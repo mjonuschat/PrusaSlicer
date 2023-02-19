@@ -70,6 +70,7 @@ void process_classic(
     const Parameters           &params,
     const Surface              &surface,
     const ExPolygons           *lower_slices,
+    const ExPolygons           *upper_slices,
     // Cache:
     Polygons                   &lower_slices_polygons_cache,
     // Output:
@@ -85,6 +86,7 @@ void process_arachne(
     const Parameters           &params,
     const Surface              &surface,
     const ExPolygons           *lower_slices,
+    const ExPolygons           *upper_slices,
     // Cache:
     Polygons                   &lower_slices_polygons_cache,
     // Output:
