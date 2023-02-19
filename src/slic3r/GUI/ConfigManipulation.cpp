@@ -345,6 +345,9 @@ void ConfigManipulation::toggle_print_fff_options(DynamicPrintConfig* config)
     toggle_field("min_feature_size", have_arachne);
     toggle_field("min_bead_width", have_arachne);
     toggle_field("thin_walls", !have_arachne);
+
+    toggle_field("only_one_perimeter_top", !have_arachne);
+    toggle_field("min_width_top_surface", have_perimeters && config->opt_bool("only_one_perimeter_top") && !have_arachne);
 }
 
 void ConfigManipulation::toggle_print_sla_options(DynamicPrintConfig* config)
