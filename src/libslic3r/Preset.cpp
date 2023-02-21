@@ -511,6 +511,9 @@ static std::vector<std::string> s_Preset_print_options {
     "wall_distribution_count", "min_feature_size", "min_bead_width",
     "top_one_perimeter_type", "only_one_perimeter_first_layer",
     "automatic_extrusion_widths", "automatic_infill_combination", "automatic_infill_combination_max_layer_height",
+
+    // BOSS
+    "solid_fill_pattern",
 };
 
 static std::vector<std::string> s_Preset_filament_options {
