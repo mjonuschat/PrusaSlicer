@@ -732,6 +732,8 @@ PRINT_CONFIG_CLASS_DEFINE(
     // Single perimeter.
     ((ConfigOptionEnum<TopOnePerimeterType>, top_one_perimeter_type))
     ((ConfigOptionBool,                 only_one_perimeter_first_layer))
+    // SuperSlicer
+    ((ConfigOptionEnum<InfillPattern>,  solid_fill_pattern))
 )
 
 PRINT_CONFIG_CLASS_DEFINE(
