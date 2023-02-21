@@ -637,6 +637,7 @@ PRINT_CONFIG_CLASS_DEFINE(
     // SuperSlicer
     ((ConfigOptionBool,                 only_one_perimeter_top))
     ((ConfigOptionFloatOrPercent,       min_width_top_surface))
+    ((ConfigOptionEnum<InfillPattern>,  solid_fill_pattern))
 )
 
 PRINT_CONFIG_CLASS_DEFINE(
