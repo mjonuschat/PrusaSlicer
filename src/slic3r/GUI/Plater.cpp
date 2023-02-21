@@ -14,6 +14,7 @@
 ///|/ Copyright (c) 2012 Mike Sheldrake @mesheldrake
 ///|/ Copyright (c) 2012 Henrik Brix Andersen @henrikbrixandersen
 ///|/ Copyright (c) 2012 Sam Wong
+///|/ Copyright (c) SuperSlicer 2021 Christoph Schöning
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
@@ -694,7 +695,10 @@ Plater::priv::priv(Plater* q, MainFrame* main_frame)
         "layer_height", "first_layer_height", "min_layer_height", "max_layer_height",
         "brim_width", "perimeters", "perimeter_extruder", "fill_density", "infill_extruder", "top_solid_layers",
         "support_material", "support_material_extruder", "support_material_interface_extruder",
-        "support_material_contact_distance", "support_material_bottom_contact_distance", "raft_layers"
+        "support_material_contact_distance", "support_material_bottom_contact_distance", "raft_layers",
+
+        // BOSS
+        "init_z_rotate",
         }))
     , sidebar(new Sidebar(q))
     , notification_manager(std::make_unique<NotificationManager>(q))
@@ -1335,6 +1339,7 @@ std::vector<size_t> Plater::priv::load_files(const std::vector<fs::path>& input_
     if (input_files.empty()) { return std::vector<size_t>(); }
 
     auto *nozzle_dmrs = config->opt<ConfigOptionFloats>("nozzle_diameter");
+    auto init_z_rotate = config->opt_float("init_z_rotate");
 
     PlaterAfterLoadAutoArrange plater_after_load_auto_arrange;
 
@@ -1466,6 +1471,20 @@ std::vector<size_t> Plater::priv::load_files(const std::vector<fs::path>& input_
                 }
                 else
                     model = FileReader::load_model(path.string(), FileReader::LoadAttributes{}, &load_stats);
+
+                if (init_z_rotate != 0) {
+                    for (auto *obj : model.objects) {
+                        if (obj->instances.empty()) {
+                            // STL/OBJ: no instances yet, rotate geometry directly
+                            obj->rotate(Geometry::deg2rad(init_z_rotate), Axis::Z);
+                        } else {
+                            // 3MF/AMF: rotate instances to preserve infill alignment
+                            for (auto *inst : obj->instances) {
+                                inst->set_rotation(Z, inst->get_rotation(Z) + Geometry::deg2rad(init_z_rotate));
+                            }
+                        }
+                    }
+                }
             }
         } catch (const ConfigurationError &e) {
             std::string message = GUI::format(_L("Failed loading file \"%1%\" due to an invalid configuration."), filename.string()) + "\n\n" + e.what();
