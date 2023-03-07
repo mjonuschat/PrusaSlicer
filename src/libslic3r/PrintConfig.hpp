@@ -849,7 +849,9 @@ PRINT_CONFIG_CLASS_DERIVED_DEFINE(
     ((ConfigOptionFloats,             wiping_volumes_matrix))
     ((ConfigOptionFloats,             wiping_volumes_extruders))
     ((ConfigOptionFloat,              z_offset))
+    // SuperSlicer
     ((ConfigOptionFloat,              init_z_rotate))
+    ((ConfigOptionInts,               chamber_temperature))
 )
 
 PRINT_CONFIG_CLASS_DERIVED_DEFINE0(
