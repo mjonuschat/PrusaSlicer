@@ -99,11 +99,23 @@ void PlaceholderParser::update_timestamp(DynamicConfig &config)
         config.set_key_value("timestamp", new ConfigOptionString(ss.str()));
     }
     config.set_key_value("year",   new ConfigOptionInt(1900 + timeinfo->tm_year));
-    config.set_key_value("month",  new ConfigOptionInt(1 + timeinfo->tm_mon));
-    config.set_key_value("day",    new ConfigOptionInt(timeinfo->tm_mday));
-    config.set_key_value("hour",   new ConfigOptionInt(timeinfo->tm_hour));
-    config.set_key_value("minute", new ConfigOptionInt(timeinfo->tm_min));
-    config.set_key_value("second", new ConfigOptionInt(timeinfo->tm_sec));
+
+    char two_d[3];
+
+    sprintf(two_d, "%02d", 1 + timeinfo->tm_mon);
+    config.set_key_value("month", new ConfigOptionString(two_d));
+
+    sprintf(two_d, "%02d", timeinfo->tm_mday);
+    config.set_key_value("day", new ConfigOptionString(two_d));
+
+    sprintf(two_d, "%02d", timeinfo->tm_hour);
+    config.set_key_value("hour", new ConfigOptionString(two_d));
+
+    sprintf(two_d, "%02d", timeinfo->tm_min);
+    config.set_key_value("minute", new ConfigOptionString(two_d));
+
+    sprintf(two_d, "%02d", timeinfo->tm_sec);
+    config.set_key_value("second", new ConfigOptionString(two_d));
 }
 
 static inline bool opts_equal(const DynamicConfig &config_old, const DynamicConfig &config_new, const std::string &opt_key)
