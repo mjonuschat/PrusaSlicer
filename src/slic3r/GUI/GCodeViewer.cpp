@@ -1,6 +1,7 @@
 ///|/ Copyright (c) Prusa Research 2020 - 2023 Enrico Turri @enricoturri1966, Oleksandra Iushchenko @YuSanka, Lukáš Matěna @lukasmatena, Vojtěch Bubník @bubnikv, Filip Sykala @Jony01, Lukáš Hejl @hejllukas
 ///|/ Copyright (c) BambuStudio 2023 manch1n @manch1n
 ///|/ Copyright (c) SuperSlicer 2023 Remi Durand @supermerill
+///|/ Copyright (c) 2022 Iulian Onofrei @revolter
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
@@ -969,6 +970,12 @@ void GCodeViewer::init()
     try
     {
         m_viewer.init(reinterpret_cast<const char*>(glGetString(GL_VERSION)));
+        const bool seams_active = m_viewer.is_option_visible(libvgcode::convert(Preview::OptionType::Seams));
+
+        if (!seams_active) {
+            m_viewer.toggle_option_visibility(libvgcode::convert(Preview::OptionType::Seams));
+        }
+
         glcheck();
     }
     catch (const std::exception& e)
