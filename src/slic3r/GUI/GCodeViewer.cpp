@@ -850,6 +850,12 @@ void GCodeViewer::init()
     try
     {
         m_viewer.init(reinterpret_cast<const char*>(glGetString(GL_VERSION)));
+        const bool seams_active = m_viewer.is_option_visible(libvgcode::convert(Preview::OptionType::Seams));
+
+        if (!seams_active) {
+            m_viewer.toggle_option_visibility(libvgcode::convert(Preview::OptionType::Seams));
+        }
+
         glcheck();
     }
     catch (const std::exception& e)
