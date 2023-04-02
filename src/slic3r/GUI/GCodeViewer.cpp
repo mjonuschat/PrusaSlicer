@@ -709,6 +709,7 @@ void GCodeViewer::init()
         }
         }
 
+        set_toolpath_move_type_visible(EMoveType::Seam, true);
         set_toolpath_move_type_visible(EMoveType::Extrude, true);
     }
 
