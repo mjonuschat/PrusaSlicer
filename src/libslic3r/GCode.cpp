@@ -106,6 +106,43 @@ namespace Slic3r {
         return ok;
     }
 
+    inline std::string make_klipper_exclude_object_name(const std::string &name, int object_id, int instance_id)
+    {
+        constexpr char banned_chars[] = "-. \r\n\v\t\f";
+        std::string cleaned_name = name;
+        const char *next = cleaned_name.c_str();
+        while (next = std::strpbrk(next, banned_chars))
+            cleaned_name[next - cleaned_name.c_str()] = '_';
+        return cleaned_name + "_id_" + std::to_string(object_id) + "_copy_" + std::to_string(instance_id);
+    }
+
+    // Label excluded objects for Klipper
+    std::string make_klipper_exclude_object_header(const Print &print) {
+        std::string output;
+        int object_id = 0;
+        for (auto object : print.objects()) {
+            int instance_id = 0;
+            for (auto instance : object->instances()) {
+                char buffer[64];
+                output += "EXCLUDE_OBJECT_DEFINE NAME=";
+                output += make_klipper_exclude_object_name(object->model_object()->name, object_id, instance_id++);
+                Polygon outline = object->model_object()->convex_hull_2d(instance.model_instance->get_matrix());
+                outline.douglas_peucker(50000.f);
+                auto center = outline.centroid();
+                std::snprintf(buffer, sizeof(buffer) - 1, " CENTER=%.3f,%.3f", unscale<float>(center[0]), unscale<float>(center[1]));
+                output += buffer + std::string(" POLYGON=[");
+                for (auto point : outline) {
+                    std::snprintf(buffer, sizeof(buffer) - 1, "[%.3f,%.3f],", unscale<float>(point[0]), unscale<float>(point[1]));
+                    output += buffer;
+                }
+                output.pop_back();
+                output += "]\n";
+            }
+            ++object_id;
+        }
+        return output;
+    }
+
     std::string OozePrevention::pre_toolchange(GCode& gcodegen)
     {
         std::string gcode;
@@ -1193,6 +1230,10 @@ void GCode::_do_export(Print& print, GCodeOutputStream &file, ThumbnailsGenerato
     // adds tags for time estimators
     if (print.config().remaining_times.value)
         file.write_format(";%s\n", GCodeProcessor::reserved_tag(GCodeProcessor::ETags::First_Line_M73_Placeholder).c_str());
+
+    // Label all instances for Klipper excluded objects
+    if (config().gcode_label_objects && config().gcode_flavor == gcfKlipper)
+        file.write(make_klipper_exclude_object_header(print));
 
     // Starting now, the G-code find / replace post-processor will be enabled.
     file.find_replace_enable();
@@ -2391,7 +2432,10 @@ void GCode::process_layer_single_object(
                         break;
                     else
                         ++ object_id;
-                gcode += std::string("; printing object ") + print_object.model_object()->name + " id:" + std::to_string(object_id) + " copy " + std::to_string(print_instance.instance_id) + "\n";
+                if (config().gcode_flavor == gcfKlipper) {
+                    gcode += std::string("EXCLUDE_OBJECT_START NAME=") + make_klipper_exclude_object_name(print_object.model_object()->name, object_id, print_instance.instance_id) + "\n";
+                } else
+                  gcode += std::string("; printing object ") + print_object.model_object()->name + " id:" + std::to_string(object_id) + " copy " + std::to_string(print_instance.instance_id) + "\n";
             }
         }
     };
@@ -2564,8 +2608,12 @@ void GCode::process_layer_single_object(
                 }
             }
         }
-    if (! first && this->config().gcode_label_objects)
-        gcode += std::string("; stop printing object ") + print_object.model_object()->name + " id:" + std::to_string(object_id) + " copy " + std::to_string(print_instance.instance_id) + "\n";
+    if (!first && this->config().gcode_label_objects) {
+        if (config().gcode_flavor == gcfKlipper) {
+            gcode += std::string("EXCLUDE_OBJECT_END NAME=") + make_klipper_exclude_object_name(print_object.model_object()->name, object_id, print_instance.instance_id) + "\n";
+        } else
+            gcode += std::string("; stop printing object ") + print_object.model_object()->name + " id:" + std::to_string(object_id) + " copy " + std::to_string(print_instance.instance_id) + "\n";
+    }
 }
 
 void GCode::apply_print_config(const PrintConfig &print_config)
