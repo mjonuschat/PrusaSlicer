@@ -492,6 +492,8 @@ static std::vector<std::string> s_Preset_print_options {
     "top_one_perimeter_type", "only_one_perimeter_first_layer",
     // BOSS
     "solid_fill_pattern",
+
+    "bridge_density",
 };
 
 static std::vector<std::string> s_Preset_filament_options {
