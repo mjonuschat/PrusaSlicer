@@ -514,6 +514,8 @@ static std::vector<std::string> s_Preset_print_options {
 
     // BOSS
     "solid_fill_pattern",
+
+    "bridge_density",
 };
 
 static std::vector<std::string> s_Preset_filament_options {
