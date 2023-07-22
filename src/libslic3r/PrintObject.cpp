@@ -708,7 +708,8 @@ bool PrintObject::invalidate_state_by_config_options(
             // Brim is printed below supports, support invalidates brim and skirt.
             steps.emplace_back(posSupportMaterial);
         } else if (
-               opt_key == "only_one_perimeter_top") {
+               opt_key == "only_one_perimeter_first_layer"
+               || opt_key == "only_one_perimeter_top") {
             steps.emplace_back(posPerimeters);
         } else if (
                opt_key == "perimeters"
