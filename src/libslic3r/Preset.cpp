@@ -462,7 +462,7 @@ static std::vector<std::string> s_Preset_print_options {
     "perimeter_generator", "wall_transition_length", "wall_transition_filter_deviation", "wall_transition_angle",
     "wall_distribution_count", "min_feature_size", "min_bead_width",
     // SuperSlicer
-    "only_one_perimeter_top", "min_width_top_surface", "solid_fill_pattern",
+    "only_one_perimeter_first_layer", "only_one_perimeter_top", "min_width_top_surface", "solid_fill_pattern",
 };
 
 static std::vector<std::string> s_Preset_filament_options {

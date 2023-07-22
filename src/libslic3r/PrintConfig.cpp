@@ -538,6 +538,12 @@ void PrintConfigDef::init_fff_params()
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloat(1));
 
+    def = this->add("only_one_perimeter_first_layer", coBool);
+    def->label = L("On First layer");
+    def->category = L("Layers and Perimeters");
+    def->tooltip = L("Use only one perimeter on first layer, to give more space to the top infill pattern.");
+    def->set_default_value(new ConfigOptionBool(false));
+
     def = this->add("only_one_perimeter_top", coBool);
     def->label = L("On top surfaces");
     def->category = L("Layers and Perimeters");

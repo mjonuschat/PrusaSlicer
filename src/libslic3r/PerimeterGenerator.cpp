@@ -1378,7 +1378,7 @@ void PerimeterGenerator::process_classic(
     int        loop_number = params.config.perimeters + surface.extra_perimeters - 1;  // 0-indexed loops
 
     // SuperSlicer: set the topmost layer to be one perimeter
-    if (loop_number > 0 && params.config.only_one_perimeter_top && upper_slices == nullptr)
+    if ((params.layer_id == 0 && params.config.only_one_perimeter_first_layer) || (loop_number > 0 && params.config.only_one_perimeter_top && upper_slices == nullptr))
         loop_number = 0;
 
     ExPolygons last        = union_ex(surface.expolygon.simplify_p(params.scaled_resolution));
