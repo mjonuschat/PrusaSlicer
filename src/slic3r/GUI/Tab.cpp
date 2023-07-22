@@ -1474,6 +1474,7 @@ void TabPrint::build()
         optgroup = page->new_optgroup(L("Quality (slower slicing)"));
         line = { L("Only one perimeter"), "" };
         line.label_path = category_path + "only-one-perimeter-top-bottom";
+        line.append_option(optgroup->get_option("only_one_perimeter_first_layer"));
         line.append_option(optgroup->get_option("only_one_perimeter_top"));
         line.append_option(optgroup->get_option("min_width_top_surface"));
         optgroup->append_line(line);
