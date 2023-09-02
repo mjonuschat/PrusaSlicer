@@ -1515,6 +1515,12 @@ void TabPrint::build()
         optgroup->append_single_option_line("only_retract_when_crossing_perimeters");
         optgroup->append_single_option_line("infill_first");
 
+        optgroup = page->new_optgroup(L("Small Area Infill Flow Compensation"));
+        optgroup->append_single_option_line("small_area_infill_flow_compensation", category_path + "small-area-infill-flow-compensation");
+        optgroup->append_single_option_line("small_area_infill_flow_compensation_max_length", category_path + "small-area-infill-flow-compensation-max-length");
+        optgroup->append_single_option_line("small_area_infill_flow_compensation_minimum_flow", category_path + "small-area-infill-flow-compensation-minimum-flow");
+        optgroup->append_single_option_line("small_area_infill_flow_compensation_flow_dropoff", category_path + "small-area-infill-flow-compensation-flow-drop-off");
+
     page = add_options_page(L("Skirt and brim"), "skirt+brim");
         category_path = "skirt-and-brim_133969#";
         optgroup = page->new_optgroup(L("Skirt"));
