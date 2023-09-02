@@ -475,6 +475,7 @@ static std::vector<std::string> s_Preset_print_options {
     "wall_distribution_count", "min_feature_size", "min_bead_width",
     // SuperSlicer
     "only_one_perimeter_first_layer", "only_one_perimeter_top", "min_width_top_surface", "solid_fill_pattern",
+    "small_area_infill_flow_compensation", "small_area_infill_flow_compensation_max_length", "small_area_infill_flow_compensation_minimum_flow", "small_area_infill_flow_compensation_flow_dropoff",
 };
 
 static std::vector<std::string> s_Preset_filament_options {
