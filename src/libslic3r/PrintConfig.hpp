@@ -786,6 +786,11 @@ PRINT_CONFIG_CLASS_DEFINE(
     ((ConfigOptionString,              color_change_gcode))
     ((ConfigOptionString,              pause_print_gcode))
     ((ConfigOptionString,              template_custom_gcode))
+    // Small Area Infill Flow Compensation
+    ((ConfigOptionBool,                 small_area_infill_flow_compensation))
+    ((ConfigOptionInt,                  small_area_infill_flow_compensation_max_length))
+    ((ConfigOptionPercent,              small_area_infill_flow_compensation_minimum_flow))
+    ((ConfigOptionInt,                  small_area_infill_flow_compensation_flow_dropoff))
 )
 
 static inline std::string get_extrusion_axis(const GCodeConfig &cfg)

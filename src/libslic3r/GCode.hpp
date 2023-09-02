@@ -46,7 +46,8 @@
 #include <map>
 #include <string>
 
-//#include "GCode/PressureEqualizer.hpp"
+#include "GCode/PressureEqualizer.hpp"
+#include "GCode/SmallAreaInfillFlowCompensator.hpp"
 
 namespace Slic3r {
 
@@ -59,11 +60,11 @@ struct PrintInstance;
 class OozePrevention {
 public:
     bool enable;
-    
+
     OozePrevention() : enable(false) {}
     std::string pre_toolchange(GCodeGenerator &gcodegen);
     std::string post_toolchange(GCodeGenerator &gcodegen);
-    
+
 private:
     int _get_temp(const GCodeGenerator &gcodegen) const;
 };
@@ -197,15 +198,15 @@ class Bed {
 
 class GCodeGenerator {
 
-public:        
-    GCodeGenerator() : 
+public:
+    GCodeGenerator() :
     	m_origin(Vec2d::Zero()),
-        m_enable_loop_clipping(true), 
-        m_enable_cooling_markers(false), 
+        m_enable_loop_clipping(true),
+        m_enable_cooling_markers(false),
         m_enable_extrusion_role_markers(false),
         m_last_processor_extrusion_role(GCodeExtrusionRole::None),
         m_layer_count(0),
-        m_layer_index(-1), 
+        m_layer_index(-1),
         m_layer(nullptr),
         m_object_layer_over_raft(false),
         m_volumetric_speed(0),
@@ -235,7 +236,7 @@ public:
     template<typename Derived>
     Vec2d           point_to_gcode(const Eigen::MatrixBase<Derived> &point) const {
         static_assert(Derived::IsVectorAtCompileTime && int(Derived::SizeAtCompileTime) == 2, "GCodeGenerator::point_to_gcode(): first parameter is not a 2D vector");
-        return Vec2d(unscaled<double>(point.x()), unscaled<double>(point.y())) + m_origin 
+        return Vec2d(unscaled<double>(point.x()), unscaled<double>(point.y())) + m_origin
             - m_config.extruder_offset.get_at(m_writer.extruder()->id());
     }
     // Convert coordinates of the active object to G-code coordinates, possibly adjusted for extruder offset and quantized to G-code resolution.
@@ -295,7 +296,7 @@ private:
 
         bool is_open() const { return f; }
         bool is_error() const;
-        
+
         void flush();
         void close();
 
@@ -303,12 +304,12 @@ private:
         void write(const std::string& what) { this->write(what.c_str()); }
         void write(const char* what);
 
-        // Write a string into a file. 
+        // Write a string into a file.
         // Add a newline, if the string does not end with a newline already.
         // Used to export a custom G-code section processed by the PlaceholderParser.
         void writeln(const std::string& what);
 
-        // Formats and write into a file the given data. 
+        // Formats and write into a file the given data.
         void write_format(const char* format, ...);
 
     private:
@@ -402,19 +403,19 @@ private:
     // This function will be called for each printing extruder, possibly twice: First for wiping extrusions, second for normal extrusions.
     void process_layer_single_object(
         // output
-        std::string              &gcode, 
+        std::string              &gcode,
         // Index of the extruder currently active.
         const unsigned int        extruder_id,
         // What object and instance is going to be printed.
         const InstanceToPrint    &print_instance,
         // and the object & support layer of the above.
-        const ObjectLayerToPrint &layer_to_print, 
+        const ObjectLayerToPrint &layer_to_print,
         // Container for extruder overrides (when wiping into object or infill).
         const LayerTools         &layer_tools,
         // Optional smooth path interpolating extrusion polylines.
         const GCode::SmoothPathCache &smooth_path_cache,
         // Is any extrusion possibly marked as wiping extrusion?
-        const bool                is_anything_overridden, 
+        const bool                is_anything_overridden,
         // Round 1 (wiping into object or infill) or round 2 (normal extrusions).
         const bool                print_wipe_extrusions);
 
@@ -526,6 +527,7 @@ private:
     std::unique_ptr<GCodeFindReplace>   m_find_replace;
     std::unique_ptr<PressureEqualizer>  m_pressure_equalizer;
     std::unique_ptr<GCode::WipeTowerIntegration> m_wipe_tower;
+    std::unique_ptr<SmallAreaInfillFlowCompensator> m_small_area_infill_flow_compensator;
 
     // Heights (print_z) at which the skirt has already been extruded.
     std::vector<coordf_t>               m_skirt_done;
@@ -558,6 +560,7 @@ private:
     friend class GCode::Wipe;
     friend class GCode::WipeTowerIntegration;
     friend class PressureEqualizer;
+    friend class SmallAreaInfillFlowCompensator;
 };
 
 std::vector<const PrintInstance*> sort_object_instances_by_model_order(const Print& print);

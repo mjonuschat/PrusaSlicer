@@ -722,6 +722,12 @@ bool PrintObject::invalidate_state_by_config_options(
             || opt_key == "arc_fitting") {
             steps.emplace_back(posPerimeters);
         } else if (
+               opt_key == "small_area_infill_flow_compensation"
+            || opt_key == "small_area_infill_flow_compensation_max_length"
+            || opt_key == "small_area_infill_flow_compensation_minimum_flow"
+            || opt_key == "small_area_infill_flow_compensation_flow_dropoff") {
+            steps.emplace_back(posSlice);
+        } else if (
                opt_key == "gap_fill_enabled"
             || opt_key == "gap_fill_speed") {
             // Return true if gap-fill speed has changed from zero value to non-zero or from non-zero value to zero.
