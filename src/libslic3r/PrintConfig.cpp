@@ -2005,6 +2005,38 @@ void PrintConfigDef::init_fff_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloat(0));
 
+    def = this->add("small_area_infill_flow_compensation", coBool);
+    def->label = L("Enable Small Area Infill Flow Compensation");
+    def->tooltip = L("Enable flow compensation for small infill areas");
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionBool(false));
+
+    def = this->add("small_area_infill_flow_compensation_max_length", coInt);
+    def->label = L("Maximum extrusion length");
+    def->tooltip = L("Extrusion length up to which the flow compensation applies. Typical range is 0-20mm.");
+    def->sidetext = L("mm");
+    def->min = 0;
+    def->max = 100;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionInt(17));
+
+    def = this->add("small_area_infill_flow_compensation_minimum_flow", coPercent);
+    def->label = L("Minimum flow percent");
+    def->tooltip = L("Limit flow reduction to this percentage of original flow");
+    def->sidetext = L("%");
+    def->min = 0;
+    def->max = 100;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionPercent(30));
+
+    def = this->add("small_area_infill_flow_compensation_flow_dropoff", coInt);
+    def->label = L("Flow drop off");
+    def->tooltip = L("How exponential the flow drop off is (multiple of 2)");
+    def->min = 2;
+    def->max = 100;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionInt(12));
+
     def = this->add("min_fan_speed", coInts);
     def->label = L("Min");
     def->tooltip = L("This setting represents the minimum PWM your fan needs to work.");

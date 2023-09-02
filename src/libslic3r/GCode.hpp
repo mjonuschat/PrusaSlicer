@@ -41,6 +41,7 @@
 #include <string>
 
 #include "GCode/PressureEqualizer.hpp"
+#include "GCode/SmallAreaInfillFlowCompensator.hpp"
 
 namespace Slic3r {
 
@@ -432,6 +433,7 @@ private:
     std::unique_ptr<SpiralVase>         m_spiral_vase;
     std::unique_ptr<GCodeFindReplace>   m_find_replace;
     std::unique_ptr<PressureEqualizer>  m_pressure_equalizer;
+    std::unique_ptr<SmallAreaInfillFlowCompensator> m_small_area_infill_flow_compensator;
     std::unique_ptr<WipeTowerIntegration> m_wipe_tower;
 
     // Heights (print_z) at which the skirt has already been extruded.
@@ -460,6 +462,7 @@ private:
     friend class Wipe;
     friend class WipeTowerIntegration;
     friend class PressureEqualizer;
+    friend class SmallAreaInfillFlowCompensator;
 };
 
 std::vector<const PrintInstance*> sort_object_instances_by_model_order(const Print& print);

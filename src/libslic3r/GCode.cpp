@@ -53,6 +53,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/find.hpp>
 #include <boost/foreach.hpp>
+#include <boost/format.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/log/trivial.hpp>
 
@@ -1196,6 +1197,10 @@ void GCode::_do_export(Print& print, GCodeOutputStream &file, ThumbnailsGenerato
         print.config().max_volumetric_extrusion_rate_slope_negative.value > 0)
         m_pressure_equalizer = make_unique<PressureEqualizer>(print.config());
     m_enable_extrusion_role_markers = (bool)m_pressure_equalizer;
+
+    if (print.config().small_area_infill_flow_compensation.value)
+        m_small_area_infill_flow_compensator = make_unique<SmallAreaInfillFlowCompensator>(print.config());
+
 
     if (print.config().avoid_crossing_curled_overhangs){
         this->m_avoid_crossing_curled_overhangs.init_bed_shape(get_bed_shape(print.config()));
@@ -3201,8 +3206,18 @@ std::string GCode::_extrude(const ExtrusionPath &path, const std::string_view de
         for (++ it; it != end; ++ it) {
             Vec2d p = this->point_to_gcode_quantized(*it);
             const double line_length = (p - prev).norm();
+            auto dE = e_per_mm * line_length;
+            if (m_small_area_infill_flow_compensator) {
+                auto oldE = dE;
+                dE = m_small_area_infill_flow_compensator->modify_flow(line_length, dE, path.role());
+
+                if (m_config.gcode_comments && boost::str(boost::format("%.5f") % oldE) != boost::str(boost::format("%.5f") % dE)) {
+                    comment += boost::str(boost::format(" | Old Flow Value: %.5f tool at: X%.3f Y%.3f was at: X%.3f Y%.3f") % oldE % p.x() % p.y() % prev.x() % prev.y());
+                }
+            }
+
             path_length += line_length;
-            gcode += m_writer.extrude_to_xy(p, e_per_mm * line_length, comment);
+            gcode += m_writer.extrude_to_xy(p, dE, comment);
             prev = p;
         }
     } else {
@@ -3220,7 +3235,17 @@ std::string GCode::_extrude(const ExtrusionPath &path, const std::string_view de
             const ProcessedPoint &processed_point = new_points[i];
             Vec2d                 p               = this->point_to_gcode_quantized(processed_point.p);
             const double          line_length     = (p - prev).norm();
-            gcode += m_writer.extrude_to_xy(p, e_per_mm * line_length, marked_comment);
+            auto dE = e_per_mm * line_length;
+            if (m_small_area_infill_flow_compensator) {
+                auto oldE = dE;
+                dE = m_small_area_infill_flow_compensator->modify_flow(line_length, dE, path.role());
+
+                if (m_config.gcode_comments && boost::str(boost::format("%.5f") % oldE) != boost::str(boost::format("%.5f") % dE)) {
+                    marked_comment += boost::str(boost::format(" | Old Flow Value: %.5f tool at: X%.3f Y%.3f was at: X%.3f Y%.3f") % oldE % p.x() % p.y() % prev.x() % prev.y());
+                }
+            }
+
+            gcode += m_writer.extrude_to_xy(p, dE, marked_comment);
             prev             = p;
             double new_speed = processed_point.speed * 60.0;
             if (last_set_speed != new_speed) {
