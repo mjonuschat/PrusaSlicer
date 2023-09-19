@@ -9,8 +9,7 @@
 #include "libslic3r/Geometry/Circle.hpp"
 #include "libslic3r/SurfaceMesh.hpp"
 #include <numeric>
-
-#include <numeric>
+#include <tbb/parallel_for.h>
 
 #define DEBUG_EXTRACT_ALL_FEATURES_AT_ONCE 0
 

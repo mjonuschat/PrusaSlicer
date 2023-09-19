@@ -11,6 +11,7 @@
 
 #include "../libslic3r.h"
 #include "../PrintConfig.hpp"
+#include <boost/log/trivial.hpp>
 // #include "../LocalesUtils.hpp"
 // #include "../GCode.hpp"
 

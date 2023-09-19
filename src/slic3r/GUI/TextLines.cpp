@@ -19,6 +19,8 @@
 #include "slic3r/GUI/Camera.hpp"
 #include "slic3r/GUI/3DScene.hpp"
 
+#include "libslic3r/ClipperUtils.hpp" // union_ex + offset_ex
+
 using namespace Slic3r;
 using namespace Slic3r::Emboss;
 using namespace Slic3r::GUI;
