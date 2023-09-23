@@ -3211,8 +3211,8 @@ std::string GCode::_extrude(const ExtrusionPath &path, const std::string_view de
                 auto oldE = dE;
                 dE = m_small_area_infill_flow_compensator->modify_flow(line_length, dE, path.role());
 
-                if (m_config.gcode_comments && boost::str(boost::format("%.5f") % oldE) != boost::str(boost::format("%.5f") % dE)) {
-                    comment += boost::str(boost::format(" | Old Flow Value: %.5f tool at: X%.3f Y%.3f was at: X%.3f Y%.3f") % oldE % p.x() % p.y() % prev.x() % prev.y());
+                if (m_config.gcode_comments && oldE > 0 && oldE != dE) {
+                    comment += boost::str(boost::format(" | Old Flow Value: %.5f  Length: %.5f") % oldE % line_length);
                 }
             }
 
@@ -3240,8 +3240,8 @@ std::string GCode::_extrude(const ExtrusionPath &path, const std::string_view de
                 auto oldE = dE;
                 dE = m_small_area_infill_flow_compensator->modify_flow(line_length, dE, path.role());
 
-                if (m_config.gcode_comments && boost::str(boost::format("%.5f") % oldE) != boost::str(boost::format("%.5f") % dE)) {
-                    marked_comment += boost::str(boost::format(" | Old Flow Value: %.5f tool at: X%.3f Y%.3f was at: X%.3f Y%.3f") % oldE % p.x() % p.y() % prev.x() % prev.y());
+                if (m_config.gcode_comments && oldE > 0 && oldE != dE) {
+                    marked_comment += boost::str(boost::format(" | Old Flow Value: %.5f  Length: %.5f") % oldE % line_length);
                 }
             }
 
