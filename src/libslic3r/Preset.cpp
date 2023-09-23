@@ -475,7 +475,13 @@ static std::vector<std::string> s_Preset_print_options {
     "wall_distribution_count", "min_feature_size", "min_bead_width",
     // SuperSlicer
     "only_one_perimeter_first_layer", "only_one_perimeter_top", "min_width_top_surface", "solid_fill_pattern",
-    "small_area_infill_flow_compensation", "small_area_infill_flow_compensation_max_length", "small_area_infill_flow_compensation_minimum_flow", "small_area_infill_flow_compensation_flow_dropoff",
+    "small_area_infill_flow_compensation", "small_area_infill_flow_compensation_extrusion_length_0", "small_area_infill_flow_compensation_extrusion_length_1", "small_area_infill_flow_compensation_extrusion_length_2",
+    "small_area_infill_flow_compensation_extrusion_length_3", "small_area_infill_flow_compensation_extrusion_length_4", "small_area_infill_flow_compensation_extrusion_length_5",
+    "small_area_infill_flow_compensation_extrusion_length_6", "small_area_infill_flow_compensation_extrusion_length_7", "small_area_infill_flow_compensation_extrusion_length_8",
+    "small_area_infill_flow_compensation_extrusion_length_9", "small_area_infill_flow_compensation_compensation_factor_0", "small_area_infill_flow_compensation_compensation_factor_1",
+    "small_area_infill_flow_compensation_compensation_factor_2", "small_area_infill_flow_compensation_compensation_factor_3", "small_area_infill_flow_compensation_compensation_factor_4",
+    "small_area_infill_flow_compensation_compensation_factor_5", "small_area_infill_flow_compensation_compensation_factor_6", "small_area_infill_flow_compensation_compensation_factor_7",
+    "small_area_infill_flow_compensation_compensation_factor_8", "small_area_infill_flow_compensation_compensation_factor_9"
 };
 
 static std::vector<std::string> s_Preset_filament_options {

@@ -2051,31 +2051,175 @@ void PrintConfigDef::init_fff_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionBool(false));
 
-    def = this->add("small_area_infill_flow_compensation_max_length", coInt);
-    def->label = L("Maximum extrusion length");
+    def = this->add("small_area_infill_flow_compensation_extrusion_length_0", coFloat);
+    def->label = L("Extrusion length");
     def->tooltip = L("Extrusion length up to which the flow compensation applies. Typical range is 0-20mm.");
     def->sidetext = L("mm");
     def->min = 0;
     def->max = 100;
     def->mode = comExpert;
-    def->set_default_value(new ConfigOptionInt(17));
+    def->set_default_value(new ConfigOptionFloat(0));
 
-    def = this->add("small_area_infill_flow_compensation_minimum_flow", coPercent);
-    def->label = L("Minimum flow percent");
-    def->tooltip = L("Limit flow reduction to this percentage of original flow");
-    def->sidetext = L("%");
+    def = this->add("small_area_infill_flow_compensation_extrusion_length_1", coFloat);
+    def->label = L("Extrusion length");
+    def->tooltip = L("Extrusion length up to which the flow compensation applies. Typical range is 0-20mm.");
+    def->sidetext = L("mm");
     def->min = 0;
     def->max = 100;
     def->mode = comExpert;
-    def->set_default_value(new ConfigOptionPercent(30));
+    def->set_default_value(new ConfigOptionFloat(0.2));
 
-    def = this->add("small_area_infill_flow_compensation_flow_dropoff", coInt);
-    def->label = L("Flow drop off");
-    def->tooltip = L("How exponential the flow drop off is (multiple of 2)");
-    def->min = 2;
+    def = this->add("small_area_infill_flow_compensation_extrusion_length_2", coFloat);
+    def->label = L("Extrusion length");
+    def->tooltip = L("Extrusion length up to which the flow compensation applies. Typical range is 0-20mm.");
+    def->sidetext = L("mm");
+    def->min = 0;
     def->max = 100;
     def->mode = comExpert;
-    def->set_default_value(new ConfigOptionInt(12));
+    def->set_default_value(new ConfigOptionFloat(0.4));
+
+    def = this->add("small_area_infill_flow_compensation_extrusion_length_3", coFloat);
+    def->label = L("Extrusion length");
+    def->tooltip = L("Extrusion length up to which the flow compensation applies. Typical range is 0-20mm.");
+    def->sidetext = L("mm");
+    def->min = 0;
+    def->max = 100;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(0.6));
+
+    def = this->add("small_area_infill_flow_compensation_extrusion_length_4", coFloat);
+    def->label = L("Extrusion length");
+    def->tooltip = L("Extrusion length up to which the flow compensation applies. Typical range is 0-20mm.");
+    def->sidetext = L("mm");
+    def->min = 0;
+    def->max = 100;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(0.8));
+
+    def = this->add("small_area_infill_flow_compensation_extrusion_length_5", coFloat);
+    def->label = L("Extrusion length");
+    def->tooltip = L("Extrusion length up to which the flow compensation applies. Typical range is 0-20mm.");
+    def->sidetext = L("mm");
+    def->min = 0;
+    def->max = 100;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(1.5));
+
+    def = this->add("small_area_infill_flow_compensation_extrusion_length_6", coFloat);
+    def->label = L("Extrusion length");
+    def->tooltip = L("Extrusion length up to which the flow compensation applies. Typical range is 0-20mm.");
+    def->sidetext = L("mm");
+    def->min = 0;
+    def->max = 100;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(2));
+
+    def = this->add("small_area_infill_flow_compensation_extrusion_length_7", coFloat);
+    def->label = L("Extrusion length");
+    def->tooltip = L("Extrusion length up to which the flow compensation applies. Typical range is 0-20mm.");
+    def->sidetext = L("mm");
+    def->min = 0;
+    def->max = 100;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(3));
+
+    def = this->add("small_area_infill_flow_compensation_extrusion_length_8", coFloat);
+    def->label = L("Extrusion length");
+    def->tooltip = L("Extrusion length up to which the flow compensation applies. Typical range is 0-20mm.");
+    def->sidetext = L("mm");
+    def->min = 0;
+    def->max = 100;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(5));
+
+    def = this->add("small_area_infill_flow_compensation_extrusion_length_9", coFloat);
+    def->label = L("Extrusion length");
+    def->tooltip = L("Extrusion length up to which the flow compensation applies. Typical range is 0-20mm.");
+    def->sidetext = L("mm");
+    def->min = 0;
+    def->max = 100;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(10));
+
+    def = this->add("small_area_infill_flow_compensation_compensation_factor_0", coFloat);
+    def->label = L("Compensation Factor");
+    def->tooltip = L("Compensation factor to apply to the extrusion amount");
+    def->min = 0;
+    def->max = 1;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(0));
+
+    def = this->add("small_area_infill_flow_compensation_compensation_factor_1", coFloat);
+    def->label = L("Compensation Factor");
+    def->tooltip = L("Compensation factor to apply to the extrusion amount");
+    def->min = 0;
+    def->max = 1;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(0.4444));
+
+    def = this->add("small_area_infill_flow_compensation_compensation_factor_2", coFloat);
+    def->label = L("Compensation Factor");
+    def->tooltip = L("Compensation factor to apply to the extrusion amount");
+    def->min = 0;
+    def->max = 1;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(0.6145));
+
+    def = this->add("small_area_infill_flow_compensation_compensation_factor_3", coFloat);
+    def->label = L("Compensation Factor");
+    def->tooltip = L("Compensation factor to apply to the extrusion amount");
+    def->min = 0;
+    def->max = 1;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(0.7059));
+
+    def = this->add("small_area_infill_flow_compensation_compensation_factor_4", coFloat);
+    def->label = L("Compensation Factor");
+    def->tooltip = L("Compensation factor to apply to the extrusion amount");
+    def->min = 0;
+    def->max = 1;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(0.7619));
+
+    def = this->add("small_area_infill_flow_compensation_compensation_factor_5", coFloat);
+    def->label = L("Compensation Factor");
+    def->tooltip = L("Compensation factor to apply to the extrusion amount");
+    def->min = 0;
+    def->max = 1;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(0.8571));
+
+    def = this->add("small_area_infill_flow_compensation_compensation_factor_6", coFloat);
+    def->label = L("Compensation Factor");
+    def->tooltip = L("Compensation factor to apply to the extrusion amount");
+    def->min = 0;
+    def->max = 1;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(0.8889));
+
+    def = this->add("small_area_infill_flow_compensation_compensation_factor_7", coFloat);
+    def->label = L("Compensation Factor");
+    def->tooltip = L("Compensation factor to apply to the extrusion amount");
+    def->min = 0;
+    def->max = 1;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(0.9231));
+
+    def = this->add("small_area_infill_flow_compensation_compensation_factor_8", coFloat);
+    def->label = L("Compensation Factor");
+    def->tooltip = L("Compensation factor to apply to the extrusion amount");
+    def->min = 0;
+    def->max = 1;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(0.9520));
+
+    def = this->add("small_area_infill_flow_compensation_compensation_factor_9", coFloat);
+    def->label = L("Compensation Factor");
+    def->tooltip = L("Compensation factor to apply to the extrusion amount");
+    def->min = 0;
+    def->max = 1;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(1));
 
     def = this->add("min_fan_speed", coInts);
     def->label = L("Min");

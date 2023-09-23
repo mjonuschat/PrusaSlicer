@@ -3228,6 +3228,7 @@ std::string GCodeGenerator::_extrude(
     auto  it   = path.begin();
     auto  end  = path.end();
     for (++ it; it != end; ++ it) {
+        std::string tempComment = comment;
         Vec2d p_exact = this->point_to_gcode(it->point);
         Vec2d p = GCodeFormatter::quantize(p_exact);
         assert(p != prev);
@@ -3256,13 +3257,13 @@ std::string GCodeGenerator::_extrude(
                     auto dE = e_per_mm * line_length;
                     if (m_small_area_infill_flow_compensator) {
                         auto oldE = dE;
-                        dE = m_small_area_infill_flow_compensator->modify_flow(line_length, dE, path.role());
+                        dE = m_small_area_infill_flow_compensator->modify_flow(line_length, dE, path_attr.role);
 
-                        if (m_config.gcode_comments && boost::str(boost::format("%.5f") % oldE) != boost::str(boost::format("%.5f") % dE)) {
-                            comment += boost::str(boost::format(" | Old Flow Value: %.5f tool at: X%.3f Y%.3f was at: X%.3f Y%.3f") % oldE % p.x() % p.y() % prev.x() % prev.y());
+                        if (m_config.gcode_comments && oldE > 0 && oldE != dE) {
+                            tempComment += Slic3r::format(" | Old Flow Value: %0.5f Length: %0.5f",oldE, line_length);
                         }
                     }
-                    gcode += m_writer.extrude_to_xy(p, dE, comment);
+                    gcode += m_writer.extrude_to_xy(p, dE, tempComment);
                 }
             } else {
                 double angle = Geometry::ArcWelder::arc_angle(prev.cast<double>(), p.cast<double>(), double(radius));
@@ -3273,13 +3274,13 @@ std::string GCodeGenerator::_extrude(
                 assert(dE > 0);
                 if (m_small_area_infill_flow_compensator) {
                     auto oldE = dE;
-                    dE = m_small_area_infill_flow_compensator->modify_flow(line_length, dE, path.role());
+                    dE = m_small_area_infill_flow_compensator->modify_flow(line_length, dE, path_attr.role);
 
-                    if (m_config.gcode_comments && boost::str(boost::format("%.5f") % oldE) != boost::str(boost::format("%.5f") % dE)) {
-                        comment += boost::str(boost::format(" | Old Flow Value: %.5f tool at: X%.3f Y%.3f was at: X%.3f Y%.3f") % oldE % p.x() % p.y() % prev.x() % prev.y());
+                    if (m_config.gcode_comments && oldE > 0 && oldE != dE) {
+                        tempComment += Slic3r::format(" | Old Flow Value: %0.5f Length: %0.5f",oldE, line_length);
                     }
                 }
-                gcode += m_writer.extrude_to_xy_G2G3IJ(p, ij, it->ccw(), dE, comment);
+                gcode += m_writer.extrude_to_xy_G2G3IJ(p, ij, it->ccw(), dE, tempComment);
             }
             prev = p;
             prev_exact = p_exact;

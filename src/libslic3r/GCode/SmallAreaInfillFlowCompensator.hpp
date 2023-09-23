@@ -9,7 +9,7 @@
 #include "../libslic3r.h"
 #include "../PrintConfig.hpp"
 #include "../ExtrusionRole.hpp"
-
+#include "spline.h"
 namespace Slic3r {
 
 class SmallAreaInfillFlowCompensator
@@ -22,16 +22,18 @@ public:
     double modify_flow(const double line_length, const double dE, const ExtrusionRole role);
 
 private:
-    // Length at which extrusion modifer is no longer applied
-    const int maxModifiedLength;
+    // Model points
+    std::vector<double> eLengths;
+    std::vector<double> flowComps;
 
-    // Min percentage flow is reduced to
-    const double minFlowPercent;
-
-    // How exponential the flow drop off is (multiple of 2)
-    int flowDropOff;
+    // TODO: Cubic Spline
+    tk::spline flowModel;
 
     double flow_comp_model(const double line_length);
+
+    double max_modified_length() {
+        return eLengths.back();
+    }
 };
 
 } // namespace Slic3r
