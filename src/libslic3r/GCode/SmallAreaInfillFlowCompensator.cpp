@@ -20,28 +20,109 @@
 
 namespace Slic3r {
 
-// Default flow drop off value, used when the input is invalid.
-static constexpr int DEFAULT_FLOW_DROP_OFF = 12;
+bool nearly_equal(double a, double b)
+{
+  return std::nextafter(a, std::numeric_limits<double>::lowest()) <= b
+    && std::nextafter(a, std::numeric_limits<double>::max()) >= b;
+}
 
 SmallAreaInfillFlowCompensator::SmallAreaInfillFlowCompensator(const Slic3r::GCodeConfig &config)
-    : maxModifiedLength(config.small_area_infill_flow_compensation_max_length.value)
-    , minFlowPercent(config.small_area_infill_flow_compensation_minimum_flow.get_abs_value(1.0))
-    , flowDropOff(config.small_area_infill_flow_compensation_flow_dropoff.value)
 {
-    if (flowDropOff % 2 != 0) {
-        BOOST_LOG_TRIVIAL(warning) << "Flow drop off needs to be a multiple of 2, using default value";
-        flowDropOff = DEFAULT_FLOW_DROP_OFF;
+    auto curLength = 0.0;
+
+    if(nearly_equal(config.small_area_infill_flow_compensation_extrusion_length_0, 0.0)) {
+        eLengths.push_back(config.small_area_infill_flow_compensation_extrusion_length_0);
+        flowComps.push_back(config.small_area_infill_flow_compensation_compensation_factor_0);
+    } else {
+        throw Slic3r::InvalidArgument("First extrusion length for small area infill compensation length must be 0");
     }
+
+    curLength = config.small_area_infill_flow_compensation_extrusion_length_1;
+    if(curLength > 0.0 and curLength > eLengths.back()) {
+        eLengths.push_back(config.small_area_infill_flow_compensation_extrusion_length_1);
+        flowComps.push_back(config.small_area_infill_flow_compensation_compensation_factor_1);
+    } else {
+        throw Slic3r::InvalidArgument("Extrusion lengths for subsequent points must be increasing");
+    }
+
+    curLength = config.small_area_infill_flow_compensation_extrusion_length_2;
+    if(curLength > 0.0 and curLength > eLengths.back()) {
+        eLengths.push_back(config.small_area_infill_flow_compensation_extrusion_length_2);
+        flowComps.push_back(config.small_area_infill_flow_compensation_compensation_factor_2);
+    } else {
+        throw Slic3r::InvalidArgument("Extrusion lengths for subsequent points must be increasing");
+    }
+
+    curLength = config.small_area_infill_flow_compensation_extrusion_length_3;
+    if(curLength > 0.0 and curLength > eLengths.back()) {
+        eLengths.push_back(config.small_area_infill_flow_compensation_extrusion_length_3);
+        flowComps.push_back(config.small_area_infill_flow_compensation_compensation_factor_3);
+    } else {
+        throw Slic3r::InvalidArgument("Extrusion lengths for subsequent points must be increasing");
+    }
+
+    curLength = config.small_area_infill_flow_compensation_extrusion_length_4;
+    if(curLength > 0.0 and curLength > eLengths.back()) {
+        eLengths.push_back(config.small_area_infill_flow_compensation_extrusion_length_4);
+        flowComps.push_back(config.small_area_infill_flow_compensation_compensation_factor_4);
+    } else {
+        throw Slic3r::InvalidArgument("Extrusion lengths for subsequent points must be increasing");
+    }
+
+    curLength = config.small_area_infill_flow_compensation_extrusion_length_5;
+    if(curLength > 0.0 and curLength > eLengths.back()) {
+        eLengths.push_back(config.small_area_infill_flow_compensation_extrusion_length_5);
+        flowComps.push_back(config.small_area_infill_flow_compensation_compensation_factor_5);
+    } else {
+        throw Slic3r::InvalidArgument("Extrusion lengths for subsequent points must be increasing");
+    }
+
+    curLength = config.small_area_infill_flow_compensation_extrusion_length_6;
+    if(curLength > 0.0 and curLength > eLengths.back()) {
+        eLengths.push_back(config.small_area_infill_flow_compensation_extrusion_length_6);
+        flowComps.push_back(config.small_area_infill_flow_compensation_compensation_factor_6);
+    } else {
+        throw Slic3r::InvalidArgument("Extrusion lengths for subsequent points must be increasing");
+    }
+
+    curLength = config.small_area_infill_flow_compensation_extrusion_length_7;
+    if(curLength > 0.0 and curLength > eLengths.back()) {
+        eLengths.push_back(config.small_area_infill_flow_compensation_extrusion_length_7);
+        flowComps.push_back(config.small_area_infill_flow_compensation_compensation_factor_7);
+    } else {
+        throw Slic3r::InvalidArgument("Extrusion lengths for subsequent points must be increasing");
+    }
+
+    curLength = config.small_area_infill_flow_compensation_extrusion_length_8;
+    if(curLength > 0.0 and curLength > eLengths.back()) {
+        eLengths.push_back(config.small_area_infill_flow_compensation_extrusion_length_8);
+        flowComps.push_back(config.small_area_infill_flow_compensation_compensation_factor_8);
+    } else {
+        throw Slic3r::InvalidArgument("Extrusion lengths for subsequent points must be increasing");
+    }
+
+    curLength = config.small_area_infill_flow_compensation_extrusion_length_9;
+    if(curLength > 0.0 and curLength > eLengths.back()) {
+        eLengths.push_back(config.small_area_infill_flow_compensation_extrusion_length_9);
+        flowComps.push_back(config.small_area_infill_flow_compensation_compensation_factor_9);
+    } else {
+        throw Slic3r::InvalidArgument("Extrusion lengths for subsequent points must be increasing");
+    }
+
+    if(!nearly_equal(flowComps.back(), 1.0)) {
+        throw Slic3r::InvalidArgument("Final compensation factor for small area infill flow compensation must be 1.0");
+    }
+
+    flowModel.set_points(eLengths, flowComps);
 }
 
 double SmallAreaInfillFlowCompensator::flow_comp_model(const double line_length)
 {
-    if (line_length == 0 || line_length > maxModifiedLength) {
+    if (line_length == 0 || line_length > max_modified_length()) {
         return 1.0;
     }
 
-    double magicNumber = (minFlowPercent - 1) * pow(maxModifiedLength, -1 * flowDropOff);
-    return magicNumber * pow(line_length - maxModifiedLength, flowDropOff) + 1;
+    return flowModel(line_length);
 }
 
 double SmallAreaInfillFlowCompensator::modify_flow(const double line_length, const double dE, const ExtrusionRole role)
