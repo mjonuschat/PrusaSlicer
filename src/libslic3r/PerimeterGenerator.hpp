@@ -105,6 +105,9 @@ void process_arachne(
 
 ExtrusionMultiPath thick_polyline_to_multi_path(const ThickPolyline &thick_polyline, ExtrusionRole role, const Flow &flow, float tolerance, float merge_tolerance);
 
+void split_top_surfaces(const Parameters &params, const ExPolygons           *lower_slices,const ExPolygons  *upper_slices, const ExPolygons &orig_polygons, ExPolygons &top_fills,
+                                            ExPolygons &non_top_polygons, ExPolygons &fill_clip);
+
 } // namespace PerimeterGenerator
 } // namespace Slic3r
 
