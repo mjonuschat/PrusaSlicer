@@ -50,6 +50,11 @@ void GCodeWriter::apply_print_config(const PrintConfig &print_config)
         print_config.machine_max_acceleration_extruding.values.front() : 0));
     m_max_travel_acceleration = static_cast<unsigned int>(std::round((use_mach_limits && print_config.machine_limits_usage.value == MachineLimitsUsage::EmitToGCode && supports_separate_travel_acceleration(print_config.gcode_flavor.value)) ?
         print_config.machine_max_acceleration_travel.values.front() : 0));
+
+    m_max_jerk_x = static_cast<unsigned int>(std::round((use_mach_limits && print_config.machine_limits_usage.value == MachineLimitsUsage::EmitToGCode) ?
+        print_config.machine_max_jerk_x.values.front() : 0));
+    m_max_jerk_y = static_cast<unsigned int>(std::round((use_mach_limits && print_config.machine_limits_usage.value == MachineLimitsUsage::EmitToGCode) ?
+        print_config.machine_max_jerk_y.values.front() : 0));
 }
 
 void GCodeWriter::set_extruders(std::vector<unsigned int> extruder_ids)
@@ -201,7 +206,7 @@ std::string GCodeWriter::set_chamber_temperature(unsigned int temperature, bool 
 
 
 
-std::string GCodeWriter::set_acceleration_internal(Acceleration type, unsigned int acceleration)
+std::string GCodeWriter::set_acceleration_internal(Acceleration type, unsigned int acceleration, double minimum_cruise_ratio, const std::string_view comment)
 {
     // Clamp the acceleration to the allowed maximum.
     if (type == Acceleration::Print && m_max_acceleration > 0 && acceleration > m_max_acceleration)
@@ -209,26 +214,67 @@ std::string GCodeWriter::set_acceleration_internal(Acceleration type, unsigned i
     if (type == Acceleration::Travel && m_max_travel_acceleration > 0 && acceleration > m_max_travel_acceleration)
         acceleration = m_max_travel_acceleration;
 
+    // Ensure minimum cruise ratio is equal to or greater than 0.
+    minimum_cruise_ratio = std::max(minimum_cruise_ratio, 0.0);
+
     // Are we setting travel acceleration for a flavour that supports separate travel and print acc?
     bool separate_travel = (type == Acceleration::Travel && supports_separate_travel_acceleration(this->config.gcode_flavor));
 
-    auto& last_value = separate_travel ? m_last_travel_acceleration : m_last_acceleration ;
-    if (acceleration == 0 || acceleration == last_value)
+    auto& last_acceleration_value =   separate_travel ? m_last_travel_acceleration : m_last_acceleration ;
+    auto& last_minimum_cruise_ratio = m_last_minimum_cruise_ratio;
+    if ((acceleration == 0 || acceleration == last_acceleration_value) && (minimum_cruise_ratio == 0 || minimum_cruise_ratio == last_minimum_cruise_ratio))
         return {};
     
-    last_value = acceleration;
+    last_acceleration_value = acceleration;
+    last_minimum_cruise_ratio = minimum_cruise_ratio;
     
     std::ostringstream gcode;
-    if (FLAVOR_IS(gcfRepetier))
+    if (FLAVOR_IS(gcfKlipper)) {
+        gcode << "SET_VELOCITY_LIMIT ACCEL=" << acceleration;
+        if (minimum_cruise_ratio > 0)
+            gcode << " MINIMUM_CRUISE_RATIO=" << minimum_cruise_ratio;
+    } else if (FLAVOR_IS(gcfRepetier))
         gcode << (separate_travel ? "M202 X" : "M201 X") << acceleration << " Y" << acceleration;
     else if (FLAVOR_IS(gcfRepRapFirmware) || FLAVOR_IS(gcfMarlinFirmware))
         gcode << (separate_travel ? "M204 T" : "M204 P") << acceleration;
     else
         gcode << "M204 S" << acceleration;
 
-    if (this->config.gcode_comments) gcode << " ; adjust acceleration";
+    if (this->config.gcode_comments)
+        gcode << " ; adjust acceleration (" << comment << ")";
+
     gcode << "\n";
     
+    return gcode.str();
+}
+
+std::string GCodeWriter::set_jerk(unsigned int jerk, const std::string_view comment)
+{
+    if (jerk == 0 || jerk == m_last_jerk)
+        return {};
+    
+    // Clamp the acceleration to the allowed maximum.
+    int jerk_x = jerk, jerk_y = jerk;
+    if (m_max_jerk_x > 0 && jerk > m_max_jerk_x)
+        jerk_x = m_max_jerk_x;
+    if (m_max_jerk_y > 0 && jerk > m_max_jerk_y)
+        jerk_y = m_max_jerk_y;
+    
+    m_last_jerk = jerk;
+
+    std::ostringstream gcode;
+    if (FLAVOR_IS(gcfKlipper))
+        gcode << "SET_VELOCITY_LIMIT SQUARE_CORNER_VELOCITY=" << jerk;
+    else if (FLAVOR_IS(gcfRepRapFirmware))
+        gcode << "M566 X" << jerk_x << " Y" << jerk_y;
+    else
+        gcode << "M205 X" << jerk_x << " Y" << jerk_y;
+
+    if (this->config.gcode_comments)
+        gcode << " ; adjust jerk (" << comment << ")";
+
+    gcode << "\n";
+
     return gcode.str();
 }
 
