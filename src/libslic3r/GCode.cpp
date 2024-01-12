@@ -3100,7 +3100,13 @@ std::string GCodeGenerator::extrude_smooth_path(
     }
 
     // reset acceleration
-    gcode += m_writer.set_print_acceleration(fast_round_up<unsigned int>(m_config.default_acceleration.value));
+    gcode += m_writer.set_print_acceleration(
+        fast_round_up<unsigned int>(m_config.default_acceleration.value),
+        m_config.default_minimum_cruise_ratio,
+        "Default"
+    );
+    //reset jerk
+    gcode += m_writer.set_jerk(fast_round_up<unsigned int>(m_config.default_jerk.value), "Default");
 
     if (is_loop) {
         GCode::SmoothPath wipe{smooth_path.begin() + wipe_offset, smooth_path.end()};
@@ -3399,26 +3405,65 @@ std::string GCodeGenerator::_extrude(
     // adjust acceleration
     if (m_config.default_acceleration.value > 0) {
         double acceleration;
+        double minimum_cruise_ratio;
         if (this->on_first_layer() && m_config.first_layer_acceleration.value > 0) {
             acceleration = m_config.first_layer_acceleration.value;
+            minimum_cruise_ratio = m_config.first_layer_minimum_cruise_ratio.value;
         } else if (this->object_layer_over_raft() && m_config.first_layer_acceleration_over_raft.value > 0) {
             acceleration = m_config.first_layer_acceleration_over_raft.value;
+            minimum_cruise_ratio = m_config.first_layer_minimum_cruise_ratio_over_raft.value;
         } else if (m_config.bridge_acceleration.value > 0 && path_attr.role.is_bridge()) {
             acceleration = m_config.bridge_acceleration.value;
+            minimum_cruise_ratio = m_config.bridge_minimum_cruise_ratio.value;
         } else if (m_config.top_solid_infill_acceleration > 0 && path_attr.role == ExtrusionRole::TopSolidInfill) {
             acceleration = m_config.top_solid_infill_acceleration.value;
+            minimum_cruise_ratio = m_config.top_solid_infill_minimum_cruise_ratio.value;
         } else if (m_config.solid_infill_acceleration > 0 && path_attr.role.is_solid_infill()) {
             acceleration = m_config.solid_infill_acceleration.value;
+            minimum_cruise_ratio = m_config.solid_infill_minimum_cruise_ratio.value;
         } else if (m_config.infill_acceleration.value > 0 && path_attr.role.is_infill()) {
             acceleration = m_config.infill_acceleration.value;
+            minimum_cruise_ratio = m_config.infill_minimum_cruise_ratio.value;
         } else if (m_config.external_perimeter_acceleration > 0 && path_attr.role.is_external_perimeter()) {
             acceleration = m_config.external_perimeter_acceleration.value;
+            minimum_cruise_ratio = m_config.external_perimeter_minimum_cruise_ratio.value;
         } else if (m_config.perimeter_acceleration.value > 0 && path_attr.role.is_perimeter()) {
             acceleration = m_config.perimeter_acceleration.value;
+            minimum_cruise_ratio = m_config.perimeter_minimum_cruise_ratio.value;
         } else {
             acceleration = m_config.default_acceleration.value;
+            minimum_cruise_ratio = m_config.default_minimum_cruise_ratio.value;
         }
-        gcode += m_writer.set_print_acceleration((unsigned int)floor(acceleration + 0.5));
+        gcode += m_writer.set_print_acceleration(
+            fast_round_up<unsigned int>(acceleration),
+            minimum_cruise_ratio,
+            gcode_extrusion_role_to_string(extrusion_role_to_gcode_extrusion_role(path_attr.role))
+        );
+    }
+
+    // adjust jerk
+    if (m_config.default_jerk.value > 0) {
+        int jerk;
+        if (this->on_first_layer() && m_config.first_layer_jerk.value > 0) {
+            jerk = m_config.first_layer_jerk.value;
+        } else if (this->object_layer_over_raft() && m_config.first_layer_jerk_over_raft.value > 0) {
+            jerk = m_config.first_layer_jerk_over_raft.value;
+        } else if (m_config.bridge_jerk.value > 0 && path_attr.role.is_bridge()) {
+            jerk = m_config.bridge_jerk.value;
+        } else if (m_config.top_solid_infill_jerk > 0 && path_attr.role == ExtrusionRole::TopSolidInfill) {
+            jerk = m_config.top_solid_infill_jerk.value;
+        } else if (m_config.solid_infill_jerk > 0 && path_attr.role.is_solid_infill()) {
+            jerk = m_config.solid_infill_jerk.value;
+        } else if (m_config.infill_jerk.value > 0 && path_attr.role.is_infill()) {
+            jerk = m_config.infill_jerk.value;
+        } else if (m_config.external_perimeter_jerk > 0 && path_attr.role.is_external_perimeter()) {
+            jerk = m_config.external_perimeter_jerk.value;
+        } else if (m_config.perimeter_jerk.value > 0 && path_attr.role.is_perimeter()) {
+            jerk = m_config.perimeter_jerk.value;
+        } else {
+            jerk = m_config.default_jerk.value;
+        }
+        gcode += m_writer.set_jerk(jerk, gcode_extrusion_role_to_string(extrusion_role_to_gcode_extrusion_role(path_attr.role)));
     }
 
     // calculate extrusion length per distance unit
@@ -3668,13 +3713,22 @@ std::string GCodeGenerator::generate_travel_gcode(
         return "";
     }
 
-    const unsigned travel_acceleration                = static_cast<unsigned>(m_config.travel_acceleration.value + 0.5);
-    const unsigned travel_short_distance_acceleration = static_cast<unsigned>(m_config.travel_short_distance_acceleration.value + 0.5);
+    const unsigned travel_acceleration = fast_round_up<unsigned int>(m_config.travel_acceleration.value);
+    const unsigned travel_jerk = fast_round_up<unsigned int>(m_config.travel_jerk.value);
+    const float travel_mcr = m_config.travel_minimum_cruise_ratio.value;
+    const unsigned travel_short_distance_acceleration = fast_round_up<unsigned int>(m_config.travel_short_distance_acceleration.value);
+    const unsigned travel_short_distance_jerk = fast_round_up<unsigned int>(m_config.travel_short_distance_jerk.value);
+    const float travel_short_distance_mcr = m_config.travel_short_distance_minimum_cruise_ratio.value;
 
     std::string gcode;
     // Generate G-code for the travel move.
     // Use G1 because we rely on paths being straight (G0 may make round paths).
-    gcode += this->m_writer.set_travel_acceleration(use_short_distance_acceleration() ? travel_short_distance_acceleration : travel_acceleration);
+    gcode += this->m_writer.set_travel_acceleration(
+        use_short_distance_acceleration() ? travel_short_distance_acceleration : travel_acceleration,
+        use_short_distance_acceleration() ? travel_short_distance_mcr : travel_mcr
+    );
+    if (m_config.default_jerk > 0 && m_config.travel_jerk > 0)
+        gcode += this->m_writer.set_jerk(use_short_distance_acceleration() ? travel_short_distance_jerk : travel_jerk, "Travel");
 
     bool already_inserted{false};
     for (std::size_t i{0}; i < travel.size(); ++i) {
@@ -3705,16 +3759,18 @@ std::string GCodeGenerator::generate_travel_gcode(
     // This is mainly for parts of the G-code export that don't take into account that travel acceleration could change during printing.
     // Those parts of the G-code export always use the travel acceleration that was set last.
     if (use_short_distance_acceleration() && travel_short_distance_acceleration != travel_acceleration) {
-        gcode += this->m_writer.set_travel_acceleration(travel_acceleration);
+        gcode += this->m_writer.set_travel_acceleration(travel_acceleration, travel_mcr);
     }
 
     if (!GCodeWriter::supports_separate_travel_acceleration(config().gcode_flavor)) {
         // In case that this flavor does not support separate print and travel acceleration,
         // reset acceleration to default.
         // TODO: This doesn't seem to perform what the comment describes.
-        gcode += this->m_writer.set_travel_acceleration(travel_acceleration);
+        gcode += this->m_writer.set_travel_acceleration(m_config.default_acceleration, m_config.default_minimum_cruise_ratio);
     }
 
+    if (m_config.default_jerk > 0 && m_config.travel_jerk > 0)
+        gcode += this->m_writer.set_jerk(m_config.default_jerk, "Default");
     return gcode;
 }
 
