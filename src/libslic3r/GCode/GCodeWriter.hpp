@@ -24,6 +24,7 @@
 #include "libslic3r/Point.hpp"
 #include "libslic3r/PrintConfig.hpp"
 #include "CoolingBuffer.hpp"
+#include "libslic3r/ExtrusionRole.hpp"
 
 namespace Slic3r {
 
@@ -35,7 +36,7 @@ public:
     GCodeWriter() : 
         multiple_extruders(false), m_extrusion_axis("E"), m_extruder(nullptr),
         m_single_extruder_multi_material(false),
-        m_last_acceleration(0), m_max_acceleration(0),
+        m_last_acceleration(0), m_max_acceleration(0), m_last_jerk(0),
         m_last_bed_temperature(0), m_last_bed_temperature_reached(true)
         {}
     Extruder*            extruder()             { return m_extruder; }
@@ -56,12 +57,14 @@ public:
     }
     std::string preamble();
     std::string postamble() const;
+    static std::string set_temperature(unsigned int temperature, GCodeFlavor flavor, bool wait = false, int tool = -1, std::string comment = std::string());
     std::string set_temperature(unsigned int temperature, bool wait = false, int tool = -1) const;
     std::string set_bed_temperature(unsigned int temperature, bool wait = false);
     std::string set_chamber_temperature(unsigned int temperature, bool wait, bool accurate) const;
-    std::string set_print_acceleration(unsigned int acceleration)   { return set_acceleration_internal(Acceleration::Print, acceleration); }
-    std::string set_travel_acceleration(unsigned int acceleration)  { return set_acceleration_internal(Acceleration::Travel, acceleration); }
+    std::string set_print_acceleration(unsigned int acceleration, double minimum_cruise_ratio, const std::string_view comment)   { return set_acceleration_internal(Acceleration::Print, acceleration, minimum_cruise_ratio, comment); }
+    std::string set_travel_acceleration(unsigned int acceleration, double minimum_cruise_ratio)  { return set_acceleration_internal(Acceleration::Travel, acceleration, minimum_cruise_ratio, "Travel"); }
     std::string set_junction_deviation(double junction_deviation);
+    std::string set_jerk(unsigned int jerk, const std::string_view comment);
     std::string reset_e(bool force = false);
     std::string update_progress(unsigned int num, unsigned int tot, bool allow_100 = false) const;
     // return false if this extruder was already selected
@@ -118,6 +121,8 @@ public:
     std::string retract(bool before_wipe = false);
     std::string retract_for_toolchange(bool before_wipe = false);
     std::string unretract();
+    // BOSS
+    std::string prime();
 
     // Current position of the printer, in G-code coordinates.
     // Z coordinate of current position contains zhop. If zhop is applied (this->zhop() > 0),
@@ -147,12 +152,18 @@ private:
     bool            m_single_extruder_multi_material;
     Extruder*       m_extruder;
     unsigned int    m_last_acceleration = (unsigned int)(-1);
+    double          m_last_minimum_cruise_ratio = -1.0;
     unsigned int    m_last_travel_acceleration = (unsigned int)(-1); // only used for flavors supporting separate print/travel acc
     // Limit for setting the acceleration, to respect the machine limits set for the Marlin firmware.
     // If set to zero, the limit is not in action.
     unsigned int    m_max_acceleration;
     unsigned int    m_max_travel_acceleration;
     double          m_max_junction_deviation;
+
+    unsigned int    m_last_jerk = 0;
+    unsigned int    m_max_jerk_x = 0;
+    unsigned int    m_max_jerk_y = 0;
+
 
     unsigned int    m_last_bed_temperature;
     bool            m_last_bed_temperature_reached;
@@ -164,7 +175,7 @@ private:
     };
 
     std::string _retract(double length, double restart_extra, const std::string_view comment);
-    std::string set_acceleration_internal(Acceleration type, unsigned int acceleration);
+    std::string set_acceleration_internal(Acceleration type, unsigned int acceleration, double minimum_cruise_ratio, const std::string_view comment);
 };
 
 class GCodeFormatter {
