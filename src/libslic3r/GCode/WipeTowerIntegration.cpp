@@ -110,11 +110,13 @@ std::string WipeTowerIntegration::append_tcr(GCodeGenerator &gcodegen, const Wip
     std::string tcr_gcode;
     unescape_string_cstyle(tcr_rotated_gcode, tcr_gcode);
 
-    if (gcodegen.config().default_acceleration > 0)
+    if (gcodegen.config().default_acceleration > 0) {
         gcode += gcodegen.writer().set_print_acceleration(fast_round_up<unsigned int>(gcodegen.config().wipe_tower_acceleration.value));
+        gcode += gcodegen.writer().set_jerk(fast_round_up<unsigned int>(gcodegen.config().wipe_tower_jerk.value));
+    }
     gcode += tcr_gcode;
     gcode += gcodegen.writer().set_print_acceleration(fast_round_up<unsigned int>(gcodegen.config().default_acceleration.value));
-
+    gcode += gcodegen.writer().set_jerk(fast_round_up<unsigned int>(gcodegen.config().default_jerk.value));
     // A phony move to the end position at the wipe tower.
     gcodegen.writer().travel_to_xy(end_pos.cast<double>());
     gcodegen.last_position = wipe_tower_point_to_object_point(gcodegen, end_pos);
