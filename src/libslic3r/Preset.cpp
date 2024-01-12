@@ -516,6 +516,18 @@ static std::vector<std::string> s_Preset_print_options {
     "small_area_infill_flow_compensation_compensation_factor_7",
     "small_area_infill_flow_compensation_compensation_factor_8",
     "small_area_infill_flow_compensation_compensation_factor_9",
+
+    "bridge_jerk",
+    "default_jerk",
+    "external_perimeter_jerk",
+    "first_layer_jerk_over_raft",
+    "first_layer_jerk",
+    "infill_jerk",
+    "perimeter_jerk",
+    "solid_infill_jerk",
+    "top_solid_infill_jerk",
+    "travel_jerk",
+    "wipe_tower_jerk",
 };
 
 static std::vector<std::string> s_Preset_filament_options {
