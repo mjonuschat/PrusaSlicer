@@ -14,6 +14,7 @@ xs/assertlib*
 .vs/*
 /src/TAGS
 /.vscode/
+build-default/*
 build-linux/*
 build_x86_64/*
 build_arm64/*
