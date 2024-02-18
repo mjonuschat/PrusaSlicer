@@ -1,0 +1,108 @@
+on:
+  workflow_call:
+    inputs:
+      cache-key:
+        required: true
+        type: string
+      cache-path:
+        required: true
+        type: string
+      valid-cache:
+        required: true
+        type: boolean
+      os:
+        required: true
+        type: string
+      arch:
+        required: false
+        type: string
+      build-deps-only:
+        required: false
+        type: boolean
+
+jobs:
+  build_deps:
+    name: Build Deps
+    if: inputs.build-deps-only || inputs.valid-cache != true
+    runs-on: ${{ inputs.os }}
+    env:
+      date:
+    steps:
+
+      # Setup the environment
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: load cached deps
+        uses: actions/cache@v4
+        with:
+          path: ${{ inputs.cache-path }}
+          key: ${{ inputs.cache-key }}
+
+      - name: setup dev on Windows
+        if: inputs.os == 'windows-latest'
+        uses: microsoft/setup-msbuild@v1.1
+
+      - name: Get the date on Ubuntu and macOS
+        if: inputs.os != 'windows-latest'
+        run: echo "date=$(date +'%Y%m%d')" >> $GITHUB_ENV
+        shell: bash
+
+      - name: Get the date on Windows
+        if: inputs.os == 'windows-latest'
+        run: echo "date=$(Get-Date -Format 'yyyyMMdd')" | Out-File -Append -FilePath $env:GITHUB_ENV -Encoding utf8
+        shell: pwsh
+
+
+      # Build Dependencies
+      - name: Build on Windows
+        if: inputs.os == 'windows-latest'
+        working-directory: ${{ github.workspace }}
+        run: |
+            choco install strawberryperl
+            mkdir ${{ github.workspace }}/deps/build
+            mkdir ${{ github.workspace }}/deps/build/PrusaSlicer_dep
+            .\build_win.bat -d=.\deps\build\PrusaSlicer_dep -c=Release -r=none -s=deps
+            .\build_win.bat -d=.\deps\build\PrusaSlicer_dep -c=Release -r=none -s=pack
+            cd ${{ github.workspace }}/deps/build
+
+      - name: Build on Mac ${{ inputs.arch }}
+        if: inputs.os == 'macos-12' || inputs.os == 'macos-13' || inputs.os == 'macos-14'
+        working-directory: ${{ github.workspace }}
+        run: |
+            brew install git gettext automake texinfo
+            brew uninstall cmake
+            (cd $(brew --repository homebrew/core)/Formula/c; git checkout e26e881a5dc87daaab3c96096288e67f055bb7d6 cmake.rb)
+            HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_FROM_API=1 brew install cmake
+            mkdir -p ${{ github.workspace }}/deps/build_${{ inputs.arch }}
+            mkdir -p ${{ github.workspace }}/deps/build_${{ inputs.arch }}/PrusaSlicer_dep_${{ inputs.arch }}
+            brew uninstall --ignore-dependencies zstd
+            ./build_release_macos.sh -dp -a ${{ inputs.arch }} -t 10.15
+            brew install zstd
+
+      # Upload Artifacts
+      - name: Upload Mac ${{ inputs.arch }} artifacts
+        if: inputs.os == 'macos-12' || inputs.os == 'macos-13' || inputs.os == 'macos-14'
+        uses: actions/upload-artifact@v4
+        with:
+          name: PrusaSlicer_dep_mac_${{ inputs.arch }}_${{ env.date }}
+          path: ${{ github.workspace }}/deps/build_${{ inputs.arch }}/PrusaSlicer_dep*.tar.gz
+
+      - name: Upload Windows artifacts
+        if: inputs.os == 'windows-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: PrusaSlicer_dep_win64_${{ env.date }}
+          path: ${{ github.workspace }}/deps/build/PrusaSlicer_dep*.zip
+
+  build_prusa:
+    name: Build PrusaSlicer
+    needs: [build_deps]
+    if: ${{ !cancelled() && !inputs.build-deps-only && (inputs.valid-cache == true && needs.build_deps.result == 'skipped') || (inputs.valid-cache != true && success()) }}
+    uses: ./.github/workflows/build_prusa.yml
+    with:
+      cache-key: ${{ inputs.cache-key }}
+      cache-path: ${{ inputs.cache-path }}
+      os: ${{ inputs.os }}
+      arch: ${{ inputs.arch }}
+    secrets: inherit
