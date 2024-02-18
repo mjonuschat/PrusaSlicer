@@ -138,6 +138,9 @@ endif (MINGW)
 if (NOT WIN32 AND NOT APPLE)
     # Binary name on unix like systems (Linux, Unix)
     set_target_properties(PrusaSlicer PROPERTIES OUTPUT_NAME "prusa-slicer")
+    set(SLIC3R_APP_CMD "prusa-slicer")
+    set(SLIC3R_VIEWER_CMD "prusa-gcodeviewer")
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/platform/unix/build_linux_image.sh.in ${CMAKE_CURRENT_BINARY_DIR}/build_linux_image.sh @ONLY)
 endif ()
 
 
@@ -287,10 +290,10 @@ endif ()
 
 # Slic3r binary install target
 if (WIN32)
-    install(TARGETS PrusaSlicer RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}")
+    install(TARGETS PrusaSlicer RUNTIME DESTINATION ".")
     if (MSVC)
-        install(TARGETS PrusaSlicer_app_gui RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}")
-        install(TARGETS PrusaSlicer_app_console RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}")
+        install(TARGETS PrusaSlicer_app_gui RUNTIME DESTINATION ".")
+        install(TARGETS PrusaSlicer_app_console RUNTIME DESTINATION ".")
     endif ()
 else ()
     install(TARGETS PrusaSlicer RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}" BUNDLE DESTINATION ${CMAKE_INSTALL_BINDIR})
