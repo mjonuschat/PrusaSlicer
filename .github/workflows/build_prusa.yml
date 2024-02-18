@@ -1,0 +1,211 @@
+name: Build PrusaSlicer
+
+on:
+    workflow_call:
+      inputs:
+        cache-key:
+          required: true
+          type: string
+        cache-path:
+          required: true
+          type: string
+        os:
+          required: true
+          type: string
+        arch:
+          required: false
+          type: string
+
+jobs:
+  build_prusa:
+    name: Build PrusaSlicer
+    runs-on: ${{ inputs.os }}
+    env:
+      date:
+      ver:
+      ver_pure:
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: load cached deps
+        uses: actions/cache@v4
+        with:
+          path: ${{ inputs.cache-path }}
+          key: ${{ inputs.cache-key }}
+          fail-on-cache-miss: true
+
+      - name: Get the version and date on Ubuntu and macOS
+        if: inputs.os != 'windows-latest'
+        run: |
+          ver_pure=$(grep 'set(SLIC3R_VERSION' version.inc | cut -d '"' -f2)
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            ver="PR-${{ github.event.number }}"
+          else
+            ver="$ver_pure+BOSS"
+          fi
+          echo "ver=$ver" >> $GITHUB_ENV
+          echo "ver_pure=$ver_pure" >> $GITHUB_ENV
+          echo "date=$(date +'%Y%m%d')" >> $GITHUB_ENV
+        shell: bash
+
+      - name: Get the version and date on Windows
+        if: inputs.os == 'windows-latest'
+        run: |
+          $date = Get-Date -Format 'yyyyMMdd'
+          $ref = "${{ github.ref }}"
+          $eventName = "${{ github.event_name }}"
+          $prNumber = "${{ github.event.number }}"
+          $versionContent = Get-Content version.inc -Raw
+          if ($versionContent -match 'set\(SLIC3R_VERSION "(.*?)"\)') {
+              $ver_pure = $matches[1]
+          }
+          if ($eventName -eq 'pull_request') {
+              $ver = "PR" + $prNumber
+          } else {
+              $ver=$ver_pure + "+BOSS"
+          }
+
+          echo "ver=$ver" | Out-File -Append -FilePath $env:GITHUB_ENV -Encoding utf8
+          echo "ver_pure=$ver_pure" | Out-File -Append -FilePath $env:GITHUB_ENV -Encoding utf8
+          echo "date=$date" | Out-File -Append -FilePath $env:GITHUB_ENV -Encoding utf8
+          echo "date: ${{ env.date }} version: ${{ env.ver }}"
+        shell: pwsh
+
+#   Mac
+      - name: Install tools mac
+        if: inputs.os == 'macos-13' || inputs.os == 'macos-14'
+        run: |
+          brew install git gettext automake texinfo tree
+          mkdir -p ${{ github.workspace }}/deps/build_${{inputs.arch}}
+          mkdir -p ${{ github.workspace }}/deps/build_${{inputs.arch}}/PrusaSlicer_dep_${{inputs.arch}}
+          tree ${{ github.workspace }}/deps/build_${{inputs.arch}}/PrusaSlicer_dep_${{inputs.arch}}
+
+      - name: Build slicer mac
+        if: inputs.os == 'macos-13' || inputs.os == 'macos-14'
+        working-directory: ${{ github.workspace }}
+        run: |
+          ./build_release_macos.sh -s -n -a ${{inputs.arch}} -t 11.3
+
+      - name: Sign app and notary
+        if: (github.ref == 'refs/heads/boss' || startsWith(github.ref, 'refs/heads/release/')) && (inputs.os == 'macos-13' || inputs.os == 'macos-14')
+        working-directory: ${{ github.workspace }}
+        env:
+          BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
+          P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+          CERTIFICATE_ID: ${{ secrets.MACOS_CERTIFICATE_ID }}
+        run: |
+          CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
+          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+          echo -n "$BUILD_CERTIFICATE_BASE64" | base64 --decode > $CERTIFICATE_PATH
+          security create-keychain -p $KEYCHAIN_PASSWORD $KEYCHAIN_PATH
+          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
+          security unlock-keychain -p $KEYCHAIN_PASSWORD $KEYCHAIN_PATH
+          security import $CERTIFICATE_PATH -P $P12_PASSWORD -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
+          security list-keychain -d user -s $KEYCHAIN_PATH
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k $P12_PASSWORD $KEYCHAIN_PATH
+          codesign --deep --force --verbose --options runtime --timestamp --entitlements ${{ github.workspace }}/.github/scripts/disable_validation.entitlements --sign "$CERTIFICATE_ID" ${{ github.workspace }}/build_${{inputs.arch}}/PrusaSlicer/PrusaSlicer.app
+          ln -s /Applications ${{ github.workspace }}/build_${{inputs.arch}}/PrusaSlicer/Applications
+          hdiutil create -volname "PrusaSlicer" -srcfolder ${{ github.workspace }}/build_${{inputs.arch}}/PrusaSlicer -ov -format UDZO PrusaSlicer-${{ env.ver }}+MacOS-${{inputs.arch}}-${{ env.date }}.dmg
+          codesign --deep --force --verbose --options runtime --timestamp --entitlements ${{ github.workspace }}/.github/scripts/disable_validation.entitlements --sign "$CERTIFICATE_ID" PrusaSlicer-${{ env.ver }}+MacOS-${{inputs.arch}}-${{ env.date }}.dmg
+          xcrun notarytool store-credentials "notarytool-profile" --apple-id "${{ secrets.APPLE_DEV_ACCOUNT }}" --team-id "${{ secrets.TEAM_ID }}" --password "${{ secrets.APP_PWD }}"
+          xcrun notarytool submit "PrusaSlicer-${{ env.ver }}+MacOS-${{inputs.arch}}-${{ env.date }}.dmg" --keychain-profile "notarytool-profile" --wait
+          xcrun stapler staple PrusaSlicer-${{ env.ver }}+MacOS-${{inputs.arch}}-${{ env.date }}.dmg
+
+      - name: Create DMG without notary
+        if: (github.ref != 'refs/heads/boss' && !startsWith(github.ref, 'refs/heads/release/')) && (inputs.os == 'macos-13' || inputs.os == 'macos-14')
+        working-directory: ${{ github.workspace }}
+        run: |
+          ln -s /Applications ${{ github.workspace }}/build_${{inputs.arch}}/PrusaSlicer/Applications
+          hdiutil create -volname "PrusaSlicer" -srcfolder ${{ github.workspace }}/build_${{inputs.arch}}/PrusaSlicer -ov -format UDZO PrusaSlicer-${{ env.ver }}+MacOS-${{inputs.arch}}-${{ env.date }}.dmg
+
+      - name: Upload artifacts mac
+        if: inputs.os == 'macos-13' || inputs.os == 'macos-14'
+        uses: actions/upload-artifact@v4
+        with:
+          name: PrusaSlicer-${{ env.ver }}+MacOS-${{inputs.arch}}-${{ env.date }}
+          path: ${{ github.workspace }}/PrusaSlicer-${{ env.ver }}+MacOS-${{inputs.arch}}-${{ env.date }}.dmg
+
+# Windows
+      - name: setup MSVC
+        if: inputs.os == 'windows-latest'
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Install nsis
+        if: inputs.os == 'windows-latest'
+        run: |
+          dir "C:/Program Files (x86)/Windows Kits/10/Include"
+          choco install nsis
+
+      - name: Build slicer Win
+        if: inputs.os == 'windows-latest'
+        working-directory: ${{ github.workspace }}
+        run: .\build_win.bat -d=.\deps\build\PrusaSlicer_dep -c=Release -s=app -r=none
+
+      - name: Create installer Win
+        if: inputs.os == 'windows-latest'
+        working-directory: ${{ github.workspace }}/build
+        run: |
+          cpack -G NSIS
+
+      - name: Pack app
+        if: inputs.os == 'windows-latest'
+        working-directory: ${{ github.workspace }}/build/src/Release
+        run: |
+          7z a -tzip ${{ github.workspace }}\build\PrusaSlicer-${{ env.ver }}+win64-${{ env.date }}.zip resources *.exe *.dll
+
+      - name: Upload artifacts Win zip
+        if: inputs.os == 'windows-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: PrusaSlicer-${{ env.ver }}+win64-${{ env.date }}
+          path: ${{ github.workspace }}\build\PrusaSlicer-${{ env.ver }}+win64-${{ env.date }}.zip
+
+      - name: Upload artifacts Win installer
+        if: inputs.os == 'windows-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: PrusaSlicer-Installer-${{ env.ver }}+win64-${{ env.date }}
+          path: ${{ github.workspace }}\build\PrusaSlicer-Installer*.exe
+
+# Ubuntu
+      - name: Install dependencies
+        if: inputs.os == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake git build-essential autoconf cmake libglu1-mesa-dev libgtk-3-dev libdbus-1-dev libcurl4-openssl-dev libsecret-1-dev libssl-dev
+
+      - name: Install dependencies from build_linux.sh
+        if: inputs.os == 'ubuntu-22.04'
+        shell: bash
+        run: sudo ./build_release_linux.sh -ur
+
+      - name: Fix permissions
+        if: inputs.os == 'ubuntu-22.04'
+        shell: bash
+        run: sudo chown $USER -R ./
+
+      - name: Build slicer
+        if: inputs.os == 'ubuntu-22.04'
+        shell: bash
+        run: |
+          ./build_release_linux.sh -isr
+          mv -n ./build/PrusaSlicer-${{ env.ver_pure }}+Linux.tar ./build/PrusaSlicer-${{ env.ver }}+Linux-${{ env.date }}.tar
+          mv -n ./build/PrusaSlicer-${{ env.ver_pure }}+Linux.AppImage ./build/PrusaSlicer-${{ env.ver }}+Linux-${{ env.date }}.AppImage
+          chmod +x ./build/PrusaSlicer-${{ env.ver }}+Linux-${{ env.date }}.AppImage
+
+      - name: Upload artifacts Ubuntu (Archive)
+        if: inputs.os == 'ubuntu-22.04'
+        uses: actions/upload-artifact@v4
+        with:
+          name: "PrusaSlicer-${{ env.ver }}+Linux-${{ env.date }} (Archive)"
+          path: './build/PrusaSlicer-${{ env.ver }}+Linux-${{ env.date }}.tar'
+
+      - name: Upload artifacts Ubuntu (AppImage)
+        if: inputs.os == 'ubuntu-22.04'
+        uses: actions/upload-artifact@v4
+        with:
+          name: "PrusaSlicer-${{ env.ver }}+Linux-${{ env.date }} (AppImage)"
+          path: './build/PrusaSlicer-${{ env.ver }}+Linux-${{ env.date }}.AppImage'
