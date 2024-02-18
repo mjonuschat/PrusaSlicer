@@ -638,6 +638,11 @@ if(SLIC3R_BUILD_TESTS)
     add_subdirectory(tests)
 endif()
 
+if (NOT WIN32 AND NOT APPLE)
+    set(SLIC3R_APP_CMD "prusa-slicer")
+    set(SLIC3R_VIEWER_CMD "prusa-gcodeviewer")
+    configure_file(${LIBDIR}/platform/unix/build_appimage.sh.in ${CMAKE_CURRENT_BINARY_DIR}/build_appimage.sh @ONLY)
+endif()
 
 # Resources install target, configure fhs.hpp on UNIX
 if (WIN32)
