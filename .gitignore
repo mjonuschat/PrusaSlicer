@@ -14,6 +14,7 @@ xs/assertlib*
 .vs/*
 /src/TAGS
 /.vscode/
+build-default/*
 build-linux/*
 build_x86_64/*
 build_arm64/*
@@ -23,3 +24,8 @@ deps/build-linux/*
 **/.idea/
 .pkg_cache
 CMakeUserPresets.json
+build-dir
+repo
+.flatpak-builder
+*.flatpak
+!.flatpak/
