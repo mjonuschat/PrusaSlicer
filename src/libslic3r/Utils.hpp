@@ -128,6 +128,12 @@ std::string header_gcodeviewer_generated();
 // getpid platform wrapper
 extern unsigned get_current_pid();
 
+inline bool nearly_equal(double a, double b)
+{
+  return std::nextafter(a, std::numeric_limits<double>::lowest()) <= b
+    && std::nextafter(a, std::numeric_limits<double>::max()) >= b;
+}
+
 // Compute the next highest power of 2 of 32-bit v
 // http://graphics.stanford.edu/~seander/bithacks.html
 inline uint16_t next_highest_power_of_2(uint16_t v)
