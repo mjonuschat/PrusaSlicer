@@ -1021,6 +1021,9 @@ void GCodeGenerator::_do_export(Print& print, GCodeOutputStream &file, Thumbnail
         m_pressure_equalizer = make_unique<PressureEqualizer>(print.config());
     m_enable_extrusion_role_markers = (bool)m_pressure_equalizer;
 
+    if (print.config().small_area_infill_flow_compensation.value)
+        m_small_area_infill_flow_compensator = make_unique<SmallAreaInfillFlowCompensator>(print.config());
+
     if (print.config().avoid_crossing_curled_overhangs){
         this->m_avoid_crossing_curled_overhangs.init_bed_shape(get_bed_shape(print.config()));
     }
@@ -3476,6 +3479,7 @@ std::string GCodeGenerator::_extrude(
     auto  it   = path.begin();
     auto  end  = path.end();
     for (++ it; it != end; ++ it) {
+        std::string tempComment = comment;
         Vec2d p_exact = this->point_to_gcode(it->point);
         Vec2d p = GCodeFormatter::quantize(p_exact);
         assert(p != prev);
@@ -3499,15 +3503,33 @@ std::string GCodeGenerator::_extrude(
             }
             if (radius == 0) {
                 // Extrude line segment.
-                if (const double line_length = (p - prev).norm(); line_length > 0)
-                    gcode += m_writer.extrude_to_xy(p, e_per_mm * line_length, comment);
+                if (const double line_length = (p - prev).norm(); line_length > 0) {
+                    auto dE = e_per_mm * line_length;
+                    if (m_small_area_infill_flow_compensator) {
+                        auto oldE = dE;
+                        dE = m_small_area_infill_flow_compensator->modify_flow(line_length, dE, path_attr.role);
+
+                        if (m_config.gcode_comments && oldE > 0 && oldE != dE) {
+                            tempComment += Slic3r::format(" | Old Flow Value: %0.5f Length: %0.5f",oldE, line_length);
+                        }
+                    }
+                    gcode += m_writer.extrude_to_xy(p, dE, tempComment);
+                }
             } else {
                 double angle = Geometry::ArcWelder::arc_angle(prev.cast<double>(), p.cast<double>(), double(radius));
                 assert(angle > 0);
                 const double line_length = angle * std::abs(radius);
-                const double dE          = e_per_mm * line_length;
+                auto dE                  = e_per_mm * line_length;
                 assert(dE > 0);
-                gcode += m_writer.extrude_to_xy_G2G3IJ(p, ij, it->ccw(), dE, comment);
+                if (m_small_area_infill_flow_compensator) {
+                    auto oldE = dE;
+                    dE = m_small_area_infill_flow_compensator->modify_flow(line_length, dE, path_attr.role);
+
+                    if (m_config.gcode_comments && oldE > 0 && oldE != dE) {
+                        tempComment += Slic3r::format(" | Old Flow Value: %0.5f Length: %0.5f",oldE, line_length);
+                    }
+                }
+                gcode += m_writer.extrude_to_xy_G2G3IJ(p, ij, it->ccw(), dE, tempComment);
             }
             prev = p;
             prev_exact = p_exact;
