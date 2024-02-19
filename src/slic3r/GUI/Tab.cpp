@@ -1531,6 +1531,69 @@ void TabPrint::build()
         optgroup->append_single_option_line("only_retract_when_crossing_perimeters");
         optgroup->append_single_option_line("infill_first");
 
+        optgroup = page->new_optgroup(L("Small Area Infill Flow Compensation"));
+        optgroup->append_single_option_line("small_area_infill_flow_compensation");
+
+        line = { L("Model: Point 1"), "" };
+        line.label_path = category_path + "small-area-infill-flow-compensation";
+        line.append_option(optgroup->get_option("small_area_infill_flow_compensation_extrusion_length_0"));
+        line.append_option(optgroup->get_option("small_area_infill_flow_compensation_compensation_factor_0"));
+        optgroup->append_line(line);
+
+        line = { L("Model: Point 2"), "" };
+        line.label_path = category_path + "small-area-infill-flow-compensation";
+        line.append_option(optgroup->get_option("small_area_infill_flow_compensation_extrusion_length_1"));
+        line.append_option(optgroup->get_option("small_area_infill_flow_compensation_compensation_factor_1"));
+        optgroup->append_line(line);
+
+        line = { L("Model: Point 3"), "" };
+        line.label_path = category_path + "small-area-infill-flow-compensation";
+        line.append_option(optgroup->get_option("small_area_infill_flow_compensation_extrusion_length_2"));
+        line.append_option(optgroup->get_option("small_area_infill_flow_compensation_compensation_factor_2"));
+        optgroup->append_line(line);
+
+        line = { L("Model: Point 4"), "" };
+        line.label_path = category_path + "small-area-infill-flow-compensation";
+        line.append_option(optgroup->get_option("small_area_infill_flow_compensation_extrusion_length_3"));
+        line.append_option(optgroup->get_option("small_area_infill_flow_compensation_compensation_factor_3"));
+        optgroup->append_line(line);
+
+        line = { L("Model: Point 5"), "" };
+        line.label_path = category_path + "small-area-infill-flow-compensation";
+        line.append_option(optgroup->get_option("small_area_infill_flow_compensation_extrusion_length_4"));
+        line.append_option(optgroup->get_option("small_area_infill_flow_compensation_compensation_factor_4"));
+        optgroup->append_line(line);
+
+        line = { L("Model: Point 6"), "" };
+        line.label_path = category_path + "small-area-infill-flow-compensation";
+        line.append_option(optgroup->get_option("small_area_infill_flow_compensation_extrusion_length_5"));
+        line.append_option(optgroup->get_option("small_area_infill_flow_compensation_compensation_factor_5"));
+        optgroup->append_line(line);
+
+        line = { L("Model: Point 7"), "" };
+        line.label_path = category_path + "small-area-infill-flow-compensation";
+        line.append_option(optgroup->get_option("small_area_infill_flow_compensation_extrusion_length_6"));
+        line.append_option(optgroup->get_option("small_area_infill_flow_compensation_compensation_factor_6"));
+        optgroup->append_line(line);
+
+        line = { L("Model: Point 8"), "" };
+        line.label_path = category_path + "small-area-infill-flow-compensation";
+        line.append_option(optgroup->get_option("small_area_infill_flow_compensation_extrusion_length_7"));
+        line.append_option(optgroup->get_option("small_area_infill_flow_compensation_compensation_factor_7"));
+        optgroup->append_line(line);
+
+        line = { L("Model: Point 9"), "" };
+        line.label_path = category_path + "small-area-infill-flow-compensation";
+        line.append_option(optgroup->get_option("small_area_infill_flow_compensation_extrusion_length_8"));
+        line.append_option(optgroup->get_option("small_area_infill_flow_compensation_compensation_factor_8"));
+        optgroup->append_line(line);
+
+        line = { L("Model: Point 10"), "" };
+        line.label_path = category_path + "small-area-infill-flow-compensation";
+        line.append_option(optgroup->get_option("small_area_infill_flow_compensation_extrusion_length_9"));
+        line.append_option(optgroup->get_option("small_area_infill_flow_compensation_compensation_factor_9"));
+        optgroup->append_line(line);
+
     page = add_options_page(L("Skirt and brim"), "skirt+brim");
         category_path = "skirt-and-brim_133969#";
         optgroup = page->new_optgroup(L("Skirt"));
