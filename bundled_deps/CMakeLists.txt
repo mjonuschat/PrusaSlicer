@@ -46,6 +46,9 @@ target_include_directories(stb_image INTERFACE stb_image)
 add_library(tcbspan INTERFACE)
 target_include_directories(tcbspan INTERFACE tcbspan)
 
+add_library(tkspline INTERFACE)
+target_include_directories(tkspline INTERFACE tkspline)
+
 if (SLIC3R_GUI)
     add_subdirectory(imgui)
     add_subdirectory(hidapi)
