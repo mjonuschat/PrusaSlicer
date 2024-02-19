@@ -187,6 +187,8 @@ set(SLIC3R_SOURCES
     GCode/PrintExtents.hpp
     GCode/RetractWhenCrossingPerimeters.cpp
     GCode/RetractWhenCrossingPerimeters.hpp
+    GCode/SmallAreaInfillFlowCompensator.cpp
+    GCode/SmallAreaInfillFlowCompensator.hpp
     GCode/SpiralVase.cpp
     GCode/SpiralVase.hpp
     GCode/SeamPlacer.cpp
@@ -658,6 +660,7 @@ target_link_libraries(libslic3r PUBLIC
     boost_headeronly
     libseqarrange
     prusa_fdm_mixer
+    tkspline
 )
 
 if (APPLE)
