@@ -9,6 +9,7 @@
 #include "format.hpp"
 #include "libslic3r/Model.hpp"
 #include "libslic3r/PresetBundle.hpp"
+#include "libslic3r/PrintConfig.hpp"
 #include "MsgDialog.hpp"
 
 #include <string>
@@ -223,6 +224,10 @@ void ConfigManipulation::update_print_fff_config(DynamicPrintConfig* config, con
 
 void ConfigManipulation::toggle_print_fff_options(DynamicPrintConfig* config)
 {
+    PresetBundle *preset_bundle  = wxGetApp().preset_bundle;
+
+    auto gcflavor = preset_bundle->printers.get_selected_preset().config.option<ConfigOptionEnum<GCodeFlavor>>("gcode_flavor")->value;
+
     bool have_perimeters = config->opt_int("perimeters") > 0;
     for (auto el : { "extra_perimeters","extra_perimeters_on_overhangs", "thin_walls", "overhangs",
                     "seam_position","staggered_inner_seams", "external_perimeters_first", "external_perimeter_extrusion_width",
@@ -273,9 +278,16 @@ void ConfigManipulation::toggle_print_fff_options(DynamicPrintConfig* config)
 
     bool have_default_jerk = config->opt_int("default_jerk") > 0;
     for (auto el : { "perimeter_jerk", "infill_jerk", "top_solid_infill_jerk",
-                    "solid_infill_jerk", "external_perimeter_jerk", "external_perimeter_jerk",
-                    "bridge_jerk", "first_layer_jerk", "travel_jerk", "wipe_tower_jerk" })
+                    "solid_infill_jerk", "external_perimeter_jerk", "bridge_jerk",
+                    "first_layer_jerk", "first_layer_jerk_over_raft", "wipe_tower_jerk", "travel_jerk" })
         toggle_field(el, have_default_jerk);
+
+    bool have_accel_to_decel = config->opt_float("default_accel_to_decel") > 0 && gcflavor == gcfKlipper;
+    for (auto el : { "perimeter_accel_to_decel", "infill_accel_to_decel", "top_solid_infill_accel_to_decel",
+                    "solid_infill_accel_to_decel", "external_perimeter_accel_to_decel", "bridge_accel_to_decel",
+                    "first_layer_accel_to_decel", "first_layer_accel_to_decel_over_raft", "travel_accel_to_decel",
+                    "wipe_tower_accel_to_decel" })
+        toggle_field(el, have_accel_to_decel);
 
     bool have_skirt = config->opt_int("skirts") > 0;
     toggle_field("skirt_height", have_skirt && config->opt_enum<DraftShield>("draft_shield") != dsEnabled);
@@ -322,7 +334,7 @@ void ConfigManipulation::toggle_print_fff_options(DynamicPrintConfig* config)
     toggle_field("support_material_speed", have_support_material || have_brim || have_skirt);
 
     toggle_field("raft_contact_distance", have_raft && !have_support_soluble);
-    for (auto el : { "raft_expansion", "first_layer_acceleration_over_raft", "first_layer_jerk_over_raft", "first_layer_speed_over_raft" })
+    for (auto el : { "raft_expansion", "first_layer_speed_over_raft" })
         toggle_field(el, have_raft);
 
     bool has_ironing = config->opt_bool("ironing");
