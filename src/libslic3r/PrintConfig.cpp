@@ -544,6 +544,15 @@ void PrintConfigDef::init_fff_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloat(0));
 
+    def = this->add("bridge_accel_to_decel", coFloat);
+    def->label = L("Accel to Decel");
+    def->tooltip = L("This is how fast the toolhead may go from acceleration to deceleration. "
+                   "Set zero to disable control for bridges.");
+    def->sidetext = L("mm/s²");
+    def->min = 0;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(0));
+
     def = this->add("bridge_jerk", coInt);
     def->label = L("Jerk");
     def->tooltip = L("This is the jerk your printer will use for bridges. "
@@ -841,6 +850,15 @@ void PrintConfigDef::init_fff_params()
     def->tooltip = L("This is the acceleration your printer will be reset to after "
                    "the role-specific acceleration values are used (perimeter/infill). "
                    "Set zero to prevent resetting acceleration at all.");
+    def->sidetext = L("mm/s²");
+    def->min = 0;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(0));
+
+    def = this->add("default_accel_to_decel", coFloat);
+    def->label = L("Accel to Decel");
+    def->tooltip = L("This is how fast the toolhead may go from acceleration to deceleration. "
+                   "Set zero to disable all accel to decel controls.");
     def->sidetext = L("mm/s²");
     def->min = 0;
     def->mode = comExpert;
@@ -1412,10 +1430,10 @@ void PrintConfigDef::init_fff_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloat(0));
 
-    def = this->add("first_layer_acceleration_over_raft", coFloat);
-    def->label = L("Acceleration");
-    def->tooltip = L("This is the acceleration your printer will use for first layer of object above raft interface. Set zero "
-                   "to disable acceleration control for first layer of object above raft interface.");
+    def = this->add("first_layer_accel_to_decel", coFloat);
+    def->label = L("Accel to Decel");
+    def->tooltip = L("This is how fast the toolhead may go from acceleration to deceleration. "
+                   "Set zero to disable control for first_layer.");
     def->sidetext = L("mm/s²");
     def->min = 0;
     def->mode = comExpert;
@@ -1429,6 +1447,24 @@ void PrintConfigDef::init_fff_params()
     def->min = 0;
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionInt(0));
+
+    def = this->add("first_layer_acceleration_over_raft", coFloat);
+    def->label = L("Acceleration");
+    def->tooltip = L("This is the acceleration your printer will use for first layer of object above raft interface. Set zero "
+                   "to disable acceleration control for first layer of object above raft interface.");
+    def->sidetext = L("mm/s²");
+    def->min = 0;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(0));
+
+    def = this->add("first_layer_accel_to_decel_over_raft", coFloat);
+    def->label = L("Accel to Decel");
+    def->tooltip = L("This is how fast the toolhead may go from acceleration to deceleration. "
+                   "Set zero to disable control for first layer of object above raft interface.");
+    def->sidetext = L("mm/s²");
+    def->min = 0;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(0));
 
     def = this->add("first_layer_jerk_over_raft", coInt);
     def->label = L("Jerk");
@@ -1633,28 +1669,10 @@ void PrintConfigDef::init_fff_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloat(0));
 
-    def = this->add("solid_infill_acceleration", coFloat);
-    def->label = L("Acceleration");
-    def->tooltip = L("This is the acceleration your printer will use for solid infill. Set zero to use "
-                     "the value for infill.");
-    def->sidetext = L("mm/s²");
-    def->min = 0;
-    def->mode = comExpert;
-    def->set_default_value(new ConfigOptionFloat(0));
-
-    def = this->add("top_solid_infill_acceleration", coFloat);
-    def->label = L("Acceleration");
-    def->tooltip = L("This is the acceleration your printer will use for top solid infill. Set zero to use "
-                     "the value for solid infill.");
-    def->sidetext = L("mm/s²");
-    def->min = 0;
-    def->mode = comExpert;
-    def->set_default_value(new ConfigOptionFloat(0));
-
-    def = this->add("travel_acceleration", coFloat);
-    def->label = L("Acceleration");
-    def->tooltip = L("This is the acceleration your printer will use for travel moves. Set zero to disable "
-                     "acceleration control for travel.");
+    def = this->add("infill_accel_to_decel", coFloat);
+    def->label = L("Accel to Decel");
+    def->tooltip = L("This is how fast the toolhead may go from acceleration to deceleration. "
+                   "Set zero to disable control for infill.");
     def->sidetext = L("mm/s²");
     def->min = 0;
     def->mode = comExpert;
@@ -1669,23 +1687,77 @@ void PrintConfigDef::init_fff_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionInt(0));
 
+    def = this->add("solid_infill_acceleration", coFloat);
+    def->label = L("Acceleration");
+    def->tooltip = L("This is the acceleration your printer will use for solid infill. Set zero to use "
+                     "the value for infill.");
+    def->sidetext = L("mm/s²");
+    def->min = 0;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(0));
+
+    def = this->add("solid_infill_accel_to_decel", coFloat);
+    def->label = L("Accel to Decel");
+    def->tooltip = L("This is how fast the toolhead may go from acceleration to deceleration. "
+                   "Set zero to disable control for solid infill.");
+    def->sidetext = L("mm/s²");
+    def->min = 0;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(0));
+
     def = this->add("solid_infill_jerk", coInt);
     def->label = L("Jerk");
     def->tooltip = L("This is the jerk your printer will use for solid infill. Set zero to use "
-                     "the value for infill.");
-    def->sidetext = L("mm/s");
-    def->min = 0;
-    def->mode = comExpert;
-    def->set_default_value(new ConfigOptionInt(0));
-
-    def = this->add("top_solid_infill_jerk", coInt);
-    def->label = L("Jerk");
-    def->tooltip = L("This is the jerk your printer will use for top solid infill. Set zero to use "
                      "the value for solid infill.");
     def->sidetext = L("mm/s");
     def->min = 0;
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionInt(0));
+
+    def = this->add("top_solid_infill_acceleration", coFloat);
+    def->label = L("Acceleration");
+    def->tooltip = L("This is the acceleration your printer will use for top solid infill. Set zero to use "
+                     "the value for top solid infill.");
+    def->sidetext = L("mm/s²");
+    def->min = 0;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(0));
+
+    def = this->add("top_solid_infill_accel_to_decel", coFloat);
+    def->label = L("Accel to Decel");
+    def->tooltip = L("This is how fast the toolhead may go from acceleration to deceleration. "
+                   "Set zero to disable control for top solid infill.");
+    def->sidetext = L("mm/s²");
+    def->min = 0;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(0));
+
+    def = this->add("top_solid_infill_jerk", coInt);
+    def->label = L("Jerk");
+    def->tooltip = L("This is the jerk your printer will use for top solid infill. Set zero to use "
+                     "the value for top solid infill.");
+    def->sidetext = L("mm/s");
+    def->min = 0;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionInt(0));
+
+    def = this->add("travel_acceleration", coFloat);
+    def->label = L("Acceleration");
+    def->tooltip = L("This is the acceleration your printer will use for travel moves. Set zero to disable "
+                     "acceleration control for travel.");
+    def->sidetext = L("mm/s²");
+    def->min = 0;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(0));
+
+    def = this->add("travel_accel_to_decel", coFloat);
+    def->label = L("Accel to Decel");
+    def->tooltip = L("This is how fast the toolhead may go from acceleration to deceleration. "
+                   "Set zero to disable control for travel.");
+    def->sidetext = L("mm/s²");
+    def->min = 0;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(0));
 
     def = this->add("travel_jerk", coInt);
     def->label = L("Jerk");
@@ -2047,6 +2119,15 @@ void PrintConfigDef::init_fff_params()
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloats{ 1500., 1250. });
 
+    // Klipper: SET_VELOCITY_LIMIT ACCEL_TO_DECEL=... [mm/sec^2]
+    def = this->add("machine_max_accel_to_decel", coFloats);
+    def->full_label = L("Maximum acceleration to deceleration.");
+    def->category = L("Machine limits");
+    def->tooltip = L("Maximum pseudo acceleration when transitioning from acceleration to deceleration.");
+    def->sidetext = L("mm/s²");
+    def->min = 0;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloats{ 750., 625. });
 
     // M204 R... [mm/sec^2]
     def = this->add("machine_max_acceleration_retracting", coFloats);
@@ -2437,11 +2518,12 @@ void PrintConfigDef::init_fff_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloat(0));
 
-    def = this->add("external_perimeter_acceleration", coFloat);
-    def->label = L("Acceleration");
-    def->tooltip = L("This is the acceleration your printer will use for external perimeters. "
-                     "Set zero to use the value for perimeters.");
+    def = this->add("perimeter_accel_to_decel", coFloat);
+    def->label = L("Accel to Decel");
+    def->tooltip = L("This is how fast the toolhead may go from acceleration to deceleration. "
+                   "Set zero to disable control for perimeters.");
     def->sidetext = L("mm/s²");
+    def->min = 0;
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloat(0));
 
@@ -2452,6 +2534,23 @@ void PrintConfigDef::init_fff_params()
     def->sidetext = L("mm/s");
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionInt(0));
+
+    def = this->add("external_perimeter_acceleration", coFloat);
+    def->label = L("Acceleration");
+    def->tooltip = L("This is the acceleration your printer will use for external perimeters. "
+                     "Set zero to use the value for perimeters.");
+    def->sidetext = L("mm/s²");
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(0));
+
+    def = this->add("external_perimeter_accel_to_decel", coFloat);
+    def->label = L("Accel to Decel");
+    def->tooltip = L("This is how fast the toolhead may go from acceleration to deceleration. "
+                   "Set zero to disable control for bridges.");
+    def->sidetext = L("mm/s²");
+    def->min = 0;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(0));
 
     def = this->add("external_perimeter_jerk", coInt);
     def->label = L("Jerk");

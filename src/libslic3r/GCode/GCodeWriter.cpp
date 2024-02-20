@@ -56,6 +56,9 @@ void GCodeWriter::apply_print_config(const PrintConfig &print_config)
         print_config.machine_max_jerk_x.values.front() : 0));
     m_max_jerk_y = static_cast<unsigned int>(std::round((use_mach_limits && print_config.machine_limits_usage.value == MachineLimitsUsage::EmitToGCode) ?
         print_config.machine_max_jerk_y.values.front() : 0));
+
+    m_max_accel_to_decel = static_cast<unsigned int>(std::round((use_mach_limits && print_config.machine_limits_usage.value == MachineLimitsUsage::EmitToGCode) ?
+        print_config.machine_max_acceleration_extruding.values.front() : 0));
 }
 
 void GCodeWriter::set_extruders(std::vector<unsigned int> extruder_ids)
@@ -186,7 +189,7 @@ std::string GCodeWriter::set_bed_temperature(unsigned int temperature, bool wait
     return gcode.str();
 }
 
-std::string GCodeWriter::set_acceleration_internal(Acceleration type, unsigned int acceleration)
+std::string GCodeWriter::set_acceleration_internal(Acceleration type, unsigned int acceleration, unsigned int accel_to_decel, const std::string_view comment)
 {
     // Clamp the acceleration to the allowed maximum.
     if (type == Acceleration::Print && m_max_acceleration > 0 && acceleration > m_max_acceleration)
@@ -194,30 +197,42 @@ std::string GCodeWriter::set_acceleration_internal(Acceleration type, unsigned i
     if (type == Acceleration::Travel && m_max_travel_acceleration > 0 && acceleration > m_max_travel_acceleration)
         acceleration = m_max_travel_acceleration;
 
+    // Clamp the accel_to_decel to the allowed maximum.
+    if (m_max_accel_to_decel > 0 && accel_to_decel > m_max_accel_to_decel)
+        accel_to_decel = m_max_accel_to_decel;
+
     // Are we setting travel acceleration for a flavour that supports separate travel and print acc?
     bool separate_travel = (type == Acceleration::Travel && supports_separate_travel_acceleration(this->config.gcode_flavor));
 
-    auto& last_value = separate_travel ? m_last_travel_acceleration : m_last_acceleration ;
-    if (acceleration == 0 || acceleration == last_value)
+    auto& last_acceleration_value =   separate_travel ? m_last_travel_acceleration : m_last_acceleration ;
+    auto& last_accel_to_decel_value = m_last_accel_to_decel;
+    if ((acceleration == 0 || acceleration == last_acceleration_value) && (accel_to_decel == 0 || accel_to_decel == last_accel_to_decel_value))
         return {};
     
-    last_value = acceleration;
+    last_acceleration_value = acceleration;
+    last_accel_to_decel_value = accel_to_decel;
     
     std::ostringstream gcode;
-    if (FLAVOR_IS(gcfRepetier))
+    if (FLAVOR_IS(gcfKlipper)) {
+        gcode << "SET_VELOCITY_LIMIT ACCEL=" << acceleration;
+        if (accel_to_decel > 0)
+            gcode << " ACCEL_TO_DECEL=" << accel_to_decel;
+    } else if (FLAVOR_IS(gcfRepetier))
         gcode << (separate_travel ? "M202 X" : "M201 X") << acceleration << " Y" << acceleration;
     else if (FLAVOR_IS(gcfRepRapFirmware) || FLAVOR_IS(gcfMarlinFirmware))
         gcode << (separate_travel ? "M204 T" : "M204 P") << acceleration;
     else
         gcode << "M204 S" << acceleration;
 
-    if (this->config.gcode_comments) gcode << " ; adjust acceleration";
+    if (this->config.gcode_comments)
+        gcode << " ; adjust acceleration (" << comment << ")";
+
     gcode << "\n";
     
     return gcode.str();
 }
 
-std::string GCodeWriter::set_jerk(unsigned int jerk)
+std::string GCodeWriter::set_jerk(unsigned int jerk, const std::string_view comment)
 {
     if (jerk == 0 || jerk == m_last_jerk)
         return {};
@@ -232,12 +247,16 @@ std::string GCodeWriter::set_jerk(unsigned int jerk)
     m_last_jerk = jerk;
 
     std::ostringstream gcode;
-    if (FLAVOR_IS(gcfRepRapFirmware))
+    if (FLAVOR_IS(gcfKlipper))
+        gcode << "SET_VELOCITY_LIMIT SQUARE_CORNER_VELOCITY=" << jerk;
+    else if (FLAVOR_IS(gcfRepRapFirmware))
         gcode << "M566 X" << jerk_x << " Y" << jerk_y;
     else
         gcode << "M205 X" << jerk_x << " Y" << jerk_y;
 
-    if (this->config.gcode_comments) gcode << " ; adjust jerk";
+    if (this->config.gcode_comments)
+        gcode << " ; adjust jerk (" << comment << ")";
+
     gcode << "\n";
 
     return gcode.str();
