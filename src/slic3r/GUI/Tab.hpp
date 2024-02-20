@@ -513,8 +513,9 @@ class TabPrinter : public Tab
 private:
 	bool		m_has_single_extruder_MM_page = false;
 	bool		m_use_silent_mode = false;
-    bool        m_supports_travel_acceleration = false;
-	bool        m_supports_min_feedrates = false;
+        bool		m_supports_travel_acceleration = false;
+        bool		m_supports_accel_to_decel = false;
+	bool		m_supports_min_feedrates = false;
 	void		append_option_line(ConfigOptionsGroupShp optgroup, const std::string opt_key);
 	bool		m_rebuild_kinematics_page = false;
 	ogStaticText* m_machine_limits_description_line {nullptr};

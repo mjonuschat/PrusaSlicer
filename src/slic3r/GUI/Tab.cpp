@@ -1685,56 +1685,67 @@ void TabPrint::build()
         optgroup = page->new_optgroup(L("Acceleration/jerk control (advanced)"));
         line = { L("External perimeters"), "" };
         line.append_option(optgroup->get_option("external_perimeter_acceleration"));
+        line.append_option(optgroup->get_option("external_perimeter_accel_to_decel"));
         line.append_option(optgroup->get_option("external_perimeter_jerk"));
         optgroup->append_line(line);
 
         line = { L("Perimeters"), "" };
         line.append_option(optgroup->get_option("perimeter_acceleration"));
+        line.append_option(optgroup->get_option("perimeter_accel_to_decel"));
         line.append_option(optgroup->get_option("perimeter_jerk"));
         optgroup->append_line(line);
 
         line = { L("Top solid infill"), "" };
         line.append_option(optgroup->get_option("top_solid_infill_acceleration"));
+        line.append_option(optgroup->get_option("top_solid_infill_accel_to_decel"));
         line.append_option(optgroup->get_option("top_solid_infill_jerk"));
         optgroup->append_line(line);
 
         line = { L("Solid infill"), "" };
         line.append_option(optgroup->get_option("solid_infill_acceleration"));
+        line.append_option(optgroup->get_option("solid_infill_accel_to_decel"));
         line.append_option(optgroup->get_option("solid_infill_jerk"));
         optgroup->append_line(line);
 
         line = { L("Infill"), "" };
         line.append_option(optgroup->get_option("infill_acceleration"));
+        line.append_option(optgroup->get_option("infill_accel_to_decel"));
         line.append_option(optgroup->get_option("infill_jerk"));
         optgroup->append_line(line);
 
         line = { L("Bridge"), "" };
         line.append_option(optgroup->get_option("bridge_acceleration"));
+        line.append_option(optgroup->get_option("bridge_accel_to_decel"));
         line.append_option(optgroup->get_option("bridge_jerk"));
         optgroup->append_line(line);
 
         line = { L("First layer"), "" };
         line.append_option(optgroup->get_option("first_layer_acceleration"));
+        line.append_option(optgroup->get_option("first_layer_accel_to_decel"));
         line.append_option(optgroup->get_option("first_layer_jerk"));
         optgroup->append_line(line);
 
         line = { L("First object layer over raft interface"), "" };
         line.append_option(optgroup->get_option("first_layer_acceleration_over_raft"));
+        line.append_option(optgroup->get_option("first_layer_accel_to_decel_over_raft"));
         line.append_option(optgroup->get_option("first_layer_jerk_over_raft"));
         optgroup->append_line(line);
 
         line = { L("Wipe Tower"), "" };
         line.append_option(optgroup->get_option("wipe_tower_acceleration"));
+        line.append_option(optgroup->get_option("wipe_tower_accel_to_decel"));
         line.append_option(optgroup->get_option("wipe_tower_jerk"));
         optgroup->append_line(line);
 
         line = { L("Travel"), "" };
         line.append_option(optgroup->get_option("travel_acceleration"));
+        line.append_option(optgroup->get_option("travel_accel_to_decel"));
         line.append_option(optgroup->get_option("travel_jerk"));
         optgroup->append_line(line);
 
         line = { L("Default"), "" };
         line.append_option(optgroup->get_option("default_acceleration"));
+        line.append_option(optgroup->get_option("default_accel_to_decel"));
         line.append_option(optgroup->get_option("default_jerk"));
         optgroup->append_line(line);
 
@@ -2874,10 +2885,12 @@ void TabPrinter::build_fff()
                     const GCodeFlavor flavor = static_cast<GCodeFlavor>(boost::any_cast<int>(value));
                     bool supports_travel_acceleration = GCodeWriter::supports_separate_travel_acceleration(flavor);
                     bool supports_min_feedrates       = (flavor == gcfMarlinFirmware || flavor == gcfMarlinLegacy);
-                    if (supports_travel_acceleration != m_supports_travel_acceleration || supports_min_feedrates != m_supports_min_feedrates) {
+                    bool supports_accel_to_decel      = (flavor == gcfKlipper);
+                    if (supports_travel_acceleration != m_supports_travel_acceleration || supports_min_feedrates != m_supports_min_feedrates || m_supports_accel_to_decel != supports_accel_to_decel) {
                         m_rebuild_kinematics_page = true;
                         m_supports_travel_acceleration = supports_travel_acceleration;
                         m_supports_min_feedrates = supports_min_feedrates;
+                        m_supports_accel_to_decel = supports_accel_to_decel;
                     }
 
                     const bool is_emit_to_gcode = m_config->option("machine_limits_usage")->getInt() == static_cast<int>(MachineLimitsUsage::EmitToGCode);
@@ -3229,6 +3242,8 @@ PageShp TabPrinter::build_kinematics_page()
         append_option_line(optgroup, "machine_max_acceleration_retracting");
         if (m_supports_travel_acceleration)
             append_option_line(optgroup, "machine_max_acceleration_travel");
+        if (m_supports_accel_to_decel)
+            append_option_line(optgroup, "machine_max_accel_to_decel");
 
     optgroup = page->new_optgroup(L("Jerk limits"));
         for (const std::string &axis : axes)	{
@@ -3730,10 +3745,12 @@ void TabPrinter::update_fff()
     const auto flavor = m_config->option<ConfigOptionEnum<GCodeFlavor>>("gcode_flavor")->value;
     bool supports_travel_acceleration = (flavor == gcfMarlinFirmware || flavor == gcfRepRapFirmware);
     bool supports_min_feedrates       = (flavor == gcfMarlinFirmware || flavor == gcfMarlinLegacy);
-    if (m_supports_travel_acceleration != supports_travel_acceleration || m_supports_min_feedrates != supports_min_feedrates) {
+    bool supports_accel_to_decel      = (flavor == gcfKlipper);
+    if (m_supports_travel_acceleration != supports_travel_acceleration || m_supports_min_feedrates != supports_min_feedrates || m_supports_accel_to_decel != supports_accel_to_decel) {
         m_rebuild_kinematics_page = true;
         m_supports_travel_acceleration = supports_travel_acceleration;
         m_supports_min_feedrates = supports_min_feedrates;
+        m_supports_accel_to_decel = supports_accel_to_decel;
     }
 
     toggle_options();
