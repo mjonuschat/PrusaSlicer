@@ -364,7 +364,7 @@ void PrintConfigDef::init_common_params()
     def->mode = comAdvanced;
     def->cli = ConfigOptionDef::nocli;
     def->set_default_value(new ConfigOptionString(""));
-    
+
     def = this->add("printhost_port", coString);
     def->label = L("Printer");
     def->tooltip = L("Name of the printer");
@@ -372,7 +372,7 @@ void PrintConfigDef::init_common_params()
     def->mode = comAdvanced;
     def->cli = ConfigOptionDef::nocli;
     def->set_default_value(new ConfigOptionString(""));
-    
+
     def = this->add("printhost_cafile", coString);
     def->label = L("HTTPS CA File");
     def->tooltip = L("Custom CA certificate file can be specified for HTTPS OctoPrint connections, in crt/pem format. "
@@ -380,16 +380,16 @@ void PrintConfigDef::init_common_params()
     def->mode = comAdvanced;
     def->cli = ConfigOptionDef::nocli;
     def->set_default_value(new ConfigOptionString(""));
-    
+
     // Options used by physical printers
-    
+
     def = this->add("printhost_user", coString);
     def->label = L("User");
 //    def->tooltip = L("");
     def->mode = comAdvanced;
     def->cli = ConfigOptionDef::nocli;
     def->set_default_value(new ConfigOptionString(""));
-    
+
     def = this->add("printhost_password", coString);
     def->label = L("Password");
 //    def->tooltip = L("");
@@ -405,7 +405,7 @@ void PrintConfigDef::init_common_params()
     def->mode = comAdvanced;
     def->cli = ConfigOptionDef::nocli;
     def->set_default_value(new ConfigOptionBool(false));
-    
+
     def = this->add("preset_names", coStrings);
     def->label = L("Printer preset names");
     def->tooltip = L("Names of presets related to the physical printer");
@@ -539,6 +539,15 @@ void PrintConfigDef::init_fff_params()
     def->label = L("Acceleration");
     def->tooltip = L("This is the acceleration your printer will use for bridges. "
                    "Set zero to disable acceleration control for bridges.");
+    def->sidetext = L("mm/s²");
+    def->min = 0;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(0));
+
+    def = this->add("bridge_accel_to_decel", coFloat);
+    def->label = L("Accel to Decel");
+    def->tooltip = L("This is how fast the toolhead may go from acceleration to deceleration. "
+                   "Set zero to disable control for bridges.");
     def->sidetext = L("mm/s²");
     def->min = 0;
     def->mode = comExpert;
@@ -747,7 +756,7 @@ void PrintConfigDef::init_fff_params()
         { "no_brim",         L("No brim") },
         { "outer_only",      L("Outer brim only") },
         { "inner_only",      L("Inner brim only") },
-        { "outer_and_inner", L("Outer and inner brim") } 
+        { "outer_and_inner", L("Outer and inner brim") }
     });
     def->mode = comSimple;
     def->set_default_value(new ConfigOptionEnum<BrimType>(btOuterOnly));
@@ -841,6 +850,15 @@ void PrintConfigDef::init_fff_params()
     def->tooltip = L("This is the acceleration your printer will be reset to after "
                    "the role-specific acceleration values are used (perimeter/infill). "
                    "Set zero to prevent resetting acceleration at all.");
+    def->sidetext = L("mm/s²");
+    def->min = 0;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(0));
+
+    def = this->add("default_accel_to_decel", coFloat);
+    def->label = L("Accel to Decel");
+    def->tooltip = L("This is how fast the toolhead may go from acceleration to deceleration. "
+                   "Set zero to disable all accel to decel controls.");
     def->sidetext = L("mm/s²");
     def->min = 0;
     def->mode = comExpert;
@@ -1012,7 +1030,7 @@ void PrintConfigDef::init_fff_params()
     def->tooltip = L("The extruder to use (unless more specific extruder settings are specified). "
                    "This value overrides perimeter and infill extruders, but not the support extruders.");
     def->min = 0;  // 0 = inherit defaults
-    def->set_enum_labels(ConfigOptionDef::GUIType::i_enum_open, 
+    def->set_enum_labels(ConfigOptionDef::GUIType::i_enum_open,
         { L("default"), "1", "2", "3", "4", "5" }); // override label for item 0
 
     def = this->add("extruder_clearance_height", coFloat);
@@ -1300,11 +1318,11 @@ void PrintConfigDef::init_fff_params()
     def->tooltip = L("The filament material type for use in custom G-codes.");
     def->gui_flags = "show_value";
     def->set_enum_values(ConfigOptionDef::GUIType::select_open, {
-        "PLA", 
+        "PLA",
         "PET",
         "ABS",
         "ASA",
-        "FLEX", 
+        "FLEX",
         "HIPS",
         "EDGE",
         "NGEN",
@@ -1412,7 +1430,7 @@ void PrintConfigDef::init_fff_params()
     def->set_enum<InfillPattern>({
         { "rectilinear",        L("Rectilinear") },
         { "alignedrectilinear", L("Aligned Rectilinear") },
-        { "grid",               L("Grid") }, 
+        { "grid",               L("Grid") },
         { "triangles",          L("Triangles")},
         { "stars",              L("Stars")},
         { "cubic",              L("Cubic")},
@@ -1439,10 +1457,10 @@ void PrintConfigDef::init_fff_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloat(0));
 
-    def = this->add("first_layer_acceleration_over_raft", coFloat);
-    def->label = L("Acceleration");
-    def->tooltip = L("This is the acceleration your printer will use for first layer of object above raft interface. Set zero "
-                   "to disable acceleration control for first layer of object above raft interface.");
+    def = this->add("first_layer_accel_to_decel", coFloat);
+    def->label = L("Accel to Decel");
+    def->tooltip = L("This is how fast the toolhead may go from acceleration to deceleration. "
+                   "Set zero to disable control for first_layer.");
     def->sidetext = L("mm/s²");
     def->min = 0;
     def->mode = comExpert;
@@ -1456,6 +1474,24 @@ void PrintConfigDef::init_fff_params()
     def->min = 0;
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionInt(0));
+
+    def = this->add("first_layer_acceleration_over_raft", coFloat);
+    def->label = L("Acceleration");
+    def->tooltip = L("This is the acceleration your printer will use for first layer of object above raft interface. Set zero "
+                   "to disable acceleration control for first layer of object above raft interface.");
+    def->sidetext = L("mm/s²");
+    def->min = 0;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(0));
+
+    def = this->add("first_layer_accel_to_decel_over_raft", coFloat);
+    def->label = L("Accel to Decel");
+    def->tooltip = L("This is how fast the toolhead may go from acceleration to deceleration. "
+                   "Set zero to disable control for first layer of object above raft interface.");
+    def->sidetext = L("mm/s²");
+    def->min = 0;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(0));
 
     def = this->add("first_layer_jerk_over_raft", coInt);
     def->label = L("Jerk");
@@ -1660,37 +1696,10 @@ void PrintConfigDef::init_fff_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloat(0));
 
-    def = this->add("solid_infill_acceleration", coFloat);
-    def->label = L("Acceleration");
-    def->tooltip = L("This is the acceleration your printer will use for solid infill. Set zero to use "
-                     "the value for infill.");
-    def->sidetext = L("mm/s²");
-    def->min = 0;
-    def->mode = comExpert;
-    def->set_default_value(new ConfigOptionFloat(0));
-
-    def = this->add("top_solid_infill_acceleration", coFloat);
-    def->label = L("Acceleration");
-    def->tooltip = L("This is the acceleration your printer will use for top solid infill. Set zero to use "
-                     "the value for solid infill.");
-    def->sidetext = L("mm/s²");
-    def->min = 0;
-    def->mode = comExpert;
-    def->set_default_value(new ConfigOptionFloat(0));
-
-    def = this->add("wipe_tower_acceleration", coFloat);
-    def->label = L("Wipe tower");
-    def->tooltip = L("This is the acceleration your printer will use for wipe tower. Set zero to disable "
-                     "acceleration control for the wipe tower.");
-    def->sidetext = L("mm/s²");
-    def->min = 0;
-    def->mode = comExpert;
-    def->set_default_value(new ConfigOptionFloat(0));
-
-    def = this->add("travel_acceleration", coFloat);
-    def->label = L("Acceleration");
-    def->tooltip = L("This is the acceleration your printer will use for travel moves. Set zero to disable "
-                     "acceleration control for travel.");
+    def = this->add("infill_accel_to_decel", coFloat);
+    def->label = L("Accel to Decel");
+    def->tooltip = L("This is how fast the toolhead may go from acceleration to deceleration. "
+                   "Set zero to disable control for infill.");
     def->sidetext = L("mm/s²");
     def->min = 0;
     def->mode = comExpert;
@@ -1705,23 +1714,77 @@ void PrintConfigDef::init_fff_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionInt(0));
 
+    def = this->add("solid_infill_acceleration", coFloat);
+    def->label = L("Acceleration");
+    def->tooltip = L("This is the acceleration your printer will use for solid infill. Set zero to use "
+                     "the value for infill.");
+    def->sidetext = L("mm/s²");
+    def->min = 0;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(0));
+
+    def = this->add("solid_infill_accel_to_decel", coFloat);
+    def->label = L("Accel to Decel");
+    def->tooltip = L("This is how fast the toolhead may go from acceleration to deceleration. "
+                   "Set zero to disable control for solid infill.");
+    def->sidetext = L("mm/s²");
+    def->min = 0;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(0));
+
     def = this->add("solid_infill_jerk", coInt);
     def->label = L("Jerk");
     def->tooltip = L("This is the jerk your printer will use for solid infill. Set zero to use "
-                     "the value for infill.");
-    def->sidetext = L("mm/s");
-    def->min = 0;
-    def->mode = comExpert;
-    def->set_default_value(new ConfigOptionInt(0));
-
-    def = this->add("top_solid_infill_jerk", coInt);
-    def->label = L("Jerk");
-    def->tooltip = L("This is the jerk your printer will use for top solid infill. Set zero to use "
                      "the value for solid infill.");
     def->sidetext = L("mm/s");
     def->min = 0;
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionInt(0));
+
+    def = this->add("top_solid_infill_acceleration", coFloat);
+    def->label = L("Acceleration");
+    def->tooltip = L("This is the acceleration your printer will use for top solid infill. Set zero to use "
+                     "the value for top solid infill.");
+    def->sidetext = L("mm/s²");
+    def->min = 0;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(0));
+
+    def = this->add("top_solid_infill_accel_to_decel", coFloat);
+    def->label = L("Accel to Decel");
+    def->tooltip = L("This is how fast the toolhead may go from acceleration to deceleration. "
+                   "Set zero to disable control for top solid infill.");
+    def->sidetext = L("mm/s²");
+    def->min = 0;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(0));
+
+    def = this->add("top_solid_infill_jerk", coInt);
+    def->label = L("Jerk");
+    def->tooltip = L("This is the jerk your printer will use for top solid infill. Set zero to use "
+                     "the value for top solid infill.");
+    def->sidetext = L("mm/s");
+    def->min = 0;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionInt(0));
+
+    def = this->add("wipe_tower_acceleration", coFloat);
+    def->label = L("Wipe tower");
+    def->tooltip = L("This is the acceleration your printer will use for wipe tower. Set zero to disable "
+                     "acceleration control for the wipe tower.");
+    def->sidetext = L("mm/s²");
+    def->min = 0;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(0));
+
+    def = this->add("wipe_tower_accel_to_decel", coFloat);
+    def->label = L("Accel to Decel");
+    def->tooltip = L("This is how fast the toolhead may go from acceleration to deceleration. "
+                   "Set zero to disable control for the wipe tower.");
+    def->sidetext = L("mm/s²");
+    def->min = 0;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(0));
 
     def = this->add("wipe_tower_jerk", coInt);
     def->label = L("Jerk");
@@ -1731,6 +1794,24 @@ void PrintConfigDef::init_fff_params()
     def->min = 0;
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionInt(0));
+
+    def = this->add("travel_acceleration", coFloat);
+    def->label = L("Acceleration");
+    def->tooltip = L("This is the acceleration your printer will use for travel moves. Set zero to disable "
+                     "acceleration control for travel.");
+    def->sidetext = L("mm/s²");
+    def->min = 0;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(0));
+
+    def = this->add("travel_accel_to_decel", coFloat);
+    def->label = L("Accel to Decel");
+    def->tooltip = L("This is how fast the toolhead may go from acceleration to deceleration. "
+                   "Set zero to disable control for travel.");
+    def->sidetext = L("mm/s²");
+    def->min = 0;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(0));
 
     def = this->add("travel_jerk", coInt);
     def->label = L("Jerk");
@@ -2092,6 +2173,15 @@ void PrintConfigDef::init_fff_params()
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloats{ 1500., 1250. });
 
+    // Klipper: SET_VELOCITY_LIMIT ACCEL_TO_DECEL=... [mm/sec^2]
+    def = this->add("machine_max_accel_to_decel", coFloats);
+    def->full_label = L("Maximum acceleration to deceleration.");
+    def->category = L("Machine limits");
+    def->tooltip = L("Maximum pseudo acceleration when transitioning from acceleration to deceleration.");
+    def->sidetext = L("mm/s²");
+    def->min = 0;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloats{ 750., 625. });
 
     // M204 R... [mm/sec^2]
     def = this->add("machine_max_acceleration_retracting", coFloats);
@@ -2490,11 +2580,12 @@ void PrintConfigDef::init_fff_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloat(0));
 
-    def = this->add("external_perimeter_acceleration", coFloat);
-    def->label = L("Acceleration");
-    def->tooltip = L("This is the acceleration your printer will use for external perimeters. "
-                     "Set zero to use the value for perimeters.");
+    def = this->add("perimeter_accel_to_decel", coFloat);
+    def->label = L("Accel to Decel");
+    def->tooltip = L("This is how fast the toolhead may go from acceleration to deceleration. "
+                   "Set zero to disable control for perimeters.");
     def->sidetext = L("mm/s²");
+    def->min = 0;
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloat(0));
 
@@ -2505,6 +2596,23 @@ void PrintConfigDef::init_fff_params()
     def->sidetext = L("mm/s");
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionInt(0));
+
+    def = this->add("external_perimeter_acceleration", coFloat);
+    def->label = L("Acceleration");
+    def->tooltip = L("This is the acceleration your printer will use for external perimeters. "
+                     "Set zero to use the value for perimeters.");
+    def->sidetext = L("mm/s²");
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(0));
+
+    def = this->add("external_perimeter_accel_to_decel", coFloat);
+    def->label = L("Accel to Decel");
+    def->tooltip = L("This is how fast the toolhead may go from acceleration to deceleration. "
+                   "Set zero to disable control for bridges.");
+    def->sidetext = L("mm/s²");
+    def->min = 0;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(0));
 
     def = this->add("external_perimeter_jerk", coInt);
     def->label = L("Jerk");
@@ -3358,7 +3466,7 @@ void PrintConfigDef::init_fff_params()
                      "will create more stable supports, while snug support towers will save material and reduce "
                      "object scarring.");
     def->set_enum<SupportMaterialStyle>({
-        { "grid", L("Grid") }, 
+        { "grid", L("Grid") },
         { "snug", L("Snug") },
         { "organic", L("Organic") }
     });
@@ -3445,7 +3553,7 @@ void PrintConfigDef::init_fff_params()
     def->set_default_value(new ConfigOptionFloat(2));
 
     def = this->add("support_tree_branch_diameter_angle", coFloat);
-    // TRN PrintSettings: #lmFIXME 
+    // TRN PrintSettings: #lmFIXME
     def->label = L("Branch Diameter Angle");
     def->category = L("Support material");
     // TRN PrintSettings: "Organic supports" > "Branch Diameter Angle"
@@ -3471,10 +3579,10 @@ void PrintConfigDef::init_fff_params()
     def->set_default_value(new ConfigOptionFloat(3));
 
     // Tree Support Branch Distance
-    // How far apart the branches need to be when they touch the model. Making this distance small will cause 
+    // How far apart the branches need to be when they touch the model. Making this distance small will cause
     // the tree support to touch the model at more points, causing better overhang but making support harder to remove.
     def = this->add("support_tree_branch_distance", coFloat);
-    // TRN PrintSettings: #lmFIXME 
+    // TRN PrintSettings: #lmFIXME
     def->label = L("Branch Distance");
     def->category = L("Support material");
     // TRN PrintSettings: "Organic supports" > "Branch Distance"
@@ -4044,7 +4152,7 @@ void PrintConfigDef::init_sla_support_params(const std::string &prefix)
     def->label = L("Pillar widening factor");
     def->category = L("Supports");
 
-    def->tooltip  = 
+    def->tooltip  =
         L("Merging bridges or pillars into another pillars can "
         "increase the radius. Zero means no increase, one means "
         "full increase. The exact amount of increase is unspecified and can "
@@ -4264,7 +4372,7 @@ void PrintConfigDef::init_sla_params()
                       "to the sign of the correction.");
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloat(0.0));
-    
+
     def = this->add("elefant_foot_min_width", coFloat);
     def->label = L("Elephant foot minimum width");
     def->category = L("Advanced");
@@ -4436,7 +4544,7 @@ void PrintConfigDef::init_sla_params()
     def->full_width = true;
     def->height = 13;
     // TODO currently notes are the only way to pass data
-    // for non-PrusaResearch printers. We therefore need to always show them 
+    // for non-PrusaResearch printers. We therefore need to always show them
     def->mode = comSimple;
     def->set_default_value(new ConfigOptionString(""));
 
@@ -4541,7 +4649,7 @@ void PrintConfigDef::init_sla_params()
     def->max = 30;
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloat(0.));
-    
+
     def = this->add("pad_brim_size", coFloat);
     def->label = L("Pad brim size");
     def->tooltip = L("How far should the pad extend around the contained geometry");
@@ -4592,7 +4700,7 @@ void PrintConfigDef::init_sla_params()
     def->tooltip = L("Create pad around object and ignore the support elevation");
     def->mode = comSimple;
     def->set_default_value(new ConfigOptionBool(false));
-    
+
     def = this->add("pad_around_object_everywhere", coBool);
     def->label = L("Pad around object everywhere");
     def->category = L("Pad");
@@ -4638,14 +4746,14 @@ void PrintConfigDef::init_sla_params()
     def->min = 0;
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloat(0.3));
-    
+
     def = this->add("hollowing_enable", coBool);
     def->label = L("Enable hollowing");
     def->category = L("Hollowing");
     def->tooltip = L("Hollow out a model to have an empty interior");
     def->mode = comSimple;
     def->set_default_value(new ConfigOptionBool(false));
-    
+
     def = this->add("hollowing_min_thickness", coFloat);
     def->label = L("Wall thickness");
     def->category = L("Hollowing");
@@ -4655,7 +4763,7 @@ void PrintConfigDef::init_sla_params()
     def->max = 10;
     def->mode = comSimple;
     def->set_default_value(new ConfigOptionFloat(3.));
-    
+
     def = this->add("hollowing_quality", coFloat);
     def->label = L("Accuracy");
     def->category = L("Hollowing");
@@ -4664,7 +4772,7 @@ void PrintConfigDef::init_sla_params()
     def->max = 1;
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloat(0.5));
-    
+
     def = this->add("hollowing_closing_distance", coFloat);
     def->label = L("Closing distance");
     def->category = L("Hollowing");
@@ -4709,11 +4817,11 @@ void PrintConfigDef::init_sla_params()
     // Declare retract values for material profile, overriding the print and printer profiles.
     for (const char* opt_key : {
         // float
-        "support_head_front_diameter", "branchingsupport_head_front_diameter", 
-        "support_head_penetration", "branchingsupport_head_penetration", 
+        "support_head_front_diameter", "branchingsupport_head_front_diameter",
+        "support_head_penetration", "branchingsupport_head_penetration",
         "support_head_width", "branchingsupport_head_width",
         "support_pillar_diameter", "branchingsupport_pillar_diameter",
-        "relative_correction_x", "relative_correction_y", "relative_correction_z", 
+        "relative_correction_x", "relative_correction_y", "relative_correction_z",
         "elefant_foot_compensation",
         // int
         "support_points_density_relative"
@@ -4928,7 +5036,7 @@ DynamicPrintConfig* DynamicPrintConfig::new_from_defaults_keys(const std::vector
 }
 
 double min_object_distance(const ConfigBase &cfg)
-{   
+{
     const ConfigOptionEnum<PrinterTechnology> *opt_printer_technology = cfg.option<ConfigOptionEnum<PrinterTechnology>>("printer_technology");
     auto printer_technology = opt_printer_technology ? opt_printer_technology->value : ptUnknown;
 
@@ -4941,7 +5049,7 @@ double min_object_distance(const ConfigBase &cfg)
         auto dd_opt  = cfg.option<ConfigOptionFloat>("duplicate_distance");
         auto co_opt  = cfg.option<ConfigOptionBool>("complete_objects");
 
-        if (!ecr_opt || !dd_opt || !co_opt) 
+        if (!ecr_opt || !dd_opt || !co_opt)
             ret = 0.;
         else {
             // min object distance is max(duplicate_distance, clearance_radius)
@@ -5286,7 +5394,7 @@ std::string validate(const FullPrintConfig &cfg)
         return ret; \
     }
 PRINT_CONFIG_CACHE_INITIALIZE((
-    PrintObjectConfig, PrintRegionConfig, MachineEnvelopeConfig, GCodeConfig, PrintConfig, FullPrintConfig, 
+    PrintObjectConfig, PrintRegionConfig, MachineEnvelopeConfig, GCodeConfig, PrintConfig, FullPrintConfig,
     SLAMaterialConfig, SLAPrintConfig, SLAPrintObjectConfig, SLAPrinterConfig, SLAFullPrintConfig))
 static int print_config_static_initialized = print_config_static_initializer();
 
@@ -5647,7 +5755,7 @@ PrintStatisticsConfigDef::PrintStatisticsConfigDef()
     def = this->add("normal_print_time", coString);
     def->label = L("Print time (normal mode)");
     def->tooltip = L("Estimated print time when printed in normal mode (i.e. not in silent mode). Same as print_time.");
-    
+
     def = this->add("num_printing_extruders", coInt);
     def->label = L("Number of printing extruders");
     def->tooltip = L("Number of extruders used during the print.");
@@ -5882,22 +5990,22 @@ static Points to_points(const std::vector<Vec2d> &dpts)
     Points pts; pts.reserve(dpts.size());
     for (auto &v : dpts)
         pts.emplace_back( coord_t(scale_(v.x())), coord_t(scale_(v.y())) );
-    return pts;    
+    return pts;
 }
 
 Points get_bed_shape(const DynamicPrintConfig &config)
 {
     const auto *bed_shape_opt = config.opt<ConfigOptionPoints>("bed_shape");
     if (!bed_shape_opt) {
-        
+
         // Here, it is certain that the bed shape is missing, so an infinite one
         // has to be used, but still, the center of bed can be queried
         if (auto center_opt = config.opt<ConfigOptionPoint>("center"))
             return { scaled(center_opt->value) };
-        
+
         return {};
     }
-    
+
     return to_points(bed_shape_opt->values);
 }
 
