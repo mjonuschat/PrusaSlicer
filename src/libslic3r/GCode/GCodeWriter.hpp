@@ -14,6 +14,7 @@
 #include "../Point.hpp"
 #include "../PrintConfig.hpp"
 #include "CoolingBuffer.hpp"
+#include "libslic3r/ExtrusionRole.hpp"
 
 #include <string>
 #include <string_view>
@@ -29,7 +30,7 @@ public:
     GCodeWriter() : 
         multiple_extruders(false), m_extrusion_axis("E"), m_extruder(nullptr),
         m_single_extruder_multi_material(false),
-        m_last_acceleration(0), m_max_acceleration(0), m_last_jerk(0),
+        m_last_acceleration(0), m_max_acceleration(0), m_max_accel_to_decel(0), m_last_jerk(0),
         m_last_bed_temperature(0), m_last_bed_temperature_reached(true)
         {}
     Extruder*            extruder()             { return m_extruder; }
@@ -52,9 +53,9 @@ public:
     std::string postamble() const;
     std::string set_temperature(unsigned int temperature, bool wait = false, int tool = -1) const;
     std::string set_bed_temperature(unsigned int temperature, bool wait = false);
-    std::string set_print_acceleration(unsigned int acceleration)   { return set_acceleration_internal(Acceleration::Print, acceleration); }
-    std::string set_travel_acceleration(unsigned int acceleration)  { return set_acceleration_internal(Acceleration::Travel, acceleration); }
-    std::string set_jerk(unsigned int jerk);
+    std::string set_print_acceleration(unsigned int acceleration, unsigned int accel_to_decel, const std::string_view comment)   { return set_acceleration_internal(Acceleration::Print, acceleration, accel_to_decel, comment); }
+    std::string set_travel_acceleration(unsigned int acceleration, unsigned int accel_to_decel)  { return set_acceleration_internal(Acceleration::Travel, acceleration, accel_to_decel, "Travel"); }
+    std::string set_jerk(unsigned int jerk, const std::string_view comment);
     std::string reset_e(bool force = false);
     std::string update_progress(unsigned int num, unsigned int tot, bool allow_100 = false) const;
     // return false if this extruder was already selected
@@ -120,11 +121,13 @@ private:
     bool            m_single_extruder_multi_material;
     Extruder*       m_extruder;
     unsigned int    m_last_acceleration = (unsigned int)(-1);
+    unsigned int    m_last_accel_to_decel = (unsigned int)(-1);
     unsigned int    m_last_travel_acceleration = (unsigned int)(-1); // only used for flavors supporting separate print/travel acc
     // Limit for setting the acceleration, to respect the machine limits set for the Marlin firmware.
     // If set to zero, the limit is not in action.
     unsigned int    m_max_acceleration;
     unsigned int    m_max_travel_acceleration;
+    unsigned int    m_max_accel_to_decel;
 
     unsigned int    m_last_jerk = (unsigned int)(-1);
     unsigned int    m_max_jerk_x;
@@ -140,7 +143,7 @@ private:
     };
 
     std::string _retract(double length, double restart_extra, const std::string_view comment);
-    std::string set_acceleration_internal(Acceleration type, unsigned int acceleration);
+    std::string set_acceleration_internal(Acceleration type, unsigned int acceleration, unsigned int accel_to_decel, const std::string_view comment);
 };
 
 class GCodeFormatter {
