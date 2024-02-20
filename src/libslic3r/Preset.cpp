@@ -449,9 +449,10 @@ static std::vector<std::string> s_Preset_print_options {
     "perimeter_speed", "small_perimeter_speed", "external_perimeter_speed", "infill_speed", "solid_infill_speed",
     "enable_dynamic_overhang_speeds", "overhang_speed_0", "overhang_speed_1", "overhang_speed_2", "overhang_speed_3",
     "top_solid_infill_speed", "support_material_speed", "support_material_xy_spacing", "support_material_interface_speed",
-    "bridge_speed", "gap_fill_speed", "gap_fill_enabled", "travel_speed", "travel_speed_z", "first_layer_speed", "first_layer_speed_over_raft", "perimeter_acceleration", "infill_acceleration",
-    "external_perimeter_acceleration", "top_solid_infill_acceleration", "solid_infill_acceleration", "travel_acceleration",
-    "bridge_acceleration", "first_layer_acceleration", "first_layer_acceleration_over_raft", "default_acceleration", "skirts", "skirt_distance", "skirt_height", "draft_shield",
+    "bridge_speed", "gap_fill_speed", "gap_fill_enabled", "travel_speed", "travel_speed_z", "first_layer_speed", "first_layer_speed_over_raft", "perimeter_acceleration", "perimeter_accel_to_decel",
+    "infill_acceleration", "infill_accel_to_decel", "external_perimeter_acceleration", "external_perimeter_accel_to_decel", "top_solid_infill_acceleration", "top_solid_infill_accel_to_decel",
+    "solid_infill_acceleration", "solid_infill_accel_to_decel", "travel_acceleration", "travel_accel_to_decel", "bridge_acceleration", "bridge_accel_to_decel", "first_layer_acceleration",
+    "first_layer_accel_to_decel", "first_layer_acceleration_over_raft", "first_layer_accel_to_decel_over_raft", "default_acceleration", "default_accel_to_decel", "skirts", "skirt_distance", "skirt_height", "draft_shield",
     "perimeter_jerk", "infill_jerk",
     "external_perimeter_jerk", "top_solid_infill_jerk", "solid_infill_jerk", "travel_jerk",
     "bridge_jerk", "first_layer_jerk", "first_layer_jerk_over_raft", "default_jerk",
@@ -508,7 +509,7 @@ static std::vector<std::string> s_Preset_filament_options {
 };
 
 static std::vector<std::string> s_Preset_machine_limits_options {
-    "machine_max_acceleration_extruding", "machine_max_acceleration_retracting", "machine_max_acceleration_travel",
+    "machine_max_acceleration_extruding", "machine_max_acceleration_retracting", "machine_max_acceleration_travel", "machine_max_accel_to_decel",
     "machine_max_acceleration_x", "machine_max_acceleration_y", "machine_max_acceleration_z", "machine_max_acceleration_e",
     "machine_max_feedrate_x", "machine_max_feedrate_y", "machine_max_feedrate_z", "machine_max_feedrate_e",
     "machine_min_extruding_rate", "machine_min_travel_rate",
