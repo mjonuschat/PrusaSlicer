@@ -2913,9 +2913,13 @@ std::string GCodeGenerator::extrude_smooth_path(
     }
 
     // reset acceleration
-    gcode += m_writer.set_print_acceleration(fast_round_up<unsigned int>(m_config.default_acceleration.value));
+    gcode += m_writer.set_print_acceleration(
+        fast_round_up<unsigned int>(m_config.default_acceleration.value),
+        fast_round_up<unsigned int>(m_config.default_accel_to_decel.value),
+        "Default"
+    );
     //reset jerk
-    gcode += m_writer.set_jerk(fast_round_up<unsigned int>(m_config.default_jerk.value));
+    gcode += m_writer.set_jerk(fast_round_up<unsigned int>(m_config.default_jerk.value), "Default");
 
     if (is_loop) {
         m_wipe.set_path(GCode::SmoothPath{smooth_path});
@@ -3197,26 +3201,40 @@ std::string GCodeGenerator::_extrude(
     // adjust acceleration
     if (m_config.default_acceleration.value > 0) {
         double acceleration;
+        double accel_to_decel;
         if (this->on_first_layer() && m_config.first_layer_acceleration.value > 0) {
             acceleration = m_config.first_layer_acceleration.value;
+            accel_to_decel = m_config.first_layer_accel_to_decel.value;
         } else if (this->object_layer_over_raft() && m_config.first_layer_acceleration_over_raft.value > 0) {
             acceleration = m_config.first_layer_acceleration_over_raft.value;
+            accel_to_decel = m_config.first_layer_accel_to_decel_over_raft.value;
         } else if (m_config.bridge_acceleration.value > 0 && path_attr.role.is_bridge()) {
             acceleration = m_config.bridge_acceleration.value;
+            accel_to_decel = m_config.bridge_accel_to_decel.value;
         } else if (m_config.top_solid_infill_acceleration > 0 && path_attr.role == ExtrusionRole::TopSolidInfill) {
             acceleration = m_config.top_solid_infill_acceleration.value;
+            accel_to_decel = m_config.top_solid_infill_accel_to_decel.value;
         } else if (m_config.solid_infill_acceleration > 0 && path_attr.role.is_solid_infill()) {
             acceleration = m_config.solid_infill_acceleration.value;
+            accel_to_decel = m_config.solid_infill_accel_to_decel.value;
         } else if (m_config.infill_acceleration.value > 0 && path_attr.role.is_infill()) {
             acceleration = m_config.infill_acceleration.value;
+            accel_to_decel = m_config.infill_accel_to_decel.value;
         } else if (m_config.external_perimeter_acceleration > 0 && path_attr.role.is_external_perimeter()) {
             acceleration = m_config.external_perimeter_acceleration.value;
+            accel_to_decel = m_config.external_perimeter_accel_to_decel.value;
         } else if (m_config.perimeter_acceleration.value > 0 && path_attr.role.is_perimeter()) {
             acceleration = m_config.perimeter_acceleration.value;
+            accel_to_decel = m_config.perimeter_accel_to_decel.value;
         } else {
             acceleration = m_config.default_acceleration.value;
+            accel_to_decel = m_config.default_accel_to_decel.value;
         }
-        gcode += m_writer.set_print_acceleration((unsigned int)floor(acceleration + 0.5));
+        gcode += m_writer.set_print_acceleration(
+            fast_round_up<unsigned int>(acceleration),
+            fast_round_up<unsigned int>(accel_to_decel),
+            gcode_extrusion_role_to_string(extrusion_role_to_gcode_extrusion_role(path_attr.role))
+        );
     }
 
     // adjust jerk
@@ -3241,7 +3259,7 @@ std::string GCodeGenerator::_extrude(
         } else {
             jerk = m_config.default_jerk.value;
         }
-        gcode += m_writer.set_jerk(jerk);
+        gcode += m_writer.set_jerk(jerk, gcode_extrusion_role_to_string(extrusion_role_to_gcode_extrusion_role(path_attr.role)));
     }
 
     // calculate extrusion length per distance unit
@@ -3461,7 +3479,8 @@ std::string GCodeGenerator::generate_travel_gcode(
 ) {
     std::string gcode;
 
-    const unsigned acceleration =(unsigned)(m_config.travel_acceleration.value + 0.5);
+    const unsigned acceleration = fast_round_up<unsigned int>(m_config.travel_acceleration.value);
+    const unsigned accel_to_decel = fast_round_up<unsigned int>(m_config.travel_accel_to_decel.value);
 
     if (travel.empty()) {
         return "";
@@ -3469,9 +3488,9 @@ std::string GCodeGenerator::generate_travel_gcode(
 
     // generate G-code for the travel move
     // use G1 because we rely on paths being straight (G0 may make round paths)
-    gcode += this->m_writer.set_travel_acceleration(acceleration);
+    gcode += this->m_writer.set_travel_acceleration(acceleration, accel_to_decel);
     if (m_config.default_jerk > 0 && m_config.travel_jerk > 0)
-        gcode += this->m_writer.set_jerk(m_config.travel_jerk);
+        gcode += this->m_writer.set_jerk(m_config.travel_jerk, "Travel");
 
     Vec3d previous_point{this->point_to_gcode(travel.front())};
     bool already_inserted{false};
@@ -3492,11 +3511,11 @@ std::string GCodeGenerator::generate_travel_gcode(
     if (! GCodeWriter::supports_separate_travel_acceleration(config().gcode_flavor)) {
         // In case that this flavor does not support separate print and travel acceleration,
         // reset acceleration to default.
-        gcode += this->m_writer.set_travel_acceleration(acceleration);
+        gcode += this->m_writer.set_print_acceleration(m_config.default_acceleration, m_config.default_accel_to_decel, "Default");
     }
 
     if (m_config.default_jerk > 0 && m_config.travel_jerk > 0)
-        gcode += this->m_writer.set_jerk(m_config.default_jerk);
+        gcode += this->m_writer.set_jerk(m_config.default_jerk, "Default");
     return gcode;
 }
 
