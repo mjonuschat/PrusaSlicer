@@ -17,3 +17,23 @@ add_library(imgui STATIC
     imstb_textedit.h
     imstb_truetype.h
 )
+
+add_library(imgui_backend STATIC
+        backends/imgui_impl_glfw.h
+        backends/imgui_impl_glfw.cpp
+        backends/imgui_impl_opengl3.h
+        backends/imgui_impl_opengl3.cpp
+)
+
+target_include_directories(
+        imgui_backend PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+find_package(glfw3 3.3 REQUIRED)
+target_link_libraries(
+        imgui_backend PUBLIC glfw3 OpenGL::GL GLEW::GLEW
+)
+
+if (APPLE)
+    target_link_libraries(imgui_backend PUBLIC "-framework Cocoa" "-framework IOKit")
+endif ()

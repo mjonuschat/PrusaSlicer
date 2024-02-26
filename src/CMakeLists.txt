@@ -281,3 +281,6 @@ else ()
     # Install the symlink for gcodeviewer
     install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink prusa-slicer prusa-gcodeviewer WORKING_DIRECTORY \$ENV{DESTDIR}/${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR})")
 endif ()
+
+
+add_subdirectory(slic3r3)
