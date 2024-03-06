@@ -126,3 +126,43 @@ jobs:
         with:
           name: PrusaSlicer-${{ env.ver }}+win64-${{ env.date }}
           path: ${{ github.workspace }}\build\PrusaSlicer-${{ env.ver }}+win64-${{ env.date }}.zip
+
+# Ubuntu
+      - name: Install dependencies
+        if: inputs.os == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake git build-essential autoconf cmake libglu1-mesa-dev libgtk-3-dev libdbus-1-dev libcurl4-openssl-dev libsecret-1-dev libssl-dev
+
+      - name: Install dependencies from build_linux.sh
+        if: inputs.os == 'ubuntu-22.04'
+        shell: bash
+        run: sudo ./build_release_linux.sh -ur
+
+      - name: Fix permissions
+        if: inputs.os == 'ubuntu-22.04'
+        shell: bash
+        run: sudo chown $USER -R ./
+
+      - name: Build slicer
+        if: inputs.os == 'ubuntu-22.04'
+        shell: bash
+        run: |
+          ./build_release_linux.sh -isr
+          mv -n ./build/PrusaSlicer-${{ env.ver_pure }}+Linux.tar ./build/PrusaSlicer-${{ env.ver }}+Linux-${{ env.date }}.tar
+          mv -n ./build/PrusaSlicer-${{ env.ver_pure }}+Linux.AppImage ./build/PrusaSlicer-${{ env.ver }}+Linux-${{ env.date }}.AppImage
+          chmod +x ./build/PrusaSlicer-${{ env.ver }}+Linux-${{ env.date }}.AppImage
+
+      - name: Upload artifacts Ubuntu (Archive)
+        if: inputs.os == 'ubuntu-22.04'
+        uses: actions/upload-artifact@v4
+        with:
+          name: "PrusaSlicer-${{ env.ver }}+Linux-${{ env.date }} (Archive)"
+          path: './build/PrusaSlicer-${{ env.ver }}+Linux-${{ env.date }}.tar'
+
+      - name: Upload artifacts Ubuntu (AppImage)
+        if: inputs.os == 'ubuntu-22.04'
+        uses: actions/upload-artifact@v4
+        with:
+          name: "PrusaSlicer-${{ env.ver }}+Linux-${{ env.date }} (AppImage)"
+          path: './build/PrusaSlicer-${{ env.ver }}+Linux-${{ env.date }}.AppImage'

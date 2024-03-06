@@ -12,8 +12,8 @@ on:
      - 'version.inc'
      - 'resources/**'
      - ".github/workflows/build_*.yml"
+     - "build_release_linux.sh"
      - "build_release_macos.sh"
-     - "build_release_vs2022.bat"
      - "build_win.bat"
 
   pull_request:
@@ -46,6 +46,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - os: ubuntu-22.04
           - os: macos-14
             arch: arm64
           - os: macos-12

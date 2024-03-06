@@ -41,7 +41,7 @@ jobs:
 
       - name: setup dev on Windows
         if: inputs.os == 'windows-latest'
-        uses: microsoft/setup-msbuild@v1.1
+        uses: microsoft/setup-msbuild@v2
 
       - name: Get the date on Ubuntu and macOS
         if: inputs.os != 'windows-latest'
@@ -80,6 +80,20 @@ jobs:
             ./build_release_macos.sh -dp -a ${{ inputs.arch }} -t 10.15
             brew install zstd
 
+      - name: Build on Ubuntu
+        if: inputs.os == 'ubuntu-22.04'
+        working-directory: ${{ github.workspace }}
+        run: |
+            sudo apt-get update
+            sudo apt-get install -y cmake git build-essential autoconf cmake libglu1-mesa-dev libgtk-3-dev libdbus-1-dev libcurl4-openssl-dev libsecret-1-dev libssl-dev
+            mkdir -p ${{ github.workspace }}/deps/build
+            mkdir -p ${{ github.workspace }}/deps/build/destdir
+            sudo ./build_release_linux.sh -ur
+            sudo chown $USER -R ./
+            ./build_release_linux.sh -dr
+            cd deps/build
+            tar -czvf PrusaSlicer_dep_ubuntu_$(date +"%Y%m%d").tar.gz destdir
+
       # Upload Artifacts
       - name: Upload Mac ${{ inputs.arch }} artifacts
         if: inputs.os == 'macos-12' || inputs.os == 'macos-13' || inputs.os == 'macos-14'
@@ -94,6 +108,13 @@ jobs:
         with:
           name: PrusaSlicer_dep_win64_${{ env.date }}
           path: ${{ github.workspace }}/deps/build/PrusaSlicer_dep*.zip
+
+      - name: Upload Ubuntu artifacts
+        if: inputs.os == 'ubuntu-22.04'
+        uses: actions/upload-artifact@v4
+        with:
+          name: PrusaSlicer_dep_ubuntu_${{ env.date }}
+          path: ${{ github.workspace }}/deps/build/PrusaSlicer_dep_ubuntu_*.tar.gz
 
   build_prusa:
     name: Build PrusaSlicer
