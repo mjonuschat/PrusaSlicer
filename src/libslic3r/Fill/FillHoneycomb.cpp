@@ -4,6 +4,7 @@
 ///|/ Copyright (c) Prusa Research 2016 Vojtěch Bubník @bubnikv
 ///|/ Copyright (c) Slic3r 2011 - 2015 Alessandro Ranellucci @alranel
 ///|/ Copyright (c) 2012 Mark Hindess
+///|/ Copyright (c) 2022 David Eccles @gringer
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
@@ -87,10 +88,7 @@ void FillHoneycomb::_fill_surface_single(
     }
     
     all_polylines = intersection_pl(std::move(all_polylines), expolygon);
-    if (params.dont_connect() || all_polylines.size() <= 1)
-        append(polylines_out, chain_polylines(std::move(all_polylines)));
-    else
-        connect_infill(std::move(all_polylines), expolygon, polylines_out, this->spacing, params);
+    chain_or_connect_infill(std::move(all_polylines), expolygon, polylines_out, this->spacing, params);
 }
 
 } // namespace Slic3r
