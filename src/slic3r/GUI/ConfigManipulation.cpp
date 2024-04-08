@@ -144,6 +144,7 @@ void ConfigManipulation::update_print_fff_config(DynamicPrintConfig* config, con
     {
         wxString msg_text = _(L("The Spiral Vase mode requires:\n"
                                 "- one perimeter\n"
+                                "- no extra perimeter on odd layers\n"
                                 "- no top solid layers\n"
                                 "- 0% fill density\n"
                                 "- no support material\n"
@@ -174,6 +175,32 @@ void ConfigManipulation::update_print_fff_config(DynamicPrintConfig* config, con
             if (!support)
                 cb_value_change("support_material", false);
         }
+    }
+
+    if (config->opt_bool("alternate_extra_perimeter") &&
+        config->opt_enum<EnsureVerticalShellThickness>("ensure_vertical_shell_thickness") ==
+            EnsureVerticalShellThickness::Enabled) {
+        wxString msg_text = _(L("Alternate extra perimeters doesn't work well with ensure vertical "
+                                "shell thickness enabled. "));
+
+        if (is_global_config)
+            msg_text += "\n\n" + _(L("Change these settings automatically? \n"
+                                     "Yes - Change ensure vertical shell thickness to Partial and enable alternate extra perimeters\n"
+                                     "No  - Don't use alternate extra perimeters"));
+
+        MessageDialog dialog(m_msg_dlg_parent, msg_text, "",
+                               wxICON_WARNING | (is_global_config ? wxYES | wxNO : wxOK));
+        DynamicPrintConfig new_conf = *config;
+        auto answer = dialog.ShowModal();
+        if (!is_global_config || answer == wxID_YES) {
+            new_conf.set_key_value("ensure_vertical_shell_thickness", new ConfigOptionEnum<EnsureVerticalShellThickness>(EnsureVerticalShellThickness::Partial));
+            new_conf.set_key_value("alternate_extra_perimeter", new ConfigOptionBool(true));
+        }
+        else {
+            new_conf.set_key_value("ensure_vertical_shell_thickness", new ConfigOptionEnum<EnsureVerticalShellThickness>(EnsureVerticalShellThickness::Enabled));
+            new_conf.set_key_value("alternate_extra_perimeter", new ConfigOptionBool(false));
+        }
+        apply(config, &new_conf);
     }
 
     if (config->opt_bool("wipe_tower") && config->opt_bool("support_material") && 
