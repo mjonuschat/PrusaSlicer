@@ -1026,6 +1026,12 @@ void PerimeterGenerator::process_arachne(
     // extra perimeters for each one
     // detect how many perimeters must be generated for this island
     int loop_number = params.config.perimeters + surface.extra_perimeters - 1; // 0-indexed loops
+    int infill_density =  params.config.fill_density.value;
+
+    // Extra perimeter on odd layers
+    if (params.config.alternate_extra_perimeter && params.layer_id % 2 == 1 && !params.spiral_vase && infill_density > 0)
+        loop_number++;
+
     if (loop_number > 0 && ((params.config.top_one_perimeter_type == TopOnePerimeterType::TopmostOnly && upper_slices == nullptr) || (params.config.only_one_perimeter_first_layer && params.layer_id == 0)))
         loop_number = 0;
 
@@ -1229,7 +1235,12 @@ void PerimeterGenerator::process_classic(
     // we need to process each island separately because we might have different
     // extra perimeters for each one
     // detect how many perimeters must be generated for this island
-    int        loop_number = params.config.perimeters + surface.extra_perimeters - 1;  // 0-indexed loops
+    int loop_number = params.config.perimeters + surface.extra_perimeters - 1;  // 0-indexed loops
+    int infill_density = params.config.fill_density.value;
+
+    // Alternate extra perimeter on odd layers
+    if (params.config.alternate_extra_perimeter && params.layer_id % 2 == 1 && !params.spiral_vase && infill_density > 0)
+        loop_number++;
 
     // Set the topmost layer to be one perimeter.
     if (loop_number > 0 && ((params.config.top_one_perimeter_type != TopOnePerimeterType::None && upper_slices == nullptr) || (params.config.only_one_perimeter_first_layer && params.layer_id == 0)))

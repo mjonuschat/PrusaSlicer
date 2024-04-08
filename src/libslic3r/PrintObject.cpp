@@ -729,8 +729,7 @@ bool PrintObject::invalidate_state_by_config_options(
             || opt_key == "infill_overlap"
             || opt_key == "external_perimeters_first"
             || opt_key == "arc_fitting"
-            || opt_key == "top_one_perimeter_type"
-            || opt_key == "only_one_perimeter_first_layer") {
+            || opt_key == "alternate_extra_perimeter") {
             steps.emplace_back(posPerimeters);
         } else if (
                opt_key == "small_area_infill_flow_compensation"
@@ -1362,7 +1361,7 @@ void PrintObject::discover_vertical_shells()
         bool has_extra_layers = false;
         for (size_t region_id = 0; region_id < this->num_printing_regions(); ++region_id) {
             const PrintRegionConfig &config = this->printing_region(region_id).config();
-            if (config.ensure_vertical_shell_thickness.value == EnsureVerticalShellThickness::Enabled || config.ensure_vertical_shell_thickness.value == EnsureVerticalShellThickness::Partial) {
+            if (config.ensure_vertical_shell_thickness.value == EnsureVerticalShellThickness::Enabled) {
                 has_extra_layers = true;
                 break;
             }
@@ -1444,7 +1443,7 @@ void PrintObject::discover_vertical_shells()
 
     for (size_t region_id = 0; region_id < this->num_printing_regions(); ++region_id) {
         const PrintRegion &region = this->printing_region(region_id);
-        if (region.config().ensure_vertical_shell_thickness.value != EnsureVerticalShellThickness::Enabled && region.config().ensure_vertical_shell_thickness.value != EnsureVerticalShellThickness::Partial) {
+        if (region.config().ensure_vertical_shell_thickness.value != EnsureVerticalShellThickness::Enabled) {
             // This region will be handled by discover_horizontal_shells().
             continue;
         }
@@ -1568,10 +1567,7 @@ void PrintObject::discover_vertical_shells()
 	                        ++ i) {
                             at_least_one_top_projected = true;
 	                        const DiscoverVerticalShellsCacheEntry &cache = cache_top_botom_regions[i];
-                            if (region_config.ensure_vertical_shell_thickness.value != EnsureVerticalShellThickness::Partial) {
-                                combine_holes(cache.holes);
-                            }
-
+                            combine_holes(cache.holes);
                             combine_shells(cache.top_surfaces);
 	                    }
                         if (!at_least_one_top_projected && i < int(cache_top_botom_regions.size())) {
@@ -1600,10 +1596,7 @@ void PrintObject::discover_vertical_shells()
 	                        -- i) {
                                 at_least_one_bottom_projected = true;
 	                        const DiscoverVerticalShellsCacheEntry &cache = cache_top_botom_regions[i];
-                            if (region_config.ensure_vertical_shell_thickness.value != EnsureVerticalShellThickness::Partial) {
-                                combine_holes(cache.holes);
-                            }
-
+                            combine_holes(cache.holes);
                             combine_shells(cache.bottom_surfaces);
 	                    }
 
@@ -2927,10 +2920,8 @@ void PrintObject::discover_horizontal_shells()
             }
 
             // If ensure_vertical_shell_thickness, then the rest has already been performed by discover_vertical_shells().
-            if (region_config.ensure_vertical_shell_thickness.value != EnsureVerticalShellThickness::Disabled)
+            if (region_config.ensure_vertical_shell_thickness.value == EnsureVerticalShellThickness::Enabled)
                 continue;
-
-            assert(region_config.ensure_vertical_shell_thickness.value == EnsureVerticalShellThickness::Disabled);
 
             coordf_t print_z  = layer->print_z;
             coordf_t bottom_z = layer->bottom_z();
@@ -3011,7 +3002,11 @@ void PrintObject::discover_horizontal_shells()
                         }
                     }
 
-                    const float factor = (region_config.fill_density.value == 0) ? 1.f : 0.5f;
+                    float factor = 0.0f;
+                    if (region_config.fill_density.value == 0)
+                        factor = 1.0f;
+                    else if (region_config.ensure_vertical_shell_thickness.value == EnsureVerticalShellThickness::Disabled)
+                        factor = 0.5f;
                     if (factor > 0.0f) {
                         // if we're printing a hollow object we discard any solid shell thinner
                         // than a perimeter width, since it's probably just crossing a sloping wall
@@ -3037,7 +3032,7 @@ void PrintObject::discover_horizontal_shells()
                     {
                         //FIXME Vojtech: Disable this and you will be sorry.
                         // https://github.com/prusa3d/PrusaSlicer/issues/26 bottom
-                        float margin = layerm->flow(frSolidInfill).scaled_width(); // require at least this size
+                        float margin = (region_config.ensure_vertical_shell_thickness.value != EnsureVerticalShellThickness::Disabled ? 3.f : 1.0f) * layerm->flow(frSolidInfill).scaled_width(); // require at least this size
                         // we use a higher miterLimit here to handle areas with acute angles
                         // in those cases, the default miterLimit would cut the corner and we'd
                         // get a triangle in $too_narrow; if we grow it below then the shell
