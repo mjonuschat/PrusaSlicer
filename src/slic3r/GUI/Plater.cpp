@@ -637,6 +637,7 @@ Plater::priv::priv(Plater* q, MainFrame* main_frame)
 
         // BOSS
         "init_z_rotate",
+        "alternate_extra_perimeter",
         }))
     , sidebar(new Sidebar(q))
     , notification_manager(std::make_unique<NotificationManager>(q))
