@@ -1024,6 +1024,10 @@ void PerimeterGenerator::process_arachne(
     if (loop_number > 0 && ((params.config.top_one_perimeter_type == TopOnePerimeterType::TopmostOnly && upper_slices == nullptr) || (params.config.only_one_perimeter_first_layer && params.layer_id == 0)))
         loop_number = 0;
 
+    // Extra perimeter on odd layers
+    if (params.config.alternate_extra_perimeter && params.layer_id % 2 == 0)
+        loop_number++;
+
     // Calculate how many inner loops remain when TopSurfaces is selected.
     const int inner_loop_number = (params.config.top_one_perimeter_type == TopOnePerimeterType::TopSurfaces && upper_slices != nullptr) ? loop_number - 1 : -1;
 
@@ -1225,6 +1229,10 @@ void PerimeterGenerator::process_classic(
     // extra perimeters for each one
     // detect how many perimeters must be generated for this island
     int        loop_number = params.config.perimeters + surface.extra_perimeters - 1;  // 0-indexed loops
+
+    // Alternate extra perimeter on odd layers
+    if (params.config.alternate_extra_perimeter && params.layer_id % 2 == 0)
+        loop_number++;
 
     // Set the topmost layer to be one perimeter.
     if (loop_number > 0 && ((params.config.top_one_perimeter_type != TopOnePerimeterType::None && upper_slices == nullptr) || (params.config.only_one_perimeter_first_layer && params.layer_id == 0)))
