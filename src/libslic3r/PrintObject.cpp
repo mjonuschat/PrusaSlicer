@@ -729,8 +729,7 @@ bool PrintObject::invalidate_state_by_config_options(
             || opt_key == "infill_overlap"
             || opt_key == "external_perimeters_first"
             || opt_key == "arc_fitting"
-            || opt_key == "top_one_perimeter_type"
-            || opt_key == "only_one_perimeter_first_layer") {
+            || opt_key == "alternate_extra_perimeter") {
             steps.emplace_back(posPerimeters);
         } else if (
                opt_key == "small_area_infill_flow_compensation"
@@ -1568,7 +1567,10 @@ void PrintObject::discover_vertical_shells()
 	                        ++ i) {
                             at_least_one_top_projected = true;
 	                        const DiscoverVerticalShellsCacheEntry &cache = cache_top_botom_regions[i];
-                            if (region_config.ensure_vertical_shell_thickness.value != EnsureVerticalShellThickness::Partial) {
+                            bool combine_ensure_vertical_shell_thickness = region_config.ensure_vertical_shell_thickness.value != EnsureVerticalShellThickness::Partial;
+                            bool combine_alternate_extra_perimeter = !region_config.alternate_extra_perimeter.value || (region_config.alternate_extra_perimeter.value && int(idx_layer) % 2 == 0);
+
+                            if (combine_ensure_vertical_shell_thickness || combine_alternate_extra_perimeter) {
                                 combine_holes(cache.holes);
                             }
 
@@ -1600,7 +1602,10 @@ void PrintObject::discover_vertical_shells()
 	                        -- i) {
                                 at_least_one_bottom_projected = true;
 	                        const DiscoverVerticalShellsCacheEntry &cache = cache_top_botom_regions[i];
-                            if (region_config.ensure_vertical_shell_thickness.value != EnsureVerticalShellThickness::Partial) {
+                            bool combine_ensure_vertical_shell_thickness = region_config.ensure_vertical_shell_thickness.value != EnsureVerticalShellThickness::Partial;
+                            bool combine_alternate_extra_perimeter = !region_config.alternate_extra_perimeter.value || (region_config.alternate_extra_perimeter.value && int(idx_layer) % 2 == 0);
+
+                            if (combine_ensure_vertical_shell_thickness || combine_alternate_extra_perimeter) {
                                 combine_holes(cache.holes);
                             }
 
