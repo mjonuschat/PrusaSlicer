@@ -1120,6 +1120,8 @@ void PerimeterGenerator::process_arachne(
     if (params.layer_id == 0 && params.config.only_one_perimeter_first_layer)
         loop_number = 0;
     // SuperSlicer: set the topmost layer to be one perimeter
+    if (params.config.alternate_extra_perimeter && params.layer_id % 2 == 1)
+        loop_number++;
     if (loop_number > 0 && params.config.only_one_perimeter_top && upper_slices == nullptr)
         loop_number = 0;
 
@@ -1444,6 +1446,8 @@ void PerimeterGenerator::process_classic(
     int        loop_number = params.config.perimeters + surface.extra_perimeters - 1;  // 0-indexed loops
 
     // SuperSlicer: set the topmost layer to be one perimeter
+    if (params.config.alternate_extra_perimeter && params.layer_id % 2 == 1)
+        loop_number++;
     if ((params.layer_id == 0 && params.config.only_one_perimeter_first_layer) || (loop_number > 0 && params.config.only_one_perimeter_top && upper_slices == nullptr))
         loop_number = 0;
 

@@ -719,6 +719,7 @@ bool PrintObject::invalidate_state_by_config_options(
             || opt_key == "perimeter_extrusion_width"
             || opt_key == "infill_overlap"
             || opt_key == "external_perimeters_first"
+            || opt_key == "alternate_extra_perimeter"
             || opt_key == "arc_fitting") {
             steps.emplace_back(posPerimeters);
         } else if (
@@ -1505,7 +1506,8 @@ void PrintObject::discover_vertical_shells()
 	                        ++ i) {
                             at_least_one_top_projected = true;
 	                        const DiscoverVerticalShellsCacheEntry &cache = cache_top_botom_regions[i];
-                            combine_holes(cache.holes);
+                            if (!region_config.alternate_extra_perimeter.value || (region_config.alternate_extra_perimeter.value && int(idx_layer) % 2 == 1))
+                                combine_holes(cache.holes);
                             combine_shells(cache.top_surfaces);
 	                    }
                         if (!at_least_one_top_projected && i < int(cache_top_botom_regions.size())) {
@@ -1534,7 +1536,8 @@ void PrintObject::discover_vertical_shells()
 	                        -- i) {
                                 at_least_one_bottom_projected = true;
 	                        const DiscoverVerticalShellsCacheEntry &cache = cache_top_botom_regions[i];
-							combine_holes(cache.holes);
+                                                        if (!region_config.alternate_extra_perimeter.value || (region_config.alternate_extra_perimeter.value && int(idx_layer) % 2 == 1))
+							    combine_holes(cache.holes);
                             combine_shells(cache.bottom_surfaces);
 	                    }
 

@@ -78,6 +78,7 @@ void ConfigManipulation::update_print_fff_config(DynamicPrintConfig* config, con
 
     if (config->opt_bool("spiral_vase") &&
         ! (config->opt_int("perimeters") == 1 &&
+           ! config->opt_bool("alternate_extra_perimeter") &&
            config->opt_int("top_solid_layers") == 0 &&
            fill_density == 0 &&
            ! config->opt_bool("support_material") &&
@@ -86,6 +87,7 @@ void ConfigManipulation::update_print_fff_config(DynamicPrintConfig* config, con
     {
         wxString msg_text = _(L("The Spiral Vase mode requires:\n"
                                 "- one perimeter\n"
+                                "- no extra perimeter on odd layers\n"
                                 "- no top solid layers\n"
                                 "- 0% fill density\n"
                                 "- no support material\n"
@@ -99,6 +101,7 @@ void ConfigManipulation::update_print_fff_config(DynamicPrintConfig* config, con
         bool support = true;
         if (!is_global_config || answer == wxID_YES) {
             new_conf.set_key_value("perimeters", new ConfigOptionInt(1));
+            new_conf.set_key_value("alternate_extra_perimeter", new ConfigOptionBool(false));
             new_conf.set_key_value("top_solid_layers", new ConfigOptionInt(0));
             new_conf.set_key_value("fill_density", new ConfigOptionPercent(0));
             new_conf.set_key_value("support_material", new ConfigOptionBool(false));
