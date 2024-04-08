@@ -532,6 +532,8 @@ static std::vector<std::string> s_Preset_print_options {
     "travel_jerk",
     "wipe_tower_accel_to_decel",
     "wipe_tower_jerk",
+
+    "alternate_extra_perimeter", 
 };
 
 static std::vector<std::string> s_Preset_filament_options {
