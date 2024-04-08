@@ -2138,7 +2138,7 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
         "support_material", "support_material_extruder", "support_material_interface_extruder",
         "support_material_contact_distance", "support_material_bottom_contact_distance", "raft_layers",
         // SuperSlicer
-        "init_z_rotate",
+        "init_z_rotate", "alternate_extra_perimeter",
         }))
     , sidebar(new Sidebar(q))
     , notification_manager(std::make_unique<NotificationManager>(q))

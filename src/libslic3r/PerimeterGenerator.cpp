@@ -1122,6 +1122,8 @@ void PerimeterGenerator::process_arachne(
     // SuperSlicer: set the topmost layer to be one perimeter
     if (loop_number > 0 && params.config.only_one_perimeter_top && upper_slices == nullptr)
         loop_number = 0;
+    if (params.config.alternate_extra_perimeter && params.layer_id % 2 == 1)
+        loop_number++;
 
     ExPolygons last        = offset_ex(surface.expolygon.simplify_p(params.scaled_resolution), - float(ext_perimeter_width / 2. - ext_perimeter_spacing / 2.));
 
@@ -1446,6 +1448,8 @@ void PerimeterGenerator::process_classic(
     // SuperSlicer: set the topmost layer to be one perimeter
     if ((params.layer_id == 0 && params.config.only_one_perimeter_first_layer) || (loop_number > 0 && params.config.only_one_perimeter_top && upper_slices == nullptr))
         loop_number = 0;
+    if (params.config.alternate_extra_perimeter && params.layer_id % 2 == 1)
+        loop_number++;
 
     ExPolygons last        = union_ex(surface.expolygon.simplify_p(params.scaled_resolution));
     ExPolygons gaps;

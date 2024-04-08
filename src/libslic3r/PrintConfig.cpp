@@ -1024,6 +1024,16 @@ void PrintConfigDef::init_fff_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionBool(false));
 
+    def = this->add("alternate_extra_perimeter", coBool);
+    def->label = L("Extra perimeter on odd layers");
+    def->category = L("Layers and Perimeters");
+    def->tooltip = L("This setting adds an extra perimeter to every odd layer. This way the "
+                   "infill gets wedged vertically between the perimeters, resulting in stronger "
+                   "prints. Using lightning infill together with this option is not recommended "
+                   "as there is limited infill to anchor the extra perimeters to.");
+    def->set_default_value(new ConfigOptionBool(false));
+
+
     def = this->add("extruder", coInt);
     def->label = L("Extruder");
     def->category = L("Extruders");
