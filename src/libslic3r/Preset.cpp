@@ -565,6 +565,8 @@ static std::vector<std::string> s_Preset_print_options {
     "travel_short_distance_minimum_cruise_ratio",
     "wipe_tower_jerk",
     "wipe_tower_minimum_cruise_ratio",
+
+    "alternate_extra_perimeter",
 };
 
 static std::vector<std::string> s_Preset_filament_options {
