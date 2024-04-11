@@ -1,7 +1,10 @@
 #pragma once
 #include <memory>
-#include "View/Frame.hpp"
-#include "View/FrameNavigable.hpp"
+#include "slic3r3/App/View/BaseRenderModule.hpp"
+
+namespace Slic3r::Domain {
+class Workbench;
+}
 
 namespace Slic3r::Biz {
 class DataManager;
@@ -9,22 +12,21 @@ class DataManager;
 
 
 namespace Slic3r::App {
+namespace Platform {
+class IRenderingPlatform;
+}
 
-class App : public View::FrameNavigable
+class App
 {
 public:
     void init(int argc, char** argv);
-    void render_imgui();
-    void render();
+    void render(Platform::IRenderingPlatform& rendering_platform);
 
-    void navigate_to_platter() override;
-    void navigate_to_config() override;
 
 private:
-    std::unique_ptr<View::Frame> m_main_frame;
+    std::unique_ptr<Domain::Workbench> m_workbench;
 
-
-    View::Frame* m_active_frame {nullptr};
+    std::unique_ptr<View::BaseRenderModule> m_render_module;
 };
 
 }

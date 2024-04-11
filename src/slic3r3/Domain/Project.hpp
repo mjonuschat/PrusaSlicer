@@ -1,4 +1,5 @@
 #pragma once
+#include <string>
 #include <vector>
 #include "ConfigContainer.hpp"
 
@@ -13,10 +14,14 @@ class Project
 public:
     using ConfigContainerList = std::vector<std::unique_ptr<ConfigContainer>>;
 
+    void set_file_name(const std::string& file_name) { m_file_name = file_name; }
+    [[nodiscard]] const std::string& file_name() const { return m_file_name; }
+
     [[nodiscard]] ConfigContainerList& config_contianers() { return m_config_containers; }
     [[nodiscard]] const ConfigContainerList& config_containers() const { return m_config_containers; }
 
 private:
+    std::string m_file_name;
     ConfigContainerList m_config_containers;
 };
 
