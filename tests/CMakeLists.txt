@@ -31,6 +31,7 @@ add_subdirectory(cpp17 EXCLUDE_FROM_ALL)    # does not have to be built all the 
 if (SLIC3R_GUI)
     add_subdirectory(slic3rutils)
 endif()
+add_subdirectory(slic3r3)
 
 
 # add_subdirectory(example)

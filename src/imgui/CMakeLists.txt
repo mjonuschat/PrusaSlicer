@@ -18,7 +18,9 @@ add_library(imgui STATIC
     imstb_truetype.h
 )
 
-add_library(imgui_backend STATIC
+target_include_directories(imgui PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+add_library(imgui_backend_ogl3_glfw STATIC
         backends/imgui_impl_glfw.h
         backends/imgui_impl_glfw.cpp
         backends/imgui_impl_opengl3.h
@@ -26,14 +28,37 @@ add_library(imgui_backend STATIC
 )
 
 target_include_directories(
-        imgui_backend PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
+        imgui_backend_ogl3_glfw PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
 find_package(glfw3 3.3 REQUIRED)
 target_link_libraries(
-        imgui_backend PUBLIC glfw3 OpenGL::GL GLEW::GLEW
+        imgui_backend_ogl3_glfw PUBLIC glfw3 OpenGL::GL GLEW::GLEW
 )
 
 if (APPLE)
-    target_link_libraries(imgui_backend PUBLIC "-framework Cocoa" "-framework IOKit")
+    target_link_libraries(imgui_backend_ogl3_glfw PUBLIC "-framework Cocoa" "-framework IOKit")
+endif ()
+
+
+add_library(imgui_backend_ogl3_sdl2 STATIC
+        backends/imgui_impl_sdl.h
+        backends/imgui_impl_sdl.cpp
+        backends/imgui_impl_opengl3.h
+        backends/imgui_impl_opengl3.cpp
+)
+
+target_include_directories(
+        imgui_backend_ogl3_sdl2 PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+# find_package(SDL2 REQUIRED COMPONENTS SDL2)
+find_package(SDL2 2 REQUIRED)
+
+target_link_libraries(
+        imgui_backend_ogl3_sdl2 SDL2::SDL2 OpenGL::GL GLEW::GLEW
+)
+
+if (APPLE)
+    target_link_libraries(imgui_backend_ogl3_sdl2 "-framework Cocoa" "-framework IOKit")
 endif ()

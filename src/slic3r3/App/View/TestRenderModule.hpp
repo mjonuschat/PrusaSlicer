@@ -4,14 +4,14 @@
 
 #pragma once
 
-#include "Frame.hpp"
+#include "BaseRenderModule.hpp"
 
 namespace Slic3r::App::View {
 
-class TestFrame : public Frame
+class TestRenderModule : public BaseRenderModule
 {
 public:
-    TestFrame();
+    TestRenderModule();
 };
 
 }

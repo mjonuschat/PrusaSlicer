@@ -5,18 +5,22 @@
 #pragma once
 
 #include <memory>
+#include "libslic3r/ObjectID.hpp"
 
 namespace Slic3r {
-class Model;
+class ModelInstance;
 }
 
 namespace Slic3r::Domain {
 
-class Bed
+class Bed : public ObjectBase
 {
 public:
+    using ModelInstances = std::vector<ModelInstance*>;
+    [[nodiscard]] ModelInstances & model_instances() { return m_model_instacnes; }
+    [[nodiscard]] const ModelInstances& model() const { return m_model_instacnes; }
 private:
-    std::unique_ptr<Model> m_model;
+    ModelInstances m_model_instacnes;
 
     // other bed data like grid position
 };
