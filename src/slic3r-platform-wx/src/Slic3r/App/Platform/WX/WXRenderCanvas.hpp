@@ -1,0 +1,43 @@
+#pragma once
+
+#include <memory>
+#include <chrono>
+
+#include <GL/glew.h>
+#include <wx/glcanvas.h>
+
+#include "Slic3r/App/Platform/AbstractRenderCanvas.hpp"
+
+
+namespace Slic3r::App::Platform::WX {
+
+class WXRenderCanvas : public Platform::AbstractRenderCanvas, public wxGLCanvas {
+public:
+    explicit WXRenderCanvas(wxWindow* parent);
+
+    WXRenderCanvas(const WXRenderCanvas&) = delete;
+    WXRenderCanvas operator=(const WXRenderCanvas&) = delete;
+
+protected:
+    void begin_frame_platform() override;
+    void begin_imgui_frame_platform()override;
+    void end_imgui_frame_platform() override;
+    void end_frame_platform() override;
+    double get_platform_time() override;
+
+
+private:
+    void on_paint(wxPaintEvent& event);
+    void on_size(wxSizeEvent& event);
+    void on_keyboard(wxKeyEvent&evt);
+    void on_mouse(wxMouseEvent& event);
+
+    void init_wx_imgui();
+
+private:
+    using Clock = std::chrono::high_resolution_clock;
+    std::unique_ptr<wxGLContext> m_gl_context;
+    std::chrono::time_point<Clock> m_start_time;
+};
+
+}

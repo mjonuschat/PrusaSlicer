@@ -6,10 +6,10 @@ set(SLIC3R3_APP_SOURCES
         View/BaseRenderModule.hpp
         View/TestRenderModule.cpp
         View/TestRenderModule.hpp
-        Plater/Scene/Scene.cpp
-        Plater/Scene/Scene.hpp
-        Presenter/ScenePresenter.cpp
-        Presenter/ScenePresenter.hpp
+        Scene/Scene.cpp
+        Scene/Scene.hpp
+        Plater/Presenter/ScenePresenter.cpp
+        Plater/Presenter/ScenePresenter.hpp
         Renderer/Device.cpp
         Renderer/Device.hpp
         View/IView.hpp

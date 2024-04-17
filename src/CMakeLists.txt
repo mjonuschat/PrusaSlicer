@@ -284,3 +284,10 @@ endif ()
 
 
 add_subdirectory(slic3r3)
+
+add_subdirectory(slic3r-platform)
+add_subdirectory(slic3r-platform-sdl)
+add_subdirectory(slic3r-platform-wx)
+add_subdirectory(slic3r-shared)
+add_subdirectory(slic3r-app-sdltest)
+add_subdirectory(slic3r-app-wxtest)

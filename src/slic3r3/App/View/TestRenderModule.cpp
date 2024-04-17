@@ -10,4 +10,5 @@ TestRenderModule::TestRenderModule() {
     m_views.emplace_back(std::make_unique<TestView>());
 }
 
-} // namespace Slic3r::App::View
+}
+// namespace Slic3r::App::View

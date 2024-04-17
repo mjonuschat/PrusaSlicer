@@ -1,0 +1,42 @@
+set(SLIC3R_SHARED_FILES
+        ./src/Slic3r/App/Render/Material.hpp
+        ./src/Slic3r/App/Render/ShaderManager.hpp
+        ./src/Slic3r/App/Render/ModelManager.hpp
+        ./src/Slic3r/App/Render/Model.hpp
+        ./src/Slic3r/App/Render/Texture.hpp
+        ./src/Slic3r/App/Render/Drawable.hpp
+        ./src/Slic3r/App/Render/Buffer.hpp
+        ./src/Slic3r/App/Render/Shader.hpp
+        ./src/Slic3r/App/Plater/ScenePresenter.hpp
+        ./src/Slic3r/App/View/IPanelView.hpp
+        ./src/Slic3r/App/Preview/View/DoubleSlider.cpp
+        ./src/Slic3r/App/Preview/View/DoubleSlider.hpp
+        ./src/Slic3r/App/Scene/Scene.cpp
+        ./src/Slic3r/App/Scene/Scene.hpp
+        ./src/Slic3r/Biz/PrintConfigInteractor.hpp
+        ./src/Slic3r/Biz/ObservableDynamicPrintConfig.hpp
+        ./src/Slic3r/Biz/PrintConfigInteractor.cpp
+        ./src/Slic3r/Biz/Observable.hpp
+        ./src/Slic3r/Biz/Plater/SceneInteractor.hpp
+        ./src/Slic3r/Biz/Plater/ConfigViewModel.hpp
+        ./src/Slic3r/Biz/Interactor/SceneInteractor.hpp
+        ./src/Slic3r/Biz/Interactor/SceneInteractor.cpp
+        ./src/Slic3r/Domain/ConfigContainer.hpp
+        ./src/Slic3r/Domain/DataManager.cpp
+        ./src/Slic3r/Domain/Project.cpp
+        ./src/Slic3r/Domain/Bed.hpp
+        ./src/Slic3r/Domain/Workbench.cpp
+        ./src/Slic3r/Domain/DataManager.hpp
+        ./src/Slic3r/Domain/Project.hpp
+        ./src/Slic3r/Domain/Bed.cpp
+        ./src/Slic3r/Domain/Workbench.hpp
+        ./src/Slic3r/Domain/ConfigContainer.cpp
+
+        ./src/Slic3r/App/TestRenderModule.hpp
+        ./src/Slic3r/App/TestRenderModule.cpp
+
+)
+
+add_library(slic3r-shared STATIC ${SLIC3R_SHARED_FILES})
+target_link_libraries(slic3r-shared PUBLIC slic3r-platform libslic3r)
+target_include_directories(slic3r-shared PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
