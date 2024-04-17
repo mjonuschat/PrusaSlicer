@@ -62,3 +62,20 @@ target_link_libraries(
 if (APPLE)
     target_link_libraries(imgui_backend_ogl3_sdl2 "-framework Cocoa" "-framework IOKit")
 endif ()
+
+add_library(imgui_backend_ogl3 STATIC
+        backends/imgui_impl_opengl3.h
+        backends/imgui_impl_opengl3.cpp
+)
+
+target_include_directories(
+        imgui_backend_ogl3 PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+target_link_libraries(
+        imgui_backend_ogl3 OpenGL::GL GLEW::GLEW
+)
+
+if (APPLE)
+    target_link_libraries(imgui_backend_ogl3 "-framework Cocoa" "-framework IOKit")
+endif ()

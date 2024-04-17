@@ -1298,7 +1298,7 @@ static wxMenu* generate_help_menu()
 
 static void add_common_view_menu_items(wxMenu* view_menu, MainFrame* mainFrame, std::function<bool(void)> can_change_view)
 {
-    // The camera control accelerators are captured by GLCanvas3D::on_char().
+    // The camera control accelerators are captured by GLCanvas3D::on_keyboard().
     append_menu_item(view_menu, wxID_ANY, _L("Iso") + sep + "&0", _L("Iso View"), [mainFrame](wxCommandEvent&) { mainFrame->select_view("iso"); },
         "", nullptr, [can_change_view]() { return can_change_view(); }, mainFrame);
     view_menu->AppendSeparator();
