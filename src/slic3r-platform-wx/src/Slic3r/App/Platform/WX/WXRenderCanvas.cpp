@@ -211,7 +211,7 @@ KeyCode get_key_code_from_event(const wxKeyEvent& event)
         return KeyCode::KpSpace;
 
     case WXK_NUMPAD_DECIMAL:
-        return KeyCode::KpDecimal;
+        return KeyCode::KpPeriod;
 
     case WXK_SHIFT:
         return KeyCode::LShift;
@@ -223,7 +223,7 @@ KeyCode get_key_code_from_event(const wxKeyEvent& event)
     wxChar unicode_char = event.GetUnicodeKey();
     if ('a' <= unicode_char && unicode_char <= 'z')
         unicode_char -= 'a' - 'A';
-    if ('A' <= unicode_char && unicode_char <= 'Z')
+    if (' ' <= unicode_char && unicode_char <= 127)
         return KeyCode(unicode_char);
     return KeyCode::None;
 }
@@ -278,6 +278,7 @@ WXRenderCanvas::WXRenderCanvas(wxWindow* parent)
     ImGui_ImplOpenGL3_Init(glsl_version);
 
     Bind(wxEVT_SIZE, &WXRenderCanvas::on_size, this);
+    Bind(wxEVT_IDLE, &WXRenderCanvas::on_idle, this);
     Bind(wxEVT_PAINT, &WXRenderCanvas::on_paint, this);
     Bind(wxEVT_CHAR, &WXRenderCanvas::on_keyboard, this);
     Bind(wxEVT_KEY_DOWN, &WXRenderCanvas::on_keyboard, this);
@@ -338,7 +339,7 @@ void WXRenderCanvas::on_paint(wxPaintEvent& event)
 
 void WXRenderCanvas::on_size(wxSizeEvent& event)
 {
-    render();
+//    render();
 }
 
 void WXRenderCanvas::on_keyboard(wxKeyEvent& evt)
@@ -379,7 +380,6 @@ void WXRenderCanvas::on_keyboard(wxKeyEvent& evt)
             evt.Skip();   // Needed to have EVT_CHAR generated as well
         }
 
-
         KeyCode key_code = get_key_code_from_event(evt);
         if (key_code != KeyCode::None) {
 
@@ -393,7 +393,7 @@ void WXRenderCanvas::on_keyboard(wxKeyEvent& evt)
                 event_type, key_code, m_key_modifiers
             };
 
-            emit_keyboard(platform_event);
+            enqueue_keyboard(platform_event);
         }
     }
     render();
@@ -455,9 +455,15 @@ void WXRenderCanvas::on_mouse(wxMouseEvent& evt)
     MouseEvent platform_event{
         platform_event_type, button, evt.GetX(), evt.GetY(), wheel_x, wheel_y, m_key_modifiers
     };
-    emit_mouse(platform_event);
+    enqueue_mouse(platform_event);
 
     render();
+}
+
+void WXRenderCanvas::on_idle(wxIdleEvent& event)
+{
+    if (get_and_reset_render_requested())
+        render();
 }
 
 

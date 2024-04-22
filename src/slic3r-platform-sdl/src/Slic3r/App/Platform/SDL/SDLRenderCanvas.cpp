@@ -339,7 +339,7 @@ void SDLRenderCanvas::pass_event_to_scene(SDL_Event& event)
         update_key_modifiers(type, code);
 
         KeyboardEvent platform_event{type, code, m_key_modifiers};
-        emit_keyboard(platform_event);
+        enqueue_keyboard(platform_event);
     }
     else if (event.type == SDL_MOUSEMOTION)
     {
@@ -351,7 +351,7 @@ void SDLRenderCanvas::pass_event_to_scene(SDL_Event& event)
             0, 0,
             m_key_modifiers
         };
-        emit_mouse(platform_event);
+        enqueue_mouse(platform_event);
     }
     else if (event.type == SDL_MOUSEBUTTONDOWN || event.type == SDL_MOUSEBUTTONUP)
     {
@@ -363,7 +363,7 @@ void SDLRenderCanvas::pass_event_to_scene(SDL_Event& event)
             0, 0,
             m_key_modifiers
         };
-        emit_mouse(platform_event);
+        enqueue_mouse(platform_event);
     }
     else if (event.type == SDL_MOUSEWHEEL)
     {
@@ -375,7 +375,7 @@ void SDLRenderCanvas::pass_event_to_scene(SDL_Event& event)
             mouse_wheel.preciseX, mouse_wheel.preciseY,
             m_key_modifiers
         };
-        emit_mouse(platform_event);
+        enqueue_mouse(platform_event);
     }
 }
 

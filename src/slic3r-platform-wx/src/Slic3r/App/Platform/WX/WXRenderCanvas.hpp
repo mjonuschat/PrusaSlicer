@@ -31,6 +31,7 @@ private:
     void on_size(wxSizeEvent& event);
     void on_keyboard(wxKeyEvent&evt);
     void on_mouse(wxMouseEvent& event);
+    void on_idle(wxIdleEvent& event);
 
     void init_wx_imgui();
 

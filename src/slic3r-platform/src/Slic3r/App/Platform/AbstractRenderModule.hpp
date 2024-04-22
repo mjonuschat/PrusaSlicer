@@ -2,6 +2,7 @@
 
 #include "MouseEvent.hpp"
 #include "KeyboardEvent.hpp"
+#include "IRenderRequestHandler.hpp"
 
 namespace Slic3r::App::Platform {
 
@@ -21,7 +22,14 @@ public:
     virtual void on_scene_mouse_event(const MouseEvent& e);
     virtual void on_scene_keyboard_event(const KeyboardEvent& e);
 
+    void activate(IRenderRequestHandler* render_request_handler);
+    void deactivate();
+
 protected:
+    virtual void on_activated();
+    virtual void on_deactivated();
+private:
+    IRenderRequestHandler* m_render_request_handler{nullptr};
 };
 
 
