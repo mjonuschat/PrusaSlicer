@@ -4,7 +4,7 @@
 
 #pragma once
 #include "libslic3r/TriangleMesh.hpp"
-#include "slic3r3/Domain/Project.hpp"
+#include "Slic3r/Domain/Project.hpp"
 
 namespace Slic3r::Biz::Interactor {
 

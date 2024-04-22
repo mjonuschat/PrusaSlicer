@@ -377,7 +377,11 @@ endif()
 # boost::beast::detail::base64 was introduced first in version 1.66.0
 set(MINIMUM_BOOST_VERSION "1.66.0")
 set(_boost_components "system;filesystem;thread;log;locale;regex;chrono;atomic;date_time;iostreams;nowide")
-find_package(Boost ${MINIMUM_BOOST_VERSION} REQUIRED COMPONENTS ${_boost_components})
+if(EMSCRIPTEN_SUPPORT)
+    find_package(Boost ${MINIMUM_BOOST_VERSION} REQUIRED)
+else()
+    find_package(Boost ${MINIMUM_BOOST_VERSION} REQUIRED COMPONENTS ${_boost_components})
+endif()
 
 add_library(boost_libs INTERFACE)
 add_library(boost_headeronly INTERFACE)
