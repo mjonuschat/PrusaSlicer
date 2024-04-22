@@ -27,7 +27,7 @@ void TestRenderModule::on_scene_mouse_event(const Platform::MouseEvent &e)
 
 void TestRenderModule::on_scene_keyboard_event(const Platform::KeyboardEvent &e)
 {
-    std::cout <<  "Keyboard3Event type: " << uint32_t(e.get_type()) << "\n";
+    std::cout <<  "KeyboardEvent type: " << uint32_t(e.get_type()) << "\n";
 }
 
 }

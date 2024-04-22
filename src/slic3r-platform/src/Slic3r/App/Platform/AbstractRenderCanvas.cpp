@@ -10,6 +10,15 @@
 
 namespace Slic3r::App::Platform {
 
+void AbstractRenderCanvas::set_render_module(AbstractRenderModule* render_module)
+{
+    if (m_render_module)
+        m_render_module->deactivate();
+    m_render_module = render_module;
+    if (m_render_module)
+        m_render_module->activate(this);
+}
+
 void AbstractRenderCanvas::render()
 {
     if (m_render_module == nullptr)
@@ -19,6 +28,7 @@ void AbstractRenderCanvas::render()
     begin_imgui_frame();
     m_render_module->render_imgui();
     end_imgui_frame();
+    emit_enqueued_events();
     m_render_module->render_scene();
     end_frame();
 }
@@ -29,7 +39,6 @@ void AbstractRenderCanvas::begin_frame()
 {
     ImGuiIO& io = ImGui::GetIO();
 
-    // Setup time step (we don't use SDL_GetTicks() because it is using millisecond resolution)
     double current_time = get_platform_time();
     io.DeltaTime = m_last_time > 0 ? float(current_time - m_last_time) : (1.0f / 60.0f);
     m_last_time = current_time;
@@ -105,5 +114,43 @@ void AbstractRenderCanvas::update_mouse_position(int x, int y)
     m_mouse_y = y;
 }
 
+void AbstractRenderCanvas::enqueue_mouse(const MouseEvent& e)
+{
+    m_enqueued_mouse_events.push_back(e);
+}
+void AbstractRenderCanvas::enqueue_keyboard(const KeyboardEvent& e)
+{
+    m_enqueued_keyboard_events.push_back(e);
+}
+
+void AbstractRenderCanvas::emit_enqueued_events()
+{
+    ImGuiIO& io = ImGui::GetIO();
+    if (!io.WantCaptureKeyboard) {
+        for (const auto& e : m_enqueued_keyboard_events)
+            emit_keyboard(e);
+    }
+    m_enqueued_keyboard_events.clear();
+
+    if (!io.WantCaptureMouse) {
+        for (const auto& e : m_enqueued_mouse_events)
+            emit_mouse(e);
+    }
+    m_enqueued_mouse_events.clear();
+}
+
+
+void AbstractRenderCanvas::request_render()
+{
+    m_render_requested = true;
+}
+
+bool AbstractRenderCanvas::get_and_reset_render_requested()
+{
+    const bool ret = m_render_requested;
+    if (m_render_requested)
+        m_render_requested = false;
+    return ret;
+}
 
 } // namespace Slic3r::App::Platform
