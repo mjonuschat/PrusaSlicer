@@ -764,6 +764,10 @@ PRINT_CONFIG_CLASS_DEFINE(
 
     // SuperSlicer
     ((ConfigOptionEnum<InfillPattern>,  solid_fill_pattern))
+    // Reverse extrusion direction
+    ((ConfigOptionBool,                 overhangs_reverse))
+    ((ConfigOptionBool,                 infill_reverse))
+    ((ConfigOptionBool,                 internal_perimeters_reverse))
 )
 
 PRINT_CONFIG_CLASS_DEFINE(
