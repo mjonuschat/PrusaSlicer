@@ -124,10 +124,29 @@ std::vector<Perimeter> extract_perimeter_extrusions(
         for (ExtrusionEntity *ee : *eec) {
             if (ee != nullptr) {
                 std::optional<InstancePoint> last_position{get_instance_point(previous_position, offset)};
+                ExtrusionRole role = ee->role();
                 bool reverse_loop{false};
                 if (auto loop = dynamic_cast<const ExtrusionLoop *>(ee)) {
                     const bool is_hole = loop->is_clockwise();
-                    reverse_loop = print.config().prefer_clockwise_movements ? !is_hole : is_hole;
+
+                    const bool is_odd_layer = layer.id() % 2 == 0;
+                    const bool should_reverse_internal_perimeter = role.is_internal_perimeter() &&
+                        region.config().internal_perimeters_reverse;
+                    bool should_reverse_overhang_perimeters{false};
+
+                    if (region.config().overhangs_reverse && is_odd_layer) {
+                        for (ExtrusionPath el : loop->paths) {
+                            if (el.role().is_overhang_perimeter()) {
+                                should_reverse_overhang_perimeters = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    const bool reverse_on_odd = is_odd_layer &&
+                        (should_reverse_internal_perimeter || should_reverse_overhang_perimeters);
+                    reverse_loop = (print.config().prefer_clockwise_movements ? !is_hole : is_hole) ^
+                        reverse_on_odd;
                 }
                 SmoothPath path{smooth_path(&layer, ExtrusionEntityReference{*ee, reverse_loop}, extruder_id, last_position)};
                 previous_position = get_gcode_point(last_position, offset);
@@ -190,11 +209,16 @@ std::vector<InfillRange> extract_infill_ranges(
         const std::optional<InstancePoint> previous_instance_point{get_instance_point(previous_position, offset)};
         const Point* start_near{previous_instance_point ? &(previous_instance_point->local_point) : nullptr};
         const ExtrusionEntityReferences sorted_extrusions{sort_fill_extrusions(extrusions, start_near)};
+        const bool reverse_infill = region.config().infill_reverse && layer.id() % 2 == 0;
 
         std::vector<SmoothPath> paths;
         for (const ExtrusionEntityReference &extrusion_reference : sorted_extrusions) {
             std::optional<InstancePoint> last_position{get_instance_point(previous_position, offset)};
-            SmoothPath path{smooth_path(&layer, extrusion_reference, extruder_id, last_position)};
+            SmoothPath path{smooth_path(
+                &layer,
+                ExtrusionEntityReference{extrusion_reference.extrusion_entity(), reverse_infill},
+                extruder_id, last_position
+            )};
             if (!path.empty()) {
                 paths.push_back(std::move(path));
             }
