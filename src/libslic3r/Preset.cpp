@@ -485,7 +485,8 @@ static std::vector<std::string> s_Preset_print_options {
     "small_area_infill_flow_compensation_extrusion_length_9", "small_area_infill_flow_compensation_compensation_factor_0", "small_area_infill_flow_compensation_compensation_factor_1",
     "small_area_infill_flow_compensation_compensation_factor_2", "small_area_infill_flow_compensation_compensation_factor_3", "small_area_infill_flow_compensation_compensation_factor_4",
     "small_area_infill_flow_compensation_compensation_factor_5", "small_area_infill_flow_compensation_compensation_factor_6", "small_area_infill_flow_compensation_compensation_factor_7",
-    "small_area_infill_flow_compensation_compensation_factor_8", "small_area_infill_flow_compensation_compensation_factor_9"
+    "small_area_infill_flow_compensation_compensation_factor_8", "small_area_infill_flow_compensation_compensation_factor_9",
+    "overhangs_reverse", "infill_reverse", "internal_perimeters_reverse"
 };
 
 static std::vector<std::string> s_Preset_filament_options {
