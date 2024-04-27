@@ -703,20 +703,12 @@ void MainFrame::update_title()
         boost::replace_first(build_id, SLIC3R_APP_NAME, GCODEVIEWER_APP_NAME);
     size_t 		idx_plus = build_id.find('+');
     if (idx_plus != build_id.npos) {
-    	// Parse what is behind the '+'. If there is a number, then it is a build number after the label, and full build ID is shown.
-    	int commit_after_label;
-    	if (! boost::starts_with(build_id.data() + idx_plus + 1, "UNKNOWN") && 
-            (build_id.at(idx_plus + 1) == '-' || sscanf(build_id.data() + idx_plus + 1, "%d-", &commit_after_label) == 0)) {
-    		// It is a release build.
-    		build_id.erase(build_id.begin() + idx_plus, build_id.end());    		
-#if defined(_WIN32) && ! defined(_WIN64)
-    		// People are using 32bit slicer on a 64bit machine by mistake. Make it explicit.
-            build_id += " 32 bit";
-#endif
-    	}
+	build_id.erase(build_id.begin() + idx_plus, build_id.end());
     }
 
     title += wxString(build_id);
+    title += "+BOSS";
+
     if (wxGetApp().is_editor())
         title += (" " + _L("based on Slic3r"));
 
