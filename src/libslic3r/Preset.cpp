@@ -567,6 +567,10 @@ static std::vector<std::string> s_Preset_print_options {
     "wipe_tower_minimum_cruise_ratio",
 
     "alternate_extra_perimeter",
+
+    "overhangs_reverse",
+    "infill_reverse",
+    "internal_perimeters_reverse",
 };
 
 static std::vector<std::string> s_Preset_filament_options {
