@@ -4,6 +4,7 @@
 ///|/ Copyright (c) 2016 Joseph Lenox @lordofhyphens
 ///|/ Copyright (c) Slic3r 2014 - 2016 Alessandro Ranellucci @alranel
 ///|/ Copyright (c) 2015 Maksim Derbasov @ntfshard
+///|/ Copyright (c) OrcaSlicer 2023 Noisyfox @Noisyfox
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
@@ -731,7 +732,9 @@ bool PrintObject::invalidate_state_by_config_options(
             || opt_key == "arc_fitting"
             || opt_key == "top_one_perimeter_type"
             || opt_key == "only_one_perimeter_first_layer"
-            || opt_key == "alternate_extra_perimeter") {
+            || opt_key == "alternate_extra_perimeter"
+            || opt_key == "overhangs_reverse"
+            || opt_key == "internal_perimeters_reverse") {
             steps.emplace_back(posPerimeters);
         } else if (
                opt_key == "small_area_infill_flow_compensation"
@@ -840,7 +843,8 @@ bool PrintObject::invalidate_state_by_config_options(
             || opt_key == "raft_first_layer_density"
             || opt_key == "raft_first_layer_expansion"
             || opt_key == "dont_support_bridges"
-            || opt_key == "first_layer_extrusion_width") {
+            || opt_key == "first_layer_extrusion_width"
+            || opt_key == "infill_reverse") {
             steps.emplace_back(posSupportMaterial);
         } else if (opt_key == "bottom_solid_layers") {
             steps.emplace_back(posPrepareInfill);
