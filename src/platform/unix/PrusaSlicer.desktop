@@ -1,5 +1,5 @@
 [Desktop Entry]
-Name=PrusaSlicer
+Name=PrusaSlicer (BOSS)
 GenericName=3D Printing Software
 Icon=PrusaSlicer
 Exec=prusa-slicer %F
