@@ -3,6 +3,7 @@
 ///|/ Copyright (c) 2021 Ilya @xorza
 ///|/ Copyright (c) 2019 John Drake @foxox
 ///|/ Copyright (c) 2018 Martin Loidl @LoidlM
+///|/ Copyright (c) OrcaSlicer 2023 Noisyfox @Noisyfox
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
@@ -567,6 +568,10 @@ static std::vector<std::string> s_Preset_print_options {
     "wipe_tower_minimum_cruise_ratio",
 
     "alternate_extra_perimeter",
+
+    "overhangs_reverse",
+    "infill_reverse",
+    "internal_perimeters_reverse",
 };
 
 static std::vector<std::string> s_Preset_filament_options {

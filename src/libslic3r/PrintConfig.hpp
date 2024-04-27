@@ -12,6 +12,7 @@
 ///|/ Copyright (c) Slic3r 2013 - 2015 Alessandro Ranellucci @alranel
 ///|/ Copyright (c) 2015 Maksim Derbasov @ntfshard
 ///|/ Copyright (c) 2015 Alexander Rössler @machinekoder
+///|/ Copyright (c) OrcaSlicer 2023 Noisyfox @Noisyfox
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
@@ -810,6 +811,10 @@ PRINT_CONFIG_CLASS_DEFINE(
 
     // SuperSlicer
     ((ConfigOptionEnum<InfillPattern>,  solid_fill_pattern))
+    // Reverse extrusion direction
+    ((ConfigOptionBool,                 overhangs_reverse))
+    ((ConfigOptionBool,                 infill_reverse))
+    ((ConfigOptionBool,                 internal_perimeters_reverse))
 )
 
 PRINT_CONFIG_CLASS_DEFINE(
