@@ -14,6 +14,7 @@
 ///|/ Copyright (c) 2016 Chow Loong Jin @hyperair
 ///|/ Copyright (c) 2012 QuantumConcepts
 ///|/ Copyright (c) 2012 Henrik Brix Andersen @henrikbrixandersen
+///|/ Copyright (c) OrcaSlicer 2023 Noisyfox @Noisyfox
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
@@ -1836,6 +1837,12 @@ void TabPrint::build()
         optgroup->append_single_option_line("arc_fitting");
         optgroup->append_single_option_line("xy_size_compensation");
         optgroup->append_single_option_line("elefant_foot_compensation", "elephant-foot-compensation_114487");
+
+        line = { L("Reverse direction on odd layers"), "" };
+        line.append_option(optgroup->get_option("overhangs_reverse"));
+        line.append_option(optgroup->get_option("infill_reverse"));
+        line.append_option(optgroup->get_option("internal_perimeters_reverse"));
+        optgroup->append_line(line);
 
         optgroup = page->new_optgroup(L("Arachne perimeter generator"));
         optgroup->append_single_option_line("wall_transition_angle");
