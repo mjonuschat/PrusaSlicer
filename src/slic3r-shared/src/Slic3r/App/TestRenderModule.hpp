@@ -16,6 +16,7 @@ public:
 private:
     static constexpr size_t BUF_SIZE = 256;
     char m_text_buffer[BUF_SIZE];
+    bool m_main_window_opened{true};
 };
 
 } // namespace Slic3r::App::SDLTest

@@ -28,6 +28,8 @@ public:
 protected:
     virtual void on_activated();
     virtual void on_deactivated();
+
+    void request_render();
 private:
     IRenderRequestHandler* m_render_request_handler{nullptr};
 };

@@ -1,12 +1,10 @@
 #include "AbstractRenderCanvas.hpp"
 
-#include <type_traits>
+#include <iostream>
 
 #include <imgui/imgui.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
 #include <gl/glew.h>
-
-#include <libslic3r/enum_bitmask.hpp>
 
 namespace Slic3r::App::Platform {
 
@@ -135,6 +133,8 @@ void AbstractRenderCanvas::emit_enqueued_events()
     if (!io.WantCaptureMouse) {
         for (const auto& e : m_enqueued_mouse_events)
             emit_mouse(e);
+    } else if (std::any_of(io.MouseDown, io.MouseDown + 5, [](bool val){ return val; })){
+        request_render();
     }
     m_enqueued_mouse_events.clear();
 }

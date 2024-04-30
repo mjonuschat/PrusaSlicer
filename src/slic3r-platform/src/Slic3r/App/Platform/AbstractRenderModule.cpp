@@ -21,7 +21,10 @@ void AbstractRenderModule::deactivate()
     m_render_request_handler = nullptr;
 }
 
-
+void AbstractRenderModule::request_render()
+{
+    m_render_request_handler->request_render();
+}
 
 
 } // namespace Slic3r::App::Platform
