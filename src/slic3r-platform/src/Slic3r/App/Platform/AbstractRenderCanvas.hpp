@@ -4,6 +4,7 @@
 
 #include "AbstractRenderModule.hpp"
 #include "IRenderRequestHandler.hpp"
+#include "StdMainThreadDispatcher.hpp"
 
 namespace Slic3r::App::Platform {
 
@@ -14,7 +15,7 @@ namespace Slic3r::App::Platform {
  * - facilitate rendering of render module
  * - translate platform specific events and push them the render module
  */
-class AbstractRenderCanvas : public IRenderRequestHandler
+class AbstractRenderCanvas : public IRenderRequestHandler, public IMainThreadDispatcher
 {
 public:
     ~AbstractRenderCanvas() override = default;
@@ -24,6 +25,12 @@ public:
 
     // IRenderRequestHandler interface impl
     void request_render() override;
+
+    void dispatch_on_main_thread(Function func) override
+    { m_main_thread_dispatcher.dispatch_on_main_thread(func); }
+
+    void dispatch() override
+    { m_main_thread_dispatcher.dispatch(); }
 
 protected:
     virtual void begin_frame_platform() = 0;
@@ -71,6 +78,7 @@ protected:
 
     MouseEvents m_enqueued_mouse_events;
     KeyboardEvents m_enqueued_keyboard_events;
+    StdMainThreadDispatcher m_main_thread_dispatcher;
 private:
     double m_last_time{0};
     bool m_render_requested{false};

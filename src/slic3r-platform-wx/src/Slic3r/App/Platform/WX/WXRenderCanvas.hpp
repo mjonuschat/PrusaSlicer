@@ -18,6 +18,8 @@ public:
     WXRenderCanvas(const WXRenderCanvas&) = delete;
     WXRenderCanvas operator=(const WXRenderCanvas&) = delete;
 
+    void dispatch_on_main_thread(Function func) override;
+
 protected:
     void begin_frame_platform() override;
     void begin_imgui_frame_platform()override;

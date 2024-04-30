@@ -1,5 +1,7 @@
 #include "WXRenderCanvas.hpp"
 
+#include <iostream>
+
 #include <wx/dcclient.h>
 #include <imgui/imgui.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
@@ -462,7 +464,10 @@ void WXRenderCanvas::on_mouse(wxMouseEvent& evt)
 
 void WXRenderCanvas::on_idle(wxIdleEvent& event)
 {
-    if (get_and_reset_render_requested())
+    dispatch();
+    bool render_requested = get_and_reset_render_requested();
+    std::cout << "Idle: render requested: " << render_requested << "\n";
+    if (render_requested)
         render();
 }
 
@@ -501,6 +506,7 @@ void WXRenderCanvas::end_imgui_frame_platform()
 void WXRenderCanvas::end_frame_platform()
 {
     wxGLCanvas::SwapBuffers();
+    wxApp::GetInstance()->WakeUpIdle();
 }
 
 double WXRenderCanvas::get_platform_time()
@@ -508,5 +514,12 @@ double WXRenderCanvas::get_platform_time()
     auto delta = std::chrono::duration_cast<std::chrono::microseconds>(Clock::now() - m_start_time);
     return double(delta.count()) * 0.000001;
 }
+
+void WXRenderCanvas::dispatch_on_main_thread(IMainThreadDispatcher::Function func)
+{
+    AbstractRenderCanvas::dispatch_on_main_thread(func);
+    wxApp::GetInstance()->WakeUpIdle();
+}
+
 
 } //namespace Slic3r::App::Platform::WX

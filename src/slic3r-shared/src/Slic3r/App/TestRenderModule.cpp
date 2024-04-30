@@ -7,17 +7,19 @@ void TestRenderModule::render_scene() {}
 
 void TestRenderModule::render_imgui()
 {
-    ImGui::Begin("My Win");
-    ImGui::Text("Hello there");
-    ImGui::InputText("Text", m_text_buffer, BUF_SIZE);
-    if (ImGui::Button("Press me")) {
-        // pressed
-    }
-    if (ImGui::BeginPopupContextItem("MyWinPopup")) {
-        ImGui::Text("Item 1");
-        ImGui::EndPopup();
+    if (ImGui::Begin("My Win")) {
+        ImGui::Text("Hello there");
+        ImGui::InputText("Text", m_text_buffer, BUF_SIZE);
+        if (ImGui::Button("Press me")) {
+            // pressed
+        }
+        if (ImGui::BeginPopupContextItem("MyWinPopup")) {
+            ImGui::Text("Item 1");
+            ImGui::EndPopup();
+        }
     }
     ImGui::End();
+
 }
 
 void TestRenderModule::on_scene_mouse_event(const Platform::MouseEvent &e)
