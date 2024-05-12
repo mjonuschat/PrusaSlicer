@@ -540,34 +540,35 @@ static std::vector<std::string> s_Preset_print_options {
     "small_area_infill_flow_compensation_compensation_factor_8",
     "small_area_infill_flow_compensation_compensation_factor_9",
 
-    "bridge_accel_to_decel",
     "bridge_jerk",
-    "default_accel_to_decel",
+    "bridge_minimum_cruise_ratio",
     "default_jerk",
-    "external_perimeter_accel_to_decel",
+    "default_minimum_cruise_ratio",
     "external_perimeter_jerk",
-    "first_layer_accel_to_decel_over_raft",
-    "first_layer_accel_to_decel",
+    "external_perimeter_minimum_cruise_ratio",
     "first_layer_jerk_over_raft",
     "first_layer_jerk",
-    "infill_accel_to_decel",
+    "first_layer_minimum_cruise_ratio_over_raft",
+    "first_layer_minimum_cruise_ratio",
     "infill_jerk",
-    "perimeter_accel_to_decel",
+    "infill_minimum_cruise_ratio",
     "perimeter_jerk",
-    "solid_infill_accel_to_decel",
+    "perimeter_minimum_cruise_ratio",
     "solid_infill_jerk",
-    "top_solid_infill_accel_to_decel",
+    "solid_infill_minimum_cruise_ratio",
     "top_solid_infill_jerk",
-    "travel_accel_to_decel",
+    "top_solid_infill_minimum_cruise_ratio",
     "travel_jerk",
-    "wipe_tower_accel_to_decel",
+    "travel_minimum_cruise_ratio",
     "wipe_tower_jerk",
+    "wipe_tower_minimum_cruise_ratio",
 
     "alternate_extra_perimeter", 
 
     "overhangs_reverse",
     "infill_reverse",
     "internal_perimeters_reverse",
+
 };
 
 static std::vector<std::string> s_Preset_filament_options {
@@ -598,8 +599,6 @@ static std::vector<std::string> s_Preset_machine_limits_options {
     "machine_max_feedrate_x", "machine_max_feedrate_y", "machine_max_feedrate_z", "machine_max_feedrate_e",
     "machine_min_extruding_rate", "machine_min_travel_rate",
     "machine_max_jerk_x", "machine_max_jerk_y", "machine_max_jerk_z", "machine_max_jerk_e",
-    // BOSS
-    "machine_max_accel_to_decel",
 };
 
 static std::vector<std::string> s_Preset_printer_options {

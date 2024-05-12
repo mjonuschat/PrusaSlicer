@@ -676,11 +676,11 @@ void PrintConfigDef::init_fff_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloat(0));
 
-    def = this->add("bridge_accel_to_decel", coFloat);
-    def->label = L("Accel to Decel");
-    def->tooltip = L("This is how fast the toolhead may go from acceleration to deceleration. "
+    def = this->add("bridge_minimum_cruise_ratio", coFloat);
+    def->label = L("Minimum Cruise Ratio");
+    def->tooltip = L("The minimum distance traveled at cruising speed relative to the total distance traveled before going from acceleration to deceleration. "
                    "Set zero to disable control for bridges.");
-    def->sidetext = L("mm/s²");
+    def->sidetext = L("mm");
     def->min = 0;
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloat(0));
@@ -990,11 +990,11 @@ void PrintConfigDef::init_fff_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloat(0));
 
-    def = this->add("default_accel_to_decel", coFloat);
-    def->label = L("Accel to Decel");
-    def->tooltip = L("This is how fast the toolhead may go from acceleration to deceleration. "
-                   "Set zero to disable all accel to decel controls.");
-    def->sidetext = L("mm/s²");
+    def = this->add("default_minimum_cruise_ratio", coFloat);
+    def->label = L("Minimum Cruise Ratio");
+    def->tooltip = L("The minimum distance traveled at cruising speed relative to the total distance traveled before going from acceleration to deceleration. "
+                   "Set zero to disable all Minimum Cruise Ratio controls.");
+    def->sidetext = L("mm");
     def->min = 0;
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloat(0));
@@ -1652,11 +1652,11 @@ void PrintConfigDef::init_fff_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloat(0));
 
-    def = this->add("first_layer_accel_to_decel", coFloat);
-    def->label = L("Accel to Decel");
-    def->tooltip = L("This is how fast the toolhead may go from acceleration to deceleration. "
+    def = this->add("first_layer_minimum_cruise_ratio", coFloat);
+    def->label = L("Minimum Cruise Ratio");
+    def->tooltip = L("The minimum distance traveled at cruising speed relative to the total distance traveled before going from acceleration to deceleration. "
                    "Set zero to disable control for first_layer.");
-    def->sidetext = L("mm/s²");
+    def->sidetext = L("mm");
     def->min = 0;
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloat(0));
@@ -1679,11 +1679,11 @@ void PrintConfigDef::init_fff_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloat(0));
 
-    def = this->add("first_layer_accel_to_decel_over_raft", coFloat);
-    def->label = L("Accel to Decel");
-    def->tooltip = L("This is how fast the toolhead may go from acceleration to deceleration. "
+    def = this->add("first_layer_minimum_cruise_ratio_over_raft", coFloat);
+    def->label = L("Minimum Cruise Ratio");
+    def->tooltip = L("The minimum distance traveled at cruising speed relative to the total distance traveled before going from acceleration to deceleration. "
                    "Set zero to disable control for first layer of object above raft interface.");
-    def->sidetext = L("mm/s²");
+    def->sidetext = L("mm");
     def->min = 0;
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloat(0));
@@ -1903,11 +1903,11 @@ void PrintConfigDef::init_fff_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloat(0));
 
-    def = this->add("infill_accel_to_decel", coFloat);
-    def->label = L("Accel to Decel");
-    def->tooltip = L("This is how fast the toolhead may go from acceleration to deceleration. "
+    def = this->add("infill_minimum_cruise_ratio", coFloat);
+    def->label = L("Minimum Cruise Ratio");
+    def->tooltip = L("The minimum distance traveled at cruising speed relative to the total distance traveled before going from acceleration to deceleration. "
                    "Set zero to disable control for infill.");
-    def->sidetext = L("mm/s²");
+    def->sidetext = L("mm");
     def->min = 0;
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloat(0));
@@ -1930,11 +1930,11 @@ void PrintConfigDef::init_fff_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloat(0));
 
-    def = this->add("solid_infill_accel_to_decel", coFloat);
-    def->label = L("Accel to Decel");
-    def->tooltip = L("This is how fast the toolhead may go from acceleration to deceleration. "
+    def = this->add("solid_infill_minimum_cruise_ratio", coFloat);
+    def->label = L("Minimum Cruise Ratio");
+    def->tooltip = L("The minimum distance traveled at cruising speed relative to the total distance traveled before going from acceleration to deceleration. "
                    "Set zero to disable control for solid infill.");
-    def->sidetext = L("mm/s²");
+    def->sidetext = L("mm");
     def->min = 0;
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloat(0));
@@ -1957,11 +1957,11 @@ void PrintConfigDef::init_fff_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloat(0));
 
-    def = this->add("top_solid_infill_accel_to_decel", coFloat);
-    def->label = L("Accel to Decel");
-    def->tooltip = L("This is how fast the toolhead may go from acceleration to deceleration. "
+    def = this->add("top_solid_infill_minimum_cruise_ratio", coFloat);
+    def->label = L("Minimum Cruise Ratio");
+    def->tooltip = L("The minimum distance traveled at cruising speed relative to the total distance traveled before going from acceleration to deceleration. "
                    "Set zero to disable control for top solid infill.");
-    def->sidetext = L("mm/s²");
+    def->sidetext = L("mm");
     def->min = 0;
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloat(0));
@@ -1976,7 +1976,7 @@ void PrintConfigDef::init_fff_params()
     def->set_default_value(new ConfigOptionInt(0));
 
     def = this->add("wipe_tower_acceleration", coFloat);
-    def->label = L("Wipe tower");
+    def->label = L("Acceleration");
     def->tooltip = L("This is the acceleration your printer will use for wipe tower. Set zero to disable "
                      "acceleration control for the wipe tower.");
     def->sidetext = L("mm/s²");
@@ -1984,11 +1984,11 @@ void PrintConfigDef::init_fff_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloat(0));
 
-    def = this->add("wipe_tower_accel_to_decel", coFloat);
-    def->label = L("Accel to Decel");
-    def->tooltip = L("This is how fast the toolhead may go from acceleration to deceleration. "
+    def = this->add("wipe_tower_minimum_cruise_ratio", coFloat);
+    def->label = L("Minimum Cruise Ratio");
+    def->tooltip = L("The minimum distance traveled at cruising speed relative to the total distance traveled before going from acceleration to deceleration. "
                    "Set zero to disable control for the wipe tower.");
-    def->sidetext = L("mm/s²");
+    def->sidetext = L("mm");
     def->min = 0;
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloat(0));
@@ -2011,11 +2011,11 @@ void PrintConfigDef::init_fff_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloat(0));
 
-    def = this->add("travel_accel_to_decel", coFloat);
-    def->label = L("Accel to Decel");
-    def->tooltip = L("This is how fast the toolhead may go from acceleration to deceleration. "
+    def = this->add("travel_minimum_cruise_ratio", coFloat);
+    def->label = L("Minimum Cruise Ratio");
+    def->tooltip = L("The minimum distance traveled at cruising speed relative to the total distance traveled before going from acceleration to deceleration. "
                    "Set zero to disable control for travel.");
-    def->sidetext = L("mm/s²");
+    def->sidetext = L("mm");
     def->min = 0;
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloat(0));
@@ -2430,16 +2430,6 @@ void PrintConfigDef::init_fff_params()
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloats{ 1500., 1250. });
 
-    // Klipper: SET_VELOCITY_LIMIT ACCEL_TO_DECEL=... [mm/sec^2]
-    def = this->add("machine_max_accel_to_decel", coFloats);
-    def->full_label = L("Maximum acceleration to deceleration.");
-    def->category = L("Machine limits");
-    def->tooltip = L("Maximum pseudo acceleration when transitioning from acceleration to deceleration.");
-    def->sidetext = L("mm/s²");
-    def->min = 0;
-    def->mode = comAdvanced;
-    def->set_default_value(new ConfigOptionFloats{ 750., 625. });
-
     // M204 R... [mm/sec^2]
     def = this->add("machine_max_acceleration_retracting", coFloats);
     def->full_label = L("Maximum acceleration when retracting");
@@ -2837,11 +2827,11 @@ void PrintConfigDef::init_fff_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloat(0));
 
-    def = this->add("perimeter_accel_to_decel", coFloat);
-    def->label = L("Accel to Decel");
-    def->tooltip = L("This is how fast the toolhead may go from acceleration to deceleration. "
+    def = this->add("perimeter_minimum_cruise_ratio", coFloat);
+    def->label = L("Minimum Cruise Ratio");
+    def->tooltip = L("The minimum distance traveled at cruising speed relative to the total distance traveled before going from acceleration to deceleration. "
                    "Set zero to disable control for perimeters.");
-    def->sidetext = L("mm/s²");
+    def->sidetext = L("mm");
     def->min = 0;
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloat(0));
@@ -2862,11 +2852,11 @@ void PrintConfigDef::init_fff_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloat(0));
 
-    def = this->add("external_perimeter_accel_to_decel", coFloat);
-    def->label = L("Accel to Decel");
-    def->tooltip = L("This is how fast the toolhead may go from acceleration to deceleration. "
+    def = this->add("external_perimeter_minimum_cruise_ratio", coFloat);
+    def->label = L("Minimum Cruise Ratio");
+    def->tooltip = L("The minimum distance traveled at cruising speed relative to the total distance traveled before going from acceleration to deceleration. "
                    "Set zero to disable control for bridges.");
-    def->sidetext = L("mm/s²");
+    def->sidetext = L("mm");
     def->min = 0;
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloat(0));
