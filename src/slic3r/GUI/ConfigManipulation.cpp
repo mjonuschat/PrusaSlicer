@@ -285,12 +285,12 @@ void ConfigManipulation::toggle_print_fff_options(DynamicPrintConfig* config)
                     "first_layer_jerk", "first_layer_jerk_over_raft", "wipe_tower_jerk", "travel_jerk" })
         toggle_field(el, have_default_jerk);
 
-    bool have_accel_to_decel = config->opt_float("default_accel_to_decel") > 0 && gcflavor == gcfKlipper;
-    for (auto el : { "perimeter_accel_to_decel", "infill_accel_to_decel", "top_solid_infill_accel_to_decel",
-                    "solid_infill_accel_to_decel", "external_perimeter_accel_to_decel", "bridge_accel_to_decel",
-                    "first_layer_accel_to_decel", "first_layer_accel_to_decel_over_raft", "travel_accel_to_decel",
-                    "wipe_tower_accel_to_decel" })
-        toggle_field(el, have_accel_to_decel);
+    bool have_minimum_cruise_ratio = config->opt_float("default_minimum_cruise_ratio") > 0 && gcflavor == gcfKlipper;
+    for (auto el : { "perimeter_minimum_cruise_ratio", "infill_minimum_cruise_ratio", "top_solid_infill_minimum_cruise_ratio",
+                    "solid_infill_minimum_cruise_ratio", "external_perimeter_minimum_cruise_ratio", "bridge_minimum_cruise_ratio",
+                    "first_layer_minimum_cruise_ratio", "first_layer_minimum_cruise_ratio_over_raft", "travel_minimum_cruise_ratio",
+                    "wipe_tower_minimum_cruise_ratio" })
+        toggle_field(el, have_minimum_cruise_ratio);
 
     bool have_skirt = config->opt_int("skirts") > 0;
     toggle_field("skirt_height", have_skirt && config->opt_enum<DraftShield>("draft_shield") != dsEnabled);

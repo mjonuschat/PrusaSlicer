@@ -2992,7 +2992,7 @@ std::string GCodeGenerator::extrude_loop(const ExtrusionLoop &loop_src, bool rev
     // reset acceleration
     gcode += m_writer.set_print_acceleration(
         fast_round_up<unsigned int>(m_config.default_acceleration.value),
-        fast_round_up<unsigned int>(m_config.default_accel_to_decel.value),
+        m_config.default_minimum_cruise_ratio,
         "Default"
     );
     //reset jerk
@@ -3046,7 +3046,7 @@ std::string GCodeGenerator::extrude_skirt(
     // reset acceleration
     gcode += m_writer.set_print_acceleration(
         fast_round_up<unsigned int>(m_config.default_acceleration.value),
-        fast_round_up<unsigned int>(m_config.default_accel_to_decel.value),
+        m_config.default_minimum_cruise_ratio,
         "Default"
     );
     // reset jerk
@@ -3080,7 +3080,7 @@ std::string GCodeGenerator::extrude_multi_path(const ExtrusionMultiPath &multipa
     // reset acceleration
     gcode += m_writer.set_print_acceleration(
         fast_round_up<unsigned int>(m_config.default_acceleration.value),
-        fast_round_up<unsigned int>(m_config.default_accel_to_decel.value),
+        m_config.default_minimum_cruise_ratio,
         "Default"
     );
     // reset jerk
@@ -3123,7 +3123,7 @@ std::string GCodeGenerator::extrude_path(const ExtrusionPath &path, bool reverse
     // reset acceleration
     gcode += m_writer.set_print_acceleration(
         fast_round_up<unsigned int>(m_config.default_acceleration.value),
-        fast_round_up<unsigned int>(m_config.default_accel_to_decel.value),
+        m_config.default_minimum_cruise_ratio,
         "Default"
     );
     // reset jerk
@@ -3363,38 +3363,38 @@ std::string GCodeGenerator::_extrude(
     // adjust acceleration
     if (m_config.default_acceleration.value > 0) {
         double acceleration;
-        double accel_to_decel;
+        double minimum_cruise_ratio;
         if (this->on_first_layer() && m_config.first_layer_acceleration.value > 0) {
             acceleration = m_config.first_layer_acceleration.value;
-            accel_to_decel = m_config.first_layer_accel_to_decel.value;
+            minimum_cruise_ratio = m_config.first_layer_minimum_cruise_ratio.value;
         } else if (this->object_layer_over_raft() && m_config.first_layer_acceleration_over_raft.value > 0) {
             acceleration = m_config.first_layer_acceleration_over_raft.value;
-            accel_to_decel = m_config.first_layer_accel_to_decel_over_raft.value;
+            minimum_cruise_ratio = m_config.first_layer_minimum_cruise_ratio_over_raft.value;
         } else if (m_config.bridge_acceleration.value > 0 && path_attr.role.is_bridge()) {
             acceleration = m_config.bridge_acceleration.value;
-            accel_to_decel = m_config.bridge_accel_to_decel.value;
+            minimum_cruise_ratio = m_config.bridge_minimum_cruise_ratio.value;
         } else if (m_config.top_solid_infill_acceleration > 0 && path_attr.role == ExtrusionRole::TopSolidInfill) {
             acceleration = m_config.top_solid_infill_acceleration.value;
-            accel_to_decel = m_config.top_solid_infill_accel_to_decel.value;
+            minimum_cruise_ratio = m_config.top_solid_infill_minimum_cruise_ratio.value;
         } else if (m_config.solid_infill_acceleration > 0 && path_attr.role.is_solid_infill()) {
             acceleration = m_config.solid_infill_acceleration.value;
-            accel_to_decel = m_config.solid_infill_accel_to_decel.value;
+            minimum_cruise_ratio = m_config.solid_infill_minimum_cruise_ratio.value;
         } else if (m_config.infill_acceleration.value > 0 && path_attr.role.is_infill()) {
             acceleration = m_config.infill_acceleration.value;
-            accel_to_decel = m_config.infill_accel_to_decel.value;
+            minimum_cruise_ratio = m_config.infill_minimum_cruise_ratio.value;
         } else if (m_config.external_perimeter_acceleration > 0 && path_attr.role.is_external_perimeter()) {
             acceleration = m_config.external_perimeter_acceleration.value;
-            accel_to_decel = m_config.external_perimeter_accel_to_decel.value;
+            minimum_cruise_ratio = m_config.external_perimeter_minimum_cruise_ratio.value;
         } else if (m_config.perimeter_acceleration.value > 0 && path_attr.role.is_perimeter()) {
             acceleration = m_config.perimeter_acceleration.value;
-            accel_to_decel = m_config.perimeter_accel_to_decel.value;
+            minimum_cruise_ratio = m_config.perimeter_minimum_cruise_ratio.value;
         } else {
             acceleration = m_config.default_acceleration.value;
-            accel_to_decel = m_config.default_accel_to_decel.value;
+            minimum_cruise_ratio = m_config.default_minimum_cruise_ratio.value;
         }
         gcode += m_writer.set_print_acceleration(
             fast_round_up<unsigned int>(acceleration),
-            fast_round_up<unsigned int>(accel_to_decel),
+            minimum_cruise_ratio,
             gcode_extrusion_role_to_string(extrusion_role_to_gcode_extrusion_role(path_attr.role))
         );
     }
@@ -3631,7 +3631,6 @@ std::string GCodeGenerator::generate_travel_gcode(
     std::string gcode;
 
     const unsigned acceleration = fast_round_up<unsigned int>(m_config.travel_acceleration.value);
-    const unsigned accel_to_decel = fast_round_up<unsigned int>(m_config.travel_accel_to_decel.value);
 
     if (travel.empty()) {
         return "";
@@ -3639,7 +3638,7 @@ std::string GCodeGenerator::generate_travel_gcode(
 
     // generate G-code for the travel move
     // use G1 because we rely on paths being straight (G0 may make round paths)
-    gcode += this->m_writer.set_travel_acceleration(acceleration, accel_to_decel);
+    gcode += this->m_writer.set_travel_acceleration(acceleration, m_config.travel_minimum_cruise_ratio.value);
     if (m_config.default_jerk > 0 && m_config.travel_jerk > 0)
         gcode += this->m_writer.set_jerk(m_config.travel_jerk, "Travel");
 
@@ -3662,7 +3661,7 @@ std::string GCodeGenerator::generate_travel_gcode(
     if (! GCodeWriter::supports_separate_travel_acceleration(config().gcode_flavor)) {
         // In case that this flavor does not support separate print and travel acceleration,
         // reset acceleration to default.
-        gcode += this->m_writer.set_print_acceleration(m_config.default_acceleration, m_config.default_accel_to_decel, "Default");
+        gcode += this->m_writer.set_print_acceleration(m_config.default_acceleration, m_config.default_minimum_cruise_ratio, "Default");
     }
 
     if (m_config.default_jerk > 0 && m_config.travel_jerk > 0)
