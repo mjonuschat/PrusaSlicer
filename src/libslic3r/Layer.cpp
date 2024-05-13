@@ -686,6 +686,7 @@ void Layer::make_perimeters()
                                (other_config.gap_fill_enabled ? other_config.gap_fill_speed.value : 0.)
     		                && config.overhangs                   == other_config.overhangs
     		                && config.opt_serialize("perimeter_extrusion_width") == other_config.opt_serialize("perimeter_extrusion_width")
+		                && config.opt_serialize("external_perimeter_extrusion_width") == other_config.opt_serialize("external_perimeter_extrusion_width")
     		                && config.thin_walls                  == other_config.thin_walls
     		                && config.external_perimeters_first   == other_config.external_perimeters_first
     		                && config.infill_overlap              == other_config.infill_overlap
