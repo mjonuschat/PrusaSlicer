@@ -996,7 +996,7 @@ static inline std::vector<std::vector<ExPolygons>> mm_segmentation_top_and_botto
         // Maximum number of bottom layers for a queried color.
         int     bottom_solid_layers     { 0 };
     };
-    auto layer_color_stat = [&layers = std::as_const(layers)](const size_t layer_idx, const size_t color_idx) -> LayerColorStat {
+    auto layer_color_stat = [&layers = std::as_const(layers), &print_object](const size_t layer_idx, const size_t color_idx) -> LayerColorStat {
         LayerColorStat out;
         const Layer &layer = *layers[layer_idx];
         for (const LayerRegion *region : layer.regions())
@@ -1004,14 +1004,16 @@ static inline std::vector<std::vector<ExPolygons>> mm_segmentation_top_and_botto
                 // color_idx == 0 means "don't know" extruder aka the underlying extruder.
                 // As this region may split existing regions, we collect statistics over all regions for color_idx == 0.
                 color_idx == 0 || config.perimeter_extruder == int(color_idx)) {
-                out.extrusion_width     = std::max<float>(out.extrusion_width, float(config.perimeter_extrusion_width));
+                const double nozzle_diameter = print_object.print()->config().nozzle_diameter.get_at(0);
+                double perimeter_extrusion_width = config.get_abs_value("perimeter_extrusion_width", nozzle_diameter);
+                out.extrusion_width     = std::max<float>(out.extrusion_width, perimeter_extrusion_width);
                 out.top_solid_layers    = std::max<int>(out.top_solid_layers, config.top_solid_layers);
                 out.bottom_solid_layers = std::max<int>(out.bottom_solid_layers, config.bottom_solid_layers);
                 out.small_region_threshold = config.gap_fill_enabled.value && config.gap_fill_speed.value > 0 ?
                                              // Gap fill enabled. Enable a single line of 1/2 extrusion width.
-                                             0.5f * float(config.perimeter_extrusion_width) :
+                                             0.5f * perimeter_extrusion_width :
                                              // Gap fill disabled. Enable two lines slightly overlapping.
-                                             float(config.perimeter_extrusion_width) + 0.7f * Flow::rounded_rectangle_extrusion_spacing(float(config.perimeter_extrusion_width), float(layer.height));
+                                             perimeter_extrusion_width + 0.7f * Flow::rounded_rectangle_extrusion_spacing(perimeter_extrusion_width, float(layer.height));
                 out.small_region_threshold = scaled<float>(out.small_region_threshold * 0.5f);
                 ++ out.num_regions;
             }
