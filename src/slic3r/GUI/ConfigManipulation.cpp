@@ -1,5 +1,6 @@
 ///|/ Copyright (c) Prusa Research 2019 - 2023 Lukáš Hejl @hejllukas, Vojtěch Bubník @bubnikv, Lukáš Matěna @lukasmatena, Oleksandra Iushchenko @YuSanka, Pavel Mikuš @Godrak, Tomáš Mészáros @tamasmeszaros
 ///|/ Copyright (c) OrcaSlicer 2023 Noisyfox @Noisyfox
+///|/ Copyright (c) SuperSlicer 2020 Remi Durand @supermerill
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
@@ -442,6 +443,16 @@ void ConfigManipulation::toggle_print_fff_options(DynamicPrintConfig* config)
     toggle_field("raft_contact_distance", have_raft && !have_support_soluble);
     for (auto el : { "raft_expansion", "first_layer_speed_over_raft" })
         toggle_field(el, have_raft);
+
+    // for default_extrusion_width/spacing, you need to have at least an extrusion_width with 0
+    bool have_default_width = config->option("first_layer_extrusion_width")->getFloat() == 0 ||
+        (config->option("perimeter_extrusion_width")->getFloat() == 0 && (have_perimeters || have_brim)) ||
+        (config->option("external_perimeter_extrusion_width")->getFloat() == 0 && have_perimeters) ||
+        (config->option("infill_extrusion_width")->getFloat() == 0 && (have_infill || has_solid_infill)) ||
+        (config->option("solid_infill_extrusion_width")->getFloat() == 0 && has_solid_infill) ||
+        (config->option("top_infill_extrusion_width")->getFloat() == 0 && has_top_solid_infill) ||
+        (config->option("support_material_extrusion_width")->getFloat() == 0 && have_support_material);
+    toggle_field("extrusion_width", have_default_width);
 
     bool has_ironing = config->opt_bool("ironing");
     for (auto el : { "ironing_type", "ironing_flowrate", "ironing_spacing", "ironing_speed" })

@@ -111,8 +111,8 @@ SCENARIO("Placeholder parser scripting", "[PlaceholderParser]") {
     // Test the "coFloatOrPercent" and "xxx_extrusion_width" substitutions.
     // first_layer_extrusion_width ratio_over first_layer_heigth.
     SECTION("perimeter_extrusion_width") { REQUIRE(std::stod(parser.process("{perimeter_extrusion_width}")) == Approx(0.67500001192092896)); }
-    SECTION("first_layer_extrusion_width") { REQUIRE(std::stod(parser.process("{first_layer_extrusion_width}")) == Approx(0.9)); }
-    SECTION("support_material_xy_spacing") { REQUIRE(std::stod(parser.process("{support_material_xy_spacing}")) == Approx(0.3375)); }
+    SECTION("first_layer_extrusion_width") { REQUIRE(std::stod(parser.process("{first_layer_extrusion_width}")) == Approx(0.84)); }
+    SECTION("support_material_xy_spacing") { REQUIRE(std::stod(parser.process("{support_material_xy_spacing}")) == Approx(0.315)); }
     // external_perimeter_speed over perimeter_speed
     SECTION("external_perimeter_speed") { REQUIRE(std::stod(parser.process("{external_perimeter_speed}")) == Approx(30.)); }
     // infill_overlap over perimeter_extrusion_width
