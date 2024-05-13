@@ -5,6 +5,7 @@
 ///|/ ported from lib/Slic3r/Layer.pm:
 ///|/ Copyright (c) Prusa Research 2016 - 2022 Vojtěch Bubník @bubnikv
 ///|/ Copyright (c) Slic3r 2011 - 2016 Alessandro Ranellucci @alranel
+///|/ Copyright (c) SuperSlicer 2020 Remi Durand @supermerill
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
@@ -656,7 +657,8 @@ inline bool has_compatible_layer_regions(const PrintRegionConfig &config, const 
            config.external_perimeter_speed                              == other_config.external_perimeter_speed &&
            (config.gap_fill_enabled ? config.gap_fill_speed.value : 0.) == (other_config.gap_fill_enabled ? other_config.gap_fill_speed.value : 0.) &&
            config.overhangs                                             == other_config.overhangs &&
-           config.opt_serialize("perimeter_extrusion_width")     == other_config.opt_serialize("perimeter_extrusion_width") &&
+           config.opt_serialize("perimeter_extrusion_width")            == other_config.opt_serialize("perimeter_extrusion_width") &&
+           config.opt_serialize("external_perimeter_extrusion_width")   == other_config.opt_serialize("external_perimeter_extrusion_width") &&
            config.thin_walls                                            == other_config.thin_walls &&
            config.external_perimeters_first                             == other_config.external_perimeters_first &&
            config.infill_overlap                                        == other_config.infill_overlap &&
