@@ -15,6 +15,7 @@
 ///|/ Copyright (c) 2012 QuantumConcepts
 ///|/ Copyright (c) 2012 Henrik Brix Andersen @henrikbrixandersen
 ///|/ Copyright (c) OrcaSlicer 2023 Noisyfox @Noisyfox
+///|/ Copyright (c) SuperSlicer 2020 Remi Durand @supermerill
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
@@ -1822,10 +1823,10 @@ void TabPrint::build()
 
         optgroup = page->new_optgroup(L("Overlap"));
         optgroup->append_single_option_line("infill_overlap");
+        optgroup->append_single_option_line("bridge_density");
 
         optgroup = page->new_optgroup(L("Flow"));
         optgroup->append_single_option_line("bridge_flow_ratio");
-        optgroup->append_single_option_line("bridge_density");
 
         optgroup = page->new_optgroup(L("Slicing"));
         optgroup->append_single_option_line("slice_closing_radius");
