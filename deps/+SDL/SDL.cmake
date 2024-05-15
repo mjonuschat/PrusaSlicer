@@ -7,4 +7,5 @@ add_cmake_project(
             -DINCLUDE_INSTALL_DIR=${CMAKE_INSTALL_INCLUDEDIR}
             -DBUILD_SHARED_LIBS=ON
             -DCMAKE_BUILD_SHARED_LIBS=ON
+        EMSCRIPTEN_PORT sdl2
 )

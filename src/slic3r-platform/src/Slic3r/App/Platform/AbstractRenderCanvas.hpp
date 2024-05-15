@@ -29,8 +29,8 @@ public:
     void dispatch_on_main_thread(Function func) override
     { m_main_thread_dispatcher.dispatch_on_main_thread(func); }
 
-    void dispatch() override
-    { m_main_thread_dispatcher.dispatch(); }
+    bool dispatch_enqueued() override
+    { return m_main_thread_dispatcher.dispatch_enqueued(); }
 
 protected:
     virtual void begin_frame_platform() = 0;

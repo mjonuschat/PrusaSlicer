@@ -186,6 +186,8 @@ foreach (pkg ${FOUND_PACKAGES})
             list(APPEND DEPS_TO_BUILD ${pkg})
           endif ()
         endif ()
+    else()
+        message(status "Skipping package ${pkg}")
     endif ()
 endforeach()
 

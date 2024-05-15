@@ -26,8 +26,13 @@ add_cmake_project(LibBGCode
     CMAKE_ARGS
         -DLibBGCode_BUILD_TESTS:BOOL=OFF
         -DLibBGCode_BUILD_CMD_TOOL:BOOL=OFF
+        -DCMAKE_FIND_ROOT_PATH=/
 )
 
 # set(DEP_LibBGCode_deps_DEPENDS ZLIB Boost)
 # set(DEP_LibBGCode_DEPENDS LibBGCode_deps)
-set(DEP_LibBGCode_DEPENDS ZLIB Boost heatshrink)
+if (EMSCRIPTEN)
+    set(DEP_LibBGCode_DEPENDS heatshrink)
+else ()
+    set(DEP_LibBGCode_DEPENDS ZLIB Boost heatshrink)
+endif ()

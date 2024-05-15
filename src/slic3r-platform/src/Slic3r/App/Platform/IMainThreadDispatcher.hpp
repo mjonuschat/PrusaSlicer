@@ -12,7 +12,7 @@ public:
     virtual ~IMainThreadDispatcher() = default;
 
     virtual void dispatch_on_main_thread(Function func) = 0;
-    virtual void dispatch() = 0;
+    virtual bool dispatch_enqueued() = 0;
 };
 
 }

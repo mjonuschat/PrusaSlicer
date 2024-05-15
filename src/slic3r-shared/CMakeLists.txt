@@ -21,21 +21,25 @@ set(SLIC3R_SHARED_FILES
         ./src/Slic3r/Biz/Plater/ConfigViewModel.hpp
         ./src/Slic3r/Biz/Interactor/SceneInteractor.hpp
         ./src/Slic3r/Biz/Interactor/SceneInteractor.cpp
-        ./src/Slic3r/Domain/ConfigContainer.hpp
-        ./src/Slic3r/Domain/DataManager.cpp
-        ./src/Slic3r/Domain/Project.cpp
-        ./src/Slic3r/Domain/Bed.hpp
-        ./src/Slic3r/Domain/Workbench.cpp
-        ./src/Slic3r/Domain/DataManager.hpp
-        ./src/Slic3r/Domain/Project.hpp
-        ./src/Slic3r/Domain/Bed.cpp
-        ./src/Slic3r/Domain/Workbench.hpp
-        ./src/Slic3r/Domain/ConfigContainer.cpp
-
         ./src/Slic3r/App/TestRenderModule.hpp
         ./src/Slic3r/App/TestRenderModule.cpp
-
 )
+
+if (NOT EMSCRIPTEN)
+    set(SLIC3R_SHARED_FILE
+            ${SLIC3R_SHARED_FILES}
+            ./src/Slic3r/Domain/ConfigContainer.hpp
+            ./src/Slic3r/Domain/DataManager.cpp
+            ./src/Slic3r/Domain/Project.cpp
+            ./src/Slic3r/Domain/Bed.hpp
+            ./src/Slic3r/Domain/Workbench.cpp
+            ./src/Slic3r/Domain/DataManager.hpp
+            ./src/Slic3r/Domain/Project.hpp
+            ./src/Slic3r/Domain/Bed.cpp
+            ./src/Slic3r/Domain/Workbench.hpp
+            ./src/Slic3r/Domain/ConfigContainer.cpp
+    )
+endif()
 
 add_library(slic3r-shared STATIC ${SLIC3R_SHARED_FILES})
 target_link_libraries(slic3r-shared PUBLIC slic3r-platform libslic3r)

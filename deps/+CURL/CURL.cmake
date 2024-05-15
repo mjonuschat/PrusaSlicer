@@ -64,6 +64,7 @@ add_cmake_project(CURL
   # PATCH_COMMAND       ${GIT_EXECUTABLE} checkout -f -- . && git clean -df && 
   #                     ${GIT_EXECUTABLE} apply --whitespace=fix ${CMAKE_CURRENT_LIST_DIR}/curl-mods.patch
   PATCH_COMMAND       "${_patch_command}"
+  EMSCRIPTEN_EXCLUDED TRUE
   CMAKE_ARGS
     -DBUILD_TESTING:BOOL=OFF
     -DCMAKE_POSITION_INDEPENDENT_CODE=ON

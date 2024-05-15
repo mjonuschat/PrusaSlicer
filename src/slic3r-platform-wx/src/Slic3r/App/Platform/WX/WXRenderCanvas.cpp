@@ -464,7 +464,7 @@ void WXRenderCanvas::on_mouse(wxMouseEvent& evt)
 
 void WXRenderCanvas::on_idle(wxIdleEvent& event)
 {
-    dispatch();
+    dispatch_enqueued();
     bool render_requested = get_and_reset_render_requested();
     std::cout << "Idle: render requested: " << render_requested << "\n";
     if (render_requested)

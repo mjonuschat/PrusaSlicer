@@ -11,7 +11,7 @@ class StdMainThreadDispatcher : public IMainThreadDispatcher
 {
 public:
     void dispatch_on_main_thread(Function func) override;
-    void dispatch() override;
+    bool dispatch_enqueued() override;
 
 private:
     using Functions = std::vector<Function>;

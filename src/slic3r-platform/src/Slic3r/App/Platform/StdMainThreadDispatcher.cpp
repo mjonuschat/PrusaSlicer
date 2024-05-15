@@ -8,7 +8,7 @@ void StdMainThreadDispatcher::dispatch_on_main_thread(Function func)
     m_queue.push_back(func);
 }
 
-void Slic3r::App::Platform::StdMainThreadDispatcher::dispatch()
+bool StdMainThreadDispatcher::dispatch_enqueued()
 {
     Functions to_process;
 
@@ -25,7 +25,7 @@ void Slic3r::App::Platform::StdMainThreadDispatcher::dispatch()
     {
         func();
     }
-
+    return !to_process.empty();
 }
 
 }

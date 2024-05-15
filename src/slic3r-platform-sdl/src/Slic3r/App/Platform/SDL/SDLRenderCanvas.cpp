@@ -50,26 +50,37 @@ SDLRenderCanvas::SDLRenderCanvas()
     m_window = SDL_CreateWindow("Slic3r3", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, window_flags);
     m_gl_context = SDL_GL_CreateContext(m_window);
     SDL_GL_MakeCurrent(m_window, m_gl_context);
+#ifndef __EMSCRIPTEN__
     SDL_GL_SetSwapInterval(1); // Enable vsync
+#endif
 
     const auto err = glewInit();
     if (err != GLEW_NO_ERROR) {
         throw PlatformError(std::string("GLEW init failed with code ") + std::to_string(err));
     }
+    printf("SDLCanvas 4\n");
+
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO &io = ImGui::GetIO();
     (void) io;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
+    printf("SDLCanvas 5\n");
+
+#ifdef __EMSCRIPTEN__
+    io.IniFilename = nullptr;
+#endif
 
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
     // ImGui::StyleColorsLight();
 
+    printf("SDLCanvas 6\n");
     // Setup Platform/Renderer backends
     init_sdl_imgui();
     ImGui_ImplOpenGL3_Init(glsl_version);
+    printf("SDLCanvas 7\n");
 }
 
 SDLRenderCanvas::~SDLRenderCanvas()
@@ -165,18 +176,37 @@ void SDLRenderCanvas::poll_events()
     SDL_Event event;
     while (SDL_PollEvent(&event))
     {
-        pass_event_to_imgui(event);
-        pass_event_to_scene(event);
-
-        if (event.type == SDL_QUIT)
-            m_should_quit = true;
-        if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE && event.window.windowID == SDL_GetWindowID(m_window))
-            m_should_quit = true;
+        process_event(event);
     }
+}
+
+void SDLRenderCanvas::wait_for_events()
+{
+    SDL_Event event;
+    bool render_required = false;
+    while (!render_required) {
+        if (SDL_WaitEventTimeout(&event, 1000 / 60) == 1) {
+            process_event(event);
+            render_required = true;
+        }
+        render_required |= get_and_reset_render_requested();
+        render_required |= AbstractRenderCanvas::dispatch_enqueued();
+    }
+}
+
+void SDLRenderCanvas::process_event(const SDL_Event& event)
+{
+    pass_event_to_imgui(event);
+    pass_event_to_scene(event);
+
+    if (event.type == SDL_QUIT)
+        m_should_quit = true;
+    if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE && event.window.windowID == SDL_GetWindowID(m_window))
+        m_should_quit = true;
 
 }
 
-bool SDLRenderCanvas::pass_event_to_imgui(SDL_Event& event) {
+bool SDLRenderCanvas::pass_event_to_imgui(const SDL_Event& event) {
     ImGuiIO& io = ImGui::GetIO();
     switch (event.type)
     {
@@ -327,7 +357,7 @@ double SDLRenderCanvas::get_platform_time()
     return double(current_time) / frequency;
 }
 
-void SDLRenderCanvas::pass_event_to_scene(SDL_Event& event)
+void SDLRenderCanvas::pass_event_to_scene(const SDL_Event& event)
 {
     if (event.type == SDL_KEYDOWN || event.type == SDL_KEYUP)
     {

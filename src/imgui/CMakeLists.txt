@@ -31,14 +31,17 @@ target_include_directories(
         imgui_backend_ogl3_glfw PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-find_package(glfw3 3.3 REQUIRED)
-target_link_libraries(
-        imgui_backend_ogl3_glfw PUBLIC glfw3 OpenGL::GL GLEW::GLEW
-)
+if (NOT EMSCRIPTEN)
+    # There is conflict with Emscripten Port GLFW
+    find_package(glfw3 3.3 REQUIRED)
+    target_link_libraries(
+            imgui_backend_ogl3_glfw PUBLIC glfw3 OpenGL::GL GLEW::GLEW
+    )
 
-if (APPLE)
-    target_link_libraries(imgui_backend_ogl3_glfw PUBLIC "-framework Cocoa" "-framework IOKit")
-endif ()
+    if (APPLE)
+        target_link_libraries(imgui_backend_ogl3_glfw PUBLIC "-framework Cocoa" "-framework IOKit")
+    endif ()
+endif()
 
 
 add_library(imgui_backend_ogl3_sdl2 STATIC
@@ -53,10 +56,14 @@ target_include_directories(
 )
 
 # find_package(SDL2 REQUIRED COMPONENTS SDL2)
-find_package(SDL2 2 REQUIRED)
+if (EMSCRIPTEN)
+    find_package(SDL2 REQUIRED)
+else ()
+    find_package(SDL2 2 REQUIRED)
+endif ()
 
 target_link_libraries(
-        imgui_backend_ogl3_sdl2 SDL2::SDL2 OpenGL::GL GLEW::GLEW
+        imgui_backend_ogl3_sdl2 SDL2::SDL2 PlatformGL
 )
 
 if (APPLE)
@@ -73,7 +80,7 @@ target_include_directories(
 )
 
 target_link_libraries(
-        imgui_backend_ogl3 OpenGL::GL GLEW::GLEW
+        imgui_backend_ogl3 PlatformGL
 )
 
 if (APPLE)

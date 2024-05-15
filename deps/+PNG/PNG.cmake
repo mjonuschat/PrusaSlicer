@@ -15,6 +15,7 @@ add_cmake_project(PNG
     URL https://github.com/glennrp/libpng/archive/refs/tags/v1.6.35.zip
     URL_HASH SHA256=3d22d46c566b1761a0e15ea397589b3a5f36ac09b7c785382e6470156c04247f
     PATCH_COMMAND "${_patch_cmd}"
+    EMSCRIPTEN_PORT libpng
     CMAKE_ARGS
         -DPNG_SHARED=OFF
         -DPNG_STATIC=ON
