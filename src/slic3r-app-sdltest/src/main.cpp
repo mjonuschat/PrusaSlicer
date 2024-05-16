@@ -2,7 +2,10 @@
 #include <Slic3r/App/Platform/SDL/SDLRenderCanvas.hpp>
 #include "Slic3r/App/TestRenderModule.hpp"
 
-int main(int argc, char** argv)
+#include "Windows.h"
+
+//int main(int argc, char** argv)
+int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
 {
     Slic3r::App::Platform::SDL::SDLRenderCanvas canvas;
 

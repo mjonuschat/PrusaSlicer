@@ -4,6 +4,7 @@
 
 #include <gl/glew.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
+#include "SDL_syswm.h"
 
 #include <Slic3r/App/Platform/PlatformError.hpp>
 

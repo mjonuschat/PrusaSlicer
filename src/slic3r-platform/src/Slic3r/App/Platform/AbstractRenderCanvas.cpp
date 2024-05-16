@@ -1,6 +1,7 @@
 #include "AbstractRenderCanvas.hpp"
 
 #include <iostream>
+#include <algorithm>
 
 #include <imgui/imgui.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
