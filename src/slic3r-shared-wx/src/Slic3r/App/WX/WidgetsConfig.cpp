@@ -1,5 +1,6 @@
 
 #include "WidgetsConfig.hpp"
+#include "slic3r-shared/src/Slic3r/App/Color.hpp"
 
 #include <wx/window.h>
 #include <wx/toplevel.h>
@@ -195,7 +196,7 @@ const std::string WidgetsConfig::get_html_bg_color(wxWindow* html_parent)
         bgr_clr = wxSystemSettings::GetColour(wxSYS_COLOUR_WINDOW);
 #endif
 
-    return "";//!  encode_color(ColorRGB(bgr_clr.Red(), bgr_clr.Green(), bgr_clr.Blue()));
+    return encode_color(ColorRGB(bgr_clr.Red(), bgr_clr.Green(), bgr_clr.Blue()));
 }
 
 const std::string& WidgetsConfig::get_mode_btn_color(int mode_id)
@@ -217,7 +218,7 @@ bool WidgetsConfig::set_mode_palette(const std::vector<wxColour>& palette)
 
     for (size_t mode = 0; mode < palette.size(); ++mode) {
         const wxColour& clr = palette[mode];
-        std::string color_str = ""; //! clr == wxTransparentColour ? std::string("") : encode_color(ColorRGB(clr.Red(), clr.Green(), clr.Blue()));
+        std::string color_str = clr == wxTransparentColour ? std::string("") : encode_color(ColorRGB(clr.Red(), clr.Green(), clr.Blue()));
         if (m_mode_palette[mode] != color_str) {
             m_mode_palette[mode] = color_str;
             to_save = true;

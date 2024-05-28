@@ -35,6 +35,8 @@ set(SLIC3R_SHARED_FILES
         ./src/Slic3r/App/TestRenderModule.hpp
         ./src/Slic3r/App/TestRenderModule.cpp
 
+        ./src/Slic3r/App/Color.hpp
+        ./src/Slic3r/App/Color.cpp
 )
 
 add_library(slic3r-shared STATIC ${SLIC3R_SHARED_FILES})

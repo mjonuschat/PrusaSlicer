@@ -6,6 +6,9 @@
 #include "BitmapCache.hpp"
 
 #include "wxExtensions.hpp" //! ->from_u8
+
+#include "slic3r-shared/src/Slic3r/App/Color.hpp"
+
 //#include "libslic3r/Utils.hpp"
 //#include "../Utils/MacDarkMode.hpp"
 //#include "GUI.hpp"
@@ -639,13 +642,9 @@ wxBitmapBundle* BitmapCache::mksolid_bndl(size_t width, size_t height, const std
         if (color.empty())
             bndl = new wxBitmapBundle(mksolid(width, height, 0, 0, 0, wxALPHA_TRANSPARENT, size_t(0)));
         else {
-#if 0
             ColorRGB rgb;// [3] ;
             decode_color(color, rgb);
             bndl = new wxBitmapBundle(mksolid(width, height, rgb.r_uchar(), rgb.g_uchar(), rgb.b_uchar(), wxALPHA_OPAQUE, border_width, dark_mode));
-#else
-            bndl = new wxBitmapBundle(mksolid(width, height, 1, 1, 1, wxALPHA_OPAQUE, border_width, dark_mode));
-#endif
         }
         m_bndl_map[bitmap_key] = bndl;
     }
