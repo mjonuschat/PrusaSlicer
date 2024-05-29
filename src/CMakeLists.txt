@@ -14,6 +14,13 @@ if (NOT EMSCRIPTEN)
 endif()
 add_subdirectory(qoi)
 add_subdirectory(libnest2d)
+add_subdirectory(fmt)
+
+#set(FMT_INCLUDE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/fmt/include)
+#add_subdirectory(fmtlog)
+
+set(SPDLOG_FMT_EXTERNAL ${CMAKE_CURRENT_SOURCE_DIR}/fmt)
+add_subdirectory(spdlog)
 
 find_package(Qhull 7.2 REQUIRED)
 add_library(qhull INTERFACE)

@@ -6,6 +6,7 @@
 #include <imgui/backends/imgui_impl_opengl3.h>
 
 #include <Slic3r/App/Platform/PlatformError.hpp>
+#include <Slic3r/App/Render/commonGL.hpp>
 
 namespace Slic3r::App::Platform::SDL
 {
@@ -58,7 +59,8 @@ SDLRenderCanvas::SDLRenderCanvas()
     if (err != GLEW_NO_ERROR) {
         throw PlatformError(std::string("GLEW init failed with code ") + std::to_string(err));
     }
-    printf("SDLCanvas 4\n");
+
+    Render::initialize_gl();
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -66,7 +68,6 @@ SDLRenderCanvas::SDLRenderCanvas()
     ImGuiIO &io = ImGui::GetIO();
     (void) io;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
-    printf("SDLCanvas 5\n");
 
 #ifdef __EMSCRIPTEN__
     io.IniFilename = nullptr;
@@ -76,15 +77,15 @@ SDLRenderCanvas::SDLRenderCanvas()
     ImGui::StyleColorsDark();
     // ImGui::StyleColorsLight();
 
-    printf("SDLCanvas 6\n");
     // Setup Platform/Renderer backends
     init_sdl_imgui();
     ImGui_ImplOpenGL3_Init(glsl_version);
-    printf("SDLCanvas 7\n");
 }
 
 SDLRenderCanvas::~SDLRenderCanvas()
 {
+    std::cerr << "SDLRenderCanvas dtor\n";
+
     // Cleanup
     ImGui_ImplOpenGL3_Shutdown();
 
@@ -206,7 +207,8 @@ void SDLRenderCanvas::process_event(const SDL_Event& event)
 
 }
 
-bool SDLRenderCanvas::pass_event_to_imgui(const SDL_Event& event) {
+bool SDLRenderCanvas::pass_event_to_imgui(const SDL_Event& event)
+{
     ImGuiIO& io = ImGui::GetIO();
     switch (event.type)
     {
@@ -252,14 +254,7 @@ bool SDLRenderCanvas::pass_event_to_imgui(const SDL_Event& event) {
 
 void SDLRenderCanvas::begin_frame_platform()
 {
-
-}
-
-void SDLRenderCanvas::begin_imgui_frame_platform()
-{
     ImGuiIO& io = ImGui::GetIO();
-    IM_ASSERT(io.Fonts->IsBuilt() && "Font atlas not built! It is generally built by the renderer backend. Missing call to renderer _NewFrame() function? e.g. ImGui_ImplOpenGL3_NewFrame().");
-
     // Setup display size (every frame to accommodate for window resizing)
     int w, h;
     int display_w, display_h;
@@ -268,9 +263,13 @@ void SDLRenderCanvas::begin_imgui_frame_platform()
         w = h = 0;
     SDL_GL_GetDrawableSize(m_window, &display_w, &display_h);
     io.DisplaySize = ImVec2((float)w, (float)h);
+    set_screen_size(display_w, display_h);
     if (w > 0 && h > 0)
         io.DisplayFramebufferScale = ImVec2((float)display_w / w, (float)display_h / h);
+}
 
+void SDLRenderCanvas::begin_imgui_frame_platform()
+{
     update_imgui_mouse_position();
     update_imgui_mouse_cursor();
 }

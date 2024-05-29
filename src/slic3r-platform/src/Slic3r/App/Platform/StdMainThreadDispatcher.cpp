@@ -8,16 +8,22 @@ void StdMainThreadDispatcher::dispatch_on_main_thread(Function func)
     m_queue.push_back(func);
 }
 
-bool StdMainThreadDispatcher::dispatch_enqueued()
+void StdMainThreadDispatcher::dispatch_on_main_thread_after(Function func)
+{
+    std::scoped_lock lock(m_call_after_queue_mutex);
+    m_call_after_queue.push_back(func);
+}
+
+bool StdMainThreadDispatcher::process_queue(Functions& queue, std::mutex& queue_mutex)
 {
     Functions to_process;
 
     {
-        std::scoped_lock lock(m_queue_mutex);
+        std::scoped_lock lock(queue_mutex);
         to_process.insert(
             to_process.end(),
-            std::make_move_iterator(m_queue.begin()),
-            std::make_move_iterator(m_queue.end())
+            std::make_move_iterator(queue.begin()),
+            std::make_move_iterator(queue.end())
         );
     }
 
@@ -25,7 +31,15 @@ bool StdMainThreadDispatcher::dispatch_enqueued()
     {
         func();
     }
+
     return !to_process.empty();
+}
+
+bool StdMainThreadDispatcher::dispatch_enqueued()
+{
+    bool main_queue = process_queue(m_queue, m_queue_mutex);
+    bool after_queue = process_queue(m_call_after_queue, m_call_after_queue_mutex);
+    return main_queue || after_queue;
 }
 
 }

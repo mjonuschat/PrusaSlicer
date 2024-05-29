@@ -1,12 +1,19 @@
 set(SLIC3R_SHARED_FILES
+        ./src/Slic3r/App/Render/Context.hpp
+        ./src/Slic3r/App/Render/Context.cpp
         ./src/Slic3r/App/Render/Material.hpp
         ./src/Slic3r/App/Render/ShaderManager.hpp
+        ./src/Slic3r/App/Render/ShaderManager.cpp
         ./src/Slic3r/App/Render/ModelManager.hpp
         ./src/Slic3r/App/Render/Model.hpp
         ./src/Slic3r/App/Render/Texture.hpp
         ./src/Slic3r/App/Render/Drawable.hpp
         ./src/Slic3r/App/Render/Buffer.hpp
+        ./src/Slic3r/App/Render/Buffer.cpp
         ./src/Slic3r/App/Render/Shader.hpp
+        ./src/Slic3r/App/Render/Shader.cpp
+        ./src/Slic3r/App/Render/commonGL.hpp
+        ./src/Slic3r/App/Render/commonGL.cpp
         ./src/Slic3r/App/Plater/ScenePresenter.hpp
         ./src/Slic3r/App/View/IPanelView.hpp
         ./src/Slic3r/App/Preview/View/DoubleSlider.cpp

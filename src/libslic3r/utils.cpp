@@ -18,6 +18,8 @@
 #include "format.hpp"
 #include "libslic3r.h"
 
+#include <spdlog/spdlog.h>
+
 #ifdef WIN32
 	#include <windows.h>
 	#include <psapi.h>
@@ -80,6 +82,7 @@
 
 namespace Slic3r {
 
+/*
 static boost::log::trivial::severity_level logSeverity = boost::log::trivial::error;
 
 static boost::log::trivial::severity_level level_to_boost(unsigned level)
@@ -119,6 +122,105 @@ unsigned get_logging_level()
     case boost::log::trivial::info : return 3;
     case boost::log::trivial::debug : return 4;
     case boost::log::trivial::trace : return 5;
+    default: return 1;
+    }
+}
+*/
+
+/*
+fmtlog::LogLevel log_level_to_fmtlog(unsigned int level)
+{
+    switch (level) {
+    // Report fatal errors only.
+    case 0: //return boost::log::trivial::fatal;
+    // Report fatal errors and errors.
+    case 1: //return boost::log::trivial::error;
+        return fmtlog::ERR;
+    // Report fatal errors, errors and warnings.
+    case 2: //return boost::log::trivial::warning;
+        return fmtlog::WRN;
+    // Report all errors, warnings and infos.
+    case 3: //return boost::log::trivial::info;
+        return fmtlog::INF;
+    // Report all errors, warnings, infos and debugging.
+    case 4: //return boost::log::trivial::debug;
+    // Report everyting including fine level tracing information.
+    default: //return boost::log::trivial::trace;
+        return fmtlog::DBG;
+    }
+}
+
+void set_logging_level(unsigned int level)
+{
+    fmtlog::LogLevel lvl = log_level_to_fmtlog(level);
+    fmtlog::setLogLevel(lvl);
+}
+
+unsigned get_logging_level()
+{
+    fmtlog::LogLevel level = fmtlog::getLogLevel();
+    switch (level) {
+    // case boost::log::trivial::fatal : return 0;
+    // case boost::log::trivial::error : return 1;
+    case fmtlog::ERR: return 0;
+
+    // case boost::log::trivial::warning : return 2;
+    case fmtlog::WRN: return 2;
+
+    // case boost::log::trivial::info : return 3;
+    case fmtlog::INF: return 3;
+
+    // case boost::log::trivial::debug : return 4;
+    // case boost::log::trivial::trace : return 5;
+    case fmtlog::DBG: return 2;
+
+    default: return 1;
+    }
+}
+*/
+
+spdlog::level::level_enum log_level_to_spdlog(unsigned int level)
+{
+    switch (level) {
+    // Report fatal errors only.
+    case 0: return spdlog::level::critical;
+    // Report fatal errors and errors.
+    case 1: return spdlog::level::err;
+    // Report fatal errors, errors and warnings.
+    case 2: return spdlog::level::warn;
+    // Report all errors, warnings and infos.
+    case 3: return spdlog::level::info;
+    // Report all errors, warnings, infos and debugging.
+    case 4: return spdlog::level::debug;
+    // Report everyting including fine level tracing information.
+    default: return spdlog::level::trace;
+    }
+
+}
+
+void set_logging_level(unsigned int level)
+{
+    spdlog::level::level_enum lvl = log_level_to_spdlog(level);
+    spdlog::set_level(lvl);
+}
+
+unsigned get_logging_level()
+{
+    auto level = spdlog::get_level();
+
+    switch (level) {
+    // Report fatal errors only.
+    case spdlog::level::critical: return 0;
+    // Report fatal errors and errors.
+    case spdlog::level::err: return 1;
+    // Report fatal errors, errors and warnings.
+    case spdlog::level::warn: return 2;
+    // Report all errors, warnings and infos.
+    case spdlog::level::info: return 3;
+    // Report all errors, warnings, infos and debugging.
+    case spdlog::level::debug: return 4;
+    // Report everyting including fine level tracing information.
+    case spdlog::level::trace: return 5;
     default: return 1;
     }
 }
@@ -699,7 +801,8 @@ CopyFileResult copy_file_inner(const std::string& from, const std::string& to, s
 	boost::system::error_code ec;
 	boost::filesystem::permissions(target, perms, ec);
 	if (ec)
-		BOOST_LOG_TRIVIAL(debug) << "boost::filesystem::permisions before copy error message (this could be irrelevant message based on file system): " << ec.message();
+        SPDLOG_DEBUG("boost::filesystem::permisions before copy error message (this could be irrelevant message based on file system): {}", ec.message());
+		//BOOST_LOG_TRIVIAL(debug) << "boost::filesystem::permisions before copy error message (this could be irrelevant message based on file system): " << ec.message();
 	ec.clear();
 #ifdef __linux__
 	// We want to allow copying files on Linux to succeed even if changing the file attributes fails.
@@ -715,7 +818,8 @@ CopyFileResult copy_file_inner(const std::string& from, const std::string& to, s
 	ec.clear();
 	boost::filesystem::permissions(target, perms, ec);
 	if (ec)
-		BOOST_LOG_TRIVIAL(debug) << "boost::filesystem::permisions after copy error message (this could be irrelevant message based on file system): " << ec.message();
+        SPDLOG_DEBUG("boost::filesystem::permisions after copy error message (this could be irrelevant message based on file system): {}", ec.message());
+		//BOOST_LOG_TRIVIAL(debug) << "boost::filesystem::permisions after copy error message (this could be irrelevant message based on file system): " << ec.message();
 	return SUCCESS;
 }
 
@@ -1125,7 +1229,7 @@ std::string format_memsize(size_t bytes, unsigned int decimals)
 std::string log_memory_info(bool ignore_loglevel)
 {
     std::string out;
-    if (ignore_loglevel || logSeverity <= boost::log::trivial::info) {
+    if (ignore_loglevel || /*logSeverity <= boost::log::trivial::info*/ spdlog::get_level() <= spdlog::level::info) {
 #ifdef WIN32
     #ifndef PROCESS_MEMORY_COUNTERS_EX
         // MingW32 doesn't have this struct in psapi.h

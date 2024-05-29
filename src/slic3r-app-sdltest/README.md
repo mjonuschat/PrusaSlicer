@@ -9,7 +9,7 @@ To compile with Emscripten do following:
 cd PrusaSlicer
 
 # We are at the project top level
-# First build deps
+# First build deps, note on OSX you will need to have docker installed (to build GMP lib)
 
 mkdir -p deps/build-emscripten
 cd deps/build-emscripten

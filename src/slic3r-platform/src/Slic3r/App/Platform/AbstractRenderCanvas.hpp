@@ -29,6 +29,9 @@ public:
     void dispatch_on_main_thread(Function func) override
     { m_main_thread_dispatcher.dispatch_on_main_thread(func); }
 
+    void dispatch_on_main_thread_after(Function func) override
+    { m_main_thread_dispatcher.dispatch_on_main_thread_after(func); }
+
     bool dispatch_enqueued() override
     { return m_main_thread_dispatcher.dispatch_enqueued(); }
 
@@ -67,14 +70,20 @@ private:
     void emit_enqueued_events();
 
 protected:
+    void set_screen_size(size_t w, size_t h);
+
+protected:
     using MouseEvents = std::vector<MouseEvent>;
     using KeyboardEvents = std::vector<KeyboardEvent>;
 
     AbstractRenderModule* m_render_module{nullptr};
     KeyModifiers m_key_modifiers{KeyModifiers(KeyModifier::None)};
 
-    int m_mouse_x;
-    int m_mouse_y;
+    int m_mouse_x {0};
+    int m_mouse_y {0};
+
+    size_t m_screen_w{0};
+    size_t m_screen_h{0};
 
     MouseEvents m_enqueued_mouse_events;
     KeyboardEvents m_enqueued_keyboard_events;

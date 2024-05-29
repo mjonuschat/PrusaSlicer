@@ -16,8 +16,34 @@ set(SLIC3R_PLATFORM_FILES
         src/Slic3r/App/Platform/PlatformServices.hpp
         src/Slic3r/App/Platform/JobManager.cpp
         src/Slic3r/App/Platform/JobManager.hpp
+        src/Slic3r/App/Platform/PlatformInfo.hpp
+        src/Slic3r/App/Platform/PlatformInfo.cpp
 )
+
+if (APPLE)
+    set(SLIC3R_PLATFORM_FILES
+            ${SLIC3R_PLATFORM_FILES}
+            src/Slic3r/App/Platform/PlatformInfo_osx.mm
+    )
+elseif (WIN32)
+    set(SLIC3R_PLATFORM_FILES
+            ${SLIC3R_PLATFORM_FILES}
+            src/Slic3r/App/Platform/PlatformInfo_win32.cpp
+    )
+elseif (EMSCRIPTEN)
+    set(SLIC3R_PLATFORM_FILES
+            ${SLIC3R_PLATFORM_FILES}
+            src/Slic3r/App/Platform/PlatformInfo_emscripten.cpp
+    )
+elseif (UNIX)
+    set(SLIC3R_PLATFORM_FILES
+            ${SLIC3R_PLATFORM_FILES}
+            src/Slic3r/App/Platform/PlatformInfo_unix.cpp
+    )
+endif ()
 
 add_library(slic3r-platform STATIC ${SLIC3R_PLATFORM_FILES})
 target_include_directories(slic3r-platform PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
-target_link_libraries(slic3r-platform PUBLIC PlatformGL imgui imgui_backend_ogl3)
+target_link_libraries(slic3r-platform PUBLIC PlatformGL imgui imgui_backend_ogl3 spdlog)
+
+

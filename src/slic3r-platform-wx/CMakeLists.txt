@@ -11,5 +11,6 @@ target_link_libraries(slic3r-platform-wx PUBLIC
         GLEW::GLEW
         imgui_backend_ogl3
         slic3r-platform
+        slic3r-shared
 )
 target_include_directories(slic3r-platform-wx PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)

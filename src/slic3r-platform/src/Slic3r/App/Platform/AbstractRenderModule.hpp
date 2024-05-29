@@ -25,11 +25,21 @@ public:
     void activate(IRenderRequestHandler* render_request_handler);
     void deactivate();
 
+    void set_screen_size(size_t w, size_t h)
+    {
+        m_screen_w = w;
+        m_screen_h = h;
+    }
+
 protected:
     virtual void on_activated();
     virtual void on_deactivated();
 
     void request_render();
+
+protected:
+    size_t m_screen_w {0};
+    size_t m_screen_h {0};
 private:
     IRenderRequestHandler* m_render_request_handler{nullptr};
 };

@@ -36,7 +36,7 @@ add_cmake_project(OpenVDB
         -DCMAKE_FIND_ROOT_PATH=/
         -DTHREADS_PREFER_PTHREAD_FLAG=ON
         --debug-find
-        --trace-source=/opt/homebrew/Cellar/cmake/3.28.3/share/cmake/Modules/FindThreads.cmake
+        --trace-source=/opt/homebrew/Cellar/cmake/3.28.3/share/cmake/Modules/FindBoost.cmake
 )
 
 #if (EMSCRIPTEN)

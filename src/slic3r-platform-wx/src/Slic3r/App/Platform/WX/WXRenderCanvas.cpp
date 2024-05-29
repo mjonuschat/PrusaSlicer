@@ -6,7 +6,8 @@
 #include <imgui/imgui.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
 
-#include "Slic3r/App/Platform/PlatformError.hpp"
+#include <Slic3r/App/Platform/PlatformError.hpp>
+#include <Slic3r/App/Render/commonGL.hpp>
 
 namespace Slic3r::App::Platform::WX {
 
@@ -264,6 +265,9 @@ WXRenderCanvas::WXRenderCanvas(wxWindow* parent)
     if (err != GLEW_NO_ERROR) {
         throw PlatformError(std::string("GLEW init failed with code ") + std::to_string(err));
     }
+
+    Render::initialize_gl();
+
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -474,28 +478,19 @@ void WXRenderCanvas::on_idle(wxIdleEvent& event)
 
 void WXRenderCanvas::begin_frame_platform()
 {
-}
-
-void WXRenderCanvas::begin_imgui_frame_platform()
-{
-    ImGuiIO& io = ImGui::GetIO();
-    IM_ASSERT(io.Fonts->IsBuilt() && "Font atlas not built! It is generally built by the renderer backend. Missing call to renderer _NewFrame() function? e.g. ImGui_ImplOpenGL3_NewFrame().");
-
     // Setup display size (every frame to accommodate for window resizing)
     int w, h;
     int display_w, display_h;
     GetClientSize(&w, &h);
-//    SDL_GL_GetDrawableSize(m_window, &display_w, &display_h);
+    //    SDL_GL_GetDrawableSize(m_window, &display_w, &display_h);
     io.DisplaySize = ImVec2((float)w, (float)h);
+    set_screen_size(display_w, display_h);
     double scale_factor = wxWindow::GetContentScaleFactor();
     io.DisplayFramebufferScale = ImVec2(float(scale_factor), float(scale_factor));
-    /*
-    if (w > 0 && h > 0)
-        io.DisplayFramebufferScale = ImVec2((float)display_w / w, (float)display_h / h);
+}
 
-    update_imgui_mouse_position();
-    update_imgui_mouse_cursor();
-    */
+void WXRenderCanvas::begin_imgui_frame_platform()
+{
 }
 
 void WXRenderCanvas::end_imgui_frame_platform()

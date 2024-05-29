@@ -5,6 +5,7 @@
 #include "Platform.hpp"
 
 #include <boost/log/trivial.hpp>
+#include <spdlog/spdlog.h>
 #include <boost/filesystem/operations.hpp>
 
 #if defined(__APPLE__)
@@ -91,7 +92,7 @@ void detect_platform()
 	s_platform 		  = Platform::BSDUnix;
 	s_platform_flavor = PlatformFlavor::OpenBSD;
 #elif defined(__EMSCRIPTEN__)
-    BOOST_LOG_TRIVIAL(info) << "Platform: Emscripten";
+    SPDLOG_INFO("Platform: Emscripten");
     s_platform 		  = Platform::Emscripten;
     s_platform_flavor = PlatformFlavor::Generic;
 #else
