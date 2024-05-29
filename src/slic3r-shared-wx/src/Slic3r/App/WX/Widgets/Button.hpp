@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../wxExtensions.hpp"
+#include "../Scalable.hpp"
 #include "StaticBox.hpp"
 
 namespace Slic3r::App::WX {

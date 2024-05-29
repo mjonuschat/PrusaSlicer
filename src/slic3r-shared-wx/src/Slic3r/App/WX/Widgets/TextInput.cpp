@@ -5,7 +5,8 @@
 #include <wx/dcclient.h>
 #include <wx/panel.h>
 
-#include "slic3r/App/WX/WidgetsConfig.hpp"
+#include "../WidgetsConfig.hpp"
+#include "../BitmapGetters.hpp"
 
 namespace Slic3r::App::WX {
 

@@ -5,6 +5,18 @@ set(SLIC3R_SHARED_WX_FILES
         src/Slic3r/App/WX/wxExtensions.cpp
         src/Slic3r/App/WX/WidgetsConfig.hpp
         src/Slic3r/App/WX/WidgetsConfig.cpp
+        src/Slic3r/App/WX/StringConversions.hpp
+        src/Slic3r/App/WX/StringConversions.cpp
+        src/Slic3r/App/WX/MenuManaging.hpp
+        src/Slic3r/App/WX/MenuManaging.cpp
+        src/Slic3r/App/WX/BitmapGetters.hpp
+        src/Slic3r/App/WX/BitmapGetters.cpp
+        src/Slic3r/App/WX/Scalable.hpp
+        src/Slic3r/App/WX/Scalable.cpp
+        src/Slic3r/App/WX/Highlighter.hpp
+        src/Slic3r/App/WX/Highlighter.cpp
+        src/Slic3r/App/WX/LockButton.hpp
+        src/Slic3r/App/WX/LockButton.cpp
         # our widgets
         src/Slic3r/App/WX/Widgets/UIColors.hpp
         src/Slic3r/App/WX/Widgets/StateColor.hpp

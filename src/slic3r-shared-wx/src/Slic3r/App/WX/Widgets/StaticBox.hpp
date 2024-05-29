@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../wxExtensions.hpp"
 #include "StateHandler.hpp"
 
 #include <wx/window.h>

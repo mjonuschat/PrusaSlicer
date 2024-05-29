@@ -4,15 +4,11 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include "BitmapCache.hpp"
-
-#include "wxExtensions.hpp" //! ->from_u8
+#include "StringConversions.hpp"
 
 #include "slic3r-shared/src/Slic3r/App/Color.hpp"
 
-//#include "libslic3r/Utils.hpp"
 //#include "../Utils/MacDarkMode.hpp"
-//#include "GUI.hpp"
-//#include "GUI_Utils.hpp"
 
 #include <set>
 

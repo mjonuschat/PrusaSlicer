@@ -1,9 +1,9 @@
 #pragma once
 
-#include "../wxExtensions.hpp"
-#include "StateColor.hpp"
-
 #include "BitmapToggleButton.hpp"
+
+#include "../Scalable.hpp"
+#include "StateColor.hpp"
 
 namespace Slic3r::App::WX {
 

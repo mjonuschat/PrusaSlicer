@@ -2,6 +2,7 @@
 
 #include <wx/containr.h>
 #include <wx/textctrl.h>
+#include <wx/timer.h>
 #include "StaticBox.hpp"
 
 namespace Slic3r::App::WX {

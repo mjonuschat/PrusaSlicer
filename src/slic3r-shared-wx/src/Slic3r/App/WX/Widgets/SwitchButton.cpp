@@ -1,6 +1,5 @@
 #include "SwitchButton.hpp"
 
-#include "../wxExtensions.hpp"
 //#include "../../Utils/MacDarkMode.hpp"
 
 #include <wx/dcgraph.h>

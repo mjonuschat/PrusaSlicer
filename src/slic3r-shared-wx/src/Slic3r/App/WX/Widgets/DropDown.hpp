@@ -2,10 +2,13 @@
 
 #include <wx/stattext.h>
 #include <wx/popupwin.h>
+#include <wx/bmpbndl.h>
 
 #include <boost/date_time/posix_time/posix_time.hpp>
 
-#include "../wxExtensions.hpp"
+#include <vector>
+
+#include "../Scalable.hpp"
 #include "StateHandler.hpp"
 
 namespace Slic3r::App::WX {

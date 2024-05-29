@@ -1,0 +1,19 @@
+#pragma once
+
+#include <wx/string.h>
+
+#include <boost/filesystem.hpp>
+
+namespace Slic3r::App::WX {
+
+// wxString from std::string in UTF8
+wxString	from_u8(const std::string& str);
+// std::string in UTF8 from wxString
+std::string	into_u8(const wxString& str);
+// wxString from boost path
+wxString	from_path(const boost::filesystem::path& path);
+// boost path from wxString
+boost::filesystem::path	into_path(const wxString& str);
+
+}
+

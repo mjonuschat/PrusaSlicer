@@ -1,6 +1,7 @@
 #include "DropDown.hpp"
 #include "ComboBox.hpp"
 #include "../WidgetsConfig.hpp"
+#include "../BitmapGetters.hpp"
 //#include "../OptionsGroup.hpp"
 
 #include <wx/dcgraph.h>

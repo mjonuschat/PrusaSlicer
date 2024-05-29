@@ -12,13 +12,16 @@ namespace Slic3r::App::Desktop {
 MainFrame::MainFrame()
     : wxFrame(nullptr, wxID_ANY, "")
 {
-    this->SetMinSize(FromDIP(wxSize(400, 200)));
-    this->SetMaxSize(FromDIP(wxSize(1200, 600)));
-
     using namespace WX;
 
+    auto em = w_config()->em_unit();
+
+    this->SetMinSize(FromDIP(wxSize(80 * em, 40 * em)));
+    this->SetMaxSize(FromDIP(wxSize(120 * em, 80 * em)));
+
+
     wxFont font = w_config()->normal_font();
-    font.SetPointSize(20);
+    font.SetPointSize(15);
     w_config()->update_fonts(font, w_config()->em_unit());
 
     this->SetFont(w_config()->normal_font());

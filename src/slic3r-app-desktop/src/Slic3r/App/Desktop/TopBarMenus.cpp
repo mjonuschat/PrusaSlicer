@@ -1,7 +1,8 @@
 #include "TopBarMenus.hpp"
 #include "TopBar.hpp"
 
-#include "Slic3r/App/WX/wxExtensions.hpp"
+#include "Slic3r/App/WX/MenuManaging.hpp"
+#include "Slic3r/App/WX/BitmapGetters.hpp"
 #include <Slic3r/App/WX/WidgetsConfig.hpp>
 
 //#include "GUI_App.hpp"
@@ -92,12 +93,11 @@ void TopBarMenus::ApplyWorkspacesMenu()
 
 void TopBarMenus::CreateAccountMenu()
 {
-    remember_me_item_id = wxWindow::NewControlId();
-    append_menu_check_item(&account, remember_me_item_id, _L("Remember me"), "" , 
-        [this](wxCommandEvent&) { if (m_cb_toggle_remember_session) m_cb_toggle_remember_session(); }, nullptr);
-
     m_login_item = append_menu_item(&account, wxID_ANY, "Login", "",
         [this](wxCommandEvent&) { if (m_cb_act_with_user_account) m_cb_act_with_user_account(); }, "login");
+
+    m_hide_login_item = append_menu_item(&account, wxID_ANY, _L("Hide \"Log in\" button"), "",
+        [this](wxCommandEvent&) { if (m_cb_hide_user_account) m_cb_hide_user_account(); });
 }
 
 void TopBarMenus::UpdateAccountMenu()
@@ -105,10 +105,18 @@ void TopBarMenus::UpdateAccountMenu()
     bool is_logged{ false };
     if (m_cb_get_user_account_info)
         is_logged = m_cb_get_user_account_info().is_logged;
+    if (is_logged)
+        RemoveHideLoginItem();
     if (m_login_item) {
-        m_login_item->SetItemLabel(is_logged ? _L("Prusa Account Log out") : _L("Prusa Account Log in"));
+        m_login_item->SetItemLabel(is_logged ? _L("Log out") : _L("Log in"));
         set_menu_item_bitmap(m_login_item, is_logged ? "logout" : "login");
     }
+}
+
+void TopBarMenus::RemoveHideLoginItem()
+{
+    if (m_hide_login_item)
+        account.Remove(m_hide_login_item);
 }
 
 void TopBarMenus::Popup(TopBarItemsCtrl* popup_ctrl, wxMenu* menu, wxPoint pos)

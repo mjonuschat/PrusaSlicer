@@ -2,7 +2,9 @@
 
 #include <wx/containr.h>
 #include <wx/textctrl.h>
+
 #include "StaticBox.hpp"
+#include "../Scalable.hpp"
 
 namespace Slic3r::App::WX {
 

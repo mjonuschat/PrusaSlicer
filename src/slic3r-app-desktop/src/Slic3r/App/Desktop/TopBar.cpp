@@ -1,7 +1,10 @@
 #include "TopBar.hpp"
 #include "TopBarMenus.hpp"
 
+#include <Slic3r/App/WX/wxExtensions.hpp>
 #include <Slic3r/App/WX/WidgetsConfig.hpp>
+#include <Slic3r/App/WX/BitmapGetters.hpp>
+#include <Slic3r/App/WX/StringConversions.hpp>
 
 //#include "GUI_App.hpp"
 //#include "Search.hpp"
@@ -169,8 +172,14 @@ void TopBarItemsCtrl::Button::sys_color_changed()
     m_foreground_color = w_config()->get_label_clr_default();
 }
 
+#ifdef __linux__
+const int icon_sz = 20;
+#else
+const int icon_sz = 24;
+#endif
+
 TopBarItemsCtrl::ButtonWithPopup::ButtonWithPopup(wxWindow* parent, const wxString& label, const std::string& icon_name, wxSize size)
-    :TopBarItemsCtrl::Button(parent, label, icon_name, 24, size)
+    :TopBarItemsCtrl::Button(parent, label, icon_name, icon_sz, size)
 {
     if (size != wxDefaultSize)
         m_fixed_width = size.x * 0.1;
@@ -226,10 +235,8 @@ void TopBarItemsCtrl::ButtonWithPopup::SetLabel(const wxString& label)
 void TopBarItemsCtrl::UpdateAccountButton(bool avatar/* = false*/)
 {
     TopBarMenus::UserAccountInfo  user_account = m_menus->get_user_account_info();
-    const wxString user_name = user_account.is_logged ? from_u8(user_account.user_name) : _L("Anonymous");
-    m_account_btn->SetLabel(m_collapsed_btns ? "" : user_name);
+    const wxString user_name = user_account.is_logged ? from_u8(user_account.user_name) : _L("Log in");
     m_account_btn->SetToolTip(user_name);
-    const int icon_sz = 24;
 #ifdef __linux__
     if (avatar) {
         if (user_account.is_logged) {
@@ -257,7 +264,10 @@ void TopBarItemsCtrl::UpdateAccountButton(bool avatar/* = false*/)
         }
     }
 #endif
-    m_account_btn->Refresh();
+
+    m_account_btn->SetLabel(m_collapsed_btns ? "" : user_name);
+    this->Layout();
+//    m_account_btn->Refresh();
 }
 
 void TopBarItemsCtrl::UnselectPopupButtons()
@@ -270,7 +280,6 @@ void TopBarItemsCtrl::UnselectPopupButtons()
 
 void TopBarItemsCtrl::CreateSearch()
 {
-
     // Linux specific: If wxDefaultSize is used in constructor and than set just maxSize, 
     // than this max size will be used as a default control size and can't be resized.
     // So, set initial size for some minimum value
@@ -472,7 +481,7 @@ TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent, TopBarMenus* menus/* = nullpt
 
     wxBoxSizer* right_sizer = new wxBoxSizer(wxHORIZONTAL);
 
-    m_workspace_btn = new ButtonWithPopup(this, _L("Workspace"), "mode_simple");
+    m_workspace_btn = new ButtonWithPopup(this, "Workspace", "mode_simple");
     right_sizer->AddStretchSpacer(20);
     right_sizer->Add(m_workspace_btn, 0, wxALIGN_CENTER_VERTICAL | wxALL, m_btn_margin);
 
@@ -481,7 +490,7 @@ TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent, TopBarMenus* menus/* = nullpt
         m_menus->Popup(this, &m_menus->workspaces, m_workspace_btn->get_popup_pos());
     });
 
-    m_account_btn = new ButtonWithPopup(this, _L("Anonymous"), "user", wxSize(180, -1));
+    m_account_btn = new ButtonWithPopup(this, _L("Log in"), "user", wxSize(180, -1));
     right_sizer->Add(m_account_btn, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, m_btn_margin);
     
     m_account_btn->Bind(wxEVT_BUTTON, [this](wxCommandEvent& event) {
@@ -492,12 +501,6 @@ TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent, TopBarMenus* menus/* = nullpt
     m_sizer->Add(right_sizer, 0, wxALIGN_CENTER_VERTICAL);
 
     m_sizer->SetItemMinSize(1, wxSize(42 * em_unit(this), -1));
-
-    this->Bind(wxEVT_UPDATE_UI, [this](wxUpdateUIEvent& evt) {
-        auto user_account = m_menus->get_user_account_info();
-        evt.Enable(user_account.is_logged);
-        evt.Check (user_account.remember_session);
-    }, m_menus->remember_me_item_id);
 
     update_btns_width();
 }
@@ -515,6 +518,12 @@ void TopBarItemsCtrl::UpdateMode()
 
     m_workspace_btn->SetLabel(m_collapsed_btns ? "" : m_menus->get_workspace_name());
 
+    this->Layout();
+}
+
+void TopBarItemsCtrl::ShowUserAccount(bool show)
+{
+    m_account_btn->Show(show);
     this->Layout();
 }
 

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../wxExtensions.hpp"
 #include "BitmapToggleButton.hpp"
+#include "../Scalable.hpp"
 
 namespace Slic3r::App::WX {
 

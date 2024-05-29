@@ -3,6 +3,8 @@
 #include "TextInput.hpp"
 #include "DropDown.hpp"
 
+#include <wx/ctrlsub.h>
+
 namespace Slic3r::App::WX {
 
 #define CB_NO_DROP_ICON DD_NO_DROP_ICON
