@@ -21,6 +21,7 @@
 
 #include "FillBase.hpp"
 #include "FillConcentric.hpp"
+#include "FillCrossHatch.hpp"
 #include "FillHoneycomb.hpp"
 #include "Fill3DHoneycomb.hpp"
 #include "FillGyroid.hpp"
@@ -46,6 +47,7 @@ Fill* Fill::new_from_type(const InfillPattern type)
     case ipGyroid:              return new FillGyroid();
     case ipRectilinear:         return new FillRectilinear();
     case ipAlignedRectilinear:  return new FillAlignedRectilinear();
+    case ipCrossHatch:          return new FillCrossHatch();
     case ipMonotonic:           return new FillMonotonic();
     case ipMonotonicLines:      return new FillMonotonicLines();
     case ipLine:                return new FillLine();
