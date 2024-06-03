@@ -106,6 +106,8 @@ set(SLIC3R_SOURCES
     Fill/FillBase.hpp
     Fill/FillConcentric.cpp
     Fill/FillConcentric.hpp
+    Fill/FillCrossHatch.cpp
+    Fill/FillCrossHatch.hpp
     Fill/FillEnsuring.cpp
     Fill/FillEnsuring.hpp
     Fill/FillHoneycomb.cpp
