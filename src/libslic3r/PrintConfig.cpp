@@ -140,7 +140,8 @@ static const t_config_enum_values s_keys_map_InfillPattern {
     { "octagramspiral",     ipOctagramSpiral },
     { "adaptivecubic",      ipAdaptiveCubic },
     { "supportcubic",       ipSupportCubic },
-    { "lightning",          ipLightning }
+    { "lightning",          ipLightning },
+    { "crosshatch",         ipCrossHatch }
 };
 CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(InfillPattern)
 
@@ -1560,7 +1561,8 @@ void PrintConfigDef::init_fff_params()
         { "octagramspiral",     L("Octagram Spiral")},
         { "adaptivecubic",      L("Adaptive Cubic")},
         { "supportcubic",       L("Support Cubic")},
-        { "lightning",          L("Lightning")}
+        { "lightning",          L("Lightning")},
+        { "crosshatch",         L("Cross Hatch")}
     });
     def->set_default_value(new ConfigOptionEnum<InfillPattern>(ipStars));
 
