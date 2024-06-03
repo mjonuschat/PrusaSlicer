@@ -604,6 +604,27 @@ void PrintConfigDef::init_fff_params()
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloat(1));
 
+    def = this->add("first_layer_flow_ratio", coFloat);
+    def->label = L("First layer flow ratio");
+    def->category = L("Advanced");
+    def->tooltip = L("This factor affects the amount of plastic for the first layer. "
+                   "You can increase this to over-extrude on the first layer if there is not enough plastic because your bed isn't levelled, "
+                   "or decrease it a bit to prevent rought first layers.");
+    def->min = 0.5;
+    def->max = 1.5;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(1));
+
+    def = this->add("top_layer_flow_ratio", coFloat);
+    def->label = L("Top layer flow ratio");
+    def->category = L("Advanced");
+    def->tooltip = L("This factor affects the amount of plastic for the top layer. Increase this to over-extrude "
+                     "on the top layer if there is not enough plastic or decrease it to prevent rough top layers.");
+    def->min = 0.5;
+    def->max = 1.5;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(1));
+
     def = this->add("only_one_perimeter_first_layer", coBool);
     def->label = L("On First layer");
     def->category = L("Layers and Perimeters");
@@ -629,6 +650,26 @@ void PrintConfigDef::init_fff_params()
     def->max_literal = 15;
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloatOrPercent(100, true));
+
+    def = this->add("first_layer_flow_ratio", coFloat);
+    def->label = L("First layer flow ratio");
+    def->category = L("Advanced");
+    def->tooltip = L("This factor affects the amount of plastic for first layer. "
+                   "You can decrease it slightly (e.g. 0.85) to prevent rough first layer and sticking to the nozzle, "
+                   "or increase a bit to improve sticking to unflat bed (though it's better to have autoleveling or flat bed).");
+    def->min = 0.5;
+    def->max = 1.5;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(1));
+
+    def = this->add("top_layer_flow_ratio", coFloat);
+    def->label = L("Top layer flow ratio");
+    def->category = L("Advanced");
+    def->tooltip = L("This factor affects the amount of plastic for top layer. Play with this parameter to get smooth surface.");
+    def->min = 0.5;
+    def->max = 1.5;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(1));
 
     def = this->add("bridge_speed", coFloat);
     def->label = L("Bridges");
