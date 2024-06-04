@@ -1,12 +1,25 @@
 #include "Context.hpp"
 
-#include "ShaderManager.hpp"
 #include "commonGL.hpp"
+#include "ShaderManager.hpp"
+#include "TextureManager.hpp"
+
+#include <spdlog/spdlog.h>
 
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/classification.hpp>
 
+#include <sstream>
+
 namespace Slic3r::App::Render {
+
+const char* getGlString(GLenum name)
+{
+    const char* val = reinterpret_cast<const char*>(glGetString(name));
+    glCheck();
+    return val;
+}
+
 
 std::string getGlString(GLenum name, const std::string& defaultValue)
 {
@@ -60,8 +73,39 @@ Context::Context()
     std::string glsl_version = getGlString(GL_SHADING_LANGUAGE_VERSION, VERSION_NA);
     m_glsl_version = parse_version(glsl_version);
     m_core_profile = !GLEW_ARB_compatibility;
+#ifdef EMSCRIPTEN
+    m_vao_available = GLEW_OES_vertex_array_object;
+#else
+    m_vao_available = true;
+#endif
 
-    m_shader_manager = std::make_unique<ShaderManager>();
+    m_shader_manager = std::make_unique<ShaderManager>(*this);
+    m_texture_manager = std::make_unique<TextureManager>(*this);
+}
+
+void Context::log_gl_info() const
+{
+    SPDLOG_INFO("OpenGL Vendor: {}", getGlString(GL_VENDOR));
+    SPDLOG_INFO("OpenGL Version: {}", getGlString(GL_VERSION));
+    SPDLOG_INFO("GLSL Version: {}", getGlString(GL_SHADING_LANGUAGE_VERSION));
+    SPDLOG_INFO("OpenGL Renderer: {}", getGlString(GL_RENDERER));
+#ifdef EMSCRIPTEN
+    SPDLOG_INFO("OpenGL Extensions: {}", getGlString(GL_EXTENSIONS));
+#else
+    if (is_core_profile()) {
+        int n;
+        glGetIntegerv(GL_NUM_EXTENSIONS, &n);
+
+        std::ostringstream oss;
+        for (int i = 0; i < n; i++) {
+            if (i > 0)
+                oss << " ";
+            oss << reinterpret_cast<const char*>(glGetStringi(GL_EXTENSIONS, i));
+        }
+        SPDLOG_INFO("OpenGL Extensions: {}", oss.str());
+    } else
+        SPDLOG_INFO("OpenGL Extensions: {}", getGlString(GL_EXTENSIONS));
+#endif
 }
 
 Context& Context::instance()

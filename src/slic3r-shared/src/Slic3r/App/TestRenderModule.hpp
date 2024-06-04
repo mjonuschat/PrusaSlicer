@@ -2,8 +2,9 @@
 #include <cstddef>
 #include <memory>
 #include "Slic3r/App/Platform/AbstractRenderModule.hpp"
-#include "Slic3r/App/Render/Buffer.hpp"
+#include "Slic3r/App/Render/Geometry.hpp"
 #include "Slic3r/App/Render/Shader.hpp"
+#include "Slic3r/App/Render/TextureManager.hpp"
 
 namespace Slic3r::App {
 
@@ -20,7 +21,10 @@ public:
 
 private:
     Render::Geometry<Render::VertexP3> m_geometry;
+    Render::Geometry<Render::VertexP3T2> m_geometry2;
     Render::Shader* m_shader{nullptr};
+    Render::Shader* m_shader2{nullptr};
+    Render::Texture* m_tex{nullptr};
 
     static constexpr size_t BUF_SIZE = 256;
     char m_text_buffer[BUF_SIZE];

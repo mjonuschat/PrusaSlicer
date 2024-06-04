@@ -90,7 +90,7 @@ protected:
     StdMainThreadDispatcher m_main_thread_dispatcher;
 private:
     double m_last_time{0};
-    bool m_render_requested{false};
+    size_t m_render_request_count{0};
 };
 
 }

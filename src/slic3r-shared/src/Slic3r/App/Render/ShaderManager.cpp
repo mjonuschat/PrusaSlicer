@@ -30,14 +30,13 @@ std::pair<bool, std::string> ShaderManager::init()
     assert(m_shaders.empty());
 
     bool valid = true;
-    auto& context = Context::instance();
 
 #if SLIC3R_OPENGL_ES || defined(__EMSCRIPTEN__)
     const std::string prefix = "ES/";
     // used to render wireframed triangles
     valid &= append_shader("wireframe", { prefix + "wireframe.vs", prefix + "wireframe.fs" });
 #else
-    const std::string prefix = context.gl_version() >= Semver(3, 1, 0) ? "140/" : "110/";
+    const std::string prefix = m_context.gl_version() >= Semver(3, 1, 0) ? "140/" : "110/";
 #endif // SLIC3R_OPENGL_ES || defined(__EMSCRIPTEN__)
     // imgui shader
     valid &= append_shader("imgui", { prefix + "imgui.vs", prefix + "imgui.fs" });
@@ -53,7 +52,7 @@ std::pair<bool, std::string> ShaderManager::init()
     // used to render dashed lines
     valid &= append_shader("dashed_lines", { prefix + "dashed_lines.vs", prefix + "dashed_lines.fs" });
 #else
-    if (context.is_core_profile())
+    if (m_context.is_core_profile())
         // used to render thick and/or dashed lines
         valid &= append_shader("dashed_thick_lines", { prefix + "dashed_thick_lines.vs", prefix + "dashed_thick_lines.fs", prefix + "dashed_thick_lines.gs" });
 #endif // SLIC3R_OPENGL_ES || defined(__EMSCRIPTEN__)
@@ -66,7 +65,7 @@ std::pair<bool, std::string> ShaderManager::init()
     // used to render printbed
     valid &= append_shader("printbed", { prefix + "printbed.vs", prefix + "printbed.fs" });
     // used to render options in gcode preview
-    if (context.gl_version() >=  Semver(3, 3, 0)) {
+    if (m_context.gl_version() >=  Semver(3, 3, 0)) {
         valid &= append_shader("gouraud_light_instanced", { prefix + "gouraud_light_instanced.vs", prefix + "gouraud_light_instanced.fs" });
     }
     // used to render objects in 3d editor

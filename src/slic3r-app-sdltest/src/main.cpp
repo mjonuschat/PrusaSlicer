@@ -3,6 +3,7 @@
 #include <boost/nowide/cstdlib.hpp>
 #include <spdlog/spdlog.h>
 
+#include <Slic3r/App/Render/Context.hpp>
 #include <Slic3r/App/Platform/PlatformServices.hpp>
 #include <Slic3r/App/Platform/SDL/SDLRenderCanvas.hpp>
 #include <libslic3r/Utils.hpp>
@@ -104,42 +105,43 @@ void init_system()
     set_custom_gcodes_dir((path_resources / "custom_gcodes").string());
 }
 
+std::unique_ptr<Slic3r::App::Platform::SDL::SDLRenderCanvas> canvas;
+std::unique_ptr<Slic3r::App::TestRenderModule> render_module;
+
 int main(int argc, char** argv)
 {
-    std::cerr << "Hello" << std::endl;
     Slic3r::set_logging_level(5);
-    std::cerr << "Hello" << std::endl;
-    SPDLOG_INFO("Hello from spdlog");
-    SPDLOG_ERROR("Error from spdlog");
 
     init_system();
 
-    Slic3r::App::Platform::SDL::SDLRenderCanvas canvas;
-    Slic3r::App::Platform::PlatformServices::instance().set_services(&canvas, &canvas);
-    Slic3r::App::TestRenderModule render_module;
-    SPDLOG_INFO("RM created");
-    canvas.set_render_module(&render_module);
-    SPDLOG_INFO("RM registered");
+    canvas = std::make_unique<Slic3r::App::Platform::SDL::SDLRenderCanvas>();
+    Slic3r::App::Render::Context::instance().log_gl_info();
+    Slic3r::App::Platform::PlatformServices::instance().set_services(canvas.get(), canvas.get());
+    render_module = std::make_unique<Slic3r::App::TestRenderModule>();
+    SPDLOG_TRACE("RM created");
+    canvas->set_render_module(render_module.get());
+    SPDLOG_TRACE("RM registered");
 #ifdef __EMSCRIPTEN__
     main_loop_impl = [&]()
 #else
-    while (!canvas.should_quit())
+    while (!canvas->should_quit())
 #endif
     {
-        SPDLOG_INFO("Loop start");
+        SPDLOG_TRACE("Loop start");
 #if WAIT_FOR_EVENT
-        canvas.wait_for_events();
+        canvas->wait_for_events();
 #else
-        canvas.poll_events();
+        canvas->poll_events();
 #endif
-        SPDLOG_INFO("Loop render");
-        canvas.render();
-        SPDLOG_INFO("Loop end");
+        SPDLOG_TRACE("Loop render");
+        canvas->render();
+        SPDLOG_TRACE("Loop end");
     };
 #ifdef __EMSCRIPTEN__
-    SPDLOG_INFO("Setting main loop");
+    SPDLOG_TRACE("Setting main loop");
     emscripten_set_main_loop(main_loop, 0, true);
 #endif
 
+    SPDLOG_TRACE("Quitting");
     return 0;
 }

@@ -13,8 +13,7 @@ namespace Slic3r::App::Platform::SDL
 
 SDLRenderCanvas::SDLRenderCanvas()
 {
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0)
-    {
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0) {
         std::string message = std::string("Platform Error: ") + SDL_GetError();
         throw PlatformError(message);
     }
@@ -84,8 +83,6 @@ SDLRenderCanvas::SDLRenderCanvas()
 
 SDLRenderCanvas::~SDLRenderCanvas()
 {
-    std::cerr << "SDLRenderCanvas dtor\n";
-
     // Cleanup
     ImGui_ImplOpenGL3_Shutdown();
 
@@ -335,13 +332,11 @@ void SDLRenderCanvas::update_imgui_mouse_cursor()
         return;
 
     ImGuiMouseCursor imgui_cursor = ImGui::GetMouseCursor();
-    if (io.MouseDrawCursor || imgui_cursor == ImGuiMouseCursor_None)
-    {
+    if (io.MouseDrawCursor || imgui_cursor == ImGuiMouseCursor_None) {
         // Hide OS mouse cursor if imgui is drawing it or if it wants no cursor
         SDL_ShowCursor(SDL_FALSE);
     }
-    else
-    {
+    else {
         // Show OS mouse cursor
         SDL_SetCursor(m_mouse_cursors[imgui_cursor] ? m_mouse_cursors[imgui_cursor] : m_mouse_cursors[ImGuiMouseCursor_Arrow]);
         SDL_ShowCursor(SDL_TRUE);
@@ -358,8 +353,7 @@ double SDLRenderCanvas::get_platform_time()
 
 void SDLRenderCanvas::pass_event_to_scene(const SDL_Event& event)
 {
-    if (event.type == SDL_KEYDOWN || event.type == SDL_KEYUP)
-    {
+    if (event.type == SDL_KEYDOWN || event.type == SDL_KEYUP) {
         const auto &key = event.key;
         const KeyboardEvent::Type type = key.state == SDL_PRESSED ? KeyboardEvent::Type::KeyDown :
                                                                     KeyboardEvent::Type::KeyUp;
@@ -370,8 +364,7 @@ void SDLRenderCanvas::pass_event_to_scene(const SDL_Event& event)
         KeyboardEvent platform_event{type, code, m_key_modifiers};
         enqueue_keyboard(platform_event);
     }
-    else if (event.type == SDL_MOUSEMOTION)
-    {
+    else if (event.type == SDL_MOUSEMOTION) {
         const auto &mouse = event.motion;
         update_mouse_position(mouse.x, mouse.y);
         MouseEvent platform_event{
@@ -382,8 +375,7 @@ void SDLRenderCanvas::pass_event_to_scene(const SDL_Event& event)
         };
         enqueue_mouse(platform_event);
     }
-    else if (event.type == SDL_MOUSEBUTTONDOWN || event.type == SDL_MOUSEBUTTONUP)
-    {
+    else if (event.type == SDL_MOUSEBUTTONDOWN || event.type == SDL_MOUSEBUTTONUP) {
         const auto& mouse_button = event.button;
         MouseEvent::Type type = event.type == SDL_MOUSEBUTTONDOWN ? MouseEvent::Type::ButtonDown : MouseEvent::Type::ButtonUp;
         MouseEvent platform_event{
@@ -394,8 +386,7 @@ void SDLRenderCanvas::pass_event_to_scene(const SDL_Event& event)
         };
         enqueue_mouse(platform_event);
     }
-    else if (event.type == SDL_MOUSEWHEEL)
-    {
+    else if (event.type == SDL_MOUSEWHEEL) {
         const auto& mouse_wheel = event.wheel;
         update_mouse_position(mouse_wheel.mouseX, mouse_wheel.mouseY);
         MouseEvent platform_event{

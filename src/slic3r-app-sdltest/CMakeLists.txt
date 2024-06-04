@@ -56,7 +56,7 @@ elseif(EMSCRIPTEN)
     target_link_libraries(slic3r-app-sdltest PUBLIC Boost::filesystem)
     message(STATUS "Preload file Flags: " --preload-file "${SLIC3R_RESOURCES_NEXT_DIR}@/resources")
 
-    set(CMAKE_EXE_LINKER_FLAGS "--preload-file ${SLIC3R_RESOURCES_NEXT_DIR}@/resources ${CMAKE_EXE_LINKER_FLAGS}")
+    set(CMAKE_EXE_LINKER_FLAGS "--preload-file ${SLIC3R_RESOURCES_NEXT_DIR}@/resources -pthread ${CMAKE_EXE_LINKER_FLAGS}")
 else ()
 #    if (APPLE)
 #        # On OSX, the name of the binary matches the name of the Application.

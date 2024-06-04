@@ -49,6 +49,7 @@ else ()
 
     if (EMSCRIPTEN)
         set(_cross_compile_arg "--host=none --build=none --disable-assembly --enable-cxx")
+        set(_gmp_ccflags "${_gmp_ccflags} -pthread")
     elseif (CMAKE_CROSSCOMPILING)
         # TOOLCHAIN_PREFIX should be defined in the toolchain file
         set(_cross_compile_arg --host=${TOOLCHAIN_PREFIX})
@@ -56,8 +57,6 @@ else ()
 
     if (EMSCRIPTEN)
         set(_cfg_cmd "emconfigure ./configure ${_cross_compile_arg} --enable-shared=no --enable-cxx=yes --enable-static=yes")
-        message(STATUS  CMAKE_CURRENT_BINARY_DIR: ${CMAKE_CURRENT_BINARY_DIR})
-        message(STATUS  "================================================")
         if (CMAKE_HOST_APPLE)
             set(_cfg_cmd "${_cfg_cmd} --prefix=/destdir/usr/local")
             set(_cfg_cmd

@@ -39,29 +39,20 @@ void AbstractRenderCanvas::render()
     if (m_render_module == nullptr)
         return;
 
-    SPDLOG_INFO("AbstractRenderCanvas::render 1a");
     assert_no_gl_error();
-    SPDLOG_INFO("AbstractRenderCanvas::render 1b");
     begin_frame();
-    SPDLOG_INFO("AbstractRenderCanvas::render 2");
     assert_no_gl_error();
     begin_imgui_frame();
-    SPDLOG_INFO("AbstractRenderCanvas::render 3");
     assert_no_gl_error();
     m_render_module->render_imgui();
-    SPDLOG_INFO("AbstractRenderCanvas::render 4");
     assert_no_gl_error();
     end_imgui_frame();
-    SPDLOG_INFO("AbstractRenderCanvas::render 5");
     assert_no_gl_error();
     emit_enqueued_events();
-    SPDLOG_INFO("AbstractRenderCanvas::render 6");
     assert_no_gl_error();
     m_render_module->render_scene();
-    SPDLOG_INFO("AbstractRenderCanvas::render 7");
     assert_no_gl_error();
     end_frame();
-    SPDLOG_INFO("AbstractRenderCanvas::render 8");
 }
 
 
@@ -177,15 +168,16 @@ void AbstractRenderCanvas::emit_enqueued_events()
 
 void AbstractRenderCanvas::request_render()
 {
-    m_render_requested = true;
+    m_render_request_count += 2;
 }
 
 bool AbstractRenderCanvas::get_and_reset_render_requested()
 {
-    const bool ret = m_render_requested;
-    if (m_render_requested)
-        m_render_requested = false;
-    return ret;
+    if (m_render_request_count > 0) {
+        m_render_request_count--;
+        return true;
+    }
+    return false;
 }
 
 } // namespace Slic3r::App::Platform

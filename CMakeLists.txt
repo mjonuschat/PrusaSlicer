@@ -499,8 +499,10 @@ else() # found by an older Find script
 endif ()
 
 if (EMSCRIPTEN)
-    set(CMAKE_CXX_FLAGS "--use-port=libpng --use-port=libjpeg ${CMAKE_CXX_FLAGS}")
-    set(CMAKE_C_FLAGS "--use-port=libpng --use-port=libjpeg ${CMAKE_CXX_FLAGS}")
+#    set(CMAKE_CXX_FLAGS "--use-port=libpng --use-port=libjpeg ${CMAKE_CXX_FLAGS}")
+#    set(CMAKE_C_FLAGS "--use-port=libpng --use-port=libjpeg ${CMAKE_CXX_FLAGS}")
+    set(CMAKE_CXX_FLAGS "--use-port=libpng -pthread ${CMAKE_CXX_FLAGS}")
+    set(CMAKE_C_FLAGS "--use-port=libpng -pthread ${CMAKE_CXX_FLAGS}")
 
     set(SIMPLES_MAIN_SOURCE
             "int main() { return 0; }\n\n"

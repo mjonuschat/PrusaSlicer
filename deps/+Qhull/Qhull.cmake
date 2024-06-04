@@ -16,4 +16,7 @@ add_cmake_project(Qhull
         ${_qhull_shared_libs}
         ${_qhull_static_libs}
         -DQHULL_ENABLE_TESTING:BOOL=OFF
+    EMSCRIPTEN_CMAKE_ARGS
+        -DCMAKE_CXX_FLAGS=-pthread
+        -DCMAKE_C_FLAGS=-pthread
 )
