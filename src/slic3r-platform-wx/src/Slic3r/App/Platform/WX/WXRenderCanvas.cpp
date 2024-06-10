@@ -408,7 +408,9 @@ void WXRenderCanvas::on_keyboard(wxKeyEvent& evt)
 void WXRenderCanvas::on_mouse(wxMouseEvent& evt)
 {
     ImGuiIO& io = ImGui::GetIO();
-    io.MousePos = ImVec2((float)evt.GetX(), (float)evt.GetY());
+    int mouse_x = ToDIP(evt.GetX());
+    int mouse_y = ToDIP(evt.GetY());
+    io.MousePos = ImVec2((float) mouse_x, (float) mouse_y);
     io.MouseDown[0] = evt.LeftIsDown();
     io.MouseDown[1] = evt.RightIsDown();
     io.MouseDown[2] = evt.MiddleIsDown();
@@ -457,9 +459,11 @@ void WXRenderCanvas::on_mouse(wxMouseEvent& evt)
         break;
     }
 
-
     MouseEvent platform_event{
-        platform_event_type, button, evt.GetX(), evt.GetY(), wheel_x, wheel_y, m_key_modifiers
+        platform_event_type, button,
+        mouse_x, mouse_y,
+        wheel_x, wheel_y,
+        m_key_modifiers
     };
     enqueue_mouse(platform_event);
 
@@ -480,12 +484,14 @@ void WXRenderCanvas::begin_frame_platform()
 {
     // Setup display size (every frame to accommodate for window resizing)
     int w, h;
-    int display_w, display_h;
     GetClientSize(&w, &h);
+    size_t display_w = ToPhys(w);
+    size_t display_h = ToPhys(h);
     //    SDL_GL_GetDrawableSize(m_window, &display_w, &display_h);
+    ImGuiIO &io = ImGui::GetIO();
     io.DisplaySize = ImVec2((float)w, (float)h);
-    set_screen_size(display_w, display_h);
     double scale_factor = wxWindow::GetContentScaleFactor();
+    set_screen_size({display_w, display_h, float(scale_factor)});
     io.DisplayFramebufferScale = ImVec2(float(scale_factor), float(scale_factor));
 }
 

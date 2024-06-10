@@ -5,6 +5,7 @@
 #include "AbstractRenderModule.hpp"
 #include "IRenderRequestHandler.hpp"
 #include "StdMainThreadDispatcher.hpp"
+#include "ScreenInfo.hpp"
 
 namespace Slic3r::App::Platform {
 
@@ -70,7 +71,7 @@ private:
     void emit_enqueued_events();
 
 protected:
-    void set_screen_size(size_t w, size_t h);
+    void set_screen_size(const ScreenInfo& screen_info);
 
 protected:
     using MouseEvents = std::vector<MouseEvent>;
@@ -82,8 +83,7 @@ protected:
     int m_mouse_x {0};
     int m_mouse_y {0};
 
-    size_t m_screen_w{0};
-    size_t m_screen_h{0};
+    ScreenInfo m_screen_info{0,0,1};
 
     MouseEvents m_enqueued_mouse_events;
     KeyboardEvents m_enqueued_keyboard_events;

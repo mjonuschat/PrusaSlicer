@@ -21,17 +21,16 @@ void AbstractRenderCanvas::set_render_module(AbstractRenderModule* render_module
         m_render_module->deactivate();
     m_render_module = render_module;
     if (m_render_module) {
-        m_render_module->set_screen_size(m_screen_w, m_screen_h);
+        m_render_module->set_screen_size(m_screen_info);
         m_render_module->activate(this);
     }
 }
 
-void AbstractRenderCanvas::set_screen_size(size_t w, size_t h)
+void AbstractRenderCanvas::set_screen_size(const ScreenInfo& screen_info)
 {
-    m_screen_w = w;
-    m_screen_h = h;
+    m_screen_info = screen_info;
     if (m_render_module)
-        m_render_module->set_screen_size(w, h);
+        m_render_module->set_screen_size(m_screen_info);
 }
 
 void AbstractRenderCanvas::render()
@@ -69,7 +68,7 @@ void AbstractRenderCanvas::begin_frame()
     m_last_time = current_time;
 
     assert_no_gl_error();
-    glViewport(0, 0, m_screen_w, m_screen_h);
+    glViewport(0, 0, m_screen_info.physical_width(), m_screen_info.physical_height());
     assert_no_gl_error();
     // TODO: this should be render module responsibility
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);

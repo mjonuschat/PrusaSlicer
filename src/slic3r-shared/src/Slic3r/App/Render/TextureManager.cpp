@@ -36,14 +36,13 @@ Texture* TextureManager::get(const std::string& name, const ImageLoadOptions& op
         return nullptr;
     }
 
-    Texture* tex = new Texture();
+    Texture* tex = new Texture(m_context);
     for (size_t level = 0; level < images.size(); level++) {
         const auto& img = images[level];
         tex->set_data(img.format(), level, img.width(), img.height(), img.data());
     }
 
     // TODO: (Optional) Compress bitmap
-
 
     m_textures[name] = tex;
     return tex;
@@ -55,7 +54,7 @@ Texture* TextureManager::create_empty(const std::string& name, PixelFormat pf, s
     if (it != m_textures.end())
         return it->second;
 
-    Texture* tex = new Texture();
+    Texture* tex = new Texture(m_context);
 
     {
         std::vector<uint8_t> data;

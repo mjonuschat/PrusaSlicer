@@ -16,7 +16,7 @@ public:
 private:
 
     MainFrame* m_main_frame;
-    TestRenderModule m_render_module;
+    std::unique_ptr<TestRenderModule> m_render_module;
 
 };
 

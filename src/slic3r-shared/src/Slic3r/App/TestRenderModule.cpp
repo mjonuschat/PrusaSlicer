@@ -51,17 +51,17 @@ TestRenderModule::TestRenderModule()
     SPDLOG_TRACE("TestRenderModule() 1");
     memset(m_text_buffer, 0, sizeof(m_text_buffer));
     m_geometry
-        .add_vertex({{1, 1, -2}})
-        .add_vertex({{-1, 1, -2}})
-        .add_vertex({{0, -1, -2}})
+        .add_vertex({{1, 1, 0}})
+        .add_vertex({{-1, 1, 0}})
+        .add_vertex({{0, -1, 0}})
         .add_triangle_indices(0, 1, 2)
         .upload();
 
     m_geometry2
-        .add_vertex({{1, 1, -2}, {1, 1}})
-        .add_vertex({{-1, 1, -2}, {0, 1}})
-        .add_vertex({{1, -1, -2}, {1, 0}})
-        .add_vertex({{-1, -1, -2}, {0, 0}})
+        .add_vertex({{1, 1, 0}, {1, 1}})
+        .add_vertex({{-1, 1, 0}, {0, 1}})
+        .add_vertex({{1, -1, 0}, {1, 0}})
+        .add_vertex({{-1, -1, 0}, {0, 0}})
         .add_triangle_indices(0, 1, 2)
         .add_triangle_indices(1, 3, 2)
         .upload();
@@ -75,8 +75,8 @@ TestRenderModule::TestRenderModule()
     opts.gen_mipmaps = true;
     opts.force_power_of_two = true;
     m_tex = Render::Context::instance().texture_manager().get(
-//        "icons/PrusaSlicer-gcodeviewer-mac_128px.png",
-         "icons/funnel.svg",
+        "icons/PrusaSlicer-gcodeviewer-mac_128px.png",
+//         "icons/funnel.svg",
         opts
     );
 //    m_tex = Render::Context::instance().texture_manager()
@@ -86,7 +86,7 @@ TestRenderModule::TestRenderModule()
 void TestRenderModule::render_scene()
 {
     SPDLOG_TRACE("TestRenderModule::render_scene() 1");
-    glViewport(0, 0, m_screen_w, m_screen_h);
+    glViewport(0, 0, m_screen_info.physical_width(), m_screen_info.physical_height());
     Transform3f view = Transform3f::Identity();
     view = view.translate(Vec3f(0, 0, -2));
     SPDLOG_TRACE("TestRenderModule::render_scene() 2");
@@ -95,7 +95,11 @@ void TestRenderModule::render_scene()
 
     m_geometry.bind(*m_shader);
     Matrix4f vm = view.matrix();
-    Matrix4f  proj = perspective(60, float(m_screen_w) / float(m_screen_h), 0.01, 10);
+    Matrix4f proj = perspective(
+        60,
+        float(m_screen_info.physical_width()) / float(m_screen_info.physical_height()),
+        0.01, 10
+    );
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     SPDLOG_TRACE("TestRenderModule::render_scene() 4");
@@ -114,10 +118,11 @@ void TestRenderModule::render_scene()
 
     Transform3f model = Transform3f::Identity();
     model.translate(Vec3f(-0.5, -0.5, 0));
+    model.scale(m_geom2_scale);
     vm = view.matrix() * model.matrix();
 
     m_shader2->bind();
-    m_geometry2.bind(*m_shader2);//0x0000000118009a20
+    m_geometry2.bind(*m_shader2);
     m_shader2->set_uniform("view_model_matrix", vm);
     m_shader2->set_uniform("projection_matrix", proj);
     //m_shader2->set_uniform("uniform_texture", 0);
@@ -156,6 +161,11 @@ void TestRenderModule::render_imgui()
 void TestRenderModule::on_scene_mouse_event(const Platform::MouseEvent &e)
 {
     std::cout <<  "MouseEvent type: " << uint32_t(e.get_type()) << "\n";
+    if (e.get_type() == Platform::MouseEvent::Type::Move) {
+        float dx = 2 * float(e.get_x()) / float(m_screen_info.logical_width()) - 1.0f;
+        m_geom2_scale = std::pow(2.0f, dx * 5);
+        std::cout << "Geom scale: " << m_geom2_scale << "  dx: " << dx << "\n";
+    }
 }
 
 void TestRenderModule::on_scene_keyboard_event(const Platform::KeyboardEvent &e)

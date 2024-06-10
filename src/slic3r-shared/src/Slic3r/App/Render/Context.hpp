@@ -6,6 +6,7 @@ namespace Slic3r::App::Render {
 
 class ShaderManager;
 class TextureManager;
+class Texture;
 
 class Context
 {

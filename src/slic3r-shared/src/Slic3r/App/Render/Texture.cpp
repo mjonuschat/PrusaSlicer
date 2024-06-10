@@ -1,4 +1,5 @@
 #include "Texture.hpp"
+#include "Context.hpp"
 
 namespace Slic3r::App::Render {
 
@@ -32,7 +33,8 @@ GLenum texture_format_type(PixelFormat format)
 }
 }
 
-Texture::Texture()
+Texture::Texture(Context& context)
+    : m_context(context)
 {
     glGenTextures(1, &m_id);
     glCheck();
@@ -60,7 +62,7 @@ void Texture::set_data(PixelFormat format,size_t level, size_t w, size_t h, cons
     bind(0);
     GLenum gl_format = GL::texture_format(format);
     GLenum gl_type = GL::texture_format_type(format);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, level > 0 ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
     glCheck();
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glCheck();

@@ -260,9 +260,12 @@ void SDLRenderCanvas::begin_frame_platform()
         w = h = 0;
     SDL_GL_GetDrawableSize(m_window, &display_w, &display_h);
     io.DisplaySize = ImVec2((float)w, (float)h);
-    set_screen_size(display_w, display_h);
+    const float scale_x = (float)display_w / (float)w;
+    const float scale_y = (float)display_h / (float)h;
+    assert(scale_x == scale_y);
+    set_screen_size({size_t(display_w), size_t(display_h), scale_x});
     if (w > 0 && h > 0)
-        io.DisplayFramebufferScale = ImVec2((float)display_w / w, (float)display_h / h);
+        io.DisplayFramebufferScale = ImVec2(scale_x, scale_y);
 }
 
 void SDLRenderCanvas::begin_imgui_frame_platform()

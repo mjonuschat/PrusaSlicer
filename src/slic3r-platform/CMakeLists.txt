@@ -18,6 +18,7 @@ set(SLIC3R_PLATFORM_FILES
         src/Slic3r/App/Platform/JobManager.hpp
         src/Slic3r/App/Platform/PlatformInfo.hpp
         src/Slic3r/App/Platform/PlatformInfo.cpp
+        src/Slic3r/App/Platform/ScreenInfo.hpp
 )
 
 if (APPLE)
