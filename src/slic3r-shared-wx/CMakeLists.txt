@@ -39,6 +39,8 @@ set(SLIC3R_SHARED_WX_FILES
         src/Slic3r/App/WX/Widgets/Button.cpp
         src/Slic3r/App/WX/Widgets/BitmapToggleButton.hpp
         src/Slic3r/App/WX/Widgets/BitmapToggleButton.cpp
+        src/Slic3r/App/WX/Widgets/BitmapComboBox.hpp
+        src/Slic3r/App/WX/Widgets/BitmapComboBox.cpp
         src/Slic3r/App/WX/Widgets/SwitchButton.hpp
         src/Slic3r/App/WX/Widgets/SwitchButton.cpp
 )

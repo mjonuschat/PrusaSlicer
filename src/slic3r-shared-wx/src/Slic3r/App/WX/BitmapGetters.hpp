@@ -23,19 +23,16 @@ inline wxSize get_preferred_size(const wxBitmapBundle& bmp, wxWindow* parent)
 #else
     return bmp.GetDefaultSize();
 #endif
-}
 
-/*
-namespace Slic3r::GUI {
 class BitmapComboBox;
-}
-void apply_extruder_selector(Slic3r::GUI::BitmapComboBox** ctrl,
-                             wxWindow* parent,
+void apply_extruder_selector(BitmapComboBox**   ctrl,
+                             wxWindow*          parent,
+                             bool               use_full_item_name = false,
                              const std::string& first_item = "",
-                             wxPoint pos = wxDefaultPosition,
-                             wxSize size = wxDefaultSize,
-                             bool use_thin_icon = false);
-*/
+                             wxPoint            pos = wxDefaultPosition,
+                             wxSize             size = wxDefaultSize,
+                             bool               use_thin_icon = false);
 
 }
 
+}

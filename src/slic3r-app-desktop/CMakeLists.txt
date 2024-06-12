@@ -7,6 +7,10 @@ set(SLIC3R_APP_DESKTOP_FILES
         src/Slic3r/App/Desktop/TopBar.hpp
         src/Slic3r/App/Desktop/TopBarMenus.cpp
         src/Slic3r/App/Desktop/TopBarMenus.hpp
+        src/Slic3r/App/Desktop/ModePaletteComboBox.cpp
+        src/Slic3r/App/Desktop/ModePaletteComboBox.hpp
+        src/Slic3r/App/Desktop/GUI_Descriptions.cpp
+        src/Slic3r/App/Desktop/GUI_Descriptions.hpp
 )
 
 # Create a slic3r-app-desktop executable

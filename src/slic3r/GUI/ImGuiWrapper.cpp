@@ -79,7 +79,6 @@ void imgui_rendered_fallback_glyph(ImWchar c)
     }
 }
 
-
 namespace Slic3r {
 namespace GUI {
 

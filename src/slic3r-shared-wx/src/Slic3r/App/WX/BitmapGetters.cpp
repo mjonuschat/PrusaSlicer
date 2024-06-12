@@ -1,9 +1,15 @@
 #include "BitmapGetters.hpp"
 #include "BitmapCache.hpp"
 #include "WidgetsConfig.hpp"
+#include "StringConversions.hpp"
+#include "Widgets/BitmapComboBox.hpp"
 
 #include <stdexcept>
 #include <boost/algorithm/string/replace.hpp>
+#include <boost/format.hpp>
+
+#define _L(s) s //#include "I18N.hpp"
+#define _(s) s //#include "I18N.hpp"
 
 namespace Slic3r::App::WX {
 
@@ -77,19 +83,20 @@ std::vector<wxBitmapBundle*> get_extruder_color_icons(bool thin_icon/* = false*/
     return bmps;
 }
 
-/*
-void apply_extruder_selector(Slic3r::GUI::BitmapComboBox** ctrl, 
-                             wxWindow* parent,
-                             const std::string& first_item/* = ""* /, 
-                             wxPoint pos/* = wxDefaultPosition* /,
-                             wxSize size/* = wxDefaultSize* /,
-                             bool use_thin_icon/* = false* /)
+
+void apply_extruder_selector(BitmapComboBox**   ctrl, 
+                             wxWindow*          parent,
+                             bool               use_full_item_name  /* = false*/,
+                             const std::string& first_item          /* = ""*/,
+                             wxPoint            pos                 /* = wxDefaultPosition*/,
+                             wxSize             size                /* = wxDefaultSize*/,
+                             bool               use_thin_icon       /* = false*/)
 {
     std::vector<wxBitmapBundle*> icons = get_extruder_color_icons(use_thin_icon);
 
     if (!*ctrl) {
-        *ctrl = new Slic3r::GUI::BitmapComboBox(parent, wxID_ANY, wxEmptyString, pos, size, 0, nullptr, wxCB_READONLY);
-        Slic3r::GUI::wxGetApp().UpdateDarkUI(*ctrl);
+        *ctrl = new BitmapComboBox(parent, wxID_ANY, wxEmptyString, pos, size, 0, nullptr, wxCB_READONLY);
+        w_config()->UpdateDarkUI(*ctrl);
     }
     else
     {
@@ -106,11 +113,8 @@ void apply_extruder_selector(Slic3r::GUI::BitmapComboBox** ctrl,
         return;
     }
 
-    // For ObjectList we use short extruder name (just a number)
-    const bool use_full_item_name = dynamic_cast<Slic3r::GUI::ObjectList*>(parent) == nullptr;
-
     int i = 0;
-    wxString str = _(L("Extruder"));
+    wxString str = _L("Extruder");
     for (wxBitmapBundle* bmp : icons) {
         if (i == 0) {
             if (!first_item.empty())
@@ -125,7 +129,7 @@ void apply_extruder_selector(Slic3r::GUI::BitmapComboBox** ctrl,
     }
     (*ctrl)->SetSelection(0);
 }
-*/
+
 
 }
 

@@ -108,7 +108,7 @@ void TextInput::SetLabel(const wxString& label)
 
 bool TextInput::SetBackgroundColour(const wxColour& colour)
 {
-    const int clr_background_disabled = Slic3r::App::WX::WidgetsConfig::instance()->dark_mode() ? clr_background_disabled_dark : clr_background_disabled_light;
+    const int clr_background_disabled = w_config()->dark_mode() ? clr_background_disabled_dark : clr_background_disabled_light;
     const StateColor clr_state( std::make_pair(clr_background_disabled,    (int)StateColor::Disabled),
                                 std::make_pair(clr_background_focused,     (int)StateColor::Checked),
                                 std::make_pair(colour,                     (int)StateColor::Focused),

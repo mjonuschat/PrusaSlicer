@@ -43,6 +43,18 @@ ScalableBitmap::ScalableBitmap(wxWindow* parent, boost::filesystem::path& icon_p
     if (ext == ".png" || ext == ".jpg") {
         bitmap.LoadFile(path, ext == ".png" ? wxBITMAP_TYPE_PNG : wxBITMAP_TYPE_JPEG);
 
+        // check if the bitmap has a square shape
+
+        if (wxSize sz = bitmap.GetSize(); sz.x != sz.y) {
+            const int bmp_side = std::min(sz.GetWidth(), sz.GetHeight());
+
+            wxRect rc = sz.GetWidth() > sz.GetHeight() ?
+                        wxRect(int(0.5 * (sz.x - sz.y)), 0, bmp_side, bmp_side) :
+                        wxRect(0, int(0.5 * (sz.y - sz.x)), bmp_side, bmp_side);
+
+            bitmap = bitmap.GetSubBitmap(rc);
+        }
+
         // set mask for circle shape
 
         wxBitmapBundle mask_bmps = *get_bmp_bundle("user_mask", bitmap.GetSize().GetWidth());
