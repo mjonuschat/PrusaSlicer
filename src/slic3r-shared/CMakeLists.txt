@@ -33,6 +33,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/TestRenderModule.cpp
         src/Slic3r/App/Render/Geometry.hpp
         src/Slic3r/App/Render/Geometry.cpp
+        src/Slic3r/App/Render/GeometryBuilder.hpp
+        src/Slic3r/App/Render/GeometryBuilder.cpp
         src/Slic3r/App/Render/TextureManager.cpp
         src/Slic3r/App/Render/TextureManager.hpp
         src/Slic3r/App/Render/Image.hpp

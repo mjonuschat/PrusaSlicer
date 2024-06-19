@@ -20,8 +20,8 @@ public:
     void on_scene_keyboard_event(const Platform::KeyboardEvent &e) override;
 
 private:
-    Render::Geometry<Render::VertexP3> m_geometry;
-    Render::Geometry<Render::VertexP3T2> m_geometry2;
+    Render::Geometry m_geometry;
+    Render::Geometry m_geometry2;
     Render::Shader* m_shader{nullptr};
     Render::Shader* m_shader2{nullptr};
     Render::Texture* m_tex{nullptr};

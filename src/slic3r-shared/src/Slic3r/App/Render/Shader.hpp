@@ -96,7 +96,6 @@ public:
     // returns -1 if not found
     int get_uniform_location(const char* name) const;
 private:
-    template <typename V, typename I>
     friend class Geometry;
     std::string m_name;
     unsigned int m_id{ 0 };

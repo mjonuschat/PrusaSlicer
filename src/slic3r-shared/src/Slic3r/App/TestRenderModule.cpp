@@ -5,9 +5,10 @@
 #include <fmt/chrono.h>
 #include <libslic3r/Geometry.hpp>
 
-#include "Render/commonGL.hpp"
-#include "Render/Context.hpp"
-#include "Render/ShaderManager.hpp"
+#include "Slic3r/App/Render/commonGL.hpp"
+#include "Slic3r/App/Render/Context.hpp"
+#include "Slic3r/App/Render/ShaderManager.hpp"
+#include "Slic3r/App/Render/GeometryBuilder.hpp"
 
 namespace Slic3r::App {
 
@@ -50,21 +51,23 @@ TestRenderModule::TestRenderModule()
 {
     SPDLOG_TRACE("TestRenderModule() 1");
     memset(m_text_buffer, 0, sizeof(m_text_buffer));
-    m_geometry
+    Render::GeometryBuilder<Render::VertexP3> geometry;
+    geometry
         .add_vertex({{1, 1, 0}})
         .add_vertex({{-1, 1, 0}})
         .add_vertex({{0, -1, 0}})
-        .add_triangle_indices(0, 1, 2)
-        .upload();
+        .add_triangle_indices(0, 1, 2);
+    m_geometry = geometry.build();
 
-    m_geometry2
+    Render::GeometryBuilder<Render::VertexP3T2> geometry2;
+    geometry2
         .add_vertex({{1, 1, 0}, {1, 1}})
         .add_vertex({{-1, 1, 0}, {0, 1}})
         .add_vertex({{1, -1, 0}, {1, 0}})
         .add_vertex({{-1, -1, 0}, {0, 0}})
         .add_triangle_indices(0, 1, 2)
-        .add_triangle_indices(1, 3, 2)
-        .upload();
+        .add_triangle_indices(1, 3, 2);
+    m_geometry2 = geometry2.build();
 
     SPDLOG_TRACE("TestRenderModule() 2");
     auto& ctx = Render::Context::instance();
