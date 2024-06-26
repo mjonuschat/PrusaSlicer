@@ -1,6 +1,8 @@
 set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Render/Context.hpp
         src/Slic3r/App/Render/Context.cpp
+        src/Slic3r/App/Render/Device.hpp
+        src/Slic3r/App/Render/Device.cpp
         src/Slic3r/App/Render/Material.hpp
         src/Slic3r/App/Render/ShaderManager.hpp
         src/Slic3r/App/Render/ShaderManager.cpp

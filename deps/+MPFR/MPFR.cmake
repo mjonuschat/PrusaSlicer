@@ -26,7 +26,7 @@ else ()
     # endif ()
 
     if (EMSCRIPTEN)
-        set(_cross_compile_arg --host=none)
+        set(_cross_compile_arg --host=wasm32)
     endif ()
 
     message(STATUS "${PROJECT_NAME}_DEP_INSTALL_PREFIX=${${PROJECT_NAME}_DEP_INSTALL_PREFIX}")

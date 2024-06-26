@@ -63,6 +63,9 @@ template<> struct IndexTypeTraits<unsigned char>
     static constexpr GLenum type_id = GL_UNSIGNED_BYTE;
 };
 } // namespace GL
+
+
+
 template <typename V, typename I=uint32_t>
 class GeometryBuilder
 {
@@ -106,11 +109,17 @@ public:
         void* index_data = nullptr;
         size_t index_count = 0;
         Render::IndexType index_type = Render::IndexType::UInt;
+        std::unique_ptr<char[]> repacked_index_data;
 
         if (!m_indices.empty()) {
-            index_data = m_indices.data();
             index_count = m_indices.size();
-            index_type = IndexTypeTraits<I>::index_type;
+            if (repack_index<unsigned char>(m_indices, repacked_index_data, index_type) ||
+                repack_index<unsigned short>(m_indices, repacked_index_data, index_type))
+                index_data = repacked_index_data.get();
+            else {
+                index_type = IndexTypeTraits<I>::index_type;
+                index_data = m_indices.data();
+            }
         }
 
         geometry.upload(
@@ -121,6 +130,25 @@ public:
         m_indices.clear();
         return geometry;
     }
+private:
+    template <typename DestI>
+    static bool repack_index(const std::vector<I>& src, std::unique_ptr<char[]>& dest, IndexType& destType)
+    {
+        if (IndexTypeTraits<I>::index_type == IndexTypeTraits<DestI>::index_type)
+            return false;
+        const auto size = src.size();
+        if (size > std::numeric_limits<DestI>::max())
+            return false;
+
+        destType = IndexTypeTraits<DestI>::index_type;
+        dest.reset(new char[sizeof(DestI) * size]);
+        for (size_t i = 0; i < size; i++) {
+            DestI& dest_el = *reinterpret_cast<DestI*>(dest[sizeof(DestI) * i]);
+            dest_el = static_cast<DestI>(src[i]);
+        }
+        return true;
+    }
+
 private:
     std::vector<V> m_vertices;
     std::vector<I> m_indices;
