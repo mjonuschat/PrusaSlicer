@@ -17,7 +17,7 @@
 #include <gtk/gtk.h>
 #endif
 
-namespace Slic3r::App::WX {
+namespace Slic3r::App::WX::Widgets {
 
 wxDEFINE_EVENT(EVT_DISMISS, wxCommandEvent);
 

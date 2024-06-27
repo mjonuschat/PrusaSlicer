@@ -9,7 +9,7 @@
 // ***  BitmapComboBox  ***
 // ---------------------------------
 
-namespace Slic3r::App::WX {
+namespace Slic3r::App::WX::Widgets {
 
 BitmapComboBox::BitmapComboBox(wxWindow*        parent,
                                wxWindowID       id          /* = wxID_ANY*/,

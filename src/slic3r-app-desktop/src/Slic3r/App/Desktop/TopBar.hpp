@@ -65,7 +65,7 @@ class TopBarItemsCtrl : public wxControl
 
     TopBarMenus*    m_menus                 { nullptr };
 
-    WX::TextInput*    m_search{ nullptr };
+    WX::Widgets::TextInput*    m_search{ nullptr };
 
     int             m_btns_width            { 0 };
     bool            m_collapsed_btns        { false };
@@ -102,7 +102,7 @@ public:
     void UpdateSearchSizeAndPosition();
     void UpdateSearch(const wxString& search);
 
-    wxWindow* GetSearchCtrl() { return m_search->GetTextCtrl(); }
+//    wxWindow* GetSearchCtrl() { return m_search->GetTextCtrl(); */}
 
 private:
     wxFlexGridSizer*                m_buttons_sizer;
@@ -382,7 +382,7 @@ public:
             const bool isFromParent = event.GetEventObject() == (wxObject*)parent;
             const bool isFromSelf = event.GetEventObject() == (wxObject*)this;
             const bool isForward = event.GetDirection();
-
+/*
             wxWindow* search_win = (dynamic_cast<TopBarItemsCtrl*>(m_bookctrl)->GetSearchCtrl());
             const bool isFromSearch = event.GetEventObject() == (wxObject*)search_win;
             if (isFromSearch)
@@ -392,7 +392,9 @@ public:
                 wxWindowList::compatibility_iterator i = siblings.Find(search_win->GetParent());
                 i->GetNext()->GetData()->SetFocus();
             }
-            else if (isFromSelf && !isForward)
+            else 
+*/                
+            if (isFromSelf && !isForward)
             {
                 // focus is currently on notebook tab and should leave
                 // it backwards (Shift-TAB)

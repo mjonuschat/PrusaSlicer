@@ -6,7 +6,7 @@
 #include <wx/dcmemory.h>
 #include <wx/dcclient.h>
 
-namespace Slic3r::App::WX {
+namespace Slic3r::App::WX::Widgets {
 
 SwitchButton::SwitchButton(wxWindow* parent, const wxString& name, wxWindowID id)
 	: BitmapToggleButton(parent, name, id)

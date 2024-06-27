@@ -2,6 +2,8 @@
 
 #include <wx/settings.h>
 
+namespace Slic3r::App::WX::Widgets {
+
 BitmapToggleButton::BitmapToggleButton(wxWindow* parent, const wxString& label, wxWindowID id)
 {
     const long style = wxBORDER_NONE | wxBU_EXACTFIT | wxBU_LEFT;
@@ -44,4 +46,6 @@ void BitmapToggleButton::update_size()
     wxSize best_sz = GetBestSize();
     SetSize(best_sz);
 #endif
+}
+
 }

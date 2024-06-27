@@ -3,7 +3,7 @@
 #include "../Scalable.hpp"
 #include "StaticBox.hpp"
 
-namespace Slic3r::App::WX {
+namespace Slic3r::App::WX::Widgets {
 
 class Button : public StaticBox
 {

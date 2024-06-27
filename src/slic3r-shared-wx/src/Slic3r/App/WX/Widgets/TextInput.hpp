@@ -6,7 +6,7 @@
 #include "StaticBox.hpp"
 #include "../Scalable.hpp"
 
-namespace Slic3r::App::WX {
+namespace Slic3r::App::WX::Widgets {
 
 class TextInput : public wxNavigationEnabled<StaticBox>
 {

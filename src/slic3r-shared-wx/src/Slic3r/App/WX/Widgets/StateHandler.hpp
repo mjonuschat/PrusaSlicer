@@ -5,7 +5,7 @@
 
 #include "StateColor.hpp"
 
-namespace Slic3r::App::WX {
+namespace Slic3r::App::WX::Widgets {
 
 wxDECLARE_EVENT(EVT_ENABLE_CHANGED, wxCommandEvent);
 

@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Slic3r::App::WX {
+namespace Slic3r::App::WX::Widgets {
 
 static const int clr_border_normal              = 0x646464;
 static const int clr_border_hovered             = 0xED6B21;

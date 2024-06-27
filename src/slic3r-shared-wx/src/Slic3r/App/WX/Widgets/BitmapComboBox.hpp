@@ -9,7 +9,7 @@
 // ---------------------------------
 // ***  BitmapComboBox  ***
 // ---------------------------------
-namespace Slic3r::App::WX {
+namespace Slic3r::App::WX::Widgets {
 
 // BitmapComboBox used to presets list on Sidebar and Tabs
 //class BitmapComboBox : public wxBitmapComboBox

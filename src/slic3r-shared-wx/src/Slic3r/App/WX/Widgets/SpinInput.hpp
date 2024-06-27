@@ -5,7 +5,7 @@
 #include <wx/timer.h>
 #include "StaticBox.hpp"
 
-namespace Slic3r::App::WX {
+namespace Slic3r::App::WX::Widgets {
 
 class Button;
 

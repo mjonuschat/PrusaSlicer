@@ -19,7 +19,7 @@ namespace Slic3r::App::Desktop {
 // ---------------------------------
 
 // BitmapComboBox used to palets list in GUI Preferences
-class ModePaletteComboBox : public WX::BitmapComboBox
+class ModePaletteComboBox : public WX::Widgets::BitmapComboBox
 {
 public:
 

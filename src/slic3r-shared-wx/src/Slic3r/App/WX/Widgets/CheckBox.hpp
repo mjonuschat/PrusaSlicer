@@ -3,7 +3,7 @@
 #include "BitmapToggleButton.hpp"
 #include "../Scalable.hpp"
 
-namespace Slic3r::App::WX {
+namespace Slic3r::App::WX::Widgets {
 
 class CheckBox : public BitmapToggleButton
 {

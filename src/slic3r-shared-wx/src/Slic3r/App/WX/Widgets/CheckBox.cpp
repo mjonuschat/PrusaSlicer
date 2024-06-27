@@ -1,6 +1,6 @@
 #include "CheckBox.hpp"
 
-namespace Slic3r::App::WX {
+namespace Slic3r::App::WX::Widgets {
 
 const int px_cnt = 16;
 

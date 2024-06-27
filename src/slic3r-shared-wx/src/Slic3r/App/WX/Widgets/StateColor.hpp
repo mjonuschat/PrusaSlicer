@@ -2,7 +2,7 @@
 
 #include <wx/colour.h>
 
-namespace Slic3r::App::WX {
+namespace Slic3r::App::WX::Widgets {
 
 class StateColor
 {

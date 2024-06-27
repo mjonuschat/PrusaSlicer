@@ -1,7 +1,8 @@
-#ifndef slic3r_GUI_BitmapToggleButton_hpp_
-#define slic3r_GUI_BitmapToggleButton_hpp_
+#pragma once
 
 #include <wx/tglbtn.h>
+
+namespace Slic3r::App::WX::Widgets {
 
 class BitmapToggleButton : public wxBitmapToggleButton
 {
@@ -14,4 +15,6 @@ protected:
 	void update_size();
 };
 
-#endif // !slic3r_GUI_BitmapToggleButton_hpp_
+}
+
+

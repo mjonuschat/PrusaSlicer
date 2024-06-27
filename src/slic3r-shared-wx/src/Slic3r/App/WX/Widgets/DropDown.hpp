@@ -11,7 +11,7 @@
 #include "../Scalable.hpp"
 #include "StateHandler.hpp"
 
-namespace Slic3r::App::WX {
+namespace Slic3r::App::WX::Widgets {
 
 #define DD_NO_CHECK_ICON    0x0001
 #define DD_NO_DROP_ICON     0x0002

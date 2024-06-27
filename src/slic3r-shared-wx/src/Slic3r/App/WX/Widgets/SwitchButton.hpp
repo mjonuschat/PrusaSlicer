@@ -5,7 +5,7 @@
 #include "../Scalable.hpp"
 #include "StateColor.hpp"
 
-namespace Slic3r::App::WX {
+namespace Slic3r::App::WX::Widgets {
 
 class SwitchButton : public BitmapToggleButton
 {

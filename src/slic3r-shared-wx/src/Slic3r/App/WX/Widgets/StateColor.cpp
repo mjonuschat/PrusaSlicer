@@ -1,6 +1,6 @@
 #include "StateColor.hpp"
 
-namespace Slic3r::App::WX {
+namespace Slic3r::App::WX::Widgets {
 
 StateColor::StateColor(wxColour const &color) { append(color, 0); }
 

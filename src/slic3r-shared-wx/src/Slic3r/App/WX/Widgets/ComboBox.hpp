@@ -5,7 +5,7 @@
 
 #include <wx/ctrlsub.h>
 
-namespace Slic3r::App::WX {
+namespace Slic3r::App::WX::Widgets {
 
 #define CB_NO_DROP_ICON DD_NO_DROP_ICON
 #define CB_NO_TEXT DD_NO_TEXT

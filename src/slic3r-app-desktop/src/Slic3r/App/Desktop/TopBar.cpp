@@ -283,7 +283,7 @@ void TopBarItemsCtrl::CreateSearch()
     // Linux specific: If wxDefaultSize is used in constructor and than set just maxSize, 
     // than this max size will be used as a default control size and can't be resized.
     // So, set initial size for some minimum value
-    m_search = new WX::TextInput(this, /*wxGetApp().searcher().default_string*/"Input", "", "search", wxDefaultPosition, wxSize(2 * em_unit(this), -1), wxTE_PROCESS_ENTER);
+    m_search = new WX::Widgets::TextInput(this, /*wxGetApp().searcher().default_string*/"Input", "", "search", wxDefaultPosition, wxSize(2 * em_unit(this), -1), wxTE_PROCESS_ENTER);
     m_search->SetMaxSize(wxSize(42*em_unit(this), -1));
     w_config()->UpdateDarkUI(m_search);
 /*

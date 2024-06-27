@@ -2,7 +2,6 @@
 #include "BitmapCache.hpp"
 #include "WidgetsConfig.hpp"
 #include "StringConversions.hpp"
-#include "Widgets/BitmapComboBox.hpp"
 
 #include <stdexcept>
 #include <boost/algorithm/string/replace.hpp>
@@ -84,7 +83,7 @@ std::vector<wxBitmapBundle*> get_extruder_color_icons(bool thin_icon/* = false*/
 }
 
 
-void apply_extruder_selector(BitmapComboBox**   ctrl, 
+void apply_extruder_selector(Widgets::BitmapComboBox**   ctrl,
                              wxWindow*          parent,
                              bool               use_full_item_name  /* = false*/,
                              const std::string& first_item          /* = ""*/,
@@ -95,7 +94,7 @@ void apply_extruder_selector(BitmapComboBox**   ctrl,
     std::vector<wxBitmapBundle*> icons = get_extruder_color_icons(use_thin_icon);
 
     if (!*ctrl) {
-        *ctrl = new BitmapComboBox(parent, wxID_ANY, wxEmptyString, pos, size, 0, nullptr, wxCB_READONLY);
+        *ctrl = new Widgets::BitmapComboBox(parent, wxID_ANY, wxEmptyString, pos, size, 0, nullptr, wxCB_READONLY);
         w_config()->UpdateDarkUI(*ctrl);
     }
     else

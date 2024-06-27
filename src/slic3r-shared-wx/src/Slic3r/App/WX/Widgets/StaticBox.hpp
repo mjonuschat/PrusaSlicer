@@ -4,7 +4,7 @@
 
 #include <wx/window.h>
 
-namespace Slic3r::App::WX {
+namespace Slic3r::App::WX::Widgets {
 
 class StaticBox : public wxWindow
 {

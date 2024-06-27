@@ -4,6 +4,7 @@
 ///|/
 #pragma once
 
+#include "Widgets/BitmapComboBox.hpp"
 #include <wx/bmpbndl.h>
 
 namespace Slic3r::App::WX {
@@ -24,8 +25,7 @@ inline wxSize get_preferred_size(const wxBitmapBundle& bmp, wxWindow* parent)
     return bmp.GetDefaultSize();
 #endif
 
-class BitmapComboBox;
-void apply_extruder_selector(BitmapComboBox**   ctrl,
+void apply_extruder_selector(Widgets::BitmapComboBox**   ctrl,
                              wxWindow*          parent,
                              bool               use_full_item_name = false,
                              const std::string& first_item = "",

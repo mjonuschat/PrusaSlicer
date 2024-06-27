@@ -6,7 +6,7 @@
 
 #include "../WidgetsConfig.hpp"
 
-namespace Slic3r::App::WX {
+namespace Slic3r::App::WX::Widgets {
 
 BEGIN_EVENT_TABLE(ComboBox, TextInput)
 
