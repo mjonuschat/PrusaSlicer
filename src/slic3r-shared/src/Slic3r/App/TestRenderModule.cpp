@@ -49,12 +49,12 @@ std::chrono::duration<double, std::milli> get_delta()
 
 TestRenderModule::TestRenderModule()
 {
+    memset(m_text_buffer, 0, sizeof(m_text_buffer));
 }
 
 void TestRenderModule::on_init()
 {
     SPDLOG_TRACE("TestRenderModule() 1");
-    memset(m_text_buffer, 0, sizeof(m_text_buffer));
     Render::GeometryBuilder<Render::VertexP3> geometry;
     geometry
         .add_vertex({{1, 1, 0}})
