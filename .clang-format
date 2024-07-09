@@ -10,8 +10,8 @@ AlignEscapedNewlines: DontAlign
 AlignOperands:   false
 AlignTrailingComments: true
 AllowAllParametersOfDeclarationOnNextLine: true
-AllowShortBlocksOnASingleLine: true
-AllowShortCaseLabelsOnASingleLine: true
+AllowShortBlocksOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: false
 AllowShortFunctionsOnASingleLine: All
 AllowShortIfStatementsOnASingleLine: false
 AllowShortLoopsOnASingleLine: false
@@ -24,7 +24,7 @@ BinPackParameters: false
 BraceWrapping:   
   AfterClass:      true
   AfterControlStatement: false
-  AfterEnum:       false
+  AfterEnum:       true
   AfterFunction:   true
   AfterNamespace:  false
   AfterObjCDeclaration: false
@@ -95,7 +95,7 @@ PenaltyBreakString: 600
 PenaltyBreakTemplateDeclaration: 10
 PenaltyExcessCharacter: 50
 PenaltyReturnTypeOnItsOwnLine: 300
-PointerAlignment: Right
+PointerAlignment: Left
 ReflowComments:  true
 SortIncludes:    false
 SortUsingDeclarations: false

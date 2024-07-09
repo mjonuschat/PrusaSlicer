@@ -13,6 +13,7 @@ public:
     ~SDLRenderCanvas() override;
 
     void poll_events();
+    void wait_for_events();
     bool should_quit() const { return m_should_quit; }
 
 protected:
@@ -25,11 +26,11 @@ protected:
 private:
     void init_sdl_imgui();
 
+    void process_event(const SDL_Event& event);
     void update_imgui_mouse_position();
     void update_imgui_mouse_cursor();
-    bool pass_event_to_imgui(SDL_Event& event);
-
-    void pass_event_to_scene(SDL_Event& event);
+    bool pass_event_to_imgui(const SDL_Event& event);
+    void pass_event_to_scene(const SDL_Event& event);
 
 private:
     SDL_Window* m_window{nullptr};

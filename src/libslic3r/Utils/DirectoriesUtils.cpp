@@ -81,6 +81,13 @@ static std::string GetDataDir()
     return dir;
 }
 
+#elif defined(__EMSCRIPTEN__)
+static std::string GetDataDir()
+{
+    // Emscripten TODO: provide better data dir path
+    std::string dir;
+    return dir;
+}
 #endif
 
 namespace Slic3r {

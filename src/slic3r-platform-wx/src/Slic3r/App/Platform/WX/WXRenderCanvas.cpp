@@ -6,7 +6,8 @@
 #include <imgui/imgui.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
 
-#include "Slic3r/App/Platform/PlatformError.hpp"
+#include <Slic3r/App/Platform/PlatformError.hpp>
+#include <Slic3r/App/Render/commonGL.hpp>
 
 namespace Slic3r::App::Platform::WX {
 
@@ -249,35 +250,16 @@ WXRenderCanvas::WXRenderCanvas(wxWindow* parent)
 
 #if defined(__APPLE__)
     // GL 3.2 Core + GLSL 150
-    const char* glsl_version = "#version 150";
+    m_glsl_version = "#version 150";
     attrs.MajorVersion(3).MinorVersion(2);
 #else
     // GL 3.0 + GLSL 130
-    const char* glsl_version = "#version 130";
+    m_glsl_version = "#version 130";
     attrs.MajorVersion(3).MinorVersion(0);
 #endif
 
     m_gl_context = std::make_unique<wxGLContext>(this, nullptr, &attrs);
-    SetCurrent(*m_gl_context);
-
-    const auto err = glewInit();
-    if (err != GLEW_NO_ERROR) {
-        throw PlatformError(std::string("GLEW init failed with code ") + std::to_string(err));
-    }
-    // Setup Dear ImGui context
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO &io = ImGui::GetIO();
-    (void) io;
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
-
-    // Setup Dear ImGui style
-    ImGui::StyleColorsDark();
-    // ImGui::StyleColorsLight();
-
-    // Setup Platform/Renderer backends
-    init_wx_imgui();
-    ImGui_ImplOpenGL3_Init(glsl_version);
+    //SetCurrent(*m_gl_context);
 
     Bind(wxEVT_SIZE, &WXRenderCanvas::on_size, this);
     Bind(wxEVT_IDLE, &WXRenderCanvas::on_idle, this);
@@ -293,6 +275,32 @@ WXRenderCanvas::WXRenderCanvas(wxWindow* parent)
     Bind(wxEVT_RIGHT_UP, &WXRenderCanvas::on_mouse, this);
     Bind(wxEVT_MIDDLE_DOWN, &WXRenderCanvas::on_mouse, this);
     Bind(wxEVT_MIDDLE_UP, &WXRenderCanvas::on_mouse, this);
+}
+
+
+void WXRenderCanvas::init()
+{
+    const auto err = glewInit();
+    if (err != GLEW_NO_ERROR) {
+        throw PlatformError(std::string("GLEW init failed with code ") + std::to_string(err));
+    }
+
+    Render::initialize_gl();
+
+    // Setup Dear ImGui context
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO &io = ImGui::GetIO();
+    (void) io;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
+
+    // Setup Dear ImGui style
+    ImGui::StyleColorsDark();
+    // ImGui::StyleColorsLight();
+
+    // Setup Platform/Renderer backends
+    init_wx_imgui();
+    ImGui_ImplOpenGL3_Init(m_glsl_version.c_str());
 }
 
 
@@ -328,13 +336,23 @@ void WXRenderCanvas::init_wx_imgui()
     io.ConfigMacOSXBehaviors = false;
 }
 
+void WXRenderCanvas::render()
+{
+    SetCurrent(*m_gl_context);
+    if (!m_initialized) {
+        init();
+        m_initialized = true;
+    }
+    AbstractRenderCanvas::render();
+}
+
+
 
 void WXRenderCanvas::on_paint(wxPaintEvent& event)
 {
     // This is a dummy, to avoid an endless succession of paint messages.
     // OnPaint handlers must always create a wxPaintDC.
     wxPaintDC dc(this);
-    SetCurrent(*m_gl_context);
     render();
 }
 
@@ -404,7 +422,9 @@ void WXRenderCanvas::on_keyboard(wxKeyEvent& evt)
 void WXRenderCanvas::on_mouse(wxMouseEvent& evt)
 {
     ImGuiIO& io = ImGui::GetIO();
-    io.MousePos = ImVec2((float)evt.GetX(), (float)evt.GetY());
+    int mouse_x = ToDIP(evt.GetX());
+    int mouse_y = ToDIP(evt.GetY());
+    io.MousePos = ImVec2((float) mouse_x, (float) mouse_y);
     io.MouseDown[0] = evt.LeftIsDown();
     io.MouseDown[1] = evt.RightIsDown();
     io.MouseDown[2] = evt.MiddleIsDown();
@@ -453,9 +473,11 @@ void WXRenderCanvas::on_mouse(wxMouseEvent& evt)
         break;
     }
 
-
     MouseEvent platform_event{
-        platform_event_type, button, evt.GetX(), evt.GetY(), wheel_x, wheel_y, m_key_modifiers
+        platform_event_type, button,
+        mouse_x, mouse_y,
+        wheel_x, wheel_y,
+        m_key_modifiers
     };
     enqueue_mouse(platform_event);
 
@@ -464,7 +486,7 @@ void WXRenderCanvas::on_mouse(wxMouseEvent& evt)
 
 void WXRenderCanvas::on_idle(wxIdleEvent& event)
 {
-    dispatch();
+    dispatch_enqueued();
     bool render_requested = get_and_reset_render_requested();
     std::cout << "Idle: render requested: " << render_requested << "\n";
     if (render_requested)
@@ -474,28 +496,21 @@ void WXRenderCanvas::on_idle(wxIdleEvent& event)
 
 void WXRenderCanvas::begin_frame_platform()
 {
+    // Setup display size (every frame to accommodate for window resizing)
+    int w, h;
+    GetClientSize(&w, &h);
+    size_t display_w = ToPhys(w);
+    size_t display_h = ToPhys(h);
+    //    SDL_GL_GetDrawableSize(m_window, &display_w, &display_h);
+    ImGuiIO &io = ImGui::GetIO();
+    io.DisplaySize = ImVec2((float)w, (float)h);
+    double scale_factor = wxWindow::GetContentScaleFactor();
+    set_screen_size({display_w, display_h, float(scale_factor)});
+    io.DisplayFramebufferScale = ImVec2(float(scale_factor), float(scale_factor));
 }
 
 void WXRenderCanvas::begin_imgui_frame_platform()
 {
-    ImGuiIO& io = ImGui::GetIO();
-    IM_ASSERT(io.Fonts->IsBuilt() && "Font atlas not built! It is generally built by the renderer backend. Missing call to renderer _NewFrame() function? e.g. ImGui_ImplOpenGL3_NewFrame().");
-
-    // Setup display size (every frame to accommodate for window resizing)
-    int w, h;
-    int display_w, display_h;
-    GetClientSize(&w, &h);
-//    SDL_GL_GetDrawableSize(m_window, &display_w, &display_h);
-    io.DisplaySize = ImVec2((float)w, (float)h);
-    double scale_factor = wxWindow::GetContentScaleFactor();
-    io.DisplayFramebufferScale = ImVec2(float(scale_factor), float(scale_factor));
-    /*
-    if (w > 0 && h > 0)
-        io.DisplayFramebufferScale = ImVec2((float)display_w / w, (float)display_h / h);
-
-    update_imgui_mouse_position();
-    update_imgui_mouse_cursor();
-    */
 }
 
 void WXRenderCanvas::end_imgui_frame_platform()

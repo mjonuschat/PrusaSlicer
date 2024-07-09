@@ -1,6 +1,6 @@
 #include "SwitchButton.hpp"
 
-//#include "../../Utils/MacDarkMode.hpp"
+#include "Slic3r/App/WX/MacUtils.hpp"
 
 #include <wx/dcgraph.h>
 #include <wx/dcmemory.h>
@@ -52,7 +52,7 @@ void SwitchButton::Rescale()
 {
 	if (!labels[0].IsEmpty()) {
 #ifdef __WXOSX__
-        auto scale = Slic3r::GUI::mac_max_scaling_factor();
+        auto scale = mac_max_scaling_factor();
         int BS = (int) scale;
 #else
         constexpr int BS = 1;

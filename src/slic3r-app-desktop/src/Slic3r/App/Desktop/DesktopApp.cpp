@@ -2,6 +2,7 @@
 #include "MainFrame.hpp"
 
 #include <Slic3r/App/WX/WidgetsConfig.hpp>
+#include <Slic3r/App/Init.hpp>
 
 #include <Slic3r/App/Platform/PlatformServices.hpp>
 
@@ -10,6 +11,7 @@ wxIMPLEMENT_APP(Slic3r::App::Desktop::DesktopApp);
 namespace Slic3r::App::Desktop {
 bool DesktopApp::OnInit()
 {
+    init_paths();
     const bool is_dark = true;
     const bool is_sys_menu = true;
     WX::WidgetsConfig* wdts_config = WX::WidgetsConfig::instance(is_dark, is_sys_menu);

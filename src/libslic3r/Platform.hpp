@@ -17,6 +17,7 @@ enum class Platform
 	OSX,
 	Linux,
 	BSDUnix,
+    Emscripten,
 };
 
 enum class PlatformFlavor

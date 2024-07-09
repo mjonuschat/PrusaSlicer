@@ -1,6 +1,13 @@
 #pragma once
 
+#include <memory>
+
+#include <spdlog/spdlog.h>
+
 #include "commonGL.hpp"
+#include "Shader.hpp"
+#include "Context.hpp"
+#include "libslic3r/Point.hpp"
 
 namespace Slic3r::App::Render {
 
@@ -12,7 +19,7 @@ public:
         glCheck();
     }
 
-    ~Buffer();
+    virtual ~Buffer();
 
     inline void bind() const
     {
@@ -20,7 +27,7 @@ public:
         glCheck();
     }
 
-    inline void setData(const void* data, size_t size, GLenum usage)
+    inline void set_data(const void* data, GLsizeiptr size, GLenum usage)
     {
         bind();
         glBufferData(m_target, size, data, usage);
@@ -30,6 +37,24 @@ public:
 private:
     GLenum m_target;
     GLuint m_id {0};
+};
+
+class VertexBuffer : public Buffer
+{
+public:
+    VertexBuffer() : Buffer(GL_ARRAY_BUFFER) {}
+
+    inline void bind_vertex_attrib(GLuint index, GLint size, GLenum type, bool normalized, GLsizei stride, const void* pointer)
+    {
+        glVertexAttribPointer(index, size, type, normalized ? GL_TRUE : GL_FALSE, stride, pointer);
+        glCheck();
+    }
+};
+
+class IndexBuffer : public Buffer
+{
+public:
+    IndexBuffer() : Buffer(GL_ELEMENT_ARRAY_BUFFER) {}
 };
 
 } // namespace Slic3r::App::Render

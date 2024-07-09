@@ -9,9 +9,18 @@ add_subdirectory(miniz)
 add_subdirectory(glu-libtess)
 add_subdirectory(semver)
 add_subdirectory(libigl)
-add_subdirectory(hints)
+if (NOT EMSCRIPTEN)
+    add_subdirectory(hints)
+endif()
 add_subdirectory(qoi)
 add_subdirectory(libnest2d)
+add_subdirectory(fmt)
+
+#set(FMT_INCLUDE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/fmt/include)
+#add_subdirectory(fmtlog)
+
+set(SPDLOG_FMT_EXTERNAL ${CMAKE_CURRENT_SOURCE_DIR}/fmt)
+add_subdirectory(spdlog)
 
 find_package(Qhull 7.2 REQUIRED)
 add_library(qhull INTERFACE)
@@ -29,74 +38,81 @@ if (SLIC3R_ENABLE_FORMAT_STEP)
     add_subdirectory(occt_wrapper)
 endif ()
 
+if (EMSCRIPTEN)
+    add_subdirectory(imgui)
+    add_subdirectory(libvgcode)
+endif()
+
 if (SLIC3R_GUI)
     add_subdirectory(imgui)
     add_subdirectory(libvgcode)
-    add_subdirectory(hidapi)
-    include_directories(hidapi/include)
-
-    if(WIN32)
-        message(STATUS "WXWIN environment set to: $ENV{WXWIN}")
-    elseif(UNIX)
-        set(wxWidgets_USE_UNICODE ON)
-        if(SLIC3R_STATIC)
-            set(wxWidgets_USE_STATIC ON)
-        else()
-            set(wxWidgets_USE_STATIC OFF)
-        endif()
-    endif()
-
-    if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
-        set (wxWidgets_CONFIG_OPTIONS "--toolkit=gtk${SLIC3R_GTK}")
-    endif ()
-    find_package(wxWidgets 3.2 MODULE REQUIRED COMPONENTS base core adv html gl webview)
-
-    include(${wxWidgets_USE_FILE})
-
-    slic3r_remap_configs(wx::wxhtml wx::wxadv wx::wxgl wx::wxcore wx::wxbase RelWithDebInfo Release)
-
-    if(UNIX)
-        message(STATUS "wx-config path: ${wxWidgets_CONFIG_EXECUTABLE}")
-    endif()
 
     find_package(JPEG MODULE QUIET)
     find_package(NanoSVG REQUIRED)
 
-    string(REGEX MATCH "wxpng" WX_PNG_BUILTIN ${wxWidgets_LIBRARIES})
-    if (PNG_FOUND AND NOT WX_PNG_BUILTIN)
-        list(FILTER wxWidgets_LIBRARIES EXCLUDE REGEX png)
-        list(APPEND wxWidgets_LIBRARIES ${PNG_LIBRARIES})
-    endif ()
+    if (NOT EMSCRIPTEN)
+        add_subdirectory(hidapi)
+        include_directories(hidapi/include)
 
-    string(REGEX MATCH "wxjpeg" WX_JPEG_BUILTIN ${wxWidgets_LIBRARIES})
-    if (JPEG_FOUND AND NOT WX_JPEG_BUILTIN)
-        list(FILTER wxWidgets_LIBRARIES EXCLUDE REGEX jpeg)
-        list(APPEND wxWidgets_LIBRARIES ${JPEG_LIBRARIES})
-    endif ()
+        if(WIN32)
+            message(STATUS "WXWIN environment set to: $ENV{WXWIN}")
+        elseif(UNIX)
+            set(wxWidgets_USE_UNICODE ON)
+            if(SLIC3R_STATIC)
+                set(wxWidgets_USE_STATIC ON)
+            else()
+                set(wxWidgets_USE_STATIC OFF)
+            endif()
+        endif()
 
-    string(REGEX MATCH "wxexpat" WX_EXPAT_BUILTIN ${wxWidgets_LIBRARIES})
-    if (EXPAT_FOUND AND NOT WX_EXPAT_BUILTIN)
-        list(FILTER wxWidgets_LIBRARIES EXCLUDE REGEX expat)
-        list(APPEND wxWidgets_LIBRARIES libexpat)
-    endif ()
-    
-    # This is an issue in the new wxWidgets cmake build, doesn't deal with librt
-    find_library(LIBRT rt)
-    if(LIBRT)
-        list(APPEND wxWidgets_LIBRARIES ${LIBRT})
-    endif()
+        if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
+            set (wxWidgets_CONFIG_OPTIONS "--toolkit=gtk${SLIC3R_GTK}")
+        endif ()
+        find_package(wxWidgets 3.2 MODULE REQUIRED COMPONENTS base core adv html gl webview)
 
-    # This fixes a OpenGL linking issue on OSX. wxWidgets cmake build includes
-    # wrong libs for opengl in the link line and it does not link to it by himself.
-    # libslic3r_gui will link to opengl anyway, so lets override wx
-    list(FILTER wxWidgets_LIBRARIES EXCLUDE REGEX OpenGL)
-    
-    if (UNIX AND NOT APPLE)
-        list(APPEND wxWidgets_LIBRARIES X11 wayland-client wayland-egl EGL)
-    endif ()
-#    list(REMOVE_ITEM wxWidgets_LIBRARIES oleacc)
-    message(STATUS "wx libs: ${wxWidgets_LIBRARIES}")
+        include(${wxWidgets_USE_FILE})
 
+        slic3r_remap_configs(wx::wxhtml wx::wxadv wx::wxgl wx::wxcore wx::wxbase RelWithDebInfo Release)
+
+        if(UNIX)
+            message(STATUS "wx-config path: ${wxWidgets_CONFIG_EXECUTABLE}")
+        endif()
+
+        string(REGEX MATCH "wxpng" WX_PNG_BUILTIN ${wxWidgets_LIBRARIES})
+        if (PNG_FOUND AND NOT WX_PNG_BUILTIN)
+            list(FILTER wxWidgets_LIBRARIES EXCLUDE REGEX png)
+            list(APPEND wxWidgets_LIBRARIES ${PNG_LIBRARIES})
+        endif ()
+
+        string(REGEX MATCH "wxjpeg" WX_JPEG_BUILTIN ${wxWidgets_LIBRARIES})
+        if (JPEG_FOUND AND NOT WX_JPEG_BUILTIN)
+            list(FILTER wxWidgets_LIBRARIES EXCLUDE REGEX jpeg)
+            list(APPEND wxWidgets_LIBRARIES ${JPEG_LIBRARIES})
+        endif ()
+
+        string(REGEX MATCH "wxexpat" WX_EXPAT_BUILTIN ${wxWidgets_LIBRARIES})
+        if (EXPAT_FOUND AND NOT WX_EXPAT_BUILTIN)
+            list(FILTER wxWidgets_LIBRARIES EXCLUDE REGEX expat)
+            list(APPEND wxWidgets_LIBRARIES libexpat)
+        endif ()
+
+        # This is an issue in the new wxWidgets cmake build, doesn't deal with librt
+        find_library(LIBRT rt)
+        if(LIBRT)
+            list(APPEND wxWidgets_LIBRARIES ${LIBRT})
+        endif()
+
+        # This fixes a OpenGL linking issue on OSX. wxWidgets cmake build includes
+        # wrong libs for opengl in the link line and it does not link to it by himself.
+        # libslic3r_gui will link to opengl anyway, so lets override wx
+        list(FILTER wxWidgets_LIBRARIES EXCLUDE REGEX OpenGL)
+
+        if (UNIX AND NOT APPLE)
+            list(APPEND wxWidgets_LIBRARIES X11 wayland-client wayland-egl EGL)
+        endif ()
+    #    list(REMOVE_ITEM wxWidgets_LIBRARIES oleacc)
+        message(STATUS "wx libs: ${wxWidgets_LIBRARIES}")
+    endif (NOT EMSCRIPTEN)
     add_subdirectory(slic3r)
 endif()
 
@@ -282,11 +298,15 @@ else ()
     install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink prusa-slicer prusa-gcodeviewer WORKING_DIRECTORY \$ENV{DESTDIR}/${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR})")
 endif ()
 
+
+if (NOT EMSCRIPTEN)
+    add_subdirectory(slic3r-platform-wx)
+    add_subdirectory(slic3r-app-wxtest)
+endif ()
+
 add_subdirectory(slic3r-platform)
 add_subdirectory(slic3r-platform-sdl)
-add_subdirectory(slic3r-platform-wx)
 add_subdirectory(slic3r-shared)
 add_subdirectory(slic3r-shared-wx)
 add_subdirectory(slic3r-app-sdltest)
-#add_subdirectory(slic3r-app-wxtest)
 add_subdirectory(slic3r-app-desktop)

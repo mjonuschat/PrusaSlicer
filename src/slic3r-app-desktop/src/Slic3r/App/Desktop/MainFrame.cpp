@@ -77,7 +77,9 @@ MainFrame::MainFrame()
     test_sizer2->Add(test_btn2, 0, wxALIGN_CENTRE_VERTICAL | wxALL, 20);
 
     test_btn->Bind(wxEVT_BUTTON, [=](wxCommandEvent& e) {
+#ifdef WIN32
         w_config()->force_colors_update(!w_config()->dark_mode(), {this});
+#endif
         m_top_bar->OnColorsChanged();
         test_btn->sys_color_changed();
         test_btn2->sys_color_changed();

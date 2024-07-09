@@ -624,12 +624,24 @@ target_link_libraries(libslic3r
     TBB::tbbmalloc
     libslic3r_cgal
     ${CMAKE_DL_LIBS}
-    PNG::PNG
-    ZLIB::ZLIB
-	JPEG::JPEG
+#    PNG::PNG
+#    ZLIB::ZLIB
+#	JPEG::JPEG
     qoi
     LibBGCode::bgcode_convert
+    spdlog
     )
+
+if (NOT EMSCRIPTEN)
+    target_link_libraries(libslic3r
+            PNG::PNG
+            ZLIB::ZLIB
+            JPEG::JPEG
+    )
+else ()
+    set(CMAKE_C_FLAGS "--use-port=libpng --use-port=zlib ${CMAKE_CXX_FLAGS}")
+    set(CMAKE_CXX_FLAGS "--use-port=libpng --use-port=zlib ${CMAKE_CXX_FLAGS}")
+endif ()
 
 if (APPLE)
     # TODO: we need to fix notarization with the separate shared library
@@ -649,6 +661,14 @@ if (APPLE)
     # currently, PS targets v10.12
     target_compile_options(libslic3r PUBLIC "-fno-aligned-allocation")
     target_compile_options(libslic3r_cgal PUBLIC "-fno-aligned-allocation")
+endif ()
+
+if (EMSCRIPTEN)
+    # Emscripten has no support for rounding FP env
+    # For discussion see:
+    # https://github.com/emscripten-core/emscripten/issues/11086
+    # https://github.com/WebAssembly/relaxed-simd/issues/19
+    target_compile_definitions(libslic3r_cgal PUBLIC -DCGAL_ALWAYS_ROUND_TO_NEAREST)
 endif ()
 
 if (SLIC3R_PCH AND NOT SLIC3R_SYNTAXONLY)

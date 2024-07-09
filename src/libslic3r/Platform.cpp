@@ -5,6 +5,7 @@
 #include "Platform.hpp"
 
 #include <boost/log/trivial.hpp>
+#include <spdlog/spdlog.h>
 #include <boost/filesystem/operations.hpp>
 
 #if defined(__APPLE__)
@@ -90,6 +91,10 @@ void detect_platform()
     BOOST_LOG_TRIVIAL(info) << "Platform: OpenBSD";
 	s_platform 		  = Platform::BSDUnix;
 	s_platform_flavor = PlatformFlavor::OpenBSD;
+#elif defined(__EMSCRIPTEN__)
+    SPDLOG_INFO("Platform: Emscripten");
+    s_platform 		  = Platform::Emscripten;
+    s_platform_flavor = PlatformFlavor::Generic;
 #else
 	// This should not happen.
     BOOST_LOG_TRIVIAL(info) << "Platform: Unknown";
@@ -120,6 +125,7 @@ std::string platform_to_string(Platform platform)
         case Platform::OSX          : return "OSX";
         case Platform::Linux        : return "Linux";
         case Platform::BSDUnix      : return "BSDUnix";
+        case Platform::Emscripten   : return "Emscripten";
     }
     assert(false);
     return "";

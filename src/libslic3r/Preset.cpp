@@ -382,6 +382,7 @@ bool is_compatible_with_print(const PresetWithVendorProfile &preset, const Prese
 
 bool is_compatible_with_printer(const PresetWithVendorProfile &preset, const PresetWithVendorProfile &active_printer, const DynamicPrintConfig *extra_config)
 {
+    BOOST_LOG_TRIVIAL(debug) << "Checking compatibility of printer " << active_printer.preset.name << " with filament: " << preset.preset.name << "\n";
     // templates_profile vendor profiles should be decided as same vendor profiles
 	if (preset.vendor != nullptr && preset.vendor != active_printer.vendor && !preset.vendor->templates_profile)
 		// The current profile has a vendor assigned and it is different from the active print's vendor.
@@ -390,14 +391,18 @@ bool is_compatible_with_printer(const PresetWithVendorProfile &preset, const Pre
     auto *compatible_printers     = dynamic_cast<const ConfigOptionStrings*>(preset.preset.config.option("compatible_printers"));
     bool  has_compatible_printers = compatible_printers != nullptr && ! compatible_printers->values.empty();
     if (! has_compatible_printers && ! condition.empty()) {
+        BOOST_LOG_TRIVIAL(debug) << " - no compatible_printers present, evaluating condition: " << condition << "\n";
         try {
-            return PlaceholderParser::evaluate_boolean_expression(condition, active_printer.preset.config, extra_config);
+            bool ret = PlaceholderParser::evaluate_boolean_expression(condition, active_printer.preset.config, extra_config);
+            BOOST_LOG_TRIVIAL(debug) << " - result: " << ret << "\n";
         } catch (const std::runtime_error &err) {
+            BOOST_LOG_TRIVIAL(debug) << " - caught error: " << err.what() << "\n";
             //FIXME in case of an error, return "compatible with everything".
             printf("Preset::is_compatible_with_printer - parsing error of compatible_printers_condition %s:\n%s\n", active_printer.preset.name.c_str(), err.what());
             return true;
         }
     }
+    BOOST_LOG_TRIVIAL(debug) << " - compatible_printers present, evaluating condition: " << condition << "\n";
     return preset.preset.is_default || active_printer.preset.name.empty() || ! has_compatible_printers ||
         std::find(compatible_printers->values.begin(), compatible_printers->values.end(), active_printer.preset.name) !=
             compatible_printers->values.end();

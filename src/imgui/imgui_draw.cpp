@@ -3280,6 +3280,7 @@ void ImFont::AddRemapChar(ImWchar dst, ImWchar src, bool overwrite_dst)
     IndexAdvanceX[dst] = (src < index_size) ? IndexAdvanceX.Data[src] : 1.0f;
 }
 
+
 const ImFontGlyph* ImFont::FindGlyph(ImWchar c) const
 {
     // PrusaSlicer extension: call the following function whenever the fallback is needed.

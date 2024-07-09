@@ -25,6 +25,10 @@ else ()
     #     set(_cross_compile_arg --host=${TOOLCHAIN_PREFIX})
     # endif ()
 
+    if (EMSCRIPTEN)
+        set(_cross_compile_arg --host=wasm32)
+    endif ()
+
     message(STATUS "${PROJECT_NAME}_DEP_INSTALL_PREFIX=${${PROJECT_NAME}_DEP_INSTALL_PREFIX}")
 
     ExternalProject_Add(dep_MPFR

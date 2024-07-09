@@ -3,6 +3,7 @@
 #include "BitmapGetters.hpp"
 #include "StringConversions.hpp"
 #include "WidgetsConfig.hpp"
+#include "MacUtils.hpp"
 
 #include <wx/display.h>
 
@@ -65,7 +66,7 @@ ScalableBitmap::ScalableBitmap(wxWindow* parent, boost::filesystem::path& icon_p
 
         std::set<double> scales = { 1.0 };
 #ifdef __APPLE__
-        scales.emplace(Slic3r::GUI::mac_max_scaling_factor());
+        scales.emplace(mac_max_scaling_factor());
 #elif _WIN32
         size_t disp_cnt = wxDisplay::GetCount();
         for (size_t disp = 0; disp < disp_cnt; ++disp)

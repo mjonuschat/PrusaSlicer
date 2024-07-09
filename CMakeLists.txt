@@ -15,8 +15,17 @@ include("version.inc")
 include(GNUInstallDirs)
 include(CMakeDependentOption)
 
+if (EMSCRIPTEN)
+    set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -sUSE_PTHREADS)
+    set(CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS} -sUSE_PTHREADS)
+    set(CMAKE_SHARED_LINKER_FLAGS ${CMAKE_SHARED_LINKER_FLAGS} -sUSE_PTHREADS)
+endif ()
+
 set(SLIC3R_RESOURCES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/resources")
 file(TO_NATIVE_PATH "${SLIC3R_RESOURCES_DIR}" SLIC3R_RESOURCES_DIR_WIN)
+
+set(SLIC3R_RESOURCES_NEXT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/ResourcesNext")
+file(TO_NATIVE_PATH "${SLIC3R_RESOURCES_NEXT_DIR}" SLIC3R_RESOURCES_NEXT_DIR_WIN)
 
 if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   message(STATUS "No build type selected, default to Release")
@@ -26,7 +35,7 @@ endif()
 if(DEFINED ENV{SLIC3R_STATIC})
         set(SLIC3R_STATIC_INITIAL $ENV{SLIC3R_STATIC})
 else()
-        if (MSVC OR MINGW OR APPLE)
+        if (MSVC OR MINGW OR APPLE OR EMSCRIPTEN)
                 set(SLIC3R_STATIC_INITIAL 1)
         else()
                 set(SLIC3R_STATIC_INITIAL 0)
@@ -377,8 +386,9 @@ endif()
 # boost::beast::detail::base64 was introduced first in version 1.66.0
 set(MINIMUM_BOOST_VERSION "1.66.0")
 set(_boost_components "system;filesystem;thread;log;locale;regex;chrono;atomic;date_time;iostreams;nowide")
-if(EMSCRIPTEN_SUPPORT)
-    find_package(Boost ${MINIMUM_BOOST_VERSION} REQUIRED)
+if(EMSCRIPTEN)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --use-port=sdl2 --use-port=zlib -fwasm-exceptions")
+    #find_package(Boost ${MINIMUM_BOOST_VERSION} REQUIRED )
 else()
     find_package(Boost ${MINIMUM_BOOST_VERSION} REQUIRED COMPONENTS ${_boost_components})
 endif()
@@ -446,19 +456,20 @@ slic3r_remap_configs(TBB::tbbmalloc RelWithDebInfo Release)
 # endif()
 # The Intel TBB library will use the std::exception_ptr feature of C++11.
 # add_definitions(-DTBB_USE_CAPTURED_EXCEPTION=0)
+if (NOT EMSCRIPTEN)
+    find_package(CURL REQUIRED)
 
-find_package(CURL REQUIRED)
+    add_library(libcurl INTERFACE)
+    target_link_libraries(libcurl INTERFACE CURL::libcurl)
 
-add_library(libcurl INTERFACE)
-target_link_libraries(libcurl INTERFACE CURL::libcurl)
-
-# Fixing curl's cmake config script bugs
-if (NOT WIN32)
-    # Required by libcurl
-    find_package(ZLIB REQUIRED)
-    target_link_libraries(libcurl INTERFACE ZLIB::ZLIB)
-else()
-    target_link_libraries(libcurl INTERFACE crypt32)
+    # Fixing curl's cmake config script bugs
+    if (NOT WIN32)
+        # Required by libcurl
+        find_package(ZLIB REQUIRED)
+        target_link_libraries(libcurl INTERFACE ZLIB::ZLIB)
+    else()
+        target_link_libraries(libcurl INTERFACE crypt32)
+    endif()
 endif()
 
 ## OPTIONAL packages
@@ -487,10 +498,41 @@ else() # found by an older Find script
     target_link_libraries(libexpat INTERFACE ${EXPAT_LIBRARIES})
 endif ()
 
+if (EMSCRIPTEN)
+#    set(CMAKE_CXX_FLAGS "--use-port=libpng --use-port=libjpeg ${CMAKE_CXX_FLAGS}")
+#    set(CMAKE_C_FLAGS "--use-port=libpng --use-port=libjpeg ${CMAKE_CXX_FLAGS}")
+    set(CMAKE_CXX_FLAGS "--use-port=libpng -pthread ${CMAKE_CXX_FLAGS}")
+    set(CMAKE_C_FLAGS "--use-port=libpng -pthread ${CMAKE_CXX_FLAGS}")
+
+    set(SIMPLES_MAIN_SOURCE
+            "int main() { return 0; }\n\n"
+    )
+    try_compile(_res SOURCE_FROM_VAR main.cpp SIMPLEST_MAIN_SOURCE)
+    if (NOT _res)
+        message(ERROR "Prefetching Emscripten ports of libpng and libjpeg fails")
+    endif ()
+endif()
+
 find_package(PNG REQUIRED)
 
 set(OpenGL_GL_PREFERENCE "LEGACY")
 find_package(OpenGL REQUIRED)
+
+if (NOT EMSCRIPTEN)
+    # The GLEW is bundled with Emscripten SDK, but has no .cmake files
+    # So it can't be found
+    # Instead it is just part of OPENGL_LIBRARIES
+    find_package(GLEW REQUIRED)
+endif()
+
+add_library(PlatformGL INTERFACE)
+if (EMSCRIPTEN)
+    # OpenGL::GL and GLEW::GLEW are part of OPENGL_LIBRARIES
+    target_include_directories(PlatformGL INTERFACE ${OPENGL_INCLUDE_DIR})
+    target_link_libraries(PlatformGL INTERFACE ${OPENGL_LIBRARIES})
+else()
+    target_link_libraries(PlatformGL INTERFACE OpenGL::GL GLEW::GLEW)
+endif()
 
 # Find glew or use bundled version
 if (SLIC3R_STATIC AND NOT SLIC3R_STATIC_EXCLUDE_GLEW)
@@ -498,7 +540,6 @@ if (SLIC3R_STATIC AND NOT SLIC3R_STATIC_EXCLUDE_GLEW)
     set(GLEW_VERBOSE ON)
 endif()
 
-find_package(GLEW REQUIRED)
 
 # Find the Cereal serialization library
 find_package(cereal REQUIRED)
@@ -509,74 +550,78 @@ else()
     target_link_libraries(libcereal INTERFACE cereal::cereal)
 endif()
 
-# l10n
-set(L10N_DIR "${SLIC3R_RESOURCES_DIR}/localization")
-add_custom_target(gettext_make_pot
-    COMMAND xgettext --keyword=L --keyword=_L --keyword=_u8L --keyword=L_CONTEXT:1,2c --keyword=_L_PLURAL:1,2 --add-comments=TRN --from-code=UTF-8 --debug --boost
-        -f "${L10N_DIR}/list.txt"
-        -o "${L10N_DIR}/PrusaSlicer.pot"
-    COMMAND hintsToPot ${SLIC3R_RESOURCES_DIR} ${L10N_DIR}
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-    COMMENT "Generate pot file from strings in the source tree"
-)
+if (NOT EMSCRIPTEN)
+    # l10n
+    set(L10N_DIR "${SLIC3R_RESOURCES_DIR}/localization")
+    add_custom_target(gettext_make_pot
+        COMMAND xgettext --keyword=L --keyword=_L --keyword=_u8L --keyword=L_CONTEXT:1,2c --keyword=_L_PLURAL:1,2 --add-comments=TRN --from-code=UTF-8 --debug --boost
+            -f "${L10N_DIR}/list.txt"
+            -o "${L10N_DIR}/PrusaSlicer.pot"
+        COMMAND hintsToPot ${SLIC3R_RESOURCES_DIR} ${L10N_DIR}
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        COMMENT "Generate pot file from strings in the source tree"
+    )
 
-add_custom_target(gettext_merge_community_po_with_pot
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-    COMMENT "Merge community po with new generated pot file"
-)
-file(GLOB L10N_PO_FILES "${L10N_DIR}/*/PrusaSlicer*.po")
-# list of names of directories, which are licalized by PS internally
-list(APPEND PS_L10N_DIRS "cs" "de" "es" "fr" "it" "ja" "pl")
-foreach(po_file ${L10N_PO_FILES})
-    GET_FILENAME_COMPONENT(po_dir "${po_file}" DIRECTORY)
-    GET_FILENAME_COMPONENT(po_dir_name "${po_dir}" NAME)
-    list(FIND PS_L10N_DIRS ${po_dir_name} found_dir_id)
-    # found_dir_id==-1 means that po_dir_name wasn't found in PS_L10N_DIRS
-    if(found_dir_id LESS 0)
+    add_dependencies(gettext_make_pot hintsToPot)
+
+    add_custom_target(gettext_merge_community_po_with_pot
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        COMMENT "Merge community po with new generated pot file"
+    )
+    file(GLOB L10N_PO_FILES "${L10N_DIR}/*/PrusaSlicer*.po")
+    # list of names of directories, which are licalized by PS internally
+    list(APPEND PS_L10N_DIRS "cs" "de" "es" "fr" "it" "ja" "pl")
+    foreach(po_file ${L10N_PO_FILES})
+        GET_FILENAME_COMPONENT(po_dir "${po_file}" DIRECTORY)
+        GET_FILENAME_COMPONENT(po_dir_name "${po_dir}" NAME)
+        list(FIND PS_L10N_DIRS ${po_dir_name} found_dir_id)
+        # found_dir_id==-1 means that po_dir_name wasn't found in PS_L10N_DIRS
+        if(found_dir_id LESS 0)
+            add_custom_command(
+                TARGET gettext_merge_community_po_with_pot PRE_BUILD
+                COMMAND msgmerge -N -o ${po_file} ${po_file} "${L10N_DIR}/PrusaSlicer.pot"
+                # delete obsolete lines from resulting PO to avoid conflicts after a merging of it with wxWidgets.po
+                COMMAND msgattrib --no-obsolete -o ${po_file} ${po_file}
+                DEPENDS ${po_file}
+            )
+        endif()
+    endforeach()
+
+    add_custom_target(gettext_concat_wx_po_with_po
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        COMMENT "Concatenate and merge wxWidgets localization po with PrusaSlicer po file"
+    )
+    file(GLOB L10N_PO_FILES "${L10N_DIR}/*/PrusaSlicer*.po")
+    foreach(po_file ${L10N_PO_FILES})
+        GET_FILENAME_COMPONENT(po_dir "${po_file}" DIRECTORY)
+        GET_FILENAME_COMPONENT(po_dir_name "${po_dir}" NAME)
+        SET(wx_po_file "${L10N_DIR}/wx_locale/${po_dir_name}.po")
+        #SET(po_new_file "${po_dir}/PrusaSlicer_.po")
         add_custom_command(
-            TARGET gettext_merge_community_po_with_pot PRE_BUILD
-            COMMAND msgmerge -N -o ${po_file} ${po_file} "${L10N_DIR}/PrusaSlicer.pot"
-            # delete obsolete lines from resulting PO to avoid conflicts after a merging of it with wxWidgets.po
+            TARGET gettext_concat_wx_po_with_po PRE_BUILD
+            COMMAND msgcat --use-first -o ${po_file} ${po_file} ${wx_po_file}
+            # delete obsolete lines from resulting PO
             COMMAND msgattrib --no-obsolete -o ${po_file} ${po_file}
             DEPENDS ${po_file}
         )
-    endif()
-endforeach()
+    endforeach()
 
-add_custom_target(gettext_concat_wx_po_with_po
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-    COMMENT "Concatenate and merge wxWidgets localization po with PrusaSlicer po file"
-)
-file(GLOB L10N_PO_FILES "${L10N_DIR}/*/PrusaSlicer*.po")
-foreach(po_file ${L10N_PO_FILES})
-    GET_FILENAME_COMPONENT(po_dir "${po_file}" DIRECTORY)
-    GET_FILENAME_COMPONENT(po_dir_name "${po_dir}" NAME)
-    SET(wx_po_file "${L10N_DIR}/wx_locale/${po_dir_name}.po")
-    #SET(po_new_file "${po_dir}/PrusaSlicer_.po")
-    add_custom_command(
-        TARGET gettext_concat_wx_po_with_po PRE_BUILD
-        COMMAND msgcat --use-first -o ${po_file} ${po_file} ${wx_po_file}
-        # delete obsolete lines from resulting PO
-        COMMAND msgattrib --no-obsolete -o ${po_file} ${po_file}
-        DEPENDS ${po_file}
+    add_custom_target(gettext_po_to_mo
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        COMMENT "Generate localization mo files (binary) from po files (texts)"
     )
-endforeach()
-
-add_custom_target(gettext_po_to_mo
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-    COMMENT "Generate localization mo files (binary) from po files (texts)"
-)
-file(GLOB L10N_PO_FILES "${L10N_DIR}/*/PrusaSlicer*.po")
-foreach(po_file ${L10N_PO_FILES})
-    GET_FILENAME_COMPONENT(po_dir "${po_file}" DIRECTORY)
-    SET(mo_file "${po_dir}/PrusaSlicer.mo")
-    add_custom_command(
-        TARGET gettext_po_to_mo PRE_BUILD
-        COMMAND msgfmt ARGS --check-format -o ${mo_file} ${po_file}
-        #COMMAND msgfmt ARGS --check-compatibility -o ${mo_file} ${po_file}
-        DEPENDS ${po_file}
-    )
-endforeach()
+    file(GLOB L10N_PO_FILES "${L10N_DIR}/*/PrusaSlicer*.po")
+    foreach(po_file ${L10N_PO_FILES})
+        GET_FILENAME_COMPONENT(po_dir "${po_file}" DIRECTORY)
+        SET(mo_file "${po_dir}/PrusaSlicer.mo")
+        add_custom_command(
+            TARGET gettext_po_to_mo PRE_BUILD
+            COMMAND msgfmt ARGS --check-format -o ${mo_file} ${po_file}
+            #COMMAND msgfmt ARGS --check-compatibility -o ${mo_file} ${po_file}
+            DEPENDS ${po_file}
+        )
+    endforeach()
+endif (NOT EMSCRIPTEN) # l18n
 
 find_package(NLopt 1.4 REQUIRED)
 slic3r_remap_configs(NLopt::nlopt RelWithDebInfo Release)
@@ -632,13 +677,11 @@ endfunction()
 add_subdirectory(src)
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT PrusaSlicer_app_console)
 
-add_dependencies(gettext_make_pot hintsToPot)
-
 if(SLIC3R_BUILD_SANDBOXES)
     add_subdirectory(sandboxes)
 endif()
 
-if(SLIC3R_BUILD_TESTS)
+if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
     add_subdirectory(tests)
 endif()
 

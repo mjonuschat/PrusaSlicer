@@ -1,5 +1,5 @@
 #include <catch2/catch.hpp>
-#include <slic3r3/App/Scene/Scene.hpp>
+#include <Slic3r/App/Scene/Scene.hpp>
 
 TEST_CASE("Scene basic transform", "[Node]") {
     using namespace Slic3r::App::Scene;

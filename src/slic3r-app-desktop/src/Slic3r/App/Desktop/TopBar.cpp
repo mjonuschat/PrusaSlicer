@@ -17,6 +17,10 @@
 #include <wx/dcclient.h>
 #include <wx/stattext.h>
 
+#ifdef __APPLE__
+#include <wx/statbmp.h>
+#endif
+
 wxDEFINE_EVENT(wxCUSTOMEVT_TOPBAR_SEL_CHANGED, wxCommandEvent);
 
 namespace Slic3r::App::Desktop {
@@ -448,7 +452,9 @@ TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent, TopBarMenus* menus/* = nullpt
     wxBoxSizer* left_sizer = new wxBoxSizer(wxHORIZONTAL);
 
 #ifdef __APPLE__
-    auto logo = new wxStaticBitmap(this, wxID_ANY, "PrusaSlicer"/**get_bmp_bundle(wxGetApp().logo_name()*/, 40));
+    wxBitmapBundle bundle{};
+
+    auto logo = new wxStaticBitmap(this, wxID_ANY, wxBitmapBundle::FromResources("PrusaSlicer")/**get_bmp_bundle(wxGetApp().logo_name()*/ /*, 40*/);
     left_sizer->Add(logo, 0, wxALIGN_CENTER_VERTICAL | wxALL, m_btn_margin);
 #else
     m_menu_btn = new ButtonWithPopup(this, _L("Menu"), "PrusaSlicer"/*, wxGetApp().logo_name()*/);

@@ -6,9 +6,9 @@
 #include "BitmapCache.hpp"
 #include "StringConversions.hpp"
 
-#include "slic3r-shared/src/Slic3r/App/Color.hpp"
-
-//#include "../Utils/MacDarkMode.hpp"
+#include "Slic3r/App/Color.hpp"
+#include "Slic3r/App/WX/MacUtils.hpp"
+#include <libslic3r/Utils.hpp>
 
 #include <set>
 
@@ -35,13 +35,14 @@ static std::string float_to_string_decimal_point(double value, int precision = -
     return std::to_string(value);
 }
 
+/*
 static std::string var(const std::string icon_name)
 {
     static const std::string g_var_dir = "C:\\PS_3\\PrusaSlicerPrivate\\resources\\icons";
     auto file = (boost::filesystem::path(g_var_dir) / icon_name).make_preferred();
     return file.string();
 }
-
+*/
 
 
 BitmapCache::BitmapCache()

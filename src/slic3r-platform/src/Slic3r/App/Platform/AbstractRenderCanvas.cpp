@@ -1,11 +1,22 @@
 #include "AbstractRenderCanvas.hpp"
 
 #include <iostream>
-#include <algorithm>
 
 #include <imgui/imgui.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
-#include <gl/glew.h>
+#include <GL/glew.h>
+#include <spdlog/spdlog.h>
+
+#ifdef NDEBUG
+#define assert_no_gl_error()
+#else
+#define assert_no_gl_error() { GLenum err = glGetError(); assert(err == GL_NO_ERROR);}
+#endif
+
+void imgui_rendered_fallback_glyph(ImWchar c)
+{
+    // TODO: implement glyph loading (postoponed)
+}
 
 namespace Slic3r::App::Platform {
 
@@ -14,8 +25,17 @@ void AbstractRenderCanvas::set_render_module(AbstractRenderModule* render_module
     if (m_render_module)
         m_render_module->deactivate();
     m_render_module = render_module;
-    if (m_render_module)
+    if (m_render_module) {
+        m_render_module->set_screen_size(m_screen_info);
         m_render_module->activate(this);
+    }
+}
+
+void AbstractRenderCanvas::set_screen_size(const ScreenInfo& screen_info)
+{
+    m_screen_info = screen_info;
+    if (m_render_module)
+        m_render_module->set_screen_size(m_screen_info);
 }
 
 void AbstractRenderCanvas::render()
@@ -23,12 +43,21 @@ void AbstractRenderCanvas::render()
     if (m_render_module == nullptr)
         return;
 
+    m_render_module->ensure_initialized();
+
+    assert_no_gl_error();
     begin_frame();
+    assert_no_gl_error();
     begin_imgui_frame();
+    assert_no_gl_error();
     m_render_module->render_imgui();
+    assert_no_gl_error();
     end_imgui_frame();
+    assert_no_gl_error();
     emit_enqueued_events();
+    assert_no_gl_error();
     m_render_module->render_scene();
+    assert_no_gl_error();
     end_frame();
 }
 
@@ -36,33 +65,35 @@ void AbstractRenderCanvas::render()
 
 void AbstractRenderCanvas::begin_frame()
 {
+    begin_frame_platform();
+    assert_no_gl_error();
+
     ImGuiIO& io = ImGui::GetIO();
 
     double current_time = get_platform_time();
     io.DeltaTime = m_last_time > 0 ? float(current_time - m_last_time) : (1.0f / 60.0f);
     m_last_time = current_time;
 
-    int display_w, display_h;
-    display_w = io.DisplaySize.x;
-    display_h = io.DisplaySize.y;
-    glViewport(0, 0, display_w, display_h);
-
+    assert_no_gl_error();
+    glViewport(0, 0, m_screen_info.physical_width(), m_screen_info.physical_height());
+    assert_no_gl_error();
     // TODO: this should be render module responsibility
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
     glClearColor(
         clear_color.x * clear_color.w, clear_color.y * clear_color.w,
         clear_color.z * clear_color.w, clear_color.w
     );
+    assert_no_gl_error();
     glClear(GL_COLOR_BUFFER_BIT);
-
-    begin_frame_platform();
-
+    assert_no_gl_error();
 }
 
 void AbstractRenderCanvas::begin_imgui_frame()
 {
     // Start the Dear ImGui frame
     ImGui_ImplOpenGL3_NewFrame();
+    ImGuiIO& io = ImGui::GetIO();
+    IM_ASSERT(io.Fonts->IsBuilt() && "Font atlas not built! It is generally built by the renderer backend. Missing call to renderer _NewFrame() function? e.g. ImGui_ImplOpenGL3_NewFrame().");
     begin_imgui_frame_platform();
     ImGui::NewFrame();
 }
@@ -143,15 +174,16 @@ void AbstractRenderCanvas::emit_enqueued_events()
 
 void AbstractRenderCanvas::request_render()
 {
-    m_render_requested = true;
+    m_render_request_count += 2;
 }
 
 bool AbstractRenderCanvas::get_and_reset_render_requested()
 {
-    const bool ret = m_render_requested;
-    if (m_render_requested)
-        m_render_requested = false;
-    return ret;
+    if (m_render_request_count > 0) {
+        m_render_request_count--;
+        return true;
+    }
+    return false;
 }
 
 } // namespace Slic3r::App::Platform

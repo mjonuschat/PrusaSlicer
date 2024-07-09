@@ -1,4 +1,6 @@
 #include "commonGL.hpp"
+#include "Context.hpp"
+#include "ShaderManager.hpp"
 
 namespace Slic3r::App::Render {
 
@@ -16,6 +18,11 @@ const char* gl_error_desc(GLenum err)
     default:                    sErr = "Unknown";           break;
     }
     return sErr;
+}
+
+void initialize_gl()
+{
+    Context::instance().shader_manager().init();
 }
 
 }

@@ -17,6 +17,8 @@ set(SLIC3R_SHARED_WX_FILES
         src/Slic3r/App/WX/Highlighter.cpp
         src/Slic3r/App/WX/LockButton.hpp
         src/Slic3r/App/WX/LockButton.cpp
+        src/Slic3r/App/WX/MacUtils.hpp
+        src/Slic3r/App/WX/MacUtils.mm
         # our widgets
         src/Slic3r/App/WX/Widgets/UIColors.hpp
         src/Slic3r/App/WX/Widgets/StateColor.hpp
@@ -47,4 +49,8 @@ set(SLIC3R_SHARED_WX_FILES
 
 add_library(slic3r-shared-wx STATIC ${SLIC3R_SHARED_WX_FILES})
 target_include_directories(slic3r-shared-wx PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
-target_link_libraries(slic3r-shared-wx PUBLIC Boost::boost)
+target_link_libraries(slic3r-shared-wx PUBLIC
+        slic3r-shared
+        libslic3r # For Utils.hpp
+        Boost::boost
+)

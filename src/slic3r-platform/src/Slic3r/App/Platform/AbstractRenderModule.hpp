@@ -3,6 +3,7 @@
 #include "MouseEvent.hpp"
 #include "KeyboardEvent.hpp"
 #include "IRenderRequestHandler.hpp"
+#include "ScreenInfo.hpp"
 
 namespace Slic3r::App::Platform {
 
@@ -25,11 +26,30 @@ public:
     void activate(IRenderRequestHandler* render_request_handler);
     void deactivate();
 
+    void set_screen_size(const ScreenInfo& screen_info) { m_screen_info = screen_info; }
+    void ensure_initialized()
+    {
+        if (!m_initialized) {
+            on_init();
+            m_initialized = true;
+        }
+    }
+
+
 protected:
+    /**
+     * Initialize all Render objects here.
+     */
+    virtual void on_init() {}
+
     virtual void on_activated();
     virtual void on_deactivated();
 
     void request_render();
+
+protected:
+    ScreenInfo m_screen_info {0, 0, 1};
+    bool m_initialized{false};
 private:
     IRenderRequestHandler* m_render_request_handler{nullptr};
 };

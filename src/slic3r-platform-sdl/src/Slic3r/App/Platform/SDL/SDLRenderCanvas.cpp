@@ -2,19 +2,19 @@
 
 #include <string>
 
-#include <gl/glew.h>
+#include <GL/glew.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
 #include "SDL_syswm.h"
 
 #include <Slic3r/App/Platform/PlatformError.hpp>
+#include <Slic3r/App/Render/commonGL.hpp>
 
 namespace Slic3r::App::Platform::SDL
 {
 
 SDLRenderCanvas::SDLRenderCanvas()
 {
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0)
-    {
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0) {
         std::string message = std::string("Platform Error: ") + SDL_GetError();
         throw PlatformError(message);
     }
@@ -51,18 +51,27 @@ SDLRenderCanvas::SDLRenderCanvas()
     m_window = SDL_CreateWindow("Slic3r3", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, window_flags);
     m_gl_context = SDL_GL_CreateContext(m_window);
     SDL_GL_MakeCurrent(m_window, m_gl_context);
+#ifndef __EMSCRIPTEN__
     SDL_GL_SetSwapInterval(1); // Enable vsync
+#endif
 
     const auto err = glewInit();
     if (err != GLEW_NO_ERROR) {
         throw PlatformError(std::string("GLEW init failed with code ") + std::to_string(err));
     }
+
+    Render::initialize_gl();
+
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO &io = ImGui::GetIO();
     (void) io;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
+
+#ifdef __EMSCRIPTEN__
+    io.IniFilename = nullptr;
+#endif
 
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
@@ -166,18 +175,38 @@ void SDLRenderCanvas::poll_events()
     SDL_Event event;
     while (SDL_PollEvent(&event))
     {
-        pass_event_to_imgui(event);
-        pass_event_to_scene(event);
-
-        if (event.type == SDL_QUIT)
-            m_should_quit = true;
-        if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE && event.window.windowID == SDL_GetWindowID(m_window))
-            m_should_quit = true;
+        process_event(event);
     }
+}
+
+void SDLRenderCanvas::wait_for_events()
+{
+    SDL_Event event;
+    bool render_required = false;
+    while (!render_required) {
+        if (SDL_WaitEventTimeout(&event, 1000 / 60) == 1) {
+            process_event(event);
+            render_required = true;
+        }
+        render_required |= get_and_reset_render_requested();
+        render_required |= AbstractRenderCanvas::dispatch_enqueued();
+    }
+}
+
+void SDLRenderCanvas::process_event(const SDL_Event& event)
+{
+    pass_event_to_imgui(event);
+    pass_event_to_scene(event);
+
+    if (event.type == SDL_QUIT)
+        m_should_quit = true;
+    if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE && event.window.windowID == SDL_GetWindowID(m_window))
+        m_should_quit = true;
 
 }
 
-bool SDLRenderCanvas::pass_event_to_imgui(SDL_Event& event) {
+bool SDLRenderCanvas::pass_event_to_imgui(const SDL_Event& event)
+{
     ImGuiIO& io = ImGui::GetIO();
     switch (event.type)
     {
@@ -223,14 +252,7 @@ bool SDLRenderCanvas::pass_event_to_imgui(SDL_Event& event) {
 
 void SDLRenderCanvas::begin_frame_platform()
 {
-
-}
-
-void SDLRenderCanvas::begin_imgui_frame_platform()
-{
     ImGuiIO& io = ImGui::GetIO();
-    IM_ASSERT(io.Fonts->IsBuilt() && "Font atlas not built! It is generally built by the renderer backend. Missing call to renderer _NewFrame() function? e.g. ImGui_ImplOpenGL3_NewFrame().");
-
     // Setup display size (every frame to accommodate for window resizing)
     int w, h;
     int display_w, display_h;
@@ -239,9 +261,16 @@ void SDLRenderCanvas::begin_imgui_frame_platform()
         w = h = 0;
     SDL_GL_GetDrawableSize(m_window, &display_w, &display_h);
     io.DisplaySize = ImVec2((float)w, (float)h);
+    const float scale_x = (float)display_w / (float)w;
+    const float scale_y = (float)display_h / (float)h;
+    assert(scale_x == scale_y);
+    set_screen_size({size_t(display_w), size_t(display_h), scale_x});
     if (w > 0 && h > 0)
-        io.DisplayFramebufferScale = ImVec2((float)display_w / w, (float)display_h / h);
+        io.DisplayFramebufferScale = ImVec2(scale_x, scale_y);
+}
 
+void SDLRenderCanvas::begin_imgui_frame_platform()
+{
     update_imgui_mouse_position();
     update_imgui_mouse_cursor();
 }
@@ -307,13 +336,11 @@ void SDLRenderCanvas::update_imgui_mouse_cursor()
         return;
 
     ImGuiMouseCursor imgui_cursor = ImGui::GetMouseCursor();
-    if (io.MouseDrawCursor || imgui_cursor == ImGuiMouseCursor_None)
-    {
+    if (io.MouseDrawCursor || imgui_cursor == ImGuiMouseCursor_None) {
         // Hide OS mouse cursor if imgui is drawing it or if it wants no cursor
         SDL_ShowCursor(SDL_FALSE);
     }
-    else
-    {
+    else {
         // Show OS mouse cursor
         SDL_SetCursor(m_mouse_cursors[imgui_cursor] ? m_mouse_cursors[imgui_cursor] : m_mouse_cursors[ImGuiMouseCursor_Arrow]);
         SDL_ShowCursor(SDL_TRUE);
@@ -328,10 +355,9 @@ double SDLRenderCanvas::get_platform_time()
     return double(current_time) / frequency;
 }
 
-void SDLRenderCanvas::pass_event_to_scene(SDL_Event& event)
+void SDLRenderCanvas::pass_event_to_scene(const SDL_Event& event)
 {
-    if (event.type == SDL_KEYDOWN || event.type == SDL_KEYUP)
-    {
+    if (event.type == SDL_KEYDOWN || event.type == SDL_KEYUP) {
         const auto &key = event.key;
         const KeyboardEvent::Type type = key.state == SDL_PRESSED ? KeyboardEvent::Type::KeyDown :
                                                                     KeyboardEvent::Type::KeyUp;
@@ -342,8 +368,7 @@ void SDLRenderCanvas::pass_event_to_scene(SDL_Event& event)
         KeyboardEvent platform_event{type, code, m_key_modifiers};
         enqueue_keyboard(platform_event);
     }
-    else if (event.type == SDL_MOUSEMOTION)
-    {
+    else if (event.type == SDL_MOUSEMOTION) {
         const auto &mouse = event.motion;
         update_mouse_position(mouse.x, mouse.y);
         MouseEvent platform_event{
@@ -354,8 +379,7 @@ void SDLRenderCanvas::pass_event_to_scene(SDL_Event& event)
         };
         enqueue_mouse(platform_event);
     }
-    else if (event.type == SDL_MOUSEBUTTONDOWN || event.type == SDL_MOUSEBUTTONUP)
-    {
+    else if (event.type == SDL_MOUSEBUTTONDOWN || event.type == SDL_MOUSEBUTTONUP) {
         const auto& mouse_button = event.button;
         MouseEvent::Type type = event.type == SDL_MOUSEBUTTONDOWN ? MouseEvent::Type::ButtonDown : MouseEvent::Type::ButtonUp;
         MouseEvent platform_event{
@@ -366,8 +390,7 @@ void SDLRenderCanvas::pass_event_to_scene(SDL_Event& event)
         };
         enqueue_mouse(platform_event);
     }
-    else if (event.type == SDL_MOUSEWHEEL)
-    {
+    else if (event.type == SDL_MOUSEWHEEL) {
         const auto& mouse_wheel = event.wheel;
         update_mouse_position(mouse_wheel.mouseX, mouse_wheel.mouseY);
         MouseEvent platform_event{
