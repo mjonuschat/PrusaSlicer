@@ -75,7 +75,7 @@ void Geometry::upload(
     const VertexAttribsDesc& vertex_format,
     const void* index_data,
     size_t index_count,
-    IndexType index_format
+    Render::IndexType index_format
 )
 {
     SPDLOG_TRACE("Buffer::upload() Part 1");

@@ -4,7 +4,7 @@
 
 #include <imgui/imgui.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
-#include <gl/glew.h>
+#include <GL/glew.h>
 #include <spdlog/spdlog.h>
 
 #ifdef NDEBUG
@@ -12,6 +12,11 @@
 #else
 #define assert_no_gl_error() { GLenum err = glGetError(); assert(err == GL_NO_ERROR);}
 #endif
+
+void imgui_rendered_fallback_glyph(ImWchar c)
+{
+    // TODO: implement glyph loading (postoponed)
+}
 
 namespace Slic3r::App::Platform {
 
@@ -37,6 +42,8 @@ void AbstractRenderCanvas::render()
 {
     if (m_render_module == nullptr)
         return;
+
+    m_render_module->ensure_initialized();
 
     assert_no_gl_error();
     begin_frame();

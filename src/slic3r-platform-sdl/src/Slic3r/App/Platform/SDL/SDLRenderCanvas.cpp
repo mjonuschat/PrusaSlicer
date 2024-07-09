@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include <gl/glew.h>
+#include <GL/glew.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
 
 #include <Slic3r/App/Platform/PlatformError.hpp>

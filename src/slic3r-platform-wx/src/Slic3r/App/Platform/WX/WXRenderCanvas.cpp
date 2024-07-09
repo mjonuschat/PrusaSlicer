@@ -250,17 +250,36 @@ WXRenderCanvas::WXRenderCanvas(wxWindow* parent)
 
 #if defined(__APPLE__)
     // GL 3.2 Core + GLSL 150
-    const char* glsl_version = "#version 150";
+    m_glsl_version = "#version 150";
     attrs.MajorVersion(3).MinorVersion(2);
 #else
     // GL 3.0 + GLSL 130
-    const char* glsl_version = "#version 130";
+    m_glsl_version = "#version 130";
     attrs.MajorVersion(3).MinorVersion(0);
 #endif
 
     m_gl_context = std::make_unique<wxGLContext>(this, nullptr, &attrs);
-    SetCurrent(*m_gl_context);
+    //SetCurrent(*m_gl_context);
 
+    Bind(wxEVT_SIZE, &WXRenderCanvas::on_size, this);
+    Bind(wxEVT_IDLE, &WXRenderCanvas::on_idle, this);
+    Bind(wxEVT_PAINT, &WXRenderCanvas::on_paint, this);
+    Bind(wxEVT_CHAR, &WXRenderCanvas::on_keyboard, this);
+    Bind(wxEVT_KEY_DOWN, &WXRenderCanvas::on_keyboard, this);
+    Bind(wxEVT_KEY_UP, &WXRenderCanvas::on_keyboard, this);
+    Bind(wxEVT_MOUSEWHEEL, &WXRenderCanvas::on_mouse, this);
+    Bind(wxEVT_MOTION, &WXRenderCanvas::on_mouse, this);
+    Bind(wxEVT_LEFT_DOWN, &WXRenderCanvas::on_mouse, this);
+    Bind(wxEVT_LEFT_UP, &WXRenderCanvas::on_mouse, this);
+    Bind(wxEVT_RIGHT_DOWN, &WXRenderCanvas::on_mouse, this);
+    Bind(wxEVT_RIGHT_UP, &WXRenderCanvas::on_mouse, this);
+    Bind(wxEVT_MIDDLE_DOWN, &WXRenderCanvas::on_mouse, this);
+    Bind(wxEVT_MIDDLE_UP, &WXRenderCanvas::on_mouse, this);
+}
+
+
+void WXRenderCanvas::init()
+{
     const auto err = glewInit();
     if (err != GLEW_NO_ERROR) {
         throw PlatformError(std::string("GLEW init failed with code ") + std::to_string(err));
@@ -281,22 +300,7 @@ WXRenderCanvas::WXRenderCanvas(wxWindow* parent)
 
     // Setup Platform/Renderer backends
     init_wx_imgui();
-    ImGui_ImplOpenGL3_Init(glsl_version);
-
-    Bind(wxEVT_SIZE, &WXRenderCanvas::on_size, this);
-    Bind(wxEVT_IDLE, &WXRenderCanvas::on_idle, this);
-    Bind(wxEVT_PAINT, &WXRenderCanvas::on_paint, this);
-    Bind(wxEVT_CHAR, &WXRenderCanvas::on_keyboard, this);
-    Bind(wxEVT_KEY_DOWN, &WXRenderCanvas::on_keyboard, this);
-    Bind(wxEVT_KEY_UP, &WXRenderCanvas::on_keyboard, this);
-    Bind(wxEVT_MOUSEWHEEL, &WXRenderCanvas::on_mouse, this);
-    Bind(wxEVT_MOTION, &WXRenderCanvas::on_mouse, this);
-    Bind(wxEVT_LEFT_DOWN, &WXRenderCanvas::on_mouse, this);
-    Bind(wxEVT_LEFT_UP, &WXRenderCanvas::on_mouse, this);
-    Bind(wxEVT_RIGHT_DOWN, &WXRenderCanvas::on_mouse, this);
-    Bind(wxEVT_RIGHT_UP, &WXRenderCanvas::on_mouse, this);
-    Bind(wxEVT_MIDDLE_DOWN, &WXRenderCanvas::on_mouse, this);
-    Bind(wxEVT_MIDDLE_UP, &WXRenderCanvas::on_mouse, this);
+    ImGui_ImplOpenGL3_Init(m_glsl_version.c_str());
 }
 
 
@@ -332,13 +336,23 @@ void WXRenderCanvas::init_wx_imgui()
     io.ConfigMacOSXBehaviors = false;
 }
 
+void WXRenderCanvas::render()
+{
+    SetCurrent(*m_gl_context);
+    if (!m_initialized) {
+        init();
+        m_initialized = true;
+    }
+    AbstractRenderCanvas::render();
+}
+
+
 
 void WXRenderCanvas::on_paint(wxPaintEvent& event)
 {
     // This is a dummy, to avoid an endless succession of paint messages.
     // OnPaint handlers must always create a wxPaintDC.
     wxPaintDC dc(this);
-    SetCurrent(*m_gl_context);
     render();
 }
 

@@ -80,7 +80,7 @@ public:
     GeometryBuilder(const GeometryBuilder&) = delete;
 
     using VertexType = V;
-    using IndexType = I;
+    //using IndexType = I;
 
     GeometryBuilder& add_vertex(const V& v)
     {
@@ -88,13 +88,13 @@ public:
         return *this;
     }
 
-    GeometryBuilder& add_index(IndexType i)
+    GeometryBuilder& add_index(I i)
     {
         m_indices.push_back(i);
         return *this;
     }
 
-    GeometryBuilder& add_triangle_indices(IndexType i0, IndexType i1, IndexType i2)
+    GeometryBuilder& add_triangle_indices(I i0, I i1, I i2)
     {
         m_indices.push_back(i0);
         m_indices.push_back(i1);
@@ -108,7 +108,7 @@ public:
 
         void* index_data = nullptr;
         size_t index_count = 0;
-        Render::IndexType index_type = Render::IndexType::UInt;
+        IndexType index_type = IndexType::UInt;
         std::unique_ptr<char[]> repacked_index_data;
 
         if (!m_indices.empty()) {
@@ -141,11 +141,12 @@ private:
             return false;
 
         destType = IndexTypeTraits<DestI>::index_type;
-        dest.reset(new char[sizeof(DestI) * size]);
+        auto* dest_data = new char[sizeof(DestI) * size];
         for (size_t i = 0; i < size; i++) {
-            DestI& dest_el = *reinterpret_cast<DestI*>(dest[sizeof(DestI) * i]);
-            dest_el = static_cast<DestI>(src[i]);
+            DestI* dest_el = reinterpret_cast<DestI*>(&dest_data[sizeof(DestI) * i]);
+            *dest_el = static_cast<DestI>(src[i]);
         }
+        dest.reset(dest_data);
         return true;
     }
 

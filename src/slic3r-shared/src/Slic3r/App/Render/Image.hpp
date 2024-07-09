@@ -2,6 +2,8 @@
 
 #include <cassert>
 #include <vector>
+#include <cstddef>
+#include <cstdint>
 
 namespace Slic3r::App::Render {
 

@@ -19,6 +19,9 @@ public:
     void on_scene_mouse_event(const Platform::MouseEvent &e) override;
     void on_scene_keyboard_event(const Platform::KeyboardEvent &e) override;
 
+protected:
+    void on_init() override;
+
 private:
     Render::Geometry m_geometry;
     Render::Geometry m_geometry2;

@@ -11,13 +11,15 @@
 
 namespace Slic3r::App::Platform::WX {
 
-class WXRenderCanvas : public Platform::AbstractRenderCanvas, public wxGLCanvas {
+class WXRenderCanvas : public Platform::AbstractRenderCanvas, public wxGLCanvas
+{
 public:
     explicit WXRenderCanvas(wxWindow* parent);
 
     WXRenderCanvas(const WXRenderCanvas&) = delete;
     WXRenderCanvas operator=(const WXRenderCanvas&) = delete;
 
+    void render() override;
     void dispatch_on_main_thread(Function func) override;
 
 protected:
@@ -35,12 +37,16 @@ private:
     void on_mouse(wxMouseEvent& event);
     void on_idle(wxIdleEvent& event);
 
+    void init();
     void init_wx_imgui();
 
 private:
     using Clock = std::chrono::high_resolution_clock;
     std::unique_ptr<wxGLContext> m_gl_context;
     std::chrono::time_point<Clock> m_start_time;
+
+    std::string m_glsl_version;
+    bool m_initialized{false};
 };
 
 }

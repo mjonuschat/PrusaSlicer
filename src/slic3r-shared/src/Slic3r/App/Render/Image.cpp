@@ -1,5 +1,7 @@
 #include "Image.hpp"
 
+#include <cstring>
+
 namespace Slic3r::App::Render {
 
 size_t pixel_format_bytes_per_pixel(PixelFormat pf)

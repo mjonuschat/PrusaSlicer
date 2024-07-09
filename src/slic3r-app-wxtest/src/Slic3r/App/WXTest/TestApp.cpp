@@ -49,8 +49,10 @@ bool TestApp::OnInit()
     canvas.set_render_module(m_render_module.get());
     m_main_frame->Show();
 
+#ifndef __linux__
     // Initial repaint
     canvas.render();
+#endif
 
     return true;
 }

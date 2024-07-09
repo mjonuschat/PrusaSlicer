@@ -21,7 +21,7 @@ class AbstractRenderCanvas : public IRenderRequestHandler, public IMainThreadDis
 public:
     ~AbstractRenderCanvas() override = default;
 
-    void render();
+    virtual void render();
     void set_render_module(AbstractRenderModule* render_module);
 
     // IRenderRequestHandler interface impl
