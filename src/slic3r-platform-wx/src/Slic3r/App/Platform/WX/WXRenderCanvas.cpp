@@ -2,6 +2,8 @@
 
 #include <iostream>
 
+#include <spdlog/spdlog.h>
+
 #include <wx/dcclient.h>
 #include <imgui/imgui.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
@@ -277,6 +279,9 @@ WXRenderCanvas::WXRenderCanvas(wxWindow* parent)
     Bind(wxEVT_MIDDLE_UP, &WXRenderCanvas::on_mouse, this);
 }
 
+WXRenderCanvas::~WXRenderCanvas()
+{ Render::shutdown_gl(); }
+
 
 void WXRenderCanvas::init()
 {
@@ -422,8 +427,8 @@ void WXRenderCanvas::on_keyboard(wxKeyEvent& evt)
 void WXRenderCanvas::on_mouse(wxMouseEvent& evt)
 {
     ImGuiIO& io = ImGui::GetIO();
-    int mouse_x = ToDIP(evt.GetX());
-    int mouse_y = ToDIP(evt.GetY());
+    int mouse_x = ToDIP(FromPhys(evt.GetX()));
+    int mouse_y = ToDIP(FromPhys(evt.GetY()));
     io.MousePos = ImVec2((float) mouse_x, (float) mouse_y);
     io.MouseDown[0] = evt.LeftIsDown();
     io.MouseDown[1] = evt.RightIsDown();
@@ -504,7 +509,8 @@ void WXRenderCanvas::begin_frame_platform()
     //    SDL_GL_GetDrawableSize(m_window, &display_w, &display_h);
     ImGuiIO &io = ImGui::GetIO();
     io.DisplaySize = ImVec2((float)w, (float)h);
-    double scale_factor = wxWindow::GetContentScaleFactor();
+    //double scale_factor = wxWindow::GetContentScaleFactor();
+    double scale_factor = wxWindow::GetDPIScaleFactor();
     set_screen_size({display_w, display_h, float(scale_factor)});
     io.DisplayFramebufferScale = ImVec2(float(scale_factor), float(scale_factor));
 }

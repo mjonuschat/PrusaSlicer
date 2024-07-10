@@ -1,11 +1,13 @@
 #include "AbstractRenderCanvas.hpp"
 
 #include <iostream>
+#include <algorithm>
 
 #include <imgui/imgui.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
 #include <GL/glew.h>
 #include <spdlog/spdlog.h>
+
 
 #ifdef NDEBUG
 #define assert_no_gl_error()

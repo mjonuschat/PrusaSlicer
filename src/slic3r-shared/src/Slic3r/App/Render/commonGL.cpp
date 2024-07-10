@@ -25,4 +25,7 @@ void initialize_gl()
     Context::instance().shader_manager().init();
 }
 
+void shutdown_gl()
+{ Context::instance().release_resources(); }
+
 }

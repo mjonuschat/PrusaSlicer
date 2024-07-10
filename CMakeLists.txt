@@ -405,6 +405,52 @@ if(NOT SLIC3R_STATIC)
     target_compile_definitions(boost_headeronly INTERFACE BOOST_LOG_DYN_LINK)
 endif()
 
+function(slic3r_link_resources _target)
+    if (WIN32)
+        if (CMAKE_CONFIGURATION_TYPES)
+            foreach (CONF ${CMAKE_CONFIGURATION_TYPES})
+                file(TO_NATIVE_PATH "${CMAKE_CURRENT_BINARY_DIR}/${CONF}" WIN_CONF_OUTPUT_DIR)
+                file(TO_NATIVE_PATH "${CMAKE_CURRENT_BINARY_DIR}/${CONF}/resources" WIN_RESOURCES_SYMLINK)
+                add_custom_command(TARGET ${_target} POST_BUILD
+                        COMMAND if exist "${WIN_CONF_OUTPUT_DIR}" "("
+                        if not exist "${WIN_RESOURCES_SYMLINK}" "("
+                        mklink /J "${WIN_RESOURCES_SYMLINK}" "${SLIC3R_RESOURCES_NEXT_DIR_WIN}"
+                        ")"
+                        ")"
+                        COMMENT "Symlinking the resources directory into the build tree"
+                        VERBATIM
+                )
+            endforeach ()
+        else ()
+            file(TO_NATIVE_PATH "${CMAKE_CURRENT_BINARY_DIR}/resources" WIN_RESOURCES_SYMLINK)
+            add_custom_command(TARGET ${_target} POST_BUILD
+                    COMMAND if not exist "${WIN_RESOURCES_SYMLINK}" "(" mklink /J "${WIN_RESOURCES_SYMLINK}" "${SLIC3R_RESOURCES_NEXT_DIR_WIN}" ")"
+                    COMMENT "Symlinking the resources directory into the build tree"
+                    VERBATIM
+            )
+        endif ()
+
+    elseif(EMSCRIPTEN)
+        find_package(Boost REQUIRED COMPONENTS filesystem)
+        target_link_libraries(${_target} PUBLIC Boost::filesystem)
+        message(STATUS "Preload file Flags: " --preload-file "${SLIC3R_RESOURCES_NEXT_DIR}@/resources")
+
+        set(CMAKE_EXE_LINKER_FLAGS "--preload-file ${SLIC3R_RESOURCES_NEXT_DIR}@/resources -pthread ${CMAKE_EXE_LINKER_FLAGS}")
+    else ()
+        if (XCODE)
+            # Because of Debug/Release/etc. configurations (similar to MSVC) the slic3r binary is located in an extra level
+            set(BIN_RESOURCES_DIR "${CMAKE_CURRENT_BINARY_DIR}/resources")
+        else ()
+            set(BIN_RESOURCES_DIR "${CMAKE_CURRENT_BINARY_DIR}/../resources")
+        endif ()
+        add_custom_command(TARGET ${_target} POST_BUILD
+                COMMAND ln -sfn "${SLIC3R_RESOURCES_NEXT_DIR}" "${BIN_RESOURCES_DIR}"
+                COMMENT "Symlinking the resources directory into the build tree"
+                VERBATIM)
+    endif ()
+
+endfunction()
+
 function(slic3r_remap_configs targets from_Cfg to_Cfg)
     if(MSVC)
         string(TOUPPER ${from_Cfg} from_CFG)

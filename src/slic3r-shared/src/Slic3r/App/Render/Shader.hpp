@@ -30,7 +30,14 @@ public:
     typedef std::array<std::string, static_cast<size_t>(ShaderType::Count)> ShaderFilenames;
     typedef std::array<std::string, static_cast<size_t>(ShaderType::Count)> ShaderSources;
 
+    Shader() = default;
     ~Shader();
+
+    Shader(const Shader&) = delete;
+    Shader& operator=(const Shader&) = delete;
+
+    Shader(Shader&&) = default;
+    Shader& operator=(Shader&&) = default;
 
     bool init_from_files(const std::string& name, const ShaderFilenames& filenames, const std::initializer_list<std::string_view> &defines = {});
     bool init_from_texts(const std::string& name, const ShaderSources& sources);

@@ -11,7 +11,7 @@ namespace Slic3r::App::Platform {
 class ScreenInfo {
 public:
     /**
-     * Creartes scree info
+     * Creates screen info
      * @param width Width in physical pixels (without applied scale)
      * @param height Height in physical pixels (without applied scale)
      * @param scale The UI scale which applied to logical pixel size gains physical one.

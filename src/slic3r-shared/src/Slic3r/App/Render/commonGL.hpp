@@ -10,7 +10,7 @@
 #define glCheck() { \
   GLenum err = glGetError(); \
   if (err != GL_NO_ERROR) { \
-    std::cerr << __FILE__ << ":" << __LINE__  << " (" << __FUNCTION__ << ") GL Error: " << ::Slic3r::App::Render::gl_error_desc(err) << "\n"; \
+    std::cerr << __FILE__ << ":" << __LINE__  << " (" << __FUNCTION__ << ") GL Error: " << ::Slic3r::App::Render::gl_error_desc(err) << std::endl; \
     assert(false); \
   } \
 }
@@ -21,5 +21,6 @@ namespace Slic3r::App::Render {
 const char* gl_error_desc(GLenum err);
 
 void initialize_gl();
+void shutdown_gl();
 
 }

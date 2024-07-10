@@ -2,6 +2,8 @@
 #include <libslic3r/Semver.hpp>
 #include <memory>
 
+#include "ShaderManager.hpp"
+
 namespace Slic3r::App::Render {
 
 class ShaderManager;
@@ -39,6 +41,8 @@ public:
     [[nodiscard]] ShaderManager& shader_manager() const { return *m_shader_manager; }
     [[nodiscard]] TextureManager& texture_manager() const { return *m_texture_manager; }
 
+    void release_resources()
+    { m_shader_manager->shutdown(); }
 private:
     Semver m_opengl_version;
     Semver m_glsl_version;

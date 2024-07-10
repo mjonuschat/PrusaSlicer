@@ -1,6 +1,7 @@
 #include "TextureManager.hpp"
 #include "libslic3r/Utils.hpp"
 
+#include <boost/filesystem/path.hpp>
 #include <boost/nowide/fstream.hpp>
 #include <spdlog/spdlog.h>
 
@@ -22,7 +23,8 @@ Texture* TextureManager::get(const std::string& name, const ImageLoadOptions& op
 
     std::vector<Image>  images;
     {
-        boost::nowide::ifstream is(resources_dir() + "/" + name);
+        auto path = boost::filesystem::path(resources_dir()) / name;
+        boost::nowide::ifstream is(path, std::ios::binary | std::ios::in);
         if (!is.good()) {
             SPDLOG_ERROR("Cannot open file {}", name);
             return nullptr;

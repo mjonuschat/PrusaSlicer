@@ -32,3 +32,5 @@ if (MSVC)
     # Manifest is provided through PrusaSlicer.rc, don't generate your own.
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /MANIFEST:NO")
 endif ()
+
+slic3r_link_resources(slic3r-app-desktop)

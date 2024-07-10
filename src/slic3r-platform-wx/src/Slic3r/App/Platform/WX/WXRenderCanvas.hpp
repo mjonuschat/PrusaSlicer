@@ -15,6 +15,7 @@ class WXRenderCanvas : public Platform::AbstractRenderCanvas, public wxGLCanvas
 {
 public:
     explicit WXRenderCanvas(wxWindow* parent);
+    ~WXRenderCanvas();
 
     WXRenderCanvas(const WXRenderCanvas&) = delete;
     WXRenderCanvas operator=(const WXRenderCanvas&) = delete;
