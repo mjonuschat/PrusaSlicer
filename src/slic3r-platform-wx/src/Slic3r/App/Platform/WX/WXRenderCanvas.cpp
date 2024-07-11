@@ -427,8 +427,8 @@ void WXRenderCanvas::on_keyboard(wxKeyEvent& evt)
 void WXRenderCanvas::on_mouse(wxMouseEvent& evt)
 {
     ImGuiIO& io = ImGui::GetIO();
-    int mouse_x = ToDIP(FromPhys(evt.GetX()));
-    int mouse_y = ToDIP(FromPhys(evt.GetY()));
+    int mouse_x = ToDIP(evt.GetX());
+    int mouse_y = ToDIP(evt.GetY());
     io.MousePos = ImVec2((float) mouse_x, (float) mouse_y);
     io.MouseDown[0] = evt.LeftIsDown();
     io.MouseDown[1] = evt.RightIsDown();
