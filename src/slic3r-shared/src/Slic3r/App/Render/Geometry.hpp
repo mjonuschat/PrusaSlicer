@@ -96,7 +96,7 @@ inline GLenum type(DataType type)
         GL_SHORT
     };
 
-    const int idx = static_cast<int>(type);
+    const size_t idx = static_cast<size_t>(type);
     assert(0 >= idx && idx < (sizeof(translation_table) / sizeof(GLenum)));
 
     return translation_table[idx];
