@@ -8,6 +8,7 @@
 
 #include <Slic3r/App/Platform/PlatformError.hpp>
 #include <Slic3r/App/Render/commonGL.hpp>
+#include <Slic3r/App/Platform/MouseEvent.hpp>
 
 namespace Slic3r::App::Platform::SDL
 {
@@ -372,7 +373,7 @@ void SDLRenderCanvas::pass_event_to_scene(const SDL_Event& event)
         const auto &mouse = event.motion;
         update_mouse_position(mouse.x, mouse.y);
         MouseEvent platform_event{
-            MouseEvent::Type::Move, MouseButton::None,
+            MouseEvent::Type::Move, MouseButton::NoButton,
             mouse.x, mouse.y,
             0, 0,
             m_key_modifiers
@@ -394,7 +395,7 @@ void SDLRenderCanvas::pass_event_to_scene(const SDL_Event& event)
         const auto& mouse_wheel = event.wheel;
         update_mouse_position(mouse_wheel.mouseX, mouse_wheel.mouseY);
         MouseEvent platform_event{
-            MouseEvent::Type::Wheel, MouseButton::None,
+            MouseEvent::Type::Wheel, MouseButton::NoButton,
             m_mouse_x, m_mouse_y,
             mouse_wheel.preciseX, mouse_wheel.preciseY,
             m_key_modifiers

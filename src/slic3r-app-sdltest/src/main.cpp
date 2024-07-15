@@ -74,7 +74,7 @@ void init_system()
         MessageBoxW(NULL, text.c_str(), L"Warning"/*L"Incopatible library found"*/, MB_OK);
     }
 #endif
-    init_paths();
+    App::init_paths();
 }
 
 std::unique_ptr<Slic3r::App::Platform::SDL::SDLRenderCanvas> canvas;

@@ -60,3 +60,9 @@ target_link_libraries(slic3r-shared-wx PUBLIC
         libslic3r # For Utils.hpp
         Boost::boost
 )
+
+if (UNIX AND NOT APPLE)
+    find_package(GTK${SLIC3R_GTK} REQUIRED)
+    target_include_directories(slic3r-shared-wx PRIVATE ${GTK${SLIC3R_GTK}_INCLUDE_DIRS})
+    target_link_libraries(slic3r-shared-wx PUBLIC ${GTK${SLIC3R_GTK}_LIBRARIES} fontconfig)
+endif ()

@@ -6,8 +6,14 @@
 
 namespace Slic3r::App::Platform {
 
+#ifdef None
+// There is a special place in hell for people who create common word defines
+// without prefixes like the Xlib devs
+#undef None
+#endif
+
 enum class MouseButton : uint8_t {
-    None = 0,
+    NoButton = 0,
     Left = 1,
     Middle = 1 << 1,
     Right = 1 << 2,

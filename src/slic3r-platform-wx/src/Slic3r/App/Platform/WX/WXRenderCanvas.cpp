@@ -447,7 +447,7 @@ void WXRenderCanvas::on_mouse(wxMouseEvent& evt)
     wxEventType event_type = evt.GetEventType();
 
     MouseEvent::Type platform_event_type = MouseEvent::Type::Move;
-    MouseButton button = MouseButton::None;
+    MouseButton button = MouseButton::NoButton;
 
     if (event_type == wxEVT_MOUSEWHEEL)
         platform_event_type = MouseEvent::Type::Wheel;
