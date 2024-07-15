@@ -82,8 +82,10 @@
 
 namespace Slic3r {
 
-/*
-static boost::log::trivial::severity_level logSeverity = boost::log::trivial::error;
+
+// TODO: migrate this logging stuff to slic3r-base/Slic3r/Log.hpp
+
+static boost::log::trivial::severity_level boost_log_severity = boost::log::trivial::error;
 
 static boost::log::trivial::severity_level level_to_boost(unsigned level)
 {
@@ -98,88 +100,22 @@ static boost::log::trivial::severity_level level_to_boost(unsigned level)
     case 3: return boost::log::trivial::info;
     // Report all errors, warnings, infos and debugging.
     case 4: return boost::log::trivial::debug;
-    // Report everyting including fine level tracing information.
+    // Report everything including fine level tracing information.
     default: return boost::log::trivial::trace;
     }
 }
 
-void set_logging_level(unsigned int level)
+void set_boost_logging_level(unsigned int level)
 {
-    logSeverity = level_to_boost(level);
+    boost_log_severity = level_to_boost(level);
 
     boost::log::core::get()->set_filter
     (
-        boost::log::trivial::severity >= logSeverity
+        boost::log::trivial::severity >= boost_log_severity
     );
 }
 
-unsigned get_logging_level()
-{
-    switch (logSeverity) {
-    case boost::log::trivial::fatal : return 0;
-    case boost::log::trivial::error : return 1;
-    case boost::log::trivial::warning : return 2;
-    case boost::log::trivial::info : return 3;
-    case boost::log::trivial::debug : return 4;
-    case boost::log::trivial::trace : return 5;
-    default: return 1;
-    }
-}
-*/
-
-/*
-fmtlog::LogLevel log_level_to_fmtlog(unsigned int level)
-{
-    switch (level) {
-    // Report fatal errors only.
-    case 0: //return boost::log::trivial::fatal;
-    // Report fatal errors and errors.
-    case 1: //return boost::log::trivial::error;
-        return fmtlog::ERR;
-    // Report fatal errors, errors and warnings.
-    case 2: //return boost::log::trivial::warning;
-        return fmtlog::WRN;
-    // Report all errors, warnings and infos.
-    case 3: //return boost::log::trivial::info;
-        return fmtlog::INF;
-    // Report all errors, warnings, infos and debugging.
-    case 4: //return boost::log::trivial::debug;
-    // Report everyting including fine level tracing information.
-    default: //return boost::log::trivial::trace;
-        return fmtlog::DBG;
-    }
-}
-
-void set_logging_level(unsigned int level)
-{
-    fmtlog::LogLevel lvl = log_level_to_fmtlog(level);
-    fmtlog::setLogLevel(lvl);
-}
-
-unsigned get_logging_level()
-{
-    fmtlog::LogLevel level = fmtlog::getLogLevel();
-    switch (level) {
-    // case boost::log::trivial::fatal : return 0;
-    // case boost::log::trivial::error : return 1;
-    case fmtlog::ERR: return 0;
-
-    // case boost::log::trivial::warning : return 2;
-    case fmtlog::WRN: return 2;
-
-    // case boost::log::trivial::info : return 3;
-    case fmtlog::INF: return 3;
-
-    // case boost::log::trivial::debug : return 4;
-    // case boost::log::trivial::trace : return 5;
-    case fmtlog::DBG: return 2;
-
-    default: return 1;
-    }
-}
-*/
-
-spdlog::level::level_enum log_level_to_spdlog(unsigned int level)
+static spdlog::level::level_enum log_level_to_spdlog(unsigned int level)
 {
     switch (level) {
     // Report fatal errors only.
@@ -192,7 +128,7 @@ spdlog::level::level_enum log_level_to_spdlog(unsigned int level)
     case 3: return spdlog::level::info;
     // Report all errors, warnings, infos and debugging.
     case 4: return spdlog::level::debug;
-    // Report everyting including fine level tracing information.
+    // Report everything including fine level tracing information.
     default: return spdlog::level::trace;
     }
 
@@ -202,6 +138,7 @@ void set_logging_level(unsigned int level)
 {
     spdlog::level::level_enum lvl = log_level_to_spdlog(level);
     spdlog::set_level(lvl);
+    set_boost_logging_level(level);
 }
 
 unsigned get_logging_level()
@@ -1229,7 +1166,7 @@ std::string format_memsize(size_t bytes, unsigned int decimals)
 std::string log_memory_info(bool ignore_loglevel)
 {
     std::string out;
-    if (ignore_loglevel || /*logSeverity <= boost::log::trivial::info*/ spdlog::get_level() <= spdlog::level::info) {
+    if (ignore_loglevel || /*boost_log_severity <= boost::log::trivial::info*/ spdlog::get_level() <= spdlog::level::info) {
 #ifdef WIN32
     #ifndef PROCESS_MEMORY_COUNTERS_EX
         // MingW32 doesn't have this struct in psapi.h

@@ -299,6 +299,11 @@ else ()
 endif ()
 
 
+# Slic3r Next modules goes here:
+
+add_subdirectory(slic3r-base)
+
+
 if (NOT EMSCRIPTEN)
     add_subdirectory(slic3r-platform-wx)
     add_subdirectory(slic3r-app-wxtest)

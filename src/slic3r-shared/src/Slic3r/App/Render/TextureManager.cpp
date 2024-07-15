@@ -1,9 +1,9 @@
 #include "TextureManager.hpp"
 #include "libslic3r/Utils.hpp"
+#include <Slic3r/Log.hpp>
 
 #include <boost/filesystem/path.hpp>
 #include <boost/nowide/fstream.hpp>
-#include <spdlog/spdlog.h>
 
 namespace Slic3r::App::Render {
 

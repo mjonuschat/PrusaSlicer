@@ -22,6 +22,7 @@ add_executable(slic3r-app-desktop WIN32 ${SLIC3R_APP_DESKTOP_FILES}
                                         ${CMAKE_CURRENT_BINARY_DIR}/slic3r-app-desktop.rc)
 
 target_link_libraries(slic3r-app-desktop PUBLIC
+        slic3r-base
         slic3r-platform slic3r-platform-wx 
         slic3r-shared slic3r-shared-wx
         ${wxWidgets_LIBRARIES} 

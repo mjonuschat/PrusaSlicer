@@ -61,6 +61,7 @@ Image Image::half_sampled() const
             const size_t base_idx = y * row_stride + x * channels;
             for (size_t ch = 0; ch < channels; ch++) {
                 uint32_t val = 0;
+                // TODO: unroll loops manually as MSVC do not recognize following pragma
 #pragma unroll
                 for (size_t j = 0; j < 2; j++) {
 #pragma unroll

@@ -4,7 +4,7 @@
 #include "ShaderManager.hpp"
 #include "TextureManager.hpp"
 
-#include <spdlog/spdlog.h>
+#include <Slic3r/Log.hpp>
 
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/classification.hpp>

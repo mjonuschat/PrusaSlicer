@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include <spdlog/spdlog.h>
+#include <Slic3r/Log.hpp>
 
 #include "commonGL.hpp"
 #include "Shader.hpp"

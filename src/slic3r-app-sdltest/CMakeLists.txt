@@ -12,7 +12,7 @@ else ()
     add_executable(slic3r-app-sdltest WIN32 ${SLIC3R_APP_SDLTEST_FILES})
 endif()
 
-target_link_libraries(slic3r-app-sdltest PUBLIC slic3r-platform slic3r-platform-sdl slic3r-shared fmt spdlog)
+target_link_libraries(slic3r-app-sdltest PUBLIC slic3r-platform slic3r-platform-sdl slic3r-shared fmt slic3r-base)
 
 
 # Link the resources dir to where Slic3r GUI expects it

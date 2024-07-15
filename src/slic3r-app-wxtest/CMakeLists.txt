@@ -12,7 +12,7 @@ else()
 endif()
 
 target_link_libraries(slic3r-app-wxtest PUBLIC
-        slic3r-platform slic3r-platform-wx slic3r-shared
+        slic3r-base slic3r-platform slic3r-platform-wx slic3r-shared
         ${wxWidgets_LIBRARIES} NanoSVG::nanosvg NanoSVG::nanosvgrast
 )
 

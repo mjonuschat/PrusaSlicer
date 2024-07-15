@@ -1,8 +1,9 @@
 #include "ImageCodec.hpp"
-#include "Slic3r/Memory.hpp"
+
+#include <Slic3r/Log.hpp>
+#include <Slic3r/Memory.hpp>
 
 #include <sstream>
-#include <spdlog/spdlog.h>
 #include <boost/core/bit.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 

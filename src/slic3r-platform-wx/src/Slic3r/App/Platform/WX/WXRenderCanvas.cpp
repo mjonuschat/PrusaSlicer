@@ -2,14 +2,13 @@
 
 #include <iostream>
 
-#include <spdlog/spdlog.h>
-
 #include <wx/dcclient.h>
 #include <imgui/imgui.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
 
 #include <Slic3r/App/Platform/PlatformError.hpp>
 #include <Slic3r/App/Render/commonGL.hpp>
+#include <Slic3r/Log.hpp>
 
 namespace Slic3r::App::Platform::WX {
 
@@ -429,6 +428,11 @@ void WXRenderCanvas::on_mouse(wxMouseEvent& evt)
     ImGuiIO& io = ImGui::GetIO();
     int mouse_x = ToDIP(evt.GetX());
     int mouse_y = ToDIP(evt.GetY());
+    //int mouse_x = evt.GetX();
+    //int mouse_y = evt.GetY();
+
+    SPDLOG_INFO("Mouse event {} {}", mouse_x, mouse_y);
+
     io.MousePos = ImVec2((float) mouse_x, (float) mouse_y);
     io.MouseDown[0] = evt.LeftIsDown();
     io.MouseDown[1] = evt.RightIsDown();
@@ -493,7 +497,7 @@ void WXRenderCanvas::on_idle(wxIdleEvent& event)
 {
     dispatch_enqueued();
     bool render_requested = get_and_reset_render_requested();
-    std::cout << "Idle: render requested: " << render_requested << "\n";
+    //std::cout << "Idle: render requested: " << render_requested << "\n";
     if (render_requested)
         render();
 }
@@ -504,13 +508,20 @@ void WXRenderCanvas::begin_frame_platform()
     // Setup display size (every frame to accommodate for window resizing)
     int w, h;
     GetClientSize(&w, &h);
+    // double scale_factor = wxWindow::GetContentScaleFactor();
+    double scale_factor = wxWindow::GetDPIScaleFactor();
+#if WIN32
+    size_t display_w = w;
+    size_t display_h = h;
+    w /= scale_factor;
+    h /= scale_factor;
+#else
     size_t display_w = ToPhys(w);
     size_t display_h = ToPhys(h);
-    //    SDL_GL_GetDrawableSize(m_window, &display_w, &display_h);
+#endif
     ImGuiIO &io = ImGui::GetIO();
     io.DisplaySize = ImVec2((float)w, (float)h);
-    //double scale_factor = wxWindow::GetContentScaleFactor();
-    double scale_factor = wxWindow::GetDPIScaleFactor();
+    SPDLOG_INFO("Setting screen resolution {} {} @ scale {} (phys {} {})", w, h, scale_factor, display_w, display_h);
     set_screen_size({display_w, display_h, float(scale_factor)});
     io.DisplayFramebufferScale = ImVec2(float(scale_factor), float(scale_factor));
 }

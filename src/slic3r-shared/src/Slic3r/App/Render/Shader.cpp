@@ -8,13 +8,14 @@
 #include "libslic3r/Utils.hpp"
 #include "libslic3r/format.hpp"
 #include "libslic3r/Color.hpp"
+#include <Slic3r/Log.hpp>
+
 
 #include <boost/nowide/fstream.hpp>
 #include <GL/glew.h>
 #include <cassert>
 
 #include <boost/log/trivial.hpp>
-#include <spdlog/spdlog.h>
 
 namespace Slic3r::App::Render {
 

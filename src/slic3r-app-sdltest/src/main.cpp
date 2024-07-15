@@ -1,8 +1,9 @@
 #include <boost/dll.hpp>
 #include <boost/nowide/iostream.hpp>
 #include <boost/nowide/cstdlib.hpp>
-#include <spdlog/spdlog.h>
 
+
+#include <Slic3r/Log.hpp>
 #include <Slic3r/App/Init.hpp>
 #include <Slic3r/App/Render/Context.hpp>
 #include <Slic3r/App/Platform/PlatformServices.hpp>

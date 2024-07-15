@@ -6,7 +6,7 @@
 #include <imgui/imgui.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
 #include <GL/glew.h>
-#include <spdlog/spdlog.h>
+#include <Slic3r/Log.hpp>
 
 
 #ifdef NDEBUG

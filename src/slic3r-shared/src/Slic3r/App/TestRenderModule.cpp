@@ -94,6 +94,9 @@ void TestRenderModule::render_scene()
 {
     SPDLOG_TRACE("TestRenderModule::render_scene() 1");
     glViewport(0, 0, m_screen_info.physical_width(), m_screen_info.physical_height());
+    SPDLOG_INFO(
+        "Setting viewport to {}x{}", m_screen_info.physical_width(), m_screen_info.physical_height()
+    );
     Transform3f view = Transform3f::Identity();
     view = view.translate(Vec3f(0, 0, -2));
     SPDLOG_TRACE("TestRenderModule::render_scene() 2");
@@ -167,11 +170,10 @@ void TestRenderModule::render_imgui()
 
 void TestRenderModule::on_scene_mouse_event(const Platform::MouseEvent &e)
 {
-    std::cout <<  "MouseEvent type: " << uint32_t(e.get_type()) << "\n";
     if (e.get_type() == Platform::MouseEvent::Type::Move) {
         float dx = 2 * float(e.get_x()) / float(m_screen_info.logical_width()) - 1.0f;
         m_geom2_scale = std::pow(2.0f, dx * 5);
-        std::cout << "Geom scale: " << m_geom2_scale << "  dx: " << dx << "\n";
+        SPDLOG_INFO("Geom scale: {}  dx: {}", m_geom2_scale, dx);
     }
 }
 
