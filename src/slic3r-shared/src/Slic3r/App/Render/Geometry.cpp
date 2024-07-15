@@ -44,6 +44,40 @@ size_t index_type_size(IndexType index)
 }
 
 namespace GL {
+inline GLenum type(DataType type)
+{
+    constexpr static GLenum translation_table[] = {
+        // Float = 0,
+        GL_FLOAT,
+        // Byte,
+        GL_BYTE,
+        // Short
+        GL_SHORT
+    };
+
+    const size_t idx = static_cast<size_t>(type);
+    assert(0 >= idx && idx < (sizeof(translation_table) / sizeof(GLenum)));
+
+    return translation_table[idx];
+}
+
+inline GLenum type(IndexType type)
+{
+    constexpr static GLenum translation_table[] = {
+        // UByte = 0,
+        GL_UNSIGNED_BYTE,
+        // UShort,
+        GL_UNSIGNED_SHORT,
+        // UInt
+        GL_UNSIGNED_INT,
+    };
+
+    const int idx = static_cast<int>(type);
+    //assert(0 >= idx && idx < sizeof(translation_table) / sizeof(GLenum));
+
+    return translation_table[idx];
+}
+
 
 const char* shader_input_name(VertexAttribType vat)
 {
