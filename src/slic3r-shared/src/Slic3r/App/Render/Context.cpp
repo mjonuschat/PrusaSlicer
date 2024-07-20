@@ -1,6 +1,7 @@
 #include "Context.hpp"
 
 #include "commonGL.hpp"
+#include "Device.hpp"
 #include "ShaderManager.hpp"
 #include "TextureManager.hpp"
 
@@ -78,9 +79,9 @@ Context::Context()
 #else
     m_vao_available = true;
 #endif
-
-    m_shader_manager = std::make_unique<ShaderManager>(*this);
-    m_texture_manager = std::make_unique<TextureManager>(*this);
+    m_device.reset(new Device(*this));
+    m_shader_manager.reset(new ShaderManager(*this));
+    m_texture_manager.reset(new TextureManager(*m_device));
 }
 
 void Context::log_gl_info() const

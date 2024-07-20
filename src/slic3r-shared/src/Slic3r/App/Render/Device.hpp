@@ -9,16 +9,20 @@ using ResourceId = unsigned int;
 using ResourceIds = std::vector<ResourceId>;
 
 class Context;
+class Texture;
+class VertexBuffer;
+class IndexBuffer;
+class Shader;
+
 class Device
 {
     friend class Context;
     explicit Device(Context& context): m_context(context) {}
 public:
-    void set_viewport();
-    void clear_buffers(bool depth);
-    void set_depth_test_enabled(bool enabled);
-    void set_blending_enabled(bool enabled);
 
+    std::unique_ptr<Texture> create_texture();
+    std::unique_ptr<VertexBuffer> create_vertex_buffer();
+    std::unique_ptr<IndexBuffer> create_index_buffer();
 private:
     Context& m_context;
     ResourceId m_bound_vertex_buffer{0};

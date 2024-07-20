@@ -1,9 +1,11 @@
 #include "Texture.hpp"
 #include "Context.hpp"
+#include "Slic3r/App/Render/GL/GLTextureInternal.hpp"
 
 namespace Slic3r::App::Render {
 
 namespace GL {
+
 GLenum texture_format(PixelFormat format)
 {
     switch (format) {
@@ -33,26 +35,28 @@ GLenum texture_format_type(PixelFormat format)
 }
 }
 
-Texture::Texture(Context& context)
-    : m_context(context)
+Texture::Texture(Device& device)
+    : WithInternal::WithInternal(InternalType<GL::GLTextureInternal>()), m_device(device)
 {
-    glGenTextures(1, &m_id);
+    glGenTextures(1, &get_internal_as<GL::GLTextureInternal>().m_id);
     glCheck();
 }
 
 void Texture::bind(uint8_t unit)
 {
+    auto& self = get_internal_as<GL::GLTextureInternal>();
     glActiveTexture(GL_TEXTURE0 + unit);
-    glBindTexture(GL_TEXTURE_2D, m_id);
+    glBindTexture(GL_TEXTURE_2D, self.m_id);
     glCheck();
-    m_bound_unit = unit;
+    self.m_bound_unit = unit;
 }
 
 void Texture::unbind()
 {
-    glActiveTexture(GL_TEXTURE0 + m_bound_unit);
+    auto& self = get_internal_as<GL::GLTextureInternal>();
+    glActiveTexture(GL_TEXTURE0 + self.m_bound_unit);
     glBindTexture(GL_TEXTURE_2D, 0);
-    m_bound_unit = UNBOUND;
+    self.m_bound_unit = GL::GLTextureInternal::UNBOUND;
     glCheck();
 }
 

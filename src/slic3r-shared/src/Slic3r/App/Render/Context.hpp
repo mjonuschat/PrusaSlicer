@@ -9,6 +9,7 @@ namespace Slic3r::App::Render {
 class ShaderManager;
 class TextureManager;
 class Texture;
+class Device;
 
 class Context
 {
@@ -49,6 +50,7 @@ private:
     bool m_core_profile;
     bool m_vao_available;
 
+    std::unique_ptr<Device> m_device;
     std::unique_ptr<ShaderManager> m_shader_manager;
     std::unique_ptr<TextureManager> m_texture_manager;
 };

@@ -11,8 +11,9 @@ class Context;
 
 class ShaderManager
 {
-public:
+    friend class Context;
     explicit ShaderManager(Context& context) : m_context(context) {}
+public:
 
     std::pair<bool, std::string> init();
     // call this method before to release the OpenGL context

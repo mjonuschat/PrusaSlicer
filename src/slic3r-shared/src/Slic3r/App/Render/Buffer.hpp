@@ -7,54 +7,37 @@
 #include "commonGL.hpp"
 #include "Shader.hpp"
 #include "Context.hpp"
+#include "WithInternal.hpp"
 #include "libslic3r/Point.hpp"
 
 namespace Slic3r::App::Render {
+enum class BufferTarget {
+    VertexBuffer,
+    IndexBuffer
+};
 
-class Buffer {
+class Buffer : public WithInternal {
 public:
-    explicit Buffer(GLenum target): m_target(target)
-    {
-        glGenBuffers(1, &m_id);
-        glCheck();
-    }
+    explicit Buffer(BufferTarget target);
+    ~Buffer() override;
 
-    virtual ~Buffer();
-
-    inline void bind() const
-    {
-        glBindBuffer(m_target, m_id);
-        glCheck();
-    }
-
-    inline void set_data(const void* data, GLsizeiptr size, GLenum usage)
-    {
-        bind();
-        glBufferData(m_target, size, data, usage);
-        glCheck();
-    }
+    void bind() const;
+    void set_data(const void* data, GLsizeiptr size, GLenum usage);
 
 private:
-    GLenum m_target;
-    GLuint m_id {0};
+    BufferTarget m_target;
 };
 
 class VertexBuffer : public Buffer
 {
 public:
-    VertexBuffer() : Buffer(GL_ARRAY_BUFFER) {}
-
-    inline void bind_vertex_attrib(GLuint index, GLint size, GLenum type, bool normalized, GLsizei stride, const void* pointer)
-    {
-        glVertexAttribPointer(index, size, type, normalized ? GL_TRUE : GL_FALSE, stride, pointer);
-        glCheck();
-    }
+    VertexBuffer() : Buffer(BufferTarget::VertexBuffer) {}
 };
 
 class IndexBuffer : public Buffer
 {
 public:
-    IndexBuffer() : Buffer(GL_ELEMENT_ARRAY_BUFFER) {}
+    IndexBuffer() : Buffer(BufferTarget::IndexBuffer) {}
 };
 
 } // namespace Slic3r::App::Render

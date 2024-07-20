@@ -2,17 +2,19 @@
 
 #include "commonGL.hpp"
 #include "Image.hpp"
+#include "WithInternal.hpp"
 
 namespace Slic3r::App::Render {
 
 class Context;
+class Device;
 
-class Texture {
+class Texture : public WithInternal {
 public:
     enum class MinFilter { Nearest = 0, Linear};
     enum class MagFilter { Nearest = 0, Linear, MipMap};
 
-    explicit Texture(Context& context);
+    explicit Texture(Device& device);
 
     void bind(uint8_t unit = 0);
     void unbind();
@@ -21,10 +23,7 @@ public:
     void set_filtering(MinFilter min_filter, MagFilter mag_filter);
 
 private:
-    Context& m_context;
-    GLuint m_id{0};
-    static constexpr uint8_t UNBOUND = 255;
-    uint8_t m_bound_unit{UNBOUND};
+    Device& m_device;
 };
 
 }

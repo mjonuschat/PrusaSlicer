@@ -38,7 +38,7 @@ Texture* TextureManager::get(const std::string& name, const ImageLoadOptions& op
         return nullptr;
     }
 
-    Texture* tex = new Texture(m_context);
+    Texture* tex = new Texture(m_device);
     for (size_t level = 0; level < images.size(); level++) {
         const auto& img = images[level];
         tex->set_data(img.format(), level, img.width(), img.height(), img.data());
@@ -56,8 +56,7 @@ Texture* TextureManager::create_empty(const std::string& name, PixelFormat pf, s
     if (it != m_textures.end())
         return it->second;
 
-    Texture* tex = new Texture(m_context);
-
+    Texture* tex = new Texture(m_device);
     {
         std::vector<uint8_t> data;
         data.resize(w * h * pixel_format_bytes_per_pixel(pf), 0x7f);

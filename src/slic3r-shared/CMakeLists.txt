@@ -17,6 +17,12 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Render/Shader.cpp
         src/Slic3r/App/Render/commonGL.hpp
         src/Slic3r/App/Render/commonGL.cpp
+        src/Slic3r/App/Render/CommandBuffer.hpp
+        src/Slic3r/App/Render/CommandBuffer.cpp
+        src/Slic3r/App/Render/VertexAttribDesc.cpp
+        src/Slic3r/App/Render/VertexAttribDesc.hpp
+        src/Slic3r/App/Render/WithInternal.hpp
+        src/Slic3r/App/Render/GL/GLTextureInternal.hpp
         src/Slic3r/App/Plater/ScenePresenter.hpp
         src/Slic3r/App/View/IPanelView.hpp
         src/Slic3r/App/Preview/View/DoubleSlider.cpp
