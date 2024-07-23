@@ -1,6 +1,6 @@
 #include "Context.hpp"
 
-#include "commonGL.hpp"
+#include "Slic3r/App/Render/GL/commonGL.hpp"
 #include "Device.hpp"
 #include "ShaderManager.hpp"
 #include "TextureManager.hpp"
@@ -74,6 +74,12 @@ Context::Context()
     std::string glsl_version = getGlString(GL_SHADING_LANGUAGE_VERSION, VERSION_NA);
     m_glsl_version = parse_version(glsl_version);
     m_core_profile = !GLEW_ARB_compatibility;
+
+    GLint max_texture_units = 0;
+    glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &max_texture_units);
+    glCheck();
+    m_max_texture_units = max_texture_units;
+
 #ifdef EMSCRIPTEN
     m_vao_available = GLEW_OES_vertex_array_object;
 #else
@@ -82,6 +88,11 @@ Context::Context()
     m_device.reset(new Device(*this));
     m_shader_manager.reset(new ShaderManager(*this));
     m_texture_manager.reset(new TextureManager(*m_device));
+}
+
+Context::~Context()
+{
+    SPDLOG_DEBUG("Releasing context");
 }
 
 void Context::log_gl_info() const

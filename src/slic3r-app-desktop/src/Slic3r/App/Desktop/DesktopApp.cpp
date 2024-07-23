@@ -31,7 +31,7 @@ bool DesktopApp::OnInit()
     canvas.set_render_module(&m_render_module);
     m_main_frame->Show();
 
-#ifndef __linux
+#if !defined(__linux)
     // Initial repaint
     canvas.render();
 #endif

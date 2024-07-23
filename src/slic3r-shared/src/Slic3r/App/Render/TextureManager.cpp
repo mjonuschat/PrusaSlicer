@@ -1,4 +1,5 @@
 #include "TextureManager.hpp"
+#include "Device.hpp"
 #include "libslic3r/Utils.hpp"
 #include <Slic3r/Log.hpp>
 
@@ -12,7 +13,7 @@ Texture* TextureManager::get(const std::string& name, const ImageLoadOptions& op
 {
     TextureMap::const_iterator it = m_textures.find(name);
     if (it != m_textures.end())
-        return it->second;
+        return it->second.get();
 
     // Load bitmap
     auto* codec = ImageCodecManager::instance().find_loader(name);
@@ -38,7 +39,7 @@ Texture* TextureManager::get(const std::string& name, const ImageLoadOptions& op
         return nullptr;
     }
 
-    Texture* tex = new Texture(m_device);
+    auto tex = m_device.create_texture();
     for (size_t level = 0; level < images.size(); level++) {
         const auto& img = images[level];
         tex->set_data(img.format(), level, img.width(), img.height(), img.data());
@@ -46,24 +47,24 @@ Texture* TextureManager::get(const std::string& name, const ImageLoadOptions& op
 
     // TODO: (Optional) Compress bitmap
 
-    m_textures[name] = tex;
-    return tex;
+    m_textures[name] = std::move(tex);
+    return m_textures[name].get();
 }
 
 Texture* TextureManager::create_empty(const std::string& name, PixelFormat pf, size_t w, size_t h)
 {
     TextureMap::const_iterator it = m_textures.find(name);
     if (it != m_textures.end())
-        return it->second;
+        return it->second.get();
 
-    Texture* tex = new Texture(m_device);
+    auto tex = m_device.create_texture();
     {
         std::vector<uint8_t> data;
         data.resize(w * h * pixel_format_bytes_per_pixel(pf), 0x7f);
         tex->set_data(pf, 0, w, h, data.data());
     }
-    m_textures[name] = tex;
-    return tex;
+    m_textures[name] = std::move(tex);
+    return m_textures[name].get();
 }
 
 }

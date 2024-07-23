@@ -1,4 +1,8 @@
 set(SLIC3R_SHARED_FILES
+        src/Slic3r/App/Render/Types.hpp
+        src/Slic3r/App/Render/Types.cpp
+        src/Slic3r/App/Render/Init.cpp
+        src/Slic3r/App/Render/Init.hpp
         src/Slic3r/App/Render/Context.hpp
         src/Slic3r/App/Render/Context.cpp
         src/Slic3r/App/Render/Device.hpp
@@ -15,14 +19,21 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Render/Buffer.cpp
         src/Slic3r/App/Render/Shader.hpp
         src/Slic3r/App/Render/Shader.cpp
-        src/Slic3r/App/Render/commonGL.hpp
-        src/Slic3r/App/Render/commonGL.cpp
+        src/Slic3r/App/Render/GL/commonGL.hpp
+        src/Slic3r/App/Render/GL/commonGL.cpp
         src/Slic3r/App/Render/CommandBuffer.hpp
         src/Slic3r/App/Render/CommandBuffer.cpp
         src/Slic3r/App/Render/VertexAttribDesc.cpp
         src/Slic3r/App/Render/VertexAttribDesc.hpp
         src/Slic3r/App/Render/WithInternal.hpp
+        src/Slic3r/App/Render/GL/GLTypes.cpp
+        src/Slic3r/App/Render/GL/GLTypes.hpp
         src/Slic3r/App/Render/GL/GLTextureInternal.hpp
+        src/Slic3r/App/Render/GL/GLBufferInternal.hpp
+        src/Slic3r/App/Render/GL/GLGeometryInternal.hpp
+        src/Slic3r/App/Render/GL/GLShaderInternal.hpp
+        src/Slic3r/App/Render/GL/GLDeviceInternal.hpp
+        src/Slic3r/App/Render/GL/GLDeviceInternal.cpp
         src/Slic3r/App/Plater/ScenePresenter.hpp
         src/Slic3r/App/View/IPanelView.hpp
         src/Slic3r/App/Preview/View/DoubleSlider.cpp

@@ -7,6 +7,11 @@
 #include "StdMainThreadDispatcher.hpp"
 #include "ScreenInfo.hpp"
 
+namespace Slic3r::App::Render {
+class Device;
+}
+
+
 namespace Slic3r::App::Platform {
 
 /**
@@ -42,6 +47,7 @@ protected:
     virtual void end_imgui_frame_platform() = 0;
     virtual void end_frame_platform() = 0;
     virtual double get_platform_time() = 0;
+    virtual Render::Device& get_device() = 0;
 
     void enqueue_mouse(const MouseEvent& e);
     void enqueue_keyboard(const KeyboardEvent& e);

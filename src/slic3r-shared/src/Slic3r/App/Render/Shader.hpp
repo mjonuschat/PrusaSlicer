@@ -1,5 +1,8 @@
 #pragma once
 
+#include "Types.hpp"
+#include "WithInternal.hpp"
+
 #include <array>
 #include <string>
 #include <string_view>
@@ -13,40 +16,26 @@ class ColorRGBA;
 
 namespace Slic3r::App::Render {
 
-class Shader
+class Device;
+
+class Shader : public WithInternal
 {
 public:
-    enum class ShaderType
-    {
-        Vertex,
-        Fragment,
-        Geometry,
-        TessEvaluation,
-        TessControl,
-        Compute,
-        Count
-    };
-
     typedef std::array<std::string, static_cast<size_t>(ShaderType::Count)> ShaderFilenames;
     typedef std::array<std::string, static_cast<size_t>(ShaderType::Count)> ShaderSources;
 
-    Shader() = default;
-    ~Shader();
+    Shader(Device& device);
+    ~Shader() override;
 
     Shader(const Shader&) = delete;
     Shader& operator=(const Shader&) = delete;
 
     Shader(Shader&&) = default;
-    Shader& operator=(Shader&&) = default;
 
     bool init_from_files(const std::string& name, const ShaderFilenames& filenames, const std::initializer_list<std::string_view> &defines = {});
     bool init_from_texts(const std::string& name, const ShaderSources& sources);
 
     const std::string& get_name() const { return m_name; }
-    unsigned int get_id() const { return m_id; }
-
-    void bind() const;
-    void unbind() const;
 
     void set_uniform(const char* name, int value) const { set_uniform(get_uniform_location(name), value); }
     void set_uniform(const char* name, bool value) const { set_uniform(get_uniform_location(name), value); }
@@ -104,8 +93,9 @@ public:
     int get_uniform_location(const char* name) const;
 private:
     friend class Geometry;
+    Device& m_device;
+
     std::string m_name;
-    unsigned int m_id{ 0 };
     std::vector<std::pair<std::string, int>> m_attrib_location_cache;
     std::vector<std::pair<std::string, int>> m_uniform_location_cache;
 };

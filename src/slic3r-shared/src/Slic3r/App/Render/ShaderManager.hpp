@@ -22,8 +22,6 @@ public:
     // returns nullptr if not found
     Shader* get_shader(const std::string& shader_name);
 
-    // returns currently active shader, nullptr if none
-    Shader* get_current_shader();
 private:
     Context& m_context;
     std::vector<std::unique_ptr<Shader>> m_shaders;

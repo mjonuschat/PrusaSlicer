@@ -7,7 +7,9 @@
 #include "SDL_syswm.h"
 
 #include <Slic3r/App/Platform/PlatformError.hpp>
-#include <Slic3r/App/Render/commonGL.hpp>
+#include <Slic3r/App/Render/Init.hpp>
+#include <Slic3r/App/Render/Context.hpp>
+#include <Slic3r/App/Render/Device.hpp>
 #include <Slic3r/App/Platform/MouseEvent.hpp>
 
 namespace Slic3r::App::Platform::SDL
@@ -61,7 +63,7 @@ SDLRenderCanvas::SDLRenderCanvas()
         throw PlatformError(std::string("GLEW init failed with code ") + std::to_string(err));
     }
 
-    Render::initialize_gl();
+    Render::initialize_render();
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -99,6 +101,7 @@ SDLRenderCanvas::~SDLRenderCanvas()
     memset(m_mouse_cursors, 0, sizeof(m_mouse_cursors));
 
     ImGui::DestroyContext();
+    Render::shutdown_render();
 
     SDL_GL_DeleteContext(m_gl_context);
     SDL_DestroyWindow(m_window);
@@ -354,6 +357,11 @@ double SDLRenderCanvas::get_platform_time()
     static Uint64 frequency = SDL_GetPerformanceFrequency();
     Uint64 current_time = SDL_GetPerformanceCounter();
     return double(current_time) / frequency;
+}
+
+Render::Device& SDLRenderCanvas::get_device()
+{
+    return Render::Context::instance().device();
 }
 
 void SDLRenderCanvas::pass_event_to_scene(const SDL_Event& event)

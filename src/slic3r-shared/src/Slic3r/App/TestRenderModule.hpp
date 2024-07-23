@@ -15,16 +15,15 @@ public:
 
     void render_scene() override;
     void render_imgui() override;
-
     void on_scene_mouse_event(const Platform::MouseEvent &e) override;
     void on_scene_keyboard_event(const Platform::KeyboardEvent &e) override;
 
 protected:
-    void on_init() override;
+    void on_init(Render::Device& device) override;
 
 private:
-    Render::Geometry m_geometry;
-    Render::Geometry m_geometry2;
+    std::unique_ptr<Render::Geometry> m_geometry;
+    std::unique_ptr<Render::Geometry> m_geometry2;
     Render::Shader* m_shader{nullptr};
     Render::Shader* m_shader2{nullptr};
     Render::Texture* m_tex{nullptr};

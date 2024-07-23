@@ -14,6 +14,8 @@ public:
     };
 
     virtual ~WithInternal() = default;
+    WithInternal(WithInternal&&) = default;
+    WithInternal& operator=(WithInternal&&) = default;
 
     template<typename C> C& get_internal_as() { return *static_cast<C*>(m_internal.get()); }
     template<typename C> const C& get_internal_as() const
@@ -31,8 +33,8 @@ protected:
     explicit WithInternal(InternalType<C>) : m_internal(std::make_unique<C>()) {}
 
     template <typename C, typename ...Args>
-    explicit WithInternal(InternalType<C>, Args... args)
-        : m_internal(std::make_unique<C>(args...))
+    explicit WithInternal(InternalType<C>, Args&&... args)
+        : m_internal(std::make_unique<C>(std::forward<Args...>(args...)))
     {}
 
 protected:

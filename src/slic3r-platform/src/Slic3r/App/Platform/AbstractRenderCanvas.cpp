@@ -45,7 +45,7 @@ void AbstractRenderCanvas::render()
     if (m_render_module == nullptr)
         return;
 
-    m_render_module->ensure_initialized();
+    m_render_module->ensure_initialized(get_device());
 
     assert_no_gl_error();
     begin_frame();
@@ -76,6 +76,7 @@ void AbstractRenderCanvas::begin_frame()
     io.DeltaTime = m_last_time > 0 ? float(current_time - m_last_time) : (1.0f / 60.0f);
     m_last_time = current_time;
 
+    /*
     assert_no_gl_error();
     glViewport(0, 0, m_screen_info.physical_width(), m_screen_info.physical_height());
     assert_no_gl_error();
@@ -88,6 +89,7 @@ void AbstractRenderCanvas::begin_frame()
     assert_no_gl_error();
     glClear(GL_COLOR_BUFFER_BIT);
     assert_no_gl_error();
+    */
 }
 
 void AbstractRenderCanvas::begin_imgui_frame()

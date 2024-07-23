@@ -4,6 +4,8 @@
 
 namespace Slic3r::App::Render {
 
+class Device;
+
 struct VertexP3
 {
     Vec3f position;
@@ -41,36 +43,23 @@ static_assert(sizeof(VertexP3N3) == (3 + 3) * 4);
 static_assert(sizeof(VertexP3N3T2) == (3 + 3 + 2) * 4);
 
 
-
-namespace GL {
-template<typename I> struct IndexTypeTraits
-{
-    static constexpr GLenum type_id = 0;
+template <typename T>
+struct CommonIndexTypeTraits {
+    constexpr static bool allowed = false;
 };
 
-template<> struct IndexTypeTraits<unsigned int>
-{
-    static constexpr GLenum type_id = GL_UNSIGNED_INT;
-};
-
-template<> struct IndexTypeTraits<unsigned short>
-{
-    static constexpr GLenum type_id = GL_UNSIGNED_SHORT;
-};
-
-template<> struct IndexTypeTraits<unsigned char>
-{
-    static constexpr GLenum type_id = GL_UNSIGNED_BYTE;
-};
-} // namespace GL
-
-
+template <>
+struct CommonIndexTypeTraits<uint8_t> { constexpr static bool allowed = true; };
+template <>
+struct CommonIndexTypeTraits<uint16_t> { constexpr static bool allowed = true; };
+template <>
+struct CommonIndexTypeTraits<uint32_t> { constexpr static bool allowed = true; };
 
 template <typename V, typename I=uint32_t>
 class GeometryBuilder
 {
     static_assert(
-        GL::IndexTypeTraits<I>::type_id != 0,
+        CommonIndexTypeTraits<I>::allowed,
         "I parameters must be one of unsigned int, unsigned short, unsigned char"
     );
 
@@ -102,9 +91,9 @@ public:
         return *this;
     }
 
-    Geometry build()
+    std::unique_ptr<Geometry> build(Device& device)
     {
-        Geometry geometry;
+        std::unique_ptr<Geometry> geometry = std::make_unique<Geometry>(device);
 
         void* index_data = nullptr;
         size_t index_count = 0;
@@ -122,7 +111,7 @@ public:
             }
         }
 
-        geometry.upload(
+        geometry->upload(
             m_vertices.data(), m_vertices.size(), VertexType::format(),
             index_data, index_count,index_type
         );

@@ -1,66 +1,16 @@
 #include "Geometry.hpp"
+#include "Device.hpp"
+
+#include "Slic3r/App/Render/GL/GLGeometryInternal.hpp"
+#include "Slic3r/App/Render/GL/GLShaderInternal.hpp"
+#include "Slic3r/App/Render/GL/commonGL.hpp"
+#include "Slic3r/App/Render/GL/GLTypes.hpp"
 
 namespace Slic3r::App::Render {
 
-namespace GL {
-inline GLenum type(DataType type)
-{
-    constexpr static GLenum translation_table[] = {
-        // Float = 0,
-        GL_FLOAT,
-        // Byte,
-        GL_BYTE,
-        // Short
-        GL_SHORT
-    };
-
-    const size_t idx = static_cast<size_t>(type);
-    assert(0 >= idx && idx < (sizeof(translation_table) / sizeof(GLenum)));
-
-    return translation_table[idx];
-}
-
-inline GLenum type(IndexType type)
-{
-    constexpr static GLenum translation_table[] = {
-        // UByte = 0,
-        GL_UNSIGNED_BYTE,
-        // UShort,
-        GL_UNSIGNED_SHORT,
-        // UInt
-        GL_UNSIGNED_INT,
-    };
-
-    const int idx = static_cast<int>(type);
-    //assert(0 >= idx && idx < sizeof(translation_table) / sizeof(GLenum));
-
-    return translation_table[idx];
-}
-
-
-const char* shader_input_name(VertexAttribType vat)
-{
-    switch (vat) {
-    case VertexAttribType::Vertex:
-        return "v_position";
-
-    case VertexAttribType::Normal:
-        return "v_normal";
-
-    case VertexAttribType::TexCoord0:
-        return "v_tex_coord";
-
-    case VertexAttribType::Extra:
-        return "v_extra";
-
-    }
-
-    // Encountered missing VertexAttribType, if valid, please add it into the switch above
-    assert(false);
-    return "";
-}
-
-} // namespace GL
+Geometry::Geometry(Device& device)
+    : WithInternal(InternalType<GL::GLGeometryInternal>()), m_device(device)
+{}
 
 void Geometry::upload(
     const void* vertex_data,
@@ -78,88 +28,28 @@ void Geometry::upload(
     // TODO: handle ES with VAO
     bool use_vao = ctx.is_vao_available();
 
+    auto& self = get_internal_as<GL::GLGeometryInternal>();
     if (use_vao) {
-        glGenVertexArrays(1, &m_vao_id);
-        glBindVertexArray(m_vao_id);
+        glGenVertexArrays(1, &self.m_vao_id);
+        glBindVertexArray(self.m_vao_id);
         glCheck();
     }
     SPDLOG_TRACE("Buffer::upload() Part 2");
 
 
-    m_vb = std::make_unique<VertexBuffer>();
-    m_vb->set_data(vertex_data, vertex_attribs_stride(vertex_format) * vertex_count, GL_STATIC_DRAW);
+    m_vb = m_device.create_vertex_buffer();
+    m_vb->set_data(vertex_data, vertex_attribs_stride(vertex_format) * vertex_count, BufferUsage::StaticDraw);
     m_vertex_count = vertex_count;
     m_vertex_format = vertex_format;
 
     if (index_data && index_count > 0) {
-        m_ib = std::make_unique<IndexBuffer>();
-        m_ib->set_data(index_data, index_type_size(index_format) * index_count, GL_STATIC_DRAW);
+        m_ib = m_device.create_index_buffer();
+        m_ib->set_data(index_data, index_type_size(index_format) * index_count, BufferUsage::StaticDraw);
         m_index_count = index_count;
         m_index_type = index_format;
     }
 
     m_built = true;
-}
-
-void Geometry::bind(const Shader& shader)
-{
-    assert(m_built);
-
-    auto& ctx = Context::instance();
-    // TODO: handle ES with VAO
-    bool use_vao = ctx.is_vao_available();
-
-    if (use_vao)
-        glBindVertexArray(m_vao_id);
-
-    bool needs_new_binding = !use_vao || m_shader_id != shader.m_id;
-
-    if (needs_new_binding) {
-        m_vb->bind();
-
-        const size_t stride = vertex_attribs_stride(m_vertex_format);
-
-        for (const auto& vad : m_vertex_format) {
-            int loc = shader.get_attrib_location(GL::shader_input_name(vad.attrib_type));
-            if (loc < 0)
-                continue;
-            glEnableVertexAttribArray(loc);
-            glVertexAttribPointer(
-                loc, vad.components, GL::type(vad.data_type), GL_FALSE, stride,
-                reinterpret_cast<void*>(vad.offset)
-            );
-            glCheck();
-        }
-
-        if (m_ib) {
-            m_ib->bind();
-            glCheck();
-        }
-
-        m_shader_id = shader.m_id;
-    }
-}
-
-void Geometry::draw(GLenum primitive, size_t offset, size_t count) const
-{
-    assert(m_built);
-    if (m_ib)
-        glDrawElements(primitive, count, GL::type(m_index_type), reinterpret_cast<const void*>(0 + index_type_size(m_index_type) * offset));
-    else
-        glDrawArrays(primitive, offset, count);
-    glCheck();
-}
-
-void Geometry::unbind()
-{
-    auto& ctx = Context::instance();
-    bool use_vao = ctx.is_vao_available();
-    if (use_vao) {
-        glBindVertexArray(0);
-    } else {
-        // TODO: unbind enabled attrs
-    }
-    glCheck();
 }
 
 

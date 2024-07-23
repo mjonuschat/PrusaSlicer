@@ -5,13 +5,9 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace Slic3r::App::Render {
+#include "Types.hpp"
 
-enum class PixelFormat
-{
-    RGB8 = 0,
-    RGBA8,
-};
+namespace Slic3r::App::Render {
 
 size_t pixel_format_bytes_per_pixel(PixelFormat pf);
 size_t pixel_format_channel_count(PixelFormat pf);

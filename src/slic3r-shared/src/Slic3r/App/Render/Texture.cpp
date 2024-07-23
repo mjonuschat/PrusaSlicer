@@ -1,39 +1,11 @@
 #include "Texture.hpp"
 #include "Context.hpp"
+#include "Slic3r/App/Render/GL/commonGL.hpp"
+#include "Slic3r/App/Render/GL/GLTypes.hpp"
 #include "Slic3r/App/Render/GL/GLTextureInternal.hpp"
+#include "Slic3r/App/Render/GL/GLDeviceInternal.hpp"
 
 namespace Slic3r::App::Render {
-
-namespace GL {
-
-GLenum texture_format(PixelFormat format)
-{
-    switch (format) {
-    case PixelFormat::RGB8:
-        return GL_RGB;
-        
-    case PixelFormat::RGBA8:
-        return GL_RGBA;
-    
-    default:
-        // Unsupported format
-        assert(false);
-    }
-}
-
-GLenum texture_format_type(PixelFormat format)
-{
-    switch (format) {
-    case PixelFormat::RGB8:
-    case PixelFormat::RGBA8:
-        return GL_UNSIGNED_BYTE;
-    default:
-        // Unsupported format
-        assert(false);
-        return GL_UNSIGNED_BYTE;
-    }
-}
-}
 
 Texture::Texture(Device& device)
     : WithInternal::WithInternal(InternalType<GL::GLTextureInternal>()), m_device(device)
@@ -42,28 +14,12 @@ Texture::Texture(Device& device)
     glCheck();
 }
 
-void Texture::bind(uint8_t unit)
-{
-    auto& self = get_internal_as<GL::GLTextureInternal>();
-    glActiveTexture(GL_TEXTURE0 + unit);
-    glBindTexture(GL_TEXTURE_2D, self.m_id);
-    glCheck();
-    self.m_bound_unit = unit;
-}
-
-void Texture::unbind()
-{
-    auto& self = get_internal_as<GL::GLTextureInternal>();
-    glActiveTexture(GL_TEXTURE0 + self.m_bound_unit);
-    glBindTexture(GL_TEXTURE_2D, 0);
-    self.m_bound_unit = GL::GLTextureInternal::UNBOUND;
-    glCheck();
-}
-
 
 void Texture::set_data(PixelFormat format,size_t level, size_t w, size_t h, const void* data)
 {
-    bind(0);
+    auto& device = m_device.get_internal_as<GL::GLDeviceInternal>();
+    device.bind_texture(0, *this);
+
     GLenum gl_format = GL::texture_format(format);
     GLenum gl_type = GL::texture_format_type(format);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, level > 0 ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);

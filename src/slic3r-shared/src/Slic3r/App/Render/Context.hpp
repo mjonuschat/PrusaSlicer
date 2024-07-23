@@ -15,6 +15,7 @@ class Context
 {
 private:
     Context();
+    ~Context();
 
 public:
     static Context& instance();
@@ -36,19 +37,23 @@ public:
 #endif
     }
 
+    uint8_t max_texture_units() const { return m_max_texture_units; }
+
     bool is_core_profile() const { return m_core_profile; }
     void log_gl_info() const;
 
     [[nodiscard]] ShaderManager& shader_manager() const { return *m_shader_manager; }
     [[nodiscard]] TextureManager& texture_manager() const { return *m_texture_manager; }
+    [[nodiscard]] Device& device() const { return *m_device; }
 
     void release_resources()
-    { m_shader_manager->shutdown(); }
+    { if (m_shader_manager) m_shader_manager->shutdown(); }
 private:
     Semver m_opengl_version;
     Semver m_glsl_version;
     bool m_core_profile;
     bool m_vao_available;
+    uint8_t m_max_texture_units{0};
 
     std::unique_ptr<Device> m_device;
     std::unique_ptr<ShaderManager> m_shader_manager;

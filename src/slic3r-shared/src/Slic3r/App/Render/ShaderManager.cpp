@@ -2,7 +2,7 @@
 
 #include <string_view>
 
-#include "commonGL.hpp"
+#include "Slic3r/App/Render/GL/commonGL.hpp"
 #include "Slic3r/App/Render/Context.hpp"
 
 #include "libslic3r/Technologies.hpp"
@@ -17,7 +17,7 @@ std::pair<bool, std::string> ShaderManager::init()
 
     auto append_shader = [this, &error](const std::string& name, const Shader::ShaderFilenames& filenames, 
         const std::initializer_list<std::string_view> &defines = {}) {
-        m_shaders.push_back(std::make_unique<Shader>());
+        m_shaders.push_back(std::make_unique<Shader>(m_context.device()));
         if (!m_shaders.back()->init_from_files(name, filenames, defines)) {
             error += name + "\n";
             // if any error happens while initializating the shader, we remove it from the list
@@ -105,16 +105,5 @@ Shader* ShaderManager::get_shader(const std::string& shader_name)
     return (it != m_shaders.end()) ? it->get() : nullptr;
 }
 
-Shader* ShaderManager::get_current_shader()
-{
-    GLint id = 0;
-    ::glGetIntegerv(GL_CURRENT_PROGRAM, &id);
-    glCheck();
-    if (id == 0)
-        return nullptr;
-
-    auto it = std::find_if(m_shaders.begin(), m_shaders.end(), [id](std::unique_ptr<Shader>& p) { return static_cast<GLint>(p->get_id()) == id; });
-    return (it != m_shaders.end()) ? it->get() : nullptr;
-}
 
 }

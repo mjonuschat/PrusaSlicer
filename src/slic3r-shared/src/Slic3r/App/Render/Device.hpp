@@ -3,32 +3,35 @@
 #include <vector>
 #include <cstddef>
 
-namespace Slic3r::App::Render {
+#include "WithInternal.hpp"
 
-using ResourceId = unsigned int;
-using ResourceIds = std::vector<ResourceId>;
+namespace Slic3r::App::Render {
 
 class Context;
 class Texture;
 class VertexBuffer;
 class IndexBuffer;
 class Shader;
+class CommandBuffer;
 
-class Device
+class Device : public WithInternal
 {
     friend class Context;
-    explicit Device(Context& context): m_context(context) {}
+    explicit Device(Context& context);
+
+    Device(Device&&) = default;
 public:
+    Context& context() { return m_context; }
+    const Context& context() const { return m_context; }
+
+    void load_state();
 
     std::unique_ptr<Texture> create_texture();
     std::unique_ptr<VertexBuffer> create_vertex_buffer();
     std::unique_ptr<IndexBuffer> create_index_buffer();
+    std::unique_ptr<CommandBuffer> create_command_buffer();
 private:
     Context& m_context;
-    ResourceId m_bound_vertex_buffer{0};
-    ResourceId m_bound_index_buffer{0};
-    ResourceIds m_bound_textures{0};
-    size_t m_active_texture_unit{0};
 };
 
 }

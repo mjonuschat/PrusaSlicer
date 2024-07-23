@@ -18,7 +18,7 @@ public:
     Texture* get(const std::string& name, const ImageLoadOptions& opts = {});
     Texture* create_empty(const std::string& name, PixelFormat pf, size_t w, size_t h);
 private:
-    using TextureMap = std::unordered_map<std::string, Texture*>; // std::unique_ptr<Texture> ?
+    using TextureMap = std::unordered_map<std::string, std::unique_ptr<Texture>>; // std::unique_ptr<Texture> ?
 
     Device& m_device;
     TextureMap m_textures;

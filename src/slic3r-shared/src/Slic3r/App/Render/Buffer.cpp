@@ -1,9 +1,13 @@
 #include "Buffer.hpp"
+#include "Device.hpp"
+#include "Slic3r/App/Render/GL/commonGL.hpp"
 #include "Slic3r/App/Render/GL/GLBufferInternal.hpp"
+#include "Slic3r/App/Render/GL/GLDeviceInternal.hpp"
+
 namespace Slic3r::App::Render {
 
-
-Buffer::Buffer(BufferTarget target): WithInternal(InternalType<GL::GLBufferInternal>(), target)
+Buffer::Buffer(Device& device, BufferTarget target)
+    : WithInternal(InternalType<GL::GLBufferInternal>(), target), m_device(device), m_target(target)
 {
     auto& self = get_internal_as<GL::GLBufferInternal>();
     glGenBuffers(1, &self.m_id);
@@ -17,18 +21,11 @@ Buffer::~Buffer()
         glDeleteBuffers(1, &self.m_id);
 }
 
-void Buffer::bind() const
+void Buffer::set_data(const void* data, size_t size, BufferUsage usage)
 {
     auto& self = get_internal_as<GL::GLBufferInternal>();
-    glBindBuffer(self.m_target, self.m_id);
-    glCheck();
-}
-
-void Buffer::set_data(const void* data, GLsizeiptr size, GLenum usage)
-{
-    auto& self = get_internal_as<GL::GLBufferInternal>();
-    bind();
-    glBufferData(self.m_target, size, data, usage);
+    m_device.get_internal_as<GL::GLDeviceInternal>().bind_buffer(m_target, self.m_id);
+    glBufferData(self.m_target, size, data, GL::type(usage));
     glCheck();
 }
 

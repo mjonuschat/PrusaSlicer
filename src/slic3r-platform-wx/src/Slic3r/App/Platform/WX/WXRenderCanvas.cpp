@@ -7,7 +7,9 @@
 #include <imgui/backends/imgui_impl_opengl3.h>
 
 #include <Slic3r/App/Platform/PlatformError.hpp>
-#include <Slic3r/App/Render/commonGL.hpp>
+#include <Slic3r/App/Render/Init.hpp>
+#include <Slic3r/App/Render/Context.hpp>
+#include <Slic3r/App/Render/Device.hpp>
 #include <Slic3r/Log.hpp>
 
 namespace Slic3r::App::Platform::WX {
@@ -279,7 +281,7 @@ WXRenderCanvas::WXRenderCanvas(wxWindow* parent)
 }
 
 WXRenderCanvas::~WXRenderCanvas()
-{ Render::shutdown_gl(); }
+{ Render::shutdown_render(); }
 
 
 void WXRenderCanvas::init()
@@ -289,7 +291,9 @@ void WXRenderCanvas::init()
         throw PlatformError(std::string("GLEW init failed with code ") + std::to_string(err));
     }
 
-    Render::initialize_gl();
+    glGetError();
+
+    Render::initialize_render();
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -546,6 +550,12 @@ double WXRenderCanvas::get_platform_time()
     auto delta = std::chrono::duration_cast<std::chrono::microseconds>(Clock::now() - m_start_time);
     return double(delta.count()) * 0.000001;
 }
+
+Render::Device& WXRenderCanvas::get_device()
+{
+    return Render::Context::instance().device();
+}
+
 
 void WXRenderCanvas::dispatch_on_main_thread(IMainThreadDispatcher::Function func)
 {

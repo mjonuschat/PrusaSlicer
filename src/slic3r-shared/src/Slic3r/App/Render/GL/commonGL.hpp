@@ -20,7 +20,4 @@ namespace Slic3r::App::Render {
 
 const char* gl_error_desc(GLenum err);
 
-void initialize_gl();
-void shutdown_gl();
-
 }

@@ -1,7 +1,8 @@
 // ReSharper disable CppMemberFunctionMayBeStatic
 // NOLINTBEGIN(*-convert-member-functions-to-static)
 #include "Shader.hpp"
-#include "commonGL.hpp"
+#include "Slic3r/App/Render/GL/commonGL.hpp"
+#include "SLic3r/App/Render/GL/GLShaderInternal.hpp"
 
 #include "libslic3r/libslic3r.h"
 
@@ -19,10 +20,15 @@
 
 namespace Slic3r::App::Render {
 
+Shader::Shader(Device& device)
+    : WithInternal(InternalType<GL::GLShaderInternal>()), m_device(device)
+{}
+
 Shader::~Shader()
 {
-    if (m_id > 0) {
-        glDeleteProgram(m_id);
+    auto& self = get_internal_as<GL::GLShaderInternal>();
+    if (self.m_id > 0) {
+        glDeleteProgram(self.m_id);
         glCheck();
     }
 }
@@ -124,7 +130,8 @@ bool Shader::init_from_texts(const std::string& name, const ShaderSources& sourc
         }
     };
 
-    assert(m_id == 0);
+    auto& self = get_internal_as<GL::GLShaderInternal>();
+    assert(self.m_id == 0);
 
     m_name = name;
 
@@ -170,9 +177,9 @@ bool Shader::init_from_texts(const std::string& name, const ShaderSources& sourc
         }
     }
 
-    m_id = glCreateProgram();
+    self.m_id = glCreateProgram();
     glCheck();
-    if (m_id == 0) {
+    if (self.m_id == 0) {
         SPDLOG_ERROR("glCreateProgram() failed for shader program '{}'", name);
 
         // release shaders
@@ -182,22 +189,22 @@ bool Shader::init_from_texts(const std::string& name, const ShaderSources& sourc
 
     for (size_t i = 0; i < static_cast<size_t>(ShaderType::Count); ++i) {
         if (shader_ids[i] > 0) {
-            glAttachShader(m_id, shader_ids[i]);
+            glAttachShader(self.m_id, shader_ids[i]);
             glCheck();
         }
     }
 
-    glLinkProgram(m_id);
+    glLinkProgram(self.m_id);
     glCheck();
     GLint params;
-    glGetProgramiv(m_id, GL_LINK_STATUS, &params);
+    glGetProgramiv(self.m_id, GL_LINK_STATUS, &params);
     glCheck();
     if (params == GL_FALSE) {
         // Linking failed. 
-        glGetProgramiv(m_id, GL_INFO_LOG_LENGTH, &params);
+        glGetProgramiv(self.m_id, GL_INFO_LOG_LENGTH, &params);
         glCheck();
         std::vector<char> msg(params);
-        glGetProgramInfoLog(m_id, params, &params, msg.data());
+        glGetProgramInfoLog(self.m_id, params, &params, msg.data());
         glCheck();
         SPDLOG_ERROR("Unable to link shader program '{}':\n{}", name, msg.data());
 
@@ -205,9 +212,9 @@ bool Shader::init_from_texts(const std::string& name, const ShaderSources& sourc
         release_shaders(shader_ids);
 
         // release shader program
-        glDeleteProgram(m_id);
+        glDeleteProgram(self.m_id);
         glCheck();
-        m_id = 0;
+        self.m_id = 0;
 
         return false;
     }
@@ -216,19 +223,6 @@ bool Shader::init_from_texts(const std::string& name, const ShaderSources& sourc
     release_shaders(shader_ids);
 
     return true;
-}
-
-void Shader::bind() const
-{
-    assert(m_id > 0);
-    glUseProgram(m_id);
-    glCheck();
-}
-
-void Shader::unbind() const
-{
-    glUseProgram(0);
-    glCheck();
 }
 
 void Shader::set_uniform(int id, int value) const
@@ -413,9 +407,10 @@ void Shader::set_uniform(int id, const ColorRGBA& value) const
 
 int Shader::get_attrib_location(const char* name) const
 {
-    assert(m_id > 0);
+    auto& self = get_internal_as<GL::GLShaderInternal>();
+    assert(self.m_id > 0);
 
-    if (m_id <= 0)
+    if (self.m_id <= 0)
         // Shader program not loaded. This should not happen.
         return -1;
 
@@ -424,16 +419,17 @@ int Shader::get_attrib_location(const char* name) const
         // Attrib ID cached.
         return it->second;
 
-    int id = glGetAttribLocation(m_id, name);
+    int id = glGetAttribLocation(self.m_id, name);
     const_cast<Shader*>(this)->m_attrib_location_cache.emplace_back(name, id );
     return id;
 }
 
 int Shader::get_uniform_location(const char* name) const
 {
-    assert(m_id > 0);
+    auto& self = get_internal_as<GL::GLShaderInternal>();
+    assert(self.m_id > 0);
 
-    if (m_id <= 0)
+    if (self.m_id <= 0)
         // Shader program not loaded. This should not happen.
         return -1;
 
@@ -442,7 +438,7 @@ int Shader::get_uniform_location(const char* name) const
         // Uniform ID cached.
         return it->second;
 
-    int id = glGetUniformLocation(m_id, name);
+    int id = glGetUniformLocation(self.m_id, name);
     const_cast<Shader*>(this)->m_uniform_location_cache.emplace_back(name, id );
     return id;
 }
