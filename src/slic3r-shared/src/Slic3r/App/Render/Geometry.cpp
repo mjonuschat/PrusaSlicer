@@ -2,7 +2,6 @@
 #include "Device.hpp"
 
 #include "Slic3r/App/Render/GL/GLGeometryInternal.hpp"
-#include "Slic3r/App/Render/GL/GLShaderInternal.hpp"
 #include "Slic3r/App/Render/GL/commonGL.hpp"
 #include "Slic3r/App/Render/GL/GLTypes.hpp"
 
@@ -11,6 +10,14 @@ namespace Slic3r::App::Render {
 Geometry::Geometry(Device& device)
     : WithInternal(InternalType<GL::GLGeometryInternal>()), m_device(device)
 {}
+
+Geometry::~Geometry()
+{
+    auto& self = get_internal_as<GL::GLGeometryInternal>();
+    if (self.m_vao_id) {
+        glDeleteVertexArrays(1, &self.m_vao_id);
+    }
+}
 
 void Geometry::upload(
     const void* vertex_data,

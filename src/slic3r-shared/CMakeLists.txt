@@ -86,7 +86,14 @@ endif()
 find_package(NanoSVG REQUIRED)
 find_package(Boost REQUIRED COMPONENTS filesystem)
 add_library(slic3r-shared STATIC ${SLIC3R_SHARED_FILES})
-target_link_libraries(slic3r-shared PUBLIC slic3r-platform libslic3r NanoSVG::nanosvg NanoSVG::nanosvgrast Boost::filesystem)
+target_link_libraries(slic3r-shared PUBLIC
+        slic3r-base
+        slic3r-platform
+        libslic3r
+        NanoSVG::nanosvg
+        NanoSVG::nanosvgrast
+        Boost::filesystem
+)
 if (EMSCRIPTEN)
 #    target_link_libraries(slic3r-shared PUBLIC png-mt )
 else()

@@ -5,6 +5,8 @@
 #include <fmt/chrono.h>
 #include <libslic3r/Geometry.hpp>
 
+#include <Slic3r/Assert.hpp>
+
 #include "Slic3r/App/Render/Device.hpp"
 #include "Slic3r/App/Render/ShaderManager.hpp"
 #include "Slic3r/App/Render/GeometryBuilder.hpp"
@@ -50,6 +52,7 @@ std::chrono::duration<double, std::milli> get_delta()
 TestRenderModule::TestRenderModule()
 {
     memset(m_text_buffer, 0, sizeof(m_text_buffer));
+    //std::cout << DEBUG_ASSERT_VAL(sqrt(3 * 4) - 5 == sqrt(5 - 4) * 2) << "\n";
 }
 
 void TestRenderModule::on_init(Render::Device& device)

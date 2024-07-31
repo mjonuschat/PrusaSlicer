@@ -84,7 +84,7 @@ namespace Slic3r {
 
 
 // TODO: migrate this logging stuff to slic3r-base/Slic3r/Log.hpp
-
+#ifndef __EMSCRIPTEN__
 static boost::log::trivial::severity_level boost_log_severity = boost::log::trivial::error;
 
 static boost::log::trivial::severity_level level_to_boost(unsigned level)
@@ -114,6 +114,7 @@ void set_boost_logging_level(unsigned int level)
         boost::log::trivial::severity >= boost_log_severity
     );
 }
+#endif // #ifndef __EMSCRIPTEN__
 
 static spdlog::level::level_enum log_level_to_spdlog(unsigned int level)
 {
@@ -138,7 +139,9 @@ void set_logging_level(unsigned int level)
 {
     spdlog::level::level_enum lvl = log_level_to_spdlog(level);
     spdlog::set_level(lvl);
+#ifndef __EMSCRIPTEN__
     set_boost_logging_level(level);
+#endif
 }
 
 unsigned get_logging_level()

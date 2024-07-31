@@ -77,6 +77,13 @@ public:
         return *this;
     }
 
+    GeometryBuilder& add_vertex(const V& v, I& out_idx)
+    {
+        out_idx = static_cast<I>(m_vertices.size());
+        m_vertices.push_back(v);
+        return *this;
+    }
+
     GeometryBuilder& add_index(I i)
     {
         m_indices.push_back(i);

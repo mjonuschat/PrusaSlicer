@@ -13,6 +13,7 @@ class Geometry : public WithInternal
 {
 public:
     explicit Geometry(Device& device);
+    ~Geometry() override;
 
     Geometry(Geometry&&) = default;
 

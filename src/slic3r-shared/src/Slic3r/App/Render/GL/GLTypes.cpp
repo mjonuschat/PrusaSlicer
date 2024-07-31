@@ -1,5 +1,7 @@
 #include "GLTypes.hpp"
 
+#include "Slic3r/Assert.hpp"
+
 namespace Slic3r::App::Render::GL {
 
 const char* shader_input_name(VertexAttribType vat)
