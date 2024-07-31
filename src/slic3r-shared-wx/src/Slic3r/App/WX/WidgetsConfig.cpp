@@ -1,6 +1,6 @@
 
 #include "WidgetsConfig.hpp"
-#include "slic3r-shared/src/Slic3r/App/Color.hpp"
+#include "Slic3r/App/Color.hpp"
 
 #include <wx/window.h>
 #include <wx/toplevel.h>

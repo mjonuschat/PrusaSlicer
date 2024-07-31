@@ -11,6 +11,12 @@ set(SLIC3R_APP_DESKTOP_FILES
         src/Slic3r/App/Desktop/ModePaletteComboBox.hpp
         src/Slic3r/App/Desktop/GUI_Descriptions.cpp
         src/Slic3r/App/Desktop/GUI_Descriptions.hpp
+        src/Slic3r/App/Desktop/Config/Field.cpp
+        src/Slic3r/App/Desktop/Config/Field.hpp
+        src/Slic3r/App/Desktop/Config/OptionsGroup.cpp
+        src/Slic3r/App/Desktop/Config/OptionsGroup.hpp
+        src/Slic3r/App/Desktop/Config/OG_CustomCtrl.cpp
+        src/Slic3r/App/Desktop/Config/OG_CustomCtrl.hpp
 )
 
 # Create a slic3r-app-desktop executable

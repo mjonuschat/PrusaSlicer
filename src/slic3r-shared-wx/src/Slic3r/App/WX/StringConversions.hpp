@@ -15,5 +15,7 @@ wxString	from_path(const boost::filesystem::path& path);
 // boost path from wxString
 boost::filesystem::path	into_path(const wxString& str);
 
+wxString double_to_string(double const value, const int max_precision = 4);
+
 }
 

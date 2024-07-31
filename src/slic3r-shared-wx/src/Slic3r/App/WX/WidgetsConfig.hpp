@@ -145,6 +145,7 @@ public:
     int             em_unit() const                 { return m_em_unit; }
     bool            dark_mode() const               { return m_is_dark; }
 
+    bool            suppress_round_corners() const { return true;/* app_config->get("suppress_round_corners") == "1";*/ }
 };
 
 WidgetsConfig* w_config();
