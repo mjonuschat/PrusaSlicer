@@ -22,7 +22,7 @@ const char* shader_input_name(VertexAttribType vat)
     }
 
     // Encountered missing VertexAttribType, if valid, please add it into the switch above
-    assert(false);
+    ASSERT(false);
     return "";
 }
 
@@ -38,7 +38,7 @@ GLenum texture_format(PixelFormat format)
 
     default:
         // Unsupported format
-        assert(false);
+        ASSERT(false);
     }
 }
 
@@ -50,7 +50,7 @@ GLenum texture_format_type(PixelFormat format)
         return GL_UNSIGNED_BYTE;
     default:
         // Unsupported format
-        assert(false);
+        ASSERT(false);
         return GL_UNSIGNED_BYTE;
     }
 }
@@ -71,7 +71,7 @@ GLenum type(BlendFactor type)
     };
 
     const int idx = static_cast<int>(type);
-    assert(idx >= 0 && idx < sizeof(translation_table)/sizeof(translation_table[0]));
+    ASSERT(idx >= 0 && idx < sizeof(translation_table)/sizeof(translation_table[0]));
     return translation_table[idx];
 }
 

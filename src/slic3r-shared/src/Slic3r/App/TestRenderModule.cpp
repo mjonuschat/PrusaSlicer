@@ -52,7 +52,24 @@ std::chrono::duration<double, std::milli> get_delta()
 TestRenderModule::TestRenderModule()
 {
     memset(m_text_buffer, 0, sizeof(m_text_buffer));
-    //std::cout << DEBUG_ASSERT_VAL(sqrt(3 * 4) - 5 == sqrt(5 - 4) * 2) << "\n";
+
+    // Test asserts (being compilable)
+    std::cout << DEBUG_ASSERT_VAL(2, "extra message") << "\n";
+    std::cout << DEBUG_ASSERT_VAL(5 != 3) << "\n";
+
+    DEBUG_ASSERT(1);
+    DEBUG_ASSERT(1, "extra message");
+
+    std::cout << ASSERT_VAL(2, "extra message") << "\n";
+    std::cout << ASSERT_VAL(5 != 3) << "\n";
+
+    ASSERT(1);
+    ASSERT(1, "extra message");
+
+    if (false) {
+        PANIC();
+        PANIC("Extra message");
+    }
 }
 
 void TestRenderModule::on_init(Render::Device& device)

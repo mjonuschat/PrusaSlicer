@@ -1,7 +1,7 @@
 #pragma once
 
 #include <iostream>
-#include <cassert>
+#include <Slic3r/Assert.hpp>
 #include <GL/glew.h>
 
 #ifdef NDEBUG
@@ -9,9 +9,8 @@
 #else
 #define glCheck() { \
   GLenum err = glGetError(); \
-  if (err != GL_NO_ERROR) { \
-    std::cerr << __FILE__ << ":" << __LINE__  << " (" << __FUNCTION__ << ") GL Error: " << ::Slic3r::App::Render::gl_error_desc(err) << std::endl; \
-    assert(false); \
+  if (err != GL_NO_ERROR) {  \
+    PANIC(std::string("GL Error: ") + ::Slic3r::App::Render::gl_error_desc(err)); \
   } \
 }
 #endif

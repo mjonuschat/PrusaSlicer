@@ -11,6 +11,9 @@
 #include "GLShaderInternal.hpp"
 #include "GLTextureInternal.hpp"
 
+#include "Slic3r/Assert.hpp"
+#include "GL/glew.h"
+
 namespace Slic3r::App::Render::GL {
 
 GLDeviceInternal::GLDeviceInternal(Context& context): m_context(context)
@@ -36,6 +39,11 @@ void GLDeviceInternal::load_state()
 
     for (auto& tex : m_bound_textures)
         tex = 0;
+
+    SPDLOG_INFO(
+        "loaded GL state: shader {}  VB {}  IB {}  VAO {}", m_bound_shader, m_bound_vertex_buffer,
+        m_bound_index_buffer, m_bound_vao
+    );
 }
 
 void GLDeviceInternal::activate_texture_unit(uint8_t unit)
@@ -79,17 +87,22 @@ void GLDeviceInternal::bind_shader(Shader& s)
 
 void GLDeviceInternal::bind_vertex_buffer(ResourceId vb)
 {
+    SPDLOG_INFO("Binding VB {}", vb);
     if (m_bound_vertex_buffer == vb)
         return;
+    SPDLOG_INFO("Bound VB {}", vb);
     glBindBuffer(GL_ARRAY_BUFFER, vb);
     glCheck();
     m_bound_vertex_buffer = vb;
+    SPDLOG_INFO("(bind_vertex_buffer) Setting bound VB {}", vb);
 }
 
 void GLDeviceInternal::bind_index_buffer(ResourceId ib)
 {
+    SPDLOG_INFO("Binding IB {}", ib);
     if (m_bound_index_buffer == ib)
         return;
+    SPDLOG_INFO("Bound IB {}", ib);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ib);
     glCheck();
     m_bound_index_buffer = ib;
@@ -97,8 +110,10 @@ void GLDeviceInternal::bind_index_buffer(ResourceId ib)
 
 void GLDeviceInternal::bind_vao(ResourceId vao)
 {
+    SPDLOG_INFO("Binding vao {}", vao);
     if (m_bound_vao == vao)
         return;
+    SPDLOG_INFO("Bound vao {}", vao);
     glBindVertexArray(vao);
     glCheck();
     m_bound_vao = vao;
@@ -117,26 +132,34 @@ void GLDeviceInternal::bind_buffer(BufferTarget target, ResourceId buffer)
 
     default:
         // unsupported target
-        assert(false);
+        PANIC("Unsupported buffer target to bind to");
 
     }
 }
 
 void GLDeviceInternal::bind_geometry(Geometry& g, Shader& shader)
 {
-    assert(g.ready());
+    DEBUG_ASSERT(g.ready());
     // TODO: handle ES with VAO
     bool use_vao = m_context.is_vao_available();
-    auto& self = g.get_internal_as<GLGeometryInternal>();
+    auto& geom = g.get_internal_as<GLGeometryInternal>();
 
-    if (use_vao)
-        bind_vao(self.m_vao_id);
+    GLuint vb_id = g.vertex_buffer()->get_internal_as<GLBufferInternal>().m_id;
+    if (use_vao) {
+        bind_vao(geom.m_vao_id);
+//        if (vb_id) {
+//            m_bound_vertex_buffer = vb_id;
+//            SPDLOG_INFO("(bind_geometry) Setting bound VB {}", vb_id);
+//            m_bound_index_buffer = g.index_buffer() ? g.index_buffer()->get_internal_as<GLBufferInternal>().m_id : 0;
+//        }
+    }
 
+    m_bound_indices = geom.m_has_indices;
     GLuint shader_id = shader.get_internal_as<GLShaderInternal>().m_id;
-    bool needs_new_binding = !use_vao || self.m_shader_id != shader_id;
+    bool needs_new_binding = !use_vao || geom.m_shader_id != shader_id;
 
     if (needs_new_binding) {
-        bind_vertex_buffer(g.vertex_buffer()->get_internal_as<GLBufferInternal>().m_id);
+        bind_vertex_buffer(vb_id);
 
         const VertexAttribsDesc& attrs = g.vertex_format();
         const size_t stride = vertex_attribs_stride(attrs);
@@ -159,20 +182,108 @@ void GLDeviceInternal::bind_geometry(Geometry& g, Shader& shader)
             m_bound_index_type = g.index_type();
         } else
             bind_index_buffer(0);
-        self.m_shader_id = shader_id;
+        geom.m_shader_id = shader_id;
+    }
+
+    if (m_context.is_es()) {
+        bind_vertex_buffer(vb_id);
+    }
+}
+
+void GLDeviceInternal::unbind_geometry()
+{
+    {
+        GLint bound_shader = 0;
+        GLint bound_vertex_buffer = 0;
+        GLint bound_index_buffer = 0;
+        GLint bound_vao = 0;
+        glGetIntegerv(GL_CURRENT_PROGRAM, reinterpret_cast<GLint*>(&bound_shader));
+        glCheck();
+        glGetIntegerv(GL_ARRAY_BUFFER_BINDING, reinterpret_cast<GLint*>(&bound_vertex_buffer));
+        glCheck();
+        glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, reinterpret_cast<GLint*>(&bound_index_buffer));
+        glCheck();
+        glGetIntegerv(GL_VERTEX_ARRAY_BINDING, reinterpret_cast<GLint*>(&bound_vao));
+        glCheck();
+
+        SPDLOG_INFO(
+            "GL state before unbind_geometry: shader {} ({})  VB {} ({})  IB {} ({})  VAO {} ({})",
+            bound_shader, m_bound_shader,
+            bound_vertex_buffer, m_bound_vertex_buffer,
+            bound_index_buffer, m_bound_index_buffer,
+            bound_vao, m_bound_vao
+        );
+
+    }
+
+    if (m_context.is_vao_available()) {
+        bind_vao(0);
+        m_bound_vertex_buffer = 0;
+        SPDLOG_INFO("(unbind_geometry) Setting bound VB {}", 0);
+        m_bound_index_buffer = 0;
+        m_bound_indices = false;
+    } else {
+        bind_vertex_buffer(0);
+        bind_index_buffer(0);
+    }
+
+    {
+        GLint bound_shader = 0;
+        GLint bound_vertex_buffer = 0;
+        GLint bound_index_buffer = 0;
+        GLint bound_vao = 0;
+        glGetIntegerv(GL_CURRENT_PROGRAM, reinterpret_cast<GLint*>(&bound_shader));
+        glCheck();
+        glGetIntegerv(GL_ARRAY_BUFFER_BINDING, reinterpret_cast<GLint*>(&bound_vertex_buffer));
+        glCheck();
+        glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, reinterpret_cast<GLint*>(&bound_index_buffer));
+        glCheck();
+        glGetIntegerv(GL_VERTEX_ARRAY_BINDING, reinterpret_cast<GLint*>(&bound_vao));
+        glCheck();
+
+        SPDLOG_INFO(
+            "GL state after unbind_geometry: shader {} ({})  VB {} ({})  IB {} ({})  VAO {} ({})",
+            bound_shader, m_bound_shader, bound_vertex_buffer, m_bound_vertex_buffer,
+            bound_index_buffer, m_bound_index_buffer, bound_vao, m_bound_vao
+        );
     }
 }
 
 
 void GLDeviceInternal::draw(PrimitiveType primitive, size_t offset, size_t count)
 {
-    if (m_bound_index_buffer)
+    GLint bound_shader = 0;
+    GLint bound_vertex_buffer = 0;
+    GLint bound_index_buffer = 0;
+    GLint bound_vao = 0;
+    glGetIntegerv(GL_CURRENT_PROGRAM, reinterpret_cast<GLint*>(&bound_shader));
+    glCheck();
+    glGetIntegerv(GL_ARRAY_BUFFER_BINDING, reinterpret_cast<GLint*>(&bound_vertex_buffer));
+    glCheck();
+    glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, reinterpret_cast<GLint*>(&bound_index_buffer));
+    glCheck();
+    glGetIntegerv(GL_VERTEX_ARRAY_BINDING, reinterpret_cast<GLint*>(&bound_vao));
+    glCheck();
+
+    SPDLOG_INFO(
+        "GL state before draw: shader {} ({})  VB {} ({})  IB {} ({})  VAO {} ({})",
+        bound_shader, m_bound_shader,
+        bound_vertex_buffer, m_bound_vertex_buffer,
+        bound_index_buffer, m_bound_index_buffer,
+        bound_vao, m_bound_vao
+    );
+
+
+    if (m_bound_indices) {
+        SPDLOG_INFO("Draw Elements");
         glDrawElements(
             GL::type(primitive), count, type(m_bound_index_type),
             reinterpret_cast<const void*>(0 + index_type_size(m_bound_index_type) * offset)
         );
-    else
+    } else {
+        SPDLOG_INFO("Draw Arrays");
         glDrawArrays(GL::type(primitive), offset, count);
+    }
     glCheck();
 
 }

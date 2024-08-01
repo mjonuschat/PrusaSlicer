@@ -1,11 +1,13 @@
 #pragma once
 
-#include <cassert>
 #include <vector>
 #include <cstddef>
 #include <cstdint>
 
 #include "Types.hpp"
+
+#include "Slic3r/Assert.hpp"
+
 
 namespace Slic3r::App::Render {
 
@@ -27,7 +29,7 @@ public:
         const size_t bytes_per_pixel = pixel_format_bytes_per_pixel(format);
         if (m_pixels.empty())
             m_pixels.resize(w * h * bytes_per_pixel, 0);
-        assert(data.size() == w * h * bytes_per_pixel);
+        DEBUG_ASSERT(data.size() == w * h * bytes_per_pixel);
     }
 
     Image(Image&&) noexcept = default;

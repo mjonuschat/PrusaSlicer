@@ -2,6 +2,7 @@
 
 #include "commonGL.hpp"
 #include "Slic3r/App/Render/Types.hpp"
+#include "Slic3r/Assert.hpp"
 
 namespace Slic3r::App::Render::GL {
 inline GLenum type(DataType type)
@@ -16,7 +17,7 @@ inline GLenum type(DataType type)
     };
 
     const size_t idx = static_cast<size_t>(type);
-    assert(0 >= idx && idx < (sizeof(translation_table) / sizeof(translation_table[0])));
+    ASSERT(0 >= idx && idx < (sizeof(translation_table) / sizeof(translation_table[0])));
 
     return translation_table[idx];
 }
@@ -33,7 +34,7 @@ inline GLenum type(IndexType type)
     };
 
     const int idx = static_cast<int>(type);
-    assert(idx >= 0 && idx < sizeof(translation_table) / sizeof(translation_table[0]));
+    ASSERT(idx >= 0 && idx < sizeof(translation_table) / sizeof(translation_table[0]));
 
     return translation_table[idx];
 }
@@ -51,7 +52,7 @@ inline GLenum type(PrimitiveType type)
     };
 
     const int idx = static_cast<int>(type);
-    assert(idx >= 0 && idx < sizeof(translation_table) / sizeof(translation_table[0]));
+    ASSERT(idx >= 0 && idx < sizeof(translation_table) / sizeof(translation_table[0]));
 
     return translation_table[idx];
 }

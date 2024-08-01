@@ -8,7 +8,7 @@
 #include <vector>
 #include <algorithm>
 #include <string>
-#include <cassert>
+#include "Slic3r/Assert.hpp"
 
 //#include "Point.hpp"
 
@@ -45,7 +45,7 @@ public:
 	void b(float b) { m_data[2] = std::clamp(b, 0.0f, 1.0f); }
 
 	void set(unsigned int comp, float value) {
-		assert(0 <= comp && comp <= 2);
+		DEBUG_ASSERT(0 <= comp && comp <= 2);
 		m_data[comp] = std::clamp(value, 0.0f, 1.0f);
 	}
 
@@ -108,7 +108,7 @@ public:
 	void a(float a) { m_data[3] = std::clamp(a, 0.0f, 1.0f); }
 
 	void set(unsigned int comp, float value) {
-		assert(0 <= comp && comp <= 3);
+		DEBUG_ASSERT(0 <= comp && comp <= 3);
 		m_data[comp] = std::clamp(value, 0.0f, 1.0f);
 	}
 

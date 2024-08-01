@@ -1,6 +1,6 @@
 #include "VertexAttribDesc.hpp"
 
-#include <cassert>
+#include "Slic3r/Assert.hpp"
 
 namespace Slic3r::App::Render {
 
@@ -15,7 +15,7 @@ size_t size_in_bytes(DataType data_type)
         return sizeof(uint16_t);
     default:
         // unknown type, please add case for it
-        assert(false);
+        ASSERT(false);
         return 0;
     }
 }
@@ -41,7 +41,7 @@ size_t index_type_size(IndexType index)
     }
 
     // unsupported index type
-    assert(false);
+    ASSERT(false);
     return 4;
 }
 

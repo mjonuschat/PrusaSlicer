@@ -2,7 +2,7 @@
 // NOLINTBEGIN(*-convert-member-functions-to-static)
 #include "Shader.hpp"
 #include "Slic3r/App/Render/GL/commonGL.hpp"
-#include "SLic3r/App/Render/GL/GLShaderInternal.hpp"
+#include "Slic3r/App/Render/GL/GLShaderInternal.hpp"
 
 #include "libslic3r/libslic3r.h"
 
@@ -10,11 +10,11 @@
 #include "libslic3r/format.hpp"
 #include "libslic3r/Color.hpp"
 #include <Slic3r/Log.hpp>
+#include <Slic3r/Assert.hpp>
 
 
 #include <boost/nowide/fstream.hpp>
 #include <GL/glew.h>
-#include <cassert>
 
 #include <boost/log/trivial.hpp>
 
@@ -131,7 +131,7 @@ bool Shader::init_from_texts(const std::string& name, const ShaderSources& sourc
     };
 
     auto& self = get_internal_as<GL::GLShaderInternal>();
-    assert(self.m_id == 0);
+    DEBUG_ASSERT(self.m_id == 0);
 
     m_name = name;
 
@@ -408,7 +408,7 @@ void Shader::set_uniform(int id, const ColorRGBA& value) const
 int Shader::get_attrib_location(const char* name) const
 {
     auto& self = get_internal_as<GL::GLShaderInternal>();
-    assert(self.m_id > 0);
+    DEBUG_ASSERT(self.m_id > 0);
 
     if (self.m_id <= 0)
         // Shader program not loaded. This should not happen.
@@ -427,7 +427,7 @@ int Shader::get_attrib_location(const char* name) const
 int Shader::get_uniform_location(const char* name) const
 {
     auto& self = get_internal_as<GL::GLShaderInternal>();
-    assert(self.m_id > 0);
+    DEBUG_ASSERT(self.m_id > 0);
 
     if (self.m_id <= 0)
         // Shader program not loaded. This should not happen.

@@ -2,6 +2,7 @@
 #include "Device.hpp"
 
 #include "Slic3r/App/Render/GL/GLGeometryInternal.hpp"
+#include "Slic3r/App/Render/GL/GLDeviceInternal.hpp"
 #include "Slic3r/App/Render/GL/commonGL.hpp"
 #include "Slic3r/App/Render/GL/GLTypes.hpp"
 
@@ -29,17 +30,19 @@ void Geometry::upload(
 )
 {
     SPDLOG_TRACE("Buffer::upload() Part 1");
-    assert(!m_built);
+    DEBUG_ASSERT(!m_built);
 
     auto& ctx = Context::instance();
     // TODO: handle ES with VAO
     bool use_vao = ctx.is_vao_available();
 
     auto& self = get_internal_as<GL::GLGeometryInternal>();
+    auto& device = m_device.get_internal_as<GL::GLDeviceInternal>();
+    self.m_has_indices = index_count > 0;
     if (use_vao) {
         glGenVertexArrays(1, &self.m_vao_id);
-        glBindVertexArray(self.m_vao_id);
         glCheck();
+        device.bind_vao(self.m_vao_id);
     }
     SPDLOG_TRACE("Buffer::upload() Part 2");
 
@@ -55,6 +58,9 @@ void Geometry::upload(
         m_index_count = index_count;
         m_index_type = index_format;
     }
+    device.bind_vao(0);
+    device.bind_vertex_buffer(0);
+    device.bind_index_buffer(0);
 
     m_built = true;
 }

@@ -7,6 +7,7 @@
 
 #include "libslic3r/Technologies.hpp"
 #include "Slic3r/App/Platform/PlatformInfo.hpp"
+#include "Slic3r/Assert.hpp"
 
 namespace Slic3r::App::Render {
 
@@ -27,7 +28,7 @@ std::pair<bool, std::string> ShaderManager::init()
         return true;
     };
 
-    assert(m_shaders.empty());
+    DEBUG_ASSERT(m_shaders.empty());
 
     bool valid = true;
 

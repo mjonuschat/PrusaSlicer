@@ -16,9 +16,9 @@ namespace Slic3r::App {
 // The output HSV values are in the ranges h = [0, 360], and s, v = [0, 1]
 static void RGBtoHSV(float r, float g, float b, float& h, float& s, float& v)
 {
-	assert(0.0f <= r && r <= 1.0f);
-	assert(0.0f <= g && g <= 1.0f);
-	assert(0.0f <= b && b <= 1.0f);
+	DEBUG_ASSERT(0.0f <= r && r <= 1.0f);
+	DEBUG_ASSERT(0.0f <= g && g <= 1.0f);
+	DEBUG_ASSERT(0.0f <= b && b <= 1.0f);
 
 	const float max_comp = std::max(std::max(r, g), b);
 	const float min_comp = std::min(std::min(r, g), b);
@@ -43,9 +43,9 @@ static void RGBtoHSV(float r, float g, float b, float& h, float& s, float& v)
 	while (h < 0.0f) { h += 360.0f; }
 	while (h > 360.0f) { h -= 360.0f; }
 
-	assert(0.0f <= s && s <= 1.0f);
-	assert(0.0f <= v && v <= 1.0f);
-	assert(0.0f <= h && h <= 360.0f);
+	DEBUG_ASSERT(0.0f <= s && s <= 1.0f);
+	DEBUG_ASSERT(0.0f <= v && v <= 1.0f);
+	DEBUG_ASSERT(0.0f <= h && h <= 360.0f);
 }
 
 // Conversion from HSV to RGB color space
@@ -53,9 +53,9 @@ static void RGBtoHSV(float r, float g, float b, float& h, float& s, float& v)
 // The output RGB values are in the range [0, 1]
 static void HSVtoRGB(float h, float s, float v, float& r, float& g, float& b)
 {
-	assert(0.0f <= s && s <= 1.0f);
-	assert(0.0f <= v && v <= 1.0f);
-	assert(0.0f <= h && h <= 360.0f);
+	DEBUG_ASSERT(0.0f <= s && s <= 1.0f);
+	DEBUG_ASSERT(0.0f <= v && v <= 1.0f);
+	DEBUG_ASSERT(0.0f <= h && h <= 360.0f);
 
 	const float chroma = v * s;
 	const float h_prime = std::fmod(h / 60.0f, 6.0f);
@@ -102,9 +102,9 @@ static void HSVtoRGB(float h, float s, float v, float& r, float& g, float& b)
 	g += m;
 	b += m;
 
-	assert(0.0f <= r && r <= 1.0f);
-	assert(0.0f <= g && g <= 1.0f);
-	assert(0.0f <= b && b <= 1.0f);
+	DEBUG_ASSERT(0.0f <= r && r <= 1.0f);
+	DEBUG_ASSERT(0.0f <= g && g <= 1.0f);
+	DEBUG_ASSERT(0.0f <= b && b <= 1.0f);
 }
 
 class Randomizer
@@ -164,7 +164,7 @@ ColorRGB ColorRGB::operator + (const ColorRGB& other) const
 
 ColorRGB ColorRGB::operator * (float value) const
 {
-	assert(value >= 0.0f);
+	DEBUG_ASSERT(value >= 0.0f);
 	ColorRGB ret;
 	for (size_t i = 0; i < 3; ++i) {
 		ret.m_data[i] = std::clamp(value * m_data[i], 0.0f, 1.0f);
@@ -217,7 +217,7 @@ ColorRGBA ColorRGBA::operator + (const ColorRGBA& other) const
 
 ColorRGBA ColorRGBA::operator * (float value) const
 {
-	assert(value >= 0.0f);
+	DEBUG_ASSERT(value >= 0.0f);
 	ColorRGBA ret;
 	for (size_t i = 0; i < 3; ++i) {
 		ret.m_data[i] = std::clamp(value * m_data[i], 0.0f, 1.0f);
@@ -231,13 +231,13 @@ ColorRGBA operator * (float value, const ColorRGBA& other) { return other * valu
 
 ColorRGB lerp(const ColorRGB& a, const ColorRGB& b, float t)
 {
-	assert(0.0f <= t && t <= 1.0f);
+	DEBUG_ASSERT(0.0f <= t && t <= 1.0f);
 	return (1.0f - t) * a + t * b;
 }
 
 ColorRGBA lerp(const ColorRGBA& a, const ColorRGBA& b, float t)
 {
-	assert(0.0f <= t && t <= 1.0f);
+	DEBUG_ASSERT(0.0f <= t && t <= 1.0f);
 	return (1.0f - t) * a + t * b;
 }
 
@@ -334,9 +334,9 @@ bool decode_color(const std::string& color_in, ColorRGB& color_out)
 	else
 		return false;
 
-	assert(0.0f <= color_out.r() && color_out.r() <= 1.0f);
-	assert(0.0f <= color_out.g() && color_out.g() <= 1.0f);
-	assert(0.0f <= color_out.b() && color_out.b() <= 1.0f);
+	DEBUG_ASSERT(0.0f <= color_out.r() && color_out.r() <= 1.0f);
+	DEBUG_ASSERT(0.0f <= color_out.g() && color_out.g() <= 1.0f);
+	DEBUG_ASSERT(0.0f <= color_out.b() && color_out.b() <= 1.0f);
 	return true;
 }
 

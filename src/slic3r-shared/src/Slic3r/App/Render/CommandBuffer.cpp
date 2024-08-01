@@ -38,7 +38,7 @@ void CommandBuffer::set_clear_values(const RgbaF& clear_color, double clear_dept
 
 void CommandBuffer::clear_buffers(bool color, bool depth)
 {
-    assert(color || depth);
+    DEBUG_ASSERT(color || depth);
     GLenum buffer_mask = 0;
     if (color)
         buffer_mask |= GL_COLOR_BUFFER_BIT;
@@ -110,6 +110,8 @@ void CommandBuffer::draw(PrimitiveType primitive, size_t offset, size_t count)
 
 void CommandBuffer::submit()
 {
+    auto& device = m_device.get_internal_as<GL::GLDeviceInternal>();
+    device.unbind_geometry();
 }
 
 

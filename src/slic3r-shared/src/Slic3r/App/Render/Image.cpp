@@ -1,6 +1,7 @@
 #include "Image.hpp"
 
 #include <cstring>
+#include "Slic3r/Assert.hpp"
 
 namespace Slic3r::App::Render {
 
@@ -13,7 +14,7 @@ size_t pixel_format_bytes_per_pixel(PixelFormat pf)
         return 4;
     default:
         // unsupported format
-        assert(false);
+        PANIC("Unsupported pixel format");
         return 0;
     }
 }
@@ -28,7 +29,7 @@ size_t pixel_format_channel_count(PixelFormat pf)
 
 void Image::blit(const Image& source, size_t x, size_t y)
 {
-    assert(m_pixel_format == source.m_pixel_format);
+    ASSERT(m_pixel_format == source.m_pixel_format);
 
     const size_t x1 = std::min(m_width, x + source.width());
     const size_t y1 = std::min(m_height, y + source.height());
@@ -51,7 +52,7 @@ Image Image::half_sampled() const
     const size_t channels = channel_count();
     half_pixels.reserve(half_w * half_h * channels);
 
-    assert(channels == pixel_size()); // only byte per channel allowed at the  moment
+    ASSERT(channels == pixel_size()); // only byte per channel allowed at the  moment
 
     const size_t pixel_stride = channels;
     const size_t row_stride = m_width * channels;
