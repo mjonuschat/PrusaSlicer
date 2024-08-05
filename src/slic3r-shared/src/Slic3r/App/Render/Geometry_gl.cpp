@@ -58,7 +58,8 @@ void Geometry::upload(
         m_index_count = index_count;
         m_index_type = index_format;
     }
-    device.bind_vao(0);
+    if (use_vao)
+        device.bind_vao(0);
     device.bind_vertex_buffer(0);
     device.bind_index_buffer(0);
 

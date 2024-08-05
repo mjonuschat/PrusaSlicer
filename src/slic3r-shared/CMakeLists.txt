@@ -9,25 +9,37 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Render/Device.cpp
         src/Slic3r/App/Render/Material.hpp
         src/Slic3r/App/Render/ShaderManager.hpp
-        src/Slic3r/App/Render/ShaderManager.cpp
+        src/Slic3r/App/Render/ShaderManager_gl.cpp
         src/Slic3r/App/Render/ModelManager.hpp
         src/Slic3r/App/Render/Model.hpp
         src/Slic3r/App/Render/Texture.hpp
-        src/Slic3r/App/Render/Texture.cpp
+        src/Slic3r/App/Render/Texture_gl.cpp
         src/Slic3r/App/Render/Drawable.hpp
         src/Slic3r/App/Render/Buffer.hpp
-        src/Slic3r/App/Render/Buffer.cpp
+        src/Slic3r/App/Render/Buffer_gl.cpp
         src/Slic3r/App/Render/Shader.hpp
-        src/Slic3r/App/Render/Shader.cpp
-        src/Slic3r/App/Render/GL/commonGL.hpp
-        src/Slic3r/App/Render/GL/commonGL.cpp
+        src/Slic3r/App/Render/Shader_gl.cpp
+        src/Slic3r/App/Render/UniformValue.hpp
+        src/Slic3r/App/Render/UniformValue.cpp
+        src/Slic3r/App/Render/Geometry.hpp
+        src/Slic3r/App/Render/Geometry_gl.cpp
+        src/Slic3r/App/Render/GeometryBuilder.hpp
+        src/Slic3r/App/Render/GeometryBuilder.cpp
+        src/Slic3r/App/Render/TextureManager.cpp
+        src/Slic3r/App/Render/TextureManager.hpp
+        src/Slic3r/App/Render/Image.hpp
+        src/Slic3r/App/Render/Image.cpp
+        src/Slic3r/App/Render/ImageCodec.cpp
+        src/Slic3r/App/Render/ImageCodec.hpp
         src/Slic3r/App/Render/CommandBuffer.hpp
-        src/Slic3r/App/Render/CommandBuffer.cpp
+        src/Slic3r/App/Render/CommandBuffer_gl.cpp
         src/Slic3r/App/Render/VertexAttribDesc.cpp
         src/Slic3r/App/Render/VertexAttribDesc.hpp
         src/Slic3r/App/Render/WithInternal.hpp
         src/Slic3r/App/Render/GL/GLTypes.cpp
         src/Slic3r/App/Render/GL/GLTypes.hpp
+        src/Slic3r/App/Render/GL/commonGL.hpp
+        src/Slic3r/App/Render/GL/commonGL.cpp
         src/Slic3r/App/Render/GL/GLTextureInternal.hpp
         src/Slic3r/App/Render/GL/GLBufferInternal.hpp
         src/Slic3r/App/Render/GL/GLGeometryInternal.hpp
@@ -54,16 +66,6 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Color.hpp
         src/Slic3r/App/Init.cpp
         src/Slic3r/App/Init.hpp
-        src/Slic3r/App/Render/Geometry.hpp
-        src/Slic3r/App/Render/Geometry.cpp
-        src/Slic3r/App/Render/GeometryBuilder.hpp
-        src/Slic3r/App/Render/GeometryBuilder.cpp
-        src/Slic3r/App/Render/TextureManager.cpp
-        src/Slic3r/App/Render/TextureManager.hpp
-        src/Slic3r/App/Render/Image.hpp
-        src/Slic3r/App/Render/Image.cpp
-        src/Slic3r/App/Render/ImageCodec.cpp
-        src/Slic3r/App/Render/ImageCodec.hpp
         src/Slic3r/Memory.hpp
 )
 

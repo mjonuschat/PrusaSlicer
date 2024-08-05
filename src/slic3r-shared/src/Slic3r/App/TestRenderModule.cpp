@@ -124,9 +124,9 @@ void TestRenderModule::render_scene()
     // glViewport(0, 0, m_screen_info.physical_width(), m_screen_info.physical_height());
     command_buffer->set_viewport(Render::Rect::from(0, 0, m_screen_info));
 
-    SPDLOG_INFO(
-        "Setting viewport to {}x{}", m_screen_info.physical_width(), m_screen_info.physical_height()
-    );
+//    SPDLOG_INFO(
+//        "Setting viewport to {}x{}", m_screen_info.physical_width(), m_screen_info.physical_height()
+//    );
 
     Transform3f view = Transform3f::Identity();
     view = view.translate(Vec3f(0, 0, -2));

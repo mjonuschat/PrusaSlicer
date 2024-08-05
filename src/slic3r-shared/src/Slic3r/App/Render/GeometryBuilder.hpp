@@ -149,7 +149,6 @@ private:
 private:
     std::vector<V> m_vertices;
     std::vector<I> m_indices;
-
 };
 
 } // namespace Slic3r::App::Render

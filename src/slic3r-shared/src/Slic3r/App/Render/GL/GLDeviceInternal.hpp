@@ -37,6 +37,8 @@ private:
     void bind_vertex_buffer(ResourceId vb);
     void bind_index_buffer(ResourceId vb);
     void bind_vao(ResourceId vao);
+
+    void print_buffer_info(const char* action = nullptr);
 private:
     Context& m_context;
     // only active bound VB (not taking bound VAO into account)
