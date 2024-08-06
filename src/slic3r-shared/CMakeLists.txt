@@ -35,6 +35,10 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Render/CommandBuffer_gl.cpp
         src/Slic3r/App/Render/VertexAttribDesc.cpp
         src/Slic3r/App/Render/VertexAttribDesc.hpp
+        src/Slic3r/App/Render/MathUtils.cpp
+        src/Slic3r/App/Render/MathUtils.hpp
+        src/Slic3r/App/Render/ImguiRender.hpp
+        src/Slic3r/App/Render/ImguiRender.cpp
         src/Slic3r/App/Render/WithInternal.hpp
         src/Slic3r/App/Render/GL/GLTypes.cpp
         src/Slic3r/App/Render/GL/GLTypes.hpp

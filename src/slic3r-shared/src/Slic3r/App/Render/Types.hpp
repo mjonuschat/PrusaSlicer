@@ -26,7 +26,9 @@ enum class BufferTarget {
 };
 
 enum class BufferUsage {
-    StaticDraw
+    StaticDraw,
+    DynamicDraw,
+    StreamDraw
 };
 
 struct Rect
@@ -53,10 +55,26 @@ enum class BlendFactor
     OneMinusDstAlpha
 };
 
-struct Blending
+struct BlendOp
 {
     BlendFactor src = BlendFactor::One;
     BlendFactor dst = BlendFactor::Zero;
+};
+
+enum class BlendEquation
+{
+    Add = 0,
+    Subtract,
+    ReverseSubtract,
+    Min,
+    Max
+};
+
+struct Blending
+{
+    BlendOp rgb;
+    BlendOp alpha;
+    BlendEquation equation{BlendEquation::Add};
 };
 
 enum class PrimitiveType
@@ -89,6 +107,7 @@ enum class VertexAttribType
     Vertex = 0,
     Normal,
     TexCoord0,
+    Color,
     Extra
 };
 
@@ -100,6 +119,7 @@ enum class DataType
 {
     Float = 0,
     Byte,
+    UByte,
     Short
 };
 

@@ -1,11 +1,17 @@
 #pragma once
 
+#define USE_IMGUI_RENDER 1
+
 #include <vector>
 
 #include "AbstractRenderModule.hpp"
 #include "IRenderRequestHandler.hpp"
 #include "StdMainThreadDispatcher.hpp"
 #include "ScreenInfo.hpp"
+
+#if USE_IMGUI_RENDER
+#include <Slic3r/App/Render/ImguiRender.hpp>
+#endif
 
 namespace Slic3r::App::Render {
 class Device;
@@ -95,6 +101,9 @@ protected:
     KeyboardEvents m_enqueued_keyboard_events;
     StdMainThreadDispatcher m_main_thread_dispatcher;
 private:
+#if USE_IMGUI_RENDER
+    std::unique_ptr<Render::ImguiRender> m_imgui_render;
+#endif
     double m_last_time{0};
     size_t m_render_request_count{0};
 };

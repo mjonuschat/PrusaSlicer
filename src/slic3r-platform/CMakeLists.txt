@@ -45,6 +45,6 @@ endif ()
 
 add_library(slic3r-platform STATIC ${SLIC3R_PLATFORM_FILES})
 target_include_directories(slic3r-platform PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
-target_link_libraries(slic3r-platform PUBLIC PlatformGL imgui imgui_backend_ogl3 slic3r-base libslic3r)
+target_link_libraries(slic3r-platform PUBLIC PlatformGL imgui imgui_backend_ogl3 slic3r-base slic3r-shared libslic3r)
 
 

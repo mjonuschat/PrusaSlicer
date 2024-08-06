@@ -69,7 +69,11 @@ void CommandBuffer::set_scissor_enabled(bool enabled)
 
 void CommandBuffer::set_blending(const Blending& blending)
 {
-    glBlendFunc(GL::type(blending.src), GL::type(blending.dst));
+    glBlendEquation(GL::type(blending.equation));
+    glBlendFuncSeparate(
+        GL::type(blending.rgb.src), GL::type(blending.rgb.dst),
+        GL::type(blending.alpha.src), GL::type(blending.alpha.dst)
+    );
     glCheck();
 }
 
@@ -77,6 +81,22 @@ void CommandBuffer::set_blending_enabled(bool enabled)
 {
     GL::setEnabled(GL_BLEND, enabled);
 }
+
+void CommandBuffer::set_depth_test_enabled(bool enabled)
+{
+    GL::setEnabled(GL_DEPTH_TEST, enabled);
+}
+
+void CommandBuffer::set_cull_face_enabled(bool enabled)
+{
+    GL::setEnabled(GL_CULL_FACE, enabled);
+}
+
+void CommandBuffer::set_stencil_test_enabled(bool enabled)
+{
+    GL::setEnabled(GL_STENCIL_TEST, enabled);
+}
+
 
 void CommandBuffer::bind_texture(uint8_t unit, Texture& t)
 {

@@ -15,6 +15,7 @@
 #include "GL/glew.h"
 
 #define RENDER_TRACE_LOG 0
+#define RENDER_TRACE_DRAW 1
 
 namespace Slic3r::App::Render::GL {
 
@@ -184,8 +185,8 @@ void GLDeviceInternal::bind_geometry(Geometry& g, Shader& shader)
                 continue;
             glEnableVertexAttribArray(loc);
             glVertexAttribPointer(
-                loc, vad.components, type(vad.data_type), GL_FALSE, stride,
-                reinterpret_cast<void*>(vad.offset)
+                loc, vad.components, type(vad.data_type), vad.normalize ? GL_TRUE : GL_FALSE,
+                stride, reinterpret_cast<void*>(vad.offset)
             );
             glCheck();
         }
@@ -234,22 +235,17 @@ void GLDeviceInternal::unbind_geometry()
 
 void GLDeviceInternal::draw(PrimitiveType primitive, size_t offset, size_t count)
 {
-#if RENDER_TRACE_LOG
-    print_buffer_info("draw");
+#if RENDER_TRACE_LOG || RENDER_TRACE_DRAW
+    print_buffer_info(m_bound_indices ? "draw elements" : "draw vertices");
+    SPDLOG_INFO("Draw offset: {}  count: {}", offset, count);
 #endif
 
     if (m_bound_indices) {
-#if RENDER_TRACE_LOG
-        SPDLOG_INFO("Draw Elements");
-#endif
         glDrawElements(
             GL::type(primitive), count, type(m_bound_index_type),
             reinterpret_cast<const void*>(0 + index_type_size(m_bound_index_type) * offset)
         );
     } else {
-#if RENDER_TRACE_LOG
-        SPDLOG_INFO("Draw Arrays");
-#endif
         glDrawArrays(GL::type(primitive), offset, count);
     }
     glCheck();
@@ -271,21 +267,16 @@ void GLDeviceInternal::print_buffer_info(const char* action)
     glGetIntegerv(GL_VERTEX_ARRAY_BINDING, reinterpret_cast<GLint*>(&bound_vao));
     glCheck();
 
-    SPDLOG_INFO(
-        "Bound buffers (at {}): shader {} ({})  VB {} ({})  IB {} ({})  VAO {} ({})",
-        action,
-        bound_shader, m_bound_shader,
-        bound_vertex_buffer, m_bound_vertex_buffer,
-        bound_index_buffer, m_bound_index_buffer,
-        bound_vao, m_bound_vao
-    );
 
     if (bound_vao) {
         GLint max_attrs;
         glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &max_attrs);
         glCheck();
 
-        SPDLOG_INFO("Bound VAO buffers");
+        SPDLOG_INFO(
+            "Bound Buffers (at {}): Bound VAO {} ({}), index buffer: {} ({})  vertex buffers:",
+            action, bound_vao, m_bound_vao, bound_index_buffer, m_bound_index_buffer
+        );
 
         for (GLint i = 0; i < max_attrs; i++) {
             GLint bound_vbi = -1;
@@ -295,6 +286,15 @@ void GLDeviceInternal::print_buffer_info(const char* action)
             if (bound_vbi != 0)
                 SPDLOG_INFO("attr {}: VBO {}", i, bound_vbi);
         }
+    } else {
+        SPDLOG_INFO(
+            "Bound buffers (at {}): current state: shader {} ({})  VB {} ({})  IB {} ({})  VAO {} ({})",
+            action,
+            bound_shader, m_bound_shader,
+            bound_vertex_buffer, m_bound_vertex_buffer,
+            bound_index_buffer, m_bound_index_buffer,
+            bound_vao, m_bound_vao
+        );
     }
 
 }

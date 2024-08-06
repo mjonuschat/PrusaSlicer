@@ -8,6 +8,7 @@ size_t size_in_bytes(DataType data_type)
 {
     switch (data_type) {
     case DataType::Byte:
+    case DataType::UByte:
         return sizeof(uint8_t);
     case DataType::Float:
         return sizeof(float);

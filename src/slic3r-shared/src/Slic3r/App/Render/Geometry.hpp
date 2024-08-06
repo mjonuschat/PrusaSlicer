@@ -12,7 +12,9 @@ class Device;
 class Geometry : public WithInternal
 {
 public:
-    explicit Geometry(Device& device);
+    explicit Geometry(Device& device) : Geometry(device, BufferUsage::StaticDraw) {}
+    Geometry(Device& device, BufferUsage buffer_usage) : Geometry(device, buffer_usage, buffer_usage) {}
+    Geometry(Device& device, BufferUsage vertex_usage, BufferUsage index_usage);
     ~Geometry() override;
 
     Geometry(Geometry&&) = default;
@@ -47,6 +49,8 @@ private:
 
     VertexAttribsDesc m_vertex_format;
     IndexType m_index_type{IndexType::UInt};
+    BufferUsage m_vertex_usage{BufferUsage::StaticDraw};
+    BufferUsage m_index_usage{BufferUsage::StaticDraw};
     size_t m_vertex_count{0};
     size_t m_index_count{0};
 

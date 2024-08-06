@@ -32,9 +32,9 @@ struct VertexAttribDesc
     size_t offset;
 
     /**
-     * Stride between vertices in bytes, pass 0 for tightly packed vertex layout.
+     * Enable normalization during upload.
      */
-    //size_t stride;
+    bool normalize{false};
 
     /**
      * All components size in bytes for given vertex attribute.

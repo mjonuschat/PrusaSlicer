@@ -27,6 +27,10 @@ public:
     void set_blending(const Blending& blending);
     void set_blending_enabled(bool enabled);
 
+    void set_depth_test_enabled(bool enabled);
+    void set_cull_face_enabled(bool enabled);
+    void set_stencil_test_enabled(bool enabled);
+
     void bind_shader(Shader& s);
     void bind_geometry(Geometry& g, Shader& s);
     void bind_texture(uint8_t unit, Texture& t);

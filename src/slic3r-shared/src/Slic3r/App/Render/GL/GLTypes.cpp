@@ -16,6 +16,9 @@ const char* shader_input_name(VertexAttribType vat)
     case VertexAttribType::TexCoord0:
         return "v_tex_coord";
 
+    case VertexAttribType::Color:
+        return "v_color";
+
     case VertexAttribType::Extra:
         return "v_extra";
 
@@ -68,6 +71,21 @@ GLenum type(BlendFactor type)
         GL_ONE_MINUS_SRC_ALPHA,
         GL_DST_ALPHA,
         GL_ONE_MINUS_DST_ALPHA
+    };
+
+    const int idx = static_cast<int>(type);
+    ASSERT(idx >= 0 && idx < sizeof(translation_table)/sizeof(translation_table[0]));
+    return translation_table[idx];
+}
+
+GLenum type(BlendEquation type)
+{
+    constexpr static GLenum translation_table[] = {
+        GL_FUNC_ADD,
+        GL_FUNC_SUBTRACT,
+        GL_FUNC_REVERSE_SUBTRACT,
+        GL_MIN,
+        GL_MAX
     };
 
     const int idx = static_cast<int>(type);

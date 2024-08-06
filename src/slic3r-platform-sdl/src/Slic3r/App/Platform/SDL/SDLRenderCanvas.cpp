@@ -10,6 +10,8 @@
 #include <Slic3r/App/Render/Init.hpp>
 #include <Slic3r/App/Render/Context.hpp>
 #include <Slic3r/App/Render/Device.hpp>
+#include <Slic3r/App/Render/Geometry.hpp>
+#include <Slic3r/App/Render/Texture.hpp>
 #include <Slic3r/App/Platform/MouseEvent.hpp>
 
 namespace Slic3r::App::Platform::SDL

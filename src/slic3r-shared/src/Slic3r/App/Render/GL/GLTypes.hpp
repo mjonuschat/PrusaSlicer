@@ -12,12 +12,14 @@ inline GLenum type(DataType type)
         GL_FLOAT,
         // Byte,
         GL_BYTE,
+        // UByte
+        GL_UNSIGNED_BYTE,
         // Short
         GL_SHORT
     };
 
     const size_t idx = static_cast<size_t>(type);
-    ASSERT(0 >= idx && idx < (sizeof(translation_table) / sizeof(translation_table[0])));
+    ASSERT(idx < (sizeof(translation_table) / sizeof(translation_table[0])));
 
     return translation_table[idx];
 }
@@ -73,6 +75,10 @@ inline GLenum type(BufferUsage usage)
     switch (usage) {
     case BufferUsage::StaticDraw:
         return GL_STATIC_DRAW;
+    case BufferUsage::DynamicDraw:
+        return GL_DYNAMIC_DRAW;
+    case BufferUsage::StreamDraw:
+        return GL_STREAM_DRAW;
     }
 }
 
@@ -82,5 +88,7 @@ const char* shader_input_name(VertexAttribType vat);
 GLenum texture_format(PixelFormat format);
 GLenum texture_format_type(PixelFormat format);
 GLenum type(BlendFactor type);
+GLenum type(BlendEquation type);
+
 
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <unordered_set>
 #include "Slic3r/App/Render/Device.hpp"
 #include "Slic3r/App/Render/Types.hpp"
 
@@ -48,7 +49,7 @@ private:
     IndexType m_bound_index_type{IndexType::UByte};
     ResourceId m_bound_vao{0};
     ResourceId m_bound_shader{0};
-    ResourceIds m_bound_textures{0};
+    ResourceIds m_bound_textures;
     uint8_t m_active_texture_unit{0};
     // Is index buffer enabled either via bound IB or VAO
     bool m_bound_indices{false};

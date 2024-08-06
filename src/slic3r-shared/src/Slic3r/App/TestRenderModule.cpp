@@ -3,7 +3,6 @@
 #include <iostream>
 #include <chrono>
 #include <fmt/chrono.h>
-#include <libslic3r/Geometry.hpp>
 
 #include <Slic3r/Assert.hpp>
 
@@ -11,34 +10,9 @@
 #include "Slic3r/App/Render/ShaderManager.hpp"
 #include "Slic3r/App/Render/GeometryBuilder.hpp"
 #include "Slic3r/App/Render/CommandBuffer.hpp"
+#include "Slic3r/App/Render/MathUtils.hpp"
 
 namespace Slic3r::App {
-
-Matrix4f frustum(float left, float right, float bottom, float top, float near_z, float far_z)
-{
-    const float inv_dx = 1.0f / (right - left);
-    const float inv_dy = 1.0f / (top - bottom);
-    const float inv_dz = 1.0f / (far_z - near_z);
-    Matrix4f ret;
-    ret << 2.0f * near_z * inv_dx,                    0.0,    (left + right) * inv_dx,                             0.0,
-                              0.0, 2.0f * near_z * inv_dy,    (bottom + top) * inv_dy,                             0.0,
-                              0.0,                    0.0, -(near_z + far_z) * inv_dz, -2.0f * near_z * far_z * inv_dz,
-                              0.0,                    0.0,                       -1.0,                             0.0;
-    return ret;
-}
-
-Matrix4f perspective(float fovy, float aspect, float near_z, float far_z)
-{
-    const float f = 1.0f / std::tan(Geometry::deg2rad(fovy / 2));
-    const float dist_z = near_z - far_z;
-    Matrix4f ret;
-    ret <<
-        f/aspect, 0, 0, 0,
-        0, f, 0, 0,
-        0, 0, (far_z + near_z) / dist_z, 2 * far_z * near_z / dist_z,
-        0, 0, -1, 0;
-    return ret;
-}
 
 std::chrono::duration<double, std::milli> get_delta()
 {
@@ -137,14 +111,16 @@ void TestRenderModule::render_scene()
 
     command_buffer->bind_geometry(*m_geometry, *m_shader);
     Matrix4f vm = view.matrix();
-    Matrix4f proj = perspective(
+    Matrix4f proj = Render::perspective(
         60,
         float(m_screen_info.physical_width()) / float(m_screen_info.physical_height()),
         0.01, 10
     );
 
-
-    command_buffer->set_blending({Render::BlendFactor::SrcAlpha, Render::BlendFactor::OneMinusSrcAlpha});
+    command_buffer->set_blending({
+        {Render::BlendFactor::SrcAlpha, Render::BlendFactor::OneMinusSrcAlpha},
+        {Render::BlendFactor::One, Render::BlendFactor::OneMinusSrcAlpha}
+    });
     command_buffer->set_blending_enabled(true);
 
     SPDLOG_TRACE("TestRenderModule::render_scene() 4");
