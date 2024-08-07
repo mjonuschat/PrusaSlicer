@@ -463,6 +463,14 @@ function(slic3r_remap_configs targets from_Cfg to_Cfg)
     endif()
 endfunction()
 
+function(slic3r_msvc_set_deps_env_path tgt)
+    if (MSVC)
+        set_target_properties("${tgt}" 
+            PROPERTIES VS_DEBUGGER_ENVIRONMENT "PATH=%PATH%;${CMAKE_PREFIX_PATH}\\bin"
+        )
+    endif()
+endfunction()
+
 if(TARGET Boost::system)
     message(STATUS "Boost::boost exists")
     target_link_libraries(boost_headeronly INTERFACE Boost::boost)

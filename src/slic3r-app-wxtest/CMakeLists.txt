@@ -17,4 +17,4 @@ target_link_libraries(slic3r-app-wxtest PUBLIC
 )
 
 
-SLIC3R_LINK_RESOURCES(slic3r-app-wxtest)
+slic3r_link_resources(slic3r-app-wxtest)

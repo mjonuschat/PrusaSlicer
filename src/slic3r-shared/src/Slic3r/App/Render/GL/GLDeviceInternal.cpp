@@ -15,7 +15,7 @@
 #include "GL/glew.h"
 
 #define RENDER_TRACE_LOG 0
-#define RENDER_TRACE_DRAW 1
+#define RENDER_TRACE_DRAW 0
 
 namespace Slic3r::App::Render::GL {
 
@@ -171,6 +171,7 @@ void GLDeviceInternal::bind_geometry(Geometry& g, Shader& shader)
 
     m_bound_indices = geom.m_has_indices;
     GLuint shader_id = shader.get_internal_as<GLShaderInternal>().m_id;
+    auto* index_buffer = g.index_buffer();
     bool needs_new_binding = !use_vao || geom.m_shader_id != shader_id;
 
     if (needs_new_binding) {
@@ -191,7 +192,6 @@ void GLDeviceInternal::bind_geometry(Geometry& g, Shader& shader)
             glCheck();
         }
 
-        auto* index_buffer = g.index_buffer();
         if (index_buffer) {
             bind_index_buffer(index_buffer->get_internal_as<GLBufferInternal>().m_id);
             m_bound_index_type = g.index_type();
@@ -199,6 +199,9 @@ void GLDeviceInternal::bind_geometry(Geometry& g, Shader& shader)
             bind_index_buffer(0);
         geom.m_shader_id = shader_id;
     }
+
+    if (index_buffer)
+        m_bound_index_type = g.index_type();
 
 #if RENDER_TRACE_LOG
     print_buffer_info("bind_geometry");
