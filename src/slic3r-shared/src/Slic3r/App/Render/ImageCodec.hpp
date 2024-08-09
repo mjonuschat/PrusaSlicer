@@ -14,6 +14,7 @@ struct ImageLoadOptions
     size_t max_size_px {1024};
     bool force_power_of_two {false};
     bool gen_mipmaps {false};
+    bool flip_y{false};
 };
 
 /**.

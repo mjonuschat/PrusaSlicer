@@ -9,6 +9,7 @@
 
 #include <png.h>
 #include <nanosvg/nanosvg.h>
+#define NANOSVGRAST_IMPLEMENTATION
 #include <nanosvg/nanosvgrast.h>
 
 namespace Slic3r::App::Render {
@@ -19,6 +20,18 @@ void adjust_size_to_opts(size_t& w, size_t& h, const ImageLoadOptions& opts)
     h = std::min<size_t>(h, opts.max_size_px);
     if (opts.force_power_of_two)
         w = h = boost::core::bit_ceil(std::max(w, h));
+}
+
+void flip_pixels_in_y(Image::Data& pixels, size_t h, size_t row_stride)
+{
+    Image::Data temp_row(row_stride, 0);
+    const auto h_half = h / 2;
+    for (size_t row = 0; row < h_half; row++) {
+        std::memcpy(temp_row.data(), &pixels[row * row_stride], row_stride);
+        const auto opposite_row = h - row - 1;
+        std::memcpy(&pixels[row * row_stride], &pixels[opposite_row * row_stride], row_stride);
+        std::memcpy(&pixels[opposite_row * row_stride], temp_row.data(), row_stride);
+    }
 }
 
 class PngReadCodec : public IImageLoadCodec
@@ -119,8 +132,10 @@ std::vector<Image> PngReadCodec::load(std::istream& is, const ImageLoadOptions& 
     Image::Data out_pixels(out_w * out_h * pixel_stride, 0);
 
     auto readbuf = static_cast<png_bytep>(out_pixels.data());
-    for (size_t r = 0; r < out_h; ++r)
-        png_read_row(png, readbuf + r * out_w * pixel_stride, nullptr);
+    for (size_t r = 0; r < out_h; ++r) {
+        size_t r_idx = opts.flip_y ? out_h - r - 1 : r;
+        png_read_row(png, readbuf + r_idx * out_w * pixel_stride, nullptr);
+    }
 
     size_t new_w = out_w;
     size_t new_h = out_h;
@@ -197,6 +212,9 @@ std::vector<Image> SvgReadCodec::load(std::istream& is, const ImageLoadOptions& 
         nsvgRasterizeXY(
             rast, image.get(), 0, 0, scale_w, scale_h, pixels.data(), width, height, width * 4
         );
+
+        if (opts.flip_y)
+            flip_pixels_in_y(pixels, height, width * 4);
 
         ret.emplace_back(format, width, height, std::move(pixels));
 

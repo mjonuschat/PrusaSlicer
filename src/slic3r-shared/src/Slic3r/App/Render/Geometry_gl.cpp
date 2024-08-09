@@ -3,6 +3,7 @@
 
 #include "Slic3r/App/Render/GL/GLGeometryInternal.hpp"
 #include "Slic3r/App/Render/GL/GLDeviceInternal.hpp"
+#include "Slic3r/App/Render/GL/GLBufferInternal.hpp"
 #include "Slic3r/App/Render/GL/commonGL.hpp"
 #include "Slic3r/App/Render/GL/GLTypes.hpp"
 
@@ -50,6 +51,7 @@ void Geometry::upload(
     }
     SPDLOG_TRACE("Buffer::upload() Part 2");
 
+    DEBUG_ASSERT_BOUND_VAO(0);
 
     if (!m_vb)
         m_vb = m_device.create_vertex_buffer();
@@ -61,6 +63,7 @@ void Geometry::upload(
         if (!m_ib)
             m_ib = m_device.create_index_buffer();
         m_ib->set_data(index_data, index_type_size(index_format) * index_count, m_index_usage);
+        DEBUG_ASSERT_BOUND_IB(m_ib->get_internal_as<GL::GLBufferInternal>().m_id);
         m_index_count = index_count;
         m_index_type = index_format;
     }

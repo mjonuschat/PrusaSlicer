@@ -6,5 +6,3 @@ add_cmake_project(LibAssert
 #        -DCPPTRACE_UNWIND_WITH_NOTHING=ON
 #        -DCPPTRACE_GET_SYMBOLS_WITH_NOTHING=ON
 )
-
-set(DEP_JPEG_DEPENDS ZLIB)

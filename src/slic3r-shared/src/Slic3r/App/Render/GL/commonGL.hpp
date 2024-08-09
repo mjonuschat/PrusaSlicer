@@ -6,6 +6,7 @@
 
 #ifdef NDEBUG
 #define glCheck()
+#define DEBUG_ASSERT_BOUND_IB(ib) (void)ib
 #else
 #define glCheck() { \
   GLenum err = glGetError(); \
@@ -13,6 +14,27 @@
     PANIC(std::string("GL Error: ") + ::Slic3r::App::Render::gl_error_desc(err)); \
   } \
 }
+
+#define DEBUG_ASSERT_BOUND_IB(ib) \
+    { \
+        GLint bound_ib; \
+        glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &bound_ib); \
+        DEBUG_ASSERT(ib == bound_ib); \
+    }
+
+#define DEBUG_ASSERT_BOUND_VAO(vao)                         \
+    {                                                       \
+        GLint bound_vao;                                    \
+        glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &bound_vao); \
+        DEBUG_ASSERT(vao == bound_vao);                     \
+    }
+
+#endif
+
+#ifndef NDEBUG
+
+
+
 #endif
 
 namespace Slic3r::App::Render {
