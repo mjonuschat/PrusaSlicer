@@ -51,7 +51,7 @@ set(SLIC3R_SHARED_FILES
 )
 
 if (NOT EMSCRIPTEN)
-    set(SLIC3R_SHARED_FILE
+    set(SLIC3R_SHARED_FILES
             ${SLIC3R_SHARED_FILES}
             src/Slic3r/Domain/ConfigContainer.hpp
             src/Slic3r/Domain/DataManager.cpp

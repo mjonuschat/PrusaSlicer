@@ -9,8 +9,8 @@
 
 namespace Slic3r::App::Desktop {
 
-MainFrame::MainFrame()
-    : wxFrame(nullptr, wxID_ANY, "")
+MainFrame::MainFrame(Domain::Workbench& workbench)
+    : wxFrame(nullptr, wxID_ANY, ""), m_workbench(workbench)
 {
     using namespace WX;
 

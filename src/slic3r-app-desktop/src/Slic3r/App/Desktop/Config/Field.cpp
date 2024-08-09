@@ -1322,7 +1322,7 @@ void Choice::msw_rescale()
             for (const std::string& el : labels)
                 field->Append(localized ? _(WX::from_u8(el)) : WX::from_u8(el));
 
-            if (auto opt = m_opt.enum_def->label_to_index(into_u8(selection)); opt.has_value())
+            if (auto opt = m_opt.enum_def->label_to_index(WX::into_u8(selection)); opt.has_value())
                 // This enum has a value field of the same content as text_value. Select it.
                 field->SetSelection(*opt);
             else

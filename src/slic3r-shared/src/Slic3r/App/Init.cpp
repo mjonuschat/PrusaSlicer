@@ -3,6 +3,7 @@
 #include <boost/filesystem/path.hpp>
 #include <boost/dll/runtime_symbol_info.hpp>
 #include <libslic3r/Utils.hpp>
+#include <libslic3r/Utils/DirectoriesUtils.hpp>
 
 
 namespace Slic3r::App {
@@ -38,11 +39,16 @@ void init_paths()
 
 #endif // __EMSCRIPTEN__
 
+    // Resource dirs
     set_resources_dir(path_resources.string());
     set_var_dir((path_resources / "icons").string());
     set_local_dir((path_resources / "localization").string());
     set_sys_shapes_dir((path_resources / "shapes").string());
     set_custom_gcodes_dir((path_resources / "custom_gcodes").string());
+
+    // Data/config dir
+    set_data_dir(get_default_datadir());
+
 }
 
 
