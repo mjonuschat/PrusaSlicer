@@ -348,6 +348,19 @@ void WidgetsConfig::UpdateAllStaticTextDarkUI(wxWindow* parent)
 #endif
 }
 
+void WidgetsConfig::SetWindowVariantForButton(wxButton* btn)
+{
+#ifdef __APPLE__
+    // This is a limit imposed by OSX. The way the native button widget is drawn only allows it to be stretched horizontally,
+    // and the vertical size is fixed. (see https://stackoverflow.com/questions/29083891/wxpython-button-size-being-ignored-on-osx)
+    // But standard height is possible to change using SetWindowVariant method (see https://docs.wxwidgets.org/3.0/window_8h.html#a879bccd2c987fedf06030a8abcbba8ac)
+    if (m_normal_font.GetPointSize() > 15) {
+        btn->SetWindowVariant(wxWINDOW_VARIANT_LARGE);
+        btn->SetFont(m_normal_font);
+    }
+#endif
+}
+
 wxTopLevelWindow* WidgetsConfig::find_toplevel_parent(wxWindow* window)
 {
     for (; window != nullptr; window = window->GetParent()) {

@@ -114,7 +114,7 @@ public:
     void            UpdateDVCDarkUI(wxDataViewCtrl* dvc, bool highlited = false);
     // update color mode for panel including all static texts controls
     void            UpdateAllStaticTextDarkUI(wxWindow* parent);
-//    void            SetWindowVariantForButton(wxButton* btn);
+    void            SetWindowVariantForButton(wxButton* btn);
 
     const std::string       get_html_bg_color(wxWindow* html_parent);
 
