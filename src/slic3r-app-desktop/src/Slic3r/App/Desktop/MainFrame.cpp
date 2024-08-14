@@ -10,7 +10,7 @@
 namespace Slic3r::App::Desktop {
 
 MainFrame::MainFrame(Domain::Workbench& workbench)
-    : wxFrame(nullptr, wxID_ANY, ""), m_workbench(workbench)
+    : wxFrame(nullptr, wxID_ANY, ""), m_workbench(workbench), m_preset_interactor(workbench)
 {
     using namespace WX;
 

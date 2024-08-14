@@ -1,24 +1,10 @@
 //
-// Created by Jan Bartipan on 07.03.2024.
-//
-
 #pragma once
 #include "libslic3r/TriangleMesh.hpp"
 #include "Slic3r/Domain/Project.hpp"
 
-namespace Slic3r::Biz::Interactor {
+namespace Slic3r::Biz::Scene {
 
-struct SceneChangeListener
-{
-    virtual ~SceneChangeListener() = default;
-    virtual void scene_changed() = 0;
-};
-
-struct SceneSelectionChanged
-{
-    virtual ~SceneSelectionChanged() = default;
-    virtual void scene_selection_changed() = 0;
-};
 
 class SceneInteractor
 {

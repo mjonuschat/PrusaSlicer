@@ -72,13 +72,25 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Init.hpp
 
         src/Slic3r/Biz/PrintConfigInteractor.hpp
-        src/Slic3r/Biz/ObservableDynamicPrintConfig.hpp
         src/Slic3r/Biz/PrintConfigInteractor.cpp
+        src/Slic3r/Biz/ObservableDynamicPrintConfig.hpp
         src/Slic3r/Biz/Observable.hpp
         src/Slic3r/Biz/Plater/SceneInteractor.hpp
         src/Slic3r/Biz/Plater/ConfigViewModel.hpp
-        src/Slic3r/Biz/Interactor/SceneInteractor.hpp
-        src/Slic3r/Biz/Interactor/SceneInteractor.cpp
+
+        src/Slic3r/Biz/Scene/SceneInteractor.hpp
+        src/Slic3r/Biz/Scene/SceneInteractor.cpp
+        src/Slic3r/Biz/Scene/SceneChangeListener.hpp
+        src/Slic3r/Biz/Scene/SceneSelectionChangeListener.hpp
+        src/Slic3r/Biz/Scene/Selection.hpp
+        src/Slic3r/Biz/Scene/SceneInteractorProjectContext.hpp
+
+        src/Slic3r/Biz/Preset/PresetChangeListener.hpp
+        src/Slic3r/Biz/Preset/PresetInteractor.cpp
+        src/Slic3r/Biz/Preset/PresetInteractor.hpp
+        src/Slic3r/Biz/Preset/PresetInteractorProjectContext.hpp
+        src/Slic3r/Biz/Preset/PresetInteractorConfigContainerContext.hpp
+        src/Slic3r/Biz/Preset/PresetState.hpp
 
         src/Slic3r/Memory.hpp
 

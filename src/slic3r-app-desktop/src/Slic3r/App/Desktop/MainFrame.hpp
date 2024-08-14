@@ -6,6 +6,7 @@
 #include "Slic3r/App/Platform/WX/WXRenderCanvas.hpp"
 #include "Slic3r/Domain/Workbench.hpp"
 #include "Slic3r/Domain/Bed.hpp"
+#include "slic3r-shared/src/Slic3r/Biz/Preset/PresetInteractor.hpp"
 #include "TopBarMenus.hpp"
 
 namespace Slic3r::App::Desktop {
@@ -20,6 +21,7 @@ public:
 
 private:
     Domain::Workbench& m_workbench;
+    Biz::Preset::PresetInteractor m_preset_interactor;
     std::unique_ptr<Platform::WX::WXRenderCanvas> m_canvas;
 
     TopBarMenus         m_top_bar_menus;
