@@ -1,7 +1,3 @@
-//
-// Created by Jan Bartipan on 22.02.2024.
-//
-
 #pragma once
 
 #include <memory>
@@ -17,10 +13,10 @@ class Bed : public ObjectBase
 {
 public:
     using ModelInstances = std::vector<ModelInstance*>;
-    [[nodiscard]] ModelInstances & model_instances() { return m_model_instacnes; }
-    [[nodiscard]] const ModelInstances& model() const { return m_model_instacnes; }
+    [[nodiscard]] ModelInstances & model_instances() { return m_instances; }
+    [[nodiscard]] const ModelInstances& model() const { return m_instances; }
 private:
-    ModelInstances m_model_instacnes;
+    ModelInstances m_instances;
 
     // other bed data like grid position
 };

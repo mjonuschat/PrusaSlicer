@@ -29,6 +29,7 @@ public:
     [[nodiscard]] PresetBundle& preset_bundle() { return *m_preset_bundle;}
 
     void load_configs();
+    void load_project(const std::string& file_path);
 
 private:
     ProjectList m_projects;

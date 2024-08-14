@@ -216,11 +216,19 @@ std::vector<Image> SvgReadCodec::load(std::istream& is, const ImageLoadOptions& 
         if (opts.flip_y)
             flip_pixels_in_y(pixels, height, width * 4);
 
+        if (std::any_of(pixels.begin(), pixels.end(), [](auto x){ return x!=0; })) {
+            SPDLOG_INFO("Non empty image with size {}x{} added", width, height);
+        } else {
+            SPDLOG_INFO("Empty image with size {}x{} added", width, height);
+        }
         ret.emplace_back(format, width, height, std::move(pixels));
 
         width /= 2;
         height /= 2;
-    } while (opts.gen_mipmaps && width > 1);
+        scale_w = (float) width / image->width;
+        scale_h = (float) height / image->height;
+
+    } while (opts.gen_mipmaps && width > 0);
 
     return ret;
 }

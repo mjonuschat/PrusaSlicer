@@ -55,13 +55,14 @@ void AbstractRenderCanvas::render()
     if (m_render_module == nullptr)
         return;
 
+
+    m_render_module->ensure_initialized(get_device());
+
 #if USE_IMGUI_RENDER
     if (!m_imgui_render) {
         m_imgui_render = std::make_unique<Render::ImguiRender>(Render::Context::instance().device());
     }
 #endif
-
-    m_render_module->ensure_initialized(get_device());
 
     assert_no_gl_error();
     begin_frame();

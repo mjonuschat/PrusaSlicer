@@ -75,13 +75,13 @@ void TestRenderModule::on_init(Render::Device& device)
     m_shader2 = ctx.shader_manager().get_shader("flat_texture");
     SPDLOG_TRACE("TestRenderModule() 3");
     Render::ImageLoadOptions opts;
-    opts.gen_mipmaps = false;
+    opts.gen_mipmaps = true;
     opts.force_power_of_two = true;
     opts.flip_y = true;
     m_tex = Render::Context::instance().texture_manager().get(
 //        "icons/PrusaSlicer-gcodeviewer-mac_128px.png",
-         "icons/funnel.svg",
-//        "icons/PrusaSlicer-gcodeviewer.svg",
+//         "icons/funnel.svg",
+        "icons/PrusaSlicer-gcodeviewer.svg",
         opts
     );
 //    m_tex = Render::Context::instance().texture_manager()

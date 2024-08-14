@@ -8,6 +8,7 @@
 #include "libslic3r/Technologies.hpp"
 #include "Slic3r/App/Platform/PlatformInfo.hpp"
 #include "Slic3r/Assert.hpp"
+#include "Slic3r/Log.hpp"
 
 namespace Slic3r::App::Render {
 
@@ -19,10 +20,12 @@ std::pair<bool, std::string> ShaderManager::init()
     auto append_shader = [this, &error](const std::string& name, const Shader::ShaderFilenames& filenames, 
         const std::initializer_list<std::string_view> &defines = {}) {
         m_shaders.push_back(std::make_unique<Shader>(m_context.device()));
+        SPDLOG_INFO("Loading shader {}", name);
         if (!m_shaders.back()->init_from_files(name, filenames, defines)) {
             error += name + "\n";
             // if any error happens while initializating the shader, we remove it from the list
             m_shaders.pop_back();
+            SPDLOG_ERROR("Loading shader {} failed with error: {}", name, error);
             return false;
         }
         return true;

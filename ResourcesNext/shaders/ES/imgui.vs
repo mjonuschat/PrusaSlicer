@@ -12,6 +12,6 @@ varying vec4 Frag_Color;
 void main()
 {
 	Frag_UV = v_tex_coord;
-	Frag_Color = Color;
+	Frag_Color = v_color;
     gl_Position = ProjMtx * vec4(v_position.xy, 0.0, 1.0);
 }

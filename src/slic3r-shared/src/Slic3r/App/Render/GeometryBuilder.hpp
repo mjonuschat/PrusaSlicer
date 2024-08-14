@@ -2,6 +2,9 @@
 
 #include "Geometry.hpp"
 
+struct indexed_triangle_set;
+namespace Slic3r { class TriangleMesh; }
+
 namespace Slic3r::App::Render {
 
 class Device;
@@ -71,6 +74,13 @@ public:
     using VertexType = V;
     //using IndexType = I;
 
+    GeometryBuilder& reserve(size_t num_vertices, size_t num_indices)
+    {
+        m_vertices.reserve(num_vertices);
+        m_indices.reserve(num_indices);
+        return *this;
+    }
+
     GeometryBuilder& add_vertex(const V& v)
     {
         m_vertices.push_back(v);
@@ -98,10 +108,8 @@ public:
         return *this;
     }
 
-    std::unique_ptr<Geometry> build(Device& device)
+    void update(Geometry& geometry, bool clear_after = true)
     {
-        std::unique_ptr<Geometry> geometry = std::make_unique<Geometry>(device);
-
         void* index_data = nullptr;
         size_t index_count = 0;
         IndexType index_type = IndexType::UInt;
@@ -118,12 +126,20 @@ public:
             }
         }
 
-        geometry->upload(
+        geometry.upload(
             m_vertices.data(), m_vertices.size(), VertexType::format(),
             index_data, index_count,index_type
         );
-        m_vertices.clear();
-        m_indices.clear();
+        if (clear_after) {
+            m_vertices.clear();
+            m_indices.clear();
+        }
+    }
+
+    std::unique_ptr<Geometry> build(Device& device)
+    {
+        std::unique_ptr<Geometry> geometry = std::make_unique<Geometry>(device);
+        update(*geometry);
         return geometry;
     }
 private:
@@ -150,5 +166,9 @@ private:
     std::vector<V> m_vertices;
     std::vector<I> m_indices;
 };
+
+
+std::unique_ptr<Geometry> geometry_from_triangle_mesh(Device& device, const TriangleMesh& triangle_mesh);
+std::unique_ptr<Geometry> geometry_from_triangle_mesh(Device& device, const indexed_triangle_set& triangle_mesh);
 
 } // namespace Slic3r::App::Render

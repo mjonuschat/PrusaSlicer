@@ -1,3 +1,4 @@
+#include <filesystem>
 #include <boost/dll.hpp>
 #include <boost/nowide/iostream.hpp>
 #include <boost/nowide/cstdlib.hpp>
@@ -40,6 +41,18 @@ void main_loop()
         main_loop_impl();
 }
 
+void ls_directory(const std::filesystem::path& path)
+{
+    SPDLOG_INFO("Content of directory {}", path.string());
+    if (std::filesystem::exists(path) && std::filesystem::is_directory(path)) {
+        for (const auto& entry : std::filesystem::recursive_directory_iterator(path)) {
+            SPDLOG_INFO("{}", entry.path().string());
+        }
+    } else {
+        SPDLOG_INFO("DIRECTORY {} DOES NOT EXIST!", path.string());
+    }
+}
+
 
 void init_system()
 {
@@ -55,6 +68,9 @@ void init_system()
         }
     }
 
+#ifdef __EMSCRIPTEN__
+    ls_directory("/resources");
+#endif
     // Detect the operating system flavor after SLIC3R_LOGLEVEL is set.
     detect_platform();
 
@@ -75,6 +91,7 @@ void init_system()
     //}
 #endif
     App::init_paths();
+
 }
 
 std::unique_ptr<Slic3r::App::Platform::SDL::SDLRenderCanvas> canvas;

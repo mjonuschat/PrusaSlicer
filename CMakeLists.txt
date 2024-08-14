@@ -436,6 +436,7 @@ function(slic3r_link_resources _target)
         message(STATUS "Preload file Flags: " --preload-file "${SLIC3R_RESOURCES_NEXT_DIR}@/resources")
 
         set(CMAKE_EXE_LINKER_FLAGS "--preload-file ${SLIC3R_RESOURCES_NEXT_DIR}@/resources -pthread ${CMAKE_EXE_LINKER_FLAGS}")
+        set(CMAKE_SHARED_LINKER_FLAGS "--preload-file ${SLIC3R_RESOURCES_NEXT_DIR}@/resources -pthread ${CMAKE_SHARED_LINKER_FLAGS}")
     else ()
         if (XCODE)
             # Because of Debug/Release/etc. configurations (similar to MSVC) the slic3r binary is located in an extra level

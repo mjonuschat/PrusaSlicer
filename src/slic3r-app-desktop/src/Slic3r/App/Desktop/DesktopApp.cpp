@@ -4,6 +4,7 @@
 #include <Slic3r/Log.hpp>
 #include <Slic3r/App/WX/WidgetsConfig.hpp>
 #include <Slic3r/App/Init.hpp>
+#include <libslic3r/Model.hpp>
 
 #include <Slic3r/App/Platform/PlatformServices.hpp>
 
@@ -19,6 +20,8 @@ bool DesktopApp::OnInit()
 
     init_paths();
     m_workbench.load_configs();
+
+    //m_workbench.load_project("/Users/jan.bartipan/work/Models/3DBenchy.3mf");
 
     const bool is_dark = true;
     const bool is_sys_menu = true;

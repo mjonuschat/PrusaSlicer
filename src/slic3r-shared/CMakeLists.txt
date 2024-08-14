@@ -50,18 +50,27 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Render/GL/GLShaderInternal.hpp
         src/Slic3r/App/Render/GL/GLDeviceInternal.hpp
         src/Slic3r/App/Render/GL/GLDeviceInternal.cpp
+
         src/Slic3r/App/Plater/ScenePresenter.hpp
+
         src/Slic3r/App/View/IPanelView.hpp
+
         src/Slic3r/App/Preview/View/DoubleSlider.cpp
         src/Slic3r/App/Preview/View/DoubleSlider.hpp
+
         src/Slic3r/App/Scene/Scene.cpp
         src/Slic3r/App/Scene/Scene.hpp
+        src/Slic3r/App/Scene/Node.cpp
+        src/Slic3r/App/Scene/Node.hpp
+        src/Slic3r/App/Scene/NodeInfo.hpp
+
         src/Slic3r/App/TestRenderModule.hpp
         src/Slic3r/App/TestRenderModule.cpp
         src/Slic3r/App/Color.cpp
         src/Slic3r/App/Color.hpp
         src/Slic3r/App/Init.cpp
         src/Slic3r/App/Init.hpp
+
         src/Slic3r/Biz/PrintConfigInteractor.hpp
         src/Slic3r/Biz/ObservableDynamicPrintConfig.hpp
         src/Slic3r/Biz/PrintConfigInteractor.cpp
@@ -70,23 +79,20 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/Plater/ConfigViewModel.hpp
         src/Slic3r/Biz/Interactor/SceneInteractor.hpp
         src/Slic3r/Biz/Interactor/SceneInteractor.cpp
+
         src/Slic3r/Memory.hpp
 
-if (NOT EMSCRIPTEN)
-    set(SLIC3R_SHARED_FILES
-            ${SLIC3R_SHARED_FILES}
-            src/Slic3r/Domain/ConfigContainer.hpp
-            src/Slic3r/Domain/DataManager.cpp
-            src/Slic3r/Domain/Project.cpp
-            src/Slic3r/Domain/Bed.hpp
-            src/Slic3r/Domain/Workbench.cpp
-            src/Slic3r/Domain/DataManager.hpp
-            src/Slic3r/Domain/Project.hpp
-            src/Slic3r/Domain/Bed.cpp
-            src/Slic3r/Domain/Workbench.hpp
-            src/Slic3r/Domain/ConfigContainer.cpp
-    )
-#endif()
+        src/Slic3r/Domain/ElementId.cpp
+        src/Slic3r/Domain/ElementId.hpp
+        src/Slic3r/Domain/Project.cpp
+        src/Slic3r/Domain/Project.hpp
+        src/Slic3r/Domain/Bed.hpp
+        src/Slic3r/Domain/Bed.cpp
+        src/Slic3r/Domain/Workbench.cpp
+        src/Slic3r/Domain/Workbench.hpp
+        src/Slic3r/Domain/ConfigContainer.cpp
+        src/Slic3r/Domain/ConfigContainer.hpp
+)
 
 find_package(NanoSVG REQUIRED)
 find_package(Boost REQUIRED COMPONENTS filesystem)
