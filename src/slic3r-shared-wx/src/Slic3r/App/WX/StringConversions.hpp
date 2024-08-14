@@ -21,5 +21,7 @@ wxString get_wraped_wxString(const wxString& text_in, size_t line_len = 80);
 
 static wxString dots("…", wxConvUTF8);
 
+bool has_illegal_characters(const wxString& wxstring);
+
 }
 

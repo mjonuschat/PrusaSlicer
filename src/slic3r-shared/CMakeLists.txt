@@ -100,6 +100,7 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/Preset/AbstractConfigManipulation.cpp
 
         src/Slic3r/Memory.hpp
+        src/Slic3r/StringUtils.hpp
 
         src/Slic3r/Domain/ElementId.cpp
         src/Slic3r/Domain/ElementId.hpp
