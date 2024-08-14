@@ -15,6 +15,8 @@ set(SLIC3R_SHARED_WX_FILES
         src/Slic3r/App/WX/BitmapGetters.cpp
         src/Slic3r/App/WX/Scalable.hpp
         src/Slic3r/App/WX/Scalable.cpp
+        src/Slic3r/App/WX/ExtraRenderers.hpp
+        src/Slic3r/App/WX/ExtraRenderers.cpp
         src/Slic3r/App/WX/Highlighter.hpp
         src/Slic3r/App/WX/Highlighter.cpp
         src/Slic3r/App/WX/LockButton.hpp
