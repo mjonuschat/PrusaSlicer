@@ -16,24 +16,35 @@
 #include <Slic3r/App/WX/StringConversions.hpp>
 #include <Slic3r/App/WX/WidgetsConfig.hpp>
 #include <Slic3r/App/WX/Scalable.hpp>
+#include <Slic3r/App/WX/format.hpp>
 
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/classification.hpp>
 
 #include "libslic3r/Preset.hpp"
 
-//#include "Search.hpp" // for > searcher().add_key(..)
-//#include "format.hpp" // for > format_wxstr
-//#include "libslic3r/AppConfig.hpp" // for > get_app_config()->get_bool("suppress_hyperlinks")
+//!#include "Search.hpp" // for > searcher().add_key(..)
+//!#include "libslic3r/AppConfig.hpp" // for > get_app_config()->get_bool("suppress_hyperlinks")
 
-//#include "I18N.hpp"
-#define _L(s)       s 
+//!#include "I18N.hpp"
+static wxString _L(const wxString& s) { return s; }
+static wxString _(const wxString& s) { return s; }
+static wxString _(const std::string& s) { return Slic3r::App::WX::from_u8(s); }
 #define _CTX(s, s1) s
 
 namespace Slic3r::App::Desktop::Config {
 
 using WX::into_u8;
 using WX::from_u8;
+
+Line::Line(wxString label, wxString tooltip) :
+    label(_(label)), label_tooltip(_(tooltip)) {}
+
+Line::Line(const std::string& opt_key, const wxString& label, const wxString& tooltip) :
+    label(_(label)), label_tooltip(_(tooltip))
+{
+    m_options.push_back(Option({ opt_key, coNone }, opt_key));
+}
 
 const t_field& OptionsGroup::build_field(const Option& opt) {
     return build_field(opt.opt_id, opt.opt);
@@ -267,7 +278,7 @@ void OptionsGroup::change_opt_value(DynamicPrintConfig& config, const t_config_o
     }
     catch (const std::exception& e)
     {
-//        wxLogError(format_wxstr("Internal error when changing value for %1%: %2%", opt_key, e.what()));
+        wxLogError(WX::format_wxstr("Internal error when changing value for %1%: %2%", opt_key, e.what()));
     }
 }
 
@@ -724,7 +735,7 @@ Option ConfigOptionsGroup::get_option(const std::string& opt_key, int opt_index 
 
     if (m_use_custom_ctrl) {
         // fill group and category values just for options from Settings Tab
-//        wxGetApp().searcher().add_key(opt_id, static_cast<Preset::Type>(this->config_type()), title, this->config_category());
+//!        wxGetApp().searcher().add_key(opt_id, static_cast<Preset::Type>(this->config_type()), title, this->config_category());
     }
 
 	return Option(*m_config->def()->get(opt_key), opt_id);

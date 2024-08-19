@@ -20,7 +20,6 @@
 #include "libslic3r/PrintConfig.hpp"
 
 #include "Field.hpp"
-#define _(s) s //#include "I18N.hpp"
 
 // Translate the ifdef 
 #ifdef __WXOSX__
@@ -82,15 +81,9 @@ public:
 	void append_widget(const widget_t widget) {
 		m_extra_widgets.push_back(widget);
     }
-	Line(wxString label, wxString tooltip) :
-		label(_(label)), label_tooltip(_(tooltip)) {}
+	Line(wxString label, wxString tooltip);
 	Line() : m_is_separator(true) {}
-
-	Line(const std::string& opt_key, const wxString& label, const wxString& tooltip) :
-		label(_(label)), label_tooltip(_(tooltip))
-	{
-		m_options.push_back(Option({ opt_key, coNone }, opt_key));
-	}
+	Line(const std::string& opt_key, const wxString& label, const wxString& tooltip);
 
 	bool is_separator() const { return m_is_separator; }
 	bool has_only_option(const std::string& opt_key) const { return m_options.size() == 1 && m_options[0].opt_id == opt_key; }
