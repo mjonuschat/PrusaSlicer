@@ -1,4 +1,6 @@
 set(SLIC3R_SHARED_WX_FILES
+        src/Slic3r/App/WX/format.hpp
+
         src/Slic3r/App/WX/BitmapCache.hpp
         src/Slic3r/App/WX/BitmapCache.cpp
         src/Slic3r/App/WX/wxExtensions.hpp
