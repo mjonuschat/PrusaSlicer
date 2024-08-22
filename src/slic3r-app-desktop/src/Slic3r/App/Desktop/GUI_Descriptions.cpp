@@ -7,7 +7,6 @@
 
 #include "Slic3r/App/WX/Scalable.hpp"
 #include "Slic3r/App/WX/WidgetsConfig.hpp"
-#include "Slic3r/App/WX/wxExtensions.hpp"
 
 #include <wx/sizer.h>
 #include <wx/string.h>
@@ -69,7 +68,7 @@ void FillSizerWithModeColorDescriptions(
 	std::vector<wxColourPickerCtrl**> clr_pickers, 
 	std::vector<wxColour>& mode_palette)
 {
-	const int margin = WX::em_unit(parent);
+	const int margin = WX::w_config()->em_unit(parent);
 
 	auto palette_cb = new ModePaletteComboBox(parent);
     palette_cb->UpdateSelection(mode_palette);

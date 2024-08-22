@@ -4,15 +4,16 @@
 ///|/
 #include "OG_CustomCtrl.hpp"
 
+#include <Slic3r/App/WX/StringConversions.hpp>
 #include <Slic3r/App/WX/WidgetsConfig.hpp>
 #include <Slic3r/App/WX/BitmapGetters.hpp>
-#include <Slic3r/App/WX/wxExtensions.hpp>
 
 #include <wx/utils.h>
 #include <boost/algorithm/string/split.hpp>
 
 //#include "libslic3r/AppConfig.hpp"  // => get_app_config()->get_bool
 #define _CTX(s, s1) s //#include "I18N.hpp"
+static wxString _(const std::string& s) { return Slic3r::App::WX::from_u8(s); }
 
 namespace Slic3r::App::Desktop::Config {
 
@@ -43,8 +44,8 @@ OG_CustomCtrl::OG_CustomCtrl(   wxWindow*            parent,
     if (!wxOSX)
         SetDoubleBuffered(true);// SetDoubleBuffered exists on Win and Linux/GTK, but is missing on OSX
 
-    m_font      = WX::w_config()->normal_font();
-    m_em_unit   = WX::em_unit(m_parent);
+    SetFont(WX::w_config()->normal_font());
+    m_em_unit   = WX::w_config()->em_unit(m_parent);
     m_v_gap     = lround(1.0 * m_em_unit);
     m_h_gap     = lround(0.2 * m_em_unit);
 
@@ -357,6 +358,25 @@ void OG_CustomCtrl::OnLeaveWin(wxMouseEvent& event)
     event.Skip();
 }
 
+bool OG_CustomCtrl::SetFont(wxFont const& font)
+{
+    bool ret = wxPanel::SetFont(font);
+    m_font = font;
+
+    init_max_win_width();
+
+    wxCoord    v_pos = 0;
+    for (CtrlLine& line : ctrl_lines) {
+        line.msw_rescale();
+        if (line.is_visible)
+            v_pos += (wxCoord)line.height;
+    }
+    this->SetMinSize(wxSize(wxDefaultCoord, v_pos));
+    GetParent()->Layout();
+
+    return ret;
+}
+
 bool OG_CustomCtrl::update_visibility(ConfigOptionMode mode)
 {
     wxCoord    v_pos = 0;
@@ -429,7 +449,7 @@ void OG_CustomCtrl::msw_rescale()
     return;
 #endif
     m_font      = WX::w_config()->normal_font();
-    m_em_unit   = WX::em_unit(m_parent);
+    m_em_unit   = WX::w_config()->em_unit(m_parent);
     m_v_gap     = lround(1.0 * m_em_unit);
     m_h_gap     = lround(0.2 * m_em_unit);
 

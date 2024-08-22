@@ -86,6 +86,7 @@ public:
     void            init_ui_colours();
 
 	void            update_fonts(const wxFont& normal_font, const int em);
+	void            force_fonts_update(wxWindow* win, bool apply_for_children = false);
 
 #ifdef _WIN32
     void            force_colors_update(const bool is_dark, const std::vector<wxWindow*>& wins);
@@ -142,6 +143,7 @@ public:
     const wxFont&   code_font()                     { return m_code_font; }
     const wxFont&   link_font()                     { return m_link_font; }
 
+    int             em_unit(wxWindow* win) const;
     int             em_unit() const                 { return m_em_unit; }
     bool            dark_mode() const               { return m_is_dark; }
 

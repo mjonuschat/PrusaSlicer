@@ -23,6 +23,8 @@ class TopBarItemsCtrl : public wxControl
         wxColour    m_foreground_color;
         wxBitmapBundle  m_bmp_bundle = wxBitmapBundle();
 
+        void        messure_min_size();
+
     protected:
         wxString    m_label;
         std::string m_icon_name;
@@ -46,6 +48,8 @@ class TopBarItemsCtrl : public wxControl
 
         void sys_color_changed();
         void SetBitmapBundle(wxBitmapBundle bmp_bundle) { m_bmp_bundle = bmp_bundle; }
+
+        bool SetFont(const wxFont& font) override;
     };
 
     class ButtonWithPopup : public Button

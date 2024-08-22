@@ -76,11 +76,13 @@ void TextInput::Create(wxWindow *     parent,
         ProcessEventLocally(e);
         e.Skip();
     });
-    text_ctrl->Bind(wxEVT_TEXT_ENTER, [this](auto &e) {
-        OnEdit();
-        e.SetId(GetId());
-        ProcessEventLocally(e);
-    });
+    if (style & wxTE_PROCESS_ENTER) {
+        text_ctrl->Bind(wxEVT_TEXT_ENTER, [this](auto& e) {
+            OnEdit();
+            e.SetId(GetId());
+            ProcessEventLocally(e);
+        });
+    }
     text_ctrl->Bind(wxEVT_TEXT, [this](auto &e) {
         e.SetId(GetId());
         ProcessEventLocally(e);
@@ -97,6 +99,7 @@ void TextInput::Create(wxWindow *     parent,
         });
     }
     messureSize();
+    is_completed = true;
 }
 
 void TextInput::SetLabel(const wxString& label)
@@ -204,9 +207,23 @@ void TextInput::Rescale()
 bool TextInput::SetFont(const wxFont& font)
 {
     bool ret = StaticBox::SetFont(font);
-    if (text_ctrl)
-        return ret && text_ctrl->SetFont(font);
-    return ret;
+    bool text_ctrl_ret = true;
+    if (text_ctrl) {
+        text_ctrl_ret = text_ctrl->SetFont(font);
+
+        if (is_completed) {
+            wxSize sz   = text_ctrl->GetSize();
+            text_ctrl->SetMinSize(0.3 * sz);// invalidate min size to correct process the GetBestSize()
+            wxSize bsz  = text_ctrl->GetBestSize();
+            if (bsz.y != sz.y) {
+                text_ctrl->SetSize(bsz);
+                messureSize();
+                Refresh();
+            }
+        }
+    }
+
+    return ret && text_ctrl_ret;
 }
 
 bool TextInput::Enable(bool enable)

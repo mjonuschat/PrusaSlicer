@@ -79,6 +79,30 @@ void WidgetsConfig::update_fonts(const wxFont& normal_font, const int em)
     m_em_unit = em;
 }
 
+static void set_new_font(wxWindow* win, bool apply_for_children)
+{
+    wxWindowList& children = win->GetChildren();
+    if (apply_for_children) {
+        for (auto child : children)
+            set_new_font(child, apply_for_children);
+    }
+
+    if (win->GetFont().GetWeight() == wxFONTWEIGHT_BOLD)
+        win->SetFont(w_config()->bold_font());
+    else
+        win->SetFont(w_config()->normal_font());
+
+    if (apply_for_children && !children.IsEmpty()) {
+        win->Layout();
+        win->Refresh();
+    }
+}
+
+void WidgetsConfig::force_fonts_update(wxWindow* win, bool apply_for_children/* = false*/)
+{
+    set_new_font(win, apply_for_children);
+}
+
 void WidgetsConfig::init_ui_colours()
 {
     m_color_label_modified  = get_label_default_clr_modified();
@@ -228,6 +252,21 @@ bool WidgetsConfig::set_mode_palette(const std::vector<wxColour>& palette)
     return to_save;
 }
 
+/* Function for getting of em_unit value from correct parent.
+ * In most of cases it is m_em_unit value from WidgetsConfig,
+ * but for Dialogs it's its own value.
+ * This value will be used to correct rescale after moving between
+ * Displays with different HDPI */
+int WidgetsConfig::em_unit(wxWindow* win) const
+{
+    if (win)
+    {
+        wxTopLevelWindow* toplevel = w_config()->find_toplevel_parent(win);
+        float sf = toplevel->GetDPIScaleFactor();
+        return int(sf * 10);
+    }
+    return m_em_unit;
+}
 
 [[maybe_unused]] static bool is_default(wxWindow* win)
 {

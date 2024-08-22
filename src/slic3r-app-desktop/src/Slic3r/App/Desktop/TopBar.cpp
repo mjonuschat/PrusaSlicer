@@ -1,7 +1,6 @@
 #include "TopBar.hpp"
 #include "TopBarMenus.hpp"
 
-#include <Slic3r/App/WX/wxExtensions.hpp>
 #include <Slic3r/App/WX/WidgetsConfig.hpp>
 #include <Slic3r/App/WX/BitmapGetters.hpp>
 #include <Slic3r/App/WX/StringConversions.hpp>
@@ -41,22 +40,7 @@ TopBarItemsCtrl::Button::Button(wxWindow* parent, const wxString& label, const s
 ,m_has_down_arrow(!icon_name.empty())
 ,m_dd_bmp_bundle(m_has_down_arrow ? *get_bmp_bundle("drop_down") : wxBitmapBundle())
 {
-    int btn_margin = em_unit(this);
-    int x, y;
-    GetTextExtent(label.IsEmpty() ? "a" : label, &x, &y);
-    wxSize size(x + 4 * btn_margin, y + int(1.5 * btn_margin));
-    if (icon_name.empty())
-        this->SetMinSize(size);
-    else if (label.IsEmpty()) {
-        const int btn_side = size.y;
-        this->SetMinSize(wxSize(btn_side, btn_side));
-    }
-    else
-#ifdef _WIN32
-        this->SetMinSize(wxSize(-1, size.y));
-#else
-        this->SetMinSize(wxSize(size.x + px_cnt, size.y));
-#endif
+    messure_min_size();
 
     //button events
     Bind(wxEVT_SET_FOCUS,    [this](wxFocusEvent& event) { set_hovered(true ); event.Skip(); });
@@ -74,6 +58,26 @@ TopBarItemsCtrl::Button::Button(wxWindow* parent, const wxString& label, const s
         GetEventHandler()->AddPendingEvent(evt);
         event.Skip();
     });
+}
+
+void TopBarItemsCtrl::Button::messure_min_size()
+{
+    int btn_margin = w_config()->em_unit(this);
+    int x, y;
+    GetTextExtent(m_label.IsEmpty() ? "a" : m_label, &x, &y);
+    wxSize size(x + 4 * btn_margin, y + int(1.5 * btn_margin));
+    if (m_icon_name.empty())
+        this->SetMinSize(size);
+    else if (m_label.IsEmpty()) {
+        const int btn_side = size.y;
+        this->SetMinSize(wxSize(btn_side, btn_side));
+    }
+    else
+#ifdef _WIN32
+        this->SetMinSize(wxSize(-1, size.y));
+#else
+        this->SetMinSize(wxSize(size.x + m_px_cnt, size.y));
+#endif
 }
 
 void TopBarItemsCtrl::Button::set_selected(bool selected)
@@ -114,7 +118,7 @@ void TopBarItemsCtrl::Button::render()
     const wxRect rc(GetSize());
     wxPaintDC dc(this);
 
-    int em = em_unit(this);
+    int em = w_config()->em_unit(this);
 
     // Draw def rect with rounded corners
 
@@ -170,6 +174,13 @@ void TopBarItemsCtrl::Button::sys_color_changed()
     m_foreground_color = w_config()->get_label_clr_default();
 }
 
+bool TopBarItemsCtrl::Button::SetFont(const wxFont& font)
+{
+    bool ret = wxPanel::SetFont(font);
+    messure_min_size();
+    return ret;
+}
+
 const int login_icon_sz = 24;
 
 TopBarItemsCtrl::ButtonWithPopup::ButtonWithPopup(wxWindow* parent, const wxString& label, const std::string& icon_name, const int px_cnt, wxSize size)
@@ -197,7 +208,7 @@ void TopBarItemsCtrl::ButtonWithPopup::SetLabel(const wxString& label)
         return;
     }
 
-    const int em = em_unit(this);
+    const int em = w_config()->em_unit(this);
 
     const int label_width   = GetTextExtent(text).GetWidth();
     int       width_margins = int(0.1 * em * (m_px_cnt + 16 + 25));
@@ -205,13 +216,13 @@ void TopBarItemsCtrl::ButtonWithPopup::SetLabel(const wxString& label)
     this->SetMinSize(wxSize(label_width + width_margins, btn_height));
 
     if (m_fixed_width != wxDefaultCoord) {
-        const int text_width = m_fixed_width * em_unit(this) - width_margins;
+        const int text_width = m_fixed_width * w_config()->em_unit(this) - width_margins;
         if (label_width > text_width) {
             wxWindowDC wdc(this);
             text = wxControl::Ellipsize(text, wdc, wxELLIPSIZE_END, text_width);
 
-            SetMinSize(wxSize(m_fixed_width * em_unit(this), btn_height));
-            SetSize(wxSize(m_fixed_width * em_unit(this), btn_height));
+            SetMinSize(wxSize(m_fixed_width * w_config()->em_unit(this), btn_height));
+            SetSize(wxSize(m_fixed_width * w_config()->em_unit(this), btn_height));
         }
     }
 
@@ -255,8 +266,8 @@ void TopBarItemsCtrl::CreateSearch()
     // Linux specific: If wxDefaultSize is used in constructor and than set just maxSize, 
     // than this max size will be used as a default control size and can't be resized.
     // So, set initial size for some minimum value
-    m_search = new WX::Widgets::TextInput(this, /*wxGetApp().searcher().default_string*/"Input", "", "search", wxDefaultPosition, wxSize(2 * em_unit(this), -1), wxTE_PROCESS_ENTER);
-    m_search->SetMaxSize(wxSize(/*42*/30*em_unit(this), -1));
+    m_search = new WX::Widgets::TextInput(this, /*wxGetApp().searcher().default_string*/"Input", "", "search", wxDefaultPosition, wxSize(2 * w_config()->em_unit(this), -1), wxTE_PROCESS_ENTER);
+    m_search->SetMaxSize(wxSize(/*42*/30*w_config()->em_unit(this), -1));
     w_config()->UpdateDarkUI(m_search);
 /*
     m_search->Bind(wxEVT_TEXT, [](wxEvent& e)
@@ -317,7 +328,7 @@ void TopBarItemsCtrl::UpdateSearchSizeAndPosition()
     if (!m_workspace_btn || !m_account_btn)
         return;
 
-    int em = em_unit(this);
+    int em = w_config()->em_unit(this);
 
     wxWindow* parent_win = GetParent()->GetParent();
     int top_win_without_sidebar = parent_win->GetSize().GetWidth() - 42 * em;
@@ -349,20 +360,20 @@ void TopBarItemsCtrl::UpdateSearch(const wxString& search)
 
 void TopBarItemsCtrl::update_margins()
 {
-    int em = em_unit(this);
+    int em = w_config()->em_unit(this);
     m_btn_margin  = std::lround(0.9 * em);
 }
 
 wxPoint TopBarItemsCtrl::ButtonWithPopup::get_popup_pos()
 {
     wxPoint pos = this->GetPosition();
-    pos.y += this->GetSize().GetHeight() + int(0.2 * em_unit(this));
+    pos.y += this->GetSize().GetHeight() + int(0.2 * w_config()->em_unit(this));
     return pos;
 }
 
 void TopBarItemsCtrl::update_btns_width()
 {
-    int em = em_unit(this);
+    int em = w_config()->em_unit(this);
 
     m_btns_width = 2 * m_btn_margin;
     if (m_menu_btn)
@@ -472,7 +483,7 @@ TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent, TopBarMenus* menus/* = nullpt
 
     m_sizer->Add(right_sizer, 0, wxALIGN_CENTER_VERTICAL);
 
-    m_sizer->SetItemMinSize(1, wxSize(42 * em_unit(this), -1));
+    m_sizer->SetItemMinSize(1, wxSize(42 * w_config()->em_unit(this), -1));
 
     update_btns_width();
 }
@@ -496,7 +507,7 @@ void TopBarItemsCtrl::Rescale()
 {
     update_margins();
 
-    int em = em_unit(this);
+    int em = w_config()->em_unit(this);
     m_search->SetMinSize(wxSize(4 * em, -1));
     m_search->SetMaxSize(wxSize(42 * em, -1));
     m_search->Rescale();

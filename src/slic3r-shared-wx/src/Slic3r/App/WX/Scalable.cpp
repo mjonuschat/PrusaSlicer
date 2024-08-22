@@ -1,5 +1,4 @@
 #include "Scalable.hpp"
-#include "wxExtensions.hpp"
 #include "BitmapGetters.hpp"
 #include "StringConversions.hpp"
 #include "WidgetsConfig.hpp"
@@ -123,12 +122,12 @@ ScalableButton::ScalableButton( wxWindow *          parent,
     if (!icon_name.empty()) {
         SetBitmap(*get_bmp_bundle(icon_name, width, height));
         if (!label.empty())
-            SetBitmapMargins(int(0.5* em_unit(parent)), 0);
+            SetBitmapMargins(int(0.5* w_config()->em_unit(parent)), 0);
     }
 
     if (size != wxDefaultSize)
     {
-        const int em = em_unit(parent);
+        const int em = w_config()->em_unit(parent);
         m_width = size.x/em;
         m_height= size.y/em;
     }
@@ -210,7 +209,7 @@ void ScalableButton::sys_color_changed()
     if (!m_disabled_icon_name.empty())
         SetBitmapDisabled(*get_bmp_bundle(m_disabled_icon_name, m_bmp_width, m_bmp_height));
     if (!GetLabelText().IsEmpty())
-        SetBitmapMargins(int(0.5 * em_unit(m_parent)), 0);
+        SetBitmapMargins(int(0.5 * w_config()->em_unit(m_parent)), 0);
 }
 
 }

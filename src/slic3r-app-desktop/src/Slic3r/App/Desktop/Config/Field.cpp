@@ -13,7 +13,6 @@
 
 #include <Slic3r/App/WX/StringConversions.hpp>
 #include <Slic3r/App/WX/WidgetsConfig.hpp>
-#include <Slic3r/App/WX/wxExtensions.hpp>
 #include <Slic3r/App/WX/MsgDialog.hpp>
 #include <Slic3r/App/WX/format.hpp>
 #include <Slic3r/App/WX/Widgets/BitmapComboBox.hpp>
@@ -96,7 +95,7 @@ void Field::PostInitialize()
 	}
 
     // initialize m_unit_value
-    m_em_unit = WX::em_unit(m_parent);
+    m_em_unit = WX::w_config()->em_unit(m_parent);
     parent_is_custom_ctrl = dynamic_cast<OG_CustomCtrl*>(m_parent) != nullptr;
 
 	BUILD();
@@ -393,7 +392,7 @@ void Field::get_value_by_opt_type(wxString& str, const bool check_value/* = true
 void Field::msw_rescale()
 {
 	// update em_unit value
-	m_em_unit = WX::em_unit(m_parent);
+	m_em_unit = WX::w_config()->em_unit(m_parent);
 }
 
 void Field::sys_color_changed()

@@ -82,6 +82,8 @@ protected:
 
     void sendSpinEvent();
 
+    bool          is_completed{ false };
+
     DECLARE_EVENT_TABLE()
 };
 
