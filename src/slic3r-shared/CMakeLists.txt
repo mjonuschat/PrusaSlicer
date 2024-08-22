@@ -90,6 +90,7 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/Preset/PresetInteractor.hpp
         src/Slic3r/Biz/Preset/PresetInteractorProjectContext.hpp
         src/Slic3r/Biz/Preset/PresetInteractorConfigContainerContext.hpp
+        src/Slic3r/Biz/Preset/PresetInteractorConfigContainerContext.cpp
         src/Slic3r/Biz/Preset/PresetState.hpp
 
         src/Slic3r/Memory.hpp
