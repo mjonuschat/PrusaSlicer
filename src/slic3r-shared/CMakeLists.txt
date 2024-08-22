@@ -94,6 +94,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/Preset/PresetState.hpp
         src/Slic3r/Biz/Preset/PresetHints.hpp
         src/Slic3r/Biz/Preset/PresetHints.cpp
+        src/Slic3r/Biz/Preset/AbstractConfigManipulation.hpp
+        src/Slic3r/Biz/Preset/AbstractConfigManipulation.cpp
 
         src/Slic3r/Memory.hpp
 
