@@ -1,7 +1,7 @@
 #include "Highlighter.hpp"
 #include "WidgetsConfig.hpp"
 
-//#include "OG_CustomCtrl.hpp"
+#include <wx/panel.h>
 
 namespace Slic3r::App::WX {
 
@@ -69,7 +69,7 @@ void HighlighterForWx::bind_timer(wxWindow* owner)
 }
 
 // using OG_CustomCtrl where arrow will be rendered and flag indicated "show/hide" state of this arrow
-void HighlighterForWx::init(std::pair<OG_CustomCtrl*, bool*> params)
+void HighlighterForWx::init(std::pair<wxPanel*, bool*> params)
 {
     invalidate();
     if (!Highlighter::init(!params.first && !params.second))
@@ -79,7 +79,7 @@ void HighlighterForWx::init(std::pair<OG_CustomCtrl*, bool*> params)
     m_show_blink_ptr = params.second;
 
     *m_show_blink_ptr = true;
-//    m_custom_ctrl->Refresh();
+    m_custom_ctrl->Refresh();
 }
 
 // - using a BlinkingBitmap. Change state of this bitmap

@@ -19,5 +19,7 @@ wxString double_to_string(double const value, const int max_precision = 4);
 
 wxString get_wraped_wxString(const wxString& text_in, size_t line_len = 80);
 
+static wxString dots("…", wxConvUTF8);
+
 }
 
