@@ -17,6 +17,9 @@ set(SLIC3R_APP_DESKTOP_FILES
         src/Slic3r/App/Desktop/Config/OptionsGroup.hpp
         src/Slic3r/App/Desktop/Config/OG_CustomCtrl.cpp
         src/Slic3r/App/Desktop/Config/OG_CustomCtrl.hpp
+
+        src/Slic3r/App/Desktop/Preset/SubstitutionManager.cpp
+        src/Slic3r/App/Desktop/Preset/SubstitutionManager.hpp
 )
 
 # Create a slic3r-app-desktop executable
