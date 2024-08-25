@@ -20,6 +20,20 @@ set(SLIC3R_APP_DESKTOP_FILES
 
         src/Slic3r/App/Desktop/Preset/SubstitutionManager.cpp
         src/Slic3r/App/Desktop/Preset/SubstitutionManager.hpp
+        src/Slic3r/App/Desktop/Preset/EditorPage.cpp
+        src/Slic3r/App/Desktop/Preset/EditorPage.hpp
+        src/Slic3r/App/Desktop/Preset/AbstractEditor.cpp
+        src/Slic3r/App/Desktop/Preset/AbstractEditor.hpp
+        src/Slic3r/App/Desktop/Preset/EditorPrint.cpp
+        src/Slic3r/App/Desktop/Preset/EditorPrint.hpp
+        src/Slic3r/App/Desktop/Preset/EditorFilament.cpp
+        src/Slic3r/App/Desktop/Preset/EditorFilament.hpp
+        src/Slic3r/App/Desktop/Preset/EditorSLAPrint.cpp
+        src/Slic3r/App/Desktop/Preset/EditorSLAPrint.hpp
+        src/Slic3r/App/Desktop/Preset/EditorSLAMaterial.cpp
+        src/Slic3r/App/Desktop/Preset/EditorSLAMaterial.hpp
+        src/Slic3r/App/Desktop/Preset/EditorPrinter.cpp
+        src/Slic3r/App/Desktop/Preset/EditorPrinter.hpp
 )
 
 # Create a slic3r-app-desktop executable

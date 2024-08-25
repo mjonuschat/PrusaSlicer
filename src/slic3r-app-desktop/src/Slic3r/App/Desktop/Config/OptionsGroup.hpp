@@ -37,6 +37,10 @@
 
 namespace Slic3r::App::Desktop::Config {
 
+class ConfigOptionsGroup;
+using ConfigOptionsGroupShp = std::shared_ptr<ConfigOptionsGroup>;
+using ConfigOptionsGroupWkp = std::weak_ptr<ConfigOptionsGroup>;
+
 // Thrown if the building of a parameter page is canceled.
 class UIBuildCanceled : public std::exception {};
 class OG_CustomCtrl;
