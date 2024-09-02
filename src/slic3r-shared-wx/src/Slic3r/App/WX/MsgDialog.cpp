@@ -349,14 +349,14 @@ InfoDialog::InfoDialog(wxWindow* parent, const wxString &title, const wxString& 
 
 MessageDialog::MessageDialog(wxWindow* parent,
                              const wxString& message,
-                             const wxString& caption = wxEmptyString,
-                             long style = wxOK)
+                             const wxString& caption,
+                             long style)
 : wxMessageDialog(parent, get_wraped_wxString(message), caption, style) {}
 
 RichMessageDialog::RichMessageDialog(wxWindow* parent,
                                      const wxString& message,
-                                     const wxString& caption = wxEmptyString,
-                                     long style = wxOK)
+                                     const wxString& caption,
+                                     long style)
 : wxRichMessageDialog(parent, get_wraped_wxString(message), caption, style)
 {
     this->SetEscapeId(wxID_CANCEL);

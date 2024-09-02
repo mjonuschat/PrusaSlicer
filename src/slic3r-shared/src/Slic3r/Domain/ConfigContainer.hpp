@@ -16,6 +16,9 @@ class ConfigContainer : public ObjectBase
 {
 public:
 
+    PrinterTechnology print_technology() const { return m_print_technology; }
+    const DynamicPrintConfig& get_print_config() const { return m_print_config; }
+
 private:
     using BedList = std::vector<std::unique_ptr<Bed>>;
 

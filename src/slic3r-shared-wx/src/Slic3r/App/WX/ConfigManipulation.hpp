@@ -6,7 +6,7 @@
 
 //	 Class inherited from AbstractConfigManipulation to show warnings using wxWidgets
 
-#include "slic3r/Biz/Preset/AbstractConfigManipulation.hpp"
+#include "Slic3r/Biz/Preset/AbstractConfigManipulation.hpp"
 
 class wxWindow;
 

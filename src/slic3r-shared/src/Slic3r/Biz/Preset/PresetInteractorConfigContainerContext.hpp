@@ -17,7 +17,7 @@ struct PresetInteractorConfigContainerContext
     PresetBundleRuntime         preset_bundle_runtime;
     std::string                 ph_printer_name                 { std::string() };
 
-    PrinterTechnology   printer_technology() { return printer.edited_preset.printer_technology(); }
+    PrinterTechnology   printer_technology() const { return printer.edited_preset.printer_technology(); }
 
     DynamicPrintConfig  full_config() const;
 

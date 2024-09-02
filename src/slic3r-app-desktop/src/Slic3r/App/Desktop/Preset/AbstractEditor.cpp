@@ -49,6 +49,7 @@
 #include <wx/imaglist.h>
 #include <wx/settings.h>
 #include <wx/wupdlock.h>
+#include <wx/bookctrl.h>
 
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/replace.hpp>

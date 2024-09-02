@@ -20,6 +20,8 @@ bool DesktopApp::OnInit()
 
     init_paths();
     m_workbench.load_configs();
+    m_project_interactor = std::make_unique<Biz::ProjectInteractor>(m_workbench);
+    m_project_interactor->new_project();
 
     //m_workbench.load_project("/Users/jan.bartipan/work/Models/3DBenchy.3mf");
 
