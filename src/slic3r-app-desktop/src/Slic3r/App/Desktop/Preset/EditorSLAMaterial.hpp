@@ -23,7 +23,7 @@ namespace Slic3r::App::Desktop::Preset {
 class EditorSLAMaterial : public AbstractEditor
 {
 public:
-    EditorSLAMaterial(wxWindow* parent);
+    EditorSLAMaterial(wxWindow* parent, Biz::Preset::PresetInteractor& preset_interactor);
     ~EditorSLAMaterial() {}
 
 private:

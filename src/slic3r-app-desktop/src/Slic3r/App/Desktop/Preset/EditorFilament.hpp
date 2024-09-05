@@ -23,8 +23,8 @@ namespace Slic3r::App::Desktop::Preset {
 class EditorFilament : public AbstractEditor
 {
 public:
-    EditorFilament(wxWindow* parent);
-    ~EditorFilament() {}
+    EditorFilament(wxWindow* parent, Biz::Preset::PresetInteractor& preset_interactor);
+    ~EditorFilament() = default;
 
 private:
     void    build() override;

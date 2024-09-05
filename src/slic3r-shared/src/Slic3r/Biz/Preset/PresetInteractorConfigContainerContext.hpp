@@ -21,6 +21,8 @@ struct PresetInteractorConfigContainerContext
 
     DynamicPrintConfig  full_config() const;
 
+    PresetState& preset_state(Slic3r::Preset::Type preset_type, size_t preset_index);
+
 private:
     DynamicPrintConfig  full_fff_config() const;
     DynamicPrintConfig  full_sla_config() const;

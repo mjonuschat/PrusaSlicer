@@ -72,12 +72,14 @@ void EditorSLAPrint::build_sla_support_params(const std::vector<SamePair<std::st
     add_options_into_line(optgroup, prefixes, "support_max_pillar_link_distance");
 }
 
-EditorSLAPrint::EditorSLAPrint(wxWindow* parent) :
-    AbstractEditor(parent, _L("Print Settings"), Slic3r::Preset::TYPE_SLA_PRINT) {}
+EditorSLAPrint::EditorSLAPrint(wxWindow* parent, Biz::Preset::PresetInteractor& preset_interactor) :
+    AbstractEditor(parent, _L("Print Settings"), Slic3r::Preset::TYPE_SLA_PRINT, preset_interactor)
+{
+    m_config_interactor = std::make_unique<Biz::Preset::PresetConfigInteractor>(preset_interactor, Slic3r::Preset::TYPE_SLA_PRINT, 0);
+}
 
 void EditorSLAPrint::build()
 {
-    m_state = &m_ccc->print;
     load_initial_data();
 
     auto page = add_options_page(L("Layers and perimeters"), "layers");
@@ -155,13 +157,13 @@ void EditorSLAPrint::update_description_lines()
 
     if (m_active_page && m_active_page->title() == "Supports")
     {
-        bool is_visible = m_config->def()->get("support_object_elevation")->mode <= m_mode;
+        bool is_visible = config().def()->get("support_object_elevation")->mode <= m_mode;
         if (m_support_object_elevation_description_line)
         {
             m_support_object_elevation_description_line->Show(is_visible);
             if (is_visible)
             {
-                bool elev = !m_config->opt_bool("pad_enable") || !m_config->opt_bool("pad_around_object");
+                bool elev = !config().opt_bool("pad_enable") || !config().opt_bool("pad_around_object");
                 m_support_object_elevation_description_line->SetText(elev ? "" :
                     WX::format_wxstr(_L("\"%1%\" is disabled because \"%2%\" is on in \"%3%\" category.\n"
                         "To enable \"%1%\", please switch off \"%2%\"")
@@ -174,7 +176,7 @@ void EditorSLAPrint::update_description_lines()
 void EditorSLAPrint::toggle_options()
 {
     if (m_active_page)
-        m_config_manipulation.toggle_print_sla_options(m_config);
+        m_config_manipulation.toggle_print_sla_options(*m_config_interactor);
 }
 
 void EditorSLAPrint::update()

@@ -95,8 +95,13 @@ PresetDependencies::PresetDependencies(Slic3r::Preset::Type type):
     }
 }
 
-AbstractEditor::AbstractEditor(wxWindow* parent, const wxString& title, Slic3r::Preset::Type type) :
-    m_parent(parent), m_type(type), m_title(title)
+AbstractEditor::AbstractEditor(
+    wxWindow* parent,
+    const wxString& title,
+    Slic3r::Preset::Type type,
+    Biz::Preset::PresetInteractor& preset_interactor
+)
+    : m_parent(parent), m_type(type), m_title(title), m_preset_interactor(preset_interactor)
 {
     Create(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, /*wxBK_LEFT | */wxTAB_TRAVERSAL/*, name*/);
     this->SetFont(WX::w_config()->normal_font());
@@ -120,7 +125,7 @@ void AbstractEditor::init(  Biz::Preset::PresetInteractorConfigContainerContext*
                             Biz::Preset::PresetInteractor* preset_interactor,
                             PresetBundle* preset_bundle)
 {
-    m_ccc = ccc;
+//RMV    m_ccc = ccc;
 #ifdef __WINDOWS__
     SetDoubleBuffered(true);
 #endif //__WINDOWS__
@@ -339,8 +344,7 @@ void AbstractEditor::add_scaled_bitmap(wxWindow* parent,
 
 void AbstractEditor::load_initial_data()
 {
-    m_config = &m_state->edited_preset.config;
-    bool has_parent = m_state->selected_preset_parent != nullptr;
+    bool has_parent = m_config_interactor->preset_state().selected_preset_parent != nullptr;
     m_bmp_non_system = has_parent ? &m_bmp_value_unlock : &m_bmp_white_bullet;
     m_ttg_non_system = has_parent ? &m_ttg_value_unlock : &m_ttg_white_bullet_ns;
     m_tt_non_system  = has_parent ? &m_tt_value_unlock  : &m_ttg_white_bullet_ns;
@@ -370,7 +374,7 @@ PageShp AbstractEditor::add_options_page(const wxString& title, const std::strin
     if (!is_extruder_pages)
         m_pages.push_back(page);
 
-    page->set_config(m_config);
+    page->set_config_interactor(m_config_interactor.get());
     return page;
 }
 
@@ -578,8 +582,9 @@ void AbstractEditor::update_changed_ui()
         return;
 
     const bool deep_compare = m_type != Slic3r::Preset::TYPE_FILAMENT;
-    auto dirty_options = m_state->current_dirty_options(deep_compare);
-    auto nonsys_options = m_state->current_different_from_parent_options(deep_compare);
+    const auto& preset_state = m_config_interactor->preset_state();
+    auto dirty_options = preset_state.current_dirty_options(deep_compare);
+    auto nonsys_options = preset_state.current_different_from_parent_options(deep_compare);
     if (m_type == Slic3r::Preset::TYPE_PRINTER) {
         {
             auto check_bed_custom_options = [](std::vector<std::string>& keys) {
@@ -620,14 +625,19 @@ void AbstractEditor::init_options_list()
 {
     m_options_list.clear();
 
-    for (const std::string& opt_key : m_config->keys())
+    for (const std::string& opt_key : config().keys())
         emplace_option(opt_key, m_type != Slic3r::Preset::TYPE_FILAMENT && !PresetCollection::is_independent_from_extruder_number_option(opt_key));
 }
 
 template<class T>
-void add_correct_opts_to_options_list(const std::string &opt_key, std::map<std::string, int>& map, AbstractEditor*tab, int value)
+void add_correct_opts_to_options_list(
+    const std::string& opt_key,
+    std::map<std::string, int>& map,
+    const DynamicPrintConfig& config,
+    int value
+)
 {
-    T *opt_cur = static_cast<T*>(tab->config()->option(opt_key));
+    const T *opt_cur = static_cast<const T*>(config.option(opt_key));
     for (size_t i = 0; i < opt_cur->values.size(); i++)
         map.emplace(opt_key + "#" + std::to_string(i), value);
 }
@@ -635,16 +645,16 @@ void add_correct_opts_to_options_list(const std::string &opt_key, std::map<std::
 void AbstractEditor::emplace_option(const std::string& opt_key, bool respect_vec_values/* = false*/)
 {
     if (respect_vec_values) {
-        switch (m_config->option(opt_key)->type())
+        switch (config().option(opt_key)->type())
         {
-        case coInts:	add_correct_opts_to_options_list<ConfigOptionInts		>(opt_key, m_options_list, this, m_opt_status_value);	break;
-        case coBools:	add_correct_opts_to_options_list<ConfigOptionBools		>(opt_key, m_options_list, this, m_opt_status_value);	break;
-        case coFloats:	add_correct_opts_to_options_list<ConfigOptionFloats		>(opt_key, m_options_list, this, m_opt_status_value);	break;
-        case coStrings:	add_correct_opts_to_options_list<ConfigOptionStrings	>(opt_key, m_options_list, this, m_opt_status_value);	break;
-        case coPercents:add_correct_opts_to_options_list<ConfigOptionPercents	>(opt_key, m_options_list, this, m_opt_status_value);	break;
-        case coPoints:	add_correct_opts_to_options_list<ConfigOptionPoints		>(opt_key, m_options_list, this, m_opt_status_value);	break;
-        case coFloatsOrPercents:	add_correct_opts_to_options_list<ConfigOptionFloatsOrPercents		>(opt_key, m_options_list, this, m_opt_status_value);	break;
-        case coEnums:	add_correct_opts_to_options_list<ConfigOptionEnumsGeneric>(opt_key, m_options_list, this, m_opt_status_value);	break;
+        case coInts:	add_correct_opts_to_options_list<ConfigOptionInts		>(opt_key, m_options_list, config(), m_opt_status_value);	break;
+        case coBools:	add_correct_opts_to_options_list<ConfigOptionBools		>(opt_key, m_options_list, config(), m_opt_status_value);	break;
+        case coFloats:	add_correct_opts_to_options_list<ConfigOptionFloats		>(opt_key, m_options_list, config(), m_opt_status_value);	break;
+        case coStrings:	add_correct_opts_to_options_list<ConfigOptionStrings	>(opt_key, m_options_list, config(), m_opt_status_value);	break;
+        case coPercents:add_correct_opts_to_options_list<ConfigOptionPercents	>(opt_key, m_options_list, config(), m_opt_status_value);	break;
+        case coPoints:	add_correct_opts_to_options_list<ConfigOptionPoints		>(opt_key, m_options_list, config(), m_opt_status_value);	break;
+        case coFloatsOrPercents:	add_correct_opts_to_options_list<ConfigOptionFloatsOrPercents		>(opt_key, m_options_list, config(), m_opt_status_value);	break;
+        case coEnums:	add_correct_opts_to_options_list<ConfigOptionEnumsGeneric>(opt_key, m_options_list, config(), m_opt_status_value);	break;
         default:		m_options_list.emplace(opt_key, m_opt_status_value);		break;
         }
     }
@@ -692,7 +702,7 @@ void AbstractEditor::update_changed_tree_ui()
             }
             if (page->title() == "Dependencies") {
                 if (m_type == Slic3r::Preset::TYPE_PRINTER) {
-                    sys_page = m_state->selected_preset_parent != nullptr;
+                    sys_page = m_config_interactor->preset_state().selected_preset_parent != nullptr;
                     modified_page = false;
                 } else {
                     if (m_type == Slic3r::Preset::TYPE_FILAMENT || m_type == Slic3r::Preset::TYPE_SLA_MATERIAL)
@@ -824,8 +834,8 @@ void AbstractEditor::update_tab_ui()
 void AbstractEditor::load_config(const DynamicPrintConfig& config)
 {
     bool modified = 0;
-    for(auto opt_key : m_config->diff(config)) {
-        m_config->set_key_value(opt_key, config.option(opt_key)->clone());
+    for(auto opt_key : this->config().diff(config)) {
+        m_config_interactor->set_config_value(opt_key, config.option(opt_key)->clone(), 0);
         modified = 1;
     }
     if (modified) {
@@ -982,7 +992,7 @@ void AbstractEditor::toggle_option(const std::string& opt_key, bool toggle, int 
 // and value can be some random value because in this case it will not been used
 void AbstractEditor::load_key_value(const std::string& opt_key, const boost::any& value, bool saved_value /*= false*/)
 {
-    if (!saved_value) OptionsGroup::change_opt_value(*m_config, opt_key, value);
+    if (!saved_value) OptionsGroup::change_opt_value(*m_config_interactor, opt_key, value);
     // Mark the print & filament enabled if they are compatible with the currently selected preset.
     if (opt_key == "compatible_printers" || opt_key == "compatible_prints") {
         // Don't select another profile if this profile happens to become incompatible.
@@ -1105,7 +1115,8 @@ void AbstractEditor::activate_option(const std::string& opt_key, const wxString&
 //!
 void AbstractEditor::cache_config_diff(const std::vector<std::string>& selected_options, const DynamicPrintConfig* config/* = nullptr*/)
 {
-    m_cache_config.apply_only(config ? *config : m_state->edited_preset.config, selected_options);
+    const auto& preset_state = m_config_interactor->preset_state();
+    m_cache_config.apply_only(config ? *config : preset_state.edited_preset.config, selected_options);
 }
 //!
 void AbstractEditor::apply_config_from_cache()
@@ -1116,7 +1127,9 @@ void AbstractEditor::apply_config_from_cache()
         was_applied = static_cast<EditorPrinter*>(this)->apply_extruder_cnt_from_cache();
 
     if (!m_cache_config.empty()) {
-        m_state->edited_preset.config.apply(m_cache_config);
+        m_config_interactor->modify_config([this](auto& config) {
+            config.apply(m_cache_config);
+        });
         m_cache_config.clear();
 
         was_applied = true;
@@ -1142,8 +1155,9 @@ void AbstractEditor::build_preset_description_line(ConfigOptionsGroup* optgroup)
 
 void AbstractEditor::update_preset_description_line()
 {
-    const Slic3r::Preset* parent = m_state->selected_preset_parent;
-    const Slic3r::Preset& preset = m_state->edited_preset;
+    const auto& state = m_config_interactor->preset_state();
+    const Slic3r::Preset* parent = state.selected_preset_parent;
+    const Slic3r::Preset& preset = state.edited_preset;
 
     wxString description_line;
 
@@ -1253,12 +1267,12 @@ void AbstractEditor::edit_custom_gcode(const t_config_option_key& opt_key)
 
 const std::string& AbstractEditor::get_custom_gcode(const t_config_option_key& opt_key)
 {
-    return m_config->opt_string(opt_key);
+    return config().opt_string(opt_key);
 }
 
 void AbstractEditor::set_custom_gcode(const t_config_option_key& opt_key, const std::string& value)
 {
-    DynamicPrintConfig new_conf = *m_config;
+    DynamicPrintConfig new_conf = config();
     new_conf.set_key_value(opt_key, new ConfigOptionString(value));
     load_config(new_conf);
 }
@@ -1335,7 +1349,8 @@ void AbstractEditor::validate_custom_gcode_cb(const wxString& title, const t_con
 
 bool AbstractEditor::is_prusa_printer() const
 {
-    std::string printer_model = m_ccc->printer.edited_preset.config.opt_string("printer_model");
+    std::string printer_model = m_preset_interactor.selected_config_container_context()
+                                    .printer.edited_preset.config.opt_string("printer_model");
     return printer_model == "SL1" || printer_model == "SL1S" || printer_model == "M1";
 }
 
@@ -1351,7 +1366,8 @@ void AbstractEditor::update_ui_items_related_on_parent_preset(const Slic3r::Pres
 // Initialize the UI from the current preset
 void AbstractEditor::load_current_preset()
 {
-    const Slic3r::Preset& preset = m_state->edited_preset;
+    const auto& state = m_config_interactor->preset_state();
+    const auto& preset = state.edited_preset;
 
     update();
     if (m_type == Slic3r::Preset::TYPE_PRINTER) {
@@ -1368,7 +1384,7 @@ void AbstractEditor::load_current_preset()
     // Reload preset pages with the new configuration values.
     reload_config();
 
-    update_ui_items_related_on_parent_preset(m_state->selected_preset_parent);
+    update_ui_items_related_on_parent_preset(state.selected_preset_parent);
 
     {
         // checking out if this Tab exists till this moment
@@ -1377,15 +1393,15 @@ void AbstractEditor::load_current_preset()
 
 //!        on_presets_changed();
         if (m_type == Slic3r::Preset::TYPE_PRINTER) {
-            if (m_state->edited_preset.printer_technology() == ptFFF) {
-                static_cast<EditorPrinter*>(this)->set_init_extruders_cnt(static_cast<const ConfigOptionFloats*>(m_state->selected_preset->config.option("nozzle_diameter"))->values.size());
-                const Slic3r::Preset* parent_preset = m_state->selected_preset_parent;
+            if (state.edited_preset.printer_technology() == ptFFF) {
+                static_cast<EditorPrinter*>(this)->set_init_extruders_cnt(static_cast<const ConfigOptionFloats*>(state.selected_preset->config.option("nozzle_diameter"))->values.size());
+                const Slic3r::Preset* parent_preset = state.selected_preset_parent;
                 static_cast<EditorPrinter*>(this)->set_sys_extruders_cnt(parent_preset == nullptr ? 0 :
                     static_cast<const ConfigOptionFloats*>(parent_preset->config.option("nozzle_diameter"))->values.size());
             }
         }
 
-        m_opt_status_value = (m_state->selected_preset_parent ? osSystemValue : 0) | osInitValue;
+        m_opt_status_value = (state.selected_preset_parent ? osSystemValue : 0) | osInitValue;
         init_options_list();
         update_visibility();
         update_sla_prusa_specific_visibility();
@@ -1709,7 +1725,7 @@ void AbstractEditor::compatible_widget_reload(PresetDependencies &deps)
     if (!field)
         return;
 
-    bool has_any = ! m_config->option<ConfigOptionStrings>(deps.key_list)->values.empty();
+    bool has_any = ! config().option<ConfigOptionStrings>(deps.key_list)->values.empty();
     has_any ? deps.btn->Enable() : deps.btn->Disable();
     CheckBox::SetValue(deps.checkbox, !has_any);
 

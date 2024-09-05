@@ -2,15 +2,25 @@
 
 #include <vector>
 
-#include "PresetRuntime.hpp"
+namespace Slic3r {
+class Preset;
+}
 
 namespace Slic3r::Biz::Preset {
 
+struct PresetRuntime
+{
+    const bool is_compatible;
+    const Slic3r::Preset* preset;
+};
+
 struct PresetBundleRuntime
 {
-    std::vector<PresetRuntime>                  print;
-    std::vector<std::vector<PresetRuntime>>     materials;
+    using PresetRuntimeList = std::vector<PresetRuntime>;
+    using PresetRuntimeListList = std::vector<PresetRuntimeList>;
 
+    PresetRuntimeList print;
+    PresetRuntimeListList materials;
 };
 
 }

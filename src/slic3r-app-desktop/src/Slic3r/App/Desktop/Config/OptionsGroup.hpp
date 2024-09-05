@@ -18,6 +18,7 @@
 #include <functional>
 
 #include "libslic3r/PrintConfig.hpp"
+#include "Slic3r/Biz/Preset/IConfigInteractor.hpp"
 
 #include "Field.hpp"
 
@@ -257,17 +258,14 @@ public:
 	static bool			is_option_without_field(const std::string& opt_key);
 
 	// Change option value in config
-	static void change_opt_value(DynamicPrintConfig& config, const t_config_option_key& opt_key, const boost::any& value, int opt_index = 0);
+	static void change_opt_value(Biz::Preset::IConfigInteractor& config_interactor, const t_config_option_key& opt_key, const boost::any& value, int opt_index = 0);
 };
 
 class ConfigOptionsGroup: public OptionsGroup {
 public:
-	ConfigOptionsGroup(	wxWindow* parent, const wxString& title, DynamicPrintConfig* config = nullptr, 
+	ConfigOptionsGroup(	wxWindow* parent, const wxString& title, Biz::Preset::IConfigInteractor* config_interactor = nullptr,
 						bool is_tab_opt = false, column_t extra_clmn = nullptr) :
-		OptionsGroup(parent, title, is_tab_opt, extra_clmn), m_config(config) {}
-	ConfigOptionsGroup(	wxWindow* parent, const wxString& title, ModelConfig* config, 
-						bool is_tab_opt = false, column_t extra_clmn = nullptr) :
-		OptionsGroup(parent, title, is_tab_opt, extra_clmn), m_config(&config->get()), m_modelconfig(config) {}
+		OptionsGroup(parent, title, is_tab_opt, extra_clmn), m_config_interactor(config_interactor) {}
 	ConfigOptionsGroup(	wxWindow* parent) :
 		OptionsGroup(parent, wxEmptyString, true, nullptr) {}
     ~ConfigOptionsGroup() override = default;
@@ -277,7 +275,7 @@ public:
 	const t_opt_map&   opt_map() const throw() { return m_opt_map; }
 
 	void 		set_config_category_and_type(const wxString &category, int type) { m_config_category = category; m_config_type = type; }
-    void        set_config(DynamicPrintConfig* config) { m_config = config; m_modelconfig = nullptr; }
+    //RMV void        set_config(DynamicPrintConfig* config) { m_config = config; m_modelconfig = nullptr; }
 	Option		get_option(const std::string& opt_key, int opt_index = -1);
 	Line		create_single_option_line(const std::string& title, const std::string& path = std::string(), int idx = -1) /*const*/{
 		Option option = get_option(title, idx);
@@ -319,9 +317,10 @@ private:
     // Reference to libslic3r config or ModelConfig::get(), non-owning pointer.
     // The reference is const, so that the spots which modify m_config are clearly
     // demarcated by const_cast and m_config_changed_callback is called afterwards.
-    const DynamicPrintConfig*	m_config {nullptr};
+    //RMV const DynamicPrintConfig*	m_config {nullptr};
     // If the config is modelconfig, then ModelConfig::touch() has to be called after value change.
-    ModelConfig*				m_modelconfig { nullptr };
+    //RMV ModelConfig*				m_modelconfig { nullptr };
+    Biz::Preset::IConfigInteractor* m_config_interactor {nullptr};
 	t_opt_map					m_opt_map;
     wxString                    m_config_category;
     int                         m_config_type;

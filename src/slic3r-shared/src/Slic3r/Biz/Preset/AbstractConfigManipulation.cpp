@@ -14,7 +14,7 @@ static std::string _u8L(const std::string& s) { return s; }
 
 namespace Slic3r::Biz::Preset {
 
-void AbstractConfigManipulation::apply(DynamicPrintConfig* config, DynamicPrintConfig* new_config)
+void AbstractConfigManipulation::apply(DynamicPrintConfig* config, const DynamicPrintConfig* new_config)
 {
     bool modified = false;
     for (auto opt_key : config->diff(*new_config)) {
@@ -35,7 +35,7 @@ void AbstractConfigManipulation::toggle_field(const std::string& opt_key, const 
     cb_toggle_field(opt_key, toggle, opt_index);
 }
 
-void AbstractConfigManipulation::update_print_fff_config(DynamicPrintConfig* config, DynamicPrintConfig* initial_config, const bool is_global_config)
+void AbstractConfigManipulation::update_print_fff_config(DynamicPrintConfig* config, const DynamicPrintConfig* initial_config, const bool is_global_config)
 {
     // #ys_FIXME_to_delete
     //! Temporary workaround for the correct updates of the TextCtrl (like "layer_height"):
@@ -433,6 +433,34 @@ void AbstractConfigManipulation::toggle_print_sla_options(DynamicPrintConfig* co
     toggle_field("pad_object_connector_width", zero_elev);
     toggle_field("pad_object_connector_penetration", zero_elev);
 }
+
+void AbstractConfigManipulation::apply(IConfigInteractor& config_interactor, const DynamicPrintConfig* new_config)
+{
+    config_interactor.modify_config([&](auto& config) { apply(&config, new_config); });
+}
+
+
+void AbstractConfigManipulation::update_print_fff_config(
+    IConfigInteractor& config_interactor,
+    const DynamicPrintConfig* initial_config,
+    const bool is_global_config
+)
+{
+    config_interactor.modify_config([&](auto& config) {
+        update_print_fff_config(&config, initial_config, is_global_config);
+    });
+}
+
+void AbstractConfigManipulation::toggle_print_fff_options(IConfigInteractor& config_interactor)
+{
+    config_interactor.modify_config([&](auto& config) { toggle_print_fff_options(&config); });
+}
+
+void AbstractConfigManipulation::toggle_print_sla_options(IConfigInteractor& config_interactor)
+{
+    config_interactor.modify_config([&](auto& config) { toggle_print_sla_options(&config); });
+}
+
 
 
 }

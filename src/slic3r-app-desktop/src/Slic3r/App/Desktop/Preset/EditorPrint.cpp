@@ -35,12 +35,14 @@ static wxString _L(const wxString& s) { return s; };
 
 namespace Slic3r::App::Desktop::Preset {
 
-EditorPrint::EditorPrint(wxWindow* parent) :
-    AbstractEditor(parent, _L("Print Settings"), Slic3r::Preset::TYPE_PRINT) {}
+EditorPrint::EditorPrint(wxWindow* parent, Biz::Preset::PresetInteractor& preset_interactor) :
+    AbstractEditor(parent, _L("Print Settings"), Slic3r::Preset::TYPE_PRINT, preset_interactor)
+{
+    m_config_interactor = std::make_unique<Biz::Preset::PresetConfigInteractor>(preset_interactor, Slic3r::Preset::TYPE_PRINT, 0);
+}
 
 void EditorPrint::build()
 {
-    m_state = &m_ccc->print;
     load_initial_data();
 
     auto page = add_options_page(L("Layers and perimeters"), "layers");
@@ -377,10 +379,11 @@ void EditorPrint::update_description_lines()
     if (m_active_page && m_active_page->title() == "Layers and perimeters" && 
         m_recommended_thin_wall_thickness_description_line && m_top_bottom_shell_thickness_explanation)
     {
+        const auto& ccc = m_preset_interactor.selected_config_container_context();
         m_recommended_thin_wall_thickness_description_line->SetText(
-            WX::from_u8(Biz::Preset::PresetHints::recommended_thin_wall_thickness(*m_ccc)));
+            WX::from_u8(Biz::Preset::PresetHints::recommended_thin_wall_thickness(ccc)));
         m_top_bottom_shell_thickness_explanation->SetText(
-            WX::from_u8(Biz::Preset::PresetHints::top_bottom_shell_thickness_explanation(*m_ccc)));
+            WX::from_u8(Biz::Preset::PresetHints::top_bottom_shell_thickness_explanation(ccc)));
     }
 
     if (m_active_page && m_active_page->title() == "Output options") {
@@ -402,7 +405,7 @@ void EditorPrint::toggle_options()
 {
     if (!m_active_page) return;
 
-    m_config_manipulation.toggle_print_fff_options(m_config);
+    m_config_manipulation.toggle_print_fff_options(*m_config_interactor);
 }
 
 void EditorPrint::update()
@@ -417,13 +420,13 @@ void EditorPrint::update()
     // NOTE: Initialization of the support_material_overhangs_queried value have to be processed just ones
     if (!m_config_manipulation.is_initialized_support_material_overhangs_queried())
     {
-        const Slic3r::Preset& selected_preset = *m_state->selected_preset;
+        const Slic3r::Preset& selected_preset = *m_config_interactor->preset_state().selected_preset;
         bool is_user_and_saved_preset = !selected_preset.is_system && !selected_preset.is_dirty;
-        bool support_material_overhangs_queried = m_config->opt_bool("support_material") && !m_config->opt_bool("overhangs");
+        bool support_material_overhangs_queried = config().opt_bool("support_material") && !config().opt_bool("overhangs");
         m_config_manipulation.initialize_support_material_overhangs_queried(is_user_and_saved_preset && support_material_overhangs_queried);
     }
 
-    m_config_manipulation.update_print_fff_config(m_config, &m_state->selected_preset->config ,true);
+    m_config_manipulation.update_print_fff_config(*m_config_interactor, &config() ,true);
 
     update_description_lines();
     Layout();
@@ -494,7 +497,7 @@ wxSizer* EditorPrint::create_substitutions_widget(wxWindow* parent)
     grid_sizer->SetFlexibleDirection(wxBOTH);
     grid_sizer->AddGrowableCol(1);
 
-    m_subst_manager.init(m_config, parent, grid_sizer);
+    m_subst_manager.init(m_config_interactor.get(), parent, grid_sizer);
     m_subst_manager.set_cb_edited_substitution([this]() {
         update_dirty();
         Layout();

@@ -8,6 +8,7 @@
 #include <string>
 
 #include "libslic3r/Preset.hpp"
+#include "Slic3r/Biz/Preset/IConfigInteractor.hpp"
 
 class wxFlexGridSizer;
 class wxWindow;
@@ -20,8 +21,8 @@ namespace Slic3r::App::Desktop::Preset {
 // Substitution Manager - helper for manipuation of the substitutions
 class SubstitutionManager
 {
-	DynamicPrintConfig* m_config{ nullptr };
-	wxWindow*			m_parent{ nullptr };
+    Biz::Preset::IConfigInteractor* m_config_interactor{nullptr};
+    wxWindow*			m_parent{ nullptr };
 	wxFlexGridSizer*	m_grid_sizer{ nullptr };
 
 	int                 m_em{10};
@@ -39,7 +40,7 @@ public:
 	SubstitutionManager() = default;
 	~SubstitutionManager() = default;
 
-	void init(DynamicPrintConfig* config, wxWindow* parent, wxFlexGridSizer* grid_sizer);
+	void init(Biz::Preset::IConfigInteractor* config_interactor, wxWindow* parent, wxFlexGridSizer* grid_sizer);
 	void create_legend();
 	void delete_substitution(int substitution_id);
 	void add_substitution(	int substitution_id = -1,
@@ -67,6 +68,9 @@ public:
 			m_cb_hide_delete_all_btn();
 	}
 	bool is_empty_substitutions();
+
+private:
+    const DynamicPrintConfig& config() const { return m_config_interactor->config(); }
 };
 
 } 

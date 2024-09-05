@@ -6,10 +6,32 @@
 #include "Slic3r/Biz/ISelectedConfigContainerChangedListener.hpp"
 #include "Slic3r/Domain/Workbench.hpp"
 #include "Slic3r/Biz/Preset/PresetInteractorProjectContext.hpp"
+#include "Slic3r/Biz/Preset/IConfigInteractor.hpp"
 
 namespace Slic3r::Biz::Preset {
 
 class IPresetChangeListener;
+
+class PresetInteractor;
+
+class PresetConfigInteractor : public IConfigInteractor
+{
+public:
+    PresetConfigInteractor(PresetInteractor& parent, Slic3r::Preset::Type preset_type, size_t preset_index = 0)
+        : m_parent(parent), m_preset_type(preset_type), m_preset_index(preset_index)
+    {}
+    const DynamicPrintConfig& config() const override;
+    void set_config_value(const std::string& name, const boost::any& value, int opt_index) override;
+    void set_config(const DynamicPrintConfig& config) override;
+    void set_config_num_extruders(size_t num_extruders) override;
+    void modify_config(ModifyFunc mod_fn) override;
+
+    const PresetState& preset_state() const;
+private:
+    PresetInteractor& m_parent;
+    Slic3r::Preset::Type m_preset_type;
+    size_t m_preset_index;
+};
 
 class PresetInteractor final : public ISelectedConfigContainerChangedListener
 {
@@ -17,6 +39,19 @@ public:
     explicit PresetInteractor(Domain::Workbench& workbench) : m_workbench(workbench) {}
 
     PresetInteractor(PresetInteractor&&) = default;
+
+    PresetInteractorConfigContainerContext& selected_config_container_context()
+    {
+        auto& project_ctx = get_project_context(m_selected_project_id)->second;
+        auto& cccs = project_ctx.config_containers;
+        return cccs.find(project_ctx.selected_config_container_id)->second;
+    }
+
+    void set_preset_state_value(Slic3r::Preset::Type preset_type, size_t preset_index, const std::string& name, const boost::any& value, int opt_index = 0);
+    void set_preset_state_config_num_extruders(Slic3r::Preset::Type preset_type, size_t preset_index, size_t num_extruders);
+    void set_preset_state(Slic3r::Preset::Type preset_type, size_t preset_index, const DynamicPrintConfig& config);
+    void modify_preset_state(Slic3r::Preset::Type preset_type, size_t preset_index, IConfigInteractor::ModifyFunc modify_fn);
+
 
     bool add_change_listener(IPresetChangeListener* listener)
     {
@@ -31,22 +66,33 @@ public:
     void on_selected_config_container_changed(SelectionId project_id, SelectionId bed_id) override;
 
 private:
+    using ProjectContexts = std::unordered_map<SelectionId, PresetInteractorProjectContext>;
+
+    ProjectContexts::const_iterator get_project_context(SelectionId project_id) const
+    {
+        return m_project_contexts.find(project_id);
+    }
+
+    ProjectContexts::iterator get_project_context(SelectionId project_id)
+    {
+        return m_project_contexts.find(project_id);
+    }
+
     PresetInteractorProjectContext& get_or_create_project_context(SelectionId project_id);
     PresetInteractorConfigContainerContext& get_or_create_config_container_context(SelectionId project_id, SelectionId config_container_id);
+    PresetState create_preset_state(PresetCollection& source_with_selected) const;
+
+    static void set_config_value(
+        DynamicPrintConfig& config, const std::string& name, const boost::any& value, int opt_index
+    );
 
 private:
-    struct Selection
-    {
-        SelectionId project_id{INVALID_ID};
-        SelectionId config_container_id{INVALID_ID};
-    };
 
     Domain::Workbench& m_workbench;
     ListenerList<IPresetChangeListener> m_change_listeners;
 
-    using ProjectContexts = std::unordered_map<SelectionId, PresetInteractorProjectContext>;
     ProjectContexts m_project_contexts;
 
-    Selection m_selection;
+    SelectionId m_selected_project_id{INVALID_ID};
 };
 }

@@ -29,7 +29,7 @@ bool DesktopApp::OnInit()
     const bool is_sys_menu = true;
     WX::WidgetsConfig* wdts_config = WX::WidgetsConfig::instance(is_dark, is_sys_menu);
 
-    m_main_frame = new MainFrame(m_workbench);
+    m_main_frame = new MainFrame(m_workbench, m_project_interactor->preset_interactor());
     Platform::WX::WXRenderCanvas& canvas = m_main_frame->get_render_canvas();
     Platform::PlatformServices::instance().set_services(&canvas, &canvas);
     

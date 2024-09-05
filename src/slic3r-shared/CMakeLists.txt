@@ -86,6 +86,7 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/Scene/SceneInteractorProjectContext.hpp
 
         src/Slic3r/Biz/Preset/IPresetChangeListener.hpp
+        src/Slic3r/Biz/Preset/IConfigInteractor.hpp
         src/Slic3r/Biz/Preset/PresetInteractor.cpp
         src/Slic3r/Biz/Preset/PresetInteractor.hpp
         src/Slic3r/Biz/Preset/PresetInteractorProjectContext.hpp
@@ -98,6 +99,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/Preset/PresetHints.cpp
         src/Slic3r/Biz/Preset/AbstractConfigManipulation.hpp
         src/Slic3r/Biz/Preset/AbstractConfigManipulation.cpp
+        src/Slic3r/Biz/Preset/PresetBundleRuntime.cpp
+        src/Slic3r/Biz/Preset/PresetBundleRuntime.hpp
 
         src/Slic3r/Biz/SelectionId.hpp
         src/Slic3r/Biz/ListenerList.hpp

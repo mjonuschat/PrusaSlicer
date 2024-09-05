@@ -49,8 +49,11 @@ static wxString _L(const wxString& s) { return s; };
 
 namespace Slic3r::App::Desktop::Preset {
 
-EditorPrinter::EditorPrinter(wxWindow* parent) :
-    AbstractEditor(parent, _L("Printers"), Slic3r::Preset::TYPE_PRINTER) {}
+EditorPrinter::EditorPrinter(wxWindow* parent, Biz::Preset::PresetInteractor& preset_interactor) :
+    AbstractEditor(parent, _L("Printers"), Slic3r::Preset::TYPE_PRINTER, preset_interactor)
+{
+    m_config_interactor = std::make_unique<Biz::Preset::PresetConfigInteractor>(preset_interactor, Slic3r::Preset::TYPE_PRINTER, 0);
+}
 
 void EditorPrinter::init_options_list()
 {
@@ -62,8 +65,7 @@ void EditorPrinter::init_options_list()
 
 void EditorPrinter::build()
 {
-    m_state = &m_ccc->printer;
-    printer_technology = m_state->selected_preset->printer_technology();
+    printer_technology = m_preset_interactor.selected_config_container_context().printer_technology();
 /*      //! some better solution?
     // For DiffPresetDialog we use options list which is saved in Searcher class.
     // Options for the Searcher is added in the moment of pages creation.
@@ -93,7 +95,7 @@ void EditorPrinter::build_print_host_upload_group(Page* page) //! maybe it's a t
     Line line = { "", "" };
     line.full_width = 1;
     line.widget = [this, description_line_text](wxWindow* parent) {
-        return description_line_widget(parent, m_state->selected_preset->printer_technology() == ptFFF ?
+        return description_line_widget(parent, m_config_interactor->preset_state().selected_preset->printer_technology() == ptFFF ?
                                        &m_fff_print_host_upload_description_line : &m_sla_print_host_upload_description_line,
                                        description_line_text);
     };
@@ -113,12 +115,12 @@ void EditorPrinter::build_fff()
     // to avoid redundant memory allocation / deallocation during extruders count changing
     m_pages.reserve(30);
 
-    auto   *nozzle_diameter = dynamic_cast<const ConfigOptionFloats*>(m_config->option("nozzle_diameter"));
+    auto   *nozzle_diameter = dynamic_cast<const ConfigOptionFloats*>(config().option("nozzle_diameter"));
     m_initial_extruders_count = m_extruders_count = nozzle_diameter->values.size();
 //!    wxGetApp().sidebar().update_objects_list_extruder_column(m_initial_extruders_count);
 
     const Slic3r::Preset* parent_preset = printer_technology == ptSLA ? nullptr // just for first build, if SLA printer preset is selected 
-                                  : m_state->selected_preset_parent;
+                                  : m_config_interactor->preset_state().selected_preset_parent;
     m_sys_extruders_count = parent_preset == nullptr ? 0 :
             static_cast<const ConfigOptionFloats*>(parent_preset->config.option("nozzle_diameter"))->values.size();
 
@@ -164,7 +166,7 @@ void EditorPrinter::build_fff()
 
                         if (boost::any_cast<bool>(value) && m_extruders_count > 1) {
                             //!SuppressBackgroundProcessingUpdate sbpu;
-                            std::vector<double> nozzle_diameters = static_cast<const ConfigOptionFloats*>(m_config->option("nozzle_diameter"))->values;
+                            std::vector<double> nozzle_diameters = static_cast<const ConfigOptionFloats*>(config().option("nozzle_diameter"))->values;
                             const double frst_diam = nozzle_diameters[0];
 
                             for (auto cur_diam : nozzle_diameters) {
@@ -175,7 +177,7 @@ void EditorPrinter::build_fff()
                                                                   "Do you want to change the diameter for all extruders to first extruder nozzle diameter value?");
                                     WX::MessageDialog dialog(parent(), msg_text, _L("Nozzle diameter"), wxICON_WARNING | wxYES_NO);
 
-                                    DynamicPrintConfig new_conf = *m_config;
+                                    DynamicPrintConfig new_conf = config();
                                     if (dialog.ShowModal() == wxID_YES) {
                                         for (size_t i = 1; i < nozzle_diameters.size(); i++)
                                             nozzle_diameters[i] = frst_diam;
@@ -224,7 +226,7 @@ void EditorPrinter::build_fff()
 
         optgroup->on_change = [this](t_config_option_key opt_key, boost::any value) {
             wxTheApp->CallAfter([this, opt_key, value]() {
-                if (opt_key == "thumbnails" && m_config->has("thumbnails_format")) {
+                if (opt_key == "thumbnails" && config().has("thumbnails_format")) {
                     // to backward compatibility we need to update "thumbnails_format" from new "thumbnails"
                     if (const std::string val = boost::any_cast<std::string>(value); !value.empty()) {
                         auto [thumbnails_list, errors] = GCodeThumbnails::make_and_check_thumbnail_list(val);
@@ -237,12 +239,12 @@ void EditorPrinter::build_fff()
                         }
 
                         if (!thumbnails_list.empty()) {
-                            GCodeThumbnailsFormat old_format = GCodeThumbnailsFormat(m_config->option("thumbnails_format")->getInt());
+                            GCodeThumbnailsFormat old_format = GCodeThumbnailsFormat(config().option("thumbnails_format")->getInt());
                             GCodeThumbnailsFormat new_format = thumbnails_list.begin()->first;
                             if (old_format != new_format) {
-                                DynamicPrintConfig new_conf = *m_config;
+                                DynamicPrintConfig new_conf = config();
 
-                                auto* opt = m_config->option("thumbnails_format")->clone();
+                                auto* opt = config().option("thumbnails_format")->clone();
                                 opt->setInt(int(new_format));
                                 new_conf.set_key_value("thumbnails_format", opt);
 
@@ -268,15 +270,15 @@ void EditorPrinter::build_fff()
                         m_supports_min_feedrates = supports_min_feedrates;
                     }
 
-                    const bool is_emit_to_gcode = m_config->option("machine_limits_usage")->getInt() == static_cast<int>(MachineLimitsUsage::EmitToGCode);
+                    const bool is_emit_to_gcode = config().option("machine_limits_usage")->getInt() == static_cast<int>(MachineLimitsUsage::EmitToGCode);
                     if ((flavor == gcfKlipper && is_emit_to_gcode) || (!m_supports_min_feedrates && m_use_silent_mode)) {
-                        DynamicPrintConfig new_conf = *m_config;
+                        DynamicPrintConfig new_conf = config();
                         wxString msg;
 
                         if (flavor == gcfKlipper && is_emit_to_gcode) {
                             msg = get_info_klipper_string();
 
-                            auto machine_limits_usage = static_cast<ConfigOptionEnum<MachineLimitsUsage>*>(m_config->option("machine_limits_usage")->clone());
+                            auto machine_limits_usage = static_cast<ConfigOptionEnum<MachineLimitsUsage>*>(config().option("machine_limits_usage")->clone());
                             machine_limits_usage->value = MachineLimitsUsage::TimeEstimateOnly;
                             new_conf.set_key_value("machine_limits_usage", machine_limits_usage);
                         }
@@ -287,7 +289,7 @@ void EditorPrinter::build_fff()
                             msg += _L("The selected G-code flavor does not support the machine limitation for Stealth mode.\n"
                                       "Stealth mode will not be applied and will be disabled.");
 
-                            auto silent_mode = static_cast<ConfigOptionBool*>(m_config->option("silent_mode")->clone());
+                            auto silent_mode = static_cast<ConfigOptionBool*>(config().option("silent_mode")->clone());
                             silent_mode->value = false;
                             new_conf.set_key_value("silent_mode", silent_mode);
                         }
@@ -462,7 +464,7 @@ void EditorPrinter::build_sla()
 //    optgroup->append_single_option_line("area_fill");
 
     optgroup = page->new_optgroup(L("Corrections"));
-    line = Line{ m_config->def()->get("relative_correction")->full_label, "" };
+    line = Line{ config().def()->get("relative_correction")->full_label, "" };
     for (auto& axis : { "X", "Y", "Z" }) {
         auto opt = optgroup->get_option(std::string("relative_correction_") + char(std::tolower(axis[0])));
         opt.opt.label = axis;
@@ -508,7 +510,7 @@ void EditorPrinter::extruders_count_changed(size_t extruders_count)
     bool is_updated_mm_filament_presets = false;
     if (m_extruders_count != extruders_count) {
         m_extruders_count = extruders_count;
-        m_state->edited_preset.set_num_extruders(extruders_count);
+        m_config_interactor->set_config_num_extruders(extruders_count);
         is_count_changed = is_updated_mm_filament_presets = true;
     }
     /*  //!
@@ -564,11 +566,11 @@ PageShp EditorPrinter::build_kinematics_page()
     {
         if (opt_key == "machine_limits_usage" &&
             static_cast<MachineLimitsUsage>(boost::any_cast<int>(value)) == MachineLimitsUsage::EmitToGCode &&
-            static_cast<GCodeFlavor>(m_config->option("gcode_flavor")->getInt()) == gcfKlipper)
+            static_cast<GCodeFlavor>(config().option("gcode_flavor")->getInt()) == gcfKlipper)
         {
-            DynamicPrintConfig new_conf = *m_config;
+            DynamicPrintConfig new_conf = config();
 
-            auto machine_limits_usage = static_cast<ConfigOptionEnum<MachineLimitsUsage>*>(m_config->option("machine_limits_usage")->clone());
+            auto machine_limits_usage = static_cast<ConfigOptionEnum<MachineLimitsUsage>*>(config().option("machine_limits_usage")->clone());
             machine_limits_usage->value = MachineLimitsUsage::TimeEstimateOnly;
 
             new_conf.set_key_value("machine_limits_usage", machine_limits_usage);
@@ -641,14 +643,14 @@ void EditorPrinter::build_extruder_pages(size_t n_before_extruders)
 
         optgroup->on_change = [this, extruder_idx](const t_config_option_key&opt_key, boost::any value)
         {
-            const bool is_single_extruder_MM = m_config->opt_bool("single_extruder_multi_material");
+            const bool is_single_extruder_MM = config().opt_bool("single_extruder_multi_material");
             const bool is_nozzle_diameter_changed = opt_key.find_first_of("nozzle_diameter") != std::string::npos;
 
             if (is_single_extruder_MM && m_extruders_count > 1 && is_nozzle_diameter_changed)
             {
                 //!SuppressBackgroundProcessingUpdate sbpu;
                 const double new_nd = boost::any_cast<double>(value);
-                std::vector<double> nozzle_diameters = static_cast<const ConfigOptionFloats*>(m_config->option("nozzle_diameter"))->values;
+                std::vector<double> nozzle_diameters = static_cast<const ConfigOptionFloats*>(config().option("nozzle_diameter"))->values;
 
                 // if value was changed
                 if (fabs(nozzle_diameters[extruder_idx == 0 ? 1 : 0] - new_nd) > EPSILON)
@@ -657,7 +659,7 @@ void EditorPrinter::build_extruder_pages(size_t n_before_extruders)
                                                  "will be set to the new value. Do you want to proceed?");
                     WX::MessageDialog dialog(parent(), msg_text, _L("Nozzle diameter"), wxICON_WARNING | wxYES_NO);
 
-                    DynamicPrintConfig new_conf = *m_config;
+                    DynamicPrintConfig new_conf = config();
                     if (dialog.ShowModal() == wxID_YES) {
                         for (size_t i = 0; i < nozzle_diameters.size(); i++) {
                             if (i==extruder_idx)
@@ -698,10 +700,10 @@ void EditorPrinter::build_extruder_pages(size_t n_before_extruders)
 
             btn->Bind(wxEVT_BUTTON, [this, extruder_idx](wxCommandEvent&e)
             {
-                std::vector<std::string> colors = static_cast<const ConfigOptionStrings*>(m_config->option("extruder_colour"))->values;
+                std::vector<std::string> colors = static_cast<const ConfigOptionStrings*>(config().option("extruder_colour"))->values;
                 colors[extruder_idx]            = "";
 
-                DynamicPrintConfig new_conf = *m_config;
+                DynamicPrintConfig new_conf = config();
                 new_conf.set_key_value("extruder_colour", new ConfigOptionStrings(colors));
                 load_config(new_conf);
 
@@ -710,7 +712,7 @@ void EditorPrinter::build_extruder_pages(size_t n_before_extruders)
             });
 
             parent->Bind(wxEVT_UPDATE_UI, [this, extruder_idx](wxUpdateUIEvent& evt) {
-                evt.Enable(!static_cast<const ConfigOptionStrings*>(m_config->option("extruder_colour"))->values[extruder_idx].empty());
+                evt.Enable(!static_cast<const ConfigOptionStrings*>(config().option("extruder_colour"))->values[extruder_idx].empty());
             }, btn->GetId());
 
             return sizer;
@@ -731,10 +733,10 @@ void EditorPrinter::build_extruder_pages(size_t n_before_extruders)
             sizer->Add(btn);
 
             btn->Bind(wxEVT_BUTTON, [this, extruder_idx](wxCommandEvent& e) {
-                DynamicPrintConfig new_conf = *m_config;
+                DynamicPrintConfig new_conf = config();
 
                 for (const std::string& opt : extruder_options) {
-                    const ConfigOption* other_opt = m_config->option(opt);
+                    const ConfigOption* other_opt = config().option(opt);
                     for (size_t extruder = 0; extruder < m_extruders_count; ++extruder) {
                         if (extruder == extruder_idx)
                             continue;
@@ -748,7 +750,7 @@ void EditorPrinter::build_extruder_pages(size_t n_before_extruders)
             });
 
             auto has_changes = [this]() {
-                auto dirty_options = m_state->current_dirty_options(true);
+                auto dirty_options = m_config_interactor->preset_state().current_dirty_options(true);
 #if 1
                 dirty_options.erase(std::remove_if(dirty_options.begin(), dirty_options.end(), 
                     [](const std::string& opt) { return opt.find("extruder_colour") != std::string::npos || opt.find("nozzle_diameter") != std::string::npos; }), dirty_options.end());
@@ -819,7 +821,7 @@ void EditorPrinter::build_extruder_pages(size_t n_before_extruders)
 void EditorPrinter::build_unregular_pages(bool from_initial_build/* = false*/)
 {
     size_t		n_before_extruders = 2;			//	Count of pages before Extruder pages
-    auto        flavor = m_config->option<ConfigOptionEnum<GCodeFlavor>>("gcode_flavor")->value;
+    auto        flavor = config().option<ConfigOptionEnum<GCodeFlavor>>("gcode_flavor")->value;
     bool		show_mach_limits = (flavor == gcfMarlinLegacy || flavor == gcfMarlinFirmware || flavor == gcfRepRapFirmware || flavor == gcfKlipper);
 
     /* ! Freeze/Thaw in this function is needed to avoid call OnPaint() for erased pages
@@ -863,7 +865,7 @@ void EditorPrinter::build_unregular_pages(bool from_initial_build/* = false*/)
         m_has_single_extruder_MM_page = false;
     }
     if (from_initial_build ||
-        (m_extruders_count > 1 && m_config->opt_bool("single_extruder_multi_material") && !m_has_single_extruder_MM_page)) {
+        (m_extruders_count > 1 && config().opt_bool("single_extruder_multi_material") && !m_has_single_extruder_MM_page)) {
         // create a page, but pretend it's an extruder page, so we can add it to m_pages ourselves
         auto page = add_options_page(L("Single extruder MM setup"), "printer", true);
         auto optgroup = page->new_optgroup(L("Single extruder multimaterial parameters"));
@@ -901,7 +903,7 @@ void EditorPrinter::build_unregular_pages(bool from_initial_build/* = false*/)
 void EditorPrinter::on_preset_loaded()
 {
     // update the extruders count field
-    auto   *nozzle_diameter = dynamic_cast<const ConfigOptionFloats*>(m_config->option("nozzle_diameter"));
+    auto   *nozzle_diameter = dynamic_cast<const ConfigOptionFloats*>(config().option("nozzle_diameter"));
     size_t extruders_count = nozzle_diameter->values.size();
     // update the GUI field according to the number of nozzle diameters supplied
     extruders_count_changed(extruders_count);
@@ -910,7 +912,7 @@ void EditorPrinter::on_preset_loaded()
 void EditorPrinter::update_pages()
 {
     // update m_pages ONLY if printer technology is changed
-    const PrinterTechnology new_printer_technology = m_state->edited_preset.printer_technology();
+    const PrinterTechnology new_printer_technology = m_config_interactor->preset_state().edited_preset.printer_technology();
     if (new_printer_technology == printer_technology)
         return;
 
@@ -977,10 +979,10 @@ void EditorPrinter::clear_pages()
 
 void EditorPrinter::toggle_options()
 {
-    if (!m_active_page || m_state->edited_preset.printer_technology() == ptSLA)
+    if (!m_active_page || m_config_interactor->preset_state().edited_preset.printer_technology() == ptSLA)
         return;
 
-    const GCodeFlavor flavor = m_config->option<ConfigOptionEnum<GCodeFlavor>>("gcode_flavor")->value;
+    const GCodeFlavor flavor = config().option<ConfigOptionEnum<GCodeFlavor>>("gcode_flavor")->value;
     bool have_multiple_extruders = m_extruders_count > 1;
     if (m_active_page->title() == "Custom G-code")
         toggle_option("toolchange_gcode", have_multiple_extruders);
@@ -998,14 +1000,14 @@ void EditorPrinter::toggle_options()
         val > 0 && (size_t)val <= m_extruders_count)
     {
         size_t i = size_t(val - 1);
-        bool have_retract_length = m_config->opt_float("retract_length", i) > 0;
-        const bool ramping_lift = m_config->opt_bool("travel_ramping_lift", i);
-        const bool lifts_z = (ramping_lift && m_config->opt_float("travel_max_lift", i) > 0)
-                          || (! ramping_lift && m_config->opt_float("retract_lift", i) > 0);
+        bool have_retract_length = config().opt_float("retract_length", i) > 0;
+        const bool ramping_lift = config().opt_bool("travel_ramping_lift", i);
+        const bool lifts_z = (ramping_lift && config().opt_float("travel_max_lift", i) > 0)
+                          || (! ramping_lift && config().opt_float("retract_lift", i) > 0);
 
 
         // when using firmware retraction, firmware decides retraction length
-        bool use_firmware_retraction = m_config->opt_bool("use_firmware_retraction");
+        bool use_firmware_retraction = config().opt_bool("use_firmware_retraction");
         toggle_option("retract_length", !use_firmware_retraction, i);
 
         toggle_option("retract_lift", ! ramping_lift, i);
@@ -1034,7 +1036,7 @@ void EditorPrinter::toggle_options()
         for (auto el : vec)
             toggle_option(el, retraction && !use_firmware_retraction, i);
 
-        bool wipe = m_config->opt_bool("wipe", i);
+        bool wipe = config().opt_bool("wipe", i);
         toggle_option("retract_before_wipe", wipe, i);
 
         if (use_firmware_retraction && wipe) {
@@ -1043,9 +1045,9 @@ void EditorPrinter::toggle_options()
                     "\nShall I disable it in order to enable Firmware Retraction?"),
                 _L("Firmware Retraction"), wxICON_WARNING | wxYES | wxNO);
 
-            DynamicPrintConfig new_conf = *m_config;
+            DynamicPrintConfig new_conf = config();
             if (dialog.ShowModal() == wxID_YES) {
-                auto wipe = static_cast<ConfigOptionBools*>(m_config->option("wipe")->clone());
+                auto wipe = static_cast<ConfigOptionBools*>(config().option("wipe")->clone());
                 for (size_t w = 0; w < wipe->values.size(); w++)
                     wipe->values[w] = false;
                 new_conf.set_key_value("wipe", wipe);
@@ -1060,7 +1062,7 @@ void EditorPrinter::toggle_options()
 
         toggle_option("retract_length_toolchange", have_multiple_extruders, i);
 
-        bool toolchange_retraction = m_config->opt_float("retract_length_toolchange", i) > 0;
+        bool toolchange_retraction = config().opt_float("retract_length_toolchange", i) > 0;
         toggle_option("retract_restart_extra_toolchange", have_multiple_extruders && toolchange_retraction, i);
     }
 
@@ -1069,9 +1071,9 @@ void EditorPrinter::toggle_options()
             || flavor == gcfMarlinFirmware
             || flavor == gcfRepRapFirmware
             || flavor == gcfKlipper);
-		const auto *machine_limits_usage = m_config->option<ConfigOptionEnum<MachineLimitsUsage>>("machine_limits_usage");
+		const auto *machine_limits_usage = config().option<ConfigOptionEnum<MachineLimitsUsage>>("machine_limits_usage");
 		bool enabled = machine_limits_usage->value != MachineLimitsUsage::Ignore;
-        bool silent_mode = m_config->opt_bool("silent_mode");
+        bool silent_mode = config().opt_bool("silent_mode");
         int  max_field = silent_mode ? 2 : 1;
     	for (const std::string &opt : Slic3r::Preset::machine_limits_options())
             for (int i = 0; i < max_field; ++ i)
@@ -1083,7 +1085,8 @@ void EditorPrinter::toggle_options()
 void EditorPrinter::update()
 {
     m_update_cnt++;
-    m_state->edited_preset.printer_technology() == ptFFF ? update_fff() : update_sla();
+    auto pt = m_preset_interactor.selected_config_container_context().printer_technology();
+    pt == ptFFF ? update_fff() : update_sla();
     m_update_cnt--;
 
     update_description_lines();
@@ -1095,12 +1098,12 @@ void EditorPrinter::update()
 
 void EditorPrinter::update_fff()
 {
-    if (m_use_silent_mode != m_config->opt_bool("silent_mode"))	{
+    if (m_use_silent_mode != config().opt_bool("silent_mode"))	{
         m_rebuild_kinematics_page = true;
-        m_use_silent_mode = m_config->opt_bool("silent_mode");
+        m_use_silent_mode = config().opt_bool("silent_mode");
     }
 
-    const auto flavor = m_config->option<ConfigOptionEnum<GCodeFlavor>>("gcode_flavor")->value;
+    const auto flavor = config().option<ConfigOptionEnum<GCodeFlavor>>("gcode_flavor")->value;
     bool supports_travel_acceleration = (flavor == gcfMarlinFirmware || flavor == gcfRepRapFirmware);
     bool supports_min_feedrates       = (flavor == gcfMarlinFirmware || flavor == gcfMarlinLegacy);
     if (m_supports_travel_acceleration != supports_travel_acceleration || m_supports_min_feedrates != supports_min_feedrates) {
@@ -1130,9 +1133,9 @@ wxSizer* EditorPrinter::create_bed_shape_widget(wxWindow* parent)
     btn->Bind(wxEVT_BUTTON, ([this](wxCommandEvent e)
         {
             BedShapeDialog dlg(this);
-            dlg.build_dialog(*m_config->option<ConfigOptionPoints>("bed_shape"),
-                *m_config->option<ConfigOptionString>("bed_custom_texture"),
-                *m_config->option<ConfigOptionString>("bed_custom_model"));
+            dlg.build_dialog(*config().option<ConfigOptionPoints>("bed_shape"),
+                *config().option<ConfigOptionString>("bed_custom_texture"),
+                *config().option<ConfigOptionString>("bed_custom_model"));
             if (dlg.ShowModal() == wxID_OK) {
                 const std::vector<Vec2d>& shape = dlg.get_shape();
                 const std::string& custom_texture = dlg.get_custom_texture();
@@ -1161,7 +1164,7 @@ wxSizer* EditorPrinter::create_bed_shape_widget(wxWindow* parent)
 
 void EditorPrinter::cache_extruder_cnt(const DynamicPrintConfig* config/* = nullptr*/)
 {
-    const DynamicPrintConfig& cached_config = config ? *config : m_state->edited_preset.config;
+    const DynamicPrintConfig& cached_config = config ? *config : this->config();
     if (Slic3r::Preset::printer_technology(cached_config) == ptSLA)
         return;
 
@@ -1172,11 +1175,11 @@ void EditorPrinter::cache_extruder_cnt(const DynamicPrintConfig* config/* = null
 
 bool EditorPrinter::apply_extruder_cnt_from_cache()
 {
-    if (m_state->edited_preset.printer_technology() == ptSLA)
+    if (m_config_interactor->preset_state().edited_preset.printer_technology() == ptSLA)
         return false;
 
     if (m_cache_extruder_count > 0) {
-        m_state->edited_preset.set_num_extruders(m_cache_extruder_count);
+        m_config_interactor->set_config_num_extruders(m_cache_extruder_count);
         m_cache_extruder_count = 0;
         return true;
     }

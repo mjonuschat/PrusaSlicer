@@ -6,6 +6,7 @@
 
 #include "../Config/OptionsGroup.hpp"
 #include "libslic3r/Preset.hpp"
+#include "Slic3r/Biz/Preset/IConfigInteractor.hpp"
 
 #include <vector>
 #include <memory>
@@ -28,7 +29,8 @@ public:
     Page(wxWindow* parent, const wxString& title, int iconID);
     ~Page() {}
 
-    void set_config(DynamicPrintConfig* config_in) { m_config = config_in; }
+    void set_config_interactor(Biz::Preset::IConfigInteractor* config_interactor)
+    { m_config_interactor = config_interactor; }
     void reload_config();
     void update_visibility(ConfigOptionMode mode, bool update_contolls_visibility);
     void activate(ConfigOptionMode mode, std::function<void()> throw_if_canceled);
@@ -74,7 +76,7 @@ private:
     wxString    m_title;
     size_t      m_iconID;
 
-    DynamicPrintConfig* m_config    { nullptr };
+    Biz::Preset::IConfigInteractor* m_config_interactor {nullptr};
 
     // Color of TreeCtrlItem. The wxColour will be updated only if the new wxColour pointer differs from the currently rendered one.
     const wxColour*        m_item_color;

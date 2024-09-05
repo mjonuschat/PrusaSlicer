@@ -81,8 +81,8 @@ static void add_experimets_page(TopBar* top_bar, MainFrame* main_frame)
 }
 
 
-MainFrame::MainFrame(Domain::Workbench& workbench)
-    : wxFrame(nullptr, wxID_ANY, ""), m_workbench(workbench), m_preset_interactor(workbench)
+MainFrame::MainFrame(Domain::Workbench& workbench, Biz::Preset::PresetInteractor& preset_interactor)
+    : wxFrame(nullptr, wxID_ANY, ""), m_workbench(workbench), m_preset_interactor(preset_interactor)
 {
     auto em = w_config()->em_unit();
 
@@ -219,14 +219,14 @@ void MainFrame::init_preset_editors()
 
     const auto printer_tech = m_active_context->printer_technology();
     if (printer_tech == ptFFF) {
-        add_preset_editor(new EditorPrint(m_top_bar), "cog");
-        add_preset_editor(new EditorFilament(m_top_bar), "spool");
+        add_preset_editor(new EditorPrint(m_top_bar, m_preset_interactor), "cog");
+        add_preset_editor(new EditorFilament(m_top_bar, m_preset_interactor), "spool");
     }
     else {
-        add_preset_editor(new EditorSLAPrint(m_top_bar), "cog");
-        add_preset_editor(new EditorSLAMaterial(m_top_bar), "resin");
+        add_preset_editor(new EditorSLAPrint(m_top_bar, m_preset_interactor), "cog");
+        add_preset_editor(new EditorSLAMaterial(m_top_bar, m_preset_interactor), "resin");
     }
-    add_preset_editor(new EditorPrinter(m_top_bar), printer_tech == ptFFF ? "printer" : "sla_printer");
+    add_preset_editor(new EditorPrinter(m_top_bar, m_preset_interactor), printer_tech == ptFFF ? "printer" : "sla_printer");
 }
 
 void MainFrame::add_preset_editor(Preset::AbstractEditor* panel, const std::string& bmp_name /*= ""*/)

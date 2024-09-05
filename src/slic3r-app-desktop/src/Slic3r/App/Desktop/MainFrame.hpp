@@ -21,7 +21,7 @@ class TopBar;
 
 class MainFrame : public wxFrame {
 public:
-    explicit MainFrame(Domain::Workbench& workbench);
+    MainFrame(Domain::Workbench& workbench, Biz::Preset::PresetInteractor& preset_interactor);
 
     Platform::WX::WXRenderCanvas& get_render_canvas() { return *m_canvas; }
 
@@ -29,7 +29,7 @@ public:
 
 private:
     Domain::Workbench& m_workbench;
-    Biz::Preset::PresetInteractor m_preset_interactor;
+    Biz::Preset::PresetInteractor& m_preset_interactor;
     std::unique_ptr<Platform::WX::WXRenderCanvas> m_canvas;
 
     std::map<Slic3r::Preset::Type, Preset::AbstractEditor*>   m_preset_editors;

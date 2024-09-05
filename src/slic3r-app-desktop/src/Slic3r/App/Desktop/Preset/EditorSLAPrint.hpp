@@ -23,7 +23,7 @@ namespace Slic3r::App::Desktop::Preset {
 class EditorSLAPrint : public AbstractEditor
 {
 public:
-    EditorSLAPrint(wxWindow* parent);
+    EditorSLAPrint(wxWindow* parent, Biz::Preset::PresetInteractor& preset_interactor);
     ~EditorSLAPrint() {}
 
 private:

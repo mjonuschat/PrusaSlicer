@@ -16,14 +16,14 @@ SelectionId ProjectInteractor::new_project()
     initialize_new_project(project);
     SelectionId container_id = project.config_containers().front()->id().id;
     SelectionId project_id = add_project(std::move(project));
-    do_select_project(project_id);
-    do_select_config_container(container_id);
     return project_id;
 }
 
 void ProjectInteractor::initialize_new_project(Domain::Project& p)
 {
     auto& cc_ptr = p.config_containers().emplace_back(std::make_unique<Domain::ConfigContainer>());
+    // upload config from selected preset
+    cc_ptr->set_print_config(m_workbench.preset_bundle().full_config());
 }
 
 void ProjectInteractor::select_project(SelectionId project_id)

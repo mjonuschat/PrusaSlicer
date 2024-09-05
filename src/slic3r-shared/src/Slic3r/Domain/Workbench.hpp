@@ -25,6 +25,9 @@ public:
     [[nodiscard]] ProjectList& projects() { return m_projects; }
     [[nodiscard]] const ProjectList& projects() const { return m_projects; }
 
+    [[nodiscard]] Project& project(const size_t project_id) { return m_projects[project_id]; }
+    [[nodiscard]] const Project& project(const size_t project_id) const { return m_projects[project_id]; }
+
     [[nodiscard]] const PresetBundle& preset_bundle() const { return *m_preset_bundle;}
     [[nodiscard]] PresetBundle& preset_bundle() { return *m_preset_bundle;}
 

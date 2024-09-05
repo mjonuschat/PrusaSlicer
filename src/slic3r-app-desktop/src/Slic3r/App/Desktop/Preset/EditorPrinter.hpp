@@ -23,7 +23,7 @@ namespace Slic3r::App::Desktop::Preset {
 class EditorPrinter : public AbstractEditor
 {
 public:
-    EditorPrinter(wxWindow* parent);
+    EditorPrinter(wxWindow* parent, Biz::Preset::PresetInteractor& preset_interactor);
     ~EditorPrinter() {}
 
     bool    apply_extruder_cnt_from_cache();

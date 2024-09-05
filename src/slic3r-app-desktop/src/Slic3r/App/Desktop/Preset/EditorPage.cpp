@@ -108,7 +108,7 @@ bool Page::set_value(const t_config_option_key& opt_key, const boost::any& value
 ConfigOptionsGroupShp Page::new_optgroup(const wxString& title, int noncommon_label_width /*= -1*/)
 {
     //! config_ have to be "right"
-    ConfigOptionsGroupShp optgroup = std::make_shared<ConfigOptionsGroup>(m_parent, title, m_config, true);
+    ConfigOptionsGroupShp optgroup = std::make_shared<ConfigOptionsGroup>(m_parent, title, m_config_interactor, true);
     if (noncommon_label_width >= 0)
         optgroup->label_width = noncommon_label_width;
 
@@ -125,15 +125,15 @@ ConfigOptionsGroupShp Page::new_optgroup(const wxString& title, int noncommon_la
     };
 
     optgroup->get_initial_config = [editor]() {
-        return editor->state()->selected_preset->config;
+        return editor->config_interactor().preset_state().edited_preset.config;
     };
 
     optgroup->get_sys_config = [editor]() {
-        return editor->state()->selected_preset_parent->config;
+        return editor->config_interactor().preset_state().selected_preset_parent->config;
     };
 
     optgroup->have_sys_config = [editor]() {
-        return editor->state()->selected_preset_parent != nullptr;
+        return editor->config_interactor().preset_state().selected_preset_parent != nullptr;
     };
 
     optgroup->rescale_extra_column_item = [](wxWindow* win) {

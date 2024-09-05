@@ -74,7 +74,7 @@ using PageShp = std::shared_ptr<Page>;
 class AbstractEditor : public wxPanel
 {
 public:
-    AbstractEditor(wxWindow* parent, const wxString& title, Slic3r::Preset::Type type);
+    AbstractEditor(wxWindow* parent, const wxString& title, Slic3r::Preset::Type type, Biz::Preset::PresetInteractor& preset_interactor);
     ~AbstractEditor() {}
 
     static wxString             translate_category(const wxString& title, Slic3r::Preset::Type preset_type);
@@ -82,13 +82,15 @@ public:
     wxWindow*                   parent() const   { return m_parent; }
     wxString                    title()  const   { return m_title; }
     Slic3r::Preset::Type        type()   const   { return m_type; }
-    DynamicPrintConfig*         config() const   { return m_config; }
-    Biz::Preset::PresetState*   state()  const   { return m_state; }
+//RMV    DynamicPrintConfig*         config() const   { return m_config; }
+//RMV    Biz::Preset::PresetState*   state()  const   { return m_state; }
+    Biz::Preset::PresetConfigInteractor& config_interactor() { return *m_config_interactor;}
+    const Biz::Preset::PresetConfigInteractor& config_interactor() const { return *m_config_interactor;}
 
     // The tab is already constructed.
     bool    completed() const { return m_completed; }
 
-    void    init(Biz::Preset::PresetInteractorConfigContainerContext* ccc, 
+    void    init(Biz::Preset::PresetInteractorConfigContainerContext* ccc,
                  Biz::Preset::PresetInteractor* preset_interactor,
                  PresetBundle* preset_bundle);
     void    update(Biz::Preset::PresetInteractorConfigContainerContext* ccc);
@@ -157,6 +159,8 @@ protected:
     void        build_preset_description_line(ConfigOptionsGroup* optgroup);
     void        load_key_value(const std::string& opt_key, const boost::any& value, bool saved_value = false);
 
+    const DynamicPrintConfig& config() const { return m_config_interactor->config(); }
+
 private:
 
     void    OnKeyDown(wxKeyEvent& event);
@@ -193,9 +197,11 @@ protected:
     std::string             m_name;
     const wxString          m_title;
 
-    Biz::Preset::PresetInteractorConfigContainerContext*    m_ccc       { nullptr };
-    Biz::Preset::PresetState*                               m_state     { nullptr };
-    DynamicPrintConfig*                                     m_config    { nullptr };
+//RMV    Biz::Preset::PresetInteractorConfigContainerContext*    m_ccc       { nullptr };
+//RMV    Biz::Preset::PresetState*                               m_state     { nullptr };
+//RMV    DynamicPrintConfig*                                     m_config    { nullptr };
+    Biz::Preset::PresetInteractor& m_preset_interactor;
+    std::unique_ptr<Biz::Preset::PresetConfigInteractor> m_config_interactor;
 
     ConfigOptionMode        m_mode                  { comExpert }; // to correct first Tab update_visibility() set mode to Expert
     WX::ConfigManipulation  m_config_manipulation;
@@ -234,7 +240,7 @@ protected:
 private:
     wxWindow*   m_parent;
 #ifdef __WXOSX__
-    wxPanel*    m_tmp_panel;
+    wxPanel*    m_tmp_panel                 {nullptr};
     int         m_size_move = -1;
 #endif // __WXOSX__
     wxBoxSizer*         m_top_hsizer        {nullptr};
@@ -289,7 +295,7 @@ private:
     wxString    m_tt_white_bullet;
     wxString    m_tt_value_revert;
 
-    int                             m_icon_count;
+    int                             m_icon_count {0};
     std::map<std::string, size_t>   m_icon_index;        // Map from an icon file name to its index
     std::map<wxString, std::string> m_category_icon;    // Map from a category name to an icon file name
 

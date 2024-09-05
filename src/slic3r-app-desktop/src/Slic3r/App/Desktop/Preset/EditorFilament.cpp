@@ -41,15 +41,15 @@ namespace Slic3r::App::Desktop::Preset {
 
 const std::string& EditorFilament::get_custom_gcode(const t_config_option_key& opt_key)
 {
-    return m_config->opt_string(opt_key, unsigned(0));
+    return config().opt_string(opt_key, unsigned(0));
 }
 
 void EditorFilament::set_custom_gcode(const t_config_option_key& opt_key, const std::string& value)
 {
-    std::vector<std::string> gcodes = static_cast<const ConfigOptionStrings*>(m_config->option(opt_key))->values;
+    std::vector<std::string> gcodes = static_cast<const ConfigOptionStrings*>(config().option(opt_key))->values;
     gcodes[0] = value;
 
-    DynamicPrintConfig new_conf = *m_config;
+    DynamicPrintConfig new_conf = config();
     new_conf.set_key_value(opt_key, new ConfigOptionStrings(gcodes));
     load_config(new_conf);
 }
@@ -95,7 +95,7 @@ void EditorFilament::update_line_with_near_label_widget(ConfigOptionsGroupShp op
         return;
     m_overrides_options[opt_key]->Enable(is_checked);
 
-    is_checked &= !m_config->option(opt_key)->is_nil();
+    is_checked &= !config().option(opt_key)->is_nil();
     CheckBox::SetValue(m_overrides_options[opt_key], is_checked);
 
     Field* field = optgroup->get_fieldc(opt_key, opt_index);
@@ -153,20 +153,20 @@ void EditorFilament::update_filament_overrides_page()
     const int extruder_idx = 0; // #ys_FIXME
 
     const bool have_retract_length = (
-        m_config->option("filament_retract_length")->is_nil()
-        || m_config->opt_float("filament_retract_length", extruder_idx) > 0
+        config().option("filament_retract_length")->is_nil()
+        || config().opt_float("filament_retract_length", extruder_idx) > 0
     );
 
     const bool uses_ramping_lift = (
-        m_config->option("filament_travel_ramping_lift")->is_nil()
-        || m_config->opt_bool("filament_travel_ramping_lift", extruder_idx)
+        config().option("filament_travel_ramping_lift")->is_nil()
+        || config().opt_bool("filament_travel_ramping_lift", extruder_idx)
     );
 
     const bool is_lifting =  (
-        m_config->option("filament_travel_max_lift")->is_nil()
-        || m_config->opt_float("filament_travel_max_lift", extruder_idx) > 0
-        || m_config->option("filament_retract_lift")->is_nil()
-        || m_config->opt_float("filament_retract_lift", extruder_idx) > 0
+        config().option("filament_travel_max_lift")->is_nil()
+        || config().opt_float("filament_travel_max_lift", extruder_idx) > 0
+        || config().option("filament_retract_lift")->is_nil()
+        || config().opt_float("filament_retract_lift", extruder_idx) > 0
     );
 
     for (const auto&[title, keys] : filament_overrides_option_keys) {
@@ -189,8 +189,8 @@ void EditorFilament::update_filament_overrides_page()
                 title == "Travel lift"
                 && uses_ramping_lift
                 && opt_key == "filament_retract_lift"
-                && !m_config->option("filament_travel_ramping_lift")->is_nil()
-                && m_config->opt_bool("filament_travel_ramping_lift", extruder_idx)
+                && !config().option("filament_travel_ramping_lift")->is_nil()
+                && config().opt_bool("filament_travel_ramping_lift", extruder_idx)
             ) {
                 is_checked = false;
             }
@@ -222,12 +222,14 @@ void EditorFilament::update_filament_overrides_page()
     }
 }
 
-EditorFilament::EditorFilament(wxWindow* parent) :
-    AbstractEditor(parent, _L("Filaments"), Slic3r::Preset::TYPE_FILAMENT) {}
+EditorFilament::EditorFilament(wxWindow* parent, Biz::Preset::PresetInteractor& preset_interactor) :
+    AbstractEditor(parent, _L("Filaments"), Slic3r::Preset::TYPE_FILAMENT, preset_interactor)
+{
+    m_config_interactor = std::make_unique<Biz::Preset::PresetConfigInteractor>(m_preset_interactor, Slic3r::Preset::TYPE_FILAMENT, 0);
+}
 
 void EditorFilament::build()
 {
-    m_state = &m_ccc->materials[0];
     load_initial_data();
 
     auto page = add_options_page(L("Filament"), "spool");
@@ -360,7 +362,7 @@ void EditorFilament::build()
 
             ramming_dialog_btn->Bind(wxEVT_BUTTON, [this](wxCommandEvent& e) {
 /*  //!
-                RammingDialog dlg(this,(m_config->option<ConfigOptionStrings>("filament_ramming_parameters"))->get_at(0));
+                RammingDialog dlg(this,(config().option<ConfigOptionStrings>("filament_ramming_parameters"))->get_at(0));
                 if (dlg.ShowModal() == wxID_OK) {
                     load_key_value("filament_ramming_parameters", dlg.get_parameters());
                     update_changed_ui();
@@ -439,7 +441,7 @@ void EditorFilament::update_volumetric_flow_preset_hints()
 {
     wxString text;
     try {
-        text = WX::from_u8(Biz::Preset::PresetHints::maximum_volumetric_flow_description(*m_ccc));
+        text = WX::from_u8(Biz::Preset::PresetHints::maximum_volumetric_flow_description(m_preset_interactor.selected_config_container_context()));
     } catch (std::exception &ex) {
         text = _L("Volumetric flow hints not available") + "\n\n" + WX::from_u8(ex.what());
     }
@@ -454,7 +456,7 @@ void EditorFilament::update_description_lines()
         return;
 
     if (m_active_page->title() == "Cooling" && m_cooling_description_line)
-        m_cooling_description_line->SetText(WX::from_u8(Biz::Preset::PresetHints::cooling_description(m_state->edited_preset)));
+        m_cooling_description_line->SetText(WX::from_u8(Biz::Preset::PresetHints::cooling_description(m_config_interactor->preset_state().edited_preset)));
     if (m_active_page->title() == "Advanced" && m_volumetric_speed_description_line)
         this->update_volumetric_flow_preset_hints();
 }
@@ -466,8 +468,8 @@ void EditorFilament::toggle_options()
 
     if (m_active_page->title() == "Cooling")
     {
-        bool cooling = m_config->opt_bool("cooling", 0);
-        bool fan_always_on = cooling || m_config->opt_bool("fan_always_on", 0);
+        bool cooling = config().opt_bool("cooling", 0);
+        bool fan_always_on = cooling || config().opt_bool("fan_always_on", 0);
 
         for (auto el : { "max_fan_speed", "fan_below_layer_time", "slowdown_below_layer_time", "min_print_speed" })
             toggle_option(el, cooling);
@@ -475,7 +477,7 @@ void EditorFilament::toggle_options()
         for (auto el : { "min_fan_speed", "disable_fan_first_layers", "full_fan_speed_layer" })
             toggle_option(el, fan_always_on);
 
-        bool dynamic_fan_speeds = m_config->opt_bool("enable_dynamic_fan_speeds", 0);
+        bool dynamic_fan_speeds = config().opt_bool("enable_dynamic_fan_speeds", 0);
         for (int i = 0; i < 4; i++) {
         toggle_option("overhang_fan_speed_"+std::to_string(i),dynamic_fan_speeds);
         }
@@ -483,7 +485,7 @@ void EditorFilament::toggle_options()
 
     if (m_active_page->title() == "Advanced")
     {
-        bool multitool_ramming = m_config->opt_bool("filament_multitool_ramming", 0);
+        bool multitool_ramming = config().opt_bool("filament_multitool_ramming", 0);
         toggle_option("filament_multitool_ramming_volume", multitool_ramming);
         toggle_option("filament_multitool_ramming_flow", multitool_ramming);
     }

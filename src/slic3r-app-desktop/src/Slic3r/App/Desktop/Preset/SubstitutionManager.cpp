@@ -24,14 +24,14 @@ using namespace Config;
 
 // G-code substitutions
 
-void SubstitutionManager::init(DynamicPrintConfig* config, wxWindow* parent, wxFlexGridSizer* grid_sizer)
+void SubstitutionManager::init(Biz::Preset::IConfigInteractor* config_interactor, wxWindow* parent, wxFlexGridSizer* grid_sizer)
 {
-    m_config = config;
+    m_config_interactor = config_interactor;
     m_parent = parent;
     m_grid_sizer = grid_sizer;
     m_em = WX::w_config()->em_unit(parent);
 
-    m_substitutions = m_config->option<ConfigOptionStrings>("gcode_substitutions")->values;
+    m_substitutions = config().option<ConfigOptionStrings>("gcode_substitutions")->values;
     m_chb_match_single_lines.clear();
 }
 
@@ -41,8 +41,8 @@ void SubstitutionManager::validate_length()
         WX::WarningDialog(m_parent, _L("Value of gcode_substitutions parameter will be cut to valid length"),
                                     _L("Invalid length of gcode_substitutions parameter")).ShowModal();
         m_substitutions.resize(m_substitutions.size() - (m_substitutions.size() % 4));
-        // save changes from m_substitutions to config 
-        m_config->option<ConfigOptionStrings>("gcode_substitutions")->values = m_substitutions;
+        // save changes from m_substitutions to config
+        m_config_interactor->set_config_value("gcode_substitutions", m_substitutions, 0);
     }
 }
 
@@ -88,8 +88,9 @@ void SubstitutionManager::delete_substitution(int substitution_id)
         return;
 
     // delete substitution
-    std::vector<std::string>& substitutions = m_config->option<ConfigOptionStrings>("gcode_substitutions")->values;
+    std::vector<std::string> substitutions = config().option<ConfigOptionStrings>("gcode_substitutions")->values;
     substitutions.erase(std::next(substitutions.begin(), substitution_id * 4), std::next(substitutions.begin(), substitution_id * 4 + 4));
+    m_config_interactor->set_config_value("gcode_substitutions", substitutions, 0);
 
     call_ui_update();
 
@@ -118,7 +119,7 @@ void SubstitutionManager::add_substitution( int substitution_id,
             m_substitutions.push_back(std::string());
 
         // save changes from config to m_substitutions
-        m_config->option<ConfigOptionStrings>("gcode_substitutions")->values = m_substitutions;
+        m_config_interactor->set_config_value("gcode_substitutions", m_substitutions, 0);
 
         call_after_layout = true;
     }
@@ -213,7 +214,7 @@ void SubstitutionManager::add_substitution( int substitution_id,
 
 void SubstitutionManager::update_from_config()
 {
-    std::vector<std::string>& subst = m_config->option<ConfigOptionStrings>("gcode_substitutions")->values;
+    const std::vector<std::string>& subst = config().option<ConfigOptionStrings>("gcode_substitutions")->values;
     if (m_substitutions == subst && !subst.empty()  && m_grid_sizer->IsShown(1)) {
         // just update visibility for chb_match_single_lines
         int subst_id = 0;
@@ -252,7 +253,7 @@ void SubstitutionManager::update_from_config()
 void SubstitutionManager::delete_all()
 {
     m_substitutions.clear();
-    m_config->option<ConfigOptionStrings>("gcode_substitutions")->values.clear();
+    m_config_interactor->set_config_value("gcode_substitutions", std::vector<std::string>{}, 0);
     call_ui_update();
 
     if (!m_grid_sizer->IsEmpty()) {
@@ -271,14 +272,13 @@ void SubstitutionManager::edit_substitution(int substitution_id, int opt_pos, co
 
     m_substitutions[substitution_id * 4 + opt_pos] = value;
     // save changes from m_substitutions to config 
-    m_config->option<ConfigOptionStrings>("gcode_substitutions")->values = m_substitutions;
-
+    m_config_interactor->set_config_value("gcode_substitutions", m_substitutions, 0);
     call_ui_update();
 }
 
 bool SubstitutionManager::is_empty_substitutions()
 {
-    return m_config->option<ConfigOptionStrings>("gcode_substitutions")->values.empty();
+    return config().option<ConfigOptionStrings>("gcode_substitutions")->values.empty();
 }
 
 }
