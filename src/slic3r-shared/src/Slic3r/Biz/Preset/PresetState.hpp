@@ -11,6 +11,8 @@ struct PresetState
     Slic3r::Preset          edited_preset;
 
     PresetState() = default;
+    PresetState(const PresetState&) = default;
+    PresetState& operator=(const PresetState&) = default;
 
     PresetState(Slic3r::Preset* selected_preset_in, const Slic3r::Preset* selected_preset_parent_in) :
         selected_preset(selected_preset_in),

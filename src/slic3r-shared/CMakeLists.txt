@@ -85,7 +85,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/Scene/Selection.hpp
         src/Slic3r/Biz/Scene/SceneInteractorProjectContext.hpp
 
-        src/Slic3r/Biz/Preset/IPresetChangeListener.hpp
+        src/Slic3r/Biz/Preset/IBedPresetValueChangedListener.hpp
+        src/Slic3r/Biz/Preset/IBedPresetSwitchedListener.hpp
         src/Slic3r/Biz/Preset/IConfigInteractor.hpp
         src/Slic3r/Biz/Preset/PresetInteractor.cpp
         src/Slic3r/Biz/Preset/PresetInteractor.hpp

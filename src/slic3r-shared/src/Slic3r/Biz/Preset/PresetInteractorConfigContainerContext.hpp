@@ -9,19 +9,20 @@ namespace Slic3r::Biz::Preset {
 
 struct PresetInteractorConfigContainerContext
 {
-    size_t                      config_container_id;
-    PresetState                 printer;
-    PresetState                 print;
-    std::vector<PresetState>    materials;
-    std::vector<PresetState>    extruders;
-    PresetBundleRuntime         preset_bundle_runtime;
-    std::string                 ph_printer_name                 { std::string() };
+    size_t config_container_id;
+    PresetState printer;
+    PresetState print;
+    std::vector<PresetState> materials;
+    std::vector<PresetState> extruders;
+    PresetBundleRuntime preset_bundle_runtime;
+    std::string ph_printer_name{std::string()};
 
     PrinterTechnology   printer_technology() const { return printer.edited_preset.printer_technology(); }
 
     DynamicPrintConfig  full_config() const;
 
     PresetState& preset_state(Slic3r::Preset::Type preset_type, size_t preset_index);
+
 
 private:
     DynamicPrintConfig  full_fff_config() const;

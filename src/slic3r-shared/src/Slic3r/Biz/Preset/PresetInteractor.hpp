@@ -10,10 +10,14 @@
 
 namespace Slic3r::Biz::Preset {
 
-class IPresetChangeListener;
+class IBedPresetValueChangedListener;
+class IBedPresetSwitchedListener;
 
 class PresetInteractor;
 
+/**
+ * Implements interaction with Preset underlying DynamicPrintConfig
+ */
 class PresetConfigInteractor : public IConfigInteractor
 {
 public:
@@ -33,6 +37,9 @@ private:
     size_t m_preset_index;
 };
 
+/**
+ * Manipulates presets associated with config containers.
+ */
 class PresetInteractor final : public ISelectedConfigContainerChangedListener
 {
 public:
@@ -47,20 +54,35 @@ public:
         return cccs.find(project_ctx.selected_config_container_id)->second;
     }
 
+
     void set_preset_state_value(Slic3r::Preset::Type preset_type, size_t preset_index, const std::string& name, const boost::any& value, int opt_index = 0);
     void set_preset_state_config_num_extruders(Slic3r::Preset::Type preset_type, size_t preset_index, size_t num_extruders);
     void set_preset_state(Slic3r::Preset::Type preset_type, size_t preset_index, const DynamicPrintConfig& config);
     void modify_preset_state(Slic3r::Preset::Type preset_type, size_t preset_index, IConfigInteractor::ModifyFunc modify_fn);
 
+    void select_printer_preset(size_t preset_idx);
+    void select_print_preset(size_t preset_idx);
+    void select_extruder_preset(size_t extruder_idx, size_t preset_idx);
+    void select_material_preset(size_t extruder_idx, size_t preset_idx);
 
-    bool add_change_listener(IPresetChangeListener* listener)
+    bool add_bed_preset_value_changed_listener(IBedPresetValueChangedListener* listener)
     {
-        return m_change_listeners.add(listener);
+        return m_bed_preset_value_changed_listeners.add(listener);
     }
 
-    bool remove_change_listener(IPresetChangeListener* listener)
+    bool remove_bed_preset_value_changed_listener(IBedPresetValueChangedListener* listener)
     {
-        return m_change_listeners.remove(listener);
+        return m_bed_preset_value_changed_listeners.remove(listener);
+    }
+
+    bool add_bed_preset_switched_listener(IBedPresetSwitchedListener* listener)
+    {
+        return m_bed_preset_switched_listeners.add(listener);
+    }
+
+    bool remove_bed_preset_switched_listener(IBedPresetSwitchedListener* listener)
+    {
+        return m_bed_preset_switched_listeners.remove(listener);
     }
 
     void on_selected_config_container_changed(SelectionId project_id, SelectionId bed_id) override;
@@ -80,7 +102,8 @@ private:
 
     PresetInteractorProjectContext& get_or_create_project_context(SelectionId project_id);
     PresetInteractorConfigContainerContext& get_or_create_config_container_context(SelectionId project_id, SelectionId config_container_id);
-    PresetState create_preset_state(PresetCollection& source_with_selected) const;
+
+    static PresetState create_preset_state(PresetCollection& source_with_selected);
 
     static void set_config_value(
         DynamicPrintConfig& config, const std::string& name, const boost::any& value, int opt_index
@@ -89,7 +112,8 @@ private:
 private:
 
     Domain::Workbench& m_workbench;
-    ListenerList<IPresetChangeListener> m_change_listeners;
+    ListenerList<IBedPresetValueChangedListener> m_bed_preset_value_changed_listeners;
+    ListenerList<IBedPresetSwitchedListener> m_bed_preset_switched_listeners;
 
     ProjectContexts m_project_contexts;
 

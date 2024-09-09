@@ -9,12 +9,27 @@ class DynamicPrintConfig;
 
 namespace Slic3r::Biz::Preset {
 
+/**
+ * Universal interface the GUI components use to manipulate an element backed
+ * by a DynamicPrintConfig (like Preset or ModelConfig).
+ */
 class IConfigInteractor
 {
 public:
     virtual ~IConfigInteractor() = default;
 
+    /**
+     * Get actual config (read only)
+     * @return config
+     */
     virtual const DynamicPrintConfig& config() const = 0;
+
+    /**
+     * Set one specigic key
+     * @param name
+     * @param value
+     * @param opt_index
+     */
     virtual void set_config_value(
         const std::string& name, const boost::any& value, int opt_index
     ) = 0;

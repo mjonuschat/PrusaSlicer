@@ -1,5 +1,6 @@
 #include "PresetInteractor.hpp"
-#include "IPresetChangeListener.hpp"
+#include "IBedPresetValueChangedListener.hpp"
+#include "IBedPresetSwitchedListener.hpp"
 #include "Slic3r/Domain/ConfigContainer.hpp"
 
 #include <boost/algorithm/string.hpp>
@@ -15,13 +16,15 @@ void PresetInteractor::on_selected_config_container_changed(SelectionId project_
     // update selected config
     auto& ccc = get_or_create_config_container_context(m_selected_project_id, container_id);
 
+    ccc.bundle_runtime.update_compatible_prints(m_workbench.preset_bundle(), *ccc.printer.selected_preset);
+    ccc.bundle_runtime.update_compatible_materials(m_workbench.preset_bundle(), *ccc.printer.selected_preset, *ccc.print.selected_preset);
 
     // notify listeners on changes
-    m_change_listeners.invoke([&ccc](auto* l) {
-        l->on_bed_preset_changed(Slic3r::Preset::Type::TYPE_PRINT, ccc.print);
-        l->on_bed_preset_changed(Slic3r::Preset::Type::TYPE_PRINTER, ccc.printer);
+    m_bed_preset_value_changed_listeners.invoke([&ccc](auto* l) {
+        l->on_bed_preset_value_changed(Slic3r::Preset::Type::TYPE_PRINT, ccc.print);
+        l->on_bed_preset_value_changed(Slic3r::Preset::Type::TYPE_PRINTER, ccc.printer);
         if (!ccc.materials.empty())
-            l->on_bed_preset_changed(Slic3r::Preset::Type::TYPE_FILAMENT, ccc.materials[0]);
+            l->on_bed_preset_value_changed(Slic3r::Preset::Type::TYPE_FILAMENT, ccc.materials[0]);
     });
 }
 
@@ -39,7 +42,8 @@ void PresetInteractor::set_preset_state_value(
 
     set_config_value(config, name, value, opt_index);
 
-    m_change_listeners.invoke([preset_type, &preset_state](auto* l) { l->on_bed_preset_changed(preset_type, preset_state); });
+    m_bed_preset_value_changed_listeners.invoke([preset_type, &preset_state](auto* l) {
+        l->on_bed_preset_value_changed(preset_type, preset_state); });
 }
 
 void PresetInteractor::set_preset_state_config_num_extruders(
@@ -52,8 +56,8 @@ void PresetInteractor::set_preset_state_config_num_extruders(
 
     config.set_num_extruders(num_extruders);
 
-    m_change_listeners.invoke([preset_type, &preset_state](auto* l) {
-        l->on_bed_preset_changed(preset_type, preset_state);
+    m_bed_preset_value_changed_listeners.invoke([preset_type, &preset_state](auto* l) {
+        l->on_bed_preset_value_changed(preset_type, preset_state);
     });
 }
 
@@ -64,7 +68,8 @@ void PresetInteractor::set_preset_state(Slic3r::Preset::Type preset_type, size_t
 
     preset_state.edited_preset.config = config;
 
-    m_change_listeners.invoke([preset_type, &preset_state](auto* l) { l->on_bed_preset_changed(preset_type, preset_state); });
+    m_bed_preset_value_changed_listeners.invoke([preset_type, &preset_state](auto* l) {
+        l->on_bed_preset_value_changed(preset_type, preset_state); });
 }
 
 void PresetInteractor::modify_preset_state(
@@ -77,12 +82,64 @@ void PresetInteractor::modify_preset_state(
 
     modify_fn(config);
 
-    m_change_listeners.invoke([preset_type, &preset_state](auto* l) {
-        l->on_bed_preset_changed(preset_type, preset_state);
+    m_bed_preset_value_changed_listeners.invoke([preset_type, &preset_state](auto* l) {
+        l->on_bed_preset_value_changed(preset_type, preset_state);
     });
 }
 
+void PresetInteractor::select_printer_preset(size_t preset_idx) 
+{
+    auto& ccc = selected_config_container_context();
+    PresetBundle& preset_bundle = m_workbench.preset_bundle();
+    preset_bundle.printers.select_preset(preset_idx);
+    ccc.printer = create_preset_state(preset_bundle.printers);
 
+    // update PresetBundleRuntime
+    ccc.bundle_runtime.update_compatible_prints(preset_bundle, *ccc.printer.selected_preset);
+    
+    m_bed_preset_switched_listeners.invoke([](auto* l){
+        l->on_bed_preset_switched(Slic3r::Preset::TYPE_PRINTER); 
+    });
+
+    // TODO: select relevant print if needed
+}
+
+void PresetInteractor::select_print_preset(size_t preset_idx) 
+{
+    auto& ccc = selected_config_container_context();
+    PresetBundle& preset_bundle = m_workbench.preset_bundle();
+    bool is_sla = ccc.printer_technology() == ptSLA;
+    PresetCollection& collection = is_sla ? preset_bundle.sla_prints : preset_bundle.prints;
+    collection.select_preset(preset_idx);
+    ccc.print = create_preset_state(collection);
+    
+    // TODO: update PresetBundleRuntime
+    
+    m_bed_preset_switched_listeners.invoke([](auto* l){
+        l->on_bed_preset_switched(Slic3r::Preset::TYPE_PRINT); 
+    });
+}
+
+void PresetInteractor::select_extruder_preset(size_t extruder_idx, size_t preset_idx) 
+{
+    // TODO: implement once extruder preset is available
+}
+
+void PresetInteractor::select_material_preset(size_t extruder_idx, size_t preset_idx) 
+{
+    // TODO: update PresetBundleRuntime
+    auto& ccc = selected_config_container_context();
+    PresetBundle& preset_bundle = m_workbench.preset_bundle();
+    bool is_sla = ccc.printer_technology() == ptSLA;
+    PresetCollection& collection = is_sla ? preset_bundle.sla_materials : preset_bundle.filaments;
+    collection.select_preset(preset_idx);
+    ccc.materials[extruder_idx] = create_preset_state(collection);
+    
+    m_bed_preset_switched_listeners.invoke([](auto* l){
+        l->on_bed_preset_switched(Slic3r::Preset::TYPE_FILAMENT); 
+    });
+    
+}
 
 void PresetInteractor::set_config_value(
     DynamicPrintConfig& config, const std::string& name, const boost::any& value, int opt_index
@@ -115,15 +172,22 @@ void PresetInteractor::set_config_value(
         break;
     }
     case coFloatsOrPercents: {
-        std::string str = boost::any_cast<std::string>(value);
-        bool percent = false;
-        if (str.back() == '%') {
-            str.pop_back();
-            percent = true;
+        if (typeid(std::string) == value.type()) {
+            std::string str = boost::any_cast<std::string>(value);
+            bool percent = false;
+            if (str.back() == '%') {
+                str.pop_back();
+                percent = true;
+            }
+            double val = std::stod(str
+            ); // locale-dependent (on purpose - the input is the actual content of the field)
+            ConfigOptionFloatsOrPercents* vec_new = new ConfigOptionFloatsOrPercents({{val, percent}
+            });
+            config.option<ConfigOptionFloatsOrPercents>(name)->set_at(vec_new, opt_index, opt_index);
+        } else {
+            auto val = boost::any_cast<std::vector<FloatOrPercent>>(value);
+            config.option<ConfigOptionFloatsOrPercents>(name)->values = val;
         }
-        double val = std::stod(str); // locale-dependent (on purpose - the input is the actual content of the field)
-        ConfigOptionFloatsOrPercents* vec_new = new ConfigOptionFloatsOrPercents({ {val, percent} });
-        config.option<ConfigOptionFloatsOrPercents>(name)->set_at(vec_new, opt_index, opt_index);
         break;
     }
     case coPercents: {
@@ -244,11 +308,12 @@ PresetInteractorConfigContainerContext& PresetInteractor::get_or_create_config_c
     return it->second;
 }
 
-PresetState PresetInteractor::create_preset_state(PresetCollection& source_with_selected) const
+PresetState PresetInteractor::create_preset_state(PresetCollection& source_with_selected)
 {
     auto& preset = source_with_selected.get_selected_preset();
-    return PresetState(&preset, source_with_selected.get_selected_preset_parent());
+    return {&preset, source_with_selected.get_selected_preset_parent()};
 }
+
 
 const DynamicPrintConfig& PresetConfigInteractor::config() const
 {
@@ -278,6 +343,7 @@ void PresetConfigInteractor::set_config(const Slic3r::DynamicPrintConfig& config
 {
     m_parent.set_preset_state(m_preset_type, m_preset_index, config);
 }
+
 void PresetConfigInteractor::modify_config(IConfigInteractor::ModifyFunc mod_fn)
 {
     m_parent.modify_preset_state(m_preset_type, m_preset_index, mod_fn);
