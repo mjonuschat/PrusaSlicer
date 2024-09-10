@@ -37,6 +37,7 @@
 
 #include "Slic3r/Biz/Preset/PresetInteractorConfigContainerContext.hpp"
 #include "Slic3r/Biz/Preset/PresetState.hpp"
+#include "Slic3r/Biz/Preset/PresetInteractor.hpp"
 
 #include "../GUI_Descriptions.hpp"
 #include "Slic3r/App/WX/Highlighter.hpp"
@@ -51,6 +52,9 @@ class wxWindow;
 class wxString;
 
 namespace Slic3r::App::Desktop::Preset {
+
+class EditorPresetComboBox;
+class Manipulators;
 
 struct PresetDependencies {
     Slic3r::Preset::Type    type{ Slic3r::Preset::TYPE_INVALID };
@@ -84,7 +88,10 @@ public:
     // The tab is already constructed.
     bool    completed() const { return m_completed; }
 
-    void    init(Biz::Preset::PresetInteractorConfigContainerContext* ccc);
+    void    init(Biz::Preset::PresetInteractorConfigContainerContext* ccc, 
+                 Biz::Preset::PresetInteractor* preset_interactor,
+                 PresetBundle* preset_bundle);
+    void    update(Biz::Preset::PresetInteractorConfigContainerContext* ccc);
     void    activate();
     void    activate_option(const std::string& opt_key, const wxString& category);
     void    update_mode(ConfigOptionMode mode);
@@ -193,9 +200,10 @@ protected:
     ConfigOptionMode        m_mode                  { comExpert }; // to correct first Tab update_visibility() set mode to Expert
     WX::ConfigManipulation  m_config_manipulation;
     std::vector<PageShp>    m_pages;
-    Page*                   m_active_page {nullptr};
+    Page*                   m_active_page           {nullptr};
 
-//!    TabPresetComboBox*    m_presets_choice;
+    EditorPresetComboBox*   m_presets_choice        {nullptr};
+    Manipulators*           m_manipulators          {nullptr};
 
     PresetDependencies      m_compatible_printers   { PresetDependencies(Slic3r::Preset::TYPE_PRINTER) };
     PresetDependencies      m_compatible_prints     { PresetDependencies(Slic3r::Preset::TYPE_PRINT) };

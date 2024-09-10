@@ -40,6 +40,12 @@ set(SLIC3R_APP_DESKTOP_FILES
         src/Slic3r/App/Desktop/Preset/SavePresetDialog.hpp
         src/Slic3r/App/Desktop/Preset/EditGCodeDialog.cpp
         src/Slic3r/App/Desktop/Preset/EditGCodeDialog.hpp
+        src/Slic3r/App/Desktop/Preset/PresetComboBox.cpp
+        src/Slic3r/App/Desktop/Preset/PresetComboBox.hpp
+        src/Slic3r/App/Desktop/Preset/EditorPresetComboBox.cpp
+        src/Slic3r/App/Desktop/Preset/EditorPresetComboBox.hpp
+        src/Slic3r/App/Desktop/Preset/Manipulators.cpp
+        src/Slic3r/App/Desktop/Preset/Manipulators.hpp
 )
 
 # Create a slic3r-app-desktop executable

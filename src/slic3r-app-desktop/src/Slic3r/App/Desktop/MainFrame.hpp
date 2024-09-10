@@ -44,6 +44,7 @@ private:
     void init_plater();
     void init_preset_editors();
     void add_preset_editor(Preset::AbstractEditor* panel, const std::string& bmp_name /*= ""*/);
+    void update_preset_editors();
 
     void complete_and_bind_top_bar();
 

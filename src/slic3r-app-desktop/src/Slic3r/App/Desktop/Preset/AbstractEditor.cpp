@@ -21,6 +21,8 @@
 
 #include "AbstractEditor.hpp"
 #include "EditorPrinter.hpp"
+#include "EditorPresetComboBox.hpp"
+#include "Manipulators.hpp"
 #include "../Config/OptionsGroup.hpp"
 #include "../Config/OG_CustomCtrl.hpp"
 #include "EditGCodeDialog.hpp"
@@ -50,7 +52,6 @@
 
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/replace.hpp>
-#include <boost/exception/diagnostic_information.hpp>
 
 //!#include "GUI_App.hpp"       for -> update_label_colours
 //!#include "MainFrame.hpp"     for -> select_tab()
@@ -114,14 +115,14 @@ AbstractEditor::AbstractEditor(wxWindow* parent, const wxString& title, Slic3r::
 }
 
 // sub new
-void AbstractEditor::init(Biz::Preset::PresetInteractorConfigContainerContext* ccc)
+void AbstractEditor::init(  Biz::Preset::PresetInteractorConfigContainerContext* ccc, 
+                            Biz::Preset::PresetInteractor* preset_interactor,
+                            PresetBundle* preset_bundle)
 {
     m_ccc = ccc;
 #ifdef __WINDOWS__
     SetDoubleBuffered(true);
 #endif //__WINDOWS__
-
-//    m_preset_bundle = preset_bundle;
 
     // Vertical sizer to hold the choice menu and the rest of the page.
 #ifdef __WXOSX__
@@ -145,21 +146,13 @@ void AbstractEditor::init(Biz::Preset::PresetInteractorConfigContainerContext* c
     panel->SetSizer(sizer);
 #endif //__WXOSX__
 
-    /*  //!
     // preset chooser
-    m_presets_choice = new TabPresetComboBox(panel, m_type, m_preset_bundle);
-    m_presets_choice->set_selection_changed_function([this](int selection) {
-        if (!m_presets_choice->selection_is_changed_according_to_physical_printers())
-        {
-            if (m_type == Slic3r::Preset::TYPE_PRINTER && !m_presets_choice->is_selected_physical_printer())
-                m_preset_bundle->physical_printers.unselect_printer();
+    m_presets_choice = new EditorPresetComboBox(panel, m_type, preset_bundle);
 
-            // select preset
-            std::string preset_name = m_presets_choice->GetString(selection).ToUTF8().data();
-            select_preset(Preset::remove_suffix_modified(preset_name));
-        }
-    });
-*/
+    // set of buttons for maniplation(save/rename/delete...) with presets
+    m_manipulators = new Manipulators(panel, m_presets_choice, preset_interactor);
+    m_manipulators->show_btn_incompatible_presets();
+
     add_scaled_button(panel, &m_question_btn, "question");
     m_question_btn->SetToolTip(_L("Hover the cursor over buttons to find more information \n"
                                    "or click this button."));
@@ -196,13 +189,14 @@ void AbstractEditor::init(Biz::Preset::PresetInteractorConfigContainerContext* c
     const float scale_factor = WX::w_config()->em_unit(this)*0.1;// GetContentScaleFactor();
     m_top_hsizer = new wxBoxSizer(wxHORIZONTAL);
     sizer->Add(m_top_hsizer, 0, wxEXPAND | wxBOTTOM, 3);
-//!    m_top_hsizer->Add(m_presets_choice, 0, wxLEFT | wxRIGHT | wxTOP | wxALIGN_CENTER_VERTICAL, 3);
+    m_top_hsizer->Add(m_presets_choice, 0, wxLEFT | wxRIGHT | wxTOP | wxALIGN_CENTER_VERTICAL, 3);
     m_top_hsizer->AddSpacer(int(4*scale_factor));
+    m_top_hsizer->Add((wxBoxSizer*)m_manipulators, 0, wxLEFT | wxRIGHT | wxTOP | wxALIGN_CENTER_VERTICAL, 3);
 
     m_top_hsizer->AddSpacer(int(16*scale_factor));
     // StretchSpacer has a strange behavior under OSX, so
     // hide whole top sizer to correct layout later
-    m_top_hsizer->ShowItems(false);
+//!    m_top_hsizer->ShowItems(false);
 
     //Horizontal sizer to hold the tree and the selected page.
     m_hsizer = new wxBoxSizer(wxHORIZONTAL);
@@ -302,6 +296,26 @@ void AbstractEditor::init(Biz::Preset::PresetInteractorConfigContainerContext* c
     rebuild_page_tree();
 
     m_completed = true;
+}
+
+void AbstractEditor::update(Biz::Preset::PresetInteractorConfigContainerContext* ccc)
+{
+    m_ccc = ccc;
+
+    if (m_type == Slic3r::Preset::TYPE_PRINT || m_type == Slic3r::Preset::TYPE_SLA_PRINT)
+        m_state = &m_ccc->print;
+    else if (m_type == Slic3r::Preset::TYPE_FILAMENT || m_type == Slic3r::Preset::TYPE_SLA_MATERIAL)
+        m_state = &m_ccc->materials[0];//! ysFIXME -> set correct extruder id
+    else
+        m_state = &m_ccc->printer;
+
+    m_config = &m_state->edited_preset.config;
+
+    // update presets list and manipulators from the state
+    m_presets_choice->update(m_state, &m_ccc->preset_bundle_runtime);
+    m_manipulators->update(m_state, m_ccc->printer.edited_preset.config.opt_string("printer_model"), m_ccc->ph_printer_name);
+
+    reload_config();
 }
 
 void AbstractEditor::add_scaled_button(wxWindow* parent,
@@ -863,7 +877,7 @@ void AbstractEditor::msw_rescale()
 {
     m_em_unit = WX::w_config()->em_unit(m_parent);
 
-//!    m_presets_choice->msw_rescale();
+    m_presets_choice->msw_rescale();
     m_treectrl->SetMinSize(wxSize(20 * m_em_unit, -1));
 
     if (m_compatible_printers.checkbox)
@@ -880,7 +894,8 @@ void AbstractEditor::msw_rescale()
 
 void AbstractEditor::sys_color_changed()
 {
-//!    m_presets_choice->sys_color_changed();
+    m_presets_choice->sys_color_changed();
+    m_manipulators->sys_color_changed();
 
     // update buttons and cached bitmaps
     for (const auto btn : m_scaled_buttons)
@@ -1226,13 +1241,13 @@ bool AbstractEditor::validate_custom_gcode(const wxString& title, const std::str
 }
 
 void AbstractEditor::edit_custom_gcode(const t_config_option_key& opt_key)
-{/* //!
+{
     EditGCodeDialog dlg = EditGCodeDialog(this, opt_key, get_custom_gcode(opt_key), m_ccc);
     if (dlg.ShowModal() == wxID_OK) {
         set_custom_gcode(opt_key, dlg.get_edited_gcode());
         update_dirty();
         update();
-    }*/
+    }
 }
 
 const std::string& AbstractEditor::get_custom_gcode(const t_config_option_key& opt_key)

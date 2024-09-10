@@ -107,6 +107,8 @@ MainFrame::MainFrame(Domain::Workbench& workbench)
 
     complete_and_bind_top_bar();
 
+    update_preset_editors();
+
     this->Bind(wxEVT_SYS_COLOUR_CHANGED, [this](wxSysColourChangedEvent& event)
     {
         event.Skip();
@@ -162,6 +164,12 @@ void MainFrame::init_top_bar()
     m_top_bar_menus.ApplyWorkspacesMenu();
 
     m_top_bar = new TopBar(this, &m_top_bar_menus);
+}
+
+void MainFrame::update_preset_editors()
+{
+    for (auto& [type, panel] : m_preset_editors)
+        panel->update(m_active_context);
 }
 
 void MainFrame::complete_and_bind_top_bar()
@@ -223,7 +231,7 @@ void MainFrame::init_preset_editors()
 
 void MainFrame::add_preset_editor(Preset::AbstractEditor* panel, const std::string& bmp_name /*= ""*/)
 {
-    panel->init(m_active_context);
+    panel->init(m_active_context, &m_preset_interactor, &m_workbench.preset_bundle());
     m_preset_editors[panel->type()] = panel;
 
     m_top_bar->AddNewPage(panel, panel->title(), bmp_name);
