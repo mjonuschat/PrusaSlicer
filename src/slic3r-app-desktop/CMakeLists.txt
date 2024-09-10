@@ -34,6 +34,10 @@ set(SLIC3R_APP_DESKTOP_FILES
         src/Slic3r/App/Desktop/Preset/EditorSLAMaterial.hpp
         src/Slic3r/App/Desktop/Preset/EditorPrinter.cpp
         src/Slic3r/App/Desktop/Preset/EditorPrinter.hpp
+        src/Slic3r/App/Desktop/Preset/PresetNameGetter.cpp
+        src/Slic3r/App/Desktop/Preset/PresetNameGetter.hpp
+        src/Slic3r/App/Desktop/Preset/SavePresetDialog.cpp
+        src/Slic3r/App/Desktop/Preset/SavePresetDialog.hpp
 )
 
 # Create a slic3r-app-desktop executable

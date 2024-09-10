@@ -313,7 +313,7 @@ void WidgetsConfig::UpdateDarkUI(wxWindow* window, bool highlited/* = false*/, b
         }
     }
     else if (wxTextCtrl* text = dynamic_cast<wxTextCtrl*>(window)) {
-        if (text->GetBorder() != wxBORDER_SIMPLE)
+        if (text->GetBorder() != wxBORDER_SIMPLE && text->GetBorder() != wxBORDER_NONE)
             text->SetWindowStyle(text->GetWindowStyle() | wxBORDER_SIMPLE);
     }
     else if (wxCheckListBox* list = dynamic_cast<wxCheckListBox*>(window)) {
