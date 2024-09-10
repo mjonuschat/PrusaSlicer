@@ -113,6 +113,7 @@ MainFrame::MainFrame(Domain::Workbench& workbench)
         m_top_bar->OnColorsChanged();
     });
 
+#ifndef __WXOSX__
     this->Bind(wxEVT_DPI_CHANGED, [this](wxDPIChangedEvent& event)
     {
         event.Skip();
@@ -120,6 +121,7 @@ MainFrame::MainFrame(Domain::Workbench& workbench)
         for (auto& [type, panel] : m_preset_editors)
             panel->msw_rescale();
     });
+#endif
 }
 
 void MainFrame::init_bed_context()

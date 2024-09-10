@@ -23,8 +23,7 @@
 #include "EditorPrinter.hpp"
 #include "../Config/OptionsGroup.hpp"
 #include "../Config/OG_CustomCtrl.hpp"
-//#include "PresetComboBoxes.hpp"
-//#include "EditGCodeDialog.hpp"
+#include "EditGCodeDialog.hpp"
 
 #include "Slic3r/Biz/Preset/PresetHints.hpp"
 
@@ -1228,7 +1227,7 @@ bool AbstractEditor::validate_custom_gcode(const wxString& title, const std::str
 
 void AbstractEditor::edit_custom_gcode(const t_config_option_key& opt_key)
 {/* //!
-    EditGCodeDialog dlg = EditGCodeDialog(this, m_preset_bundle, opt_key, get_custom_gcode(opt_key));
+    EditGCodeDialog dlg = EditGCodeDialog(this, opt_key, get_custom_gcode(opt_key), m_ccc);
     if (dlg.ShowModal() == wxID_OK) {
         set_custom_gcode(opt_key, dlg.get_edited_gcode());
         update_dirty();

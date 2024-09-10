@@ -38,6 +38,8 @@ set(SLIC3R_APP_DESKTOP_FILES
         src/Slic3r/App/Desktop/Preset/PresetNameGetter.hpp
         src/Slic3r/App/Desktop/Preset/SavePresetDialog.cpp
         src/Slic3r/App/Desktop/Preset/SavePresetDialog.hpp
+        src/Slic3r/App/Desktop/Preset/EditGCodeDialog.cpp
+        src/Slic3r/App/Desktop/Preset/EditGCodeDialog.hpp
 )
 
 # Create a slic3r-app-desktop executable
