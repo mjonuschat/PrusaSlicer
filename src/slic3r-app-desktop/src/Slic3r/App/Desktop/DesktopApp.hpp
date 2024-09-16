@@ -8,6 +8,8 @@
 #include <Slic3r/Domain/Bed.hpp>
 #include <Slic3r/App/TestRenderModule.hpp>
 
+#include <Slic3r/App/I18N/Translation.hpp>
+
 namespace Slic3r::App::Desktop {
 class MainFrame;
 
@@ -16,10 +18,15 @@ public:
     bool OnInit() override;
 
 private:
+    void init_translations();
+
+private:
 
     MainFrame* m_main_frame;
     TestRenderModule m_render_module;
     Domain::Workbench m_workbench;
+
+    Translations m_translations;
 };
 
 } // namespace Slic3r::App::Desktop

@@ -8,6 +8,11 @@
 #include "Preset/EditorPrinter.hpp"
 
 #include <Slic3r/App/WX/WidgetsConfig.hpp>
+#include <Slic3r/App/WX/StringConversions.hpp>
+#include <Slic3r/App/WX/format.hpp>
+#include <Slic3r/App/WX/I18N.hpp>
+#include <Slic3r/App/WX/MsgDialog.hpp>
+#include <Slic3r/App/I18N/Translation.hpp>
 
 #include <wx/panel.h>
 #include <wx/notebook.h>
@@ -32,15 +37,21 @@ static void add_experimets_page(TopBar* top_bar, MainFrame* main_frame)
     wxStaticText* test_txt = new wxStaticText(test_panel, wxID_ANY, "Change: ");
     test_sizer->Add(test_txt, 0, wxALIGN_CENTRE_VERTICAL | wxALL, 20);
 
-    ScalableButton* test_btn = new ScalableButton(test_panel, wxID_ANY, "cog", "Color mode");
+    ScalableButton* test_btn = new ScalableButton(test_panel, wxID_ANY, "cog", _L("Color mode"));
     test_btn->SetFont(w_config()->bold_font());
-    ScalableButton* test_btn2 = new ScalableButton(test_panel, wxID_ANY, "edit", "Apply");
+    ScalableButton* test_btn2 = new ScalableButton(test_panel, wxID_ANY, "edit", _L("Apply"));
     test_btn2->SetFont(w_config()->bold_font());
+
+    ScalableButton* lang_selection_btn = new ScalableButton(test_panel, wxID_ANY, "language", _L("Select the language"),
+                                                            wxDefaultSize, wxDefaultPosition, wxBU_EXACTFIT | wxNO_BORDER, 24);
+    lang_selection_btn->SetFont(w_config()->bold_font());
 
     test_sizer->Add(test_btn, 0, wxALIGN_CENTRE_VERTICAL | wxALL, 20);
 
     wxBoxSizer* test_sizer2 = new wxBoxSizer(wxHORIZONTAL);
     main_sizer->Add(test_sizer2, 0, wxEXPAND);
+
+    main_sizer->Add(lang_selection_btn, 0, wxALL, 40);
 
     wxStaticText* test_txt2 = new wxStaticText(test_panel, wxID_ANY, "Text size: ");
     test_sizer2->Add(test_txt2, 0, wxALIGN_CENTRE_VERTICAL | wxALL, 20);
@@ -77,12 +88,16 @@ static void add_experimets_page(TopBar* top_bar, MainFrame* main_frame)
         test_panel->Layout();
     });
 
+    lang_selection_btn->Bind(wxEVT_BUTTON, [=](wxCommandEvent& e) {
+        main_frame->select_language();
+    });
+
     top_bar->AddPage(test_panel, ("UI - test"));
 }
 
 
-MainFrame::MainFrame(Domain::Workbench& workbench)
-    : wxFrame(nullptr, wxID_ANY, ""), m_workbench(workbench), m_preset_interactor(workbench)
+MainFrame::MainFrame(Domain::Workbench& workbench, Translations& translations)
+    : wxFrame(nullptr, wxID_ANY, ""), m_workbench(workbench), m_preset_interactor(workbench), m_translations(translations)
 {
     auto em = w_config()->em_unit();
 
@@ -247,6 +262,67 @@ void MainFrame::sys_color_changed()
     for (auto& [type, panel] : m_preset_editors)
         panel->sys_color_changed();
 
+}
+
+static int GetSingleChoiceIndex(const wxString& message,
+                                const wxString& caption,
+                                const wxArrayString& choices,
+                                int initialSelection)
+{
+#ifdef _WIN32
+    wxSingleChoiceDialog dialog(nullptr, message, caption, choices);
+    WX::w_config()->UpdateDlgDarkUI(&dialog);
+    auto children = dialog.GetChildren();
+    for (auto child : children)
+        child->SetFont(WX::w_config()->normal_font());
+
+    dialog.SetSelection(initialSelection);
+    return dialog.ShowModal() == wxID_OK ? dialog.GetSelection() : -1;
+#else
+    return wxGetSingleChoiceIndex(message, caption, choices, initialSelection);
+#endif
+}
+
+bool MainFrame::select_language()
+{
+    wxArrayString names;
+    auto language_infos = m_translations.languages();
+    names.Alloc(language_infos.size());
+
+    // Some valid language should be selected since the application start up.
+    const std::string active_language = m_translations.active_language();
+    int init_selection = -1;
+    for (size_t i = 0; i < language_infos.size(); ++i) {
+        if (language_infos[i].canonical_name == active_language)
+            // The dictionary matches the active language and country.
+            init_selection = i;
+        names.Add(WX::from_u8(language_infos[i].description));
+    }
+
+    const long index = GetSingleChoiceIndex(_L("Select the language"), _L("Language"), names, init_selection);
+
+    // Try to load a new language.
+    if (index != -1 && (init_selection == -1 || init_selection != index)) {
+        if (m_translations.set_best_translation_for_language(language_infos[index].canonical_name)) {
+            // Save language at application config.
+            //app_config->set("translation_language", language_infos[index].tag);
+            this->Refresh();
+            return true;
+        }
+        else {    
+            wxString message = WX::format_wxstr(_L("Switching PrusaSlicer to language %1% failed."), language_infos[index].canonical_name);
+#if !defined(_WIN32) && !defined(__APPLE__)
+            // likely some linux system
+            message += "\n" + WX::format_wxstr(_L("You may need to reconfigure the missing locales, likely by running the %1% and %2% commands.\n"), 
+                                               "\"locale-gen\"", "\"dpkg-reconfigure locales\"");
+#endif
+            MessageDialog(this, message, _L("PrusaSlicer - Switching language failed"), wxOK | wxICON_ERROR);
+            
+            return false;
+        }
+
+    }
+    return false;
 }
 
 }

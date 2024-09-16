@@ -11,6 +11,10 @@
 #include "Slic3r/Biz/Preset/PresetInteractorConfigContainerContext.hpp"
 #include "TopBarMenus.hpp"
 
+namespace Slic3r {
+class Translations;
+}
+
 namespace Slic3r::App::Desktop::Preset {
 class AbstractEditor;
 }
@@ -21,14 +25,16 @@ class TopBar;
 
 class MainFrame : public wxFrame {
 public:
-    explicit MainFrame(Domain::Workbench& workbench);
+    explicit MainFrame(Domain::Workbench& workbench, Translations& translations);
 
     Platform::WX::WXRenderCanvas& get_render_canvas() { return *m_canvas; }
 
     void    sys_color_changed();
+    bool    select_language();
 
 private:
     Domain::Workbench& m_workbench;
+    Translations& m_translations;
     Biz::Preset::PresetInteractor m_preset_interactor;
     std::unique_ptr<Platform::WX::WXRenderCanvas> m_canvas;
 
