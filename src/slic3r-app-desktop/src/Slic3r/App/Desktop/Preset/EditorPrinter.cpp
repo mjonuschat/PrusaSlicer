@@ -28,6 +28,7 @@
 #include "Slic3r/App/WX/StringConversions.hpp"
 #include "Slic3r/App/WX/MsgDialog.hpp"
 #include "Slic3r/App/WX/format.hpp"
+#include "Slic3r/App/WX/I18N.hpp"
 
 //#include "Search.hpp"
 
@@ -42,15 +43,12 @@
 
 //#include "slic3r/GUI/BedShapeDialog.hpp"
 
-//!#include "I18N.hpp"
-#define _u8L(s) s
-#define L(s) s
-static wxString _L(const wxString& s) { return s; };
-
 namespace Slic3r::App::Desktop::Preset {
 
+using WX::_L;
+
 EditorPrinter::EditorPrinter(wxWindow* parent) :
-    AbstractEditor(parent, _L("Printers"), Slic3r::Preset::TYPE_PRINTER) {}
+    AbstractEditor(parent, L("Printers"), Slic3r::Preset::TYPE_PRINTER) {}
 
 void EditorPrinter::init_options_list()
 {
@@ -83,7 +81,7 @@ void EditorPrinter::build_print_host_upload_group(Page* page) //! maybe it's a t
 {
     ConfigOptionsGroupShp optgroup = page->new_optgroup(L("Print Host upload"));
 
-    wxString description_line_text = _L(""
+    wxString description_line_text = L(""
         "Note: All parameters from this group are moved to the Physical Printer settings (see changelog).\n\n"
         "A new Physical Printer profile is created by clicking on the \"cog\" icon right of the Printer profiles combo box, "
         "by selecting the \"Add physical printer\" item in the Printer combo box. The Physical Printer profile editor opens "

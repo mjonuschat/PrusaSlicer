@@ -28,8 +28,7 @@
 
 //!#include "GUIApp.hpp"  // for -> open_browser_with_warning_dialog
  
-//!#include "I18N.hpp"
-static wxString _L(const wxString& s) { return s; }
+#include "I18N.hpp"
 
 namespace Slic3r::App::WX {
 

@@ -17,6 +17,7 @@
 #include <Slic3r/App/WX/WidgetsConfig.hpp>
 #include <Slic3r/App/WX/Scalable.hpp>
 #include <Slic3r/App/WX/format.hpp>
+#include <Slic3r/App/WX/I18N.hpp>
 
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/classification.hpp>
@@ -26,22 +27,20 @@
 //!#include "Search.hpp" // for > searcher().add_key(..)
 //!#include "libslic3r/AppConfig.hpp" // for > get_app_config()->get_bool("suppress_hyperlinks")
 
-//!#include "I18N.hpp"
-static wxString _L(const wxString& s) { return s; }
-static wxString _(const wxString& s) { return s; }
-static wxString _(const std::string& s) { return Slic3r::App::WX::from_u8(s); }
-#define _CTX(s, s1) s
 
 namespace Slic3r::App::Desktop::Config {
 
 using WX::into_u8;
 using WX::from_u8;
+using WX::_;
+using WX::_L;
+using WX::_CTX;
 
 Line::Line(wxString label, wxString tooltip) :
-    label(_(label)), label_tooltip(_(tooltip)) {}
+    label(label), label_tooltip(tooltip) {}
 
 Line::Line(const std::string& opt_key, const wxString& label, const wxString& tooltip) :
-    label(_(label)), label_tooltip(_(tooltip))
+    label(label), label_tooltip(tooltip)
 {
     m_options.push_back(Option({ opt_key, coNone }, opt_key));
 }
@@ -700,7 +699,7 @@ void OptionsGroup::clear(bool destroy_custom_ctrl)
 
 Line OptionsGroup::create_single_option_line(const Option& option, const std::string& path/* = std::string()*/) const
 {
-    Line retval{ _(option.opt.label), from_u8(option.opt.tooltip) };
+    Line retval{ option.opt.label, from_u8(option.opt.tooltip) };
 
 	retval.label_path = path;
     retval.append_option(option);

@@ -22,17 +22,16 @@
 #include "../Config/OptionsGroup.hpp"
 
 #include "Slic3r/App/WX/format.hpp"
+#include "Slic3r/App/WX/I18N.hpp"
 
 #include <wx/string.h>
 
 #include <wx/bmpbuttn.h>
 #include <wx/wupdlock.h>
 
-//!#include "I18N.hpp"
-#define L(s) s
-static wxString _L(const wxString& s) { return s; };
-
 namespace Slic3r::App::Desktop::Preset {
+
+using WX::_L;
 
 void EditorSLAPrint::build_sla_support_params(const std::vector<SamePair<std::string>> &prefixes,
                                            const PageShp &page)
@@ -73,7 +72,7 @@ void EditorSLAPrint::build_sla_support_params(const std::vector<SamePair<std::st
 }
 
 EditorSLAPrint::EditorSLAPrint(wxWindow* parent) :
-    AbstractEditor(parent, _L("Print Settings"), Slic3r::Preset::TYPE_SLA_PRINT) {}
+    AbstractEditor(parent, L("Print Settings"), Slic3r::Preset::TYPE_SLA_PRINT) {}
 
 void EditorSLAPrint::build()
 {

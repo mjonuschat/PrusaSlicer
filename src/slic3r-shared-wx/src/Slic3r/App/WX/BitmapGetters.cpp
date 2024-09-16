@@ -2,13 +2,11 @@
 #include "BitmapCache.hpp"
 #include "WidgetsConfig.hpp"
 #include "StringConversions.hpp"
+#include "I18N.hpp"
 
 #include <stdexcept>
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/format.hpp>
-
-#define _L(s) s //#include "I18N.hpp"
-#define _(s) s //#include "I18N.hpp"
 
 namespace Slic3r::App::WX {
 

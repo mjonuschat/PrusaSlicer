@@ -8,17 +8,16 @@
 #include "Slic3r/App/WX/MsgDialog.hpp"
 #include "Slic3r/App/WX/StringConversions.hpp"
 #include "Slic3r/App/WX/WidgetsConfig.hpp"
+#include "Slic3r/App/WX/I18N.hpp"
 
 #include <wx/window.h>
 #include <wx/sizer.h>
-
-//#include "I18N.hpp"
-#define _L(s)   s
 
 namespace Slic3r::App::Desktop::Preset {
 
 using WX::from_u8;
 using WX::into_u8;
+using WX::_L;
 
 using namespace Config;
 

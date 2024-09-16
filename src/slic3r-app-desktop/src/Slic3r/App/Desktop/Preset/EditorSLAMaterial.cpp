@@ -24,6 +24,7 @@
 #include "Slic3r/App/WX/format.hpp"
 
 #include "Slic3r/App/WX/Widgets/CheckBox.hpp"
+#include "Slic3r/App/WX/I18N.hpp"
 
 #include <wx/button.h>
 #include <wx/sizer.h>
@@ -32,14 +33,12 @@
 #include <wx/bmpbuttn.h>
 #include <wx/wupdlock.h>
 
-//!#include "I18N.hpp"
-#define L(s) s
-static wxString _L(const wxString& s) { return s; };
-
 namespace Slic3r::App::Desktop::Preset {
 
+using WX::_L;
+
 EditorSLAMaterial::EditorSLAMaterial(wxWindow* parent) :
-    AbstractEditor(parent, _L("Materials"), Slic3r::Preset::TYPE_SLA_MATERIAL) {}
+    AbstractEditor(parent, L("Materials"), Slic3r::Preset::TYPE_SLA_MATERIAL) {}
 
 void EditorSLAMaterial::build()
 {

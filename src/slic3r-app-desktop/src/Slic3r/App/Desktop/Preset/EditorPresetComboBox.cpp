@@ -36,9 +36,7 @@
 //!#include "GUIApp.hpp"  // for -> open_browser_with_warning_dialog(), get_tab() and show_printer_webview_tab()
 //!#include "Plater.hpp"  // for -> for update presets in sidebar 
 
-//!#include "I18N.hpp"
-#define _L(s)    s
-#define  L(s) s
+#include "Slic3r/App/I18N/I18N.hpp"
 
 namespace Slic3r::App::Desktop::Preset {
 

@@ -25,6 +25,7 @@
 #include "Slic3r/Biz/Preset/PresetHints.hpp"
 
 #include "Slic3r/App/WX/StringConversions.hpp"
+#include "Slic3r/App/WX/I18N.hpp"
 #include "Slic3r/App/WX/Widgets/CheckBox.hpp"
 
 #include <wx/sizer.h>
@@ -33,11 +34,9 @@
 #include <wx/bmpbuttn.h>
 #include <wx/wupdlock.h>
 
-//!#include "I18N.hpp"
-#define L(s) s
-static wxString _L(const wxString& s) { return s; };
-
 namespace Slic3r::App::Desktop::Preset {
+
+using namespace WX;
 
 const std::string& EditorFilament::get_custom_gcode(const t_config_option_key& opt_key)
 {
@@ -223,7 +222,7 @@ void EditorFilament::update_filament_overrides_page()
 }
 
 EditorFilament::EditorFilament(wxWindow* parent) :
-    AbstractEditor(parent, _L("Filaments"), Slic3r::Preset::TYPE_FILAMENT) {}
+    AbstractEditor(parent, L("Filaments"), Slic3r::Preset::TYPE_FILAMENT) {}
 
 void EditorFilament::build()
 {

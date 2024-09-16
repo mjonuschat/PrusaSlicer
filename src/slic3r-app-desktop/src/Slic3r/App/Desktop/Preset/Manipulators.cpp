@@ -30,6 +30,7 @@
 #include "Slic3r/App/WX/BitmapGetters.hpp"
 #include "Slic3r/App/WX/MsgDialog.hpp"
 #include "Slic3r/App/WX/format.hpp"
+#include "Slic3r/App/WX/I18N.hpp"
 
 #include "Slic3r/Biz/Preset/PresetState.hpp"
 
@@ -43,14 +44,9 @@
 #include <wx/string.h>
 #include <wx/bmpbuttn.h>
 
-//!#include "I18N.hpp"
-#define _u8L(s) s
-#define L(s) s
-#define _(s) s
-static wxString _L(const wxString& s) { return s; };
-static wxString _L_PLURAL(const wxString& s1, const wxString& s2, int n) { return s1; };
-
 namespace Slic3r::App::Desktop::Preset {
+
+using namespace WX;
 
 Manipulators::Manipulators(wxWindow* parent, EditorPresetComboBox* presets_list, Biz::Preset::PresetInteractor* preset_interactor) :
     wxBoxSizer(wxHORIZONTAL),
