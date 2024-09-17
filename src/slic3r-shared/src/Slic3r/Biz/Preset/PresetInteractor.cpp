@@ -16,8 +16,8 @@ void PresetInteractor::on_selected_config_container_changed(SelectionId project_
     // update selected config
     auto& ccc = get_or_create_config_container_context(m_selected_project_id, container_id);
 
-    ccc.bundle_runtime.update_compatible_prints(m_workbench.preset_bundle(), *ccc.printer.selected_preset);
-    ccc.bundle_runtime.update_compatible_materials(m_workbench.preset_bundle(), *ccc.printer.selected_preset, *ccc.print.selected_preset);
+    ccc.preset_bundle_runtime.update_compatible_prints(m_workbench.preset_bundle(), *ccc.printer.selected_preset);
+    ccc.preset_bundle_runtime.update_compatible_materials(m_workbench.preset_bundle(), *ccc.printer.selected_preset, *ccc.print.selected_preset);
 
     // notify listeners on changes
     m_bed_preset_value_changed_listeners.invoke([&ccc](auto* l) {
@@ -66,6 +66,9 @@ void PresetInteractor::set_preset_state(Slic3r::Preset::Type preset_type, size_t
     auto& ccc = selected_config_container_context();
     auto& preset_state = ccc.preset_state(preset_type, preset_index);
 
+    if (preset_state.edited_preset.config.diff(config).empty())
+        return;
+
     preset_state.edited_preset.config = config;
 
     m_bed_preset_value_changed_listeners.invoke([preset_type, &preset_state](auto* l) {
@@ -79,12 +82,15 @@ void PresetInteractor::modify_preset_state(
     auto& ccc = selected_config_container_context();
     auto& preset_state = ccc.preset_state(preset_type, preset_index);
     auto& config = preset_state.edited_preset.config;
+    auto orig_config = config;
 
     modify_fn(config);
 
-    m_bed_preset_value_changed_listeners.invoke([preset_type, &preset_state](auto* l) {
-        l->on_bed_preset_value_changed(preset_type, preset_state);
-    });
+    if (!orig_config.diff(config).empty()) {
+        m_bed_preset_value_changed_listeners.invoke([preset_type, &preset_state](auto* l) {
+            l->on_bed_preset_value_changed(preset_type, preset_state);
+        });
+    }
 }
 
 void PresetInteractor::select_printer_preset(size_t preset_idx) 
@@ -95,7 +101,7 @@ void PresetInteractor::select_printer_preset(size_t preset_idx)
     ccc.printer = create_preset_state(preset_bundle.printers);
 
     // update PresetBundleRuntime
-    ccc.bundle_runtime.update_compatible_prints(preset_bundle, *ccc.printer.selected_preset);
+    ccc.preset_bundle_runtime.update_compatible_prints(preset_bundle, *ccc.printer.selected_preset);
     
     m_bed_preset_switched_listeners.invoke([](auto* l){
         l->on_bed_preset_switched(Slic3r::Preset::TYPE_PRINTER); 
@@ -302,10 +308,18 @@ PresetInteractorConfigContainerContext& PresetInteractor::get_or_create_config_c
     ccc.printer = create_preset_state(preset_bundle.printers);
     ccc.print = create_preset_state(pt == PrinterTechnology::ptFFF ? preset_bundle.prints : preset_bundle.sla_prints);
     ccc.materials = {create_preset_state(preset_bundle.materials(pt))};
+    ccc.preset_bundle_runtime.update_compatible_prints(preset_bundle, ccc.printer.edited_preset);
+    ccc.preset_bundle_runtime.update_compatible_materials(preset_bundle, ccc.printer.edited_preset, ccc.print.edited_preset);
 
     bool _;
     std::tie(it, _) = project_context.config_containers.emplace(config_container_id, std::move(ccc));
     return it->second;
+}
+
+PresetState PresetInteractor::create_preset_state(Slic3r::Preset* selected_preset)
+{
+    auto& collection = m_workbench.preset_bundle().get_presets(selected_preset->type);
+    return {selected_preset, collection.get_preset_parent(*selected_preset)};
 }
 
 PresetState PresetInteractor::create_preset_state(PresetCollection& source_with_selected)

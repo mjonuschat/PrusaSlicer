@@ -20,6 +20,7 @@
 #include "Slic3r/App/WX/format.hpp"
 
 #include "Slic3r/Biz/Preset/PresetInteractorConfigContainerContext.hpp"
+#include "Slic3r/Biz/Preset/PresetInteractor.hpp"
 
 #include "Slic3r/App/Color.hpp"
 
@@ -41,10 +42,10 @@ namespace Slic3r::App::Desktop::Preset {
 //------------------------------------------
 
 EditGCodeDialog::EditGCodeDialog(wxWindow* parent, const std::string& key, const std::string& value,
-    Biz::Preset::PresetInteractorConfigContainerContext* ccc) :
+                                 Biz::Preset::PresetInteractor& preset_interactor) :
     // TRN: This is title of a dialog. The argument is the name of the currently edited custom G-code.
     wxDialog(parent, wxID_ANY, WX::format_wxstr(_L("Edit Custom G-code (%1%)"), key), wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER),
-    m_ccc(ccc)
+    m_preset_interactor(preset_interactor)
 {
     SetFont(WX::w_config()->normal_font());
     WX::w_config()->UpdateDarkUI(this);
@@ -261,12 +262,14 @@ wxDataViewItem EditGCodeDialog::add_presets_placeholders()
         return std::set<std::string>(vec.begin(), vec.end());
     };
 
-    const bool                  is_fff           = m_ccc->printer_technology() == ptFFF;
+    const auto& ccc = m_preset_interactor.selected_config_container_context();
+
+    const bool                  is_fff           = ccc.printer_technology() == ptFFF;
     const std::set<std::string> print_options    = get_set_from_vec(is_fff ? Slic3r::Preset::print_options()    : Slic3r::Preset::sla_print_options());
     const std::set<std::string> material_options = get_set_from_vec(is_fff ? Slic3r::Preset::filament_options() : Slic3r::Preset::sla_material_options());
     const std::set<std::string> printer_options  = get_set_from_vec(is_fff ? Slic3r::Preset::printer_options()  : Slic3r::Preset::sla_printer_options());
 
-    const auto&full_config = m_ccc->full_config();
+    const auto&full_config = ccc.full_config();
 
     wxDataViewItem group = m_params_list->AppendGroup(_L("Presets"), "cog");
 
@@ -316,7 +319,8 @@ void EditGCodeDialog::selection_changed(wxDataViewEvent& evt)
     if (!opt_key.empty()) {
         const ConfigOptionDef*    def     { nullptr };
 
-        const auto& full_config = m_ccc->full_config();
+        const auto& ccc = m_preset_interactor.selected_config_container_context();
+        const auto& full_config = ccc.full_config();
         if (const ConfigDef* config_def = full_config.def(); config_def && config_def->has(opt_key)) {
             def = config_def->get(opt_key);
         }

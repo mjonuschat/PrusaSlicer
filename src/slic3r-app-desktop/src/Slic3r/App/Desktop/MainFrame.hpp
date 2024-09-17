@@ -47,12 +47,6 @@ private:
     void update_preset_editors();
 
     void complete_and_bind_top_bar();
-
-    Biz::Preset::PresetInteractorConfigContainerContext*             m_active_context{ nullptr };
-    // just for test 
-    std::vector<Biz::Preset::PresetInteractorConfigContainerContext> m_bed_contexts;
-    void init_bed_context();
-
 };
 
 }

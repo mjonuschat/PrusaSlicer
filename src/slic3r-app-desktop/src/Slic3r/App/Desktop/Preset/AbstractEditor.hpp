@@ -38,6 +38,7 @@
 #include "Slic3r/Biz/Preset/PresetInteractorConfigContainerContext.hpp"
 #include "Slic3r/Biz/Preset/PresetState.hpp"
 #include "Slic3r/Biz/Preset/PresetInteractor.hpp"
+#include "Slic3r/Biz/Preset/IBedPresetSwitchedListener.hpp"
 
 #include "../GUI_Descriptions.hpp"
 #include "Slic3r/App/WX/Highlighter.hpp"
@@ -71,29 +72,26 @@ struct PresetDependencies {
 using namespace Config;
 
 using PageShp = std::shared_ptr<Page>;
-class AbstractEditor : public wxPanel
+class AbstractEditor : public wxPanel, public Biz::Preset::IBedPresetSwitchedListener
 {
 public:
     AbstractEditor(wxWindow* parent, const wxString& title, Slic3r::Preset::Type type, Biz::Preset::PresetInteractor& preset_interactor);
-    ~AbstractEditor() {}
+    ~AbstractEditor() { m_preset_interactor.remove_bed_preset_switched_listener(this); }
 
     static wxString             translate_category(const wxString& title, Slic3r::Preset::Type preset_type);
 
     wxWindow*                   parent() const   { return m_parent; }
     wxString                    title()  const   { return m_title; }
     Slic3r::Preset::Type        type()   const   { return m_type; }
-//RMV    DynamicPrintConfig*         config() const   { return m_config; }
-//RMV    Biz::Preset::PresetState*   state()  const   { return m_state; }
     Biz::Preset::PresetConfigInteractor& config_interactor() { return *m_config_interactor;}
     const Biz::Preset::PresetConfigInteractor& config_interactor() const { return *m_config_interactor;}
 
     // The tab is already constructed.
     bool    completed() const { return m_completed; }
 
-    void    init(Biz::Preset::PresetInteractorConfigContainerContext* ccc,
-                 Biz::Preset::PresetInteractor* preset_interactor,
-                 PresetBundle* preset_bundle);
-    void    update(Biz::Preset::PresetInteractorConfigContainerContext* ccc);
+    void    init(Biz::Preset::PresetInteractor* preset_interactor,
+                 const PresetBundle* preset_bundle);
+    void    update_selected_ccc();
     void    activate();
     void    activate_option(const std::string& opt_key, const wxString& category);
     void    update_mode(ConfigOptionMode mode);
@@ -113,6 +111,13 @@ public:
     void    update_preset_choice();//?
     void    cache_config_diff(const std::vector<std::string>& selected_options, const DynamicPrintConfig* config = nullptr);//?
     void    apply_config_from_cache();//?
+
+private:
+    void on_bed_preset_switched(Slic3r::Preset::Type preset_type, size_t opt_extruder_idx) override
+    {
+        if (m_type == preset_type)
+            update_selected_ccc();
+    }
 
 protected:
     PageShp         add_options_page(const wxString& title, const std::string& icon, bool is_extruder_pages = false);
@@ -197,9 +202,6 @@ protected:
     std::string             m_name;
     const wxString          m_title;
 
-//RMV    Biz::Preset::PresetInteractorConfigContainerContext*    m_ccc       { nullptr };
-//RMV    Biz::Preset::PresetState*                               m_state     { nullptr };
-//RMV    DynamicPrintConfig*                                     m_config    { nullptr };
     Biz::Preset::PresetInteractor& m_preset_interactor;
     std::unique_ptr<Biz::Preset::PresetConfigInteractor> m_config_interactor;
 

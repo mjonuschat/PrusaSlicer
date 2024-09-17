@@ -39,6 +39,7 @@
 
 #include "Slic3r/App/WX/Widgets/CheckBox.hpp"
 
+#include <wx/bookctrl.h>
 #include <wx/button.h>
 #include <wx/scrolwin.h>
 #include <wx/sizer.h>
@@ -103,6 +104,7 @@ AbstractEditor::AbstractEditor(
 )
     : m_parent(parent), m_type(type), m_title(title), m_preset_interactor(preset_interactor)
 {
+    m_preset_interactor.add_bed_preset_switched_listener(this);
     Create(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, /*wxBK_LEFT | */wxTAB_TRAVERSAL/*, name*/);
     this->SetFont(WX::w_config()->normal_font());
 
@@ -121,11 +123,9 @@ AbstractEditor::AbstractEditor(
 }
 
 // sub new
-void AbstractEditor::init(  Biz::Preset::PresetInteractorConfigContainerContext* ccc, 
-                            Biz::Preset::PresetInteractor* preset_interactor,
-                            PresetBundle* preset_bundle)
+void AbstractEditor::init(Biz::Preset::PresetInteractor* preset_interactor,
+                            const PresetBundle* preset_bundle)
 {
-//RMV    m_ccc = ccc;
 #ifdef __WINDOWS__
     SetDoubleBuffered(true);
 #endif //__WINDOWS__
@@ -304,22 +304,14 @@ void AbstractEditor::init(  Biz::Preset::PresetInteractorConfigContainerContext*
     m_completed = true;
 }
 
-void AbstractEditor::update(Biz::Preset::PresetInteractorConfigContainerContext* ccc)
+void AbstractEditor::update_selected_ccc()
 {
-    m_ccc = ccc;
-
-    if (m_type == Slic3r::Preset::TYPE_PRINT || m_type == Slic3r::Preset::TYPE_SLA_PRINT)
-        m_state = &m_ccc->print;
-    else if (m_type == Slic3r::Preset::TYPE_FILAMENT || m_type == Slic3r::Preset::TYPE_SLA_MATERIAL)
-        m_state = &m_ccc->materials[0];//! ysFIXME -> set correct extruder id
-    else
-        m_state = &m_ccc->printer;
-
-    m_config = &m_state->edited_preset.config;
+    const auto& ccc = m_preset_interactor.selected_config_container_context();
+    const auto& state = ccc.preset_state(m_type, 0);
 
     // update presets list and manipulators from the state
-    m_presets_choice->update(m_state, &m_ccc->preset_bundle_runtime);
-    m_manipulators->update(m_state, m_ccc->printer.edited_preset.config.opt_string("printer_model"), m_ccc->ph_printer_name);
+    m_presets_choice->update(&state, &ccc.preset_bundle_runtime);
+    m_manipulators->update(&state, ccc.printer.edited_preset.config.opt_string("printer_model"), ccc.ph_printer_name);
 
     reload_config();
 }
@@ -1257,7 +1249,7 @@ bool AbstractEditor::validate_custom_gcode(const wxString& title, const std::str
 
 void AbstractEditor::edit_custom_gcode(const t_config_option_key& opt_key)
 {
-    EditGCodeDialog dlg = EditGCodeDialog(this, opt_key, get_custom_gcode(opt_key), m_ccc);
+    EditGCodeDialog dlg = EditGCodeDialog(this, opt_key, get_custom_gcode(opt_key), m_preset_interactor);
     if (dlg.ShowModal() == wxID_OK) {
         set_custom_gcode(opt_key, dlg.get_edited_gcode());
         update_dirty();

@@ -24,8 +24,8 @@ class PresetNameGetter;
 class SavePresetDialog : public wxDialog
 {
 public:
-    SavePresetDialog(wxWindow* parent, std::vector<const Slic3r::Preset*> selected_presets, PresetBundle* preset_bundle, std::string suffix = "", bool template_filament = false, std::string ph_printer_name = "");
-    SavePresetDialog(wxWindow* parent, const Slic3r::Preset* selected_preset, PresetBundle* preset_bundle);
+    SavePresetDialog(wxWindow* parent, std::vector<const Slic3r::Preset*> selected_presets, const PresetBundle* preset_bundle, std::string suffix = "", bool template_filament = false, std::string ph_printer_name = "");
+    SavePresetDialog(wxWindow* parent, const Slic3r::Preset* selected_preset, const PresetBundle* preset_bundle);
     ~SavePresetDialog() override;
 
     void    AddItem(const Slic3r::Preset* selected_preset, const std::string& suffix, bool is_for_multiple_save);
@@ -57,7 +57,7 @@ private:
 
     std::vector<PresetNameGetter*>                  m_items;
 
-    PresetBundle*   m_preset_bundle                 { nullptr };
+    const PresetBundle*   m_preset_bundle           { nullptr };
     wxBoxSizer*     m_presets_sizer                 { nullptr };
     wxStaticText*   m_label                         { nullptr };
     wxBoxSizer*     m_radio_sizer                   { nullptr };  

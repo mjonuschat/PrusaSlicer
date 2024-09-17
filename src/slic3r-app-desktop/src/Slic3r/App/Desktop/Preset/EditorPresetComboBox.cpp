@@ -42,7 +42,7 @@
 
 namespace Slic3r::App::Desktop::Preset {
 
-EditorPresetComboBox::EditorPresetComboBox(wxWindow* parent, Slic3r::Preset::Type preset_type, PresetBundle* preset_bundle) :
+EditorPresetComboBox::EditorPresetComboBox(wxWindow* parent, Slic3r::Preset::Type preset_type, const PresetBundle* preset_bundle) :
     PresetComboBox(parent, preset_type, wxSize(35 * WX::w_config()->em_unit(), -1), preset_bundle)
 {
     /*
@@ -96,7 +96,7 @@ wxString EditorPresetComboBox::get_preset_name(const Slic3r::Preset& preset)
     return WX::from_u8(preset.name + suffix(preset));
 }
 
-void EditorPresetComboBox::update(Biz::Preset::PresetState* state, Biz::Preset::PresetBundleRuntime* pb_runtime)
+void EditorPresetComboBox::update(const Biz::Preset::PresetState* state, const Biz::Preset::PresetBundleRuntime* pb_runtime)
 {
     m_preset_state = state;
     m_pb_runtime = pb_runtime;
@@ -130,9 +130,9 @@ void EditorPresetComboBox::update()
 
     if (m_type == Slic3r::Preset::TYPE_PRINTER && m_preset_bundle->physical_printers.has_selection()) {
         std::string sel_preset_name = m_preset_bundle->physical_printers.get_selected_printer_preset_name();
-        Slic3r::Preset* preset = m_collection->find_preset(sel_preset_name);
-        if (!preset || m_collection->get_selected_preset_name() != sel_preset_name)
-            m_preset_bundle->physical_printers.unselect_printer();
+        const Slic3r::Preset* preset = m_collection->find_preset(sel_preset_name);
+//        if (!preset || m_collection->get_selected_preset_name() != sel_preset_name)
+//            m_preset_bundle->physical_printers.unselect_printer();
     }
 
     for (size_t i = presets.front().is_visible ? 0 : m_collection->num_default_presets(); i < presets.size(); ++i)
@@ -252,7 +252,7 @@ void EditorPresetComboBox::update()
                 });
             for (const PhysicalPrinterPresetData& data : preset_data)
             {
-                Slic3r::Preset* preset = m_collection->find_preset(data.name);
+                const Slic3r::Preset* preset = m_collection->find_preset(data.name);
                 if (!preset || !preset->is_visible)
                     continue;
                 std::string main_icon_name = preset->printer_technology() == ptSLA ? "sla_printer" : m_main_bitmap_name;
@@ -288,7 +288,7 @@ void EditorPresetComboBox::msw_rescale()
 void EditorPresetComboBox::update_dirty()
 {
     // 1) Update the dirty flag of the current preset.
-    m_collection->update_dirty();
+    //RMV m_collection->update_dirty();
 
     // 2) Update the labels.
     wxWindowUpdateLocker noUpdates(this);
@@ -306,7 +306,7 @@ void EditorPresetComboBox::update_dirty()
             preset_name = PhysicalPrinter::get_preset_name(preset_name);
         }
             
-        Slic3r::Preset* preset = m_collection->find_preset(preset_name, false);
+        const Slic3r::Preset* preset = m_collection->find_preset(preset_name, false);
         if (preset) {
             std::string new_label = preset->name + suffix(preset);
 

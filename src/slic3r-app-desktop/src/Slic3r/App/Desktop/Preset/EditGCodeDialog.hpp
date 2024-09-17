@@ -19,6 +19,7 @@ namespace Slic3r::App::WX {
 
 namespace Slic3r::Biz::Preset {
     struct  PresetInteractorConfigContainerContext;
+    class PresetInteractor;
 }
 
 namespace Slic3r::App::Desktop::Preset {
@@ -33,7 +34,7 @@ class EditGCodeDialog : public wxDialog
 {
 public:
     EditGCodeDialog(wxWindow*parent, const std::string&key, const std::string&value, 
-                    Biz::Preset::PresetInteractorConfigContainerContext* ccc);
+                    Biz::Preset::PresetInteractor& preset_interactor);
     ~EditGCodeDialog();
 
     std::string get_edited_gcode() const;
@@ -49,7 +50,7 @@ private:
     void    msw_rescale();
 
 private:
-    Biz::Preset::PresetInteractorConfigContainerContext* m_ccc  {nullptr};
+    Biz::Preset::PresetInteractor& m_preset_interactor;
 
     ParamsViewCtrl*                 m_params_list               {nullptr};
     WX::ScalableButton*             m_add_btn                   {nullptr};

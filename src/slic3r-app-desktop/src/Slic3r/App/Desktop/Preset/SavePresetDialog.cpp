@@ -42,7 +42,7 @@ constexpr auto BORDER_W = 10;
 
 SavePresetDialog::SavePresetDialog( wxWindow* parent, 
                                     std::vector<const Slic3r::Preset*> selected_presets, 
-                                    PresetBundle* preset_bundle, 
+                                    const PresetBundle* preset_bundle,
                                     std::string suffix /*= ""*/, 
                                     bool template_filament/* =false*/,
                                     std::string ph_printer_name/* = ""*/)
@@ -63,7 +63,7 @@ SavePresetDialog::SavePresetDialog( wxWindow* parent,
 
 }
 
-SavePresetDialog::SavePresetDialog(wxWindow* parent, const Slic3r::Preset* selected_preset, PresetBundle* preset_bundle)
+SavePresetDialog::SavePresetDialog(wxWindow* parent, const Slic3r::Preset* selected_preset, const PresetBundle* preset_bundle)
     : wxDialog(parent, wxID_ANY, _L("Rename preset"), wxDefaultPosition, wxSize(45 * WX::w_config()->em_unit(), 5 * WX::w_config()->em_unit()), wxDEFAULT_DIALOG_STYLE | wxICON_WARNING),
     m_use_for_rename(true),
     m_preset_bundle(preset_bundle)

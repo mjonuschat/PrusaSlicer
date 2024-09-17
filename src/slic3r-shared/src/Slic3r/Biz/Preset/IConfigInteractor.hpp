@@ -25,7 +25,7 @@ public:
     virtual const DynamicPrintConfig& config() const = 0;
 
     /**
-     * Set one specigic key
+     * Set one specific key
      * @param name
      * @param value
      * @param opt_index

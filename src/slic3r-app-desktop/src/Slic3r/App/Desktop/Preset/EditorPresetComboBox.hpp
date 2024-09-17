@@ -23,14 +23,14 @@ namespace Slic3r::App::Desktop::Preset {
 class EditorPresetComboBox : public PresetComboBox
 {
 public:
-    EditorPresetComboBox(wxWindow *parent, Slic3r::Preset::Type preset_type, PresetBundle* preset_bundle);
+    EditorPresetComboBox(wxWindow *parent, Slic3r::Preset::Type preset_type, const PresetBundle* preset_bundle);
     ~EditorPresetComboBox() {}
 
-    PresetCollection*       presets()       const   { return m_collection; }
-    PresetBundle*           preset_bundle() const   { return m_preset_bundle; }
+    const PresetCollection*       presets()       const   { return m_collection; }
+    const PresetBundle*           preset_bundle() const   { return m_preset_bundle; }
     Slic3r::Preset::Type    type()          const   { return m_type; }
 
-    void    update(Biz::Preset::PresetState* state, Biz::Preset::PresetBundleRuntime* pb_runtime);
+    void    update(const Biz::Preset::PresetState* state, const Biz::Preset::PresetBundleRuntime* pb_runtime);
     void    update() override;
     void    update_dirty();
     void    msw_rescale() override;
@@ -46,8 +46,8 @@ private:
     bool                                m_show_incompatible     { false };
 
     // Information about selected preset
-    Biz::Preset::PresetState*           m_preset_state          { nullptr };
-    Biz::Preset::PresetBundleRuntime*   m_pb_runtime            { nullptr };
+    const Biz::Preset::PresetState*           m_preset_state          { nullptr };
+    const Biz::Preset::PresetBundleRuntime*   m_pb_runtime            { nullptr };
 };
 
 } 

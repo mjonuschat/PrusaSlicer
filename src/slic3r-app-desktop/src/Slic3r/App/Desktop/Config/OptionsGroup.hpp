@@ -275,7 +275,6 @@ public:
 	const t_opt_map&   opt_map() const throw() { return m_opt_map; }
 
 	void 		set_config_category_and_type(const wxString &category, int type) { m_config_category = category; m_config_type = type; }
-    //RMV void        set_config(DynamicPrintConfig* config) { m_config = config; m_modelconfig = nullptr; }
 	Option		get_option(const std::string& opt_key, int opt_index = -1);
 	Line		create_single_option_line(const std::string& title, const std::string& path = std::string(), int idx = -1) /*const*/{
 		Option option = get_option(title, idx);
@@ -314,12 +313,6 @@ public:
 	std::pair<OG_CustomCtrl*, bool*>	get_custom_ctrl_with_blinking_ptr(const t_config_option_key& opt_key, int opt_index/* = -1*/);
 
 private:
-    // Reference to libslic3r config or ModelConfig::get(), non-owning pointer.
-    // The reference is const, so that the spots which modify m_config are clearly
-    // demarcated by const_cast and m_config_changed_callback is called afterwards.
-    //RMV const DynamicPrintConfig*	m_config {nullptr};
-    // If the config is modelconfig, then ModelConfig::touch() has to be called after value change.
-    //RMV ModelConfig*				m_modelconfig { nullptr };
     Biz::Preset::IConfigInteractor* m_config_interactor {nullptr};
 	t_opt_map					m_opt_map;
     wxString                    m_config_category;

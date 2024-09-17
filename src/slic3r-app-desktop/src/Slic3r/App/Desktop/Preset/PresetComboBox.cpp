@@ -51,7 +51,7 @@ namespace Slic3r::App::Desktop::Preset {
  * control size calculation methods (virtual) are overridden.
  **/
 
-PresetComboBox::PresetComboBox(wxWindow* parent, Slic3r::Preset::Type preset_type, const wxSize& size, PresetBundle* preset_bundle/* = nullptr*/) :
+PresetComboBox::PresetComboBox(wxWindow* parent, Slic3r::Preset::Type preset_type, const wxSize& size, const PresetBundle* preset_bundle/* = nullptr*/) :
     WX::Widgets::BitmapComboBox(parent, wxID_ANY, wxEmptyString, wxDefaultPosition, size, 0, nullptr, wxCB_READONLY),
     m_type(preset_type),
     m_last_selected(wxNOT_FOUND),
@@ -77,7 +77,7 @@ PresetComboBox::PresetComboBox(wxWindow* parent, Slic3r::Preset::Type preset_typ
     Bind(wxEVT_COMBOBOX, &PresetComboBox::OnSelect, this);
 }
 
-void PresetComboBox::init_from_bundle(PresetBundle* preset_bundle)
+void PresetComboBox::init_from_bundle(const PresetBundle* preset_bundle)
 {
     if (!preset_bundle)
         return;
@@ -153,16 +153,7 @@ void PresetComboBox::set_label_marker(int item, LabelItemType label_item_type)
 {
     this->SetClientData(item, (void*)label_item_type);
 }
-/*
-bool PresetComboBox::set_printer_technology(PrinterTechnology pt)
-{
-    if (printer_technology != pt) {
-        printer_technology = pt;
-        return true;
-    }
-    return false;
-}
-*/
+
 void PresetComboBox::invalidate_selection()
 {
     m_last_selected = INT_MAX; // this value means that no one item is selected
@@ -218,7 +209,7 @@ std::string PresetComboBox::suffix(const Slic3r::Preset& preset)
     return (preset.is_dirty ? Slic3r::Preset::suffix_modified() : "");
 }
 
-std::string PresetComboBox::suffix(Slic3r::Preset* preset)
+std::string PresetComboBox::suffix(const Slic3r::Preset* preset)
 {
     return (preset->is_dirty ? Slic3r::Preset::suffix_modified() : "");
 }

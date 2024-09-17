@@ -90,7 +90,7 @@ Manipulators::Manipulators(wxWindow* parent, EditorPresetComboBox* presets_list,
     m_parent->Refresh();
 }
 
-void Manipulators::update(Biz::Preset::PresetState* state, const std::string& printer_model, const std::string& ph_printer_name)
+void Manipulators::update(const Biz::Preset::PresetState* state, const std::string& printer_model, const std::string& ph_printer_name)
 {
     m_preset_state      = state;
     m_printer_model     = printer_model;

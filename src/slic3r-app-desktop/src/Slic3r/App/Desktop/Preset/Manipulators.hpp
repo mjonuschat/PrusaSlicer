@@ -42,7 +42,7 @@ public:
                  Biz::Preset::PresetInteractor* preset_interactor);
     virtual ~Manipulators() {}
 
-    void    update(Biz::Preset::PresetState* state, const std::string& printer_model, const std::string& ph_printer_name);
+    void    update(const Biz::Preset::PresetState* state, const std::string& printer_model, const std::string& ph_printer_name);
     void    show_btn_incompatible_presets(bool show = true);
     void    sys_color_changed();
 
@@ -72,7 +72,7 @@ private:
     wxWindow*                           m_parent            { nullptr };
     EditorPresetComboBox*               m_presets_list      { nullptr };
     Biz::Preset::PresetInteractor*      m_preset_interactor { nullptr };
-    Biz::Preset::PresetState*           m_preset_state      { nullptr };
+    const Biz::Preset::PresetState*     m_preset_state      { nullptr };
     std::string                         m_printer_model     { std::string() };
 
     // Name of the selected physical printer. Can has value just for TYPE_PRINTER 

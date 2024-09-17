@@ -37,10 +37,10 @@ public:
     };
 
     // To create a PresetNameGetter as an item inside of the SavePresetDialog
-    PresetNameGetter(wxWindow* parent, wxBoxSizer* sizer, const Slic3r::Preset* selected_preset, PresetCollection* presets, const std::string& suffix, bool as_text_ctrl, bool show_label);
+    PresetNameGetter(wxWindow* parent, wxBoxSizer* sizer, const Slic3r::Preset* selected_preset, const PresetCollection* presets, const std::string& suffix, bool as_text_ctrl, bool show_label);
 
     // To create a PresetNameGetter as a separate control(f.e. as a part of ConfigWizard to check name of the new custom priter)
-    PresetNameGetter(wxWindow* parent, wxBoxSizer* sizer, const std::string& def_name, PresetBundle* preset_bundle, PrinterTechnology pt = ptFFF);
+    PresetNameGetter(wxWindow* parent, wxBoxSizer* sizer, const std::string& def_name, const PresetBundle* preset_bundle, PrinterTechnology pt = ptFFF);
 
     bool                    is_valid()      const { return m_valid_type != ValidationType::NoValid; }
     Slic3r::Preset::Type    type()          const { return m_type; }
@@ -80,8 +80,8 @@ private:
     WX::Widgets::ComboBox*  m_combo                 { nullptr };
     wxTextCtrl*             m_text_ctrl             { nullptr };
     wxStaticText*           m_valid_label           { nullptr };
-    PresetCollection*       m_presets               { nullptr };
-    PresetBundle*           m_preset_bundle         { nullptr };
+    const PresetCollection* m_presets               { nullptr };
+    const PresetBundle*     m_preset_bundle         { nullptr };
 
     std::string		        m_preset_name;
     std::vector<PresetName> m_casei_preset_names;

@@ -35,6 +35,29 @@ PresetState& PresetInteractorConfigContainerContext::preset_state(Slic3r::Preset
     PANIC("Wrong preset state type");
 }
 
+const PresetState& PresetInteractorConfigContainerContext::preset_state(Slic3r::Preset::Type preset_type, size_t preset_index) const
+{
+    switch(preset_type) {
+    case Slic3r::Preset::TYPE_FILAMENT:
+    case Slic3r::Preset::TYPE_SLA_MATERIAL:
+        return materials[preset_index];
+
+    case Slic3r::Preset::TYPE_PRINTER:
+        return printer;
+
+    case Slic3r::Preset::TYPE_PRINT:
+    case Slic3r::Preset::TYPE_SLA_PRINT:
+        return print;
+
+    default:
+        PANIC("Unsupported preset type");
+
+        // TODO: Extruders
+    }
+
+    PANIC("Wrong preset state type");
+}
+
 DynamicPrintConfig PresetInteractorConfigContainerContext::full_config() const
 {
     return (printer.edited_preset.printer_technology() == ptFFF) ?

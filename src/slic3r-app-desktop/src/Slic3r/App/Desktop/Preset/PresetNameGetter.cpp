@@ -139,7 +139,7 @@ static std::map<Slic3r::Preset::Type, std::string> TOP_LABELS =
     { Slic3r::Preset::Type::TYPE_PRINTER,       L("Save printer settings as") },
 };
 
-PresetNameGetter::PresetNameGetter(wxWindow* parent, wxBoxSizer* sizer, const Slic3r::Preset* selected_preset, PresetCollection* presets, 
+PresetNameGetter::PresetNameGetter(wxWindow* parent, wxBoxSizer* sizer, const Slic3r::Preset* selected_preset, const PresetCollection* presets,
                                    const std::string& suffix, bool as_text_ctrl, bool show_label):
     m_type(selected_preset->type),
     m_use_text_ctrl(as_text_ctrl),
@@ -151,7 +151,7 @@ PresetNameGetter::PresetNameGetter(wxWindow* parent, wxBoxSizer* sizer, const Sl
     build(sizer, get_init_preset_name(selected_preset, suffix), show_label);
 }
 
-PresetNameGetter::PresetNameGetter(wxWindow* parent, wxBoxSizer* sizer, const std::string& def_name, PresetBundle* preset_bundle, PrinterTechnology pt /*= ptFFF*/):
+PresetNameGetter::PresetNameGetter(wxWindow* parent, wxBoxSizer* sizer, const std::string& def_name, const PresetBundle* preset_bundle, PrinterTechnology pt /*= ptFFF*/):
     m_preset_name(def_name),
     m_preset_bundle(preset_bundle),
     m_printer_technology(pt),

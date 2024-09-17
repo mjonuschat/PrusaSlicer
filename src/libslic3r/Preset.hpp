@@ -776,7 +776,7 @@ public:
     bool            delete_preset_from_printers(const std::string& preset_name);
     void            rename_preset_in_printers(const std::string& old_name, const std::string& new_name);
     // Get list of printers which have more than one preset and "preset_names" preset is one of them
-    std::vector<std::string> get_printers_with_preset( const std::string &preset_name, bool respect_only_preset = true);
+    std::vector<std::string> get_printers_with_preset( const std::string &preset_name, bool respect_only_preset = true) const;
     // Get list of printers which has only "preset_names" preset
     std::vector<std::string> get_printers_with_only_preset( const std::string &preset_name);
 

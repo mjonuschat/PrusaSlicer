@@ -10,6 +10,7 @@
 
 #include <wx/dc.h>
 #include <wx/dcclient.h>
+#include <wx/bmpcbox.h>
 #ifdef wxHAS_GENERIC_DATAVIEWCTRL
 #include "wx/generic/private/markuptext.h"
 #include "wx/generic/private/rowheightcache.h"

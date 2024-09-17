@@ -21,11 +21,10 @@ namespace Slic3r::App::Desktop::Preset {
 class PresetComboBox : public WX::Widgets::BitmapComboBox
 {
 public:
-    PresetComboBox(wxWindow* parent, Slic3r::Preset::Type preset_type, const wxSize& size = wxDefaultSize, PresetBundle* preset_bundle = nullptr);
+    PresetComboBox(wxWindow* parent, Slic3r::Preset::Type preset_type, const wxSize& size = wxDefaultSize, const PresetBundle* preset_bundle = nullptr);
     ~PresetComboBox();
 
-    void    init_from_bundle(PresetBundle* preset_bundle);
-    bool    set_printer_technology(PrinterTechnology pt);
+    void    init_from_bundle(const PresetBundle* preset_bundle);
     void    show_all(bool show_all);
     bool    is_selected_physical_printer();
     // select preset which is selected in PreseBundle
@@ -70,7 +69,7 @@ protected:
 #endif // __linux__
     static wxString         separator(const std::string& label);
     std::string             suffix(const Slic3r::Preset& preset);
-    std::string             suffix(Slic3r::Preset* preset);
+    std::string             suffix(const Slic3r::Preset* preset);
 
     Slic3r::Preset::Type    get_type() { return m_type; }
 
@@ -111,8 +110,8 @@ protected:
     Slic3r::Preset::Type    m_type;
     std::string             m_main_bitmap_name;
 
-    PresetBundle*           m_preset_bundle         {nullptr};
-    PresetCollection*       m_collection            {nullptr};
+    const PresetBundle*           m_preset_bundle         {nullptr};
+    const PresetCollection*       m_collection            {nullptr};
 
     // Caching bitmaps for the all bitmaps, used in preset comboboxes
 

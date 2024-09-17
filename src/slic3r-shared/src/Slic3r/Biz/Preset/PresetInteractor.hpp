@@ -60,11 +60,23 @@ public:
     void set_preset_state(Slic3r::Preset::Type preset_type, size_t preset_index, const DynamicPrintConfig& config);
     void modify_preset_state(Slic3r::Preset::Type preset_type, size_t preset_index, IConfigInteractor::ModifyFunc modify_fn);
 
-    void select_printer_preset(size_t preset_idx);
-    void select_print_preset(size_t preset_idx);
-    void select_extruder_preset(size_t extruder_idx, size_t preset_idx);
-    void select_material_preset(size_t extruder_idx, size_t preset_idx);
+    const PresetCollection& preset_collection(Slic3r::Preset::Type preset_type) const
+    {
+        const auto& pb = m_workbench.preset_bundle();
+        return pb.get_presets(preset_type);
+    }
+    
+    void select_preset(Slic3r::Preset::Type preset_type, size_t preset_index, size_t collection_index)
+    {
+        auto& ccc = selected_config_container_context();
+        auto& collection = preset_collection(preset_type);
+        auto it = collection.begin() + collection_index;
+        auto& preset = *it;
+        ccc.preset_state(preset_type, preset_index) = create_preset_state(&preset);
+    }
 
+    
+    
     bool add_bed_preset_value_changed_listener(IBedPresetValueChangedListener* listener)
     {
         return m_bed_preset_value_changed_listeners.add(listener);
@@ -102,8 +114,21 @@ private:
 
     PresetInteractorProjectContext& get_or_create_project_context(SelectionId project_id);
     PresetInteractorConfigContainerContext& get_or_create_config_container_context(SelectionId project_id, SelectionId config_container_id);
+    
+    void select_printer_preset(size_t preset_idx);
+    void select_print_preset(size_t preset_idx);
+    void select_extruder_preset(size_t extruder_idx, size_t preset_idx);
+    void select_material_preset(size_t extruder_idx, size_t preset_idx);
+
+    PresetCollection& preset_collection(Slic3r::Preset::Type preset_type)
+    {
+        auto& pb = m_workbench.preset_bundle();
+        return pb.get_presets(preset_type);
+    }
+
 
     static PresetState create_preset_state(PresetCollection& source_with_selected);
+    PresetState create_preset_state(Slic3r::Preset* selected_preset);
 
     static void set_config_value(
         DynamicPrintConfig& config, const std::string& name, const boost::any& value, int opt_index

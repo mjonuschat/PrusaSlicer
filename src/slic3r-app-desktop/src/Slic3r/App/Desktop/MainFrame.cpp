@@ -94,8 +94,6 @@ MainFrame::MainFrame(Domain::Workbench& workbench, Biz::Preset::PresetInteractor
     this->SetFont(w_config()->normal_font());
     w_config()->UpdateDarkUI(this);
 
-    init_bed_context();
-
     init_top_bar();
 
     init_plater();
@@ -126,31 +124,6 @@ MainFrame::MainFrame(Domain::Workbench& workbench, Biz::Preset::PresetInteractor
 #endif
 }
 
-void MainFrame::init_bed_context()
-{
-    using namespace Biz::Preset;
-
-    PresetInteractorConfigContainerContext bed_context;
-
-    bed_context.printer = PresetState(&m_workbench.preset_bundle().printers.get_selected_preset(),
-                                       m_workbench.preset_bundle().printers.get_selected_preset_parent());
-
-    Slic3r::PresetCollection& print_collect    = bed_context.printer_technology() == ptFFF ? 
-                                                 m_workbench.preset_bundle().prints : m_workbench.preset_bundle().sla_prints;
-    Slic3r::PresetCollection& material_collect = bed_context.printer_technology() == ptFFF ? 
-                                                 m_workbench.preset_bundle().filaments : m_workbench.preset_bundle().sla_materials;
-
-    bed_context.print = PresetState(&print_collect.get_selected_preset(),
-                                     print_collect.get_selected_preset_parent());
-
-    bed_context.materials.emplace_back(PresetState(&material_collect.get_selected_preset(),
-                                                    material_collect.get_selected_preset_parent()));
-
-    m_bed_contexts.emplace_back(bed_context);
-
-    m_active_context = &m_bed_contexts[0];
-}
-
 void MainFrame::init_top_bar()
 {
     m_top_bar_menus.set_workspaces_menu_callbacks(
@@ -169,7 +142,7 @@ void MainFrame::init_top_bar()
 void MainFrame::update_preset_editors()
 {
     for (auto& [type, panel] : m_preset_editors)
-        panel->update(m_active_context);
+        panel->update_selected_ccc();
 }
 
 void MainFrame::complete_and_bind_top_bar()
@@ -188,8 +161,10 @@ void MainFrame::complete_and_bind_top_bar()
         wxWindow* panel = m_top_bar->GetCurrentPage();
         Preset::AbstractEditor* editor = dynamic_cast<Preset::AbstractEditor*>(panel);
 
+        const auto& ccc = m_preset_interactor.selected_config_container_context();
+
         // There shouldn't be a case, when we try to select a editor, which doesn't support a printer technology
-        if (!panel || (editor && !editor->supports_printer_technology(m_active_context->printer_technology())))
+        if (!panel || (editor && !editor->supports_printer_technology(ccc.printer_technology())))
             return;
 
         // temporary fix - WebViewPanel is not inheriting from Tab -> would jump to select Plater
@@ -217,7 +192,7 @@ void MainFrame::init_preset_editors()
 {
     using namespace Preset;
 
-    const auto printer_tech = m_active_context->printer_technology();
+    const auto printer_tech = m_preset_interactor.selected_config_container_context().printer_technology();
     if (printer_tech == ptFFF) {
         add_preset_editor(new EditorPrint(m_top_bar, m_preset_interactor), "cog");
         add_preset_editor(new EditorFilament(m_top_bar, m_preset_interactor), "spool");
@@ -231,7 +206,7 @@ void MainFrame::init_preset_editors()
 
 void MainFrame::add_preset_editor(Preset::AbstractEditor* panel, const std::string& bmp_name /*= ""*/)
 {
-    panel->init(m_active_context, &m_preset_interactor, &m_workbench.preset_bundle());
+    panel->init(&m_preset_interactor, &m_workbench.preset_bundle());
     m_preset_editors[panel->type()] = panel;
 
     m_top_bar->AddNewPage(panel, panel->title(), bmp_name);
