@@ -144,6 +144,8 @@
   <string>NSApplication</string>
   <key>NSHighResolutionCapable</key>
   <true/>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Allow network connectivity for PrusaSlicer to send G-codes to your printer via supported services like PrusaConnect, PrusaLink, Octoprint, or Klipper/Moonraker.</string>
   <key>LSEnvironment</key>
   <dict>
     <key>ASAN_OPTIONS</key>
