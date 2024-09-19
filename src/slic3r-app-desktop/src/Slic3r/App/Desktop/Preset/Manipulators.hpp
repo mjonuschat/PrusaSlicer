@@ -14,6 +14,7 @@
 ///|/
 #pragma once
 
+#include "libslic3r/Preset.hpp"
 #include <wx/sizer.h>
 
 #include <functional>
@@ -38,8 +39,8 @@ class Manipulators : wxBoxSizer
 {
 public:
     Manipulators(wxWindow*                      parent, 
-                 EditorPresetComboBox*          presets_list, 
-                 Biz::Preset::PresetInteractor* preset_interactor);
+                 Biz::Preset::PresetInteractor* preset_interactor,
+                 Slic3r::Preset::Type           type);
     virtual ~Manipulators() {}
 
     void    update(const Biz::Preset::PresetState* state, const std::string& printer_model, const std::string& ph_printer_name);
@@ -70,13 +71,12 @@ private:
  
 private:
     wxWindow*                           m_parent            { nullptr };
-    EditorPresetComboBox*               m_presets_list      { nullptr };
     Biz::Preset::PresetInteractor*      m_preset_interactor { nullptr };
     const Biz::Preset::PresetState*     m_preset_state      { nullptr };
-    std::string                         m_printer_model     { std::string() };
-
+    Slic3r::Preset::Type                m_type;
+    std::string                         m_printer_model     {};
     // Name of the selected physical printer. Can has value just for TYPE_PRINTER 
-    std::string                         m_ph_printer_name   { std::string() };
+    std::string                         m_ph_printer_name   {};
 
     std::vector<WX::ScalableButton*>    m_buttons = {};
 

@@ -206,7 +206,7 @@ void MainFrame::init_preset_editors()
 
 void MainFrame::add_preset_editor(Preset::AbstractEditor* panel, const std::string& bmp_name /*= ""*/)
 {
-    panel->init(&m_preset_interactor, &m_workbench.preset_bundle());
+    panel->init(&m_preset_interactor);
     m_preset_editors[panel->type()] = panel;
 
     m_top_bar->AddNewPage(panel, panel->title(), bmp_name);

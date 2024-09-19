@@ -3,6 +3,8 @@
 #include "IBedPresetSwitchedListener.hpp"
 #include "Slic3r/Domain/ConfigContainer.hpp"
 
+#include <vector>
+#include <string>
 #include <boost/algorithm/string.hpp>
 
 namespace Slic3r::Biz::Preset {
@@ -212,11 +214,11 @@ void PresetInteractor::set_config_value(
     case coStrings: {
         if (name == "compatible_prints" || name == "compatible_printers" || name == "gcode_substitutions") {
             config.option<ConfigOptionStrings>(name)->values =
-                boost::any_cast<std::__1::vector<std::string>>(value);
+                boost::any_cast<std::/*__1::*/vector<std::string>>(value);
         }
         else if (config.def()->get(name)->gui_flags.compare("serialized") == 0) {
             std::string str = boost::any_cast<std::string>(value);
-            std::__1::vector<std::string> values{};
+            std::/*__1::*/vector<std::string> values{};
             if (!str.empty()) {
                 if (str.back() == ';') str.pop_back();
                 // Split a string to multiple strings by a semi - colon.This is the old way of storing multi - string values.

@@ -123,8 +123,7 @@ AbstractEditor::AbstractEditor(
 }
 
 // sub new
-void AbstractEditor::init(Biz::Preset::PresetInteractor* preset_interactor,
-                            const PresetBundle* preset_bundle)
+void AbstractEditor::init(Biz::Preset::PresetInteractor* preset_interactor)
 {
 #ifdef __WINDOWS__
     SetDoubleBuffered(true);
@@ -153,10 +152,10 @@ void AbstractEditor::init(Biz::Preset::PresetInteractor* preset_interactor,
 #endif //__WXOSX__
 
     // preset chooser
-    m_presets_choice = new EditorPresetComboBox(panel, m_type, preset_bundle);
+    m_presets_choice = new EditorPresetComboBox(panel, m_type, &preset_interactor->preset_bundle());
 
     // set of buttons for maniplation(save/rename/delete...) with presets
-    m_manipulators = new Manipulators(panel, m_presets_choice, preset_interactor);
+    m_manipulators = new Manipulators(panel, preset_interactor, m_type);
     m_manipulators->show_btn_incompatible_presets();
 
     add_scaled_button(panel, &m_question_btn, "question");

@@ -32,6 +32,7 @@
 #include "Slic3r/App/WX/format.hpp"
 
 #include "Slic3r/Biz/Preset/PresetState.hpp"
+#include "Slic3r/Biz/Preset/PresetInteractor.hpp"
 
 #include "libslic3r/Preset.hpp"
 #include "libslic3r/PresetBundle.hpp"
@@ -52,11 +53,11 @@ static wxString _L_PLURAL(const wxString& s1, const wxString& s2, int n) { retur
 
 namespace Slic3r::App::Desktop::Preset {
 
-Manipulators::Manipulators(wxWindow* parent, EditorPresetComboBox* presets_list, Biz::Preset::PresetInteractor* preset_interactor) :
+Manipulators::Manipulators(wxWindow* parent, Biz::Preset::PresetInteractor* preset_interactor, Slic3r::Preset::Type type) :
     wxBoxSizer(wxHORIZONTAL),
     m_parent(parent),
-    m_presets_list(presets_list),
-    m_preset_interactor(preset_interactor)
+    m_preset_interactor(preset_interactor),
+    m_type(type)
 {
     //TRN Settings Tab: tooltip for toolbar button
     m_btn_save_preset = add_button("save", _L("Save preset"), [this]() { save_preset(); }, nullptr, 0);
@@ -70,11 +71,11 @@ Manipulators::Manipulators(wxWindow* parent, EditorPresetComboBox* presets_list,
     //TRN Settings Tab: tooltip for toolbar button
     m_detach_preset_btn = add_button("lock_open_sys", _L("Detach from system preset"), [this]() { detach_preset(); }, [this]() { return m_can_detach_presets; }, 20);
 
-    if (presets_list->type() == Slic3r::Preset::Type::TYPE_PRINTER) {
+    if (m_type == Slic3r::Preset::Type::TYPE_PRINTER) {
         //TRN Settings Tab: tooltip for toolbar button
         m_btn_edit_ph_printer = add_button("cog", _L("Add physical printer"), 
             [this]() {
-                if (m_presets_list->is_selected_physical_printer())
+                if (!m_ph_printer_name.empty()) // is_selected_physical_printer
                     edit_physical_printer();
                 else
                     add_physical_printer();
@@ -99,7 +100,7 @@ void Manipulators::update(const Biz::Preset::PresetState* state, const std::stri
     auto preset = m_preset_state->edited_preset;
     auto parent = m_preset_state->selected_preset_parent;
 
-    const bool is_printer_and_selected_physical = m_presets_list->type() == Slic3r::Preset::TYPE_PRINTER && !m_ph_printer_name.empty();
+    const bool is_printer_and_selected_physical = m_type == Slic3r::Preset::TYPE_PRINTER && !m_ph_printer_name.empty();
 
     m_can_detach_presets = parent && parent->is_system && !preset.is_default;
     m_can_delete_presets = is_printer_and_selected_physical || (!preset.is_default && !preset.is_system);
@@ -236,17 +237,16 @@ void Manipulators::save_preset(std::string name /*= ""*/, bool detach)
 //!	m_treectrl->OnSetFocus();
 
     Slic3r::Preset*      selected_preset = m_preset_state->selected_preset;
-    Slic3r::Preset::Type type            = m_presets_list->type();
     bool from_template = false;
     std::string edited_printer;
-    if (type == Slic3r::Preset::TYPE_FILAMENT && selected_preset->vendor && selected_preset->vendor->templates_profile) {
+    if (m_type == Slic3r::Preset::TYPE_FILAMENT && selected_preset->vendor && selected_preset->vendor->templates_profile) {
         edited_printer = m_printer_model;
         from_template = !edited_printer.empty();
     }
 
     if (name.empty()) {
         const std::string suffix = detach ? _u8L("Detached") : "";
-        SavePresetDialog dlg(m_parent, { selected_preset }, m_presets_list->preset_bundle(), suffix, from_template, m_ph_printer_name);
+        SavePresetDialog dlg(m_parent, { selected_preset }, &m_preset_interactor->preset_bundle(), suffix, from_template, m_ph_printer_name);
         if (dlg.ShowModal() != wxID_OK)
             return;
         name = dlg.get_name();
@@ -254,7 +254,7 @@ void Manipulators::save_preset(std::string name /*= ""*/, bool detach)
             from_template = dlg.get_template_filament_checkbox();
     }
 /*  //!
-    if (detach && type == Slic3r::Preset::TYPE_PRINTER)
+    if (detach && m_type == Slic3r::Preset::TYPE_PRINTER)
         m_config->opt_string("printer_model", true) = "";
 
     Slic3r::Preset&      edited_preset = m_preset_state->edited_preset;
@@ -271,7 +271,7 @@ void Manipulators::save_preset(std::string name /*= ""*/, bool detach)
     // Save the preset into Slic3r::data_dir / presets / section_name / preset_name.ini
     save_current_preset(name, detach);
 
-    if (detach && type == Preset::TYPE_PRINTER)
+    if (detach && m_type == Preset::TYPE_PRINTER)
         wxGetApp().mainframe->on_config_changed(m_config);
 
 
@@ -287,7 +287,7 @@ void Manipulators::save_preset(std::string name /*= ""*/, bool detach)
     m_btn_rename_preset->Show(!m_presets_choice->is_selected_physical_printer());
     m_btn_delete_preset->GetParent()->Layout();
 
-    if (type == Preset::TYPE_PRINTER)
+    if (m_type == Preset::TYPE_PRINTER)
         static_cast<TabPrinter*>(this)->m_initial_extruders_count = static_cast<TabPrinter*>(this)->m_extruders_count;
 
     // Parent preset is "default" after detaching, so we should to update UI values, related on parent preset  
@@ -299,14 +299,14 @@ void Manipulators::save_preset(std::string name /*= ""*/, bool detach)
     // If filament preset is saved for multi-material printer preset,
     // there are cases when filament comboboxs are updated for old (non-modified) colors,
     // but in full_config a filament_colors option aren't.
-    if (type == Preset::TYPE_FILAMENT && wxGetApp().extruders_edited_cnt() > 1)
+    if (m_type == Preset::TYPE_FILAMENT && wxGetApp().extruders_edited_cnt() > 1)
         wxGetApp().plater()->force_filament_colors_update();
 
     {
         // Profile compatiblity is updated first when the profile is saved.
         // Update profile selection combo boxes at the depending tabs to reflect modifications in profile compatibility.
         std::vector<Preset::Type> dependent;
-        switch (type) {
+        switch (m_type) {
         case Preset::TYPE_PRINT:
             dependent = { Preset::TYPE_FILAMENT };
             break;
@@ -327,7 +327,7 @@ void Manipulators::save_preset(std::string name /*= ""*/, bool detach)
     }
 
     // update preset comboboxes in DiffPresetDlg
-    wxGetApp().mainframe->diff_dialog.update_presets(type);
+    wxGetApp().mainframe->diff_dialog.update_presets(m_type);
 
     if (detach)
         update_description_lines();
@@ -336,18 +336,18 @@ void Manipulators::save_preset(std::string name /*= ""*/, bool detach)
 
 void Manipulators::rename_preset()
 {
-    if (m_presets_list->is_selected_physical_printer())
+    if (!m_ph_printer_name.empty()) //is_selected_physical_printer
         return;
 
-    auto pb = m_presets_list->preset_bundle();
-    SavePresetDialog dlg(m_parent, m_preset_state->selected_preset, pb);
+    const auto& pb = m_preset_interactor->preset_bundle();
+    SavePresetDialog dlg(m_parent, m_preset_state->selected_preset, &pb);
 
     bool is_selected_ph_priter = false;
 
-    if (m_presets_list->type() == Slic3r::Preset::TYPE_PRINTER) {
-        if (pb->physical_printers.empty()) {
+    if (m_type == Slic3r::Preset::TYPE_PRINTER) {
+        if (!pb.physical_printers.empty()) {
             // Check preset for rename in physical printers
-            std::vector<std::string> ph_printers = pb->physical_printers.get_printers_with_preset(m_preset_state->selected_preset->name);
+            std::vector<std::string> ph_printers = pb.physical_printers.get_printers_with_preset(m_preset_state->selected_preset->name);
             if (!ph_printers.empty()) {
                 wxString msg = _L_PLURAL("The physical printer below is based on the preset, you are going to rename.",
                                          "The physical printers below are based on the preset, you are going to rename.", ph_printers.size());
@@ -534,8 +534,10 @@ void Manipulators::update_compatibility_ui()
         //TRN Settings Tab: tooltip for toolbar button
         _L("Only compatible presets are shown. Click to show both the presets compatible and not compatible with the current printer."));
 
+    /* //! send Event to AbstractEditor for update m_presets_choise
     m_presets_list->set_show_incompatible_presets(m_show_incompatible_presets);
     m_presets_list->update();
+    */
 }
 
 } 

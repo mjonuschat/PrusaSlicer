@@ -66,6 +66,11 @@ public:
         return pb.get_presets(preset_type);
     }
     
+    const PresetBundle& preset_bundle() const
+    {
+        return m_workbench.preset_bundle();
+    }
+    
     void select_preset(Slic3r::Preset::Type preset_type, size_t preset_index, size_t collection_index)
     {
         auto& ccc = selected_config_container_context();

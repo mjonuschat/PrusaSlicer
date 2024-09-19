@@ -89,8 +89,7 @@ public:
     // The tab is already constructed.
     bool    completed() const { return m_completed; }
 
-    void    init(Biz::Preset::PresetInteractor* preset_interactor,
-                 const PresetBundle* preset_bundle);
+    void    init(Biz::Preset::PresetInteractor* preset_interactor);
     void    update_selected_ccc();
     void    activate();
     void    activate_option(const std::string& opt_key, const wxString& category);

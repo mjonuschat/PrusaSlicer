@@ -1,6 +1,8 @@
 #pragma once
 
 #include <deque>
+#include <functional>
+#include <algorithm>
 
 namespace Slic3r::Biz {
 
