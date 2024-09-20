@@ -10,15 +10,11 @@
 
 //#include "Plater.hpp"
 //#include "MainFrame.hpp"
-//#include "format.hpp"
-//#include "MsgDialog.hpp"
-//#include "I18N.hpp"
-#define _L(s) s 
-#define _(s)  s
 
 #include <Slic3r/App/WX/StringConversions.hpp>
 #include <Slic3r/App/WX/WidgetsConfig.hpp>
-#include <Slic3r/App/WX/wxExtensions.hpp>
+#include <Slic3r/App/WX/MsgDialog.hpp>
+#include <Slic3r/App/WX/format.hpp>
 #include <Slic3r/App/WX/Widgets/BitmapComboBox.hpp>
 
 #include "Slic3r/App/Color.hpp"
@@ -40,6 +36,10 @@
 #define wxOSX false
 #endif
 
+//!#include "I18N.hpp"
+#define _(s)  s
+static wxString _L(const wxString& s) { return s; }
+
 namespace Slic3r::App::Desktop::Config {
 
 ThumbnailErrors validate_thumbnails_string(wxString& str, const wxString& def_ext = "PNG")
@@ -52,7 +52,7 @@ ThumbnailErrors validate_thumbnails_string(wxString& str, const wxString& def_ex
     if (!thumbnails_list.empty()) {
         const auto& extentions = ConfigOptionEnum<GCodeThumbnailsFormat>::get_enum_names();
         for (const auto& [format, size] : thumbnails_list)
-//            str += format_wxstr("%1%x%2%/%3%, ", size.x(), size.y(), extentions[int(format)]);
+            str += WX::format_wxstr("%1%x%2%/%3%, ", size.x(), size.y(), extentions[int(format)]);
         str.resize(str.Len() - 2);
     }
 
@@ -95,7 +95,7 @@ void Field::PostInitialize()
 	}
 
     // initialize m_unit_value
-    m_em_unit = WX::em_unit(m_parent);
+    m_em_unit = WX::w_config()->em_unit(m_parent);
     parent_is_custom_ctrl = dynamic_cast<OG_CustomCtrl*>(m_parent) != nullptr;
 
 	BUILD();
@@ -117,15 +117,15 @@ void Field::PostInitialize()
 				case WXK_CONTROL_F:
 #endif /* __APPLE__ */
 				case 'F': { 
-//                    wxGetApp().show_search_dialog(); 
+//!                    wxGetApp().show_search_dialog(); 
                     break; }
 			    default: break;
 			    }
-//			    if (tab_id >= 0)
-//					wxGetApp().mainframe->select_tab(tab_id);
-//				if (tab_id > 0)
+//!			    if (tab_id >= 0)
+//!					wxGetApp().mainframe->select_tab(tab_id);
+//!				if (tab_id > 0)
 					// tab panel should be focused for correct navigation between tabs
-//				    wxGetApp().tab_panel()->SetFocus();
+//!				    wxGetApp().tab_panel()->SetFocus();
 		    }
 
 		    evt.Skip();
@@ -224,7 +224,7 @@ void Field::get_value_by_opt_type(wxString& str, const bool check_value/* = true
             }
 
 			wxString label = m_opt.full_label.empty() ? _(m_opt.label) : _(m_opt.full_label);
-//            show_error(m_parent, format_wxstr(_L("%s doesn't support percentage"), label));
+            WX::ErrorDialog(m_parent, WX::format_wxstr(_L("%s doesn't support percentage"), label), false).ShowModal();
 			set_value(WX::double_to_string(m_opt.min), true);
 			m_value = double(m_opt.min);
 			break;
@@ -253,7 +253,7 @@ void Field::get_value_by_opt_type(wxString& str, const bool check_value/* = true
                     m_value.clear();
                     break;
                 }
-//                show_error(m_parent, _(L("Invalid numeric input.")));
+                WX::ErrorDialog(m_parent, _L("Invalid numeric input."), false).ShowModal();
                 set_value(WX::double_to_string(val), true);
             }
             if (m_opt.min > val || val > m_opt.max)
@@ -264,10 +264,10 @@ void Field::get_value_by_opt_type(wxString& str, const bool check_value/* = true
                 }
                 if (m_opt_id == "extrusion_multiplier") {
                     if (m_value.empty() || boost::any_cast<double>(m_value) != val) {
-//                        wxString msg_text = format_wxstr(_L("Input value is out of range\n"
-//                            "Are you sure that %s is a correct value and that you want to continue?"), str);
-//                        WarningDialog dialog(m_parent, msg_text, _L("Parameter validation") + ": " + m_opt_id, wxYES | wxNO);
-//                        if (dialog.ShowModal() == wxID_NO) 
+                        wxString msg_text = WX::format_wxstr(_L("Input value is out of range\n"
+                            "Are you sure that %s is a correct value and that you want to continue?"), str);
+                        WX::WarningDialog dialog(m_parent, msg_text, _L("Parameter validation") + ": " + m_opt_id, wxYES | wxNO);
+                        if (dialog.ShowModal() == wxID_NO) 
                         {
                             if (m_value.empty()) {
                                 if (m_opt.min > val) val = m_opt.min;
@@ -280,7 +280,7 @@ void Field::get_value_by_opt_type(wxString& str, const bool check_value/* = true
                     }
                 }
                 else {
-//                    show_error(m_parent, _L("Input value is out of range"));
+                    WX::ErrorDialog(m_parent, _L("Input value is out of range"), false).ShowModal();
                     if (m_opt.min > val) val = m_opt.min;
                     if (val > m_opt.max) val = m_opt.max;
                     set_value(WX::double_to_string(val), true);
@@ -297,7 +297,7 @@ void Field::get_value_by_opt_type(wxString& str, const bool check_value/* = true
             // Workaroud to avoid of using of the % for first layer height
             // see https://github.com/prusa3d/PrusaSlicer/issues/7418
             wxString label = m_opt.full_label.empty() ? _(m_opt.label) : _(m_opt.full_label);
-//            show_error(m_parent, format_wxstr(_L("%s doesn't support percentage"), label));
+            WX::ErrorDialog(m_parent, WX::format_wxstr(_L("%s doesn't support percentage"), label), false).ShowModal();
             const wxString stVal = WX::double_to_string(0.01, 2);
             set_value(stVal, true);
             m_value = WX::into_u8(stVal);;
@@ -323,7 +323,7 @@ void Field::get_value_by_opt_type(wxString& str, const bool check_value/* = true
                     m_value.clear();
                     break;
                 }
-//                show_error(m_parent, _L("Invalid numeric input."));
+            WX::ErrorDialog(m_parent, _L("Invalid numeric input."), false).ShowModal();
                 set_value(WX::double_to_string(val), true);
             }
             else if (((m_opt.sidetext.rfind("mm/s") != std::string::npos && val > m_opt.max) ||
@@ -340,16 +340,16 @@ void Field::get_value_by_opt_type(wxString& str, const bool check_value/* = true
                 const std::string sidetext = m_opt.sidetext.rfind("mm/s") != std::string::npos ? "mm/s" : "mm";
                 const wxString stVal = WX::double_to_string(val, 2);
                 // TRN %1% = Value, %2% = units
-//                const wxString msg_text = format_wxstr(_L("Do you mean %1%%% instead of %1% %2%?\n"
-//                    "Select YES if you want to change this value to %1%%%, \n"
-//                    "or NO if you are sure that %1% %2% is a correct value."), stVal, sidetext);
-//                WarningDialog dialog(m_parent, msg_text, _L("Parameter validation") + ": " + m_opt_id, wxYES | wxNO);
-//                if ((!infill_anchors || val > 100) && dialog.ShowModal() == wxID_YES) 
+                const wxString msg_text = WX::format_wxstr(_L("Do you mean %1%%% instead of %1% %2%?\n"
+                    "Select YES if you want to change this value to %1%%%, \n"
+                    "or NO if you are sure that %1% %2% is a correct value."), stVal, sidetext);
+                WX::WarningDialog dialog(m_parent, msg_text, _L("Parameter validation") + ": " + m_opt_id, wxYES | wxNO);
+                if ((!infill_anchors || val > 100) && dialog.ShowModal() == wxID_YES) 
                 {
                     set_value(WX::from_u8((boost::format("%s%%") % stVal).str()), false/*true*/);
                     str += "%%";
                 }
-//				else
+				else
 					set_value(stVal, false); // it's no needed but can be helpful, when inputted value contained "," instead of "."
             }
         }
@@ -360,8 +360,8 @@ void Field::get_value_by_opt_type(wxString& str, const bool check_value/* = true
             if (errors != enum_bitmask<ThumbnailError>()) {
                 set_value(str_out, true);
                 wxString error_str;
-//                if (errors.has(ThumbnailError::InvalidVal))
-//                    error_str += format_wxstr(_L("Invalid input format. Expected vector of dimensions in the following format: \"%1%\""), "XxY/EXT, XxY/EXT, ...");
+                if (errors.has(ThumbnailError::InvalidVal))
+                    error_str += WX::format_wxstr(_L("Invalid input format. Expected vector of dimensions in the following format: \"%1%\""), "XxY/EXT, XxY/EXT, ...");
                 if (errors.has(ThumbnailError::OutOfRange)) {
                     if (!error_str.empty())
                         error_str += "\n\n";
@@ -372,7 +372,7 @@ void Field::get_value_by_opt_type(wxString& str, const bool check_value/* = true
                         error_str += "\n\n";
                     error_str += _L("Some extension in the input is invalid");
                 }
-//                show_error(m_parent, error_str);
+                WX::ErrorDialog(m_parent, error_str, false).ShowModal();
             }
             else if (str_out != str) {
                 str = str_out;
@@ -392,7 +392,7 @@ void Field::get_value_by_opt_type(wxString& str, const bool check_value/* = true
 void Field::msw_rescale()
 {
 	// update em_unit value
-	m_em_unit = WX::em_unit(m_parent);
+	m_em_unit = WX::w_config()->em_unit(m_parent);
 }
 
 void Field::sys_color_changed()
@@ -1583,7 +1583,7 @@ boost::any& PointCtrl::get_value()
 		!y_textctrl->GetValue().ToDouble(&y))
 	{
 		set_value(m_value.empty() ? Vec2d(0.0, 0.0) : m_value, true);
-//        show_error(m_parent, _L("Invalid numeric input."));
+        WX::ErrorDialog(m_parent, _L("Invalid numeric input."), false).ShowModal();
 	}
 	else
 	if (m_opt.min > x || x > m_opt.max ||
@@ -1595,7 +1595,7 @@ boost::any& PointCtrl::get_value()
 		if (y > m_opt.max) y = m_opt.max;
 		set_value(Vec2d(x, y), true);
 
-//		show_error(m_parent, _L("Input value is out of range"));
+        WX::ErrorDialog(m_parent, _L("Input value is out of range"), false).ShowModal();
 	}
 
 	return m_value = Vec2d(x, y);

@@ -17,6 +17,35 @@ set(SLIC3R_APP_DESKTOP_FILES
         src/Slic3r/App/Desktop/Config/OptionsGroup.hpp
         src/Slic3r/App/Desktop/Config/OG_CustomCtrl.cpp
         src/Slic3r/App/Desktop/Config/OG_CustomCtrl.hpp
+
+        src/Slic3r/App/Desktop/Preset/SubstitutionManager.cpp
+        src/Slic3r/App/Desktop/Preset/SubstitutionManager.hpp
+        src/Slic3r/App/Desktop/Preset/EditorPage.cpp
+        src/Slic3r/App/Desktop/Preset/EditorPage.hpp
+        src/Slic3r/App/Desktop/Preset/AbstractEditor.cpp
+        src/Slic3r/App/Desktop/Preset/AbstractEditor.hpp
+        src/Slic3r/App/Desktop/Preset/EditorPrint.cpp
+        src/Slic3r/App/Desktop/Preset/EditorPrint.hpp
+        src/Slic3r/App/Desktop/Preset/EditorFilament.cpp
+        src/Slic3r/App/Desktop/Preset/EditorFilament.hpp
+        src/Slic3r/App/Desktop/Preset/EditorSLAPrint.cpp
+        src/Slic3r/App/Desktop/Preset/EditorSLAPrint.hpp
+        src/Slic3r/App/Desktop/Preset/EditorSLAMaterial.cpp
+        src/Slic3r/App/Desktop/Preset/EditorSLAMaterial.hpp
+        src/Slic3r/App/Desktop/Preset/EditorPrinter.cpp
+        src/Slic3r/App/Desktop/Preset/EditorPrinter.hpp
+        src/Slic3r/App/Desktop/Preset/PresetNameGetter.cpp
+        src/Slic3r/App/Desktop/Preset/PresetNameGetter.hpp
+        src/Slic3r/App/Desktop/Preset/SavePresetDialog.cpp
+        src/Slic3r/App/Desktop/Preset/SavePresetDialog.hpp
+        src/Slic3r/App/Desktop/Preset/EditGCodeDialog.cpp
+        src/Slic3r/App/Desktop/Preset/EditGCodeDialog.hpp
+        src/Slic3r/App/Desktop/Preset/PresetComboBox.cpp
+        src/Slic3r/App/Desktop/Preset/PresetComboBox.hpp
+        src/Slic3r/App/Desktop/Preset/EditorPresetComboBox.cpp
+        src/Slic3r/App/Desktop/Preset/EditorPresetComboBox.hpp
+        src/Slic3r/App/Desktop/Preset/Manipulators.cpp
+        src/Slic3r/App/Desktop/Preset/Manipulators.hpp
 )
 
 # Create a slic3r-app-desktop executable

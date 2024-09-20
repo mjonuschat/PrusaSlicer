@@ -20,6 +20,8 @@ bool DesktopApp::OnInit()
 
     init_paths();
     m_workbench.load_configs();
+    m_project_interactor = std::make_unique<Biz::ProjectInteractor>(m_workbench);
+    m_project_interactor->new_project();
 
     //m_workbench.load_project("/Users/jan.bartipan/work/Models/3DBenchy.3mf");
 
@@ -27,7 +29,7 @@ bool DesktopApp::OnInit()
     const bool is_sys_menu = true;
     WX::WidgetsConfig* wdts_config = WX::WidgetsConfig::instance(is_dark, is_sys_menu);
 
-    m_main_frame = new MainFrame(m_workbench);
+    m_main_frame = new MainFrame(m_workbench, m_project_interactor->preset_interactor());
     Platform::WX::WXRenderCanvas& canvas = m_main_frame->get_render_canvas();
     Platform::PlatformServices::instance().set_services(&canvas, &canvas);
     

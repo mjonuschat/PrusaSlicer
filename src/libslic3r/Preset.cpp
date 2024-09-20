@@ -2185,7 +2185,7 @@ void PhysicalPrinterCollection::rename_preset_in_printers(const std::string& old
 }
 
 // Get list of printers which have more than one preset and "preset_names" preset is one of them
-std::vector<std::string> PhysicalPrinterCollection::get_printers_with_preset(const std::string& preset_name, bool respect_only_preset /*= true*/)
+std::vector<std::string> PhysicalPrinterCollection::get_printers_with_preset(const std::string& preset_name, bool respect_only_preset /*= true*/) const
 {
     std::vector<std::string> printers;
 

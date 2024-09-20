@@ -88,6 +88,7 @@ public:
 
 
     PresetCollection&           get_presets(Preset::Type preset_type);
+    const PresetCollection&     get_presets(Preset::Type preset_type) const;
 
     // The project configuration values are kept separated from the print/filament/printer preset,
     // they are being serialized / deserialized from / to the .amf, .3mf, .config, .gcode, 

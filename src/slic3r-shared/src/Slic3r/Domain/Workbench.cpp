@@ -9,9 +9,10 @@ namespace Slic3r::Domain {
 void Workbench::load_configs()
 {
     m_app_config = std::make_unique<AppConfig>(Slic3r::AppConfig::EAppMode::Editor);
+    m_app_config->load();
     m_preset_bundle = std::make_unique<Slic3r::PresetBundle>();
     m_preset_bundle->setup_directories();
-    m_preset_bundle->load_presets(*m_app_config, Slic3r::Disable);
+    m_preset_bundle->load_presets(*m_app_config, ForwardCompatibilitySubstitutionRule::EnableSystemSilent);
 }
 
 void Workbench::load_project(const std::string& file_path)

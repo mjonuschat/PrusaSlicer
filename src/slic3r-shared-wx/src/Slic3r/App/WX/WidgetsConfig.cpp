@@ -79,6 +79,30 @@ void WidgetsConfig::update_fonts(const wxFont& normal_font, const int em)
     m_em_unit = em;
 }
 
+static void set_new_font(wxWindow* win, bool apply_for_children)
+{
+    wxWindowList& children = win->GetChildren();
+    if (apply_for_children) {
+        for (auto child : children)
+            set_new_font(child, apply_for_children);
+    }
+
+    if (win->GetFont().GetWeight() == wxFONTWEIGHT_BOLD)
+        win->SetFont(w_config()->bold_font());
+    else
+        win->SetFont(w_config()->normal_font());
+
+    if (apply_for_children && !children.IsEmpty()) {
+        win->Layout();
+        win->Refresh();
+    }
+}
+
+void WidgetsConfig::force_fonts_update(wxWindow* win, bool apply_for_children/* = false*/)
+{
+    set_new_font(win, apply_for_children);
+}
+
 void WidgetsConfig::init_ui_colours()
 {
     m_color_label_modified  = get_label_default_clr_modified();
@@ -228,6 +252,21 @@ bool WidgetsConfig::set_mode_palette(const std::vector<wxColour>& palette)
     return to_save;
 }
 
+/* Function for getting of em_unit value from correct parent.
+ * In most of cases it is m_em_unit value from WidgetsConfig,
+ * but for Dialogs it's its own value.
+ * This value will be used to correct rescale after moving between
+ * Displays with different HDPI */
+int WidgetsConfig::em_unit(wxWindow* win) const
+{
+    if (win)
+    {
+        wxTopLevelWindow* toplevel = w_config()->find_toplevel_parent(win);
+        float sf = toplevel->GetDPIScaleFactor();
+        return int(sf * 10);
+    }
+    return m_em_unit;
+}
 
 [[maybe_unused]] static bool is_default(wxWindow* win)
 {
@@ -274,7 +313,7 @@ void WidgetsConfig::UpdateDarkUI(wxWindow* window, bool highlited/* = false*/, b
         }
     }
     else if (wxTextCtrl* text = dynamic_cast<wxTextCtrl*>(window)) {
-        if (text->GetBorder() != wxBORDER_SIMPLE)
+        if (text->GetBorder() != wxBORDER_SIMPLE && text->GetBorder() != wxBORDER_NONE)
             text->SetWindowStyle(text->GetWindowStyle() | wxBORDER_SIMPLE);
     }
     else if (wxCheckListBox* list = dynamic_cast<wxCheckListBox*>(window)) {
@@ -344,6 +383,19 @@ void WidgetsConfig::UpdateAllStaticTextDarkUI(wxWindow* parent)
     for (auto child : children) {
         if (dynamic_cast<wxStaticText*>(child))
             child->SetForegroundColour(m_color_label_default);
+    }
+#endif
+}
+
+void WidgetsConfig::SetWindowVariantForButton(wxButton* btn)
+{
+#ifdef __APPLE__
+    // This is a limit imposed by OSX. The way the native button widget is drawn only allows it to be stretched horizontally,
+    // and the vertical size is fixed. (see https://stackoverflow.com/questions/29083891/wxpython-button-size-being-ignored-on-osx)
+    // But standard height is possible to change using SetWindowVariant method (see https://docs.wxwidgets.org/3.0/window_8h.html#a879bccd2c987fedf06030a8abcbba8ac)
+    if (m_normal_font.GetPointSize() > 15) {
+        btn->SetWindowVariant(wxWINDOW_VARIANT_LARGE);
+        btn->SetFont(m_normal_font);
     }
 #endif
 }

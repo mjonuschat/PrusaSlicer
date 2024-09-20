@@ -23,6 +23,13 @@ public:
 
     [[nodiscard]] ConfigContainerList& config_containers() { return m_config_containers; }
     [[nodiscard]] const ConfigContainerList& config_containers() const { return m_config_containers; }
+    ConfigContainerList::const_iterator find_config_container(size_t id) const
+    {
+        return std::find_if(
+            m_config_containers.begin(), m_config_containers.end(),
+            [id](const auto& cc) { return cc->id().id == id; }
+        );
+    }
 
 private:
     std::string m_file_name;

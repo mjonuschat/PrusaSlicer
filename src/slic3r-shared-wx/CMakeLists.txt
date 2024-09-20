@@ -1,4 +1,6 @@
 set(SLIC3R_SHARED_WX_FILES
+        src/Slic3r/App/WX/format.hpp
+
         src/Slic3r/App/WX/BitmapCache.hpp
         src/Slic3r/App/WX/BitmapCache.cpp
         src/Slic3r/App/WX/wxExtensions.hpp
@@ -13,11 +15,17 @@ set(SLIC3R_SHARED_WX_FILES
         src/Slic3r/App/WX/BitmapGetters.cpp
         src/Slic3r/App/WX/Scalable.hpp
         src/Slic3r/App/WX/Scalable.cpp
+        src/Slic3r/App/WX/ExtraRenderers.hpp
+        src/Slic3r/App/WX/ExtraRenderers.cpp
         src/Slic3r/App/WX/Highlighter.hpp
         src/Slic3r/App/WX/Highlighter.cpp
         src/Slic3r/App/WX/LockButton.hpp
         src/Slic3r/App/WX/LockButton.cpp
         src/Slic3r/App/WX/MacUtils.hpp
+        src/Slic3r/App/WX/MsgDialog.hpp
+        src/Slic3r/App/WX/MsgDialog.cpp
+        src/Slic3r/App/WX/ConfigManipulation.hpp
+        src/Slic3r/App/WX/ConfigManipulation.cpp
         # our widgets
         src/Slic3r/App/WX/Widgets/UIColors.hpp
         src/Slic3r/App/WX/Widgets/StateColor.hpp

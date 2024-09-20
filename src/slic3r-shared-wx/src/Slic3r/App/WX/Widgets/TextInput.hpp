@@ -24,6 +24,8 @@ class TextInput : public wxNavigationEnabled<StaticBox>
     wxRect                  dd_icon_rect;
     std::function<void()>   OnClickDropDownIcon{ nullptr };
 
+    bool          is_completed{ false };
+
 public:
     TextInput();
 

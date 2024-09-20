@@ -5,6 +5,8 @@
 #include <wx/statbmp.h>
 #include <wx/timer.h>
 
+class wxPanel;
+
 namespace Slic3r::App::WX {
 
 // ----------------------------------------------------------------------------
@@ -34,8 +36,6 @@ private:
 // Highlighter
 // ----------------------------------------------------------------------------
 
-class OG_CustomCtrl;
-
 // Highlighter is used as an instrument to put attention to some UI control
 
 class Highlighter
@@ -61,7 +61,7 @@ class HighlighterForWx : public Highlighter
 // - using a BlinkingBitmap. Change state of this bitmap
     BlinkingBitmap* m_blinking_bitmap   { nullptr };
 // - using OG_CustomCtrl where arrow will be rendered and flag indicated "show/hide" state of this arrow
-    OG_CustomCtrl*  m_custom_ctrl       { nullptr };
+    wxPanel*        m_custom_ctrl       { nullptr };
     bool*           m_show_blink_ptr    { nullptr };
 
 public:
@@ -70,7 +70,7 @@ public:
 
     void bind_timer(wxWindow* owner) override;
     void init(BlinkingBitmap* blinking_bitmap);
-    void init(std::pair<OG_CustomCtrl*, bool*>);
+    void init(std::pair<wxPanel*, bool*>);
     void blink();
     void invalidate();
 };

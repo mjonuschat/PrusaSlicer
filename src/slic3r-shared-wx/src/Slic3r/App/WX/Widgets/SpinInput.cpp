@@ -100,8 +100,22 @@ void SpinInputBase::SetSelection(long from, long to)
 
 bool SpinInputBase::SetFont(wxFont const& font)
 {
-    if (text_ctrl)
-        return text_ctrl->SetFont(font);
+    if (text_ctrl) {
+        bool ret = text_ctrl->SetFont(font);
+
+        if (is_completed) {
+            wxSize sz = text_ctrl->GetSize();
+            text_ctrl->SetMinSize(0.3*sz);//invalidate min size to correct process the GetBestSize()
+            wxSize bsz = text_ctrl->GetBestSize();
+            if (bsz.y != sz.y) {
+                text_ctrl->SetSize(bsz);
+                messureSize();
+                Refresh();
+            }
+        }
+        return ret;
+    }
+
     return StaticBox::SetFont(font);
 }
 
@@ -316,6 +330,7 @@ void SpinInput::Create(wxWindow *parent,
     SetRange(min, max);
     SetValue(initial);
     messureSize();
+    is_completed = true;
 }
 
 void SpinInput::bind_inc_dec_button(Button *btn, ButtonId id)
@@ -493,6 +508,7 @@ void SpinInputDouble::Create(wxWindow *parent,
     SetIncrement(inc);
     SetValue(initial);
     messureSize();
+    is_completed = true;
 }
 
 void SpinInputDouble::bind_inc_dec_button(Button *btn, ButtonId id)

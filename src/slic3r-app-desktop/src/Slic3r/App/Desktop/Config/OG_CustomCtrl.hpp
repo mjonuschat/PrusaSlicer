@@ -88,6 +88,7 @@ public:
     void    OnMotion(wxMouseEvent& event);
     void    OnLeftDown(wxMouseEvent& event);
     void    OnLeaveWin(wxMouseEvent& event);
+    bool    SetFont(wxFont const& font) override;
 
     void    init_ctrl_lines();
     bool    update_visibility(ConfigOptionMode mode);

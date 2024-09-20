@@ -16,24 +16,35 @@
 #include <Slic3r/App/WX/StringConversions.hpp>
 #include <Slic3r/App/WX/WidgetsConfig.hpp>
 #include <Slic3r/App/WX/Scalable.hpp>
+#include <Slic3r/App/WX/format.hpp>
 
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/classification.hpp>
 
 #include "libslic3r/Preset.hpp"
 
-//#include "Search.hpp" // for > searcher().add_key(..)
-//#include "format.hpp" // for > format_wxstr
-//#include "libslic3r/AppConfig.hpp" // for > get_app_config()->get_bool("suppress_hyperlinks")
+//!#include "Search.hpp" // for > searcher().add_key(..)
+//!#include "libslic3r/AppConfig.hpp" // for > get_app_config()->get_bool("suppress_hyperlinks")
 
-//#include "I18N.hpp"
-#define _L(s)       s 
+//!#include "I18N.hpp"
+static wxString _L(const wxString& s) { return s; }
+static wxString _(const wxString& s) { return s; }
+static wxString _(const std::string& s) { return Slic3r::App::WX::from_u8(s); }
 #define _CTX(s, s1) s
 
 namespace Slic3r::App::Desktop::Config {
 
 using WX::into_u8;
 using WX::from_u8;
+
+Line::Line(wxString label, wxString tooltip) :
+    label(_(label)), label_tooltip(_(tooltip)) {}
+
+Line::Line(const std::string& opt_key, const wxString& label, const wxString& tooltip) :
+    label(_(label)), label_tooltip(_(tooltip))
+{
+    m_options.push_back(Option({ opt_key, coNone }, opt_key));
+}
 
 const t_field& OptionsGroup::build_field(const Option& opt) {
     return build_field(opt.opt_id, opt.opt);
@@ -143,132 +154,9 @@ OptionsGroup::OptionsGroup(	wxWindow* _parent, const wxString& title,
 }
 
 // opt_index = 0, by the reason of zero-index in ConfigOptionVector by default (in case only one element)
-void OptionsGroup::change_opt_value(DynamicPrintConfig& config, const t_config_option_key& opt_key, const boost::any& value, int opt_index /*= 0*/)
+void OptionsGroup::change_opt_value(Biz::Preset::IConfigInteractor& config_interactor, const t_config_option_key& opt_key, const boost::any& value, int opt_index /*= 0*/)
 {
-    try {
-
-        if (config.def()->get(opt_key)->type == coBools && config.def()->get(opt_key)->nullable) {
-            ConfigOptionBoolsNullable* vec_new = new ConfigOptionBoolsNullable{ boost::any_cast<unsigned char>(value) };
-            config.option<ConfigOptionBoolsNullable>(opt_key)->set_at(vec_new, opt_index, 0);
-            return;
-        }
-
-        const ConfigOptionDef* opt_def = config.def()->get(opt_key);
-        switch (opt_def->type) {
-        case coFloatOrPercent: {
-            std::string str = boost::any_cast<std::string>(value);
-            bool percent = false;
-            if (str.back() == '%') {
-                str.pop_back();
-                percent = true;
-            }
-            double val = std::stod(str); // locale-dependent (on purpose - the input is the actual content of the field)
-            config.set_key_value(opt_key, new ConfigOptionFloatOrPercent(val, percent));
-            break; }
-        case coPercent:
-            config.set_key_value(opt_key, new ConfigOptionPercent(boost::any_cast<double>(value)));
-            break;
-        case coFloat: {
-            double& val = config.opt_float(opt_key);
-            val = boost::any_cast<double>(value);
-            break;
-        }
-        case coFloatsOrPercents: {
-            std::string str = boost::any_cast<std::string>(value);
-            bool percent = false;
-            if (str.back() == '%') {
-                str.pop_back();
-                percent = true;
-            }
-            double val = std::stod(str); // locale-dependent (on purpose - the input is the actual content of the field)
-            ConfigOptionFloatsOrPercents* vec_new = new ConfigOptionFloatsOrPercents({ {val, percent} });
-            config.option<ConfigOptionFloatsOrPercents>(opt_key)->set_at(vec_new, opt_index, opt_index);
-            break;
-        }
-        case coPercents: {
-            ConfigOptionPercents* vec_new = new ConfigOptionPercents{ boost::any_cast<double>(value) };
-            config.option<ConfigOptionPercents>(opt_key)->set_at(vec_new, opt_index, opt_index);
-            break;
-        }
-        case coFloats: {
-            ConfigOptionFloats* vec_new = new ConfigOptionFloats{ boost::any_cast<double>(value) };
-            config.option<ConfigOptionFloats>(opt_key)->set_at(vec_new, opt_index, opt_index);
-            break;
-        }
-        case coString:
-            config.set_key_value(opt_key, new ConfigOptionString(boost::any_cast<std::string>(value)));
-            break;
-        case coStrings: {
-            if (opt_key == "compatible_prints" || opt_key == "compatible_printers" || opt_key == "gcode_substitutions") {
-                config.option<ConfigOptionStrings>(opt_key)->values =
-                    boost::any_cast<std::vector<std::string>>(value);
-            }
-            else if (config.def()->get(opt_key)->gui_flags.compare("serialized") == 0) {
-                std::string str = boost::any_cast<std::string>(value);
-                std::vector<std::string> values{};
-                if (!str.empty()) {
-                    if (str.back() == ';') str.pop_back();
-                    // Split a string to multiple strings by a semi - colon.This is the old way of storing multi - string values.
-                    // Currently used for the post_process config value only.
-                    boost::split(values, str, boost::is_any_of(";"));
-                    if (values.size() == 1 && values[0] == "")
-                        values.resize(0);
-                }
-                config.option<ConfigOptionStrings>(opt_key)->values = values;
-            }
-            else {
-                ConfigOptionStrings* vec_new = new ConfigOptionStrings{ boost::any_cast<std::string>(value) };
-                config.option<ConfigOptionStrings>(opt_key)->set_at(vec_new, opt_index, 0);
-            }
-        }
-                      break;
-        case coBool:
-            config.set_key_value(opt_key, new ConfigOptionBool(boost::any_cast<bool>(value)));
-            break;
-        case coBools: {
-            ConfigOptionBools* vec_new = new ConfigOptionBools{ boost::any_cast<unsigned char>(value) != 0 };
-            config.option<ConfigOptionBools>(opt_key)->set_at(vec_new, opt_index, 0);
-            break; }
-        case coInt: {
-			//config.set_key_value(opt_key, new ConfigOptionInt(boost::any_cast<int>(value)));
-			int& val_new = config.opt_int(opt_key);
-			val_new = boost::any_cast<int>(value);
-            break;
-		}
-        case coInts: {
-            ConfigOptionInts* vec_new = new ConfigOptionInts{ boost::any_cast<int>(value) };
-            config.option<ConfigOptionInts>(opt_key)->set_at(vec_new, opt_index, 0);
-        }
-                   break;
-        case coEnum: {
-            auto* opt = opt_def->default_value.get()->clone();
-            opt->setInt(boost::any_cast<int>(value));
-            config.set_key_value(opt_key, opt);
-        }
-                   break;
-        case coEnums: {
-            ConfigOptionEnumsGeneric* vec_new = new ConfigOptionEnumsGeneric(1, boost::any_cast<int>(value));;
-            config.option<ConfigOptionEnumsGeneric>(opt_key)->set_at(vec_new, opt_index, 0);
-            break; }
-        case coPoints: {
-            if (opt_key == "bed_shape") {
-                config.option<ConfigOptionPoints>(opt_key)->values = boost::any_cast<std::vector<Vec2d>>(value);
-                break;
-            }
-            ConfigOptionPoints* vec_new = new ConfigOptionPoints{ boost::any_cast<Vec2d>(value) };
-            config.option<ConfigOptionPoints>(opt_key)->set_at(vec_new, opt_index, 0);
-        }
-                     break;
-        case coNone:
-            break;
-        default:
-            break;
-        }
-    }
-    catch (const std::exception& e)
-    {
-//        wxLogError(format_wxstr("Internal error when changing value for %1%: %2%", opt_key, e.what()));
-    }
+    config_interactor.set_config_value(opt_key, value, opt_index);
 }
 
 Option::Option(const ConfigOptionDef& _opt, t_config_option_key id) : opt(_opt), opt_id(id)
@@ -714,7 +602,8 @@ void OptionsGroup::on_change_OG(const t_config_option_key& opt_id, const boost::
 
 Option ConfigOptionsGroup::get_option(const std::string& opt_key, int opt_index /*= -1*/)
 {
-	if (!m_config->has(opt_key)) {
+    const auto config = m_config_interactor->config();
+    if (!config.has(opt_key)) {
 		std::cerr << "No " << opt_key << " in ConfigOptionsGroup config.\n";
 	}
 
@@ -724,10 +613,10 @@ Option ConfigOptionsGroup::get_option(const std::string& opt_key, int opt_index 
 
     if (m_use_custom_ctrl) {
         // fill group and category values just for options from Settings Tab
-//        wxGetApp().searcher().add_key(opt_id, static_cast<Preset::Type>(this->config_type()), title, this->config_category());
+//!        wxGetApp().searcher().add_key(opt_id, static_cast<Preset::Type>(this->config_type()), title, this->config_category());
     }
 
-	return Option(*m_config->def()->get(opt_key), opt_id);
+	return Option(*config.def()->get(opt_key), opt_id);
 }
 
 void ConfigOptionsGroup::on_change_OG(const t_config_option_key& opt_id, const boost::any& value)
@@ -986,11 +875,11 @@ boost::any ConfigOptionsGroup::config_value(const std::string& opt_key, int opt_
 		if (opt_index != -1)
 			throw Slic3r::OutOfRange("Can't deserialize option indexed value");
 // 		return join(';', m_config->get(opt_key)});
-		return get_config_value(*m_config, opt_key);
+		return get_config_value(m_config_interactor->config(), opt_key);
 	}
 	else {
 //		return opt_index == -1 ? m_config->get(opt_key) : m_config->get_at(opt_key, opt_index);
-		return get_config_value(*m_config, opt_key, opt_index);
+		return get_config_value(m_config_interactor->config(), opt_key, opt_index);
 	}
 }
 
@@ -1164,9 +1053,7 @@ std::pair<OG_CustomCtrl*, bool*> ConfigOptionsGroup::get_custom_ctrl_with_blinki
 void ConfigOptionsGroup::change_opt_value(const t_config_option_key& opt_key, const boost::any& value, int opt_index /*= 0*/)
 
 {
-    OptionsGroup::change_opt_value(const_cast<DynamicPrintConfig&>(*m_config), opt_key, value, opt_index);
-	if (m_modelconfig)
-		m_modelconfig->touch();
+    OptionsGroup::change_opt_value(*m_config_interactor, opt_key, value, opt_index);
 }
 
 wxString OptionsGroup::get_url(const std::string& path_end)

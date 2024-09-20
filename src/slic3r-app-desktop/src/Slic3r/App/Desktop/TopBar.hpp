@@ -2,12 +2,10 @@
 #define slic3r_TopBar_hpp_
 
 #include <wx/bookctrl.h>
-#include <wx/button.h>
+#include <wx/panel.h>
 #include <wx/sizer.h>
 
 #include "Slic3r/App/WX/Widgets/TextInput.hpp"
-
-class wxFlexGridSizer;
 
 // custom message the TopBarItemsCtrl sends to its parent (TopBar) to notify a selection change:
 wxDECLARE_EVENT(wxCUSTOMEVT_TOPBAR_SEL_CHANGED, wxCommandEvent);
@@ -18,12 +16,21 @@ class TopBarMenus;
 
 class TopBarItemsCtrl : public wxControl
 {
-    class Button : public WX::ScalableButton
+    class Button : public wxPanel
     {
         bool        m_is_selected{ false };
         wxColour    m_background_color;
         wxColour    m_foreground_color;
         wxBitmapBundle  m_bmp_bundle = wxBitmapBundle();
+
+        void        messure_min_size();
+
+    protected:
+        wxString    m_label;
+        std::string m_icon_name;
+        int         m_px_cnt            { 16 };
+        bool        m_has_down_arrow    { false };
+        wxBitmapBundle  m_dd_bmp_bundle = wxBitmapBundle();
 
     public:
         Button() {};
@@ -39,8 +46,10 @@ class TopBarItemsCtrl : public wxControl
         void set_hovered (bool hovered);
         void render();
 
-        void sys_color_changed() override;
+        void sys_color_changed();
         void SetBitmapBundle(wxBitmapBundle bmp_bundle) { m_bmp_bundle = bmp_bundle; }
+
+        bool SetFont(const wxFont& font) override;
     };
 
     class ButtonWithPopup : public Button
@@ -51,6 +60,7 @@ class TopBarItemsCtrl : public wxControl
         ButtonWithPopup(wxWindow*           parent,
                         const wxString&     label,
                         const std::string&  icon_name = "",
+                        const int           px_cnt = 16,
                         wxSize              size = wxDefaultSize);
         ButtonWithPopup(wxWindow*           parent,
                         const std::string&  icon_name,
@@ -105,8 +115,8 @@ public:
 //    wxWindow* GetSearchCtrl() { return m_search->GetTextCtrl(); */}
 
 private:
-    wxFlexGridSizer*                m_buttons_sizer;
-    wxFlexGridSizer*                m_sizer;
+    wxFlexGridSizer*                m_buttons_sizer {nullptr};
+    wxFlexGridSizer*                m_sizer         {nullptr};
     ButtonWithPopup*                m_menu_btn      {nullptr};
     ButtonWithPopup*                m_workspace_btn {nullptr};
     ButtonWithPopup*                m_account_btn   {nullptr};
@@ -121,11 +131,11 @@ private:
 class TopBar : public wxBookCtrlBase
 {
 public:
-    TopBar( wxWindow * parent,
-            wxWindowID winid = wxID_ANY,
-            const wxPoint & pos = wxDefaultPosition,
-            const wxSize & size = wxDefaultSize,
-            long style = 0)
+    TopBar(wxWindow * parent,
+                 wxWindowID winid = wxID_ANY,
+                 const wxPoint & pos = wxDefaultPosition,
+                 const wxSize & size = wxDefaultSize,
+                 long style = 0)
     {
         Init();
         Create(parent, winid, pos, size, style);
@@ -393,7 +403,7 @@ public:
                 i->GetNext()->GetData()->SetFocus();
             }
             else 
-*/                
+*/
             if (isFromSelf && !isForward)
             {
                 // focus is currently on notebook tab and should leave

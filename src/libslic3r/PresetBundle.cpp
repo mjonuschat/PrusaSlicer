@@ -477,14 +477,21 @@ void PresetBundle::reset_extruder_filaments()
         this->extruders_filaments.emplace_back(ExtruderFilaments(&filaments, id, names[id]));
 }
 
-PresetCollection&PresetBundle::get_presets(Preset::Type type)
+PresetCollection& PresetBundle::get_presets(Preset::Type type)
+{
+    return const_cast<PresetCollection&>(
+        const_cast<const PresetBundle*>(this)->get_presets(type)
+    );
+}
+
+const PresetCollection& PresetBundle::get_presets(Preset::Type type) const
 {
     assert(type >= Preset::TYPE_PRINT && type <= Preset::TYPE_PRINTER);
 
-    return  type == Preset::TYPE_PRINT          ? prints        :
-            type == Preset::TYPE_SLA_PRINT      ? sla_prints    :
-            type == Preset::TYPE_FILAMENT       ? filaments     :
-            type == Preset::TYPE_SLA_MATERIAL   ? sla_materials : printers;
+    return  type == Preset::TYPE_PRINT      ? prints        :
+        type == Preset::TYPE_SLA_PRINT      ? sla_prints    :
+        type == Preset::TYPE_FILAMENT       ? filaments     :
+        type == Preset::TYPE_SLA_MATERIAL   ? sla_materials : printers;
 }
 
 

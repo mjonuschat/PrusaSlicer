@@ -85,14 +85,34 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/Scene/Selection.hpp
         src/Slic3r/Biz/Scene/SceneInteractorProjectContext.hpp
 
-        src/Slic3r/Biz/Preset/PresetChangeListener.hpp
+        src/Slic3r/Biz/Preset/IBedPresetValueChangedListener.hpp
+        src/Slic3r/Biz/Preset/IBedPresetSwitchedListener.hpp
+        src/Slic3r/Biz/Preset/IConfigInteractor.hpp
         src/Slic3r/Biz/Preset/PresetInteractor.cpp
         src/Slic3r/Biz/Preset/PresetInteractor.hpp
         src/Slic3r/Biz/Preset/PresetInteractorProjectContext.hpp
         src/Slic3r/Biz/Preset/PresetInteractorConfigContainerContext.hpp
+        src/Slic3r/Biz/Preset/PresetInteractorConfigContainerContext.cpp
         src/Slic3r/Biz/Preset/PresetState.hpp
+        src/Slic3r/Biz/Preset/PresetRuntime.hpp
+        src/Slic3r/Biz/Preset/PresetBundleRuntime.hpp
+        src/Slic3r/Biz/Preset/PresetHints.hpp
+        src/Slic3r/Biz/Preset/PresetHints.cpp
+        src/Slic3r/Biz/Preset/AbstractConfigManipulation.hpp
+        src/Slic3r/Biz/Preset/AbstractConfigManipulation.cpp
+        src/Slic3r/Biz/Preset/PresetBundleRuntime.cpp
+        src/Slic3r/Biz/Preset/PresetBundleRuntime.hpp
+
+        src/Slic3r/Biz/SelectionId.hpp
+        src/Slic3r/Biz/ListenerList.hpp
+        src/Slic3r/Biz/IProjectsChangedListener.hpp
+        src/Slic3r/Biz/ISelectedConfigContainerChangedListener.hpp
+        src/Slic3r/Biz/ISelectedProjectChangedListener.hpp
+        src/Slic3r/Biz/ProjectInteractor.cpp
+        src/Slic3r/Biz/ProjectInteractor.hpp
 
         src/Slic3r/Memory.hpp
+        src/Slic3r/StringUtils.hpp
 
         src/Slic3r/Domain/ElementId.cpp
         src/Slic3r/Domain/ElementId.hpp
