@@ -29,13 +29,12 @@
 #include "libslic3r/PresetBundle.hpp" // IWYU pragma: keep
 #include "libslic3r/Print.hpp"
 
-//!#include "I18N.hpp"
-#define  L(s) s
-static wxString _(const wxString& s) { return s; };
-static wxString _L(const wxString& s) { return s; };
-
+#include "Slic3r/App/WX/I18N.hpp"
 
 namespace Slic3r::App::Desktop::Preset {
+
+using WX::_L;
+using WX::_;
 
 //------------------------------------------
 //          EditGCodeDialog

@@ -21,9 +21,7 @@
 #include "wx/private/markupparser.h"
 #endif // wxUSE_ACCESSIBILITY
 
-//!#include "I18N.hpp"
-#define _L(s)    s
-
+#include "I18N.hpp"
 
 namespace Slic3r::App::WX {
 

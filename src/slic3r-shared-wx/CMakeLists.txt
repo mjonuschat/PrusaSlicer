@@ -26,6 +26,8 @@ set(SLIC3R_SHARED_WX_FILES
         src/Slic3r/App/WX/MsgDialog.cpp
         src/Slic3r/App/WX/ConfigManipulation.hpp
         src/Slic3r/App/WX/ConfigManipulation.cpp
+        src/Slic3r/App/WX/I18N.hpp
+        src/Slic3r/App/WX/I18N.cpp
         # our widgets
         src/Slic3r/App/WX/Widgets/UIColors.hpp
         src/Slic3r/App/WX/Widgets/StateColor.hpp

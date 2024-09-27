@@ -167,6 +167,15 @@ void TestRenderModule::render_imgui()
         }
 
         ImGui::Text("%s", fmt::format("Delta: {}", get_delta()).c_str());
+
+        double a = 5005.5;
+        std::stringstream ss;
+        ss << a;
+        ImGui::Text("%s", ss.str().c_str());
+        char sss[50];
+        sprintf(sss, "%g", a);
+        ImGui::Text("%s", sss);
+
     }
     ImGui::End();
 }

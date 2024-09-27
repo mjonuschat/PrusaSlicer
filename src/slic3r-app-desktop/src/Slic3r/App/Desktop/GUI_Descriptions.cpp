@@ -7,6 +7,7 @@
 
 #include "Slic3r/App/WX/Scalable.hpp"
 #include "Slic3r/App/WX/WidgetsConfig.hpp"
+#include "Slic3r/App/WX/I18N.hpp"
 
 #include <wx/sizer.h>
 #include <wx/string.h>
@@ -14,11 +15,9 @@
 #include <wx/statbmp.h>
 #include <wx/clrpicker.h>
 
-#define _(s) s //#include "I18N.hpp"
-#define _L(s) s //#include "I18N.hpp"
-#define _CTX(s, s1) s //#include "I18N.hpp"
-
 namespace Slic3r::App::Desktop::GUI_Descriptions {
+
+using namespace WX;
 
 void FillSizerWithTextColorDescriptions(wxSizer* sizer, wxWindow* parent, wxColourPickerCtrl** sys_colour, wxColourPickerCtrl** mod_colour)
 {

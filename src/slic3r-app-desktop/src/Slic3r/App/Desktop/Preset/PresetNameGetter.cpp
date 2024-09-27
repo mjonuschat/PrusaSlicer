@@ -8,6 +8,7 @@
 #include "Slic3r/App/WX/wxExtensions.hpp"
 #include "Slic3r/App/WX/BitmapGetters.hpp"
 #include "Slic3r/App/WX/StringConversions.hpp"
+#include "Slic3r/App/WX/I18N.hpp"
 #include "Slic3r/App/WX/format.hpp"
 
 #include "Slic3r/App/WX/Widgets/ComboBox.hpp"
@@ -30,13 +31,10 @@
 
 #include "libslic3r/PresetBundle.hpp"
 
-//!#include "I18N.hpp"
-#define L(s) s
-static wxString             _(const wxString& s)                            { return s; };
-static wxString            _L(const wxString& s)                            { return s; };
-static std::string       _u8L(const std::string& s)                         { return s; };
-
 namespace Slic3r::App::Desktop::Preset {
+
+using WX::_L;
+using WX::_;
 
 constexpr auto BORDER_W = 10;
 

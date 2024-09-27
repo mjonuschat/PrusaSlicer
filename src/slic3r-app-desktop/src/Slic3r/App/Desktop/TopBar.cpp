@@ -9,8 +9,7 @@
 //#include "Search.hpp"
 //#include "format.hpp"
 
-#define _L(s) s //#include "I18N.hpp"
-
+#include "Slic3r/App/WX/I18N.hpp"
 
 #include <wx/dc.h>
 #include <wx/dcclient.h>
@@ -64,11 +63,14 @@ void TopBarItemsCtrl::Button::messure_min_size()
 {
     int btn_margin = w_config()->em_unit(this);
     int x, y;
-    GetTextExtent(m_label.IsEmpty() ? "a" : m_label, &x, &y);
+
+    wxString localized_label = _(m_label);
+
+    GetTextExtent(localized_label.IsEmpty() ? "a" : localized_label, &x, &y);
     wxSize size(x + 4 * btn_margin, y + int(1.5 * btn_margin));
     if (m_icon_name.empty())
         this->SetMinSize(size);
-    else if (m_label.IsEmpty()) {
+    else if (localized_label.IsEmpty()) {
         const int btn_side = size.y;
         this->SetMinSize(wxSize(btn_side, btn_side));
     }
@@ -128,7 +130,7 @@ void TopBarItemsCtrl::Button::render()
 
     wxPoint pt = { 0, 0 };
 
-    wxString text = m_label;
+    wxString text = _(m_label);
 
     if (m_bmp_bundle.IsOk()) {
         wxSize szIcon = get_preferred_size(m_bmp_bundle, this);

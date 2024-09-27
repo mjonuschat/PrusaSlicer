@@ -71,6 +71,13 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Init.cpp
         src/Slic3r/App/Init.hpp
 
+        src/Slic3r/App/I18N/LanguageInfo.cpp
+        src/Slic3r/App/I18N/LanguageInfo.hpp
+        src/Slic3r/App/I18N/I18N.cpp
+        src/Slic3r/App/I18N/I18N.hpp
+        src/Slic3r/App/I18N/Translation.cpp
+        src/Slic3r/App/I18N/Translation.hpp
+
         src/Slic3r/Biz/PrintConfigInteractor.hpp
         src/Slic3r/Biz/PrintConfigInteractor.cpp
         src/Slic3r/Biz/ObservableDynamicPrintConfig.hpp

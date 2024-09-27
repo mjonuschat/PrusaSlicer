@@ -25,18 +25,18 @@
 
 #include "Slic3r/App/WX/StringConversions.hpp"
 #include "Slic3r/App/WX/MsgDialog.hpp"
+#include "Slic3r/App/WX/I18N.hpp"
 
 #include <wx/sizer.h>
 #include <wx/string.h>
 
-//!#include "I18N.hpp"
-#define L(s) s
-static wxString _L(const wxString& s) { return s; };
 
 namespace Slic3r::App::Desktop::Preset {
 
+using WX::_L;
+
 EditorPrint::EditorPrint(wxWindow* parent, Biz::Preset::PresetInteractor& preset_interactor) :
-    AbstractEditor(parent, _L("Print Settings"), Slic3r::Preset::TYPE_PRINT, preset_interactor)
+    AbstractEditor(parent, L("Print Settings"), Slic3r::Preset::TYPE_PRINT, preset_interactor)
 {
     m_config_interactor = std::make_unique<Biz::Preset::PresetConfigInteractor>(preset_interactor, Slic3r::Preset::TYPE_PRINT, 0);
 }

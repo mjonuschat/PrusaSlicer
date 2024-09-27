@@ -8,6 +8,7 @@
 #include "Slic3r/App/WX/WidgetsConfig.hpp"
 #include "Slic3r/App/WX/wxExtensions.hpp"
 #include "Slic3r/App/WX/StringConversions.hpp"
+#include "Slic3r/App/WX/I18N.hpp"
 #include "Slic3r/App/WX/format.hpp"
 
 #include <cstddef>
@@ -25,13 +26,9 @@
 
 #include "libslic3r/PresetBundle.hpp" // IWYU pragma: keep
 
-//!#include "I18N.hpp"
-static wxString            _L(const wxString& s)                            { return s; };
-static std::string       _u8L(const std::string& s)                         { return s; };
-static std::string  _CTX_utf8(const std::string& s, const std::string& s1)  { return s; };
-static std::string  L_CONTEXT(const std::string& s, const std::string& s1)  { return s; };
-
 namespace Slic3r::App::Desktop::Preset {
+
+using WX::_L;
 
 constexpr auto BORDER_W = 10;
 

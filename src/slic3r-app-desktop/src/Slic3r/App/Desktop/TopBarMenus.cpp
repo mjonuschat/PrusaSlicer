@@ -3,14 +3,13 @@
 
 #include "Slic3r/App/WX/MenuManaging.hpp"
 #include "Slic3r/App/WX/BitmapGetters.hpp"
+#include "Slic3r/App/WX/I18N.hpp"
 #include <Slic3r/App/WX/WidgetsConfig.hpp>
 
 //#include "GUI_App.hpp"
 //#include "GUI_Factories.hpp"
 
 #include "libslic3r/Config.hpp" //ConfigOptionMode
-
-#define _L(s) s //#include "I18N.hpp"
 
 namespace Slic3r::App::Desktop {
 

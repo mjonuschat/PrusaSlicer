@@ -13,7 +13,7 @@
 #include "PresetHints.hpp"
 #include "../Preset/PresetInteractorConfigContainerContext.hpp"
 
-static std::string _u8L(const std::string& s) { return s; } // #include "I18N.hpp"
+#include "Slic3r/App/I18N/I18N.hpp"
 
 namespace Slic3r::Biz::Preset {
 

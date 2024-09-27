@@ -15,6 +15,7 @@
 #include <Slic3r/App/WX/WidgetsConfig.hpp>
 #include <Slic3r/App/WX/MsgDialog.hpp>
 #include <Slic3r/App/WX/format.hpp>
+#include <Slic3r/App/WX/I18N.hpp>
 #include <Slic3r/App/WX/Widgets/BitmapComboBox.hpp>
 
 #include "Slic3r/App/Color.hpp"
@@ -36,11 +37,10 @@
 #define wxOSX false
 #endif
 
-//!#include "I18N.hpp"
-#define _(s)  s
-static wxString _L(const wxString& s) { return s; }
-
 namespace Slic3r::App::Desktop::Config {
+
+using WX::_L;
+using WX::_;
 
 ThumbnailErrors validate_thumbnails_string(wxString& str, const wxString& def_ext = "PNG")
 {

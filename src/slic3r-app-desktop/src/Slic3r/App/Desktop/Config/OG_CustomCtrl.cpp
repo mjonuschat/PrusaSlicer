@@ -7,15 +7,16 @@
 #include <Slic3r/App/WX/StringConversions.hpp>
 #include <Slic3r/App/WX/WidgetsConfig.hpp>
 #include <Slic3r/App/WX/BitmapGetters.hpp>
+#include <Slic3r/App/WX/I18N.hpp>
 
 #include <wx/utils.h>
 #include <boost/algorithm/string/split.hpp>
 
 //#include "libslic3r/AppConfig.hpp"  // => get_app_config()->get_bool
-#define _CTX(s, s1) s //#include "I18N.hpp"
-static wxString _(const std::string& s) { return Slic3r::App::WX::from_u8(s); }
 
 namespace Slic3r::App::Desktop::Config {
+
+using namespace WX;
 
 static bool is_point_in_rect(const wxPoint& pt, const wxRect& rect)
 {
@@ -620,7 +621,7 @@ void OG_CustomCtrl::CtrlLine::render(wxDC& dc, wxCoord v_pos)
 
     const std::vector<Option>& option_set = og_line.get_options();
 
-    wxString label = og_line.label;
+    wxString label = _(og_line.label);
     bool is_url_string = false;
     if (ctrl->opt_group->label_width != 0 && !label.IsEmpty()) {
         const wxColour* text_clr = (option_set.size() == 1 && field ? field->label_color() : og_line.label_color());

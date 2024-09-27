@@ -10,6 +10,7 @@
 #include "Slic3r/App/WX/BitmapCache.hpp"
 #include "Slic3r/App/WX/BitmapGetters.hpp"
 #include "Slic3r/App/WX/StringConversions.hpp"
+#include "Slic3r/App/WX/I18N.hpp"
 #include "Slic3r/App/WX/format.hpp"
 
 #include <cstddef>
@@ -33,12 +34,9 @@
 //!#include "GUIApp.hpp"  // for -> open_browser_with_warning_dialog(), get_tab() and show_printer_webview_tab()
 //!#include "Plater.hpp"  // for -> for update presets in sidebar 
 
-//!#include "I18N.hpp"
-#define _L(s) s
-#define  L(s) s
-#define  _(s) s
-
 namespace Slic3r::App::Desktop::Preset {
+
+using WX::_;
 
 /* For PresetComboBox we use bitmaps that are created from images that are already scaled appropriately for Retina
  * (Contrary to the intuition, the `scale` argument for Bitmap's constructor doesn't mean

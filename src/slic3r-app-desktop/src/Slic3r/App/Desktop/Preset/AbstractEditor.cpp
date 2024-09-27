@@ -59,12 +59,7 @@
 //!#include "MainFrame.hpp"     for -> select_tab()
 //!#include "AppConfig.hpp" 
 
-//!#include "I18N.hpp"
-#define _u8L(s) s
-#define L(s) s
-#define _(s) s
-static wxString _L(const wxString& s) { return s; };
-static wxString _L_PLURAL(const wxString& s1, const wxString& s2, int n) { return s1; };
+#include "Slic3r/App/WX/I18N.hpp"
 
 #ifdef WIN32
 	#include <CommCtrl.h>
@@ -77,6 +72,9 @@ namespace Slic3r::App::Desktop::Preset {
 using WX::from_u8;
 using WX::into_u8;
 using WX::dots;
+using WX::_L;
+using WX::_;
+using WX::_L_PLURAL;
 
 PresetDependencies::PresetDependencies(Slic3r::Preset::Type type):
     type(type)
@@ -375,7 +373,7 @@ PageShp AbstractEditor::add_options_page(const wxString& title, const std::strin
 wxString AbstractEditor::translate_category(const wxString& title, Slic3r::Preset::Type preset_type)
 {
     if (preset_type == Slic3r::Preset::TYPE_PRINTER && title.Contains("Extruder ")) {
-        return _("Extruder") + title.SubString(8, title.Last());
+        return _(wxString("Extruder")) + title.SubString(8, title.Last());
     }
     return _(title);
 }
@@ -1270,7 +1268,7 @@ void AbstractEditor::set_custom_gcode(const t_config_option_key& opt_key, const 
 
 wxSizer* AbstractEditor::description_line_widget(wxWindow* parent, ogStaticText* *StaticText, wxString text /*= wxEmptyString*/)
 {
-    *StaticText = new ogStaticText(parent, text);
+    *StaticText = new ogStaticText(parent, _(text));
     (*StaticText)->SetFont(WX::w_config()->normal_font());
 
     auto sizer = new wxBoxSizer(wxHORIZONTAL);
