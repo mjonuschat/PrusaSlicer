@@ -29,7 +29,7 @@ add_library(imgui_backend_ogl3_glfw STATIC
 )
 
 target_include_directories(
-        imgui_backend_ogl3_glfw PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
+        imgui_backend_ogl3_glfw PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/imgui
 )
 
 if (NOT EMSCRIPTEN)

@@ -1,6 +1,8 @@
 #include "Translation.hpp"
 #include "LanguageInfo.hpp"
 
+#include <clocale>
+
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 #include <boost/locale/info.hpp>

@@ -25,6 +25,7 @@ add_cmake_project(Boost
         -DBOOST_EXCLUDE_LIBRARIES:STRING=${_excluded_libs}
         -DBOOST_LOCALE_ENABLE_ICU:BOOL=OFF # do not link to libicu, breaks compatibility between distros
         -DBUILD_TESTING:BOOL=OFF
+        -DBOOST_IOSTREAMS_ENABLE_ZSTD:BOOL=OFF
         "-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}"
         "${_context_abi_line}"
         "${_context_arch_line}"

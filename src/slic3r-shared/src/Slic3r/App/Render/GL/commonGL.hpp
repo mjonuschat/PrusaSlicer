@@ -7,6 +7,7 @@
 #ifdef NDEBUG
 #define glCheck()
 #define DEBUG_ASSERT_BOUND_IB(ib) (void)ib
+#define DEBUG_ASSERT_BOUND_VAO(vao)  (void)vao
 #else
 #define glCheck() { \
   GLenum err = glGetError(); \
@@ -28,12 +29,6 @@
         glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &bound_vao); \
         DEBUG_ASSERT(vao == bound_vao);                     \
     }
-
-#endif
-
-#ifndef NDEBUG
-
-
 
 #endif
 
