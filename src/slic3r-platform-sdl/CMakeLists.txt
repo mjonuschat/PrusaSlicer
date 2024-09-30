@@ -1,6 +1,6 @@
 set(SLIC3R_PLATFORM_SDL_FILES
         ./src/Slic3r/App/Platform/SDL/SDLRenderCanvas.cpp
-        ./src/Slic3r/App/Platform/SDL/SDLRenderCanvas.hpp
+        ./include/Slic3r/App/Platform/SDL/SDLRenderCanvas.hpp
 )
 
 add_library(slic3r-platform-sdl STATIC ${SLIC3R_PLATFORM_SDL_FILES})
@@ -17,4 +17,4 @@ target_link_libraries(slic3r-platform-sdl PUBLIC
         slic3r-platform
         slic3r-shared
 )
-target_include_directories(slic3r-platform-sdl PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
+target_include_directories(slic3r-platform-sdl PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)

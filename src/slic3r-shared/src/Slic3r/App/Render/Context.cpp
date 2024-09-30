@@ -1,9 +1,9 @@
-#include "Context.hpp"
+#include "Slic3r/App/Render/Context.hpp"
 
 #include "Slic3r/App/Render/GL/commonGL.hpp"
-#include "Device.hpp"
-#include "ShaderManager.hpp"
-#include "TextureManager.hpp"
+#include "Slic3r/App/Render/Device.hpp"
+#include "Slic3r/App/Render/ShaderManager.hpp"
+#include "Slic3r/App/Render/TextureManager.hpp"
 
 #include <Slic3r/Log.hpp>
 

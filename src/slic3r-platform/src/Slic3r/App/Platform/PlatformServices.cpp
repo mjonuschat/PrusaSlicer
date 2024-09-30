@@ -1,4 +1,4 @@
-#include "PlatformServices.hpp"
+#include "Slic3r/App/Platform/PlatformServices.hpp"
 
 namespace Slic3r::App::Platform {
 

@@ -1,4 +1,4 @@
-#include "StringConversions.hpp"
+#include "Slic3r/App/WX/StringConversions.hpp"
 #include "Slic3r/App/I18N/I18N.hpp"
 
 namespace Slic3r::App::WX {

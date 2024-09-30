@@ -3,8 +3,8 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include "LockButton.hpp"
-#include "WidgetsConfig.hpp"
+#include "Slic3r/App/WX/LockButton.hpp"
+#include "Slic3r/App/WX/WidgetsConfig.hpp"
 
 namespace Slic3r::App::WX {
 

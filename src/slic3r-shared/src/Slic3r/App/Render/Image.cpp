@@ -1,4 +1,4 @@
-#include "Image.hpp"
+#include "Slic3r/App/Render/Image.hpp"
 
 #include <cstring>
 #include "Slic3r/Assert.hpp"

@@ -10,8 +10,8 @@
 #include "libslic3r/libslic3r.h"
 #include "libslic3r/format.hpp"
 
-#include "PresetHints.hpp"
-#include "../Preset/PresetInteractorConfigContainerContext.hpp"
+#include "Slic3r/Biz/Preset/PresetHints.hpp"
+#include "Slic3r/Biz/Preset/PresetInteractorConfigContainerContext.hpp"
 
 #include "Slic3r/App/I18N/I18N.hpp"
 

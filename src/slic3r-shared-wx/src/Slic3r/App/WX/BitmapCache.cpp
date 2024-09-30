@@ -3,8 +3,8 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include "BitmapCache.hpp"
-#include "StringConversions.hpp"
+#include "Slic3r/App/WX/BitmapCache.hpp"
+#include "Slic3r/App/WX/StringConversions.hpp"
 
 #include "Slic3r/App/Color.hpp"
 #include "Slic3r/App/WX/MacUtils.hpp"

@@ -1,6 +1,6 @@
-#include "PresetInteractor.hpp"
-#include "IBedPresetValueChangedListener.hpp"
-#include "IBedPresetSwitchedListener.hpp"
+#include "Slic3r/Biz/Preset/PresetInteractor.hpp"
+#include "Slic3r/Biz/Preset/IBedPresetValueChangedListener.hpp"
+#include "Slic3r/Biz/Preset/IBedPresetSwitchedListener.hpp"
 #include "Slic3r/Domain/ConfigContainer.hpp"
 
 #include <vector>

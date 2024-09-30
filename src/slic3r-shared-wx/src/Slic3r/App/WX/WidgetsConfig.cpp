@@ -1,5 +1,5 @@
 
-#include "WidgetsConfig.hpp"
+#include "Slic3r/App/WX/WidgetsConfig.hpp"
 #include "Slic3r/App/Color.hpp"
 
 #include <wx/window.h>

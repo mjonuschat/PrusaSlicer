@@ -1,4 +1,4 @@
-#include "WXRenderCanvas.hpp"
+#include "Slic3r/App/Platform/WX/WXRenderCanvas.hpp"
 
 #include <iostream>
 

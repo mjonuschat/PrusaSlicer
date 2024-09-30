@@ -2,8 +2,8 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include "BitmapComboBox.hpp"
-#include "../WidgetsConfig.hpp"
+#include "Slic3r/App/WX/Widgets/BitmapComboBox.hpp"
+#include "Slic3r/App/WX/WidgetsConfig.hpp"
 
 // ---------------------------------
 // ***  BitmapComboBox  ***

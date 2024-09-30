@@ -1,4 +1,4 @@
-#include "MacUtils.hpp"
+#include "Slic3r/App/WX/MacUtils.hpp"
 #include <algorithm>
 #import <AppKit/AppKit.h>
 

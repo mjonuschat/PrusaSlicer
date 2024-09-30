@@ -2,7 +2,7 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include "AbstractConfigManipulation.hpp"
+#include "Slic3r/Biz/Preset/AbstractConfigManipulation.hpp"
 #include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/format.hpp"
 

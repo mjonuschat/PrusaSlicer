@@ -1,15 +1,15 @@
-#include "GLDeviceInternal.hpp"
+#include "Slic3r/App/Render/GL/GLDeviceInternal.hpp"
 
 #include "Slic3r/App/Render/Context.hpp"
 #include "Slic3r/App/Render/Geometry.hpp"
 #include "Slic3r/App/Render/Shader.hpp"
 
-#include "commonGL.hpp"
-#include "GLTypes.hpp"
-#include "GLBufferInternal.hpp"
-#include "GLGeometryInternal.hpp"
-#include "GLShaderInternal.hpp"
-#include "GLTextureInternal.hpp"
+#include "Slic3r/App/Render/GL/commonGL.hpp"
+#include "Slic3r/App/Render/GL/GLTypes.hpp"
+#include "Slic3r/App/Render/GL/GLBufferInternal.hpp"
+#include "Slic3r/App/Render/GL/GLGeometryInternal.hpp"
+#include "Slic3r/App/Render/GL/GLShaderInternal.hpp"
+#include "Slic3r/App/Render/GL/GLTextureInternal.hpp"
 
 #include "Slic3r/Assert.hpp"
 #include "GL/glew.h"

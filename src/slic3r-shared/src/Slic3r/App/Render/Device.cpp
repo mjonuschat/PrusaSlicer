@@ -1,11 +1,11 @@
-#include "Device.hpp"
-#include "CommandBuffer.hpp"
-#include "Context.hpp"
+#include "Slic3r/App/Render/Device.hpp"
+#include "Slic3r/App/Render/CommandBuffer.hpp"
+#include "Slic3r/App/Render/Context.hpp"
 #include "Slic3r/App/Render/GL/commonGL.hpp"
 #include "Slic3r/App/Render/GL/GLDeviceInternal.hpp"
 
-#include "Texture.hpp"
-#include "Buffer.hpp"
+#include "Slic3r/App/Render/Texture.hpp"
+#include "Slic3r/App/Render/Buffer.hpp"
 
 namespace Slic3r::App::Render {
 

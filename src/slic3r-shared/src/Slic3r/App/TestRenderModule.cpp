@@ -1,4 +1,4 @@
-#include "TestRenderModule.hpp"
+#include "Slic3r/App/TestRenderModule.hpp"
 #include "imgui/imgui.h"
 #include <iostream>
 #include <chrono>

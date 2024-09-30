@@ -1,4 +1,4 @@
-#include "AbstractRenderModule.hpp"
+#include "Slic3r/App/Platform/AbstractRenderModule.hpp"
 
 namespace Slic3r::App::Platform {
 

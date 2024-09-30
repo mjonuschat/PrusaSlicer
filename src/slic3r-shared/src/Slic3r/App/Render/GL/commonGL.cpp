@@ -1,4 +1,4 @@
-#include "commonGL.hpp"
+#include "Slic3r/App/Render/GL/commonGL.hpp"
 #include "Slic3r/App/Render/Context.hpp"
 #include "Slic3r/App/Render/ShaderManager.hpp"
 

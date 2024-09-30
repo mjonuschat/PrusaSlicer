@@ -1,8 +1,8 @@
-#include "BitmapGetters.hpp"
-#include "BitmapCache.hpp"
-#include "WidgetsConfig.hpp"
-#include "StringConversions.hpp"
-#include "I18N.hpp"
+#include "Slic3r/App/WX/BitmapGetters.hpp"
+#include "Slic3r/App/WX/BitmapCache.hpp"
+#include "Slic3r/App/WX/WidgetsConfig.hpp"
+#include "Slic3r/App/WX/StringConversions.hpp"
+#include "Slic3r/App/WX/I18N.hpp"
 
 #include <stdexcept>
 #include <boost/algorithm/string/replace.hpp>

@@ -1,5 +1,5 @@
-#include "Texture.hpp"
-#include "Context.hpp"
+#include "Slic3r/App/Render/Texture.hpp"
+#include "Slic3r/App/Render/Context.hpp"
 #include "Slic3r/App/Render/GL/commonGL.hpp"
 #include "Slic3r/App/Render/GL/GLTypes.hpp"
 #include "Slic3r/App/Render/GL/GLTextureInternal.hpp"

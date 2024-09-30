@@ -1,4 +1,4 @@
-#include "StringConversions.hpp"
+#include "Slic3r/App/WX/StringConversions.hpp"
 #include "Slic3r/StringUtils.hpp"
 
 #include <wx/numformatter.h>

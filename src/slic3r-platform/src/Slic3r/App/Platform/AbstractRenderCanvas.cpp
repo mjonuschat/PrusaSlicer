@@ -1,4 +1,4 @@
-#include "AbstractRenderCanvas.hpp"
+#include "Slic3r/App/Platform/AbstractRenderCanvas.hpp"
 
 #include <iostream>
 #include <algorithm>

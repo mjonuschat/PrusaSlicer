@@ -1,4 +1,4 @@
-#include "CheckBox.hpp"
+#include "Slic3r/App/WX/Widgets/CheckBox.hpp"
 
 namespace Slic3r::App::WX::Widgets {
 

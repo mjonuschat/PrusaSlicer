@@ -1,4 +1,4 @@
-#include "GeometryBuilder.hpp"
+#include "Slic3r/App/Render/GeometryBuilder.hpp"
 
 #include <libslic3r/TriangleMesh.hpp>
 

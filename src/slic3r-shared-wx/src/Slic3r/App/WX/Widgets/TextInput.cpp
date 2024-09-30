@@ -1,12 +1,12 @@
-#include "TextInput.hpp"
-#include "UIColors.hpp"
+#include "Slic3r/App/WX/Widgets/TextInput.hpp"
+#include "Slic3r/App/WX/Widgets/UIColors.hpp"
 
 #include <wx/dcgraph.h>
 #include <wx/dcclient.h>
 #include <wx/panel.h>
 
-#include "../WidgetsConfig.hpp"
-#include "../BitmapGetters.hpp"
+#include "Slic3r/App/WX/WidgetsConfig.hpp"
+#include "Slic3r/App/WX/BitmapGetters.hpp"
 
 namespace Slic3r::App::WX::Widgets {
 

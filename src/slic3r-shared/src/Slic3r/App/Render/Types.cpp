@@ -1,4 +1,4 @@
-#include "Types.hpp"
+#include "Slic3r/App/Render/Types.hpp"
 #include "Slic3r/App/Platform/ScreenInfo.hpp"
 
 

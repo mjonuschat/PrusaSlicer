@@ -1,10 +1,10 @@
-#include "ComboBox.hpp"
-#include "UIColors.hpp"
+#include "Slic3r/App/WX/Widgets/ComboBox.hpp"
+#include "Slic3r/App/WX/Widgets/UIColors.hpp"
 
 #include <wx/wx.h>
 #include <wx/dcgraph.h>
 
-#include "../WidgetsConfig.hpp"
+#include "Slic3r/App/WX/WidgetsConfig.hpp"
 
 namespace Slic3r::App::WX::Widgets {
 

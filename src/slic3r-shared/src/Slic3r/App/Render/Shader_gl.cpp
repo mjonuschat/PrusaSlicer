@@ -1,6 +1,6 @@
 // ReSharper disable CppMemberFunctionMayBeStatic
 // NOLINTBEGIN(*-convert-member-functions-to-static)
-#include "Shader.hpp"
+#include "Slic3r/App/Render/Shader.hpp"
 #include "Slic3r/App/Render/GL/commonGL.hpp"
 #include "Slic3r/App/Render/GL/GLShaderInternal.hpp"
 

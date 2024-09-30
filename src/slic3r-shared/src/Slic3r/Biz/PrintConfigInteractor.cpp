@@ -1,4 +1,4 @@
-#include "PrintConfigInteractor.hpp"
+#include "Slic3r/Biz/PrintConfigInteractor.hpp"
 
 #include <libslic3r/PrintConfig.hpp>
 

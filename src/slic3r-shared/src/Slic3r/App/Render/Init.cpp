@@ -1,5 +1,5 @@
-#include "Init.hpp"
-#include "Context.hpp"
+#include "Slic3r/App/Render/Init.hpp"
+#include "Slic3r/App/Render/Context.hpp"
 
 namespace Slic3r::App::Render {
 

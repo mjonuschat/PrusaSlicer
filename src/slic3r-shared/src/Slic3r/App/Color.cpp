@@ -3,7 +3,7 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 //#include "libslic3r.h"
-#include "Color.hpp"
+#include "Slic3r/App/Color.hpp"
 
 #include <random>
 

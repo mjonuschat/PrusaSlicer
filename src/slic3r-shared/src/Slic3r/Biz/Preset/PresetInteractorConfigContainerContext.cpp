@@ -5,7 +5,7 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 
-#include "PresetInteractorConfigContainerContext.hpp"
+#include "Slic3r/Biz/Preset/PresetInteractorConfigContainerContext.hpp"
 #include "libslic3r/Preset.hpp"
 #include <boost/algorithm/clamp.hpp>
 #include "Slic3r/Assert.hpp"

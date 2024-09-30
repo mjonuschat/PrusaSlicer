@@ -1,4 +1,4 @@
-#include "ImageCodec.hpp"
+#include "Slic3r/App/Render/ImageCodec.hpp"
 
 #include <Slic3r/Log.hpp>
 #include <Slic3r/Memory.hpp>

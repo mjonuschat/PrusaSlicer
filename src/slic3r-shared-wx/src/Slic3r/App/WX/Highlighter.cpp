@@ -1,5 +1,5 @@
-#include "Highlighter.hpp"
-#include "WidgetsConfig.hpp"
+#include "Slic3r/App/WX/Highlighter.hpp"
+#include "Slic3r/App/WX/WidgetsConfig.hpp"
 
 #include <wx/panel.h>
 

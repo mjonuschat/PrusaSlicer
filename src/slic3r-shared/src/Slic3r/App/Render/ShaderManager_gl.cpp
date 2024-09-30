@@ -1,4 +1,4 @@
-#include "ShaderManager.hpp"
+#include "Slic3r/App/Render/ShaderManager.hpp"
 
 #include <string_view>
 

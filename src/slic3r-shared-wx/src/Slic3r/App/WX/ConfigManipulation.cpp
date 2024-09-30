@@ -2,9 +2,9 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include "ConfigManipulation.hpp"
-#include "StringConversions.hpp"
-#include "MsgDialog.hpp"
+#include "Slic3r/App/WX/ConfigManipulation.hpp"
+#include "Slic3r/App/WX/StringConversions.hpp"
+#include "Slic3r/App/WX/MsgDialog.hpp"
 
 #include <wx/window.h>
 #include <wx/string.h>

@@ -1,5 +1,5 @@
-#include "Geometry.hpp"
-#include "Device.hpp"
+#include "Slic3r/App/Render/Geometry.hpp"
+#include "Slic3r/App/Render/Device.hpp"
 
 #include "Slic3r/App/Render/GL/GLGeometryInternal.hpp"
 #include "Slic3r/App/Render/GL/GLDeviceInternal.hpp"

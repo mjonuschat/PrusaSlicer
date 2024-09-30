@@ -1,4 +1,4 @@
-#include "JobManager.hpp"
+#include "Slic3r/App/Platform/JobManager.hpp"
 
 namespace Slic3r::App::Platform {
 

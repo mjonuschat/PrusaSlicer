@@ -1,4 +1,4 @@
-#include "VertexAttribDesc.hpp"
+#include "Slic3r/App/Render/VertexAttribDesc.hpp"
 
 #include "Slic3r/Assert.hpp"
 

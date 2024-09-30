@@ -1,8 +1,8 @@
-#include "Scalable.hpp"
-#include "BitmapGetters.hpp"
-#include "StringConversions.hpp"
-#include "WidgetsConfig.hpp"
-#include "MacUtils.hpp"
+#include "Slic3r/App/WX/Scalable.hpp"
+#include "Slic3r/App/WX/BitmapGetters.hpp"
+#include "Slic3r/App/WX/StringConversions.hpp"
+#include "Slic3r/App/WX/WidgetsConfig.hpp"
+#include "Slic3r/App/WX/MacUtils.hpp"
 
 #include <wx/display.h>
 

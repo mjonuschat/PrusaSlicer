@@ -1,6 +1,6 @@
-#include "Workbench.hpp"
-#include "Project.hpp"
-#include "Bed.hpp"
+#include "Slic3r/Domain/Workbench.hpp"
+#include "Slic3r/Domain/Project.hpp"
+#include "Slic3r/Domain/Bed.hpp"
 #include "libslic3r/Utils/DirectoriesUtils.hpp"
 #include "libslic3r/Model.hpp"
 

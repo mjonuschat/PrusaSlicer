@@ -1,7 +1,7 @@
-#include "DropDown.hpp"
-#include "ComboBox.hpp"
-#include "../WidgetsConfig.hpp"
-#include "../BitmapGetters.hpp"
+#include "Slic3r/App/WX/Widgets/DropDown.hpp"
+#include "Slic3r/App/WX/Widgets/ComboBox.hpp"
+#include "Slic3r/App/WX/WidgetsConfig.hpp"
+#include "Slic3r/App/WX/BitmapGetters.hpp"
 //#include "../OptionsGroup.hpp"
 
 #include <wx/dcgraph.h>

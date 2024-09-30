@@ -1,4 +1,4 @@
-#include "SDLRenderCanvas.hpp"
+#include "Slic3r/App/Platform/SDL/SDLRenderCanvas.hpp"
 
 #include <string>
 

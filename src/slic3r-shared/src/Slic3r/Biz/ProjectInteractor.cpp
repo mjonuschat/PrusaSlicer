@@ -1,12 +1,12 @@
-#include "ProjectInteractor.hpp"
+#include "Slic3r/Biz/ProjectInteractor.hpp"
 
 #include <Slic3r/Domain/Workbench.hpp>
 #include <Slic3r/Domain/Project.hpp>
 #include <Slic3r/Domain/Bed.hpp>
 #include <libslic3r/Model.hpp>
 
-#include "ISelectedProjectChangedListener.hpp"
-#include "IProjectsChangedListener.hpp"
+#include "Slic3r/Biz/ISelectedProjectChangedListener.hpp"
+#include "Slic3r/Biz/IProjectsChangedListener.hpp"
 
 namespace Slic3r::Biz {
 

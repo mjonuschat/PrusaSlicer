@@ -3,12 +3,12 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include "wxExtensions.hpp"
+#include "Slic3r/App/WX/wxExtensions.hpp"
 
 #include <wx/wx.h>
 #include <wx/dialog.h>
 
-#include "WidgetsConfig.hpp"
+#include "Slic3r/App/WX/WidgetsConfig.hpp"
 
 namespace Slic3r::App::WX {
 

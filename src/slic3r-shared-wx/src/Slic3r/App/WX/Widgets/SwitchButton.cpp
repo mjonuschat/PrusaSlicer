@@ -1,4 +1,4 @@
-#include "SwitchButton.hpp"
+#include "Slic3r/App/WX/Widgets/SwitchButton.hpp"
 
 #include "Slic3r/App/WX/MacUtils.hpp"
 

@@ -1,4 +1,4 @@
-#include "Button.hpp"
+#include "Slic3r/App/WX/Widgets/Button.hpp"
 
 #include <wx/wx.h>
 #include <wx/dcgraph.h>

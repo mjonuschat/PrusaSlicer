@@ -1,5 +1,5 @@
-#include "UniformValue.hpp"
-#include "Shader.hpp"
+#include "Slic3r/App/Render/UniformValue.hpp"
+#include "Slic3r/App/Render/Shader.hpp"
 
 #include <type_traits>
 

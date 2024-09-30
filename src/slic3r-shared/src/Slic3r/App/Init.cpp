@@ -1,4 +1,4 @@
-#include "Init.hpp"
+#include "Slic3r/App/Init.hpp"
 
 #include <boost/filesystem/path.hpp>
 #include <boost/dll/runtime_symbol_info.hpp>

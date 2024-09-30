@@ -1,4 +1,4 @@
-#include "BitmapToggleButton.hpp"
+#include "Slic3r/App/WX/Widgets/BitmapToggleButton.hpp"
 
 #include <wx/settings.h>
 

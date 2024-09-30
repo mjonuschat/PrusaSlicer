@@ -1,8 +1,8 @@
-#include "StaticBox.hpp"
+#include "Slic3r/App/WX/Widgets/StaticBox.hpp"
 #include <wx/dcgraph.h>
 #include <wx/dcbuffer.h>
 
-#include "UIColors.hpp"
+#include "Slic3r/App/WX/Widgets/UIColors.hpp"
 
 namespace Slic3r::App::WX::Widgets {
 

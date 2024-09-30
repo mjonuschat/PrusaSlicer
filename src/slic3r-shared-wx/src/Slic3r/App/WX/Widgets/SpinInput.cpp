@@ -1,8 +1,8 @@
-#include "SpinInput.hpp"
-#include "Button.hpp"
-#include "UIColors.hpp"
+#include "Slic3r/App/WX/Widgets/SpinInput.hpp"
+#include "Slic3r/App/WX/Widgets/Button.hpp"
+#include "Slic3r/App/WX/Widgets/UIColors.hpp"
 
-#include "../WidgetsConfig.hpp"
+#include "Slic3r/App/WX/WidgetsConfig.hpp"
 
 #include <wx/dcgraph.h>
 #include <wx/dcclient.h>

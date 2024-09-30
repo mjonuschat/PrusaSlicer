@@ -3,13 +3,13 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 
-#include "MsgDialog.hpp"
-#include "WidgetsConfig.hpp"
-#include "BitmapGetters.hpp"
-#include "StringConversions.hpp"
-#include "format.hpp"
+#include "Slic3r/App/WX/MsgDialog.hpp"
+#include "Slic3r/App/WX/WidgetsConfig.hpp"
+#include "Slic3r/App/WX/BitmapGetters.hpp"
+#include "Slic3r/App/WX/StringConversions.hpp"
+#include "Slic3r/App/WX/format.hpp"
 
-#include "Widgets/CheckBox.hpp"
+#include "Slic3r/App/WX/Widgets/CheckBox.hpp"
 #include "slic3r/App/Color.hpp"
 
 #include "libslic3r/Utils.hpp"
@@ -28,7 +28,7 @@
 
 //!#include "GUIApp.hpp"  // for -> open_browser_with_warning_dialog
  
-#include "I18N.hpp"
+#include "Slic3r/App/WX/I18N.hpp"
 
 namespace Slic3r::App::WX {
 

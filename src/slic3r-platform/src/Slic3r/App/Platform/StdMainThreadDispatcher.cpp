@@ -1,4 +1,4 @@
-#include "StdMainThreadDispatcher.hpp"
+#include "Slic3r/App/Platform/StdMainThreadDispatcher.hpp"
 
 namespace Slic3r::App::Platform {
 

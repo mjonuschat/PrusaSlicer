@@ -1,5 +1,5 @@
-#include "Buffer.hpp"
-#include "Device.hpp"
+#include "Slic3r/App/Render/Buffer.hpp"
+#include "Slic3r/App/Render/Device.hpp"
 #include "Slic3r/App/Render/GL/commonGL.hpp"
 #include "Slic3r/App/Render/GL/GLBufferInternal.hpp"
 #include "Slic3r/App/Render/GL/GLDeviceInternal.hpp"

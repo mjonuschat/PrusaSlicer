@@ -1,4 +1,4 @@
-#include "GLTypes.hpp"
+#include "Slic3r/App/Render/GL/GLTypes.hpp"
 
 #include "Slic3r/Assert.hpp"
 

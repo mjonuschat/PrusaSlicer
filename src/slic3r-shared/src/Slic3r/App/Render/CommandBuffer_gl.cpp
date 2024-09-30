@@ -1,6 +1,6 @@
-#include "CommandBuffer.hpp"
+#include "Slic3r/App/Render/CommandBuffer.hpp"
 
-#include "Geometry.hpp"
+#include "Slic3r/App/Render/Geometry.hpp"
 
 #include "Slic3r/App/Render/GL/commonGL.hpp"
 #include "Slic3r/App/Render/GL/GLTypes.hpp"

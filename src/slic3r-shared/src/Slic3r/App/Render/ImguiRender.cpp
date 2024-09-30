@@ -1,11 +1,11 @@
-#include "ImguiRender.hpp"
-#include "CommandBuffer.hpp"
-#include "Geometry.hpp"
-#include "Device.hpp"
-#include "Shader.hpp"
-#include "ShaderManager.hpp"
-#include "Texture.hpp"
-#include "MathUtils.hpp"
+#include "Slic3r/App/Render/ImguiRender.hpp"
+#include "Slic3r/App/Render/CommandBuffer.hpp"
+#include "Slic3r/App/Render/Geometry.hpp"
+#include "Slic3r/App/Render/Device.hpp"
+#include "Slic3r/App/Render/Shader.hpp"
+#include "Slic3r/App/Render/ShaderManager.hpp"
+#include "Slic3r/App/Render/Texture.hpp"
+#include "Slic3r/App/Render/MathUtils.hpp"
 
 #include <Slic3r/Assert.hpp>
 #include <imgui/imgui.h>

@@ -1,5 +1,5 @@
-#include "TextureManager.hpp"
-#include "Device.hpp"
+#include "Slic3r/App/Render/TextureManager.hpp"
+#include "Slic3r/App/Render/Device.hpp"
 #include "libslic3r/Utils.hpp"
 #include <Slic3r/Log.hpp>
 

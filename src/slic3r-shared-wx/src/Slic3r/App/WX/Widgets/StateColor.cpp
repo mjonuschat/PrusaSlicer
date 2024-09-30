@@ -1,4 +1,4 @@
-#include "StateColor.hpp"
+#include "Slic3r/App/WX/Widgets/StateColor.hpp"
 
 namespace Slic3r::App::WX::Widgets {
 

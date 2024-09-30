@@ -2,11 +2,11 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include "ExtraRenderers.hpp"
-#include "WidgetsConfig.hpp"
-#include "BitmapGetters.hpp"
-#include "StringConversions.hpp"
-#include "Widgets/BitmapComboBox.hpp"
+#include "Slic3r/App/WX/ExtraRenderers.hpp"
+#include "Slic3r/App/WX/WidgetsConfig.hpp"
+#include "Slic3r/App/WX/BitmapGetters.hpp"
+#include "Slic3r/App/WX/StringConversions.hpp"
+#include "Slic3r/App/WX/Widgets/BitmapComboBox.hpp"
 
 #include <wx/dc.h>
 #include <wx/dcclient.h>
@@ -21,7 +21,7 @@
 #include "wx/private/markupparser.h"
 #endif // wxUSE_ACCESSIBILITY
 
-#include "I18N.hpp"
+#include "Slic3r/App/WX/I18N.hpp"
 
 namespace Slic3r::App::WX {
 

@@ -1,5 +1,5 @@
-#include "Translation.hpp"
-#include "LanguageInfo.hpp"
+#include "Slic3r/App/I18N/Translation.hpp"
+#include "Slic3r/App/I18N/LanguageInfo.hpp"
 
 #include <clocale>
 

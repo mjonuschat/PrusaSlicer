@@ -1,4 +1,4 @@
-#include "PlatformInfo.hpp"
+#include "Slic3r/App/Platform/PlatformInfo.hpp"
 
 #import <Foundation/Foundation.h>
 

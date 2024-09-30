@@ -1,5 +1,5 @@
-#include "MenuManaging.hpp"
-#include "BitmapGetters.hpp"
+#include "Slic3r/App/WX/MenuManaging.hpp"
+#include "Slic3r/App/WX/BitmapGetters.hpp"
 
 #include <set>
 #include <map>

@@ -1,4 +1,4 @@
-#include "Node.hpp"
+#include "Slic3r/App/Scene/Node.hpp"
 
 namespace Slic3r::App::Scene {
 // NOLINTBEGIN(misc-no-recursion): Mark recursion in query() as resolved

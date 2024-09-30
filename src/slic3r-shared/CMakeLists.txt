@@ -1,136 +1,136 @@
 set(SLIC3R_SHARED_FILES
-        src/Slic3r/App/Render/Types.hpp
+        include/Slic3r/App/Render/Types.hpp
         src/Slic3r/App/Render/Types.cpp
         src/Slic3r/App/Render/Init.cpp
-        src/Slic3r/App/Render/Init.hpp
-        src/Slic3r/App/Render/Context.hpp
+        include/Slic3r/App/Render/Init.hpp
+        include/Slic3r/App/Render/Context.hpp
         src/Slic3r/App/Render/Context.cpp
-        src/Slic3r/App/Render/Device.hpp
+        include/Slic3r/App/Render/Device.hpp
         src/Slic3r/App/Render/Device.cpp
-        src/Slic3r/App/Render/Material.hpp
-        src/Slic3r/App/Render/ShaderManager.hpp
+        include/Slic3r/App/Render/Material.hpp
+        include/Slic3r/App/Render/ShaderManager.hpp
         src/Slic3r/App/Render/ShaderManager_gl.cpp
-        src/Slic3r/App/Render/ModelManager.hpp
-        src/Slic3r/App/Render/Model.hpp
-        src/Slic3r/App/Render/Texture.hpp
+        include/Slic3r/App/Render/ModelManager.hpp
+        include/Slic3r/App/Render/Model.hpp
+        include/Slic3r/App/Render/Texture.hpp
         src/Slic3r/App/Render/Texture_gl.cpp
-        src/Slic3r/App/Render/Drawable.hpp
-        src/Slic3r/App/Render/Buffer.hpp
+        include/Slic3r/App/Render/Drawable.hpp
+        include/Slic3r/App/Render/Buffer.hpp
         src/Slic3r/App/Render/Buffer_gl.cpp
-        src/Slic3r/App/Render/Shader.hpp
+        include/Slic3r/App/Render/Shader.hpp
         src/Slic3r/App/Render/Shader_gl.cpp
-        src/Slic3r/App/Render/UniformValue.hpp
+        include/Slic3r/App/Render/UniformValue.hpp
         src/Slic3r/App/Render/UniformValue.cpp
-        src/Slic3r/App/Render/Geometry.hpp
+        include/Slic3r/App/Render/Geometry.hpp
         src/Slic3r/App/Render/Geometry_gl.cpp
-        src/Slic3r/App/Render/GeometryBuilder.hpp
+        include/Slic3r/App/Render/GeometryBuilder.hpp
         src/Slic3r/App/Render/GeometryBuilder.cpp
         src/Slic3r/App/Render/TextureManager.cpp
-        src/Slic3r/App/Render/TextureManager.hpp
-        src/Slic3r/App/Render/Image.hpp
+        include/Slic3r/App/Render/TextureManager.hpp
+        include/Slic3r/App/Render/Image.hpp
         src/Slic3r/App/Render/Image.cpp
         src/Slic3r/App/Render/ImageCodec.cpp
-        src/Slic3r/App/Render/ImageCodec.hpp
-        src/Slic3r/App/Render/CommandBuffer.hpp
+        include/Slic3r/App/Render/ImageCodec.hpp
+        include/Slic3r/App/Render/CommandBuffer.hpp
         src/Slic3r/App/Render/CommandBuffer_gl.cpp
         src/Slic3r/App/Render/VertexAttribDesc.cpp
-        src/Slic3r/App/Render/VertexAttribDesc.hpp
+        include/Slic3r/App/Render/VertexAttribDesc.hpp
         src/Slic3r/App/Render/MathUtils.cpp
-        src/Slic3r/App/Render/MathUtils.hpp
-        src/Slic3r/App/Render/ImguiRender.hpp
+        include/Slic3r/App/Render/MathUtils.hpp
+        include/Slic3r/App/Render/ImguiRender.hpp
         src/Slic3r/App/Render/ImguiRender.cpp
-        src/Slic3r/App/Render/WithInternal.hpp
+        include/Slic3r/App/Render/WithInternal.hpp
         src/Slic3r/App/Render/GL/GLTypes.cpp
-        src/Slic3r/App/Render/GL/GLTypes.hpp
-        src/Slic3r/App/Render/GL/commonGL.hpp
+        include/Slic3r/App/Render/GL/GLTypes.hpp
+        include/Slic3r/App/Render/GL/commonGL.hpp
         src/Slic3r/App/Render/GL/commonGL.cpp
-        src/Slic3r/App/Render/GL/GLTextureInternal.hpp
-        src/Slic3r/App/Render/GL/GLBufferInternal.hpp
-        src/Slic3r/App/Render/GL/GLGeometryInternal.hpp
-        src/Slic3r/App/Render/GL/GLShaderInternal.hpp
-        src/Slic3r/App/Render/GL/GLDeviceInternal.hpp
+        include/Slic3r/App/Render/GL/GLTextureInternal.hpp
+        include/Slic3r/App/Render/GL/GLBufferInternal.hpp
+        include/Slic3r/App/Render/GL/GLGeometryInternal.hpp
+        include/Slic3r/App/Render/GL/GLShaderInternal.hpp
+        include/Slic3r/App/Render/GL/GLDeviceInternal.hpp
         src/Slic3r/App/Render/GL/GLDeviceInternal.cpp
 
-        src/Slic3r/App/Plater/ScenePresenter.hpp
+        include/Slic3r/App/Plater/ScenePresenter.hpp
 
-        src/Slic3r/App/View/IPanelView.hpp
+        include/Slic3r/App/View/IPanelView.hpp
 
         src/Slic3r/App/Preview/View/DoubleSlider.cpp
-        src/Slic3r/App/Preview/View/DoubleSlider.hpp
+        include/Slic3r/App/Preview/View/DoubleSlider.hpp
 
         src/Slic3r/App/Scene/Scene.cpp
-        src/Slic3r/App/Scene/Scene.hpp
+        include/Slic3r/App/Scene/Scene.hpp
         src/Slic3r/App/Scene/Node.cpp
-        src/Slic3r/App/Scene/Node.hpp
-        src/Slic3r/App/Scene/NodeInfo.hpp
+        include/Slic3r/App/Scene/Node.hpp
+        include/Slic3r/App/Scene/NodeInfo.hpp
 
-        src/Slic3r/App/TestRenderModule.hpp
+        include/Slic3r/App/TestRenderModule.hpp
         src/Slic3r/App/TestRenderModule.cpp
         src/Slic3r/App/Color.cpp
-        src/Slic3r/App/Color.hpp
+        include/Slic3r/App/Color.hpp
         src/Slic3r/App/Init.cpp
-        src/Slic3r/App/Init.hpp
+        include/Slic3r/App/Init.hpp
 
         src/Slic3r/App/I18N/LanguageInfo.cpp
-        src/Slic3r/App/I18N/LanguageInfo.hpp
+        include/Slic3r/App/I18N/LanguageInfo.hpp
         src/Slic3r/App/I18N/I18N.cpp
-        src/Slic3r/App/I18N/I18N.hpp
+        include/Slic3r/App/I18N/I18N.hpp
         src/Slic3r/App/I18N/Translation.cpp
-        src/Slic3r/App/I18N/Translation.hpp
+        include/Slic3r/App/I18N/Translation.hpp
 
-        src/Slic3r/Biz/PrintConfigInteractor.hpp
+        include/Slic3r/Biz/PrintConfigInteractor.hpp
         src/Slic3r/Biz/PrintConfigInteractor.cpp
-        src/Slic3r/Biz/ObservableDynamicPrintConfig.hpp
-        src/Slic3r/Biz/Observable.hpp
-        src/Slic3r/Biz/Plater/SceneInteractor.hpp
-        src/Slic3r/Biz/Plater/ConfigViewModel.hpp
+        include/Slic3r/Biz/ObservableDynamicPrintConfig.hpp
+        include/Slic3r/Biz/Observable.hpp
+        include/Slic3r/Biz/Plater/SceneInteractor.hpp
+        include/Slic3r/Biz/Plater/ConfigViewModel.hpp
 
-        src/Slic3r/Biz/Scene/SceneInteractor.hpp
+        include/Slic3r/Biz/Scene/SceneInteractor.hpp
         src/Slic3r/Biz/Scene/SceneInteractor.cpp
-        src/Slic3r/Biz/Scene/SceneChangeListener.hpp
-        src/Slic3r/Biz/Scene/SceneSelectionChangeListener.hpp
-        src/Slic3r/Biz/Scene/Selection.hpp
-        src/Slic3r/Biz/Scene/SceneInteractorProjectContext.hpp
+        include/Slic3r/Biz/Scene/SceneChangeListener.hpp
+        include/Slic3r/Biz/Scene/SceneSelectionChangeListener.hpp
+        include/Slic3r/Biz/Scene/Selection.hpp
+        include/Slic3r/Biz/Scene/SceneInteractorProjectContext.hpp
 
-        src/Slic3r/Biz/Preset/IBedPresetValueChangedListener.hpp
-        src/Slic3r/Biz/Preset/IBedPresetSwitchedListener.hpp
-        src/Slic3r/Biz/Preset/IConfigInteractor.hpp
+        include/Slic3r/Biz/Preset/IBedPresetValueChangedListener.hpp
+        include/Slic3r/Biz/Preset/IBedPresetSwitchedListener.hpp
+        include/Slic3r/Biz/Preset/IConfigInteractor.hpp
         src/Slic3r/Biz/Preset/PresetInteractor.cpp
-        src/Slic3r/Biz/Preset/PresetInteractor.hpp
-        src/Slic3r/Biz/Preset/PresetInteractorProjectContext.hpp
-        src/Slic3r/Biz/Preset/PresetInteractorConfigContainerContext.hpp
+        include/Slic3r/Biz/Preset/PresetInteractor.hpp
+        include/Slic3r/Biz/Preset/PresetInteractorProjectContext.hpp
+        include/Slic3r/Biz/Preset/PresetInteractorConfigContainerContext.hpp
         src/Slic3r/Biz/Preset/PresetInteractorConfigContainerContext.cpp
-        src/Slic3r/Biz/Preset/PresetState.hpp
-        src/Slic3r/Biz/Preset/PresetRuntime.hpp
-        src/Slic3r/Biz/Preset/PresetBundleRuntime.hpp
-        src/Slic3r/Biz/Preset/PresetHints.hpp
+        include/Slic3r/Biz/Preset/PresetState.hpp
+        include/Slic3r/Biz/Preset/PresetRuntime.hpp
+        include/Slic3r/Biz/Preset/PresetBundleRuntime.hpp
+        include/Slic3r/Biz/Preset/PresetHints.hpp
         src/Slic3r/Biz/Preset/PresetHints.cpp
-        src/Slic3r/Biz/Preset/AbstractConfigManipulation.hpp
+        include/Slic3r/Biz/Preset/AbstractConfigManipulation.hpp
         src/Slic3r/Biz/Preset/AbstractConfigManipulation.cpp
         src/Slic3r/Biz/Preset/PresetBundleRuntime.cpp
-        src/Slic3r/Biz/Preset/PresetBundleRuntime.hpp
+        include/Slic3r/Biz/Preset/PresetBundleRuntime.hpp
 
-        src/Slic3r/Biz/SelectionId.hpp
-        src/Slic3r/Biz/ListenerList.hpp
-        src/Slic3r/Biz/IProjectsChangedListener.hpp
-        src/Slic3r/Biz/ISelectedConfigContainerChangedListener.hpp
-        src/Slic3r/Biz/ISelectedProjectChangedListener.hpp
+        include/Slic3r/Biz/SelectionId.hpp
+        include/Slic3r/Biz/ListenerList.hpp
+        include/Slic3r/Biz/IProjectsChangedListener.hpp
+        include/Slic3r/Biz/ISelectedConfigContainerChangedListener.hpp
+        include/Slic3r/Biz/ISelectedProjectChangedListener.hpp
         src/Slic3r/Biz/ProjectInteractor.cpp
-        src/Slic3r/Biz/ProjectInteractor.hpp
+        include/Slic3r/Biz/ProjectInteractor.hpp
 
-        src/Slic3r/Memory.hpp
-        src/Slic3r/StringUtils.hpp
+        include/Slic3r/Memory.hpp
+        include/Slic3r/StringUtils.hpp
 
         src/Slic3r/Domain/ElementId.cpp
-        src/Slic3r/Domain/ElementId.hpp
+        include/Slic3r/Domain/ElementId.hpp
         src/Slic3r/Domain/Project.cpp
-        src/Slic3r/Domain/Project.hpp
-        src/Slic3r/Domain/Bed.hpp
+        include/Slic3r/Domain/Project.hpp
+        include/Slic3r/Domain/Bed.hpp
         src/Slic3r/Domain/Bed.cpp
         src/Slic3r/Domain/Workbench.cpp
-        src/Slic3r/Domain/Workbench.hpp
+        include/Slic3r/Domain/Workbench.hpp
         src/Slic3r/Domain/ConfigContainer.cpp
-        src/Slic3r/Domain/ConfigContainer.hpp
+        include/Slic3r/Domain/ConfigContainer.hpp
 )
 
 find_package(NanoSVG REQUIRED)
@@ -151,4 +151,4 @@ else()
     find_package(PNG REQUIRED)
     target_link_libraries(slic3r-shared PUBLIC PNG::PNG)
 endif ()
-target_include_directories(slic3r-shared PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
+target_include_directories(slic3r-shared PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
