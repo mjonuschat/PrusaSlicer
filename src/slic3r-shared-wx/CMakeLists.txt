@@ -69,6 +69,7 @@ target_link_libraries(slic3r-shared-wx PUBLIC
         slic3r-shared
         libslic3r # For Utils.hpp
         Boost::boost
+        localesutils
 )
 
 if (UNIX AND NOT APPLE)

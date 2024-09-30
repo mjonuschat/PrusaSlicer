@@ -101,13 +101,15 @@ std::string get_font_filepath() {
     return resource_dir + "fonts/NotoSans-Regular.ttf";
 }
 
-#include "imgui/imstb_truetype.h"
+// Explicit horror include (used to be implicit) - libslic3r "officialy" does not depend on imgui.
+#include "../../bundled_deps/imgui/imgui/imstb_truetype.h" // stbtt_fontinfo
+#include "boost/nowide/cstdio.hpp"
 TEST_CASE("Read glyph C shape from font, stb library calls ONLY", "[Emboss]") {
     std::string font_path = get_font_filepath();
     char  letter   = 'C';
     
     // Read  font file
-    FILE *file = fopen(font_path.c_str(), "rb");
+    FILE *file = boost::nowide::fopen(font_path.c_str(), "rb");
     REQUIRE(file != nullptr);
     // find size of file
     REQUIRE(fseek(file, 0L, SEEK_END) == 0);

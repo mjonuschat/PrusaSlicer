@@ -181,9 +181,6 @@ namespace Slic3r {
             Height,
             Width,
             Layer_Change,
-            Layer_Change_Travel,
-            Layer_Change_Retraction_Start,
-            Layer_Change_Retraction_End,
             Color_Change,
             Pause_Print,
             Custom_Code,
@@ -343,7 +340,9 @@ namespace Slic3r {
             // hard limit for the travel acceleration, to which the firmware will clamp.
             float max_travel_acceleration; // mm/s^2
             float extrude_factor_override_percentage;
-            float time; // s
+            // We accumulate total print time in doubles to reduce the loss of precision
+            // while adding big floating numbers with small float numbers.
+            double time; // s
             struct StopTime
             {
                 unsigned int g1_line_id;
@@ -779,6 +778,11 @@ namespace Slic3r {
         void update_estimated_statistics();
 
         double extract_absolute_position_on_axis(Axis axis, const GCodeReader::GCodeLine& line, double area_filament_cross_section);
+
+        AxisCoords create_axis_coords(const Vec3f &vec) {
+            return AxisCoords{vec[0], vec[1], vec[2], 0};
+        }
+
    };
 
 } /* namespace Slic3r */

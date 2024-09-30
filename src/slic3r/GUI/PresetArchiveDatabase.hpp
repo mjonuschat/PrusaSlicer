@@ -172,7 +172,6 @@ private:
 	void consolidate_uuid_maps();
     void extract_local_archives();
 	std::string get_next_uuid();
-	wxEvtHandler*					p_evt_handler;
 	boost::filesystem::path			m_unq_tmp_path;
     PrivateArchiveRepositoryVector  m_archive_repositories;
 	std::map<std::string, bool>		m_selected_repositories_uuid;

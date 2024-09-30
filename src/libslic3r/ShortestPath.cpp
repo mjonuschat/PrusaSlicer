@@ -8,14 +8,24 @@
 	#undef assert
 #endif
 
-#include "clipper.hpp"
+#include <cmath>
+#include <cassert>
+#include <iterator>
+#include <limits>
+#include <algorithm>
+
 #include "ShortestPath.hpp"
 #include "KDTreeIndirect.hpp"
 #include "MutablePriorityQueue.hpp"
 #include "Print.hpp"
-
-#include <cmath>
-#include <cassert>
+#include "libslic3r/ExtrusionEntity.hpp"
+#include "libslic3r/ExtrusionEntityCollection.hpp"
+#include "libslic3r/Line.hpp"
+#include "libslic3r/MultiMaterialSegmentation.hpp"
+#include "libslic3r/Point.hpp"
+#include "libslic3r/Polygon.hpp"
+#include "libslic3r/libslic3r.h"
+#include "tcbspan/span.hpp"
 
 namespace Slic3r {
 
@@ -1120,10 +1130,6 @@ std::vector<size_t> chain_expolygons(const ExPolygons &expolygons, Point *start_
     return chain_points(ordering_points);
 }
 
-#ifndef NDEBUG
-	// #define DEBUG_SVG_OUTPUT
-#endif /* NDEBUG */
-
 #ifdef DEBUG_SVG_OUTPUT
 void svg_draw_polyline_chain(const char *name, size_t idx, const Polylines &polylines)
 {
@@ -1951,14 +1957,15 @@ static inline void improve_ordering_by_two_exchanges_with_segment_flipping(Polyl
 	for (const FlipEdge &edge : edges) {
 		Polyline &pl = polylines[edge.source_index];
 		out.emplace_back(std::move(pl));
-		if (edge.p2 == pl.first_point().cast<double>()) {
+		if (edge.p2 == out.back().first_point().cast<double>()) {
 			// Polyline is flipped.
 			out.back().reverse();
 		} else {
 			// Polyline is not flipped.
-			assert(edge.p1 == pl.first_point().cast<double>());
+			assert(edge.p1 == out.back().first_point().cast<double>());
 		}
 	}
+	polylines = out;
 
 #ifndef NDEBUG
 	double cost_final = cost();

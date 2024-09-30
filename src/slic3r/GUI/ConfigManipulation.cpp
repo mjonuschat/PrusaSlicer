@@ -345,6 +345,16 @@ void ConfigManipulation::toggle_print_fff_options(DynamicPrintConfig* config)
     toggle_field("min_feature_size", have_arachne);
     toggle_field("min_bead_width", have_arachne);
     toggle_field("thin_walls", !have_arachne);
+
+    toggle_field("scarf_seam_placement", !has_spiral_vase);
+    const auto scarf_seam_placement{config->opt_enum<ScarfSeamPlacement>("scarf_seam_placement")};
+    const bool uses_scarf_seam{!has_spiral_vase && scarf_seam_placement != ScarfSeamPlacement::nowhere};
+    toggle_field("scarf_seam_only_on_smooth", uses_scarf_seam);
+    toggle_field("scarf_seam_start_height", uses_scarf_seam);
+    toggle_field("scarf_seam_entire_loop", uses_scarf_seam);
+    toggle_field("scarf_seam_length", uses_scarf_seam);
+    toggle_field("scarf_seam_max_segment_length", uses_scarf_seam);
+    toggle_field("scarf_seam_on_inner_perimeters", uses_scarf_seam);
 }
 
 void ConfigManipulation::toggle_print_sla_options(DynamicPrintConfig* config)

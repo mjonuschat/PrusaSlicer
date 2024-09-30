@@ -1,27 +1,7 @@
 cmake_minimum_required(VERSION 3.13)
 project(PrusaSlicer-native)
 
-add_subdirectory(build-utils)
-add_subdirectory(admesh)
-add_subdirectory(avrdude)
 add_subdirectory(clipper)
-add_subdirectory(miniz)
-add_subdirectory(glu-libtess)
-add_subdirectory(semver)
-add_subdirectory(libigl)
-if (NOT EMSCRIPTEN)
-    add_subdirectory(hints)
-endif()
-add_subdirectory(qoi)
-add_subdirectory(libnest2d)
-add_subdirectory(fmt)
-
-#set(FMT_INCLUDE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/fmt/include)
-#add_subdirectory(fmtlog)
-
-set(SPDLOG_FMT_EXTERNAL ${CMAKE_CURRENT_SOURCE_DIR}/fmt)
-add_subdirectory(spdlog)
-
 find_package(Qhull 7.2 REQUIRED)
 add_library(qhull INTERFACE)
 if(SLIC3R_STATIC)
@@ -44,16 +24,9 @@ if (EMSCRIPTEN)
 endif()
 
 if (SLIC3R_GUI)
-    add_subdirectory(imgui)
     add_subdirectory(libvgcode)
 
-    find_package(JPEG MODULE QUIET)
-    find_package(NanoSVG REQUIRED)
-
     if (NOT EMSCRIPTEN)
-        add_subdirectory(hidapi)
-        include_directories(hidapi/include)
-
         if(WIN32)
             message(STATUS "WXWIN environment set to: $ENV{WXWIN}")
         elseif(UNIX)

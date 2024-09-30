@@ -760,13 +760,9 @@ void GLGizmoPainterBase::update_raycast_cache(const Vec2d& mouse_position,
     for (int mesh_id = 0; mesh_id < int(trafo_matrices.size()); ++mesh_id) {
 
         if (m_c->raycaster()->raycasters()[mesh_id]->unproject_on_mesh(
-                   mouse_position,
-                   trafo_matrices[mesh_id],
-                   camera,
-                   hit,
-                   normal,
-                   m_c->object_clipper()->get_clipping_plane(),
-                   &facet))
+                mouse_position, trafo_matrices[mesh_id], camera, hit, normal,
+                m_c->object_clipper()->get_clipping_plane(), &facet, false
+            ))
         {
             // In case this hit is clipped, skip it.
             if (is_mesh_point_clipped(hit.cast<double>(), trafo_matrices[mesh_id]))

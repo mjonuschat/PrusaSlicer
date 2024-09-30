@@ -21,7 +21,7 @@ namespace pt = boost::property_tree;
 namespace Slic3r {
 namespace
 {
-std::string escape_string(const std::string& unescaped)
+/*std::string escape_string(const std::string& unescaped)
 {
     std::string ret_val;
     CURL* curl = curl_easy_init();
@@ -45,7 +45,7 @@ std::string escape_path_by_element(const boost::filesystem::path& path)
         parent = parent.parent_path();
     }
     return ret_val;
-}
+}*/
 
 boost::optional<std::string> get_error_message_from_response_body(const std::string& body)
 {
@@ -78,7 +78,7 @@ bool PrusaConnectNew::test(wxString& curl_msg) const
 {
     // Test is not used by upload and gets list of files on a device.   
     const std::string name = get_name();
-    std::string url = GUI::format("https://connect.prusa3d.com/app/teams/%1%/files?printer_uuid=%2%", m_team_id, m_uuid);
+    std::string url = GUI::format("%1%/%2%/files?printer_uuid=%3%", Utils::ServiceConfig::instance().connect_teams_url(), m_team_id, m_uuid);
     const std::string access_token = GUI::wxGetApp().plater()->get_user_account()->get_access_token();
     BOOST_LOG_TRIVIAL(info) << GUI::format("%1%: Get files/raw at: %2%", name, url);
     bool res = true;

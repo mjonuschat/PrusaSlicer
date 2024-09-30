@@ -143,6 +143,7 @@ target_link_libraries(slic3r-shared PUBLIC
         NanoSVG::nanosvg
         NanoSVG::nanosvgrast
         Boost::filesystem
+        fmt::fmt
 )
 if (EMSCRIPTEN)
 #    target_link_libraries(slic3r-shared PUBLIC png-mt )

@@ -1,9 +1,9 @@
 #include "StringConversions.hpp"
-#include "slic3r/StringUtils.hpp"
+#include "Slic3r/StringUtils.hpp"
 
 #include <wx/numformatter.h>
 
-#include "libslic3r/LocalesUtils.hpp" //!
+#include "LocalesUtils.hpp" //!
 #include "libslic3r/Utils.hpp"
 
 

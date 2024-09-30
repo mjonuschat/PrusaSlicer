@@ -195,6 +195,8 @@ set(SLIC3R_SOURCES
     GCode/SeamRandom.hpp
     GCode/SeamPainting.cpp
     GCode/SeamPainting.hpp
+    GCode/SeamScarf.cpp
+    GCode/SeamScarf.hpp
     GCode/ModelVisibility.cpp
     GCode/ModelVisibility.hpp
     GCode/SmoothPath.cpp
@@ -213,6 +215,8 @@ set(SLIC3R_SOURCES
     GCode/AvoidCrossingPerimeters.hpp
     GCode/Travels.cpp
     GCode/Travels.hpp
+    GCode/ExtrusionOrder.cpp
+    GCode/ExtrusionOrder.hpp
     GCode.cpp
     GCode.hpp
     GCodeReader.cpp
@@ -237,7 +241,6 @@ set(SLIC3R_SOURCES
     Geometry/VoronoiUtils.hpp
     Geometry/VoronoiUtils.cpp
     Geometry/VoronoiVisualUtils.hpp
-    Int128.hpp
     JumpPointSearch.cpp
     JumpPointSearch.hpp
     KDTreeIndirect.hpp
@@ -251,8 +254,6 @@ set(SLIC3R_SOURCES
     Line.hpp
     BlacklistedLibraryCheck.cpp
     BlacklistedLibraryCheck.hpp
-    LocalesUtils.cpp
-    LocalesUtils.hpp
     CutUtils.cpp
     CutUtils.hpp
     Model.cpp
@@ -577,6 +578,7 @@ add_library(libslic3r_cgal STATIC
     Triangulation.hpp Triangulation.cpp
 )
 target_include_directories(libslic3r_cgal PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+target_include_directories(libslic3r_cgal PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 # Reset compile options of libslic3r_cgal. Despite it being linked privately, CGAL options
 # (-frounding-math) still propagate to dependent libs which is not desired.
@@ -595,6 +597,7 @@ if (_opts)
 endif()
 
 target_link_libraries(libslic3r_cgal PRIVATE ${_cgal_tgt} libigl)
+target_link_libraries(libslic3r_cgal PUBLIC semver admesh localesutils)
 
 if (MSVC AND "${CMAKE_SIZEOF_VOID_P}" STREQUAL "4") # 32 bit MSVC workaround
     target_compile_definitions(libslic3r_cgal PRIVATE CGAL_DO_NOT_USE_MPZF)
@@ -603,37 +606,34 @@ endif ()
 encoding_check(libslic3r)
 
 target_compile_definitions(libslic3r PUBLIC -DUSE_TBB -DTBB_USE_CAPTURED_EXCEPTION=0)
-target_include_directories(libslic3r PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
+target_include_directories(libslic3r PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/.. ${CMAKE_CURRENT_BINARY_DIR})
 target_include_directories(libslic3r PUBLIC ${EXPAT_INCLUDE_DIRS})
 
 find_package(JPEG REQUIRED)
 
-target_link_libraries(libslic3r
+target_link_libraries(libslic3r PRIVATE
     libnest2d
-    admesh
     libcereal
-    libigl
-    miniz
     boost_libs
     clipper
     libexpat
     glu-libtess
     qhull
-    semver
     TBB::tbb
     TBB::tbbmalloc
     libslic3r_cgal
     ${CMAKE_DL_LIBS}
 #    PNG::PNG
-#    ZLIB::ZLIB
-#	JPEG::JPEG
+#    ZLIB::ZLIB#
+	JPEG::JPEG
     qoi
-    LibBGCode::bgcode_convert
+    fastfloat
+    int128
     spdlog
-    )
+)
 
 if (NOT EMSCRIPTEN)
-    target_link_libraries(libslic3r
+    target_link_libraries(libslic3r PRIVATE
             PNG::PNG
             ZLIB::ZLIB
             JPEG::JPEG
@@ -643,17 +643,30 @@ else ()
     set(CMAKE_CXX_FLAGS "--use-port=libpng --use-port=zlib ${CMAKE_CXX_FLAGS}")
 endif ()
 
+target_link_libraries(libslic3r PUBLIC
+    Eigen3::Eigen
+    semver
+    admesh
+    localesutils
+    LibBGCode::bgcode_convert
+    tcbspan
+    miniz
+    libigl
+    agg
+    ankerl
+)
+
 if (APPLE)
     # TODO: we need to fix notarization with the separate shared library
-    target_link_libraries(libslic3r OCCTWrapper)
+    target_link_libraries(libslic3r PUBLIC OCCTWrapper)
 endif ()
 
 if (TARGET OpenVDB::openvdb)
-    target_link_libraries(libslic3r OpenVDB::openvdb)
+    target_link_libraries(libslic3r PUBLIC OpenVDB::openvdb)
 endif()
 
 if(WIN32)
-    target_link_libraries(libslic3r Psapi.lib)
+    target_link_libraries(libslic3r PUBLIC Psapi.lib)
 endif()
 
 if (APPLE)

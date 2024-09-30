@@ -56,6 +56,8 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../platform/msw/PrusaSlicer.manifest.
 add_executable(slic3r-app-desktop WIN32 ${SLIC3R_APP_DESKTOP_FILES} 
                                         ${CMAKE_CURRENT_BINARY_DIR}/slic3r-app-desktop.rc)
 
+find_package(NanoSVG REQUIRED)
+
 target_link_libraries(slic3r-app-desktop PUBLIC
         slic3r-base
         slic3r-platform slic3r-platform-wx 

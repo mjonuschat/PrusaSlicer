@@ -14,7 +14,7 @@
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
-#include <boost/filesystem/fstream.hpp>
+#include <boost/filesystem/fstream.hpp> // IWYU pragma: keep
 #include <boost/lexical_cast.hpp>
 #include <boost/log/trivial.hpp>
 #include <curl/curl.h>
@@ -74,7 +74,7 @@ void copy_file_fix(const fs::path &source, const fs::path &target)
 	static constexpr const auto perms = fs::owner_read | fs::owner_write | fs::group_read | fs::others_read;
 	fs::permissions(target, perms);
 }
-std::string escape_string_url(const std::string& unescaped)
+/*std::string escape_string_url(const std::string& unescaped)
 {
 	std::string ret_val;
 	CURL* curl = curl_easy_init();
@@ -87,7 +87,7 @@ std::string escape_string_url(const std::string& unescaped)
 		curl_easy_cleanup(curl);
 	}
 	return ret_val;
-}
+}*/
 }
 
 wxDEFINE_EVENT(EVT_CONFIG_UPDATER_SYNC_DONE, wxCommandEvent);

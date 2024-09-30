@@ -1,7 +1,17 @@
 #include "libslic3r/GCode/SeamAligned.hpp"
+
+#include <algorithm>
+#include <cmath>
+#include <iterator>
+#include <limits>
+#include <stdexcept>
+#include <utility>
+
 #include "libslic3r/GCode/SeamGeometry.hpp"
 #include "libslic3r/GCode/ModelVisibility.hpp"
-#include <fstream>
+#include "libslic3r/KDTreeIndirect.hpp"
+#include "libslic3r/Line.hpp"
+#include "tcbspan/span.hpp"
 
 namespace Slic3r::Seams::Aligned {
 using Perimeters::PointType;
@@ -112,8 +122,8 @@ std::optional<std::size_t> snap_to_angle(
         }
         return false;
     }};
-    Geometry::visit_near_backward(search_start, positions.size(), visitor);
-    Geometry::visit_near_forward(search_start, positions.size(), visitor);
+    Geometry::visit_backward(search_start, positions.size(), visitor);
+    Geometry::visit_forward(search_start, positions.size(), visitor);
     if (match) {
         return match;
     }
@@ -121,8 +131,8 @@ std::optional<std::size_t> snap_to_angle(
     min_distance = std::numeric_limits<double>::infinity();
     angle_type = AngleType::concave;
 
-    Geometry::visit_near_backward(search_start, positions.size(), visitor);
-    Geometry::visit_near_forward(search_start, positions.size(), visitor);
+    Geometry::visit_backward(search_start, positions.size(), visitor);
+    Geometry::visit_forward(search_start, positions.size(), visitor);
 
     return match;
 }

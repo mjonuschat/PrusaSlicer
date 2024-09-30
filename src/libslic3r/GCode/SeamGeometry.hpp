@@ -1,17 +1,31 @@
 #ifndef libslic3r_SeamGeometry_hpp_
 #define libslic3r_SeamGeometry_hpp_
 
+#include <oneapi/tbb/blocked_range.h>
+#include <oneapi/tbb/parallel_for.h>
+#include <vector>
+#include <algorithm>
+#include <cstddef>
+#include <functional>
+#include <numeric>
+#include <optional>
+#include <utility>
+
 #include "libslic3r/ExtrusionEntity.hpp"
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/AABBTreeLines.hpp"
 #include "libslic3r/Point.hpp"
-#include <oneapi/tbb/blocked_range.h>
-#include <oneapi/tbb/parallel_for.h>
-#include <vector>
 #include "tcbspan/span.hpp"
+#include "libslic3r/BoundingBox.hpp"
+#include "libslic3r/Line.hpp"
+#include "libslic3r/Polygon.hpp"
 
 namespace Slic3r {
 class Layer;
+
+namespace AABBTreeLines {
+template <typename LineType> class LinesDistancer;
+}  // namespace AABBTreeLines
 }
 
 namespace Slic3r::Seams::Geometry {
@@ -47,12 +61,14 @@ struct BoundedPolygon {
     Polygon polygon;
     BoundingBox bounding_box;
     bool is_hole{false};
+    double offset_inside{};
 };
 
 using BoundedPolygons = std::vector<BoundedPolygon>;
 
 BoundedPolygons project_to_geometry(const Geometry::Extrusions &external_perimeters, const double max_bb_distance);
 std::vector<BoundedPolygons> project_to_geometry(const std::vector<Geometry::Extrusions> &extrusions, const double max_bb_distance);
+std::vector<BoundedPolygons> convert_to_geometry(const std::vector<Geometry::Extrusions> &extrusions);
 
 Vec2d get_polygon_normal(
     const std::vector<Vec2d> &points, const std::size_t index, const double min_arm_length
@@ -131,12 +147,12 @@ void iterate_nested(const NestedVector &nested_vector, const std::function<void(
     });
 }
 
-void visit_near_forward(
+void visit_forward(
     const std::size_t start_index,
     const std::size_t loop_size,
     const std::function<bool(std::size_t)> &visitor
 );
-void visit_near_backward(
+void visit_backward(
     const std::size_t start_index,
     const std::size_t loop_size,
     const std::function<bool(std::size_t)> &visitor
@@ -175,6 +191,24 @@ std::pair<std::size_t, double> pick_closest_bounding_box(
 );
 
 Polygon to_polygon(const ExtrusionLoop &loop);
+
+enum class Direction1D {
+    forward,
+    backward
+};
+
+struct PointOnLine{
+    Vec2d point;
+    std::size_t line_index;
+};
+
+std::optional<PointOnLine> offset_along_lines(
+    const Vec2d &point,
+    const std::size_t loop_line_index,
+    const Linesf &loop_lines,
+    const double offset,
+    const Direction1D direction
+);
 
 } // namespace Slic3r::Seams::Geometry
 

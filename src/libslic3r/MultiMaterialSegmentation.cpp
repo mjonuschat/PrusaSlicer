@@ -2,23 +2,47 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
+#include <boost/log/trivial.hpp>
+#include <boost/thread/lock_guard.hpp>
+#include <oneapi/tbb/blocked_range.h>
+#include <oneapi/tbb/parallel_for.h>
+#include <boost/container_hash/hash.hpp>
+#include <utility>
+#include <unordered_set>
+#include <mutex>
+#include <algorithm>
+#include <array>
+#include <cmath>
+#include <functional>
+#include <limits>
+#include <queue>
+#include <vector>
+#include <cassert>
+#include <cstdlib>
+
 #include "BoundingBox.hpp"
 #include "ClipperUtils.hpp"
 #include "EdgeGrid.hpp"
 #include "Layer.hpp"
 #include "Print.hpp"
-#include "Geometry/VoronoiVisualUtils.hpp"
 #include "Geometry/VoronoiUtils.hpp"
 #include "MutablePolygon.hpp"
-#include "format.hpp"
-
-#include <utility>
-#include <unordered_set>
-
-#include <boost/log/trivial.hpp>
-#include <tbb/parallel_for.h>
-#include <mutex>
-#include <boost/thread/lock_guard.hpp>
+#include "admesh/stl.h"
+#include "libslic3r/ExPolygon.hpp"
+#include "libslic3r/Flow.hpp"
+#include "libslic3r/Geometry/VoronoiOffset.hpp"
+#include "libslic3r/LayerRegion.hpp"
+#include "libslic3r/Line.hpp"
+#include "libslic3r/Model.hpp"
+#include "libslic3r/Point.hpp"
+#include "libslic3r/Polygon.hpp"
+#include "libslic3r/PrintConfig.hpp"
+#include "libslic3r/Surface.hpp"
+#include "libslic3r/TriangleMeshSlicer.hpp"
+#include "libslic3r/TriangleSelector.hpp"
+#include "libslic3r/Utils.hpp"
+#include "libslic3r/libslic3r.h"
+#include "MultiMaterialSegmentation.hpp"
 
 //#define MM_SEGMENTATION_DEBUG_GRAPH
 //#define MM_SEGMENTATION_DEBUG_REGIONS
@@ -859,6 +883,19 @@ static bool is_volume_sinking(const indexed_triangle_set &its, const Transform3d
     return false;
 }
 
+static inline ExPolygons trim_by_top_or_bottom_layer(ExPolygons expolygons_to_trim, const size_t top_or_bottom_layer_idx,  const std::vector<std::vector<Polygons>> &top_or_bottom_raw_by_extruder) {
+    for (const std::vector<Polygons> &top_or_bottom_raw : top_or_bottom_raw_by_extruder) {
+        if (top_or_bottom_raw.empty())
+            continue;
+
+        if (const Polygons &top_or_bottom = top_or_bottom_raw[top_or_bottom_layer_idx]; !top_or_bottom.empty()) {
+            expolygons_to_trim = diff_ex(expolygons_to_trim, top_or_bottom);
+        }
+    }
+
+    return expolygons_to_trim;
+}
+
 // Returns MM segmentation of top and bottom layers based on painting in MM segmentation gizmo
 static inline std::vector<std::vector<ExPolygons>> mm_segmentation_top_and_bottom_layers(const PrintObject             &print_object,
                                                                                          const std::vector<ExPolygons> &input_expolygons,
@@ -944,16 +981,38 @@ static inline std::vector<std::vector<ExPolygons>> mm_segmentation_top_and_botto
     }
 
     auto filter_out_small_polygons = [&num_extruders, &num_layers](std::vector<std::vector<Polygons>> &raw_surfaces, double min_area) -> void {
-        for (size_t extruder_idx = 0; extruder_idx < num_extruders; ++extruder_idx)
-            if (!raw_surfaces[extruder_idx].empty())
-                for (size_t layer_idx = 0; layer_idx < num_layers; ++layer_idx)
-                    if (!raw_surfaces[extruder_idx][layer_idx].empty())
-                        remove_small(raw_surfaces[extruder_idx][layer_idx], min_area);
+        for (size_t extruder_idx = 0; extruder_idx < num_extruders; ++extruder_idx) {
+            if (raw_surfaces[extruder_idx].empty())
+                continue;
+
+            for (size_t layer_idx = 0; layer_idx < num_layers; ++layer_idx) {
+                if (raw_surfaces[extruder_idx][layer_idx].empty())
+                    continue;
+
+                remove_small(raw_surfaces[extruder_idx][layer_idx], min_area);
+            }
+        }
     };
 
     // Filter out polygons less than 0.1mm^2, because they are unprintable and causing dimples on outer primers (#7104)
     filter_out_small_polygons(top_raw, Slic3r::sqr(scale_(0.1f)));
     filter_out_small_polygons(bottom_raw, Slic3r::sqr(scale_(0.1f)));
+
+    // Remove top and bottom surfaces that are covered by the previous or next sliced layer.
+    for (size_t extruder_idx = 0; extruder_idx < num_extruders; ++extruder_idx) {
+        for (size_t layer_idx = 0; layer_idx < num_layers; ++layer_idx) {
+            const bool has_top_surface    = !top_raw[extruder_idx].empty() && !top_raw[extruder_idx][layer_idx].empty();
+            const bool has_bottom_surface = !bottom_raw[extruder_idx].empty() && !bottom_raw[extruder_idx][layer_idx].empty();
+
+            if (has_top_surface && layer_idx < (num_layers - 1)) {
+                top_raw[extruder_idx][layer_idx] = diff(top_raw[extruder_idx][layer_idx], input_expolygons[layer_idx + 1]);
+            }
+
+            if (has_bottom_surface && layer_idx > 0) {
+                bottom_raw[extruder_idx][layer_idx] = diff(bottom_raw[extruder_idx][layer_idx], input_expolygons[layer_idx - 1]);
+            }
+        }
+    }
 
 #ifdef MM_SEGMENTATION_DEBUG_TOP_BOTTOM
     {
@@ -1028,12 +1087,13 @@ static inline std::vector<std::vector<ExPolygons>> mm_segmentation_top_and_botto
             for (size_t color_idx = 0; color_idx < num_extruders; ++ color_idx) {
                 throw_on_cancel_callback();
                 LayerColorStat stat = layer_color_stat(layer_idx, color_idx);
-                if (std::vector<Polygons> &top = top_raw[color_idx]; ! top.empty() && ! top[layer_idx].empty())
-                    if (ExPolygons top_ex = union_ex(top[layer_idx]); ! top_ex.empty()) {
+                if (std::vector<Polygons> &top = top_raw[color_idx]; !top.empty() && !top[layer_idx].empty()) {
+                    if (ExPolygons top_ex = union_ex(top[layer_idx]); !top_ex.empty()) {
                         // Clean up thin projections. They are not printable anyways.
                         if (stat.small_region_threshold > 0)
                             top_ex = opening_ex(top_ex, stat.small_region_threshold);
-                        if (! top_ex.empty()) {
+
+                        if (!top_ex.empty()) {
                             append(triangles_by_color_top[color_idx][layer_idx + layer_idx_offset], top_ex);
                             float offset = 0.f;
                             ExPolygons layer_slices_trimmed = input_expolygons[layer_idx];
@@ -1041,20 +1101,29 @@ static inline std::vector<std::vector<ExPolygons>> mm_segmentation_top_and_botto
                                 offset -= stat.extrusion_width;
                                 layer_slices_trimmed = intersection_ex(layer_slices_trimmed, input_expolygons[last_idx]);
                                 ExPolygons last = intersection_ex(top_ex, offset_ex(layer_slices_trimmed, offset));
+
+                                // Trim this propagated top layer by the painted bottom layer.
+                                last = trim_by_top_or_bottom_layer(last, size_t(last_idx), bottom_raw);
+
                                 if (stat.small_region_threshold > 0)
                                     last = opening_ex(last, stat.small_region_threshold);
+
                                 if (last.empty())
                                     break;
+
                                 append(triangles_by_color_top[color_idx][last_idx + layer_idx_offset], std::move(last));
                             }
                         }
                     }
-                if (std::vector<Polygons> &bottom = bottom_raw[color_idx]; ! bottom.empty() && ! bottom[layer_idx].empty())
-                    if (ExPolygons bottom_ex = union_ex(bottom[layer_idx]); ! bottom_ex.empty()) {
+                }
+
+                if (std::vector<Polygons> &bottom = bottom_raw[color_idx]; !bottom.empty() && !bottom[layer_idx].empty()) {
+                    if (ExPolygons bottom_ex = union_ex(bottom[layer_idx]); !bottom_ex.empty()) {
                         // Clean up thin projections. They are not printable anyways.
                         if (stat.small_region_threshold > 0)
                             bottom_ex = opening_ex(bottom_ex, stat.small_region_threshold);
-                        if (! bottom_ex.empty()) {
+
+                        if (!bottom_ex.empty()) {
                             append(triangles_by_color_bottom[color_idx][layer_idx + layer_idx_offset], bottom_ex);
                             float offset = 0.f;
                             ExPolygons layer_slices_trimmed = input_expolygons[layer_idx];
@@ -1062,14 +1131,21 @@ static inline std::vector<std::vector<ExPolygons>> mm_segmentation_top_and_botto
                                 offset -= stat.extrusion_width;
                                 layer_slices_trimmed = intersection_ex(layer_slices_trimmed, input_expolygons[last_idx]);
                                 ExPolygons last = intersection_ex(bottom_ex, offset_ex(layer_slices_trimmed, offset));
+
+                                // Trim this propagated bottom layer by the painted top layer.
+                                last = trim_by_top_or_bottom_layer(last, size_t(last_idx), top_raw);
+
                                 if (stat.small_region_threshold > 0)
                                     last = opening_ex(last, stat.small_region_threshold);
+
                                 if (last.empty())
                                     break;
+
                                 append(triangles_by_color_bottom[color_idx][last_idx + layer_idx_offset], std::move(last));
                             }
                         }
                     }
+                }
             }
         }
     });

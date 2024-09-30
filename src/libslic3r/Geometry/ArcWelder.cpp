@@ -26,15 +26,16 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include "ArcWelder.hpp"
-#include "Circle.hpp"
 
-#include "../MultiPoint.hpp"
-#include "../Polygon.hpp"
-
-#include <numeric>
-#include <random>
-#include <boost/log/trivial.hpp>
 #include <boost/container/small_vector.hpp>
+#include <array>
+#include <cstdint>
+#include <iterator>
+
+#include "Circle.hpp"
+#include "../MultiPoint.hpp"
+#include "libslic3r/Line.hpp"
+#include "libslic3r/Point.hpp"
 
 namespace Slic3r { namespace Geometry { namespace ArcWelder {
 
@@ -97,8 +98,6 @@ static bool foot_pt_on_segment(const Point &p1, const Point &p2, const Point &pt
 static inline bool circle_approximation_sufficient(const Circle &circle, const Points::const_iterator begin, const Points::const_iterator end, const double tolerance)
 {
     // The circle was calculated from the 1st and last point of the point sequence, thus the fitting of those points does not need to be evaluated.
-    assert(std::abs((*begin - circle.center).cast<double>().norm() - circle.radius) < SCALED_EPSILON);
-    assert(std::abs((*std::prev(end) - circle.center).cast<double>().norm() - circle.radius) < SCALED_EPSILON);
     assert(end - begin >= 3);
 
     // Test the 1st point.
