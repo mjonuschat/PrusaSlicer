@@ -6,26 +6,29 @@ on:
 
 jobs:
   build_osx:
-    uses: Prusa-Development/PrusaSlicer-Actions/.github/workflows/build_osx.yml@master
+    uses: Prusa-Development/PrusaSlicer-Actions/.github/workflows/build_osx.yml@slic3r3_prototype
     secrets: inherit
+    with:
+      deployment_target_x86: '10.13' # required for working std::variant
 
   build_osx_asan:
-    uses: Prusa-Development/PrusaSlicer-Actions/.github/workflows/build_osx.yml@master
+    uses: Prusa-Development/PrusaSlicer-Actions/.github/workflows/build_osx.yml@slic3r3_prototype
     secrets: inherit
     needs: build_osx
     with:
       with_asan: true
+      deployment_target_x86: '10.13' # required for working std::variant
 
   build_win:
-    uses: Prusa-Development/PrusaSlicer-Actions/.github/workflows/build_windows.yml@master
+    uses: Prusa-Development/PrusaSlicer-Actions/.github/workflows/build_windows.yml@slic3r3_prototype
     secrets: inherit
 
   build_flatpak:
-    uses: Prusa-Development/PrusaSlicer-Actions/.github/workflows/build_flatpak.yml@master
+    uses: Prusa-Development/PrusaSlicer-Actions/.github/workflows/build_flatpak.yml@slic3r3_prototype
     secrets: inherit
 
   build_flatpak_asan:
-    uses: Prusa-Development/PrusaSlicer-Actions/.github/workflows/build_flatpak.yml@master
+    uses: Prusa-Development/PrusaSlicer-Actions/.github/workflows/build_flatpak.yml@slic3r3_prototype
     secrets: inherit
     needs: build_flatpak
     with:

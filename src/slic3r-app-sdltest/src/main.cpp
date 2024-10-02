@@ -1,4 +1,4 @@
-#include <filesystem>
+#include <boost/filesystem.hpp>
 #include <boost/dll.hpp>
 #include <boost/nowide/iostream.hpp>
 #include <boost/nowide/cstdlib.hpp>
@@ -41,11 +41,11 @@ void main_loop()
         main_loop_impl();
 }
 
-void ls_directory(const std::filesystem::path& path)
+void ls_directory(const boost::filesystem::path& path)
 {
     SPDLOG_INFO("Content of directory {}", path.string());
-    if (std::filesystem::exists(path) && std::filesystem::is_directory(path)) {
-        for (const auto& entry : std::filesystem::recursive_directory_iterator(path)) {
+    if (boost::filesystem::exists(path) && boost::filesystem::is_directory(path)) {
+        for (const auto& entry : boost::filesystem::recursive_directory_iterator(path)) {
             SPDLOG_INFO("{}", entry.path().string());
         }
     } else {
