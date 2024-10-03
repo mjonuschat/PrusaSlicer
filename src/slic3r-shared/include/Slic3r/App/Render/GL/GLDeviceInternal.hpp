@@ -24,12 +24,12 @@ public:
 
     void load_state();
 
-    void bind_shader(Shader& s);
+    void bind_shader(const Shader& s);
     void bind_buffer(BufferTarget target, ResourceId buffer);
-    void bind_geometry(Geometry& g, Shader& s);
+    void bind_geometry(const Geometry& g, const Shader& s);
     void unbind_geometry();
-    void bind_texture(uint8_t unit, Texture& t);
-    void unbind_texture(uint8_t unit, Texture& t);
+    void bind_texture(uint8_t unit, const Texture& t);
+    void unbind_texture(uint8_t unit, const Texture& t);
 
     void draw(PrimitiveType primitive, size_t offset, size_t count);
 private:

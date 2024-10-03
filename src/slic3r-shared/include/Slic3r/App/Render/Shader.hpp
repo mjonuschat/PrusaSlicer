@@ -24,7 +24,7 @@ public:
     typedef std::array<std::string, static_cast<size_t>(ShaderType::Count)> ShaderFilenames;
     typedef std::array<std::string, static_cast<size_t>(ShaderType::Count)> ShaderSources;
 
-    Shader(Device& device);
+    explicit Shader(Device& device);
     ~Shader() override;
 
     Shader(const Shader&) = delete;

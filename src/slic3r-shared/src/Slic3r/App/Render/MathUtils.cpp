@@ -32,7 +32,7 @@ Matrix4f frustum(float left, float right, float bottom, float top, float near_z,
 
 Matrix4f perspective(float fovy, float aspect, float near_z, float far_z)
 {
-    const float f = 1.0f / std::tan(Geometry::deg2rad(fovy / 2));
+    const float f = 1.0f / std::tan(Geometry::deg2rad(fovy) / 2);
     const float dist_z = near_z - far_z;
     Matrix4f ret;
     ret <<
@@ -43,5 +43,28 @@ Matrix4f perspective(float fovy, float aspect, float near_z, float far_z)
     return ret;
 }
 
+Matrix4f look_at(const Vec3f& eye, const Vec3f& center, const Vec3f& up)
+{
+    Vec3f f = (center - eye).normalized();
+    Vec3f u = up.normalized();
+    Vec3f s = f.cross(u).normalized();
+    u = s.cross(f);
+
+    Matrix4f ret = Matrix4f ::Identity();
+    ret(0,0) = s.x();
+    ret(0, 1) = s.y();
+    ret(0, 2) = s.z();
+    ret(0, 3) = -s.dot(eye);
+    ret(1, 0) = u.x();
+    ret(1, 1) = u.y();
+    ret(1, 2) = u.z();
+    ret(1, 3) = -u.dot(eye);
+    ret(2, 0) = -f.x();
+    ret(2, 1) = -f.y();
+    ret(2, 2) = -f.z();
+    ret(2, 3) = f.dot(eye);
+
+    return ret;
+}
 
 }

@@ -1,10 +1,10 @@
 #pragma once
-#include "libslic3r/Geometry.hpp"
-#include "NodeInfo.hpp"
+#include "Slic3r/App/Scene/Transform.hpp"
+#include "Slic3r/App/Scene/NodeInfo.hpp"
+#include "Slic3r/App/Scene/IRenderNodeComponent.hpp"
+#include "Slic3r/App/Scene/Material.hpp"
 
 namespace Slic3r::App::Scene {
-
-using Transform = Eigen::Matrix4f;
 
 class Node
 {
@@ -13,6 +13,8 @@ public:
     using NodeList = std::vector<Node*>;
     using ConstNodeList = std::vector<const Node*>;
     using NodePredicate = std::function<bool(const Node*)>;
+
+    const Node* parent() const { return m_parent; }
 
     const Transform& local_transform() const { return m_local_xform; }
     const Transform& world_transform() const;
@@ -59,6 +61,15 @@ public:
 
     const NodeInfo& node_info() const { return m_node_info; }
     NodeInfo& node_info() { return m_node_info; }
+
+    bool has_render_component() const { return bool(m_render_component);}
+    void set_render_component(IRenderNodeComponent* component, const Material& material);
+    const IRenderNodeComponent* render_component() const { return m_render_component.get(); }
+
+    bool has_material_override() const { return bool(m_material_override); }
+    void set_material_override(const Material& material) { m_material_override = std::make_unique<Material>(material); }
+    const Material* material_override() const { return m_material_override.get(); }
+
 private:
     void reset_world_transform(const Matrix4f& t)
     {
@@ -87,11 +98,14 @@ private:
     Node* m_parent{nullptr};
     NodeOwningList m_children;
 
-    Transform m_local_xform;
-    mutable Transform m_world_xform;
+    Transform m_local_xform{Transform::Identity()};
+    mutable Transform m_world_xform{Transform::Identity()};
     mutable bool m_world_xform_dirty{false};
 
     NodeInfo m_node_info;
+
+    std::unique_ptr<IRenderNodeComponent> m_render_component;
+    std::unique_ptr<Material> m_material_override;
 };
 
 } // namespace Slic3r::App::Scene

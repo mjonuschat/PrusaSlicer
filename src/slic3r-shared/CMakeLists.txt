@@ -63,6 +63,17 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Scene/Node.cpp
         include/Slic3r/App/Scene/Node.hpp
         include/Slic3r/App/Scene/NodeInfo.hpp
+        include/Slic3r/App/Scene/IRenderLayerObject.hpp
+        include/Slic3r/App/Scene/IRenderNodeComponent.hpp
+        include/Slic3r/App/Scene/Camera.hpp
+        src/Slic3r/App/Scene/Camera.cpp
+        include/Slic3r/App/Scene/Transform.hpp
+        src/Slic3r/App/Scene/MeshRenderNodeComponent.cpp
+        include/Slic3r/App/Scene/MeshRenderNodeComponent.hpp
+        src/Slic3r/App/Scene/Material.cpp
+        include/Slic3r/App/Scene/Material.hpp
+        src/Slic3r/App/Scene/GeometryManager.cpp
+        include/Slic3r/App/Scene/GeometryManager.hpp
 
         include/Slic3r/App/TestRenderModule.hpp
         src/Slic3r/App/TestRenderModule.cpp

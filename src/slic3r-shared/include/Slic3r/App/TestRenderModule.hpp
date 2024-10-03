@@ -5,6 +5,7 @@
 #include "Slic3r/App/Render/Geometry.hpp"
 #include "Slic3r/App/Render/Shader.hpp"
 #include "Slic3r/App/Render/TextureManager.hpp"
+#include "Slic3r/App/Scene/Scene.hpp"
 
 namespace Slic3r::App {
 
@@ -20,6 +21,7 @@ public:
 
 protected:
     void on_init(Render::Device& device) override;
+    void on_screen_resized() override;
 
 private:
     std::unique_ptr<Render::Geometry> m_geometry;
@@ -32,6 +34,8 @@ private:
     char m_text_buffer[BUF_SIZE];
     bool m_main_window_opened{true};
     float m_geom2_scale{1};
+
+    std::unique_ptr<Scene::Scene> m_scene;
 };
 
 } // namespace Slic3r::App::SDLTest

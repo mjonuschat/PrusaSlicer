@@ -59,7 +59,7 @@ void GLDeviceInternal::activate_texture_unit(uint8_t unit)
     m_active_texture_unit = unit;
 }
 
-void GLDeviceInternal::bind_texture(uint8_t unit, Texture& t)
+void GLDeviceInternal::bind_texture(uint8_t unit, const Texture& t)
 {
     const auto& tex = t.get_internal_as<GLTextureInternal>();
     if (m_bound_textures[unit] == tex.m_id)
@@ -69,7 +69,7 @@ void GLDeviceInternal::bind_texture(uint8_t unit, Texture& t)
     glCheck();
 }
 
-void GLDeviceInternal::unbind_texture(uint8_t unit, Texture& t)
+void GLDeviceInternal::unbind_texture(uint8_t unit, const Texture& t)
 {
     const auto& tex = t.get_internal_as<GLTextureInternal>();
     if (m_bound_textures[unit] == 0)
@@ -79,7 +79,7 @@ void GLDeviceInternal::unbind_texture(uint8_t unit, Texture& t)
     m_bound_textures[unit] = 0;
 }
 
-void GLDeviceInternal::bind_shader(Shader& s)
+void GLDeviceInternal::bind_shader(const Shader& s)
 {
     ResourceId shader_id = s.get_internal_as<GLShaderInternal>().m_id;
     if (m_bound_shader == shader_id)
@@ -157,12 +157,12 @@ void GLDeviceInternal::bind_buffer(BufferTarget target, ResourceId buffer)
     }
 }
 
-void GLDeviceInternal::bind_geometry(Geometry& g, Shader& shader)
+void GLDeviceInternal::bind_geometry(const Geometry& g, const Shader& shader)
 {
     DEBUG_ASSERT(g.ready());
     // TODO: handle ES with VAO
     bool use_vao = m_context.is_vao_available();
-    auto& geom = g.get_internal_as<GLGeometryInternal>();
+    const auto& geom = g.get_internal_as<GLGeometryInternal>();
 
     GLuint vb_id = g.vertex_buffer()->get_internal_as<GLBufferInternal>().m_id;
     if (use_vao) {

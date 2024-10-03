@@ -42,6 +42,9 @@ public:
 
     bool ready() const { return m_built; }
 
+    size_t vertex_count() const { return m_vertex_count; }
+    size_t index_count() const { return m_index_count; }
+
 private:
     Device& m_device;
     std::unique_ptr<VertexBuffer> m_vb;

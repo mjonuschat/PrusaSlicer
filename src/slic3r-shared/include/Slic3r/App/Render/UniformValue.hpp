@@ -26,6 +26,6 @@ using UniformValue = std::variant<
 
 >;
 
-void set_uniform(Shader& shader, const char* param_name, const UniformValue& value);
+void set_uniform(const Shader& shader, const char* param_name, const UniformValue& value);
 
 }

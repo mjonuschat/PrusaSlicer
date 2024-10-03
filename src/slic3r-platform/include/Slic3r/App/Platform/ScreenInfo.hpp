@@ -25,6 +25,16 @@ public:
     float logical_width() const { return m_width / m_scale; }
     float logical_height() const { return m_height / m_scale; }
 
+    bool operator==(const ScreenInfo& rhs) const
+    {
+        return m_width == rhs.m_width && m_height == rhs.m_height && m_scale == rhs.m_scale;
+    }
+
+    bool operator!=(const ScreenInfo& rhs) const
+    {
+        return !(*this == rhs);
+    }
+
 private:
     size_t m_width;
     size_t m_height;

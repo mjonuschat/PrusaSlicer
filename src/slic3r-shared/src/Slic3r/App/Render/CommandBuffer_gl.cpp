@@ -98,25 +98,25 @@ void CommandBuffer::set_stencil_test_enabled(bool enabled)
 }
 
 
-void CommandBuffer::bind_texture(uint8_t unit, Texture& t)
+void CommandBuffer::bind_texture(uint8_t unit, const Texture& t)
 {
     auto& device = m_device.get_internal_as<GL::GLDeviceInternal>();
     device.bind_texture(unit, t);
 }
 
-void CommandBuffer::unbind_texture(uint8_t unit, Texture& t)
+void CommandBuffer::unbind_texture(uint8_t unit, const Texture& t)
 {
     auto& device = m_device.get_internal_as<GL::GLDeviceInternal>();
     device.unbind_texture(unit, t);
 }
 
-void CommandBuffer::bind_shader(Shader& s)
+void CommandBuffer::bind_shader(const Shader& s)
 {
     auto& device = m_device.get_internal_as<GL::GLDeviceInternal>();
     device.bind_shader(s);
 }
 
-void CommandBuffer::bind_geometry(Geometry& g, Shader& s)
+void CommandBuffer::bind_geometry(const Geometry& g, const Shader& s)
 {
     auto& device = m_device.get_internal_as<GL::GLDeviceInternal>();
     device.bind_geometry(g, s);

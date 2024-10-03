@@ -9,8 +9,7 @@ struct GLGeometryInternal : public Geometry::Internal {
     GLuint m_vao_id{0};
     bool m_has_indices{false};
     // Cached
-    GLuint m_shader_id{0};
-    std::vector<GLuint> m_shader_attrib_locations;
+    mutable GLuint m_shader_id{0};
 };
 
 }

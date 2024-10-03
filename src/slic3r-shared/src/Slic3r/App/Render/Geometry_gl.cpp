@@ -74,7 +74,6 @@ void Geometry::upload(
 
     m_built = true;
     self.m_shader_id = 0;
-    self.m_shader_attrib_locations.clear();
 }
 
 

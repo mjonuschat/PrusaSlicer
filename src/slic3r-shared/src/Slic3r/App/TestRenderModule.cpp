@@ -12,6 +12,11 @@
 #include "Slic3r/App/Render/CommandBuffer.hpp"
 #include "Slic3r/App/Render/MathUtils.hpp"
 
+#include "Slic3r/App/Scene/Scene.hpp"
+#include "Slic3r/App/Scene/MeshRenderNodeComponent.hpp"
+
+#include "libslic3r/TriangleMesh.hpp"
+
 namespace Slic3r::App {
 
 std::chrono::duration<double, std::milli> get_delta()
@@ -86,6 +91,34 @@ void TestRenderModule::on_init(Render::Device& device)
     );
 //    m_tex = Render::Context::instance().texture_manager()
 //                .create_empty("white", Render::PixelFormat::RGBA8, 16, 16);
+
+    m_scene = std::make_unique<Scene::Scene>();
+    m_scene->camera().set_perspective(90, m_screen_info.logical_width() / m_screen_info.logical_height(), 0.1f, 100);
+    Transform3f cam_xform = Transform3f::Identity();
+    cam_xform.translate(Vec3f{0, 0 , 10});
+    m_scene->camera().model() = cam_xform.matrix();
+
+    auto* n1 = new Scene::Node();
+    Transform3f t = Transform3f::Identity();
+    t.translate(Vec3f{0, 1, 0});
+    n1->set_local_transform(t.matrix());
+
+    auto* n2 = new Scene::Node();
+    t = Transform3f::Identity();
+    //t.translate(Vec3f{1, 0, 3});
+    n2->set_local_transform(t.matrix());
+    const indexed_triangle_set& mesh = its_make_cone(2, 5);
+    auto* node_geom = m_scene->geometry_manager().get_or_create("cone-2-5", [&]() {
+        return Render::geometry_from_triangle_mesh(device, mesh);
+    });
+    auto* render_component = new Scene::MeshRenderNodeComponent(node_geom);
+    n2->set_render_component(
+        render_component,
+        Scene::Material{device.context().shader_manager().get_shader("gouraud")}
+            .set_uniform("uniform_color", ColorRGBA{1.f, 0.6f, 0, 1})
+    );
+    n1->add_child(n2);
+    m_scene->root().add_child(n1);
 }
 
 void TestRenderModule::render_scene()
@@ -150,7 +183,10 @@ void TestRenderModule::render_scene()
     command_buffer->draw(Render::PrimitiveType::Triangles, 0, 6);
     command_buffer->unbind_texture(0, *m_tex);
     SPDLOG_TRACE("TestRenderModule::render_scene() 8");
+    command_buffer->set_blending_enabled(false);
     command_buffer->submit();
+
+    m_scene->render(*m_device);
 }
 
 void TestRenderModule::render_imgui()
@@ -192,6 +228,11 @@ void TestRenderModule::on_scene_mouse_event(const Platform::MouseEvent &e)
 void TestRenderModule::on_scene_keyboard_event(const Platform::KeyboardEvent &e)
 {
     std::cout <<  "KeyboardEvent type: " << uint32_t(e.get_type()) << "\n";
+}
+
+void TestRenderModule::on_screen_resized()
+{
+    m_scene->camera().set_perspective(90, m_screen_info.logical_width() / m_screen_info.logical_height(), 0.01, 100);
 }
 
 }

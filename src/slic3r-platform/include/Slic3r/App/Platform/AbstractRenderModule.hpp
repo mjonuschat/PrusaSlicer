@@ -31,7 +31,7 @@ public:
     void activate(IRenderRequestHandler* render_request_handler);
     void deactivate();
 
-    void set_screen_size(const ScreenInfo& screen_info) { m_screen_info = screen_info; }
+    void set_screen_size(const ScreenInfo& screen_info);
     void ensure_initialized(Render::Device& device)
     {
         if (!m_initialized) {
@@ -49,6 +49,7 @@ protected:
 
     virtual void on_activated();
     virtual void on_deactivated();
+    virtual void on_screen_resized();
 
     void request_render();
 

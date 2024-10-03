@@ -6,6 +6,7 @@ void AbstractRenderModule::on_scene_mouse_event(const MouseEvent& e) {}
 void AbstractRenderModule::on_scene_keyboard_event(const KeyboardEvent& e) {}
 void AbstractRenderModule::on_activated() {}
 void AbstractRenderModule::on_deactivated() {}
+void AbstractRenderModule::on_screen_resized() {}
 
 
 
@@ -24,6 +25,14 @@ void AbstractRenderModule::deactivate()
 void AbstractRenderModule::request_render()
 {
     m_render_request_handler->request_render();
+}
+
+void AbstractRenderModule::set_screen_size(const ScreenInfo& screen_info)
+{
+    if (m_screen_info != screen_info) {
+        m_screen_info = screen_info;
+        on_screen_resized();
+    }
 }
 
 
