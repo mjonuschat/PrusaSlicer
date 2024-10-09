@@ -266,6 +266,7 @@ WXRenderCanvas::WXRenderCanvas(wxWindow* parent)
     m_gl_context = std::make_unique<wxGLContext>(this, nullptr, &attrs);
     //SetCurrent(*m_gl_context);
 
+    Bind(wxEVT_ENTER_WINDOW, &WXRenderCanvas::on_mouse_enter, this);
     Bind(wxEVT_SIZE, &WXRenderCanvas::on_size, this);
     Bind(wxEVT_IDLE, &WXRenderCanvas::on_idle, this);
     Bind(wxEVT_PAINT, &WXRenderCanvas::on_paint, this);
@@ -280,6 +281,7 @@ WXRenderCanvas::WXRenderCanvas(wxWindow* parent)
     Bind(wxEVT_RIGHT_UP, &WXRenderCanvas::on_mouse, this);
     Bind(wxEVT_MIDDLE_DOWN, &WXRenderCanvas::on_mouse, this);
     Bind(wxEVT_MIDDLE_UP, &WXRenderCanvas::on_mouse, this);
+    Bind(wxEVT_LEAVE_WINDOW, &WXRenderCanvas::on_mouse_leave, this);
 }
 
 WXRenderCanvas::~WXRenderCanvas()
@@ -429,15 +431,49 @@ void WXRenderCanvas::on_keyboard(wxKeyEvent& evt)
     render();
 }
 
+void WXRenderCanvas::on_mouse_enter(wxMouseEvent& event)
+{
+    int mouse_x = ToDIP(event.GetX());
+    int mouse_y = ToDIP(event.GetY());
+
+    bool x = mouse_x > 1 and mouse_y < 1;
+    MouseEvent platform_event {
+        MouseEvent::Type::Enter,
+        MouseButton::NoButton,
+        mouse_x, mouse_y,
+        0, 0,
+        m_key_modifiers
+    };
+    enqueue_mouse(platform_event);
+}
+
+void WXRenderCanvas::on_mouse_leave(wxMouseEvent& event)
+{
+    int mouse_x = ToDIP(event.GetX());
+    int mouse_y = ToDIP(event.GetY());
+
+    MouseEvent platform_event {
+        MouseEvent::Type::Leave,
+        MouseButton::NoButton,
+        mouse_x, mouse_y,
+        0, 0,
+        m_key_modifiers
+    };
+    enqueue_mouse(platform_event);
+}
+
+
 void WXRenderCanvas::on_mouse(wxMouseEvent& evt)
 {
     ImGuiIO& io = ImGui::GetIO();
     int mouse_x = ToDIP(evt.GetX());
     int mouse_y = ToDIP(evt.GetY());
+    m_mouse_x = mouse_x;
+    m_mouse_y = mouse_y;
     //int mouse_x = evt.GetX();
     //int mouse_y = evt.GetY();
 
-    SPDLOG_INFO("Mouse event {} {}", mouse_x, mouse_y);
+    //SPDLOG_DEBUG("Mouse event {} {}", mouse_x, mouse_y);
 
     io.MousePos = ImVec2((float) mouse_x, (float) mouse_y);
     io.MouseDown[0] = evt.LeftIsDown();
@@ -527,7 +563,7 @@ void WXRenderCanvas::begin_frame_platform()
 #endif
     ImGuiIO &io = ImGui::GetIO();
     io.DisplaySize = ImVec2((float)w, (float)h);
-    SPDLOG_INFO("Setting screen resolution {} {} @ scale {} (phys {} {})", w, h, scale_factor, display_w, display_h);
+    //SPDLOG_DEBUG("Setting screen resolution {} {} @ scale {} (phys {} {})", w, h, scale_factor, display_w, display_h);
     set_screen_size({display_w, display_h, float(scale_factor)});
     io.DisplayFramebufferScale = ImVec2(float(scale_factor), float(scale_factor));
 }

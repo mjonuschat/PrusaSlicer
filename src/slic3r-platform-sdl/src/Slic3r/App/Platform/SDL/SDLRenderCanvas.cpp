@@ -382,6 +382,16 @@ void SDLRenderCanvas::pass_event_to_scene(const SDL_Event& event)
         KeyboardEvent platform_event{type, code, m_key_modifiers};
         enqueue_keyboard(platform_event);
     }
+    else if (event.type == SDL_WINDOWEVENT_ENTER) {
+        MouseEvent platform_event {
+            MouseEvent::Type::Enter,
+            MouseButton::NoButton,
+            m_mouse_x, m_mouse_y,
+            0, 0,
+            m_key_modifiers
+        };
+        enqueue_mouse(platform_event);
+    }
     else if (event.type == SDL_MOUSEMOTION) {
         const auto &mouse = event.motion;
         update_mouse_position(mouse.x, mouse.y);
@@ -415,6 +425,17 @@ void SDLRenderCanvas::pass_event_to_scene(const SDL_Event& event)
         };
         enqueue_mouse(platform_event);
     }
+    else if (event.type == SDL_WINDOWEVENT_LEAVE) {
+        MouseEvent platform_event {
+            MouseEvent::Type::Leave,
+            MouseButton::NoButton,
+            m_mouse_x, m_mouse_y,
+            0, 0,
+            m_key_modifiers
+        };
+        enqueue_mouse(platform_event);
+    }
+
 }
 
 }

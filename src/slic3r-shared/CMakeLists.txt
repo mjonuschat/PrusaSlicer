@@ -50,6 +50,8 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Render/GL/GLShaderInternal.hpp
         include/Slic3r/App/Render/GL/GLDeviceInternal.hpp
         src/Slic3r/App/Render/GL/GLDeviceInternal.cpp
+        include/Slic3r/App/Render/ResourceManager.hpp
+        include/Slic3r/App/Render/GeometryManager.hpp
 
         include/Slic3r/App/Plater/ScenePresenter.hpp
 
@@ -72,8 +74,14 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Scene/MeshRenderNodeComponent.hpp
         src/Slic3r/App/Scene/Material.cpp
         include/Slic3r/App/Scene/Material.hpp
-        src/Slic3r/App/Scene/GeometryManager.cpp
-        include/Slic3r/App/Scene/GeometryManager.hpp
+        include/Slic3r/App/Scene/NodeBuilder.hpp
+        src/Slic3r/App/Scene/NodeBuilder.cpp
+        include/Slic3r/App/Scene/IRaycastNodeComponent.hpp
+        include/Slic3r/App/Scene/AabbRaycastNodeComponent.hpp
+        include/Slic3r/App/Scene/Ray.hpp
+        include/Slic3r/App/Scene/NodeVisitorTypes.hpp
+        include/Slic3r/App/Scene/NodeVisitor.hpp
+        src/Slic3r/App/Scene/NodeVisitor.cpp
 
         include/Slic3r/App/TestRenderModule.hpp
         src/Slic3r/App/TestRenderModule.cpp
@@ -163,3 +171,16 @@ else()
     target_link_libraries(slic3r-shared PUBLIC PNG::PNG)
 endif ()
 target_include_directories(slic3r-shared PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+
+
+# Tests
+add_executable(slic3r-shared-tests
+        test/main.cpp
+        test/Slic3r/App/Scene/Node.cpp
+)
+target_include_directories(slic3r-shared-tests PRIVATE test)
+
+find_package(Catch2 2.9 REQUIRED)
+target_link_libraries(slic3r-shared-tests PRIVATE slic3r-shared Catch2::Catch2 )
+
+

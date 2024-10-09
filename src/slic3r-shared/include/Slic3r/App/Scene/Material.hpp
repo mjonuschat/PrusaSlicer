@@ -25,7 +25,7 @@ public:
     explicit Material(const Render::Shader* shader) : m_shader(shader) {}
 
     const Render::Shader* shader() const { return m_shader; }
-    void set_shader(const Render::Shader* shader) { m_shader = shader; }
+    Material& set_shader(const Render::Shader* shader) { m_shader = shader; return *this; }
 
     const MaterialTextures& textures() const { return m_textures; }
     MaterialTextures& textures() { return m_textures; }

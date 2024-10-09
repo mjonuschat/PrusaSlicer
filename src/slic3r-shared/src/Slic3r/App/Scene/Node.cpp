@@ -2,13 +2,15 @@
 
 #include <memory>
 
+#include "Slic3r/App/Scene/NodeVisitor.hpp"
 #include "Slic3r/Assert.hpp"
 
 namespace Slic3r::App::Scene {
+
 // NOLINTBEGIN(misc-no-recursion): Mark recursion in query() as resolved
-void Node::query(const NodePredicate& predicate, NodeList& found_nodes)
+void Node::query(const NodePredicate& predicate, NodeList& found_nodes, bool ignore_enabled)
 {
-    if (predicate(this)) {
+    if ((m_enabled || ignore_enabled) && predicate(this)) {
         found_nodes.push_back(this);
     }
     for (auto& child : m_children) {
@@ -16,9 +18,9 @@ void Node::query(const NodePredicate& predicate, NodeList& found_nodes)
     }
 }
 
-void Node::query(const NodePredicate& predicate, ConstNodeList& found_nodes) const
+void Node::query(const NodePredicate& predicate, ConstNodeList& found_nodes, bool ignore_enabled) const
 {
-    if (predicate(this)) {
+    if ((m_enabled || ignore_enabled) && predicate(this)) {
         found_nodes.push_back(this);
     }
     for (auto& child : m_children) {
@@ -42,11 +44,19 @@ const Transform& Node::world_transform() const
 // NOLINTEND(misc-no-recursion)
 
 
-void Node::set_render_component(IRenderNodeComponent* component, const Material& material)
+void Node::set_render_component(IRenderNodeComponent* component)
 {
-    ASSERT(material.shader() != nullptr, "Shader is required");
     m_render_component.reset(component);
-    m_material_override = std::make_unique<Material>(material);
+}
+
+void Node::mark_world_transform_dirty() const
+{
+    visit_conditional(*this, [](const Node& n) -> bool {
+        if (n.m_world_xform_dirty)
+            return false;
+        n.m_world_xform_dirty = true;
+        return true;
+    });
 }
 
 } // namespace Slic3r::App::Scene

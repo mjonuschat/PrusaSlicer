@@ -1,9 +1,19 @@
 #pragma once
 
-#include "Slic3r/App/Scene/Transform.hpp"
+#include <memory>
 
+#include "Slic3r/App/Scene/Transform.hpp"
+#include "Slic3r/App/Scene/Ray.hpp"
+#include "Slic3r/App/Render/Types.hpp"
 
 namespace Slic3r::App::Scene {
+
+class ICameraProjectionGetter
+{
+public:
+    virtual ~ICameraProjectionGetter() = default;
+    virtual Transform projection(const Render::Rect& viewport) = 0;
+};
 
 
 class Camera {
@@ -16,16 +26,44 @@ public:
 
     Transform& projection() { return m_projection; }
     const Transform& projection() const { return m_projection; }
-    void set_perspective(float fovy, float aspect, float near_z, float far_z);
 
     Transform view() const
     { return m_model.inverse(); }
 
+    void set_viewport(const Render::Rect& viewport);
 
+    Ray ray_at(float screen_x, float screen_y) const;
+    Vec3f unproject(const Vec3f& win_pos) const;
 
 private:
     Transform m_model{Transform::Identity()};
     Transform m_projection{Transform::Identity()};
+    Render::Rect m_viewport;
+    std::unique_ptr<ICameraProjectionGetter> m_projection_getter;
 };
+
+class PerspectiveCameraProjectionGetter : public ICameraProjectionGetter
+{
+public:
+    PerspectiveCameraProjectionGetter() = default;
+    PerspectiveCameraProjectionGetter(float fovy, float z_near, float z_far)
+        : m_fovy(fovy), m_z_near(z_near), m_z_far(z_far)
+    {}
+    Transform projection(const Render::Rect& viewport) override;
+
+    float fovy() const { return m_fovy; }
+    void set_fovy(float val) { m_fovy = val; }
+
+    float z_near() const { return m_z_near; }
+    void set_z_near(float val) { m_z_near = val; }
+    float z_far() const { return m_z_far; }
+    void set_z_far(float val) { m_z_far= val; }
+
+private:
+    float m_fovy{90};
+    float m_z_near{0.01f};
+    float m_z_far{100.f};
+};
+
 
 }

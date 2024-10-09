@@ -9,7 +9,7 @@ wxIMPLEMENT_APP(Slic3r::App::WXTest::TestApp);
 namespace Slic3r::App::WXTest {
 bool TestApp::OnInit()
 {
-    set_log_level(spdlog::level::debug);
+    set_log_level(4);
     init_logging();
     init_paths();
     m_main_frame = new MainFrame();

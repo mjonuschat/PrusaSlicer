@@ -11,7 +11,7 @@ class Node;
 
 class IRenderNodeComponent : public IRenderLayerObject {
 public:
-    virtual void render(const Node& node, const Camera& camera, const Material& material, Render::CommandBuffer& cmd_buffer) const = 0;
+    virtual void render(const Node& node, const Camera& camera, const Material& material_override, Render::CommandBuffer& cmd_buffer) const = 0;
 };
 
 }

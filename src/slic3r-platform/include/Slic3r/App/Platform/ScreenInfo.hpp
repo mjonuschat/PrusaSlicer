@@ -25,6 +25,11 @@ public:
     float logical_width() const { return m_width / m_scale; }
     float logical_height() const { return m_height / m_scale; }
 
+    float logical_to_physical(float logical_coord) { return logical_coord * m_scale; }
+    float physical_to_logical(float physical_coord) { return physical_coord / m_scale; }
+
+    float mouse_to_screen(float mouse_coord) { return logical_to_physical(mouse_coord); }
+
     bool operator==(const ScreenInfo& rhs) const
     {
         return m_width == rhs.m_width && m_height == rhs.m_height && m_scale == rhs.m_scale;

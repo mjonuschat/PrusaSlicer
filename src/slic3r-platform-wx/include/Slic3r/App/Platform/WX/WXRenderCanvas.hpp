@@ -37,6 +37,8 @@ private:
     void on_size(wxSizeEvent& event);
     void on_keyboard(wxKeyEvent&evt);
     void on_mouse(wxMouseEvent& event);
+    void on_mouse_enter(wxMouseEvent& event);
+    void on_mouse_leave(wxMouseEvent& event);
     void on_idle(wxIdleEvent& event);
 
     void init();

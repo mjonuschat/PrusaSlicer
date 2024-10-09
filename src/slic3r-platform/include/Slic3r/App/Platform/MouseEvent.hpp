@@ -27,7 +27,9 @@ public:
         Move = 0,
         ButtonDown,
         ButtonUp,
-        Wheel
+        Wheel,
+        Enter,
+        Leave
     };
 
     MouseEvent(Type type, MouseButton button, int x, int y, float wheel_delta_x, float wheel_delta_y, KeyModifiers key_modifiers)

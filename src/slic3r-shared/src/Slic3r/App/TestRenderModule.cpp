@@ -14,6 +14,7 @@
 
 #include "Slic3r/App/Scene/Scene.hpp"
 #include "Slic3r/App/Scene/MeshRenderNodeComponent.hpp"
+#include "Slic3r/App/Scene/NodeBuilder.hpp"
 
 #include "libslic3r/TriangleMesh.hpp"
 
@@ -54,19 +55,22 @@ TestRenderModule::TestRenderModule()
 void TestRenderModule::on_init(Render::Device& device)
 {
     AbstractRenderModule::on_init(device);
+    init_render();
+    init_scene();
+}
 
+void TestRenderModule::init_render()
+{
     SPDLOG_TRACE("TestRenderModule() 1");
     Render::GeometryBuilder<Render::VertexP3> geometry;
-    geometry
-        .add_vertex({{1, 1, 0}})
+    geometry.add_vertex({{1, 1, 0}})
         .add_vertex({{-1, 1, 0}})
         .add_vertex({{0, -1, 0}})
         .add_triangle_indices(0, 1, 2);
     m_geometry = geometry.build(*m_device);
 
     Render::GeometryBuilder<Render::VertexP3T2> geometry2;
-    geometry2
-        .add_vertex({{1, 1, 0}, {1, 1}})
+    geometry2.add_vertex({{1, 1, 0}, {1, 1}})
         .add_vertex({{-1, 1, 0}, {0, 1}})
         .add_vertex({{1, -1, 0}, {1, 0}})
         .add_vertex({{-1, -1, 0}, {0, 0}})
@@ -84,46 +88,89 @@ void TestRenderModule::on_init(Render::Device& device)
     opts.force_power_of_two = true;
     opts.flip_y = true;
     m_tex = Render::Context::instance().texture_manager().get(
-//        "icons/PrusaSlicer-gcodeviewer-mac_128px.png",
-//         "icons/funnel.svg",
-        "icons/PrusaSlicer-gcodeviewer.svg",
-        opts
+        //        "icons/PrusaSlicer-gcodeviewer-mac_128px.png",
+        //         "icons/funnel.svg",
+        "icons/PrusaSlicer-gcodeviewer.svg", opts
     );
-//    m_tex = Render::Context::instance().texture_manager()
-//                .create_empty("white", Render::PixelFormat::RGBA8, 16, 16);
+    //    m_tex = Render::Context::instance().texture_manager()
+    //                .create_empty("white", Render::PixelFormat::RGBA8, 16, 16);
 
+
+}
+
+void TestRenderModule::init_scene()
+{
+    auto& device  = *m_device;
     m_scene = std::make_unique<Scene::Scene>();
-    m_scene->camera().set_perspective(90, m_screen_info.logical_width() / m_screen_info.logical_height(), 0.1f, 100);
+    m_scene->camera().set_viewport(Render::Rect::from(0, 0, m_screen_info));
     Transform3f cam_xform = Transform3f::Identity();
-    cam_xform.translate(Vec3f{0, 0 , 10});
+    cam_xform.translate(Vec3f{0, 0 , 30});
     m_scene->camera().model() = cam_xform.matrix();
-
-    auto* n1 = new Scene::Node();
-    Transform3f t = Transform3f::Identity();
-    t.translate(Vec3f{0, 1, 0});
-    n1->set_local_transform(t.matrix());
-
-    auto* n2 = new Scene::Node();
-    t = Transform3f::Identity();
-    //t.translate(Vec3f{1, 0, 3});
-    n2->set_local_transform(t.matrix());
-    const indexed_triangle_set& mesh = its_make_cone(2, 5);
-    auto* node_geom = m_scene->geometry_manager().get_or_create("cone-2-5", [&]() {
-        return Render::geometry_from_triangle_mesh(device, mesh);
+    
+    Scene::NodeBuilder node_builder;
+    auto* cone_mesh = m_scene->triangle_mesh_manager().get_or_create("cone-2-5", [](){
+        return std::make_unique<Scene::TriangleMesh>(its_make_cone(2, 5, M_PI / 8));
     });
-    auto* render_component = new Scene::MeshRenderNodeComponent(node_geom);
-    n2->set_render_component(
-        render_component,
-        Scene::Material{device.context().shader_manager().get_shader("gouraud")}
-            .set_uniform("uniform_color", ColorRGBA{1.f, 0.6f, 0, 1})
-    );
-    n1->add_child(n2);
-    m_scene->root().add_child(n1);
+
+    auto cone = m_scene->geometry_manager().get_or_create("cone-2-5", [&]() {
+        return Render::geometry_from_triangle_mesh(device, cone_mesh->triangles);
+    });
+
+    auto shader = device.context().shader_manager().get_shader("gouraud_light");
+    constexpr float right_angle = M_PI / 2.0f;
+    
+    node_builder
+//        .transform([](auto& xform){
+//            xform
+//                .rotate(Eigen::AngleAxisf{right_angle/2, Vec3f::UnitZ()})
+//                .rotate(Eigen::AngleAxisf{right_angle/2, Vec3f::UnitX()});
+//        })
+        .children(3, [&](auto& builder, size_t i){
+            ColorRGBA color{0, 0, 0, 1.f};
+            color.set(i, 1);
+            builder
+                .transform([&](auto& xform) {
+                    Vec3f offset = Vec3f::Zero();
+                    offset[i] = 10;
+                    xform.translate(offset);
+                })
+                .child([&](auto& builder){
+                    builder
+                        .transform([&](auto& xform){
+                            // cone points in +Z direction,
+                            if (i == 0) {
+                                // make it pointing in +X direction
+                                xform.rotate(Eigen::AngleAxisf{right_angle, Vec3f::UnitY()});
+                            } else if (i == 1) {
+                                // make it pointing in +Y direction
+                                xform.rotate(Eigen::AngleAxisf{-right_angle, Vec3f::UnitX()});
+                            }
+                        })
+                        .set_mesh(
+                            cone,
+                            Scene::Material{}
+                                .set_shader(shader)
+                                .set_uniform("uniform_color", color)
+                        )
+                        .set_aabb(cone_mesh->aabb_mesh.get());
+
+                });
+        });
+    m_scene->root().add_child(node_builder.build().release());
+    update_camera();
 }
 
 void TestRenderModule::render_scene()
 {
     m_device->load_state();
+
+    if (m_render_low)
+        render_scene_render();
+    render_scene_scene();
+}
+
+void TestRenderModule::render_scene_render()
+{
     auto command_buffer = m_device->create_command_buffer();
     command_buffer->set_clear_values({0.45f, 0.55f, 0.60f, 1.00f});
     command_buffer->clear_buffers(true, true);
@@ -133,9 +180,9 @@ void TestRenderModule::render_scene()
     // glViewport(0, 0, m_screen_info.physical_width(), m_screen_info.physical_height());
     command_buffer->set_viewport(Render::Rect::from(0, 0, m_screen_info));
 
-//    SPDLOG_INFO(
-//        "Setting viewport to {}x{}", m_screen_info.physical_width(), m_screen_info.physical_height()
-//    );
+    //    SPDLOG_INFO(
+    //        "Setting viewport to {}x{}", m_screen_info.physical_width(), m_screen_info.physical_height()
+    //    );
 
     Transform3f view = Transform3f::Identity();
     view = view.translate(Vec3f(0, 0, -2));
@@ -186,12 +233,57 @@ void TestRenderModule::render_scene()
     command_buffer->set_blending_enabled(false);
     command_buffer->submit();
 
-    m_scene->render(*m_device);
+}
+
+void TestRenderModule::render_scene_scene()
+{
+    auto cmd_buffer = m_device->create_command_buffer();
+    if (!m_render_low) {
+        cmd_buffer->set_clear_values({0.45f, 0.55f, 0.60f, 1.00f});
+        cmd_buffer->clear_buffers(true, true);
+        cmd_buffer->set_viewport(Render::Rect::from(0, 0, m_screen_info));
+    }
+    m_scene->render(*cmd_buffer);
+}
+
+
+void TestRenderModule::update_camera()
+{
+    auto& cam = m_scene->camera();
+    Vec3f off{
+        m_cam_focal_dist * std::sinf(m_cam_zenith) * std::cosf(m_cam_azimuth),
+        m_cam_focal_dist * std::sinf(m_cam_zenith) * std::sinf(m_cam_azimuth),
+        m_cam_focal_dist * std::cosf(m_cam_zenith)
+    };
+    Vec3f pos = m_cam_focal - off;
+    Vec3f up {
+        //-std::cosf(m_cam_zenith) * std::cosf(m_cam_azimuth),
+        //-std::cosf(m_cam_zenith) * std::sinf(m_cam_azimuth),
+        //-std::sinf(m_cam_zenith)
+        0, 0, 1
+    };
+
+    cam.look_at(pos, m_cam_focal, up);
+}
+
+void TestRenderModule::reset_highlighted(const Scene::Node::NodeList& nodes_to_highlight, const Scene::Material& material)
+{
+    remove_highlighted();
+    for (auto* n : nodes_to_highlight)
+        n->set_material_override(material);
+    m_highlighted_nodes = nodes_to_highlight;
+}
+
+void TestRenderModule::remove_highlighted()
+{
+    for (auto* n : m_highlighted_nodes)
+        n->remove_material_override();
 }
 
 void TestRenderModule::render_imgui()
 {
-    if (ImGui::Begin("My Win")) {
+    if (ImGui::Begin("Slicer")) {
+        ImGui::Checkbox("Low level rendering", &m_render_low);
         ImGui::Text("Hello there");
         ImGui::InputText("Text", m_text_buffer, BUF_SIZE);
         if (ImGui::Button("Press me")) {
@@ -214,14 +306,68 @@ void TestRenderModule::render_imgui()
 
     }
     ImGui::End();
+
+
 }
 
 void TestRenderModule::on_scene_mouse_event(const Platform::MouseEvent &e)
 {
-    if (e.get_type() == Platform::MouseEvent::Type::Move) {
-        float dx = 2 * float(e.get_x()) / float(m_screen_info.logical_width()) - 1.0f;
-        m_geom2_scale = std::pow(2.0f, dx * 5);
-        SPDLOG_INFO("Geom scale: {}  dx: {}", m_geom2_scale, dx);
+    if (e.get_type() == Platform::MouseEvent::Type::Enter) {
+        m_last_mouse_x = e.get_x();
+        m_last_mouse_y = e.get_y();
+        SPDLOG_INFO("[Mouse Enter] {} {}", e.get_x(), e.get_y());
+    } else if (e.get_type() == Platform::MouseEvent::Type::Move) {
+        {
+            float dx = 2 * float(e.get_x()) / float(m_screen_info.logical_width()) - 1.0f;
+            m_geom2_scale = std::pow(2.0f, dx * 5);
+            //SPDLOG_INFO("Geom scale: {}  dx: {}", m_geom2_scale, dx);
+        }
+
+        float dx = float(m_last_mouse_x - e.get_x()) / (m_screen_info.logical_width() / 180.0f);
+        float dy = float(m_last_mouse_y - e.get_y()) / (m_screen_info.logical_height() / 180.0f);
+        SPDLOG_INFO(
+            "[Mouse Move] {} {}  ∆ {} {}",
+            e.get_x(), e.get_y(),
+            m_last_mouse_x - e.get_x(),
+            m_last_mouse_y - e.get_y()
+        );
+
+        constexpr float epsilon = 1e-4;
+        m_cam_azimuth += dx * M_PI / 180.0f;
+        m_cam_zenith -= dy * M_PI / 180.0f;
+        if (m_cam_zenith > M_PI - epsilon) m_cam_zenith = M_PI / 2 - epsilon;
+        else if (m_cam_zenith < 0 + epsilon) m_cam_zenith = epsilon;
+
+        SPDLOG_INFO("Cam dx: {} dy: {}: azimuth: {} zenith: {}", dx, dy, m_cam_azimuth, m_cam_zenith);
+
+        update_camera();
+
+        m_last_mouse_x = e.get_x();
+        m_last_mouse_y = e.get_y();
+
+        Scene::NodePickResults pick_results;
+        m_scene->pick_at(
+            m_screen_info.mouse_to_screen(e.get_x()),
+            m_screen_info.mouse_to_screen(e.get_y()),
+            pick_results
+        );
+
+        if (!pick_results.empty()) {
+
+            Scene::Node::NodeList to_highlight = {pick_results[0].node};
+
+            reset_highlighted(
+                to_highlight,
+                Scene::Material()
+                    .set_uniform(
+                        "uniform_color", ColorRGBA(0.9f, 0.9f, 0.9f, 1.f)
+                    )
+            );
+        } else {
+            remove_highlighted();
+        }
+
+        SPDLOG_INFO("Cam pick found {} results", pick_results.size());
     }
 }
 
@@ -232,7 +378,7 @@ void TestRenderModule::on_scene_keyboard_event(const Platform::KeyboardEvent &e)
 
 void TestRenderModule::on_screen_resized()
 {
-    m_scene->camera().set_perspective(90, m_screen_info.logical_width() / m_screen_info.logical_height(), 0.01, 100);
+    m_scene->camera().set_viewport(Render::Rect::from(0, 0, m_screen_info));
 }
 
 }

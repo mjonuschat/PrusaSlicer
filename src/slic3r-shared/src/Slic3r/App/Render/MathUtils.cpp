@@ -55,10 +55,12 @@ Matrix4f look_at(const Vec3f& eye, const Vec3f& center, const Vec3f& up)
     ret(0, 1) = s.y();
     ret(0, 2) = s.z();
     ret(0, 3) = -s.dot(eye);
+
     ret(1, 0) = u.x();
     ret(1, 1) = u.y();
     ret(1, 2) = u.z();
     ret(1, 3) = -u.dot(eye);
+
     ret(2, 0) = -f.x();
     ret(2, 1) = -f.y();
     ret(2, 2) = -f.z();

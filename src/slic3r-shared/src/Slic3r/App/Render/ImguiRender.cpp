@@ -60,6 +60,7 @@ void ImguiRender::setup_state(CommandBuffer& buffer, const ImDrawData* draw_data
     buffer.set_scissor_enabled(true);
     buffer.set_stencil_test_enabled(false);
     buffer.set_cull_face_enabled(false);
+    buffer.set_depth_test_enabled(false);
 
     buffer.bind_shader(*m_shader);
 //    // Setup render state: alpha-blending enabled, no face culling, no depth testing, scissor enabled, polygon fill
@@ -172,7 +173,7 @@ void ImguiRender::render(CommandBuffer& buffer, const ImDrawData* draw_data)
             IndexTypeTraits<ImDrawIdx>::index_type
         );
 
-        SPDLOG_INFO("Uploading {} vertices, {} indices", cmd_list->VtxBuffer.Size, cmd_list->IdxBuffer.Size);
+        //SPDLOG_DEBUG("Uploading {} vertices, {} indices", cmd_list->VtxBuffer.Size, cmd_list->IdxBuffer.Size);
 
         buffer.bind_geometry(*m_geom, *m_shader);
 
