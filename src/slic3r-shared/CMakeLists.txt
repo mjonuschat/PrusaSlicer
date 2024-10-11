@@ -71,6 +71,7 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/I18N/Translation.cpp
         include/Slic3r/App/I18N/Translation.hpp
 
+        include/Slic3r/App/Yoga/Align.hpp
         src/Slic3r/App/Yoga/FlexSizer.cpp
         include/Slic3r/App/Yoga/FlexSizer.hpp
         src/Slic3r/App/Yoga/SplitterSizer.cpp
