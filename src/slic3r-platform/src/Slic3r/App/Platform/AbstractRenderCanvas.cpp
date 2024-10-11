@@ -138,6 +138,7 @@ void AbstractRenderCanvas::end_frame()
     const ImDrawData* draw_data = ImGui::GetDrawData();
     if (draw_data) {
         auto& dev = Render::Context::instance().device();
+        dev.load_state();
         auto buffer = dev.create_command_buffer();
         m_imgui_render->render(*buffer, draw_data);
         buffer->submit();

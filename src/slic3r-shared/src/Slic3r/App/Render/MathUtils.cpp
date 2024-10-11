@@ -69,4 +69,14 @@ Matrix4f look_at(const Vec3f& eye, const Vec3f& center, const Vec3f& up)
     return ret;
 }
 
+Vec2f viewport_transform(const Rect& viewport, const Vec3f& ndc_pos)
+{
+    float viewport_half_width = viewport.width / 2.0f;
+    float viewport_half_height = viewport.height / 2.0f;
+    return {
+        viewport_half_width * ndc_pos.x() + viewport.x + viewport_half_width,
+        viewport_half_height * ndc_pos.y() + viewport.y + viewport_half_height
+    };
+}
+
 }

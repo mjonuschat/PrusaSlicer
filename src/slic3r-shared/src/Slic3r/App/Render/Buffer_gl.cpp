@@ -24,7 +24,9 @@ Buffer::~Buffer()
 void Buffer::set_data(const void* data, size_t size, BufferUsage usage)
 {
     auto& self = get_internal_as<GL::GLBufferInternal>();
-    m_device.get_internal_as<GL::GLDeviceInternal>().bind_buffer(m_target, self.m_id);
+    auto& device = m_device.get_internal_as<GL::GLDeviceInternal>();
+    device.bind_buffer(m_target, self.m_id);
+    //device.print_buffer_info("Buffer::set_data()");
     glBufferData(self.m_target, size, data, GL::type(usage));
     glCheck();
 }

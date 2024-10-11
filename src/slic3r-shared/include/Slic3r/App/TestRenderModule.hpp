@@ -29,7 +29,7 @@ protected:
     void render_scene_render();
     void render_scene_scene();
 
-    void update_camera();
+    void render_object_hud(const Scene::Node& n, const Eigen::AlignedBox<float, 2>& screen_bounding_box) const;
 
     void remove_highlighted();
     void reset_highlighted(const Scene::Node::NodeList& nodes_to_highlight, const Scene::Material& material);
@@ -52,11 +52,6 @@ private:
 
     int m_last_mouse_x{0};
     int m_last_mouse_y{0};
-
-    Vec3f m_cam_focal{0,0,0};
-    float m_cam_focal_dist{30};
-    float m_cam_azimuth{M_PI/2};
-    float m_cam_zenith{M_PI/2};
 };
 
 } // namespace Slic3r::App::SDLTest

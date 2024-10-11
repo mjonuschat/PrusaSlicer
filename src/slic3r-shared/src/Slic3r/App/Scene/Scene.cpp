@@ -3,6 +3,8 @@
 #include "Slic3r/App/Scene/Material.hpp"
 #include "Slic3r/App/Scene/NodeVisitor.hpp"
 
+#include <imgui/imgui.h>
+
 namespace Slic3r::App::Scene {
 
 Material resolve_material(const Node& n)
@@ -36,6 +38,38 @@ void Scene::render(Render::CommandBuffer& cmd_buffer) const
     for (const auto* n : nodes) {
         auto mat_override = resolve_material(*n);
         n->render_component()->render(*n, m_camera, mat_override, cmd_buffer);
+    }
+}
+
+Eigen::AlignedBox<float, 2> resolve_bounding_box(const Node& node, const Camera& cam)
+{
+    const Node* n = &node;
+    while (n) {
+        if (n->has_raycast_component()) {
+            const auto& raycast = *n->raycast_component();
+            const auto& m = n->world_transform();
+            const auto v = cam.view();
+            const auto& p = cam.projection();
+
+            const auto mvp = p * v * m;
+            return raycast.projected_bounding_box(mvp, cam.viewport());
+        }
+        n = n->parent();
+    }
+
+    return {};
+}
+
+void Scene::render_imgui() const
+{
+    Node::ConstNodeList nodes;
+    m_root.query([](auto n){ return n->has_imgui_render_component();}, nodes);
+    for (const auto* n : nodes) {
+        auto bb = resolve_bounding_box(*n, m_camera);
+        if (!bb.isEmpty())
+            n->imgui_render_component()->render_imgui(*n,bb);
+        else
+            SPDLOG_WARN("No IRaycastNodeComponent associated with ImguiRenderNodeComponent (in the same node or any of its parents)");
     }
 }
 

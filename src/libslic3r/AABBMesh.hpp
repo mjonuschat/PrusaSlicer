@@ -70,6 +70,8 @@ public:
     const Vec3f& vertices(size_t idx) const;
     const Vec3i& indices(size_t idx) const;
 
+    const Eigen::AlignedBox<float, 3>& bounding_box() const;
+
     // Result of a raycast
     class hit_result {
         // m_t holds a distance from m_source to the intersection.

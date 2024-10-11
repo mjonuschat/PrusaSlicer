@@ -25,8 +25,11 @@ public:
     float logical_width() const { return m_width / m_scale; }
     float logical_height() const { return m_height / m_scale; }
 
-    float logical_to_physical(float logical_coord) { return logical_coord * m_scale; }
-    float physical_to_logical(float physical_coord) { return physical_coord / m_scale; }
+    float logical_to_physical(float logical_coord) const { return logical_coord * m_scale; }
+    float physical_to_logical(float physical_coord) const { return physical_coord / m_scale; }
+
+    float physical_to_imgui_x(float physical_x) const { return physical_to_logical(physical_x); }
+    float physical_to_imgui_y(float physical_y) const { return physical_to_logical(physical_height() - physical_y - 1); }
 
     float mouse_to_screen(float mouse_coord) { return logical_to_physical(mouse_coord); }
 

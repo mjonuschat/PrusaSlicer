@@ -2,6 +2,7 @@
 
 #include "Slic3r/App/Scene/IRaycastNodeComponent.hpp"
 #include "Slic3r/Assert.hpp"
+#include "Slic3r/App/Render/Types.hpp"
 #include <libslic3r/AABBMesh.hpp>
 
 namespace Slic3r::App::Scene {
@@ -14,21 +15,11 @@ public:
 
     bool raycast(
         const Matrix4f& world, const Vec3f& ray_origin, const Vec3f& ray_direction, double& t
-    ) const override
-    {
-        ASSERT(m_aabb_mesh != nullptr);
+    ) const override;
 
-        Matrix4f inv_world = world.inverse();
-
-        Vec3d local_ray_origin = (inv_world * Vec4f{ray_origin.x(), ray_origin.y(), ray_origin.z(), 1}).head<3>().cast<double>();
-        Vec3d local_ray_direction = (inv_world.block<3, 3>(0, 0) * ray_direction).cast<double>();
-
-        auto hit = m_aabb_mesh->query_ray_hit(local_ray_origin, local_ray_direction);
-        if (!hit.is_hit())
-            return false;
-        t = hit.distance();
-        return true;
-    }
+    Eigen::AlignedBox<float, 2> projected_bounding_box(
+        const Matrix4f& mvp, const Slic3r::App::Render::Rect& viewport
+    ) const override;
 
 private:
     const AABBMesh* m_aabb_mesh{nullptr};

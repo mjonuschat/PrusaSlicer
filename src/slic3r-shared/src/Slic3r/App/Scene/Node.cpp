@@ -49,6 +49,11 @@ void Node::set_render_component(IRenderNodeComponent* component)
     m_render_component.reset(component);
 }
 
+void Node::set_imgui_render_component(IImguiRenderNodeComponent* component)
+{
+    m_imgui_render_component.reset(component);
+}
+
 void Node::mark_world_transform_dirty() const
 {
     visit_conditional(*this, [](const Node& n) -> bool {

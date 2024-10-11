@@ -16,8 +16,6 @@
 #include "Slic3r/App/Scene/MeshRenderNodeComponent.hpp"
 #include "Slic3r/App/Scene/NodeBuilder.hpp"
 
-#include "libslic3r/TriangleMesh.hpp"
-
 namespace Slic3r::App {
 
 std::chrono::duration<double, std::milli> get_delta()
@@ -154,10 +152,15 @@ void TestRenderModule::init_scene()
                         )
                         .set_aabb(cone_mesh->aabb_mesh.get());
 
+                    if (i == 0)
+                        builder.set_imgui_func([this](const auto& n, const auto& screen_bb) {
+                            this->render_object_hud(n, screen_bb);
+                        });
+
                 });
         });
     m_scene->root().add_child(node_builder.build().release());
-    update_camera();
+    m_scene->camera_trackball().set_focal_distance(30);
 }
 
 void TestRenderModule::render_scene()
@@ -247,25 +250,6 @@ void TestRenderModule::render_scene_scene()
 }
 
 
-void TestRenderModule::update_camera()
-{
-    auto& cam = m_scene->camera();
-    Vec3f off{
-        m_cam_focal_dist * std::sinf(m_cam_zenith) * std::cosf(m_cam_azimuth),
-        m_cam_focal_dist * std::sinf(m_cam_zenith) * std::sinf(m_cam_azimuth),
-        m_cam_focal_dist * std::cosf(m_cam_zenith)
-    };
-    Vec3f pos = m_cam_focal - off;
-    Vec3f up {
-        //-std::cosf(m_cam_zenith) * std::cosf(m_cam_azimuth),
-        //-std::cosf(m_cam_zenith) * std::sinf(m_cam_azimuth),
-        //-std::sinf(m_cam_zenith)
-        0, 0, 1
-    };
-
-    cam.look_at(pos, m_cam_focal, up);
-}
-
 void TestRenderModule::reset_highlighted(const Scene::Node::NodeList& nodes_to_highlight, const Scene::Material& material)
 {
     remove_highlighted();
@@ -278,6 +262,24 @@ void TestRenderModule::remove_highlighted()
 {
     for (auto* n : m_highlighted_nodes)
         n->remove_material_override();
+}
+
+void TestRenderModule::render_object_hud(const Scene::Node& n, const Eigen::AlignedBox<float, 2>& screen_bounding_box) const
+{
+    const auto& pos = screen_bounding_box.max();
+    ImGui::SetNextWindowPos({
+        m_screen_info.physical_to_imgui_x(pos.x()),
+        m_screen_info.physical_to_imgui_y(pos.y())
+    });
+    std::string win_name = "obj##" + std::to_string(reinterpret_cast<long>(&n));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {0, 0});
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 5);
+    if (ImGui::Begin(win_name.c_str(), nullptr, /*ImGuiWindowFlags_NoBackground |*/ ImGuiWindowFlags_NoDecoration)) {
+        ImGui::Button("(i)");
+        ImGui::Text("Abc");
+    }
+    ImGui::End();
+    ImGui::PopStyleVar(2);
 }
 
 void TestRenderModule::render_imgui()
@@ -307,7 +309,23 @@ void TestRenderModule::render_imgui()
     }
     ImGui::End();
 
+    int windows_flag = ImGuiWindowFlags_NoTitleBar
+        | ImGuiWindowFlags_NoCollapse
+        //   | ImGuiWindowFlags_NoBackground
+        | ImGuiWindowFlags_NoMove
+        //   | ImGuiWindowFlags_NoResize
+        | ImGuiWindowFlags_NoScrollbar
+        | ImGuiWindowFlags_NoScrollWithMouse;
 
+    if (ImGui::Begin("My main Win", nullptr, ImGuiWindowFlags(windows_flag))) {
+        ImGui::Text("First line");
+        static int my_int = 5;
+        ImGui::InputInt("Input number", &my_int);
+        ImGui::Text("Second line ");
+    }
+    ImGui::End();
+
+    m_scene->render_imgui();
 }
 
 void TestRenderModule::on_scene_mouse_event(const Platform::MouseEvent &e)
@@ -332,15 +350,7 @@ void TestRenderModule::on_scene_mouse_event(const Platform::MouseEvent &e)
             m_last_mouse_y - e.get_y()
         );
 
-        constexpr float epsilon = 1e-4;
-        m_cam_azimuth += dx * M_PI / 180.0f;
-        m_cam_zenith -= dy * M_PI / 180.0f;
-        if (m_cam_zenith > M_PI - epsilon) m_cam_zenith = M_PI / 2 - epsilon;
-        else if (m_cam_zenith < 0 + epsilon) m_cam_zenith = epsilon;
-
-        SPDLOG_INFO("Cam dx: {} dy: {}: azimuth: {} zenith: {}", dx, dy, m_cam_azimuth, m_cam_zenith);
-
-        update_camera();
+        m_scene->camera_trackball().add_azimuth_and_zenith(dx * M_PI / 180.0f, -dy * M_PI / 180.0f);
 
         m_last_mouse_x = e.get_x();
         m_last_mouse_y = e.get_y();

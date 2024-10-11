@@ -137,6 +137,12 @@ void GLDeviceInternal::bind_vao(ResourceId vao)
     glBindVertexArray(vao);
     glCheck();
     m_bound_vao = vao;
+
+    if (vao == 0)
+    {
+        m_bound_vertex_buffer = 0;
+        m_bound_index_buffer = 0;
+    }
 }
 
 void GLDeviceInternal::bind_buffer(BufferTarget target, ResourceId buffer)

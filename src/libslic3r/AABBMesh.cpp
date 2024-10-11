@@ -37,6 +37,12 @@ public:
             its.vertices, its.indices);
     }
 
+    const AABBTreeIndirect::Tree3f::BoundingBox& bounding_box() const
+    {
+        assert(!m_tree.empty());
+        return m_tree.node(0).bbox;
+    }
+
     void intersect_ray(const indexed_triangle_set &its,
                        const Vec3d &               s,
                        const Vec3d &               dir,
@@ -145,6 +151,11 @@ const Vec3f& AABBMesh::vertices(size_t idx) const
 const Vec3i& AABBMesh::indices(size_t idx) const
 {
     return m_tm->indices[idx];
+}
+
+const Eigen::AlignedBox<float, 3>& AABBMesh::bounding_box() const
+{
+    return m_aabb->bounding_box();
 }
 
 

@@ -31,6 +31,7 @@ public:
     { return m_model.inverse(); }
 
     void set_viewport(const Render::Rect& viewport);
+    const Render::Rect viewport() const { return m_viewport; }
 
     Ray ray_at(float screen_x, float screen_y) const;
     Vec3f unproject(const Vec3f& win_pos) const;

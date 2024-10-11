@@ -220,6 +220,8 @@ void ImguiRender::render(CommandBuffer& buffer, const ImDrawData* draw_data)
                 }
             }
         }
+
+
     }
 
     if (last_bound_texture) {

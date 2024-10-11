@@ -78,10 +78,14 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Scene/NodeBuilder.cpp
         include/Slic3r/App/Scene/IRaycastNodeComponent.hpp
         include/Slic3r/App/Scene/AabbRaycastNodeComponent.hpp
+        src/Slic3r/App/Scene/AabbRaycastNodeComponent.cpp
         include/Slic3r/App/Scene/Ray.hpp
         include/Slic3r/App/Scene/NodeVisitorTypes.hpp
         include/Slic3r/App/Scene/NodeVisitor.hpp
         src/Slic3r/App/Scene/NodeVisitor.cpp
+        include/Slic3r/App/Scene/CameraTrackballController.hpp
+        src/Slic3r/App/Scene/CameraTrackballController.cpp
+        include/Slic3r/App/Scene/IImguiRenderNodeComponent.hpp
 
         include/Slic3r/App/TestRenderModule.hpp
         src/Slic3r/App/TestRenderModule.cpp

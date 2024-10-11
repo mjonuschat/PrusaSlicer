@@ -37,6 +37,16 @@ NodeBuilder& NodeBuilder::set_material_override(const Material& material)
     return *this;
 }
 
+NodeBuilder& NodeBuilder::set_imgui_func(const FuncImguiRenderNodeComponent::RenderFunc& imgui_render_func)
+{
+    ensure_current();
+
+    m_current->set_imgui_render_component(
+        std::make_unique<FuncImguiRenderNodeComponent>(imgui_render_func)
+    );
+    return *this;
+}
+
 NodeBuilder& NodeBuilder::set_aabb(const AABBMesh* aabb)
 {
     ensure_current();

@@ -2,6 +2,7 @@
 #include "Slic3r/App/Scene/Transform.hpp"
 #include "Slic3r/App/Scene/NodeInfo.hpp"
 #include "Slic3r/App/Scene/IRenderNodeComponent.hpp"
+#include "Slic3r/App/Scene/IImguiRenderNodeComponent.hpp"
 #include "Slic3r/App/Scene/IRaycastNodeComponent.hpp"
 #include "Slic3r/App/Scene/Material.hpp"
 #include "Slic3r/App/Scene/NodeVisitorTypes.hpp"
@@ -76,6 +77,11 @@ public:
     void remove_material_override() { if (m_material_override) m_material_override.reset(); }
     const Material* material_override() const { return m_material_override.get(); }
 
+    bool has_imgui_render_component() const { return bool(m_imgui_render_component);}
+    void set_imgui_render_component(IImguiRenderNodeComponent* component);
+    void set_imgui_render_component(std::unique_ptr<IImguiRenderNodeComponent>&& component) { set_imgui_render_component(component.release()); }
+    const IImguiRenderNodeComponent* imgui_render_component() const { return m_imgui_render_component.get(); }
+
     bool has_raycast_component() const { return bool(m_raycast_component); }
     void set_raycast_component(std::unique_ptr<IRaycastNodeComponent>&& component) { m_raycast_component = std::move(component); }
     void set_raycast_component(IRaycastNodeComponent* component) { m_raycast_component.reset(component); }
@@ -113,7 +119,9 @@ private:
 
     std::unique_ptr<IRenderNodeComponent> m_render_component;
     std::unique_ptr<Material> m_material_override;
+    std::unique_ptr<IImguiRenderNodeComponent> m_imgui_render_component;
     std::unique_ptr<IRaycastNodeComponent> m_raycast_component;
+
     boost::any m_tag;
 };
 
