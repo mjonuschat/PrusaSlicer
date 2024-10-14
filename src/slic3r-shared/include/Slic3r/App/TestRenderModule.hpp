@@ -29,7 +29,7 @@ protected:
     void render_scene_render();
     void render_scene_scene();
 
-    void render_object_hud(const Scene::Node& n, const Eigen::AlignedBox<float, 2>& screen_bounding_box) const;
+    void render_object_hud(const Scene::Node& n, const Eigen::AlignedBox<float, 2>& screen_bounding_box);
 
     void remove_highlighted();
     void reset_highlighted(const Scene::Node::NodeList& nodes_to_highlight, const Scene::Material& material);

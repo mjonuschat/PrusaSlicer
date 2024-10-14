@@ -86,6 +86,9 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Scene/CameraTrackballController.hpp
         src/Slic3r/App/Scene/CameraTrackballController.cpp
         include/Slic3r/App/Scene/IImguiRenderNodeComponent.hpp
+        include/Slic3r/App/Scene/INodeTransformModifier.hpp
+        include/Slic3r/App/Scene/ScreenSpaceSizedTransformModifier.hpp
+        src/Slic3r/App/Scene/ScreenSpaceSizedTransformModifier.cpp
 
         include/Slic3r/App/TestRenderModule.hpp
         src/Slic3r/App/TestRenderModule.cpp

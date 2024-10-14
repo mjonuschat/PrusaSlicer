@@ -7,6 +7,41 @@
 
 namespace Slic3r::App::Scene {
 
+
+void Scene::add_child(Node* node, Node* parent)
+{
+    visit(*node, [this](Node& n) {
+        auto* modifier = n.transform_modifier();
+        if (modifier == nullptr)
+            return;
+        auto* cam_listener = dynamic_cast<ICameraUpdateListener*>(modifier);
+        if (cam_listener)
+            m_camera.add_update_listener(cam_listener);
+    });
+
+    if (parent == nullptr)
+        parent = &m_root;
+    parent->add_child(node);
+}
+
+bool Scene::remove_children(const Node::NodePredicate& predicate, Node* parent)
+{
+    if (parent == nullptr)
+        parent = &m_root;
+
+    return parent->remove_children(predicate, [this](Node* n) {
+        visit(*n, [this](Node& n) {
+            auto* modifier = n.transform_modifier();
+            if (modifier == nullptr)
+                return;
+            auto* cam_listener = dynamic_cast<ICameraUpdateListener*>(modifier);
+            if (cam_listener)
+                m_camera.remove_update_listener(cam_listener);
+        });
+    });
+}
+
+
 Material resolve_material(const Node& n)
 {
     std::list<const Node*> path = {&n};
@@ -104,15 +139,15 @@ bool Scene::pick_at(float mouse_x, float mouse_y, NodePickResults& results)
             return false;
         return n.raycast_component()->raycast(n.world_transform(), ray.origin, ray.direction, t);
     });
+    std::sort(ret.begin(), ret.end(), [](auto a, auto b) {
+        return a.second < b.second;
+    });
     results.reserve(results.size() + ret.size());
     std::transform(
         ret.begin(), ret.end(), std::back_inserter(results),
         [](const auto& p) -> NodePickResult { return {p.first, p.second}; }
     );
 
-    std::sort(ret.begin(), ret.end(), [](auto a, auto b) {
-        return a.second < b.second;
-    });
     return !ret.empty();
 }
 }

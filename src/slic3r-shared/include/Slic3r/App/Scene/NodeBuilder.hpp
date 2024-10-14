@@ -17,10 +17,11 @@ namespace Slic3r::App::Scene {
 
 class MeshRenderNodeComponent;
 class Material;
+class Scene;
 
 class NodeBuilder {
 public:
-    NodeBuilder() : m_current(std::make_unique<Node>()) {}
+    explicit NodeBuilder(Scene& scene) : m_scene(scene), m_current(std::make_unique<Node>()) {}
     NodeBuilder& transform(const std::function<void(Transform3f&)>& modifier);
     NodeBuilder& set_mesh(const Render::Geometry* geometry, const Material& material);
     NodeBuilder& set_material_override(const Material& material);
@@ -44,6 +45,16 @@ public:
         m_current->set_tag(tag_value);
         return *this;
     }
+
+    template <typename T, typename ... Args>
+    NodeBuilder& set_transform_modifier(Args&& ... args)
+    {
+        ensure_current();
+        m_current->set_transform_modifier(std::make_unique<T>(args...));
+        return *this;
+    }
+
+    NodeBuilder& set_screen_space_sized_modifier(float scale);
 
     NodeBuilder& child(const std::function<void(NodeBuilder&)>& builder);
     NodeBuilder& children(size_t num_children, const std::function<void(NodeBuilder&, size_t)>& builder);
@@ -72,6 +83,7 @@ private:
     NodeBuilder& end_child();
     void ensure_current();
 private:
+    Scene& m_scene;
     std::unique_ptr<Node> m_current;
     Node::NodeOwningList m_parents;
 };

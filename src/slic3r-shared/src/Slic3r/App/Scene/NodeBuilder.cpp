@@ -1,6 +1,8 @@
 #include "Slic3r/App/Scene/NodeBuilder.hpp"
 #include "Slic3r/App/Scene/MeshRenderNodeComponent.hpp"
 #include "Slic3r/App/Scene/AabbRaycastNodeComponent.hpp"
+#include "Slic3r/App/Scene/ScreenSpaceSizedTransformModifier.hpp"
+#include "Slic3r/App/Scene/Scene.hpp"
 
 namespace Slic3r::App::Scene {
 
@@ -47,6 +49,16 @@ NodeBuilder& NodeBuilder::set_imgui_func(const FuncImguiRenderNodeComponent::Ren
     return *this;
 }
 
+NodeBuilder& NodeBuilder::set_screen_space_sized_modifier(float scale)
+{
+    ensure_current();
+    auto modifier =
+        std::make_unique<ScreenSpaceSizedTransformModifier>(m_scene.camera(), *m_current, scale);
+    m_current->set_transform_modifier(std::move(modifier));
+    return *this;
+}
+
+
 NodeBuilder& NodeBuilder::set_aabb(const AABBMesh* aabb)
 {
     ensure_current();
@@ -90,7 +102,8 @@ NodeBuilder& NodeBuilder::end_child()
     ensure_current();
 
     auto& parent = m_parents.back();
-    parent->add_child(m_current.release());
+    //parent->add_child(m_current.release());
+    m_scene.add_child(m_current.release(), parent.get());
     m_current = std::move(parent);
     m_parents.pop_back();
     return *this;

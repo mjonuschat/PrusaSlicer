@@ -4,8 +4,10 @@
 #include "Slic3r/App/Scene/IRenderNodeComponent.hpp"
 #include "Slic3r/App/Scene/IImguiRenderNodeComponent.hpp"
 #include "Slic3r/App/Scene/IRaycastNodeComponent.hpp"
+#include "Slic3r/App/Scene/INodeTransformModifier.hpp"
 #include "Slic3r/App/Scene/Material.hpp"
 #include "Slic3r/App/Scene/NodeVisitorTypes.hpp"
+#include "Slic3r/App/Scene/ScreenSpaceSizedTransformModifier.hpp"
 
 #include <boost/any.hpp>
 
@@ -40,29 +42,13 @@ public:
             set_local_transform(t);
     }
 
-    void add_child(Node* n)
-    {
-        if (n->m_parent == this)
-            // already added
-            return;
-
-        n->m_parent = this;
-        n->mark_world_transform_dirty();
-        m_children.emplace_back(n);
-    }
-
-    bool remove_children(const NodePredicate& predicate)
-    {
-        return std::remove_if(
-                   m_children.begin(), m_children.end(),
-                   [predicate](NodeOwningList::const_reference node) {
-                       return predicate(node.get());
-                   }
-               ) != m_children.end();
-    }
-
     bool enabled() const { return m_enabled; }
     void set_enabled(bool enabled) { m_enabled = enabled; }
+
+    const INodeTransformModifier* transform_modifier() const { return m_transform_modifier.get(); }
+    INodeTransformModifier* transform_modifier() { return m_transform_modifier.get(); }
+    void set_transform_modifier(std::unique_ptr<INodeTransformModifier>&& modifier)
+    { m_transform_modifier = std::move(modifier); }
 
     void query(const NodePredicate& predicate, NodeList& found_nodes, bool ignore_enabled = false);
     void query(const NodePredicate& predicate, ConstNodeList& found_nodes, bool ignore_enabled = false) const;
@@ -93,11 +79,34 @@ public:
     boost::any tag() const { return m_tag; }
 
 private:
-    void reset_world_transform(const Matrix4f& t)
+    friend class Scene;
+
+    // Use Scene::add_node instead
+    void add_child(Node* n)
     {
-        m_world_xform = t;
-        m_world_xform_dirty = false;
+        if (n->m_parent == this)
+            // already added
+            return;
+
+        n->m_parent = this;
+        n->mark_world_transform_dirty();
+        m_children.emplace_back(n);
     }
+
+    // Use Scene::remove_node instead
+    bool remove_children(const NodePredicate& predicate, const std::function<void(Node*)>& node_callback = {})
+    {
+        return std::remove_if(
+           m_children.begin(), m_children.end(),
+           [predicate, node_callback](NodeOwningList::reference node) {
+               Node* node_ptr = node.get();
+               if (node_callback)
+                   node_callback(node_ptr);
+               return predicate(node_ptr);
+           }
+        ) != m_children.end();
+    }
+
 
     void mark_world_transform_dirty() const;
     //void mark_children_world_transform_dirty() const;
@@ -108,6 +117,8 @@ private:
     friend void visit_conditional(const Node& node, const ConstNodeConditionalVisitor& visitor, bool);
     friend void visit_conditional(Node& node, const NodeConditionalVisitor& visitor, bool);
 private:
+    friend void ScreenSpaceSizedTransformModifier::camera_updated(const Camera& cam);
+
     Node* m_parent{nullptr};
     NodeOwningList m_children;
 
@@ -121,6 +132,7 @@ private:
     std::unique_ptr<Material> m_material_override;
     std::unique_ptr<IImguiRenderNodeComponent> m_imgui_render_component;
     std::unique_ptr<IRaycastNodeComponent> m_raycast_component;
+    std::unique_ptr<INodeTransformModifier> m_transform_modifier;
 
     boost::any m_tag;
 };

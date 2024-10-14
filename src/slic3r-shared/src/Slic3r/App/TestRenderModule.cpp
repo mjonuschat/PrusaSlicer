@@ -15,6 +15,7 @@
 #include "Slic3r/App/Scene/Scene.hpp"
 #include "Slic3r/App/Scene/MeshRenderNodeComponent.hpp"
 #include "Slic3r/App/Scene/NodeBuilder.hpp"
+#include "Slic3r/App/Scene/ScreenSpaceSizedTransformModifier.hpp"
 
 namespace Slic3r::App {
 
@@ -105,13 +106,20 @@ void TestRenderModule::init_scene()
     cam_xform.translate(Vec3f{0, 0 , 30});
     m_scene->camera().model() = cam_xform.matrix();
     
-    Scene::NodeBuilder node_builder;
+    Scene::NodeBuilder node_builder{*m_scene};
     auto* cone_mesh = m_scene->triangle_mesh_manager().get_or_create("cone-2-5", [](){
         return std::make_unique<Scene::TriangleMesh>(its_make_cone(2, 5, M_PI / 8));
+    });
+    auto* cube_mesh = m_scene->triangle_mesh_manager().get_or_create("box-2-2-2", [](){
+        return std::make_unique<Scene::TriangleMesh>(its_make_cube(2, 2, 2));
     });
 
     auto cone = m_scene->geometry_manager().get_or_create("cone-2-5", [&]() {
         return Render::geometry_from_triangle_mesh(device, cone_mesh->triangles);
+    });
+
+    auto cube = m_scene->geometry_manager().get_or_create("box-2-2-2", [&](){
+       return Render::geometry_from_triangle_mesh(device, cube_mesh->triangles);
     });
 
     auto shader = device.context().shader_manager().get_shader("gouraud_light");
@@ -123,43 +131,60 @@ void TestRenderModule::init_scene()
 //                .rotate(Eigen::AngleAxisf{right_angle/2, Vec3f::UnitZ()})
 //                .rotate(Eigen::AngleAxisf{right_angle/2, Vec3f::UnitX()});
 //        })
-        .children(3, [&](auto& builder, size_t i){
-            ColorRGBA color{0, 0, 0, 1.f};
-            color.set(i, 1);
-            builder
-                .transform([&](auto& xform) {
-                    Vec3f offset = Vec3f::Zero();
-                    offset[i] = 10;
-                    xform.translate(offset);
-                })
-                .child([&](auto& builder){
+        .child([&](auto& node_builder){
+            node_builder
+                .set_screen_space_sized_modifier(0.1f)
+                .children(3, [&](auto& builder, size_t i){
+                    ColorRGBA color{0, 0, 0, 1.f};
+                    color.set(i, 1);
                     builder
-                        .transform([&](auto& xform){
-                            // cone points in +Z direction,
-                            if (i == 0) {
-                                // make it pointing in +X direction
-                                xform.rotate(Eigen::AngleAxisf{right_angle, Vec3f::UnitY()});
-                            } else if (i == 1) {
-                                // make it pointing in +Y direction
-                                xform.rotate(Eigen::AngleAxisf{-right_angle, Vec3f::UnitX()});
-                            }
+                        .transform([&](auto& xform) {
+                            Vec3f offset = Vec3f::Zero();
+                            offset[i] = 10;
+                            xform.translate(offset);
                         })
-                        .set_mesh(
-                            cone,
-                            Scene::Material{}
-                                .set_shader(shader)
-                                .set_uniform("uniform_color", color)
-                        )
-                        .set_aabb(cone_mesh->aabb_mesh.get());
+                        .child([&](auto& builder){
+                            builder
+                                .transform([&](auto& xform){
+                                    // cone points in +Z direction,
+                                    if (i == 0) {
+                                        // make it pointing in +X direction
+                                        xform.rotate(Eigen::AngleAxisf{right_angle, Vec3f::UnitY()});
+                                    } else if (i == 1) {
+                                        // make it pointing in +Y direction
+                                        xform.rotate(Eigen::AngleAxisf{-right_angle, Vec3f::UnitX()});
+                                    }
+                                })
+                                .set_mesh(
+                                    cone,
+                                    Scene::Material{}
+                                        .set_shader(shader)
+                                        .set_uniform("uniform_color", color)
+                                )
+                                .set_aabb(cone_mesh->aabb_mesh.get());
 
-                    if (i == 0)
-                        builder.set_imgui_func([this](const auto& n, const auto& screen_bb) {
-                            this->render_object_hud(n, screen_bb);
+                            if (i == 0)
+                                builder.set_imgui_func([this](const auto& n, const auto& screen_bb) {
+                                    this->render_object_hud(n, screen_bb);
+                                });
+
                         });
-
                 });
+        })
+        .child([&](auto& builder){
+            builder
+                .transform([](auto& xform) {
+                    xform.translate(Vec3f{-1, -1, -1});
+                })
+                .set_mesh(
+                    cube,
+                    Scene::Material{}
+                        .set_shader(shader)
+                        .set_uniform("uniform_color", ColorRGBA{1.0f, 0.0f, 0.5f, 1.0f})
+                )
+                .set_aabb(cube_mesh->aabb_mesh.get());
         });
-    m_scene->root().add_child(node_builder.build().release());
+    m_scene->add_child(node_builder.build().release());
     m_scene->camera_trackball().set_focal_distance(30);
 }
 
@@ -264,7 +289,7 @@ void TestRenderModule::remove_highlighted()
         n->remove_material_override();
 }
 
-void TestRenderModule::render_object_hud(const Scene::Node& n, const Eigen::AlignedBox<float, 2>& screen_bounding_box) const
+void TestRenderModule::render_object_hud(const Scene::Node& n, const Eigen::AlignedBox<float, 2>& screen_bounding_box)
 {
     const auto& pos = screen_bounding_box.max();
     ImGui::SetNextWindowPos({
@@ -274,7 +299,8 @@ void TestRenderModule::render_object_hud(const Scene::Node& n, const Eigen::Alig
     std::string win_name = "obj##" + std::to_string(reinterpret_cast<long>(&n));
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {0, 0});
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 5);
-    if (ImGui::Begin(win_name.c_str(), nullptr, /*ImGuiWindowFlags_NoBackground |*/ ImGuiWindowFlags_NoDecoration)) {
+    if (ImGui::Begin(win_name.c_str(), nullptr, ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoDecoration)) {
+        ImGui::InputText("Text", this->m_text_buffer, BUF_SIZE);
         ImGui::Button("(i)");
         ImGui::Text("Abc");
     }
@@ -309,6 +335,7 @@ void TestRenderModule::render_imgui()
     }
     ImGui::End();
 
+#if 0
     int windows_flag = ImGuiWindowFlags_NoTitleBar
         | ImGuiWindowFlags_NoCollapse
         //   | ImGuiWindowFlags_NoBackground
@@ -324,16 +351,19 @@ void TestRenderModule::render_imgui()
         ImGui::Text("Second line ");
     }
     ImGui::End();
+#endif
 
     m_scene->render_imgui();
 }
 
 void TestRenderModule::on_scene_mouse_event(const Platform::MouseEvent &e)
 {
+    Scene::CameraTrackballController& trackball = m_scene->camera_trackball();
+
     if (e.get_type() == Platform::MouseEvent::Type::Enter) {
         m_last_mouse_x = e.get_x();
         m_last_mouse_y = e.get_y();
-        SPDLOG_INFO("[Mouse Enter] {} {}", e.get_x(), e.get_y());
+        //SPDLOG_INFO("[Mouse Enter] {} {}", e.get_x(), e.get_y());
     } else if (e.get_type() == Platform::MouseEvent::Type::Move) {
         {
             float dx = 2 * float(e.get_x()) / float(m_screen_info.logical_width()) - 1.0f;
@@ -343,14 +373,14 @@ void TestRenderModule::on_scene_mouse_event(const Platform::MouseEvent &e)
 
         float dx = float(m_last_mouse_x - e.get_x()) / (m_screen_info.logical_width() / 180.0f);
         float dy = float(m_last_mouse_y - e.get_y()) / (m_screen_info.logical_height() / 180.0f);
-        SPDLOG_INFO(
-            "[Mouse Move] {} {}  ∆ {} {}",
-            e.get_x(), e.get_y(),
-            m_last_mouse_x - e.get_x(),
-            m_last_mouse_y - e.get_y()
-        );
+        //SPDLOG_INFO(
+        //    "[Mouse Move] {} {}  ∆ {} {}",
+        //    e.get_x(), e.get_y(),
+        //    m_last_mouse_x - e.get_x(),
+        // trackball()
+        //);
 
-        m_scene->camera_trackball().add_azimuth_and_zenith(dx * M_PI / 180.0f, -dy * M_PI / 180.0f);
+        trackball.add_azimuth_and_zenith(dx * M_PI / 180.0f, -dy * M_PI / 180.0f);
 
         m_last_mouse_x = e.get_x();
         m_last_mouse_y = e.get_y();
@@ -377,7 +407,16 @@ void TestRenderModule::on_scene_mouse_event(const Platform::MouseEvent &e)
             remove_highlighted();
         }
 
-        SPDLOG_INFO("Cam pick found {} results", pick_results.size());
+        if (!pick_results.empty())
+            SPDLOG_INFO("Cam pick found {} results", pick_results.size());
+    } else if (e.get_type() == Platform::MouseEvent::Type::Wheel) {
+        const float wheel_delta_y = e.get_wheel_delta_y();
+        if (wheel_delta_y != 0) {
+            float dist = trackball.cam_focal_dist();
+            dist += wheel_delta_y * 0.1f;
+            trackball.set_focal_distance(dist);
+        }
+
     }
 }
 

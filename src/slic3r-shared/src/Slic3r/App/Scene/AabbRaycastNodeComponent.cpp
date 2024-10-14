@@ -13,7 +13,7 @@ bool AabbRaycastNodeComponent::raycast(
     Matrix4f inv_world = world.inverse();
 
     Vec3d local_ray_origin = (inv_world * Vec4f{ray_origin.x(), ray_origin.y(), ray_origin.z(), 1}).head<3>().cast<double>();
-    Vec3d local_ray_direction = (inv_world.block<3, 3>(0, 0) * ray_direction).cast<double>();
+    Vec3d local_ray_direction = (inv_world.block<3, 3>(0, 0) * ray_direction).cast<double>().normalized();
 
     auto hit = m_aabb_mesh->query_ray_hit(local_ray_origin, local_ray_direction);
     if (!hit.is_hit())

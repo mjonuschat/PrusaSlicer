@@ -50,6 +50,11 @@ public:
         update_camera();
     }
 
+    const Vec3f& cam_focal() const { return m_cam_focal; }
+    float cam_focal_dist() const { return m_cam_focal_dist; }
+    float azimuth() const { return m_azimuth; }
+    float zenith() const { return m_zenith; }
+
 private:
     void update_camera();
     void clamp_zenith();

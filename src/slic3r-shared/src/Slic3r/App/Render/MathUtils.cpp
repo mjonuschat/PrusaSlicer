@@ -79,4 +79,4 @@ Vec2f viewport_transform(const Rect& viewport, const Vec3f& ndc_pos)
     };
 }
 
-}
+} // namespace Slic3r::App::Render

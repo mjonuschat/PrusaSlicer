@@ -517,10 +517,10 @@ void WXRenderCanvas::on_mouse(wxMouseEvent& evt)
     float wheel_y = 0;
     switch (evt.GetWheelAxis()) {
     case wxMOUSE_WHEEL_VERTICAL:
-        wheel_y = evt.GetWheelDelta();
+        wheel_y = evt.GetWheelRotation();
         break;
     case wxMOUSE_WHEEL_HORIZONTAL:
-        wheel_x = evt.GetWheelDelta();
+        wheel_x = evt.GetWheelRotation();
         break;
     }
 

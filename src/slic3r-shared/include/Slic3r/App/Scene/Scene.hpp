@@ -53,6 +53,9 @@ public:
     void render_imgui() const;
     bool pick_at(float mouse_x, float mouse_y, ConstNodePickResults& results) const;
     bool pick_at(float mouse_x, float mouse_y, NodePickResults& results);
+
+    void add_child(Node* node, Node* parent = nullptr);
+    bool remove_children(const Node::NodePredicate& predicate, Node* parent = nullptr);
 private:
     Node m_root;
     Camera m_camera;

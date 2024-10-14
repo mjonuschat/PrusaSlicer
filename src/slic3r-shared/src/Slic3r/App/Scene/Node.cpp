@@ -36,6 +36,8 @@ const Transform& Node::world_transform() const
         } else {
             m_world_xform = m_local_xform;
         }
+        if (m_transform_modifier)
+            m_transform_modifier->modify_world_transform(m_world_xform);
         m_world_xform_dirty = false;
     }
     return m_world_xform;

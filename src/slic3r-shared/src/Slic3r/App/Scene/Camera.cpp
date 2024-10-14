@@ -1,6 +1,7 @@
 #include "Slic3r/App/Scene/Camera.hpp"
 #include "Slic3r/App/Render/MathUtils.hpp"
 #include "Slic3r/Log.hpp"
+#include "libslic3r/Geometry.hpp"
 
 namespace Slic3r::App::Scene {
 
@@ -13,11 +14,13 @@ void Camera::set_viewport(const Render::Rect& viewport)
     m_viewport = viewport;
     if (m_projection_getter)
         m_projection = m_projection_getter->projection(m_viewport);
+    m_update_listeners.invoke([this](auto* l) { l->camera_updated(*this); });
 }
 
 void Camera::look_at(const Vec3f& eye, const Vec3f& center, const Vec3f& up)
 {
     m_model = Render::look_at(eye, center, up).inverse();
+    m_update_listeners.invoke([this](auto* l) { l->camera_updated(*this); });
 }
 
 Ray Camera::ray_at(float screen_x, float screen_y) const
@@ -70,10 +73,19 @@ Vec3f Camera::unproject(const Vec3f& win_pos) const
     return p.head<3>() / p.w();
 }
 
-Transform PerspectiveCameraProjectionGetter::projection(const Render::Rect& viewport)
+Transform PerspectiveCameraProjectionGetter::projection(const Render::Rect& viewport) const
 {
-    return Render::perspective(m_fovy, float(viewport.width) / float(viewport.height), m_z_near, m_z_far);
+    return Render::perspective(
+        m_fovy, float(viewport.width) / float(viewport.height), m_z_near, m_z_far
+    );
 }
 
+float PerspectiveCameraProjectionGetter::constant_screen_space_size_scale(
+    const Camera& cam, float cam_object_dist
+) const
+{
+    // Note: For orhto this is: 2 / (r - l)
+    return cam_object_dist / (2 * std::tan(Geometry::deg2rad(m_fovy / 2)));
 }
 
+} // namespace Slic3r::App::Scene
