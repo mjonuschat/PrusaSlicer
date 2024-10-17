@@ -76,6 +76,11 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Yoga/FlexSizer.hpp
         src/Slic3r/App/Yoga/SplitterSizer.cpp
         include/Slic3r/App/Yoga/SplitterSizer.hpp
+        src/Slic3r/App/Yoga/Toolbar/Item.cpp
+        include/Slic3r/App/Yoga/Toolbar/Item.hpp
+        src/Slic3r/App/Yoga/Toolbar/Toolbar.cpp
+        include/Slic3r/App/Yoga/Toolbar/Toolbar.hpp
+        include/Slic3r/App/Yoga/Toolbar.hpp
 
         include/Slic3r/Biz/PrintConfigInteractor.hpp
         src/Slic3r/Biz/PrintConfigInteractor.cpp
