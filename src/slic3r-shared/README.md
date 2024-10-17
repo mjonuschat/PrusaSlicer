@@ -31,7 +31,9 @@ In case when it seems an opposite direction dependency will be needed, use [the 
 
 ```mermaid
 graph RL
-    slic3r-platform
+    slic3r-base
+    slic3r-render-->slic3r-base
+    slic3r-platform-->slic3r-render
     slic3r-platform-sdl-->slic3r-platform
     slic3r-platform-wx-->slic3r-platform
     slic3r-shared-->slic3r-platform

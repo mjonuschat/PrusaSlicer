@@ -283,8 +283,11 @@ if (NOT EMSCRIPTEN)
     add_subdirectory(slic3r-app-desktop)
 endif ()
 
+add_subdirectory(slic3r-render)
 add_subdirectory(slic3r-platform)
 add_subdirectory(slic3r-platform-sdl)
 add_subdirectory(slic3r-shared)
 add_subdirectory(slic3r-shared-wx)
 add_subdirectory(slic3r-app-sdltest)
+
+add_all_doxygen_target(slic3r-doxygen)

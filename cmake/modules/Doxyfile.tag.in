@@ -1,0 +1,4 @@
+@INCLUDE = Doxyfile
+
+GENERATE_TAGFILE       = @DOXYGEN_TAG_FILE@
+GENERATE_HTML          = NO

@@ -13,9 +13,7 @@ public:
         : m_aabb_mesh(mesh)
     {}
 
-    bool raycast(
-        const Matrix4f& world, const Vec3f& ray_origin, const Vec3f& ray_direction, double& t
-    ) const override;
+    bool raycast(const Matrix4f& world, const Ray& ray, double& t) const override;
 
     Eigen::AlignedBox<float, 2> projected_bounding_box(
         const Matrix4f& mvp, const Slic3r::App::Render::Rect& viewport

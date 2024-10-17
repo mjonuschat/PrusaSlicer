@@ -9,6 +9,7 @@
 #include "Slic3r/App/Scene/TriangleMeshManager.hpp"
 #include "Slic3r/App/Render/GeometryManager.hpp"
 #include "Slic3r/App/Render/Shader.hpp"
+#include "Slic3r/App/Render/ScreenInfo.hpp"
 
 #include "libslic3r/Color.hpp"
 #include "libslic3r/Geometry.hpp"
@@ -32,6 +33,18 @@ struct ConstNodePickResult
 using NodePickResults = std::vector<NodePickResult>;
 using ConstNodePickResults = std::vector<ConstNodePickResult>;
 
+/**
+ * @brief Scenegraph entrypoint
+ *
+ * Encapsulate scene tree made of Node and provides:
+ * - rendering of 3D object, see render()
+ * - rendering of 2D GUI overlay, see render_imgui()
+ * - camera used for rendering (camera()) and its trackball manipulator (camera_trackball())
+ * - ray picking, see pick_at()
+ * - also provides common resource caching manager for rendering geometry (geometry_manager()),
+ *   and in-memory geometry (triangle_mesh_manager())
+ * .
+ */
 class Scene
 {
 public:
@@ -50,7 +63,7 @@ public:
     TriangleMeshManager<std::string>& triangle_mesh_manager() { return m_trimesh_manager; }
 
     void render(Render::CommandBuffer& cmd_buffer) const;
-    void render_imgui() const;
+    void render_imgui(const Render::ScreenInfo& screen_info) const;
     bool pick_at(float mouse_x, float mouse_y, ConstNodePickResults& results) const;
     bool pick_at(float mouse_x, float mouse_y, NodePickResults& results);
 

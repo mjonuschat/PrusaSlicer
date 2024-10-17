@@ -95,16 +95,30 @@ Eigen::AlignedBox<float, 2> resolve_bounding_box(const Node& node, const Camera&
     return {};
 }
 
-void Scene::render_imgui() const
+Eigen::AlignedBox<float, 2> to_imgui_coords(const Eigen::AlignedBox<float, 2>& bb, const Render::ScreenInfo& screen_info)
+{
+    Eigen::AlignedBox<float, 2> ret;
+    ret
+        .extend(Vec2f{
+            screen_info.physical_to_imgui_x(bb.min().x()),
+            screen_info.physical_to_imgui_y(bb.min().y()),
+        })
+        .extend(Vec2f{
+            screen_info.physical_to_imgui_x(bb.max().x()),
+            screen_info.physical_to_imgui_y(bb.max().y()),
+        });
+    return ret;
+}
+
+
+void Scene::render_imgui(const Render::ScreenInfo& screen_info) const
 {
     Node::ConstNodeList nodes;
     m_root.query([](auto n){ return n->has_imgui_render_component();}, nodes);
     for (const auto* n : nodes) {
         auto bb = resolve_bounding_box(*n, m_camera);
         if (!bb.isEmpty())
-            n->imgui_render_component()->render_imgui(*n,bb);
-        else
-            SPDLOG_WARN("No IRaycastNodeComponent associated with ImguiRenderNodeComponent (in the same node or any of its parents)");
+            n->imgui_render_component()->render_imgui(*n, to_imgui_coords(bb, screen_info));
     }
 }
 
@@ -116,7 +130,7 @@ bool Scene::pick_at(float mouse_x, float mouse_y, ConstNodePickResults& results)
     auto ret = visit_conditional_transform<double>(n, [&ray](const Node& n, double& t) {
         if (!n.has_raycast_component())
             return false;
-        return n.raycast_component()->raycast(n.world_transform(), ray.origin, ray.direction, t);
+        return n.raycast_component()->raycast(n.world_transform(), ray, t);
     });
     results.reserve(results.size() + ret.size());
     std::transform(
@@ -137,7 +151,7 @@ bool Scene::pick_at(float mouse_x, float mouse_y, NodePickResults& results)
     auto ret = visit_conditional_transform<double>(n, [&ray](Node& n, double& t) {
         if (!n.has_raycast_component())
             return false;
-        return n.raycast_component()->raycast(n.world_transform(), ray.origin, ray.direction, t);
+        return n.raycast_component()->raycast(n.world_transform(), ray, t);
     });
     std::sort(ret.begin(), ret.end(), [](auto a, auto b) {
         return a.second < b.second;

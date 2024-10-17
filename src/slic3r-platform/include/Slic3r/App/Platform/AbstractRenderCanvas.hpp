@@ -4,10 +4,10 @@
 
 #include <vector>
 
-#include "AbstractRenderModule.hpp"
-#include "IRenderRequestHandler.hpp"
-#include "StdMainThreadDispatcher.hpp"
-#include "ScreenInfo.hpp"
+#include "Slic3r/App/Platform/AbstractRenderModule.hpp"
+#include "Slic3r/App/Platform/IRenderRequestHandler.hpp"
+#include "Slic3r/App/Platform/StdMainThreadDispatcher.hpp"
+#include "Slic3r/App/Render/ScreenInfo.hpp"
 
 #if USE_IMGUI_RENDER
 #include <Slic3r/App/Render/ImguiRender.hpp>
@@ -83,7 +83,7 @@ private:
     void emit_enqueued_events();
 
 protected:
-    void set_screen_size(const ScreenInfo& screen_info);
+    void set_screen_size(const Render::ScreenInfo& screen_info);
 
 protected:
     using MouseEvents = std::vector<MouseEvent>;
@@ -95,7 +95,7 @@ protected:
     int m_mouse_x {0};
     int m_mouse_y {0};
 
-    ScreenInfo m_screen_info{0,0,1};
+    Render::ScreenInfo m_screen_info{0,0,1};
 
     MouseEvents m_enqueued_mouse_events;
     KeyboardEvents m_enqueued_keyboard_events;

@@ -49,7 +49,7 @@ TEST_CASE("Scene basic transform", "[Node]") {
         REQUIRE_THAT((n2_world.z()), WithinRel(3, 0.0001));
     }
 
-    t = Slic3r::Transform3f::Identity();
+    t = Transform3f::Identity();
     t.translate(Vec3f{-1, -2, -3});
     n2->set_local_transform(t.matrix());
 
@@ -63,5 +63,21 @@ TEST_CASE("Scene basic transform", "[Node]") {
         REQUIRE_THAT((n2_world.x()), WithinRel(0, 0.0001));
         REQUIRE_THAT((n2_world.y()), WithinRel(0, 0.0001));
         REQUIRE_THAT((n2_world.z()), WithinRel(0, 0.0001));
+    }
+
+    t.setIdentity();
+    t.translate(Vec3f{9, 8, 7});
+    n2->set_world_transform(t.matrix());
+
+    {
+        const auto& n1_world = n1->world_transform().block<3, 1>(0, 3);
+        REQUIRE_THAT((n1_world.x()), WithinRel(1, 0.0001));
+        REQUIRE_THAT((n1_world.y()), WithinRel(2, 0.0001));
+        REQUIRE_THAT((n1_world.z()), WithinRel(3, 0.0001));
+
+        const auto& n2_world = n2->world_transform().block<3, 1>(0, 3);
+        REQUIRE_THAT((n2_world.x()), WithinRel(9, 0.0001));
+        REQUIRE_THAT((n2_world.y()), WithinRel(8, 0.0001));
+        REQUIRE_THAT((n2_world.z()), WithinRel(7, 0.0001));
     }
 }

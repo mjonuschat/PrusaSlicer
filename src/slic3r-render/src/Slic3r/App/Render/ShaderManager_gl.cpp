@@ -6,7 +6,7 @@
 #include "Slic3r/App/Render/Context.hpp"
 
 #include "libslic3r/Technologies.hpp"
-#include "Slic3r/App/Platform/PlatformInfo.hpp"
+#include "Slic3r/PlatformInfo.hpp"
 #include "Slic3r/Assert.hpp"
 #include "Slic3r/Log.hpp"
 
@@ -82,7 +82,7 @@ std::pair<bool, std::string> ShaderManager::init()
     valid &= append_shader("variable_layer_height", { prefix + "variable_layer_height.vs", prefix + "variable_layer_height.fs" });
     // used to render highlight contour around selected triangles inside the multi-material gizmo
     valid &= append_shader("mm_contour", {prefix + "mm_contour.vs", prefix + "mm_contour.fs"});
-    auto platform_info = Platform::PlatformInfo::instance();
+    auto platform_info = PlatformInfo::instance();
     // Used to render painted triangles inside the multi-material gizmo. Triangle normals are
     // computed inside fragment shader.
     // For Apple's on Arm CPU computed triangle normals inside fragment shader using dFdx and dFdy has the opposite direction.

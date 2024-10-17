@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-namespace Slic3r::App::Platform {
+namespace Slic3r::App::Render {
 
 
 /**

@@ -1,8 +1,8 @@
-#include "Slic3r/App/Platform/PlatformInfo.hpp"
+#include "Slic3r/PlatformInfo.hpp"
 
 #include <sys/utsname.h>
 
-namespace Slic3r::App::Platform {
+namespace Slic3r {
 
 PlatformInfo::PlatformInfo()
     : m_os_version(Semver::invalid())

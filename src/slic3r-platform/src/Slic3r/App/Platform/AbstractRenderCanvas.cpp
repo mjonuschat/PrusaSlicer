@@ -43,7 +43,7 @@ void AbstractRenderCanvas::set_render_module(AbstractRenderModule* render_module
     }
 }
 
-void AbstractRenderCanvas::set_screen_size(const ScreenInfo& screen_info)
+void AbstractRenderCanvas::set_screen_size(const Render::ScreenInfo& screen_info)
 {
     m_screen_info = screen_info;
     if (m_render_module)
@@ -199,10 +199,15 @@ void AbstractRenderCanvas::emit_enqueued_events()
     }
     m_enqueued_keyboard_events.clear();
 
-    if (!io.WantCaptureMouse) {
-        for (const auto& e : m_enqueued_mouse_events)
-            emit_mouse(e);
-    } else if (std::any_of(io.MouseDown, io.MouseDown + 5, [](bool val){ return val; })){
+    if (io.WantCaptureMouse) {
+        for (auto& e : m_enqueued_mouse_events)
+            e.set_imgui_captured(true);
+    }
+    for (const auto& e : m_enqueued_mouse_events)
+        emit_mouse(e);
+
+    if (io.WantCaptureMouse &&
+        std::any_of(io.MouseDown, io.MouseDown + 5, [](bool val) { return val; })) {
         request_render();
     }
     m_enqueued_mouse_events.clear();

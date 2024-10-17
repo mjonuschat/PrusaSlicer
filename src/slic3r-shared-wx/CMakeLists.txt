@@ -76,3 +76,7 @@ if (UNIX AND NOT APPLE)
     target_include_directories(slic3r-shared-wx PRIVATE ${GTK${SLIC3R_GTK}_INCLUDE_DIRS})
     target_link_libraries(slic3r-shared-wx PUBLIC ${GTK${SLIC3R_GTK}_LIBRARIES} fontconfig)
 endif ()
+
+
+# Doxygen
+add_doxygen_target(slic3r-shared-wx)

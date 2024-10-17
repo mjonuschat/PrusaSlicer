@@ -18,3 +18,7 @@ target_link_libraries(slic3r-platform-sdl PUBLIC
         slic3r-shared
 )
 target_include_directories(slic3r-platform-sdl PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+
+
+# Doxygen
+add_doxygen_target(slic3r-platform-sdl)

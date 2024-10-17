@@ -4,9 +4,40 @@
 #include "Slic3r/App/Scene/NodeVisitorTypes.hpp"
 #include "Slic3r/App/Scene/Node.hpp"
 
+/**
+ * @file NodeVisitor.hpp
+ *
+ * @brief Node visitor functions.
+ */
+
 namespace Slic3r::App::Scene {
 
+/**
+ * @brief Visit const nodes in depth-first order.
+ *
+* By default visits enabled nodes or pass `ignore_enabled` as `true` to visit even disabled nodes).
+* Once an disabled node is encountered, the propagation stops and its children are not visited even
+* if these are enabled.
+ *
+ * @param node Root node to start the recursive visit
+ * @param visitor Function of prototype `void(const Node&)` to be called on every node
+ * @param ignore_enabled If passed `true` the visitor will be called only for enabled nodes,
+ * otherwise even disabled nodes are visited.
+ */
 void visit(const Node& node, const ConstNodeVisitor& visitor, bool ignore_enabled = false);
+
+/**
+ * @brief Visit non const nodes in depth-first order.
+ *
+ * By default visits enabled nodes or pass `ignore_enabled` as `true` to visit even disabled nodes).
+ * Once an disabled node is encountered, the propagation stops and its children are not visited even
+ * if these are enabled.
+ *
+ * @param node Root node to start the recursive visit
+ * @param visitor Function of prototype `void(Node&)` to be called on every node
+ * @param ignore_enabled If passed `true` the visitor will be called only for enabled nodes,
+ * otherwise even disabled nodes are visited.
+ */
 void visit(Node& node, const NodeVisitor& visitor, bool ignore_enabled = false);
 void visit_conditional(const Node& node, const ConstNodeConditionalVisitor& visitor, bool ignore_enabled = false);
 void visit_conditional(Node& node, const NodeConditionalVisitor& visitor, bool ignore_enabled = false);

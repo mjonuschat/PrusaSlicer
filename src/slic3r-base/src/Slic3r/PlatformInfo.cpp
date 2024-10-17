@@ -1,6 +1,6 @@
-#include "Slic3r/App/Platform/PlatformInfo.hpp"
+#include "Slic3r/PlatformInfo.hpp"
 
-namespace Slic3r::App::Platform {
+namespace Slic3r {
 
 
 

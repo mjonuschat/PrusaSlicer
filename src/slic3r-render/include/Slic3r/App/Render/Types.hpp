@@ -1,10 +1,8 @@
 #pragma once
 
-namespace Slic3r::App::Platform {
-class ScreenInfo;
-}
-
 namespace Slic3r::App::Render {
+
+class ScreenInfo;
 
 struct RgbaF {
     float r;
@@ -38,7 +36,7 @@ struct Rect
     int width;
     int height;
 
-    static Rect from(int x, int y, const Platform::ScreenInfo& screen);
+    static Rect from(int x, int y, const ScreenInfo& screen);
 };
 
 enum class BlendFactor

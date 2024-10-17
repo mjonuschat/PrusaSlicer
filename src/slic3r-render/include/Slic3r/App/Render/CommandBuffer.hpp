@@ -15,6 +15,7 @@ class CommandBuffer : public WithInternal
 {
 public:
     explicit CommandBuffer(Device& device);
+    ~CommandBuffer() noexcept;
 
     void set_clear_values(const RgbaF& clear_color, double clear_depth = 1);
     void clear_buffers(bool color, bool depth);
@@ -41,6 +42,7 @@ public:
     void submit();
 private:
     Device& m_device;
+    bool m_needs_submit{false};
 };
 
 }

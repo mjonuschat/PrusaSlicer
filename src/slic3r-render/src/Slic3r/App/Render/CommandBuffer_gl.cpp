@@ -28,6 +28,12 @@ CommandBuffer::CommandBuffer(Device& device)
     : WithInternal(InternalType<GL::GLCommandBufferInternal>()), m_device(device)
 {}
 
+CommandBuffer::~CommandBuffer() noexcept
+{
+    if (m_needs_submit)
+        submit();
+}
+
 void CommandBuffer::set_clear_values(const RgbaF& clear_color, double clear_depth)
 {
     glClearColor(clear_color.r, clear_color.g, clear_color.b, clear_color.a);
@@ -120,6 +126,7 @@ void CommandBuffer::bind_geometry(const Geometry& g, const Shader& s)
 {
     auto& device = m_device.get_internal_as<GL::GLDeviceInternal>();
     device.bind_geometry(g, s);
+    m_needs_submit = true;
 }
 
 void CommandBuffer::draw(PrimitiveType primitive, size_t offset, size_t count)

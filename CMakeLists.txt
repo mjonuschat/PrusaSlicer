@@ -189,6 +189,7 @@ endforeach ()
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/modules/)
 
 enable_testing ()
+include(DoxygenTarget)
 
 # Enable C++17 language standard.
 set(CMAKE_CXX_STANDARD 17)

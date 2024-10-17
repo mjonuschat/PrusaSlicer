@@ -291,10 +291,9 @@ void TestRenderModule::remove_highlighted()
 
 void TestRenderModule::render_object_hud(const Scene::Node& n, const Eigen::AlignedBox<float, 2>& screen_bounding_box)
 {
-    const auto& pos = screen_bounding_box.max();
     ImGui::SetNextWindowPos({
-        m_screen_info.physical_to_imgui_x(pos.x()),
-        m_screen_info.physical_to_imgui_y(pos.y())
+        screen_bounding_box.max().x(),
+        screen_bounding_box.min().y()
     });
     std::string win_name = "obj##" + std::to_string(reinterpret_cast<long>(&n));
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {0, 0});
@@ -353,7 +352,7 @@ void TestRenderModule::render_imgui()
     ImGui::End();
 #endif
 
-    m_scene->render_imgui();
+    m_scene->render_imgui(m_screen_info);
 }
 
 void TestRenderModule::on_scene_mouse_event(const Platform::MouseEvent &e)

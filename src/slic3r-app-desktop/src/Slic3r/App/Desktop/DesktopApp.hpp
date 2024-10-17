@@ -6,7 +6,7 @@
 
 #include <Slic3r/Domain/Workbench.hpp>
 #include <Slic3r/Domain/Bed.hpp>
-#include <Slic3r/App/TestRenderModule.hpp>
+#include <Slic3r/App/Plater/PlaterRenderModule.hpp>
 
 #include <Slic3r/Biz/ProjectInteractor.hpp>
 #include <Slic3r/App/I18N/Translation.hpp>
@@ -24,7 +24,7 @@ private:
 private:
 
     MainFrame* m_main_frame;
-    TestRenderModule m_render_module;
+    Plater::PlaterRenderModule m_render_module;
     Domain::Workbench m_workbench;
     std::unique_ptr<Biz::ProjectInteractor> m_project_interactor;
 

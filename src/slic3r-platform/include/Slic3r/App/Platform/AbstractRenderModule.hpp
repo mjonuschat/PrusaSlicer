@@ -1,9 +1,9 @@
 #pragma once
 
-#include "MouseEvent.hpp"
-#include "KeyboardEvent.hpp"
-#include "IRenderRequestHandler.hpp"
-#include "ScreenInfo.hpp"
+#include "Slic3r/App/Platform/MouseEvent.hpp"
+#include "Slic3r/App/Platform/KeyboardEvent.hpp"
+#include "Slic3r/App/Platform/IRenderRequestHandler.hpp"
+#include "Slic3r/App/Render/ScreenInfo.hpp"
 
 namespace Slic3r::App::Render {
 class Device;
@@ -31,7 +31,7 @@ public:
     void activate(IRenderRequestHandler* render_request_handler);
     void deactivate();
 
-    void set_screen_size(const ScreenInfo& screen_info);
+    void set_screen_size(const Render::ScreenInfo& screen_info);
     void ensure_initialized(Render::Device& device)
     {
         if (!m_initialized) {
@@ -56,7 +56,7 @@ protected:
 protected:
     Render::Device* m_device{nullptr};
 
-    ScreenInfo m_screen_info {0, 0, 1};
+    Render::ScreenInfo m_screen_info {0, 0, 1};
     bool m_initialized{false};
 private:
     IRenderRequestHandler* m_render_request_handler{nullptr};

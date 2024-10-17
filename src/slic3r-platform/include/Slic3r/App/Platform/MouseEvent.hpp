@@ -36,6 +36,8 @@ public:
         : m_type(type), m_button(button), m_x(x), m_y(y), m_wheel_delta_x(wheel_delta_x), m_wheel_delta_y(wheel_delta_y), m_key_modifiers(key_modifiers)
     {}
 
+    void set_imgui_captured(bool imgui_captured) { m_imgui_captured = imgui_captured; }
+
     [[nodiscard]] Type get_type() const { return m_type; }
     [[nodiscard]] MouseButton get_button() const { return m_button; }
     [[nodiscard]] int get_x() const { return m_x; }
@@ -43,6 +45,7 @@ public:
     [[nodiscard]] float get_wheel_delta_x() const { return m_wheel_delta_x; }
     [[nodiscard]] float get_wheel_delta_y() const { return m_wheel_delta_y; }
     [[nodiscard]] KeyModifiers get_key_modifiers() const { return m_key_modifiers; }
+    [[nodiscard]] bool is_imgui_captured() const { return m_imgui_captured; }
 private:
     Type m_type;
     MouseButton m_button;
@@ -51,6 +54,7 @@ private:
     float m_wheel_delta_x{0};
     float m_wheel_delta_y{0};
     KeyModifiers m_key_modifiers;
+    bool m_imgui_captured{false};
 };
 
 }
