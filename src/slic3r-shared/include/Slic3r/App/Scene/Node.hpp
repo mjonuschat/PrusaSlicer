@@ -112,7 +112,7 @@ public:
      * @brief Is node enabled.
      *
      * Only enabled nodes can appear in query(const NodePredicate&, NodeList&, bool),
-     * query(const ConstNodePredicate&, ConstNodeList&, bool), and @ref @ref NodeVisitor.hpp "node visitors"
+     * query(const ConstNodePredicate&, ConstNodeList&, bool), and @ref NodeVisitor.hpp "node visitors"
      *
      * @return
      */
@@ -198,6 +198,7 @@ public:
     /**
      * @name TagComponent
      * Metadata tag
+     * @{
      */
     template <typename T>
     bool has_tag_of_type() const { return m_tag.type() == typeid(T); }

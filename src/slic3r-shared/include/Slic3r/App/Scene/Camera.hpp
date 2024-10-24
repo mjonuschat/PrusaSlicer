@@ -11,11 +11,39 @@ namespace Slic3r::App::Scene {
 
 class Camera;
 
+/**
+ * @brief Interface for camera projection computation.
+ */
 class ICameraProjectionGetter
 {
 public:
     virtual ~ICameraProjectionGetter() = default;
+
+    /**
+     * @brief Compute projection matrix for given @p viewport
+     * @param viewport Camera viewport position and size
+     * @return Projection matrix
+     */
     virtual Transform projection(const Render::Rect& viewport) const = 0;
+
+    /**
+     * @brief Compute screen space size scale.
+     *
+     * This scale is applied by ScreenSpaceSizedTransformModifier to keep screen space size constant
+     * for a given node.
+     *
+     * @param cam A camera object
+     * @param cam_object_dist A distance from camera to node.
+     * @return Scale to be applied
+     *
+     * @note
+     * Typically:
+     * - for perspective projection this should be @f(\frac{dist}{2 \cdot tan \frac{fov_y}{2} }@f)
+     * (where @f(dist@f) is camera-node disance, and @f(fov_y@f) is Field of view in vertical axis),
+     * - for ortho projection this should be @f(\frac{2}{r - l}@f) (where @f(l@f) and @f(r@f) are
+     * left resp. right parameters of ortho projection).
+     * .
+     */
     virtual float constant_screen_space_size_scale(const Camera& cam, float cam_object_dist) const = 0;
 };
 

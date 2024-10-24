@@ -5,6 +5,12 @@
 namespace Slic3r::App::Scene {
 class Node;
 
+/**
+ * @brief Modify node's world scale so it is constant in screenspace i.e. the size of node is same
+ * independently of camera zoom/distance.
+ *
+ * This may be handy for gizmos.
+ */
 class ScreenSpaceSizedTransformModifier : public INodeTransformModifier, public ICameraUpdateListener {
 public:
     ScreenSpaceSizedTransformModifier(const Camera& cam, Node& node, float scale=1)

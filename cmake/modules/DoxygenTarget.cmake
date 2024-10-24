@@ -100,72 +100,132 @@ endfunction()
 
 find_package(Doxygen QUIET)
 
-function(add_doxygen_target lib_target)
+function(add_target_to_doxygen lib_target)
     if (NOT DOXYGEN_FOUND)
         message(STATUS "No doxygen found, doxygen related targets wont be defined")
         return()
     endif ()
-    _get_target_libraries_with_prefix(${lib_target} "slic3r-" slicer_libs)
 
-    set(DOXYGEN_TAGFILES "")
-    set(LIB_DOXY_TAG_DEPS "")
-    set(LIB_DOXY_DEPS "")
-    foreach (lib ${slicer_libs})
-        _get_doxygen_tag_file(${lib} _lib_tag_file)
-        _get_doxygen_output_dir(${lib} _lib_doxy_dir)
-        set(DOXYGEN_TAGFILES "${DOXYGEN_TAGFILES} ${_lib_tag_file}=${_lib_doxy_dir}/html")
-        list(APPEND LIB_DOXY_TAG_DEPS "${lib}-doxygen-tag")
-        list(APPEND LIB_DOXY_TAG_DEPS "${lib}-doxygen")
-    endforeach ()
+    # Parsing arguments
+    set(options)
+    set(oneValueArgs)
+    set(multiValueArgs INPUT)
+    cmake_parse_arguments(PARSE_ARGV 1 arg
+            "${options}" "${oneValueArgs}" "${multiValueArgs}"
+    )
+
+    # Setup variables to be used as target properties
+    if (DEFINED arg_INPUT)
+        set(DOXYGEN_INPUT "")
+        foreach (input IN LISTS arg_INPUT)
+            list(APPEND DOXYGEN_INPUT "${CMAKE_CURRENT_SOURCE_DIR}/${input}")
+        endforeach ()
+    else ()
+        set(DOXYGEN_INPUT "${CMAKE_CURRENT_SOURCE_DIR}/include")
+    endif ()
 
     set(DOXYGEN_PROJECT_NAME "${lib_target}")
     _get_doxygen_output_dir(${lib_target} DOXYGEN_OUTPUT_DIR)
     _get_doxygen_tag_file(${lib_target} DOXYGEN_TAG_FILE)
 
     file(GLOB_RECURSE DOXYGEN_OTHER_MARKDOWN
-            RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
+            # Use REALTIVE if _md_fix_fenced_blocks is uncommented bellow
+            #RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
             LIST_DIRECTORIES false
             "${CMAKE_CURRENT_SOURCE_DIR}/*.md"
     )
 
-    _md_fix_fenced_blocks("${DOXYGEN_OTHER_MARKDOWN}" "${CMAKE_CURRENT_BINARY_DIR}/doxy" "${CMAKE_CURRENT_SOURCE_DIR}" processed_files)
+#     This is done in DoxygenFileFilter.cmake
+#    _md_fix_fenced_blocks("${DOXYGEN_OTHER_MARKDOWN}" "${CMAKE_CURRENT_BINARY_DIR}/doxy" "${CMAKE_CURRENT_SOURCE_DIR}" processed_files)
+#    set(DOXYGEN_OTHER_MARKDOWN "${processed_files}")
 
-    set(readme_md_path "${CMAKE_CURRENT_BINARY_DIR}/doxy/README.md")
-    if ("${readme_md_path}" IN_LIST processed_files)
-        list(REMOVE_ITEM processed_files "${readme_md_path}")
-        SET(DOXYGEN_README_PATH "${readme_md_path}")
-    endif ()
+    # Create definitions of topics/groups for each library (all files in the library are associated with this group)
+    file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/${lib_target}.dox" "/** @defgroup ${lib_target} Library ${lib_target} */")
+    set(DOXYGEN_OTHER_DOX "${CMAKE_CURRENT_BINARY_DIR}/${lib_target}.dox")
 
-    string(REPLACE ";" " " DOXYGEN_OTHER_MARKDOWN "${processed_files}")
-
-    set(DOXYGEN_HTML_HEADER "${MODULE_SOURCE_DIR}/Doxygen-header.html")
-
-    configure_file("${MODULE_SOURCE_DIR}/Doxyfile.in" "${CMAKE_CURRENT_BINARY_DIR}/Doxyfile" @ONLY)
-    configure_file("${MODULE_SOURCE_DIR}/Doxyfile.tag.in" "${CMAKE_CURRENT_BINARY_DIR}/Doxyfile.tag" @ONLY)
-
-    add_custom_target("${lib_target}-doxygen-tag"
-            COMMAND doxygen Doxyfile.tag
-            WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+    # Set target properties to be used in add_doxygen_target()
+    set_target_properties(${lib_target} PROPERTIES
+            DOXYGEN_INPUT "${DOXYGEN_INPUT}"
+            #DOXYGEN_README_MD_PATH "${DOXYGEN_README_PATH}"
+            DOXYGEN_OTHER_MARKDOWN "${DOXYGEN_OTHER_MARKDOWN}"
+            DOXYGEN_OTHER_DOX "${DOXYGEN_OTHER_DOX}"
     )
-    add_custom_target("${lib_target}-doxygen"
-            COMMAND doxygen Doxyfile
-            WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
-            DEPENDS ${LIB_DOXY_TAG_DEPS} ${LIB_DOXY_DEPS}
-    )
-
-    file(MAKE_DIRECTORY "${DOXYGEN_OUTPUT_DIR}")
 
     if(NOT DEFINED DOXYGEN_TARGETS)
-        set(DOXYGEN_TARGETS "" CACHE INTERNAL "List of all Doxygen targets")
+        set(DOXYGEN_TARGETS "${lib_target}" CACHE INTERNAL "List of all Doxygen targets" FORCE)
+    else ()
+        set(DOXYGEN_TARGETS "${DOXYGEN_TARGETS};${lib_target}"  CACHE INTERNAL "List of all Doxygen targets" FORCE)
     endif()
-
-    set(DOXYGEN_TARGETS "${DOXYGEN_TARGETS};${lib_target}-doxygen"  CACHE INTERNAL "List of all Doxygen targets")
 endfunction()
 
-function(add_all_doxygen_target target)
+function(add_doxygen_target target)
+
+    # Parse input args
+    set(options)
+    set(oneValueArgs)
+    set(multiValueArgs EXTRA_INPUT)
+    cmake_parse_arguments(PARSE_ARGV 1 arg
+            "${options}" "${oneValueArgs}" "${multiValueArgs}"
+    )
+
+    set(DOXYGEN_HTML_HEADER "${MODULE_SOURCE_DIR}/Doxygen-header.html")
     separate_arguments(DOXYGEN_TARGETS)
     if (DOXYGEN_TARGETS)
-        add_custom_target(${target} DEPENDS ${DOXYGEN_TARGETS})
+        set(doxygen_targets "")
+
+        set(DOXYGEN_PROJECT_NAME "${CMAKE_PROJECT_NAME}")
+        set(DOXYGEN_INPUT "")
+        set(DOXYGEN_INPUT_FILTER "")
+        set(DOXYGEN_OTHER_MDS "")
+        set(DOXYGEN_OTHER_DOXS "")
+        set(DOXYGEN_STRIP_FROM_INC_PATH "")
+        set(DOXYGEN_OUTPUT_DIR "${MODULE_SOURCE_DIR}/../../doc/doxy/")
+        set(DOXYGEN_SOURCE_ROOT "${CMAKE_CURRENT_SOURCE_DIR}")
+        set(DOXYGEN_HTML_EXTRA_STYLESHEET "${MODULE_SOURCE_DIR}/Doxygen-awesome.css")
+
+        if (DEFINED arg_EXTRA_INPUT)
+            foreach (extra_input IN LISTS arg_EXTRA_INPUT)
+                if (NOT IS_ABSOLUTE "${extra_input}")
+                    set(extra_input "${CMAKE_CURRENT_SOURCE_DIR}/${extra_input}")
+                endif ()
+                if (extra_input MATCHES "[*?]")
+                    file(GLOB_RECURSE extra_input "${extra_input}")
+                endif()
+                list(APPEND DOXYGEN_INPUT "${extra_input}")
+            endforeach ()
+        endif ()
+
+        foreach (doxygen_req_target IN LISTS DOXYGEN_TARGETS)
+            #get_target_property(BIN_DIR ${doxygen_req_target} BIN_DIR)
+            #get_target_property(SRC_DIR ${doxygen_req_target} SRC_DIR)
+            get_target_property(INPUT ${doxygen_req_target} DOXYGEN_INPUT)
+            get_target_property(OTHER_MARKDOWN ${doxygen_req_target} DOXYGEN_OTHER_MARKDOWN)
+            get_target_property(OTHER_DOXS ${doxygen_req_target} DOXYGEN_OTHER_DOX)
+
+            list(APPEND DOXYGEN_INPUT "${INPUT}")
+            list(APPEND DOXYGEN_STRIP_FROM_INC_PATH "${INPUT}")
+            list(APPEND DOXYGEN_OTHER_MDS "${OTHER_MARKDOWN}")
+            list(APPEND DOXYGEN_OTHER_DOXS "${OTHER_DOXS}")
+        endforeach ()
+
+        string(REPLACE ";" " " DOXYGEN_INPUT "${DOXYGEN_INPUT};${DOXYGEN_OTHER_MDS};${DOXYGEN_OTHER_DOXS}")
+        string(REPLACE ";" " " DOXYGEN_STRIP_FROM_INC_PATH "${DOXYGEN_STRIP_FROM_INC_PATH}")
+
+        if (WIN32)
+            set(DOXYGEN_INPUT_FILTER "${MODULE_SOURCE_DIR}/DoxygenFileFilter.bat")
+        else ()
+            set(DOXYGEN_INPUT_FILTER "${MODULE_SOURCE_DIR}/DoxygenFileFilter.sh")
+        endif ()
+
+        file(MAKE_DIRECTORY "${DOXYGEN_OUTPUT_DIR}")
+        configure_file("${MODULE_SOURCE_DIR}/Doxyfile.in" "${CMAKE_CURRENT_BINARY_DIR}/Doxyfile" @ONLY)
+
+        add_custom_target("${target}"
+                # Use this command instead to debug DoxygenFileFilter.cmake/.bat/.sh
+                # COMMAND doxygen -d  filteroutput Doxyfile
+                COMMAND doxygen Doxyfile
+                WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+        )
     else ()
         message(WARNING "No doxygen targets found, skipping definition of top-level all-doxygens target")
     endif ()

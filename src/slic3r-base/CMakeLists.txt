@@ -44,5 +44,5 @@ endif ()
 
 
 # Doxygen
-add_doxygen_target(slic3r-base)
+add_target_to_doxygen(slic3r-base)
 

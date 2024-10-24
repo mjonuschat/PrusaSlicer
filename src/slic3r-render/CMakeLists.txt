@@ -81,7 +81,7 @@ target_include_directories(slic3r-render PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/incl
 
 
 # Doxygen
-add_doxygen_target(slic3r-render)
+add_target_to_doxygen(slic3r-render)
 
 # Tests
 #add_executable(slic3r-render-tests

@@ -290,4 +290,6 @@ add_subdirectory(slic3r-shared)
 add_subdirectory(slic3r-shared-wx)
 add_subdirectory(slic3r-app-sdltest)
 
-add_all_doxygen_target(slic3r-doxygen)
+add_doxygen_target(slic3r-doxygen
+    EXTRA_INPUT ../doc/Doxygen.md ../doc/CodeStyle.md
+)

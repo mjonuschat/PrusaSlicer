@@ -79,4 +79,4 @@ endif ()
 
 
 # Doxygen
-add_doxygen_target(slic3r-shared-wx)
+add_target_to_doxygen(slic3r-shared-wx)

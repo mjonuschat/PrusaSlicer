@@ -25,6 +25,6 @@ target_link_libraries(slic3r-platform PUBLIC slic3r-base slic3r-render libslic3r
 
 
 # Doxygen
-add_doxygen_target(slic3r-platform)
+add_target_to_doxygen(slic3r-platform)
 
 

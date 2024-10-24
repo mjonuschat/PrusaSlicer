@@ -126,7 +126,7 @@ target_include_directories(slic3r-shared PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/incl
 
 
 # Doxygen
-add_doxygen_target(slic3r-shared)
+add_target_to_doxygen(slic3r-shared)
 
 # Tests
 add_executable(slic3r-shared-tests
