@@ -11,6 +11,8 @@ namespace Slic3r::App::Scene {
 void Scene::add_child(Node* node, Node* parent)
 {
     visit(*node, [this](Node& n) {
+        m_nodes_by_id[n.id()] = &n;
+
         auto* modifier = n.transform_modifier();
         if (modifier == nullptr)
             return;
@@ -31,6 +33,7 @@ bool Scene::remove_children(const Node::NodePredicate& predicate, Node* parent)
 
     return parent->remove_children(predicate, [this](Node* n) {
         visit(*n, [this](Node& n) {
+            m_nodes_by_id.erase(n.id());
             auto* modifier = n.transform_modifier();
             if (modifier == nullptr)
                 return;
@@ -70,7 +73,12 @@ void Scene::render(Render::CommandBuffer& cmd_buffer) const
         return a->render_component()->layer_index() < b->render_component()->layer_index();
     });
     cmd_buffer.set_depth_test_enabled(true);
+    int last_layer = -1000;
     for (const auto* n : nodes) {
+        if (auto layer = n->render_component()->layer_index(); layer != last_layer) {
+            cmd_buffer.clear_buffers(false, true);
+            last_layer = layer;
+        }
         auto mat_override = resolve_material(*n);
         n->render_component()->render(*n, m_camera, mat_override, cmd_buffer);
     }

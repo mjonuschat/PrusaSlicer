@@ -359,35 +359,35 @@ void TestRenderModule::on_scene_mouse_event(const Platform::MouseEvent &e)
 {
     Scene::CameraTrackballController& trackball = m_scene->camera_trackball();
 
-    if (e.get_type() == Platform::MouseEvent::Type::Enter) {
-        m_last_mouse_x = e.get_x();
-        m_last_mouse_y = e.get_y();
-        //SPDLOG_INFO("[Mouse Enter] {} {}", e.get_x(), e.get_y());
-    } else if (e.get_type() == Platform::MouseEvent::Type::Move) {
+    if (e.type() == Platform::MouseEvent::Type::Enter) {
+        m_last_mouse_x = e.x();
+        m_last_mouse_y = e.y();
+        //SPDLOG_INFO("[Mouse Enter] {} {}", e.x(), e.y());
+    } else if (e.type() == Platform::MouseEvent::Type::Move) {
         {
-            float dx = 2 * float(e.get_x()) / float(m_screen_info.logical_width()) - 1.0f;
+            float dx = 2 * float(e.x()) / float(m_screen_info.logical_width()) - 1.0f;
             m_geom2_scale = std::pow(2.0f, dx * 5);
             //SPDLOG_INFO("Geom scale: {}  dx: {}", m_geom2_scale, dx);
         }
 
-        float dx = float(m_last_mouse_x - e.get_x()) / (m_screen_info.logical_width() / 180.0f);
-        float dy = float(m_last_mouse_y - e.get_y()) / (m_screen_info.logical_height() / 180.0f);
+        float dx = float(m_last_mouse_x - e.x()) / (m_screen_info.logical_width() / 180.0f);
+        float dy = float(m_last_mouse_y - e.y()) / (m_screen_info.logical_height() / 180.0f);
         //SPDLOG_INFO(
         //    "[Mouse Move] {} {}  ∆ {} {}",
-        //    e.get_x(), e.get_y(),
-        //    m_last_mouse_x - e.get_x(),
+        //    e.x(), e.y(),
+        //    m_last_mouse_x - e.x(),
         // trackball()
         //);
 
         trackball.add_azimuth_and_zenith(dx * M_PI / 180.0f, -dy * M_PI / 180.0f);
 
-        m_last_mouse_x = e.get_x();
-        m_last_mouse_y = e.get_y();
+        m_last_mouse_x = e.x();
+        m_last_mouse_y = e.y();
 
         Scene::NodePickResults pick_results;
         m_scene->pick_at(
-            m_screen_info.mouse_to_screen(e.get_x()),
-            m_screen_info.mouse_to_screen(e.get_y()),
+            m_screen_info.mouse_to_screen(e.x()),
+            m_screen_info.mouse_to_screen(e.y()),
             pick_results
         );
 
@@ -408,8 +408,8 @@ void TestRenderModule::on_scene_mouse_event(const Platform::MouseEvent &e)
 
         if (!pick_results.empty())
             SPDLOG_INFO("Cam pick found {} results", pick_results.size());
-    } else if (e.get_type() == Platform::MouseEvent::Type::Wheel) {
-        const float wheel_delta_y = e.get_wheel_delta_y();
+    } else if (e.type() == Platform::MouseEvent::Type::Wheel) {
+        const float wheel_delta_y = e.wheel_delta_y();
         if (wheel_delta_y != 0) {
             float dist = trackball.cam_focal_dist();
             dist += wheel_delta_y * 0.1f;
@@ -421,7 +421,7 @@ void TestRenderModule::on_scene_mouse_event(const Platform::MouseEvent &e)
 
 void TestRenderModule::on_scene_keyboard_event(const Platform::KeyboardEvent &e)
 {
-    std::cout <<  "KeyboardEvent type: " << uint32_t(e.get_type()) << "\n";
+    std::cout <<  "KeyboardEvent type: " << uint32_t(e.type()) << "\n";
 }
 
 void TestRenderModule::on_screen_resized()

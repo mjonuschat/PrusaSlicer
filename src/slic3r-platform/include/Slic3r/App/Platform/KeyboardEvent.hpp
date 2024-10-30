@@ -19,9 +19,9 @@ public:
         : m_type(type), m_code(code), m_key_modifiers(modifiers)
     {}
 
-    Type get_type() const { return m_type; }
-    KeyCode get_code() const { return m_code; }
-    KeyModifiers get_key_modifiers() const { return m_key_modifiers; }
+    Type type() const { return m_type; }
+    KeyCode code() const { return m_code; }
+    KeyModifiers key_modifiers() const { return m_key_modifiers; }
 
 private:
     Type m_type;

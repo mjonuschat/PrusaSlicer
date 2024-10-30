@@ -22,11 +22,12 @@ NodeBuilder& NodeBuilder::transform(const std::function<void(Transform3f&)>& mod
     return *this;
 }
 
-NodeBuilder& NodeBuilder::set_mesh(const Render::Geometry* geometry, const Material& material)
+NodeBuilder& NodeBuilder::set_mesh(const Render::Geometry* geometry, const Material& material, int layer_index)
 {
     ensure_current();
 
     auto render_component = std::make_unique<MeshRenderNodeComponent>(geometry, material, Render::PrimitiveType::Triangles, 0, 0);
+    render_component->set_layer_index(layer_index);
     m_current->set_render_component(std::move(render_component));
     return *this;
 }

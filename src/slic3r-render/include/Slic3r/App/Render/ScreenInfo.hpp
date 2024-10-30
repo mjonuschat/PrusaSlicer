@@ -31,7 +31,7 @@ public:
     float physical_to_imgui_x(float physical_x) const { return physical_to_logical(physical_x); }
     float physical_to_imgui_y(float physical_y) const { return physical_to_logical(physical_height() - physical_y - 1); }
 
-    float mouse_to_screen(float mouse_coord) { return logical_to_physical(mouse_coord); }
+    float mouse_to_screen(float mouse_coord) const { return logical_to_physical(mouse_coord); }
 
     bool operator==(const ScreenInfo& rhs) const
     {

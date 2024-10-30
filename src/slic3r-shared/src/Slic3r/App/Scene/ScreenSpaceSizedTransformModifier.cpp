@@ -12,7 +12,7 @@ void ScreenSpaceSizedTransformModifier::modify_world_transform(
     const auto cam_world_pos = m_camera.model().block<3, 1>(0, 3);
     const float dist = (obj_world_pos - cam_world_pos).norm();
 
-    const float scale = m_camera.projection_getter()
+    const float scale = m_camera.cam_projection()
         .constant_screen_space_size_scale(m_camera, dist) * m_preserved_scale;
 
     // remove scaling part

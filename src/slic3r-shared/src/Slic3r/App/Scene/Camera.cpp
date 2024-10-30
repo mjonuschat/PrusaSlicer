@@ -6,7 +6,7 @@
 namespace Slic3r::App::Scene {
 
 Camera::Camera()
-    : m_model(Transform::Identity()), m_projection_getter(new PerspectiveCameraProjectionGetter)
+    : m_model(Transform::Identity()), m_projection_getter(new PerspectiveCameraProjection)
 {}
 
 void Camera::set_viewport(const Render::Rect& viewport)
@@ -73,14 +73,14 @@ Vec3f Camera::unproject(const Vec3f& win_pos) const
     return p.head<3>() / p.w();
 }
 
-Transform PerspectiveCameraProjectionGetter::projection(const Render::Rect& viewport) const
+Transform PerspectiveCameraProjection::projection(const Render::Rect& viewport) const
 {
     return Render::perspective(
         m_fovy, float(viewport.width) / float(viewport.height), m_z_near, m_z_far
     );
 }
 
-float PerspectiveCameraProjectionGetter::constant_screen_space_size_scale(
+float PerspectiveCameraProjection::constant_screen_space_size_scale(
     const Camera& cam, float cam_object_dist
 ) const
 {

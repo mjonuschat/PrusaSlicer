@@ -7,6 +7,13 @@
 
 namespace Slic3r::App::Scene {
 
+static size_t next_id() {
+    static size_t id = 0;
+    return ++id;
+}
+
+Node::Node() : m_id(next_id()) {}
+
 // NOLINTBEGIN(misc-no-recursion): Mark recursion in query() as resolved
 void Node::query(const NodePredicate& predicate, NodeList& found_nodes, bool ignore_enabled)
 {

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <unordered_map>
 #include <boost/variant/variant.hpp>
 
 #include "Slic3r/App/Scene/Node.hpp"
@@ -45,13 +46,42 @@ using ConstNodePickResults = std::vector<ConstNodePickResult>;
  *   and in-memory geometry (triangle_mesh_manager())
  * .
  */
-class Scene
+class Scene final
 {
 public:
-    Scene() : m_camera_trackball(m_camera) {}
+    Scene() : m_camera_trackball(m_camera) { m_nodes_by_id[m_root.id()] = &m_root; }
 
     Node& root() { return m_root; }
     const Node& root() const { return m_root; }
+
+    /**
+     * @brief Quick mutable node look up by id.
+     *
+     * Gets node by its id.
+     *
+     * @param id Node id (see Node::id(), Node::set_id())
+     * @return Pointer to node with given id or `nullptr` if no such node present in scene.
+     */
+    Node* node(size_t id)
+    {
+        auto it = m_nodes_by_id.find(id);
+        return it == m_nodes_by_id.end() ? nullptr : it->second;
+    }
+
+    /**
+     * @brief Quick immutable node look up by id.
+     *
+     * Gets node by its id.
+     *
+     * @param id Node id (see Node::id(), Node::set_id())
+     * @return Constant pointer to node with given id or `nullptr` if no such node present in scene.
+     */
+    const Node* node(size_t id) const
+    {
+        auto it = m_nodes_by_id.find(id);
+        return it == m_nodes_by_id.end() ? nullptr : it->second;
+    }
+
 
     Camera& camera() { return m_camera; }
     const Camera& camera() const { return m_camera; }
@@ -70,9 +100,12 @@ public:
     void add_child(Node* node, Node* parent = nullptr);
     bool remove_children(const Node::NodePredicate& predicate, Node* parent = nullptr);
 private:
+    using NodeIdLookUp = std::unordered_map<size_t, Node*>;
+
     Node m_root;
     Camera m_camera;
     CameraTrackballController m_camera_trackball;
+    NodeIdLookUp m_nodes_by_id;
     Render::GeometryManager<std::string> m_geometry_manager;
     TriangleMeshManager<std::string> m_trimesh_manager;
 };

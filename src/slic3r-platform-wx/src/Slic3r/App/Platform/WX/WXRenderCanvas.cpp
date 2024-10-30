@@ -374,6 +374,22 @@ void WXRenderCanvas::on_size(wxSizeEvent& event)
 //    render();
 }
 
+KeyModifiers WXRenderCanvas::modifiers(const wxKeyboardState& event)
+{
+    KeyModifiers key_mods{0};
+
+    if (event.ControlDown())
+        key_mods |= KeyModifiers(KeyModifier::Ctrl);
+    if (event.ShiftDown())
+        key_mods |= KeyModifiers(KeyModifier::Shift);
+    if (event.MetaDown())
+        key_mods |= KeyModifiers(KeyModifier::Meta);
+    if (event.AltDown())
+        key_mods |= KeyModifiers(KeyModifier::Alt);
+
+    return key_mods;
+}
+
 void WXRenderCanvas::on_keyboard(wxKeyEvent& evt)
 {
     wxEventType type = evt.GetEventType();
@@ -422,7 +438,7 @@ void WXRenderCanvas::on_keyboard(wxKeyEvent& evt)
             update_key_modifiers(event_type, key_code);
 
             KeyboardEvent platform_event{
-                event_type, key_code, m_key_modifiers
+                event_type, key_code, modifiers(evt)
             };
 
             enqueue_keyboard(platform_event);
@@ -442,7 +458,7 @@ void WXRenderCanvas::on_mouse_enter(wxMouseEvent& event)
         MouseButton::NoButton,
         mouse_x, mouse_y,
         0, 0,
-        m_key_modifiers
+        modifiers(event)
     };
     enqueue_mouse(platform_event);
 }

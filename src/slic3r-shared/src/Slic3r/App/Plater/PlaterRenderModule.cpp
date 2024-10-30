@@ -2,6 +2,11 @@
 #include "Slic3r/App/Scene/NodeBuilder.hpp"
 #include "Slic3r/App/Render/Device.hpp"
 #include "Slic3r/App/Render/GeometryBuilder.hpp"
+#include "Slic3r/App/Plater/CameraGizmo.hpp"
+#include "Slic3r/App/Plater/SceneNodeTag.hpp"
+#include "Slic3r/App/Plater/GizmoNodeTag.hpp"
+#include "Slic3r/App/Plater/QuickSelectGizmo.hpp"
+#include "Slic3r/App/Plater/QuickDragGizmo.hpp"
 
 #include "imgui/imgui.h"
 
@@ -11,6 +16,7 @@ void PlaterRenderModule::on_init(Render::Device& device)
 {
     AbstractRenderModule::on_init(device);
     init_scene();
+    init_gizmos();
 }
 
 void PlaterRenderModule::init_scene()
@@ -49,7 +55,7 @@ void PlaterRenderModule::init_scene()
         //        })
         .child([&](auto& node_builder){
             node_builder
-                .set_screen_space_sized_modifier(0.1f)
+                .set_screen_space_sized_modifier(0.03f)
                 .children(3, [&](auto& builder, size_t i){
                     ColorRGBA color{0, 0, 0, 1.f};
                     color.set(i, 1);
@@ -75,9 +81,11 @@ void PlaterRenderModule::init_scene()
                                     cone,
                                     Scene::Material{}
                                         .set_shader(shader)
-                                        .set_uniform("uniform_color", color)
+                                        .set_uniform("uniform_color", color),
+                                    100
                                 )
-                                .set_aabb(cone_mesh->aabb_mesh.get());
+                                .set_aabb(cone_mesh->aabb_mesh.get())
+                                .set_tag(GizmoNodeTag{.primary_axis=AxisType(i)});
 
                             if (i == 0)
                                 builder.set_imgui_func([this](const auto& n, const auto& screen_bb) {
@@ -87,21 +95,37 @@ void PlaterRenderModule::init_scene()
                         });
                 });
         })
-        .child([&](auto& builder){
+        .children(5 * 5, [&](auto& builder, size_t idx) {
             builder
-                .transform([](auto& xform) {
-                    xform.translate(Vec3f{-1, -1, -1});
+                .transform([idx](auto& xform){
+                    constexpr static float stride = 10;
+                    xform.translate(Vec3f{(idx % 5) * stride, (idx / 5) * stride, 0});
                 })
-                .set_mesh(
-                    cube,
-                    Scene::Material{}
-                        .set_shader(shader)
-                        .set_uniform("uniform_color", ColorRGBA{1.0f, 0.0f, 0.5f, 1.0f})
-                )
-                .set_aabb(cube_mesh->aabb_mesh.get());
+                .child([&](auto& builder){
+                    builder
+                        .transform([](auto& xform) {
+                            xform.translate(Vec3f{-1, -1, -1});
+                        })
+                        .set_mesh(
+                            cube,
+                            Scene::Material{}
+                                .set_shader(shader)
+                                .set_uniform("uniform_color", ColorRGBA{1.0f, 0.0f, 0.5f, 1.0f})
+                        )
+                        .set_aabb(cube_mesh->aabb_mesh.get())
+                        .set_tag(SceneNodeTag{.object_id=0, .volume_id=0, .instance_id=idx});
+                });
         });
     m_scene->add_child(node_builder.build().release());
     m_scene->camera_trackball().set_focal_distance(30);
+}
+
+void PlaterRenderModule::init_gizmos()
+{
+    m_gizmo_manager = std::make_unique<GizmoManager>(*m_scene);
+    m_gizmo_manager->add_base_gizmo<CameraGizmo>(*m_scene);
+    m_gizmo_manager->add_base_gizmo<QuickSelectGizmo>(*m_scene);
+    m_gizmo_manager->add_base_gizmo<QuickDragGizmo>();
 }
 
 
@@ -154,7 +178,8 @@ void PlaterRenderModule::render_object_hud(const Scene::Node& n, const Eigen::Al
         screen_bounding_box.min().y()
     });
     if (ImGui::Begin(node_name.c_str(), nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBackground)) {
-        ImGui::SmallButton("X");
+        if (ImGui::SmallButton("Foc"))
+            m_scene->camera_trackball().set_focal_point({0, 0, 0});
     }
     ImGui::End();
 }
@@ -164,7 +189,7 @@ void PlaterRenderModule::on_scene_mouse_event(
     const Platform::MouseEvent& e
 )
 {
-    AbstractRenderModule::on_scene_mouse_event(e);
+    m_gizmo_manager->on_scene_mouse_event(e, m_screen_info);
 }
 void PlaterRenderModule::on_scene_keyboard_event(
     const Platform::KeyboardEvent& e

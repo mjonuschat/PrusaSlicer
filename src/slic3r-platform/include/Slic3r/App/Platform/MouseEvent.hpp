@@ -38,13 +38,13 @@ public:
 
     void set_imgui_captured(bool imgui_captured) { m_imgui_captured = imgui_captured; }
 
-    [[nodiscard]] Type get_type() const { return m_type; }
-    [[nodiscard]] MouseButton get_button() const { return m_button; }
-    [[nodiscard]] int get_x() const { return m_x; }
-    [[nodiscard]] int get_y() const { return m_y; }
-    [[nodiscard]] float get_wheel_delta_x() const { return m_wheel_delta_x; }
-    [[nodiscard]] float get_wheel_delta_y() const { return m_wheel_delta_y; }
-    [[nodiscard]] KeyModifiers get_key_modifiers() const { return m_key_modifiers; }
+    [[nodiscard]] Type type() const { return m_type; }
+    [[nodiscard]] MouseButton button() const { return m_button; }
+    [[nodiscard]] int x() const { return m_x; }
+    [[nodiscard]] int y() const { return m_y; }
+    [[nodiscard]] float wheel_delta_x() const { return m_wheel_delta_x; }
+    [[nodiscard]] float wheel_delta_y() const { return m_wheel_delta_y; }
+    [[nodiscard]] KeyModifiers key_modifiers() const { return m_key_modifiers; }
     [[nodiscard]] bool is_imgui_captured() const { return m_imgui_captured; }
 private:
     Type m_type;

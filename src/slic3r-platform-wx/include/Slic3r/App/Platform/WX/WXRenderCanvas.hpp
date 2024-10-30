@@ -41,6 +41,8 @@ private:
     void on_mouse_leave(wxMouseEvent& event);
     void on_idle(wxIdleEvent& event);
 
+    static KeyModifiers modifiers(const wxKeyboardState& event);
+
     void init();
     void init_wx_imgui();
 

@@ -4,6 +4,7 @@
 
 #include "Slic3r/App/Platform/AbstractRenderModule.hpp"
 #include "Slic3r/App/Scene/Scene.hpp"
+#include "Slic3r/App/Plater/GizmoManager.hpp"
 
 namespace Slic3r::App::Plater {
 
@@ -23,8 +24,11 @@ protected:
 private:
     void init_scene();
     void render_object_hud(const Scene::Node& n, const Eigen::AlignedBox<float, 2>& screen_bounding_box);
+
+    void init_gizmos();
 private:
     std::unique_ptr<Scene::Scene> m_scene;
+    std::unique_ptr<GizmoManager> m_gizmo_manager;
 
     bool m_gui_win_open{true};
 };

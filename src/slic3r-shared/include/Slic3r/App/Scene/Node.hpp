@@ -25,7 +25,8 @@ namespace Slic3r::App::Scene {
  *
  * In terms of tree hierarchy node contains:
  * - parent link: see @ref Node::parent() const
- * - list of children (see Node::children() const
+ * - list of children: see Node::children() const
+ * - use Scene::add_child() and Scene::remove_children() to modify node hierarchy
  * .
  * In terms of transformation node contains:
  * - local transform (stored, see local_transform() )
@@ -36,7 +37,7 @@ namespace Slic3r::App::Scene {
  *   see render_component(), set_render_component(), has_render_component()
  * - to override visual material of 3D object use Material,
  *   see material_override(), set_material_override(), has_material_override()
- * - to support object picking use IRaycastNodeComponent or its AABBMesh implementation AabbRaycastNodeComponent,
+ * - for object picking use IRaycastNodeComponent or its AABBMesh implementation AabbRaycastNodeComponent,
  *   see raycast_component(), set_raycast_component(), has_raycast_component()
  * - to render 2D GUI overlay use IImguiRenderNodeComponent
  *   see imgui_render_component(), set_imgui_render_component(), has_imgui_render_component()
@@ -44,7 +45,7 @@ namespace Slic3r::App::Scene {
  *   see has_tag_of_type(), set_tag(), tag()
  * .
  */
-class Node
+class Node final
 {
 public:
     using NodeOwningList = std::vector<std::unique_ptr<Node>>;
@@ -52,11 +53,33 @@ public:
     using ConstNodeList = std::vector<const Node*>;
     using NodePredicate = std::function<bool(const Node*)>;
 
+    Node();
+
+    /**
+     * @name Identification
+     * Simple unique node identifier (automatically assigned on creation)
+     * @{
+     */
+    size_t id() const { return m_id; }
+    void set_id(size_t id) { m_id = id; }
+    /** @} */
+
+    /**
+     * @name Hierarchy
+     * Parent-child hierarchy
+     * @{
+     */
+    /**
+     * @brief Nodes parent pointer
+     * @return Node parent or `nullptr` if the node is root itself.
+     */
+    const Node* parent() const { return m_parent; }
+
     /**
      * @brief Nodes parent pointer
      * @return Node parent of `nullptr` if root itself.
      */
-    const Node* parent() const { return m_parent; }
+    Node* parent() { return m_parent; }
 
     /**
      * @brief Read-only children
@@ -66,7 +89,13 @@ public:
      * @return Constant vector of `unique_ptr<Node>`
      */
     const NodeOwningList& children() const { return m_children; }
+    /** @} */
 
+    /**
+     * @name Transform
+     * Node local and world transform
+     * @{
+     */
     /**
      * @brief Local transformation
      * @return
@@ -107,14 +136,20 @@ public:
         } else
             set_local_transform(t);
     }
+    /** @} */
 
+    /**
+     * @name Enabled
+     * Node enable state
+     * @{
+     */
     /**
      * @brief Is node enabled.
      *
      * Only enabled nodes can appear in query(const NodePredicate&, NodeList&, bool),
      * query(const ConstNodePredicate&, ConstNodeList&, bool), and @ref NodeVisitor.hpp "node visitors"
      *
-     * @return
+     * @return True if enabled
      */
     bool enabled() const { return m_enabled; }
 
@@ -123,9 +158,10 @@ public:
      * @param enabled
      */
     void set_enabled(bool enabled) { m_enabled = enabled; }
+    /** @} */
 
     /**
-     * @name TransformModifier
+     * @name Transform Modifier
      * World Transformation modifier
      * @{
      */
@@ -152,7 +188,7 @@ public:
     /**@}*/
 
     /**
-     * @name RenderComponent
+     * @name Render Component
      * Rendering 3D object
      * @{
      */
@@ -163,7 +199,7 @@ public:
     /**@}*/
 
     /**
-     * @name MaterialOverride
+     * @name Material Override
      * Override 3D object material
      * @{
      */
@@ -174,7 +210,7 @@ public:
     /**@}*/
 
     /**
-     * @name ImguiRenderComponent
+     * @name ImGUI Render Component
      * Rendering 2D GUI overlay
      * @{
      */
@@ -185,7 +221,7 @@ public:
     /**@}*/
 
     /**
-     * @name RaycastComponent
+     * @name Raycast Component
      * Raycast hit test
      * @{
      */
@@ -196,7 +232,7 @@ public:
     /**@}*/
 
     /**
-     * @name TagComponent
+     * @name Tag Component
      * Metadata tag
      * @{
      */
@@ -247,6 +283,7 @@ private:
 private:
     friend void ScreenSpaceSizedTransformModifier::camera_updated(const Camera& cam);
 
+    size_t m_id{0};
     Node* m_parent{nullptr};
     NodeOwningList m_children;
 

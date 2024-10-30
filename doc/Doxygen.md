@@ -77,7 +77,7 @@ In points:
          * @{
           */
         const INodeTransformModifier* transform_modifier() const { return m_transform_modifier.get(); }
-       INodeTransformModifier* transform_modifier() { return m_transform_modifier.get(); }
+        INodeTransformModifier* transform_modifier() { return m_transform_modifier.get(); }
         void set_transform_modifier(std::unique_ptr<INodeTransformModifier>&& modifier)
         { m_transform_modifier = std::move(modifier); }
         /**@}*/
@@ -85,13 +85,9 @@ In points:
         //...
     }
    
-   ```
+    ```
 
-Example:
 
-```c++
-
-```
 
 ## Doxygen processing
 

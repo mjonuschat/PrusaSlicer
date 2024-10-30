@@ -2,6 +2,18 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Plater/ScenePresenter.hpp
         include/Slic3r/App/Plater/PlaterRenderModule.hpp
         src/Slic3r/App/Plater/PlaterRenderModule.cpp
+        include/Slic3r/App/Plater/GizmoManager.hpp
+        src/Slic3r/App/Plater/GizmoManager.cpp
+        include/Slic3r/App/Plater/IGizmo.hpp
+        include/Slic3r/App/Plater/GizmoEventContext.hpp
+        include/Slic3r/App/Plater/CameraGizmo.hpp
+        src/Slic3r/App/Plater/CameraGizmo.cpp
+        include/Slic3r/App/Plater/GizmoNodeTag.hpp
+        include/Slic3r/App/Plater/SceneNodeTag.hpp
+        include/Slic3r/App/Plater/QuickSelectGizmo.hpp
+        src/Slic3r/App/Plater/QuickSelectGizmo.cpp
+        include/Slic3r/App/Plater/QuickDragGizmo.hpp
+        src/Slic3r/App/Plater/QuickDragGizmo.cpp
 
         include/Slic3r/App/View/IPanelView.hpp
 
@@ -36,6 +48,8 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Scene/INodeTransformModifier.hpp
         include/Slic3r/App/Scene/ScreenSpaceSizedTransformModifier.hpp
         src/Slic3r/App/Scene/ScreenSpaceSizedTransformModifier.cpp
+        include/Slic3r/App/Scene/SceneChangeSession.hpp
+        src/Slic3r/App/Scene/SceneChangeSession.cpp
 
         include/Slic3r/App/TestRenderModule.hpp
         src/Slic3r/App/TestRenderModule.cpp

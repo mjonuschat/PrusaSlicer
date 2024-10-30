@@ -14,10 +14,10 @@ class Camera;
 /**
  * @brief Interface for camera projection computation.
  */
-class ICameraProjectionGetter
+class ICameraProjection
 {
 public:
-    virtual ~ICameraProjectionGetter() = default;
+    virtual ~ICameraProjection() = default;
 
     /**
      * @brief Compute projection matrix for given @p viewport
@@ -75,8 +75,8 @@ public:
     Ray ray_at(float screen_x, float screen_y) const;
     Vec3f unproject(const Vec3f& win_pos) const;
 
-    const ICameraProjectionGetter& projection_getter() const { return *m_projection_getter; }
-    void set_projection_getter(ICameraProjectionGetter* projection_getter)
+    const ICameraProjection& cam_projection() const { return *m_projection_getter; }
+    void set_cam_projection(ICameraProjection* projection_getter)
     {
         m_projection_getter.reset(projection_getter);
     }
@@ -97,15 +97,15 @@ private:
     Transform m_model{Transform::Identity()};
     Transform m_projection{Transform::Identity()};
     Render::Rect m_viewport;
-    std::unique_ptr<ICameraProjectionGetter> m_projection_getter;
+    std::unique_ptr<ICameraProjection> m_projection_getter;
     CameraUpdateListeners m_update_listeners;
 };
 
-class PerspectiveCameraProjectionGetter : public ICameraProjectionGetter
+class PerspectiveCameraProjection : public ICameraProjection
 {
 public:
-    PerspectiveCameraProjectionGetter() = default;
-    PerspectiveCameraProjectionGetter(float fovy, float z_near, float z_far)
+    PerspectiveCameraProjection() = default;
+    PerspectiveCameraProjection(float fovy, float z_near, float z_far)
         : m_fovy(fovy), m_z_near(z_near), m_z_far(z_far)
     {}
     Transform projection(const Render::Rect& viewport) const override;
@@ -122,7 +122,7 @@ public:
 private:
     float m_fovy{90};
     float m_z_near{0.01f};
-    float m_z_far{100.f};
+    float m_z_far{1000.f};
 };
 
 
