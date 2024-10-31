@@ -10,17 +10,7 @@ namespace Slic3r::App::Scene {
 
 void Scene::add_child(Node* node, Node* parent)
 {
-    visit(*node, [this](Node& n) {
-        m_nodes_by_id[n.id()] = &n;
-
-        auto* modifier = n.transform_modifier();
-        if (modifier == nullptr)
-            return;
-        auto* cam_listener = dynamic_cast<ICameraUpdateListener*>(modifier);
-        if (cam_listener)
-            m_camera.add_update_listener(cam_listener);
-    });
-
+    register_node(node);
     if (parent == nullptr)
         parent = &m_root;
     parent->add_child(node);
@@ -31,16 +21,53 @@ bool Scene::remove_children(const Node::NodePredicate& predicate, Node* parent)
     if (parent == nullptr)
         parent = &m_root;
 
-    return parent->remove_children(predicate, [this](Node* n) {
-        visit(*n, [this](Node& n) {
-            m_nodes_by_id.erase(n.id());
-            auto* modifier = n.transform_modifier();
-            if (modifier == nullptr)
-                return;
-            auto* cam_listener = dynamic_cast<ICameraUpdateListener*>(modifier);
-            if (cam_listener)
-                m_camera.remove_update_listener(cam_listener);
-        });
+    return parent->remove_children([this, predicate](Node* n) {
+        if (predicate(n)) {
+            unregister_node(n);
+            return true;
+        }
+        return false;
+    });
+}
+
+Node::NodeOwningList Scene::detach_children(const Node::NodePredicate & predicate, Node* parent)
+{
+    if (parent == nullptr)
+        parent = &m_root;
+
+    return parent->detach_children([&](auto n){
+        if (predicate(n)) {
+            unregister_node(n);
+            return true;
+        }
+        return false;
+    });
+}
+
+void Scene::register_node(Node* node)
+{
+    visit(*node, [this](Node& n) {
+        m_nodes_by_id[n.id()] = &n;
+
+        auto* modifier = n.transform_modifier();
+        if (modifier == nullptr)
+            return;
+        auto* cam_listener = dynamic_cast<ICameraUpdateListener*>(modifier);
+        if (cam_listener)
+            m_camera.add_update_listener(cam_listener);
+    });
+}
+
+void Scene::unregister_node(Node* node)
+{
+    visit(*node, [this](Node& n) {
+        m_nodes_by_id.erase(n.id());
+        auto* modifier = n.transform_modifier();
+        if (modifier == nullptr)
+            return;
+        auto* cam_listener = dynamic_cast<ICameraUpdateListener*>(modifier);
+        if (cam_listener)
+            m_camera.remove_update_listener(cam_listener);
     });
 }
 

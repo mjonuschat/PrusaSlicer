@@ -222,8 +222,8 @@ function(add_doxygen_target target)
 
         add_custom_target("${target}"
                 # Use this command instead to debug DoxygenFileFilter.cmake/.bat/.sh
-                COMMAND doxygen -d  filteroutput Doxyfile
-                # COMMAND doxygen Doxyfile
+                #   COMMAND doxygen -d  filteroutput Doxyfile
+                COMMAND doxygen Doxyfile
                 WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
         )
     else ()

@@ -52,12 +52,14 @@ public:
     using NodeList = std::vector<Node*>;
     using ConstNodeList = std::vector<const Node*>;
     using NodePredicate = std::function<bool(const Node*)>;
+    using NodeModifyingPredicate = std::function<bool(Node*)>;
 
     Node();
 
     /**
      * @name Identification
-     * Simple unique node identifier (automatically assigned on creation)
+     * Simple unique node identifier (automatically assigned on creation).
+     * Is always greater than zero, so zero can be used as unset or invalid ID.
      * @{
      */
     size_t id() const { return m_id; }
@@ -245,7 +247,7 @@ public:
 private:
     friend class Scene;
 
-    // Use Scene::add_node instead
+    // Use Scene::add_child instead
     void add_child(Node* n)
     {
         if (n->m_parent == this)
@@ -257,18 +259,34 @@ private:
         m_children.emplace_back(n);
     }
 
-    // Use Scene::remove_node instead
-    bool remove_children(const NodePredicate& predicate, const std::function<void(Node*)>& node_callback = {})
+    // Use Scene::remove_children instead
+    bool remove_children(const NodeModifyingPredicate& predicate)
     {
-        return std::remove_if(
-           m_children.begin(), m_children.end(),
-           [predicate, node_callback](NodeOwningList::reference node) {
-               Node* node_ptr = node.get();
-               if (node_callback)
-                   node_callback(node_ptr);
-               return predicate(node_ptr);
-           }
-        ) != m_children.end();
+        auto it = std::remove_if(
+            m_children.begin(), m_children.end(),
+            [predicate](NodeOwningList::reference node) {
+                Node* node_ptr = node.get();
+                return predicate(node_ptr);
+            }
+        );
+        if (it == m_children.end())
+            return false;
+        m_children.erase(it, m_children.end());
+        return true;
+    }
+
+    NodeOwningList detach_children(const NodeModifyingPredicate& predicate)
+    {
+        NodeOwningList ret;
+        // Move all nodes to detach to upper (right) side of vector
+        auto it = std::stable_partition(
+            m_children.begin(), m_children.end(),
+            [&](const auto& n) { return !predicate(n.get()); }
+        );
+
+        std::move(it, m_children.end(), std::back_inserter(ret));
+        m_children.erase(it, m_children.end());
+        return ret;
     }
 
 

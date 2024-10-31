@@ -85,7 +85,7 @@ void PlaterRenderModule::init_scene()
                                     100
                                 )
                                 .set_aabb(cone_mesh->aabb_mesh.get())
-                                .set_tag(GizmoNodeTag{.primary_axis=AxisType(i)});
+                                .set_tag(GizmoNodeTag{AxisType(i)});
 
                             if (i == 0)
                                 builder.set_imgui_func([this](const auto& n, const auto& screen_bb) {
@@ -113,7 +113,7 @@ void PlaterRenderModule::init_scene()
                                 .set_uniform("uniform_color", ColorRGBA{1.0f, 0.0f, 0.5f, 1.0f})
                         )
                         .set_aabb(cube_mesh->aabb_mesh.get())
-                        .set_tag(SceneNodeTag{.object_id=0, .volume_id=0, .instance_id=idx});
+                        .set_tag(SceneNodeTag{0, 0, idx});
                 });
         });
     m_scene->add_child(node_builder.build().release());
