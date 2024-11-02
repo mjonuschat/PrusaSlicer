@@ -259,10 +259,10 @@ endif ()
 
 # Slic3r binary install target
 if (WIN32)
-    install(TARGETS PrusaSlicer RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}")
+    install(TARGETS PrusaSlicer RUNTIME DESTINATION ".")
     if (MSVC)
-        install(TARGETS PrusaSlicer_app_gui RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}")
-        install(TARGETS PrusaSlicer_app_console RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}")
+        install(TARGETS PrusaSlicer_app_gui RUNTIME DESTINATION ".")
+        install(TARGETS PrusaSlicer_app_console RUNTIME DESTINATION ".")
     endif ()
 else ()
     install(TARGETS PrusaSlicer RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}" BUNDLE DESTINATION ${CMAKE_INSTALL_BINDIR})

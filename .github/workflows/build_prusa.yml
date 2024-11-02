@@ -132,10 +132,22 @@ jobs:
         if: inputs.os == 'windows-latest'
         uses: microsoft/setup-msbuild@v2
 
+      - name: Install nsis
+        if: inputs.os == 'windows-latest'
+        run: |
+          dir "C:/Program Files (x86)/Windows Kits/10/Include"
+          choco install nsis
+
       - name: Build slicer Win
         if: inputs.os == 'windows-latest'
         working-directory: ${{ github.workspace }}
         run: .\build_win.bat -d=.\deps\build\PrusaSlicer_dep -c=Release -s=app -r=none
+
+      - name: Create installer Win
+        if: inputs.os == 'windows-latest'
+        working-directory: ${{ github.workspace }}/build
+        run: |
+          cpack -G NSIS
 
       - name: Pack app
         if: inputs.os == 'windows-latest'
@@ -149,6 +161,13 @@ jobs:
         with:
           name: PrusaSlicer-${{ env.ver }}+win64-${{ env.date }}
           path: ${{ github.workspace }}\build\PrusaSlicer-${{ env.ver }}+win64-${{ env.date }}.zip
+
+      - name: Upload artifacts Win installer
+        if: inputs.os == 'windows-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: PrusaSlicer-Installer-${{ env.ver }}+win64-${{ env.date }}
+          path: ${{ github.workspace }}\build\PrusaSlicer-Installer*.exe
 
 # Ubuntu
       - name: Install dependencies
