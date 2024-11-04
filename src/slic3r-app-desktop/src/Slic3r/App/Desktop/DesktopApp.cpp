@@ -24,6 +24,8 @@ bool DesktopApp::OnInit()
     init_translations();
     m_workbench.load_configs();
     m_project_interactor = std::make_unique<Biz::ProjectInteractor>(m_workbench);
+    m_render_module = std::make_unique<Plater::PlaterRenderModule>(*m_project_interactor);
+
     m_project_interactor->new_project();
 
     //m_workbench.load_project("/Users/jan.bartipan/work/Models/3DBenchy.3mf");
@@ -36,7 +38,7 @@ bool DesktopApp::OnInit()
     Platform::WX::WXRenderCanvas& canvas = m_main_frame->get_render_canvas();
     Platform::PlatformServices::instance().set_services(&canvas, &canvas);
     
-    canvas.set_render_module(&m_render_module);
+    canvas.set_render_module(m_render_module.get());
     m_main_frame->Show();
 
 #if !defined(__linux)

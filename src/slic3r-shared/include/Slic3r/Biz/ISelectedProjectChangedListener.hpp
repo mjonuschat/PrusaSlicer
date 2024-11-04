@@ -9,7 +9,7 @@ class ISelectedProjectChangedListener
 public:
     virtual ~ISelectedProjectChangedListener() = default;
 
-    virtual void on_project_changed(size_t index) = 0;
+    virtual void on_selected_project_changed(size_t index) = 0;
 };
 
 }

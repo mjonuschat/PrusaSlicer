@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-namespace Slic3r::Biz {
+namespace Slic3r::Domain {
 
 using SelectionId = size_t;
 const SelectionId INVALID_ID = SelectionId(-1);

@@ -6,6 +6,7 @@ set(SLIC3R_BASE_FILES
 		src/Slic3r/PlatformInfo.cpp
 		include/Slic3r/TypeInfo.hpp
 		src/Slic3r/TypeInfo.cpp
+		include/Slic3r/IdGenerator.hpp
 )
 
 if (APPLE)

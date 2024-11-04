@@ -10,7 +10,7 @@
 namespace Slic3r::Biz::Preset {
 
 
-void PresetInteractor::on_selected_config_container_changed(SelectionId project_id, SelectionId container_id)
+void PresetInteractor::on_selected_config_container_changed(Domain::SelectionId project_id, Domain::SelectionId container_id)
 {
     m_selected_project_id = project_id;
     get_or_create_project_context(project_id).selected_config_container_id = container_id;
@@ -279,7 +279,7 @@ void PresetInteractor::set_config_value(
     }
 }
 
-PresetInteractorProjectContext& PresetInteractor::get_or_create_project_context(SelectionId project_id)
+PresetInteractorProjectContext& PresetInteractor::get_or_create_project_context(Domain::SelectionId project_id)
 {
     auto it = m_project_contexts.find(project_id);
     if (it != m_project_contexts.end())
@@ -292,7 +292,7 @@ PresetInteractorProjectContext& PresetInteractor::get_or_create_project_context(
     return it->second;
 }
 
-PresetInteractorConfigContainerContext& PresetInteractor::get_or_create_config_container_context(SelectionId project_id, SelectionId config_container_id)
+PresetInteractorConfigContainerContext& PresetInteractor::get_or_create_config_container_context(Domain::SelectionId project_id, Domain::SelectionId config_container_id)
 {
     const auto& project = m_workbench.project(project_id);
     auto& project_context = get_or_create_project_context(project_id);

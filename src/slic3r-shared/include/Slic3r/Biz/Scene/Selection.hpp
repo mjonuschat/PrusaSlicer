@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vector>
-#include "Slic3r/Domain/ElementId.hpp"
+#include "Slic3r/Domain/ElementRef.hpp"
 
 namespace Slic3r::Biz::Scene {
 
@@ -13,10 +13,12 @@ enum class SelectionMode
 
 struct Selection
 {
-    using ElementIds = std::vector<Domain::ElementId>;
+    using ElementRefs = std::vector<Domain::ElementRef>;
 
     SelectionMode mode;
-    ElementIds elements;
+    ElementRefs elements;
+
+    bool empty() const { return elements.empty(); }
 };
 
 }

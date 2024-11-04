@@ -80,8 +80,6 @@ public:
         ccc.preset_state(preset_type, preset_index) = create_preset_state(&preset);
     }
 
-    
-    
     bool add_bed_preset_value_changed_listener(IBedPresetValueChangedListener* listener)
     {
         return m_bed_preset_value_changed_listeners.add(listener);
@@ -102,23 +100,23 @@ public:
         return m_bed_preset_switched_listeners.remove(listener);
     }
 
-    void on_selected_config_container_changed(SelectionId project_id, SelectionId bed_id) override;
+    void on_selected_config_container_changed(Domain::SelectionId project_id, Domain::SelectionId bed_id) override;
 
 private:
-    using ProjectContexts = std::unordered_map<SelectionId, PresetInteractorProjectContext>;
+    using ProjectContexts = std::unordered_map<Domain::SelectionId, PresetInteractorProjectContext>;
 
-    ProjectContexts::const_iterator get_project_context(SelectionId project_id) const
+    ProjectContexts::const_iterator get_project_context(Domain::SelectionId project_id) const
     {
         return m_project_contexts.find(project_id);
     }
 
-    ProjectContexts::iterator get_project_context(SelectionId project_id)
+    ProjectContexts::iterator get_project_context(Domain::SelectionId project_id)
     {
         return m_project_contexts.find(project_id);
     }
 
-    PresetInteractorProjectContext& get_or_create_project_context(SelectionId project_id);
-    PresetInteractorConfigContainerContext& get_or_create_config_container_context(SelectionId project_id, SelectionId config_container_id);
+    PresetInteractorProjectContext& get_or_create_project_context(Domain::SelectionId project_id);
+    PresetInteractorConfigContainerContext& get_or_create_config_container_context(Domain::SelectionId project_id, Domain::SelectionId config_container_id);
     
     void select_printer_preset(size_t preset_idx);
     void select_print_preset(size_t preset_idx);
@@ -147,6 +145,6 @@ private:
 
     ProjectContexts m_project_contexts;
 
-    SelectionId m_selected_project_id{INVALID_ID};
+    Domain::SelectionId m_selected_project_id{Domain::INVALID_ID};
 };
 }

@@ -124,7 +124,7 @@ void PlaterRenderModule::init_gizmos()
 {
     m_gizmo_manager = std::make_unique<GizmoManager>(*m_scene);
     m_gizmo_manager->add_base_gizmo<CameraGizmo>(*m_scene);
-    m_gizmo_manager->add_base_gizmo<QuickSelectGizmo>(*m_scene);
+    m_gizmo_manager->add_base_gizmo<QuickSelectGizmo>(m_project_interactor.scene_interactor(), *m_scene);
     m_gizmo_manager->add_base_gizmo<QuickDragGizmo>();
 }
 

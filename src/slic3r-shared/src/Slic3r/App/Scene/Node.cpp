@@ -1,4 +1,5 @@
 #include "Slic3r/App/Scene/Node.hpp"
+#include "Slic3r/IdGenerator.hpp"
 
 #include <memory>
 
@@ -8,8 +9,8 @@
 namespace Slic3r::App::Scene {
 
 static size_t next_id() {
-    static size_t id = 0;
-    return ++id;
+    static IdGenerator<size_t> id_generator(0);
+    return id_generator.next_id();
 }
 
 Node::Node() : m_id(next_id()) {}

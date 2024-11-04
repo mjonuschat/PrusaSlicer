@@ -5,28 +5,28 @@
 
 namespace Slic3r::Domain
 {
-    struct ElementId
-    {
+    struct ElementRef
+{
         size_t object_id{0};
         size_t instance_id{0};
         size_t volume_id{0};
 
-        bool operator==(const ElementId& rhs) const
+        bool operator==(const ElementRef& rhs) const
         { return as_tuple() == rhs.as_tuple(); }
 
-        bool operator!=(const ElementId& rhs) const
+        bool operator!=(const ElementRef& rhs) const
         { return as_tuple() != rhs.as_tuple(); }
 
-        bool operator<(const ElementId& rhs) const
+        bool operator<(const ElementRef& rhs) const
         { return as_tuple() < rhs.as_tuple(); }
 
-        bool operator>(const ElementId& rhs) const
+        bool operator>(const ElementRef& rhs) const
         { return as_tuple() > rhs.as_tuple(); }
 
-        bool operator<=(const ElementId& rhs) const
+        bool operator<=(const ElementRef& rhs) const
         { return as_tuple() <= rhs.as_tuple(); }
 
-        bool operator>=(const ElementId& rhs) const
+        bool operator>=(const ElementRef& rhs) const
         { return as_tuple() >= rhs.as_tuple(); }
 
         bool valid() const { return object_id != 0; }

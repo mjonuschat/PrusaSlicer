@@ -20,10 +20,6 @@ GizmoActivationState QuickSelectGizmo::on_mouse(const GizmoEventContext& ctx, bo
         });
     if (type == Platform::MouseEvent::Type::ButtonDown) {
         m_click_start = Clock::now();
-        if (it == ctx.pick_results().end()) {
-            clear_selection();
-            return GizmoActivationState::Inactive;
-        }
         m_processing = true;
 
         return only_active ? GizmoActivationState::Active : GizmoActivationState::Probing;
@@ -37,24 +33,74 @@ GizmoActivationState QuickSelectGizmo::on_mouse(const GizmoEventContext& ctx, bo
     if (type == Platform::MouseEvent::Type::Move) {
         return GizmoActivationState::Probing;
     } else if (type == Platform::MouseEvent::Type::ButtonUp) {
-        if (it != ctx.pick_results().end())
-            mark_selected(*it->node);
-        return GizmoActivationState::Done;
+        const bool additive = (ctx.mouse_event().key_modifiers() &
+                               Platform::KeyModifiers(Platform::KeyModifier::Shift)) != 0;
+        const auto& selection = m_scene_interactor.selection();
+        const bool selection_empty = selection.empty();
+
+        if (selection_empty) {
+            if (it == ctx.pick_results().end())
+                return GizmoActivationState::Inactive;
+
+            mark_selected(*it->node, !additive);
+            return GizmoActivationState::Done;
+        } else {
+            if (it == ctx.pick_results().end()) {
+                if (!additive)
+                    clear_selection();
+                return GizmoActivationState::Done;
+            }
+
+            const auto& tag = *it->node->tag_of_type<SceneNodeTag>();
+
+            const bool already_selected =
+                std::any_of(selection.elements.begin(), selection.elements.end(), [&](const auto& e) {
+                    return e.object_id == tag.object_id && e.volume_id == tag.volume_id &&
+                        e.instance_id == tag.instance_id;
+                });
+            if (additive) {
+                if (already_selected) {
+                    mark_unselected(*it->node);
+                } else {
+                    mark_selected(*it->node, false);
+                }
+            } else {
+                mark_selected(*it->node);
+            }
+            return GizmoActivationState::Done;
+        }
     }
     return GizmoActivationState::Inactive;
 }
 
-void QuickSelectGizmo::mark_selected(Scene::Node& n)
+void QuickSelectGizmo::mark_selected(Scene::Node& n, bool replace)
 {
-    m_selection_scene_change_session.roll_back();
+    Biz::Scene::Selection selection = replace ? Biz::Scene::Selection{} : m_scene_interactor.selection();
+
+    if (replace)
+        m_selection_scene_change_session.roll_back();
     m_selection_scene_change_session.change(n).set_material_override(
         Scene::Material{}.set_uniform("uniform_color", ColorRGBA{1.0f, 1.0f, 1.0f, 1.0f})
     );
+    const auto* tag = n.tag_of_type<SceneNodeTag>();
+    if (tag)
+    {
+        selection.elements.push_back({tag->object_id, tag->instance_id, tag->volume_id});
+    }
+
+    m_scene_interactor.set_selection(selection);
+}
+
+void QuickSelectGizmo::mark_unselected(Scene::Node& n)
+{
+    Biz::Scene::Selection selection = m_scene_interactor.selection();
+    m_selection_scene_change_session.roll_back_node(&n);
 }
 
 void QuickSelectGizmo::clear_selection()
 {
     m_selection_scene_change_session.roll_back();
+    m_scene_interactor.set_selection({});
 }
 
 } // namespace Slic3r::App::Plater

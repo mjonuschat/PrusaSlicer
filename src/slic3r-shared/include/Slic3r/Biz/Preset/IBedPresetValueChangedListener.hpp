@@ -1,7 +1,7 @@
 #pragma once
 
 
-#include "Slic3r/Biz/SelectionId.hpp"
+#include "Slic3r/Domain/SelectionId.hpp"
 #include <libslic3r/Preset.hpp>
 
 namespace Slic3r::Biz::Preset {

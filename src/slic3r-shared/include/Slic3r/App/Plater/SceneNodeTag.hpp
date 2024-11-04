@@ -1,13 +1,13 @@
 #pragma once
 
-#include "Slic3r/Biz/SelectionId.hpp"
+#include "Slic3r/Domain/SelectionId.hpp"
 
 namespace Slic3r::App::Plater {
 
 struct SceneNodeTag {
-    const Biz::SelectionId object_id{0};
-    const Biz::SelectionId volume_id{0};
-    const Biz::SelectionId instance_id{0};
+    const Domain::SelectionId object_id{0};
+    const Domain::SelectionId volume_id{0};
+    const Domain::SelectionId instance_id{0};
 };
 
 }

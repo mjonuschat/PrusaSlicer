@@ -24,9 +24,10 @@ private:
 private:
 
     MainFrame* m_main_frame;
-    Plater::PlaterRenderModule m_render_module;
+    std::unique_ptr<Plater::PlaterRenderModule> m_render_module;
     Domain::Workbench m_workbench;
     std::unique_ptr<Biz::ProjectInteractor> m_project_interactor;
+
 
     Translations m_translations;
 };

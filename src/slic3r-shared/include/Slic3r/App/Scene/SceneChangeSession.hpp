@@ -13,27 +13,42 @@ namespace Slic3r::App::Scene {
  * Use NodeChangeBuilder returned from SceneChangeSession::change() method to record changes for
  * given node (passed as argument to SceneChangeSession::change().
  */
-class ISceneChange
+class AbstractSceneChange
 {
 public:
-    virtual ~ISceneChange() = default;
+    explicit AbstractSceneChange(size_t changed_node_id) : m_changed_node_id(changed_node_id) {}
+    virtual ~AbstractSceneChange() = default;
+
     /**
      * @brief Roll back recorded change in given scene.
      * @param scene A scene containing node the change was recorded for, to be used for roll back.
      */
     virtual void roll_back(Scene& scene) = 0;
+
+    /**
+     * @brief Gets ID of node the change belongs to (the change happens to)
+     * @return ID of changed node.
+     */
+    size_t node_id() const { return m_changed_node_id; }
+
+protected:
+    size_t m_changed_node_id;
 };
+
 
 /**
  * @brief Added node change
  */
-class AddNodeChange final : public ISceneChange
+class AddNodeChange final : public AbstractSceneChange
 {
 public:
-    AddNodeChange(size_t node_id, size_t original_parent_id)
-        : m_node_id(node_id), m_original_parent_id(original_parent_id)
+    AddNodeChange(size_t changed_parent_id, size_t node_id, size_t original_parent_id)
+        : AbstractSceneChange(changed_parent_id)
+        , m_node_id(node_id)
+        , m_original_parent_id(original_parent_id)
     {}
     void roll_back(Scene& scene) override;
+
 private:
     size_t m_node_id;
     size_t m_original_parent_id;
@@ -42,11 +57,11 @@ private:
 /**
  * @brief Changed material override
  */
-class AddMaterialOverrideChange : public ISceneChange
+class AddMaterialOverrideChange : public AbstractSceneChange
 {
 public:
     explicit AddMaterialOverrideChange(size_t node_id, const Material* original = nullptr) 
-    : m_node_id(node_id)
+    : AbstractSceneChange(node_id)
     {
         if (original)
             m_original_material = std::make_unique<Material>(*original);
@@ -55,7 +70,6 @@ public:
     void roll_back(Scene& scene) override;
 
 private:
-    size_t m_node_id;
     std::unique_ptr<Material> m_original_material;
 };
 
@@ -124,14 +138,38 @@ public:
 
     explicit SceneChangeSession(Scene& scene) : m_scene(scene) {}
 
+    /**
+     * @brief Record (potentially multiple) changes to single node @p n
+     * @param n Node to make changes to
+     * @return NodeChangeBuilder instance to record all changes to node @p n with.
+     */
     NodeChangeBuilder change(Node& n) { return {*this, n}; }
 
+    /**
+     * @name Roll back changes
+     * @{
+     */
+    /**
+     * @brief Roll back all recorded changes
+     */
     void roll_back();
+
+    /**
+     * Roll back all changes related to node @p n
+     * @param n Node to roll back changes to
+     */
+    void roll_back_node(Node* n);
+    /** @} */
+
+    /**
+     * Get number of recorded changes for all nodes.
+     * @return Numer of recorded changes
+     */
     size_t size() const { return m_changes.size(); }
 
 private:
     friend class NodeChangeBuilder;
-    using SceneChangePtr = std::unique_ptr<ISceneChange>;
+    using SceneChangePtr = std::unique_ptr<AbstractSceneChange>;
     using SceneChanges = std::vector<SceneChangePtr>;
 
     Scene& m_scene;

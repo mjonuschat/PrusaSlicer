@@ -242,6 +242,10 @@ public:
     bool has_tag_of_type() const { return m_tag.type() == typeid(T); }
     void set_tag(const boost::any& tag) { m_tag = tag; }
     boost::any tag() const { return m_tag; }
+    template <typename T>
+    const T* tag_of_type() const { return boost::any_cast<T>(&m_tag); }
+    template <typename T>
+    T* tag_of_type() { return boost::any_cast<T>(&m_tag); }
     /**@}*/
 
 private:

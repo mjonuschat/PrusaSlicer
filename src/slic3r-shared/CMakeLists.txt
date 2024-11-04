@@ -1,5 +1,6 @@
 set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Plater/ScenePresenter.hpp
+        include/Slic3r/App/Plater/ScenePresenterProjectContext.hpp
         include/Slic3r/App/Plater/PlaterRenderModule.hpp
         src/Slic3r/App/Plater/PlaterRenderModule.cpp
         include/Slic3r/App/Plater/GizmoManager.hpp
@@ -69,7 +70,6 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/PrintConfigInteractor.cpp
         include/Slic3r/Biz/ObservableDynamicPrintConfig.hpp
         include/Slic3r/Biz/Observable.hpp
-        include/Slic3r/Biz/Plater/SceneInteractor.hpp
         include/Slic3r/Biz/Plater/ConfigViewModel.hpp
 
         include/Slic3r/Biz/Scene/SceneInteractor.hpp
@@ -97,7 +97,6 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/Preset/PresetBundleRuntime.cpp
         include/Slic3r/Biz/Preset/PresetBundleRuntime.hpp
 
-        include/Slic3r/Biz/SelectionId.hpp
         include/Slic3r/Biz/ListenerList.hpp
         include/Slic3r/Biz/IProjectsChangedListener.hpp
         include/Slic3r/Biz/ISelectedConfigContainerChangedListener.hpp
@@ -107,8 +106,9 @@ set(SLIC3R_SHARED_FILES
 
         include/Slic3r/StringUtils.hpp
 
+        include/Slic3r/Domain/SelectionId.hpp
+        include/Slic3r/Domain/ElementRef.hpp
         src/Slic3r/Domain/ElementId.cpp
-        include/Slic3r/Domain/ElementId.hpp
         src/Slic3r/Domain/Project.cpp
         include/Slic3r/Domain/Project.hpp
         include/Slic3r/Domain/Bed.hpp
