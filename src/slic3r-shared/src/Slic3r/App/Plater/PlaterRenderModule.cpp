@@ -15,7 +15,11 @@ namespace Slic3r::App::Plater {
 void PlaterRenderModule::on_init(Render::Device& device)
 {
     AbstractRenderModule::on_init(device);
-    init_scene();
+    //init_scene();
+    m_scene_presenter = std::make_unique<ScenePresenter>(m_workbench, m_project_interactor);
+    m_project_interactor.add_selected_project_changed_listener(m_scene_presenter.get());
+    m_project_interactor.scene_interactor().add_scene_changed_listener(m_scene_presenter.get());
+    m_project_interactor.scene_interactor().add_scene_selection_changed_listener(m_scene_presenter.get());
     init_gizmos();
 }
 
@@ -122,10 +126,10 @@ void PlaterRenderModule::init_scene()
 
 void PlaterRenderModule::init_gizmos()
 {
-    m_gizmo_manager = std::make_unique<GizmoManager>(*m_scene);
-    m_gizmo_manager->add_base_gizmo<CameraGizmo>(*m_scene);
-    m_gizmo_manager->add_base_gizmo<QuickSelectGizmo>(m_project_interactor.scene_interactor(), *m_scene);
-    m_gizmo_manager->add_base_gizmo<QuickDragGizmo>();
+    m_gizmo_manager = std::make_unique<GizmoManager>(*m_scene_presenter);
+    m_gizmo_manager->add_base_gizmo<CameraGizmo>(*m_scene_presenter);
+    m_gizmo_manager->add_base_gizmo<QuickSelectGizmo>(m_project_interactor.scene_interactor(), *m_scene_presenter);
+    m_gizmo_manager->add_base_gizmo<QuickDragGizmo>(m_project_interactor.scene_interactor(), *m_scene_presenter);
 }
 
 
@@ -138,7 +142,8 @@ void PlaterRenderModule::render_scene()
     cmd_buffer->clear_buffers(true, true);
     cmd_buffer->set_viewport(Render::Rect::from(0, 0, m_screen_info));
 
-    m_scene->render(*cmd_buffer);
+    //m_scene->render(*cmd_buffer);
+    m_scene_presenter->render_scene(*cmd_buffer);
     cmd_buffer->submit();
 }
 
@@ -161,10 +166,13 @@ void imgui_scenegraph_node_info(const Scene::Node& node)
 
 void PlaterRenderModule::render_imgui()
 {
-    m_scene->render_imgui(m_screen_info);
+    if (!m_scene_presenter->project_ready())
+        return;
+
+    m_scene_presenter->render_imgui(m_screen_info);
 
     if (ImGui::Begin("Slicer", &m_gui_win_open)) {
-        imgui_scenegraph_node_info(m_scene->root());
+        imgui_scenegraph_node_info(m_scene_presenter->scene().root());
     }
     ImGui::End();
 }
@@ -179,7 +187,7 @@ void PlaterRenderModule::render_object_hud(const Scene::Node& n, const Eigen::Al
     });
     if (ImGui::Begin(node_name.c_str(), nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBackground)) {
         if (ImGui::SmallButton("Foc"))
-            m_scene->camera_trackball().set_focal_point({0, 0, 0});
+            m_scene_presenter->scene().camera_trackball().set_focal_point({0, 0, 0});
     }
     ImGui::End();
 }
@@ -208,7 +216,9 @@ void PlaterRenderModule::on_deactivated()
 }
 void PlaterRenderModule::on_screen_resized()
 {
-    m_scene->camera().set_viewport(Render::Rect::from(0, 0, m_screen_info));
+    //m_scene->camera().set_viewport(Render::Rect::from(0, 0, m_screen_info));
+    auto viewport = Render::Rect::from(0, 0, m_screen_info);
+    m_scene_presenter->update_cameras([&viewport](auto& cam) { cam.set_viewport(viewport); });
 }
 
 

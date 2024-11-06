@@ -30,8 +30,10 @@ void GizmoManager::on_scene_mouse_event(const Platform::MouseEvent& e, const Sli
         prepare_cycle();
     }
 
+    Scene::Scene& scene = m_scene_provider.scene();
+
     Scene::NodePickResults pick_results;
-    m_scene.pick_at(
+    scene.pick_at(
         screen_info.mouse_to_screen(e.x()),
         screen_info.mouse_to_screen(e.y()),
         pick_results

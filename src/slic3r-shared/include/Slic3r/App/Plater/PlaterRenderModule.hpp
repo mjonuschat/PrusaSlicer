@@ -5,14 +5,16 @@
 #include "Slic3r/App/Platform/AbstractRenderModule.hpp"
 #include "Slic3r/App/Scene/Scene.hpp"
 #include "Slic3r/App/Plater/GizmoManager.hpp"
+#include "Slic3r/App/Plater/ScenePresenter.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
+#
 
 namespace Slic3r::App::Plater {
 
 class PlaterRenderModule final : public Platform::AbstractRenderModule {
 public:
-    explicit PlaterRenderModule(Biz::ProjectInteractor& project_interactor)
-        : m_project_interactor(project_interactor)
+    explicit PlaterRenderModule(const Domain::Workbench& workbench, Biz::ProjectInteractor& project_interactor)
+        : m_workbench(workbench), m_project_interactor(project_interactor)
     {}
 
     void render_scene() override;
@@ -32,7 +34,9 @@ private:
 
     void init_gizmos();
 private:
+    const Domain::Workbench& m_workbench;
     Biz::ProjectInteractor& m_project_interactor;
+    std::unique_ptr<ScenePresenter> m_scene_presenter;
     std::unique_ptr<Scene::Scene> m_scene;
     std::unique_ptr<GizmoManager> m_gizmo_manager;
 

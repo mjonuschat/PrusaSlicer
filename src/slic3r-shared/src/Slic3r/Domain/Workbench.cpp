@@ -19,7 +19,7 @@ void Workbench::load_project(const std::string& file_path)
 {
     Project project;
     project.load(file_path);
-    m_projects.emplace_back(std::move(project));
+    m_projects.emplace(m_project_id_generator.next_id(), std::move(project));
 }
 
 }

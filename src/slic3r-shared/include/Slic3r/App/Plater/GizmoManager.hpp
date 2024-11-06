@@ -4,6 +4,7 @@
 #include <memory>
 
 #include "Slic3r/App/Plater/IGizmo.hpp"
+#include "Slic3r/App/Plater/ISceneProvider.hpp"
 #include "Slic3r/App/Render/ScreenInfo.hpp"
 
 
@@ -11,7 +12,7 @@ namespace Slic3r::App::Plater {
 
 class GizmoManager {
 public:
-    explicit GizmoManager(Scene::Scene& scene) : m_scene(scene) {}
+    explicit GizmoManager(ISceneProvider& scene_provider) : m_scene_provider(scene_provider) {}
     void on_scene_mouse_event(const Platform::MouseEvent& e, const Render::ScreenInfo& screen_info);
 
     template<typename G, typename... ArgsT>
@@ -31,7 +32,7 @@ private:
 
     using GizmoList = std::vector<IGizmoPtr>;
 
-    Scene::Scene& m_scene;
+    ISceneProvider& m_scene_provider;
 
     GizmoList m_base_gizmos;
     IToolGizmo* m_active_tool{nullptr};

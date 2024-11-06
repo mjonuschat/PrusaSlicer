@@ -77,9 +77,10 @@ void QuickSelectGizmo::mark_selected(Scene::Node& n, bool replace)
 {
     Biz::Scene::Selection selection = replace ? Biz::Scene::Selection{} : m_scene_interactor.selection();
 
+    auto& selection_changes = m_scene_provider.selection_scene_changes();
     if (replace)
-        m_selection_scene_change_session.roll_back();
-    m_selection_scene_change_session.change(n).set_material_override(
+        selection_changes.roll_back();
+    selection_changes.change(n).set_material_override(
         Scene::Material{}.set_uniform("uniform_color", ColorRGBA{1.0f, 1.0f, 1.0f, 1.0f})
     );
     const auto* tag = n.tag_of_type<SceneNodeTag>();
@@ -93,13 +94,15 @@ void QuickSelectGizmo::mark_selected(Scene::Node& n, bool replace)
 
 void QuickSelectGizmo::mark_unselected(Scene::Node& n)
 {
+    auto& selection_changes = m_scene_provider.selection_scene_changes();
     Biz::Scene::Selection selection = m_scene_interactor.selection();
-    m_selection_scene_change_session.roll_back_node(&n);
+    selection_changes.roll_back_node(&n);
 }
 
 void QuickSelectGizmo::clear_selection()
 {
-    m_selection_scene_change_session.roll_back();
+    auto& selection_changes = m_scene_provider.selection_scene_changes();
+    selection_changes.roll_back();
     m_scene_interactor.set_selection({});
 }
 

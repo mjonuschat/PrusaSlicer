@@ -29,8 +29,7 @@ void ProjectInteractor::initialize_new_project(Domain::Project& p)
 void ProjectInteractor::select_project(Domain::SelectionId project_id)
 {
     if (project_id != m_selection.project_id)
-        return;
-    do_select_project(project_id);
+        do_select_project(project_id);
 }
 
 void ProjectInteractor::do_select_project(Domain::SelectionId project_id)
@@ -54,8 +53,8 @@ Domain::SelectionId ProjectInteractor::add_project(Domain::Project&& p)
 {
     auto& projects = m_workbench.projects();
     const Domain::SelectionId first_container_id = p.config_containers().front()->id().id;
-    projects.emplace_back(std::move(p));
-    Domain::SelectionId project_id = projects.size() - 1;
+    Domain::SelectionId project_id = m_workbench.next_project_id();
+    projects.emplace(project_id, std::move(p));
     m_projects_changed_listeners.invoke([project_id](auto* l) { l->on_project_added(project_id); });
     do_select_project(project_id);
     do_select_config_container(first_container_id);
@@ -67,15 +66,15 @@ void ProjectInteractor::remove_project(Domain::SelectionId project_id)
     m_projects_changed_listeners.invoke([project_id](auto* l) { l->on_project_removed(project_id); });
 
     auto& projects = m_workbench.projects();
-    auto it = projects.begin();
-    std::advance(it, project_id);
-    projects.erase(it);
+    auto it = projects.find(project_id);
 
-    if (m_selection.project_id >= project_id) {
-        if (m_selection.project_id >= m_workbench.projects().size()) {
-            m_selection.project_id--;
-        }
-        do_select_project(m_selection.project_id);
+    it = projects.erase(it);
+
+    if (m_selection.project_id == project_id) {
+        Domain::SelectionId next_selected_project_id = Domain::INVALID_ID;
+        if (it != projects.end())
+            next_selected_project_id = it->first;
+        do_select_project(next_selected_project_id);
     }
 }
 

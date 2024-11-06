@@ -3,6 +3,14 @@
 
 namespace Slic3r::App::Scene {
 
+float period_normalized(float val, float period_min, float period_max) {
+    float fract;
+    const float amplitude = period_max - period_min;
+
+    std::modf((val - period_min) / amplitude, &fract);
+    return period_min + amplitude * fract;
+}
+
 void CameraTrackballController::update_camera()
 {
     Vec3f off{
@@ -12,10 +20,10 @@ void CameraTrackballController::update_camera()
     };
     Vec3f pos = m_cam_focal - off;
     Vec3f up {
-        //-std::cosf(m_zenith) * std::cosf(m_azimuth),
-        //-std::cosf(m_zenith) * std::sinf(m_azimuth),
-        //-std::sinf(m_zenith)
-        0, 0, 1
+        std::cosf(m_zenith) * std::cosf(m_azimuth),
+        std::cosf(m_zenith) * std::sinf(m_azimuth),
+        -std::sinf(m_zenith)
+        // 0, 0, 1
     };
 
     //SPDLOG_INFO("focal point: ({} {} {})", m_cam_focal.x(), m_cam_focal.y(), m_cam_focal.z());
@@ -25,15 +33,26 @@ void CameraTrackballController::update_camera()
 
 void CameraTrackballController::set_zenith(float value)
 {
-    m_zenith = value;
-    clamp_zenith();
+    m_zenith = period_normalized(value, -M_PI, M_PI);
+    normalize_azimuth_and_zenith();
     update_camera();
 }
 
-void CameraTrackballController::clamp_zenith()
+void CameraTrackballController::normalize_azimuth_and_zenith()
 {
-    if (m_zenith > M_PI - MIN_ZENITH) m_zenith = M_PI - MIN_ZENITH;
-    else if (m_zenith < 0 + MIN_ZENITH) m_zenith = MIN_ZENITH;
+    // Normalize zenith to the range -M_PI_2 to M_PI_2
+    m_zenith = fmodf(m_zenith, 2.0 * M_PI);
+    if (m_zenith < 0) {
+        m_zenith += 2 * M_PI;
+    } else if (m_zenith > 2 * M_PI) {
+        m_zenith = 2 * M_PI - m_zenith;
+        m_azimuth += M_PI;
+    }
+
+    m_azimuth = fmodf(m_azimuth, 2.0 * M_PI);
+    if (m_azimuth < 0) {
+        m_azimuth += 2.0 * M_PI;
+    }
 }
 
-}
+} // namespace Slic3r::App::Scene

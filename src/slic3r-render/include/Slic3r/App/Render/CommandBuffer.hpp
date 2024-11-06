@@ -38,11 +38,15 @@ public:
     void unbind_texture(uint8_t unit, const Texture& t);
 
     void draw(PrimitiveType primitive, size_t offset, size_t count);
+    void draw(const DrawCommand& cmd);
+    void draw(const DrawCommands::const_iterator first, const DrawCommands::const_iterator last);
+    void draw(const DrawCommands& cmds) { draw(cmds.begin(), cmds.end()); }
 
     void submit();
 private:
     Device& m_device;
     bool m_needs_submit{false};
+    size_t m_bound_geometry_element_size{0};
 };
 
 }

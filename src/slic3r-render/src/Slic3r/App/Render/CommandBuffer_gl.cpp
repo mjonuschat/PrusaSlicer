@@ -126,14 +126,28 @@ void CommandBuffer::bind_geometry(const Geometry& g, const Shader& s)
 {
     auto& device = m_device.get_internal_as<GL::GLDeviceInternal>();
     device.bind_geometry(g, s);
+    m_bound_geometry_element_size = g.index_count();
+    if (m_bound_geometry_element_size == 0)
+        m_bound_geometry_element_size = g.vertex_count();
     m_needs_submit = true;
 }
 
 void CommandBuffer::draw(PrimitiveType primitive, size_t offset, size_t count)
 {
     auto& device = m_device.get_internal_as<GL::GLDeviceInternal>();
-    device.draw(primitive, offset, count);
+    device.draw(primitive, offset, count == 0 ? m_bound_geometry_element_size : count);
 }
+
+void CommandBuffer::draw(const DrawCommand& cmd)
+{
+    draw(cmd.primitive, cmd.offset, cmd.count);
+}
+
+void CommandBuffer::draw(const DrawCommands::const_iterator first, const DrawCommands::const_iterator last)
+{
+    std::for_each(first, last, [this](const auto& cmd) { draw(cmd); });
+}
+
 
 void CommandBuffer::submit()
 {

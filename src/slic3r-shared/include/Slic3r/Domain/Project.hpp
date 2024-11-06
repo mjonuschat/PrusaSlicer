@@ -11,10 +11,12 @@ namespace Slic3r::Domain {
 /**
  * All data that can be loaded/saved into .3mf file.
  */
-class Project
+class Project final
 {
 public:
     using ConfigContainerList = std::vector<std::unique_ptr<ConfigContainer>>;
+
+    Project();
 
     void load(const std::string& file_path);
 
@@ -30,6 +32,9 @@ public:
             [id](const auto& cc) { return cc->id().id == id; }
         );
     }
+
+    const Model& model() const { return *m_model; }
+    Model& model() { return *m_model; }
 
 private:
     std::string m_file_name;

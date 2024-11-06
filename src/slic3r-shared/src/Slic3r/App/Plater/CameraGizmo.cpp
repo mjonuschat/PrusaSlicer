@@ -41,11 +41,12 @@ GizmoActivationState CameraGizmo::on_mouse(const GizmoEventContext& ctx, bool on
 
 void CameraGizmo::update_pan(float delta_x, float delta_y)
 {
-    auto& cam = m_scene.camera();
+    auto& scene = m_scene_provider.scene();
+    auto& cam = scene.camera();
     const auto& model = cam.model();
     auto right = model.block<3, 1>(0, 0);
     auto up = model.block<3, 1>(0, 1);
-    auto& trackball = m_scene.camera_trackball();
+    auto& trackball = scene.camera_trackball();
 
     float dist = trackball.cam_focal_dist();
     trackball.set_focal_point(trackball.cam_focal() + right * -delta_x * dist + up * delta_y * dist);
@@ -53,7 +54,8 @@ void CameraGizmo::update_pan(float delta_x, float delta_y)
 
 void CameraGizmo::update_zoom(float wheel_delta_y)
 {
-    auto& trackball = m_scene.camera_trackball();
+    auto& scene = m_scene_provider.scene();
+    auto& trackball = scene.camera_trackball();
     float d = trackball.cam_focal_dist();
     d += wheel_delta_y * 0.05f;
     trackball.set_focal_distance(d);
@@ -61,8 +63,9 @@ void CameraGizmo::update_zoom(float wheel_delta_y)
 
 void CameraGizmo::update_rotation(float delta_x, float delta_y)
 {
-    auto& trackball = m_scene.camera_trackball();
-    trackball.add_azimuth_and_zenith(-delta_x * M_PI / 2, delta_y * M_PI / 2);
+    auto& scene = m_scene_provider.scene();
+    auto& trackball = scene.camera_trackball();
+    trackball.add_azimuth_and_zenith(-delta_x * M_PI, -delta_y * M_PI);
 }
 
 

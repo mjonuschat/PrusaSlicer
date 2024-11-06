@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cstddef>
+#include <vector>
 #include <tuple>
 
 namespace Slic3r::Domain
@@ -39,4 +39,5 @@ namespace Slic3r::Domain
         }
     };
 
+    using ElementRefs = std::vector<ElementRef>;
 }

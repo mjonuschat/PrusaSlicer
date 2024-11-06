@@ -24,6 +24,7 @@ public:
     void set_azimuth(float value)
     {
         m_azimuth = value;
+        normalize_azimuth_and_zenith();
         update_camera();
     }
 
@@ -32,13 +33,14 @@ public:
     void add_azimuth(float value)
     {
         m_azimuth += value;
+        normalize_azimuth_and_zenith();
         update_camera();
     }
 
     void add_zenith(float value)
     {
         m_zenith += value;
-        clamp_zenith();
+        normalize_azimuth_and_zenith();
         update_camera();
     }
 
@@ -46,7 +48,7 @@ public:
     {
         m_azimuth += azimuth;
         m_zenith += zenith;
-        clamp_zenith();
+        normalize_azimuth_and_zenith();
         update_camera();
     }
 
@@ -57,17 +59,16 @@ public:
 
 private:
     void update_camera();
-    void clamp_zenith();
+    void normalize_azimuth_and_zenith();
 private:
     Camera& m_camera;
 
     constexpr static float MIN_FOCAL_DISTANCE = 1e-02;
-    constexpr static float MIN_ZENITH = 1e-02;
 
     Vec3f m_cam_focal{0,0,0};
     float m_cam_focal_dist{30};
-    float m_azimuth{M_PI/2};
-    float m_zenith{M_PI/2};
+    float m_azimuth{-M_PI_2};
+    float m_zenith{-M_PI_2};
 
 };
 

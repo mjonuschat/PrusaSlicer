@@ -75,6 +75,8 @@ public:
         m_selected_config_container_changed_listener.remove(l);
     }
 
+    Domain::SelectionId selected_project_id() const { return m_selection.project_id; }
+
     Domain::SelectionId new_project();
 
     const Preset::PresetInteractor& preset_interactor() const { return m_preset_interactor; }

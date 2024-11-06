@@ -24,7 +24,8 @@ bool DesktopApp::OnInit()
     init_translations();
     m_workbench.load_configs();
     m_project_interactor = std::make_unique<Biz::ProjectInteractor>(m_workbench);
-    m_render_module = std::make_unique<Plater::PlaterRenderModule>(*m_project_interactor);
+    m_render_module =
+        std::make_unique<Plater::PlaterRenderModule>(m_workbench, *m_project_interactor);
 
     m_project_interactor->new_project();
 

@@ -5,6 +5,8 @@
 
 namespace Slic3r::Domain {
 
+Project::Project() : m_model(new Model()) {}
+
 void Project::load(const std::string& file_path)
 {
     m_model = std::make_unique<Model>(Model::read_from_file(file_path));
