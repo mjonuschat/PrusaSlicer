@@ -3,5 +3,5 @@
 
 namespace Slic3r::App::Scene {
 
-using Transform = Matrix4f;
+using Transform = Matrix4d;
 }

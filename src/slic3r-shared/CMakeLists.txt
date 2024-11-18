@@ -17,6 +17,7 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Plater/QuickDragGizmo.hpp
         src/Slic3r/App/Plater/QuickDragGizmo.cpp
         include/Slic3r/App/Plater/ISceneProvider.hpp
+        include/Slic3r/App/Plater/GeometryElementId.hpp
 
         include/Slic3r/App/View/IPanelView.hpp
 

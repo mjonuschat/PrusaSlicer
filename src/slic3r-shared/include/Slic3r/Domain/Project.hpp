@@ -4,7 +4,12 @@
 #include <memory>
 #include "ConfigContainer.hpp"
 
-namespace Slic3r { class Model; }
+namespace Slic3r {
+class Model;
+class ModelObject;
+class ModelVolume;
+class ModelInstance;
+}
 
 namespace Slic3r::Domain {
 
@@ -36,10 +41,26 @@ public:
     const Model& model() const { return *m_model; }
     Model& model() { return *m_model; }
 
+    const ModelObject* find_object_by_id(size_t id) const;
+    const ModelVolume* find_volume_by_id(size_t obj_id, size_t vol_id) const;
+    const ModelInstance* find_instance_by_id(size_t inst, size_t inst_id) const;
+    ModelObject* find_object_by_id(size_t id);
+    ModelVolume* find_volume_by_id(size_t obj_id, size_t vol_id);
+    ModelInstance* find_instance_by_id(size_t inst, size_t inst_id);
+
 private:
     std::string m_file_name;
     ConfigContainerList m_config_containers;
     std::unique_ptr<Model> m_model;
 };
+
+template <typename T, typename C>
+T* find_by_id(const C& container, size_t id)
+{
+    auto it = std::find_if(container.begin(), container.end(), [id](const auto& e) {
+        return e->id() == id;
+    });
+    return it == container.end() ? nullptr : *it;
+}
 
 } // namespace Slic3r::Domain

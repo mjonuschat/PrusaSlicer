@@ -5,9 +5,19 @@
 
 namespace Slic3r::App::Render {
 
-Matrix4f ortho(float left, float right, float bottom, float top, float near_z, float far_z)
+template <typename T>
+using Vec3 = Eigen::Matrix<T, 3, 1>;
+
+template <typename T>
+using Vec2 = Eigen::Matrix<T, 2, 1>;
+
+template <typename T>
+using Matrix4 = Eigen::Matrix<T, 4, 4>;
+
+template <typename T>
+Matrix4<T> ortho(T left, T right, T bottom, T top, T near_z, T far_z)
 {
-    Matrix4f ret;
+    Matrix4<T> ret;
     ret <<
         2 / (right - left), 0, 0, - (right + left) / (right - left),
         0, 2 / (top - bottom), 0, - (top + bottom) / (top - bottom),
@@ -16,25 +26,41 @@ Matrix4f ortho(float left, float right, float bottom, float top, float near_z, f
     return ret;
 }
 
-Matrix4f frustum(float left, float right, float bottom, float top, float near_z, float far_z)
+Matrix4d ortho(double left, double right, double bottom, double top, double near_z, double far_z)
+{ return ortho<double>(left, right, bottom, top, near_z, far_z); }
+
+Matrix4f ortho(float left, float right, float bottom, float top, float near_z, float far_z)
+{ return ortho<float>(left, right, bottom, top, near_z, far_z); }
+
+
+template <typename T>
+Matrix4<T> frustum(T left, T right, T bottom, T top, T near_z, T far_z)
 {
-    const float inv_dx = 1.0f / (right - left);
-    const float inv_dy = 1.0f / (top - bottom);
-    const float inv_dz = 1.0f / (far_z - near_z);
-    Matrix4f ret;
+    const T inv_dx = T(1.0) / (right - left);
+    const T inv_dy = T(1.0) / (top - bottom);
+    const T inv_dz = T(1.0) / (far_z - near_z);
+    Matrix4<T> ret;
     ret <<
-        2.0f * near_z * inv_dx, 0.0,    (left + right) * inv_dx,                             0.0,
-        0.0, 2.0f * near_z * inv_dy,    (bottom + top) * inv_dy,                             0.0,
-        0.0,                    0.0, -(near_z + far_z) * inv_dz, -2.0f * near_z * far_z * inv_dz,
+        2.0 * near_z * inv_dx, 0.0,    (left + right) * inv_dx,                             0.0,
+        0.0, 2.0 * near_z * inv_dy,    (bottom + top) * inv_dy,                             0.0,
+        0.0,                    0.0, -(near_z + far_z) * inv_dz, -2.0 * near_z * far_z * inv_dz,
         0.0,                    0.0,                       -1.0,                             0.0;
     return ret;
 }
 
-Matrix4f perspective(float fovy, float aspect, float near_z, float far_z)
+Matrix4f frustum(float left, float right, float bottom, float top, float near_z, float far_z)
+{ return frustum<float>(left, right, bottom, top, near_z, far_z); }
+
+Matrix4d frustum(double left, double right, double bottom, double top, double near_z, double far_z)
+{ return frustum<double>(left, right, bottom, top, near_z, far_z); }
+
+
+template <typename T>
+Matrix4<T> perspective(T fovy, T aspect, T near_z, T far_z)
 {
-    const float f = 1.0f / std::tan(Geometry::deg2rad(fovy) / 2);
-    const float dist_z = near_z - far_z;
-    Matrix4f ret;
+    const T f = T(1.0) / std::tan(Geometry::deg2rad(fovy) / 2);
+    const double dist_z = near_z - far_z;
+    Matrix4<T> ret;
     ret <<
         f/aspect, 0, 0, 0,
         0, f, 0, 0,
@@ -43,14 +69,22 @@ Matrix4f perspective(float fovy, float aspect, float near_z, float far_z)
     return ret;
 }
 
-Matrix4f look_at(const Vec3f& eye, const Vec3f& center, const Vec3f& up)
+Matrix4f perspective(float fovy, float aspect, float near_z, float far_z)
+{ return perspective<float>(fovy, aspect, near_z, far_z); }
+
+Matrix4d perspective(double fovy, double aspect, double near_z, double far_z)
+{ return perspective<double>(fovy, aspect, near_z, far_z); }
+
+
+template <typename T>
+Matrix4<T> look_at(const Vec3<T>& eye, const Vec3<T>& center, const Vec3<T>& up)
 {
-    Vec3f f = (center - eye).normalized();
-    Vec3f u = up.normalized();
-    Vec3f s = f.cross(u).normalized();
+    Vec3<T> f = (center - eye).normalized();
+    Vec3<T> u = up.normalized();
+    Vec3<T> s = f.cross(u).normalized();
     u = s.cross(f);
 
-    Matrix4f ret = Matrix4f ::Identity();
+    Matrix4<T> ret = Matrix4<T> ::Identity();
     ret(0,0) = s.x();
     ret(0, 1) = s.y();
     ret(0, 2) = s.z();
@@ -69,14 +103,29 @@ Matrix4f look_at(const Vec3f& eye, const Vec3f& center, const Vec3f& up)
     return ret;
 }
 
-Vec2f viewport_transform(const Rect& viewport, const Vec3f& ndc_pos)
+Matrix4f look_at(const Vec3f& eye, const Vec3f& center, const Vec3f& up)
+{ return look_at<float>(eye, center, up); }
+
+Matrix4d look_at(const Vec3d& eye, const Vec3d& center, const Vec3d& up)
+{ return look_at<double>(eye, center, up); }
+
+
+template <typename T>
+Vec2<T> viewport_transform(const Rect& viewport, const Vec3<T>& ndc_pos)
 {
-    float viewport_half_width = viewport.width / 2.0f;
-    float viewport_half_height = viewport.height / 2.0f;
+    T viewport_half_width = viewport.width / T(2.0);
+    T viewport_half_height = viewport.height / T(2.0);
     return {
         viewport_half_width * ndc_pos.x() + viewport.x + viewport_half_width,
         viewport_half_height * ndc_pos.y() + viewport.y + viewport_half_height
     };
 }
+
+Vec2f viewport_transform(const Rect& viewport, const Vec3f& ndc_pos)
+{ return viewport_transform<float>(viewport, ndc_pos); }
+
+Vec2d viewport_transform(const Rect& viewport, const Vec3d& ndc_pos)
+{ return viewport_transform<double>(viewport, ndc_pos); }
+
 
 } // namespace Slic3r::App::Render

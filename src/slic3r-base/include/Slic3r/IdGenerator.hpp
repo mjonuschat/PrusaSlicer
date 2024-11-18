@@ -11,6 +11,10 @@ namespace Slic3r {
 template <typename T = size_t>
 class IdGenerator {
 public:
+    IdGenerator() = default;
+    IdGenerator(const IdGenerator<T>&) = delete;
+    IdGenerator(IdGenerator<T>&& other)  noexcept : m_next_id(other.m_next_id.load()) {}
+
     /**
      * @brief Creates new ID seqeuence generator
      * @param first_id ID the sequence should start with

@@ -24,8 +24,11 @@ public:
     using GeometryManager = Render::GeometryManager<std::string>;
     using TriangleMeshManager = Scene::TriangleMeshManager<std::string>;
 
-
-    ScenePresenter(const Domain::Workbench& m_workbench, Biz::ProjectInteractor& project_interactor);
+    ScenePresenter(
+        const Domain::Workbench& m_workbench,
+        Biz::ProjectInteractor& project_interactor,
+        Render::Device& device
+    );
 
     GeometryManager& geometry_manager() { return m_geometry_manager; }
     TriangleMeshManager& triangle_mesh_manager() { return m_triangle_mesh_manager; }
@@ -82,6 +85,8 @@ private:
 private:
     const Domain::Workbench& m_workbench;
     Biz::ProjectInteractor& m_project_interactor;
+    Render::Device& m_device;
+
     Domain::SelectionId m_selected_project_id{Domain::INVALID_ID};
     ProjectContexts m_projects;
     GeometryManager m_geometry_manager;

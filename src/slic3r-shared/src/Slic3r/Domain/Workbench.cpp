@@ -6,6 +6,14 @@
 
 namespace Slic3r::Domain {
 
+
+Workbench::Workbench() : m_project_id_generator(0) {}
+Workbench::Workbench(Workbench&& other) : m_project_id_generator(std::move(other.m_project_id_generator))
+{
+
+}
+
+
 void Workbench::load_configs()
 {
     m_app_config = std::make_unique<AppConfig>(Slic3r::AppConfig::EAppMode::Editor);

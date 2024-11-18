@@ -86,7 +86,7 @@ void ImguiRender::setup_state(CommandBuffer& buffer, const ImDrawData* draw_data
     const float top = draw_data->DisplayPos.y;
     const float bottom = draw_data->DisplayPos.y + draw_data->DisplaySize.y;
 
-    Matrix4f projection = ortho(left, right, bottom, top, -1, 1);
+    Matrix4f projection = ortho(left, right, bottom, top, -1, 1).cast<float>();
     m_shader->set_uniform("ProjMtx", projection);
     //buffer.bind_geometry(*m_geom, *m_shader);
 

@@ -37,7 +37,7 @@ private:
     const Domain::Workbench& m_workbench;
     Biz::ProjectInteractor& m_project_interactor;
     std::unique_ptr<ScenePresenter> m_scene_presenter;
-    std::unique_ptr<Scene::Scene> m_scene;
+    //std::unique_ptr<Scene::Scene> m_scene;
     std::unique_ptr<GizmoManager> m_gizmo_manager;
 
     bool m_gui_win_open{true};

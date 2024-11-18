@@ -44,7 +44,7 @@ public:
      * left resp. right parameters of ortho projection).
      * .
      */
-    virtual float constant_screen_space_size_scale(const Camera& cam, float cam_object_dist) const = 0;
+    virtual double constant_screen_space_size_scale(const Camera& cam, double cam_object_dist) const = 0;
 };
 
 class ICameraUpdateListener
@@ -61,7 +61,7 @@ public:
 
     Transform& model() { return m_model; }
     const Transform& model() const { return m_model; }
-    void look_at(const Vec3f& eye, const Vec3f& center, const Vec3f& up);
+    void look_at(const Vec3d& eye, const Vec3d& center, const Vec3d& up);
 
     Transform& projection() { return m_projection; }
     const Transform& projection() const { return m_projection; }
@@ -72,8 +72,8 @@ public:
     void set_viewport(const Render::Rect& viewport);
     const Render::Rect viewport() const { return m_viewport; }
 
-    Ray ray_at(float screen_x, float screen_y) const;
-    Vec3f unproject(const Vec3f& win_pos) const;
+    Ray ray_at(double screen_x, double screen_y) const;
+    Vec3d unproject(const Vec3d& win_pos) const;
 
     const ICameraProjection& cam_projection() const { return *m_projection_getter; }
     void set_cam_projection(ICameraProjection* projection_getter)
@@ -105,24 +105,24 @@ class PerspectiveCameraProjection : public ICameraProjection
 {
 public:
     PerspectiveCameraProjection() = default;
-    PerspectiveCameraProjection(float fovy, float z_near, float z_far)
+    PerspectiveCameraProjection(double fovy, double z_near, double z_far)
         : m_fovy(fovy), m_z_near(z_near), m_z_far(z_far)
     {}
     Transform projection(const Render::Rect& viewport) const override;
-    float constant_screen_space_size_scale(const Camera& cam, float cam_object_dist) const override;
+    double constant_screen_space_size_scale(const Camera& cam, double cam_object_dist) const override;
 
-    float fovy() const { return m_fovy; }
-    void set_fovy(float val) { m_fovy = val; }
+    double fovy() const { return m_fovy; }
+    void set_fovy(double val) { m_fovy = val; }
 
-    float z_near() const { return m_z_near; }
-    void set_z_near(float val) { m_z_near = val; }
-    float z_far() const { return m_z_far; }
-    void set_z_far(float val) { m_z_far= val; }
+    double z_near() const { return m_z_near; }
+    void set_z_near(double val) { m_z_near = val; }
+    double z_far() const { return m_z_far; }
+    void set_z_far(double val) { m_z_far= val; }
 
 private:
-    float m_fovy{90};
-    float m_z_near{0.01f};
-    float m_z_far{1000.f};
+    double m_fovy{90};
+    double m_z_near{0.01f};
+    double m_z_far{1000.f};
 };
 
 

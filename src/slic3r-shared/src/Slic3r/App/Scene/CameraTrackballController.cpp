@@ -3,9 +3,9 @@
 
 namespace Slic3r::App::Scene {
 
-float period_normalized(float val, float period_min, float period_max) {
-    float fract;
-    const float amplitude = period_max - period_min;
+double period_normalized(double val, double period_min, double period_max) {
+    double fract;
+    const double amplitude = period_max - period_min;
 
     std::modf((val - period_min) / amplitude, &fract);
     return period_min + amplitude * fract;
@@ -13,13 +13,13 @@ float period_normalized(float val, float period_min, float period_max) {
 
 void CameraTrackballController::update_camera()
 {
-    Vec3f off{
+    Vec3d off{
         m_cam_focal_dist * std::sinf(m_zenith) * std::cosf(m_azimuth),
         m_cam_focal_dist * std::sinf(m_zenith) * std::sinf(m_azimuth),
         m_cam_focal_dist * std::cosf(m_zenith)
     };
-    Vec3f pos = m_cam_focal - off;
-    Vec3f up {
+    Vec3d pos = m_cam_focal - off;
+    Vec3d up {
         std::cosf(m_zenith) * std::cosf(m_azimuth),
         std::cosf(m_zenith) * std::sinf(m_azimuth),
         -std::sinf(m_zenith)
@@ -31,7 +31,7 @@ void CameraTrackballController::update_camera()
 }
 
 
-void CameraTrackballController::set_zenith(float value)
+void CameraTrackballController::set_zenith(double value)
 {
     m_zenith = period_normalized(value, -M_PI, M_PI);
     normalize_azimuth_and_zenith();

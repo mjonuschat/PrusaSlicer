@@ -15,7 +15,7 @@ public:
         auto it = m_resources.find(name);
         if (it != m_resources.end())
             return it->second.get();
-        auto ret = m_resources.emplace(name, builder());
+        auto ret = m_resources.emplace(name, std::move(builder()));
         return ret.first->second.get();
     }
 

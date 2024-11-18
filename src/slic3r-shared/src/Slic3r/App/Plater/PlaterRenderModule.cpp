@@ -15,21 +15,25 @@ namespace Slic3r::App::Plater {
 void PlaterRenderModule::on_init(Render::Device& device)
 {
     AbstractRenderModule::on_init(device);
-    //init_scene();
-    m_scene_presenter = std::make_unique<ScenePresenter>(m_workbench, m_project_interactor);
+    m_scene_presenter =
+        std::make_unique<ScenePresenter>(m_workbench, m_project_interactor, *m_device);
     m_project_interactor.add_selected_project_changed_listener(m_scene_presenter.get());
     m_project_interactor.scene_interactor().add_scene_changed_listener(m_scene_presenter.get());
     m_project_interactor.scene_interactor().add_scene_selection_changed_listener(m_scene_presenter.get());
     init_gizmos();
+    //init_scene();
+    m_project_interactor.scene_interactor().new_object_from_mesh(TriangleMesh{its_make_cube(10,10,10) });
+
 }
 
 void PlaterRenderModule::init_scene()
 {
+    /*
     auto& device  = *m_device;
     m_scene = std::make_unique<Scene::Scene>();
     m_scene->camera().set_viewport(Render::Rect::from(0, 0, m_screen_info));
-    Transform3f cam_xform = Transform3f::Identity();
-    cam_xform.translate(Vec3f{0, 0 , 30});
+    Transform3d cam_xform = Transform3d::Identity();
+    cam_xform.translate(Vec3d{0, 0 , 30});
     m_scene->camera().model() = cam_xform.matrix();
 
     Scene::NodeBuilder node_builder{*m_scene};
@@ -41,15 +45,15 @@ void PlaterRenderModule::init_scene()
     });
 
     auto cone = m_scene->geometry_manager().get_or_create("cone-2-5", [&]() {
-        return Render::geometry_from_triangle_mesh(device, cone_mesh->triangles);
+        return Render::geometry_from_triangle_mesh(device, cone_mesh->triangles());
     });
 
     auto cube = m_scene->geometry_manager().get_or_create("box-2-2-2", [&](){
-        return Render::geometry_from_triangle_mesh(device, cube_mesh->triangles);
+        return Render::geometry_from_triangle_mesh(device, cube_mesh->triangles());
     });
 
     auto shader = device.context().shader_manager().get_shader("gouraud_light");
-    constexpr float right_angle = M_PI / 2.0f;
+    constexpr double right_angle = M_PI / 2.0;
 
     node_builder
         //        .transform([](auto& xform){
@@ -65,7 +69,7 @@ void PlaterRenderModule::init_scene()
                     color.set(i, 1);
                     builder
                         .transform([&](auto& xform) {
-                            Vec3f offset = Vec3f::Zero();
+                            Vec3d offset = Vec3d::Zero();
                             offset[i] = 10;
                             xform.translate(offset);
                         })
@@ -75,10 +79,10 @@ void PlaterRenderModule::init_scene()
                                     // cone points in +Z direction,
                                     if (i == 0) {
                                         // make it pointing in +X direction
-                                        xform.rotate(Eigen::AngleAxisf{right_angle, Vec3f::UnitY()});
+                                        xform.rotate(Eigen::AngleAxisd{right_angle, Vec3d::UnitY()});
                                     } else if (i == 1) {
                                         // make it pointing in +Y direction
-                                        xform.rotate(Eigen::AngleAxisf{-right_angle, Vec3f::UnitX()});
+                                        xform.rotate(Eigen::AngleAxisd{-right_angle, Vec3d::UnitX()});
                                     }
                                 })
                                 .set_mesh(
@@ -88,7 +92,7 @@ void PlaterRenderModule::init_scene()
                                         .set_uniform("uniform_color", color),
                                     100
                                 )
-                                .set_aabb(cone_mesh->aabb_mesh.get())
+                                .set_aabb(&cone_mesh->aabb_mesh())
                                 .set_tag(GizmoNodeTag{AxisType(i)});
 
                             if (i == 0)
@@ -103,12 +107,12 @@ void PlaterRenderModule::init_scene()
             builder
                 .transform([idx](auto& xform){
                     constexpr static float stride = 10;
-                    xform.translate(Vec3f{(idx % 5) * stride, (idx / 5) * stride, 0});
+                    xform.translate(Vec3d{(idx % 5) * stride, (idx / 5) * stride, 0});
                 })
                 .child([&](auto& builder){
                     builder
                         .transform([](auto& xform) {
-                            xform.translate(Vec3f{-1, -1, -1});
+                            xform.translate(Vec3d{-1, -1, -1});
                         })
                         .set_mesh(
                             cube,
@@ -116,12 +120,13 @@ void PlaterRenderModule::init_scene()
                                 .set_shader(shader)
                                 .set_uniform("uniform_color", ColorRGBA{1.0f, 0.0f, 0.5f, 1.0f})
                         )
-                        .set_aabb(cube_mesh->aabb_mesh.get())
+                        .set_aabb(&cube_mesh->aabb_mesh())
                         .set_tag(SceneNodeTag{0, 0, idx});
                 });
         });
     m_scene->add_child(node_builder.build().release());
     m_scene->camera_trackball().set_focal_distance(30);
+    */
 }
 
 void PlaterRenderModule::init_gizmos()

@@ -6,8 +6,8 @@ namespace Slic3r::App::Scene {
 
 struct Ray
 {
-    Vec3f origin;
-    Vec3f direction;
+    Vec3d origin;
+    Vec3d direction;
 };
 
 

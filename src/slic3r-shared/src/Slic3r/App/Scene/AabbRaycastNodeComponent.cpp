@@ -4,13 +4,13 @@
 namespace Slic3r::App::Scene
 {
 
-bool AabbRaycastNodeComponent::raycast(const Matrix4f& world, const Ray& ray, double& t) const
+bool AabbRaycastNodeComponent::raycast(const Matrix4d& world, const Ray& ray, double& t) const
 {
     ASSERT(m_aabb_mesh != nullptr);
 
-    Matrix4f inv_world = world.inverse();
+    Matrix4d inv_world = world.cast<double>().inverse();
 
-    Vec3d local_ray_origin = (inv_world * Vec4f{ray.origin.x(), ray.origin.y(), ray.origin.z(), 1}).head<3>().cast<double>();
+    Vec3d local_ray_origin = (inv_world * Vec4d{ray.origin.x(), ray.origin.y(), ray.origin.z(), 1}).head<3>().cast<double>();
     Vec3d local_ray_direction = (inv_world.block<3, 3>(0, 0) * ray.direction).cast<double>().normalized();
 
     auto hit = m_aabb_mesh->query_ray_hit(local_ray_origin, local_ray_direction);

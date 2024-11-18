@@ -22,7 +22,7 @@ class Scene;
 class NodeBuilder {
 public:
     explicit NodeBuilder(Scene& scene) : m_scene(scene), m_current(std::make_unique<Node>()) {}
-    NodeBuilder& transform(const std::function<void(Transform3f&)>& modifier);
+    NodeBuilder& transform(const std::function<void(Transform3d&)>& modifier);
     NodeBuilder& set_mesh(const Render::Geometry* geometry, const Material& material, int layer_index=0);
     NodeBuilder& set_material_override(const Material& material);
     NodeBuilder& set_imgui_func(const FuncImguiRenderNodeComponent::RenderFunc& imgui_render_func);
@@ -37,6 +37,7 @@ public:
     }
 
     NodeBuilder& set_aabb(const AABBMesh* aabb);
+    NodeBuilder& set_aabb(const AABBMesh& aabb) { return set_aabb(&aabb); }
 
     template <typename T>
     NodeBuilder& set_tag(const T& tag_value)
@@ -59,10 +60,14 @@ public:
     NodeBuilder& child(const std::function<void(NodeBuilder&)>& builder);
     NodeBuilder& children(size_t num_children, const std::function<void(NodeBuilder&, size_t)>& builder);
 
-    template <typename I, typename T>
-    NodeBuilder& child_for_each(I first, I last, const std::function<void(NodeBuilder&, const T&)>& builder)
+    template<typename ContainerT>
+    NodeBuilder& child_for_each(
+        typename ContainerT::const_iterator first,
+        typename ContainerT::const_iterator last,
+        const std::function<void(NodeBuilder&, const typename ContainerT::value_type&)>& builder
+    )
     {
-        std::for_each(first, last, [&](const T& element) {
+        std::for_each(first, last, [&](const typename ContainerT::value_type& element) {
             begin_child();
             builder(*this, element);
             end_child();
@@ -70,10 +75,10 @@ public:
         return *this;
     }
 
-    template <typename ContainerT, typename T>
-    NodeBuilder& child_for_each(const ContainerT& container, const std::function<void(NodeBuilder&, const T&)>& builder)
+    template <typename ContainerT>
+    NodeBuilder& child_for_each(const ContainerT& container, const std::function<void(NodeBuilder&, const typename ContainerT::value_type&)>& builder)
     {
-        return child_for_each(container.cbegin(), container.cend(), builder);
+        return child_for_each<ContainerT>(container.cbegin(), container.cend(), builder);
     }
 
     std::unique_ptr<Node> build();

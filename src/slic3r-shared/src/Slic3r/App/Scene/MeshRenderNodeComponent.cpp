@@ -29,12 +29,12 @@ void MeshRenderNodeComponent::render(
         Render::set_uniform(shader, name.c_str(), value);
 
     // Set transform uniforms
-    Matrix4f view = camera.view();
-    Matrix4f model = node.world_transform();
+    Transform view = camera.view();
+    const Transform& model = node.world_transform();
 
     int uniform_id = shader.get_uniform_location("view_model_matrix");
     if (uniform_id >= 0) {
-        Matrix4f model_view = view * model;
+        Matrix4f model_view = (view * model).cast<float>();
         shader.set_uniform(uniform_id, model_view);
     }
 
@@ -46,7 +46,8 @@ void MeshRenderNodeComponent::render(
     uniform_id = shader.get_uniform_location("view_normal_matrix");
     if (uniform_id >= 0) {
         //Matrix3f normal = view.block<3, 3>(0, 0) * model.block<3, 3>(0, 0).inverse().transpose();
-        Matrix3f normal = (view.block<3, 3>(0, 0) * model.block<3, 3>(0, 0)).inverse().transpose();
+        Matrix3f normal =
+            (view.block<3, 3>(0, 0) * model.block<3, 3>(0, 0)).inverse().transpose().cast<float>();
         shader.set_uniform(uniform_id, normal);
     }
 

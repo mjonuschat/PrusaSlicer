@@ -33,8 +33,8 @@ TEST_CASE("Scene basic transform", "[Node]") {
         REQUIRE_THAT((n2_world.z()), WithinRel(0, 0.0001));
     }
 
-    Transform3f t = Slic3r::Transform3f::Identity();
-    t.translate(Vec3f{1, 2, 3});
+    Transform3d t = Slic3r::Transform3d::Identity();
+    t.translate(Vec3d{1, 2, 3});
     n1->set_local_transform(t.matrix());
 
     {
@@ -49,8 +49,8 @@ TEST_CASE("Scene basic transform", "[Node]") {
         REQUIRE_THAT((n2_world.z()), WithinRel(3, 0.0001));
     }
 
-    t = Transform3f::Identity();
-    t.translate(Vec3f{-1, -2, -3});
+    t = Transform3d::Identity();
+    t.translate(Vec3d{-1, -2, -3});
     n2->set_local_transform(t.matrix());
 
     {
@@ -66,7 +66,7 @@ TEST_CASE("Scene basic transform", "[Node]") {
     }
 
     t.setIdentity();
-    t.translate(Vec3f{9, 8, 7});
+    t.translate(Vec3d{9, 8, 7});
     n2->set_world_transform(t.matrix());
 
     {

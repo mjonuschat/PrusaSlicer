@@ -48,7 +48,7 @@ void CameraGizmo::update_pan(float delta_x, float delta_y)
     auto up = model.block<3, 1>(0, 1);
     auto& trackball = scene.camera_trackball();
 
-    float dist = trackball.cam_focal_dist();
+    double dist = trackball.cam_focal_dist();
     trackball.set_focal_point(trackball.cam_focal() + right * -delta_x * dist + up * delta_y * dist);
 }
 
@@ -56,7 +56,7 @@ void CameraGizmo::update_zoom(float wheel_delta_y)
 {
     auto& scene = m_scene_provider.scene();
     auto& trackball = scene.camera_trackball();
-    float d = trackball.cam_focal_dist();
+    double d = trackball.cam_focal_dist();
     d += wheel_delta_y * 0.05f;
     trackball.set_focal_distance(d);
 }

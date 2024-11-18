@@ -51,6 +51,11 @@ class Scene final
 public:
     Scene() : m_camera_trackball(m_camera) { m_nodes_by_id[m_root.id()] = &m_root; }
 
+    Scene(const Scene&) = delete;
+    Scene& operator=(const Scene&) = delete;
+
+    Scene(Scene&&) = default;
+
     /**
      * @name Access to root
      * @{

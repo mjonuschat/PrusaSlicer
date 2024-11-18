@@ -20,8 +20,7 @@ public:
      * @param[out] t Output ray t of first hit (set only if `true` returned)
      * @return True if any collision hit was detected
      */
-    virtual bool raycast(
-        const Matrix4f& world, const Ray& ray, double& t) const = 0;
+    virtual bool raycast(const Matrix4d& world, const Ray& ray, double& t) const = 0;
 
     /**
      * @brief Gets screen space projection of collision object as AABB

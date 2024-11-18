@@ -1,11 +1,16 @@
 #include "Slic3r/App/Plater/ScenePresenter.hpp"
+#include "Slic3r/App/Scene/NodeBuilder.hpp"
+#include "Slic3r/App/Plater/SceneNodeTag.hpp"
+#include "Slic3r/App/Render/GeometryBuilder.hpp"
+#include "Slic3r/App/Render/Device.hpp"
+#include "libslic3r/Model.hpp"
 
 namespace Slic3r::App::Plater {
 
 ScenePresenter::ScenePresenter(
-    const Domain::Workbench& m_workbench, Biz::ProjectInteractor& project_interactor
+    const Domain::Workbench& m_workbench, Biz::ProjectInteractor& project_interactor, Render::Device& device
 )
-    : m_workbench(m_workbench), m_project_interactor(project_interactor)
+    : m_workbench(m_workbench), m_project_interactor(project_interactor), m_device(device)
 {
 //    std::for_each(m_workbench.projects().begin(), m_workbench.projects().end(), [this](const auto& p) {
 //        m_projects.emplace(p.first, ScenePresenterProjectContext{});
@@ -47,9 +52,43 @@ void ScenePresenter::on_scene_selection_changed(Domain::SelectionId project_id, 
 
 void ScenePresenter::on_instance_added(Domain::SelectionId project_id, const Domain::ElementRefs& instances)
 {
-    // if first instance, create geometry
-    // create nodes for all volumes under instance
+    auto& scn = scene();
+    auto& ctx = project_context();
+    auto& geom_mgr = ctx.model_geometry_manager();
+    auto& trimesh_mgr = ctx.model_triangle_mesh_manager();
+    auto& proj = m_workbench.project(m_selected_project_id);
+    const Domain::Project& project = m_workbench.project(project_id);
 
+    Scene::NodeBuilder node_builder(scn);
+    node_builder.child_for_each(instances, [&](Scene::NodeBuilder& builder, const Domain::ElementRef& element) {
+        const ModelObject* obj = project.find_object_by_id(element.object_id);
+        const ModelInstance* inst = Domain::find_by_id<ModelInstance>(obj->instances, element.instance_id);
+            builder
+                .transform([inst](auto& t) { t = inst->get_matrix(); })
+                //.set_tag(SceneNodeTag{obj->id().id, 0, inst->id().id})
+                .child_for_each(obj->volumes, [&](Scene::NodeBuilder& builder, const ModelVolume* vol) {
+                    GeometryElementId id{GeometryElementId::Type::Volume, element.volume_id};
+                    const auto& trimesh =
+                        trimesh_mgr.get_or_create(id, [&]() -> std::unique_ptr<Scene::TriangleMesh> {
+                            return std::make_unique<Scene::TriangleMesh>(vol->mesh_ptr());
+                        });
+                    const auto* geom = geom_mgr.get_or_create(id, [&]() {
+                        return Render::geometry_from_triangle_mesh(m_device, trimesh->triangles());
+                    });
+                    auto material = Scene::Material{}
+                        .set_shader(m_device.context().shader_manager().get_shader(
+                            "gouraud_light"
+                        ))
+                        .set_uniform("uniform_color", ColorRGBA{1, 0, 0.5f, 1});
+                    builder
+                        .transform([&](auto& xform) { xform = vol->get_matrix(); })
+                        .set_tag(SceneNodeTag{obj->id().id, vol->id().id, inst->id().id})
+                        .set_mesh(geom, material)
+                        .set_aabb(trimesh->aabb_mesh());
+                });
+            }
+    );
+    scn.add_child(node_builder.build().release());
 }
 
 void ScenePresenter::on_instance_removed(Domain::SelectionId project_id, const Domain::ElementRefs& instances)

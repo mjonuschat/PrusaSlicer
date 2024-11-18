@@ -12,11 +12,11 @@ void NodeBuilder::ensure_current()
         m_current = std::make_unique<Node>();
 }
 
-NodeBuilder& NodeBuilder::transform(const std::function<void(Transform3f&)>& modifier)
+NodeBuilder& NodeBuilder::transform(const std::function<void(Transform3d&)>& modifier)
 {
     ensure_current();
 
-    Transform3f xform = Transform3f::Identity();
+    Transform3d xform = Transform3d::Identity();
     modifier(xform);
     m_current->set_local_transform(xform.matrix());
     return *this;

@@ -27,13 +27,13 @@ bool DesktopApp::OnInit()
     m_render_module =
         std::make_unique<Plater::PlaterRenderModule>(m_workbench, *m_project_interactor);
 
-    m_project_interactor->new_project();
-
     //m_workbench.load_project("/Users/jan.bartipan/work/Models/3DBenchy.3mf");
 
     const bool is_dark = true;
     const bool is_sys_menu = true;
     WX::WidgetsConfig* wdts_config = WX::WidgetsConfig::instance(is_dark, is_sys_menu);
+
+    Domain::SelectionId project_id = m_project_interactor->new_project();
 
     m_main_frame = new MainFrame(m_workbench, m_project_interactor->preset_interactor(), m_translations);
     Platform::WX::WXRenderCanvas& canvas = m_main_frame->get_render_canvas();

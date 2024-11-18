@@ -16,12 +16,12 @@ struct Plane
      *
      * In the plane equation: `ax + by + cz + d = 0` the normal is vector of `(a, b, c)`.
      */
-    Vec3f normal;
+    Vec3d normal;
 
     /**
      * @brief The `d` coeficient as used in plane equation `ax + by + cz + d = 0.`
      */
-    float d;
+    double d;
 
     /**
      * @brief Creates 3D plane defined by point on the plane and two (non-parallel) vectors in the plane.
@@ -31,7 +31,7 @@ struct Plane
      * @return New plane where @p point lays on the plane and @p v0 and @p v1 are vectors
      * also laying on the plane (relatively to @p point).
      */
-    static Plane from_point_and_vectors(const Vec3f& point, const Vec3f& v0, const Vec3f& v1);
+    static Plane from_point_and_vectors(const Vec3d& point, const Vec3d& v0, const Vec3d& v1);
 
     /**
      * @brief Create plane defined by three points laying on it.
@@ -41,7 +41,7 @@ struct Plane
      * @param p2 Third plane point
      * @return Plane containing all three points.
      */
-    static Plane from_three_points(const Vec3f& p0, const Vec3f& p1, const Vec3f& p2)
+    static Plane from_three_points(const Vec3d& p0, const Vec3d& p1, const Vec3d& p2)
     { return from_point_and_vectors(p0, p1 - p0, p2 - p0); }
 
     /**
@@ -51,6 +51,6 @@ struct Plane
      * ray equation (`origin + direction * t`) will get you intersection point.
      * @return `True` if intersection of this plane and @p ray exists, otherwise `false`.
      */
-    bool intersects(const Ray& ray, float& t) const;
+    bool intersects(const Ray& ray, double& t) const;
 };
 } // namespace Slic3r::App::Scene

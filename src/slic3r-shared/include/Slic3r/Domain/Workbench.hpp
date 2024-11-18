@@ -17,9 +17,8 @@ class Workbench
 public:
     using ProjectMap = std::unordered_map<SelectionId, Project>;
 
-    Workbench() = default;
-    Workbench(Workbench&&) = default;
-    Workbench& operator=(Workbench&&) = default;
+    Workbench();
+    Workbench(Workbench&&) ;
 
     Workbench(const Workbench&) = delete;
     Workbench& operator=(const Workbench&) = delete;
