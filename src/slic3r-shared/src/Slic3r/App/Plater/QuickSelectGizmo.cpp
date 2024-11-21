@@ -42,12 +42,12 @@ GizmoActivationState QuickSelectGizmo::on_mouse(const GizmoEventContext& ctx, bo
             if (it == ctx.pick_results().end())
                 return GizmoActivationState::Inactive;
 
-            mark_selected(*it->node, !additive);
+            m_selection_handler.mark_selected(*it->node, !additive);
             return GizmoActivationState::Done;
         } else {
             if (it == ctx.pick_results().end()) {
                 if (!additive)
-                    clear_selection();
+                    m_selection_handler.clear_selection();
                 return GizmoActivationState::Done;
             }
 
@@ -60,50 +60,17 @@ GizmoActivationState QuickSelectGizmo::on_mouse(const GizmoEventContext& ctx, bo
                 });
             if (additive) {
                 if (already_selected) {
-                    mark_unselected(*it->node);
+                    m_selection_handler.mark_unselected(*it->node);
                 } else {
-                    mark_selected(*it->node, false);
+                    m_selection_handler.mark_selected(*it->node, false);
                 }
             } else {
-                mark_selected(*it->node);
+                m_selection_handler.mark_selected(*it->node);
             }
             return GizmoActivationState::Done;
         }
     }
     return GizmoActivationState::Inactive;
-}
-
-void QuickSelectGizmo::mark_selected(Scene::Node& n, bool replace)
-{
-    Biz::Scene::Selection selection = replace ? Biz::Scene::Selection{} : m_scene_interactor.selection();
-
-    auto& selection_changes = m_scene_provider.selection_scene_changes();
-    if (replace)
-        selection_changes.roll_back();
-    selection_changes.change(n).set_material_override(
-        Scene::Material{}.set_uniform("uniform_color", ColorRGBA{1.0f, 1.0f, 1.0f, 1.0f})
-    );
-    const auto* tag = n.tag_of_type<SceneNodeTag>();
-    if (tag)
-    {
-        selection.elements.push_back({tag->object_id, tag->instance_id, tag->volume_id});
-    }
-
-    m_scene_interactor.set_selection(selection);
-}
-
-void QuickSelectGizmo::mark_unselected(Scene::Node& n)
-{
-    auto& selection_changes = m_scene_provider.selection_scene_changes();
-    Biz::Scene::Selection selection = m_scene_interactor.selection();
-    selection_changes.roll_back_node(&n);
-}
-
-void QuickSelectGizmo::clear_selection()
-{
-    auto& selection_changes = m_scene_provider.selection_scene_changes();
-    selection_changes.roll_back();
-    m_scene_interactor.set_selection({});
 }
 
 } // namespace Slic3r::App::Plater

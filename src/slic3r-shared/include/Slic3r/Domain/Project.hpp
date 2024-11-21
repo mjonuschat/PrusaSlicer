@@ -43,10 +43,10 @@ public:
 
     const ModelObject* find_object_by_id(size_t id) const;
     const ModelVolume* find_volume_by_id(size_t obj_id, size_t vol_id) const;
-    const ModelInstance* find_instance_by_id(size_t inst, size_t inst_id) const;
+    const ModelInstance* find_instance_by_id(size_t obj_id, size_t inst_id) const;
     ModelObject* find_object_by_id(size_t id);
     ModelVolume* find_volume_by_id(size_t obj_id, size_t vol_id);
-    ModelInstance* find_instance_by_id(size_t inst, size_t inst_id);
+    ModelInstance* find_instance_by_id(size_t obj_id, size_t inst_id);
 
 private:
     std::string m_file_name;

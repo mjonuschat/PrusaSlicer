@@ -128,8 +128,25 @@ public:
      * @name Pick all nodes under cursor.
      * @{
      */
-    bool pick_at(float mouse_x, float mouse_y, ConstNodePickResults& results) const;
-    bool pick_at(float mouse_x, float mouse_y, NodePickResults& results);
+    /**
+     * @brief Pick immutable nodes under mouse cursor.
+     *
+     * @param mouse_x, mouse_y Mouse cursor position (in logical coords)
+     * @param [out] results List of nodes under cursor sorted by distance from camera (nearest first).
+     * @param [out] out_ray If passed as non-`nullptr`, the ray associated with mouse cursor is set.
+     * @return True if there is any hit, otherwise false.
+     */
+    bool pick_at(float mouse_x, float mouse_y, ConstNodePickResults& results, Ray* out_ray = nullptr) const;
+
+    /**
+     * @brief Pick mutable nodes under mouse cursor.
+     *
+     * @param mouse_x, mouse_y Mouse cursor position (in logical coords)
+     * @param [out] results List of nodes under cursor sorted by distance from camera (nearest first).
+     * @param [out] out_ray If passed as non-`nullptr`, the ray associated with mouse cursor is set.
+     * @return True if there is any hit, otherwise false.
+     */
+    bool pick_at(float mouse_x, float mouse_y, NodePickResults& results, Ray* out_ray = nullptr);
     /** @} */
 
     /**

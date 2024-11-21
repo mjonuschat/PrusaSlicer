@@ -248,6 +248,17 @@ public:
     T* tag_of_type() { return boost::any_cast<T>(&m_tag); }
     /**@}*/
 
+    /**
+     * @name Debug name
+     * Node name to be used for debugging to distinguish between individual nodes.
+     * @{
+     */
+    void set_debug_name(std::string_view str)
+    { m_debug_name = str; }
+    const std::string& debug_name() const
+    { return m_debug_name; }
+    /**@}*/
+
 private:
     friend class Scene;
 
@@ -322,6 +333,8 @@ private:
     std::unique_ptr<INodeTransformModifier> m_transform_modifier;
 
     boost::any m_tag;
+
+    std::string m_debug_name;
 };
 
 } // namespace Slic3r::App::Scene

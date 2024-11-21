@@ -7,7 +7,7 @@ namespace Slic3r::App::Scene {
 class CameraTrackballController
 {
 public:
-    explicit CameraTrackballController(Camera& camera) : m_camera(camera) {}
+    explicit CameraTrackballController(Camera& camera) : m_camera(camera) { update_camera(); }
 
     void set_focal_point(const Vec3d& pos)
     {

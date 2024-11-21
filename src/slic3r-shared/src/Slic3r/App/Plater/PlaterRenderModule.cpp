@@ -154,12 +154,13 @@ void PlaterRenderModule::render_scene()
 
 void imgui_scenegraph_node_info(const Scene::Node& node)
 {
-    ImGuiTreeNodeFlags node_flags = 0;
+    ImGuiTreeNodeFlags node_flags = ImGuiTreeNodeFlags_DefaultOpen;
     if (node.children().empty())
         node_flags |= ImGuiTreeNodeFlags_Leaf;
+    const std::string& name = node.debug_name();
     if (ImGui::TreeNodeEx(
-            &node, node_flags, "Node %s%s%s%s", node.has_render_component() ? "(R)" : "",
-            node.has_material_override() ? "(M)" : "",
+            &node, node_flags, "%s %s%s%s%s", name.empty() ? "Node" : name.c_str(),
+            node.has_render_component() ? "(R)" : "", node.has_material_override() ? "(M)" : "",
             node.has_imgui_render_component() ? "(I)" : "", node.has_raycast_component() ? "(C)" : ""
         )) {
         for (const auto& ch : node.children()) {

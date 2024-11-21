@@ -57,6 +57,13 @@ public:
 
     NodeBuilder& set_screen_space_sized_modifier(float scale);
 
+    NodeBuilder& set_debug_name(std::string_view sv)
+    {
+        ensure_current();
+        m_current->set_debug_name(sv);
+        return *this;
+    }
+
     NodeBuilder& child(const std::function<void(NodeBuilder&)>& builder);
     NodeBuilder& children(size_t num_children, const std::function<void(NodeBuilder&, size_t)>& builder);
 

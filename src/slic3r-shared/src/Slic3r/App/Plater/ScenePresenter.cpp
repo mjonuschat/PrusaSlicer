@@ -1,5 +1,6 @@
 #include "Slic3r/App/Plater/ScenePresenter.hpp"
 #include "Slic3r/App/Scene/NodeBuilder.hpp"
+#include "Slic3r/App/Scene/NodeVisitor.hpp"
 #include "Slic3r/App/Plater/SceneNodeTag.hpp"
 #include "Slic3r/App/Render/GeometryBuilder.hpp"
 #include "Slic3r/App/Render/Device.hpp"
@@ -56,16 +57,18 @@ void ScenePresenter::on_instance_added(Domain::SelectionId project_id, const Dom
     auto& ctx = project_context();
     auto& geom_mgr = ctx.model_geometry_manager();
     auto& trimesh_mgr = ctx.model_triangle_mesh_manager();
-    auto& proj = m_workbench.project(m_selected_project_id);
     const Domain::Project& project = m_workbench.project(project_id);
 
     Scene::NodeBuilder node_builder(scn);
-    node_builder.child_for_each(instances, [&](Scene::NodeBuilder& builder, const Domain::ElementRef& element) {
-        const ModelObject* obj = project.find_object_by_id(element.object_id);
-        const ModelInstance* inst = Domain::find_by_id<ModelInstance>(obj->instances, element.instance_id);
+    node_builder
+        .set_debug_name("project-root")
+        .child_for_each(instances, [&](Scene::NodeBuilder& builder, const Domain::ElementRef& element) {
+            const ModelObject* obj = project.find_object_by_id(element.object_id);
+            const ModelInstance* inst = Domain::find_by_id<ModelInstance>(obj->instances, element.instance_id);
             builder
+                .set_debug_name(fmt::format("obj: {} inst: {}", obj->id().id, inst->id().id))
                 .transform([inst](auto& t) { t = inst->get_matrix(); })
-                //.set_tag(SceneNodeTag{obj->id().id, 0, inst->id().id})
+                .set_tag(SceneNodeTag{obj->id().id, 0, inst->id().id, ModelVolumeType::INVALID})
                 .child_for_each(obj->volumes, [&](Scene::NodeBuilder& builder, const ModelVolume* vol) {
                     GeometryElementId id{GeometryElementId::Type::Volume, element.volume_id};
                     const auto& trimesh =
@@ -81,13 +84,14 @@ void ScenePresenter::on_instance_added(Domain::SelectionId project_id, const Dom
                         ))
                         .set_uniform("uniform_color", ColorRGBA{1, 0, 0.5f, 1});
                     builder
+                        .set_debug_name(fmt::format("vol: {}", vol->id().id))
                         .transform([&](auto& xform) { xform = vol->get_matrix(); })
-                        .set_tag(SceneNodeTag{obj->id().id, vol->id().id, inst->id().id})
+                        .set_tag(SceneNodeTag{obj->id().id, vol->id().id, inst->id().id, vol->type()})
                         .set_mesh(geom, material)
                         .set_aabb(trimesh->aabb_mesh());
                 });
             }
-    );
+        );
     scn.add_child(node_builder.build().release());
 }
 
@@ -98,22 +102,47 @@ void ScenePresenter::on_instance_removed(Domain::SelectionId project_id, const D
 
 void ScenePresenter::on_instance_transformed(Domain::SelectionId project_id, const Domain::ElementRefs& elements)
 {
-
+    auto& scene = m_projects[m_selected_project_id].scene();
+    const auto& proj = m_workbench.project(project_id);
+    Scene::visit(scene.root(), [&](Scene::Node& n) {
+        const SceneNodeTag* t = n.tag_of_type<SceneNodeTag>();
+        if (t == nullptr || t->volume_id != 0)
+            return;
+        for (const auto& e : elements) {
+            if (t->instance_id == e.instance_id) {
+                const auto* inst = proj.find_instance_by_id(e.object_id, e.instance_id);
+                n.set_local_transform(inst->get_matrix().matrix());
+            }
+        }
+    });
 }
 
 
 void ScenePresenter::on_volume_added(Domain::SelectionId project_id, const Domain::ElementRefs& volumes)
 {
-
+    // find all instances of given object id and insert the volume node as child
 }
 
 void ScenePresenter::on_volume_removed(Domain::SelectionId project_id, const Domain::ElementRefs& volumes)
 {
-
+    // find all instances of given object id and remove the volume node there
 }
 
 void ScenePresenter::on_volume_transformed(Domain::SelectionId project_id, const Domain::ElementRefs& elements)
 {
+    auto& scene = m_projects[m_selected_project_id].scene();
+    const auto& proj = m_workbench.project(project_id);
+    Scene::visit(scene.root(), [&](Scene::Node& n) {
+        const SceneNodeTag* t = n.tag_of_type<SceneNodeTag>();
+        if (t == nullptr || t->volume_id == 0)
+            return;
+        for (const auto& e : elements) {
+            if (t->volume_id == e.volume_id) {
+                const auto* vol = proj.find_volume_by_id(e.object_id, e.volume_id);
+                n.set_local_transform(vol->get_matrix().matrix());
+            }
+        }
+    });
 
 }
 

@@ -157,10 +157,12 @@ void Scene::render_imgui(const Render::ScreenInfo& screen_info) const
     }
 }
 
-bool Scene::pick_at(float mouse_x, float mouse_y, ConstNodePickResults& results) const
+bool Scene::pick_at(float mouse_x, float mouse_y, ConstNodePickResults& results, Ray* out_ray) const
 {
     Node::ConstNodeList query_result;
     auto ray = m_camera.ray_at(mouse_x, mouse_y);
+    if (out_ray != nullptr)
+        *out_ray = ray;
     const Node& n = m_root;
     auto ret = visit_conditional_transform<double>(n, [&ray](const Node& n, double& t) {
         if (!n.has_raycast_component())
@@ -178,10 +180,12 @@ bool Scene::pick_at(float mouse_x, float mouse_y, ConstNodePickResults& results)
     return !ret.empty();
 }
 
-bool Scene::pick_at(float mouse_x, float mouse_y, NodePickResults& results)
+bool Scene::pick_at(float mouse_x, float mouse_y, NodePickResults& results, Ray* out_ray)
 {
     Node::NodeList query_result;
     auto ray = m_camera.ray_at(mouse_x, mouse_y);
+    if (out_ray != nullptr)
+        *out_ray = ray;
     Node& n = m_root;
     auto ret = visit_conditional_transform<double>(n, [&ray](Node& n, double& t) {
         if (!n.has_raycast_component())

@@ -33,14 +33,15 @@ void GizmoManager::on_scene_mouse_event(const Platform::MouseEvent& e, const Sli
     Scene::Scene& scene = m_scene_provider.scene();
 
     Scene::NodePickResults pick_results;
+    Scene::Ray pick_ray;
     scene.pick_at(
         screen_info.mouse_to_screen(e.x()),
         screen_info.mouse_to_screen(e.y()),
-        pick_results
+        pick_results, &pick_ray
 
     );
 
-    GizmoEventContext ctx{e, pick_results, screen_info};
+    GizmoEventContext ctx{e, pick_ray, pick_results, screen_info};
     const bool single_active = m_in_cycle_gizmos.size() == 1;
 #if DEBUG_GIZMO_MANAGER
     SPDLOG_INFO("process event---in-cycle: {}", m_in_cycle);

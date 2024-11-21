@@ -1,13 +1,16 @@
 #pragma once
 
+#include "libslic3r/Model.hpp"
 #include "Slic3r/Domain/SelectionId.hpp"
 
 namespace Slic3r::App::Plater {
 
-struct SceneNodeTag {
+struct SceneNodeTag
+{
     const Domain::SelectionId object_id{0};
     const Domain::SelectionId volume_id{0};
     const Domain::SelectionId instance_id{0};
+    const ModelVolumeType volume_type{ModelVolumeType::INVALID};
 };
 
-}
+} // namespace Slic3r::App::Plater

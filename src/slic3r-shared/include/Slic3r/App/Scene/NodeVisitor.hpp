@@ -44,20 +44,27 @@ void visit(Node& node, const NodeVisitor& visitor, bool ignore_enabled = false);
  * @brief Visit const nodes in depth-first order with possibility to quit the visit early before
  * visiting all nodes.
  * @param node Root node to start the visit with.
- * @param visitor A function called on visited note. If it returns true node's children are not visited.
- * @param ignore_enabled If set to `true`, even disabled nodes are visited, otherwise disabled nodes are skipped.
+ * @param visitor A function called on visited note. If it returns `false` node's children are not
+ * visited.
+ * @param ignore_enabled If set to `true`, even disabled nodes are visited, otherwise disabled nodes
+ * are skipped.
  */
-void visit_conditional(const Node& node, const ConstNodeConditionalVisitor& visitor, bool ignore_enabled = false);
-
+void visit_conditional(
+    const Node& node, const ConstNodeConditionalVisitor& visitor, bool ignore_enabled = false
+);
 
 /**
  * @brief Visit non-const nodes in depth-first order with possibility to quit the visit early before
  * visiting all nodes.
  * @param node Root node to start the visit with.
- * @param visitor A function called on visited note. If it returns true node's children are not visited.
- * @param ignore_enabled If set to `true`, even disabled nodes are visited, otherwise disabled nodes are skipped.
+ * @param visitor A function called on visited note. If it returns `false` node's children are not
+ * visited.
+ * @param ignore_enabled If set to `true`, even disabled nodes are visited, otherwise disabled nodes
+ * are skipped.
  */
-void visit_conditional(Node& node, const NodeConditionalVisitor& visitor, bool ignore_enabled = false);
+void visit_conditional(
+    Node& node, const NodeConditionalVisitor& visitor, bool ignore_enabled = false
+);
 
 /**
  * @brief Visit const nodes and transform them into list of Result.
@@ -68,7 +75,8 @@ void visit_conditional(Node& node, const NodeConditionalVisitor& visitor, bool i
  * @tparam Result Type of result object the @p transform function produces for given node.
  * @param node A start node for visit
  * @param transform A function to transform given visiting node into @p Result
- * @param ignore_enabled If set to `true`, even disabled nodes are visited, otherwise disabled nodes are skipped.
+ * @param ignore_enabled If set to `true`, even disabled nodes are visited, otherwise disabled nodes
+ * are skipped.
  * @return Transformation output as list of `(node, result)` pairs.
  */
 template<typename Result>
@@ -95,7 +103,8 @@ std::vector<std::pair<const Node*, Result>> visit_conditional_transform(
  * @tparam Result Type of result object the @p transform function produces for given node.
  * @param node A start node for visit
  * @param transform A function to transform given visiting node into @p Result
- * @param ignore_enabled If set to `true`, even disabled nodes are visited, otherwise disabled nodes are skipped.
+ * @param ignore_enabled If set to `true`, even disabled nodes are visited, otherwise disabled nodes
+ * are skipped.
  * @return Transformation output as list of `(node, result)` pairs.
  */
 template<typename Result>
