@@ -60,17 +60,17 @@ private:
 class AddMaterialOverrideChange : public AbstractSceneChange
 {
 public:
-    explicit AddMaterialOverrideChange(size_t node_id, const Material* original = nullptr) 
+    explicit AddMaterialOverrideChange(size_t node_id, const Render::Material* original = nullptr)
     : AbstractSceneChange(node_id)
     {
         if (original)
-            m_original_material = std::make_unique<Material>(*original);
+            m_original_material = std::make_unique<Render::Material>(*original);
     }
 
     void roll_back(Scene& scene) override;
 
 private:
-    std::unique_ptr<Material> m_original_material;
+    std::unique_ptr<Render::Material> m_original_material;
 };
 
 /**
@@ -100,7 +100,7 @@ public:
          * @param m Material to be used as override
          * @return this node change builder instance.
          */
-        NodeChangeBuilder& set_material_override(const Material& m);
+        NodeChangeBuilder& set_material_override(const Render::Material& m);
 
         /**
          * @brief Finish changes and get parent.

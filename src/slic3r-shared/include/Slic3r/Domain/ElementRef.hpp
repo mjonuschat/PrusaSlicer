@@ -28,6 +28,12 @@ struct ElementRef
     bool has_instance() const { return instance_id != 0; }
     bool has_volume() const { return volume_id != 0; }
 
+    bool is_part_of(const ElementRef& this_or_parent) const
+    {
+        return object_id == this_or_parent.object_id && this_or_parent.instance_id == instance_id &&
+            (volume_id == this_or_parent.volume_id || this_or_parent.volume_id == 0);
+    }
+
 private:
     constexpr std::tuple<size_t, size_t, size_t> as_tuple() const
     {

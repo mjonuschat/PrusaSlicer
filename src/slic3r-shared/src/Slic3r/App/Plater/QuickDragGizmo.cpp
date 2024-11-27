@@ -6,7 +6,7 @@ namespace Slic3r::App::Plater {
 GizmoActivationState QuickDragGizmo::on_mouse(const GizmoEventContext& ctx, bool only_active)
 {
     const auto& e = ctx.mouse_event();
-    const Scene::NodePickResult* n;
+    const Scene::NodePickResult* n{nullptr};
 
     if (e.type() == Platform::MouseEvent::Type::ButtonDown) {
         if (e.key_modifiers() != 0 || e.button() != Platform::MouseButton::Left ||
@@ -19,8 +19,10 @@ GizmoActivationState QuickDragGizmo::on_mouse(const GizmoEventContext& ctx, bool
         // Move the plane at same z-level as the node hit point is
         m_plane.d = -ctx.pick_ray().point_at(n->t).z();
 
-        if (!mouse_pos(ctx.screen_mouse_x(), ctx.screen_mouse_y(), m_initial_world_pos))
+        if (!mouse_pos(ctx.screen_mouse_x(), ctx.screen_mouse_y(), m_initial_world_pos)) {
+            m_state = State::Inactive;
             return GizmoActivationState::Inactive;
+        }
 
         m_state = State::Probing;
 
@@ -29,14 +31,16 @@ GizmoActivationState QuickDragGizmo::on_mouse(const GizmoEventContext& ctx, bool
         if (m_state == State::Inactive)
             return GizmoActivationState::Inactive;
 
-        if ((n = ctx.pick_result_with_tag_of_type<SceneNodeTag>()) == nullptr) {
-
-        }
-
         if (m_state == State::Probing) {
+            if ((n = ctx.pick_result_with_tag_of_type<SceneNodeTag>()) == nullptr) {
+                m_state = State::Inactive;
+                return GizmoActivationState::Inactive;
+            }
+
             const int dist_sq = mouse_dist_sq(e.x(), e.y());
             if (dist_sq < THRESHOLD_DIST_SQ)
                 return GizmoActivationState::Probing;
+            SPDLOG_INFO("  QuickDragGizmo threshold reached {}", dist_sq);
             m_state = State::Dragging;
             m_selection_handler.mark_selected(*n->node);
         }
@@ -58,17 +62,22 @@ GizmoActivationState QuickDragGizmo::on_mouse(const GizmoEventContext& ctx, bool
         if (m_state != State::Inactive)
             m_scene_interactor.finalize_transform_selection(m_xform_memento, false);
 
+        const bool was_active = m_state == State::Dragging;
         m_state = State::Inactive;
-        return GizmoActivationState::Inactive;
+        return was_active ? GizmoActivationState::Done : GizmoActivationState::Inactive;
     } else if (e.type() == Platform::MouseEvent::Type::Leave) {
         if (m_state != State::Inactive)
             m_scene_interactor.finalize_transform_selection(m_xform_memento, true);
+        const bool was_active = m_state == State::Dragging;
         m_state = State::Inactive;
-        return GizmoActivationState::Inactive;
+        return was_active ? GizmoActivationState::Done : GizmoActivationState::Inactive;
     } else {
+        m_state = State::Inactive;
         return GizmoActivationState::Inactive;
     }
 }
+
+void QuickDragGizmo::on_cycle_prepare() { m_state = State::Inactive; }
 
 bool QuickDragGizmo::mouse_pos(float screen_x, float screen_y, Vec3d& out_pos)
 {

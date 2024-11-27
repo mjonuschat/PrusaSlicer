@@ -108,6 +108,23 @@ public:
         return *this;
     }
 
+    size_t& current_offset() const
+    {
+        return m_indices.empty() ? m_vertices.size() : m_indices.size();
+    }
+
+    GeometryBuilder& current_offset(size_t& vertex_offset) const
+    {
+        vertex_offset = current_offset();
+        return *this;
+    }
+
+    GeometryBuilder& add_draw_command(const DrawCommand& rc)
+    {
+        m_commands.push_back(rc);
+        return *this;
+    }
+
     void update(Geometry& geometry, bool clear_after = true)
     {
         void* index_data = nullptr;
@@ -130,9 +147,11 @@ public:
             m_vertices.data(), m_vertices.size(), VertexType::format(),
             index_data, index_count,index_type
         );
+        geometry.render_commands() = m_commands;
         if (clear_after) {
             m_vertices.clear();
             m_indices.clear();
+            m_commands.clear();
         }
     }
 
@@ -165,10 +184,14 @@ private:
 private:
     std::vector<V> m_vertices;
     std::vector<I> m_indices;
+    DrawCommands m_commands;
 };
 
-
-std::unique_ptr<Geometry> geometry_from_triangle_mesh(Device& device, const TriangleMesh& triangle_mesh);
-std::unique_ptr<Geometry> geometry_from_triangle_mesh(Device& device, const indexed_triangle_set& triangle_mesh);
+std::unique_ptr<Geometry> geometry_from_triangle_mesh(
+    Device& device, const TriangleMesh& triangle_mesh, const Material& material = {}
+);
+std::unique_ptr<Geometry> geometry_from_triangle_mesh(
+    Device& device, const indexed_triangle_set& triangle_mesh, const Material& material = {}
+);
 
 } // namespace Slic3r::App::Render

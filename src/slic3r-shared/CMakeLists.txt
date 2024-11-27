@@ -37,8 +37,6 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Scene/Transform.hpp
         src/Slic3r/App/Scene/MeshRenderNodeComponent.cpp
         include/Slic3r/App/Scene/MeshRenderNodeComponent.hpp
-        src/Slic3r/App/Scene/Material.cpp
-        include/Slic3r/App/Scene/Material.hpp
         include/Slic3r/App/Scene/NodeBuilder.hpp
         src/Slic3r/App/Scene/NodeBuilder.cpp
         include/Slic3r/App/Scene/IRaycastNodeComponent.hpp
@@ -84,6 +82,7 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/Scene/SceneChangeListener.hpp
         include/Slic3r/Biz/Scene/SceneSelectionChangeListener.hpp
         include/Slic3r/Biz/Scene/Selection.hpp
+        src/Slic3r/Biz/Scene/Selection.cpp
         include/Slic3r/Biz/Scene/SceneInteractorProjectContext.hpp
 
         include/Slic3r/Biz/Preset/IBedPresetValueChangedListener.hpp

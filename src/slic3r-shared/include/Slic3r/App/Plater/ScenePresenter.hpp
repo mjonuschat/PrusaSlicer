@@ -12,6 +12,8 @@
 #include "Slic3r/App/Scene/TriangleMeshManager.hpp"
 #include "Slic3r/App/Plater/ISceneProvider.hpp"
 
+namespace Slic3r::App::Scene { class NodeBuilder; }
+
 namespace Slic3r::App::Plater {
 
 class ScenePresenter : public Biz::ISelectedProjectChangedListener,
@@ -81,6 +83,9 @@ private:
     void on_wipe_tower_added(Domain::SelectionId project_id, size_t idx) override;
     void on_wipe_tower_removed(Domain::SelectionId project_id, size_t idx) override;
     void on_wipe_tower_transformed(Domain::SelectionId project_id, size_t idx) override;
+
+    void build_volume_node(Scene::NodeBuilder& builder, Domain::SelectionId project_id, const ModelInstance* inst, const ModelVolume* vol);
+
 
 private:
     const Domain::Workbench& m_workbench;

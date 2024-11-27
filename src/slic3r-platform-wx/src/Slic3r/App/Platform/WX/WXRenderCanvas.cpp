@@ -452,7 +452,6 @@ void WXRenderCanvas::on_mouse_enter(wxMouseEvent& event)
     int mouse_x = ToDIP(event.GetX());
     int mouse_y = ToDIP(event.GetY());
 
-    bool x = mouse_x > 1 and mouse_y < 1;
     MouseEvent platform_event {
         MouseEvent::Type::Enter,
         MouseButton::NoButton,

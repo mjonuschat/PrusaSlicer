@@ -4,7 +4,7 @@
 #include "Slic3r/App/Scene/IImguiRenderNodeComponent.hpp"
 #include "Slic3r/App/Scene/IRaycastNodeComponent.hpp"
 #include "Slic3r/App/Scene/INodeTransformModifier.hpp"
-#include "Slic3r/App/Scene/Material.hpp"
+#include "Slic3r/App/Render/Material.hpp"
 #include "Slic3r/App/Scene/NodeVisitorTypes.hpp"
 #include "Slic3r/App/Scene/ScreenSpaceSizedTransformModifier.hpp"
 
@@ -206,9 +206,9 @@ public:
      * @{
      */
     bool has_material_override() const { return bool(m_material_override); }
-    void set_material_override(const Material& material) { m_material_override = std::make_unique<Material>(material); }
+    void set_material_override(const Render::Material& material) { m_material_override = std::make_unique<Render::Material>(material); }
     void remove_material_override() { if (m_material_override) m_material_override.reset(); }
-    const Material* material_override() const { return m_material_override.get(); }
+    const Render::Material* material_override() const { return m_material_override.get(); }
     /**@}*/
 
     /**
@@ -258,6 +258,17 @@ public:
     const std::string& debug_name() const
     { return m_debug_name; }
     /**@}*/
+
+    size_t level() const
+    {
+        size_t level = 0;
+        const auto* n = m_parent;
+        while (n != nullptr) {
+            level++;
+            n = n->parent();
+        }
+        return level;
+    }
 
 private:
     friend class Scene;
@@ -327,7 +338,7 @@ private:
     bool m_enabled{true};
 
     std::unique_ptr<IRenderNodeComponent> m_render_component;
-    std::unique_ptr<Material> m_material_override;
+    std::unique_ptr<Render::Material> m_material_override;
     std::unique_ptr<IImguiRenderNodeComponent> m_imgui_render_component;
     std::unique_ptr<IRaycastNodeComponent> m_raycast_component;
     std::unique_ptr<INodeTransformModifier> m_transform_modifier;

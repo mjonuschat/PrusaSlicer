@@ -3,7 +3,7 @@
 #include "Slic3r/App/Render/CommandBuffer.hpp"
 #include "Slic3r/App/Scene/IRenderLayerObject.hpp"
 #include "Slic3r/App/Scene/Camera.hpp"
-#include "Slic3r/App/Scene/Material.hpp"
+#include "Slic3r/App/Render/Material.hpp"
 
 namespace Slic3r::App::Scene {
 
@@ -21,7 +21,18 @@ public:
      * @param material_override Potential material override coming for the node or its parents.
      * @param cmd_buffer Command buffer the render commands are passed to.
      */
-    virtual void render(const Node& node, const Camera& camera, const Material& material_override, Render::CommandBuffer& cmd_buffer) const = 0;
+    virtual void render(
+        const Node& node,
+        const Camera& camera,
+        const Render::Material& material_override,
+        Render::CommandBuffer& cmd_buffer
+    ) const = 0;
+
+    /**
+     * @brief Get associated material.
+     * @return
+     */
+    virtual const Render::Material& material() const = 0;
 };
 
 }

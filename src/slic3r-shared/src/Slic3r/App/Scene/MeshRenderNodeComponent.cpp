@@ -8,57 +8,37 @@
 
 namespace Slic3r::App::Scene {
 
+const std::string UNIFORM_VIEW_MODEL_MATRIX = "view_model_matrix";
+const std::string UNIFORM_PROJECTION_MATRIX = "projection_matrix";
+const std::string UNIFORM_VIEW_NORMAL_MATRIX = "view_normal_matrix";
+const std::string UNIFORM_VOLUME_WORLD_MATRIX = "volume_world_matrix";
+
 void MeshRenderNodeComponent::render(
     const Node& node,
     const Camera& camera,
-    const Material& material_override,
+    const Render::Material& resolved_material,
     Render::CommandBuffer& cmd_buffer
 ) const
 {
-    Material mat = m_material;
-    mat.update(material_override);
-
-    const Render::Shader& shader = *mat.shader();
-    cmd_buffer.bind_shader(shader);
-    cmd_buffer.bind_geometry(*m_geometry, shader);
-
-    for (const auto [slot, texture] : mat.textures())
-        cmd_buffer.bind_texture(slot, *texture);
-
-    for (const auto& [name, value] : mat.uniforms())
-        Render::set_uniform(shader, name.c_str(), value);
+    const Render::Shader& shader = *resolved_material.shader();
+    Render::Material material = resolved_material;
 
     // Set transform uniforms
     Transform view = camera.view();
     const Transform& model = node.world_transform();
 
-    int uniform_id = shader.get_uniform_location("view_model_matrix");
-    if (uniform_id >= 0) {
-        Matrix4f model_view = (view * model).cast<float>();
-        shader.set_uniform(uniform_id, model_view);
-    }
+    // update per-node uniforms
+    Matrix4f model_view = (view * model).cast<float>();
+    material.set_uniform(UNIFORM_VIEW_MODEL_MATRIX, model_view);
+    Matrix4f value = camera.projection().cast<float>();
+    material.set_uniform(UNIFORM_PROJECTION_MATRIX, value);
+    Matrix3f normal =
+        (view.block<3, 3>(0, 0) * model.block<3, 3>(0, 0)).inverse().transpose().cast<float>();
+    material.set_uniform(UNIFORM_VIEW_NORMAL_MATRIX, normal);
+    Matrix4f vol_world = node.world_transform().cast<float>();
+    material.set_uniform(UNIFORM_VOLUME_WORLD_MATRIX, vol_world);
 
-    uniform_id = shader.get_uniform_location("projection_matrix");
-    if (uniform_id >= 0) {
-        shader.set_uniform(uniform_id, camera.projection());
-    }
-
-    uniform_id = shader.get_uniform_location("view_normal_matrix");
-    if (uniform_id >= 0) {
-        //Matrix3f normal = view.block<3, 3>(0, 0) * model.block<3, 3>(0, 0).inverse().transpose();
-        Matrix3f normal =
-            (view.block<3, 3>(0, 0) * model.block<3, 3>(0, 0)).inverse().transpose().cast<float>();
-        shader.set_uniform(uniform_id, normal);
-    }
-
-    uniform_id = shader.get_uniform_location("volume_world_matrix");
-    if (uniform_id >= 0)
-        shader.set_uniform(uniform_id, node.world_transform());
-
-    cmd_buffer.draw(m_primitive_type, m_vertex_offset, m_vertex_count);
-
-    for (const auto [slot, texture] : mat.textures())
-        cmd_buffer.unbind_texture(slot, *texture);
+    cmd_buffer.bind_and_draw(*m_geometry, material);
 }
 
 void MeshRenderNodeComponent::set_geometry(

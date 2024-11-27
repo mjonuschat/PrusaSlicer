@@ -8,6 +8,15 @@
 
 namespace Slic3r::App::Plater {
 
+static const std::unordered_map<ModelVolumeType, ColorRGBA> VOLUME_COLORS = {
+    {ModelVolumeType::MODEL_PART, {1, 0.5f, 0, 1}},
+    {ModelVolumeType::NEGATIVE_VOLUME, {0.5f, 0.5f, 0.5f, 0.5f}},
+    {ModelVolumeType::SUPPORT_BLOCKER, {0.6f, 0.2f, 1.0f, 0.5f}},
+    {ModelVolumeType::SUPPORT_ENFORCER, {0.6f, 0.2f, 1.0f, 0.5f}},
+    {ModelVolumeType::PARAMETER_MODIFIER, {1, 1.0f, 0, 0.5f}},
+    {ModelVolumeType::INVALID, {1, 0.2f, 0.2f, 0.5f}},
+};
+
 ScenePresenter::ScenePresenter(
     const Domain::Workbench& m_workbench, Biz::ProjectInteractor& project_interactor, Render::Device& device
 )
@@ -16,7 +25,7 @@ ScenePresenter::ScenePresenter(
 //    std::for_each(m_workbench.projects().begin(), m_workbench.projects().end(), [this](const auto& p) {
 //        m_projects.emplace(p.first, ScenePresenterProjectContext{});
 //    });
-    on_selected_project_changed(m_project_interactor.selected_project_id());
+    ScenePresenter::on_selected_project_changed(m_project_interactor.selected_project_id());
 }
 
 void ScenePresenter::render_scene(Render::CommandBuffer& command_buffer)
@@ -48,51 +57,90 @@ void ScenePresenter::on_selected_project_changed(size_t index)
 
 void ScenePresenter::on_scene_selection_changed(Domain::SelectionId project_id, const Biz::Scene::Selection& selection)
 {
+    auto& proj = m_projects[project_id];
+    auto& selection_changes = proj.selection_scene_changes();
+    auto& scene = proj.scene();
 
+    selection_changes.roll_back();
+
+    if (selection.elements.empty())
+        return;
+
+    Scene::Node::NodeList found_nodes;
+    found_nodes.reserve(selection.elements.size());
+    for (const auto& e : selection.elements) {
+        scene.root().query([&](const Scene::Node* n) {
+            const auto* tag = n->tag_of_type<SceneNodeTag>();
+            if (tag == nullptr)
+                return false;
+            return tag->matches_element(e);
+        }, found_nodes);
+    }
+
+    auto selection_mat = Render::Material{}
+        .set_uniform("uniform_color", ColorRGBA{1.0f, 1.0f, 1.0f, 1.0f})
+        .set_transparent(false);
+    for (auto* n : found_nodes)
+        selection_changes.change(*n)
+            .set_material_override(selection_mat);
+}
+
+void ScenePresenter::build_volume_node(
+    Scene::NodeBuilder& builder,
+    Domain::SelectionId project_id,
+    const ModelInstance* inst,
+    const ModelVolume* vol
+)
+{
+    auto& ctx = m_projects[project_id];
+    auto& geom_mgr = ctx.model_geometry_manager();
+    auto& trimesh_mgr = ctx.model_triangle_mesh_manager();
+
+    GeometryElementId id{GeometryElementId::Type::Volume, vol->id().id};
+    const auto& trimesh =
+        trimesh_mgr.get_or_create(id, [&]() -> std::unique_ptr<Scene::TriangleMesh> {
+            return std::make_unique<Scene::TriangleMesh>(vol->mesh_ptr());
+        });
+    const auto* geom = geom_mgr.get_or_create(id, [&]() {
+        return Render::geometry_from_triangle_mesh(m_device, trimesh->triangles());
+    });
+    ColorRGBA color = ColorRGBA{1.0f, 1.0f, 1.0f, 1.0f};
+
+    auto color_it = VOLUME_COLORS.find(vol->type());
+    if (color_it != VOLUME_COLORS.end())
+        color = color_it->second;
+    const bool transparent = color.a() < 1.0f;
+
+    auto material = Render::Material{}
+        .set_shader(m_device.context().shader_manager().get_shader("gouraud_light"))
+        .set_uniform("uniform_color", color)
+        .set_transparent(transparent);
+    builder
+        .set_debug_name(fmt::format("vol: {}", vol->id().id))
+        .transform([&](auto& xform) { xform = vol->get_matrix(); })
+        .set_tag(SceneNodeTag{vol->get_object()->id().id, vol->id().id, inst->id().id, vol->type()})
+        .set_mesh(geom, material)
+        .set_aabb(trimesh->aabb_mesh());
 }
 
 void ScenePresenter::on_instance_added(Domain::SelectionId project_id, const Domain::ElementRefs& instances)
 {
     auto& scn = scene();
-    auto& ctx = project_context();
-    auto& geom_mgr = ctx.model_geometry_manager();
-    auto& trimesh_mgr = ctx.model_triangle_mesh_manager();
     const Domain::Project& project = m_workbench.project(project_id);
 
-    Scene::NodeBuilder node_builder(scn);
-    node_builder
-        .set_debug_name("project-root")
-        .child_for_each(instances, [&](Scene::NodeBuilder& builder, const Domain::ElementRef& element) {
-            const ModelObject* obj = project.find_object_by_id(element.object_id);
-            const ModelInstance* inst = Domain::find_by_id<ModelInstance>(obj->instances, element.instance_id);
-            builder
-                .set_debug_name(fmt::format("obj: {} inst: {}", obj->id().id, inst->id().id))
-                .transform([inst](auto& t) { t = inst->get_matrix(); })
-                .set_tag(SceneNodeTag{obj->id().id, 0, inst->id().id, ModelVolumeType::INVALID})
-                .child_for_each(obj->volumes, [&](Scene::NodeBuilder& builder, const ModelVolume* vol) {
-                    GeometryElementId id{GeometryElementId::Type::Volume, element.volume_id};
-                    const auto& trimesh =
-                        trimesh_mgr.get_or_create(id, [&]() -> std::unique_ptr<Scene::TriangleMesh> {
-                            return std::make_unique<Scene::TriangleMesh>(vol->mesh_ptr());
-                        });
-                    const auto* geom = geom_mgr.get_or_create(id, [&]() {
-                        return Render::geometry_from_triangle_mesh(m_device, trimesh->triangles());
-                    });
-                    auto material = Scene::Material{}
-                        .set_shader(m_device.context().shader_manager().get_shader(
-                            "gouraud_light"
-                        ))
-                        .set_uniform("uniform_color", ColorRGBA{1, 0, 0.5f, 1});
-                    builder
-                        .set_debug_name(fmt::format("vol: {}", vol->id().id))
-                        .transform([&](auto& xform) { xform = vol->get_matrix(); })
-                        .set_tag(SceneNodeTag{obj->id().id, vol->id().id, inst->id().id, vol->type()})
-                        .set_mesh(geom, material)
-                        .set_aabb(trimesh->aabb_mesh());
-                });
-            }
-        );
-    scn.add_child(node_builder.build().release());
+    Scene::NodeBuilder builder(scn);
+    for (const auto& element : instances) {
+        const ModelObject* obj = project.find_object_by_id(element.object_id);
+        const ModelInstance* inst = Domain::find_by_id<ModelInstance>(obj->instances, element.instance_id);
+        builder
+            .set_debug_name(fmt::format("obj: {} inst: {}", obj->id().id, inst->id().id))
+            .transform([inst](auto& t) { t = inst->get_matrix(); })
+            .set_tag(SceneNodeTag{obj->id().id, 0, inst->id().id, ModelVolumeType::INVALID})
+            .child_for_each(obj->volumes, [&](Scene::NodeBuilder& builder, const ModelVolume* vol) {
+                build_volume_node(builder, project_id, inst, vol);
+            });
+        scn.add_child(builder.build().release());
+    }
 }
 
 void ScenePresenter::on_instance_removed(Domain::SelectionId project_id, const Domain::ElementRefs& instances)
@@ -121,11 +169,37 @@ void ScenePresenter::on_instance_transformed(Domain::SelectionId project_id, con
 void ScenePresenter::on_volume_added(Domain::SelectionId project_id, const Domain::ElementRefs& volumes)
 {
     // find all instances of given object id and insert the volume node as child
+    DEBUG_ASSERT(volumes.size() > 0);
+    const auto obj_id = volumes.front().object_id;
+    DEBUG_ASSERT(std::all_of(volumes.begin(), volumes.end(), [=](const Domain::ElementRef& vol) {
+        return vol.object_id == obj_id;
+    }));
+    auto& scene = m_projects[project_id].scene();
+    const auto* obj = m_workbench.project(project_id).find_object_by_id(obj_id);;
+
+    Scene::visit_conditional(scene.root(), [&](Scene::Node& n) {
+        const SceneNodeTag* t = n.tag_of_type<SceneNodeTag>();
+        if (t != nullptr && t->volume_id == 0 && t->object_id == obj_id) {
+            // root of the instance
+
+            const auto* inst = Domain::find_by_id<ModelInstance>(obj->instances, t->instance_id);
+            Scene::NodeBuilder builder{scene};
+            for (const auto& e : volumes) {
+                const auto* vol = Domain::find_by_id<ModelVolume>(obj->volumes, e.volume_id);
+                build_volume_node(builder, project_id, inst, vol);
+                scene.add_child(builder.build().release(), &n);
+            }
+
+            return false;
+        }
+        return true;
+    });
 }
 
 void ScenePresenter::on_volume_removed(Domain::SelectionId project_id, const Domain::ElementRefs& volumes)
 {
     // find all instances of given object id and remove the volume node there
+
 }
 
 void ScenePresenter::on_volume_transformed(Domain::SelectionId project_id, const Domain::ElementRefs& elements)

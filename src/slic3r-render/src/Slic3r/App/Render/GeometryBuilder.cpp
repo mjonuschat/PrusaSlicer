@@ -40,10 +40,9 @@ const VertexAttribsDesc& VertexP3N3T2::format()
     return desc;
 }
 
-std::unique_ptr<Geometry> geometry_from_triangle_mesh(Device& device, const TriangleMesh& triangle_mesh)
-{ return geometry_from_triangle_mesh(device, triangle_mesh.its); }
-
-std::unique_ptr<Geometry> geometry_from_triangle_mesh(Device& device, const indexed_triangle_set& triangle_mesh)
+std::unique_ptr<Geometry> geometry_from_triangle_mesh(
+    Device& device, const indexed_triangle_set& triangle_mesh, const Material& material
+)
 {
     const size_t num_verts = triangle_mesh.indices.size() * 3;
     GeometryBuilder<VertexP3N3> builder;
@@ -56,7 +55,15 @@ std::unique_ptr<Geometry> geometry_from_triangle_mesh(Device& device, const inde
             .add_vertex({triangle_mesh.vertices[tri[1]], n})
             .add_vertex({triangle_mesh.vertices[tri[2]], n});
     }
+    builder.add_draw_command({PrimitiveType::Triangles, 0, num_verts, material});
     return builder.build(device);
 }
 
+std::unique_ptr<Geometry> geometry_from_triangle_mesh(
+    Device& device, const TriangleMesh& triangle_mesh, const Material& material
+)
+{
+    return geometry_from_triangle_mesh(device, triangle_mesh.its, material);
 }
+
+} // namespace Slic3r::App::Render

@@ -13,7 +13,7 @@ public:
         Internal() = default;
     };
 
-    virtual ~WithInternal() = default;
+    virtual ~WithInternal() noexcept = default;
     WithInternal(WithInternal&&) = default;
     WithInternal& operator=(WithInternal&&) = default;
 

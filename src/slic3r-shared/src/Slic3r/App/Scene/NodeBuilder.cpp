@@ -22,7 +22,7 @@ NodeBuilder& NodeBuilder::transform(const std::function<void(Transform3d&)>& mod
     return *this;
 }
 
-NodeBuilder& NodeBuilder::set_mesh(const Render::Geometry* geometry, const Material& material, int layer_index)
+NodeBuilder& NodeBuilder::set_mesh(const Render::Geometry* geometry, const Render::Material& material, int layer_index)
 {
     ensure_current();
 
@@ -32,7 +32,7 @@ NodeBuilder& NodeBuilder::set_mesh(const Render::Geometry* geometry, const Mater
     return *this;
 }
 
-NodeBuilder& NodeBuilder::set_material_override(const Material& material)
+NodeBuilder& NodeBuilder::set_material_override(const Render::Material& material)
 {
     ensure_current();
 

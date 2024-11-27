@@ -157,7 +157,7 @@ void TestRenderModule::init_scene()
                                 })
                                 .set_mesh(
                                     cone,
-                                    Scene::Material{}
+                                    Render::Material{}
                                         .set_shader(shader)
                                         .set_uniform("uniform_color", color)
                                 )
@@ -178,7 +178,7 @@ void TestRenderModule::init_scene()
                 })
                 .set_mesh(
                     cube,
-                    Scene::Material{}
+                    Render::Material{}
                         .set_shader(shader)
                         .set_uniform("uniform_color", ColorRGBA{1.0f, 0.0f, 0.5f, 1.0f})
                 )
@@ -275,7 +275,7 @@ void TestRenderModule::render_scene_scene()
 }
 
 
-void TestRenderModule::reset_highlighted(const Scene::Node::NodeList& nodes_to_highlight, const Scene::Material& material)
+void TestRenderModule::reset_highlighted(const Scene::Node::NodeList& nodes_to_highlight, const Render::Material& material)
 {
     remove_highlighted();
     for (auto* n : nodes_to_highlight)
@@ -397,7 +397,7 @@ void TestRenderModule::on_scene_mouse_event(const Platform::MouseEvent &e)
 
             reset_highlighted(
                 to_highlight,
-                Scene::Material()
+                Render::Material()
                     .set_uniform(
                         "uniform_color", ColorRGBA(0.9f, 0.9f, 0.9f, 1.f)
                     )

@@ -9,6 +9,7 @@ class Model;
 class ModelObject;
 class ModelVolume;
 class ModelInstance;
+enum class ModelVolumeType : int;
 }
 
 namespace Slic3r::Domain {

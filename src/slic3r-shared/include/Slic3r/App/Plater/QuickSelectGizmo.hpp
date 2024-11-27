@@ -13,11 +13,12 @@ namespace Slic3r::App::Plater {
 
 class QuickSelectGizmo : public IGizmo {
 public:
-    QuickSelectGizmo(Biz::Scene::SceneInteractor& scene_interactor, ISceneProvider& scene_provider)
+    explicit QuickSelectGizmo(Biz::Scene::SceneInteractor& scene_interactor)
         : m_scene_interactor(scene_interactor)
-        , m_selection_handler(scene_interactor, scene_provider)
+        , m_selection_handler(scene_interactor)
     {}
     GizmoActivationState on_mouse(const GizmoEventContext& ctx, bool only_active) override;
+    void on_cycle_prepare() override { m_processing = false; }
 private:
     using Clock = std::chrono::steady_clock;
     using TimePoint = std::chrono::time_point<Clock>;

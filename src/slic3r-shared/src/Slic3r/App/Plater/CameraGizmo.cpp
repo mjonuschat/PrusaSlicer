@@ -17,6 +17,9 @@ GizmoActivationState CameraGizmo::on_mouse(const GizmoEventContext& ctx, bool on
         m_last_x = event.x();
         m_last_y = event.y();
     } else if (type == Platform::MouseEvent::Type::Move) {
+        if (m_state == State::Inactive)
+            return GizmoActivationState::Inactive;
+
         float delta_x = (event.x() - m_last_x) / ctx.screen_info().logical_width();
         float delta_y = (event.y() - m_last_y) / ctx.screen_info().logical_height();
         m_last_x = event.x();
@@ -27,6 +30,7 @@ GizmoActivationState CameraGizmo::on_mouse(const GizmoEventContext& ctx, bool on
         else if (m_state == State::Panning)
             update_pan(delta_x, delta_y);
 
+        return GizmoActivationState::Active;
     } else if (type == Platform::MouseEvent::Type::ButtonUp) {
         m_state = State::Inactive;
         return only_active ? GizmoActivationState::Done : GizmoActivationState::Inactive;
@@ -57,7 +61,7 @@ void CameraGizmo::update_zoom(float wheel_delta_y)
     auto& scene = m_scene_provider.scene();
     auto& trackball = scene.camera_trackball();
     double d = trackball.cam_focal_dist();
-    d += wheel_delta_y * 0.05f;
+    d += -wheel_delta_y * 0.2f;
     trackball.set_focal_distance(d);
 }
 

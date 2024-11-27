@@ -13,7 +13,7 @@ public:
 
     explicit MeshRenderNodeComponent(
         const Render::Geometry* geometry,
-        const Material& material,
+        const Render::Material& material,
         Render::PrimitiveType primitive_type = Render::PrimitiveType::Triangles,
         size_t count = 0,
         size_t offset = 0
@@ -26,23 +26,30 @@ public:
     MeshRenderNodeComponent& operator=(const MeshRenderNodeComponent&) = default;
     MeshRenderNodeComponent& operator=(MeshRenderNodeComponent&&) = default;
 
+    const Render::Material& material() const override { return m_material; }
+
     void render(
         const Node& node,
         const Camera& camera,
-        const Material& material_override,
+        const Render::Material& resolved_material,
         Render::CommandBuffer& cmd_buffer
     ) const override;
 
     int layer_index() const override { return m_layer;}
     void set_layer_index(int layer) { m_layer = layer; }
 
-    void set_geometry(const Render::Geometry* geometry, Render::PrimitiveType primitive_type=Render::PrimitiveType::Triangles, size_t count=0, size_t offset=0);
+    void set_geometry(
+        const Render::Geometry* geometry,
+        Render::PrimitiveType primitive_type = Render::PrimitiveType::Triangles,
+        size_t count = 0,
+        size_t offset = 0
+    );
 
 
 
 private:
     const Render::Geometry* m_geometry{nullptr};
-    Material m_material;
+    Render::Material m_material;
     Render::PrimitiveType m_primitive_type{Render::PrimitiveType::Triangles};
     size_t m_vertex_offset{0};
     size_t m_vertex_count{0};

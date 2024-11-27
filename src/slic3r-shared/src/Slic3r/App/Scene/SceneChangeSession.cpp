@@ -5,6 +5,8 @@ namespace Slic3r::App::Scene {
 void AddNodeChange::roll_back(Scene& scene)
 {
     auto* node = scene.node(m_node_id);
+    if (node == nullptr)
+        return;
     Node* original_parent = nullptr;
     if (m_original_parent_id) {
         original_parent = scene.node(m_original_parent_id);
@@ -26,10 +28,12 @@ void AddNodeChange::roll_back(Scene& scene)
 void AddMaterialOverrideChange::roll_back(Scene& scene)
 {
     Node* node = scene.node(m_changed_node_id);
-    if (m_original_material)
-        node->set_material_override(*m_original_material);
-    else
-        node->remove_material_override();
+    if (node != nullptr) {
+        if (m_original_material)
+            node->set_material_override(*m_original_material);
+        else
+            node->remove_material_override();
+    }
 }
 
 
@@ -63,7 +67,7 @@ SceneChangeSession::NodeChangeBuilder& SceneChangeSession::NodeChangeBuilder::ad
     return *this;
 }
 SceneChangeSession::NodeChangeBuilder& SceneChangeSession::NodeChangeBuilder::set_material_override(
-    const Material& m
+    const Render::Material& m
 )
 {
     m_session.m_changes.push_back(
@@ -72,4 +76,5 @@ SceneChangeSession::NodeChangeBuilder& SceneChangeSession::NodeChangeBuilder::se
     m_node.set_material_override(m);
     return *this;
 }
+
 }

@@ -15,10 +15,11 @@ public:
     QuickDragGizmo(Biz::Scene::SceneInteractor& scene_interactor, ISceneProvider& scene_provider)
         : m_scene_interactor(scene_interactor)
         , m_scene_provider(scene_provider)
-        , m_selection_handler(scene_interactor, scene_provider)
+        , m_selection_handler(scene_interactor)
     {}
 
     GizmoActivationState on_mouse(const GizmoEventContext& ctx, bool only_active) override;
+    void on_cycle_prepare() override;
 private:
     int mouse_dist_sq(int mouse_x, int mouse_y) const
     {

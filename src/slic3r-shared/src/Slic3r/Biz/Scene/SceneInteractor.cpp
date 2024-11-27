@@ -58,6 +58,7 @@ void transform_selection_volume_mode(
         vol->set_transformation(transform_product(memento.elements[e].original_xform, relative_transform));
     }
 }
+
 } // namespace
 
 void SceneInteractor::on_selected_project_changed(size_t index)
@@ -81,6 +82,7 @@ void SceneInteractor::set_selection(const Selection& selection)
 {
     const auto it = m_projects.find(m_selected_project_id);
     ASSERT(it != m_projects.end());
+    DEBUG_ASSERT(selection.is_valid());
     it->second.selection = selection;
     m_selection_changed_listeners.invoke([&](auto* l){
         l->on_scene_selection_changed(m_selected_project_id, selection);
@@ -93,6 +95,7 @@ void SceneInteractor::modify_selection(const std::function<void(Selection&)>& mo
     ASSERT(it != m_projects.end());
     auto& selection = it->second.selection;
     modifier(selection);
+    DEBUG_ASSERT(selection.is_valid());
     m_selection_changed_listeners.invoke([&](auto* l){
         l->on_scene_selection_changed(m_selected_project_id, selection);
     });
@@ -105,11 +108,56 @@ void SceneInteractor::new_object_from_mesh(TriangleMesh&& mesh)
     auto& obj = *project.model().add_object();
     auto& vol = *obj.add_volume(std::move(mesh));
     auto& inst = *obj.add_instance();
-    const Domain::ElementRefs updated {{obj.id().id, inst.id().id, vol.id().id}};
+    const Domain::ElementRefs updated {{obj.id().id, inst.id().id, 0}};
 
     m_changed_listeners.invoke([&](auto* l) {
         l->on_instance_added(m_selected_project_id, updated);
     });
+
+    set_selection({SelectionMode::Instance, {updated}});
+}
+
+void SceneInteractor::add_volume_from_mesh(TriangleMesh&& mesh, ModelVolumeType volume_type, const Transform& xform)
+{
+    auto& project = m_workbench.project(m_selected_project_id);
+    const Selection& sel = selection();
+    //DEBUG_ASSERT(sel.mode == SelectionMode::Instance);
+    DEBUG_ASSERT(sel.elements.size() == 1);
+    size_t obj_id = sel.elements[0].object_id;
+    Domain::ElementRefs updated;
+    
+    auto& obj = *project.find_object_by_id(obj_id);
+    auto& vol = *obj.add_volume(std::move(mesh), volume_type);
+    vol.set_transformation(Transform3d{xform});
+    updated.push_back({obj.id().id, obj.instances[0]->id().id, vol.id().id});
+
+    m_changed_listeners.invoke([&](auto* l) {
+        l->on_volume_added(m_selected_project_id, updated);
+    });
+
+    set_selection({SelectionMode::Volume, updated});
+}
+
+void SceneInteractor::add_instance(const Transform& xform)
+{
+    auto& project = m_workbench.project(m_selected_project_id);
+    const Selection& sel = selection();
+    //DEBUG_ASSERT(sel.mode == SelectionMode::Instance);
+    DEBUG_ASSERT(sel.elements.size() == 1);
+    size_t obj_id = sel.elements[0].object_id;
+    Domain::ElementRefs updated;
+
+    auto& obj = *project.find_object_by_id(obj_id);
+    auto& inst = *obj.add_instance();
+    inst.set_transformation(Geometry::Transformation{Transform3d{xform}});
+    updated.push_back({obj.id().id, inst.id().id, 0});
+
+    m_changed_listeners.invoke([&](auto* l) {
+        l->on_instance_added(m_selected_project_id, updated);
+    });
+
+    set_selection({SelectionMode::Instance, updated});
+
 }
 
 void SceneInteractor::transform_selection(const Matrix4d& relative_transform, TransformMemento& memento)

@@ -32,7 +32,7 @@ protected:
     void render_object_hud(const Scene::Node& n, const Eigen::AlignedBox<float, 2>& screen_bounding_box);
 
     void remove_highlighted();
-    void reset_highlighted(const Scene::Node::NodeList& nodes_to_highlight, const Scene::Material& material);
+    void reset_highlighted(const Scene::Node::NodeList& nodes_to_highlight, const Render::Material& material);
 
 private:
     std::unique_ptr<Render::Geometry> m_geometry;

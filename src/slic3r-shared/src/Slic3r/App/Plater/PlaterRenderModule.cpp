@@ -21,119 +21,61 @@ void PlaterRenderModule::on_init(Render::Device& device)
     m_project_interactor.scene_interactor().add_scene_changed_listener(m_scene_presenter.get());
     m_project_interactor.scene_interactor().add_scene_selection_changed_listener(m_scene_presenter.get());
     init_gizmos();
-    //init_scene();
-    m_project_interactor.scene_interactor().new_object_from_mesh(TriangleMesh{its_make_cube(10,10,10) });
-
+    init_scene();
 }
 
 void PlaterRenderModule::init_scene()
 {
-    /*
-    auto& device  = *m_device;
-    m_scene = std::make_unique<Scene::Scene>();
-    m_scene->camera().set_viewport(Render::Rect::from(0, 0, m_screen_info));
-    Transform3d cam_xform = Transform3d::Identity();
-    cam_xform.translate(Vec3d{0, 0 , 30});
-    m_scene->camera().model() = cam_xform.matrix();
+    auto& scene_interactor = m_project_interactor.scene_interactor();
 
-    Scene::NodeBuilder node_builder{*m_scene};
-    auto* cone_mesh = m_scene->triangle_mesh_manager().get_or_create("cone-2-5", [](){
-        return std::make_unique<Scene::TriangleMesh>(its_make_cone(2, 5, M_PI / 8));
-    });
-    auto* cube_mesh = m_scene->triangle_mesh_manager().get_or_create("box-2-2-2", [](){
-        return std::make_unique<Scene::TriangleMesh>(its_make_cube(2, 2, 2));
-    });
+    const size_t x_size = 5;
+    const size_t y_size = 5;
+    const double span = 20;
+    const double x_off = -((x_size - 1) * span) / 2;
+    const double y_off = -((y_size - 1) * span) / 2;
 
-    auto cone = m_scene->geometry_manager().get_or_create("cone-2-5", [&]() {
-        return Render::geometry_from_triangle_mesh(device, cone_mesh->triangles());
-    });
+    {
+        scene_interactor.new_object_from_mesh(TriangleMesh{its_make_cube(10,10,10) });
 
-    auto cube = m_scene->geometry_manager().get_or_create("box-2-2-2", [&](){
-        return Render::geometry_from_triangle_mesh(device, cube_mesh->triangles());
-    });
+        Biz::Scene::TransformMemento xform_memento;
+        Transform3d xform = Transform3d::Identity();
+        xform.translate(Vec3d{0 * span + x_off, 0 * span + y_off, 0});
+        scene_interactor.transform_selection(xform.matrix(), xform_memento);
 
-    auto shader = device.context().shader_manager().get_shader("gouraud_light");
-    constexpr double right_angle = M_PI / 2.0;
+        xform = Transform3d::Identity();
+        xform.translate(Vec3d{ 10, 10, 10});
+        scene_interactor.add_volume_from_mesh(TriangleMesh{its_make_cube(10,10,10)}, ModelVolumeType::NEGATIVE_VOLUME, xform.matrix());
 
-    node_builder
-        //        .transform([](auto& xform){
-        //            xform
-        //                .rotate(Eigen::AngleAxisf{right_angle/2, Vec3f::UnitZ()})
-        //                .rotate(Eigen::AngleAxisf{right_angle/2, Vec3f::UnitX()});
-        //        })
-        .child([&](auto& node_builder){
-            node_builder
-                .set_screen_space_sized_modifier(0.03f)
-                .children(3, [&](auto& builder, size_t i){
-                    ColorRGBA color{0, 0, 0, 1.f};
-                    color.set(i, 1);
-                    builder
-                        .transform([&](auto& xform) {
-                            Vec3d offset = Vec3d::Zero();
-                            offset[i] = 10;
-                            xform.translate(offset);
-                        })
-                        .child([&](auto& builder){
-                            builder
-                                .transform([&](auto& xform){
-                                    // cone points in +Z direction,
-                                    if (i == 0) {
-                                        // make it pointing in +X direction
-                                        xform.rotate(Eigen::AngleAxisd{right_angle, Vec3d::UnitY()});
-                                    } else if (i == 1) {
-                                        // make it pointing in +Y direction
-                                        xform.rotate(Eigen::AngleAxisd{-right_angle, Vec3d::UnitX()});
-                                    }
-                                })
-                                .set_mesh(
-                                    cone,
-                                    Scene::Material{}
-                                        .set_shader(shader)
-                                        .set_uniform("uniform_color", color),
-                                    100
-                                )
-                                .set_aabb(&cone_mesh->aabb_mesh())
-                                .set_tag(GizmoNodeTag{AxisType(i)});
+        xform = Transform3d::Identity();
+        xform.translate(Vec3d{ 0, -10, 10});
+        scene_interactor.add_volume_from_mesh(TriangleMesh{its_make_cube(10,10,10)}, ModelVolumeType::PARAMETER_MODIFIER, xform.matrix());
 
-                            if (i == 0)
-                                builder.set_imgui_func([this](const auto& n, const auto& screen_bb) {
-                                    this->render_object_hud(n, screen_bb);
-                                });
+        xform = Transform3d::Identity();
+        xform.translate(Vec3d{ 0, 5, 10});
+        scene_interactor.add_volume_from_mesh(TriangleMesh{its_make_sphere(10, 12)}, ModelVolumeType::SUPPORT_ENFORCER, xform.matrix());
 
-                        });
-                });
-        })
-        .children(5 * 5, [&](auto& builder, size_t idx) {
-            builder
-                .transform([idx](auto& xform){
-                    constexpr static float stride = 10;
-                    xform.translate(Vec3d{(idx % 5) * stride, (idx / 5) * stride, 0});
-                })
-                .child([&](auto& builder){
-                    builder
-                        .transform([](auto& xform) {
-                            xform.translate(Vec3d{-1, -1, -1});
-                        })
-                        .set_mesh(
-                            cube,
-                            Scene::Material{}
-                                .set_shader(shader)
-                                .set_uniform("uniform_color", ColorRGBA{1.0f, 0.0f, 0.5f, 1.0f})
-                        )
-                        .set_aabb(&cube_mesh->aabb_mesh())
-                        .set_tag(SceneNodeTag{0, 0, idx});
-                });
-        });
-    m_scene->add_child(node_builder.build().release());
-    m_scene->camera_trackball().set_focal_distance(30);
-    */
+    }
+
+
+    for (size_t x = 0; x < x_size; x++) {
+        for (size_t y = 0; y < y_size; y++) {
+            if (x == 0 && y == 0)
+                continue;
+
+            Transform3d xform = Transform3d::Identity();
+            xform.translate(Vec3d{x * span + x_off, y * span + y_off, 0});
+            scene_interactor.add_instance(xform.matrix());
+        }
+    }
+
+    m_scene_presenter->scene().log_nodes();
 }
 
 void PlaterRenderModule::init_gizmos()
 {
     m_gizmo_manager = std::make_unique<GizmoManager>(*m_scene_presenter);
     m_gizmo_manager->add_base_gizmo<CameraGizmo>(*m_scene_presenter);
-    m_gizmo_manager->add_base_gizmo<QuickSelectGizmo>(m_project_interactor.scene_interactor(), *m_scene_presenter);
+    m_gizmo_manager->add_base_gizmo<QuickSelectGizmo>(m_project_interactor.scene_interactor());
     m_gizmo_manager->add_base_gizmo<QuickDragGizmo>(m_project_interactor.scene_interactor(), *m_scene_presenter);
 }
 
@@ -143,9 +85,9 @@ void PlaterRenderModule::render_scene()
     m_device->load_state();
     auto cmd_buffer = m_device->create_command_buffer();
 
+    cmd_buffer->set_viewport(Render::Rect::from(0, 0, m_screen_info));
     cmd_buffer->set_clear_values({0.45f, 0.55f, 0.60f, 1.00f});
     cmd_buffer->clear_buffers(true, true);
-    cmd_buffer->set_viewport(Render::Rect::from(0, 0, m_screen_info));
 
     //m_scene->render(*cmd_buffer);
     m_scene_presenter->render_scene(*cmd_buffer);
@@ -177,7 +119,7 @@ void PlaterRenderModule::render_imgui()
 
     m_scene_presenter->render_imgui(m_screen_info);
 
-    if (ImGui::Begin("Slicer", &m_gui_win_open)) {
+    if (ImGui::Begin("Outline", &m_gui_win_open)) {
         imgui_scenegraph_node_info(m_scene_presenter->scene().root());
     }
     ImGui::End();

@@ -141,12 +141,5 @@ template <> struct IndexTypeTraits<unsigned int> {
     static constexpr IndexType index_type = IndexType::UInt;
 };
 
-struct DrawCommand
-{
-    PrimitiveType primitive;
-    size_t offset{0};
-    size_t count{0};
-};
-using DrawCommands = std::vector<DrawCommand>;
 
 }

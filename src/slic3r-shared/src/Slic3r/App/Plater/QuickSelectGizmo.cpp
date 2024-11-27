@@ -6,9 +6,6 @@ namespace Slic3r::App::Plater {
 GizmoActivationState QuickSelectGizmo::on_mouse(const GizmoEventContext& ctx, bool only_active)
 {
     using namespace std::chrono_literals;
-    if (ctx.mouse_event().button() != Platform::MouseButton::Left)
-        return GizmoActivationState::Inactive;
-
     const auto type = ctx.mouse_event().type();
 
     constexpr static Clock::duration max_click_duration = Clock::duration {500ms};
@@ -18,27 +15,34 @@ GizmoActivationState QuickSelectGizmo::on_mouse(const GizmoEventContext& ctx, bo
             const Scene::Node& n = *item.node;
             return n.has_tag_of_type<SceneNodeTag>();
         });
+
     if (type == Platform::MouseEvent::Type::ButtonDown) {
+        if (ctx.mouse_event().button() != Platform::MouseButton::Left) {
+            m_processing = false;
+            return GizmoActivationState::Inactive;
+        }
+
         m_click_start = Clock::now();
         m_processing = true;
 
         return only_active ? GizmoActivationState::Active : GizmoActivationState::Probing;
     }
 
-    if (Clock::now() - m_click_start >= max_click_duration)
+    if (m_processing && Clock::now() - m_click_start >= max_click_duration) {
         m_processing = false;
+        SPDLOG_INFO("QuickSelectGizmo activation timed out");
+    }
     if (!m_processing)
         return GizmoActivationState::Inactive;
 
     if (type == Platform::MouseEvent::Type::Move) {
-        return GizmoActivationState::Probing;
+        return  GizmoActivationState::Probing;
     } else if (type == Platform::MouseEvent::Type::ButtonUp) {
         const bool additive = (ctx.mouse_event().key_modifiers() &
                                Platform::KeyModifiers(Platform::KeyModifier::Shift)) != 0;
         const auto& selection = m_scene_interactor.selection();
-        const bool selection_empty = selection.empty();
 
-        if (selection_empty) {
+        if (selection.empty()) {
             if (it == ctx.pick_results().end())
                 return GizmoActivationState::Inactive;
 

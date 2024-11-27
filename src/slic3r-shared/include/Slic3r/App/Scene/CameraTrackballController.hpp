@@ -66,7 +66,7 @@ private:
     constexpr static double MIN_FOCAL_DISTANCE = 1e-02;
 
     Vec3d m_cam_focal{0,0,0};
-    double m_cam_focal_dist{30};
+    double m_cam_focal_dist{200};
     double m_azimuth{-M_PI_2};
     double m_zenith{-M_PI_2};
 

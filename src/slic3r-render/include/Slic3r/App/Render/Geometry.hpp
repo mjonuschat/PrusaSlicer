@@ -1,14 +1,23 @@
 #pragma once
 
-#include "Types.hpp"
-#include "Buffer.hpp"
-#include "VertexAttribDesc.hpp"
-#include "WithInternal.hpp"
+#include "Slic3r/App/Render/Types.hpp"
+#include "Slic3r/App/Render/Buffer.hpp"
+#include "Slic3r/App/Render/VertexAttribDesc.hpp"
+#include "Slic3r/App/Render/WithInternal.hpp"
+#include "Slic3r/App/Render/DrawCommand.hpp"
 
 namespace Slic3r::App::Render {
 
 class Device;
 
+/**
+ * @brief Static GPU geometry container.
+ *
+ * It wraps vertex and optional index buffer along with list of DrawCommand s. Use GeometryBuilder
+ * to construct geometry in structured way, or you can use upload() method to pass raw buffers and
+ * relevant format descriptors.
+ *
+ */
 class Geometry : public WithInternal
 {
 public:
@@ -45,6 +54,9 @@ public:
     size_t vertex_count() const { return m_vertex_count; }
     size_t index_count() const { return m_index_count; }
 
+    const DrawCommands& draw_commands() const { return m_commands; }
+    DrawCommands& render_commands() { return m_commands; }
+
 private:
     Device& m_device;
     std::unique_ptr<VertexBuffer> m_vb;
@@ -54,6 +66,7 @@ private:
     IndexType m_index_type{IndexType::UInt};
     BufferUsage m_vertex_usage{BufferUsage::StaticDraw};
     BufferUsage m_index_usage{BufferUsage::StaticDraw};
+    DrawCommands m_commands;
     size_t m_vertex_count{0};
     size_t m_index_count{0};
 

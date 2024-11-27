@@ -8,14 +8,12 @@ set(SLIC3R_RENDER_FILES
         src/Slic3r/App/Render/Context.cpp
         include/Slic3r/App/Render/Device.hpp
         src/Slic3r/App/Render/Device.cpp
-        include/Slic3r/App/Render/Material.hpp
         include/Slic3r/App/Render/ShaderManager.hpp
         src/Slic3r/App/Render/ShaderManager_gl.cpp
         include/Slic3r/App/Render/ModelManager.hpp
         include/Slic3r/App/Render/Model.hpp
         include/Slic3r/App/Render/Texture.hpp
         src/Slic3r/App/Render/Texture_gl.cpp
-        include/Slic3r/App/Render/Drawable.hpp
         include/Slic3r/App/Render/Buffer.hpp
         src/Slic3r/App/Render/Buffer_gl.cpp
         include/Slic3r/App/Render/Shader.hpp
@@ -33,6 +31,7 @@ set(SLIC3R_RENDER_FILES
         src/Slic3r/App/Render/ImageCodec.cpp
         include/Slic3r/App/Render/ImageCodec.hpp
         include/Slic3r/App/Render/CommandBuffer.hpp
+        src/Slic3r/App/Render/CommandBuffer.cpp
         src/Slic3r/App/Render/CommandBuffer_gl.cpp
         src/Slic3r/App/Render/VertexAttribDesc.cpp
         include/Slic3r/App/Render/VertexAttribDesc.hpp
@@ -53,6 +52,9 @@ set(SLIC3R_RENDER_FILES
         src/Slic3r/App/Render/GL/GLDeviceInternal.cpp
         include/Slic3r/App/Render/ResourceManager.hpp
         include/Slic3r/App/Render/GeometryManager.hpp
+        include/Slic3r/App/Render/Material.hpp
+        src/Slic3r/App/Render/Material.cpp
+        include/Slic3r/App/Render/DrawCommand.hpp
 
         include/Slic3r/Memory.hpp
 )

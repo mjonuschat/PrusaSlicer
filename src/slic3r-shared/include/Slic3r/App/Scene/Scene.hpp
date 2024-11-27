@@ -34,6 +34,35 @@ struct ConstNodePickResult
 using NodePickResults = std::vector<NodePickResult>;
 using ConstNodePickResults = std::vector<ConstNodePickResult>;
 
+class ISceneRenderCustomizer
+{
+public:
+    virtual ~ISceneRenderCustomizer() = default;
+
+    virtual void on_render_begin(Render::CommandBuffer& cmd_buf) = 0;
+    virtual void on_layer_begin(Render::CommandBuffer& cmd_buf, size_t layer_idx) = 0;
+    virtual void on_opaque_pass_begin(Render::CommandBuffer& cmd_buf) = 0;
+    virtual void on_opaque_pass_end(Render::CommandBuffer& cmd_buf) = 0;
+    virtual void on_transparent_pass_begin(Render::CommandBuffer& cmd_buf) = 0;
+    virtual void on_transparent_pass_end(Render::CommandBuffer& cmd_buf) = 0;
+    virtual void on_layer_end(Render::CommandBuffer& cmd_buf, size_t layer_idx) = 0;
+    virtual void on_render_end(Render::CommandBuffer& cmd_buf) = 0;
+};
+
+class MinimalSceneRenderCustomizer : public ISceneRenderCustomizer
+{
+public:
+    void on_render_begin(Render::CommandBuffer& cmd_buf) override;
+    void on_layer_begin(Render::CommandBuffer& cmd_buf, size_t layer_idx) override {}
+    void on_opaque_pass_begin(Render::CommandBuffer& cmd_buf) override;
+    void on_opaque_pass_end(Render::CommandBuffer& cmd_buf) override {}
+    void on_transparent_pass_begin(Render::CommandBuffer& cmd_buf) override;
+    void on_transparent_pass_end(Render::CommandBuffer& cmd_buf) override;
+    void on_layer_end(Render::CommandBuffer& cmd_buf, size_t layer_idx) override {}
+    void on_render_end(Render::CommandBuffer& cmd_buf) override {}
+
+};
+
 /**
  * @brief Scenegraph entrypoint
  *
@@ -49,7 +78,7 @@ using ConstNodePickResults = std::vector<ConstNodePickResult>;
 class Scene final
 {
 public:
-    Scene() : m_camera_trackball(m_camera) { m_nodes_by_id[m_root.id()] = &m_root; }
+    Scene();
 
     Scene(const Scene&) = delete;
     Scene& operator=(const Scene&) = delete;
@@ -120,7 +149,7 @@ public:
      * @name Rendering
      * @{
      */
-    void render(Render::CommandBuffer& cmd_buffer) const;
+    void render(Render::CommandBuffer& cmd_buffer, ISceneRenderCustomizer* customizer = &ms_default_customizer) const;
     void render_imgui(const Render::ScreenInfo& screen_info) const;
     /** @} */
 
@@ -185,9 +214,12 @@ public:
     Node::NodeOwningList detach_children(const Node::NodePredicate & predicate, Node* parent = nullptr);
 
     /** @} */
+
+    void log_nodes() const;
 private:
     void register_node(Node* n);
     void unregister_node(Node* n);
+
 private:
     using NodeIdLookUp = std::unordered_map<size_t, Node*>;
 
@@ -197,6 +229,8 @@ private:
     NodeIdLookUp m_nodes_by_id;
     Render::GeometryManager<std::string> m_geometry_manager;
     TriangleMeshManager<std::string> m_trimesh_manager;
+
+    static MinimalSceneRenderCustomizer ms_default_customizer;
 };
 
 }

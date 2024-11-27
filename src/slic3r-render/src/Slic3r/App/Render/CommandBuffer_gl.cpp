@@ -7,6 +7,9 @@
 #include "Slic3r/App/Render/GL/GLCommandBufferInternal.hpp"
 #include "Slic3r/App/Render/GL/GLDeviceInternal.hpp"
 
+// ReSharper disable CppMemberFunctionMayBeConst
+// ReSharper disable CppMemberFunctionMayBeStatic
+// NOLINT_BEGIN(*-convert-member-functions-to-static)
 
 namespace Slic3r::App::Render {
 
@@ -103,6 +106,12 @@ void CommandBuffer::set_stencil_test_enabled(bool enabled)
     GL::setEnabled(GL_STENCIL_TEST, enabled);
 }
 
+void CommandBuffer::set_depth_write_enabled(bool enabled)
+{
+    glDepthMask(enabled ? GL_TRUE : GL_FALSE);
+    glCheck();
+}
+
 
 void CommandBuffer::bind_texture(uint8_t unit, const Texture& t)
 {
@@ -138,15 +147,6 @@ void CommandBuffer::draw(PrimitiveType primitive, size_t offset, size_t count)
     device.draw(primitive, offset, count == 0 ? m_bound_geometry_element_size : count);
 }
 
-void CommandBuffer::draw(const DrawCommand& cmd)
-{
-    draw(cmd.primitive, cmd.offset, cmd.count);
-}
-
-void CommandBuffer::draw(const DrawCommands::const_iterator first, const DrawCommands::const_iterator last)
-{
-    std::for_each(first, last, [this](const auto& cmd) { draw(cmd); });
-}
 
 
 void CommandBuffer::submit()

@@ -1,8 +1,9 @@
 #pragma once
 
 #include <cstddef>
-#include "Types.hpp"
-#include "WithInternal.hpp"
+#include "Slic3r/App/Render/Types.hpp"
+#include "Slic3r/App/Render/DrawCommand.hpp"
+#include "Slic3r/App/Render/WithInternal.hpp"
 
 namespace Slic3r::App::Render {
 
@@ -11,11 +12,11 @@ class Shader;
 class Texture;
 class Device;
 
-class CommandBuffer : public WithInternal
+class CommandBuffer final : public WithInternal
 {
 public:
     explicit CommandBuffer(Device& device);
-    ~CommandBuffer() noexcept;
+    ~CommandBuffer() noexcept override;
 
     void set_clear_values(const RgbaF& clear_color, double clear_depth = 1);
     void clear_buffers(bool color, bool depth);
@@ -29,6 +30,7 @@ public:
     void set_blending_enabled(bool enabled);
 
     void set_depth_test_enabled(bool enabled);
+    void set_depth_write_enabled(bool enabled);
     void set_cull_face_enabled(bool enabled);
     void set_stencil_test_enabled(bool enabled);
 
@@ -37,10 +39,15 @@ public:
     void bind_texture(uint8_t unit, const Texture& t);
     void unbind_texture(uint8_t unit, const Texture& t);
 
+    void bind_material(const Material& material);
+    void unbind_material(const Material& material);
+
     void draw(PrimitiveType primitive, size_t offset, size_t count);
     void draw(const DrawCommand& cmd);
     void draw(const DrawCommands::const_iterator first, const DrawCommands::const_iterator last);
     void draw(const DrawCommands& cmds) { draw(cmds.begin(), cmds.end()); }
+
+    void bind_and_draw(const Geometry& g, const Material& material_override);
 
     void submit();
 private:

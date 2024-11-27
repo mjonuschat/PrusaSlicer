@@ -44,7 +44,7 @@ void GizmoManager::on_scene_mouse_event(const Platform::MouseEvent& e, const Sli
     GizmoEventContext ctx{e, pick_ray, pick_results, screen_info};
     const bool single_active = m_in_cycle_gizmos.size() == 1;
 #if DEBUG_GIZMO_MANAGER
-    SPDLOG_INFO("process event---in-cycle: {}", m_in_cycle);
+    SPDLOG_INFO("process event {} ---in-cycle: {}", int(e.type()), m_in_cycle);
 #endif
 
     auto it = m_in_cycle_gizmos.begin();
@@ -60,7 +60,7 @@ void GizmoManager::on_scene_mouse_event(const Platform::MouseEvent& e, const Sli
             it = m_in_cycle_gizmos.erase(it);
             continue;
         } else if (ret == GizmoActivationState::Done) {
-            m_in_cycle = false;
+            m_in_cycle_gizmos.clear();
             break;
         } else if (ret == GizmoActivationState::Active) {
             m_in_cycle_gizmos.clear();
@@ -78,8 +78,10 @@ void GizmoManager::prepare_cycle()
 {
     m_in_cycle = true;
     m_in_cycle_gizmos.reserve(m_base_gizmos.size() + (m_active_tool != nullptr ? 1 : 0));
-    for (const auto& g : m_base_gizmos)
+    for (const auto& g : m_base_gizmos) {
+        g->on_cycle_prepare();
         m_in_cycle_gizmos.push_back(g.get());
+    }
     if (m_active_tool)
         m_in_cycle_gizmos.push_back(m_active_tool);
 #if DEBUG_GIZMO_MANAGER

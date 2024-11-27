@@ -53,6 +53,8 @@ public:
 
     void on_selected_project_changed(size_t index) override;
     void new_object_from_mesh(TriangleMesh&& mesh);
+    void add_volume_from_mesh(TriangleMesh&& mesh, ModelVolumeType volume_type, const Transform& xform = Matrix4d::Identity());
+    void add_instance(const Transform& xform);
 
     /**
      * @name Scene selection
