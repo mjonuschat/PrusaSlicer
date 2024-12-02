@@ -1,5 +1,8 @@
 #include "Slic3r/App/Plater/QuickSelectGizmo.hpp"
+
+#include "Slic3r/App/Render/Device.hpp"
 #include "Slic3r/App/Scene/Node.hpp"
+#include "Slic3r/App/Render/GeometryBuilder.hpp"
 
 namespace Slic3r::App::Plater {
 
@@ -75,6 +78,37 @@ GizmoActivationState QuickSelectGizmo::on_mouse(const GizmoEventContext& ctx, bo
         }
     }
     return GizmoActivationState::Inactive;
+}
+
+void QuickSelectGizmo::update_selection_rect(float x, float y, float w, float h)
+{
+    Render::GeometryBuilder<Render::VertexP3> builder;
+
+
+    auto* shader = m_device.context().shader_manager().get_shader("dashed_thick_lines");
+
+    builder
+        .add_vertex({{x, y, 0}})
+        .add_vertex({{x + w, y, 0}})
+        .add_vertex({{x + w, y + h, 0}})
+        .add_vertex({{x, y + h, 0}})
+    .add_draw_command({Render::PrimitiveType::LineLoop, 0, 4, Render::Material{}.set_shader(shader)});
+    builder.update(m_selection_rect);
+}
+
+
+void QuickSelectGizmo::render_scene(Render::CommandBuffer& cmd_buffer)
+{
+    if (!m_selection_rect_shown)
+        return;
+
+    Render::Material mat;
+    Matrix4f vm = Matrix4f::Identity();
+    // TODO: setup ortho projection (use m_screen_info to get physical size---i.e. in real pixels)
+    mat
+        .set_uniform("view_model_matrix", vm)
+        .set_uniform("projection_matrix", Matrix4f{});
+    cmd_buffer.bind_and_draw(m_selection_rect, mat);
 }
 
 } // namespace Slic3r::App::Plater

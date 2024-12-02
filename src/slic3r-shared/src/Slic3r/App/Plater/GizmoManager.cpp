@@ -91,4 +91,16 @@ void GizmoManager::prepare_cycle()
 #endif
 }
 
+void GizmoManager::render_scene(Render::CommandBuffer& cmd_buffer)
+{
+    for (auto* g : m_in_cycle_gizmos)
+        g->render_scene(cmd_buffer);
+}
+
+void GizmoManager::render_imgui()
+{
+    for (auto* g : m_in_cycle_gizmos)
+        g->render_imgui();
+}
+
 }

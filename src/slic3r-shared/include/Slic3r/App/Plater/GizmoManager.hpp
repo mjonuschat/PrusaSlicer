@@ -23,6 +23,9 @@ public:
         return *static_cast<G*>(ptr.get());
     }
 
+    void render_scene(Render::CommandBuffer& cmd_buffer);
+    void render_imgui();
+
 private:
     void prepare_cycle();
 

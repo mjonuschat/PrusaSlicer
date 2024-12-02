@@ -75,7 +75,7 @@ void PlaterRenderModule::init_gizmos()
 {
     m_gizmo_manager = std::make_unique<GizmoManager>(*m_scene_presenter);
     m_gizmo_manager->add_base_gizmo<CameraGizmo>(*m_scene_presenter);
-    m_gizmo_manager->add_base_gizmo<QuickSelectGizmo>(m_project_interactor.scene_interactor());
+    m_gizmo_manager->add_base_gizmo<QuickSelectGizmo>(m_project_interactor.scene_interactor(), *m_device, m_screen_info);
     m_gizmo_manager->add_base_gizmo<QuickDragGizmo>(m_project_interactor.scene_interactor(), *m_scene_presenter);
 }
 
@@ -89,8 +89,10 @@ void PlaterRenderModule::render_scene()
     cmd_buffer->set_clear_values({0.45f, 0.55f, 0.60f, 1.00f});
     cmd_buffer->clear_buffers(true, true);
 
-    //m_scene->render(*cmd_buffer);
     m_scene_presenter->render_scene(*cmd_buffer);
+
+    m_gizmo_manager->render_scene(*cmd_buffer);
+
     cmd_buffer->submit();
 }
 
@@ -118,6 +120,8 @@ void PlaterRenderModule::render_imgui()
         return;
 
     m_scene_presenter->render_imgui(m_screen_info);
+
+    m_gizmo_manager->render_imgui();
 
     if (ImGui::Begin("Outline", &m_gui_win_open)) {
         imgui_scenegraph_node_info(m_scene_presenter->scene().root());
