@@ -9,6 +9,8 @@
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #
 
+#include "Slic3r/App/TestRenderLayout.hpp"
+
 namespace Slic3r::App::Plater {
 
 class PlaterRenderModule final : public Platform::AbstractRenderModule {
@@ -41,6 +43,9 @@ private:
     std::unique_ptr<GizmoManager> m_gizmo_manager;
 
     bool m_gui_win_open{true};
+
+    // main window layout
+    TestRenderLayout trl;
 };
 
 }

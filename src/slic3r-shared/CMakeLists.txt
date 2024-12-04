@@ -71,6 +71,22 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/I18N/Translation.cpp
         include/Slic3r/App/I18N/Translation.hpp
 
+        include/Slic3r/App/Yoga/Align.hpp
+        src/Slic3r/App/Yoga/FlexSizer.cpp
+        include/Slic3r/App/Yoga/FlexSizer.hpp
+        src/Slic3r/App/Yoga/SplitterSizer.cpp
+        include/Slic3r/App/Yoga/SplitterSizer.hpp
+        src/Slic3r/App/Yoga/Toolbar/Item.cpp
+        include/Slic3r/App/Yoga/Toolbar/Item.hpp
+        src/Slic3r/App/Yoga/Toolbar/Toolbar.cpp
+        include/Slic3r/App/Yoga/Toolbar/Toolbar.hpp
+        include/Slic3r/App/Yoga/Toolbar.hpp
+        src/Slic3r/App/Yoga/MiddleSizer.cpp
+        include/Slic3r/App/Yoga/MiddleSizer.hpp
+
+        src/Slic3r/App/TestRenderLayout.cpp
+        include/Slic3r/App/TestRenderLayout.hpp
+
         include/Slic3r/Biz/PrintConfigInteractor.hpp
         src/Slic3r/Biz/PrintConfigInteractor.cpp
         include/Slic3r/Biz/ObservableDynamicPrintConfig.hpp
@@ -127,6 +143,7 @@ set(SLIC3R_SHARED_FILES
 
 find_package(NanoSVG REQUIRED)
 find_package(Boost REQUIRED COMPONENTS filesystem)
+find_package(yoga CONFIG REQUIRED)
 add_library(slic3r-shared STATIC ${SLIC3R_SHARED_FILES})
 target_link_libraries(slic3r-shared PUBLIC
         slic3r-base
@@ -135,6 +152,7 @@ target_link_libraries(slic3r-shared PUBLIC
         libslic3r
         Boost::filesystem
         fmt::fmt
+        yoga::yogacore
 )
 if (EMSCRIPTEN)
 #    target_link_libraries(slic3r-shared PUBLIC png-mt )

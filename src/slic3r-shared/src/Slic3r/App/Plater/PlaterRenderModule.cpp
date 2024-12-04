@@ -119,6 +119,8 @@ void PlaterRenderModule::render_imgui()
     if (!m_scene_presenter->project_ready())
         return;
 
+    trl.render(ImVec2(m_screen_info.logical_width(), m_screen_info.logical_height()));
+
     m_scene_presenter->render_imgui(m_screen_info);
 
     m_gizmo_manager->render_imgui();
