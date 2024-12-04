@@ -81,6 +81,11 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Yoga/Toolbar/Toolbar.cpp
         include/Slic3r/App/Yoga/Toolbar/Toolbar.hpp
         include/Slic3r/App/Yoga/Toolbar.hpp
+        src/Slic3r/App/Yoga/MiddleSizer.cpp
+        include/Slic3r/App/Yoga/MiddleSizer.hpp
+
+        src/Slic3r/App/TestRenderLayout.cpp
+        include/Slic3r/App/TestRenderLayout.hpp
 
         include/Slic3r/Biz/PrintConfigInteractor.hpp
         src/Slic3r/Biz/PrintConfigInteractor.cpp
