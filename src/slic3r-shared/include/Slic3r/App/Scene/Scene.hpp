@@ -184,6 +184,10 @@ public:
      */
     /**
      * @brief Add node under root or given parent if specified.
+     *
+     * @note Scene takes over ownership of the @p node. The @p node gets deleted if its parent
+     * or whole is deleted.
+     *
      * @param node Node to be added as child.
      * @param parent Optional parent node, if not specified, @p node is added under scene root.
      */

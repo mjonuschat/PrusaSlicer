@@ -20,6 +20,7 @@ bool AabbRaycastNodeComponent::raycast(const Matrix4d& world, const Ray& ray, do
     return true;
 }
 
+/*
 Eigen::AlignedBox<float, 2> AabbRaycastNodeComponent::projected_bounding_box(
     const Matrix4f& mvp, const Render::Rect& viewport
 ) const
@@ -52,7 +53,24 @@ Eigen::AlignedBox<float, 2> AabbRaycastNodeComponent::projected_bounding_box(
 
     return ret;
 }
+*/
 
+Eigen::AlignedBox3f AabbRaycastNodeComponent::world_bounding_box(const Matrix4d& world) const
+{
+    ASSERT(m_aabb_mesh != nullptr);
+    auto bbox3 = m_aabb_mesh->bounding_box();
+
+
+    // TODO: use convex hull to get tight AABB in world space
+
+    Eigen::AlignedBox<float, 3> ret;
+    for (size_t i = 0; i < 8; i++) {
+        Vec3f v = bbox3.corner(Eigen::AlignedBox<float, 3>::CornerType(i));
+        Vec3f w = (world * Vec4d{v.x(), v.y(), v.z(), 1}).block<3,1>(0,0).cast<float>();
+        ret.extend(w);
+    }
+    return ret;
+}
 
 
 }

@@ -225,8 +225,9 @@ Eigen::AlignedBox<float, 2> resolve_bounding_box(const Node& node, const Camera&
             const auto v = cam.view();
             const auto& p = cam.projection();
 
-            const auto mvp = p * v * m;
-            return raycast.projected_bounding_box(mvp.cast<float>(), cam.viewport());
+            const auto vp = p * v;
+
+            return projected_bounding_box(raycast, m, vp.cast<float>(), cam.viewport());
         }
         n = n->parent();
     }
