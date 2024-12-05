@@ -42,6 +42,11 @@ GizmoActivationState CameraGizmo::on_mouse(const GizmoEventContext& ctx, bool on
     return only_active ? GizmoActivationState::Active : GizmoActivationState::Probing;
 }
 
+void CameraGizmo::on_cycle_prepare()
+{
+    m_state = State::Inactive;
+}
+
 void CameraGizmo::update_pan(float delta_x, float delta_y)
 {
     auto& scene = m_scene_provider.scene();
