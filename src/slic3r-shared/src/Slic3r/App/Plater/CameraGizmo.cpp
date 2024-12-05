@@ -10,9 +10,8 @@ GizmoActivationState CameraGizmo::on_mouse(const GizmoEventContext& ctx, bool on
         if (!ctx.pick_results().empty())
             return GizmoActivationState::Inactive;
 
-        const bool pan = (event.key_modifiers() &
-                          (Platform::KeyModifiers(Platform::KeyModifier::Shift) |
-                           Platform::KeyModifiers(Platform::KeyModifier::Alt))) != 0;
+        const bool pan = event.button() == Platform::MouseButton::Right ||
+                         event.button() == Platform::MouseButton::Middle;
         m_state = pan ? State::Panning : State::Rotating;
         m_last_x = event.x();
         m_last_y = event.y();
