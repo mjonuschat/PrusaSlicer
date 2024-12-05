@@ -45,6 +45,15 @@ struct Plane
     { return from_point_and_vectors(p0, p1 - p0, p2 - p0); }
 
     /**
+     * @brief Creates 3D plane passing throught the given point and having the given normal.
+     * @param p Point lying on plane
+     * @param v normal to the plane
+     * @return New plane where @p point lays on the plane and @n is the normal.
+     */
+    static Plane from_point_and_normal(const Vec3d& p, const Vec3d& n)
+    { return { n, -n.dot(p) }; }
+
+    /**
      * @brief Tests if @p ray intersects this plane.
      * @param[in] ray Ray definition
      * @param[out] t If `true` returned, @p t will be filled with `t` parameter, which plugged into
