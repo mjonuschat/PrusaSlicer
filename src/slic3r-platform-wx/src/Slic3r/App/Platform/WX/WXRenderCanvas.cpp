@@ -240,13 +240,11 @@ WXRenderCanvas::WXRenderCanvas(wxWindow* parent)
 : wxGLCanvas(parent), m_start_time(Clock::now())
 {
     wxGLContextAttrs attrs;
-    attrs.PlatformDefaults()
-        .CoreProfile()
+    attrs.PlatformDefaults().CoreProfile();
         //.RGBA()
         //.DoubleBuffer()
         //.MinRGBA(8,8,8,8)
         //.Depth(24)
-        .EndList();
 
 #ifdef __APPLE__
     // on MAC the method RGBA() has no effect
@@ -262,6 +260,8 @@ WXRenderCanvas::WXRenderCanvas(wxWindow* parent)
     m_glsl_version = "#version 130";
     attrs.MajorVersion(3).MinorVersion(0);
 #endif
+
+    attrs.EndList();
 
     m_gl_context = std::make_unique<wxGLContext>(this, nullptr, &attrs);
     //SetCurrent(*m_gl_context);
