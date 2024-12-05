@@ -14,10 +14,14 @@ class Camera;
 /**
  * @brief Interface for camera projection computation.
  */
-class ICameraProjection
+class AbstractCameraProjection
 {
 public:
-    virtual ~ICameraProjection() = default;
+    AbstractCameraProjection() = default;
+    AbstractCameraProjection(double z_near, double z_far)
+        : m_z_near(z_near), m_z_far(z_far)
+    {}
+    virtual ~AbstractCameraProjection() = default;
 
     /**
      * @brief Compute projection matrix for given @p viewport
@@ -45,6 +49,31 @@ public:
      * .
      */
     virtual double constant_screen_space_size_scale(const Camera& cam, double cam_object_dist) const = 0;
+
+    /**
+     * @brief Get the distance of the near plane from the camera eye
+     * @return The distance of the near plane from the camera eye
+     */
+    double z_near() const { return m_z_near; }
+    /**
+     * @brief Set the distance of the near plane from the camera eye
+     * @param val Get the distance of the near plane from the camera eye
+     */
+    void set_z_near(double val) { m_z_near = val; }
+    /**
+     * @brief Get the distance of the far plane from the camera eye
+     * @return The distance of the far plane from the camera eye
+     */
+    double z_far() const { return m_z_far; }
+    /**
+     * @brief Set the distance of the far plane from the camera eye
+     * @param val Get the distance of the far plane from the camera eye
+     */
+    void set_z_far(double val) { m_z_far = val; }
+
+protected:
+    double m_z_near{ 10.0f };
+    double m_z_far{ 1000.f };
 };
 
 class ICameraUpdateListener
@@ -69,14 +98,20 @@ public:
     Transform view() const
     { return m_model.inverse(); }
 
+    Vec3d position() const { return m_model.block<3, 1>(0, 3); }
+
+    Vec3d forward() const { return -view().block<1, 3>(2, 0); }
+    Vec3d right() const { return view().block<1, 3>(0, 0); }
+    Vec3d up() const { return view().block<1, 3>(1, 0); }
+
     void set_viewport(const Render::Rect& viewport);
     const Render::Rect viewport() const { return m_viewport; }
 
     Ray ray_at(double screen_x, double screen_y) const;
     Vec3d unproject(const Vec3d& win_pos) const;
 
-    const ICameraProjection& cam_projection() const { return *m_projection_getter; }
-    void set_cam_projection(ICameraProjection* projection_getter)
+    const AbstractCameraProjection& cam_projection() const { return *m_projection_getter; }
+    void set_cam_projection(AbstractCameraProjection* projection_getter)
     {
         m_projection_getter.reset(projection_getter);
     }
@@ -97,32 +132,26 @@ private:
     Transform m_model{Transform::Identity()};
     Transform m_projection{Transform::Identity()};
     Render::Rect m_viewport;
-    std::unique_ptr<ICameraProjection> m_projection_getter;
+    std::unique_ptr<AbstractCameraProjection> m_projection_getter;
     CameraUpdateListeners m_update_listeners;
 };
 
-class PerspectiveCameraProjection : public ICameraProjection
+class PerspectiveCameraProjection : public AbstractCameraProjection
 {
 public:
     PerspectiveCameraProjection() = default;
     PerspectiveCameraProjection(double fovy, double z_near, double z_far)
-        : m_fovy(fovy), m_z_near(z_near), m_z_far(z_far)
-    {}
+        : AbstractCameraProjection(z_near, z_far), m_fovy(fovy)
+    {
+    }
     Transform projection(const Render::Rect& viewport) const override;
     double constant_screen_space_size_scale(const Camera& cam, double cam_object_dist) const override;
 
     double fovy() const { return m_fovy; }
     void set_fovy(double val) { m_fovy = val; }
 
-    double z_near() const { return m_z_near; }
-    void set_z_near(double val) { m_z_near = val; }
-    double z_far() const { return m_z_far; }
-    void set_z_far(double val) { m_z_far= val; }
-
 private:
     double m_fovy{90};
-    double m_z_near{0.01f};
-    double m_z_far{1000.f};
 };
 
 
