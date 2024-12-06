@@ -226,6 +226,9 @@ KeyCode get_key_code_from_event(const wxKeyEvent& event)
 
     case WXK_ALT:
         return KeyCode::LAlt;
+
+    case WXK_CONTROL:
+        return KeyCode::LCtrl;
     }
 
     wxChar unicode_char = event.GetUnicodeKey();
