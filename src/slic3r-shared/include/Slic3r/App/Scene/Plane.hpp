@@ -61,5 +61,21 @@ struct Plane
      * @return `True` if intersection of this plane and @p ray exists, otherwise `false`.
      */
     bool intersects(const Ray& ray, double& t) const;
+
+    /**
+      * @brief Calculate signed distance between @p point and this plane.
+      * @param[in] p Point
+      * @return The signed distance between @p point and this plane.
+      */
+    double signed_distance(const Vec3d& p) const
+    { return normal.dot(p) + d; }
+
+    /**
+     * @brief Calculate distance between @p point and this plane.
+     * @param[in] p Point
+     * @return The distance between @p point and this plane.
+     */
+    double distance(const Vec3d& p) const
+    { return std::abs(signed_distance(p)); }
 };
 } // namespace Slic3r::App::Scene
