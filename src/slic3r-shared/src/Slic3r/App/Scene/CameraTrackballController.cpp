@@ -41,7 +41,7 @@ void CameraTrackballController::set_zenith(double value)
 void CameraTrackballController::normalize_azimuth_and_zenith()
 {
     // Normalize zenith to the range -M_PI_2 to M_PI_2
-    m_zenith = fmodf(m_zenith, 2.0 * M_PI);
+    m_zenith = fmod(m_zenith, 2.0 * M_PI);
     if (m_zenith < 0) {
         m_zenith += 2 * M_PI;
     } else if (m_zenith > 2 * M_PI) {
@@ -49,7 +49,7 @@ void CameraTrackballController::normalize_azimuth_and_zenith()
         m_azimuth += M_PI;
     }
 
-    m_azimuth = fmodf(m_azimuth, 2.0 * M_PI);
+    m_azimuth = fmod(m_azimuth, 2.0 * M_PI);
     if (m_azimuth < 0) {
         m_azimuth += 2.0 * M_PI;
     }
