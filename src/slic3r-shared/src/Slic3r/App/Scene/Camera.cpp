@@ -23,6 +23,16 @@ void Camera::look_at(const Vec3d& eye, const Vec3d& center, const Vec3d& up)
     m_update_listeners.invoke([this](auto* l) { l->camera_updated(*this); });
 }
 
+void Camera::switch_projection_type()
+{
+    if (m_projection_getter->type() == CameraProjectionType::Perspective)
+        m_projection_getter.reset(new OrthographicCameraProjection);
+    else
+        m_projection_getter.reset(new PerspectiveCameraProjection);
+
+    set_viewport(m_viewport);
+}
+
 Ray Camera::ray_at(double screen_x, double screen_y) const
 {
 #if 1

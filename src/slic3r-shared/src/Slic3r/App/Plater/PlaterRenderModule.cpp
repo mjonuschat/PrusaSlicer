@@ -157,7 +157,33 @@ void PlaterRenderModule::on_scene_keyboard_event(
     const Platform::KeyboardEvent& e
 )
 {
-    AbstractRenderModule::on_scene_keyboard_event(e);
+    switch (e.type())
+    {
+    case Platform::KeyboardEvent::Type::KeyDown:
+    {
+        switch (e.code())
+        {
+        case Platform::KeyCode::K:
+        {
+            m_scene_presenter->scene().camera().switch_projection_type();
+            break;
+        }
+        default:
+        {
+            break;
+        }
+        }
+        break;
+    }
+    case Platform::KeyboardEvent::Type::KeyUp:
+    {
+        break;
+    }
+    default:
+    {
+        break;
+    }
+    }
 }
 
 void PlaterRenderModule::on_activated()

@@ -11,15 +11,23 @@ namespace Slic3r::App::Scene {
 
 class Camera;
 
+enum class CameraProjectionType : uint8_t
+{
+    Perspective,
+    Orthographic
+};
+
 /**
  * @brief Interface for camera projection computation.
  */
 class AbstractCameraProjection
 {
 public:
-    AbstractCameraProjection() = default;
-    AbstractCameraProjection(double z_near, double z_far)
-        : m_z_near(z_near), m_z_far(z_far)
+    explicit AbstractCameraProjection(CameraProjectionType type)
+        : m_type(type)
+    {}
+    AbstractCameraProjection(CameraProjectionType type, double z_near, double z_far)
+        : m_type(type), m_z_near(z_near), m_z_far(z_far)
     {}
     virtual ~AbstractCameraProjection() = default;
 
@@ -51,6 +59,11 @@ public:
     virtual double constant_screen_space_size_scale(const Camera& cam, double cam_object_dist) const = 0;
 
     /**
+     * @brief Get the type of projection
+     * @return The type of projection
+     */
+    CameraProjectionType type() const { return m_type; }
+    /**
      * @brief Get the distance of the near plane from the camera eye
      * @return The distance of the near plane from the camera eye
      */
@@ -72,6 +85,7 @@ public:
     void set_z_far(double val) { m_z_far = val; }
 
 protected:
+    CameraProjectionType m_type;
     double m_z_near{ 10.0f };
     double m_z_far{ 1000.f };
 };
@@ -94,6 +108,8 @@ public:
 
     Transform& projection() { return m_projection; }
     const Transform& projection() const { return m_projection; }
+
+    void switch_projection_type();
 
     Transform view() const
     { return m_model.inverse(); }
@@ -139,9 +155,11 @@ private:
 class PerspectiveCameraProjection : public AbstractCameraProjection
 {
 public:
-    PerspectiveCameraProjection() = default;
+    PerspectiveCameraProjection()
+        : AbstractCameraProjection(CameraProjectionType::Perspective)
+    {}
     PerspectiveCameraProjection(double fovy, double z_near, double z_far)
-        : AbstractCameraProjection(z_near, z_far), m_fovy(fovy)
+        : AbstractCameraProjection(CameraProjectionType::Perspective, z_near, z_far), m_fovy(fovy)
     {}
     Transform projection(const Render::Rect& viewport) const override;
     double constant_screen_space_size_scale(const Camera& cam, double cam_object_dist) const override;
@@ -156,9 +174,11 @@ private:
 class OrthographicCameraProjection : public AbstractCameraProjection
 {
 public:
-    OrthographicCameraProjection() = default;
+    OrthographicCameraProjection()
+        : AbstractCameraProjection(CameraProjectionType::Orthographic)
+    {}
     OrthographicCameraProjection(double z_near, double z_far)
-        : AbstractCameraProjection(z_near, z_far)
+        : AbstractCameraProjection(CameraProjectionType::Orthographic, z_near, z_far)
     {}
 
     Transform projection(const Render::Rect& viewport) const override;
