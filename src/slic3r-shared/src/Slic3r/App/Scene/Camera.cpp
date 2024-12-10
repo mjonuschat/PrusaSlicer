@@ -47,17 +47,25 @@ Ray Camera::ray_at(double screen_x, double screen_y) const
     };
     Vec4d ray_clip{ray_nds.x(), ray_nds.y(), -1, 1};
     Vec4d ray_eye = m_projection.inverse() * ray_clip;
-    ray_eye.z() = -1;
-    ray_eye.w() = 0;
+    if (m_projection_getter->type() == CameraProjectionType::Perspective) {
+        ray_eye.z() = -1;
+        ray_eye.w() = 0;
 
-    Vec3d ray_world = (m_model * ray_eye).head<3>();
+        Vec3d ray_world = (m_model * ray_eye).head<3>();
 
-//    SPDLOG_INFO("ray NDS ({},  {},  {})", ray_nds.x(), ray_nds.y(), ray_nds.z());
-//    SPDLOG_INFO("ray clip ({},  {},  {},  {})", ray_clip.x(), ray_clip.y(), ray_clip.z(), ray_clip.w());
-//    SPDLOG_INFO("ray eye ({},  {},  {},  {})", ray_eye.x(), ray_eye.y(), ray_eye.z(), ray_eye.w());
-//    SPDLOG_INFO("ray world ({},  {},  {})", ray_world.x(), ray_world.y(), ray_world.z());
+//        SPDLOG_INFO("ray NDS ({},  {},  {})", ray_nds.x(), ray_nds.y(), ray_nds.z());
+//        SPDLOG_INFO("ray clip ({},  {},  {},  {})", ray_clip.x(), ray_clip.y(), ray_clip.z(), ray_clip.w());
+//        SPDLOG_INFO("ray eye ({},  {},  {},  {})", ray_eye.x(), ray_eye.y(), ray_eye.z(), ray_eye.w());
+//        SPDLOG_INFO("ray world ({},  {},  {})", ray_world.x(), ray_world.y(), ray_world.z());
 
-    return {m_model.block<3, 1>(0, 3), ray_world.normalized()};
+        return {m_model.block<3, 1>(0, 3), ray_world.normalized()};
+    }
+    else {
+        Vec4d ray_origin_eye(ray_eye.x(), ray_eye.y(), 0, 1);
+        Vec4d ray_direction_eye = ray_eye - ray_origin_eye;
+        ray_direction_eye.w() = 0;
+        return {(m_model * ray_origin_eye).head<3>(), (m_model * ray_direction_eye).head<3>().normalized()};
+    }
 #else
     Vec3d p0 = unproject({screen_x, m_viewport.height - screen_y - 1, 0});
     Vec3d p1 = unproject({screen_x, m_viewport.height - screen_y - 1, 1});
