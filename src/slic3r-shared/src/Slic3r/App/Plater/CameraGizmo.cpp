@@ -62,11 +62,7 @@ void CameraGizmo::update_pan(float delta_x, float delta_y)
 
 void CameraGizmo::update_zoom(float wheel_delta_y)
 {
-    auto& scene = m_scene_provider.scene();
-    auto& trackball = scene.camera_trackball();
-    double d = trackball.cam_focal_dist();
-    d += -wheel_delta_y * 0.2f;
-    trackball.set_focal_distance(d);
+    m_scene_provider.scene().camera_trackball().update_zoom(wheel_delta_y / std::abs(wheel_delta_y));
 }
 
 void CameraGizmo::update_rotation(float delta_x, float delta_y)

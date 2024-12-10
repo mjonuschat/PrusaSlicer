@@ -34,9 +34,10 @@ public:
     /**
      * @brief Compute projection matrix for given @p viewport
      * @param viewport Camera viewport position and size
+     * @param zoom Zoom value to apply
      * @return Projection matrix
      */
-    virtual Transform projection(const Render::Rect& viewport) const = 0;
+    virtual Transform projection(const Render::Rect& viewport, double zoom) const = 0;
 
     /**
      * @brief Compute screen space size scale.
@@ -69,8 +70,8 @@ public:
      */
     double z_near() const { return m_z_near; }
     /**
-     * @brief Set the distance of the near plane from the camera eye
-     * @param val Get the distance of the near plane from the camera eye
+     * @brief Set the distance of the near plane from the camera eye with the given value
+     * @param val The new value for the distance of the near plane from the camera eye
      */
     void set_z_near(double val) { m_z_near = val; }
     /**
@@ -79,15 +80,15 @@ public:
      */
     double z_far() const { return m_z_far; }
     /**
-     * @brief Set the distance of the far plane from the camera eye
-     * @param val Get the distance of the far plane from the camera eye
+     * @brief Set the distance of the far plane from the camera eye with the given value
+     * @param val The new value for the distance of the far plane from the camera eye
      */
     void set_z_far(double val) { m_z_far = val; }
 
 protected:
     CameraProjectionType m_type;
-    double m_z_near{ 10.0f };
-    double m_z_far{ 1000.f };
+    double m_z_near{ 10. };
+    double m_z_far{ 1000. };
 };
 
 class ICameraUpdateListener
@@ -123,14 +124,14 @@ public:
     void set_viewport(const Render::Rect& viewport);
     const Render::Rect viewport() const { return m_viewport; }
 
+    void set_zoom(double value);
+    void update_zoom(double value) { set_zoom(m_zoom / (1.0 - std::max(std::min(value, 4.0), -4.0) * 0.1)); }
+    double zoom() const { return m_zoom; }
+
     Ray ray_at(double screen_x, double screen_y) const;
     Vec3d unproject(const Vec3d& win_pos) const;
 
     const AbstractCameraProjection& cam_projection() const { return *m_projection_getter; }
-    void set_cam_projection(AbstractCameraProjection* projection_getter)
-    {
-        m_projection_getter.reset(projection_getter);
-    }
 
     void add_update_listener(ICameraUpdateListener* update_listener)
     {
@@ -143,11 +144,15 @@ public:
     }
 
 private:
+    void update_projection();
+
+private:
     using CameraUpdateListeners = Biz::ListenerList<ICameraUpdateListener>;
 
     Transform m_model{Transform::Identity()};
     Transform m_projection{Transform::Identity()};
     Render::Rect m_viewport;
+    double m_zoom{ 1. };
     std::unique_ptr<AbstractCameraProjection> m_projection_getter;
     CameraUpdateListeners m_update_listeners;
 };
@@ -161,14 +166,15 @@ public:
     PerspectiveCameraProjection(double fovy, double z_near, double z_far)
         : AbstractCameraProjection(CameraProjectionType::Perspective, z_near, z_far), m_fovy(fovy)
     {}
-    Transform projection(const Render::Rect& viewport) const override;
+
+    Transform projection(const Render::Rect& viewport, double zoom) const override;
     double constant_screen_space_size_scale(const Camera& cam, double cam_object_dist) const override;
 
     double fovy() const { return m_fovy; }
     void set_fovy(double val) { m_fovy = val; }
 
 private:
-    double m_fovy{90};
+    double m_fovy{90.};
 };
 
 class OrthographicCameraProjection : public AbstractCameraProjection
@@ -181,7 +187,7 @@ public:
         : AbstractCameraProjection(CameraProjectionType::Orthographic, z_near, z_far)
     {}
 
-    Transform projection(const Render::Rect& viewport) const override;
+    Transform projection(const Render::Rect& viewport, double zoom) const override;
     double constant_screen_space_size_scale(const Camera& cam, double cam_object_dist) const override;
 };
 

@@ -15,6 +15,9 @@ public:
         update_camera();
     }
 
+    void set_zoom(double value) { m_camera.set_zoom(value); }
+    void update_zoom(double value) { m_camera.update_zoom(value); }
+
     void set_focal_distance(double value)
     {
         m_cam_focal_dist = std::max(MIN_FOCAL_DISTANCE, value);

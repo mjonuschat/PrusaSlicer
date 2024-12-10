@@ -411,9 +411,7 @@ void TestRenderModule::on_scene_mouse_event(const Platform::MouseEvent &e)
     } else if (e.type() == Platform::MouseEvent::Type::Wheel) {
         const float wheel_delta_y = e.wheel_delta_y();
         if (wheel_delta_y != 0) {
-            float dist = trackball.cam_focal_dist();
-            dist += wheel_delta_y * 0.1f;
-            trackball.set_focal_distance(dist);
+            trackball.update_zoom(wheel_delta_y / std::abs(wheel_delta_y));
         }
 
     }

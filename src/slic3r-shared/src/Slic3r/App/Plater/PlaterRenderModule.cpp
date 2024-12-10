@@ -163,9 +163,19 @@ void PlaterRenderModule::on_scene_keyboard_event(
     {
         switch (e.code())
         {
-        case Platform::KeyCode::K:
+        case Platform::KeyCode::I: // zoom in
+        {
+            m_scene_presenter->scene().camera_trackball().update_zoom(1.);
+            break;
+        }
+        case Platform::KeyCode::K: // switch camera type
         {
             m_scene_presenter->scene().camera().switch_projection_type();
+            break;
+        }
+        case Platform::KeyCode::O: // zoom out
+        {
+            m_scene_presenter->scene().camera_trackball().update_zoom(-1.);
             break;
         }
         default:

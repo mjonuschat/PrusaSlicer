@@ -1,6 +1,7 @@
 #include "Slic3r/App/Scene/Camera.hpp"
 #include "Slic3r/App/Render/MathUtils.hpp"
 #include "Slic3r/Log.hpp"
+#include "Slic3r/Assert.hpp"
 #include "libslic3r/Geometry.hpp"
 
 namespace Slic3r::App::Scene {
@@ -12,8 +13,14 @@ Camera::Camera()
 void Camera::set_viewport(const Render::Rect& viewport)
 {
     m_viewport = viewport;
-    if (m_projection_getter)
-        m_projection = m_projection_getter->projection(m_viewport);
+    update_projection();
+    m_update_listeners.invoke([this](auto* l) { l->camera_updated(*this); });
+}
+
+void Camera::set_zoom(double value)
+{
+    m_zoom = std::clamp(value, 0.6, 100.0);
+    update_projection();
     m_update_listeners.invoke([this](auto* l) { l->camera_updated(*this); });
 }
 
@@ -25,12 +32,13 @@ void Camera::look_at(const Vec3d& eye, const Vec3d& center, const Vec3d& up)
 
 void Camera::switch_projection_type()
 {
+    ASSERT(m_projection_getter != nullptr);
     if (m_projection_getter->type() == CameraProjectionType::Perspective)
         m_projection_getter.reset(new OrthographicCameraProjection);
     else
         m_projection_getter.reset(new PerspectiveCameraProjection);
-
-    set_viewport(m_viewport);
+    update_projection();
+    m_update_listeners.invoke([this](auto* l) { l->camera_updated(*this); });
 }
 
 Ray Camera::ray_at(double screen_x, double screen_y) const
@@ -92,30 +100,39 @@ Vec3d Camera::unproject(const Vec3d& win_pos) const
     return p.head<3>() / p.w();
 }
 
-Transform PerspectiveCameraProjection::projection(const Render::Rect& viewport) const
+void Camera::update_projection()
 {
-    return Render::perspective(
-        m_fovy, double(viewport.width) / double(viewport.height), m_z_near, m_z_far
-    );
+    ASSERT(m_projection_getter != nullptr);
+    m_projection = m_projection_getter->projection(m_viewport, m_zoom);
+}
+
+Transform PerspectiveCameraProjection::projection(const Render::Rect& viewport, double zoom) const
+{
+    ASSERT(zoom != 0.0);
+    return Render::perspective(m_fovy / zoom, double(viewport.width) / double(viewport.height), m_z_near, m_z_far);
 }
 
 double PerspectiveCameraProjection::constant_screen_space_size_scale(
     const Camera& cam, double cam_object_dist
 ) const
 {
-    return cam_object_dist / (2 * std::tan(Geometry::deg2rad(m_fovy / 2)));
+    // TODO: This needs to be checked
+    return cam_object_dist / (2 * std::tan(Geometry::deg2rad(m_fovy / (2 * cam.zoom()))));
 }
 
-Transform OrthographicCameraProjection::projection(const Render::Rect& viewport) const
+Transform OrthographicCameraProjection::projection(const Render::Rect& viewport, double zoom) const
 {
-    double half_w = 0.5 * viewport.width;
-    double half_h = 0.5 * viewport.height;
+    ASSERT(zoom != 0.0);
+    double inv_zoom = 1.0 / zoom;
+    double half_w = 0.5 * inv_zoom * viewport.width;
+    double half_h = 0.5 * inv_zoom * viewport.height;
     return Render::ortho(-half_w, half_w, -half_h, half_h, m_z_near, m_z_far);
 }
 
 double OrthographicCameraProjection::constant_screen_space_size_scale(const Camera& cam, double cam_object_dist) const
 {
-    return 2 / (cam.viewport().width);
+    // TODO: This needs to be checked
+    return 2 * cam.zoom() / (cam.viewport().width);
 }
 
 } // namespace Slic3r::App::Scene
