@@ -85,8 +85,19 @@ double PerspectiveCameraProjection::constant_screen_space_size_scale(
     const Camera& cam, double cam_object_dist
 ) const
 {
-    // Note: For orhto this is: 2 / (r - l)
     return cam_object_dist / (2 * std::tan(Geometry::deg2rad(m_fovy / 2)));
+}
+
+Transform OrthographicCameraProjection::projection(const Render::Rect& viewport) const
+{
+    double half_w = 0.5 * viewport.width;
+    double half_h = 0.5 * viewport.height;
+    return Render::ortho(-half_w, half_w, -half_h, half_h, m_z_near, m_z_far);
+}
+
+double OrthographicCameraProjection::constant_screen_space_size_scale(const Camera& cam, double cam_object_dist) const
+{
+    return 2 / (cam.viewport().width);
 }
 
 } // namespace Slic3r::App::Scene

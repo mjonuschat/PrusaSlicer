@@ -142,8 +142,7 @@ public:
     PerspectiveCameraProjection() = default;
     PerspectiveCameraProjection(double fovy, double z_near, double z_far)
         : AbstractCameraProjection(z_near, z_far), m_fovy(fovy)
-    {
-    }
+    {}
     Transform projection(const Render::Rect& viewport) const override;
     double constant_screen_space_size_scale(const Camera& cam, double cam_object_dist) const override;
 
@@ -154,5 +153,16 @@ private:
     double m_fovy{90};
 };
 
+class OrthographicCameraProjection : public AbstractCameraProjection
+{
+public:
+    OrthographicCameraProjection() = default;
+    OrthographicCameraProjection(double z_near, double z_far)
+        : AbstractCameraProjection(z_near, z_far)
+    {}
+
+    Transform projection(const Render::Rect& viewport) const override;
+    double constant_screen_space_size_scale(const Camera& cam, double cam_object_dist) const override;
+};
 
 }
