@@ -420,6 +420,43 @@ void TestRenderModule::on_scene_mouse_event(const Platform::MouseEvent &e)
 void TestRenderModule::on_scene_keyboard_event(const Platform::KeyboardEvent &e)
 {
     std::cout <<  "KeyboardEvent type: " << uint32_t(e.type()) << "\n";
+    switch (e.type())
+    {
+    case Platform::KeyboardEvent::Type::KeyDown:
+    {
+        switch (e.code())
+        {
+        case Platform::KeyCode::I: // zoom in
+        {
+            m_scene->camera_trackball().update_zoom(1.);
+            break;
+        }
+        case Platform::KeyCode::K: // switch camera type
+        {
+            m_scene->camera().switch_projection_type();
+            break;
+        }
+        case Platform::KeyCode::O: // zoom out
+        {
+            m_scene->camera_trackball().update_zoom(-1.);
+            break;
+        }
+        default:
+        {
+            break;
+        }
+        }
+        break;
+    }
+    case Platform::KeyboardEvent::Type::KeyUp:
+    {
+        break;
+    }
+    default:
+    {
+        break;
+    }
+    }
 }
 
 void TestRenderModule::on_screen_resized()
