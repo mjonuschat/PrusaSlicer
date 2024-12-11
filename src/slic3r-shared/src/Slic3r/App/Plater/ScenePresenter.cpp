@@ -1,4 +1,5 @@
 #include "Slic3r/App/Plater/ScenePresenter.hpp"
+#include "Slic3r/App/Plater/PlaterSceneLayer.hpp"
 #include "Slic3r/App/Scene/NodeBuilder.hpp"
 #include "Slic3r/App/Scene/NodeVisitor.hpp"
 #include "Slic3r/App/Plater/SceneNodeTag.hpp"
@@ -31,7 +32,7 @@ ScenePresenter::ScenePresenter(
 void ScenePresenter::render_scene(Render::CommandBuffer& command_buffer)
 {
     if (!m_projects.empty())
-        project_context().scene().render(command_buffer);
+        project_context().scene().render(command_buffer, this);
 }
 
 void ScenePresenter::render_imgui(const Render::ScreenInfo& screen_info)
@@ -83,6 +84,28 @@ void ScenePresenter::on_scene_selection_changed(Domain::SelectionId project_id, 
     for (auto* n : found_nodes)
         selection_changes.change(*n)
             .set_material_override(selection_mat);
+
+    // update selection root, so it is in the center of all selected objects
+
+    Eigen::AlignedBox3f bounds;
+    for (const auto& n : found_nodes) {
+        // visit all children to find all potential bounding boxes
+        // this is important for instance-mode of selection where `n` itself has
+        // no bounding box/raycast component
+        visit(*n, [&](const Scene::Node& ni) {
+            auto* collision = ni.raycast_component();
+            if (collision != nullptr) {
+                auto wbb = collision->world_bounding_box(n->world_transform());
+                for (size_t i = 0; i < 8; i++)
+                    bounds.extend(wbb.corner(static_cast<decltype(wbb)::CornerType>(i)));
+            }
+        });
+    }
+    proj.set_selection_bounding_box(bounds);
+    Matrix4d xform = Matrix4d::Identity();
+    //xform.block<1, 3>(0, 3) = bounds.center().cast<double>();
+    xform.col(3).head(3) = bounds.center().cast<double>();
+    proj.selection_root().set_world_transform(xform);
 }
 
 void ScenePresenter::build_volume_node(
@@ -119,7 +142,7 @@ void ScenePresenter::build_volume_node(
         .set_debug_name(fmt::format("vol: {}", vol->id().id))
         .transform([&](auto& xform) { xform = vol->get_matrix(); })
         .set_tag(SceneNodeTag{vol->get_object()->id().id, vol->id().id, inst->id().id, vol->type()})
-        .set_mesh(geom, material)
+        .set_mesh(geom, material, int(PlaterSceneLayer::DocumentObjects))
         .set_aabb(trimesh->aabb_mesh());
 }
 
@@ -257,6 +280,14 @@ void ScenePresenter::on_wipe_tower_transformed(Domain::SelectionId project_id, s
 
 }
 
+
+void ScenePresenter::on_layer_begin(Render::CommandBuffer& cmd_buf, size_t layer_idx)
+{
+    if (layer_idx == int(PlaterSceneLayer::GizmoHandles))
+
+        // clear depth buffer so all gizmo handles are rendered over document objects
+        cmd_buf.clear_buffers(false, true);
+}
 
 
 } // namespace Slic3r::App::Plater

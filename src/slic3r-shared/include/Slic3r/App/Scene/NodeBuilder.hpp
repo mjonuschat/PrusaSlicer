@@ -55,7 +55,7 @@ public:
         return *this;
     }
 
-    NodeBuilder& set_screen_space_sized_modifier(float scale);
+    NodeBuilder& set_screen_space_sized_modifier(double scale);
 
     NodeBuilder& set_debug_name(std::string_view sv)
     {

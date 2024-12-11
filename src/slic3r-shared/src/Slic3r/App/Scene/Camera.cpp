@@ -45,7 +45,6 @@ Ray Camera::ray_at(double screen_x, double screen_y) const
 {
     screen_x -= m_viewport.x;
     screen_y -= m_viewport.y;
-    screen_y -= m_viewport.y;
 
     Vec3d ray_nds{
         (2.0 * screen_x) / m_viewport.width - 1.0,

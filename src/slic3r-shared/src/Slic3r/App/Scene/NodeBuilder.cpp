@@ -50,7 +50,7 @@ NodeBuilder& NodeBuilder::set_imgui_func(const FuncImguiRenderNodeComponent::Ren
     return *this;
 }
 
-NodeBuilder& NodeBuilder::set_screen_space_sized_modifier(float scale)
+NodeBuilder& NodeBuilder::set_screen_space_sized_modifier(double scale)
 {
     ensure_current();
     auto modifier =

@@ -55,7 +55,7 @@ public:
     size_t index_count() const { return m_index_count; }
 
     const DrawCommands& draw_commands() const { return m_commands; }
-    DrawCommands& render_commands() { return m_commands; }
+    DrawCommands& draw_commands() { return m_commands; }
 
 private:
     Device& m_device;

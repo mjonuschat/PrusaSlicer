@@ -263,7 +263,6 @@ WXRenderCanvas::WXRenderCanvas(wxWindow* parent)
     m_glsl_version = "#version 130";
     attrs.MajorVersion(3).MinorVersion(0);
 #endif
-
     attrs.EndList();
 
     m_gl_context = std::make_unique<wxGLContext>(this, nullptr, &attrs);

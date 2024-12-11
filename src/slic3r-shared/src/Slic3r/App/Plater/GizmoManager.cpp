@@ -103,4 +103,45 @@ void GizmoManager::render_imgui()
         g->render_imgui();
 }
 
+void GizmoManager::activate_tool(ToolType tool, PrinterTechnology pt)
+{
+    deactivate_current_tool();
+
+    m_active_tool = DEBUG_ASSERT_VAL(find_tool(tool, pt));
+
+    if (m_active_tool != nullptr)
+        m_active_tool->on_activated();
+}
+
+void GizmoManager::toggle_activate_tool(ToolType tool, PrinterTechnology pt)
+{
+    IToolGizmo* original_tool = m_active_tool;
+    deactivate_current_tool();
+
+    IToolGizmo* next_tool = DEBUG_ASSERT_VAL(find_tool(tool, pt));
+    if (next_tool != original_tool) {
+        m_active_tool = next_tool;
+        m_active_tool->on_activated();
+    }
+}
+
+void GizmoManager::deactivate_current_tool()
+{
+    if (m_active_tool == nullptr)
+        return;
+    m_active_tool->on_deactivated();
+    m_active_tool = nullptr;
+
+}
+
+IToolGizmo* GizmoManager::find_tool(ToolType tool, PrinterTechnology pt)
+{
+    auto it =
+        std::find_if(m_tool_gizmos.begin(), m_tool_gizmos.end(), [tool, pt](const IToolGizmoPtr& tg) {
+            return tg->type() == tool && tg->supports_printer(pt);
+        });
+    return it == m_tool_gizmos.end() ? nullptr : it->get();
+}
+
+
 }

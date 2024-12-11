@@ -12,6 +12,7 @@ public:
     virtual Scene::Scene& scene() = 0;
     virtual const Scene::Scene& scene() const = 0;
     virtual Scene::SceneChangeSession& selection_scene_changes() = 0;
+    virtual Scene::Node& selection_root() = 0;
 };
 
 }

@@ -127,7 +127,7 @@ public:
     Vec3d up() const { return view().block<1, 3>(1, 0); }
 
     void set_viewport(const Render::Rect& viewport);
-    const Render::Rect viewport() const { return m_viewport; }
+    const Render::Rect& viewport() const { return m_viewport; }
 
     void set_zoom(double value);
     void update_zoom(double value) { set_zoom(m_zoom / (1.0 - std::max(std::min(value, 4.0), -4.0) * 0.1)); }

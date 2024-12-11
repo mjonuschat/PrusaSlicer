@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Slic3r/App/Render/Geometry.hpp"
 #include "Slic3r/App/Scene/IRenderNodeComponent.hpp"
 
 namespace Slic3r::App::Scene {
@@ -19,7 +20,15 @@ public:
         size_t offset = 0
     ) : m_material(material)
     {
-        ASSERT(material.shader() != nullptr, "Shader must be specified for primary material");
+        const auto& draw_commands = geometry->draw_commands();
+        ASSERT(
+            material.shader() != nullptr ||
+                std::all_of(
+                    draw_commands.begin(), draw_commands.end(),
+                    [](const Render::DrawCommand& dc) { return dc.material.shader() != nullptr; }
+                ),
+            "Shader must be specified for primary material"
+        );
         set_geometry(geometry, primitive_type, count, offset);
     }
 

@@ -19,6 +19,7 @@ namespace Slic3r::App::Plater {
 class ScenePresenter : public Biz::ISelectedProjectChangedListener,
                        public Biz::Scene::ISceneSelectionChangedListener,
                        public Biz::Scene::ISceneChangedListener,
+                       public Scene::ISceneRenderCustomizer,
                        public ISceneProvider
 {
 public:
@@ -58,6 +59,8 @@ public:
         return project_context().selection_scene_changes();
     }
 
+    Scene::Node& selection_root() override { return project_context().selection_root(); }
+
     void render_scene(Render::CommandBuffer& command_buffer);
     void render_imgui(const Render::ScreenInfo& screen_info);
 
@@ -83,6 +86,8 @@ private:
     void on_wipe_tower_added(Domain::SelectionId project_id, size_t idx) override;
     void on_wipe_tower_removed(Domain::SelectionId project_id, size_t idx) override;
     void on_wipe_tower_transformed(Domain::SelectionId project_id, size_t idx) override;
+
+    void on_layer_begin(Render::CommandBuffer& cmd_buf, size_t layer_idx) override;
 
     void build_volume_node(Scene::NodeBuilder& builder, Domain::SelectionId project_id, const ModelInstance* inst, const ModelVolume* vol);
 

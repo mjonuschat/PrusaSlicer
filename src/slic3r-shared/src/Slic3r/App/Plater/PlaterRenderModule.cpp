@@ -7,6 +7,7 @@
 #include "Slic3r/App/Plater/GizmoNodeTag.hpp"
 #include "Slic3r/App/Plater/QuickSelectGizmo.hpp"
 #include "Slic3r/App/Plater/QuickDragGizmo.hpp"
+#include "Slic3r/App/Plater/TranslationGizmo.hpp"
 
 #include "imgui/imgui.h"
 
@@ -73,10 +74,14 @@ void PlaterRenderModule::init_scene()
 
 void PlaterRenderModule::init_gizmos()
 {
-    m_gizmo_manager = std::make_unique<GizmoManager>(*m_scene_presenter);
+    m_gizmo_manager = std::make_unique<GizmoManager>(*m_device, *m_scene_presenter);
     m_gizmo_manager->add_base_gizmo<CameraGizmo>(*m_scene_presenter);
     m_gizmo_manager->add_base_gizmo<QuickSelectGizmo>(m_project_interactor.scene_interactor(), *m_device, *m_scene_presenter, m_screen_info);
     m_gizmo_manager->add_base_gizmo<QuickDragGizmo>(m_project_interactor.scene_interactor(), *m_scene_presenter);
+    m_gizmo_manager->add_tool_gizmo<TranslationGizmo>(
+            *m_device, m_gizmo_manager->data_factory(), *m_scene_presenter,
+            m_project_interactor.scene_interactor()
+        );
 }
 
 
@@ -126,6 +131,9 @@ void PlaterRenderModule::render_imgui()
     m_gizmo_manager->render_imgui();
 
     if (ImGui::Begin("Outline", &m_gui_win_open)) {
+        if (ImGui::Button("Translate"))
+            // TODO: get and pass the correct printer type
+            m_gizmo_manager->toggle_activate_tool(ToolType::Translation, ptFFF);
         imgui_scenegraph_node_info(m_scene_presenter->scene().root());
     }
     ImGui::End();

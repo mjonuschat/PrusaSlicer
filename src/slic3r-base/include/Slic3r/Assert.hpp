@@ -40,6 +40,7 @@
 #define ASSERT_VAL(...) __ASSERT_GET_3TH_ARG(__VA_ARGS__, ASSERT_VAL_2, ASSERT_VAL_1)(__VA_ARGS__)
 #define ASSERT_VAL_1(x) ::Slic3r::assert_val(x, __FILE__, __LINE__, __PRETTY_FUNCTION__,  #x)
 #define ASSERT_VAL_2(x, message) ::Slic3r::assert_val(x, __FILE__, __LINE__, __PRETTY_FUNCTION__,  #x, message)
+#define UNREACHABLE(...) ASSERT(false, __VA_ARGS__)
 
 
 namespace Slic3r {

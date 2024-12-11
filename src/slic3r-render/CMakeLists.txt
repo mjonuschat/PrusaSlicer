@@ -55,6 +55,7 @@ set(SLIC3R_RENDER_FILES
         include/Slic3r/App/Render/Material.hpp
         src/Slic3r/App/Render/Material.cpp
         include/Slic3r/App/Render/DrawCommand.hpp
+        include/Slic3r/App/Render/DynamicGeometry.hpp
 
         include/Slic3r/Memory.hpp
 )

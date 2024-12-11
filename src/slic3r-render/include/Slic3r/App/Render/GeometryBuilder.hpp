@@ -94,9 +94,21 @@ public:
         return *this;
     }
 
+    GeometryBuilder& add_vertices(std::initializer_list<V> v)
+    {
+        m_vertices.insert(m_vertices.end(), v.begin(), v.end());
+        return *this;
+    }
+
     GeometryBuilder& add_index(I i)
     {
         m_indices.push_back(i);
+        return *this;
+    }
+
+    GeometryBuilder& add_indices(std::initializer_list<I> indices)
+    {
+        m_indices.insert(m_indices.end(), indices.begin(), indices.end());
         return *this;
     }
 
@@ -147,7 +159,7 @@ public:
             m_vertices.data(), m_vertices.size(), VertexType::format(),
             index_data, index_count,index_type
         );
-        geometry.render_commands() = m_commands;
+        geometry.draw_commands() = m_commands;
         if (clear_after) {
             m_vertices.clear();
             m_indices.clear();
@@ -172,12 +184,11 @@ private:
             return false;
 
         destType = IndexTypeTraits<DestI>::index_type;
-        auto* dest_data = new char[sizeof(DestI) * size];
+        dest = std::make_unique<char[]>(size * sizeof(DestI));
         for (size_t i = 0; i < size; i++) {
-            DestI* dest_el = reinterpret_cast<DestI*>(&dest_data[sizeof(DestI) * i]);
+            auto* dest_el = reinterpret_cast<DestI*>(&dest[sizeof(DestI) * i]);
             *dest_el = static_cast<DestI>(src[i]);
         }
-        dest.reset(dest_data);
         return true;
     }
 

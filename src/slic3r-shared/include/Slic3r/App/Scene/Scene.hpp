@@ -39,14 +39,14 @@ class ISceneRenderCustomizer
 public:
     virtual ~ISceneRenderCustomizer() = default;
 
-    virtual void on_render_begin(Render::CommandBuffer& cmd_buf) = 0;
-    virtual void on_layer_begin(Render::CommandBuffer& cmd_buf, size_t layer_idx) = 0;
-    virtual void on_opaque_pass_begin(Render::CommandBuffer& cmd_buf) = 0;
-    virtual void on_opaque_pass_end(Render::CommandBuffer& cmd_buf) = 0;
-    virtual void on_transparent_pass_begin(Render::CommandBuffer& cmd_buf) = 0;
-    virtual void on_transparent_pass_end(Render::CommandBuffer& cmd_buf) = 0;
-    virtual void on_layer_end(Render::CommandBuffer& cmd_buf, size_t layer_idx) = 0;
-    virtual void on_render_end(Render::CommandBuffer& cmd_buf) = 0;
+    virtual void on_render_begin(Render::CommandBuffer& cmd_buf) {}
+    virtual void on_layer_begin(Render::CommandBuffer& cmd_buf, size_t layer_idx) {}
+    virtual void on_opaque_pass_begin(Render::CommandBuffer& cmd_buf) {}
+    virtual void on_opaque_pass_end(Render::CommandBuffer& cmd_buf) {}
+    virtual void on_transparent_pass_begin(Render::CommandBuffer& cmd_buf) {}
+    virtual void on_transparent_pass_end(Render::CommandBuffer& cmd_buf) {}
+    virtual void on_layer_end(Render::CommandBuffer& cmd_buf, size_t layer_idx) {}
+    virtual void on_render_end(Render::CommandBuffer& cmd_buf) {}
 };
 
 class MinimalSceneRenderCustomizer : public ISceneRenderCustomizer

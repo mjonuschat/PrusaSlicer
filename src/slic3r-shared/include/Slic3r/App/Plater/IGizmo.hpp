@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Slic3r/App/Plater/GizmoEventContext.hpp"
+#include "libslic3r/Config.hpp"
 
 namespace Slic3r::App::Plater {
 
@@ -27,11 +28,20 @@ public:
     virtual void render_imgui() {}
 };
 
+enum class ToolType : uint8_t
+{
+    None = 0,
+    Translation = 1,
+    Rotation = 2,
+    // add as needed, no printer type variants (use two distinct IToolGizmos with same type instead)
+};
 
 class IToolGizmo : public IGizmo {
 public:
     virtual void on_activated() = 0;
     virtual void on_deactivated() = 0;
+    virtual ToolType type() const = 0;
+    virtual bool supports_printer(PrinterTechnology pt) const = 0;
 };
 
 }

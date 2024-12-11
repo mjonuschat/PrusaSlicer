@@ -8,6 +8,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Plater/GizmoManager.cpp
         include/Slic3r/App/Plater/IGizmo.hpp
         include/Slic3r/App/Plater/GizmoEventContext.hpp
+        include/Slic3r/App/Plater/GizmoDataFactory.hpp
+        src/Slic3r/App/Plater/GizmoDataFactory.cpp
         include/Slic3r/App/Plater/CameraGizmo.hpp
         src/Slic3r/App/Plater/CameraGizmo.cpp
         include/Slic3r/App/Plater/GizmoNodeTag.hpp
@@ -20,6 +22,9 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Plater/GeometryElementId.hpp
         include/Slic3r/App/Plater/SelectionHandler.hpp
         src/Slic3r/App/Plater/SelectionHandler.cpp
+        include/Slic3r/App/Plater/TranslationGizmo.hpp
+        src/Slic3r/App/Plater/TranslationGizmo.cpp
+        include/Slic3r/App/Plater/PlaterSceneLayer.hpp
 
         include/Slic3r/App/View/IPanelView.hpp
 
@@ -43,6 +48,7 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Scene/AabbRaycastNodeComponent.hpp
         src/Slic3r/App/Scene/AabbRaycastNodeComponent.cpp
         include/Slic3r/App/Scene/Ray.hpp
+        src/Slic3r/App/Scene/Ray.cpp
         include/Slic3r/App/Scene/NodeVisitorTypes.hpp
         include/Slic3r/App/Scene/NodeVisitor.hpp
         src/Slic3r/App/Scene/NodeVisitor.cpp
@@ -172,6 +178,7 @@ add_target_to_doxygen(slic3r-shared)
 add_executable(slic3r-shared-tests
         test/main.cpp
         test/Slic3r/App/Scene/Node.cpp
+        test/Slic3r/App/Scene/Ray.cpp
 )
 target_include_directories(slic3r-shared-tests PRIVATE test)
 

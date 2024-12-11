@@ -19,9 +19,26 @@ public:
         return ret.first->second.get();
     }
 
+    const R* get(const K& name) const
+    {
+        auto it = m_resources.find(name);
+        return it != m_resources.end() ? it->second.get() : nullptr;
+    }
+
+    R* get(const K& name)
+    {
+        auto it = m_resources.find(name);
+        return it != m_resources.end() ? it->second.get() : nullptr;
+    }
+
     void set(const K& name, R* resource)
     {
         m_resources[name] = std::make_unique<R>(resource);
+    }
+
+    void set(const K& name, std::unique_ptr<R>&& resource)
+    {
+        m_resources[name] = std::move(resource);
     }
 
 

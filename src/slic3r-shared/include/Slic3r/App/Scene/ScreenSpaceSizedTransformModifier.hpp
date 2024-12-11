@@ -13,7 +13,7 @@ class Node;
  */
 class ScreenSpaceSizedTransformModifier : public INodeTransformModifier, public ICameraUpdateListener {
 public:
-    ScreenSpaceSizedTransformModifier(const Camera& cam, Node& node, float scale=1)
+    ScreenSpaceSizedTransformModifier(const Camera& cam, Node& node, double scale=1)
         : m_camera(cam), m_node(node), m_preserved_scale(scale)
     {}
 
@@ -23,6 +23,6 @@ public:
 private:
     const Camera& m_camera;
     Node& m_node;
-    float m_preserved_scale;
+    double m_preserved_scale;
 };
 }
