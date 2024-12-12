@@ -56,6 +56,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Scene/SceneChangeSession.cpp
         include/Slic3r/App/Scene/Plane.hpp
         src/Slic3r/App/Scene/Plane.cpp
+        include/Slic3r/App/Scene/Frustum.hpp
+        src/Slic3r/App/Scene/Frustum.cpp
 
         include/Slic3r/App/TestRenderModule.hpp
         src/Slic3r/App/TestRenderModule.cpp

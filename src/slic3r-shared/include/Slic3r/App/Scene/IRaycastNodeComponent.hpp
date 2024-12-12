@@ -6,6 +6,8 @@
 
 namespace Slic3r::App::Scene {
 
+struct Frustum;
+
 /**
  * @brief Generic interface for raycast collision detection component.
  * @see AabbRaycastNodeComponent
@@ -25,6 +27,13 @@ public:
 
     virtual Eigen::AlignedBox3f world_bounding_box(const Matrix4d& world) const = 0;
 
+    /**
+     * @brief intersection test against given frustum.
+     * @param world World transform of associated node
+     * @param frustum Frustum in world space
+     * @return True if associated node and frustum intersect
+     */
+    virtual bool intersects(const Matrix4d& world, const Frustum& frustum) const = 0;
 };
 
 /**

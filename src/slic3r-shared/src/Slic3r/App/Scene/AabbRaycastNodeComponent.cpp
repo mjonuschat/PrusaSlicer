@@ -1,5 +1,6 @@
 #include "Slic3r/App/Scene/AabbRaycastNodeComponent.hpp"
 #include "Slic3r/App/Render/MathUtils.hpp"
+#include "Slic3r/App/Scene/Frustum.hpp"
 
 namespace Slic3r::App::Scene
 {
@@ -72,5 +73,10 @@ Eigen::AlignedBox3f AabbRaycastNodeComponent::world_bounding_box(const Matrix4d&
     return ret;
 }
 
+bool AabbRaycastNodeComponent::intersects(const Matrix4d& world, const Frustum& frustum) const
+{
+    ASSERT(m_aabb_mesh != nullptr);
+    return frustum.intersects(world_bounding_box(world).cast<double>());
+}
 
 }

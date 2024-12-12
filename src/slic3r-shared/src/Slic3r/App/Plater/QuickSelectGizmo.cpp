@@ -6,6 +6,45 @@
 
 namespace Slic3r::App::Plater {
 
+static Scene::Frustum orthographic_frustum(const Scene::Ray& ray_lb, const Scene::Ray& ray_rb,
+    const Scene::Ray& ray_rt, const Scene::Ray& ray_lt, double near_z, double far_z)
+{
+    // near left bottom
+    Vec3d nlb = ray_lb.point_at(near_z);
+    // near right bottom
+    Vec3d nrb = ray_rb.point_at(near_z);
+    // near right top
+    Vec3d nrt = ray_rt.point_at(near_z);
+    // near left top
+    Vec3d nlt = ray_lt.point_at(near_z);
+    // far left bottom
+    Vec3d flb = ray_lb.point_at(far_z);
+    // far right bottom
+    Vec3d frb = ray_rb.point_at(far_z);
+    // far right top
+    Vec3d frt = ray_rt.point_at(far_z);
+    // far left top
+    Vec3d flt = ray_lt.point_at(far_z);
+
+    Scene::Frustum ret;
+    ret.vertices = { nlb, nrb, nrt, nlt, flb, frb, frt, flt };
+    ret.planes = {
+        // near
+        Scene::Plane::from_three_points(nrb, nlb, nlt).normalized(),
+        // far
+        Scene::Plane::from_three_points(flb, frb, flt).normalized(),
+        // left
+        Scene::Plane::from_three_points(nlb, flb, nlt).normalized(),
+        // right
+        Scene::Plane::from_three_points(frb, nrb, frt).normalized(),
+        // bottom
+        Scene::Plane::from_three_points(nlb, nrb, flb).normalized(),
+        // top
+        Scene::Plane::from_three_points(nrt, nlt, frt).normalized()
+    };
+    return ret;
+}
+
 void RectangleSelection::update(const Vec2i& curr_mouse_pos)
 {
     Render::Rect rect{
@@ -36,13 +75,63 @@ void RectangleSelection::update(const Vec2i& curr_mouse_pos)
         .add_draw_command({ Render::PrimitiveType::LineLoop, 0, 4, Render::Material{}.set_shader(shader) });
     builder.update(m_geometry);
 
+    const Scene::Camera& camera = m_scene_provider.scene().camera();
+    Scene::Ray ray_lt = camera.ray_at(m_screen_info.mouse_to_screen(rect.x), m_screen_info.mouse_to_screen(rect.y));
+    Scene::Ray ray_lb = camera.ray_at(m_screen_info.mouse_to_screen(rect.x), m_screen_info.mouse_to_screen(rect.y + rect.height));
+    Scene::Ray ray_rt = camera.ray_at(m_screen_info.mouse_to_screen(rect.x + rect.width), m_screen_info.mouse_to_screen(rect.y));
+    Scene::Ray ray_rb = camera.ray_at(m_screen_info.mouse_to_screen(rect.x + rect.width), m_screen_info.mouse_to_screen(rect.y + rect.height));
+
+    const Scene::AbstractCameraProjection& cam_proj = camera.cam_projection();
+    if (cam_proj.type() == Scene::CameraProjectionType::Perspective) {
+    }
+    else
+        m_frustum = orthographic_frustum(ray_lb, ray_rb, ray_rt, ray_lt, cam_proj.z_near(), cam_proj.z_far());
+
     m_defined = m_initial_mouse_pos != curr_mouse_pos;
+}
+
+static Scene::Node::NodeList extract_instance_nodes(const Scene::Node::NodeList& nodes)
+{
+    Scene::Node::NodeList ret;
+    for (size_t i = 0; i < nodes.size(); ++i) {
+        ret.emplace_back(nodes[i]->parent());
+    }
+    std::sort(ret.begin(), ret.end(),
+        [](const Scene::Node* n1, const Scene::Node* n2) { return n1->id() < n2->id(); });
+    ret.erase(std::unique(ret.begin(), ret.end(),
+        [](const Scene::Node* n1, const Scene::Node* n2) { return n1->id() == n2->id(); }), ret.end());
+    return ret;
 }
 
 bool RectangleSelection::update_selection(SelectionHandler& selection_handler)
 {
     if (!(m_active && m_defined))
         return false;
+
+    Scene::Node::NodeList nodes = collect_contained_nodes();
+
+    if (m_type == Type::Remove) {
+        if (m_scene_interactor.selection().mode == Biz::Scene::SelectionMode::Instance)
+            nodes = extract_instance_nodes(nodes);
+    }
+    else if (m_type == Type::Replace) {
+        if (std::any_of(nodes.begin(), nodes.end(), 
+            [&](const Scene::Node* n) {
+                return n->tag_of_type<SceneNodeTag>()->volume_type == ModelVolumeType::MODEL_PART;
+            }))
+            nodes = extract_instance_nodes(nodes);
+        else if (nodes.size() != 1) {
+            nodes.clear();
+            selection_handler.clear_selection();
+        }
+    }
+
+    for (size_t i = 0; i < nodes.size(); ++i) {
+        if (m_type == Type::Remove)
+            selection_handler.mark_unselected(*nodes[i]);
+        else
+            selection_handler.mark_selected(*nodes[i], m_type == Type::Replace && i == 0);
+    }
 
     return true;
 }
@@ -68,6 +157,23 @@ void RectangleSelection::render(Render::CommandBuffer& cmd_buffer)
         .set_uniform("projection_matrix", vm)
         .set_uniform("uniform_color", color);
     cmd_buffer.bind_and_draw(m_geometry, mat);
+}
+
+Scene::Node::NodeList RectangleSelection::collect_contained_nodes()
+{
+    Scene::Node::NodeList nodes;
+    m_scene_provider.scene().root().query([this](const Scene::Node* n)->bool {
+        auto* rcc = n->raycast_component();
+        return
+          // node has Raycast component present
+          rcc != nullptr &&
+          // node represents volume/instance
+          n->has_tag_of_type<SceneNodeTag>() &&
+          // node intersects frustum
+          rcc->intersects(n->world_transform(), m_frustum);
+    }, nodes);
+
+    return nodes;
 }
 
 GizmoActivationState QuickSelectGizmo::on_mouse(const GizmoEventContext& ctx, bool only_active)

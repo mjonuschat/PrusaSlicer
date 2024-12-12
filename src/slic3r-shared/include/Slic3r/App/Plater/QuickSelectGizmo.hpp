@@ -7,6 +7,7 @@
 #include "Slic3r/App/Plater/SceneNodeTag.hpp"
 #include "Slic3r/App/Plater/SelectionHandler.hpp"
 #include "Slic3r/App/Plater/ISceneProvider.hpp"
+#include "Slic3r/App/Scene/Frustum.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 
 namespace Slic3r::App::Plater {
@@ -22,9 +23,12 @@ public:
         Remove
     };
 
-    RectangleSelection(const Render::ScreenInfo& screen_info, Render::Device& device)
+    RectangleSelection(const Render::ScreenInfo& screen_info, Render::Device& device, ISceneProvider& scene_provider,
+       Biz::Scene::SceneInteractor& scene_interactor)
         : m_screen_info(screen_info)
         , m_device(device)
+        , m_scene_provider(scene_provider)
+        , m_scene_interactor(scene_interactor)
         , m_geometry(device, Render::BufferUsage::DynamicDraw)
     {}
 
@@ -47,14 +51,20 @@ public:
     void render(Render::CommandBuffer& cmd_buffer);
 
 private:
+    Scene::Node::NodeList collect_contained_nodes();
+
+private:
     const Render::ScreenInfo& m_screen_info;
     Render::Device& m_device;
+    ISceneProvider& m_scene_provider;
+    Biz::Scene::SceneInteractor& m_scene_interactor;
 
     Type m_type{ Type::Undefined };
     bool m_active{ false };
     bool m_defined{ false };
     Vec2i m_initial_mouse_pos;
     Render::Geometry m_geometry;
+    Scene::Frustum m_frustum;
 };
 
 class QuickSelectGizmo : public IGizmo {
@@ -62,11 +72,12 @@ public:
     QuickSelectGizmo(
         Biz::Scene::SceneInteractor& scene_interactor,
         Render::Device& device,
+        ISceneProvider& scene_provider,
         const Render::ScreenInfo& screen_info
     )
         : m_scene_interactor(scene_interactor)
         , m_selection_handler(scene_interactor)
-        , m_rectangle_selection(screen_info, device)
+        , m_rectangle_selection(screen_info, device, scene_provider, scene_interactor)
     {}
 
     GizmoActivationState on_mouse(const GizmoEventContext& ctx, bool only_active) override;
