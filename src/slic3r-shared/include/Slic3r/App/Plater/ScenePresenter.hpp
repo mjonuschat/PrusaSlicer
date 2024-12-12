@@ -69,6 +69,7 @@ private:
     void on_selected_project_changed(size_t index) override;
 
     void on_scene_selection_changed(Domain::SelectionId project_id, const Biz::Scene::Selection& selection) override;
+    void on_scene_selection_transformed(Domain::SelectionId project_id, const Biz::Scene::Selection& selection) override;
 
     void on_instance_added(Domain::SelectionId project_id, const Domain::ElementRefs& instances) override;
     void on_instance_removed(Domain::SelectionId project_id, const Domain::ElementRefs& instances) override;

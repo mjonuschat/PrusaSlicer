@@ -80,7 +80,7 @@ public:
         , m_rectangle_selection(screen_info, device, scene_provider, scene_interactor)
     {}
 
-    GizmoActivationState on_mouse(const GizmoEventContext& ctx, bool only_active) override;
+    GizmoActivationState on_mouse(GizmoEventContext& ctx, bool only_active) override;
     void on_cycle_prepare() override { m_processing = false; }
 
     void render_scene(Render::CommandBuffer& cmd_buffer) override;

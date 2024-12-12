@@ -72,6 +72,12 @@ void GizmoManager::on_scene_mouse_event(const Platform::MouseEvent& e, const Sli
 
     if (m_in_cycle && m_in_cycle_gizmos.empty())
         m_in_cycle = false;
+
+    // process transient events
+    for (auto& g : m_base_gizmos)
+        g->on_transient_mouse(ctx);
+    for (auto& g : m_tool_gizmos)
+        g->on_transient_mouse(ctx);
 }
 
 void GizmoManager::prepare_cycle()

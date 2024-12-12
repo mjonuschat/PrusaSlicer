@@ -17,6 +17,7 @@ class ISceneSelectionChangedListener
 public:
     virtual ~ISceneSelectionChangedListener() = default;
     virtual void on_scene_selection_changed(Domain::SelectionId project_id, const Selection& selection) = 0;
+    virtual void on_scene_selection_transformed(Domain::SelectionId project_id, const Selection& selection) = 0;
 };
 
 class ISceneChangedListener

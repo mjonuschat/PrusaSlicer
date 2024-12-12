@@ -174,6 +174,9 @@ void SceneInteractor::transform_selection(const Matrix4d& relative_transform, Tr
         else
             l->on_volume_transformed(m_selected_project_id, proj.selection.elements);
     });
+    m_selection_changed_listeners.invoke([&](ISceneSelectionChangedListener* l) {
+        l->on_scene_selection_transformed(m_selected_project_id, proj.selection);
+    });
 }
 
 void SceneInteractor::finalize_transform_selection(TransformMemento& memento, bool canceled)

@@ -71,7 +71,7 @@ void Node::mark_world_transform_dirty() const
             return false;
         n.m_world_xform_dirty = true;
         return true;
-    });
+    }, true);
 }
 
 } // namespace Slic3r::App::Scene

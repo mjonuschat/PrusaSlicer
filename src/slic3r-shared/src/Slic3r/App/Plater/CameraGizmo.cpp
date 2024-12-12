@@ -2,7 +2,7 @@
 
 namespace Slic3r::App::Plater {
 
-GizmoActivationState CameraGizmo::on_mouse(const GizmoEventContext& ctx, bool only_active)
+GizmoActivationState CameraGizmo::on_mouse(GizmoEventContext& ctx, bool only_active)
 {
     const Platform::MouseEvent& event = ctx.mouse_event();
     const auto type = event.type();

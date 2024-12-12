@@ -79,9 +79,8 @@ void PlaterRenderModule::init_gizmos()
     m_gizmo_manager->add_base_gizmo<QuickSelectGizmo>(m_project_interactor.scene_interactor(), *m_device, *m_scene_presenter, m_screen_info);
     m_gizmo_manager->add_base_gizmo<QuickDragGizmo>(m_project_interactor.scene_interactor(), *m_scene_presenter);
     m_gizmo_manager->add_tool_gizmo<TranslationGizmo>(
-            *m_device, m_gizmo_manager->data_factory(), *m_scene_presenter,
-            m_project_interactor.scene_interactor()
-        );
+            m_gizmo_manager->data_factory(), *m_scene_presenter, m_project_interactor.scene_interactor()
+    );
 }
 
 

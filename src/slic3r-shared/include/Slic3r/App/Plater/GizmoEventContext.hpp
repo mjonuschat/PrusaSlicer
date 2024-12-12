@@ -29,10 +29,22 @@ public:
     float screen_mouse_x() const { return m_screen_info.mouse_to_screen(m_mouse_event.x()); }
     float screen_mouse_y() const { return m_screen_info.mouse_to_screen(m_mouse_event.y()); }
 
+    Scene::NodePickResult* pick_result(const std::function<bool(const Scene::NodePickResult&)>& predicate)
+    {
+        auto it = std::find_if(m_pick_results.begin(), m_pick_results.end(), predicate);
+        return it == m_pick_results.end() ? nullptr : &*it;
+    }
+
     const Scene::NodePickResult* pick_result(const std::function<bool(const Scene::NodePickResult&)>& predicate) const
     {
         auto it = std::find_if(m_pick_results.begin(), m_pick_results.end(), predicate);
         return it == m_pick_results.end() ? nullptr : &*it;
+    }
+
+    template <typename T>
+    Scene::NodePickResult* pick_result_with_tag_of_type()
+    {
+        return pick_result([](const auto& pr) { return pr.node->template has_tag_of_type<T>(); });
     }
 
     template <typename T>
@@ -42,12 +54,18 @@ public:
     }
 
     template <typename T>
-    const Scene::Node* pick_result_node_with_tag_of_type() const
+    Scene::Node* pick_result_node_with_tag_of_type()
     {
         auto* r = pick_result_with_tag_of_type<T>();
         return r ? r->node : nullptr;
     }
 
+    template <typename T>
+    const Scene::Node* pick_result_node_with_tag_of_type() const
+    {
+        auto* r = pick_result_with_tag_of_type<T>();
+        return r ? r->node : nullptr;
+    }
 private:
     Platform::MouseEvent m_mouse_event;
     Scene::Ray m_pick_ray;

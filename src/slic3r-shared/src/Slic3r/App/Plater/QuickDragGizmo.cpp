@@ -3,7 +3,7 @@
 
 namespace Slic3r::App::Plater {
 
-GizmoActivationState QuickDragGizmo::on_mouse(const GizmoEventContext& ctx, bool only_active)
+GizmoActivationState QuickDragGizmo::on_mouse(GizmoEventContext& ctx, bool only_active)
 {
     const auto& e = ctx.mouse_event();
     const Scene::NodePickResult* n{nullptr};

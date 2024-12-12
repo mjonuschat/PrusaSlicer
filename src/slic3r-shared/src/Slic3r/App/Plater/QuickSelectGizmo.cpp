@@ -112,7 +112,7 @@ bool RectangleSelection::update_selection(SelectionHandler& selection_handler)
             nodes = extract_instance_nodes(nodes);
     }
     else if (m_type == Type::Replace) {
-        if (std::any_of(nodes.begin(), nodes.end(), 
+        if (std::any_of(nodes.begin(), nodes.end(),
             [&](const Scene::Node* n) {
                 return n->tag_of_type<SceneNodeTag>()->volume_type == ModelVolumeType::MODEL_PART;
             }))
@@ -173,7 +173,7 @@ Scene::Node::NodeList RectangleSelection::collect_contained_nodes()
     return nodes;
 }
 
-GizmoActivationState QuickSelectGizmo::on_mouse(const GizmoEventContext& ctx, bool only_active)
+GizmoActivationState QuickSelectGizmo::on_mouse(GizmoEventContext& ctx, bool only_active)
 {
     using namespace std::chrono_literals;
     const auto& evt = ctx.mouse_event();

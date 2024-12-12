@@ -64,7 +64,10 @@ void ScenePresenter::on_scene_selection_changed(Domain::SelectionId project_id, 
 
     selection_changes.roll_back();
 
-    if (selection.elements.empty())
+    bool selection_empty = selection.elements.empty();
+    proj.selection_root().set_enabled(!selection_empty);
+
+    if (selection_empty)
         return;
 
     Scene::Node::NodeList found_nodes;
@@ -106,6 +109,11 @@ void ScenePresenter::on_scene_selection_changed(Domain::SelectionId project_id, 
     //xform.block<1, 3>(0, 3) = bounds.center().cast<double>();
     xform.col(3).head(3) = bounds.center().cast<double>();
     proj.selection_root().set_world_transform(xform);
+}
+
+void ScenePresenter::on_scene_selection_transformed(Domain::SelectionId project_id, const Biz::Scene::Selection& selection)
+{
+    on_scene_selection_changed(project_id, selection);
 }
 
 void ScenePresenter::build_volume_node(

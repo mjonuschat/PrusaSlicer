@@ -18,7 +18,7 @@ public:
         , m_selection_handler(scene_interactor)
     {}
 
-    GizmoActivationState on_mouse(const GizmoEventContext& ctx, bool only_active) override;
+    GizmoActivationState on_mouse(GizmoEventContext& ctx, bool only_active) override;
     void on_cycle_prepare() override;
 private:
     int mouse_dist_sq(int mouse_x, int mouse_y) const

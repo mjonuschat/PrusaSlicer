@@ -15,7 +15,7 @@ public:
 
     explicit CameraGizmo(ISceneProvider& scene_provider) : m_scene_provider(scene_provider) {}
 
-    GizmoActivationState on_mouse(const GizmoEventContext& ctx, bool only_active) override;
+    GizmoActivationState on_mouse(GizmoEventContext& ctx, bool only_active) override;
     void on_cycle_prepare() override;
 private:
     void update_pan(float delta_x, float delta_y);
