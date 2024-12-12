@@ -70,9 +70,7 @@ Ray Camera::ray_at(double screen_x, double screen_y) const
     }
     else {
         Vec4d ray_origin_eye(ray_eye.x(), ray_eye.y(), 0, 1);
-        Vec4d ray_direction_eye = ray_eye - ray_origin_eye;
-        ray_direction_eye.w() = 0;
-        return {(m_model * ray_origin_eye).head<3>(), (m_model * ray_direction_eye).head<3>().normalized()};
+        return {(m_model * ray_origin_eye).head<3>(), forward()};
     }
 #else
     Vec3d p0 = unproject({screen_x, m_viewport.height - screen_y - 1, 0});
