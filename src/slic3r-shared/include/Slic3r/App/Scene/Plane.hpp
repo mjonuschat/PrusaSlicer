@@ -24,6 +24,17 @@ struct Plane
     double d;
 
     /**
+     * @brief Normalize the normal of this plane and update d accordingly.
+     */
+    void normalize();
+
+    /**
+      * @brief Return a normalized copy of this plane
+      * @return New plane obtained by normalizing this plane
+      */
+    Plane normalized() const;
+
+    /**
      * @brief Creates 3D plane defined by point on the plane and two (non-parallel) vectors in the plane.
      * @param point Point lying on plane
      * @param v0 Vector in one plane direction
