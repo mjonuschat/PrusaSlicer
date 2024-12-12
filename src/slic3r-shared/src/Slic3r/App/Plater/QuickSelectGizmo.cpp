@@ -6,9 +6,17 @@
 
 namespace Slic3r::App::Plater {
 
-static Scene::Frustum orthographic_frustum(const Scene::Ray& ray_lb, const Scene::Ray& ray_rb,
-    const Scene::Ray& ray_rt, const Scene::Ray& ray_lt, double near_z, double far_z)
+static Scene::Frustum create_frustum(const Scene::Camera& camera, const Render::ScreenInfo& screen_info, const Render::Rect& rect)
 {
+    Scene::Ray ray_lt = camera.ray_at(screen_info.mouse_to_screen(rect.x), screen_info.mouse_to_screen(rect.y));
+    Scene::Ray ray_lb = camera.ray_at(screen_info.mouse_to_screen(rect.x), screen_info.mouse_to_screen(rect.y + rect.height));
+    Scene::Ray ray_rt = camera.ray_at(screen_info.mouse_to_screen(rect.x + rect.width), screen_info.mouse_to_screen(rect.y));
+    Scene::Ray ray_rb = camera.ray_at(screen_info.mouse_to_screen(rect.x + rect.width), screen_info.mouse_to_screen(rect.y + rect.height));
+
+    const Scene::AbstractCameraProjection& cam_proj = camera.cam_projection();
+    double near_z = cam_proj.z_near();
+    double far_z  = cam_proj.z_far();
+
     // near left bottom
     Vec3d nlb = ray_lb.point_at(near_z);
     // near right bottom
@@ -75,18 +83,7 @@ void RectangleSelection::update(const Vec2i& curr_mouse_pos)
         .add_draw_command({ Render::PrimitiveType::LineLoop, 0, 4, Render::Material{}.set_shader(shader) });
     builder.update(m_geometry);
 
-    const Scene::Camera& camera = m_scene_provider.scene().camera();
-    Scene::Ray ray_lt = camera.ray_at(m_screen_info.mouse_to_screen(rect.x), m_screen_info.mouse_to_screen(rect.y));
-    Scene::Ray ray_lb = camera.ray_at(m_screen_info.mouse_to_screen(rect.x), m_screen_info.mouse_to_screen(rect.y + rect.height));
-    Scene::Ray ray_rt = camera.ray_at(m_screen_info.mouse_to_screen(rect.x + rect.width), m_screen_info.mouse_to_screen(rect.y));
-    Scene::Ray ray_rb = camera.ray_at(m_screen_info.mouse_to_screen(rect.x + rect.width), m_screen_info.mouse_to_screen(rect.y + rect.height));
-
-    const Scene::AbstractCameraProjection& cam_proj = camera.cam_projection();
-    if (cam_proj.type() == Scene::CameraProjectionType::Perspective) {
-    }
-    else
-        m_frustum = orthographic_frustum(ray_lb, ray_rb, ray_rt, ray_lt, cam_proj.z_near(), cam_proj.z_far());
-
+    m_frustum = create_frustum(m_scene_provider.scene().camera(), m_screen_info, rect);
     m_defined = m_initial_mouse_pos != curr_mouse_pos;
 }
 
