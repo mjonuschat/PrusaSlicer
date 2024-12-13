@@ -19,7 +19,7 @@ void Camera::set_viewport(const Render::Rect& viewport)
 
 void Camera::set_zoom(double value)
 {
-    m_zoom = std::clamp(value, 0.6, 100.0);
+    m_zoom = std::clamp(value, MIN_ZOOM, MAX_ZOOM);
     update_projection();
     m_update_listeners.invoke([this](auto* l) { l->camera_updated(*this); });
 }
@@ -43,7 +43,6 @@ void Camera::switch_projection_type()
 
 Ray Camera::ray_at(double screen_x, double screen_y) const
 {
-#if 1
     screen_x -= m_viewport.x;
     screen_y -= m_viewport.y;
     screen_y -= m_viewport.y;
@@ -72,17 +71,6 @@ Ray Camera::ray_at(double screen_x, double screen_y) const
         Vec4d ray_origin_eye(ray_eye.x(), ray_eye.y(), 0, 1);
         return {(m_model * ray_origin_eye).head<3>(), forward()};
     }
-#else
-    Vec3d p0 = unproject({screen_x, m_viewport.height - screen_y - 1, 0});
-    Vec3d p1 = unproject({screen_x, m_viewport.height - screen_y - 1, 1});
-    Vec3d dir = (p1 - p0).normalized();
-    Vec3d o = m_model.block<3, 1>(0, 3);
-//    SPDLOG_INFO("ray dir {} {} {}", dir.x(), dir.y(), dir.z());
-//    SPDLOG_INFO("ray orig {} {} {}", o.x(), o.y(), o.z());
-//    SPDLOG_INFO("ray p0 {} {} {}", p0.x(), p0.y(), p0.z());
-//    SPDLOG_INFO("ray p1 {} {} {}", p1.x(), p1.y(), p1.z());
-    return {o, dir};
-#endif
 }
 
 Vec3d Camera::unproject(const Vec3d& win_pos) const

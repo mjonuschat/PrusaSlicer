@@ -36,6 +36,11 @@ public:
      * @param viewport Camera viewport position and size
      * @param zoom Zoom value to apply
      * @return Projection matrix
+     *
+     * @note
+     * Zoom:
+     * - for perspective projection the zoom modifies the vertical field of view by applying a scaling factor equal to 1/zoom
+     * - for orthographic projection the zoom modifies the viewport by applying a scaling factor equal to 1/zoom
      */
     virtual Transform projection(const Render::Rect& viewport, double zoom) const = 0;
 
@@ -155,6 +160,9 @@ private:
     double m_zoom{ 1. };
     std::unique_ptr<AbstractCameraProjection> m_projection_getter;
     CameraUpdateListeners m_update_listeners;
+
+    static constexpr double MIN_ZOOM{ 0.6 };
+    static constexpr double MAX_ZOOM{ 100.0 };
 };
 
 class PerspectiveCameraProjection : public AbstractCameraProjection
