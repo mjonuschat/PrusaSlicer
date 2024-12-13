@@ -433,7 +433,7 @@ void TestRenderModule::on_scene_keyboard_event(const Platform::KeyboardEvent &e)
         }
         case Platform::KeyCode::K: // switch camera type
         {
-            m_scene->camera().switch_projection_type();
+            m_scene->camera_trackball().switch_projection_type();
             break;
         }
         case Platform::KeyCode::O: // zoom out
