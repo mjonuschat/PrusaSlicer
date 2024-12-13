@@ -13,6 +13,9 @@ void SelectionHandler::mark_selected(Scene::Node& n, bool replace)
 
     Domain::ElementRef element = {tag->object_id, tag->instance_id, tag->volume_id};
 
+    if (m_scene_interactor.selection().is_selected(element))
+        return;
+
     auto selection_mode = m_scene_interactor.selection().mode;
 
     auto new_selection_mode = tag->volume_type == ModelVolumeType::MODEL_PART ?
