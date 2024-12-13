@@ -81,6 +81,15 @@ struct Plane
     bool intersects(const Eigen::AlignedBox3d& box) const;
 
     /**
+     * @brief Tests if the sphere defined by @center center and @radius radius intersects this plane.
+     * @param[in] center Center of the sphere to test
+     * @param[in] radius Radius of the sphere to test
+     * @return `True` if this plane interstects the sphere, otherwise `false`.
+     */
+    bool intersects(const Vec3d& center, double radius) const
+    { return distance(center) < radius; }
+
+    /**
       * @brief Calculate signed distance between @p point and this plane.
       * @param[in] p Point
       * @return The signed distance between @p point and this plane.
