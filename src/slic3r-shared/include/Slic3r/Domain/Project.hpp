@@ -1,8 +1,7 @@
 #pragma once
-#include <string>
-#include <vector>
-#include <memory>
-#include "ConfigContainer.hpp"
+
+#include "Slic3r/Domain/ConfigContainer.hpp"
+#include "Slic3r/Domain/BedContainer.hpp"
 
 namespace Slic3r {
 class Model;
@@ -49,9 +48,13 @@ public:
     ModelVolume* find_volume_by_id(size_t obj_id, size_t vol_id);
     ModelInstance* find_instance_by_id(size_t obj_id, size_t inst_id);
 
+    const BedContainer& bed_container() const { return m_bed_container; }
+    BedContainer& bed_container() { return m_bed_container; }
+
 private:
     std::string m_file_name;
     ConfigContainerList m_config_containers;
+    BedContainer m_bed_container;
     std::unique_ptr<Model> m_model;
 };
 

@@ -11,10 +11,13 @@
 #include "Slic3r/App/Render/GeometryManager.hpp"
 #include "Slic3r/App/Scene/TriangleMeshManager.hpp"
 #include "Slic3r/App/Plater/ISceneProvider.hpp"
+#include "Slic3r/App/Plater/BedRenderUpdater.hpp"
 
 namespace Slic3r::App::Scene { class NodeBuilder; }
 
 namespace Slic3r::App::Plater {
+
+struct BedNodeTag;
 
 class ScenePresenter : public Biz::ISelectedProjectChangedListener,
                        public Biz::Scene::ISceneSelectionChangedListener,
@@ -65,6 +68,8 @@ public:
     void render_imgui(const Render::ScreenInfo& screen_info);
 
     void update_cameras(const std::function<void(Scene::Camera&)>& modifier);
+    void update_beds() { m_bed_render_updater.update_all(m_device, m_workbench.project(m_selected_project_id)); }
+
 private:
     void on_selected_project_changed(size_t index) override;
 
@@ -80,9 +85,9 @@ private:
     void on_volume_transformed(Domain::SelectionId project_id, const Domain::ElementRefs& elements) override;
     void on_volume_mesh_changed(Domain::SelectionId project_id, const Domain::ElementRefs& volumes) override;
 
-    void on_bed_added(Domain::SelectionId project_id, size_t idx) override;
-    void on_bed_removed(Domain::SelectionId project_id, size_t idx) override;
-    void on_bed_transformed(Domain::SelectionId project_id, size_t idx) override;
+    void on_bed_instance_added(Domain::SelectionId project_id, const Domain::ElementRef& instance) override;
+    void on_bed_instance_removed(Domain::SelectionId project_id, const Domain::ElementRef& instance) override;
+    void on_bed_instance_transformed(Domain::SelectionId project_id, const Domain::ElementRef& instance) override;
 
     void on_wipe_tower_added(Domain::SelectionId project_id, size_t idx) override;
     void on_wipe_tower_removed(Domain::SelectionId project_id, size_t idx) override;
@@ -92,6 +97,11 @@ private:
 
     void build_volume_node(Scene::NodeBuilder& builder, Domain::SelectionId project_id, const ModelInstance* inst, const ModelVolume* vol);
 
+    void build_bed_plate_node(Scene::NodeBuilder& builder, Domain::SelectionId project_id, const Domain::Bed& bed, const BedNodeTag& tag);
+    void build_bed_grid_node(Scene::NodeBuilder& builder, Domain::SelectionId project_id, const Domain::Bed& bed, const BedNodeTag& tag);
+    void build_bed_contour_node(Scene::NodeBuilder& builder, Domain::SelectionId project_id, const Domain::Bed& bed, const BedNodeTag& tag);
+    void build_bed_print_volume_node(Scene::NodeBuilder& builder, Domain::SelectionId project_id, const Domain::Bed& bed, const BedNodeTag& tag);
+    void build_bed_model_node(Scene::NodeBuilder& builder, Domain::SelectionId project_id, const Domain::Bed& bed, const BedNodeTag& tag);
 
 private:
     const Domain::Workbench& m_workbench;
@@ -102,6 +112,7 @@ private:
     ProjectContexts m_projects;
     GeometryManager m_geometry_manager;
     TriangleMeshManager m_triangle_mesh_manager;
+    BedRenderUpdater m_bed_render_updater;
 
 };
 

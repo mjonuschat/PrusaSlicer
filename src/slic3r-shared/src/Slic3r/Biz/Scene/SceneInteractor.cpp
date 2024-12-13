@@ -1,4 +1,6 @@
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
+#include "Slic3r/Domain/Bed.hpp"
+#include "Slic3r/Domain/BedInstance.hpp"
 #include "libslic3r/Model.hpp"
 
 namespace Slic3r::Biz::Scene {
@@ -67,6 +69,14 @@ void SceneInteractor::on_selected_project_changed(size_t index)
     if (m_projects.count(index) == 0)
         m_projects.emplace(index, SceneInteractorProjectContext{project});
     m_selected_project_id = index;
+
+    project.bed_container().reset();
+    Domain::Bed* bed = project.bed_container().add_bed(
+        project.config_containers().front()->get_print_config(),
+        m_workbench.preset_bundle());
+
+    // temporary member to allow to select a bed from ConfigContainer until we do not have a mechanism for it
+    m_bed_id = bed->id().id;
 }
 
 
@@ -158,6 +168,48 @@ void SceneInteractor::add_instance(const Transform& xform)
 
     set_selection({SelectionMode::Instance, updated});
 
+}
+
+void SceneInteractor::new_bed(size_t idx, const Transform& xform)
+{
+    Domain::Bed* bed = m_workbench.project(m_selected_project_id).bed_container().bed(idx);
+    DEBUG_ASSERT(bed != nullptr);
+    DEBUG_ASSERT(bed->instances().empty());
+    add_bed_instance(idx, xform);
+}
+
+void SceneInteractor::add_bed_instance(size_t idx, const Transform& xform)
+{
+    Domain::Bed* bed = m_workbench.project(m_selected_project_id).bed_container().bed(idx);
+    DEBUG_ASSERT(bed != nullptr);
+    Domain::BedInstance* inst = bed->add_instance();
+    DEBUG_ASSERT(inst != nullptr);
+    inst->set_transformation(Geometry::Transformation{ Transform3d{xform} });
+    const Domain::ElementRef updated{ bed->id().id, inst->id().id };
+
+    m_changed_listeners.invoke([&](auto* l) {
+        l->on_bed_instance_added(m_selected_project_id, updated);
+    });
+}
+
+void SceneInteractor::transform_bed_instance(const Domain::ElementRef& instance, const Transform& xform)
+{
+    Domain::Bed* bed = m_workbench.project(m_selected_project_id).bed_container().bed(instance.object_id);
+    DEBUG_ASSERT(bed != nullptr);
+    Domain::BedInstance* inst = bed->instance(instance.instance_id);
+    DEBUG_ASSERT(inst != nullptr);
+    inst->set_transformation(Geometry::Transformation{ Transform3d{xform} });
+    const Domain::ElementRef updated{ bed->id().id, inst->id().id };
+
+    m_changed_listeners.invoke([&](auto* l) {
+        l->on_bed_instance_transformed(m_selected_project_id, updated);
+    });
+}
+
+// temporary method to allow to select a bed from ConfigContainer until we do not have a mechanism for it
+Domain::Bed* SceneInteractor::bed()
+{
+    return m_workbench.project(m_selected_project_id).bed_container().bed(m_bed_id);
 }
 
 void SceneInteractor::transform_selection(const Matrix4d& relative_transform, TransformMemento& memento)

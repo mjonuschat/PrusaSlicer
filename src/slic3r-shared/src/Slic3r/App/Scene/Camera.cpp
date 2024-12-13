@@ -32,7 +32,7 @@ void Camera::look_at(const Vec3d& eye, const Vec3d& center, const Vec3d& up)
 
 void Camera::switch_projection_type()
 {
-    ASSERT(m_projection_getter != nullptr);
+    DEBUG_ASSERT(m_projection_getter != nullptr);
     if (m_projection_getter->type() == CameraProjectionType::Perspective)
         m_projection_getter.reset(new OrthographicCameraProjection);
     else
@@ -87,13 +87,13 @@ Vec3d Camera::unproject(const Vec3d& win_pos) const
 
 void Camera::update_projection()
 {
-    ASSERT(m_projection_getter != nullptr);
+    DEBUG_ASSERT(m_projection_getter != nullptr);
     m_projection = m_projection_getter->projection(m_viewport, m_zoom);
 }
 
 Transform PerspectiveCameraProjection::projection(const Render::Rect& viewport, double zoom) const
 {
-    ASSERT(zoom != 0.0);
+    DEBUG_ASSERT(zoom != 0.0);
     return Render::perspective(m_fovy / zoom, double(viewport.width) / double(viewport.height), m_z_near, m_z_far);
 }
 

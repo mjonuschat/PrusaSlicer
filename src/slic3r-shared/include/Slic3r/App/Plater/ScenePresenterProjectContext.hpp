@@ -4,13 +4,13 @@
 #include "Slic3r/App/Scene/SceneChangeSession.hpp"
 #include "Slic3r/App/Render/GeometryManager.hpp"
 #include "Slic3r/App/Scene/TriangleMeshManager.hpp"
-#include "Slic3r/App/Plater/GeometryElementId.hpp"
+#include "Slic3r/App/Plater/AuxiliaryElementId.hpp"
 #include "Slic3r/App/Scene/NodeBuilder.hpp"
 
 namespace Slic3r::App::Plater {
 
-using ModelGeometryManager = Render::GeometryManager<GeometryElementId>;
-using ModelTriangleMeshManager = Scene::TriangleMeshManager<GeometryElementId>;
+using ModelGeometryManager = Render::GeometryManager<AuxiliaryElementId>;
+using ModelTriangleMeshManager = Scene::TriangleMeshManager<AuxiliaryElementId>;
 
 class ScenePresenterProjectContext {
 public:

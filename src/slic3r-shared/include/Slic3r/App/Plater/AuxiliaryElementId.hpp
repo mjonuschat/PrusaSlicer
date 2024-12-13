@@ -4,7 +4,7 @@
 
 namespace Slic3r::App::Plater {
 
-struct GeometryElementId
+struct AuxiliaryElementId
 {
     enum class Type : uint8_t
     {
@@ -21,9 +21,9 @@ struct GeometryElementId
      * @param rhs
      * @return
      */
-    bool operator==(const GeometryElementId& rhs) const { return type == rhs.type && id == rhs.id; }
+    bool operator==(const AuxiliaryElementId& rhs) const { return type == rhs.type && id == rhs.id; }
 
-    bool operator<(const GeometryElementId& rhs) const
+    bool operator<(const AuxiliaryElementId& rhs) const
     {
         return type < rhs.type || (type == rhs.type && id < rhs.id);
     }
@@ -32,9 +32,9 @@ struct GeometryElementId
 
 namespace std {
 template<>
-struct hash<Slic3r::App::Plater::GeometryElementId>
+struct hash<Slic3r::App::Plater::AuxiliaryElementId>
 {
-    using value_type = Slic3r::App::Plater::GeometryElementId;
+    using value_type = Slic3r::App::Plater::AuxiliaryElementId;
     std::uint64_t operator()(const value_type& val) const
     {
         size_t ret = boost::hash_value(val.type);

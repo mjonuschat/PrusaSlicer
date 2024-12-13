@@ -19,12 +19,17 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Plater/QuickDragGizmo.hpp
         src/Slic3r/App/Plater/QuickDragGizmo.cpp
         include/Slic3r/App/Plater/ISceneProvider.hpp
-        include/Slic3r/App/Plater/GeometryElementId.hpp
+        include/Slic3r/App/Plater/AuxiliaryElementId.hpp
         include/Slic3r/App/Plater/SelectionHandler.hpp
         src/Slic3r/App/Plater/SelectionHandler.cpp
         include/Slic3r/App/Plater/TranslationGizmo.hpp
         src/Slic3r/App/Plater/TranslationGizmo.cpp
         include/Slic3r/App/Plater/PlaterSceneLayer.hpp
+        include/Slic3r/App/Plater/BedNodeTag.hpp
+        include/Slic3r/App/Plater/BedRenderUpdater.hpp
+        src/Slic3r/App/Plater/BedRenderUpdater.cpp
+        include/Slic3r/App/Plater/BedRenderHelper.hpp
+        src/Slic3r/App/Plater/BedRenderHelper.cpp
 
         include/Slic3r/App/View/IPanelView.hpp
 
@@ -100,6 +105,8 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/ObservableDynamicPrintConfig.hpp
         include/Slic3r/Biz/Observable.hpp
         include/Slic3r/Biz/Plater/ConfigViewModel.hpp
+        include/Slic3r/Biz/Plater/BedGeometry.hpp
+        src/Slic3r/Biz/Plater/BedGeometry.cpp
 
         include/Slic3r/Biz/Scene/SceneInteractor.hpp
         src/Slic3r/Biz/Scene/SceneInteractor.cpp
@@ -143,6 +150,10 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Domain/Project.hpp
         include/Slic3r/Domain/Bed.hpp
         src/Slic3r/Domain/Bed.cpp
+        include/Slic3r/Domain/BedInstance.hpp
+        src/Slic3r/Domain/BedInstance.cpp
+        include/Slic3r/Domain/BedContainer.hpp
+        src/Slic3r/Domain/BedContainer.cpp
         src/Slic3r/Domain/Workbench.cpp
         include/Slic3r/Domain/Workbench.hpp
         src/Slic3r/Domain/ConfigContainer.cpp

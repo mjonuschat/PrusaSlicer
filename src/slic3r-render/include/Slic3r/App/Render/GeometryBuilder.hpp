@@ -204,5 +204,14 @@ std::unique_ptr<Geometry> geometry_from_triangle_mesh(
 std::unique_ptr<Geometry> geometry_from_triangle_mesh(
     Device& device, const indexed_triangle_set& triangle_mesh, const Material& material = {}
 );
+std::unique_ptr<Geometry> geometry_from_triangles(
+    Device& device, const std::vector<Vec3f>& triangles, const Material& material = {}
+);
+std::unique_ptr<Geometry> geometry_from_triangles(
+    Device& device, const std::vector<std::pair<Vec3f, Vec2f>>& triangles, const Material& material = {}
+);
+std::unique_ptr<Geometry> geometry_from_lines(
+    Device& device, const std::vector<Vec3f>& lines, const Material& material = {}
+);
 
 } // namespace Slic3r::App::Render

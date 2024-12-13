@@ -10,6 +10,8 @@
 #include "Slic3r/Biz/ListenerList.hpp"
 #include "Slic3r/Domain/ElementRef.hpp"
 
+namespace Slic3r::Domain { class Bed; }
+
 namespace Slic3r::Biz::Scene {
 
 class ISceneSelectionChangedListener
@@ -34,9 +36,9 @@ public:
     virtual void on_volume_transformed(Domain::SelectionId project_id, const Domain::ElementRefs& elements) = 0;
     virtual void on_volume_mesh_changed(Domain::SelectionId project_id, const Domain::ElementRefs& volumes) = 0;
 
-    virtual void on_bed_added(Domain::SelectionId project_id, size_t idx) = 0;
-    virtual void on_bed_removed(Domain::SelectionId project_id, size_t idx) = 0;
-    virtual void on_bed_transformed(Domain::SelectionId project_id, size_t idx) = 0;
+    virtual void on_bed_instance_added(Domain::SelectionId project_id, const Domain::ElementRef& instance) = 0;
+    virtual void on_bed_instance_removed(Domain::SelectionId project_id, const Domain::ElementRef& instance) = 0;
+    virtual void on_bed_instance_transformed(Domain::SelectionId project_id, const Domain::ElementRef& instance) = 0;
 
     virtual void on_wipe_tower_added(Domain::SelectionId project_id, size_t idx) = 0;
     virtual void on_wipe_tower_removed(Domain::SelectionId project_id, size_t idx) = 0;
@@ -56,6 +58,13 @@ public:
     void new_object_from_mesh(TriangleMesh&& mesh);
     void add_volume_from_mesh(TriangleMesh&& mesh, ModelVolumeType volume_type, const Transform& xform = Matrix4d::Identity());
     void add_instance(const Transform& xform);
+
+    void new_bed(size_t idx, const Transform& xform = Matrix4d::Identity());
+    void add_bed_instance(size_t idx, const Transform& xform);
+    void transform_bed_instance(const Domain::ElementRef& instance, const Transform& xform);
+
+    // temporary method to allow to select a bed from ConfigContainer until we do not have a mechanism for it
+    Domain::Bed* bed();
 
     /**
      * @name Scene selection
@@ -130,6 +139,9 @@ private:
     Domain::SelectionId m_selected_project_id {Domain::INVALID_ID};
     Biz::ListenerList<ISceneSelectionChangedListener> m_selection_changed_listeners;
     Biz::ListenerList<ISceneChangedListener> m_changed_listeners;
+
+    // temporary member to allow to select a bed from ConfigContainer until we do not have a mechanism for it
+    size_t m_bed_id{ Domain::INVALID_ID };
 };
 
 struct TransformMemento

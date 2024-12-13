@@ -6,7 +6,8 @@
 #include "Slic3r/Assert.hpp"
 
 namespace Slic3r::App::Render {
-class Geometery;
+class Geometry;
+class Material;
 }
 
 namespace Slic3r {
@@ -16,7 +17,6 @@ class AABBMesh;
 namespace Slic3r::App::Scene {
 
 class MeshRenderNodeComponent;
-class Material;
 class Scene;
 
 class NodeBuilder {

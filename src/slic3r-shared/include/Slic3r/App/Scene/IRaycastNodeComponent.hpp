@@ -6,7 +6,7 @@
 
 namespace Slic3r::App::Scene {
 
-struct Frustum;
+class Frustum;
 
 /**
  * @brief Generic interface for raycast collision detection component.
