@@ -979,20 +979,9 @@ static std::string get_connect_state_suffix_for_printer(const Preset& printer_pr
         
         for (const auto& [printer_model_nozzle_pair, states] : printer_state_map) {
             std::string printer_model = printer_preset.config.opt_string("printer_model");
-            std::string vendor_repo_prefix;
-            if (printer_preset.vendor) {
-                vendor_repo_prefix = printer_preset.vendor->repo_prefix;
-            } else if (std::string inherits = printer_preset.inherits(); !inherits.empty()) {
-                const Preset *parent = wxGetApp().preset_bundle->printers.find_preset(inherits);
-                if (parent && parent->vendor) {
-                    vendor_repo_prefix = parent->vendor->repo_prefix;
-                }
-            }
-            if (printer_model.find(vendor_repo_prefix) == 0) {
-                printer_model = printer_model.substr(vendor_repo_prefix.size());
-                boost::trim_left(printer_model);
-            }
-
+            const PresetWithVendorProfile& printer_with_vendor = wxGetApp().preset_bundle->printers.get_preset_with_vendor_profile(printer_preset);
+            printer_model = printer_preset.trim_vendor_repo_prefix(printer_model, printer_with_vendor.vendor);
+            
             if (printer_preset.config.has("nozzle_diameter")) {
                 double nozzle_diameter = static_cast<const ConfigOptionFloats*>(printer_preset.config.option("nozzle_diameter"))->values[0];
                 wxString nozzle_diameter_serialized = double_to_string(nozzle_diameter);
@@ -1043,19 +1032,8 @@ static bool fill_data_to_connect_info_line(  const Preset& printer_preset,
         for (const auto& [printer_model_nozzle_pair, states] : printer_state_map) {
             // get printer_model without repo prefix
             std::string printer_model = printer_preset.config.opt_string("printer_model");
-            std::string vendor_repo_prefix;
-            if (printer_preset.vendor) {
-                vendor_repo_prefix = printer_preset.vendor->repo_prefix;
-            } else if (std::string inherits = printer_preset.inherits(); !inherits.empty()) {
-                const Preset *parent = wxGetApp().preset_bundle->printers.find_preset(inherits);
-                if (parent && parent->vendor) {
-                    vendor_repo_prefix = parent->vendor->repo_prefix;
-                }
-            }
-            if (printer_model.find(vendor_repo_prefix) == 0) {
-                printer_model = printer_model.substr(vendor_repo_prefix.size());
-                boost::trim_left(printer_model);
-            }
+            const PresetWithVendorProfile& printer_with_vendor = wxGetApp().preset_bundle->printers.get_preset_with_vendor_profile(printer_preset);
+            printer_model = printer_preset.trim_vendor_repo_prefix(printer_model, printer_with_vendor.vendor);
 
             if (printer_preset.config.has("nozzle_diameter")) {
                 double nozzle_diameter = static_cast<const ConfigOptionFloats*>(printer_preset.config.option("nozzle_diameter"))->values[0];

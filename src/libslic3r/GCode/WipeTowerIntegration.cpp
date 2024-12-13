@@ -72,7 +72,7 @@ std::string WipeTowerIntegration::append_tcr(GCodeGenerator &gcodegen, const Wip
             gcode += gcodegen.travel_to_first_position(to, current_z, ExtrusionRole::Mixed, [](){return "";});
         } else {
             if (gcodegen.last_position) {
-                const Vec3crd from{to_3d(*gcodegen.last_position, scaled(z))};
+                const Vec3crd from{to_3d(*gcodegen.last_position, scaled(current_z))};
                 gcode += gcodegen.travel_to(
                     from, to, ExtrusionRole::Mixed, comment, [](){return "";}
                 );

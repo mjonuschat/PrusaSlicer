@@ -58,10 +58,7 @@ std::pair<std::vector<Vec2d>, std::vector<PointType>> remove_redundant_points(
         const std::int64_t index{std::distance(points.begin(), iterator)};
         if (next(iterator) == points.end() || point_types[index] != point_types[index + 1]) {
             std::vector<Vec2d> simplification_result;
-            douglas_peucker<double>(
-                range_start, next(iterator), std::back_inserter(simplification_result), tolerance,
-                [](const Vec2d &point) { return point; }
-            );
+            douglas_peucker(range_start, next(iterator), std::back_inserter(simplification_result), tolerance);
 
             points_result.insert(
                 points_result.end(), simplification_result.begin(), simplification_result.end()

@@ -25,6 +25,8 @@ endif()
 
 if (SLIC3R_GUI)
     add_subdirectory(libvgcode)
+    add_subdirectory(slic3r-arrange)
+    add_subdirectory(slic3r-arrange-wrapper)
 
     if (NOT EMSCRIPTEN)
         if(WIN32)
@@ -112,7 +114,7 @@ if (NOT WIN32 AND NOT APPLE)
     set_target_properties(PrusaSlicer PROPERTIES OUTPUT_NAME "prusa-slicer")
 endif ()
 
-target_link_libraries(PrusaSlicer libslic3r libcereal)
+target_link_libraries(PrusaSlicer libslic3r libcereal slic3r-arrange-wrapper)
 
 if (APPLE)
 #    add_compile_options(-stdlib=libc++)

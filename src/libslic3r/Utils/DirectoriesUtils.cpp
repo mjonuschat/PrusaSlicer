@@ -51,34 +51,51 @@ static std::string GetDataDir()
 #include <stdlib.h>
 #include <pwd.h>
 
-static std::string GetDataDir()
-{
-    std::string dir;
+std::optional<std::string> get_env(std::string_view key) {
+    const char* result{getenv(key.data())};
+    if(result == nullptr) {
+        return std::nullopt;
+    }
+    return std::string{result};
+}
 
-    char* ptr;
-    if ((ptr = getenv("XDG_CONFIG_HOME")))
-        dir = std::string(ptr);
-    else {
-        if ((ptr = getenv("HOME")))
-            dir = std::string(ptr);
-        else {
-            struct passwd* who = (struct passwd*)NULL;
-            if ((ptr = getenv("USER")) || (ptr = getenv("LOGNAME")))
-                who = getpwnam(ptr);
-            // make sure the user exists!
-            if (!who)
-                who = getpwuid(getuid());
-
-            dir = std::string(who ? who->pw_dir : 0);
+namespace Slic3r {
+std::optional<boost::filesystem::path> get_home_config_dir() {
+    if (auto result{get_env("HOME")}) {
+        return *result + "/.config";
+    } else {
+        std::optional<std::string> user_name{get_env("USER")};
+        if (!user_name) {
+            user_name = get_env("LOGNAME");
         }
-        if (! dir.empty())
-            dir += "/.config";
+        struct passwd* who{
+            user_name ?
+            getpwnam(user_name->data()) :
+            (struct passwd*)NULL
+        };
+        // make sure the user exists!
+        if (!who) {
+            who = getpwuid(getuid());
+        }
+        if (who) {
+            return std::string{who->pw_dir} + "/.config";
+        }
+    }
+    return std::nullopt;
+}
+}
+
+std::string GetDataDir()
+{
+    if (auto result{get_env("XDG_CONFIG_HOME")}) {
+        return *result;
+    } else if (auto result{Slic3r::get_home_config_dir()}) {
+        return result->string();
     }
 
-    if (dir.empty())
-        BOOST_LOG_TRIVIAL(error) << "GetDataDir() > unsupported file layout";
+    BOOST_LOG_TRIVIAL(error) << "GetDataDir() > unsupported file layout";
 
-    return dir;
+    return {};
 }
 
 #elif defined(__EMSCRIPTEN__)
@@ -95,7 +112,7 @@ namespace Slic3r {
 std::string get_default_datadir()
 {
     const std::string config_dir = GetDataDir();
-    const std::string data_dir = (boost::filesystem::path(config_dir) / SLIC3R_APP_FULL_NAME).make_preferred().string();
+    std::string data_dir = (boost::filesystem::path(config_dir) / SLIC3R_APP_FULL_NAME).make_preferred().string();
     return data_dir;
 }
 

@@ -53,6 +53,7 @@ public:
     void enqueue_test_connection();
     void enqueue_printer_data_action(const std::string& uuid);
     void enqueue_refresh();
+    void request_refresh();
 
     // Callbacks - called from UI after receiving Event from Session thread. Some might use Session thread.
     // 

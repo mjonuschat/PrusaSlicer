@@ -131,7 +131,7 @@ Params Placer::get_params(const DynamicPrintConfig &config) {
     params.staggered_inner_seams = config.opt_bool("staggered_inner_seams");
 
     params.max_nearest_detour = 1.0;
-    params.rear_tolerance = 0.2;
+    params.rear_tolerance = 1.0;
     params.rear_y_offset = 20;
     params.aligned.jump_visibility_threshold = 0.6;
     params.max_distance = 5.0;
@@ -139,8 +139,8 @@ Params Placer::get_params(const DynamicPrintConfig &config) {
     params.perimeter.embedding_threshold = 0.5;
     params.perimeter.painting_radius = 0.1;
     params.perimeter.simplification_epsilon = 0.001;
-    params.perimeter.smooth_angle_arm_length = 0.2;
-    params.perimeter.sharp_angle_arm_length = 0.05;
+    params.perimeter.smooth_angle_arm_length = 0.5;
+    params.perimeter.sharp_angle_arm_length = 0.25;
 
     params.visibility.raycasting_visibility_samples_count = 30000;
     params.visibility.fast_decimation_triangle_count_target = 16000;
@@ -297,7 +297,7 @@ boost::variant<Point, Scarf::Scarf> finalize_seam_position(
         Scarf::Scarf scarf{};
         scarf.entire_loop = region->config().scarf_seam_entire_loop;
         scarf.max_segment_length = region->config().scarf_seam_max_segment_length;
-        scarf.start_height = region->config().scarf_seam_start_height.get_abs_value(1.0);
+        scarf.start_height = std::min(region->config().scarf_seam_start_height.get_abs_value(1.0), 1.0);
 
         const double offset{scarf.entire_loop ? 0.0 : region->config().scarf_seam_length.value};
         const std::optional<Geometry::PointOnLine> outter_scarf_start_point{Geometry::offset_along_lines(

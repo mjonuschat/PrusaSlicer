@@ -779,10 +779,6 @@ namespace Slic3r {
 
         double extract_absolute_position_on_axis(Axis axis, const GCodeReader::GCodeLine& line, double area_filament_cross_section);
 
-        AxisCoords create_axis_coords(const Vec3f &vec) {
-            return AxisCoords{vec[0], vec[1], vec[2], 0};
-        }
-
    };
 
 } /* namespace Slic3r */

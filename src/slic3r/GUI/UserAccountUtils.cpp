@@ -26,17 +26,6 @@ std::string parse_tree_for_param(const pt::ptree& tree, const std::string& param
     return {};
 }
 
-/*void parse_tree_for_param_vector(
-const pt::ptree &tree, const std::string& param, std::vector<std::string>& results) {
-    for (const auto &section : tree) {
-        if (section.first == param) {
-            results.emplace_back(section.second.data());
-        } else {
-            parse_tree_for_param_vector(section.second, param, results);
-        }
-    }
-}*/
-
 pt::ptree parse_tree_for_subtree(const pt::ptree& tree, const std::string& param) {
     for (const auto &section : tree) {
         if (section.first == param) {

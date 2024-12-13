@@ -39,7 +39,7 @@ add_executable(${_TEST_NAME}_tests
 	test_thin_walls.cpp
 	test_trianglemesh.cpp
 	)
-target_link_libraries(${_TEST_NAME}_tests test_common libslic3r)
+target_link_libraries(${_TEST_NAME}_tests test_common slic3r-arrange-wrapper)
 set_property(TARGET ${_TEST_NAME}_tests PROPERTY FOLDER "tests")
 target_compile_definitions(${_TEST_NAME}_tests PUBLIC CATCH_CONFIG_ENABLE_BENCHMARKING)
 

@@ -315,7 +315,8 @@ private:
 
     void initialize_instance(
         const InstanceToPrint &print_instance,
-        const ObjectLayerToPrint &layer_to_print
+        const ObjectLayerToPrint &layer_to_print,
+        const bool is_first
     );
 
     std::string extrude_slices(

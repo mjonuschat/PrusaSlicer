@@ -328,7 +328,6 @@ SeamCandidate get_seam_candidate(
                 choice_visibilities[slice_index] >
                 least_visible.visibility + params.jump_visibility_threshold};
             const bool can_be_on_edge{
-                !is_on_edge &&
                 perimeter.angle_types[least_visible.choice.next_index] != AngleType::smooth};
             if (is_too_far || (can_be_on_edge  && is_too_visible)) {
                 candidate = least_visible.choice;
