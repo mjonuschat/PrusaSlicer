@@ -7,6 +7,7 @@
 #if DEBUG_GIZMO_MANAGER
 #include "Slic3r/TypeInfo.hpp"
 #include "Slic3r/Log.hpp"
+#include <imgui/imgui.h>
 #endif
 
 
@@ -45,6 +46,7 @@ void GizmoManager::on_scene_mouse_event(const Platform::MouseEvent& e, const Sli
     const bool single_active = m_in_cycle_gizmos.size() == 1;
 #if DEBUG_GIZMO_MANAGER
     SPDLOG_INFO("process event {} ---in-cycle: {}", int(e.type()), m_in_cycle);
+    update_gizmo_activation_debug_frame_begin();
 #endif
 
     auto it = m_in_cycle_gizmos.begin();
@@ -54,6 +56,7 @@ void GizmoManager::on_scene_mouse_event(const Platform::MouseEvent& e, const Sli
         auto ret = g->on_mouse(ctx, single_active);
 #if DEBUG_GIZMO_MANAGER
         SPDLOG_INFO("- {} with result {}", type_name(*g), ACTIVATION_STATE_NAMES[int(ret)]);
+        update_gizmo_activation_debug_data(g, ret);
 #endif
 
         if (ret == GizmoActivationState::Inactive) {
@@ -107,6 +110,9 @@ void GizmoManager::render_imgui()
 {
     for (auto* g : m_in_cycle_gizmos)
         g->render_imgui();
+#if DEBUG_GIZMO_MANAGER
+    render_gizmo_activation_debug();
+#endif
 }
 
 void GizmoManager::activate_tool(ToolType tool, PrinterTechnology pt)
@@ -149,5 +155,104 @@ IToolGizmo* GizmoManager::find_tool(ToolType tool, PrinterTechnology pt)
     return it == m_tool_gizmos.end() ? nullptr : it->get();
 }
 
+
+#if DEBUG_GIZMO_MANAGER
+void GizmoManager::update_gizmo_activation_debug_data(const IGizmo* g, GizmoActivationState state)
+{
+    if (auto it = m_activation_debug.find(g); it != m_activation_debug.end()) {
+        it->second.back() = state;
+    } else {
+        m_activation_debug[g] = {state};
+    }
+}
+
+void GizmoManager::update_gizmo_activation_debug_frame_begin()
+{
+    for (auto& [g, gad] : m_activation_debug) {
+        gad.push_back(GizmoActivationState::Inactive);
+        if (gad.size() > NUM_DEBUG_ACTIVATION_LAST_STEPS)
+            gad.pop_front();
+    }
+}
+
+void GizmoManager::render_gizmo_activation_debug() const
+{
+    if (ImGui::Begin("Gizmo Activation")) {
+        // Begin a table with 2 + maxCellsPerRow columns
+        if (ImGui::BeginTable("MapDataTable", 1 + NUM_DEBUG_ACTIVATION_LAST_STEPS, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg)) {
+            // Set fixed width for the first column
+            ImGui::TableSetupColumn("Gizmo", ImGuiTableColumnFlags_WidthFixed, 250.0f); // Adjust 150.0f as needed
+            for (int i = 0; i < NUM_DEBUG_ACTIVATION_LAST_STEPS; ++i) {
+                ImGui::TableSetupColumn("");
+            }
+            ImGui::TableHeadersRow();
+
+            // Loop through each key-value pair in the map
+            for (const auto& [key, values] : m_activation_debug) {
+                // Create a new row for the current key
+                ImGui::TableNextRow();
+
+                // Render the key in the first column
+                ImGui::TableSetColumnIndex(0);
+                ImGui::TextUnformatted(type_name(*key).c_str());
+
+                // Prepare a buffer for rendering values with padding
+                int remainingCells = NUM_DEBUG_ACTIVATION_LAST_STEPS - static_cast<int>(values.size());
+
+                // Render blank cells for padding on the left
+                for (int cellIndex = 0; cellIndex < remainingCells; ++cellIndex) {
+                    ImGui::TableSetColumnIndex(1 + cellIndex);
+                    ImGui::TextUnformatted("");
+                }
+
+                // Render up to maxCellsPerRow cells for the values
+                auto it = values.begin();
+                for (int cellIndex = remainingCells; cellIndex < NUM_DEBUG_ACTIVATION_LAST_STEPS; ++cellIndex) {
+                    ImGui::TableSetColumnIndex(1 + cellIndex);
+
+                    if (it != values.end()) {
+                        // Determine the cell color based on the value
+                        ImVec4 color;
+                        const char* name = "?";
+                        switch (*it) {
+                            case GizmoActivationState::Inactive:
+                                color = ImVec4(0.2f, 0.2f, 0.2f, 1.0f);
+                            name = "I";
+                            break;
+                            case GizmoActivationState::Probing:
+                                color = ImVec4(0.8f, 0.8f, 0.0f, 1.0f);
+                            name = "P";
+                            break;
+                            case GizmoActivationState::Active:
+                                color = ImVec4(0.0f, 1.0f, 0.2f, 1.0f);
+                            name = "A";
+                            break;
+                            case GizmoActivationState::Done:
+                                color = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
+                            name = "D";
+                            break;
+                        }
+
+                        // Draw a colored cell
+                        ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg, ImGui::ColorConvertFloat4ToU32(color));
+                        ImGui::TextUnformatted(name);
+
+                        // Advance the iterator
+                        ++it;
+                    } else {
+                        // If no more values, leave the cell blank
+                        ImGui::TextUnformatted("");
+                    }
+                }
+            }
+
+            ImGui::EndTable();
+        }
+    }
+    ImGui::End();
+
+}
+
+#endif
 
 }

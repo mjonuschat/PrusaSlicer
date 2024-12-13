@@ -9,6 +9,12 @@
 #include "Slic3r/App/Plater/GizmoDataFactory.hpp"
 #include "libslic3r/Config.hpp"
 
+
+#ifndef DEBUG_GIZMO_MANAGER
+#define DEBUG_GIZMO_MANAGER 1
+#endif
+
+
 namespace Slic3r::App::Plater {
 
 class GizmoManager {
@@ -47,6 +53,12 @@ private:
     void prepare_cycle();
     IToolGizmo* find_tool(ToolType tool, PrinterTechnology pt);
 
+#if DEBUG_GIZMO_MANAGER
+    void update_gizmo_activation_debug_data(const IGizmo* g, GizmoActivationState state);
+    void update_gizmo_activation_debug_frame_begin();
+    void render_gizmo_activation_debug() const;
+#endif
+
 private:
     using IGizmoPtr = std::unique_ptr<IGizmo>;
     using IToolGizmoPtr = std::unique_ptr<IToolGizmo>;
@@ -64,6 +76,12 @@ private:
 
     bool m_in_cycle {false};
     std::vector<IGizmo*> m_in_cycle_gizmos;
+#if DEBUG_GIZMO_MANAGER
+    constexpr static size_t NUM_DEBUG_ACTIVATION_LAST_STEPS = 63;
+    using GizmoActivationDebugData = std::list<GizmoActivationState>;
+    using GizmosActivationDebugData = std::unordered_map<const IGizmo*, GizmoActivationDebugData>;
+    GizmosActivationDebugData m_activation_debug;
+#endif
 };
 
 }
