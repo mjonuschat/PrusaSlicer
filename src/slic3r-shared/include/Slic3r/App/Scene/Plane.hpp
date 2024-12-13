@@ -74,6 +74,13 @@ struct Plane
     bool intersects(const Ray& ray, double& t) const;
 
     /**
+      * @brief Tests if @box box intersects this plane.
+      * @param[in] box Axis aligned box to test
+      * @return `True` if this plane interstects @box box, otherwise `false`.
+      */
+    bool intersects(const Eigen::AlignedBox3d& box) const;
+
+    /**
       * @brief Calculate signed distance between @p point and this plane.
       * @param[in] p Point
       * @return The signed distance between @p point and this plane.
