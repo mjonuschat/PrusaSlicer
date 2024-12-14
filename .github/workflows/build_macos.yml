@@ -58,7 +58,7 @@ jobs:
           path: ${{ github.workspace }}/deps/build${{ matrix.arch }}/PrusaSlicer_dep_${{ matrix.arch }}
           key: ${{ runner.os }}${{ matrix.arch }}-cache-Prusaslicer_deps-build-${{ hashFiles('deps/**') }}
 
-      - name: Build PrusaSlicer (BOSS) ${{ $matrix.arch }} Dependencies
+      - name: Build PrusaSlicer (BOSS) ${{ matrix.arch }} Dependencies
         if: steps.cache-build-deps.outputs.cache-hit != 'true'
         working-directory: ${{ github.workspace }}
         run: |
@@ -70,12 +70,12 @@ jobs:
         run: |
           brew install zstd            
 
-      - name: Build PrusaSlicer (BOSS) ${{ $matrix.arch }} 
+      - name: Build PrusaSlicer (BOSS) ${{ matrix.arch }} 
         working-directory: ${{ github.workspace }}
         run: |
           ./build_release_macos.sh -s -n -a ${{matrix.arch}} -t 11.3
 
-      - name: Bundle PrusaSlicer (BOSS) ${{ $matrix.arch }} release build
+      - name: Bundle PrusaSlicer (BOSS) ${{ matrix.arch }} release build
         if: (github.ref == 'refs/heads/boss' || startsWith(github.ref, 'refs/heads/release/'))
         working-directory: ${{ github.workspace }}
         env:
@@ -101,14 +101,14 @@ jobs:
           xcrun notarytool submit "PrusaSlicer-${{ env.ver }}+MacOS-${{matrix.arch}}-${{ env.date }}.dmg" --keychain-profile "notarytool-profile" --wait
           xcrun stapler staple PrusaSlicer-${{ env.ver }}+MacOS-${{matrix.arch}}-${{ env.date }}.dmg
 
-      - name: Bundle PrusaSlicer (BOSS) ${{ $matrix.arch }} development build
+      - name: Bundle PrusaSlicer (BOSS) ${{ matrix.arch }} development build
         if: (github.ref != 'refs/heads/boss' && !startsWith(github.ref, 'refs/heads/release/'))
         working-directory: ${{ github.workspace }}
         run: |
           ln -s /Applications ${{ github.workspace }}/build_${{matrix.arch}}/PrusaSlicer/Applications
           hdiutil create -volname "PrusaSlicer" -srcfolder ${{ github.workspace }}/build_${{matrix.arch}}/PrusaSlicer -ov -format UDZO PrusaSlicer-${{ env.ver }}+MacOS-${{matrix.arch}}-${{ env.date }}.dmg
 
-      - name: Upload MacOS PrusaSlicer (BOSS) ${{ $matrix.arch }} 
+      - name: Upload MacOS PrusaSlicer (BOSS) ${{ matrix.arch }} 
         uses: actions/upload-artifact@v4
         with:
           name: PrusaSlicer-${{ env.ver }}+MacOS-${{matrix.arch}}-${{ env.date }}
@@ -124,7 +124,7 @@ jobs:
       ver:
       ver_pure:
       DMG_UNIVERSAL:
-        
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
