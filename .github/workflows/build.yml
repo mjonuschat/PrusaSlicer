@@ -34,19 +34,28 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
-    name: Build PrusaSlicer (BOSS)
-    strategy:
-      fail-fast: false
-      matrix:
-        platform: [linux, macos, windows]
-    uses: ./.github/workflows/build_${{ matrix.platform }}.yml
+  build_linux:
+    name: Build PrusaSlicer (BOSS) on Linux
+    uses: ./.github/workflows/build_linux.yml
+    secrets: inherit
+
+  build_macos:
+    name: Build PrusaSlicer (BOSS) on MacOS
+    uses: ./.github/workflows/build_macos.yml
+    secrets: inherit
+  
+  build_windows:
+    name: Build PrusaSlicer (BOSS) on Windows
+    uses: ./.github/workflows/build_windows.yml
     secrets: inherit
 
   release:
     name: Release
     uses: ./.github/workflows/release.yml
-    needs: [build]
+    needs:
+      - build_linux
+      - build_macos
+      - build_windows
     secrets: inherit
     permissions:
       contents: write    

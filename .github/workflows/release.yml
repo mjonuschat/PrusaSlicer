@@ -11,7 +11,9 @@ jobs:
     env:
       date:
       ver:
-
+      ver_pure:
+      DMG_UNIVERSAL:
+      
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -90,7 +92,7 @@ jobs:
           path: ${{ env.DMG_UNIVERSAL }}
 
   create_nightly:
-    name: Create nightly release
+    name: Create Nightly Release
     runs-on: ubuntu-latest
     needs: create_macos_universal
     permissions:
@@ -110,7 +112,7 @@ jobs:
 
       - uses: ncipollo/release-action@v1
         with:
-          artifacts: "PrusaSlicer-*BOSS*"
+          artifacts: "PrusaSlicer-*BOSS+win64*,PrusaSlicer-*BOSS+MacOS-universal*,PrusaSlicer-*+BOSS+Linux*flatpak*"
           allowUpdates: true
           artifactErrorsFailBuild: true
           bodyFile: ${{ github.workspace }}/.github/RELEASE_TEMPLATE.md
@@ -122,12 +124,14 @@ jobs:
           omitDraftDuringUpdate: true
           removeArtifacts: true
           replacesArtifacts: true
-          tag: latest
+          tag: nightly
 
   create_release:
-    name: Create release
+    name: Create PrusaSlicer (BOSS) GitHub Release
     runs-on: ubuntu-latest
     needs: create_macos_universal
+    env:
+      ver_pure:
     permissions:
       contents: write
     if: startsWith(github.ref, 'refs/heads/release/')
@@ -135,21 +139,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Get the version
+      - name: Get PrusaSlicer Version
         run: |
           ver_pure=$(grep 'set(SLIC3R_VERSION' version.inc | cut -d '"' -f2)
           echo "ver_pure=$ver_pure" >> $GITHUB_ENV
 
-      - name: Download artifacts
+      - name: Download PrusaSlicer (BOSS) Build Artifacts
         uses: actions/download-artifact@v4
         with:
           pattern: PrusaSlicer-*BOSS* 
           merge-multiple: true
 
-
-      - uses: ncipollo/release-action@v1
+      - name: Create PrusaSlicer (BOSS) GitHub Release
+        uses: ncipollo/release-action@v1
         with:
-          artifacts: "PrusaSlicer-*BOSS+win64*,PrusaSlicer-*BOSS+MacOS-universal*,PrusaSlicer-*+BOSS+Linux*AppImage*"
+          artifacts: "PrusaSlicer-*BOSS+win64*,PrusaSlicer-*BOSS+MacOS-universal*,PrusaSlicer-*+BOSS+Linux*flatpak*"
           allowUpdates: false
           artifactErrorsFailBuild: true
           bodyFile: ${{ github.workspace }}/.github/RELEASE_TEMPLATE.md
