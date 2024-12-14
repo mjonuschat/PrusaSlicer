@@ -40,7 +40,7 @@ jobs:
       fail-fast: false
       matrix:
         platform: [linux, osx, windows]
-    uses: ./.github/workflows/build_${{ matrix.platform }}.yml
+    uses: ./.github/workflows/build/build_${{ matrix.platform }}.yml
     secrets: inherit
 
   release:
