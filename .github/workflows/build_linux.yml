@@ -1,11 +1,11 @@
-name: Build Linux PrusaSlicer (BOSS)
+name: Build Linux
 
 on:
   workflow_call:
 
 jobs:
   build_flatpak:
-    name: Build PrusaSlicer+BOSS (Linux Flatpak)
+    name: Compile & Bundle Flatpak
     runs-on: ubuntu-latest
     container:
       image: bilelmoussaoui/flatpak-github-actions:gnome-47

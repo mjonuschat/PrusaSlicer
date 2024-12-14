@@ -1,4 +1,4 @@
-name: Build PrusaSlicer (BOSS)
+name: Build
 
 on:
   push:
@@ -35,17 +35,17 @@ concurrency:
 
 jobs:
   build_linux:
-    name: Build PrusaSlicer (BOSS) on Linux
+    name: Build on Linux
     uses: ./.github/workflows/build_linux.yml
     secrets: inherit
 
   build_macos:
-    name: Build PrusaSlicer (BOSS) on MacOS
+    name: Build on MacOS
     uses: ./.github/workflows/build_macos.yml
     secrets: inherit
   
   build_windows:
-    name: Build PrusaSlicer (BOSS) on Windows
+    name: Build on Windows
     uses: ./.github/workflows/build_windows.yml
     secrets: inherit
 

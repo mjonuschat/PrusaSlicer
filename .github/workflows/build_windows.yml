@@ -1,11 +1,11 @@
-name: Build Windows PrusaSlicer (BOSS)
+name: Build Windows
 
 on:
   workflow_call:
 
 jobs:
   build_windows:
-    name: Build Windows PrusaSlicer (BOSS)
+    name: Compile
     runs-on: windows-latest
     env:
       date:

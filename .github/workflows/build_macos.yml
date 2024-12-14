@@ -1,11 +1,11 @@
-name: Build MacOS PrusaSlicer (BOSS)
+name: Build MacOS
 
 on:
   workflow_call:
 
 jobs:
   build_macos:
-    name: Build MacOS PrusaSlicer (BOSS)
+    name: Compile
     strategy:
       fail-fast: false
       matrix:
@@ -115,7 +115,7 @@ jobs:
           path: ${{ github.workspace }}/PrusaSlicer-${{ env.ver }}+MacOS-${{matrix.arch}}-${{ env.date }}.dmg
 
   bundle_macos:
-    name: Bundle universal MacOS PrusaSlicer (BOSS) Binary
+    name: Bundle DMG
     runs-on: macos-14
     needs: [build_macos]
     if: github.ref == 'refs/heads/boss' || startsWith(github.ref, 'refs/heads/release/')
