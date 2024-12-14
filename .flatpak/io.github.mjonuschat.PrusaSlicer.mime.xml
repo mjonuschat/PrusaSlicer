@@ -4,13 +4,13 @@
         <comment>3D Manufacturing File</comment>
         <sub-class-of type="application/zip"/>
         <glob pattern="*.3mf"/>
-        <icon name="dev.mojocode.PrusaSlicer.application-vnd-ms-3mfdocument"/>
-        <generic-icon name="dev.mojocode.PrusaSlicer.application-vnd-ms-3mfdocument"/>
+        <icon name="io.github.mjonuschat.PrusaSlicer.application-vnd-ms-3mfdocument"/>
+        <generic-icon name="io.github.mjonuschat.PrusaSlicer.application-vnd-ms-3mfdocument"/>
     </mime-type>
     <mime-type type="text/x.gcode">
         <comment>G-CODE</comment>
         <glob pattern="*.gcode"/>
-        <icon name="dev.mojocode.PrusaSlicer.text-x-gcode"/>
-        <generic-icon name="dev.mojocode.PrusaSlicer.text-x-gcode"/>
+        <icon name="io.github.mjonuschat.PrusaSlicer.text-x-gcode"/>
+        <generic-icon name="io.github.mjonuschat.PrusaSlicer.text-x-gcode"/>
     </mime-type>
 </mime-info>

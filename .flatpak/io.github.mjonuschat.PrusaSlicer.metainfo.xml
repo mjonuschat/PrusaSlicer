@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <component type="desktop">
-    <id>dev.mojocode.PrusaSlicer</id>
-    <launchable type="desktop-id">dev.mojocode.PrusaSlicer.desktop</launchable>
+    <id>io.github.mjonuschat.PrusaSlicer</id>
+    <launchable type="desktop-id">io.github.mjonuschat.PrusaSlicer.desktop</launchable>
     <name>PrusaSlicer (BOSS Edition)</name>
     <summary>Get perfect 3D prints</summary>
     <developer id="mojocode.de">
