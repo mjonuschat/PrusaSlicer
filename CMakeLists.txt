@@ -634,7 +634,7 @@ endif()
 # Resources install target, configure fhs.hpp on UNIX
 if (WIN32)
     install(DIRECTORY "${SLIC3R_RESOURCES_DIR}/" DESTINATION "./resources")
-    set(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS_SKIP TRUE)
+    set(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS_SKIP FALSE)
     include(InstallRequiredSystemLibraries) 
     install (PROGRAMS ${CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS} DESTINATION ".")
 elseif (SLIC3R_FHS)

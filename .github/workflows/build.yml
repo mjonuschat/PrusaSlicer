@@ -1,0 +1,52 @@
+name: Build PrusaSlicer (BOSS)
+
+on:
+  push:
+    # branches:
+    #  - boss
+    #  - release/*
+    paths:
+     - 'deps/**'
+     - 'src/**'
+     - '**/CMakeLists.txt'
+     - 'version.inc'
+     - 'resources/**'
+     - ".github/workflows/*.yml"
+     - "build_release_linux.sh"
+     - "build_release_macos.sh"
+     - "build_win.bat"
+
+  pull_request:
+    branches:
+     - boss
+     - release/*
+    paths:
+     - 'deps/**'
+     - 'src/**'
+     - '**/CMakeLists.txt'
+     - 'version.inc'
+     - ".github/workflows/*.yml"
+
+  workflow_dispatch: 
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build PrusaSlicer (BOSS)
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [linux, osx, windows]
+    uses: ./.github/workflows/build_${{ matrix.platform }}.yml
+    secrets: inherit
+
+  release:
+    name: Release
+    uses: ./.github/workflows/release.yml
+    needs: [build]
+    secrets: inherit
+    permissions:
+      contents: write    
