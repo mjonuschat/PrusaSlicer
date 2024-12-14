@@ -32,7 +32,7 @@ jobs:
         shell: bash
 
       - name: Build PrusaSlicer (BOSS) Linux Flatpak
-      - uses: flatpak/flatpak-github-actions/flatpak-builder@v6
+        uses: flatpak/flatpak-github-actions/flatpak-builder@v6
         with:
           bundle: PrusaSlicer-${{ env.ver }}+Linux-${{ env.date }}.flatpak
           manifest-path: .flatpak/io.github.mjonuschat.PrusaSlicer.yml
