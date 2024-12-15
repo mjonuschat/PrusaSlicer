@@ -1,4 +1,4 @@
-name: Build all
+name: Build
 
 on:
   push:
@@ -27,41 +27,35 @@ on:
      - 'version.inc'
      - ".github/workflows/*.yml"
 
-  workflow_dispatch: # allows for manual dispatch
-    inputs:
-      build-deps-only:
-        description: 'Only build dependencies (bypasses caching)'
-        type: boolean
-        default: false
+  workflow_dispatch: 
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
-
 jobs:
-  build_all:
-    name: Build All
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-22.04
-          - os: macos-14
-            arch: arm64
-          - os: macos-13
-            arch: x86_64
-          - os: windows-latest
-    uses: ./.github/workflows/build_check_cache.yml
-    with:
-      os: ${{ matrix.os }}
-      arch: ${{ matrix.arch }}
-      build-deps-only: ${{ inputs.build-deps-only || false }}
+  build_linux:
+    name: Build on Linux
+    uses: ./.github/workflows/build_linux.yml
     secrets: inherit
+
+  build_macos:
+    name: Build on MacOS
+    uses: ./.github/workflows/build_macos.yml
+    secrets: inherit
+  
+  build_windows:
+    name: Build on Windows
+    uses: ./.github/workflows/build_windows.yml
+    secrets: inherit
+
   release:
     name: Release
     uses: ./.github/workflows/release.yml
-    needs: build_all
+    needs:
+      - build_linux
+      - build_macos
+      - build_windows
     secrets: inherit
     permissions:
       contents: write    
