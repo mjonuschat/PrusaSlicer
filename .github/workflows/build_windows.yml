@@ -51,6 +51,19 @@ jobs:
         run: |
             choco install strawberryperl   
 
+      - name: Download Visual C++ 2022 Redistributable
+        id: download-vcredist
+        uses: carlosperate/download-file-action@v2
+        with:
+          file-url: https://github.com/abbodi1406/vcredist/releases/download/v0.77.0/VisualCppRedist_AIO_x86_x64.exe
+          file-name: vcredist_14_38_3313_0.7z
+          location:  ${{ runner.temp }}
+          sha256: 74acbc9669fe760cfa3108dc75f49d764751501cef6d4ceace793266f91ea0e8
+
+      - name: Unpack Visual C++ 2022 Runtime
+        run: |
+          7z e ${{ steps.download-vcredist.outputs.file-path }} -o${{ runner.temp }}/vcredist 2022\x64\System64\*.dll
+
       - name: Determine Cache Keys
         id: cache-keys
         run: |
@@ -79,6 +92,14 @@ jobs:
         run: |
           .\build_win.bat -d=.\deps\build\PrusaSlicer_dep -c=Release -s=app -r=none
 
+      - name: Provide Visual C++ 2022 System Runtime
+        working-directory: ${{ github.workspace }}/build/src/Release
+        run: |
+          move ${{ runner.temp }}\vcredist\vcruntime140.dll .
+          move ${{ runner.temp }}\vcredist\vcruntime140_1.dll .
+          move ${{ runner.temp }}\vcredist\msvcp140.dll .
+          move ${{ runner.temp }}\vcredist\msvcp140_codecvt_ids.dll .
+
       - name: Create installer Win
         working-directory: ${{ github.workspace }}/build
         run: |
@@ -88,6 +109,7 @@ jobs:
         working-directory: ${{ github.workspace }}/build/src/Release
         run: |
           7z a -tzip ${{ github.workspace }}\build\PrusaSlicer-${{ env.ver }}+win64-${{ env.date }}.zip resources *.exe *.dll mesa/opengl32.dll
+          7z l $${{ github.workspace }}\build\PrusaSlicer-${{ env.ver }}+win64-${{ env.date }}.zip
 
       - name: Upload PrusaSlicer (BOSS) Portable
         uses: actions/upload-artifact@v4
