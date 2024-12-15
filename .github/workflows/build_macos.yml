@@ -54,8 +54,8 @@ jobs:
       - name: Determine Cache Keys
         id: cache-keys
         run: |
-          echo cache-key=${{ github.workspace }}/deps/build_${{ matrix.arch }}/PrusaSlicer_dep_${{ matrix.arch }} >> "$GITHUB_OUTPUT"
-          echo cache-path=${{ runner.os }}_${{ matrix.arch }}-cache-Prusaslicer_deps-build-${{ hashFiles('deps/**') }} >> "$GITHUB_OUTPUT"
+          echo cache-path=${{ github.workspace }}/deps/build_${{ matrix.arch }}/PrusaSlicer_dep_${{ matrix.arch }} >> "$GITHUB_OUTPUT"
+          echo cache-key=${{ runner.os }}_${{ matrix.arch }}-cache-Prusaslicer_deps-build-${{ hashFiles('deps/**') }} >> "$GITHUB_OUTPUT"
 
       - name: Cache build dependencies
         id: cache-build-deps
