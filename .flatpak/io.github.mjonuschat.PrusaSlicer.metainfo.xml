@@ -1,0 +1,56 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<component type="desktop">
+    <id>io.github.mjonuschat.PrusaSlicer</id>
+    <launchable type="desktop-id">io.github.mjonuschat.PrusaSlicer.desktop</launchable>
+    <name>PrusaSlicer (BOSS Edition)</name>
+    <summary>Get perfect 3D prints</summary>
+    <developer id="mojocode.de">
+        <name>Morton Jonuschat</name>
+    </developer>
+    <url type="homepage">https://github.com/mjonuschat/PrusaSlicer/</url>
+    <url type="help">https://help.prusa3d.com</url>
+    <url type="bugtracker">https://github.com/mjonuschat/PrusaSlicer/issues</url>
+    <metadata_license>0BSD</metadata_license>
+    <project_license>AGPL-3.0-only</project_license>
+    <content_rating type="oars-1.1" />
+    <requires>
+        <display_length compare="gt">768</display_length>
+    </requires>
+    <recommends>
+        <control>keyboard</control>
+        <control>pointing</control>
+    </recommends>
+    <provides>
+        <id>prusa-slicer.desktop</id>
+        <mediatype>text/x.gcode</mediatype>
+        <mediatype>model/stl</mediatype>
+        <mediatype>application/x-amf</mediatype>
+        <mediatype>application/prs.wavefront-obj</mediatype>
+        <mediatype>application/vnd.ms-3mfdocument</mediatype>
+    </provides>
+    <branding>
+        <color type="primary" scheme_preference="light">#ff6e00</color>
+        <color type="primary" scheme_preference="dark">#666666</color>
+    </branding>
+    <screenshots>
+        <screenshot type="default">
+            <image>https://raw.githubusercontent.com/flathub/com.prusa3d.PrusaSlicer/b284b0ec93346dd66f9ae85120184e66f0569fa5/screenshots/default.png</image>
+            <caption>Clear and simple UI</caption>
+        </screenshot>
+    </screenshots>
+    <description>
+        <p>
+            PrusaSlicer (formerly known as Slic3r Prusa Edition or Slic3r PE) is our own in-house developed slicer software 
+            based on the open-source project Slic3r. PrusaSlicer is an open-source, feature-rich, frequently updated tool 
+            that contains everything you need to export the perfect print files for (not only) your Original Prusa 3D printer.
+            Of course, it’s still open-source and you’ll find everything on our GitHub. 
+            We’re still proud that our slicer is based on the original project written by Alessandro Ranellucci! 
+            Both projects now happily coexist and new features are frequently merged between one and another.
+        </p>
+    </description>
+    <releases>
+        <release version="nightly" date="2024-09-19">
+            <url>https://github.com/mjonuschat/PrusaSlicer/releases/tag/nightly</url>
+        </release>
+    </releases>
+</component>
