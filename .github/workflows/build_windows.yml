@@ -51,12 +51,18 @@ jobs:
         run: |
             choco install strawberryperl   
 
+      - name: Determine Cache Keys
+        id: cache-keys
+        run: |
+          echo cache-key=${{ github.workspace }}/deps/build/PrusaSlicer_dep >> $ENV:GITHUB_OUTPUT
+          echo cache-path=${{ runner.os }}-cache-Prusaslicer_deps-build-${{ hashFiles('deps/**') }} >> $ENV:GITHUB_OUTPUT
+
       - name: Cache build dependencies
         id: cache-build-deps
         uses: actions/cache@v4
         with:
-          path: ${{ github.workspace }}/deps/build${{ matrix.arch }}/PrusaSlicer_dep
-          key: ${{ runner.os }}${{ matrix.arch }}-cache-Prusaslicer_deps-build-${{ hashFiles('deps/**') }}
+          path: ${{ steps.cache-keys.outputs.cache-path }}
+          key: ${{ steps.cache-keys.outputs.cache-key }}
 
       - name: Build PrusaSlicer (BOSS) Dependencies
         if: steps.cache-build-deps.outputs.cache-hit != 'true'
