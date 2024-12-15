@@ -34,33 +34,28 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  vcredist:
-    name: VC redist test
-    runs-on: windows-latest
-    steps:
-      - name: Download Visual C++ 2022 Redistributable
-        id: download-vcredist
-        uses: carlosperate/download-file-action@v2
-        with:
-          file-url: https://github.com/abbodi1406/vcredist/releases/download/v0.77.0/VisualCppRedist_AIO_x86_x64.exe
-          file-name: vcredist_14_38_3313_0.7z
-          location:  ${{ runner.temp }}
-          sha256: 74acbc9669fe760cfa3108dc75f49d764751501cef6d4ceace793266f91ea0e8
+  build_linux:
+    name: Build on Linux
+    uses: ./.github/workflows/build_linux.yml
+    secrets: inherit
 
-      - name: Unpack Visual C++ Runtime
-        run: |
-          7z e ${{ steps.download-vcredist.outputs.file-path }} -o${{ runner.temp }}/vcredist 2022\x64\System64\*.dll
+  build_macos:
+    name: Build on MacOS
+    uses: ./.github/workflows/build_macos.yml
+    secrets: inherit
+  
+  build_windows:
+    name: Build on Windows
+    uses: ./.github/workflows/build_windows.yml
+    secrets: inherit
 
-      - name: Pack release
-        run: |
-          mkdir ${{ github.workspace }}/Release
-          cd  ${{ github.workspace }}/Release
-          move ${{ runner.temp }}\vcredist\vcruntime140.dll .
-          move ${{ runner.temp }}\vcredist\vcruntime140_1.dll .
-          move ${{ runner.temp }}\vcredist\msvcp140.dll .
-          move ${{ runner.temp }}\vcredist\msvcp140_codecvt_ids.dll .
-          7z a -tzip ${{ github.workspace }}\test.zip resources *.exe *.dll mesa/opengl32.dll
-
-      - name: List release content
-        run: |
-          7z l ${{ github.workspace }}\test.zip 
+  release:
+    name: Release
+    uses: ./.github/workflows/release.yml
+    needs:
+      - build_linux
+      - build_macos
+      - build_windows
+    secrets: inherit
+    permissions:
+      contents: write    
