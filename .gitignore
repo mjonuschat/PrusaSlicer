@@ -24,3 +24,8 @@ deps/build-linux/*
 **/.idea/
 .pkg_cache
 CMakeUserPresets.json
+build-dir
+repo
+.flatpak-builder
+*.flatpak
+!.flatpak/
