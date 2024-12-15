@@ -36,7 +36,7 @@ concurrency:
 jobs:
   vcredist:
     name: VC redist test
-    secrets: inherit
+    runs-on: windows-latest
     steps:
       - name: Download Visual C++ 2022 Redistributable
         id: download-vcredist
