@@ -16,9 +16,9 @@ jobs:
             arch: arm64
     runs-on: ${{ matrix.os }}
     env:
-      date:
-      ver:
-      ver_pure:
+      date: ""
+      ver: ""
+      ver_pure: ""
 
     steps:
       - name: Checkout
@@ -124,12 +124,11 @@ jobs:
     name: Bundle DMG
     runs-on: macos-14
     needs: [build_macos]
-    if: github.ref == 'refs/heads/boss' || startsWith(github.ref, 'refs/heads/release/')
     env:
-      date:
-      ver:
-      ver_pure:
-      DMG_UNIVERSAL:
+      date: ""
+      ver: ""
+      ver_pure: ""
+      DMG_UNIVERSAL: ""
 
     steps:
       - name: Checkout
@@ -179,6 +178,7 @@ jobs:
           echo "DMG_UNIVERSAL=$(ls ${GITHUB_WORKSPACE}/artifacts/PrusaSlicer*+MacOS-universal*.dmg|head -n1)" >> $GITHUB_ENV
 
       - name: Sign MacOS PrusaSlicer (BOSS) Universal Binary
+        if: (github.ref == 'refs/heads/boss' || startsWith(github.ref, 'refs/heads/release/'))
         working-directory: ${{ github.workspace }}
         env:
           BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
