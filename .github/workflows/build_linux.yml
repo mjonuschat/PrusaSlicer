@@ -36,4 +36,11 @@ jobs:
         with:
           bundle: PrusaSlicer-${{ env.ver }}+Linux-${{ env.date }}.flatpak
           manifest-path: .flatpak/io.github.mjonuschat.PrusaSlicer.yml
-          cache-key: flatpak-builder-${{ github.sha }}   
+          cache-key: flatpak-builder-${{ github.sha }}
+          upload-artifact: false
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PrusaSlicer-${{ env.ver }}+Linux-${{ env.date }}
+          path: PrusaSlicer-${{ env.ver }}+Linux-${{ env.date }}.flatpak
+          if-no-files-found: error
