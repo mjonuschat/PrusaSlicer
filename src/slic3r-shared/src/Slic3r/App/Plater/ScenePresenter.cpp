@@ -52,8 +52,21 @@ void ScenePresenter::update_cameras(const std::function<void(Scene::Camera&)>& m
 void ScenePresenter::on_selected_project_changed(size_t index)
 {
     m_selected_project_id = index;
-    if (m_projects.count(m_selected_project_id) == 0)
-        m_projects.emplace(m_selected_project_id, ScenePresenterProjectContext{});
+    if (m_projects.count(m_selected_project_id) == 0) {
+        ScenePresenterProjectContext context{};
+        m_projects.emplace(m_selected_project_id, std::move(context));
+    }
+}
+
+Scene::Node* ScenePresenter::initialize_selection_root(Scene::Scene& scene)
+{
+    Scene::NodeBuilder builder(scene);
+    Scene::Node* selection_root = builder
+        .set_debug_name("selection_root")
+        .set_screen_space_sized_modifier(0.0075)
+        .build().release();
+    scene.add_child(selection_root);
+    return selection_root;
 }
 
 void ScenePresenter::on_scene_selection_changed(Domain::SelectionId project_id, const Biz::Scene::Selection& selection)

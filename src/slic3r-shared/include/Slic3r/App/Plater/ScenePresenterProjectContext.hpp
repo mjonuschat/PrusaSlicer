@@ -14,17 +14,7 @@ using ModelTriangleMeshManager = Scene::TriangleMeshManager<GeometryElementId>;
 
 class ScenePresenterProjectContext {
 public:
-    ScenePresenterProjectContext()
-        : m_scene(new Scene::Scene())
-        , m_selection_scene_change_session(*m_scene)
-    {
-        Scene::NodeBuilder builder(*m_scene);
-        m_selection_root = builder
-            .set_debug_name("selection_root")
-            .set_screen_space_sized_modifier(0.01)
-            .build().release();
-        m_scene->add_child(m_selection_root);
-    }
+    ScenePresenterProjectContext();
 
     ScenePresenterProjectContext(const ScenePresenterProjectContext&) = delete;
     ScenePresenterProjectContext& operator=(const ScenePresenterProjectContext&) = delete;

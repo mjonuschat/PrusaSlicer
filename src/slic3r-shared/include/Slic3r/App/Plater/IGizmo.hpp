@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Slic3r/App/Plater/GizmoEventContext.hpp"
+#include "Slic3r/App/CommandRegistry.hpp"
 #include "libslic3r/Config.hpp"
 
 namespace Slic3r::App::Plater {
@@ -74,6 +75,16 @@ public:
      * @{
      */
     virtual void on_transient_mouse(GizmoEventContext& ctx) {}
+    /**@}*/
+
+    /**
+     * @name Keyboard invoked commands
+     * @{
+     */
+    /**
+     *
+     */
+    virtual void register_commands(CommandRegistry& registry) {}
     /**@}*/
 
     /**

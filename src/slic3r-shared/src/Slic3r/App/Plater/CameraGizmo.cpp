@@ -2,6 +2,59 @@
 
 namespace Slic3r::App::Plater {
 
+void CameraGizmo::register_commands(CommandRegistry& registry)
+{
+    registry
+        .register_command(
+            new FuncCommand(
+                "zoom-in",
+                [&]() { m_scene_provider.scene().camera_trackball().update_zoom(1.); },
+                nullptr,
+                KeyboardShortcut{0, Platform::KeyCode::I}
+            ),
+            true
+        )
+        .register_command(
+            new FuncCommand(
+                "zoom-out",
+                [&]() { m_scene_provider.scene().camera_trackball().update_zoom(-1.); },
+                nullptr,
+                KeyboardShortcut{0, Platform::KeyCode::O}
+            ),
+            true
+        )
+        .register_command(
+            new FuncCommand(
+                "camera-projection-switch",
+                [&]() { m_scene_provider.scene().camera_trackball().switch_projection_type(); },
+                nullptr,
+                KeyboardShortcut{0, Platform::KeyCode::K}
+            ),
+            true
+        )
+    ;
+/*
+    switch (e.code())
+    {
+    case Platform::KeyCode::I: // zoom in
+    {
+        m_scene_presenter->scene().camera_trackball().update_zoom(1.);
+        break;
+    }
+    case Platform::KeyCode::K: // switch camera type
+    {
+        m_scene_presenter->scene().camera_trackball().switch_projection_type();
+        break;
+    }
+    case Platform::KeyCode::O: // zoom out
+    {
+        m_scene_presenter->scene().camera_trackball().update_zoom(-1.);
+        break;
+    }
+    */
+}
+
+
 GizmoActivationState CameraGizmo::on_mouse(GizmoEventContext& ctx, bool only_active)
 {
     const Platform::MouseEvent& event = ctx.mouse_event();
@@ -62,7 +115,13 @@ void CameraGizmo::update_pan(float delta_x, float delta_y)
 
 void CameraGizmo::update_zoom(float wheel_delta_y)
 {
-    m_scene_provider.scene().camera_trackball().update_zoom(wheel_delta_y / std::abs(wheel_delta_y));
+    // On OSX with TrackPad when doing a small movement with two fingers (the scroll gesture)
+    // the wheel_delta_y may be 0 (!) so prevent handling such events (this would lead to NaN in
+    // zoom factor)
+    if (wheel_delta_y != 0)
+        m_scene_provider.scene().camera_trackball().update_zoom(
+            wheel_delta_y / std::abs(wheel_delta_y)
+        );
 }
 
 void CameraGizmo::update_rotation(float delta_x, float delta_y)

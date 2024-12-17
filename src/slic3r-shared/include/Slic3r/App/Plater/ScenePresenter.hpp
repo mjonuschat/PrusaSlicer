@@ -91,8 +91,9 @@ private:
     void on_layer_begin(Render::CommandBuffer& cmd_buf, size_t layer_idx) override;
 
     void build_volume_node(Scene::NodeBuilder& builder, Domain::SelectionId project_id, const ModelInstance* inst, const ModelVolume* vol);
+    static Scene::Node* initialize_selection_root(Scene::Scene& scene);
 
-
+    friend class ScenePresenterProjectContext;
 private:
     const Domain::Workbench& m_workbench;
     Biz::ProjectInteractor& m_project_interactor;

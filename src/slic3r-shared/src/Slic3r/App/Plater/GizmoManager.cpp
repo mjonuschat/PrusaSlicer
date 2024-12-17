@@ -83,6 +83,11 @@ void GizmoManager::on_scene_mouse_event(const Platform::MouseEvent& e, const Sli
         g->on_transient_mouse(ctx);
 }
 
+bool GizmoManager::on_scene_keyboard_event(const Platform::KeyboardEvent& e)
+{
+    return m_command_registry.process_keyboard_event(e);
+}
+
 void GizmoManager::prepare_cycle()
 {
     m_in_cycle = true;
@@ -102,8 +107,11 @@ void GizmoManager::prepare_cycle()
 
 void GizmoManager::render_scene(Render::CommandBuffer& cmd_buffer)
 {
+    // Most gizmos will render on top of scene, so disable depth test here so gizmos shouldn't care
+    cmd_buffer.set_depth_test_enabled(false);
     for (auto* g : m_in_cycle_gizmos)
         g->render_scene(cmd_buffer);
+    //m_scene_provider.scene().log_nodes();
 }
 
 void GizmoManager::render_imgui()
@@ -175,9 +183,11 @@ void GizmoManager::update_gizmo_activation_debug_frame_begin()
     }
 }
 
-void GizmoManager::render_gizmo_activation_debug() const
+void GizmoManager::render_gizmo_activation_debug()
 {
-    if (ImGui::Begin("Gizmo Activation")) {
+    if (!m_activation_debug_shown)
+        return;
+    if (ImGui::Begin("Gizmo Activation", &m_activation_debug_shown)) {
         // Begin a table with 2 + maxCellsPerRow columns
         if (ImGui::BeginTable("MapDataTable", 1 + NUM_DEBUG_ACTIVATION_LAST_STEPS, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg)) {
             // Set fixed width for the first column

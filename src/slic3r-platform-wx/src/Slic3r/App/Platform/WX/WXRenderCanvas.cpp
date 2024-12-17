@@ -474,7 +474,7 @@ void WXRenderCanvas::on_mouse_leave(wxMouseEvent& event)
         MouseButton::NoButton,
         mouse_x, mouse_y,
         0, 0,
-        m_key_modifiers
+        modifiers(event)
     };
     enqueue_mouse(platform_event);
 }
@@ -545,7 +545,7 @@ void WXRenderCanvas::on_mouse(wxMouseEvent& evt)
         platform_event_type, button,
         mouse_x, mouse_y,
         wheel_x, wheel_y,
-        m_key_modifiers
+        modifiers(evt)
     };
     enqueue_mouse(platform_event);
 

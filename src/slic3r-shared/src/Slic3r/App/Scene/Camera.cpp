@@ -19,7 +19,7 @@ void Camera::set_viewport(const Render::Rect& viewport)
 
 void Camera::set_zoom(double value)
 {
-    m_zoom = std::clamp(value, MIN_ZOOM, MAX_ZOOM);
+    m_zoom = std::clamp(value, m_projection_getter->min_zoom(), m_projection_getter->max_zoom());
     update_projection();
     m_update_listeners.invoke([this](auto* l) { l->camera_updated(*this); });
 }
@@ -33,10 +33,14 @@ void Camera::look_at(const Vec3d& eye, const Vec3d& center, const Vec3d& up)
 void Camera::switch_projection_type()
 {
     ASSERT(m_projection_getter != nullptr);
-    if (m_projection_getter->type() == CameraProjectionType::Perspective)
+    if (m_projection_getter->type() == CameraProjectionType::Perspective) {
         m_projection_getter.reset(new OrthographicCameraProjection);
-    else
+        m_zoom = CameraProjectionParameters::orthographic_zoom_from_perspective(m_zoom);
+    }
+    else {
         m_projection_getter.reset(new PerspectiveCameraProjection);
+        m_zoom = CameraProjectionParameters::perspective_zoom_from_orthographic(m_zoom);
+    }
     update_projection();
     m_update_listeners.invoke([this](auto* l) { l->camera_updated(*this); });
 }
@@ -101,23 +105,37 @@ double PerspectiveCameraProjection::constant_screen_space_size_scale(
     const Camera& cam, double cam_object_dist
 ) const
 {
+
+    double phi_half = m_fovy / (2 * cam.zoom());
+    /*
     // TODO: This needs to be checked
-    return cam_object_dist / (2 * std::tan(Geometry::deg2rad(m_fovy / (2 * cam.zoom()))));
+    double denom = 2 * std::tan(Geometry::deg2rad(phi_half));
+    double ret = cam_object_dist / denom;
+    SPDLOG_INFO("Screen scale: {}   dist: {}  fovy (actual): {}  fovy (zoomed): {}", ret, cam_object_dist, m_fovy, phi_half);
+    return ret;
+    */
+    return cam_object_dist/2 * std::tan(Geometry::deg2rad(phi_half));
 }
 
 Transform OrthographicCameraProjection::projection(const Render::Rect& viewport, double zoom) const
 {
     ASSERT(zoom != 0.0);
     double inv_zoom = 1.0 / zoom;
-    double half_w = 0.5 * inv_zoom * viewport.width;
-    double half_h = 0.5 * inv_zoom * viewport.height;
+    // double half_w = 0.5 * inv_zoom * viewport.width;
+    // double half_h = 0.5 * inv_zoom * viewport.height;
+    double half_h = inv_zoom;
+    double half_w = double(viewport.width) / viewport.height * half_h;
     return Render::ortho(-half_w, half_w, -half_h, half_h, m_z_near, m_z_far);
 }
 
 double OrthographicCameraProjection::constant_screen_space_size_scale(const Camera& cam, double cam_object_dist) const
 {
     // TODO: This needs to be checked
-    return 2 * cam.zoom() / (cam.viewport().width);
+    //return 2 * cam.zoom() / (cam.viewport().width);
+    //return cam_object_dist / (2 * std::tan(Geometry::deg2rad(m_fovy / 2)));
+    // Note: For orhto this is: 2 / (r - l)
+    return 0.5/cam.zoom();
+
 }
 
 } // namespace Slic3r::App::Scene

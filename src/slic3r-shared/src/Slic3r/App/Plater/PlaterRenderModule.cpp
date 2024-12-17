@@ -10,6 +10,7 @@
 #include "Slic3r/App/Plater/TranslationGizmo.hpp"
 
 #include "imgui/imgui.h"
+#include "Eigen/SVD"
 
 namespace Slic3r::App::Plater {
 
@@ -90,7 +91,7 @@ void PlaterRenderModule::render_scene()
     auto cmd_buffer = m_device->create_command_buffer();
 
     cmd_buffer->set_viewport(Render::Rect::from(0, 0, m_screen_info));
-    cmd_buffer->set_clear_values({0.45f, 0.55f, 0.60f, 1.00f});
+    cmd_buffer->set_clear_values({0.61f, 0.61f, 0.61f, 1.00f});
     cmd_buffer->clear_buffers(true, true);
 
     m_scene_presenter->render_scene(*cmd_buffer);
@@ -99,6 +100,54 @@ void PlaterRenderModule::render_scene()
 
     cmd_buffer->submit();
 }
+
+class ImguiVecRender
+{
+public:
+    void operator()(const char* label, const Vec2f& v)
+    {
+        fill_data<2>(v);
+        ImGui::InputFloat2(label, m_data);
+    }
+
+    void operator()(const char* label, const Vec2d& v)
+    {
+        fill_data<2>(v);
+        ImGui::InputFloat2(label, m_data);
+    }
+    //
+    // void operator()(const char* label, const Vec3f& v)
+    // {
+    //     fill_data<3>(v);
+    //     ImGui::InputFloat3(label, m_data);
+    // }
+    //
+    void operator()(const char* label, const Vec3d& v)
+    {
+        fill_data<3>(v);
+        ImGui::InputFloat3(label, m_data);
+    }
+
+    void operator()(const char* label, const Vec4f& v)
+    {
+        fill_data<4>(v);
+        ImGui::InputFloat4(label, m_data);
+    }
+
+    void operator()(const char* label, const Vec4d& v)
+    {
+        fill_data<4>(v);
+        ImGui::InputFloat4(label, m_data);
+    }
+private:
+    template <size_t N, typename VecT>
+    void fill_data(const VecT &data)
+    {
+        for (size_t i = 0; i < N; i++) m_data[i] = static_cast<float>(data[i]);
+    }
+private:
+    float m_data[4];
+};
 
 void imgui_scenegraph_node_info(const Scene::Node& node)
 {
@@ -111,6 +160,15 @@ void imgui_scenegraph_node_info(const Scene::Node& node)
             node.has_render_component() ? "(R)" : "", node.has_material_override() ? "(M)" : "",
             node.has_imgui_render_component() ? "(I)" : "", node.has_raycast_component() ? "(C)" : ""
         )) {
+
+        if (ImGui::CollapsingHeader("I")) {
+            auto transform{node.world_transform()};
+
+            ImguiVecRender vec_render;
+            for (size_t i = 0; i < 4; i++)
+                vec_render("", Vec4d{transform.row(i)});
+        }
+
         for (const auto& ch : node.children()) {
             imgui_scenegraph_node_info(*ch);
         }
@@ -164,43 +222,7 @@ void PlaterRenderModule::on_scene_keyboard_event(
     const Platform::KeyboardEvent& e
 )
 {
-    switch (e.type())
-    {
-    case Platform::KeyboardEvent::Type::KeyDown:
-    {
-        switch (e.code())
-        {
-        case Platform::KeyCode::I: // zoom in
-        {
-            m_scene_presenter->scene().camera_trackball().update_zoom(1.);
-            break;
-        }
-        case Platform::KeyCode::K: // switch camera type
-        {
-            m_scene_presenter->scene().camera_trackball().switch_projection_type();
-            break;
-        }
-        case Platform::KeyCode::O: // zoom out
-        {
-            m_scene_presenter->scene().camera_trackball().update_zoom(-1.);
-            break;
-        }
-        default:
-        {
-            break;
-        }
-        }
-        break;
-    }
-    case Platform::KeyboardEvent::Type::KeyUp:
-    {
-        break;
-    }
-    default:
-    {
-        break;
-    }
-    }
+    m_gizmo_manager->on_scene_keyboard_event(e);
 }
 
 void PlaterRenderModule::on_activated()

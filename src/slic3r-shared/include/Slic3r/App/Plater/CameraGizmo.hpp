@@ -15,6 +15,7 @@ public:
 
     explicit CameraGizmo(ISceneProvider& scene_provider) : m_scene_provider(scene_provider) {}
 
+    void register_commands(CommandRegistry& registry) override;
     GizmoActivationState on_mouse(GizmoEventContext& ctx, bool only_active) override;
     void on_cycle_prepare() override;
 private:

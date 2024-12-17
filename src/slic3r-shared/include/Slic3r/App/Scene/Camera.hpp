@@ -17,6 +17,24 @@ enum class CameraProjectionType : uint8_t
     Orthographic
 };
 
+struct CameraProjectionParameters
+{
+    static double orthographic_zoom_from_perspective(double perspective_zoom) { return 1 / (REF_Z * std::tan((REF_FOVY * M_PI) / (2 * 180 *  perspective_zoom))); }
+    static double perspective_zoom_from_orthographic(double ortho_zoom) { return (REF_FOVY * M_PI) / (180 * 2 * std::atan(1 / (REF_Z * ortho_zoom))); }
+
+    static constexpr double REF_FOVY = 90.0;
+
+    // static constexpr double Z_NEAR = 10;
+    // static constexpr double Z_FAR = 1000.0;
+    static constexpr double REF_Z = 300;
+
+    static constexpr double PERSPECTIVE_MIN_ZOOM = 0.6;
+    static constexpr double PERSPECTIVE_MAX_ZOOM = 100;
+
+    static double orthographic_min_zoom() { return orthographic_zoom_from_perspective(PERSPECTIVE_MIN_ZOOM); }
+    static double orthographic_max_zoom() { return orthographic_zoom_from_perspective(PERSPECTIVE_MAX_ZOOM); }
+};
+
 /**
  * @brief Interface for camera projection computation.
  */
@@ -43,6 +61,9 @@ public:
      * - for orthographic projection the zoom modifies the viewport by applying a scaling factor equal to 1/zoom
      */
     virtual Transform projection(const Render::Rect& viewport, double zoom) const = 0;
+
+    virtual double min_zoom() const = 0;
+    virtual double max_zoom() const = 0;
 
     /**
      * @brief Compute screen space size scale.
@@ -160,9 +181,6 @@ private:
     double m_zoom{ 1. };
     std::unique_ptr<AbstractCameraProjection> m_projection_getter;
     CameraUpdateListeners m_update_listeners;
-
-    static constexpr double MIN_ZOOM{ 0.6 };
-    static constexpr double MAX_ZOOM{ 100.0 };
 };
 
 class PerspectiveCameraProjection : public AbstractCameraProjection
@@ -171,18 +189,17 @@ public:
     PerspectiveCameraProjection()
         : AbstractCameraProjection(CameraProjectionType::Perspective)
     {}
-    PerspectiveCameraProjection(double fovy, double z_near, double z_far)
-        : AbstractCameraProjection(CameraProjectionType::Perspective, z_near, z_far), m_fovy(fovy)
-    {}
 
     Transform projection(const Render::Rect& viewport, double zoom) const override;
     double constant_screen_space_size_scale(const Camera& cam, double cam_object_dist) const override;
 
     double fovy() const { return m_fovy; }
-    void set_fovy(double val) { m_fovy = val; }
+
+    double min_zoom() const override { return CameraProjectionParameters::PERSPECTIVE_MIN_ZOOM; }
+    double max_zoom() const override { return CameraProjectionParameters::PERSPECTIVE_MAX_ZOOM; }
 
 private:
-    double m_fovy{90.};
+    const double m_fovy{CameraProjectionParameters::REF_FOVY};
 };
 
 class OrthographicCameraProjection : public AbstractCameraProjection
@@ -197,6 +214,10 @@ public:
 
     Transform projection(const Render::Rect& viewport, double zoom) const override;
     double constant_screen_space_size_scale(const Camera& cam, double cam_object_dist) const override;
+
+    double min_zoom() const override { return CameraProjectionParameters::orthographic_min_zoom(); }
+    double max_zoom() const override { return CameraProjectionParameters::orthographic_max_zoom(); }
+
 };
 
 }

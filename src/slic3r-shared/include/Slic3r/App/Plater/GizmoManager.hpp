@@ -7,11 +7,12 @@
 #include "Slic3r/App/Plater/ISceneProvider.hpp"
 #include "Slic3r/App/Render/ScreenInfo.hpp"
 #include "Slic3r/App/Plater/GizmoDataFactory.hpp"
+#include "Slic3r/App/CommandRegistry.hpp"
 #include "libslic3r/Config.hpp"
 
 
 #ifndef DEBUG_GIZMO_MANAGER
-#define DEBUG_GIZMO_MANAGER 1
+#define DEBUG_GIZMO_MANAGER 0
 #endif
 
 
@@ -23,12 +24,14 @@ public:
         : m_scene_provider(scene_provider), m_data_factory(device)
     {}
     void on_scene_mouse_event(const Platform::MouseEvent& e, const Render::ScreenInfo& screen_info);
+    bool on_scene_keyboard_event(const Platform::KeyboardEvent& e);
 
     template<typename G, typename... ArgsT>
     G& add_base_gizmo(ArgsT&&... args)
     {
         m_base_gizmos.emplace_back(std::make_unique<G>(args...));
         auto& ptr = m_base_gizmos.back();
+        ptr->register_commands(m_command_registry);
         return *static_cast<G*>(ptr.get());
     }
 
@@ -37,6 +40,7 @@ public:
     {
         m_tool_gizmos.emplace_back(std::make_unique<G>(args...));
         auto& ptr = m_tool_gizmos.back();
+        ptr->register_commands(m_command_registry);
         return *static_cast<G*>(ptr.get());
     }
 
@@ -56,7 +60,7 @@ private:
 #if DEBUG_GIZMO_MANAGER
     void update_gizmo_activation_debug_data(const IGizmo* g, GizmoActivationState state);
     void update_gizmo_activation_debug_frame_begin();
-    void render_gizmo_activation_debug() const;
+    void render_gizmo_activation_debug();
 #endif
 
 private:
@@ -76,10 +80,14 @@ private:
 
     bool m_in_cycle {false};
     std::vector<IGizmo*> m_in_cycle_gizmos;
+
+    CommandRegistry m_command_registry;
+
 #if DEBUG_GIZMO_MANAGER
     constexpr static size_t NUM_DEBUG_ACTIVATION_LAST_STEPS = 63;
     using GizmoActivationDebugData = std::list<GizmoActivationState>;
     using GizmosActivationDebugData = std::unordered_map<const IGizmo*, GizmoActivationDebugData>;
+    bool m_activation_debug_shown {true};
     GizmosActivationDebugData m_activation_debug;
 #endif
 };
