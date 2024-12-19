@@ -915,6 +915,22 @@ boost::any ConfigOptionsGroup::get_config_value(const DynamicPrintConfig& config
                 ret = WX::double_to_string(val); }
             }
             break;
+        case coFloatsOrPercents: {
+            if (config.option(opt_key)->is_nil()) {
+                ret = _L("N/A");
+            }
+            else {
+                const auto& config_option = config.option<ConfigOptionFloatsOrPercentsNullable>(opt_key)->get_at(idx);
+
+                text_value = WX::double_to_string(config_option.value);
+                if (config_option.percent) {
+                    text_value += "%";
+                }
+
+                ret = text_value;
+            }
+            break;
+        }
         case coBools:
             ret = config.option<ConfigOptionBoolsNullable>(opt_key)->values[idx];
             break;

@@ -17,7 +17,7 @@
 #include "libslic3r/Zipper.hpp"
 #include "libslic3r/libslic3r.h"
 
-#define NANOSVG_IMPLEMENTATION
+//#define NANOSVG_IMPLEMENTATION // ysCommented - this is no need anymore, we are linking nanosvg library in libslic3r 
 #include <cstdint>
 #include <algorithm>
 #include <string_view>

@@ -68,6 +68,10 @@ Manipulators::Manipulators(wxWindow* parent, Biz::Preset::PresetInteractor* pres
     m_detach_preset_btn = add_button("lock_open_sys", _L("Detach from system preset"), [this]() { detach_preset(); }, [this]() { return m_can_detach_presets; }, 20);
 
     if (m_type == Slic3r::Preset::Type::TYPE_PRINTER) {
+        //! ysFIXME -set correct tooltip
+        // m_btn_edit_ph_printer->SetToolTip( m_preset_bundle->physical_printers.has_selection() ?
+        // _L("Edit physical printer") : _L("Add physical printer"));
+
         //TRN Settings Tab: tooltip for toolbar button
         m_btn_edit_ph_printer = add_button("cog", _L("Add physical printer"), 
             [this]() {
@@ -373,6 +377,13 @@ void Manipulators::rename_preset()
 
     assert(old_name == m_preset_state->edited_preset.name);
 
+    if (m_type == Preset::TYPE_FILAMENT) {
+        // Filaments will be sorted inside collection after remaning,
+        // so, cache preset names for each extruder to reset them after renaming
+        m_preset_bundle->cache_extruder_filaments_names();
+    }
+
+    bool was_renamed = true;
     using namespace boost;
     try {
         // Note: selected preset can be changed, if in SavePresetDialog was selected name of existing preset
@@ -398,10 +409,18 @@ void Manipulators::rename_preset()
     catch (const exception& ex) {
         const std::string exception = diagnostic_information(ex);
         printf("Can't rename a preset : %s", exception.c_str());
+        was_renamed = false;
     }
 
     // sort presets after renaming
     std::sort(m_presets->begin(), m_presets->end());
+
+    if (was_renamed && m_type == Preset::TYPE_FILAMENT) {
+        // Reset extruder_filaments only if preset was renamed
+        m_preset_bundle->reset_extruder_filaments();
+        // and update compatibility for extruders after reset
+        m_preset_bundle->update_filaments_compatible(PresetSelectCompatibleType::OnlyIfWasCompatible);
+    }
     // update selection
     select_preset_by_name(new_name, true);
 

@@ -125,6 +125,9 @@ std::vector<std::pair<std::string, std::vector<std::string>>> filament_overrides
     {"Retraction when tool is disabled", {
         "filament_retract_length_toolchange",
         "filament_retract_restart_extra_toolchange"
+    }},
+    {"Seams", {
+        "filament_seam_gap_distance"
     }}
 };
 

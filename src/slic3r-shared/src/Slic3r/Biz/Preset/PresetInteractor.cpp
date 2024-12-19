@@ -180,22 +180,17 @@ void PresetInteractor::set_config_value(
         break;
     }
     case coFloatsOrPercents: {
-        if (typeid(std::string) == value.type()) {
-            std::string str = boost::any_cast<std::string>(value);
-            bool percent = false;
-            if (str.back() == '%') {
-                str.pop_back();
-                percent = true;
-            }
-            double val = std::stod(str
-            ); // locale-dependent (on purpose - the input is the actual content of the field)
-            ConfigOptionFloatsOrPercents* vec_new = new ConfigOptionFloatsOrPercents({{val, percent}
-            });
-            config.option<ConfigOptionFloatsOrPercents>(name)->set_at(vec_new, opt_index, opt_index);
-        } else {
-            auto val = boost::any_cast<std::vector<FloatOrPercent>>(value);
-            config.option<ConfigOptionFloatsOrPercents>(name)->values = val;
+        std::string str = boost::any_cast<std::string>(value);
+        bool percent = false;
+        if (str.back() == '%') {
+            str.pop_back();
+            percent = true;
         }
+
+        const bool                    is_na_value = opt_def->nullable && str == "N/A";// #ysFIXME use localized string here
+        const FloatOrPercent          val = is_na_value ? ConfigOptionFloatsOrPercentsNullable::nil_value() : FloatOrPercent{ std::stod(str), percent };
+        ConfigOptionFloatsOrPercents* vec_new = new ConfigOptionFloatsOrPercents({ val });
+        config.option<ConfigOptionFloatsOrPercents>(name)->set_at(vec_new, opt_index, opt_index);
         break;
     }
     case coPercents: {

@@ -23,13 +23,13 @@
 #include "EditorPrinter.hpp"
 #include "EditorPresetComboBox.hpp"
 #include "Manipulators.hpp"
-#include "../Config/OptionsGroup.hpp"
 #include "../Config/OG_CustomCtrl.hpp"
 #include "EditGCodeDialog.hpp"
 
 #include "Slic3r/Biz/Preset/PresetHints.hpp"
 
 #include "libslic3r/GCode/GCodeProcessor.hpp"
+#include "libslic3r/SLAPrint.hpp"
 
 #include "Slic3r/App/WX/WidgetsConfig.hpp"
 #include "Slic3r/App/WX/StringConversions.hpp"
@@ -1338,9 +1338,10 @@ void AbstractEditor::validate_custom_gcode_cb(const wxString& title, const t_con
 
 bool AbstractEditor::is_prusa_printer() const
 {
-    std::string printer_model = m_preset_interactor.selected_config_container_context()
-                                    .printer.edited_preset.config.opt_string("printer_model");
-    return printer_model == "SL1" || printer_model == "SL1S" || printer_model == "M1";
+    const Slic3r::Preset& edited_preset = m_preset_interactor.selected_config_container_context()
+                                         .printer.edited_preset;
+    std::string  printer_model = edited_preset.trim_vendor_repo_prefix(edited_preset.config.opt_string("printer_model"));
+    return Slic3r::SLAPrint::is_prusa_print(printer_model);
 }
 
 void AbstractEditor::update_ui_items_related_on_parent_preset(const Slic3r::Preset* selected_preset_parent)

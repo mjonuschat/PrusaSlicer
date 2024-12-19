@@ -83,6 +83,7 @@ void EditorPrint::build()
         optgroup = page->new_optgroup(L("Quality (slower slicing)"));
         optgroup->append_single_option_line("extra_perimeters", category_path + "extra-perimeters-if-needed");
         optgroup->append_single_option_line("extra_perimeters_on_overhangs", category_path + "extra-perimeters-on-overhangs");
+        optgroup->append_single_option_line("ensure_vertical_shell_thickness", category_path + "ensure-vertical-shell-thickness");
         optgroup->append_single_option_line("avoid_crossing_curled_overhangs", category_path + "avoid-crossing-curled-overhangs");
         optgroup->append_single_option_line("avoid_crossing_perimeters", category_path + "avoid-crossing-perimeters");
         optgroup->append_single_option_line("avoid_crossing_perimeters_max_detour", category_path + "avoid_crossing_perimeters_max_detour");
@@ -92,7 +93,17 @@ void EditorPrint::build()
 
         optgroup = page->new_optgroup(L("Advanced"));
         optgroup->append_single_option_line("seam_position", category_path + "seam-position");
+        optgroup->append_single_option_line("seam_gap_distance", category_path + "seam-gap-distance");
         optgroup->append_single_option_line("staggered_inner_seams", category_path + "staggered-inner-seams");
+
+        optgroup->append_single_option_line("scarf_seam_placement", category_path + "scarf-seam-placement");
+        optgroup->append_single_option_line("scarf_seam_only_on_smooth", category_path + "scarf-seam-only-on-smooth");
+        optgroup->append_single_option_line("scarf_seam_start_height", category_path + "scarf-seam-start-height");
+        optgroup->append_single_option_line("scarf_seam_entire_loop", category_path + "scarf-seam-entire-loop");
+        optgroup->append_single_option_line("scarf_seam_length", category_path + "scarf-seam-length");
+        optgroup->append_single_option_line("scarf_seam_max_segment_length", category_path + "scarf-seam-max-segment-length");
+        optgroup->append_single_option_line("scarf_seam_on_inner_perimeters", category_path + "scarf-seam-on-inner-perimeters");
+
         optgroup->append_single_option_line("external_perimeters_first", category_path + "external-perimeters-first");
         optgroup->append_single_option_line("gap_fill_enabled", category_path + "fill-gaps");
         optgroup->append_single_option_line("perimeter_generator");
@@ -126,8 +137,9 @@ void EditorPrint::build()
 
         optgroup = page->new_optgroup(L("Reducing printing time"));
         category_path = "infill_42#";
+        optgroup->append_single_option_line("automatic_infill_combination");
+        optgroup->append_single_option_line("automatic_infill_combination_max_layer_height");
         optgroup->append_single_option_line("infill_every_layers", category_path + "combine-infill-every-x-layers");
-        // optgroup->append_single_option_line("infill_only_where_needed", category_path + "only-infill-where-needed");
 
         optgroup = page->new_optgroup(L("Advanced"));
         optgroup->append_single_option_line("solid_infill_every_layers", category_path + "solid-infill-every-x-layers");
@@ -285,6 +297,7 @@ void EditorPrint::build()
         optgroup->append_single_option_line("solid_infill_extrusion_width");
         optgroup->append_single_option_line("top_infill_extrusion_width");
         optgroup->append_single_option_line("support_material_extrusion_width");
+        optgroup->append_single_option_line("automatic_extrusion_widths");
 
         optgroup = page->new_optgroup(L("Overlap"));
         optgroup->append_single_option_line("infill_overlap");
