@@ -19,7 +19,7 @@ namespace Slic3r::App::Plater {
 class ScenePresenter : public Biz::ISelectedProjectChangedListener,
                        public Biz::Scene::ISceneSelectionChangedListener,
                        public Biz::Scene::ISceneChangedListener,
-                       public Scene::ISceneRenderCustomizer,
+                       public Scene::MinimalSceneRenderCustomizer,
                        public ISceneProvider
 {
 public:

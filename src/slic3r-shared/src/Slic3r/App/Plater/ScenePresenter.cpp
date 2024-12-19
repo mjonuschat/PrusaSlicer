@@ -304,6 +304,7 @@ void ScenePresenter::on_wipe_tower_transformed(Domain::SelectionId project_id, s
 
 void ScenePresenter::on_layer_begin(Render::CommandBuffer& cmd_buf, size_t layer_idx)
 {
+    MinimalSceneRenderCustomizer::on_layer_begin(cmd_buf, layer_idx);
     if (layer_idx == int(PlaterSceneLayer::GizmoHandles))
 
         // clear depth buffer so all gizmo handles are rendered over document objects
