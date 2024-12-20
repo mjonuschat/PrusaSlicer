@@ -4,7 +4,8 @@
 #include <wx/textctrl.h>
 
 #include "StaticBox.hpp"
-#include "../Scalable.hpp"
+#include "Slic3r/App/WX/Scalable.hpp"
+#include "Slic3r/App/WX/StringConversions.hpp"
 
 namespace Slic3r::App::WX::Widgets {
 
@@ -31,8 +32,8 @@ public:
 
     TextInput(wxWindow *     parent,
               wxString       text,
-              wxString       label = "",
-              wxString       icon  = "",
+              wxString       label = {},
+              wxString       icon  = {},
               const wxPoint &pos   = wxDefaultPosition,
               const wxSize & size  = wxDefaultSize,
               long           style = 0);
@@ -40,8 +41,8 @@ public:
 public:
     void Create(wxWindow *     parent,
               wxString       text,
-              wxString       label = "",
-              wxString       icon  = "",
+              wxString       label = {},
+              wxString       icon  = {},
               const wxPoint &pos   = wxDefaultPosition,
               const wxSize & size  = wxDefaultSize,
               long           style = 0);

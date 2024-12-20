@@ -132,7 +132,9 @@ void SubstitutionManager::add_substitution( int substitution_id,
 
     auto top_sizer = new wxBoxSizer(wxHORIZONTAL);
     auto add_text_editor = [substitution_id, top_sizer, this](const wxString& value, int opt_pos, int proportion) {
-        auto editor = new WX::Widgets::TextInput(m_parent, value, "", "", wxDefaultPosition, wxSize(15 * m_em, wxDefaultCoord), wxTE_PROCESS_ENTER);
+        auto editor = new WX::Widgets::TextInput(
+            m_parent, value, {}, {}, wxDefaultPosition,
+            wxSize(15 * m_em, wxDefaultCoord), wxTE_PROCESS_ENTER);
 
         editor->SetFont(WX::w_config()->normal_font());
         WX::w_config()->UpdateDarkUI(editor);

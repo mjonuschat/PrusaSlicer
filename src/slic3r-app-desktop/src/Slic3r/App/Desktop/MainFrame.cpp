@@ -34,7 +34,7 @@ static void add_experimets_page(TopBar* top_bar, MainFrame* main_frame)
     wxBoxSizer* test_sizer = new wxBoxSizer(wxHORIZONTAL);
     main_sizer->Add(test_sizer, 0, wxEXPAND);
 
-    wxStaticText* test_txt = new wxStaticText(test_panel, wxID_ANY, "Change: ");
+    wxStaticText* test_txt = new wxStaticText(test_panel, wxID_ANY, from_u8("Change: "));
     test_sizer->Add(test_txt, 0, wxALIGN_CENTRE_VERTICAL | wxALL, 20);
 
     ScalableButton* test_btn = new ScalableButton(test_panel, wxID_ANY, "cog", _L("Color mode"));
@@ -53,10 +53,10 @@ static void add_experimets_page(TopBar* top_bar, MainFrame* main_frame)
 
     main_sizer->Add(lang_selection_btn, 0, wxALL, 40);
 
-    wxStaticText* test_txt2 = new wxStaticText(test_panel, wxID_ANY, "Text size: ");
+    wxStaticText* test_txt2 = new wxStaticText(test_panel, wxID_ANY, from_u8("Text size: "));
     test_sizer2->Add(test_txt2, 0, wxALIGN_CENTRE_VERTICAL | wxALL, 20);
 
-    wxTextCtrl* edit_font = new wxTextCtrl(test_panel, wxID_ANY, wxString::Format("%d", w_config()->normal_font().GetPointSize()));
+    wxTextCtrl* edit_font = new wxTextCtrl(test_panel, wxID_ANY, wxString::Format(from_u8("%d"), w_config()->normal_font().GetPointSize()));
     test_sizer2->Add(edit_font, 0, wxALIGN_CENTRE_VERTICAL | wxALL, 20);
 
     test_sizer2->Add(test_btn2, 0, wxALIGN_CENTRE_VERTICAL | wxALL, 20);
@@ -92,12 +92,12 @@ static void add_experimets_page(TopBar* top_bar, MainFrame* main_frame)
         main_frame->select_language();
     });
 
-    top_bar->AddPage(test_panel, ("UI - test"));
+    top_bar->AddPage(test_panel, from_u8("UI - test"));
 }
 
 
 MainFrame::MainFrame(Domain::Workbench& workbench, Biz::Preset::PresetInteractor& preset_interactor, Translations& translations)
-    : wxFrame(nullptr, wxID_ANY, ""), m_workbench(workbench), m_preset_interactor(preset_interactor), m_translations(translations)
+    : wxFrame(nullptr, wxID_ANY, {}), m_workbench(workbench), m_preset_interactor(preset_interactor), m_translations(translations)
 {
     auto em = w_config()->em_unit();
 
@@ -200,7 +200,7 @@ void MainFrame::complete_and_bind_top_bar()
 void MainFrame::init_plater()
 {
     m_canvas = std::make_unique<Platform::WX::WXRenderCanvas>(m_top_bar);
-    m_top_bar->AddPage(m_canvas.get(), ("Plater"));
+    m_top_bar->AddPage(m_canvas.get(), from_u8("Plater"));
 }
 
 void MainFrame::init_preset_editors()

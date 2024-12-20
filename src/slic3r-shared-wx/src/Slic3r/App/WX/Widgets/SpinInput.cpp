@@ -39,9 +39,16 @@ SpinInputBase::SpinInputBase()
 
 Button * SpinInputBase::create_button(ButtonId id)
 {
-    auto btn = new Button(this, "", id == ButtonId::btnIncrease ? "spin_inc_act" : "spin_dec_act", wxBORDER_NONE, wxSize(12, 7));
+    auto btn = new Button(
+        this, {},
+        id == ButtonId::btnIncrease ? from_u8("spin_inc_act")
+                                    : from_u8("spin_dec_act"),
+        wxBORDER_NONE, wxSize(12, 7)
+    );
     btn->SetCornerRadius(0);
-    btn->SetInactiveIcon(id == ButtonId::btnIncrease ? "spin_inc" : "spin_dec");
+    btn->SetInactiveIcon(
+        id == ButtonId::btnIncrease ? from_u8("spin_inc") : from_u8("spin_dec")
+    );
     btn->DisableFocusFromKeyboard();
     btn->SetSelected(false);
 

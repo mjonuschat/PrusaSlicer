@@ -1,5 +1,6 @@
 #include "DesktopApp.hpp"
 #include "MainFrame.hpp"
+#include "Slic3r/App/WX/StringConversions.hpp"
 
 #include <Slic3r/Log.hpp>
 #include <Slic3r/App/WX/WidgetsConfig.hpp>
@@ -66,18 +67,18 @@ void DesktopApp::init_translations()
         message += "\n" + WX::format_wxstr(("You may need to reconfigure the missing locales, likely by running the %1% and %2% commands.\n"),
             "\"locale-gen\"", "\"dpkg-reconfigure locales\"");
 #endif
-        message += "\n\nApplication will close.";
-        wxMessageBox(message, "PrusaSlicer - Switching language failed", wxOK | wxICON_ERROR);
+        message += WX::from_u8("\n\nApplication will close.");
+        wxMessageBox(message, WX::from_u8("PrusaSlicer - Switching language failed"), wxOK | wxICON_ERROR);
 
         std::exit(EXIT_FAILURE);
     }
     else if (!language.empty() && language != m_translations.active_language()) {
         // Loading the language dictionary failed.
         wxString message = WX::format_wxstr("Switching PrusaSlicer to language %1% failed.", language);
-        message += "\n\n" + WX::format_wxstr(m_translations.is_alternative_language() ?
+        message += WX::from_u8("\n\n") + WX::format_wxstr(m_translations.is_alternative_language() ?
                                              "Application is started in alternative language %1%." :
                                              "Application is started in system language %1%.", m_translations.active_language());
-        wxMessageBox(message, "PrusaSlicer - Switching language", wxOK | wxICON_WARNING);
+        wxMessageBox(message, WX::from_u8("PrusaSlicer - Switching language"), wxOK | wxICON_WARNING);
     }
 
     // set language for Im_gui

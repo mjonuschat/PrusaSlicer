@@ -27,9 +27,9 @@ void FillSizerWithTextColorDescriptions(wxSizer* sizer, wxWindow* parent, wxColo
 	auto add_color = [grid_sizer, parent](wxColourPickerCtrl** color_picker, const wxColour& color, const wxColour& def_color, wxString label_text) {
 		// wrap the label_text to the max 80 characters
 		if (label_text.Len() > 80) {
-			size_t brack_pos = label_text.find_last_of(" ", 79);
+			size_t brack_pos = label_text.find_last_of(wxString::FromUTF8(" "), 79);
 			if (brack_pos > 0 && brack_pos < 80)
-				label_text.insert(brack_pos + 1, "\n");
+				label_text.insert(brack_pos + 1, wxString::FromUTF8("\n"));
 		}
 
 		auto sys_label = new wxStaticText(parent, wxID_ANY, label_text);
@@ -79,7 +79,7 @@ void FillSizerWithModeColorDescriptions(
 		const auto& palette = ModePaletteComboBox::MODE_PALETTES[selection];
 		for (int mode = 0; mode < 3; mode++)
 		    if  (*clr_pickers[mode]) {
-				wxColour clr = wxColour(palette.second[mode]);
+				wxColour clr = wxColour(wxString::FromUTF8(palette.second[mode]));
 			    (*clr_pickers[mode])->SetColour(clr);
 				mode_palette[mode] = clr;
 		    }

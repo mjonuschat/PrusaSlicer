@@ -55,7 +55,7 @@ void EditorFilament::set_custom_gcode(const t_config_option_key& opt_key, const 
 
 void EditorFilament::create_line_with_near_label_widget(ConfigOptionsGroupShp optgroup, const std::string& opt_key, int opt_index/* = 0*/)
 {
-    Line line {"",""};
+    Line line {{}, {}};
     if (opt_key == "filament_retract_lift_above" || opt_key == "filament_retract_lift_below") {
         Option opt = optgroup->get_option(opt_key);
         opt.opt.label = opt.opt.full_label;
@@ -133,12 +133,12 @@ std::vector<std::pair<std::string, std::vector<std::string>>> filament_overrides
 
 void EditorFilament::add_filament_overrides_page()
 {
-    PageShp page = add_options_page(L("Filament Overrides"), "wrench");
+    PageShp page = add_options_page(_L("Filament Overrides"), "wrench");
 
     const int extruder_idx = 0; // #ys_FIXME
 
     for (const auto&[title, keys] : filament_overrides_option_keys) {
-        ConfigOptionsGroupShp optgroup = page->new_optgroup(L(title));
+        ConfigOptionsGroupShp optgroup = page->new_optgroup(_L(title));
         for (const std::string& opt_key : keys) {
             create_line_with_near_label_widget(optgroup, opt_key, extruder_idx);
         }
@@ -147,7 +147,7 @@ void EditorFilament::add_filament_overrides_page()
 
 void EditorFilament::update_filament_overrides_page()
 {
-    if (!m_active_page || m_active_page->title() != "Filament Overrides")
+    if (!m_active_page || m_active_page->title() != WX::from_u8("Filament Overrides"))
         return;
     Page* page = m_active_page;
 
@@ -225,7 +225,7 @@ void EditorFilament::update_filament_overrides_page()
 }
 
 EditorFilament::EditorFilament(wxWindow* parent, Biz::Preset::PresetInteractor& preset_interactor) :
-    AbstractEditor(parent, L("Filaments"), Slic3r::Preset::TYPE_FILAMENT, preset_interactor)
+    AbstractEditor(parent, _L("Filaments"), Slic3r::Preset::TYPE_FILAMENT, preset_interactor)
 {
     m_config_interactor = std::make_unique<Biz::Preset::PresetConfigInteractor>(m_preset_interactor, Slic3r::Preset::TYPE_FILAMENT, 0);
 }
@@ -234,8 +234,8 @@ void EditorFilament::build()
 {
     load_initial_data();
 
-    auto page = add_options_page(L("Filament"), "spool");
-        auto optgroup = page->new_optgroup(L("Filament"));
+    auto page = add_options_page(_L("Filament"), "spool");
+        auto optgroup = page->new_optgroup(_L("Filament"));
         optgroup->append_single_option_line("filament_colour");
         optgroup->append_single_option_line("filament_diameter");
         optgroup->append_single_option_line("extrusion_multiplier");
@@ -255,40 +255,40 @@ void EditorFilament::build()
                 on_value_change(opt_key, value);
         };
 
-        optgroup = page->new_optgroup(L("Temperature"));
+        optgroup = page->new_optgroup(_L("Temperature"));
 
         create_line_with_near_label_widget(optgroup, "idle_temperature");
 
-        Line line = { L("Nozzle"), "" };
+        Line line = { _L("Nozzle"), {} };
         line.append_option(optgroup->get_option("first_layer_temperature"));
         line.append_option(optgroup->get_option("temperature"));
         optgroup->append_line(line);
 
-        line = { L("Bed"), "" };
+        line = { _L("Bed"), {} };
         line.append_option(optgroup->get_option("first_layer_bed_temperature"));
         line.append_option(optgroup->get_option("bed_temperature"));
         optgroup->append_line(line);
 
-        line = { L("Chamber"), "" };
+        line = { _L("Chamber"), {} };
         line.append_option(optgroup->get_option("chamber_temperature"));
         line.append_option(optgroup->get_option("chamber_minimal_temperature"));
         optgroup->append_line(line);
 
-    page = add_options_page(L("Cooling"), "cooling");
+    page = add_options_page(_L("Cooling"), "cooling");
         std::string category_path = "cooling_127569#";
-        optgroup = page->new_optgroup(L("Enable"));
+        optgroup = page->new_optgroup(_L("Enable"));
         optgroup->append_single_option_line("fan_always_on");
         optgroup->append_single_option_line("cooling");
 
-        line = { "", "" };
+        line = { {}, {} };
         line.full_width = 1;
         line.widget = [this](wxWindow* parent) {
             return description_line_widget(parent, &m_cooling_description_line);
         };
         optgroup->append_line(line);
 
-        optgroup = page->new_optgroup(L("Fan settings"));
-        line = { L("Fan speed"), "" };
+        optgroup = page->new_optgroup(_L("Fan settings"));
+        line = { _L("Fan speed"), {} };
         line.label_path = category_path + "fan-settings";
         line.append_option(optgroup->get_option("min_fan_speed"));
         line.append_option(optgroup->get_option("max_fan_speed"));
@@ -298,30 +298,30 @@ void EditorFilament::build()
         optgroup->append_single_option_line("disable_fan_first_layers", category_path + "fan-settings");
         optgroup->append_single_option_line("full_fan_speed_layer", category_path + "fan-settings");
 
-        optgroup = page->new_optgroup(L("Dynamic fan speeds"), 25);
+        optgroup = page->new_optgroup(_L("Dynamic fan speeds"), 25);
         optgroup->append_single_option_line("enable_dynamic_fan_speeds", category_path + "dynamic-fan-speeds");
         optgroup->append_single_option_line("overhang_fan_speed_0", category_path + "dynamic-fan-speeds");
         optgroup->append_single_option_line("overhang_fan_speed_1", category_path + "dynamic-fan-speeds");
         optgroup->append_single_option_line("overhang_fan_speed_2", category_path + "dynamic-fan-speeds");
         optgroup->append_single_option_line("overhang_fan_speed_3", category_path + "dynamic-fan-speeds");
 
-        optgroup = page->new_optgroup(L("Cooling thresholds"), 25);
+        optgroup = page->new_optgroup(_L("Cooling thresholds"), 25);
         optgroup->append_single_option_line("fan_below_layer_time", category_path + "cooling-thresholds");
         optgroup->append_single_option_line("slowdown_below_layer_time", category_path + "cooling-thresholds");
         optgroup->append_single_option_line("min_print_speed", category_path + "cooling-thresholds");
 
-    page = add_options_page(L("Advanced"), "wrench");
-        optgroup = page->new_optgroup(L("Filament properties"));
+    page = add_options_page(_L("Advanced"), "wrench");
+        optgroup = page->new_optgroup(_L("Filament properties"));
         // Set size as all another fields for a better alignment
         Option option = optgroup->get_option("filament_type");
         option.opt.width = Field::def_width();
         optgroup->append_single_option_line(option);
         optgroup->append_single_option_line("filament_soluble");
 
-        optgroup = page->new_optgroup(L("Print speed override"));
+        optgroup = page->new_optgroup(_L("Print speed override"));
         optgroup->append_single_option_line("filament_max_volumetric_speed", "max-volumetric-speed_127176");
 
-        line = { "", "" };
+        line = { {}, {} };
         line.full_width = 1;
         line.widget = [this](wxWindow* parent) {
             return description_line_widget(parent, &m_volumetric_speed_description_line);
@@ -331,14 +331,14 @@ void EditorFilament::build()
         optgroup->append_single_option_line("filament_infill_max_speed", "max-simple-infill-speed");
         optgroup->append_single_option_line("filament_infill_max_crossing_speed", "max-crossing-infill-speed");
 
-        optgroup = page->new_optgroup(L("Shrinkage compensation"));
+        optgroup = page->new_optgroup(_L("Shrinkage compensation"));
         optgroup->append_single_option_line("filament_shrinkage_compensation_xy");
         optgroup->append_single_option_line("filament_shrinkage_compensation_z");
 
-        optgroup = page->new_optgroup(L("Wipe tower parameters"));
+        optgroup = page->new_optgroup(_L("Wipe tower parameters"));
         optgroup->append_single_option_line("filament_minimal_purge_on_wipe_tower");
 
-        optgroup = page->new_optgroup(L("Toolchange parameters with single extruder MM printers"));
+        optgroup = page->new_optgroup(_L("Toolchange parameters with single extruder MM printers"));
         optgroup->append_single_option_line("filament_loading_speed_start");
         optgroup->append_single_option_line("filament_loading_speed");
         optgroup->append_single_option_line("filament_unloading_speed_start");
@@ -375,7 +375,7 @@ void EditorFilament::build()
         });
 
 
-        optgroup = page->new_optgroup(L("Toolchange parameters with multi extruder MM printers"));
+        optgroup = page->new_optgroup(_L("Toolchange parameters with multi extruder MM printers"));
         optgroup->append_single_option_line("filament_multitool_ramming");
         optgroup->append_single_option_line("filament_multitool_ramming_volume");
         optgroup->append_single_option_line("filament_multitool_ramming_flow");
@@ -387,8 +387,8 @@ void EditorFilament::build()
         const int gcode_field_height = 15; // 150
         const int notes_field_height = 25; // 250
 
-    page = add_options_page(L("Custom G-code"), "cog");
-        optgroup = page->new_optgroup(L("Start G-code"), 0);
+    page = add_options_page(_L("Custom G-code"), "cog");
+        optgroup = page->new_optgroup(_L("Start G-code"), 0);
         optgroup->on_change = [this, &optgroup_title = optgroup->title](const t_config_option_key& opt_key, const boost::any& value) {
             validate_custom_gcode_cb(optgroup_title, opt_key, value);
         };
@@ -399,7 +399,7 @@ void EditorFilament::build()
         option.opt.height = gcode_field_height;// 150;
         optgroup->append_single_option_line(option);
 
-        optgroup = page->new_optgroup(L("End G-code"), 0);
+        optgroup = page->new_optgroup(_L("End G-code"), 0);
         optgroup->on_change = [this, &optgroup_title = optgroup->title](const t_config_option_key& opt_key, const boost::any& value) {
             validate_custom_gcode_cb(optgroup_title, opt_key, value);
         };
@@ -410,16 +410,16 @@ void EditorFilament::build()
         option.opt.height = gcode_field_height;// 150;
         optgroup->append_single_option_line(option);
 
-    page = add_options_page(L("Notes"), "note");
-        optgroup = page->new_optgroup(L("Notes"), 0);
+    page = add_options_page(_L("Notes"), "note");
+        optgroup = page->new_optgroup(_L("Notes"), 0);
         optgroup->label_width = 0;
         option = optgroup->get_option("filament_notes");
         option.opt.full_width = true;
         option.opt.height = notes_field_height;// 250;
         optgroup->append_single_option_line(option);
 
-    page = add_options_page(L("Dependencies"), "wrench");
-        optgroup = page->new_optgroup(L("Profile dependencies"));
+    page = add_options_page(_L("Dependencies"), "wrench");
+        optgroup = page->new_optgroup(_L("Profile dependencies"));
         create_line_with_widget(optgroup.get(), "compatible_printers", "", [this](wxWindow* parent) {
             return compatible_widget_create(parent, m_compatible_printers);
         });
@@ -445,7 +445,7 @@ void EditorFilament::update_volumetric_flow_preset_hints()
     try {
         text = WX::from_u8(Biz::Preset::PresetHints::maximum_volumetric_flow_description(m_preset_interactor.selected_config_container_context()));
     } catch (std::exception &ex) {
-        text = _L("Volumetric flow hints not available") + "\n\n" + WX::from_u8(ex.what());
+        text = _L("Volumetric flow hints not available") + WX::from_u8("\n\n") + WX::from_u8(ex.what());
     }
     m_volumetric_speed_description_line->SetText(text);
 }
@@ -457,9 +457,9 @@ void EditorFilament::update_description_lines()
     if (!m_active_page)
         return;
 
-    if (m_active_page->title() == "Cooling" && m_cooling_description_line)
+    if (m_active_page->title() == WX::from_u8("Cooling") && m_cooling_description_line)
         m_cooling_description_line->SetText(WX::from_u8(Biz::Preset::PresetHints::cooling_description(m_config_interactor->preset_state().edited_preset)));
-    if (m_active_page->title() == "Advanced" && m_volumetric_speed_description_line)
+    if (m_active_page->title() == WX::from_u8("Advanced") && m_volumetric_speed_description_line)
         this->update_volumetric_flow_preset_hints();
 }
 
@@ -468,7 +468,7 @@ void EditorFilament::toggle_options()
     if (!m_active_page)
         return;
 
-    if (m_active_page->title() == "Cooling")
+    if (m_active_page->title() == WX::from_u8("Cooling"))
     {
         bool cooling = config().opt_bool("cooling", 0);
         bool fan_always_on = cooling || config().opt_bool("fan_always_on", 0);
@@ -485,20 +485,20 @@ void EditorFilament::toggle_options()
         }
     }
 
-    if (m_active_page->title() == "Advanced")
+    if (m_active_page->title() == WX::from_u8("Advanced"))
     {
         bool multitool_ramming = config().opt_bool("filament_multitool_ramming", 0);
         toggle_option("filament_multitool_ramming_volume", multitool_ramming);
         toggle_option("filament_multitool_ramming_flow", multitool_ramming);
     }
 
-    if (m_active_page->title() == "Filament Overrides")
+    if (m_active_page->title() == WX::from_u8("Filament Overrides"))
         update_filament_overrides_page();
 
-    if (m_active_page->title() == "Filament") {
+    if (m_active_page->title() == WX::from_u8("Filament")) {
         Page* page = m_active_page;
 
-        const auto og_it = std::find_if(page->optgroups.begin(), page->optgroups.end(), [](const ConfigOptionsGroupShp og) { return og->title == "Temperature"; });
+        const auto og_it = std::find_if(page->optgroups.begin(), page->optgroups.end(), [](const ConfigOptionsGroupShp og) { return og->title == WX::from_u8("Temperature"); });
         if (og_it != page->optgroups.end())
             update_line_with_near_label_widget(*og_it, "idle_temperature");
     }

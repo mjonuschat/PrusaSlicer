@@ -7,8 +7,9 @@
 #include <Slic3r/App/WX/WidgetsConfig.hpp>
 
 //#include "GUI_App.hpp"
-//#include "GUI_Factories.hpp"
+// #include "GUI_Factories.hpp"
 
+#include "Slic3r/App/WX/StringConversions.hpp"
 #include "libslic3r/Config.hpp" //ConfigOptionMode
 
 namespace Slic3r::App::Desktop {
@@ -25,7 +26,7 @@ TopBarMenus::TopBarMenus()
 
 void TopBarMenus::AppendMenuItem(wxMenu* menu, const wxString& title)
 {
-    append_submenu(&main, menu, wxID_ANY, title, "cog");
+    append_submenu(&main, menu, wxID_ANY, title, from_u8("cog"));
 }
 
 void TopBarMenus::AppendMenuSeparaorItem()
@@ -92,10 +93,10 @@ void TopBarMenus::ApplyWorkspacesMenu()
 
 void TopBarMenus::CreateAccountMenu()
 {
-    m_login_item = append_menu_item(&account, wxID_ANY, "Login", "",
+    m_login_item = append_menu_item(&account, wxID_ANY, from_u8("Login"), {},
         [this](wxCommandEvent&) { if (m_cb_act_with_user_account) m_cb_act_with_user_account(); }, "login");
 
-    m_hide_login_item = append_menu_item(&account, wxID_ANY, _L("Hide \"Log in\" button"), "",
+    m_hide_login_item = append_menu_item(&account, wxID_ANY, _L("Hide \"Log in\" button"), {},
         [this](wxCommandEvent&) { if (m_cb_hide_user_account) m_cb_hide_user_account(); });
 }
 

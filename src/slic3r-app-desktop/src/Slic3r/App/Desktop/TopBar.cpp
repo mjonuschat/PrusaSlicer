@@ -66,7 +66,7 @@ void TopBarItemsCtrl::Button::messure_min_size()
 
     wxString localized_label = _(m_label);
 
-    GetTextExtent(localized_label.IsEmpty() ? "a" : localized_label, &x, &y);
+    GetTextExtent(localized_label.IsEmpty() ? wxString::FromUTF8("a") : localized_label, &x, &y);
     wxSize size(x + 4 * btn_margin, y + int(1.5 * btn_margin));
     if (m_icon_name.empty())
         this->SetMinSize(size);
@@ -195,7 +195,7 @@ TopBarItemsCtrl::ButtonWithPopup::ButtonWithPopup(wxWindow* parent, const wxStri
 }
 
 TopBarItemsCtrl::ButtonWithPopup::ButtonWithPopup(wxWindow* parent, const std::string& icon_name, int icon_width/* = 20*/, int icon_height/* = 20*/)
-    :TopBarItemsCtrl::Button(parent, "", icon_name, icon_width)
+    :TopBarItemsCtrl::Button(parent, wxString::FromUTF8(""), icon_name, icon_width)
 {
 }
 
@@ -251,7 +251,7 @@ void TopBarItemsCtrl::UpdateAccountButton(bool avatar/* = false*/)
         }
     }
 
-    m_account_btn->SetLabel(m_collapsed_btns ? "" : user_name);
+    m_account_btn->SetLabel(m_collapsed_btns ? wxString::FromUTF8("") : user_name);
     this->Layout();
 }
 
@@ -268,7 +268,7 @@ void TopBarItemsCtrl::CreateSearch()
     // Linux specific: If wxDefaultSize is used in constructor and than set just maxSize, 
     // than this max size will be used as a default control size and can't be resized.
     // So, set initial size for some minimum value
-    m_search = new WX::Widgets::TextInput(this, /*wxGetApp().searcher().default_string*/"Input", "", "search", wxDefaultPosition, wxSize(2 * w_config()->em_unit(this), -1), wxTE_PROCESS_ENTER);
+    m_search = new WX::Widgets::TextInput(this, /*wxGetApp().searcher().default_string*/wxString::FromUTF8("Input"), wxString::FromUTF8(""), wxString::FromUTF8("search"), wxDefaultPosition, wxSize(2 * w_config()->em_unit(this), -1), wxTE_PROCESS_ENTER);
     m_search->SetMaxSize(wxSize(/*42*/30*w_config()->em_unit(this), -1));
     w_config()->UpdateDarkUI(m_search);
 /*
@@ -466,7 +466,7 @@ TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent, TopBarMenus* menus/* = nullpt
 
     wxBoxSizer* right_sizer = new wxBoxSizer(wxHORIZONTAL);
 
-    m_workspace_btn = new ButtonWithPopup(this, "Workspace", "mode_simple");
+    m_workspace_btn = new ButtonWithPopup(this, wxString::FromUTF8("Workspace"), "mode_simple");
     right_sizer->AddStretchSpacer(20);
     right_sizer->Add(m_workspace_btn, 0, wxALIGN_CENTER_VERTICAL | wxALL, m_btn_margin);
 
@@ -494,7 +494,7 @@ void TopBarItemsCtrl::UpdateMode()
 {
     wxBitmapBundle bmp = *m_menus->get_workspace_bitmap();
     m_workspace_btn->SetBitmapBundle(bmp);
-    m_workspace_btn->SetLabel(m_collapsed_btns ? "" : m_menus->get_workspace_name());
+    m_workspace_btn->SetLabel(m_collapsed_btns ? wxString::FromUTF8("") : m_menus->get_workspace_name());
 
     this->Layout();
 }

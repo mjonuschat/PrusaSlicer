@@ -14,6 +14,11 @@ wxString from_u8(const std::string& str)
     return wxString::FromUTF8(str.c_str());
 }
 
+wxString from_u8(const char* str)
+{
+    return wxString::FromUTF8(str);
+}
+
 std::string into_u8(const wxString& str)
 {
     auto buffer_utf8 = str.utf8_str();
@@ -44,20 +49,20 @@ wxString double_to_string(double const value, const int max_precision /*= 4*/)
     // The following code comes from wxNumberFormatter::RemoveTrailingZeroes(wxString& s)
     // with the exception that here one sets the decimal separator explicitely to dot.
     // If number is in scientific format, trailing zeroes belong to the exponent and cannot be removed.
-    if (s.find_first_of("eE") == wxString::npos) {
+    if (s.find_first_of(from_u8("eE")) == wxString::npos) {
         char dec_sep = is_decimal_separator_point() ? '.' : ',';
         const size_t posDecSep = s.find(dec_sep);
         // No decimal point => removing trailing zeroes irrelevant for integer number.
         if (posDecSep != wxString::npos) {
             // Find the last character to keep.
-            size_t posLastNonZero = s.find_last_not_of("0");
+            size_t posLastNonZero = s.find_last_not_of(from_u8("0"));
             // If it's the decimal separator itself, don't keep it either.
             if (posLastNonZero == posDecSep)
                 -- posLastNonZero;
             s.erase(posLastNonZero + 1);
             // Remove sign from orphaned zero.
-            if (s.compare("-0") == 0)
-                s = "0";
+            if (s.compare(from_u8("-0")) == 0)
+                s = from_u8("0");
         }
     }
 
@@ -92,7 +97,7 @@ wxString get_wraped_wxString(const wxString& in, size_t line_len /*=80*/)
                 ibreak    = ++ j;
                 overwrite = false;
             } else
-                j += get_utf8_sequence_length(in.c_str() + j, in.size() - j);
+                j += get_utf8_sequence_length(in.ToUTF8() + j, in.size() - j);
             if (++ cnt == line_len) {
                 if (ibreak == size_t(-1)) {
                     ibreak    = j;

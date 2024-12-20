@@ -48,7 +48,7 @@ namespace Slic3r::App::Desktop::Preset {
 using WX::_L;
 
 EditorPrinter::EditorPrinter(wxWindow* parent, Biz::Preset::PresetInteractor& preset_interactor) :
-    AbstractEditor(parent, L("Printers"), Slic3r::Preset::TYPE_PRINTER, preset_interactor)
+    AbstractEditor(parent, _L("Printers"), Slic3r::Preset::TYPE_PRINTER, preset_interactor)
 {
     m_config_interactor = std::make_unique<Biz::Preset::PresetConfigInteractor>(preset_interactor, Slic3r::Preset::TYPE_PRINTER, 0);
 }
@@ -81,16 +81,16 @@ void EditorPrinter::build()
 
 void EditorPrinter::build_print_host_upload_group(Page* page) //! maybe it's a time to delete this one?
 {
-    ConfigOptionsGroupShp optgroup = page->new_optgroup(L("Print Host upload"));
+    ConfigOptionsGroupShp optgroup = page->new_optgroup(_L("Print Host upload"));
 
-    wxString description_line_text = L(""
+    wxString description_line_text = _L(""
         "Note: All parameters from this group are moved to the Physical Printer settings (see changelog).\n\n"
         "A new Physical Printer profile is created by clicking on the \"cog\" icon right of the Printer profiles combo box, "
         "by selecting the \"Add physical printer\" item in the Printer combo box. The Physical Printer profile editor opens "
         "also when clicking on the \"cog\" icon in the Printer settings tab. The Physical Printer profiles are being stored "
         "into PrusaSlicer/physical_printer directory.");
 
-    Line line = { "", "" };
+    Line line = {{}, {} };
     line.full_width = 1;
     line.widget = [this, description_line_text](wxWindow* parent) {
         return description_line_widget(parent, m_config_interactor->preset_state().selected_preset->printer_technology() == ptFFF ?
@@ -122,8 +122,8 @@ void EditorPrinter::build_fff()
     m_sys_extruders_count = parent_preset == nullptr ? 0 :
             static_cast<const ConfigOptionFloats*>(parent_preset->config.option("nozzle_diameter"))->values.size();
 
-    auto page = add_options_page(L("General"), "printer");
-        auto optgroup = page->new_optgroup(L("Size and coordinates"));
+    auto page = add_options_page(_L("General"), "printer");
+        auto optgroup = page->new_optgroup(_L("Size and coordinates"));
 
         create_line_with_widget(optgroup.get(), "bed_shape", "custom-svg-and-png-bed-textures_124612", [this](wxWindow* parent) {
             return 	create_bed_shape_widget(parent);
@@ -132,7 +132,7 @@ void EditorPrinter::build_fff()
         optgroup->append_single_option_line("max_print_height");
         optgroup->append_single_option_line("z_offset");
 
-        optgroup = page->new_optgroup(L("Capabilities"));
+        optgroup = page->new_optgroup(_L("Capabilities"));
         ConfigOptionDef def;
             def.type =  coInt,
             def.set_default_value(new ConfigOptionInt(1));
@@ -215,7 +215,7 @@ void EditorPrinter::build_fff()
 
         build_print_host_upload_group(page.get());
 
-        optgroup = page->new_optgroup(L("Firmware"));
+        optgroup = page->new_optgroup(_L("Firmware"));
         optgroup->append_single_option_line("gcode_flavor");
 
         option = optgroup->get_option("thumbnails");
@@ -287,7 +287,7 @@ void EditorPrinter::build_fff()
 
                         if (!m_supports_min_feedrates && m_use_silent_mode) {
                             if (!msg.IsEmpty())
-                                msg += "\n\n";
+                                msg += WX::from_u8("\n\n");
                             msg += _L("The selected G-code flavor does not support the machine limitation for Stealth mode.\n"
                                       "Stealth mode will not be applied and will be disabled.");
 
@@ -306,7 +306,7 @@ void EditorPrinter::build_fff()
             });
         };
 
-        optgroup = page->new_optgroup(L("Advanced"));
+        optgroup = page->new_optgroup(_L("Advanced"));
         optgroup->append_single_option_line("use_relative_e_distances");
         optgroup->append_single_option_line("use_firmware_retraction");
         optgroup->append_single_option_line("use_volumetric_e");
@@ -315,8 +315,8 @@ void EditorPrinter::build_fff()
 
     const int gcode_field_height = 15; // 150
     const int notes_field_height = 25; // 250
-    page = add_options_page(L("Custom G-code"), "cog");
-        optgroup = page->new_optgroup(L("Start G-code"), 0);
+    page = add_options_page(_L("Custom G-code"), "cog");
+        optgroup = page->new_optgroup(_L("Start G-code"), 0);
         optgroup->on_change = [this, &optgroup_title = optgroup->title](const t_config_option_key& opt_key, const boost::any& value) {
             validate_custom_gcode_cb(optgroup_title, opt_key, value);
         };
@@ -327,10 +327,10 @@ void EditorPrinter::build_fff()
         option.opt.height = 3 * gcode_field_height;//150;
         optgroup->append_single_option_line(option);
 
-        optgroup = page->new_optgroup(L("Start G-Code options"));
+        optgroup = page->new_optgroup(_L("Start G-Code options"));
         optgroup->append_single_option_line("autoemit_temperature_commands");
 
-        optgroup = page->new_optgroup(L("End G-code"), 0);
+        optgroup = page->new_optgroup(_L("End G-code"), 0);
         optgroup->on_change = [this, &optgroup_title = optgroup->title](const t_config_option_key& opt_key, const boost::any& value) {
             validate_custom_gcode_cb(optgroup_title, opt_key, value);
         };
@@ -341,7 +341,7 @@ void EditorPrinter::build_fff()
         option.opt.height = 1.75 * gcode_field_height;//150;
         optgroup->append_single_option_line(option);
 
-        optgroup = page->new_optgroup(L("Before layer change G-code"), 0);
+        optgroup = page->new_optgroup(_L("Before layer change G-code"), 0);
         optgroup->on_change = [this, &optgroup_title = optgroup->title](const t_config_option_key& opt_key, const boost::any& value) {
             validate_custom_gcode_cb(optgroup_title, opt_key, value);
         };
@@ -352,7 +352,7 @@ void EditorPrinter::build_fff()
         option.opt.height = gcode_field_height;//150;
         optgroup->append_single_option_line(option);
 
-        optgroup = page->new_optgroup(L("After layer change G-code"), 0);
+        optgroup = page->new_optgroup(_L("After layer change G-code"), 0);
         optgroup->on_change = [this, &optgroup_title = optgroup->title](const t_config_option_key& opt_key, const boost::any& value) {
             validate_custom_gcode_cb(optgroup_title, opt_key, value);
         };
@@ -363,7 +363,7 @@ void EditorPrinter::build_fff()
         option.opt.height = gcode_field_height;//150;
         optgroup->append_single_option_line(option);
 
-        optgroup = page->new_optgroup(L("Tool change G-code"), 0);
+        optgroup = page->new_optgroup(_L("Tool change G-code"), 0);
         optgroup->on_change = [this, &optgroup_title = optgroup->title](const t_config_option_key& opt_key, const boost::any& value) {
             validate_custom_gcode_cb(optgroup_title, opt_key, value);
         };
@@ -374,7 +374,7 @@ void EditorPrinter::build_fff()
         option.opt.height = gcode_field_height;//150;
         optgroup->append_single_option_line(option);
 
-        optgroup = page->new_optgroup(L("Between objects G-code (for sequential printing)"), 0);
+        optgroup = page->new_optgroup(_L("Between objects G-code (for sequential printing)"), 0);
         optgroup->on_change = [this, &optgroup_title = optgroup->title](const t_config_option_key& opt_key, const boost::any& value) {
             validate_custom_gcode_cb(optgroup_title, opt_key, value);
         };
@@ -385,7 +385,7 @@ void EditorPrinter::build_fff()
         option.opt.height = gcode_field_height;//150;
         optgroup->append_single_option_line(option);
 
-        optgroup = page->new_optgroup(L("Color Change G-code"), 0);
+        optgroup = page->new_optgroup(_L("Color Change G-code"), 0);
         optgroup->on_change = [this, &optgroup_title = optgroup->title](const t_config_option_key& opt_key, const boost::any& value) {
             validate_custom_gcode_cb(optgroup_title, opt_key, value);
         };
@@ -395,7 +395,7 @@ void EditorPrinter::build_fff()
         option.opt.height = gcode_field_height;//150;
         optgroup->append_single_option_line(option);
 
-        optgroup = page->new_optgroup(L("Pause Print G-code"), 0);
+        optgroup = page->new_optgroup(_L("Pause Print G-code"), 0);
         optgroup->on_change = [this, &optgroup_title = optgroup->title](const t_config_option_key& opt_key, const boost::any& value) {
             validate_custom_gcode_cb(optgroup_title, opt_key, value);
         };
@@ -405,7 +405,7 @@ void EditorPrinter::build_fff()
         option.opt.height = gcode_field_height;//150;
         optgroup->append_single_option_line(option);
 
-        optgroup = page->new_optgroup(L("Template Custom G-code"), 0);
+        optgroup = page->new_optgroup(_L("Template Custom G-code"), 0);
         optgroup->on_change = [this, &optgroup_title = optgroup->title](const t_config_option_key& opt_key, const boost::any& value) {
             validate_custom_gcode_cb(optgroup_title, opt_key, value);
         };
@@ -415,15 +415,15 @@ void EditorPrinter::build_fff()
         option.opt.height = gcode_field_height;//150;
         optgroup->append_single_option_line(option);
 
-    page = add_options_page(L("Notes"), "note");
-        optgroup = page->new_optgroup(L("Notes"), 0);
+    page = add_options_page(_L("Notes"), "note");
+        optgroup = page->new_optgroup(_L("Notes"), 0);
         option = optgroup->get_option("printer_notes");
         option.opt.full_width = true;
         option.opt.height = notes_field_height;//250;
         optgroup->append_single_option_line(option);
 
-    page = add_options_page(L("Dependencies"), "wrench");
-        optgroup = page->new_optgroup(L("Profile dependencies"));
+    page = add_options_page(_L("Dependencies"), "wrench");
+        optgroup = page->new_optgroup(_L("Profile dependencies"));
 
         build_preset_description_line(optgroup.get());
 
@@ -434,20 +434,20 @@ void EditorPrinter::build_sla()
 {
     if (!m_pages.empty())
         m_pages.resize(0);
-    auto page = add_options_page(L("General"), "printer");
-    auto optgroup = page->new_optgroup(L("Size and coordinates"));
+    auto page = add_options_page(_L("General"), "printer");
+    auto optgroup = page->new_optgroup(_L("Size and coordinates"));
 
     create_line_with_widget(optgroup.get(), "bed_shape", "custom-svg-and-png-bed-textures_124612", [this](wxWindow* parent) {
         return 	create_bed_shape_widget(parent);
     });
     optgroup->append_single_option_line("max_print_height");
 
-    optgroup = page->new_optgroup(L("Display"));
+    optgroup = page->new_optgroup(_L("Display"));
     optgroup->append_single_option_line("display_width");
     optgroup->append_single_option_line("display_height");
 
     auto option = optgroup->get_option("display_pixels_x");
-    Line line = { option.opt.full_label, "" };
+    Line line = { WX::from_u8(option.opt.full_label), {} };
     line.append_option(option);
     line.append_option(optgroup->get_option("display_pixels_y"));
     optgroup->append_line(line);
@@ -457,16 +457,16 @@ void EditorPrinter::build_sla()
     optgroup->append_single_option_line("display_mirror_x");
     optgroup->append_single_option_line("display_mirror_y");
 
-    optgroup = page->new_optgroup(L("Tilt"));
-    line = { L("Tilt time"), "" };
+    optgroup = page->new_optgroup(_L("Tilt"));
+    line = { _L("Tilt time"), {} };
     line.append_option(optgroup->get_option("fast_tilt_time"));
     line.append_option(optgroup->get_option("slow_tilt_time"));
     line.append_option(optgroup->get_option("high_viscosity_tilt_time"));
     optgroup->append_line(line);
 //    optgroup->append_single_option_line("area_fill");
 
-    optgroup = page->new_optgroup(L("Corrections"));
-    line = Line{ config().def()->get("relative_correction")->full_label, "" };
+    optgroup = page->new_optgroup(_L("Corrections"));
+    line = Line{ WX::from_u8(config().def()->get("relative_correction")->full_label), {} };
     for (auto& axis : { "X", "Y", "Z" }) {
         auto opt = optgroup->get_option(std::string("relative_correction_") + char(std::tolower(axis[0])));
         opt.opt.label = axis;
@@ -478,14 +478,14 @@ void EditorPrinter::build_sla()
     optgroup->append_single_option_line("elefant_foot_min_width");
     optgroup->append_single_option_line("gamma_correction");
     
-    optgroup = page->new_optgroup(L("Exposure"));
+    optgroup = page->new_optgroup(_L("Exposure"));
     optgroup->append_single_option_line("min_exposure_time");
     optgroup->append_single_option_line("max_exposure_time");
     optgroup->append_single_option_line("min_initial_exposure_time");
     optgroup->append_single_option_line("max_initial_exposure_time");
 
 
-    optgroup = page->new_optgroup(L("Output"));
+    optgroup = page->new_optgroup(_L("Output"));
     optgroup->append_single_option_line("sla_archive_format");
     optgroup->append_single_option_line("sla_output_precision");
 
@@ -493,15 +493,15 @@ void EditorPrinter::build_sla()
 
     const int notes_field_height = 25; // 250
 
-    page = add_options_page(L("Notes"), "note");
-    optgroup = page->new_optgroup(L("Notes"), 0);
+    page = add_options_page(_L("Notes"), "note");
+    optgroup = page->new_optgroup(_L("Notes"), 0);
     option = optgroup->get_option("printer_notes");
     option.opt.full_width = true;
     option.opt.height = notes_field_height;//250;
     optgroup->append_single_option_line(option);
 
-    page = add_options_page(L("Dependencies"), "wrench");
-    optgroup = page->new_optgroup(L("Profile dependencies"));
+    page = add_options_page(_L("Dependencies"), "wrench");
+    optgroup = page->new_optgroup(_L("Profile dependencies"));
 
     build_preset_description_line(optgroup.get());
 }
@@ -540,7 +540,7 @@ void EditorPrinter::extruders_count_changed(size_t extruders_count)
 void EditorPrinter::append_option_line(ConfigOptionsGroupShp optgroup, const std::string opt_key)
 {
     auto option = optgroup->get_option(opt_key, 0);
-    auto line = Line{ option.opt.full_label, "" };
+    auto line = Line{ WX::from_u8(option.opt.full_label), {} };
     line.append_option(option);
     if (m_use_silent_mode 
         || printer_technology == ptSLA // just for first build, if SLA printer preset is selected 
@@ -551,12 +551,12 @@ void EditorPrinter::append_option_line(ConfigOptionsGroupShp optgroup, const std
 
 PageShp EditorPrinter::build_kinematics_page()
 {
-    auto page = add_options_page(L("Machine limits"), "cog", true);
+    auto page = add_options_page(_L("Machine limits"), "cog", true);
 
-    auto optgroup = page->new_optgroup(L("General"));
+    auto optgroup = page->new_optgroup(_L("General"));
     {
 	    optgroup->append_single_option_line("machine_limits_usage");
-        Line line { "", "" };
+        Line line { {}, {} };
         line.full_width = 1;
         line.widget = [this](wxWindow* parent) {
             return description_line_widget(parent, &m_machine_limits_description_line);
@@ -595,12 +595,12 @@ PageShp EditorPrinter::build_kinematics_page()
     }
 
     const std::vector<std::string> axes{ "x", "y", "z", "e" };
-    optgroup = page->new_optgroup(L("Maximum feedrates"));
+    optgroup = page->new_optgroup(_L("Maximum feedrates"));
         for (const std::string &axis : axes)	{
             append_option_line(optgroup, "machine_max_feedrate_" + axis);
         }
 
-    optgroup = page->new_optgroup(L("Maximum accelerations"));
+    optgroup = page->new_optgroup(_L("Maximum accelerations"));
         for (const std::string &axis : axes)	{
             append_option_line(optgroup, "machine_max_acceleration_" + axis);
         }
@@ -609,13 +609,13 @@ PageShp EditorPrinter::build_kinematics_page()
         if (m_supports_travel_acceleration)
             append_option_line(optgroup, "machine_max_acceleration_travel");
 
-    optgroup = page->new_optgroup(L("Jerk limits"));
+    optgroup = page->new_optgroup(_L("Jerk limits"));
         for (const std::string &axis : axes)	{
             append_option_line(optgroup, "machine_max_jerk_" + axis);
         }
 
         if (m_supports_min_feedrates) {
-            optgroup = page->new_optgroup(L("Minimum feedrates"));
+            optgroup = page->new_optgroup(_L("Minimum feedrates"));
             append_option_line(optgroup, "machine_min_extruding_rate");
             append_option_line(optgroup, "machine_min_travel_rate");
         }
@@ -636,11 +636,11 @@ void EditorPrinter::build_extruder_pages(size_t n_before_extruders)
 {
     for (auto extruder_idx = m_extruders_count_old; extruder_idx < m_extruders_count; ++extruder_idx) {
         //# build page
-        const wxString&page_name = wxString::Format("Extruder %d", int(extruder_idx + 1));
+        const wxString&page_name = wxString::Format(WX::from_u8("Extruder %d"), int(extruder_idx + 1));
         auto           page      = add_options_page(page_name, "funnel", true);
         m_pages.insert(m_pages.begin() + n_before_extruders + extruder_idx, page);
 
-        auto optgroup = page->new_optgroup(L("Size"));
+        auto optgroup = page->new_optgroup(_L("Size"));
         optgroup->append_single_option_line("nozzle_diameter", "", extruder_idx);
 
         optgroup->on_change = [this, extruder_idx](const t_config_option_key&opt_key, boost::any value)
@@ -722,7 +722,7 @@ void EditorPrinter::build_extruder_pages(size_t n_before_extruders)
 
         optgroup->append_single_option_line("nozzle_high_flow", "", extruder_idx);
 
-        optgroup = page->new_optgroup(L("Preview"));
+        optgroup = page->new_optgroup(_L("Preview"));
 
         auto reset_to_filament_color = [this, extruder_idx](wxWindow*parent) {
             WX::ScalableButton* btn = new WX::ScalableButton(parent, wxID_ANY, "undo", _L("Reset to Filament Color"),
@@ -755,10 +755,10 @@ void EditorPrinter::build_extruder_pages(size_t n_before_extruders)
         line.append_widget(reset_to_filament_color);
         optgroup->append_line(line);
 
-        optgroup = page->new_optgroup("");
+        optgroup = page->new_optgroup({});
 
         auto copy_settings_btn = 
-        line            = { "", ""};
+        line            = { {}, {}};
         line.full_width = 1;
         line.widget = [this, extruder_idx](wxWindow* parent) {
             WX::ScalableButton* btn = new WX::ScalableButton(parent, wxID_ANY, "copy", _L("Apply below setting to other extruders"),
@@ -806,26 +806,26 @@ void EditorPrinter::build_extruder_pages(size_t n_before_extruders)
         };
         optgroup->append_line(line);
 
-        optgroup = page->new_optgroup(L("Layer height limits"));
+        optgroup = page->new_optgroup(_L("Layer height limits"));
         optgroup->append_single_option_line("min_layer_height", "", extruder_idx);
         optgroup->append_single_option_line("max_layer_height", "", extruder_idx);
 
-        optgroup = page->new_optgroup(L("Position (for multi-extruder printers)"));
+        optgroup = page->new_optgroup(_L("Position (for multi-extruder printers)"));
         optgroup->append_single_option_line("extruder_offset", "", extruder_idx);
 
-        optgroup = page->new_optgroup(L("Travel lift"));
+        optgroup = page->new_optgroup(_L("Travel lift"));
         optgroup->append_single_option_line("retract_lift", "", extruder_idx);
         optgroup->append_single_option_line("travel_ramping_lift", "", extruder_idx);
         optgroup->append_single_option_line("travel_max_lift", "", extruder_idx);
         optgroup->append_single_option_line("travel_slope", "", extruder_idx);
         optgroup->append_single_option_line("travel_lift_before_obstacle", "", extruder_idx);
 
-        line = { L("Only lift"), "" };
+        line = { _L("Only lift"), {} };
         line.append_option(optgroup->get_option("retract_lift_above", extruder_idx));
         line.append_option(optgroup->get_option("retract_lift_below", extruder_idx));
         optgroup->append_line(line);
 
-        optgroup = page->new_optgroup(L("Retraction"));
+        optgroup = page->new_optgroup(_L("Retraction"));
         optgroup->append_single_option_line("retract_length", "", extruder_idx);
         optgroup->append_single_option_line("retract_speed", "", extruder_idx);
         optgroup->append_single_option_line("deretract_speed", "", extruder_idx);
@@ -835,7 +835,7 @@ void EditorPrinter::build_extruder_pages(size_t n_before_extruders)
         optgroup->append_single_option_line("wipe", "", extruder_idx);
         optgroup->append_single_option_line("retract_before_wipe", "", extruder_idx);
 
-        optgroup = page->new_optgroup(L("Retraction when tool is disabled (advanced settings for multi-extruder setups)"));
+        optgroup = page->new_optgroup(_L("Retraction when tool is disabled (advanced settings for multi-extruder setups)"));
         optgroup->append_single_option_line("retract_length_toolchange", "", extruder_idx);
         optgroup->append_single_option_line("retract_restart_extra_toolchange", "", extruder_idx);
     }
@@ -867,7 +867,7 @@ void EditorPrinter::build_unregular_pages(bool from_initial_build/* = false*/)
     // Add/delete Kinematics page according to show_mach_limits
     size_t existed_page = 0;
     for (size_t i = n_before_extruders; i < m_pages.size(); ++i) // first make sure it's not there already
-        if (m_pages[i]->title().find(L("Machine limits")) != std::string::npos) {
+        if (m_pages[i]->title().find(_L("Machine limits")) != std::string::npos) {
             if (!show_mach_limits || m_rebuild_kinematics_page)
                 m_pages.erase(m_pages.begin() + i);
             else
@@ -892,7 +892,7 @@ void EditorPrinter::build_unregular_pages(bool from_initial_build/* = false*/)
     {
         // if we have a single extruder MM setup, add a page with configuration options:
         for (size_t i = 0; i < m_pages.size(); ++i) // first make sure it's not there already
-            if (m_pages[i]->title().find(L("Single extruder MM setup")) != std::string::npos) {
+            if (m_pages[i]->title().find(_L("Single extruder MM setup")) != std::string::npos) {
                 m_pages.erase(m_pages.begin() + i);
                 break;
             }
@@ -901,8 +901,8 @@ void EditorPrinter::build_unregular_pages(bool from_initial_build/* = false*/)
     if (from_initial_build ||
         (m_extruders_count > 1 && config().opt_bool("single_extruder_multi_material") && !m_has_single_extruder_MM_page)) {
         // create a page, but pretend it's an extruder page, so we can add it to m_pages ourselves
-        auto page = add_options_page(L("Single extruder MM setup"), "printer", true);
-        auto optgroup = page->new_optgroup(L("Single extruder multimaterial parameters"));
+        auto page = add_options_page(_L("Single extruder MM setup"), "printer", true);
+        auto optgroup = page->new_optgroup(_L("Single extruder multimaterial parameters"));
         optgroup->append_single_option_line("cooling_tube_retraction");
         optgroup->append_single_option_line("cooling_tube_length");
         optgroup->append_single_option_line("parking_pos_retraction");
@@ -988,7 +988,7 @@ void EditorPrinter::reload_config()
 
     // "extruders_count" doesn't update from the update_config(),
     // so update it implicitly
-    if (m_active_page && m_active_page->title() == "General")
+    if (m_active_page && m_active_page->title() == WX::from_u8("General"))
         m_active_page->set_value("extruders_count", int(m_extruders_count));
 }
 
@@ -998,7 +998,7 @@ void EditorPrinter::activate_selected_page(std::function<void()> throw_if_cancel
 
     // "extruders_count" doesn't update from the update_config(),
     // so update it implicitly
-    if (m_active_page && m_active_page->title() == "General")
+    if (m_active_page && m_active_page->title() == WX::from_u8("General"))
         m_active_page->set_value("extruders_count", int(m_extruders_count));
 }
 
@@ -1018,9 +1018,9 @@ void EditorPrinter::toggle_options()
 
     const GCodeFlavor flavor = config().option<ConfigOptionEnum<GCodeFlavor>>("gcode_flavor")->value;
     bool have_multiple_extruders = m_extruders_count > 1;
-    if (m_active_page->title() == "Custom G-code")
+    if (m_active_page->title() == WX::from_u8("Custom G-code"))
         toggle_option("toolchange_gcode", have_multiple_extruders);
-    if (m_active_page->title() == "General") {
+    if (m_active_page->title() == WX::from_u8("General")) {
         toggle_option("single_extruder_multi_material", have_multiple_extruders);
 
         bool is_marlin_flavor = flavor == gcfMarlinLegacy || flavor == gcfMarlinFirmware;
@@ -1030,7 +1030,7 @@ void EditorPrinter::toggle_options()
 
     wxString extruder_number;
     long val;
-    if (m_active_page->title().StartsWith("Extruder ", &extruder_number) && extruder_number.ToLong(&val) &&
+    if (m_active_page->title().StartsWith(WX::from_u8("Extruder "), &extruder_number) && extruder_number.ToLong(&val) &&
         val > 0 && (size_t)val <= m_extruders_count)
     {
         size_t i = size_t(val - 1);
@@ -1100,7 +1100,7 @@ void EditorPrinter::toggle_options()
         toggle_option("retract_restart_extra_toolchange", have_multiple_extruders && toolchange_retraction, i);
     }
 
-    if (m_active_page->title() == "Machine limits" && m_machine_limits_description_line) {
+    if (m_active_page->title() == WX::from_u8("Machine limits") && m_machine_limits_description_line) {
         assert(flavor == gcfMarlinLegacy
             || flavor == gcfMarlinFirmware
             || flavor == gcfRepRapFirmware
@@ -1156,7 +1156,7 @@ void EditorPrinter::update_sla()
 // Return a callback to create a EditorPrinter widget to edit bed shape
 wxSizer* EditorPrinter::create_bed_shape_widget(wxWindow* parent)
 {
-    WX::ScalableButton* btn = new WX::ScalableButton(parent, wxID_ANY, "printer", " " + _L("Set") + " " + WX::dots,
+    WX::ScalableButton* btn = new WX::ScalableButton(parent, wxID_ANY, "printer", WX::from_u8(" ") + _L("Set") + WX::from_u8(" ") + WX::dots,
         wxDefaultSize, wxDefaultPosition, wxBU_LEFT | wxBU_EXACTFIT);
     btn->SetFont(WX::w_config()->normal_font());
     btn->SetSize(btn->GetBestSize());
@@ -1222,8 +1222,8 @@ bool EditorPrinter::apply_extruder_cnt_from_cache()
 
 void EditorPrinter::update_sla_prusa_specific_visibility()
 {
-    if (m_active_page && m_active_page->title() == "General") {
-        auto og_it = std::find_if(m_active_page->optgroups.begin(), m_active_page->optgroups.end(), [](const ConfigOptionsGroupShp og) { return og->title == "Tilt"; });
+    if (m_active_page && m_active_page->title() == WX::from_u8("General")) {
+        auto og_it = std::find_if(m_active_page->optgroups.begin(), m_active_page->optgroups.end(), [](const ConfigOptionsGroupShp og) { return og->title == WX::from_u8("Tilt"); });
         if (og_it != m_active_page->optgroups.end()) {            
             og_it->get()->Show(m_mode == comExpert && !is_prusa_printer());
             Layout();

@@ -323,7 +323,7 @@ public:
 
     void	set_value(const std::string& value, bool change_event = false) {
 		m_disable_change_event = !change_event;
-        dynamic_cast<text_ctrl*>(window)->SetValue(wxString(value));
+        dynamic_cast<text_ctrl*>(window)->SetValue(WX::from_u8(value));
 		m_disable_change_event = false;
     }
 	void	set_value(const boost::any& value, bool change_event = false) override;
@@ -473,7 +473,7 @@ public:
 
 	void			set_value(const std::string& value, bool change_event = false) {
 		m_disable_change_event = !change_event;
-		dynamic_cast<wxColourPickerCtrl*>(window)->SetColour(value);
+		dynamic_cast<wxColourPickerCtrl*>(window)->SetColour(WX::from_u8(value));
 		m_disable_change_event = false;
 	 	}
 	void			set_value(const boost::any& value, bool change_event = false) override;

@@ -13,7 +13,9 @@ void MinimalSceneRenderCustomizer::on_render_begin(Render::CommandBuffer& cmd_bu
     //cmd_buf.clear_buffers(true, true);
 }
 
-void MinimalSceneRenderCustomizer::on_opaque_pass_begin(Render::CommandBuffer& cmd_buf)
+void MinimalSceneRenderCustomizer::on_opaque_pass_begin(
+    Render::CommandBuffer& cmd_buf, size_t layer_index
+)
 {
     cmd_buf.set_blending_enabled(false);
     cmd_buf.set_depth_write_enabled(true);
@@ -22,7 +24,9 @@ void MinimalSceneRenderCustomizer::on_opaque_pass_begin(Render::CommandBuffer& c
 }
 
 
-void MinimalSceneRenderCustomizer::on_transparent_pass_begin(Render::CommandBuffer& cmd_buf)
+void MinimalSceneRenderCustomizer::on_transparent_pass_begin(
+    Render::CommandBuffer& cmd_buf, size_t layer_index
+)
 {
     cmd_buf.set_depth_test_enabled(true);
     cmd_buf.set_blending_enabled(true);
@@ -32,7 +36,9 @@ void MinimalSceneRenderCustomizer::on_transparent_pass_begin(Render::CommandBuff
     cmd_buf.set_cull_face_enabled(true);
 }
 
-void MinimalSceneRenderCustomizer::on_transparent_pass_end(Render::CommandBuffer& cmd_buf)
+void MinimalSceneRenderCustomizer::on_transparent_pass_end(
+    Render::CommandBuffer& cmd_buf, size_t layer_index
+)
 {
     cmd_buf.set_blending_enabled(false);
     cmd_buf.set_depth_write_enabled(true);
@@ -162,20 +168,20 @@ void Scene::render(Render::CommandBuffer& cmd_buffer, ISceneRenderCustomizer* cu
         customizer->on_render_begin(cmd_buffer);
 
     constexpr int INITIAL_LAYER = std::numeric_limits<int>::min();
-    int last_layer = INITIAL_LAYER;
+    int current_layer = INITIAL_LAYER;
     bool was_opaque = false;
     for (const auto& [n, mat]  : nodes_with_materials) {
-        const bool first_iteration = last_layer == INITIAL_LAYER;
+        const bool first_iteration = current_layer == INITIAL_LAYER;
 
         // did we start next layer
-        if (auto layer = n->render_component()->layer_index(); layer != last_layer) {
+        if (auto layer = n->render_component()->layer_index(); layer != current_layer) {
             //cmd_buffer.clear_buffers(false, true);
             if (customizer) {
-                if (last_layer != INITIAL_LAYER)
-                    customizer->on_layer_end(cmd_buffer, last_layer);
+                if (current_layer != INITIAL_LAYER)
+                    customizer->on_layer_end(cmd_buffer, current_layer);
                 customizer->on_layer_begin(cmd_buffer, layer);
             }
-            last_layer = layer;
+            current_layer = layer;
         }
 
         // did we switch between opaque/transparent passes
@@ -186,17 +192,17 @@ void Scene::render(Render::CommandBuffer& cmd_buffer, ISceneRenderCustomizer* cu
             // end last pass
             if (!first_iteration && pass_switch) {
                 if (was_opaque)
-                    customizer->on_opaque_pass_end(cmd_buffer);
+                    customizer->on_opaque_pass_end(cmd_buffer, current_layer);
                 else
-                    customizer->on_transparent_pass_end(cmd_buffer);
+                    customizer->on_transparent_pass_end(cmd_buffer, current_layer);
             }
 
             // begin new pass
             if (pass_switch) {
                 if (is_opaque)
-                    customizer->on_opaque_pass_begin(cmd_buffer);
+                    customizer->on_opaque_pass_begin(cmd_buffer, current_layer);
                 else
-                    customizer->on_transparent_pass_begin(cmd_buffer);
+                    customizer->on_transparent_pass_begin(cmd_buffer, current_layer);
             }
         }
 
@@ -206,10 +212,10 @@ void Scene::render(Render::CommandBuffer& cmd_buffer, ISceneRenderCustomizer* cu
 
     if (customizer) {
         if (was_opaque)
-            customizer->on_opaque_pass_end(cmd_buffer);
+            customizer->on_opaque_pass_end(cmd_buffer, current_layer);
         else
-            customizer->on_transparent_pass_end(cmd_buffer);
-        customizer->on_layer_end(cmd_buffer, last_layer);
+            customizer->on_transparent_pass_end(cmd_buffer, current_layer);
+        customizer->on_layer_end(cmd_buffer, current_layer);
         customizer->on_render_end(cmd_buffer);
     }
 

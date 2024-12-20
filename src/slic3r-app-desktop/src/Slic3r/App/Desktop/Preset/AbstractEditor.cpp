@@ -219,7 +219,7 @@ void AbstractEditor::init(Biz::Preset::PresetInteractor* preset_interactor)
     m_left_sizer->Add(m_treectrl, 1, wxEXPAND);
     // Index of the last icon inserted into m_treectrl
     m_icon_count = -1;
-    m_treectrl->AddRoot("root");
+    m_treectrl->AddRoot(from_u8("root"));
     m_treectrl->SetIndent(0);
     WX::w_config()->UpdateDarkUI(m_treectrl);
 
@@ -372,8 +372,8 @@ PageShp AbstractEditor::add_options_page(const wxString& title, const std::strin
 // just for this category we should splite the title and translate "Extruder" word separately
 wxString AbstractEditor::translate_category(const wxString& title, Slic3r::Preset::Type preset_type)
 {
-    if (preset_type == Slic3r::Preset::TYPE_PRINTER && title.Contains("Extruder ")) {
-        return _(wxString("Extruder")) + title.SubString(8, title.Last());
+    if (preset_type == Slic3r::Preset::TYPE_PRINTER && title.Contains(from_u8("Extruder "))) {
+        return _(from_u8("Extruder")) + title.SubString(8, title.Last());
     }
     return _(title);
 }
@@ -670,7 +670,7 @@ void AbstractEditor::update_changed_tree_ui()
         return;
 
     auto selected_item = m_treectrl->GetSelection();
-    auto selection = selected_item ? m_treectrl->GetItemText(selected_item) : "";
+    auto selection = selected_item ? m_treectrl->GetItemText(selected_item) : wxString{};
 
     while (cur_item) {
         auto title = m_treectrl->GetItemText(cur_item);
@@ -680,16 +680,16 @@ void AbstractEditor::update_changed_tree_ui()
                 continue;
             bool sys_page = true;
             bool modified_page = false;
-            if (page->title() == "General") {
+            if (page->title() == from_u8("General")) {
                 std::initializer_list<const char*> optional_keys{ "extruders_count", "bed_shape" };
                 for (auto &opt_key : optional_keys) {
                     get_sys_and_mod_flags(opt_key, sys_page, modified_page);
                 }
             }
-            if (m_type == Slic3r::Preset::TYPE_FILAMENT && page->title() == "Advanced") {
+            if (m_type == Slic3r::Preset::TYPE_FILAMENT && page->title() == from_u8("Advanced")) {
                 get_sys_and_mod_flags("filament_ramming_parameters", sys_page, modified_page);
             }
-            if (page->title() == "Dependencies") {
+            if (page->title() == from_u8("Dependencies")) {
                 if (m_type == Slic3r::Preset::TYPE_PRINTER) {
                     sys_page = m_config_interactor->preset_state().selected_preset_parent != nullptr;
                     modified_page = false;
@@ -757,27 +757,27 @@ void AbstractEditor::on_roll_back_value(const bool to_sys /*= true*/)
     m_postpone_update_ui = true;
 
     for (auto group : m_active_page->optgroups) {
-        if (group->title == "Capabilities") {
+        if (group->title == from_u8("Capabilities")) {
             if ((m_options_list["extruders_count"] & os) == 0)
                 to_sys ? group->back_to_sys_value("extruders_count") : group->back_to_initial_value("extruders_count");
         }
-        if (group->title == "Size and coordinates") {
+        if (group->title == from_u8("Size and coordinates")) {
             if ((m_options_list["bed_shape"] & os) == 0) {
                 to_sys ? group->back_to_sys_value("bed_shape") : group->back_to_initial_value("bed_shape");
                 load_key_value("bed_shape", true/*some value*/, true);
             }
         }
-        if (group->title == "Toolchange parameters with single extruder MM printers") {
+        if (group->title == from_u8("Toolchange parameters with single extruder MM printers")) {
             if ((m_options_list["filament_ramming_parameters"] & os) == 0)
                 to_sys ? group->back_to_sys_value("filament_ramming_parameters") : group->back_to_initial_value("filament_ramming_parameters");
         }
-        if (group->title == "G-code Substitutions") {
+        if (group->title == from_u8("G-code Substitutions")) {
             if ((m_options_list["gcode_substitutions"] & os) == 0) {
                 to_sys ? group->back_to_sys_value("gcode_substitutions") : group->back_to_initial_value("gcode_substitutions");
                 load_key_value("gcode_substitutions", true/*some value*/, true);
             }
         }
-        if (group->title == "Profile dependencies") {
+        if (group->title == from_u8("Profile dependencies")) {
             // "compatible_printers" option doesn't exists in Printer Settimgs Tab
             if (m_type != Slic3r::Preset::TYPE_PRINTER && (m_options_list["compatible_printers"] & os) == 0) {
                 to_sys ? group->back_to_sys_value("compatible_printers") : group->back_to_initial_value("compatible_printers");
@@ -1089,7 +1089,7 @@ void AbstractEditor::activate_option(const std::string& opt_key, const wxString&
     // focused selected field
     if (field)
         set_focus(field->getWindow());
-    else if (category == "Single extruder MM setup") {
+    else if (category == from_u8("Single extruder MM setup")) {
         // When we show and hide "Single extruder MM setup" page, 
         // related options are still in the search list
         // So, let's hightlighte a "single_extruder_multi_material" option, 
@@ -1134,7 +1134,7 @@ void AbstractEditor::build_preset_description_line(ConfigOptionsGroup* optgroup)
         return description_line_widget(parent, &m_parent_preset_description_line);
     };
 
-    Line line = Line{ "", "" };
+    Line line = Line{ {}, {} };
     line.full_width = 1;
 
     line.append_widget(description_line);
@@ -1159,23 +1159,24 @@ void AbstractEditor::update_preset_description_line()
     } else {
         std::string name = parent->name;
         boost::replace_all(name, "&", "&&");
-        description_line = _L("Current preset is inherited from") + ":\n\t" + from_u8(name);
+        description_line = _L("Current preset is inherited from") + from_u8(":\n\t") + from_u8(name);
     }
 
     if (preset.is_default || preset.is_system)
-        description_line += "\n\t" + _L("It can't be deleted or modified.") +
-                            "\n\t" + _L("Any modifications should be saved as a new preset inherited from this one.") +
-                            "\n\t" + _L("To do that please specify a new name for the preset.");
+        description_line += from_u8("\n\t") + _L("It can't be deleted or modified.") +
+                            from_u8("\n\t") + _L("Any modifications should be saved as a new preset inherited from this one.") +
+                            from_u8("\n\t") + _L("To do that please specify a new name for the preset.");
 
     if (parent && parent->vendor)
     {
-        description_line += "\n\n" + _L("Additional information:") + "\n";
-        description_line += "\t" + _L("vendor") + ": " + (m_type == Slic3r::Preset::TYPE_PRINTER ? "\n\t\t" : "") + parent->vendor->name +
-                            ", ver: " + parent->vendor->config_version.to_string();
+        description_line += from_u8("\n\n") + _L("Additional information:") + from_u8("\n");
+        description_line += from_u8("\t") + _L("vendor") +
+            from_u8(std::string(": ") + (m_type == Slic3r::Preset::TYPE_PRINTER ? "\n\t\t" : "") +
+                    parent->vendor->name + ", ver: " + parent->vendor->config_version.to_string());
         if (m_type == Slic3r::Preset::TYPE_PRINTER) {
             const std::string &printer_model = preset.config.opt_string("printer_model");
             if (! printer_model.empty())
-                description_line += "\n\n\t" + _L("printer model") + ": \n\t\t" + printer_model;
+                description_line += from_u8("\n\n\t") + _L("printer model") + from_u8(": \n\t\t" + printer_model);
             switch (preset.printer_technology()) {
             case ptFFF:
             {
@@ -1183,13 +1184,13 @@ void AbstractEditor::update_preset_description_line()
                 const std::string              &default_print_profile = preset.config.opt_string("default_print_profile");
                 const std::vector<std::string> &default_filament_profiles = preset.config.option<ConfigOptionStrings>("default_filament_profile")->values;
                 if (!default_print_profile.empty())
-                    description_line += "\n\n\t" + _L("default print profile") + ": \n\t\t" + default_print_profile;
+                    description_line += from_u8("\n\n\t") + _L("default print profile") + from_u8(": \n\t\t" + default_print_profile);
                 if (!default_filament_profiles.empty())
                 {
-                    description_line += "\n\n\t" + _L("default filament profile") + ": \n\t\t";
+                    description_line += from_u8("\n\n\t") + _L("default filament profile") + from_u8(": \n\t\t");
                     for (const std::string& profile : default_filament_profiles) {
                         if (&profile != &*default_filament_profiles.begin())
-                            description_line += ", ";
+                            description_line += from_u8(", ");
                         description_line += from_u8(profile);
                     }
                 }
@@ -1200,11 +1201,11 @@ void AbstractEditor::update_preset_description_line()
                 //FIXME add prefered_sla_material_profile for SLA
                 const std::string &default_sla_material_profile = preset.config.opt_string("default_sla_material_profile");
                 if (!default_sla_material_profile.empty())
-                    description_line += "\n\n\t" + _L("default SLA material profile") + ": \n\t\t" + default_sla_material_profile;
+                    description_line += from_u8("\n\n\t") + _L("default SLA material profile") + from_u8(": \n\t\t" + default_sla_material_profile);
 
                 const std::string &default_sla_print_profile = preset.config.opt_string("default_sla_print_profile");
                 if (!default_sla_print_profile.empty())
-                    description_line += "\n\n\t" + _L("default SLA print profile") + ": \n\t\t" + default_sla_print_profile;
+                    description_line += from_u8("\n\n\t") + _L("default SLA print profile") + from_u8(": \n\t\t" + default_sla_print_profile);
                 break;
             }
             default: break;
@@ -1212,8 +1213,8 @@ void AbstractEditor::update_preset_description_line()
         }
         else if (!preset.alias.empty())
         {
-            description_line += "\n\n\t" + _L("full profile name")     + ": \n\t\t" + preset.name;
-            description_line += "\n\t"   + _L("symbolic profile name") + ": \n\t\t" + preset.alias;
+            description_line += from_u8("\n\n\t") + _L("full profile name")     + from_u8(": \n\t\t" + preset.name);
+            description_line += from_u8("\n\t")   + _L("symbolic profile name") + from_u8(": \n\t\t" + preset.alias);
         }
     }
 
@@ -1237,7 +1238,7 @@ bool AbstractEditor::validate_custom_gcode(const wxString& title, const std::str
                       "The following lines %s contain reserved keywords.\nPlease remove them, as they may cause problems in G-code visualization and printing time estimation.", 
                       tags.size()),
             lines);
-        WX::MessageDialog dialog(/*wxGetApp().mainframe*/nullptr, reports, _L("Found reserved keywords in") + " " + _(title), wxICON_WARNING | wxOK); //!
+        WX::MessageDialog dialog(/*wxGetApp().mainframe*/nullptr, reports, _L("Found reserved keywords in") + from_u8(" ") + _(title), wxICON_WARNING | wxOK); //!
         dialog.ShowModal();
 
     }
@@ -1279,8 +1280,8 @@ wxSizer* AbstractEditor::description_line_widget(wxWindow* parent, ogStaticText*
 // Legend for OptionsGroups                                     column's   name         tooltip
 void AbstractEditor::create_legend(PageShp page, const std::vector<std::pair<std::string, std::string>>& columns, ConfigOptionMode mode, bool is_wider /*= false*/)
 {
-    auto optgroup = page->new_optgroup("");
-    auto line = Line{ "", "" };
+    auto optgroup = page->new_optgroup({});
+    auto line = Line{ {}, {} };
 
     ConfigOptionDef def;
     def.type = coString;
@@ -1304,7 +1305,7 @@ std::optional<ConfigOptionsGroupShp> AbstractEditor::get_option_group(const Page
     auto og_it = std::find_if(
         page->optgroups.begin(), page->optgroups.end(),
         [&](const ConfigOptionsGroupShp& og) {
-            return og->title == title;
+            return og->title == from_u8(title);
         }
     );
     if (og_it == page->optgroups.end())
@@ -1318,7 +1319,7 @@ void AbstractEditor::add_options_into_line(ConfigOptionsGroupShp &optgroup,
                                   const std::string &preprefix/* = std::string()*/)
 {
     auto opt = optgroup->get_option(preprefix + prefixes.front().first + optkey);
-    Line line{ opt.opt.label, "" };
+    Line line{ from_u8(opt.opt.label), {} };
     line.full_width = 1;
     for (auto &prefix : prefixes) {
         opt = optgroup->get_option(preprefix + prefix.first + optkey);
@@ -1404,7 +1405,7 @@ void AbstractEditor::rebuild_page_tree()
 {
     // get label of the currently selected item
     const auto sel_item = m_treectrl->GetSelection();
-    const auto selected = sel_item ? m_treectrl->GetItemText(sel_item) : "";
+    const auto selected = sel_item ? m_treectrl->GetItemText(sel_item) : wxString{};
     const auto rootItem = m_treectrl->GetRootItem();
 
     wxTreeItemId item;
@@ -1462,7 +1463,7 @@ void AbstractEditor::clear_pages()
 
 void AbstractEditor::update_description_lines()
 {
-    if (m_active_page && m_active_page->title() == "Dependencies" && m_parent_preset_description_line)
+    if (m_active_page && m_active_page->title() == from_u8("Dependencies") && m_parent_preset_description_line)
         update_preset_description_line();
 }
 
@@ -1473,7 +1474,7 @@ void AbstractEditor::activate_selected_page(std::function<void()> throw_if_cance
 
     m_active_page->activate(m_mode, throw_if_canceled);
 
-    if (m_active_page->title() == "Dependencies") {
+    if (m_active_page->title() == from_u8("Dependencies")) {
         if (m_compatible_printers.checkbox)
             this->compatible_widget_reload(m_compatible_printers);
         if (m_compatible_prints.checkbox)
@@ -1527,7 +1528,7 @@ bool AbstractEditor::tree_sel_change_delayed()
 
     Page* page = nullptr;
     const auto sel_item = m_treectrl->GetSelection();
-    const auto selection = sel_item ? m_treectrl->GetItemText(sel_item) : "";
+    const auto selection = sel_item ? m_treectrl->GetItemText(sel_item) : wxString{};
     for (auto p : m_pages)
         if (translate_category(p->title(), m_type) == selection)
         {
@@ -1684,7 +1685,7 @@ bool AbstractEditor::validate_custom_gcodes()
     if (m_type != Slic3r::Preset::TYPE_FILAMENT &&
         (m_type != Slic3r::Preset::TYPE_PRINTER || static_cast<EditorPrinter*>(this)->printer_technology != ptFFF))
         return true;
-    if (m_active_page->title() != L("Custom G-code"))
+    if (m_active_page->title() != _L("Custom G-code"))
         return true;
 
     // When we switch Settings tab after editing of the custom g-code, then warning message could ba already shown after KillFocus event

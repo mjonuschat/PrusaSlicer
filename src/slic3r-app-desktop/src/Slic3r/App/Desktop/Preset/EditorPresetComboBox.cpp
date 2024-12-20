@@ -121,7 +121,7 @@ void EditorPresetComboBox::update()
     std::vector<PresetData> nonsys_presets;
     std::vector<PresetData> template_presets;
 
-    wxString selected = "";
+    wxString selected = {};
     if (!presets.front().is_visible)
         set_label_marker(Append(separator(L("System presets")), NullBitmapBndl()));
     size_t idx_selected = m_type == Slic3r::Preset::TYPE_FILAMENT ? extruder_filaments.get_selected_idx() : m_collection->get_selected_idx();

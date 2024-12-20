@@ -193,13 +193,13 @@ void SavePresetDialog::add_info_for_edit_ph_printer(wxBoxSizer* sizer)
     m_action = ChangePreset;
     m_radio_sizer = new wxBoxSizer(wxHORIZONTAL);
 
-    wxStaticBox* action_stb = new wxStaticBox(this, wxID_ANY, "");
+    wxStaticBox* action_stb = new wxStaticBox(this, wxID_ANY, {});
     if (!wxOSX) action_stb->SetBackgroundStyle(wxBG_STYLE_PAINT);
     action_stb->SetFont(WX::w_config()->bold_font());
 
     wxStaticBoxSizer* stb_sizer = new wxStaticBoxSizer(action_stb, wxVERTICAL);
     for (int id = 0; id < 3; id++) {
-        wxRadioButton* btn = new wxRadioButton(this, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, id == 0 ? wxRB_GROUP : 0);
+        wxRadioButton* btn = new wxRadioButton(this, wxID_ANY, {}, wxDefaultPosition, wxDefaultSize, id == 0 ? wxRB_GROUP : 0);
         btn->SetValue(id == int(ChangePreset));
         btn->Bind(wxEVT_RADIOBUTTON, [this, id](wxCommandEvent&) { m_action = (ActionType)id; });
         stb_sizer->Add(btn, 0, wxEXPAND | wxTOP, 5);

@@ -83,7 +83,7 @@ Manipulators::Manipulators(wxWindow* parent, Biz::Preset::PresetInteractor* pres
         );
     }
     else
-        m_btn_hide_incompatible_presets = add_button("flag_green", "", [this]() { toggle_show_hide_incompatible(); }, [this]() { return m_show_btn_incompatible_presets; });
+        m_btn_hide_incompatible_presets = add_button("flag_green", {}, [this]() { toggle_show_hide_incompatible(); }, [this]() { return m_show_btn_incompatible_presets; });
 
     //TRN Settings Tab: tooltip for toolbar button
     m_btn_compare_preset = add_button("compare", _L("Compare preset with another"), [this]() { compare_preset(); }, nullptr, 50);
@@ -352,10 +352,10 @@ void Manipulators::rename_preset()
                 wxString msg = _L_PLURAL("The physical printer below is based on the preset, you are going to rename.",
                                          "The physical printers below are based on the preset, you are going to rename.", ph_printers.size());
                 for (const std::string& printer : ph_printers)
-                    msg += "\n    \"" + WX::from_u8(printer) + "\",";
+                    msg += from_u8("\n    \"") + from_u8(printer) + WX::from_u8("\",");
                 msg.RemoveLast();
-                msg += "\n" + _L_PLURAL("Note, that the selected preset will be renamed in this printer too.",
-                    "Note, that the selected preset will be renamed in these printers too.", ph_printers.size()) + "\n\n";
+                msg += from_u8("\n") + _L_PLURAL("Note, that the selected preset will be renamed in this printer too.",
+                    "Note, that the selected preset will be renamed in these printers too.", ph_printers.size()) + from_u8("\n\n");
 
                 dlg.set_info_line_extentions(msg);
                 is_selected_ph_priter = true;
@@ -438,8 +438,8 @@ void Manipulators::detach_preset()
         _L("The current custom preset will be detached from the parent system preset.");
 
     if (dirty)
-        msg_text += "\n\n" + _L("Modifications to the current profile will be saved.");
-    msg_text += "\n\n" + _L("This action is not revertible.\nDo you want to proceed?");
+        msg_text += WX::from_u8("\n\n") + _L("Modifications to the current profile will be saved.");
+    msg_text += WX::from_u8("\n\n") + _L("This action is not revertible.\nDo you want to proceed?");
 
     WX::MessageDialog dialog(m_parent, msg_text, _L("Detach preset"), wxICON_WARNING | wxYES_NO | wxCANCEL);
     if (dialog.ShowModal() == wxID_YES)

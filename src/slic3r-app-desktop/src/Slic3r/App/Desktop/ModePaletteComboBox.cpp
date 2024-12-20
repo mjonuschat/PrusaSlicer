@@ -27,7 +27,7 @@ ModePaletteComboBox::ModePaletteComboBox(wxWindow* parent) :
 	BitmapComboBox(parent, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, nullptr, wxCB_READONLY)
 {
 	for (const auto& palette : MODE_PALETTES)
-		Append(_(palette.first), *get_bmp(palette.second));
+		Append(wxString::FromUTF8(_(palette.first)), *get_bmp(palette.second));
 }
 
 void ModePaletteComboBox::UpdateSelection(const std::vector<wxColour> &palette_in)
@@ -37,7 +37,7 @@ void ModePaletteComboBox::UpdateSelection(const std::vector<wxColour> &palette_i
 
 		bool is_selected = true;
 		for (size_t mode = 0; mode < palette_in.size(); mode++)
-			if (wxColour(palette[mode]) != palette_in[mode]) {
+			if (wxColour(wxString::FromUTF8(palette[mode])) != palette_in[mode]) {
 				is_selected = false;
 				break;
 			}

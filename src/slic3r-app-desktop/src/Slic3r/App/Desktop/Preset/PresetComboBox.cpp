@@ -247,7 +247,7 @@ void PresetComboBox::update(std::string select_preset_name)
     std::vector<PresetData> incomp_presets;
     std::vector<PresetData> template_presets;
 
-    wxString selected = "";
+    wxString selected = {};
     if (!presets.front().is_visible)
         set_label_marker(Append(separator(L("System presets")), NullBitmapBndl()));
 
@@ -290,7 +290,7 @@ void PresetComboBox::update(std::string select_preset_name)
                 system_presets.push_back({ get_preset_name(preset), get_preset_name(preset).Lower(), bmp, is_enabled });
             }
             if (preset.name == select_preset_name)
-                selected = preset.name;
+                selected = WX::from_u8(preset.name);
 
             if (preset.is_dirty && m_show_modif_preset_separately) {
                 wxString preset_name = get_preset_name_with_suffix(preset);
@@ -312,7 +312,7 @@ void PresetComboBox::update(std::string select_preset_name)
             if (preset.is_dirty && m_show_modif_preset_separately) {
                 wxString preset_name = get_preset_name_with_suffix(preset);
                 nonsys_presets.push_back({preset_name, preset_name.Lower(), bmp, is_enabled});
-                if (preset_name == select_preset_name || (select_preset_name.empty() && is_enabled))
+                if (preset_name == WX::from_u8(select_preset_name) || (select_preset_name.empty() && is_enabled))
                     selected = preset_name;
             }
         }

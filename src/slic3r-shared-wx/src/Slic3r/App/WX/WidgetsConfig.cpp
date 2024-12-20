@@ -1,6 +1,7 @@
 
 #include "Slic3r/App/WX/WidgetsConfig.hpp"
 #include "Slic3r/App/Color.hpp"
+#include "Slic3r/App/WX/StringConversions.hpp"
 
 #include <wx/window.h>
 #include <wx/toplevel.h>
@@ -231,9 +232,11 @@ const std::string& WidgetsConfig::get_mode_btn_color(int mode_id)
 
 std::vector<wxColour> WidgetsConfig::get_mode_palette()
 {
-    return { wxColor(m_mode_palette[0]),
-             wxColor(m_mode_palette[1]),
-             wxColor(m_mode_palette[2]) };
+    return {
+        wxColor(from_u8(m_mode_palette[0])),
+        wxColor(from_u8(m_mode_palette[1])),
+        wxColor(from_u8(m_mode_palette[2]))
+    };
 }
 
 bool WidgetsConfig::set_mode_palette(const std::vector<wxColour>& palette)

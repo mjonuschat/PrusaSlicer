@@ -4,6 +4,7 @@
 #include <wx/textctrl.h>
 #include <wx/timer.h>
 #include "StaticBox.hpp"
+#include "Slic3r/App/WX/StringConversions.hpp"
 
 namespace Slic3r::App::WX::Widgets {
 
@@ -97,7 +98,7 @@ class SpinInput : public SpinInputBase
 public:
     SpinInput(wxWindow *     parent,
               wxString       text,
-              wxString       label = "",
+              wxString       label = {},
               const wxPoint &pos   = wxDefaultPosition,
               const wxSize & size  = wxDefaultSize,
               long           style = 0,
@@ -105,7 +106,7 @@ public:
 
     void Create(wxWindow *     parent,
               wxString       text,
-              wxString       label   = "",
+              wxString       label   = {},
               const wxPoint &pos     = wxDefaultPosition,
               const wxSize & size    = wxDefaultSize,
               long           style   = 0,
@@ -148,7 +149,7 @@ public:
 
     SpinInputDouble(wxWindow* parent,
         wxString        text,
-        wxString        label = "",
+        wxString        label = {},
         const wxPoint&  pos = wxDefaultPosition,
         const wxSize&   size = wxDefaultSize,
         long            style = 0,
@@ -159,7 +160,7 @@ public:
 
     void Create(wxWindow* parent,
         wxString        text,
-        wxString        label = "",
+        wxString        label = {},
         const wxPoint&  pos = wxDefaultPosition,
         const wxSize&   size = wxDefaultSize,
         long            style = 0,

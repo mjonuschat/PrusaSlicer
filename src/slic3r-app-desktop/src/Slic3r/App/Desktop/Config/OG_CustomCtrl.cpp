@@ -181,7 +181,7 @@ wxPoint OG_CustomCtrl::get_pos(const Line& line, Field* field_in/* = nullptr*/)
                     // those two parameter names require localization with context
                     label = (option.label == "Top" || option.label == "Bottom") ?
                         _CTX(option.label, "Layers") : _(option.label);
-                    label += ":";
+                    label += WX::from_u8(":");
 
                     wxCoord label_w, label_h;
 #ifdef __WXMSW__
@@ -249,7 +249,7 @@ void OG_CustomCtrl::OnMotion(wxMouseEvent& event)
     const wxPoint pos = event.GetLogicalPosition(wxClientDC(this));
     wxString tooltip;
 
-    wxString language = "en";//! wxGetApp().app_config->get("translation_language");
+    wxString language = WX::from_u8("en");//! wxGetApp().app_config->get("translation_language");
 
     const bool suppress_hyperlinks = true;//! get_app_config()->get_bool("suppress_hyperlinks");
 
@@ -257,7 +257,7 @@ void OG_CustomCtrl::OnMotion(wxMouseEvent& event)
         line.is_focused = is_point_in_rect(pos, line.rect_label);
         if (line.is_focused) {
             if (!suppress_hyperlinks && !line.og_line.label_path.empty())
-                tooltip = OptionsGroup::get_url(line.og_line.label_path) +"\n\n";
+                tooltip = OptionsGroup::get_url(line.og_line.label_path) +WX::from_u8("\n\n");
             tooltip += line.og_line.label_tooltip;
             break;
         }
@@ -626,7 +626,7 @@ void OG_CustomCtrl::CtrlLine::render(wxDC& dc, wxCoord v_pos)
     if (ctrl->opt_group->label_width != 0 && !label.IsEmpty()) {
         const wxColour* text_clr = (option_set.size() == 1 && field ? field->label_color() : og_line.label_color());
         is_url_string = !suppress_hyperlinks && !og_line.label_path.empty();
-        h_pos = draw_text(dc, wxPoint(h_pos, v_pos), label + ":", text_clr, ctrl->opt_group->label_width * ctrl->m_em_unit, is_url_string);
+        h_pos = draw_text(dc, wxPoint(h_pos, v_pos), label + WX::from_u8(":"), text_clr, ctrl->opt_group->label_width * ctrl->m_em_unit, is_url_string);
     }
 
     // If there's a widget, build it and set result to the correct position.
@@ -665,7 +665,7 @@ void OG_CustomCtrl::CtrlLine::render(wxDC& dc, wxCoord v_pos)
             // those two parameter names require localization with context
             label = (option.label == "Top" || option.label == "Bottom") ?
                 _CTX(option.label, "Layers") : _(option.label);
-            label += ":";
+            label += WX::from_u8(":");
 
             if (is_url_string)
                 is_url_string = false;

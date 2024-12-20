@@ -38,7 +38,7 @@ namespace Slic3r::App::Desktop::Preset {
 using WX::_L;
 
 EditorSLAMaterial::EditorSLAMaterial(wxWindow* parent, Biz::Preset::PresetInteractor& preset_interactor) :
-    AbstractEditor(parent, L("Materials"), Slic3r::Preset::TYPE_SLA_MATERIAL, preset_interactor)
+    AbstractEditor(parent, _L("Materials"), Slic3r::Preset::TYPE_SLA_MATERIAL, preset_interactor)
 {
     m_config_interactor = std::make_unique<Biz::Preset::PresetConfigInteractor>(preset_interactor, Slic3r::Preset::TYPE_SLA_MATERIAL, 0);
 }
@@ -47,9 +47,9 @@ void EditorSLAMaterial::build()
 {
     load_initial_data();
 
-    auto page = add_options_page(L("Material"), "resin");
+    auto page = add_options_page(_L("Material"), "resin");
 
-    auto optgroup = page->new_optgroup(L("Material"));
+    auto optgroup = page->new_optgroup(_L("Material"));
     optgroup->append_single_option_line("material_colour");
     optgroup->append_single_option_line("bottle_cost");
     optgroup->append_single_option_line("bottle_volume");
@@ -89,15 +89,15 @@ void EditorSLAMaterial::build()
 */
     };
 
-    optgroup = page->new_optgroup(L("Layers"));
+    optgroup = page->new_optgroup(_L("Layers"));
     optgroup->append_single_option_line("initial_layer_height");
 
-    optgroup = page->new_optgroup(L("Exposure"));
+    optgroup = page->new_optgroup(_L("Exposure"));
     optgroup->append_single_option_line("exposure_time");
     optgroup->append_single_option_line("initial_exposure_time");
 
-    optgroup = page->new_optgroup(L("Corrections"));
-    auto line = Line{ config().def()->get("material_correction")->full_label, "" };
+    optgroup = page->new_optgroup(_L("Corrections"));
+    auto line = Line{ WX::from_u8(config().def()->get("material_correction")->full_label), {} };
     for (auto& axis : { "X", "Y", "Z" }) {
         auto opt = optgroup->get_option(std::string("material_correction_") + char(std::tolower(axis[0])));
         opt.opt.label = axis;
@@ -107,7 +107,7 @@ void EditorSLAMaterial::build()
 
     optgroup->append_single_option_line("zcorrection_layers");
 
-    line = Line{ "", "" };
+    line = Line{ {}, {} };
     line.full_width = 1;
     // line.label_path = category_path + "recommended-thin-wall-thickness";
     line.widget = [this](wxWindow* parent) {
@@ -117,16 +117,16 @@ void EditorSLAMaterial::build()
 
     add_material_overrides_page();
 
-    page = add_options_page(L("Notes"), "note");
-    optgroup = page->new_optgroup(L("Notes"), 0);
+    page = add_options_page(_L("Notes"), "note");
+    optgroup = page->new_optgroup(_L("Notes"), 0);
     optgroup->label_width = 0;
     Option option = optgroup->get_option("material_notes");
     option.opt.full_width = true;
     option.opt.height = 25;//250;
     optgroup->append_single_option_line(option);
 
-    page = add_options_page(L("Dependencies"), "wrench");
-    optgroup = page->new_optgroup(L("Profile dependencies"));
+    page = add_options_page(_L("Dependencies"), "wrench");
+    optgroup = page->new_optgroup(_L("Profile dependencies"));
 
     create_line_with_widget(optgroup.get(), "compatible_printers", "", [this](wxWindow* parent) {
         return compatible_widget_create(parent, m_compatible_printers);
@@ -146,13 +146,13 @@ void EditorSLAMaterial::build()
 
     build_preset_description_line(optgroup.get());
 
-    page = add_options_page(L("Material printing profile"), "note");
+    page = add_options_page(_L("Material printing profile"), "note");
 
 #if 1
-    optgroup = page->new_optgroup(L("Material printing profile"));
+    optgroup = page->new_optgroup(_L("Material printing profile"));
     optgroup->append_single_option_line("material_print_speed");
 
-    optgroup = page->new_optgroup(L("Tilt"));
+    optgroup = page->new_optgroup(_L("Tilt"));
     optgroup->append_single_option_line("area_fill");
 
 #else
@@ -169,7 +169,7 @@ void EditorSLAMaterial::build()
 static void append_tilt_options_line(ConfigOptionsGroupShp optgroup, const std::string opt_key)
 {
     auto option = optgroup->get_option(opt_key, 0);
-    auto line = Line{ option.opt.full_label, "" };
+    auto line = Line{ WX::from_u8(option.opt.full_label), {} };
     option.opt.width = Field::def_width/*_wider*/();
     line.append_option(option);
 
@@ -195,7 +195,7 @@ void EditorSLAMaterial::build_tilt_group(PageShp page)
 
     // TRN: 'Profile' in this context denotes a group of parameters used to configure
     //      layer separation procedure for SLA printers.
-    auto optgroup = page->new_optgroup(L("Profile settings"));
+    auto optgroup = page->new_optgroup(_L("Profile settings"));
     optgroup->on_change = [this, optgroup](const t_config_option_key& key, boost::any value)
     {
         if (key.find_first_of("use_tilt") == 0)
@@ -226,10 +226,10 @@ std::vector<std::string> disable_tilt_options = {
 
 void EditorSLAMaterial::toggle_tilt_options(bool is_above)
 {
-    if (m_active_page && m_active_page->title() == "Material printing profile")
+    if (m_active_page && m_active_page->title() == WX::from_u8("Material printing profile"))
     {
         int column_id = is_above ? 0 : 1;
-        auto optgroup = m_active_page->get_optgroup("Profile settings");
+        auto optgroup = m_active_page->get_optgroup(WX::from_u8("Profile settings"));
         bool use_tilt = boost::any_cast<bool>(optgroup->get_config_value(config(), "use_tilt", column_id));
 
         for (const std::string& opt_key : disable_tilt_options) {
@@ -242,7 +242,7 @@ void EditorSLAMaterial::toggle_tilt_options(bool is_above)
 
 void EditorSLAMaterial::toggle_options()
 {
-    if (m_active_page->title() == "Material Overrides")
+    if (m_active_page->title() == WX::from_u8("Material Overrides"))
         update_material_overrides_page();
 }
 
@@ -258,7 +258,7 @@ void EditorSLAMaterial::update()
 
 void EditorSLAMaterial::update_description_lines()
 {
-    if (m_active_page && m_active_page->title() == "Material" &&  m_z_correction_to_mm_description) {
+    if (m_active_page && m_active_page->title() == WX::from_u8("Material") &&  m_z_correction_to_mm_description) {
         double lh = m_preset_interactor.selected_config_container_context().print.edited_preset.config.opt_float("layer_height");
         int zlayers = config().opt_int("zcorrection_layers");
         m_z_correction_to_mm_description->SetText(WX::format_wxstr(_L("The current Z-axis height correction is: %1% mm"), zlayers * lh));
@@ -269,16 +269,16 @@ void EditorSLAMaterial::update_description_lines()
 
 void EditorSLAMaterial::update_sla_prusa_specific_visibility()
 {
-    if (m_active_page && m_active_page->title() == "Material printing profile") {
+    if (m_active_page && m_active_page->title() == WX::from_u8("Material printing profile")) {
         for (auto& title : { "", "Profile settings" }) {
             auto og_it = std::find_if(m_active_page->optgroups.begin(), m_active_page->optgroups.end(), 
-                         [title](const ConfigOptionsGroupShp og) { return og->title == title; });
+                         [title](const ConfigOptionsGroupShp og) { return og->title == WX::from_u8(title); });
             if (og_it != m_active_page->optgroups.end())
                 og_it->get()->Show(m_mode >= comAdvanced && is_prusa_printer());
         }
 
         auto og_it = std::find_if(m_active_page->optgroups.begin(), m_active_page->optgroups.end(), 
-                        [](const ConfigOptionsGroupShp og) { return og->title == "Material printing profile"; });
+                        [](const ConfigOptionsGroupShp og) { return og->title == WX::from_u8("Material printing profile"); });
         if (og_it != m_active_page->optgroups.end())
             og_it->get()->Show(m_mode >= comAdvanced && !is_prusa_printer());
 
@@ -334,7 +334,7 @@ static std::vector<std::string> get_override_opt_kyes_for_line(const std::string
 
 void EditorSLAMaterial::create_line_with_near_label_widget(ConfigOptionsGroupShp optgroup, const std::string& key)
 {
-    if (optgroup->title == "Support head" || optgroup->title == "Support pillar")
+    if (optgroup->title == WX::from_u8("Support head") || optgroup->title == WX::from_u8("Support pillar"))
         add_options_into_line(optgroup, { {"", L("Default")}, {"branching", L("Branching")} }, key, "material_ow_");
     else {
         const std::string opt_key = std::string("material_ow_") + key;
@@ -352,7 +352,7 @@ void EditorSLAMaterial::create_line_with_near_label_widget(ConfigOptionsGroupShp
         check_box->Bind(wxEVT_CHECKBOX, [this, optgroup_wk, key](wxCommandEvent& evt) {
             const bool is_checked = evt.IsChecked();
             if (auto optgroup_sh = optgroup_wk.lock(); optgroup_sh) {
-                auto opt_keys = get_override_opt_kyes_for_line(optgroup_sh->title.ToStdString(), key);
+                auto opt_keys = get_override_opt_kyes_for_line(WX::into_u8(optgroup_sh->title), key);
                 for (const std::string& opt_key : opt_keys)
                     if (Field* field = optgroup_sh->get_fieldc(opt_key, 0); field != nullptr) {
                         field->toggle(is_checked);
@@ -392,10 +392,10 @@ std::vector<std::pair<std::string, std::vector<std::string>>> material_overrides
 void EditorSLAMaterial::add_material_overrides_page()
 {
     // TRN: Page title in Material Settings in SLA mode.
-    PageShp page = add_options_page(L("Material Overrides"), "wrench");
+    PageShp page = add_options_page(_L("Material Overrides"), "wrench");
 
     for (const auto& [title, keys] : material_overrides_option_keys) {
-        ConfigOptionsGroupShp optgroup = page->new_optgroup(L(title));
+        ConfigOptionsGroupShp optgroup = page->new_optgroup(_L(title));
         for (const std::string& opt_key : keys) {
             create_line_with_near_label_widget(optgroup, opt_key);
         }
@@ -412,7 +412,7 @@ void EditorSLAMaterial::update_line_with_near_label_widget(ConfigOptionsGroupShp
     std::vector<std::string> opt_keys;
     opt_keys.reserve(3);
 
-    if (optgroup->title == "Support head" || optgroup->title == "Support pillar") {
+    if (optgroup->title == WX::from_u8("Support head") || optgroup->title == WX::from_u8("Support pillar")) {
         for (auto& prefix : { "", "branching" }) {
             std::string opt_key = preprefix + prefix + key;
             is_checked = !config().option(opt_key)->is_nil();
@@ -443,8 +443,8 @@ void EditorSLAMaterial::update_line_with_near_label_widget(ConfigOptionsGroupShp
 
 void EditorSLAMaterial::update_material_overrides_page()
 {
-    if (!m_active_page || m_active_page->title() != "Material Overrides")
-        return;
+    if (!m_active_page || m_active_page->title() != WX::from_u8("Material Overrides"))
+            return;
     Page* page = m_active_page;
 
     for (const auto& [title, keys] : material_overrides_option_keys) {

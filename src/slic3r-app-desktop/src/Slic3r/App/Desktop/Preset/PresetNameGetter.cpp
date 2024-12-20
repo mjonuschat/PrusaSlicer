@@ -25,9 +25,6 @@
 #include <wx/checkbox.h>
 #include <wx/radiobut.h>
 #include <wx/textctrl.h>
-#ifdef _WIN32
-#include <wx/msw/private.h>
-#endif
 
 #include "libslic3r/PresetBundle.hpp"
 
@@ -45,7 +42,7 @@ constexpr auto BORDER_W = 10;
 std::string PresetNameGetter::get_init_preset_name(const Slic3r::Preset* selected_preset, const std::string &suffix)
 {
     std::string preset_name = selected_preset->is_default ? "Untitled" :
-                              selected_preset->is_system ? WX::format("%1% - %2%", selected_preset->name, suffix) :
+                              selected_preset->is_system ? WX::format(WX::from_u8("%1% - %2%"), selected_preset->name, suffix) :
                               selected_preset->name;
 
     // if name contains extension
@@ -110,7 +107,7 @@ void PresetNameGetter::init_input_name_ctrl(wxBoxSizer *input_name_sizer, const 
             values.push_back(preset.name);
         }
 
-        m_combo = new WX::Widgets::ComboBox(m_parent, wxID_ANY, "", wxDefaultPosition, wxSize(35 * WX::w_config()->em_unit(), -1), 0, nullptr, wxTE_PROCESS_ENTER | DD_NO_CHECK_ICON);
+        m_combo = new WX::Widgets::ComboBox(m_parent, wxID_ANY, {}, wxDefaultPosition, wxSize(35 * WX::w_config()->em_unit(), -1), 0, nullptr, wxTE_PROCESS_ENTER | DD_NO_CHECK_ICON);
         for (const std::string&value : values)
             m_combo->Append(WX::from_u8(value));
         m_combo->SetValue(WX::from_u8(preset_name));
@@ -144,7 +141,7 @@ PresetNameGetter::PresetNameGetter(wxWindow* parent, wxBoxSizer* sizer, const Sl
     m_parent(parent),
     m_presets(presets),
     m_valid_bmp(new wxStaticBitmap(m_parent, wxID_ANY, *WX::get_bmp_bundle("tick_mark"))),
-    m_valid_label(new wxStaticText(m_parent, wxID_ANY, ""))
+    m_valid_label(new wxStaticText(m_parent, wxID_ANY, {}))
 {
     build(sizer, get_init_preset_name(selected_preset, suffix), show_label);
 }
@@ -155,7 +152,7 @@ PresetNameGetter::PresetNameGetter(wxWindow* parent, wxBoxSizer* sizer, const st
     m_printer_technology(pt),
     m_parent(parent),
     m_valid_bmp(new wxStaticBitmap(m_parent, wxID_ANY, *WX::get_bmp_bundle("tick_mark"))),
-    m_valid_label(new wxStaticText(m_parent, wxID_ANY, ""))
+    m_valid_label(new wxStaticText(m_parent, wxID_ANY, {}))
 {
     build(sizer, m_preset_name);
     update();
@@ -172,7 +169,7 @@ void PresetNameGetter::build(wxBoxSizer* sizer, std::string preset_name, bool sh
     init_casei_preset_names();
 
     if (show_label)
-        sizer->Add(new wxStaticText(m_parent, wxID_ANY, _(TOP_LABELS.at(m_type)) + ":"),   0, wxEXPAND | wxTOP| wxBOTTOM, BORDER_W);
+        sizer->Add(new wxStaticText(m_parent, wxID_ANY, _(TOP_LABELS.at(m_type)) + WX::from_u8(":")),   0, wxEXPAND | wxTOP| wxBOTTOM, BORDER_W);
 
     sizer->Add(input_name_sizer,0, wxEXPAND | (show_label ? 0 : wxTOP) | wxBOTTOM, BORDER_W);
     sizer->Add(m_valid_label,   0, wxEXPAND | wxLEFT,   3*BORDER_W);
@@ -236,14 +233,14 @@ void PresetNameGetter::update()
     const std::string unusable_suffix = PresetCollection::get_suffix_modified();//"(modified)";
     for (size_t i = 0; i < std::strlen(unusable_symbols); i++) {
         if (m_preset_name.find_first_of(unusable_symbols[i]) != std::string::npos) {
-            info_line = _L("The following characters are not allowed in the name") + ": " + unusable_symbols;
+            info_line = _L("The following characters are not allowed in the name") + WX::from_u8(std::string(": ") + unusable_symbols);
             m_valid_type = ValidationType::NoValid;
             break;
         }
     }
 
     if (m_valid_type == ValidationType::Valid && m_preset_name.find(unusable_suffix) != std::string::npos) {
-        info_line = _L("The following suffix is not allowed in the name") + ":\n\t" +
+        info_line = _L("The following suffix is not allowed in the name") + WX::from_u8(":\n\t") +
                     WX::from_u8(unusable_suffix);
         m_valid_type = ValidationType::NoValid;
     }
@@ -257,7 +254,7 @@ void PresetNameGetter::update()
     if (m_valid_type == ValidationType::Valid && existing && (existing->is_default || existing->is_system)) {
         info_line = m_use_text_ctrl ? _L("This name is used for a system profile name, use another.") :
                              _L("Cannot overwrite a system profile.");
-        info_line += "\n" + WX::format_wxstr("(%1%)", existing->name);
+        info_line += WX::from_u8("\n") + WX::format_wxstr("(%1%)", existing->name);
         m_valid_type = ValidationType::NoValid;
     }
 
@@ -280,7 +277,7 @@ void PresetNameGetter::update()
                 info_line = WX::format_wxstr(_u8L("Preset with name \"%1%\" already exists."), existing->name);
             else
                 info_line = WX::format_wxstr(_u8L("Preset with name \"%1%\" already exists and is incompatible with selected printer."), existing->name);
-            info_line += "\n" + (m_use_text_ctrl ? _L("Note: This preset will be replaced after renaming") :
+            info_line += WX::from_u8("\n") + (m_use_text_ctrl ? _L("Note: This preset will be replaced after renaming") :
                                                    _L("Note: Preset modifications will be saved exactly into this preset"));
             m_valid_type = ValidationType::Warning;
         }
@@ -291,11 +288,7 @@ void PresetNameGetter::update()
         m_valid_type = ValidationType::NoValid;
     }
 
-#ifdef __WXMSW__
-    const int max_path_length = MAX_PATH;
-#else
     const int max_path_length = 255;
-#endif
 
     if (m_valid_type == ValidationType::Valid && m_presets && m_presets->path_from_name(m_preset_name).length() >= max_path_length) {
         info_line = _L("The name is too long.");
@@ -319,7 +312,7 @@ void PresetNameGetter::update()
 
     if (m_valid_type != ValidationType::NoValid && m_cb_info_line_extention) {        
         if (wxString ext = m_cb_info_line_extention(); !ext.IsEmpty())
-            info_line += "\n\n" + ext;
+            info_line += WX::from_u8("\n\n") + ext;
     }
 
     m_valid_label->SetLabel(info_line);

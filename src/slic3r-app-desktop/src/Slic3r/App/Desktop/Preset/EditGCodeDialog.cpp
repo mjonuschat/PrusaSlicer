@@ -85,7 +85,7 @@ EditGCodeDialog::EditGCodeDialog(wxWindow* parent, const std::string& key, const
     ));
 
 
-    wxStaticText* label_top = new wxStaticText(this, wxID_ANY, _L("Built-in placeholders (Double click item to add to G-code)") + ":");
+    wxStaticText* label_top = new wxStaticText(this, wxID_ANY, _L("Built-in placeholders (Double click item to add to G-code)") +WX::from_u8( ":"));
 
     auto* grid_sizer = new wxFlexGridSizer(1, 3, 5, 15);
     grid_sizer->SetFlexibleDirection(wxBOTH);
@@ -97,7 +97,7 @@ EditGCodeDialog::EditGCodeDialog(wxWindow* parent, const std::string& key, const
     m_add_btn = new WX::ScalableButton(this, wxID_ANY, "add_copies");
     m_add_btn->SetToolTip(_L("Add selected placeholder to G-code"));
 
-    m_gcode_editor = new wxTextCtrl(this, wxID_ANY, value, wxDefaultPosition, wxSize(em * 75, em * 70), wxTE_MULTILINE
+    m_gcode_editor = new wxTextCtrl(this, wxID_ANY, WX::from_u8(value), wxDefaultPosition, wxSize(em * 75, em * 70), wxTE_MULTILINE
 #ifdef _WIN32
     | wxBORDER_SIMPLE
 #endif
@@ -296,7 +296,7 @@ void EditGCodeDialog::add_selected_value_to_gcode()
     if (val.IsEmpty())
         return;
 
-    m_gcode_editor->WriteText(m_gcode_editor->GetInsertionPoint() == m_gcode_editor->GetLastPosition() ? "\n" + val : val);
+    m_gcode_editor->WriteText(m_gcode_editor->GetInsertionPoint() == m_gcode_editor->GetLastPosition() ? WX::from_u8("\n") + val : val);
 
     if (val.Last() == ']') {
         const long new_pos = m_gcode_editor->GetInsertionPoint();
@@ -344,7 +344,8 @@ void EditGCodeDialog::selection_changed(wxDataViewEvent& evt)
 
         if (def) {
             const ConfigOptionType scalar_type = def->is_scalar() ? def->type : static_cast<ConfigOptionType>(def->type - coVectorType);
-            wxString type_str = scalar_type == coNone           ? "none" :
+            wxString type_str = WX::from_u8(
+                                scalar_type == coNone           ? "none" :
                                 scalar_type == coFloat          ? "float" : 
                                 scalar_type == coInt            ? "integer" :
                                 scalar_type == coString         ? "string" :
@@ -352,9 +353,10 @@ void EditGCodeDialog::selection_changed(wxDataViewEvent& evt)
                                 scalar_type == coFloatOrPercent ? "float or percent" :
                                 scalar_type == coPoint          ? "point" :
                                 scalar_type == coBool           ? "bool" :
-                                scalar_type == coEnum           ? "enum" : "undef";
+                                scalar_type == coEnum           ? "enum" : "undef"
+            );
             if (!def->is_scalar())
-                type_str += "[]";
+                type_str += WX::from_u8("[]");
 
             label = (!def || (def->full_label.empty() && def->label.empty()) ) ? WX::format_wxstr("%1%\n(%2%)", opt_key, type_str) :
                     (!def->full_label.empty() && !def->label.empty() ) ?
@@ -365,7 +367,7 @@ void EditGCodeDialog::selection_changed(wxDataViewEvent& evt)
                 description = WX::get_wraped_wxString(_(def->tooltip), 120);
         }
         else
-            label = "Undef optptr";
+            label = WX::from_u8("Undef optptr");
     }
 
     m_param_label->SetLabel(label);
@@ -446,9 +448,9 @@ ParamsNode::ParamsNode( ParamsNode*         parent,
 {
     text = WX::from_u8(param_key);
     if (param_type == ParamType::Vector)
-        text += "[]";
+        text += WX::from_u8("[]");
     else if (param_type == ParamType::FilamentVector)
-        text += "[current_extruder]";
+        text += WX::from_u8("[current_extruder]");
 
     icon_name = ParamsInfo.at(param_type);
 }
@@ -585,7 +587,7 @@ void ParamsModel::GetValue(wxVariant& variant, const wxDataViewItem& item, unsig
         variant << WX::DataViewBitmapText(node->text, WX::get_bmp_bundle(node->icon_name)->GetBitmapFor(m_ctrl->GetParent()));
 #endif //__linux__
     else
-        wxLogError("DiffModel::GetValue: wrong column %d", col);
+        wxLogError(WX::from_u8("DiffModel::GetValue: wrong column %d"), col);
 }
 
 bool ParamsModel::SetValue(const wxVariant& variant, const wxDataViewItem& item, unsigned int col)
@@ -607,7 +609,7 @@ bool ParamsModel::SetValue(const wxVariant& variant, const wxDataViewItem& item,
         return true;
     }
     
-    wxLogError("DiffModel::SetValue: wrong column");
+    wxLogError(WX::from_u8("DiffModel::SetValue: wrong column"));
     return false;
 }
 
@@ -676,9 +678,9 @@ ParamsViewCtrl::ParamsViewCtrl(wxWindow *parent, wxSize size)
 #ifdef SUPPORTS_MARKUP
     rd->EnableMarkup(true);
 #endif
-    wxDataViewColumn* column = new wxDataViewColumn("", rd, 0, 20 * m_em_unit, wxALIGN_TOP, wxDATAVIEW_COL_RESIZABLE | wxDATAVIEW_CELL_INERT);
+    wxDataViewColumn* column = new wxDataViewColumn(wxString{}, rd, 0, 20 * m_em_unit, wxALIGN_TOP, wxDATAVIEW_COL_RESIZABLE | wxDATAVIEW_CELL_INERT);
 #else
-    wxDataViewColumn* column = new wxDataViewColumn("", new WX::BitmapTextRenderer(true, wxDATAVIEW_CELL_INERT), 0, 20 * m_em_unit, wxALIGN_TOP, wxDATAVIEW_COL_RESIZABLE);
+    wxDataViewColumn* column = new wxDataViewColumn(wxString{}, new WX::BitmapTextRenderer(true, wxDATAVIEW_CELL_INERT), 0, 20 * m_em_unit, wxALIGN_TOP, wxDATAVIEW_COL_RESIZABLE);
 #endif //__linux__
     this->AppendColumn(column);
     this->SetExpanderColumn(column);

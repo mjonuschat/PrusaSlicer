@@ -1,7 +1,8 @@
 #pragma once
 
-#include "../Scalable.hpp"
+#include "Slic3r/App/WX/Scalable.hpp"
 #include "StaticBox.hpp"
+#include "Slic3r/App/WX/StringConversions.hpp"
 
 namespace Slic3r::App::WX::Widgets {
 
@@ -25,9 +26,9 @@ class Button : public StaticBox
 public:
     Button();
 
-    Button(wxWindow* parent, wxString text, wxString icon = "", long style = 0, wxSize iconSize = wxSize(16, 16));
+    Button(wxWindow* parent, wxString text, wxString icon = {}, long style = 0, wxSize iconSize = wxSize(16, 16));
 
-    bool Create(wxWindow* parent, wxString text, wxString icon = "", long style = 0, wxSize iconSize = wxSize(16, 16));
+    bool Create(wxWindow* parent, wxString text, wxString icon = {}, long style = 0, wxSize iconSize = wxSize(16, 16));
 
     void SetLabel(const wxString& label) override;
 

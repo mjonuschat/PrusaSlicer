@@ -53,7 +53,7 @@ bool Button::Create(wxWindow* parent, wxString text, wxString icon, long style, 
     state_handler.update_binds();
     wxWindow::SetLabel(text);
     if (!icon.IsEmpty()) {
-        this->active_icon = ScalableBitmap(this, icon.ToStdString(), iconSize);
+        this->active_icon = ScalableBitmap(this, icon.ToStdString(wxConvUTF8), iconSize);
     }
     messureSize();
     return true;
@@ -69,7 +69,7 @@ void Button::SetLabel(const wxString& label)
 void Button::SetIcon(const wxString& icon)
 {
     if (!icon.IsEmpty()) {
-        this->active_icon = ScalableBitmap(this, icon.ToStdString(), this->active_icon.px_size());
+        this->active_icon = ScalableBitmap(this, icon.ToStdString(wxConvUTF8), this->active_icon.px_size());
     }
     else
     {
@@ -81,7 +81,7 @@ void Button::SetIcon(const wxString& icon)
 void Button::SetInactiveIcon(const wxString &icon)
 {
     if (!icon.IsEmpty()) {
-        this->inactive_icon = ScalableBitmap(this, icon.ToStdString(), this->active_icon.px_size());
+        this->inactive_icon = ScalableBitmap(this, icon.ToStdString(wxConvUTF8), this->active_icon.px_size());
     } else {
         this->inactive_icon = ScalableBitmap();
     }

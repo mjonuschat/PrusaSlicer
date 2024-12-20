@@ -174,11 +174,11 @@ static void add_msg_content(MsgDialog* parent, wxBoxSizer* content_sizer, const 
     }
 
     // if message containes the table
-    if (content.msg.Contains("<tr>")) {
+    if (content.msg.Contains(from_u8("<tr>"))) {
         int lines = content.msg.Freq('\n') + 1;
         int pos = 0;
         while (pos < (int)content.msg.Len() && pos != wxNOT_FOUND) {
-            pos = content.msg.find("<tr>", pos + 1);
+            pos = content.msg.find(from_u8("<tr>"), pos + 1);
             lines += 2;
         }
         int page_height = std::min(int(font.GetPixelSize().y+2) * lines, 68 * em);
@@ -237,16 +237,16 @@ void ErrorDialog::create(const HtmlContent& content, int icon_width)
 }
 
 ErrorDialog::ErrorDialog(wxWindow *parent, const wxString &msg, bool monospaced_font)
-    : MsgDialog(parent, wxString::Format(_L("%s error"), SLIC3R_APP_NAME), 
-                        wxString::Format(_L("%s has encountered an error"), SLIC3R_APP_NAME), wxOK)
+    : MsgDialog(parent, wxString::Format(_L("%s error"), from_u8(SLIC3R_APP_NAME)),
+                        wxString::Format(_L("%s has encountered an error"), from_u8(SLIC3R_APP_NAME)), wxOK)
     , m_content(HtmlContent{ msg, monospaced_font, true })
 {
     create(m_content, monospaced_font ? 48 : 84);
 }
 
 ErrorDialog::ErrorDialog(wxWindow *parent, const wxString &msg, const t_link_clicked& on_link_clicked)
-    : MsgDialog(parent, wxString::Format(_L("%s error"), SLIC3R_APP_NAME), 
-                        wxString::Format(_L("%s has encountered an error"), SLIC3R_APP_NAME), wxOK)
+    : MsgDialog(parent, wxString::Format(_L("%s error"), from_u8(SLIC3R_APP_NAME)),
+                        wxString::Format(_L("%s has encountered an error"), from_u8(SLIC3R_APP_NAME)), wxOK)
     , m_content(HtmlContent{ msg, false, true, on_link_clicked })
 {
     create(m_content, 84);
@@ -268,8 +268,8 @@ WarningDialog::WarningDialog(wxWindow *parent,
                              const wxString& message,
                              const wxString& caption/* = wxEmptyString*/,
                              long style/* = wxOK*/)
-    : MsgDialog(parent, caption.IsEmpty() ? wxString::Format(_L("%s warning"), SLIC3R_APP_NAME) : caption, 
-                        wxString::Format(_L("%s has a warning")+":", SLIC3R_APP_NAME), style)
+    : MsgDialog(parent, caption.IsEmpty() ? wxString::Format(_L("%s warning"), from_u8(SLIC3R_APP_NAME)) : caption, 
+                        wxString::Format(_L("%s has a warning")+from_u8(":"), from_u8(SLIC3R_APP_NAME)), style)
 {
     add_msg_content(this, content_sizer, HtmlContent{ message });
     finalize();
@@ -282,7 +282,7 @@ MessageDialog::MessageDialog(wxWindow* parent,
     const wxString& message,
     const wxString& caption/* = wxEmptyString*/,
     long style/* = wxOK*/)
-    : MsgDialog(parent, caption.IsEmpty() ? wxString::Format(_L("%s info"), SLIC3R_APP_NAME) : caption, wxEmptyString, style)
+    : MsgDialog(parent, caption.IsEmpty() ? wxString::Format(_L("%s info"), from_u8(SLIC3R_APP_NAME)) : caption, wxEmptyString, style)
 {
     add_msg_content(this, content_sizer, HtmlContent{ get_wraped_wxString(message) });
     finalize();
@@ -300,7 +300,7 @@ RichMessageDialogBase::RichMessageDialogBase(wxWindow* parent,
 {}
 
 RichMessageDialogBase::RichMessageDialogBase(wxWindow* parent, const HtmlContent& content, const wxString& caption, long style)
-    : MsgDialog(parent, caption.IsEmpty() ? wxString::Format(_L("%s info"), SLIC3R_APP_NAME) : caption, wxEmptyString, style)
+    : MsgDialog(parent, caption.IsEmpty() ? wxString::Format(_L("%s info"), from_u8(SLIC3R_APP_NAME)) : caption, wxEmptyString, style)
 {
     m_content = content; // We need a copy for the on_link_clicked lambda.
     add_msg_content(this, content_sizer, m_content);
@@ -337,7 +337,7 @@ int RichMessageDialogBase::ShowModal()
 // InfoDialog
 
 InfoDialog::InfoDialog(wxWindow* parent, const wxString &title, const wxString& msg, bool is_marked_msg/* = false*/, long style/* = wxOK | wxICON_INFORMATION*/)
-	: MsgDialog(parent, wxString::Format(_L("%s information"), SLIC3R_APP_NAME), title, style)
+	: MsgDialog(parent, wxString::Format(_L("%s information"), from_u8(SLIC3R_APP_NAME)), title, style)
 	, msg(msg)
 {
     add_msg_content(this, content_sizer, HtmlContent{ msg, false, is_marked_msg });

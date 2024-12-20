@@ -90,7 +90,7 @@ void TextInput::Create(wxWindow *     parent,
     text_ctrl->Bind(wxEVT_RIGHT_DOWN, [](auto &e) {}); // disable context menu
 
     if (!icon.IsEmpty()) {
-        this->drop_down_icon = ScalableBitmap(this, icon.ToStdString(), 16);
+        this->drop_down_icon = ScalableBitmap(this, icon.ToStdString(wxConvUTF8), 16);
         this->Bind(wxEVT_LEFT_DOWN, [this](wxMouseEvent& event) {
             const wxPoint pos = event.GetLogicalPosition(wxClientDC(this));
             if (OnClickDropDownIcon && dd_icon_rect.Contains(pos))

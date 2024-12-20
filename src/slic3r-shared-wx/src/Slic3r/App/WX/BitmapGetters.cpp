@@ -121,7 +121,7 @@ void apply_extruder_selector(Widgets::BitmapComboBox**   ctrl,
 
         (*ctrl)->Append(use_full_item_name
                         ? from_u8((boost::format("%1% %2%") % str % i).str())
-                        : wxString::Format("%d", i), *bmp);
+                        : wxString::Format(from_u8("%d"), i), *bmp);
         ++i;
     }
     (*ctrl)->SetSelection(0);

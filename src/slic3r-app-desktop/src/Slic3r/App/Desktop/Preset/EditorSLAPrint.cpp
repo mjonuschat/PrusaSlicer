@@ -37,12 +37,12 @@ void EditorSLAPrint::build_sla_support_params(const std::vector<SamePair<std::st
                                            const PageShp &page)
 {
 
-    auto optgroup = page->new_optgroup(L("Support head"));
+    auto optgroup = page->new_optgroup(_L("Support head"));
     add_options_into_line(optgroup, prefixes, "support_head_front_diameter");
     add_options_into_line(optgroup, prefixes, "support_head_penetration");
     add_options_into_line(optgroup, prefixes, "support_head_width");
 
-    optgroup = page->new_optgroup(L("Support pillar"));
+    optgroup = page->new_optgroup(_L("Support pillar"));
     add_options_into_line(optgroup, prefixes, "support_pillar_diameter");
     add_options_into_line(optgroup, prefixes, "support_small_pillar_diameter_percent");
     add_options_into_line(optgroup, prefixes, "support_max_bridges_on_pillar");
@@ -58,21 +58,21 @@ void EditorSLAPrint::build_sla_support_params(const std::vector<SamePair<std::st
     // Mirrored parameter from Pad page for toggling elevation on the same page
     add_options_into_line(optgroup, prefixes, "support_object_elevation");
 
-    Line line{ "", "" };
+    Line line{ {}, {} };
     line.full_width = 1;
     line.widget = [this](wxWindow* parent) {
         return description_line_widget(parent, &m_support_object_elevation_description_line);
     };
     optgroup->append_line(line);
 
-    optgroup = page->new_optgroup(L("Connection of the support sticks and junctions"));
+    optgroup = page->new_optgroup(_L("Connection of the support sticks and junctions"));
     add_options_into_line(optgroup, prefixes, "support_critical_angle");
     add_options_into_line(optgroup, prefixes, "support_max_bridge_length");
     add_options_into_line(optgroup, prefixes, "support_max_pillar_link_distance");
 }
 
 EditorSLAPrint::EditorSLAPrint(wxWindow* parent, Biz::Preset::PresetInteractor& preset_interactor) :
-    AbstractEditor(parent, L("Print Settings"), Slic3r::Preset::TYPE_SLA_PRINT, preset_interactor)
+    AbstractEditor(parent, _L("Print Settings"), Slic3r::Preset::TYPE_SLA_PRINT, preset_interactor)
 {
     m_config_interactor = std::make_unique<Biz::Preset::PresetConfigInteractor>(preset_interactor, Slic3r::Preset::TYPE_SLA_PRINT, 0);
 }
@@ -81,27 +81,27 @@ void EditorSLAPrint::build()
 {
     load_initial_data();
 
-    auto page = add_options_page(L("Layers and perimeters"), "layers");
+    auto page = add_options_page(_L("Layers and perimeters"), "layers");
 
-    auto optgroup = page->new_optgroup(L("Layers"));
+    auto optgroup = page->new_optgroup(_L("Layers"));
     optgroup->append_single_option_line("layer_height");
     optgroup->append_single_option_line("faded_layers");
 
-    page = add_options_page(L("Supports"), "support"/*"sla_supports"*/);
+    page = add_options_page(_L("Supports"), "support"/*"sla_supports"*/);
 
-    optgroup = page->new_optgroup(L("Supports"));
+    optgroup = page->new_optgroup(_L("Supports"));
     optgroup->append_single_option_line("supports_enable");
     optgroup->append_single_option_line("support_tree_type");
     optgroup->append_single_option_line("support_enforcers_only");
     
     build_sla_support_params({{"", L("Default")}, {"branching", L("Branching")}}, page);
 
-    optgroup = page->new_optgroup(L("Automatic generation"));
+    optgroup = page->new_optgroup(_L("Automatic generation"));
     optgroup->append_single_option_line("support_points_density_relative");
     optgroup->append_single_option_line("support_points_minimal_distance");
 
-    page = add_options_page(L("Pad"), "pad");
-    optgroup = page->new_optgroup(L("Pad"));
+    page = add_options_page(_L("Pad"), "pad");
+    optgroup = page->new_optgroup(_L("Pad"));
     optgroup->append_single_option_line("pad_enable");
     optgroup->append_single_option_line("pad_wall_thickness");
     optgroup->append_single_option_line("pad_wall_height");
@@ -118,26 +118,26 @@ void EditorSLAPrint::build()
     optgroup->append_single_option_line("pad_object_connector_width");
     optgroup->append_single_option_line("pad_object_connector_penetration");
     
-    page = add_options_page(L("Hollowing"), "hollowing");
-    optgroup = page->new_optgroup(L("Hollowing"));
+    page = add_options_page(_L("Hollowing"), "hollowing");
+    optgroup = page->new_optgroup(_L("Hollowing"));
     optgroup->append_single_option_line("hollowing_enable");
     optgroup->append_single_option_line("hollowing_min_thickness");
     optgroup->append_single_option_line("hollowing_quality");
     optgroup->append_single_option_line("hollowing_closing_distance");
 
-    page = add_options_page(L("Advanced"), "wrench");
-    optgroup = page->new_optgroup(L("Slicing"));
+    page = add_options_page(_L("Advanced"), "wrench");
+    optgroup = page->new_optgroup(_L("Slicing"));
     optgroup->append_single_option_line("slice_closing_radius");
     optgroup->append_single_option_line("slicing_mode");
 
-    page = add_options_page(L("Output options"), "output+page_white");
-    optgroup = page->new_optgroup(L("Output file"));
+    page = add_options_page(_L("Output options"), "output+page_white");
+    optgroup = page->new_optgroup(_L("Output file"));
     Option option = optgroup->get_option("output_filename_format");
     option.opt.full_width = true;
     optgroup->append_single_option_line(option);
 
-    page = add_options_page(L("Dependencies"), "wrench");
-    optgroup = page->new_optgroup(L("Profile dependencies"));
+    page = add_options_page(_L("Dependencies"), "wrench");
+    optgroup = page->new_optgroup(_L("Profile dependencies"));
 
     create_line_with_widget(optgroup.get(), "compatible_printers", "", [this](wxWindow* parent) {
         return compatible_widget_create(parent, m_compatible_printers);
@@ -154,7 +154,7 @@ void EditorSLAPrint::update_description_lines()
 {
     AbstractEditor::update_description_lines();
 
-    if (m_active_page && m_active_page->title() == "Supports")
+    if (m_active_page && m_active_page->title() == WX::from_u8("Supports"))
     {
         bool is_visible = config().def()->get("support_object_elevation")->mode <= m_mode;
         if (m_support_object_elevation_description_line)
@@ -163,7 +163,7 @@ void EditorSLAPrint::update_description_lines()
             if (is_visible)
             {
                 bool elev = !config().opt_bool("pad_enable") || !config().opt_bool("pad_around_object");
-                m_support_object_elevation_description_line->SetText(elev ? "" :
+                m_support_object_elevation_description_line->SetText(elev ? wxString{} :
                     WX::format_wxstr(_L("\"%1%\" is disabled because \"%2%\" is on in \"%3%\" category.\n"
                         "To enable \"%1%\", please switch off \"%2%\"")
                         , _L("Object elevation"), _L("Pad around object"), _L("Pad")));

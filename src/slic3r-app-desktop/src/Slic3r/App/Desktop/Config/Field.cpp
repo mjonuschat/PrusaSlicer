@@ -42,7 +42,7 @@ namespace Slic3r::App::Desktop::Config {
 using WX::_L;
 using WX::_;
 
-ThumbnailErrors validate_thumbnails_string(wxString& str, const wxString& def_ext = "PNG")
+ThumbnailErrors validate_thumbnails_string(wxString& str, const wxString& def_ext = WX::from_u8("PNG"))
 {
     std::string input_string = WX::into_u8(str);
 
@@ -172,7 +172,7 @@ void Field::on_edit_value()
 wxString Field::get_tooltip_text(const wxString& default_string)
 {
     if (m_opt.tooltip.empty())
-        return "";
+        return {};
 
     std::string opt_id = m_opt_id;
     auto hash_pos = opt_id.find('#');
@@ -183,10 +183,10 @@ wxString Field::get_tooltip_text(const wxString& default_string)
 
     bool newline_after_name = boost::iends_with(opt_id, "_gcode") && opt_id != "binary_gcode";
 
-	return WX::from_u8(m_opt.tooltip) + "\n" + _L("default value") + "\t: " +
-        (newline_after_name ? "\n" : "") + default_string +
-        (newline_after_name ? "" : "\n") +
-        _L("parameter name") + "\t: " + opt_id;
+	return WX::from_u8(m_opt.tooltip) + WX::from_u8("\n") + _L("default value") + WX::from_u8("\t: ") +
+        WX::from_u8(newline_after_name ? "\n" : "") + default_string +
+        WX::from_u8(newline_after_name ? "" : "\n") +
+        _L("parameter name") + WX::from_u8("\t: " + opt_id);
 }
 
 bool Field::is_matched(const std::string& string, const std::string& pattern)
@@ -266,7 +266,7 @@ void Field::get_value_by_opt_type(wxString& str, const bool check_value/* = true
                     if (m_value.empty() || boost::any_cast<double>(m_value) != val) {
                         wxString msg_text = WX::format_wxstr(_L("Input value is out of range\n"
                             "Are you sure that %s is a correct value and that you want to continue?"), str);
-                        WX::WarningDialog dialog(m_parent, msg_text, _L("Parameter validation") + ": " + m_opt_id, wxYES | wxNO);
+                        WX::WarningDialog dialog(m_parent, msg_text, _L("Parameter validation") + WX::from_u8(": " + m_opt_id), wxYES | wxNO);
                         if (dialog.ShowModal() == wxID_NO) 
                         {
                             if (m_value.empty()) {
@@ -316,8 +316,8 @@ void Field::get_value_by_opt_type(wxString& str, const bool check_value/* = true
                 set_value(str, false);
 
             // remove space and "mm" substring, if any exists
-            str.Replace(" ", "", true);
-            str.Replace("m", "", true);
+            str.Replace(WX::from_u8(" "), {}, true);
+            str.Replace(WX::from_u8("m"), {}, true);
 
             if (is_na_value) {
                 val = ConfigOptionFloatsOrPercentsNullable::nil_value().value;
@@ -347,11 +347,11 @@ void Field::get_value_by_opt_type(wxString& str, const bool check_value/* = true
                 const wxString msg_text = WX::format_wxstr(_L("Do you mean %1%%% instead of %1% %2%?\n"
                     "Select YES if you want to change this value to %1%%%, \n"
                     "or NO if you are sure that %1% %2% is a correct value."), stVal, sidetext);
-                WX::WarningDialog dialog(m_parent, msg_text, _L("Parameter validation") + ": " + m_opt_id, wxYES | wxNO);
+                WX::WarningDialog dialog(m_parent, msg_text, _L("Parameter validation") + WX::from_u8(": " + m_opt_id), wxYES | wxNO);
                 if ((!infill_anchors || val > 100) && dialog.ShowModal() == wxID_YES) 
                 {
                     set_value(WX::from_u8((boost::format("%s%%") % stVal).str()), false/*true*/);
-                    str += "%%";
+                    str += WX::from_u8("%%");
                 }
 				else
 					set_value(stVal, false); // it's no needed but can be helpful, when inputted value contained "," instead of "."
@@ -368,12 +368,12 @@ void Field::get_value_by_opt_type(wxString& str, const bool check_value/* = true
                     error_str += WX::format_wxstr(_L("Invalid input format. Expected vector of dimensions in the following format: \"%1%\""), "XxY/EXT, XxY/EXT, ...");
                 if (errors.has(ThumbnailError::OutOfRange)) {
                     if (!error_str.empty())
-                        error_str += "\n\n";
+                        error_str += WX::from_u8("\n\n");
                     error_str += _L("Input value is out of range");
                 }
                 if (errors.has(ThumbnailError::InvalidExt)) {
                     if (!error_str.empty())
-                        error_str += "\n\n";
+                        error_str += WX::from_u8("\n\n");
                     error_str += _L("Some extension in the input is invalid");
                 }
                 WX::ErrorDialog(m_parent, error_str, false).ShowModal();
@@ -420,28 +420,28 @@ void TextCtrl::BUILD() {
     if (m_opt.height >= 0) size.SetHeight(m_opt.height*m_em_unit);
     if (m_opt.width >= 0) size.SetWidth(m_opt.width*m_em_unit);
 
-	wxString text_value = wxString("");
+	wxString text_value = {};
 
 	switch (m_opt.type) {
 	case coFloatOrPercent:
 	{
 		text_value = WX::double_to_string(m_opt.default_value->getFloat());
 		if (m_opt.get_default_value<ConfigOptionFloatOrPercent>()->percent)
-			text_value += "%";
+			text_value += WX::from_u8("%");
 		break;
 	}
     case coFloatsOrPercents: {
 		const auto val =  m_opt.get_default_value<ConfigOptionFloatsOrPercents>()->get_at(m_opt_idx);
         text_value = WX::double_to_string(val.value);
         if (val.percent)
-            text_value += "%";
+            text_value += WX::from_u8("%");
         m_last_meaningful_value = text_value;
         break;
 	}
 	case coPercent:
 	{
 		text_value = wxString::Format(_T("%i"), int(m_opt.default_value->getFloat()));
-		text_value += "%";
+		text_value += WX::from_u8("%");
 		break;
 	}
 	case coPercents:
@@ -458,13 +458,13 @@ void TextCtrl::BUILD() {
 		break;
 	}
 	case coString:
-		text_value = m_opt.get_default_value<ConfigOptionString>()->value;
+		text_value = WX::from_u8(m_opt.get_default_value<ConfigOptionString>()->value);
 		break;
 	case coStrings:
 	{
 		const ConfigOptionStrings *vec = m_opt.get_default_value<ConfigOptionStrings>();
 		if (vec == nullptr || vec->empty()) break; //for the case of empty default value
-		text_value = vec->get_at(m_opt_idx);
+		text_value = WX::from_u8(vec->get_at(m_opt_idx));
 		break;
 	}
 	default:
@@ -472,7 +472,7 @@ void TextCtrl::BUILD() {
 	}
 
     long style = m_opt.multiline ? wxTE_MULTILINE : wxTE_PROCESS_ENTER;
-	auto temp = new text_ctrl(m_parent, text_value, "", "", wxDefaultPosition, size, style);
+	auto temp = new text_ctrl(m_parent, text_value, {}, {}, wxDefaultPosition, size, style);
     if (parent_is_custom_ctrl && m_opt.height < 0)
         opt_height = (double)temp->GetSize().GetHeight()/m_em_unit;
     temp->SetFont(m_opt.is_code ?
@@ -751,7 +751,7 @@ void CheckBox::BUILD() {
 	    on_change_field();
 	});
 
-	window->SetToolTip(get_tooltip_text(check_value ? "true" : "false"));
+	window->SetToolTip(get_tooltip_text(WX::from_u8(check_value ? "true" : "false")));
 }
 
 void CheckBox::set_value(const bool value, bool change_event/* = false*/)
@@ -831,7 +831,7 @@ void SpinCtrl::BUILD() {
     if (m_opt.height >= 0) size.SetHeight(m_opt.height*m_em_unit);
     if (m_opt.width >= 0) size.SetWidth(m_opt.width*m_em_unit);
 
-	wxString	text_value = wxString("");
+	wxString	text_value = {};
 	int			default_value = UNDEF_VALUE;
 
 	switch (m_opt.type) {
@@ -860,7 +860,7 @@ void SpinCtrl::BUILD() {
     const int min_val = m_opt.min == -FLT_MAX ? (int)0 : (int)m_opt.min;
 	const int max_val = m_opt.max < FLT_MAX ? (int)m_opt.max : INT_MAX;
 
-	auto temp = new WX::Widgets::SpinInput(m_parent, text_value, "", wxDefaultPosition, size,
+	auto temp = new WX::Widgets::SpinInput(m_parent, text_value, {}, wxDefaultPosition, size,
 		wxTE_PROCESS_ENTER | wxSP_ARROW_KEYS
 
 		, min_val, max_val, default_value);
@@ -1004,10 +1004,10 @@ void Choice::BUILD() {
     if (m_opt.gui_type != ConfigOptionDef::GUIType::undefined 
         && m_opt.gui_type != ConfigOptionDef::GUIType::select_close) {
         m_is_editable = true;
-        temp = new choice_ctrl(m_parent, wxID_ANY, wxString(""), wxDefaultPosition, size, 0, nullptr, wxTE_PROCESS_ENTER | DD_NO_CHECK_ICON);
+        temp = new choice_ctrl(m_parent, wxID_ANY, {}, wxDefaultPosition, size, 0, nullptr, wxTE_PROCESS_ENTER | DD_NO_CHECK_ICON);
     }
     else {
-        temp = new choice_ctrl(m_parent, wxID_ANY, wxString(""), wxDefaultPosition, size, 0, nullptr, wxCB_READONLY | DD_NO_CHECK_ICON);
+        temp = new choice_ctrl(m_parent, wxID_ANY, {}, wxDefaultPosition, size, 0, nullptr, wxCB_READONLY | DD_NO_CHECK_ICON);
     }
 
 #ifdef __WXGTK3__
@@ -1106,7 +1106,7 @@ void Choice::set_selection()
      */
     m_disable_change_event = true;
 
-	wxString text_value = wxString("");
+	wxString text_value = {};
 
     choice_ctrl* field = dynamic_cast<choice_ctrl*>(window);
 	switch (m_opt.type) {
@@ -1129,13 +1129,13 @@ void Choice::set_selection()
 		break;
 	}
 	case coStrings:{
-		text_value = m_opt.get_default_value<ConfigOptionStrings>()->get_at(m_opt_idx);
+		text_value = WX::from_u8(m_opt.get_default_value<ConfigOptionStrings>()->get_at(m_opt_idx));
 		break;
 	}
 	case coFloatOrPercent: {
 		text_value = WX::double_to_string(m_opt.default_value->getFloat());
 		if (m_opt.get_default_value<ConfigOptionFloatOrPercent>()->percent)
-			text_value += "%";
+			text_value += WX::from_u8("%");
 		break;
 	}
     default: break;
@@ -1158,7 +1158,7 @@ void Choice::set_value(const std::string& value, bool change_event)  //! Redunda
         // This enum has a value field of the same content as text_value. Select it.
         field->SetSelection(*opt);
     else
-        field->SetValue(value);
+        field->SetValue(WX::from_u8(value));
     m_disable_change_event = false;
 }
 
@@ -1231,7 +1231,7 @@ void Choice::set_values(const std::vector<std::string>& values)
 	auto ww = dynamic_cast<choice_ctrl*>(window);
 	auto value = ww->GetValue();
 	ww->Clear();
-	ww->Append("");
+	ww->Append({});
 	for (const std::string& el : values)
 		ww->Append(WX::from_u8(el));
 	ww->SetValue(value);
@@ -1356,7 +1356,7 @@ void ColourPicker::BUILD()
     if (m_opt.width >= 0) size.SetWidth(m_opt.width*m_em_unit);
 
 	// Validate the color
-	wxString clr_str(m_opt.type == coString ? m_opt.get_default_value<ConfigOptionString>()->value : m_opt.get_default_value<ConfigOptionStrings>()->get_at(m_opt_idx));
+	wxString clr_str(WX::from_u8(m_opt.type == coString ? m_opt.get_default_value<ConfigOptionString>()->value : m_opt.get_default_value<ConfigOptionStrings>()->get_at(m_opt_idx)));
 	wxColour clr(clr_str);
 	if (clr_str.IsEmpty() || !clr.IsOk()) {
 		clr = wxTransparentColour;
@@ -1390,7 +1390,7 @@ void ColourPicker::set_undef_value(wxColourPickerCtrl* field)
     dc.SetFont(WX::w_config()->normal_font());
 
     const wxRect rect = wxRect(0, 0, bmp.GetWidth(), bmp.GetHeight());
-    dc.DrawLabel("undef", rect, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL);
+    dc.DrawLabel(WX::from_u8("undef"), rect, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL);
 
     dc.SelectObject(wxNullBitmap);
     btn->SetBitmapLabel(bmp);
@@ -1468,8 +1468,8 @@ void PointCtrl::BUILD()
 	wxString Y = val - int(val) == 0 ? wxString::Format(_T("%i"), int(val)) : wxNumberFormatter::ToString(val, 2, wxNumberFormatter::Style_None);
 
 	long style = wxTE_PROCESS_ENTER;
-	x_textctrl = new text_ctrl(m_parent, X, "", "", wxDefaultPosition, field_size, style);
-	y_textctrl = new text_ctrl(m_parent, Y, "", "", wxDefaultPosition, field_size, style);
+	x_textctrl = new text_ctrl(m_parent, X, {}, {}, wxDefaultPosition, field_size, style);
+	y_textctrl = new text_ctrl(m_parent, Y, {}, {}, wxDefaultPosition, field_size, style);
     if (parent_is_custom_ctrl && m_opt.height < 0)
         opt_height = (double)x_textctrl->GetSize().GetHeight() / m_em_unit;
 
@@ -1479,8 +1479,8 @@ void PointCtrl::BUILD()
 	if (!wxOSX) y_textctrl->SetBackgroundStyle(wxBG_STYLE_PAINT);
 
     wxSize label_sz = wxSize(int(field_size.x / 2), field_size.y);
-	auto static_text_x = new wxStaticText(m_parent, wxID_ANY, "x : ", wxDefaultPosition, label_sz, wxALIGN_RIGHT);
-    auto static_text_y = new wxStaticText(m_parent, wxID_ANY, "y : ", wxDefaultPosition, label_sz, wxALIGN_RIGHT);
+	auto static_text_x = new wxStaticText(m_parent, wxID_ANY, WX::from_u8("x : "), wxDefaultPosition, label_sz, wxALIGN_RIGHT);
+    auto static_text_y = new wxStaticText(m_parent, wxID_ANY, WX::from_u8("y : "), wxDefaultPosition, label_sz, wxALIGN_RIGHT);
 	static_text_x->SetFont(WX::w_config()->normal_font());
 	static_text_x->SetBackgroundStyle(wxBG_STYLE_PAINT);
 	static_text_y->SetFont(WX::w_config()->normal_font());
@@ -1505,8 +1505,8 @@ void PointCtrl::BUILD()
 	// 	// recast as a wxWindow to fit the calling convention
 	sizer = dynamic_cast<wxSizer*>(temp);
 
-	x_textctrl->SetToolTip(get_tooltip_text(X+", "+Y));
-	y_textctrl->SetToolTip(get_tooltip_text(X+", "+Y));
+	x_textctrl->SetToolTip(get_tooltip_text(X+WX::from_u8(", ")+Y));
+	y_textctrl->SetToolTip(get_tooltip_text(X+WX::from_u8(", ")+Y));
 }
 
 void PointCtrl::msw_rescale()
@@ -1661,7 +1661,7 @@ void SliderCtrl::BUILD()
 	m_slider->SetBackgroundStyle(wxBG_STYLE_PAINT);
  	wxSize field_size(40, -1);
 
-	m_textctrl = new wxTextCtrl(m_parent, wxID_ANY, wxString::Format("%d", m_slider->GetValue()/m_scale),
+	m_textctrl = new wxTextCtrl(m_parent, wxID_ANY, wxString::Format(WX::from_u8("%d"), m_slider->GetValue()/m_scale),
 								wxDefaultPosition, field_size);
 	m_textctrl->SetFont(WX::w_config()->normal_font());
 	m_textctrl->SetBackgroundStyle(wxBG_STYLE_PAINT);
@@ -1672,7 +1672,7 @@ void SliderCtrl::BUILD()
 	m_slider->Bind(wxEVT_SLIDER, ([this](wxCommandEvent e) {
 		if (!m_disable_change_event) {
 			int val = boost::any_cast<int>(get_value());
-			m_textctrl->SetLabel(wxString::Format("%d", val));
+			m_textctrl->SetLabel(wxString::Format(WX::from_u8("%d"), val));
 			on_change_field();
 		}
 	}), m_slider->GetId());
@@ -1696,7 +1696,7 @@ void SliderCtrl::set_value(const boost::any& value, bool change_event)
 
 	m_slider->SetValue(boost::any_cast<int>(value)*m_scale);
 	int val = boost::any_cast<int>(get_value());
-	m_textctrl->SetLabel(wxString::Format("%d", val));
+	m_textctrl->SetLabel(wxString::Format(WX::from_u8("%d"), val));
 
 	m_disable_change_event = false;
 }

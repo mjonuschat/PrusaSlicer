@@ -44,12 +44,12 @@ namespace Slic3r::App::WX {
 template<typename... TArgs>
 inline wxString format_wxstr(const char* fmt, TArgs&&... args) {
 	boost::format message(fmt);
-	return wxString::FromUTF8(Slic3r::internal::format::format_recursive(message, std::forward<TArgs>(args)...).c_str());
+	return from_u8(Slic3r::internal::format::format_recursive(message, std::forward<TArgs>(args)...).c_str());
 }
 template<typename... TArgs>
 inline wxString format_wxstr(const std::string& fmt, TArgs&&... args) {
 	boost::format message(fmt);
-	return wxString::FromUTF8(Slic3r::internal::format::format_recursive(message, std::forward<TArgs>(args)...).c_str());
+	return from_u8(Slic3r::internal::format::format_recursive(message, std::forward<TArgs>(args)...).c_str());
 }
 template<typename... TArgs>
 inline wxString format_wxstr(const wxString& fmt, TArgs&&... args) {

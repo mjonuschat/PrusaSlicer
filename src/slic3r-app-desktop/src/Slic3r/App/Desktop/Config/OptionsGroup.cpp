@@ -148,7 +148,7 @@ OptionsGroup::OptionsGroup(	wxWindow* _parent, const wxString& title,
                             column_t extra_clmn /* = nullptr */) :
                 m_parent(_parent), title(title),
                 m_use_custom_ctrl(is_tab_opt),
-                staticbox(title!=""), extra_column(extra_clmn)
+                staticbox(!title.empty()), extra_column(extra_clmn)
 {
 }
 
@@ -164,13 +164,13 @@ Option::Option(const ConfigOptionDef& _opt, t_config_option_key id) : opt(_opt),
         wxString tooltip;
         if (opt.opt_key.rfind("branching", 0) == 0) {
             tooltip = _L("Unavailable for this method.");
-            tooltip += "\n";
+            tooltip += WX::from_u8("\n");
         }
         tooltip += _(opt.tooltip);
 
         // edit tooltip : change Slic3r to SLIC3R_APP_KEY
         // Temporary workaround for localization
-        tooltip.Replace("Slic3r", SLIC3R_APP_KEY, true);
+        tooltip.Replace(WX::from_u8("Slic3r"), WX::from_u8(SLIC3R_APP_KEY), true);
 
         opt.tooltip = into_u8(tooltip);
     }
@@ -366,7 +366,7 @@ void OptionsGroup::activate_line(Line& line)
                 // Text is properly aligned only when Ellipsize is checked.
                 label_style |= staticbox ? 0 : wxST_ELLIPSIZE_END;
 #endif /* __WXGTK__ */
-                label = new wxStaticText(this->ctrl_parent(), wxID_ANY, line.label + (line.label.IsEmpty() ? "" : ": "),
+                label = new wxStaticText(this->ctrl_parent(), wxID_ANY, line.label + WX::from_u8(line.label.IsEmpty() ? "" : ": "),
                     wxDefaultPosition, wxSize(label_width * WX::w_config()->em_unit(), -1), label_style);
                 label->SetBackgroundStyle(wxBG_STYLE_PAINT);
                 label->SetFont(WX::w_config()->normal_font());
@@ -381,7 +381,7 @@ void OptionsGroup::activate_line(Line& line)
                 m_grid_sizer->Add(sizer, 0, wxEXPAND | (staticbox ? wxALL : wxBOTTOM | wxTOP | wxLEFT), staticbox ? 0 : 1);
                 sizer->Add(label, 0, (staticbox ? 0 : wxALIGN_RIGHT | wxRIGHT) | wxALIGN_CENTER_VERTICAL, 5);
             }
-            if (label != nullptr && line.label_tooltip != "")
+            if (label != nullptr && !line.label_tooltip.IsEmpty())
                 label->SetToolTip(line.label_tooltip);
         }
     }
@@ -433,7 +433,7 @@ void OptionsGroup::activate_line(Line& line)
                 wxString str_label = (option.label == "Top" || option.label == "Bottom") ?
                     _CTX(option.label, "Layers") :
                     _(option.label);
-                label = new wxStaticText(this->ctrl_parent(), wxID_ANY, str_label + ": ", wxDefaultPosition, //wxDefaultSize);
+                label = new wxStaticText(this->ctrl_parent(), wxID_ANY, str_label + from_u8(": "), wxDefaultPosition, //wxDefaultSize);
                     wxSize(sublabel_width != -1 ? sublabel_width * WX::w_config()->em_unit() : -1, -1), wxALIGN_RIGHT);
                 label->SetBackgroundStyle(wxBG_STYLE_PAINT);
                 label->SetFont(WX::w_config()->normal_font());
@@ -576,7 +576,7 @@ void OptionsGroup::clear(bool destroy_custom_ctrl)
 
 Line OptionsGroup::create_single_option_line(const Option& option, const std::string& path/* = std::string()*/) const
 {
-    Line retval{ option.opt.label, from_u8(option.opt.tooltip) };
+    Line retval{ from_u8(option.opt.label), from_u8(option.opt.tooltip) };
 
 	retval.label_path = path;
     retval.append_option(option);
@@ -887,7 +887,7 @@ boost::any ConfigOptionsGroup::get_config_value(const DynamicPrintConfig& config
 	size_t idx = opt_index == -1 ? 0 : opt_index;
 
 	boost::any ret;
-	wxString text_value = wxString("");
+	wxString text_value = {};
 	const ConfigOptionDef* opt = config.def()->get(opt_key);
 
     if (opt->nullable)
@@ -949,7 +949,7 @@ boost::any ConfigOptionsGroup::get_config_value(const DynamicPrintConfig& config
 
         text_value = WX::double_to_string(value.value);
 		if (value.percent)
-			text_value += "%";
+			text_value += WX::from_u8("%");
 
 		ret = text_value;
 		break;
@@ -958,7 +958,7 @@ boost::any ConfigOptionsGroup::get_config_value(const DynamicPrintConfig& config
 		const auto& val = config.option<ConfigOptionFloatsOrPercents>(opt_key)->get_at(idx);
         text_value = WX::double_to_string(val.value);
 		if (val.percent)
-			text_value += "%";
+			text_value += WX::from_u8("%");
 		ret = text_value;
 		break;
 	}
@@ -997,7 +997,7 @@ boost::any ConfigOptionsGroup::get_config_value(const DynamicPrintConfig& config
 			std::vector<std::string> values = config.option<ConfigOptionStrings>(opt_key)->values;
 			if (!values.empty() && !values[0].empty())
 				for (const std::string& el : values)
-					text_value += from_u8(el) + ";";
+					text_value += from_u8(el) + WX::from_u8(";");
 			ret = text_value;
 		}
 		else
@@ -1076,10 +1076,10 @@ wxString OptionsGroup::get_url(const std::string& path_end)
     if (path_end.empty())
         return wxEmptyString;
 
-    wxString language = "";// wxGetApp().current_language_code_safe();
-    wxString lang_marker = language.IsEmpty() ? "en" : language.BeforeFirst('_');
+    wxString language = {};// wxGetApp().current_language_code_safe();
+    wxString lang_marker = language.IsEmpty() ? WX::from_u8("en") : language.BeforeFirst('_');
 
-    return wxString("https://help.prusa3d.com/") + lang_marker + wxString("/article/" + path_end);
+    return WX::from_u8("https://help.prusa3d.com/") + lang_marker + WX::from_u8("/article/" + path_end);
 }
 
 bool OptionsGroup::launch_browser(const std::string& path_end)

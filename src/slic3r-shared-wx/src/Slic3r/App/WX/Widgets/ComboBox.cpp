@@ -34,8 +34,11 @@ ComboBox::ComboBox(wxWindow *      parent,
     : drop(texts, icons)
 {
     text_off = style & CB_NO_TEXT;
-    TextInput::Create(parent, "", value, (style & CB_NO_DROP_ICON) ? "" : "drop_down", pos, size,
-                      style | wxTE_PROCESS_ENTER);
+    TextInput::Create(
+        parent, {}, value,
+        from_u8((style & CB_NO_DROP_ICON) ? "" : "drop_down"), pos, size,
+        style | wxTE_PROCESS_ENTER
+    );
     drop.Create(this, style);
 
     SetFont(w_config()->normal_font());
