@@ -136,7 +136,6 @@ void ConfigManipulation::update_print_fff_config(DynamicPrintConfig* config, con
 
     if (config->opt_bool("spiral_vase") &&
         ! (config->opt_int("perimeters") == 1 &&
-           ! config->opt_bool("alternate_extra_perimeter") &&
            config->opt_int("top_solid_layers") == 0 &&
            fill_density == 0 &&
            ! config->opt_bool("support_material") &&
@@ -159,7 +158,6 @@ void ConfigManipulation::update_print_fff_config(DynamicPrintConfig* config, con
         bool support = true;
         if (!is_global_config || answer == wxID_YES) {
             new_conf.set_key_value("perimeters", new ConfigOptionInt(1));
-            new_conf.set_key_value("alternate_extra_perimeter", new ConfigOptionBool(false));
             new_conf.set_key_value("top_solid_layers", new ConfigOptionInt(0));
             new_conf.set_key_value("fill_density", new ConfigOptionPercent(0));
             new_conf.set_key_value("support_material", new ConfigOptionBool(false));
@@ -177,6 +175,32 @@ void ConfigManipulation::update_print_fff_config(DynamicPrintConfig* config, con
             if (!support)
                 cb_value_change("support_material", false);
         }
+    }
+
+    if (config->opt_bool("alternate_extra_perimeter") &&
+        config->opt_enum<EnsureVerticalShellThickness>("ensure_vertical_shell_thickness") ==
+            EnsureVerticalShellThickness::Enabled) {
+        wxString msg_text = _(L("Alternate extra perimeters doesn't work well with ensure vertical "
+                                "shell thickness enabled. "));
+
+        if (is_global_config)
+            msg_text += "\n\n" + _(L("Change these settings automatically? \n"
+                                     "Yes - Change ensure vertical shell thickness to Partial and enable alternate extra perimeters\n"
+                                     "No  - Don't use alternate extra perimeters"));
+
+        MessageDialog dialog(m_msg_dlg_parent, msg_text, "",
+                               wxICON_WARNING | (is_global_config ? wxYES | wxNO : wxOK));
+        DynamicPrintConfig new_conf = *config;
+        auto answer = dialog.ShowModal();
+        if (!is_global_config || answer == wxID_YES) {
+            new_conf.set_key_value("ensure_vertical_shell_thickness", new ConfigOptionEnum<EnsureVerticalShellThickness>(EnsureVerticalShellThickness::Partial));
+            new_conf.set_key_value("alternate_extra_perimeter", new ConfigOptionBool(true));
+        }
+        else {
+            new_conf.set_key_value("ensure_vertical_shell_thickness", new ConfigOptionEnum<EnsureVerticalShellThickness>(EnsureVerticalShellThickness::Enabled));
+            new_conf.set_key_value("alternate_extra_perimeter", new ConfigOptionBool(false));
+        }
+        apply(config, &new_conf);
     }
 
     if (config->opt_bool("wipe_tower") && config->opt_bool("support_material") && 
