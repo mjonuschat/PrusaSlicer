@@ -57,6 +57,7 @@ public:
     }
     std::string preamble();
     std::string postamble() const;
+    static std::string set_temperature(unsigned int temperature, GCodeFlavor flavor, bool wait = false, int tool = -1, std::string comment = std::string());
     std::string set_temperature(unsigned int temperature, bool wait = false, int tool = -1) const;
     std::string set_bed_temperature(unsigned int temperature, bool wait = false);
     std::string set_chamber_temperature(unsigned int temperature, bool wait, bool accurate) const;
