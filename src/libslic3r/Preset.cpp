@@ -577,6 +577,10 @@ static std::vector<std::string> s_Preset_print_options {
     "top_layer_flow_ratio",
 
     "print_extrusion_multiplier",
+
+    "preheat_time",
+    "preheat_steps",
+
 };
 
 static std::vector<std::string> s_Preset_filament_options {
@@ -626,7 +630,7 @@ static std::vector<std::string> s_Preset_printer_options {
     "machine_limits_usage", "thumbnails", "thumbnails_format",
     "nozzle_high_flow", "extruder_clearance_radius", "extruder_clearance_height",
     // BOSS
-    "init_z_rotate"
+    "init_z_rotate",
 };
 
 static std::vector<std::string> s_Preset_sla_print_options {
