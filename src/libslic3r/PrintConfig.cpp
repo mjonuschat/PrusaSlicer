@@ -3503,6 +3503,25 @@ void PrintConfigDef::init_fff_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionBool(true));
 
+    def = this->add("preheat_time", coFloat);
+    def->label = L("Preheat time");
+    def->tooltip = L("To reduce the waiting time after tool change, the next tool can be preheated while the current "
+                     "tool is still in use. This setting specifies the time in seconds to preheat the next tool. A M104 "
+                     "command to preheat the tool in advance will be inserted into the G-Code.");
+    def->sidetext = "s";
+    def->min = 0;
+    def->max = 120;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(120.0));
+
+    def = this->add("preheat_steps", coInt);
+    def->label = L("Preheat steps");
+    def->tooltip = L("Insert multiple preheat commands (e.g. M104.1). Only useful for Prusa XL. For other printers, please set it to 1.");
+    def->min = 1;
+    def->max = 10;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionInt(1));
+
     def = this->add("start_gcode", coString);
     def->label = L("Start G-code");
     def->tooltip = L("This start procedure is inserted at the beginning, possibly prepended by "
