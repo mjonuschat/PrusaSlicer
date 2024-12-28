@@ -1051,6 +1051,8 @@ PRINT_CONFIG_CLASS_DERIVED_DEFINE(
     ((ConfigOptionBool,               wiping_volumes_use_custom_matrix))
     ((ConfigOptionFloat,              z_offset))
     ((ConfigOptionFloat,              init_z_rotate))
+    ((ConfigOptionFloat,              preheat_time))
+    ((ConfigOptionInt,                preheat_steps))
 )
 
 PRINT_CONFIG_CLASS_DERIVED_DEFINE0(
