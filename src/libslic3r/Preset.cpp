@@ -576,6 +576,9 @@ static std::vector<std::string> s_Preset_print_options {
     "top_layer_flow_ratio",
 
     "print_extrusion_multiplier",
+
+    "preheat_time",
+    "preheat_steps",
 };
 
 static std::vector<std::string> s_Preset_filament_options {

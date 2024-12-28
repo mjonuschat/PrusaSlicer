@@ -107,35 +107,36 @@ std::string GCodeWriter::postamble() const
     return gcode.str();
 }
 
-std::string GCodeWriter::set_temperature(unsigned int temperature, bool wait, int tool) const
+std::string GCodeWriter::set_temperature(unsigned int temperature, GCodeFlavor flavor, bool wait, int tool, std::string comment)
 {
-    if (wait && (FLAVOR_IS(gcfMakerWare) || FLAVOR_IS(gcfSailfish)))
+    if (wait && (flavor == gcfMakerWare || flavor == gcfSailfish))
         return {};
     
-    std::string_view code, comment;
-    if (wait && FLAVOR_IS_NOT(gcfTeacup) && FLAVOR_IS_NOT(gcfRepRapFirmware)) {
+    std::string_view code;
+    if (wait && flavor != gcfTeacup && flavor != gcfRepRapFirmware) {
         code = "M109"sv;
-        comment = "set temperature and wait for it to be reached"sv;
+        if(comment.empty())
+            comment = "set temperature and wait for it to be reached"sv;
     } else {
-        if (FLAVOR_IS(gcfRepRapFirmware)) { // M104 is deprecated on RepRapFirmware
+        if (flavor == gcfRepRapFirmware) { // M104 is deprecated on RepRapFirmware
             code = "G10"sv;
         } else {
             code = "M104"sv;
         }
-        comment = "set temperature"sv;
+        if(comment.empty())
+            comment = "set temperature"sv;
     }
     
     std::ostringstream gcode;
     gcode << code << " ";
-    if (FLAVOR_IS(gcfMach3) || FLAVOR_IS(gcfMachinekit)) {
+    if (flavor == gcfMach3 || flavor == gcfMachinekit) {
         gcode << "P";
     } else {
         gcode << "S";
     }
     gcode << temperature;
-    bool multiple_tools = this->multiple_extruders && ! m_single_extruder_multi_material;
-    if (tool != -1 && (multiple_tools || FLAVOR_IS(gcfMakerWare) || FLAVOR_IS(gcfSailfish) || FLAVOR_IS(gcfRepRapFirmware)) ) {
-        if (FLAVOR_IS(gcfRepRapFirmware)) {
+    if (tool != -1) {
+        if (flavor == gcfRepRapFirmware) {
             gcode << " P" << tool;
         } else {
             gcode << " T" << tool;
@@ -143,10 +144,18 @@ std::string GCodeWriter::set_temperature(unsigned int temperature, bool wait, in
     }
     gcode << " ; " << comment << "\n";
     
-    if ((FLAVOR_IS(gcfTeacup) || FLAVOR_IS(gcfRepRapFirmware)) && wait)
+    if ((flavor == gcfTeacup || flavor == gcfRepRapFirmware) && wait)
         gcode << "M116 ; wait for temperature to be reached\n";
-    
+
     return gcode.str();
+}
+
+std::string GCodeWriter::set_temperature(unsigned int temperature, bool wait, int tool) const
+{
+    // set tool to -1 to make sure we won't emit T parameter for single extruder or SEMM
+    if (!this->multiple_extruders || m_single_extruder_multi_material)
+        tool = -1;
+    return set_temperature(temperature, this->config.gcode_flavor, wait, tool);
 }
 
 std::string GCodeWriter::set_bed_temperature(unsigned int temperature, bool wait)

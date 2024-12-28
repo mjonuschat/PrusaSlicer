@@ -451,6 +451,8 @@ void ConfigManipulation::toggle_print_fff_options(DynamicPrintConfig* config)
 
     bool have_ooze_prevention = config->opt_bool("ooze_prevention");
     toggle_field("standby_temperature_delta", have_ooze_prevention);
+    toggle_field("preheat_time", have_ooze_prevention);
+    toggle_field("preheat_steps", have_ooze_prevention);
 
     bool have_wipe_tower = config->opt_bool("wipe_tower");
     for (auto el : { "wipe_tower_width",  "wipe_tower_brim_width", "wipe_tower_cone_angle",

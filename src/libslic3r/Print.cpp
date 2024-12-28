@@ -188,6 +188,8 @@ bool Print::invalidate_state_by_config_options(const ConfigOptionResolver & /* n
         "solid_infill_minimum_cruise_ratio",
         "solid_infill_jerk",
         "standby_temperature_delta",
+        "preheat_time",
+        "preheat_steps",
         "start_gcode",
         "start_filament_gcode",
         "custom_parameters_filament",
