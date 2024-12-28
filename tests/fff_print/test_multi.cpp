@@ -144,6 +144,38 @@ SCENARIO("Ooze prevention", "[Multi]")
     }
 }
 
+SCENARIO("Ooze prevention preheats first-layer toolchanges to first-layer temperature",
+    "[Multi]")
+{
+    DynamicPrintConfig config = Slic3r::DynamicPrintConfig::full_print_config_with({
+        { "nozzle_diameter",             "0.4, 0.4" },
+        { "perimeter_extruder",          1 },
+        { "external_perimeter_extruder", 1 },
+        { "solid_infill_extruder",       2 },
+        { "ooze_prevention",             1 },
+        { "preheat_time",                1.0 },
+        { "temperature",                 "200, 205" },
+        { "first_layer_temperature",     "210, 215" },
+        { "skirts",                      0 },
+        { "start_gcode",                 "" },
+    });
+
+    const std::string gcode =
+        Slic3r::Test::slice({ Slic3r::Test::TestMesh::cube_20x20x20 }, config);
+    const size_t pos = gcode.find("preheat T1");
+
+    REQUIRE(pos != std::string::npos);
+
+    const size_t line_begin = gcode.rfind('\n', pos);
+    const size_t line_end   = gcode.find('\n', pos);
+    const size_t line_start = line_begin == std::string::npos ? 0 : line_begin + 1;
+    const size_t line_count =
+        line_end == std::string::npos ? std::string::npos : line_end - line_start;
+    const std::string preheat_line = gcode.substr(line_start, line_count);
+
+    REQUIRE(preheat_line.find("M104 S215 T1") != std::string::npos);
+}
+
 std::string slice_stacked_cubes(const DynamicPrintConfig &config, const DynamicPrintConfig &volume1config, const DynamicPrintConfig &volume2config)
 {
     Model        model;
