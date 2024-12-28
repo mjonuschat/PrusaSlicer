@@ -540,6 +540,9 @@ namespace Slic3r {
         size_t m_last_default_color_id;
         float m_kissslicer_toolchange_time_correction;
         bool m_single_extruder_multi_material;
+        bool m_ooze_prevention;
+        float m_preheat_time;
+        int m_preheat_steps;
 
         enum class EProducer
         {
@@ -785,5 +788,3 @@ namespace Slic3r {
 } /* namespace Slic3r */
 
 #endif /* slic3r_GCodeProcessor_hpp_ */
-
-
