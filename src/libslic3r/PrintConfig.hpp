@@ -946,6 +946,8 @@ PRINT_CONFIG_CLASS_DEFINE(
     ((ConfigOptionFloat,                small_area_infill_flow_compensation_compensation_factor_7))
     ((ConfigOptionFloat,                small_area_infill_flow_compensation_compensation_factor_8))
     ((ConfigOptionFloat,                small_area_infill_flow_compensation_compensation_factor_9))
+    // BOSS
+    ((ConfigOptionFloats,               filament_max_speed))
 )
 
 static inline std::string get_extrusion_axis(const GCodeConfig &cfg)
