@@ -111,9 +111,8 @@ modules:
   sources:
 
   # PrusaSlicer dependencies source
-  - type: git
-    url: https://github.com/mjonuschat/PrusaSlicer
-    tag: version_2.8.1+boss
+  - type: dir
+    path: ".."
 
   # Cereal
   - type: file
@@ -340,9 +339,8 @@ modules:
       /app/share/icons/hicolor/128x128/mimetypes/io.github.mjonuschat.PrusaSlicer.text-x-gcode.png
     update-mime-database /app/share/mime
   sources:
-  - type: git
-    url: https://github.com/mjonuschat/PrusaSlicer
-    tag: version_2.8.1+boss
+  - type: dir
+    path: ".."
   - type: patch # Fix download from printables. More info: https://github.com/prusa3d/PrusaSlicer/pull/12785
     path: patches/0001-don-t-call-show_downloader_registration_dialog-if-SL.patch
 
