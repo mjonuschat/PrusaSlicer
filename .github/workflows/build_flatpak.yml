@@ -2,8 +2,6 @@ name: Build flatpak
 
 on:
   push:
-    branches:
-      - master # disable flatpak for slic3r3 for now (we need to record transitive deps, so these get downloaded when build flatpak
   workflow_dispatch:
 
 jobs:
