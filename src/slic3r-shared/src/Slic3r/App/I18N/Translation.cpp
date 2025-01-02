@@ -1,12 +1,15 @@
 #include "Slic3r/App/I18N/Translation.hpp"
 #include "Slic3r/App/I18N/LanguageInfo.hpp"
 
+#include <boost/algorithm/string/case_conv.hpp>
+#include <boost/algorithm/string/predicate.hpp>
 #include <clocale>
 
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 #include <boost/locale/info.hpp>
 #include <boost/log/trivial.hpp>
+#include <iostream>
 
 #include "libslic3r_version.h"
 
@@ -112,13 +115,13 @@ void Translations::init_system_language()
 }
 
 #ifdef __linux__
-const LanguageShortInfo* Translations::linux_get_existing_locale_language(const LanguageShortInfo* language,
+LanguageShortInfo* Translations::linux_get_existing_locale_language(LanguageShortInfo* language,
     const LanguageShortInfo* system_language)
 {
     constexpr size_t max_len = 50;
     char path[max_len] = "";
     std::vector<std::string> locales;
-    const std::string lang_prefix = language->presfix;
+    const std::string lang_prefix = language->language;
 
     // Call locale -a so we can parse the output to get the list of available locales
     // We expect lines such as "en_US.utf8". Pick ones starting with the language code
@@ -178,7 +181,7 @@ const LanguageShortInfo* Translations::linux_get_existing_locale_language(const 
     for (auto it = locales.rbegin(); it != locales.rend(); ++it)
         if (!it->empty()) {
             const std::string& locale = *it;
-            const LanguageShortInfo* lang = get_language_short_info(locale);
+            LanguageShortInfo* lang = get_language_short_info(locale);
             if (lang)
                 return lang;
         }
@@ -199,15 +202,21 @@ bool Translations::is_available_locale(LanguageShortInfo* language_info)
 
     bool is_available = std::setlocale(LC_NUMERIC, num_locale.c_str()) != nullptr;
 
-    if (!is_available) {
 #ifdef __linux__ 
+    if (!is_available) {
         // If we can't find this locale , try to use different one for the language
         // instead of just reporting that it is impossible to switch.
         std::string original_lang = language_info->canonical_name;
         language_info = linux_get_existing_locale_language(language_info, m_language_short_info_system);
         BOOST_LOG_TRIVIAL(trace) << boost::format("Can't switch language to %1% (missing locales). Using %2% instead.")
             % original_lang % language_info->canonical_name;
-#endif        
+        std::cout << boost::format("Can't switch language to %1% (missing locales). Using %2% instead.")
+            % original_lang % language_info->canonical_name << std::endl;
+        is_available = std::setlocale(LC_NUMERIC, language_info->canonical_name.c_str()) != nullptr;
+    }
+#endif
+
+    if (!is_available) {
         // revert old locale
         std::setlocale(LC_NUMERIC, old_locale);
     }

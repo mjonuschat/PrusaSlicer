@@ -65,6 +65,12 @@ target_link_libraries(slic3r-app-desktop PUBLIC
         ${wxWidgets_LIBRARIES} 
 )
 
+# See https://github.com/prusa3d/PrusaSlicer/issues/4584.
+if (UNIX AND NOT APPLE)
+    find_package(GTK3 REQUIRED)
+    target_link_libraries(slic3r-app-desktop PUBLIC GTK3::GTK3)
+endif ()
+
 if (MSVC)
     # Manifest is provided through PrusaSlicer.rc, don't generate your own.
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /MANIFEST:NO")

@@ -10,7 +10,7 @@
 #include "Slic3r/App/WX/format.hpp"
 
 #include "Slic3r/App/WX/Widgets/CheckBox.hpp"
-#include "slic3r/App/Color.hpp"
+#include "Slic3r/App/Color.hpp"
 
 #include "libslic3r/Utils.hpp"
 

@@ -1137,7 +1137,7 @@ void ogStaticText::SetPathEnd(const std::string& link)
     // Workaround: On Linux wxStaticText doesn't receive wxEVT_ENTER(LEAVE)_WINDOW events,
     // so implement this behaviour trough wxEVT_MOTION events for this control and it's parent
     Bind(wxEVT_MOTION, [link, this](wxMouseEvent& event) {
-        SetToolTip(OptionsGroup::get_url(!get_app_config()->get_bool("suppress_hyperlinks") ? link : std::string()));
+//        SetToolTip(OptionsGroup::get_url(!get_app_config()->get_bool("suppress_hyperlinks") ? link : std::string()));
         FocusText(true);
         event.Skip();
     });

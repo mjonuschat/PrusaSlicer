@@ -1,6 +1,8 @@
 #pragma once
 
+#include <cstdint>
 #include <vector>
+#include <cstdlib>
 
 #include "Types.hpp"
 

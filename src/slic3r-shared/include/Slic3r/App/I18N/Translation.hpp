@@ -48,7 +48,7 @@ private:
     bool    is_available_locale(LanguageShortInfo* language_info);
 
 #ifdef __linux__
-    const LanguageShortInfo* linux_get_existing_locale_language(const LanguageShortInfo* language,
+    LanguageShortInfo* linux_get_existing_locale_language(LanguageShortInfo* language,
                                                                 const LanguageShortInfo* system_language);
 #endif // __linux__
 
