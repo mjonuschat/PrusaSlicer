@@ -5,4 +5,8 @@ add_cmake_project(LibAssert
 #        EMSCRIPTEN_CMAKE_ARGS
 #        -DCPPTRACE_UNWIND_WITH_NOTHING=ON
 #        -DCPPTRACE_GET_SYMBOLS_WITH_NOTHING=ON
+        CMAKE_ARGS
+            -DLIBASSERT_USE_EXTERNAL_CPPTRACE=ON
 )
+
+set(DEP_LibAssert_DEPENDS cpptrace)

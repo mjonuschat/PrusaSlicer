@@ -68,6 +68,7 @@ inline GLenum type(BufferTarget target)
     case BufferTarget::IndexBuffer:
         return GL_ELEMENT_ARRAY_BUFFER;
     }
+    throw std::runtime_error{"Unreachable code!"};
 }
 
 inline GLenum type(BufferUsage usage)
@@ -80,6 +81,7 @@ inline GLenum type(BufferUsage usage)
     case BufferUsage::StreamDraw:
         return GL_STREAM_DRAW;
     }
+    throw std::runtime_error{"Unreachable code!"};
 }
 
 

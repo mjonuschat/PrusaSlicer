@@ -39,9 +39,10 @@ GLenum texture_format(PixelFormat format)
     case PixelFormat::RGBA8:
         return GL_RGBA;
 
-    default:
+    default: {
         // Unsupported format
-        ASSERT(false);
+        throw std::runtime_error{"Unreachable code!"};
+    }
     }
 }
 

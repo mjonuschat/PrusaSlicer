@@ -1,10 +1,7 @@
-#include "Slic3r/App/Platform/SDL/SDLRenderCanvas.hpp"
-
 #include <string>
 
 #include <GL/glew.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
-#include "SDL_syswm.h"
 
 #include <Slic3r/App/Platform/PlatformError.hpp>
 #include <Slic3r/App/Render/Init.hpp>
@@ -13,6 +10,11 @@
 #include <Slic3r/App/Render/Geometry.hpp>
 #include <Slic3r/App/Render/Texture.hpp>
 #include <Slic3r/App/Platform/MouseEvent.hpp>
+
+// Eigen headers clash with SDL headers, because of macro Success.
+// Include SDL headers last.
+#include "Slic3r/App/Platform/SDL/SDLRenderCanvas.hpp"
+#include "SDL_syswm.h"
 
 namespace Slic3r::App::Platform::SDL
 {

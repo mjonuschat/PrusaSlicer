@@ -3,6 +3,7 @@
 #include <vector>
 #include <tuple>
 #include <boost/functional/hash.hpp>
+#include <cstdint>
 
 namespace Slic3r::Domain {
 

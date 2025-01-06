@@ -87,7 +87,7 @@ function(add_cmake_project projectname)
             -DCMAKE_TOOLCHAIN_FILE:STRING=${CMAKE_TOOLCHAIN_FILE}
             -DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}
             -DCMAKE_CROSSCOMPILING_EMULATOR:STRING=${CMAKE_CROSSCOMPILING_EMULATOR}
-            -DCMAKE_FIND_DEBUG_MODE=TRUE
+            -DCMAKE_FIND_DEBUG_MODE=FALSE
             "${_configs_line}"
             ${DEP_CMAKE_OPTS}
             ${P_ARGS_CMAKE_ARGS}

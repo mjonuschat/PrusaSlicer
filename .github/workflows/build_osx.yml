@@ -2,8 +2,6 @@ name: Build osx
 
 on:
   push:
-    branches:
-      - master # disable flatpak for slic3r3 for now (we require to update OSX to have C++ 20 required by Yoga)
   workflow_dispatch:
 
 jobs:

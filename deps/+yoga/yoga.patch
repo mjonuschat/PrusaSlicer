@@ -1,5 +1,3 @@
-diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 55f1a6df..c8c15c30 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -10,7 +10,7 @@ set(CMAKE_VERBOSE_MAKEFILE on)
