@@ -97,7 +97,7 @@ wxString get_wraped_wxString(const wxString& in, size_t line_len /*=80*/)
                 ibreak    = ++ j;
                 overwrite = false;
             } else
-                j += get_utf8_sequence_length(in.ToUTF8() + j, in.size() - j);
+                j += get_utf8_sequence_length(static_cast<const char*>(in.ToUTF8()) + j, in.size() - j);
             if (++ cnt == line_len) {
                 if (ibreak == size_t(-1)) {
                     ibreak    = j;

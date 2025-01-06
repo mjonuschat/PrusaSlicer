@@ -924,7 +924,7 @@ boost::any ConfigOptionsGroup::get_config_value(const DynamicPrintConfig& config
 
                 text_value = WX::double_to_string(config_option.value);
                 if (config_option.percent) {
-                    text_value += "%";
+                    text_value += wxString::FromAscii("%");
                 }
 
                 ret = text_value;

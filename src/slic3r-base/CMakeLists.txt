@@ -34,7 +34,11 @@ endif ()
 
 add_library(slic3r-base STATIC ${SLIC3R_BASE_FILES})
 # wxString conversions only with explicit encoding stated for all slic3r-* targets
-target_compile_definitions(slic3r-base PUBLIC -DwxNO_IMPLICIT_WXSTRING_ENCODING=1)
+if ((NOT UNIX) OR APPLE)
+	# The wxNO_IMPLICIT_WXSTRING_ENCODING cannot be used along with wxUSE_UTF8_LOCALE_ONLY which gets defined on Linux
+	# as part of autoconf generated file (setup.h.in)
+	target_compile_definitions(slic3r-base PUBLIC -DwxNO_IMPLICIT_WXSTRING_ENCODING=1)
+endif ()
 target_include_directories(slic3r-base PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_include_directories(slic3r-base PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_link_libraries(slic3r-base PUBLIC
