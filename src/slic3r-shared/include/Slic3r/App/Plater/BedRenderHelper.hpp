@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <libslic3r/Point.hpp>
+#include "Slic3r/App/Render/TextureManager.hpp"
 
 namespace Slic3r::Domain {
 class Bed;
@@ -17,12 +18,13 @@ public:
      *
      * @param bed The bed whose texture is required.
      * @param size The desired size of the texture, in pixels.
+     * @param manager The TextureManager instance to create texture within
      *
-     * @return bed texture in raw format.
+     * @return bed texture instance.
      *
      * @note The filename of the texture is specified into the bed, see Slic3r::Domain::Bed definition.
      */
-    [[nodiscard]] static std::vector<uint8_t> texture(const Domain::Bed& bed, size_t size);
+    [[nodiscard]] static Render::Texture* texture(const Domain::Bed& bed, size_t size, Render::TextureManager& manager);
 
     /**
      * @brief Return the geometry of the bed grid.

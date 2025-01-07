@@ -14,22 +14,18 @@ static constexpr double GROUND_Z = -0.005;
 
 namespace Slic3r::App::Plater {
 
-std::vector<uint8_t> BedRenderHelper::texture(const Domain::Bed& bed, size_t size)
+Render::Texture* BedRenderHelper::texture(const Domain::Bed& bed, size_t size, Render::TextureManager& manager)
 {
     std::string texture_filename = bed.texture_filename();
 
     std::vector<uint8_t> ret;
     if (texture_filename.empty())
-        return ret;
+        return nullptr;
 
-    if (boost::algorithm::iends_with(texture_filename, ".png")) {
-        // TODO: load texture data from png file
-    }
-    else if (boost::algorithm::iends_with(texture_filename, ".svg")) {
-        // TODO: load texture data from svg file
-    }
+    Render::ImageLoadOptions opts;
+    opts.max_size_px = size;
 
-    return ret;
+    return manager.get(texture_filename, opts);
 }
 
 std::vector<Vec3f> BedRenderHelper::plate_grid(const Domain::Bed& bed)

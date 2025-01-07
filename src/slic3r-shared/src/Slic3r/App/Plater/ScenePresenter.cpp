@@ -65,7 +65,7 @@ static const std::vector<Vec3d> bed_offsets = {
 class MultipleBeds
 {
 public:
-static [[nodiscard]] std::pair<size_t, size_t> active(const Domain::BedContainer& container)
+[[nodiscard]] static std::pair<size_t, size_t> active(const Domain::BedContainer& container)
 {
     const Domain::BedContainer::BedList& beds = container.beds();
     for (size_t i = 0; i < beds.size(); ++i) {
@@ -200,7 +200,7 @@ void ScenePresenter::render_imgui(const Render::ScreenInfo& screen_info)
 
         if (remove_tag != nullptr) {
             scene().remove_children([&](const auto* n) {
-                const BedNodeTag* tag = n->tag_of_type<BedNodeTag>();
+                const BedNodeTag* tag = n->template tag_of_type<BedNodeTag>();
                 return tag != nullptr && tag->bed_id == remove_tag->bed_id && tag->instance_id == remove_tag->instance_id;
             });
             update_beds();
@@ -225,8 +225,8 @@ void ScenePresenter::render_imgui(const Render::ScreenInfo& screen_info)
             }
         }
 
-        ImGui::End();
     }
+    ImGui::End();
 #endif // ENABLED_DEBUG_BEDS
 
     if (!m_projects.empty())
