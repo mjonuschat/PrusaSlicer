@@ -1,24 +1,47 @@
 #pragma once
 
-#include <memory>
 #include "libslic3r/ObjectID.hpp"
-
-namespace Slic3r {
-class ModelInstance;
-}
+#include "libslic3r/Point.hpp"
+#include "libslic3r/Geometry.hpp"
 
 namespace Slic3r::Domain {
+
+class BedInstance;
 
 class Bed : public ObjectBase
 {
 public:
-    using ModelInstances = std::vector<ModelInstance*>;
-    [[nodiscard]] ModelInstances & model_instances() { return m_instances; }
-    [[nodiscard]] const ModelInstances& model() const { return m_instances; }
-private:
-    ModelInstances m_instances;
+    ~Bed() { clear_instances(); }
 
-    // other bed data like grid position
+    [[nodiscard]] static Bed from(const Pointfs& contour, float max_print_height,
+        const std::string& model_filename, const std::string& texture_filename);
+
+    [[nodiscard]] const Vec2d& center() const { return m_center; }
+    [[nodiscard]] const Pointfs& contour() const { return m_contour; }
+    [[nodiscard]] float max_print_height() const { return m_max_print_height; }
+
+    [[nodiscard]] const std::string& model_filename() const { return m_model_filename; }
+    [[nodiscard]] const std::string& texture_filename() const { return m_texture_filename; }
+
+    [[nodiscard]] BedInstance* add_instance();
+    [[nodiscard]] BedInstance* add_instance(const Geometry::Transformation& trafo);
+    void remove_instance(size_t idx);
+    void clear_instances();
+
+    [[nodiscard]] BedInstance* instance(size_t idx);
+    [[nodiscard]] const BedInstance* instance(size_t idx) const;
+
+    using BedInstances = std::vector<BedInstance*>;
+    [[nodiscard]] BedInstances& instances() { return m_instances; }
+    [[nodiscard]] const BedInstances& instances() const { return m_instances; }
+
+private:
+    Pointfs m_contour;
+    Vec2d m_center{ Vec2d::Zero() };
+    float m_max_print_height{ 0.0f };
+    std::string m_model_filename;
+    std::string m_texture_filename;
+    BedInstances m_instances;
 };
 
 } // namespace Slic3r::Domain

@@ -239,20 +239,37 @@ KeyCode get_key_code_from_event(const wxKeyEvent& event)
     return KeyCode::None;
 }
 
+static wxGLAttributes create_wxglattributes()
+{
+    //
+    // TODO:
+    // port missing settings from OpenGLManager::create_wxglcanvas
+    //
+
+    wxGLAttributes ret;
+    ret.PlatformDefaults().DoubleBuffer()
+        .RGBA().MinRGBA(8, 8, 8, 8)
+        .Depth(24)
+        .SampleBuffers(1).Samplers(4)
+#ifdef __APPLE__
+        // on MAC the method RGBA() has no effect
+        .SetNeedsARB(true);
+#else
+    ;
+#endif // __APPLE__
+    ret.EndList();
+
+    DEBUG_ASSERT(wxGLCanvas::IsDisplaySupported(ret));
+    if (!wxGLCanvas::IsDisplaySupported(ret))
+        ret.Reset();
+    return ret;
+}
+
 WXRenderCanvas::WXRenderCanvas(wxWindow* parent)
-: wxGLCanvas(parent), m_start_time(Clock::now())
+: wxGLCanvas(parent, create_wxglattributes()), m_start_time(Clock::now())
 {
     wxGLContextAttrs attrs;
     attrs.PlatformDefaults().CoreProfile();
-        //.RGBA()
-        //.DoubleBuffer()
-        //.MinRGBA(8,8,8,8)
-        //.Depth(24)
-
-#ifdef __APPLE__
-    // on MAC the method RGBA() has no effect
-    attrs.SetNeedsARB(true);
-#endif // __APPLE__
 
 #if defined(__APPLE__)
     // GL 3.2 Core + GLSL 150

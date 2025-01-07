@@ -6,53 +6,6 @@
 
 namespace Slic3r::App::Plater {
 
-static Scene::Frustum create_frustum(const Scene::Camera& camera, const Render::ScreenInfo& screen_info, const Render::Rect& rect)
-{
-    Scene::Ray ray_lt = camera.ray_at(screen_info.mouse_to_screen(rect.x), screen_info.mouse_to_screen(rect.y));
-    Scene::Ray ray_lb = camera.ray_at(screen_info.mouse_to_screen(rect.x), screen_info.mouse_to_screen(rect.y + rect.height));
-    Scene::Ray ray_rt = camera.ray_at(screen_info.mouse_to_screen(rect.x + rect.width), screen_info.mouse_to_screen(rect.y));
-    Scene::Ray ray_rb = camera.ray_at(screen_info.mouse_to_screen(rect.x + rect.width), screen_info.mouse_to_screen(rect.y + rect.height));
-
-    const Scene::AbstractCameraProjection& cam_proj = camera.cam_projection();
-    double near_z = cam_proj.z_near();
-    double far_z  = cam_proj.z_far();
-
-    // near left bottom
-    Vec3d nlb = ray_lb.point_at(near_z);
-    // near right bottom
-    Vec3d nrb = ray_rb.point_at(near_z);
-    // near right top
-    Vec3d nrt = ray_rt.point_at(near_z);
-    // near left top
-    Vec3d nlt = ray_lt.point_at(near_z);
-    // far left bottom
-    Vec3d flb = ray_lb.point_at(far_z);
-    // far right bottom
-    Vec3d frb = ray_rb.point_at(far_z);
-    // far right top
-    Vec3d frt = ray_rt.point_at(far_z);
-    // far left top
-    Vec3d flt = ray_lt.point_at(far_z);
-
-    Scene::Frustum ret;
-    ret.vertices = { nlb, nrb, nrt, nlt, flb, frb, frt, flt };
-    ret.planes = {
-        // near
-        Scene::Plane::from_three_points(nrb, nlb, nlt).normalized(),
-        // far
-        Scene::Plane::from_three_points(flb, frb, flt).normalized(),
-        // left
-        Scene::Plane::from_three_points(nlb, flb, nlt).normalized(),
-        // right
-        Scene::Plane::from_three_points(frb, nrb, frt).normalized(),
-        // bottom
-        Scene::Plane::from_three_points(nlb, nrb, flb).normalized(),
-        // top
-        Scene::Plane::from_three_points(nrt, nlt, frt).normalized()
-    };
-    return ret;
-}
-
 void RectangleSelection::update(const Vec2i& curr_mouse_pos)
 {
     Render::Rect rect{
@@ -65,7 +18,7 @@ void RectangleSelection::update(const Vec2i& curr_mouse_pos)
     float scr_w = m_screen_info.logical_width();
     float scr_h = m_screen_info.logical_height();
 
-    ASSERT(scr_w > 0.0f && scr_h > 0.0f);
+    DEBUG_ASSERT(scr_w > 0.0f && scr_h > 0.0f);
 
     float left   = 2.0f * (rect.x / scr_w - 0.5f);
     float right  = 2.0f * ((rect.x + rect.width) / scr_w - 0.5f);
@@ -74,7 +27,7 @@ void RectangleSelection::update(const Vec2i& curr_mouse_pos)
 
     Render::GeometryBuilder<Render::VertexP3> builder;
     auto* shader = m_device.context().shader_manager().get_shader("flat");
-    ASSERT(shader != nullptr);
+    DEBUG_ASSERT(shader != nullptr);
     builder
         .add_vertex({ {left,  bottom, 0.0f} })
         .add_vertex({ {right, bottom, 0.0f} })
@@ -83,7 +36,7 @@ void RectangleSelection::update(const Vec2i& curr_mouse_pos)
         .add_draw_command({ Render::PrimitiveType::LineLoop, 0, 4, Render::Material{}.set_shader(shader) });
     builder.update(m_geometry);
 
-    m_frustum = create_frustum(m_scene_provider.scene().camera(), m_screen_info, rect);
+    m_frustum = Scene::Frustum::from(m_scene_provider.scene().camera(), m_screen_info, rect);
     m_defined = m_initial_mouse_pos != curr_mouse_pos;
 }
 

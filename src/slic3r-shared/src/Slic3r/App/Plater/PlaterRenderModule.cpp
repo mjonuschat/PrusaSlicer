@@ -8,6 +8,8 @@
 #include "Slic3r/App/Plater/QuickSelectGizmo.hpp"
 #include "Slic3r/App/Plater/QuickDragGizmo.hpp"
 #include "Slic3r/App/Plater/TranslationGizmo.hpp"
+#include "Slic3r/Domain/Bed.hpp"
+#include "Slic3r/Domain/BedInstance.hpp"
 
 #include "imgui/imgui.h"
 #include "Eigen/SVD"
@@ -35,6 +37,18 @@ void PlaterRenderModule::init_scene()
     const double span = 20;
     const double x_off = -((x_size - 1) * span) / 2;
     const double y_off = -((y_size - 1) * span) / 2;
+
+    const Domain::Bed* bed = scene_interactor.bed();
+    Vec2d bed_center = bed->center().cast<double>();
+    Transform3d bed_xform = Geometry::translation_transform(to_3d(-bed_center, 0));
+    scene_interactor.new_bed(bed->id().id, bed_xform.matrix());
+
+    // add a second instance of the bed, as inactive
+    bed_xform.translate(Vec3d(300, 0, 0));
+    scene_interactor.add_bed_instance(bed->id().id, bed_xform.matrix());
+    Domain::BedInstance* bed_instance = bed->instances().back();
+    bed_instance->set_active(false);
+    m_scene_presenter->update_beds();
 
     {
         scene_interactor.new_object_from_mesh(TriangleMesh{its_make_cube(10,10,10) });
