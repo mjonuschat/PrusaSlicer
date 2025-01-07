@@ -89,8 +89,6 @@ TEST_CASE("Perimeter constructs KD trees", "[Seams][SeamPerimeters]") {
     CHECK(perimeter.common_points.embedded_points);
 }
 
-using std::filesystem::path;
-
 constexpr const char *to_string(Perimeters::PointType point_type) {
     using Perimeters::PointType;
 

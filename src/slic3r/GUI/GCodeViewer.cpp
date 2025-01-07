@@ -870,7 +870,7 @@ void GCodeViewer::load_as_gcode(const GCodeProcessorResult& gcode_result, const 
         m_viewer.toggle_top_layer_only_view_range();
 
     // avoid processing if called with the same gcode_result
-    if (m_last_result_id == gcode_result.id && wxGetApp().is_editor() && ! s_reload_preview_after_switching_beds) {
+    if (m_last_result_id == gcode_result.id && ! s_beds_switched_since_last_gcode_load && wxGetApp().is_editor() && ! s_reload_preview_after_switching_beds) {
         // collect tool colors
         libvgcode::Palette tools_colors;
         tools_colors.reserve(str_tool_colors.size());
@@ -890,6 +890,7 @@ void GCodeViewer::load_as_gcode(const GCodeProcessorResult& gcode_result, const 
     }
 
     m_last_result_id = gcode_result.id;
+    s_beds_switched_since_last_gcode_load = false;
 
     // release gpu memory, if used
     reset();

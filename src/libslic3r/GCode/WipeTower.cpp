@@ -586,7 +586,8 @@ WipeTower::WipeTower(const Vec2f& pos, double rotation_deg, const PrintConfig& c
         m_set_extruder_trimpot    = config.high_current_on_filament_swap;
     }
 
-    m_is_mk4mmu3 = boost::icontains(config.printer_notes.value, "PRINTER_MODEL_MK4") && boost::icontains(config.printer_notes.value, "MMU");
+    m_is_mk4mmu3                 = boost::icontains(config.printer_notes.value, "PRINTER_MODEL_MK4") && boost::icontains(config.printer_notes.value, "MMU");
+    m_switch_filament_monitoring = m_is_mk4mmu3 || is_XL_printer(config);
 
     // Calculate where the priming lines should be - very naive test not detecting parallelograms etc.
     const std::vector<Vec2d>& bed_points = config.bed_shape.values;
@@ -935,7 +936,7 @@ void WipeTower::toolchange_Unload(
         }
     }
 
-    if (m_is_mk4mmu3) {
+    if (m_switch_filament_monitoring) {
         writer.switch_filament_monitoring(false);
         writer.wait(1.5f);
     }
@@ -1084,7 +1085,7 @@ void WipeTower::toolchange_Change(
     //writer.append("[end_filament_gcode]\n");
     writer.append("[toolchange_gcode_from_wipe_tower_generator]\n");
 
-    if (m_is_mk4mmu3)
+    if (m_switch_filament_monitoring)
         writer.switch_filament_monitoring(true);
 
     // Travel to where we assume we are. Custom toolchange or some special T code handling (parking extruder etc)

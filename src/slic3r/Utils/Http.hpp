@@ -25,6 +25,9 @@ struct HttpRetryOpt
 
 	static const HttpRetryOpt& no_retry();
     static const HttpRetryOpt& default_retry();
+
+    static constexpr size_t MAX_RETRY_DELAY_MS = 4 * 64000;
+    static constexpr size_t MAX_RETRIES = 16;
 };
 
 

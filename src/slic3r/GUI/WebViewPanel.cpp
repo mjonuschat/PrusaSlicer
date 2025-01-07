@@ -752,7 +752,9 @@ wxString ConnectWebViewPanel::get_login_script(bool refresh)
 
             let retry = false;
             let backoff = 1000;
-            const maxBackoff = 64000;
+            const maxBackoff = 64000 * 4;
+            const maxRetries = 16;
+            let numRetries = 0;
             do {
 
                 let error = false;
@@ -763,7 +765,8 @@ wxString ConnectWebViewPanel::get_login_script(bool refresh)
                     let body = await resp.text();
                     _prusaSlicer_log('Slicer Login resp ' + resp.status + ' (' + token.substring(token.length - 8) + ') body: ' + body);
                     if (resp.status >= 500 || resp.status == 408) {
-                        retry = true;
+                        numRetries++;
+                        retry = maxRetries <= 0 || numRetries <= maxRetries;
                     } else {
                         retry = false;
                         if (resp.status >= 400)
@@ -772,6 +775,7 @@ wxString ConnectWebViewPanel::get_login_script(bool refresh)
                 } catch (e) {
                     _prusaSlicer_log('Slicer Login failed: ' + e.toString());
                     console.error('Slicer Login failed', e.toString());
+                    // intentionally not taking care about max retry count, as this is not server error but likely being offline
                     retry = true;
                 }
 

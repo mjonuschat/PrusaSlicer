@@ -15,7 +15,6 @@
 
 #include <libslic3r/PresetBundle.hpp> // IWYU pragma: keep
 
-
 #include <wx/webview.h>
 #include <wx/display.h>
 
@@ -80,7 +79,7 @@ WebViewDialog::WebViewDialog(wxWindow* parent, const wxString& url, const wxStri
         topsizer->Add(text, 0, wxALIGN_LEFT | wxBOTTOM, 10);
         return;
     }
-    WebView::webview_create(m_browser, this, GUI::format_wxstr("file://%1%/web/%2%.html", boost::filesystem::path(resources_dir()).generic_string(), m_loading_html), m_script_message_hadler_names);
+    WebView::webview_create(m_browser, this, url, m_script_message_hadler_names);
     
     if (Utils::ServiceConfig::instance().webdev_enabled()) {
         m_browser->EnableContextMenu();
@@ -139,7 +138,6 @@ WebViewDialog::WebViewDialog(wxWindow* parent, const wxString& url, const wxStri
 
     Bind(wxEVT_CLOSE_WINDOW, ([this](wxCloseEvent& evt) { EndModal(wxID_CANCEL); }));
 
-    m_browser->LoadURL(url);   
 #ifdef DEBUG_URL_PANEL
     m_url->SetLabelText(url);
 #endif
@@ -691,14 +689,10 @@ void PrintablesConnectUploadDialog::on_connect_action_close_dialog(const std::st
 }
 
 LoginWebViewDialog::LoginWebViewDialog(wxWindow *parent, std::string &ret_val, const wxString& url, wxEvtHandler* evt_handler)
-    : WebViewDialog(parent, GUI::format_wxstr("file://%1%/web/other_loading.html", boost::filesystem::path(resources_dir()).generic_string()), _L("Log in dialog"), wxSize(50 * wxGetApp().em_unit(), 80 * wxGetApp().em_unit()), {})
+    : WebViewDialog(parent, url, _L("Log in dialog"), wxSize(50 * wxGetApp().em_unit(), 80 * wxGetApp().em_unit()), {})
     , m_ret_val(ret_val)
     , p_evt_handler(evt_handler)
 {
-    // Loading screen is sent to WebViewDialog constructor to first load.
-    // In on_loaded real url is requested.
-    // This gives us space to delete cookies before requesting login page. (So it is never logged in)
-    m_default_url = url;
     Centre();
 }
 void LoginWebViewDialog::on_navigation_request(wxWebViewEvent &evt)
@@ -731,22 +725,6 @@ void LoginWebViewDialog::on_dpi_changed(const wxRect &suggested_rect)
     SetMinSize(size);
     Fit();
     Refresh();
-}
-
-void LoginWebViewDialog::on_loaded(wxWebViewEvent &evt)
-{
-    BOOST_LOG_TRIVIAL(debug) << "LoginWebViewDialog::on_loaded " << evt.GetURL();  
-    
-    if (!m_did_default_url_request && evt.GetURL().Find("/web/other_loading.html") != wxNOT_FOUND) {
-        m_did_default_url_request = true;
-        delete_cookies(m_browser, Utils::ServiceConfig::instance().account_url());
-        delete_cookies(m_browser, "https://accounts.google.com");
-        delete_cookies(m_browser, "https://appleid.apple.com");
-        delete_cookies(m_browser, "https://facebook.com");
-        m_browser->LoadURL(m_default_url);
-        return;
-    }
-    
 }
 } // GUI
 } // Slic3r

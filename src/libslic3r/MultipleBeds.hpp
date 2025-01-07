@@ -17,6 +17,7 @@ class Print;
 
 extern bool s_reload_preview_after_switching_beds;
 extern bool s_beds_just_switched;
+extern bool s_beds_switched_since_last_gcode_load;
 
 namespace BedsGrid {
 using GridCoords = Vec2crd;

@@ -464,7 +464,7 @@ Http::Http(const std::string &url) : p(new priv(url)) {}
 const HttpRetryOpt& HttpRetryOpt::default_retry()
 {
 	using namespace std::chrono_literals;
-    static HttpRetryOpt val = {500ms, 64s, 0};
+    static HttpRetryOpt val = {500ms, std::chrono::milliseconds(MAX_RETRY_DELAY_MS), MAX_RETRIES};
     return val;
 }
 

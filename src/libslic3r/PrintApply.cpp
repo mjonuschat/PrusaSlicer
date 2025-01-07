@@ -1470,7 +1470,7 @@ Print::ApplyStatus Print::apply(const Model &model, DynamicPrintConfig new_full_
                     for (size_t state_idx = 1; state_idx < std::min(volume_used_facet_states.size(), used_facet_states.size()); ++state_idx) {
                         used_facet_states[state_idx] |= volume_used_facet_states[state_idx];
                     }
-
+#if 0
                     // When the default facet state (TriangleStateType::NONE) is used, then we mark the volume extruder also as the used extruder.
                     const bool used_volume_extruder = !volume_used_facet_states.empty() && volume_used_facet_states[static_cast<size_t>(TriangleStateType::NONE)];
                     if (const int volume_extruder_id = volume->extruder_id(); used_volume_extruder && volume_extruder_id >= 0) {
@@ -1479,6 +1479,9 @@ Print::ApplyStatus Print::apply(const Model &model, DynamicPrintConfig new_full_
                 } else if (const int volume_extruder_id = volume->extruder_id(); volume_extruder_id >= 0) {
                     used_facet_states[volume_extruder_id] |= true;
                 }
+#else
+                }
+#endif
             }
 
             for (size_t state_idx = static_cast<size_t>(TriangleStateType::Extruder1); state_idx < used_facet_states.size(); ++state_idx) {

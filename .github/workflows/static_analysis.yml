@@ -6,12 +6,6 @@ on:
     - cron: "0 0 * * *"
 
 jobs:
-  static_analysis_master:
-    uses: Prusa-Development/PrusaSlicer-Actions/.github/workflows/static_analysis.yml@slic3r3_prototype
-    secrets: inherit
-    with:
-      branch: master
-      actions_branch: slic3r3_prototype
   static_analysis_dev:
     uses: Prusa-Development/PrusaSlicer-Actions/.github/workflows/static_analysis.yml@slic3r3_prototype
     secrets: inherit
