@@ -484,8 +484,8 @@ void PrintConfigDef::init_common_params()
     def->label = L("Authorization Type");
 //    def->tooltip = L("");
     def->set_enum<AuthorizationType>({
-        { "key", L("API key") },
-        { "user", L("HTTP digest") }
+        std::pair{ "key", L("API key") },
+        std::pair{ "user", L("HTTP digest") }
     });
     def->mode = comAdvanced;
     def->cli = ConfigOptionDef::nocli;
@@ -521,8 +521,8 @@ void PrintConfigDef::init_fff_params()
     def->tooltip = L("Enable to get a G-code file which has G2 and G3 moves. "
                      "G-code resolution will be used as the fitting tolerance.");
     def->set_enum<ArcFittingType>({
-        { "disabled",       "Disabled" },
-        { "emit_center",    "Enabled: G2/3 I J" }
+        std::pair{ "disabled",       "Disabled" },
+        std::pair{ "emit_center",    "Enabled: G2/3 I J" }
     });
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionEnum<ArcFittingType>(ArcFittingType::Disabled));
@@ -704,9 +704,9 @@ void PrintConfigDef::init_fff_params()
     def->tooltip = L("Use only one perimeter on flat top surface, to give more space to the top infill pattern. Could be applied on topmost surface or all top surfaces.");
     def->mode = comExpert;
     def->set_enum<TopOnePerimeterType>({
-        { "none",    L("Disabled") },
-        { "top",     L("All top surfaces") },
-        { "topmost", L("Topmost surface only") }
+        std::pair{ "none",    L("Disabled") },
+        std::pair{ "top",     L("All top surfaces") },
+        std::pair{ "topmost", L("Topmost surface only") }
     });
     def->set_default_value(new ConfigOptionEnum<TopOnePerimeterType>(TopOnePerimeterType::None));
 
@@ -840,10 +840,10 @@ void PrintConfigDef::init_fff_params()
     def->category = L("Skirt and brim");
     def->tooltip = L("The places where the brim will be printed around each object on the first layer.");
     def->set_enum<BrimType>({
-        { "no_brim",         L("No brim") },
-        { "outer_only",      L("Outer brim only") },
-        { "inner_only",      L("Inner brim only") },
-        { "outer_and_inner", L("Outer and inner brim") } 
+        std::pair{ "no_brim",         L("No brim") },
+        std::pair{ "outer_only",      L("Outer brim only") },
+        std::pair{ "inner_only",      L("Inner brim only") },
+        std::pair{ "outer_and_inner", L("Outer and inner brim") } 
     });
     def->mode = comSimple;
     def->set_default_value(new ConfigOptionEnum<BrimType>(btOuterOnly));
@@ -1011,9 +1011,12 @@ void PrintConfigDef::init_fff_params()
                    "(top+bottom solid layers).");
     def->set_enum<EnsureVerticalShellThickness>({
         { "disabled", L("Disabled") },
-        // TRN: This is a drop-down option for 'Ensure vertical shell thickness' parameter.
         { "partial",  L("Partial")  },
         { "enabled",  L("Enabled")  },
+        std::pair{ "disabled", L("Disabled") },
+        // TRN: This is a drop-down option for 'Ensure vertical shell thickness' parameter.
+        std::pair{ "partial",  L("Partial")  },
+        std::pair{ "enabled",  L("Enabled")  },
     });
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionEnum<EnsureVerticalShellThickness>(EnsureVerticalShellThickness::Enabled));
@@ -1024,14 +1027,14 @@ void PrintConfigDef::init_fff_params()
     def->tooltip = L("Fill pattern for top infill. This only affects the top visible layer, and not its adjacent solid shells.");
     def->cli = "top-fill-pattern|external-fill-pattern|solid-fill-pattern";
     def->set_enum<InfillPattern>({
-        { "rectilinear",        L("Rectilinear") },
-        { "monotonic",          L("Monotonic") },
-        { "monotoniclines",     L("Monotonic Lines") },
-        { "alignedrectilinear", L("Aligned Rectilinear") },
-        { "concentric",         L("Concentric") },
-        { "hilbertcurve",       L("Hilbert Curve") },
-        { "archimedeanchords",  L("Archimedean Chords") },
-        { "octagramspiral",     L("Octagram Spiral") }
+        std::pair{ "rectilinear",        L("Rectilinear") },
+        std::pair{ "monotonic",          L("Monotonic") },
+        std::pair{ "monotoniclines",     L("Monotonic Lines") },
+        std::pair{ "alignedrectilinear", L("Aligned Rectilinear") },
+        std::pair{ "concentric",         L("Concentric") },
+        std::pair{ "hilbertcurve",       L("Hilbert Curve") },
+        std::pair{ "archimedeanchords",  L("Archimedean Chords") },
+        std::pair{ "octagramspiral",     L("Octagram Spiral") }
     });
 
     // solid_fill_pattern is an obsolete equivalent to top_fill_pattern/bottom_fill_pattern.
@@ -1514,20 +1517,20 @@ void PrintConfigDef::init_fff_params()
     def->min = 0;
     def->max = 100;
     def->set_enum_values(ConfigOptionDef::GUIType::f_enum_open, {
-        { "0", "0%" },
-        { "5", "5%" },
-        { "10", "10%" },
-        { "15", "15%" },
-        { "20", "20%" },
-        { "25", "25%" },
-        { "30", "30%" },
-        { "40", "40%" },
-        { "50", "50%" },
-        { "60", "60%" },
-        { "70", "70%" },
-        { "80", "80%" },
-        { "90", "90%" },
-        { "100", "100%" }
+        std::pair{ "0", "0%" },
+        std::pair{ "5", "5%" },
+        std::pair{ "10", "10%" },
+        std::pair{ "15", "15%" },
+        std::pair{ "20", "20%" },
+        std::pair{ "25", "25%" },
+        std::pair{ "30", "30%" },
+        std::pair{ "40", "40%" },
+        std::pair{ "50", "50%" },
+        std::pair{ "60", "60%" },
+        std::pair{ "70", "70%" },
+        std::pair{ "80", "80%" },
+        std::pair{ "90", "90%" },
+        std::pair{ "100", "100%" }
     });
     def->set_default_value(new ConfigOptionPercent(20));
 
@@ -1536,24 +1539,24 @@ void PrintConfigDef::init_fff_params()
     def->category = L("Infill");
     def->tooltip = L("Fill pattern for general low-density infill.");
     def->set_enum<InfillPattern>({
-        { "rectilinear",        L("Rectilinear") },
-        { "alignedrectilinear", L("Aligned Rectilinear") },
-        { "grid",               L("Grid") }, 
-        { "triangles",          L("Triangles")},
-        { "stars",              L("Stars")},
-        { "cubic",              L("Cubic")},
-        { "line",               L("Line")},
-        { "concentric",         L("Concentric")},
-        { "honeycomb",          L("Honeycomb")},
-        { "3dhoneycomb",        L("3D Honeycomb")},
-        { "gyroid",             L("Gyroid")},
-        { "hilbertcurve",       L("Hilbert Curve")},
-        { "archimedeanchords",  L("Archimedean Chords")},
-        { "octagramspiral",     L("Octagram Spiral")},
-        { "adaptivecubic",      L("Adaptive Cubic")},
-        { "supportcubic",       L("Support Cubic")},
-        { "lightning",          L("Lightning")},
-        { "zigzag",             L("Zig Zag")}
+        std::pair{ "rectilinear",        L("Rectilinear") },
+        std::pair{ "alignedrectilinear", L("Aligned Rectilinear") },
+        std::pair{ "grid",               L("Grid") }, 
+        std::pair{ "triangles",          L("Triangles")},
+        std::pair{ "stars",              L("Stars")},
+        std::pair{ "cubic",              L("Cubic")},
+        std::pair{ "line",               L("Line")},
+        std::pair{ "concentric",         L("Concentric")},
+        std::pair{ "honeycomb",          L("Honeycomb")},
+        std::pair{ "3dhoneycomb",        L("3D Honeycomb")},
+        std::pair{ "gyroid",             L("Gyroid")},
+        std::pair{ "hilbertcurve",       L("Hilbert Curve")},
+        std::pair{ "archimedeanchords",  L("Archimedean Chords")},
+        std::pair{ "octagramspiral",     L("Octagram Spiral")},
+        std::pair{ "adaptivecubic",      L("Adaptive Cubic")},
+        std::pair{ "supportcubic",       L("Support Cubic")},
+        std::pair{ "lightning",          L("Lightning")},
+        std::pair{ "zigzag",             L("Zig Zag")}
     });
     def->set_default_value(new ConfigOptionEnum<InfillPattern>(ipStars));
 
@@ -1656,9 +1659,9 @@ void PrintConfigDef::init_fff_params()
     def->category = L("Fuzzy Skin");
     def->tooltip = L("Fuzzy skin type.");
     def->set_enum<FuzzySkinType>({
-        { "none",       L("None") },
-        { "external",   L("Outside walls") },
-        { "all",        L("All walls") }
+        std::pair{ "none",       L("None") },
+        std::pair{ "external",   L("Outside walls") },
+        std::pair{ "all",        L("All walls") }
     });
     def->mode = comSimple;
     def->set_default_value(new ConfigOptionEnum<FuzzySkinType>(FuzzySkinType::None));
@@ -1714,19 +1717,19 @@ void PrintConfigDef::init_fff_params()
                    "Set this option to your printer's firmware to get a compatible output. "
                    "The \"No extrusion\" flavor prevents PrusaSlicer from exporting any extrusion value at all.");
     def->set_enum<GCodeFlavor>({
-        { "reprap",         "RepRap/Sprinter" },
-        { "reprapfirmware", "RepRapFirmware" },
-        { "repetier",       "Repetier" },
-        { "teacup",         "Teacup" },
-        { "makerware",      "MakerWare (MakerBot)" },
-        { "marlin",         "Marlin (legacy)" },
-        { "marlin2",        "Marlin 2" },
-        { "klipper",        "Klipper" },
-        { "sailfish",       "Sailfish (MakerBot)" },
-        { "mach3",          "Mach3/LinuxCNC" },
-        { "machinekit",     "Machinekit" },
-        { "smoothie",       "Smoothie" },
-        { "no-extrusion",   L("No extrusion") }
+        std::pair{ "reprap",         "RepRap/Sprinter" },
+        std::pair{ "reprapfirmware", "RepRapFirmware" },
+        std::pair{ "repetier",       "Repetier" },
+        std::pair{ "teacup",         "Teacup" },
+        std::pair{ "makerware",      "MakerWare (MakerBot)" },
+        std::pair{ "marlin",         "Marlin (legacy)" },
+        std::pair{ "marlin2",        "Marlin 2" },
+        std::pair{ "klipper",        "Klipper" },
+        std::pair{ "sailfish",       "Sailfish (MakerBot)" },
+        std::pair{ "mach3",          "Mach3/LinuxCNC" },
+        std::pair{ "machinekit",     "Machinekit" },
+        std::pair{ "smoothie",       "Smoothie" },
+        std::pair{ "no-extrusion",   L("No extrusion") }
     });
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionEnum<GCodeFlavor>(gcfRepRapSprinter));
@@ -1739,10 +1742,10 @@ void PrintConfigDef::init_fff_params()
                      "This settings is NOT compatible with Single Extruder Multi Material setup and Wipe into Object / Wipe into Infill.");
 
     def->set_enum<LabelObjectsStyle>({
-        { "disabled",   L("Disabled") },
-        { "octoprint",  L("OctoPrint comments") },
-        { "firmware",   L("Firmware-specific") }
-        });
+        std::pair{ "disabled",   L("Disabled") },
+        std::pair{ "octoprint",  L("OctoPrint comments") },
+        std::pair{ "firmware",   L("Firmware-specific") }
+    });
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionEnum<LabelObjectsStyle>(LabelObjectsStyle::Disabled));
 
@@ -1829,12 +1832,12 @@ void PrintConfigDef::init_fff_params()
     def->ratio_over = "infill_extrusion_width";
     def->max_literal = 1000;
     def->set_enum_values(ConfigOptionDef::GUIType::f_enum_open, {
-        { "0",      L("0 (no open anchors)") },
-        { "1",      L("1 mm") },
-        { "2",      L("2 mm") },
-        { "5",      L("5 mm") },
-        { "10",     L("10 mm") },
-        { "1000",   L("1000 (unlimited)") }
+        std::pair{ "0",      L("0 (no open anchors)") },
+        std::pair{ "1",      L("1 mm") },
+        std::pair{ "2",      L("2 mm") },
+        std::pair{ "5",      L("5 mm") },
+        std::pair{ "10",     L("10 mm") },
+        std::pair{ "1000",   L("1000 (unlimited)") }
     });
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloatOrPercent(600, true));
@@ -1852,12 +1855,12 @@ void PrintConfigDef::init_fff_params()
     def->ratio_over  = def_infill_anchor_min->ratio_over;
     def->max_literal = def_infill_anchor_min->max_literal;
     def->set_enum_values(ConfigOptionDef::GUIType::f_enum_open, {
-        { "0",      L("0 (not anchored)") },
-        { "1",      L("1 mm") },
-        { "2",      L("2 mm") },
-        { "5",      L("5 mm") },
-        { "10",     L("10 mm") },
-        { "1000",   L("1000 (unlimited)") }
+        std::pair{ "0",      L("0 (not anchored)") },
+        std::pair{ "1",      L("1 mm") },
+        std::pair{ "2",      L("2 mm") },
+        std::pair{ "5",      L("5 mm") },
+        std::pair{ "10",     L("10 mm") },
+        std::pair{ "1000",   L("1000 (unlimited)") }
     });
     def->mode        = def_infill_anchor_min->mode;
     def->set_default_value(new ConfigOptionFloatOrPercent(50, false));
@@ -1974,9 +1977,9 @@ void PrintConfigDef::init_fff_params()
     def->category = L("Ironing");
     def->tooltip = L("Ironing Type");
     def->set_enum<IroningType>({
-        { "top",        L("All top surfaces") },
-        { "topmost",    L("Topmost surface only") },
-        { "solid",      L("All solid surfaces") }
+        std::pair{ "top",        L("All top surfaces") },
+        std::pair{ "topmost",    L("Topmost surface only") },
+        std::pair{ "solid",      L("All solid surfaces") }
     });
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionEnum<IroningType>(IroningType::TopSurfaces));
@@ -2049,9 +2052,9 @@ void PrintConfigDef::init_fff_params()
     def->category = L("Machine limits");
     def->tooltip = L("How to apply the Machine Limits");
     def->set_enum<MachineLimitsUsage>({
-        { "emit_to_gcode",      L("Emit to G-code") },
-        { "time_estimate_only", L("Use for time estimate") },
-        { "ignore",             L("Ignore") }
+        std::pair{ "emit_to_gcode",      L("Emit to G-code") },
+        std::pair{ "time_estimate_only", L("Use for time estimate") },
+        std::pair{ "ignore",             L("Ignore") }
     });
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionEnum<MachineLimitsUsage>(MachineLimitsUsage::TimeEstimateOnly));
@@ -2298,15 +2301,15 @@ void PrintConfigDef::init_fff_params()
     def->tooltip = L("Slic3r can upload G-code files to a printer host. This field must contain "
                    "the kind of the host.");
     def->set_enum<PrintHostType>({
-        { "prusalink",      "PrusaLink" },
-        { "prusaconnect",   "PrusaConnect" },
-        { "octoprint",      "OctoPrint" },
-        { "moonraker",      "Klipper (via Moonraker)" },
-        { "duet",           "Duet" },
-        { "flashair",       "FlashAir" },
-        { "astrobox",       "AstroBox" },
-        { "repetier",       "Repetier" },
-        { "mks",            "MKS" }
+        std::pair{ "prusalink",      "PrusaLink" },
+        std::pair{ "prusaconnect",   "PrusaConnect" },
+        std::pair{ "octoprint",      "OctoPrint" },
+        std::pair{ "moonraker",      "Klipper (via Moonraker)" },
+        std::pair{ "duet",           "Duet" },
+        std::pair{ "flashair",       "FlashAir" },
+        std::pair{ "astrobox",       "AstroBox" },
+        std::pair{ "repetier",       "Repetier" },
+        std::pair{ "mks",            "MKS" }
     });
     def->mode = comAdvanced;
     def->cli = ConfigOptionDef::nocli;
@@ -2710,10 +2713,10 @@ void PrintConfigDef::init_fff_params()
     def->category = L("Layers and Perimeters");
     def->tooltip = L("Position of perimeters starting points.");
     def->set_enum<SeamPosition>({
-        { "random",     L("Random") },
-        { "nearest",    L("Nearest") },
-        { "aligned",    L("Aligned") },
-        { "rear",       L("Rear") }
+        std::pair{ "random",     L("Random") },
+        std::pair{ "nearest",    L("Nearest") },
+        std::pair{ "aligned",    L("Aligned") },
+        std::pair{ "rear",       L("Rear") }
     });
     def->mode = comSimple;
     def->set_default_value(new ConfigOptionEnum<SeamPosition>(spAligned));
@@ -2733,10 +2736,10 @@ void PrintConfigDef::init_fff_params()
     def->set_default_value(new ConfigOptionEnum<ScarfSeamPlacement>(ScarfSeamPlacement::nowhere));
     def->set_enum<ScarfSeamPlacement>({
         // TRN: Drop-down option for 'Scarf joint placement' parameter.
-        { "nowhere", L("Nowhere") },
+        std::pair{ "nowhere", L("Nowhere") },
         // TRN: Drop-down option for 'Scarf joint placement' parameter.
-        { "contours", L("Contours") },
-        { "everywhere", L("Everywhere") }
+        std::pair{ "contours", L("Contours") },
+        std::pair{ "everywhere", L("Everywhere") }
     });
 
     def = this->add("scarf_seam_only_on_smooth", coBool);
@@ -2831,9 +2834,9 @@ void PrintConfigDef::init_fff_params()
                      "Limited = skirt is as tall as specified by skirt_height.\n"
     				 "This is useful to protect an ABS or ASA print from warping and detaching from print bed due to wind draft.");
     def->set_enum<DraftShield>({
-        { "disabled",   L("Disabled") },
-        { "limited",    L("Limited") },
-        { "enabled",    L("Enabled") }
+        std::pair{ "disabled",   L("Disabled") },
+        std::pair{ "limited",    L("Limited") },
+        std::pair{ "enabled",    L("Enabled") }
     });
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionEnum<DraftShield>(dsDisabled));
@@ -3064,9 +3067,9 @@ void PrintConfigDef::init_fff_params()
     def->category = L("Advanced");
     def->tooltip = L("Use \"Even-odd\" for 3DLabPrint airplane models. Use \"Close holes\" to close all holes in the model.");
     def->set_enum<SlicingMode>({
-        { "regular",        L("Regular") },
-        { "even_odd",       L("Even-odd") },
-        { "close_holes",    L("Close holes") }
+        std::pair{ "regular",        L("Regular") },
+        std::pair{ "even_odd",       L("Even-odd") },
+        std::pair{ "close_holes",    L("Close holes") }
     });
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionEnum<SlicingMode>(SlicingMode::Regular));
@@ -3124,9 +3127,9 @@ void PrintConfigDef::init_fff_params()
     def->sidetext = L("mm");
 //    def->min = 0;
     def->set_enum_values(ConfigOptionDef::GUIType::f_enum_open, {
-        { "0",      L("0 (soluble)") },
-        { "0.1",    L("0.1 (detachable)") },
-        { "0.2",    L("0.2 (detachable)") }
+        std::pair{ "0",      L("0 (soluble)") },
+        std::pair{ "0.1",    L("0.1 (detachable)") },
+        std::pair{ "0.2",    L("0.2 (detachable)") }
     });
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloat(0.2));
@@ -3140,9 +3143,9 @@ void PrintConfigDef::init_fff_params()
 //    def->min = 0;
     def->set_enum_values(ConfigOptionDef::GUIType::f_enum_open, {
     //TRN Print Settings: "Bottom contact Z distance". Have to be as short as possible
-        { "0",      L("Same as top") },
-        { "0.1",    "0.1" },
-        { "0.2",    "0.2" }
+        std::pair{ "0",      L("Same as top") },
+        std::pair{ "0.1",    "0.1" },
+        std::pair{ "0.2",    "0.2" }
     });
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloat(0));
@@ -3204,10 +3207,10 @@ void PrintConfigDef::init_fff_params()
     def->sidetext = L("layers");
     def->min = 0;
     def->set_enum_values(ConfigOptionDef::GUIType::i_enum_open, {
-        { "0", L("0 (off)") },
-        { "1", L("1 (light)") },
-        { "2", L("2 (default)") },
-        { "3", L("3 (heavy)") }
+        std::pair{ "0", L("0 (off)") },
+        std::pair{ "1", L("1 (light)") },
+        std::pair{ "2", L("2 (default)") },
+        std::pair{ "3", L("3 (heavy)") }
     });
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionInt(3));
@@ -3221,11 +3224,11 @@ void PrintConfigDef::init_fff_params()
     def->min = -1;
     def->set_enum_values(ConfigOptionDef::GUIType::i_enum_open, {
     //TRN Print Settings: "Bottom interface layers". Have to be as short as possible
-        { "-1", L("Same as top") },
-        { "0", L("0 (off)") },
-        { "1", L("1 (light)") },
-        { "2", L("2 (default)") },
-        { "3", L("3 (heavy)") }
+        std::pair{ "-1", L("Same as top") },
+        std::pair{ "0", L("0 (off)") },
+        std::pair{ "1", L("1 (light)") },
+        std::pair{ "2", L("2 (default)") },
+        std::pair{ "3", L("3 (heavy)") }
     });
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionInt(-1));
@@ -3265,9 +3268,9 @@ void PrintConfigDef::init_fff_params()
     def->category = L("Support material");
     def->tooltip = L("Pattern used to generate support material.");
     def->set_enum<SupportMaterialPattern>({
-        { "rectilinear",        L("Rectilinear") },
-        { "rectilinear-grid",   L("Rectilinear grid") },
-        { "honeycomb",          L("Honeycomb") }
+        std::pair{ "rectilinear",        L("Rectilinear") },
+        std::pair{ "rectilinear-grid",   L("Rectilinear grid") },
+        std::pair{ "honeycomb",          L("Honeycomb") }
     });
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionEnum<SupportMaterialPattern>(smpRectilinear));
@@ -3279,9 +3282,9 @@ void PrintConfigDef::init_fff_params()
                      "Default pattern for non-soluble support interface is Rectilinear, "
                      "while default pattern for soluble support interface is Concentric.");
     def->set_enum<SupportMaterialInterfacePattern>({
-        { "auto",           L("Default") },
-        { "rectilinear",    L("Rectilinear") },
-        { "concentric",     L("Concentric") }
+        std::pair{ "auto",           L("Default") },
+        std::pair{ "rectilinear",    L("Rectilinear") },
+        std::pair{ "concentric",     L("Concentric") }
     });
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionEnum<SupportMaterialInterfacePattern>(smipRectilinear));
@@ -3311,9 +3314,9 @@ void PrintConfigDef::init_fff_params()
                      "will create more stable supports, while snug support towers will save material and reduce "
                      "object scarring.");
     def->set_enum<SupportMaterialStyle>({
-        { "grid", L("Grid") }, 
-        { "snug", L("Snug") },
-        { "organic", L("Organic") }
+        std::pair{ "grid", L("Grid") }, 
+        std::pair{ "snug", L("Snug") },
+        std::pair{ "organic", L("Organic") }
     });
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionEnum<SupportMaterialStyle>(smsGrid));
@@ -3737,8 +3740,8 @@ void PrintConfigDef::init_fff_params()
                       "Arachne engine produces perimeters with variable extrusion width. "
                       "This setting also affects the Concentric infill.");
     def->set_enum<PerimeterGeneratorType>({
-        { "classic", L("Classic") },
-        { "arachne", L("Arachne") }
+        std::pair{ "classic", L("Classic") },
+        std::pair{ "arachne", L("Arachne") }
     });
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionEnum<PerimeterGeneratorType>(PerimeterGeneratorType::Arachne));
@@ -4151,8 +4154,8 @@ void PrintConfigDef::init_sla_params()
                      " Portrait mode will flip the meaning of display width and height parameters"
                      " and the output images will be rotated by 90 degrees.");
     def->set_enum<SLADisplayOrientation>({
-        { "landscape",  L("Landscape") },
-        { "portrait",   L("Portrait") }
+        std::pair{ "landscape",  L("Landscape") },
+        std::pair{ "portrait",   L("Portrait") }
     });
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionEnum<SLADisplayOrientation>(sladoPortrait));
@@ -4664,9 +4667,9 @@ void PrintConfigDef::init_sla_params()
         "A slower printing profile might be necessary when using materials with higher viscosity "
         "or with some hollowed parts. It slows down the tilt movement and adds a delay before exposure.");
     def->set_enum<SLAMaterialSpeed>({
-        { "slow",           L("Slow") },
-        { "fast",           L("Fast") },
-        { "high_viscosity", L("High viscosity") }
+        std::pair{ "slow",           L("Slow") },
+        std::pair{ "fast",           L("Fast") },
+        std::pair{ "high_viscosity", L("High viscosity") }
     });
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionEnum<SLAMaterialSpeed>(slamsFast));
@@ -4751,17 +4754,17 @@ void PrintConfigDef::init_sla_tilt_params()
     def->mode = comExpert;
     def->sidetext = L("mm/s");
     def->set_enum<TowerSpeeds>({
-        { "layer1",  "1"  },
-        { "layer2",  "2"  },
-        { "layer3",  "3"  },
-        { "layer4",  "4"  },
-        { "layer5",  "5"  },
-        { "layer8",  "8"  },
-        { "layer11", "11" },
-        { "layer14", "14" },
-        { "layer18", "18" },
-        { "layer22", "22" },
-        { "layer24", "24" },
+        std::pair{ "layer1",  "1"  },
+        std::pair{ "layer2",  "2"  },
+        std::pair{ "layer3",  "3"  },
+        std::pair{ "layer4",  "4"  },
+        std::pair{ "layer5",  "5"  },
+        std::pair{ "layer8",  "8"  },
+        std::pair{ "layer11", "11" },
+        std::pair{ "layer14", "14" },
+        std::pair{ "layer18", "18" },
+        std::pair{ "layer22", "22" },
+        std::pair{ "layer24", "24" },
     });
     def->set_default_value(new ConfigOptionEnums<TowerSpeeds>({ tsLayer22, tsLayer22 }));
 
@@ -5800,9 +5803,9 @@ CLIMiscConfigDef::CLIMiscConfigDef()
                      "For example, newer PrusaSlicer may extend the list of supported firmware flavors. One may decide to "
                      "bail out or to substitute an unknown value with a default silently or verbosely.");
     def->set_enum<ForwardCompatibilitySubstitutionRule>({
-        { "disable",        L("Bail out on unknown configuration values") },
-        { "enable",         L("Enable reading unknown configuration values by verbosely substituting them with defaults.") },
-        { "enable_silent",  L("Enable reading unknown configuration values by silently substituting them with defaults.") }
+        std::pair{ "disable",        L("Bail out on unknown configuration values") },
+        std::pair{ "enable",         L("Enable reading unknown configuration values by verbosely substituting them with defaults.") },
+        std::pair{ "enable_silent",  L("Enable reading unknown configuration values by silently substituting them with defaults.") }
     });
     def->set_default_value(new ConfigOptionEnum<ForwardCompatibilitySubstitutionRule>(ForwardCompatibilitySubstitutionRule::Enable));
 

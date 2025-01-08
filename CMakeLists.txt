@@ -126,6 +126,8 @@ if(SLIC3R_DESKTOP_INTEGRATION)
     add_definitions(-DSLIC3R_DESKTOP_INTEGRATION)
 endif ()
 
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 if (MSVC AND CMAKE_CXX_COMPILER_ID STREQUAL Clang)
     set(IS_CLANG_CL TRUE)
 
@@ -190,8 +192,7 @@ list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/modules/)
 enable_testing ()
 include(DoxygenTarget)
 
-# Enable C++17 language standard.
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if(NOT WIN32)
@@ -388,7 +389,7 @@ else()
     find_package(Boost ${MINIMUM_BOOST_VERSION} REQUIRED COMPONENTS ${_boost_components})
 endif()
 
-find_package(Eigen3 3.3.7 REQUIRED)
+find_package(Eigen3 3.4.0 REQUIRED)
 
 add_library(boost_libs INTERFACE)
 add_library(boost_headeronly INTERFACE)
@@ -584,7 +585,7 @@ endif()
 
 
 # Find the Cereal serialization library
-find_package(cereal REQUIRED)
+find_package(cereal 1.3.2 REQUIRED)
 add_library(libcereal INTERFACE)
 if (NOT TARGET cereal::cereal)
     target_link_libraries(libcereal INTERFACE cereal)

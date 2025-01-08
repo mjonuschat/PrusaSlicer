@@ -3209,7 +3209,7 @@ void GLGizmoEmboss::draw_rotation() {
     const wxString tooltip = _L("Rotate text Clock-wise.");
     bool exist_change = false;
     if (rev_slider(tr_rotation, angle_deg, def_angle_deg, undo_tooltip, 
-        limits.angle, u8"%.2f °", tooltip)) {
+        limits.angle, reinterpret_cast<const char*>(u8"%.2f °"), tooltip)) {
         // convert back to radians and CCW
         double angle_rad = -angle_deg * M_PI / 180.0;
         Geometry::to_range_pi_pi(angle_rad);                

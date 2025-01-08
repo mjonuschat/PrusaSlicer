@@ -96,10 +96,10 @@ struct EmbossShape
 
         // Loaded svg file data.
         // !!! It is not serialized on undo/redo stack 
-        std::shared_ptr<NSVGimage> image = nullptr;
+        std::shared_ptr<NSVGimage> image;
 
         // Loaded string data from file
-        std::shared_ptr<std::string> file_data = nullptr;
+        std::shared_ptr<std::string> file_data;
 
         template<class Archive> void save(Archive &ar) const {
             // Note: image is only cache it is not neccessary to store

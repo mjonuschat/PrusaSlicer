@@ -122,8 +122,6 @@ public:
 class IntersectionLine : public Line
 {
 public:
-    IntersectionLine() = default;
-
     bool skip() const { return (this->flags & SKIP) != 0; }
     void set_skip() { this->flags |= SKIP; }
 

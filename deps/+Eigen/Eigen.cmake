@@ -1,4 +1,4 @@
 add_cmake_project(Eigen
-    URL "https://gitlab.com/libeigen/eigen/-/archive/3.3.7/eigen-3.3.7.zip"
-    URL_HASH SHA256=e09b89aae054e9778ee3f606192ee76d645eec82c402c01c648b1fe46b6b9857
+    URL "https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.zip"
+    URL_HASH SHA256=1ccaabbfe870f60af3d6a519c53e09f3dcf630207321dffa553564a8e75c4fc8
 )
