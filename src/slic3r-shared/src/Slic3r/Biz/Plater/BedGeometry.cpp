@@ -23,7 +23,6 @@ namespace Slic3r::Biz::Plater {
 TriangleMesh BedGeometry::model(const Domain::Bed& bed)
 {
     std::string model_filename = bed.model_filename();
-    DEBUG_ASSERT(!model_filename.empty());
     TriangleMesh ret;
     bool res = !model_filename.empty() && ret.ReadSTLFile(model_filename.c_str());
     if (res)

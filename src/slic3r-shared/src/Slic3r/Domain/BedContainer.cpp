@@ -48,19 +48,11 @@ Bed& BedContainer::add_bed(const Preset& selected_preset, const PresetBundle& pr
     std::string custom_model_filename   = selected_preset.config.option<ConfigOptionString>("bed_custom_model")->value;
     std::string custom_texture_filename = selected_preset.config.option<ConfigOptionString>("bed_custom_texture")->value;
 
-    // Rendering of bed texture is not implemented yet
-    // for the moment set the texture filename as empty so that a grid is drawn
-    // in place of the texture
     return add_bed(
         selected_preset.config.option<ConfigOptionPoints>("bed_shape")->values,
         selected_preset.config.option<ConfigOptionFloat>("max_print_height")->value,
         custom_model_filename.empty() ? model_filename : custom_model_filename,
-        "");
-//    return add_bed(
-//        config.option<ConfigOptionPoints>("bed_shape")->values,
-//        config.option<ConfigOptionFloat>("max_print_height")->value,
-//        custom_model_filename.empty() ? model_filename : custom_model_filename,
-//        custom_texture_filename.empty() ? texture_filename : custom_texture_filename);
+        custom_texture_filename.empty() ? texture_filename : custom_texture_filename);
 }
 
 Bed* BedContainer::bed(size_t idx)

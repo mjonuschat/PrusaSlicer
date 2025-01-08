@@ -38,6 +38,7 @@ public:
     }
 
     uint8_t max_texture_units() const { return m_max_texture_units; }
+    size_t max_texture_size() const { return m_max_texture_size; }
 
     bool is_core_profile() const { return m_core_profile; }
     void log_gl_info() const;
@@ -46,14 +47,15 @@ public:
     [[nodiscard]] TextureManager& texture_manager() const { return *m_texture_manager; }
     [[nodiscard]] Device& device() const { return *m_device; }
 
-    void release_resources()
-    { if (m_shader_manager) m_shader_manager->shutdown(); }
+    void release_resources();
+
 private:
     Semver m_opengl_version;
     Semver m_glsl_version;
     bool m_core_profile;
     bool m_vao_available;
     uint8_t m_max_texture_units{0};
+    size_t m_max_texture_size{ 0 };
 
     std::unique_ptr<Device> m_device;
     std::unique_ptr<ShaderManager> m_shader_manager;

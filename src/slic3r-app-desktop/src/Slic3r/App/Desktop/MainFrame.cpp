@@ -83,6 +83,7 @@ static void add_experimets_page(TopBar* top_bar, MainFrame* main_frame)
             font.SetPointSize(font_sz);
             w_config()->update_fonts(font, w_config()->em_unit());
             w_config()->force_fonts_update(main_frame, true);
+            main_frame->get_render_canvas().set_font_size(1.7777f * float(font_sz));
         }
 
         test_panel->Layout();
@@ -280,6 +281,7 @@ bool MainFrame::select_language()
     // Try to load a new language.
     if (index != -1 && (init_selection == -1 || init_selection != index)) {
         if (m_translations.set_best_translation_for_language(language_infos[index].canonical_name)) {
+            m_canvas->set_language(language_infos[index].canonical_name);
             // Save language at application config.
             //app_config->set("translation_language", language_infos[index].tag);
             this->Refresh();

@@ -39,6 +39,10 @@ bool DesktopApp::OnInit()
     m_main_frame = new MainFrame(m_workbench, m_project_interactor->preset_interactor(), m_translations);
     Platform::WX::WXRenderCanvas& canvas = m_main_frame->get_render_canvas();
     Platform::PlatformServices::instance().set_services(&canvas, &canvas);
+#if USE_IMGUI_RENDER
+    canvas.set_language(m_translations.active_language());
+    canvas.set_font_size(1.7777f * float(App::WX::w_config()->normal_font().GetPointSize()));
+#endif // USE_IMGUI_RENDER
     
     canvas.set_render_module(m_render_module.get());
     m_main_frame->Show();
@@ -80,9 +84,6 @@ void DesktopApp::init_translations()
                                              "Application is started in system language %1%.", m_translations.active_language());
         wxMessageBox(message, WX::from_u8("PrusaSlicer - Switching language"), wxOK | wxICON_WARNING);
     }
-
-    // set language for Im_gui
-    // m_imgui->sel_language(m_translations.active_language())
 }
 
 }

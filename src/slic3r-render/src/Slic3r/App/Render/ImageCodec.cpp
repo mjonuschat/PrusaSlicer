@@ -195,8 +195,8 @@ std::vector<Image> SvgReadCodec::load(std::istream& is, const ImageLoadOptions& 
     float scale_h = (float) height / image->height;
 
     PixelFormat format = PixelFormat::RGBA8;
-    width = (int) (scale * image->width);
-    height = (int) (scale * image->height);
+    width = size_t(scale * image->width);
+    height = size_t(scale * image->height);
 
     adjust_size_to_opts(width, height, opts);
 
@@ -223,12 +223,17 @@ std::vector<Image> SvgReadCodec::load(std::istream& is, const ImageLoadOptions& 
         }
         ret.emplace_back(format, width, height, std::move(pixels));
 
-        width /= 2;
-        height /= 2;
-        scale_w = (float) width / image->width;
-        scale_h = (float) height / image->height;
+        if (opts.gen_mipmaps) {
+            if (width == 1 && height == 1)
+                break;
 
-    } while (opts.gen_mipmaps && width > 0);
+            if (width > 1) width /= 2;
+            if (height > 1) height /= 2;
+
+            scale_w = (float) width / image->width;
+            scale_h = (float) height / image->height;
+        }
+    } while (opts.gen_mipmaps);
 
     return ret;
 }

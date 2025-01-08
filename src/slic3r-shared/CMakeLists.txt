@@ -31,6 +31,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Plater/BedRenderUpdater.cpp
         include/Slic3r/App/Plater/BedRenderHelper.hpp
         src/Slic3r/App/Plater/BedRenderHelper.cpp
+        include/Slic3r/App/Plater/BedMaterials.hpp
+        src/Slic3r/App/Plater/BedMaterials.cpp
 
         include/Slic3r/App/View/IPanelView.hpp
 

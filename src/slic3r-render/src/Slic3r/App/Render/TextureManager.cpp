@@ -4,6 +4,7 @@
 #include <Slic3r/Log.hpp>
 
 #include <boost/filesystem/path.hpp>
+#include <boost/filesystem/operations.hpp>
 #include <boost/nowide/fstream.hpp>
 
 namespace Slic3r::App::Render {
@@ -24,7 +25,7 @@ Texture* TextureManager::get(const std::string& name, const ImageLoadOptions& op
 
     std::vector<Image>  images;
     {
-        auto path = boost::filesystem::path(resources_dir()) / name;
+        boost::filesystem::path path = boost::filesystem::exists(name) ? name : boost::filesystem::path(resources_dir()) / name;
         boost::nowide::ifstream is(path, std::ios::binary | std::ios::in);
         if (!is.good()) {
             SPDLOG_ERROR("Cannot open file {}", name);

@@ -11,7 +11,8 @@
 
 #if USE_IMGUI_RENDER
 #include <Slic3r/App/Render/ImguiRender.hpp>
-#endif
+#include <optional>
+#endif // USE_IMGUI_RENDER
 
 namespace Slic3r::App::Render {
 class Device;
@@ -31,6 +32,13 @@ class AbstractRenderCanvas : public IRenderRequestHandler, public IMainThreadDis
 {
 public:
     ~AbstractRenderCanvas() override = default;
+
+#if USE_IMGUI_RENDER
+    const std::string& language() const { return m_imgui_render->language(); }
+    void set_language(const std::string& language) { m_pending_language = language; }
+    float font_size() const { return m_imgui_render->font_size(); }
+    void set_font_size(float font_size) { m_pending_font_size = font_size; }
+#endif // USE_IMGUI_RENDER
 
     virtual void render();
     void set_render_module(AbstractRenderModule* render_module);
@@ -103,7 +111,9 @@ protected:
 private:
 #if USE_IMGUI_RENDER
     std::unique_ptr<Render::ImguiRender> m_imgui_render;
-#endif
+    std::optional<std::string> m_pending_language;
+    std::optional<float> m_pending_font_size;
+#endif // USE_IMGUI_RENDER
     double m_last_time{0};
     size_t m_render_request_count{0};
 };
