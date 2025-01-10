@@ -15,8 +15,9 @@ endif ()
 
 add_cmake_project(OpenVDB
     # 11.0.0 patched
-    URL https://github.com/prusa3d/openvdb/archive/8bbb2f8c9c5f007c86e5dea5b598559aaa8c579e.zip
-    URL_HASH SHA256=ee022574812c6a5ce2da66acd37e0e0e18bc4d0e0d721e7e8f509cd9f13dd110
+    URL https://github.com/AcademySoftwareFoundation/openvdb/archive/refs/tags/v11.0.0.zip
+    URL_HASH SHA256=db7e1aacd0a634195574b2e6a43d268d063830628501fd0a94a99bf252d01fb6
+    PATCH_COMMAND ${PATCH_CMD} ${CMAKE_CURRENT_LIST_DIR}/openvdb.patch
     CMAKE_ARGS
         -DCMAKE_POSITION_INDEPENDENT_CODE=ON
         -DOPENVDB_BUILD_PYTHON_MODULE=OFF
