@@ -59,6 +59,7 @@ private:
     wxSizer*    create_bed_shape_widget(wxWindow* parent);
     void    cache_extruder_cnt(const DynamicPrintConfig* config = nullptr);
     void    update_sla_prusa_specific_visibility() override;
+    void    update_description_lines() override;
 
 public:
     PrinterTechnology   printer_technology{ ptFFF };

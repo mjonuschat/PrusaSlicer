@@ -19,6 +19,7 @@
 #include <Slic3r/App/WX/Widgets/BitmapComboBox.hpp>
 
 #include "Slic3r/App/Color.hpp"
+#include "Slic3r/App/Localization.hpp"
 
 #include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/enum_bitmask.hpp"
@@ -59,8 +60,19 @@ ThumbnailErrors validate_thumbnails_string(wxString& str, const wxString& def_ex
     return errors;
 }
 
+Field::Field(const ConfigOptionDef& opt, const t_config_option_key& id) : m_opt(opt), m_opt_id(id)
+{
+    localization().add_language_changed_listener(this);
+}
+
+Field::Field(wxWindow* parent, const ConfigOptionDef& opt, const t_config_option_key& id) : m_parent(parent), m_opt(opt), m_opt_id(id)
+{
+    localization().add_language_changed_listener(this);
+}
+
 Field::~Field()
 {
+    localization().remove_language_changed_listener(this);
 	if (m_on_kill_focus)
 		m_on_kill_focus = nullptr;
 	if (m_on_change)
@@ -169,7 +181,14 @@ void Field::on_edit_value()
 		m_fn_edit_value(m_opt_id);
 }
 
-wxString Field::get_tooltip_text(const wxString& default_string)
+void Field::postprocess_tooltip(wxString& tooltip)
+{
+    // edit tooltip : change Slic3r to SLIC3R_APP_KEY
+    // Temporary workaround for localization
+    tooltip.Replace(WX::from_u8("Slic3r"), WX::from_u8(SLIC3R_APP_KEY), true);
+}
+
+wxString Field::get_tooltip_text()
 {
     if (m_opt.tooltip.empty())
         return {};
@@ -183,10 +202,20 @@ wxString Field::get_tooltip_text(const wxString& default_string)
 
     bool newline_after_name = boost::iends_with(opt_id, "_gcode") && opt_id != "binary_gcode";
 
-	return WX::from_u8(m_opt.tooltip) + WX::from_u8("\n") + _L("default value") + WX::from_u8("\t: ") +
-        WX::from_u8(newline_after_name ? "\n" : "") + default_string +
+    wxString tooltip;
+    if (m_opt.opt_key.rfind("branching", 0) == 0) {
+        tooltip = _L("Unavailable for this method.");
+        tooltip += WX::from_u8("\n");
+    }
+
+    tooltip += _(m_opt.tooltip) + WX::from_u8("\n") + _L("default value") + WX::from_u8("\t: ") +
+        WX::from_u8(newline_after_name ? "\n" : "") + get_default_value_as_string() +
         WX::from_u8(newline_after_name ? "" : "\n") +
         _L("parameter name") + WX::from_u8("\t: " + opt_id);
+
+    Field::postprocess_tooltip(tooltip);
+
+    return tooltip;
 }
 
 bool Field::is_matched(const std::string& string, const std::string& pattern)
@@ -410,6 +439,12 @@ void Field::sys_color_changed()
 #endif
 }
 
+void Field::on_language_changed()
+{ 
+    if (wxWindow* win = getWindow())
+        win->SetToolTip(get_tooltip_text());
+}
+
 template<class T>
 bool is_defined_input_value(wxWindow* win, const ConfigOptionType& type)
 {
@@ -418,11 +453,8 @@ bool is_defined_input_value(wxWindow* win, const ConfigOptionType& type)
     return true;
 }
 
-void TextCtrl::BUILD() {
-    auto size = wxSize(def_width()*m_em_unit, wxDefaultCoord);
-    if (m_opt.height >= 0) size.SetHeight(m_opt.height*m_em_unit);
-    if (m_opt.width >= 0) size.SetWidth(m_opt.width*m_em_unit);
-
+wxString TextCtrl::get_default_value_as_string()
+{
 	wxString text_value = {};
 
 	switch (m_opt.type) {
@@ -474,6 +506,17 @@ void TextCtrl::BUILD() {
 		break;
 	}
 
+    return text_value;
+}
+
+void TextCtrl::BUILD() 
+{
+    auto size = wxSize(def_width()*m_em_unit, wxDefaultCoord);
+    if (m_opt.height >= 0) size.SetHeight(m_opt.height*m_em_unit);
+    if (m_opt.width >= 0) size.SetWidth(m_opt.width*m_em_unit);
+
+    wxString text_value = get_default_value_as_string();
+
     long style = m_opt.multiline ? wxTE_MULTILINE : wxTE_PROCESS_ENTER;
 	auto temp = new text_ctrl(m_parent, text_value, {}, {}, wxDefaultPosition, size, style);
     if (parent_is_custom_ctrl && m_opt.height < 0)
@@ -488,7 +531,7 @@ void TextCtrl::BUILD() {
 		// This does not apply to the multi-line edit field, where the last line and a narrow frame around the text is not cleared.
 		temp->SetBackgroundStyle(wxBG_STYLE_PAINT);
 
-	temp->SetToolTip(get_tooltip_text(text_value));
+    temp->SetToolTip(get_tooltip_text());
 
     if (style & wxTE_PROCESS_ENTER) {
         temp->Bind(wxEVT_TEXT_ENTER, ([this, temp](wxEvent& e)
@@ -724,6 +767,15 @@ bool CheckBox::GetValue()
     return dynamic_cast<WX::Widgets::SwitchButton*>(window)->GetValue();
 }
 
+wxString CheckBox::get_default_value_as_string() 
+{
+    bool check_value =  m_opt.type == coBool ?
+                        m_opt.default_value->getBool() : m_opt.type == coBools ?
+                        m_opt.get_default_value<ConfigOptionBools>()->get_at(m_opt_idx) :
+                        false;
+    return WX::from_u8(check_value ? "true" : "false");
+}
+
 void CheckBox::BUILD() {
 	auto size = wxSize(wxDefaultSize);
 	if (m_opt.height >= 0) 
@@ -731,10 +783,10 @@ void CheckBox::BUILD() {
 	if (m_opt.width >= 0) 
         size.SetWidth(m_opt.width*m_em_unit);
 
-	bool check_value =	m_opt.type == coBool ?
-						m_opt.default_value->getBool() : m_opt.type == coBools ?
-							m_opt.get_default_value<ConfigOptionBools>()->get_at(m_opt_idx) :
-    						false;
+    bool check_value =  m_opt.type == coBool ?
+                        m_opt.default_value->getBool() : m_opt.type == coBools ?
+                        m_opt.get_default_value<ConfigOptionBools>()->get_at(m_opt_idx) :
+                        false;
 
     m_last_meaningful_value = static_cast<unsigned char>(check_value);
 
@@ -754,7 +806,7 @@ void CheckBox::BUILD() {
 	    on_change_field();
 	});
 
-	window->SetToolTip(get_tooltip_text(WX::from_u8(check_value ? "true" : "false")));
+    window->SetToolTip(get_tooltip_text());
 }
 
 void CheckBox::set_value(const bool value, bool change_event/* = false*/)
@@ -828,14 +880,9 @@ void CheckBox::disable()
     window->Disable();
 }
 
-
-void SpinCtrl::BUILD() {
-	auto size = wxSize(def_width() * m_em_unit, wxDefaultCoord);
-    if (m_opt.height >= 0) size.SetHeight(m_opt.height*m_em_unit);
-    if (m_opt.width >= 0) size.SetWidth(m_opt.width*m_em_unit);
-
-	wxString	text_value = {};
-	int			default_value = UNDEF_VALUE;
+int SpinCtrl::get_default_int_value()
+{
+    int default_value = UNDEF_VALUE;
 
 	switch (m_opt.type) {
 	case coInt:
@@ -857,16 +904,31 @@ void SpinCtrl::BUILD() {
 		break;
 	}
 
+    return default_value;
+}
+
+wxString SpinCtrl::get_default_value_as_string()
+{
+    wxString    text_value = {};
+    int         default_value = get_default_int_value();
     if (default_value != UNDEF_VALUE)
         text_value = wxString::Format(_T("%i"), default_value);
+    return text_value;
+}
+
+void SpinCtrl::BUILD() {
+    auto size = wxSize(def_width() * m_em_unit, wxDefaultCoord);
+    if (m_opt.height >= 0) size.SetHeight(m_opt.height*m_em_unit);
+    if (m_opt.width >= 0) size.SetWidth(m_opt.width*m_em_unit);
+
+    wxString    text_value = get_default_value_as_string();
 
     const int min_val = m_opt.min == -FLT_MAX ? (int)0 : (int)m_opt.min;
 	const int max_val = m_opt.max < FLT_MAX ? (int)m_opt.max : INT_MAX;
 
 	auto temp = new WX::Widgets::SpinInput(m_parent, text_value, {}, wxDefaultPosition, size,
 		wxTE_PROCESS_ENTER | wxSP_ARROW_KEYS
-
-		, min_val, max_val, default_value);
+        , min_val, max_val, get_default_int_value());
 
 #ifdef __WXGTK3__
 	wxSize best_sz = temp->GetBestSize();
@@ -900,7 +962,7 @@ void SpinCtrl::BUILD() {
         propagate_value();
         bEnterPressed = true;
     }), temp->GetId());
-	temp->SetToolTip(get_tooltip_text(text_value));
+    temp->SetToolTip(get_tooltip_text());
 
     temp->Bind(wxEVT_TEXT, [this, temp](wxCommandEvent e) {
         long value;
@@ -998,6 +1060,21 @@ void SpinCtrl::msw_rescale()
 
 using choice_ctrl = WX::Widgets::ComboBox;
 
+void Choice::add_values()
+{
+    if (m_opt.enum_def) {
+        if (auto& labels = m_opt.enum_def->labels(); !labels.empty()) {
+            bool localized = m_opt.enum_def->has_labels();
+
+            choice_ctrl* ctrl = dynamic_cast<choice_ctrl*>(window);
+            for (const std::string& el : labels)
+                ctrl->Append(localized ? _(WX::from_u8(el)) : WX::from_u8(el));
+
+            set_default_selection();
+        }
+	}
+}
+
 void Choice::BUILD() {
     wxSize size(def_width_wider() * m_em_unit, wxDefaultCoord);
     if (m_opt.height >= 0) size.SetHeight(m_opt.height*m_em_unit);
@@ -1025,14 +1102,7 @@ void Choice::BUILD() {
 	// recast as a wxWindow to fit the calling convention
 	window = dynamic_cast<wxWindow*>(temp);
 
-    if (m_opt.enum_def) {
-        if (auto& labels = m_opt.enum_def->labels(); !labels.empty()) {
-            bool localized = m_opt.enum_def->has_labels();
-            for (const std::string& el : labels)
-                temp->Append(localized ? _(WX::from_u8(el)) : WX::from_u8(el));
-            set_selection();
-        }
-	}
+    add_values();
 
     temp->Bind(wxEVT_MOUSEWHEEL, [this](wxMouseEvent& e) {
         if (m_suppress_scroll && !m_is_dropped)
@@ -1058,7 +1128,7 @@ void Choice::BUILD() {
         } );
     }
 
-	temp->SetToolTip(get_tooltip_text(temp->GetValue()));
+    temp->SetToolTip(get_tooltip_text());
 }
 
 void Choice::propagate_value()
@@ -1102,7 +1172,33 @@ void Choice::suppress_scroll()
     m_suppress_scroll = true;
 }
 
-void Choice::set_selection()
+void Choice::on_language_changed()
+{
+    /* To prevent earlier control updating under OSX set m_disable_change_event to true
+     * (under OSX wxBitmapComboBox send wxEVT_COMBOBOX even after SetSelection())
+     */
+    m_disable_change_event = true;
+
+    choice_ctrl* ctrl = dynamic_cast<choice_ctrl*>(window);
+
+    const int selection = ctrl->GetSelection();
+
+    ctrl->Clear();
+    add_values();
+
+    // update tooltips
+    Field::on_language_changed();
+    // set actual selection
+    ctrl->Select(selection);
+}
+
+wxString Choice::get_default_value_as_string()
+{
+    choice_ctrl* field = dynamic_cast<choice_ctrl*>(window);
+    return field->GetValue();
+}
+
+void Choice::set_default_selection()
 {
     /* To prevent earlier control updating under OSX set m_disable_change_event to true
      * (under OSX wxBitmapComboBox send wxEVT_COMBOBOX even after SetSelection())
@@ -1307,7 +1403,7 @@ void Choice::msw_rescale()
 
     choice_ctrl* field = dynamic_cast<choice_ctrl*>(window);
 #ifdef __WXOSX__
-    const wxString selection = field->GetValue();// field->GetString(index);
+    const int selection = field->GetSelection();// field->GetString(index);
 
 	/* To correct scaling (set new controll size) of a wxBitmapCombobox
 	 * we need to refill control with new bitmaps. So, in our case :
@@ -1324,19 +1420,8 @@ void Choice::msw_rescale()
     // Set rescaled size
     field->SetSize(size);
 
-    if (m_opt.enum_def) {
-        if (auto& labels = m_opt.enum_def->labels(); !labels.empty()) {
-            const bool localized = m_opt.enum_def->has_labels();
-            for (const std::string& el : labels)
-                field->Append(localized ? _(WX::from_u8(el)) : WX::from_u8(el));
-
-            if (auto opt = m_opt.enum_def->label_to_index(WX::into_u8(selection)); opt.has_value())
-                // This enum has a value field of the same content as text_value. Select it.
-                field->SetSelection(*opt);
-            else
-                field->SetValue(selection);
-        }
-    }
+    add_values();
+    field->Select(selection);
 #else
 #ifdef _WIN32
     field->Rescale();
@@ -1352,6 +1437,12 @@ void Choice::msw_rescale()
 #endif
 }
 
+wxString ColourPicker::get_default_value_as_string()
+{
+    return WX::from_u8(m_opt.type == coString ? m_opt.get_default_value<ConfigOptionString>()->value :
+                                                m_opt.get_default_value<ConfigOptionStrings>()->get_at(m_opt_idx));
+}
+
 void ColourPicker::BUILD()
 {
 	auto size = wxSize(def_width() * m_em_unit, wxDefaultCoord);
@@ -1359,7 +1450,7 @@ void ColourPicker::BUILD()
     if (m_opt.width >= 0) size.SetWidth(m_opt.width*m_em_unit);
 
 	// Validate the color
-	wxString clr_str(WX::from_u8(m_opt.type == coString ? m_opt.get_default_value<ConfigOptionString>()->value : m_opt.get_default_value<ConfigOptionStrings>()->get_at(m_opt_idx)));
+    wxString clr_str = get_default_value_as_string();
 	wxColour clr(clr_str);
 	if (clr_str.IsEmpty() || !clr.IsOk()) {
 		clr = wxTransparentColour;
@@ -1378,7 +1469,7 @@ void ColourPicker::BUILD()
 
 	temp->Bind(wxEVT_COLOURPICKER_CHANGED, ([this](wxCommandEvent e) { on_change_field(); }), temp->GetId());
 
-	temp->SetToolTip(get_tooltip_text(clr_str));
+    temp->SetToolTip(get_tooltip_text());
 }
 
 void ColourPicker::set_undef_value(wxColourPickerCtrl* field)
@@ -1458,17 +1549,29 @@ PointCtrl::~PointCtrl()
     }
 }
 
+std::tuple<wxString, wxString>  PointCtrl::get_default_point_value()
+{
+    auto default_pt = m_opt.get_default_value<ConfigOptionPoints>()->values.at(0);
+    double val = default_pt(0);
+    wxString X = val - int(val) == 0 ? wxString::Format(_T("%i"), int(val)) : wxNumberFormatter::ToString(val, 2, wxNumberFormatter::Style_None);
+    val = default_pt(1);
+    wxString Y = val - int(val) == 0 ? wxString::Format(_T("%i"), int(val)) : wxNumberFormatter::ToString(val, 2, wxNumberFormatter::Style_None);
+    return { X, Y };
+}
+
+wxString PointCtrl::get_default_value_as_string()
+{
+    auto [X, Y] = get_default_point_value();
+    return X + WX::from_u8(", ") + Y;
+}
+
 void PointCtrl::BUILD()
 {
-	auto temp = new wxBoxSizer(wxHORIZONTAL);
+    auto temp = new wxBoxSizer(wxHORIZONTAL);
 
     const wxSize field_size(4 * m_em_unit, -1);
 
-	auto default_pt = m_opt.get_default_value<ConfigOptionPoints>()->values.at(0);
-	double val = default_pt(0);
-	wxString X = val - int(val) == 0 ? wxString::Format(_T("%i"), int(val)) : wxNumberFormatter::ToString(val, 2, wxNumberFormatter::Style_None);
-	val = default_pt(1);
-	wxString Y = val - int(val) == 0 ? wxString::Format(_T("%i"), int(val)) : wxNumberFormatter::ToString(val, 2, wxNumberFormatter::Style_None);
+    auto [X, Y] = get_default_point_value();
 
 	long style = wxTE_PROCESS_ENTER;
 	x_textctrl = new text_ctrl(m_parent, X, {}, {}, wxDefaultPosition, field_size, style);
@@ -1508,8 +1611,8 @@ void PointCtrl::BUILD()
 	// 	// recast as a wxWindow to fit the calling convention
 	sizer = dynamic_cast<wxSizer*>(temp);
 
-	x_textctrl->SetToolTip(get_tooltip_text(X+WX::from_u8(", ")+Y));
-	y_textctrl->SetToolTip(get_tooltip_text(X+WX::from_u8(", ")+Y));
+    x_textctrl->SetToolTip(get_tooltip_text());
+    y_textctrl->SetToolTip(get_tooltip_text());
 }
 
 void PointCtrl::msw_rescale()
@@ -1609,13 +1712,18 @@ boost::any& PointCtrl::get_value()
 	return m_value = Vec2d(x, y);
 }
 
+wxString StaticText::get_default_value_as_string()
+{
+    return WX::from_u8(m_opt.get_default_value<ConfigOptionString>()->value);
+}
+
 void StaticText::BUILD()
 {
 	auto size = wxSize(wxDefaultSize);
     if (m_opt.height >= 0) size.SetHeight(m_opt.height*m_em_unit);
     if (m_opt.width >= 0) size.SetWidth(m_opt.width*m_em_unit);
 
-    const wxString legend = WX::from_u8(m_opt.get_default_value<ConfigOptionString>()->value);
+    const wxString legend = get_default_value_as_string();
     auto temp = new wxStaticText(m_parent, wxID_ANY, legend, wxDefaultPosition, size, wxST_ELLIPSIZE_MIDDLE);
 	temp->SetFont(WX::w_config()->normal_font());
 	temp->SetBackgroundStyle(wxBG_STYLE_PAINT);
@@ -1626,7 +1734,7 @@ void StaticText::BUILD()
 	// 	// recast as a wxWindow to fit the calling convention
 	window = dynamic_cast<wxWindow*>(temp);
 
-	temp->SetToolTip(get_tooltip_text(legend));
+    temp->SetToolTip(get_tooltip_text());
 }
 
 void StaticText::msw_rescale()
@@ -1643,6 +1751,11 @@ void StaticText::msw_rescale()
         field->SetSize(size);
         field->SetMinSize(size);
     }
+}
+
+wxString SliderCtrl::get_default_value_as_string()
+{
+    return {};
 }
 
 void SliderCtrl::BUILD()

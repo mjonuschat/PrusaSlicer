@@ -258,7 +258,8 @@ void OG_CustomCtrl::OnMotion(wxMouseEvent& event)
         if (line.is_focused) {
             if (!suppress_hyperlinks && !line.og_line.label_path.empty())
                 tooltip = OptionsGroup::get_url(line.og_line.label_path) +WX::from_u8("\n\n");
-            tooltip += line.og_line.label_tooltip;
+            tooltip += _(line.og_line.label_tooltip);
+            Field::postprocess_tooltip(tooltip);
             break;
         }
 

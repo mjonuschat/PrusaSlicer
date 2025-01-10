@@ -32,6 +32,7 @@
 #include "Slic3r/App/WX/Widgets/SwitchButton.hpp"
 #include "Slic3r/App/WX/Widgets/SpinInput.hpp"
 #include "Slic3r/App/WX/Widgets/TextInput.hpp"
+#include "Slic3r/App/ILanguageChangedListener.hpp"
 
 #ifdef __WXMSW__
 #define wxMSW true
@@ -165,6 +166,7 @@ public:
 
 
 class Field : public UndoValueUIManager
+            , public ILanguageChangedListener
 {
 protected:
     // factory function to defer and enforce creation of derived type. 
@@ -179,6 +181,9 @@ protected:
 	void			on_kill_focus();
     /// Call the attached on_change method. 
     void			on_change_field();
+
+    // get default value as a string used to set tooltips
+    virtual wxString get_default_value_as_string() = 0;
 
     class EnterPressed {
     public:
@@ -244,12 +249,12 @@ public:
 	/// Fires the enable or disable function, based on the input.
     inline void			toggle(bool en) { en ? enable() : disable(); }
 
-	virtual wxString	get_tooltip_text(const wxString& default_string);
+    wxString            get_tooltip_text();
 
     void				field_changed() { on_change_field(); }
 
-    Field(const ConfigOptionDef& opt, const t_config_option_key& id) : m_opt(opt), m_opt_id(id) {}
-    Field(wxWindow* parent, const ConfigOptionDef& opt, const t_config_option_key& id) : m_parent(parent), m_opt(opt), m_opt_id(id) {}
+    Field(const ConfigOptionDef& opt, const t_config_option_key& id);
+    Field(wxWindow* parent, const ConfigOptionDef& opt, const t_config_option_key& id);
     virtual ~Field();
 
     /// If you don't know what you are getting back, check both methods for nullptr. 
@@ -270,6 +275,7 @@ public:
 
     virtual void msw_rescale();
     virtual void sys_color_changed();
+    void on_language_changed() override;
 
     bool get_enter_pressed() const { return bEnterPressed; }
     void set_enter_pressed(bool pressed) { bEnterPressed = pressed; }
@@ -278,6 +284,9 @@ public:
 	static int def_width()			;
 	static int def_width_wider()	;
 	static int def_width_thinner()	;
+
+    // tmp function for change "Slic3r" for "PrusaSlicer" in tooltip text
+    static void postprocess_tooltip(wxString& tooltip);
 
 protected:
 	// current value
@@ -316,6 +325,7 @@ public:
 	~TextCtrl() {}
 
     void BUILD() override;
+    wxString get_default_value_as_string() override;
     bool value_was_changed();
     // Propagate value from field to the OptionGroupe and Config after kill_focus/ENTER
     void propagate_value();
@@ -355,6 +365,7 @@ public:
 
 	wxWindow*		window{ nullptr };
 	void			BUILD() override;
+    wxString        get_default_value_as_string() override;
 
 	void			set_value(const bool value, bool change_event = false);
 	void			set_value(const boost::any& value, bool change_event = false) override;
@@ -388,6 +399,7 @@ public:
 
 	wxWindow*		window{ nullptr };
 	void			BUILD() override;
+    wxString        get_default_value_as_string() override;
     /// Propagate value from field to the OptionGroupe and Config after kill_focus/ENTER
     void	        propagate_value() ;
 /*
@@ -420,6 +432,9 @@ public:
 	void			enable()  override { dynamic_cast<WX::Widgets::SpinInput*>(window)->Enable(); }
 	void			disable() override { dynamic_cast<WX::Widgets::SpinInput*>(window)->Disable(); }
 	wxWindow*		getWindow() override { return window; }
+
+private:
+    int  get_default_int_value();
 };
 
 class Choice : public Field {
@@ -432,6 +447,7 @@ public:
 
 	wxWindow*		window{ nullptr };
 	void			BUILD() override;
+    wxString        get_default_value_as_string() override;
 	// Propagate value from field to the OptionGroupe and Config after kill_focus/ENTER
 	void			propagate_value();
 
@@ -443,7 +459,7 @@ public:
     bool            m_suppress_scroll { false };
     int             m_last_selected   { wxNOT_FOUND };
 
-	void			set_selection();
+    void            set_default_selection();
 	void			set_value(const std::string& value, bool change_event = false);
 	void			set_value(const boost::any& value, bool change_event = false) override;
 	void			set_values(const std::vector<std::string> &values);
@@ -457,6 +473,10 @@ public:
 	wxWindow*		getWindow() override { return window; }
 
     void            suppress_scroll();
+    void            on_language_changed() override;
+
+private:
+    void            add_values();
 };
 
 class ColourPicker : public Field {
@@ -470,6 +490,7 @@ public:
 
 	wxWindow*		window{ nullptr };
 	void			BUILD()  override;
+    wxString        get_default_value_as_string() override;
 
 	void			set_value(const std::string& value, bool change_event = false) {
 		m_disable_change_event = !change_event;
@@ -498,6 +519,7 @@ public:
 	text_ctrl*		y_textctrl{ nullptr };
 
 	void			BUILD()  override;
+    wxString        get_default_value_as_string() override;
 	bool			value_was_changed(text_ctrl* win);
     // Propagate value from field to the OptionGroupe and Config after kill_focus/ENTER
     void            propagate_value(text_ctrl* win);
@@ -516,6 +538,9 @@ public:
 		y_textctrl->Disable(); }
 	wxSizer*		getSizer() override { return sizer; }
 	wxWindow*		getWindow() override { return dynamic_cast<wxWindow*>(x_textctrl); }
+
+private:
+    std::tuple<wxString, wxString>  get_default_point_value();
 };
 
 class StaticText : public Field {
@@ -527,6 +552,7 @@ public:
 
 	wxWindow*		window{ nullptr };
 	void			BUILD()  override;
+    wxString        get_default_value_as_string() override;
 
 	void			set_value(const std::string& value, bool change_event = false) {
 		m_disable_change_event = !change_event;
@@ -562,6 +588,7 @@ public:
 	int				m_scale = 10;
 
 	void			BUILD()  override;
+    wxString        get_default_value_as_string() override;
 
 	void			set_value(const int value, bool change_event = false);
 	void			set_value(const boost::any& value, bool change_event = false) override;

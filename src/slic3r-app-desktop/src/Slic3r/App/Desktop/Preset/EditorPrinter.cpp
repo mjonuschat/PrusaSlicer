@@ -83,21 +83,30 @@ void EditorPrinter::build_print_host_upload_group(Page* page) //! maybe it's a t
 {
     ConfigOptionsGroupShp optgroup = page->new_optgroup(_L("Print Host upload"));
 
-    wxString description_line_text = _L(""
-        "Note: All parameters from this group are moved to the Physical Printer settings (see changelog).\n\n"
-        "A new Physical Printer profile is created by clicking on the \"cog\" icon right of the Printer profiles combo box, "
-        "by selecting the \"Add physical printer\" item in the Printer combo box. The Physical Printer profile editor opens "
-        "also when clicking on the \"cog\" icon in the Printer settings tab. The Physical Printer profiles are being stored "
-        "into PrusaSlicer/physical_printer directory.");
-
     Line line = {{}, {} };
     line.full_width = 1;
-    line.widget = [this, description_line_text](wxWindow* parent) {
+    line.widget = [this](wxWindow* parent) {
         return description_line_widget(parent, m_config_interactor->preset_state().selected_preset->printer_technology() == ptFFF ?
-                                       &m_fff_print_host_upload_description_line : &m_sla_print_host_upload_description_line,
-                                       description_line_text);
+                                       &m_fff_print_host_upload_description_line : &m_sla_print_host_upload_description_line, {});
     };
     optgroup->append_line(line);
+}
+
+void EditorPrinter::update_description_lines()
+{
+    AbstractEditor::update_description_lines();
+
+    if (m_active_page && m_active_page->title() == WX::from_u8("General")) {
+        ogStaticText* print_host_upload_description_line = m_config_interactor->preset_state().selected_preset->printer_technology() == ptFFF ?
+                                                           m_fff_print_host_upload_description_line : m_sla_print_host_upload_description_line;
+        if (print_host_upload_description_line)
+            print_host_upload_description_line->SetText(_L(""
+                "Note: All parameters from this group are moved to the Physical Printer settings (see changelog).\n\n"
+                "A new Physical Printer profile is created by clicking on the \"cog\" icon right of the Printer profiles combo box, "
+                "by selecting the \"Add physical printer\" item in the Printer combo box. The Physical Printer profile editor opens "
+                "also when clicking on the \"cog\" icon in the Printer settings tab. The Physical Printer profiles are being stored "
+                "into PrusaSlicer/physical_printer directory."));
+    }
 }
 
 static wxString get_info_klipper_string()

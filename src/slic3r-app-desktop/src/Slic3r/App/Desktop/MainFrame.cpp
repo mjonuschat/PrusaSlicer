@@ -12,7 +12,8 @@
 #include <Slic3r/App/WX/format.hpp>
 #include <Slic3r/App/WX/I18N.hpp>
 #include <Slic3r/App/WX/MsgDialog.hpp>
-#include <Slic3r/App/I18N/Translation.hpp>
+
+#include <Slic3r/App/Localization.hpp>
 
 #include <wx/panel.h>
 #include <wx/notebook.h>
@@ -96,9 +97,10 @@ static void add_experimets_page(TopBar* top_bar, MainFrame* main_frame)
 }
 
 
-MainFrame::MainFrame(Domain::Workbench& workbench, Biz::Preset::PresetInteractor& preset_interactor, Translations& translations)
-    : wxFrame(nullptr, wxID_ANY, {}), m_workbench(workbench), m_preset_interactor(preset_interactor), m_translations(translations)
+MainFrame::MainFrame(Domain::Workbench& workbench, Biz::Preset::PresetInteractor& preset_interactor)
+    : wxFrame(nullptr, wxID_ANY, {}), m_workbench(workbench), m_preset_interactor(preset_interactor)
 {
+    localization().add_language_changed_listener(this);
     auto em = w_config()->em_unit();
 
     this->SetMinSize(FromDIP(wxSize(80 * em, 40 * em)));
@@ -137,6 +139,19 @@ MainFrame::MainFrame(Domain::Workbench& workbench, Biz::Preset::PresetInteractor
             panel->msw_rescale();
     });
 #endif
+}
+
+MainFrame::~MainFrame() 
+{
+    localization().remove_language_changed_listener(this);
+}
+
+void MainFrame::on_language_changed()
+{
+    // Save language at application config.
+    //app_config->set("translation_language", language_infos[index].tag);
+
+    this->Refresh();
 }
 
 void MainFrame::init_top_bar()
@@ -261,11 +276,11 @@ static int GetSingleChoiceIndex(const wxString& message,
 bool MainFrame::select_language()
 {
     wxArrayString names;
-    auto language_infos = m_translations.languages();
+    auto language_infos = localization().languages();
     names.Alloc(language_infos.size());
 
     // Some valid language should be selected since the application start up.
-    const std::string active_language = m_translations.active_language();
+    const std::string active_language = localization().active_language();
     int init_selection = -1;
     for (size_t i = 0; i < language_infos.size(); ++i) {
         if (language_infos[i].canonical_name == active_language)
@@ -278,24 +293,18 @@ bool MainFrame::select_language()
 
     // Try to load a new language.
     if (index != -1 && (init_selection == -1 || init_selection != index)) {
-        if (m_translations.set_best_translation_for_language(language_infos[index].canonical_name)) {
-            // Save language at application config.
-            //app_config->set("translation_language", language_infos[index].tag);
-            this->Refresh();
+        if (localization().set_language(language_infos[index].canonical_name))
             return true;
-        }
-        else {
-            wxString message = WX::format_wxstr(_L("Switching PrusaSlicer to language %1% failed."), language_infos[index].canonical_name);
+
+        // If something was failed during the set new language:
+
+        wxString message = WX::format_wxstr(_L("Switching PrusaSlicer to language %1% failed."), language_infos[index].canonical_name);
 #if !defined(_WIN32) && !defined(__APPLE__)
-            // likely some linux system
-            message += "\n" + WX::format_wxstr(_L("You may need to reconfigure the missing locales, likely by running the %1% and %2% commands.\n"),
-                                               "\"locale-gen\"", "\"dpkg-reconfigure locales\"");
+        // likely some linux system
+        message += "\n" + WX::format_wxstr(_L("You may need to reconfigure the missing locales, likely by running the %1% and %2% commands.\n"),
+                                              "\"locale-gen\"", "\"dpkg-reconfigure locales\"");
 #endif
-            MessageDialog(this, message, _L("PrusaSlicer - Switching language failed"), wxOK | wxICON_ERROR);
-
-            return false;
-        }
-
+        MessageDialog(this, message, _L("PrusaSlicer - Switching language failed"), wxOK | wxICON_ERROR);
     }
     return false;
 }

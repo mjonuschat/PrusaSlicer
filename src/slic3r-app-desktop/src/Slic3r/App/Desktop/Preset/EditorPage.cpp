@@ -71,6 +71,12 @@ void Page::sys_color_changed()
         group->sys_color_changed();
 }
 
+void Page::on_language_changed()
+{
+    for (auto group : optgroups)
+        group->on_language_changed();
+}
+
 void Page::refresh()
 {
     for (auto group : optgroups)

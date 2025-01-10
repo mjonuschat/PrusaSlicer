@@ -160,20 +160,6 @@ void OptionsGroup::change_opt_value(Biz::Preset::IConfigInteractor& config_inter
 
 Option::Option(const ConfigOptionDef& _opt, t_config_option_key id) : opt(_opt), opt_id(id)
 {
-    if (!opt.tooltip.empty()) {
-        wxString tooltip;
-        if (opt.opt_key.rfind("branching", 0) == 0) {
-            tooltip = _L("Unavailable for this method.");
-            tooltip += WX::from_u8("\n");
-        }
-        tooltip += _(opt.tooltip);
-
-        // edit tooltip : change Slic3r to SLIC3R_APP_KEY
-        // Temporary workaround for localization
-        tooltip.Replace(WX::from_u8("Slic3r"), WX::from_u8(SLIC3R_APP_KEY), true);
-
-        opt.tooltip = into_u8(tooltip);
-    }
 }
 
 void Line::clear()
@@ -857,6 +843,12 @@ void ConfigOptionsGroup::sys_color_changed()
 	// update undo buttons : rescale bitmaps
 	for (const auto& field : m_fields)
 		field.second->sys_color_changed();
+}
+
+void ConfigOptionsGroup::on_language_changed()
+{
+    if (staticbox && stb)
+        stb->SetLabelText(_(title));
 }
 
 void ConfigOptionsGroup::refresh()
