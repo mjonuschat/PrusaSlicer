@@ -214,6 +214,12 @@ void Field::get_value_by_opt_type(wxString& str, const bool check_value/* = true
 	case coPercents:
 	case coFloats:
 	case coFloat:{
+        // is N/A value
+        if (bool is_na_value = m_opt.nullable && str == na_value(); is_na_value) {
+            m_value = ConfigOptionFloatsNullable::nil_value();
+            break;
+        }
+
 		if (m_opt.type == coPercent && !str.IsEmpty() &&  str.Last() == '%')
 			str.RemoveLast();
 		else if (!str.IsEmpty() && str.Last() == '%')
@@ -229,25 +235,19 @@ void Field::get_value_by_opt_type(wxString& str, const bool check_value/* = true
 			m_value = double(m_opt.min);
 			break;
 		}
-        double val;
-
-        bool is_na_value = m_opt.nullable && str == na_value();
 
         const char dec_sep = is_decimal_separator_point() ? '.' : ',';
         const char dec_sep_alt = dec_sep == '.' ? ',' : '.';
-        // Replace the first incorrect separator in decimal number, 
-        // if this value doesn't "N/A" value in some language
-        // see https://github.com/prusa3d/PrusaSlicer/issues/6921
-        if (!is_na_value && str.Replace(dec_sep_alt, dec_sep, false) != 0)
+        // Replace the first incorrect separator in decimal number
+        if (str.Replace(dec_sep_alt, dec_sep, false) != 0)
             set_value(str, false);
 
+        double val;
         if (str == dec_sep)
             val = 0.0;
         else
         {
-            if (is_na_value)
-                val = ConfigOptionFloatsNullable::nil_value();
-            else if (!str.ToDouble(&val))
+            if (!str.ToDouble(&val))
             {
                 if (!check_value) {
                     m_value.clear();
@@ -305,24 +305,27 @@ void Field::get_value_by_opt_type(wxString& str, const bool check_value/* = true
         }
         if ((m_opt.type == coFloatOrPercent || m_opt.type == coFloatsOrPercents) && !str.IsEmpty() &&  str.Last() != '%')
         {
-            double val = 0.;
-
-            bool is_na_value = m_opt.nullable && str == na_value();
+            // is N/A value
+            if (m_opt.nullable && str == na_value()) {
+                // For options with types coFloatOrPercent(s) we use std::string for casting value.
+                // Then we use this string value inside PresetInteractor::set_config_value to detect if this option has NA value.
+                // Note: this string shouldn't be localized, because it doen't used on UI
+                m_value = std::string("N/A");
+                break;
+            }
 
             const char dec_sep = is_decimal_separator_point() ? '.' : ',';
             const char dec_sep_alt = dec_sep == '.' ? ',' : '.';
             // Replace the first incorrect separator in decimal number.
-            if (!is_na_value && str.Replace(dec_sep_alt, dec_sep, false) != 0)
+            if (str.Replace(dec_sep_alt, dec_sep, false) != 0)
                 set_value(str, false);
 
             // remove space and "mm" substring, if any exists
             str.Replace(WX::from_u8(" "), {}, true);
             str.Replace(WX::from_u8("m"), {}, true);
 
-            if (is_na_value) {
-                val = ConfigOptionFloatsOrPercentsNullable::nil_value().value;
-            }
-            else if (!str.ToDouble(&val)) {
+            double val = 0.;
+            if (!str.ToDouble(&val)) {
                 if (!check_value) {
                     m_value.clear();
                     break;

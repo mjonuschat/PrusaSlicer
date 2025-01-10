@@ -187,7 +187,7 @@ void PresetInteractor::set_config_value(
             percent = true;
         }
 
-        const bool                    is_na_value = opt_def->nullable && str == "N/A";// #ysFIXME use localized string here
+        const bool                    is_na_value = opt_def->nullable && str == "N/A";
         const FloatOrPercent          val = is_na_value ? ConfigOptionFloatsOrPercentsNullable::nil_value() : FloatOrPercent{ std::stod(str), percent };
         ConfigOptionFloatsOrPercents* vec_new = new ConfigOptionFloatsOrPercents({ val });
         config.option<ConfigOptionFloatsOrPercents>(name)->set_at(vec_new, opt_index, opt_index);
