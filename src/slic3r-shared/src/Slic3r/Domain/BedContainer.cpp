@@ -16,41 +16,44 @@ std::vector<size_t> BedContainer::beds_indices() const
     return ret;
 }
 
-Bed* BedContainer::add_bed(const Pointfs& contour, float max_print_height, const std::string& model_filename,
-    const std::string& texture_filename)
+Bed& BedContainer::add_bed(
+    const Pointfs& contour,
+    float max_print_height,
+    const std::string& model_filename,
+    const std::string& texture_filename
+)
 {
-    m_beds.emplace_back(std::make_unique<Bed>(Bed::from(contour, max_print_height, model_filename, texture_filename)));
-    return m_beds.back().get();
+    m_beds.emplace_back(
+        std::make_unique<Bed>(Bed::from(contour, max_print_height, model_filename, texture_filename))
+    );
+    return *m_beds.back();
 }
 
-Bed* BedContainer::add_bed(const DynamicPrintConfig& config, const PresetBundle& preset_bundle)
+Bed& BedContainer::add_bed(const Preset& selected_preset, const PresetBundle& preset_bundle)
 {
-    Pointfs contour = config.option<ConfigOptionPoints>("bed_shape")->values;
     std::string model_filename;
     std::string texture_filename;
 
-    const Slic3r::Preset* curr_preset = &preset_bundle.printers.get_selected_preset();
+    const Slic3r::Preset* curr_preset = &selected_preset;
     while (curr_preset != nullptr) {
         if (curr_preset->config.has("bed_shape")) {
-            if (contour == curr_preset->config.option<ConfigOptionPoints>("bed_shape")->values) {
-                model_filename   = PresetUtils::system_printer_bed_model(*curr_preset);
-                texture_filename = PresetUtils::system_printer_bed_texture(*curr_preset);
-                if (!model_filename.empty() && !texture_filename.empty())
-                    break;
-            }
+            model_filename   = PresetUtils::system_printer_bed_model(*curr_preset);
+            texture_filename = PresetUtils::system_printer_bed_texture(*curr_preset);
+            if (!model_filename.empty() && !texture_filename.empty())
+                break;
         }
         curr_preset = preset_bundle.printers.get_preset_parent(*curr_preset);
     }
 
-    std::string custom_model_filename   = config.option<ConfigOptionString>("bed_custom_model")->value;
-    std::string custom_texture_filename = config.option<ConfigOptionString>("bed_custom_texture")->value;
+    std::string custom_model_filename   = selected_preset.config.option<ConfigOptionString>("bed_custom_model")->value;
+    std::string custom_texture_filename = selected_preset.config.option<ConfigOptionString>("bed_custom_texture")->value;
 
     // Rendering of bed texture is not implemented yet
     // for the moment set the texture filename as empty so that a grid is drawn
     // in place of the texture
     return add_bed(
-        config.option<ConfigOptionPoints>("bed_shape")->values,
-        config.option<ConfigOptionFloat>("max_print_height")->value,
+        selected_preset.config.option<ConfigOptionPoints>("bed_shape")->values,
+        selected_preset.config.option<ConfigOptionFloat>("max_print_height")->value,
         custom_model_filename.empty() ? model_filename : custom_model_filename,
         "");
 //    return add_bed(
@@ -77,9 +80,9 @@ BedInstance* BedContainer::bed_instance(size_t bed_idx, size_t instance_idx)
     Bed* b = bed(bed_idx);
     if (b != nullptr) {
         Bed::BedInstances& instances = b->instances();
-        auto it = std::find_if(instances.begin(), instances.end(), [instance_idx](BedInstance* i) { return i->id().id == instance_idx; });
+        auto it = std::find_if(instances.begin(), instances.end(), [instance_idx](const auto& i) { return i->id().id == instance_idx; });
         if (it != instances.end())
-            return *it;
+            return it->get();
     }
     return nullptr;
 }
@@ -89,9 +92,9 @@ const BedInstance* BedContainer::bed_instance(size_t bed_idx, size_t instance_id
     const Bed* b = bed(bed_idx);
     if (b != nullptr) {
         const Bed::BedInstances& instances = b->instances();
-        auto it = std::find_if(instances.begin(), instances.end(), [instance_idx](const BedInstance* i) { return i->id().id == instance_idx; });
+        auto it = std::find_if(instances.begin(), instances.end(), [instance_idx](const auto& i) { return i->id().id == instance_idx; });
         if (it != instances.end())
-            return *it;
+            return it->get();
     }
     return nullptr;
 }

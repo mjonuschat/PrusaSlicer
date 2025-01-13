@@ -2,6 +2,7 @@
 #include "Slic3r/Biz/Preset/IBedPresetValueChangedListener.hpp"
 #include "Slic3r/Biz/Preset/IBedPresetSwitchedListener.hpp"
 #include "Slic3r/Domain/ConfigContainer.hpp"
+#include "Slic3r/Assert.hpp"
 
 #include <vector>
 #include <string>
@@ -38,7 +39,7 @@ void PresetInteractor::set_preset_state_value(
     int opt_index
 )
 {
-    auto& ccc = selected_config_container_context();
+    auto& ccc = mutable_selected_config_container_context();
     auto& preset_state = ccc.preset_state(preset_type, preset_index);
     auto& config = preset_state.edited_preset.config;
 
@@ -52,7 +53,7 @@ void PresetInteractor::set_preset_state_config_num_extruders(
     Slic3r::Preset::Type preset_type, size_t preset_index, size_t num_extruders
 )
 {
-    auto& ccc = selected_config_container_context();
+    auto& ccc = mutable_selected_config_container_context();
     auto& preset_state = ccc.preset_state(preset_type, preset_index);
     auto& config = preset_state.edited_preset.config;
 
@@ -65,7 +66,7 @@ void PresetInteractor::set_preset_state_config_num_extruders(
 
 void PresetInteractor::set_preset_state(Slic3r::Preset::Type preset_type, size_t preset_index, const DynamicPrintConfig& config)
 {
-    auto& ccc = selected_config_container_context();
+    auto& ccc = mutable_selected_config_container_context();
     auto& preset_state = ccc.preset_state(preset_type, preset_index);
 
     if (preset_state.edited_preset.config.diff(config).empty())
@@ -81,7 +82,7 @@ void PresetInteractor::modify_preset_state(
     Slic3r::Preset::Type preset_type, size_t preset_index, IConfigInteractor::ModifyFunc modify_fn
 )
 {
-    auto& ccc = selected_config_container_context();
+    auto& ccc = mutable_selected_config_container_context();
     auto& preset_state = ccc.preset_state(preset_type, preset_index);
     auto& config = preset_state.edited_preset.config;
     auto orig_config = config;
@@ -97,7 +98,7 @@ void PresetInteractor::modify_preset_state(
 
 void PresetInteractor::select_printer_preset(size_t preset_idx) 
 {
-    auto& ccc = selected_config_container_context();
+    auto& ccc = mutable_selected_config_container_context();
     PresetBundle& preset_bundle = m_workbench.preset_bundle();
     preset_bundle.printers.select_preset(preset_idx);
     ccc.printer = create_preset_state(preset_bundle.printers);
@@ -114,7 +115,7 @@ void PresetInteractor::select_printer_preset(size_t preset_idx)
 
 void PresetInteractor::select_print_preset(size_t preset_idx) 
 {
-    auto& ccc = selected_config_container_context();
+    auto& ccc = mutable_selected_config_container_context();
     PresetBundle& preset_bundle = m_workbench.preset_bundle();
     bool is_sla = ccc.printer_technology() == ptSLA;
     PresetCollection& collection = is_sla ? preset_bundle.sla_prints : preset_bundle.prints;
@@ -136,7 +137,7 @@ void PresetInteractor::select_extruder_preset(size_t extruder_idx, size_t preset
 void PresetInteractor::select_material_preset(size_t extruder_idx, size_t preset_idx) 
 {
     // TODO: update PresetBundleRuntime
-    auto& ccc = selected_config_container_context();
+    auto& ccc = mutable_selected_config_container_context();
     PresetBundle& preset_bundle = m_workbench.preset_bundle();
     bool is_sla = ccc.printer_technology() == ptSLA;
     PresetCollection& collection = is_sla ? preset_bundle.sla_materials : preset_bundle.filaments;
@@ -289,19 +290,19 @@ PresetInteractorProjectContext& PresetInteractor::get_or_create_project_context(
 
 PresetInteractorConfigContainerContext& PresetInteractor::get_or_create_config_container_context(Domain::SelectionId project_id, Domain::SelectionId config_container_id)
 {
-    const auto& project = m_workbench.project(project_id);
+    auto& project = m_workbench.project(project_id);
     auto& project_context = get_or_create_project_context(project_id);
     auto it = project_context.config_containers.find(config_container_id);
     if (it != project_context.config_containers.end())
         return it->second;
 
     PresetInteractorConfigContainerContext ccc{config_container_id};
-    Domain::ConfigContainer& cc = **project.find_config_container(config_container_id);
+    Domain::ConfigContainer& cc = *ASSERT_VAL(project.find_config_container(config_container_id));
 
     // fill ccc presets from cc.print_config
     PresetBundle& preset_bundle = m_workbench.preset_bundle();
     auto pt = preset_bundle.printers.get_selected_preset().printer_technology();
-    preset_bundle.load_config_model(project.file_name(), cc.get_print_config());
+    preset_bundle.load_config_model(project.file_name(), cc.print_config());
     ccc.printer = create_preset_state(preset_bundle.printers);
     ccc.print = create_preset_state(pt == PrinterTechnology::ptFFF ? preset_bundle.prints : preset_bundle.sla_prints);
     ccc.materials = {create_preset_state(preset_bundle.materials(pt))};

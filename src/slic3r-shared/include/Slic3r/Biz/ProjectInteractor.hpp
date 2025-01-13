@@ -14,8 +14,19 @@ namespace Slic3r::Biz {
 
 class ISelectedProjectChangedListener;
 class ISelectedConfigContainerChangedListener;
+class ISelectedBedInstanceChanged;
 class IProjectsChangedListener;
 
+/**
+ * @brief Top level interactor managing list of projects and their bed selection.
+ *
+ * Use this interactor to:
+ * - manipulate project add/close/select,
+ * - get or set bed selection within project (and get notified when changed),
+ * - get access to PresetInteractor (to modify config container of bed),
+ * - get access to SceneInteractor (to manipulate 3D volumes)
+ * .
+ */
 class ProjectInteractor final
 {
 public:
@@ -27,6 +38,16 @@ public:
     }
 
     /**
+     * @name Project manipulation
+     * @{
+     */
+    /**
+     * @brief Create new project
+     * @return Returns ID of newly created project
+     */
+    Domain::SelectionId new_project();
+
+    /**
      * Select already opened project. If the project is already selected, do nothing.
      * @param project_id An index of project to be selected.
      */
@@ -35,7 +56,7 @@ public:
     /**
      * Add project to Workbench and select it.
      * @param p Project to move to workbench
-     * @return An project_id / index of added project.
+     * @return A project_id / index of added project.
      */
     Domain::SelectionId add_project(Domain::Project&& p);
 
@@ -45,6 +66,112 @@ public:
      */
     void remove_project(Domain::SelectionId project_id);
 
+    /** @} */
+
+    /**
+     * @name Config container operations
+     * @{
+     */
+
+    void add_config_container();
+    void remove_config_container(Domain::SelectionId config_container_id);
+
+    void add_bed_instance(Domain::SelectionId config_container_id);
+
+    /** @} */
+
+    /**
+     * @name Selection ID getters
+     * @{
+     */
+
+    /**
+     * @brief Get selected project ID
+     */
+    Domain::SelectionId selected_project_id() const { return m_selection.project_id; }
+
+    /**
+     * @brief Get selected config container ID
+     */
+    Domain::SelectionId selected_config_container_id() const { return m_selection.config_container_id; }
+
+    /**
+     * @brief Get selected bed instance ID
+     */
+    Domain::SelectionId selected_bed_instance_id() const { return m_selection.bed_instance_id; }
+
+    /** @} */
+    /**
+     * @name Quick selection getters
+     * @{
+     */
+    const Domain::Project& selected_project() const
+    {
+        DEBUG_ASSERT(m_selection.project_id != Domain::INVALID_ID);
+        return m_workbench.project(m_selection.project_id);
+    }
+
+    Domain::Project& selected_project()
+    {
+        DEBUG_ASSERT(m_selection.project_id != Domain::INVALID_ID);
+        return m_workbench.project(m_selection.project_id);
+    }
+
+    const Domain::ConfigContainer& selected_config_container() const
+    {
+        DEBUG_ASSERT(m_selection.config_container_id != Domain::INVALID_ID);
+        return *DEBUG_ASSERT_VAL(
+            selected_project().find_config_container(m_selection.config_container_id)
+        );
+    }
+
+    Domain::ConfigContainer& selected_config_container()
+    {
+        DEBUG_ASSERT(m_selection.config_container_id != Domain::INVALID_ID);
+        return *DEBUG_ASSERT_VAL(
+            selected_project().find_config_container(m_selection.config_container_id)
+        );
+    }
+
+    const Domain::BedInstance& selected_bed_instance() const
+    {
+        return selected_config_container().find_bed_instance_by_id(m_selection.bed_instance_id);
+    }
+
+    Domain::BedInstance& selected_bed_instance()
+    {
+        return selected_config_container().find_bed_instance_by_id(m_selection.bed_instance_id);
+    }
+    /** @} */
+
+    /**
+     * @brief Get immutable preset interactor
+     * @return Immutable preset interactor instance
+     */
+    const Preset::PresetInteractor& preset_interactor() const { return m_preset_interactor; }
+
+    /**
+     * @brief Get mutable preset interactor
+     * @return Mutable preset interactor instance
+     */
+    Preset::PresetInteractor& preset_interactor() { return m_preset_interactor; }
+
+    /**
+     * @brief Get immutable scene interactor
+     * @return Immutable scene interactor instance
+     */
+    const Scene::SceneInteractor& scene_interactor() const { return m_scene_interactor; }
+
+    /**
+     * @brief Get mutable scene interactor
+     * @return Mutable scene interactor instance
+     */
+    Scene::SceneInteractor& scene_interactor() { return m_scene_interactor; }
+
+    /**
+     * @name ISelectedProjectChangedListener: active project changed notification
+     * @{
+     */
     void add_selected_project_changed_listener(ISelectedProjectChangedListener* l)
     {
         m_selected_project_changed_listeners.add(l);
@@ -54,7 +181,12 @@ public:
     {
         m_selected_project_changed_listeners.remove(l);
     }
+    /** @} */
 
+    /**
+     * @name IProjectsChangedListener: list of opened projects chanegd (project opened or closed)
+     * @{
+     */
     void add_projects_changed_listener(IProjectsChangedListener* l)
     {
         m_projects_changed_listeners.add(l);
@@ -64,7 +196,12 @@ public:
     {
         m_projects_changed_listeners.remove(l);
     }
+    /** @} */
 
+    /**
+     * @name ISelectedConfigContainerChangedListener Selected config container changed
+     * @{
+     */
     void add_selected_config_container_changed_listener(ISelectedConfigContainerChangedListener* l)
     {
         m_selected_config_container_changed_listener.add(l);
@@ -74,32 +211,41 @@ public:
     {
         m_selected_config_container_changed_listener.remove(l);
     }
+    /** @} */
 
-    Domain::SelectionId selected_project_id() const { return m_selection.project_id; }
+    /**
+     * @name ISelectedBedInstanceChanged Selected bed instance changed
+     * @{
+     */
+    void add_selected_bed_instance_changed_listener(ISelectedBedInstanceChanged* l)
+    {
+        m_selected_bed_instance_changed_listeners.add(l);
+    }
 
-    Domain::SelectionId new_project();
-
-    const Preset::PresetInteractor& preset_interactor() const { return m_preset_interactor; }
-    Preset::PresetInteractor& preset_interactor() { return m_preset_interactor; }
-
-    const Scene::SceneInteractor& scene_interactor() const { return m_scene_interactor; }
-    Scene::SceneInteractor& scene_interactor() { return m_scene_interactor; }
-
+    void remove_selected_bed_instance_changed_listener(ISelectedBedInstanceChanged* l)
+    {
+        m_selected_bed_instance_changed_listeners.remove(l);
+    }
+    /** @} */
 private:
     void do_select_project(Domain::SelectionId project_id);
     void do_select_config_container(Domain::SelectionId container_id);
+    void do_select_bed_instance(Domain::SelectionId bed_instance_id);
 
-    void initialize_new_project(Domain::Project& p);
+    void initialize_new_project_before_inserting(Domain::Project& p);
+    void initialize_inserted_project(size_t project_id);
 
 private:
     struct Selection
     {
         Domain::SelectionId project_id{Domain::INVALID_ID};
         Domain::SelectionId config_container_id{Domain::INVALID_ID};
+        Domain::SelectionId bed_instance_id{Domain::INVALID_ID};
     };
 
     ListenerList<ISelectedProjectChangedListener> m_selected_project_changed_listeners;
     ListenerList<ISelectedConfigContainerChangedListener> m_selected_config_container_changed_listener;
+    ListenerList<ISelectedBedInstanceChanged> m_selected_bed_instance_changed_listeners;
     ListenerList<IProjectsChangedListener> m_projects_changed_listeners;
 
     Domain::Workbench& m_workbench;

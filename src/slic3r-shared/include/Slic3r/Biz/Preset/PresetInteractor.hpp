@@ -47,13 +47,19 @@ public:
 
     PresetInteractor(PresetInteractor&&) = default;
 
-    PresetInteractorConfigContainerContext& selected_config_container_context()
+    const PresetInteractorConfigContainerContext& config_container_context(Domain::SelectionId project_id, Domain::SelectionId config_container_id) const
     {
-        auto& project_ctx = get_project_context(m_selected_project_id)->second;
-        auto& cccs = project_ctx.config_containers;
-        return cccs.find(project_ctx.selected_config_container_id)->second;
+        const auto& project_ctx = get_project_context(project_id)->second;
+        const auto& cccs = project_ctx.config_containers;
+        return cccs.find(config_container_id)->second;
     }
 
+    const PresetInteractorConfigContainerContext& selected_config_container_context() const
+    {
+        const auto& project_ctx = get_project_context(m_selected_project_id)->second;
+        const auto& cccs = project_ctx.config_containers;
+        return cccs.find(project_ctx.selected_config_container_id)->second;
+    }
 
     void set_preset_state_value(Slic3r::Preset::Type preset_type, size_t preset_index, const std::string& name, const boost::any& value, int opt_index = 0);
     void set_preset_state_config_num_extruders(Slic3r::Preset::Type preset_type, size_t preset_index, size_t num_extruders);
@@ -73,7 +79,7 @@ public:
     
     void select_preset(Slic3r::Preset::Type preset_type, size_t preset_index, size_t collection_index)
     {
-        auto& ccc = selected_config_container_context();
+        auto& ccc = mutable_selected_config_container_context();
         auto& collection = preset_collection(preset_type);
         auto it = collection.begin() + collection_index;
         auto& preset = *it;
@@ -103,7 +109,16 @@ public:
     void on_selected_config_container_changed(Domain::SelectionId project_id, Domain::SelectionId bed_id) override;
 
 private:
+    friend class PresetConfigInteractor;
     using ProjectContexts = std::unordered_map<Domain::SelectionId, PresetInteractorProjectContext>;
+
+    PresetInteractorConfigContainerContext& mutable_selected_config_container_context()
+    {
+        auto& project_ctx = get_project_context(m_selected_project_id)->second;
+        auto& cccs = project_ctx.config_containers;
+        return cccs.find(project_ctx.selected_config_container_id)->second;
+    }
+
 
     ProjectContexts::const_iterator get_project_context(Domain::SelectionId project_id) const
     {

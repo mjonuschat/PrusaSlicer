@@ -359,14 +359,14 @@ void SDLRenderCanvas::update_imgui_mouse_cursor()
 }
 
 
-double SDLRenderCanvas::get_platform_time()
+double SDLRenderCanvas::platform_time()
 {
     static Uint64 frequency = SDL_GetPerformanceFrequency();
     Uint64 current_time = SDL_GetPerformanceCounter();
     return double(current_time) / frequency;
 }
 
-Render::Device& SDLRenderCanvas::get_device()
+Render::Device& SDLRenderCanvas::device()
 {
     return Render::Context::instance().device();
 }

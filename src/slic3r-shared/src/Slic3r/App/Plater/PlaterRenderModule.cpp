@@ -32,23 +32,18 @@ void PlaterRenderModule::init_scene()
 {
     auto& scene_interactor = m_project_interactor.scene_interactor();
 
+    const auto& bed = m_project_interactor.selected_project()
+                          .config_containers()
+                          .front()
+                          ->bed_instances()
+                          .front()
+                          ->bed();
+
     const size_t x_size = 5;
     const size_t y_size = 5;
     const double span = 20;
-    const double x_off = -((x_size - 1) * span) / 2;
-    const double y_off = -((y_size - 1) * span) / 2;
-
-    const Domain::Bed* bed = scene_interactor.bed();
-    Vec2d bed_center = bed->center().cast<double>();
-    Transform3d bed_xform = Geometry::translation_transform(to_3d(-bed_center, 0));
-    scene_interactor.new_bed(bed->id().id, bed_xform.matrix());
-
-    // add a second instance of the bed, as inactive
-    bed_xform.translate(Vec3d(300, 0, 0));
-    scene_interactor.add_bed_instance(bed->id().id, bed_xform.matrix());
-    Domain::BedInstance* bed_instance = bed->instances().back();
-    bed_instance->set_active(false);
-    m_scene_presenter->update_beds();
+    const double x_off = -((x_size - 1) * span) / 2 + bed.center().x();
+    const double y_off = -((y_size - 1) * span) / 2 + bed.center().y();
 
     {
         scene_interactor.new_object_from_mesh(TriangleMesh{its_make_cube(10,10,10) });
@@ -251,7 +246,7 @@ void PlaterRenderModule::on_screen_resized()
 {
     //m_scene->camera().set_viewport(Render::Rect::from(0, 0, m_screen_info));
     auto viewport = Render::Rect::from(0, 0, m_screen_info);
-    m_scene_presenter->update_cameras([&viewport](auto& cam) { cam.set_viewport(viewport); });
+    m_scene_presenter->screen_resized(viewport);
 }
 
 

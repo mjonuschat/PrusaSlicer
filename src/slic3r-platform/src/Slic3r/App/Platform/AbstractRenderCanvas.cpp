@@ -56,7 +56,7 @@ void AbstractRenderCanvas::render()
         return;
 
 
-    m_render_module->ensure_initialized(get_device());
+    m_render_module->ensure_initialized(device());
 
 #if USE_IMGUI_RENDER
     if (!m_imgui_render) {
@@ -89,7 +89,7 @@ void AbstractRenderCanvas::begin_frame()
 
     ImGuiIO& io = ImGui::GetIO();
 
-    double current_time = get_platform_time();
+    double current_time = platform_time();
     io.DeltaTime = m_last_time > 0 ? float(current_time - m_last_time) : (1.0f / 60.0f);
     m_last_time = current_time;
 

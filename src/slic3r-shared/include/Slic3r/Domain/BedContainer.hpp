@@ -5,6 +5,7 @@
 #include <memory>
 
 #include "Slic3r/Domain/Bed.hpp"
+#include "libslic3r/Preset.hpp"
 
 namespace Slic3r {
 class DynamicPrintConfig;
@@ -19,10 +20,14 @@ class BedInstance;
 class BedContainer
 {
 public:
-    [[nodiscard]] Bed* add_bed(const Pointfs& contour, float max_print_height, const std::string& model_filename,
-        const std::string& texture_filename);
+    [[nodiscard]] Bed& add_bed(
+        const Pointfs& contour,
+        float max_print_height,
+        const std::string& model_filename,
+        const std::string& texture_filename
+    );
 
-    [[nodiscard]] Bed* add_bed(const DynamicPrintConfig& config, const PresetBundle& preset_bundle);
+    [[nodiscard]] Bed& add_bed(const Preset& selected_preset, const PresetBundle& preset_bundle);
 
     size_t beds_count() const { return m_beds.size(); }
     std::vector<size_t> beds_indices() const;
