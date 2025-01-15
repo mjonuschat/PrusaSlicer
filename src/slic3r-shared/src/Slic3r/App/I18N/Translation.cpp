@@ -64,6 +64,7 @@ void Translations::init_translations(const boost::filesystem::path& local_dir)
                 m_translations.emplace_back( LanguageShortInfo{ lang.CanonicalName, 
                                                                 lang.LocaleTag, 
                                                                 lang.Description,
+                                                                lang.CanonicalRef,
                                                                 language(lang.CanonicalName),
                                                                 country(lang.CanonicalName) });
         }
@@ -234,7 +235,13 @@ bool Translations::is_available_locale(LanguageShortInfo* language_info)
         m_sys_locale : 
         language_info->canonical_name;
 
-    const bool is_available = std::setlocale(LC_NUMERIC, num_locale.c_str()) != nullptr;
+    bool is_available = std::setlocale(LC_NUMERIC, num_locale.c_str()) != nullptr;
+
+    if (!is_available) {
+        // If we can't find this locale, try to use canonical ref value
+        // instead of just reporting that it is impossible to switch.
+        is_available = std::setlocale(LC_NUMERIC, language_info->canonical_ref.c_str()) != nullptr;
+    }
 
     if (!is_available) {
         // revert old locale
