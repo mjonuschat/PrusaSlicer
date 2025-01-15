@@ -1010,9 +1010,6 @@ void PrintConfigDef::init_fff_params()
     def->tooltip = L("Add solid infill near sloping surfaces to guarantee the vertical shell thickness "
                    "(top+bottom solid layers).");
     def->set_enum<EnsureVerticalShellThickness>({
-        { "disabled", L("Disabled") },
-        { "partial",  L("Partial")  },
-        { "enabled",  L("Enabled")  },
         std::pair{ "disabled", L("Disabled") },
         // TRN: This is a drop-down option for 'Ensure vertical shell thickness' parameter.
         std::pair{ "partial",  L("Partial")  },
