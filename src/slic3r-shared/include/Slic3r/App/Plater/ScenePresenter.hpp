@@ -36,9 +36,6 @@ public:
         Render::Device& device
     );
 
-    GeometryManager& geometry_manager() { return m_geometry_manager; }
-    TriangleMeshManager& triangle_mesh_manager() { return m_triangle_mesh_manager; }
-
 
     bool project_ready() const { return !m_projects.empty(); }
 
@@ -67,10 +64,12 @@ public:
     void render_scene(Render::CommandBuffer& command_buffer);
     void render_imgui(const Render::ScreenInfo& screen_info);
 
+    void screen_resized(const Render::Rect& viewport);
+
+private:
     void update_cameras(const std::function<void(Scene::Camera&)>& modifier);
     void update_beds() { m_bed_render_updater.update_all(m_device, m_workbench.project(m_selected_project_id)); }
 
-private:
     void on_selected_project_changed(size_t index) override;
 
     void on_scene_selection_changed(Domain::SelectionId project_id, const Biz::Scene::Selection& selection) override;
@@ -85,13 +84,13 @@ private:
     void on_volume_transformed(Domain::SelectionId project_id, const Domain::ElementRefs& elements) override;
     void on_volume_mesh_changed(Domain::SelectionId project_id, const Domain::ElementRefs& volumes) override;
 
-    void on_bed_instance_added(Domain::SelectionId project_id, const Domain::ElementRef& instance) override;
-    void on_bed_instance_removed(Domain::SelectionId project_id, const Domain::ElementRef& instance) override;
-    void on_bed_instance_transformed(Domain::SelectionId project_id, const Domain::ElementRef& instance) override;
+    void on_bed_instance_added(Domain::SelectionId project_id, const Domain::BedRefs& instances) override;
+    void on_bed_instance_removed(Domain::SelectionId project_id, const Domain::BedRefs& instances) override;
+    void on_bed_instance_transformed(Domain::SelectionId project_id, const Domain::BedRefs& instances) override;
 
-    void on_wipe_tower_added(Domain::SelectionId project_id, size_t idx) override;
-    void on_wipe_tower_removed(Domain::SelectionId project_id, size_t idx) override;
-    void on_wipe_tower_transformed(Domain::SelectionId project_id, size_t idx) override;
+    void on_wipe_tower_added(Domain::SelectionId project_id, Domain::SelectionId  wipe_tower_id) override;
+    void on_wipe_tower_removed(Domain::SelectionId project_id, Domain::SelectionId  wipe_tower_id) override;
+    void on_wipe_tower_transformed(Domain::SelectionId project_id, Domain::SelectionId  wipe_tower_id) override;
 
     void on_layer_begin(Render::CommandBuffer& cmd_buf, size_t layer_idx) override;
 
@@ -112,8 +111,6 @@ private:
 
     Domain::SelectionId m_selected_project_id{Domain::INVALID_ID};
     ProjectContexts m_projects;
-    GeometryManager m_geometry_manager;
-    TriangleMeshManager m_triangle_mesh_manager;
     BedRenderUpdater m_bed_render_updater;
 
 };

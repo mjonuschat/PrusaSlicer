@@ -52,8 +52,8 @@ protected:
     virtual void begin_imgui_frame_platform() = 0;
     virtual void end_imgui_frame_platform() = 0;
     virtual void end_frame_platform() = 0;
-    virtual double get_platform_time() = 0;
-    virtual Render::Device& get_device() = 0;
+    virtual double platform_time() = 0;
+    virtual Render::Device& device() = 0;
 
     void enqueue_mouse(const MouseEvent& e);
     void enqueue_keyboard(const KeyboardEvent& e);

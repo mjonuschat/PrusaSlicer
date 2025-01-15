@@ -28,8 +28,8 @@ protected:
     void begin_imgui_frame_platform()override;
     void end_imgui_frame_platform() override;
     void end_frame_platform() override;
-    double get_platform_time() override;
-    Render::Device& get_device() override;
+    double platform_time() override;
+    Render::Device& device() override;
 
 
 private:

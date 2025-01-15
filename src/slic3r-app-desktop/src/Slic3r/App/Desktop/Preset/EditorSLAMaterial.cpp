@@ -259,7 +259,8 @@ void EditorSLAMaterial::update()
 void EditorSLAMaterial::update_description_lines()
 {
     if (m_active_page && m_active_page->title() == WX::from_u8("Material") &&  m_z_correction_to_mm_description) {
-        double lh = m_preset_interactor.selected_config_container_context().print.edited_preset.config.opt_float("layer_height");
+        const auto& ccc = m_preset_interactor.selected_config_container_context();
+        double lh = ccc.print.edited_preset.config.opt_float("layer_height");
         int zlayers = config().opt_int("zcorrection_layers");
         m_z_correction_to_mm_description->SetText(WX::format_wxstr(_L("The current Z-axis height correction is: %1% mm"), zlayers * lh));
     }

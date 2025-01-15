@@ -2,6 +2,7 @@
 
 #include "Slic3r/Domain/ConfigContainer.hpp"
 #include "Slic3r/Domain/BedContainer.hpp"
+#include "Slic3r/Domain/FindById.hpp"
 
 namespace Slic3r {
 class Model;
@@ -30,16 +31,12 @@ public:
 
     [[nodiscard]] ConfigContainerList& config_containers() { return m_config_containers; }
     [[nodiscard]] const ConfigContainerList& config_containers() const { return m_config_containers; }
-    ConfigContainerList::const_iterator find_config_container(size_t id) const
-    {
-        return std::find_if(
-            m_config_containers.begin(), m_config_containers.end(),
-            [id](const auto& cc) { return cc->id().id == id; }
-        );
-    }
 
     const Model& model() const { return *m_model; }
     Model& model() { return *m_model; }
+
+    [[nodiscard]] const ConfigContainer* find_config_container(size_t id) const;
+    [[nodiscard]] ConfigContainer* find_config_container(size_t id);
 
     const ModelObject* find_object_by_id(size_t id) const;
     const ModelVolume* find_volume_by_id(size_t obj_id, size_t vol_id) const;
@@ -57,14 +54,5 @@ private:
     BedContainer m_bed_container;
     std::unique_ptr<Model> m_model;
 };
-
-template <typename T, typename C>
-T* find_by_id(const C& container, size_t id)
-{
-    auto it = std::find_if(container.begin(), container.end(), [id](const auto& e) {
-        return e->id() == id;
-    });
-    return it == container.end() ? nullptr : *it;
-}
 
 } // namespace Slic3r::Domain

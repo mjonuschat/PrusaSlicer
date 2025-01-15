@@ -617,13 +617,13 @@ void WXRenderCanvas::end_frame_platform()
     wxApp::GetInstance()->WakeUpIdle();
 }
 
-double WXRenderCanvas::get_platform_time()
+double WXRenderCanvas::platform_time()
 {
     auto delta = std::chrono::duration_cast<std::chrono::microseconds>(Clock::now() - m_start_time);
     return double(delta.count()) * 0.000001;
 }
 
-Render::Device& WXRenderCanvas::get_device()
+Render::Device& WXRenderCanvas::device()
 {
     return Render::Context::instance().device();
 }

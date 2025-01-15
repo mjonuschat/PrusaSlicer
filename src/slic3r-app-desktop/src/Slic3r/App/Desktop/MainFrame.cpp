@@ -207,7 +207,8 @@ void MainFrame::init_preset_editors()
 {
     using namespace Preset;
 
-    const auto printer_tech = m_preset_interactor.selected_config_container_context().printer_technology();
+    const auto& ccc = m_preset_interactor.selected_config_container_context();
+    const auto printer_tech = ccc.printer_technology();
     if (printer_tech == ptFFF) {
         add_preset_editor(new EditorPrint(m_top_bar, m_preset_interactor), "cog");
         add_preset_editor(new EditorFilament(m_top_bar, m_preset_interactor), "spool");

@@ -115,8 +115,6 @@ set(SLIC3R_SHARED_FILES
 
         include/Slic3r/Biz/Scene/SceneInteractor.hpp
         src/Slic3r/Biz/Scene/SceneInteractor.cpp
-        include/Slic3r/Biz/Scene/SceneChangeListener.hpp
-        include/Slic3r/Biz/Scene/SceneSelectionChangeListener.hpp
         include/Slic3r/Biz/Scene/Selection.hpp
         src/Slic3r/Biz/Scene/Selection.cpp
         include/Slic3r/Biz/Scene/SceneInteractorProjectContext.hpp
@@ -141,6 +139,7 @@ set(SLIC3R_SHARED_FILES
 
         include/Slic3r/Biz/ListenerList.hpp
         include/Slic3r/Biz/IProjectsChangedListener.hpp
+        include/Slic3r/Biz/ISelectedBedInstanceChanged.hpp
         include/Slic3r/Biz/ISelectedConfigContainerChangedListener.hpp
         include/Slic3r/Biz/ISelectedProjectChangedListener.hpp
         src/Slic3r/Biz/ProjectInteractor.cpp
@@ -155,6 +154,7 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Domain/Project.hpp
         include/Slic3r/Domain/Bed.hpp
         src/Slic3r/Domain/Bed.cpp
+        include/Slic3r/Domain/BedRef.hpp
         include/Slic3r/Domain/BedInstance.hpp
         src/Slic3r/Domain/BedInstance.cpp
         include/Slic3r/Domain/BedContainer.hpp

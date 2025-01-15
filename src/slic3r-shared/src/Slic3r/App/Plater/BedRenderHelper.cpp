@@ -1,5 +1,6 @@
 #include "Slic3r/App/Plater/BedRenderHelper.hpp"
 #include "Slic3r/Domain/Bed.hpp"
+#include "Slic3r/Domain/BedInstance.hpp"
 
 #include <libslic3r/ClipperUtils.hpp>
 

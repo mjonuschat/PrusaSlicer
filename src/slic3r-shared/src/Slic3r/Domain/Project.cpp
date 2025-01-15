@@ -16,12 +16,18 @@ void Project::load(const std::string& file_path)
 
 }
 
+const ConfigContainer* Project::find_config_container(size_t id) const
+{
+    return find_by_id<ConfigContainer>(m_config_containers, id);
+}
+
+ConfigContainer* Project::find_config_container(size_t id)
+{
+    return find_by_id<ConfigContainer>(m_config_containers, id);
+}
+
 const ModelObject* Project::find_object_by_id(size_t id) const
 {
-//    auto it = std::find_if(m_model->objects.begin(), m_model->objects.end(), [id](const auto& obj) {
-//        return obj->id() == id;
-//    });
-//    return it == m_model->objects.end() ? nullptr : *it;
     return find_by_id<ModelObject>(m_model->objects, id);
 }
 
@@ -30,10 +36,6 @@ const ModelVolume* Project::find_volume_by_id(size_t obj_id, size_t vol_id) cons
     const auto* obj = find_object_by_id(obj_id);
     if (obj == nullptr)
         return nullptr;
-//    auto it = std::find_if(obj->volumes.begin(), obj->volumes.end(), [vol_id](const auto& vol) {
-//        return vol->id() == vol_id;
-//    });
-//    return it == obj->volumes.end() ? nullptr : *it;
     return find_by_id<ModelVolume>(obj->volumes, vol_id);
 }
 
@@ -42,19 +44,11 @@ const ModelInstance* Project::find_instance_by_id(size_t obj_id, size_t inst_id)
     const auto* obj = find_object_by_id(obj_id);
     if (obj == nullptr)
         return nullptr;
-//    auto it = std::find_if(obj->instances.begin(), obj->instances.end(), [inst_id](const auto& inst) {
-//        return inst->id() == inst_id;
-//    });
-//    return it == obj->instances.end() ? nullptr : *it;
     return find_by_id<ModelInstance>(obj->instances, inst_id);
 }
 
 ModelObject* Project::find_object_by_id(size_t id)
 {
-//    auto it = std::find_if(m_model->objects.begin(), m_model->objects.end(), [id](const auto& obj) {
-//        return obj->id() == id;
-//    });
-//    return it == m_model->objects.end() ? nullptr : *it;
     return find_by_id<ModelObject>(m_model->objects, id);
 }
 

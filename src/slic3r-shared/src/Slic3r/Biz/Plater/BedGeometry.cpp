@@ -1,5 +1,6 @@
 #include "Slic3r/Biz/Plater/BedGeometry.hpp"
 #include "Slic3r/Domain/Bed.hpp"
+#include "Slic3r/Domain/BedInstance.hpp"
 
 #include <libslic3r/Point.hpp>
 #include <libslic3r/Tesselate.hpp>
