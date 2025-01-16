@@ -16,6 +16,7 @@ struct LanguageShortInfo
     std::string         canonical_name;
     std::string         local_tag;
     std::string         description;
+    std::string         canonical_ref;
     std::string         language;   // value in canonical_name before first "_"
     std::string         country;    // value in canonical_name after first "_"
 

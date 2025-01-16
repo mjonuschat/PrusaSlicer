@@ -38,6 +38,7 @@
 #include "Slic3r/App/WX/format.hpp"
 
 #include "Slic3r/App/WX/Widgets/CheckBox.hpp"
+#include "Slic3r/App/Localization.hpp"
 
 #include <wx/bookctrl.h>
 #include <wx/button.h>
@@ -103,6 +104,7 @@ AbstractEditor::AbstractEditor(
     : m_parent(parent), m_type(type), m_title(title), m_preset_interactor(preset_interactor)
 {
     m_preset_interactor.add_bed_preset_switched_listener(this);
+    localization().add_language_changed_listener(this);
     Create(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, /*wxBK_LEFT | */wxTAB_TRAVERSAL/*, name*/);
     this->SetFont(WX::w_config()->normal_font());
 
@@ -119,6 +121,16 @@ AbstractEditor::AbstractEditor(
     m_config_manipulation = get_config_manipulation();
     m_highlighter.set_timer_owner(this, 0);
 }
+
+AbstractEditor::~AbstractEditor()
+{
+    m_preset_interactor.remove_bed_preset_switched_listener(this);
+    localization().remove_language_changed_listener(this);
+}
+
+// TRN Settings Page: Text of the question mark button
+const std::string question_btn_tooltip = L("Hover the cursor over buttons to find more information \n"
+                                           "or click this button.");
 
 // sub new
 void AbstractEditor::init(Biz::Preset::PresetInteractor* preset_interactor)
@@ -157,8 +169,7 @@ void AbstractEditor::init(Biz::Preset::PresetInteractor* preset_interactor)
     m_manipulators->show_btn_incompatible_presets();
 
     add_scaled_button(panel, &m_question_btn, "question");
-    m_question_btn->SetToolTip(_L("Hover the cursor over buttons to find more information \n"
-                                   "or click this button."));
+    m_question_btn->SetToolTip(_(question_btn_tooltip));
 
     // Bitmaps to be shown on the "Revert to system" aka "Lock to system" button next to each input field.
     add_scaled_bitmap(this, m_bmp_value_lock  , "lock_closed");
@@ -337,6 +348,17 @@ void AbstractEditor::load_initial_data()
     m_bmp_non_system = has_parent ? &m_bmp_value_unlock : &m_bmp_white_bullet;
     m_ttg_non_system = has_parent ? &m_ttg_value_unlock : &m_ttg_white_bullet_ns;
     m_tt_non_system  = has_parent ? &m_tt_value_unlock  : &m_ttg_white_bullet_ns;
+}
+
+void AbstractEditor::on_language_changed()
+{
+    set_tooltips_text();
+    m_question_btn->SetToolTip(_(question_btn_tooltip));
+
+    m_presets_choice->update();
+    m_manipulators->on_language_changed();
+    if (m_active_page)
+        m_active_page->on_language_changed();
 }
 
 PageShp AbstractEditor::add_options_page(const wxString& title, const std::string& icon, bool is_extruder_pages /*= false*/)

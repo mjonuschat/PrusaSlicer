@@ -88,6 +88,9 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/I18N/I18N.hpp
         src/Slic3r/App/I18N/Translation.cpp
         include/Slic3r/App/I18N/Translation.hpp
+        src/Slic3r/App/Localization.cpp
+        include/Slic3r/App/Localization.hpp
+        include/Slic3r/App/ILanguageChangedListener.hpp
 
         include/Slic3r/App/Yoga/Align.hpp
         src/Slic3r/App/Yoga/FlexSizer.cpp

@@ -49,46 +49,79 @@ namespace Slic3r::App::Desktop::Preset {
 
 using namespace WX;
 
+std::map<std::string, std::string> tooltips {
+    //TRN Settings Tab: tooltip for toolbar button
+    {"save_preset",                 L("Save preset")},
+    //TRN Settings Tab: tooltip for toolbar button
+    {"rename_preset",               L("Rename preset")},
+    //TRN Settings Tab: tooltip for toolbar button
+    {"delete_preset",               L("Delete preset")},
+    //TRN Settings Tab: tooltip for toolbar button
+    {"detach_preset",               L("Detach from system preset")},
+    //TRN Settings Tab: tooltip for toolbar button
+    {"edit_ph_printer",             L("Edit physical printer")},
+    //TRN Settings Tab: tooltip for toolbar button
+    {"add_ph_printer",              L("Add physical printer")},
+    //TRN Settings Tab: tooltip for toolbar button
+    {"compare_preset",              L("Compare preset with another")},
+    //TRN Settings Tab: tooltip for toolbar button
+    {"show_incompatible_presets",   L("Both compatible an incompatible presets are shown. Click to hide presets not compatible with the current printer.") },
+    //TRN Settings Tab: tooltip for toolbar button
+    {"hide_incompatible_presets",   L("Only compatible presets are shown. Click to show both the presets compatible and not compatible with the current printer.")},
+};
+
+void Manipulators::update_tooltips()
+{
+    m_btn_save_preset->SetToolTip(_(tooltips["save_preset"]));
+
+    m_btn_rename_preset->SetToolTip(_(tooltips["rename_preset"]));
+
+    m_btn_delete_preset->SetToolTip(_(tooltips["delete_preset"]));
+
+    m_detach_preset_btn->SetToolTip(_(tooltips["detach_preset"]));
+
+    if (m_btn_edit_ph_printer)
+        m_btn_edit_ph_printer->SetToolTip(m_ph_printer_name.empty() ? _(tooltips["add_ph_printer"]) : _(tooltips["edit_ph_printer"]));
+
+    if (m_btn_hide_incompatible_presets)
+        m_btn_hide_incompatible_presets->SetToolTip(m_show_incompatible_presets ? _(tooltips["show_incompatible_presets"]) : _(tooltips["hide_incompatible_presets"]));
+
+    m_btn_compare_preset->SetToolTip(_(tooltips["compare_preset"]));
+}
+
 Manipulators::Manipulators(wxWindow* parent, Biz::Preset::PresetInteractor* preset_interactor, Slic3r::Preset::Type type) :
     wxBoxSizer(wxHORIZONTAL),
     m_parent(parent),
     m_preset_interactor(preset_interactor),
     m_type(type)
 {
-    //TRN Settings Tab: tooltip for toolbar button
-    m_btn_save_preset = add_button("save", _L("Save preset"), [this]() { save_preset(); }, nullptr, 0);
-
-    //TRN Settings Tab: tooltip for toolbar button
-    m_btn_rename_preset = add_button("edit", _L("Rename preset"), [this]() { rename_preset(); }, [this]() { return m_can_rename_presets; });
-
-    //TRN Settings Tab: tooltip for toolbar button
-    m_btn_delete_preset = add_button("cross", _L("Delete preset"), [this]() { delete_preset(); }, [this]() { return m_can_delete_presets; });
-
-    //TRN Settings Tab: tooltip for toolbar button
-    m_detach_preset_btn = add_button("lock_open_sys", _L("Detach from system preset"), [this]() { detach_preset(); }, [this]() { return m_can_detach_presets; }, 20);
+    m_btn_save_preset   = add_button("save",            [this]() { save_preset(); }, nullptr, 0);
+    m_btn_rename_preset = add_button("edit",            [this]() { rename_preset(); }, [this]() { return m_can_rename_presets; });
+    m_btn_delete_preset = add_button("cross",           [this]() { delete_preset(); }, [this]() { return m_can_delete_presets; });
+    m_detach_preset_btn = add_button("lock_open_sys",   [this]() { detach_preset(); }, [this]() { return m_can_detach_presets; }, 20);
 
     if (m_type == Slic3r::Preset::Type::TYPE_PRINTER) {
-        //! ysFIXME -set correct tooltip
-        // m_btn_edit_ph_printer->SetToolTip( m_preset_bundle->physical_printers.has_selection() ?
-        // _L("Edit physical printer") : _L("Add physical printer"));
-
-        //TRN Settings Tab: tooltip for toolbar button
-        m_btn_edit_ph_printer = add_button("cog", _L("Add physical printer"), 
-            [this]() {
-                if (!m_ph_printer_name.empty()) // is_selected_physical_printer
-                    edit_physical_printer();
-                else
-                    add_physical_printer();
-            }
-        );
+        m_btn_edit_ph_printer = add_button("cog", [this]() {
+            if (!m_ph_printer_name.empty()) // is_selected_physical_printer
+                edit_physical_printer();
+            else
+                add_physical_printer();
+            update_tooltips();
+        });
     }
     else
-        m_btn_hide_incompatible_presets = add_button("flag_green", {}, [this]() { toggle_show_hide_incompatible(); }, [this]() { return m_show_btn_incompatible_presets; });
+        m_btn_hide_incompatible_presets = add_button("flag_green", [this]() { toggle_show_hide_incompatible(); }, [this]() { return m_show_btn_incompatible_presets; });
 
-    //TRN Settings Tab: tooltip for toolbar button
-    m_btn_compare_preset = add_button("compare", _L("Compare preset with another"), [this]() { compare_preset(); }, nullptr, 50);
+    m_btn_compare_preset = add_button("compare", [this]() { compare_preset(); }, nullptr, 50);
+
+    update_tooltips();
 
     m_parent->Refresh();
+}
+
+void Manipulators::on_language_changed()
+{
+    update_tooltips();
 }
 
 void Manipulators::update(const Biz::Preset::PresetState* state, const std::string& printer_model, const std::string& ph_printer_name)
@@ -117,13 +150,11 @@ void Manipulators::show_btn_incompatible_presets(bool show /*= true*/)
 }
 
 WX::ScalableButton* Manipulators::add_button(const std::string&      icon_name,
-                                             const wxString&         tooltip,
                                              std::function<void()>   fn_on_click/* = nullptr*/,
                                              std::function<bool()>   fn_ui_update/* = nullptr*/,
                                              int                     left_space/* = 10*/)
 {
     WX::ScalableButton *btn = new WX::ScalableButton(m_parent, wxID_ANY, icon_name);
-    btn->SetToolTip(tooltip);
     this->Add(btn, 0, wxLEFT, left_space);
 
     if (fn_on_click)
@@ -542,13 +573,8 @@ void Manipulators::toggle_show_hide_incompatible()
 
 void Manipulators::update_compatibility_ui()
 {
+    update_tooltips();
     m_btn_hide_incompatible_presets->SetBitmap(*WX::get_bmp_bundle(m_show_incompatible_presets ? "flag_red" : "flag_green"));
-    m_btn_hide_incompatible_presets->SetToolTip(m_show_incompatible_presets ?
-        //TRN Settings Tab: tooltip for toolbar button
-        _L("Both compatible an incompatible presets are shown. Click to hide presets not compatible with the current printer.") :
-        //TRN Settings Tab: tooltip for toolbar button
-        _L("Only compatible presets are shown. Click to show both the presets compatible and not compatible with the current printer."));
-
     /* //! send Event to AbstractEditor for update m_presets_choise
     m_presets_list->set_show_incompatible_presets(m_show_incompatible_presets);
     m_presets_list->update();

@@ -46,11 +46,11 @@ public:
     void    update(const Biz::Preset::PresetState* state, const std::string& printer_model, const std::string& ph_printer_name);
     void    show_btn_incompatible_presets(bool show = true);
     void    sys_color_changed();
+    void    on_language_changed();
 
 private:
 
     WX::ScalableButton* add_button(const std::string&    icon_name,
-                                   const wxString&       tooltip,
                                    std::function<void()> fn_on_click = nullptr,
                                    std::function<bool()> fn_ui_update = nullptr,
                                    int                   left_space = 10);
@@ -67,6 +67,7 @@ private:
     void    toggle_show_hide_incompatible();
     void    update_compatibility_ui();
     void    compare_preset();
+    void    update_tooltips();
 
  
 private:

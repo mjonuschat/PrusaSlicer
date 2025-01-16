@@ -305,6 +305,7 @@ public:
     bool        update_visibility(ConfigOptionMode mode);
     void        msw_rescale();
     void        sys_color_changed();
+    void        on_language_changed();
     void        refresh();
 	boost::any	config_value(const std::string& opt_key, int opt_index, bool deserialize);
 	// return option value from config 

@@ -44,6 +44,7 @@
 #include "Slic3r/App/WX/Highlighter.hpp"
 #include "Slic3r/App/WX/Scalable.hpp"
 #include "Slic3r/App/WX/ConfigManipulation.hpp"
+#include "Slic3r/App/ILanguageChangedListener.hpp"
 
 #include "libslic3r/Preset.hpp"
 
@@ -72,11 +73,13 @@ struct PresetDependencies {
 using namespace Config;
 
 using PageShp = std::shared_ptr<Page>;
-class AbstractEditor : public wxPanel, public Biz::Preset::IBedPresetSwitchedListener
+class AbstractEditor : public wxPanel
+                     , public ILanguageChangedListener
+                     , public Biz::Preset::IBedPresetSwitchedListener
 {
 public:
     AbstractEditor(wxWindow* parent, const wxString& title, Slic3r::Preset::Type type, Biz::Preset::PresetInteractor& preset_interactor);
-    ~AbstractEditor() { m_preset_interactor.remove_bed_preset_switched_listener(this); }
+    ~AbstractEditor();
 
     static wxString             translate_category(const wxString& title, Slic3r::Preset::Type preset_type);
 
@@ -117,6 +120,8 @@ private:
         if (m_type == preset_type)
             update_selected_ccc();
     }
+
+    void on_language_changed() override;
 
 protected:
     PageShp         add_options_page(const wxString& title, const std::string& icon, bool is_extruder_pages = false);

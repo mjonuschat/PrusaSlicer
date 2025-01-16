@@ -37,6 +37,7 @@ public:
     void clear();
     void msw_rescale();
     void sys_color_changed();
+    void on_language_changed();
     void refresh();
 
     wxBoxSizer*                 vsizer() const { return m_vsizer; }

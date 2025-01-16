@@ -5,15 +5,12 @@
 
 #include <wx/wx.h>
 #include "Slic3r/App/Platform/WX/WXRenderCanvas.hpp"
+#include "Slic3r/App/ILanguageChangedListener.hpp"
 #include "Slic3r/Domain/Workbench.hpp"
 #include "Slic3r/Domain/Bed.hpp"
 #include "Slic3r/Biz/Preset/PresetInteractor.hpp"
 #include "Slic3r/Biz/Preset/PresetInteractorConfigContainerContext.hpp"
 #include "TopBarMenus.hpp"
-
-namespace Slic3r {
-class Translations;
-}
 
 namespace Slic3r::App::Desktop::Preset {
 class AbstractEditor;
@@ -23,9 +20,10 @@ namespace Slic3r::App::Desktop {
 
 class TopBar;
 
-class MainFrame : public wxFrame {
+class MainFrame : public wxFrame, public ILanguageChangedListener {
 public:
-    explicit MainFrame(Domain::Workbench& workbench, Biz::Preset::PresetInteractor& preset_interactor, Translations& translations);
+    explicit MainFrame(Domain::Workbench& workbench, Biz::Preset::PresetInteractor& preset_interactor);
+    ~MainFrame();
 
     Platform::WX::WXRenderCanvas& get_render_canvas() { return *m_canvas; }
 
@@ -34,7 +32,6 @@ public:
 
 private:
     Domain::Workbench& m_workbench;
-    Translations& m_translations;
     Biz::Preset::PresetInteractor& m_preset_interactor;
     std::unique_ptr<Platform::WX::WXRenderCanvas> m_canvas;
 
@@ -53,6 +50,8 @@ private:
     void update_preset_editors();
 
     void complete_and_bind_top_bar();
+
+    void on_language_changed() override;
 };
 
 }

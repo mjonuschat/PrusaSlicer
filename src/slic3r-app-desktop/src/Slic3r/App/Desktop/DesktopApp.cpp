@@ -6,6 +6,7 @@
 #include <Slic3r/App/WX/WidgetsConfig.hpp>
 #include <Slic3r/App/WX/format.hpp>
 #include <Slic3r/App/Init.hpp>
+#include <Slic3r/App/Localization.hpp>
 #include <libslic3r/Model.hpp>
 
 #include <Slic3r/App/Platform/PlatformServices.hpp>
@@ -36,7 +37,7 @@ bool DesktopApp::OnInit()
 
     m_project_interactor->new_project();
 
-    m_main_frame = new MainFrame(m_workbench, m_project_interactor->preset_interactor(), m_translations);
+    m_main_frame = new MainFrame(m_workbench, m_project_interactor->preset_interactor());
     Platform::WX::WXRenderCanvas& canvas = m_main_frame->get_render_canvas();
     Platform::PlatformServices::instance().set_services(&canvas, &canvas);
     
@@ -52,14 +53,12 @@ bool DesktopApp::OnInit()
 
 void DesktopApp::init_translations()
 {
-    m_translations.init_translations(boost::filesystem::path(localization_dir()));
-
     // Get the active language from PrusaSlicer.ini, or empty string if the key does not exist.
     std::string language = "";// app_config->get("translation_language");
     if (!language.empty())
         BOOST_LOG_TRIVIAL(trace) << boost::format("translation_language provided by PrusaSlicer.ini: %1%") % language;
 
-    if (!m_translations.set_best_translation_for_language(language)) {
+    if (!localization().set_language(language)) {
         // Loading the language dictionary failed.
         wxString message = WX::format_wxstr("Switching PrusaSlicer to language %1% failed.", language);
 #if !defined(_WIN32) && !defined(__APPLE__)
@@ -72,12 +71,12 @@ void DesktopApp::init_translations()
 
         std::exit(EXIT_FAILURE);
     }
-    else if (!language.empty() && language != m_translations.active_language()) {
+    else if (!language.empty() && language != localization().active_language()) {
         // Loading the language dictionary failed.
         wxString message = WX::format_wxstr("Switching PrusaSlicer to language %1% failed.", language);
-        message += WX::from_u8("\n\n") + WX::format_wxstr(m_translations.is_alternative_language() ?
+        message += WX::from_u8("\n\n") + WX::format_wxstr(localization().is_alternative_language() ?
                                              "Application is started in alternative language %1%." :
-                                             "Application is started in system language %1%.", m_translations.active_language());
+                                             "Application is started in system language %1%.", localization().active_language());
         wxMessageBox(message, WX::from_u8("PrusaSlicer - Switching language"), wxOK | wxICON_WARNING);
     }
 
