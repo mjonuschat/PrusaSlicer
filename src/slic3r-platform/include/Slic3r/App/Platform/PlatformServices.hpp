@@ -16,14 +16,12 @@ public:
         IMainThreadDispatcher* main_thread_dispatcher
     );
 
-    IRenderRequestHandler& get_render_request_handler()
-    {
+    IRenderRequestHandler& render_request_handler() {
         assert(m_render_request_handler != nullptr);
         return *m_render_request_handler;
     }
 
-    IMainThreadDispatcher& get_main_thread_dispatcher()
-    {
+    IMainThreadDispatcher& main_thread_dispatcher() {
         assert(m_main_thread_dispatcher != nullptr);
         return *m_main_thread_dispatcher;
     }
