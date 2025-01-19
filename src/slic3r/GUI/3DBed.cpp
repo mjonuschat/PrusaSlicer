@@ -180,21 +180,31 @@ void Bed3D::render(GLCanvas3D& canvas, const Transform3d& view_matrix, const Tra
         const BoundingBoxf bb = this->build_volume().bounding_volume2d();
 
         for (int i : beds_to_render) {
-            if (i + 1 >= m_digits_models.size())
-                break;
-
             double size_x = std::max(10., std::min(bb.size().x(), bb.size().y()) * 0.11);
             double aspect = 1.2;
-            Transform3d mat = view_matrix;
-            mat.translate(Vec3d(bb.min.x(), bb.min.y(), 0.));
-            mat.translate(s_multiple_beds.get_bed_translation(i));
+            Transform3d base_mat = view_matrix;
+            base_mat.translate(Vec3d(bb.min.x(), bb.min.y(), 0.));
+            base_mat.translate(s_multiple_beds.get_bed_translation(i));
             if (build_volume().type() != BuildVolume::Type::Circle)
-                mat.translate(Vec3d(0.3 * size_x, 0.3 * size_x, 0.));
-            mat.translate(Vec3d(0., 0., 0.5 * GROUND_Z));            
-            mat.scale(Vec3d(size_x, size_x * aspect, 1.));
+                base_mat.translate(Vec3d(0.3 * size_x, 0.3 * size_x, 0.));
+            base_mat.translate(Vec3d(0., 0., 0.5 * GROUND_Z));
+            base_mat.scale(Vec3d(size_x, size_x * aspect, 1.));
 
-            shader->set_uniform("view_model_matrix", mat);
-            m_digits_models[i + 1]->render();
+            const std::string bed_number = std::to_string(i + 1);
+            constexpr double digit_advance = 0.85;
+            const double label_width = digit_advance * static_cast<double>(bed_number.size() - 1);
+
+            for (size_t digit_idx = 0; digit_idx < bed_number.size(); ++digit_idx) {
+                const char ch = bed_number[digit_idx];
+                if (ch < '0' || ch > '9')
+                    continue;
+
+                Transform3d mat = base_mat;
+                mat.translate(Vec3d(static_cast<double>(digit_idx) * digit_advance - 0.5 * label_width, 0.0, 0.0));
+
+                shader->set_uniform("view_model_matrix", mat);
+                m_digits_models[static_cast<size_t>(ch - '0')]->render();
+            }
         }
         glsafe(::glBindTexture(GL_TEXTURE_2D, 0));
         if (old_cullface)
