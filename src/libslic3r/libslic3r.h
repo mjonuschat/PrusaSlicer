@@ -115,7 +115,7 @@ using deque =
 template<typename T, typename Q>
 inline T unscale(Q v) { return T(v) * T(SCALING_FACTOR); }
 
-constexpr size_t MAX_NUMBER_OF_BEDS = 9;
+constexpr size_t MAX_NUMBER_OF_BEDS = 25;
 
 enum Axis { 
 	X=0,
