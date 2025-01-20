@@ -1,8 +1,9 @@
 #include "Slic3r/App/Plater/BedRenderHelper.hpp"
 #include "Slic3r/Domain/Bed.hpp"
-#include "Slic3r/Domain/BedInstance.hpp"
+#include "Slic3r/App/Render/Context.hpp"
 
 #include <libslic3r/ClipperUtils.hpp>
+#include <libslic3r/Utils.hpp>
 
 #include <Slic3r/Log.hpp>
 
@@ -15,16 +16,16 @@ static constexpr double GROUND_Z = -0.005;
 
 namespace Slic3r::App::Plater {
 
-Render::Texture* BedRenderHelper::texture(const Domain::Bed& bed, size_t size, Render::TextureManager& manager)
+Render::Texture* BedRenderHelper::texture(const Domain::Bed& bed, Render::TextureManager& manager)
 {
-    std::string texture_filename = bed.texture_filename();
-
-    std::vector<uint8_t> ret;
+    const std::string& texture_filename = bed.texture_filename();
     if (texture_filename.empty())
         return nullptr;
 
     Render::ImageLoadOptions opts;
-    opts.max_size_px = size;
+    opts.max_size_px = Render::Context::instance().max_texture_size() / 2;
+    opts.flip_y = true;
+    opts.gen_mipmaps = true;
 
     return manager.get(texture_filename, opts);
 }

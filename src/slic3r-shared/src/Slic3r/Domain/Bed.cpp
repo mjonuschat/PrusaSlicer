@@ -1,5 +1,4 @@
 #include "Slic3r/Domain/Bed.hpp"
-#include "Slic3r/Domain/BedInstance.hpp"
 #include "Slic3r/Log.hpp"
 #include "Slic3r/Assert.hpp"
 

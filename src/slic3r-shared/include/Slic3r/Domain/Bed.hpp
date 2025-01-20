@@ -3,10 +3,9 @@
 #include "libslic3r/ObjectID.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Geometry.hpp"
+#include "Slic3r/Domain/BedInstance.hpp"
 
 namespace Slic3r::Domain {
-
-class BedInstance;
 
 class Bed : public ObjectBase
 {

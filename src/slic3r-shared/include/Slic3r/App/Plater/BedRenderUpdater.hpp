@@ -2,65 +2,64 @@
 
 #include "Slic3r/App/Plater/ISceneProvider.hpp"
 #include "Slic3r/App/Scene/Camera.hpp"
-
-#include <libslic3r/Color.hpp>
+#include "Slic3r/Biz/ISelectedProjectChangedListener.hpp"
 
 namespace Slic3r::Domain {
 class Project;
+class Workbench;
 } // namespace Slic3r::Domain
 
 namespace Slic3r::App::Plater {
 
-/**
-* @brief Bed colors
-*/
-static const Slic3r::ColorRGBA DEFAULT_BED_MODEL_COLOR  = { 0.25f, 0.25f, 0.25f, 1.0f };
-static const Slic3r::ColorRGBA DISABLED_BED_MODEL_COLOR = { 0.5f, 0.5f, 0.5f, 1.0f };
-static const Slic3r::ColorRGBA DEFAULT_BED_PLATE_COLOR  = { 0.225f, 0.225f, 0.225f, 1.0f };
-static const Slic3r::ColorRGBA DISABLED_BED_PLATE_COLOR = { 0.425f, 0.425f, 0.425f, 1.0f };
-static const Slic3r::ColorRGBA DEFAULT_BED_GRID_COLOR  = { 0.75f, 0.75f, 0.75f, 0.75f };
-static const Slic3r::ColorRGBA DISABLED_BED_GRID_COLOR = { 0.65f, 0.65f, 0.65f, 0.75f };
-static const Slic3r::ColorRGBA DEFAULT_BED_CONTOUR_COLOR  = { 0.9f, 0.9f, 0.9f, 1.0f };
-static const Slic3r::ColorRGBA DISABLED_BED_CONTOUR_COLOR = { 0.75f, 0.75f, 0.75f, 1.0f };
-
-class BedRenderUpdater : public Scene::ICameraUpdateListener
+class BedRenderUpdater : public Scene::ICameraUpdateListener,
+                         public Biz::ISelectedProjectChangedListener
 {
 public:
-    explicit BedRenderUpdater(ISceneProvider& scene_provider)
+    BedRenderUpdater(ISceneProvider& scene_provider, const Domain::Workbench& workbench, Render::Device& device)
     : m_scene_provider(scene_provider)
+    , m_workbench(workbench)
+    , m_device(device)
     {}
 
     /**
       * @brief Performs all updates
       */
-    void update_all(Render::Device& device, const Domain::Project& project) {
-        update_materials(device, project);
-        update_positions(project);
-        update_elements_state(project);
+    void update_all() {
+        update_materials();
+        update_positions();
+        update_elements_state();
     }
 
     /**
       * @brief Updates beds' materials in dependence of the scene status
       */
-    void update_materials(Render::Device& device, const Domain::Project& project);
+    void update_materials();
 
     /**
       * @brief Updates beds' position in scene
       */
-    void update_positions(const Domain::Project& project);
+    void update_positions();
 
     /**
       * @brief Updates beds' elements state
       */
-    void update_elements_state(const Domain::Project& project);
+    void update_elements_state();
 
     /**
       * @brief Implementation of Scene::ICameraUpdateListener interface
       */
     void camera_updated(const Scene::Camera& cam) override;
 
+    /**
+      * @brief Implementation of Biz::ISelectedProjectChangedListener interface
+      */
+    void on_selected_project_changed(size_t index) override;
+
 private:
     ISceneProvider& m_scene_provider;
+    const Domain::Workbench& m_workbench;
+    Render::Device& m_device;
+    Domain::Project* m_project{ nullptr };
 };
 
 } // namespace Slic3r::App::Plater

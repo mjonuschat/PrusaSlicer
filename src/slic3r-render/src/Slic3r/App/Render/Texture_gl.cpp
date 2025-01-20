@@ -14,8 +14,13 @@ Texture::Texture(Device& device)
     glCheck();
 }
 
+Texture::~Texture()
+{
+    glDeleteTextures(1, &get_internal_as<GL::GLTextureInternal>().m_id);
+    glCheck();
+}
 
-void Texture::set_data(PixelFormat format,size_t level, size_t w, size_t h, const void* data)
+void Texture::set_data(PixelFormat format, size_t level, size_t w, size_t h, const void* data)
 {
     auto& device = m_device.get_internal_as<GL::GLDeviceInternal>();
     device.bind_texture(0, *this);
@@ -30,8 +35,8 @@ void Texture::set_data(PixelFormat format,size_t level, size_t w, size_t h, cons
     glCheck();
     glTexImage2D(GL_TEXTURE_2D, level, gl_format, w, h, 0, gl_format, gl_type, data);
     glCheck();
-//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
-//    glCheck();
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, level);
+    glCheck();
 }
 
 

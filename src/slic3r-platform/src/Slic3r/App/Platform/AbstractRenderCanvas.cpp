@@ -12,7 +12,7 @@
 #include <Slic3r/App/Render/CommandBuffer.hpp>
 #include <Slic3r/App/Render/Geometry.hpp>
 #include <Slic3r/App/Render/Texture.hpp>
-#endif
+#endif // !USE_IMGUI_RENDER
 #include <GL/glew.h>
 #include <Slic3r/Log.hpp>
 
@@ -22,12 +22,6 @@
 #else
 #define assert_no_gl_error() { GLenum err = glGetError(); assert(err == GL_NO_ERROR);}
 #endif
-
-void imgui_rendered_fallback_glyph(ImWchar c)
-{
-    // TODO: implement glyph loading (postponed)
-}
-
 
 namespace Slic3r::App::Platform {
 
@@ -62,7 +56,12 @@ void AbstractRenderCanvas::render()
     if (!m_imgui_render) {
         m_imgui_render = std::make_unique<Render::ImguiRender>(Render::Context::instance().device());
     }
-#endif
+    if (m_pending_language.has_value() || m_pending_font_size.has_value()) {
+        m_imgui_render->set_font(m_pending_language, m_pending_font_size);
+        m_pending_language.reset();
+        m_pending_font_size.reset();
+    }
+#endif // USE_IMGUI_RENDER
 
     assert_no_gl_error();
     begin_frame();

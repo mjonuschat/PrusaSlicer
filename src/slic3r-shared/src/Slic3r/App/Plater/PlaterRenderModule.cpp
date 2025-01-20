@@ -14,6 +14,13 @@
 #include "imgui/imgui.h"
 #include "Eigen/SVD"
 
+#define ENABLED_DEBUG_IMGUI_FONT 1
+#define ENABLED_DEBUG_IMGUI_ICONS 1
+
+#if ENABLED_DEBUG_IMGUI_ICONS
+#include <boost/nowide/convert.hpp>
+#endif // ENABLED_DEBUG_IMGUI_ICONS
+
 namespace Slic3r::App::Plater {
 
 void PlaterRenderModule::on_init(Render::Device& device)
@@ -203,6 +210,234 @@ void PlaterRenderModule::render_imgui()
         imgui_scenegraph_node_info(m_scene_presenter->scene().root());
     }
     ImGui::End();
+
+#if ENABLED_DEBUG_IMGUI_FONT
+    ImGui::SetNextWindowCollapsed(true, ImGuiCond_Once);
+    if (ImGui::Begin("Fonts test/debug", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        if (ImGui::BeginTable("Fonts", 2, ImGuiTableFlags_Borders)) {
+
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::Text("Czech");
+            ImGui::TableSetColumnIndex(1);
+            ImGui::Text("oddělitelné");
+            ImGui::Text("žádné otevřené kotvy");
+            ImGui::Text("Přerušit");
+            ImGui::Text("Přesné");
+
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::Text("Russian");
+            ImGui::TableSetColumnIndex(1);
+            ImGui::Text("Неизвестно");
+            ImGui::Text("Внешний периметр");
+            ImGui::Text("Нависающие периметры");
+            ImGui::Text("Внутреннее заполнение");
+
+            ImGui::EndTable();
+        }
+    }
+    ImGui::End();
+#endif // ENABLED_DEBUG_IMGUI_FONT
+
+#if ENABLED_DEBUG_IMGUI_ICONS
+    ImGui::SetNextWindowCollapsed(true, ImGuiCond_Once);
+    if (ImGui::Begin("ImGui icons test/debug", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        if (ImGui::BeginTable("Icons", 2, ImGuiTableFlags_Borders)) {
+            float font_scale = ImGui::GetTextLineHeight() / 15.0f;
+            int icon_sz = lround(16 * font_scale);
+
+            int px = icon_sz;
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::Text("Icons %dx%d", px, px);
+            ImGui::TableSetColumnIndex(1);
+            static const std::vector<std::pair<std::wstring, std::string>> ICONS = {
+                { std::wstring(&ImGui::PrintIconMarker),               "cog"                            },
+                { std::wstring(&ImGui::PrinterIconMarker),             "printer"                        },
+                { std::wstring(&ImGui::PrinterSlaIconMarker),          "sla_printer"                    },
+                { std::wstring(&ImGui::FilamentIconMarker),            "spool"                          },
+                { std::wstring(&ImGui::MaterialIconMarker),            "resin"                          },
+                { std::wstring(&ImGui::MinimalizeButton),              "notification_minimalize"        },
+                { std::wstring(&ImGui::MinimalizeHoverButton),         "notification_minimalize_hover"  },
+                { std::wstring(&ImGui::RightArrowButton),              "notification_right"             },
+                { std::wstring(&ImGui::RightArrowHoverButton),         "notification_right_hover"       },
+                { std::wstring(&ImGui::PreferencesButton),             "notification_preferences"       },
+                { std::wstring(&ImGui::PreferencesHoverButton),        "notification_preferences_hover" },
+                { std::wstring(&ImGui::SliderFloatEditBtnIcon),        "edit_button"                    },
+                { std::wstring(&ImGui::SliderFloatEditBtnPressedIcon), "edit_button_pressed"            },
+                { std::wstring(&ImGui::ClipboardBtnIcon),              "copy_menu"                      },
+                { std::wstring(&ImGui::ExpandBtn),                     "expand_btn"                     },
+                { std::wstring(&ImGui::CollapseBtn),                   "collapse_btn"                   },
+                { std::wstring(&ImGui::RevertButton),                  "undo"                           },
+                { std::wstring(&ImGui::WarningMarkerSmall),            "notification_warning"           },
+                { std::wstring(&ImGui::InfoMarkerSmall),               "notification_info"              },
+                { std::wstring(&ImGui::PlugMarker),                    "plug"                           },
+                { std::wstring(&ImGui::DowelMarker),                   "dowel"                          },
+                { std::wstring(&ImGui::SnapMarker),                    "snap"                           },
+                { std::wstring(&ImGui::HorizontalHide),                "horizontal_hide"                },
+                { std::wstring(&ImGui::HorizontalShow),                "horizontal_show"                },
+                { std::wstring(&ImGui::PrintIdle),                     "print_idle"                     },
+                { std::wstring(&ImGui::PrintRunning),                  "print_running"                  },
+                { std::wstring(&ImGui::PrintFinished),                 "print_finished"                 },
+            };
+
+            ImGui::PushItemWidth(200.0f);
+            if (ImGui::BeginCombo("##icons", nullptr, ImGuiComboFlags_HeightRegular)) {
+                for (size_t i = 0; i < ICONS.size(); ++i) {
+                    ImGui::PushStyleColor(ImGuiCol_Button, { 0.0f, 0.0f, 0.0f, 0.0f });
+                    ImGui::PushStyleColor(ImGuiCol_ButtonActive, { 0.0f, 0.0f, 0.0f, 0.0f });
+                    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, { 0.0f, 0.0f, 0.0f, 0.0f });
+                    ImGui::Button(boost::nowide::narrow(ICONS[i].first).c_str(), ImVec2(px, px) + ImGui::GetStyle().FramePadding * 2.0f);
+                    ImGui::PopStyleColor(3);
+                    if (ImGui::IsItemHovered()) {
+                        ImGui::BeginTooltip();
+                        ImGui::Text("%s", ICONS[i].second.c_str());
+                        ImGui::EndTooltip();
+                    }
+                }
+                ImGui::EndCombo();
+            }
+            ImGui::PopItemWidth();
+
+            px = int(1.25f * icon_sz);
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::Text("Icons medium %dx%d", px, px);
+            ImGui::TableSetColumnIndex(1);
+            static const std::vector<std::pair<std::wstring, std::string>> ICONS_MEDIUM = {
+                { std::wstring(&ImGui::Lock),              "lock_closed"       },
+                { std::wstring(&ImGui::LockHovered),       "lock_closed_f"     },
+                { std::wstring(&ImGui::Unlock),            "lock_open"         },
+                { std::wstring(&ImGui::UnlockHovered),     "lock_open_f"       },
+                { std::wstring(&ImGui::DSRevert),          "undo"              },
+                { std::wstring(&ImGui::DSRevertHovered),   "undo_f"            },
+                { std::wstring(&ImGui::DSSettings),        "cog"               },
+                { std::wstring(&ImGui::DSSettingsHovered), "cog_f"             },
+                { std::wstring(&ImGui::ErrorTick),         "error_tick"        },
+                { std::wstring(&ImGui::ErrorTickHovered),  "error_tick_f"      },
+                { std::wstring(&ImGui::PausePrint),        "pause_print"       },
+                { std::wstring(&ImGui::PausePrintHovered), "pause_print_f"     },
+                { std::wstring(&ImGui::EditGCode),         "edit_gcode"        },
+                { std::wstring(&ImGui::EditGCodeHovered),  "edit_gcode_f"      },
+                { std::wstring(&ImGui::RemoveTick),        "colorchange_del"   },
+                { std::wstring(&ImGui::RemoveTickHovered), "colorchange_del_f" },
+            };
+
+            ImGui::PushItemWidth(200.0f);
+            if (ImGui::BeginCombo("##icons_medium", nullptr, ImGuiComboFlags_HeightRegular)) {
+                for (size_t i = 0; i < ICONS_MEDIUM.size(); ++i) {
+                    ImGui::PushStyleColor(ImGuiCol_Button, { 0.0f, 0.0f, 0.0f, 0.0f });
+                    ImGui::PushStyleColor(ImGuiCol_ButtonActive, { 0.0f, 0.0f, 0.0f, 0.0f });
+                    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, { 0.0f, 0.0f, 0.0f, 0.0f });
+                    ImGui::Button(boost::nowide::narrow(ICONS_MEDIUM[i].first).c_str(), ImVec2(px, px) + ImGui::GetStyle().FramePadding * 2.0f);
+                    ImGui::PopStyleColor(3);
+                    if (ImGui::IsItemHovered()) {
+                        ImGui::BeginTooltip();
+                        ImGui::Text("%s", ICONS_MEDIUM[i].second.c_str());
+                        ImGui::EndTooltip();
+                    }
+                }
+                ImGui::EndCombo();
+            }
+            ImGui::PopItemWidth();
+
+            px = 2 * icon_sz;
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::Text("Icons large %dx%d", px, px);
+            ImGui::TableSetColumnIndex(1);
+            static const std::vector<std::pair<std::wstring, std::string>> ICONS_LARGE = {
+                { std::wstring(&ImGui::LegendTravel),            "legend_travel"                    },
+                { std::wstring(&ImGui::LegendWipe),              "legend_wipe"                      },
+                { std::wstring(&ImGui::LegendRetract),           "legend_retract"                   },
+                { std::wstring(&ImGui::LegendDeretract),         "legend_deretract"                 },
+                { std::wstring(&ImGui::LegendSeams),             "legend_seams"                     },
+                { std::wstring(&ImGui::LegendToolChanges),       "legend_toolchanges"               },
+                { std::wstring(&ImGui::LegendColorChanges),      "legend_colorchanges"              },
+                { std::wstring(&ImGui::LegendPausePrints),       "legend_pauseprints"               },
+                { std::wstring(&ImGui::LegendCustomGCodes),      "legend_customgcodes"              },
+                { std::wstring(&ImGui::LegendCOG),               "legend_cog"                       },
+                { std::wstring(&ImGui::LegendShells),            "legend_shells"                    },
+                { std::wstring(&ImGui::LegendToolMarker),        "legend_toolmarker"                },
+                { std::wstring(&ImGui::CloseNotifButton),        "notification_close"               },
+                { std::wstring(&ImGui::CloseNotifHoverButton),   "notification_close_hover"         },
+                { std::wstring(&ImGui::EjectButton),             "notification_eject_sd"            },
+                { std::wstring(&ImGui::EjectHoverButton),        "notification_eject_sd_hover"      },
+                { std::wstring(&ImGui::WarningMarker),           "notification_warning"             },
+                { std::wstring(&ImGui::ErrorMarker),             "notification_error"               },
+                { std::wstring(&ImGui::CancelButton),            "notification_cancel"              },
+                { std::wstring(&ImGui::CancelHoverButton),       "notification_cancel_hover"        },
+//                { std::wstring(&ImGui::SinkingObjectMarker),     "move"                              },
+//                { std::wstring(&ImGui::CustomSupportsMarker),    "fdm_supports"                      },
+//                { std::wstring(&ImGui::CustomSeamMarker),        "seam"                              },
+//                { std::wstring(&ImGui::MmuSegmentationMarker),   "mmu_segmentation"                  },
+//                { std::wstring(&ImGui::VarLayerHeightMarker),    "layers"                            },
+                { std::wstring(&ImGui::DocumentationButton),      "notification_documentation"       },
+                { std::wstring(&ImGui::DocumentationHoverButton), "notification_documentation_hover" },
+                { std::wstring(&ImGui::InfoMarker),               "notification_info"                },
+                { std::wstring(&ImGui::PlayButton),               "notification_play"                },
+                { std::wstring(&ImGui::PlayHoverButton),          "notification_play_hover"          },
+                { std::wstring(&ImGui::PauseButton),              "notification_pause"               },
+                { std::wstring(&ImGui::PauseHoverButton),         "notification_pause_hover"         },
+                { std::wstring(&ImGui::OpenButton),               "notification_open"                },
+                { std::wstring(&ImGui::OpenHoverButton),          "notification_open_hover"          },
+                { std::wstring(&ImGui::SlaViewOriginal),          "sla_view_original"                },
+                { std::wstring(&ImGui::SlaViewProcessed),         "sla_view_processed"               },
+            };
+
+            ImGui::PushItemWidth(200.0f);
+            if (ImGui::BeginCombo("##icons_large", nullptr, ImGuiComboFlags_HeightRegular)) {
+                for (size_t i = 0; i < ICONS_LARGE.size(); ++i) {
+                    ImGui::PushStyleColor(ImGuiCol_Button, { 0.0f, 0.0f, 0.0f, 0.0f });
+                    ImGui::PushStyleColor(ImGuiCol_ButtonActive, { 0.0f, 0.0f, 0.0f, 0.0f });
+                    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, { 0.0f, 0.0f, 0.0f, 0.0f });
+                    ImGui::Button(boost::nowide::narrow(ICONS_LARGE[i].first).c_str(), ImVec2(px, px) + ImGui::GetStyle().FramePadding * 2.0f);
+                    ImGui::PopStyleColor(3);
+                    if (ImGui::IsItemHovered()) {
+                        ImGui::BeginTooltip();
+                        ImGui::Text("%s", ICONS_LARGE[i].second.c_str());
+                        ImGui::EndTooltip();
+                    }
+                }
+                ImGui::EndCombo();
+            }
+            ImGui::PopItemWidth();
+
+            px = 4 * icon_sz;
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::Text("Icons extra large %dx%d", px, px);
+            ImGui::TableSetColumnIndex(1);
+            static const std::vector<std::pair<std::wstring, std::string>> ICONS_EXTRA_LARGE = {
+                { std::wstring(&ImGui::ClippyMarker),          "notification_clippy"       },
+                { std::wstring(&ImGui::SliceAllBtnIcon),       "slice_all"                 },
+                { std::wstring(&ImGui::WarningMarkerDisabled), "notification_warning_grey" },
+            };
+
+            ImGui::PushItemWidth(200.0f);
+            if (ImGui::BeginCombo("##icons_extra_large", nullptr, ImGuiComboFlags_HeightRegular)) {
+                for (size_t i = 0; i < ICONS_EXTRA_LARGE.size(); ++i) {
+                    ImGui::PushStyleColor(ImGuiCol_Button, { 0.0f, 0.0f, 0.0f, 0.0f });
+                    ImGui::PushStyleColor(ImGuiCol_ButtonActive, { 0.0f, 0.0f, 0.0f, 0.0f });
+                    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, { 0.0f, 0.0f, 0.0f, 0.0f });
+                    ImGui::Button(boost::nowide::narrow(ICONS_EXTRA_LARGE[i].first).c_str(), ImVec2(px, px) + ImGui::GetStyle().FramePadding * 2.0f);
+                    ImGui::PopStyleColor(3);
+                    if (ImGui::IsItemHovered()) {
+                        ImGui::BeginTooltip();
+                        ImGui::Text("%s", ICONS_EXTRA_LARGE[i].second.c_str());
+                        ImGui::EndTooltip();
+                    }
+                }
+                ImGui::EndCombo();
+            }
+            ImGui::PopItemWidth();
+
+            ImGui::EndTable();
+        }
+    }
+    ImGui::End();
+#endif // ENABLED_DEBUG_IMGUI_ICONS
 }
 
 void PlaterRenderModule::render_object_hud(const Scene::Node& n, const Eigen::AlignedBox<float, 2>& screen_bounding_box)

@@ -68,7 +68,7 @@ public:
 
 private:
     void update_cameras(const std::function<void(Scene::Camera&)>& modifier);
-    void update_beds() { m_bed_render_updater.update_all(m_device, m_workbench.project(m_selected_project_id)); }
+    void update_beds() { m_bed_render_updater.update_all(); }
 
     void on_selected_project_changed(size_t index) override;
 

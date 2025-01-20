@@ -80,6 +80,11 @@ Context::Context()
     glCheck();
     m_max_texture_units = max_texture_units;
 
+    GLint max_texture_size = 0;
+    glGetIntegerv(GL_MAX_TEXTURE_SIZE, &max_texture_size);
+    glCheck();
+    m_max_texture_size = max_texture_size;
+
 #ifdef EMSCRIPTEN
     m_vao_available = GLEW_OES_vertex_array_object;
 #else
@@ -118,6 +123,12 @@ void Context::log_gl_info() const
     } else
         SPDLOG_INFO("OpenGL Extensions: {}", getGlString(GL_EXTENSIONS));
 #endif
+}
+
+void Context::release_resources()
+{
+    if (m_shader_manager) m_shader_manager->shutdown();
+    if (m_texture_manager) m_texture_manager->shutdown();
 }
 
 Context& Context::instance()

@@ -18,21 +18,23 @@ Node::Node() : m_id(next_id()) {}
 // NOLINTBEGIN(misc-no-recursion): Mark recursion in query() as resolved
 void Node::query(const NodePredicate& predicate, NodeList& found_nodes, bool ignore_enabled)
 {
-    if ((m_enabled || ignore_enabled) && predicate(this)) {
-        found_nodes.push_back(this);
-    }
-    for (auto& child : m_children) {
-        child->query(predicate, found_nodes);
+    if (m_enabled || ignore_enabled) {
+        if (predicate(this))
+            found_nodes.push_back(this);
+        for (auto& child : m_children) {
+            child->query(predicate, found_nodes, ignore_enabled);
+        }
     }
 }
 
 void Node::query(const NodePredicate& predicate, ConstNodeList& found_nodes, bool ignore_enabled) const
 {
-    if ((m_enabled || ignore_enabled) && predicate(this)) {
-        found_nodes.push_back(this);
-    }
-    for (auto& child : m_children) {
-        child->query(predicate, found_nodes);
+    if (m_enabled || ignore_enabled) {
+        if (predicate(this))
+            found_nodes.push_back(this);
+        for (auto& child : m_children) {
+            child->query(predicate, found_nodes, ignore_enabled);
+        }
     }
 }
 
