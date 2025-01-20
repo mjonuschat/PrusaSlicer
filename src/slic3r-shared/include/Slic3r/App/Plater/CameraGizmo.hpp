@@ -19,14 +19,17 @@ public:
     GizmoActivationState on_mouse(GizmoEventContext& ctx, bool only_active) override;
     void on_cycle_prepare() override;
 private:
-    void update_pan(float delta_x, float delta_y);
+    void update_pan(const Vec3d& delta);
     void update_rotation(float delta_x, float delta_y);
     void update_zoom(float wheel_delta_y);
+
+    bool pick_plane(const GizmoEventContext& ctx, Vec3d& out_plane_point);
 private:
     ISceneProvider& m_scene_provider;
     State m_state{State::Inactive};
     float m_last_x{0};
     float m_last_y{0};
+    Vec3d m_mouse_last_world_position;
 };
 
 }

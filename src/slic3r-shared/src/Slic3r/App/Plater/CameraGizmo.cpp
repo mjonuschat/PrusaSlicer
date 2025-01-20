@@ -1,4 +1,5 @@
 #include "Slic3r/App/Plater/CameraGizmo.hpp"
+#include "Slic3r/App/Scene/Plane.hpp"
 
 namespace Slic3r::App::Plater {
 
@@ -55,6 +56,25 @@ void CameraGizmo::register_commands(CommandRegistry& registry)
 }
 
 
+bool CameraGizmo::pick_plane(const GizmoEventContext& ctx, Vec3d& out_plane_point)
+{
+    auto& scene = m_scene_provider.scene();
+    auto& cam = scene.camera();
+    const Scene::Plane plane {
+        cam.model().block<3, 1>(0, 2),
+        scene.camera_trackball().cam_focal_dist()
+    };
+
+    double t;
+    auto r = ctx.pick_ray();
+    r.origin = Vec3d::Zero();
+    if (plane.intersects(r, t)) {
+        out_plane_point = r.point_at(t);
+        return true;
+    }
+    return false;
+}
+
 GizmoActivationState CameraGizmo::on_mouse(GizmoEventContext& ctx, bool only_active)
 {
     const Platform::MouseEvent& event = ctx.mouse_event();
@@ -68,6 +88,10 @@ GizmoActivationState CameraGizmo::on_mouse(GizmoEventContext& ctx, bool only_act
         m_state = pan ? State::Panning : State::Rotating;
         m_last_x = event.x();
         m_last_y = event.y();
+        if (pan && !pick_plane(ctx, m_mouse_last_world_position)) {
+            // pick failed, we cannot pan
+            return GizmoActivationState::Inactive;
+        }
     } else if (type == Platform::MouseEvent::Type::Move) {
         if (m_state == State::Inactive)
             return GizmoActivationState::Inactive;
@@ -79,8 +103,14 @@ GizmoActivationState CameraGizmo::on_mouse(GizmoEventContext& ctx, bool only_act
         
         if (m_state == State::Rotating)
             update_rotation(delta_x, delta_y);
-        else if (m_state == State::Panning)
-            update_pan(delta_x, delta_y);
+        else if (m_state == State::Panning) {
+            Vec3d current_mouse_world_pos;
+            if (pick_plane(ctx, current_mouse_world_pos)) {
+                update_pan(m_mouse_last_world_position - current_mouse_world_pos);
+                m_mouse_last_world_position = current_mouse_world_pos;
+            } else
+                return GizmoActivationState::Inactive;
+        }
 
         return GizmoActivationState::Active;
     } else if (type == Platform::MouseEvent::Type::ButtonUp) {
@@ -100,17 +130,19 @@ void CameraGizmo::on_cycle_prepare()
     m_state = State::Inactive;
 }
 
-void CameraGizmo::update_pan(float delta_x, float delta_y)
+void CameraGizmo::update_pan(const Vec3d& delta)
 {
     auto& scene = m_scene_provider.scene();
-    auto& cam = scene.camera();
-    const auto& model = cam.model();
-    auto right = model.block<3, 1>(0, 0);
-    auto up = model.block<3, 1>(0, 1);
+    // auto& cam = scene.camera();
+    // const auto& model = cam.model();
+    // auto right = model.block<3, 1>(0, 0);
+    // auto up = model.block<3, 1>(0, 1);
     auto& trackball = scene.camera_trackball();
 
-    double dist = trackball.cam_focal_dist();
-    trackball.set_focal_point(trackball.cam_focal() + right * -delta_x * dist + up * delta_y * dist);
+    // double dist = trackball.cam_focal_dist();
+    // trackball.set_focal_point(trackball.cam_focal() + right * -delta_x * dist + up * delta_y * dist);
+    trackball.set_focal_point(trackball.cam_focal() + delta);
+    SPDLOG_DEBUG("Pan {},{},{}", delta.x(), delta.y(), delta.z());
 }
 
 void CameraGizmo::update_zoom(float wheel_delta_y)
