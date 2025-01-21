@@ -50,6 +50,7 @@ public:
     void toggle_activate_tool(ToolType tool, PrinterTechnology pt);
     void activate_tool(ToolType tool, PrinterTechnology pt);
     void deactivate_current_tool();
+    ToolType current_tool_type() const { return (m_active_tool != nullptr) ? m_active_tool->type() : ToolType::None; }
 
     GizmoDataFactory& data_factory() { return m_data_factory; }
 
