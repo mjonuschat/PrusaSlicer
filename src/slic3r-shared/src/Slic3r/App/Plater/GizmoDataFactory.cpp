@@ -18,7 +18,7 @@ void orient_object_pointing_to_positive_z(
 )
 {
     // an object points in +Z direction,
-    constexpr float right_angle = M_PI / 2.0f;
+    constexpr float right_angle = float(PI) / 2.0f;
     switch (data_transform) {
     case GizmoDataTransform::PointX:
         // make it pointing in +X direction
