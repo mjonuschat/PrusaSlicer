@@ -150,8 +150,6 @@ GizmoActivationState RotationGizmo::on_mouse(GizmoEventContext& ctx, bool only_a
             len /= scale;
         }
 
-        SPDLOG_INFO("pivot {} - len {} - theta {}", to_string(m_pivot), len, theta * 180.0 / PI);
-
         // snap to coarse snap region
         if (m_snap.coarse.in <= len && len <= m_snap.coarse.out) {
             double step = TWO_PI / CIRCLE_COARSE_GRADE_STEPS;
