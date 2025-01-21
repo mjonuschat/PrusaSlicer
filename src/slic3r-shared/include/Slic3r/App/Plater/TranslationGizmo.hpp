@@ -37,6 +37,7 @@ private:
     Biz::Scene::TransformMemento m_xform_memento;
     Scene::Ray m_translation_ray;
     double m_start_t{0};
+    bool m_dragging{ false };
     bool m_activated{false};
     bool m_highlighted{false};
 };
