@@ -19,9 +19,10 @@ struct GizmoNodeTag
 {
     const AxisType primary_axis;
     const AxisType secondary_axis{AxisType::None};
+    const void* user_data{ nullptr };
 
-    explicit GizmoNodeTag(AxisType primary_axis, AxisType secondary_axis = AxisType::None)
-        : primary_axis(primary_axis), secondary_axis(secondary_axis)
+    explicit GizmoNodeTag(AxisType primary_axis, AxisType secondary_axis = AxisType::None, const void* user_data = nullptr)
+        : primary_axis(primary_axis), secondary_axis(secondary_axis), user_data(user_data)
     {}
 
     Vec3d primary_axis_dir() const { return axis_type_dir(primary_axis); }
