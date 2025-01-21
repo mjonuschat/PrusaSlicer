@@ -66,6 +66,9 @@ public:
 
     void screen_resized(const Render::Rect& viewport);
 
+    void set_freeze_selection_center(bool freeze) { m_freeze_selection_center = freeze; }
+    bool freeze_selection_center() const { return m_freeze_selection_center; }
+
 private:
     void update_cameras(const std::function<void(Scene::Camera&)>& modifier);
     void update_beds() { m_bed_render_updater.update_all(); }
@@ -113,6 +116,7 @@ private:
     ProjectContexts m_projects;
     BedRenderUpdater m_bed_render_updater;
 
+    bool m_freeze_selection_center{ false };
 };
 
 }

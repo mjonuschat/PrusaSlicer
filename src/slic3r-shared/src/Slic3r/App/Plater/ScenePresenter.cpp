@@ -370,10 +370,12 @@ void ScenePresenter::on_scene_selection_changed(Domain::SelectionId project_id, 
         });
     }
     proj.set_selection_bounding_box(bounds);
-    Matrix4d xform = Matrix4d::Identity();
-    //xform.block<1, 3>(0, 3) = bounds.center().cast<double>();
-    xform.col(3).head(3) = bounds.center().cast<double>();
-    proj.selection_root().set_world_transform(xform);
+    if (!m_freeze_selection_center) {
+        Matrix4d xform = Matrix4d::Identity();
+        //xform.block<1, 3>(0, 3) = bounds.center().cast<double>();
+        xform.col(3).head(3) = bounds.center().cast<double>();
+        proj.selection_root().set_world_transform(xform);
+    }
 }
 
 void ScenePresenter::on_scene_selection_transformed(Domain::SelectionId project_id, const Biz::Scene::Selection& selection)
