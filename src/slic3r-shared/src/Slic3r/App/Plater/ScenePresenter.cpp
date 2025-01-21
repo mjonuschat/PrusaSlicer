@@ -315,7 +315,7 @@ Scene::Node* ScenePresenter::initialize_selection_root(Scene::Scene& scene)
     Scene::NodeBuilder builder(scene);
     Scene::Node* selection_root = builder
         .set_debug_name("selection_root")
-        .set_screen_space_sized_modifier(0.0075)
+        .set_screen_space_sized_modifier(screen_space_sized_modifier())
         .build().release();
     scene.add_child(selection_root);
     return selection_root;

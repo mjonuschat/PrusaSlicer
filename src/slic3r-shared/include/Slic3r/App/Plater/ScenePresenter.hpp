@@ -69,6 +69,8 @@ public:
     void set_freeze_selection_center(bool freeze) { m_freeze_selection_center = freeze; }
     bool freeze_selection_center() const { return m_freeze_selection_center; }
 
+    static double screen_space_sized_modifier() { return 0.0075; }
+
 private:
     void update_cameras(const std::function<void(Scene::Camera&)>& modifier);
     void update_beds() { m_bed_render_updater.update_all(); }
