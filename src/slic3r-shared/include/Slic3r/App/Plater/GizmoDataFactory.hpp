@@ -6,10 +6,27 @@
 
 namespace Slic3r::App::Plater {
 
+static const ColorRGBA RED   = { 1.0f, 0.2f, 0.2f, 1.0f };
+static const ColorRGBA GREEN = { 0.2f, 1.0f, 0.2f, 1.0f };
+static const ColorRGBA BLUE  = { 0.2f, 0.2f, 1.0f, 1.0f };
+static const ColorRGBA WHITE = { 1.0f, 1.0f, 1.0f, 1.0f };
+
+constexpr uint8_t CIRCLE_COARSE_GRADE_STEPS = 8; // 8 steps = 45 degrees step angle
+constexpr uint8_t CIRCLE_FINE_GRADE_SECONDARY_STEPS = 72; // 72 steps = 5 degrees step angle
+constexpr float CIRCLE_FINE_GRADE_PRIMARY_OUT_RADIUS = 1.1f;
+constexpr float CIRCLE_FINE_GRADE_SECONDARY_OUT_RADIUS = 1.05f;
+constexpr float CIRCLE_COARSE_GRADE_IN_RADIUS = 1.0f / 3.0f;
+constexpr float CIRCLE_COARSE_GRADE_OUT_RADIUS = 2.0f / 3.0f;
+
 enum class GizmoDataId
 {
     ConeHandle = 0,
     AxesLines = 1,
+    Segment = 2,
+    Cone = 3,
+    Cube = 4,
+    Circle = 5,
+    GradedCircle = 6,
 };
 
 enum class GizmoDataVariant
@@ -99,6 +116,9 @@ private:
 
     void create_data(GizmoDataId id);
     void create_axes_lines();
+    void create_segment();
+    void create_circle();
+    void create_graded_circle();
 
 private:
     Render::Device& m_device;

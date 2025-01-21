@@ -25,6 +25,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Plater/SelectionHandler.cpp
         include/Slic3r/App/Plater/TranslationGizmo.hpp
         src/Slic3r/App/Plater/TranslationGizmo.cpp
+        include/Slic3r/App/Plater/RotationGizmo.hpp
+        src/Slic3r/App/Plater/RotationGizmo.cpp
         include/Slic3r/App/Plater/PlaterSceneLayer.hpp
         include/Slic3r/App/Plater/BedNodeTag.hpp
         include/Slic3r/App/Plater/BedRenderUpdater.hpp
