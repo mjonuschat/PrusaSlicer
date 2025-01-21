@@ -50,6 +50,14 @@ NodeBuilder& NodeBuilder::set_imgui_func(const FuncImguiRenderNodeComponent::Ren
     return *this;
 }
 
+NodeBuilder& NodeBuilder::set_enabled(bool enabled)
+{
+    ensure_current();
+
+    m_current->set_enabled(enabled);
+    return *this;
+}
+
 NodeBuilder& NodeBuilder::set_screen_space_sized_modifier(double scale)
 {
     ensure_current();

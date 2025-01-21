@@ -26,6 +26,7 @@ public:
     NodeBuilder& set_mesh(const Render::Geometry* geometry, const Render::Material& material, int layer_index=0);
     NodeBuilder& set_material_override(const Render::Material& material);
     NodeBuilder& set_imgui_func(const FuncImguiRenderNodeComponent::RenderFunc& imgui_render_func);
+    NodeBuilder& set_enabled(bool enabled);
 
     template <typename ImguiRendererT, typename ... ArgsT>
     NodeBuilder& set_imgui(ArgsT&&... args)
