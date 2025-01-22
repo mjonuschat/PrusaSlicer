@@ -6,6 +6,7 @@
 namespace Slic3r::App::Plater {
 
 namespace {
+
 constexpr double HALF_PI = 0.5 * PI;
 constexpr double TWO_PI = 2.0 * PI;
 constexpr double CIRCLE_RADIUS = 30.0;
@@ -17,6 +18,7 @@ constexpr double HANDLE_GAP_LENGTH = 1.0;
 static const Vec3d HANDLE_CUBE_OFFSET = { HANDLE_STEM_LENGTH, 0.0, 0.0 };
 static const Vec3d HANDLE_CONE_CCW_OFFSET = { HANDLE_STEM_LENGTH, 0.5 * HANDLE_CUBE_SIZE[Y] + HANDLE_GAP_LENGTH, 0.0 };
 static const Vec3d HANDLE_CONE_CW_OFFSET = { HANDLE_STEM_LENGTH, -(0.5 * HANDLE_CUBE_SIZE[Y] + HANDLE_GAP_LENGTH), 0.0 };
+
 } // namespace
 
 static Transform3d axis_transform(AxisType axis)
@@ -233,28 +235,6 @@ void RotationGizmo::on_cycle_prepare()
     m_dragging = false;
 }
 
-static ColorRGBA axis_color(AxisType axis)
-{
-    switch (axis)
-    {
-    case AxisType::XAxis: { return RED; }
-    case AxisType::YAxis: { return GREEN; }
-    case AxisType::ZAxis: { return BLUE; }
-    default:              { return { 0.0f, 0.0f, 0.0f, 1.0f }; }
-    }
-}
-
-static std::string axis_string(AxisType axis)
-{
-    switch (axis)
-    {
-    case AxisType::XAxis: { return "X axis"; }
-    case AxisType::YAxis: { return "Y axis"; }
-    case AxisType::ZAxis: { return "Z axis"; }
-    default:              { return "?"; }
-    }
-}
-
 static void build_rotate_node(AxisType axis, Scene::NodeBuilder& builder, Render::Device& device, GizmoDataFactory& data_factory)
 {
     ColorRGBA color = axis_color(axis);
@@ -279,7 +259,7 @@ static void build_rotate_node(AxisType axis, Scene::NodeBuilder& builder, Render
     builder.child([&](Scene::NodeBuilder& bldr) {
         Render::Material material = Render::Material{}
             .set_shader(device.context().shader_manager().get_shader("flat"))
-            .set_uniform("uniform_color", WHITE);
+            .set_uniform("uniform_color", ColorRGBA::WHITE());
 
         bldr
             .set_debug_name("graded circle")
@@ -328,7 +308,7 @@ static void build_rotate_node(AxisType axis, Scene::NodeBuilder& builder, Render
                         .translate(HANDLE_CUBE_OFFSET)
                         .scale(HANDLE_CUBE_SIZE);
                 });
-            });
+        });
 
         bldr.child([&](Scene::NodeBuilder& child_bldr) {
             auto geom = data_factory.geometry(GizmoDataId::Cone);
@@ -349,7 +329,7 @@ static void build_rotate_node(AxisType axis, Scene::NodeBuilder& builder, Render
                         .rotate(Eigen::AngleAxisd{ -HALF_PI, Vec3d::UnitX() })
                         .scale(HANDLE_CONE_SIZE);
                 });
-            });
+        });
 
         bldr.child([&](Scene::NodeBuilder& child_bldr) {
             auto geom = data_factory.geometry(GizmoDataId::Cone);
@@ -370,7 +350,7 @@ static void build_rotate_node(AxisType axis, Scene::NodeBuilder& builder, Render
                         .rotate(Eigen::AngleAxisd{ HALF_PI, Vec3d::UnitX() })
                         .scale(HANDLE_CONE_SIZE);
                 });
-            });
+        });
     });
 }
 
@@ -434,6 +414,7 @@ void RotationGizmo::clear_highlight()
 {
     if (m_highlighted)
         // show all axes
+        // hide graded circle
         visit(
             m_scene_presenter.selection_root(), [](Scene::Node& node) {
                 const GizmoNodeTag* tag = node.tag_of_type<GizmoNodeTag>();
