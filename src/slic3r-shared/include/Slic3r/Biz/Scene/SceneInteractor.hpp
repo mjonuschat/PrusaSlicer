@@ -13,6 +13,10 @@
 
 namespace Slic3r::Domain { class Bed; }
 
+namespace Slic3r::Biz {
+class ISelectedBedInstanceChangedListener;
+} // namespace Slic3r::Biz
+
 namespace Slic3r::Biz::Scene {
 
 class ISceneSelectionChangedListener
@@ -64,6 +68,8 @@ public:
     Domain::BedInstance& add_bed_instance(size_t bed_id, const Transform& xform);
     void transform_bed_instance(const Domain::ElementRef& instance, const Transform& xform);
 
+    void select_bed_instance(const Domain::BedRef& instance);
+
     /**
      * @name Scene selection
      * @{
@@ -105,6 +111,21 @@ public:
     /** @} */
 
     /**
+     * @name Selected Bed Instance Changed Listener
+     * @{
+     */
+    void add_bed_instance_selection_changed_listener(ISelectedBedInstanceChangedListener* l)
+    {
+        m_bed_instance_selection_changed_listeners.add(l);
+    }
+
+    void remove_bed_instance_selection_changed_listener(ISelectedBedInstanceChangedListener* l)
+    {
+        m_bed_instance_selection_changed_listeners.remove(l);
+    }
+    /** @} */
+
+    /**
      * @name Transforming selection
      * @{
      */
@@ -138,6 +159,7 @@ private:
     Domain::SelectionId m_selected_config_container_id {Domain::INVALID_ID};
     Domain::SelectionId m_selected_bed_instance_id {Domain::INVALID_ID};
     Biz::ListenerList<ISceneSelectionChangedListener> m_selection_changed_listeners;
+    Biz::ListenerList<ISelectedBedInstanceChangedListener> m_bed_instance_selection_changed_listeners;
     Biz::ListenerList<ISceneChangedListener> m_changed_listeners;
 
     // temporary member to allow to select a bed from ConfigContainer until we do not have a mechanism for it

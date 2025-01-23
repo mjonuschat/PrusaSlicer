@@ -77,21 +77,10 @@ Domain::SelectionId ProjectInteractor::add_project(Domain::Project&& p)
     initialize_inserted_project(project_id);
 
     const Domain::SelectionId first_bed_instance_id = config_container.bed_instances().front()->id().id;
-    do_select_bed_instance(first_bed_instance_id);
+    m_scene_interactor.select_bed_instance({ first_container_id, first_bed_instance_id });
 
     return project_id;
 }
-
-void ProjectInteractor::do_select_bed_instance(Domain::SelectionId bed_instance_id)
-{
-    m_selection.bed_instance_id = bed_instance_id;
-    auto project_id = m_selection.project_id;
-    auto config_container_id = m_selection.config_container_id;
-    m_selected_bed_instance_changed_listeners.invoke([project_id, config_container_id, bed_instance_id](auto* l) {
-        l->on_selected_bed_instance_changed(project_id, config_container_id, bed_instance_id);
-    });
-}
-
 
 
 void ProjectInteractor::remove_project(Domain::SelectionId project_id)

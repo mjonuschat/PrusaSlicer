@@ -1,7 +1,9 @@
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 #include "Slic3r/Domain/Bed.hpp"
 #include "Slic3r/Domain/BedInstance.hpp"
-#include "libslic3r/Model.hpp"
+#include "Slic3r/Biz/ISelectedBedInstanceChangedListener.hpp"
+
+#include <libslic3r/Model.hpp>
 
 namespace Slic3r::Biz::Scene {
 
@@ -196,6 +198,24 @@ void SceneInteractor::transform_bed_instance(const Domain::ElementRef& instance,
 
     m_changed_listeners.invoke([&](auto* l) {
         l->on_bed_instance_transformed(m_selected_project_id, {updated});
+    });
+}
+
+void SceneInteractor::select_bed_instance(const Domain::BedRef& instance)
+{
+    Domain::Project::ConfigContainerList& ccs = m_projects.find(m_selected_project_id)->second.project.config_containers();
+    for (auto& cc : ccs) {        
+        Domain::ConfigContainer::BedInstanceList& instances = cc->bed_instances();
+        for (auto& inst : instances) {
+            inst->set_active(cc->id().id == instance.bed_id && inst->id().id == instance.bed_instance_id);
+//            inst->set_active(cc->id().id == instance.config_container_id && inst->id().id == instance.instance_id);
+        }
+    }
+
+    m_bed_instance_selection_changed_listeners.invoke([&](auto* l) {
+        l->on_selected_bed_instance_changed(
+            m_selected_project_id, instance.bed_id, instance.bed_instance_id);
+//            m_selected_project_id, instance.config_container_id, instance.instance_id);
     });
 }
 
