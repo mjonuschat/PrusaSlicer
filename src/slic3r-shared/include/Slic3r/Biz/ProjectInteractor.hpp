@@ -14,7 +14,7 @@ namespace Slic3r::Biz {
 
 class ISelectedProjectChangedListener;
 class ISelectedConfigContainerChangedListener;
-class ISelectedBedInstanceChanged;
+class ISelectedBedInstanceChangedListener;
 class IProjectsChangedListener;
 
 /**
@@ -217,12 +217,12 @@ public:
      * @name ISelectedBedInstanceChanged Selected bed instance changed
      * @{
      */
-    void add_selected_bed_instance_changed_listener(ISelectedBedInstanceChanged* l)
+    void add_selected_bed_instance_changed_listener(ISelectedBedInstanceChangedListener* l)
     {
         m_selected_bed_instance_changed_listeners.add(l);
     }
 
-    void remove_selected_bed_instance_changed_listener(ISelectedBedInstanceChanged* l)
+    void remove_selected_bed_instance_changed_listener(ISelectedBedInstanceChangedListener* l)
     {
         m_selected_bed_instance_changed_listeners.remove(l);
     }
@@ -245,7 +245,7 @@ private:
 
     ListenerList<ISelectedProjectChangedListener> m_selected_project_changed_listeners;
     ListenerList<ISelectedConfigContainerChangedListener> m_selected_config_container_changed_listener;
-    ListenerList<ISelectedBedInstanceChanged> m_selected_bed_instance_changed_listeners;
+    ListenerList<ISelectedBedInstanceChangedListener> m_selected_bed_instance_changed_listeners;
     ListenerList<IProjectsChangedListener> m_projects_changed_listeners;
 
     Domain::Workbench& m_workbench;

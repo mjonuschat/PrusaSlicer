@@ -7,7 +7,7 @@
 
 #include "Slic3r/Biz/ISelectedProjectChangedListener.hpp"
 #include "Slic3r/Biz/IProjectsChangedListener.hpp"
-#include "Slic3r/Biz/ISelectedBedInstanceChanged.hpp"
+#include "Slic3r/Biz/ISelectedBedInstanceChangedListener.hpp"
 
 namespace Slic3r::Biz {
 

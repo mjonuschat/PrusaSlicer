@@ -144,7 +144,7 @@ set(SLIC3R_SHARED_FILES
 
         include/Slic3r/Biz/ListenerList.hpp
         include/Slic3r/Biz/IProjectsChangedListener.hpp
-        include/Slic3r/Biz/ISelectedBedInstanceChanged.hpp
+        include/Slic3r/Biz/ISelectedBedInstanceChangedListener.hpp
         include/Slic3r/Biz/ISelectedConfigContainerChangedListener.hpp
         include/Slic3r/Biz/ISelectedProjectChangedListener.hpp
         src/Slic3r/Biz/ProjectInteractor.cpp
