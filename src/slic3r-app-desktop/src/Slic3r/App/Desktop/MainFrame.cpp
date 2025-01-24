@@ -153,8 +153,9 @@ MainFrame::~MainFrame()
 void MainFrame::on_language_changed()
 {
     // Save language at application config.
-    //app_config->set("translation_language", language_infos[index].tag);
+    //app_config->set("translation_language", localization().active_language());
 
+    m_canvas->set_language(localization().active_language());
     this->Refresh();
 }
 
@@ -298,10 +299,8 @@ bool MainFrame::select_language()
 
     // Try to load a new language.
     if (index != -1 && (init_selection == -1 || init_selection != index)) {
-        if (localization().set_language(language_infos[index].canonical_name)) {
-            m_canvas->set_language(language_infos[index].canonical_name);
+        if (localization().set_language(language_infos[index].canonical_name))
             return true;
-        }
 
         // If something was failed during the set new language:
 

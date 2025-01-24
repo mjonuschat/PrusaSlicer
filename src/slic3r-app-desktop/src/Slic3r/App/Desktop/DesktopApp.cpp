@@ -45,7 +45,7 @@ bool DesktopApp::OnInit()
     Platform::WX::WXRenderCanvas& canvas = m_main_frame->get_render_canvas();
     Biz::Platform::PlatformServices::instance().set_render_request_handler(&canvas);
 #if USE_IMGUI_RENDER
-    canvas.set_language(Localization::instance().active_language());
+    canvas.set_language(localization().active_language());
     canvas.set_font_size(1.7777f * float(App::WX::w_config()->normal_font().GetPointSize()));
 #endif // USE_IMGUI_RENDER
     
