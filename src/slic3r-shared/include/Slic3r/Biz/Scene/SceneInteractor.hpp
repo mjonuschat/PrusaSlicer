@@ -169,9 +169,6 @@ private:
     Biz::ListenerList<ISceneChangedListener> m_changed_listeners;
     Domain::BedRef m_selected_bed_instance{ Domain::INVALID_ID, Domain::INVALID_ID };
     BedPlacement m_bed_placement;
-
-    // temporary member to allow to select a bed from ConfigContainer until we do not have a mechanism for it
-    size_t m_bed_id{ Domain::INVALID_ID };
 };
 
 struct TransformMemento
