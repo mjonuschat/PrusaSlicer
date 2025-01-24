@@ -14,13 +14,6 @@
 
 #include "libslic3r/Model.hpp"
 
-#define ENABLED_DEBUG_BEDS 1
-
-#if ENABLED_DEBUG_BEDS
-#include <imgui/imgui.h>
-#include <cfloat>
-#endif // ENABLED_DEBUG_BEDS
-
 namespace Slic3r::App::Plater {
 
 static const std::unordered_map<ModelVolumeType, ColorRGBA> VOLUME_COLORS = {
@@ -43,10 +36,11 @@ ScenePresenter::ScenePresenter(
     project_context().scene().camera().add_update_listener(&m_bed_render_updater);
     const auto& p = m_workbench.project(project_id);
     Domain::BedRefs updated;
-
-    for (const auto& cc : p.config_containers())
-        for (const auto& bi : cc->bed_instances())
-            updated.push_back(Domain::BedRef{bi->bed().id().id, bi->id().id});
+    for (const auto& cc : p.config_containers()) {
+        for (const auto& bi : cc->bed_instances()){
+            updated.push_back(Domain::BedRef{ cc->id().id, bi->id().id });
+        }
+    }
 
     ScenePresenter::on_bed_instance_added(project_id, updated);
     m_project_interactor.add_selected_project_changed_listener(&m_bed_render_updater);
@@ -58,229 +52,8 @@ void ScenePresenter::render_scene(Render::CommandBuffer& command_buffer)
         project_context().scene().render(command_buffer, this);
 }
 
-#if ENABLED_DEBUG_BEDS
-static const std::vector<Vec2d> bed_offsets = {
-    { 0.0, 0.0 },
-    { 1.0, 0.0 },
-    { 0.0, 1.0 },
-    { 1.0, 1.0 },
-    { 2.0, 0.0 },
-    { 2.0, 1.0 },
-    { 0.0, 2.0 },
-    { 1.0, 2.0 },
-    { 2.0, 2.0 },
-};
-
-class MultipleBeds
-{
-public:
-    [[nodiscard]] static std::pair<size_t, size_t> active(const Domain::BedContainer& container)
-    {
-        const Domain::BedContainer::BedList& beds = container.beds();
-        for (size_t i = 0; i < beds.size(); ++i) {
-            const Domain::Bed* bed = beds[i].get();
-            const Domain::Bed::BedInstances& instances = bed->instances();
-            for (size_t j = 0; j < instances.size(); ++j) {
-                const Domain::BedInstance& inst = *instances[j];
-                if (inst.active())
-                    return { bed->id().id, inst.id().id };
-            }
-        }
-        return { 0, 0 };
-    }
-
-    static void set_active(Domain::BedContainer& container, size_t bed_idx, size_t instance_idx)
-    {
-        Domain::BedContainer::BedList& beds = container.beds();
-        for (size_t i = 0; i < beds.size(); ++i) {
-            Domain::Bed* bed = beds[i].get();
-            Domain::Bed::BedInstances& instances = bed->instances();
-            for (size_t j = 0; j < instances.size(); ++j) {
-                Domain::BedInstance& inst = *instances[j];
-                inst.set_active(bed->id().id == bed_idx && inst.id().id == instance_idx);
-            }
-        }
-    }
-
-    static size_t instances_count(Domain::BedContainer& container)
-    {
-        size_t ret = 0;
-        Domain::BedContainer::BedList& beds = container.beds();
-        for (size_t i = 0; i < beds.size(); ++i) {
-            ret += beds[i]->instances().size();
-        }
-        return ret;
-    }
-
-    static void refresh_layout(Domain::BedContainer& container)
-    {
-        Domain::BedContainer::BedList& beds = container.beds();
-        size_t instances_count = 0;
-        Vec2d offset_base = s_gap + s_max_size;
-        for (size_t i = 0; i < beds.size(); ++i) {
-            Domain::Bed* bed = beds[i].get();
-            Domain::Bed::BedInstances& instances = bed->instances();
-            for (size_t j = 0; j < instances.size(); ++j) {
-                Vec2d offset = { bed_offsets[instances_count].x() * offset_base.x(),
-                                 bed_offsets[instances_count].y() * offset_base.y() };
-                Transform3d bed_xform = Geometry::translation_transform(to_3d(offset, 0));
-                instances[j]->set_transformation(Geometry::Transformation{ bed_xform });
-                ++instances_count;
-            }
-        }
-    }
-
-    static void set_max_size(const Domain::BedContainer& container)
-    {
-        s_max_size = Vec2d::Zero();
-        const Domain::BedContainer::BedList& beds = container.beds();
-        for (const auto& bed : beds) {
-            const Domain::Bed& b = *bed.get();
-            const Pointfs& contour = b.contour();
-
-            Vec2d min = { DBL_MAX, DBL_MAX };
-            Vec2d max = { -DBL_MAX, -DBL_MAX };
-
-            for (const Vec2d& v : contour) {
-                min.x() = std::min(v.x(), min.x());
-                min.y() = std::min(v.y(), min.y());
-                max.x() = std::max(v.x(), max.x());
-                max.y() = std::max(v.y(), max.y());
-            }
-
-            s_max_size = max - min;
-
-            TriangleMesh model = Biz::Plater::BedGeometry::model(b);
-            if (!model.empty()) {
-                BoundingBoxf3 bb = model.bounding_box();
-                Vec3d bb_size = bb.size();
-                s_max_size.x() = std::max(s_max_size.x(), bb_size.x());
-                s_max_size.y() = std::max(s_max_size.y(), bb_size.y());
-            }
-        }
-    }
-
-    static Vec2d max_size() { return s_max_size; }
-    static Vec2d gap() { return s_gap; }
-
-private:
-    static Vec2d s_max_size;
-    static Vec2d s_gap;
-};
-
-Vec2d MultipleBeds::s_max_size = Vec2d::Zero();
-Vec2d MultipleBeds::s_gap = 20.0f * Vec2d::Ones();
-#endif // ENABLED_DEBUG_BEDS
-
 void ScenePresenter::render_imgui(const Render::ScreenInfo& screen_info)
 {
-#if ENABLED_DEBUG_BEDS
-    ImGui::SetNextWindowCollapsed(true, ImGuiCond_Once);
-    if (ImGui::Begin("Bed test/debug", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-
-        Domain::Project& proj = const_cast<Domain::Project&>(m_workbench.project(m_selected_project_id));
-
-        size_t instances_count = MultipleBeds::instances_count(proj.bed_container());
-        BedNodeTag* remove_tag = nullptr;
-
-        if (ImGui::BeginTable("Beds", (instances_count > 1) ? 6 : 5, ImGuiTableFlags_Borders)) {
-            ImGui::TableSetupScrollFreeze(0, 1); // Make top row always visible
-            ImGui::TableSetupColumn("Bed ID");
-            ImGui::TableSetupColumn("Instance ID");
-            ImGui::TableSetupColumn("Active");
-            ImGui::TableSetupColumn("Contour");
-            ImGui::TableSetupColumn("Print Volume");
-            ImGui::TableHeadersRow();
-
-            Scene::visit(scene().root(), [&](Scene::Node& n) {
-                BedNodeTag* tag = n.tag_of_type<BedNodeTag>();
-                if (tag != nullptr) {
-                    if (tag->type == BedElementType::Undefined) {
-                        Domain::Bed* bed = proj.bed_container().bed(tag->bed_id);
-                        DEBUG_ASSERT(bed != nullptr);
-                        Domain::BedInstance* inst = bed->instance(tag->instance_id);
-                        DEBUG_ASSERT(inst != nullptr);
-
-                        ImGui::TableNextRow();
-                        ImGui::TableSetColumnIndex(0);
-                        ImGui::AlignTextToFramePadding();
-                        ImGui::Text("%zu", tag->bed_id);
-                        ImGui::TableSetColumnIndex(1);
-                        ImGui::Text("%zu", tag->instance_id);
-                        ImGui::TableSetColumnIndex(2);
-                        bool active = inst->active();
-                        if (ImGui::Checkbox(fmt::format("##active{}/{}", tag->bed_id, tag->instance_id).c_str(), &active)) {
-                            if (active) {
-                                MultipleBeds::set_active(proj.bed_container(), tag->bed_id, tag->instance_id);
-                                m_bed_render_updater.update_materials();
-                            }
-                        }
-                        ImGui::TableSetColumnIndex(3);
-                        bool contour = inst->contour_enabled();
-                        if (ImGui::Checkbox(fmt::format("##contour{}/{}", tag->bed_id, tag->instance_id).c_str(), &contour)) {
-                            inst->set_contour_enabled(contour);
-                            m_bed_render_updater.update_elements_state();
-                        }
-                        ImGui::TableSetColumnIndex(4);
-                        bool print_volume = inst->print_volume_enabled();
-                        if (ImGui::Checkbox(fmt::format("##print_volume{}/{}", tag->bed_id, tag->instance_id).c_str(), &print_volume)) {
-                            inst->set_print_volume_enabled(print_volume);
-                            m_bed_render_updater.update_elements_state();
-                        }
-
-                        if (instances_count > 1) {
-                            ImGui::TableSetColumnIndex(5);
-                            if (ImGui::Button(fmt::format("Remove##{}/{}", tag->bed_id, tag->instance_id).c_str())) {
-                                bed->remove_instance(tag->instance_id);
-
-                                std::pair<size_t, size_t> active = MultipleBeds::active(proj.bed_container());
-                                if (active.first == 0 && active.second == 0) {
-                                    std::vector<size_t> beds_idxs = proj.bed_container().beds_indices();
-                                    Domain::Bed* b = proj.bed_container().bed(beds_idxs.front());
-                                    MultipleBeds::set_active(proj.bed_container(), b->id().id, b->instances().front()->id().id);
-                                }
-
-                                const Domain::BedRef updated{ tag->bed_id, tag->instance_id };
-                                on_bed_instance_removed(m_selected_project_id, { updated });
-                                remove_tag = tag;
-                            }
-                        }
-                    }
-                }
-            });
-
-            ImGui::EndTable();
-        }
-
-        if (remove_tag != nullptr) {
-            scene().remove_children([&](const auto* n) {
-                const BedNodeTag* tag = n->template tag_of_type<BedNodeTag>();
-                return tag != nullptr && tag->bed_id == remove_tag->bed_id && tag->instance_id == remove_tag->instance_id;
-            });
-            update_beds();
-        }
-
-        size_t total_instances_count = 0;
-        std::vector<size_t> beds_idxs = proj.bed_container().beds_indices();
-        for (size_t i : beds_idxs) {
-            total_instances_count += proj.bed_container().bed(i)->instances().size();
-        }
-
-        if (total_instances_count < 9) {
-            if (ImGui::Button("Add instance")) {
-                Domain::Bed* b = proj.bed_container().bed(beds_idxs.front());
-                Domain::BedInstance& i = b->add_instance();
-                const Domain::BedRef updated{ b->id().id, i.id().id };
-                on_bed_instance_added(m_selected_project_id, { updated });
-                MultipleBeds::set_active(proj.bed_container(), b->id().id, i.id().id);
-                update_beds();
-            }
-        }
-
-    }
-    ImGui::End();
-#endif // ENABLED_DEBUG_BEDS
-
     if (!m_projects.empty())
         project_context().scene().render_imgui(screen_info);
 }
@@ -304,9 +77,6 @@ void ScenePresenter::on_selected_project_changed(size_t index)
         ScenePresenterProjectContext context{};
         m_projects.emplace(m_selected_project_id, std::move(context));
         m_bed_render_updater.on_selected_project_changed(m_selected_project_id);
-#if ENABLED_DEBUG_BEDS
-        MultipleBeds::set_max_size(m_workbench.project(m_selected_project_id).bed_container());
-#endif // ENABLED_DEBUG_BEDS
     }
 }
 
@@ -392,6 +162,11 @@ void ScenePresenter::on_scene_selection_transformed(Domain::SelectionId project_
     on_scene_selection_changed(project_id, selection);
 }
 
+void ScenePresenter::on_selected_bed_instance_changed(Domain::SelectionId project_id, Domain::SelectionId container_id, Domain::SelectionId bed_instance_id)
+{
+    m_bed_render_updater.update_all();
+}
+
 void ScenePresenter::build_volume_node(
     Scene::NodeBuilder& builder,
     Domain::SelectionId project_id,
@@ -440,7 +215,7 @@ void ScenePresenter::build_bed_plate_node(Scene::NodeBuilder& builder, Domain::S
     DEBUG_ASSERT(!triangles.empty());
 
     BedElementType type = bed.texture_filename().empty() ? BedElementType::PlateDefault : BedElementType::PlateTextured;
-    AuxiliaryElementId id{ AuxiliaryElementId::Type::Bed, tag.bed_id * 100 + size_t(type) };
+    AuxiliaryElementId id{ AuxiliaryElementId::Type::Bed, tag.config_container_id * 100 + size_t(type) };
     const auto* geom = geom_mgr.get_or_create(id, [&]() {
         return Render::geometry_from_triangles(m_device, triangles);
     });
@@ -456,7 +231,7 @@ void ScenePresenter::build_bed_plate_node(Scene::NodeBuilder& builder, Domain::S
         .child([&](Scene::NodeBuilder& bldr) {
             bldr
                 .set_debug_name(fmt::format("bed: {} plate", bed.id().id))
-                .set_tag(BedNodeTag{ tag.bed_id, tag.instance_id, type })
+                .set_tag(BedNodeTag{ tag.config_container_id, tag.instance_id, type })
                 .set_mesh(geom, material, int(PlaterSceneLayer::DocumentObjects));
         });
 }
@@ -470,7 +245,7 @@ void ScenePresenter::build_bed_grid_node(Scene::NodeBuilder& builder, Domain::Se
     std::vector<Vec3f> lines = App::Plater::BedRenderHelper::plate_grid(bed);
     DEBUG_ASSERT(!lines.empty());
 
-    AuxiliaryElementId id{ AuxiliaryElementId::Type::Bed, tag.bed_id * 100 + size_t(BedElementType::Grid) };
+    AuxiliaryElementId id{ AuxiliaryElementId::Type::Bed, tag.config_container_id * 100 + size_t(BedElementType::Grid) };
     const auto* geom = geom_mgr.get_or_create(id, [&]() {
         return Render::geometry_from_lines(m_device, lines);
     });
@@ -481,7 +256,7 @@ void ScenePresenter::build_bed_grid_node(Scene::NodeBuilder& builder, Domain::Se
         .child([&](Scene::NodeBuilder& bldr) {
             bldr
                 .set_debug_name(fmt::format("bed: {} grid", bed.id().id))
-                .set_tag(BedNodeTag{ tag.bed_id, tag.instance_id, BedElementType::Grid })
+                .set_tag(BedNodeTag{ tag.config_container_id, tag.instance_id, BedElementType::Grid })
                 .set_mesh(geom, material, int(PlaterSceneLayer::DocumentObjects));
         });
 }
@@ -495,7 +270,7 @@ void ScenePresenter::build_bed_contour_node(Scene::NodeBuilder& builder, Domain:
     std::vector<Vec3f> lines = Biz::Plater::BedGeometry::plate_contour(bed);
     DEBUG_ASSERT(!lines.empty());
 
-    AuxiliaryElementId id{ AuxiliaryElementId::Type::Bed, tag.bed_id * 100 + size_t(BedElementType::Contour) };
+    AuxiliaryElementId id{ AuxiliaryElementId::Type::Bed, tag.config_container_id * 100 + size_t(BedElementType::Contour) };
     const auto* geom = geom_mgr.get_or_create(id, [&]() {
         return Render::geometry_from_lines(m_device, lines);
     });
@@ -506,7 +281,7 @@ void ScenePresenter::build_bed_contour_node(Scene::NodeBuilder& builder, Domain:
         .child([&](Scene::NodeBuilder& bldr) {
             bldr
                 .set_debug_name(fmt::format("bed: {} contour", bed.id().id))
-                .set_tag(BedNodeTag{ tag.bed_id, tag.instance_id, BedElementType::Contour })
+                .set_tag(BedNodeTag{ tag.config_container_id, tag.instance_id, BedElementType::Contour })
                 .set_mesh(geom, material, int(PlaterSceneLayer::DocumentObjects));
         });
 }
@@ -520,7 +295,7 @@ void ScenePresenter::build_bed_print_volume_node(Scene::NodeBuilder& builder, Do
     std::vector<Vec3f> lines = Biz::Plater::BedGeometry::print_volume(bed);
     DEBUG_ASSERT(!lines.empty());
 
-    AuxiliaryElementId id{ AuxiliaryElementId::Type::Bed, tag.bed_id * 100 + size_t(BedElementType::PrintVolume) };
+    AuxiliaryElementId id{ AuxiliaryElementId::Type::Bed, tag.config_container_id * 100 + size_t(BedElementType::PrintVolume) };
     const auto* geom = geom_mgr.get_or_create(id, [&]() {
         return Render::geometry_from_lines(m_device, lines);
     });
@@ -531,7 +306,7 @@ void ScenePresenter::build_bed_print_volume_node(Scene::NodeBuilder& builder, Do
         .child([&](Scene::NodeBuilder& bldr) {
             bldr
                 .set_debug_name(fmt::format("bed: {} contour", bed.id().id))
-                .set_tag(BedNodeTag{ tag.bed_id, tag.instance_id, BedElementType::PrintVolume })
+                .set_tag(BedNodeTag{ tag.config_container_id, tag.instance_id, BedElementType::PrintVolume })
                 .set_mesh(geom, material, int(PlaterSceneLayer::DocumentObjects));
         });
 }
@@ -549,7 +324,7 @@ void ScenePresenter::build_bed_model_node(Scene::NodeBuilder& builder, Domain::S
     auto& geom_mgr = ctx.model_geometry_manager();
     auto& trimesh_mgr = ctx.model_triangle_mesh_manager();
 
-    AuxiliaryElementId id{ AuxiliaryElementId::Type::Bed, tag.bed_id * 100 + size_t(BedElementType::Model) };
+    AuxiliaryElementId id{ AuxiliaryElementId::Type::Bed, tag.config_container_id * 100 + size_t(BedElementType::Model) };
     const auto& trimesh =
         trimesh_mgr.get_or_create(id, [&]() -> std::unique_ptr<Scene::TriangleMesh> {
             return std::make_unique<Scene::TriangleMesh>(std::move(mesh.its));
@@ -564,7 +339,7 @@ void ScenePresenter::build_bed_model_node(Scene::NodeBuilder& builder, Domain::S
         .child([&](Scene::NodeBuilder& bldr) {
             bldr
                 .set_debug_name(fmt::format("bed: {} model", bed.id().id))
-                .set_tag(BedNodeTag{ tag.bed_id, tag.instance_id, BedElementType::Model })
+                .set_tag(BedNodeTag{ tag.config_container_id, tag.instance_id, BedElementType::Model })
                 .set_mesh(geom, material, int(PlaterSceneLayer::DocumentObjects));
         });
 }
@@ -674,48 +449,52 @@ void ScenePresenter::on_volume_mesh_changed(Domain::SelectionId project_id, cons
 void ScenePresenter::on_bed_instance_added(Domain::SelectionId project_id, const Domain::BedRefs& instances)
 {
     auto& scn = scene();
-#if ENABLED_DEBUG_BEDS
-    auto& proj = const_cast<Domain::Project&>(m_workbench.project(project_id));
-#else
     const auto& proj = m_workbench.project(project_id);
-#endif // ENABLED_DEBUG_BEDS
 
     for (auto& instance : instances) {
-        const Domain::Bed* bed = proj.bed_container().bed(instance.bed_id);
-        DEBUG_ASSERT(bed != nullptr);
-        const Domain::BedInstance* inst = bed->instance(instance.bed_instance_id);
-        DEBUG_ASSERT(inst != nullptr);
+        const Domain::ConfigContainer* cc = proj.find_config_container(instance.config_container_id);
+        DEBUG_ASSERT(cc != nullptr);
+        const Domain::BedInstance& inst = cc->find_bed_instance(instance.instance_id);
+        const Domain::Bed& bed = cc->bed();
 
-        BedNodeTag tag = { instance.bed_id, instance.bed_instance_id };
+        BedNodeTag tag = { instance.config_container_id, instance.instance_id };
 
         Scene::NodeBuilder builder(scn);
         builder
-            .set_debug_name(fmt::format("bed: {} inst: {}", instance.bed_id, instance.bed_instance_id))
+            .set_debug_name(fmt::format("bed: {} inst: {}", instance.config_container_id, instance.instance_id))
             .set_tag(tag)
-            .transform([inst](auto& t) { t = inst->matrix(); });
+            .transform([inst](auto& t) { t = inst.matrix(); });
 
-        build_bed_plate_node(builder, project_id, *bed, tag);
-        if (!bed->model_filename().empty())
-            build_bed_model_node(builder, project_id, *bed, tag);
-        if (bed->texture_filename().empty())
-            build_bed_grid_node(builder, project_id, *bed, tag);
-        build_bed_contour_node(builder, project_id, *bed, tag);
-        build_bed_print_volume_node(builder, project_id, *bed, tag);
+        build_bed_plate_node(builder, project_id, bed, tag);
+        if (!bed.model_filename().empty())
+            build_bed_model_node(builder, project_id, bed, tag);
+        if (bed.texture_filename().empty())
+            build_bed_grid_node(builder, project_id, bed, tag);
+        build_bed_contour_node(builder, project_id, bed, tag);
+        build_bed_print_volume_node(builder, project_id, bed, tag);
 
         scn.add_child(builder.build().release());
     }
 
-    update_beds();
-#if ENABLED_DEBUG_BEDS
-    MultipleBeds::refresh_layout(proj.bed_container());
-#endif // ENABLED_DEBUG_BEDS
+    m_bed_render_updater.update_all();
 }
 
 void ScenePresenter::on_bed_instance_removed(Domain::SelectionId project_id, const Domain::BedRefs& instances)
 {
-#if ENABLED_DEBUG_BEDS
-    MultipleBeds::refresh_layout(const_cast<Domain::Project&>(m_workbench.project(project_id)).bed_container());
-#endif // ENABLED_DEBUG_BEDS
+    scene().remove_children([&](const Scene::Node* n) {
+        const BedNodeTag* tag = n->tag_of_type<BedNodeTag>();
+        if (tag != nullptr) {
+            auto it = std::find_if(instances.begin(), instances.end(),
+                [tag](const Domain::BedRef& br) {
+                    return tag->config_container_id == br.config_container_id && tag->instance_id == br.instance_id;
+                });
+            if (it != instances.end())
+                return true;
+        }
+        return false;
+    });
+  
+    m_bed_render_updater.update_all();
 }
 
 void ScenePresenter::on_bed_instance_transformed(Domain::SelectionId project_id, const Domain::BedRefs& instances)

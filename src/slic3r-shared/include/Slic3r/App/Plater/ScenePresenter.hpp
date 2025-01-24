@@ -5,6 +5,7 @@
 #include "Slic3r/Domain/SelectionId.hpp"
 #include "Slic3r/Domain/Workbench.hpp"
 #include "Slic3r/Biz/ISelectedProjectChangedListener.hpp"
+#include "Slic3r/Biz/ISelectedBedInstanceChangedListener.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/App/Plater/ScenePresenterProjectContext.hpp"
@@ -21,6 +22,7 @@ struct BedNodeTag;
 
 class ScenePresenter : public Biz::ISelectedProjectChangedListener,
                        public Biz::Scene::ISceneSelectionChangedListener,
+                       public Biz::ISelectedBedInstanceChangedListener,
                        public Biz::Scene::ISceneChangedListener,
                        public Scene::MinimalSceneRenderCustomizer,
                        public ISceneProvider
@@ -59,6 +61,8 @@ public:
         return project_context().selection_scene_changes();
     }
 
+    void update_beds() { m_bed_render_updater.update_all(); }
+
     Scene::Node& selection_root() override { return project_context().selection_root(); }
 
     void render_scene(Render::CommandBuffer& command_buffer);
@@ -73,12 +77,13 @@ public:
 
 private:
     void update_cameras(const std::function<void(Scene::Camera&)>& modifier);
-    void update_beds() { m_bed_render_updater.update_all(); }
 
     void on_selected_project_changed(size_t index) override;
 
     void on_scene_selection_changed(Domain::SelectionId project_id, const Biz::Scene::Selection& selection) override;
     void on_scene_selection_transformed(Domain::SelectionId project_id, const Biz::Scene::Selection& selection) override;
+
+    void on_selected_bed_instance_changed(Domain::SelectionId project_id, Domain::SelectionId container_id, Domain::SelectionId bed_instance_id) override;
 
     void on_instance_added(Domain::SelectionId project_id, const Domain::ElementRefs& instances) override;
     void on_instance_removed(Domain::SelectionId project_id, const Domain::ElementRefs& instances) override;

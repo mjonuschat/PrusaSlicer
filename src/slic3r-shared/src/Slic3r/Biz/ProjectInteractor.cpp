@@ -35,9 +35,8 @@ void ProjectInteractor::initialize_inserted_project(size_t project_id)
         m_preset_interactor.config_container_context(project_id, cc_id).printer.edited_preset;
 
     Domain::Bed& bed = p.bed_container().add_bed(selected_printer_preset, m_workbench.preset_bundle());
-    Scene::SceneInteractor::Transform xform{Matrix4d::Identity()};
-    Domain::BedInstance& bed_instance = m_scene_interactor.add_bed_instance(bed.id().id, xform);
-    cc_ptr->bed_instances().push_back(&bed_instance);
+    cc_ptr->set_bed(bed);
+    m_scene_interactor.add_bed_instance(cc_id);
 }
 
 void ProjectInteractor::select_project(Domain::SelectionId project_id)

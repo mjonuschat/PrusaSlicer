@@ -7,6 +7,8 @@
 #include "Slic3r/Domain/Workbench.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractorProjectContext.hpp"
 #include "Slic3r/Biz/ISelectedProjectChangedListener.hpp"
+#include "Slic3r/Biz/ISelectedConfigContainerChangedListener.hpp"
+#include "Slic3r/Biz/Scene/BedPlacement.hpp"
 #include "Slic3r/Biz/ListenerList.hpp"
 #include "Slic3r/Domain/ElementRef.hpp"
 #include "Slic3r/Domain/BedRef.hpp"
@@ -52,7 +54,8 @@ public:
 
 struct TransformMemento;
 
-class SceneInteractor final : public ISelectedProjectChangedListener
+class SceneInteractor final : public ISelectedProjectChangedListener,
+                              public ISelectedConfigContainerChangedListener
 {
 public:
     using Transform = Matrix4d;
@@ -60,15 +63,19 @@ public:
     explicit SceneInteractor(Domain::Workbench& workbench) : m_workbench(workbench) {}
 
     void on_selected_project_changed(size_t index) override;
+    void on_selected_config_container_changed(Domain::SelectionId project_id, Domain::SelectionId container_id) override;
+
     void new_object_from_mesh(TriangleMesh&& mesh);
     void add_volume_from_mesh(TriangleMesh&& mesh, ModelVolumeType volume_type, const Transform& xform = Matrix4d::Identity());
     void add_instance(const Transform& xform);
 
-    void new_bed(size_t bed_id, const Transform& xform = Matrix4d::Identity());
-    Domain::BedInstance& add_bed_instance(size_t bed_id, const Transform& xform);
-    void transform_bed_instance(const Domain::ElementRef& instance, const Transform& xform);
+    Domain::BedInstance& add_bed_instance(size_t config_container_id);
+    void remove_bed_instance(const Domain::BedRef& instance);
+    void transform_bed_instance(const Domain::BedRef& instance, const Transform& xform);
 
     void select_bed_instance(const Domain::BedRef& instance);
+    void select_first_bed_instance();
+    const Domain::BedRef& selected_bed_instance() const { return m_selected_bed_instance; }
 
     /**
      * @name Scene selection
@@ -157,10 +164,11 @@ private:
     ProjectContexts m_projects;
     Domain::SelectionId m_selected_project_id {Domain::INVALID_ID};
     Domain::SelectionId m_selected_config_container_id {Domain::INVALID_ID};
-    Domain::SelectionId m_selected_bed_instance_id {Domain::INVALID_ID};
     Biz::ListenerList<ISceneSelectionChangedListener> m_selection_changed_listeners;
     Biz::ListenerList<ISelectedBedInstanceChangedListener> m_bed_instance_selection_changed_listeners;
     Biz::ListenerList<ISceneChangedListener> m_changed_listeners;
+    Domain::BedRef m_selected_bed_instance{ Domain::INVALID_ID, Domain::INVALID_ID };
+    BedPlacement m_bed_placement;
 
     // temporary member to allow to select a bed from ConfigContainer until we do not have a mechanism for it
     size_t m_bed_id{ Domain::INVALID_ID };

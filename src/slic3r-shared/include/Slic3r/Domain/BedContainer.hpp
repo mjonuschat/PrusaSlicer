@@ -27,7 +27,7 @@ public:
         const std::string& texture_filename
     );
 
-    [[nodiscard]] Bed& add_bed(const Preset& selected_preset, const PresetBundle& preset_bundle);
+    Bed& add_bed(const Preset& selected_preset, const PresetBundle& preset_bundle);
 
     size_t beds_count() const { return m_beds.size(); }
     std::vector<size_t> beds_indices() const;
@@ -35,11 +35,7 @@ public:
     [[nodiscard]] Bed* bed(size_t idx);
     [[nodiscard]] const Bed* bed(size_t idx) const;
 
-    [[nodiscard]] BedInstance* bed_instance(size_t bed_idx, size_t instance_idx);
-    [[nodiscard]] const BedInstance* bed_instance(size_t bed_idx, size_t instance_idx) const;
-
     using BedList = std::vector<std::unique_ptr<Bed>>;
-    [[nodiscard]] BedList& beds() { return m_beds; }
     [[nodiscard]] const BedList& beds() const { return m_beds; }
 
     void reset() { m_beds.clear(); }

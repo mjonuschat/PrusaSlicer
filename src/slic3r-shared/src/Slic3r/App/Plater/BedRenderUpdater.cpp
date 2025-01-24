@@ -16,18 +16,17 @@ void BedRenderUpdater::update_materials()
         BedNodeTag* tag = n.tag_of_type<BedNodeTag>();
         if (tag != nullptr && tag->type != BedElementType::Undefined) {
             DEBUG_ASSERT(m_project != nullptr);
-            const Domain::Bed* bed = m_project->bed_container().bed(tag->bed_id);
-            DEBUG_ASSERT(bed != nullptr);
-            const Domain::BedInstance* inst = bed->instance(tag->instance_id);
-            DEBUG_ASSERT(inst != nullptr);
-            if (inst->active())
+            Domain::ConfigContainer* cc = m_project->find_config_container(tag->config_container_id);
+            DEBUG_ASSERT(cc != nullptr);
+            const Domain::BedInstance& inst = cc->find_bed_instance(tag->instance_id);
+            if (inst.active())
                 n.remove_material_override();
             else {
                 Render::Material material;
                 switch (tag->type)
                 {
                 case BedElementType::PlateDefault:  { material = BedMaterials::plate_default_override_material(m_device); break; }
-                case BedElementType::PlateTextured: { material = BedMaterials::plate_textured_override_material(m_device, *bed); break; }
+                case BedElementType::PlateTextured: { material = BedMaterials::plate_textured_override_material(m_device, cc->bed()); break; }
                 case BedElementType::Contour:       { material = BedMaterials::contour_override_material(m_device); break; }
                 case BedElementType::Grid:          { material = BedMaterials::grid_override_material(m_device); break; }
                 case BedElementType::PrintVolume:   { material = BedMaterials::print_volume_override_material(m_device); break; }
@@ -47,11 +46,10 @@ void BedRenderUpdater::update_positions()
         if (tag != nullptr) {
             if (tag->type == BedElementType::Undefined) {
                 DEBUG_ASSERT(m_project != nullptr);
-                const Domain::Bed* bed = m_project->bed_container().bed(tag->bed_id);
-                DEBUG_ASSERT(bed != nullptr);
-                const Domain::BedInstance* inst = bed->instance(tag->instance_id);
-                DEBUG_ASSERT(inst != nullptr);
-                n.set_world_transform(inst->matrix().matrix());
+                Domain::ConfigContainer* cc = m_project->find_config_container(tag->config_container_id);
+                DEBUG_ASSERT(cc != nullptr);
+                const Domain::BedInstance& inst = cc->find_bed_instance(tag->instance_id);
+                n.set_world_transform(inst.matrix().matrix());
             }
         }
     }, true);
@@ -64,14 +62,13 @@ void BedRenderUpdater::update_elements_state()
         if (tag != nullptr) {
             if (tag->type == BedElementType::Contour || tag->type == BedElementType::PrintVolume) {
                 DEBUG_ASSERT(m_project != nullptr);
-                const Domain::Bed* bed = m_project->bed_container().bed(tag->bed_id);
-                DEBUG_ASSERT(bed != nullptr);
-                const Domain::BedInstance* inst = bed->instance(tag->instance_id);
-                DEBUG_ASSERT(inst != nullptr);
+                Domain::ConfigContainer* cc = m_project->find_config_container(tag->config_container_id);
+                DEBUG_ASSERT(cc != nullptr);
+                const Domain::BedInstance& inst = cc->find_bed_instance(tag->instance_id);
                 if (tag->type == BedElementType::Contour)
-                    n.set_enabled(inst->contour_enabled());
+                    n.set_enabled(inst.contour_enabled());
                 else if (tag->type == BedElementType::PrintVolume)
-                    n.set_enabled(inst->print_volume_enabled());
+                    n.set_enabled(inst.print_volume_enabled());
             }
         }
     }, true);
@@ -92,13 +89,12 @@ void BedRenderUpdater::camera_updated(const Scene::Camera& cam)
             else if (tag->type == BedElementType::PlateTextured) {
                 // change material in dependence of camera position/orientation
                 DEBUG_ASSERT(m_project != nullptr);
-                const Domain::Bed* bed = m_project->bed_container().bed(tag->bed_id);
-                DEBUG_ASSERT(bed != nullptr);
-                const Domain::BedInstance* inst = bed->instance(tag->instance_id);
-                DEBUG_ASSERT(inst != nullptr);
-                if (inst->active()) {
+                Domain::ConfigContainer* cc = m_project->find_config_container(tag->config_container_id);
+                DEBUG_ASSERT(cc != nullptr);
+                const Domain::BedInstance& inst = cc->find_bed_instance(tag->instance_id);
+                if (inst.active()) {
                     if (show_bottom)
-                        n.set_material_override(BedMaterials::plate_textured_override_material(m_device, *bed));
+                        n.set_material_override(BedMaterials::plate_textured_override_material(m_device, cc->bed()));
                     else
                         n.remove_material_override();
                 }

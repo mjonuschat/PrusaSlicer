@@ -67,28 +67,4 @@ const Bed* BedContainer::bed(size_t idx) const
     return (it != m_beds.end()) ? it->get() : nullptr;
 }
 
-BedInstance* BedContainer::bed_instance(size_t bed_idx, size_t instance_idx)
-{
-    Bed* b = bed(bed_idx);
-    if (b != nullptr) {
-        Bed::BedInstances& instances = b->instances();
-        auto it = std::find_if(instances.begin(), instances.end(), [instance_idx](const auto& i) { return i->id().id == instance_idx; });
-        if (it != instances.end())
-            return it->get();
-    }
-    return nullptr;
-}
-
-const BedInstance* BedContainer::bed_instance(size_t bed_idx, size_t instance_idx) const
-{
-    const Bed* b = bed(bed_idx);
-    if (b != nullptr) {
-        const Bed::BedInstances& instances = b->instances();
-        auto it = std::find_if(instances.begin(), instances.end(), [instance_idx](const auto& i) { return i->id().id == instance_idx; });
-        if (it != instances.end())
-            return it->get();
-    }
-    return nullptr;
-}
-
 } // namespace Slic3r::Domain

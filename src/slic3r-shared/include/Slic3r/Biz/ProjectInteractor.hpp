@@ -33,6 +33,7 @@ public:
         : m_workbench(workbench), m_preset_interactor(workbench), m_scene_interactor(workbench)
     {
         add_selected_config_container_changed_listener(&m_preset_interactor);
+        add_selected_config_container_changed_listener(&m_scene_interactor);
         add_selected_project_changed_listener(&m_scene_interactor);
     }
 
@@ -75,8 +76,6 @@ public:
     void add_config_container();
     void remove_config_container(Domain::SelectionId config_container_id);
 
-    void add_bed_instance(Domain::SelectionId config_container_id);
-
     /** @} */
 
     /**
@@ -93,11 +92,6 @@ public:
      * @brief Get selected config container ID
      */
     Domain::SelectionId selected_config_container_id() const { return m_selection.config_container_id; }
-
-    /**
-     * @brief Get selected bed instance ID
-     */
-    Domain::SelectionId selected_bed_instance_id() const { return m_selection.bed_instance_id; }
 
     /** @} */
     /**
@@ -130,16 +124,6 @@ public:
         return *DEBUG_ASSERT_VAL(
             selected_project().find_config_container(m_selection.config_container_id)
         );
-    }
-
-    const Domain::BedInstance& selected_bed_instance() const
-    {
-        return selected_config_container().find_bed_instance_by_id(m_selection.bed_instance_id);
-    }
-
-    Domain::BedInstance& selected_bed_instance()
-    {
-        return selected_config_container().find_bed_instance_by_id(m_selection.bed_instance_id);
     }
     /** @} */
 
@@ -224,7 +208,6 @@ private:
     {
         Domain::SelectionId project_id{Domain::INVALID_ID};
         Domain::SelectionId config_container_id{Domain::INVALID_ID};
-        Domain::SelectionId bed_instance_id{Domain::INVALID_ID};
     };
 
     ListenerList<ISelectedProjectChangedListener> m_selected_project_changed_listeners;

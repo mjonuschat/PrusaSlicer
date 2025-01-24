@@ -123,6 +123,8 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/Scene/Selection.hpp
         src/Slic3r/Biz/Scene/Selection.cpp
         include/Slic3r/Biz/Scene/SceneInteractorProjectContext.hpp
+        include/Slic3r/Biz/Scene/BedPlacement.hpp
+        src/Slic3r/Biz/Scene/BedPlacement.cpp
 
         include/Slic3r/Biz/Preset/IBedPresetValueChangedListener.hpp
         include/Slic3r/Biz/Preset/IBedPresetSwitchedListener.hpp

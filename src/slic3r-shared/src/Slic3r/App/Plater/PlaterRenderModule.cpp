@@ -1,9 +1,12 @@
 #include "Slic3r/App/Plater/PlaterRenderModule.hpp"
 #include "Slic3r/App/Scene/NodeBuilder.hpp"
+#include "Slic3r/App/Scene/NodeVisitor.hpp"
 #include "Slic3r/App/Render/Device.hpp"
 #include "Slic3r/App/Render/GeometryBuilder.hpp"
 #include "Slic3r/App/Plater/CameraGizmo.hpp"
 #include "Slic3r/App/Plater/SceneNodeTag.hpp"
+#include "Slic3r/App/Plater/GizmoNodeTag.hpp"
+#include "Slic3r/App/Plater/BedNodeTag.hpp"
 #include "Slic3r/App/Plater/QuickSelectGizmo.hpp"
 #include "Slic3r/App/Plater/QuickDragGizmo.hpp"
 #include "Slic3r/App/Plater/TranslationGizmo.hpp"
@@ -16,6 +19,7 @@
 
 #define ENABLED_DEBUG_IMGUI_FONT 1
 #define ENABLED_DEBUG_IMGUI_ICONS 1
+#define ENABLED_DEBUG_BEDS 1
 
 #if ENABLED_DEBUG_IMGUI_ICONS
 #include <boost/nowide/convert.hpp>
@@ -31,6 +35,7 @@ void PlaterRenderModule::on_init(Render::Device& device)
     m_project_interactor.add_selected_project_changed_listener(m_scene_presenter.get());
     m_project_interactor.scene_interactor().add_scene_changed_listener(m_scene_presenter.get());
     m_project_interactor.scene_interactor().add_scene_selection_changed_listener(m_scene_presenter.get());
+    m_project_interactor.scene_interactor().add_bed_instance_selection_changed_listener(m_scene_presenter.get());
     init_gizmos();
     init_scene();
 }
@@ -41,8 +46,6 @@ void PlaterRenderModule::init_scene()
 
     const auto& bed = m_project_interactor.selected_project()
                           .config_containers()
-                          .front()
-                          ->bed_instances()
                           .front()
                           ->bed();
 
@@ -217,46 +220,9 @@ static bool IconButton(const wchar_t icon, const ImVec2& size = ImVec2(0, 0))
 } // namespace ImGuiEx
 #endif // ENABLED_DEBUG_IMGUI_ICONS
 
-void PlaterRenderModule::render_imgui()
-{
-    if (!m_scene_presenter->project_ready())
-        return;
-
-    trl.render(ImVec2(m_screen_info.logical_width(), m_screen_info.logical_height()));
-
-    m_scene_presenter->render_imgui(m_screen_info);
-
-    m_gizmo_manager->render_imgui();
-
-    if (ImGui::Begin("Outline", &m_gui_win_open)) {
-        ImGui::Text("Tool Gizmos");
-        ToolType type = m_gizmo_manager->current_tool_type();
-        if (type == ToolType::Translation) {
-            ImGui::PushStyleColor(ImGuiCol_Button, { 0.67f, 0.36f, 0.19f, 1.0f });
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, { 0.923f, 0.504f, 0.264f, 1.0f });
-            ImGui::PushStyleColor(ImGuiCol_ButtonActive, { 0.923f, 0.504f, 0.264f, 1.0f });
-        }
-        if (ImGui::Button("Translate"))
-            // TODO: get and pass the correct printer type
-            m_gizmo_manager->toggle_activate_tool(ToolType::Translation, ptFFF);
-        if (type == ToolType::Translation)
-            ImGui::PopStyleColor(3);
-        if (type == ToolType::Rotation) {
-            ImGui::PushStyleColor(ImGuiCol_Button, { 0.67f, 0.36f, 0.19f, 1.0f });
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, { 0.923f, 0.504f, 0.264f, 1.0f });
-            ImGui::PushStyleColor(ImGuiCol_ButtonActive, { 0.923f, 0.504f, 0.264f, 1.0f });
-        }
-        if (ImGui::Button("Rotate"))
-            // TODO: get and pass the correct printer type
-            m_gizmo_manager->toggle_activate_tool(ToolType::Rotation, ptFFF);
-        if (type == ToolType::Rotation)
-            ImGui::PopStyleColor(3);
-        ImGui::Separator();
-        imgui_scenegraph_node_info(m_scene_presenter->scene().root());
-    }
-    ImGui::End();
-
 #if ENABLED_DEBUG_IMGUI_FONT
+static void render_imgui_debug_input_font()
+{
     ImGui::SetNextWindowCollapsed(true, ImGuiCond_Once);
     if (ImGui::Begin("Fonts test/debug", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
         if (ImGui::BeginTable("Fonts", 2, ImGuiTableFlags_Borders)) {
@@ -283,9 +249,12 @@ void PlaterRenderModule::render_imgui()
         }
     }
     ImGui::End();
+}
 #endif // ENABLED_DEBUG_IMGUI_FONT
 
 #if ENABLED_DEBUG_IMGUI_ICONS
+static void render_imgui_debug_icons()
+{
     ImGui::SetNextWindowCollapsed(true, ImGuiCond_Once);
     if (ImGui::Begin("ImGui icons test/debug", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
         if (ImGui::BeginTable("Icons", 2, ImGuiTableFlags_Borders)) {
@@ -482,7 +451,148 @@ void PlaterRenderModule::render_imgui()
         }
     }
     ImGui::End();
+}
+#endif //ENABLED_DEBUG_IMGUI_ICONS
+
+#if ENABLED_DEBUG_BEDS
+static void render_imgui_debug_bed(Biz::ProjectInteractor& project_interactor, ScenePresenter& scene_presenter)
+{
+    ImGui::SetNextWindowCollapsed(true, ImGuiCond_Once);
+    if (ImGui::Begin("Bed test/debug", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+
+        auto& proj = project_interactor.selected_project();
+
+        size_t total_instances_count = 0;
+        const Domain::Project::ConfigContainerList& ccs = proj.config_containers();
+        for (auto& cc : ccs) {
+            total_instances_count += cc->bed_instances().size();
+        }
+
+        Domain::BedRef remove_tag{ Domain::INVALID_ID, Domain::INVALID_ID };
+
+        if (ImGui::BeginTable("Beds", (total_instances_count > 1) ? 6 : 5, ImGuiTableFlags_Borders)) {
+            ImGui::TableSetupScrollFreeze(0, 1); // Make top row always visible
+            ImGui::TableSetupColumn("Container ID");
+            ImGui::TableSetupColumn("Instance ID");
+            ImGui::TableSetupColumn("Active");
+            ImGui::TableSetupColumn("Contour");
+            ImGui::TableSetupColumn("Print Volume");
+            ImGui::TableHeadersRow();
+
+            Scene::visit(scene_presenter.scene().root(), [&](Scene::Node& n) {
+                BedNodeTag* tag = n.tag_of_type<BedNodeTag>();
+                if (tag != nullptr) {
+                    Domain::ConfigContainer* cc = proj.find_config_container(tag->config_container_id);
+                    DEBUG_ASSERT(cc != nullptr);
+                    Domain::BedInstance& inst = cc->find_bed_instance(tag->instance_id);
+                    if (tag->type == BedElementType::Undefined) {
+
+                        ImGui::TableNextRow();
+                        ImGui::TableSetColumnIndex(0);
+                        ImGui::AlignTextToFramePadding();
+                        ImGui::Text("%zu", tag->config_container_id);
+
+                        ImGui::TableSetColumnIndex(1);
+                        ImGui::Text("%zu", tag->instance_id);
+
+                        ImGui::TableSetColumnIndex(2);
+                        bool active = inst.active();
+                        if (ImGui::Checkbox(fmt::format("##active{}/{}", tag->config_container_id, tag->instance_id).c_str(), &active))
+                            project_interactor.scene_interactor().select_bed_instance({ tag->config_container_id, tag->instance_id });
+
+                        ImGui::TableSetColumnIndex(3);
+                        bool contour = inst.contour_enabled();
+                        if (ImGui::Checkbox(fmt::format("##contour{}/{}", tag->config_container_id, tag->instance_id).c_str(), &contour)) {
+                            inst.set_contour_enabled(contour);
+                            scene_presenter.update_beds();
+                        }
+
+                        ImGui::TableSetColumnIndex(4);
+                        bool print_volume = inst.print_volume_enabled();
+                        if (ImGui::Checkbox(fmt::format("##print_volume{}/{}", tag->config_container_id, tag->instance_id).c_str(), &print_volume)) {
+                            inst.set_print_volume_enabled(print_volume);
+                            scene_presenter.update_beds();
+                        }
+
+                        if (total_instances_count > 1) {
+                            ImGui::TableSetColumnIndex(5);
+                            if (ImGui::Button(fmt::format("Remove##{}/{}", tag->config_container_id, tag->instance_id).c_str()))
+                                remove_tag = { tag->config_container_id, tag->instance_id };
+                        }
+                    }
+                }
+            });
+
+            ImGui::EndTable();
+        }
+
+        if (remove_tag.config_container_id != Domain::INVALID_ID) {
+            const Domain::BedRef& active = project_interactor.scene_interactor().selected_bed_instance();
+            project_interactor.scene_interactor().remove_bed_instance(remove_tag);
+            if (active == remove_tag)
+                project_interactor.scene_interactor().select_first_bed_instance();
+            --total_instances_count;
+        }
+
+        if (total_instances_count < 9) {
+            if (ImGui::Button("Add instance"))
+                project_interactor.scene_interactor()
+                    .add_bed_instance(project_interactor.selected_config_container().id().id);
+        }
+    }
+    ImGui::End();
+}
+#endif //ENABLED_DEBUG_BEDS
+
+void PlaterRenderModule::render_imgui()
+{
+    if (!m_scene_presenter->project_ready())
+        return;
+
+    trl.render(ImVec2(m_screen_info.logical_width(), m_screen_info.logical_height()));
+
+    m_scene_presenter->render_imgui(m_screen_info);
+
+    m_gizmo_manager->render_imgui();
+
+    if (ImGui::Begin("Outline", &m_gui_win_open)) {
+        ImGui::Text("Tool Gizmos");
+        ToolType type = m_gizmo_manager->current_tool_type();
+        if (type == ToolType::Translation) {
+            ImGui::PushStyleColor(ImGuiCol_Button, { 0.67f, 0.36f, 0.19f, 1.0f });
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, { 0.923f, 0.504f, 0.264f, 1.0f });
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, { 0.923f, 0.504f, 0.264f, 1.0f });
+        }
+        if (ImGui::Button("Translate"))
+            // TODO: get and pass the correct printer type
+            m_gizmo_manager->toggle_activate_tool(ToolType::Translation, ptFFF);
+        if (type == ToolType::Translation)
+            ImGui::PopStyleColor(3);
+        if (type == ToolType::Rotation) {
+            ImGui::PushStyleColor(ImGuiCol_Button, { 0.67f, 0.36f, 0.19f, 1.0f });
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, { 0.923f, 0.504f, 0.264f, 1.0f });
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, { 0.923f, 0.504f, 0.264f, 1.0f });
+        }
+        if (ImGui::Button("Rotate"))
+            // TODO: get and pass the correct printer type
+            m_gizmo_manager->toggle_activate_tool(ToolType::Rotation, ptFFF);
+        if (type == ToolType::Rotation)
+            ImGui::PopStyleColor(3);
+        ImGui::Separator();
+        imgui_scenegraph_node_info(m_scene_presenter->scene().root());
+    }
+    ImGui::End();
+
+#if ENABLED_DEBUG_IMGUI_FONT
+    render_imgui_debug_input_font();
+#endif // ENABLED_DEBUG_IMGUI_FONT
+#if ENABLED_DEBUG_IMGUI_ICONS
+    render_imgui_debug_icons();
 #endif // ENABLED_DEBUG_IMGUI_ICONS
+#if ENABLED_DEBUG_BEDS
+    render_imgui_debug_bed(m_project_interactor, *m_scene_presenter);
+#endif // ENABLED_DEBUG_BEDS
+
 }
 
 void PlaterRenderModule::render_object_hud(const Scene::Node& n, const Eigen::AlignedBox<float, 2>& screen_bounding_box)

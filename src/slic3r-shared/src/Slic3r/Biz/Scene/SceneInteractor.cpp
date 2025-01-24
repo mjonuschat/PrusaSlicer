@@ -5,7 +5,11 @@
 
 #include <libslic3r/Model.hpp>
 
+#include <Slic3r/Assert.hpp>
+
 namespace Slic3r::Biz::Scene {
+
+static const Vec2d BED_GAP = { 20.0, 20.0 };
 
 namespace {
 
@@ -74,6 +78,12 @@ void SceneInteractor::on_selected_project_changed(size_t index)
 
 }
 
+void SceneInteractor::on_selected_config_container_changed(Domain::SelectionId project_id,
+    Domain::SelectionId container_id)
+{
+    DEBUG_ASSERT(project_id == m_selected_project_id);
+    m_selected_config_container_id = container_id;
+}
 
 const Selection& SceneInteractor::selection() const
 {
@@ -165,39 +175,43 @@ void SceneInteractor::add_instance(const Transform& xform)
 
 }
 
-void SceneInteractor::new_bed(size_t bed_id, const Transform& xform)
+Domain::BedInstance& SceneInteractor::add_bed_instance(size_t config_container_id)
 {
-    Domain::Bed* bed = m_workbench.project(m_selected_project_id).bed_container().bed(bed_id);
-    DEBUG_ASSERT(bed != nullptr);
-    DEBUG_ASSERT(bed->instances().empty());
-    add_bed_instance(bed_id, xform);
-}
+    Domain::ConfigContainer* cc = m_projects.find(m_selected_project_id)->second.project.find_config_container(config_container_id);
+    Domain::BedInstance& ret = cc->add_bed_instance();
 
-Domain::BedInstance& SceneInteractor::add_bed_instance(size_t bed_id, const Transform& xform)
-{
-    Domain::Bed* bed = m_workbench.project(m_selected_project_id).bed_container().bed(bed_id);
-    DEBUG_ASSERT(bed != nullptr);
-    Domain::BedInstance& inst = bed->add_instance();
-    inst.set_transformation(Geometry::Transformation{ Transform3d{xform} });
-    const Domain::BedRef updated{ bed->id().id, inst.id().id };
+    m_bed_placement.layout(m_projects.find(m_selected_project_id)->second.project, BED_GAP);
 
+    const Domain::BedRef updated{ cc->id().id, ret.id().id };
     m_changed_listeners.invoke([&](auto* l) {
-        l->on_bed_instance_added(m_selected_project_id, {updated});
+        l->on_bed_instance_added(m_selected_project_id, { updated });
     });
-    return inst;
+    return ret;
 }
 
-void SceneInteractor::transform_bed_instance(const Domain::ElementRef& instance, const Transform& xform)
+void SceneInteractor::remove_bed_instance(const Domain::BedRef& instance)
 {
-    Domain::Bed* bed = m_workbench.project(m_selected_project_id).bed_container().bed(instance.object_id);
-    DEBUG_ASSERT(bed != nullptr);
-    Domain::BedInstance* inst = bed->instance(instance.instance_id);
-    DEBUG_ASSERT(inst != nullptr);
-    inst->set_transformation(Geometry::Transformation{ Transform3d{xform} });
-    const Domain::BedRef updated{ bed->id().id, inst->id().id };
+    Domain::ConfigContainer* cc = m_projects.find(m_selected_project_id)->second.project.find_config_container(instance.config_container_id);
+    DEBUG_ASSERT(cc != nullptr);
+    cc->remove_bed_instance_by_id(instance.instance_id);
+
+    m_bed_placement.layout(m_projects.find(m_selected_project_id)->second.project, BED_GAP);
 
     m_changed_listeners.invoke([&](auto* l) {
-        l->on_bed_instance_transformed(m_selected_project_id, {updated});
+        l->on_bed_instance_removed(m_selected_project_id, { instance });
+    });
+}
+
+void SceneInteractor::transform_bed_instance(const Domain::BedRef& instance, const Transform& xform)
+{
+    Domain::ConfigContainer* cc = m_projects
+        .find(m_selected_project_id)->second.project
+        .find_config_container(instance.config_container_id);
+    Domain::BedInstance& inst = cc->find_bed_instance(instance.instance_id);
+    inst.set_transformation(Geometry::Transformation{ Transform3d{xform} });
+
+    m_changed_listeners.invoke([&](auto* l) {
+        l->on_bed_instance_transformed(m_selected_project_id, { instance });
     });
 }
 
@@ -207,16 +221,22 @@ void SceneInteractor::select_bed_instance(const Domain::BedRef& instance)
     for (auto& cc : ccs) {        
         Domain::ConfigContainer::BedInstanceList& instances = cc->bed_instances();
         for (auto& inst : instances) {
-            inst->set_active(cc->id().id == instance.bed_id && inst->id().id == instance.bed_instance_id);
-//            inst->set_active(cc->id().id == instance.config_container_id && inst->id().id == instance.instance_id);
+            inst->set_active(cc->id().id == instance.config_container_id && inst->id().id == instance.instance_id);
         }
     }
 
+    m_selected_bed_instance = instance;
+
     m_bed_instance_selection_changed_listeners.invoke([&](auto* l) {
         l->on_selected_bed_instance_changed(
-            m_selected_project_id, instance.bed_id, instance.bed_instance_id);
-//            m_selected_project_id, instance.config_container_id, instance.instance_id);
+            m_selected_project_id, instance.config_container_id, instance.instance_id);
     });
+}
+
+void SceneInteractor::select_first_bed_instance()
+{
+    const auto& cc = m_projects.find(m_selected_project_id)->second.project.config_containers().front();
+    select_bed_instance({ cc->id().id, cc->bed_instances().front()->id().id });
 }
 
 void SceneInteractor::transform_selection(const Matrix4d& relative_transform, TransformMemento& memento)
