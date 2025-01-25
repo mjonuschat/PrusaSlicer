@@ -34,6 +34,14 @@ public:
 
     void set_zenith(double value);
 
+    void set_azimuth_and_zenith(double azimuth, double zenith)
+    {
+        m_azimuth = azimuth;
+        m_zenith = zenith;
+        normalize_azimuth_and_zenith();
+        update_camera();
+    }
+
     void add_azimuth(double value)
     {
         m_azimuth += value;
@@ -70,7 +78,7 @@ private:
     constexpr static double MIN_FOCAL_DISTANCE = 1e-02;
 
     Vec3d m_cam_focal{0,0,0};
-    double m_cam_focal_dist{200};
+    double m_cam_focal_dist{400};
     double m_azimuth{-M_PI_2};
     double m_zenith{-M_PI_2};
 

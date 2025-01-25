@@ -250,7 +250,7 @@ public:
 
     /**
      * @name Debug name
-     * Node name to be used for debugging to distinguish between individual nodes.
+     * Node name to be used for debugging to distinguish between individual nodes in tree debug window.
      * @{
      */
     void set_debug_name(std::string_view str)

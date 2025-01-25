@@ -167,7 +167,7 @@ private:
 
 void imgui_scenegraph_node_info(const Scene::Node& node)
 {
-    ImGuiTreeNodeFlags node_flags = ImGuiTreeNodeFlags_DefaultOpen;
+    ImGuiTreeNodeFlags node_flags = 0; //ImGuiTreeNodeFlags_DefaultOpen;
     if (node.children().empty())
         node_flags |= ImGuiTreeNodeFlags_Leaf;
     const std::string& name = node.debug_name();
@@ -177,12 +177,22 @@ void imgui_scenegraph_node_info(const Scene::Node& node)
             node.has_imgui_render_component() ? "(I)" : "", node.has_raycast_component() ? "(C)" : ""
         )) {
 
-        if (ImGui::CollapsingHeader("I")) {
+        static const Scene::Node* opened_node = nullptr;
+
+        ImGui::SameLine();
+        if (ImGui::SmallButton("info")) {
+            opened_node = (opened_node == &node) ? nullptr : &node;
+        }
+
+        if (opened_node == &node) {
             auto transform{node.world_transform()};
 
             ImguiVecRender vec_render;
-            for (size_t i = 0; i < 4; i++)
-                vec_render("", Vec4d{transform.row(i)});
+            for (size_t i = 0; i < 4; i++) {
+                ImGui::PushID(i);
+                vec_render("##", Vec4d{transform.row(i)});
+                ImGui::PopID();
+            }
         }
 
         for (const auto& ch : node.children()) {

@@ -23,32 +23,76 @@ DEFINE_HAS_ATTR_OF_TYPE_TRAIT(HasPosition2, Vec2f, position)
 DEFINE_HAS_ATTR_OF_TYPE_TRAIT(HasNormal, Vec3f, normal)
 DEFINE_HAS_ATTR_OF_TYPE_TRAIT(HasTexCoord2, Vec2f, color)
 
+template <typename V, typename DerivedT>
+class VertexAttributeBuilder
+{
+protected:
+    VertexAttributeBuilder() = default;
+    explicit VertexAttributeBuilder(const V& vertex) : m_vertex(vertex) {}
+public:
+    DerivedT& attr(std::function<void(V&)> modifier)
+    {
+        modifier(m_vertex);
+        return *this;
+    }
+
+    template <typename U = V, typename = std::enable_if_t<Internal::HasNormal<U>::value>>
+    DerivedT& normal(const Vec3f& n)
+    {
+        m_vertex.normal = n;
+        return *this;
+    }
+
+    template <typename U = V, typename = std::enable_if_t<Internal::HasTexCoord2<U>::value>>
+    DerivedT& tex_coord(const Vec2f& tc)
+    {
+        m_vertex.tex_coord = tc;
+        return *this;
+    }
+protected:
+    template <typename U = V, typename = std::enable_if_t<Internal::HasPosition3<U>::value>>
+    void set_position(const Vec3f& v)
+    {
+        m_vertex.position = v;
+    }
+
+    template <typename U = V, typename = std::enable_if_t<Internal::HasPosition2<U>::value>>
+    void set_position(const Vec2f& v)
+    {
+        m_vertex.position = v;
+    }
+
+
+protected:
+    V m_vertex{};
+};
+
 }
 
+
 template <typename V>
-class DynamicGeometry
+class DynamicGeometry : public Internal::VertexAttributeBuilder<V, DynamicGeometry<V>>
 {
 public:
     using Vertices = std::vector<V>;
 
-    class PrimitiveBuilder
+    class PrimitiveBuilder : public Internal::VertexAttributeBuilder<V, DynamicGeometry<V>::PrimitiveBuilder>
     {
     public:
-        PrimitiveBuilder(DynamicGeometry& parent, PrimitiveType primitive)
-            : m_parent(parent), m_primitive(primitive), m_vertex(parent.m_vertex), m_offset(parent.m_vertices.size())
-        {}
-
         ~PrimitiveBuilder()
         {
             if (m_vertices.empty())
                 return;
+
+            const size_t offset = m_parent.m_vertices.size();
+            const size_t count = m_vertices.size();
 
             m_parent.m_vertices.insert(
                 m_parent.m_vertices.end(),
                 std::make_move_iterator(m_vertices.begin()),
                 std::make_move_iterator(m_vertices.end())
             );
-            m_parent.m_draw_commands.emplace_back({m_primitive, m_offset, m_count, m_parent.m_material});
+            m_parent.m_draw_commands.emplace_back(DrawCommand{m_primitive, offset, count, m_material});
             m_parent.m_uploaded = false;
         }
 
@@ -59,51 +103,35 @@ public:
             m_vertices.push_back(m_vertex);
             return *this;
         }
-
-        PrimitiveBuilder& attr(std::function<void(V&)> modifier)
-        {
-            modifier(m_vertex);
-            return *this;
-        }
-
-        template <typename U = V, typename = std::enable_if_t<Internal::HasNormal<U>::value>>
-        PrimitiveBuilder& normal(const Vec3f& n)
-        {
-            m_vertex.normal = n;
-            return *this;
-        }
-
-        template <typename U = V, typename = std::enable_if_t<Internal::HasTexCoord2<U>::value>>
-        PrimitiveBuilder& tex_coord(const Vec2f& tc)
-        {
-            m_vertex.tex_coord = tc;
-            return *this;
-        }
     private:
-        template <typename U = V, typename = std::enable_if_t<Internal::HasPosition3<U>::value>>
-        void set_position(const Vec3f& v)
+        friend class DynamicGeometry<V>;
+        PrimitiveBuilder(DynamicGeometry& parent, PrimitiveType primitive, Material& material)
+            : Internal::VertexAttributeBuilder<V, PrimitiveBuilder>(parent.m_vertex), m_parent(parent), m_primitive(primitive), m_material(material)
         {
-            m_vertex.position = v;
+            m_vertex = m_parent.m_vertex;
         }
 
-        template <typename U = V, typename = std::enable_if_t<Internal::HasPosition2<U>::value>>
-        void set_position(const Vec2f& v)
-        {
-            m_vertex.position = v;
-        }
+        using Internal::VertexAttributeBuilder<V, PrimitiveBuilder>::m_vertex;
+        using Internal::VertexAttributeBuilder<V, PrimitiveBuilder>::set_position;
 
     private:
         DynamicGeometry& m_parent;
         PrimitiveType m_primitive;
-        V m_vertex;
+        Material m_material;
         Vertices m_vertices;
-        size_t m_offset;
-        size_t m_count{0};
     };
 
     explicit DynamicGeometry(Device& device, BufferUsage usage = BufferUsage::DynamicDraw)
         : m_device(device), m_usage(usage), m_geometry(device, m_usage)
     {}
+
+    bool empty() const { return m_draw_commands.empty(); }
+
+    DynamicGeometry& set_material(const Material& material)
+    {
+        m_material = material;
+        return *this;
+    }
 
     void upload()
     {
@@ -136,8 +164,10 @@ public:
     }
 
     PrimitiveBuilder build_primitive(PrimitiveType primitive)
-    { return PrimitiveBuilder(*this, primitive); }
+    { return PrimitiveBuilder(*this, primitive, m_material); }
 
+    PrimitiveBuilder build_primitive(PrimitiveType primitive, const Material& material)
+    { return PrimitiveBuilder(*this, primitive, material); }
 
 private:
     friend class PrimitiveBuilder;
@@ -152,7 +182,6 @@ private:
 
     // template for building elements
     Material m_material;
-    V m_vertex;
 
     // Max size of vertex data to keep after upload
     static constexpr size_t MAX_TRANSIENT_DATA_SIZE = 655536;

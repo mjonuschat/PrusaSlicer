@@ -104,5 +104,20 @@ struct Plane
      */
     double distance(const Vec3d& p) const
     { return std::abs(signed_distance(p)); }
+
+    /**
+     * @brief Get two perpendicular vectors in the plane.
+     * @param[out] u
+     * @param[out] v
+     */
+    void vectors_in_plane(Vec3d& u, Vec3d& v) const
+    {
+        size_t max_axis = 5;
+        normal.maxCoeff(&max_axis);
+
+        Vec3d v1 = max_axis == 0 ? Vec3d{0, 1, 0} : Vec3d{1, 0, 0};
+        u = (v1 - v1.dot(normal) * normal).normalized();
+        v = u.cross(normal).normalized();
+    }
 };
 } // namespace Slic3r::App::Scene
