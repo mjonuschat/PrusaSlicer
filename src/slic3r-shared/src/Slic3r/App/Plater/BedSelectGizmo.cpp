@@ -23,7 +23,7 @@ GizmoActivationState BedSelectGizmo::on_mouse(GizmoEventContext& ctx, bool only_
 
         auto it =
             std::find_if(ctx.pick_results().begin(), ctx.pick_results().end(), [&](const auto& item) {
-                return item.node->has_tag_of_type<BedNodeTag>();
+                return item.node->template has_tag_of_type<BedNodeTag>();
             });
 
         if (it == ctx.pick_results().end())
