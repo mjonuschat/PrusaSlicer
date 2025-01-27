@@ -69,6 +69,23 @@ std::vector<std::pair<Vec3f, Vec2f>> BedGeometry::plate_triangles(const Domain::
     return ret;
 }
 
+TriangleMesh BedGeometry::plate_mesh(const Domain::Bed& bed)
+{
+    std::vector<std::pair<Vec3f, Vec2f>> triangles = plate_triangles(bed);
+    std::vector<Vec3f> vertices;
+    vertices.reserve(triangles.size());
+    std::transform(triangles.begin(), triangles.end(), std::back_inserter(vertices),
+        [](const std::pair<Vec3f, Vec2f>& v) {
+            return v.first;
+    });
+    std::vector<Vec3i> faces;
+    faces.reserve(triangles.size() / 3);
+    for (int i = 0; i < int(triangles.size()); i += 3) {
+        faces.emplace_back(Vec3i(i + 0, i + 1, i + 2));
+    }
+    return TriangleMesh(vertices, faces);
+}
+
 std::vector<Vec3f> BedGeometry::plate_contour(const Domain::Bed& bed)
 {
     std::vector<Vec3f> ret;

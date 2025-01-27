@@ -23,7 +23,7 @@ public:
     [[nodiscard]] static TriangleMesh model(const Domain::Bed& bed);
 
     /**
-     * @brief Return the geometry of the bed plate.
+     * @brief Return the geometry (triangulated contour) of the bed plate.
      *
      * @param bed The bed whose plate is required.
      *
@@ -32,6 +32,17 @@ public:
      * @note The bed contour is specified into the bed, see Slic3r::Domain::Bed definition.
      */
     [[nodiscard]] static std::vector<std::pair<Vec3f, Vec2f>> plate_triangles(const Domain::Bed& bed);
+
+    /**
+     * @brief Return the geometry (triangulated contour) of the bed plate as mesh.
+     *
+     * @param bed The bed whose plate is required.
+     *
+     * @return the geometry of the bed plate as TriangleMesh.
+     *
+     * @note The bed contour is specified into the bed, see Slic3r::Domain::Bed definition.
+     */
+    [[nodiscard]] static TriangleMesh plate_mesh(const Domain::Bed& bed);
 
     /**
      * @brief Return the geometry of the bed contour.

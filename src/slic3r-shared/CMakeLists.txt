@@ -19,6 +19,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Plater/QuickSelectGizmo.cpp
         include/Slic3r/App/Plater/QuickDragGizmo.hpp
         src/Slic3r/App/Plater/QuickDragGizmo.cpp
+        include/Slic3r/App/Plater/BedSelectGizmo.hpp
+        src/Slic3r/App/Plater/BedSelectGizmo.cpp
         include/Slic3r/App/Plater/ISceneProvider.hpp
         include/Slic3r/App/Plater/AuxiliaryElementId.hpp
         include/Slic3r/App/Plater/SelectionHandler.hpp

@@ -210,6 +210,7 @@ void ScenePresenter::build_bed_plate_node(Scene::NodeBuilder& builder, Domain::S
 {
     auto& ctx = m_projects[project_id];
     auto& geom_mgr = ctx.model_geometry_manager();
+    auto& trimesh_mgr = ctx.model_triangle_mesh_manager();
 
     std::vector<std::pair<Vec3f, Vec2f>> triangles = Biz::Plater::BedGeometry::plate_triangles(bed);
     DEBUG_ASSERT(!triangles.empty());
@@ -219,6 +220,11 @@ void ScenePresenter::build_bed_plate_node(Scene::NodeBuilder& builder, Domain::S
     const auto* geom = geom_mgr.get_or_create(id, [&]() {
         return Render::geometry_from_triangles(m_device, triangles);
     });
+    const auto& trimesh =
+        trimesh_mgr.get_or_create(id, [&]() -> std::unique_ptr<Scene::TriangleMesh> {
+            TriangleMesh mesh = Biz::Plater::BedGeometry::plate_mesh(bed);
+            return std::make_unique<Scene::TriangleMesh>(std::move(mesh.its));
+        });
 
     Render::Material material;
     switch (type)
@@ -232,7 +238,8 @@ void ScenePresenter::build_bed_plate_node(Scene::NodeBuilder& builder, Domain::S
             bldr
                 .set_debug_name(fmt::format("bed: {} plate", bed.id().id))
                 .set_tag(BedNodeTag{ tag.config_container_id, tag.instance_id, type })
-                .set_mesh(geom, material, int(PlaterSceneLayer::DocumentObjects));
+                .set_mesh(geom, material, int(PlaterSceneLayer::DocumentObjects))
+                .set_aabb(trimesh->aabb_mesh());
         });
 }
 
@@ -340,7 +347,8 @@ void ScenePresenter::build_bed_model_node(Scene::NodeBuilder& builder, Domain::S
             bldr
                 .set_debug_name(fmt::format("bed: {} model", bed.id().id))
                 .set_tag(BedNodeTag{ tag.config_container_id, tag.instance_id, BedElementType::Model })
-                .set_mesh(geom, material, int(PlaterSceneLayer::DocumentObjects));
+                .set_mesh(geom, material, int(PlaterSceneLayer::DocumentObjects))
+                .set_aabb(trimesh->aabb_mesh());
         });
 }
 

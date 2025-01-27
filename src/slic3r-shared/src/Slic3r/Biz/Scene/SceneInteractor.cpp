@@ -217,6 +217,9 @@ void SceneInteractor::transform_bed_instance(const Domain::BedRef& instance, con
 
 void SceneInteractor::select_bed_instance(const Domain::BedRef& instance)
 {
+    if (instance == m_selected_bed_instance)
+        return;
+
     Domain::Project::ConfigContainerList& ccs = m_projects.find(m_selected_project_id)->second.project.config_containers();
     for (auto& cc : ccs) {        
         Domain::ConfigContainer::BedInstanceList& instances = cc->bed_instances();

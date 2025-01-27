@@ -9,6 +9,7 @@
 #include "Slic3r/App/Plater/BedNodeTag.hpp"
 #include "Slic3r/App/Plater/QuickSelectGizmo.hpp"
 #include "Slic3r/App/Plater/QuickDragGizmo.hpp"
+#include "Slic3r/App/Plater/BedSelectGizmo.hpp"
 #include "Slic3r/App/Plater/TranslationGizmo.hpp"
 #include "Slic3r/App/Plater/RotationGizmo.hpp"
 #include "Slic3r/Domain/Bed.hpp"
@@ -35,6 +36,7 @@ void PlaterRenderModule::on_init(Render::Device& device)
     m_project_interactor.add_selected_project_changed_listener(m_scene_presenter.get());
     m_project_interactor.scene_interactor().add_scene_changed_listener(m_scene_presenter.get());
     m_project_interactor.scene_interactor().add_scene_selection_changed_listener(m_scene_presenter.get());
+    m_project_interactor.scene_interactor().add_bed_instance_selection_changed_listener(&m_project_interactor);
     m_project_interactor.scene_interactor().add_bed_instance_selection_changed_listener(m_scene_presenter.get());
     init_gizmos();
     init_scene();
@@ -97,6 +99,7 @@ void PlaterRenderModule::init_gizmos()
     m_gizmo_manager = std::make_unique<GizmoManager>(*m_device, *m_scene_presenter);
     m_gizmo_manager->add_base_gizmo<CameraGizmo>(*m_scene_presenter);
     m_gizmo_manager->add_base_gizmo<QuickSelectGizmo>(m_project_interactor.scene_interactor(), *m_device, *m_scene_presenter, m_screen_info);
+    m_gizmo_manager->add_base_gizmo<BedSelectGizmo>(m_project_interactor.scene_interactor(), *m_scene_presenter);
     m_gizmo_manager->add_base_gizmo<QuickDragGizmo>(m_project_interactor.scene_interactor(), *m_scene_presenter);
     m_gizmo_manager->add_tool_gizmo<TranslationGizmo>(
         *m_device, m_gizmo_manager->data_factory(), *m_scene_presenter, m_project_interactor.scene_interactor()
@@ -470,11 +473,10 @@ static void render_imgui_debug_bed(Biz::ProjectInteractor& project_interactor, S
 
         Domain::BedRef remove_tag{ Domain::INVALID_ID, Domain::INVALID_ID };
 
-        if (ImGui::BeginTable("Beds", (total_instances_count > 1) ? 6 : 5, ImGuiTableFlags_Borders)) {
+        if (ImGui::BeginTable("Beds", (total_instances_count > 1) ? 5 : 4, ImGuiTableFlags_Borders)) {
             ImGui::TableSetupScrollFreeze(0, 1); // Make top row always visible
             ImGui::TableSetupColumn("Container ID");
             ImGui::TableSetupColumn("Instance ID");
-            ImGui::TableSetupColumn("Active");
             ImGui::TableSetupColumn("Contour");
             ImGui::TableSetupColumn("Print Volume");
             ImGui::TableHeadersRow();
@@ -496,18 +498,13 @@ static void render_imgui_debug_bed(Biz::ProjectInteractor& project_interactor, S
                         ImGui::Text("%zu", tag->instance_id);
 
                         ImGui::TableSetColumnIndex(2);
-                        bool active = inst.active();
-                        if (ImGui::Checkbox(fmt::format("##active{}/{}", tag->config_container_id, tag->instance_id).c_str(), &active))
-                            project_interactor.scene_interactor().select_bed_instance({ tag->config_container_id, tag->instance_id });
-
-                        ImGui::TableSetColumnIndex(3);
                         bool contour = inst.contour_enabled();
                         if (ImGui::Checkbox(fmt::format("##contour{}/{}", tag->config_container_id, tag->instance_id).c_str(), &contour)) {
                             inst.set_contour_enabled(contour);
                             scene_presenter.update_beds();
                         }
 
-                        ImGui::TableSetColumnIndex(4);
+                        ImGui::TableSetColumnIndex(3);
                         bool print_volume = inst.print_volume_enabled();
                         if (ImGui::Checkbox(fmt::format("##print_volume{}/{}", tag->config_container_id, tag->instance_id).c_str(), &print_volume)) {
                             inst.set_print_volume_enabled(print_volume);
@@ -515,7 +512,7 @@ static void render_imgui_debug_bed(Biz::ProjectInteractor& project_interactor, S
                         }
 
                         if (total_instances_count > 1) {
-                            ImGui::TableSetColumnIndex(5);
+                            ImGui::TableSetColumnIndex(4);
                             if (ImGui::Button(fmt::format("Remove##{}/{}", tag->config_container_id, tag->instance_id).c_str()))
                                 remove_tag = { tag->config_container_id, tag->instance_id };
                         }

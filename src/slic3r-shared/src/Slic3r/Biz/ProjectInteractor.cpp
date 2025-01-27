@@ -45,6 +45,12 @@ void ProjectInteractor::select_project(Domain::SelectionId project_id)
         do_select_project(project_id);
 }
 
+void ProjectInteractor::on_selected_bed_instance_changed(Domain::SelectionId project_id, Domain::SelectionId container_id, Domain::SelectionId bed_instance_id)
+{
+    if (container_id != m_selection.config_container_id)
+        do_select_config_container(container_id);
+}
+
 void ProjectInteractor::do_select_project(Domain::SelectionId project_id)
 {
     m_selection.project_id = project_id;

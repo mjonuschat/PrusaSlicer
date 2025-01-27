@@ -4,6 +4,7 @@
 #include "Slic3r/Biz/ListenerList.hpp"
 #include "Slic3r/Biz/Preset/PresetInteractor.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
+#include "Slic3r/Biz/ISelectedBedInstanceChangedListener.hpp"
 
 namespace Slic3r::Domain {
 class Project;
@@ -21,12 +22,11 @@ class IProjectsChangedListener;
  *
  * Use this interactor to:
  * - manipulate project add/close/select,
- * - get or set bed selection within project (and get notified when changed),
  * - get access to PresetInteractor (to modify config container of bed),
  * - get access to SceneInteractor (to manipulate 3D volumes)
  * .
  */
-class ProjectInteractor final
+class ProjectInteractor final : public ISelectedBedInstanceChangedListener
 {
 public:
     explicit ProjectInteractor(Domain::Workbench& workbench)
@@ -194,6 +194,13 @@ public:
     {
         m_selected_config_container_changed_listener.remove(l);
     }
+    /** @} */
+
+    /**
+     * @name ISelectedBedInstanceChangedListener interface implementation
+     * @{
+     */
+    void on_selected_bed_instance_changed(Domain::SelectionId project_id, Domain::SelectionId container_id, Domain::SelectionId bed_instance_id) override;
     /** @} */
 
 private:
