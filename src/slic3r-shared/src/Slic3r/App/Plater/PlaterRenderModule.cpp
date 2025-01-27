@@ -4,7 +4,6 @@
 #include "Slic3r/App/Render/GeometryBuilder.hpp"
 #include "Slic3r/App/Plater/CameraGizmo.hpp"
 #include "Slic3r/App/Plater/SceneNodeTag.hpp"
-#include "Slic3r/App/Plater/GizmoNodeTag.hpp"
 #include "Slic3r/App/Plater/QuickSelectGizmo.hpp"
 #include "Slic3r/App/Plater/QuickDragGizmo.hpp"
 #include "Slic3r/App/Plater/TranslationGizmo.hpp"

@@ -59,6 +59,7 @@ private:
     Snap m_snap;
     Vec3d m_pivot{ Vec3d::Zero()};
     Biz::Scene::TransformMemento m_xform_memento;
+    Scene::Node::NodeList m_handles;
 };
 
 } // namespace Slic3r::App::Plater

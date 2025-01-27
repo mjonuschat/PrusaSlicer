@@ -21,6 +21,24 @@ static const Vec3d HANDLE_CONE_CW_OFFSET = { HANDLE_STEM_LENGTH, -(0.5 * HANDLE_
 
 } // namespace
 
+struct RotationGizmoNodeTag : public GizmoNodeTag
+{
+    uint8_t level{ 0 };
+    bool is_handle{ false };
+
+    explicit RotationGizmoNodeTag(
+        AxisType primary_axis,
+        AxisType secondary_axis = AxisType::None,
+        uint8_t level = 0,
+        bool is_handle = false
+    )
+      : GizmoNodeTag(primary_axis, secondary_axis)
+      , level(level)
+      , is_handle(is_handle)
+    {
+    }
+};
+
 static Transform3d axis_transform(AxisType axis)
 {
     Transform3d ret = Transform3d::Identity();
@@ -104,13 +122,13 @@ GizmoActivationState RotationGizmo::on_mouse(GizmoEventContext& ctx, bool only_a
     const auto& pick_ray = ctx.pick_ray();
 
     if (event_type == Platform::MouseEvent::Type::ButtonDown) {
-        const Scene::Node* node = ctx.pick_result_node_with_tag_of_type<GizmoNodeTag>();
+        const Scene::Node* node = ctx.pick_result_node_with_tag_of_type<RotationGizmoNodeTag>();
         if (node == nullptr) {
             on_stop_dragging();
             return GizmoActivationState::Inactive;
         }
 
-        const GizmoNodeTag& tag = *node->tag_of_type<GizmoNodeTag>();
+        const RotationGizmoNodeTag& tag = *node->tag_of_type<RotationGizmoNodeTag>();
         m_translation_ray.origin = extract_position(m_scene_presenter.selection_root().world_transform());
         m_translation_ray.direction = tag.primary_axis_dir();
     }
@@ -168,22 +186,11 @@ GizmoActivationState RotationGizmo::on_mouse(GizmoEventContext& ctx, bool only_a
         if (theta == TWO_PI)
             theta = 0.0;
 
-        visit(
-            m_scene_presenter.selection_root(), [&](Scene::Node& node) {
-                if (node.debug_name() == "handle") {
-                    const GizmoNodeTag* tag = node.tag_of_type<GizmoNodeTag>();
-                    DEBUG_ASSERT(tag != nullptr);
-                    if (tag->primary_axis == m_curr_axis) {
-                        Transform3d xform = Transform3d::Identity();
-                        xform.rotate(Eigen::AngleAxisd(theta, Vec3d::UnitZ()));
-                        node.set_local_transform(xform.matrix());
-                    }
-                }
-            },
-            true
-        );
-
         Transform3d xform = Transform3d::Identity();
+        xform.rotate(Eigen::AngleAxisd(theta, Vec3d::UnitZ()));
+        m_handles[size_t(m_curr_axis) - 1]->set_local_transform(xform.matrix());
+
+        xform = Transform3d::Identity();
         xform.translate(m_pivot);
         xform.rotate(Eigen::AngleAxisd(theta, axis_type_dir(m_curr_axis)));
         xform.translate(-m_pivot);
@@ -207,7 +214,7 @@ void RotationGizmo::on_transient_mouse(GizmoEventContext& ctx)
     if (!m_activated || m_dragging)
         return;
 
-    auto* n = ctx.pick_result_node_with_tag_of_type<GizmoNodeTag>();
+    auto* n = ctx.pick_result_node_with_tag_of_type<RotationGizmoNodeTag>();
     if (n == nullptr) {
         clear_highlight();
         m_curr_axis = AxisType::None;
@@ -222,11 +229,11 @@ void RotationGizmo::on_transient_mouse(GizmoEventContext& ctx)
             child->set_enabled(child.get() == gp);
         }
         for (auto& child : gp->children()) {
-            const GizmoNodeTag& tag = *child->tag_of_type<GizmoNodeTag>();
-            child->set_enabled((size_t)tag.user_data >= 1);
+            const RotationGizmoNodeTag& tag = *child->tag_of_type<RotationGizmoNodeTag>();
+            child->set_enabled(tag.level >= 1);
         }
         m_highlighted = true;
-        m_curr_axis = p->tag_of_type<GizmoNodeTag>()->primary_axis;
+        m_curr_axis = p->tag_of_type<RotationGizmoNodeTag>()->primary_axis;
     }
 }
 
@@ -240,7 +247,7 @@ static void build_rotate_node(AxisType axis, Scene::NodeBuilder& builder, Render
     ColorRGBA color = axis_color(axis);
 
     builder.set_debug_name(axis_string(axis));
-    builder.set_tag(GizmoNodeTag{ axis });
+    builder.set_tag(RotationGizmoNodeTag{ axis });
 
     builder.child([&](Scene::NodeBuilder& bldr) {
         Render::Material material = Render::Material{}
@@ -249,7 +256,7 @@ static void build_rotate_node(AxisType axis, Scene::NodeBuilder& builder, Render
 
         bldr
             .set_debug_name("circle")
-            .set_tag(GizmoNodeTag{ axis })
+            .set_tag(RotationGizmoNodeTag{ axis })
             .set_mesh(data_factory.geometry(GizmoDataId::Circle), material, int(PlaterSceneLayer::GizmoHandles))
             .transform([&](Transform3d& xform) {
                 xform.scale(CIRCLE_DIAMETER * Vec3d::Ones());
@@ -263,7 +270,7 @@ static void build_rotate_node(AxisType axis, Scene::NodeBuilder& builder, Render
 
         bldr
             .set_debug_name("graded circle")
-            .set_tag(GizmoNodeTag{ axis, AxisType::None, (void*)size_t(2) })
+            .set_tag(RotationGizmoNodeTag{ axis, AxisType::None, 2 })
             .set_mesh(data_factory.geometry(GizmoDataId::GradedCircle), material, int(PlaterSceneLayer::GizmoHandles))
             .set_enabled(false)
             .transform([&](Transform3d& xform) {
@@ -274,7 +281,7 @@ static void build_rotate_node(AxisType axis, Scene::NodeBuilder& builder, Render
     builder.child([&](Scene::NodeBuilder& bldr) {
         bldr
             .set_debug_name("handle")
-            .set_tag(GizmoNodeTag{ axis, AxisType::None, (void*)size_t(1) });
+            .set_tag(RotationGizmoNodeTag{ axis, AxisType::None, 1, true });
 
         bldr.child([&](Scene::NodeBuilder& child_bldr) {
             Render::Material material = Render::Material{}
@@ -283,7 +290,7 @@ static void build_rotate_node(AxisType axis, Scene::NodeBuilder& builder, Render
 
             child_bldr
                 .set_debug_name("stem")
-                .set_tag(GizmoNodeTag{ axis })
+                .set_tag(RotationGizmoNodeTag{ axis })
                 .set_mesh(data_factory.geometry(GizmoDataId::Segment), material, int(PlaterSceneLayer::GizmoHandles))
                 .transform([&](Transform3d& xform) {
                     xform.scale(HANDLE_STEM_LENGTH * Vec3d::UnitX());
@@ -300,7 +307,7 @@ static void build_rotate_node(AxisType axis, Scene::NodeBuilder& builder, Render
 
             child_bldr
                 .set_debug_name("cube")
-                .set_tag(GizmoNodeTag{ axis })
+                .set_tag(RotationGizmoNodeTag{ axis })
                 .set_mesh(geom, material, int(PlaterSceneLayer::GizmoHandles))
                 .set_aabb(mesh->aabb_mesh())
                 .transform([&](Transform3d& xform) {
@@ -320,7 +327,7 @@ static void build_rotate_node(AxisType axis, Scene::NodeBuilder& builder, Render
 
             child_bldr
                 .set_debug_name("cone ccw")
-                .set_tag(GizmoNodeTag{ axis })
+                .set_tag(RotationGizmoNodeTag{ axis })
                 .set_mesh(geom, material, int(PlaterSceneLayer::GizmoHandles))
                 .set_aabb(mesh->aabb_mesh())
                 .transform([&](Transform3d& xform) {
@@ -341,7 +348,7 @@ static void build_rotate_node(AxisType axis, Scene::NodeBuilder& builder, Render
 
             child_bldr
                 .set_debug_name("cone cw")
-                .set_tag(GizmoNodeTag{ axis })
+                .set_tag(RotationGizmoNodeTag{ axis })
                 .set_mesh(geom, material, int(PlaterSceneLayer::GizmoHandles))
                 .set_aabb(mesh->aabb_mesh())
                 .transform([&](Transform3d& xform) {
@@ -378,7 +385,7 @@ void RotationGizmo::on_activated()
 
     Scene::NodeBuilder builder{ scene };
     builder.set_debug_name("main");
-    builder.set_tag(GizmoNodeTag{ AxisType::None });
+    builder.set_tag(RotationGizmoNodeTag{ AxisType::None });
 
     builder.child([&](Scene::NodeBuilder& bldr) {
         build_rotate_node(AxisType::XAxis, bldr, m_device, m_data_factory);
@@ -400,6 +407,14 @@ void RotationGizmo::on_activated()
 
     auto main_node = builder.build();
     scene.add_child(main_node.release(), &selection_root);
+
+    m_handles.clear();
+    scene.root().query([this](const Scene::Node* n)->bool {
+        const RotationGizmoNodeTag* tag = n->tag_of_type<RotationGizmoNodeTag>();
+        return (tag != nullptr && tag->is_handle);
+    }, m_handles);
+
+    DEBUG_ASSERT(m_handles.size() == 3);
 }
 
 void RotationGizmo::on_deactivated()
@@ -417,9 +432,9 @@ void RotationGizmo::clear_highlight()
         // hide graded circle
         visit(
             m_scene_presenter.selection_root(), [](Scene::Node& node) {
-                const GizmoNodeTag* tag = node.tag_of_type<GizmoNodeTag>();
+                const RotationGizmoNodeTag* tag = node.tag_of_type<RotationGizmoNodeTag>();
                 if (tag != nullptr)
-                    node.set_enabled((size_t)tag->user_data < 2);
+                    node.set_enabled(tag->level < 2);
             },
             true
         );
@@ -428,13 +443,9 @@ void RotationGizmo::clear_highlight()
 
 void RotationGizmo::on_stop_dragging()
 {
-    visit(
-        m_scene_presenter.selection_root(), [&](Scene::Node& node) {
-            if (node.debug_name() == "handle")
-                node.set_local_transform(Transform3d::Identity().matrix());
-        },
-        true
-    );
+    std::for_each(m_handles.begin(), m_handles.end(), [](Scene::Node* n) {
+        n->set_local_transform(Transform3d::Identity().matrix());
+    });
     m_dragging = false;
 }
 
