@@ -464,6 +464,8 @@ static void render_imgui_debug_bed(Biz::ProjectInteractor& project_interactor, S
     if (ImGui::Begin("Bed test/debug", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
 
         auto& proj = project_interactor.selected_project();
+        auto& scene_interactor = project_interactor.scene_interactor();
+        const Domain::BedRef& active_tag = scene_interactor.selected_bed_instance();
 
         size_t total_instances_count = 0;
         const Domain::Project::ConfigContainerList& ccs = proj.config_containers();
@@ -489,7 +491,13 @@ static void render_imgui_debug_bed(Biz::ProjectInteractor& project_interactor, S
                     Domain::BedInstance& inst = cc->find_bed_instance(tag->instance_id);
                     if (tag->type == BedElementType::Undefined) {
 
+                        bool active = active_tag.config_container_id == tag->config_container_id &&
+                                      active_tag.instance_id == tag->instance_id;
+
                         ImGui::TableNextRow();
+                        if (active)
+                            ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, ImGui::GetColorU32(ImGuiCol_TableHeaderBg));
+
                         ImGui::TableSetColumnIndex(0);
                         ImGui::AlignTextToFramePadding();
                         ImGui::Text("%zu", tag->config_container_id);
@@ -524,17 +532,16 @@ static void render_imgui_debug_bed(Biz::ProjectInteractor& project_interactor, S
         }
 
         if (remove_tag.config_container_id != Domain::INVALID_ID) {
-            const Domain::BedRef& active = project_interactor.scene_interactor().selected_bed_instance();
-            project_interactor.scene_interactor().remove_bed_instance(remove_tag);
+            const Domain::BedRef& active = scene_interactor.selected_bed_instance();
+            scene_interactor.remove_bed_instance(remove_tag);
             if (active == remove_tag)
-                project_interactor.scene_interactor().select_first_bed_instance();
+                scene_interactor.select_first_bed_instance();
             --total_instances_count;
         }
 
         if (total_instances_count < 9) {
             if (ImGui::Button("Add instance"))
-                project_interactor.scene_interactor()
-                    .add_bed_instance(project_interactor.selected_config_container().id().id);
+                scene_interactor.add_bed_instance(project_interactor.selected_config_container().id().id);
         }
     }
     ImGui::End();
