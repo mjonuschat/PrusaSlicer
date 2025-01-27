@@ -28,7 +28,8 @@ add_subdirectory(fff_print)
 add_subdirectory(sla_print)
 add_subdirectory(cpp17 EXCLUDE_FROM_ALL)    # does not have to be built all the time
 
-if (SLIC3R_GUI)
+message(STATUS "SLIC3R2_ENABLED: ${SLIC3R2_ENABLED}")
+if (SLIC3R_GUI AND SLIC3R2_ENABLED)
     add_subdirectory(slic3rutils)
 endif()
 # add_subdirectory(slic3r3)

@@ -23,13 +23,13 @@ if (EMSCRIPTEN)
     add_subdirectory(libvgcode)
 endif()
 
-set(SLIC3R2_ENABLED ON)
 
-if (SLIC3R_GUI)
+if (SLIC3R_GUI OR SLIC3R3_ENABLED)
     add_subdirectory(libvgcode)
     add_subdirectory(slic3r-arrange)
     add_subdirectory(slic3r-arrange-wrapper)
-
+endif()
+if (SLIC3R_GUI)
     if (NOT EMSCRIPTEN)
         if(WIN32)
             message(STATUS "WXWIN environment set to: $ENV{WXWIN}")
