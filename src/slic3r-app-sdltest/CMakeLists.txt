@@ -15,3 +15,6 @@ target_link_libraries(slic3r-app-sdltest PUBLIC slic3r-platform slic3r-platform-
 
 slic3r_link_resources(slic3r-app-sdltest)
 slic3r_msvc_set_deps_env_path(slic3r-app-sdltest)
+if (WIN32)
+    prusaslicer_copy_dlls(slic3r-app-sdltest)
+endif ()

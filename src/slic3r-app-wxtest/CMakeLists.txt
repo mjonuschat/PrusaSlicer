@@ -20,3 +20,6 @@ target_link_libraries(slic3r-app-wxtest PUBLIC
 
 
 slic3r_link_resources(slic3r-app-wxtest)
+if (WIN32)
+    prusaslicer_copy_dlls(slic3r-app-wxtest)
+endif ()

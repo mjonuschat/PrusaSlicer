@@ -77,3 +77,6 @@ if (MSVC)
 endif ()
 
 slic3r_link_resources(slic3r-app-desktop)
+if (WIN32)
+    prusaslicer_copy_dlls(slic3r-app-desktop)
+endif ()
