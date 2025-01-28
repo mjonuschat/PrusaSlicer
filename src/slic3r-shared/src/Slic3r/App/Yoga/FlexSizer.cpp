@@ -5,9 +5,6 @@
 #include <Yoga.h>
 #include <string.h>
 
-#ifndef IMGUI_DEFINE_MATH_OPERATORS
-#define IMGUI_DEFINE_MATH_OPERATORS
-#endif
 #include <imgui/imgui_internal.h>
 
 namespace Slic3r::App::Yoga {

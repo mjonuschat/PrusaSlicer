@@ -630,7 +630,7 @@ ImVec2 Toolbar::tooltip_pivot()
     return ImVec2(m_align.horizontal == AlignH::Right ? 1.f : 0.f, 0.f);
 }
 
-ImDrawCornerFlags Toolbar::corners_flag(int id)
+ImDrawFlags Toolbar::corners_flag(int id)
 {
     bool start_rounding = id == 0;
     if (!start_rounding && id > 0) {
@@ -647,9 +647,9 @@ ImDrawCornerFlags Toolbar::corners_flag(int id)
         stop_rounding = post_node && m_nodes[post_node].is_separator();
     }
 
-    return (start_rounding && stop_rounding) ? ImDrawCornerFlags_All :
-           start_rounding ? (m_is_horizontal ? ImDrawCornerFlags_Left  : ImDrawCornerFlags_Top) :
-           stop_rounding  ? (m_is_horizontal ? ImDrawCornerFlags_Right : ImDrawCornerFlags_Bot) : ImDrawCornerFlags_None;
+    return (start_rounding && stop_rounding) ? ImDrawFlags_RoundCornersAll :
+            start_rounding ? (m_is_horizontal ? ImDrawFlags_RoundCornersLeft  : ImDrawFlags_RoundCornersTop) :
+            stop_rounding  ? (m_is_horizontal ? ImDrawFlags_RoundCornersRight : ImDrawFlags_RoundCornersBottom) : ImDrawFlags_RoundCornersNone;
 }
 
 bool Toolbar::render_node(int id, ImVec2 win_pos, ImRect bb)

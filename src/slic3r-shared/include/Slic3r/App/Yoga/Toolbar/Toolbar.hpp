@@ -7,10 +7,6 @@
 
 #include "yoga/Yoga.h"
 #include "imgui/imgui.h"
-
-#ifndef IMGUI_DEFINE_MATH_OPERATORS
-#define IMGUI_DEFINE_MATH_OPERATORS
-#endif
 #include "imgui/imgui_internal.h"
 
 #include "Slic3r/App/Yoga/Toolbar/Item.hpp"
@@ -75,7 +71,7 @@ private:
     // get real size of the control in respect to the layout
     YGSize      get_size(float side);
     ImVec2      tooltip_pivot();
-    ImDrawCornerFlags   corners_flag(int id);
+    ImDrawFlags corners_flag(int id);
 
     // render node and return true, if item was hovered
     bool        render_node(int id, ImVec2 win_pos, ImRect bb);

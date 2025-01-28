@@ -47,8 +47,12 @@ endif()
 
 
 add_library(imgui_backend_ogl3_sdl2 STATIC
-        imgui/backends/imgui_impl_sdl.h
-        imgui/backends/imgui_impl_sdl.cpp
+#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        imgui/backends/imgui_impl_sdl2.h
+        imgui/backends/imgui_impl_sdl2.cpp
+#        imgui/backends/imgui_impl_sdl.h
+#        imgui/backends/imgui_impl_sdl.cpp
+#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         imgui/backends/imgui_impl_opengl3.h
         imgui/backends/imgui_impl_opengl3.cpp
 )

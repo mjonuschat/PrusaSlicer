@@ -6,9 +6,6 @@
 #pragma once
 
 #include "imgui/imgui.h"
-#ifndef IMGUI_DEFINE_MATH_OPERATORS
-#define IMGUI_DEFINE_MATH_OPERATORS
-#endif
 #include "imgui/imgui_internal.h"
 
 #include<string>
@@ -65,7 +62,7 @@ public :
     float   separator_size() const { return m_size_as_separator; }
 
     // render node and return true, if item was hovered
-    bool    render(ImRect item_bb, ImRect parent_bb, ImDrawCornerFlags corners_flag, ImVec2 tooltip_pivot);
+    bool    render(ImRect item_bb, ImRect parent_bb, ImDrawFlags corners_flag, ImVec2 tooltip_pivot);
     void    render_sub_toolbar(ImRect item_bb, ImRect parent_bb, bool force);
     void    render_tooltip(ImVec2 win_pos, ImVec2 tt_shift = ImVec2(), ImVec2 pivot = ImVec2(), bool for_arrow = false);
 
