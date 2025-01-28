@@ -194,7 +194,7 @@ void ImguiRender::render(CommandBuffer& buffer, const ImDrawData* draw_data)
                     buffer.set_scissor({(int)clip_rect.x, (int)(fb_height - clip_rect.w), (int)(clip_rect.z - clip_rect.x), (int)(clip_rect.w - clip_rect.y)});
 
                     // Bind texture, Draw
-                    auto* texture = static_cast<Texture*>(pcmd->GetTexID());
+                    auto* texture = (Texture*)pcmd->GetTexID();
                     if (texture) {
                         buffer.bind_texture(0, *texture);
                         last_bound_texture = texture;

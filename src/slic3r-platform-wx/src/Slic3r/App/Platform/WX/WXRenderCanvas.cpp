@@ -334,34 +334,121 @@ void WXRenderCanvas::init()
     ImGui_ImplOpenGL3_Init(m_glsl_version.c_str());
 }
 
+static ImGuiKey wx_to_imgui_key(int keycode)
+{
+    // 0..9
+    if (48 <= keycode && keycode <= 57)
+        return ImGuiKey(ImGuiKey_0 + keycode - 48);
+
+    // A..Z
+    if (65 <= keycode && keycode <= 90)
+        return ImGuiKey(ImGuiKey_A + keycode - 65);
+
+    // a..z
+    if (97 <= keycode && keycode <= 122)
+        return ImGuiKey(ImGuiKey_A + keycode - 97);
+
+    switch (keycode)
+    {
+        case WXK_TAB:             return ImGuiKey_Tab;
+        case WXK_LEFT:            return ImGuiKey_LeftArrow;
+        case WXK_RIGHT:           return ImGuiKey_RightArrow;
+        case WXK_UP:              return ImGuiKey_UpArrow;
+        case WXK_DOWN:            return ImGuiKey_DownArrow;
+        case WXK_PAGEUP:          return ImGuiKey_PageUp;
+        case WXK_PAGEDOWN:        return ImGuiKey_PageDown;
+        case WXK_HOME:            return ImGuiKey_Home;
+        case WXK_END:             return ImGuiKey_End;
+        case WXK_INSERT:          return ImGuiKey_Insert;
+        case WXK_DELETE:          return ImGuiKey_Delete;
+        case WXK_BACK:            return ImGuiKey_Backspace;
+        case WXK_SPACE:           return ImGuiKey_Space;
+        case WXK_RETURN:          return ImGuiKey_Enter;
+        case WXK_ESCAPE:          return ImGuiKey_Escape;
+
+        case '\'':                return ImGuiKey_Apostrophe;
+        case ',':                 return ImGuiKey_Comma;
+        case '-':                 return ImGuiKey_Minus;
+        case '.':                 return ImGuiKey_Period;
+        case '/':                 return ImGuiKey_Slash;
+        case ';':                 return ImGuiKey_Semicolon;
+        case '=':                 return ImGuiKey_Equal;
+        case '[':                 return ImGuiKey_LeftBracket;
+        case '\\':                return ImGuiKey_Backslash;
+        case ']':                 return ImGuiKey_RightBracket;
+
+        //case ?????: return ImGuiKey_GraveAccent;
+
+        case WXK_CAPITAL:         return ImGuiKey_CapsLock;
+
+        case WXK_SCROLL:          return ImGuiKey_ScrollLock;
+        case WXK_NUMLOCK:         return ImGuiKey_NumLock;
+        case WXK_PRINT:           return ImGuiKey_PrintScreen;
+        case WXK_PAUSE:           return ImGuiKey_Pause;
+        case WXK_NUMPAD0:         return ImGuiKey_Keypad0;
+        case WXK_NUMPAD1:         return ImGuiKey_Keypad1;
+        case WXK_NUMPAD2:         return ImGuiKey_Keypad2;
+        case WXK_NUMPAD3:         return ImGuiKey_Keypad3;
+        case WXK_NUMPAD4:         return ImGuiKey_Keypad4;
+        case WXK_NUMPAD5:         return ImGuiKey_Keypad5;
+        case WXK_NUMPAD6:         return ImGuiKey_Keypad6;
+        case WXK_NUMPAD7:         return ImGuiKey_Keypad7;
+        case WXK_NUMPAD8:         return ImGuiKey_Keypad8;
+        case WXK_NUMPAD9:         return ImGuiKey_Keypad9;
+        case WXK_NUMPAD_DELETE:   return ImGuiKey_KeypadDecimal;
+        case WXK_NUMPAD_DIVIDE:   return ImGuiKey_KeypadDivide;
+        case WXK_NUMPAD_MULTIPLY: return ImGuiKey_KeypadMultiply;
+        case WXK_NUMPAD_SUBTRACT: return ImGuiKey_KeypadSubtract;
+        case WXK_NUMPAD_ADD:      return ImGuiKey_KeypadAdd;
+        case WXK_NUMPAD_ENTER:    return ImGuiKey_KeypadEnter;
+        case WXK_NUMPAD_EQUAL:    return ImGuiKey_KeypadEqual;
+
+        //case ?????: return ImGuiKey_LeftCtrl;
+        //case ?????: return ImGuiKey_LeftShift;
+        //case ?????: return ImGuiKey_LeftAlt;
+        //case ?????: return ImGuiKey_LeftSuper;
+        //case ?????: return ImGuiKey_RightCtrl;
+        //case ?????: return ImGuiKey_RightShift;
+        //case ?????: return ImGuiKey_RightAlt;
+        //case ?????: return ImGuiKey_RightSuper;
+        //case ?????: return ImGuiKey_Menu;
+
+        case WXK_F1:              return ImGuiKey_F1;
+        case WXK_F2:              return ImGuiKey_F2;
+        case WXK_F3:              return ImGuiKey_F3;
+        case WXK_F4:              return ImGuiKey_F4;
+        case WXK_F5:              return ImGuiKey_F5;
+        case WXK_F6:              return ImGuiKey_F6;
+        case WXK_F7:              return ImGuiKey_F7;
+        case WXK_F8:              return ImGuiKey_F8;
+        case WXK_F9:              return ImGuiKey_F9;
+        case WXK_F10:             return ImGuiKey_F10;
+        case WXK_F11:             return ImGuiKey_F11;
+        case WXK_F12:             return ImGuiKey_F12;
+        case WXK_F13:             return ImGuiKey_F13;
+        case WXK_F14:             return ImGuiKey_F14;
+        case WXK_F15:             return ImGuiKey_F15;
+        case WXK_F16:             return ImGuiKey_F16;
+        case WXK_F17:             return ImGuiKey_F17;
+        case WXK_F18:             return ImGuiKey_F18;
+        case WXK_F19:             return ImGuiKey_F19;
+        case WXK_F20:             return ImGuiKey_F20;
+        case WXK_F21:             return ImGuiKey_F21;
+        case WXK_F22:             return ImGuiKey_F22;
+        case WXK_F23:             return ImGuiKey_F23;
+        case WXK_F24:             return ImGuiKey_F24;
+
+        //case ?????: return ImGuiKey_AppBack;
+        //case ?????: return ImGuiKey_AppForward;
+
+        default:                break;
+    }
+    return ImGuiKey_None;
+}
 
 void WXRenderCanvas::init_wx_imgui()
 {
     ImGuiIO& io = ImGui::GetIO();
-
-    // Keyboard mapping. ImGui will use those indices to peek into the io.KeysDown[] array.
-    io.KeyMap[ImGuiKey_Tab] = WXK_TAB;
-    io.KeyMap[ImGuiKey_LeftArrow] = WXK_LEFT;
-    io.KeyMap[ImGuiKey_RightArrow] = WXK_RIGHT;
-    io.KeyMap[ImGuiKey_UpArrow] = WXK_UP;
-    io.KeyMap[ImGuiKey_DownArrow] = WXK_DOWN;
-    io.KeyMap[ImGuiKey_PageUp] = WXK_PAGEUP;
-    io.KeyMap[ImGuiKey_PageDown] = WXK_PAGEDOWN;
-    io.KeyMap[ImGuiKey_Home] = WXK_HOME;
-    io.KeyMap[ImGuiKey_End] = WXK_END;
-    io.KeyMap[ImGuiKey_Insert] = WXK_INSERT;
-    io.KeyMap[ImGuiKey_Delete] = WXK_DELETE;
-    io.KeyMap[ImGuiKey_Backspace] = WXK_BACK;
-    io.KeyMap[ImGuiKey_Space] = WXK_SPACE;
-    io.KeyMap[ImGuiKey_Enter] = WXK_RETURN;
-    io.KeyMap[ImGuiKey_KeyPadEnter] = WXK_NUMPAD_ENTER;
-    io.KeyMap[ImGuiKey_Escape] = WXK_ESCAPE;
-    io.KeyMap[ImGuiKey_A] = 'A';
-    io.KeyMap[ImGuiKey_C] = 'C';
-    io.KeyMap[ImGuiKey_V] = 'V';
-    io.KeyMap[ImGuiKey_X] = 'X';
-    io.KeyMap[ImGuiKey_Y] = 'Y';
-    io.KeyMap[ImGuiKey_Z] = 'Z';
 
     // Don't let imgui special-case Mac, wxWidgets already do that
     io.ConfigMacOSXBehaviors = false;
@@ -433,11 +520,13 @@ void WXRenderCanvas::on_keyboard(wxKeyEvent& evt)
         int key = evt.GetKeyCode();
         //wxCHECK_MSG(key >= 0 && key < IM_ARRAYSIZE(io.KeysDown), false, "Received invalid key code");
 
-        io.KeysDown[key] = (type == wxEVT_KEY_DOWN);
-        io.KeyShift = evt.ShiftDown();
-        io.KeyCtrl = evt.ControlDown();
-        io.KeyAlt = evt.AltDown();
-        io.KeySuper = evt.MetaDown();
+        ImGuiKey imgui_key = wx_to_imgui_key(key);
+        if (imgui_key != ImGuiKey_None)
+            io.AddKeyEvent(imgui_key, type == wxEVT_KEY_DOWN);
+        io.AddKeyEvent(ImGuiMod_Ctrl,  evt.ControlDown());
+        io.AddKeyEvent(ImGuiMod_Shift, evt.ShiftDown());
+        io.AddKeyEvent(ImGuiMod_Alt,   evt.AltDown());
+        io.AddKeyEvent(ImGuiMod_Super, evt.MetaDown());
 
         if (key != WXK_TAB
             && key != WXK_LEFT

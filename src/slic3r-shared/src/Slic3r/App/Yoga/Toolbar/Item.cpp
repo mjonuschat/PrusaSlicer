@@ -16,7 +16,7 @@ struct ButtonBehaviour {
     bool hovered_arrow  { false };
 };
 
-static ButtonBehaviour CustomRoundedButton(const std::string& label, const ImVec2& pos, const ImVec2& size, bool has_arrow, bool is_toggled , ImDrawCornerFlags rounding_corners/* = ImDrawCornerFlags_None*/)
+static ButtonBehaviour CustomRoundedButton(const std::string& label, const ImVec2& pos, const ImVec2& size, bool has_arrow, bool is_toggled, ImDrawFlags rounding_corners/* = ImDrawCornerFlags_None*/)
 {
     ImGui::SetNextWindowPos(pos);
     ImGui::SetNextWindowSize(size);
@@ -53,7 +53,7 @@ static ButtonBehaviour CustomRoundedButton(const std::string& label, const ImVec
 
     // Draw button background with custom rounding corner(s)
     ImU32 col = ImGui::GetColorU32(hovered ? (is_toggled ? ImGuiCol_WindowBg : ImGuiCol_Button) : (is_toggled ? ImGuiCol_Button : ImGuiCol_WindowBg));
-    draw_list->AddRectFilled(button_bb.Min, button_bb.Max, col, rounding, ImDrawCornerFlags_All);
+    draw_list->AddRectFilled(button_bb.Min, button_bb.Max, col, rounding, ImDrawFlags_RoundCornersAll);
 
     // Render the text label in the center of the button
     ImVec2 text_size = ImGui::CalcTextSize(label.c_str());
@@ -136,7 +136,7 @@ void Item::render_sub_toolbar(ImRect item_bb, ImRect parent_bb, bool force)
         sub_tb_rect = ImRect(); //invalidate subtoolbar
 }
 
-bool Item::render(ImRect item_bb, ImRect parent_bb, ImDrawCornerFlags corners_flag, ImVec2 tooltip_pivot) 
+bool Item::render(ImRect item_bb, ImRect parent_bb, ImDrawFlags corners_flag, ImVec2 tooltip_pivot)
 {
     const bool has_arrow  = m_callbacks.action_on_arrow || m_sub_toolbar;
 
