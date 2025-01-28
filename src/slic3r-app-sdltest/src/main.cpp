@@ -109,6 +109,8 @@ int main(int argc, char** argv)
     init_system();
 
     canvas = std::make_unique<Slic3r::App::Platform::SDL::SDLRenderCanvas>();
+    canvas->set_language("en");
+    canvas->set_font_size(16.0f);
     Slic3r::App::Render::Context::instance().log_gl_info();
     Slic3r::App::Platform::PlatformServices::instance().set_services(canvas.get(), canvas.get());
     render_module = std::make_unique<Slic3r::App::TestRenderModule>();
