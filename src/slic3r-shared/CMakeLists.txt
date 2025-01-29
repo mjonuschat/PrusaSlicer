@@ -41,9 +41,6 @@ set(SLIC3R_SHARED_FILES
 
         include/Slic3r/App/View/IPanelView.hpp
 
-        src/Slic3r/App/Preview/View/DoubleSlider.cpp
-        include/Slic3r/App/Preview/View/DoubleSlider.hpp
-
         src/Slic3r/App/Scene/Scene.cpp
         include/Slic3r/App/Scene/Scene.hpp
         src/Slic3r/App/Scene/Node.cpp
@@ -109,6 +106,13 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Yoga/Toolbar.hpp
         src/Slic3r/App/Yoga/MiddleSizer.cpp
         include/Slic3r/App/Yoga/MiddleSizer.hpp
+
+        src/Slic3r/App/Imgui/DoubleSlider.cpp
+        include/Slic3r/App/Imgui/DoubleSlider.hpp
+        src/Slic3r/App/Imgui/RulerForDoubleSlider.cpp
+        include/Slic3r/App/Imgui/RulerForDoubleSlider.hpp
+        src/Slic3r/App/Imgui/ImguiExtension.cpp
+        include/Slic3r/App/Imgui/ImguiExtension.hpp
 
         src/Slic3r/App/TestRenderLayout.cpp
         include/Slic3r/App/TestRenderLayout.hpp
