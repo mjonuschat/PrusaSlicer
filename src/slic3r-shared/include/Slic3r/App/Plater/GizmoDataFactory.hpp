@@ -6,26 +6,20 @@
 
 namespace Slic3r::App::Plater {
 
+constexpr uint8_t CIRCLE_COARSE_GRADE_STEPS = 8; // 8 steps = 45 degrees step angle
+constexpr uint8_t CIRCLE_FINE_GRADE_SECONDARY_STEPS = 72; // 72 steps = 5 degrees step angle
+constexpr float CIRCLE_FINE_GRADE_PRIMARY_OUT_RADIUS = 1.1f;
+constexpr float CIRCLE_FINE_GRADE_SECONDARY_OUT_RADIUS = 1.05f;
+constexpr float CIRCLE_COARSE_GRADE_IN_RADIUS = 1.0f / 3.0f;
+constexpr float CIRCLE_COARSE_GRADE_OUT_RADIUS = 2.0f / 3.0f;
+
 enum class GizmoDataId
 {
-    ConeHandle = 0,
-    AxesLines = 1,
-};
-
-enum class GizmoDataVariant
-{
-    None = 0,
-    Red = 1,
-    Green = 2,
-    Blue = 3,
-};
-
-enum class GizmoDataTransform
-{
-    None = 0,
-    PointX = 1,
-    PointY = 2,
-    PointZ = 3
+    Segment = 0,
+    Cone = 1,
+    Cube = 2,
+    Circle = 3,
+    GradedCircle = 4,
 };
 
 class GizmoDataFactory
@@ -35,27 +29,6 @@ public:
     using GeometryManager = Render::GeometryManager<GizmoDataId>;
 
     explicit GizmoDataFactory(Render::Device& device) : m_device(device) {}
-
-    /**
-     * @brief Create new Node for given gizmo data, material variant and transform modification.
-     *
-     * @note The returned node is not inserted into scene, it's up to you to add the node into same
-     * @p scene.
-     *
-     * @param scene A parent scene the node will be inserted into.
-     * @param data_id ID of the gizmo data to create node for
-     * @param data_variant A material variant (if needed)
-     * @param data_transform A transformation type to be applied (if needed)
-     * @return Node with drawable component (always), AabbRaycast component (optional), modified
-     * transform (optional) and screen-sizing modifier (keeping constant screen size independently
-     * on camera fov and distance).
-     */
-    std::unique_ptr<Scene::Node> create_node(
-        Scene::Scene& scene,
-        GizmoDataId data_id,
-        GizmoDataVariant data_variant = GizmoDataVariant::None,
-        GizmoDataTransform data_transform = GizmoDataTransform::None
-    );
 
     /**
      * @brief Get or create triangle mesh for given gizmo data.
@@ -98,7 +71,9 @@ public:
 private:
 
     void create_data(GizmoDataId id);
-    void create_axes_lines();
+    void create_segment();
+    void create_circle();
+    void create_graded_circle();
 
 private:
     Render::Device& m_device;

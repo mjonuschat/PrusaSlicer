@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <libslic3r/Point.hpp>
+#include <libslic3r/Color.hpp>
 
 namespace Slic3r::App::Plater {
 
@@ -36,6 +37,26 @@ inline Vec3d axis_type_dir(AxisType at)
     return ret;
 }
 
+inline ColorRGBA axis_color(AxisType axis)
+{
+    switch (axis)
+    {
+    case AxisType::XAxis: { return ColorRGBA::X(); }
+    case AxisType::YAxis: { return ColorRGBA::Y(); }
+    case AxisType::ZAxis: { return ColorRGBA::Z(); }
+    default:              { return ColorRGBA::BLACK(); }
+    }
+}
 
+inline std::string axis_string(AxisType axis)
+{
+    switch (axis)
+    {
+    case AxisType::XAxis: { return "X axis"; }
+    case AxisType::YAxis: { return "Y axis"; }
+    case AxisType::ZAxis: { return "Z axis"; }
+    default:              { return "?"; }
+    }
+}
 
 }

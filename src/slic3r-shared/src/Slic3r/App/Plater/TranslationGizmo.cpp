@@ -2,14 +2,44 @@
 #include "Slic3r/App/Plater/ScenePresenter.hpp"
 #include "Slic3r/App/Plater/GizmoDataFactory.hpp"
 #include "Slic3r/App/Plater/GizmoNodeTag.hpp"
+#include "Slic3r/App/Plater/PlaterSceneLayer.hpp"
 
 namespace Slic3r::App::Plater {
 
-void TranslationGizmo::on_cycle_prepare()
+constexpr double HALF_PI = 0.5 * PI;
+static const Vec3d HANDLE_CONE_SIZE = { 10.0, 10.0, 15.0 };
+constexpr double HANDLE_STEM_LENGTH = 50.0;
+static const Vec3d HANDLE_CONE_OFFSET = { 0.0, 0.0, HANDLE_STEM_LENGTH };
+
+static Transform3d axis_transform(AxisType axis)
 {
-    m_activated = false;
+    Transform3d ret = Transform3d::Identity();
+    switch (axis)
+    {
+    case AxisType::XAxis:
+    {
+        ret.rotate(Eigen::AngleAxisd(HALF_PI, Vec3d::UnitY()));
+        break;
+    }
+    case AxisType::YAxis:
+    {
+        ret.rotate(Eigen::AngleAxisd(HALF_PI, Vec3d::UnitX()));
+        break;
+    }
+    default:
+    case AxisType::ZAxis:
+    {
+        // no rotation applied
+        break;
+    }
+    }
+    return ret;
 }
 
+void TranslationGizmo::on_cycle_prepare()
+{
+    m_dragging = false;
+}
 
 GizmoActivationState TranslationGizmo::on_mouse(GizmoEventContext& ctx, bool only_active)
 {
@@ -17,7 +47,7 @@ GizmoActivationState TranslationGizmo::on_mouse(GizmoEventContext& ctx, bool onl
     if (event_type != Platform::MouseEvent::Type::ButtonDown &&
         event_type != Platform::MouseEvent::Type::Move &&
         event_type != Platform::MouseEvent::Type::ButtonUp) {
-        m_activated = false;
+        m_dragging = false;
         return GizmoActivationState::Inactive;
     }
 
@@ -26,7 +56,7 @@ GizmoActivationState TranslationGizmo::on_mouse(GizmoEventContext& ctx, bool onl
     if (event_type == Platform::MouseEvent::Type::ButtonDown) {
         const Scene::Node* node = ctx.pick_result_node_with_tag_of_type<GizmoNodeTag>();
         if (node == nullptr) {
-            m_activated = false;
+            m_dragging = false;
             return GizmoActivationState::Inactive;
         }
 
@@ -39,19 +69,18 @@ GizmoActivationState TranslationGizmo::on_mouse(GizmoEventContext& ctx, bool onl
 
     double t;
     if (!m_translation_ray.closest_point_from_ray(pick_ray, t)) {
-        m_activated = false;
+        m_dragging = false;
         return GizmoActivationState::Inactive;
     }
 
     if (event_type == Platform::MouseEvent::Type::ButtonDown) {
         m_start_t = t;
-        m_activated = true;
+        m_dragging = true;
         return GizmoActivationState::Active;
     }
 
-    if (!m_activated) {
+    if (!m_dragging)
         return GizmoActivationState::Inactive;
-    }
 
     Vec3d delta = m_translation_ray.point_at(t) - m_translation_ray.point_at(m_start_t);
 
@@ -65,7 +94,7 @@ GizmoActivationState TranslationGizmo::on_mouse(GizmoEventContext& ctx, bool onl
 
     if (event_type == Platform::MouseEvent::Type::ButtonUp) {
         m_scene_interactor.finalize_transform_selection(m_xform_memento, false);
-        m_activated = false;
+        m_dragging = false;
         clear_highlight();
         return GizmoActivationState::Done;
     }
@@ -76,56 +105,121 @@ GizmoActivationState TranslationGizmo::on_mouse(GizmoEventContext& ctx, bool onl
 void TranslationGizmo::clear_highlight()
 {
     if (m_highlighted)
+        // show all axes
         visit(
             m_scene_provider.selection_root(), [](Scene::Node& node) { node.set_enabled(true); },
             true
         );
     m_highlighted = false;
 }
+
 void TranslationGizmo::on_transient_mouse(GizmoEventContext& ctx)
 {
-    if (m_activated)
+    if (!m_activated || m_dragging)
         return;
     auto* n = ctx.pick_result_node_with_tag_of_type<GizmoNodeTag>();
     if (n == nullptr) {
         clear_highlight();
     } else {
-        auto* p = n->parent();
-        for (auto& child : p->children())
-            child->set_enabled(child.get() == n);
+        // when hovering over a handle
+        // show only the correspondent axis
+        auto* p = n->parent();  // {} axis
+        auto* gp = p->parent(); // main
+        for (auto& child : gp->children()){
+            child->set_enabled(child.get() == p);
+        }
         m_highlighted = true;
     }
 }
 
+static void build_axis_node(AxisType axis, Scene::NodeBuilder& builder, Render::Device& device, GizmoDataFactory& data_factory)
+{
+    ColorRGBA color = axis_color(axis);
+
+    builder.set_debug_name(axis_string(axis));
+    builder.set_tag(GizmoNodeTag{ axis });
+
+    builder.child([&](Scene::NodeBuilder& bldr) {
+        Render::Material material = Render::Material{}
+            .set_shader(device.context().shader_manager().get_shader("flat"))
+            .set_uniform("uniform_color", color);
+
+        bldr
+            .set_debug_name("stem")
+            .set_tag(GizmoNodeTag{ axis })
+            .set_mesh(data_factory.geometry(GizmoDataId::Segment), material, int(PlaterSceneLayer::GizmoHandles))
+            .transform([&](Transform3d& xform) {
+                xform.rotate(Eigen::AngleAxisd(-HALF_PI, Vec3d::UnitY()));
+                xform.scale(HANDLE_STEM_LENGTH * Vec3d::UnitX());
+            });
+    });
+
+    builder.child([&](Scene::NodeBuilder& bldr) {
+        auto geom = data_factory.geometry(GizmoDataId::Cone);
+        auto  mesh = data_factory.triangle_mesh(GizmoDataId::Cone);
+
+        Render::Material material = Render::Material{}
+            .set_shader(device.context().shader_manager().get_shader("gouraud_light"))
+            .set_uniform("uniform_color", color);
+
+        bldr
+            .set_debug_name("cone")
+            .set_tag(GizmoNodeTag{ axis })
+            .set_mesh(geom, material, int(PlaterSceneLayer::GizmoHandles))
+            .set_aabb(mesh->aabb_mesh())
+            .transform([&](Transform3d& xform) {
+                xform
+                    .translate(HANDLE_CONE_OFFSET)
+                    .scale(HANDLE_CONE_SIZE);
+            });
+    });
+}
 
 void TranslationGizmo::on_activated()
 {
+    m_activated = true;
+
     auto& scene = m_scene_provider.scene();
     auto& selection_root = m_scene_provider.selection_root();
 
-    auto x_handle = m_data_factory.create_node(
-        scene, GizmoDataId::ConeHandle, GizmoDataVariant::Red, GizmoDataTransform::PointX
-    );
-    auto y_handle = m_data_factory.create_node(
-        scene, GizmoDataId::ConeHandle, GizmoDataVariant::Green, GizmoDataTransform::PointY
-    );
-    auto z_handle = m_data_factory.create_node(
-        scene, GizmoDataId::ConeHandle, GizmoDataVariant::Blue, GizmoDataTransform::PointZ
-    );
+    // builds the following hierarchy of elements:
+    // [main] - [X axis]
+    //        - [Y axis]
+    //        - [Z axis]
+    // each of the {} axis elements is composed by the elements:
+    // [{} axis] - [stem]
+    //           - [cone]
 
-    x_handle->set_tag(GizmoNodeTag{AxisType::XAxis});
-    y_handle->set_tag(GizmoNodeTag{AxisType::YAxis});
-    z_handle->set_tag(GizmoNodeTag{AxisType::ZAxis});
+    Scene::NodeBuilder builder{ scene };
+    builder.set_debug_name("main");
+    builder.set_tag(GizmoNodeTag{ AxisType::None });
 
-    auto center = m_data_factory.create_node(scene, GizmoDataId::AxesLines);
-    scene.add_child(x_handle.release(), &selection_root);
-    scene.add_child(y_handle.release(), &selection_root);
-    scene.add_child(z_handle.release(), &selection_root);
-    scene.add_child(center.release(), &selection_root);
+    builder.child([&](Scene::NodeBuilder& bldr) {
+        build_axis_node(AxisType::XAxis, bldr, m_device, m_data_factory);
+        bldr.transform([&](Transform3d& xform) {
+            xform = axis_transform(AxisType::XAxis) * xform;
+        });
+    });
+
+    builder.child([&](Scene::NodeBuilder& bldr) {
+        build_axis_node(AxisType::YAxis, bldr, m_device, m_data_factory);
+        bldr.transform([&](Transform3d& xform) {
+            xform = axis_transform(AxisType::YAxis) * xform;
+        });
+    });
+
+    builder.child([&](Scene::NodeBuilder& bldr) {
+        build_axis_node(AxisType::ZAxis, bldr, m_device, m_data_factory);
+    });
+
+    auto main_node = builder.build();
+    scene.add_child(main_node.release(), &selection_root);
 }
 
 void TranslationGizmo::on_deactivated()
 {
+    m_activated = false;
+
     auto& scene = m_scene_provider.scene();
     auto& selection_root = m_scene_provider.selection_root();
     scene.remove_children([](const Scene::Node*) { return true; }, &selection_root);

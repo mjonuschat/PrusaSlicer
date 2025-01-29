@@ -123,7 +123,7 @@ void TestRenderModule::init_scene()
     });
 
     auto shader = device.context().shader_manager().get_shader("gouraud_light");
-    constexpr float right_angle = M_PI / 2.0f;
+    constexpr float right_angle = float(PI) / 2.0f;
     
     node_builder
 //        .transform([](auto& xform){

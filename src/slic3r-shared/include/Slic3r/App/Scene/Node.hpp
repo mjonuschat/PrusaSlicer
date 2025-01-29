@@ -91,6 +91,7 @@ public:
      * @return Constant vector of `unique_ptr<Node>`
      */
     const NodeOwningList& children() const { return m_children; }
+
     /** @} */
 
     /**
@@ -174,7 +175,7 @@ public:
     /**@}*/
 
     /**
-     * @name Query
+     * @name Query all
      * Query node and its children
      * @{
      */
@@ -187,7 +188,25 @@ public:
      * @brief Query this node and its children (only enabled by default).
      */
     void query(const NodePredicate& predicate, ConstNodeList& found_nodes, bool ignore_enabled = false) const;
+
     /**@}*/
+
+    /**
+     * @name Query first
+     * @{
+     */
+
+    /**
+     * @brief Query this node and its children for first match (only enabled by default).
+     */
+    const Node* query_first(const NodePredicate& predicate, bool ignore_enabled = false) const;
+
+    /**
+     * @brief Query this node and its children for first match (only enabled by default).
+     */
+    Node* query_first(const NodePredicate& predicate, bool ignore_enabled = false);
+
+    /** @} */
 
     /**
      * @name Render Component

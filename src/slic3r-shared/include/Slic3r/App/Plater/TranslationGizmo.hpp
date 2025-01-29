@@ -3,7 +3,6 @@
 #include "ScenePresenter.hpp"
 #include "Slic3r/App/Plater/IGizmo.hpp"
 #include "Slic3r/App/Render/Device.hpp"
-#include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 
 namespace Slic3r::App::Plater {
 
@@ -13,11 +12,13 @@ class ScenePresenter;
 class TranslationGizmo : public IToolGizmo {
 public:
     TranslationGizmo(
+        Render::Device& device,
         GizmoDataFactory& data_factory,
         ScenePresenter& scene_provider,
         Biz::Scene::SceneInteractor& scene_interactor
     )
-        : m_data_factory(data_factory)
+        : m_device(device)
+        , m_data_factory(data_factory)
         , m_scene_provider(scene_provider)
         , m_scene_interactor(scene_interactor)
     {}
@@ -31,12 +32,14 @@ public:
     ToolType type() const override { return ToolType::Translation; }
 
 private:
+    Render::Device& m_device;
     GizmoDataFactory& m_data_factory;
     ISceneProvider& m_scene_provider;
     Biz::Scene::SceneInteractor& m_scene_interactor;
     Biz::Scene::TransformMemento m_xform_memento;
     Scene::Ray m_translation_ray;
     double m_start_t{0};
+    bool m_dragging{ false };
     bool m_activated{false};
     bool m_highlighted{false};
 };

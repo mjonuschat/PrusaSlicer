@@ -38,6 +38,33 @@ void Node::query(const NodePredicate& predicate, ConstNodeList& found_nodes, boo
     }
 }
 
+const Node* Node::query_first(const NodePredicate& predicate, bool ignore_enabled) const
+{
+    if (m_enabled || ignore_enabled) {
+        if (predicate(this))
+            return this;
+        for (auto& child : m_children) {
+            if (auto* ret = child->query_first(predicate, ignore_enabled))
+                return ret;
+        }
+    }
+    return nullptr;
+}
+
+Node *Node::query_first(const NodePredicate &predicate, bool ignore_enabled)
+{
+    if (m_enabled || ignore_enabled) {
+        if (predicate(this))
+            return this;
+        for (auto &child: m_children) {
+            if (auto *ret = child->query_first(predicate, ignore_enabled))
+                return ret;
+        }
+    }
+    return nullptr;
+}
+
+
 const Transform& Node::world_transform() const
 {
     if (m_world_xform_dirty) {

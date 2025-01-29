@@ -315,7 +315,7 @@ Scene::Node* ScenePresenter::initialize_selection_root(Scene::Scene& scene)
     Scene::NodeBuilder builder(scene);
     Scene::Node* selection_root = builder
         .set_debug_name("selection_root")
-        .set_screen_space_sized_modifier(0.0075)
+        .set_screen_space_sized_modifier(screen_space_sized_modifier())
         .build().release();
     scene.add_child(selection_root);
     return selection_root;
@@ -370,10 +370,21 @@ void ScenePresenter::on_scene_selection_changed(Domain::SelectionId project_id, 
         });
     }
     proj.set_selection_bounding_box(bounds);
-    Matrix4d xform = Matrix4d::Identity();
-    //xform.block<1, 3>(0, 3) = bounds.center().cast<double>();
-    xform.col(3).head(3) = bounds.center().cast<double>();
-    proj.selection_root().set_world_transform(xform);
+    if (!m_freeze_selection_center) {
+        Matrix4d xform = Matrix4d::Identity();
+        if (selection.mode == Biz::Scene::SelectionMode::Instance) {
+            const auto* tag = found_nodes.front()->tag_of_type<SceneNodeTag>();
+            const ModelObject* obj = m_project_interactor.selected_project().find_object_by_id(tag->object_id);
+            const ModelInstance* inst = m_project_interactor.selected_project().find_instance_by_id(tag->object_id, tag->instance_id);
+            Geometry::Transformation world_m = inst->get_transformation() * obj->volumes.front()->get_transformation();
+            xform.col(3).head(3) = world_m.get_offset();
+        }
+        else {
+            //xform.block<1, 3>(0, 3) = bounds.center().cast<double>();
+            xform.col(3).head(3) = bounds.center().cast<double>();
+        }
+        proj.selection_root().set_world_transform(xform);
+    }
 }
 
 void ScenePresenter::on_scene_selection_transformed(Domain::SelectionId project_id, const Biz::Scene::Selection& selection)
