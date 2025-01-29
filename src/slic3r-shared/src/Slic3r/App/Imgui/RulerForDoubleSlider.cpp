@@ -1,6 +1,7 @@
 #include "Slic3r/App/Imgui/RulerForDoubleSlider.hpp"
 
 #include <cmath>
+#include <algorithm>
 
 namespace Slic3r::App::Imgui::DoubleSlider {
 
