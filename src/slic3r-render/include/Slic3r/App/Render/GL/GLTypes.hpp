@@ -67,6 +67,10 @@ inline GLenum type(BufferTarget target)
         return GL_ARRAY_BUFFER;
     case BufferTarget::IndexBuffer:
         return GL_ELEMENT_ARRAY_BUFFER;
+#ifdef SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
+    case BufferTarget::TextureBuffer:
+        return GL_TEXTURE_BUFFER;
+#endif // SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
     }
     throw std::runtime_error{"Unreachable code!"};
 }
@@ -84,9 +88,43 @@ inline GLenum type(BufferUsage usage)
     throw std::runtime_error{"Unreachable code!"};
 }
 
+inline GLenum type(BufferAccess access)
+{
+    switch (access) {
+    case BufferAccess::ReadOnly:  return GL_READ_ONLY;
+    case BufferAccess::WriteOnly: return GL_WRITE_ONLY;
+    case BufferAccess::ReadWrite: return GL_READ_WRITE;
+    }
+    throw std::runtime_error{"Unreachable code!"};
+}
+
+inline GLenum type(TextureMinFilter filter)
+{
+    switch (filter)
+    {
+    case TextureMinFilter::Linear:               return GL_LINEAR;
+    case TextureMinFilter::Nearest:              return GL_NEAREST;
+    case TextureMinFilter::MipMapNearestNearest: return GL_NEAREST_MIPMAP_NEAREST;
+    case TextureMinFilter::MipMapLinearNearest:  return GL_LINEAR_MIPMAP_NEAREST;
+    case TextureMinFilter::MipMapNearestLinear:  return GL_NEAREST_MIPMAP_LINEAR;
+    case TextureMinFilter::MipMapLinearLinear:   return GL_LINEAR_MIPMAP_LINEAR;
+    }
+    throw std::runtime_error{"Unreachable code!"};
+}
+
+inline GLenum type(TextureMagFilter filter)
+{
+    switch (filter)
+    {
+    case TextureMagFilter::Linear:  return GL_LINEAR;
+    case TextureMagFilter::Nearest: return GL_NEAREST;
+    }
+    throw std::runtime_error{"Unreachable code!"};
+}
 
 
 const char* shader_input_name(VertexAttribType vat);
+GLenum texture_internal_format(PixelFormat format);
 GLenum texture_format(PixelFormat format);
 GLenum texture_format_type(PixelFormat format);
 GLenum type(BlendFactor type);

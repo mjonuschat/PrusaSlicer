@@ -30,8 +30,10 @@ bool DesktopApp::OnInit()
     Biz::Platform::PlatformServices::instance().set_main_thread_dispatcher(main_thread_dispatcher.get());
 
     m_project_interactor = std::make_unique<Biz::ProjectInteractor>(m_workbench);
-    m_render_module =
-        std::make_unique<Plater::PlaterRenderModule>(m_workbench, *m_project_interactor);
+    m_plater_module =
+      std::make_unique<Plater::PlaterRenderModule>(m_workbench, *m_project_interactor);
+    m_preview_module =
+      std::make_unique<Preview::PreviewRenderModule>(m_workbench, *m_project_interactor);
 
     //m_workbench.load_project("/Users/jan.bartipan/work/Models/3DBenchy.3mf");
 
@@ -44,12 +46,11 @@ bool DesktopApp::OnInit()
     m_main_frame = new MainFrame(m_workbench, m_project_interactor->preset_interactor(), std::move(main_thread_dispatcher));
     Platform::WX::WXRenderCanvas& canvas = m_main_frame->get_render_canvas();
     Biz::Platform::PlatformServices::instance().set_render_request_handler(&canvas);
-#if USE_IMGUI_RENDER
     canvas.set_language(localization().active_language());
     canvas.set_font_size(1.7777f * float(App::WX::w_config()->normal_font().GetPointSize()));
-#endif // USE_IMGUI_RENDER
-    
-    canvas.set_render_module(m_render_module.get());
+
+    // >>> replace m_plater_module with m_preview_module in the following line to test libvgcode wrapper
+    canvas.set_render_module(m_plater_module.get());
     m_main_frame->Show();
 
 #if !defined(__linux)

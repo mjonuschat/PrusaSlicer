@@ -27,7 +27,9 @@ Render::Texture* BedRenderHelper::texture(const Domain::Bed& bed, Render::Textur
     opts.flip_y = true;
     opts.gen_mipmaps = true;
 
-    return manager.get(texture_filename, opts);
+    Render::Texture* tex = manager.get(texture_filename, opts);
+    tex->set_filtering(Render::TextureMinFilter::MipMapLinearLinear, Render::TextureMagFilter::Linear);
+    return tex;
 }
 
 std::vector<Vec3f> BedRenderHelper::plate_grid(const Domain::Bed& bed)

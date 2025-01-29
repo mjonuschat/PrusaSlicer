@@ -8,7 +8,6 @@
 #include "Shader.hpp"
 #include "Context.hpp"
 #include "WithInternal.hpp"
-#include "libslic3r/Point.hpp"
 
 namespace Slic3r::App::Render {
 
@@ -21,8 +20,11 @@ public:
 
     void set_data(const void* data, size_t size, BufferUsage usage);
 
-private:
+    BufferTarget target() const { return m_target; }
+
+protected:
     Device& m_device;
+private:
     BufferTarget m_target;
 };
 
@@ -37,5 +39,14 @@ class IndexBuffer : public Buffer
 public:
     explicit IndexBuffer(Device& device) : Buffer(device, BufferTarget::IndexBuffer) {}
 };
+
+#ifdef SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
+class TextureBuffer : public Buffer
+{
+public:
+    explicit TextureBuffer(Device& device);
+    ~TextureBuffer() override;
+};
+#endif // SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
 
 } // namespace Slic3r::App::Render

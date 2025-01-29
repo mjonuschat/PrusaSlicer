@@ -1,80 +1,44 @@
 cmake_minimum_required(VERSION 3.13)
 project(libvgcode)
 
-# glad library
-if (EMSCRIPTEN OR SLIC3R_OPENGL_ES)
-    set(GLAD_SOURCES
-        glad/include/glad/gles2.h
-        glad/include/KHR/khrplatform.h
-        glad/src/gles2.c
-    )
-else ()
-    set(GLAD_SOURCES
-        glad/include/glad/gl.h
-        glad/include/KHR/khrplatform.h
-        glad/src/gl.c
-    )
-endif ()
+add_library(libvgcode
+    include/Slic3r/App/libvgcode/ColorRange.hpp
+    include/Slic3r/App/libvgcode/Types.hpp
+    include/Slic3r/App/libvgcode/Viewer.hpp
+    include/Slic3r/App/libvgcode/ViewerInputData.hpp
 
-set(LIBVGCODE_SOURCES
-	# API
-	include/ColorPrint.hpp
-    include/ColorRange.hpp
-    include/GCodeInputData.hpp
-    include/PathVertex.hpp
-    include/Types.hpp
-    include/Viewer.hpp
-	# source
-	src/Bitset.hpp
-	src/Bitset.cpp
-	src/CogMarker.hpp
-	src/CogMarker.cpp
-	src/ColorPrint.cpp
-	src/ColorRange.cpp
-	src/ExtrusionRoles.hpp
-	src/ExtrusionRoles.cpp
-	src/GCodeInputData.cpp
-	src/Layers.hpp
-	src/Layers.cpp
-	src/OpenGLUtils.hpp
-	src/OpenGLUtils.cpp
-	src/OptionTemplate.hpp
-	src/OptionTemplate.cpp
-	src/PathVertex.cpp
-	src/Range.hpp
-	src/Range.cpp
-	src/SegmentTemplate.hpp
-	src/SegmentTemplate.cpp
-	src/Settings.hpp
-	src/Settings.cpp
-	src/Shaders.hpp
-	src/ShadersES.hpp
-	src/ToolMarker.hpp
-	src/ToolMarker.cpp
-	src/Types.cpp
-	src/Utils.hpp
-	src/Utils.cpp
-	src/Viewer.cpp
-	src/ViewerImpl.hpp
-	src/ViewerImpl.cpp
-	src/ViewRange.hpp
-	src/ViewRange.cpp
-	${GLAD_SOURCES}
+    src/Slic3r/App/libvgcode/ColorRange.cpp
+    src/Slic3r/App/libvgcode/Bitset.hpp
+    src/Slic3r/App/libvgcode/CogMarker.hpp
+    src/Slic3r/App/libvgcode/CogMarker.cpp
+    src/Slic3r/App/libvgcode/Extruders.hpp
+    src/Slic3r/App/libvgcode/Extruders.cpp
+    src/Slic3r/App/libvgcode/ExtrusionRoles.hpp
+    src/Slic3r/App/libvgcode/ExtrusionRoles.cpp
+    src/Slic3r/App/libvgcode/Layers.hpp
+    src/Slic3r/App/libvgcode/Layers.cpp
+    src/Slic3r/App/libvgcode/ObjExport.hpp
+    src/Slic3r/App/libvgcode/ObjExport.cpp
+    src/Slic3r/App/libvgcode/OptionTemplate.hpp
+    src/Slic3r/App/libvgcode/OptionTemplate.cpp
+    src/Slic3r/App/libvgcode/Range.hpp
+    src/Slic3r/App/libvgcode/Range.cpp
+    src/Slic3r/App/libvgcode/SegmentTemplate.hpp
+    src/Slic3r/App/libvgcode/SegmentTemplate.cpp
+    src/Slic3r/App/libvgcode/Settings.hpp
+    src/Slic3r/App/libvgcode/ToolMarker.hpp
+    src/Slic3r/App/libvgcode/ToolMarker.cpp
+    src/Slic3r/App/libvgcode/Types.cpp
+    src/Slic3r/App/libvgcode/Utils.hpp
+    src/Slic3r/App/libvgcode/Utils.cpp
+    src/Slic3r/App/libvgcode/Viewer.cpp
+    src/Slic3r/App/libvgcode/ViewerImpl.hpp
+    src/Slic3r/App/libvgcode/ViewerImpl.cpp
+    src/Slic3r/App/libvgcode/ViewRange.hpp
+    src/Slic3r/App/libvgcode/ViewRange.cpp
 )
 
-add_library(libvgcode STATIC ${LIBVGCODE_SOURCES})
+target_include_directories(libvgcode PUBLIC include)
+target_include_directories(libvgcode PRIVATE src)
 
-if (EMSCRIPTEN OR SLIC3R_OPENGL_ES)
-    add_compile_definitions(ENABLE_OPENGL_ES)
-endif()
-
-if (WIN32)
-    foreach(_source IN ITEMS ${LIBVGCODE_SOURCES})
-        get_filename_component(_source_path "${_source}" PATH)
-        string(REPLACE "/" "\\" _group_path "${_source_path}")
-        source_group("${_group_path}" FILES "${_source}")
-    endforeach()
-endif ()
-
-# glad includes
-include_directories(glad/include)
+target_link_libraries(libvgcode PUBLIC libslic3r libpgcode slic3r-render)

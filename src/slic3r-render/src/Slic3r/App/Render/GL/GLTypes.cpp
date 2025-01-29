@@ -29,16 +29,29 @@ const char* shader_input_name(VertexAttribType vat)
     return "";
 }
 
+GLenum texture_internal_format(PixelFormat format)
+{
+    switch (format) {
+    case PixelFormat::RGB8:    return GL_RGB;
+    case PixelFormat::RGBA8:   return GL_RGBA;
+    case PixelFormat::R32F:    return GL_R32F;
+    case PixelFormat::R32UI:   return GL_R32UI;
+    case PixelFormat::RGBA32F: return GL_RGBA32F;
+    default: {
+        // Unsupported format
+        throw std::runtime_error{"Unreachable code!"};
+    }
+    }
+}
 
 GLenum texture_format(PixelFormat format)
 {
     switch (format) {
-    case PixelFormat::RGB8:
-        return GL_RGB;
-
-    case PixelFormat::RGBA8:
-        return GL_RGBA;
-
+    case PixelFormat::RGB8:    return GL_RGB;
+    case PixelFormat::RGBA8:   return GL_RGBA;
+    case PixelFormat::R32F:    return GL_RED;
+    case PixelFormat::R32UI:   return GL_RED_INTEGER;
+    case PixelFormat::RGBA32F: return GL_RGBA;
     default: {
         // Unsupported format
         throw std::runtime_error{"Unreachable code!"};
@@ -49,9 +62,11 @@ GLenum texture_format(PixelFormat format)
 GLenum texture_format_type(PixelFormat format)
 {
     switch (format) {
-    case PixelFormat::RGB8:
-    case PixelFormat::RGBA8:
-        return GL_UNSIGNED_BYTE;
+    case PixelFormat::RGB8:    return GL_UNSIGNED_BYTE;
+    case PixelFormat::RGBA8:   return GL_UNSIGNED_BYTE;
+    case PixelFormat::R32F:    return GL_FLOAT;
+    case PixelFormat::R32UI:   return GL_UNSIGNED_INT;
+    case PixelFormat::RGBA32F: return GL_FLOAT;
     default:
         // Unsupported format
         ASSERT(false);

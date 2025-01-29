@@ -131,8 +131,9 @@ void FlexSizer::init(int col_cnt, int row_cnt, ImVec2 min_size/* = ImVec2(0.f, 0
 
 FlexSizer::~FlexSizer()
 {
-    // Clean up Yoga
-    YGNodeFreeRecursive(m_root);
+    if (m_root)
+        // Clean up Yoga
+        YGNodeFreeRecursive(m_root);
 }
 
 // get min size in respect to children

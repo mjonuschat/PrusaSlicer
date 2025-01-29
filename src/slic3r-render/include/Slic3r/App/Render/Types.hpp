@@ -17,18 +17,47 @@ enum class PixelFormat
 {
     RGB8 = 0,
     RGBA8,
+    R32F,
+    R32UI,
+    RGBA32F,
 };
 
 
 enum class BufferTarget {
     VertexBuffer,
-    IndexBuffer
+    IndexBuffer,
+#ifdef SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
+    TextureBuffer,
+#endif // SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
 };
 
 enum class BufferUsage {
     StaticDraw,
     DynamicDraw,
     StreamDraw
+};
+
+enum class BufferAccess
+{
+    ReadOnly,
+    WriteOnly,
+    ReadWrite
+};
+
+enum class TextureMinFilter
+{
+    Nearest,
+    Linear,
+    MipMapNearestNearest,
+    MipMapLinearNearest,
+    MipMapNearestLinear,
+    MipMapLinearLinear,
+};
+
+enum class TextureMagFilter
+{
+    Nearest,
+    Linear,
 };
 
 struct Rect

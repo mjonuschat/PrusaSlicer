@@ -36,8 +36,9 @@ Toolbar::Toolbar(const std::string& name, float min_size /*= 25.f*/, float max_s
 
 Toolbar::~Toolbar()
 {
-    // Clean up Yoga
-    YGNodeFreeRecursive(m_root);
+    if (m_root)
+        // Clean up Yoga
+        YGNodeFreeRecursive(m_root);
 }
 
 void Toolbar::init(const std::string& name, float min_size /*= 25.f*/, float max_size /*= 50.f*/, Yoga::Align align/* = Yoga::Align()*/, Orientation orientation /*= Orient::Vertical*/)

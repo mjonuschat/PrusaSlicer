@@ -26,10 +26,18 @@ public:
 
     void bind_shader(const Shader& s);
     void bind_buffer(BufferTarget target, ResourceId buffer);
+    void unbind_buffer(BufferTarget target);
     void bind_geometry(const Geometry& g, const Shader& s);
     void unbind_geometry();
     void bind_texture(uint8_t unit, const Texture& t);
     void unbind_texture(uint8_t unit, const Texture& t);
+#ifdef SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
+    void bind_texture_buffer_texture(uint8_t unit, ResourceId texture_buffer);
+    void unbind_texture_buffer_texture(uint8_t unit);
+#endif // SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
+
+    void* map_buffer(BufferTarget target, BufferAccess access);
+    void unmap_buffer(BufferTarget target);
 
     void draw(PrimitiveType primitive, size_t offset, size_t count);
 
@@ -38,7 +46,10 @@ private:
     friend class ::Slic3r::App::Render::Geometry;
     void activate_texture_unit(uint8_t unit);
     void bind_vertex_buffer(ResourceId vb);
-    void bind_index_buffer(ResourceId vb);
+    void bind_index_buffer(ResourceId ib);
+#ifdef SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
+    void bind_texture_buffer(ResourceId tb);
+#endif // SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
     void bind_vao(ResourceId vao);
 
 private:
@@ -47,6 +58,10 @@ private:
     ResourceId m_bound_vertex_buffer{0};
     // only active bound IB (not taking bound VAO into account)
     ResourceId m_bound_index_buffer{0};
+#ifdef SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
+    // active bound TB
+    ResourceId m_bound_texture_buffer{ 0 };
+#endif // SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
     IndexType m_bound_index_type{IndexType::UByte};
     ResourceId m_bound_vao{0};
     ResourceId m_bound_shader{0};

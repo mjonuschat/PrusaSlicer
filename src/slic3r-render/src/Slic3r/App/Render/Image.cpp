@@ -12,6 +12,12 @@ size_t pixel_format_bytes_per_pixel(PixelFormat pf)
         return 3;
     case PixelFormat::RGBA8:
         return 4;
+    case PixelFormat::R32F:
+        return 4;
+    case PixelFormat::R32UI:
+        return 4;
+    case PixelFormat::RGBA32F:
+        return 16;
     default:
         // unsupported format
         PANIC("Unsupported pixel format");

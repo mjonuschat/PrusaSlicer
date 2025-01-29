@@ -7,6 +7,7 @@
 #include <Slic3r/Domain/Workbench.hpp>
 #include <Slic3r/Domain/Bed.hpp>
 #include <Slic3r/App/Plater/PlaterRenderModule.hpp>
+#include <Slic3r/App/Preview/PreviewRenderModule.hpp>
 
 #include <Slic3r/Biz/ProjectInteractor.hpp>
 
@@ -23,7 +24,8 @@ private:
 private:
 
     MainFrame* m_main_frame;
-    std::unique_ptr<Plater::PlaterRenderModule> m_render_module;
+    std::unique_ptr<Plater::PlaterRenderModule> m_plater_module;
+    std::unique_ptr<Preview::PreviewRenderModule> m_preview_module;
     Domain::Workbench m_workbench;
     std::unique_ptr<Biz::ProjectInteractor> m_project_interactor;
 

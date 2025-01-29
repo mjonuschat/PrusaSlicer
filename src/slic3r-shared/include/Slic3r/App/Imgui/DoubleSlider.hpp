@@ -192,7 +192,7 @@ public:
     Manager() = default;
     virtual ~Manager() = default;
 
-    void Init(int lowerPos,
+    void init(int lowerPos,
               int higherPos,
               int minPos,
               int maxPos,

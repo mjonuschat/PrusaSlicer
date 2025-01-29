@@ -56,6 +56,7 @@ void GLDeviceInternal::activate_texture_unit(uint8_t unit)
     if (m_active_texture_unit == unit)
         return;
     glActiveTexture(GL_TEXTURE0 + unit);
+    glCheck();
     m_active_texture_unit = unit;
 }
 
@@ -67,6 +68,7 @@ void GLDeviceInternal::bind_texture(uint8_t unit, const Texture& t)
     activate_texture_unit(unit);
     glBindTexture(tex.m_target, tex.m_id);
     glCheck();
+    m_bound_textures[unit] = tex.m_id;
 }
 
 void GLDeviceInternal::unbind_texture(uint8_t unit, const Texture& t)
@@ -76,7 +78,43 @@ void GLDeviceInternal::unbind_texture(uint8_t unit, const Texture& t)
         return;
     activate_texture_unit(unit);
     glBindTexture(tex.m_target, 0);
+    glCheck();
     m_bound_textures[unit] = 0;
+}
+
+#ifdef SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
+void GLDeviceInternal::bind_texture_buffer_texture(uint8_t unit, ResourceId texture_buffer)
+{
+    if (m_bound_textures[unit] == texture_buffer)
+        return;
+    activate_texture_unit(unit);
+    glBindTexture(GL_TEXTURE_BUFFER, texture_buffer);
+    glCheck();
+    m_bound_textures[unit] = texture_buffer;
+}
+
+void GLDeviceInternal::unbind_texture_buffer_texture(uint8_t unit)
+{
+    if (m_bound_textures[unit] == 0)
+        return;
+    activate_texture_unit(unit);
+    glBindTexture(GL_TEXTURE_BUFFER, 0);
+    glCheck();
+    m_bound_textures[unit] = 0;
+}
+#endif // SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
+
+void* GLDeviceInternal::map_buffer(BufferTarget target, BufferAccess access)
+{
+    void* ret = glMapBuffer(type(target), type(access));
+    glCheck();
+    return ret;
+}
+
+void GLDeviceInternal::unmap_buffer(BufferTarget target)
+{
+    glUnmapBuffer(type(target));
+    glCheck();
 }
 
 void GLDeviceInternal::bind_shader(const Shader& s)
@@ -124,6 +162,26 @@ void GLDeviceInternal::bind_index_buffer(ResourceId ib)
     m_bound_indices = ib != 0;
 }
 
+#ifdef SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
+void GLDeviceInternal::bind_texture_buffer(ResourceId tb)
+{
+#if RENDER_TRACE_LOG
+    SPDLOG_INFO("Binding TB {}", tb);
+#endif // RENDER_TRACE_LOG
+    if (m_bound_texture_buffer == tb)
+        return;
+#if RENDER_TRACE_LOG
+    SPDLOG_INFO("Bound TB {}", tb);
+#endif // RENDER_TRACE_LOG
+    glBindBuffer(GL_TEXTURE_BUFFER, tb);
+    glCheck();
+    m_bound_texture_buffer = tb;
+#if RENDER_TRACE_LOG
+    SPDLOG_INFO("(bind_texture_buffer) Setting bound TB {}", tb);
+#endif // RENDER_TRACE_LOG
+}
+#endif // SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
+
 void GLDeviceInternal::bind_vao(ResourceId vao)
 {
 #if RENDER_TRACE_LOG
@@ -156,10 +214,43 @@ void GLDeviceInternal::bind_buffer(BufferTarget target, ResourceId buffer)
         bind_index_buffer(buffer);
         break;
 
+#ifdef SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
+    case BufferTarget::TextureBuffer:
+        bind_texture_buffer(buffer);
+        break;
+#endif // SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
+
     default:
         // unsupported target
         PANIC("Unsupported buffer target to bind to");
 
+    }
+}
+
+void GLDeviceInternal::unbind_buffer(BufferTarget target)
+{
+    glBindBuffer(type(target), 0);
+    glCheck();
+
+    switch (target) {
+    case BufferTarget::VertexBuffer:
+        m_bound_vertex_buffer = 0;
+        break;
+
+    case BufferTarget::IndexBuffer:
+        m_bound_index_buffer = 0;
+        m_bound_indices = false;
+        break;
+
+#ifdef SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
+    case BufferTarget::TextureBuffer:
+        m_bound_texture_buffer = 0;
+        break;
+#endif // SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
+
+    default:
+        // unsupported target
+        PANIC("Unsupported buffer target to bind to");
     }
 }
 
