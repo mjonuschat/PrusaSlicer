@@ -1,7 +1,8 @@
 
 #include "Slic3r/App/WX/WidgetsConfig.hpp"
-#include "Slic3r/App/Color.hpp"
 #include "Slic3r/App/WX/StringConversions.hpp"
+
+#include <libslic3r/Color.hpp>
 
 #include <wx/window.h>
 #include <wx/toplevel.h>
@@ -22,8 +23,6 @@
 #include <wx/msw/dark_mode.h>
 #endif // _MSW_DARK_MODE
 
-
-//#include "libslic3r/Color.hpp"
 
 namespace Slic3r::App::WX {
 

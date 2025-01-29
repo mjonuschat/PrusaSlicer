@@ -77,8 +77,6 @@ set(SLIC3R_SHARED_FILES
 
         include/Slic3r/App/TestRenderModule.hpp
         src/Slic3r/App/TestRenderModule.cpp
-        src/Slic3r/App/Color.cpp
-        include/Slic3r/App/Color.hpp
         src/Slic3r/App/Init.cpp
         include/Slic3r/App/Init.hpp
         include/Slic3r/App/KeyboardShortcut.hpp

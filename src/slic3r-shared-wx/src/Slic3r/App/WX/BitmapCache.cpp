@@ -6,9 +6,9 @@
 #include "Slic3r/App/WX/BitmapCache.hpp"
 #include "Slic3r/App/WX/StringConversions.hpp"
 
-#include "Slic3r/App/Color.hpp"
 #include "Slic3r/App/WX/MacUtils.hpp"
 #include <libslic3r/Utils.hpp>
+#include <libslic3r/Color.hpp>
 
 #include <set>
 

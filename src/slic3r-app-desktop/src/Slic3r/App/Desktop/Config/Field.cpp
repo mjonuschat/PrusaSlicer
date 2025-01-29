@@ -18,12 +18,12 @@
 #include <Slic3r/App/WX/I18N.hpp>
 #include <Slic3r/App/WX/Widgets/BitmapComboBox.hpp>
 
-#include "Slic3r/App/Color.hpp"
 #include "Slic3r/App/Localization.hpp"
 
 #include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/enum_bitmask.hpp"
 #include "libslic3r/GCode/Thumbnails.hpp"
+#include <libslic3r/Color.hpp>
 
 #include <regex>
 #include <wx/tooltip.h>
