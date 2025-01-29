@@ -650,6 +650,7 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/Format/3mf/Relations.cpp
         src/Slic3r/Biz/Format/3mf/Relations.hpp
         src/Slic3r/Biz/Format/3mf/ResultLoad3mf.cpp
+        src/Slic3r/Biz/ProjectLoader.cpp
 
         include/Slic3r/Biz/FileLoadingLogic.hpp
         src/Slic3r/Biz/FileLoadingLogic.cpp
@@ -658,6 +659,25 @@ set(SLIC3R_SHARED_FILES
 
         include/Slic3r/Biz/ArrangeInteractor.hpp
         src/Slic3r/Biz/ArrangeInteractor.cpp
+        
+        include/Slic3r/Biz/PresetUpdater/PresetUpdaterArchiveSync.hpp
+        include/Slic3r/Biz/PresetUpdater/PresetUpdaterIndex.hpp
+        include/Slic3r/Biz/PresetUpdater/PresetUpdaterInteractor.hpp
+        include/Slic3r/Biz/PresetUpdater/PresetUpdaterProcessStatus.hpp
+        include/Slic3r/Biz/PresetUpdater/PresetUpdaterReconfigurationList.hpp
+        include/Slic3r/Biz/PresetUpdater/PresetUpdaterRepository.hpp
+        include/Slic3r/Biz/PresetUpdater/PresetUpdaterRepositoryDatabase.hpp
+        include/Slic3r/Biz/PresetUpdater/PresetUpdaterVendorProfile.hpp
+        src/Slic3r/Biz/PresetUpdater/PresetUpdaterArchiveSync.cpp
+        src/Slic3r/Biz/PresetUpdater/PresetUpdaterIndex.cpp
+        src/Slic3r/Biz/PresetUpdater/PresetUpdaterInteractor.cpp
+        src/Slic3r/Biz/PresetUpdater/PresetUpdaterProcessStatus.cpp
+        src/Slic3r/Biz/PresetUpdater/PresetUpdaterReconfigurationList.cpp
+        src/Slic3r/Biz/PresetUpdater/PresetUpdaterRepository.cpp
+        src/Slic3r/Biz/PresetUpdater/PresetUpdaterRepositoryDatabase.cpp
+        src/Slic3r/Biz/PresetUpdater/PresetUpdaterVendorProfile.cpp
+        src/Slic3r/Biz/PresetUpdater/PresetUpdaterUtils.hpp
+        src/Slic3r/Biz/PresetUpdater/PresetUpdaterUtils.cpp
 )
 
 if (WIN32)
