@@ -12,8 +12,6 @@
 #include <vector>
 #include <cassert>
 
-#include "Point.hpp"
-
 namespace Slic3r {
 
 class ColorRGB
@@ -172,22 +170,6 @@ std::string encode_color(const ColorRGBA& color);
 ColorRGB  to_rgb(const ColorRGBA& other_rgba);
 ColorRGBA to_rgba(const ColorRGB& other_rgb);
 ColorRGBA to_rgba(const ColorRGB& other_rgb, float alpha);
-
-// Color mapping of a value into RGB false colors.
-inline Vec3f value_to_rgbf(float minimum, float maximum, float value) 
-{
-    float ratio = 2.0f * (value - minimum) / (maximum - minimum);
-    float b = std::max(0.0f, (1.0f - ratio));
-    float r = std::max(0.0f, (ratio - 1.0f));
-    float g = 1.0f - b - r;
-    return Vec3f { r, g, b };
-}
-
-// Color mapping of a value into RGB false colors.
-inline Vec3i value_to_rgbi(float minimum, float maximum, float value)
-{
-    return (value_to_rgbf(minimum, maximum, value) * 255).cast<int>();
-}
 
 ColorRGBA picking_decode(unsigned int id);
 unsigned int picking_encode(unsigned char r, unsigned char g, unsigned char b);
