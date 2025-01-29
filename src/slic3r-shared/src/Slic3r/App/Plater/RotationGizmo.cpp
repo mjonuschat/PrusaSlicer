@@ -1,6 +1,7 @@
 #include "Slic3r/App/Plater/RotationGizmo.hpp"
 #include "Slic3r/App/Plater/GizmoDataFactory.hpp"
 #include "Slic3r/App/Plater/PlaterSceneLayer.hpp"
+#include "Slic3r/App/Plater/SceneNodeTag.hpp"
 #include "Slic3r/App/Render/Device.hpp"
 
 namespace Slic3r::App::Plater {
@@ -141,7 +142,26 @@ GizmoActivationState RotationGizmo::on_mouse(GizmoEventContext& ctx, bool only_a
 
     if (event_type == Platform::MouseEvent::Type::ButtonDown) {
         m_dragging = true;
-        m_pivot = extract_position(m_scene_presenter.selection_root().world_transform());
+        m_pivot_world = extract_position(m_scene_presenter.selection_root().world_transform());
+        const auto& selection = m_scene_interactor.selection();
+        if (selection.mode == Biz::Scene::SelectionMode::Instance) {
+            m_pivot_local = m_pivot_world;
+        } else {
+            auto first_element_ref = selection.elements.front();
+            auto parent_ref = Domain::ElementRef{first_element_ref.object_id, first_element_ref.instance_id, 0};
+
+            const Scene::Node *parent_node = ASSERT_VAL(
+                m_scene_presenter.scene().root().query_first([&](const auto& node) {
+                    auto* node_tag = node->template tag_of_type<SceneNodeTag>();
+                    return node_tag && node_tag->matches_element(parent_ref);
+                })
+            );
+
+            auto parent_world = parent_node->world_transform();
+            m_pivot_local = extract_position(
+                parent_world.inverse() * m_scene_presenter.selection_root().
+                world_transform());
+        }
         return GizmoActivationState::Active;
     }
 
@@ -149,7 +169,7 @@ GizmoActivationState RotationGizmo::on_mouse(GizmoEventContext& ctx, bool only_a
         return GizmoActivationState::Inactive;
 
     if (m_curr_axis != AxisType::None) {
-        Vec2d pos = to_2d(mouse_position_in_local_plane(m_curr_axis, Transform3d::Identity(), m_pivot,
+        Vec2d pos = to_2d(mouse_position_in_local_plane(m_curr_axis, Transform3d::Identity(), m_pivot_world,
           Linef3(pick_ray.origin, pick_ray.point_at(10.0))));
 
         Vec2d orig_dir = Vec2d::UnitX();
@@ -166,7 +186,7 @@ GizmoActivationState RotationGizmo::on_mouse(GizmoEventContext& ctx, bool only_a
         if (modifier != nullptr) {
             const App::Scene::Camera& camera = m_scene_presenter.scene().camera();
             double scale = camera.cam_projection()
-                .constant_screen_space_size_scale(camera, (m_pivot - camera.position()).norm()) * ScenePresenter::screen_space_sized_modifier();
+                .constant_screen_space_size_scale(camera, (m_pivot_world - camera.position()).norm()) * ScenePresenter::screen_space_sized_modifier();
             len /= scale;
         }
 
@@ -191,9 +211,9 @@ GizmoActivationState RotationGizmo::on_mouse(GizmoEventContext& ctx, bool only_a
         m_handles[size_t(m_curr_axis) - 1]->set_local_transform(xform.matrix());
 
         xform = Transform3d::Identity();
-        xform.translate(m_pivot);
+        xform.translate(m_pivot_local);
         xform.rotate(Eigen::AngleAxisd(theta, axis_type_dir(m_curr_axis)));
-        xform.translate(-m_pivot);
+        xform.translate(-m_pivot_local);
         m_scene_presenter.set_freeze_selection_center(true);
         m_scene_interactor.transform_selection(xform.matrix(), m_xform_memento);
         m_scene_presenter.set_freeze_selection_center(false);

@@ -57,7 +57,8 @@ private:
         Radii fine;
     };
     Snap m_snap;
-    Vec3d m_pivot{ Vec3d::Zero()};
+    Vec3d m_pivot_world{ Vec3d::Zero()};
+    Vec3d m_pivot_local{ Vec3d::Zero()};
     Biz::Scene::TransformMemento m_xform_memento;
     Scene::Node::NodeList m_handles;
 };
