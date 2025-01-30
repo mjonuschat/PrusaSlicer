@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include <cstdint>
 #include <cstddef>
 
 namespace Slic3r::Domain {
