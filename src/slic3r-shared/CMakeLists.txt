@@ -41,6 +41,15 @@ set(SLIC3R_SHARED_FILES
 
         include/Slic3r/App/View/IPanelView.hpp
 
+        src/Slic3r/App/Preview/DoubleSliderForLayers.cpp
+        include/Slic3r/App/Preview/DoubleSliderForLayers.hpp
+        src/Slic3r/App/Preview/DoubleSliderForGCode.cpp
+        include/Slic3r/App/Preview/DoubleSliderForGCode.hpp
+        src/Slic3r/App/Preview/ExtrudersSequence.cpp
+        include/Slic3r/App/Preview/ExtrudersSequence.hpp
+        src/Slic3r/App/Preview/TickCodeManager.cpp
+        include/Slic3r/App/Preview/TickCodeManager.hpp
+
         src/Slic3r/App/Scene/Scene.cpp
         include/Slic3r/App/Scene/Scene.hpp
         src/Slic3r/App/Scene/Node.cpp
@@ -176,11 +185,14 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Domain/Workbench.hpp
         src/Slic3r/Domain/ConfigContainer.cpp
         include/Slic3r/Domain/ConfigContainer.hpp
-
         include/Slic3r/Biz/Slicing/BackgroundProcess.hpp
         include/Slic3r/Biz/Slicing/SlicingInteractor.hpp
         src/Slic3r/Biz/Slicing/BackgroundProcess.cpp
         src/Slic3r/Biz/Slicing/SlicingInteractor.cpp
+        src/Slic3r/Domain/GCode.cpp
+        include/Slic3r/Domain/GCode.hpp
+        src/Slic3r/Domain/Units.cpp
+        include/Slic3r/Domain/Units.hpp
 )
 
 find_package(NanoSVG REQUIRED)
