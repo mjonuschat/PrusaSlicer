@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <cstdint>
 #include <cstddef>
 
 namespace Slic3r::Domain {
