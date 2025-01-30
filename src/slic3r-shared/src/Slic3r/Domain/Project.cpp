@@ -70,5 +70,32 @@ ModelInstance* Project::find_instance_by_id(size_t obj_id, size_t inst_id)
     return find_by_id<ModelInstance>(obj->instances, inst_id);
 }
 
+const BedInstance* Project::find_bed_instance_by_id(size_t id) const
+{
+    for (const auto& cc : m_config_containers)
+        if (auto* bed_inst = find_by_id(cc->bed_instances(), id))
+            return bed_inst;
+    return nullptr;
+}
+
+BedInstance* Project::find_bed_instance_by_id(size_t id)
+{
+    for (const auto& cc : m_config_containers)
+        if (auto* bed_inst = find_by_id(cc->bed_instances(), id))
+            return bed_inst;
+    return nullptr;
+}
+
+const Bed* Project::find_bed_by_id(size_t id) const
+{
+    return find_by_id(m_bed_container.beds(), id);
+}
+
+Bed* Project::find_bed_by_id(size_t id)
+{
+    return find_by_id(m_bed_container.beds(), id);
+}
+
+
 
 } // namespace Slic3r::Domain

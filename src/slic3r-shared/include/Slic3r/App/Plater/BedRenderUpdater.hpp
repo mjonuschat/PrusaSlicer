@@ -15,16 +15,17 @@ class BedRenderUpdater : public Scene::ICameraUpdateListener,
                          public Biz::ISelectedProjectChangedListener
 {
 public:
-    BedRenderUpdater(ISceneProvider& scene_provider, const Domain::Workbench& workbench, Render::Device& device)
-    : m_scene_provider(scene_provider)
-    , m_workbench(workbench)
-    , m_device(device)
+    BedRenderUpdater(
+        ISceneProvider& scene_provider, const Domain::Workbench& workbench, Render::Device& device
+    )
+        : m_scene_provider(scene_provider), m_workbench(workbench), m_device(device)
     {}
 
     /**
-      * @brief Performs all updates
-      */
-    void update_all() {
+     * @brief Performs all updates
+     */
+    void update_all()
+    {
         update_materials();
         update_positions();
         update_elements_state();

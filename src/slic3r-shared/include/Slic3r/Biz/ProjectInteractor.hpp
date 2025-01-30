@@ -35,6 +35,7 @@ public:
         add_selected_config_container_changed_listener(&m_preset_interactor);
         add_selected_config_container_changed_listener(&m_scene_interactor);
         add_selected_project_changed_listener(&m_scene_interactor);
+        m_scene_interactor.add_bed_instance_selection_changed_listener(this);
     }
 
     /**

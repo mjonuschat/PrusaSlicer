@@ -32,21 +32,26 @@ public:
     [[nodiscard]] ConfigContainerList& config_containers() { return m_config_containers; }
     [[nodiscard]] const ConfigContainerList& config_containers() const { return m_config_containers; }
 
-    const Model& model() const { return *m_model; }
-    Model& model() { return *m_model; }
+    [[nodiscard]] const Model& model() const { return *m_model; }
+    [[nodiscard]] Model& model() { return *m_model; }
 
     [[nodiscard]] const ConfigContainer* find_config_container(size_t id) const;
     [[nodiscard]] ConfigContainer* find_config_container(size_t id);
 
-    const ModelObject* find_object_by_id(size_t id) const;
-    const ModelVolume* find_volume_by_id(size_t obj_id, size_t vol_id) const;
-    const ModelInstance* find_instance_by_id(size_t obj_id, size_t inst_id) const;
-    ModelObject* find_object_by_id(size_t id);
-    ModelVolume* find_volume_by_id(size_t obj_id, size_t vol_id);
-    ModelInstance* find_instance_by_id(size_t obj_id, size_t inst_id);
+    [[nodiscard]] const ModelObject* find_object_by_id(size_t id) const;
+    [[nodiscard]] const ModelVolume* find_volume_by_id(size_t obj_id, size_t vol_id) const;
+    [[nodiscard]] const ModelInstance* find_instance_by_id(size_t obj_id, size_t inst_id) const;
+    [[nodiscard]] ModelObject* find_object_by_id(size_t id);
+    [[nodiscard]] ModelVolume* find_volume_by_id(size_t obj_id, size_t vol_id);
+    [[nodiscard]] ModelInstance* find_instance_by_id(size_t obj_id, size_t inst_id);
 
-    const BedContainer& bed_container() const { return m_bed_container; }
-    BedContainer& bed_container() { return m_bed_container; }
+    [[nodiscard]] const BedInstance* find_bed_instance_by_id(size_t id) const;
+    [[nodiscard]] BedInstance* find_bed_instance_by_id(size_t id);
+
+    [[nodiscard]] const BedContainer& bed_container() const { return m_bed_container; }
+    [[nodiscard]] BedContainer& bed_container() { return m_bed_container; }
+    [[nodiscard]] const Bed* find_bed_by_id(size_t id) const;
+    [[nodiscard]] Bed* find_bed_by_id(size_t id);
 
 private:
     std::string m_file_name;

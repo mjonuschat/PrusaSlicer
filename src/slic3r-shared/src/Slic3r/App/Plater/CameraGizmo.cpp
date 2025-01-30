@@ -1,5 +1,7 @@
 #include "Slic3r/App/Plater/CameraGizmo.hpp"
+#include "Slic3r/App/Plater/NodePredicates.hpp"
 #include "Slic3r/App/Scene/Plane.hpp"
+
 
 namespace Slic3r::App::Plater {
 
@@ -137,7 +139,7 @@ GizmoActivationState CameraGizmo::on_mouse(GizmoEventContext& ctx, bool only_act
     const Platform::MouseEvent& event = ctx.mouse_event();
     const auto type = event.type();
     if (type == Platform::MouseEvent::Type::ButtonDown) {
-        if (!ctx.pick_results().empty())
+        if (any_draggable(ctx.pick_results()))
             return GizmoActivationState::Inactive;
 
         const bool pan = event.button() == Platform::MouseButton::Right ||

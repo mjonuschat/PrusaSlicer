@@ -18,21 +18,17 @@ GizmoActivationState BedSelectGizmo::on_mouse(GizmoEventContext& ctx, bool only_
     auto type = evt.type();
 
     if (type == Platform::MouseEvent::Type::ButtonDown) {
-        if (evt.button() != Platform::MouseButton::Left)
+        if (evt.button() != Platform::MouseButton::Left || ctx.pick_results().empty())
             return GizmoActivationState::Inactive;
 
-        auto it =
-            std::find_if(ctx.pick_results().begin(), ctx.pick_results().end(), [&](const auto& item) {
-                return item.node->template has_tag_of_type<BedNodeTag>();
-            });
-
-        if (it == ctx.pick_results().end())
-            return GizmoActivationState::Inactive;
-
-        BedNodeTag* tag = it->node->tag_of_type<BedNodeTag>();
-        Domain::BedRef instance = { tag->config_container_id, tag->instance_id };
-        m_scene_interactor.select_bed_instance(instance);
-        return GizmoActivationState::Done;
+        BedNodeTag* tag = ctx.pick_results().front().node->tag_of_type<BedNodeTag>();
+        if (tag) {
+            Domain::BedRef instance = { tag->config_container_id, tag->instance_id };
+            if (m_scene_interactor.selected_bed_instance() != instance) {
+                m_scene_interactor.select_bed_instance(instance);
+                return GizmoActivationState::Done;
+            }
+        }
     }
 
     return GizmoActivationState::Inactive;

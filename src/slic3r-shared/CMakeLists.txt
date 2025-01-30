@@ -15,6 +15,7 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Plater/CameraGizmo.cpp
         include/Slic3r/App/Plater/GizmoNodeTag.hpp
         include/Slic3r/App/Plater/SceneNodeTag.hpp
+        include/Slic3r/App/Plater/NodePredicates.hpp
         include/Slic3r/App/Plater/QuickSelectGizmo.hpp
         src/Slic3r/App/Plater/QuickSelectGizmo.cpp
         include/Slic3r/App/Plater/QuickDragGizmo.hpp

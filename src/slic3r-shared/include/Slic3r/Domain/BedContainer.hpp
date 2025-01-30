@@ -37,6 +37,7 @@ public:
 
     using BedList = std::vector<std::unique_ptr<Bed>>;
     [[nodiscard]] const BedList& beds() const { return m_beds; }
+    [[nodiscard]] BedList& beds() { return m_beds; }
 
     void reset() { m_beds.clear(); }
 

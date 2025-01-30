@@ -20,8 +20,6 @@ public:
      */
     void layout(Domain::Project& project, const Vec2d& gap);
 
-private:
-//    Vec2d m_max_size{ Vec2d::Zero() };
 };
 
 } // namespace Slic3r::Biz::Scene

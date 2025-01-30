@@ -1,9 +1,5 @@
 #include "Slic3r/App/Plater/GizmoManager.hpp"
 
-#ifndef DEBUG_GIZMO_MANAGER
-#define DEBUG_GIZMO_MANAGER 1
-#endif
-
 #if DEBUG_GIZMO_MANAGER
 #include "Slic3r/TypeInfo.hpp"
 #include "Slic3r/Log.hpp"
