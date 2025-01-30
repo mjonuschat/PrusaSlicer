@@ -13,12 +13,78 @@
 #include <atomic>
 #include <mutex>
 
+#include <jthread/JThread.hpp>
+
 #include "ObjectID.hpp"
 #include "Model.hpp"
 #include "PlaceholderParser.hpp"
 #include "PrintConfig.hpp"
+#include "libslic3r/GCode/GCodeProcessor.hpp"
 
 namespace Slic3r {
+
+struct PrintStatistics
+{
+    PrintStatistics() { clear(); }
+    float                           normal_print_time_seconds;
+    float                           silent_print_time_seconds;
+    std::string                     estimated_normal_print_time;
+    std::string                     estimated_silent_print_time;
+    double                          total_used_filament;
+    double                          total_extruded_volume;
+    double                          total_cost;
+    int                             total_toolchanges;
+    double                          total_weight;
+    double                          total_wipe_tower_cost;
+    double                          total_wipe_tower_filament;
+    double                          total_wipe_tower_filament_weight;
+    std::vector<unsigned int>       printing_extruders;
+    unsigned int                    initial_extruder_id;
+    std::string                     initial_filament_type;
+    std::string                     printing_filament_types;
+    std::map<size_t, double>        filament_stats;
+
+    // Config with the filled in print statistics.
+    DynamicConfig           config() const;
+    // Config with the statistics keys populated with placeholder strings.
+    static DynamicConfig    placeholders();
+    // Replace the print statistics placeholders in the path.
+    std::string             finalize_output_path(const std::string &path_in) const;
+
+    void clear() {
+        total_used_filament    = 0.;
+        total_extruded_volume  = 0.;
+        total_cost             = 0.;
+        total_toolchanges      = 0;
+        total_weight           = 0.;
+        total_wipe_tower_cost  = 0.;
+        total_wipe_tower_filament = 0.;
+        total_wipe_tower_filament_weight = 0.;
+        initial_extruder_id    = 0;
+        initial_filament_type.clear();
+        printing_filament_types.clear();
+        filament_stats.clear();
+        printing_extruders.clear();
+    }
+
+    static const std::string FilamentUsedG;
+    static const std::string FilamentUsedGMask;
+    static const std::string TotalFilamentUsedG;
+    static const std::string TotalFilamentUsedGMask;
+    static const std::string TotalFilamentUsedGValueMask;
+    static const std::string FilamentUsedCm3;
+    static const std::string FilamentUsedCm3Mask;
+    static const std::string FilamentUsedMm;
+    static const std::string FilamentUsedMmMask;
+    static const std::string FilamentCost;
+    static const std::string FilamentCostMask;
+    static const std::string TotalFilamentCost;
+    static const std::string TotalFilamentCostMask;
+    static const std::string TotalFilamentCostValueMask;
+    static const std::string TotalFilamentUsedWipeTower;
+    static const std::string TotalFilamentUsedWipeTowerValueMask;
+};
+
 
 class CanceledException : public std::exception {
 public:
@@ -394,6 +460,24 @@ private:
     const PrintBase *m_print;
 };
 
+namespace Biz::Print {
+enum class ApplyStatus {
+    unchanged,
+    changed
+};
+
+class IPrint {
+public:
+    virtual ApplyStatus update(const Model &model, DynamicPrintConfig config) = 0;
+    virtual void slice() = 0;
+    virtual bool empty() const = 0;
+    virtual ~IPrint() = default;
+
+    JThread::StopToken stop_token;
+    std::function<void(GCodeProcessorResult&&, PrintStatistics&&)> on_result;
+};
+}
+
 /**
  * @brief Printing involves slicing and export of device dependent instructions.
  *
@@ -405,7 +489,7 @@ private:
  * The PrintBase class will abstract this flow for different technologies.
  *
  */
-class PrintBase : public ObjectBase
+class PrintBase : public ObjectBase, public Biz::Print::IPrint
 {
 public:
 	PrintBase() : m_placeholder_parser(&m_full_print_config) { this->restart(); }
@@ -415,9 +499,6 @@ public:
 
     // Reset the print status including the copy of the Model / ModelObject hierarchy.
     virtual void            clear() = 0;
-    // The Print is empty either after clear() or after apply() over an empty model,
-    // or after apply() over a model, where no object is printable (all outside the print volume).
-    virtual bool            empty() const = 0;
     // List of existing PrintObject IDs, to remove notifications for non-existent IDs.
     virtual std::vector<ObjectID> print_object_ids() const = 0;
 
@@ -434,6 +515,15 @@ public:
         APPLY_STATUS_INVALIDATED,
     };
     virtual ApplyStatus     apply(const Model &model, DynamicPrintConfig config) = 0;
+
+    virtual Biz::Print::ApplyStatus update(const Model &model, DynamicPrintConfig config) override {
+        const ApplyStatus status{this->apply(model, std::move(config))};
+        if (status == APPLY_STATUS_UNCHANGED) {
+            return Biz::Print::ApplyStatus::unchanged;
+        }
+        return Biz::Print::ApplyStatus::changed;
+    }
+
     const Model&            model() const { return m_model; }
 
     struct TaskParams {
@@ -450,7 +540,7 @@ public:
     // After calling the apply() function, call set_task() to limit the task to be processed by process().
     virtual void            set_task(const TaskParams &params) = 0;
     // Perform the calculation. This is the only method that is to be called at a worker thread.
-    virtual void            process() = 0;
+    virtual void process() = 0;
     // Clean up after process() finished, either with success, error or if canceled.
     // The adjustments on the Print / PrintObject data due to set_task() are to be reverted here.
     virtual void            finalize() = 0;
@@ -545,7 +635,12 @@ protected:
 
     // If the background processing stop was requested, throw CanceledException.
     // To be called by the worker thread and its sub-threads (mostly launched on the TBB thread pool) regularly.
-    void                   throw_if_canceled() const { if (m_cancel_status.load(std::memory_order_acquire)) throw CanceledException(); }
+    void                   throw_if_canceled() const {
+        if (stop_token.stop_requested()) {
+            throw CanceledException();
+        }
+        if (m_cancel_status.load(std::memory_order_acquire)) throw CanceledException();
+    }
     // Wrapper around this->throw_if_canceled(), so that throw_if_canceled() may be passed to a function without making throw_if_canceled() public.
     PrintTryCancel         make_try_cancel() const { return PrintTryCancel(this); }
 

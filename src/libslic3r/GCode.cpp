@@ -673,6 +673,12 @@ void GCodeGenerator::do_export(Print* print, const char* path, GCodeProcessorRes
 
     BOOST_LOG_TRIVIAL(info) << "Exporting G-code finished" << log_memory_info();
     print->set_done(psGCodeExport);
+
+    if (print->on_result) {
+        GCodeProcessorResult processor_result{m_processor.extract_result()};
+        processor_result.filename = path;
+        print->on_result(std::move(processor_result), PrintStatistics{print->m_print_statistics});
+    }
 }
 
 // free functions called by GCodeGenerator::_do_export()

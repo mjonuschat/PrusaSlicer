@@ -517,68 +517,6 @@ bool is_toolchange_required(
     const unsigned current_extruder_id
 );
 
-struct PrintStatistics
-{
-    PrintStatistics() { clear(); }
-    float                           normal_print_time_seconds;
-    float                           silent_print_time_seconds;
-    std::string                     estimated_normal_print_time;
-    std::string                     estimated_silent_print_time;
-    double                          total_used_filament;
-    double                          total_extruded_volume;
-    double                          total_cost;
-    int                             total_toolchanges;
-    double                          total_weight;
-    double                          total_wipe_tower_cost;
-    double                          total_wipe_tower_filament;
-    double                          total_wipe_tower_filament_weight;
-    std::vector<unsigned int>       printing_extruders;
-    unsigned int                    initial_extruder_id;
-    std::string                     initial_filament_type;
-    std::string                     printing_filament_types;
-    std::map<size_t, double>        filament_stats;
-
-    // Config with the filled in print statistics.
-    DynamicConfig           config() const;
-    // Config with the statistics keys populated with placeholder strings.
-    static DynamicConfig    placeholders();
-    // Replace the print statistics placeholders in the path.
-    std::string             finalize_output_path(const std::string &path_in) const;
-
-    void clear() {
-        total_used_filament    = 0.;
-        total_extruded_volume  = 0.;
-        total_cost             = 0.;
-        total_toolchanges      = 0;
-        total_weight           = 0.;
-        total_wipe_tower_cost  = 0.;
-        total_wipe_tower_filament = 0.;
-        total_wipe_tower_filament_weight = 0.;
-        initial_extruder_id    = 0;
-        initial_filament_type.clear();
-        printing_filament_types.clear();
-        filament_stats.clear();
-        printing_extruders.clear();
-    }
-
-    static const std::string FilamentUsedG;
-    static const std::string FilamentUsedGMask;
-    static const std::string TotalFilamentUsedG;
-    static const std::string TotalFilamentUsedGMask;
-    static const std::string TotalFilamentUsedGValueMask;
-    static const std::string FilamentUsedCm3;
-    static const std::string FilamentUsedCm3Mask;
-    static const std::string FilamentUsedMm;
-    static const std::string FilamentUsedMmMask;
-    static const std::string FilamentCost;
-    static const std::string FilamentCostMask;
-    static const std::string TotalFilamentCost;
-    static const std::string TotalFilamentCostMask;
-    static const std::string TotalFilamentCostValueMask;
-    static const std::string TotalFilamentUsedWipeTower;
-    static const std::string TotalFilamentUsedWipeTowerValueMask;
-};
-
 using PrintObjectPtrs          = std::vector<PrintObject*>;
 using ConstPrintObjectPtrs     = std::vector<const PrintObject*>;
 
@@ -613,6 +551,8 @@ public:
     void                process() override;
     void                finalize() override { PrintBaseWithState<PrintStep, psCount>::finalize_impl(m_objects); }
     void                cleanup() override;
+
+    void slice() override;
 
     // Exports G-code into a file name based on the path_template, returns the file path of the generated G-code file.
     // If preview_data is not null, the preview_data is filled in for the G-code visualization (not used by the command line Slic3r).

@@ -843,6 +843,12 @@ void SLAPrint::process()
 
 }
 
+void SLAPrint::slice() {
+    this->process();
+    this->finalize();
+    this->cleanup();
+};
+
 bool SLAPrint::invalidate_state_by_config_options(const std::vector<t_config_option_key> &opt_keys, bool &invalidate_all_model_objects)
 {
     using namespace std::string_view_literals;

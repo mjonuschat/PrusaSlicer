@@ -102,6 +102,13 @@ namespace Slic3r {
 
     struct GCodeProcessorResult
     {
+        GCodeProcessorResult() = default;
+        GCodeProcessorResult(const GCodeProcessorResult&) = delete;
+        GCodeProcessorResult& operator=(const GCodeProcessorResult&) = delete;
+
+        GCodeProcessorResult(GCodeProcessorResult&&) = default;
+        GCodeProcessorResult& operator=(GCodeProcessorResult&&) = default;
+
         struct SettingsIds
         {
             std::string print;

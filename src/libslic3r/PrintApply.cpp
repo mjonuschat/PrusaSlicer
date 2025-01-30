@@ -17,6 +17,9 @@
 #include <cassert>
 #include <cstddef>
 
+#include <boost/filesystem.hpp>
+#include <boost/filesystem/operations.hpp>
+
 #include "Model.hpp"
 #include "Print.hpp"
 #include "admesh/stl.h"
@@ -1601,6 +1604,15 @@ void Print::cleanup()
         if (! Print::is_shared_print_object_step_valid_unguarded(this_objects, posSupportSpotsSearch))
             shared_regions->generated_support_points.reset();
     }
+}
+
+void Print::slice() {
+    this->process();
+    auto path{boost::filesystem::temp_directory_path() / boost::filesystem::unique_path()};
+    path.replace_extension(".gcode");
+    this->export_gcode(path.string(), nullptr);
+    this->finalize();
+    this->cleanup();
 }
 
 bool Print::is_shared_print_object_step_valid_unguarded(SpanOfConstPtrs<PrintObject> print_objects, PrintObjectStep print_object_step)

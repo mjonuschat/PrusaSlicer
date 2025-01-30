@@ -619,6 +619,7 @@ target_link_libraries(libslic3r PUBLIC
     boost_headeronly
     NanoSVG::nanosvg
     NanoSVG::nanosvgrast
+    slic3r-jthread
 )
 
 if (APPLE)
