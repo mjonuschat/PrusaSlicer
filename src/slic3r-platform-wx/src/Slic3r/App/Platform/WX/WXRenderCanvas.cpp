@@ -265,8 +265,8 @@ static wxGLAttributes create_wxglattributes()
     return ret;
 }
 
-WXRenderCanvas::WXRenderCanvas(wxWindow* parent)
-: wxGLCanvas(parent, create_wxglattributes()), m_start_time(Clock::now())
+WXRenderCanvas::WXRenderCanvas(wxWindow* parent, std::unique_ptr<Biz::Platform::IMainThreadDispatcher> &&main_thread_dispatcher)
+: AbstractRenderCanvas{std::move(main_thread_dispatcher)}, wxGLCanvas(parent, create_wxglattributes()), m_start_time(Clock::now())
 {
     wxGLContextAttrs attrs;
     attrs.PlatformDefaults().CoreProfile();
@@ -571,7 +571,7 @@ void WXRenderCanvas::on_mouse(wxMouseEvent& evt)
 
 void WXRenderCanvas::on_idle(wxIdleEvent& event)
 {
-    dispatch_enqueued();
+    m_main_thread_dispatcher->dispatch_enqueued();
     bool render_requested = get_and_reset_render_requested();
     //std::cout << "Idle: render requested: " << render_requested << "\n";
     if (render_requested)
@@ -629,9 +629,9 @@ Render::Device& WXRenderCanvas::device()
 }
 
 
-void WXRenderCanvas::dispatch_on_main_thread(IMainThreadDispatcher::Function func)
+void WXRenderCanvas::dispatch_on_main_thread(Biz::Platform::IMainThreadDispatcher::Function func)
 {
-    AbstractRenderCanvas::dispatch_on_main_thread(func);
+    m_main_thread_dispatcher->dispatch_on_main_thread(std::move(func));
     wxApp::GetInstance()->WakeUpIdle();
 }
 

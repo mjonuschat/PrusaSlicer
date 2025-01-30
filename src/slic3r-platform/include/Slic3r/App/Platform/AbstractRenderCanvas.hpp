@@ -3,6 +3,7 @@
 #define USE_IMGUI_RENDER 1
 
 #include <vector>
+#include <libassert/assert.hpp>
 
 #include "Slic3r/App/Platform/AbstractRenderModule.hpp"
 #include "Slic3r/Biz/Platform/IRenderRequestHandler.hpp"
@@ -28,9 +29,15 @@ namespace Slic3r::App::Platform {
  * - facilitate rendering of render module
  * - translate platform specific events and push them the render module
  */
-class AbstractRenderCanvas : public Biz::Platform::IRenderRequestHandler, public Biz::Platform::IMainThreadDispatcher
+class AbstractRenderCanvas : public Biz::Platform::IRenderRequestHandler
 {
 public:
+    AbstractRenderCanvas(std::unique_ptr<Biz::Platform::IMainThreadDispatcher>&& main_thread_dispatcher)
+        : m_main_thread_dispatcher{std::move(main_thread_dispatcher)}
+    {
+        ASSERT(m_main_thread_dispatcher);
+    }
+
     ~AbstractRenderCanvas() override = default;
 
 #if USE_IMGUI_RENDER
@@ -45,15 +52,6 @@ public:
 
     // IRenderRequestHandler interface impl
     void request_render() override;
-
-    void dispatch_on_main_thread(Function func) override
-    { m_main_thread_dispatcher.dispatch_on_main_thread(func); }
-
-    void dispatch_on_main_thread_after(Function func) override
-    { m_main_thread_dispatcher.dispatch_on_main_thread_after(func); }
-
-    bool dispatch_enqueued() override
-    { return m_main_thread_dispatcher.dispatch_enqueued(); }
 
 protected:
     virtual void begin_frame_platform() = 0;
@@ -107,7 +105,7 @@ protected:
 
     MouseEvents m_enqueued_mouse_events;
     KeyboardEvents m_enqueued_keyboard_events;
-    StdMainThreadDispatcher m_main_thread_dispatcher;
+    std::unique_ptr<Biz::Platform::IMainThreadDispatcher> m_main_thread_dispatcher;
 private:
 #if USE_IMGUI_RENDER
     std::unique_ptr<Render::ImguiRender> m_imgui_render;

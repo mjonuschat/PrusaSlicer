@@ -19,6 +19,8 @@ ImguiRender::ImguiRender(Device& device)
     , m_font_helper(device)
 {}
 
+ImguiRender::~ImguiRender() = default;
+
 void ImguiRender::set_font(const std::optional<std::string>& language, const std::optional<float>& font_size)
 {
     m_font_helper.set_font(language, font_size);

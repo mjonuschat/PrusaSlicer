@@ -5,6 +5,7 @@
 #include "Slic3r/Biz/Preset/PresetInteractor.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 #include "Slic3r/Biz/ISelectedBedInstanceChangedListener.hpp"
+#include "Slic3r/Biz/Slicing/SlicingInteractor.hpp"
 
 namespace Slic3r::Domain {
 class Project;
@@ -36,6 +37,7 @@ public:
         add_selected_config_container_changed_listener(&m_scene_interactor);
         add_selected_project_changed_listener(&m_scene_interactor);
         m_scene_interactor.add_bed_instance_selection_changed_listener(this);
+        add_selected_project_changed_listener(&m_slicing_interactor);
     }
 
     /**
@@ -152,6 +154,8 @@ public:
      */
     Scene::SceneInteractor& scene_interactor() { return m_scene_interactor; }
 
+    Slicing::SlicingInteractor& slicing_interactor() { return m_slicing_interactor; }
+
     /**
      * @name ISelectedProjectChangedListener: active project changed notification
      * @{
@@ -227,6 +231,7 @@ private:
 
     Preset::PresetInteractor m_preset_interactor;
     Scene::SceneInteractor m_scene_interactor;
+    Slicing::SlicingInteractor m_slicing_interactor{};
 };
 
 } // namespace Slic3r::Biz

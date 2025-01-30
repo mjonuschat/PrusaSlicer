@@ -25,6 +25,10 @@ bool DesktopApp::OnInit()
     init_paths();
     init_translations();
     m_workbench.load_configs();
+
+    auto main_thread_dispatcher{std::make_unique<Platform::StdMainThreadDispatcher>()};
+    Biz::Platform::PlatformServices::instance().set_main_thread_dispatcher(main_thread_dispatcher.get());
+
     m_project_interactor = std::make_unique<Biz::ProjectInteractor>(m_workbench);
     m_render_module =
         std::make_unique<Plater::PlaterRenderModule>(m_workbench, *m_project_interactor);
@@ -37,9 +41,9 @@ bool DesktopApp::OnInit()
 
     m_project_interactor->new_project();
 
-    m_main_frame = new MainFrame(m_workbench, m_project_interactor->preset_interactor());
+    m_main_frame = new MainFrame(m_workbench, m_project_interactor->preset_interactor(), std::move(main_thread_dispatcher));
     Platform::WX::WXRenderCanvas& canvas = m_main_frame->get_render_canvas();
-    Biz::Platform::PlatformServices::instance().set_services(&canvas, &canvas);
+    Biz::Platform::PlatformServices::instance().set_render_request_handler(&canvas);
 #if USE_IMGUI_RENDER
     canvas.set_language(Localization::instance().active_language());
     canvas.set_font_size(1.7777f * float(App::WX::w_config()->normal_font().GetPointSize()));

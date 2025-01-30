@@ -14,14 +14,14 @@ namespace Slic3r::App::Platform::WX {
 class WXRenderCanvas : public Platform::AbstractRenderCanvas, public wxGLCanvas
 {
 public:
-    explicit WXRenderCanvas(wxWindow* parent);
+    WXRenderCanvas(wxWindow* parent, std::unique_ptr<Biz::Platform::IMainThreadDispatcher>&& main_thread_dispatcher);
     ~WXRenderCanvas();
 
     WXRenderCanvas(const WXRenderCanvas&) = delete;
     WXRenderCanvas operator=(const WXRenderCanvas&) = delete;
 
     void render() override;
-    void dispatch_on_main_thread(Function func) override;
+    void dispatch_on_main_thread(Biz::Platform::IMainThreadDispatcher::Function  func);
 
 protected:
     void begin_frame_platform() override;
@@ -30,7 +30,6 @@ protected:
     void end_frame_platform() override;
     double platform_time() override;
     Render::Device& device() override;
-
 
 private:
     void on_paint(wxPaintEvent& event);

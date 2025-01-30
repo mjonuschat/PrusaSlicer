@@ -18,6 +18,7 @@ class ImguiRender
 {
 public:
     explicit ImguiRender(Device& device);
+    ~ImguiRender();
 
     const std::string& language() const { return m_font_helper.language(); }
     float font_size() const { return m_font_helper.font_size(); }

@@ -172,6 +172,11 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Domain/Workbench.hpp
         src/Slic3r/Domain/ConfigContainer.cpp
         include/Slic3r/Domain/ConfigContainer.hpp
+
+        include/Slic3r/Biz/Slicing/BackgroundProcess.hpp
+        include/Slic3r/Biz/Slicing/SlicingInteractor.hpp
+        src/Slic3r/Biz/Slicing/BackgroundProcess.cpp
+        src/Slic3r/Biz/Slicing/SlicingInteractor.cpp
 )
 
 find_package(NanoSVG REQUIRED)
@@ -217,6 +222,12 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
             test/Slic3r/App/Scene/Node.cpp
             test/Slic3r/App/Scene/Ray.cpp
             test/Slic3r/Biz/ProjectInteractorTests.cpp
+
+            test/Slic3r/Biz/Slicing/TestUtils.cpp
+            test/Slic3r/Biz/Slicing/GCodeUtils.cpp
+            test/Slic3r/Biz/Slicing/TestCallbacks.cpp
+            test/Slic3r/Biz/Slicing/TestActions.cpp
+            test/Slic3r/Biz/Slicing/TestInteractor.cpp
     )
     target_include_directories(slic3r-shared-tests PRIVATE test)
 

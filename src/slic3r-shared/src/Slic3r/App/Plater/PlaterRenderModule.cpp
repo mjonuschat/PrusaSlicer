@@ -567,6 +567,16 @@ void PlaterRenderModule::render_imgui()
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, { 0.923f, 0.504f, 0.264f, 1.0f });
             ImGui::PushStyleColor(ImGuiCol_ButtonActive, { 0.923f, 0.504f, 0.264f, 1.0f });
         }
+        if (ImGui::Button("Slice all")) {
+            const DynamicPrintConfig& config{m_project_interactor.selected_config_container().print_config()};
+            const Model &model{m_workbench.project(m_project_interactor.selected_project_id()).model()};
+            m_project_interactor.slicing_interactor().update_bed(
+                model,
+                config,
+                m_project_interactor.scene_interactor().selected_bed_instance().instance_id
+            );
+            m_project_interactor.slicing_interactor().slice_all();
+        }
         if (ImGui::Button("Translate"))
             // TODO: get and pass the correct printer type
             m_gizmo_manager->toggle_activate_tool(ToolType::Translation, ptFFF);

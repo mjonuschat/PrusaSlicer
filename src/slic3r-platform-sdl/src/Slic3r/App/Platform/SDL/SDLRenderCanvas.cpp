@@ -19,7 +19,8 @@
 namespace Slic3r::App::Platform::SDL
 {
 
-SDLRenderCanvas::SDLRenderCanvas()
+SDLRenderCanvas::SDLRenderCanvas(std::unique_ptr<StdMainThreadDispatcher>&& main_thread_dispatcher)
+    : AbstractRenderCanvas{std::move(main_thread_dispatcher)}
 {
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0) {
         std::string message = std::string("Platform Error: ") + SDL_GetError();
@@ -200,7 +201,7 @@ void SDLRenderCanvas::wait_for_events()
             render_required = true;
         }
         render_required |= get_and_reset_render_requested();
-        render_required |= AbstractRenderCanvas::dispatch_enqueued();
+        render_required |= m_main_thread_dispatcher->dispatch_enqueued();
     }
 }
 

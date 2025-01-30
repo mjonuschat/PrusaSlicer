@@ -97,8 +97,11 @@ static void add_experimets_page(TopBar* top_bar, MainFrame* main_frame)
     top_bar->AddPage(test_panel, from_u8("UI - test"));
 }
 
-
-MainFrame::MainFrame(Domain::Workbench& workbench, Biz::Preset::PresetInteractor& preset_interactor)
+MainFrame::MainFrame(
+    Domain::Workbench& workbench,
+    Biz::Preset::PresetInteractor& preset_interactor,
+    std::unique_ptr<Biz::Platform::IMainThreadDispatcher>&& main_thread_dispatcher
+)
     : wxFrame(nullptr, wxID_ANY, {}), m_workbench(workbench), m_preset_interactor(preset_interactor)
 {
     localization().add_language_changed_listener(this);
@@ -114,7 +117,7 @@ MainFrame::MainFrame(Domain::Workbench& workbench, Biz::Preset::PresetInteractor
 
     init_top_bar();
 
-    init_plater();
+    init_plater(std::move(main_thread_dispatcher));
 
     init_preset_editors();
 
@@ -213,9 +216,9 @@ void MainFrame::complete_and_bind_top_bar()
     });
 }
 
-void MainFrame::init_plater()
+void MainFrame::init_plater(std::unique_ptr<Biz::Platform::IMainThreadDispatcher>&& main_thread_dispatcher)
 {
-    m_canvas = std::make_unique<Platform::WX::WXRenderCanvas>(m_top_bar);
+    m_canvas = std::make_unique<Platform::WX::WXRenderCanvas>(m_top_bar, std::move(main_thread_dispatcher));
     m_top_bar->AddPage(m_canvas.get(), from_u8("Plater"));
 }
 

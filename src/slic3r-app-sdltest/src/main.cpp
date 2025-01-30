@@ -108,11 +108,13 @@ int main(int argc, char** argv)
 
     init_system();
 
-    canvas = std::make_unique<Slic3r::App::Platform::SDL::SDLRenderCanvas>();
+    auto main_thread_dispatcher{std::make_unique<Slic3r::App::Platform::StdMainThreadDispatcher>()};
+    Slic3r::Biz::Platform::PlatformServices::instance().set_main_thread_dispatcher(main_thread_dispatcher.get());
+    canvas = std::make_unique<Slic3r::App::Platform::SDL::SDLRenderCanvas>(std::move(main_thread_dispatcher));
     canvas->set_language("en");
     canvas->set_font_size(16.0f);
     Slic3r::App::Render::Context::instance().log_gl_info();
-    Slic3r::Biz::Platform::PlatformServices::instance().set_services(canvas.get(), canvas.get());
+    Slic3r::Biz::Platform::PlatformServices::instance().set_render_request_handler(canvas.get());
     render_module = std::make_unique<Slic3r::App::TestRenderModule>();
     SPDLOG_TRACE("RM created");
     canvas->set_render_module(render_module.get());

@@ -14,7 +14,9 @@ bool TestApp::OnInit()
     init_paths();
     m_main_frame = new MainFrame();
     Platform::WX::WXRenderCanvas& canvas = m_main_frame->get_render_canvas();
-    Biz::Platform::PlatformServices::instance().set_services(&canvas, &canvas);
+    auto main_thread_dispatcher{std::make_unique<Platform::StdMainThreadDispatcher>()};
+    Biz::Platform::PlatformServices::instance().set_main_thread_dispatcher(main_thread_dispatcher.get());
+    Biz::Platform::PlatformServices::instance().set_render_request_handler(&canvas);
 
     m_render_module = std::make_unique<TestRenderModule>();
     canvas.set_render_module(m_render_module.get());

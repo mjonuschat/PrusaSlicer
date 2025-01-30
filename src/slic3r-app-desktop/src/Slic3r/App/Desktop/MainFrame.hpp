@@ -22,7 +22,11 @@ class TopBar;
 
 class MainFrame : public wxFrame, public ILanguageChangedListener {
 public:
-    explicit MainFrame(Domain::Workbench& workbench, Biz::Preset::PresetInteractor& preset_interactor);
+    MainFrame(
+        Domain::Workbench& workbench,
+        Biz::Preset::PresetInteractor& preset_interactor,
+        std::unique_ptr<Biz::Platform::IMainThreadDispatcher>&& main_thread_dispatcher
+    );
     ~MainFrame();
 
     Platform::WX::WXRenderCanvas& get_render_canvas() { return *m_canvas; }
@@ -44,7 +48,7 @@ private:
     /*ConfigOptionMode*/ int m_mode{ 1 /*comAdvanced*/ };
 
     void init_top_bar();
-    void init_plater();
+    void init_plater(std::unique_ptr<Biz::Platform::IMainThreadDispatcher>&& main_thread_dispatcher);
     void init_preset_editors();
     void add_preset_editor(Preset::AbstractEditor* panel, const std::string& bmp_name /*= ""*/);
     void update_preset_editors();

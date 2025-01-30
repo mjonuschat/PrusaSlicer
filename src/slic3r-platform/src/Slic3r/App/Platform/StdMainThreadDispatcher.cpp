@@ -5,13 +5,13 @@ namespace Slic3r::App::Platform {
 void StdMainThreadDispatcher::dispatch_on_main_thread(Function func)
 {
     std::scoped_lock lock(m_queue_mutex);
-    m_queue.push_back(func);
+    m_queue.push_back(std::move(func));
 }
 
 void StdMainThreadDispatcher::dispatch_on_main_thread_after(Function func)
 {
     std::scoped_lock lock(m_call_after_queue_mutex);
-    m_call_after_queue.push_back(func);
+    m_call_after_queue.push_back(std::move(func));
 }
 
 bool StdMainThreadDispatcher::process_queue(Functions& queue, std::mutex& queue_mutex)
