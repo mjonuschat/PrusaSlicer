@@ -5,6 +5,7 @@
 
 #include <vector>
 #include <functional>
+#include <cmath>
 
 namespace Slic3r::Domain {
 
