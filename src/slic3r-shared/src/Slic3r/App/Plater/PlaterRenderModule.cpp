@@ -14,17 +14,14 @@
 #include "Slic3r/App/Plater/RotationGizmo.hpp"
 #include "Slic3r/Domain/Bed.hpp"
 #include "Slic3r/Domain/BedInstance.hpp"
+#include "Slic3r/App/Imgui/ImguiExtension.hpp"
 
-#include "imgui/imgui.h"
-#include "Eigen/SVD"
+#include <imgui/imgui.h>
+#include <Eigen/SVD>
 
 #define ENABLED_DEBUG_IMGUI_FONT 1
 #define ENABLED_DEBUG_IMGUI_ICONS 1
 #define ENABLED_DEBUG_BEDS 1
-
-#if ENABLED_DEBUG_IMGUI_ICONS
-#include <boost/nowide/convert.hpp>
-#endif // ENABLED_DEBUG_IMGUI_ICONS
 
 namespace Slic3r::App::Plater {
 
@@ -211,18 +208,6 @@ void imgui_scenegraph_node_info(const Scene::Node& node)
     }
 }
 
-#if ENABLED_DEBUG_IMGUI_ICONS
-namespace ImGuiEx
-{
-
-static bool IconButton(const wchar_t icon, const ImVec2& size = ImVec2(0, 0))
-{
-    return ImGui::Button(boost::nowide::narrow(std::wstring(&icon, 1)).c_str(), size);
-}
-
-} // namespace ImGuiEx
-#endif // ENABLED_DEBUG_IMGUI_ICONS
-
 #if ENABLED_DEBUG_IMGUI_FONT
 static void render_imgui_debug_input_font()
 {
@@ -305,7 +290,7 @@ static void render_imgui_debug_icons()
                     ImGui::PushStyleColor(ImGuiCol_Button, { 0.0f, 0.0f, 0.0f, 0.0f });
                     ImGui::PushStyleColor(ImGuiCol_ButtonActive, { 0.0f, 0.0f, 0.0f, 0.0f });
                     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, { 0.0f, 0.0f, 0.0f, 0.0f });
-                    ImGuiEx::IconButton(ICONS[i].first, ImVec2(px, px) + ImGui::GetStyle().FramePadding * 2.0f);
+                    App::Imgui::icon_button(ICONS[i].first, ImVec2(px, px) + ImGui::GetStyle().FramePadding * 2.0f);
                     ImGui::PopStyleColor(3);
                     if (ImGui::IsItemHovered()) {
                         ImGui::BeginTooltip();
@@ -347,7 +332,7 @@ static void render_imgui_debug_icons()
                     ImGui::PushStyleColor(ImGuiCol_Button, { 0.0f, 0.0f, 0.0f, 0.0f });
                     ImGui::PushStyleColor(ImGuiCol_ButtonActive, { 0.0f, 0.0f, 0.0f, 0.0f });
                     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, { 0.0f, 0.0f, 0.0f, 0.0f });
-                    ImGuiEx::IconButton(ICONS_MEDIUM[i].first, ImVec2(px, px) + ImGui::GetStyle().FramePadding * 2.0f);
+                    App::Imgui::icon_button(ICONS_MEDIUM[i].first, ImVec2(px, px) + ImGui::GetStyle().FramePadding * 2.0f);
                     ImGui::PopStyleColor(3);
                     if (ImGui::IsItemHovered()) {
                         ImGui::BeginTooltip();
@@ -409,7 +394,7 @@ static void render_imgui_debug_icons()
                     ImGui::PushStyleColor(ImGuiCol_Button, { 0.0f, 0.0f, 0.0f, 0.0f });
                     ImGui::PushStyleColor(ImGuiCol_ButtonActive, { 0.0f, 0.0f, 0.0f, 0.0f });
                     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, { 0.0f, 0.0f, 0.0f, 0.0f });
-                    ImGuiEx::IconButton(ICONS_LARGE[i].first, ImVec2(px, px) + ImGui::GetStyle().FramePadding * 2.0f);
+                    App::Imgui::icon_button(ICONS_LARGE[i].first, ImVec2(px, px) + ImGui::GetStyle().FramePadding * 2.0f);
                     ImGui::PopStyleColor(3);
                     if (ImGui::IsItemHovered()) {
                         ImGui::BeginTooltip();
@@ -438,7 +423,7 @@ static void render_imgui_debug_icons()
                     ImGui::PushStyleColor(ImGuiCol_Button, { 0.0f, 0.0f, 0.0f, 0.0f });
                     ImGui::PushStyleColor(ImGuiCol_ButtonActive, { 0.0f, 0.0f, 0.0f, 0.0f });
                     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, { 0.0f, 0.0f, 0.0f, 0.0f });
-                    ImGuiEx::IconButton(ICONS_EXTRA_LARGE[i].first, ImVec2(px, px) + ImGui::GetStyle().FramePadding * 2.0f);
+                    App::Imgui::icon_button(ICONS_EXTRA_LARGE[i].first, ImVec2(px, px) + ImGui::GetStyle().FramePadding * 2.0f);
                     ImGui::PopStyleColor(3);
                     if (ImGui::IsItemHovered()) {
                         ImGui::BeginTooltip();
