@@ -51,6 +51,8 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Preview/TickCodeManager.hpp
         src/Slic3r/App/Preview/ActualSpeedPlotter.cpp
         include/Slic3r/App/Preview/ActualSpeedPlotter.hpp
+        src/Slic3r/App/Preview/GCodeWindow.cpp
+        include/Slic3r/App/Preview/GCodeWindow.hpp
 
         src/Slic3r/App/Scene/Scene.cpp
         include/Slic3r/App/Scene/Scene.hpp

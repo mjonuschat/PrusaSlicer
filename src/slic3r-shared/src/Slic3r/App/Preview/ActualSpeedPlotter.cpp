@@ -2,13 +2,13 @@
 #include "Slic3r/App/Imgui/ImguiExtension.hpp"
 #include "Slic3r/App/I18N/I18N.hpp"
 
-#include <imgui/imgui_internal.h>
+#include <libslic3r/Color.hpp>
 
 namespace Slic3r::App::Preview {
 
-static const ImVec4 GRID_MAIN_COLOR = { 0.5f, 0.5f, 0.5f, 0.5f };
+static const ImVec4 GRID_MAIN_COLOR      = { 0.5f, 0.5f, 0.5f, 0.5f };
 static const ImVec4 GRID_SECONDARY_COLOR = { 0.0f, 0.0f, 0.5f, 0.5f };
-static const ImVec4 PROFILE_BASE_COLOR = { 0.8f, 0.8f, 0.8f, 1.0f };
+static const ImVec4 PROFILE_BASE_COLOR   = { 0.8f, 0.8f, 0.8f, 1.0f };
 
 int plot_actual_speed_profile(const ActualSpeedPlotData& data, const ImVec2& size)
 {

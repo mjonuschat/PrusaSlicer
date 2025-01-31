@@ -1,11 +1,13 @@
 #pragma once
 
-#include <libslic3r/Color.hpp>
-
 #include <imgui/imgui.h>
 
 #include <array>
 #include <vector>
+
+namespace Slic3r {
+class ColorRGB;
+} //  namespace Slic3r
 
 namespace Slic3r::App::Preview {
 
@@ -23,7 +25,7 @@ struct ActualSpeedPlotData
     std::vector<ActualSpeedPlotDataItem> data;
 };
 
-/** @brief Render an ImGui plot of the actual speed profile.
+/** @brief ImGui widget to render a plot of the actual speed profile.
  *
  * @param data The data to plot
  * @param size The size of the widgets where to plot the data
