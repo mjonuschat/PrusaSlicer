@@ -25,6 +25,7 @@ bool StdMainThreadDispatcher::process_queue(Functions& queue, std::mutex& queue_
             std::make_move_iterator(queue.begin()),
             std::make_move_iterator(queue.end())
         );
+        queue.clear();
     }
 
     for (const auto& func : to_process)
