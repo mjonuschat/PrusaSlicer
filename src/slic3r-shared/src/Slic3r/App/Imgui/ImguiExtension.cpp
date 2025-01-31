@@ -2,6 +2,8 @@
 #include "Slic3r/App/Imgui/DoubleSlider.hpp"
 #include "Slic3r/Assert.hpp"
 
+#include <libslic3r/Color.hpp>
+
 #include <boost/nowide/convert.hpp>
 
 namespace Slic3r::App::Imgui {
@@ -176,6 +178,16 @@ bool menu_item_with_icon(const char* label, const char* shortcut, ImU32 icon_col
 bool icon_button(const wchar_t icon, const ImVec2& size)
 {
     return ImGui::Button(boost::nowide::narrow(std::wstring(&icon, 1)).c_str(), size);
+}
+
+ImU32 to_ImU32(const ColorRGBA& color)
+{
+    return IM_COL32(color.r_uchar(), color.g_uchar(), color.b_uchar(), color.a_uchar());
+}
+
+ImU32 to_ImU32(const ColorRGB& color, uint8_t alpha)
+{
+    return IM_COL32(color.r_uchar(), color.g_uchar(), color.b_uchar(), alpha);
 }
 
 } // namespace Slic3r::App::Imgui

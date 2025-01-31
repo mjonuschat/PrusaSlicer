@@ -5,6 +5,12 @@
 
 #include <string>
 #include <sstream>
+#include <cstdint>
+
+namespace Slic3r {
+class ColorRGB;
+class ColorRGBA;
+} //  namespace Slic3r
 
 namespace Slic3r::App::Imgui {
 
@@ -27,6 +33,19 @@ public:
     void pop();
 };
 
+struct ScopedGroup
+{
+    ScopedGroup(const char* id) {
+        ImGui::BeginGroup();
+        ImGui::PushID(id);
+    }
+
+    ~ScopedGroup() {
+        ImGui::PopID();
+        ImGui::EndGroup();
+    }
+};
+
 inline void disable_background_fadeout_animation() { ImGui::GetCurrentContext()->DimBgRatio = 1.0f; }
 
 void draw_hexagon(const ImVec2& center, float radius, ImU32 col, float start_angle = 0.0f, float rounding = 0.0f);
@@ -39,9 +58,12 @@ bool menu_item_with_icon(const char* label, const char* shortcut = nullptr, ImU3
 
 bool icon_button(const wchar_t icon, const ImVec2& size = ImVec2(0.0f, 0.0f));
 
+ImU32 to_ImU32(const ColorRGBA& color);
+ImU32 to_ImU32(const ColorRGB& color, uint8_t alpha = 255);
+
 // this code is borrowed from https://stackoverflow.com/questions/16605967/set-precision-of-stdto-string-when-converting-floating-point-values
 template <typename T>
-std::string to_string_with_precision(const T a_value, const int n = 2)
+std::string to_string_with_precision(const T a_value, const uint8_t n = 2)
 {
     std::ostringstream out;
     out.precision(n);

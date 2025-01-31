@@ -519,7 +519,7 @@ void DoubleSliderForLayers::draw_colored_band(const ImRect& groove, const ImRect
     ColorRGBA rgba;
     bool res = decode_color(m_ticks.colors[default_color_idx], rgba);
     DEBUG_ASSERT(res);
-    ImU32 band_clr = IM_COL32(rgba.r_uchar(), rgba.g_uchar(), rgba.b_uchar(), rgba.a_uchar());
+    ImU32 band_clr = App::Imgui::to_ImU32(rgba);
     draw_main_band(band_clr);
 
     static float tick_pos;
@@ -545,7 +545,7 @@ void DoubleSliderForLayers::draw_colored_band(const ImRect& groove, const ImRect
                     ColorRGBA rgba;
                     bool res = decode_color(clr_str, rgba);
                     DEBUG_ASSERT(res);
-                    ImU32 band_clr = IM_COL32(rgba.r_uchar(), rgba.g_uchar(), rgba.b_uchar(), rgba.a_uchar());
+                    ImU32 band_clr = App::Imgui::to_ImU32(rgba);
                     if (tick_it->tick == 0)
                         draw_main_band(band_clr);
                     else {
@@ -1110,7 +1110,7 @@ bool DoubleSliderForLayers::render_multi_extruders_menu(bool switch_current_code
                     ColorRGBA rgba;
                     bool res = decode_color(colors[i - 1], rgba);
                     DEBUG_ASSERT(res);
-                    ImU32 icon_clr = IM_COL32(rgba.r_uchar(), rgba.g_uchar(), rgba.b_uchar(), rgba.a_uchar());
+                    ImU32 icon_clr = App::Imgui::to_ImU32(rgba);
                     if (App::Imgui::menu_item_with_icon(item_name.c_str(), nullptr, icon_clr, false, !is_active_extruder)) {
                         add_code_as_tick(CustomGCodeType::ToolChange, i);
                         ret = true;

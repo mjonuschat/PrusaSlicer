@@ -49,6 +49,8 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Preview/ExtrudersSequence.hpp
         src/Slic3r/App/Preview/TickCodeManager.cpp
         include/Slic3r/App/Preview/TickCodeManager.hpp
+        src/Slic3r/App/Preview/ActualSpeedPlotter.cpp
+        include/Slic3r/App/Preview/ActualSpeedPlotter.hpp
 
         src/Slic3r/App/Scene/Scene.cpp
         include/Slic3r/App/Scene/Scene.hpp
