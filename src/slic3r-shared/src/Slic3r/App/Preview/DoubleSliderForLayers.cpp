@@ -6,22 +6,21 @@
 #include <libslic3r/format.hpp>
 #include <libslic3r/Color.hpp>
 
+#include <libpgcode/Utils.hpp>
+
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/replace.hpp>
 
 #include <algorithm>
 
+using namespace Slic3r;
+using namespace Slic3r::Biz::libpgcode;
 using namespace Slic3r::Domain;
 
 namespace Slic3r::App::Preview {
 
 static constexpr float EPSILON = 0.0011f;
-
-// string analogue of custom_code_per_height mode
-static const std::string SINGLE_EXTRUDER_MODE = "SingleExtruder";
-static const std::string MULTI_AS_SINGLE_MODE = "MultiAsSingle";
-static const std::string MULTI_EXTRUDER_MODE = "MultiExtruder";
 
 void DoubleSliderForLayers::init(
     int lowerValue,
@@ -52,24 +51,24 @@ void DoubleSliderForLayers::change_one_layer_lock()
     process_thumb_move();
 }
 
-CustomGCodeInfo DoubleSliderForLayers::ticks_values() const
+CustomGCode::Info DoubleSliderForLayers::ticks_values() const
 {
-    CustomGCodeInfo custom_gcode_per_print_z;
-    std::vector<CustomGCodeItem>& values = custom_gcode_per_print_z.gcodes;
+    CustomGCode::Info custom_gcode_per_print_z;
+    std::vector<CustomGCode::Item>& values = custom_gcode_per_print_z.gcodes;
 
     int val_size = int(m_values.size());
     if (!m_values.empty()){
         for (const TickCode& tick : m_ticks.ticks) {
             if (tick.tick > val_size)
                 break;
-            values.emplace_back(CustomGCodeItem{ m_values[tick.tick], tick.type, int8_t(tick.extruder), tick.color, tick.extra });
+            values.emplace_back(CustomGCode::Item{ m_values[tick.tick], tick.type, tick.extruder, tick.color, tick.extra });
         }
     }
     custom_gcode_per_print_z.mode = m_mode;
     return custom_gcode_per_print_z;
 }
 
-void DoubleSliderForLayers::set_ticks_values(const CustomGCodeInfo& custom_gcode_per_print_z)
+void DoubleSliderForLayers::set_ticks_values(const CustomGCode::Info& custom_gcode_per_print_z)
 {
     if (m_values.empty()) {
         m_ticks.mode = m_mode;
@@ -130,16 +129,16 @@ void DoubleSliderForLayers::set_draw_mode(bool is_sla_print, bool is_sequential_
 
 void DoubleSliderForLayers::set_mode_and_only_extruder(const bool is_one_extruder_printed_model, const int only_extruder)
 {
-    m_mode = !is_one_extruder_printed_model ? PrinterMode::MultiExtruder :
-                                              only_extruder < 0 ? PrinterMode::SingleExtruder :
-                                              PrinterMode::MultiAsSingle;
-    if ((m_ticks.mode == PrinterMode::Undefined) || (m_ticks.empty() && m_ticks.mode != m_mode))
+    m_mode = !is_one_extruder_printed_model ? CustomGCode::Mode::MultiExtruder :
+                                              only_extruder < 0 ? CustomGCode::Mode::SingleExtruder :
+                                              CustomGCode::Mode::MultiAsSingle;
+    if ((m_ticks.mode == CustomGCode::Mode::Undef) || (m_ticks.empty() && m_ticks.mode != m_mode))
         m_ticks.mode = m_mode;
 
     m_ticks.only_extruder_id = only_extruder;
-    m_ticks.is_wipe_tower = m_mode != PrinterMode::SingleExtruder;
+    m_ticks.is_wipe_tower = m_mode != CustomGCode::Mode::SingleExtruder;
 
-    if (m_mode != PrinterMode::SingleExtruder)
+    if (m_mode != CustomGCode::Mode::SingleExtruder)
         use_default_colors(false);
 }
 
@@ -172,14 +171,14 @@ void DoubleSliderForLayers::add_current_tick()
 
     if (it != m_ticks.ticks.end()) // this tick is already exist
         return;
-    if (!m_ticks.check_ticks_changed_event(m_mode == PrinterMode::MultiAsSingle ?
-        CustomGCodeType::ToolChange : CustomGCodeType::ColorChange, m_mode)) {
+    if (!m_ticks.check_ticks_changed_event(m_mode == CustomGCode::Mode::MultiAsSingle ?
+        CustomGCode::Type::ToolChange : CustomGCode::Type::ColorChange, m_mode)) {
         process_ticks_changed();
         return;
     }
 
-    if (m_mode == PrinterMode::SingleExtruder)
-        add_code_as_tick(CustomGCodeType::ColorChange);
+    if (m_mode == CustomGCode::Mode::SingleExtruder)
+        add_code_as_tick(CustomGCode::Type::ColorChange);
     else {
         m_show_just_color_change_menu = true;
         process_request_extra_frames();
@@ -235,7 +234,7 @@ void DoubleSliderForLayers::render(float scale_factor/* = 0.1f*/, float offset /
     }
     else if (m_ctrl.is_lclick_on_thumb() && can_edit() &&
              !m_ticks.has_tick(m_ctrl.active_pos()))
-        add_code_as_tick(CustomGCodeType::ColorChange);
+        add_code_as_tick(CustomGCode::Type::ColorChange);
 
     // draw action buttons
 
@@ -357,7 +356,7 @@ std::string DoubleSliderForLayers::tooltip(int tick/*=-1*/) const
     if (m_focus == FocusedItem::RevertIcon)
         return _u8L("Discard all custom changes");
     if (m_focus == FocusedItem::CogIcon) {
-        return m_mode == PrinterMode::MultiAsSingle ?
+        return m_mode == CustomGCode::Mode::MultiAsSingle ?
         (boost::format(_u8L("Jump to height %s\n"
                            "Set ruler mode\n"
                            "or Set extruder sequence for the entire print")) % "(Shift + G)").str() :
@@ -365,7 +364,7 @@ std::string DoubleSliderForLayers::tooltip(int tick/*=-1*/) const
                            "or Set ruler mode")) % "(Shift + G)").str();
     }
     if (m_focus == FocusedItem::ColorBand)
-        return m_mode != PrinterMode::SingleExtruder || !can_edit() ? "" :
+        return m_mode != CustomGCode::Mode::SingleExtruder || !can_edit() ? "" :
             _u8L("Edit current color - Right click the colored slider segment");
     if (m_focus == FocusedItem::SmartWipeTower)
         return _u8L("This is wipe tower layer");
@@ -383,9 +382,9 @@ std::string DoubleSliderForLayers::tooltip(int tick/*=-1*/) const
 
         // Show mode as a first string of tooltop
         tooltip = "    " + _u8L("Print mode") + ": ";
-        tooltip += (m_mode == PrinterMode::SingleExtruder ? SINGLE_EXTRUDER_MODE :
-                    m_mode == PrinterMode::MultiAsSingle  ? MULTI_AS_SINGLE_MODE :
-                                                            MULTI_EXTRUDER_MODE);
+        tooltip += (m_mode == CustomGCode::Mode::SingleExtruder ? CustomGCode::SingleExtruderMode :
+                    m_mode == CustomGCode::Mode::MultiAsSingle ?  CustomGCode::MultiAsSingleMode :
+                                                                  CustomGCode::MultiExtruderMode);
         tooltip += "\n\n";
 
         /* Note: just on OSX!!!
@@ -395,8 +394,8 @@ std::string DoubleSliderForLayers::tooltip(int tick/*=-1*/) const
          * */
 
         // Show list of actions with new tick
-        tooltip += (m_mode == PrinterMode::MultiAsSingle ? _u8L("Add extruder change - Left click") :
-            m_mode == PrinterMode::SingleExtruder ?
+        tooltip += (m_mode == CustomGCode::Mode::MultiAsSingle ? _u8L("Add extruder change - Left click") :
+            m_mode == CustomGCode::Mode::SingleExtruder ?
             _u8L("Add color change - Left click for predefined color or "
                  "Shift + Left click for custom color selection") :
             _u8L("Add color change - Left click")  ) + " " +
@@ -433,15 +432,15 @@ std::string DoubleSliderForLayers::tooltip(int tick/*=-1*/) const
             return gcode;
         };
         tooltip +=
-            tick_code_it->type == CustomGCodeType::ColorChange ?
-                (m_mode == PrinterMode::SingleExtruder && tick_code_it->extruder==1 ?
-                    format(_u8L("Color change (\"%1%\")"), gcode(CustomGCodeType::ColorChange)) :
-                    format(_u8L("Color change (\"%1%\") for Extruder %2%"), gcode(CustomGCodeType::ColorChange), tick_code_it->extruder)) :
-    	          tick_code_it->type == CustomGCodeType::PausePrint ?
-                    format(_u8L("Pause print (\"%1%\")"), gcode(CustomGCodeType::PausePrint)) :
-  	            tick_code_it->type == CustomGCodeType::Template ?
-                    format(_u8L("Custom template (\"%1%\")"), gcode(CustomGCodeType::Template)) :
-		            tick_code_it->type == CustomGCodeType::ToolChange ?
+            tick_code_it->type == CustomGCode::Type::ColorChange ?
+                (m_mode == CustomGCode::Mode::SingleExtruder && tick_code_it->extruder==1 ?
+                    format(_u8L("Color change (\"%1%\")"), gcode(CustomGCode::Type::ColorChange)) :
+                    format(_u8L("Color change (\"%1%\") for Extruder %2%"), gcode(CustomGCode::Type::ColorChange), tick_code_it->extruder)) :
+    	          tick_code_it->type == CustomGCode::Type::PausePrint ?
+                    format(_u8L("Pause print (\"%1%\")"), gcode(CustomGCode::Type::PausePrint)) :
+  	            tick_code_it->type == CustomGCode::Type::Template ?
+                    format(_u8L("Custom template (\"%1%\")"), gcode(CustomGCode::Type::Template)) :
+		            tick_code_it->type == CustomGCode::Type::ToolChange ?
                     format(_u8L("Extruder (tool) is changed to Extruder \"%1%\""), tick_code_it->extruder) :
                     format_gcode(tick_code_it->extra);// tick_code_it->type == Custom
 
@@ -515,7 +514,7 @@ void DoubleSliderForLayers::draw_colored_band(const ImRect& groove, const ImRect
     };
 
     //draw main colored band
-    int default_color_idx = m_mode == PrinterMode::MultiAsSingle ? std::max(m_ticks.only_extruder_id - 1, 0) : 0;
+    int default_color_idx = m_mode == CustomGCode::Mode::MultiAsSingle ? std::max(m_ticks.only_extruder_id - 1, 0) : 0;
     ColorRGBA rgba;
     bool res = decode_color(m_ticks.colors[default_color_idx], rgba);
     DEBUG_ASSERT(res);
@@ -534,11 +533,11 @@ void DoubleSliderForLayers::draw_colored_band(const ImRect& groove, const ImRect
                                   ImVec2(main_band.Max.x, std::min(tick_pos, main_band.Max.y)));
 
         if (main_band.Contains(band_rect)) {
-            if ((m_mode == PrinterMode::SingleExtruder && tick_it->type == CustomGCodeType::ColorChange) ||
-                (m_mode == PrinterMode::MultiAsSingle && (tick_it->type == CustomGCodeType::ToolChange || tick_it->type == CustomGCodeType::ColorChange)))
+            if ((m_mode == CustomGCode::Mode::SingleExtruder && tick_it->type == CustomGCode::Type::ColorChange) ||
+                (m_mode == CustomGCode::Mode::MultiAsSingle && (tick_it->type == CustomGCode::Type::ToolChange || tick_it->type == CustomGCode::Type::ColorChange)))
             {
-                std::string clr_str = m_mode == PrinterMode::SingleExtruder ? tick_it->color :
-                    tick_it->type == CustomGCodeType::ToolChange ? m_ticks.color_for_tool_change_tick(tick_it) :
+                std::string clr_str = m_mode == CustomGCode::Mode::SingleExtruder ? tick_it->color :
+                    tick_it->type == CustomGCode::Type::ToolChange ? m_ticks.color_for_tool_change_tick(tick_it) :
                     m_ticks.color_for_color_change_tick(tick_it);
 
                 if (!clr_str.empty()) {
@@ -606,7 +605,7 @@ void DoubleSliderForLayers::draw_ticks(const ImRect& slideable_region)
 
         if (ImGui::IsMouseHoveringRect(tick_hover_box.Min, tick_hover_box.Max)) {
             ImGui::RenderFrame(tick_hover_box.Min, tick_hover_box.Max, tick_hovered_clr, false);
-            if (tick_it->type == CustomGCodeType::ColorChange || tick_it->type == CustomGCodeType::ToolChange) {
+            if (tick_it->type == CustomGCode::Type::ColorChange || tick_it->type == CustomGCode::Type::ToolChange) {
                 m_focus = FocusedItem::Tick;
                 App::Imgui::tooltip(tooltip(tick_it->tick), ImGui::GetFontSize() * 20.f);
             }
@@ -649,12 +648,12 @@ void DoubleSliderForLayers::draw_ticks(const ImRect& slideable_region)
         else if (m_draw_mode != DrawMode::Regular)// if we have non-regular draw mode, all ticks should be marked with error icon
             activate_this_tick = render_button(ImGui::ErrorTick, ImGui::ErrorTickHovered, btn_label,
                 icon_pos, FocusedItem::Tick, tick_it->tick);
-        else if (tick_it->type == CustomGCodeType::ColorChange || tick_it->type == CustomGCodeType::ToolChange) {
+        else if (tick_it->type == CustomGCode::Type::ColorChange || tick_it->type == CustomGCode::Type::ToolChange) {
             if (m_ticks.is_conflict_tick(*tick_it, m_mode, m_values[tick_it->tick]) != ConflictType::None)
                 activate_this_tick = render_button(ImGui::ErrorTick, ImGui::ErrorTickHovered, btn_label,
                     icon_pos, FocusedItem::Tick, tick_it->tick);
         }
-        else if (tick_it->type == CustomGCodeType::PausePrint)
+        else if (tick_it->type == CustomGCode::Type::PausePrint)
             activate_this_tick = render_button(ImGui::PausePrint, ImGui::PausePrintHovered, btn_label,
                 icon_pos, FocusedItem::Tick, tick_it->tick);
         else
@@ -924,7 +923,7 @@ void DoubleSliderForLayers::render_cog_menu()
             if (m_cb_app_config_changed != nullptr)
                 m_cb_app_config_changed("show_estimated_times_in_dbl_slider", m_show_estimated_times ? "1" : "0");
         }
-        if (m_mode == PrinterMode::MultiAsSingle && m_draw_mode == DrawMode::Regular &&
+        if (m_mode == CustomGCode::Mode::MultiAsSingle && m_draw_mode == DrawMode::Regular &&
             ImGui::MenuItem(_u8L("Set extruder sequence for the entire print").c_str())) {
             if (m_ticks.edit_extruder_sequence(m_ctrl.max_pos(), m_mode))
                 process_ticks_changed();
@@ -950,7 +949,7 @@ void DoubleSliderForLayers::render_cog_menu()
             if (ImGui::MenuItem(_u8L("Use default colors").c_str(), nullptr, m_ticks.used_default_colors()))
                 use_default_colors(!m_ticks.used_default_colors());
 
-            if (m_mode != PrinterMode::MultiExtruder && m_draw_mode == DrawMode::Regular &&
+            if (m_mode != CustomGCode::Mode::MultiExtruder && m_draw_mode == DrawMode::Regular &&
                 ImGui::MenuItem(_u8L("Set auto color changes").c_str())) {
                 auto_color_change();
             }
@@ -968,16 +967,16 @@ void DoubleSliderForLayers::render_edit_menu()
     if (m_ticks.has_tick(m_ctrl.active_pos()) && ImGui::BeginPopup("edit_menu_popup")) {
         std::set<TickCode>::iterator it = m_ticks.ticks.find(TickCode{ m_ctrl.active_pos()});
 
-        if (it->type == CustomGCodeType::ToolChange) {
+        if (it->type == CustomGCode::Type::ToolChange) {
             if (render_multi_extruders_menu(true)) {
                 ImGui::EndPopup();
                 return;
             }
         }
         else {
-            std::string edit_item_name = it->type == CustomGCodeType::ColorChange ? _u8L("Edit color") :
-                                         it->type == CustomGCodeType::PausePrint  ? _u8L("Edit pause print message") :
-                                                                                    _u8L("Edit custom G-code");
+            std::string edit_item_name = it->type == CustomGCode::Type::ColorChange ? _u8L("Edit color") :
+                                         it->type == CustomGCode::Type::PausePrint  ? _u8L("Edit pause print message") :
+                                                                                      _u8L("Edit custom G-code");
             if (App::Imgui::menu_item_with_icon(edit_item_name.c_str(), "")) {
                 edit_tick();
                 ImGui::EndPopup();
@@ -985,17 +984,17 @@ void DoubleSliderForLayers::render_edit_menu()
             }
         }
 
-        if (it->type == CustomGCodeType::ColorChange && m_mode == PrinterMode::MultiAsSingle) {
+        if (it->type == CustomGCode::Type::ColorChange && m_mode == CustomGCode::Mode::MultiAsSingle) {
             if (render_multi_extruders_menu(true)) {
                 ImGui::EndPopup();
                 return;
             }
         }
 
-        std::string delete_item_name = it->type == CustomGCodeType::ColorChange ? _u8L("Delete color change") :
-                                       it->type == CustomGCodeType::ToolChange  ? _u8L("Delete tool change") :
-                                       it->type == CustomGCodeType::PausePrint  ? _u8L("Delete pause print") :
-                                                                                  _u8L("Delete custom G-code");
+        std::string delete_item_name = it->type == CustomGCode::Type::ColorChange ? _u8L("Delete color change") :
+                                       it->type == CustomGCode::Type::ToolChange  ? _u8L("Delete tool change") :
+                                       it->type == CustomGCode::Type::PausePrint  ? _u8L("Delete pause print") :
+                                                                                    _u8L("Delete custom G-code");
         if (App::Imgui::menu_item_with_icon(delete_item_name.c_str(), ""))
             delete_current_tick();
 
@@ -1052,25 +1051,25 @@ bool DoubleSliderForLayers::render_button(wchar_t icon, wchar_t icon_hovered, co
 void DoubleSliderForLayers::render_add_tick_menu()
 {
     if (ImGui::BeginPopup("slider_full_menu_popup")) {
-        if (m_mode == PrinterMode::SingleExtruder) {
+        if (m_mode == CustomGCode::Mode::SingleExtruder) {
             if (ImGui::MenuItem(_u8L("Add Color Change").c_str()))
-                add_code_as_tick(CustomGCodeType::ColorChange);
+                add_code_as_tick(CustomGCode::Type::ColorChange);
         }
         else
             render_multi_extruders_menu();
 
         if (ImGui::MenuItem(_u8L("Add Pause").c_str()))
-            add_code_as_tick(CustomGCodeType::PausePrint);
+            add_code_as_tick(CustomGCode::Type::PausePrint);
         if (ImGui::MenuItem(_u8L("Add Custom G-code").c_str()))
-            add_code_as_tick(CustomGCodeType::Custom);
-        if (!gcode(CustomGCodeType::Template).empty() && ImGui::MenuItem(_u8L("Add Custom Template").c_str()))
-            add_code_as_tick(CustomGCodeType::Template);
+            add_code_as_tick(CustomGCode::Type::Custom);
+        if (!gcode(CustomGCode::Type::Template).empty() && ImGui::MenuItem(_u8L("Add Custom Template").c_str()))
+            add_code_as_tick(CustomGCode::Type::Template);
 
         ImGui::EndPopup();
         return;
     }
 
-    std::string longest_menu_name = format(_u8L("Add color change (%1%) for:"), gcode(CustomGCodeType::ColorChange));
+    std::string longest_menu_name = format(_u8L("Add color change (%1%) for:"), gcode(CustomGCode::Type::ColorChange));
 
     float label_width = ImGui::CalcTextSize(longest_menu_name.c_str(), nullptr, true).x;
     ImRect active_thumb_rect = m_ctrl.active_thumb_rect();
@@ -1097,7 +1096,7 @@ bool DoubleSliderForLayers::render_multi_extruders_menu(bool switch_current_code
     if (extruders_cnt > 1) {
         int tick = m_ctrl.active_pos();
 
-        if (m_mode == PrinterMode::MultiAsSingle) {
+        if (m_mode == CustomGCode::Mode::MultiAsSingle) {
             std::string menu_name = switch_current_code ? _u8L("Switch code to Change extruder") : _u8L("Change extruder");
             if (ImGui::BeginMenu(menu_name.c_str())) {
                 std::array<int, 2> active_extruders = m_ticks.active_extruders_for_tick(tick, m_mode);
@@ -1112,7 +1111,7 @@ bool DoubleSliderForLayers::render_multi_extruders_menu(bool switch_current_code
                     DEBUG_ASSERT(res);
                     ImU32 icon_clr = App::Imgui::to_ImU32(rgba);
                     if (App::Imgui::menu_item_with_icon(item_name.c_str(), nullptr, icon_clr, false, !is_active_extruder)) {
-                        add_code_as_tick(CustomGCodeType::ToolChange, i);
+                        add_code_as_tick(CustomGCode::Type::ToolChange, i);
                         ret = true;
                     }
                 }
@@ -1121,8 +1120,8 @@ bool DoubleSliderForLayers::render_multi_extruders_menu(bool switch_current_code
         }
  
         const std::string menu_name = switch_current_code ?
-            format(_u8L("Switch code to Color change (%1%) for:"), gcode(CustomGCodeType::ColorChange)) :
-            format(_u8L("Add color change (%1%) for:"), gcode(CustomGCodeType::ColorChange));
+            format(_u8L("Switch code to Color change (%1%) for:"), gcode(CustomGCode::Type::ColorChange)) :
+            format(_u8L("Add color change (%1%) for:"), gcode(CustomGCode::Type::ColorChange));
         if (ImGui::BeginMenu(menu_name.c_str())) {
             std::set<int> used_extruders_for_tick = m_ticks.used_extruders_for_tick(tick, m_values[tick]);
 
@@ -1134,7 +1133,7 @@ bool DoubleSliderForLayers::render_multi_extruders_menu(bool switch_current_code
                     item_name += " (" + _u8L("used") + ")";
 
                 if (ImGui::MenuItem(item_name.c_str())) {
-                    add_code_as_tick(CustomGCodeType::ColorChange, i);
+                    add_code_as_tick(CustomGCode::Type::ColorChange, i);
                     ret = true;
                 }
             }
@@ -1245,7 +1244,7 @@ void DoubleSliderForLayers::render_color_picker()
         m_show_color_picker = false;
 }
 
-void DoubleSliderForLayers::add_code_as_tick(CustomGCodeType type, int selected_extruder/* = -1*/)
+void DoubleSliderForLayers::add_code_as_tick(CustomGCode::Type type, int selected_extruder/* = -1*/)
 {
     int tick = m_ctrl.active_pos();
 
@@ -1264,7 +1263,7 @@ void DoubleSliderForLayers::add_code_as_tick(CustomGCodeType type, int selected_
         if (!m_ticks.add_tick(tick, type, extruder, m_values[tick]))
             return;
     }
-    else if (type == CustomGCodeType::ToolChange || type == CustomGCodeType::ColorChange) {
+    else if (type == CustomGCode::Type::ToolChange || type == CustomGCode::Type::ColorChange) {
         // try to switch tick code to ToolChange or ColorChange accordingly
         if (!m_ticks.switch_code_for_tick(it, type, extruder))
             return;

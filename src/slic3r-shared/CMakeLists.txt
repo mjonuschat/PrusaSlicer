@@ -193,8 +193,6 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/Slicing/SlicingInteractor.hpp
         src/Slic3r/Biz/Slicing/BackgroundProcess.cpp
         src/Slic3r/Biz/Slicing/SlicingInteractor.cpp
-        src/Slic3r/Domain/GCode.cpp
-        include/Slic3r/Domain/GCode.hpp
         src/Slic3r/Domain/Units.cpp
         include/Slic3r/Domain/Units.hpp
 )
@@ -212,6 +210,7 @@ target_link_libraries(slic3r-shared PUBLIC
         slic3r-platform
         slic3r-render
         libslic3r
+        libpgcode
         Boost::filesystem
         fmt::fmt
         yoga::yogacore

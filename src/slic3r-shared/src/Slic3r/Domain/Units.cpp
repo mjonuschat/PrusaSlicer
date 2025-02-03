@@ -3,9 +3,13 @@
 
 #include "Slic3r/Assert.hpp"
 
+#include <libpgcode/Utils.hpp>
+
 #include <vector>
 #include <functional>
 #include <cmath>
+
+using namespace Slic3r::Biz::libpgcode;
 
 namespace Slic3r::Domain {
 
@@ -38,70 +42,6 @@ static const std::vector<std::string> UNITS_STR = {
     _u8L("s"),
     _u8L("y"),
 };
-
-struct Conversion
-{
-    UnitsType in;
-    UnitsType out;
-    std::function<float(float)> conversion_function;
-};
-
-static const float INCHES_TO_MILLIMETERS = 25.4f;
-static const float MILLIMETERS_TO_INCHES = 1.0f / INCHES_TO_MILLIMETERS;
-static const float METERS_TO_FEET = 3.28084f;
-static const float FEET_TO_METERS = 1.0f / METERS_TO_FEET;
-static const float METERS_TO_MILLIMETERS = 1000.0f;
-static const float MILLIMETERS_TO_METERS = 1.0f / METERS_TO_MILLIMETERS;
-static const float FEET_TO_INCHES = 12.0f;
-static const float INCHES_TO_FEET = 1.0f / FEET_TO_INCHES;
-static const float CUBED_INCHES_TO_CUBED_MILLIMETERS = INCHES_TO_MILLIMETERS * INCHES_TO_MILLIMETERS * INCHES_TO_MILLIMETERS;
-static const float CUBED_MILLIMETERS_TO_CUBED_INCHES = MILLIMETERS_TO_INCHES * MILLIMETERS_TO_INCHES * MILLIMETERS_TO_INCHES;
-static const float CUBED_METERS_TO_CUBED_FEET = METERS_TO_FEET * METERS_TO_FEET * METERS_TO_FEET;
-static const float CUBED_FEET_TO_CUBED_METERS = FEET_TO_METERS * FEET_TO_METERS * FEET_TO_METERS;
-static const float CUBED_METERS_TO_CUBED_MILLIMETERS = METERS_TO_MILLIMETERS * METERS_TO_MILLIMETERS * METERS_TO_MILLIMETERS;
-static const float CUBED_MILLIMETERS_TO_CUBED_METERS = MILLIMETERS_TO_METERS * MILLIMETERS_TO_METERS * MILLIMETERS_TO_METERS;
-static const float CUBED_FEET_TO_CUBED_INCHES = FEET_TO_INCHES * FEET_TO_INCHES * FEET_TO_INCHES;
-static const float CUBED_INCHES_TO_CUBED_FEET = INCHES_TO_FEET * INCHES_TO_FEET * INCHES_TO_FEET;
-static const float GRAMS_TO_OUNCES = 0.035274f;
-static const float OUNCES_TO_GRAMS = 1.0f / GRAMS_TO_OUNCES;
-static const float MINUTES_TO_SECONDS = 60.0f;
-static const float SECONDS_TO_MINUTES = 1.0f / MINUTES_TO_SECONDS;
-
-static const std::vector<Conversion> CONVERSIONS = {
-    { UnitsType::Celsius,                  UnitsType::Farhenheit,               [](float value){ return (value * 1.8f) + 32.0f; } },
-    { UnitsType::Farhenheit,               UnitsType::Celsius,                  [](float value){ return (value - 32.0f) * 0.55555f; } },
-    { UnitsType::Feet,                     UnitsType::Inches,                   [](float value){ return value * FEET_TO_INCHES; } },
-    { UnitsType::Feet,                     UnitsType::Meters,                   [](float value){ return value * FEET_TO_METERS; } },
-    { UnitsType::Grams,                    UnitsType::Ounces,                   [](float value){ return value * GRAMS_TO_OUNCES; } },
-    { UnitsType::Inches,                   UnitsType::Feet,                     [](float value){ return value * INCHES_TO_FEET; } },
-    { UnitsType::Inches,                   UnitsType::Millimeters,              [](float value){ return value * INCHES_TO_MILLIMETERS; } },
-    { UnitsType::InchesPerSecond,          UnitsType::MillimetersPerSecond,     [](float value){ return value * INCHES_TO_MILLIMETERS; } },
-    { UnitsType::InchesCube,               UnitsType::MillimetersCube,          [](float value){ return value * CUBED_INCHES_TO_CUBED_MILLIMETERS; } },
-    { UnitsType::InchesCubePerSecond,      UnitsType::MillimetersCubePerSecond, [](float value){ return value * CUBED_INCHES_TO_CUBED_MILLIMETERS; } },
-    { UnitsType::Meters,                   UnitsType::Millimeters,              [](float value){ return value * METERS_TO_MILLIMETERS; } },
-    { UnitsType::Meters,                   UnitsType::Feet,                     [](float value){ return value * METERS_TO_FEET; } },
-    { UnitsType::MetersCube,               UnitsType::MillimetersCube,          [](float value){ return value * CUBED_METERS_TO_CUBED_MILLIMETERS; } },
-    { UnitsType::Millimeters,              UnitsType::Inches,                   [](float value){ return value * MILLIMETERS_TO_INCHES; } },
-    { UnitsType::MillimetersPerSecond,     UnitsType::InchesPerSecond,          [](float value){ return value * MILLIMETERS_TO_INCHES; } },
-    { UnitsType::MillimetersPerSecond,     UnitsType::MillimetersPerMinute,     [](float value){ return value * MINUTES_TO_SECONDS; } },
-    { UnitsType::MillimetersPerMinute,     UnitsType::MillimetersPerSecond,     [](float value){ return value * SECONDS_TO_MINUTES; } },
-    { UnitsType::MillimetersCube,          UnitsType::InchesCube,               [](float value){ return value * CUBED_MILLIMETERS_TO_CUBED_INCHES; } },
-    { UnitsType::MillimetersCubePerSecond, UnitsType::InchesCubePerSecond,      [](float value){ return value * CUBED_MILLIMETERS_TO_CUBED_INCHES; } },
-    { UnitsType::Millimeters,              UnitsType::Meters,                   [](float value){ return value * MILLIMETERS_TO_METERS; } },
-    { UnitsType::MillimetersCube,          UnitsType::MetersCube,               [](float value){ return value * CUBED_MILLIMETERS_TO_CUBED_METERS; } },
-    { UnitsType::Ounces,                   UnitsType::Grams,                    [](float value){ return value * OUNCES_TO_GRAMS; } },
-    { UnitsType::Minutes,                  UnitsType::Seconds,                  [](float value){ return value * MINUTES_TO_SECONDS; } },
-    { UnitsType::Seconds,                  UnitsType::Minutes,                  [](float value){ return value * SECONDS_TO_MINUTES; } },
-};
-
-float convert(float value, UnitsType value_units, UnitsType desired_units)
-{
-    DEBUG_ASSERT(value_units < UnitsType::COUNT && desired_units < UnitsType::COUNT);
-    const auto it = std::find_if(CONVERSIONS.begin(), CONVERSIONS.end(), 
-      [value_units, desired_units](const Conversion& c) { return c.in == value_units && c.out == desired_units; });
-    DEBUG_ASSERT(value_units == desired_units || it != CONVERSIONS.end());
-    return (it != CONVERSIONS.end()) ? it->conversion_function(value) : value;
-}
 
 std::string format_to_string(float value, UnitsType units, uint8_t decimals)
 {
@@ -136,7 +76,7 @@ std::string convert_and_format_to_string(float value, UnitsType value_units, Uni
 std::string units_as_string(UnitsType units)
 {
     DEBUG_ASSERT(units < UnitsType::COUNT);
-    return UNITS_STR[std::size_t(units)];
+    return UNITS_STR[size_t(units)];
 }
 
 struct TimeHDMS

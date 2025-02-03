@@ -41,7 +41,7 @@ public:
 
     void reset() { m_gcode.clear(); }
 
-    const Line& line_at(uint32_t id) const;
+    Line line_at(uint32_t id) const;
 
     void resize_range(Range& range, uint32_t lines_count, uint32_t curr_line_id) const;
 

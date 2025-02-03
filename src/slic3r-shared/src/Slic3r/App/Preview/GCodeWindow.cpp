@@ -11,7 +11,7 @@ static const ImVec4 PARAMETERS_COLOR = { 1.0f, 1.0f, 1.0f, 1.0f };
 static const ImVec4 COMMENT_COLOR    = { 0.7f, 0.7f, 0.7f, 1.0f };
 static const ImVec4 ELLIPSIS_COLOR   = { 0.0f, 0.7f, 0.0f, 1.0f };
 
-const GCodeWindowData::Line& GCodeWindowData::line_at(uint32_t id) const
+GCodeWindowData::Line GCodeWindowData::line_at(uint32_t id) const
 {
     static const Line DUMMY_LINE = Line();
     if (id < uint32_t(m_gcode.size())) {

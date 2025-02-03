@@ -14,6 +14,7 @@ endif()
 
 add_subdirectory(slic3r-jthread)
 add_subdirectory(libslic3r)
+add_subdirectory(libpgcode)
 
 if (SLIC3R_ENABLE_FORMAT_STEP)
     add_subdirectory(occt_wrapper)

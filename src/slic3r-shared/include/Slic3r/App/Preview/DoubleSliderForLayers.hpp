@@ -52,8 +52,8 @@ public:
 
     void change_one_layer_lock();
 
-    Slic3r::Domain::CustomGCodeInfo ticks_values() const;
-    void set_ticks_values(const Slic3r::Domain::CustomGCodeInfo& custom_gcode_per_print_z);
+    Slic3r::CustomGCode::Info ticks_values() const;
+    void set_ticks_values(const Slic3r::CustomGCode::Info& custom_gcode_per_print_z);
 
     void set_layers_times(const std::vector<float>& layers_times, float total_time);
     void set_layers_times(const std::vector<float>& layers_times);
@@ -106,11 +106,11 @@ public:
     void set_get_used_extruders_in_print_callback(GetUsedExtrudersInPrintCallback cb) { m_ticks.set_get_used_extruders_in_print_callback(cb); }
     void set_get_extruders_sequence_callback(GetExtrudersSequenceCallback cb) { m_ticks.set_get_extruders_sequence_callback(cb); }
 
-    std::string gcode(Slic3r::Domain::CustomGCodeType type) const { return m_ticks.gcode(type); }
+    std::string gcode(Slic3r::CustomGCode::Type type) const { return m_ticks.gcode(type); }
 
-    const ImVec2 get_size() const { return m_size; }
+    const ImVec2 size() const { return m_size; }
 
-    void set_units(Slic3r::Domain::UnitsSystem units) { m_units = units; }
+    void set_units(Slic3r::Biz::libpgcode::UnitsSystem units) { m_units = units; }
 
     /**
      * @name Implementation of Imgui::DoubleSlider::Manager public interface
@@ -142,7 +142,7 @@ private:
     bool render_jump_to_window(const ImVec2& pos, float& active_value);
     void render_color_picker();
 
-    void add_code_as_tick(Slic3r::Domain::CustomGCodeType type, int selected_extruder = -1);
+    void add_code_as_tick(Slic3r::CustomGCode::Type type, int selected_extruder = -1);
     void edit_tick(int tick = -1);
     void discard_all_ticks();
     void process_jump_to_value();
@@ -158,7 +158,7 @@ private:
     void process_ticks_changed() { if (m_cb_ticks_changed != nullptr) m_cb_ticks_changed(); }
 
 private:
-    Slic3r::Domain::UnitsSystem m_units{ Slic3r::Domain::UnitsSystem::SI };
+    Slic3r::Biz::libpgcode::UnitsSystem m_units{ Slic3r::Biz::libpgcode::UnitsSystem::SI };
 
     bool m_is_osx{ false };
     bool m_allow_editing{ true };
@@ -170,7 +170,7 @@ private:
     int m_pos_on_move{ -1 };
 
     DrawMode m_draw_mode{ DrawMode::Regular };
-    Slic3r::Domain::PrinterMode m_mode{ Slic3r::Domain::PrinterMode::SingleExtruder };
+    Slic3r::CustomGCode::Mode m_mode{ Slic3r::CustomGCode::SingleExtruder };
     FocusedItem m_focus{ FocusedItem::None };
 
     Imgui::DoubleSlider::Ruler m_ruler;

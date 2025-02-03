@@ -5,7 +5,7 @@
 
 #include <random>
 
-using namespace Slic3r::Domain;
+using namespace Slic3r;
 
 namespace Slic3r::App::Preview {
 
@@ -19,18 +19,18 @@ TickCodeManager::TickCodeManager()
     m_pause_print_msg = _u8L("Place bearings in slots and resume printing");
 }
 
-void TickCodeManager::set_ticks(const CustomGCodeInfo& custom_gcode_per_print_z)
+void TickCodeManager::set_ticks(const CustomGCode::Info& custom_gcode_per_print_z)
 {
     ticks.clear();
 
-    const std::vector<CustomGCodeItem>& heights = custom_gcode_per_print_z.gcodes;
+    const std::vector<CustomGCode::Item>& heights = custom_gcode_per_print_z.gcodes;
     for (auto h : heights) {
         int tick = tick_from_value(h.print_z);
         if (tick >=0)
-            ticks.emplace(TickCode{ tick, h.type, h.extruder, h.str_color, h.extra });
+            ticks.emplace(TickCode{ tick, h.type, h.extruder, h.color, h.extra });
     }
 
-    if (custom_gcode_per_print_z.mode != PrinterMode::Undefined && !custom_gcode_per_print_z.gcodes.empty())
+    if (custom_gcode_per_print_z.mode != CustomGCode::Mode::Undef && !custom_gcode_per_print_z.gcodes.empty())
         mode = custom_gcode_per_print_z.mode;
 }
 
@@ -39,18 +39,18 @@ bool TickCodeManager::has_tick(int tick) const
     return ticks.find(TickCode{ tick }) != ticks.end();
 }
 
-bool TickCodeManager::add_tick(const int tick, CustomGCodeType type, const int extruder, float print_z)
+bool TickCodeManager::add_tick(const int tick, CustomGCode::Type type, const int extruder, float print_z)
 {
     std::string color;
     std::string extra;
-    if (type == CustomGCodeType::Custom) {
+    if (type == CustomGCode::Type::Custom) {
         // custom Gcode
         extra = custom_code(m_custom_gcode, print_z);
         if (extra.empty())
             return false;
         m_custom_gcode = extra;
     }
-    else if (type == CustomGCodeType::PausePrint) {
+    else if (type == CustomGCode::Type::PausePrint) {
         extra = pause_print_msg(m_pause_print_msg, print_z);
         if (extra.empty())
             return false;
@@ -74,13 +74,13 @@ bool TickCodeManager::edit_tick(std::set<TickCode>::iterator it, float print_z)
     TickCode changed_tick = *it;
 
     std::string edited_value;
-    if (it->type == CustomGCodeType::ColorChange)
+    if (it->type == CustomGCode::Type::ColorChange)
         edited_value = new_color(it->color);
-    else if (it->type == CustomGCodeType::PausePrint)
+    else if (it->type == CustomGCode::Type::PausePrint)
         edited_value = pause_print_msg(it->extra, print_z);
     else
-        edited_value = custom_code((it->type == CustomGCodeType::Template) ?
-            gcode(CustomGCodeType::Template) : it->extra, print_z);
+        edited_value = custom_code((it->type == CustomGCode::Type::Template) ?
+            gcode(CustomGCode::Type::Template) : it->extra, print_z);
 
     if (edited_value.empty())
         return false;
@@ -89,23 +89,23 @@ bool TickCodeManager::edit_tick(std::set<TickCode>::iterator it, float print_z)
     if (it = ticks.find(changed_tick); it == ticks.end())
         return false;
 
-    if (it->type == CustomGCodeType::ColorChange) {
+    if (it->type == CustomGCode::Type::ColorChange) {
         if (it->color == edited_value)
             return false;
         changed_tick.color = edited_value;
     }
-    else if (it->type == CustomGCodeType::Template) {
-        if (gcode(CustomGCodeType::Template) == edited_value)
+    else if (it->type == CustomGCode::Type::Template) {
+        if (gcode(CustomGCode::Type::Template) == edited_value)
             return false;
         changed_tick.extra = edited_value;
-        changed_tick.type = CustomGCodeType::Custom;
+        changed_tick.type = CustomGCode::Type::Custom;
     }
-    else if (it->type == CustomGCodeType::Custom || it->type == CustomGCodeType::PausePrint) {
+    else if (it->type == CustomGCode::Type::Custom || it->type == CustomGCode::Type::PausePrint) {
         if (it->extra == edited_value)
             return false;
         changed_tick.extra = edited_value;
-        if (it->type == CustomGCodeType::Template)
-            changed_tick.type = CustomGCodeType::Custom;
+        if (it->type == CustomGCode::Type::Template)
+            changed_tick.type = CustomGCode::Type::Custom;
     }
 
     ticks.erase(it);
@@ -114,13 +114,13 @@ bool TickCodeManager::edit_tick(std::set<TickCode>::iterator it, float print_z)
     return true;
 }
 
-void TickCodeManager::add_auto_color_change(PrinterMode main_mode, const int extruders_cnt, float print_z)
+void TickCodeManager::add_auto_color_change(CustomGCode::Mode main_mode, const int extruders_cnt, float print_z)
 {
     int tick = tick_from_value(print_z);
     if (tick >= 0 && !has_tick(tick)) {
-        if (main_mode == PrinterMode::SingleExtruder) {
+        if (main_mode == CustomGCode::Mode::SingleExtruder) {
             set_default_colors(true);
-            add_tick(tick, CustomGCodeType::ColorChange, 1, print_z);
+            add_tick(tick, CustomGCode::Type::ColorChange, 1, print_z);
         }
         else {
             int extruder = 2;
@@ -131,12 +131,12 @@ void TickCodeManager::add_auto_color_change(PrinterMode main_mode, const int ext
                 if (extruder > extruders_cnt)
                     extruder = 1;
             }
-            add_tick(tick, CustomGCodeType::ToolChange, extruder, print_z);
+            add_tick(tick, CustomGCode::Type::ToolChange, extruder, print_z);
         }
     }
 }
 
-void TickCodeManager::switch_code(CustomGCodeType type_from, CustomGCodeType type_to)
+void TickCodeManager::switch_code(CustomGCode::Type type_from, CustomGCode::Type type_to)
 {
     for (auto it{ ticks.begin() }, end{ ticks.end() }; it != end; )
         if (it->type == type_from) {
@@ -150,7 +150,7 @@ void TickCodeManager::switch_code(CustomGCodeType type_from, CustomGCodeType typ
             ++it;
 }
 
-bool TickCodeManager::switch_code_for_tick(std::set<TickCode>::iterator it, CustomGCodeType type_to, const int extruder)
+bool TickCodeManager::switch_code_for_tick(std::set<TickCode>::iterator it, CustomGCode::Type type_to, const int extruder)
 {
     std::string color = color_for_tick(*it, type_to, extruder);
     if (color.empty())
@@ -167,7 +167,7 @@ bool TickCodeManager::switch_code_for_tick(std::set<TickCode>::iterator it, Cust
     return true;
 }
 
-void TickCodeManager::erase_all_ticks_with_code(CustomGCodeType type)
+void TickCodeManager::erase_all_ticks_with_code(CustomGCode::Type type)
 {
     for (auto it{ ticks.begin() }, end{ ticks.end() }; it != end; ) {
         if (it->type == type)
@@ -177,17 +177,17 @@ void TickCodeManager::erase_all_ticks_with_code(CustomGCodeType type)
     }
 }
 
-ConflictType TickCodeManager::is_conflict_tick(const TickCode& tick, PrinterMode main_mode, float print_z) const
+ConflictType TickCodeManager::is_conflict_tick(const TickCode& tick, CustomGCode::Mode main_mode, float print_z) const
 {
-    if ((tick.type == CustomGCodeType::ColorChange && (
-            (mode == PrinterMode::SingleExtruder && main_mode == PrinterMode::MultiExtruder ) ||
-            (mode == PrinterMode::MultiExtruder  && main_mode == PrinterMode::SingleExtruder)    )) ||
-        (tick.type == CustomGCodeType::ToolChange &&
-            (mode == PrinterMode::MultiAsSingle && main_mode != PrinterMode::MultiAsSingle)) )
+    if ((tick.type == CustomGCode::Type::ColorChange && (
+            (mode == CustomGCode::Mode::SingleExtruder && main_mode == CustomGCode::Mode::MultiExtruder ) ||
+            (mode == CustomGCode::Mode::MultiExtruder  && main_mode == CustomGCode::Mode::SingleExtruder)    )) ||
+        (tick.type == CustomGCode::Type::ToolChange &&
+            (mode == CustomGCode::Mode::MultiAsSingle && main_mode != CustomGCode::Mode::MultiAsSingle)) )
         return ConflictType::ModeConflict;
 
     // check ColorChange tick
-    if (tick.type == CustomGCodeType::ColorChange) {
+    if (tick.type == CustomGCode::Type::ColorChange) {
         // We should mark a tick as a "MeaninglessColorChange", 
         // if it has a ColorChange for unused extruder from current print to end of the print
         std::set<int> extruders_for_tick = used_extruders_for_tick(tick.tick, print_z, main_mode);
@@ -197,14 +197,14 @@ ConflictType TickCodeManager::is_conflict_tick(const TickCode& tick, PrinterMode
 
         // We should mark a tick as a "Redundant", 
         // if it has a ColorChange for extruder that has not been used before
-        if (mode == PrinterMode::MultiAsSingle && tick.extruder != std::max<int>(only_extruder_id, 1)) {
+        if (mode == CustomGCode::Mode::MultiAsSingle && tick.extruder != std::max<int>(only_extruder_id, 1)) {
             auto it = ticks.lower_bound( tick );
-            if (it == ticks.begin() && it->type == CustomGCodeType::ToolChange && tick.extruder == it->extruder)
+            if (it == ticks.begin() && it->type == CustomGCode::Type::ToolChange && tick.extruder == it->extruder)
                 return ConflictType::None;
 
             while (it != ticks.begin()) {
                 --it;
-                if (it->type == CustomGCodeType::ToolChange && tick.extruder == it->extruder)
+                if (it->type == CustomGCode::Type::ToolChange && tick.extruder == it->extruder)
                     return ConflictType::None;
             }
 
@@ -213,7 +213,7 @@ ConflictType TickCodeManager::is_conflict_tick(const TickCode& tick, PrinterMode
     }
 
     // check ToolChange tick
-    if (mode == PrinterMode::MultiAsSingle && tick.type == CustomGCodeType::ToolChange) {
+    if (mode == CustomGCode::Mode::MultiAsSingle && tick.type == CustomGCode::Type::ToolChange) {
         // We should mark a tick as a "MeaninglessToolChange", 
         // if it has a ToolChange to the same extruder
         auto it = ticks.find(tick);
@@ -225,7 +225,7 @@ ConflictType TickCodeManager::is_conflict_tick(const TickCode& tick, PrinterMode
 
         while (it != ticks.begin()) {
             --it;
-            if (it->type == CustomGCodeType::ToolChange)
+            if (it->type == CustomGCode::Type::ToolChange)
                 return tick.extruder == it->extruder ? ConflictType::MeaninglessToolChange : ConflictType::None;
         }
     }
@@ -249,7 +249,7 @@ int TickCodeManager::tick_from_value(float value, bool force_lower_bound/* = fal
     return int(it - m_values->begin());
 }
 
-std::string TickCodeManager::gcode(CustomGCodeType type) const
+std::string TickCodeManager::gcode(CustomGCode::Type type) const
 {
     if (m_cb_get_gcode)
         return m_cb_get_gcode(type);
@@ -258,25 +258,25 @@ std::string TickCodeManager::gcode(CustomGCodeType type) const
 
 // Get used extruders for tick. 
 // Means all extruders(tools) which will be used during printing from current tick to the end
-std::set<int> TickCodeManager::used_extruders_for_tick(int tick, float print_z, PrinterMode force_mode/* = Undef*/) const
+std::set<int> TickCodeManager::used_extruders_for_tick(int tick, float print_z, CustomGCode::Mode force_mode/* = Undef*/) const
 {
-    PrinterMode e_mode = (force_mode == PrinterMode::Undefined) ? mode : force_mode;
+    CustomGCode::Mode e_mode = (force_mode == CustomGCode::Mode::Undef) ? mode : force_mode;
 
-    if (e_mode == PrinterMode::MultiExtruder) {
+    if (e_mode == CustomGCode::Mode::MultiExtruder) {
         if (m_cb_get_used_extruders_in_print)
             return m_cb_get_used_extruders_in_print(print_z);
         return {};
     }
 
-    const int default_initial_extruder = e_mode == PrinterMode::MultiAsSingle ? std::max(only_extruder_id, 1) : 1;
-    if (ticks.empty() || e_mode == PrinterMode::SingleExtruder)
+    int default_initial_extruder = e_mode == CustomGCode::Mode::MultiAsSingle ? std::max(only_extruder_id, 1) : 1;
+    if (ticks.empty() || e_mode == CustomGCode::Mode::SingleExtruder)
         return { default_initial_extruder };
 
     std::set<int> used_extruders;
 
     auto it_start = ticks.lower_bound(TickCode{ tick });
     auto it = it_start;
-    if (it == ticks.begin() && it->type == CustomGCodeType::ToolChange &&
+    if (it == ticks.begin() && it->type == CustomGCode::Type::ToolChange &&
         tick != it->tick)  // In case of switch of ToolChange to ColorChange, when tick exists,
         // we shouldn't change color for extruder, which will be deleted
     {
@@ -287,7 +287,7 @@ std::set<int> TickCodeManager::used_extruders_for_tick(int tick, float print_z, 
 
     while (it != ticks.begin()) {
         --it;
-        if (it->type == CustomGCodeType::ToolChange && tick != it->tick) {
+        if (it->type == CustomGCode::Type::ToolChange && tick != it->tick) {
             used_extruders.emplace(it->extruder);
             break;
         }
@@ -297,7 +297,7 @@ std::set<int> TickCodeManager::used_extruders_for_tick(int tick, float print_z, 
         used_extruders.emplace(default_initial_extruder);
 
     for (it = it_start; it != ticks.end(); ++it)
-        if (it->type == CustomGCodeType::ToolChange && tick != it->tick)
+        if (it->type == CustomGCode::Type::ToolChange && tick != it->tick)
             used_extruders.emplace(it->extruder);
 
     return used_extruders;
@@ -307,9 +307,9 @@ std::set<int> TickCodeManager::used_extruders_for_tick(int tick, float print_z, 
 // Means one current extruder for not existing tick OR 
 // 2 extruders - for existing tick (extruder before ToolChange and extruder of current existing tick)
 // Use those values to disable selection of active extruders
-std::array<int, 2> TickCodeManager::active_extruders_for_tick(int tick, PrinterMode main_mode) const
+std::array<int, 2> TickCodeManager::active_extruders_for_tick(int tick, CustomGCode::Mode main_mode) const
 {
-    int default_initial_extruder = main_mode == PrinterMode::MultiAsSingle ? std::max<int>(1, only_extruder_id) : 1;
+    int default_initial_extruder = main_mode == CustomGCode::Mode::MultiAsSingle ? std::max<int>(1, only_extruder_id) : 1;
     std::array<int, 2> extruders = { default_initial_extruder, -1 };
     if (empty())
         return extruders;
@@ -321,7 +321,7 @@ std::array<int, 2> TickCodeManager::active_extruders_for_tick(int tick, PrinterM
 
     while (it != ticks.begin()) {
         --it;
-        if (it->type == CustomGCodeType::ToolChange) {
+        if (it->type == CustomGCode::Type::ToolChange) {
             extruders[0] = it->extruder;
             break;
         }
@@ -340,7 +340,7 @@ std::string TickCodeManager::color_for_tool_change_tick(std::set<TickCode>::cons
     auto it_n = it;
     while (it_n != ticks.begin()) {
         --it_n;
-        if (it_n->type == CustomGCodeType::ColorChange && it_n->extruder == current_extruder)
+        if (it_n->type == CustomGCode::Type::ColorChange && it_n->extruder == current_extruder)
             return it_n->color;
     }
 
@@ -354,13 +354,13 @@ std::string TickCodeManager::color_for_color_change_tick(std::set<TickCode>::con
     bool is_tool_change = false;
     while (it_n != ticks.begin()) {
         --it_n;
-        if (it_n->type == CustomGCodeType::ToolChange) {
+        if (it_n->type == CustomGCode::Type::ToolChange) {
             is_tool_change = true;
             if (it_n->extruder == it->extruder)
                 return it->color;
             break;
         }
-        if (it_n->type == CustomGCodeType::ColorChange && it_n->extruder == it->extruder)
+        if (it_n->type == CustomGCode::Type::ColorChange && it_n->extruder == it->extruder)
             return it->color;
     }
     if (!is_tool_change && it->extruder == def_extruder)
@@ -369,22 +369,22 @@ std::string TickCodeManager::color_for_color_change_tick(std::set<TickCode>::con
     return "";
 }
 
-bool TickCodeManager::check_ticks_changed_event(CustomGCodeType type, PrinterMode main_mode)
+bool TickCodeManager::check_ticks_changed_event(CustomGCode::Type type, CustomGCode::Mode main_mode)
 {
     if (mode == main_mode ||
-        (type != CustomGCodeType::ColorChange && type != CustomGCodeType::ToolChange) ||
-        (mode == PrinterMode::SingleExtruder && main_mode == PrinterMode::MultiAsSingle) || // All ColorChanges will be applied for 1st extruder
-        (mode == PrinterMode::MultiExtruder  && main_mode == PrinterMode::MultiAsSingle))  // Just mark ColorChanges for all unused extruders
+        (type != CustomGCode::Type::ColorChange && type != CustomGCode::Type::ToolChange) ||
+        (mode == CustomGCode::Mode::SingleExtruder && main_mode == CustomGCode::Mode::MultiAsSingle) || // All ColorChanges will be applied for 1st extruder
+        (mode == CustomGCode::Mode::MultiExtruder  && main_mode == CustomGCode::Mode::MultiAsSingle))  // Just mark ColorChanges for all unused extruders
         return true;
 
-    if ((mode == PrinterMode::SingleExtruder && main_mode == PrinterMode::MultiExtruder) ||
-        (mode == PrinterMode::MultiExtruder && main_mode == PrinterMode::SingleExtruder))
+    if ((mode == CustomGCode::Mode::SingleExtruder && main_mode == CustomGCode::Mode::MultiExtruder) ||
+        (mode == CustomGCode::Mode::MultiExtruder && main_mode == CustomGCode::Mode::SingleExtruder))
     {
-        if (!has_tick_with_code(CustomGCodeType::ColorChange))
+        if (!has_tick_with_code(CustomGCode::Type::ColorChange))
             return true;
 
         if (m_cb_show_info_msg) {
-            std::string message = (mode == PrinterMode::SingleExtruder) ?
+            std::string message = (mode == CustomGCode::Mode::SingleExtruder) ?
                             _u8L("The last color change data was saved for a single extruder printing.") :
                             (
                                 _u8L("The last color change data was saved for a multi extruder printing.") + "\n" +
@@ -393,14 +393,14 @@ bool TickCodeManager::check_ticks_changed_event(CustomGCodeType type, PrinterMod
                             );
 
             if ( m_cb_show_info_msg(message, YES | NO) == YES)
-                erase_all_ticks_with_code(CustomGCodeType::ColorChange);
+                erase_all_ticks_with_code(CustomGCode::Type::ColorChange);
         }
         return false;
     }
     //          m_ticks_mode == MultiAsSingle
-    if (has_tick_with_code(CustomGCodeType::ToolChange)) {
+    if (has_tick_with_code(CustomGCode::Type::ToolChange)) {
         if (m_cb_show_info_msg) {
-            std::string message = (main_mode == PrinterMode::SingleExtruder) ?
+            std::string message = (main_mode == CustomGCode::Mode::SingleExtruder) ?
                             (
                                 _u8L("The last color change data was saved for a multi extruder printing.") + "\n\n" +
                                 _u8L("Select YES if you want to delete all saved tool changes, \n"
@@ -414,11 +414,11 @@ bool TickCodeManager::check_ticks_changed_event(CustomGCodeType type, PrinterMod
                                 _u8L("Are you sure you want to continue?")
                             );
 
-            int answer = m_cb_show_info_msg(message, YES | NO | (main_mode == PrinterMode::SingleExtruder ? CANCEL : 0));
+            int answer = m_cb_show_info_msg(message, YES | NO | (main_mode == CustomGCode::Mode::SingleExtruder ? CANCEL : 0));
             if (answer == YES)
-                erase_all_ticks_with_code(CustomGCodeType::ToolChange);
-            else if (main_mode == PrinterMode::SingleExtruder && answer == NO)
-                switch_code(CustomGCodeType::ToolChange, CustomGCodeType::ColorChange);
+                erase_all_ticks_with_code(CustomGCode::Type::ToolChange);
+            else if (main_mode == CustomGCode::Mode::SingleExtruder && answer == NO)
+                switch_code(CustomGCode::Type::ToolChange, CustomGCode::Type::ColorChange);
         }
         return false;
     }
@@ -429,9 +429,9 @@ bool TickCodeManager::check_ticks_changed_event(CustomGCodeType type, PrinterMod
     return true;
 }
 
-bool TickCodeManager::edit_extruder_sequence(const int max_tick, PrinterMode main_mode)
+bool TickCodeManager::edit_extruder_sequence(const int max_tick, CustomGCode::Mode main_mode)
 {
-    if (!check_ticks_changed_event(CustomGCodeType::ToolChange, main_mode) || !m_cb_get_extruders_sequence)
+    if (!check_ticks_changed_event(CustomGCode::Type::ToolChange, main_mode) || !m_cb_get_extruders_sequence)
         return false;
 
     // init extruder sequence in respect to the extruders count 
@@ -441,7 +441,7 @@ bool TickCodeManager::edit_extruder_sequence(const int max_tick, PrinterMode mai
     if(!m_cb_get_extruders_sequence(m_extruders_sequence))
         return false;
 
-    erase_all_ticks_with_code(CustomGCodeType::ToolChange);
+    erase_all_ticks_with_code(CustomGCode::Type::ToolChange);
 
     int extr_cnt = int(m_extruders_sequence.extruders.size());
     if (extr_cnt == 1)
@@ -477,7 +477,7 @@ bool TickCodeManager::edit_extruder_sequence(const int max_tick, PrinterMode mai
 
         bool meaningless_tick = tick == 0.0 && cur_extruder == extruder;
         if (!meaningless_tick && !color_repetition)
-            ticks.emplace(TickCode{ tick, CustomGCodeType::ToolChange, cur_extruder + 1, colors[cur_extruder] });
+            ticks.emplace(TickCode{ tick, CustomGCode::Type::ToolChange, cur_extruder + 1, colors[cur_extruder] });
 
         if (m_extruders_sequence.is_mm_intervals) {
             value += m_extruders_sequence.interval_by_mm;
@@ -492,7 +492,7 @@ bool TickCodeManager::edit_extruder_sequence(const int max_tick, PrinterMode mai
     return true;
 }
 
-bool TickCodeManager::has_tick_with_code(CustomGCodeType type)
+bool TickCodeManager::has_tick_with_code(CustomGCode::Type type)
 {
     for (const TickCode& tick : ticks)
         if (tick.type == type)
@@ -501,7 +501,7 @@ bool TickCodeManager::has_tick_with_code(CustomGCodeType type)
     return false;
 }
 
-std::string TickCodeManager::color_for_tick(TickCode tick, CustomGCodeType type, const int extruder)
+std::string TickCodeManager::color_for_tick(TickCode tick, CustomGCode::Type type, const int extruder)
 {
     auto opposite_one_color = [](const std::string& color) {
         ColorRGB rgb;
@@ -514,16 +514,16 @@ std::string TickCodeManager::color_for_tick(TickCode tick, CustomGCodeType type,
         return encode_color(opposite(rgb1, rgb2));
     };
 
-    if (mode == PrinterMode::SingleExtruder && type == CustomGCodeType::ColorChange && m_use_default_colors) {
+    if (mode == CustomGCode::Mode::SingleExtruder && type == CustomGCode::Type::ColorChange && m_use_default_colors) {
         if (ticks.empty())
             return opposite_one_color(colors[0]);
 
         auto before_tick_it = std::lower_bound(ticks.begin(), ticks.end(), tick);
         if (before_tick_it == ticks.end()) {
             while (before_tick_it != ticks.begin())
-                if (--before_tick_it; before_tick_it->type == CustomGCodeType::ColorChange)
+                if (--before_tick_it; before_tick_it->type == CustomGCode::Type::ColorChange)
                     break;
-            if (before_tick_it->type == CustomGCodeType::ColorChange)
+            if (before_tick_it->type == CustomGCode::Type::ColorChange)
                 return opposite_one_color(before_tick_it->color);
 
             return opposite_one_color(colors[0]);
@@ -531,36 +531,36 @@ std::string TickCodeManager::color_for_tick(TickCode tick, CustomGCodeType type,
 
         if (before_tick_it == ticks.begin()) {
             const std::string& frst_color = colors[0];
-            if (before_tick_it->type == CustomGCodeType::ColorChange)
+            if (before_tick_it->type == CustomGCode::Type::ColorChange)
                 return opposite_two_colors(frst_color, before_tick_it->color);
 
             auto next_tick_it = before_tick_it;
             while (next_tick_it != ticks.end())
-                if (++next_tick_it; next_tick_it != ticks.end() && next_tick_it->type == CustomGCodeType::ColorChange)
+                if (++next_tick_it; next_tick_it != ticks.end() && next_tick_it->type == CustomGCode::Type::ColorChange)
                     break;
-            if (next_tick_it != ticks.end() && next_tick_it->type == CustomGCodeType::ColorChange)
+            if (next_tick_it != ticks.end() && next_tick_it->type == CustomGCode::Type::ColorChange)
                 return opposite_two_colors(frst_color, next_tick_it->color);
 
             return opposite_one_color(frst_color);
         }
 
-        std::string frst_color = "";
-        if (before_tick_it->type == CustomGCodeType::ColorChange)
+        std::string frst_color;
+        if (before_tick_it->type == CustomGCode::Type::ColorChange)
             frst_color = before_tick_it->color;
         else {
             auto next_tick_it = before_tick_it;
             while (next_tick_it != ticks.end())
-                if (++next_tick_it; next_tick_it != ticks.end() && next_tick_it->type == CustomGCodeType::ColorChange) {
+                if (++next_tick_it; next_tick_it != ticks.end() && next_tick_it->type == CustomGCode::Type::ColorChange) {
                     frst_color = next_tick_it->color;
                     break;
                 }
         }
 
         while (before_tick_it != ticks.begin())
-            if (--before_tick_it; before_tick_it->type == CustomGCodeType::ColorChange)
+            if (--before_tick_it; before_tick_it->type == CustomGCode::Type::ColorChange)
                 break;
 
-        if (before_tick_it->type == CustomGCodeType::ColorChange) {
+        if (before_tick_it->type == CustomGCode::Type::ColorChange) {
             if (frst_color.empty())
                 return opposite_one_color(before_tick_it->color);
 
@@ -575,12 +575,12 @@ std::string TickCodeManager::color_for_tick(TickCode tick, CustomGCodeType type,
 
     std::string color = colors[extruder - 1];
 
-    if (type == CustomGCodeType::ColorChange) {
+    if (type == CustomGCode::Type::ColorChange) {
         if (!ticks.empty()) {
             auto before_tick_it = std::lower_bound(ticks.begin(), ticks.end(), tick );
             while (before_tick_it != ticks.begin()) {
                 --before_tick_it;
-                if (before_tick_it->type == CustomGCodeType::ColorChange && before_tick_it->extruder == extruder) {
+                if (before_tick_it->type == CustomGCode::Type::ColorChange && before_tick_it->extruder == extruder) {
                     color = before_tick_it->color;
                     break;
                 }
