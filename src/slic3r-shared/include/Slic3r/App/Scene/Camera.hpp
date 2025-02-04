@@ -5,7 +5,7 @@
 #include "Slic3r/App/Scene/Transform.hpp"
 #include "Slic3r/App/Scene/Ray.hpp"
 #include "Slic3r/App/Render/Types.hpp"
-#include "Slic3r/Biz/ListenerList.hpp"
+#include "Slic3r/Biz/Platform/ListenerList.hpp"
 
 namespace Slic3r::App::Scene {
 

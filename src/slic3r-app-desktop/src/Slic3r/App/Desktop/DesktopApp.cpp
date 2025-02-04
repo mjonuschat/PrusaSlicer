@@ -9,7 +9,7 @@
 #include <Slic3r/App/Localization.hpp>
 #include <libslic3r/Model.hpp>
 
-#include <Slic3r/App/Platform/PlatformServices.hpp>
+#include <Slic3r/Biz/Platform/PlatformServices.hpp>
 
 
 #include <boost/log/trivial.hpp>
@@ -39,7 +39,7 @@ bool DesktopApp::OnInit()
 
     m_main_frame = new MainFrame(m_workbench, m_project_interactor->preset_interactor());
     Platform::WX::WXRenderCanvas& canvas = m_main_frame->get_render_canvas();
-    Platform::PlatformServices::instance().set_services(&canvas, &canvas);
+    Biz::Platform::PlatformServices::instance().set_services(&canvas, &canvas);
 #if USE_IMGUI_RENDER
     canvas.set_language(Localization::instance().active_language());
     canvas.set_font_size(1.7777f * float(App::WX::w_config()->normal_font().GetPointSize()));

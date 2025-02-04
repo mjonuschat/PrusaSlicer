@@ -5,7 +5,7 @@
 #include "IRenderRequestHandler.hpp"
 #include "IMainThreadDispatcher.hpp"
 
-namespace Slic3r::App::Platform {
+namespace Slic3r::Biz::Platform {
 
 class PlatformServices {
 public:

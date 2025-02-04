@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "Slic3r/App/Platform/AbstractRenderModule.hpp"
-#include "Slic3r/App/Platform/IRenderRequestHandler.hpp"
+#include "Slic3r/Biz/Platform/IRenderRequestHandler.hpp"
 #include "Slic3r/App/Platform/StdMainThreadDispatcher.hpp"
 #include "Slic3r/App/Render/ScreenInfo.hpp"
 
@@ -28,7 +28,7 @@ namespace Slic3r::App::Platform {
  * - facilitate rendering of render module
  * - translate platform specific events and push them the render module
  */
-class AbstractRenderCanvas : public IRenderRequestHandler, public IMainThreadDispatcher
+class AbstractRenderCanvas : public Biz::Platform::IRenderRequestHandler, public Biz::Platform::IMainThreadDispatcher
 {
 public:
     ~AbstractRenderCanvas() override = default;

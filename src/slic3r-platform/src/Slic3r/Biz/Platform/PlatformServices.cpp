@@ -1,6 +1,6 @@
-#include "Slic3r/App/Platform/PlatformServices.hpp"
+#include <Slic3r/Biz/Platform/PlatformServices.hpp>
 
-namespace Slic3r::App::Platform {
+namespace Slic3r::Biz::Platform {
 
 PlatformServices& PlatformServices::instance()
 {

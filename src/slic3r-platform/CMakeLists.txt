@@ -8,14 +8,15 @@ set(SLIC3R_PLATFORM_FILES
         include/Slic3r/App/Platform/PlatformError.hpp
         include/Slic3r/App/Platform/KeyModifers.hpp
         include/Slic3r/App/Platform/KeyCode.hpp
-        include/Slic3r/App/Platform/IMainThreadDispatcher.hpp
-        include/Slic3r/App/Platform/IRenderRequestHandler.hpp
+        include/Slic3r/Biz/Platform/IMainThreadDispatcher.hpp
+        include/Slic3r/Biz/Platform/IRenderRequestHandler.hpp
         src/Slic3r/App/Platform/StdMainThreadDispatcher.cpp
         include/Slic3r/App/Platform/StdMainThreadDispatcher.hpp
-        src/Slic3r/App/Platform/PlatformServices.cpp
-        include/Slic3r/App/Platform/PlatformServices.hpp
+        src/Slic3r/Biz/Platform/PlatformServices.cpp
+        include/Slic3r/Biz/Platform/PlatformServices.hpp
         src/Slic3r/App/Platform/JobManager.cpp
         include/Slic3r/App/Platform/JobManager.hpp
+        include/Slic3r/Biz/Platform/ListenerList.hpp
 )
 
 

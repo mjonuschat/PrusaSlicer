@@ -2,7 +2,7 @@
 
 #include "Slic3r/App/Platform/MouseEvent.hpp"
 #include "Slic3r/App/Platform/KeyboardEvent.hpp"
-#include "Slic3r/App/Platform/IRenderRequestHandler.hpp"
+#include "Slic3r/Biz/Platform/IRenderRequestHandler.hpp"
 #include "Slic3r/App/Render/ScreenInfo.hpp"
 
 namespace Slic3r::App::Render {
@@ -28,7 +28,7 @@ public:
     virtual void on_scene_mouse_event(const MouseEvent& e);
     virtual void on_scene_keyboard_event(const KeyboardEvent& e);
 
-    void activate(IRenderRequestHandler* render_request_handler);
+    void activate(Biz::Platform::IRenderRequestHandler* render_request_handler);
     void deactivate();
 
     void set_screen_size(const Render::ScreenInfo& screen_info);
@@ -59,7 +59,7 @@ protected:
     Render::ScreenInfo m_screen_info {0, 0, 1};
     bool m_initialized{false};
 private:
-    IRenderRequestHandler* m_render_request_handler{nullptr};
+    Biz::Platform::IRenderRequestHandler* m_render_request_handler{nullptr};
 };
 
 

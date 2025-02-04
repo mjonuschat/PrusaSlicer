@@ -8,7 +8,7 @@ void AbstractRenderModule::on_activated() {}
 void AbstractRenderModule::on_deactivated() {}
 void AbstractRenderModule::on_screen_resized() {}
 
-
+using Biz::Platform::IRenderRequestHandler;
 
 void AbstractRenderModule::activate(IRenderRequestHandler* render_request_handler)
 {

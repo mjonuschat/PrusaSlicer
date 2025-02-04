@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Slic3r/Domain/SelectionId.hpp"
-#include "Slic3r/Biz/ListenerList.hpp"
+#include "Slic3r/Biz/Platform/ListenerList.hpp"
 #include "Slic3r/Biz/Preset/PresetInteractor.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 #include "Slic3r/Biz/ISelectedBedInstanceChangedListener.hpp"

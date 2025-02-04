@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Slic3r::App::Platform {
+namespace Slic3r::Biz::Platform {
 
 class IRenderRequestHandler {
 public:

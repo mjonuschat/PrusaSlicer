@@ -7,7 +7,7 @@
 #include <Slic3r/Log.hpp>
 #include <Slic3r/App/Init.hpp>
 #include <Slic3r/App/Render/Context.hpp>
-#include <Slic3r/App/Platform/PlatformServices.hpp>
+#include <Slic3r/Biz/Platform/PlatformServices.hpp>
 #include <Slic3r/App/Platform/SDL/SDLRenderCanvas.hpp>
 #include <libslic3r/Utils.hpp>
 #include <libslic3r/Platform.hpp>
@@ -112,7 +112,7 @@ int main(int argc, char** argv)
     canvas->set_language("en");
     canvas->set_font_size(16.0f);
     Slic3r::App::Render::Context::instance().log_gl_info();
-    Slic3r::App::Platform::PlatformServices::instance().set_services(canvas.get(), canvas.get());
+    Slic3r::Biz::Platform::PlatformServices::instance().set_services(canvas.get(), canvas.get());
     render_module = std::make_unique<Slic3r::App::TestRenderModule>();
     SPDLOG_TRACE("RM created");
     canvas->set_render_module(render_module.get());

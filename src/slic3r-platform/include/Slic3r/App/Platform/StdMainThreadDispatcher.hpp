@@ -1,13 +1,13 @@
 #pragma once
 
-#include "IMainThreadDispatcher.hpp"
+#include <Slic3r/Biz/Platform/IMainThreadDispatcher.hpp>
 
 #include <vector>
 #include <mutex>
 
 namespace Slic3r::App::Platform {
 
-class StdMainThreadDispatcher : public IMainThreadDispatcher
+class StdMainThreadDispatcher : public Biz::Platform::IMainThreadDispatcher
 {
 public:
     void dispatch_on_main_thread(Function func) override;
