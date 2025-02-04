@@ -7,22 +7,15 @@
 #include "ProcessorImpl.hpp"
 #include "libpgcode/Utils.hpp"
 
-#include <libslic3r/libslic3r.h>
-#include <libslic3r/PrintConfig.hpp>
-
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/classification.hpp>
 
-#include <map>
-#include <cmath>
 #include <assert.h>
 
 #if __has_include(<charconv>)
 #include <charconv>
 #include <utility>
 #endif // __has_include
-
-using namespace Slic3r;
 
 namespace Slic3r::Biz::libpgcode {
 
@@ -930,7 +923,7 @@ void ProcessorImpl::process_G2_G3(const GCodeReader::GCodeLine& line, bool clock
     }
 
     // relative center
-    Vec3f rel_center = Slic3r::Vec3f::Zero();
+    Vec3f rel_center = Vec3f::Zero();
 #ifndef NDEBUG
     double radius = 0.0;
 #endif // NDEBUG

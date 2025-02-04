@@ -5,9 +5,13 @@
 ///|/
 #pragma once
 
+#include <libslic3r/libslic3r.h>
+#include <libslic3r/GCodeReader.hpp>
 #include <libslic3r/ExtrusionRole.hpp>
 #include <libslic3r/PrintConfig.hpp>
 #include <libslic3r/CustomGCode.hpp>
+#include <libslic3r/Color.hpp>
+#include <libslic3r/BoundingBox.hpp>
 
 #include <string_view>
 #include <optional>
@@ -27,7 +31,7 @@ static constexpr float DEFAULT_FILAMENT_DIAMETER = 1.75f;
 static constexpr float DEFAULT_FILAMENT_DENSITY  = 1.245f;
 static constexpr float DEFAULT_FILAMENT_COST     = 0.0f;
 
-static const Slic3r::Vec3f DEFAULT_EXTRUDER_OFFSET = Slic3r::Vec3f::Zero();
+static const Vec3f DEFAULT_EXTRUDER_OFFSET = Vec3f::Zero();
 
 static constexpr float DEFAULT_ACCELERATION         = 1500.0f; // Prusa Firmware 1_75mm_MK2
 static constexpr float DEFAULT_RETRACT_ACCELERATION = 1500.0f; // Prusa Firmware 1_75mm_MK2
@@ -45,6 +49,9 @@ static const std::vector<std::string> DEFAULT_COLOR_CHANGE_COLORS = {
     "#D16830", // 209, 104,  48
     "#942616", // 148,  38,  22
 };
+
+static constexpr size_t GCODE_EXTRUSION_ROLES_COUNT = size_t(GCodeExtrusionRole::Count);
+using GCodeExtrusionRoles = std::vector<GCodeExtrusionRole>;
 
 enum class MoveType : uint8_t
 {
@@ -110,10 +117,13 @@ enum class TimeMode : uint8_t
 
 static constexpr size_t TIME_MODES_COUNT = size_t(TimeMode::COUNT);
 
+using Times = std::array<float, TIME_MODES_COUNT>;
+using TimeModes = std::vector<TimeMode>;
+
 struct MoveVertex
 {
     MoveType type{ MoveType::Noop };
-    Slic3r::GCodeExtrusionRole extrusion_role{ Slic3r::GCodeExtrusionRole::None };
+    GCodeExtrusionRole extrusion_role{ GCodeExtrusionRole::None };
     uint8_t extruder_id{ 0 };
     uint8_t cp_color_id{ 0 };
     uint32_t gcode_id{ 0 };
@@ -128,8 +138,8 @@ struct MoveVertex
     float fan_speed{ 0.0f }; // percentage
     float temperature{ 0.0f }; // Celsius degrees
     float mass{ 0.0f }; // g
-    Slic3r::Vec3f position{ Slic3r::Vec3f::Zero() }; // mm
-    std::array<float, TIME_MODES_COUNT> time{}; // s
+    Vec3f position{ Vec3f::Zero() }; // mm
+    Times time{}; // s
 
     float volumetric_rate() const;
     float actual_volumetric_rate() const;
@@ -168,6 +178,8 @@ enum class OptionType : uint8_t
 };
 
 static constexpr size_t OPTION_TYPES_COUNT = size_t(OptionType::COUNT);
+
+using OptionTypes = std::vector<OptionType>;
 
 enum class UnitsSystem : uint8_t
 {
@@ -272,7 +284,7 @@ struct PrintEstimatedStatistics
     struct Mode
     {
         float time{ 0.0f };
-        std::vector<std::pair<Slic3r::CustomGCode::Type, std::pair<float, float>>> custom_gcode_times;
+        std::vector<std::pair<CustomGCode::Type, std::pair<float, float>>> custom_gcode_times;
 
         void reset();
     };
@@ -281,7 +293,7 @@ struct PrintEstimatedStatistics
     std::vector<float> volumes_per_color_change;
     std::map<uint8_t, float> volumes_per_extruder;
     std::map<uint8_t, float> cost_per_extruder;
-    std::map<Slic3r::GCodeExtrusionRole, std::pair<float, float>> used_filaments_per_role;
+    std::map<GCodeExtrusionRole, std::pair<float, float>> used_filaments_per_role;
 
     void reset();
 };

@@ -16,11 +16,15 @@ struct G1LinesCacheItem
     float elapsed_time{ 0.0f };
 };
 
+using G1LinesCacheItems = std::vector<G1LinesCacheItem>;
+
 struct StopTime
 {
     uint32_t g1_line_id{ 0 };
     float elapsed_time{ 0.0f };
 };
+
+using StopTimes = std::vector<StopTime>;
 
 struct TimeMachineData
 {
@@ -29,8 +33,8 @@ struct TimeMachineData
     float first_layer_time{ 0.0f };
     std::string line_m73_main_mask;
     std::string line_m73_stop_mask;
-    std::vector<G1LinesCacheItem> g1_times_cache;
-    std::vector<StopTime> stop_times;
+    G1LinesCacheItems g1_times_cache;
+    StopTimes stop_times;
 
     void reset();
 };

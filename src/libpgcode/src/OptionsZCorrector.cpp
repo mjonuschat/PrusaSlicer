@@ -13,7 +13,7 @@ void OptionsZCorrector::update(float height)
     if (!m_move_id.has_value() || !m_custom_gcode_per_print_z_id.has_value())
         return;
 
-    const Slic3r::Vec3f& position = m_result.moves.back().position;
+    const Vec3f& position = m_result.moves.back().position;
 
     MoveVertex& move = m_result.moves.emplace_back(m_result.moves[*m_move_id]);
     move.position = position;

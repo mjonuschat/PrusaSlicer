@@ -40,7 +40,7 @@ struct TimeBlock
     };
 
     MoveType move_type{ MoveType::Noop };
-    Slic3r::GCodeExtrusionRole role{ Slic3r::GCodeExtrusionRole::None };
+    GCodeExtrusionRole role{ GCodeExtrusionRole::None };
     uint32_t move_id{ 0 };
     uint32_t g1_line_id{ 0 };
     uint32_t layer_id{ 0 };

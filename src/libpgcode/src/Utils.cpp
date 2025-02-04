@@ -64,9 +64,9 @@ float convert(float value, UnitsType value_units, UnitsType desired_units)
     return (it != CONVERSIONS.end()) ? it->conversion_function(value) : value;
 }
 
-bool supports_separate_travel_acceleration(Slic3r::GCodeFlavor flavor)
+bool supports_separate_travel_acceleration(GCodeFlavor flavor)
 {
-    return (flavor == Slic3r::gcfRepetier || flavor == Slic3r::gcfMarlinFirmware || flavor == Slic3r::gcfRepRapFirmware);
+    return (flavor == gcfRepetier || flavor == gcfMarlinFirmware || flavor == gcfRepRapFirmware);
 }
 
 std::string_view reserved_tag(Tags tag)

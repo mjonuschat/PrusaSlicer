@@ -28,7 +28,7 @@ OptionType move_type_to_option(MoveType type);
  */
 float convert(float value, UnitsType value_units, UnitsType desired_units);
 
-bool supports_separate_travel_acceleration(Slic3r::GCodeFlavor flavor);
+bool supports_separate_travel_acceleration(GCodeFlavor flavor);
 
 std::string_view reserved_tag(Tags tag);
 

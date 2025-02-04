@@ -5,10 +5,7 @@
 ///|/
 #pragma once
 
-#include <libslic3r/ExtrusionRole.hpp>
-
-#include <map>
-#include <vector>
+#include "libpgcode/Types.hpp"
 
 namespace Slic3r::Biz::libpgcode {
 
@@ -25,14 +22,14 @@ struct UsedFilaments
 
     float role_cache{ 0.0f };
     // Extrusion Role -> (length [m], mass [g])
-    std::map<Slic3r::GCodeExtrusionRole, std::pair<float, float>> filaments_per_role;
+    std::map<GCodeExtrusionRole, std::pair<float, float>> filaments_per_role;
 
     void increase_caches(float extruded_volume, uint8_t extruder_id, float parking_volume, float extra_loading_volume);
 
     void process_color_change_cache();
     void process_extruder_cache(uint8_t extruder_id);
-    void process_role_cache(const ProcessorResult& result, uint8_t extruder_id, Slic3r::GCodeExtrusionRole role);
-    void process_caches(const ProcessorResult& result, uint8_t extruder_id, Slic3r::GCodeExtrusionRole role);
+    void process_role_cache(const ProcessorResult& result, uint8_t extruder_id, GCodeExtrusionRole role);
+    void process_caches(const ProcessorResult& result, uint8_t extruder_id, GCodeExtrusionRole role);
 
     void reset();
 

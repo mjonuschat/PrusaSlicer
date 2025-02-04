@@ -25,7 +25,7 @@ bool MoveVertex::is_option() const
 }
 
 bool MoveVertex::is_wipe() const { return type == MoveType::Wipe; }
-bool MoveVertex::is_custom_gcode() const { return type == MoveType::Extrude && extrusion_role == Slic3r::GCodeExtrusionRole::Custom; }
+bool MoveVertex::is_custom_gcode() const { return type == MoveType::Extrude && extrusion_role == GCodeExtrusionRole::Custom; }
 
 void PrintEstimatedStatistics::Mode::reset()
 {

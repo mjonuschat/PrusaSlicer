@@ -49,7 +49,7 @@ void UsedFilaments::process_extruder_cache(uint8_t extruder_id)
     m_recent_toolchange = true;
 }
 
-void UsedFilaments::process_role_cache(const ProcessorResult& result, uint8_t extruder_id, Slic3r::GCodeExtrusionRole role)
+void UsedFilaments::process_role_cache(const ProcessorResult& result, uint8_t extruder_id, GCodeExtrusionRole role)
 {
     if (role_cache != 0.0f) {
         std::pair<float, float> filament = { 0.0f, 0.0f };
@@ -68,7 +68,7 @@ void UsedFilaments::process_role_cache(const ProcessorResult& result, uint8_t ex
     }
 }
 
-void UsedFilaments::process_caches(const ProcessorResult& result, uint8_t extruder_id, Slic3r::GCodeExtrusionRole role)
+void UsedFilaments::process_caches(const ProcessorResult& result, uint8_t extruder_id, GCodeExtrusionRole role)
 {
     process_color_change_cache();
     process_extruder_cache(extruder_id);

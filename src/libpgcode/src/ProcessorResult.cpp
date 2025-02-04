@@ -6,11 +6,6 @@
 
 #include "libpgcode/ProcessorResult.hpp"
 
-#include <libslic3r/libslic3r.h>
-
-#include <algorithm>
-#include <climits>
-
 namespace Slic3r::Biz::libpgcode {
 
 static uint32_t ID = 0;
@@ -29,7 +24,7 @@ FilamentGeometry ProcessorResult::filament_geometry(uint8_t extruder_id) const
     FilamentGeometry ret;
     ret.diameter = (size_t(extruder_id) < filament_diameters.size()) ?
         filament_diameters[extruder_id] : filament_diameters.back();
-    ret.area_cross_section = float(PI) * Slic3r::sqr(0.5f * ret.diameter);
+    ret.area_cross_section = float(PI) * sqr(0.5f * ret.diameter);
     return ret;
 }
 
@@ -48,8 +43,8 @@ std::vector<std::string> ProcessorResult::color_strings_for_color_print() const
 {
     std::vector<std::string> ret = extruder_str_colors;
     ret.reserve(ret.size() + custom_gcode_per_print_z.size() + 1);
-    for (const Slic3r::CustomGCode::Item& code : custom_gcode_per_print_z) {
-        if (code.type == Slic3r::CustomGCode::Type::ColorChange)
+    for (const CustomGCode::Item& code : custom_gcode_per_print_z) {
+        if (code.type == CustomGCode::Type::ColorChange)
             ret.emplace_back(code.color);
     }
     // gray color for pause print or custom G-code 

@@ -6,25 +6,23 @@
 
 #include "TimeBlock.hpp"
 
-#include <libslic3r/libslic3r.h>
-
 namespace Slic3r::Biz::libpgcode {
 
 static float estimated_acceleration_distance(float initial_rate, float target_rate, float acceleration)
 {
-    return (acceleration == 0.0f) ? 0.0f : (Slic3r::sqr(target_rate) - Slic3r::sqr(initial_rate)) / (2.0f * acceleration);
+    return (acceleration == 0.0f) ? 0.0f : (sqr(target_rate) - sqr(initial_rate)) / (2.0f * acceleration);
 }
 
 static float intersection_distance(float initial_rate, float final_rate, float acceleration, float distance)
 {
     return (acceleration == 0.0f) ?
-        0.0f : (2.0f * acceleration * distance - Slic3r::sqr(initial_rate) + Slic3r::sqr(final_rate)) / (4.0f * acceleration);
+        0.0f : (2.0f * acceleration * distance - sqr(initial_rate) + sqr(final_rate)) / (4.0f * acceleration);
 }
 
 static float speed_from_distance(float initial_feedrate, float distance, float acceleration)
 {
     // to avoid invalid negative numbers due to numerical errors 
-    float value = std::max(0.0f, Slic3r::sqr(initial_feedrate) + 2.0f * acceleration * distance);
+    float value = std::max(0.0f, sqr(initial_feedrate) + 2.0f * acceleration * distance);
     return std::sqrt(value);
 }
 

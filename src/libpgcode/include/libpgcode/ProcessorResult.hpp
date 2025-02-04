@@ -26,13 +26,13 @@ struct ProcessorResult
     std::vector<float> filament_diameters;
     std::vector<float> filament_densities;
     std::vector<float> filament_costs;
-    std::vector<Slic3r::Vec2f> bed_shape;
+    std::vector<Vec2f> bed_shape;
 
     LineView gcode;
 
     std::vector<std::string> extruder_str_colors;
     std::vector<MoveVertex> moves;
-    std::vector<Slic3r::CustomGCode::Item> custom_gcode_per_print_z;
+    std::vector<CustomGCode::Item> custom_gcode_per_print_z;
     PrintEstimatedStatistics print_statistics;
     PrintSettings print_settings;
     std::optional<ConflictResult> conflict_result;

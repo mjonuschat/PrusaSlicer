@@ -7,8 +7,6 @@
 #include "libpgcode/Processor.hpp"
 #include "ProcessorImpl.hpp"
 
-#include <libslic3r/GCodeReader.hpp>
-
 namespace Slic3r::Biz::libpgcode {
 
 Processor::Processor(ProcessorConfig&& config)
@@ -45,8 +43,8 @@ GCodeProducer detect_producer(const std::string_view comment)
 GCodeProducer detect_producer(const std::string& gcode)
 {
     GCodeProducer ret = GCodeProducer::Unknown;
-    Slic3r::GCodeReader parser;
-    parser.parse_buffer(gcode, [&ret, &parser](Slic3r::GCodeReader& reader, const Slic3r::GCodeReader::GCodeLine& line) {
+    GCodeReader parser;
+    parser.parse_buffer(gcode, [&ret, &parser](GCodeReader& reader, const GCodeReader::GCodeLine& line) {
         GCodeProducer producer = detect_producer(std::string_view(line.raw()));
         if (producer != GCodeProducer::Unknown) {
             ret = producer;

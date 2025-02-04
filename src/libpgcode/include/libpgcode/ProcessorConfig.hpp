@@ -64,7 +64,7 @@ struct FilamentsConfig
 struct ExtrudersConfig
 {
     uint8_t count{ MIN_EXTRUDERS_COUNT };
-    std::vector<Slic3r::Vec3f> offsets;
+    std::vector<Vec3f> offsets;
     std::vector<std::string> str_colors;
     std::vector<int> temps_config;
     std::vector<int> temps_first_layer_config;
@@ -86,7 +86,7 @@ struct ProcessorCallbacksConfig
 struct ProcessorConfig
 {
     GCodeProducer producer{ GCodeProducer::Unknown };
-    Slic3r::GCodeFlavor flavor{ Slic3r::gcfRepRapSprinter };
+    GCodeFlavor flavor{ gcfRepRapSprinter };
     bool use_volumetric_e{ false };
     bool export_remaining_time_enabled{ false };
     bool stealth_time_estimator_enabled{ false };
@@ -99,7 +99,7 @@ struct ProcessorConfig
     float parking_pos_retraction{ 0.0f };
     float extra_loading_move{ 0.0f };
     float kisslicer_toolchange_time_correction{ 0.0f };
-    std::vector<Slic3r::Vec2f> bed_shape;
+    std::vector<Vec2f> bed_shape;
     FilamentsConfig filaments;
     ExtrudersConfig extruders;
     MachineLimitsConfig machine_limits;

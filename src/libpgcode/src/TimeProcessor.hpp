@@ -35,23 +35,23 @@ struct TimeProcessor
     std::vector<float> filament_unload_times;
     MachineLimitsConfig machine_limits;
 
-    void update_machine_accelerations(Slic3r::GCodeFlavor flavor);
+    void update_machine_accelerations(GCodeFlavor flavor);
 
     float minimum_feedrate(TimeMode mode, float feedrate) const;
     float minimum_travel_feedrate(TimeMode mode, float feedrate) const;
-    float axis_max_feedrate(TimeMode mode, Slic3r::Axis axis) const;
+    float axis_max_feedrate(TimeMode mode, Axis axis) const;
 
     float acceleration(TimeMode mode) const;
     float travel_acceleration(TimeMode mode) const;
     float retract_acceleration(TimeMode mode) const;
 
-    float axis_max_acceleration(TimeMode mode, Slic3r::Axis axis) const;
-    float axis_max_jerk(TimeMode mode, Slic3r::Axis axis) const;
+    float axis_max_acceleration(TimeMode mode, Axis axis) const;
+    float axis_max_jerk(TimeMode mode, Axis axis) const;
 
     float filament_load_time(uint8_t extruder_id, bool is_XL_printer) const;
     float filament_unload_time(uint8_t extruder_id, bool is_XL_printer) const;
 
-    std::vector<std::pair<Slic3r::CustomGCode::Type, std::pair<float, float>>>
+    std::vector<std::pair<CustomGCode::Type, std::pair<float, float>>>
         custom_gcode_times(TimeMode mode, bool include_remaining) const;
 
     void reset();

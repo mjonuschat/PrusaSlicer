@@ -7,14 +7,10 @@
 #include "libpgcode/ProcessorConfig.hpp"
 #include "libpgcode/Utils.hpp"
 
-#include <libslic3r/GCodeReader.hpp>
-
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
-
-using namespace Slic3r;
 
 namespace Slic3r::Biz::libpgcode {
 
@@ -293,10 +289,10 @@ static std::vector<int> extract_vector_of_integers(std::string_view data)
     return ret;
 }
 
-static std::vector<Slic3r::Vec2f> extract_vector_of_points(std::string_view data, StringToDoubleDecimalPointCallback cb)
+static std::vector<Vec2f> extract_vector_of_points(std::string_view data, StringToDoubleDecimalPointCallback cb)
 {
     data = skip_whitespaces_both_sides(data);
-    std::vector<Slic3r::Vec2f> ret;
+    std::vector<Vec2f> ret;
     std::vector<std::string> values;
     boost::split(values, std::string(data), boost::is_any_of(","));
     for (size_t i = 0; i < values.size(); ++i) {
@@ -470,12 +466,12 @@ ProcessorConfig extract_processor_config_from_prusaslicer_gcode_internal(const s
 
                     case KeyType::Vector_of_points:
                     {
-                        std::vector<Slic3r::Vec2f> values = extract_vector_of_points(tokens.back(), cb);
+                        std::vector<Vec2f> values = extract_vector_of_points(tokens.back(), cb);
                         if (!values.empty()) {
                             if      (key_it->first == "bed_shape"sv) ret.bed_shape = values;
                             else if (key_it->first == "extruder_offset"sv) {
                                 std::transform(values.begin(), values.end(), std::back_inserter(ret.extruders.offsets),
-                                    [](const Slic3r::Vec2f& in) { const Slic3r::Vec3f v = { in[0], in[1], 0.0f }; return v; });
+                                    [](const Vec2f& in) { const Vec3f v = { in[0], in[1], 0.0f }; return v; });
                             }
                         }
                         break;

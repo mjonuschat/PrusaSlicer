@@ -16,7 +16,7 @@ struct ActualSpeedMove
 {
     uint32_t move_id{ 0 };
     float actual_feedrate{ 0.0f };
-    std::optional<Slic3r::Vec3f> position;
+    std::optional<Vec3f> position;
     std::optional<float> delta_extruder;
     std::optional<float> feedrate;
     std::optional<float> width;
@@ -30,7 +30,7 @@ struct CustomGCodeTime
 {
     bool needed{ false };
     float cache{ 0.0f };
-    std::vector<std::pair<Slic3r::CustomGCode::Type, float>> times;
+    std::vector<std::pair<CustomGCode::Type, float>> times;
 
     void reset();
 };
@@ -39,8 +39,8 @@ struct TimeMachineState
 {
     float feedrate{ 0.0f }; // mm/s
     float safe_feedrate{ 0.0f }; // mm/s
-    Slic3r::Vec4f axis_feedrate{ Slic3r::Vec4f::Zero() }; // mm/s
-    Slic3r::Vec4f abs_axis_feedrate{ Slic3r::Vec4f::Zero() }; // mm/s
+    Vec4f axis_feedrate{ Vec4f::Zero() }; // mm/s
+    Vec4f abs_axis_feedrate{ Vec4f::Zero() }; // mm/s
 
     void reset();
 };

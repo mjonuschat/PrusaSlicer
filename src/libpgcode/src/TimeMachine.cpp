@@ -7,10 +7,6 @@
 #include "TimeMachine.hpp"
 #include "libpgcode/ProcessorResult.hpp"
 
-#include <libslic3r/libslic3r.h>
-
-#include <algorithm>
-#include <cmath>
 #include <assert.h>
 
 namespace Slic3r::Biz::libpgcode {
@@ -33,8 +29,8 @@ void TimeMachineState::reset()
 {
     feedrate          = 0.0f;
     safe_feedrate     = 0.0f;
-    axis_feedrate     = Slic3r::Vec4f::Zero();
-    abs_axis_feedrate = Slic3r::Vec4f::Zero();
+    axis_feedrate     = Vec4f::Zero();
+    abs_axis_feedrate = Vec4f::Zero();
 }
 
 static void planner_forward_pass_kernel(const TimeBlock& prev, TimeBlock& curr)
@@ -169,20 +165,20 @@ void TimeMachine::calculate_time(ProcessorResult& result, TimeMode mode, size_t 
                 if (float(EPSILON) < block.trapezoid.accelerate_until &&
                     block.trapezoid.accelerate_until < block.distance - float(EPSILON)) {
                     float t = block.trapezoid.accelerate_until / block.distance;
-                    Slic3r::Vec3f position = Slic3r::lerp(prev_move.position, curr_move.position, t);
+                    Vec3f position = lerp(prev_move.position, curr_move.position, t);
                     if ((position - prev_move.position).norm() > float(EPSILON) &&
                         (position - curr_move.position).norm() > float(EPSILON)) {
                         ActualSpeedMove move;
                         move.move_id         = block.move_id;
                         move.actual_feedrate = block.trapezoid.cruise_feedrate;
                         move.position        = position;
-                        move.delta_extruder  = interpolate ? Slic3r::lerp(prev_move.delta_extruder, curr_move.delta_extruder, t) : curr_move.delta_extruder;
-                        move.feedrate        = interpolate ? Slic3r::lerp(prev_move.feedrate, curr_move.feedrate, t) : curr_move.feedrate;
-                        move.width           = interpolate ? Slic3r::lerp(prev_move.width, curr_move.width, t) : curr_move.width;
-                        move.height          = interpolate ? Slic3r::lerp(prev_move.height, curr_move.height, t) : curr_move.height;
-                        move.mm3_per_mm      = interpolate ? Slic3r::lerp(prev_move.mm3_per_mm, curr_move.mm3_per_mm, t) : curr_move.mm3_per_mm;
-                        move.fan_speed       = interpolate ? Slic3r::lerp(prev_move.fan_speed, curr_move.fan_speed, t) : curr_move.fan_speed;
-                        move.temperature     = interpolate ? Slic3r::lerp(prev_move.temperature, curr_move.temperature, t) : curr_move.temperature;
+                        move.delta_extruder  = interpolate ? lerp(prev_move.delta_extruder, curr_move.delta_extruder, t) : curr_move.delta_extruder;
+                        move.feedrate        = interpolate ? lerp(prev_move.feedrate, curr_move.feedrate, t) : curr_move.feedrate;
+                        move.width           = interpolate ? lerp(prev_move.width, curr_move.width, t) : curr_move.width;
+                        move.height          = interpolate ? lerp(prev_move.height, curr_move.height, t) : curr_move.height;
+                        move.mm3_per_mm      = interpolate ? lerp(prev_move.mm3_per_mm, curr_move.mm3_per_mm, t) : curr_move.mm3_per_mm;
+                        move.fan_speed       = interpolate ? lerp(prev_move.fan_speed, curr_move.fan_speed, t) : curr_move.fan_speed;
+                        move.temperature     = interpolate ? lerp(prev_move.temperature, curr_move.temperature, t) : curr_move.temperature;
 
                         actual_speed_moves.emplace_back(move);
                     }
@@ -191,20 +187,20 @@ void TimeMachine::calculate_time(ProcessorResult& result, TimeMode mode, size_t 
                 bool has_deceleration = block.trapezoid.deceleration_distance(block.distance) > float(EPSILON);
                 if (has_deceleration && block.trapezoid.decelerate_after > block.trapezoid.accelerate_until + float(EPSILON)) {
                     float t = block.trapezoid.decelerate_after / block.distance;
-                    Slic3r::Vec3f position = Slic3r::lerp(prev_move.position, curr_move.position, t);
+                    Vec3f position = lerp(prev_move.position, curr_move.position, t);
                     if ((position - prev_move.position).norm() > float(EPSILON) &&
                         (position - curr_move.position).norm() > float(EPSILON)) {
                         ActualSpeedMove move;
                         move.move_id         = block.move_id;
                         move.actual_feedrate = block.trapezoid.cruise_feedrate;
                         move.position        = position;
-                        move.delta_extruder  = interpolate ? Slic3r::lerp(prev_move.delta_extruder, curr_move.delta_extruder, t) : curr_move.delta_extruder;
-                        move.feedrate        = interpolate ? Slic3r::lerp(prev_move.feedrate, curr_move.feedrate, t) : curr_move.feedrate;
-                        move.width           = interpolate ? Slic3r::lerp(prev_move.width, curr_move.width, t) : curr_move.width;
-                        move.height          = interpolate ? Slic3r::lerp(prev_move.height, curr_move.height, t) : curr_move.height;
-                        move.mm3_per_mm      = interpolate ? Slic3r::lerp(prev_move.mm3_per_mm, curr_move.mm3_per_mm, t) : curr_move.mm3_per_mm;
-                        move.fan_speed       = interpolate ? Slic3r::lerp(prev_move.fan_speed, curr_move.fan_speed, t) : curr_move.fan_speed;
-                        move.temperature     = interpolate ? Slic3r::lerp(prev_move.temperature, curr_move.temperature, t) : curr_move.temperature;
+                        move.delta_extruder  = interpolate ? lerp(prev_move.delta_extruder, curr_move.delta_extruder, t) : curr_move.delta_extruder;
+                        move.feedrate        = interpolate ? lerp(prev_move.feedrate, curr_move.feedrate, t) : curr_move.feedrate;
+                        move.width           = interpolate ? lerp(prev_move.width, curr_move.width, t) : curr_move.width;
+                        move.height          = interpolate ? lerp(prev_move.height, curr_move.height, t) : curr_move.height;
+                        move.mm3_per_mm      = interpolate ? lerp(prev_move.mm3_per_mm, curr_move.mm3_per_mm, t) : curr_move.mm3_per_mm;
+                        move.fan_speed       = interpolate ? lerp(prev_move.fan_speed, curr_move.fan_speed, t) : curr_move.fan_speed;
+                        move.temperature     = interpolate ? lerp(prev_move.temperature, curr_move.temperature, t) : curr_move.temperature;
 
                         actual_speed_moves.emplace_back(move);
                     }
