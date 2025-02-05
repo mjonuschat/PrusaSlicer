@@ -84,6 +84,29 @@ inline GLenum type(BufferUsage usage)
     throw std::runtime_error{"Unreachable code!"};
 }
 
+inline GLenum type(TextureMinFilter filter)
+{
+    switch (filter)
+    {
+    case TextureMinFilter::Linear:               return GL_LINEAR;
+    case TextureMinFilter::Nearest:              return GL_NEAREST;
+    case TextureMinFilter::MipMapNearestNearest: return GL_NEAREST_MIPMAP_NEAREST;
+    case TextureMinFilter::MipMapLinearNearest:  return GL_LINEAR_MIPMAP_NEAREST;
+    case TextureMinFilter::MipMapNearestLinear:  return GL_NEAREST_MIPMAP_LINEAR;
+    case TextureMinFilter::MipMapLinearLinear:   return GL_LINEAR_MIPMAP_LINEAR;
+    }
+    throw std::runtime_error{"Unreachable code!"};
+}
+
+inline GLenum type(TextureMagFilter filter)
+{
+    switch (filter)
+    {
+    case TextureMagFilter::Linear:  return GL_LINEAR;
+    case TextureMagFilter::Nearest: return GL_NEAREST;
+    }
+    throw std::runtime_error{"Unreachable code!"};
+}
 
 
 const char* shader_input_name(VertexAttribType vat);

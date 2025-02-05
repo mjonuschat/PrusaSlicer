@@ -44,6 +44,7 @@ Texture* TextureManager::get(const std::string& name, const ImageLoadOptions& op
     for (size_t level = 0; level < images.size(); level++) {
         const auto& img = images[level];
         tex->set_data(img.format(), level, img.width(), img.height(), img.data());
+        //tex->set_filtering(TextureMinFilter::Linear, TextureMagFilter::Linear);
     }
 
     // TODO: (Optional) Compress bitmap

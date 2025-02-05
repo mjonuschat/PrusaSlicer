@@ -34,6 +34,22 @@ enum class BufferUsage {
     StreamDraw
 };
 
+enum class TextureMinFilter
+{
+    Nearest,
+    Linear,
+    MipMapNearestNearest,
+    MipMapLinearNearest,
+    MipMapNearestLinear,
+    MipMapLinearLinear,
+};
+
+enum class TextureMagFilter
+{
+    Nearest,
+    Linear,
+};
+
 struct Rect
 {
     int x;

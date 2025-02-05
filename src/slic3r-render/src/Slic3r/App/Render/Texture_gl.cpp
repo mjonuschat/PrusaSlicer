@@ -29,10 +29,6 @@ void Texture::set_data(PixelFormat format, size_t level, size_t w, size_t h, con
     GLenum gl_format = GL::texture_format(format);
     GLenum gl_type = GL::texture_format_type(format);
     GLenum gl_target = get_internal_as<GL::GLTextureInternal>().m_target;
-    glTexParameteri(gl_target, GL_TEXTURE_MIN_FILTER, level > 0 ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
-    glCheck();
-    glTexParameteri(gl_target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glCheck();
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glCheck();
     glTexImage2D(gl_target, level, gl_internal_format, w, h, 0, gl_format, gl_type, data);
@@ -41,5 +37,15 @@ void Texture::set_data(PixelFormat format, size_t level, size_t w, size_t h, con
     glCheck();
 }
 
+void Texture::set_filtering(TextureMinFilter min_filter, TextureMagFilter mag_filter)
+{
+    auto& device = m_device.get_internal_as<GL::GLDeviceInternal>();
+    device.bind_texture(0, *this);
+    GLenum gl_target = get_internal_as<GL::GLTextureInternal>().m_target;
+    glTexParameteri(gl_target, GL_TEXTURE_MIN_FILTER, GL::type(min_filter));
+    glCheck();
+    glTexParameteri(gl_target, GL_TEXTURE_MAG_FILTER, GL::type(mag_filter));
+    glCheck();
+}
 
 }

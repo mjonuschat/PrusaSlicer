@@ -67,6 +67,7 @@ void GLDeviceInternal::bind_texture(uint8_t unit, const Texture& t)
     activate_texture_unit(unit);
     glBindTexture(tex.m_target, tex.m_id);
     glCheck();
+    m_bound_textures[unit] = tex.m_id;
 }
 
 void GLDeviceInternal::unbind_texture(uint8_t unit, const Texture& t)
