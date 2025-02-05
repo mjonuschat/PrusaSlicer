@@ -1,6 +1,6 @@
 #include "Slic3r/Biz/IProjectsChangedListener.hpp"
 
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "libslic3r/Model.hpp"
