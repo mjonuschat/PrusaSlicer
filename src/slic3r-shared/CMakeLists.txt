@@ -204,6 +204,8 @@ add_target_to_doxygen(slic3r-shared)
 add_executable(slic3r-shared-tests
         test/Slic3r/App/Scene/Node.cpp
         test/Slic3r/App/Scene/Ray.cpp
+        test/Slic3r/Biz/ProjectInteractorTests.cpp
+        test/Slic3r/Biz/ListenerSpy.hpp
 )
 target_include_directories(slic3r-shared-tests PRIVATE test)
 
