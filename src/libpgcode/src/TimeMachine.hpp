@@ -79,6 +79,8 @@ struct TimeMachine
     void reset();
 };
 
+using TimeMachines = std::array<TimeMachine, TIME_MODES_COUNT>;
+
 // Calculates the maximum allowable speed at this point when you must be able to reach target_velocity using the 
 // acceleration within the allotted distance.
 float max_allowable_speed(float acceleration, float target_velocity, float distance);

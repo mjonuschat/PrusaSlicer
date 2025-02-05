@@ -29,7 +29,7 @@ struct TimeProcessor
     // This is currently only really used by the MK3 MMU2:
     // extruder_unloaded = true means no filament is loaded yet, all the filaments are parked in the MK3 MMU2 unit.
     bool extruder_unloaded{ true };
-    std::array<TimeMachine, TIME_MODES_COUNT> machines;
+    TimeMachines machines;
     // Additional load / unload times for a filament exchange sequence.
     std::vector<float> filament_load_times;
     std::vector<float> filament_unload_times;

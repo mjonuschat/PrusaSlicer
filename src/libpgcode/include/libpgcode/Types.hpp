@@ -71,6 +71,8 @@ enum class MoveType : uint8_t
 
 static constexpr size_t MOVE_TYPES_COUNT = size_t(MoveType::COUNT);
 
+using MoveTypes = std::vector<MoveType>;
+
 enum class GCodeProducer : uint8_t
 {
     AnkerMakeStudio,
@@ -151,6 +153,8 @@ struct MoveVertex
 };
 
 static const MoveVertex DUMMY_MOVE_VERTEX = MoveVertex();
+
+using MoveVertices = std::vector<MoveVertex>;
 
 enum class PositioningType : uint8_t
 {
