@@ -197,13 +197,12 @@ add_target_to_doxygen(slic3r-shared)
 
 # Tests
 add_executable(slic3r-shared-tests
-        test/main.cpp
         test/Slic3r/App/Scene/Node.cpp
         test/Slic3r/App/Scene/Ray.cpp
 )
 target_include_directories(slic3r-shared-tests PRIVATE test)
 
 find_package(Catch2 3.8 REQUIRED)
-target_link_libraries(slic3r-shared-tests PRIVATE slic3r-shared Catch2::Catch2 )
+target_link_libraries(slic3r-shared-tests PRIVATE slic3r-shared Catch2::Catch2WithMain)
 
 
