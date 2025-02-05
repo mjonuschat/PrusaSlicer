@@ -87,6 +87,7 @@ inline GLenum type(BufferUsage usage)
 
 
 const char* shader_input_name(VertexAttribType vat);
+GLenum texture_internal_format(PixelFormat format);
 GLenum texture_format(PixelFormat format);
 GLenum texture_format_type(PixelFormat format);
 GLenum type(BlendFactor type);
