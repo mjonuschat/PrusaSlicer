@@ -37,6 +37,17 @@ void Texture::set_data(PixelFormat format, size_t level, size_t w, size_t h, con
     glCheck();
 }
 
+void Texture::set_sub_data(PixelFormat format, size_t level, size_t offset_x, size_t offset_y, size_t w, size_t h, const void* data)
+{
+    auto& device = m_device.get_internal_as<GL::GLDeviceInternal>();
+    device.bind_texture(0, *this);
+    GLenum gl_target = get_internal_as<GL::GLTextureInternal>().m_target;
+    GLenum gl_format = GL::texture_format(format);
+    GLenum gl_type = GL::texture_format_type(format);
+    glTexSubImage2D(gl_target, 0, offset_x, offset_y, w, h, gl_format, gl_type, data);
+    glCheck();
+}
+
 void Texture::set_filtering(TextureMinFilter min_filter, TextureMagFilter mag_filter)
 {
     auto& device = m_device.get_internal_as<GL::GLDeviceInternal>();
