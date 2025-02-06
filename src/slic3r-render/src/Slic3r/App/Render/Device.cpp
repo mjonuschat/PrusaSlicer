@@ -3,6 +3,7 @@
 #include "Slic3r/App/Render/Context.hpp"
 #include "Slic3r/App/Render/GL/commonGL.hpp"
 #include "Slic3r/App/Render/GL/GLDeviceInternal.hpp"
+#include "Slic3r/App/Render/GL/GLBufferInternal.hpp"
 
 #include "Slic3r/App/Render/Texture.hpp"
 #include "Slic3r/App/Render/Buffer.hpp"
@@ -31,9 +32,26 @@ std::unique_ptr<IndexBuffer> Device::create_index_buffer()
     return std::make_unique<IndexBuffer>(*this);
 }
 
+#if !SLIC3R_OPENGL_ES && !defined(__EMSCRIPTEN__)
+std::unique_ptr<TextureBuffer> Device::create_texture_buffer()
+{
+    return std::make_unique<TextureBuffer>(*this);
+}
+#endif // !SLIC3R_OPENGL_ES && !defined(__EMSCRIPTEN__)
+
 std::unique_ptr<CommandBuffer> Device::create_command_buffer()
 {
     return std::make_unique<CommandBuffer>(*this);
+}
+
+void Device::bind_buffer(const Buffer& b)
+{
+    get_internal_as<GL::GLDeviceInternal>().bind_buffer(b.target(), b.get_internal_as<App::Render::GL::GLBufferInternal>().m_id);
+}
+
+void Device::unbind_buffer(const Buffer& b)
+{
+    get_internal_as<GL::GLDeviceInternal>().unbind_buffer(b.target());
 }
 
 }

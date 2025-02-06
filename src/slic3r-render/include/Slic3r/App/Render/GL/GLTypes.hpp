@@ -67,6 +67,10 @@ inline GLenum type(BufferTarget target)
         return GL_ARRAY_BUFFER;
     case BufferTarget::IndexBuffer:
         return GL_ELEMENT_ARRAY_BUFFER;
+#if !SLIC3R_OPENGL_ES && !defined(__EMSCRIPTEN__)
+    case BufferTarget::TextureBuffer:
+        return GL_TEXTURE_BUFFER;
+#endif // !SLIC3R_OPENGL_ES && !defined(__EMSCRIPTEN__)
     }
     throw std::runtime_error{"Unreachable code!"};
 }

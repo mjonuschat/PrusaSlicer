@@ -9,8 +9,12 @@ namespace Slic3r::App::Render {
 
 class Context;
 class Texture;
+class Buffer;
 class VertexBuffer;
 class IndexBuffer;
+#if !SLIC3R_OPENGL_ES && !defined(__EMSCRIPTEN__)
+class TextureBuffer;
+#endif // !SLIC3R_OPENGL_ES && !defined(__EMSCRIPTEN__)
 class Shader;
 class CommandBuffer;
 
@@ -29,7 +33,14 @@ public:
     std::unique_ptr<Texture> create_texture();
     std::unique_ptr<VertexBuffer> create_vertex_buffer();
     std::unique_ptr<IndexBuffer> create_index_buffer();
+#if !SLIC3R_OPENGL_ES && !defined(__EMSCRIPTEN__)
+    std::unique_ptr<TextureBuffer> create_texture_buffer();
+#endif // !SLIC3R_OPENGL_ES && !defined(__EMSCRIPTEN__)
     std::unique_ptr<CommandBuffer> create_command_buffer();
+
+    void bind_buffer(const Buffer& b);
+    void unbind_buffer(const Buffer& b);
+
 private:
     Context& m_context;
 };

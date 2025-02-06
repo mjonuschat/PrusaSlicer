@@ -1,5 +1,8 @@
 #include "Slic3r/App/Render/Buffer.hpp"
 #include "Slic3r/App/Render/Device.hpp"
+#if !SLIC3R_OPENGL_ES && !defined(__EMSCRIPTEN__)
+#include "Slic3r/App/Render/TextureManager.hpp"
+#endif // !SLIC3R_OPENGL_ES && !defined(__EMSCRIPTEN__)
 #include "Slic3r/App/Render/GL/commonGL.hpp"
 #include "Slic3r/App/Render/GL/GLBufferInternal.hpp"
 #include "Slic3r/App/Render/GL/GLDeviceInternal.hpp"
@@ -31,5 +34,26 @@ void Buffer::set_data(const void* data, size_t size, BufferUsage usage)
     glCheck();
 }
 
+#if !SLIC3R_OPENGL_ES && !defined(__EMSCRIPTEN__)
+TextureBuffer::TextureBuffer(Device& device)
+    : Buffer(device, BufferTarget::TextureBuffer)
+{
+    auto& dvc = this->device().get_internal_as<GL::GLDeviceInternal>();
+    auto& self = get_internal_as<GL::GLBufferInternal>();
+    dvc.bind_buffer(target(), self.m_id);
+    glGenTextures(1, &self.m_tex_id);
+    glCheck();
+    dvc.bind_texture_buffer_texture(0, self.m_tex_id);
+}
+
+TextureBuffer::~TextureBuffer()
+{
+    auto& self = get_internal_as<GL::GLBufferInternal>();
+    if (self.m_tex_id) {
+        glDeleteTextures(1, &self.m_tex_id);
+        glCheck();
+    }
+}
+#endif // !SLIC3R_OPENGL_ES && !defined(__EMSCRIPTEN__)
 
 } // namespace Slic3r::App::Render
