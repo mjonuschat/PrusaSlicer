@@ -200,16 +200,25 @@ target_include_directories(slic3r-shared PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/incl
 # Doxygen
 add_target_to_doxygen(slic3r-shared)
 
-# Tests
-add_executable(slic3r-shared-tests
-        test/Slic3r/App/Scene/Node.cpp
-        test/Slic3r/App/Scene/Ray.cpp
-        test/Slic3r/Biz/ProjectInteractorTests.cpp
-        test/Slic3r/Biz/ListenerSpy.hpp
-)
-target_include_directories(slic3r-shared-tests PRIVATE test)
 
-find_package(Catch2 3.8 REQUIRED)
-target_link_libraries(slic3r-shared-tests PRIVATE slic3r-shared Catch2::Catch2WithMain)
+if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
 
+    # Tests
+    add_executable(slic3r-shared-tests
+            test/Slic3r/App/Scene/Node.cpp
+            test/Slic3r/App/Scene/Ray.cpp
+            test/Slic3r/Biz/ProjectInteractorTests.cpp
+    )
+    target_include_directories(slic3r-shared-tests PRIVATE test)
 
+    find_package(Catch2 3.8 REQUIRED)
+    target_link_libraries(slic3r-shared-tests PRIVATE slic3r-shared Catch2::Catch2WithMain)
+
+    set(_catch_args "exclude:[NotWorking] exclude:[Slow]")
+    list(APPEND _catch_args "${CATCH_EXTRA_ARGS}")
+    add_test(NAME slic3r-shared-tests
+            COMMAND slic3r-shared-tests ${_catch_args}
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+
+endif()

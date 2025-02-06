@@ -1,42 +1,107 @@
 #include "Slic3r/Biz/IProjectsChangedListener.hpp"
 
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/trompeloeil.hpp>
 
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "libslic3r/Model.hpp"
 
-//#include "Slic3r/Biz/ListenerSpy.hpp"
+#include <boost/filesystem/operations.hpp>
 
+namespace Slic3r::Biz::Mock {
 
-namespace mock {
-struct MockSelectedProjectChangedListener : public Slic3r::Biz::ISelectedProjectChangedListener
+struct SelectedProjectChangedListener : public ISelectedProjectChangedListener
 {
-#if 1
-    using on_selected_project_changed_args_vec_t = std::vector<std::tuple<size_t>>;
-    on_selected_project_changed_args_vec_t on_selected_project_changed_args;
+    MAKE_MOCK1(on_selected_project_changed, void(Domain::SelectionId));
+};
 
-    void on_selected_project_changed(size_t arg0) override
-    {on_selected_project_changed_args.emplace_back(arg0);}
-#else
-    DEFINE_SPY_METHOD(on_selected_project_changed, void(size_t))
-#endif
+struct SelectedConfigContainerChangedListener : public ISelectedConfigContainerChangedListener
+{
+    MAKE_MOCK2(on_selected_config_container_changed, void(Domain::SelectionId, Domain::SelectionId));
+};
+
+
+struct SelectedBedInstanceChangedListener : public ISelectedBedInstanceChangedListener
+{
+    MAKE_MOCK3(on_selected_bed_instance_changed, void(Domain::SelectionId project_id, Domain::SelectionId container_id, Domain::SelectionId bed_instance_id));
 };
 }
 
+void outp() { std::cout << std::endl; }
+
+template <typename T, typename ... ArgsT>
+void outp(const T& arg, const ArgsT& ... args)
+{
+    std::cout << arg;
+    outp(args...);
+}
+
+
+
 TEST_CASE("Project Interactor Listeners", "[ProjectInteractor]")
 {
+    using namespace Slic3r::Biz;
+    using namespace trompeloeil;
+
     Slic3r::Domain::Workbench workbench;
-    boost::filesystem::path data_path = boost::filesystem::path(__FILE__).parent_path() / "../../data";
+    // Note: the test is expected to be run in same directory this library has the CMakeLists.txt file in
+    //boost::filesystem::path data_path = boost::filesystem::path(__FILE__).parent_path() / "../../data";
+    boost::filesystem::path data_path = absolute(canonical(boost::filesystem::path{"test/data"}));
+    std::cout << "Data path: " << data_path.string() << std::endl;
     Slic3r::set_data_dir(data_path.string());
     workbench.load_configs();
 
-    Slic3r::Biz::ProjectInteractor project_interactor{workbench};
-    mock::MockSelectedProjectChangedListener selected_project_changed_listener;
-    project_interactor.add_selected_project_changed_listener(&selected_project_changed_listener);
+    ProjectInteractor project_interactor{workbench};
 
-    project_interactor.new_project();
-    REQUIRE(selected_project_changed_listener.on_selected_project_changed_args.size() == 1);
-    project_interactor.new_project();
-    REQUIRE(selected_project_changed_listener.on_selected_project_changed_args.size() == 2);
+    Mock::SelectedProjectChangedListener selected_project_changed_listener;
+    Mock::SelectedConfigContainerChangedListener selected_config_container_listener;
+    project_interactor.add_selected_project_changed_listener(&selected_project_changed_listener);
+    project_interactor.add_selected_config_container_changed_listener(&selected_config_container_listener);
+
+    Scene::SceneInteractor& scene_interactor = project_interactor.scene_interactor();
+    Mock::SelectedBedInstanceChangedListener selected_bed_instance_changed_listener;
+    scene_interactor.add_bed_instance_selection_changed_listener(&selected_bed_instance_changed_listener);
+
+    {
+        REQUIRE_CALL(selected_project_changed_listener, on_selected_project_changed(0));
+        REQUIRE_CALL(selected_config_container_listener, on_selected_config_container_changed(0, gt(0)));
+        REQUIRE_CALL(selected_bed_instance_changed_listener, on_selected_bed_instance_changed(0, gt(0), gt(0)));
+        project_interactor.new_project();
+    }
+
+    {
+        REQUIRE_CALL(selected_project_changed_listener, on_selected_project_changed(1));
+        REQUIRE_CALL(
+            selected_config_container_listener,
+            on_selected_config_container_changed(1, gt(0))
+        )
+        .SIDE_EFFECT(
+            auto capStr = std::string("selected_config_container( cc: ") + std::to_string(_2) + " )";
+            UNSCOPED_INFO(capStr);
+        );
+        REQUIRE_CALL(
+            selected_bed_instance_changed_listener,
+            on_selected_bed_instance_changed(1, gt(0), gt(0))
+        )
+        .SIDE_EFFECT(
+            auto capStr = std::string("selected_bed_instance( cc: ") + std::to_string(_2) + " )";
+            UNSCOPED_INFO(capStr);
+        );
+        project_interactor.new_project();
+    }
+
+    {
+        REQUIRE_CALL(selected_project_changed_listener, on_selected_project_changed(0))
+        .SIDE_EFFECT(
+            auto capStr = std::string("selected_project: ") + std::to_string(_1);
+            UNSCOPED_INFO(capStr);
+        );
+        // REQUIRE_CALL(selected_config_container_listener, on_selected_config_container_changed(1, gt(0)))
+        // .SIDE_EFFECT(
+        //     auto capStr = std::string("selected_config_container( cc: ") + std::to_string(_2) + " )";
+        //     UNSCOPED_INFO(capStr);
+        // );
+        project_interactor.select_project(0);
+    }
 
 }
