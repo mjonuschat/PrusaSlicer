@@ -266,7 +266,7 @@ static wxGLAttributes create_wxglattributes()
 }
 
 WXRenderCanvas::WXRenderCanvas(wxWindow* parent, std::unique_ptr<Biz::Platform::IMainThreadDispatcher> &&main_thread_dispatcher)
-: AbstractRenderCanvas{std::move(main_thread_dispatcher)}, wxGLCanvas(parent, create_wxglattributes()), m_start_time(Clock::now())
+: AbstractRenderCanvas{std::move(main_thread_dispatcher)}, wxGLCanvas(parent, create_wxglattributes(), wxID_ANY, wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS), m_start_time(Clock::now())
 {
     wxGLContextAttrs attrs;
     attrs.PlatformDefaults().CoreProfile();
