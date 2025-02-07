@@ -44,11 +44,9 @@ bool DesktopApp::OnInit()
     m_main_frame = new MainFrame(m_workbench, m_project_interactor->preset_interactor(), std::move(main_thread_dispatcher));
     Platform::WX::WXRenderCanvas& canvas = m_main_frame->get_render_canvas();
     Biz::Platform::PlatformServices::instance().set_render_request_handler(&canvas);
-#if USE_IMGUI_RENDER
     canvas.set_language(localization().active_language());
     canvas.set_font_size(1.7777f * float(App::WX::w_config()->normal_font().GetPointSize()));
-#endif // USE_IMGUI_RENDER
-    
+
     canvas.set_render_module(m_render_module.get());
     m_main_frame->Show();
 

@@ -4,15 +4,13 @@
 #include <algorithm>
 
 #include <imgui/imgui.h>
-#if !USE_IMGUI_RENDER
-#include <imgui/backends/imgui_impl_opengl3.h>
-#else
+
 #include <Slic3r/App/Render/Context.hpp>
 #include <Slic3r/App/Render/Device.hpp>
 #include <Slic3r/App/Render/CommandBuffer.hpp>
 #include <Slic3r/App/Render/Geometry.hpp>
 #include <Slic3r/App/Render/Texture.hpp>
-#endif // !USE_IMGUI_RENDER
+
 #include <GL/glew.h>
 #include <Slic3r/Log.hpp>
 
@@ -52,7 +50,6 @@ void AbstractRenderCanvas::render()
 
     m_render_module->ensure_initialized(device());
 
-#if USE_IMGUI_RENDER
     if (!m_imgui_render) {
         m_imgui_render = std::make_unique<Render::ImguiRender>(Render::Context::instance().device());
     }
@@ -61,7 +58,6 @@ void AbstractRenderCanvas::render()
         m_pending_language.reset();
         m_pending_font_size.reset();
     }
-#endif // USE_IMGUI_RENDER
 
     assert_no_gl_error();
     begin_frame();
@@ -111,11 +107,7 @@ void AbstractRenderCanvas::begin_frame()
 void AbstractRenderCanvas::begin_imgui_frame()
 {
     // Start the Dear ImGui frame
-#if USE_IMGUI_RENDER
     m_imgui_render->new_frame();
-#else
-    ImGui_ImplOpenGL3_NewFrame();
-#endif
     ImGuiIO& io = ImGui::GetIO();
     IM_ASSERT(io.Fonts->IsBuilt() && "Font atlas not built! It is generally built by the renderer backend. Missing call to renderer _NewFrame() function? e.g. ImGui_ImplOpenGL3_NewFrame().");
     begin_imgui_frame_platform();
@@ -133,7 +125,6 @@ void AbstractRenderCanvas::end_imgui_frame()
 void AbstractRenderCanvas::end_frame()
 {
 
-#if USE_IMGUI_RENDER
     const ImDrawData* draw_data = ImGui::GetDrawData();
     if (draw_data) {
         auto& dev = Render::Context::instance().device();
@@ -142,11 +133,6 @@ void AbstractRenderCanvas::end_frame()
         m_imgui_render->render(*buffer, draw_data);
         buffer->submit();
     }
-#else
-    ImDrawData* draw_data = ImGui::GetDrawData();
-    if (draw_data)
-        ImGui_ImplOpenGL3_RenderDrawData(draw_data);
-#endif
     end_frame_platform();
 }
 

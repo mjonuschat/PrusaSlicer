@@ -87,17 +87,10 @@ SDLRenderCanvas::SDLRenderCanvas(std::unique_ptr<StdMainThreadDispatcher>&& main
 
     // Setup Platform/Renderer backends
     init_sdl_imgui();
-#if !USE_IMGUI_RENDER
-    ImGui_ImplOpenGL3_Init(glsl_version);
-#endif
 }
 
 SDLRenderCanvas::~SDLRenderCanvas()
 {
-#if !USE_IMGUI_RENDER
-    // Cleanup
-    ImGui_ImplOpenGL3_Shutdown();
-#endif
     // Destroy last known clipboard data
     if (m_clipboard_text_data)
         SDL_free(m_clipboard_text_data);
