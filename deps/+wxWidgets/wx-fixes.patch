@@ -1,4 +1,42 @@
 diff --color -urN wxWidgets-323a465e577e03f330e2e6a4c78e564d125340cb/build/cmake/lib/webview/CMakeLists.txt dep_wxWidgets/build/cmake/lib/webview/CMakeLists.txt
+--- wxWidgets-323a465e577e03f330e2e6a4c78e564d125340cb/include/wx/generic/private/widthcalc.h	2024-06-26 10:39:50.000000000 +0200
++++ dep_wxWidgets/include/wx/generic/private/widthcalc.h	2025-01-08 12:59:53.557388376 +0100
+@@ -101,9 +101,9 @@
+                 UpdateWithRow(row);
+             }
+ 
+-            wxLogTrace("items container",
+-                       "determined best size from %zu top, %zu bottom "
+-                       "plus %zu more visible items out of %zu total",
++            wxLogTrace(wxString::FromAscii("items container"),
++                       wxString::FromAscii("determined best size from %zu top, %zu bottom "
++                       "plus %zu more visible items out of %zu total"),
+                        top_part_end,
+                        count - bottom_part_start,
+                        last_visible - first_visible,
+--- dep_wxWidgets.orig/include/wx/log.h	2025-02-07 17:04:45.405039600 +0100
++++ dep_wxWidgets/include/wx/log.h	2025-02-07 17:59:41.401229900 +0100
+@@ -1472,7 +1472,7 @@
+ #ifdef __VISUALC__
+     #define wxLogApiError(api, rc)                                            \
+         wxLogDebug(wxT("%s(%d): '%s' failed with error 0x%08lx (%s)."),       \
+-                   __FILE__, __LINE__, api,                                   \
++                   wxS(__FILE__), __LINE__, api,                                   \
+                    (long)rc, wxSysErrorMsgStr(rc))
+ #else // !VC++
+     #define wxLogApiError(api, rc)                                            \
+
+--- wxWidgets-323a465e577e03f330e2e6a4c78e564d125340cb/include/wx/variant.h	2024-06-26 10:39:50.000000000 +0200
++++ dep_wxWidgets/include/wx/variant.h	2025-01-08 12:59:53.559361667 +0100
+@@ -517,7 +517,7 @@
+ \
+ expdecl classname& operator << ( classname &value, const wxVariant &variant )\
+ {\
+-    wxASSERT( variant.GetType() == #classname );\
++    wxASSERT( variant.GetType() == wxString::FromAscii(#classname) );\
+     \
+     classname##VariantData *data = (classname##VariantData*) variant.GetData();\
+     value = data->GetValue();\
 --- wxWidgets-323a465e577e03f330e2e6a4c78e564d125340cb/src/osx/carbon/dcscreen.cpp	2024-06-26 10:39:50.000000000 +0200
 +++ dep_wxWidgets/src/osx/carbon/dcscreen.cpp	2025-01-08 14:13:51.980634573 +0100
 @@ -14,6 +14,7 @@

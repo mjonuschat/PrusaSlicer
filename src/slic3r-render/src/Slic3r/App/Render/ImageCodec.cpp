@@ -9,7 +9,7 @@
 
 #include <png.h>
 #include <nanosvg/nanosvg.h>
-#define NANOSVGRAST_IMPLEMENTATION
+//#define NANOSVGRAST_IMPLEMENTATION
 #include <nanosvg/nanosvgrast.h>
 
 namespace Slic3r::App::Render {
