@@ -104,6 +104,19 @@ void GLDeviceInternal::unbind_texture_buffer_texture(uint8_t unit)
 }
 #endif // !SLIC3R_OPENGL_ES && !defined(__EMSCRIPTEN__)
 
+void* GLDeviceInternal::map_buffer(BufferTarget target, BufferAccess access)
+{
+    void* ret = glMapBuffer(type(target), type(access));
+    glCheck();
+    return ret;
+}
+
+void GLDeviceInternal::unmap_buffer(BufferTarget target)
+{
+    glUnmapBuffer(type(target));
+    glCheck();
+}
+
 void GLDeviceInternal::bind_shader(const Shader& s)
 {
     ResourceId shader_id = s.get_internal_as<GLShaderInternal>().m_id;

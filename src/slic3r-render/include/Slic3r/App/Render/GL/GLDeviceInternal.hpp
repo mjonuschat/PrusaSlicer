@@ -36,6 +36,9 @@ public:
     void unbind_texture_buffer_texture(uint8_t unit);
 #endif // !SLIC3R_OPENGL_ES && !defined(__EMSCRIPTEN__)
 
+    void* map_buffer(BufferTarget target, BufferAccess access);
+    void unmap_buffer(BufferTarget target);
+
     void draw(PrimitiveType primitive, size_t offset, size_t count);
 
     void print_buffer_info(const char* action = nullptr);

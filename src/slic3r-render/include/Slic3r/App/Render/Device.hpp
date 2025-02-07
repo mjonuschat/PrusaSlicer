@@ -4,6 +4,7 @@
 #include <cstddef>
 
 #include "WithInternal.hpp"
+#include "Types.hpp"
 
 namespace Slic3r::App::Render {
 
@@ -40,6 +41,9 @@ public:
 
     void bind_buffer(const Buffer& b);
     void unbind_buffer(const Buffer& b);
+
+    void* map_buffer(const Buffer& b, BufferAccess access);
+    void unmap_buffer(const Buffer& b);
 
 private:
     Context& m_context;

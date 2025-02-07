@@ -88,6 +88,16 @@ inline GLenum type(BufferUsage usage)
     throw std::runtime_error{"Unreachable code!"};
 }
 
+inline GLenum type(BufferAccess access)
+{
+    switch (access) {
+    case BufferAccess::ReadOnly:  return GL_READ_ONLY;
+    case BufferAccess::WriteOnly: return GL_WRITE_ONLY;
+    case BufferAccess::ReadWrite: return GL_READ_WRITE;
+    }
+    throw std::runtime_error{"Unreachable code!"};
+}
+
 inline GLenum type(TextureMinFilter filter)
 {
     switch (filter)

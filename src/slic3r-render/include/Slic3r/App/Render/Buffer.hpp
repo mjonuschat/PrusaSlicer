@@ -20,11 +20,11 @@ public:
 
     void set_data(const void* data, size_t size, BufferUsage usage);
 
-    Device& device() { return m_device; }
     BufferTarget target() const { return m_target; }
 
-private:
+protected:
     Device& m_device;
+private:
     BufferTarget m_target;
 };
 

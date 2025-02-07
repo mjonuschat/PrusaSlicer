@@ -37,6 +37,13 @@ enum class BufferUsage {
     StreamDraw
 };
 
+enum class BufferAccess
+{
+    ReadOnly,
+    WriteOnly,
+    ReadWrite
+};
+
 enum class TextureMinFilter
 {
     Nearest,

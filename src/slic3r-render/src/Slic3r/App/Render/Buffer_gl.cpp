@@ -38,8 +38,8 @@ void Buffer::set_data(const void* data, size_t size, BufferUsage usage)
 TextureBuffer::TextureBuffer(Device& device)
     : Buffer(device, BufferTarget::TextureBuffer)
 {
-    auto& dvc = this->device().get_internal_as<GL::GLDeviceInternal>();
     auto& self = get_internal_as<GL::GLBufferInternal>();
+    auto& dvc = m_device.get_internal_as<GL::GLDeviceInternal>();
     dvc.bind_buffer(target(), self.m_id);
     glGenTextures(1, &self.m_tex_id);
     glCheck();

@@ -54,4 +54,14 @@ void Device::unbind_buffer(const Buffer& b)
     get_internal_as<GL::GLDeviceInternal>().unbind_buffer(b.target());
 }
 
+void* Device::map_buffer(const Buffer& b, BufferAccess access)
+{
+    return get_internal_as<GL::GLDeviceInternal>().map_buffer(b.target(), access);
+}
+
+void Device::unmap_buffer(const Buffer& b)
+{
+    get_internal_as<GL::GLDeviceInternal>().unmap_buffer(b.target());
+}
+
 }
