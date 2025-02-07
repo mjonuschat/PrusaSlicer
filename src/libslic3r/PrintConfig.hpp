@@ -693,6 +693,7 @@ PRINT_CONFIG_CLASS_DEFINE(
     ((ConfigOptionFloat,                bridge_flow_ratio))
     ((ConfigOptionFloat,                bridge_speed))
     ((ConfigOptionEnum<EnsureVerticalShellThickness>, ensure_vertical_shell_thickness))
+    ((ConfigOptionFloatOrPercent,       over_bridge_speed))
     ((ConfigOptionEnum<InfillPattern>,  top_fill_pattern))
     ((ConfigOptionEnum<InfillPattern>,  bottom_fill_pattern))
     ((ConfigOptionFloatOrPercent,       external_perimeter_extrusion_width))
@@ -936,6 +937,7 @@ PRINT_CONFIG_CLASS_DERIVED_DEFINE(
     ((ConfigOptionFloatOrPercent,     first_layer_extrusion_width))
     ((ConfigOptionFloatOrPercent,     first_layer_height))
     ((ConfigOptionFloatOrPercent,     first_layer_speed))
+    ((ConfigOptionFloatOrPercent,     first_layer_infill_speed))
     ((ConfigOptionInts,               first_layer_temperature))
     ((ConfigOptionIntsNullable,       idle_temperature))
     ((ConfigOptionInts,               full_fan_speed_layer))
@@ -1341,10 +1343,10 @@ public:
     CLIMiscConfigDef();
 };
 
-class CLIProfilesSharingConfigDef : public ConfigDef
+class CLIInputConfigDef : public ConfigDef
 {
 public:
-    CLIProfilesSharingConfigDef();
+    CLIInputConfigDef();
 };
 
 typedef std::string t_custom_gcode_key;
@@ -1409,7 +1411,7 @@ public:
 };
 extern const CustomGcodeSpecificConfigDef    custom_gcode_specific_config_def;
 
-// This class defines the command line options representing actions.
+// This class defines the command line options representing actions including options representing profiles sharing commands.
 extern const CLIActionsConfigDef    cli_actions_config_def;
 
 // This class defines the command line options representing transforms.
@@ -1418,42 +1420,8 @@ extern const CLITransformConfigDef  cli_transform_config_def;
 // This class defines all command line options that are not actions or transforms.
 extern const CLIMiscConfigDef       cli_misc_config_def;
 
-// This class defines the command line options representing profiles sharing commands.
-extern const CLIProfilesSharingConfigDef  cli_profiles_sharing_config_def;
-
-class DynamicPrintAndCLIConfig : public DynamicPrintConfig
-{
-public:
-    DynamicPrintAndCLIConfig() {}
-    DynamicPrintAndCLIConfig(const DynamicPrintAndCLIConfig &other) : DynamicPrintConfig(other) {}
-
-    // Overrides ConfigBase::def(). Static configuration definition. Any value stored into this ConfigBase shall have its definition here.
-    const ConfigDef*        def() const override { return &s_def; }
-
-    // Verify whether the opt_key has not been obsoleted or renamed.
-    // Both opt_key and value may be modified by handle_legacy().
-    // If the opt_key is no more valid in this version of Slic3r, opt_key is cleared by handle_legacy().
-    // handle_legacy() is called internally by set_deserialize().
-    void                    handle_legacy(t_config_option_key &opt_key, std::string &value) const override;
-
-private:
-    class PrintAndCLIConfigDef : public ConfigDef
-    {
-    public:
-        PrintAndCLIConfigDef() {
-            this->options.insert(print_config_def.options.begin(), print_config_def.options.end());
-            this->options.insert(cli_actions_config_def.options.begin(), cli_actions_config_def.options.end());
-            this->options.insert(cli_transform_config_def.options.begin(), cli_transform_config_def.options.end());
-            this->options.insert(cli_misc_config_def.options.begin(), cli_misc_config_def.options.end());
-            this->options.insert(cli_profiles_sharing_config_def.options.begin(), cli_profiles_sharing_config_def.options.end());
-            for (const auto &kvp : this->options)
-                this->by_serialization_key_ordinal[kvp.second.serialization_key_ordinal] = &kvp.second;
-        }
-        // Do not release the default values, they are handled by print_config_def & cli_actions_config_def / cli_transform_config_def / cli_misc_config_def.
-        ~PrintAndCLIConfigDef() { this->options.clear(); }
-    };
-    static PrintAndCLIConfigDef s_def;
-};
+// This class defines the command line options representing commands for loading configuration from CLI
+extern const CLIInputConfigDef  cli_input_config_def;
 
 bool is_XL_printer(const DynamicPrintConfig &cfg);
 bool is_XL_printer(const PrintConfig &cfg);

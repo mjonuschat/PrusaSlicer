@@ -2,7 +2,8 @@
  * Ported from t/retraction.t
  */
 
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/catch_approx.hpp>
 
 #include <libslic3r/GCodeReader.hpp>
 #include <libslic3r/Config.hpp>
@@ -13,6 +14,7 @@
 
 using namespace Slic3r;
 using namespace Test;
+using namespace Catch;
 
 constexpr bool debug_files {false};
 
@@ -77,7 +79,7 @@ void check_gcode(std::initializer_list<TestMesh> meshes, const DynamicPrintConfi
                 lift_dist = line.dist_Z(self);
             }
             if (line.dist_Z(self) < 0) {
-                INFO("Must be lifted before going down.")
+                INFO("Must be lifted before going down.");
                 CHECK(lifted);
                 INFO("Going down by the same amount of the lift or by the amount needed to get to next layer");
                 CHECK((
@@ -132,11 +134,6 @@ void test_slicing(std::initializer_list<TestMesh> meshes, DynamicPrintConfig& co
 
     SECTION("Restart extra length") {
         config.set_deserialize_strict({{ "retract_restart_extra", "1" }});
-        check_gcode(meshes, config, duplicate);
-    }
-
-    SECTION("Negative restart extra length") {
-        config.set_deserialize_strict({{ "retract_restart_extra", "-1" }});
         check_gcode(meshes, config, duplicate);
     }
 

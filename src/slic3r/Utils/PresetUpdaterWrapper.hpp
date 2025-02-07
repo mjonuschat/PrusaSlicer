@@ -40,9 +40,11 @@ public:
         PURP_NO_RETRY,
     };
     // called from PresetUpdaterWrapper
-    PresetUpdaterUIStatus(PresetUpdaterUIStatus::PresetUpdaterRetryPolicy policy);
+    PresetUpdaterUIStatus();
     ~PresetUpdaterUIStatus(){}
     void set_handler(wxEvtHandler* evt_handler) {m_evt_handler = evt_handler;}
+
+    void reset(PresetUpdaterUIStatus::PresetUpdaterRetryPolicy policy);
 
     // called from worker thread
     bool on_attempt(int attempt, unsigned delay);
@@ -152,7 +154,7 @@ private:
 
     // m_worker_thread runs on background while m_modal_thread runs only when modal window exists.
     std::thread m_worker_thread;
-    PresetUpdaterUIStatus* m_ui_status {nullptr};
+    std::unique_ptr<PresetUpdaterUIStatus> m_ui_status;
     std::thread m_modal_thread;
 };
 

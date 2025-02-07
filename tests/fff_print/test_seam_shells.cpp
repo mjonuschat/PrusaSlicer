@@ -1,4 +1,5 @@
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/catch_approx.hpp>
 #include <filesystem>
 #include <fstream>
 #include "libslic3r/ClipperUtils.hpp"
@@ -9,6 +10,7 @@
 
 using namespace Slic3r;
 using namespace Slic3r::Seams;
+using namespace Catch;
 
 struct ProjectionFixture
 {

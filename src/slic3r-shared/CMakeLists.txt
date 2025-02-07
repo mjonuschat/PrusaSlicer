@@ -203,7 +203,7 @@ add_executable(slic3r-shared-tests
 )
 target_include_directories(slic3r-shared-tests PRIVATE test)
 
-find_package(Catch2 2.9 REQUIRED)
+find_package(Catch2 3.8 REQUIRED)
 target_link_libraries(slic3r-shared-tests PRIVATE slic3r-shared Catch2::Catch2 )
 
 

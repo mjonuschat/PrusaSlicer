@@ -64,6 +64,7 @@
 #include "libslic3r/TriangleSelector.hpp"
 #include "tcbspan/span.hpp"
 #include "libslic3r/Point.hpp"
+#include "libslic3r/InfillAboveBridges.hpp"
 
 using namespace std::literals;
 
@@ -411,6 +412,20 @@ void PrintObject::prepare_infill()
         layer->export_region_fill_surfaces_to_svg_debug("9_prepare_infill-final");
     } // for each layer
 #endif /* SLIC3R_DEBUG_SLICE_PROCESSING */
+
+
+    PrepareInfill::SurfaceRefs surfaces;
+    for (const Layer *layer : m_layers) {
+        surfaces.emplace_back();
+        for (size_t region_id = 0; region_id < this->num_printing_regions(); ++ region_id) {
+            LayerRegion *layerm = layer->m_regions[region_id];
+            if (!layerm->fill_surfaces().empty() && layerm->region().config().over_bridge_speed > 0) {
+                surfaces.back().push_back(std::ref(layerm->m_fill_surfaces));
+            }
+        }
+    }
+    constexpr double infill_over_bridges_expand{1.0};
+    PrepareInfill::separate_infill_above_bridges(surfaces, infill_over_bridges_expand);
 
     this->set_done(posPrepareInfill);
 }
@@ -833,6 +848,18 @@ bool PrintObject::invalidate_state_by_config_options(
             steps.emplace_back(posInfill);
         } else if (opt_key == "fill_pattern") {
             steps.emplace_back(posPrepareInfill);
+        } else if (opt_key == "over_bridge_speed") {
+            const auto *old_speed = old_config.option<ConfigOptionFloat>(opt_key);
+            const auto *new_speed = new_config.option<ConfigOptionFloat>(opt_key);
+            if (
+                old_speed == nullptr
+                || new_speed == nullptr
+                || old_speed->value == 0
+                || new_speed->value == 0
+            ) {
+                steps.emplace_back(posPrepareInfill);
+            }
+            invalidated |= m_print->invalidate_step(psGCodeExport);
         } else if (opt_key == "fill_density") {
             // One likely wants to reslice only when switching between zero infill to simulate boolean difference (subtracting volumes),
             // normal infill and 100% (solid) infill.
@@ -893,6 +920,7 @@ bool PrintObject::invalidate_state_by_config_options(
             || opt_key == "external_perimeter_speed"
             || opt_key == "small_perimeter_speed"
             || opt_key == "solid_infill_speed"
+            || opt_key == "first_layer_infill_speed"
             || opt_key == "top_solid_infill_speed") {
             invalidated |= m_print->invalidate_step(psGCodeExport);
         } else if (

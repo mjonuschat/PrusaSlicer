@@ -245,6 +245,8 @@ set(SLIC3R_SOURCES
     Geometry/VoronoiUtils.hpp
     Geometry/VoronoiUtils.cpp
     Geometry/VoronoiVisualUtils.hpp
+    InfillAboveBridges.hpp
+    InfillAboveBridges.cpp
     JumpPointSearch.cpp
     JumpPointSearch.hpp
     KDTreeIndirect.hpp
@@ -262,6 +264,10 @@ set(SLIC3R_SOURCES
     CutUtils.hpp
     Model.cpp
     Model.hpp
+    ModelProcessing.cpp
+    ModelProcessing.hpp
+    FileReader.cpp
+    FileReader.hpp
     MultiMaterialSegmentation.cpp
     MultiMaterialSegmentation.hpp
     MeshNormals.hpp

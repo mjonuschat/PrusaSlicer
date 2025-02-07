@@ -864,14 +864,15 @@ static inline std::vector<std::vector<ExPolygons>> segmentation_top_and_bottom_l
                 // color_idx == 0 means "don't know" extruder aka the underlying extruder.
                 // As this region may split existing regions, we collect statistics over all regions for color_idx == 0.
                 color_idx == 0 || config.perimeter_extruder == int(color_idx)) {
-                out.extrusion_width     = std::max<float>(out.extrusion_width, float(config.perimeter_extrusion_width));
+                const Flow perimeter_flow = region->flow(FlowRole::frPerimeter);
+                out.extrusion_width     = std::max<float>(out.extrusion_width, perimeter_flow.width());
                 out.top_solid_layers    = std::max<int>(out.top_solid_layers, config.top_solid_layers);
                 out.bottom_solid_layers = std::max<int>(out.bottom_solid_layers, config.bottom_solid_layers);
                 out.small_region_threshold = config.gap_fill_enabled.value && config.gap_fill_speed.value > 0 ?
                                              // Gap fill enabled. Enable a single line of 1/2 extrusion width.
-                                             0.5f * float(config.perimeter_extrusion_width) :
+                                             0.5f * perimeter_flow.width() :
                                              // Gap fill disabled. Enable two lines slightly overlapping.
-                                             float(config.perimeter_extrusion_width) + 0.7f * Flow::rounded_rectangle_extrusion_spacing(float(config.perimeter_extrusion_width), float(layer.height));
+                                             perimeter_flow.width() + 0.7f * perimeter_flow.spacing();
                 out.small_region_threshold = scaled<float>(out.small_region_threshold * 0.5f);
                 ++ out.num_regions;
             }

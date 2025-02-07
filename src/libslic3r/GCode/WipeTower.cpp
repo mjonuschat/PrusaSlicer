@@ -1161,6 +1161,15 @@ void WipeTower::toolchange_Wipe(
 	float dy = (is_first_layer() ? m_extra_flow : m_extra_spacing_wipe) * m_perimeter_width; // Don't use the extra spacing for the first layer, but do use the spacing resulting from increased flow.
     // All the calculations in all other places take the spacing into account for all the layers.
 
+    // Ensure that for the first layer, the cleaning_box will be entirely filled.
+    if (is_first_layer()) {
+        const float cleaning_box_height    = cleaning_box.lu.y() - (0.5f * line_width) - float(EPSILON) - (writer.y() + dy);
+        const int   extrusion_cnt          = static_cast<int>(std::floor(cleaning_box_height / dy)) + 1;
+        const float extrusion_length       = xr - xl;
+        const float x_to_fill_cleaning_box = extrusion_length * static_cast<float>(extrusion_cnt);
+        x_to_wipe = std::max(x_to_wipe, x_to_fill_cleaning_box);
+    }
+
     const float target_speed = is_first_layer() ? m_first_layer_speed * 60.f : m_infill_speed * 60.f;
     float wipe_speed = 0.33f * target_speed;
 

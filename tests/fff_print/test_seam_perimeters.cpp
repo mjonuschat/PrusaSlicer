@@ -2,7 +2,8 @@
 #include "libslic3r/GCode/SeamPerimeters.hpp"
 #include "libslic3r/Layer.hpp"
 #include "libslic3r/Point.hpp"
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/catch_approx.hpp>
 #include <libslic3r/GCode/SeamGeometry.hpp>
 #include <libslic3r/Geometry.hpp>
 #include <fstream>
@@ -11,6 +12,7 @@
 
 using namespace Slic3r;
 using namespace Slic3r::Seams;
+using namespace  Catch;
 
 constexpr bool debug_files{false};
 

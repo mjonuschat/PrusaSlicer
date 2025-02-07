@@ -24,9 +24,9 @@ enum class ConnectPrinterState {
     CONNECT_PRINTER_ERROR,
     CONNECT_PRINTER_STATE_COUNT
 };
-// <std::pair<std::string, std::string> is pair of printer_model and nozzle_diameter. std::vector<size_t> is vector of ConnectPrinterState counters
-typedef std::map<std::pair<std::string, std::string>, std::vector<size_t>> ConnectPrinterStateMap;
-typedef std::map< std::string, std::pair<std::string, std::string>> ConnectUUIDToModelNozzleMap;
+// printer preset name and std::vector<size_t> is vector of ConnectPrinterState counters
+typedef std::map<std::string, std::vector<size_t>> ConnectPrinterStateMap;
+typedef std::map< std::string, std::string> ConnectUUIDToPresetName;
 // Class UserAccount should handle every request for entities outside PrusaSlicer like PrusaAuth or PrusaConnect.
 // Outside communication is implemented in class UserAccountCommunication that runs separate thread. Results come back in events to Plater.
 // All incoming data shoud be stored in UserAccount.
@@ -85,7 +85,7 @@ private:
     std::unique_ptr<Slic3r::GUI::UserAccountCommunication> m_communication;
     
     ConnectPrinterStateMap              m_printer_map;
-    ConnectUUIDToModelNozzleMap         m_printer_uuid_map;
+    ConnectUUIDToPresetName             m_printer_uuid_map;
     std::map<std::string, std::string>  m_account_user_data;
     std::string                         m_username;
     size_t                              m_fail_counter { 0 };
@@ -104,6 +104,7 @@ private:
         {"READY"    , ConnectPrinterState::CONNECT_PRINTER_READY},
         {"ATTENTION", ConnectPrinterState::CONNECT_PRINTER_ATTENTION},
         {"BUSY"     , ConnectPrinterState::CONNECT_PRINTER_BUSY},
+        {"ERROR"     , ConnectPrinterState::CONNECT_PRINTER_ERROR},
     };
 };
 }} // namespace slic3r::GUI

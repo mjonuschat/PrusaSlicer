@@ -103,11 +103,35 @@ if (SLIC3R2_ENABLED)
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/platform/msw/PrusaSlicer-gcodeviewer.rc.in ${CMAKE_CURRENT_BINARY_DIR}/PrusaSlicer-gcodeviewer.rc @ONLY)
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/platform/msw/PrusaSlicer.manifest.in ${CMAKE_CURRENT_BINARY_DIR}/PrusaSlicer.manifest @ONLY)
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/platform/osx/Info.plist.in ${CMAKE_CURRENT_BINARY_DIR}/Info.plist @ONLY)
-    if (WIN32)
-        add_library(PrusaSlicer SHARED PrusaSlicer.cpp PrusaSlicer.hpp)
-    else ()
-        add_executable(PrusaSlicer PrusaSlicer.cpp PrusaSlicer.hpp)
+
+    set(SLIC3R_CLI_SOURCES
+        PrusaSlicer.hpp
+        CLI/CLI.hpp
+        CLI/CLI_DynamicPrintConfig.hpp
+        CLI/PrintHelp.cpp
+        CLI/Setup.cpp
+        CLI/LoadPrintData.cpp
+        CLI/ProcessTransform.cpp
+        CLI/ProcessActions.cpp
+        CLI/Run.cpp
+    )
+    if (SLIC3R_GUI)
+        list(APPEND SLIC3R_CLI_SOURCES
+             CLI/GuiParams.cpp
+        )
     endif ()
+
+    if (WIN32)
+        add_library(PrusaSlicer SHARED PrusaSlicer.cpp ${SLIC3R_CLI_SOURCES})
+    else ()
+        add_executable(PrusaSlicer PrusaSlicer.cpp ${SLIC3R_CLI_SOURCES})
+    endif ()
+
+    foreach(_source IN ITEMS ${SLIC3R_CLI_SOURCES})
+        get_filename_component(_source_path "${_source}" PATH)
+        string(REPLACE "/" "\\" _group_path "${_source_path}")
+        source_group("${_group_path}" FILES "${_source}")
+    endforeach()
 
     if (MINGW)
         target_link_options(PrusaSlicer PUBLIC "-Wl,-allow-multiple-definition")
@@ -119,7 +143,7 @@ if (SLIC3R2_ENABLED)
         set_target_properties(PrusaSlicer PROPERTIES OUTPUT_NAME "prusa-slicer")
     endif ()
 
-    target_link_libraries(PrusaSlicer libslic3r libcereal slic3r-arrange-wrapper)
+target_link_libraries(PrusaSlicer libslic3r libcereal slic3r-arrange-wrapper stb_image)
 
     if (APPLE)
     #    add_compile_options(-stdlib=libc++)

@@ -800,9 +800,7 @@ void GUI_App::post_init()
             if (plater()->load_files(fns) && this->init_params->input_files.size() == 1) {
                 // Update application titlebar when opening a project file
                 const std::string& filename = this->init_params->input_files.front();
-                if (boost::algorithm::iends_with(filename, ".amf") ||
-                    boost::algorithm::iends_with(filename, ".amf.xml") ||
-                    boost::algorithm::iends_with(filename, ".3mf"))
+                if (boost::algorithm::iends_with(filename, ".3mf"))
                     this->plater()->set_project_filename(from_u8(filename));
             }
             if (this->init_params->delete_after_load) {
@@ -909,7 +907,7 @@ wxGLContext* GUI_App::init_glcontext(wxGLCanvas& canvas)
     return m_opengl_mgr.init_glcontext(canvas);
 #else
     return m_opengl_mgr.init_glcontext(canvas, init_params != nullptr ? init_params->opengl_version : std::make_pair(0, 0),
-        init_params != nullptr ? init_params->opengl_compatibiity_profile : false, init_params != nullptr ? init_params->opengl_debug : false);
+        init_params != nullptr ? init_params->opengl_compatibility_profile : false, init_params != nullptr ? init_params->opengl_debug : false);
 #endif // SLIC3R_OPENGL_ES
 }
 
@@ -4121,7 +4119,7 @@ void GUI_App::select_filament_from_connect(const std::string& msg)
     }
     // test if currently selected is same type
     size_t extruder_count = preset_bundle->extruders_filaments.size();
-    if (extruder_count != materials.size()) {
+    if (extruder_count < materials.size()) {
         BOOST_LOG_TRIVIAL(error) << format("Failed to select filament from Connect. Selected printer has %1% extruders while data from Connect contains %2% materials.", extruder_count, materials.size());
         plater()->get_notification_manager()->close_notification_of_type(NotificationType::SelectFilamentFromConnect);
         // TRN: Notification text.
@@ -4129,7 +4127,7 @@ void GUI_App::select_filament_from_connect(const std::string& msg)
         return;
     }
     std::string notification_text;
-    for (size_t i = 0; i < extruder_count; i++) {
+    for (size_t i = 0; i < materials.size(); i++) {
         search_and_select_filaments(materials[i], avoid_abrasive.size() > i ? avoid_abrasive[i] : false, i, notification_text);
     }
 

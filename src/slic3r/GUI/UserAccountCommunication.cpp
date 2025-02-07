@@ -13,6 +13,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/nowide/cstdio.hpp>
 #include <boost/nowide/fstream.hpp>
+#include <boost/nowide/convert.hpp>
 #include <curl/curl.h>
 #include <string>
 
@@ -176,8 +177,8 @@ UserAccountCommunication::UserAccountCommunication(wxEvtHandler* evt_handler, Ap
     : wxEvtHandler()
     , m_evt_handler(evt_handler)
     , m_app_config(app_config)
-    , m_polling_timer(new wxTimer(this))
-    , m_token_timer(new wxTimer(this))
+    , m_polling_timer(std::make_unique<wxTimer>(this))
+    , m_token_timer(std::make_unique<wxTimer>(this))
 {
     Bind(wxEVT_TIMER, &UserAccountCommunication::on_token_timer, this, m_token_timer->GetId());
     Bind(wxEVT_TIMER, &UserAccountCommunication::on_polling_timer, this, m_polling_timer->GetId());
@@ -225,6 +226,7 @@ UserAccountCommunication::~UserAccountCommunication()
 {
     m_token_timer->Stop();
     m_polling_timer->Stop();
+
     if (m_thread.joinable()) {
         // Stop the worker thread, if running.
         {
@@ -304,6 +306,8 @@ std::string UserAccountCommunication::get_shared_session_key()
 
 void UserAccountCommunication::set_polling_enabled(bool enabled)
 {
+    // Here enabled sets to USER_ACCOUNT_ACTION_CONNECT_PRINTER_MODELS so it gets full list on first,
+    // than it should change inside session to USER_ACCOUNT_ACTION_CONNECT_STATUS
     return m_session->set_polling_action(enabled ? UserAccountActionID::USER_ACCOUNT_ACTION_CONNECT_PRINTER_MODELS : UserAccountActionID::USER_ACCOUNT_ACTION_DUMMY);
 }
 

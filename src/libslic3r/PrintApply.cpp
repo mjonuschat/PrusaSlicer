@@ -1163,8 +1163,9 @@ Print::ApplyStatus Print::apply(const Model &model, DynamicPrintConfig new_full_
 
             update_apply_status(
                 (num_extruders_changed || tool_change_differ || multi_extruder_differ || color_change_differ) ?
-            	// The Tool Ordering and the Wipe Tower are no more valid.
-            	this->invalidate_steps({ psWipeTower, psGCodeExport }) :
+                // The Tool Ordering and the Wipe Tower are no more valid.
+                // Because G-code export (PlaceholderParser) accesses the first layer convex hull, we need to also invalidate psSkirtBrim.
+            	this->invalidate_steps({ psWipeTower, psGCodeExport, psSkirtBrim }) :
             	// There is no change in Tool Changes stored in custom_gcode_per_print_z, therefore there is no need to update Tool Ordering.
             	this->invalidate_step(psGCodeExport));
             m_model.custom_gcode_per_print_z() = model.custom_gcode_per_print_z();
@@ -1336,7 +1337,9 @@ Print::ApplyStatus Print::apply(const Model &model, DynamicPrintConfig new_full_
             if (model_object.instances.size() != model_object_new.instances.size() || 
             	! std::equal(model_object.instances.begin(), model_object.instances.end(), model_object_new.instances.begin(), [](auto l, auto r){ return l->id() == r->id(); })) {
             	// G-code generator accesses model_object.instances to generate sequential print ordering matching the Plater object list.
-            	update_apply_status(this->invalidate_step(psGCodeExport));
+                // WipingExtrusions::mark_wiping_extrusions() precalculate data based on the number of instances when wiping into infill/object is enabled.
+                update_apply_status(this->invalidate_steps({psGCodeExport, psWipeTower}));
+
 	            model_object.clear_instances();
 	            model_object.instances.reserve(model_object_new.instances.size());
 	            for (const ModelInstance *model_instance : model_object_new.instances) {

@@ -45,18 +45,31 @@ void model_to_csgmesh(const ModelObject &mo,
                 part_begin.stack_operation = CSGStackOp::Push;
                 *out = std::move(part_begin);
                 ++out;
+                
+                // Collect partial meshes and keep outward and inward facing meshes separately.
+                std::vector<indexed_triangle_set> meshes_union;
+                std::vector<indexed_triangle_set> meshes_difference;
+                its_split(vol->mesh().its, SplitOutputFn{[&meshes_union, &meshes_difference](indexed_triangle_set &&its) {
+                    if (its.empty())
+                        return;
+                    if (its_volume(its) >= 0.f)
+                        meshes_union.emplace_back(std::move(its));
+                    else {
+                        its_flip_triangles(its);
+                        meshes_difference.emplace_back(std::move(its));
+                    }
+                }});
 
-                its_split(vol->mesh().its, SplitOutputFn{[&out, &vol, &trafo](indexed_triangle_set &&its) {
-                              if (its.empty())
-                                  return;
-
-                              CSGPart part{std::make_unique<indexed_triangle_set>(std::move(its)),
-                                       CSGType::Union,
-                                       (trafo * vol->get_matrix()).cast<float>()};
-
-                              *out = std::move(part);
-                              ++out;
-                          }});
+                // Add the operation for each of the partial mesh (outward-facing normals go first).                
+                for (auto* meshes : { &meshes_union, &meshes_difference}) {
+                    for (indexed_triangle_set& its : *meshes) {
+                        CSGPart part{ std::make_unique<indexed_triangle_set>(std::move(its)),
+                            meshes == &meshes_union ? CSGType::Union : CSGType::Difference,
+                            (trafo * vol->get_matrix()).cast<float>() };
+                        *out = std::move(part);
+                        ++out;
+                    }
+                }
 
                 CSGPart part_end{{}};
                 part_end.stack_operation = CSGStackOp::Pop;

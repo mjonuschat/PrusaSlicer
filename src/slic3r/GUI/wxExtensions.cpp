@@ -117,6 +117,10 @@ wxMenuItem* append_menu_item(wxMenu* menu, int id, const wxString& string, const
             entry->SetMenuItem(item);
             accelerator_entries_cache().push_back(entry);
         }
+        else {
+            delete entry;
+            entry = nullptr;
+        }
     }
 #endif
 

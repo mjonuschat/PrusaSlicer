@@ -704,7 +704,8 @@ namespace DoExport {
 	                if (region.config().get_abs_value("infill_speed") == 0 ||
 	                    region.config().get_abs_value("solid_infill_speed") == 0 ||
 	                    region.config().get_abs_value("top_solid_infill_speed") == 0 ||
-                        region.config().get_abs_value("bridge_speed") == 0)
+                        region.config().get_abs_value("bridge_speed") == 0 ||
+                        region.config().get_abs_value("over_bridge_speed") == 0)
                     {
                         // Minimal volumetric flow should not be calculated over ironing extrusions.
                         // Use following lambda instead of the built-it method.
@@ -1356,8 +1357,15 @@ void GCodeGenerator::_do_export(Print& print, GCodeOutputStream &file, Thumbnail
                     } else {
                         // Just continue printing, no action necessary.
                     }
-
                 }
+
+                // When priming is enabled, extruders are ordered (inside ToolOrdering::collect_extruder_statistics())
+                // in such a way that the last one is the first printing extruder (actually printing, not just priming).
+                const unsigned int first_printing_extruder_after_priming = tool_ordering.all_extruders().back();
+
+                // Because CoolingBuffer doesn't process the priming of extruders, set the current extruder
+                // to the actual first printing extruder (that is also the last primed extruder).
+                m_cooling_buffer->set_current_extruder(first_printing_extruder_after_priming);
             }
             print.throw_if_canceled();
         }
@@ -2295,13 +2303,20 @@ std::pair<GCode::SmoothPath, std::size_t> split_with_seam(
     if (loop.paths.empty() || loop.paths.front().empty()) {
         return {SmoothPath{}, 0};
     }
-    if (const auto seam_point{boost::get<Point>(&seam)}; seam_point != nullptr) {
+    const auto seam_point{boost::get<Point>(&seam)};
+    const auto scarf{boost::get<Seams::Scarf::Scarf>(&seam)};
+
+    if (seam_point != nullptr) {
         return {
             smooth_path_cache.resolve_or_fit_split_with_seam(
                 loop, flipped, scaled_resolution, *seam_point, seam_point_merge_distance_threshold
             ),
             0};
-    } else if (const auto scarf{boost::get<Seams::Scarf::Scarf>(&seam)}; scarf != nullptr) {
+    } else if (scarf != nullptr && scarf->start_point == scarf->end_point) {
+        return {smooth_path_cache.resolve_or_fit_split_with_seam(
+            loop, flipped, scaled_resolution, scarf->start_point, seam_point_merge_distance_threshold
+        ), 0};
+    } else if (scarf != nullptr) {
         ExtrusionPaths paths{loop.paths};
         const auto apply_smoothing{[&](tcb::span<const ExtrusionPath> paths){
             return smooth_path_cache.resolve_or_fit(paths, false, scaled<double>(0.0015));
@@ -2543,7 +2558,12 @@ LayerResult GCodeGenerator::process_layer(
     if (extrusions.empty()) {
         return result;
     }
-    const Geometry::ArcWelder::Segment first_segment{*GCode::ExtrusionOrder::get_first_point(extrusions)};
+
+    const auto optional_first_segment{GCode::ExtrusionOrder::get_first_point(extrusions)};
+    if (!optional_first_segment) {
+        return result;
+    }
+    const Geometry::ArcWelder::Segment &first_segment{*optional_first_segment};
     const Vec3crd first_point{to_3d(first_segment.point, scaled(print_z + (first_segment.height_fraction - 1.0) * height))};
     const PrintInstance* first_instance{get_first_instance(extrusions, instances_to_print)};
     m_label_objects.update(first_instance);
@@ -2975,6 +2995,10 @@ std::string GCodeGenerator::change_layer(
             Vec3d position{this->writer().get_position()};
             position.z() = print_z;
             this->writer().update_position(position);
+        } else {
+            Vec3d position{this->writer().get_position()};
+            position.z() = position.z() + m_config.z_offset;
+            this->writer().update_position(position);
         }
     }
 
@@ -3090,7 +3114,7 @@ std::string GCodeGenerator::extrude_perimeters(
         // Apply the small perimeter speed.
         if (perimeter.extrusion_entity->length() <= SMALL_PERIMETER_LENGTH)
             speed = m_config.small_perimeter_speed.get_abs_value(m_config.perimeter_speed);
-        gcode += this->extrude_smooth_path(perimeter.smooth_path, true, comment_perimeter, speed, perimeter.wipe_offset);
+        gcode += this->extrude_smooth_path(perimeter.smooth_path, perimeter.extrusion_entity->is_loop(), comment_perimeter, speed, perimeter.wipe_offset);
         this->m_travel_obstacle_tracker.mark_extruded(
             perimeter.extrusion_entity, print_instance.object_layer_to_print_id, print_instance.instance_id
         );
@@ -3364,6 +3388,14 @@ std::string GCodeGenerator::_extrude(
             speed = m_config.get_abs_value("infill_speed");
         } else if (path_attr.role == ExtrusionRole::SolidInfill) {
             speed = m_config.get_abs_value("solid_infill_speed");
+        } else if (path_attr.role == ExtrusionRole::InfillOverBridge) {
+            const double solid_infill_speed = m_config.get_abs_value("solid_infill_speed");
+            const double over_bridge_speed{m_config.get_abs_value("over_bridge_speed", solid_infill_speed)};
+            if (over_bridge_speed > 0) {
+                speed = over_bridge_speed;
+            } else {
+                speed = solid_infill_speed;
+            }
         } else if (path_attr.role == ExtrusionRole::TopSolidInfill) {
             speed = m_config.get_abs_value("top_solid_infill_speed");
         } else if (path_attr.role == ExtrusionRole::Ironing) {
@@ -3376,8 +3408,14 @@ std::string GCodeGenerator::_extrude(
     }
     if (m_volumetric_speed != 0. && speed == 0)
         speed = m_volumetric_speed / path_attr.mm3_per_mm;
-    if (this->on_first_layer())
-        speed = m_config.get_abs_value("first_layer_speed", speed);
+    if (this->on_first_layer()) {
+        const double first_layer_infill_speed{m_config.get_abs_value("first_layer_infill_speed", speed)};
+        if (path_attr.role == ExtrusionRole::SolidInfill && first_layer_infill_speed > 0) {
+            speed = first_layer_infill_speed;
+        } else {
+            speed = m_config.get_abs_value("first_layer_speed", speed);
+        }
+    }
     else if (this->object_layer_over_raft())
         speed = m_config.get_abs_value("first_layer_speed_over_raft", speed);
 

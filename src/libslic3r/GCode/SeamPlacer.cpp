@@ -235,6 +235,24 @@ SeamChoice to_seam_choice(
     return result;
 }
 
+Geometry::Direction1D get_direction(
+    const bool flipped,
+    const ExPolygon &perimeter_polygon,
+    const ExtrusionLoop &loop
+) {
+    using Dir = Geometry::Direction1D;
+
+    Dir result{flipped ? Dir::forward : Dir::backward};
+
+    // In rare cases it may happen that the original geometry perimeter
+    // polygon has different direction to the actual extrusion loop.
+    // In that case the logic is exactly opposite.
+    if (perimeter_polygon.contour.is_clockwise() != loop.is_clockwise()) {
+        result = result == Dir::forward ? Dir::backward : Dir::forward;
+    }
+    return result;
+}
+
 boost::variant<Point, Scarf::Scarf> finalize_seam_position(
     const ExtrusionLoop &loop,
     const PrintRegion *region,
@@ -255,8 +273,7 @@ boost::variant<Point, Scarf::Scarf> finalize_seam_position(
     auto [loop_line_index, loop_point]{
         project_to_extrusion_loop(seam_choice, perimeter, distancer)};
 
-    const Geometry::Direction1D offset_direction{
-        flipped ? Geometry::Direction1D::forward : Geometry::Direction1D::backward};
+    const Geometry::Direction1D offset_direction{get_direction(flipped, perimeter_polygon, loop)};
 
     // ExtrusionRole::Perimeter is inner perimeter.
     if (do_staggering) {
@@ -312,11 +329,15 @@ boost::variant<Point, Scarf::Scarf> finalize_seam_position(
         }
 
         if (loop.role() != ExtrusionRole::Perimeter) { // Outter perimeter
-            scarf.start_point = scaled(project_to_extrusion_loop(
+            const Vec2d start_point_candidate{project_to_extrusion_loop(
                 to_seam_choice(*outter_scarf_start_point, perimeter),
                 perimeter,
                 distancer
-            ).second);
+            ).second};
+            if ((start_point_candidate - outter_scarf_start_point->point).norm() > 5.0) {
+                return scaled(loop_point);
+            }
+            scarf.start_point = scaled(start_point_candidate);
             scarf.end_point = scaled(loop_point);
             scarf.end_point_previous_index = loop_line_index;
             return scarf;
@@ -359,18 +380,25 @@ boost::variant<Point, Scarf::Scarf> finalize_seam_position(
             if (!inner_scarf_start_point) {
                 return scaled(inner_scarf_end_point.point);
             }
-
-            scarf.start_point = scaled(project_to_extrusion_loop(
+            const Vec2d start_point_candidate{project_to_extrusion_loop(
                 to_seam_choice(*inner_scarf_start_point, perimeter),
                 perimeter,
                 distancer
-            ).second);
+            ).second};
+            if ((start_point_candidate - inner_scarf_start_point->point).norm() > 5.0) {
+                return scaled(loop_point);
+            }
+            scarf.start_point = scaled(start_point_candidate);
 
             const auto [end_point_previous_index, end_point]{project_to_extrusion_loop(
                 to_seam_choice(inner_scarf_end_point, perimeter),
                 perimeter,
                 distancer
             )};
+            if ((end_point - inner_scarf_end_point.point).norm() > 5.0) {
+                return scaled(loop_point);
+            }
+
             scarf.end_point = scaled(end_point);
             scarf.end_point_previous_index = end_point_previous_index;
             return scarf;

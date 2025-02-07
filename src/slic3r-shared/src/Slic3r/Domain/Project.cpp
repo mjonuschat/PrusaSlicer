@@ -8,12 +8,14 @@ Project::Project() : m_model(new Model()) {}
 
 void Project::load(const std::string& file_path)
 {
+    // TODO: implement
+    /*
     m_model = std::make_unique<Model>(Model::read_from_file(file_path));
     set_file_name(file_path);
     m_config_containers.clear();
     m_config_containers.emplace_back();
     auto& config_container = m_config_containers.back();
-
+    */
 }
 
 const ConfigContainer* Project::find_config_container(size_t id) const

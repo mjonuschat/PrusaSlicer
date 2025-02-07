@@ -86,7 +86,7 @@ private:
     bool                                    m_thread_stop { false };
     bool                                    m_thread_wakeup{ false };
     bool                                    m_window_is_active{ true };
-    wxTimer*                                m_polling_timer;
+    std::unique_ptr<wxTimer>                m_polling_timer;
 
     std::string                             m_code_verifier;
     wxEvtHandler*                           m_evt_handler;
@@ -95,7 +95,7 @@ private:
     std::string                             m_username;
     bool                                    m_remember_session { true }; // if default is true, on every login Remember me will be checked.
 
-    wxTimer*                                m_token_timer;
+    std::unique_ptr<wxTimer>                m_token_timer;
     std::time_t                             m_next_token_refresh_at{0};
 
     void wakeup_session_thread();

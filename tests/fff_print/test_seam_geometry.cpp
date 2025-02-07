@@ -1,9 +1,12 @@
 #include <libslic3r/Point.hpp>
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_vector.hpp>
+#include <catch2/catch_approx.hpp>
 #include <libslic3r/GCode/SeamGeometry.hpp>
 #include <libslic3r/Geometry.hpp>
 
 using namespace Slic3r;
+using namespace Catch;
 
 TEST_CASE("Lists mapping", "[Seams][SeamGeometry]") {
     // clang-format off
