@@ -4,6 +4,7 @@
 #include <catch2/trompeloeil.hpp>
 
 #include "Slic3r/Biz/ProjectInteractor.hpp"
+#include "Slic3r/TestUtils/TestData.hpp"
 #include "libslic3r/Model.hpp"
 
 #include <boost/filesystem/operations.hpp>
@@ -46,7 +47,7 @@ TEST_CASE("Project Interactor Listeners", "[ProjectInteractor]")
     Slic3r::Domain::Workbench workbench;
     // Note: the test is expected to be run in same directory this library has the CMakeLists.txt file in
     //boost::filesystem::path data_path = boost::filesystem::path(__FILE__).parent_path() / "../../data";
-    boost::filesystem::path data_path = absolute(canonical(boost::filesystem::path{"test/data"}));
+    boost::filesystem::path data_path{Tests::get_datadir()};
     std::cout << "Data path: " << data_path.string() << std::endl;
     Slic3r::set_data_dir(data_path.string());
     workbench.load_configs();
