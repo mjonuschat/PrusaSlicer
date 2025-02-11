@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Slic3r/App/imgui/DoubleSlider.hpp"
+#include "Slic3r/App/Imgui/DoubleSlider.hpp"
 
 #include <memory>
 
