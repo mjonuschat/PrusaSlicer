@@ -475,8 +475,11 @@ public:
     // This bounding box is only used for the actual slicing.
     const BoundingBoxf3& raw_bounding_box() const;
     // A snug bounding box around the transformed non-modifier object volumes.
-    BoundingBoxf3 instance_bounding_box(size_t instance_idx, bool dont_translate = false) const;
-	// A snug bounding box of non-transformed (non-rotated, non-scaled, non-translated) sum of non-modifier object volumes.
+    BoundingBoxf3 instance_bounding_box(size_t instance_idx, bool dont_translate = false) const
+    { return instance_bounding_box(*this->instances[instance_idx], dont_translate); }
+    // A snug bounding box around the transformed non-modifier object volumes.
+    BoundingBoxf3 instance_bounding_box(const ModelInstance& instance, bool dont_translate = false) const;
+    // A snug bounding box of non-transformed (non-rotated, non-scaled, non-translated) sum of non-modifier object volumes.
 	const BoundingBoxf3& raw_mesh_bounding_box() const;
 	// A snug bounding box of non-transformed (non-rotated, non-scaled, non-translated) sum of all object volumes.
     BoundingBoxf3 full_raw_mesh_bounding_box() const;

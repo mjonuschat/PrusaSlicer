@@ -19,7 +19,7 @@ void BedPlacement::layout(Domain::Project& project, const Vec2d& gap)
     for (size_t i = 0; i < ccs.size(); ++i) {
         auto& cc = ccs[i];
         const Domain::Bed& bed = cc->bed();
-        Vec2d size = bed.contour_aabb();
+        Vec2d size = bed.contour_aabb_extent();
         Vec2d pos = offset_y * Vec2d::UnitY();
         TriangleMesh model = Biz::Plater::BedGeometry::model(bed);
         if (!model.empty())

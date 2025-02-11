@@ -855,12 +855,12 @@ const BoundingBoxf3& ModelObject::raw_bounding_box() const
 }
 
 // This returns an accurate snug bounding box of the transformed object instance, without the translation applied.
-BoundingBoxf3 ModelObject::instance_bounding_box(size_t instance_idx, bool dont_translate) const
+BoundingBoxf3 ModelObject::instance_bounding_box(const ModelInstance& model_instance, bool dont_translate) const
 {
     BoundingBoxf3 bb;
     const Transform3d inst_matrix = dont_translate ?
-        this->instances[instance_idx]->get_transformation().get_matrix_no_offset() :
-        this->instances[instance_idx]->get_transformation().get_matrix();
+        model_instance.get_transformation().get_matrix_no_offset() :
+        model_instance.get_transformation().get_matrix();
 
     for (ModelVolume *v : this->volumes) {
         if (v->is_model_part())

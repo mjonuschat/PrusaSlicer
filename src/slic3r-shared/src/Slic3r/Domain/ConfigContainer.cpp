@@ -5,7 +5,8 @@ namespace Slic3r::Domain {
 
 BedInstance& ConfigContainer::add_bed_instance()
 {
-    m_bed_instances.emplace_back(std::make_unique<BedInstance>());
+    ASSERT(m_bed != nullptr, "ConfigContainer's Bed is null");
+    m_bed_instances.emplace_back(std::make_unique<BedInstance>(*m_bed));
     return *m_bed_instances.back();
 }
 

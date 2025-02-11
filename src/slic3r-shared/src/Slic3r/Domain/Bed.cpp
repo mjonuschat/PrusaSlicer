@@ -58,9 +58,19 @@ Bed Bed::from(
         max.y() = std::max(v.y(), max.y());
     }
 
-    ret.m_contour_aabb = max - min;
+    ret.m_contour_aabb_extent = max - min;
     ret.m_center = 0.5 * (min + max);
     return ret;
 }
+
+
+bool Bed::contains(const Vec2d& bed_inst_position, const BoundingBoxf& object_bb) const
+{
+    Vec2d half_extent = m_contour_aabb_extent * 0.5;
+    Vec2d center = Vec2d{m_center.x(), m_center.y()} + bed_inst_position;
+    BoundingBoxf bed_bounds{center - half_extent, center + half_extent};
+    return bed_bounds.overlap(object_bb);
+}
+
 
 }

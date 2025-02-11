@@ -156,6 +156,9 @@ public:
      */
     void finalize_transform_selection(TransformMemento& memento, bool canceled);
     /** @} */
+
+private:
+    void update_selection_instance_bed_placement();
 private:
     using ProjectContexts = std::unordered_map<Domain::SelectionId, SceneInteractorProjectContext>;
 
