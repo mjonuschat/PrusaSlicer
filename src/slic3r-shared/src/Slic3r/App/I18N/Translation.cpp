@@ -1,6 +1,7 @@
 #include "Slic3r/App/I18N/Translation.hpp"
 #include "Slic3r/App/I18N/LanguageInfo.hpp"
 
+#include <libassert/assert.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 #include <clocale>
@@ -290,6 +291,7 @@ bool Translations::set_best_translation_for_language(const std::string& language
     if (!language_info)
         language_info = get_language_short_info("en");
 
+    ASSERT(language_info != nullptr);
     if (!is_available_locale(language_info))
         return false;
 
