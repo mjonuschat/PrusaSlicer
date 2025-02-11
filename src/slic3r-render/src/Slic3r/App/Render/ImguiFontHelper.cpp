@@ -255,7 +255,7 @@ static void add_icons_rect_to_font_texture(const ImguiFontHelper& helper, ImguiL
 static void load_icon_from_svg(const std::pair<const wchar_t, std::string>& icon, int icon_sz, int rect_id, int tex_width,
     unsigned char* pixels) {
     ImGuiIO& io = ImGui::GetIO();
-    if (const ImFontAtlas::CustomRect* rect = io.Fonts->GetCustomRectByIndex(rect_id)) {
+    if (const ImFontAtlasCustomRect* rect = io.Fonts->GetCustomRectByIndex(rect_id)) {
         DEBUG_ASSERT(rect->Width == icon_sz);
         DEBUG_ASSERT(rect->Height == icon_sz);
         std::string filename = Slic3r::var(icon.second + ".svg");
@@ -399,7 +399,7 @@ void ImguiFontHelper::create_font_texture()
     m_font_texture = m_device.context().texture_manager().create_empty("imgui_font", PixelFormat::RGBA8, width, height);
     m_font_texture->set_data(PixelFormat::RGBA8, 0, width, height, pixels);
 //    m_textures[TextureType::Font]->set_filtering(Texture::MinFilter::Linear, Texture::MagFilter::Linear);
-    io.Fonts->SetTexID(m_font_texture);
+    io.Fonts->SetTexID((ImTextureID)(intptr_t)m_font_texture);
 }
 
 } // namespace Slic3r::App::Render
