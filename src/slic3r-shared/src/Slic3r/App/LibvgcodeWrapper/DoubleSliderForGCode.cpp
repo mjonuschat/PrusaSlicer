@@ -1,6 +1,6 @@
-#include "Slic3r/App/Preview/DoubleSliderForGCode.hpp"
+#include "Slic3r/App/LibvgcodeWrapper/DoubleSliderForGCode.hpp"
 
-namespace Slic3r::App::Preview {
+namespace Slic3r::App::LibvgcodeWrapper {
 
 static constexpr float SLIDER_GCODE_HEIGHT = 40.0f;
 
@@ -21,4 +21,4 @@ void DoubleSliderForGcode::render(float scale_factor/* = 0.1f*/, float offset/* 
         process_thumb_move();
 }
 
-} // namespace Slic3r::App::Preview
+} // namespace Slic3r::App::LibvgcodeWrapper

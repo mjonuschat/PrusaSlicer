@@ -1,4 +1,4 @@
-#include "Slic3r/App/Preview/TickCodeManager.hpp"
+#include "Slic3r/App/LibvgcodeWrapper/TickCodeManager.hpp"
 #include "Slic3r/App/I18N/I18N.hpp"
 
 #include <libslic3r/Color.hpp>
@@ -7,7 +7,7 @@
 
 using namespace Slic3r;
 
-namespace Slic3r::App::Preview {
+namespace Slic3r::App::LibvgcodeWrapper {
 
 static constexpr float EPSILON = 0.0011f;
 static constexpr int YES = 0x00000002; // an analogue of wxYES   
@@ -613,4 +613,4 @@ std::string TickCodeManager::new_color(const std::string& color)
     return std::string();
 }
 
-} // namespace Slic3r::App::Preview
+} // namespace Slic3r::App::LibvgcodeWrapper

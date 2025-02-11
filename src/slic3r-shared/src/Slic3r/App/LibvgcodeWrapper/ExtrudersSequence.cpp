@@ -1,6 +1,6 @@
-#include "Slic3r/App/Preview/ExtrudersSequence.hpp"
+#include "Slic3r/App/LibvgcodeWrapper/ExtrudersSequence.hpp"
 
-namespace Slic3r::App::Preview {
+namespace Slic3r::App::LibvgcodeWrapper {
 
 bool ExtrudersSequence::operator == (const ExtrudersSequence& other) const
 {
@@ -37,4 +37,4 @@ void ExtrudersSequence::init(size_t extruders_count)
     }
 }
 
-} // namespace Slic3r::App::Preview
+} // namespace Slic3r::App::LibvgcodeWrapper

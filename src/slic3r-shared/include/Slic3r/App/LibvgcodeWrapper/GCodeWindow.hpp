@@ -6,7 +6,7 @@
 #include <optional>
 #include <cstdint>
 
-namespace Slic3r::App::Preview {
+namespace Slic3r::App::LibvgcodeWrapper {
 
 class GCodeWindowData
 {
@@ -57,4 +57,4 @@ private:
  */
 void gcode_window(const GCodeWindowData& data, uint32_t curr_line_id);
 
-} // namespace Slic3r::App::Preview
+} // namespace Slic3r::App::LibvgcodeWrapper

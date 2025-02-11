@@ -3,7 +3,7 @@
 #include <vector>
 #include <cstddef>
 
-namespace Slic3r::App::Preview {
+namespace Slic3r::App::LibvgcodeWrapper {
 
 struct ExtrudersSequence
 {
@@ -22,4 +22,4 @@ struct ExtrudersSequence
     void init(size_t extruders_count);
 };
 
-} // namespace Slic3r::App::Preview
+} // namespace Slic3r::App::LibvgcodeWrapper

@@ -1,4 +1,4 @@
-#include "Slic3r/App/Preview/DoubleSliderForLayers.hpp"
+#include "Slic3r/App/LibvgcodeWrapper/DoubleSliderForLayers.hpp"
 #include "Slic3r/App/Imgui/ImguiExtension.hpp"
 #include "Slic3r/App/I18N/I18N.hpp"
 #include "Slic3r/Assert.hpp"
@@ -18,7 +18,7 @@ using namespace Slic3r;
 using namespace Slic3r::Biz::libpgcode;
 using namespace Slic3r::Domain;
 
-namespace Slic3r::App::Preview {
+namespace Slic3r::App::LibvgcodeWrapper {
 
 static constexpr float EPSILON = 0.0011f;
 
@@ -1314,4 +1314,4 @@ void DoubleSliderForLayers::process_jump_to_value()
     }
 }
 
-} // namespace Slic3r::App::Preview
+} // namespace Slic3r::App::LibvgcodeWrapper

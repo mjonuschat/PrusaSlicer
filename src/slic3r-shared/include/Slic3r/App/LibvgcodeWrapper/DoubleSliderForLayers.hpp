@@ -2,10 +2,10 @@
 
 #include "Slic3r/App/Imgui/DoubleSlider.hpp"
 #include "Slic3r/App/Imgui/RulerForDoubleSlider.hpp"
-#include "Slic3r/App/Preview/TickCodeManager.hpp"
+#include "Slic3r/App/LibvgcodeWrapper/TickCodeManager.hpp"
 #include "Slic3r/Domain/Units.hpp"
 
-namespace Slic3r::App::Preview {
+namespace Slic3r::App::LibvgcodeWrapper {
 
 typedef std::function<void(void)> TicksChangedCallback;
 typedef std::function<void(const std::string&, const std::string&)> AppConfigChangedCallback;
@@ -196,4 +196,4 @@ private:
     AppConfigChangedCallback m_cb_app_config_changed{ nullptr };
 };
 
-} // namespace Slic3r::App::Preview
+} // namespace Slic3r::App::LibvgcodeWrapper

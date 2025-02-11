@@ -43,18 +43,6 @@ set(SLIC3R_SHARED_FILES
 
         include/Slic3r/App/Preview/PreviewRenderModule.hpp
         src/Slic3r/App/Preview/PreviewRenderModule.cpp
-        src/Slic3r/App/Preview/DoubleSliderForLayers.cpp
-        include/Slic3r/App/Preview/DoubleSliderForLayers.hpp
-        src/Slic3r/App/Preview/DoubleSliderForGCode.cpp
-        include/Slic3r/App/Preview/DoubleSliderForGCode.hpp
-        src/Slic3r/App/Preview/ExtrudersSequence.cpp
-        include/Slic3r/App/Preview/ExtrudersSequence.hpp
-        src/Slic3r/App/Preview/TickCodeManager.cpp
-        include/Slic3r/App/Preview/TickCodeManager.hpp
-        src/Slic3r/App/Preview/ActualSpeedPlotter.cpp
-        include/Slic3r/App/Preview/ActualSpeedPlotter.hpp
-        src/Slic3r/App/Preview/GCodeWindow.cpp
-        include/Slic3r/App/Preview/GCodeWindow.hpp
 
         src/Slic3r/App/Scene/Scene.cpp
         include/Slic3r/App/Scene/Scene.hpp
@@ -128,6 +116,23 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Imgui/RulerForDoubleSlider.hpp
         src/Slic3r/App/Imgui/ImguiExtension.cpp
         include/Slic3r/App/Imgui/ImguiExtension.hpp
+
+        src/Slic3r/App/LibvgcodeWrapper/Wrapper.cpp
+        include/Slic3r/App/LibvgcodeWrapper/Wrapper.hpp
+        src/Slic3r/App/LibvgcodeWrapper/WrapperImpl.cpp
+        include/Slic3r/App/LibvgcodeWrapper/WrapperImpl.hpp
+        src/Slic3r/App/LibvgcodeWrapper/DoubleSliderForLayers.cpp
+        include/Slic3r/App/LibvgcodeWrapper/DoubleSliderForLayers.hpp
+        src/Slic3r/App/LibvgcodeWrapper/DoubleSliderForGCode.cpp
+        include/Slic3r/App/LibvgcodeWrapper/DoubleSliderForGCode.hpp
+        src/Slic3r/App/LibvgcodeWrapper/ExtrudersSequence.cpp
+        include/Slic3r/App/LibvgcodeWrapper/ExtrudersSequence.hpp
+        src/Slic3r/App/LibvgcodeWrapper/TickCodeManager.cpp
+        include/Slic3r/App/LibvgcodeWrapper/TickCodeManager.hpp
+        src/Slic3r/App/LibvgcodeWrapper/ActualSpeedPlotter.cpp
+        include/Slic3r/App/LibvgcodeWrapper/ActualSpeedPlotter.hpp
+        src/Slic3r/App/LibvgcodeWrapper/GCodeWindow.cpp
+        include/Slic3r/App/LibvgcodeWrapper/GCodeWindow.hpp
 
         src/Slic3r/App/TestRenderLayout.cpp
         include/Slic3r/App/TestRenderLayout.hpp

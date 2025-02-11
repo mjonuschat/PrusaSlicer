@@ -1,10 +1,10 @@
-#include "Slic3r/App/Preview/ActualSpeedPlotter.hpp"
+#include "Slic3r/App/LibvgcodeWrapper/ActualSpeedPlotter.hpp"
 #include "Slic3r/App/Imgui/ImguiExtension.hpp"
 #include "Slic3r/App/I18N/I18N.hpp"
 
 #include <libslic3r/Color.hpp>
 
-namespace Slic3r::App::Preview {
+namespace Slic3r::App::LibvgcodeWrapper {
 
 static const ImVec4 GRID_MAIN_COLOR      = { 0.5f, 0.5f, 0.5f, 0.5f };
 static const ImVec4 GRID_SECONDARY_COLOR = { 0.0f, 0.0f, 0.5f, 0.5f };
@@ -106,4 +106,4 @@ int plot_actual_speed_profile(const ActualSpeedPlotData& data, const ImVec2& siz
     return idx_hovered;
 }
 
-} // namespace Slic3r::App::Preview
+} // namespace Slic3r::App::LibvgcodeWrapper

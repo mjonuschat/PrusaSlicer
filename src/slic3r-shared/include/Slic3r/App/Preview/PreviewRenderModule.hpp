@@ -4,6 +4,7 @@
 #include "Slic3r/App/Plater/ScenePresenter.hpp"
 #include "Slic3r/Biz/Preset/PresetInteractor.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
+#include "Slic3r/App/LibvgcodeWrapper/Wrapper.hpp"
 
 #include <memory>
 
@@ -26,6 +27,8 @@ private:
     const Domain::Workbench& m_workbench;
     Biz::ProjectInteractor& m_project_interactor;
     std::unique_ptr<Plater::ScenePresenter> m_scene_presenter;
+
+    App::LibvgcodeWrapper::Wrapper m_viewer;
 };
 
 } // namespace Slic3r::App::Preview

@@ -1,10 +1,10 @@
-#include "Slic3r/App/Preview/GCodeWindow.hpp"
+#include "Slic3r/App/LibvgcodeWrapper/GCodeWindow.hpp"
 #include "Slic3r/App/Imgui/ImguiExtension.hpp"
 #include "Slic3r/App/I18N/I18N.hpp"
 
 #include "Slic3r/Assert.hpp"
 
-namespace Slic3r::App::Preview {
+namespace Slic3r::App::LibvgcodeWrapper {
 
 static const ImVec4 COMMAND_COLOR    = { 0.8f, 0.8f, 0.0f, 1.0f };
 static const ImVec4 PARAMETERS_COLOR = { 1.0f, 1.0f, 1.0f, 1.0f };
@@ -156,4 +156,4 @@ void gcode_window(const GCodeWindowData& data, uint32_t curr_line_id)
     }
 }
 
-} // namespace Slic3r::App::Preview
+} // namespace Slic3r::App::LibvgcodeWrapper

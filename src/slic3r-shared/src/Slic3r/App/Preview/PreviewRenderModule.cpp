@@ -29,6 +29,14 @@ void PreviewRenderModule::on_init(Render::Device& device)
         std::make_unique<Plater::ScenePresenter>(m_workbench, m_project_interactor, *m_device);
     m_project_interactor.add_selected_project_changed_listener(m_scene_presenter.get());
     m_project_interactor.scene_interactor().add_scene_changed_listener(m_scene_presenter.get());
+
+    try {
+        App::LibvgcodeWrapper::WrapperSettings settings;
+        if (!m_viewer.init(settings)) {
+        }
+    }
+    catch (const std::exception& e) {
+    }
 }
 
 } // namespace Slic3r::App::Preview

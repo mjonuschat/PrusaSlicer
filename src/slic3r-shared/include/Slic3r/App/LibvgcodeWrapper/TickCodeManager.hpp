@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Slic3r/App/Preview/ExtrudersSequence.hpp"
+#include "Slic3r/App/LibvgcodeWrapper/ExtrudersSequence.hpp"
 
 #include <libslic3r/CustomGCode.hpp>
 
@@ -8,7 +8,7 @@
 #include <functional>
 #include <array>
 
-namespace Slic3r::App::Preview {
+namespace Slic3r::App::LibvgcodeWrapper {
 
 typedef std::function<void(Slic3r::CustomGCode::Type)> CheckGCodeCallback;
 typedef std::function<std::string(const std::string&, float)> GetCustomGCodeCallback;
@@ -134,4 +134,4 @@ private:
     GetExtrudersSequenceCallback m_cb_get_extruders_sequence{ nullptr };
 };
 
-} // namespace Slic3r::App::Preview
+} // namespace Slic3r::App::LibvgcodeWrapper

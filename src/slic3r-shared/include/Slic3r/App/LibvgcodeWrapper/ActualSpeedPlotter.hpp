@@ -9,7 +9,7 @@ namespace Slic3r {
 class ColorRGB;
 } //  namespace Slic3r
 
-namespace Slic3r::App::Preview {
+namespace Slic3r::App::LibvgcodeWrapper {
 
 struct ActualSpeedPlotDataItem
 {
@@ -32,4 +32,4 @@ struct ActualSpeedPlotData
  */
 int plot_actual_speed_profile(const ActualSpeedPlotData& data, const ImVec2& size = { 0.0f, 0.0f });
 
-} // namespace Slic3r::App::Preview
+} // namespace Slic3r::App::LibvgcodeWrapper
