@@ -196,6 +196,16 @@ else()
 endif ()
 target_include_directories(slic3r-shared PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
+if (NOT WIN32)
+    if (SLIC3R_FHS)
+        # CMAKE_INSTALL_FULL_DATAROOTDIR: read-only architecture-independent data root (share)
+        set(SLIC3R_FHS_RESOURCES "${CMAKE_INSTALL_FULL_DATAROOTDIR}/PrusaSlicer")
+        install(DIRECTORY ${SLIC3R_RESOURCES_NEXT_DIR}/ DESTINATION ${SLIC3R_FHS_RESOURCES})
+        target_compile_definitions(slic3r-shared PUBLIC SLIC3R_FHS SLIC3R_FHS_RESOURCES="${SLIC3R_FHS_RESOURCES}")
+    else ()
+        install(DIRECTORY "${SLIC3R_RESOURCES_NEXT_DIR}/" DESTINATION "${CMAKE_INSTALL_PREFIX}/resources")
+    endif ()
+endif()
 
 # Doxygen
 add_target_to_doxygen(slic3r-shared)

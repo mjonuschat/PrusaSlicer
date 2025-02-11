@@ -80,3 +80,5 @@ slic3r_link_resources(slic3r-app-desktop)
 if (WIN32)
     prusaslicer_copy_dlls(slic3r-app-desktop)
 endif ()
+
+install(TARGETS slic3r-app-desktop RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
