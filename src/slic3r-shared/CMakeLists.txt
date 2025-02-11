@@ -41,6 +41,8 @@ set(SLIC3R_SHARED_FILES
 
         include/Slic3r/App/View/IPanelView.hpp
 
+        include/Slic3r/App/Preview/PreviewRenderModule.hpp
+        src/Slic3r/App/Preview/PreviewRenderModule.cpp
         src/Slic3r/App/Preview/DoubleSliderForLayers.cpp
         include/Slic3r/App/Preview/DoubleSliderForLayers.hpp
         src/Slic3r/App/Preview/DoubleSliderForGCode.cpp
