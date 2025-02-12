@@ -13,8 +13,8 @@ bool Selection::is_valid() const
 
 void Selection::normalize()
 {
+    mode = SelectionMode::Volume;
     if (elements.empty()) {
-        mode = SelectionMode::Volume;
         return;
     }
 
