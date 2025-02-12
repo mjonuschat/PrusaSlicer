@@ -7,7 +7,6 @@
 #include "Slic3r/App/Plater/GizmoManager.hpp"
 #include "Slic3r/App/Plater/ScenePresenter.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
-#
 
 #include "Slic3r/App/TestRenderLayout.hpp"
 
