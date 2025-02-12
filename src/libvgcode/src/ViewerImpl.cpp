@@ -15,7 +15,7 @@
 #include <Slic3r/App/Render/TextureManager.hpp>
 #include <Slic3r/App/Render/Material.hpp>
 
-#include <libslic3r/Format.hpp>
+#include <libslic3r/format.hpp>
 
 #include <map>
 #include <assert.h>
