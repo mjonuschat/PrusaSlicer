@@ -62,7 +62,6 @@ target_link_libraries(slic3r-app-desktop PUBLIC
         slic3r-base
         slic3r-platform slic3r-platform-wx 
         slic3r-shared slic3r-shared-wx
-        ${wxWidgets_LIBRARIES} 
 )
 
 # See https://github.com/prusa3d/PrusaSlicer/issues/4584.

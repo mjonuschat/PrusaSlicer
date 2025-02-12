@@ -18,7 +18,8 @@ add_library(imgui STATIC
     imgui/imstb_truetype.h
 )
 
-target_include_directories(imgui PUBLIC .)
+target_include_directories(imgui PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+message(STATUS "Imgui include dir: ${CMAKE_CURRENT_SOURCE_DIR}")
 
 
 add_library(imgui_backend_ogl3_glfw STATIC

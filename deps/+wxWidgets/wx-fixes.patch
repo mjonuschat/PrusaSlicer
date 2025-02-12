@@ -1,6 +1,6 @@
-diff --color -urN wxWidgets-323a465e577e03f330e2e6a4c78e564d125340cb/build/cmake/lib/webview/CMakeLists.txt dep_wxWidgets/build/cmake/lib/webview/CMakeLists.txt
---- wxWidgets-323a465e577e03f330e2e6a4c78e564d125340cb/include/wx/generic/private/widthcalc.h	2024-06-26 10:39:50.000000000 +0200
-+++ dep_wxWidgets/include/wx/generic/private/widthcalc.h	2025-01-08 12:59:53.557388376 +0100
+diff -urN wxWidgets-5462e7d7cfac645926188443e842171e107b312c/include/wx/generic/private/widthcalc.h dep_wxWidgets/include/wx/generic/private/widthcalc.h
+--- wxWidgets-5462e7d7cfac645926188443e842171e107b312c/include/wx/generic/private/widthcalc.h	2025-01-14 17:15:38.000000000 +0100
++++ dep_wxWidgets/include/wx/generic/private/widthcalc.h	2025-02-13 08:16:11.810084500 +0100
 @@ -101,9 +101,9 @@
                  UpdateWithRow(row);
              }
@@ -14,8 +14,9 @@ diff --color -urN wxWidgets-323a465e577e03f330e2e6a4c78e564d125340cb/build/cmake
                         top_part_end,
                         count - bottom_part_start,
                         last_visible - first_visible,
---- dep_wxWidgets.orig/include/wx/log.h	2025-02-07 17:04:45.405039600 +0100
-+++ dep_wxWidgets/include/wx/log.h	2025-02-07 17:59:41.401229900 +0100
+diff -urN wxWidgets-5462e7d7cfac645926188443e842171e107b312c/include/wx/log.h dep_wxWidgets/include/wx/log.h
+--- wxWidgets-5462e7d7cfac645926188443e842171e107b312c/include/wx/log.h	2025-01-14 17:15:38.000000000 +0100
++++ dep_wxWidgets/include/wx/log.h	2025-02-13 08:16:11.810084500 +0100
 @@ -1472,7 +1472,7 @@
  #ifdef __VISUALC__
      #define wxLogApiError(api, rc)                                            \
@@ -25,9 +26,9 @@ diff --color -urN wxWidgets-323a465e577e03f330e2e6a4c78e564d125340cb/build/cmake
                     (long)rc, wxSysErrorMsgStr(rc))
  #else // !VC++
      #define wxLogApiError(api, rc)                                            \
-
---- wxWidgets-323a465e577e03f330e2e6a4c78e564d125340cb/include/wx/variant.h	2024-06-26 10:39:50.000000000 +0200
-+++ dep_wxWidgets/include/wx/variant.h	2025-01-08 12:59:53.559361667 +0100
+diff -urN wxWidgets-5462e7d7cfac645926188443e842171e107b312c/include/wx/variant.h dep_wxWidgets/include/wx/variant.h
+--- wxWidgets-5462e7d7cfac645926188443e842171e107b312c/include/wx/variant.h	2025-01-14 17:15:38.000000000 +0100
++++ dep_wxWidgets/include/wx/variant.h	2025-02-13 08:16:11.810084500 +0100
 @@ -517,7 +517,7 @@
  \
  expdecl classname& operator << ( classname &value, const wxVariant &variant )\
@@ -37,8 +38,9 @@ diff --color -urN wxWidgets-323a465e577e03f330e2e6a4c78e564d125340cb/build/cmake
      \
      classname##VariantData *data = (classname##VariantData*) variant.GetData();\
      value = data->GetValue();\
---- wxWidgets-323a465e577e03f330e2e6a4c78e564d125340cb/src/osx/carbon/dcscreen.cpp	2024-06-26 10:39:50.000000000 +0200
-+++ dep_wxWidgets/src/osx/carbon/dcscreen.cpp	2025-01-08 14:13:51.980634573 +0100
+diff -urN wxWidgets-5462e7d7cfac645926188443e842171e107b312c/src/osx/carbon/dcscreen.cpp dep_wxWidgets/src/osx/carbon/dcscreen.cpp
+--- wxWidgets-5462e7d7cfac645926188443e842171e107b312c/src/osx/carbon/dcscreen.cpp	2025-01-14 17:15:38.000000000 +0100
++++ dep_wxWidgets/src/osx/carbon/dcscreen.cpp	2025-02-13 08:16:11.810084500 +0100
 @@ -14,6 +14,7 @@
  #include "wx/osx/dcscreen.h"
  
@@ -59,6 +61,8 @@ diff --color -urN wxWidgets-323a465e577e03f330e2e6a4c78e564d125340cb/build/cmake
 -    wxASSERT_MSG(image, wxT("wxScreenDC::GetAsBitmap - unable to get screenshot."));
 -
 -    CGContextDrawImage(context, srcRect, image);
+-
+-    CGImageRelease(image);
 +#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 140000
 +    if ( WX_IS_MACOS_AVAILABLE(14, 4) ) // errors on lower versions of macOS 14
 +    {
@@ -71,8 +75,7 @@ diff --color -urN wxWidgets-323a465e577e03f330e2e6a4c78e564d125340cb/build/cmake
 +        image = CGDisplayCreateImage(kCGDirectMainDisplay);
 +#endif
 +    }
- 
--    CGImageRelease(image);
++
 +    if ( image != nullptr )
 +    {
 +        CGContextDrawImage(context, srcRect, image);

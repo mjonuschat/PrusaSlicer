@@ -308,19 +308,21 @@ endif (SLIC3R2_ENABLED)
 
 add_subdirectory(slic3r-base)
 
+if (SLIC3R3_ENABLED)
 
-if (NOT EMSCRIPTEN)
-    add_subdirectory(slic3r-platform-wx)
-    add_subdirectory(slic3r-app-wxtest)
-    add_subdirectory(slic3r-app-desktop)
-endif ()
+    if (NOT EMSCRIPTEN)
+        add_subdirectory(slic3r-platform-wx)
+        add_subdirectory(slic3r-app-wxtest)
+        add_subdirectory(slic3r-app-desktop)
+    endif ()
 
-add_subdirectory(slic3r-render)
-add_subdirectory(slic3r-platform)
-add_subdirectory(slic3r-platform-sdl)
-add_subdirectory(slic3r-shared)
-add_subdirectory(slic3r-shared-wx)
-add_subdirectory(slic3r-app-sdltest)
+    add_subdirectory(slic3r-render)
+    add_subdirectory(slic3r-platform)
+    add_subdirectory(slic3r-platform-sdl)
+    add_subdirectory(slic3r-shared)
+    add_subdirectory(slic3r-shared-wx)
+    add_subdirectory(slic3r-app-sdltest)
+endif (SLIC3R3_ENABLED)
 
 add_doxygen_target(slic3r-doxygen
     EXTRA_INPUT ../doc/Doxygen.md ../doc/CodeStyle.md
