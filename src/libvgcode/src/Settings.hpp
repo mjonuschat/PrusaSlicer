@@ -1,25 +1,25 @@
-///|/ Copyright (c) Prusa Research 2023 Enrico Turri @enricoturri1966, Pavel Mikuš @Godrak
+///|/ Copyright (c) Prusa Research 2016 - 2023 Oleksandra Iushchenko @YuSanka, Vojtech Bubník @bubnikv, Filip Sykala @Jony01, David Kocík @kocikdav, Enrico Turri @enricoturri1966, Tomáš Mészáros @tamasmeszaros, Lukáš Matena @lukasmatena, Vojtech Král @vojtechkral
+///|/ Copyright (c) 2019 Sijmen Schoon
 ///|/
-///|/ libvgcode is released under the terms of the AGPLv3 or higher
+///|/ libvgcode library is released under the terms of the AGPLv3 or higher
 ///|/
-#ifndef VGCODE_SETTINGS_HPP
-#define VGCODE_SETTINGS_HPP
+#pragma once
 
-#include "../include/Types.hpp"
+#include "libvgcode/Types.hpp"
 
 #include <map>
 
-namespace libvgcode {
+namespace Slic3r::Biz::libvgcode {
 
 struct Settings
 {
 		//
 	  // Visualization parameters
 		//
-		EViewType view_type{ EViewType::FeatureType };
-		ETimeMode time_mode{ ETimeMode::Normal };
+		ViewType view_type{ ViewType::FeatureType };
+		libpgcode::TimeMode time_mode{ libpgcode::TimeMode::Normal };
 		bool top_layer_only_view_range{ false };
-		bool spiral_vase_mode{ false };
+		bool spiral_vase_enabled{ false };
 		//
 		// Required update flags
 		//
@@ -30,8 +30,8 @@ struct Settings
 		//
 		// Visibility maps
 		//
-		std::array<bool, std::size_t(EOptionType::COUNT)> options_visibility{
-			    false, // Travels
+		std::array<bool, libpgcode::OPTION_TYPES_COUNT> options_visibility{
+			  false, // Travels
 				false, // Wipes
 				false, // Retractions
 				false, // Unretractions
@@ -40,19 +40,17 @@ struct Settings
 				false, // ColorChanges
 				false, // PausePrints
 				false, // CustomGCodes
-#if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
 				false, // CenterOfGravity
 				true   // ToolMarker
-#endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
 		};
 
-		std::array<bool, std::size_t(EGCodeExtrusionRole::COUNT)> extrusion_roles_visibility{
+		std::array<bool, libpgcode::GCODE_EXTRUSION_ROLES_COUNT> extrusion_roles_visibility{
 				true, // None
 				true, // Perimeter
 				true, // ExternalPerimeter
 				true, // OverhangPerimeter
 				true, // InternalInfill
-                true, // SolidInfill
+        true, // SolidInfill
 				true, // TopSolidInfill
 				true, // Ironing
 				true, // BridgeInfill
@@ -65,6 +63,4 @@ struct Settings
 		};
 };
 
-} // namespace libvgcode
-
-#endif // VGCODE_SETTINGS_HPP
+} // namespace Slic3r::Biz::libvgcode

@@ -1,15 +1,18 @@
-///|/ Copyright (c) Prusa Research 2023 Enrico Turri @enricoturri1966, Pavel Mikuš @Godrak
+///|/ Copyright (c) Prusa Research 2016 - 2023 Oleksandra Iushchenko @YuSanka, Vojtech Bubník @bubnikv, Filip Sykala @Jony01, David Kocík @kocikdav, Enrico Turri @enricoturri1966, Tomáš Mészáros @tamasmeszaros, Lukáš Matena @lukasmatena, Vojtech Král @vojtechkral
+///|/ Copyright (c) 2019 Sijmen Schoon
 ///|/
-///|/ libvgcode is released under the terms of the AGPLv3 or higher
+///|/ libvgcode library is released under the terms of the AGPLv3 or higher
 ///|/
-#include "../include/Viewer.hpp"
+#include "libvgcode/Viewer.hpp"
 #include "ViewerImpl.hpp"
 
-namespace libvgcode {
+using namespace Slic3r::Biz::libpgcode;
+
+namespace Slic3r::Biz::libvgcode {
 
 Viewer::Viewer()
 {
-    m_impl = new ViewerImpl();
+    m_impl = new ViewerImpl;
 }
 
 Viewer::~Viewer()
@@ -17,9 +20,9 @@ Viewer::~Viewer()
     delete m_impl;
 }
 
-void Viewer::init(const std::string& opengl_context_version)
+void Viewer::init()
 {
-    m_impl->init(opengl_context_version);
+    m_impl->init();
 }
 
 void Viewer::shutdown()
@@ -32,32 +35,45 @@ void Viewer::reset()
     m_impl->reset();
 }
 
-void Viewer::load(GCodeInputData&& gcode_data)
+void Viewer::load(App::Render::Device& device, ViewerInputData&& gcode_data)
 {
-    m_impl->load(std::move(gcode_data));
+    m_impl->load(device, std::move(gcode_data));
 }
 
-void Viewer::render(const Mat4x4& view_matrix, const Mat4x4& projection_matrix)
+void Viewer::load_as_sla(const std::vector<float>& layers_zs, const std::vector<float>& layers_times)
+{
+    m_impl->load_as_sla(layers_zs, layers_times);
+}
+
+void Viewer::render(const Transform3f& view_matrix, const Transform3f& projection_matrix)
 {
     m_impl->render(view_matrix, projection_matrix);
 }
 
-EViewType Viewer::get_view_type() const
+#if ENABLE_RENDER_TO_TEXTURE
+std::vector<uint8_t> Viewer::render_to_texture(uint16_t width, uint16_t height, const Transform3f& view_matrix,
+    const Transform3f& projection_matrix, const ColorRGBA& background_color)
 {
-    return m_impl->get_view_type();
+    return m_impl->render_to_texture(width, height, view_matrix, projection_matrix, background_color);
+}
+#endif // ENABLE_RENDER_TO_TEXTURE
+
+ViewType Viewer::view_type() const
+{
+    return m_impl->view_type();
 }
 
-void Viewer::set_view_type(EViewType type)
+void Viewer::set_view_type(ViewType type)
 {
     m_impl->set_view_type(type);
 }
 
-ETimeMode Viewer::get_time_mode() const
+TimeMode Viewer::time_mode() const
 {
-    return m_impl->get_time_mode();
+    return m_impl->time_mode();
 }
 
-void Viewer::set_time_mode(ETimeMode mode)
+void Viewer::set_time_mode(TimeMode mode)
 {
     m_impl->set_time_mode(mode);
 }
@@ -72,32 +88,32 @@ void Viewer::toggle_top_layer_only_view_range()
     m_impl->toggle_top_layer_only_view_range();
 }
 
-bool Viewer::is_option_visible(EOptionType type) const
+bool Viewer::is_option_visible(OptionType type) const
 {
     return m_impl->is_option_visible(type);
 }
 
-void Viewer::toggle_option_visibility(EOptionType type)
+void Viewer::toggle_option_visibility(OptionType type)
 {
     m_impl->toggle_option_visibility(type);
 }
 
-bool Viewer::is_extrusion_role_visible(EGCodeExtrusionRole role) const
+bool Viewer::is_extrusion_role_visible(GCodeExtrusionRole role) const
 {
     return m_impl->is_extrusion_role_visible(role);
 }
 
-void Viewer::toggle_extrusion_role_visibility(EGCodeExtrusionRole role)
+void Viewer::toggle_extrusion_role_visibility(GCodeExtrusionRole role)
 {
     m_impl->toggle_extrusion_role_visibility(role);
 }
 
-const Color& Viewer::get_extrusion_role_color(EGCodeExtrusionRole role) const
+const ColorRGB& Viewer::extrusion_role_color(GCodeExtrusionRole role) const
 {
-    return m_impl->get_extrusion_role_color(role);
+    return m_impl->extrusion_role_color(role);
 }
 
-void Viewer::set_extrusion_role_color(EGCodeExtrusionRole role, const Color& color)
+void Viewer::set_extrusion_role_color(GCodeExtrusionRole role, const ColorRGB& color)
 {
     m_impl->set_extrusion_role_color(role, color);
 }
@@ -107,12 +123,12 @@ void Viewer::reset_default_extrusion_roles_colors()
     m_impl->reset_default_extrusion_roles_colors();
 }
 
-const Color& Viewer::get_option_color(EOptionType type) const
+const ColorRGB& Viewer::option_color(OptionType type) const
 {
-    return m_impl->get_option_color(type);
+    return m_impl->option_color(type);
 }
 
-void Viewer::set_option_color(EOptionType type, const Color& color)
+void Viewer::set_option_color(OptionType type, const ColorRGB& color)
 {
     m_impl->set_option_color(type, color);
 }
@@ -122,14 +138,14 @@ void Viewer::reset_default_options_colors()
     m_impl->reset_default_options_colors();
 }
 
-size_t Viewer::get_tool_colors_count() const
+size_t Viewer::tool_colors_count() const
 {
-    return m_impl->get_tool_colors_count();
+    return m_impl->tool_colors_count();
 }
 
-const Palette& Viewer::get_tool_colors() const
+const Palette& Viewer::tool_colors() const
 {
-    return m_impl->get_tool_colors();
+    return m_impl->tool_colors();
 }
 
 void Viewer::set_tool_colors(const Palette& colors)
@@ -137,14 +153,14 @@ void Viewer::set_tool_colors(const Palette& colors)
     m_impl->set_tool_colors(colors);
 }
 
-size_t Viewer::get_color_print_colors_count() const
+size_t Viewer::color_print_colors_count() const
 {
-    return m_impl->get_color_print_colors_count();
+    return m_impl->color_print_colors_count();
 }
 
-const Palette& Viewer::get_color_print_colors() const
+const Palette& Viewer::color_print_colors() const
 {
-    return m_impl->get_color_print_colors();
+    return m_impl->color_print_colors();
 }
 
 void Viewer::set_color_print_colors(const Palette& colors)
@@ -152,19 +168,19 @@ void Viewer::set_color_print_colors(const Palette& colors)
     m_impl->set_color_print_colors(colors);
 }
 
-const ColorRange& Viewer::get_color_range(EViewType type) const
+const ColorRange& Viewer::color_range(ViewType type) const
 {
-    return m_impl->get_color_range(type);
+    return m_impl->color_range(type);
 }
 
-void Viewer::set_color_range_palette(EViewType type, const Palette& palette)
+void Viewer::set_color_range_palette(ViewType type, const Palette& palette)
 {
     m_impl->set_color_range_palette(type, palette);
 }
 
-float Viewer::get_travels_radius() const
+float Viewer::travels_radius() const
 {
-    return m_impl->get_travels_radius();
+    return m_impl->travels_radius();
 }
 
 void Viewer::set_travels_radius(float radius)
@@ -172,9 +188,9 @@ void Viewer::set_travels_radius(float radius)
     m_impl->set_travels_radius(radius);
 }
 
-float Viewer::get_wipes_radius() const
+float Viewer::wipes_radius() const
 {
-    return m_impl->get_wipes_radius();
+    return m_impl->wipes_radius();
 }
 
 void Viewer::set_wipes_radius(float radius)
@@ -182,29 +198,29 @@ void Viewer::set_wipes_radius(float radius)
     m_impl->set_wipes_radius(radius);
 }
 
-size_t Viewer::get_layers_count() const
+size_t Viewer::layers_count() const
 {
-    return m_impl->get_layers_count();
+    return m_impl->layers_count();
 }
 
-const Interval& Viewer::get_layers_view_range() const
+const Interval& Viewer::layers_range() const
 {
-    return m_impl->get_layers_view_range();
+    return m_impl->layers_range();
 }
 
-void Viewer::set_layers_view_range(const Interval& range)
+void Viewer::set_layers_range(const Interval& range)
 {
-    m_impl->set_layers_view_range(range);
+    m_impl->set_layers_range(range);
 }
 
-void Viewer::set_layers_view_range(Interval::value_type min, Interval::value_type max)
+void Viewer::set_layers_range(Interval::value_type min, Interval::value_type max)
 {
-    m_impl->set_layers_view_range(min, max);
+    m_impl->set_layers_range(min, max);
 }
 
-const Interval& Viewer::get_view_visible_range() const
+const Interval& Viewer::view_visible_range() const
 {
-    return m_impl->get_view_visible_range();
+    return m_impl->view_visible_range();
 }
 
 void Viewer::set_view_visible_range(Interval::value_type min, Interval::value_type max)
@@ -212,160 +228,224 @@ void Viewer::set_view_visible_range(Interval::value_type min, Interval::value_ty
     m_impl->set_view_visible_range(min, max);
 }
 
-const Interval& Viewer::get_view_full_range() const
+const Interval& Viewer::view_full_range() const
 {
-    return m_impl->get_view_full_range();
+    return m_impl->view_full_range();
 }
 
-const Interval& Viewer::get_view_enabled_range() const
+const Interval& Viewer::view_enabled_range() const
 {
-    return m_impl->get_view_enabled_range();
+    return m_impl->view_enabled_range();
 }
 
-bool Viewer::is_spiral_vase_mode() const
+const Lights& Viewer::lights() const
 {
-    return m_impl->is_spiral_vase_mode();
+    return m_impl->lights();
 }
 
-float Viewer::get_layer_z(size_t layer_id) const
+void Viewer::set_lights(const Lights& lights)
 {
-    return m_impl->get_layer_z(layer_id);
+    m_impl->set_lights(lights);
 }
 
-std::vector<float> Viewer::get_layers_zs() const
+Lights Viewer::default_lights() const
 {
-    return m_impl->get_layers_zs();
+    return m_impl->default_lights();
 }
 
-size_t Viewer::get_layer_id_at(float z) const
+bool Viewer::is_spiral_vase_enabled() const
 {
-    return m_impl->get_layer_id_at(z);
+    return m_impl->is_spiral_vase_enabled();
 }
 
-size_t Viewer::get_used_extruders_count() const
+float Viewer::layer_z(size_t layer_id) const
 {
-    return m_impl->get_used_extruders_count();
+    return m_impl->layer_z(layer_id);
 }
 
-std::vector<uint8_t> Viewer::get_used_extruders_ids() const
+std::vector<float> Viewer::layers_zs() const
 {
-    return m_impl->get_used_extruders_ids();
+    return m_impl->layers_zs();
 }
 
-std::vector<ETimeMode> Viewer::get_time_modes() const
+size_t Viewer::layer_id_at(float z) const
 {
-    return m_impl->get_time_modes();
+    return m_impl->layer_id_at(z);
 }
 
-size_t Viewer::get_vertices_count() const
+uint8_t Viewer::used_extruders_count() const
 {
-    return m_impl->get_vertices_count();
+    return m_impl->used_extruders_count();
 }
 
-const PathVertex& Viewer::get_current_vertex() const
+uint8_t Viewer::extruders_count() const
 {
-    return m_impl->get_current_vertex();
+    return m_impl->extruders_count();
 }
 
-size_t Viewer::get_current_vertex_id() const
+std::vector<uint8_t> Viewer::used_extruders_ids() const
 {
-    return m_impl->get_current_vertex_id();
+    return m_impl->used_extruders_ids();
 }
 
-const PathVertex& Viewer::get_vertex_at(size_t id) const
+float Viewer::used_extruder_used_filament_length(uint8_t extruder_id) const
 {
-    return m_impl->get_vertex_at(id);
+    return m_impl->used_extruder_used_filament_length(extruder_id);
 }
 
-float Viewer::get_estimated_time() const
+float Viewer::used_extruder_used_filament_mass(uint8_t extruder_id) const
 {
-    return m_impl->get_estimated_time();
+    return m_impl->used_extruder_used_filament_mass(extruder_id);
 }
 
-float Viewer::get_estimated_time_at(size_t id) const
+TimeModes Viewer::time_modes() const
 {
-    return m_impl->get_estimated_time_at(id);
+    return m_impl->time_modes();
 }
 
-Color Viewer::get_vertex_color(const PathVertex& vertex) const
+size_t Viewer::vertices_count() const
 {
-    return m_impl->get_vertex_color(vertex);
+    return m_impl->vertices_count();
 }
 
-size_t Viewer::get_extrusion_roles_count() const
+const MoveVertices& Viewer::vertices() const
 {
-    return m_impl->get_extrusion_roles_count();
+    return m_impl->vertices();
 }
 
-std::vector<EGCodeExtrusionRole> Viewer::get_extrusion_roles() const
+const MoveVertex& Viewer::current_vertex() const
 {
-    return m_impl->get_extrusion_roles();
+    return m_impl->current_vertex();
 }
 
-size_t Viewer::get_options_count() const
+size_t Viewer::current_vertex_id() const
 {
-    return m_impl->get_options_count();
+    return m_impl->current_vertex_id();
 }
 
-const std::vector<EOptionType>& Viewer::get_options() const
+const MoveVertex& Viewer::vertex_at(size_t id) const
 {
-    return m_impl->get_options();
+    return m_impl->vertex_at(id);
 }
 
-size_t Viewer::get_color_prints_count(uint8_t extruder_id) const
+float Viewer::estimated_time() const
 {
-    return m_impl->get_color_prints_count(extruder_id);
+    return m_impl->estimated_time();
 }
 
-std::vector<ColorPrint> Viewer::get_color_prints(uint8_t extruder_id) const
+float Viewer::estimated_time_at(size_t id) const
 {
-    return m_impl->get_color_prints(extruder_id);
+    return m_impl->estimated_time_at(id);
 }
 
-float Viewer::get_extrusion_role_estimated_time(EGCodeExtrusionRole role) const
+ColorRGB Viewer::vertex_color(const MoveVertex& vertex) const
 {
-    return m_impl->get_extrusion_role_estimated_time(role);
+    return m_impl->vertex_color(vertex);
 }
 
-float Viewer::get_travels_estimated_time() const
+size_t Viewer::extrusion_roles_count() const
 {
-    return m_impl->get_travels_estimated_time();
+    return m_impl->extrusion_roles_count();
 }
 
-std::vector<float> Viewer::get_layers_estimated_times() const
+GCodeExtrusionRoles Viewer::extrusion_roles() const
 {
-    return m_impl->get_layers_estimated_times();
+    return m_impl->extrusion_roles();
 }
 
-AABox Viewer::get_bounding_box(const std::vector<EMoveType>& types) const
+size_t Viewer::visible_extrusion_roles_count() const
 {
-    return m_impl->get_bounding_box(types);
+    return m_impl->visible_extrusion_roles_count();
 }
 
-AABox Viewer::get_extrusion_bounding_box(const std::vector<EGCodeExtrusionRole>& roles) const
+GCodeExtrusionRoles Viewer::visible_extrusion_roles() const
 {
-    return m_impl->get_extrusion_bounding_box(roles);
+    return m_impl->visible_extrusion_roles();
 }
 
-size_t Viewer::get_used_cpu_memory() const
+size_t Viewer::options_count() const
 {
-    return m_impl->get_used_cpu_memory();
+    return m_impl->options_count();
 }
 
-size_t Viewer::get_used_gpu_memory() const
+const OptionTypes& Viewer::options() const
 {
-    return m_impl->get_used_gpu_memory();
+    return m_impl->options();
 }
 
-#if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
-Vec3 Viewer::get_cog_position() const
+size_t Viewer::visible_options_count() const
 {
-    return m_impl->get_cog_marker_position();
+    return m_impl->visible_options_count();
 }
 
-float Viewer::get_cog_marker_scale_factor() const
+OptionTypes Viewer::visible_options() const
 {
-    return m_impl->get_cog_marker_scale_factor();
+    return m_impl->visible_options();
+}
+
+size_t Viewer::extruder_color_prints_count(uint8_t extruder_id) const
+{
+    return m_impl->used_extruder_color_prints_count(extruder_id);
+}
+
+ColorPrints Viewer::extruder_color_prints(uint8_t extruder_id) const
+{
+    return m_impl->used_extruder_color_prints(extruder_id);
+}
+
+float Viewer::extrusion_role_estimated_time(GCodeExtrusionRole role) const
+{
+    return m_impl->extrusion_role_estimated_time(role);
+}
+
+float Viewer::extrusion_role_used_filament_length(GCodeExtrusionRole role) const
+{
+    return m_impl->extrusion_role_used_filament_length(role);
+}
+
+float Viewer::extrusion_role_used_filament_mass(GCodeExtrusionRole role) const
+{
+    return m_impl->extrusion_role_used_filament_mass(role);
+}
+
+float Viewer::option_estimated_time(OptionType type) const
+{
+    return m_impl->option_estimated_time(type);
+}
+
+std::vector<float> Viewer::layers_estimated_times() const
+{
+    return m_impl->layers_estimated_times();
+}
+
+size_t Viewer::gcode_events_count() const
+{
+    return m_impl->gcode_events_count();
+}
+
+const GCodeEvents& Viewer::gcode_events() const
+{
+    return m_impl->gcode_events();
+}
+
+BoundingBoxf3 Viewer::bounding_box(const MoveTypes& types) const
+{
+    return m_impl->bounding_box(types);
+}
+
+BoundingBoxf3 Viewer::extrusion_bounding_box(const GCodeExtrusionRoles& roles) const
+{
+    return m_impl->extrusion_bounding_box(roles);
+}
+
+Vec3f Viewer::cog_position() const
+{
+    return m_impl->cog_marker_position();
+}
+
+float Viewer::cog_marker_scale_factor() const
+{
+    return m_impl->cog_marker_scale_factor();
 }
 
 void Viewer::set_cog_marker_scale_factor(float factor)
@@ -373,14 +453,9 @@ void Viewer::set_cog_marker_scale_factor(float factor)
     m_impl->set_cog_marker_scale_factor(factor);
 }
 
-const Vec3& Viewer::get_tool_marker_position() const
+float Viewer::tool_marker_offset_z() const
 {
-    return m_impl->get_tool_marker_position();
-}
-
-float Viewer::get_tool_marker_offset_z() const
-{
-    return m_impl->get_tool_marker_offset_z();
+    return m_impl->tool_marker_offset_z();
 }
 
 void Viewer::set_tool_marker_offset_z(float offset_z)
@@ -388,9 +463,9 @@ void Viewer::set_tool_marker_offset_z(float offset_z)
     m_impl->set_tool_marker_offset_z(offset_z);
 }
 
-float Viewer::get_tool_marker_scale_factor() const
+float Viewer::tool_marker_scale_factor() const
 {
-    return m_impl->get_tool_marker_scale_factor();
+    return m_impl->tool_marker_scale_factor();
 }
 
 void Viewer::set_tool_marker_scale_factor(float factor)
@@ -398,25 +473,34 @@ void Viewer::set_tool_marker_scale_factor(float factor)
     m_impl->set_tool_marker_scale_factor(factor);
 }
 
-const Color& Viewer::get_tool_marker_color() const
+const ColorRGB& Viewer::tool_marker_color() const
 {
-    return m_impl->get_tool_marker_color();
+    return m_impl->tool_marker_color();
 }
 
-void Viewer::set_tool_marker_color(const Color& color)
+void Viewer::set_tool_marker_color(const ColorRGB& color)
 {
     m_impl->set_tool_marker_color(color);
 }
 
-float Viewer::get_tool_marker_alpha() const
+float Viewer::tool_marker_alpha() const
 {
-    return m_impl->get_tool_marker_alpha();
+    return m_impl->tool_marker_alpha();
 }
 
 void Viewer::set_tool_marker_alpha(float alpha)
 {
     m_impl->set_tool_marker_alpha(alpha);
 }
-#endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
 
-} // namespace libvgcode
+BoundingBoxf3 Viewer::tool_marker_bounding_box() const
+{
+    return m_impl->tool_marker_bounding_box();
+}
+
+bool Viewer::export_toolpaths_to_obj(FILE& obj_file, FILE& mtl_file, const ObjExportParams& params) const
+{
+    return m_impl->export_toolpaths_to_obj(obj_file, mtl_file, params);
+}
+
+} // namespace Slic3r::Biz::libvgcode

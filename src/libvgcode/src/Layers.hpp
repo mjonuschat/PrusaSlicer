@@ -1,53 +1,51 @@
-///|/ Copyright (c) Prusa Research 2023 Enrico Turri @enricoturri1966, Pavel Mikuš @Godrak
+///|/ Copyright (c) Prusa Research 2016 - 2023 Oleksandra Iushchenko @YuSanka, Vojtech Bubník @bubnikv, Filip Sykala @Jony01, David Kocík @kocikdav, Enrico Turri @enricoturri1966, Tomáš Mészáros @tamasmeszaros, Lukáš Matena @lukasmatena, Vojtech Král @vojtechkral
+///|/ Copyright (c) 2019 Sijmen Schoon
 ///|/
-///|/ libvgcode is released under the terms of the AGPLv3 or higher
+///|/ libvgcode library is released under the terms of the AGPLv3 or higher
 ///|/
-#ifndef VGCODE_LAYERS_HPP
-#define VGCODE_LAYERS_HPP
+#pragma once
 
 #include "Range.hpp"
 
-namespace libvgcode {
-
-struct PathVertex;
+namespace Slic3r::Biz::libvgcode {
 
 class Layers
 {
 public:
-    void update(const PathVertex& vertex, uint32_t vertex_id);
+    void update(const libpgcode::MoveVertex& vertex, uint32_t vertex_id);
+    void update_as_sla(float z, float time);
+
     void reset();
     
     bool empty() const { return m_items.empty(); }
-    std::size_t count() const { return m_items.size(); }
+    size_t count() const { return m_items.size(); }
 
-    std::vector<float> get_times(ETimeMode mode) const;
-    std::vector<float> get_zs() const;
+    std::vector<float> times(libpgcode::TimeMode mode) const;
+    std::vector<float> zs() const;
     
-    float get_layer_time(ETimeMode mode, std::size_t layer_id) const {
-        return (mode < ETimeMode::COUNT&& layer_id < m_items.size()) ?
-            m_items[layer_id].times[static_cast<std::size_t>(mode)] : 0.0f;
+    float layer_time(libpgcode::TimeMode mode, size_t layer_id) const {
+        return (mode < libpgcode::TimeMode::COUNT && layer_id < m_items.size()) ?
+            m_items[layer_id].times[size_t(mode)] : 0.0f;
     }
-    float get_layer_z(std::size_t layer_id) const {
+    float layer_z(size_t layer_id) const {
         return (layer_id < m_items.size()) ? m_items[layer_id].z : 0.0f;
     }
-    std::size_t get_layer_id_at(float z) const;
+    size_t layer_id_at(float z) const;
     
-    const Interval& get_view_range() const { return m_view_range.get(); }
+    const Interval& view_range() const { return m_view_range.get(); }
     void set_view_range(const Interval& range) { set_view_range(range[0], range[1]); }
     void set_view_range(Interval::value_type min, Interval::value_type max) { m_view_range.set(min, max); }
     
-    bool layer_contains_colorprint_options(std::size_t layer_id) const {
+    bool layer_contains_colorprint_options(size_t layer_id) const {
         return (layer_id < m_items.size()) ? m_items[layer_id].contains_colorprint_options : false;
     }
-
-    std::size_t size_in_bytes_cpu() const;
 
 private:
     struct Item
     {
         float z{ 0.0f };
         Range range;
-        std::array<float, TIME_MODES_COUNT> times{ 0.0f, 0.0f };
+        libpgcode::Times times{};
         bool contains_colorprint_options{ false };
     };
     
@@ -55,6 +53,4 @@ private:
     Range m_view_range;
 };
 
-} // namespace libvgcode
-
-#endif // VGCODE_LAYERS_HPP
+} // namespace Slic3r::Biz::libvgcode

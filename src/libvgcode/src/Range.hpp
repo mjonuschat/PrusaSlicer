@@ -1,13 +1,13 @@
-///|/ Copyright (c) Prusa Research 2023 Enrico Turri @enricoturri1966, Pavel Mikuš @Godrak
+///|/ Copyright (c) Prusa Research 2016 - 2023 Oleksandra Iushchenko @YuSanka, Vojtech Bubník @bubnikv, Filip Sykala @Jony01, David Kocík @kocikdav, Enrico Turri @enricoturri1966, Tomáš Mészáros @tamasmeszaros, Lukáš Matena @lukasmatena, Vojtech Král @vojtechkral
+///|/ Copyright (c) 2019 Sijmen Schoon
 ///|/
-///|/ libvgcode is released under the terms of the AGPLv3 or higher
+///|/ libvgcode library is released under the terms of the AGPLv3 or higher
 ///|/
-#ifndef VGCODE_RANGE_HPP
-#define VGCODE_RANGE_HPP
+#pragma once
 
-#include "../include/Types.hpp"
+#include "libvgcode/Types.hpp"
 
-namespace libvgcode {
+namespace Slic3r::Biz::libvgcode {
 
 class Range
 {
@@ -17,10 +17,10 @@ public:
     void set(const Interval& range) { set(range[0], range[1]); }
     void set(Interval::value_type min, Interval::value_type max);
     
-    Interval::value_type get_min() const { return m_range[0]; }
+    Interval::value_type min() const { return m_range[0]; }
     void set_min(Interval::value_type min) { set(min, m_range[1]); }
 
-    Interval::value_type get_max() const { return m_range[1]; }
+    Interval::value_type max() const { return m_range[1]; }
     void set_max(Interval::value_type max) { set(m_range[0], max); }
 
     // clamp the given range to stay inside this range
@@ -34,6 +34,4 @@ private:
     Interval m_range{ 0, 0 };
 };
 
-} // namespace libvgcode
-
-#endif // VGCODE_RANGE_HPP
+} // namespace Slic3r::Biz::libvgcode

@@ -11,12 +11,12 @@
 
 namespace Slic3r::Biz::libvgcode {
 
-class ExtrusionRoles
+class Extruders
 {
 public:
     struct Item
     {
-        libpgcode::Times times;
+        ColorPrints color_prints;
         //
         // first = length in mm
         // second = mass in g
@@ -24,19 +24,21 @@ public:
         std::pair<float, float> used_filament;
     };
 
-    void add(GCodeExtrusionRole role, const std::pair<float, float>& used_filament);
-    void update(GCodeExtrusionRole role, const libpgcode::Times& times);
+    void add(uint8_t id, const std::pair<float, float>& used_filament);
+    void update(uint8_t id, const ColorPrint& color_print);
 
-    size_t roles_count() const { return m_items.size(); }
-    libpgcode::GCodeExtrusionRoles roles() const;
-    float time(GCodeExtrusionRole role, libpgcode::TimeMode mode) const;
-    float used_filament_length(GCodeExtrusionRole role) const;
-    float used_filament_mass(GCodeExtrusionRole role) const;
+    uint8_t extruders_count() const { return uint8_t(m_items.size()); }
+    std::vector<uint8_t> extruders_ids() const;
+    uint8_t extruder_max_id() const { return m_items.empty() ? 0 : m_items.rbegin()->first; }
+    size_t extruder_color_prints_count(uint8_t id) const;
+    ColorPrints extruder_color_prints(uint8_t id) const;
+    float extruder_used_filament_length(uint8_t id) const;
+    float extruder_used_filament_mass(uint8_t id) const;
 
     void reset() { m_items.clear(); }
 
 private:
-    std::map<GCodeExtrusionRole, Item> m_items;
+    std::map<uint8_t, Item> m_items;
 };
 
 } // namespace Slic3r::Biz::libvgcode

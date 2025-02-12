@@ -1,25 +1,34 @@
-///|/ Copyright (c) Prusa Research 2023 Enrico Turri @enricoturri1966
+///|/ Copyright (c) Prusa Research 2016 - 2023 Oleksandra Iushchenko @YuSanka, Vojtech Bubník @bubnikv, Filip Sykala @Jony01, David Kocík @kocikdav, Enrico Turri @enricoturri1966, Tomáš Mészáros @tamasmeszaros, Lukáš Matena @lukasmatena, Vojtech Král @vojtechkral
+///|/ Copyright (c) 2019 Sijmen Schoon
 ///|/
-///|/ libvgcode is released under the terms of the AGPLv3 or higher
+///|/ libvgcode library is released under the terms of the AGPLv3 or higher
 ///|/
 #include "ExtrusionRoles.hpp"
 
-namespace libvgcode {
+using namespace Slic3r::Biz::libpgcode;
 
-void ExtrusionRoles::add(EGCodeExtrusionRole role, const std::array<float, TIME_MODES_COUNT>& times)
+namespace Slic3r::Biz::libvgcode {
+
+void ExtrusionRoles::add(GCodeExtrusionRole role, const std::pair<float, float>& used_filament)
 {
-    auto role_it = m_items.find(role);
-    if (role_it == m_items.end())
-        role_it = m_items.insert(std::make_pair(role, Item())).first;
+    auto it = m_items.find(role);
+    if (it == m_items.end())
+        m_items.insert({ role, { {}, used_filament } });
+}
 
-    for (std::size_t i = 0; i < TIME_MODES_COUNT; ++i) {
-        role_it->second.times[i] += times[i];
+void ExtrusionRoles::update(GCodeExtrusionRole role, const libpgcode::Times& times)
+{
+    auto it = m_items.find(role);
+    if (it != m_items.end()) {
+        for (size_t i = 0; i < TIME_MODES_COUNT; ++i) {
+            it->second.times[i] += times[i];
+        }
     }
 }
 
-std::vector<EGCodeExtrusionRole> ExtrusionRoles::get_roles() const
+GCodeExtrusionRoles ExtrusionRoles::roles() const
 {
-    std::vector<EGCodeExtrusionRole> ret;
+    GCodeExtrusionRoles ret;
     ret.reserve(m_items.size());
     for (const auto& [role, item] : m_items) {
         ret.emplace_back(role);
@@ -27,13 +36,25 @@ std::vector<EGCodeExtrusionRole> ExtrusionRoles::get_roles() const
     return ret;
 }
 
-float ExtrusionRoles::get_time(EGCodeExtrusionRole role, ETimeMode mode) const
+float ExtrusionRoles::time(GCodeExtrusionRole role, TimeMode mode) const
 {
-    const auto role_it = m_items.find(role);
-    if (role_it == m_items.end())
+    auto it = m_items.find(role);
+    if (it == m_items.end())
         return 0.0f;
 
-    return (mode < ETimeMode::COUNT) ? role_it->second.times[static_cast<std::size_t>(mode)] : 0.0f;
+    return (mode < TimeMode::COUNT) ? it->second.times[size_t(mode)] : 0.0f;
 }
 
-} // namespace libvgcode
+float ExtrusionRoles::used_filament_length(GCodeExtrusionRole role) const
+{
+    auto it = m_items.find(role);
+    return (it != m_items.end()) ? it->second.used_filament.first : 0.0f;
+}
+
+float ExtrusionRoles::used_filament_mass(GCodeExtrusionRole role) const
+{
+    auto it = m_items.find(role);
+    return (it != m_items.end()) ? it->second.used_filament.second : 0.0f;
+}
+
+} // namespace Slic3r::Biz::libvgcode

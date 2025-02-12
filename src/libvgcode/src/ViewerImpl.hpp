@@ -1,29 +1,35 @@
-///|/ Copyright (c) Prusa Research 2023 Enrico Turri @enricoturri1966, Pavel Mikuš @Godrak
+///|/ Copyright (c) Prusa Research 2016 - 2023 Oleksandra Iushchenko @YuSanka, Vojtech Bubník @bubnikv, Filip Sykala @Jony01, David Kocík @kocikdav, Enrico Turri @enricoturri1966, Tomáš Mészáros @tamasmeszaros, Lukáš Matena @lukasmatena, Vojtech Král @vojtechkral
+///|/ Copyright (c) 2019 Sijmen Schoon
 ///|/
-///|/ libvgcode is released under the terms of the AGPLv3 or higher
+///|/ libvgcode library is released under the terms of the AGPLv3 or higher
 ///|/
-#ifndef VGCODE_VIEWERIMPL_HPP
-#define VGCODE_VIEWERIMPL_HPP
+#pragma once
 
 #include "Settings.hpp"
 #include "SegmentTemplate.hpp"
 #include "OptionTemplate.hpp"
-#if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
 #include "CogMarker.hpp"
 #include "ToolMarker.hpp"
-#endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
-#include "../include/PathVertex.hpp"
-#include "../include/ColorRange.hpp"
-#include "../include/ColorPrint.hpp"
 #include "Bitset.hpp"
 #include "ViewRange.hpp"
 #include "Layers.hpp"
 #include "ExtrusionRoles.hpp"
+#include "Extruders.hpp"
+#include "libvgcode/ColorRange.hpp"
+#include "libvgcode/ViewerInputData.hpp"
+#include "libvgcode/Viewer.hpp"
 
-#include <string>
-#include <optional>
+#include <libpgcode/ProcessorResult.hpp>
 
-namespace libvgcode {
+#include <Slic3r/App/Render/Buffer.hpp>
+
+#define USE_TEXTURE_BUFFER (0 && (!SLIC3R_OPENGL_ES && !defined(__EMSCRIPTEN__)))
+
+namespace Slic3r::App::Render {
+class Device;
+} // namespace Slic3r::App::Render
+
+namespace Slic3r::Biz::libvgcode {
 
 struct GCodeInputData;
 
@@ -40,7 +46,7 @@ public:
     //
     // Initialize shaders, uniform indices and segment geometry.
     //
-    void init(const std::string& opengl_context_version);
+    void init();
     //
     // Release the resources used by the viewer.
     //
@@ -53,7 +59,11 @@ public:
     // Setup all the variables used for visualization of the toolpaths
     // from the given gcode data.
     //
-    void load(GCodeInputData&& gcode_data);
+    void load(App::Render::Device& device, ViewerInputData&& gcode_data);
+    //
+    // Setup the viewer content from the given data (support for SLA printers).
+    //
+    void load_as_sla(const std::vector<float>& layers_zs, const std::vector<float>& layers_times);
 
     //
     // Update the visibility property of toolpaths in dependence
@@ -70,126 +80,163 @@ public:
     //
     // Render the toolpaths
     //
-    void render(const Mat4x4& view_matrix, const Mat4x4& projection_matrix);
+    void render(const Transform3f& view_matrix, const Transform3f& projection_matrix);
 
-    EViewType get_view_type() const { return m_settings.view_type; }
-    void set_view_type(EViewType type);
+#if ENABLE_RENDER_TO_TEXTURE 
+    std::vector<uint8_t> render_to_texture(uint16_t width, uint16_t height, const Transform3f& view_matrix,
+        const Transform3f& projection_matrix, const ColorRGBA& background_color);
+#endif // ENABLE_RENDER_TO_TEXTURE
 
-    ETimeMode get_time_mode() const { return m_settings.time_mode; }
-    void set_time_mode(ETimeMode mode);
+    ViewType view_type() const { return m_settings.view_type; }
+    void set_view_type(ViewType type);
 
-    const Interval& get_layers_view_range() const { return m_layers.get_view_range(); }
-    void set_layers_view_range(const Interval& range) { set_layers_view_range(range[0], range[1]); }
-    void set_layers_view_range(Interval::value_type min, Interval::value_type max);
+    libpgcode::TimeMode time_mode() const { return m_settings.time_mode; }
+    void set_time_mode(libpgcode::TimeMode mode);
+
+    const Interval& layers_range() const { return m_layers.view_range(); }
+    void set_layers_range(const Interval& range) { set_layers_range(range[0], range[1]); }
+    void set_layers_range(Interval::value_type min, Interval::value_type max);
 
     bool is_top_layer_only_view_range() const { return m_settings.top_layer_only_view_range; }
     void toggle_top_layer_only_view_range();
 
-    bool is_spiral_vase_mode() const { return m_settings.spiral_vase_mode; }
+    bool is_spiral_vase_enabled() const { return m_settings.spiral_vase_enabled; }
 
-    std::vector<ETimeMode> get_time_modes() const;
+    const libpgcode::TimeModes& time_modes() const { return m_time_modes; }
 
-    size_t get_layers_count() const { return m_layers.count(); }
-    float get_layer_z(size_t layer_id) const { return m_layers.get_layer_z(layer_id); }
-    std::vector<float> get_layers_zs() const { return m_layers.get_zs(); }
+    size_t layers_count() const { return m_layers.count(); }
+    float layer_z(size_t layer_id) const { return m_layers.layer_z(layer_id); }
+    std::vector<float> layers_zs() const { return m_layers.zs(); }
 
-    size_t get_layer_id_at(float z) const { return m_layers.get_layer_id_at(z); }
+    size_t layer_id_at(float z) const { return m_layers.layer_id_at(z); }
 
-    size_t get_used_extruders_count() const { return m_used_extruders.size(); }
-    std::vector<uint8_t> get_used_extruders_ids() const;
+    uint8_t used_extruders_count() const { return m_used_extruders.extruders_count(); }
+    std::vector<uint8_t> used_extruders_ids() const { return m_used_extruders.extruders_ids(); }
+    size_t used_extruder_color_prints_count(uint8_t extruder_id) const { return m_used_extruders.extruder_color_prints_count(extruder_id); }
+    ColorPrints used_extruder_color_prints(uint8_t extruder_id) const { return m_used_extruders.extruder_color_prints(extruder_id); }
+    float used_extruder_used_filament_length(uint8_t extruder_id) const { return m_used_extruders.extruder_used_filament_length(extruder_id); }
+    float used_extruder_used_filament_mass(uint8_t extruder_id) const { return m_used_extruders.extruder_used_filament_mass(extruder_id); }
 
-    size_t get_color_prints_count(uint8_t extruder_id) const;
-    std::vector<ColorPrint> get_color_prints(uint8_t extruder_id) const;
+    uint8_t extruders_count() const { return m_extruders_count; }
 
-    AABox get_bounding_box(const std::vector<EMoveType>& types = {
-        EMoveType::Retract, EMoveType::Unretract, EMoveType::Seam, EMoveType::ToolChange,
-        EMoveType::ColorChange, EMoveType::PausePrint, EMoveType::CustomGCode, EMoveType::Travel,
-        EMoveType::Wipe, EMoveType::Extrude }) const;
-    AABox get_extrusion_bounding_box(const std::vector<EGCodeExtrusionRole>& roles = {
-        EGCodeExtrusionRole::Perimeter, EGCodeExtrusionRole::ExternalPerimeter, EGCodeExtrusionRole::OverhangPerimeter,
-        EGCodeExtrusionRole::InternalInfill, EGCodeExtrusionRole::SolidInfill, EGCodeExtrusionRole::TopSolidInfill,
-        EGCodeExtrusionRole::Ironing, EGCodeExtrusionRole::BridgeInfill, EGCodeExtrusionRole::GapFill,
-        EGCodeExtrusionRole::Skirt, EGCodeExtrusionRole::SupportMaterial, EGCodeExtrusionRole::SupportMaterialInterface,
-        EGCodeExtrusionRole::WipeTower, EGCodeExtrusionRole::Custom }) const;
+    BoundingBoxf3 bounding_box(const std::vector<libpgcode::MoveType>& types = {
+        libpgcode::MoveType::Retract,
+        libpgcode::MoveType::Unretract,
+        libpgcode::MoveType::Seam,
+        libpgcode::MoveType::ToolChange,
+        libpgcode::MoveType::ColorChange,
+        libpgcode::MoveType::PausePrint,
+        libpgcode::MoveType::CustomGCode,
+        libpgcode::MoveType::Travel,
+        libpgcode::MoveType::Wipe,
+        libpgcode::MoveType::Extrude }) const;
+    BoundingBoxf3 extrusion_bounding_box(const libpgcode::GCodeExtrusionRoles& roles = {
+        GCodeExtrusionRole::Perimeter,
+        GCodeExtrusionRole::ExternalPerimeter,
+        GCodeExtrusionRole::OverhangPerimeter,
+        GCodeExtrusionRole::InternalInfill,
+        GCodeExtrusionRole::SolidInfill,
+        GCodeExtrusionRole::TopSolidInfill,
+        GCodeExtrusionRole::Ironing,
+        GCodeExtrusionRole::BridgeInfill,
+        GCodeExtrusionRole::GapFill,
+        GCodeExtrusionRole::Skirt,
+        GCodeExtrusionRole::SupportMaterial,
+        GCodeExtrusionRole::SupportMaterialInterface,
+        GCodeExtrusionRole::WipeTower,
+        GCodeExtrusionRole::Custom }) const;
 
-    bool is_option_visible(EOptionType type) const;
-    void toggle_option_visibility(EOptionType type);
+    bool is_option_visible(libpgcode::OptionType type) const;
+    void toggle_option_visibility(libpgcode::OptionType type);
 
-    bool is_extrusion_role_visible(EGCodeExtrusionRole role) const;
-    void toggle_extrusion_role_visibility(EGCodeExtrusionRole role);
+    bool is_extrusion_role_visible(GCodeExtrusionRole role) const;
+    void toggle_extrusion_role_visibility(GCodeExtrusionRole role);
 
-    const Interval& get_view_full_range() const { return m_view_range.get_full(); }
-    const Interval& get_view_enabled_range() const { return m_view_range.get_enabled(); }
-    const Interval& get_view_visible_range() const { return m_view_range.get_visible(); }
+    const Interval& view_full_range() const { return m_view_range.full(); }
+    const Interval& view_enabled_range() const { return m_view_range.enabled(); }
+    const Interval& view_visible_range() const { return m_view_range.visible(); }
     void set_view_visible_range(Interval::value_type min, Interval::value_type max);
 
-    size_t get_vertices_count() const { return m_vertices.size(); }
-    const PathVertex& get_current_vertex() const { return get_vertex_at(get_current_vertex_id()); }
-    size_t get_current_vertex_id() const { return static_cast<size_t>(m_view_range.get_visible()[1]); }
-    const PathVertex& get_vertex_at(size_t id) const {
-        return (id < m_vertices.size()) ? m_vertices[id] : PathVertex::DUMMY_PATH_VERTEX;
+    const Lights& lights() const { return m_lights; }
+    void set_lights(const Lights& lights);
+    Lights default_lights() const;
+
+    size_t vertices_count() const { return m_vertices.size(); }
+    const libpgcode::MoveVertices& vertices() const { return m_vertices; }
+    const libpgcode::MoveVertex& current_vertex() const { return vertex_at(current_vertex_id()); }
+    size_t current_vertex_id() const { return size_t(m_view_range.visible()[1]); }
+    const libpgcode::MoveVertex& vertex_at(size_t id) const {
+        return (id < m_vertices.size()) ? m_vertices[id] : libpgcode::DUMMY_MOVE_VERTEX;
     }
-    float get_estimated_time() const { return m_total_time[static_cast<size_t>(m_settings.time_mode)]; }
-    float get_estimated_time_at(size_t id) const;
-    Color get_vertex_color(const PathVertex& vertex) const;
+    float estimated_time() const { return m_total_time[size_t(m_settings.time_mode)]; }
+    float estimated_time_at(size_t id) const;
+    ColorRGB vertex_color(const libpgcode::MoveVertex& vertex) const;
 
-    size_t get_extrusion_roles_count() const { return m_extrusion_roles.get_roles_count(); }
-    std::vector<EGCodeExtrusionRole> get_extrusion_roles() const { return m_extrusion_roles.get_roles(); }
-    float get_extrusion_role_estimated_time(EGCodeExtrusionRole role) const { return m_extrusion_roles.get_time(role, m_settings.time_mode); }
+    size_t extrusion_roles_count() const { return m_extrusion_roles.roles_count(); }
+    libpgcode::GCodeExtrusionRoles extrusion_roles() const { return m_extrusion_roles.roles(); }
+    size_t visible_extrusion_roles_count() const;
+    libpgcode::GCodeExtrusionRoles visible_extrusion_roles() const;
+    float extrusion_role_estimated_time(GCodeExtrusionRole role) const {
+        return m_extrusion_roles.time(role, m_settings.time_mode);
+    }
+    float extrusion_role_used_filament_length(GCodeExtrusionRole role) const {
+        return m_extrusion_roles.used_filament_length(role);
+    }
+    float extrusion_role_used_filament_mass(GCodeExtrusionRole role) const {
+        return m_extrusion_roles.used_filament_mass(role);
+    }
 
-    size_t get_options_count() const { return m_options.size(); }
-    const std::vector<EOptionType>& get_options() const { return m_options; }
+    size_t options_count() const { return m_options.size(); }
+    const libpgcode::OptionTypes& options() const { return m_options; }
+    size_t visible_options_count() const;
+    libpgcode::OptionTypes visible_options() const;
+    float option_estimated_time(libpgcode::OptionType type) const;
 
-    float get_travels_estimated_time() const { return m_travels_time[static_cast<size_t>(m_settings.time_mode)]; }
-    std::vector<float> get_layers_estimated_times() const { return m_layers.get_times(m_settings.time_mode); }
+    std::vector<float> layers_estimated_times() const { return m_layers.times(m_settings.time_mode); }
 
-    size_t get_tool_colors_count() const { return m_tool_colors.size(); }
-    const Palette& get_tool_colors() const { return m_tool_colors; }
+    size_t gcode_events_count() const { return m_gcode_events.size(); }
+    const GCodeEvents& gcode_events() const { return m_gcode_events; }
+
+    size_t tool_colors_count() const { return m_tool_colors.size(); }
+    const Palette& tool_colors() const { return m_tool_colors; }
     void set_tool_colors(const Palette& colors);
 
-    size_t get_color_print_colors_count() const { return m_color_print_colors.size(); }
-    const Palette& get_color_print_colors() const { return m_color_print_colors; }
+    size_t color_print_colors_count() const { return m_color_print_colors.size(); }
+    const Palette& color_print_colors() const { return m_color_print_colors; }
     void set_color_print_colors(const Palette& colors);
 
-    const Color& get_extrusion_role_color(EGCodeExtrusionRole role) const;
-    void set_extrusion_role_color(EGCodeExtrusionRole role, const Color& color);
+    const ColorRGB& extrusion_role_color(GCodeExtrusionRole role) const;
+    void set_extrusion_role_color(GCodeExtrusionRole role, const ColorRGB& color);
     void reset_default_extrusion_roles_colors();
 
-    const Color& get_option_color(EOptionType type) const;
-    void set_option_color(EOptionType type, const Color& color);
+    const ColorRGB& option_color(libpgcode::OptionType type) const;
+    void set_option_color(libpgcode::OptionType type, const ColorRGB& color);
     void reset_default_options_colors();
 
-    const ColorRange& get_color_range(EViewType type) const;
-    void set_color_range_palette(EViewType type, const Palette& palette);
+    const ColorRange& color_range(ViewType type) const;
+    void set_color_range_palette(ViewType type, const Palette& palette);
 
-    float get_travels_radius() const { return m_travels_radius; }
+    float travels_radius() const { return m_travels_radius; }
     void set_travels_radius(float radius);
-    float get_wipes_radius() const { return m_wipes_radius; }
+
+    float wipes_radius() const { return m_wipes_radius; }
     void set_wipes_radius(float radius);
 
-    size_t get_used_cpu_memory() const;
-    size_t get_used_gpu_memory() const;
-
-#if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
-    Vec3 get_cog_marker_position() const { return m_cog_marker.get_position(); }
-
-    float get_cog_marker_scale_factor() const { return m_cog_marker_scale_factor; }
+    Vec3f cog_marker_position() const { return m_cog_marker.position(); }
+    float cog_marker_scale_factor() const { return m_cog_marker_scale_factor; }
     void set_cog_marker_scale_factor(float factor) { m_cog_marker_scale_factor = std::max(factor, 0.001f); }
 
-    const Vec3& get_tool_marker_position() const { return m_tool_marker.get_position(); }
-
-    float get_tool_marker_offset_z() const { return m_tool_marker.get_offset_z(); }
+    float tool_marker_offset_z() const { return m_tool_marker.offset_z(); }
     void set_tool_marker_offset_z(float offset_z) { m_tool_marker.set_offset_z(offset_z); }
-
-    float get_tool_marker_scale_factor() const { return m_tool_marker_scale_factor; }
+    float tool_marker_scale_factor() const { return m_tool_marker_scale_factor; }
     void set_tool_marker_scale_factor(float factor) { m_tool_marker_scale_factor = std::max(factor, 0.001f); }
-
-    const Color& get_tool_marker_color() const { return m_tool_marker.get_color(); }
-    void set_tool_marker_color(const Color& color) { m_tool_marker.set_color(color); }
-
-    float get_tool_marker_alpha() const { return m_tool_marker.get_alpha(); }
+    const ColorRGB& tool_marker_color() const { return m_tool_marker.color(); }
+    void set_tool_marker_color(const ColorRGB& color) { m_tool_marker.set_color(color); }
+    float tool_marker_alpha() const { return m_tool_marker.alpha(); }
     void set_tool_marker_alpha(float alpha) { m_tool_marker.set_alpha(alpha); }
-#endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
+    BoundingBoxf3 tool_marker_bounding_box() const;
+
+    bool export_toolpaths_to_obj(FILE& obj_file, FILE& mtl_file, const ObjExportParams& params) const;
 
 private:
     //
@@ -205,13 +252,17 @@ private:
     //
     ExtrusionRoles m_extrusion_roles;
     //
+    // Detected extruders count
+    //
+    uint8_t m_extruders_count{ libpgcode::MIN_EXTRUDERS_COUNT };
+    //
     // Detected options
     //
-    std::vector<EOptionType> m_options;
+    libpgcode::OptionTypes m_options;
     //
-    // Detected used extruders ids
+    // Detected used extruders
     //
-    std::map<uint8_t, std::vector<ColorPrint>> m_used_extruders;
+    Extruders m_used_extruders;
     //
     // Vertices ranges for visualization
     //
@@ -219,11 +270,19 @@ private:
     //
     // Detected total moves times
     //
-    std::array<float, TIME_MODES_COUNT> m_total_time{ 0.0f, 0.0f };
+    libpgcode::Times m_total_time{};
     //
-    // Detected travel moves times
+    // Detected time modes
     //
-    std::array<float, TIME_MODES_COUNT> m_travels_time{ 0.0f, 0.0f };
+    libpgcode::TimeModes m_time_modes;
+    //
+    // Detected options moves times
+    //
+    std::vector<std::pair<libpgcode::OptionType, libpgcode::Times>> m_options_times;
+    //
+    // List of gcode events
+    //
+    GCodeEvents m_gcode_events;
     //
     // Radius of cylinders used to render travel moves segments
     //
@@ -235,11 +294,15 @@ private:
     //
     // Palette used to render extrusion roles
     //
-    std::array<Color, size_t(EGCodeExtrusionRole::COUNT)> m_extrusion_roles_colors;
+    std::array<ColorRGB, libpgcode::GCODE_EXTRUSION_ROLES_COUNT> m_extrusion_roles_colors;
     //
     // Palette used to render options
     //
-    std::array<Color, size_t(EOptionType::COUNT)> m_options_colors;
+    std::array<ColorRGB, libpgcode::OPTION_TYPES_COUNT> m_options_colors;
+    //
+    // Lights used in rendering
+    //
+    Lights m_lights;
 
     bool m_initialized{ false };
 
@@ -251,7 +314,6 @@ private:
     // The OpenGL element used to represent all option markers
     //
     OptionTemplate m_option_template;
-#if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
     //
     // The OpenGL element used to represent the center of gravity
     //
@@ -262,11 +324,10 @@ private:
     //
     ToolMarker m_tool_marker;
     float m_tool_marker_scale_factor{ 1.0f };
-#endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
     //
     // cpu buffer to store vertices
     //
-    std::vector<PathVertex> m_vertices;
+    libpgcode::MoveVertices m_vertices;
 
     // Cache for the colors to reduce the need to recalculate colors of all the vertices.
     std::vector<float> m_vertices_colors;
@@ -278,7 +339,7 @@ private:
     //
     // Variables used for toolpaths coloring
     //
-    std::optional<Settings> m_settings_used_for_ranges;
+    std::optional<Settings> m_ranges_settings;
     ColorRange m_height_range;
     ColorRange m_width_range;
     ColorRange m_speed_range;
@@ -288,81 +349,36 @@ private:
     ColorRange m_volumetric_rate_range;
     ColorRange m_actual_volumetric_rate_range;
     std::array<ColorRange, COLOR_RANGE_TYPES_COUNT> m_layer_time_range{
-        ColorRange(EColorRangeType::Linear), ColorRange(EColorRangeType::Logarithmic)
+        ColorRange(ColorRangeType::Linear), ColorRange(ColorRangeType::Logarithmic)
     };
     Palette m_tool_colors;
     Palette m_color_print_colors;
-    //
-    // OpenGL shaders ids
-    //
-    unsigned int m_segments_shader_id{ 0 };
-    unsigned int m_options_shader_id{ 0 };
-#if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
-    unsigned int m_cog_marker_shader_id{ 0 };
-    unsigned int m_tool_marker_shader_id{ 0 };
-#endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
-    //
-    // Caches for OpenGL uniforms id for segments shader 
-    //
-    int m_uni_segments_view_matrix_id{ -1 };
-    int m_uni_segments_projection_matrix_id{ -1 };
-    int m_uni_segments_camera_position_id{ -1 };
-    int m_uni_segments_positions_tex_id{ -1 };
-    int m_uni_segments_height_width_angle_tex_id{ -1 };
-    int m_uni_segments_colors_tex_id{ -1 };
-    int m_uni_segments_segment_index_tex_id{ -1 };
-    //
-    // Caches for OpenGL uniforms id for options shader 
-    //
-    int m_uni_options_view_matrix_id{ -1 };
-    int m_uni_options_projection_matrix_id{ -1 };
-    int m_uni_options_positions_tex_id{ -1 };
-    int m_uni_options_height_width_angle_tex_id{ -1 };
-    int m_uni_options_colors_tex_id{ -1 };
-    int m_uni_options_segment_index_tex_id{ -1 };
-#if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
-    //
-    // Caches for OpenGL uniforms id for cog marker shader 
-    //
-    int m_uni_cog_marker_world_center_position{ -1 };
-    int m_uni_cog_marker_scale_factor{ -1 };
-    int m_uni_cog_marker_view_matrix{ -1 };
-    int m_uni_cog_marker_projection_matrix{ -1 };
-    //
-    // Caches for OpenGL uniforms id for tool marker shader 
-    //
-    int m_uni_tool_marker_world_origin{ -1 };
-    int m_uni_tool_marker_scale_factor{ -1 };
-    int m_uni_tool_marker_view_matrix{ -1 };
-    int m_uni_tool_marker_projection_matrix{ -1 };
-    int m_uni_tool_marker_color_base{ -1 };
-#endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
 
-#ifdef ENABLE_OPENGL_ES
+    App::Render::Device* m_device{ nullptr };
+ 
+#if !USE_TEXTURE_BUFFER
     class TextureData
     {
     public:
-        void init(size_t vertices_count);
-        void set_positions(const std::vector<Vec3>& positions);
-        void set_heights_widths_angles(const std::vector<Vec3>& heights_widths_angles);
+        void init(App::Render::Device& device, size_t vertices_count);
+        void set_positions(const std::vector<Vec4f>& positions);
+        void set_heights_widths_angles(const std::vector<Vec4f>& heights_widths_angles);
         void set_colors(const std::vector<float>& colors);
         void set_enabled_segments(const std::vector<uint32_t>& enabled_segments);
         void set_enabled_options(const std::vector<uint32_t>& enabled_options);
         void reset();
-        size_t get_count() const { return m_count; }
-        std::pair<unsigned int, size_t> get_positions_tex_id(size_t id) const;
-        std::pair<unsigned int, size_t> get_heights_widths_angles_tex_id(size_t id) const;
-        std::pair<unsigned int, size_t> get_colors_tex_id(size_t id) const;
-        std::pair<unsigned int, size_t> get_enabled_segments_tex_id(size_t id) const;
-        std::pair<unsigned int, size_t> get_enabled_options_tex_id(size_t id) const;
-
-        size_t get_enabled_segments_count() const;
-        size_t get_enabled_options_count() const;
+        size_t count() const { return m_count; }
+        std::pair<App::Render::Texture*, size_t> positions_tex(size_t id) const;
+        std::pair<App::Render::Texture*, size_t> heights_widths_angles_tex(size_t id) const;
+        std::pair<App::Render::Texture*, size_t> colors_tex(size_t id) const;
+        std::pair<App::Render::Texture*, size_t> enabled_segments_tex(size_t id) const;
+        std::pair<App::Render::Texture*, size_t> enabled_options_tex(size_t id) const;
 
         size_t max_texture_capacity() const { return m_width * m_height; }
-        size_t get_used_gpu_memory() const;
 
     private:
+        App::Render::Device* m_device{ nullptr };
+
         //
         // Texture width
         //
@@ -375,92 +391,40 @@ private:
         // Count of textures
         //
         size_t m_count{ 0 };
-        //
-        // Caches for size of data sent to gpu, in bytes
-        //
-        size_t m_positions_size{ 0 };
-        size_t m_height_width_angle_size{ 0 };
-        size_t m_colors_size{ 0 };
-        size_t m_enabled_segments_size{ 0 };
-        size_t m_enabled_options_size{ 0 };
 
-        struct TexIds
+        size_t m_max_texture_size{ 0 };
+
+        struct Textures
         {
-            //
-            // OpenGL texture to store positions
-            //
-            std::pair<unsigned int, size_t> positions{ 0, 0 };
-            //
-            // OpenGL texture to store heights, widths and angles
-            //
-            std::pair<unsigned int, size_t> heights_widths_angles{ 0, 0 };
-            //
-            // OpenGL texture to store colors
-            //
-            std::pair<unsigned int, size_t> colors{ 0, 0 };
-            //
-            // OpenGL texture to store enabled segments
-            //
-            std::pair<unsigned int, size_t> enabled_segments{ 0, 0 };
-            //
-            // OpenGL texture to store enabled options
-            //
-            std::pair<unsigned int, size_t> enabled_options{ 0, 0 };
+            std::pair<App::Render::Texture*, size_t> positions{ nullptr, 0 };
+            std::pair<App::Render::Texture*, size_t> heights_widths_angles{ nullptr, 0 };
+            std::pair<App::Render::Texture*, size_t> colors{ nullptr, 0 };
+            std::pair<App::Render::Texture*, size_t> enabled_segments{ nullptr, 0 };
+            std::pair<App::Render::Texture*, size_t> enabled_options{ nullptr, 0 };
         };
 
-        std::vector<TexIds> m_tex_ids;
+        std::vector<Textures> m_tex_ids;
     };
 
     TextureData m_texture_data;
 #else
-    //
-    // OpenGL buffers to store positions
-    //
-    unsigned int m_positions_buf_id{ 0 };
-    unsigned int m_positions_tex_id{ 0 };
-    //
-    // OpenGL buffers to store heights, widths and angles
-    //
-    unsigned int m_heights_widths_angles_buf_id{ 0 };
-    unsigned int m_heights_widths_angles_tex_id{ 0 };
-    //
-    // OpenGL buffers to store colors
-    //
-    unsigned int m_colors_buf_id{ 0 };
-    unsigned int m_colors_tex_id{ 0 };
-    //
-    // OpenGL buffers to store enabled segments
-    //
-    unsigned int m_enabled_segments_buf_id{ 0 };
-    unsigned int m_enabled_segments_tex_id{ 0 };
+    std::unique_ptr<App::Render::TextureBuffer> m_positions_buffer;
+    std::unique_ptr<App::Render::TextureBuffer> m_heights_widths_angles_buffer;
+    std::unique_ptr<App::Render::TextureBuffer> m_colors_buffer;
+    std::unique_ptr<App::Render::TextureBuffer> m_enabled_segments_buffer;
+    std::unique_ptr<App::Render::TextureBuffer> m_enabled_options_buffer;
+#endif // !USE_TEXTURE_BUFFER
+
     size_t m_enabled_segments_count{ 0 };
-    //
-    // OpenGL buffers to store enabled options
-    //
-    unsigned int m_enabled_options_buf_id{ 0 };
-    unsigned int m_enabled_options_tex_id{ 0 };
     size_t m_enabled_options_count{ 0 };
-    //
-    // Caches for size of data sent to gpu, in bytes
-    //
-    size_t m_positions_tex_size{ 0 };
-    size_t m_height_width_angle_tex_size{ 0 };
-    size_t m_colors_tex_size{ 0 };
-    size_t m_enabled_segments_tex_size{ 0 };
-    size_t m_enabled_options_tex_size{ 0 };
-#endif // ENABLE_OPENGL_ES
 
     void update_view_full_range();
     void update_color_ranges();
     void update_heights_widths();
-    void render_segments(const Mat4x4& view_matrix, const Mat4x4& projection_matrix, const Vec3& camera_position);
-    void render_options(const Mat4x4& view_matrix, const Mat4x4& projection_matrix);
-#if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
-    void render_cog_marker(const Mat4x4& view_matrix, const Mat4x4& projection_matrix);
-    void render_tool_marker(const Mat4x4& view_matrix, const Mat4x4& projection_matrix);
-#endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
+    void render_segments(const Transform3f& view_matrix, const Transform3f& projection_matrix, const Vec3f& camera_position);
+    void render_options(const Transform3f& view_matrix, const Transform3f& projection_matrix);
+    void render_cog_marker(const Transform3f& view_matrix, const Transform3f& projection_matrix);
+    void render_tool_marker(const Transform3f& view_matrix, const Transform3f& projection_matrix);
 };
 
-} // namespace libvgcode
-
-#endif // VGCODE_VIEWERIMPL_HPP
+} // namespace Slic3r::Biz::libvgcode

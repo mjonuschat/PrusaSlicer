@@ -1,28 +1,28 @@
-///|/ Copyright (c) Prusa Research 2023 Enrico Turri @enricoturri1966, Pavel Mikuš @Godrak
+///|/ Copyright (c) Prusa Research 2016 - 2023 Oleksandra Iushchenko @YuSanka, Vojtech Bubník @bubnikv, Filip Sykala @Jony01, David Kocík @kocikdav, Enrico Turri @enricoturri1966, Tomáš Mészáros @tamasmeszaros, Lukáš Matena @lukasmatena, Vojtech Král @vojtechkral
+///|/ Copyright (c) 2019 Sijmen Schoon
 ///|/
-///|/ libvgcode is released under the terms of the AGPLv3 or higher
+///|/ libvgcode library is released under the terms of the AGPLv3 or higher
 ///|/
-#ifndef VGCODE_VIEWRANGE_HPP
-#define VGCODE_VIEWRANGE_HPP
+#pragma once
 
 #include "Range.hpp"
 
-namespace libvgcode {
+namespace Slic3r::Biz::libvgcode {
 
 class ViewRange
 {
 public:
-    const Interval& get_full() const { return m_full.get(); }
+    const Interval& full() const { return m_full.get(); }
     void set_full(const Range& other) { set_full(other.get()); }
     void set_full(const Interval& range) { set_full(range[0], range[1]); }
     void set_full(Interval::value_type min, Interval::value_type max);
 
-    const Interval& get_enabled() const { return m_enabled.get(); }
+    const Interval& enabled() const { return m_enabled.get(); }
     void set_enabled(const Range& other) { set_enabled(other.get()); }
     void set_enabled(const Interval& range) { set_enabled(range[0], range[1]); }
     void set_enabled(Interval::value_type min, Interval::value_type max);
 
-    const Interval& get_visible() const { return m_visible.get(); }
+    const Interval& visible() const { return m_visible.get(); }
     void set_visible(const Range& other) { set_visible(other.get()); }
     void set_visible(const Interval& range) { set_visible(range[0], range[1]); }
     void set_visible(Interval::value_type min, Interval::value_type max);
@@ -51,6 +51,4 @@ private:
     Range m_visible;
 };
 
-} // namespace libvgcode
-
-#endif // VGCODE_VIEWRANGE_HPP
+} // namespace Slic3r::Biz::libvgcode
