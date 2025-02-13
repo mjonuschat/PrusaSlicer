@@ -15,6 +15,10 @@ public:
 
     void render(ImVec2 size);
 
+    void set_object_list_render_fn(std::function<void(ImVec2, ImVec2)> render_fn) {
+        m_cb_object_list_render = render_fn;
+    }
+
 protected:
 
 private:
@@ -31,6 +35,8 @@ private:
     Yoga::SplitterSizer     m_left_sizer;
     Yoga::MiddleSizer       m_middle_sizer;
     Yoga::SplitterSizer     m_right_sizer;
+
+    std::function<void(ImVec2, ImVec2)> m_cb_object_list_render;
 };
 
 } // namespace Slic3r::App::TestRenderLayout

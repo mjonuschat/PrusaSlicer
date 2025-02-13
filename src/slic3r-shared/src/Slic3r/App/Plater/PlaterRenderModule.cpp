@@ -45,6 +45,16 @@ void PlaterRenderModule::on_init(Render::Device& device)
     );
     init_gizmos();
     init_scene();
+    init_scene_layout();
+}
+
+void PlaterRenderModule::init_scene_layout()
+{
+    Plater::ObjectList* ol = m_scene_presenter->project_context().object_list();
+    ol->init(m_project_interactor.scene_interactor(), m_project_interactor.selected_project().model());
+
+    trl.set_object_list_render_fn([ol](ImVec2 size, ImVec2 pos) -> void
+        { ol->render(pos, size); });
 }
 
 void PlaterRenderModule::init_scene()

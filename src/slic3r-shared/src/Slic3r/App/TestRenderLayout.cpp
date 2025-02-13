@@ -62,48 +62,12 @@ void TestRenderLayout::init_main_sizer()
 
 void TestRenderLayout::init_left_sizer()
 {
-    m_left_sizer.init(2, ImVec2(), false);
+    m_left_sizer.init(1, ImVec2(), false);
     m_left_sizer.set_grow_row(0);
 
-    static FlexSizer left_top_sizer(2, 2, ImVec2(), ImVec2(5.f, 10.f));
-    left_top_sizer.set_grow_col(1);
-    left_top_sizer.set_grow_row(0, 0.f);
-    left_top_sizer.set_grow_row(1, 0.f);
-
-    left_top_sizer.add([](ImVec2, ImVec2) { ImGui::Text("Column:"); }, { AlignH::Right });
-    left_top_sizer.add([](ImVec2, ImVec2) { combo("##column", { "1", "2", "3" }); });
-
-    left_top_sizer.add([](ImVec2, ImVec2) { ImGui::Text("Row:"); }, { AlignH::Right });
-    left_top_sizer.add([](ImVec2, ImVec2) { combo("##rows", { "1", "2", "3", "4", "5", "6", "7", "8", "9" }); });
-
-    static FlexSizer left_bottom_sizer(2, 1, ImVec2(), ImVec2(5.f, 10.f));
-    left_bottom_sizer.set_grow_col(1);
-
-    left_bottom_sizer.add([](ImVec2, ImVec2) {
-        static float grow = 1;
-        ImGui::PushItemWidth(100);
-        ImGui::InputFloat("Grow", &grow, 1.f, 5.f, "%.1f");
-        ImGui::PopItemWidth();
-    });
-
-    static FlexSizer left_buttons_sizer(2, 1, ImVec2(0.f, 0.f), ImVec2(2.f, 0.f));
-    left_buttons_sizer.set_grow_col(0);
-    left_buttons_sizer.set_grow_col(1);
-
-    left_buttons_sizer.add([](ImVec2, ImVec2) {
-        if (ImGui::Button("Set Flex Column")) {
-        }
-    }, { AlignH::Right, AlignV::Bottom });
-
-    left_buttons_sizer.add([](ImVec2, ImVec2) {
-        if (ImGui::Button("Set Flex Row")) {
-        }
-    }, { AlignH::Right, AlignV::Bottom });
-
-    left_bottom_sizer.add(left_buttons_sizer);
-
-    m_left_sizer.add(left_top_sizer);
-    m_left_sizer.add(left_bottom_sizer);
+    m_left_sizer.add([this](ImVec2 size, ImVec2 pos) {
+        m_cb_object_list_render(size, pos);
+    }, { AlignH::Left, AlignV::Top }, "object_list");
 }
 
 void TestRenderLayout::init_middle_sizer()
@@ -189,10 +153,12 @@ void TestRenderLayout::render(ImVec2 size)
     ImGui::PushStyleColor(ImGuiCol_Button,          ImVec4({ 0.33f, 0.33f, 0.33f, 1.0f }));
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered,   ImVec4({ 0.923f, 0.504f, 0.264f, 1.0f }));
     ImGui::PushStyleColor(ImGuiCol_ButtonActive,    ImVec4({ 0.923f, 0.504f, 0.264f, 1.0f }));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 5.f);
 
     m_main_sizer.render(sizer_size, sizer_pos);
 
     ImGui::PopStyleColor(3);
+    ImGui::PopStyleVar(1);
 }
 
 }
