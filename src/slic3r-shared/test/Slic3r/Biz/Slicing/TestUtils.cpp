@@ -37,4 +37,44 @@ Slic3r::DynamicPrintConfig get_config() {
     config.opt_int("skirts") = 0;
     return config;
 }
+
+bool operator==(const StatusEvent& a, const StatusEvent& b) {
+    return a.status == b.status && a.project_bed_id == b.project_bed_id;
+}
+
+using StatusEvents = std::vector<StatusEvent>;
+
+void wait_for_status(
+    Slic3r::Biz::Platform::IMainThreadDispatcher& dispatcher,
+    const StatusListener& status_listener,
+    const std::chrono::seconds timeout,
+    const std::function<bool(StatusEvents)>& condition
+)
+{
+    using namespace std::chrono_literals;
+    using std::chrono::high_resolution_clock;
+
+    const auto start{high_resolution_clock::now()};
+    while(true) {
+        dispatcher.dispatch_enqueued();
+        const std::vector<StatusEvent> status_events{status_listener.status_events};
+        if (!status_events.empty() && condition(status_events)) {
+            break;
+        }
+        const auto now{high_resolution_clock::now()};
+        REQUIRE(duration_cast<std::chrono::seconds>(now - start) < timeout);
+        std::this_thread::sleep_for(1ms);
+    }
+}
+
+Slic3r::Biz::Slicing::SlicingInteractor init_slicing_interactor(Slic3r::Biz::Platform::IMainThreadDispatcher &dispatcher) {
+    Slic3r::Biz::Platform::PlatformServices::instance().set_main_thread_dispatcher(&dispatcher);
+    return {};
+}
+
+SlicingFixture::SlicingFixture(): slicing(init_slicing_interactor(dispatcher))  {
+    slicing.on_selected_project_changed(0);
+    slicing.add_status_listener(&status_listener);
+}
+
 }

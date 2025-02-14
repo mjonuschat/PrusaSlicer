@@ -242,24 +242,21 @@ if (NOT WIN32)
     endif ()
 endif()
 
-# Doxygen
 add_target_to_doxygen(slic3r-shared)
 
-
 if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
-
-    # Tests
     add_executable(slic3r-shared-tests
-            test/Slic3r/App/Scene/Node.cpp
-            test/Slic3r/App/Scene/Ray.cpp
-            test/Slic3r/Biz/ProjectInteractorTests.cpp
-            test/Slic3r/Biz/Scene/SceneInteractorTests.cpp
+        test/Slic3r/App/Scene/Node.cpp
+        test/Slic3r/App/Scene/Ray.cpp
+        test/Slic3r/Biz/ProjectInteractorTests.cpp
+        test/Slic3r/Biz/Scene/SceneInteractorTests.cpp
 
-            test/Slic3r/Biz/Slicing/TestUtils.cpp
-            test/Slic3r/Biz/Slicing/GCodeUtils.cpp
-            test/Slic3r/Biz/Slicing/TestCallbacks.cpp
-            test/Slic3r/Biz/Slicing/TestActions.cpp
-            test/Slic3r/Biz/Slicing/TestInteractor.cpp
+        test/Slic3r/Biz/Slicing/TestUtils.cpp
+        test/Slic3r/Biz/Slicing/GCodeUtils.cpp
+        test/Slic3r/Biz/Slicing/ActionsTests.cpp
+        test/Slic3r/Biz/Slicing/ListenersTests.cpp
+        test/Slic3r/Biz/Slicing/ProcessActionsTests.cpp
+        test/Slic3r/Biz/Slicing/ProcessCallbacksTests.cpp
     )
     target_include_directories(slic3r-shared-tests PRIVATE test)
 
@@ -274,12 +271,11 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
     set(_catch_args "exclude:[NotWorking] exclude:[Slow]")
     list(APPEND _catch_args "${CATCH_EXTRA_ARGS}")
     add_test(NAME slic3r-shared-tests
-            COMMAND slic3r-shared-tests ${_catch_args}
-            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        COMMAND slic3r-shared-tests ${_catch_args}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
 
     if (WIN32)
         prusaslicer_copy_dlls(slic3r-shared-tests)
     endif ()
-
 endif()

@@ -27,11 +27,13 @@ using Slic3r::Tests::get_config;
 using Slic3r::Tests::generate_cubes;
 using Slic3r::Tests::get_cubes_filament_used;
 using Slic3r::Biz::Slicing::ProjectBedId;
+using Slic3r::Biz::Print::WipeTowerGeometry;
 
 struct SharedState {
     std::string gcode{};
     FDMStatistics statistics{};
     Status status{};
+    WipeTowerGeometry wipe_tower_geometry{};
 };
 
 struct CallbacksHandler : IProcessCallbacks {
@@ -52,6 +54,12 @@ struct CallbacksHandler : IProcessCallbacks {
     void on_status(const Status status, const ProjectBedId) override {
         SharedState state{this->get_state()};
         state.status = status;
+        this->set_state(state);
+    }
+
+    void on_wipe_tower_geometry(WipeTowerGeometry&& geometry, const ProjectBedId) override {
+        SharedState state{this->get_state()};
+        state.wipe_tower_geometry = std::move(geometry);
         this->set_state(state);
     }
 
