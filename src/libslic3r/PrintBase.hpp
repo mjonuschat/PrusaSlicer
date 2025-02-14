@@ -466,6 +466,13 @@ enum class ApplyStatus {
     changed
 };
 
+struct ZDepth{
+    double z{};
+    double depth{};
+};
+
+using WipeTowerGeometry = std::vector<ZDepth>;
+
 class IPrint {
 public:
     virtual ApplyStatus update(const Model &model, DynamicPrintConfig config) = 0;
@@ -475,6 +482,7 @@ public:
 
     JThread::StopToken stop_token;
     std::function<void(GCodeProcessorResult&&, PrintStatistics&&)> on_result;
+    std::function<void(WipeTowerGeometry&&)> on_wipe_tower_geometry;
 };
 }
 

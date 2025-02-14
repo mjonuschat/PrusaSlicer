@@ -969,6 +969,22 @@ void Print::auto_assign_extruders(ModelObject* model_object) const
     }
 }
 
+Biz::Print::WipeTowerGeometry get_wipe_tower_geometry(const WipeTowerData& wipe_tower_data) {
+    using Biz::Print::ZDepth;
+    using Biz::Print::WipeTowerGeometry;
+
+    WipeTowerGeometry result;
+    result.reserve(wipe_tower_data.z_and_depth_pairs.size());
+    std::transform(
+        std::begin(wipe_tower_data.z_and_depth_pairs), std::end(wipe_tower_data.z_and_depth_pairs),
+        std::back_inserter(result), [](const std::pair<float, float>& z_depth){
+            return ZDepth{z_depth.first, z_depth.second};
+        }
+    );
+
+    return result;
+}
+
 // Slicing process, running at a background thread.
 void Print::process()
 {
@@ -1011,6 +1027,9 @@ void Print::process()
         	m_tool_ordering = ToolOrdering(*this, -1, false);
             if (m_tool_ordering.empty() || m_tool_ordering.last_extruder() == unsigned(-1))
                 throw Slic3r::SlicingError("The print is empty. The model is not printable with current print settings.");
+        }
+        if (this->on_wipe_tower_geometry) {
+            this->on_wipe_tower_geometry(get_wipe_tower_geometry(m_wipe_tower_data));
         }
         this->set_done(psWipeTower);
     }
