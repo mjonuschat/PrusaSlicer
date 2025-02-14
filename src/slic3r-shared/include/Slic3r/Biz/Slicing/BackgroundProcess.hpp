@@ -86,6 +86,7 @@ class IProcessCallbacks {
 public:
     virtual void on_fdm_result(FDMResult &&, FDMStatistics&&, ProjectBedId) = 0;
     virtual void on_status(const Status, ProjectBedId) = 0;
+    virtual void on_wipe_tower_geometry(Print::WipeTowerGeometry&&, ProjectBedId) = 0;
     virtual Status get_status(const ProjectBedId) const = 0;
     virtual ~IProcessCallbacks() = default;
 };

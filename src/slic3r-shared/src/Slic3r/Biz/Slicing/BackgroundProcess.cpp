@@ -122,6 +122,9 @@ void BackgroundProcess::slice()
                     [this](GCodeProcessorResult&& result, PrintStatistics&& print_statistics) {
                         this->m_callbacks.on_fdm_result(std::move(result), std::move(print_statistics), m_project_bed_id);
                     };
+                print->on_wipe_tower_geometry = [this](Print::WipeTowerGeometry&& geometry) {
+                    this->m_callbacks.on_wipe_tower_geometry(std::move(geometry), m_project_bed_id);
+                };
 
                 bool finished{false};
                 const ScopeGuard guard{[this, &finished]() {

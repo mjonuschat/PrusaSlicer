@@ -23,6 +23,14 @@ void SlicingInteractor::remove_status_listener(ISlicingStatusListener *listener)
     m_status_listeners.remove(listener);
 }
 
+void SlicingInteractor::add_wipe_tower_geometry_listener(ISlicingWipeTowerGeometryListener* listener) {
+    m_wipe_tower_geometry_listeners.add(listener);
+}
+
+void SlicingInteractor::remove_wipe_tower_geometry_listener(ISlicingWipeTowerGeometryListener *listener) {
+    m_wipe_tower_geometry_listeners.remove(listener);
+}
+
 void SlicingInteractor::update_bed(
     const Model& model,
     const DynamicPrintConfig& config,
@@ -147,6 +155,22 @@ void SlicingInteractor::on_fdm_result(FDMResult&& result, FDMStatistics&& statis
             });
             _result.reset();
             _statistics.reset();
+        }
+    );
+}
+
+void SlicingInteractor::on_wipe_tower_geometry(Print::WipeTowerGeometry&& wipe_tower_geometry, const ProjectBedId project_bed_id) {
+    SPDLOG_INFO(
+        "{}: WipeTowerGeometry{{size: {}}}",
+        fmt::streamed(project_bed_id),
+        wipe_tower_geometry.size()
+    );
+
+    m_dispatcher.dispatch_on_main_thread(
+        [this, project_bed_id, geometry=std::move(wipe_tower_geometry)]() mutable {
+            m_wipe_tower_geometry_listeners.invoke([&](ISlicingWipeTowerGeometryListener* listener){
+                listener->on_wipe_tower_geometry(geometry, project_bed_id);
+            });
         }
     );
 }

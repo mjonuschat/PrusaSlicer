@@ -29,6 +29,12 @@ struct ISlicingStatusListener
     virtual ~ISlicingStatusListener() = default;
 };
 
+struct ISlicingWipeTowerGeometryListener
+{
+    virtual void on_wipe_tower_geometry(Print::WipeTowerGeometry, const ProjectBedId) = 0;
+    virtual ~ISlicingWipeTowerGeometryListener() = default;
+};
+
 struct UpdateRequest {
     std::reference_wrapper<const Slic3r::Model> model;
     std::reference_wrapper<const DynamicPrintConfig> config;
@@ -41,6 +47,8 @@ public:
     void remove_result_listener(ISlicingResultListener *listener);
     void add_status_listener(ISlicingStatusListener* listener);
     void remove_status_listener(ISlicingStatusListener *listener);
+    void add_wipe_tower_geometry_listener(ISlicingWipeTowerGeometryListener *listener);
+    void remove_wipe_tower_geometry_listener(ISlicingWipeTowerGeometryListener *listener);
 
     /* WARNING!
      * Update won't be performed immediately if the background process is running. Rather, the
@@ -60,6 +68,9 @@ public:
 
     void on_fdm_result(FDMResult &&, FDMStatistics&&, ProjectBedId) override;
     void on_status(const Status, ProjectBedId) override;
+    void on_wipe_tower_geometry(
+        Print::WipeTowerGeometry&& wipe_tower_geometry, const ProjectBedId project_bed_id
+    ) override;
     Status get_status(const ProjectBedId project_bed_id) const override;
 
 private:
@@ -74,6 +85,7 @@ private:
     std::map<ProjectBedId, Status> m_statuses;
     ListenerList<ISlicingResultListener> m_result_listeners;
     ListenerList<ISlicingStatusListener> m_status_listeners;
+    ListenerList<ISlicingWipeTowerGeometryListener> m_wipe_tower_geometry_listeners;
     std::deque<ProjectBedId> m_slicing_queue;
     std::map<ProjectBedId, UpdateRequest> m_update_requests;
     Domain::SelectionId m_current_project_id{Domain::INVALID_ID};
