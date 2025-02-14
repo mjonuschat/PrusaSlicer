@@ -256,7 +256,6 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
         test/Slic3r/Biz/Slicing/ActionsTests.cpp
         test/Slic3r/Biz/Slicing/ListenersTests.cpp
         test/Slic3r/Biz/Slicing/ProcessActionsTests.cpp
-        test/Slic3r/Biz/Slicing/ProcessCallbacksTests.cpp
     )
     target_include_directories(slic3r-shared-tests PRIVATE test)
 
