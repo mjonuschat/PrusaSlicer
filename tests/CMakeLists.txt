@@ -2,6 +2,8 @@
 # add_subirectory(<testcase>)
 
 find_package(Catch2 3.8 REQUIRED)
+slic3r_remap_configs(Catch2::Catch2 RelWithDebInfo Release)
+slic3r_remap_configs(Catch2::Catch2WithMain RelWithDebInfo Release)
 
 include(Catch)
 

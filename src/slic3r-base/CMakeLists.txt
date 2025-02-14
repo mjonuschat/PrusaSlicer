@@ -48,6 +48,7 @@ target_link_libraries(slic3r-base PUBLIC
 
 if(NOT EMSCRIPTEN)
 	find_package(libassert REQUIRED)
+	slic3r_remap_configs("libassert::assert;cpptrace::cpptrace" RelWithDebInfo Release)
 	target_link_libraries(slic3r-base PUBLIC libassert::assert)
 endif ()
 

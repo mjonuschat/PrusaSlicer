@@ -182,6 +182,10 @@ set(SLIC3R_SHARED_FILES
 find_package(NanoSVG REQUIRED)
 find_package(Boost REQUIRED COMPONENTS filesystem)
 find_package(yoga CONFIG REQUIRED)
+
+slic3r_remap_configs("yoga::yogacore" RelWithDebInfo Release)
+
+
 add_library(slic3r-shared STATIC ${SLIC3R_SHARED_FILES})
 target_link_libraries(slic3r-shared PUBLIC
         slic3r-base
@@ -232,6 +236,7 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
     target_include_directories(slic3r-shared-tests PRIVATE test)
 
     find_package(Catch2 3.8 REQUIRED)
+    slic3r_remap_configs("Catch2::Catch2;Catch2::Catch2WithMain" RelWithDebInfo Release)
     target_link_libraries(slic3r-shared-tests PRIVATE slic3r-shared Catch2::Catch2WithMain)
 
     set(TEST_DATA_DIR ${CMAKE_CURRENT_SOURCE_DIR}/test/data)
