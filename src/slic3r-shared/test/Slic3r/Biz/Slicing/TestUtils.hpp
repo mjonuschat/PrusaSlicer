@@ -25,7 +25,7 @@ bool operator==(const StatusEvent& a, const StatusEvent& b);
 
 using StatusEvents = std::vector<StatusEvent>;
 
-struct StatusListener : public Biz::Slicing::ISlicingStatusListener {
+struct StatusListener : public Biz::Slicing::IStatusListener {
     virtual void on_status_changed(const Biz::Slicing::Status status, const Biz::Slicing::ProjectBedId id) override {
         status_events.push_back(StatusEvent{status, id});
     }
@@ -33,7 +33,7 @@ struct StatusListener : public Biz::Slicing::ISlicingStatusListener {
     std::vector<StatusEvent> status_events;
 };
 
-void wait_for_status(
+[[nodiscard]] bool wait_for_status(
     Slic3r::Biz::Platform::IMainThreadDispatcher& dispatcher,
     const StatusListener& status_listener,
     const std::chrono::seconds timeout,

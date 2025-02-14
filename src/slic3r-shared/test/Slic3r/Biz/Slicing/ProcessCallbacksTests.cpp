@@ -51,6 +51,9 @@ struct CallbacksHandler : IProcessCallbacks {
         boost::filesystem::remove(result.filename, error_code);
     }
 
+
+    void on_sla_result(const ProjectBedId) override {}
+
     void on_status(const Status status, const ProjectBedId) override {
         SharedState state{this->get_state()};
         state.status = status;

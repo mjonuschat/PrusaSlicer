@@ -824,6 +824,11 @@ void SLAPrint::process()
         st += printsteps.progressrange(currentstep);
     }
 
+    if (this->on_sla_result) {
+        // TODO move to approprite spot and pass the result as arg
+        this->on_sla_result();
+    }
+
     // If everything vent well
     m_report_status(*this, 100, _u8L("Slicing done"));
 

@@ -36,9 +36,9 @@ TEST_CASE_METHOD(SlicingFixture, "Update stops slicing", "[slicing][slicing-inte
     slicing.slice_bed(id.bed_id);
     slicing.update_bed(models[id], config, id.bed_id);
 
-    wait_for_status(dispatcher, status_listener, 10s, [](const StatusEvents &events){
+    REQUIRE(wait_for_status(dispatcher, status_listener, 10s, [](const StatusEvents &events){
         return events.size() > 4;
-    });
+    }));
 
     const StatusEvents expected_events{
         StatusEvent{Status::Updating, id},
@@ -64,9 +64,9 @@ TEST_CASE_METHOD(SlicingFixture, "Stop pops the action from queue", "[slicing][s
     slicing.slice_all();
     slicing.stop_slicing_bed(id2.bed_id);
 
-    wait_for_status(dispatcher, status_listener, 10s, [](const StatusEvents &events){
+    REQUIRE(wait_for_status(dispatcher, status_listener, 10s, [](const StatusEvents &events){
         return events.back().status == Status::Finished;
-    });
+    }));
     // Let the second bed finish slicing if the stop failed.
     std::this_thread::sleep_for(20ms);
     dispatcher.dispatch_enqueued();
@@ -89,17 +89,17 @@ TEST_CASE_METHOD(SlicingFixture, "Stop all stops all processes", "[slicing][slic
     slicing.slice_all();
 
     // Let them both start.
-    wait_for_status(dispatcher, status_listener, 10s, [&](const StatusEvents &events){
+    REQUIRE(wait_for_status(dispatcher, status_listener, 10s, [&](const StatusEvents &events){
         const auto it1{std::ranges::find(events, StatusEvent{Status::Running, id1})};
         const auto it2{std::ranges::find(events, StatusEvent{Status::Running, id2})};
         return it1 != events.end() && it2 != events.end();
-    });
+    }));
     slicing.stop_all();
-    wait_for_status(dispatcher, status_listener, 10s, [&](const StatusEvents &events){
+    REQUIRE(wait_for_status(dispatcher, status_listener, 10s, [&](const StatusEvents &events){
         const auto it1{std::ranges::find(events, StatusEvent{Status::Stopping, id1})};
         const auto it2{std::ranges::find(events, StatusEvent{Status::Stopping, id2})};
         return it1 != events.end() && it2 != events.end();
-    });
+    }));
 
     CHECK_THAT(status_listener.status_events, Contains(StatusEvents{{Status::Stopping, id1}}));
     CHECK_THAT(status_listener.status_events, Contains(StatusEvents{{Status::Stopping, id2}}));
@@ -120,9 +120,9 @@ TEST_CASE_METHOD(
     slicing.slice_bed(id.bed_id);
     slicing.remove_bed(id.bed_id);
 
-    wait_for_status(dispatcher, status_listener, 10s, [](const StatusEvents &events){
+    REQUIRE(wait_for_status(dispatcher, status_listener, 10s, [](const StatusEvents &events){
         return events.size() == 5;
-    });
+    }));
 
     const StatusEvents expected_events{
         StatusEvent{Status::Updating, id},

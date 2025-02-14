@@ -34,7 +34,8 @@ double get_cubes_filament_used(const Slic3r::Model &model) {
 
 Slic3r::DynamicPrintConfig get_config() {
     auto config{Slic3r::DynamicPrintConfig::full_print_config()};
-    config.opt_int("skirts") = 0;
+    config.set("skirts", 0);
+    config.option<ConfigOptionEnum<PrinterTechnology>>("printer_technology", true)->value = ptFFF;
     return config;
 }
 
@@ -44,7 +45,7 @@ bool operator==(const StatusEvent& a, const StatusEvent& b) {
 
 using StatusEvents = std::vector<StatusEvent>;
 
-void wait_for_status(
+[[nodiscard]] bool wait_for_status(
     Slic3r::Biz::Platform::IMainThreadDispatcher& dispatcher,
     const StatusListener& status_listener,
     const std::chrono::seconds timeout,
@@ -59,10 +60,12 @@ void wait_for_status(
         dispatcher.dispatch_enqueued();
         const std::vector<StatusEvent> status_events{status_listener.status_events};
         if (!status_events.empty() && condition(status_events)) {
-            break;
+            return true;;
         }
         const auto now{high_resolution_clock::now()};
-        REQUIRE(duration_cast<std::chrono::seconds>(now - start) < timeout);
+        if (duration_cast<std::chrono::seconds>(now - start) > timeout) {
+            return false;
+        }
         std::this_thread::sleep_for(1ms);
     }
 }
@@ -74,7 +77,7 @@ Slic3r::Biz::Slicing::SlicingInteractor init_slicing_interactor(Slic3r::Biz::Pla
 
 SlicingFixture::SlicingFixture(): slicing(init_slicing_interactor(dispatcher))  {
     slicing.on_selected_project_changed(0);
-    slicing.add_status_listener(&status_listener);
+    slicing.add_listener(&status_listener);
 }
 
 }

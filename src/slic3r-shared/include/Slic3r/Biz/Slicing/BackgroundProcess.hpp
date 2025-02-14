@@ -78,6 +78,8 @@ std::ostream& operator<<(std::ostream& output, const Status& status);
 
 bool is_thread_active(const Status status);
 
+Slic3r::PrinterTechnology get_printer_technology(const DynamicPrintConfig& config);
+
 using FDMResult = GCodeProcessorResult;
 
 using FDMStatistics = PrintStatistics;
@@ -85,6 +87,7 @@ using FDMStatistics = PrintStatistics;
 class IProcessCallbacks {
 public:
     virtual void on_fdm_result(FDMResult &&, FDMStatistics&&, ProjectBedId) = 0;
+    virtual void on_sla_result(ProjectBedId) = 0;
     virtual void on_status(const Status, ProjectBedId) = 0;
     virtual void on_wipe_tower_geometry(Print::WipeTowerGeometry&&, ProjectBedId) = 0;
     virtual Status get_status(const ProjectBedId) const = 0;
@@ -115,7 +118,10 @@ public:
     void slice();
     void stop();
 
+    Slic3r::PrinterTechnology get_printer_technology() const;
+
 private:
+    Slic3r::PrinterTechnology m_printer_technology;
     std::unique_ptr<Print::IPrint> m_print;
     IProcessCallbacks& m_callbacks;
     ProjectBedId m_project_bed_id;
@@ -126,6 +132,7 @@ private:
 
     void queue_action(const std::function<void()>& action);
     void on_status(const Status status);
+    void hook_callbacks(Print::IPrint* print);
 
     // Update and slice must not run at the same time.
     std::mutex m_mutex;

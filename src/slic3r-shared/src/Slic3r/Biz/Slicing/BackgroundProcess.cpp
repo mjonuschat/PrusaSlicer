@@ -46,10 +46,23 @@ bool is_thread_active(const Status status) {
         || status == Status::Updating;
 }
 
-std::unique_ptr<Slic3r::Print> init_print() {
-    auto print{std::make_unique<Slic3r::Print>()};
-    print->set_status_silent();
-    return print;
+Slic3r::PrinterTechnology get_printer_technology(const DynamicPrintConfig& config) {
+    const auto option = config.option<ConfigOptionEnum<PrinterTechnology>>("printer_technology");
+    ASSERT(option != nullptr);
+    return option->value;
+}
+
+std::unique_ptr<IPrint> init_print(const Slic3r::PrinterTechnology &printer_technology) {
+    if (printer_technology == ptFFF) {
+        auto print{std::make_unique<Slic3r::Print>()};
+        print->set_status_silent();
+        return print;
+    } else if (printer_technology == ptSLA) {
+        auto print{std::make_unique<Slic3r::SLAPrint>()};
+        print->set_status_silent();
+        return print;
+    }
+    UNREACHABLE("Only FFF and SLA are viable options!");
 }
 
 BackgroundProcess::BackgroundProcess(
@@ -58,7 +71,10 @@ BackgroundProcess::BackgroundProcess(
     DynamicPrintConfig&& config,
     const ProjectBedId project_bed_id
 )
-    : m_print{init_print()}, m_callbacks{callbacks}, m_project_bed_id{project_bed_id}
+    : m_printer_technology{Slicing::get_printer_technology(config)}
+    , m_print{init_print(m_printer_technology)}
+    , m_callbacks{callbacks}
+    , m_project_bed_id{project_bed_id}
 {
     this->update(model, std::move(config));
 };
@@ -70,7 +86,10 @@ BackgroundProcess::BackgroundProcess(
     DynamicPrintConfig&& config,
     const ProjectBedId project_bed_id
 )
-    : m_print{std::move(print)}, m_callbacks{callbacks}, m_project_bed_id{project_bed_id}
+    : m_printer_technology{Slicing::get_printer_technology(config)}
+    , m_print{std::move(print)}
+    , m_callbacks{callbacks}
+    , m_project_bed_id{project_bed_id}
 {
     this->update(model, std::move(config));
 };
@@ -80,6 +99,8 @@ BackgroundProcess::~BackgroundProcess() = default;
 void BackgroundProcess::update(const Model& model, DynamicPrintConfig&& config)
 {
     SPDLOG_INFO("{}: update", fmt::streamed(m_project_bed_id));
+    const PrinterTechnology printer_technology{Slicing::get_printer_technology(config)};
+    ASSERT(printer_technology == m_printer_technology);
 
     const LoggingScopeLock lock{m_mutex, "background process"};
 
@@ -100,6 +121,24 @@ void BackgroundProcess::update(const Model& model, DynamicPrintConfig&& config)
     apply_status = this->m_print->update(model, std::move(config));
 }
 
+void BackgroundProcess::hook_callbacks(IPrint* print) {
+    if (m_printer_technology == ptFFF) {
+        print->on_fdm_result =
+            [this](GCodeProcessorResult&& result, PrintStatistics&& print_statistics) {
+                this->m_callbacks.on_fdm_result(std::move(result), std::move(print_statistics), m_project_bed_id);
+            };
+        print->on_wipe_tower_geometry = [this](Print::WipeTowerGeometry&& geometry) {
+            this->m_callbacks.on_wipe_tower_geometry(std::move(geometry), m_project_bed_id);
+        };
+    } else if (m_printer_technology == ptSLA) {
+        print->on_sla_result = [this]() {
+            this->m_callbacks.on_sla_result(m_project_bed_id);
+        };
+    } else {
+        ASSERT(false, "Unknown printer technology!");
+    }
+};
+
 void BackgroundProcess::slice()
 {
     SPDLOG_INFO("{}: slice", fmt::streamed(m_project_bed_id));
@@ -118,13 +157,8 @@ void BackgroundProcess::slice()
         this->m_thread = JThread{
             [this](StopToken stop_token, IPrint* print) {
                 print->stop_token = stop_token;
-                print->on_result =
-                    [this](GCodeProcessorResult&& result, PrintStatistics&& print_statistics) {
-                        this->m_callbacks.on_fdm_result(std::move(result), std::move(print_statistics), m_project_bed_id);
-                    };
-                print->on_wipe_tower_geometry = [this](Print::WipeTowerGeometry&& geometry) {
-                    this->m_callbacks.on_wipe_tower_geometry(std::move(geometry), m_project_bed_id);
-                };
+
+                hook_callbacks(print);
 
                 bool finished{false};
                 const ScopeGuard guard{[this, &finished]() {
@@ -154,6 +188,10 @@ void BackgroundProcess::stop()
             this->on_status(Status::Stopping);
         }
     });
+}
+
+Slic3r::PrinterTechnology BackgroundProcess::get_printer_technology() const {
+    return m_printer_technology;
 }
 
 void BackgroundProcess::queue_action(const std::function<void()>& action)

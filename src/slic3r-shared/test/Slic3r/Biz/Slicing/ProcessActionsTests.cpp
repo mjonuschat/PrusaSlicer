@@ -19,6 +19,7 @@ using Slic3r::Biz::Slicing::IProcessCallbacks;
 using Slic3r::Biz::Slicing::FDMResult;
 using Slic3r::Biz::Slicing::FDMStatistics;
 using Slic3r::Tests::precise_sleep;
+using Slic3r::Tests::get_config;
 
 using LogEntry = std::pair<time_point, Status>;
 using LogEntries = std::vector<LogEntry>;
@@ -41,6 +42,7 @@ struct StatusLog : IProcessCallbacks
     }
 
     void on_fdm_result(FDMResult&& fdm_result, FDMStatistics&&, const ProjectBedId) override {}
+    void on_sla_result(const ProjectBedId) override {}
     void on_wipe_tower_geometry(WipeTowerGeometry&&, const ProjectBedId) override {}
 
     std::vector<std::pair<time_point, Status>> get_entries(const Status status) const
@@ -154,7 +156,7 @@ TEST_CASE("Test bsp slice() returns immediately", "[bsp][slicing-actions]")
     StatusLog log;
     const Slic3r::Model model{};
     BackgroundProcess
-        bsp{std::move(print), log, model, Slic3r::DynamicPrintConfig::full_print_config(), ProjectBedId{}};
+        bsp{std::move(print), log, model, get_config(), ProjectBedId{}};
 
     const auto execution_time{measure_execution_time([&]() { bsp.slice(); })};
     INFO("bsp.slice() exectuion time: " + std::to_string(execution_time.count()));
@@ -186,7 +188,7 @@ TEST_CASE("Test bsp stop() returns immediately", "[bsp][slicing-actions]")
     StatusLog log;
     const Slic3r::Model model{};
     BackgroundProcess
-        bsp{std::move(print), log, model, Slic3r::DynamicPrintConfig::full_print_config(), ProjectBedId{}};
+        bsp{std::move(print), log, model, get_config(), ProjectBedId{}};
 
     bsp.slice();
     const auto time_before_stop{20ms};
@@ -239,7 +241,7 @@ TEST_CASE("Test bsp update() updates status", "[bsp][slicing-actions]")
     const Slic3r::Model model{};
     const auto execution_time{measure_execution_time([&]() {
         optional_bsp
-            .emplace(std::move(print), log, model, Slic3r::DynamicPrintConfig::full_print_config(), ProjectBedId{});
+            .emplace(std::move(print), log, model, get_config(), ProjectBedId{});
     })};
     INFO("bsp.update() exectuion time: " + std::to_string(execution_time.count()));
     REQUIRE((execution_time - apply_time) < 5ms); // Update blocks the ui thread.
