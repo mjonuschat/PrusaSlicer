@@ -147,12 +147,12 @@ void SceneInteractor::add_volume_from_mesh(TriangleMesh&& mesh, ModelVolumeType 
     vol.set_transformation(Transform3d{xform});
     updated.push_back({obj.id().id, obj.instances[0]->id().id, vol.id().id});
 
-
     m_changed_listeners.invoke([&](auto* l) {
         l->on_volume_added(m_selected_project_id, updated);
     });
 
     set_selection({SelectionMode::Volume, updated});
+    update_selection_instance_bed_placement();
 }
 
 void SceneInteractor::add_instance(const Transform& xform)
@@ -206,13 +206,11 @@ void SceneInteractor::remove_bed_instance(const Domain::BedRef& instance)
     DEBUG_ASSERT(cc != nullptr);
     auto* bed_inst = Domain::find_by_id(cc->bed_instances(), instance.instance_id);
 
-    auto& insts = bed_inst->model_instances();
-    auto& unplaced = project.unplaced_model_instances();
-    unplaced.insert(unplaced.end(), insts.begin(), insts.end());
+    auto insts = bed_inst->model_instances();
 
     cc->remove_bed_instance_by_id(instance.instance_id);
-
     m_bed_placement.layout(project, BED_GAP);
+    project.update_instances_bed_placement(insts);
 
     m_changed_listeners.invoke([&](auto* l) {
         l->on_bed_instance_removed(m_selected_project_id, { instance });
@@ -262,6 +260,14 @@ void SceneInteractor::select_first_bed_instance()
     const auto& cc = m_projects.find(m_selected_project_id)->second.project.config_containers().front();
     select_bed_instance({ cc->id().id, cc->bed_instances().front()->id().id });
 }
+
+void SceneInteractor::transform_selection(const Transform& relative_transform)
+{
+    TransformMemento memento;
+    transform_selection(relative_transform, memento);
+    finalize_transform_selection(memento, false);
+}
+
 
 void SceneInteractor::transform_selection(const Matrix4d& relative_transform, TransformMemento& memento)
 {

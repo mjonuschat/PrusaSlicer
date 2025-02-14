@@ -1,5 +1,3 @@
-#include "Slic3r/Biz/IProjectsChangedListener.hpp"
-
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/trompeloeil.hpp>
 
@@ -45,7 +43,7 @@ void outp(const T& arg, const ArgsT& ... args)
 
 
 
-TEST_CASE("Project Interactor Listeners", "[ProjectInteractor]")
+TEST_CASE("Project Interactor Listeners")
 {
     using namespace Slic3r::Biz;
     using namespace trompeloeil;
@@ -54,11 +52,7 @@ TEST_CASE("Project Interactor Listeners", "[ProjectInteractor]")
     Platform::PlatformServices::instance().set_main_thread_dispatcher(dispatcher.get());
 
     Slic3r::Domain::Workbench workbench;
-    // Note: the test is expected to be run in same directory this library has the CMakeLists.txt file in
-    //boost::filesystem::path data_path = boost::filesystem::path(__FILE__).parent_path() / "../../data";
-    boost::filesystem::path data_path{Tests::get_datadir()};
-    std::cout << "Data path: " << data_path.string() << std::endl;
-    Slic3r::set_data_dir(data_path.string());
+    Slic3r::set_data_dir(Tests::get_datadir().string());
     workbench.load_configs();
 
     ProjectInteractor project_interactor{workbench};

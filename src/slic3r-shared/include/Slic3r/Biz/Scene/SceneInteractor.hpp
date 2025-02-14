@@ -137,7 +137,7 @@ public:
      * @{
      */
     /**
-     * @breif Update transform of all selected volumes or instances.
+     * @breif Update transform of all selected volumes or instances in a interactive way.
      *
      * This method will start or continue (depending on the @p memento object state) transforming
      * selected volumes or instances (depending on selection mode).
@@ -146,8 +146,20 @@ public:
      * of transform change) to be applied to all objects in selection.
      * @param memento Maintains state of the transformation (i.e. original transformation at time of
      * transform change start).
+     *
+     * @note It is required to call finalize_transform_selection() to finish the operation.
      */
     void transform_selection(const Transform& relative_transform, TransformMemento& memento);
+
+    /**
+     * @brief Update selection transform in one shot (not interactive way).
+     * @param relative_transform Relative transformation (w.r.t. object transformation at the start
+     * of transform change) to be applied to all objects in selection.
+     *
+     * @note This effectively same as calling transform_selection(const Transform&, TransformMemento&)
+     * and then finalize_transform_selection()
+     */
+    void transform_selection(const Transform& relative_transform);
 
     /**
      * @brief Finalize or cancel selection transform.

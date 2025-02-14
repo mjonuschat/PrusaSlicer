@@ -475,10 +475,11 @@ static void render_imgui_debug_bed(Biz::ProjectInteractor& project_interactor, S
 
         Domain::BedRef remove_tag{ Domain::INVALID_ID, Domain::INVALID_ID };
 
-        if (ImGui::BeginTable("Beds", (total_instances_count > 1) ? 5 : 4, ImGuiTableFlags_Borders)) {
+        if (ImGui::BeginTable("Beds", (total_instances_count > 1) ? 6 : 5, ImGuiTableFlags_Borders)) {
             ImGui::TableSetupScrollFreeze(0, 1); // Make top row always visible
             ImGui::TableSetupColumn("Container ID");
             ImGui::TableSetupColumn("Instance ID");
+            ImGui::TableSetupColumn("Model Insts");
             ImGui::TableSetupColumn("Contour");
             ImGui::TableSetupColumn("Print Volume");
             ImGui::TableHeadersRow();
@@ -506,13 +507,16 @@ static void render_imgui_debug_bed(Biz::ProjectInteractor& project_interactor, S
                         ImGui::Text("%zu", tag->instance_id);
 
                         ImGui::TableSetColumnIndex(2);
+                        ImGui::Text("%zu", inst.model_instances().size());
+
+                        ImGui::TableSetColumnIndex(3);
                         bool contour = inst.contour_enabled();
                         if (ImGui::Checkbox(fmt::format("##contour{}/{}", tag->config_container_id, tag->instance_id).c_str(), &contour)) {
                             inst.set_contour_enabled(contour);
                             scene_presenter.update_beds();
                         }
 
-                        ImGui::TableSetColumnIndex(3);
+                        ImGui::TableSetColumnIndex(4);
                         bool print_volume = inst.print_volume_enabled();
                         if (ImGui::Checkbox(fmt::format("##print_volume{}/{}", tag->config_container_id, tag->instance_id).c_str(), &print_volume)) {
                             inst.set_print_volume_enabled(print_volume);
@@ -520,7 +524,7 @@ static void render_imgui_debug_bed(Biz::ProjectInteractor& project_interactor, S
                         }
 
                         if (total_instances_count > 1) {
-                            ImGui::TableSetColumnIndex(4);
+                            ImGui::TableSetColumnIndex(5);
                             if (ImGui::Button(fmt::format("Remove##{}/{}", tag->config_container_id, tag->instance_id).c_str()))
                                 remove_tag = { tag->config_container_id, tag->instance_id };
                         }
