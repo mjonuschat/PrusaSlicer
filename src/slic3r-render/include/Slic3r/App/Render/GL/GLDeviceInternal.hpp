@@ -31,10 +31,10 @@ public:
     void unbind_geometry();
     void bind_texture(uint8_t unit, const Texture& t);
     void unbind_texture(uint8_t unit, const Texture& t);
-#if !SLIC3R_OPENGL_ES && !defined(__EMSCRIPTEN__)
+#ifdef SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
     void bind_texture_buffer_texture(uint8_t unit, ResourceId texture_buffer);
     void unbind_texture_buffer_texture(uint8_t unit);
-#endif // !SLIC3R_OPENGL_ES && !defined(__EMSCRIPTEN__)
+#endif // SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
 
     void* map_buffer(BufferTarget target, BufferAccess access);
     void unmap_buffer(BufferTarget target);
@@ -47,9 +47,9 @@ private:
     void activate_texture_unit(uint8_t unit);
     void bind_vertex_buffer(ResourceId vb);
     void bind_index_buffer(ResourceId ib);
-#if !SLIC3R_OPENGL_ES && !defined(__EMSCRIPTEN__)
+#ifdef SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
     void bind_texture_buffer(ResourceId tb);
-#endif // !SLIC3R_OPENGL_ES && !defined(__EMSCRIPTEN__)
+#endif // SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
     void bind_vao(ResourceId vao);
 
 private:
@@ -58,10 +58,10 @@ private:
     ResourceId m_bound_vertex_buffer{0};
     // only active bound IB (not taking bound VAO into account)
     ResourceId m_bound_index_buffer{0};
-#if !SLIC3R_OPENGL_ES && !defined(__EMSCRIPTEN__)
+#ifdef SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
     // active bound TB
     ResourceId m_bound_texture_buffer{ 0 };
-#endif // !SLIC3R_OPENGL_ES && !defined(__EMSCRIPTEN__)
+#endif // SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
     IndexType m_bound_index_type{IndexType::UByte};
     ResourceId m_bound_vao{0};
     ResourceId m_bound_shader{0};

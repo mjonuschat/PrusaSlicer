@@ -40,13 +40,13 @@ public:
     explicit IndexBuffer(Device& device) : Buffer(device, BufferTarget::IndexBuffer) {}
 };
 
-#if !SLIC3R_OPENGL_ES && !defined(__EMSCRIPTEN__)
+#ifdef SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
 class TextureBuffer : public Buffer
 {
 public:
     explicit TextureBuffer(Device& device);
     ~TextureBuffer() override;
 };
-#endif // !SLIC3R_OPENGL_ES && !defined(__EMSCRIPTEN__)
+#endif // SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
 
 } // namespace Slic3r::App::Render

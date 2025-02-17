@@ -1,8 +1,8 @@
 #include "Slic3r/App/Render/Buffer.hpp"
 #include "Slic3r/App/Render/Device.hpp"
-#if !SLIC3R_OPENGL_ES && !defined(__EMSCRIPTEN__)
+#ifdef SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
 #include "Slic3r/App/Render/TextureManager.hpp"
-#endif // !SLIC3R_OPENGL_ES && !defined(__EMSCRIPTEN__)
+#endif // SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
 #include "Slic3r/App/Render/GL/commonGL.hpp"
 #include "Slic3r/App/Render/GL/GLBufferInternal.hpp"
 #include "Slic3r/App/Render/GL/GLDeviceInternal.hpp"
@@ -34,7 +34,7 @@ void Buffer::set_data(const void* data, size_t size, BufferUsage usage)
     glCheck();
 }
 
-#if !SLIC3R_OPENGL_ES && !defined(__EMSCRIPTEN__)
+#ifdef SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
 TextureBuffer::TextureBuffer(Device& device)
     : Buffer(device, BufferTarget::TextureBuffer)
 {
@@ -54,6 +54,6 @@ TextureBuffer::~TextureBuffer()
         glCheck();
     }
 }
-#endif // !SLIC3R_OPENGL_ES && !defined(__EMSCRIPTEN__)
+#endif // SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
 
 } // namespace Slic3r::App::Render

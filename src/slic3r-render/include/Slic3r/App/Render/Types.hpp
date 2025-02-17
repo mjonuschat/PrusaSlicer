@@ -26,9 +26,9 @@ enum class PixelFormat
 enum class BufferTarget {
     VertexBuffer,
     IndexBuffer,
-#if !SLIC3R_OPENGL_ES && !defined(__EMSCRIPTEN__)
+#ifdef SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
     TextureBuffer,
-#endif // !SLIC3R_OPENGL_ES && !defined(__EMSCRIPTEN__)
+#endif // SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
 };
 
 enum class BufferUsage {

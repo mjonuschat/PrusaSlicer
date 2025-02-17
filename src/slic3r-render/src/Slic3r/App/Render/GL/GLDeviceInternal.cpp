@@ -82,7 +82,7 @@ void GLDeviceInternal::unbind_texture(uint8_t unit, const Texture& t)
     m_bound_textures[unit] = 0;
 }
 
-#if !SLIC3R_OPENGL_ES && !defined(__EMSCRIPTEN__)
+#ifdef SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
 void GLDeviceInternal::bind_texture_buffer_texture(uint8_t unit, ResourceId texture_buffer)
 {
     if (m_bound_textures[unit] == texture_buffer)
@@ -102,7 +102,7 @@ void GLDeviceInternal::unbind_texture_buffer_texture(uint8_t unit)
     glCheck();
     m_bound_textures[unit] = 0;
 }
-#endif // !SLIC3R_OPENGL_ES && !defined(__EMSCRIPTEN__)
+#endif // SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
 
 void* GLDeviceInternal::map_buffer(BufferTarget target, BufferAccess access)
 {
@@ -162,7 +162,7 @@ void GLDeviceInternal::bind_index_buffer(ResourceId ib)
     m_bound_indices = ib != 0;
 }
 
-#if !SLIC3R_OPENGL_ES && !defined(__EMSCRIPTEN__)
+#ifdef SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
 void GLDeviceInternal::bind_texture_buffer(ResourceId tb)
 {
 #if RENDER_TRACE_LOG
@@ -180,7 +180,7 @@ void GLDeviceInternal::bind_texture_buffer(ResourceId tb)
     SPDLOG_INFO("(bind_texture_buffer) Setting bound TB {}", tb);
 #endif // RENDER_TRACE_LOG
 }
-#endif // !SLIC3R_OPENGL_ES && !defined(__EMSCRIPTEN__)
+#endif // SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
 
 void GLDeviceInternal::bind_vao(ResourceId vao)
 {
@@ -214,11 +214,11 @@ void GLDeviceInternal::bind_buffer(BufferTarget target, ResourceId buffer)
         bind_index_buffer(buffer);
         break;
 
-#if !SLIC3R_OPENGL_ES && !defined(__EMSCRIPTEN__)
+#ifdef SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
     case BufferTarget::TextureBuffer:
         bind_texture_buffer(buffer);
         break;
-#endif // !SLIC3R_OPENGL_ES && !defined(__EMSCRIPTEN__)
+#endif // SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
 
     default:
         // unsupported target
@@ -242,11 +242,11 @@ void GLDeviceInternal::unbind_buffer(BufferTarget target)
         m_bound_indices = false;
         break;
 
-#if !SLIC3R_OPENGL_ES && !defined(__EMSCRIPTEN__)
+#ifdef SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
     case BufferTarget::TextureBuffer:
         m_bound_texture_buffer = 0;
         break;
-#endif // !SLIC3R_OPENGL_ES && !defined(__EMSCRIPTEN__)
+#endif // SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
 
     default:
         // unsupported target

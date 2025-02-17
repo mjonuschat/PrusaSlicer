@@ -13,9 +13,9 @@ class Texture;
 class Buffer;
 class VertexBuffer;
 class IndexBuffer;
-#if !SLIC3R_OPENGL_ES && !defined(__EMSCRIPTEN__)
+#ifdef SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
 class TextureBuffer;
-#endif // !SLIC3R_OPENGL_ES && !defined(__EMSCRIPTEN__)
+#endif // SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
 class Shader;
 class CommandBuffer;
 
@@ -34,9 +34,9 @@ public:
     std::unique_ptr<Texture> create_texture();
     std::unique_ptr<VertexBuffer> create_vertex_buffer();
     std::unique_ptr<IndexBuffer> create_index_buffer();
-#if !SLIC3R_OPENGL_ES && !defined(__EMSCRIPTEN__)
+#ifdef SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
     std::unique_ptr<TextureBuffer> create_texture_buffer();
-#endif // !SLIC3R_OPENGL_ES && !defined(__EMSCRIPTEN__)
+#endif // SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
     std::unique_ptr<CommandBuffer> create_command_buffer();
 
     void bind_buffer(const Buffer& b);

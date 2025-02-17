@@ -32,12 +32,12 @@ std::unique_ptr<IndexBuffer> Device::create_index_buffer()
     return std::make_unique<IndexBuffer>(*this);
 }
 
-#if !SLIC3R_OPENGL_ES && !defined(__EMSCRIPTEN__)
+#ifdef SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
 std::unique_ptr<TextureBuffer> Device::create_texture_buffer()
 {
     return std::make_unique<TextureBuffer>(*this);
 }
-#endif // !SLIC3R_OPENGL_ES && !defined(__EMSCRIPTEN__)
+#endif // SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
 
 std::unique_ptr<CommandBuffer> Device::create_command_buffer()
 {
