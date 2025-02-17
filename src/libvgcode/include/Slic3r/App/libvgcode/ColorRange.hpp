@@ -5,13 +5,29 @@
 ///|/
 #pragma once
 
-#include "Types.hpp"
+#include "Slic3r/Biz/libvgcode/Types.hpp"
 
 #include <cfloat>
 
 namespace Slic3r::Biz::libvgcode {
+class ViewerImpl;
+} // namespace Slic3r::Biz::libvgcode
 
-static const Palette DEFAULT_RANGES_COLORS{{
+namespace Slic3r::App::libvgcode {
+
+//
+// Color range types
+//
+enum class ColorRangeType : uint8_t
+{
+    Linear,
+    Logarithmic,
+    COUNT
+};
+
+static constexpr size_t COLOR_RANGE_TYPES_COUNT = size_t(ColorRangeType::COUNT);
+
+static const Biz::libvgcode::Palette DEFAULT_RANGES_COLORS{{
     { 0.043f, 0.173f, 0.478f }, // bluish
     { 0.075f, 0.349f, 0.522f },
     { 0.110f, 0.533f, 0.569f },
@@ -40,12 +56,12 @@ public:
     // Return the palette used by this ColorRange.
     // Default is DEFAULT_RANGES_COLORS
     //
-    const Palette& palette() const;
+    const Biz::libvgcode::Palette& palette() const;
     //
     // Set the palette to be used by this ColorRange.
     // The given palette must contain at least two colors.
     //
-    void set_palette(const Palette& palette);
+    void set_palette(const Biz::libvgcode::Palette& palette);
     //
     // Return the interpolated color at the given value.
     // Value is clamped to [get_range()[0]..get_range()[1]].
@@ -74,7 +90,7 @@ private:
     //
     // The palette used by this ColorRange
     // 
-    Palette m_palette;
+    Biz::libvgcode::Palette m_palette;
     //
     // [0] = min
     // [1] = max
@@ -95,7 +111,7 @@ private:
     //
     void reset();
 
-    friend class ViewerImpl;
+    friend class Biz::libvgcode::ViewerImpl;
 };
 
-} // namespace Slic3r::Biz::libvgcode
+} // namespace Slic3r::App::libvgcode

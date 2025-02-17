@@ -1236,7 +1236,7 @@ void ViewerImpl::reset_default_options_colors()
     m_options_colors = DEFAULT_OPTIONS_COLORS;
 }
 
-const ColorRange& ViewerImpl::color_range(ViewType type) const
+const App::libvgcode::ColorRange& ViewerImpl::color_range(ViewType type) const
 {
     switch (type)
     {
@@ -1250,7 +1250,7 @@ const ColorRange& ViewerImpl::color_range(ViewType type) const
     case ViewType::ActualVolumetricFlowRate: { return m_actual_volumetric_rate_range; }
     case ViewType::LayerTimeLinear:          { return m_layer_time_range[0]; }
     case ViewType::LayerTimeLogarithmic:     { return m_layer_time_range[1]; }
-    default:                                 { return ColorRange::DUMMY_COLOR_RANGE; }
+    default:                                 { return App::libvgcode::ColorRange::DUMMY_COLOR_RANGE; }
     }
 }
 

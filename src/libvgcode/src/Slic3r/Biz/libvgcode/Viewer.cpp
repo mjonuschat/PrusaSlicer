@@ -168,7 +168,7 @@ void Viewer::set_color_print_colors(const Palette& colors)
     m_impl->set_color_print_colors(colors);
 }
 
-const ColorRange& Viewer::color_range(ViewType type) const
+const App::libvgcode::ColorRange& Viewer::color_range(ViewType type) const
 {
     return m_impl->color_range(type);
 }

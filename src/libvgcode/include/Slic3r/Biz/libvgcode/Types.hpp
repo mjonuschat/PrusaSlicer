@@ -77,18 +77,6 @@ struct CustomOption
 
 using CustomOptions = std::vector<CustomOption>;
 
-//
-// Color range types
-//
-enum class ColorRangeType : uint8_t
-{
-    Linear,
-    Logarithmic,
-    COUNT
-};
-
-static constexpr size_t COLOR_RANGE_TYPES_COUNT = size_t(ColorRangeType::COUNT);
-
 enum class LightReferenceSystem
 {
     World,

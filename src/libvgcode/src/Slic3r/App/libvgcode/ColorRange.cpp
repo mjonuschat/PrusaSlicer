@@ -3,13 +3,15 @@
 ///|/
 ///|/ libvgcode library is released under the terms of the AGPLv3 or higher
 ///|/
-#include "Slic3r/Biz/libvgcode/ColorRange.hpp"
+#include "Slic3r/App/libvgcode/ColorRange.hpp"
 
 #include <algorithm>
 #include <assert.h>
 #include <cmath>
 
-namespace Slic3r::Biz::libvgcode {
+using namespace Slic3r::Biz::libvgcode;
+
+namespace Slic3r::App::libvgcode {
 
 const ColorRange ColorRange::DUMMY_COLOR_RANGE = ColorRange();
 
@@ -128,5 +130,5 @@ void ColorRange::reset()
     m_count = 0;
 }
 
-} // namespace Slic3r::Biz::libvgcode
+} // namespace Slic3r::App::libvgcode
 

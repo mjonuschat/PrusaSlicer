@@ -16,6 +16,10 @@ namespace Slic3r::App::Render {
 class Device;
 } // namespace Slic3r::App::Render
 
+namespace Slic3r::App::libvgcode {
+class ColorRange;
+} // namespace Slic3r::App::libvgcode
+
 namespace Slic3r::Biz::libvgcode {
 
 struct ColorPrint;
@@ -186,7 +190,7 @@ public:
     // ViewType::LayerTimeLinear
     // ViewType::LayerTimeLogarithmic
     //
-    const ColorRange& color_range(ViewType type) const;
+    const App::libvgcode::ColorRange& color_range(ViewType type) const;
     //
     // Set the palette for the color range corresponding to the given view type
     // with the given value.

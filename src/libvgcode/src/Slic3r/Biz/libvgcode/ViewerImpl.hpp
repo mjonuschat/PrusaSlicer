@@ -15,7 +15,7 @@
 #include "Layers.hpp"
 #include "ExtrusionRoles.hpp"
 #include "Extruders.hpp"
-#include "Slic3r/Biz/libvgcode/ColorRange.hpp"
+#include "Slic3r/App/libvgcode/ColorRange.hpp"
 #include "Slic3r/Biz/libvgcode/ViewerInputData.hpp"
 #include "Slic3r/Biz/libvgcode/Viewer.hpp"
 
@@ -213,7 +213,7 @@ public:
     void set_option_color(libpgcode::OptionType type, const ColorRGB& color);
     void reset_default_options_colors();
 
-    const ColorRange& color_range(ViewType type) const;
+    const App::libvgcode::ColorRange& color_range(ViewType type) const;
     void set_color_range_palette(ViewType type, const Palette& palette);
 
     float travels_radius() const { return m_travels_radius; }
@@ -340,16 +340,17 @@ private:
     // Variables used for toolpaths coloring
     //
     std::optional<Settings> m_ranges_settings;
-    ColorRange m_height_range;
-    ColorRange m_width_range;
-    ColorRange m_speed_range;
-    ColorRange m_actual_speed_range;
-    ColorRange m_fan_speed_range;
-    ColorRange m_temperature_range;
-    ColorRange m_volumetric_rate_range;
-    ColorRange m_actual_volumetric_rate_range;
-    std::array<ColorRange, COLOR_RANGE_TYPES_COUNT> m_layer_time_range{
-        ColorRange(ColorRangeType::Linear), ColorRange(ColorRangeType::Logarithmic)
+    App::libvgcode::ColorRange m_height_range;
+    App::libvgcode::ColorRange m_width_range;
+    App::libvgcode::ColorRange m_speed_range;
+    App::libvgcode::ColorRange m_actual_speed_range;
+    App::libvgcode::ColorRange m_fan_speed_range;
+    App::libvgcode::ColorRange m_temperature_range;
+    App::libvgcode::ColorRange m_volumetric_rate_range;
+    App::libvgcode::ColorRange m_actual_volumetric_rate_range;
+    std::array<App::libvgcode::ColorRange, App::libvgcode::COLOR_RANGE_TYPES_COUNT> m_layer_time_range{
+        App::libvgcode::ColorRange(App::libvgcode::ColorRangeType::Linear),
+        App::libvgcode::ColorRange(App::libvgcode::ColorRangeType::Logarithmic)
     };
     Palette m_tool_colors;
     Palette m_color_print_colors;
