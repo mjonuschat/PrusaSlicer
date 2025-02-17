@@ -8,7 +8,7 @@
 #include "Types.hpp"
 #include "ViewerInputData.hpp"
 
-#include <libpgcode/ProcessorResult.hpp>
+#include <Slic3r/Biz/libpgcode/ProcessorResult.hpp>
 
 #define ENABLE_RENDER_TO_TEXTURE (0 && (!SLIC3R_OPENGL_ES && !defined(__EMSCRIPTEN__)))
 

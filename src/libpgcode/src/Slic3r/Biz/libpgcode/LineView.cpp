@@ -1,4 +1,4 @@
-#include "libpgcode/LineView.hpp"
+#include "Slic3r/Biz/libpgcode/LineView.hpp"
 
 #include <cassert>
 

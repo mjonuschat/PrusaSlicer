@@ -19,7 +19,7 @@
 #include "libvgcode/ViewerInputData.hpp"
 #include "libvgcode/Viewer.hpp"
 
-#include <libpgcode/ProcessorResult.hpp>
+#include <Slic3r/Biz/libpgcode/ProcessorResult.hpp>
 
 #include <Slic3r/App/Render/Buffer.hpp>
 

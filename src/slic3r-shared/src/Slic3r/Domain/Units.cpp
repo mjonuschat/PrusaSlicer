@@ -3,7 +3,7 @@
 
 #include "Slic3r/Assert.hpp"
 
-#include <libpgcode/Utils.hpp>
+#include <Slic3r/Biz/libpgcode/Utils.hpp>
 
 #include <vector>
 #include <functional>

@@ -5,7 +5,7 @@
 ///|/
 #pragma once
 
-#include <libpgcode/Types.hpp>
+#include <Slic3r/Biz/libpgcode/Types.hpp>
 
 namespace Slic3r::Biz::libvgcode {
 

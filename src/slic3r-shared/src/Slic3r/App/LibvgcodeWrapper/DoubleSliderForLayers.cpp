@@ -6,7 +6,7 @@
 #include <libslic3r/format.hpp>
 #include <libslic3r/Color.hpp>
 
-#include <libpgcode/Utils.hpp>
+#include <Slic3r/Biz/libpgcode/Utils.hpp>
 
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/split.hpp>
@@ -14,7 +14,7 @@
 
 #include <algorithm>
 
-using namespace Slic3r;
+//using namespace Slic3r;
 using namespace Slic3r::Biz::libpgcode;
 using namespace Slic3r::Domain;
 
