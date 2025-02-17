@@ -208,6 +208,8 @@ public:
     void on_selected_bed_instance_changed(Domain::SelectionId project_id, Domain::SelectionId container_id, Domain::SelectionId bed_instance_id) override;
     /** @} */
 
+    void update_bed(const Domain::SelectionId bed_instance_id);
+
 private:
     void do_select_project(Domain::SelectionId project_id);
     void do_select_config_container(Domain::SelectionId container_id);

@@ -26,7 +26,7 @@ public:
     }
 
     void set_bed(const Bed& bed) { m_bed = &bed; }
-    const Bed& bed() const { return *DEBUG_ASSERT_VAL(m_bed); }
+    const Bed& bed() const { return *ASSERT_VAL(m_bed); }
 
     /**
       * @name Bed instances management

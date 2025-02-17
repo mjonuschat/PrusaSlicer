@@ -1,6 +1,7 @@
 #include <spdlog/spdlog.h>
 #include <fmt/ostream.h>
 #include <Slic3r/Biz/Slicing/BackgroundProcess.hpp>
+#include <Slic3r/Biz/Slicing/ModelUtils.hpp>
 #include <libassert/assert.hpp>
 
 namespace Slic3r::Biz::Slicing {
@@ -22,10 +23,10 @@ LoggingScopeLock::~LoggingScopeLock() {
     SPDLOG_TRACE("Lock '{}' unlocked", m_id);
 }
 
-std::ostream& operator<<(std::ostream& output, const ProjectBedId& project_bed_id) {
+std::ostream& operator<<(std::ostream& output, const SlicingId& id) {
     return output
-        << "{project_id: " << project_bed_id.project_id
-        << ", bed_id: " << project_bed_id.bed_id << "}";
+        << "{project_id: " << id.project_id
+        << ", bed_id: " << id.bed_instance_id << "}";
 }
 
 std::ostream& operator<<(std::ostream& output, const Status& status) {
@@ -67,44 +68,50 @@ std::unique_ptr<IPrint> init_print(const Slic3r::PrinterTechnology &printer_tech
 
 BackgroundProcess::BackgroundProcess(
     IProcessCallbacks& callbacks,
-    const Model& model,
+    Model& model,
     DynamicPrintConfig&& config,
-    const ProjectBedId project_bed_id
+    const Domain::ModelInstanceList& bed_instances,
+    const SlicingId id
 )
     : m_printer_technology{Slicing::get_printer_technology(config)}
     , m_print{init_print(m_printer_technology)}
     , m_callbacks{callbacks}
-    , m_project_bed_id{project_bed_id}
+    , m_id{id}
 {
-    this->update(model, std::move(config));
+    this->update(model, std::move(config), bed_instances);
 };
 
 BackgroundProcess::BackgroundProcess(
     std::unique_ptr<IPrint>&& print,
     IProcessCallbacks& callbacks,
-    const Model& model,
+    Model& model,
     DynamicPrintConfig&& config,
-    const ProjectBedId project_bed_id
+    const Domain::ModelInstanceList& bed_instances,
+    const SlicingId id
 )
     : m_printer_technology{Slicing::get_printer_technology(config)}
     , m_print{std::move(print)}
     , m_callbacks{callbacks}
-    , m_project_bed_id{project_bed_id}
+    , m_id{id}
 {
-    this->update(model, std::move(config));
+    this->update(model, std::move(config), bed_instances);
 };
 
 BackgroundProcess::~BackgroundProcess() = default;
 
-void BackgroundProcess::update(const Model& model, DynamicPrintConfig&& config)
+void BackgroundProcess::update(
+    Model& model,
+    DynamicPrintConfig&& config,
+    const Domain::ModelInstanceList& bed_instances
+)
 {
-    SPDLOG_INFO("{}: update", fmt::streamed(m_project_bed_id));
+    SPDLOG_INFO("{}: update", fmt::streamed(m_id));
     const PrinterTechnology printer_technology{Slicing::get_printer_technology(config)};
     ASSERT(printer_technology == m_printer_technology);
 
     const LoggingScopeLock lock{m_mutex, "background process"};
 
-    const Status previous_status{m_callbacks.get_status(m_project_bed_id)};
+    const Status previous_status{m_callbacks.get_status(m_id)};
     ASSERT(!is_thread_active(previous_status), "Update must be called on stopped thread!");
     std::optional<ApplyStatus> apply_status;
     const ScopeGuard guard{[this, &previous_status, &apply_status]() {
@@ -118,21 +125,23 @@ void BackgroundProcess::update(const Model& model, DynamicPrintConfig&& config)
     }};
 
     this->on_status(Status::Updating);
-    apply_status = this->m_print->update(model, std::move(config));
+    with_limited_instances(model, bed_instances, [&](){
+        apply_status = this->m_print->update(model, std::move(config));
+    });
 }
 
 void BackgroundProcess::hook_callbacks(IPrint* print) {
     if (m_printer_technology == ptFFF) {
         print->on_fdm_result =
             [this](GCodeProcessorResult&& result, PrintStatistics&& print_statistics) {
-                this->m_callbacks.on_fdm_result(std::move(result), std::move(print_statistics), m_project_bed_id);
+                this->m_callbacks.on_fdm_result(std::move(result), std::move(print_statistics), m_id);
             };
         print->on_wipe_tower_geometry = [this](Print::WipeTowerGeometry&& geometry) {
-            this->m_callbacks.on_wipe_tower_geometry(std::move(geometry), m_project_bed_id);
+            this->m_callbacks.on_wipe_tower_geometry(std::move(geometry), m_id);
         };
     } else if (m_printer_technology == ptSLA) {
         print->on_sla_result = [this]() {
-            this->m_callbacks.on_sla_result(m_project_bed_id);
+            this->m_callbacks.on_sla_result(m_id);
         };
     } else {
         ASSERT(false, "Unknown printer technology!");
@@ -141,16 +150,16 @@ void BackgroundProcess::hook_callbacks(IPrint* print) {
 
 void BackgroundProcess::slice()
 {
-    SPDLOG_INFO("{}: slice", fmt::streamed(m_project_bed_id));
+    SPDLOG_INFO("{}: slice", fmt::streamed(m_id));
 
     this->stop();
     this->queue_action([this]() {
         this->m_thread = {}; // Wait for join.
-        ASSERT(!is_thread_active(m_callbacks.get_status(m_project_bed_id)), "The thread is stopped afterwards!");
+        ASSERT(!is_thread_active(m_callbacks.get_status(m_id)), "The thread is stopped afterwards!");
 
         const LoggingScopeLock lock{m_mutex, "background process"};
 
-        if (m_callbacks.get_status(m_project_bed_id) == Status::Empty) {
+        if (m_callbacks.get_status(m_id) == Status::Empty) {
             return;
         }
         on_status(Status::Running);
@@ -182,8 +191,8 @@ void BackgroundProcess::slice()
 void BackgroundProcess::stop()
 {
     this->queue_action([this]() {
-        if (m_callbacks.get_status(m_project_bed_id) == Status::Running) {
-            SPDLOG_INFO("{}: stop", fmt::streamed(m_project_bed_id));
+        if (m_callbacks.get_status(m_id) == Status::Running) {
+            SPDLOG_INFO("{}: stop", fmt::streamed(m_id));
             this->m_thread.request_stop();
             this->on_status(Status::Stopping);
         }
@@ -201,7 +210,7 @@ void BackgroundProcess::queue_action(const std::function<void()>& action)
 }
 
 void BackgroundProcess::on_status(const Status status) {
-    m_callbacks.on_status(status, m_project_bed_id);
+    m_callbacks.on_status(status, m_id);
 }
 
 } // namespace Slic3r::Biz::BSP

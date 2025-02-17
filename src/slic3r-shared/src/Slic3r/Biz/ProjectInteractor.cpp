@@ -53,6 +53,26 @@ void ProjectInteractor::on_selected_bed_instance_changed(Domain::SelectionId pro
         do_select_config_container(container_id);
 }
 
+void ProjectInteractor::update_bed(const Domain::SelectionId bed_instance_id) {
+    const Domain::ConfigContainer& config_container{selected_config_container()};
+    Model &model{m_workbench.project(selected_project_id()).model()};
+    const Domain::ConfigContainer::BedInstanceList& instances{ config_container.bed_instances()};
+
+    const auto instance{std::ranges::find_if(
+        instances,
+        [&](const std::unique_ptr<Slic3r::Domain::BedInstance>& instance) {
+            return instance->id().id == bed_instance_id;
+        }
+    )};
+    ASSERT(instance != instances.end());
+
+    m_slicing_interactor.update_process(
+        model,
+        config_container.print_config(),
+        **instance
+    );
+}
+
 void ProjectInteractor::do_select_project(Domain::SelectionId project_id)
 {
     m_selection.project_id = project_id;

@@ -5,6 +5,7 @@
 #include <mutex>
 
 #include <Slic3r/Domain/SelectionId.hpp>
+#include <Slic3r/Domain/ConfigContainer.hpp>
 
 #include <libslic3r/Print.hpp>
 #include <libslic3r/GCode.hpp>
@@ -46,23 +47,23 @@ private:
     std::string m_id;
 };
 
-struct ProjectBedId {
+struct SlicingId {
     Domain::SelectionId project_id{};
-    Domain::SelectionId bed_id{};
+    Domain::SelectionId bed_instance_id{};
 
-    bool operator<(const ProjectBedId& other) const {
+    bool operator<(const SlicingId& other) const {
         if (project_id != other.project_id) {
             return project_id < other.project_id;
         }
-        return bed_id < other.bed_id;
+        return bed_instance_id < other.bed_instance_id;
     }
 
-    bool operator==(const ProjectBedId& b) const {
-        return bed_id == b.bed_id && project_id == b.project_id;
+    bool operator==(const SlicingId& b) const {
+        return bed_instance_id == b.bed_instance_id && project_id == b.project_id;
     }
 };
 
-std::ostream& operator<<(std::ostream& output, const ProjectBedId& project_bed_id);
+std::ostream& operator<<(std::ostream& output, const SlicingId& id);
 
 enum class Status
 {
@@ -86,11 +87,11 @@ using FDMStatistics = PrintStatistics;
 
 class IProcessCallbacks {
 public:
-    virtual void on_fdm_result(FDMResult &&, FDMStatistics&&, ProjectBedId) = 0;
-    virtual void on_sla_result(ProjectBedId) = 0;
-    virtual void on_status(const Status, ProjectBedId) = 0;
-    virtual void on_wipe_tower_geometry(Print::WipeTowerGeometry&&, ProjectBedId) = 0;
-    virtual Status get_status(const ProjectBedId) const = 0;
+    virtual void on_fdm_result(FDMResult &&, FDMStatistics&&, SlicingId) = 0;
+    virtual void on_sla_result(SlicingId) = 0;
+    virtual void on_status(const Status, SlicingId) = 0;
+    virtual void on_wipe_tower_geometry(Print::WipeTowerGeometry&&, SlicingId) = 0;
+    virtual Status get_status(const SlicingId) const = 0;
     virtual ~IProcessCallbacks() = default;
 };
 
@@ -99,21 +100,27 @@ class BackgroundProcess
 public:
     BackgroundProcess(
         IProcessCallbacks& callbacks,
-        const Model& model,
+        Model& model,
         DynamicPrintConfig&& config,
-        const ProjectBedId project_bed_id
+        const Domain::ModelInstanceList& bed_instances,
+        const SlicingId id
     );
     BackgroundProcess(
         std::unique_ptr<Print::IPrint>&& print,
         IProcessCallbacks& callbacks,
-        const Model& model,
+        Model& model,
         DynamicPrintConfig&& config,
-        const ProjectBedId project_bed_id
+        const Domain::ModelInstanceList& bed_instances,
+        const SlicingId id
     );
     ~BackgroundProcess();
 
     /* WARNING! It is up to the caller to ensure update is not called on a running thread! */
-    void update(const Model& model, DynamicPrintConfig&& config);
+    void update(
+        Model& model,
+        DynamicPrintConfig&& config,
+        const Domain::ModelInstanceList& bed_instances
+    );
 
     void slice();
     void stop();
@@ -124,7 +131,7 @@ private:
     Slic3r::PrinterTechnology m_printer_technology;
     std::unique_ptr<Print::IPrint> m_print;
     IProcessCallbacks& m_callbacks;
-    ProjectBedId m_project_bed_id;
+    SlicingId m_id;
 
     std::function<Status()> m_get_status;
     JThread::JThread m_thread;

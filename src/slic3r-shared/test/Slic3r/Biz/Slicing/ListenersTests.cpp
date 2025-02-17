@@ -20,94 +20,89 @@ using std::chrono::high_resolution_clock;
 using Slic3r::Biz::Slicing::SlicingInteractor;
 using Slic3r::Biz::Slicing::IFDMResultListener;
 using Slic3r::Biz::Slicing::Status;
-using Slic3r::Tests::get_config;
-using Slic3r::Tests::generate_cubes;
+using Slic3r::Tests::get_cubes_model;
+using Slic3r::Tests::ModelOnBed;
 using Slic3r::Tests::is_gcode_sane;
 using Slic3r::App::Platform::StdMainThreadDispatcher;
 using Slic3r::Biz::Platform::PlatformServices;
 using Slic3r::Biz::Slicing::FDMResult;
 using Slic3r::Biz::Slicing::FDMStatistics;
-using Slic3r::Biz::Slicing::ProjectBedId;
+using Slic3r::Biz::Slicing::SlicingId;
 using Slic3r::Domain::SelectionId;
 using Slic3r::Biz::Slicing::IWipeTowerGeometryListener;
 using Slic3r::Biz::Print::WipeTowerGeometry;
 using Slic3r::Biz::Print::ZDepth;
-using GCodes = std::map<ProjectBedId, std::string>;
 using Slic3r::Tests::SlicingFixture;
 using Slic3r::Tests::StatusEvent;
 using Slic3r::Tests::StatusEvents;
 using Slic3r::Tests::StatusListener;
 using Slic3r::Biz::Slicing::ISLAResultListener;
+using Slic3r::Tests::ResultListener;
 
-struct ResultListener : public IFDMResultListener
-{
-    void on_fdm_result_changed(
-        std::shared_ptr<FDMResult> result, std::shared_ptr<FDMStatistics>, const ProjectBedId id
-    ) override
-    {
-        std::ifstream file{result->filename};
-        std::stringstream buffer;
-        buffer << file.rdbuf();
-        gcodes[id] = buffer.str();
-
-        boost::system::error_code error_code;
-        boost::filesystem::remove(result->filename, error_code);
-        result->reset();
-    }
-
-    GCodes gcodes;
-};
 
 TEST_CASE_METHOD(SlicingFixture, "Slice N beds", "[slicing][slicing-interactor]")
 {
-
     ResultListener result_listener;
     slicing.add_listener(&result_listener);
     using namespace std::chrono_literals;
 
-    const int bed_count{5};
-    for (int cube_count{1}; cube_count <= bed_count; ++cube_count) {
-        const auto bed_id{static_cast<SelectionId>(cube_count)};
-        const ProjectBedId id{0, bed_id};
-        models[id] = generate_cubes(cube_count, 5);
-        slicing.update_bed(models[id], get_config(), bed_id);
+    std::vector<Slic3r::Tests::ModelOnBed> bed_models;
+
+    const int beds_count{5};
+    for (std::size_t i{}; i < beds_count; ++i) {
+        const auto cube_count{static_cast<int>(i + 1)};
+        bed_models.emplace_back(get_cubes_model(cube_count, 5));
+        slicing.update_process(
+            bed_models.back().model,
+            bed_models.back().config,
+            bed_models.back().bed_instance
+        );
     }
 
     slicing.slice_all();
 
-    REQUIRE(wait_for_status(dispatcher, status_listener, 10s, [](const StatusEvents &events){
-        return bed_count == std::ranges::count_if(events, [](const StatusEvent& event){
+    REQUIRE(wait_for_status(dispatcher, status_listener, 3s, [](const StatusEvents &events){
+        return beds_count == std::ranges::count_if(events, [](const StatusEvent& event){
             return event.status == Status::Finished;
         });
     }));
 
     StatusEvents update_events;
     std::ranges::copy(
-        std::span{status_listener.status_events}.subspan(0, bed_count * 2),
+        std::span{status_listener.status_events}.subspan(0, beds_count * 2),
         std::back_inserter(update_events)
     );
 
     StatusEvents slicing_events;
     std::ranges::copy(
-        std::span{status_listener.status_events}.subspan(bed_count * 2),
+        std::span{status_listener.status_events}.subspan(beds_count * 2),
         std::back_inserter(slicing_events)
     );
 
     StatusEvents expected_update_events;
     StatusEvents expected_slicing_events;
-    for (std::size_t bed_id{1}; bed_id <= bed_count; ++bed_id) {
-        expected_update_events.push_back({Status::Updating, ProjectBedId{0, bed_id}});
-        expected_update_events.push_back({Status::Modified, ProjectBedId{0, bed_id}});
+    for (const ModelOnBed& model_on_bed : bed_models) {
+        const SelectionId bed_id{model_on_bed.bed_instance.id().id};
+        expected_update_events.push_back({Status::Updating, SlicingId{0, bed_id}});
+        expected_update_events.push_back({Status::Modified, SlicingId{0, bed_id}});
 
-        expected_slicing_events.push_back({Status::Running, ProjectBedId{0, bed_id}});
-        expected_slicing_events.push_back({Status::Finished, ProjectBedId{0, bed_id}});
+        expected_slicing_events.push_back({Status::Running, SlicingId{0, bed_id}});
+        expected_slicing_events.push_back({Status::Finished, SlicingId{0, bed_id}});
     }
 
     CHECK_THAT(update_events, Equals(expected_update_events));
     CHECK_THAT(slicing_events, UnorderedEquals(expected_slicing_events));
 
-    for (const auto &[id, gcode] : result_listener.gcodes) {
-        const auto error{is_gcode_sane(gcode, models[id])};
+    for (const auto& pair : result_listener.gcodes) {
+        const SelectionId id{pair.first};
+        const std::string& gcode{pair.second};
+
+        const auto model_on_bed{std::ranges::find_if(bed_models, [&](const ModelOnBed& model_on_bed) {
+            return model_on_bed.bed_instance.id().id == id;
+        })};
+        REQUIRE(model_on_bed != bed_models.end());
+
+        const auto error{is_gcode_sane(gcode, model_on_bed->model)};
         INFO((error ? *error : ""));
         CHECK(!error);
     }
@@ -116,7 +111,7 @@ TEST_CASE_METHOD(SlicingFixture, "Slice N beds", "[slicing][slicing-interactor]"
 struct WipeTowerGeometryListener : public IWipeTowerGeometryListener
 {
     void on_wipe_tower_geometry(
-        WipeTowerGeometry wipe_tower_geometry, const ProjectBedId
+        WipeTowerGeometry wipe_tower_geometry, const SlicingId
     ) override
     {
         geometry = std::move(wipe_tower_geometry);
@@ -142,10 +137,12 @@ TEST_CASE("Background process dispatches wipe_tower_geometry once available", "[
     slicing.add_listener(&status_listener);
 
     auto [model, config]{Tests::load_3mf(Tests::get_datadir() / "wipe_tower.3mf")};
-    slicing.update_bed(model, config, 0);
+
+    ModelOnBed model_on_bed{std::move(model), std::move(config)};
+    slicing.update_process(model_on_bed.model, model_on_bed.config, model_on_bed.bed_instance);
     slicing.slice_all();
 
-    REQUIRE(wait_for_status(dispatcher, status_listener, 10s, [](const StatusEvents &events){
+    REQUIRE(wait_for_status(dispatcher, status_listener, 3s, [](const StatusEvents &events){
         return events.back().status == Status::Finished;
     }));
 
@@ -166,7 +163,7 @@ TEST_CASE("Background process dispatches wipe_tower_geometry once available", "[
 }
 
 struct SLAResultListener : public ISLAResultListener {
-    void on_sla_result_changed(const ProjectBedId) override {
+    void on_sla_result_changed(const SlicingId) override {
         this->result_recieved = true;
     };
 
@@ -176,24 +173,21 @@ struct SLAResultListener : public ISLAResultListener {
 TEST_CASE_METHOD(SlicingFixture, "Update reinitializes the process if printer technology differs", "[slicing][slicing-interactor]") {
     using namespace std::chrono_literals;
 
-    const ProjectBedId id{0, 0};
-    Slic3r::DynamicPrintConfig config{get_config()};
-
     using Slic3r::ConfigOptionEnum;
     using Slic3r::PrinterTechnology;
 
+    ModelOnBed model_on_bed{get_cubes_model(10, 5)};
+
     SLAResultListener listener;
     slicing.add_listener(&listener);
+    slicing.update_process(model_on_bed.model, model_on_bed.config, model_on_bed.bed_instance);
 
-    models[id] = generate_cubes(10, 5);
-    slicing.update_bed(models[id], config, id.bed_id);
+    model_on_bed.config.option<ConfigOptionEnum<PrinterTechnology>>("printer_technology")->value = Slic3r::ptSLA;
 
-    config.option<ConfigOptionEnum<PrinterTechnology>>("printer_technology")->value = Slic3r::ptSLA;
-
-    slicing.update_bed(models[id], config, id.bed_id);
+    slicing.update_process(model_on_bed.model, model_on_bed.config, model_on_bed.bed_instance);
     slicing.slice_all();
 
-    REQUIRE(wait_for_status(dispatcher, status_listener, 10s, [](const StatusEvents &events){
+    REQUIRE(wait_for_status(dispatcher, status_listener, 3s, [](const StatusEvents &events){
         return events.back().status == Status::Finished;
     }));
 

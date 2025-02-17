@@ -20,10 +20,11 @@ using Slic3r::Biz::Slicing::FDMResult;
 using Slic3r::Biz::Slicing::FDMStatistics;
 using Slic3r::Tests::precise_sleep;
 using Slic3r::Tests::get_config;
+using Slic3r::Domain::ModelInstanceList;
 
 using LogEntry = std::pair<time_point, Status>;
 using LogEntries = std::vector<LogEntry>;
-using Slic3r::Biz::Slicing::ProjectBedId;
+using Slic3r::Biz::Slicing::SlicingId;
 
 struct StatusLog : IProcessCallbacks
 {
@@ -32,18 +33,18 @@ struct StatusLog : IProcessCallbacks
 
     LogEntries statuses{};
 
-    void on_status(const Status status, const ProjectBedId) override {
+    void on_status(const Status status, const SlicingId) override {
         statuses.emplace_back(high_resolution_clock::now(), status);
         m_status.store(status);
     }
 
-    Status get_status(const ProjectBedId) const override {
+    Status get_status(const SlicingId) const override {
         return m_status.load();
     }
 
-    void on_fdm_result(FDMResult&& fdm_result, FDMStatistics&&, const ProjectBedId) override {}
-    void on_sla_result(const ProjectBedId) override {}
-    void on_wipe_tower_geometry(WipeTowerGeometry&&, const ProjectBedId) override {}
+    void on_fdm_result(FDMResult&& fdm_result, FDMStatistics&&, const SlicingId) override {}
+    void on_sla_result(const SlicingId) override {}
+    void on_wipe_tower_geometry(WipeTowerGeometry&&, const SlicingId) override {}
 
     std::vector<std::pair<time_point, Status>> get_entries(const Status status) const
     {
@@ -145,7 +146,7 @@ public:
     milliseconds processing_time{};
 };
 
-TEST_CASE("Test bsp slice() returns immediately", "[bsp][slicing-actions]")
+TEST_CASE("Test process slice() returns immediately", "[background-process][slicing-actions]")
 {
     using namespace std::chrono_literals;
 
@@ -154,12 +155,13 @@ TEST_CASE("Test bsp slice() returns immediately", "[bsp][slicing-actions]")
     print->processing_time = processing_time;
 
     StatusLog log;
-    const Slic3r::Model model{};
+    Slic3r::Model model{};
+    const ModelInstanceList instances;
     BackgroundProcess
-        bsp{std::move(print), log, model, get_config(), ProjectBedId{}};
+        process{std::move(print), log, model, get_config(), instances, SlicingId{}};
 
-    const auto execution_time{measure_execution_time([&]() { bsp.slice(); })};
-    INFO("bsp.slice() exectuion time: " + std::to_string(execution_time.count()));
+    const auto execution_time{measure_execution_time([&]() { process.slice(); })};
+    INFO("process.slice() exectuion time: " + std::to_string(execution_time.count()));
     REQUIRE(execution_time <= 5ms); // It should return imediatly
                                     //
     // Make sure there is plenty of time for the processing to finish.
@@ -175,7 +177,7 @@ TEST_CASE("Test bsp slice() returns immediately", "[bsp][slicing-actions]")
     CHECK(is_equal<milliseconds>(log, expected_log, 5ms));
 }
 
-TEST_CASE("Test bsp stop() returns immediately", "[bsp][slicing-actions]")
+TEST_CASE("Test process stop() returns immediately", "[background-process][slicing-actions]")
 {
     using namespace std::chrono_literals;
 
@@ -186,23 +188,24 @@ TEST_CASE("Test bsp stop() returns immediately", "[bsp][slicing-actions]")
     print->delay_after_stop = delay_after_stop;
 
     StatusLog log;
-    const Slic3r::Model model{};
+    Slic3r::Model model{};
+    const ModelInstanceList instances;
     BackgroundProcess
-        bsp{std::move(print), log, model, get_config(), ProjectBedId{}};
+        process{std::move(print), log, model, get_config(), instances, SlicingId{}};
 
-    bsp.slice();
+    process.slice();
     const auto time_before_stop{20ms};
     precise_sleep(time_before_stop);
-    const auto execution_time{measure_execution_time([&]() { bsp.stop(); })};
-    INFO("bsp.stop() exectuion time: " + std::to_string(execution_time.count()));
+    const auto execution_time{measure_execution_time([&]() { process.stop(); })};
+    INFO("process.stop() exectuion time: " + std::to_string(execution_time.count()));
     REQUIRE(execution_time <= 5ms); // It should return imediatly
     for (std::size_t _{}; _ < 5; _++) {
         // Consecutive stops should not increase the waiting time,
         // nor fire status event.
         precise_sleep(2ms);
-        bsp.stop();
+        process.stop();
     }
-    bsp.slice();
+    process.slice();
 
     // Make sure there is plenty of time for the processing to finish.
     precise_sleep(processing_time * 2);
@@ -223,7 +226,7 @@ TEST_CASE("Test bsp stop() returns immediately", "[bsp][slicing-actions]")
     CHECK(is_equal<milliseconds>(log, expected_log, 5ms));
 }
 
-TEST_CASE("Test bsp update() updates status", "[bsp][slicing-actions]")
+TEST_CASE("Test process update() updates status", "[background-process][slicing-actions]")
 {
     using namespace std::chrono_literals;
 
@@ -236,14 +239,16 @@ TEST_CASE("Test bsp update() updates status", "[bsp][slicing-actions]")
     print->apply_time = apply_time;
 
     StatusLog log;
-    std::optional<BackgroundProcess> optional_bsp;
+    std::optional<BackgroundProcess> optional_process;
 
-    const Slic3r::Model model{};
+    Slic3r::Model model{};
+    const ModelInstanceList instances;
+
     const auto execution_time{measure_execution_time([&]() {
-        optional_bsp
-            .emplace(std::move(print), log, model, get_config(), ProjectBedId{});
+        optional_process
+            .emplace(std::move(print), log, model, get_config(), instances, SlicingId{});
     })};
-    INFO("bsp.update() exectuion time: " + std::to_string(execution_time.count()));
+    INFO("process.update() exectuion time: " + std::to_string(execution_time.count()));
     REQUIRE((execution_time - apply_time) < 5ms); // Update blocks the ui thread.
 
     // Let the apply finish

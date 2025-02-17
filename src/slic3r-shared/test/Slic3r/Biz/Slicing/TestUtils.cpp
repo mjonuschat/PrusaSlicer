@@ -1,5 +1,8 @@
 #include "TestUtils.hpp"
 
+#include <fstream>
+#include <boost/filesystem.hpp>
+
 namespace Slic3r::Tests {
 void precise_sleep(const std::chrono::milliseconds duration) {
     const auto start = std::chrono::high_resolution_clock::now();
@@ -39,6 +42,22 @@ Slic3r::DynamicPrintConfig get_config() {
     return config;
 }
 
+ModelOnBed::ModelOnBed(Model&& model, DynamicPrintConfig&& config)
+    : model{std::move(model)}, config{std::move(config)}, bed_instance{ModelOnBed::bed}
+{
+    for (ModelObject* object : this->model.objects) {
+        for (ModelInstance* instance : object->instances) {
+            this->bed_instance.model_instances().push_back(instance);
+        }
+    }
+}
+
+Domain::Bed ModelOnBed::bed{};
+
+ModelOnBed get_cubes_model(const int count, const int row_size) {
+    return {generate_cubes(count, row_size), get_config()};
+}
+
 bool operator==(const StatusEvent& a, const StatusEvent& b) {
     return a.status == b.status && a.project_bed_id == b.project_bed_id;
 }
@@ -68,6 +87,24 @@ using StatusEvents = std::vector<StatusEvent>;
         }
         std::this_thread::sleep_for(1ms);
     }
+}
+
+using Biz::Slicing::FDMResult;
+using Biz::Slicing::FDMStatistics;
+using Biz::Slicing::SlicingId;
+
+void ResultListener::on_fdm_result_changed(
+    std::shared_ptr<FDMResult> result, std::shared_ptr<FDMStatistics>, const SlicingId id
+)
+{
+    std::ifstream file{result->filename};
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    gcodes[id.bed_instance_id] = buffer.str();
+
+    boost::system::error_code error_code;
+    boost::filesystem::remove(result->filename, error_code);
+    result->reset();
 }
 
 Slic3r::Biz::Slicing::SlicingInteractor init_slicing_interactor(Slic3r::Biz::Platform::IMainThreadDispatcher &dispatcher) {
