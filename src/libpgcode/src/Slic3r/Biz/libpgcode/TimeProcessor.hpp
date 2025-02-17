@@ -7,7 +7,7 @@
 
 #include "TimeMachine.hpp"
 
-#include "libpgcode/ProcessorConfig.hpp"
+#include "Slic3r/Biz/libpgcode/ProcessorConfig.hpp"
 
 namespace Slic3r::Biz::libpgcode {
 

@@ -5,9 +5,7 @@
 ///|/
 
 #include "TimeProcessor.hpp"
-#include "libpgcode/Utils.hpp"
-
-using namespace Slic3r;
+#include "Slic3r/Biz/libpgcode/Utils.hpp"
 
 namespace Slic3r::Biz::libpgcode {
 

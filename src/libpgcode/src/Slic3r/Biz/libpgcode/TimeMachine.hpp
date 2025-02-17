@@ -5,7 +5,7 @@
 ///|/
 #pragma once
 
-#include "libpgcode/PostProcessorConfig.hpp"
+#include "Slic3r/Biz/libpgcode/PostProcessorConfig.hpp"
 #include "TimeBlock.hpp"
 
 namespace Slic3r::Biz::libpgcode {
@@ -25,6 +25,8 @@ struct ActualSpeedMove
     std::optional<float> fan_speed;
     std::optional<float> temperature;
 };
+
+using ActualSpeedMoves = std::vector<ActualSpeedMove>;
 
 struct CustomGCodeTime
 {
@@ -64,10 +66,10 @@ struct TimeMachine
     double time{ 0.0 }; // s
     std::string line_m73_main_mask;
     std::string line_m73_stop_mask;
-    std::vector<TimeBlock> blocks;
-    std::vector<ActualSpeedMove> actual_speed_moves;
-    std::vector<G1LinesCacheItem> g1_times_cache;
-    std::vector<StopTime> stop_times;
+    TimeBlocks blocks;
+    ActualSpeedMoves actual_speed_moves;
+    G1LinesCacheItems g1_times_cache;
+    StopTimes stop_times;
     CustomGCodeTime gcode_time;
     TimeMachineState curr;
     TimeMachineState prev;

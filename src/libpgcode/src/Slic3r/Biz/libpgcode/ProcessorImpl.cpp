@@ -5,7 +5,7 @@
 ///|/
 
 #include "ProcessorImpl.hpp"
-#include "libpgcode/Utils.hpp"
+#include "Slic3r/Biz/libpgcode/Utils.hpp"
 
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/classification.hpp>
@@ -649,7 +649,7 @@ void ProcessorImpl::process_G1(const std::array<std::optional<float>, 4>& axes, 
 
         TimeMachineState& curr = machine.curr;
         TimeMachineState& prev = machine.prev;
-        std::vector<TimeBlock>& blocks = machine.blocks;
+        TimeBlocks& blocks = machine.blocks;
 
         curr.feedrate = (delta_pos[E] == 0.0f) ? m_time_processor.minimum_travel_feedrate(TimeMode(i), m_feedrate) :
             m_time_processor.minimum_feedrate(TimeMode(i), m_feedrate);
@@ -2511,7 +2511,7 @@ void ProcessorImpl::store_move(MoveType type, bool internal_only)
 void ProcessorImpl::calculate_time(size_t keep_last_n_blocks, float additional_time)
 {
     // calculate times
-    std::vector<ActualSpeedMove> actual_speed_moves;
+    ActualSpeedMoves actual_speed_moves;
     for (size_t i = 0; i < TIME_MODES_COUNT; ++i) {
         TimeMachine& machine = m_time_processor.machines[i];
         const TimeMode mode = TimeMode(i);
@@ -2524,7 +2524,7 @@ void ProcessorImpl::calculate_time(size_t keep_last_n_blocks, float additional_t
     // result.moves repeatedly). First, we create individual vectors of MoveVertices, and store them along with their
     // required index in the result.moves vector after they are all inserted. Then we go through the destination
     // vector once and move all the elements where we want them in one go.
-    std::vector<std::pair<uint32_t, std::vector<MoveVertex>>> moves_to_insert = { std::make_pair(0, std::vector<MoveVertex>{}) };
+    std::vector<std::pair<uint32_t, MoveVertices>> moves_to_insert = { std::make_pair(0, MoveVertices{}) };
     uint32_t inserted_count = 0;
     std::vector<std::pair<uint32_t, uint32_t>> id_map;
     id_map.reserve(actual_speed_moves.size());
@@ -2562,7 +2562,7 @@ void ProcessorImpl::calculate_time(size_t keep_last_n_blocks, float additional_t
                 if (move.type == MoveType::Seam)
                     move.actual_feedrate = it->actual_feedrate;
             }
-            moves_to_insert.emplace_back(std::make_pair(0, std::vector<MoveVertex>{}));
+            moves_to_insert.emplace_back(std::make_pair(0, MoveVertices{}));
         }
     }
 

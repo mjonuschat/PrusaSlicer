@@ -5,7 +5,7 @@
 ///|/
 #pragma once
 
-#include "libpgcode/Processor.hpp"
+#include "Slic3r/Biz/libpgcode/Processor.hpp"
 #include "TimeProcessor.hpp"
 #include "UsedFilaments.hpp"
 #include "OptionsZCorrector.hpp"

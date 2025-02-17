@@ -2,33 +2,33 @@ cmake_minimum_required(VERSION 3.13)
 project(libpgcode)
 
 add_library(libpgcode
-    include/libpgcode/LineView.hpp
-    include/libpgcode/PostProcessorConfig.hpp
-    include/libpgcode/Processor.hpp
-    include/libpgcode/ProcessorConfig.hpp
-    include/libpgcode/ProcessorResult.hpp
-    include/libpgcode/Types.hpp
-    include/libpgcode/Utils.hpp
+    include/Slic3r/Biz/libpgcode/LineView.hpp
+    include/Slic3r/Biz/libpgcode/PostProcessorConfig.hpp
+    include/Slic3r/Biz/libpgcode/Processor.hpp
+    include/Slic3r/Biz/libpgcode/ProcessorConfig.hpp
+    include/Slic3r/Biz/libpgcode/ProcessorResult.hpp
+    include/Slic3r/Biz/libpgcode/Types.hpp
+    include/Slic3r/Biz/libpgcode/Utils.hpp
 
-    src/LineView.cpp
-    src/OptionsZCorrector.hpp
-    src/OptionsZCorrector.cpp
-    src/PostProcessorConfig.cpp
-    src/Processor.cpp
-    src/ProcessorConfig.cpp
-    src/ProcessorImpl.hpp
-    src/ProcessorImpl.cpp
-    src/ProcessorResult.cpp
-    src/TimeBlock.hpp
-    src/TimeBlock.cpp
-    src/TimeMachine.hpp
-    src/TimeMachine.cpp
-    src/TimeProcessor.hpp
-    src/TimeProcessor.cpp
-    src/Types.cpp
-    src/UsedFilaments.hpp
-    src/UsedFilaments.cpp
-    src/Utils.cpp
+    src/Slic3r/Biz/libpgcode/LineView.cpp
+    src/Slic3r/Biz/libpgcode/OptionsZCorrector.hpp
+    src/Slic3r/Biz/libpgcode/OptionsZCorrector.cpp
+    src/Slic3r/Biz/libpgcode/PostProcessorConfig.cpp
+    src/Slic3r/Biz/libpgcode/Processor.cpp
+    src/Slic3r/Biz/libpgcode/ProcessorConfig.cpp
+    src/Slic3r/Biz/libpgcode/ProcessorImpl.hpp
+    src/Slic3r/Biz/libpgcode/ProcessorImpl.cpp
+    src/Slic3r/Biz/libpgcode/ProcessorResult.cpp
+    src/Slic3r/Biz/libpgcode/TimeBlock.hpp
+    src/Slic3r/Biz/libpgcode/TimeBlock.cpp
+    src/Slic3r/Biz/libpgcode/TimeMachine.hpp
+    src/Slic3r/Biz/libpgcode/TimeMachine.cpp
+    src/Slic3r/Biz/libpgcode/TimeProcessor.hpp
+    src/Slic3r/Biz/libpgcode/TimeProcessor.cpp
+    src/Slic3r/Biz/libpgcode/Types.cpp
+    src/Slic3r/Biz/libpgcode/UsedFilaments.hpp
+    src/Slic3r/Biz/libpgcode/UsedFilaments.cpp
+    src/Slic3r/Biz/libpgcode/Utils.cpp
 )
 
 target_include_directories(libpgcode PUBLIC include)

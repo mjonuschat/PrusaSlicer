@@ -5,7 +5,7 @@
 ///|/
 #pragma once
 
-#include "libpgcode/Types.hpp"
+#include "Slic3r/Biz/libpgcode/Types.hpp"
 
 namespace Slic3r::Biz::libpgcode {
 
@@ -59,5 +59,7 @@ struct TimeBlock
             trapezoid.cruise_time() + trapezoid.deceleration_time(distance, acceleration);
     }
 };
+
+using TimeBlocks = std::vector<TimeBlock>;
 
 } // namespace Slic3r::Biz::libpgcode

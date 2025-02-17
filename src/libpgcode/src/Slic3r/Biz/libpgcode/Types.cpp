@@ -1,4 +1,4 @@
-#include "libpgcode/Types.hpp"
+#include "Slic3r/Biz/libpgcode/Types.hpp"
 
 #include <string>
 

@@ -4,8 +4,8 @@
 ///|/ libpgcode library is released under the terms of the AGPLv3 or higher
 ///|/
 
-#include "libpgcode/ProcessorConfig.hpp"
-#include "libpgcode/Utils.hpp"
+#include "Slic3r/Biz/libpgcode/ProcessorConfig.hpp"
+#include "Slic3r/Biz/libpgcode/Utils.hpp"
 
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/predicate.hpp>

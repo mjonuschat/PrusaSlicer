@@ -5,8 +5,8 @@
 ///|/
 #pragma once
 
-#include "libpgcode/LineView.hpp"
-#include "libpgcode/Types.hpp"
+#include "Slic3r/Biz/libpgcode/LineView.hpp"
+#include "Slic3r/Biz/libpgcode/Types.hpp"
 
 namespace Slic3r::Biz::libpgcode {
 
@@ -31,7 +31,7 @@ struct ProcessorResult
     LineView gcode;
 
     std::vector<std::string> extruder_str_colors;
-    std::vector<MoveVertex> moves;
+    MoveVertices moves;
     std::vector<CustomGCode::Item> custom_gcode_per_print_z;
     PrintEstimatedStatistics print_statistics;
     PrintSettings print_settings;

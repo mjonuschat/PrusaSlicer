@@ -5,9 +5,9 @@
 ///|/
 #pragma once
 
-#include "libpgcode/ProcessorConfig.hpp"
-#include "libpgcode/ProcessorResult.hpp"
-#include "libpgcode/PostProcessorConfig.hpp"
+#include "Slic3r/Biz/libpgcode/ProcessorConfig.hpp"
+#include "Slic3r/Biz/libpgcode/ProcessorResult.hpp"
+#include "Slic3r/Biz/libpgcode/PostProcessorConfig.hpp"
 
 #include <memory>
 

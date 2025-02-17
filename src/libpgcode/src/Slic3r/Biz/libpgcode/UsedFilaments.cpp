@@ -6,7 +6,7 @@
 
 #include "UsedFilaments.hpp"
 #include "ProcessorImpl.hpp"
-#include "libpgcode/ProcessorResult.hpp"
+#include "Slic3r/Biz/libpgcode/ProcessorResult.hpp"
 
 namespace Slic3r::Biz::libpgcode {
 

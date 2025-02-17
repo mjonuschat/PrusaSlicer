@@ -4,7 +4,7 @@
 ///|/ libpgcode library is released under the terms of the AGPLv3 or higher
 ///|/
 
-#include "libpgcode/ProcessorResult.hpp"
+#include "Slic3r/Biz/libpgcode/ProcessorResult.hpp"
 
 namespace Slic3r::Biz::libpgcode {
 

@@ -5,7 +5,7 @@
 ///|/
 
 #include "TimeMachine.hpp"
-#include "libpgcode/ProcessorResult.hpp"
+#include "Slic3r/Biz/libpgcode/ProcessorResult.hpp"
 
 #include <assert.h>
 
@@ -86,7 +86,7 @@ static void planner_reverse_pass_kernel(TimeBlock& curr, const TimeBlock& next)
     }
 }
 
-static void recalculate_trapezoids(std::vector<TimeBlock>& blocks)
+static void recalculate_trapezoids(TimeBlocks& blocks)
 {
     TimeBlock* curr = nullptr;
     TimeBlock* next = nullptr;
