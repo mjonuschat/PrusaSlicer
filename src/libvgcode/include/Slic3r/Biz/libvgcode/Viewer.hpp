@@ -23,7 +23,6 @@ class ColorRange;
 namespace Slic3r::Biz::libvgcode {
 
 struct ColorPrint;
-class ColorRange;
 class ViewerImpl;
 
 class Viewer
