@@ -16,7 +16,7 @@
 
 //using namespace Slic3r;
 using namespace Slic3r::Biz::libpgcode;
-using namespace Slic3r::Domain;
+using namespace Slic3r::Biz;
 
 namespace Slic3r::App::LibvgcodeWrapper {
 
@@ -333,7 +333,7 @@ std::string DoubleSliderForLayers::label(int pos, LabelType label_type, unsigned
     }
     if (decimals == 2 && m_units == UnitsSystem::Imperial)
         decimals = 4;
-    std::string str = convert_and_format_to_string(m_values[value],
+    std::string str = convert_and_format_units(m_values[value],
         UnitsType::Millimeters,
         (m_units == UnitsSystem::SI) ?
             UnitsType::Millimeters : UnitsType::Inches, decimals, false);
@@ -1149,7 +1149,7 @@ bool DoubleSliderForLayers::render_jump_to_window(const ImVec2& pos, float& acti
         return false;
 
     std::string msg_text = _u8L("Enter the height you want to jump to") + " (" +
-        units_as_string((m_units == UnitsSystem::SI) ?
+        format_units((m_units == UnitsSystem::SI) ?
             UnitsType::Millimeters : UnitsType::Inches) + "):";
     std::string win_name = _u8L("Jump to height") + "##btn_win";
     float ctrl_width = 50.0f;

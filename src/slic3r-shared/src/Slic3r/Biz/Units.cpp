@@ -1,4 +1,4 @@
-#include "Slic3r/Domain/Units.hpp"
+#include "Slic3r/Biz/Units.hpp"
 #include "Slic3r/App/I18N/I18N.hpp"
 
 #include "Slic3r/Assert.hpp"
@@ -11,9 +11,10 @@
 
 using namespace Slic3r::Biz::libpgcode;
 
-namespace Slic3r::Domain {
+namespace Slic3r::Biz {
 
 static const std::vector<std::string> UNITS_STR = {
+    // TRN: Following strings are units.
     _u8L("bytes"),
     _u8L("KB"),
     _u8L("MB"),
@@ -43,15 +44,15 @@ static const std::vector<std::string> UNITS_STR = {
     _u8L("y"),
 };
 
-std::string format_to_string(float value, UnitsType units, uint8_t decimals)
+std::string format_units(float value, UnitsType units, uint8_t decimals)
 {
     DEBUG_ASSERT(units < UnitsType::COUNT);
     char buf[64];
-    sprintf(buf, "%.*f %s", decimals, value, units_as_string(units).c_str());
+    sprintf(buf, "%.*f %s", decimals, value, format_units(units).c_str());
     return std::string(buf);
 }
 
-std::string convert_and_format_to_string(float value, UnitsType value_units, UnitsType desired_units, uint8_t decimals,
+std::string convert_and_format_units(float value, UnitsType value_units, UnitsType desired_units, uint8_t decimals,
     bool append_units)
 {
     DEBUG_ASSERT(value_units < UnitsType::COUNT && desired_units < UnitsType::COUNT);
@@ -65,7 +66,7 @@ std::string convert_and_format_to_string(float value, UnitsType value_units, Uni
     // if unable to perform the conversion, return the input value
     const float out_value = (it != CONVERSIONS.end()) ? convert(value, value_units, desired_units) : value;
     if (append_units)
-        return format_to_string(out_value, (it != CONVERSIONS.end()) ? desired_units : value_units, decimals);
+        return format_units(out_value, (it != CONVERSIONS.end()) ? desired_units : value_units, decimals);
     else {
         char buf[64];
         sprintf(buf, "%.*f", decimals, out_value);
@@ -73,7 +74,7 @@ std::string convert_and_format_to_string(float value, UnitsType value_units, Uni
     }
 }
 
-std::string units_as_string(UnitsType units)
+std::string format_units(UnitsType units)
 {
     DEBUG_ASSERT(units < UnitsType::COUNT);
     return UNITS_STR[size_t(units)];
@@ -89,7 +90,7 @@ struct TimeHDMS
     std::string format() const {
         char buffer[64];
         if (days > 365.0f)
-            return "> 1" + units_as_string(UnitsType::Years);
+            return "> 1" + format_units(UnitsType::Years);
         else if (days > 0.0f)
             sprintf(buffer, d_h_m_s_mask().c_str(), int(days), int(hours), int(minutes), int(seconds));
         else if (hours > 0.0f)
@@ -99,7 +100,7 @@ struct TimeHDMS
         else if (seconds >= 1.0f)
             sprintf(buffer, s_mask().c_str(), int(std::round(seconds)));
         else
-            return "< 1" + units_as_string(UnitsType::Seconds);
+            return "< 1" + format_units(UnitsType::Seconds);
         return buffer;
     }
 
@@ -119,7 +120,7 @@ struct TimeHDMS
 
         char buffer[64];
         if (copy.days > 365.0f)
-            return "> 1" + units_as_string(UnitsType::Years);
+            return "> 1" + format_units(UnitsType::Years);
         else if (copy.days > 0.0f)
             sprintf(buffer, d_h_m_mask().c_str(), int(copy.days), int(copy.hours), int(copy.minutes));
         else if (copy.hours > 0.0f)
@@ -129,14 +130,14 @@ struct TimeHDMS
         else if (copy.seconds >= 1.0f)
             sprintf(buffer, s_mask().c_str(), int(std::round(copy.seconds)));
         else
-            return "< 1" + units_as_string(UnitsType::Seconds);
+            return "< 1" + format_units(UnitsType::Seconds);
         return buffer;
     }
 
     std::string format_short_and_splitted() const {
         char buffer[64];
         if (days > 365.0f)
-            return "> 1" + units_as_string(UnitsType::Years);
+            return "> 1" + format_units(UnitsType::Years);
         else if (days > 0.0f)
             sprintf(buffer, dh__m_mask().c_str(), int(days), int(hours), int(minutes));
         else if (hours > 0.0f) {
@@ -158,14 +159,14 @@ struct TimeHDMS
         else if (seconds >= 1.0f)
             sprintf(buffer, s_mask().c_str(), int(std::round(seconds)));
         else
-            return "< 1" + units_as_string(UnitsType::Seconds);
+            return "< 1" + format_units(UnitsType::Seconds);
         return buffer;
     }
 
-    static std::string days_mask()    { return "%d" + units_as_string(UnitsType::Days); }
-    static std::string hours_mask()   { return "%d" + units_as_string(UnitsType::Hours); }
-    static std::string minutes_mask() { return "%d" + units_as_string(UnitsType::Minutes); }
-    static std::string seconds_mask() { return "%d" + units_as_string(UnitsType::Seconds); }
+    static std::string days_mask()    { return "%d" + format_units(UnitsType::Days); }
+    static std::string hours_mask()   { return "%d" + format_units(UnitsType::Hours); }
+    static std::string minutes_mask() { return "%d" + format_units(UnitsType::Minutes); }
+    static std::string seconds_mask() { return "%d" + format_units(UnitsType::Seconds); }
 
     static std::string d_h_m_s_mask() { return days_mask() + " " + hours_mask() + " " + minutes_mask() + " " + seconds_mask(); }
     static std::string d_h_m_mask()   { return days_mask() + " " + hours_mask() + " %d" + minutes_mask(); }
@@ -210,4 +211,4 @@ std::string format_time_dhms_short_and_splitted(float time_in_secs)
     return time_dhms(time_in_secs).format_short_and_splitted();
 }
 
-} // namespace Slic3r::Domain
+} // namespace Slic3r::Biz

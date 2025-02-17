@@ -196,12 +196,13 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Domain/Workbench.hpp
         src/Slic3r/Domain/ConfigContainer.cpp
         include/Slic3r/Domain/ConfigContainer.hpp
+
         include/Slic3r/Biz/Slicing/BackgroundProcess.hpp
         include/Slic3r/Biz/Slicing/SlicingInteractor.hpp
         src/Slic3r/Biz/Slicing/BackgroundProcess.cpp
         src/Slic3r/Biz/Slicing/SlicingInteractor.cpp
-        src/Slic3r/Domain/Units.cpp
-        include/Slic3r/Domain/Units.hpp
+        src/Slic3r/Biz/Units.cpp
+        include/Slic3r/Biz/Units.hpp
 )
 
 find_package(NanoSVG REQUIRED)

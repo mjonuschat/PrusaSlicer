@@ -3,7 +3,7 @@
 #include "Slic3r/App/Imgui/DoubleSlider.hpp"
 #include "Slic3r/App/Imgui/RulerForDoubleSlider.hpp"
 #include "Slic3r/App/LibvgcodeWrapper/TickCodeManager.hpp"
-#include "Slic3r/Domain/Units.hpp"
+#include "Slic3r/Biz/Units.hpp"
 
 namespace Slic3r::App::LibvgcodeWrapper {
 

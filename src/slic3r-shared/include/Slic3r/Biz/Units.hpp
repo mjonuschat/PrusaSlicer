@@ -2,7 +2,7 @@
 
 #include <Slic3r/Biz/libpgcode/Types.hpp>
 
-namespace Slic3r::Domain {
+namespace Slic3r::Biz {
 
 /** @brief Format the given value into a string with units.
  *
@@ -10,7 +10,7 @@ namespace Slic3r::Domain {
  * @param units The units.
  * @param decimals The number of decimals to add after the point.
  */
-std::string format_to_string(float value, Slic3r::Biz::libpgcode::UnitsType units, uint8_t decimals = 0);
+std::string format_units(float value, Slic3r::Biz::libpgcode::UnitsType units, uint8_t decimals = 0);
 
 /** @brief Convert the given value from value_units to desired_units.
  *         and format the result into a string with units.
@@ -21,14 +21,14 @@ std::string format_to_string(float value, Slic3r::Biz::libpgcode::UnitsType unit
  * @param decimals The number of decimals to add after the point.
  * @param append_units Whether or not to append the units string.
  */
-std::string convert_and_format_to_string(float value, Slic3r::Biz::libpgcode::UnitsType value_units, Slic3r::Biz::libpgcode::UnitsType desired_units,
+std::string convert_and_format_units(float value, Slic3r::Biz::libpgcode::UnitsType value_units, Slic3r::Biz::libpgcode::UnitsType desired_units,
     uint8_t decimals = 0, bool append_units = true);
 
 /** @brief Return the string associated with the given units.
  *
  * @param units The units.
  */
-std::string units_as_string(Slic3r::Biz::libpgcode::UnitsType units);
+std::string format_units(Slic3r::Biz::libpgcode::UnitsType units);
 
 /** @brief Format the given time in seconds into a string with format
  *         days, hours, minutes, seconds.
@@ -53,4 +53,4 @@ std::string format_time_dhms_short(float time_in_secs);
  */
 std::string format_time_dhms_short_and_splitted(float time_in_secs);
 
-} // namespace Slic3r::Domain
+} // namespace Slic3r::Biz
