@@ -11,7 +11,7 @@ void Extruders::add(uint8_t id, const std::pair<float, float>& used_filament)
 {
     auto it = m_items.find(id);
     if (it == m_items.end())
-        m_items.insert({ id, { std::vector<ColorPrint>(), used_filament } });
+        m_items.insert({ id, { ColorPrints{}, used_filament}});
 }
 
 void Extruders::update(uint8_t id, const ColorPrint& color_print)
@@ -42,7 +42,7 @@ size_t Extruders::extruder_color_prints_count(uint8_t id) const
 ColorPrints Extruders::extruder_color_prints(uint8_t id) const
 {
     auto it = m_items.find(id);
-    return (it == m_items.end()) ? std::vector<ColorPrint>() : it->second.color_prints;
+    return (it == m_items.end()) ? ColorPrints{} : it->second.color_prints;
 }
 
 float Extruders::extruder_used_filament_length(uint8_t id) const

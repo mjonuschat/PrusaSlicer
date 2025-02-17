@@ -5,7 +5,7 @@
 ///|/
 #pragma once
 
-#include "libvgcode/Types.hpp"
+#include "Slic3r/Biz/libvgcode/Types.hpp"
 
 #include <map>
 

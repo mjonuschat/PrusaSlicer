@@ -2,40 +2,40 @@ cmake_minimum_required(VERSION 3.13)
 project(libvgcode)
 
 add_library(libvgcode
-    include/libvgcode/ColorRange.hpp
-    include/libvgcode/Types.hpp
-    include/libvgcode/Viewer.hpp
-    include/libvgcode/ViewerInputData.hpp
+    include/Slic3r/Biz/libvgcode/ColorRange.hpp
+    include/Slic3r/Biz/libvgcode/Types.hpp
+    include/Slic3r/Biz/libvgcode/Viewer.hpp
+    include/Slic3r/Biz/libvgcode/ViewerInputData.hpp
 
-    src/Bitset.hpp
-    src/CogMarker.hpp
-    src/CogMarker.cpp
-    src/ColorRange.cpp
-    src/Extruders.hpp
-    src/Extruders.cpp
-    src/ExtrusionRoles.hpp
-    src/ExtrusionRoles.cpp
-    src/Layers.hpp
-    src/Layers.cpp
-    src/ObjExport.hpp
-    src/ObjExport.cpp
-    src/OptionTemplate.hpp
-    src/OptionTemplate.cpp
-    src/Range.hpp
-    src/Range.cpp
-    src/SegmentTemplate.hpp
-    src/SegmentTemplate.cpp
-    src/Settings.hpp
-    src/ToolMarker.hpp
-    src/ToolMarker.cpp
-    src/Types.cpp
-    src/Utils.hpp
-    src/Utils.cpp
-    src/Viewer.cpp
-    src/ViewerImpl.hpp
-    src/ViewerImpl.cpp
-    src/ViewRange.hpp
-    src/ViewRange.cpp
+    src/Slic3r/Biz/libvgcode/Bitset.hpp
+    src/Slic3r/Biz/libvgcode/CogMarker.hpp
+    src/Slic3r/Biz/libvgcode/CogMarker.cpp
+    src/Slic3r/Biz/libvgcode/ColorRange.cpp
+    src/Slic3r/Biz/libvgcode/Extruders.hpp
+    src/Slic3r/Biz/libvgcode/Extruders.cpp
+    src/Slic3r/Biz/libvgcode/ExtrusionRoles.hpp
+    src/Slic3r/Biz/libvgcode/ExtrusionRoles.cpp
+    src/Slic3r/Biz/libvgcode/Layers.hpp
+    src/Slic3r/Biz/libvgcode/Layers.cpp
+    src/Slic3r/Biz/libvgcode/ObjExport.hpp
+    src/Slic3r/Biz/libvgcode/ObjExport.cpp
+    src/Slic3r/Biz/libvgcode/OptionTemplate.hpp
+    src/Slic3r/Biz/libvgcode/OptionTemplate.cpp
+    src/Slic3r/Biz/libvgcode/Range.hpp
+    src/Slic3r/Biz/libvgcode/Range.cpp
+    src/Slic3r/Biz/libvgcode/SegmentTemplate.hpp
+    src/Slic3r/Biz/libvgcode/SegmentTemplate.cpp
+    src/Slic3r/Biz/libvgcode/Settings.hpp
+    src/Slic3r/Biz/libvgcode/ToolMarker.hpp
+    src/Slic3r/Biz/libvgcode/ToolMarker.cpp
+    src/Slic3r/Biz/libvgcode/Types.cpp
+    src/Slic3r/Biz/libvgcode/Utils.hpp
+    src/Slic3r/Biz/libvgcode/Utils.cpp
+    src/Slic3r/Biz/libvgcode/Viewer.cpp
+    src/Slic3r/Biz/libvgcode/ViewerImpl.hpp
+    src/Slic3r/Biz/libvgcode/ViewerImpl.cpp
+    src/Slic3r/Biz/libvgcode/ViewRange.hpp
+    src/Slic3r/Biz/libvgcode/ViewRange.cpp
 )
 
 target_include_directories(libvgcode PUBLIC include)

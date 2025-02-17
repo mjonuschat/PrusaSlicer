@@ -6,7 +6,7 @@
 #include "ViewerImpl.hpp"
 #include "Utils.hpp"
 #include "ObjExport.hpp"
-#include "libvgcode/ViewerInputData.hpp"
+#include "Slic3r/Biz/libvgcode/ViewerInputData.hpp"
 
 #include <Slic3r/Biz/libpgcode/Utils.hpp>
 #include <Slic3r/App/Render/GL/commonGL.hpp>
@@ -114,12 +114,12 @@ static std::pair<size_t, size_t> width_height(size_t count, size_t max_texture_s
     return ret;
 }
 
-void ViewerImpl::TextureData::init(App::Render::Device& device, size_t vertices_count)
+void ViewerImpl::TextureData::init(App::Render::Device* device, size_t vertices_count)
 {
     if (vertices_count == 0)
         return;
 
-    m_device = &device;
+    m_device = device;
     m_max_texture_size = m_device->context().max_texture_size();
     m_width = std::min(vertices_count, m_max_texture_size);
     size_t rows_count = vertices_count / m_width;
@@ -391,11 +391,12 @@ ViewerImpl::ViewerImpl()
     reset_default_options_colors();
 }
 
-void ViewerImpl::init()
+void ViewerImpl::init(App::Render::Device& device)
 {
     if (m_initialized)
         return;
 
+    m_device = &device;
     m_segment_template.init();
     m_option_template.init(16);
     m_cog_marker.init(32, 1.0f);
@@ -500,15 +501,13 @@ static void extract_pos_and_or_hwa(const MoveVertices& vertices, float travels_r
     }
 }
 
-void ViewerImpl::load(App::Render::Device& device, ViewerInputData&& gcode_data)
+void ViewerImpl::load(ViewerInputData&& gcode_data)
 {
     if (!m_initialized)
         return;
 
     if (gcode_data.vertices.empty())
         return;
-
-    m_device = &device;
 
     reset();
 
@@ -597,7 +596,7 @@ void ViewerImpl::load(App::Render::Device& device, ViewerInputData&& gcode_data)
 
     if (!positions.empty()) {
 #if !USE_TEXTURE_BUFFER
-        m_texture_data.init(device, positions.size());
+        m_texture_data.init(m_device, positions.size());
         // create and fill position textures
         m_texture_data.set_positions(positions);
         // create and fill height, width and angle textures
@@ -985,7 +984,7 @@ BoundingBoxf3 ViewerImpl::extrusion_bounding_box(const GCodeExtrusionRoles& role
 
 bool ViewerImpl::is_option_visible(OptionType type) const
 {
-    return m_settings.options_visibility[std::size_t(type)];
+    return m_settings.options_visibility[size_t(type)];
 }
 
 void ViewerImpl::toggle_option_visibility(OptionType type)
@@ -1044,7 +1043,7 @@ void ViewerImpl::set_view_visible_range(Interval::value_type min, Interval::valu
     update_colors_texture();
 }
 
-void ViewerImpl::set_lights(const std::vector<Light>& lights)
+void ViewerImpl::set_lights(const Lights& lights)
 {
     m_lights.clear();
     size_t num_lights = std::min(lights.size(), MAX_NUM_LIGHTS);
@@ -1065,25 +1064,14 @@ void ViewerImpl::set_lights(const std::vector<Light>& lights)
     }
 }
 
-Lights ViewerImpl::default_lights() const
+static const Lights DEFAULT_LIGHTS = {
+    { LightReferenceSystem::Eye, { -0.4574957f, 0.4574957f, 0.7624929f }, 0.45f, 0.48f, 0.075f, 20.0f },
+    { LightReferenceSystem::Eye, { 0.70014f, 0.140028f, 0.70014f }, 0.0f, 0.18f, 0.0f, 0.0f }
+};
+
+const Lights& ViewerImpl::default_lights() const
 {
-    Light top;
-    top.system = LightReferenceSystem::Eye;
-    top.direction = { -0.4574957f, 0.4574957f, 0.7624929f };
-    top.ambient = 0.45f;
-    top.diffuse = 0.48f;
-    top.specular = 0.075f;
-    top.shininess = 20.0f;
-
-    Light front;
-    front.system = LightReferenceSystem::Eye;
-    front.direction = { 0.70014f, 0.140028f, 0.70014f };
-    front.ambient = 0.0f;
-    front.diffuse = 0.18f;
-    front.specular = 0.0f;
-    front.shininess = 0.0f;
-
-    return { top, front };
+    return DEFAULT_LIGHTS;
 }
 
 float ViewerImpl::estimated_time_at(size_t id) const

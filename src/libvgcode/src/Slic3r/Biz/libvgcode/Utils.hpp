@@ -3,25 +3,13 @@
 ///|/
 ///|/ libvgcode library is released under the terms of the AGPLv3 or higher
 ///|/
+#pragma once
 
-#include "libvgcode/Types.hpp"
+#include "Slic3r/Biz/libvgcode/Types.hpp"
 
 namespace Slic3r::Biz::libvgcode {
 
-static uint8_t lerp(uint8_t f1, uint8_t f2, float t)
-{
-    float one_minus_t = 1.0f - t;
-    return uint8_t(one_minus_t * float(f1) + t * float(f2));
-}
-
-std::string light_reference_system_to_string(LightReferenceSystem sys)
-{
-    switch (sys)
-    {
-    case LightReferenceSystem::Eye:   { return "Eye"; }
-    case LightReferenceSystem::World: { return "World"; }
-    default:                          { return "Unknown"; }
-    }
-}
+void add_vertex(const Vec3f& position, const Vec3f& normal, std::vector<float>& vertices);
+void add_triangle(uint16_t v1, uint16_t v2, uint16_t v3, std::vector<uint16_t>& indices);
 
 } // namespace Slic3r::Biz::libvgcode

@@ -3,7 +3,7 @@
 ///|/
 ///|/ libvgcode library is released under the terms of the AGPLv3 or higher
 ///|/
-#include "libvgcode/Viewer.hpp"
+#include "Slic3r/Biz/libvgcode/Viewer.hpp"
 #include "ViewerImpl.hpp"
 
 using namespace Slic3r::Biz::libpgcode;
@@ -20,9 +20,9 @@ Viewer::~Viewer()
     delete m_impl;
 }
 
-void Viewer::init()
+void Viewer::init(App::Render::Device& device)
 {
-    m_impl->init();
+    m_impl->init(device);
 }
 
 void Viewer::shutdown()
@@ -35,9 +35,9 @@ void Viewer::reset()
     m_impl->reset();
 }
 
-void Viewer::load(App::Render::Device& device, ViewerInputData&& gcode_data)
+void Viewer::load(ViewerInputData&& gcode_data)
 {
-    m_impl->load(device, std::move(gcode_data));
+    m_impl->load(std::move(gcode_data));
 }
 
 void Viewer::load_as_sla(const std::vector<float>& layers_zs, const std::vector<float>& layers_times)
@@ -248,7 +248,7 @@ void Viewer::set_lights(const Lights& lights)
     m_impl->set_lights(lights);
 }
 
-Lights Viewer::default_lights() const
+const Lights& Viewer::default_lights() const
 {
     return m_impl->default_lights();
 }

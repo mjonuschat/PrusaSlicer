@@ -5,11 +5,14 @@
 ///|/
 #pragma once
 
-#include "libvgcode/Types.hpp"
+#include "Slic3r/Biz/libvgcode/Types.hpp"
+
+#include <stdio.h>
 
 namespace Slic3r::Biz::libvgcode {
 
-void add_vertex(const Vec3f& position, const Vec3f& normal, std::vector<float>& vertices);
-void add_triangle(uint16_t v1, uint16_t v2, uint16_t v3, std::vector<uint16_t>& indices);
+class ViewerImpl;
+
+bool export_toolpaths_to_obj(FILE& obj_file, FILE& mtl_file, const ObjExportParams& params, const ViewerImpl& viewer);
 
 } // namespace Slic3r::Biz::libvgcode

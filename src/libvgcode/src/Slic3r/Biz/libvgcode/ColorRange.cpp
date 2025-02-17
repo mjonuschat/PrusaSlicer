@@ -3,7 +3,7 @@
 ///|/
 ///|/ libvgcode library is released under the terms of the AGPLv3 or higher
 ///|/
-#include <libvgcode/ColorRange.hpp>
+#include "Slic3r/Biz/libvgcode/ColorRange.hpp"
 
 #include <algorithm>
 #include <assert.h>

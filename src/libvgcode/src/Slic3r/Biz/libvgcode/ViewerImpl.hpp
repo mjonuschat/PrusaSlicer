@@ -15,9 +15,9 @@
 #include "Layers.hpp"
 #include "ExtrusionRoles.hpp"
 #include "Extruders.hpp"
-#include "libvgcode/ColorRange.hpp"
-#include "libvgcode/ViewerInputData.hpp"
-#include "libvgcode/Viewer.hpp"
+#include "Slic3r/Biz/libvgcode/ColorRange.hpp"
+#include "Slic3r/Biz/libvgcode/ViewerInputData.hpp"
+#include "Slic3r/Biz/libvgcode/Viewer.hpp"
 
 #include <Slic3r/Biz/libpgcode/ProcessorResult.hpp>
 
@@ -46,7 +46,7 @@ public:
     //
     // Initialize shaders, uniform indices and segment geometry.
     //
-    void init();
+    void init(App::Render::Device& device);
     //
     // Release the resources used by the viewer.
     //
@@ -59,7 +59,7 @@ public:
     // Setup all the variables used for visualization of the toolpaths
     // from the given gcode data.
     //
-    void load(App::Render::Device& device, ViewerInputData&& gcode_data);
+    void load(ViewerInputData&& gcode_data);
     //
     // Setup the viewer content from the given data (support for SLA printers).
     //
@@ -119,7 +119,7 @@ public:
 
     uint8_t extruders_count() const { return m_extruders_count; }
 
-    BoundingBoxf3 bounding_box(const std::vector<libpgcode::MoveType>& types = {
+    BoundingBoxf3 bounding_box(const libpgcode::MoveTypes& types = {
         libpgcode::MoveType::Retract,
         libpgcode::MoveType::Unretract,
         libpgcode::MoveType::Seam,
@@ -159,7 +159,7 @@ public:
 
     const Lights& lights() const { return m_lights; }
     void set_lights(const Lights& lights);
-    Lights default_lights() const;
+    const Lights& default_lights() const;
 
     size_t vertices_count() const { return m_vertices.size(); }
     const libpgcode::MoveVertices& vertices() const { return m_vertices; }
@@ -360,7 +360,7 @@ private:
     class TextureData
     {
     public:
-        void init(App::Render::Device& device, size_t vertices_count);
+        void init(App::Render::Device* device, size_t vertices_count);
         void set_positions(const std::vector<Vec4f>& positions);
         void set_heights_widths_angles(const std::vector<Vec4f>& heights_widths_angles);
         void set_colors(const std::vector<float>& colors);

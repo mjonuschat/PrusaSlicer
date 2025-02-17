@@ -37,7 +37,7 @@ public:
     // This method must be called after a valid OpenGL context has been already created
     // and before calling any other method of the viewer.
     //
-    void init();
+    void init(App::Render::Device& device);
     //
     // Release the resources used by the viewer.
     // This method must be called before releasing the OpenGL context if the viewer
@@ -53,7 +53,7 @@ public:
     // Setup the viewer content from the given data.
     // See: ViewerInputData
     //
-    void load(App::Render::Device& device, ViewerInputData&& gcode_data);
+    void load(ViewerInputData&& gcode_data);
     //
     // Setup the viewer content from the given data (support for SLA printers).
     //
@@ -289,7 +289,7 @@ public:
     //
     // Return the default lights used for render the toolpaths.
     // 
-    Lights default_lights() const;
+    const Lights& default_lights() const;
 
     //
     // ************************************************************************

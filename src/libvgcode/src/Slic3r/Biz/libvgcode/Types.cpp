@@ -3,16 +3,25 @@
 ///|/
 ///|/ libvgcode library is released under the terms of the AGPLv3 or higher
 ///|/
-#pragma once
 
-#include "libvgcode/Types.hpp"
-
-#include <stdio.h>
+#include "Slic3r/Biz/libvgcode/Types.hpp"
 
 namespace Slic3r::Biz::libvgcode {
 
-class ViewerImpl;
+static uint8_t lerp(uint8_t f1, uint8_t f2, float t)
+{
+    float one_minus_t = 1.0f - t;
+    return uint8_t(one_minus_t * float(f1) + t * float(f2));
+}
 
-bool export_toolpaths_to_obj(FILE& obj_file, FILE& mtl_file, const ObjExportParams& params, const ViewerImpl& viewer);
+std::string light_reference_system_to_string(LightReferenceSystem sys)
+{
+    switch (sys)
+    {
+    case LightReferenceSystem::Eye:   { return "Eye"; }
+    case LightReferenceSystem::World: { return "World"; }
+    default:                          { return "Unknown"; }
+    }
+}
 
 } // namespace Slic3r::Biz::libvgcode

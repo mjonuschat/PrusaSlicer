@@ -70,10 +70,12 @@ typedef std::function<void(bool)> CustomOptionActionCallback;
 struct CustomOption
 {
     std::string name;
-    std::string svg_icon_str;
+    wchar_t icon;
     bool visible{ false };
     CustomOptionActionCallback cb_action{ nullptr };
 };
+
+using CustomOptions = std::vector<CustomOption>;
 
 //
 // Color range types
