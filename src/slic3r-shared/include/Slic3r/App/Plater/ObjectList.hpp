@@ -24,6 +24,7 @@ namespace Slic3r::App::Plater {
 
 struct MultiSelectionStorage : public ImGuiSelectionBasicStorage
 {
+    // override ApplyRequests to check if selection was changed
     void ApplyRequests(ImGuiMultiSelectIO* ms_io);
 
     bool    is_changed                  { false };
@@ -34,11 +35,15 @@ private:
     bool    is_started                  { true };
 };
 
-//                                      object_id  Selections storage
+/**
+ * @brief Help class to save several instances of MultiSelectionStorage for each set of volums or instances of the object
+ * @param key is always Id of the object 
+ * @param value is a MultiSelectionStorage of the selected volums or instances of this object.
+ */
 class MultiSelections : public std::map<size_t, MultiSelectionStorage>
 {
 public:
-
+    // T may be ModelInstancePtrs OR ModelVolumePtrs
     template <typename T>
     MultiSelectionStorage& get_ms(size_t object_id)
     {
@@ -75,10 +80,11 @@ private:
     void update_selection_from_scene(const Slic3r::Biz::Scene::Selection& selection);
     bool render_tree(ImVec2 size, const Slic3r::Biz::Scene::Selection& selection);
     bool render_object_node(const Slic3r::ModelObject* object, const Slic3r::Biz::Scene::Selection& selection);
-    bool render_instances_node(const Slic3r::ModelObject* object);
-    void render_instance_node(const Slic3r::ModelObject* object, size_t inst_id, bool is_selected);
-    void render_volume(const Slic3r::ModelVolume* volume, size_t vol_id, bool is_selected, const Domain::ElementRef& sel_element);
     bool render_volumes(const Slic3r::ModelObject* object);
+    void render_volume_node(const Slic3r::ModelVolume* volume, size_t vol_id, bool is_selected, const Domain::ElementRef& sel_element);
+    bool render_instances_node(const Slic3r::ModelObject* object);
+    bool render_instances(const Slic3r::ModelObject* object);
+    void render_instance_node(const Slic3r::ModelObject* object, size_t inst_id, bool is_selected);
 
     void render_edited(const char* init_name, const Domain::ElementRef& sel_element);
 
@@ -91,8 +97,11 @@ private:
     Biz::Scene::SceneInteractor*    m_scene_interactor  { nullptr };
     const Slic3r::Model*            m_model             { nullptr };
 
-    MultiSelections m_instances_ms;
-    MultiSelections m_volumes_ms;
+    MultiSelections                 m_instances_ms;
+    MultiSelections                 m_volumes_ms;
+
+    size_t                          m_edited_node_id    { 0 };
+
 };
 
 } // namespace Slic3r::App::Plater
