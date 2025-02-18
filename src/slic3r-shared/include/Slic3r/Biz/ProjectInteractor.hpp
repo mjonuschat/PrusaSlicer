@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Slic3r/Biz/ISlicingInputChangedListener.hpp"
 #include "Slic3r/Domain/SelectionId.hpp"
 #include "Slic3r/Biz/Platform/ListenerList.hpp"
 #include "Slic3r/Biz/Preset/PresetInteractor.hpp"
@@ -27,7 +28,7 @@ class IProjectsChangedListener;
  * - get access to SceneInteractor (to manipulate 3D volumes)
  * .
  */
-class ProjectInteractor final : public ISelectedBedInstanceChangedListener
+class ProjectInteractor final : public ISelectedBedInstanceChangedListener, private ISlicingInputChangedListener
 {
 public:
     explicit ProjectInteractor(Domain::Workbench& workbench)
@@ -38,6 +39,8 @@ public:
         add_selected_project_changed_listener(&m_scene_interactor);
         m_scene_interactor.add_bed_instance_selection_changed_listener(this);
         add_selected_project_changed_listener(&m_slicing_interactor);
+        m_scene_interactor.add_slicing_input_changed_listener(this);
+        m_preset_interactor.add_slicing_input_changed_listener(this);
     }
 
     /**
@@ -208,7 +211,6 @@ public:
     void on_selected_bed_instance_changed(Domain::SelectionId project_id, Domain::SelectionId container_id, Domain::SelectionId bed_instance_id) override;
     /** @} */
 
-    void update_bed(const Domain::SelectionId bed_instance_id);
 
 private:
     void do_select_project(Domain::SelectionId project_id);
@@ -216,6 +218,8 @@ private:
 
     void initialize_new_project_before_inserting(Domain::Project& p);
     void initialize_inserted_project(size_t project_id);
+
+    void on_slicing_input_changed(const Domain::SelectionId bed_instance_id) override;
 
 private:
     struct Selection

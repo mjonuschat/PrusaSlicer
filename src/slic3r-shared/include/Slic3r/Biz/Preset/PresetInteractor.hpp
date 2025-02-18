@@ -2,6 +2,7 @@
 
 #include <unordered_map>
 
+#include "Slic3r/Biz/ISlicingInputChangedListener.hpp"
 #include "Slic3r/Biz/Platform/ListenerList.hpp"
 #include "Slic3r/Biz/ISelectedConfigContainerChangedListener.hpp"
 #include "Slic3r/Domain/Workbench.hpp"
@@ -106,6 +107,14 @@ public:
         return m_bed_preset_switched_listeners.remove(listener);
     }
 
+    void add_slicing_input_changed_listener(ISlicingInputChangedListener* listener) {
+        m_slicing_input_changed_listeners.add(listener);
+    }
+
+    bool remove_slicing_input_changed_listener(ISlicingInputChangedListener* listener) {
+        return m_slicing_input_changed_listeners.remove(listener);
+    }
+
     void on_selected_config_container_changed(Domain::SelectionId project_id, Domain::SelectionId bed_id) override;
 
 private:
@@ -157,6 +166,7 @@ private:
     Domain::Workbench& m_workbench;
     ListenerList<IBedPresetValueChangedListener> m_bed_preset_value_changed_listeners;
     ListenerList<IBedPresetSwitchedListener> m_bed_preset_switched_listeners;
+    ListenerList<ISlicingInputChangedListener> m_slicing_input_changed_listeners;
 
     ProjectContexts m_project_contexts;
 

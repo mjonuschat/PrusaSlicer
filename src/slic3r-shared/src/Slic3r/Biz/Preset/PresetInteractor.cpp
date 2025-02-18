@@ -47,6 +47,14 @@ void PresetInteractor::set_preset_state_value(
 
     m_bed_preset_value_changed_listeners.invoke([preset_type, &preset_state](auto* l) {
         l->on_bed_preset_value_changed(preset_type, preset_state); });
+
+
+    const auto& project = m_workbench.project(m_selected_project_id);
+    for (const auto& instance : project.find_config_container(ccc.config_container_id)->bed_instances()) {
+        m_slicing_input_changed_listeners.invoke([&](auto listener) {
+            listener->on_slicing_input_changed(instance->id().id);
+        });
+    }
 }
 
 void PresetInteractor::set_preset_state_config_num_extruders(

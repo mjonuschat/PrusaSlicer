@@ -557,9 +557,7 @@ void PlaterRenderModule::render_imgui()
             ImGui::PushStyleColor(ImGuiCol_ButtonActive, { 0.923f, 0.504f, 0.264f, 1.0f });
         }
         if (ImGui::Button("Slice all")) {
-            const Domain::SelectionId instance_id{m_project_interactor.scene_interactor().selected_bed_instance().instance_id};
-            m_project_interactor.update_bed(instance_id);
-            m_project_interactor.slicing_interactor().slice_bed(instance_id);
+            m_project_interactor.slicing_interactor().slice_all();
         }
         if (ImGui::Button("Translate"))
             // TODO: get and pass the correct printer type

@@ -2,6 +2,7 @@
 #pragma once
 #include <unordered_map>
 
+#include "Slic3r/Biz/ISlicingInputChangedListener.hpp"
 #include "libslic3r/TriangleMesh.hpp"
 #include "Slic3r/Assert.hpp"
 #include "Slic3r/Domain/Workbench.hpp"
@@ -133,6 +134,19 @@ public:
     /** @} */
 
     /**
+     * @name Slicing Input Changed Listener
+     * @{
+     */
+    void add_slicing_input_changed_listener(ISlicingInputChangedListener* listener) {
+        m_slicing_input_changed_listeners.add(listener);
+    }
+
+    void remove_slicing_input_changed_listener(ISlicingInputChangedListener* listener) {
+        m_slicing_input_changed_listeners.remove(listener);
+    }
+    /** @} */
+
+    /**
      * @name Transforming selection
      * @{
      */
@@ -171,6 +185,8 @@ public:
 
 private:
     void update_selection_instance_bed_placement();
+    void invoke_slicing_input_changed(const Domain::SelectionId bed_instance_id);
+
 private:
     using ProjectContexts = std::unordered_map<Domain::SelectionId, SceneInteractorProjectContext>;
 
@@ -181,6 +197,7 @@ private:
     Domain::SelectionId m_selected_config_container_id {Domain::INVALID_ID};
     Biz::ListenerList<ISceneSelectionChangedListener> m_selection_changed_listeners;
     Biz::ListenerList<ISelectedBedInstanceChangedListener> m_bed_instance_selection_changed_listeners;
+    Biz::ListenerList<ISlicingInputChangedListener> m_slicing_input_changed_listeners;
     Biz::ListenerList<ISceneChangedListener> m_changed_listeners;
     Domain::BedRef m_selected_bed_instance{ Domain::INVALID_ID, Domain::INVALID_ID };
     BedPlacement m_bed_placement;

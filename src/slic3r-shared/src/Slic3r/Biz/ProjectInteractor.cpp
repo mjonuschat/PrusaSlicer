@@ -53,23 +53,27 @@ void ProjectInteractor::on_selected_bed_instance_changed(Domain::SelectionId pro
         do_select_config_container(container_id);
 }
 
-void ProjectInteractor::update_bed(const Domain::SelectionId bed_instance_id) {
-    const Domain::ConfigContainer& config_container{selected_config_container()};
-    Model &model{m_workbench.project(selected_project_id()).model()};
-    const Domain::ConfigContainer::BedInstanceList& instances{ config_container.bed_instances()};
 
-    const auto instance{std::ranges::find_if(
-        instances,
-        [&](const std::unique_ptr<Slic3r::Domain::BedInstance>& instance) {
-            return instance->id().id == bed_instance_id;
+void ProjectInteractor::on_slicing_input_changed(const Domain::SelectionId bed_instance_id) {
+    const Domain::BedInstance* instance{selected_project().find_bed_instance_by_id(bed_instance_id)};
+    ASSERT_VAL(instance);
+
+    const auto config_container{std::ranges::find_if(selected_project().config_containers(), [&](const auto& container){
+        ASSERT_VAL(container);
+        for (const auto& bed_instance : container->bed_instances()) {
+            if (bed_instance_id == bed_instance->id().id) {
+                return true;
+            }
         }
-    )};
-    ASSERT(instance != instances.end());
+        return false;
+    })};
+
+    ASSERT(config_container != selected_project().config_containers().end());
 
     m_slicing_interactor.update_process(
-        model,
-        config_container.print_config(),
-        **instance
+        selected_project().model(),
+        (*config_container)->print_config(),
+        *instance
     );
 }
 

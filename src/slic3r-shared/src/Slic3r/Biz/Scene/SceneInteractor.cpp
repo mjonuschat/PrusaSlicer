@@ -176,7 +176,6 @@ void SceneInteractor::add_instance(const Transform& xform)
     });
 
     set_selection({SelectionMode::Instance, updated});
-
 }
 
 Domain::BedInstance& SceneInteractor::add_bed_instance(size_t config_container_id)
@@ -196,6 +195,7 @@ Domain::BedInstance& SceneInteractor::add_bed_instance(size_t config_container_i
     m_changed_listeners.invoke([&](auto* l) {
         l->on_bed_instance_added(m_selected_project_id, { updated });
     });
+    invoke_slicing_input_changed(ret.id().id);
     return ret;
 }
 
@@ -333,6 +333,12 @@ void SceneInteractor::update_selection_instance_bed_placement()
     } else {
         proj.project.update_instances_bed_placement(proj.selection.elements);
     }
+}
+
+void SceneInteractor::invoke_slicing_input_changed(const Domain::SelectionId bed_instance_id) {
+    m_slicing_input_changed_listeners.invoke([&](auto listener) {
+        listener->on_slicing_input_changed(bed_instance_id);
+    });
 }
 
 } // namespace Slic3r::Biz::Scene
