@@ -34,12 +34,14 @@ using Slic3r::Tests::StatusEvents;
 using Slic3r::Tests::StatusListener;
 using Slic3r::Biz::Slicing::ISLAResultListener;
 using Slic3r::Tests::ResultListener;
+using Slic3r::Biz::Slicing::IFDMResultListener;
+using Slic3r::Biz::Slicing::IStatusListener;
 
 
 TEST_CASE_METHOD(SlicingFixture, "Slice N beds", "[slicing][slicing-interactor]")
 {
     ResultListener result_listener;
-    slicing.add_listener(&result_listener);
+    slicing.add_listener<IFDMResultListener>(&result_listener);
     using namespace std::chrono_literals;
 
     std::vector<Slic3r::Tests::ModelOnBed> bed_models;
@@ -121,10 +123,10 @@ TEST_CASE_METHOD(SlicingFixture, "Background process dispatches wipe_tower_geome
     using namespace std::chrono_literals;
 
     WipeTowerGeometryListener wipe_tower_geometry_listener;
-    slicing.add_listener(&wipe_tower_geometry_listener);
+    slicing.add_listener<IWipeTowerGeometryListener>(&wipe_tower_geometry_listener);
 
     StatusListener status_listener;
-    slicing.add_listener(&status_listener);
+    slicing.add_listener<IStatusListener>(&status_listener);
 
     auto [model, config]{Tests::load_3mf(Tests::get_datadir() / "wipe_tower.3mf")};
 
@@ -169,7 +171,7 @@ TEST_CASE_METHOD(SlicingFixture, "Update reinitializes the process if printer te
     ModelOnBed model_on_bed{get_cubes_model(1, 5)};
 
     SLAResultListener listener;
-    slicing.add_listener(&listener);
+    slicing.add_listener<ISLAResultListener>(&listener);
     slicing.update_process(model_on_bed.model, model_on_bed.config, model_on_bed.bed_instance);
 
     model_on_bed.config.option<ConfigOptionEnum<PrinterTechnology>>("printer_technology")->value = Slic3r::ptSLA;

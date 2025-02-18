@@ -15,16 +15,6 @@ Localization::Localization()
     m_translations.init_translations(boost::filesystem::path(localization_dir()));
 }
 
-void Localization::add_language_changed_listener(ILanguageChangedListener* l)
-{
-    m_language_changed_listener.add(l);
-}
-
-void Localization::remove_language_changed_listener(ILanguageChangedListener* l)
-{
-    m_language_changed_listener.remove(l);
-}
-
 Localization& localization()
 {
     return Localization::instance();
@@ -33,7 +23,7 @@ Localization& localization()
 bool Localization::set_language(const std::string& language)
 {
     if (m_translations.set_best_translation_for_language(language)) {
-        m_language_changed_listener.invoke([](auto * l) {
+        invoke_listeners<ILanguageChangedListener>([](auto * l) {
             l->on_language_changed(); });
         return true;
     }

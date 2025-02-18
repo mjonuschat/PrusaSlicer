@@ -33,6 +33,7 @@ using Slic3r::Domain::ModelInstanceList;
 using Slic3r::Biz::Slicing::with_limited_instances;
 using Slic3r::Tests::is_gcode_sane;
 using Slic3r::Biz::Platform::PlatformServices;
+using Slic3r::Biz::Slicing::IFDMResultListener;
 
 
 TEST_CASE_METHOD(SlicingFixture, "Update stops slicing", "[slicing][slicing-interactor]") {
@@ -63,7 +64,7 @@ TEST_CASE_METHOD(SlicingFixture, "Update respects instances on bed", "[slicing][
     using namespace std::chrono_literals;
 
     ResultListener listener;
-    slicing.add_listener(&listener);
+    slicing.add_listener<IFDMResultListener>(&listener);
 
     ModelOnBed model_on_bed{get_cubes_model(10, 5)};
 

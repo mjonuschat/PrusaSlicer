@@ -9,6 +9,8 @@ namespace Slic3r::Biz {
 template <class L>
 class ListenerList {
 public:
+    using ListenerType = L;
+
     bool add(L* listener)
     {
         if (std::find(m_listeners.begin(), m_listeners.end(), listener) == m_listeners.end()) {

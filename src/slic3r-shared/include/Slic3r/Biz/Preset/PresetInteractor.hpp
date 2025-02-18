@@ -5,6 +5,7 @@
 #include "Slic3r/Biz/ISlicingInputChangedListener.hpp"
 #include "Slic3r/Biz/Platform/ListenerList.hpp"
 #include "Slic3r/Biz/ISelectedConfigContainerChangedListener.hpp"
+#include "Slic3r/Biz/Platform/WithListeners.hpp"
 #include "Slic3r/Domain/Workbench.hpp"
 #include "Slic3r/Biz/Preset/PresetInteractorProjectContext.hpp"
 #include "Slic3r/Biz/Preset/IConfigInteractor.hpp"
@@ -41,7 +42,13 @@ private:
 /**
  * Manipulates presets associated with config containers.
  */
-class PresetInteractor final : public ISelectedConfigContainerChangedListener
+class PresetInteractor final :
+    public ISelectedConfigContainerChangedListener,
+    public WithListeners<
+        IBedPresetValueChangedListener,
+        IBedPresetSwitchedListener,
+        ISlicingInputChangedListener
+    >
 {
 public:
     explicit PresetInteractor(Domain::Workbench& workbench) : m_workbench(workbench) {}
@@ -85,34 +92,6 @@ public:
         auto it = collection.begin() + collection_index;
         auto& preset = *it;
         ccc.preset_state(preset_type, preset_index) = create_preset_state(&preset);
-    }
-
-    bool add_bed_preset_value_changed_listener(IBedPresetValueChangedListener* listener)
-    {
-        return m_bed_preset_value_changed_listeners.add(listener);
-    }
-
-    bool remove_bed_preset_value_changed_listener(IBedPresetValueChangedListener* listener)
-    {
-        return m_bed_preset_value_changed_listeners.remove(listener);
-    }
-
-    bool add_bed_preset_switched_listener(IBedPresetSwitchedListener* listener)
-    {
-        return m_bed_preset_switched_listeners.add(listener);
-    }
-
-    bool remove_bed_preset_switched_listener(IBedPresetSwitchedListener* listener)
-    {
-        return m_bed_preset_switched_listeners.remove(listener);
-    }
-
-    void add_slicing_input_changed_listener(ISlicingInputChangedListener* listener) {
-        m_slicing_input_changed_listeners.add(listener);
-    }
-
-    bool remove_slicing_input_changed_listener(ISlicingInputChangedListener* listener) {
-        return m_slicing_input_changed_listeners.remove(listener);
     }
 
     void on_selected_config_container_changed(Domain::SelectionId project_id, Domain::SelectionId bed_id) override;

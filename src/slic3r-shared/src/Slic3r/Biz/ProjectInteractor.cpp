@@ -79,7 +79,8 @@ void ProjectInteractor::on_slicing_input_changed(const Domain::SelectionId bed_i
 void ProjectInteractor::do_select_project(Domain::SelectionId project_id)
 {
     m_selection.project_id = project_id;
-    m_selected_project_changed_listeners.invoke([project_id](auto* l) {
+
+    invoke_listeners<ISelectedProjectChangedListener>([project_id](auto* l) {
         l->on_selected_project_changed(project_id);
     });
 }
@@ -88,7 +89,7 @@ void ProjectInteractor::do_select_config_container(Domain::SelectionId container
 {
     m_selection.config_container_id = container_id;
     Domain::SelectionId project_id = m_selection.project_id;
-    m_selected_config_container_changed_listener.invoke([container_id, project_id](auto* l) {
+    invoke_listeners<ISelectedConfigContainerChangedListener>([container_id, project_id](auto* l) {
         l->on_selected_config_container_changed(project_id, container_id);
     });
 }
@@ -100,7 +101,7 @@ Domain::SelectionId ProjectInteractor::add_project(Domain::Project&& p)
     const Domain::SelectionId first_container_id = config_container.id().id;
     Domain::SelectionId project_id = m_workbench.next_project_id();
     projects.emplace(project_id, std::move(p));
-    m_projects_changed_listeners.invoke([project_id](auto* l) { l->on_project_added(project_id); });
+    invoke_listeners<IProjectsChangedListener>([project_id](auto* l) { l->on_project_added(project_id); });
     do_select_project(project_id);
     do_select_config_container(first_container_id);
 
@@ -115,7 +116,7 @@ Domain::SelectionId ProjectInteractor::add_project(Domain::Project&& p)
 
 void ProjectInteractor::remove_project(Domain::SelectionId project_id)
 {
-    m_projects_changed_listeners.invoke([project_id](auto* l) { l->on_project_removed(project_id); });
+    invoke_listeners<IProjectsChangedListener>([project_id](auto* l) { l->on_project_removed(project_id); });
 
     auto& projects = m_workbench.projects();
     auto it = projects.find(project_id);

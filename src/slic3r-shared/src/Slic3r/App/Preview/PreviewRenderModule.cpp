@@ -55,8 +55,10 @@ void PreviewRenderModule::on_init(Render::Device& device)
     AbstractRenderModule::on_init(device);
     m_scene_presenter =
         std::make_unique<Plater::ScenePresenter>(m_workbench, m_project_interactor, *m_device);
-    m_project_interactor.add_selected_project_changed_listener(m_scene_presenter.get());
-    m_project_interactor.scene_interactor().add_scene_changed_listener(m_scene_presenter.get());
+    m_project_interactor.add_listener<Biz::ISelectedProjectChangedListener>(m_scene_presenter.get());
+    m_project_interactor.scene_interactor().add_listener<Biz::Scene::ISceneChangedListener>(
+        m_scene_presenter.get()
+    );
 
     init_viewer(device);
     send_data_to_viewer();

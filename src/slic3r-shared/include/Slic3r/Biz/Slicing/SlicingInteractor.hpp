@@ -10,6 +10,7 @@
 #include <Slic3r/Biz/ISelectedProjectChangedListener.hpp>
 #include <Slic3r/Biz/Platform/PlatformServices.hpp>
 #include <Slic3r/Domain/ConfigContainer.hpp>
+#include <Slic3r/Biz/Platform/WithListeners.hpp>
 
 #include "BackgroundProcess.hpp"
 
@@ -50,14 +51,14 @@ struct UpdateRequest {
     std::reference_wrapper<const Domain::BedInstance> bed;
 };
 
-class SlicingInteractor : public ISelectedProjectChangedListener, public IProcessCallbacks
+class SlicingInteractor
+    : public ISelectedProjectChangedListener,
+      public IProcessCallbacks,
+      public WithListeners<IFDMResultListener, ISLAResultListener, IStatusListener, IWipeTowerGeometryListener>
 {
 public:
     SlicingInteractor(Platform::IMainThreadDispatcher& dispatcher);
     ~SlicingInteractor();
-
-    void add_listener(ISlicingListener* listener);
-    void remove_listener(ISlicingListener *listener);
 
     /* WARNING!
      * Update won't be performed immediately if the background process is running. Rather, the
@@ -103,10 +104,6 @@ private:
     mutable std::mutex m_status_mutex;
     std::map<SlicingId, Status> m_statuses;
 
-    ListenerList<IFDMResultListener> m_fdm_result_listeners;
-    ListenerList<ISLAResultListener> m_sla_result_listeners;
-    ListenerList<IStatusListener> m_status_listeners;
-    ListenerList<IWipeTowerGeometryListener> m_wipe_tower_geometry_listeners;
     std::deque<SlicingId> m_slicing_queue;
     std::map<SlicingId, UpdateRequest> m_update_requests;
     Domain::SelectionId m_current_project_id{Domain::INVALID_ID};

@@ -6,6 +6,7 @@
 #include "Slic3r/App/Scene/Ray.hpp"
 #include "Slic3r/App/Render/Types.hpp"
 #include "Slic3r/Biz/Platform/ListenerList.hpp"
+#include "Slic3r/Biz/Platform/WithListeners.hpp"
 
 namespace Slic3r::App::Scene {
 
@@ -125,7 +126,7 @@ public:
     virtual void camera_updated(const Camera& cam) = 0;
 };
 
-class Camera {
+class Camera : public WithListeners<ICameraUpdateListener> {
 public:
     Camera();
 
@@ -159,16 +160,6 @@ public:
 
     const AbstractCameraProjection& cam_projection() const { return *m_projection_getter; }
 
-    void add_update_listener(ICameraUpdateListener* update_listener)
-    {
-         m_update_listeners.add(update_listener);
-    }
-
-    void remove_update_listener(ICameraUpdateListener* update_listener)
-    {
-        m_update_listeners.remove(update_listener);
-    }
-
 private:
     void update_projection();
 
@@ -180,7 +171,6 @@ private:
     Render::Rect m_viewport;
     double m_zoom{ 1. };
     std::unique_ptr<AbstractCameraProjection> m_projection_getter;
-    CameraUpdateListeners m_update_listeners;
 };
 
 class PerspectiveCameraProjection : public AbstractCameraProjection

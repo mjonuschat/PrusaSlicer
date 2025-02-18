@@ -62,17 +62,17 @@ ThumbnailErrors validate_thumbnails_string(wxString& str, const wxString& def_ex
 
 Field::Field(const ConfigOptionDef& opt, const t_config_option_key& id) : m_opt(opt), m_opt_id(id)
 {
-    localization().add_language_changed_listener(this);
+    localization().add_listener<ILanguageChangedListener>(this);
 }
 
 Field::Field(wxWindow* parent, const ConfigOptionDef& opt, const t_config_option_key& id) : m_parent(parent), m_opt(opt), m_opt_id(id)
 {
-    localization().add_language_changed_listener(this);
+    localization().add_listener<ILanguageChangedListener>(this);
 }
 
 Field::~Field()
 {
-    localization().remove_language_changed_listener(this);
+    localization().remove_listener<ILanguageChangedListener>(this);
 	if (m_on_kill_focus)
 		m_on_kill_focus = nullptr;
 	if (m_on_change)

@@ -53,12 +53,12 @@ TEST_CASE("Project Interactor Listeners")
 
     Mock::SelectedProjectChangedListener selected_project_changed_listener;
     Mock::SelectedConfigContainerChangedListener selected_config_container_listener;
-    project_interactor.add_selected_project_changed_listener(&selected_project_changed_listener);
-    project_interactor.add_selected_config_container_changed_listener(&selected_config_container_listener);
+    project_interactor.add_listener<ISelectedProjectChangedListener>(&selected_project_changed_listener);
+    project_interactor.add_listener<ISelectedConfigContainerChangedListener>(&selected_config_container_listener);
 
     Scene::SceneInteractor& scene_interactor = project_interactor.scene_interactor();
     Mock::SelectedBedInstanceChangedListener selected_bed_instance_changed_listener;
-    scene_interactor.add_bed_instance_selection_changed_listener(&selected_bed_instance_changed_listener);
+    scene_interactor.add_listener<ISelectedBedInstanceChangedListener>(&selected_bed_instance_changed_listener);
 
     {
         REQUIRE_CALL(selected_project_changed_listener, on_selected_project_changed(0));

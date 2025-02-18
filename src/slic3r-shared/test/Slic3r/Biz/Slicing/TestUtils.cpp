@@ -98,6 +98,7 @@ using StatusEvents = std::vector<StatusEvent>;
 using Biz::Slicing::FDMResult;
 using Biz::Slicing::FDMStatistics;
 using Biz::Slicing::SlicingId;
+using Biz::Slicing::IStatusListener;
 
 void ResultListener::on_fdm_result_changed(
     std::shared_ptr<FDMResult> result, std::shared_ptr<FDMStatistics>, const SlicingId id
@@ -115,7 +116,7 @@ void ResultListener::on_fdm_result_changed(
 
 SlicingFixture::SlicingFixture() {
     slicing.on_selected_project_changed(0);
-    slicing.add_listener(&status_listener);
+    slicing.add_listener<IStatusListener>(&status_listener);
 }
 
 SlicingFixture::~SlicingFixture() {

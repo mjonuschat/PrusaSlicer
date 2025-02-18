@@ -101,7 +101,7 @@ void Scene::register_node(Node* node)
             return;
         auto* cam_listener = dynamic_cast<ICameraUpdateListener*>(modifier);
         if (cam_listener)
-            m_camera.add_update_listener(cam_listener);
+            m_camera.add_listener<ICameraUpdateListener>(cam_listener);
     });
 }
 
@@ -114,7 +114,7 @@ void Scene::unregister_node(Node* node)
             return;
         auto* cam_listener = dynamic_cast<ICameraUpdateListener*>(modifier);
         if (cam_listener)
-            m_camera.remove_update_listener(cam_listener);
+            m_camera.remove_listener<ICameraUpdateListener>(cam_listener);
     });
 }
 

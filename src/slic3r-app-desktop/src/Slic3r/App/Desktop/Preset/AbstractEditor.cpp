@@ -103,8 +103,8 @@ AbstractEditor::AbstractEditor(
 )
     : m_parent(parent), m_type(type), m_title(title), m_preset_interactor(preset_interactor)
 {
-    m_preset_interactor.add_bed_preset_switched_listener(this);
-    localization().add_language_changed_listener(this);
+    m_preset_interactor.add_listener<Biz::Preset::IBedPresetSwitchedListener>(this);
+    localization().add_listener<ILanguageChangedListener>(this);
     Create(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, /*wxBK_LEFT | */wxTAB_TRAVERSAL/*, name*/);
     this->SetFont(WX::w_config()->normal_font());
 
@@ -124,8 +124,8 @@ AbstractEditor::AbstractEditor(
 
 AbstractEditor::~AbstractEditor()
 {
-    m_preset_interactor.remove_bed_preset_switched_listener(this);
-    localization().remove_language_changed_listener(this);
+    m_preset_interactor.remove_listener<Biz::Preset::IBedPresetSwitchedListener>(this);
+    localization().remove_listener<ILanguageChangedListener>(this);
 }
 
 // TRN Settings Page: Text of the question mark button

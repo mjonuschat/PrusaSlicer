@@ -3,6 +3,7 @@
 #include <unordered_map>
 
 #include "Slic3r/Biz/ISlicingInputChangedListener.hpp"
+#include "Slic3r/Biz/Platform/WithListeners.hpp"
 #include "libslic3r/TriangleMesh.hpp"
 #include "Slic3r/Assert.hpp"
 #include "Slic3r/Domain/Workbench.hpp"
@@ -55,8 +56,15 @@ public:
 
 struct TransformMemento;
 
-class SceneInteractor final : public ISelectedProjectChangedListener,
-                              public ISelectedConfigContainerChangedListener
+class SceneInteractor final :
+    public ISelectedProjectChangedListener,
+    public ISelectedConfigContainerChangedListener,
+    public WithListeners<
+    ISceneSelectionChangedListener,
+        ISceneChangedListener,
+        ISelectedBedInstanceChangedListener,
+        ISlicingInputChangedListener
+    >
 {
 public:
     using Transform = Matrix4d;
@@ -85,65 +93,6 @@ public:
     const Selection& selection() const;
     void set_selection(const Selection& selection);
     void modify_selection(const std::function<void(Selection&)>& modifier);
-    /** @} */
-
-
-    /**
-     * @name Selection Changed Listener
-     * @{
-     */
-    void add_scene_selection_changed_listener(ISceneSelectionChangedListener* l)
-    {
-        m_selection_changed_listeners.add(l);
-    }
-
-    void remove_scene_selection_changed_listener(ISceneSelectionChangedListener* l)
-    {
-        m_selection_changed_listeners.remove(l);
-    }
-    /** @} */
-
-    /**
-     * @name Scene Changed Listener
-     * @{
-     */
-    void add_scene_changed_listener(ISceneChangedListener* l)
-    {
-        m_changed_listeners.add(l);
-    }
-
-    void remove_scene_changed_listener(ISceneChangedListener* l)
-    {
-        m_changed_listeners.remove(l);
-    }
-    /** @} */
-
-    /**
-     * @name Selected Bed Instance Changed Listener
-     * @{
-     */
-    void add_bed_instance_selection_changed_listener(ISelectedBedInstanceChangedListener* l)
-    {
-        m_bed_instance_selection_changed_listeners.add(l);
-    }
-
-    void remove_bed_instance_selection_changed_listener(ISelectedBedInstanceChangedListener* l)
-    {
-        m_bed_instance_selection_changed_listeners.remove(l);
-    }
-    /** @} */
-
-    /**
-     * @name Slicing Input Changed Listener
-     * @{
-     */
-    void add_slicing_input_changed_listener(ISlicingInputChangedListener* listener) {
-        m_slicing_input_changed_listeners.add(listener);
-    }
-
-    void remove_slicing_input_changed_listener(ISlicingInputChangedListener* listener) {
-        m_slicing_input_changed_listeners.remove(listener);
-    }
     /** @} */
 
     /**
@@ -195,10 +144,6 @@ private:
     ProjectContexts m_projects;
     Domain::SelectionId m_selected_project_id {Domain::INVALID_ID};
     Domain::SelectionId m_selected_config_container_id {Domain::INVALID_ID};
-    Biz::ListenerList<ISceneSelectionChangedListener> m_selection_changed_listeners;
-    Biz::ListenerList<ISelectedBedInstanceChangedListener> m_bed_instance_selection_changed_listeners;
-    Biz::ListenerList<ISlicingInputChangedListener> m_slicing_input_changed_listeners;
-    Biz::ListenerList<ISceneChangedListener> m_changed_listeners;
     Domain::BedRef m_selected_bed_instance{ Domain::INVALID_ID, Domain::INVALID_ID };
     BedPlacement m_bed_placement;
 };

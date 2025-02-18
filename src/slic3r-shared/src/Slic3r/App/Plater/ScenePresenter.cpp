@@ -33,7 +33,7 @@ ScenePresenter::ScenePresenter(
 {
     size_t project_id = m_project_interactor.selected_project_id();
     ScenePresenter::on_selected_project_changed(project_id);
-    project_context().scene().camera().add_update_listener(&m_bed_render_updater);
+    project_context().scene().camera().add_listener<Scene::ICameraUpdateListener>(&m_bed_render_updater);
     const auto& p = m_workbench.project(project_id);
     Domain::BedRefs updated;
     for (const auto& cc : p.config_containers()) {
@@ -43,7 +43,7 @@ ScenePresenter::ScenePresenter(
     }
 
     ScenePresenter::on_bed_instance_added(project_id, updated);
-    m_project_interactor.add_selected_project_changed_listener(&m_bed_render_updater);
+    m_project_interactor.add_listener<Biz::ISelectedProjectChangedListener>(&m_bed_render_updater);
 }
 
 void ScenePresenter::render_scene(Render::CommandBuffer& command_buffer)

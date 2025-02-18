@@ -30,11 +30,19 @@ void PlaterRenderModule::on_init(Render::Device& device)
     AbstractRenderModule::on_init(device);
     m_scene_presenter =
         std::make_unique<ScenePresenter>(m_workbench, m_project_interactor, *m_device);
-    m_project_interactor.add_selected_project_changed_listener(m_scene_presenter.get());
-    m_project_interactor.scene_interactor().add_scene_changed_listener(m_scene_presenter.get());
-    m_project_interactor.scene_interactor().add_scene_selection_changed_listener(m_scene_presenter.get());
-    m_project_interactor.scene_interactor().add_bed_instance_selection_changed_listener(&m_project_interactor);
-    m_project_interactor.scene_interactor().add_bed_instance_selection_changed_listener(m_scene_presenter.get());
+    m_project_interactor.add_listener<Biz::ISelectedProjectChangedListener>(m_scene_presenter.get());
+    m_project_interactor.scene_interactor().add_listener<Biz::Scene::ISceneChangedListener>(
+        m_scene_presenter.get()
+    );
+    m_project_interactor.scene_interactor().add_listener<Biz::Scene::ISceneSelectionChangedListener>(
+        m_scene_presenter.get()
+    );
+    m_project_interactor.scene_interactor().add_listener<Biz::ISelectedBedInstanceChangedListener>(
+        &m_project_interactor
+    );
+    m_project_interactor.scene_interactor().add_listener<Biz::ISelectedBedInstanceChangedListener>(
+        m_scene_presenter.get()
+    );
     init_gizmos();
     init_scene();
 }

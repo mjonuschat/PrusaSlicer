@@ -14,20 +14,20 @@ void Camera::set_viewport(const Render::Rect& viewport)
 {
     m_viewport = viewport;
     update_projection();
-    m_update_listeners.invoke([this](auto* l) { l->camera_updated(*this); });
+    invoke_listeners<ICameraUpdateListener>([this](auto* l) { l->camera_updated(*this); });
 }
 
 void Camera::set_zoom(double value)
 {
     m_zoom = std::clamp(value, m_projection_getter->min_zoom(), m_projection_getter->max_zoom());
     update_projection();
-    m_update_listeners.invoke([this](auto* l) { l->camera_updated(*this); });
+    invoke_listeners<ICameraUpdateListener>([this](auto* l) { l->camera_updated(*this); });
 }
 
 void Camera::look_at(const Vec3d& eye, const Vec3d& center, const Vec3d& up)
 {
     m_model = Render::look_at(eye, center, up).inverse();
-    m_update_listeners.invoke([this](auto* l) { l->camera_updated(*this); });
+    invoke_listeners<ICameraUpdateListener>([this](auto* l) { l->camera_updated(*this); });
 }
 
 void Camera::switch_projection_type()
@@ -42,7 +42,7 @@ void Camera::switch_projection_type()
         m_zoom = CameraProjectionParameters::perspective_zoom_from_orthographic(m_zoom);
     }
     update_projection();
-    m_update_listeners.invoke([this](auto* l) { l->camera_updated(*this); });
+    invoke_listeners<ICameraUpdateListener>([this](auto* l) { l->camera_updated(*this); });
 }
 
 Ray Camera::ray_at(double screen_x, double screen_y) const

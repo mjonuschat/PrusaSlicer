@@ -28,19 +28,29 @@ class IProjectsChangedListener;
  * - get access to SceneInteractor (to manipulate 3D volumes)
  * .
  */
-class ProjectInteractor final : public ISelectedBedInstanceChangedListener, private ISlicingInputChangedListener
+
+
+
+class ProjectInteractor final :
+    public ISelectedBedInstanceChangedListener,
+    public ISlicingInputChangedListener,
+    public WithListeners<
+        ISelectedProjectChangedListener,
+        IProjectsChangedListener,
+        ISelectedConfigContainerChangedListener
+    >
 {
 public:
     explicit ProjectInteractor(Domain::Workbench& workbench, Platform::IMainThreadDispatcher& dispatcher)
         : m_workbench(workbench), m_preset_interactor(workbench), m_scene_interactor(workbench), m_slicing_interactor(dispatcher)
     {
-        add_selected_config_container_changed_listener(&m_preset_interactor);
-        add_selected_config_container_changed_listener(&m_scene_interactor);
-        add_selected_project_changed_listener(&m_scene_interactor);
-        m_scene_interactor.add_bed_instance_selection_changed_listener(this);
-        add_selected_project_changed_listener(&m_slicing_interactor);
-        m_scene_interactor.add_slicing_input_changed_listener(this);
-        m_preset_interactor.add_slicing_input_changed_listener(this);
+        add_listener<ISelectedConfigContainerChangedListener>(&m_preset_interactor);
+        add_listener<ISelectedConfigContainerChangedListener>(&m_scene_interactor);
+        add_listener<ISelectedProjectChangedListener>(&m_scene_interactor);
+        m_scene_interactor.add_listener<ISelectedBedInstanceChangedListener>(this);
+        add_listener<ISelectedProjectChangedListener>(&m_slicing_interactor);
+        m_scene_interactor.add_listener<ISlicingInputChangedListener>(this);
+        m_preset_interactor.add_listener<ISlicingInputChangedListener>(this);
     }
 
     /**
@@ -160,57 +170,13 @@ public:
     Slicing::SlicingInteractor& slicing_interactor() { return m_slicing_interactor; }
 
     /**
-     * @name ISelectedProjectChangedListener: active project changed notification
-     * @{
-     */
-    void add_selected_project_changed_listener(ISelectedProjectChangedListener* l)
-    {
-        m_selected_project_changed_listeners.add(l);
-    }
-
-    void remove_selected_project_changed_listener(ISelectedProjectChangedListener* l)
-    {
-        m_selected_project_changed_listeners.remove(l);
-    }
-    /** @} */
-
-    /**
-     * @name IProjectsChangedListener: list of opened projects chanegd (project opened or closed)
-     * @{
-     */
-    void add_projects_changed_listener(IProjectsChangedListener* l)
-    {
-        m_projects_changed_listeners.add(l);
-    }
-
-    void remove_projects_changed_listener(IProjectsChangedListener* l)
-    {
-        m_projects_changed_listeners.remove(l);
-    }
-    /** @} */
-
-    /**
-     * @name ISelectedConfigContainerChangedListener Selected config container changed
-     * @{
-     */
-    void add_selected_config_container_changed_listener(ISelectedConfigContainerChangedListener* l)
-    {
-        m_selected_config_container_changed_listener.add(l);
-    }
-
-    void remove_selected_config_container_changed_listener(ISelectedConfigContainerChangedListener* l)
-    {
-        m_selected_config_container_changed_listener.remove(l);
-    }
-    /** @} */
-
-    /**
      * @name ISelectedBedInstanceChangedListener interface implementation
      * @{
      */
     void on_selected_bed_instance_changed(Domain::SelectionId project_id, Domain::SelectionId container_id, Domain::SelectionId bed_instance_id) override;
     /** @} */
 
+    void on_slicing_input_changed(const Domain::SelectionId bed_instance_id) override;
 
 private:
     void do_select_project(Domain::SelectionId project_id);
@@ -219,18 +185,12 @@ private:
     void initialize_new_project_before_inserting(Domain::Project& p);
     void initialize_inserted_project(size_t project_id);
 
-    void on_slicing_input_changed(const Domain::SelectionId bed_instance_id) override;
-
 private:
     struct Selection
     {
         Domain::SelectionId project_id{Domain::INVALID_ID};
         Domain::SelectionId config_container_id{Domain::INVALID_ID};
     };
-
-    ListenerList<ISelectedProjectChangedListener> m_selected_project_changed_listeners;
-    ListenerList<ISelectedConfigContainerChangedListener> m_selected_config_container_changed_listener;
-    ListenerList<IProjectsChangedListener> m_projects_changed_listeners;
 
     Domain::Workbench& m_workbench;
     Selection m_selection;

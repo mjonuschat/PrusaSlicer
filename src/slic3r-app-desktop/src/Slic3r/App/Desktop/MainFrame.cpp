@@ -104,7 +104,7 @@ MainFrame::MainFrame(
 )
     : wxFrame(nullptr, wxID_ANY, {}), m_workbench(workbench), m_preset_interactor(preset_interactor)
 {
-    localization().add_language_changed_listener(this);
+    localization().add_listener<ILanguageChangedListener>(this);
     auto em = w_config()->em_unit();
 
     this->SetMinSize(FromDIP(wxSize(80 * em, 40 * em)));
@@ -149,7 +149,7 @@ MainFrame::MainFrame(
 
 MainFrame::~MainFrame()
 {
-    localization().remove_language_changed_listener(this);
+    localization().remove_listener<ILanguageChangedListener>(this);
 }
 
 void MainFrame::on_language_changed()

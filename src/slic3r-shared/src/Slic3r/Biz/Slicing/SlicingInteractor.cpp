@@ -8,46 +8,6 @@
 
 namespace Slic3r::Biz::Slicing {
 
-void SlicingInteractor::add_listener(ISlicingListener* listener) {
-    if (auto _listener{dynamic_cast<IFDMResultListener*>(listener)}) {
-        m_fdm_result_listeners.add(_listener);
-        return;
-    }
-    if (auto _listener{dynamic_cast<ISLAResultListener*>(listener)}) {
-        m_sla_result_listeners.add(_listener);
-        return;
-    }
-    if (auto _listener{dynamic_cast<IStatusListener*>(listener)}) {
-        m_status_listeners.add(_listener);
-        return;
-    }
-    if (auto _listener{dynamic_cast<IWipeTowerGeometryListener*>(listener)}) {
-        m_wipe_tower_geometry_listeners.add(_listener);
-        return;
-    }
-    ASSERT(false, "Unknown listener type!");
-}
-
-void SlicingInteractor::remove_listener(ISlicingListener* listener) {
-    if (auto _listener{dynamic_cast<IFDMResultListener*>(listener)}) {
-        m_fdm_result_listeners.remove(_listener);
-        return;
-    }
-    if (auto _listener{dynamic_cast<ISLAResultListener*>(listener)}) {
-        m_sla_result_listeners.remove(_listener);
-        return;
-    }
-    if (auto _listener{dynamic_cast<IStatusListener*>(listener)}) {
-        m_status_listeners.remove(_listener);
-        return;
-    }
-    if (auto _listener{dynamic_cast<IWipeTowerGeometryListener*>(listener)}) {
-        m_wipe_tower_geometry_listeners.remove(_listener);
-        return;
-    }
-    ASSERT(false, "Unknown listener type!");
-}
-
 SlicingInteractor::SlicingInteractor(Platform::IMainThreadDispatcher& dispatcher)
     : m_dispatcher(dispatcher)
 {}
@@ -175,7 +135,7 @@ void SlicingInteractor::on_status(const Status status, const SlicingId id) {
 
     if(!m_dispatcher.dispatch_on_main_thread([=](){
         process_slicing_queue();
-        m_status_listeners.invoke([&](IStatusListener* listener){
+        invoke_listeners<IStatusListener>([&](auto* listener){
             listener->on_status_changed(status, id);
         });
     })) {
@@ -193,7 +153,7 @@ void SlicingInteractor::on_fdm_result(FDMResult&& result, FDMStatistics&& statis
             _result = std::make_shared<FDMResult>(std::move(result)),
             _statistics = std::make_shared<FDMStatistics>(std::move(statistics))
         ]() mutable {
-            m_fdm_result_listeners.invoke([&](IFDMResultListener* listener){
+            invoke_listeners<IFDMResultListener>([&](auto* listener){
                 listener->on_fdm_result_changed(_result, _statistics, id);
             });
             _result.reset();
@@ -209,7 +169,7 @@ void SlicingInteractor::on_sla_result(const SlicingId id) {
 
     if(!m_dispatcher.dispatch_on_main_thread(
         [=]() {
-            m_sla_result_listeners.invoke([&](ISLAResultListener* listener){
+            invoke_listeners<ISLAResultListener>([&](auto* listener){
                 listener->on_sla_result_changed(id);
             });
         }
@@ -227,7 +187,7 @@ void SlicingInteractor::on_wipe_tower_geometry(Print::WipeTowerGeometry&& wipe_t
 
     if (!m_dispatcher.dispatch_on_main_thread(
         [this, id, geometry=std::move(wipe_tower_geometry)]() mutable {
-            m_wipe_tower_geometry_listeners.invoke([&](IWipeTowerGeometryListener* listener){
+            invoke_listeners<IWipeTowerGeometryListener>([&](auto* listener){
                 listener->on_wipe_tower_geometry(geometry, id);
             });
         }
