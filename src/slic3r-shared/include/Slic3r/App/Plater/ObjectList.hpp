@@ -2,6 +2,7 @@
 #include "imgui/imgui.h"
 
 #include <map>
+#include <set>
 #include <string>
 
 namespace Slic3r {
@@ -13,6 +14,7 @@ class ModelVolume;
 
 namespace Slic3r::Domain {
 struct ElementRef;
+class BedInstance;
 }
 
 namespace Slic3r::Biz::Scene {
@@ -77,13 +79,15 @@ protected:
 
 private:
 
-    void update_selection_from_scene(const Slic3r::Biz::Scene::Selection& selection);
-    bool render_tree(ImVec2 size, const Slic3r::Biz::Scene::Selection& selection);
-    bool render_object_node(const Slic3r::ModelObject* object, const Slic3r::Biz::Scene::Selection& selection);
+    void update_selection_from_scene();
+    bool render_tree(ImVec2 size);
+    bool render_config_containers();
+    bool render_bed_node(const Domain::BedInstance* bed);
+    bool render_object_node(const Slic3r::ModelObject* object, const Domain::BedInstance* bed);
     bool render_volumes(const Slic3r::ModelObject* object);
     void render_volume_node(const Slic3r::ModelVolume* volume, size_t vol_id, bool is_selected, const Domain::ElementRef& sel_element);
-    bool render_instances_node(const Slic3r::ModelObject* object);
-    bool render_instances(const Slic3r::ModelObject* object);
+    bool render_instances_node(const Slic3r::ModelObject* object, const std::set<size_t>& instances_on_bed);
+    bool render_instances(const Slic3r::ModelObject* object, const std::set<size_t>& instances_on_bed);
     void render_instance_node(const Slic3r::ModelObject* object, size_t inst_id, bool is_selected);
 
     void render_edited(const char* init_name, const Domain::ElementRef& sel_element);

@@ -2,6 +2,8 @@
 #include "Slic3r/Log.hpp"
 //#include "Slic3r/Biz/Scene/Selection.hpp"
 #include "Slic3r/Domain/ElementRef.hpp"
+#include "Slic3r/Domain/Project.hpp"
+#include "Slic3r/Domain/ConfigContainer.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 
@@ -119,6 +121,35 @@ std::string icon_str(const Slic3r::ModelVolume* volume)
     }
 }
 
+std::string get_bed_name(const Slic3r::DynamicPrintConfig& print_config)
+{
+    return icon_str(Slic3r::Preset::printer_technology(print_config) == ptSLA ? 
+                    ImGui::PrinterSlaIconMarker : ImGui::PrinterIconMarker) 
+           + print_config.opt_string("printer_model");
+}
+
+bool bed_has_object(const Domain::BedInstance* bed, const Slic3r::ModelObject* object)
+{
+    const Domain::ModelInstanceList& bed_model_instances = bed->model_instances();
+    for (const Slic3r::ModelInstance* instance : bed_model_instances)
+        if (instance->get_object() == object)
+            return true;
+
+    return false;
+}
+
+std::set<size_t> get_object_instance_ids_on_bed(const Domain::BedInstance* bed, const Slic3r::ModelObject* object)
+{
+    std::set<size_t> object_instances_on_bed;
+
+    const Domain::ModelInstanceList& bed_model_instances = bed->model_instances();
+    for (Slic3r::ModelInstance* instance : bed_model_instances)
+        if (instance->get_object() == object)
+            object_instances_on_bed.emplace(instance->id().id);
+
+    return object_instances_on_bed;
+}
+
 bool is_whole_object_selected(const Slic3r::ModelObject* object, const Slic3r::Biz::Scene::Selection& selection)
 {
     if (selection.mode == Biz::Scene::SelectionMode::Instance) {
@@ -161,17 +192,20 @@ ImGuiMultiSelectFlags ms_flags = ImGuiMultiSelectFlags_ScopeRect |
                                  ImGuiMultiSelectFlags_BoxSelect1d | 
                                  ImGuiMultiSelectFlags_SelectOnClick;
 
+ImGuiTreeNodeFlags node_flags = ImGuiTreeNodeFlags_OpenOnArrow | 
+                                ImGuiTreeNodeFlags_SpanFullWidth;
+
 void ObjectList::render(ImVec2 pos, ImVec2 size)
 {
     assert(m_model && m_scene_interactor);
-    update_selection_from_scene(m_scene_interactor->selection());
+    update_selection_from_scene();
 
     ImGui::SetCursorScreenPos(pos + ImVec2(10.f, 10.f));
     ImGui::Text("Objects");
 
     is_dragging = false;
     // Define a region for the tree control
-    if (render_tree(size, m_scene_interactor->selection())) {
+    if (render_tree(size)) {
         // update selection on scene
         propagate_selection();
     }
@@ -209,8 +243,9 @@ void ObjectList::render(ImVec2 pos, ImVec2 size)
     }
 }
 
-void ObjectList::update_selection_from_scene(const Slic3r::Biz::Scene::Selection& scene_selection)
+void ObjectList::update_selection_from_scene()
 {
+    const Slic3r::Biz::Scene::Selection& scene_selection = m_scene_interactor->selection();
     for (const Slic3r::ModelObject* object : m_model->objects) {
         size_t object_id = object->id().id;
 
@@ -239,10 +274,10 @@ void ObjectList::update_selection_from_scene(const Slic3r::Biz::Scene::Selection
     }
 }
 
-bool ObjectList::render_tree(ImVec2 size, const Slic3r::Biz::Scene::Selection& scene_selection)
+bool ObjectList::render_tree(ImVec2 size)
 {
     bool is_changed_selection = false;
-    if (ImGui::BeginChild("##Tree", ImVec2(size.x, size.y - ImGui::GetFontSize() * 2), ImGuiChildFlags_ResizeY))
+    if (ImGui::BeginChild("##Tree", ImVec2(size.x, 1.5f * size.y), ImGuiChildFlags_ResizeY))
     {
         ImGui::Columns(3, "tree", false);
 
@@ -250,26 +285,67 @@ bool ObjectList::render_tree(ImVec2 size, const Slic3r::Biz::Scene::Selection& s
         ImGui::SetColumnWidth(1, 35);
         ImGui::SetColumnWidth(2, 35);
 
-        for (const Slic3r::ModelObject* object : m_model->objects)
-            is_changed_selection |= render_object_node(object, scene_selection);
+        is_changed_selection = render_config_containers();
     }
     ImGui::EndChild();
-
     ImGui::Columns(1);
 
     return is_changed_selection;
 }
 
-bool ObjectList::render_object_node(const Slic3r::ModelObject* object, const Slic3r::Biz::Scene::Selection& selection)
+bool ObjectList::render_config_containers()
+{
+    bool is_changed_selection = false;
+    for (auto& cc : m_scene_interactor->selected_project_config_containers()) {
+        bool is_open = ImGui::TreeNodeEx(("##cc_id" + std::to_string(cc->id().id)).c_str(), node_flags, "%s", 
+                                         (get_bed_name(cc->print_config())).c_str());
+        ImGui::NextColumn();
+        ImGui::NextColumn();
+        ImGui::NextColumn();
+        if (is_open) {
+            for (auto& bed_inst : cc->bed_instances())
+                is_changed_selection |= render_bed_node(bed_inst.get());
+            ImGui::TreePop();
+        }
+    }
+    return is_changed_selection;
+}
+
+bool ObjectList::render_bed_node(const Domain::BedInstance* bed)
+{
+    size_t bed_id = bed->id().id;
+
+    const std::string name = "Bed " + std::to_string(bed_id);
+    const std::string name_id = "##bed_id" + std::to_string(bed_id);
+
+    bool is_open = ImGui::TreeNodeEx(name_id.c_str(), node_flags, "%s", (icon_str(ImGui::MinimalizeButton) + name).c_str());
+
+    ImGui::NextColumn();
+    ImGui::NextColumn();
+    ImGui::NextColumn();
+    
+    bool is_changed_selection = false;
+    if (is_open) {
+        for (const Slic3r::ModelObject* object : m_model->objects) {
+            if (bed_has_object(bed, object))
+                is_changed_selection |= render_object_node(object, bed);
+        }
+        ImGui::TreePop();
+    }
+
+    return is_changed_selection;
+}
+
+bool ObjectList::render_object_node(const Slic3r::ModelObject* object, const Domain::BedInstance* bed)
 {
     size_t object_id = object->id().id;
     Domain::ElementRef sel_element{ object_id };
 
-    bool is_selected = is_whole_object_selected(object, selection);
+    bool is_selected = is_whole_object_selected(object, m_scene_interactor->selection());
     if (m_edited_node_id == object_id && !is_selected)
         m_edited_node_id = 0;  // Exit edit mode
 
-    ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanFullWidth;
+    ImGuiTreeNodeFlags flags = node_flags;
     if (is_selected) flags |= ImGuiTreeNodeFlags_Selected;
 
     const std::string name = (object->name.empty() ? "Object " + std::to_string(object_id) : object->name);
@@ -311,8 +387,11 @@ bool ObjectList::render_object_node(const Slic3r::ModelObject* object, const Sli
         if (object->volumes.size() > 1)
             is_changed_selection |= render_volumes(object);
 
-        if (object->instances.size() > 1)
-            is_changed_selection |= render_instances_node(object);
+        if (object->instances.size() > 1) {
+            std::set<size_t> instances_on_bed = get_object_instance_ids_on_bed(bed, object);
+            if (!instances_on_bed.empty())
+                is_changed_selection |= render_instances_node(object, instances_on_bed);
+        }
 
         ImGui::TreePop();
     }
@@ -394,18 +473,16 @@ void ObjectList::render_volume_node(const Slic3r::ModelVolume* volume, size_t vo
     ImGui::NextColumn();
 }
 
-bool ObjectList::render_instances_node(const Slic3r::ModelObject* object)
+bool ObjectList::render_instances_node(const Slic3r::ModelObject* object, const std::set<size_t>& instances_on_bed)
 {
     size_t object_id = object->id().id;
     Domain::ElementRef sel_element{ object_id };
 
     MultiSelectionStorage& ms = m_instances_ms.at(object_id);
 
-    ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
-
     const std::string name_id = "Instances##obj_id" + std::to_string(object->id().id);
 
-    bool isOpen = ImGui::TreeNodeEx(name_id.c_str(), flags, "Component");
+    bool isOpen = ImGui::TreeNodeEx(name_id.c_str(), node_flags, "Component");
 
     bool is_changed_selection = handle_selection(sel_element);
     if (is_changed_selection) {
@@ -424,25 +501,28 @@ bool ObjectList::render_instances_node(const Slic3r::ModelObject* object)
     ImGui::NextColumn();
 
     if (isOpen) {
-        is_changed_selection |= render_instances(object);
+        is_changed_selection |= render_instances(object, instances_on_bed);
         ImGui::TreePop();
     }
 
     return is_changed_selection;
 }
 
-bool ObjectList::render_instances(const Slic3r::ModelObject* object)
+bool ObjectList::render_instances(const Slic3r::ModelObject* object, const std::set<size_t>& instances_on_bed)
 {
     const Slic3r::ModelInstancePtrs& instances = object->instances;
     size_t object_id = object->id().id;
 
     MultiSelectionStorage& ms = m_instances_ms.at(object_id);
     ImGui::PushID(&ms);        
-    ImGuiMultiSelectIO* ms_inst_io = ImGui::BeginMultiSelect(ms_flags, ms.Size, object->instances.size());
+    ImGuiMultiSelectIO* ms_inst_io = ImGui::BeginMultiSelect(ms_flags, ms.Size, instances_on_bed.size());
     ms.ApplyRequests(ms_inst_io);
 
-    for (size_t inst_id = 0; inst_id < instances.size(); inst_id++)
-        render_instance_node(object, inst_id, ms.Contains((ImGuiID)instances[inst_id]->id().id));
+    for (size_t inst_id = 0; inst_id < instances.size(); inst_id++) {
+        size_t instance_id = instances[inst_id]->id().id;
+        if (instances_on_bed.count(instance_id))
+            render_instance_node(object, inst_id, ms.Contains((ImGuiID)instance_id));
+    }
 
     ms_inst_io = ImGui::EndMultiSelect();
     ms.ApplyRequests(ms_inst_io);
@@ -460,17 +540,19 @@ bool ObjectList::render_instances(const Slic3r::ModelObject* object)
 
         for (const Slic3r::ModelInstance* instance : instances) {
             size_t instance_id = instance->id().id;
-            Domain::ElementRef sel_element{ object_id, instance->id().id };
+            if (instances_on_bed.count(instance_id)) {
+                Domain::ElementRef sel_element{ object_id, instance->id().id };
 
-            if (ms.Contains((ImGuiID)instance_id) && !selected_items.count(sel_element)) {
-                is_changed_selection = true;
-                selected_items.insert(sel_element);
+                if (ms.Contains((ImGuiID)instance_id) && !selected_items.count(sel_element)) {
+                    is_changed_selection = true;
+                    selected_items.insert(sel_element);
+                }
+                else if (!ms.Contains((ImGuiID)instance_id) && selected_items.count(sel_element)) {
+                    is_changed_selection = true;
+                    selected_items.erase(sel_element);
+                }
             }
-            else if (!ms.Contains((ImGuiID)instance_id) && selected_items.count(sel_element)) {
-                is_changed_selection = true;
-                selected_items.erase(sel_element);
-            }
-        }            
+        }
     }
 
     return is_changed_selection;
