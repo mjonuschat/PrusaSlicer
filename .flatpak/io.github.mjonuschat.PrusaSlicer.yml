@@ -3,7 +3,7 @@ runtime: org.gnome.Platform
 runtime-version: "47"
 sdk: org.gnome.Sdk
 command: entrypoint
-desktop-file-name-suffix: " (alpha1)"
+desktop-file-name-suffix: " (beta1)"
 separate-locales: true
 finish-args:
 - --share=ipc
