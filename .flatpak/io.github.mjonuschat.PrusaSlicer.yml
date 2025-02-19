@@ -3,7 +3,7 @@ runtime: org.gnome.Platform
 runtime-version: "47"
 sdk: org.gnome.Sdk
 command: entrypoint
-desktop-file-name-suffix: ""
+desktop-file-name-suffix: " (alpha1)"
 separate-locales: true
 finish-args:
 - --share=ipc
@@ -194,9 +194,9 @@ modules:
 
   # Catch2
   - type: file
-    url: https://github.com/catchorg/Catch2/archive/refs/tags/v2.13.10.zip
+    url: https://github.com/catchorg/Catch2/archive/refs/tags/v3.8.0.zip
     dest: external-packages/Catch2
-    sha256: 121e7488912c2ce887bfe4699ebfb983d0f2e0d68bcd60434cdfd6bb0cf78b43
+    sha256: bffd2c45a84e5a4b0c17e695798e8d2f65931cbaf5c7556d40388d1d8d04eb83
 
   # CGAL
   - type: file
@@ -224,15 +224,21 @@ modules:
 
   # wxWidgets
   - type: file
-    url: https://github.com/prusa3d/wxWidgets/archive/323a465e577e03f330e2e6a4c78e564d125340cb.zip
+    url: https://github.com/prusa3d/wxWidgets/archive/5462e7d7cfac645926188443e842171e107b312c.zip
     dest: external-packages/wxWidgets
-    sha256: b538e4ad3cc93117932f4ded70c476d6650f9c70a9d4055a08f3693864c47465
+    sha256: 3ebb971ddb45ceea6d9b965c3d0266f44edae71f2a7daa5d48db34bd95aa878b
 
   # OpenCSG
   - type: file
     url: https://github.com/floriankirsch/OpenCSG/archive/refs/tags/opencsg-1-4-2-release.zip
     dest: external-packages/OpenCSG
     sha256: 51afe0db79af8386e2027d56d685177135581e0ee82ade9d7f2caff8deab5ec5
+
+  # z3
+  - type: file
+    url: https://github.com/Z3Prover/z3/archive/refs/tags/z3-4.13.0.zip
+    dest: external-packages/z3
+    sha256: 81543736dcbbbcb037a7df55d0be596245d509f3f69f56610df32728e48ee050
 
   # NanoSVG
   - type: file
@@ -378,6 +384,10 @@ modules:
   # script to set dark theme variant
   - type: file
     path: set-dark-theme-variant.py
+
+  # script to detect if host uses dark theme
+  - type: file
+    path: uses-dark-theme.py
 
   # start-up script
   # README: workaround for the following issues, also enables dark theme variant:
