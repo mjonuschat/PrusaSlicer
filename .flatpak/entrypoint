@@ -30,9 +30,11 @@ if [ $USE_LOCALE_WORKAROUND = true ]; then
     fi
 fi
 
-[ $PRUSA_SLICER_DARK_THEME == true ] &&
-    export GTK_THEME='Adwaita:dark' &&
+if XDG_CONFIG_HOME=$HOME/.config /app/bin/uses-dark-theme.py; then
+    export GTK_THEME='Adwaita:dark'
+    export PRUSA_SLICER_DARK_THEME='true'
     echo "Message: $(date +%T): INFO: using dark theme variant"
+fi
 
 exec /app/bin/prusa-slicer "$@" &
 $(/app/bin/set-dark-theme-variant.py) &

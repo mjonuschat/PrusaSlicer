@@ -3,7 +3,7 @@
     <id>io.github.mjonuschat.PrusaSlicer</id>
     <launchable type="desktop-id">io.github.mjonuschat.PrusaSlicer.desktop</launchable>
     <name>PrusaSlicer (BOSS Edition)</name>
-    <summary>Get perfect 3D prints</summary>
+   <summary>The Slicer for Every Maker</summary>
     <developer id="mojocode.de">
         <name>Morton Jonuschat</name>
     </developer>
@@ -34,18 +34,41 @@
     </branding>
     <screenshots>
         <screenshot type="default">
-            <image>https://raw.githubusercontent.com/flathub/com.prusa3d.PrusaSlicer/b284b0ec93346dd66f9ae85120184e66f0569fa5/screenshots/default.png</image>
+            <image>https://raw.githubusercontent.com/flathub/com.prusa3d.PrusaSlicer/59900c957ae1b1f51f855cfdb7692797385ed2ff/screenshots/plater.png</image>
             <caption>Clear and simple UI</caption>
+        </screenshot>
+        <screenshot>
+            <image>https://raw.githubusercontent.com/flathub/com.prusa3d.PrusaSlicer/59900c957ae1b1f51f855cfdb7692797385ed2ff/screenshots/preview.png</image>
+            <caption>Detailed GCode preview</caption>
+        </screenshot>
+        <screenshot>
+            <image>https://raw.githubusercontent.com/flathub/com.prusa3d.PrusaSlicer/59900c957ae1b1f51f855cfdb7692797385ed2ff/screenshots/multiplebed.png</image>
+            <caption>Multiple bed support</caption>
+        </screenshot>
+        <screenshot>
+            <image>https://raw.githubusercontent.com/flathub/com.prusa3d.PrusaSlicer/59900c957ae1b1f51f855cfdb7692797385ed2ff/screenshots/plater_sidebar.png</image>
+            <caption>Multiple material support</caption>
+        </screenshot>
+        <screenshot>
+            <image>https://raw.githubusercontent.com/flathub/com.prusa3d.PrusaSlicer/59900c957ae1b1f51f855cfdb7692797385ed2ff/screenshots/printables.png</image>
+            <caption>Intergration of printables.com</caption>
+        </screenshot>
+        <screenshot>
+            <image>https://raw.githubusercontent.com/flathub/com.prusa3d.PrusaSlicer/59900c957ae1b1f51f855cfdb7692797385ed2ff/screenshots/connect.png</image>
+            <caption>Prusa Connect integration</caption>
+        </screenshot>
+        <screenshot>
+            <image>https://raw.githubusercontent.com/flathub/com.prusa3d.PrusaSlicer/59900c957ae1b1f51f855cfdb7692797385ed2ff/screenshots/SLA.png</image>
+            <caption>SLA slicing</caption>
         </screenshot>
     </screenshots>
     <description>
         <p>
-            PrusaSlicer (formerly known as Slic3r Prusa Edition or Slic3r PE) is our own in-house developed slicer software 
-            based on the open-source project Slic3r. PrusaSlicer is an open-source, feature-rich, frequently updated tool 
-            that contains everything you need to export the perfect print files for (not only) your Original Prusa 3D printer.
-            Of course, it’s still open-source and you’ll find everything on our GitHub. 
-            We’re still proud that our slicer is based on the original project written by Alessandro Ranellucci! 
-            Both projects now happily coexist and new features are frequently merged between one and another.
+            PrusaSlicer is a powerful, lightweight slicing software designed for precision and flexibility in 3D printing.
+            Compatible with a wide range of printers and materials, it combines advanced customization options with an efficient,
+            streamlined workflow, delivering high-quality results on Linux, macOS, and Windows.
+            Developed by Prusa Research, PrusaSlicer is fully open-source, supported by a vibrant community,
+            and built on the solid foundation of the Slic3r project, originally created by Alessandro Ranellucci.
         </p>
     </description>
     <releases>
