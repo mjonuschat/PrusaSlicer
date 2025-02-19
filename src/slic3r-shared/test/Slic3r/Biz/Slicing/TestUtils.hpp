@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Slic3r/App/Platform/StdMainThreadDispatcher.hpp"
 #include "Slic3r/Biz/Slicing/SlicingInteractor.hpp"
 #include "libslic3r/Model.hpp"
 #include <catch2/catch_test_macros.hpp>
@@ -47,7 +46,6 @@ struct StatusListener : public Biz::Slicing::IStatusListener {
 };
 
 [[nodiscard]] bool wait_for_status(
-    Slic3r::Biz::Platform::IMainThreadDispatcher& dispatcher,
     const StatusListener& status_listener,
     const std::chrono::seconds timeout,
     const std::function<bool(StatusEvents)>& condition
@@ -68,7 +66,6 @@ struct ResultListener : public Biz::Slicing::IFDMResultListener
 struct SlicingFixture {
     SlicingFixture();
 
-    Slic3r::App::Platform::StdMainThreadDispatcher dispatcher{};
     Biz::Slicing::SlicingInteractor slicing;
     StatusListener status_listener;
 };

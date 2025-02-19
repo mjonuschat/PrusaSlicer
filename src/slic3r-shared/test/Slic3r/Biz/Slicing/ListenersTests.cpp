@@ -23,7 +23,6 @@ using Slic3r::Biz::Slicing::Status;
 using Slic3r::Tests::get_cubes_model;
 using Slic3r::Tests::ModelOnBed;
 using Slic3r::Tests::is_gcode_sane;
-using Slic3r::App::Platform::StdMainThreadDispatcher;
 using Slic3r::Biz::Platform::PlatformServices;
 using Slic3r::Biz::Slicing::FDMResult;
 using Slic3r::Biz::Slicing::FDMStatistics;
@@ -61,7 +60,7 @@ TEST_CASE_METHOD(SlicingFixture, "Slice N beds", "[slicing][slicing-interactor]"
 
     slicing.slice_all();
 
-    REQUIRE(wait_for_status(dispatcher, status_listener, 3s, [](const StatusEvents &events){
+    REQUIRE(wait_for_status(status_listener, 3s, [](const StatusEvents &events){
         return beds_count == std::ranges::count_if(events, [](const StatusEvent& event){
             return event.status == Status::Finished;
         });
@@ -124,9 +123,6 @@ TEST_CASE("Background process dispatches wipe_tower_geometry once available", "[
 {
     using namespace std::chrono_literals;
 
-    StdMainThreadDispatcher dispatcher{};
-    PlatformServices::instance().set_main_thread_dispatcher(&dispatcher);
-
     SlicingInteractor slicing;
     slicing.on_selected_project_changed(0);
 
@@ -142,7 +138,7 @@ TEST_CASE("Background process dispatches wipe_tower_geometry once available", "[
     slicing.update_process(model_on_bed.model, model_on_bed.config, model_on_bed.bed_instance);
     slicing.slice_all();
 
-    REQUIRE(wait_for_status(dispatcher, status_listener, 3s, [](const StatusEvents &events){
+    REQUIRE(wait_for_status(status_listener, 3s, [](const StatusEvents &events){
         return events.back().status == Status::Finished;
     }));
 
@@ -187,7 +183,7 @@ TEST_CASE_METHOD(SlicingFixture, "Update reinitializes the process if printer te
     slicing.update_process(model_on_bed.model, model_on_bed.config, model_on_bed.bed_instance);
     slicing.slice_all();
 
-    REQUIRE(wait_for_status(dispatcher, status_listener, 3s, [](const StatusEvents &events){
+    REQUIRE(wait_for_status(status_listener, 3s, [](const StatusEvents &events){
         return events.back().status == Status::Finished;
     }));
 

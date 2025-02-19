@@ -24,12 +24,6 @@ struct SelectedBedInstanceChangedListener : public ISelectedBedInstanceChangedLi
 {
     MAKE_MOCK3(on_selected_bed_instance_changed, void(Domain::SelectionId project_id, Domain::SelectionId container_id, Domain::SelectionId bed_instance_id));
 };
-
-struct Dispatcher : public Platform::IMainThreadDispatcher {
-    void dispatch_on_main_thread(Function func) override {}
-    void dispatch_on_main_thread_after(Function func) override {}
-    bool dispatch_enqueued() override {return false;}
-};
 }
 
 void outp() { std::cout << std::endl; }
@@ -48,8 +42,6 @@ TEST_CASE("Project Interactor Listeners")
     using namespace Slic3r::Biz;
     using namespace trompeloeil;
 
-    auto dispatcher{std::make_unique<Mock::Dispatcher>()};
-    Platform::PlatformServices::instance().set_main_thread_dispatcher(dispatcher.get());
 
     Slic3r::Domain::Workbench workbench;
     Slic3r::set_data_dir(Tests::get_datadir().string());

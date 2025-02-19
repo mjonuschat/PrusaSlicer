@@ -31,6 +31,7 @@ using Slic3r::Tests::ResultListener;
 using Slic3r::Domain::ModelInstanceList;
 using Slic3r::Biz::Slicing::with_limited_instances;
 using Slic3r::Tests::is_gcode_sane;
+using Slic3r::Biz::Platform::PlatformServices;
 
 
 TEST_CASE_METHOD(SlicingFixture, "Update stops slicing", "[slicing][slicing-interactor]") {
@@ -42,7 +43,7 @@ TEST_CASE_METHOD(SlicingFixture, "Update stops slicing", "[slicing][slicing-inte
     slicing.slice_bed(id.bed_instance_id);
     slicing.update_process(model_on_bed.model, model_on_bed.config, model_on_bed.bed_instance);
 
-    REQUIRE(wait_for_status(dispatcher, status_listener, 3s, [](const StatusEvents &events){
+    REQUIRE(wait_for_status(status_listener, 3s, [](const StatusEvents &events){
         return events.size() > 4;
     }));
 
@@ -79,7 +80,7 @@ TEST_CASE_METHOD(SlicingFixture, "Update respects instances on bed", "[slicing][
     slicing.update_process(model_on_bed.model, model_on_bed.config, model_on_bed.bed_instance);
     slicing.slice_bed(bed_id);
 
-    REQUIRE(wait_for_status(dispatcher, status_listener, 3s, [](const StatusEvents &events){
+    REQUIRE(wait_for_status(status_listener, 3s, [](const StatusEvents &events){
         return events.back().status == Status::Finished;
     }));
 
@@ -107,12 +108,12 @@ TEST_CASE_METHOD(SlicingFixture, "Stop pops the action from queue", "[slicing][s
     slicing.slice_all();
     slicing.stop_slicing_bed(id2.bed_instance_id);
 
-    REQUIRE(wait_for_status(dispatcher, status_listener, 3s, [](const StatusEvents &events){
+    REQUIRE(wait_for_status(status_listener, 3s, [](const StatusEvents &events){
         return events.back().status == Status::Finished;
     }));
     // Let the second bed finish slicing if the stop failed.
     std::this_thread::sleep_for(20ms);
-    dispatcher.dispatch_enqueued();
+    PlatformServices::instance().main_thread_dispatcher().dispatch_enqueued();
 
     CHECK_THAT(status_listener.status_events, Contains(StatusEvents{{Status::Finished, id1}}));
     CHECK_THAT(status_listener.status_events, !Contains(StatusEvents{{Status::Stopping, id2}}));
@@ -132,13 +133,13 @@ TEST_CASE_METHOD(SlicingFixture, "Stop all stops all processes", "[slicing][slic
     slicing.slice_all();
 
     // Let them both start.
-    REQUIRE(wait_for_status(dispatcher, status_listener, 3s, [&](const StatusEvents &events){
+    REQUIRE(wait_for_status(status_listener, 3s, [&](const StatusEvents &events){
         const auto it1{std::ranges::find(events, StatusEvent{Status::Running, id1})};
         const auto it2{std::ranges::find(events, StatusEvent{Status::Running, id2})};
         return it1 != events.end() && it2 != events.end();
     }));
     slicing.stop_all();
-    REQUIRE(wait_for_status(dispatcher, status_listener, 3s, [&](const StatusEvents &events){
+    REQUIRE(wait_for_status(status_listener, 3s, [&](const StatusEvents &events){
         const auto it1{std::ranges::find(events, StatusEvent{Status::Stopping, id1})};
         const auto it2{std::ranges::find(events, StatusEvent{Status::Stopping, id2})};
         return it1 != events.end() && it2 != events.end();
@@ -162,7 +163,7 @@ TEST_CASE_METHOD(
     slicing.slice_bed(id.bed_instance_id);
     slicing.remove_bed(id.bed_instance_id);
 
-    REQUIRE(wait_for_status(dispatcher, status_listener, 3s, [](const StatusEvents &events){
+    REQUIRE(wait_for_status(status_listener, 3s, [](const StatusEvents &events){
         return events.size() == 5;
     }));
 

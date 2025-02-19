@@ -7,6 +7,7 @@
 #include "Slic3r/Biz/Platform/IRenderRequestHandler.hpp"
 #include "Slic3r/App/Platform/StdMainThreadDispatcher.hpp"
 #include "Slic3r/App/Render/ScreenInfo.hpp"
+#include "Slic3r/Biz/Platform/PlatformServices.hpp"
 
 #include <Slic3r/App/Render/ImguiRender.hpp>
 #include <optional>
@@ -28,11 +29,9 @@ namespace Slic3r::App::Platform {
 class AbstractRenderCanvas : public Biz::Platform::IRenderRequestHandler
 {
 public:
-    AbstractRenderCanvas(std::unique_ptr<Biz::Platform::IMainThreadDispatcher>&& main_thread_dispatcher)
-        : m_main_thread_dispatcher{std::move(main_thread_dispatcher)}
-    {
-        ASSERT(m_main_thread_dispatcher);
-    }
+    AbstractRenderCanvas()
+        : m_main_thread_dispatcher{Biz::Platform::PlatformServices::instance().main_thread_dispatcher()}
+    {}
 
     ~AbstractRenderCanvas() override = default;
 
@@ -99,7 +98,7 @@ protected:
 
     MouseEvents m_enqueued_mouse_events;
     KeyboardEvents m_enqueued_keyboard_events;
-    std::unique_ptr<Biz::Platform::IMainThreadDispatcher> m_main_thread_dispatcher;
+    Biz::Platform::IMainThreadDispatcher& m_main_thread_dispatcher;
 private:
     std::unique_ptr<Render::ImguiRender> m_imgui_render;
     std::optional<std::string> m_pending_language;

@@ -65,7 +65,6 @@ bool operator==(const StatusEvent& a, const StatusEvent& b) {
 using StatusEvents = std::vector<StatusEvent>;
 
 [[nodiscard]] bool wait_for_status(
-    Slic3r::Biz::Platform::IMainThreadDispatcher& dispatcher,
     const StatusListener& status_listener,
     const std::chrono::seconds timeout,
     const std::function<bool(StatusEvents)>& condition
@@ -73,10 +72,11 @@ using StatusEvents = std::vector<StatusEvent>;
 {
     using namespace std::chrono_literals;
     using std::chrono::high_resolution_clock;
+    using Biz::Platform::PlatformServices;
 
     const auto start{high_resolution_clock::now()};
     while(true) {
-        dispatcher.dispatch_enqueued();
+        PlatformServices::instance().main_thread_dispatcher().dispatch_enqueued();
         const std::vector<StatusEvent> status_events{status_listener.status_events};
         if (!status_events.empty() && condition(status_events)) {
             return true;;
@@ -107,12 +107,11 @@ void ResultListener::on_fdm_result_changed(
     result->reset();
 }
 
-Slic3r::Biz::Slicing::SlicingInteractor init_slicing_interactor(Slic3r::Biz::Platform::IMainThreadDispatcher &dispatcher) {
-    Slic3r::Biz::Platform::PlatformServices::instance().set_main_thread_dispatcher(&dispatcher);
-    return {};
-}
+SlicingFixture::SlicingFixture() {
+    using Biz::Platform::PlatformServices;
+    // Clear the que before the tests.
+    PlatformServices::instance().main_thread_dispatcher().dispatch_enqueued();
 
-SlicingFixture::SlicingFixture(): slicing(init_slicing_interactor(dispatcher))  {
     slicing.on_selected_project_changed(0);
     slicing.add_listener(&status_listener);
 }

@@ -9,7 +9,7 @@ namespace Slic3r::App::Platform::SDL {
 class SDLRenderCanvas : public AbstractRenderCanvas
 {
 public:
-    SDLRenderCanvas(std::unique_ptr<StdMainThreadDispatcher>&& main_thread_dispatcher);
+    SDLRenderCanvas();
     ~SDLRenderCanvas() override;
 
     void poll_events();

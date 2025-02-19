@@ -256,6 +256,8 @@ add_target_to_doxygen(slic3r-shared)
 
 if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
     add_executable(slic3r-shared-tests
+        test/main.cpp
+
         test/Slic3r/App/Scene/Node.cpp
         test/Slic3r/App/Scene/Ray.cpp
         test/Slic3r/Biz/ProjectInteractorTests.cpp
@@ -271,8 +273,8 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
     target_include_directories(slic3r-shared-tests PRIVATE test)
 
     find_package(Catch2 3.8 REQUIRED)
-    slic3r_remap_configs("Catch2::Catch2;Catch2::Catch2WithMain" RelWithDebInfo Release)
-    target_link_libraries(slic3r-shared-tests PRIVATE slic3r-shared Catch2::Catch2WithMain)
+    slic3r_remap_configs("Catch2::Catch2" RelWithDebInfo Release)
+    target_link_libraries(slic3r-shared-tests PRIVATE slic3r-shared Catch2::Catch2)
 
     set(TEST_DATA_DIR ${CMAKE_CURRENT_SOURCE_DIR}/test/data)
     file(TO_NATIVE_PATH "${TEST_DATA_DIR}" TEST_DATA_DIR)

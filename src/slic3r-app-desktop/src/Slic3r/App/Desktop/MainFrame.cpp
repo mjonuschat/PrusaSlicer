@@ -99,8 +99,7 @@ static void add_experimets_page(TopBar* top_bar, MainFrame* main_frame)
 
 MainFrame::MainFrame(
     Domain::Workbench& workbench,
-    Biz::Preset::PresetInteractor& preset_interactor,
-    std::unique_ptr<Biz::Platform::IMainThreadDispatcher>&& main_thread_dispatcher
+    Biz::Preset::PresetInteractor& preset_interactor
 )
     : wxFrame(nullptr, wxID_ANY, {}), m_workbench(workbench), m_preset_interactor(preset_interactor)
 {
@@ -117,7 +116,7 @@ MainFrame::MainFrame(
 
     init_top_bar();
 
-    init_plater(std::move(main_thread_dispatcher));
+    init_plater();
 
     init_preset_editors();
 
@@ -217,9 +216,9 @@ void MainFrame::complete_and_bind_top_bar()
     });
 }
 
-void MainFrame::init_plater(std::unique_ptr<Biz::Platform::IMainThreadDispatcher>&& main_thread_dispatcher)
+void MainFrame::init_plater()
 {
-    m_canvas = std::make_unique<Platform::WX::WXRenderCanvas>(m_top_bar, std::move(main_thread_dispatcher));
+    m_canvas = std::make_unique<Platform::WX::WXRenderCanvas>(m_top_bar);
     m_top_bar->AddPage(m_canvas.get(), from_u8("Plater"));
 }
 

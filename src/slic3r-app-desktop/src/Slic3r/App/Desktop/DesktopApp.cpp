@@ -26,8 +26,12 @@ bool DesktopApp::OnInit()
     init_translations();
     m_workbench.load_configs();
 
-    auto main_thread_dispatcher{std::make_unique<Platform::StdMainThreadDispatcher>()};
-    Biz::Platform::PlatformServices::instance().set_main_thread_dispatcher(main_thread_dispatcher.get());
+    using Platform::StdMainThreadDispatcher;
+    using Biz::Platform::PlatformServices;
+
+    PlatformServices::instance().set_main_thread_dispatcher(
+        std::make_unique<StdMainThreadDispatcher>()
+    );
 
     m_project_interactor = std::make_unique<Biz::ProjectInteractor>(m_workbench);
     m_plater_module =
@@ -43,7 +47,7 @@ bool DesktopApp::OnInit()
 
     m_project_interactor->new_project();
 
-    m_main_frame = new MainFrame(m_workbench, m_project_interactor->preset_interactor(), std::move(main_thread_dispatcher));
+    m_main_frame = new MainFrame(m_workbench, m_project_interactor->preset_interactor());
     Platform::WX::WXRenderCanvas& canvas = m_main_frame->get_render_canvas();
     Biz::Platform::PlatformServices::instance().set_render_request_handler(&canvas);
     canvas.set_language(localization().active_language());

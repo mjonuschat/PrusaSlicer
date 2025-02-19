@@ -13,8 +13,7 @@ public:
     static PlatformServices& instance();
 
     void set_render_request_handler(IRenderRequestHandler* render_request_handler);
-
-    void set_main_thread_dispatcher(IMainThreadDispatcher* main_thread_dispatcher);
+    void set_main_thread_dispatcher(std::unique_ptr<IMainThreadDispatcher>&& main_thread_dispatcher);
 
     IRenderRequestHandler& render_request_handler()
     {
@@ -30,7 +29,7 @@ public:
 
 private:
     IRenderRequestHandler* m_render_request_handler{nullptr};
-    IMainThreadDispatcher* m_main_thread_dispatcher{nullptr};
+    std::unique_ptr<IMainThreadDispatcher> m_main_thread_dispatcher{};
 };
 
 } // namespace Slic3r::Biz::Platform

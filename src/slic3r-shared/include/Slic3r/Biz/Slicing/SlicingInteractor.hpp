@@ -103,7 +103,9 @@ private:
     std::deque<SlicingId> m_slicing_queue;
     std::map<SlicingId, UpdateRequest> m_update_requests;
     Domain::SelectionId m_current_project_id{Domain::INVALID_ID};
-    Platform::IMainThreadDispatcher &m_dispatcher{Platform::PlatformServices::instance().main_thread_dispatcher()};
+    Platform::IMainThreadDispatcher &m_dispatcher{
+        Platform::PlatformServices::instance().main_thread_dispatcher()
+    };
     mutable std::mutex m_status_mutex;
 };
 
