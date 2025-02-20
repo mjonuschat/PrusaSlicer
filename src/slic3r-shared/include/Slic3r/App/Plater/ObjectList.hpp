@@ -84,18 +84,28 @@ private:
     bool render_config_containers();
     bool render_bed_node(const Domain::BedInstance* bed);
     bool render_object_node(const Slic3r::ModelObject* object, const Domain::BedInstance* bed);
-    bool render_volumes(const Slic3r::ModelObject* object);
+    bool render_volumes(const Slic3r::ModelObject* object, size_t bed_id);
     void render_volume_node(const Slic3r::ModelVolume* volume, size_t vol_id, bool is_selected, const Domain::ElementRef& sel_element);
     bool render_instances_node(const Slic3r::ModelObject* object, const std::set<size_t>& instances_on_bed);
     bool render_instances(const Slic3r::ModelObject* object, const std::set<size_t>& instances_on_bed);
     void render_instance_node(const Slic3r::ModelObject* object, size_t inst_id, bool is_selected);
+    bool render_layer_ranges_node(const Slic3r::ModelObject* object);
+    bool render_infos_node(const Slic3r::ModelObject* object);
 
     void render_edited(const char* init_name, const Domain::ElementRef& sel_element);
+    void render_printable_icon(const Domain::ElementRef& sel_element, bool is_printable);
+    void render_overrides_icon(const Domain::ElementRef& sel_element, bool render);
+    void render_extruder_marker(size_t extruder_id, const Domain::ElementRef& sel_element, bool is_bed = false);
 
     void clear_all_ms();
 
     void propagate_selection();
     void propagate_name_editing(const Domain::ElementRef& id, const std::string& new_name);
+    void propagate_printable(const Domain::ElementRef& id, bool is_printable);
+    void show_overrides(const Domain::ElementRef& id);
+    void extruder_clicked(const Domain::ElementRef& sel_element, bool is_bed);
+    void show_layer_ranges(const Domain::ElementRef& id);
+    void show_infos(const Domain::ElementRef& id);
 
 private:
     Biz::Scene::SceneInteractor*    m_scene_interactor  { nullptr };
