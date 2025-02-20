@@ -26,6 +26,8 @@
 cmake_minimum_required(VERSION 3.12)
 project(PrusaSlicer_deps)
 
+add_definitions("-D_WIN32_WINNT=0x0601")
+
 # Redefine BUILD_SHARED_LIBS with default being OFF
 option(BUILD_SHARED_LIBS "Build shared libraries instead of static (experimental)" OFF)
 

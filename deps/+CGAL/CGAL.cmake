@@ -1,12 +1,7 @@
 add_cmake_project(
     CGAL
-    # GIT_REPOSITORY https://github.com/CGAL/cgal.git
-    # GIT_TAG        bec70a6d52d8aacb0b3d82a7b4edc3caa899184b # releases/CGAL-5.0
-    # For whatever reason, this keeps downloading forever (repeats downloads if finished)
-    URL      https://github.com/CGAL/cgal/archive/refs/tags/v5.4.zip
-    URL_HASH SHA256=d7605e0a5a5ca17da7547592f6f6e4a59430a0bc861948974254d0de43eab4c0
-    # The patch can be deleted in cgal v6.
-    PATCH_COMMAND ${PATCH_CMD} ${CMAKE_CURRENT_LIST_DIR}/cgal.patch
+    URL      https://github.com/CGAL/cgal/archive/refs/tags/v5.6.1.zip
+    URL_HASH SHA256=a968cc77b9a2c6cbe5b1680ceee8d8cd8c5369aedb9daced9e5c90b4442dc574
 )
 
 include(GNUInstallDirs)
