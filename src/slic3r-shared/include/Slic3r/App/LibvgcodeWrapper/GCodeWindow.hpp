@@ -50,7 +50,7 @@ private:
     std::vector<std::string> m_gcode;
 };
 
-/** @brief ImGui widget to show the gcode lines.
+/** @brief ImGui widget to show the gcode lines as list of strings.
  *
  * @param data The data to show
  * @param curr_line_id The current line id 

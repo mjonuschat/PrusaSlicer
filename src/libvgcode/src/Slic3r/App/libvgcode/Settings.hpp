@@ -5,11 +5,11 @@
 ///|/
 #pragma once
 
-#include "Slic3r/Biz/libvgcode/Types.hpp"
+#include "Slic3r/App/libvgcode/Types.hpp"
 
 #include <map>
 
-namespace Slic3r::Biz::libvgcode {
+namespace Slic3r::App::libvgcode {
 
 struct Settings
 {
@@ -17,7 +17,7 @@ struct Settings
 	  // Visualization parameters
 		//
 		ViewType view_type{ ViewType::FeatureType };
-		libpgcode::TimeMode time_mode{ libpgcode::TimeMode::Normal };
+		Biz::libpgcode::TimeMode time_mode{ Biz::libpgcode::TimeMode::Normal };
 		bool top_layer_only_view_range{ false };
 		bool spiral_vase_enabled{ false };
 		//
@@ -30,7 +30,7 @@ struct Settings
 		//
 		// Visibility maps
 		//
-		std::array<bool, libpgcode::OPTION_TYPES_COUNT> options_visibility{
+		std::array<bool, Biz::libpgcode::OPTION_TYPES_COUNT> options_visibility{
 			  false, // Travels
 				false, // Wipes
 				false, // Retractions
@@ -44,7 +44,7 @@ struct Settings
 				true   // ToolMarker
 		};
 
-		std::array<bool, libpgcode::GCODE_EXTRUSION_ROLES_COUNT> extrusion_roles_visibility{
+		std::array<bool, Biz::libpgcode::GCODE_EXTRUSION_ROLES_COUNT> extrusion_roles_visibility{
 				true, // None
 				true, // Perimeter
 				true, // ExternalPerimeter
@@ -63,4 +63,4 @@ struct Settings
 		};
 };
 
-} // namespace Slic3r::Biz::libvgcode
+} // namespace Slic3r::App::libvgcode

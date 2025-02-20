@@ -14,17 +14,7 @@ class ColorRGBA;
 
 namespace Slic3r::App::Imgui {
 
-static const ImVec4 COL_ORANGE_LIGHT = { 0.923f, 0.504f, 0.264f, 1.0f };
-static const ImVec4 COL_ORANGE_DARK = { 0.67f, 0.36f, 0.19f, 1.0f };
-static const ImVec4 COL_WINDOW_BACKGROUND = { 0.13f, 0.13f, 0.13f, 0.8f };
-static const ImVec4 COL_GREY_LIGHT = { 0.4f, 0.4f, 0.4f, 1.0f };
-
 static constexpr float DEFAULT_WINDOW_BG_ALPHA = 0.8f;
-
-static const ImU32 THUMB_BG_COLOR = ImGui::ColorConvertFloat4ToU32(COL_ORANGE_LIGHT);
-static const ImU32 GROOVE_BG_COLOR = ImGui::ColorConvertFloat4ToU32(COL_WINDOW_BACKGROUND);
-static const ImU32 BORDER_COLOR = IM_COL32(255, 255, 255, 255);
-static const ImU32 TOOLTIP_BG_COLOR = ImGui::ColorConvertFloat4ToU32(COL_GREY_LIGHT);
 
 class UnifiedWindowStyle
 {
@@ -56,7 +46,8 @@ void tooltip(const std::string& label, float wrap_width = 0.0f);
 bool menu_item_with_icon(const char* label, const char* shortcut = nullptr, ImU32 icon_color = 0,
     bool selected = false, bool enabled = true);
 
-bool icon_button(const wchar_t icon, const ImVec2& size = ImVec2(0.0f, 0.0f));
+void icon_image(wchar_t icon, const ImVec2& size = { 0.0f, 0.0f });
+bool icon_button(wchar_t icon, const ImVec2& size = { 0.0f, 0.0f });
 
 ImU32 to_ImU32(const ColorRGBA& color);
 ImU32 to_ImU32(const ColorRGB& color, uint8_t alpha = 255);

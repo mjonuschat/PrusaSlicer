@@ -9,8 +9,6 @@
 #include <assert.h>
 #include <cmath>
 
-using namespace Slic3r::Biz::libvgcode;
-
 namespace Slic3r::App::libvgcode {
 
 const ColorRange ColorRange::DUMMY_COLOR_RANGE = ColorRange();

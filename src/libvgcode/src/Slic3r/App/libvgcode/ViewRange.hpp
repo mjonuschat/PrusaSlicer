@@ -7,7 +7,7 @@
 
 #include "Range.hpp"
 
-namespace Slic3r::Biz::libvgcode {
+namespace Slic3r::App::libvgcode {
 
 class ViewRange
 {
@@ -51,4 +51,4 @@ private:
     Range m_visible;
 };
 
-} // namespace Slic3r::Biz::libvgcode
+} // namespace Slic3r::App::libvgcode

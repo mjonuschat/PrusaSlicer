@@ -5,7 +5,7 @@
 ///|/
 #include "ViewRange.hpp"
 
-namespace Slic3r::Biz::libvgcode {
+namespace Slic3r::App::libvgcode {
 
 void ViewRange::set_full(Interval::value_type min, Interval::value_type max)
 {
@@ -37,4 +37,4 @@ void ViewRange::reset()
     m_visible.reset();
 }
 
-} // namespace Slic3r::Biz::libvgcode
+} // namespace Slic3r::App::libvgcode

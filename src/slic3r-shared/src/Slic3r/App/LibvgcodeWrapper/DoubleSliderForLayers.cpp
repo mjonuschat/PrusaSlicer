@@ -587,8 +587,8 @@ void DoubleSliderForLayers::draw_ticks(const ImRect& slideable_region)
     float tick_width  = float(int(1.0f * m_scale + 0.5f));
     float icon_offset = 0.5f * m_icon_screen_size;
 
-    ImU32 tick_clr = ImGui::ColorConvertFloat4ToU32(m_show_ruler ? App::Imgui::COL_ORANGE_LIGHT : App::Imgui::COL_ORANGE_DARK);
-    ImU32 tick_hovered_clr = ImGui::ColorConvertFloat4ToU32(m_show_ruler ? App::Imgui::COL_ORANGE_DARK : App::Imgui::COL_WINDOW_BACKGROUND);
+    ImU32 tick_clr = m_show_ruler ? ImGui::GetColorU32(ImGuiCol_TabActive) : ImGui::GetColorU32(ImGuiCol_Tab);
+    ImU32 tick_hovered_clr = m_show_ruler ? ImGui::GetColorU32(ImGuiCol_Tab) : ImGui::GetColorU32(ImGuiCol_WindowBg);
 
     auto get_tick_pos = [this, slideable_region](int tick) {
         return m_ctrl.position_in_rect(tick, slideable_region);
@@ -877,7 +877,7 @@ void DoubleSliderForLayers::draw_ruler(const ImRect& slideable_region)
         float line_pos = get_tick_pos(m_pos_on_move);
 
         ImRect move_line = ImRect(x_center + 0.75f * inner_x, line_pos - tick_width, x_center + 1.5f * long_outer_x, line_pos);
-        ImGui::RenderFrame(move_line.Min, move_line.Max, ImGui::ColorConvertFloat4ToU32(App::Imgui::COL_ORANGE_LIGHT), false);
+        ImGui::RenderFrame(move_line.Min, move_line.Max, ImGui::GetColorU32(ImGuiCol_TabActive), false);
         m_pos_on_move = -1;
     }
 }

@@ -49,6 +49,7 @@ bool DesktopApp::OnInit()
     canvas.set_language(localization().active_language());
     canvas.set_font_size(1.7777f * float(App::WX::w_config()->normal_font().GetPointSize()));
 
+    // >>> replace m_plater_module with m_preview_module in the following line to test libvgcode wrapper
     canvas.set_render_module(m_plater_module.get());
     m_main_frame->Show();
 

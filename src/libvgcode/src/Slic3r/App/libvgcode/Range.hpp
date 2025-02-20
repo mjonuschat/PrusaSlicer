@@ -5,9 +5,9 @@
 ///|/
 #pragma once
 
-#include "Slic3r/Biz/libvgcode/Types.hpp"
+#include "Slic3r/App/libvgcode/Types.hpp"
 
-namespace Slic3r::Biz::libvgcode {
+namespace Slic3r::App::libvgcode {
 
 class Range
 {
@@ -34,4 +34,4 @@ private:
     Interval m_range{ 0, 0 };
 };
 
-} // namespace Slic3r::Biz::libvgcode
+} // namespace Slic3r::App::libvgcode

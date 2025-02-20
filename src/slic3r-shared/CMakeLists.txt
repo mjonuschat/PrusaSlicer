@@ -117,10 +117,13 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Imgui/ImguiExtension.cpp
         include/Slic3r/App/Imgui/ImguiExtension.hpp
 
+        src/Slic3r/App/LibvgcodeWrapper/Types.cpp
+        include/Slic3r/App/LibvgcodeWrapper/Types.hpp
         src/Slic3r/App/LibvgcodeWrapper/Wrapper.cpp
         include/Slic3r/App/LibvgcodeWrapper/Wrapper.hpp
         src/Slic3r/App/LibvgcodeWrapper/WrapperImpl.cpp
         include/Slic3r/App/LibvgcodeWrapper/WrapperImpl.hpp
+        include/Slic3r/App/LibvgcodeWrapper/WrapperInputData.hpp
         src/Slic3r/App/LibvgcodeWrapper/DoubleSliderForLayers.cpp
         include/Slic3r/App/LibvgcodeWrapper/DoubleSliderForLayers.hpp
         src/Slic3r/App/LibvgcodeWrapper/DoubleSliderForGCode.cpp
@@ -133,6 +136,8 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/LibvgcodeWrapper/ActualSpeedPlotter.hpp
         src/Slic3r/App/LibvgcodeWrapper/GCodeWindow.cpp
         include/Slic3r/App/LibvgcodeWrapper/GCodeWindow.hpp
+        src/Slic3r/App/LibvgcodeWrapper/Legend.cpp
+        include/Slic3r/App/LibvgcodeWrapper/Legend.hpp
 
         src/Slic3r/App/TestRenderLayout.cpp
         include/Slic3r/App/TestRenderLayout.hpp
@@ -197,13 +202,16 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Domain/ConfigContainer.cpp
         include/Slic3r/Domain/ConfigContainer.hpp
 
+        src/Slic3r/Biz/Units.cpp
+        include/Slic3r/Biz/Units.hpp
+        src/Slic3r/Biz/Units.cpp
+        include/Slic3r/Biz/Units.hpp
+
         include/Slic3r/Biz/Slicing/BackgroundProcess.hpp
         include/Slic3r/Biz/Slicing/SlicingInteractor.hpp
         include/Slic3r/Biz/Slicing/ModelUtils.hpp
         src/Slic3r/Biz/Slicing/BackgroundProcess.cpp
         src/Slic3r/Biz/Slicing/SlicingInteractor.cpp
-        src/Slic3r/Biz/Units.cpp
-        include/Slic3r/Biz/Units.hpp
         src/Slic3r/Biz/Slicing/ModelUtils.cpp
 )
 
@@ -229,7 +237,7 @@ if (EMSCRIPTEN)
 #    target_link_libraries(slic3r-shared PUBLIC png-mt )
 else()
     find_package(PNG REQUIRED)
-    target_link_libraries(slic3r-shared PUBLIC PNG::PNG)
+    target_link_libraries(slic3r-shared PUBLIC PNG::PNG libvgcode)
 endif ()
 target_include_directories(slic3r-shared PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 

@@ -175,9 +175,27 @@ bool menu_item_with_icon(const char* label, const char* shortcut, ImU32 icon_col
     return pressed;
 }
 
-bool icon_button(const wchar_t icon, const ImVec2& size)
+void icon_image(wchar_t icon, const ImVec2& size)
 {
-    return ImGui::Button(boost::nowide::narrow(std::wstring(&icon, 1)).c_str(), size);
+    ImFont* font = ImGui::GetFont();
+    float h = ImGui::GetTextLineHeight();
+    ImVec2 rect = size;
+    if (rect.x == 0.0f) rect.x = h;
+    if (rect.y == 0.0f) rect.y = h;
+    const ImFontGlyph* glyph = font->FindGlyph(icon);
+    if (glyph != nullptr)
+        ImGui::Image(font->ContainerAtlas->TexID, rect, { glyph->U0, glyph->V0 }, { glyph->U1, glyph->V1 });
+}
+
+bool icon_button(wchar_t icon, const ImVec2& size)
+{
+    ImFont* font = ImGui::GetFont();
+    float h = ImGui::GetTextLineHeight();
+    ImVec2 rect = size;
+    if (rect.x == 0.0f) rect.x = h;
+    if (rect.y == 0.0f) rect.y = h;
+    const ImFontGlyph* glyph = font->FindGlyph(icon);
+    return (glyph != nullptr) ? ImGui::ImageButton("##btn", font->ContainerAtlas->TexID, rect, { glyph->U0, glyph->V0 }, { glyph->U1, glyph->V1 }) : false;
 }
 
 ImU32 to_ImU32(const ColorRGBA& color)
