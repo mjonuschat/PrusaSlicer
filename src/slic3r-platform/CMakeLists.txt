@@ -17,6 +17,8 @@ set(SLIC3R_PLATFORM_FILES
         src/Slic3r/App/Platform/JobManager.cpp
         include/Slic3r/App/Platform/JobManager.hpp
         include/Slic3r/Biz/Platform/ListenerList.hpp
+        include/Slic3r/Biz/Platform/Termination.hpp
+        src/Slic3r/Biz/Platform/Termination.cpp
 )
 
 

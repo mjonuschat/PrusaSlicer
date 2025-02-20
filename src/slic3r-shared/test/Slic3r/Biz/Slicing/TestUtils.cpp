@@ -58,13 +58,19 @@ ModelOnBed get_cubes_model(const int count, const int row_size) {
     return {generate_cubes(count, row_size), get_config()};
 }
 
+std::ostream& operator<<(std::ostream& output, const StatusEvent& status_event) {
+    return output << "{status: " << status_event.status
+                  << ", slicing_id: " << status_event.slicing_id << "}";
+}
+
 bool operator==(const StatusEvent& a, const StatusEvent& b) {
-    return a.status == b.status && a.project_bed_id == b.project_bed_id;
+    return a.status == b.status && a.slicing_id == b.slicing_id;
 }
 
 using StatusEvents = std::vector<StatusEvent>;
 
 [[nodiscard]] bool wait_for_status(
+    Biz::Platform::IMainThreadDispatcher& dispatcher,
     const StatusListener& status_listener,
     const std::chrono::seconds timeout,
     const std::function<bool(StatusEvents)>& condition
@@ -76,7 +82,7 @@ using StatusEvents = std::vector<StatusEvent>;
 
     const auto start{high_resolution_clock::now()};
     while(true) {
-        PlatformServices::instance().main_thread_dispatcher().dispatch_enqueued();
+        dispatcher.dispatch_enqueued();
         const std::vector<StatusEvent> status_events{status_listener.status_events};
         if (!status_events.empty() && condition(status_events)) {
             return true;;
@@ -108,12 +114,12 @@ void ResultListener::on_fdm_result_changed(
 }
 
 SlicingFixture::SlicingFixture() {
-    using Biz::Platform::PlatformServices;
-    // Clear the que before the tests.
-    PlatformServices::instance().main_thread_dispatcher().dispatch_enqueued();
-
     slicing.on_selected_project_changed(0);
     slicing.add_listener(&status_listener);
+}
+
+SlicingFixture::~SlicingFixture() {
+    dispatcher.close();
 }
 
 }

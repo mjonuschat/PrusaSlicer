@@ -31,8 +31,8 @@ class IProjectsChangedListener;
 class ProjectInteractor final : public ISelectedBedInstanceChangedListener, private ISlicingInputChangedListener
 {
 public:
-    explicit ProjectInteractor(Domain::Workbench& workbench)
-        : m_workbench(workbench), m_preset_interactor(workbench), m_scene_interactor(workbench)
+    explicit ProjectInteractor(Domain::Workbench& workbench, Platform::IMainThreadDispatcher& dispatcher)
+        : m_workbench(workbench), m_preset_interactor(workbench), m_scene_interactor(workbench), m_slicing_interactor(dispatcher)
     {
         add_selected_config_container_changed_listener(&m_preset_interactor);
         add_selected_config_container_changed_listener(&m_scene_interactor);
@@ -237,7 +237,7 @@ private:
 
     Preset::PresetInteractor m_preset_interactor;
     Scene::SceneInteractor m_scene_interactor;
-    Slicing::SlicingInteractor m_slicing_interactor{};
+    Slicing::SlicingInteractor m_slicing_interactor;
 };
 
 } // namespace Slic3r::Biz

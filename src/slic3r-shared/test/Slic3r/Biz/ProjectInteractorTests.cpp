@@ -1,6 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/trompeloeil.hpp>
 
+#include "Slic3r/App/Platform/StdMainThreadDispatcher.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/TestUtils/TestData.hpp"
 #include "libslic3r/Model.hpp"
@@ -47,7 +48,8 @@ TEST_CASE("Project Interactor Listeners")
     Slic3r::set_data_dir(Tests::get_datadir().string());
     workbench.load_configs();
 
-    ProjectInteractor project_interactor{workbench};
+    Slic3r::App::Platform::StdMainThreadDispatcher dispatcher;
+    ProjectInteractor project_interactor{workbench, dispatcher};
 
     Mock::SelectedProjectChangedListener selected_project_changed_listener;
     Mock::SelectedConfigContainerChangedListener selected_config_container_listener;
@@ -100,4 +102,6 @@ TEST_CASE("Project Interactor Listeners")
         project_interactor.select_project(0);
     }
 
+    // Queue must be clear before ProjectInteractor can be destroyed.
+    dispatcher.close();
 }

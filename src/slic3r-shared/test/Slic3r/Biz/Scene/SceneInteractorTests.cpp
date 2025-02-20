@@ -2,6 +2,7 @@
 #include <catch2/catch_approx.hpp>
 #include <catch2/trompeloeil.hpp>
 
+#include "Slic3r/App/Platform/StdMainThreadDispatcher.hpp"
 #include "Slic3r/TestUtils/TestData.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
@@ -20,7 +21,8 @@ TEST_CASE("Scene Interactor Bed Tracking")
     set_data_dir(Tests::get_datadir().string());
     workbench.load_configs();
 
-    ProjectInteractor project_interactor{workbench};
+    App::Platform::StdMainThreadDispatcher dispatcher;
+    ProjectInteractor project_interactor{workbench, dispatcher};
 
     project_interactor.new_project();
     const auto& p = project_interactor.selected_project();
@@ -247,5 +249,8 @@ TEST_CASE("Scene Interactor Bed Tracking")
     REQUIRE(p.unplaced_model_instances()[0]->id().id == second_el_ref.instance_id);
     REQUIRE(bed_instances[0]->model_instances().size() == 1);
     REQUIRE(bed_instances[0]->model_instances()[0]->id().id == first_el_ref.instance_id);
+
+    // Queue must be clear before ProjectInteractor can be destroyed.
+    dispatcher.close();
 }
 

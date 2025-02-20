@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Slic3r/App/Platform/StdMainThreadDispatcher.hpp"
 #include "Slic3r/Biz/Slicing/SlicingInteractor.hpp"
 #include "libslic3r/Model.hpp"
 #include <catch2/catch_test_macros.hpp>
@@ -30,8 +31,10 @@ ModelOnBed get_cubes_model(const int count, const int row_size);
 
 struct StatusEvent {
     Biz::Slicing::Status status;
-    Biz::Slicing::SlicingId project_bed_id;
+    Biz::Slicing::SlicingId slicing_id;
 };
+
+std::ostream& operator<<(std::ostream& output, const StatusEvent& status_event);
 
 bool operator==(const StatusEvent& a, const StatusEvent& b);
 
@@ -46,6 +49,7 @@ struct StatusListener : public Biz::Slicing::IStatusListener {
 };
 
 [[nodiscard]] bool wait_for_status(
+    Biz::Platform::IMainThreadDispatcher& dispatcher,
     const StatusListener& status_listener,
     const std::chrono::seconds timeout,
     const std::function<bool(StatusEvents)>& condition
@@ -65,8 +69,10 @@ struct ResultListener : public Biz::Slicing::IFDMResultListener
 
 struct SlicingFixture {
     SlicingFixture();
-
-    Biz::Slicing::SlicingInteractor slicing;
+    ~SlicingFixture();
+public:
+    App::Platform::StdMainThreadDispatcher dispatcher;
+    Biz::Slicing::SlicingInteractor slicing{dispatcher};
     StatusListener status_listener;
 };
 

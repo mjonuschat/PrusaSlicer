@@ -10,7 +10,6 @@
 #include "Slic3r/Biz/ISelectedBedInstanceChangedListener.hpp"
 
 namespace Slic3r::Biz {
-
 Domain::SelectionId ProjectInteractor::new_project()
 {
     Domain::Project project;

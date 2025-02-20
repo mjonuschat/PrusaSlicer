@@ -7,6 +7,7 @@
 #include "Preset/EditorSLAMaterial.hpp"
 #include "Preset/EditorPrinter.hpp"
 
+#include <Slic3r/Biz/Platform/Termination.hpp>
 #include <Slic3r/App/WX/WidgetsConfig.hpp>
 #include <Slic3r/App/WX/StringConversions.hpp>
 #include <Slic3r/App/WX/format.hpp>
@@ -142,6 +143,8 @@ MainFrame::MainFrame(
             panel->msw_rescale();
     });
 #endif
+
+    Bind(wxEVT_CLOSE_WINDOW, &MainFrame::on_close, this);
 }
 
 MainFrame::~MainFrame()
@@ -156,6 +159,12 @@ void MainFrame::on_language_changed()
 
     m_canvas->set_language(localization().active_language());
     this->Refresh();
+}
+
+void MainFrame::on_close(wxCloseEvent& event)
+{
+    Slic3r::Biz::Platform::close();
+    event.Skip();
 }
 
 void MainFrame::init_top_bar()

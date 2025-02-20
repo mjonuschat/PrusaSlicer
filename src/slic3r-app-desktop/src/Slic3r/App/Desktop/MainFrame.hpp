@@ -55,6 +55,8 @@ private:
     void complete_and_bind_top_bar();
 
     void on_language_changed() override;
+
+    void on_close(wxCloseEvent& event);
 };
 
 }

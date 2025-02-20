@@ -19,8 +19,8 @@ LoggingScopeLock::LoggingScopeLock(std::mutex& mutex, std::string id)
 }
 
 LoggingScopeLock::~LoggingScopeLock() {
-    m_mutex.unlock();
     SPDLOG_TRACE("Lock '{}' unlocked", m_id);
+    m_mutex.unlock();
 }
 
 std::ostream& operator<<(std::ostream& output, const SlicingId& id) {
@@ -174,7 +174,7 @@ void BackgroundProcess::slice()
                     if (finished) {
                         on_status(Status::Finished);
                     } else {
-                        this->on_status(Status::Modified);
+                        on_status(Status::Modified);
                     }
                 }};
 
@@ -184,7 +184,8 @@ void BackgroundProcess::slice()
                 } catch (CanceledException&) {
                 }
             },
-            this->m_print.get()};
+            this->m_print.get()
+        };
     });
 }
 

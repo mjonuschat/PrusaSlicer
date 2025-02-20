@@ -17,13 +17,10 @@ using Catch::Matchers::UnorderedEquals;
 using std::chrono::milliseconds;
 using std::chrono::seconds;
 using std::chrono::high_resolution_clock;
-using Slic3r::Biz::Slicing::SlicingInteractor;
-using Slic3r::Biz::Slicing::IFDMResultListener;
 using Slic3r::Biz::Slicing::Status;
 using Slic3r::Tests::get_cubes_model;
 using Slic3r::Tests::ModelOnBed;
 using Slic3r::Tests::is_gcode_sane;
-using Slic3r::Biz::Platform::PlatformServices;
 using Slic3r::Biz::Slicing::FDMResult;
 using Slic3r::Biz::Slicing::FDMStatistics;
 using Slic3r::Biz::Slicing::SlicingId;
@@ -60,7 +57,7 @@ TEST_CASE_METHOD(SlicingFixture, "Slice N beds", "[slicing][slicing-interactor]"
 
     slicing.slice_all();
 
-    REQUIRE(wait_for_status(status_listener, 3s, [](const StatusEvents &events){
+    REQUIRE(wait_for_status(dispatcher, status_listener, 3s, [](const StatusEvents &events){
         return beds_count == std::ranges::count_if(events, [](const StatusEvent& event){
             return event.status == Status::Finished;
         });
@@ -119,12 +116,9 @@ struct WipeTowerGeometryListener : public IWipeTowerGeometryListener
     std::optional<WipeTowerGeometry> geometry;
 };
 
-TEST_CASE("Background process dispatches wipe_tower_geometry once available", "[slicing][slicing-callbacks]")
+TEST_CASE_METHOD(SlicingFixture, "Background process dispatches wipe_tower_geometry once available", "[slicing][slicing-callbacks]")
 {
     using namespace std::chrono_literals;
-
-    SlicingInteractor slicing;
-    slicing.on_selected_project_changed(0);
 
     WipeTowerGeometryListener wipe_tower_geometry_listener;
     slicing.add_listener(&wipe_tower_geometry_listener);
@@ -138,7 +132,7 @@ TEST_CASE("Background process dispatches wipe_tower_geometry once available", "[
     slicing.update_process(model_on_bed.model, model_on_bed.config, model_on_bed.bed_instance);
     slicing.slice_all();
 
-    REQUIRE(wait_for_status(status_listener, 3s, [](const StatusEvents &events){
+    REQUIRE(wait_for_status(dispatcher, status_listener, 3s, [](const StatusEvents &events){
         return events.back().status == Status::Finished;
     }));
 
@@ -172,7 +166,7 @@ TEST_CASE_METHOD(SlicingFixture, "Update reinitializes the process if printer te
     using Slic3r::ConfigOptionEnum;
     using Slic3r::PrinterTechnology;
 
-    ModelOnBed model_on_bed{get_cubes_model(10, 5)};
+    ModelOnBed model_on_bed{get_cubes_model(1, 5)};
 
     SLAResultListener listener;
     slicing.add_listener(&listener);
@@ -183,7 +177,7 @@ TEST_CASE_METHOD(SlicingFixture, "Update reinitializes the process if printer te
     slicing.update_process(model_on_bed.model, model_on_bed.config, model_on_bed.bed_instance);
     slicing.slice_all();
 
-    REQUIRE(wait_for_status(status_listener, 3s, [](const StatusEvents &events){
+    REQUIRE(wait_for_status(dispatcher, status_listener, 3s, [](const StatusEvents &events){
         return events.back().status == Status::Finished;
     }));
 

@@ -1,3 +1,4 @@
+#include "Slic3r/Biz/Platform/Termination.hpp"
 #include <Slic3r/Biz/Slicing/SlicingInteractor.hpp>
 #include <Slic3r/Biz/Platform/PlatformServices.hpp>
 #include <libassert/assert.hpp>
@@ -45,6 +46,18 @@ void SlicingInteractor::remove_listener(ISlicingListener* listener) {
         return;
     }
     ASSERT(false, "Unknown listener type!");
+}
+
+SlicingInteractor::SlicingInteractor(Platform::IMainThreadDispatcher& dispatcher)
+    : m_dispatcher(dispatcher)
+{}
+
+SlicingInteractor::~SlicingInteractor() {
+    ASSERT(
+        m_dispatcher.is_closed(),
+        "There must be no queued events (not even in the future),"
+        " bacause they may remember the address of this instance!"
+    );
 }
 
 void SlicingInteractor::create_process(
@@ -160,18 +173,20 @@ void SlicingInteractor::on_status(const Status status, const SlicingId id) {
         }
     }
 
-    m_dispatcher.dispatch_on_main_thread([=]() mutable {
+    if(!m_dispatcher.dispatch_on_main_thread([=](){
         process_slicing_queue();
         m_status_listeners.invoke([&](IStatusListener* listener){
             listener->on_status_changed(status, id);
         });
-    });
+    })) {
+        SPDLOG_INFO("{}: status not dispatched", fmt::streamed(id), fmt::streamed(status));
+    }
 }
 
 void SlicingInteractor::on_fdm_result(FDMResult&& result, FDMStatistics&& statistics, const SlicingId id) {
     SPDLOG_INFO("{}: FDMResult{{moves_count: {}}}", fmt::streamed(id), result.moves.size());
 
-    m_dispatcher.dispatch_on_main_thread(
+    if(!m_dispatcher.dispatch_on_main_thread(
         [
             this,
             id,
@@ -184,19 +199,23 @@ void SlicingInteractor::on_fdm_result(FDMResult&& result, FDMStatistics&& statis
             _result.reset();
             _statistics.reset();
         }
-    );
+    )) {
+        SPDLOG_INFO("{}: fdm result not dispatched", fmt::streamed(id), result.moves.size());
+    }
 }
 
 void SlicingInteractor::on_sla_result(const SlicingId id) {
     SPDLOG_INFO("{}: SLAResult{{}}", fmt::streamed(id));
 
-    m_dispatcher.dispatch_on_main_thread(
+    if(!m_dispatcher.dispatch_on_main_thread(
         [=]() {
             m_sla_result_listeners.invoke([&](ISLAResultListener* listener){
                 listener->on_sla_result_changed(id);
             });
         }
-    );
+    )) {
+        SPDLOG_INFO("{}: sla result not dispatched", fmt::streamed(id));
+    }
 }
 
 void SlicingInteractor::on_wipe_tower_geometry(Print::WipeTowerGeometry&& wipe_tower_geometry, const SlicingId id) {
@@ -206,13 +225,15 @@ void SlicingInteractor::on_wipe_tower_geometry(Print::WipeTowerGeometry&& wipe_t
         wipe_tower_geometry.size()
     );
 
-    m_dispatcher.dispatch_on_main_thread(
+    if (!m_dispatcher.dispatch_on_main_thread(
         [this, id, geometry=std::move(wipe_tower_geometry)]() mutable {
             m_wipe_tower_geometry_listeners.invoke([&](IWipeTowerGeometryListener* listener){
                 listener->on_wipe_tower_geometry(geometry, id);
             });
         }
-    );
+    )) {
+        SPDLOG_INFO("{}: wipe tower geometry not dispatched", fmt::streamed(id));
+    }
 }
 
 void SlicingInteractor::process_slicing_queue() {

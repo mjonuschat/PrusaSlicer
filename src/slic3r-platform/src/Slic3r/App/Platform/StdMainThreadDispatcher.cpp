@@ -2,16 +2,27 @@
 
 namespace Slic3r::App::Platform {
 
-void StdMainThreadDispatcher::dispatch_on_main_thread(Function func)
+bool StdMainThreadDispatcher::dispatch_on_main_thread(Function func)
 {
+    if (m_closed) {
+        return false;
+    }
+
     std::scoped_lock lock(m_queue_mutex);
     m_queue.push_back(std::move(func));
+
+    return true;
 }
 
-void StdMainThreadDispatcher::dispatch_on_main_thread_after(Function func)
+bool StdMainThreadDispatcher::dispatch_on_main_thread_after(Function func)
 {
+    if (m_closed) {
+        return false;
+    }
+
     std::scoped_lock lock(m_call_after_queue_mutex);
     m_call_after_queue.push_back(std::move(func));
+    return true;
 }
 
 bool StdMainThreadDispatcher::process_queue(Functions& queue, std::mutex& queue_mutex)
@@ -43,5 +54,13 @@ bool StdMainThreadDispatcher::dispatch_enqueued()
     return main_queue || after_queue;
 }
 
+void StdMainThreadDispatcher::close() {
+    m_closed = true;
+    dispatch_enqueued();
+}
+
+bool StdMainThreadDispatcher::is_closed() const {
+    return m_closed;
+}
 }
 

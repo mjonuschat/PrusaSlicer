@@ -53,6 +53,9 @@ struct UpdateRequest {
 class SlicingInteractor : public ISelectedProjectChangedListener, public IProcessCallbacks
 {
 public:
+    SlicingInteractor(Platform::IMainThreadDispatcher& dispatcher);
+    ~SlicingInteractor();
+
     void add_listener(ISlicingListener* listener);
     void remove_listener(ISlicingListener *listener);
 
@@ -94,6 +97,9 @@ private:
         const SlicingId id
     );
 
+    // Must be the first member to be destroyed last as member process threads access it!
+    mutable std::mutex m_status_mutex;
+
     std::map<SlicingId, BackgroundProcess> m_processes;
     std::map<SlicingId, Status> m_statuses;
     ListenerList<IFDMResultListener> m_fdm_result_listeners;
@@ -103,10 +109,7 @@ private:
     std::deque<SlicingId> m_slicing_queue;
     std::map<SlicingId, UpdateRequest> m_update_requests;
     Domain::SelectionId m_current_project_id{Domain::INVALID_ID};
-    Platform::IMainThreadDispatcher &m_dispatcher{
-        Platform::PlatformServices::instance().main_thread_dispatcher()
-    };
-    mutable std::mutex m_status_mutex;
+    Platform::IMainThreadDispatcher &m_dispatcher;
 };
 
 } // namespace Slic3r::Biz::Slicing

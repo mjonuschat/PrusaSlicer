@@ -6,6 +6,7 @@
 #include <imgui/imgui.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
 
+#include <Slic3r/Biz/Platform/Termination.hpp>
 #include <Slic3r/App/Platform/PlatformError.hpp>
 #include <Slic3r/App/Render/Init.hpp>
 #include <Slic3r/App/Render/Context.hpp>
@@ -666,7 +667,6 @@ void WXRenderCanvas::on_idle(wxIdleEvent& event)
     if (render_requested)
         render();
 }
-
 
 void WXRenderCanvas::begin_frame_platform()
 {

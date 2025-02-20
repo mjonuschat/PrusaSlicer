@@ -33,7 +33,10 @@ bool DesktopApp::OnInit()
         std::make_unique<StdMainThreadDispatcher>()
     );
 
-    m_project_interactor = std::make_unique<Biz::ProjectInteractor>(m_workbench);
+    m_project_interactor = std::make_unique<Biz::ProjectInteractor>(
+        m_workbench,
+        PlatformServices::instance().main_thread_dispatcher()
+    );
     m_plater_module =
       std::make_unique<Plater::PlaterRenderModule>(m_workbench, *m_project_interactor);
     m_preview_module =
