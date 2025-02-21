@@ -39,6 +39,7 @@
 #include "libslic3r/AABBTreeLines.hpp" // search structure for found close points
 #include "libslic3r/Line.hpp"
 #include "libslic3r/BoundingBox.hpp"
+#include "libslic3r/Point.hpp"
 
 // Experimentaly suggested ration of font ascent by multiple fonts
 // to get approx center of normal text line

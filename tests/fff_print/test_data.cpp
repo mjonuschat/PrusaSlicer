@@ -2,7 +2,6 @@
 #include "test_data.hpp"
 
 #include "libslic3r/TriangleMesh.hpp"
-#include "libslic3r/GCodeReader.hpp"
 #include "libslic3r/Config.hpp"
 #include "libslic3r/Print.hpp"
 #include "libslic3r/Format/OBJ.hpp"
@@ -335,14 +334,10 @@ void init_and_process_print(std::initializer_list<TriangleMesh> meshes, Slic3r::
 
 std::string gcode(Print & print)
 {
-	boost::filesystem::path temp = boost::filesystem::unique_path();
     print.set_status_silent();
     print.process();
-    print.export_gcode(temp.string(), nullptr, nullptr);
-    boost::nowide::ifstream t(temp.string());
-	std::string str((std::istreambuf_iterator<char>(t)), std::istreambuf_iterator<char>());
-	boost::nowide::remove(temp.string().c_str());
-	return str;
+    const Biz::libpgcode::ProcessorResult result{print.process_gcode(nullptr)};
+	return result.gcode.str();
 }
 
 Slic3r::Model model(const std::string &model_name, TriangleMesh &&_mesh)

@@ -131,26 +131,26 @@ public:
         Biz::libpgcode::MoveType::Wipe,
         Biz::libpgcode::MoveType::Extrude }) const;
     BoundingBoxf3 extrusion_bounding_box(const Biz::libpgcode::GCodeExtrusionRoles& roles = {
-        GCodeExtrusionRole::Perimeter,
-        GCodeExtrusionRole::ExternalPerimeter,
-        GCodeExtrusionRole::OverhangPerimeter,
-        GCodeExtrusionRole::InternalInfill,
-        GCodeExtrusionRole::SolidInfill,
-        GCodeExtrusionRole::TopSolidInfill,
-        GCodeExtrusionRole::Ironing,
-        GCodeExtrusionRole::BridgeInfill,
-        GCodeExtrusionRole::GapFill,
-        GCodeExtrusionRole::Skirt,
-        GCodeExtrusionRole::SupportMaterial,
-        GCodeExtrusionRole::SupportMaterialInterface,
-        GCodeExtrusionRole::WipeTower,
-        GCodeExtrusionRole::Custom }) const;
+        Domain::GCodeExtrusionRole::Perimeter,
+        Domain::GCodeExtrusionRole::ExternalPerimeter,
+        Domain::GCodeExtrusionRole::OverhangPerimeter,
+        Domain::GCodeExtrusionRole::InternalInfill,
+        Domain::GCodeExtrusionRole::SolidInfill,
+        Domain::GCodeExtrusionRole::TopSolidInfill,
+        Domain::GCodeExtrusionRole::Ironing,
+        Domain::GCodeExtrusionRole::BridgeInfill,
+        Domain::GCodeExtrusionRole::GapFill,
+        Domain::GCodeExtrusionRole::Skirt,
+        Domain::GCodeExtrusionRole::SupportMaterial,
+        Domain::GCodeExtrusionRole::SupportMaterialInterface,
+        Domain::GCodeExtrusionRole::WipeTower,
+        Domain::GCodeExtrusionRole::Custom }) const;
 
     bool is_option_visible(Biz::libpgcode::OptionType type) const;
     void toggle_option_visibility(Biz::libpgcode::OptionType type);
 
-    bool is_extrusion_role_visible(GCodeExtrusionRole role) const;
-    void toggle_extrusion_role_visibility(GCodeExtrusionRole role);
+    bool is_extrusion_role_visible(Domain::GCodeExtrusionRole role) const;
+    void toggle_extrusion_role_visibility(Domain::GCodeExtrusionRole role);
 
     const Interval& view_full_range() const { return m_view_range.full(); }
     const Interval& view_enabled_range() const { return m_view_range.enabled(); }
@@ -176,13 +176,13 @@ public:
     Biz::libpgcode::GCodeExtrusionRoles extrusion_roles() const { return m_extrusion_roles.roles(); }
     size_t visible_extrusion_roles_count() const;
     Biz::libpgcode::GCodeExtrusionRoles visible_extrusion_roles() const;
-    float extrusion_role_estimated_time(GCodeExtrusionRole role) const {
+    float extrusion_role_estimated_time(Domain::GCodeExtrusionRole role) const {
         return m_extrusion_roles.time(role, m_settings.time_mode);
     }
-    float extrusion_role_used_filament_length(GCodeExtrusionRole role) const {
+    float extrusion_role_used_filament_length(Domain::GCodeExtrusionRole role) const {
         return m_extrusion_roles.used_filament_length(role);
     }
-    float extrusion_role_used_filament_mass(GCodeExtrusionRole role) const {
+    float extrusion_role_used_filament_mass(Domain::GCodeExtrusionRole role) const {
         return m_extrusion_roles.used_filament_mass(role);
     }
 
@@ -205,8 +205,8 @@ public:
     const Palette& color_print_colors() const { return m_color_print_colors; }
     void set_color_print_colors(const Palette& colors);
 
-    const ColorRGB& extrusion_role_color(GCodeExtrusionRole role) const;
-    void set_extrusion_role_color(GCodeExtrusionRole role, const ColorRGB& color);
+    const ColorRGB& extrusion_role_color(Domain::GCodeExtrusionRole role) const;
+    void set_extrusion_role_color(Domain::GCodeExtrusionRole role, const ColorRGB& color);
     void reset_default_extrusion_roles_colors();
 
     const ColorRGB& option_color(Biz::libpgcode::OptionType type) const;

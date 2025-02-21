@@ -15,7 +15,7 @@ namespace Slic3r::App::libvgcode {
 
 struct GCodeEvent
 {
-    CustomGCode::Type type{ CustomGCode::Type::Custom };
+    Domain::CustomGCodeType type{ Domain::CustomGCodeType::Custom };
     uint8_t extruder_id{ 0 };
     Biz::libpgcode::Times times{};
     std::array<float, 2> used_filament{ 0.0f, 0.0f };
@@ -49,7 +49,7 @@ struct ViewerInputData
     // first = length in mm
     // second = mass in g
     //
-    std::map<GCodeExtrusionRole, std::pair<float, float>> used_filament_by_roles;
+    std::map<Domain::GCodeExtrusionRole, std::pair<float, float>> used_filament_by_roles;
     //
     // Used filament by extruder
     // first = length in mm

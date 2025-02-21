@@ -8,11 +8,13 @@
 #include "libslic3r/Geometry/ConvexHull.hpp"
 #include "libslic3r/Print.hpp"
 #include "libslic3r/libslic3r.h"
+#include "Slic3r/Biz/GCodeReader/GCodeReader.hpp"
 
 #include "test_data.hpp"
 
 using namespace Slic3r;
 using namespace std::literals;
+using Biz::GCodeReader::GCodeReader;
 
 SCENARIO("Basic tests", "[Multi]")
 {
@@ -76,7 +78,7 @@ SCENARIO("Ooze prevention", "[Multi]")
     Points      toolchange_points;
     Points      extrusion_points;
     parser.parse_buffer(gcode, [&tool, &tool_temp, &toolchange_points, &extrusion_points, &print_config]
-        (Slic3r::GCodeReader &self, const Slic3r::GCodeReader::GCodeLine &line)
+        (GCodeReader &self, const GCodeReader::GCodeLine &line)
     {
         // if the command is a T command, set the the current tool
         if (boost::starts_with(line.cmd(), "T")) {
@@ -205,7 +207,7 @@ SCENARIO("Stacked cubes", "[Multi]")
         // Scaled Z heights.
         std::set<coord_t> T0_shells, T1_shells;
         parser.parse_buffer(gcode, [&tool, &T0_shells, &T1_shells]
-            (Slic3r::GCodeReader &self, const Slic3r::GCodeReader::GCodeLine &line)
+            (GCodeReader &self, const GCodeReader::GCodeLine &line)
         {
             if (boost::starts_with(line.cmd(), "T")) {
                 tool = atoi(line.cmd().data() + 1);
@@ -248,7 +250,7 @@ SCENARIO("Stacked cubes", "[Multi]")
         int               tool = -1;
         // Scaled Z heights.
         std::set<coord_t> T0_shells, T1_shells;
-        parser.parse_buffer(gcode, [&tool, &T0_shells, &T1_shells](Slic3r::GCodeReader &self, const Slic3r::GCodeReader::GCodeLine &line)
+        parser.parse_buffer(gcode, [&tool, &T0_shells, &T1_shells](GCodeReader &self, const GCodeReader::GCodeLine &line)
         {
             if (boost::starts_with(line.cmd(), "T")) {
                 tool = atoi(line.cmd().data() + 1);

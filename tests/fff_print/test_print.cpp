@@ -3,11 +3,13 @@
 #include "libslic3r/libslic3r.h"
 #include "libslic3r/Print.hpp"
 #include "libslic3r/Layer.hpp"
+#include "Slic3r/Biz/GCodeReader/GCodeReader.hpp"
 
 #include "test_data.hpp"
 
 using namespace Slic3r;
 using namespace Slic3r::Test;
+using Biz::GCodeReader::GCodeReader;
 
 SCENARIO("PrintObject: Perimeter generation", "[PrintObject]") {
     GIVEN("20mm cube and default config") {
@@ -134,7 +136,7 @@ SCENARIO("Ported from Perl", "[Print]") {
             std::string gcode = Slic3r::Test::slice({ TestMesh::cube_20x20x20 }, config);
             GCodeReader parser;
             Points      extrusion_points;
-            parser.parse_buffer(gcode, [&extrusion_points](Slic3r::GCodeReader &self, const Slic3r::GCodeReader::GCodeLine &line)
+            parser.parse_buffer(gcode, [&extrusion_points](GCodeReader &self, const GCodeReader::GCodeLine &line)
             {
                 if (line.cmd_is("G1") && line.extruding(self) && line.dist_XY(self) > 0)
                     extrusion_points.emplace_back(line.new_XY_scaled(self));

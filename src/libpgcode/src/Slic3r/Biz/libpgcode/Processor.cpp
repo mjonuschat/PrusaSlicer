@@ -9,6 +9,8 @@
 
 namespace Slic3r::Biz::libpgcode {
 
+using GCodeReader::GCodeReader;
+
 Processor::Processor(ProcessorConfig&& config)
 : m_impl(new ProcessorImpl(std::move(config)))
 {

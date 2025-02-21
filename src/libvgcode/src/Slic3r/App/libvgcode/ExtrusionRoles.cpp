@@ -9,6 +9,8 @@ using namespace Slic3r::Biz::libpgcode;
 
 namespace Slic3r::App::libvgcode {
 
+using Domain::GCodeExtrusionRole;
+
 void ExtrusionRoles::add(GCodeExtrusionRole role, const std::pair<float, float>& used_filament)
 {
     auto it = m_items.find(role);

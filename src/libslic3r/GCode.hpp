@@ -15,6 +15,7 @@
 #ifndef slic3r_GCode_hpp_
 #define slic3r_GCode_hpp_
 
+#include "Slic3r/Biz/libpgcode/Processor.hpp"
 #include "libslic3r/GCode/ExtrusionOrder.hpp"
 #include "libslic3r/GCode/ExtrusionProcessor.hpp"
 #include "JumpPointSearch.hpp"
@@ -38,7 +39,6 @@
 #include "libslic3r/GCode/Wipe.hpp"
 #include "libslic3r/GCode/WipeTowerIntegration.hpp"
 #include "libslic3r/GCode/SeamPlacer.hpp"
-#include "libslic3r/GCode/GCodeProcessor.hpp"
 #include "libslic3r/GCode/ThumbnailData.hpp"
 #include "libslic3r/GCode/Travels.hpp"
 #include "EdgeGrid.hpp"
@@ -112,7 +112,7 @@ public:
 
     // throws std::runtime_exception on error,
     // throws CanceledException through print->throw_if_canceled().
-    void            do_export(Print* print, const char* path, GCodeProcessorResult* result = nullptr, ThumbnailsGeneratorCallback thumbnail_cb = nullptr);
+    Biz::libpgcode::ProcessorResult do_export(Print* print, ThumbnailsGeneratorCallback thumbnail_cb = nullptr);
 
     // Exported for the helper classes (OozePrevention, Wipe) and for the Perl binding for unit tests.
     const Vec2d&    origin() const { return m_origin; }
@@ -179,8 +179,7 @@ private:
 
     class GCodeOutputStream {
     public:
-        GCodeOutputStream(FILE *f, GCodeProcessor &processor) : f(f), m_processor(processor) {}
-        ~GCodeOutputStream() { this->close(); }
+      GCodeOutputStream(Biz::libpgcode::Processor& processor) : m_processor(processor) {}
 
         // Set a find-replace post-processor to modify the G-code before GCodePostProcessor.
         // It is being set to null inside process_layers(), because the find-replace process
@@ -188,12 +187,6 @@ private:
         void set_find_replace(GCodeFindReplace *find_replace, bool enabled) { m_find_replace_backup = find_replace; m_find_replace = enabled ? find_replace : nullptr; }
         void find_replace_enable() { m_find_replace = m_find_replace_backup; }
         void find_replace_supress() { m_find_replace = nullptr; }
-
-        bool is_open() const { return f; }
-        bool is_error() const;
-
-        void flush();
-        void close();
 
         // Write a string into a file.
         void write(const std::string& what) { this->write(what.c_str()); }
@@ -208,14 +201,14 @@ private:
         void write_format(const char* format, ...);
 
     private:
-        FILE             *f { nullptr };
         // Find-replace post-processor to be called before GCodePostProcessor.
         GCodeFindReplace *m_find_replace { nullptr };
         // If suppressed, the backoup holds m_find_replace.
         GCodeFindReplace *m_find_replace_backup { nullptr };
-        GCodeProcessor   &m_processor;
+        Biz::libpgcode::Processor& m_processor;
     };
-    void            _do_export(Print &print, GCodeOutputStream &file, ThumbnailsGeneratorCallback thumbnail_cb);
+
+    void _do_export(Print& print, GCodeOutputStream& file, ThumbnailsGeneratorCallback thumbnail_cb);
 
     static ObjectsLayerToPrint         		                     collect_layers_to_print(const PrintObject &object);
     static std::vector<std::pair<coordf_t, ObjectsLayerToPrint>> collect_layers_to_print(const Print &print);
@@ -422,7 +415,7 @@ private:
     // The Pressure Equalizer removes the markers from the final G-code.
     bool                                m_enable_extrusion_role_markers;
     // Keeps track of the last extrusion role passed to the processor
-    GCodeExtrusionRole                  m_last_processor_extrusion_role;
+    Slic3r::Domain::GCodeExtrusionRole m_last_processor_extrusion_role;
     // How many times will change_layer() be called?
     // change_layer() will update the progress bar.
     unsigned int                        m_layer_count;
@@ -435,7 +428,7 @@ private:
     bool                                m_object_layer_over_raft;
     double                              m_volumetric_speed;
     // Support for the extrusion role markers. Which marker is active?
-    GCodeExtrusionRole                  m_last_extrusion_role;
+    Slic3r::Domain::GCodeExtrusionRole m_last_extrusion_role;
     // Support for G-Code Processor
     float                               m_last_height{ 0.0f };
     float                               m_last_layer_z{ 0.0f };
@@ -466,12 +459,6 @@ private:
     std::string                         m_pending_pre_extrusion_gcode;
     // Pointer to currently exporting PrintObject and instance index.
     GCode::PrintObjectInstance          m_current_instance;
-
-    bool                                m_silent_time_estimator_enabled;
-
-    // Processor
-    GCodeProcessor                      m_processor;
-
     // Back-pointer to Print (const).
     const Print*                        m_print;
 
@@ -486,7 +473,6 @@ private:
         }
 
         bool emit_fan_speed_reset  = true;
-
         bool emit_bridge_fan_start = true;
         bool emit_bridge_fan_end   = true;
     };
@@ -514,6 +500,8 @@ private:
 
 std::vector<const PrintInstance*> sort_object_instances_by_model_order(const Print& print);
 
-}
+bool contains_reserved_tags(const std::string& gcode, unsigned int max_count, std::vector<std::string>& found_tag);
+
+} // namespacer Slic3r
 
 #endif

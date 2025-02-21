@@ -84,6 +84,7 @@ public:
     bool empty() const;
     size_t size() const;
     size_t size_in_bytes() const;
+    const std::string& str() const;
 
     // Insert a line (or possibly multiple lines). The line has to end with \n.
     void push_lines(const std::string& lines);

@@ -1,6 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include "libslic3r/GCodeReader.hpp"
+#include "Slic3r/Biz/GCodeReader/GCodeReader.hpp"
 #include "libslic3r/Geometry/ConvexHull.hpp"
 #include "libslic3r/Layer.hpp"
 
@@ -8,6 +8,7 @@
 
 using namespace Slic3r::Test;
 using namespace Slic3r;
+using Biz::GCodeReader::GCodeReader;
 
 SCENARIO("Gaps", "[Gaps]") {
     GIVEN("Two hollow squares") {
@@ -35,7 +36,7 @@ SCENARIO("Gaps", "[Gaps]") {
         parser.parse_buffer(
             Slic3r::Test::slice({ Slic3r::Test::TestMesh::two_hollow_squares }, config),
             [&perimeter_points, &gap_fills_outside_last_perimeters, &last, perimeter_speed, gap_fill_speed]
-                (Slic3r::GCodeReader &self, const Slic3r::GCodeReader::GCodeLine &line)
+                (GCodeReader &self, const GCodeReader::GCodeLine &line)
         {
             if (line.extruding(self) && line.dist_XY(self) > 0) {
                 double f = line.new_F(self);

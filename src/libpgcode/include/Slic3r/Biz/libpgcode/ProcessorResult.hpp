@@ -26,16 +26,17 @@ struct ProcessorResult
     std::vector<float> filament_diameters;
     std::vector<float> filament_densities;
     std::vector<float> filament_costs;
-    std::vector<Vec2f> bed_shape;
+    std::vector<Domain::Vec2f> bed_shape;
 
     LineView gcode;
 
     std::vector<std::string> extruder_str_colors;
     MoveVertices moves;
-    std::vector<CustomGCode::Item> custom_gcode_per_print_z;
+    std::vector<Domain::CustomGCodeItem> custom_gcode_per_print_z;
     PrintEstimatedStatistics print_statistics;
     PrintSettings print_settings;
     std::optional<ConflictResult> conflict_result;
+    std::optional<std::pair<std::string, std::string>> sequential_collision_detected;
 
     uint32_t id() const;
     void set_new_id();

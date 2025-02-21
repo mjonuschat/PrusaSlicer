@@ -14,11 +14,19 @@
 #include <vector>
 
 #include "libslic3r/libslic3r.h"
-#include "libslic3r/GCodeReader.hpp"
+#include "Slic3r/Biz/GCodeReader/GCodeReader.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/PrintConfig.hpp"
 
 namespace Slic3r {
+
+inline char get_extrusion_axis_char(const GCodeConfig &config)
+{
+    std::string axis = get_extrusion_axis(config);
+    assert(axis.size() <= 1);
+    // Return 0 for gcfNoExtrusion
+    return axis.empty() ? 0 : axis[0];
+}
 
 class SpiralVase
 {
@@ -28,7 +36,8 @@ public:
     explicit SpiralVase(const PrintConfig &config) : m_config(config)
     {
         m_reader.z() = (float) m_config.z_offset;
-        m_reader.apply_config(m_config);
+        m_reader.set_extrusion_axis(get_extrusion_axis_char(config));
+        m_reader.set_use_relative_e_distances(config.use_relative_e_distances.value);
 
         const double max_nozzle_diameter = *std::max_element(config.nozzle_diameter.values.begin(), config.nozzle_diameter.values.end());
         m_max_xy_smoothing               = float(2. * max_nozzle_diameter);
@@ -44,7 +53,7 @@ public:
 
 private:
     const PrintConfig  &m_config;
-    GCodeReader 		m_reader;
+    Biz::GCodeReader::GCodeReader m_reader;
     float               m_max_xy_smoothing = 0.f;
 
     bool 				m_enabled = false;

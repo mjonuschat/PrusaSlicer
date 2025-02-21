@@ -2,10 +2,12 @@
 
 #include <libslic3r/BridgeDetector.hpp>
 #include <libslic3r/Geometry.hpp>
+#include <Slic3r/Biz/GCodeReader/GCodeReader.hpp>
 
 #include "test_data.hpp"
 
 using namespace Slic3r;
+using Biz::GCodeReader::GCodeReader;
 
 SCENARIO("Bridge detector", "[Bridging]") 
 {
@@ -108,7 +110,7 @@ SCENARIO("Bridging integration", "[Bridging]") {
     const double                bridge_speed = config.opt_float("bridge_speed") * 60.;
     // angle => length
     std::map<coord_t, double>   extrusions;
-    parser.parse_buffer(gcode, [&extrusions, bridge_speed](Slic3r::GCodeReader &self, const Slic3r::GCodeReader::GCodeLine &line)
+    parser.parse_buffer(gcode, [&extrusions, bridge_speed](GCodeReader &self, const GCodeReader::GCodeLine &line)
     {
         // if the command is a T command, set the the current tool
         if (line.cmd() == "G1" && is_approx<double>(bridge_speed, line.new_F(self))) {

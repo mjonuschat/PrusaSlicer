@@ -15,6 +15,7 @@
 #include <vector>
 #include <cstddef>
 
+#include "Slic3r/Domain/GCodeFlavor.hpp"
 #include "libslic3r/Point.hpp"
 
 namespace Slic3r
@@ -23,10 +24,6 @@ namespace Slic3r
 class WipeTowerWriter;
 class PrintConfig;
 class PrintRegionConfig;
-
-enum GCodeFlavor : unsigned char;
-
-
 
 class WipeTower
 {
@@ -306,7 +303,7 @@ private:
     bool            m_no_sparse_layers          = false;
     bool            m_set_extruder_trimpot      = false;
     bool            m_adhesion                  = true;
-    GCodeFlavor     m_gcode_flavor;
+    Domain::GCodeFlavor     m_gcode_flavor;
 
     // Bed properties
     enum {

@@ -11,10 +11,12 @@
 #include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/SurfaceCollection.hpp"
 #include "libslic3r/libslic3r.h"
+#include "Slic3r/Biz/GCodeReader/GCodeReader.hpp"
 
 #include "test_data.hpp"
 
 using namespace Slic3r;
+using Biz::GCodeReader::GCodeReader;
 
 SCENARIO("Perimeter nesting", "[Perimeters]")
 {
@@ -206,7 +208,7 @@ SCENARIO("Perimeters", "[Perimeters]")
             GCodeReader parser;
             bool        has_cw_loops = false;
             Polygon     current_loop;
-            parser.parse_buffer(gcode, [&has_cw_loops, &current_loop](Slic3r::GCodeReader &self, const Slic3r::GCodeReader::GCodeLine &line)
+            parser.parse_buffer(gcode, [&has_cw_loops, &current_loop](GCodeReader &self, const GCodeReader::GCodeLine &line)
             {
                 if (line.extruding(self) && line.dist_XY(self) > 0) {
                     if (current_loop.empty())
@@ -235,7 +237,7 @@ SCENARIO("Perimeters", "[Perimeters]")
         Polygon     current_loop;
         const double external_perimeter_speed = config.get_abs_value("external_perimeter_speed") * 60.;
         parser.parse_buffer(gcode, [&has_cw_loops, &has_outwards_move, &starts_on_convex_point, &external_loops, &current_loop, external_perimeter_speed, model]
-            (Slic3r::GCodeReader &self, const Slic3r::GCodeReader::GCodeLine &line)
+            (GCodeReader &self, const GCodeReader::GCodeLine &line)
         {
             if (line.extruding(self) && line.dist_XY(self) > 0) {
                 if (current_loop.empty())
@@ -337,7 +339,7 @@ SCENARIO("Perimeters", "[Perimeters]")
             const double filament_dmr               = config.opt<ConfigOptionFloats>("filament_diameter")->get_at(0);
             const double bridge_mm_per_mm           = sqr(nozzle_dmr / filament_dmr) * config.opt_float("bridge_flow_ratio");
             parser.parse_buffer(gcode, [&layer_speeds, &fan_speed, perimeter_speed, external_perimeter_speed, bridge_speed, nozzle_dmr, filament_dmr, bridge_mm_per_mm]
-                (Slic3r::GCodeReader &self, const Slic3r::GCodeReader::GCodeLine &line)
+                (GCodeReader &self, const GCodeReader::GCodeLine &line)
             {
                 if (line.cmd_is("M107"))
                     fan_speed = 0;
@@ -386,7 +388,7 @@ SCENARIO("Perimeters", "[Perimeters]")
             bool                   in_loop         = false;
             const double           perimeter_speed = config.opt_float("perimeter_speed") * 60.;
             GCodeReader            parser;
-            parser.parse_buffer(gcode, [&perimeters, &in_loop, perimeter_speed](Slic3r::GCodeReader &self, const Slic3r::GCodeReader::GCodeLine &line)
+            parser.parse_buffer(gcode, [&perimeters, &in_loop, perimeter_speed](GCodeReader &self, const GCodeReader::GCodeLine &line)
             {
                 if (line.extruding(self) && line.dist_XY(self) > 0 && is_approx<double>(line.new_F(self), perimeter_speed)) {
                     if (! in_loop) {
@@ -549,7 +551,7 @@ SCENARIO("Perimeters3", "[Perimeters]")
         GCodeReader         parser;
         std::set<coord_t>   z_with_bridges;
         const double        bridge_speed = config.opt_float("bridge_speed") * 60.;
-        parser.parse_buffer(gcode, [&z_with_bridges, bridge_speed](Slic3r::GCodeReader &self, const Slic3r::GCodeReader::GCodeLine &line)
+        parser.parse_buffer(gcode, [&z_with_bridges, bridge_speed](GCodeReader &self, const GCodeReader::GCodeLine &line)
         {
             if (line.extruding(self) && line.dist_XY(self) > 0 && is_approx<double>(line.new_F(self), bridge_speed))
                 z_with_bridges.insert(scaled<coord_t>(self.z()));
@@ -600,7 +602,7 @@ SCENARIO("Seam alignment", "[Perimeters]")
         bool        was_extruding = false;
         Points      seam_points;
         GCodeReader parser;
-        parser.parse_buffer(gcode, [&was_extruding, &seam_points](Slic3r::GCodeReader &self, const Slic3r::GCodeReader::GCodeLine &line)
+        parser.parse_buffer(gcode, [&was_extruding, &seam_points](GCodeReader &self, const GCodeReader::GCodeLine &line)
         {
             if (line.extruding(self)) {
                 if (! was_extruding)

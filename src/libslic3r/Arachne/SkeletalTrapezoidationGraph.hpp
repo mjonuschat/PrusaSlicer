@@ -17,7 +17,6 @@
 namespace Slic3r
 {
 class Line;
-class Point;
 };
 
 namespace Slic3r::Arachne

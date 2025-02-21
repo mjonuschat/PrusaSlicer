@@ -6,6 +6,7 @@
 
 #include <Slic3r/Domain/SelectionId.hpp>
 #include <Slic3r/Domain/ConfigContainer.hpp>
+#include <Slic3r/Biz/libpgcode/ProcessorResult.hpp>
 
 #include <libslic3r/Print.hpp>
 #include <libslic3r/GCode.hpp>
@@ -81,13 +82,11 @@ bool is_thread_active(const Status status);
 
 Slic3r::PrinterTechnology get_printer_technology(const DynamicPrintConfig& config);
 
-using FDMResult = GCodeProcessorResult;
-
-using FDMStatistics = PrintStatistics;
+using FDMResult = libpgcode::ProcessorResult;
 
 class IProcessCallbacks {
 public:
-    virtual void on_fdm_result(FDMResult &&, FDMStatistics&&, SlicingId) = 0;
+    virtual void on_fdm_result(FDMResult &&, SlicingId) = 0;
     virtual void on_sla_result(SlicingId) = 0;
     virtual void on_status(const Status, SlicingId) = 0;
     virtual void on_wipe_tower_geometry(Print::WipeTowerGeometry&&, SlicingId) = 0;

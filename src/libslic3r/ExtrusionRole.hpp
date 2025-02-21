@@ -6,6 +6,7 @@
 #ifndef slic3r_ExtrusionRole_hpp_
 #define slic3r_ExtrusionRole_hpp_
 
+#include "Slic3r/Domain/GCodeExtrusionRole.hpp"
 #include "enum_bitmask.hpp"
 
 #include <string>
@@ -109,36 +110,13 @@ enum ExtrusionLoopRole {
     elrSkirt,
 };
 
-// Be careful when editing this list as many parts of the code depend
-// on the values of these ordinars, for example
-// GCodeViewer::Extrusion_Role_Colors
-enum class GCodeExtrusionRole : uint8_t {
-    None,
-    Perimeter,
-    ExternalPerimeter,
-    OverhangPerimeter,
-    InternalInfill,
-    SolidInfill,
-    TopSolidInfill,
-    Ironing,
-    BridgeInfill,
-    GapFill,
-    Skirt,
-    SupportMaterial,
-    SupportMaterialInterface,
-    WipeTower,
-    // Custom (user defined) G-code block, for example start / end G-code.
-    Custom,
-    // Stopper to count number of enums.
-    Count
-};
+using Domain::GCodeExtrusionRole;
 
 // Convert a rich bitmask based ExtrusionRole to a less expressive ordinal GCodeExtrusionRole.
 // GCodeExtrusionRole is to be serialized into G-code and deserialized by G-code viewer,
 GCodeExtrusionRole extrusion_role_to_gcode_extrusion_role(ExtrusionRole role);
 
 std::string gcode_extrusion_role_to_string(GCodeExtrusionRole role);
-GCodeExtrusionRole string_to_gcode_extrusion_role(const std::string_view role);
 
 }
 

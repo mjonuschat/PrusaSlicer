@@ -16,9 +16,12 @@ if (NOT SLIC3R_OPENGL_ES AND NOT EMSCRIPTEN)
     add_definitions(-DSLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED)
 endif ()
 
+add_subdirectory(slic3r-domain)
+add_subdirectory(slic3r-gcode-reader)
+add_subdirectory(libpgcode)
+
 add_subdirectory(slic3r-jthread)
 add_subdirectory(libslic3r)
-add_subdirectory(libpgcode)
 
 if (SLIC3R_ENABLE_FORMAT_STEP)
     add_subdirectory(occt_wrapper)
@@ -316,7 +319,6 @@ endif (SLIC3R2_ENABLED)
 add_subdirectory(slic3r-base)
 
 if (SLIC3R3_ENABLED)
-
     if (NOT EMSCRIPTEN)
         add_subdirectory(slic3r-platform-wx)
         add_subdirectory(slic3r-app-wxtest)

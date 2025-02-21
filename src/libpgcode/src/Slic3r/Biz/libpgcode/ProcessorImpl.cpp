@@ -6,11 +6,13 @@
 
 #include "ProcessorImpl.hpp"
 #include "Slic3r/Biz/libpgcode/Utils.hpp"
+#include "Slic3r/Domain/Constants.hpp"
 
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/classification.hpp>
 
 #include <assert.h>
+#include <numbers>
 
 #if __has_include(<charconv>)
 #include <charconv>
@@ -18,6 +20,16 @@
 #endif // __has_include
 
 namespace Slic3r::Biz::libpgcode {
+using namespace Domain;
+using GCodeReader::GCodeReader;
+
+constexpr auto PI{std::numbers::pi_v<float>};
+
+template<typename T>
+constexpr inline T sqr(T x)
+{
+    return x * x;
+}
 
 static bool is_valid_color(const std::string& color)
 {
@@ -147,7 +159,7 @@ ProcessorResult ProcessorImpl::finalize()
         TimeMachine& machine = m_time_processor.machines[i];
         CustomGCodeTime& gcode_time = machine.gcode_time;
         if (gcode_time.needed && gcode_time.cache != 0.0f)
-            gcode_time.times.push_back({ CustomGCode::Type::ColorChange, gcode_time.cache });
+            gcode_time.times.push_back({ CustomGCodeType::ColorChange, gcode_time.cache });
     }
 
     m_used_filaments.process_caches(m_result, m_extruder_id, m_extrusion_role);
@@ -623,13 +635,13 @@ void ProcessorImpl::process_G1(const std::array<std::optional<float>, 4>& axes, 
             m_width = m_width_from_tag;
         else if (m_extrusion_role == GCodeExtrusionRole::ExternalPerimeter)
             // cross section: rectangle
-            m_width = delta_pos[E] * float(PI) * sqr(1.05f * filament_radius) / (delta_xyz * m_height);
+            m_width = delta_pos[E] * PI * sqr(1.05f * filament_radius) / (delta_xyz * m_height);
         else if (m_extrusion_role == GCodeExtrusionRole::BridgeInfill || m_extrusion_role == GCodeExtrusionRole::None)
             // cross section: circle
             m_width = m_result.filament_diameters[m_extruder_id] * std::sqrt(delta_pos[E] / delta_xyz);
         else
             // cross section: rectangle + 2 semicircles
-            m_width = delta_pos[E] * float(PI) * sqr(filament_radius) / (delta_xyz * m_height) + (1.0f - 0.25f * float(PI)) * m_height;
+            m_width = delta_pos[E] * PI * sqr(filament_radius) / (delta_xyz * m_height) + (1.0f - 0.25f * PI) * m_height;
 
         if (m_width == 0.0f)
             m_width = DEFAULT_TOOLPATH_WIDTH;
@@ -882,9 +894,9 @@ uint32_t arc_discretization_steps(float radius, float angle, float deviation)
     return d < float(EPSILON) ?
         // Radius smaller than deviation.
         (   // Acute angle: a single segment interpolates the arc with sufficient accuracy.
-          angle < float(PI) ||
+          angle < PI ||
           // Obtuse angle: Test whether the furthest point (center) of an arc is closer than deviation to the center of a line segment.
-          radius * (1.0f + cos(float(PI) - 0.5f * angle)) < deviation ?
+          radius * (1.0f + cos(PI - 0.5f * angle)) < deviation ?
           // Single segment is sufficient
           1 :
           // Two segments are necessary, the middle point is at the center of the arc.
@@ -1009,14 +1021,14 @@ void ProcessorImpl::process_G2_G3(const GCodeReader::GCodeLine& line, bool clock
 
     // arc angle
     if (arc.is_full_circle())
-        arc.angle = 2.0f * float(PI);
+        arc.angle = 2.0f * PI;
     else {
         arc.angle = std::atan2(rel_arc_start[X] * rel_arc_end[Y] - rel_arc_start[Y] * rel_arc_end[X],
             rel_arc_start[X] * rel_arc_end[X] + rel_arc_start[Y] * rel_arc_end[Y]);
         if (arc.angle < 0.0f)
-            arc.angle += 2.0f * float(PI);
+            arc.angle += 2.0f * PI;
         if (clockwise)
-            arc.angle -= 2.0f * float(PI);
+            arc.angle -= 2.0f * PI;
     }
 
     float travel_length = arc.travel_length();
@@ -1036,7 +1048,7 @@ void ProcessorImpl::process_G2_G3(const GCodeReader::GCodeLine& line, bool clock
           process_G1(g1_axes, g1_feedrate, G1DiscretizationOrigin::G2G3, remaining_internal_g1_lines);
     };
 
-    if (m_config.flavor == gcfMarlinFirmware) {
+    if (m_config.flavor == GCodeFlavor::gcfMarlinFirmware) {
         // calculate arc segments
         // reference:
         // Prusa-Firmware-Buddy\lib\Marlin\Marlin\src\gcode\motion\G2_G3.cpp - plan_arc()
@@ -1180,7 +1192,7 @@ void ProcessorImpl::process_G2_G3(const GCodeReader::GCodeLine& line, bool clock
 
 void ProcessorImpl::process_G10(const GCodeReader::GCodeLine& line)
 {
-    if (m_config.flavor == gcfRepRapFirmware) {
+    if (m_config.flavor == GCodeFlavor::gcfRepRapFirmware) {
         // similar to M104/M109
         float new_temp;
         if (line.has_value('S', new_temp)) {
@@ -1228,13 +1240,13 @@ void ProcessorImpl::process_G28(const GCodeReader::GCodeLine& line)
 
 void ProcessorImpl::process_G60(const GCodeReader::GCodeLine& line)
 {
-    if (m_config.flavor == gcfMarlinLegacy || m_config.flavor == gcfMarlinFirmware)
+    if (m_config.flavor == GCodeFlavor::gcfMarlinLegacy || m_config.flavor == GCodeFlavor::gcfMarlinFirmware)
         m_saved_position = m_end_position;
 }
 
 void ProcessorImpl::process_G61(const GCodeReader::GCodeLine& line)
 {
-    if (m_config.flavor == gcfMarlinLegacy || m_config.flavor == gcfMarlinFirmware) {
+    if (m_config.flavor == GCodeFlavor::gcfMarlinLegacy || m_config.flavor == GCodeFlavor::gcfMarlinFirmware) {
         bool modified = false;
         if (line.has_x()) {
             m_end_position[X] = m_saved_position[X];
@@ -1329,7 +1341,7 @@ void ProcessorImpl::process_M108(const GCodeReader::GCodeLine& line)
     // They have to be processed otherwise toolchanges will be unrecognised
     // by the analyzer - see https://github.com/prusa3d/PrusaSlicer/issues/2566
 
-    if (m_config.flavor != gcfSailfish)
+    if (m_config.flavor != GCodeFlavor::gcfSailfish)
         return;
 
     std::string cmd = line.raw();
@@ -1377,7 +1389,7 @@ void ProcessorImpl::process_M135(const GCodeReader::GCodeLine& line)
     // They have to be processed otherwise toolchanges will be unrecognised
     // by the analyzer - see https://github.com/prusa3d/PrusaSlicer/issues/2566
 
-    if (m_config.flavor != gcfMakerWare)
+    if (m_config.flavor != GCodeFlavor::gcfMakerWare)
         return;
 
     const std::string cmd = line.raw();
@@ -1391,7 +1403,7 @@ void ProcessorImpl::process_M201(const GCodeReader::GCodeLine& line)
     // see http://reprap.org/wiki/G-code#M201:_Set_max_printing_acceleration
     UnitsType units = UnitsType::Millimeters;
     if (m_units == UnitsType::Inches) {
-        if (m_config.flavor != gcfRepRapSprinter && m_config.flavor != gcfRepRapFirmware)
+        if (m_config.flavor != GCodeFlavor::gcfRepRapSprinter && m_config.flavor != GCodeFlavor::gcfRepRapFirmware)
             units = UnitsType::Inches;
     }
 
@@ -1412,15 +1424,15 @@ void ProcessorImpl::process_M201(const GCodeReader::GCodeLine& line)
 void ProcessorImpl::process_M203(const GCodeReader::GCodeLine& line)
 {
     // see http://reprap.org/wiki/G-code#M203:_Set_maximum_feedrate
-    if (m_config.flavor == gcfRepetier)
+    if (m_config.flavor == GCodeFlavor::gcfRepetier)
         return;
 
     // see http://reprap.org/wiki/G-code#M203:_Set_maximum_feedrate
     // http://smoothieware.org/supported-g-codes
     UnitsType units = UnitsType::MillimetersPerMinute;
-    if (m_config.flavor == gcfMarlinLegacy ||
-        m_config.flavor == gcfMarlinFirmware ||
-        m_config.flavor == gcfSmoothie)
+    if (m_config.flavor == GCodeFlavor::gcfMarlinLegacy ||
+        m_config.flavor == GCodeFlavor::gcfMarlinFirmware ||
+        m_config.flavor == GCodeFlavor::gcfSmoothie)
         units = UnitsType::MillimetersPerSecond;
 
     for (size_t i = 0; i < TIME_MODES_COUNT; ++i) {
@@ -1493,9 +1505,9 @@ void ProcessorImpl::process_M205(const GCodeReader::GCodeLine& line)
 
 void ProcessorImpl::process_M220(const GCodeReader::GCodeLine& line)
 {
-    if (m_config.flavor != gcfMarlinLegacy &&
-        m_config.flavor != gcfMarlinFirmware &&
-        m_config.flavor != gcfKlipper)
+    if (m_config.flavor != GCodeFlavor::gcfMarlinLegacy &&
+        m_config.flavor != GCodeFlavor::gcfMarlinFirmware &&
+        m_config.flavor != GCodeFlavor::gcfKlipper)
         return;
 
     if (line.has('B'))
@@ -1521,7 +1533,7 @@ void ProcessorImpl::process_M221(const GCodeReader::GCodeLine& line)
 
 void ProcessorImpl::process_M401(const GCodeReader::GCodeLine& line)
 {
-    if (m_config.flavor != gcfRepetier)
+    if (m_config.flavor != GCodeFlavor::gcfRepetier)
         return;
 
     m_cached_position.position = m_start_position;
@@ -1530,7 +1542,7 @@ void ProcessorImpl::process_M401(const GCodeReader::GCodeLine& line)
 
 void ProcessorImpl::process_M402(const GCodeReader::GCodeLine& line)
 {
-    if (m_config.flavor != gcfRepetier)
+    if (m_config.flavor != GCodeFlavor::gcfRepetier)
         return;
 
     // see for reference:
@@ -1647,12 +1659,12 @@ void ProcessorImpl::process_T(const std::string_view command)
         int eid = 0;
         if (!parse_number(command.substr(1), eid, m_cb_string_to_double_decimal_point) || eid < 0 || eid > 255) {
             // Specific to the MMU2 V2 (see https://www.help.prusa3d.com/en/article/prusa-specific-g-codes_112173):
-            if ((m_config.flavor == gcfMarlinLegacy || m_config.flavor == gcfMarlinFirmware) &&
+            if ((m_config.flavor == GCodeFlavor::gcfMarlinLegacy || m_config.flavor == GCodeFlavor::gcfMarlinFirmware) &&
                 (command == "Tx" || command == "Tc" || command == "T?"))
                 return;
 
             // T-1 is a valid gcode line for RepRap Firmwares (used to deselects all tools) see https://github.com/prusa3d/PrusaSlicer/issues/5677
-            if ((m_config.flavor != gcfRepRapFirmware && m_config.flavor != gcfRepRapSprinter) || eid != -1) {
+            if ((m_config.flavor != GCodeFlavor::gcfRepRapFirmware && m_config.flavor != GCodeFlavor::gcfRepRapSprinter) || eid != -1) {
                 if (m_cb_log != nullptr)
                     m_cb_log("GCode::Processor encountered an invalid toolchange (" + std::string(command) + ").");
             }
@@ -1667,7 +1679,7 @@ void ProcessorImpl::process_T(const std::string_view command)
                 }
                 else {
                     uint8_t old_extruder_id = m_extruder_id;
-                    process_filaments(CustomGCode::Type::ToolChange);
+                    process_filaments(CustomGCodeType::ToolChange);
                     m_extruder_id = id;
                     m_extruder_color.current = m_extruder_colors[id];
                     // Specific to the MK3 MMU2:
@@ -1676,7 +1688,7 @@ void ProcessorImpl::process_T(const std::string_view command)
                     float extra_time = m_time_processor.filament_unload_time(size_t(old_extruder_id), m_config.is_XL_printer);
                     m_time_processor.extruder_unloaded = false;
                     extra_time += m_time_processor.filament_load_time(size_t(m_extruder_id), m_config.is_XL_printer);
-                    if (m_config.producer == GCodeProducer::KISSlicer && m_config.flavor == gcfMarlinLegacy)
+                    if (m_config.producer == GCodeProducer::KISSlicer && m_config.flavor == GCodeFlavor::gcfMarlinLegacy)
                         extra_time += m_config.kisslicer_toolchange_time_correction;
                     simulate_st_synchronize(extra_time);
 
@@ -1693,6 +1705,40 @@ void ProcessorImpl::process_T(const std::string_view command)
             }
         }
     }
+}
+
+GCodeExtrusionRole string_to_gcode_extrusion_role(const std::string_view role)
+{
+    if (role == "Perimeter")
+        return GCodeExtrusionRole::Perimeter;
+    else if (role == "External perimeter")
+        return GCodeExtrusionRole::ExternalPerimeter;
+    else if (role == "Overhang perimeter")
+        return GCodeExtrusionRole::OverhangPerimeter;
+    else if (role == "Internal infill")
+        return GCodeExtrusionRole::InternalInfill;
+    else if (role == "Solid infill")
+        return GCodeExtrusionRole::SolidInfill;
+    else if (role == "Top solid infill")
+        return GCodeExtrusionRole::TopSolidInfill;
+    else if (role == "Ironing")
+        return GCodeExtrusionRole::Ironing;
+    else if (role == "Bridge infill")
+        return GCodeExtrusionRole::BridgeInfill;
+    else if (role == "Gap fill")
+        return GCodeExtrusionRole::GapFill;
+    else if (role == "Skirt" || role == "Skirt/Brim") // "Skirt" is for backward compatibility with 2.3.1 and earlier
+        return GCodeExtrusionRole::Skirt;
+    else if (role == "Support material")
+        return GCodeExtrusionRole::SupportMaterial;
+    else if (role == "Support material interface")
+        return GCodeExtrusionRole::SupportMaterialInterface;
+    else if (role == "Wipe tower")
+        return GCodeExtrusionRole::WipeTower;
+    else if (role == "Custom")
+        return GCodeExtrusionRole::Custom;
+    else
+        return GCodeExtrusionRole::None;
 }
 
 void ProcessorImpl::process_tags(const std::string_view comment)
@@ -1811,15 +1857,15 @@ void ProcessorImpl::process_tags(const std::string_view comment)
             if (m_config.extruders.count > 1)
                 m_extruder_id = curr_extruder_id;
 
-            CustomGCode::Item item;
+            CustomGCodeItem item;
             item.print_z = m_end_position[Z];
-            item.type = CustomGCode::Type::ColorChange;
+            item.type = CustomGCodeType::ColorChange;
             item.extruder = int8_t(extruder_id + 1);
             item.color = str_color;
             m_result.custom_gcode_per_print_z.emplace_back(item);
             m_options_z_corrector.set();
-            process_custom_gcode_time(CustomGCode::Type::ColorChange);
-            process_filaments(CustomGCode::Type::ColorChange);
+            process_custom_gcode_time(CustomGCodeType::ColorChange);
+            process_filaments(CustomGCodeType::ColorChange);
         }
 
         return;
@@ -1830,13 +1876,13 @@ void ProcessorImpl::process_tags(const std::string_view comment)
     pos = comment.find(tag);
     if (pos == 0) {
         store_move(MoveType::PausePrint);
-        CustomGCode::Item item;
+        CustomGCodeItem item;
         item.print_z  = m_end_position[Z];
-        item.type     = CustomGCode::Type::PausePrint;
+        item.type     = CustomGCodeType::PausePrint;
         item.extruder = int8_t(m_extruder_id + 1);
         m_result.custom_gcode_per_print_z.emplace_back(item);
         m_options_z_corrector.set();
-        process_custom_gcode_time(CustomGCode::Type::PausePrint);
+        process_custom_gcode_time(CustomGCodeType::PausePrint);
         return;
     }
 
@@ -1845,9 +1891,9 @@ void ProcessorImpl::process_tags(const std::string_view comment)
     pos = comment.find(tag);
     if (pos == 0) {
         store_move(MoveType::CustomGCode);
-        CustomGCode::Item item;
+        CustomGCodeItem item;
         item.print_z  = m_end_position[Z];
-        item.type     = CustomGCode::Type::Custom;
+        item.type     = CustomGCodeType::Custom;
         item.extruder = int8_t(m_extruder_id + 1);
         m_result.custom_gcode_per_print_z.emplace_back(item);
         m_options_z_corrector.set();
@@ -2384,7 +2430,7 @@ void ProcessorImpl::process_simplify3d_tags(const std::string_view comment)
     }
 }
 
-void ProcessorImpl::process_custom_gcode_time(CustomGCode::Type code)
+void ProcessorImpl::process_custom_gcode_time(CustomGCodeType code)
 {
     //FIXME this simulates st_synchronize! is it correct?
     // The estimated time may be longer than the real print time.
@@ -2403,12 +2449,12 @@ void ProcessorImpl::process_custom_gcode_time(CustomGCode::Type code)
     }
 }
 
-void ProcessorImpl::process_filaments(CustomGCode::Type code)
+void ProcessorImpl::process_filaments(CustomGCodeType code)
 {
     switch (code)
     {
-    case CustomGCode::Type::ColorChange: { m_used_filaments.process_color_change_cache(); break; }
-    case CustomGCode::Type::ToolChange:  { m_used_filaments.process_extruder_cache(m_extruder_id); break; }
+    case CustomGCodeType::ColorChange: { m_used_filaments.process_color_change_cache(); break; }
+    case CustomGCodeType::ToolChange:  { m_used_filaments.process_extruder_cache(m_extruder_id); break; }
     default:                           { break; }
     }
 }

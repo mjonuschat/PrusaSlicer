@@ -24,6 +24,7 @@
 #include "libslic3r/libslic3r.h"
 
 namespace Slic3r {
+using Biz::libpgcode::ConflictResult;
 
 namespace RasterizationImpl {
 using IndexPair = std::pair<int64_t, int64_t>;
@@ -303,7 +304,7 @@ ConflictComputeOpt ConflictChecker::find_inter_of_lines(const LineWithIDs &lines
     return {};
 }
 
-ConflictResultOpt ConflictChecker::find_inter_of_lines_in_diff_objs(SpanOfConstPtrs<PrintObject> objs,
+Biz::libpgcode::ConflictResultOpt ConflictChecker::find_inter_of_lines_in_diff_objs(SpanOfConstPtrs<PrintObject> objs,
                                                                     const WipeTowerData& wipe_tower_data) // find the first intersection point of lines in different objects
 {
     // There is no conflict when there are no objects,
@@ -371,11 +372,11 @@ ConflictResultOpt ConflictChecker::find_inter_of_lines_in_diff_objs(SpanOfConstP
             assert(! wipe_tower_data.z_and_depth_pairs.empty());
             if (ptr2 == &wtptr) { std::swap(ptr1, ptr2); }
             const PrintObject *obj2 = reinterpret_cast<const PrintObject *>(ptr2);
-            return std::make_optional<ConflictResult>("WipeTower", obj2->model_object()->name, conflictHeight, nullptr, ptr2);
+            return ConflictResult{"WipeTower", obj2->model_object()->name, static_cast<float>(conflictHeight), nullptr, ptr2};
         }
         const PrintObject *obj1 = reinterpret_cast<const PrintObject *>(ptr1);
         const PrintObject *obj2 = reinterpret_cast<const PrintObject *>(ptr2);
-        return std::make_optional<ConflictResult>(obj1->model_object()->name, obj2->model_object()->name, conflictHeight, ptr1, ptr2);
+        return ConflictResult{obj1->model_object()->name, obj2->model_object()->name, static_cast<float>(conflictHeight), ptr1, ptr2};
     } else
         return {};
 }

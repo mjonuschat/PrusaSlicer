@@ -19,7 +19,6 @@
 #include "libslic3r/GCode/ThumbnailData.hpp"
 #include "libslic3r/SLAPrint.hpp"
 #include "slic3r/Utils/PrintHost.hpp"
-#include "libslic3r/GCode/GCodeProcessor.hpp"
 
 
 namespace boost { namespace filesystem { class path; } }

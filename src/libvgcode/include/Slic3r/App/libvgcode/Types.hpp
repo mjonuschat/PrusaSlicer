@@ -5,6 +5,7 @@
 ///|/
 #pragma once
 
+#include "libslic3r/Color.hpp"
 #include <Slic3r/Biz/libpgcode/Types.hpp>
 
 #include <libslic3r/format.hpp>
@@ -91,7 +92,7 @@ static constexpr size_t LIGHT_REFERENCE_SYSTEMS_COUNT = size_t(LightReferenceSys
 std::string light_reference_system_to_string(LightReferenceSystem sys);
 
 static constexpr LightReferenceSystem DEFAULT_LIGHT_REFERENCE_SYSTEMS = LightReferenceSystem::World;
-static const Vec3f DEFAULT_LIGHT_DIRECTION = { 0.0f, 0.0f, -1.0f };
+static const Domain::Vec3f DEFAULT_LIGHT_DIRECTION = { 0.0f, 0.0f, -1.0f };
 static constexpr float DEFAULT_LIGHT_AMBIENT = 0.1f;
 static constexpr float DEFAULT_LIGHT_DIFFUSE = 0.1f;
 static constexpr float DEFAULT_LIGHT_SPECULAR = 0.1f;
@@ -100,7 +101,7 @@ static constexpr float DEFAULT_LIGHT_SHININESS = 1.0f;
 struct Light
 {
     LightReferenceSystem system{ DEFAULT_LIGHT_REFERENCE_SYSTEMS };
-    Vec3f direction{ DEFAULT_LIGHT_DIRECTION };
+    Domain::Vec3f direction{ DEFAULT_LIGHT_DIRECTION };
     float ambient{ DEFAULT_LIGHT_AMBIENT };
     float diffuse{ DEFAULT_LIGHT_DIFFUSE };
     float specular{ DEFAULT_LIGHT_SPECULAR };

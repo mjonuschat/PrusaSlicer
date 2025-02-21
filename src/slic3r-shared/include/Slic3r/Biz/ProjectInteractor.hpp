@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Slic3r/Biz/FDMResultCache.hpp"
 #include "Slic3r/Biz/ISlicingInputChangedListener.hpp"
 #include "Slic3r/Domain/SelectionId.hpp"
 #include "Slic3r/Biz/Platform/ListenerList.hpp"
@@ -51,6 +52,7 @@ public:
         add_listener<ISelectedProjectChangedListener>(&m_slicing_interactor);
         m_scene_interactor.add_listener<ISlicingInputChangedListener>(this);
         m_preset_interactor.add_listener<ISlicingInputChangedListener>(this);
+        m_slicing_interactor.add_listener<Slicing::IFDMResultListener>(&m_fdm_result_cache);
     }
 
     /**
@@ -179,6 +181,8 @@ public:
 
     Slicing::SlicingInteractor& slicing_interactor() { return m_slicing_interactor; }
 
+    FDMResultCache& fdm_result_cache() { return m_fdm_result_cache; }
+
     /**
      * @name ISelectedBedInstanceChangedListener interface implementation
      * @{
@@ -210,6 +214,7 @@ private:
     Preset::PresetInteractor m_preset_interactor;
     Scene::SceneInteractor m_scene_interactor;
     Slicing::SlicingInteractor m_slicing_interactor;
+    FDMResultCache m_fdm_result_cache;
 };
 
 } // namespace Slic3r::Biz

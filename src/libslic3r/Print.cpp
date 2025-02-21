@@ -38,6 +38,7 @@
 #include "BuildVolume.hpp"
 #include "format.hpp"
 #include "ArrangeHelper.hpp"
+#include "libslic3r/PrePreview.hpp"
 
 #include <float.h>
 
@@ -906,7 +907,9 @@ void Print::process()
 
     BOOST_LOG_TRIVIAL(info) << "Starting the slicing process." << log_memory_info();
 
-    tbb::parallel_for(tbb::blocked_range<size_t>(0, m_objects.size(), 1), [this](const tbb::blocked_range<size_t> &range) {
+    Biz::Print::Preview preview;
+
+    tbb::parallel_for(tbb::blocked_range<size_t>(0, m_objects.size(), 1), [this, &preview](const tbb::blocked_range<size_t> &range) {
         for (size_t idx = range.begin(); idx < range.end(); ++idx) {
             m_objects[idx]->make_perimeters();
             m_objects[idx]->infill();
@@ -921,7 +924,7 @@ void Print::process()
     // this also has to be done sequentially.
     alert_when_supports_needed();
 
-    tbb::parallel_for(tbb::blocked_range<size_t>(0, m_objects.size(), 1), [this](const tbb::blocked_range<size_t> &range) {
+    tbb::parallel_for(tbb::blocked_range<size_t>(0, m_objects.size(), 1), [this, &preview](const tbb::blocked_range<size_t> &range) {
         for (size_t idx = range.begin(); idx < range.end(); ++idx) {
             PrintObject &obj = *m_objects[idx];
             obj.generate_support_material();
@@ -945,6 +948,7 @@ void Print::process()
         if (this->on_wipe_tower_geometry) {
             this->on_wipe_tower_geometry(get_wipe_tower_geometry(m_wipe_tower_data));
         }
+
         this->set_done(psWipeTower);
     }
     if (this->set_started(psSkirtBrim)) {
@@ -990,9 +994,13 @@ void Print::process()
     }
     auto conflictRes = ConflictChecker::find_inter_of_lines_in_diff_objs(objects(), m_wipe_tower_data);
 
+    if (on_fdm_result) {
+        on_fdm_result(Biz::Print::get_result_preview(*this));
+    }
+
     m_conflict_result = conflictRes;
     if (conflictRes.has_value())
-        BOOST_LOG_TRIVIAL(error) << boost::format("gcode path conflicts found between %1% and %2%") % conflictRes->_objName1 % conflictRes->_objName2;
+        BOOST_LOG_TRIVIAL(error) << boost::format("gcode path conflicts found between %1% and %2%") % conflictRes->obj_name_1 % conflictRes->obj_name_2;
 
     m_sequential_collision_detected =  config().complete_objects ? check_seq_conflict(model(), config()) : std::nullopt;
 
@@ -1003,32 +1011,23 @@ void Print::process()
 // The export_gcode may die for various reasons (fails to process output_filename_format,
 // write error into the G-code, cannot execute post-processing scripts).
 // It is up to the caller to show an error message.
-std::string Print::export_gcode(const std::string& path_template, GCodeProcessorResult* result, ThumbnailsGeneratorCallback thumbnail_cb)
+Biz::libpgcode::ProcessorResult Print::process_gcode(ThumbnailsGeneratorCallback thumbnail_cb)
 {
     // output everything to a G-code file
     // The following call may die if the output_filename_format template substitution fails.
-    std::string path = this->output_filepath(path_template);
-    std::string message;
-    if (!path.empty() && result == nullptr) {
-        // Only show the path if preview_data is not set -> running from command line.
-        message = _u8L("Exporting G-code");
-        message += " to ";
-        message += path;
-    } else
-        message = _u8L("Generating G-code");
+    std::string message = _u8L("Generating G-code");
     this->set_status(90, message);
 
     // Create GCode on heap, it has quite a lot of data.
     std::unique_ptr<GCodeGenerator> gcode(new GCodeGenerator(const_cast<const Print*>(this)));
-    gcode->do_export(this, path.c_str(), result, thumbnail_cb);
+    Biz::libpgcode::ProcessorResult result{gcode->do_export(this, thumbnail_cb)};
 
     if (m_conflict_result.has_value())
-        result->conflict_result = *m_conflict_result;
+        result.conflict_result = *m_conflict_result;
 
-    if (result)
-        result->sequential_collision_detected = m_sequential_collision_detected;
+    result.sequential_collision_detected = m_sequential_collision_detected;
 
-    return path.c_str();
+    return result;
 }
 
 void Print::_make_skirt()

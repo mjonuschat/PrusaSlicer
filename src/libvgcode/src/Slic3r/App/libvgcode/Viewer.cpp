@@ -98,22 +98,22 @@ void Viewer::toggle_option_visibility(OptionType type)
     m_impl->toggle_option_visibility(type);
 }
 
-bool Viewer::is_extrusion_role_visible(GCodeExtrusionRole role) const
+bool Viewer::is_extrusion_role_visible(Domain::GCodeExtrusionRole role) const
 {
     return m_impl->is_extrusion_role_visible(role);
 }
 
-void Viewer::toggle_extrusion_role_visibility(GCodeExtrusionRole role)
+void Viewer::toggle_extrusion_role_visibility(Domain::GCodeExtrusionRole role)
 {
     m_impl->toggle_extrusion_role_visibility(role);
 }
 
-const ColorRGB& Viewer::extrusion_role_color(GCodeExtrusionRole role) const
+const ColorRGB& Viewer::extrusion_role_color(Domain::GCodeExtrusionRole role) const
 {
     return m_impl->extrusion_role_color(role);
 }
 
-void Viewer::set_extrusion_role_color(GCodeExtrusionRole role, const ColorRGB& color)
+void Viewer::set_extrusion_role_color(Domain::GCodeExtrusionRole role, const ColorRGB& color)
 {
     m_impl->set_extrusion_role_color(role, color);
 }
@@ -393,17 +393,17 @@ ColorPrints Viewer::extruder_color_prints(uint8_t extruder_id) const
     return m_impl->used_extruder_color_prints(extruder_id);
 }
 
-float Viewer::extrusion_role_estimated_time(GCodeExtrusionRole role) const
+float Viewer::extrusion_role_estimated_time(Domain::GCodeExtrusionRole role) const
 {
     return m_impl->extrusion_role_estimated_time(role);
 }
 
-float Viewer::extrusion_role_used_filament_length(GCodeExtrusionRole role) const
+float Viewer::extrusion_role_used_filament_length(Domain::GCodeExtrusionRole role) const
 {
     return m_impl->extrusion_role_used_filament_length(role);
 }
 
-float Viewer::extrusion_role_used_filament_mass(GCodeExtrusionRole role) const
+float Viewer::extrusion_role_used_filament_mass(Domain::GCodeExtrusionRole role) const
 {
     return m_impl->extrusion_role_used_filament_mass(role);
 }

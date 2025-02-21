@@ -133,8 +133,8 @@ void BackgroundProcess::update(
 void BackgroundProcess::hook_callbacks(IPrint* print) {
     if (m_printer_technology == ptFFF) {
         print->on_fdm_result =
-            [this](GCodeProcessorResult&& result, PrintStatistics&& print_statistics) {
-                this->m_callbacks.on_fdm_result(std::move(result), std::move(print_statistics), m_id);
+            [this](FDMResult&& result) {
+                this->m_callbacks.on_fdm_result(std::move(result), m_id);
             };
         print->on_wipe_tower_geometry = [this](Print::WipeTowerGeometry&& geometry) {
             this->m_callbacks.on_wipe_tower_geometry(std::move(geometry), m_id);

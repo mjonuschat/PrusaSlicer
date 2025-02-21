@@ -9,6 +9,7 @@
 using namespace Slic3r::Biz::libpgcode;
 using namespace Slic3r::App::libvgcode;
 using namespace Slic3r::Biz;
+using Slic3r::Domain::GCodeExtrusionRole;
 
 namespace Slic3r::App::LibvgcodeWrapper {
 

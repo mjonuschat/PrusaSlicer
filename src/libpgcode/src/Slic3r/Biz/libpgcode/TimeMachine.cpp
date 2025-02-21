@@ -6,10 +6,19 @@
 
 #include "TimeMachine.hpp"
 #include "Slic3r/Biz/libpgcode/ProcessorResult.hpp"
+#include "Slic3r/Domain/Constants.hpp"
 
 #include <assert.h>
 
 namespace Slic3r::Biz::libpgcode {
+using namespace Domain;
+
+template <typename T, typename Number>
+constexpr inline T lerp(const T& a, const T& b, Number t)
+{
+    assert((t >= Number(-EPSILON)) && (t <= Number(1) + Number(EPSILON)));
+    return (Number(1) - t) * a + t * b;
+}
 
 float max_allowable_speed(float acceleration, float target_velocity, float distance)
 {

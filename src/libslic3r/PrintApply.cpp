@@ -1630,11 +1630,12 @@ void Print::cleanup()
 
 void Print::slice() {
     this->process();
-    auto path{boost::filesystem::temp_directory_path() / boost::filesystem::unique_path()};
-    path.replace_extension(".gcode");
-    this->export_gcode(path.string(), nullptr);
+    Biz::libpgcode::ProcessorResult result{this->process_gcode(nullptr)};
     this->finalize();
     this->cleanup();
+    if (this->on_fdm_result) {
+        this->on_fdm_result(std::move(result));
+    }
 }
 
 bool Print::is_shared_print_object_step_valid_unguarded(SpanOfConstPtrs<PrintObject> print_objects, PrintObjectStep print_object_step)

@@ -30,6 +30,8 @@
 #include <numeric>
 
 using namespace Slic3r::Biz::libpgcode;
+using Slic3r::Domain::Vec3f;
+using Slic3r::Domain::GCodeExtrusionRole;
 
 namespace Slic3r::App::libvgcode {
 

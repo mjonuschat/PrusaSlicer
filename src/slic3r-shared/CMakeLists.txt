@@ -223,6 +223,9 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/Slicing/BackgroundProcess.cpp
         src/Slic3r/Biz/Slicing/SlicingInteractor.cpp
         src/Slic3r/Biz/Slicing/ModelUtils.cpp
+
+        include/Slic3r/Biz/FDMResultCache.hpp
+        src/Slic3r/Biz/FDMResultCache.cpp
 )
 
 find_package(NanoSVG REQUIRED)

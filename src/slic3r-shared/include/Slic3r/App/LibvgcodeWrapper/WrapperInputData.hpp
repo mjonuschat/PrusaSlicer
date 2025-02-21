@@ -1,5 +1,6 @@
 #pragma once
 
+#include "libslic3r/CustomGCode.hpp"
 #include <Slic3r/Biz/libpgcode/Types.hpp>
 
 namespace Slic3r::App::LibvgcodeWrapper {

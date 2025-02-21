@@ -1,5 +1,6 @@
 #pragma once
 
+#include "libslic3r/CustomGCode.hpp"
 #include <Slic3r/App/libvgcode/Types.hpp>
 
 #include <functional>
@@ -38,7 +39,7 @@ typedef std::function<void(void)>                                   ExtrusionRol
 typedef std::function<void(const std::string&, const std::string&)> AppConfigChangedCallback;
 
 std::string to_string(Biz::libpgcode::MoveType type);
-std::string to_string(GCodeExtrusionRole role);
+std::string to_string(Domain::GCodeExtrusionRole role);
 std::string to_string(Biz::libpgcode::OptionType type);
 std::string to_string(libvgcode::ViewType type, Biz::libpgcode::UnitsSystem sys);
 

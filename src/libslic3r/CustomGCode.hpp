@@ -10,6 +10,7 @@
 #include <vector>
 #include <utility>
 #include <cstddef>
+#include "Slic3r/Domain/CustomGCodeType.hpp"
 
 namespace Slic3r {
 
@@ -22,39 +23,14 @@ namespace CustomGCode {
  */
 constexpr double epsilon() { return 0.0011; }
 
-enum Type
-{
-    ColorChange,
-    PausePrint,
-    ToolChange,
-    Template,
-    Custom
-};
+using Type = Domain::CustomGCodeType;
+using Domain::ColorChange;
+using Domain::PausePrint;
+using Domain::ToolChange;
+using Domain::Template;
+using Domain::Custom;
+using Item = Domain::CustomGCodeItem;
 
-struct Item
-{
-    bool operator<(const Item& rhs) const { return this->print_z < rhs.print_z; }
-    bool operator==(const Item& rhs) const
-    {
-        return (rhs.print_z   == this->print_z    ) &&
-               (rhs.type      == this->type       ) &&
-               (rhs.extruder  == this->extruder   ) &&
-               (rhs.color     == this->color      ) &&
-               (rhs.extra     == this->extra      );
-    }
-    bool operator!=(const Item& rhs) const { return ! (*this == rhs); }
-    
-    double      print_z;
-    Type        type;
-    int         extruder;   // Informative value for ColorChangeCode and ToolChangeCode
-                            // "gcode" == ColorChangeCode   => M600 will be applied for "extruder" extruder
-                            // "gcode" == ToolChangeCode    => for whole print tool will be switched to "extruder" extruder
-    std::string color;      // if gcode is equal to PausePrintCode, 
-                            // this field is used for save a short message shown on Printer display 
-    std::string extra;      // this field is used for the extra data like :
-                            // - G-code text for the Type::Custom 
-                            // - message text for the Type::PausePrint
-};
 
 enum Mode
 {

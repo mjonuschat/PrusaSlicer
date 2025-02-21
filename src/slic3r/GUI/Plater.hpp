@@ -26,7 +26,6 @@
 #include "Sidebar.hpp"
 #include "Selection.hpp"
 
-#include "libslic3r/GCode/GCodeProcessor.hpp"
 #include "Jobs/Job.hpp"
 #include "Jobs/Worker.hpp"
 #include "libslic3r/GCode/ThumbnailData.hpp"

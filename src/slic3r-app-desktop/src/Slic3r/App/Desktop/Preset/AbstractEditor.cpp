@@ -28,7 +28,7 @@
 
 #include "Slic3r/Biz/Preset/PresetHints.hpp"
 
-#include "libslic3r/GCode/GCodeProcessor.hpp"
+#include "libslic3r/GCode.hpp"
 #include "libslic3r/SLAPrint.hpp"
 
 #include "Slic3r/App/WX/WidgetsConfig.hpp"
@@ -1249,7 +1249,7 @@ void AbstractEditor::update_preset_description_line()
 bool AbstractEditor::validate_custom_gcode(const wxString& title, const std::string& gcode)
 {
     std::vector<std::string> tags;
-    bool invalid = GCodeProcessor::contains_reserved_tags(gcode, 5, tags);
+    bool invalid = contains_reserved_tags(gcode, 5, tags);
     if (invalid) {
         std::string lines = ":\n";
         for (const std::string& keyword : tags)

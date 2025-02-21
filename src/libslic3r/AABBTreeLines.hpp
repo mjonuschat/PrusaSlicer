@@ -225,7 +225,7 @@ inline AABBTreeIndirect::Tree<LineType::Dim, typename LineType::Scalar> build_aa
         const LineType &line = lines[i];
         InputType       n;
         n.m_idx      = i;
-        n.m_centroid = (line.a + line.b) * 0.5;
+        n.m_centroid = ((line.a + line.b).template cast<double>() * 0.5).template cast<typename LineType::Scalar>();
         n.m_bbox     = BoundingBox(line.a, line.a);
         n.m_bbox.extend(line.b);
         input.emplace_back(n);

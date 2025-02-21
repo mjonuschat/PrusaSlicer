@@ -11,7 +11,6 @@
 #include "libslic3r/CustomGCode.hpp"
 
 #include <string>
-#include "libslic3r/GCode/GCodeProcessor.hpp"
 
 class wxGLCanvas;
 class wxBoxSizer;

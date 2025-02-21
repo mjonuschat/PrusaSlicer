@@ -4,6 +4,7 @@
 #include <assert.h>
 
 namespace Slic3r::Biz::libpgcode {
+using namespace Domain;
 
 std::string_view producer_name(GCodeProducer producer)
 {
@@ -66,7 +67,10 @@ float convert(float value, UnitsType value_units, UnitsType desired_units)
 
 bool supports_separate_travel_acceleration(GCodeFlavor flavor)
 {
-    return (flavor == gcfRepetier || flavor == gcfMarlinFirmware || flavor == gcfRepRapFirmware);
+    return (
+        flavor == GCodeFlavor::gcfRepetier || flavor == GCodeFlavor::gcfMarlinFirmware ||
+        flavor == GCodeFlavor::gcfRepRapFirmware
+    );
 }
 
 std::string_view reserved_tag(Tags tag)

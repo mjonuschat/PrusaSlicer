@@ -109,6 +109,10 @@ size_t LineView::size_in_bytes() const
     return ret;
 }
 
+const std::string& LineView::str() const {
+    return m_content;
+}
+
 void LineView::check_edits(const std::vector<EditingItem>& edits) const
 {
     for (size_t i = 0; i < edits.size(); ++i) {

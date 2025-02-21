@@ -7,6 +7,7 @@
 
 #include "Types.hpp"
 #include "ViewerInputData.hpp"
+#include "libslic3r/BoundingBox.hpp"
 
 #include <Slic3r/Biz/libpgcode/ProcessorResult.hpp>
 
@@ -68,7 +69,7 @@ public:
     //
     // Render the toolpaths according to the current settings
     //
-    void render(const Vec3f& camera_position);
+    void render(const Domain::Vec3f& camera_position);
 
 #if ENABLE_RENDER_TO_TEXTURE
     //
@@ -119,19 +120,19 @@ public:
     //
     // Returns true if the given extrusion role is visible.
     //
-    bool is_extrusion_role_visible(GCodeExtrusionRole role) const;
+    bool is_extrusion_role_visible(Domain::GCodeExtrusionRole role) const;
     //
     // Toggle the visibility state of the given extrusion role.
     //
-    void toggle_extrusion_role_visibility(GCodeExtrusionRole role);
+    void toggle_extrusion_role_visibility(Domain::GCodeExtrusionRole role);
     //
     // Return the color used to render the given extrusion rols.
     //
-    const ColorRGB& extrusion_role_color(GCodeExtrusionRole role) const;
+    const ColorRGB& extrusion_role_color(Domain::GCodeExtrusionRole role) const;
     //
     // Set the color used to render the given extrusion role.
     //
-    void set_extrusion_role_color(GCodeExtrusionRole role, const ColorRGB& color);
+    void set_extrusion_role_color(Domain::GCodeExtrusionRole role, const ColorRGB& color);
     //
     // Reset the colors used to render the extrusion roles to the default value.
     //
@@ -423,15 +424,15 @@ public:
     //
     // Return the estimated time for the given role and the current time mode.
     //
-    float extrusion_role_estimated_time(GCodeExtrusionRole role) const;
+    float extrusion_role_estimated_time(Domain::GCodeExtrusionRole role) const;
     //
     // Return the length in mm of used filament for the given role.
     //
-    float extrusion_role_used_filament_length(GCodeExtrusionRole role) const;
+    float extrusion_role_used_filament_length(Domain::GCodeExtrusionRole role) const;
     //
     // Return the mass in g of used filament for the given role.
     //
-    float extrusion_role_used_filament_mass(GCodeExtrusionRole role) const;
+    float extrusion_role_used_filament_mass(Domain::GCodeExtrusionRole role) const;
     //
     // Return the estimated time for the given option type and the current time mode.
     //
@@ -466,20 +467,20 @@ public:
     // Return the axes aligned bounding box containing all the extrusions with the given roles.
     //
     BoundingBoxf3 extrusion_bounding_box(const Biz::libpgcode::GCodeExtrusionRoles& roles = {
-        GCodeExtrusionRole::Perimeter,
-        GCodeExtrusionRole::ExternalPerimeter,
-        GCodeExtrusionRole::OverhangPerimeter,
-        GCodeExtrusionRole::InternalInfill,
-        GCodeExtrusionRole::SolidInfill,
-        GCodeExtrusionRole::TopSolidInfill,
-        GCodeExtrusionRole::Ironing,
-        GCodeExtrusionRole::BridgeInfill,
-        GCodeExtrusionRole::GapFill,
-        GCodeExtrusionRole::Skirt,
-        GCodeExtrusionRole::SupportMaterial,
-        GCodeExtrusionRole::SupportMaterialInterface,
-        GCodeExtrusionRole::WipeTower,
-        GCodeExtrusionRole::Custom }) const;
+        Domain::GCodeExtrusionRole::Perimeter,
+        Domain::GCodeExtrusionRole::ExternalPerimeter,
+        Domain::GCodeExtrusionRole::OverhangPerimeter,
+        Domain::GCodeExtrusionRole::InternalInfill,
+        Domain::GCodeExtrusionRole::SolidInfill,
+        Domain::GCodeExtrusionRole::TopSolidInfill,
+        Domain::GCodeExtrusionRole::Ironing,
+        Domain::GCodeExtrusionRole::BridgeInfill,
+        Domain::GCodeExtrusionRole::GapFill,
+        Domain::GCodeExtrusionRole::Skirt,
+        Domain::GCodeExtrusionRole::SupportMaterial,
+        Domain::GCodeExtrusionRole::SupportMaterialInterface,
+        Domain::GCodeExtrusionRole::WipeTower,
+        Domain::GCodeExtrusionRole::Custom }) const;
     /** @brief Returns the center of gravity marker position in world coordinates
      *
      * @note The following extrusion types are ignored:

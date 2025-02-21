@@ -1,7 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
 
-#include "libslic3r/GCodeReader.hpp"
+#include "Slic3r/Biz/GCodeReader/GCodeReader.hpp"
 #include "libslic3r/Config.hpp"
 #include "libslic3r/Geometry.hpp"
 
@@ -12,6 +12,7 @@
 using namespace Slic3r::Test;
 using namespace Slic3r;
 using namespace Catch;
+using Biz::GCodeReader::GCodeReader;
 
 /// Helper method to find the tool used for the brim (always the first extrusion)
 static int get_brim_tool(const std::string &gcode)
@@ -19,7 +20,7 @@ static int get_brim_tool(const std::string &gcode)
     int brim_tool	= -1;
     int tool		= -1;
 	GCodeReader parser;
-    parser.parse_buffer(gcode, [&tool, &brim_tool] (Slic3r::GCodeReader &self, const Slic3r::GCodeReader::GCodeLine &line)
+    parser.parse_buffer(gcode, [&tool, &brim_tool] (GCodeReader &self, const GCodeReader::GCodeLine &line)
     {
         // if the command is a T command, set the the current tool
         if (boost::starts_with(line.cmd(), "T")) {
@@ -55,7 +56,7 @@ TEST_CASE("Skirt height is honored", "[Skirt]") {
     std::map<double, bool> layers_with_skirt;
     double support_speed = config.opt<Slic3r::ConfigOptionFloat>("support_material_speed")->value * MM_PER_MIN;
 	GCodeReader parser;
-    parser.parse_buffer(gcode, [&layers_with_skirt, &support_speed] (Slic3r::GCodeReader &self, const Slic3r::GCodeReader::GCodeLine &line) {
+    parser.parse_buffer(gcode, [&layers_with_skirt, &support_speed] (GCodeReader &self, const GCodeReader::GCodeLine &line) {
         if (line.extruding(self) && self.f() == Approx(support_speed)) {
             layers_with_skirt[self.z()] = 1;
         }
@@ -90,8 +91,8 @@ SCENARIO("Original Slic3r Skirt/Brim tests", "[SkirtBrim]") {
 		        std::string gcode = Slic3r::Test::slice({TestMesh::cube_20x20x20}, config);
                 bool brim_generated = false;
                 double support_speed = config.opt<Slic3r::ConfigOptionFloat>("support_material_speed")->value * MM_PER_MIN;
-			    Slic3r::GCodeReader parser;
-                parser.parse_buffer(gcode, [&brim_generated, support_speed] (Slic3r::GCodeReader& self, const Slic3r::GCodeReader::GCodeLine& line) {
+			    GCodeReader parser;
+                parser.parse_buffer(gcode, [&brim_generated, support_speed] (GCodeReader& self, const GCodeReader::GCodeLine& line) {
                     if (self.z() == Approx(0.3) || line.new_Z(self) == Approx(0.3)) {
                         if (line.extruding(self) && self.f() == Approx(support_speed)) {
                             brim_generated = true;
@@ -232,7 +233,7 @@ SCENARIO("Original Slic3r Skirt/Brim tests", "[SkirtBrim]") {
 				Points extrusion_points;
 				int tool = -1;
 				GCodeReader parser;
-                parser.parse_buffer(gcode, [config, &extrusion_points, &tool, &skirt_length, support_speed] (Slic3r::GCodeReader& self, const Slic3r::GCodeReader::GCodeLine& line) {
+                parser.parse_buffer(gcode, [config, &extrusion_points, &tool, &skirt_length, support_speed] (GCodeReader& self, const GCodeReader::GCodeLine& line) {
                     // std::cerr << line.cmd() << "\n";
 					if (boost::starts_with(line.cmd(), "T")) {
 						tool = atoi(line.cmd().data() + 1);

@@ -12,6 +12,7 @@
 #include "libslic3r/ExtrusionEntityCollection.hpp"
 #include "libslic3r/Flow.hpp"
 #include "libslic3r/LayerRegion.hpp"
+#include "libslic3r/Point.hpp"
 
 namespace Slic3r::Seams::Geometry {
 
@@ -371,7 +372,7 @@ std::vector<Vec2d> unscaled(const Points &points) {
     result.reserve(points.size());
     using std::transform, std::begin, std::end, std::back_inserter;
     transform(begin(points), end(points), back_inserter(result), [](const Point &point) {
-        return unscaled(point);
+        return unscale(point);
     });
     return result;
 }
@@ -380,7 +381,7 @@ std::vector<Linef> unscaled(const Lines &lines) {
     std::vector<Linef> result;
     result.reserve(lines.size());
     std::transform(lines.begin(), lines.end(), std::back_inserter(result), [](const Line &line) {
-        return Linef{unscaled(line.a), unscaled(line.b)};
+        return Linef{unscale(line.a), unscale(line.b)};
     });
     return result;
 }
@@ -436,8 +437,8 @@ std::vector<double> get_vertex_angles(const std::vector<Vec2d> &points, const do
 }
 
 double bounding_box_distance(const BoundingBox &a, const BoundingBox &b) {
-    const double bb_max_distance{unscaled(Point{a.max - b.max}).norm()};
-    const double bb_min_distance{unscaled(Point{a.min - b.min}).norm()};
+    const double bb_max_distance{unscale(Point{a.max - b.max}).norm()};
+    const double bb_min_distance{unscale(Point{a.min - b.min}).norm()};
     return std::max(bb_max_distance, bb_min_distance);
 }
 

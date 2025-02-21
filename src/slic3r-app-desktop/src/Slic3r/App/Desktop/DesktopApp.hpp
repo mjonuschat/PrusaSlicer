@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Slic3r/App/Platform/WX/WXRenderCanvas.hpp"
 #include <memory>
 
 #include <wx/wx.h>
@@ -13,6 +14,7 @@
 
 namespace Slic3r::App::Desktop {
 class MainFrame;
+
 
 class DesktopApp : public wxApp {
 public:
@@ -28,7 +30,6 @@ private:
     std::unique_ptr<Preview::PreviewRenderModule> m_preview_module;
     Domain::Workbench m_workbench;
     std::unique_ptr<Biz::ProjectInteractor> m_project_interactor;
-
 };
 
 } // namespace Slic3r::App::Desktop

@@ -10,6 +10,8 @@ using namespace Slic3r;
 using namespace Test;
 using namespace Catch;
 
+using Biz::GCodeReader::GCodeReader;
+
 constexpr bool debug_files{false};
 
 std::string remove_object(const std::string &gcode, const int id) {
@@ -63,7 +65,7 @@ void check_retraction(const std::string &gcode, double offset = 0.0) {
 
     parser.parse_buffer(
         gcode,
-        [&](Slic3r::GCodeReader &self, const Slic3r::GCodeReader::GCodeLine &line) {
+        [&](GCodeReader &self, const GCodeReader::GCodeLine &line) {
             INFO("Line number: " + std::to_string(++count));
             INFO("Extruder id: " + std::to_string(extruder_id));
             if (!line.raw().empty() && line.raw().front() == 'T') {

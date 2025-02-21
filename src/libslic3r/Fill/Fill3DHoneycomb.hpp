@@ -15,7 +15,6 @@
 #include "libslic3r/Polyline.hpp"
 
 namespace Slic3r {
-class Point;
 
 class Fill3DHoneycomb : public Fill
 {

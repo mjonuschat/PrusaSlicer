@@ -7,11 +7,12 @@
 
 #include "libslic3r/Config.hpp"
 #include "libslic3r/GCode.hpp"
-#include "libslic3r/GCodeReader.hpp"
+#include "Slic3r/Biz/GCodeReader/GCodeReader.hpp"
 #include "libslic3r/GCode/CoolingBuffer.hpp"
 #include "libslic3r/libslic3r.h"
 
 using namespace Slic3r;
+using Biz::GCodeReader::GCodeReader;
 
 std::unique_ptr<CoolingBuffer> make_cooling_buffer(
     GCodeGenerator                  &gcode,
@@ -191,7 +192,7 @@ SCENARIO("Cooling integration tests", "[Cooling]") {
         parser.parse_buffer(
             Slic3r::Test::slice({ Slic3r::Test::TestMesh::overhang }, config),
             [&fan, &fan_with_incorrect_speeds, &fan_with_incorrect_print_speeds, &bridge_with_no_fan, bridge_speed]
-                (Slic3r::GCodeReader &self, const Slic3r::GCodeReader::GCodeLine &line)
+                (GCodeReader &self, const GCodeReader::GCodeLine &line)
         {
             if (line.cmd_is("M106")) {
                 line.has_value('S', fan);
@@ -237,7 +238,7 @@ SCENARIO("Cooling integration tests", "[Cooling]") {
         parser.parse_buffer(
             Slic3r::Test::slice({ Slic3r::Test::TestMesh::cube_20x20x20 }, config),
             [&layer_times, &layer_external, external_perimeter_speed]
-                (Slic3r::GCodeReader &self, const Slic3r::GCodeReader::GCodeLine &line)
+                (GCodeReader &self, const GCodeReader::GCodeLine &line)
         {
             if (line.cmd_is("G1")) {
                 if (line.dist_Z(self) != 0) {

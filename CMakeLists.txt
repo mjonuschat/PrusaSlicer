@@ -387,7 +387,7 @@ endif()
 # set(Boost_COMPILER "-mgw81")
 # boost::process was introduced first in version 1.64.0,
 # boost::beast::detail::base64 was introduced first in version 1.66.0
-set(MINIMUM_BOOST_VERSION "1.83.0")
+set(MINIMUM_BOOST_VERSION "1.86.0")
 set(_boost_components "system;filesystem;thread;log;locale;regex;chrono;atomic;date_time;iostreams;nowide")
 if(EMSCRIPTEN)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --use-port=sdl2 --use-port=zlib -fwasm-exceptions")

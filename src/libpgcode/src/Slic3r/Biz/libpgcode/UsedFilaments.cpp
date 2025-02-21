@@ -9,6 +9,7 @@
 #include "Slic3r/Biz/libpgcode/ProcessorResult.hpp"
 
 namespace Slic3r::Biz::libpgcode {
+using namespace Domain;
 
 void UsedFilaments::increase_caches(float extruded_volume, uint8_t extruder_id, float parking_volume, float extra_loading_volume)
 {

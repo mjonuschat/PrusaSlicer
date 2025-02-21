@@ -6,10 +6,11 @@
 #include <memory>
 
 #include "libslic3r/GCode/GCodeWriter.hpp"
-#include "libslic3r/GCodeReader.hpp"
+#include "Slic3r/Biz/GCodeReader/GCodeReader.hpp"
 
 using namespace Slic3r;
 using Catch::Approx;
+using Biz::GCodeReader::GCodeReader;
 
 SCENARIO("set_speed emits values with fixed-point output.", "[GCodeWriter]") {
 
@@ -40,7 +41,7 @@ SCENARIO("set_speed emits values with fixed-point output.", "[GCodeWriter]") {
 
 void check_gcode_feedrate(const std::string& gcode, const GCodeConfig& config, double expected_speed) {
 	GCodeReader parser;
-    parser.parse_buffer(gcode, [&] (Slic3r::GCodeReader &self, const Slic3r::GCodeReader::GCodeLine &line) {
+    parser.parse_buffer(gcode, [&] (GCodeReader &self, const GCodeReader::GCodeLine &line) {
 
         const double travel_speed = config.opt_float("travel_speed");
 

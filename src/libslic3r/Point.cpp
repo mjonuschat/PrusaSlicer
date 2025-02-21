@@ -170,5 +170,4 @@ int cross(const Vec2crd &v1, const Vec2crd &v2)
 }
 
 }
-
-}
+} // namespace Slic3r

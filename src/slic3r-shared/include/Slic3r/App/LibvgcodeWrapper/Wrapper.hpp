@@ -2,6 +2,7 @@
 
 #include "Slic3r/App/LibvgcodeWrapper/Types.hpp"
 #include "Slic3r/App/Imgui/DoubleSlider.hpp"
+#include "libslic3r/BoundingBox.hpp"
 
 #include <memory>
 

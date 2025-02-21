@@ -9,7 +9,6 @@
 
 #include "3DScene.hpp"
 #include "libslic3r/ExtrusionRole.hpp"
-#include "libslic3r/GCode/GCodeProcessor.hpp"
 #include "GLModel.hpp"
 
 #include "LibVGCode/LibVGCodeWrapper.hpp"

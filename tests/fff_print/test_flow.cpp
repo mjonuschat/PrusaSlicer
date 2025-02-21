@@ -7,22 +7,23 @@
 #include "test_data.hpp" // get access to init_print, etc
 
 #include "libslic3r/Config.hpp"
-#include "libslic3r/GCodeReader.hpp"
+#include "Slic3r/Biz/GCodeReader/GCodeReader.hpp"
 #include "libslic3r/Flow.hpp"
 #include "libslic3r/libslic3r.h"
 
 using namespace Slic3r::Test;
 using namespace Slic3r;
 using namespace Catch;
+using Biz::GCodeReader::GCodeReader;
 
 SCENARIO("Extrusion width specifics", "[Flow]") {
 
     auto test = [](const DynamicPrintConfig &config) {
-        Slic3r::GCodeReader parser;
+        GCodeReader parser;
         const double        layer_height = config.opt_float("layer_height");
         std::vector<double> E_per_mm_bottom;
         parser.parse_buffer(Slic3r::Test::slice({ Slic3r::Test::TestMesh::cube_20x20x20 }, config),
-            [&E_per_mm_bottom, layer_height] (Slic3r::GCodeReader& self, const Slic3r::GCodeReader::GCodeLine& line)
+            [&E_per_mm_bottom, layer_height] (GCodeReader& self, const GCodeReader::GCodeLine& line)
         { 
             if (self.z() == Approx(layer_height).margin(0.01)) { // only consider first layer
                 if (line.extruding(self) && line.dist_XY(self) > 0)
@@ -85,7 +86,7 @@ SCENARIO(" Bridge flow specifics.", "[Flow]") {
         const double        bridge_speed = config.opt_float("bridge_speed") * 60.;
         std::vector<double> E_per_mm;
         parser.parse_buffer(Slic3r::Test::slice({ Slic3r::Test::TestMesh::overhang }, config), 
-            [&E_per_mm, bridge_speed](Slic3r::GCodeReader &self, const Slic3r::GCodeReader::GCodeLine &line) {
+            [&E_per_mm, bridge_speed](GCodeReader &self, const GCodeReader::GCodeLine &line) {
             if (line.extruding(self) && line.dist_XY(self) > 0) {
                 if (is_approx<double>(line.new_F(self), bridge_speed))
                     E_per_mm.emplace_back(line.dist_E(self) / line.dist_XY(self));

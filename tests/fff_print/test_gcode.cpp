@@ -17,6 +17,8 @@ using namespace Slic3r;
 using namespace Test;
 using namespace Catch;
 
+using Biz::GCodeReader::GCodeReader;
+
 constexpr bool debug_files = false;
 
 SCENARIO("Origin manipulation", "[GCode]") {
@@ -48,7 +50,7 @@ TEST_CASE("Wiping speeds", "[GCode]") {
 
 	GCodeReader parser;
     std::string gcode = Slic3r::Test::slice({TestMesh::cube_20x20x20}, config);
-    parser.parse_buffer(gcode, [&] (Slic3r::GCodeReader &self, const Slic3r::GCodeReader::GCodeLine &line) {
+    parser.parse_buffer(gcode, [&] (GCodeReader &self, const GCodeReader::GCodeLine &line) {
         if (line.travel() && line.dist_Z(self) != 0) {
             extruded_on_this_layer = false;
         } else if (line.extruding(self) && line.dist_XY(self) > 0) {
@@ -77,7 +79,7 @@ bool has_moves_below_z_offset(const DynamicPrintConfig& config) {
 
     unsigned moves_below_z_offset{};
     double configured_offset = config.opt_float("z_offset");
-    parser.parse_buffer(gcode, [&] (Slic3r::GCodeReader &self, const Slic3r::GCodeReader::GCodeLine &line) {
+    parser.parse_buffer(gcode, [&] (GCodeReader &self, const GCodeReader::GCodeLine &line) {
         if (line.travel() && line.has_z() && line.z() < configured_offset) {
             moves_below_z_offset++;
         }
@@ -152,7 +154,7 @@ TEST_CASE("Extrusion, travels, temperatures", "[GCode]") {
         gcode_file << gcode;
     }
 
-    parser.parse_buffer(gcode, [&] (Slic3r::GCodeReader &self, const Slic3r::GCodeReader::GCodeLine &line) {
+    parser.parse_buffer(gcode, [&] (GCodeReader &self, const GCodeReader::GCodeLine &line) {
         INFO("Unexpected E argument");
         CHECK(!line.has_e());
 
@@ -222,7 +224,7 @@ TEST_CASE("Used filament", "[GCode]") {
     Test::gcode(print2);
 
     INFO("Final retraction is not considered in total used filament");
-    CHECK(print1.print_statistics().total_used_filament == print2.print_statistics().total_used_filament);
+    CHECK(print1.print_statistics().total_used_filament == Approx(print2.print_statistics().total_used_filament));
 }
 
 void check_m73s(Print& print){
@@ -232,7 +234,7 @@ void check_m73s(Print& print){
 
 	GCodeReader parser;
     std::string gcode = Slic3r::Test::gcode(print);
-    parser.parse_buffer(gcode, [&] (Slic3r::GCodeReader &self, const Slic3r::GCodeReader::GCodeLine &line) {
+    parser.parse_buffer(gcode, [&] (GCodeReader &self, const GCodeReader::GCodeLine &line) {
 
         if (line.cmd_is("M73")) {
             std::optional<double> p = parse_axis(line.raw(), "P");
@@ -329,7 +331,7 @@ TEST_CASE("M201 for acceleation reset", "[GCode]") {
     bool has_accel = false;
     bool has_m204 = false;
 
-    parser.parse_buffer(gcode, [&] (Slic3r::GCodeReader &self, const Slic3r::GCodeReader::GCodeLine &line) {
+    parser.parse_buffer(gcode, [&] (GCodeReader &self, const GCodeReader::GCodeLine &line) {
         if (line.cmd_is("M201") && line.has_x() && line.has_y()) {
             if (line.x() == 1337 && line.y() == 1337) {
                 has_accel = true;

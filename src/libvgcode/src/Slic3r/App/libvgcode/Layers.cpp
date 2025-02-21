@@ -23,7 +23,7 @@ void Layers::update(const MoveVertex& vertex, uint32_t vertex_id)
         // this code assumes that gcode paths are sent sequentially, one layer after the other
         assert(vertex.layer_id == uint32_t(m_items.size()));
         Item& item = m_items.emplace_back(Item());
-        if (vertex.type == MoveType::Extrude && vertex.extrusion_role != GCodeExtrusionRole::Custom)
+        if (vertex.type == MoveType::Extrude && vertex.extrusion_role != Domain::GCodeExtrusionRole::Custom)
             item.z = vertex.position[2];
         item.range.set(vertex_id, vertex_id);
         item.times = vertex.time;
@@ -31,7 +31,7 @@ void Layers::update(const MoveVertex& vertex, uint32_t vertex_id)
     }
     else {
         Item& item = m_items.back();
-        if (vertex.type == MoveType::Extrude && vertex.extrusion_role != GCodeExtrusionRole::Custom && item.z != vertex.position[2])
+        if (vertex.type == MoveType::Extrude && vertex.extrusion_role != Domain::GCodeExtrusionRole::Custom && item.z != vertex.position[2])
             item.z = vertex.position[2];
         item.range.set_max(vertex_id);
         for (size_t i = 0; i < TIME_MODES_COUNT; ++i) {

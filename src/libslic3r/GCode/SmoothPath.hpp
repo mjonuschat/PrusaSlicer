@@ -12,7 +12,6 @@
 namespace Slic3r {
 
 class ExtrusionEntityCollection;
-class Point;
 class Polyline;
 
 namespace GCode {

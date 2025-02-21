@@ -5,9 +5,10 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
 
-#include "libslic3r/GCodeReader.hpp"
 #include "libslic3r/GCode/GCodeWriter.hpp"
 #include "libslic3r/Config.hpp"
+#include <Slic3r/Biz/GCodeReader/GCodeReader.hpp>
+#include <libslic3r/Config.hpp>
 
 #include "test_data.hpp"
 #include <regex>
@@ -16,6 +17,7 @@
 using namespace Slic3r;
 using namespace Test;
 using namespace Catch;
+using Biz::GCodeReader::GCodeReader;
 
 constexpr bool debug_files {false};
 
@@ -42,7 +44,7 @@ void check_gcode(std::initializer_list<TestMesh> meshes, const DynamicPrintConfi
     }
 
 	GCodeReader parser;
-    parser.parse_buffer(gcode, [&] (Slic3r::GCodeReader &self, const Slic3r::GCodeReader::GCodeLine &line) {
+    parser.parse_buffer(gcode, [&] (GCodeReader &self, const GCodeReader::GCodeLine &line) {
         std::regex regex{"^T(\\d+)"};
         std::smatch matches;
         std::string cmd{line.cmd()};
@@ -249,7 +251,7 @@ TEST_CASE("Z moves", "[retraction]") {
     }
 
 	GCodeReader parser;
-    parser.parse_buffer(gcode, [&] (Slic3r::GCodeReader &self, const Slic3r::GCodeReader::GCodeLine &line) {
+    parser.parse_buffer(gcode, [&] (GCodeReader &self, const GCodeReader::GCodeLine &line) {
         if (line.retracting(self)) {
             retracted = true;
             retractions++;
@@ -287,7 +289,7 @@ TEST_CASE("Firmware retraction handling", "[retraction]") {
 
     std::string gcode = Slic3r::Test::slice({TestMesh::cube_20x20x20}, config);
 	GCodeReader parser;
-    parser.parse_buffer(gcode, [&] (Slic3r::GCodeReader &self, const Slic3r::GCodeReader::GCodeLine &line) {
+    parser.parse_buffer(gcode, [&] (GCodeReader &self, const GCodeReader::GCodeLine &line) {
         if (line.cmd_is("G10")) {
             if (retracted)
                 double_retractions++;
@@ -316,7 +318,7 @@ TEST_CASE("Firmware retraction when length is 0", "[retraction]") {
 
     std::string gcode = Slic3r::Test::slice({TestMesh::cube_20x20x20}, config);
 	GCodeReader parser;
-    parser.parse_buffer(gcode, [&] (Slic3r::GCodeReader &self, const Slic3r::GCodeReader::GCodeLine &line) {
+    parser.parse_buffer(gcode, [&] (GCodeReader &self, const GCodeReader::GCodeLine &line) {
         if (line.cmd_is("G10")) {
             retracted = true;
         }
@@ -333,7 +335,7 @@ std::vector<double> get_lift_layers(const DynamicPrintConfig& config) {
 
     std::vector<double> result;
 	GCodeReader parser;
-    parser.parse_buffer(gcode, [&] (Slic3r::GCodeReader &self, const Slic3r::GCodeReader::GCodeLine &line) {
+    parser.parse_buffer(gcode, [&] (GCodeReader &self, const GCodeReader::GCodeLine &line) {
         if (line.cmd_is("G1") && line.dist_Z(self) < 0) {
             result.push_back(line.new_Z(self));
         }

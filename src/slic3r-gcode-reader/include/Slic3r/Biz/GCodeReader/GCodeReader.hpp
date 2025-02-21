@@ -17,11 +17,11 @@
 #include <cinttypes>
 #include <cstring>
 
-#include "libslic3r.h"
-#include "PrintConfig.hpp"
-#include "libslic3r/Point.hpp"
+#include "Slic3r/Domain/Axis.hpp"
+#include "Slic3r/Domain/Point.hpp"
+#include "LocalesUtils.hpp"
 
-namespace Slic3r {
+namespace Slic3r::Biz::GCodeReader {
 
 class GCodeReader {
 public:
@@ -42,47 +42,47 @@ public:
 
         // Return position in this->raw() string starting with the "axis" character.
         std::string_view axis_pos(char axis) const;
-        bool  has(Axis axis) const { return (m_mask & (1 << int(axis))) != 0; }
-        float value(Axis axis) const { return m_axis[axis]; }
+        bool  has(Domain::Axis axis) const { return (m_mask & (1 << int(axis))) != 0; }
+        float value(Domain::Axis axis) const { return m_axis[axis]; }
         bool  has(char axis) const;
         bool  has_value(char axis, float &value) const;
         bool  has_value(char axis, int &value) const;
         // Parse value of an axis from raw string starting at axis_pos.
         static bool has_value(std::string_view axis_pos, float &value);
         static bool has_value(std::string_view axis_pos, int &value);
-        float new_X(const GCodeReader &reader) const { return this->has(X) ? this->x() : reader.x(); }
-        float new_Y(const GCodeReader &reader) const { return this->has(Y) ? this->y() : reader.y(); }
-        float new_Z(const GCodeReader &reader) const { return this->has(Z) ? this->z() : reader.z(); }
-        float new_E(const GCodeReader &reader) const { return this->has(E) ? this->e() : reader.e(); }
-        float new_F(const GCodeReader &reader) const { return this->has(F) ? this->f() : reader.f(); }
-        Point new_XY_scaled(const GCodeReader &reader) const 
-            { return Point::new_scale(this->new_X(reader), this->new_Y(reader)); }
-        float dist_X(const GCodeReader &reader) const { return this->has(X) ? (this->x() - reader.x()) : 0; }
-        float dist_Y(const GCodeReader &reader) const { return this->has(Y) ? (this->y() - reader.y()) : 0; }
-        float dist_Z(const GCodeReader &reader) const { return this->has(Z) ? (this->z() - reader.z()) : 0; }
-        float dist_E(const GCodeReader &reader) const { return this->has(E) ? (this->e() - reader.e()) : 0; }
+        float new_X(const GCodeReader &reader) const { return this->has(Domain::Axis::X) ? this->x() : reader.x(); }
+        float new_Y(const GCodeReader &reader) const { return this->has(Domain::Axis::Y) ? this->y() : reader.y(); }
+        float new_Z(const GCodeReader &reader) const { return this->has(Domain::Axis::Z) ? this->z() : reader.z(); }
+        float new_E(const GCodeReader &reader) const { return this->has(Domain::Axis::E) ? this->e() : reader.e(); }
+        float new_F(const GCodeReader &reader) const { return this->has(Domain::Axis::F) ? this->f() : reader.f(); }
+        Domain::Point new_XY_scaled(const GCodeReader &reader) const 
+            { return Domain::Point::new_scale(this->new_X(reader), this->new_Y(reader)); }
+        float dist_X(const GCodeReader &reader) const { return this->has(Domain::Axis::X) ? (this->x() - reader.x()) : 0; }
+        float dist_Y(const GCodeReader &reader) const { return this->has(Domain::Axis::Y) ? (this->y() - reader.y()) : 0; }
+        float dist_Z(const GCodeReader &reader) const { return this->has(Domain::Axis::Z) ? (this->z() - reader.z()) : 0; }
+        float dist_E(const GCodeReader &reader) const { return this->has(Domain::Axis::E) ? (this->e() - reader.e()) : 0; }
         float dist_XY(const GCodeReader &reader) const {
-            float x = this->has(X) ? (this->x() - reader.x()) : 0;
-            float y = this->has(Y) ? (this->y() - reader.y()) : 0;
+            float x = this->has(Domain::Axis::X) ? (this->x() - reader.x()) : 0;
+            float y = this->has(Domain::Axis::Y) ? (this->y() - reader.y()) : 0;
             return sqrt(x*x + y*y);
         }
         bool cmd_is(const char *cmd_test)          const { return cmd_is(m_raw, cmd_test); }
         bool extruding(const GCodeReader &reader)  const { return this->cmd_is("G1") && this->dist_E(reader) > 0; }
         bool retracting(const GCodeReader &reader) const { return this->cmd_is("G1") && this->dist_E(reader) < 0; }
-        bool travel()     const { return this->cmd_is("G1") && ! this->has(E); }
-        void set(const GCodeReader &reader, const Axis axis, const float new_value, const int decimal_digits = 3);
+        bool travel()     const { return this->cmd_is("G1") && ! this->has(Domain::Axis::E); }
+        void set(const GCodeReader &reader, const Domain::Axis axis, const float new_value, const int decimal_digits = 3);
 
-        bool  has_x() const { return this->has(X); }
-        bool  has_y() const { return this->has(Y); }
-        bool  has_z() const { return this->has(Z); }
-        bool  has_e() const { return this->has(E); }
-        bool  has_f() const { return this->has(F); }
-        bool  has_unknown_axis() const { return this->has(UNKNOWN_AXIS); }
-        float x() const { return m_axis[X]; }
-        float y() const { return m_axis[Y]; }
-        float z() const { return m_axis[Z]; }
-        float e() const { return m_axis[E]; }
-        float f() const { return m_axis[F]; }
+        bool  has_x() const { return this->has(Domain::Axis::X); }
+        bool  has_y() const { return this->has(Domain::Axis::Y); }
+        bool  has_z() const { return this->has(Domain::Axis::Z); }
+        bool  has_e() const { return this->has(Domain::Axis::E); }
+        bool  has_f() const { return this->has(Domain::Axis::F); }
+        bool  has_unknown_axis() const { return this->has(Domain::Axis::UNKNOWN_AXIS); }
+        float x() const { return m_axis[Domain::Axis::X]; }
+        float y() const { return m_axis[Domain::Axis::Y]; }
+        float z() const { return m_axis[Domain::Axis::Z]; }
+        float e() const { return m_axis[Domain::Axis::E]; }
+        float f() const { return m_axis[Domain::Axis::F]; }
 
         static bool cmd_is(const std::string &gcode_line, const char *cmd_test) {
             const char *cmd = GCodeReader::skip_whitespaces(gcode_line.c_str());
@@ -103,7 +103,7 @@ public:
 
     private:
         std::string      m_raw;
-        float            m_axis[NUM_AXES];
+        float            m_axis[Domain::Axis::NUM_AXES];
         uint32_t         m_mask;
         friend class GCodeReader;
     };
@@ -113,8 +113,8 @@ public:
     
     GCodeReader() : m_verbose(false), m_extrusion_axis('E') { this->reset(); }
     void reset() { memset(m_position, 0, sizeof(m_position)); }
-    void apply_config(const GCodeConfig &config);
-    void apply_config(const DynamicPrintConfig &config);
+    void set_extrusion_axis(char extrusion_axis);
+    void set_use_relative_e_distances(const bool use);
 
     template<typename Callback>
     void parse_buffer(const std::string &buffer, Callback callback)
@@ -157,17 +157,17 @@ public:
     // To be called by the callback to stop parsing.
     void quit_parsing() { m_parsing = false; }
 
-    float& x()       { return m_position[X]; }
-    float  x() const { return m_position[X]; }
-    float& y()       { return m_position[Y]; }
-    float  y() const { return m_position[Y]; }
-    float& z()       { return m_position[Z]; }
-    float  z() const { return m_position[Z]; }
-    float& e()       { return m_position[E]; }
-    float  e() const { return m_position[E]; }
-    float& f()       { return m_position[F]; }
-    float  f() const { return m_position[F]; }
-    Point  xy_scaled() const { return Point::new_scale(this->x(), this->y()); }
+    float& x()       { return m_position[Domain::Axis::X]; }
+    float  x() const { return m_position[Domain::Axis::X]; }
+    float& y()       { return m_position[Domain::Axis::Y]; }
+    float  y() const { return m_position[Domain::Axis::Y]; }
+    float& z()       { return m_position[Domain::Axis::Z]; }
+    float  z() const { return m_position[Domain::Axis::Z]; }
+    float& e()       { return m_position[Domain::Axis::E]; }
+    float  e() const { return m_position[Domain::Axis::E]; }
+    float& f()       { return m_position[Domain::Axis::F]; }
+    float  f() const { return m_position[Domain::Axis::F]; }
+    Domain::Point  xy_scaled() const { return Domain::Point::new_scale(this->x(), this->y()); }
 
 
     // Returns 0 for gcfNoExtrusion.
@@ -201,9 +201,9 @@ private:
     }
     static const char*  axis_pos(const char *raw_str, char axis);
 
-    GCodeConfig m_config;
-    char        m_extrusion_axis;
-    float       m_position[NUM_AXES];
+    char        m_extrusion_axis{0};
+    bool        m_use_relative_e_distances{false};
+    float       m_position[Domain::Axis::NUM_AXES];
     bool        m_verbose;
     // To be set by the callback to stop parsing.
     bool        m_parsing{ false };

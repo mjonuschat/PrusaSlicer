@@ -21,7 +21,6 @@ namespace Slic3r {
 // Forward declarations.
 class GCodeGenerator;
 class Layer;
-class Point;
 
 class AvoidCrossingPerimeters
 {

@@ -37,7 +37,7 @@ void PreviewRenderModule::render_scene()
 }
 
 #if ENABLED_DEBUG_VIEWER
-static void render_imgui_debug_viewer(LibvgcodeWrapper::Wrapper& viewer)
+static void render_imgui_debug_viewer(LibvgcodeWrapper::Wrapper& viewer, Biz::ProjectInteractor& project_interactor)
 {
     ImGui::SetNextWindowCollapsed(true, ImGuiCond_Once);
     if (ImGui::Begin("Preview debug", nullptr, ImGuiWindowFlags_AlwaysAutoResize |
@@ -82,6 +82,12 @@ static void render_imgui_debug_viewer(LibvgcodeWrapper::Wrapper& viewer)
             viewer.set_range_colors_popup_type(libvgcode::ViewType::LayerTimeLinear);
         if (ImGui::Button("Layer time logarithmic range colors", { 0.0f, 0.0f }))
             viewer.set_range_colors_popup_type(libvgcode::ViewType::LayerTimeLogarithmic);
+
+        // Temporary hack
+        if (ImGui::Button("Slice all", { 0.0f, 0.0f })) {
+            project_interactor.slicing_interactor().slice_all();
+        }
+
     }
     ImGui::End();
 }
@@ -94,7 +100,7 @@ void PreviewRenderModule::render_imgui()
     m_viewer.render_gui(layout);
 
 #if ENABLED_DEBUG_VIEWER
-    render_imgui_debug_viewer(m_viewer);
+    render_imgui_debug_viewer(m_viewer, m_project_interactor);
 #endif // ENABLED_DEBUG_VIEWER
 }
 
@@ -109,15 +115,51 @@ void PreviewRenderModule::on_scene_keyboard_event(const Platform::KeyboardEvent&
       Platform::AbstractRenderModule::on_scene_keyboard_event(e);
 }
 
+void PreviewRenderModule::on_fdm_result_cache_changed(
+    const Biz::Slicing::SlicingId id
+) {
+    send_data_to_viewer(m_project_interactor.fdm_result_cache().get_result(id));
+}
+
 void PreviewRenderModule::on_init(Render::Device& device)
 {
     AbstractRenderModule::on_init(device);
     m_scene_presenter =
         std::make_unique<PreviewScenePresenter>(m_workbench, m_project_interactor, *m_device);
 
+
+    // Temporary (ugly) hack to enable slicing. Remove once switching from plater to
+    // preview is possible.
+    auto config{m_project_interactor.selected_config_container().print_config()};
+    config.set("skirts", 2);
+    config.set("brim_width", 10.0);
+    config.option<ConfigOptionEnum<DraftShield>>("draft_shield", true)->value = dsEnabled;
+    m_project_interactor.selected_config_container().set_print_config(config);
+    const double cube1_side{40};
+    TriangleMesh cube1{its_make_cube(cube1_side, cube1_side, cube1_side)};
+    cube1.translate(30, 0, 0);
+    m_project_interactor.scene_interactor().new_object_from_mesh(std::move(cube1));
+    const double cube2_side{30};
+    TriangleMesh cube2{its_make_cube(cube2_side, cube2_side, cube2_side)};
+    cube2.translate(60, 0, 0);
+    m_project_interactor.scene_interactor().new_object_from_mesh(std::move(cube2));
+    const double cube3_side{80};
+    TriangleMesh cube3{its_make_cube(cube3_side, cube3_side, cube3_side)};
+    cube3.translate(-80, -60, 0);
+    m_project_interactor.scene_interactor().new_object_from_mesh(std::move(cube3));
+    const double cube4_side{70};
+    TriangleMesh cube4{its_make_cube(cube4_side, cube4_side, cube4_side)};
+    cube4.translate(0, 90, 0);
+    m_project_interactor.scene_interactor().new_object_from_mesh(std::move(cube4));
+    const double cube5_side{50};
+    TriangleMesh cube5{its_make_cube(cube5_side, cube5_side, cube5_side)};
+    cube5.translate(60, 60, 0);
+    m_project_interactor.scene_interactor().new_object_from_mesh(std::move(cube5));
+
+
+
     init_gizmos();
     init_viewer(device);
-    send_data_to_viewer();
 
     Scene::CameraTrackballController& camera_trackball = m_scene_presenter->scene().camera_trackball();
     camera_trackball.set_focal_point(m_viewer.bounding_box().center());
@@ -616,9 +658,8 @@ static LibvgcodeWrapper::WrapperInputData extract_wrapper_input_data_from_result
     return ret;
 }
 
-void PreviewRenderModule::send_data_to_viewer()
+void PreviewRenderModule::send_data_to_viewer(Biz::Slicing::FDMResult result)
 {
-    ProcessorResult result = result_from_gcode_file();
     ViewerInputData viewer_data = extract_viewer_input_data_from_result(std::move(result));
     LibvgcodeWrapper::WrapperInputData wrapper_data = extract_wrapper_input_data_from_result(result);
 

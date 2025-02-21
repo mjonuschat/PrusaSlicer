@@ -14,7 +14,11 @@
 #ifndef _libslic3r_h_
 #define _libslic3r_h_
 
+#include "Slic3r/Domain/Constants.hpp"
 #include "libslic3r_version.h"
+#include "Slic3r/Domain/Axis.hpp"
+#include "Slic3r/Domain/Vectors.hpp"
+#include "Slic3r/Domain/Point.hpp"
 
 // Profiles for the alpha are stored into the PrusaSlicer-alpha directory to not mix with the current release.
 // #define SLIC3R_APP_FULL_NAME SLIC3R_APP_KEY
@@ -57,19 +61,15 @@
 using coord_t = 
 #if 1
 // Saves around 32% RAM after slicing step, 6.7% after G-code export (tested on PrusaSlicer 2.2.0 final).
-    int32_t;
+    Slic3r::Domain::coord_t;
 #else
     //FIXME At least FillRectilinear2 and std::boost Voronoi require coord_t to be 32bit.
     int64_t;
 #endif
 
-using coordf_t = double;
+using coordf_t = Slic3r::Domain::coordf_t;
 
-//FIXME This epsilon value is used for many non-related purposes:
-// For a threshold of a squared Euclidean distance,
-// for a trheshold in a difference of radians,
-// for a threshold of a cross product of two non-normalized vectors etc.
-static constexpr double EPSILON = 1e-4;
+using Slic3r::Domain::EPSILON;
 // Scaling factor for a conversion from coord_t to coordf_t: 10e-6
 // This scaling generates a following fixed point representation with for a 32bit integer:
 // 0..4294mm with 1nm resolution
@@ -85,9 +85,6 @@ static constexpr double INSET_OVERLAP_TOLERANCE = 0.4;
 // 3mm ring around the top / bottom / bridging areas.
 //FIXME This is quite a lot.
 static constexpr double EXTERNAL_INFILL_MARGIN = 3.;
-//FIXME Better to use an inline function with an explicit return type.
-//inline coord_t scale_(coordf_t v) { return coord_t(floor(v / SCALING_FACTOR + 0.5f)); }
-#define scale_(val) ((val) / SCALING_FACTOR)
 
 #define SCALED_EPSILON scale_(EPSILON)
 
@@ -117,17 +114,17 @@ inline T unscale(Q v) { return T(v) * T(SCALING_FACTOR); }
 
 constexpr size_t MAX_NUMBER_OF_BEDS = 9;
 
-enum Axis { 
-	X=0,
-	Y,
-	Z,
-	E,
-	F,
-	NUM_AXES,
-	// For the GCodeReader to mark a parsed axis, which is not in "XYZEF", it was parsed correctly.
-	UNKNOWN_AXIS = NUM_AXES,
-	NUM_AXES_WITH_UNKNOWN,
-};
+// Temporary measure.
+using Domain::Axis;
+
+using Domain::X;
+using Domain::Y;
+using Domain::Z;
+using Domain::E;
+using Domain::F;
+using Domain::NUM_AXES;
+using Domain::UNKNOWN_AXIS;
+using Domain::NUM_AXES_WITH_UNKNOWN;
 
 template <typename T, typename Alloc, typename Alloc2>
 inline void append(std::vector<T, Alloc> &dest, const std::vector<T, Alloc2> &src)

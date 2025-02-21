@@ -8,7 +8,6 @@
 
 namespace Slic3r {
 
-enum GCodeFlavor : unsigned char;
 enum class LabelObjectsStyle;
 struct PrintInstance;
 class Print;

@@ -17,7 +17,6 @@
 namespace Slic3r {
 
 class PrintObject;
-class Point;
 
 namespace FillLightning {
 

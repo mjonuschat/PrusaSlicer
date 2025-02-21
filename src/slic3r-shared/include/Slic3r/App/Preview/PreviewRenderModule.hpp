@@ -15,7 +15,7 @@ struct ExtrudersSequence;
 
 namespace Slic3r::App::Preview {
 
-class PreviewRenderModule final : public Platform::AbstractRenderModule
+class PreviewRenderModule final : public Platform::AbstractRenderModule, public Biz::IFDMResultCacheChangedListener
 {
 public:
     explicit PreviewRenderModule(const Domain::Workbench& workbench, Biz::ProjectInteractor& project_interactor)
@@ -31,6 +31,10 @@ public:
     void on_scene_mouse_event(const Platform::MouseEvent& e) override;
     void on_scene_keyboard_event(const Platform::KeyboardEvent& e) override;
     /**@}*/
+
+    void on_fdm_result_cache_changed(
+        const Biz::Slicing::SlicingId id
+    ) override;
 
 protected:
     /**
@@ -55,7 +59,7 @@ private:
 private:
     void init_gizmos();
     void init_viewer(Render::Device& device);
-    void send_data_to_viewer();
+    void send_data_to_viewer(Biz::Slicing::FDMResult result);
 
     void on_invalidate_slice();
     void on_update_layers_slider(const CustomGCode::Info& info);

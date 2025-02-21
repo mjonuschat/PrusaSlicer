@@ -22,7 +22,6 @@ using Slic3r::Tests::get_cubes_model;
 using Slic3r::Tests::ModelOnBed;
 using Slic3r::Tests::is_gcode_sane;
 using Slic3r::Biz::Slicing::FDMResult;
-using Slic3r::Biz::Slicing::FDMStatistics;
 using Slic3r::Biz::Slicing::SlicingId;
 using Slic3r::Domain::SelectionId;
 using Slic3r::Biz::Slicing::IWipeTowerGeometryListener;
@@ -31,11 +30,9 @@ using Slic3r::Biz::Print::ZDepth;
 using Slic3r::Tests::SlicingFixture;
 using Slic3r::Tests::StatusEvent;
 using Slic3r::Tests::StatusEvents;
-using Slic3r::Tests::StatusListener;
 using Slic3r::Biz::Slicing::ISLAResultListener;
 using Slic3r::Tests::ResultListener;
 using Slic3r::Biz::Slicing::IFDMResultListener;
-using Slic3r::Biz::Slicing::IStatusListener;
 
 
 TEST_CASE_METHOD(SlicingFixture, "Slice N beds", "[slicing][slicing-interactor]")
@@ -124,9 +121,6 @@ TEST_CASE_METHOD(SlicingFixture, "Background process dispatches wipe_tower_geome
 
     WipeTowerGeometryListener wipe_tower_geometry_listener;
     slicing.add_listener<IWipeTowerGeometryListener>(&wipe_tower_geometry_listener);
-
-    StatusListener status_listener;
-    slicing.add_listener<IStatusListener>(&status_listener);
 
     auto [model, config]{Tests::load_3mf(Tests::get_datadir() / "wipe_tower.3mf")};
 

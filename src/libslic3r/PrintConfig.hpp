@@ -56,6 +56,7 @@
 #include "Config.hpp"
 #include "SLA/SupportTreeStrategies.hpp"
 #include "libslic3r/Point.hpp"
+#include "Slic3r/Domain/GCodeFlavor.hpp"
 
 namespace Slic3r {
 class FullPrintConfig;
@@ -75,10 +76,21 @@ enum class ArcFittingType {
     EmitCenter
 };
 
-enum GCodeFlavor : unsigned char {
-    gcfRepRapSprinter, gcfRepRapFirmware, gcfRepetier, gcfTeacup, gcfMakerWare, gcfMarlinLegacy, gcfMarlinFirmware, gcfKlipper, gcfSailfish, gcfMach3, gcfMachinekit,
-    gcfSmoothie, gcfNoExtrusion,
-};
+// Temporary measure
+using Slic3r::Domain::GCodeFlavor;
+using Slic3r::Domain::GCodeFlavor::gcfRepRapSprinter;
+using Slic3r::Domain::GCodeFlavor::gcfRepRapFirmware;
+using Slic3r::Domain::GCodeFlavor::gcfRepetier;
+using Slic3r::Domain::GCodeFlavor::gcfTeacup;
+using Slic3r::Domain::GCodeFlavor::gcfMakerWare;
+using Slic3r::Domain::GCodeFlavor::gcfMarlinLegacy;
+using Slic3r::Domain::GCodeFlavor::gcfMarlinFirmware;
+using Slic3r::Domain::GCodeFlavor::gcfKlipper;
+using Slic3r::Domain::GCodeFlavor::gcfSailfish;
+using Slic3r::Domain::GCodeFlavor::gcfMach3;
+using Slic3r::Domain::GCodeFlavor::gcfMachinekit;
+using Slic3r::Domain::GCodeFlavor::gcfSmoothie;
+using Slic3r::Domain::GCodeFlavor::gcfNoExtrusion;
 
 enum class MachineLimitsUsage {
     EmitToGCode,

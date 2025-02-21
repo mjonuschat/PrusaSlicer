@@ -2,7 +2,7 @@
 #include <catch2/catch_approx.hpp>
 
 #include "libslic3r/libslic3r.h"
-#include "libslic3r/GCodeReader.hpp"
+#include "Slic3r/Biz/GCodeReader/GCodeReader.hpp"
 
 #include "test_data.hpp"
 
@@ -12,6 +12,7 @@
 using namespace Slic3r;
 using namespace Slic3r::Test;
 using namespace Catch;
+using Biz::GCodeReader::GCodeReader;
 
 boost::regex perimeters_regex("G1 X[-0-9.]* Y[-0-9.]* E[-0-9.]* ; perimeter");
 boost::regex infill_regex("G1 X[-0-9.]* Y[-0-9.]* E[-0-9.]* ; infill");
@@ -77,7 +78,10 @@ SCENARIO( "PrintGCode basic functionality", "[PrintGCode]") {
             THEN("final Z height is 20mm") {
                 double final_z = 0.0;
                 GCodeReader reader;
-                reader.apply_config(print.config());
+
+                const std::string axis{get_extrusion_axis(print.config())};
+                reader.set_extrusion_axis(axis.empty() ? 0 : axis[0]);
+                reader.set_use_relative_e_distances(print.config().use_relative_e_distances);
                 reader.parse_buffer(gcode, [&final_z] (GCodeReader& self, const GCodeReader::GCodeLine& line) {
                     final_z = std::max<double>(final_z, static_cast<double>(self.z())); // record the highest Z point we reach
                 });
@@ -119,7 +123,9 @@ SCENARIO( "PrintGCode basic functionality", "[PrintGCode]") {
             THEN("final Z height is 20.1mm") {
                 double final_z = 0.0;
                 GCodeReader reader;
-                reader.apply_config(print.config());
+                const std::string axis{get_extrusion_axis(print.config())};
+                reader.set_extrusion_axis(axis.empty() ? 0 : axis[0]);
+                reader.set_use_relative_e_distances(print.config().use_relative_e_distances);
                 reader.parse_buffer(gcode, [&final_z] (GCodeReader& self, const GCodeReader::GCodeLine& line) {
                     final_z = std::max(final_z, static_cast<double>(self.z())); // record the highest Z point we reach
                 });
@@ -129,7 +135,9 @@ SCENARIO( "PrintGCode basic functionality", "[PrintGCode]") {
                 double final_z = 0.0;
                 bool reset = false;
                 GCodeReader reader;
-                reader.apply_config(print.config());
+                const std::string axis{get_extrusion_axis(print.config())};
+                reader.set_extrusion_axis(axis.empty() ? 0 : axis[0]);
+                reader.set_use_relative_e_distances(print.config().use_relative_e_distances);
                 reader.parse_buffer(gcode, [&final_z, &reset] (GCodeReader& self, const GCodeReader::GCodeLine& line) {
                     if (final_z > 0 && std::abs(self.z() - 0.3) < 0.01 ) { // saw higher Z before this, now it's lower
                         reset = true;
@@ -143,7 +151,9 @@ SCENARIO( "PrintGCode basic functionality", "[PrintGCode]") {
                 double final_z = 0.0;
                 bool reset = false;
                 GCodeReader reader;
-                reader.apply_config(print.config());
+                const std::string axis{get_extrusion_axis(print.config())};
+                reader.set_extrusion_axis(axis.empty() ? 0 : axis[0]);
+                reader.set_use_relative_e_distances(print.config().use_relative_e_distances);
                 reader.parse_buffer(gcode, [&final_z, &reset] (GCodeReader& self, const GCodeReader::GCodeLine& line) {
                     if (final_z > 0 && std::abs(self.z() - 0.3) < 0.01 ) { 
                         reset = (final_z > 20.0);

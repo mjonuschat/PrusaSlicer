@@ -13,10 +13,12 @@
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Print.hpp"
 #include "libslic3r/SVG.hpp"
+#include "Slic3r/Biz/GCodeReader/GCodeReader.hpp"
 
 #include "test_data.hpp"
 
 using namespace Slic3r;
+using Biz::GCodeReader::GCodeReader;
 using namespace std::literals;
 
 bool test_if_solid_surface_filled(const ExPolygon& expolygon, double flow_spacing, double angle = 0, double density = 1.0);
@@ -226,7 +228,7 @@ SCENARIO("Infill does not exceed perimeters", "[Fill]")
                 Points      perimeter_points;
                 Points      infill_points;
                 parser.parse_buffer(gcode, [&tool, &perimeter_points, &infill_points, perimeter_extruder, infill_extruder]
-                    (Slic3r::GCodeReader &self, const Slic3r::GCodeReader::GCodeLine &line)
+                    (GCodeReader &self, const GCodeReader::GCodeLine &line)
                 {
                     // if the command is a T command, set the the current tool
                     if (boost::starts_with(line.cmd(), "T")) {
@@ -286,7 +288,7 @@ SCENARIO("Infill does not exceed perimeters", "[Fill]")
 //         int         tool = -1;
 //         const int   infill_extruder = config.opt_int("infill_extruder");
 //         Points      infill_points;
-//         parser.parse_buffer(gcode, [&tool, &infill_points, infill_extruder](Slic3r::GCodeReader &self, const Slic3r::GCodeReader::GCodeLine &line)
+//         parser.parse_buffer(gcode, [&tool, &infill_points, infill_extruder](GCodeReader &self, const GCodeReader::GCodeLine &line)
 //         {
 //             // if the command is a T command, set the the current tool
 //             if (boost::starts_with(line.cmd(), "T")) {
@@ -340,14 +342,14 @@ SCENARIO("Combine infill", "[Fill]")
                 REQUIRE(! gcode.empty());
             }
 
-            Slic3r::GCodeReader parser;
+            GCodeReader parser;
             int tool = -1;
             std::set<coord_t> layers; // layer_z => 1
             std::map<coord_t, bool> layer_infill; // layer_z => has_infill
             const int infill_extruder           = config.opt_int("infill_extruder");
             const int support_material_extruder = config.opt_int("support_material_extruder");
             parser.parse_buffer(gcode,
-                [&tool, &layers, &layer_infill, infill_extruder, support_material_extruder](Slic3r::GCodeReader &self, const Slic3r::GCodeReader::GCodeLine &line)
+                [&tool, &layers, &layer_infill, infill_extruder, support_material_extruder](GCodeReader &self, const GCodeReader::GCodeLine &line)
             {
                 coord_t z = line.new_Z(self) / SCALING_FACTOR;
                 if (boost::starts_with(line.cmd(), "T")) {
@@ -482,7 +484,7 @@ SCENARIO("Infill density zero", "[Fill]")
             GCodeReader  parser;
             const double perimeter_speed = config.opt_float("perimeter_speed");
             std::map<double, double> layers_with_extrusion;
-            parser.parse_buffer(gcode, [&layers_with_extrusion, perimeter_speed](Slic3r::GCodeReader &self, const Slic3r::GCodeReader::GCodeLine &line) {
+            parser.parse_buffer(gcode, [&layers_with_extrusion, perimeter_speed](GCodeReader &self, const GCodeReader::GCodeLine &line) {
                 if (line.cmd() == "G1" && line.extruding(self) && line.dist_XY(self) > 0) {
                     double f = line.new_F(self);
                     if (std::abs(f - perimeter_speed * 60.) > 0.01)
@@ -520,7 +522,7 @@ SCENARIO("Infill density zero", "[Fill]")
             int          tool = -1;
             const int    infill_extruder = config.opt_int("infill_extruder");
             std::map<coord_t, Lines> infill;
-            parser.parse_buffer(gcode, [&tool, &infill, infill_extruder](Slic3r::GCodeReader &self, const Slic3r::GCodeReader::GCodeLine &line) {
+            parser.parse_buffer(gcode, [&tool, &infill, infill_extruder](GCodeReader &self, const GCodeReader::GCodeLine &line) {
                 if (boost::starts_with(line.cmd(), "T")) {
                     tool = atoi(line.cmd().data() + 1) + 1;
                 } else if (line.cmd() == "G1" && line.extruding(self) && line.dist_XY(self) > 0) {

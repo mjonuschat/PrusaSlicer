@@ -6,6 +6,7 @@
 #pragma once
 
 #include "Slic3r/Biz/libpgcode/Types.hpp"
+#include "Slic3r/Domain/GCodeFlavor.hpp"
 
 namespace Slic3r::Biz::libpgcode {
 
@@ -28,7 +29,7 @@ OptionType move_type_to_option(MoveType type);
  */
 float convert(float value, UnitsType value_units, UnitsType desired_units);
 
-bool supports_separate_travel_acceleration(GCodeFlavor flavor);
+bool supports_separate_travel_acceleration(Domain::GCodeFlavor flavor);
 
 std::string_view reserved_tag(Tags tag);
 

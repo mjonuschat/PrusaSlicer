@@ -6,6 +6,7 @@
 #pragma once
 
 #include "Slic3r/App/libvgcode/Types.hpp"
+#include "libslic3r/BoundingBox.hpp"
 
 #include <float.h>
 

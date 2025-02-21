@@ -1,11 +1,12 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include "libslic3r/GCodeReader.hpp"
+#include "Slic3r/Biz/GCodeReader/GCodeReader.hpp"
 
 #include "test_data.hpp" // get access to init_print, etc
 
 using namespace Slic3r::Test;
 using namespace Slic3r;
+using Biz::GCodeReader::GCodeReader;
 
 SCENARIO("Shells", "[Shells]") {
     GIVEN("20mm box") {
@@ -18,7 +19,7 @@ SCENARIO("Shells", "[Shells]") {
             GCodeReader parser;
             parser.parse_buffer(Slic3r::Test::slice({ Slic3r::Test::TestMesh::cube_20x20x20 }, config),
                 [&zs, &layers_with_solid_infill, &layers_with_bridge_infill, solid_infill_speed, bridge_speed]
-                    (Slic3r::GCodeReader &self, const Slic3r::GCodeReader::GCodeLine &line)
+                    (GCodeReader &self, const GCodeReader::GCodeLine &line)
             {
                 double z = line.new_Z(self);
                 REQUIRE(z >= 0);
@@ -115,7 +116,7 @@ static std::set<double> layers_with_speed(const std::string &gcode, int speed)
 {
     std::set<double> out;
     GCodeReader parser;
-    parser.parse_buffer(gcode, [&out, speed](Slic3r::GCodeReader &self, const Slic3r::GCodeReader::GCodeLine &line) {
+    parser.parse_buffer(gcode, [&out, speed](GCodeReader &self, const GCodeReader::GCodeLine &line) {
         if (line.extruding(self) && is_approx<double>(line.new_F(self), speed * 60.))
             out.insert(self.z());
     });
@@ -236,7 +237,7 @@ SCENARIO("Shells (from Perl)", "[Shells]") {
             std::vector<double> z_steps;
             GCodeReader         parser;
             parser.parse_buffer(Slic3r::Test::slice({TestMesh::cube_20x20x20}, config), 
-                [&](Slic3r::GCodeReader &self, const Slic3r::GCodeReader::GCodeLine &line) {
+                [&](GCodeReader &self, const GCodeReader::GCodeLine &line) {
                 if (line.cmd_is("G1")) {
                     if (line.extruding(self))
                         started_extruding = true;
@@ -310,7 +311,7 @@ SCENARIO("Shells (from Perl)", "[Shells]") {
         bool horizontal_extrusions                      = false;
         GCodeReader parser;
         parser.parse_buffer(Slic3r::Test::slice({TestMesh::cube_20x20x20}, config), 
-            [&](Slic3r::GCodeReader &self, const Slic3r::GCodeReader::GCodeLine &line) {
+            [&](GCodeReader &self, const GCodeReader::GCodeLine &line) {
             if (line.cmd_is("G1")) {
                 if (z_moves < 2) {
                     // skip everything up to the second Z move

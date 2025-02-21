@@ -37,4 +37,6 @@ target_include_directories(libpgcode PRIVATE src)
 if (NOT EMSCRIPTEN)
     target_link_libraries(libpgcode PUBLIC boost_headeronly)
 endif ()
-target_link_libraries(libpgcode PRIVATE libslic3r)
+target_link_libraries(libpgcode PUBLIC slic3r-domain slic3r-gcode-reader)
+target_link_libraries(libpgcode PRIVATE localesutils)
+

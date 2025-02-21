@@ -16,7 +16,9 @@
 
 wxIMPLEMENT_APP(Slic3r::App::Desktop::DesktopApp);
 
+
 namespace Slic3r::App::Desktop {
+
 bool DesktopApp::OnInit()
 {
     init_logging();
@@ -58,6 +60,10 @@ bool DesktopApp::OnInit()
 
     // >>> replace m_plater_module with m_preview_module in the following line to test libvgcode wrapper
     canvas.set_render_module(m_plater_module.get());
+    m_project_interactor->fdm_result_cache().add_listener<Biz::IFDMResultCacheChangedListener>(
+        m_preview_module.get()
+    );
+
     m_main_frame->Show();
 
 #if !defined(__linux)

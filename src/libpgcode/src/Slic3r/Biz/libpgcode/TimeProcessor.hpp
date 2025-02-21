@@ -8,6 +8,7 @@
 #include "TimeMachine.hpp"
 
 #include "Slic3r/Biz/libpgcode/ProcessorConfig.hpp"
+#include "Slic3r/Domain/Axis.hpp"
 
 namespace Slic3r::Biz::libpgcode {
 
@@ -35,23 +36,23 @@ struct TimeProcessor
     std::vector<float> filament_unload_times;
     MachineLimitsConfig machine_limits;
 
-    void update_machine_accelerations(GCodeFlavor flavor);
+    void update_machine_accelerations(Domain::GCodeFlavor flavor);
 
     float minimum_feedrate(TimeMode mode, float feedrate) const;
     float minimum_travel_feedrate(TimeMode mode, float feedrate) const;
-    float axis_max_feedrate(TimeMode mode, Axis axis) const;
+    float axis_max_feedrate(TimeMode mode, Domain::Axis axis) const;
 
     float acceleration(TimeMode mode) const;
     float travel_acceleration(TimeMode mode) const;
     float retract_acceleration(TimeMode mode) const;
 
-    float axis_max_acceleration(TimeMode mode, Axis axis) const;
-    float axis_max_jerk(TimeMode mode, Axis axis) const;
+    float axis_max_acceleration(TimeMode mode, Domain::Axis axis) const;
+    float axis_max_jerk(TimeMode mode, Domain::Axis axis) const;
 
     float filament_load_time(uint8_t extruder_id, bool is_XL_printer) const;
     float filament_unload_time(uint8_t extruder_id, bool is_XL_printer) const;
 
-    std::vector<std::pair<CustomGCode::Type, std::pair<float, float>>>
+    std::vector<std::pair<Domain::CustomGCodeType, std::pair<float, float>>>
         custom_gcode_times(TimeMode mode, bool include_remaining) const;
 
     void reset();

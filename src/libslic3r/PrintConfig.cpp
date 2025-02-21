@@ -76,19 +76,19 @@ static t_config_enum_values s_keys_map_PrinterTechnology {
 CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(PrinterTechnology)
 
 static const t_config_enum_values s_keys_map_GCodeFlavor {
-    { "reprap",         gcfRepRapSprinter },
-    { "reprapfirmware", gcfRepRapFirmware },
-    { "repetier",       gcfRepetier },
-    { "teacup",         gcfTeacup },
-    { "makerware",      gcfMakerWare },
-    { "marlin",         gcfMarlinLegacy },
-    { "marlin2",        gcfMarlinFirmware },
-    { "klipper",        gcfKlipper },
-    { "sailfish",       gcfSailfish },
-    { "smoothie",       gcfSmoothie },
-    { "mach3",          gcfMach3 },
-    { "machinekit",     gcfMachinekit },
-    { "no-extrusion",   gcfNoExtrusion }
+    { "reprap",         static_cast<int>(gcfRepRapSprinter) },
+    { "reprapfirmware", static_cast<int>(gcfRepRapFirmware) },
+    { "repetier",       static_cast<int>(gcfRepetier) },
+    { "teacup",         static_cast<int>(gcfTeacup) },
+    { "makerware",      static_cast<int>(gcfMakerWare) },
+    { "marlin",         static_cast<int>(gcfMarlinLegacy) },
+    { "marlin2",        static_cast<int>(gcfMarlinFirmware) },
+    { "klipper",        static_cast<int>(gcfKlipper) },
+    { "sailfish",       static_cast<int>(gcfSailfish) },
+    { "smoothie",       static_cast<int>(gcfSmoothie) },
+    { "mach3",          static_cast<int>(gcfMach3) },
+    { "machinekit",     static_cast<int>(gcfMachinekit) },
+    { "no-extrusion",   static_cast<int>(gcfNoExtrusion) }
 };
 CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(GCodeFlavor)
 

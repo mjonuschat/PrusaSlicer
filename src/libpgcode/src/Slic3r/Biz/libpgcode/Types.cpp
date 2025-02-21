@@ -4,6 +4,8 @@
 
 namespace Slic3r::Biz::libpgcode {
 
+using Domain::GCodeExtrusionRole;
+
 float MoveVertex::volumetric_rate() const { return feedrate * mm3_per_mm; }
 float MoveVertex::actual_volumetric_rate() const { return actual_feedrate * mm3_per_mm; }
 bool MoveVertex::is_extrusion() const { return type == MoveType::Extrude; }

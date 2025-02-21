@@ -7,8 +7,8 @@
 #include <cinttypes>
 
 #include "../GCode.hpp"
+#include "Slic3r/Biz/libpgcode/Utils.hpp"
 #include "libslic3r/Extruder.hpp"
-#include "libslic3r/GCode/GCodeProcessor.hpp"
 #include "libslic3r/GCode/GCodeWriter.hpp"
 #include "libslic3r/GCode/SmoothPath.hpp"
 #include "libslic3r/Geometry/ArcWelder.hpp"
@@ -81,7 +81,7 @@ std::string Wipe::wipe(GCodeGenerator &gcodegen, bool toolchange)
         auto start_wipe = [&wiped, &gcode, &gcodegen, wipe_speed](){
             if (! wiped) {
                 wiped = true;
-                gcode += ";" + GCodeProcessor::reserved_tag(GCodeProcessor::ETags::Wipe_Start) + "\n";
+                gcode += ";" + std::string{Biz::libpgcode::reserved_tag(Biz::libpgcode::Tags::Wipe_Start)} + "\n";
                 gcode += gcodegen.writer().set_speed(wipe_speed * 60, {}, gcodegen.enable_cooling_markers() ? ";_WIPE"sv : ""sv);
             }
         };
@@ -185,7 +185,7 @@ std::string Wipe::wipe(GCodeGenerator &gcodegen, bool toolchange)
         if (wiped) {
             // add tag for processor
             assert(p == GCodeFormatter::quantize(p));
-            gcode += ";" + GCodeProcessor::reserved_tag(GCodeProcessor::ETags::Wipe_End) + "\n";
+            gcode += ";" + std::string{Biz::libpgcode::reserved_tag(Biz::libpgcode::Tags::Wipe_End)} + "\n";
             gcodegen.last_position = gcodegen.gcode_to_point(p);
         }
     }

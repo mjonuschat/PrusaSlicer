@@ -30,17 +30,17 @@
 #include <utility>
 #include <cassert>
 
+#include "Slic3r/Domain/Vectors.hpp"
+#include "Slic3r/Domain/Point.hpp"
 #include "libslic3r.h"
 #include "LocalesUtils.hpp"
-#include "libslic3r/Point.hpp"
 
 namespace Slic3r {
 
 class BoundingBox;
 class BoundingBoxf;
-class Point;
 
-using Vector = Point;
+using Vector = Domain::Point;
 
 // Base template for eigen derived vectors
 template<int N, int M, class T>
@@ -64,25 +64,20 @@ using Vec3i32 = Eigen::Matrix<int32_t,  3, 1, Eigen::DontAlign>;
 using Vec3i64 = Eigen::Matrix<int64_t,  3, 1, Eigen::DontAlign>;
 
 // Vector types with a double coordinate base type.
-using Vec2f   = Eigen::Matrix<float,    2, 1, Eigen::DontAlign>;
-using Vec3f   = Eigen::Matrix<float,    3, 1, Eigen::DontAlign>;
-using Vec4f   = Eigen::Matrix<float,    4, 1, Eigen::DontAlign>;
-using Vec2d   = Eigen::Matrix<double,   2, 1, Eigen::DontAlign>;
-using Vec3d   = Eigen::Matrix<double,   3, 1, Eigen::DontAlign>;
-using Vec4d   = Eigen::Matrix<double,   4, 1, Eigen::DontAlign>;
+using Vec2f = Domain::Vec2f;
+using Vec3f = Domain::Vec3f;
+using Vec4f = Domain::Vec4f;
+using Vec2d = Domain::Vec2d;
+using Vec3d = Domain::Vec3d;
+using Vec4d = Domain::Vec4d;
 
-template<typename BaseType>
-using PointsAllocator = tbb::scalable_allocator<BaseType>;
-//using PointsAllocator = std::allocator<BaseType>;
-using Points         = std::vector<Point, PointsAllocator<Point>>;
-using PointPtrs      = std::vector<Point*>;
-using PointConstPtrs = std::vector<const Point*>;
+using PointPtrs      = std::vector<Domain::Point*>;
+using PointConstPtrs = std::vector<const Domain::Point*>;
 using Points3        = std::vector<Vec3crd>;
 using Pointfs        = std::vector<Vec2d>;
 using Vec2ds         = std::vector<Vec2d>;
 using Pointf3s       = std::vector<Vec3d>;
 
-using VecOfPoints    = std::vector<Points, PointsAllocator<Points>>;
 
 using Matrix2f       = Eigen::Matrix<float,  2, 2, Eigen::DontAlign>;
 using Matrix2d       = Eigen::Matrix<double, 2, 2, Eigen::DontAlign>;
@@ -188,61 +183,21 @@ inline const Vec3d get_z_base(const Transform3d::LinearPart &transform) { return
 
 template<int N, class T> using Vec = Eigen::Matrix<T,  N, 1, Eigen::DontAlign, N, 1>;
 
-class Point : public Vec2crd
+using Domain::Point;
+
+template<typename BaseType>
+using PointsAllocator = tbb::scalable_allocator<BaseType>;
+//using PointsAllocator = std::allocator<BaseType>;
+using Points         = std::vector<Point, PointsAllocator<Point>>;
+using VecOfPoints    = std::vector<Points, PointsAllocator<Points>>;
+
+namespace Domain {
+inline bool operator<(const Point &l, const Point &r)
 {
-public:
-    using coord_type = coord_t;
-
-    Point() : Vec2crd(0, 0) {}
-    Point(int32_t x, int32_t y) : Vec2crd(coord_t(x), coord_t(y)) {}
-    Point(int64_t x, int64_t y) : Vec2crd(coord_t(x), coord_t(y)) {}
-    Point(double x, double y) : Vec2crd(coord_t(std::round(x)), coord_t(std::round(y))) {}
-    Point(const Point &rhs) { *this = rhs; }
-	explicit Point(const Vec2d& rhs) : Vec2crd(coord_t(std::round(rhs.x())), coord_t(std::round(rhs.y()))) {}
-	// This constructor allows you to construct Point from Eigen expressions
-    // This constructor has to be implicit (non-explicit) to allow implicit conversion from Eigen expressions.
-    template<typename OtherDerived>
-    Point(const Eigen::MatrixBase<OtherDerived> &other) : Vec2crd(other) {}
-    static Point new_scale(coordf_t x, coordf_t y) { return Point(coord_t(scale_(x)), coord_t(scale_(y))); }
-    template<typename OtherDerived>
-    static Point new_scale(const Eigen::MatrixBase<OtherDerived> &v) { return Point(coord_t(scale_(v.x())), coord_t(scale_(v.y()))); }
-
-    // This method allows you to assign Eigen expressions to MyVectorType
-    template<typename OtherDerived>
-    Point& operator=(const Eigen::MatrixBase<OtherDerived> &other)
-    {
-        this->Vec2crd::operator=(other);
-        return *this;
-    }
-
-    Point& operator+=(const Point& rhs) { this->x() += rhs.x(); this->y() += rhs.y(); return *this; }
-    Point& operator-=(const Point& rhs) { this->x() -= rhs.x(); this->y() -= rhs.y(); return *this; }
-	Point& operator*=(const double &rhs) { this->x() = coord_t(this->x() * rhs); this->y() = coord_t(this->y() * rhs); return *this; }
-    Point operator*(const double &rhs) { return Point(this->x() * rhs, this->y() * rhs); }
-
-    void   rotate(double angle) { this->rotate(std::cos(angle), std::sin(angle)); }
-    void   rotate(double cos_a, double sin_a) {
-        double cur_x = (double)this->x();
-        double cur_y = (double)this->y();
-        this->x() = (coord_t)round(cos_a * cur_x - sin_a * cur_y);
-        this->y() = (coord_t)round(cos_a * cur_y + sin_a * cur_x);
-    }
-
-    void   rotate(double angle, const Point &center);
-    Point  rotated(double angle) const { Point res(*this); res.rotate(angle); return res; }
-    Point  rotated(double cos_a, double sin_a) const { Point res(*this); res.rotate(cos_a, sin_a); return res; }
-    Point  rotated(double angle, const Point &center) const { Point res(*this); res.rotate(angle, center); return res; }
-};
-
-inline bool operator<(const Point &l, const Point &r) 
-{ 
     return l.x() < r.x() || (l.x() == r.x() && l.y() < r.y());
 }
-
-inline Point operator* (const Point& l, const double &r)
-{
-    return {coord_t(l.x() * r), coord_t(l.y() * r)};
 }
+
 
 inline bool is_approx(const Point &p1, const Point &p2, coord_t epsilon = coord_t(SCALED_EPSILON))
 {

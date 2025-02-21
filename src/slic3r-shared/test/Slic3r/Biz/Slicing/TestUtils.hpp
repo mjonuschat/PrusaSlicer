@@ -60,7 +60,6 @@ struct ResultListener : public Biz::Slicing::IFDMResultListener
 {
     void on_fdm_result_changed(
         std::shared_ptr<Biz::Slicing::FDMResult> result,
-        std::shared_ptr<Biz::Slicing::FDMStatistics>,
         const Biz::Slicing::SlicingId id
     ) override;
 

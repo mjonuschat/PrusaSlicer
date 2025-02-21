@@ -24,19 +24,19 @@ public:
         std::pair<float, float> used_filament;
     };
 
-    void add(GCodeExtrusionRole role, const std::pair<float, float>& used_filament);
-    void update(GCodeExtrusionRole role, const Biz::libpgcode::Times& times);
+    void add(Domain::GCodeExtrusionRole role, const std::pair<float, float>& used_filament);
+    void update(Domain::GCodeExtrusionRole role, const Biz::libpgcode::Times& times);
 
     size_t roles_count() const { return m_items.size(); }
     Biz::libpgcode::GCodeExtrusionRoles roles() const;
-    float time(GCodeExtrusionRole role, Biz::libpgcode::TimeMode mode) const;
-    float used_filament_length(GCodeExtrusionRole role) const;
-    float used_filament_mass(GCodeExtrusionRole role) const;
+    float time(Domain::GCodeExtrusionRole role, Biz::libpgcode::TimeMode mode) const;
+    float used_filament_length(Domain::GCodeExtrusionRole role) const;
+    float used_filament_mass(Domain::GCodeExtrusionRole role) const;
 
     void reset() { m_items.clear(); }
 
 private:
-    std::map<GCodeExtrusionRole, Item> m_items;
+    std::map<Domain::GCodeExtrusionRole, Item> m_items;
 };
 
 } // namespace Slic3r::App::libvgcode

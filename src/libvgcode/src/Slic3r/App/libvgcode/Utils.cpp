@@ -9,6 +9,8 @@
 
 namespace Slic3r::Biz::libvgcode {
 
+using Domain::Vec3f;
+
 void add_vertex(const Vec3f& position, const Vec3f& normal, std::vector<float>& vertices)
 {
     vertices.emplace_back(position.x());

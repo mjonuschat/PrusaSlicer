@@ -10,10 +10,12 @@
 #include "libslic3r/Print.hpp"
 #include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/libslic3r.h"
+#include "Slic3r/Biz/GCodeReader/GCodeReader.hpp"
 
 #include "test_data.hpp"
 
 using namespace Slic3r;
+using Biz::GCodeReader::GCodeReader;
 
 SCENARIO("Output file format", "[CustomGCode]")
 {
@@ -48,7 +50,7 @@ SCENARIO("Custom G-code", "[CustomGCode]")
         bool        first_z_move = true; // First z move is not a layer change.
         int         num_layer_changes_not_applied = 0;
         parser.parse_buffer(Slic3r::Test::slice({ Test::TestMesh::cube_2x20x10 }, config), 
-            [&](Slic3r::GCodeReader &self, const Slic3r::GCodeReader::GCodeLine &line)
+            [&](GCodeReader &self, const GCodeReader::GCodeLine &line)
         {
             if (last_move_was_z_change != line.cmd_is("_MY_CUSTOM_LAYER_GCODE_")) {
                 ++ num_layer_changes_not_applied;
@@ -149,7 +151,7 @@ SCENARIO("Custom G-code", "[CustomGCode]")
             GCodeReader parser;
             std::vector<int> before;
             std::vector<int> change;
-            parser.parse_buffer(gcode, [&before, &change](Slic3r::GCodeReader &self, const Slic3r::GCodeReader::GCodeLine &line){
+            parser.parse_buffer(gcode, [&before, &change](GCodeReader &self, const GCodeReader::GCodeLine &line){
                 int d;
                 if (sscanf(line.raw().c_str(), ";BEFORE %d", &d) == 1)
                     before.emplace_back(d);

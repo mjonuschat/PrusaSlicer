@@ -19,7 +19,7 @@
 #include "Model.hpp"
 #include "PlaceholderParser.hpp"
 #include "PrintConfig.hpp"
-#include "libslic3r/GCode/GCodeProcessor.hpp"
+#include "Slic3r/Biz/libpgcode/ProcessorResult.hpp"
 
 namespace Slic3r {
 
@@ -42,7 +42,7 @@ struct PrintStatistics
     unsigned int                    initial_extruder_id;
     std::string                     initial_filament_type;
     std::string                     printing_filament_types;
-    std::map<size_t, double>        filament_stats;
+    std::map<uint8_t, float>        filament_stats;
 
     // Config with the filled in print statistics.
     DynamicConfig           config() const;
@@ -481,7 +481,7 @@ public:
     virtual ~IPrint() = default;
 
     JThread::StopToken stop_token;
-    std::function<void(GCodeProcessorResult&&, PrintStatistics&&)> on_fdm_result;
+    std::function<void(libpgcode::ProcessorResult&&)> on_fdm_result;
     std::function<void()> on_sla_result;
     std::function<void(WipeTowerGeometry&&)> on_wipe_tower_geometry;
 };

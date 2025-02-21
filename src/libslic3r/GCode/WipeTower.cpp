@@ -17,8 +17,8 @@
 #include <cstdio>
 #include <cstdlib>
 
+#include "Slic3r/Biz/libpgcode/Utils.hpp"
 #include "libslic3r/ClipperUtils.hpp"
-#include "libslic3r/GCode/GCodeProcessor.hpp"
 #include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/Geometry.hpp"
 #include "libslic3r/Surface.hpp"
@@ -64,8 +64,8 @@ public:
     {
             // adds tag for analyzer:
             std::ostringstream str;
-            str << ";" << GCodeProcessor::reserved_tag(GCodeProcessor::ETags::Height) << m_layer_height << "\n"; // don't rely on GCodeAnalyzer knowing the layer height - it knows nothing at priming
-            str << ";" << GCodeProcessor::reserved_tag(GCodeProcessor::ETags::Role) << gcode_extrusion_role_to_string(GCodeExtrusionRole::WipeTower) << "\n";
+            str << ";" << Biz::libpgcode::reserved_tag(Biz::libpgcode::Tags::Height) << m_layer_height << "\n"; // don't rely on GCodeAnalyzer knowing the layer height - it knows nothing at priming
+            str << ";" << Biz::libpgcode::reserved_tag(Biz::libpgcode::Tags::Role) << gcode_extrusion_role_to_string(GCodeExtrusionRole::WipeTower) << "\n";
             m_gcode += str.str();
             change_analyzer_line_width(line_width);
     }
@@ -73,7 +73,7 @@ public:
     WipeTowerWriter& change_analyzer_line_width(float line_width) {
         // adds tag for analyzer:
         std::stringstream str;
-        str << ";" << GCodeProcessor::reserved_tag(GCodeProcessor::ETags::Width) << line_width << "\n";
+        str << ";" << Biz::libpgcode::reserved_tag(Biz::libpgcode::Tags::Width) << line_width << "\n";
         m_gcode += str.str();
         return *this;
     }

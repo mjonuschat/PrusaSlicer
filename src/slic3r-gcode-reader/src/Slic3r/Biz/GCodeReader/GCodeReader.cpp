@@ -2,7 +2,7 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include "GCodeReader.hpp"
+#include "Slic3r/Biz/GCodeReader/GCodeReader.hpp"
 
 #include <boost/nowide/cstdio.hpp>
 #include <fast_float.h>
@@ -12,30 +12,15 @@
 #include <cstdio>
 #include <cstdlib>
 
-#include "Utils.hpp"
-#include "libslic3r/PrintConfig.hpp"
-#include "libslic3r/libslic3r.h"
+namespace Slic3r::Biz::GCodeReader {
+using namespace Domain;
 
-namespace Slic3r {
-
-static inline char get_extrusion_axis_char(const GCodeConfig &config)
-{
-    std::string axis = get_extrusion_axis(config);
-    assert(axis.size() <= 1);
-    // Return 0 for gcfNoExtrusion
-    return axis.empty() ? 0 : axis[0];
+void GCodeReader::set_extrusion_axis(char axis) {
+    m_extrusion_axis = axis;
 }
 
-void GCodeReader::apply_config(const GCodeConfig &config)
-{
-    m_config = config;
-    m_extrusion_axis = get_extrusion_axis_char(m_config);
-}
-
-void GCodeReader::apply_config(const DynamicPrintConfig &config)
-{
-    m_config.apply(config, true);
-    m_extrusion_axis = get_extrusion_axis_char(m_config);
+void GCodeReader::set_use_relative_e_distances(const bool use) {
+    m_use_relative_e_distances = use;
 }
 
 const char* GCodeReader::parse_line_internal(const char *ptr, const char *end, GCodeLine &gline, std::pair<const char*, const char*> &command)
@@ -91,7 +76,7 @@ const char* GCodeReader::parse_line_internal(const char *ptr, const char *end, G
         }
     }
     
-    if (gline.has(E) && m_config.use_relative_e_distances)
+    if (gline.has(E) && m_use_relative_e_distances)
         m_position[E] = 0;
 
     // Skip the rest of the line.
@@ -126,10 +111,24 @@ void GCodeReader::update_coordinates(GCodeLine &gline, std::pair<const char*, co
     }
 }
 
+namespace Impl {
+struct FilePtr {
+    FilePtr(FILE *f) : f(f) {}
+    ~FilePtr() { this->close(); }
+    void close() { 
+        if (this->f) {
+            ::fclose(this->f);
+            this->f = nullptr;
+        }
+    }
+    FILE* f = nullptr;
+};
+}
+
 template<typename ParseLineCallback, typename LineEndCallback>
 bool GCodeReader::parse_file_raw_internal(const std::string &filename, ParseLineCallback parse_line_callback, LineEndCallback line_end_callback)
 {
-    FilePtr in{ boost::nowide::fopen(filename.c_str(), "rb") };
+    Impl::FilePtr in{ boost::nowide::fopen(filename.c_str(), "rb") };
 
     fseek(in.f, 0, SEEK_END);
     const long file_size = ftell(in.f);

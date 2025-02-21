@@ -24,7 +24,6 @@
 // Forward declarations.
 namespace Slic3r {
 class Layer;
-class Point;
 class Linef;
 class Polyline;
 class FullPrintConfig;

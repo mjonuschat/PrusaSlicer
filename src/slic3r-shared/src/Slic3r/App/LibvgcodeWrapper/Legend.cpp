@@ -12,6 +12,7 @@
 using namespace Slic3r::App::libvgcode;
 using namespace Slic3r::Biz::libpgcode;
 using namespace Slic3r::Biz;
+using namespace Slic3r::Domain;
 
 namespace Slic3r::App::LibvgcodeWrapper {
 

@@ -5,10 +5,12 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
 #include "test_data.hpp"
+#include "Slic3r/Biz/GCodeReader/GCodeReader.hpp"
 
 using namespace Slic3r;
 using namespace Slic3r::Test;
 using namespace Catch;
+using Biz::GCodeReader::GCodeReader;
 
 void check_layers(const DynamicPrintConfig& config) {
 	GCodeReader parser;
@@ -17,7 +19,7 @@ void check_layers(const DynamicPrintConfig& config) {
     std::vector<double> z;
     std::vector<double> increments;
 
-    parser.parse_buffer(gcode, [&] (Slic3r::GCodeReader &self, const Slic3r::GCodeReader::GCodeLine &line) {
+    parser.parse_buffer(gcode, [&] (GCodeReader &self, const GCodeReader::GCodeLine &line) {
         if (line.has_z()) {
             z.emplace_back(line.z());
             increments.emplace_back(line.dist_Z(self));
@@ -94,7 +96,7 @@ TEST_CASE("GCode has reasonable height", "[Layers]") {
     std::vector<double> z;
 
 	GCodeReader parser;
-    parser.parse_buffer(gcode, [&] (Slic3r::GCodeReader &self, const Slic3r::GCodeReader::GCodeLine &line) {
+    parser.parse_buffer(gcode, [&] (GCodeReader &self, const GCodeReader::GCodeLine &line) {
         if (line.dist_Z(self) != Approx(0)) {
             z.emplace_back(line.z());
         }

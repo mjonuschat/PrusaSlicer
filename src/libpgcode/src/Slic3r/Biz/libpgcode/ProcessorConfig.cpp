@@ -6,6 +6,7 @@
 
 #include "Slic3r/Biz/libpgcode/ProcessorConfig.hpp"
 #include "Slic3r/Biz/libpgcode/Utils.hpp"
+#include "Slic3r/Biz/GCodeReader/GCodeReader.hpp"
 
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/predicate.hpp>
@@ -13,6 +14,8 @@
 #include <boost/algorithm/string/case_conv.hpp>
 
 namespace Slic3r::Biz::libpgcode {
+using namespace Domain;
+using GCodeReader::GCodeReader;
 
 std::vector<std::string> MachineLimitsConfig::validate()
 {
@@ -132,7 +135,7 @@ void ExtrudersConfig::reset()
 void ProcessorConfig::reset()
 {
     producer = GCodeProducer::Unknown;
-    flavor = gcfRepRapSprinter;
+    flavor = GCodeFlavor::gcfRepRapSprinter;
     use_volumetric_e = false;
     export_remaining_time_enabled = false;
     stealth_time_estimator_enabled = false;
@@ -338,20 +341,20 @@ static std::vector<std::string> extract_vector_of_strings(std::string_view data)
 
 GCodeFlavor flavor_from_string(std::string_view str)
 {
-    if      (str == "reprap"sv)         { return gcfRepRapSprinter; }
-    else if (str == "reprapfirmware"sv) { return gcfRepRapFirmware; }
-    else if (str == "repetier"sv)       { return gcfRepetier; }
-    else if (str == "teacup"sv)         { return gcfTeacup; }
-    else if (str == "makerware"sv)      { return gcfMakerWare; }
-    else if (str == "marlin"sv)         { return gcfMarlinLegacy; }
-    else if (str == "marlin2"sv)        { return gcfMarlinFirmware; }
-    else if (str == "klipper"sv)        { return gcfKlipper; }
-    else if (str == "sailfish"sv)       { return gcfSailfish; }
-    else if (str == "smoothie"sv)       { return gcfSmoothie; }
-    else if (str == "mach3"sv)          { return gcfMach3; }
-    else if (str == "machinekit"sv)     { return gcfMachinekit; }
-    else if (str == "no-extrusion"sv)   { return gcfNoExtrusion; }
-    else                                { assert(false); return gcfRepRapSprinter; }
+    if      (str == "reprap"sv)         { return GCodeFlavor::gcfRepRapSprinter; }
+    else if (str == "reprapfirmware"sv) { return GCodeFlavor::gcfRepRapFirmware; }
+    else if (str == "repetier"sv)       { return GCodeFlavor::gcfRepetier; }
+    else if (str == "teacup"sv)         { return GCodeFlavor::gcfTeacup; }
+    else if (str == "makerware"sv)      { return GCodeFlavor::gcfMakerWare; }
+    else if (str == "marlin"sv)         { return GCodeFlavor::gcfMarlinLegacy; }
+    else if (str == "marlin2"sv)        { return GCodeFlavor::gcfMarlinFirmware; }
+    else if (str == "klipper"sv)        { return GCodeFlavor::gcfKlipper; }
+    else if (str == "sailfish"sv)       { return GCodeFlavor::gcfSailfish; }
+    else if (str == "smoothie"sv)       { return GCodeFlavor::gcfSmoothie; }
+    else if (str == "mach3"sv)          { return GCodeFlavor::gcfMach3; }
+    else if (str == "machinekit"sv)     { return GCodeFlavor::gcfMachinekit; }
+    else if (str == "no-extrusion"sv)   { return GCodeFlavor::gcfNoExtrusion; }
+    else                                { assert(false); return GCodeFlavor::gcfRepRapSprinter; }
 }
 
 ProcessorConfig extract_processor_config_from_prusaslicer_gcode_internal(const std::string& gcode, StringToDoubleDecimalPointCallback cb,
@@ -493,15 +496,15 @@ ProcessorConfig extract_processor_config_from_prusaslicer_gcode_internal(const s
     });
 
     if (machine_limits.usage != MachineLimitsUsageType::Ignore &&
-        (ret.flavor == gcfMarlinLegacy ||
-         ret.flavor == gcfMarlinFirmware ||
-         ret.flavor == gcfRepRapFirmware ||
-         ret.flavor == gcfKlipper)) {
+        (ret.flavor == GCodeFlavor::gcfMarlinLegacy ||
+         ret.flavor == GCodeFlavor::gcfMarlinFirmware ||
+         ret.flavor == GCodeFlavor::gcfRepRapFirmware ||
+         ret.flavor == GCodeFlavor::gcfKlipper)) {
         ret.machine_limits = std::move(machine_limits);
         // Legacy Marlin and Klipper don't have separate travel acceleration, they use the 'extruding' value instead.
-        if (ret.flavor == gcfMarlinLegacy || ret.flavor == gcfKlipper)
+        if (ret.flavor == GCodeFlavor::gcfMarlinLegacy || ret.flavor == GCodeFlavor::gcfKlipper)
             ret.machine_limits.max_acceleration_travel = ret.machine_limits.max_acceleration_extruding;
-        if (ret.flavor == gcfRepRapFirmware) {
+        if (ret.flavor == GCodeFlavor::gcfRepRapFirmware) {
             // RRF does not support setting min feedrates. Set to zero.
             ret.machine_limits.min_extruding_rate.assign(ret.machine_limits.min_extruding_rate.size(), 0.0f);
             // RRF does not support setting min feedrates. Set to zero.
@@ -526,7 +529,7 @@ ProcessorConfig extract_processor_config_from_prusaslicer_gcode_internal(const s
     }
 
     // No Klipper here, it does not support silent mode.
-    if (has_silent_mode && (ret.flavor == gcfMarlinLegacy || ret.flavor == gcfMarlinFirmware) &&
+    if (has_silent_mode && (ret.flavor == GCodeFlavor::gcfMarlinLegacy || ret.flavor == GCodeFlavor::gcfMarlinFirmware) &&
         ret.machine_limits.max_acceleration_x.size() > 1) 
         ret.stealth_time_estimator_enabled = true;
 
@@ -566,15 +569,15 @@ ProcessorConfig extract_processor_config_from_craftware_gcode(const std::string&
 
 // updated to Cura 5.8.1
 static const std::vector<std::pair<std::string_view, GCodeFlavor>> CURA_FLAVORS = {
-    { "BFB"sv,                gcfMarlinLegacy },
-    { "Mach3"sv,              gcfMach3 },
-    { "Makerbot"sv,           gcfMakerWare },
-    { "UltiGCode"sv,          gcfMarlinLegacy },
-    { "Marlin(Volumetric)"sv, gcfMarlinLegacy },
-    { "Griffin"sv,            gcfMarlinLegacy },
-    { "Repetier"sv,           gcfRepetier },
-    { "RepRap"sv,             gcfRepRapFirmware },
-    { "Marlin"sv,             gcfMarlinLegacy },
+    { "BFB"sv,                GCodeFlavor::gcfMarlinLegacy },
+    { "Mach3"sv,              GCodeFlavor::gcfMach3 },
+    { "Makerbot"sv,           GCodeFlavor::gcfMakerWare },
+    { "UltiGCode"sv,          GCodeFlavor::gcfMarlinLegacy },
+    { "Marlin(Volumetric)"sv, GCodeFlavor::gcfMarlinLegacy },
+    { "Griffin"sv,            GCodeFlavor::gcfMarlinLegacy },
+    { "Repetier"sv,           GCodeFlavor::gcfRepetier },
+    { "RepRap"sv,             GCodeFlavor::gcfRepRapFirmware },
+    { "Marlin"sv,             GCodeFlavor::gcfMarlinLegacy },
 };
 
 ProcessorConfig extract_processor_config_from_cura_gcode(const std::string& gcode, StringToDoubleDecimalPointCallback cb)
@@ -640,7 +643,7 @@ ProcessorConfig extract_processor_config_from_kisslicer_gcode(const std::string&
         }
     });
 
-    ret.flavor = gcfMarlinLegacy;
+    ret.flavor = GCodeFlavor::gcfMarlinLegacy;
     ret.producer = GCodeProducer::KISSlicer;
     return ret;
 }

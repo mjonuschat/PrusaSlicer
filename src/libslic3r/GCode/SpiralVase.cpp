@@ -18,6 +18,8 @@
 
 namespace Slic3r {
 
+using Biz::GCodeReader::GCodeReader;
+
 static AABBTreeLines::LinesDistancer<Linef> get_layer_distancer(const std::vector<Vec2f> &layer_points)
 {
     Linesf lines;

@@ -1,3 +1,4 @@
+#include "Slic3r/Biz/FDMResultCache.hpp"
 #include "Slic3r/Biz/Platform/Termination.hpp"
 #include <Slic3r/Biz/Slicing/SlicingInteractor.hpp>
 #include <Slic3r/Biz/Platform/PlatformServices.hpp>
@@ -68,6 +69,10 @@ void SlicingInteractor::remove_bed(const Domain::SelectionId bed_instance_id) {
         m_statuses.erase(id);
     }
     process_slicing_queue();
+
+    invoke_listeners<IFDMResultListener>([id](auto* listener){
+        listener->on_fdm_result_changed(std::make_shared<FDMResult>(), id);
+    });
 }
 
 void SlicingInteractor::slice_bed(const Domain::SelectionId bed_instance_id) {
@@ -143,21 +148,18 @@ void SlicingInteractor::on_status(const Status status, const SlicingId id) {
     }
 }
 
-void SlicingInteractor::on_fdm_result(FDMResult&& result, FDMStatistics&& statistics, const SlicingId id) {
+void SlicingInteractor::on_fdm_result(FDMResult&& result, const SlicingId id) {
     SPDLOG_INFO("{}: FDMResult{{moves_count: {}}}", fmt::streamed(id), result.moves.size());
 
     if(!m_dispatcher.dispatch_on_main_thread(
         [
             this,
             id,
-            _result = std::make_shared<FDMResult>(std::move(result)),
-            _statistics = std::make_shared<FDMStatistics>(std::move(statistics))
+            _result = std::make_shared<FDMResult>(std::move(result))
         ]() mutable {
             invoke_listeners<IFDMResultListener>([&](auto* listener){
-                listener->on_fdm_result_changed(_result, _statistics, id);
+                listener->on_fdm_result_changed(_result, id);
             });
-            _result.reset();
-            _statistics.reset();
         }
     )) {
         SPDLOG_INFO("{}: fdm result not dispatched", fmt::streamed(id), result.moves.size());

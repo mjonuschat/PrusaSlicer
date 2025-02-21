@@ -96,22 +96,14 @@ using StatusEvents = std::vector<StatusEvent>;
 }
 
 using Biz::Slicing::FDMResult;
-using Biz::Slicing::FDMStatistics;
 using Biz::Slicing::SlicingId;
 using Biz::Slicing::IStatusListener;
 
 void ResultListener::on_fdm_result_changed(
-    std::shared_ptr<FDMResult> result, std::shared_ptr<FDMStatistics>, const SlicingId id
+    std::shared_ptr<FDMResult> result, const SlicingId id
 )
 {
-    std::ifstream file{result->filename};
-    std::stringstream buffer;
-    buffer << file.rdbuf();
-    gcodes[id.bed_instance_id] = buffer.str();
-
-    boost::system::error_code error_code;
-    boost::filesystem::remove(result->filename, error_code);
-    result->reset();
+    gcodes[id.bed_instance_id] = result->gcode.str();
 }
 
 SlicingFixture::SlicingFixture() {

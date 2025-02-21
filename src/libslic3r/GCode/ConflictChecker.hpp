@@ -16,7 +16,6 @@
 #include "libslic3r/Print.hpp"
 #include "libslic3r/ExtrusionEntity.hpp"
 #include "libslic3r/ExtrusionRole.hpp"
-#include "libslic3r/GCode/GCodeProcessor.hpp"
 #include "libslic3r/Layer.hpp"
 #include "libslic3r/Line.hpp"
 #include "libslic3r/Point.hpp"
@@ -132,7 +131,7 @@ using ConflictObjName = std::optional<std::pair<std::string, std::string>>;
 
 struct ConflictChecker
 {
-    static ConflictResultOpt  find_inter_of_lines_in_diff_objs(SpanOfConstPtrs<PrintObject> objs, const WipeTowerData& wtd);
+    static Biz::libpgcode::ConflictResultOpt  find_inter_of_lines_in_diff_objs(SpanOfConstPtrs<PrintObject> objs, const WipeTowerData& wtd);
     static ConflictComputeOpt find_inter_of_lines(const LineWithIDs &lines);
     static ConflictComputeOpt line_intersect(const LineWithID &l1, const LineWithID &l2);
 };

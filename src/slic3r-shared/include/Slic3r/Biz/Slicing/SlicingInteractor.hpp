@@ -25,7 +25,7 @@ class IFDMResultListener : public ISlicingListener
 {
 public:
     virtual void on_fdm_result_changed(
-        std::shared_ptr<FDMResult>, std::shared_ptr<FDMStatistics>, const SlicingId
+        std::shared_ptr<FDMResult>, const SlicingId
     ) = 0;
 };
 
@@ -51,10 +51,15 @@ struct UpdateRequest {
     std::reference_wrapper<const Domain::BedInstance> bed;
 };
 
-class SlicingInteractor
-    : public ISelectedProjectChangedListener,
-      public IProcessCallbacks,
-      public WithListeners<IFDMResultListener, ISLAResultListener, IStatusListener, IWipeTowerGeometryListener>
+class SlicingInteractor :
+    public ISelectedProjectChangedListener,
+    public IProcessCallbacks,
+    public WithListeners<
+        IFDMResultListener,
+        ISLAResultListener,
+        IStatusListener,
+        IWipeTowerGeometryListener
+    >
 {
 public:
     SlicingInteractor(Platform::IMainThreadDispatcher& dispatcher);
@@ -76,7 +81,7 @@ public:
 
     void on_selected_project_changed(size_t index) override;
 
-    void on_fdm_result(FDMResult &&, FDMStatistics&&, SlicingId) override;
+    void on_fdm_result(FDMResult &&, SlicingId) override;
     void on_sla_result(SlicingId) override;
     void on_status(const Status, SlicingId) override;
     void on_wipe_tower_geometry(

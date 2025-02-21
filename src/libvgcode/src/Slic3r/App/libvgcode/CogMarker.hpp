@@ -40,7 +40,7 @@ public:
     //
     // Update values used to calculate the center of gravity
     //
-    void update(const Vec3f& position, float mass);
+    void update(const Domain::Vec3f& position, float mass);
     //
     // Reset values used to calculate the center of gravity
     //
@@ -48,7 +48,7 @@ public:
     //
     // Return the calculated center of gravity position
     //
-    Vec3f position() const;
+    Domain::Vec3f position() const;
     //
     // Return the total mass.
     //
@@ -62,7 +62,7 @@ private:
     // Values used to calculate the center of gravity
     //
     float m_total_mass{ 0.0f };
-    Vec3f m_total_position{ Vec3f::Zero() };
+    Domain::Vec3f m_total_position{ Domain::Vec3f::Zero() };
     float m_scale_factor{ DefaultScaleFactor };
     static constexpr float DefaultScaleFactor = 2.0f;
 };

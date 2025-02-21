@@ -6,6 +6,7 @@
 #pragma once
 
 #include "Slic3r/Biz/libpgcode/Processor.hpp"
+#include "Slic3r/Biz/GCodeReader/GCodeReader.hpp"
 #include "TimeProcessor.hpp"
 #include "UsedFilaments.hpp"
 #include "OptionsZCorrector.hpp"
@@ -44,7 +45,7 @@ struct FeedMultiply
 
 struct CachedPosition
 {
-    Vec4f position{ FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX };
+    Domain::Vec4f position{ FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX };
     float feedrate{ FLT_MAX };
 
     void reset() {
@@ -69,7 +70,7 @@ public:
 private:
     PositioningType m_global_positioning_type{ PositioningType::Absolute };
     PositioningType m_e_local_positioning_type{ PositioningType::Absolute };
-    GCodeExtrusionRole m_extrusion_role{ GCodeExtrusionRole::None };
+    Domain::GCodeExtrusionRole m_extrusion_role{ Domain::GCodeExtrusionRole::None };
     UnitsType m_units{ UnitsType::Millimeters };
     uint8_t m_extruder_id{ 0 };
     bool m_wiping{ false };
@@ -89,11 +90,11 @@ private:
     float m_extruded_last_z{ 0.0f }; // mm
     std::vector<float> m_extruder_temps;
     std::vector<uint8_t> m_extruder_colors;
-    Vec4f m_start_position{ Vec4f::Zero() }; // mm
-    Vec4f m_end_position{ Vec4f::Zero() }; // mm
-    Vec4f m_saved_position{ Vec4f::Zero() }; // mm
-    Vec4f m_origin{ Vec4f::Zero() }; // mm
-    GCodeReader m_parser;
+    Domain::Vec4f m_start_position{ Domain::Vec4f::Zero() }; // mm
+    Domain::Vec4f m_end_position{ Domain::Vec4f::Zero() }; // mm
+    Domain::Vec4f m_saved_position{ Domain::Vec4f::Zero() }; // mm
+    Domain::Vec4f m_origin{ Domain::Vec4f::Zero() }; // mm
+    GCodeReader::GCodeReader m_parser;
     FeedMultiply m_feed_multiply;
     ProcessorConfig m_config;
     ProcessorResult m_result;
@@ -109,97 +110,97 @@ private:
 
     void init();
     void apply_config(ProcessorConfig&& config);
-    void process_gcode_line(const GCodeReader::GCodeLine& line);
+    void process_gcode_line(const GCodeReader::GCodeReader::GCodeReader::GCodeLine& line);
 
     //
     // Process G commands
     // 
 
     // Move
-    void process_G0(const GCodeReader::GCodeLine& line) { process_G1(line); }
-    void process_G1(const GCodeReader::GCodeLine& line);
+    void process_G0(const GCodeReader::GCodeReader::GCodeReader::GCodeLine& line) { process_G1(line); }
+    void process_G1(const GCodeReader::GCodeReader::GCodeReader::GCodeLine& line);
     void process_G1(const std::array<std::optional<float>, 4>& axes = { std::nullopt, std::nullopt, std::nullopt, std::nullopt },
         const std::optional<float>& feedrate = std::nullopt, G1DiscretizationOrigin origin = G1DiscretizationOrigin::G1,
         const std::optional<unsigned int>& remaining_internal_g1_lines = std::nullopt);
     // Arc Move
-    void process_G2_G3(const GCodeReader::GCodeLine& line, bool clockwise);
+    void process_G2_G3(const GCodeReader::GCodeReader::GCodeLine& line, bool clockwise);
     // Retract or Set tool temperature
-    void process_G10(const GCodeReader::GCodeLine& line);
+    void process_G10(const GCodeReader::GCodeReader::GCodeLine& line);
     // Unretract
-    void process_G11(const GCodeReader::GCodeLine& line) { store_move(MoveType::Unretract); }
+    void process_G11(const GCodeReader::GCodeReader::GCodeLine& line) { store_move(MoveType::Unretract); }
     // Set Units to Inches
-    void process_G20(const GCodeReader::GCodeLine& line) { m_units = UnitsType::Inches; }
+    void process_G20(const GCodeReader::GCodeReader::GCodeLine& line) { m_units = UnitsType::Inches; }
     // Set Units to Millimeters
-    void process_G21(const GCodeReader::GCodeLine& line) { m_units = UnitsType::Millimeters; }
+    void process_G21(const GCodeReader::GCodeReader::GCodeLine& line) { m_units = UnitsType::Millimeters; }
     // Firmware controlled Retract
-    void process_G22(const GCodeReader::GCodeLine& line) { store_move(MoveType::Retract); }
+    void process_G22(const GCodeReader::GCodeReader::GCodeLine& line) { store_move(MoveType::Retract); }
     // Firmware controlled Unretract
-    void process_G23(const GCodeReader::GCodeLine& line) { store_move(MoveType::Unretract); }
+    void process_G23(const GCodeReader::GCodeReader::GCodeLine& line) { store_move(MoveType::Unretract); }
     // Move to origin
-    void process_G28(const GCodeReader::GCodeLine& line);
+    void process_G28(const GCodeReader::GCodeReader::GCodeLine& line);
     // Save Current Position
-    void process_G60(const GCodeReader::GCodeLine& line);
+    void process_G60(const GCodeReader::GCodeReader::GCodeLine& line);
     // Return to Saved Position
-    void process_G61(const GCodeReader::GCodeLine& line);
+    void process_G61(const GCodeReader::GCodeReader::GCodeLine& line);
     // Set to Absolute Positioning
-    void process_G90(const GCodeReader::GCodeLine& line) { m_global_positioning_type = PositioningType::Absolute; }
+    void process_G90(const GCodeReader::GCodeReader::GCodeLine& line) { m_global_positioning_type = PositioningType::Absolute; }
     // Set to Relative Positioning
-    void process_G91(const GCodeReader::GCodeLine& line) { m_global_positioning_type = PositioningType::Relative; }
+    void process_G91(const GCodeReader::GCodeReader::GCodeLine& line) { m_global_positioning_type = PositioningType::Relative; }
 
     // Set Position
-    void process_G92(const GCodeReader::GCodeLine& line);
+    void process_G92(const GCodeReader::GCodeReader::GCodeLine& line);
 
     //
     // Process M commands
     // 
 
     // Sleep or Conditional stop
-    void process_M1(const GCodeReader::GCodeLine& line) { simulate_st_synchronize(); }
+    void process_M1(const GCodeReader::GCodeReader::GCodeLine& line) { simulate_st_synchronize(); }
     // Set extruder to absolute mode
-    void process_M82(const GCodeReader::GCodeLine& line) { m_e_local_positioning_type = PositioningType::Absolute; }
+    void process_M82(const GCodeReader::GCodeReader::GCodeLine& line) { m_e_local_positioning_type = PositioningType::Absolute; }
     // Set extruder to relative mode
-    void process_M83(const GCodeReader::GCodeLine& line) { m_e_local_positioning_type = PositioningType::Relative; }
+    void process_M83(const GCodeReader::GCodeReader::GCodeLine& line) { m_e_local_positioning_type = PositioningType::Relative; }
     // Set extruder temperature
-    void process_M104(const GCodeReader::GCodeLine& line);
+    void process_M104(const GCodeReader::GCodeReader::GCodeLine& line);
     // Set fan speed
-    void process_M106(const GCodeReader::GCodeLine& line);
+    void process_M106(const GCodeReader::GCodeReader::GCodeLine& line);
     // Disable fan
-    void process_M107(const GCodeReader::GCodeLine& line) { m_fan_speed = 0.0f; }
+    void process_M107(const GCodeReader::GCodeReader::GCodeLine& line) { m_fan_speed = 0.0f; }
     // Set tool (Sailfish)
-    void process_M108(const GCodeReader::GCodeLine& line);
+    void process_M108(const GCodeReader::GCodeReader::GCodeLine& line);
     // Set extruder temperature and wait
-    void process_M109(const GCodeReader::GCodeLine& line);
+    void process_M109(const GCodeReader::GCodeReader::GCodeLine& line);
     // Recall stored home offsets
-    void process_M132(const GCodeReader::GCodeLine& line);
+    void process_M132(const GCodeReader::GCodeReader::GCodeLine& line);
     // Set tool (MakerWare)
-    void process_M135(const GCodeReader::GCodeLine& line);
+    void process_M135(const GCodeReader::GCodeReader::GCodeLine& line);
     // Set max printing acceleration
-    void process_M201(const GCodeReader::GCodeLine& line);
+    void process_M201(const GCodeReader::GCodeReader::GCodeLine& line);
     // Set maximum feedrate
-    void process_M203(const GCodeReader::GCodeLine& line);
+    void process_M203(const GCodeReader::GCodeReader::GCodeLine& line);
     // Set default acceleration
-    void process_M204(const GCodeReader::GCodeLine& line);
+    void process_M204(const GCodeReader::GCodeReader::GCodeLine& line);
     // Advanced settings
-    void process_M205(const GCodeReader::GCodeLine& line);
+    void process_M205(const GCodeReader::GCodeReader::GCodeLine& line);
     // Set Feedrate Percentage
-    void process_M220(const GCodeReader::GCodeLine& line);
+    void process_M220(const GCodeReader::GCodeReader::GCodeLine& line);
     // Set extrude factor override percentage
-    void process_M221(const GCodeReader::GCodeLine& line);
+    void process_M221(const GCodeReader::GCodeReader::GCodeLine& line);
     // Repetier: Store x, y and z position
-    void process_M401(const GCodeReader::GCodeLine& line);
+    void process_M401(const GCodeReader::GCodeReader::GCodeLine& line);
     // Repetier: Go to stored position
-    void process_M402(const GCodeReader::GCodeLine& line);
+    void process_M402(const GCodeReader::GCodeReader::GCodeLine& line);
     // Set allowable instantaneous speed change
-    void process_M566(const GCodeReader::GCodeLine& line);
+    void process_M566(const GCodeReader::GCodeReader::GCodeLine& line);
     // Unload the current filament into the MK3 MMU2 unit at the end of print.
-    void process_M702(const GCodeReader::GCodeLine& line);
+    void process_M702(const GCodeReader::GCodeReader::GCodeLine& line);
 
     //
     // Process T commands
     // 
 
     // Processes T line (Select Tool)
-    void process_T(const GCodeReader::GCodeLine& line);
+    void process_T(const GCodeReader::GCodeReader::GCodeLine& line);
     void process_T(const std::string_view command);
 
     //
@@ -215,10 +216,10 @@ private:
     void process_orcaslicer_tags(const std::string_view comment);
     void process_simplify3d_tags(const std::string_view comment);
 
-    void process_custom_gcode_time(CustomGCode::Type code);
-    void process_filaments(CustomGCode::Type code);
+    void process_custom_gcode_time(Domain::CustomGCodeType code);
+    void process_filaments(Domain::CustomGCodeType code);
 
-    void set_extrusion_role(GCodeExtrusionRole role);
+    void set_extrusion_role(Domain::GCodeExtrusionRole role);
 
     void reset();
     // Simulates firmware st_synchronize() call

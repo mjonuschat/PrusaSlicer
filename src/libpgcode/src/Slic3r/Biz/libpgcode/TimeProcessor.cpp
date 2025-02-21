@@ -8,6 +8,7 @@
 #include "Slic3r/Biz/libpgcode/Utils.hpp"
 
 namespace Slic3r::Biz::libpgcode {
+using namespace Domain;
 
 static float get_value(const std::vector<float>& options, size_t id)
 {
@@ -116,9 +117,9 @@ float TimeProcessor::filament_unload_time(uint8_t extruder_id, bool is_XL_printe
         ((size_t(extruder_id) < filament_unload_times.size()) ? filament_unload_times[extruder_id] : filament_unload_times.front());
 }
 
-std::vector<std::pair<CustomGCode::Type, std::pair<float, float>>> TimeProcessor::custom_gcode_times(TimeMode mode, bool include_remaining) const
+std::vector<std::pair<CustomGCodeType, std::pair<float, float>>> TimeProcessor::custom_gcode_times(TimeMode mode, bool include_remaining) const
 {
-    std::vector<std::pair<CustomGCode::Type, std::pair<float, float>>> ret;
+    std::vector<std::pair<CustomGCodeType, std::pair<float, float>>> ret;
     if (mode < TimeMode::COUNT) {
         const TimeMachine& machine = machines[size_t(mode)];
         float total_time = 0.0f;

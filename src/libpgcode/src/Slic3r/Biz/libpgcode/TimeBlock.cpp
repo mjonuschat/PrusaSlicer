@@ -5,8 +5,16 @@
 ///|/
 
 #include "TimeBlock.hpp"
+#include "Slic3r/Domain/Constants.hpp"
 
 namespace Slic3r::Biz::libpgcode {
+using namespace Domain;
+
+template<typename T>
+constexpr inline T sqr(T x)
+{
+    return x * x;
+}
 
 static float estimated_acceleration_distance(float initial_rate, float target_rate, float acceleration)
 {

@@ -5,12 +5,26 @@
 #ifndef slic3r_GCode_PostProcessor_hpp_
 #define slic3r_GCode_PostProcessor_hpp_
 
-#include <string>
-
 #include "libslic3r/libslic3r.h"
 #include "libslic3r/PrintConfig.hpp"
+#include "libslic3r/PrintBase.hpp"
+#include "Slic3r/Biz/libpgcode/ProcessorResult.hpp"
+
+#include <functional>
+
+namespace Slic3r::Biz::libpgcode {
+struct ProcessorResult;
+struct PostProcessorConfig;
+} // namespace Slic3r::Biz::libpgcode
 
 namespace Slic3r {
+namespace GCode {
+
+typedef std::function<void(PrintStateBase::WarningLevel, const std::string&, int)> ActiveStepAddWarningCallback;
+extern Slic3r::Biz::libpgcode::ProcessorResult post_process(const Slic3r::Biz::libpgcode::PostProcessorConfig& config,
+		Slic3r::Biz::libpgcode::ProcessorResult&& result, ActiveStepAddWarningCallback active_step_add_warning_callback);
+
+} // namespace GCode
 
 // Run post processing script / scripts if defined.
 // Returns true if a post-processing script was executed.

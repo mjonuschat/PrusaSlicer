@@ -35,7 +35,6 @@
 #include "libslic3r/GCode/ToolOrdering.hpp"
 #include "libslic3r/GCode/WipeTower.hpp"
 #include "libslic3r/GCode/ThumbnailData.hpp"
-#include "libslic3r/GCode/GCodeProcessor.hpp"
 #include "MultiMaterialSegmentation.hpp"
 
 #include "libslic3r.h"
@@ -556,7 +555,7 @@ public:
 
     // Exports G-code into a file name based on the path_template, returns the file path of the generated G-code file.
     // If preview_data is not null, the preview_data is filled in for the G-code visualization (not used by the command line Slic3r).
-    std::string         export_gcode(const std::string& path_template, GCodeProcessorResult* result, ThumbnailsGeneratorCallback thumbnail_cb = nullptr);
+    Biz::libpgcode::ProcessorResult process_gcode(ThumbnailsGeneratorCallback thumbnail_cb = nullptr);
 
     // methods for handling state
     bool                is_step_done(PrintStep step) const { return Inherited::is_step_done(step); }
@@ -688,7 +687,7 @@ private:
     // Allow PrintObject to access m_mutex and m_cancel_callback.
     friend class PrintObject;
 
-    ConflictResultOpt m_conflict_result;
+    Biz::libpgcode::ConflictResultOpt m_conflict_result;
     std::optional<std::pair<std::string, std::string>> m_sequential_collision_detected; // names of objects (hit first when printing second)
 };
 

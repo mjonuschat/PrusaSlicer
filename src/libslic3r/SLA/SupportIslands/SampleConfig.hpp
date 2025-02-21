@@ -2,6 +2,7 @@
 #define slic3r_SLA_SuppotstIslands_SampleConfig_hpp_
 
 #include <libslic3r/libslic3r.h>
+#include <Slic3r/Domain/Point.hpp>
 
 #define OPTION_TO_STORE_ISLAND
 
