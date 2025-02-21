@@ -97,11 +97,12 @@ private:
         const SlicingId id
     );
 
-    // Must be the first member to be destroyed last as member process threads access it!
+    // WARNING: Do not reorder, if you do not know what you are doing!
+    // Any members accessed by the threads must be destroyed after
+    // the threads!
     mutable std::mutex m_status_mutex;
-
-    std::map<SlicingId, BackgroundProcess> m_processes;
     std::map<SlicingId, Status> m_statuses;
+
     ListenerList<IFDMResultListener> m_fdm_result_listeners;
     ListenerList<ISLAResultListener> m_sla_result_listeners;
     ListenerList<IStatusListener> m_status_listeners;
@@ -110,6 +111,9 @@ private:
     std::map<SlicingId, UpdateRequest> m_update_requests;
     Domain::SelectionId m_current_project_id{Domain::INVALID_ID};
     Platform::IMainThreadDispatcher &m_dispatcher;
+
+    // Keep the threads last to be destroyed first.
+    std::map<SlicingId, BackgroundProcess> m_processes;
 };
 
 } // namespace Slic3r::Biz::Slicing
