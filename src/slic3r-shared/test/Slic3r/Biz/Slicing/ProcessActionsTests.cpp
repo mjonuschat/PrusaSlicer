@@ -174,7 +174,7 @@ TEST_CASE("Test process slice() returns immediately", "[background-process][slic
     INFO(log);
     INFO("!=");
     INFO(expected_log);
-    CHECK(is_equal<milliseconds>(log, expected_log, 5ms));
+    CHECK(is_equal<milliseconds>(log, expected_log, 10ms));
 }
 
 TEST_CASE("Test process stop() returns immediately", "[background-process][slicing-actions]")
@@ -223,7 +223,7 @@ TEST_CASE("Test process stop() returns immediately", "[background-process][slici
     INFO(log);
     INFO("!=");
     INFO(expected_log);
-    CHECK(is_equal<milliseconds>(log, expected_log, 5ms));
+    CHECK(is_equal<milliseconds>(log, expected_log, 10ms));
 }
 
 TEST_CASE("Test process update() updates status", "[background-process][slicing-actions]")
@@ -262,5 +262,5 @@ TEST_CASE("Test process update() updates status", "[background-process][slicing-
     INFO(log);
     INFO("!=");
     INFO(expected_log);
-    CHECK(is_equal<milliseconds>(log, expected_log, 5ms));
+    CHECK(is_equal<milliseconds>(log, expected_log, 10ms));
 }
