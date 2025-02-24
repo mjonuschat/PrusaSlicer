@@ -17,6 +17,10 @@ struct ElementRef;
 class BedInstance;
 }
 
+namespace Slic3r::Biz {
+class ProjectInteractor;
+}
+
 namespace Slic3r::Biz::Scene {
 class SceneInteractor;
 struct Selection;
@@ -68,9 +72,8 @@ class ObjectList
 public:
     ObjectList() {}
     
-    void init(Biz::Scene::SceneInteractor& scene_interactor, const Slic3r::Model& model) {
-        m_scene_interactor = &scene_interactor;
-        m_model = &model;
+    void init(Biz::ProjectInteractor* project_interactor) {
+        m_project_interactor = project_interactor;
     }
 
     void render(ImVec2 pos, ImVec2 size);
@@ -82,20 +85,23 @@ private:
     void update_selection_from_scene();
     bool render_tree(ImVec2 size);
     bool render_config_containers();
-    bool render_bed_node(const Domain::BedInstance* bed);
-    bool render_object_node(const Slic3r::ModelObject* object, const Domain::BedInstance* bed);
+    bool render_out_of_beds();
+    bool render_bed_node(const Domain::BedInstance* bed, bool is_sla_config);
+    bool render_object_node(const Slic3r::ModelObject* object, const Domain::BedInstance* bed = nullptr, bool is_sla_config = false);
+    bool render_connectors_node(const Slic3r::ModelObject* object, size_t bed_id);
     bool render_volumes(const Slic3r::ModelObject* object, size_t bed_id);
     void render_volume_node(const Slic3r::ModelVolume* volume, size_t vol_id, bool is_selected, const Domain::ElementRef& sel_element);
     bool render_instances_node(const Slic3r::ModelObject* object, const std::set<size_t>& instances_on_bed);
     bool render_instances(const Slic3r::ModelObject* object, const std::set<size_t>& instances_on_bed);
     void render_instance_node(const Slic3r::ModelObject* object, size_t inst_id, bool is_selected);
     bool render_layer_ranges_node(const Slic3r::ModelObject* object);
-    bool render_infos_node(const Slic3r::ModelObject* object);
+    void render_infos_node(const Slic3r::ModelObject* object, bool is_sla_config);
 
     void render_edited(const char* init_name, const Domain::ElementRef& sel_element);
     void render_printable_icon(const Domain::ElementRef& sel_element, bool is_printable);
     void render_overrides_icon(const Domain::ElementRef& sel_element, bool render);
     void render_extruder_marker(size_t extruder_id, const Domain::ElementRef& sel_element, bool is_bed = false);
+    void render_infos_selectable(const std::set<wchar_t>& infos, const Slic3r::ModelObject* object, bool force_render);
 
     void clear_all_ms();
 
@@ -105,9 +111,10 @@ private:
     void show_overrides(const Domain::ElementRef& id);
     void extruder_clicked(const Domain::ElementRef& sel_element, bool is_bed);
     void show_layer_ranges(const Domain::ElementRef& id);
-    void show_infos(const Domain::ElementRef& id);
+    void show_gizmo(const Domain::ElementRef& id, wchar_t gizmo_id);
 
 private:
+    Biz::ProjectInteractor*         m_project_interactor{ nullptr };
     Biz::Scene::SceneInteractor*    m_scene_interactor  { nullptr };
     const Slic3r::Model*            m_model             { nullptr };
 
@@ -115,7 +122,6 @@ private:
     MultiSelections                 m_volumes_ms;
 
     size_t                          m_edited_node_id    { 0 };
-
 };
 
 } // namespace Slic3r::App::Plater

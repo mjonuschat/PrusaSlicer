@@ -58,6 +58,33 @@ void MultiSelections::clear_except(size_t id)
             ms.Clear();
 }
 
+enum ColumIndex
+{
+    ciTree = 0,
+    ciPrintable,
+    ciSettingsOvverides,
+    ciExtruder,
+
+    ciCount
+};
+
+ImGuiMultiSelectFlags   ms_flags      = ImGuiMultiSelectFlags_ScopeRect | 
+                                        ImGuiMultiSelectFlags_ClearOnEscape |
+                                        ImGuiMultiSelectFlags_BoxSelect1d | 
+                                        ImGuiMultiSelectFlags_SelectOnClick;
+
+ImGuiTreeNodeFlags      node_flags    = ImGuiTreeNodeFlags_OpenOnArrow | 
+                                        ImGuiTreeNodeFlags_SpanAllColumns;
+
+ImGuiTableFlags         table_flags   = ImGuiTableFlags_ScrollY | 
+                                        ImGuiTableFlags_Resizable | 
+                                        ImGuiTableFlags_NoBordersInBody | 
+                                        ImGuiTableFlags_NoPadInnerX;
+
+static ImVec4 def_color = ImVec4(0.923f, 0.504f, 0.264f, 1.0f);
+static std::string test_out;
+static std::string test_out2;
+
 std::set<Domain::ElementRef> selected_items;  // Track selected item IDs
 bool is_dragging                     { false };
 
@@ -131,9 +158,8 @@ static std::string get_bed_name(const Slic3r::DynamicPrintConfig& print_config)
            + print_config.opt_string("printer_model");
 }
 
-static bool bed_has_object(const Domain::BedInstance* bed, const Slic3r::ModelObject* object)
+static bool bed_has_object(const Domain::ModelInstanceList& bed_model_instances, const Slic3r::ModelObject* object)
 {
-    const Domain::ModelInstanceList& bed_model_instances = bed->model_instances();
     for (const Slic3r::ModelInstance* instance : bed_model_instances)
         if (instance->get_object() == object)
             return true;
@@ -141,11 +167,10 @@ static bool bed_has_object(const Domain::BedInstance* bed, const Slic3r::ModelOb
     return false;
 }
 
-static std::set<size_t> get_object_instance_ids_on_bed(const Domain::BedInstance* bed, const Slic3r::ModelObject* object)
+static std::set<size_t> get_object_instance_ids_on_bed(const Domain::ModelInstanceList& bed_model_instances, const Slic3r::ModelObject* object)
 {
     std::set<size_t> object_instances_on_bed;
 
-    const Domain::ModelInstanceList& bed_model_instances = bed->model_instances();
     for (Slic3r::ModelInstance* instance : bed_model_instances)
         if (instance->get_object() == object)
             object_instances_on_bed.emplace(instance->id().id);
@@ -177,6 +202,20 @@ static bool is_volume_selected(const Domain::ElementRef& sel_element, const Slic
     return false;
 }
 
+static size_t visible_volumes_count(const ModelObject* object)
+{
+    if (object->is_cut()) {
+        size_t count{ 0 };
+        for (const auto* volume : object->volumes)
+            if (!volume->is_cut_connector())
+                count++;
+        
+        return count;
+    }
+
+    return object->volumes.size();
+}
+
 static void force_select_whole_object(const Slic3r::ModelObject* object)
 {
     size_t object_id = object->id().id;
@@ -190,90 +229,117 @@ static void force_select_whole_object(const Slic3r::ModelObject* object)
     }
 }
 
+std::set<wchar_t> get_infos(const Slic3r::ModelObject* object, bool is_sla_config)
+{
+    std::set<wchar_t> infos;
+    if (!is_sla_config) {
+        for (const ModelVolume* mv : object->volumes) {
+            if (!mv->supported_facets.empty())
+                infos.insert(ImGui::CustomSupports);
+            if (!mv->seam_facets.empty())
+                infos.insert(ImGui::CustomSeam);
+            if (!mv->fuzzy_skin_facets.empty())
+                infos.insert(ImGui::FuzzySkin);
+            if (!mv->mm_segmentation_facets.empty())
+                infos.insert(ImGui::MmSegmentation);
+        }
+        //if (wxGetApp().plater()->canvas3D()->is_object_sinking(obj_idx))
+        //    infos.insert(ImGui::Sinking);
+    }
+
+    return infos;
+}
+
 static void next_line()
 {
     ImGui::TableNextRow();
     ImGui::TableSetColumnIndex(0);
 }
 
+static bool hovered_current_row()
+{
+    // get cursor position for the first cell in the row
+    ImGui::TableSetColumnIndex(ciTree);
+    ImVec2 row_begin = ImGui::GetCursorScreenPos();
+    // !Strange effect: It returns differs values for rows with Selectable() and TreeNode() controls
+    // it looks like for Selectable() it's a LeftBottom of the cell instead of LeftTop.
+    // So let's update row_begin.y value from the last cell of the row
 
-static ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoMove
-                                     | ImGuiWindowFlags_NoResize
-                                     | ImGuiWindowFlags_NoCollapse;
+    // get cursor position for the last cell in the row
+    ImGui::TableSetColumnIndex(ciCount-1);
+    ImVec2 row_end = ImGui::GetCursorScreenPos();
+    row_begin.y = row_end.y; // update row_begin.y
+    // get RightBottom for the row
+    row_end += ImGui::CalcTextSize(icon_str(ImGui::PrintIconMarker).c_str());
+
+    return ImGui::IsMouseHoveringRect(row_begin, row_end, false);
+}
+
 static  std::string info_line;
 static bool open_modal = false;
 static bool open_extra_window = false;
-
-static void show_test_window(const std::string& line)
+static void show_test_window(const std::string& line, bool show_as_modal = true)
 {
     info_line = line;
-//    open_modal = true;
-    open_extra_window = true;
+    if (show_as_modal)
+        open_modal = true;
+    else
+        open_extra_window = true;
 }
 
 static void render_modal()
 {
-    ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-    ImGui::SetNextWindowSize(ImVec2(430, 100), ImGuiCond_FirstUseEver);
+    if (!open_modal)
+        return;
+    ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+    ImGui::SetNextWindowSize(ImVec2(430, 150), ImGuiCond_Always);
 
     std::string win_name = "ObjectList action##my modal";
     if (!ImGui::IsPopupOpen(win_name.c_str()))
         ImGui::OpenPopup(win_name.c_str());
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(20.5f, 20.5f));
-    if (ImGui::BeginPopupModal(win_name.c_str(), &open_modal, window_flags)) {
+    if (ImGui::BeginPopupModal(win_name.c_str(), &open_modal)) {
         ImGui::Text(info_line.c_str());
         ImGui::EndPopup();
     }
     ImGui::PopStyleVar();
 }
 
-static void extra_window()
+static void render_extra_window()
 {
+    if (!open_extra_window)
+        return;
     ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
     ImGui::SetNextWindowSize(ImVec2(430, 100), ImGuiCond_Always);
 
     std::string win_name = "ObjectList action##my window";
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(20.5f, 20.5f));
-    if (open_extra_window) {
-        if (ImGui::Begin(win_name.c_str(), &open_extra_window, window_flags)) {
-            ImGui::Text(info_line.c_str());
-            ImGui::End();
-        }
-    }
+    ImGui::Begin(win_name.c_str(), &open_extra_window);
+    ImGui::Text(info_line.c_str());
+    ImGui::End();
     ImGui::PopStyleVar();
 }
 
-enum ColumIndex
+static bool icon_btn(ColumIndex ci, const std::string& icon)
 {
-    ciTree = 0,
-    ciPrintable,
-    ciSettingsOvverides,
-    ciExtruder,
+    ImGui::TableSetColumnIndex(ci);
+    ImVec2 pos = ImGui::GetCursorScreenPos();
+    const float size = ImGui::GetFontSize();
+    ImRect hovered_rc(pos, pos + ImVec2(size, size));
 
-    ciCount
-};
+    ImGui::Text(icon.c_str());
 
-ImGuiMultiSelectFlags   ms_flags      = ImGuiMultiSelectFlags_ScopeRect | 
-                                        ImGuiMultiSelectFlags_ClearOnEscape |
-                                        ImGuiMultiSelectFlags_BoxSelect1d | 
-                                        ImGuiMultiSelectFlags_SelectOnClick;
-
-ImGuiTreeNodeFlags      node_flags    = ImGuiTreeNodeFlags_OpenOnArrow | 
-                                        ImGuiTreeNodeFlags_SpanAllColumns;
-
-ImGuiTableFlags         table_flags   = ImGuiTableFlags_ScrollY | 
-                                        ImGuiTableFlags_Resizable | 
-                                        ImGuiTableFlags_NoBordersInBody | 
-                                        ImGuiTableFlags_NoPadInnerX;
-
-static ImVec4 def_color = ImVec4(0.923f, 0.504f, 0.264f, 1.0f);
-static std::string test_out;
-static std::string test_out2;
+    bool pressed = ImGui::IsMouseHoveringRect(hovered_rc.Min, hovered_rc.Max) && ImGui::IsMouseClicked(0);
+    return pressed;
+}
 
 void ObjectList::render(ImVec2 pos, ImVec2 size)
 {
+    m_scene_interactor = &m_project_interactor->scene_interactor();
+    m_model = &m_project_interactor->selected_project().model();
+
     assert(m_model && m_scene_interactor);
     update_selection_from_scene();
 
@@ -320,7 +386,7 @@ void ObjectList::render(ImVec2 pos, ImVec2 size)
     }
 
     render_modal();
-    extra_window();
+    render_extra_window();
 }
 
 void ObjectList::update_selection_from_scene()
@@ -364,6 +430,7 @@ bool ObjectList::render_tree(ImVec2 size)
         ImGui::TableSetupColumn("##extruder", ImGuiTableColumnFlags_WidthStretch/* | ImGuiTableColumnFlags_DefaultHide*/, 0.1f);
 
         is_changed_selection = render_config_containers();
+        is_changed_selection |= render_out_of_beds();
 
         ImGui::EndTable();
     }
@@ -375,20 +442,38 @@ bool ObjectList::render_config_containers()
 {
     bool is_changed_selection = false;
     for (auto& cc : m_scene_interactor->selected_project_config_containers()) {
-        ImGui::TableNextColumn();
-        bool is_open = ImGui::TreeNodeEx(("##cc_id" + std::to_string(cc->id().id)).c_str(), node_flags | ImGuiTreeNodeFlags_DefaultOpen, "%s",
-                                         (get_bed_name(cc->print_config())).c_str());
-        if (is_open) {
+        next_line();
+        if (ImGui::TreeNodeEx(("##cc_id" + std::to_string(cc->id().id)).c_str(), node_flags | ImGuiTreeNodeFlags_DefaultOpen,
+                                         (get_bed_name(cc->print_config())).c_str())) {
             for (auto& bed_inst : cc->bed_instances())
-                is_changed_selection |= render_bed_node(bed_inst.get());
+                is_changed_selection |= render_bed_node(bed_inst.get(), cc->print_technology() == ptSLA);
             ImGui::TreePop();
         }
-        ImGui::TableNextRow();
     }
     return is_changed_selection;
 }
 
-bool ObjectList::render_bed_node(const Domain::BedInstance* bed)
+bool ObjectList::render_out_of_beds()
+{
+    if (m_scene_interactor->selected_project_unplaced_model_instances().empty())
+        return false;
+
+    next_line();
+    bool is_changed_selection = false;
+
+    if(ImGui::TreeNodeEx("##cc_out", node_flags | ImGuiTreeNodeFlags_DefaultOpen, "Out of bed")) {
+        for (const Slic3r::ModelObject* object : m_model->objects) {
+            if (bed_has_object(m_scene_interactor->selected_project_unplaced_model_instances(), object))
+                is_changed_selection |= render_object_node(object);
+        }
+
+        ImGui::TreePop();
+    }
+
+    return is_changed_selection;
+}
+
+bool ObjectList::render_bed_node(const Domain::BedInstance* bed, bool is_sla_config)
 {
     size_t bed_id = bed->id().id;
 
@@ -405,8 +490,8 @@ bool ObjectList::render_bed_node(const Domain::BedInstance* bed)
     bool is_changed_selection = false;
     if (is_open) {
         for (const Slic3r::ModelObject* object : m_model->objects) {
-            if (bed_has_object(bed, object))
-                is_changed_selection |= render_object_node(object, bed);
+            if (bed_has_object(bed->model_instances(), object))
+                is_changed_selection |= render_object_node(object, bed, is_sla_config);
         }
         ImGui::TreePop();
     }
@@ -414,7 +499,7 @@ bool ObjectList::render_bed_node(const Domain::BedInstance* bed)
     return is_changed_selection;
 }
 
-bool ObjectList::render_object_node(const Slic3r::ModelObject* object, const Domain::BedInstance* bed)
+bool ObjectList::render_object_node(const Slic3r::ModelObject* object, const Domain::BedInstance* bed /*= nullptr*/, bool is_sla_config /*= false*/)
 {
     size_t object_id = object->id().id;
     Domain::ElementRef sel_element{ object_id };
@@ -457,17 +542,17 @@ bool ObjectList::render_object_node(const Slic3r::ModelObject* object, const Dom
     render_extruder_marker(1, sel_element);
 
     if (isOpen) {
-        if (object->volumes.size() > 1)
-            is_changed_selection |= render_volumes(object, bed->id().id);
+        is_changed_selection |= render_connectors_node(object, bed ? bed->id().id : 0);
+        is_changed_selection |= render_volumes(object, bed ? bed->id().id : 0);
 
         if (object->instances.size() > 1) {
-            std::set<size_t> instances_on_bed = get_object_instance_ids_on_bed(bed, object);
+            std::set<size_t> instances_on_bed = get_object_instance_ids_on_bed(bed ? bed->model_instances() : m_scene_interactor->selected_project_unplaced_model_instances(), object);
             if (!instances_on_bed.empty())
                 is_changed_selection |= render_instances_node(object, instances_on_bed);
         }
 
-        if (!object->layer_config_ranges.empty())
-            is_changed_selection |= render_layer_ranges_node(object);
+        is_changed_selection |= render_layer_ranges_node(object);
+        render_infos_node(object, is_sla_config);
 
         ImGui::TreePop();
     }
@@ -475,12 +560,47 @@ bool ObjectList::render_object_node(const Slic3r::ModelObject* object, const Dom
     return is_changed_selection;
 }
 
+bool ObjectList::render_connectors_node(const Slic3r::ModelObject* object, size_t bed_id)
+{
+    if (!object->is_cut() || object->volumes.size() == 1)
+        return false;
+
+    size_t object_id = object->id().id;
+    size_t instance_id = object->instances[0]->id().id;
+    const std::string name_id = "##connectors_id" + std::to_string(bed_id) + std::to_string(object_id);
+
+    next_line();
+    ImGui::Unindent(ImGui::GetTreeNodeToLabelSpacing());
+    if (ImGui::TreeNodeEx(name_id.c_str(), node_flags | ImGuiTreeNodeFlags_Leaf, (icon_str(ImGui::CutConnectors) + "Connectors").c_str()))
+        ImGui::TreePop();
+    ImGui::Indent(ImGui::GetTreeNodeToLabelSpacing());
+
+    if (handle_selection({ object_id, instance_id })) {
+        clear_all_ms();
+
+        std::set<Domain::ElementRef> selectedItems_tmp;
+        for (const Slic3r::ModelVolume* volume : object->volumes) {
+            if (volume->is_cut_connector())
+                selectedItems_tmp.insert({ object_id, instance_id, volume->id().id });
+        }
+        if (selected_items != selectedItems_tmp) {
+            selected_items = selectedItems_tmp;
+            return true;
+        }
+    }
+
+    return false;
+}
+
 bool ObjectList::render_volumes(const Slic3r::ModelObject* object, size_t bed_id)
 {
+    if (visible_volumes_count(object) < 2)
+        return false;
+
     size_t object_id = object->id().id;
     size_t instance_id = object->instances[0]->id().id;
 
-    const std::string name_id = "##volums_id" + std::to_string(bed_id) + std::to_string(object_id);
+    const std::string name_id = "##volumes_id" + std::to_string(bed_id) + std::to_string(object_id);
 
     next_line();
     bool is_open = ImGui::TreeNodeEx(name_id.c_str(), node_flags, "Volumes");
@@ -490,11 +610,13 @@ bool ObjectList::render_volumes(const Slic3r::ModelObject* object, size_t bed_id
 
     if (is_open) {
         ImGui::PushID(&ms);  // Ensure unique ID
-        ImGuiMultiSelectIO* ms_io = ImGui::BeginMultiSelect(ms_flags, ms.Size, volumes.size());
+        ImGuiMultiSelectIO* ms_io = ImGui::BeginMultiSelect(ms_flags, ms.Size, visible_volumes_count(object));
         ms.ApplyRequests(ms_io);
 
         for (size_t vol_id = 0; vol_id < volumes.size(); vol_id++) {
             const Slic3r::ModelVolume* volume = object->volumes[vol_id];
+            if (volume->is_cut_connector())
+                continue;
             size_t volume_id = volume->id().id;
             render_volume_node(volume, vol_id, ms.Contains((ImGuiID)volume_id), { object_id, instance_id, volume_id });
         }
@@ -653,6 +775,9 @@ void ObjectList::render_instance_node(const Slic3r::ModelObject* object, size_t 
 
 bool ObjectList::render_layer_ranges_node(const Slic3r::ModelObject* object)
 {
+    if (object->layer_config_ranges.empty())
+        return false;
+
     next_line();
     const std::string name_id = "Ranges##obj_id" + std::to_string(object->id().id);
     ImGui::Unindent(ImGui::GetTreeNodeToLabelSpacing());
@@ -671,24 +796,24 @@ bool ObjectList::render_layer_ranges_node(const Slic3r::ModelObject* object)
     return false;
 }
 
-bool ObjectList::render_infos_node(const Slic3r::ModelObject* object)
+void ObjectList::render_infos_node(const Slic3r::ModelObject* object, bool is_sla_config)
 {
+    std::set<wchar_t> infos = get_infos(object, is_sla_config);
+    if (infos.empty())
+        return;
+
+    std::string infos_line;
+    for (const wchar_t icon : infos)
+        infos_line += icon_str(icon);
+
     next_line();
     const std::string name_id = "Infos##obj_id" + std::to_string(object->id().id);
     ImGui::Unindent(ImGui::GetTreeNodeToLabelSpacing());
-    if (ImGui::TreeNodeEx(name_id.c_str(), node_flags | ImGuiTreeNodeFlags_Leaf, (icon_str(ImGui::InfosIcon) + "Infos").c_str()))
+    if (ImGui::TreeNodeEx(name_id.c_str(), node_flags | ImGuiTreeNodeFlags_Leaf, (infos_line + "Infos").c_str()))
         ImGui::TreePop();
     ImGui::Indent(ImGui::GetTreeNodeToLabelSpacing());
 
-    Domain::ElementRef sel_element{ object->id().id };
-    if (handle_selection(sel_element)) {
-        force_select_whole_object(object);
-        clear_all_ms();
-        show_infos(sel_element);
-        return true;
-    }
-
-    return false;
+    render_infos_selectable(infos, object, hovered_current_row());
 }
 
 void ObjectList::render_edited(const char* init_name, const Domain::ElementRef& sel_element)
@@ -708,38 +833,6 @@ void ObjectList::render_edited(const char* init_name, const Domain::ElementRef& 
         m_edited_node_id = 0;  // Exit edit mode
     }
     ImGui::PopStyleVar(2);
-}
-
-static bool icon_btn(ColumIndex ci, const std::string& icon)
-{
-    ImGui::TableSetColumnIndex(ci);
-    ImVec2 pos = ImGui::GetCursorScreenPos();
-    const float size = ImGui::GetFontSize();
-    ImRect hovered_rc(pos, pos + ImVec2(size, size));
-
-    ImGui::Text(icon.c_str());
-
-    bool pressed = ImGui::IsMouseHoveringRect(hovered_rc.Min, hovered_rc.Max) && ImGui::IsMouseClicked(0);
-    return pressed;
-}
-
-static bool hovered_current_row()
-{
-    // get cursor position for the first cell in the row
-    ImGui::TableSetColumnIndex(ciTree);
-    ImVec2 row_begin = ImGui::GetCursorScreenPos();
-    // !Strange effect: It returns differs values for rows with Selectable() and TreeNode() controls
-    // it looks like for Selectable() it's a LeftBottom of the cell instead of LeftTop.
-    // So let's update row_begin.y value from the last cell of the row
-
-    // get cursor position for the last cell in the row
-    ImGui::TableSetColumnIndex(ciCount-1);
-    ImVec2 row_end = ImGui::GetCursorScreenPos();
-    row_begin.y = row_end.y; // update row_begin.y
-    // get RightBottom for the row
-    row_end += ImGui::CalcTextSize(icon_str(ImGui::PrintIconMarker).c_str());
-
-    return ImGui::IsMouseHoveringRect(row_begin, row_end, false);
 }
 
 void ObjectList::render_printable_icon(const Domain::ElementRef& sel_element, bool is_printable)
@@ -781,6 +874,51 @@ void ObjectList::render_extruder_marker(size_t extruder_id, const Domain::Elemen
         extruder_clicked(sel_element, is_bed);
 }
 
+
+static std::map<wchar_t, std::string> info_descriptions = {
+    { ImGui::CustomSupports, "CustomSupports"} ,
+    { ImGui::CustomSeam    , "Seam" },
+    { ImGui::MmSegmentation, "MM Painting" },
+    { ImGui::Sinking       , "Sinking" },
+    { ImGui::FuzzySkin     , "Fuzzy Skin" },
+};
+
+void ObjectList::render_infos_selectable(const std::set<wchar_t>& infos, const Slic3r::ModelObject* object, bool force_render)
+{
+    static bool show{ false };
+    if (force_render)
+        show = true;
+
+    if (show) {
+        ImGui::SetNextWindowPos(ImVec2(3.f*ImGui::GetTreeNodeToLabelSpacing(), ImGui::GetMousePos().y - 10.f), ImGuiCond_Appearing);
+
+        ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.85);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(5.f, 5.f));
+        ImGui::Begin("##infos_list", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize);
+
+        bool any_hovered = false;
+        for (wchar_t info : infos) {
+            std::string line = icon_str(info) + info_descriptions[info];
+            if (ImGui::Selectable(line.c_str())) {
+                if (info == ImGui::Sinking) {
+                    force_select_whole_object(object);
+                    clear_all_ms();
+
+                }
+
+                show_gizmo({ object->id().id }, info);
+                show = false;
+            }
+            any_hovered |= ImGui::IsItemHovered();
+        }
+
+        ImGui::End();
+        ImGui::PopStyleVar(2);
+
+        show = any_hovered;
+    }
+}
+
 void ObjectList::clear_all_ms()
 {
     m_instances_ms.clear_all();
@@ -812,7 +950,7 @@ void ObjectList::show_overrides(const Domain::ElementRef& sel_element)
     test_out = Slic3r::format("propagate_show_overrides: obj%1%, inst%2%, vol%3%", 
                               sel_element.object_id, sel_element.instance_id, sel_element.volume_id);
 
-    show_test_window(test_out);    
+    show_test_window(test_out);
 }
 
 void ObjectList::extruder_clicked(const Domain::ElementRef& sel_element, bool is_bed)
@@ -826,12 +964,12 @@ void ObjectList::extruder_clicked(const Domain::ElementRef& sel_element, bool is
 
 void ObjectList::show_layer_ranges(const Domain::ElementRef& sel_element)
 {
-    show_test_window(Slic3r::format("show_layer_ranges for obj%1%" , sel_element.object_id));    
+    show_test_window(Slic3r::format("show_layer_ranges for obj%1%" , sel_element.object_id), true);
 }
 
-void ObjectList::show_infos(const Domain::ElementRef& sel_element)
+void ObjectList::show_gizmo(const Domain::ElementRef& sel_element, wchar_t gizmo_id)
 {
-    show_test_window(Slic3r::format("show_infos for obj%1%", sel_element.object_id));    
+    show_test_window(Slic3r::format("Open %1% %2% gizmo for object (id#%3%)", icon_str(gizmo_id), info_descriptions[gizmo_id], sel_element.object_id));
 }
 
 }// Slic3r::App::Plater namespace
