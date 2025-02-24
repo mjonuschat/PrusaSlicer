@@ -157,6 +157,8 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/Scene/SceneInteractorProjectContext.hpp
         include/Slic3r/Biz/Scene/BedPlacement.hpp
         src/Slic3r/Biz/Scene/BedPlacement.cpp
+        src/Slic3r/Biz/Scene/BedTracking.hpp
+        src/Slic3r/Biz/Scene/BedTracking.cpp
 
         include/Slic3r/Biz/Preset/IBedPresetValueChangedListener.hpp
         include/Slic3r/Biz/Preset/IBedPresetSwitchedListener.hpp

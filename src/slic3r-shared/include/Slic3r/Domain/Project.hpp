@@ -54,39 +54,8 @@ public:
     [[nodiscard]] const Bed* find_bed_by_id(size_t id) const;
     [[nodiscard]] Bed* find_bed_by_id(size_t id);
 
-    /**
-     * @brief Remove single model instance from bed instance.
-     * @param model_instance Model instance to be removed from bed instance
-     */
-    void remove_instance_from_bed(ModelInstance* model_instance);
-
-    /**
-     * @brief Rebuild all model-instance to bed links.
-     */
-    void update_instances_bed_placement();
-
-    /**
-     * @brief Rebuild model-instance to bed links for given instances
-     * @param instances List of instacnes to update
-     * @param remove_original_links If true the original links are removed before update,
-     * if false it is assumed that the instances are newly added and has no original links.
-     */
-    void update_instances_bed_placement(const ElementRefs& instances, bool remove_original_links = true);
-
-    /**
-     * @brief Rebuild model-instance to bed links for given instances
-     * @param instances List of instacnes to update
-     * @param remove_original_links If true the original links are removed before update,
-     */
-    void update_instances_bed_placement(
-        const ModelInstanceList& instances, bool remove_original_links = true
-    );
-
     ModelInstanceList& unplaced_model_instances() { return m_unplaced_model_instances; }
     const ModelInstanceList& unplaced_model_instances() const { return m_unplaced_model_instances; }
-private:
-    BedInstance* find_bed_instance_for_bounds(const BoundingBoxf& bounds);
-    void update_instance_bed_placement(ModelInstance& inst);
 
 private:
     std::string m_file_name;

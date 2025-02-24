@@ -20,6 +20,7 @@ public:
      */
     void layout(Domain::Project& project, const Vec2d& gap);
 
+
 };
 
 } // namespace Slic3r::Biz::Scene

@@ -13,6 +13,7 @@ namespace Slic3r::Biz {
 Domain::SelectionId ProjectInteractor::new_project()
 {
     Domain::Project project;
+
     initialize_new_project_before_inserting(project);
     Domain::SelectionId project_id = add_project(std::move(project));
     return project_id;
@@ -36,8 +37,6 @@ void ProjectInteractor::initialize_inserted_project(size_t project_id)
     Domain::Bed& bed = p.bed_container().add_bed(selected_printer_preset, m_workbench.preset_bundle());
     cc_ptr->set_bed(bed);
     m_scene_interactor.add_bed_instance(cc_id);
-
-    p.update_instances_bed_placement();
 }
 
 void ProjectInteractor::select_project(Domain::SelectionId project_id)

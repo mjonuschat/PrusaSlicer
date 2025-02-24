@@ -457,6 +457,8 @@ void WXRenderCanvas::init_wx_imgui()
 
 void WXRenderCanvas::render()
 {
+    if (!IsShown())
+        return;
     SetCurrent(*m_gl_context);
     if (!m_initialized) {
         init();

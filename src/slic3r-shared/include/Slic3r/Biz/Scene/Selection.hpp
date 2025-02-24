@@ -20,8 +20,8 @@ struct Selection
     SelectionMode mode{SelectionMode::Instance};
     ElementRefs elements;
 
-    bool empty() const { return elements.empty(); }
-    bool is_selected(const Domain::ElementRef& ref) const
+    [[nodiscard]] bool empty() const { return elements.empty(); }
+    [[nodiscard]] bool is_selected(const Domain::ElementRef& ref) const
     {
         return std::any_of(elements.begin(), elements.end(), [ref](const Domain::ElementRef& r) {
             return ref.is_part_of(r);
@@ -38,7 +38,7 @@ struct Selection
         return false;
     }
 
-    bool is_valid() const;
+    [[nodiscard]] bool is_valid() const;
     void normalize();
 };
 

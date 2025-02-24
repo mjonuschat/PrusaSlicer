@@ -8,7 +8,21 @@
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 #include "libslic3r/Model.hpp"
 
-#include <boost/filesystem/operations.hpp>
+struct SlicingInputChangedListener : Slic3r::Biz::ISlicingInputChangedListener
+{
+    MAKE_MOCK1(on_slicing_input_changed, void(Slic3r::Domain::SelectionId));
+};
+
+struct ScopedThreadDispatcher
+{
+    ScopedThreadDispatcher(Slic3r::Biz::Platform::IMainThreadDispatcher& dispatcher)
+        : m_dispatcher(dispatcher)
+    {}
+    ~ScopedThreadDispatcher() { m_dispatcher.close(); }
+
+private:
+    Slic3r::Biz::Platform::IMainThreadDispatcher& m_dispatcher;
+};
 
 
 TEST_CASE("Scene Interactor Bed Tracking")
@@ -17,240 +31,297 @@ TEST_CASE("Scene Interactor Bed Tracking")
     using namespace Slic3r::Biz;
     using namespace trompeloeil;
 
+    SlicingInputChangedListener slicing_input_changed_listener;
     Domain::Workbench workbench;
     set_data_dir(Tests::get_datadir().string());
     workbench.load_configs();
 
     App::Platform::StdMainThreadDispatcher dispatcher;
     ProjectInteractor project_interactor{workbench, dispatcher};
+    ScopedThreadDispatcher thread_dispatcher{dispatcher};
 
-    project_interactor.new_project();
+    project_interactor.scene_interactor().add_listener<ISlicingInputChangedListener>(&slicing_input_changed_listener);
+    {
+        ALLOW_CALL(slicing_input_changed_listener, on_slicing_input_changed(trompeloeil::_));
+        project_interactor.new_project();
+        // REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(gt(0)))
+        // .SIDE_EFFECT({ std::cout << _1 << std::endl; });
+    }
+
     const auto& p = project_interactor.selected_project();
     const auto& bed = *project_interactor.selected_project().bed_container().beds().front();
     const auto& bed_center = bed.center();
     const auto& bed_size = bed.contour_aabb_extent();
     auto& scene_interactor = project_interactor.scene_interactor();
 
-    const double cube_side = 100;
-    scene_interactor.new_object_from_mesh(TriangleMesh{its_make_cube(cube_side, cube_side, cube_side)});
+    auto& cc = p.config_containers().front();
+    const auto& bed_instances = cc->bed_instances();
+    const auto bi1_id = bed_instances[0]->id().id;
+    const double cube_side = 100; // mm
+    {
+        REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(bi1_id));
+        scene_interactor.new_object_from_mesh(TriangleMesh{its_make_cube(cube_side, cube_side, cube_side)});
+    }
 
-    // Single object amid of first bed
     Transform3d xform = Transform3d::Identity();
-    xform.translate(Vec3d{bed_center.x() - cube_side / 2, bed_center.y() - cube_side / 2, 0});
-    scene_interactor.transform_selection(xform.matrix());
+    // Single object amid of first bed
+    {
+        xform.translate(Vec3d{bed_center.x() - cube_side / 2, bed_center.y() - cube_side / 2, 0});
+        REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(bi1_id));
+        scene_interactor.transform_selection(xform.matrix());
+    }
 
     const auto first_el_ref = scene_interactor.selection().elements.front();
 
-    auto& cc = p.config_containers().front();
-    scene_interactor.add_bed_instance(cc->id().id);
-    const auto& bed_instances = cc->bed_instances();
+    {
+        //REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(bi1_id));
+        //REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(ne(bi1_id)));
+        FORBID_CALL(slicing_input_changed_listener, on_slicing_input_changed(ANY(size_t)));
+        scene_interactor.add_bed_instance(cc->id().id);
 
-    // selection: instance mode
-    // +y A +-----+ +-----+
-    //    | | (1) | |     |
-    //    | +-----+ +-----+
-    //    o----->
-    //         +x
-    // Legend:
-    //   +----+
-    //   |    |     Bed
-    //   +----+
-    //   (1)        Selected instance
-    //   [1]        Unselected instance
-    REQUIRE(bed_instances.size() == 2);
-    REQUIRE(p.unplaced_model_instances().empty());
-    REQUIRE(bed_instances[0]->model_instances()[0]->id().id == first_el_ref.instance_id);
-    REQUIRE(bed_instances[0]->model_instances().size() == 1);
-    REQUIRE(bed_instances[1]->model_instances().empty());
+        // selection: instance mode
+        // +y A +-<1>-+ +-<2>-+
+        //    | | (1) | |     |
+        //    | +-----+ +-----+
+        //    o----->
+        //         +x
+        // Legend:
+        //   +-<1>-+
+        //   |     |     Bed (with ID symbol <1> --- i.e. id is stored in bi1_id)
+        //   +-----+
+        //   (1)        Selected instance
+        //   [1]        Unselected instance
+        REQUIRE(bed_instances.size() == 2);
+        REQUIRE(p.unplaced_model_instances().empty());
+        REQUIRE(bed_instances[0]->model_instances()[0]->id().id == first_el_ref.instance_id);
+        REQUIRE(bed_instances[0]->model_instances().size() == 1);
+        REQUIRE(bed_instances[1]->model_instances().empty());
+    };
 
     Vec3d bed_pitch = bed_instances[1]->transformation().get_offset() - bed_instances[0]->transformation().get_offset();
+    const auto bi2_id = bed_instances[1]->id().id;
+
+    {
+        // Single object amid of second bed
+        xform = Transform3d::Identity();
+        xform.translate(Vec3d{bed_pitch.x(), 0, 0});
+
+        REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(bi1_id));
+        REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(bi2_id));
+        scene_interactor.transform_selection(xform.matrix());
+
+        // selection: instance mode
+        // +y A +-<1>-+ +-<2>-+
+        //    | |     | | (1) |
+        //    | +-----+ +-----+
+        //    o----->
+        //         +x
+        REQUIRE(p.unplaced_model_instances().empty());
+        REQUIRE(bed_instances[0]->model_instances().empty());
+        REQUIRE(bed_instances[1]->model_instances().size() == 1);
+        REQUIRE(bed_instances[1]->model_instances()[0]->id().id == first_el_ref.instance_id);
+    }
+    {
+        // Outside of second bed
+        xform = Transform3d::Identity();
+        xform.translate(Vec3d{0, bed_size.y(), 0});
+
+        REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(bi2_id));
+
+        scene_interactor.transform_selection(xform.matrix());
+        // selection: instance mode
+        //                (1)
+        // +y A +-<1>-+ +-<2>-+
+        //    | |     | |     |
+        //    | +-----+ +-----+
+        //    o----->
+        //         +x
+        REQUIRE(p.unplaced_model_instances().size() == 1);
+        REQUIRE(p.unplaced_model_instances()[0]->id().id == first_el_ref.instance_id);
+        REQUIRE(bed_instances[0]->model_instances().empty());
+        REQUIRE(bed_instances[1]->model_instances().empty());
+    }
+
+    {
+        // Single object amid of second bed
+        //REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(ANY(size_t)));
+        FORBID_CALL(slicing_input_changed_listener, on_slicing_input_changed(ANY(size_t)));
+        scene_interactor.add_bed_instance(cc->id().id);
+        // selection: instance mode
+        //                (1)
+        // +y A +-<1>-+ +-<2>-+ +-<3>-+
+        //    | |     | |     | |     |
+        //    | +-----+ +-----+ +-----+
+        //    o----->
+        //         +x
+        REQUIRE(bed_instances.size() == 3);
+    }
+
+    const auto bi3_id = bed_instances[2]->id().id;
+    {
+        xform = Transform3d::Identity();
+        xform.translate(Vec3d{0, -bed_size.y(), 0});
+        REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(bi2_id));
+        scene_interactor.transform_selection(xform.matrix());
 
 
-    // Single object amid of second bed
-    xform = Transform3d::Identity();
-    xform.translate(Vec3d{bed_pitch.x(), 0, 0});
-    scene_interactor.transform_selection(xform.matrix());
+        // selection: instance mode
+        // +y A +-<1>-+ +-<2>-+ +-<3>-+
+        //    | |     | | (1) | |     |
+        //    | +-----+ +-----+ +-----+
+        //    o----->
+        //         +x
+    }
 
-    // selection: instance mode
-    // +y A +-----+ +-----+
-    //    | |     | | (1) |
-    //    | +-----+ +-----+
-    //    o----->
-    //         +x
-    REQUIRE(p.unplaced_model_instances().empty());
-    REQUIRE(bed_instances[0]->model_instances().empty());
-    REQUIRE(bed_instances[1]->model_instances().size() == 1);
-    REQUIRE(bed_instances[1]->model_instances()[0]->id().id == first_el_ref.instance_id);
-
-    // Outside of second bed
-    xform = Transform3d::Identity();
-    xform.translate(Vec3d{0, bed_size.y(), 0});
-
-    scene_interactor.transform_selection(xform.matrix());
-    // selection: instance mode
-    //                (1)
-    // +y A +-----+ +-----+
-    //    | |     | |     |
-    //    | +-----+ +-----+
-    //    o----->
-    //         +x
-    REQUIRE(p.unplaced_model_instances().size() == 1);
-    REQUIRE(p.unplaced_model_instances()[0]->id().id == first_el_ref.instance_id);
-    REQUIRE(bed_instances[0]->model_instances().empty());
-    REQUIRE(bed_instances[1]->model_instances().empty());
-
-    // Single object amid of second bed
-    scene_interactor.add_bed_instance(cc->id().id);
-    // selection: instance mode
-    //                (1)
-    // +y A +-----+ +-----+ +-----+
-    //    | |     | |     | |     |
-    //    | +-----+ +-----+ +-----+
-    //    o----->
-    //         +x
-    REQUIRE(bed_instances.size() == 3);
-
-    xform = Transform3d::Identity();
-    xform.translate(Vec3d{0, -bed_size.y(), 0});
-    scene_interactor.transform_selection(xform.matrix());
-
-    // selection: instance mode
-    // +y A +-----+ +-----+ +-----+
-    //    | |     | | (1) | |     |
-    //    | +-----+ +-----+ +-----+
-    //    o----->
-    //         +x
-
-    // after removing middle bed
-    Transform3d bed_xform = bed_instances[1]->transformation().get_matrix();
     auto old_bed_two_id = bed_instances[1]->id().id;
-    scene_interactor.remove_bed_instance({cc->id().id, old_bed_two_id});
+    {
+        // after removing middle bed
+        Transform3d bed_xform = bed_instances[1]->transformation().get_matrix();
+        REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(bi3_id));
+        scene_interactor.remove_bed_instance({cc->id().id, old_bed_two_id});
 
-    // selection: instance mode
-    // +y A +-----+ +-----+
-    //    | |     | | (1) |
-    //    | +-----+ +-----+
-    //    o----->
-    //         +x
-    REQUIRE(bed_instances.size() == 2);
-    REQUIRE(bed_instances[1]->id().id != old_bed_two_id);
-    REQUIRE(bed_instances[1]->transformation().get_matrix().isApprox(bed_xform));
+        // selection: instance mode
+        // +y A +-<1>-+ +-<3>-+
+        //    | |     | | (1) |
+        //    | +-----+ +-----+
+        //    o----->
+        //         +x
+        REQUIRE(bed_instances.size() == 2);
+        REQUIRE(bed_instances[1]->id().id != old_bed_two_id);
+        REQUIRE(bed_instances[1]->transformation().get_matrix().isApprox(bed_xform));
 
-    REQUIRE(p.unplaced_model_instances().empty());
-    REQUIRE(bed_instances[0]->model_instances().empty());
-    REQUIRE(bed_instances[1]->model_instances().size() == 1);
-    REQUIRE(bed_instances[1]->model_instances()[0]->id().id == first_el_ref.instance_id);
+        REQUIRE(p.unplaced_model_instances().empty());
+        REQUIRE(bed_instances[0]->model_instances().empty());
+        REQUIRE(bed_instances[1]->model_instances().size() == 1);
+        REQUIRE(bed_instances[1]->model_instances()[0]->id().id == first_el_ref.instance_id);
+    }
+    {
+        // after removing bed number two again
+        old_bed_two_id = bed_instances[1]->id().id;
+        scene_interactor.remove_bed_instance({cc->id().id, old_bed_two_id});
 
-    // after removing bed number two again
-    old_bed_two_id = bed_instances[1]->id().id;
-    scene_interactor.remove_bed_instance({cc->id().id, old_bed_two_id});
+        // selection: instance mode
+        // +y A +-<1>-+
+        //    | |     |   (1)
+        //    | +-----+
+        //    o----->
+        //         +x
+        REQUIRE(bed_instances.size() == 1);
+        REQUIRE(p.unplaced_model_instances().size() == 1);
+        REQUIRE(p.unplaced_model_instances()[0]->id().id == first_el_ref.instance_id);
+        REQUIRE(bed_instances[0]->model_instances().empty());
+    }
+    {
+        // back to object amid first (and only) bed
+        xform = Transform3d::Identity();
+        xform.translate(Vec3d{-bed_pitch.x(), 0, 0});
+        REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(bi1_id));
+        scene_interactor.transform_selection(xform.matrix());
 
-    // selection: instance mode
-    // +y A +-----+
-    //    | |     |   (1)
-    //    | +-----+
-    //    o----->
-    //         +x
-    REQUIRE(bed_instances.size() == 1);
-    REQUIRE(p.unplaced_model_instances().size() == 1);
-    REQUIRE(p.unplaced_model_instances()[0]->id().id == first_el_ref.instance_id);
-    REQUIRE(bed_instances[0]->model_instances().empty());
+        // selection: instance mode
+        // +y A +-<1>-+
+        //    | | (1) |
+        //    | +-----+
+        //    o----->
+        //         +x
+        REQUIRE(bed_instances.size() == 1);
+        REQUIRE(p.unplaced_model_instances().empty());
+        REQUIRE(bed_instances[0]->model_instances()[0]->id().id == first_el_ref.instance_id);
+        REQUIRE(bed_instances[0]->model_instances().size() == 1);
+    }
+    Domain::ElementRef second_el_ref;
+    {
+        // back to object amid first (and only) bed
+        xform = Transform3d::Identity();
+        xform.translate(Vec3d{bed_center.x() - cube_side / 2 + bed_pitch.x(), bed_center.y() - cube_side / 2, 0});
+        scene_interactor.add_instance(xform.matrix());
+        second_el_ref = scene_interactor.selection().elements.front();
+        // selection: instance mode
+        // +y A +-<1>-+
+        //    | | [1] |   (2)
+        //    | +-----+
+        //    o----->
+        //         +x
+        REQUIRE(p.unplaced_model_instances().size() == 1);
+        REQUIRE(p.unplaced_model_instances()[0]->id().id == second_el_ref.instance_id);
+        REQUIRE(bed_instances[0]->model_instances().size() == 1);
+        REQUIRE(bed_instances[0]->model_instances()[0]->id().id == first_el_ref.instance_id);
+    }
+    {
+        REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(_));
+        scene_interactor.add_bed_instance(cc->id().id);
+        // selection: instance mode
+        // +y a +-<1>-+ +-<4>-+
+        //    | | [1] | | (2) |
+        //    | +-----+ +-----+
+        //    o----->
+        //         +x
+        REQUIRE(p.unplaced_model_instances().empty());
+        REQUIRE(bed_instances[0]->model_instances().size() == 1);
+        REQUIRE(bed_instances[0]->model_instances()[0]->id().id == first_el_ref.instance_id);
+        REQUIRE(bed_instances[1]->model_instances().size() == 1);
+        REQUIRE(bed_instances[1]->model_instances()[0]->id().id == second_el_ref.instance_id);
+    }
+    const auto bi4_id = bed_instances[1]->id().id;
+    {
+        xform = Transform3d::Identity();
+        xform.translate(Vec3d{bed_pitch.x(), 0, 0});
+        REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(bi4_id));
+        scene_interactor.transform_selection(xform.matrix());
 
-    // back to object amid first (and only) bed
-    xform = Transform3d::Identity();
-    xform.translate(Vec3d{-bed_pitch.x(), 0, 0});
-    scene_interactor.transform_selection(xform.matrix());
+        // selection: instance mode
+        // +y a   +-<1>-+ +-<4>-+
+        //    |   | [1] | |     |  (2)
+        //    |   +-----+ +-----+
+        //    o----->
+        //         +x
+        REQUIRE(p.unplaced_model_instances().size() == 1);
+        REQUIRE(p.unplaced_model_instances()[0]->id().id == second_el_ref.instance_id);
+        REQUIRE(bed_instances[0]->model_instances().size() == 1);
+        REQUIRE(bed_instances[0]->model_instances()[0]->id().id == first_el_ref.instance_id);
+    }
+    {
+        xform = Transform3d::Identity();
+        xform.translate(Vec3d{-bed_size.x(), 0, 0});
+        REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(bi1_id));
+        REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(bi4_id));
+        scene_interactor.add_volume_from_mesh(
+            TriangleMesh{its_make_cube(cube_side, cube_side, cube_side)},
+            ModelVolumeType::MODEL_PART,
+            xform.matrix()
+        );
 
-    // selection: instance mode
-    // +y A +-----+
-    //    | | (1) |
-    //    | +-----+
-    //    o----->
-    //         +x
-    REQUIRE(bed_instances.size() == 1);
-    REQUIRE(p.unplaced_model_instances().empty());
-    REQUIRE(bed_instances[0]->model_instances()[0]->id().id == first_el_ref.instance_id);
-    REQUIRE(bed_instances[0]->model_instances().size() == 1);
+        // selection: volume mode
+        // +y a   +-<1>-+ +-<4>-+
+        //    | [ |  1] | |  [  |   2]
+        //    |   +-----+ +-----+
+        //    o----->
+        //         +x
+        REQUIRE(p.unplaced_model_instances().empty());
+        REQUIRE(bed_instances[0]->model_instances().size() == 1);
+        REQUIRE(bed_instances[0]->model_instances()[0]->id().id == first_el_ref.instance_id);
+        REQUIRE(bed_instances[1]->model_instances().size() == 1);
+        REQUIRE(bed_instances[1]->model_instances()[0]->id().id == second_el_ref.instance_id);
+    }
+    {
+        xform = Transform3d::Identity();
+        xform.translate(Vec3d{bed_pitch.x(), 0, 0});
+        REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(bi1_id));
+        REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(bi4_id));
+        scene_interactor.transform_selection(xform.matrix());
 
-    // back to object amid first (and only) bed
-    xform = Transform3d::Identity();
-    xform.translate(Vec3d{bed_center.x() - cube_side / 2 + bed_pitch.x(), bed_center.y() - cube_side / 2, 0});
-    scene_interactor.add_instance(xform.matrix());
-    const auto second_el_ref = scene_interactor.selection().elements.front();
-    // selection: instance mode
-    // +y A +-----+
-    //    | | [1] |   (2)
-    //    | +-----+
-    //    o----->
-    //         +x
-    REQUIRE(p.unplaced_model_instances().size() == 1);
-    REQUIRE(p.unplaced_model_instances()[0]->id().id == second_el_ref.instance_id);
-    REQUIRE(bed_instances[0]->model_instances().size() == 1);
-    REQUIRE(bed_instances[0]->model_instances()[0]->id().id == first_el_ref.instance_id);
-
-    scene_interactor.add_bed_instance(cc->id().id);
-    // selection: instance mode
-    // +y a +-----+ +-----+
-    //    | | [1] | | (2) |
-    //    | +-----+ +-----+
-    //    o----->
-    //         +x
-    REQUIRE(p.unplaced_model_instances().empty());
-    REQUIRE(bed_instances[0]->model_instances().size() == 1);
-    REQUIRE(bed_instances[0]->model_instances()[0]->id().id == first_el_ref.instance_id);
-    REQUIRE(bed_instances[1]->model_instances().size() == 1);
-    REQUIRE(bed_instances[1]->model_instances()[0]->id().id == second_el_ref.instance_id);
-
-    xform = Transform3d::Identity();
-    xform.translate(Vec3d{bed_pitch.x(), 0, 0});
-    scene_interactor.transform_selection(xform.matrix());
-
-    // selection: instance mode
-    // +y a   +-----+ +-----+
-    //    |   | [1] | |     |  (2)
-    //    |   +-----+ +-----+
-    //    o----->
-    //         +x
-    REQUIRE(p.unplaced_model_instances().size() == 1);
-    REQUIRE(p.unplaced_model_instances()[0]->id().id == second_el_ref.instance_id);
-    REQUIRE(bed_instances[0]->model_instances().size() == 1);
-    REQUIRE(bed_instances[0]->model_instances()[0]->id().id == first_el_ref.instance_id);
-
-    xform = Transform3d::Identity();
-    xform.translate(Vec3d{-bed_size.x(), 0, 0});
-    scene_interactor.add_volume_from_mesh(
-        TriangleMesh{its_make_cube(cube_side, cube_side, cube_side)},
-        ModelVolumeType::MODEL_PART, xform
-        .matrix());
-
-    // selection: volume mode
-    // +y a   +-----+ +-----+
-    //    | [ |  1] | |  [  |   2]
-    //    |   +-----+ +-----+
-    //    o----->
-    //         +x
-    REQUIRE(p.unplaced_model_instances().empty());
-    REQUIRE(bed_instances[0]->model_instances().size() == 1);
-    REQUIRE(bed_instances[0]->model_instances()[0]->id().id == first_el_ref.instance_id);
-    REQUIRE(bed_instances[1]->model_instances().size() == 1);
-    REQUIRE(bed_instances[1]->model_instances()[0]->id().id == second_el_ref.instance_id);
-
-    xform = Transform3d::Identity();
-    xform.translate(Vec3d{bed_pitch.x(), 0, 0});
-    scene_interactor.transform_selection(xform.matrix());
-
-    // selection: volume mode
-    // +y a   +-----+ +-----+
-    //    |   | [1] | |     |  [2]
-    //    |   +-----+ +-----+
-    //    o----->
-    //         +x
-    REQUIRE(p.unplaced_model_instances().size() == 1);
-    REQUIRE(p.unplaced_model_instances()[0]->id().id == second_el_ref.instance_id);
-    REQUIRE(bed_instances[0]->model_instances().size() == 1);
-    REQUIRE(bed_instances[0]->model_instances()[0]->id().id == first_el_ref.instance_id);
-
+        // selection: volume mode
+        // +y a   +-<1>-+ +-<4>-+
+        //    |   | [1] | |     |  [2]
+        //    |   +-----+ +-----+
+        //    o----->
+        //         +x
+        REQUIRE(p.unplaced_model_instances().size() == 1);
+        REQUIRE(p.unplaced_model_instances()[0]->id().id == second_el_ref.instance_id);
+        REQUIRE(bed_instances[0]->model_instances().size() == 1);
+        REQUIRE(bed_instances[0]->model_instances()[0]->id().id == first_el_ref.instance_id);
+    }
     // Queue must be clear before ProjectInteractor can be destroyed.
-    dispatcher.close();
+    //dispatcher.close();
 }
 
