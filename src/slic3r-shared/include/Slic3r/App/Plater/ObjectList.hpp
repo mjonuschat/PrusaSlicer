@@ -91,7 +91,7 @@ private:
     bool render_connectors_node(const Slic3r::ModelObject* object, size_t bed_id);
     bool render_volumes(const Slic3r::ModelObject* object, size_t bed_id);
     void render_volume_node(const Slic3r::ModelVolume* volume, size_t vol_id, bool is_selected, const Domain::ElementRef& sel_element);
-    bool render_instances_node(const Slic3r::ModelObject* object, const std::set<size_t>& instances_on_bed);
+    bool render_instances_node(const Slic3r::ModelObject* object, const Domain::BedInstance* bed);
     bool render_instances(const Slic3r::ModelObject* object, const std::set<size_t>& instances_on_bed);
     void render_instance_node(const Slic3r::ModelObject* object, size_t inst_id, bool is_selected);
     bool render_layer_ranges_node(const Slic3r::ModelObject* object);
@@ -108,6 +108,7 @@ private:
     void propagate_selection();
     void propagate_name_editing(const Domain::ElementRef& id, const std::string& new_name);
     void propagate_printable(const Domain::ElementRef& id, bool is_printable);
+    void ask_extract_selected_instances();
     void show_overrides(const Domain::ElementRef& id);
     void extruder_clicked(const Domain::ElementRef& sel_element, bool is_bed);
     void show_layer_ranges(const Domain::ElementRef& id);

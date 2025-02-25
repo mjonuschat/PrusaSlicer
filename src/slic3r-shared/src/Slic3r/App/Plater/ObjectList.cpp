@@ -335,12 +335,21 @@ static bool icon_btn(ColumIndex ci, const std::string& icon)
     return pressed;
 }
 
+// object is simple: has just one instance, one volume and no aditional information
+static bool is_simple(const Slic3r::ModelObject* object, bool is_sla_config)
+{
+    return  object->instances.size() == 1 &&
+        object->volumes.size() == 1 &&
+        object->layer_config_ranges.empty() &&
+        get_infos(object, is_sla_config).empty();
+}
+
 void ObjectList::render(ImVec2 pos, ImVec2 size)
 {
     m_scene_interactor = &m_project_interactor->scene_interactor();
-    m_model = &m_project_interactor->selected_project().model();
-
+    m_model            = &m_project_interactor->selected_project().model();
     assert(m_model && m_scene_interactor);
+
     update_selection_from_scene();
 
     ImGui::SetCursorScreenPos(pos + ImVec2(10.f, 10.f));
@@ -356,8 +365,15 @@ void ObjectList::render(ImVec2 pos, ImVec2 size)
     // Start drag operation when any selected node is being dragged
     if (is_dragging && ImGui::BeginDragDropSource(/*ImGuiDragDropFlags_SourceNoHoldToOpenOthers | */ImGuiDragDropFlags_SourceExtern)) {
         int size = (int)selected_items.size();
-        ImGui::Text("Dragging %d item(s)", size);
-        ImGui::SetDragDropPayload("MULTI_ITEM", &size, sizeof(int));
+        assert(size > 0);
+        if (selected_items.begin()->has_volume()) {
+            ImGui::Text("Mixing volume(s)");
+            ImGui::SetDragDropPayload("MULTI_VOLUMES", &size, sizeof(int));
+        }
+        else {
+            ImGui::Text("Extracting instances into separate object");
+            ImGui::SetDragDropPayload("MULTI_INSTANCES", &size, sizeof(int));
+        }
         ImGui::EndDragDropSource();
     }
 
@@ -431,6 +447,21 @@ bool ObjectList::render_tree(ImVec2 size)
 
         is_changed_selection = render_config_containers();
         is_changed_selection |= render_out_of_beds();
+
+        next_line();
+        // Make the entire window a valid drop target
+        ImVec2 dropAreaSize = ImGui::GetContentRegionAvail();
+        ImGui::InvisibleButton("InstancesDropZone", ImVec2(size.x, 50.f));  // Creates an invisible instances drop target
+        if (ImGui::BeginDragDropTarget()) {
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("MULTI_INSTANCES")) {
+                IM_ASSERT(payload->DataSize == sizeof(int));
+                ask_extract_selected_instances();
+                selected_items.clear();  // Clear selection after drop
+            }
+            else
+                test_out.clear();
+            ImGui::EndDragDropTarget();
+        }
 
         ImGui::EndTable();
     }
@@ -509,7 +540,10 @@ bool ObjectList::render_object_node(const Slic3r::ModelObject* object, const Dom
         m_edited_node_id = 0;  // Exit edit mode
 
     ImGuiTreeNodeFlags flags = node_flags;
-    if (is_selected) flags |= ImGuiTreeNodeFlags_Selected;
+    if (is_selected)
+        flags |= ImGuiTreeNodeFlags_Selected;
+    if (is_simple(object, is_sla_config))
+        flags |= ImGuiTreeNodeFlags_Leaf;
 
     const std::string name = (object->name.empty() ? "Object " + std::to_string(object_id) : object->name);
     const std::string name_id = "##obj_id" + std::to_string(object_id);
@@ -544,13 +578,7 @@ bool ObjectList::render_object_node(const Slic3r::ModelObject* object, const Dom
     if (isOpen) {
         is_changed_selection |= render_connectors_node(object, bed ? bed->id().id : 0);
         is_changed_selection |= render_volumes(object, bed ? bed->id().id : 0);
-
-        if (object->instances.size() > 1) {
-            std::set<size_t> instances_on_bed = get_object_instance_ids_on_bed(bed ? bed->model_instances() : m_scene_interactor->selected_project_unplaced_model_instances(), object);
-            if (!instances_on_bed.empty())
-                is_changed_selection |= render_instances_node(object, instances_on_bed);
-        }
-
+        is_changed_selection |= render_instances_node(object, bed);
         is_changed_selection |= render_layer_ranges_node(object);
         render_infos_node(object, is_sla_config);
 
@@ -675,8 +703,14 @@ void ObjectList::render_volume_node(const Slic3r::ModelVolume* volume, size_t vo
     render_extruder_marker(2, sel_element);
 }
 
-bool ObjectList::render_instances_node(const Slic3r::ModelObject* object, const std::set<size_t>& instances_on_bed)
+bool ObjectList::render_instances_node(const Slic3r::ModelObject* object, const Domain::BedInstance* bed /*= nullptr*/)
 {
+    if (object->instances.size() == 1)
+        return false;
+    std::set<size_t> instances_on_bed = get_object_instance_ids_on_bed(bed ? bed->model_instances() : m_scene_interactor->selected_project_unplaced_model_instances(), object);
+    if (instances_on_bed.empty())
+        return false;
+
     size_t object_id = object->id().id;
     Domain::ElementRef sel_element{ object_id };
 
@@ -943,6 +977,11 @@ void ObjectList::propagate_printable(const Domain::ElementRef& sel_element, bool
 {
     // ask project interactor to change prinatble value for instance/object with id index
     m_scene_interactor->set_printable(sel_element, is_printable);
+}
+
+void ObjectList::ask_extract_selected_instances()
+{
+    m_scene_interactor->extract_selected_instances();
 }
 
 void ObjectList::show_overrides(const Domain::ElementRef& sel_element)
