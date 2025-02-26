@@ -94,7 +94,6 @@ private:
     bool render_instances_node(const Slic3r::ModelObject* object, const Domain::BedInstance* bed);
     bool render_instances(const Slic3r::ModelObject* object, const std::set<size_t>& instances_on_bed);
     void render_instance_node(const Slic3r::ModelObject* object, size_t inst_id, bool is_selected);
-    bool render_layer_ranges_node(const Slic3r::ModelObject* object);
     void render_infos_node(const Slic3r::ModelObject* object, bool is_sla_config);
 
     void render_edited(const char* init_name, const Domain::ElementRef& sel_element);
@@ -123,6 +122,7 @@ private:
     MultiSelections                 m_volumes_ms;
 
     size_t                          m_edited_node_id    { 0 };
+    bool                            m_full_mode         { false };
 };
 
 } // namespace Slic3r::App::Plater

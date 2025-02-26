@@ -229,7 +229,7 @@ static void force_select_whole_object(const Slic3r::ModelObject* object)
     }
 }
 
-std::set<wchar_t> get_infos(const Slic3r::ModelObject* object, bool is_sla_config)
+static std::set<wchar_t> get_infos(const Slic3r::ModelObject* object, bool is_sla_config)
 {
     std::set<wchar_t> infos;
     if (!is_sla_config) {
@@ -243,6 +243,8 @@ std::set<wchar_t> get_infos(const Slic3r::ModelObject* object, bool is_sla_confi
             if (!mv->mm_segmentation_facets.empty())
                 infos.insert(ImGui::MmSegmentation);
         }
+        if (!object->layer_config_ranges.empty())
+            infos.insert(ImGui::HRModifier);
         //if (wxGetApp().plater()->canvas3D()->is_object_sinking(obj_idx))
         //    infos.insert(ImGui::Sinking);
     }
@@ -354,6 +356,8 @@ void ObjectList::render(ImVec2 pos, ImVec2 size)
 
     ImGui::SetCursorScreenPos(pos + ImVec2(10.f, 10.f));
     ImGui::Text("Objects");
+    ImGui::SameLine(200);
+    ImGui::Checkbox("Full mode", &m_full_mode);
 
     is_dragging = false;
     // Define a region for the tree control
@@ -579,8 +583,8 @@ bool ObjectList::render_object_node(const Slic3r::ModelObject* object, const Dom
         is_changed_selection |= render_connectors_node(object, bed ? bed->id().id : 0);
         is_changed_selection |= render_volumes(object, bed ? bed->id().id : 0);
         is_changed_selection |= render_instances_node(object, bed);
-        is_changed_selection |= render_layer_ranges_node(object);
-        render_infos_node(object, is_sla_config);
+        if (m_full_mode)
+            render_infos_node(object, is_sla_config);
 
         ImGui::TreePop();
     }
@@ -807,47 +811,22 @@ void ObjectList::render_instance_node(const Slic3r::ModelObject* object, size_t 
     handle_dragging(sel_element);
 }
 
-bool ObjectList::render_layer_ranges_node(const Slic3r::ModelObject* object)
-{
-    if (object->layer_config_ranges.empty())
-        return false;
-
-    next_line();
-    const std::string name_id = "Ranges##obj_id" + std::to_string(object->id().id);
-    ImGui::Unindent(ImGui::GetTreeNodeToLabelSpacing());
-    if (ImGui::TreeNodeEx(name_id.c_str(), node_flags | ImGuiTreeNodeFlags_Leaf, (icon_str(ImGui::HRModifier) + "Height range Modifier").c_str()))
-        ImGui::TreePop();
-    ImGui::Indent(ImGui::GetTreeNodeToLabelSpacing());
-
-    Domain::ElementRef sel_element{ object->id().id };
-    if (handle_selection(sel_element)) {
-        force_select_whole_object(object);
-        clear_all_ms();
-        show_layer_ranges(sel_element);
-        return true;
-    }
-
-    return false;
-}
-
 void ObjectList::render_infos_node(const Slic3r::ModelObject* object, bool is_sla_config)
 {
     std::set<wchar_t> infos = get_infos(object, is_sla_config);
     if (infos.empty())
         return;
 
-    std::string infos_line;
-    for (const wchar_t icon : infos)
-        infos_line += icon_str(icon);
-
     next_line();
     const std::string name_id = "Infos##obj_id" + std::to_string(object->id().id);
     ImGui::Unindent(ImGui::GetTreeNodeToLabelSpacing());
-    if (ImGui::TreeNodeEx(name_id.c_str(), node_flags | ImGuiTreeNodeFlags_Leaf, (infos_line + "Infos").c_str()))
-        ImGui::TreePop();
+    bool is_open = ImGui::TreeNodeEx(name_id.c_str(), node_flags | ImGuiTreeNodeFlags_Leaf, "Infos");
     ImGui::Indent(ImGui::GetTreeNodeToLabelSpacing());
 
-    render_infos_selectable(infos, object, hovered_current_row());
+    if (is_open) {
+        render_infos_selectable(infos, object, hovered_current_row());
+        ImGui::TreePop();
+    }
 }
 
 void ObjectList::render_edited(const char* init_name, const Domain::ElementRef& sel_element)
@@ -915,41 +894,22 @@ static std::map<wchar_t, std::string> info_descriptions = {
     { ImGui::MmSegmentation, "MM Painting" },
     { ImGui::Sinking       , "Sinking" },
     { ImGui::FuzzySkin     , "Fuzzy Skin" },
+    { ImGui::HRModifier    , "Height range Modifier" },
 };
 
 void ObjectList::render_infos_selectable(const std::set<wchar_t>& infos, const Slic3r::ModelObject* object, bool force_render)
 {
-    static bool show{ false };
-    if (force_render)
-        show = true;
-
-    if (show) {
-        ImGui::SetNextWindowPos(ImVec2(3.f*ImGui::GetTreeNodeToLabelSpacing(), ImGui::GetMousePos().y - 10.f), ImGuiCond_Appearing);
-
-        ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.85);
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(5.f, 5.f));
-        ImGui::Begin("##infos_list", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize);
-
-        bool any_hovered = false;
-        for (wchar_t info : infos) {
-            std::string line = icon_str(info) + info_descriptions[info];
-            if (ImGui::Selectable(line.c_str())) {
-                if (info == ImGui::Sinking) {
-                    force_select_whole_object(object);
-                    clear_all_ms();
-
-                }
-
-                show_gizmo({ object->id().id }, info);
-                show = false;
+    for (wchar_t info : infos) {
+        next_line();
+        std::string line = icon_str(info) + info_descriptions[info];
+        if (ImGui::Selectable(line.c_str())) {
+            if (info == ImGui::Sinking || info == ImGui::HRModifier) {
+                force_select_whole_object(object);
+                clear_all_ms();
             }
-            any_hovered |= ImGui::IsItemHovered();
+            else
+                show_gizmo({ object->id().id }, info);
         }
-
-        ImGui::End();
-        ImGui::PopStyleVar(2);
-
-        show = any_hovered;
     }
 }
 
