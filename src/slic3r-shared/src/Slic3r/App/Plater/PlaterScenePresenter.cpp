@@ -363,7 +363,18 @@ void PlaterScenePresenter::on_instance_added(Domain::SelectionId project_id, con
 
 void PlaterScenePresenter::on_instance_removed(Domain::SelectionId project_id, const Domain::ElementRefs& instances)
 {
-
+    scene().remove_children([&](const Scene::Node* n) {
+        const SceneNodeTag* tag = n->tag_of_type<SceneNodeTag>();
+        if (tag != nullptr) {
+            auto it = std::find_if(instances.begin(), instances.end(),
+                [tag](const Domain::ElementRef& el) {
+                    return tag->object_id == el.object_id && tag->instance_id == el.instance_id;
+                });
+            if (it != instances.end())
+                return true;
+        }
+        return false;
+    });
 }
 
 void PlaterScenePresenter::on_instance_transformed(Domain::SelectionId project_id, const Domain::ElementRefs& elements)
@@ -417,7 +428,18 @@ void PlaterScenePresenter::on_volume_added(Domain::SelectionId project_id, const
 void PlaterScenePresenter::on_volume_removed(Domain::SelectionId project_id, const Domain::ElementRefs& volumes)
 {
     // find all instances of given object id and remove the volume node there
-
+    scene().remove_children([&](const Scene::Node* n) {
+        const SceneNodeTag* tag = n->tag_of_type<SceneNodeTag>();
+        if (tag != nullptr) {
+            auto it = std::find_if(volumes.begin(), volumes.end(),
+                [tag](const Domain::ElementRef& el) {
+                    return tag->object_id == el.object_id && tag->volume_id == el.volume_id;
+                });
+            if (it != volumes.end())
+                return true;
+        }
+        return false;
+    });
 }
 
 void PlaterScenePresenter::on_volume_transformed(Domain::SelectionId project_id, const Domain::ElementRefs& elements)
