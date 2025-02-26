@@ -52,27 +52,23 @@ void ProjectInteractor::on_selected_bed_instance_changed(Domain::SelectionId pro
 }
 
 
-void ProjectInteractor::on_slicing_input_changed(const Domain::SelectionId bed_instance_id) {
-    const Domain::BedInstance* instance{selected_project().find_bed_instance_by_id(bed_instance_id)};
-    ASSERT_VAL(instance);
-
-    const auto config_container{std::ranges::find_if(selected_project().config_containers(), [&](const auto& container){
-        ASSERT_VAL(container);
-        for (const auto& bed_instance : container->bed_instances()) {
-            if (bed_instance_id == bed_instance->id().id) {
-                return true;
-            }
-        }
-        return false;
-    })};
-
-    ASSERT(config_container != selected_project().config_containers().end());
+void ProjectInteractor::on_slicing_input_changed(const Domain::BedRef& bed_instance)
+{
+    const Domain::BedInstance* instance{selected_project().find_bed_instance_by_id(bed_instance.instance_id)};
+    ASSERT(instance);
+    const auto* config_container{selected_project().find_config_container(bed_instance.config_container_id)};
+    ASSERT(config_container);
 
     m_slicing_interactor.update_process(
         selected_project().model(),
-        (*config_container)->print_config(),
+        config_container->print_config(),
         *instance
     );
+}
+
+void ProjectInteractor::on_slicing_input_removed(const Domain::BedRef& bed_instance)
+{
+    m_slicing_interactor.remove_bed(bed_instance.instance_id);
 }
 
 void ProjectInteractor::do_select_project(Domain::SelectionId project_id)

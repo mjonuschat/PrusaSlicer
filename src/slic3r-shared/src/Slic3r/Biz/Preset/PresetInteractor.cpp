@@ -52,7 +52,7 @@ void PresetInteractor::set_preset_state_value(
     const auto& project = m_workbench.project(m_selected_project_id);
     for (const auto& instance : project.find_config_container(ccc.config_container_id)->bed_instances()) {
         m_slicing_input_changed_listeners.invoke([&](auto listener) {
-            listener->on_slicing_input_changed(instance->id().id);
+            listener->on_slicing_input_changed({ccc.config_container_id, instance->id().id});
         });
     }
 }

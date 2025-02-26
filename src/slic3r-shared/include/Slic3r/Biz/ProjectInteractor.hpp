@@ -176,9 +176,11 @@ public:
     void on_selected_bed_instance_changed(Domain::SelectionId project_id, Domain::SelectionId container_id, Domain::SelectionId bed_instance_id) override;
     /** @} */
 
-    void on_slicing_input_changed(const Domain::SelectionId bed_instance_id) override;
-
 private:
+    void on_slicing_input_changed(const Domain::BedRef& bed_instance) override;
+    void on_slicing_input_removed(const Domain::BedRef& bed_instance) override;
+
+
     void do_select_project(Domain::SelectionId project_id);
     void do_select_config_container(Domain::SelectionId container_id);
 

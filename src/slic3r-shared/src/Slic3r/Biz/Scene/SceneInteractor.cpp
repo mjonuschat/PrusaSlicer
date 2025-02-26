@@ -126,8 +126,8 @@ void SceneInteractor::new_object_from_mesh(TriangleMesh&& mesh)
     const Domain::ElementRefs updated {{obj.id().id, inst.id().id, 0}};
     auto changes = update_instances_bed_placement(project, updated);
 
-    for (const auto [_, bed_instance_id] : changes.updated_beds)
-        invoke_slicing_input_changed(bed_instance_id);
+    for (const auto& bed_ref : changes.updated_beds)
+        invoke_slicing_input_changed(bed_ref);
     invoke_listeners<ISceneChangedListener>([&](auto* l) {
         l->on_instance_added(m_selected_project_id, updated);
     });
@@ -172,8 +172,8 @@ void SceneInteractor::add_instance(const Transform& xform)
     updated.push_back({obj.id().id, inst.id().id, 0});
 
     auto changes = update_instances_bed_placement(project, updated);
-    for (const auto [_, bed_instance_id] : changes.updated_beds)
-        invoke_slicing_input_changed(bed_instance_id);
+    for (const auto& bed_ref : changes.updated_beds)
+        invoke_slicing_input_changed(bed_ref);
 
     invoke_listeners<ISceneChangedListener>([&](auto* l) {
         l->on_instance_added(m_selected_project_id, updated);
@@ -194,10 +194,12 @@ Domain::BedInstance& SceneInteractor::add_bed_instance(size_t config_container_i
     Domain::ModelInstanceList unplaced = project.unplaced_model_instances();
     project.unplaced_model_instances().clear();
     auto changes = update_instances_bed_placement(project, unplaced, false);
-    for (const auto [_, bed_instance_id] : changes.updated_beds)
-        invoke_slicing_input_changed(bed_instance_id);
-
     const Domain::BedRef updated{ cc->id().id, ret.id().id };
+    changes.updated_beds.insert(updated);
+
+    for (const auto& bed_ref : changes.updated_beds)
+        invoke_slicing_input_changed(bed_ref);
+
     invoke_listeners<ISceneChangedListener>([&](auto* l) {
         l->on_bed_instance_added(m_selected_project_id, { updated });
     });
@@ -216,9 +218,12 @@ void SceneInteractor::remove_bed_instance(const Domain::BedRef& instance)
     cc->remove_bed_instance_by_id(instance.instance_id);
     m_bed_placement.layout(project, BED_GAP);
     auto changes = update_instances_bed_placement(project, insts);
-    for (const auto [_, bed_instance_id] : changes.updated_beds)
-        invoke_slicing_input_changed(bed_instance_id);
+    for (const auto& bed_ref : changes.updated_beds)
+        invoke_slicing_input_changed(bed_ref);
 
+    invoke_listeners<ISlicingInputChangedListener>([&](auto* l) {
+        l->on_slicing_input_removed(instance);
+    });
     invoke_listeners<ISceneChangedListener>([&](auto* l) {
         l->on_bed_instance_removed(m_selected_project_id, { instance });
     });
@@ -235,8 +240,8 @@ void SceneInteractor::transform_bed_instance(const Domain::BedRef& instance, con
     auto updated = inst.model_instances();
     inst.model_instances().clear();
     auto changes = update_instances_bed_placement(proj.project, updated, false);
-    for (const auto [_, bed_instance_id] : changes.updated_beds)
-        invoke_slicing_input_changed(bed_instance_id);
+    for (const auto& bed_ref : changes.updated_beds)
+        invoke_slicing_input_changed(bed_ref);
 
     invoke_listeners<ISceneChangedListener>([&](auto* l) {
         l->on_bed_instance_transformed(m_selected_project_id, { instance });
@@ -345,13 +350,13 @@ void SceneInteractor::update_selection_instance_bed_placement()
     } else {
         changes = update_instances_bed_placement(proj.project, proj.selection.elements);
     }
-    for (const auto& [_, bed_instance_id] : changes.updated_beds)
-        invoke_slicing_input_changed(bed_instance_id);
+    for (const auto& bed_ref : changes.updated_beds)
+        invoke_slicing_input_changed(bed_ref);
 }
 
-void SceneInteractor::invoke_slicing_input_changed(const Domain::SelectionId bed_instance_id) {
+void SceneInteractor::invoke_slicing_input_changed(const Domain::BedRef& bed_instance) {
     invoke_listeners<ISlicingInputChangedListener>([&](auto listener) {
-        listener->on_slicing_input_changed(bed_instance_id);
+        listener->on_slicing_input_changed(bed_instance);
     });
 }
 

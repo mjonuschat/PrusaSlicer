@@ -10,7 +10,8 @@
 
 struct SlicingInputChangedListener : Slic3r::Biz::ISlicingInputChangedListener
 {
-    MAKE_MOCK1(on_slicing_input_changed, void(Slic3r::Domain::SelectionId));
+    MAKE_MOCK1(on_slicing_input_changed, void(const Slic3r::Domain::BedRef&));
+    MAKE_MOCK1(on_slicing_input_removed, void(const Slic3r::Domain::BedRef&));
 };
 
 struct ScopedThreadDispatcher
@@ -59,7 +60,8 @@ TEST_CASE("Scene Interactor Bed Tracking")
     const auto bi1_id = bed_instances[0]->id().id;
     const double cube_side = 100; // mm
     {
-        REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(bi1_id));
+        REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(_))
+            .WITH(_1.instance_id == bi1_id);
         scene_interactor.new_object_from_mesh(TriangleMesh{its_make_cube(cube_side, cube_side, cube_side)});
     }
 
@@ -67,16 +69,15 @@ TEST_CASE("Scene Interactor Bed Tracking")
     // Single object amid of first bed
     {
         xform.translate(Vec3d{bed_center.x() - cube_side / 2, bed_center.y() - cube_side / 2, 0});
-        REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(bi1_id));
+        REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(_))
+            .WITH(_1.instance_id == bi1_id);
         scene_interactor.transform_selection(xform.matrix());
     }
 
     const auto first_el_ref = scene_interactor.selection().elements.front();
 
     {
-        //REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(bi1_id));
-        //REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(ne(bi1_id)));
-        FORBID_CALL(slicing_input_changed_listener, on_slicing_input_changed(ANY(size_t)));
+        REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(ANY(const Domain::BedRef&)));
         scene_interactor.add_bed_instance(cc->id().id);
 
         // selection: instance mode
@@ -106,8 +107,11 @@ TEST_CASE("Scene Interactor Bed Tracking")
         xform = Transform3d::Identity();
         xform.translate(Vec3d{bed_pitch.x(), 0, 0});
 
-        REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(bi1_id));
-        REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(bi2_id));
+        REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(_))
+            .WITH(_1.instance_id == bi1_id);
+        REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(_))
+            .WITH(_1.instance_id == bi2_id);
+
         scene_interactor.transform_selection(xform.matrix());
 
         // selection: instance mode
@@ -126,7 +130,8 @@ TEST_CASE("Scene Interactor Bed Tracking")
         xform = Transform3d::Identity();
         xform.translate(Vec3d{0, bed_size.y(), 0});
 
-        REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(bi2_id));
+        REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(_))
+            .WITH(_1.instance_id == bi2_id);
 
         scene_interactor.transform_selection(xform.matrix());
         // selection: instance mode
@@ -144,8 +149,7 @@ TEST_CASE("Scene Interactor Bed Tracking")
 
     {
         // Single object amid of second bed
-        //REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(ANY(size_t)));
-        FORBID_CALL(slicing_input_changed_listener, on_slicing_input_changed(ANY(size_t)));
+        REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(ANY(const Domain::BedRef&)));
         scene_interactor.add_bed_instance(cc->id().id);
         // selection: instance mode
         //                (1)
@@ -161,7 +165,8 @@ TEST_CASE("Scene Interactor Bed Tracking")
     {
         xform = Transform3d::Identity();
         xform.translate(Vec3d{0, -bed_size.y(), 0});
-        REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(bi2_id));
+        REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(_))
+            .WITH(_1.instance_id == bi2_id);
         scene_interactor.transform_selection(xform.matrix());
 
 
@@ -177,7 +182,10 @@ TEST_CASE("Scene Interactor Bed Tracking")
     {
         // after removing middle bed
         Transform3d bed_xform = bed_instances[1]->transformation().get_matrix();
-        REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(bi3_id));
+        REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(_))
+            .WITH(_1.instance_id == bi3_id);
+        REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_removed(_))
+            .WITH(_1.instance_id == bi2_id);
         scene_interactor.remove_bed_instance({cc->id().id, old_bed_two_id});
 
         // selection: instance mode
@@ -198,6 +206,8 @@ TEST_CASE("Scene Interactor Bed Tracking")
     {
         // after removing bed number two again
         old_bed_two_id = bed_instances[1]->id().id;
+        REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_removed(_))
+            .WITH(_1.instance_id == bi3_id);
         scene_interactor.remove_bed_instance({cc->id().id, old_bed_two_id});
 
         // selection: instance mode
@@ -215,7 +225,8 @@ TEST_CASE("Scene Interactor Bed Tracking")
         // back to object amid first (and only) bed
         xform = Transform3d::Identity();
         xform.translate(Vec3d{-bed_pitch.x(), 0, 0});
-        REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(bi1_id));
+        REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(_))
+            .WITH(_1.instance_id == bi1_id);
         scene_interactor.transform_selection(xform.matrix());
 
         // selection: instance mode
@@ -266,7 +277,8 @@ TEST_CASE("Scene Interactor Bed Tracking")
     {
         xform = Transform3d::Identity();
         xform.translate(Vec3d{bed_pitch.x(), 0, 0});
-        REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(bi4_id));
+        REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(_))
+            .WITH(_1.instance_id == bi4_id);
         scene_interactor.transform_selection(xform.matrix());
 
         // selection: instance mode
@@ -283,8 +295,12 @@ TEST_CASE("Scene Interactor Bed Tracking")
     {
         xform = Transform3d::Identity();
         xform.translate(Vec3d{-bed_size.x(), 0, 0});
-        REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(bi1_id));
-        REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(bi4_id));
+
+        REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(_))
+            .WITH(_1.instance_id == bi1_id);
+        REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(_))
+            .WITH(_1.instance_id == bi4_id);
+
         scene_interactor.add_volume_from_mesh(
             TriangleMesh{its_make_cube(cube_side, cube_side, cube_side)},
             ModelVolumeType::MODEL_PART,
@@ -306,8 +322,10 @@ TEST_CASE("Scene Interactor Bed Tracking")
     {
         xform = Transform3d::Identity();
         xform.translate(Vec3d{bed_pitch.x(), 0, 0});
-        REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(bi1_id));
-        REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(bi4_id));
+        REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(_))
+            .WITH(_1.instance_id == bi1_id);
+        REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(_))
+            .WITH(_1.instance_id == bi4_id);
         scene_interactor.transform_selection(xform.matrix());
 
         // selection: volume mode
