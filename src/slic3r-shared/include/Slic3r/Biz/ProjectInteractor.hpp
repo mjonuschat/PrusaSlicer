@@ -64,6 +64,16 @@ public:
     Domain::SelectionId new_project();
 
     /**
+     * @name Project manipulation
+     * @{
+     */
+    /**
+     * @brief Load project from the file
+     * @return Returns ID of newly created project
+     */
+    Domain::SelectionId load_project(const std::string& file_path);
+
+    /**
      * Select already opened project. If the project is already selected, do nothing.
      * @param project_id An index of project to be selected.
      */
