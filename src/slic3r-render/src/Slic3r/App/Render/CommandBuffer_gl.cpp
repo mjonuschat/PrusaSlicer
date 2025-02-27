@@ -125,6 +125,14 @@ void CommandBuffer::unbind_texture(uint8_t unit, const Texture& t)
     device.unbind_texture(unit, t);
 }
 
+#ifdef SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
+void CommandBuffer::bind_texture_buffer(uint8_t unit, const TextureBuffer& tb)
+{
+    auto& device = m_device.get_internal_as<GL::GLDeviceInternal>();
+    device.bind_texture_buffer(unit, tb);
+}
+#endif // SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
+
 void CommandBuffer::bind_shader(const Shader& s)
 {
     auto& device = m_device.get_internal_as<GL::GLDeviceInternal>();
@@ -147,7 +155,11 @@ void CommandBuffer::draw(PrimitiveType primitive, size_t offset, size_t count)
     device.draw(primitive, offset, count == 0 ? m_bound_geometry_element_size : count);
 }
 
-
+void CommandBuffer::draw_instanced(PrimitiveType primitive, size_t offset, size_t count, size_t instances_count)
+{
+    auto& device = m_device.get_internal_as<GL::GLDeviceInternal>();
+    device.draw_instanced(primitive, offset, count == 0 ? m_bound_geometry_element_size : count, instances_count);
+}
 
 void CommandBuffer::submit()
 {

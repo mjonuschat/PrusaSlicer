@@ -26,10 +26,10 @@ static const std::unordered_map<ModelVolumeType, ColorRGBA> VOLUME_COLORS = {
 };
 
 ScenePresenter::ScenePresenter(
-    const Domain::Workbench& m_workbench, Biz::ProjectInteractor& project_interactor, Render::Device& device
+    const Domain::Workbench& workbench, Biz::ProjectInteractor& project_interactor, Render::Device& device
 )
-    : m_workbench(m_workbench), m_project_interactor(project_interactor), m_device(device)
-    , m_bed_render_updater(*this, m_workbench, device)
+    : m_workbench(workbench), m_project_interactor(project_interactor), m_device(device)
+    , m_bed_render_updater(*this, workbench, device)
 {
     size_t project_id = m_project_interactor.selected_project_id();
     ScenePresenter::on_selected_project_changed(project_id);
@@ -78,17 +78,6 @@ void ScenePresenter::on_selected_project_changed(size_t index)
         m_projects.emplace(m_selected_project_id, std::move(context));
         m_bed_render_updater.on_selected_project_changed(m_selected_project_id);
     }
-}
-
-Scene::Node* ScenePresenter::initialize_selection_root(Scene::Scene& scene)
-{
-    Scene::NodeBuilder builder(scene);
-    Scene::Node* selection_root = builder
-        .set_debug_name("selection_root")
-        .set_screen_space_sized_modifier(screen_space_sized_modifier())
-        .build().release();
-    scene.add_child(selection_root);
-    return selection_root;
 }
 
 void ScenePresenter::on_scene_selection_changed(Domain::SelectionId project_id, const Biz::Scene::Selection& selection)

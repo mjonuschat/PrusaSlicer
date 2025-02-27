@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
-#include "Slic3r/App/Plater/ISceneProvider.hpp"
+#include "Slic3r/App/Scene/Node.hpp"
 
 namespace Slic3r::App::Plater {
 

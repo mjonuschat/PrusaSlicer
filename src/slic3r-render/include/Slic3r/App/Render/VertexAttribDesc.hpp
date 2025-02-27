@@ -39,6 +39,11 @@ struct VertexAttribDesc
     bool normalize{false};
 
     /**
+     * Treat attribute data type as float.
+     */
+    bool cast_to_float{ false };
+
+    /**
      * All components size in bytes for given vertex attribute.
      * @return Vertex attribute size in bytes.
      */

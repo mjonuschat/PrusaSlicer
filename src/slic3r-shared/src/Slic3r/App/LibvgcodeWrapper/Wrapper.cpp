@@ -2,6 +2,7 @@
 #include "Slic3r/App/LibvgcodeWrapper/WrapperImpl.hpp"
 
 using namespace Slic3r::App::libvgcode;
+using namespace Slic3r::Biz::libpgcode;
 
 namespace Slic3r::App::LibvgcodeWrapper {
 
@@ -12,9 +13,10 @@ Wrapper::Wrapper()
 
 Wrapper::~Wrapper() = default;
 
-bool Wrapper::init(App::Render::Device& device, const WrapperSettings& settings)
+bool Wrapper::init(Render::Device& device, Scene::Scene& scene, Scene::GeometryDataFactory& data_factory,
+    const WrapperSettings& settings)
 {
-    return m_impl->init(device, settings);
+    return m_impl->init(device, scene, data_factory, settings);
 }
 
 void Wrapper::shutdown()
@@ -37,18 +39,27 @@ void Wrapper::load_as_sla(WrapperSLAInputData&& wrapper_sla_data)
     m_impl->load_as_sla(std::move(wrapper_sla_data));
 }
 
-void Wrapper::render(const Transform3f& view_matrix, const Transform3f& projection_matrix,
-    const WrapperLayoutData& layout)
+BoundingBoxf3 Wrapper::bounding_box(const Biz::libpgcode::MoveTypes& types) const
 {
-    m_impl->render(view_matrix, projection_matrix, layout);
+    return m_impl->bounding_box(types);
 }
 
-Biz::libpgcode::UnitsSystem Wrapper::units() const
+void Wrapper::render_toolpaths(const Vec3f& camera_position)
+{
+    m_impl->render_toolpaths(camera_position);
+}
+
+void Wrapper::render_gui(const WrapperLayoutData& layout)
+{
+    m_impl->render_gui(layout);
+}
+
+UnitsSystem Wrapper::units() const
 {
     return m_impl->units();
 }
 
-void Wrapper::set_units(Biz::libpgcode::UnitsSystem sys)
+void Wrapper::set_units(UnitsSystem sys)
 {
     m_impl->set_units(sys);
 }
@@ -101,6 +112,31 @@ void Wrapper::set_lights(const Lights& lights)
 const Lights& Wrapper::default_lights() const
 {
     return m_impl->default_lights();
+}
+
+float Wrapper::cog_marker_scale_factor() const
+{
+    return m_impl->cog_marker_scale_factor();
+}
+
+void Wrapper::set_cog_marker_scale_factor(float factor)
+{
+    m_impl->set_cog_marker_scale_factor(factor);
+}
+
+float Wrapper::tool_marker_scale_factor() const
+{
+    return m_impl->tool_marker_scale_factor();
+}
+
+void Wrapper::set_tool_marker_scale_factor(float factor)
+{
+    m_impl->set_tool_marker_scale_factor(factor);
+}
+
+void Wrapper::set_scale_factor_popup_type(Biz::libpgcode::OptionType type)
+{
+    m_impl->set_scale_factor_popup_type(type);
 }
 
 void Wrapper::reset_default_extrusion_roles_colors()

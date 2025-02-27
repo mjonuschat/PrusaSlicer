@@ -3,22 +3,23 @@
 #include "libslic3r/Point.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 #include "Slic3r/App/Scene/Plane.hpp"
-#include "Slic3r/App/Plater/IGizmo.hpp"
-#include "Slic3r/App/Plater/ISceneProvider.hpp"
+#include "Slic3r/App/Scene/IGizmo.hpp"
+#include "Slic3r/App/Scene/ISceneProvider.hpp"
 #include "Slic3r/App/Plater/SelectionHandler.hpp"
 
 
 namespace Slic3r::App::Plater {
 
-class QuickDragGizmo : public IGizmo {
+class QuickDragGizmo : public Scene::IGizmo
+{
 public:
-    QuickDragGizmo(Biz::Scene::SceneInteractor& scene_interactor, ISceneProvider& scene_provider)
+    QuickDragGizmo(Biz::Scene::SceneInteractor& scene_interactor, Scene::ISceneProvider& scene_provider)
         : m_scene_interactor(scene_interactor)
         , m_scene_provider(scene_provider)
         , m_selection_handler(scene_interactor)
     {}
 
-    GizmoActivationState on_mouse(GizmoEventContext& ctx, bool only_active) override;
+    Scene::GizmoActivationState on_mouse(Scene::GizmoEventContext& ctx, bool only_active) override;
     void on_cycle_prepare() override;
 private:
     int mouse_dist_sq(int mouse_x, int mouse_y) const
@@ -35,7 +36,7 @@ private:
     };
 
     Biz::Scene::SceneInteractor& m_scene_interactor;
-    ISceneProvider& m_scene_provider;
+    Scene::ISceneProvider& m_scene_provider;
     SelectionHandler m_selection_handler;
     Vec2i m_initial_mouse_pos;
     Vec3d m_initial_world_pos;

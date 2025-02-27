@@ -7,6 +7,8 @@
 
 #include <Slic3r/Biz/libpgcode/Types.hpp>
 
+#include <libslic3r/format.hpp>
+
 namespace Slic3r::App::libvgcode {
 
 static constexpr double INV255 = 1.0 / 255.0;

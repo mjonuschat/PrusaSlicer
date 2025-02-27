@@ -16,6 +16,11 @@ namespace Slic3r::App::Render {
 class Device;
 } // namespace Slic3r::App::Render
 
+namespace Slic3r::App::Scene {
+class Scene;
+class GeometryDataFactory;
+} // namespace Slic3r::App::Scene
+
 namespace Slic3r::App::libvgcode {
 
 class ColorRange;
@@ -32,12 +37,14 @@ public:
     Viewer& operator = (const Viewer& other) = delete;
     Viewer& operator = (Viewer&& other) = delete;
 
-    //
-    // Initialize the viewer.
-    // This method must be called after a valid OpenGL context has been already created
-    // and before calling any other method of the viewer.
-    //
-    void init(Render::Device& device);
+    /**
+     * @brief Initialize the viewer
+     *
+     * @param device The current device.
+     * @param scene The current scene.
+     * @param data_factory The geometry factory.
+     */
+    void init(Render::Device& device, Scene::Scene& scene, Scene::GeometryDataFactory& data_factory);
     //
     // Release the resources used by the viewer.
     // This method must be called before releasing the OpenGL context if the viewer
@@ -59,10 +66,9 @@ public:
     //
     void load_as_sla(const std::vector<float>& layers_zs, const std::vector<float>& layers_times);
     //
-    // Render the toolpaths according to the current settings and
-    // using the given camera matrices.
+    // Render the toolpaths according to the current settings
     //
-    void render(const Transform3f& view_matrix, const Transform3f& projection_matrix);
+    void render(const Vec3f& camera_position);
 
 #if ENABLE_RENDER_TO_TEXTURE
     //
@@ -474,16 +480,16 @@ public:
         GCodeExtrusionRole::SupportMaterialInterface,
         GCodeExtrusionRole::WipeTower,
         GCodeExtrusionRole::Custom }) const;
-    //
-    // Returns the position of the center of gravity of the toolpaths.
-    // It does not take in account extrusions of type:
-    // Skirt
-    // Support Material
-    // Support Material Interface
-    // WipeTower
-    // Custom
-    //
-    Vec3f cog_position() const;
+    /** @brief Returns the center of gravity marker position in world coordinates
+     *
+     * @note The following extrusion types are ignored:
+     * Skirt
+     * Support Material
+     * Support Material Interface
+     * WipeTower
+     * Custom
+     */
+    Vec3f cog_marker_position() const;
 
     float cog_marker_scale_factor() const;
     void set_cog_marker_scale_factor(float factor);

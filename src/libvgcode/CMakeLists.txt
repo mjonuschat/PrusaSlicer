@@ -3,6 +3,7 @@ project(libvgcode)
 
 add_library(libvgcode
     include/Slic3r/App/libvgcode/ColorRange.hpp
+    include/Slic3r/App/libvgcode/GCodeNodeTag.hpp
     include/Slic3r/App/libvgcode/Types.hpp
     include/Slic3r/App/libvgcode/Viewer.hpp
     include/Slic3r/App/libvgcode/ViewerInputData.hpp
@@ -41,4 +42,4 @@ add_library(libvgcode
 target_include_directories(libvgcode PUBLIC include)
 target_include_directories(libvgcode PRIVATE src)
 
-target_link_libraries(libvgcode PUBLIC libslic3r libpgcode slic3r-render)
+target_link_libraries(libvgcode PUBLIC libslic3r libpgcode slic3r-render slic3r-shared)

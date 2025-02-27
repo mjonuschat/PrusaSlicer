@@ -173,6 +173,10 @@ public:
         update(*geometry);
         return geometry;
     }
+
+    size_t vertex_count() const { return m_vertices.size(); }
+    size_t index_count() const { return m_indices.size(); }
+
 private:
     template <typename DestI>
     static bool repack_index(const std::vector<I>& src, std::unique_ptr<char[]>& dest, IndexType& destType)

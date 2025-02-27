@@ -10,6 +10,9 @@ namespace Slic3r::App::Render {
 class Geometry;
 class Shader;
 class Texture;
+#ifdef SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
+class TextureBuffer;
+#endif // SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
 class Device;
 
 class CommandBuffer final : public WithInternal
@@ -38,6 +41,9 @@ public:
     void bind_geometry(const Geometry& g, const Shader& s);
     void bind_texture(uint8_t unit, const Texture& t);
     void unbind_texture(uint8_t unit, const Texture& t);
+#ifdef SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
+    void bind_texture_buffer(uint8_t unit, const TextureBuffer& tb);
+#endif // SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
 
     void bind_material(const Material& material);
     void unbind_material(const Material& material);
@@ -47,7 +53,13 @@ public:
     void draw(const DrawCommands::const_iterator first, const DrawCommands::const_iterator last);
     void draw(const DrawCommands& cmds) { draw(cmds.begin(), cmds.end()); }
 
+    void draw_instanced(PrimitiveType primitive, size_t offset, size_t count, size_t instances_count);
+    void draw_instanced(const DrawCommand& cmd, size_t instances_count);
+    void draw_instanced(const DrawCommands::const_iterator first, const DrawCommands::const_iterator last, size_t instances_count);
+    void draw_instanced(const DrawCommands& cmds, size_t instances_count) { draw(cmds.begin(), cmds.end()); }
+
     void bind_and_draw(const Geometry& g, const Material& material_override);
+    void bind_and_draw_instanced(const Geometry& g, const Material& material_override, size_t instances_count);
 
     void submit();
 private:

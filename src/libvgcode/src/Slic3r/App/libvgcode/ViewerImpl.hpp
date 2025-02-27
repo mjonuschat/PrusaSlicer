@@ -23,11 +23,7 @@
 
 #include <Slic3r/App/Render/Buffer.hpp>
 
-#define USE_TEXTURE_BUFFER (0 && (!SLIC3R_OPENGL_ES && !defined(__EMSCRIPTEN__)))
-
-namespace Slic3r::App::Render {
-class Device;
-} // namespace Slic3r::App::Render
+#define USE_TEXTURE_BUFFER (1 && SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED)
 
 namespace Slic3r::App::libvgcode {
 
@@ -38,15 +34,19 @@ class ViewerImpl
 public:
     ViewerImpl();
     ~ViewerImpl() { shutdown(); }
-    ViewerImpl(const ViewerImpl& other) = delete;
-    ViewerImpl(ViewerImpl&& other) = delete;
-    ViewerImpl& operator = (const ViewerImpl& other) = delete;
-    ViewerImpl& operator = (ViewerImpl&& other) = delete;
+    ViewerImpl(const ViewerImpl&) = delete;
+    ViewerImpl(ViewerImpl&&) = delete;
+    ViewerImpl& operator = (const ViewerImpl&) = delete;
+    ViewerImpl& operator = (ViewerImpl&&) = delete;
 
-    //
-    // Initialize shaders, uniform indices and segment geometry.
-    //
-    void init(App::Render::Device& device);
+    /**
+     * @brief Initialize rendering geometry
+     *
+     * @param device The current device.
+     * @param scene The current scene.
+     * @param data_factory The geometry factory.
+     */
+    void init(Render::Device& device, Scene::Scene& scene, Scene::GeometryDataFactory& data_factory);
     //
     // Release the resources used by the viewer.
     //
@@ -80,7 +80,7 @@ public:
     //
     // Render the toolpaths
     //
-    void render(const Transform3f& view_matrix, const Transform3f& projection_matrix);
+    void render(const Vec3f& camera_position);
 
 #if ENABLE_RENDER_TO_TEXTURE 
     std::vector<uint8_t> render_to_texture(uint16_t width, uint16_t height, const Transform3f& view_matrix,
@@ -223,13 +223,13 @@ public:
     void set_wipes_radius(float radius);
 
     Vec3f cog_marker_position() const { return m_cog_marker.position(); }
-    float cog_marker_scale_factor() const { return m_cog_marker_scale_factor; }
-    void set_cog_marker_scale_factor(float factor) { m_cog_marker_scale_factor = std::max(factor, 0.001f); }
+    float cog_marker_scale_factor() const { return m_cog_marker.scale_factor(); }
+    void set_cog_marker_scale_factor(float factor) { m_cog_marker.set_scale_factor(factor); }
 
     float tool_marker_offset_z() const { return m_tool_marker.offset_z(); }
     void set_tool_marker_offset_z(float offset_z) { m_tool_marker.set_offset_z(offset_z); }
-    float tool_marker_scale_factor() const { return m_tool_marker_scale_factor; }
-    void set_tool_marker_scale_factor(float factor) { m_tool_marker_scale_factor = std::max(factor, 0.001f); }
+    float tool_marker_scale_factor() const { return m_tool_marker.scale_factor(); }
+    void set_tool_marker_scale_factor(float factor) { m_tool_marker.set_scale_factor(factor); }
     const ColorRGB& tool_marker_color() const { return m_tool_marker.color(); }
     void set_tool_marker_color(const ColorRGB& color) { m_tool_marker.set_color(color); }
     float tool_marker_alpha() const { return m_tool_marker.alpha(); }
@@ -237,6 +237,10 @@ public:
     BoundingBoxf3 tool_marker_bounding_box() const;
 
     bool export_toolpaths_to_obj(FILE& obj_file, FILE& mtl_file, const ObjExportParams& params) const;
+
+private:
+    const Biz::libpgcode::MoveVertex& get_current_vertex() const { return vertex_at(get_current_vertex_id()); }
+    std::size_t get_current_vertex_id() const { return size_t(m_view_range.visible()[1]); }
 
 private:
     //
@@ -318,12 +322,10 @@ private:
     // The OpenGL element used to represent the center of gravity
     //
     CogMarker m_cog_marker;
-    float m_cog_marker_scale_factor{ 1.0f };
     //
     // The OpenGL element used to represent the tool nozzle
     //
     ToolMarker m_tool_marker;
-    float m_tool_marker_scale_factor{ 1.0f };
     //
     // cpu buffer to store vertices
     //
@@ -356,8 +358,15 @@ private:
     Palette m_color_print_colors;
 
     Render::Device* m_device{ nullptr };
+    Scene::Scene* m_scene{ nullptr };
  
-#if !USE_TEXTURE_BUFFER
+#if USE_TEXTURE_BUFFER
+    Render::TextureBuffer* m_positions_buffer;
+    Render::TextureBuffer* m_heights_widths_angles_buffer;
+    Render::TextureBuffer* m_colors_buffer;
+    Render::TextureBuffer* m_enabled_segments_buffer;
+    Render::TextureBuffer* m_enabled_options_buffer;
+#else
     class TextureData
     {
     public:
@@ -408,13 +417,7 @@ private:
     };
 
     TextureData m_texture_data;
-#else
-    std::unique_ptr<Render::TextureBuffer> m_positions_buffer;
-    std::unique_ptr<Render::TextureBuffer> m_heights_widths_angles_buffer;
-    std::unique_ptr<Render::TextureBuffer> m_colors_buffer;
-    std::unique_ptr<Render::TextureBuffer> m_enabled_segments_buffer;
-    std::unique_ptr<Render::TextureBuffer> m_enabled_options_buffer;
-#endif // !USE_TEXTURE_BUFFER
+#endif // USE_TEXTURE_BUFFER
 
     size_t m_enabled_segments_count{ 0 };
     size_t m_enabled_options_count{ 0 };
@@ -422,10 +425,10 @@ private:
     void update_view_full_range();
     void update_color_ranges();
     void update_heights_widths();
-    void render_segments(const Transform3f& view_matrix, const Transform3f& projection_matrix, const Vec3f& camera_position);
-    void render_options(const Transform3f& view_matrix, const Transform3f& projection_matrix);
-    void render_cog_marker(const Transform3f& view_matrix, const Transform3f& projection_matrix);
-    void render_tool_marker(const Transform3f& view_matrix, const Transform3f& projection_matrix);
+    void render_segments(const Vec3f& camera_position);
+    void render_options();
+    void render_cog_marker();
+    void render_tool_marker();
 };
 
 } // namespace Slic3r::App::libvgcode

@@ -32,14 +32,14 @@ public:
     void bind_texture(uint8_t unit, const Texture& t);
     void unbind_texture(uint8_t unit, const Texture& t);
 #ifdef SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
-    void bind_texture_buffer_texture(uint8_t unit, ResourceId texture_buffer);
-    void unbind_texture_buffer_texture(uint8_t unit);
+    void bind_texture_buffer(uint8_t unit, const TextureBuffer& tb);
 #endif // SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
 
     void* map_buffer(BufferTarget target, BufferAccess access);
     void unmap_buffer(BufferTarget target);
 
     void draw(PrimitiveType primitive, size_t offset, size_t count);
+    void draw_instanced(PrimitiveType primitive, size_t offset, size_t count, size_t instances_count);
 
     void print_buffer_info(const char* action = nullptr);
 private:

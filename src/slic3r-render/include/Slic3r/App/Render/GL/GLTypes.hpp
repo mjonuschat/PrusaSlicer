@@ -130,5 +130,6 @@ GLenum texture_format_type(PixelFormat format);
 GLenum type(BlendFactor type);
 GLenum type(BlendEquation type);
 
+inline bool is_integer(DataType dt) { return dt != DataType::Float; }
 
 }

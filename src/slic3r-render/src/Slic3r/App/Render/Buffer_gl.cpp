@@ -35,15 +35,15 @@ void Buffer::set_data(const void* data, size_t size, BufferUsage usage)
 }
 
 #ifdef SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
-TextureBuffer::TextureBuffer(Device& device)
+TextureBuffer::TextureBuffer(Device& device, PixelFormat format)
     : Buffer(device, BufferTarget::TextureBuffer)
+    , m_format(format)
 {
     auto& self = get_internal_as<GL::GLBufferInternal>();
     auto& dvc = m_device.get_internal_as<GL::GLDeviceInternal>();
     dvc.bind_buffer(target(), self.m_id);
     glGenTextures(1, &self.m_tex_id);
     glCheck();
-    dvc.bind_texture_buffer_texture(0, self.m_tex_id);
 }
 
 TextureBuffer::~TextureBuffer()

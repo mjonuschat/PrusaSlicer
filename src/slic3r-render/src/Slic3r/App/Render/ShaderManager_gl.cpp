@@ -60,8 +60,6 @@ std::pair<bool, std::string> ShaderManager::init()
         // used to render thick and/or dashed lines
         valid &= append_shader("dashed_thick_lines", { prefix + "dashed_thick_lines.vs", prefix + "dashed_thick_lines.fs", prefix + "dashed_thick_lines.gs" });
 #endif // SLIC3R_OPENGL_ES || defined(__EMSCRIPTEN__)
-    // used to render toolpaths center of gravity
-    valid &= append_shader("toolpaths_cog", { prefix + "toolpaths_cog.vs", prefix + "toolpaths_cog.fs" });
     // used to render bed axes and model, selection hints, gcode sequential view marker model, preview shells, options in gcode preview
     valid &= append_shader("gouraud_light", { prefix + "gouraud_light.vs", prefix + "gouraud_light.fs" });
     // extend "gouraud_light" by adding clipping, used in sla gizmos
@@ -94,6 +92,14 @@ std::pair<bool, std::string> ShaderManager::init()
         valid &= append_shader("mm_gouraud", { prefix + "mm_gouraud.vs", prefix + "mm_gouraud.fs" }, { "FLIP_TRIANGLE_NORMALS"sv });
     else
         valid &= append_shader("mm_gouraud", { prefix + "mm_gouraud.vs", prefix + "mm_gouraud.fs" });
+    // used to render gcode toolpaths
+    valid &= append_shader("segments", { prefix + "segments.vs", prefix + "segments.fs" });
+    // used to render gcode options
+    valid &= append_shader("options", { prefix + "options.vs", prefix + "options.fs" });
+    // used to render gcode toolpaths center of gravity marker
+    valid &= append_shader("cog_marker", { prefix + "cog_marker.vs", prefix + "cog_marker.fs" });
+    // used to render gcode toolpaths tool marker
+    valid &= append_shader("tool_marker", { prefix + "tool_marker.vs", prefix + "tool_marker.fs" });
 
     return { valid, error };
 }

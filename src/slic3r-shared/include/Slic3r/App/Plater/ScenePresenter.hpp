@@ -8,11 +8,12 @@
 #include "Slic3r/Biz/ISelectedBedInstanceChangedListener.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
-#include "Slic3r/App/Plater/ScenePresenterProjectContext.hpp"
+#include "Slic3r/App/Scene/ScenePresenterProjectContext.hpp"
 #include "Slic3r/App/Render/GeometryManager.hpp"
 #include "Slic3r/App/Scene/TriangleMeshManager.hpp"
-#include "Slic3r/App/Plater/ISceneProvider.hpp"
+#include "Slic3r/App/Scene/ISceneProvider.hpp"
 #include "Slic3r/App/Plater/BedRenderUpdater.hpp"
+#include "Slic3r/App/Plater/AuxiliaryElementId.hpp"
 
 namespace Slic3r::App::Scene { class NodeBuilder; }
 
@@ -25,9 +26,10 @@ class ScenePresenter : public Biz::ISelectedProjectChangedListener,
                        public Biz::ISelectedBedInstanceChangedListener,
                        public Biz::Scene::ISceneChangedListener,
                        public Scene::MinimalSceneRenderCustomizer,
-                       public ISceneProvider
+                       public Scene::ISceneProvider
 {
 public:
+    using ScenePresenterProjectContext = Scene::ScenePresenterProjectContext<AuxiliaryElementId>;
     using ProjectContexts = std::unordered_map<Domain::SelectionId, ScenePresenterProjectContext>;
     using GeometryManager = Render::GeometryManager<std::string>;
     using TriangleMeshManager = Scene::TriangleMeshManager<std::string>;
@@ -42,13 +44,13 @@ public:
     bool project_ready() const { return !m_projects.empty(); }
 
 
-    ScenePresenterProjectContext& project_context()
+    Scene::ScenePresenterProjectContext<AuxiliaryElementId>& project_context()
     {
         ASSERT(m_selected_project_id != Domain::INVALID_ID);
         return m_projects[m_selected_project_id];
     }
 
-    const ScenePresenterProjectContext& project_context() const
+    const Scene::ScenePresenterProjectContext<AuxiliaryElementId>& project_context() const
     {
         ASSERT(m_selected_project_id != Domain::INVALID_ID);
         return m_projects.find(m_selected_project_id)->second;
@@ -73,7 +75,9 @@ public:
     void set_freeze_selection_center(bool freeze) { m_freeze_selection_center = freeze; }
     bool freeze_selection_center() const { return m_freeze_selection_center; }
 
-    static double screen_space_sized_modifier() { return 0.0075; }
+    double screen_space_sized_modifier() const {
+        return project_context().screen_space_sized_modifier();
+    }
 
 private:
     void update_cameras(const std::function<void(Scene::Camera&)>& modifier);
@@ -105,7 +109,6 @@ private:
     void on_layer_begin(Render::CommandBuffer& cmd_buf, size_t layer_idx) override;
 
     void build_volume_node(Scene::NodeBuilder& builder, Domain::SelectionId project_id, const ModelInstance* inst, const ModelVolume* vol);
-    static Scene::Node* initialize_selection_root(Scene::Scene& scene);
 
     void build_bed_plate_node(Scene::NodeBuilder& builder, Domain::SelectionId project_id, const Domain::Bed& bed, const BedNodeTag& tag);
     void build_bed_grid_node(Scene::NodeBuilder& builder, Domain::SelectionId project_id, const Domain::Bed& bed, const BedNodeTag& tag);
@@ -113,7 +116,6 @@ private:
     void build_bed_print_volume_node(Scene::NodeBuilder& builder, Domain::SelectionId project_id, const Domain::Bed& bed, const BedNodeTag& tag);
     void build_bed_model_node(Scene::NodeBuilder& builder, Domain::SelectionId project_id, const Domain::Bed& bed, const BedNodeTag& tag);
 
-    friend class ScenePresenterProjectContext;
 private:
     const Domain::Workbench& m_workbench;
     Biz::ProjectInteractor& m_project_interactor;

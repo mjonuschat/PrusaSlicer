@@ -20,9 +20,9 @@ Viewer::~Viewer()
     delete m_impl;
 }
 
-void Viewer::init(Render::Device& device)
+void Viewer::init(Render::Device& device, Scene::Scene& scene, Scene::GeometryDataFactory& data_factory)
 {
-    m_impl->init(device);
+    m_impl->init(device, scene, data_factory);
 }
 
 void Viewer::shutdown()
@@ -45,9 +45,9 @@ void Viewer::load_as_sla(const std::vector<float>& layers_zs, const std::vector<
     m_impl->load_as_sla(layers_zs, layers_times);
 }
 
-void Viewer::render(const Transform3f& view_matrix, const Transform3f& projection_matrix)
+void Viewer::render(const Vec3f& camera_position)
 {
-    m_impl->render(view_matrix, projection_matrix);
+    m_impl->render(camera_position);
 }
 
 #if ENABLE_RENDER_TO_TEXTURE
@@ -438,7 +438,7 @@ BoundingBoxf3 Viewer::extrusion_bounding_box(const GCodeExtrusionRoles& roles) c
     return m_impl->extrusion_bounding_box(roles);
 }
 
-Vec3f Viewer::cog_position() const
+Vec3f Viewer::cog_marker_position() const
 {
     return m_impl->cog_marker_position();
 }

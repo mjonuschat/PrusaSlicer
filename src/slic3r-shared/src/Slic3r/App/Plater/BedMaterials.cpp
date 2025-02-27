@@ -16,7 +16,7 @@ Render::Material BedMaterials::plate_default_material(const Render::Device& devi
     ret
         .set_shader(device.context().shader_manager().get_shader("flat"))
         .set_uniform("uniform_color", color)
-        .set_transparent(color.a() < 1.0f);
+        .set_transparent(color.is_transparent());
     return ret;
 }
 
@@ -38,7 +38,7 @@ Render::Material BedMaterials::grid_material(const Render::Device& device)
     ret
         .set_shader(device.context().shader_manager().get_shader("flat"))
         .set_uniform("uniform_color", color)
-        .set_transparent(color.a() < 1.0f);
+        .set_transparent(color.is_transparent());
     return ret;
 }
 
@@ -49,7 +49,7 @@ Render::Material BedMaterials::contour_material(const Render::Device& device)
     ret
         .set_shader(device.context().shader_manager().get_shader("flat"))
         .set_uniform("uniform_color", color)
-        .set_transparent(color.a() < 1.0f);
+        .set_transparent(color.is_transparent());
     return ret;
 }
 
@@ -60,7 +60,7 @@ Render::Material BedMaterials::print_volume_material(const Render::Device& devic
     ret
         .set_shader(device.context().shader_manager().get_shader("flat"))
         .set_uniform("uniform_color", color)
-        .set_transparent(color.a() < 1.0f);
+        .set_transparent(color.is_transparent());
     return ret;
 }
 
@@ -71,7 +71,7 @@ Render::Material BedMaterials::model_material(const Render::Device& device)
     ret
         .set_shader(device.context().shader_manager().get_shader("gouraud_light"))
         .set_uniform("uniform_color", color)
-        .set_transparent(color.a() < 1.0f);
+        .set_transparent(color.is_transparent());
     return ret;
 }
 
@@ -82,7 +82,7 @@ Render::Material BedMaterials::plate_default_override_material(const Render::Dev
     ret
         .set_shader(device.context().shader_manager().get_shader("flat"))
         .set_uniform("uniform_color", color)
-        .set_transparent(color.a() < 1.0f);
+        .set_transparent(color.is_transparent());
     return ret;
 }
 
@@ -105,7 +105,7 @@ Render::Material BedMaterials::grid_override_material(const Render::Device& devi
     ret
         .set_shader(device.context().shader_manager().get_shader("flat"))
         .set_uniform("uniform_color", color)
-        .set_transparent(color.a() < 1.0f);
+        .set_transparent(color.is_transparent());
     return ret;
 }
 
@@ -116,7 +116,7 @@ Render::Material BedMaterials::contour_override_material(const Render::Device& d
     ret
         .set_shader(device.context().shader_manager().get_shader("flat"))
         .set_uniform("uniform_color", color)
-        .set_transparent(color.a() < 1.0f);
+        .set_transparent(color.is_transparent());
     return ret;
 }
 
@@ -127,7 +127,7 @@ Render::Material BedMaterials::print_volume_override_material(const Render::Devi
     ret
         .set_shader(device.context().shader_manager().get_shader("flat"))
         .set_uniform("uniform_color", color)
-        .set_transparent(color.a() < 1.0f);
+        .set_transparent(color.is_transparent());
     return ret;
 }
 
@@ -138,7 +138,7 @@ Render::Material BedMaterials::model_override_material(const Render::Device& dev
     ret
         .set_shader(device.context().shader_manager().get_shader("gouraud_light"))
         .set_uniform("uniform_color", color)
-        .set_transparent(color.a() < 1.0f);
+        .set_transparent(color.is_transparent());
     return ret;
 }
 

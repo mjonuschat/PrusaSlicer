@@ -7,15 +7,18 @@
 #include "Utils.hpp"
 #include "ObjExport.hpp"
 #include "Slic3r/App/libvgcode/ViewerInputData.hpp"
+#include "Slic3r/App/libvgcode/GCodeNodeTag.hpp"
 
 #include <Slic3r/Biz/libpgcode/Utils.hpp>
 #include <Slic3r/App/Render/GL/commonGL.hpp>
 #include <Slic3r/App/Render/Device.hpp>
 #include <Slic3r/App/Render/Context.hpp>
 #include <Slic3r/App/Render/TextureManager.hpp>
+#include <Slic3r/App/Render/TextureBufferManager.hpp>
 #include <Slic3r/App/Render/Material.hpp>
-
-#include <libslic3r/format.hpp>
+#include <Slic3r/App/Scene/NodeBuilder.hpp>
+#include <Slic3r/App/Scene/Scene.hpp>
+#include "Slic3r/App/Scene/InstancedMeshRenderNodeComponent.hpp"
 
 #include <map>
 #include <assert.h>
@@ -29,6 +32,12 @@
 using namespace Slic3r::Biz::libpgcode;
 
 namespace Slic3r::App::libvgcode {
+
+static constexpr int POSITION_TEX_ID = 0;
+static constexpr int HEIGHT_WIDTH_ANGLE_TEX_ID = 1;
+static constexpr int COLOR_TEX_ID = 2;
+static constexpr int ENABLED_SEGMENTS_TEX_ID = 3;
+static constexpr int ENABLED_OPTIONS_TEX_ID = 3;
 
 template<class T, class O = T>
 using IntegerOnly = std::enable_if_t<std::is_integral<T>::value, O>;
@@ -391,16 +400,33 @@ ViewerImpl::ViewerImpl()
     reset_default_options_colors();
 }
 
-void ViewerImpl::init(Render::Device& device)
+void ViewerImpl::init(Render::Device& device, Scene::Scene& scene, Scene::GeometryDataFactory& data_factory)
 {
     if (m_initialized)
         return;
 
     m_device = &device;
-    m_segment_template.init();
-    m_option_template.init(16);
-    m_cog_marker.init(32, 1.0f);
-    m_tool_marker.init(32, 2.0f, 4.0f, 1.0f, 8.0f);
+    m_scene = &scene;
+    Scene::NodeBuilder builder{ *m_scene };
+    builder.set_debug_name("gcode_main");
+    builder.set_tag(GCodeNodeTag{ GCodeElementType::Undefined });
+
+    builder.child([&](Scene::NodeBuilder& bldr) {
+        m_cog_marker.init(*m_device, bldr, data_factory);
+    });
+    builder.child([&](Scene::NodeBuilder& bldr) {
+        m_tool_marker.init(*m_device, bldr, data_factory);
+    });
+    builder.child([&](Scene::NodeBuilder& bldr) {
+        m_segment_template.init(*m_device, bldr);
+    });
+    builder.child([&](Scene::NodeBuilder& bldr) {
+        m_option_template.init(*m_device, bldr, data_factory);
+    });
+
+    auto main_node = builder.build();
+    m_scene->add_child(main_node.release(), &m_scene->root());
+
     m_initialized = true;
 }
 
@@ -595,30 +621,30 @@ void ViewerImpl::load(ViewerInputData&& gcode_data)
     extract_pos_and_or_hwa(m_vertices, m_travels_radius, m_wipes_radius, m_valid_lines_bitset, &positions, &heights_widths_angles, true);
 
     if (!positions.empty()) {
-#if !USE_TEXTURE_BUFFER
+#if USE_TEXTURE_BUFFER
+        // create and fill positions buffer
+        m_positions_buffer = m_device->context().texture_buffer_manager().get_or_create_empty("gcode_positions", Render::PixelFormat::RGBA32F);
+        m_positions_buffer->set_data(positions.data(), positions.size() * sizeof(Vec4f), Render::BufferUsage::StaticDraw);
+
+        // create and fill height, width and angles buffer
+        m_heights_widths_angles_buffer = m_device->context().texture_buffer_manager().get_or_create_empty("gcode_heights_widths_angles", Render::PixelFormat::RGBA32F);
+        m_heights_widths_angles_buffer->set_data(heights_widths_angles.data(), heights_widths_angles.size() * sizeof(Vec4f), Render::BufferUsage::DynamicDraw);
+
+        // create (but do not fill) colors buffer (data is set in update_colors())
+        m_colors_buffer = m_device->context().texture_buffer_manager().get_or_create_empty("gcode_colors", Render::PixelFormat::R32F);
+
+        // create (but do not fill) enabled segments buffer (data is set in update_enabled_entities())
+        m_enabled_segments_buffer = m_device->context().texture_buffer_manager().get_or_create_empty("gcode_enabled_segments", Render::PixelFormat::R32UI);
+
+        // create (but do not fill) enabled options buffer (data is set in update_enabled_entities())
+        m_enabled_options_buffer = m_device->context().texture_buffer_manager().get_or_create_empty("gcode_enabled_options", Render::PixelFormat::R32UI);
+#else
         m_texture_data.init(m_device, positions.size());
         // create and fill position textures
         m_texture_data.set_positions(positions);
         // create and fill height, width and angle textures
         m_texture_data.set_heights_widths_angles(heights_widths_angles);
-#else
-        // create and fill positions buffer
-        m_positions_buffer = m_device.create_texture_buffer();
-        m_positions_buffer->set_data(positions.data(), positions.size() * sizeof(Vec4f), Render::BufferUsage::StaticDraw);
-
-        // create and fill height, width and angles buffer
-        m_heights_widths_angles_buffer = m_device.create_texture_buffer();
-        m_heights_widths_angles_buffer->set_data(heights_widths_angles.data(), heights_widths_angles.size() * sizeof(Vec4f), Render::BufferUsage::DynamicDraw);
-
-        // create (but do not fill) colors buffer (data is set in update_colors())
-        m_colors_buffer = m_device.create_texture_buffer();
-
-        // create (but do not fill) enabled segments buffer (data is set in update_enabled_entities())
-        m_enabled_segments_buffer = m_device.create_texture_buffer();
-
-        // create (but do not fill) enabled options buffer (data is set in update_enabled_entities())
-        m_enabled_options_buffer = m_device.create_texture_buffer();
-#endif // !USE_TEXTURE_BUFFER
+#endif // USE_TEXTURE_BUFFER
     }
 
     update_view_full_range();
@@ -712,28 +738,30 @@ void ViewerImpl::update_enabled_entities()
 #else
     // update buffer for enabled segments
     assert(m_enabled_segments_buffer != nullptr);
-    m_device.bind_buffer(*m_enabled_segments_buffer);
     if (!enabled_segments.empty())
         m_enabled_segments_buffer->set_data(enabled_segments.data(), enabled_segments.size() * sizeof(uint32_t), Render::BufferUsage::StaticDraw);
     else
-        m_enabled_segments_buffer->set_data(nullptr, 0, Render::BufferUsage::StaticDraw);
+        // size = 1 is used here because passing 0 let the call glBufferData() to keep the current content
+        // of the buffer without cleaaring it
+        m_enabled_segments_buffer->set_data(nullptr, 1, Render::BufferUsage::StaticDraw);
 
     // update gpu buffer for enabled options
     assert(m_enabled_options_buffer != nullptr);
-    m_device.bind_buffer(*m_enabled_options_buffer);
     if (!enabled_options.empty())
         m_enabled_options_buffer->set_data(enabled_options.data(), enabled_options.size() * sizeof(uint32_t), Render::BufferUsage::StaticDraw);
     else
-        m_enabled_options_buffer->set_data(nullptr, 0, Render::BufferUsage::StaticDraw);
+        // size = 1 is used here because passing 0 let the call glBufferData() to keep the current content
+        // of the buffer without cleaaring it
+        m_enabled_options_buffer->set_data(nullptr, 1, Render::BufferUsage::StaticDraw);
 #endif // !USE_TEXTURE_BUFFER
 
     m_settings.update_enabled_entities = false;
 }
 
 static float encoded_color(const ColorRGB& color) {
-    int r = int(color.r());
-    int g = int(color.g());
-    int b = int(color.b());
+    int r = int(color.r_uchar());
+    int g = int(color.g_uchar());
+    int b = int(color.b_uchar());
     int i_color = r << 16 | g << 8 | b;
     return float(i_color);
 }
@@ -757,14 +785,13 @@ void ViewerImpl::update_colors_texture()
             (!m_settings.spiral_vase_enabled || i != m_view_range.enabled()[0])) ?
             encoded_color(DUMMY_COLOR) : m_vertices_colors[i];
     }
-#if !USE_TEXTURE_BUFFER
+#if USE_TEXTURE_BUFFER
+    m_colors_buffer->set_data(colors.data(), colors.size() * sizeof(float), Render::BufferUsage::StaticDraw);
+#else
     if (!colors.empty())
         // update gpu buffer for colors
         m_texture_data.set_colors(colors);
-#else
-    m_device.bind_buffer(*m_colors_buffer);
-    m_colors_buffer->set_data(colors.data(), colors.size() * sizeof(float), Render::BufferUsage::StaticDraw);
-#endif // !USE_TEXTURE_BUFFER
+#endif // USE_TEXTURE_BUFFER
 }
 
 void ViewerImpl::update_colors()
@@ -794,7 +821,7 @@ void ViewerImpl::update_colors()
     m_settings.update_colors = false;
 }
 
-void ViewerImpl::render(const Transform3f& view_matrix, const Transform3f& projection_matrix)
+void ViewerImpl::render(const Vec3f& camera_position)
 {
     if (m_settings.update_view_full_range)
         update_view_full_range();
@@ -805,15 +832,13 @@ void ViewerImpl::render(const Transform3f& view_matrix, const Transform3f& proje
     if (m_settings.update_colors)
         update_colors();
 
-    Transform3f inv_view_matrix = view_matrix.inverse();
-    Vec3f camera_position = inv_view_matrix.translation();
-    render_segments(view_matrix, projection_matrix, camera_position);
-    render_options(view_matrix, projection_matrix);
+    render_segments(camera_position);
+    render_options();
 
     if (m_settings.options_visibility[size_t(OptionType::ToolMarker)])
-        render_tool_marker(view_matrix, projection_matrix);
+        render_tool_marker();
     if (m_settings.options_visibility[size_t(OptionType::CenterOfGravity)])
-        render_cog_marker(view_matrix, projection_matrix);
+        render_cog_marker();
 }
 
 #if ENABLE_RENDER_TO_TEXTURE
@@ -1008,6 +1033,24 @@ void ViewerImpl::toggle_option_visibility(OptionType type)
     }
     m_settings.update_enabled_entities = true;
     m_settings.update_colors = true;
+
+    if (type == OptionType::CenterOfGravity) {
+        Scene::Node* node = m_scene->root().query_first([](const Scene::Node* n) {
+            const GCodeNodeTag* tag = n->tag_of_type<GCodeNodeTag>();
+            return tag != nullptr && tag->type == GCodeElementType::CogMarker;
+        }, true);
+        assert(node != nullptr);
+        node->set_enabled(m_settings.options_visibility[size_t(type)]);
+    }
+
+    if (type == OptionType::ToolMarker) {
+        Scene::Node* node = m_scene->root().query_first([](const Scene::Node* n) {
+            const GCodeNodeTag* tag = n->tag_of_type<GCodeNodeTag>();
+            return tag != nullptr && tag->type == GCodeElementType::ToolMarker;
+        }, true);
+        assert(node != nullptr);
+        node->set_enabled(m_settings.options_visibility[size_t(type)]);
+    }
 }
 
 bool ViewerImpl::is_extrusion_role_visible(GCodeExtrusionRole role) const
@@ -1041,6 +1084,16 @@ void ViewerImpl::set_view_visible_range(Interval::value_type min, Interval::valu
     update_enabled_entities();
     //m_settings.update_colors = true;
     update_colors_texture();
+
+    if (is_option_visible(OptionType::ToolMarker)){
+        Scene::Node* node = m_scene->root().query_first([](const Scene::Node* n)->bool {
+            const GCodeNodeTag* tag = n->tag_of_type<GCodeNodeTag>();
+            return tag != nullptr && tag->type == GCodeElementType::ToolMarker;
+        }, true);
+
+        assert(node != nullptr);
+        node->set_enabled(m_view_range.visible()[1] != m_view_range.enabled()[1]);
+    }
 }
 
 void ViewerImpl::set_lights(const Lights& lights)
@@ -1464,8 +1517,8 @@ void ViewerImpl::update_heights_widths()
     if (m_heights_widths_angles_buffer == nullptr)
         return;
 
-    m_device.bind_buffer(*m_heights_widths_angles_buffer);
-    Vec4f* buffer = (Vec4f*)m_device.map_buffer(*m_heights_widths_angles_buffer, Render::BufferAccess::WriteOnly);
+    m_device->bind_buffer(*m_heights_widths_angles_buffer);
+    Vec4f* buffer = (Vec4f*)m_device->map_buffer(*m_heights_widths_angles_buffer, Render::BufferAccess::WriteOnly);
 
     for (size_t i = 0; i < m_vertices.size(); ++i) {
         const MoveVertex& v = m_vertices[i];
@@ -1479,205 +1532,151 @@ void ViewerImpl::update_heights_widths()
         }
     }
 
-    m_device.unmap_buffer(*m_heights_widths_angles_buffer);
+    m_device->unmap_buffer(*m_heights_widths_angles_buffer);
 #endif // !USE_TEXTURE_BUFFER
 }
 
-void ViewerImpl::render_segments(const Transform3f& view_matrix, const Transform3f& projection_matrix, const Vec3f& camera_position)
+static void add_lights_to_material(Render::Material& material, const Lights& lights)
+{
+    material.set_uniform("num_lights", int(lights.size()));
+    for (size_t i = 0; i < lights.size(); ++i) {
+        const Light& l = lights[i];
+        material
+            .set_uniform(format("lights[%d].system", i), int(l.system))
+            .set_uniform(format("lights[%d].direction", i), l.direction)
+            .set_uniform(format("lights[%d].ambient", i), l.ambient)
+            .set_uniform(format("lights[%d].diffuse", i), l.diffuse)
+            .set_uniform(format("lights[%d].specular", i), l.specular)
+            .set_uniform(format("lights[%d].shininess", i), l.shininess);
+    }
+}
+
+static Scene::Node* set_override_material(Scene::Scene& scene, GCodeElementType type, const Render::Material& material)
+{
+    Scene::Node* node = scene.root().query_first([type](const Scene::Node* n)->bool {
+        const GCodeNodeTag* tag = n->tag_of_type<GCodeNodeTag>();
+        return tag != nullptr && tag->type == type;
+    });
+
+    assert(node!= nullptr);
+    node->set_material_override(material);
+    return node;
+}
+
+void ViewerImpl::render_segments(const Vec3f& camera_position)
 {
     if (m_enabled_segments_count == 0)
         return;
 
-    assert(m_device != nullptr);
-    Render::Material material;
+    Render::Material material{};
     material
-        .set_shader(m_device->context().shader_manager().get_shader("segments"))
-        .set_uniform("view_matrix", view_matrix.matrix())
-        .set_uniform("projection_matrix", projection_matrix.matrix())
+        .set_shader(m_device->context().shader_manager().get_shader("segments"));
+    add_lights_to_material(material, m_lights);
+
+#if USE_TEXTURE_BUFFER
+    material
+        .set_uniform("position_tex", POSITION_TEX_ID)
+        .set_uniform("height_width_angle_tex", HEIGHT_WIDTH_ANGLE_TEX_ID)
+        .set_uniform("color_tex", COLOR_TEX_ID)
+        .set_uniform("segment_index_tex", ENABLED_SEGMENTS_TEX_ID)
         .set_uniform("camera_position", camera_position)
-        .set_uniform("position_tex", 0)
-        .set_uniform("height_width_angle_tex", 1)
-        .set_uniform("color_tex", 2)
-        .set_uniform("segment_index_tex", 3);
+        .set_texture_buffer(POSITION_TEX_ID, m_positions_buffer)
+        .set_texture_buffer(HEIGHT_WIDTH_ANGLE_TEX_ID, m_heights_widths_angles_buffer)
+        .set_texture_buffer(COLOR_TEX_ID, m_colors_buffer)
+        .set_texture_buffer(ENABLED_SEGMENTS_TEX_ID, m_enabled_segments_buffer);
 
-    material.set_uniform("num_lights", int(m_lights.size()));
-    for (size_t i = 0; i < m_lights.size(); ++i) {
-        std::string base = "lights[" + std::to_string(i) + "].";
-        material
-            .set_uniform(base + "system", int(m_lights[i].system))
-            .set_uniform(base + "direction", m_lights[i].direction)
-            .set_uniform(base + "ambient", m_lights[i].ambient)
-            .set_uniform(base + "diffuse", m_lights[i].diffuse)
-            .set_uniform(base + "specular", m_lights[i].specular)
-            .set_uniform(base + "shininess", m_lights[i].shininess);
-    }
-
-#if !USE_TEXTURE_BUFFER
+    Scene::Node* node = set_override_material(*m_scene, GCodeElementType::Toolpaths, material);
+    Scene::InstancedMeshRenderNodeComponent* r_comp = dynamic_cast<Scene::InstancedMeshRenderNodeComponent*>(node->render_component());
+    r_comp->set_instances_count(m_enabled_segments_count);
+#else
     for (size_t i = 0; i < m_texture_data.count(); ++i) {
         auto [es_tex, count] = m_texture_data.enabled_segments_tex(i);
         if (count == 0)
             continue;
+        
         material
-            .set_texture(0, m_texture_data.positions_tex(i).first)
-            .set_texture(1, m_texture_data.heights_widths_angles_tex(i).first)
-            .set_texture(2, m_texture_data.colors_tex(i).first)
-            .set_texture(3, es_tex);
-
-        m_segment_template.render(count);
+            .set_texture(POSITION_TEX_ID, m_texture_data.positions_tex(i).first)
+            .set_texture(HEIGHT_WIDTH_ANGLE_TEX_ID, m_texture_data.heights_widths_angles_tex(i).first)
+            .set_texture(COLOR_TEX_ID, m_texture_data.colors_tex(i).first)
+            .set_texture(ENABLED_SEGMENTS_TEX_ID, es_tex);
+        
+        set_override_material(*m_scene, GCodeElementType::Toolpaths, material);
     }
-#else
-    std::array<int, 4> curr_bound_texture = { 0, 0, 0, 0 };
-    for (size_t i = 0; i < curr_bound_texture.size(); ++i) {
-        glsafe(glActiveTexture(GL_TEXTURE0 + int(i)));
-        glsafe(glGetIntegerv(GL_TEXTURE_BINDING_BUFFER, &curr_bound_texture[i]));
-        //assert(curr_bound_texture[i] == 0);
-    }
-
-    glsafe(glActiveTexture(GL_TEXTURE0));
-    glsafe(glBindTexture(GL_TEXTURE_BUFFER, m_positions_tex_id));
-    glsafe(glTexBuffer(GL_TEXTURE_BUFFER, GL_RGBA32F, m_positions_buf_id));
-    glsafe(glActiveTexture(GL_TEXTURE1));
-    glsafe(glBindTexture(GL_TEXTURE_BUFFER, m_heights_widths_angles_tex_id));
-    glsafe(glTexBuffer(GL_TEXTURE_BUFFER, GL_RGBA32F, m_heights_widths_angles_buf_id));
-    glsafe(glActiveTexture(GL_TEXTURE2));
-    glsafe(glBindTexture(GL_TEXTURE_BUFFER, m_colors_tex_id));
-    glsafe(glTexBuffer(GL_TEXTURE_BUFFER, GL_R32F, m_colors_buf_id));
-    glsafe(glActiveTexture(GL_TEXTURE3));
-    glsafe(glBindTexture(GL_TEXTURE_BUFFER, m_enabled_segments_tex_id));
-    glsafe(glTexBuffer(GL_TEXTURE_BUFFER, GL_R32UI, m_enabled_segments_buf_id));
-
-    m_segment_template.render(m_enabled_segments_count);
-#endif // !USE_TEXTURE_BUFFER
+#endif // USE_TEXTURE_BUFFER
 }
 
-void ViewerImpl::render_options(const Transform3f& view_matrix, const Transform3f& projection_matrix)
+void ViewerImpl::render_options()
 {
     if (m_enabled_options_count == 0)
         return;
 
-    assert(m_device != nullptr);
     Render::Material material;
     material
-        .set_shader(m_device->context().shader_manager().get_shader("options"))
-        .set_uniform("view_matrix", view_matrix.matrix())
-        .set_uniform("projection_matrix", projection_matrix.matrix())
-        .set_uniform("position_tex", 0)
-        .set_uniform("height_width_angle_tex", 1)
-        .set_uniform("color_tex", 2)
-        .set_uniform("segment_index_tex", 3);
+        .set_shader(m_device->context().shader_manager().get_shader("options"));
+    add_lights_to_material(material, m_lights);
 
-    material.set_uniform("num_lights", int(m_lights.size()));
-    for (size_t i = 0; i < m_lights.size(); ++i) {
-        std::string base = "lights[" + std::to_string(i) + "].";
-        material
-            .set_uniform(base + "system", int(m_lights[i].system))
-            .set_uniform(base + "direction", m_lights[i].direction)
-            .set_uniform(base + "ambient", m_lights[i].ambient)
-            .set_uniform(base + "diffuse", m_lights[i].diffuse)
-            .set_uniform(base + "specular", m_lights[i].specular)
-            .set_uniform(base + "shininess", m_lights[i].shininess);
-    }
+#if USE_TEXTURE_BUFFER
+    material
+        .set_uniform("position_tex", POSITION_TEX_ID)
+        .set_uniform("height_width_angle_tex", HEIGHT_WIDTH_ANGLE_TEX_ID)
+        .set_uniform("color_tex", COLOR_TEX_ID)
+        .set_uniform("segment_index_tex", ENABLED_OPTIONS_TEX_ID)
+        .set_texture_buffer(POSITION_TEX_ID, m_positions_buffer)
+        .set_texture_buffer(HEIGHT_WIDTH_ANGLE_TEX_ID, m_heights_widths_angles_buffer)
+        .set_texture_buffer(COLOR_TEX_ID, m_colors_buffer)
+        .set_texture_buffer(ENABLED_OPTIONS_TEX_ID, m_enabled_options_buffer);
 
-#if !USE_TEXTURE_BUFFER
+    Scene::Node* node = set_override_material(*m_scene, GCodeElementType::Options, material);
+    Scene::InstancedMeshRenderNodeComponent* r_comp = dynamic_cast<Scene::InstancedMeshRenderNodeComponent*>(node->render_component());
+    r_comp->set_instances_count(m_enabled_options_count);
+#else
     for (size_t i = 0; i < m_texture_data.count(); ++i) {
         auto [eo_tex, count] = m_texture_data.enabled_options_tex(i);
         if (count == 0)
             continue;
-
+        
         material
-            .set_texture(0, m_texture_data.positions_tex(i).first)
-            .set_texture(1, m_texture_data.heights_widths_angles_tex(i).first)
-            .set_texture(2, m_texture_data.colors_tex(i).first)
-            .set_texture(3, eo_tex);
-
-        m_option_template.render(count);
+            .set_texture(POSITION_TEX_ID, m_texture_data.positions_tex(i).first)
+            .set_texture(HEIGHT_WIDTH_ANGLE_TEX_ID, m_texture_data.heights_widths_angles_tex(i).first)
+            .set_texture(COLOR_TEX_ID, m_texture_data.colors_tex(i).first)
+            .set_texture(ENABLED_OPTIONS_TEX_ID, eo_tex);
+        
+        set_override_material(*m_scene, GCodeElementType::Options, material);
     }
-#else
-    std::array<int, 4> curr_bound_texture = { 0, 0, 0, 0 };
-    for (size_t i = 0; i < curr_bound_texture.size(); ++i) {
-        glsafe(glActiveTexture(GL_TEXTURE0 + int(i)));
-        glsafe(glGetIntegerv(GL_TEXTURE_BINDING_BUFFER, &curr_bound_texture[i]));
-        //assert(curr_bound_texture[i] == 0);
-    }
-
-    glsafe(glActiveTexture(GL_TEXTURE0));
-    glsafe(glBindTexture(GL_TEXTURE_BUFFER, m_positions_tex_id));
-    glsafe(glTexBuffer(GL_TEXTURE_BUFFER, GL_RGBA32F, m_positions_buf_id));
-    glsafe(glActiveTexture(GL_TEXTURE1));
-    glsafe(glBindTexture(GL_TEXTURE_BUFFER, m_heights_widths_angles_tex_id));
-    glsafe(glTexBuffer(GL_TEXTURE_BUFFER, GL_RGBA32F, m_heights_widths_angles_buf_id));
-    glsafe(glActiveTexture(GL_TEXTURE2));
-    glsafe(glBindTexture(GL_TEXTURE_BUFFER, m_colors_tex_id));
-    glsafe(glTexBuffer(GL_TEXTURE_BUFFER, GL_R32F, m_colors_buf_id));
-    glsafe(glActiveTexture(GL_TEXTURE3));
-    glsafe(glBindTexture(GL_TEXTURE_BUFFER, m_enabled_options_tex_id));
-    glsafe(glTexBuffer(GL_TEXTURE_BUFFER, GL_R32UI, m_enabled_options_buf_id));
-
-    m_option_template.render(m_enabled_options_count);
-#endif // !USE_TEXTURE_BUFFER
+#endif // USE_TEXTURE_BUFFER
 }
 
-void ViewerImpl::render_cog_marker(const Transform3f& view_matrix, const Transform3f& projection_matrix)
+void ViewerImpl::render_cog_marker()
 {
     if (m_cog_marker.total_mass() == 0.0f)
         return;
 
-    assert(m_device != nullptr);
     Render::Material material;
     material
         .set_shader(m_device->context().shader_manager().get_shader("cog_marker"))
-        .set_uniform("view_matrix", view_matrix.matrix())
-        .set_uniform("projection_matrix", projection_matrix.matrix())
-        .set_uniform("world_center_position", m_cog_marker.position())
-        .set_uniform("scale_factor", m_cog_marker_scale_factor);
-
-    material.set_uniform("num_lights", int(m_lights.size()));
-    for (size_t i = 0; i < m_lights.size(); ++i) {
-        std::string base = "lights[" + std::to_string(i) + "].";
-        material
-            .set_uniform(base + "system", int(m_lights[i].system))
-            .set_uniform(base + "direction", m_lights[i].direction)
-            .set_uniform(base + "ambient", m_lights[i].ambient)
-            .set_uniform(base + "diffuse", m_lights[i].diffuse)
-            .set_uniform(base + "specular", m_lights[i].specular)
-            .set_uniform(base + "shininess", m_lights[i].shininess);
-    }
-
-    m_cog_marker.render();
+        .set_uniform("world_origin", m_cog_marker.position())
+        .set_uniform("scale_factor", m_cog_marker.scale_factor());
+    add_lights_to_material(material, m_lights);
+    set_override_material(*m_scene, GCodeElementType::CogMarker, material);
 }
 
-void ViewerImpl::render_tool_marker(const Transform3f& view_matrix, const Transform3f& projection_matrix)
+void ViewerImpl::render_tool_marker()
 {
     if (m_view_range.visible()[1] == m_view_range.enabled()[1])
         return;
 
-    const Vec3f& origin = current_vertex().position;
-    Vec3f offset = { origin.x(), origin.y(), origin.z() + m_tool_marker.offset_z()};
-    const ColorRGB& color = m_tool_marker.color();
+    Vec3f origin = get_current_vertex().position + m_tool_marker.offset_z() * Vec3f::UnitZ();
+    ColorRGBA color = to_rgba(m_tool_marker.color(), m_tool_marker.alpha());
 
-    assert(m_device != nullptr);
     Render::Material material;
     material
         .set_shader(m_device->context().shader_manager().get_shader("tool_marker"))
-        .set_uniform("view_matrix", view_matrix.matrix())
-        .set_uniform("projection_matrix", projection_matrix.matrix())
-        .set_uniform("world_origin", m_cog_marker.position())
-        .set_uniform("scale_factor", m_cog_marker_scale_factor)
-        .set_uniform("color_base", m_cog_marker_scale_factor);
-
-    material.set_uniform("num_lights", int(m_lights.size()));
-    for (size_t i = 0; i < m_lights.size(); ++i) {
-        std::string base = "lights[" + std::to_string(i) + "].";
-        material
-            .set_uniform(base + "system", int(m_lights[i].system))
-            .set_uniform(base + "direction", m_lights[i].direction)
-            .set_uniform(base + "ambient", m_lights[i].ambient)
-            .set_uniform(base + "diffuse", m_lights[i].diffuse)
-            .set_uniform(base + "specular", m_lights[i].specular)
-            .set_uniform(base + "shininess", m_lights[i].shininess);
-    }
-
-    m_tool_marker.render();
+        .set_uniform("world_origin", origin)
+        .set_uniform("scale_factor", m_tool_marker.scale_factor())
+        .set_uniform("color_base", color)
+        .set_transparent(color.is_transparent());
+    add_lights_to_material(material, m_lights);
+    set_override_material(*m_scene, GCodeElementType::ToolMarker, material);
 }
 
 } // namespace Slic3r::App::libvgcode

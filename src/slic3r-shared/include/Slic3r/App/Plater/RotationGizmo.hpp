@@ -1,25 +1,27 @@
 #pragma once
 
-#include "Slic3r/App/Plater/IGizmo.hpp"
+#include "Slic3r/App/Scene/IGizmo.hpp"
 #include "Slic3r/App/Plater/ScenePresenter.hpp"
 #include "Slic3r/App/Plater/GizmoNodeTag.hpp"
 
+namespace Slic3r::App::Scene {
+class GeometryDataFactory;
+} // namespace Slic3r::App::Scene
+
 namespace Slic3r::App::Plater {
 
-class GizmoDataFactory;
-
-class RotationGizmo : public IToolGizmo
+class RotationGizmo : public Scene::IToolGizmo
 {
 public:
-    RotationGizmo(Render::Device& device, GizmoDataFactory& data_factory,
+    RotationGizmo(Render::Device& device, Scene::GeometryDataFactory& data_factory,
         ScenePresenter& scene_provider, Biz::Scene::SceneInteractor& scene_interactor);
 
     /**
      * @name Implementation of IGizmo interface
      * @{
      */
-    GizmoActivationState on_mouse(GizmoEventContext& ctx, bool only_active) override;
-    void on_transient_mouse(GizmoEventContext& ctx) override;
+    Scene::GizmoActivationState on_mouse(Scene::GizmoEventContext& ctx, bool only_active) override;
+    void on_transient_mouse(Scene::GizmoEventContext& ctx) override;
     void on_cycle_prepare() override;
     /**@}*/
 
@@ -29,7 +31,7 @@ public:
      */
     void on_activated() override;
     void on_deactivated() override;
-    ToolType type() const override { return ToolType::Rotation; }
+    Scene::ToolType type() const override { return Scene::ToolType::Rotation; }
     /**@}*/
 
 private:
@@ -38,7 +40,7 @@ private:
 
 private:
     Render::Device& m_device;
-    GizmoDataFactory& m_data_factory;
+    Scene::GeometryDataFactory& m_data_factory;
     ScenePresenter& m_scene_presenter;
     Biz::Scene::SceneInteractor& m_scene_interactor;
     bool m_activated{ false };

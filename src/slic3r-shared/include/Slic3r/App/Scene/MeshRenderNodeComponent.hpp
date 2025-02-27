@@ -56,7 +56,7 @@ public:
 
 
 
-private:
+protected:
     const Render::Geometry* m_geometry{nullptr};
     Render::Material m_material;
     Render::PrimitiveType m_primitive_type{Render::PrimitiveType::Triangles};

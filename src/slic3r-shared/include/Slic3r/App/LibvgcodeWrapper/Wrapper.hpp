@@ -9,7 +9,12 @@ namespace Slic3r::App::Render {
 class Device;
 } // namespace Slic3r::App::Render
 
-namespace Slic3r::App::libvgcode{
+namespace Slic3r::App::Scene {
+class Scene;
+class GeometryDataFactory;
+} // namespace Slic3r::App::Scene
+
+namespace Slic3r::App::libvgcode {
 struct ViewerInputData;
 } // namespace Slic3r::App::libvgcode;
 
@@ -78,7 +83,8 @@ public:
     Wrapper& operator=(const Wrapper&) = delete;
     ~Wrapper();
 
-    bool init(App::Render::Device& device, const WrapperSettings& settings);
+    bool init(Render::Device& device, Scene::Scene& scene, Scene::GeometryDataFactory& data_factory,
+        const WrapperSettings& settings);
     void shutdown();
 
     void reset();
@@ -86,8 +92,20 @@ public:
     void load(WrapperInputData&& wrapper_data, libvgcode::ViewerInputData&& data);
     void load_as_sla(WrapperSLAInputData&& wrapper_sla_data);
 
-    void render(const Transform3f& view_matrix, const Transform3f& projection_matrix,
-        const WrapperLayoutData& layout);
+    BoundingBoxf3 bounding_box(const Biz::libpgcode::MoveTypes& types = {
+        Biz::libpgcode::MoveType::Retract,
+        Biz::libpgcode::MoveType::Unretract,
+        Biz::libpgcode::MoveType::Seam,
+        Biz::libpgcode::MoveType::ToolChange,
+        Biz::libpgcode::MoveType::ColorChange,
+        Biz::libpgcode::MoveType::PausePrint,
+        Biz::libpgcode::MoveType::CustomGCode,
+        Biz::libpgcode::MoveType::Travel,
+        Biz::libpgcode::MoveType::Wipe,
+        Biz::libpgcode::MoveType::Extrude }) const;
+
+    void render_toolpaths(const Vec3f& camera_position);
+    void render_gui(const WrapperLayoutData& layout);
 
     Biz::libpgcode::UnitsSystem units() const;
     void set_units(Biz::libpgcode::UnitsSystem sys);
@@ -105,6 +123,14 @@ public:
     const libvgcode::Lights& lights() const;
     void set_lights(const libvgcode::Lights& lights);
     const libvgcode::Lights& default_lights() const;
+
+    float cog_marker_scale_factor() const;
+    void set_cog_marker_scale_factor(float factor);
+
+    float tool_marker_scale_factor() const;
+    void set_tool_marker_scale_factor(float factor);
+
+    void set_scale_factor_popup_type(Biz::libpgcode::OptionType type);
 
     void reset_default_extrusion_roles_colors();
 

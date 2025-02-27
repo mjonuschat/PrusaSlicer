@@ -44,8 +44,13 @@ public:
 class TextureBuffer : public Buffer
 {
 public:
-    explicit TextureBuffer(Device& device);
+    TextureBuffer(Device& device, PixelFormat format);
     ~TextureBuffer() override;
+
+    PixelFormat format() const { return m_format; }
+
+private:
+    PixelFormat m_format;
 };
 #endif // SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
 

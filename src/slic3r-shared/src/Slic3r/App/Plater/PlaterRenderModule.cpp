@@ -3,7 +3,7 @@
 #include "Slic3r/App/Scene/NodeVisitor.hpp"
 #include "Slic3r/App/Render/Device.hpp"
 #include "Slic3r/App/Render/GeometryBuilder.hpp"
-#include "Slic3r/App/Plater/CameraGizmo.hpp"
+#include "Slic3r/App/Plater/PlaterCameraGizmo.hpp"
 #include "Slic3r/App/Plater/SceneNodeTag.hpp"
 #include "Slic3r/App/Plater/GizmoNodeTag.hpp"
 #include "Slic3r/App/Plater/BedNodeTag.hpp"
@@ -101,8 +101,8 @@ void PlaterRenderModule::init_scene()
 
 void PlaterRenderModule::init_gizmos()
 {
-    m_gizmo_manager = std::make_unique<GizmoManager>(*m_device, *m_scene_presenter);
-    m_gizmo_manager->add_base_gizmo<CameraGizmo>(*m_scene_presenter);
+    m_gizmo_manager = std::make_unique<Scene::GizmoManager>(*m_device, *m_scene_presenter);
+    m_gizmo_manager->add_base_gizmo<PlaterCameraGizmo>(*m_scene_presenter);
     m_gizmo_manager->add_base_gizmo<QuickSelectGizmo>(m_project_interactor.scene_interactor(), *m_device, *m_scene_presenter, m_screen_info);
     m_gizmo_manager->add_base_gizmo<BedSelectGizmo>(m_project_interactor.scene_interactor(), *m_scene_presenter);
     m_gizmo_manager->add_base_gizmo<QuickDragGizmo>(m_project_interactor.scene_interactor(), *m_scene_presenter);
@@ -558,8 +558,8 @@ void PlaterRenderModule::render_imgui()
 
     if (ImGui::Begin("Outline", &m_gui_win_open)) {
         ImGui::Text("Tool Gizmos");
-        ToolType type = m_gizmo_manager->current_tool_type();
-        if (type == ToolType::Translation) {
+        Scene::ToolType type = m_gizmo_manager->current_tool_type();
+        if (type == Scene::ToolType::Translation) {
             ImGui::PushStyleColor(ImGuiCol_Button, { 0.67f, 0.36f, 0.19f, 1.0f });
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, { 0.923f, 0.504f, 0.264f, 1.0f });
             ImGui::PushStyleColor(ImGuiCol_ButtonActive, { 0.923f, 0.504f, 0.264f, 1.0f });
@@ -569,18 +569,18 @@ void PlaterRenderModule::render_imgui()
         }
         if (ImGui::Button("Translate"))
             // TODO: get and pass the correct printer type
-            m_gizmo_manager->toggle_activate_tool(ToolType::Translation, ptFFF);
-        if (type == ToolType::Translation)
+            m_gizmo_manager->toggle_activate_tool(Scene::ToolType::Translation, ptFFF);
+        if (type == Scene::ToolType::Translation)
             ImGui::PopStyleColor(3);
-        if (type == ToolType::Rotation) {
+        if (type == Scene::ToolType::Rotation) {
             ImGui::PushStyleColor(ImGuiCol_Button, { 0.67f, 0.36f, 0.19f, 1.0f });
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, { 0.923f, 0.504f, 0.264f, 1.0f });
             ImGui::PushStyleColor(ImGuiCol_ButtonActive, { 0.923f, 0.504f, 0.264f, 1.0f });
         }
         if (ImGui::Button("Rotate"))
             // TODO: get and pass the correct printer type
-            m_gizmo_manager->toggle_activate_tool(ToolType::Rotation, ptFFF);
-        if (type == ToolType::Rotation)
+            m_gizmo_manager->toggle_activate_tool(Scene::ToolType::Rotation, ptFFF);
+        if (type == Scene::ToolType::Rotation)
             ImGui::PopStyleColor(3);
         ImGui::Separator();
         imgui_scenegraph_node_info(m_scene_presenter->scene().root());

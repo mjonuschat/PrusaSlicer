@@ -1,13 +1,16 @@
 #include "Slic3r/App/Preview/PreviewRenderModule.hpp"
+#include "Slic3r/App/Preview/PreviewCameraGizmo.hpp"
 #include "Slic3r/App/Render/Device.hpp"
 #include "Slic3r/App/Render/CommandBuffer.hpp"
 #include "Slic3r/App/I18N/I18N.hpp"
 #include "Slic3r/App/LibvgcodeWrapper/WrapperInputData.hpp"
 
 #include <Slic3r/App/libvgcode/ViewerInputData.hpp>
-#include <Slic3r/Biz/libpgcode/ProcessorResult.hpp>
+#include <Slic3r/Biz/libpgcode/Processor.hpp>
 
 #include <boost/nowide/cstdio.hpp>
+
+#define ENABLED_DEBUG_VIEWER 1
 
 using namespace Slic3r::Biz::libpgcode;
 using namespace Slic3r::App::libvgcode;
@@ -23,45 +26,89 @@ void PreviewRenderModule::render_scene()
     cmd_buffer->set_clear_values({0.61f, 0.61f, 0.61f, 1.00f});
     cmd_buffer->clear_buffers(true, true);
 
+    m_viewer.render_toolpaths(m_scene_presenter->scene().camera().position().cast<float>());
     m_scene_presenter->render_scene(*cmd_buffer);
 
     cmd_buffer->submit();
 }
 
-void PreviewRenderModule::render_imgui()
+#if ENABLED_DEBUG_VIEWER
+static void render_imgui_debug_viewer(LibvgcodeWrapper::Wrapper& viewer)
 {
-    auto& camera = m_scene_presenter->scene().camera();
-
-    LibvgcodeWrapper::WrapperLayoutData layout;
-    Transform3f view_matrix;
-    view_matrix.matrix() = camera.model().matrix().cast<float>();
-    Transform3f proj_matrix;
-    proj_matrix.matrix() = camera.projection().matrix().cast<float>();
-    m_viewer.render(view_matrix, proj_matrix, layout);
-
     if (ImGui::Begin("Preview debug", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse)) {
-        bool visible = m_viewer.is_legend_visible();
+        bool visible = viewer.is_legend_visible();
         if (ImGui::Checkbox("Show legend", &visible))
-            m_viewer.toggle_legend_visible();
-        visible = m_viewer.is_gcodewindow_visible();
+            viewer.toggle_legend_visible();
+        visible = viewer.is_gcodewindow_visible();
         if (ImGui::Checkbox("Show gcode window", &visible))
-            m_viewer.toggle_gcodewindow_visible();
+            viewer.toggle_gcodewindow_visible();
+
+        ImGui::Separator();
+
+        if (ImGui::Button("COG marker scale factor"))
+            viewer.set_scale_factor_popup_type(Biz::libpgcode::OptionType::CenterOfGravity);
+        if (ImGui::Button("Tool marker scale factor"))
+            viewer.set_scale_factor_popup_type(Biz::libpgcode::OptionType::ToolMarker);
     }
     ImGui::End();
+}
+#endif // ENABLED_DEBUG_VIEWER
+
+void PreviewRenderModule::render_imgui()
+{
+    LibvgcodeWrapper::WrapperLayoutData layout;
+    // TODO: setup layout if needed
+    m_viewer.render_gui(layout);
+
+#if ENABLED_DEBUG_VIEWER
+    render_imgui_debug_viewer(m_viewer);
+#endif // ENABLED_DEBUG_VIEWER
+}
+
+void PreviewRenderModule::on_scene_mouse_event(const Platform::MouseEvent& e)
+{
+    m_gizmo_manager->on_scene_mouse_event(e, m_screen_info);
+}
+
+void PreviewRenderModule::on_scene_keyboard_event(const Platform::KeyboardEvent& e)
+{
+    m_gizmo_manager->on_scene_keyboard_event(e);
 }
 
 void PreviewRenderModule::on_init(Render::Device& device)
 {
     AbstractRenderModule::on_init(device);
     m_scene_presenter =
-        std::make_unique<Plater::ScenePresenter>(m_workbench, m_project_interactor, *m_device);
-    m_project_interactor.add_listener<Biz::ISelectedProjectChangedListener>(m_scene_presenter.get());
-    m_project_interactor.scene_interactor().add_listener<Biz::Scene::ISceneChangedListener>(
-        m_scene_presenter.get()
-    );
+        std::make_unique<PreviewScenePresenter>(m_workbench, m_project_interactor, *m_device);
 
+    init_gizmos();
     init_viewer(device);
     send_data_to_viewer();
+
+    Scene::CameraTrackballController& camera_trackball = m_scene_presenter->scene().camera_trackball();
+    camera_trackball.set_focal_point(m_viewer.bounding_box().center());
+    camera_trackball.set_azimuth_and_zenith(1.25 * PI, 1.25 * PI);
+}
+
+void PreviewRenderModule::on_activated()
+{
+}
+
+void PreviewRenderModule::on_deactivated()
+{
+}
+
+void PreviewRenderModule::on_screen_resized()
+{
+    //m_scene->camera().set_viewport(Render::Rect::from(0, 0, m_screen_info));
+    auto viewport = Render::Rect::from(0, 0, m_screen_info);
+    m_scene_presenter->screen_resized(viewport);
+}
+
+void PreviewRenderModule::init_gizmos()
+{
+    m_gizmo_manager = std::make_unique<Scene::GizmoManager>(*m_device, *m_scene_presenter);
+    m_gizmo_manager->add_base_gizmo<PreviewCameraGizmo>(*m_scene_presenter);
 }
 
 void PreviewRenderModule::init_viewer(Render::Device& device)
@@ -96,6 +143,8 @@ void PreviewRenderModule::init_viewer(Render::Device& device)
     settings.cb_slider_layers_get_gcode = std::bind(&PreviewRenderModule::on_slider_layers_get_gcode, this, std::placeholders::_1);
     settings.cb_slider_layers_get_used_extruders_in_print = std::bind(&PreviewRenderModule::on_slider_layers_get_used_extruders_in_print, this, std::placeholders::_1);
     settings.cb_slider_layers_app_config_changed = std::bind(&PreviewRenderModule::on_slider_layers_app_config_changed, this, std::placeholders::_1, std::placeholders::_2);
+    // set gcode slider callbacks
+    settings.cb_slider_gcode_on_thumb_move = std::bind(&PreviewRenderModule::on_slider_gcode_on_thumb_move, this);
 
     if (is_editor) {
         // legend's custom options
@@ -105,7 +154,7 @@ void PreviewRenderModule::init_viewer(Render::Device& device)
         shells_option.cb_action = std::bind(&PreviewRenderModule::on_legend_shells_action, this, std::placeholders::_1);
     }
 
-    if (m_viewer.init(device, settings))
+    if (m_viewer.init(device, m_scene_presenter->scene(), m_gizmo_manager->data_factory(), settings))
         m_viewer.set_lights(m_viewer.default_lights());
     else {
         // log some error message
@@ -115,10 +164,153 @@ void PreviewRenderModule::init_viewer(Render::Device& device)
 //
 // Temporary function for test
 //
+static std::pair<ProcessorConfig, std::string> extract_from_gcode(const std::string& filename)
+{
+    std::pair<ProcessorConfig, std::string> ret;
+
+    FILE* in = fopen(filename.c_str(), "rb");
+    if (in != nullptr) {
+        fseek(in, 0, SEEK_END);
+        const long file_size = ftell(in);
+        rewind(in);
+
+        if (file_size == 0) {
+            fclose(in);
+            return ret;
+        }
+
+        ret.second.resize(file_size, '\0');
+        const std::size_t cnt_read = fread(ret.second.data(), 1, ret.second.size(), in);
+        if (cnt_read != ret.second.size()) {
+            fclose(in);
+            return ret;
+        }
+    }
+    else {
+        fclose(in);
+        return ret;
+    }
+
+    fclose(in);
+
+    const GCodeProducer producer = detect_producer(ret.second);
+
+    switch (producer)
+    {
+    case GCodeProducer::AnkerMakeStudio:
+    {
+        ret.first = extract_processor_config_from_ankermakestudio_gcode(ret.second, [](const std::string_view str, size_t* pos = nullptr) {
+            return string_to_double_decimal_point(str, pos);
+        });
+        break;
+    }
+    case GCodeProducer::BambuStudio:
+    {
+        ret.first = extract_processor_config_from_bambustudio_gcode(ret.second, [](const std::string_view str, size_t* pos = nullptr) {
+            return string_to_double_decimal_point(str, pos);
+        });
+        break;
+    }
+    case GCodeProducer::CraftWare:
+    {
+        ret.first = extract_processor_config_from_craftware_gcode(ret.second, [](const std::string_view str, size_t* pos = nullptr) {
+            return string_to_double_decimal_point(str, pos);
+        });
+        break;
+    }
+    case GCodeProducer::Cura:
+    {
+        ret.first = extract_processor_config_from_cura_gcode(ret.second, [](const std::string_view str, size_t* pos = nullptr) {
+            return string_to_double_decimal_point(str, pos);
+        });
+        break;
+    }
+    case GCodeProducer::KISSlicer:
+    {
+        ret.first = extract_processor_config_from_kisslicer_gcode(ret.second, [](const std::string_view str, size_t* pos = nullptr) {
+            return string_to_double_decimal_point(str, pos);
+        });
+        break;
+    }
+    case GCodeProducer::ideaMaker:
+    {
+        ret.first = extract_processor_config_from_ideamaker_gcode(ret.second, [](const std::string_view str, size_t* pos = nullptr) {
+            return string_to_double_decimal_point(str, pos);
+        });
+        break;
+    }
+    case GCodeProducer::OrcaSlicer:
+    {
+        ret.first = extract_processor_config_from_orcaslicer_gcode(ret.second, [](const std::string_view str, size_t* pos = nullptr) {
+            return string_to_double_decimal_point(str, pos);
+        });
+        break;
+    }
+    case GCodeProducer::PrusaSlicer:
+    {
+        ret.first = extract_processor_config_from_prusaslicer_gcode(ret.second, [](const std::string_view str, size_t* pos = nullptr) {
+            return string_to_double_decimal_point(str, pos);
+        });
+        break;
+    }
+    case GCodeProducer::Simplify3D:
+    {
+        ret.first = extract_processor_config_from_simplify3d_gcode(ret.second, [](const std::string_view str, size_t* pos = nullptr) {
+            return string_to_double_decimal_point(str, pos);
+        });
+        break;
+    }
+    case GCodeProducer::SuperSlicer:
+    {
+        ret.first = extract_processor_config_from_superslicer_gcode(ret.second, [](const std::string_view str, size_t* pos = nullptr) {
+            return string_to_double_decimal_point(str, pos);
+        });
+        break;
+    }
+    case GCodeProducer::XDesktop:
+    {
+        ret.first = extract_processor_config_from_xdesktop_gcode(ret.second, [](const std::string_view str, size_t* pos = nullptr) {
+            return string_to_double_decimal_point(str, pos);
+        });
+        break;
+    }
+    default:
+    {
+        break;
+    }
+    }
+
+    ret.first.callbacks.cb_string_to_double_decimal_point = [](const std::string_view str, size_t* pos = nullptr) {
+        return string_to_double_decimal_point(str, pos);
+    };
+    ret.first.callbacks.cb_float_to_string_decimal_point = [](double value, int precision = -1) {
+        return float_to_string_decimal_point(value, precision);
+    };
+
+    return ret;
+}
+
+//
+// Temporary function for test
+//
+static ProcessorResult result_from_gcode_file()
+{
+    // >>> filename of the test file
+    std::string filename = "c:/temp/test.gcode";
+
+    std::pair<ProcessorConfig, std::string> processor_data = extract_from_gcode(filename);
+    Processor processor(std::move(processor_data.first));
+    processor.process_buffer(std::move(processor_data).second);
+    return processor.finalize();
+}
+
+//
+// Temporary function for test
+//
 static ProcessorResult import_test_result()
 {
     // >>> filename of the test file
-    const std::string filename = "c:/temp/processor_result.txt";
+    std::string filename = "c:/temp/processor_result.txt";
 
     ProcessorResult ret;
 
@@ -409,7 +601,8 @@ static LibvgcodeWrapper::WrapperInputData extract_wrapper_input_data_from_result
 
 void PreviewRenderModule::send_data_to_viewer()
 {
-    ProcessorResult result = import_test_result();
+    ProcessorResult result = result_from_gcode_file();
+//    ProcessorResult result = import_test_result();
     ViewerInputData viewer_data = extract_viewer_input_data_from_result(std::move(result));
     LibvgcodeWrapper::WrapperInputData wrapper_data = extract_wrapper_input_data_from_result(result);
 
@@ -423,101 +616,106 @@ void PreviewRenderModule::send_data_to_viewer()
 
 void PreviewRenderModule::on_invalidate_slice()
 {
-    // TODO -> implement me
+    // TODO
 }
 
 void PreviewRenderModule::on_update_layers_slider(const Slic3r::CustomGCode::Info& info)
 {
-    // TODO -> implement me
+    // TODO
 }
 
 void PreviewRenderModule::on_request_extra_frames(unsigned int count)
 {
-    // TODO -> implement me
+    // TODO
 }
 
 void PreviewRenderModule::on_gcode_view_type_changed()
 {
-    // TODO -> implement me
+    // TODO
 }
 
 void PreviewRenderModule::on_slider_layers_on_thumb_move()
 {
-    // TODO -> implement me
+    // TODO
 }
 
 void PreviewRenderModule::on_slider_layers_ticks_changed()
 {
-    // TODO -> implement me
+    // TODO
 }
 
 std::vector<std::string> PreviewRenderModule::on_slider_layers_get_extruder_colors()
 {
-    // TODO -> implement me
+    // TODO
     return std::vector<std::string>();
 }
 
 bool PreviewRenderModule::on_slider_layers_auto_color_change()
 {
-    // TODO -> implement me
+    // TODO
     return false;
 }
 
 void PreviewRenderModule::on_slider_layers_check_gcode(Slic3r::CustomGCode::Type type)
 {
-    // TODO -> implement me
+    // TODO
 }
 
 bool PreviewRenderModule::on_slider_layers_get_extruders_sequence(LibvgcodeWrapper::ExtrudersSequence& sequence)
 {
-    // TODO -> implement me
+    // TODO
     return false;
 }
 
 std::string PreviewRenderModule::on_slider_layers_get_custom_code(const std::string& code_in, float height)
 {
-    // TODO -> implement me
+    // TODO
     return "";
 }
 
 std::string PreviewRenderModule::on_slider_layers_get_pause_print_msg(const std::string& msg_in, float height)
 {
-    // TODO -> implement me
+    // TODO
     return "";
 }
 
 std::string PreviewRenderModule::on_slider_layers_get_new_color(const std::string& color)
 {
-    // TODO -> implement me
+    // TODO
     return "";
 }
 
 int PreviewRenderModule::on_slider_layers_show_info_msg(const std::string& message, int btns_flag)
 {
-    // TODO -> implement me
+    // TODO
     return 0;
 }
 
 std::string PreviewRenderModule::on_slider_layers_get_gcode(Slic3r::CustomGCode::Type type)
 {
-    // TODO -> implement me
+    // TODO
     return "";
 }
 
 std::set<int> PreviewRenderModule::on_slider_layers_get_used_extruders_in_print(float print_z)
 {
-    // TODO -> implement me
+    // TODO
     return std::set<int>();
 }
 
 void PreviewRenderModule::on_slider_layers_app_config_changed(const std::string& key, const std::string& val)
 {
-    // TODO -> implement me
+    // TODO
+}
+
+void PreviewRenderModule::on_slider_gcode_on_thumb_move()
+{
+    // TODO
 }
 
 void PreviewRenderModule::on_legend_shells_action(bool visible)
 {
-    // TODO -> implement me
+    // TODO
 }
 
 } // namespace Slic3r::App::Preview

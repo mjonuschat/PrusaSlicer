@@ -1,18 +1,10 @@
 set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Plater/ScenePresenter.hpp
         src/Slic3r/App/Plater/ScenePresenter.cpp
-        include/Slic3r/App/Plater/ScenePresenterProjectContext.hpp
-        src/Slic3r/App/Plater/ScenePresenterProjectContext.cpp
         include/Slic3r/App/Plater/PlaterRenderModule.hpp
         src/Slic3r/App/Plater/PlaterRenderModule.cpp
-        include/Slic3r/App/Plater/GizmoManager.hpp
-        src/Slic3r/App/Plater/GizmoManager.cpp
-        include/Slic3r/App/Plater/IGizmo.hpp
-        include/Slic3r/App/Plater/GizmoEventContext.hpp
-        include/Slic3r/App/Plater/GizmoDataFactory.hpp
-        src/Slic3r/App/Plater/GizmoDataFactory.cpp
-        include/Slic3r/App/Plater/CameraGizmo.hpp
-        src/Slic3r/App/Plater/CameraGizmo.cpp
+        include/Slic3r/App/Plater/PlaterCameraGizmo.hpp
+        src/Slic3r/App/Plater/PlaterCameraGizmo.cpp
         include/Slic3r/App/Plater/GizmoNodeTag.hpp
         include/Slic3r/App/Plater/SceneNodeTag.hpp
         include/Slic3r/App/Plater/NodePredicates.hpp
@@ -22,7 +14,6 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Plater/QuickDragGizmo.cpp
         include/Slic3r/App/Plater/BedSelectGizmo.hpp
         src/Slic3r/App/Plater/BedSelectGizmo.cpp
-        include/Slic3r/App/Plater/ISceneProvider.hpp
         include/Slic3r/App/Plater/AuxiliaryElementId.hpp
         include/Slic3r/App/Plater/SelectionHandler.hpp
         src/Slic3r/App/Plater/SelectionHandler.cpp
@@ -43,6 +34,13 @@ set(SLIC3R_SHARED_FILES
 
         include/Slic3r/App/Preview/PreviewRenderModule.hpp
         src/Slic3r/App/Preview/PreviewRenderModule.cpp
+        include/Slic3r/App/Preview/PreviewCameraGizmo.hpp
+        include/Slic3r/App/Preview/PreviewScenePresenter.hpp
+        src/Slic3r/App/Preview/PreviewScenePresenter.cpp
+        include/Slic3r/App/Preview/PreviewAuxiliaryElementId.hpp
+        include/Slic3r/App/Preview/PreviewSceneLayer.hpp
+        include/Slic3r/App/Preview/PreviewSceneRenderCustomizer.hpp
+        src/Slic3r/App/Preview/PreviewSceneRenderCustomizer.cpp
 
         src/Slic3r/App/Scene/Scene.cpp
         include/Slic3r/App/Scene/Scene.hpp
@@ -55,6 +53,8 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Scene/Transform.hpp
         src/Slic3r/App/Scene/MeshRenderNodeComponent.cpp
         include/Slic3r/App/Scene/MeshRenderNodeComponent.hpp
+        src/Slic3r/App/Scene/InstancedMeshRenderNodeComponent.cpp
+        include/Slic3r/App/Scene/InstancedMeshRenderNodeComponent.hpp
         include/Slic3r/App/Scene/NodeBuilder.hpp
         src/Slic3r/App/Scene/NodeBuilder.cpp
         include/Slic3r/App/Scene/IRaycastNodeComponent.hpp
@@ -77,6 +77,16 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Scene/Plane.cpp
         include/Slic3r/App/Scene/Frustum.hpp
         src/Slic3r/App/Scene/Frustum.cpp
+        include/Slic3r/App/Scene/IGizmo.hpp
+        include/Slic3r/App/Scene/GizmoEventContext.hpp
+        include/Slic3r/App/Scene/AbstractCameraGizmo.hpp
+        src/Slic3r/App/Scene/AbstractCameraGizmo.cpp
+        include/Slic3r/App/Scene/GizmoManager.hpp
+        src/Slic3r/App/Scene/GizmoManager.cpp
+        include/Slic3r/App/Scene/GeometryDataFactory.hpp
+        src/Slic3r/App/Scene/GeometryDataFactory.cpp
+        include/Slic3r/App/Scene/ISceneProvider.hpp
+        include/Slic3r/App/Scene/ScenePresenterProjectContext.hpp
 
         include/Slic3r/App/TestRenderModule.hpp
         src/Slic3r/App/TestRenderModule.cpp

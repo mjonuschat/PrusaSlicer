@@ -155,6 +155,9 @@ void Scene::render(Render::CommandBuffer& cmd_buffer, ISceneRenderCustomizer* cu
     for (const Node* node : nodes)
         nodes_with_materials.emplace_back(node, resolve_material(*node));
 
+    if (nodes_with_materials.empty())
+        return;
+
     std::stable_partition(nodes_with_materials.begin(), nodes_with_materials.end(), [](const auto& p) {
         return !p.second.transparent();
     });
@@ -169,7 +172,8 @@ void Scene::render(Render::CommandBuffer& cmd_buffer, ISceneRenderCustomizer* cu
 
     constexpr int INITIAL_LAYER = std::numeric_limits<int>::min();
     int current_layer = INITIAL_LAYER;
-    bool was_opaque = false;
+    // set was_opaque as the opposite of the first element in list
+    bool was_opaque = nodes_with_materials.front().second.transparent();
     for (const auto& [n, mat]  : nodes_with_materials) {
         const bool first_iteration = current_layer == INITIAL_LAYER;
 

@@ -1,5 +1,5 @@
 #include "Slic3r/App/Plater/RotationGizmo.hpp"
-#include "Slic3r/App/Plater/GizmoDataFactory.hpp"
+#include "Slic3r/App/Scene/GeometryDataFactory.hpp"
 #include "Slic3r/App/Plater/PlaterSceneLayer.hpp"
 #include "Slic3r/App/Plater/SceneNodeTag.hpp"
 #include "Slic3r/App/Render/Device.hpp"
@@ -14,7 +14,7 @@ constexpr double CIRCLE_RADIUS = 30.0;
 constexpr double CIRCLE_DIAMETER = 2.0 * CIRCLE_RADIUS;
 static const Vec3d HANDLE_CUBE_SIZE = { 10.0, 10.0, 10.0 };
 static const Vec3d HANDLE_CONE_SIZE = { 10.0, 10.0, 15.0 };
-static const double HANDLE_STEM_LENGTH = CIRCLE_RADIUS * CIRCLE_FINE_GRADE_PRIMARY_OUT_RADIUS + 0.5 * HANDLE_CUBE_SIZE[X];
+static const double HANDLE_STEM_LENGTH = CIRCLE_RADIUS * Scene::CIRCLE_FINE_GRADE_PRIMARY_OUT_RADIUS + 0.5 * HANDLE_CUBE_SIZE[X];
 constexpr double HANDLE_GAP_LENGTH = 1.0;
 static const Vec3d HANDLE_CUBE_OFFSET = { HANDLE_STEM_LENGTH, 0.0, 0.0 };
 static const Vec3d HANDLE_CONE_CCW_OFFSET = { HANDLE_STEM_LENGTH, 0.5 * HANDLE_CUBE_SIZE[Y] + HANDLE_GAP_LENGTH, 0.0 };
@@ -96,7 +96,7 @@ static Vec3d extract_position(const App::Scene::Transform& xform)
     return xform.block<3, 1>(0, 3);
 }
 
-RotationGizmo::RotationGizmo(Render::Device& device, GizmoDataFactory& data_factory,
+RotationGizmo::RotationGizmo(Render::Device& device, Scene::GeometryDataFactory& data_factory,
     ScenePresenter& scene_presenter, Biz::Scene::SceneInteractor& scene_interactor
 )
     : m_device(device)
@@ -105,19 +105,19 @@ RotationGizmo::RotationGizmo(Render::Device& device, GizmoDataFactory& data_fact
     , m_scene_interactor(scene_interactor)
 {
     m_snap = {
-          { CIRCLE_RADIUS * CIRCLE_COARSE_GRADE_IN_RADIUS, CIRCLE_RADIUS * CIRCLE_COARSE_GRADE_OUT_RADIUS },
-          { CIRCLE_RADIUS, CIRCLE_RADIUS * CIRCLE_FINE_GRADE_PRIMARY_OUT_RADIUS }
+          { CIRCLE_RADIUS * Scene::CIRCLE_COARSE_GRADE_IN_RADIUS, CIRCLE_RADIUS * Scene::CIRCLE_COARSE_GRADE_OUT_RADIUS },
+          { CIRCLE_RADIUS, CIRCLE_RADIUS * Scene::CIRCLE_FINE_GRADE_PRIMARY_OUT_RADIUS }
     };
 }
 
-GizmoActivationState RotationGizmo::on_mouse(GizmoEventContext& ctx, bool only_active)
+Scene::GizmoActivationState RotationGizmo::on_mouse(Scene::GizmoEventContext& ctx, bool only_active)
 {
     const auto event_type = ctx.mouse_event().type();
     if (event_type != Platform::MouseEvent::Type::ButtonDown &&
         event_type != Platform::MouseEvent::Type::Move &&
         event_type != Platform::MouseEvent::Type::ButtonUp) {
         on_stop_dragging();
-        return GizmoActivationState::Inactive;
+        return Scene::GizmoActivationState::Inactive;
     }
 
     const auto& pick_ray = ctx.pick_ray();
@@ -126,7 +126,7 @@ GizmoActivationState RotationGizmo::on_mouse(GizmoEventContext& ctx, bool only_a
         const Scene::Node* node = ctx.pick_result_node_with_tag_of_type<RotationGizmoNodeTag>();
         if (node == nullptr) {
             on_stop_dragging();
-            return GizmoActivationState::Inactive;
+            return Scene::GizmoActivationState::Inactive;
         }
 
         const RotationGizmoNodeTag& tag = *node->tag_of_type<RotationGizmoNodeTag>();
@@ -137,7 +137,7 @@ GizmoActivationState RotationGizmo::on_mouse(GizmoEventContext& ctx, bool only_a
     double t;
     if (!m_translation_ray.closest_point_from_ray(pick_ray, t)) {
         on_stop_dragging();
-        return GizmoActivationState::Inactive;
+        return Scene::GizmoActivationState::Inactive;
     }
 
     if (event_type == Platform::MouseEvent::Type::ButtonDown) {
@@ -162,11 +162,11 @@ GizmoActivationState RotationGizmo::on_mouse(GizmoEventContext& ctx, bool only_a
                 parent_world.inverse() * m_scene_presenter.selection_root().
                 world_transform());
         }
-        return GizmoActivationState::Active;
+        return Scene::GizmoActivationState::Active;
     }
 
     if (!m_dragging)
-        return GizmoActivationState::Inactive;
+        return Scene::GizmoActivationState::Inactive;
 
     if (m_curr_axis != AxisType::None) {
         Vec2d pos = to_2d(mouse_position_in_local_plane(m_curr_axis, Transform3d::Identity(), m_pivot_world,
@@ -186,19 +186,19 @@ GizmoActivationState RotationGizmo::on_mouse(GizmoEventContext& ctx, bool only_a
         if (modifier != nullptr) {
             const App::Scene::Camera& camera = m_scene_presenter.scene().camera();
             double scale = camera.cam_projection()
-                .constant_screen_space_size_scale(camera, (m_pivot_world - camera.position()).norm()) * ScenePresenter::screen_space_sized_modifier();
+                .constant_screen_space_size_scale(camera, (m_pivot_world - camera.position()).norm()) * m_scene_presenter.screen_space_sized_modifier();
             len /= scale;
         }
 
         // snap to coarse snap region
         if (m_snap.coarse.in <= len && len <= m_snap.coarse.out) {
-            double step = TWO_PI / CIRCLE_COARSE_GRADE_STEPS;
+            double step = TWO_PI / Scene::CIRCLE_COARSE_GRADE_STEPS;
             theta = step * std::round(theta / step);
         }
         else {
             // snap to fine snap region
             if (m_snap.fine.in <= len && len <= m_snap.fine.out) {
-                double step = TWO_PI / CIRCLE_FINE_GRADE_SECONDARY_STEPS;
+                double step = TWO_PI / Scene::CIRCLE_FINE_GRADE_SECONDARY_STEPS;
                 theta = step * std::round(theta / step);
             }
         }
@@ -223,13 +223,13 @@ GizmoActivationState RotationGizmo::on_mouse(GizmoEventContext& ctx, bool only_a
         m_scene_interactor.finalize_transform_selection(m_xform_memento, false);
         on_stop_dragging();
         clear_highlight();
-        return GizmoActivationState::Done;
+        return Scene::GizmoActivationState::Done;
     }
 
-    return GizmoActivationState::Active;
+    return Scene::GizmoActivationState::Active;
 }
 
-void RotationGizmo::on_transient_mouse(GizmoEventContext& ctx)
+void RotationGizmo::on_transient_mouse(Scene::GizmoEventContext& ctx)
 {
     if (!m_activated || m_dragging)
         return;
@@ -262,7 +262,7 @@ void RotationGizmo::on_cycle_prepare()
     m_dragging = false;
 }
 
-static void build_rotate_node(AxisType axis, Scene::NodeBuilder& builder, Render::Device& device, GizmoDataFactory& data_factory)
+static void build_rotate_node(AxisType axis, Scene::NodeBuilder& builder, Render::Device& device, Scene::GeometryDataFactory& data_factory)
 {
     ColorRGBA color = axis_color(axis);
 
@@ -277,7 +277,7 @@ static void build_rotate_node(AxisType axis, Scene::NodeBuilder& builder, Render
         bldr
             .set_debug_name("circle")
             .set_tag(RotationGizmoNodeTag{ axis })
-            .set_mesh(data_factory.geometry(GizmoDataId::Circle), material, int(PlaterSceneLayer::GizmoHandles))
+            .set_mesh(data_factory.geometry(Scene::GeometryDataId::Circle), material, int(PlaterSceneLayer::GizmoHandles))
             .transform([&](Transform3d& xform) {
                 xform.scale(CIRCLE_DIAMETER * Vec3d::Ones());
             });
@@ -291,7 +291,7 @@ static void build_rotate_node(AxisType axis, Scene::NodeBuilder& builder, Render
         bldr
             .set_debug_name("graded circle")
             .set_tag(RotationGizmoNodeTag{ axis, AxisType::None, 2 })
-            .set_mesh(data_factory.geometry(GizmoDataId::GradedCircle), material, int(PlaterSceneLayer::GizmoHandles))
+            .set_mesh(data_factory.geometry(Scene::GeometryDataId::GradedCircle), material, int(PlaterSceneLayer::GizmoHandles))
             .set_enabled(false)
             .transform([&](Transform3d& xform) {
                 xform.scale(CIRCLE_DIAMETER * Vec3d::Ones());
@@ -311,15 +311,15 @@ static void build_rotate_node(AxisType axis, Scene::NodeBuilder& builder, Render
             child_bldr
                 .set_debug_name("stem")
                 .set_tag(RotationGizmoNodeTag{ axis })
-                .set_mesh(data_factory.geometry(GizmoDataId::Segment), material, int(PlaterSceneLayer::GizmoHandles))
+                .set_mesh(data_factory.geometry(Scene::GeometryDataId::Segment), material, int(PlaterSceneLayer::GizmoHandles))
                 .transform([&](Transform3d& xform) {
                     xform.scale(HANDLE_STEM_LENGTH * Vec3d::UnitX());
                 });
         });
 
         bldr.child([&](Scene::NodeBuilder& child_bldr) {
-            auto geom = data_factory.geometry(GizmoDataId::Cube);
-            auto  mesh = data_factory.triangle_mesh(GizmoDataId::Cube);
+            auto geom = data_factory.geometry(Scene::GeometryDataId::Cube);
+            auto mesh = data_factory.triangle_mesh(Scene::GeometryDataId::Cube);
 
             Render::Material material = Render::Material{}
                 .set_shader(device.context().shader_manager().get_shader("gouraud_light"))
@@ -338,8 +338,8 @@ static void build_rotate_node(AxisType axis, Scene::NodeBuilder& builder, Render
         });
 
         bldr.child([&](Scene::NodeBuilder& child_bldr) {
-            auto geom = data_factory.geometry(GizmoDataId::Cone);
-            auto  mesh = data_factory.triangle_mesh(GizmoDataId::Cone);
+            auto geom = data_factory.geometry(Scene::GeometryDataId::Cone);
+            auto mesh = data_factory.triangle_mesh(Scene::GeometryDataId::Cone);
 
             Render::Material material = Render::Material{}
                 .set_shader(device.context().shader_manager().get_shader("gouraud_light"))
@@ -359,8 +359,8 @@ static void build_rotate_node(AxisType axis, Scene::NodeBuilder& builder, Render
         });
 
         bldr.child([&](Scene::NodeBuilder& child_bldr) {
-            auto geom = data_factory.geometry(GizmoDataId::Cone);
-            auto  mesh = data_factory.triangle_mesh(GizmoDataId::Cone);
+            auto geom = data_factory.geometry(Scene::GeometryDataId::Cone);
+            auto mesh = data_factory.triangle_mesh(Scene::GeometryDataId::Cone);
 
             Render::Material material = Render::Material{}
                 .set_shader(device.context().shader_manager().get_shader("gouraud_light"))

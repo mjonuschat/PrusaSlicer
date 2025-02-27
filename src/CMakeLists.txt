@@ -12,6 +12,10 @@ else()
     target_link_libraries(qhull INTERFACE Qhull::qhullcpp Qhull::qhull_r)
 endif()
 
+if (NOT SLIC3R_OPENGL_ES AND NOT EMSCRIPTEN)
+    add_definitions(-DSLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED)
+endif ()
+
 add_subdirectory(slic3r-jthread)
 add_subdirectory(libslic3r)
 add_subdirectory(libpgcode)

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Slic3r/App/Plater/ISceneProvider.hpp"
+#include "Slic3r/App/Scene/ISceneProvider.hpp"
 #include "Slic3r/App/Scene/Camera.hpp"
 #include "Slic3r/Biz/ISelectedProjectChangedListener.hpp"
 
@@ -16,7 +16,7 @@ class BedRenderUpdater : public Scene::ICameraUpdateListener,
 {
 public:
     BedRenderUpdater(
-        ISceneProvider& scene_provider, const Domain::Workbench& workbench, Render::Device& device
+        Scene::ISceneProvider& scene_provider, const Domain::Workbench& workbench, Render::Device& device
     )
         : m_scene_provider(scene_provider), m_workbench(workbench), m_device(device)
     {}
@@ -57,7 +57,7 @@ public:
     void on_selected_project_changed(size_t index) override;
 
 private:
-    ISceneProvider& m_scene_provider;
+    Scene::ISceneProvider& m_scene_provider;
     const Domain::Workbench& m_workbench;
     Render::Device& m_device;
     Domain::Project* m_project{ nullptr };

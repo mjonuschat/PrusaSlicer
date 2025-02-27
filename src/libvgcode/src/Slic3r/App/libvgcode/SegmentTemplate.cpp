@@ -5,6 +5,13 @@
 ///|/
 #include "SegmentTemplate.hpp"
 
+#include <Slic3r/App/Render/Device.hpp>
+#include <Slic3r/App/Render/Context.hpp>
+#include "Slic3r/App/libvgcode/GCodeNodeTag.hpp"
+#include <Slic3r/App/Preview/PreviewSceneLayer.hpp>
+#include <Slic3r/App/Scene/NodeBuilder.hpp>
+#include <Slic3r/App/Scene/Scene.hpp>
+
 #include <cstdint>
 #include <array>
 
@@ -26,46 +33,30 @@ static constexpr const std::array<uint8_t, 24> VERTEX_DATA = {
     5, 7, 6, // back spike
 };
 
-void SegmentTemplate::init()
+void SegmentTemplate::init(Render::Device& device, Scene::NodeBuilder& builder)
 {
-//    if (m_vao_id != 0)
-//        return;
-//
-//    m_size_in_bytes_gpu += VERTEX_DATA.size() * sizeof(uint8_t);
-//
-//    int curr_vertex_array;
-//    glsafe(glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &curr_vertex_array));
-//    int curr_array_buffer;
-//    glsafe(glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &curr_array_buffer));
-//
-//    glsafe(glGenVertexArrays(1, &m_vao_id));
-//    glsafe(glBindVertexArray(m_vao_id));
-//
-//    glsafe(glGenBuffers(1, &m_vbo_id));
-//    glsafe(glBindBuffer(GL_ARRAY_BUFFER, m_vbo_id));
-//    glsafe(glBufferData(GL_ARRAY_BUFFER, VERTEX_DATA.size() * sizeof(uint8_t), VERTEX_DATA.data(), GL_STATIC_DRAW));
-//    glsafe(glEnableVertexAttribArray(0));
-//#if SLIC3R_OPENGL_ES || defined(__EMSCRIPTEN__)
-//    glsafe(glVertexAttribPointer(0, 1, GL_UNSIGNED_BYTE, GL_FALSE, 0, (const void*)0));
-//#else
-//    glsafe(glVertexAttribIPointer(0, 1, GL_UNSIGNED_BYTE, 0, (const void*)0));
-// #endif SLIC3R_OPENGL_ES || defined(__EMSCRIPTEN__)
-//
-//    glsafe(glBindBuffer(GL_ARRAY_BUFFER, curr_array_buffer));
-//    glsafe(glBindVertexArray(curr_vertex_array));
-}
+    Render::VertexAttribDesc v_attr;
+    v_attr.attrib_type = Render::VertexAttribType::Vertex;
+    v_attr.components = 1;
+    v_attr.data_type = Render::DataType::UByte;
+    v_attr.normalize = false;
+    v_attr.offset = 0;
 
-void SegmentTemplate::render(size_t count)
-{
-//    if (m_vao_id == 0 || m_vbo_id == 0 || count == 0)
-//        return;
-//
-//    int curr_vertex_array;
-//    glsafe(glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &curr_vertex_array));
-//
-//    glsafe(glBindVertexArray(m_vao_id));
-//    glsafe(glDrawArraysInstanced(GL_TRIANGLES, 0, GLsizei(VERTEX_DATA.size()), GLsizei(count)));
-//    glsafe(glBindVertexArray(curr_vertex_array));
+    m_geometry = std::make_unique<Render::Geometry>(device);
+    m_geometry->upload(VERTEX_DATA.data(), VERTEX_DATA.size(), { v_attr });
+
+    Render::Material material = Render::Material{}
+        .set_shader(device.context().shader_manager().get_shader("segments"));
+
+    Render::DrawCommands draw_commands;
+    draw_commands.push_back({ Render::PrimitiveType::Triangles, 0, m_geometry->vertex_count(), material});
+    m_geometry->draw_commands() = draw_commands;
+
+    builder
+        .set_debug_name("gcode_toolpaths")
+        .set_tag(GCodeNodeTag{ GCodeElementType::Toolpaths })
+        .set_mesh_instanced(m_geometry.get(), material, 0, Render::PrimitiveType::Triangles,
+            int(Preview::PreviewSceneLayer::Toolpaths));
 }
 
 } // namespace Slic3r::App::libvgcode

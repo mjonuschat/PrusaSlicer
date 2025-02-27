@@ -27,14 +27,15 @@ static const std::vector<Palette> PREDEFINED_PALETTES = {
     DEFAULT_RANGES_COLORS
 };
 
-bool WrapperImpl::init(App::Render::Device& device, const WrapperSettings& settings)
+bool WrapperImpl::init(Render::Device& device, Scene::Scene& scene, Scene::GeometryDataFactory& data_factory,
+    const WrapperSettings& settings)
 {
     m_settings = settings;
     set_settings_in_legend_visible(m_settings.settings_in_legend_visible);
     set_gcodewindow_visible(m_settings.gcodewindow_visible);
 
     try {
-        m_viewer.init(device);
+        m_viewer.init(device, scene, data_factory);
 
         m_cb_legend.cb_extrusion_role_visibility_changed = std::bind(&WrapperImpl::on_extrusion_role_visibility_changed, this);
         m_cb_legend.cb_request_extra_frame = m_settings.cb_request_extra_frames;
@@ -110,13 +111,17 @@ void WrapperImpl::load_as_sla(WrapperSLAInputData&& wrapper_sla_data)
     m_slider_layers.set_draw_mode(true, false);
 }
 
-void WrapperImpl::render(const Transform3f& view_matrix, const Transform3f& projection_matrix,
-   const WrapperLayoutData& layout)
+void WrapperImpl::render_toolpaths(const Vec3f& camera_position)
+{
+    if (m_printer_technology == PrinterTechnology::FFF)
+        render_toolpaths_internal(camera_position);
+}
+
+void WrapperImpl::render_gui(const WrapperLayoutData& layout)
 {
     m_legend_height = 0.0f;
 
     if (m_printer_technology == PrinterTechnology::FFF) {
-        //render_toolpaths(view_matrix, projection_matrix);
         render_legend(layout);
         render_slider_gcode(layout);
     }
@@ -432,6 +437,12 @@ void WrapperImpl::on_request_extra_frames(unsigned int count)
 {
     if (m_settings.cb_request_extra_frames != nullptr)
         m_settings.cb_request_extra_frames(count);
+}
+
+void WrapperImpl::render_toolpaths_internal(const Vec3f& camera_position)
+{
+    if (has_data())
+        m_viewer.render(camera_position);
 }
 
 void WrapperImpl::render_legend(const WrapperLayoutData& layout)
@@ -997,11 +1008,10 @@ void WrapperImpl::render_customize_scale_factor_popup()
 
     Imgui::UnifiedWindowStyle unified_window_style;
     unified_window_style.push();
-    ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Always, { 0.5f, 0.5f });
+    ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_FirstUseEver, { 0.5f, 0.5f });
 
     ImGuiWindowFlags windows_flag = ImGuiWindowFlags_AlwaysAutoResize |
                                     ImGuiWindowFlags_NoCollapse |
-                                    ImGuiWindowFlags_NoMove |
                                     ImGuiWindowFlags_NoResize |
                                     ImGuiWindowFlags_NoScrollbar |
                                     ImGuiWindowFlags_NoScrollWithMouse;

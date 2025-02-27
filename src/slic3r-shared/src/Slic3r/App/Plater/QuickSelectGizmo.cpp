@@ -126,7 +126,7 @@ Scene::Node::NodeList RectangleSelection::collect_contained_nodes()
     return nodes;
 }
 
-GizmoActivationState QuickSelectGizmo::on_mouse(GizmoEventContext& ctx, bool only_active)
+Scene::GizmoActivationState QuickSelectGizmo::on_mouse(Scene::GizmoEventContext& ctx, bool only_active)
 {
     using namespace std::chrono_literals;
     const auto& evt = ctx.mouse_event();
@@ -147,7 +147,7 @@ GizmoActivationState QuickSelectGizmo::on_mouse(GizmoEventContext& ctx, bool onl
     if (type == Platform::MouseEvent::Type::ButtonDown) {
         if (evt.button() != Platform::MouseButton::Left) {
             m_processing = false;
-            return GizmoActivationState::Inactive;
+            return Scene::GizmoActivationState::Inactive;
         }
 
         RectangleSelection::Type rect_sel_type = (shift_down && ctrl_down) ? RectangleSelection::Type::Add :
@@ -158,13 +158,13 @@ GizmoActivationState QuickSelectGizmo::on_mouse(GizmoEventContext& ctx, bool onl
             m_rectangle_selection.activate(rect_sel_type, { evt.x(), evt.y() });
 
         if (m_rectangle_selection.is_active())
-            return GizmoActivationState::Active;
+            return Scene::GizmoActivationState::Active;
         else {
             m_click_start = Clock::now();
             m_processing = true;
         }
 
-        return only_active ? GizmoActivationState::Active : GizmoActivationState::Probing;
+        return only_active ? Scene::GizmoActivationState::Active : Scene::GizmoActivationState::Probing;
     }
 
     if (!m_rectangle_selection.is_active()) {
@@ -173,37 +173,37 @@ GizmoActivationState QuickSelectGizmo::on_mouse(GizmoEventContext& ctx, bool onl
             SPDLOG_INFO("QuickSelectGizmo activation timed out");
         }
         if (!m_processing)
-            return GizmoActivationState::Inactive;
+            return Scene::GizmoActivationState::Inactive;
     }
 
     if (type == Platform::MouseEvent::Type::Move) {
         if (m_rectangle_selection.is_active()) {
             m_rectangle_selection.update({ evt.x(), evt.y() });
-            return GizmoActivationState::Active;
+            return Scene::GizmoActivationState::Active;
         }
         else
-            return GizmoActivationState::Probing;
+            return Scene::GizmoActivationState::Probing;
     } else if (type == Platform::MouseEvent::Type::ButtonUp) {
         if (m_rectangle_selection.is_active()) {
             bool res = m_rectangle_selection.update_selection(m_selection_handler);
             m_rectangle_selection.deactivate();
             if (res)
-                return GizmoActivationState::Done;
+                return Scene::GizmoActivationState::Done;
         }
 
         const bool additive = shift_down;
         const auto& selection = m_scene_interactor.selection();
         if (selection.empty()) {
             if (it == ctx.pick_results().end())
-                return GizmoActivationState::Inactive;
+                return Scene::GizmoActivationState::Inactive;
 
             m_selection_handler.mark_selected(*it->node, !additive);
-            return GizmoActivationState::Done;
+            return Scene::GizmoActivationState::Done;
         } else {
             if (it == ctx.pick_results().end()) {
                 if (!additive)
                     m_selection_handler.clear_selection();
-                return GizmoActivationState::Done;
+                return Scene::GizmoActivationState::Done;
             }
 
             const auto& tag = *it->node->tag_of_type<SceneNodeTag>();
@@ -222,14 +222,14 @@ GizmoActivationState QuickSelectGizmo::on_mouse(GizmoEventContext& ctx, bool onl
             } else {
                 m_selection_handler.mark_selected(*it->node);
             }
-            return GizmoActivationState::Done;
+            return Scene::GizmoActivationState::Done;
         }
     }
     else if (evt.type() == Platform::MouseEvent::Type::Leave) {
         if (m_rectangle_selection.is_active())
-            return GizmoActivationState::Active;
+            return Scene::GizmoActivationState::Active;
     }
-    return GizmoActivationState::Inactive;
+    return Scene::GizmoActivationState::Inactive;
 }
 
 void QuickSelectGizmo::render_scene(Render::CommandBuffer& cmd_buffer)

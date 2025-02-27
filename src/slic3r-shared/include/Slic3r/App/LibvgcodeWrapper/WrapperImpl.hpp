@@ -31,7 +31,8 @@ public:
     WrapperImpl& operator=(const WrapperImpl&) = delete;
     ~WrapperImpl() = default;
 
-    bool init(App::Render::Device& device, const WrapperSettings& settings);
+    bool init(Render::Device& device, Scene::Scene& scene, Scene::GeometryDataFactory& data_factory,
+        const WrapperSettings& settings);
     void shutdown();
 
     void reset();
@@ -39,8 +40,20 @@ public:
     void load(WrapperInputData&& wrapper_data, libvgcode::ViewerInputData&& data);
     void load_as_sla(WrapperSLAInputData&& wrapper_sla_data);
 
-    void render(const Transform3f& view_matrix, const Transform3f& projection_matrix,
-        const WrapperLayoutData& layout);
+    BoundingBoxf3 bounding_box(const Biz::libpgcode::MoveTypes& types = {
+        Biz::libpgcode::MoveType::Retract,
+        Biz::libpgcode::MoveType::Unretract,
+        Biz::libpgcode::MoveType::Seam,
+        Biz::libpgcode::MoveType::ToolChange,
+        Biz::libpgcode::MoveType::ColorChange,
+        Biz::libpgcode::MoveType::PausePrint,
+        Biz::libpgcode::MoveType::CustomGCode,
+        Biz::libpgcode::MoveType::Travel,
+        Biz::libpgcode::MoveType::Wipe,
+        Biz::libpgcode::MoveType::Extrude }) const { return m_viewer.bounding_box(types); }
+
+    void render_toolpaths(const Vec3f& camera_position);
+    void render_gui(const WrapperLayoutData& layout);
 
     Biz::libpgcode::UnitsSystem units() const { return m_units; }
     void set_units(Biz::libpgcode::UnitsSystem sys);
@@ -55,6 +68,12 @@ public:
     const libvgcode::Lights& lights() const { return m_viewer.lights(); }
     void set_lights(const libvgcode::Lights& lights) { m_viewer.set_lights(lights); }
     const libvgcode::Lights& default_lights() const { return m_viewer.default_lights(); }
+
+    float cog_marker_scale_factor() const { return m_viewer.cog_marker_scale_factor(); }
+    void set_cog_marker_scale_factor(float factor) { m_viewer.set_cog_marker_scale_factor(factor); }
+
+    float tool_marker_scale_factor() const { return m_viewer.tool_marker_scale_factor(); }
+    void set_tool_marker_scale_factor(float factor) { m_viewer.set_tool_marker_scale_factor(factor); }
 
     void set_legend_visible(bool visible) { m_legend_params.visible = visible; }
     void toggle_legend_visible() { set_legend_visible(!m_legend_params.visible); }
@@ -122,6 +141,7 @@ private:
     void on_extrusion_role_visibility_changed();
     void on_request_extra_frames(unsigned int count = 1);
 
+    void render_toolpaths_internal(const Vec3f& camera_position);
     void render_legend(const WrapperLayoutData& layout);
     void render_slider_gcode(const WrapperLayoutData& layout);
     void render_slider_layers(const WrapperLayoutData& layout);

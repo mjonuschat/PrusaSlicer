@@ -217,6 +217,7 @@ public:
     void set_render_component(IRenderNodeComponent* component);
     void set_render_component(std::unique_ptr<IRenderNodeComponent>&& component) { set_render_component(component.release()); }
     const IRenderNodeComponent* render_component() const { return m_render_component.get(); }
+    IRenderNodeComponent* render_component() { return m_render_component.get(); }
     /**@}*/
 
     /**

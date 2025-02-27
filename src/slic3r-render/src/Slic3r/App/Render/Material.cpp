@@ -16,6 +16,9 @@ void Material::update(const Material& override)
         m_shader = shader;
     update_map(m_uniforms, override.uniforms());
     update_map(m_textures, override.textures());
+#ifdef SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
+    update_map(m_texture_buffers, override.texture_buffers());
+#endif // SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
     if (override.m_transparent.has_value())
         m_transparent = override.transparent();
 }

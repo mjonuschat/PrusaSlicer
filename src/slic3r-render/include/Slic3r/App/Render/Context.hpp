@@ -8,6 +8,9 @@ namespace Slic3r::App::Render {
 
 class ShaderManager;
 class TextureManager;
+#ifdef SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
+class TextureBufferManager;
+#endif // SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
 class Texture;
 class Device;
 
@@ -45,6 +48,9 @@ public:
 
     [[nodiscard]] ShaderManager& shader_manager() const { return *m_shader_manager; }
     [[nodiscard]] TextureManager& texture_manager() const { return *m_texture_manager; }
+#ifdef SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
+    [[nodiscard]] TextureBufferManager& texture_buffer_manager() const { return *m_texture_buffer_manager; }
+#endif // SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
     [[nodiscard]] Device& device() const { return *m_device; }
 
     void release_resources();
@@ -59,6 +65,9 @@ private:
 
     std::unique_ptr<Device> m_device;
     std::unique_ptr<ShaderManager> m_shader_manager;
+#ifdef SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
+    std::unique_ptr<TextureBufferManager> m_texture_buffer_manager;
+#endif // SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
     std::unique_ptr<TextureManager> m_texture_manager;
 };
 

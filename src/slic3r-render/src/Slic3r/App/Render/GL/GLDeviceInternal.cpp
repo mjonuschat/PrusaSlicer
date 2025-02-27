@@ -83,24 +83,16 @@ void GLDeviceInternal::unbind_texture(uint8_t unit, const Texture& t)
 }
 
 #ifdef SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
-void GLDeviceInternal::bind_texture_buffer_texture(uint8_t unit, ResourceId texture_buffer)
+void GLDeviceInternal::bind_texture_buffer(uint8_t unit, const TextureBuffer& tb)
 {
-    if (m_bound_textures[unit] == texture_buffer)
-        return;
-    activate_texture_unit(unit);
-    glBindTexture(GL_TEXTURE_BUFFER, texture_buffer);
-    glCheck();
-    m_bound_textures[unit] = texture_buffer;
-}
+    const auto& buf = tb.get_internal_as<GLBufferInternal>();
 
-void GLDeviceInternal::unbind_texture_buffer_texture(uint8_t unit)
-{
-    if (m_bound_textures[unit] == 0)
-        return;
     activate_texture_unit(unit);
-    glBindTexture(GL_TEXTURE_BUFFER, 0);
+    glBindTexture(GL_TEXTURE_BUFFER, buf.m_tex_id);
     glCheck();
-    m_bound_textures[unit] = 0;
+
+    glTexBuffer(GL_TEXTURE_BUFFER, texture_internal_format(tb.format()), buf.m_id);
+    glCheck();
 }
 #endif // SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
 
@@ -282,10 +274,16 @@ void GLDeviceInternal::bind_geometry(const Geometry& g, const Shader& shader)
             if (loc < 0)
                 continue;
             glEnableVertexAttribArray(loc);
-            glVertexAttribPointer(
-                loc, vad.components, type(vad.data_type), vad.normalize ? GL_TRUE : GL_FALSE,
-                stride, reinterpret_cast<void*>(vad.offset)
-            );
+            if (GL::is_integer(vad.data_type) && !(vad.cast_to_float || vad.normalize))
+                glVertexAttribIPointer(
+                    loc, vad.components, type(vad.data_type), stride,
+                    reinterpret_cast<void*>(vad.offset)
+                );
+            else
+                glVertexAttribPointer(
+                    loc, vad.components, type(vad.data_type), vad.normalize ? GL_TRUE : GL_FALSE,
+                    stride, reinterpret_cast<void*>(vad.offset)
+                );
             glCheck();
         }
 
@@ -350,6 +348,19 @@ void GLDeviceInternal::draw(PrimitiveType primitive, size_t offset, size_t count
     }
     glCheck();
 
+}
+
+void GLDeviceInternal::draw_instanced(PrimitiveType primitive, size_t offset, size_t count, size_t instances_count)
+{
+    if (m_bound_indices) {
+        glDrawElementsInstanced(
+            GL::type(primitive), count, type(m_bound_index_type),
+            reinterpret_cast<const void*>(0 + index_type_size(m_bound_index_type) * offset), instances_count
+        );
+    }
+    else
+        glDrawArraysInstanced(GL::type(primitive), offset, count, instances_count);
+    glCheck();
 }
 
 void GLDeviceInternal::print_buffer_info(const char* action)

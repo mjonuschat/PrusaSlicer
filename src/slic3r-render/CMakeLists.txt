@@ -1,7 +1,3 @@
-if (NOT SLIC3R_OPENGL_ES AND NOT EMSCRIPTEN)
-    add_definitions(-DSLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED)
-endif ()
-
 set(SLIC3R_RENDER_FILES
         include/Slic3r/App/Render/ScreenInfo.hpp
         include/Slic3r/App/Render/Types.hpp
@@ -30,6 +26,8 @@ set(SLIC3R_RENDER_FILES
         src/Slic3r/App/Render/GeometryBuilder.cpp
         src/Slic3r/App/Render/TextureManager.cpp
         include/Slic3r/App/Render/TextureManager.hpp
+        src/Slic3r/App/Render/TextureBufferManager.cpp
+        include/Slic3r/App/Render/TextureBufferManager.hpp
         include/Slic3r/App/Render/Image.hpp
         src/Slic3r/App/Render/Image.cpp
         src/Slic3r/App/Render/ImageCodec.cpp

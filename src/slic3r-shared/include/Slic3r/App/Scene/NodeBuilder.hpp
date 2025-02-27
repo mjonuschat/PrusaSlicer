@@ -16,7 +16,6 @@ class AABBMesh;
 
 namespace Slic3r::App::Scene {
 
-class MeshRenderNodeComponent;
 class Scene;
 
 class NodeBuilder {
@@ -24,6 +23,8 @@ public:
     explicit NodeBuilder(Scene& scene) : m_scene(scene), m_current(std::make_unique<Node>()) {}
     NodeBuilder& transform(const std::function<void(Transform3d&)>& modifier);
     NodeBuilder& set_mesh(const Render::Geometry* geometry, const Render::Material& material, int layer_index=0);
+    NodeBuilder& set_mesh_instanced(const Render::Geometry* geometry, const Render::Material& material,
+        size_t instances_count, Render::PrimitiveType primitive_type = Render::PrimitiveType::Triangles, int layer_index = 0);
     NodeBuilder& set_material_override(const Render::Material& material);
     NodeBuilder& set_imgui_func(const FuncImguiRenderNodeComponent::RenderFunc& imgui_render_func);
     NodeBuilder& set_enabled(bool enabled);

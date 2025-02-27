@@ -1,6 +1,6 @@
 #include "Slic3r/App/Plater/TranslationGizmo.hpp"
 #include "Slic3r/App/Plater/ScenePresenter.hpp"
-#include "Slic3r/App/Plater/GizmoDataFactory.hpp"
+#include "Slic3r/App/Scene/GeometryDataFactory.hpp"
 #include "Slic3r/App/Plater/GizmoNodeTag.hpp"
 #include "Slic3r/App/Plater/PlaterSceneLayer.hpp"
 
@@ -41,14 +41,14 @@ void TranslationGizmo::on_cycle_prepare()
     m_dragging = false;
 }
 
-GizmoActivationState TranslationGizmo::on_mouse(GizmoEventContext& ctx, bool only_active)
+Scene::GizmoActivationState TranslationGizmo::on_mouse(Scene::GizmoEventContext& ctx, bool only_active)
 {
     const auto event_type = ctx.mouse_event().type();
     if (event_type != Platform::MouseEvent::Type::ButtonDown &&
         event_type != Platform::MouseEvent::Type::Move &&
         event_type != Platform::MouseEvent::Type::ButtonUp) {
         m_dragging = false;
-        return GizmoActivationState::Inactive;
+        return Scene::GizmoActivationState::Inactive;
     }
 
     const auto& pick_ray = ctx.pick_ray();
@@ -57,7 +57,7 @@ GizmoActivationState TranslationGizmo::on_mouse(GizmoEventContext& ctx, bool onl
         const Scene::Node* node = ctx.pick_result_node_with_tag_of_type<GizmoNodeTag>();
         if (node == nullptr) {
             m_dragging = false;
-            return GizmoActivationState::Inactive;
+            return Scene::GizmoActivationState::Inactive;
         }
 
         const GizmoNodeTag& tag = *node->tag_of_type<GizmoNodeTag>();
@@ -70,17 +70,17 @@ GizmoActivationState TranslationGizmo::on_mouse(GizmoEventContext& ctx, bool onl
     double t;
     if (!m_translation_ray.closest_point_from_ray(pick_ray, t)) {
         m_dragging = false;
-        return GizmoActivationState::Inactive;
+        return Scene::GizmoActivationState::Inactive;
     }
 
     if (event_type == Platform::MouseEvent::Type::ButtonDown) {
         m_start_t = t;
         m_dragging = true;
-        return GizmoActivationState::Active;
+        return Scene::GizmoActivationState::Active;
     }
 
     if (!m_dragging)
-        return GizmoActivationState::Inactive;
+        return Scene::GizmoActivationState::Inactive;
 
     Vec3d delta = m_translation_ray.point_at(t) - m_translation_ray.point_at(m_start_t);
 
@@ -96,10 +96,10 @@ GizmoActivationState TranslationGizmo::on_mouse(GizmoEventContext& ctx, bool onl
         m_scene_interactor.finalize_transform_selection(m_xform_memento, false);
         m_dragging = false;
         clear_highlight();
-        return GizmoActivationState::Done;
+        return Scene::GizmoActivationState::Done;
     }
 
-    return GizmoActivationState::Active;
+    return Scene::GizmoActivationState::Active;
 }
 
 void TranslationGizmo::clear_highlight()
@@ -113,7 +113,7 @@ void TranslationGizmo::clear_highlight()
     m_highlighted = false;
 }
 
-void TranslationGizmo::on_transient_mouse(GizmoEventContext& ctx)
+void TranslationGizmo::on_transient_mouse(Scene::GizmoEventContext& ctx)
 {
     if (!m_activated || m_dragging)
         return;
@@ -132,7 +132,7 @@ void TranslationGizmo::on_transient_mouse(GizmoEventContext& ctx)
     }
 }
 
-static void build_axis_node(AxisType axis, Scene::NodeBuilder& builder, Render::Device& device, GizmoDataFactory& data_factory)
+static void build_axis_node(AxisType axis, Scene::NodeBuilder& builder, Render::Device& device, Scene::GeometryDataFactory& data_factory)
 {
     ColorRGBA color = axis_color(axis);
 
@@ -147,7 +147,7 @@ static void build_axis_node(AxisType axis, Scene::NodeBuilder& builder, Render::
         bldr
             .set_debug_name("stem")
             .set_tag(GizmoNodeTag{ axis })
-            .set_mesh(data_factory.geometry(GizmoDataId::Segment), material, int(PlaterSceneLayer::GizmoHandles))
+            .set_mesh(data_factory.geometry(Scene::GeometryDataId::Segment), material, int(PlaterSceneLayer::GizmoHandles))
             .transform([&](Transform3d& xform) {
                 xform.rotate(Eigen::AngleAxisd(-HALF_PI, Vec3d::UnitY()));
                 xform.scale(HANDLE_STEM_LENGTH * Vec3d::UnitX());
@@ -155,8 +155,8 @@ static void build_axis_node(AxisType axis, Scene::NodeBuilder& builder, Render::
     });
 
     builder.child([&](Scene::NodeBuilder& bldr) {
-        auto geom = data_factory.geometry(GizmoDataId::Cone);
-        auto  mesh = data_factory.triangle_mesh(GizmoDataId::Cone);
+        auto geom = data_factory.geometry(Scene::GeometryDataId::Cone);
+        auto mesh = data_factory.triangle_mesh(Scene::GeometryDataId::Cone);
 
         Render::Material material = Render::Material{}
             .set_shader(device.context().shader_manager().get_shader("gouraud_light"))

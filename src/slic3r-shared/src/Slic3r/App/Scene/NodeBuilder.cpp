@@ -1,5 +1,6 @@
 #include "Slic3r/App/Scene/NodeBuilder.hpp"
 #include "Slic3r/App/Scene/MeshRenderNodeComponent.hpp"
+#include "Slic3r/App/Scene/InstancedMeshRenderNodeComponent.hpp"
 #include "Slic3r/App/Scene/AabbRaycastNodeComponent.hpp"
 #include "Slic3r/App/Scene/ScreenSpaceSizedTransformModifier.hpp"
 #include "Slic3r/App/Scene/Scene.hpp"
@@ -28,6 +29,18 @@ NodeBuilder& NodeBuilder::set_mesh(const Render::Geometry* geometry, const Rende
 
     auto render_component = std::make_unique<MeshRenderNodeComponent>(geometry, material, Render::PrimitiveType::Triangles, 0, 0);
     render_component->set_layer_index(layer_index);
+    m_current->set_render_component(std::move(render_component));
+    return *this;
+}
+
+NodeBuilder& NodeBuilder::set_mesh_instanced(const Render::Geometry* geometry, const Render::Material& material,
+    size_t instances_count, Render::PrimitiveType primitive_type, int layer_index)
+{
+    ensure_current();
+
+    auto render_component = std::make_unique<InstancedMeshRenderNodeComponent>(geometry, material, primitive_type, 0, 0);
+    render_component->set_layer_index(layer_index);
+    render_component->set_instances_count(instances_count);
     m_current->set_render_component(std::move(render_component));
     return *this;
 }

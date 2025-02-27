@@ -14,7 +14,7 @@ ImguiRender::ImguiRender(Device& device)
     , m_vertex_format({
           {VertexAttribType::Vertex, DataType::Float, 2, IM_OFFSETOF(ImDrawVert, pos)},
           {VertexAttribType::TexCoord0, DataType::Float, 2, IM_OFFSETOF(ImDrawVert, uv)},
-          {VertexAttribType::Color, DataType::UByte, 4, IM_OFFSETOF(ImDrawVert, col), true}
+          {VertexAttribType::Color, DataType::UByte, 4, IM_OFFSETOF(ImDrawVert, col), true, true}
       })
     , m_font_helper(device)
 {}
