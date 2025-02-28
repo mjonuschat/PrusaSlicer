@@ -122,7 +122,7 @@ private:
     MultiSelections                 m_volumes_ms;
 
     size_t                          m_edited_node_id    { 0 };
-    bool                            m_full_mode         { false };
+    bool                            m_show_details      { false };
 };
 
 } // namespace Slic3r::App::Plater

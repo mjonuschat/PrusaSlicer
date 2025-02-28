@@ -275,6 +275,16 @@ namespace ImGui
     const wchar_t Sinking                  = 0x2833;
     const wchar_t VariableLayerHeight      = 0x2834;
     const wchar_t FuzzySkin                = 0x2835;
+    const wchar_t BedIcon                  = 0x2836;
+    const wchar_t Details                  = 0x2837;
+    const wchar_t OpenArrow                = 0x2838;
+    const wchar_t CloseArrow               = 0x2839;
+    const wchar_t ConfigContainer          = 0x283A;
+    const wchar_t InstancesIcon            = 0x283B;
+    const wchar_t OverridenObjectIcon      = 0x283C;
+    //const wchar_t       = 0x283D;
+    //const wchar_t       = 0x283E;
+    //const wchar_t       = 0x283F;
 
 } // namespace ImGui
 // }

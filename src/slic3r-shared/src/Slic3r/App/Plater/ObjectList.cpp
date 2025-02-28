@@ -62,7 +62,7 @@ enum ColumIndex
 {
     ciTree = 0,
     ciPrintable,
-    ciSettingsOvverides,
+    ciSettingsOverrides,
     ciExtruder,
 
     ciCount
@@ -79,9 +79,10 @@ ImGuiTreeNodeFlags      node_flags    = ImGuiTreeNodeFlags_OpenOnArrow |
 ImGuiTableFlags         table_flags   = ImGuiTableFlags_ScrollY | 
                                         ImGuiTableFlags_Resizable | 
                                         ImGuiTableFlags_NoBordersInBody | 
+                               //         ImGuiTableFlags_Borders | 
                                         ImGuiTableFlags_NoPadInnerX;
 
-static ImVec4 def_color = ImVec4(0.923f, 0.504f, 0.264f, 1.0f);
+static ImVec4 def_color = ImVec4(0.21f, 0.29f, 0.46f, 1.0f);
 static std::string test_out;
 static std::string test_out2;
 
@@ -153,6 +154,8 @@ static std::string icon_str(const Slic3r::ModelVolume* volume)
 
 static std::string get_bed_name(const Slic3r::DynamicPrintConfig& print_config)
 {
+    return icon_str(ImGui::ConfigContainer) + print_config.opt_string("printer_model");
+
     return icon_str(Slic3r::Preset::printer_technology(print_config) == ptSLA ? 
                     ImGui::PrinterSlaIconMarker : ImGui::PrinterIconMarker) 
            + print_config.opt_string("printer_model");
@@ -337,6 +340,29 @@ static bool icon_btn(ColumIndex ci, const std::string& icon)
     return pressed;
 }
 
+static bool toggle_icon_btn(const wchar_t icon, bool* is_toggled, ColumIndex ci = ColumIndex::ciCount/*undef*/)
+{
+    if (ci != ColumIndex::ciCount)
+        ImGui::TableSetColumnIndex(ci);
+
+    ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetColorU32((*is_toggled) ? ImGuiCol_ButtonActive : ImGuiCol_Button));
+
+
+//    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2());
+    //ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2());
+//    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2, 4));
+//    ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0, 0));
+
+    const float size = ImGui::GetFontSize();
+    if (ImGui::Button(icon_str(icon).c_str()))
+        *is_toggled = !*is_toggled; // Toggle state
+
+//    ImGui::PopStyleVar();
+//    ImGui::PopStyleVar(2);
+
+    ImGui::PopStyleColor();
+}
+
 // object is simple: has just one instance, one volume and no aditional information
 static bool is_simple(const Slic3r::ModelObject* object, bool is_sla_config)
 {
@@ -354,14 +380,14 @@ void ObjectList::render(ImVec2 pos, ImVec2 size)
 
     update_selection_from_scene();
 
-    ImGui::SetCursorScreenPos(pos + ImVec2(10.f, 10.f));
+    ImGui::SetCursorPos(pos);
     ImGui::Text("Objects");
-    ImGui::SameLine(200);
-    ImGui::Checkbox("Full mode", &m_full_mode);
+    ImGui::SameLine((size - pos * 2).x - ImGui::GetFontSize());
+    toggle_icon_btn(ImGui::Details, &m_show_details);
 
     is_dragging = false;
     // Define a region for the tree control
-    if (render_tree(size)) {
+    if (render_tree(size-ImVec2(0, 50))) {
         // update selection on scene
         propagate_selection();
     }
@@ -380,7 +406,7 @@ void ObjectList::render(ImVec2 pos, ImVec2 size)
         }
         ImGui::EndDragDropSource();
     }
-
+/*
     // Drop Target Area
     ImGui::Separator();
     ImGui::Text("Drop Here:");
@@ -388,23 +414,7 @@ void ObjectList::render(ImVec2 pos, ImVec2 size)
     ImGui::SetCursorScreenPos(ImGui::GetCursorScreenPos() + ImVec2(25.f, 0.f));
     ImGui::Text(test_out.c_str());
     ImGui::Text(test_out2.c_str());
-
-    // Make the entire window a valid drop target
-    ImVec2 dropAreaSize = ImGui::GetContentRegionAvail();
-    ImGui::InvisibleButton("DropZone", ImVec2(dropAreaSize.x, 100.f));  // Creates an invisible drop target
-
-    if (ImGui::BeginDragDropTarget()) {
-        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("MULTI_ITEM")) {
-            IM_ASSERT(payload->DataSize == sizeof(int));
-            int payload_n = *(const int*)payload->Data;
-            test_out = "Dropped " + std::to_string(payload_n) + " item(s)!";
-            selected_items.clear();  // Clear selection after drop
-        }
-        else
-            test_out.clear();
-        ImGui::EndDragDropTarget();
-    }
-
+*/
     render_modal();
     render_extra_window();
 }
@@ -443,11 +453,15 @@ void ObjectList::update_selection_from_scene()
 bool ObjectList::render_tree(ImVec2 size)
 {
     bool is_changed_selection = false;
-    if (ImGui::BeginTable("MyTable", 4, table_flags)) {
+    if (ImGui::BeginTable("##ObjectListTable", 4, table_flags, size)) {
         ImGui::TableSetupColumn("##tree", ImGuiTableColumnFlags_WidthStretch);
         ImGui::TableSetupColumn("##visibility", ImGuiTableColumnFlags_WidthStretch, 0.1f);
         ImGui::TableSetupColumn("##settings_overrides", ImGuiTableColumnFlags_WidthStretch, 0.1f);
         ImGui::TableSetupColumn("##extruder", ImGuiTableColumnFlags_WidthStretch/* | ImGuiTableColumnFlags_DefaultHide*/, 0.1f);
+
+        //next_line();
+        //ImGui::Text("Objects");
+        //toggle_icon_btn(ImGui::Details, &m_show_details, ciSettingsOverrides);
 
         is_changed_selection = render_config_containers();
         is_changed_selection |= render_out_of_beds();
@@ -473,12 +487,61 @@ bool ObjectList::render_tree(ImVec2 size)
     return is_changed_selection;
 }
 
+static bool tree_node(const char* str_id, ImGuiTreeNodeFlags flags, const char* fmt, ...)
+{
+    // get initial cursor position
+    ImVec2 pos_old = ImGui::GetCursorScreenPos();
+    // render node as it is
+    bool is_open = ImGui::TreeNodeEx(str_id, flags, fmt);
+    // get cursor position for the end of tree node rendering
+    ImVec2 pos_new = ImGui::GetCursorScreenPos();
+
+    const bool is_selected = (flags & ImGuiTreeNodeFlags_Selected) != 0;
+
+    ImGuiContext& g = *GImGui;
+    const ImGuiStyle& style = g.Style;
+    ImGuiWindow* window = ImGui::GetCurrentWindow();
+    const ImVec2 padding = ImVec2(style.FramePadding.x, ImMin(window->DC.CurrLineTextBaseOffset, style.FramePadding.y));
+
+    const float text_offset_x = g.FontSize + padding.x * 2;                             // Collapsing arrow width + Spacing
+    const float text_offset_y = ImMax(padding.y, window->DC.CurrLineTextBaseOffset);    // Latch before ItemSize changes it
+        
+    ImVec2 text_pos(pos_old.x + text_offset_x, pos_old.y + text_offset_y);
+
+    ImVec2 pos = ImVec2(text_pos.x - text_offset_x + padding.x, text_pos.y);
+    ImVec2 pos_end = pos + ImVec2(g.FontSize, g.FontSize);
+
+    // render rect over the triangle
+    ImDrawList* draw_list = ImGui::GetCurrentWindow()->DrawList;
+
+    // first layer
+    if (!ImGui::IsItemActive() && !ImGui::IsItemHovered() && !is_selected)
+        draw_list->AddCircleFilled(ImRect(pos, pos_end).GetCenter(), 0.4f * g.FontSize, ImGui::GetColorU32(ImGuiCol_WindowBg));
+    else
+        draw_list->AddRectFilled(pos, pos_end, ImGui::GetColorU32(ImGuiCol_WindowBg));
+
+    //second layer
+    if (ImGui::IsItemActive() && ImGui::IsItemHovered())
+        draw_list->AddRectFilled(pos, pos_end, ImGui::GetColorU32(ImGuiCol_HeaderActive));
+    else if (ImGui::IsItemHovered())
+        draw_list->AddRectFilled(pos, pos_end, ImGui::GetColorU32(ImGuiCol_HeaderHovered));
+    else if (is_selected)
+        draw_list->AddRectFilled(pos, pos_end, ImGui::GetColorU32(ImGuiCol_Header));
+
+    // render open-close new arrow
+    draw_list->AddText(pos, ImGui::GetColorU32(ImGuiCol_Text), icon_str(is_open ? ImGui::OpenArrow : ImGui::CloseArrow).c_str());
+
+    // revert cursore position
+    ImGui::SetCursorScreenPos(pos_new);
+    return is_open;
+}
+
 bool ObjectList::render_config_containers()
 {
     bool is_changed_selection = false;
     for (auto& cc : m_scene_interactor->selected_project_config_containers()) {
         next_line();
-        if (ImGui::TreeNodeEx(("##cc_id" + std::to_string(cc->id().id)).c_str(), node_flags | ImGuiTreeNodeFlags_DefaultOpen,
+        if (tree_node(("##cc_id" + std::to_string(cc->id().id)).c_str(), node_flags | ImGuiTreeNodeFlags_DefaultOpen,
                                          (get_bed_name(cc->print_config())).c_str())) {
             for (auto& bed_inst : cc->bed_instances())
                 is_changed_selection |= render_bed_node(bed_inst.get(), cc->print_technology() == ptSLA);
@@ -496,7 +559,7 @@ bool ObjectList::render_out_of_beds()
     next_line();
     bool is_changed_selection = false;
 
-    if(ImGui::TreeNodeEx("##cc_out", node_flags | ImGuiTreeNodeFlags_DefaultOpen, "Out of bed")) {
+    if(tree_node("##cc_out", node_flags | ImGuiTreeNodeFlags_DefaultOpen, "Out of bed")) {
         for (const Slic3r::ModelObject* object : m_model->objects) {
             if (bed_has_object(m_scene_interactor->selected_project_unplaced_model_instances(), object))
                 is_changed_selection |= render_object_node(object);
@@ -516,9 +579,11 @@ bool ObjectList::render_bed_node(const Domain::BedInstance* bed, bool is_sla_con
     const std::string name_id = "##bed_id" + std::to_string(bed_id);
 
     next_line();
-    if (bed->active()) ImGui::PushStyleColor(ImGuiCol_Text, def_color);
-    bool is_open = ImGui::TreeNodeEx(name_id.c_str(), node_flags | ImGuiTreeNodeFlags_DefaultOpen, (icon_str(ImGui::MinimalizeButton) + name).c_str());
-    if (bed->active()) ImGui::PopStyleColor();
+    //if (bed->active()) ImGui::PushStyleColor(ImGuiCol_Text, def_color);
+    ImGuiTreeNodeFlags flags = node_flags | ImGuiTreeNodeFlags_DefaultOpen;
+    if (bed->active()) flags |= ImGuiTreeNodeFlags_Selected;
+    bool is_open = tree_node(name_id.c_str(), flags, (icon_str(ImGui::BedIcon) + name).c_str());
+    //if (bed->active()) ImGui::PopStyleColor();
 
     render_extruder_marker(0, { bed_id }, true);
     
@@ -556,11 +621,14 @@ bool ObjectList::render_object_node(const Slic3r::ModelObject* object, const Dom
 
     bool isOpen = false; 
     if (m_edited_node_id == object_id && is_selected) {
-        isOpen = ImGui::TreeNodeEx(name_id.c_str(), flags | ImGuiTreeNodeFlags_AllowOverlap, icon_str(ImGui::ObjectIcon).c_str());
+        isOpen = tree_node(name_id.c_str(), flags | ImGuiTreeNodeFlags_AllowOverlap, icon_str(ImGui::ObjectIcon).c_str());
+        ImVec2 old_pos(ImGui::GetCursorScreenPos());
         render_edited(name.c_str(), { object_id });
+        ImVec2 new_pos(ImGui::GetCursorScreenPos());
+        ImGui::SetCursorScreenPos(ImVec2(new_pos.x, old_pos.y));
     }
     else
-        isOpen = ImGui::TreeNodeEx(name_id.c_str(), flags, (icon_str(ImGui::ObjectIcon) + name).c_str());
+        isOpen = tree_node(name_id.c_str(), flags, (icon_str(ImGui::ObjectIcon) + name).c_str());
 
     bool is_changed_selection = handle_selection(sel_element);
     if (is_changed_selection) {
@@ -583,7 +651,7 @@ bool ObjectList::render_object_node(const Slic3r::ModelObject* object, const Dom
         is_changed_selection |= render_connectors_node(object, bed ? bed->id().id : 0);
         is_changed_selection |= render_volumes(object, bed ? bed->id().id : 0);
         is_changed_selection |= render_instances_node(object, bed);
-        if (m_full_mode)
+        if (m_show_details)
             render_infos_node(object, is_sla_config);
 
         ImGui::TreePop();
@@ -603,7 +671,7 @@ bool ObjectList::render_connectors_node(const Slic3r::ModelObject* object, size_
 
     next_line();
     ImGui::Unindent(ImGui::GetTreeNodeToLabelSpacing());
-    if (ImGui::TreeNodeEx(name_id.c_str(), node_flags | ImGuiTreeNodeFlags_Leaf, (icon_str(ImGui::CutConnectors) + "Connectors").c_str()))
+    if (tree_node(name_id.c_str(), node_flags | ImGuiTreeNodeFlags_Leaf, (icon_str(ImGui::CutConnectors) + "Connectors").c_str()))
         ImGui::TreePop();
     ImGui::Indent(ImGui::GetTreeNodeToLabelSpacing());
 
@@ -635,7 +703,7 @@ bool ObjectList::render_volumes(const Slic3r::ModelObject* object, size_t bed_id
     const std::string name_id = "##volumes_id" + std::to_string(bed_id) + std::to_string(object_id);
 
     next_line();
-    bool is_open = ImGui::TreeNodeEx(name_id.c_str(), node_flags, "Volumes");
+    bool is_open = tree_node(name_id.c_str(), node_flags, "Volumes");
 
     const Slic3r::ModelVolumePtrs& volumes = object->volumes;
     MultiSelectionStorage& ms = m_volumes_ms.at(object_id);
@@ -723,7 +791,7 @@ bool ObjectList::render_instances_node(const Slic3r::ModelObject* object, const 
     const std::string name_id = "Instances##obj_id" + std::to_string(object_id);
 
     next_line();
-    bool isOpen = ImGui::TreeNodeEx(name_id.c_str(), node_flags | ImGuiTreeNodeFlags_DefaultOpen, "Instances");
+    bool isOpen = tree_node(name_id.c_str(), node_flags | ImGuiTreeNodeFlags_DefaultOpen, (icon_str(ImGui::InstancesIcon) + "Instances").c_str());
 
     bool is_changed_selection = handle_selection(sel_element);
     if (is_changed_selection) {
@@ -820,7 +888,7 @@ void ObjectList::render_infos_node(const Slic3r::ModelObject* object, bool is_sl
     next_line();
     const std::string name_id = "Infos##obj_id" + std::to_string(object->id().id);
     ImGui::Unindent(ImGui::GetTreeNodeToLabelSpacing());
-    bool is_open = ImGui::TreeNodeEx(name_id.c_str(), node_flags | ImGuiTreeNodeFlags_Leaf, "Infos");
+    bool is_open = tree_node(name_id.c_str(), node_flags | ImGuiTreeNodeFlags_Leaf, "Infos");
     ImGui::Indent(ImGui::GetTreeNodeToLabelSpacing());
 
     if (is_open) {
@@ -839,13 +907,12 @@ void ObjectList::render_edited(const char* init_name, const Domain::ElementRef& 
     ImGui::PopStyleVar();
     // Editable text box
     strncpy(buffer, init_name, sizeof(buffer));
-    ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2());
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2());
     if (ImGui::InputText("##edit", buffer, sizeof(buffer), ImGuiInputTextFlags_EnterReturnsTrue)) {
         propagate_name_editing(sel_element, buffer);  // Save edited name
         m_edited_node_id = 0;  // Exit edit mode
     }
-    ImGui::PopStyleVar(2);
+    ImGui::PopStyleVar();
 }
 
 void ObjectList::render_printable_icon(const Domain::ElementRef& sel_element, bool is_printable)
@@ -862,7 +929,7 @@ void ObjectList::render_printable_icon(const Domain::ElementRef& sel_element, bo
 void ObjectList::render_overrides_icon(const Domain::ElementRef& sel_element, bool render)
 {
     if (hovered_current_row()) {
-        if (icon_btn(ciSettingsOvverides, icon_str(ImGui::PrintIconMarker)))
+        if (icon_btn(ciSettingsOverrides, icon_str(ImGui::PrintIconMarker)))
             show_overrides(sel_element);
     }
 }
