@@ -84,6 +84,7 @@ private:
 
     void update_selection_from_scene();
     bool render_tree(ImVec2 size);
+    void render_header(ImVec2 pos, ImVec2 size);
     bool render_config_containers();
     bool render_out_of_beds();
     bool render_bed_node(const Domain::BedInstance* bed, bool is_sla_config);

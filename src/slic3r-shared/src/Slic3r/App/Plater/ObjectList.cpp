@@ -74,6 +74,7 @@ ImGuiMultiSelectFlags   ms_flags      = ImGuiMultiSelectFlags_ScopeRect |
                                         ImGuiMultiSelectFlags_SelectOnClick;
 
 ImGuiTreeNodeFlags      node_flags    = ImGuiTreeNodeFlags_OpenOnArrow | 
+                                        ImGuiTreeNodeFlags_FramePadding |
                                         ImGuiTreeNodeFlags_SpanAllColumns;
 
 ImGuiTableFlags         table_flags   = ImGuiTableFlags_ScrollY | 
@@ -85,6 +86,7 @@ ImGuiTableFlags         table_flags   = ImGuiTableFlags_ScrollY |
 static ImVec4 def_color = ImVec4(0.21f, 0.29f, 0.46f, 1.0f);
 static std::string test_out;
 static std::string test_out2;
+static bool is_edit_name_input_hovered = false;
 
 std::set<Domain::ElementRef> selected_items;  // Track selected item IDs
 bool is_dragging                     { false };
@@ -119,7 +121,7 @@ static void handle_dragging(const Domain::ElementRef& id)
 
 static std::string icon_str(const wchar_t icon)
 {
-    return boost::nowide::narrow(std::wstring(&icon, 1));
+    return Slic3r::format(" %1%  ", boost::nowide::narrow(std::wstring(&icon, 1)));
 }
 
 static std::string icon_str(const Slic3r::ModelVolume* volume)
@@ -152,7 +154,7 @@ static std::string icon_str(const Slic3r::ModelVolume* volume)
     }
 }
 
-static std::string get_bed_name(const Slic3r::DynamicPrintConfig& print_config)
+static std::string get_cc_name(const Slic3r::DynamicPrintConfig& print_config)
 {
     return icon_str(ImGui::ConfigContainer) + print_config.opt_string("printer_model");
 
@@ -255,11 +257,29 @@ static std::set<wchar_t> get_infos(const Slic3r::ModelObject* object, bool is_sl
     return infos;
 }
 
-static void next_line()
+/* Wrapper function to set cursor to the first cell of next row of the table
+*/
+static void new_row()
 {
     ImGui::TableNextRow();
     ImGui::TableSetColumnIndex(0);
 }
+
+/* Selectable() ignores FramePagging, so for the rows with Selectable() items 
+ * we need to extend the CellPadding before set cursor on new row.
+ * Revertion of the CellPadding have to be processed at the and of row,
+ * that is why struct is used in this case
+ */
+struct NewRowWithSelectable
+{
+    NewRowWithSelectable() {
+        ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(GImGui->Style.CellPadding.x, GImGui->Style.FramePadding.y));
+        new_row();
+    }
+    ~NewRowWithSelectable() {
+        ImGui::PopStyleVar();
+    }
+};
 
 static bool hovered_current_row()
 {
@@ -340,36 +360,31 @@ static bool icon_btn(ColumIndex ci, const std::string& icon)
     return pressed;
 }
 
-static bool toggle_icon_btn(const wchar_t icon, bool* is_toggled, ColumIndex ci = ColumIndex::ciCount/*undef*/)
+static void toggle_icon_btn(const wchar_t icon, bool* is_toggled, ColumIndex ci = ColumIndex::ciCount/*undef*/)
 {
     if (ci != ColumIndex::ciCount)
         ImGui::TableSetColumnIndex(ci);
 
     ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetColorU32((*is_toggled) ? ImGuiCol_ButtonActive : ImGuiCol_Button));
-
-
-//    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2());
-    //ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2());
-//    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2, 4));
-//    ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0, 0));
-
-    const float size = ImGui::GetFontSize();
     if (ImGui::Button(icon_str(icon).c_str()))
         *is_toggled = !*is_toggled; // Toggle state
 
-//    ImGui::PopStyleVar();
-//    ImGui::PopStyleVar(2);
-
     ImGui::PopStyleColor();
+}
+
+// object is simple: has just one instance, one volume and no aditional information
+static bool has_overrides(const Slic3r::ModelObject* object, bool is_sla_config)
+{
+    return !object->layer_config_ranges.empty() ||
+           !get_infos(object, is_sla_config).empty();
 }
 
 // object is simple: has just one instance, one volume and no aditional information
 static bool is_simple(const Slic3r::ModelObject* object, bool is_sla_config)
 {
     return  object->instances.size() == 1 &&
-        object->volumes.size() == 1 &&
-        object->layer_config_ranges.empty() &&
-        get_infos(object, is_sla_config).empty();
+            object->volumes.size() == 1 &&
+            !has_overrides(object, is_sla_config);
 }
 
 void ObjectList::render(ImVec2 pos, ImVec2 size)
@@ -380,10 +395,7 @@ void ObjectList::render(ImVec2 pos, ImVec2 size)
 
     update_selection_from_scene();
 
-    ImGui::SetCursorPos(pos);
-    ImGui::Text("Objects");
-    ImGui::SameLine((size - pos * 2).x - ImGui::GetFontSize());
-    toggle_icon_btn(ImGui::Details, &m_show_details);
+    render_header(pos, size);
 
     is_dragging = false;
     // Define a region for the tree control
@@ -459,14 +471,10 @@ bool ObjectList::render_tree(ImVec2 size)
         ImGui::TableSetupColumn("##settings_overrides", ImGuiTableColumnFlags_WidthStretch, 0.1f);
         ImGui::TableSetupColumn("##extruder", ImGuiTableColumnFlags_WidthStretch/* | ImGuiTableColumnFlags_DefaultHide*/, 0.1f);
 
-        //next_line();
-        //ImGui::Text("Objects");
-        //toggle_icon_btn(ImGui::Details, &m_show_details, ciSettingsOverrides);
-
         is_changed_selection = render_config_containers();
         is_changed_selection |= render_out_of_beds();
 
-        next_line();
+        new_row();
         // Make the entire window a valid drop target
         ImVec2 dropAreaSize = ImGui::GetContentRegionAvail();
         ImGui::InvisibleButton("InstancesDropZone", ImVec2(size.x, 50.f));  // Creates an invisible instances drop target
@@ -487,12 +495,35 @@ bool ObjectList::render_tree(ImVec2 size)
     return is_changed_selection;
 }
 
+void ObjectList::render_header(ImVec2 pos, ImVec2 size)
+{
+    ImGui::SetCursorPos(ImVec2(pos) * 2);
+    ImGui::Text("Objects");
+
+    float btn_width = 2 * ImGui::GetFontSize();
+    float btn_pos = size.x - pos.x - btn_width;
+    ImGui::SameLine(btn_pos);
+    toggle_icon_btn(ImGui::Details, &m_show_details);
+
+    btn_pos -= pos.x + btn_width;
+    ImGui::SameLine(btn_pos);
+    if (ImGui::Button(icon_str(ImGui::AddBedIcon).c_str())) {
+        // add bed
+        m_scene_interactor->add_bed_instance(m_project_interactor->selected_config_container().id().id);
+    }
+}
+
 static bool tree_node(const char* str_id, ImGuiTreeNodeFlags flags, const char* fmt, ...)
 {
     // get initial cursor position
     ImVec2 pos_old = ImGui::GetCursorScreenPos();
     // render node as it is
     bool is_open = ImGui::TreeNodeEx(str_id, flags, fmt);
+
+    // for leaf node no need to redrow of arrows
+    if ((flags & ImGuiTreeNodeFlags_Leaf) != 0)
+        return is_open;
+
     // get cursor position for the end of tree node rendering
     ImVec2 pos_new = ImGui::GetCursorScreenPos();
 
@@ -508,41 +539,57 @@ static bool tree_node(const char* str_id, ImGuiTreeNodeFlags flags, const char* 
         
     ImVec2 text_pos(pos_old.x + text_offset_x, pos_old.y + text_offset_y);
 
-    ImVec2 pos = ImVec2(text_pos.x - text_offset_x + padding.x, text_pos.y);
+    ImVec2 pos = ImVec2(text_pos.x - text_offset_x, text_pos.y + style.FramePadding.y);
     ImVec2 pos_end = pos + ImVec2(g.FontSize, g.FontSize);
 
     // render rect over the triangle
     ImDrawList* draw_list = ImGui::GetCurrentWindow()->DrawList;
 
+    ImGuiID active_id = ImGui::GetActiveID();
+
     // first layer
-    if (!ImGui::IsItemActive() && !ImGui::IsItemHovered() && !is_selected)
-        draw_list->AddCircleFilled(ImRect(pos, pos_end).GetCenter(), 0.4f * g.FontSize, ImGui::GetColorU32(ImGuiCol_WindowBg));
-    else
-        draw_list->AddRectFilled(pos, pos_end, ImGui::GetColorU32(ImGuiCol_WindowBg));
+    draw_list->AddRectFilled(pos, pos_end, ImGui::GetColorU32(ImGuiCol_WindowBg));
+
+    ImGuiID edit_name_input_id = ImGui::GetID("##edit");
 
     //second layer
     if (ImGui::IsItemActive() && ImGui::IsItemHovered())
         draw_list->AddRectFilled(pos, pos_end, ImGui::GetColorU32(ImGuiCol_HeaderActive));
-    else if (ImGui::IsItemHovered())
+    else if (ImGui::IsItemHovered() && !is_edit_name_input_hovered)
         draw_list->AddRectFilled(pos, pos_end, ImGui::GetColorU32(ImGuiCol_HeaderHovered));
     else if (is_selected)
         draw_list->AddRectFilled(pos, pos_end, ImGui::GetColorU32(ImGuiCol_Header));
 
     // render open-close new arrow
-    draw_list->AddText(pos, ImGui::GetColorU32(ImGuiCol_Text), icon_str(is_open ? ImGui::OpenArrow : ImGui::CloseArrow).c_str());
+    draw_list->AddText(pos, ImGui::GetColorU32(ImGuiCol_Text), boost::nowide::narrow(std::wstring(&(is_open ? ImGui::OpenArrow : ImGui::CloseArrow), 1)).c_str());
 
     // revert cursore position
     ImGui::SetCursorScreenPos(pos_new);
     return is_open;
 }
 
+static bool selectable(const char* label, bool selected = false, ImGuiSelectableFlags flags = ImGuiSelectableFlags_SpanAllColumns)
+{
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(6.f, 2* GImGui->Style.FramePadding.y));
+    bool ret = ImGui::Selectable(label, selected, flags);
+    ImGui::PopStyleVar();
+
+    return ret;
+}
+
 bool ObjectList::render_config_containers()
 {
     bool is_changed_selection = false;
     for (auto& cc : m_scene_interactor->selected_project_config_containers()) {
-        next_line();
-        if (tree_node(("##cc_id" + std::to_string(cc->id().id)).c_str(), node_flags | ImGuiTreeNodeFlags_DefaultOpen,
-                                         (get_bed_name(cc->print_config())).c_str())) {
+        new_row();
+        ImGui::SetWindowFontScale(1.1f);
+        ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetColorU32(ImGuiCol_TextDisabled));
+        bool open = tree_node(("##cc_id" + std::to_string(cc->id().id)).c_str(), 
+                              node_flags | ImGuiTreeNodeFlags_DefaultOpen, get_cc_name(cc->print_config()).c_str());
+        ImGui::PopStyleColor();
+        ImGui::SetWindowFontScale(1.f);
+
+        if (open) {
             for (auto& bed_inst : cc->bed_instances())
                 is_changed_selection |= render_bed_node(bed_inst.get(), cc->print_technology() == ptSLA);
             ImGui::TreePop();
@@ -556,7 +603,7 @@ bool ObjectList::render_out_of_beds()
     if (m_scene_interactor->selected_project_unplaced_model_instances().empty())
         return false;
 
-    next_line();
+    new_row();
     bool is_changed_selection = false;
 
     if(tree_node("##cc_out", node_flags | ImGuiTreeNodeFlags_DefaultOpen, "Out of bed")) {
@@ -578,7 +625,7 @@ bool ObjectList::render_bed_node(const Domain::BedInstance* bed, bool is_sla_con
     const std::string name = "Bed " + std::to_string(bed_id);
     const std::string name_id = "##bed_id" + std::to_string(bed_id);
 
-    next_line();
+    new_row();
     //if (bed->active()) ImGui::PushStyleColor(ImGuiCol_Text, def_color);
     ImGuiTreeNodeFlags flags = node_flags | ImGuiTreeNodeFlags_DefaultOpen;
     if (bed->active()) flags |= ImGuiTreeNodeFlags_Selected;
@@ -617,18 +664,16 @@ bool ObjectList::render_object_node(const Slic3r::ModelObject* object, const Dom
     const std::string name = (object->name.empty() ? "Object " + std::to_string(object_id) : object->name);
     const std::string name_id = "##obj_id" + std::to_string(object_id);
 
-    next_line();
+    new_row();
 
+    const wchar_t icon = has_overrides(object, is_sla_config) ? ImGui::OverridenObjectIcon : ImGui::ObjectIcon;
     bool isOpen = false; 
     if (m_edited_node_id == object_id && is_selected) {
-        isOpen = tree_node(name_id.c_str(), flags | ImGuiTreeNodeFlags_AllowOverlap, icon_str(ImGui::ObjectIcon).c_str());
-        ImVec2 old_pos(ImGui::GetCursorScreenPos());
+        isOpen = tree_node(name_id.c_str(), flags | ImGuiTreeNodeFlags_AllowOverlap, icon_str(icon).c_str());
         render_edited(name.c_str(), { object_id });
-        ImVec2 new_pos(ImGui::GetCursorScreenPos());
-        ImGui::SetCursorScreenPos(ImVec2(new_pos.x, old_pos.y));
     }
     else
-        isOpen = tree_node(name_id.c_str(), flags, (icon_str(ImGui::ObjectIcon) + name).c_str());
+        isOpen = tree_node(name_id.c_str(), flags, (icon_str(icon) + name).c_str());
 
     bool is_changed_selection = handle_selection(sel_element);
     if (is_changed_selection) {
@@ -669,7 +714,7 @@ bool ObjectList::render_connectors_node(const Slic3r::ModelObject* object, size_
     size_t instance_id = object->instances[0]->id().id;
     const std::string name_id = "##connectors_id" + std::to_string(bed_id) + std::to_string(object_id);
 
-    next_line();
+    new_row();
     ImGui::Unindent(ImGui::GetTreeNodeToLabelSpacing());
     if (tree_node(name_id.c_str(), node_flags | ImGuiTreeNodeFlags_Leaf, (icon_str(ImGui::CutConnectors) + "Connectors").c_str()))
         ImGui::TreePop();
@@ -702,7 +747,7 @@ bool ObjectList::render_volumes(const Slic3r::ModelObject* object, size_t bed_id
 
     const std::string name_id = "##volumes_id" + std::to_string(bed_id) + std::to_string(object_id);
 
-    next_line();
+    new_row();
     bool is_open = tree_node(name_id.c_str(), node_flags, "Volumes");
 
     const Slic3r::ModelVolumePtrs& volumes = object->volumes;
@@ -757,17 +802,22 @@ void ObjectList::render_volume_node(const Slic3r::ModelVolume* volume, size_t vo
     if (m_edited_node_id == volume_id && !is_selected)
         m_edited_node_id = 0;  // Exit edit mode
 
-    next_line();
+    NewRowWithSelectable row;
     ImGui::SetNextItemSelectionUserData(vol_id);
     if (m_edited_node_id == volume_id) {
-        if (ImGui::Selectable(icon_str(volume).c_str(), is_selected, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowItemOverlap)) {
+        if (selectable(icon_str(volume).c_str(), is_selected, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowItemOverlap)) {
             m_edited_node_id = 0;// Discard edit mode on selection
         }
         render_edited(volume_name.c_str(), sel_element);
+
+        // During rendering of the InputText different values of cursore position are changed.
+        // As a result positions of other items in the row are missed up.
+        // But invalidating of the RowCellPaddingY fixes this issue
+        GImGui->CurrentTable->RowCellPaddingY = 0.f;
     }
     else {
         // Display as a selectable label
-        if (ImGui::Selectable((icon_str(volume) + volume_name).c_str(), is_selected, ImGuiSelectableFlags_SpanAllColumns))
+        if (selectable((icon_str(volume) + volume_name).c_str(), is_selected, ImGuiSelectableFlags_SpanAllColumns))
             m_edited_node_id = volume_id;  // Start edit mode on selection
     }
 
@@ -790,7 +840,7 @@ bool ObjectList::render_instances_node(const Slic3r::ModelObject* object, const 
 
     const std::string name_id = "Instances##obj_id" + std::to_string(object_id);
 
-    next_line();
+    new_row();
     bool isOpen = tree_node(name_id.c_str(), node_flags | ImGuiTreeNodeFlags_DefaultOpen, (icon_str(ImGui::InstancesIcon) + "Instances").c_str());
 
     bool is_changed_selection = handle_selection(sel_element);
@@ -870,10 +920,11 @@ void ObjectList::render_instance_node(const Slic3r::ModelObject* object, size_t 
     Domain::ElementRef sel_element{ object->id().id, id, 0 };
 
     const std::string name = icon_str(ImGui::ObjectIcon) + "Instance " + std::to_string(id);
-  
-    next_line();
+
+    NewRowWithSelectable row;
     ImGui::SetNextItemSelectionUserData(inst_id);
-    ImGui::Selectable(name.c_str(), is_selected, ImGuiSelectableFlags_SpanAllColumns);
+    selectable(name.c_str(), is_selected, ImGuiSelectableFlags_SpanAllColumns);
+
     render_printable_icon(sel_element, instance->printable);
 
     handle_dragging(sel_element);
@@ -885,13 +936,9 @@ void ObjectList::render_infos_node(const Slic3r::ModelObject* object, bool is_sl
     if (infos.empty())
         return;
 
-    next_line();
+    new_row();
     const std::string name_id = "Infos##obj_id" + std::to_string(object->id().id);
-    ImGui::Unindent(ImGui::GetTreeNodeToLabelSpacing());
-    bool is_open = tree_node(name_id.c_str(), node_flags | ImGuiTreeNodeFlags_Leaf, "Infos");
-    ImGui::Indent(ImGui::GetTreeNodeToLabelSpacing());
-
-    if (is_open) {
+    if (tree_node(name_id.c_str(), node_flags, "Infos")) {
         render_infos_selectable(infos, object, hovered_current_row());
         ImGui::TreePop();
     }
@@ -900,19 +947,25 @@ void ObjectList::render_infos_node(const Slic3r::ModelObject* object, bool is_sl
 void ObjectList::render_edited(const char* init_name, const Domain::ElementRef& sel_element)
 {
     static char buffer[128] = "";
+    strncpy(buffer, init_name, sizeof(buffer));
 
     // put the editor item on the same line and without item spacing
     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2());
     ImGui::SameLine();
-    ImGui::PopStyleVar();
+    // modify cursore position in respect to the cell padding
+    ImGui::SetCursorScreenPos(ImGui::GetCursorScreenPos() - ImVec2(0.f, GImGui->Style.CellPadding.y));
+    // discard horizontal frame padding
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.f, GImGui->Style.FramePadding.y));
+
     // Editable text box
-    strncpy(buffer, init_name, sizeof(buffer));
-    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2());
     if (ImGui::InputText("##edit", buffer, sizeof(buffer), ImGuiInputTextFlags_EnterReturnsTrue)) {
         propagate_name_editing(sel_element, buffer);  // Save edited name
         m_edited_node_id = 0;  // Exit edit mode
     }
-    ImGui::PopStyleVar();
+    //save hovered state for InputText => will be used in tree_node rendering
+    is_edit_name_input_hovered = ImGui::IsItemHovered();
+
+    ImGui::PopStyleVar(2);
 }
 
 void ObjectList::render_printable_icon(const Domain::ElementRef& sel_element, bool is_printable)
@@ -936,21 +989,7 @@ void ObjectList::render_overrides_icon(const Domain::ElementRef& sel_element, bo
 
 void ObjectList::render_extruder_marker(size_t extruder_id, const Domain::ElementRef& sel_element, bool is_bed/* = false*/)
 {
-    ImGui::TableSetColumnIndex(ciExtruder);
-    const std::string extruder_name = std::to_string(extruder_id + 1);
-
-    ImVec2 pos = ImGui::GetCursorScreenPos();
-
-    const float size = ImGui::GetFontSize();
-    const float radius = 0.5f * size;
-
-    ImVec2 center = pos + ImVec2(radius, radius); // Offset from cursor
-    ImGui::GetCurrentWindow()->DrawList->AddCircleFilled(center, radius, ImGui::GetColorU32(def_color));
-
-    ImGui::SetCursorScreenPos(ImVec2(center.x - 0.5f * ImGui::CalcTextSize(extruder_name.c_str()).x, pos.y));
-    ImGui::Text(extruder_name.c_str());
-
-    if (ImGui::IsMouseHoveringRect(pos, pos + ImVec2(size, size)) && ImGui::IsMouseClicked(0))
+    if (icon_btn(ciExtruder, icon_str(ImGui::ExtruderMarker)))
         extruder_clicked(sel_element, is_bed);
 }
 
@@ -967,9 +1006,9 @@ static std::map<wchar_t, std::string> info_descriptions = {
 void ObjectList::render_infos_selectable(const std::set<wchar_t>& infos, const Slic3r::ModelObject* object, bool force_render)
 {
     for (wchar_t info : infos) {
-        next_line();
+        NewRowWithSelectable row;
         std::string line = icon_str(info) + info_descriptions[info];
-        if (ImGui::Selectable(line.c_str())) {
+        if (selectable(line.c_str())) {
             if (info == ImGui::Sinking || info == ImGui::HRModifier) {
                 force_select_whole_object(object);
                 clear_all_ms();

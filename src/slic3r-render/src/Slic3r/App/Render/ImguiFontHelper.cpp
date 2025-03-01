@@ -144,6 +144,8 @@ static const std::vector<std::pair<const wchar_t, std::string>> FONT_ICONS = {
     { ImGui::ConfigContainer              , "config_container"               },
     { ImGui::InstancesIcon                , "instances_icon"                 },
     { ImGui::OverridenObjectIcon          , "overriden_object_icon"          },
+    { ImGui::ExtruderMarker               , "extruder_marker"                },
+    { ImGui::AddBedIcon                   , "add_bed"                        },
 };
 
 static const std::vector<std::pair<const wchar_t, std::string>> FONT_ICONS_MEDIUM = {
