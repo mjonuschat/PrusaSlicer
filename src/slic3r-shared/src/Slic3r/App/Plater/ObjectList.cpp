@@ -257,11 +257,44 @@ static std::set<wchar_t> get_infos(const Slic3r::ModelObject* object, bool is_sl
     return infos;
 }
 
+// color of the row background
+ImGuiCol_ row_color = ImGuiCol_COUNT;
+
+/* Row background setter
+ * predicate - condition for changing of the row color.
+ * In constructor set color for "main-active item".
+ * When call set_next(), than set color for "sub-active item".
+ * Destructor invalidates row color
+ */
+struct RowBackground
+{
+    RowBackground(bool predicate) : force_apply(predicate) {
+        if (force_apply)
+            row_color = ImGuiCol_HeaderActive;
+    }
+    ~RowBackground() { invalidate(); }
+
+    void set_next() {
+        if (force_apply)
+            row_color = ImGuiCol_Header;
+    }
+
+private:
+    void invalidate() {
+        if (force_apply)
+            row_color = ImGuiCol_COUNT;
+    }
+
+    bool force_apply{ false };
+};
+
 /* Wrapper function to set cursor to the first cell of next row of the table
 */
 static void new_row()
 {
     ImGui::TableNextRow();
+    if (row_color != ImGuiCol_COUNT)
+        ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, ImGui::GetColorU32(row_color));
     ImGui::TableSetColumnIndex(0);
 }
 
@@ -444,21 +477,19 @@ void ObjectList::update_selection_from_scene()
         vol_ms.UserData = (void*)&object->volumes;
     }
 
-    if (!scene_selection.empty()) {
-        std::set<Domain::ElementRef> selectedItems_tmp = std::set<Domain::ElementRef>(scene_selection.elements.begin(), scene_selection.elements.end());
-        if (selectedItems_tmp != selected_items) {
-            clear_all_ms();
-            if (scene_selection.mode == Biz::Scene::SelectionMode::Volume) {
-                for (const auto& el : scene_selection.elements)
-                    m_volumes_ms.at(el.object_id).SetItemSelected(el.volume_id, true);
-            }
-            else if (scene_selection.mode == Biz::Scene::SelectionMode::Instance) {
-                for (const auto& el : scene_selection.elements) {
-                    m_instances_ms.at(el.object_id).SetItemSelected(el.instance_id, true);
-                }
-            }
-            selected_items = selectedItems_tmp;
+    std::set<Domain::ElementRef> selectedItems_tmp = std::set<Domain::ElementRef>(scene_selection.elements.begin(), scene_selection.elements.end());
+    if (selectedItems_tmp != selected_items) {
+        clear_all_ms();
+        if (scene_selection.mode == Biz::Scene::SelectionMode::Volume) {
+            for (const auto& el : scene_selection.elements)
+                m_volumes_ms.at(el.object_id).SetItemSelected(el.volume_id, true);
         }
+        else if (scene_selection.mode == Biz::Scene::SelectionMode::Instance) {
+            for (const auto& el : scene_selection.elements) {
+                m_instances_ms.at(el.object_id).SetItemSelected(el.instance_id, true);
+            }
+        }
+        selected_items = selectedItems_tmp;
     }
 }
 
@@ -549,6 +580,8 @@ static bool tree_node(const char* str_id, ImGuiTreeNodeFlags flags, const char* 
 
     // first layer
     draw_list->AddRectFilled(pos, pos_end, ImGui::GetColorU32(ImGuiCol_WindowBg));
+    if (row_color != ImGuiCol_COUNT)
+        draw_list->AddRectFilled(pos, pos_end, ImGui::GetColorU32(row_color));
 
     ImGuiID edit_name_input_id = ImGui::GetID("##edit");
 
@@ -625,17 +658,15 @@ bool ObjectList::render_bed_node(const Domain::BedInstance* bed, bool is_sla_con
     const std::string name = "Bed " + std::to_string(bed_id);
     const std::string name_id = "##bed_id" + std::to_string(bed_id);
 
+    RowBackground bg(bed->active() && selected_items.empty());
     new_row();
-    //if (bed->active()) ImGui::PushStyleColor(ImGuiCol_Text, def_color);
-    ImGuiTreeNodeFlags flags = node_flags | ImGuiTreeNodeFlags_DefaultOpen;
-    if (bed->active()) flags |= ImGuiTreeNodeFlags_Selected;
-    bool is_open = tree_node(name_id.c_str(), flags, (icon_str(ImGui::BedIcon) + name).c_str());
-    //if (bed->active()) ImGui::PopStyleColor();
+    bool is_open = tree_node(name_id.c_str(), node_flags | ImGuiTreeNodeFlags_DefaultOpen, (icon_str(ImGui::BedIcon) + name).c_str());
 
     render_extruder_marker(0, { bed_id }, true);
     
     bool is_changed_selection = false;
     if (is_open) {
+        bg.set_next();
         for (const Slic3r::ModelObject* object : m_model->objects) {
             if (bed_has_object(bed->model_instances(), object))
                 is_changed_selection |= render_object_node(object, bed, is_sla_config);
@@ -664,6 +695,7 @@ bool ObjectList::render_object_node(const Slic3r::ModelObject* object, const Dom
     const std::string name = (object->name.empty() ? "Object " + std::to_string(object_id) : object->name);
     const std::string name_id = "##obj_id" + std::to_string(object_id);
 
+    RowBackground bg(is_selected);
     new_row();
 
     const wchar_t icon = has_overrides(object, is_sla_config) ? ImGui::OverridenObjectIcon : ImGui::ObjectIcon;
@@ -693,6 +725,7 @@ bool ObjectList::render_object_node(const Slic3r::ModelObject* object, const Dom
     render_extruder_marker(1, sel_element);
 
     if (isOpen) {
+        bg.set_next();
         is_changed_selection |= render_connectors_node(object, bed ? bed->id().id : 0);
         is_changed_selection |= render_volumes(object, bed ? bed->id().id : 0);
         is_changed_selection |= render_instances_node(object, bed);
