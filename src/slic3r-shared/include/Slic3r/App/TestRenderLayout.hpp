@@ -4,7 +4,7 @@
 #include "Slic3r/App/Yoga/SplitterSizer.hpp"
 #include "Slic3r/App/Yoga/MiddleSizer.hpp"
 
-#define flex_with_splitters 1
+#define flex_with_splitters 0
 
 namespace Slic3r::App {
 
@@ -30,7 +30,7 @@ private:
 #if flex_with_splitters
     Yoga::SplitterSizer     m_main_sizer;
 #else
-    Yoga::YogaFlexSizer m_main_sizer;
+    Yoga::FlexSizer m_main_sizer;
 #endif
     Yoga::SplitterSizer     m_left_sizer;
     Yoga::MiddleSizer       m_middle_sizer;
