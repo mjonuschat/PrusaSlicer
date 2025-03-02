@@ -51,10 +51,133 @@ void PlaterRenderModule::on_init(Render::Device& device)
 void PlaterRenderModule::init_scene_layout()
 {
     Plater::ObjectList* ol = m_scene_presenter->project_context().object_list();
-    ol->init(m_project_interactor.scene_interactor(), m_project_interactor.selected_project().model());
+    ol->init(&m_project_interactor);
 
     trl.set_object_list_render_fn([ol](ImVec2 size, ImVec2 pos) -> void
         { ol->render(pos, size); });
+}
+
+void my_model_experinets(Biz::Scene::SceneInteractor& scene_interactor, const Domain::Bed& bed)
+{
+    size_t x_size = 3;
+    size_t y_size = 3;
+    double span = 20;
+    double x_off = -((x_size - 1) * span) / 2 + bed.center().x();
+    double y_off = -((y_size - 1) * span) / 2 + bed.center().y();
+
+    {
+        scene_interactor.new_object_from_mesh(TriangleMesh{its_make_cube(10,10,10) });
+
+        Biz::Scene::TransformMemento xform_memento;
+        Transform3d xform = Transform3d::Identity();
+        xform.translate(Vec3d{0 * span + x_off, 0 * span + y_off, 0});
+        scene_interactor.transform_selection(xform.matrix(), xform_memento);
+
+        xform = Transform3d::Identity();
+        xform.translate(Vec3d{ 10, 10, 10});
+        scene_interactor.add_volume_from_mesh(TriangleMesh{its_make_cube(10,10,10)}, ModelVolumeType::NEGATIVE_VOLUME, xform.matrix());
+
+        xform = Transform3d::Identity();
+        xform.translate(Vec3d{ 0, -10, 10});
+        scene_interactor.add_volume_from_mesh(TriangleMesh{its_make_cube(10,10,10)}, ModelVolumeType::PARAMETER_MODIFIER, xform.matrix());
+
+        xform = Transform3d::Identity();
+        xform.translate(Vec3d{ 0, 5, 10});
+        scene_interactor.add_volume_from_mesh(TriangleMesh{its_make_sphere(10, 12)}, ModelVolumeType::SUPPORT_ENFORCER, xform.matrix());
+
+    }
+
+    for (size_t x = 0; x < x_size; x++) {
+        for (size_t y = 0; y < y_size; y++) {
+            if (x == 0 && y == 0)
+                continue;
+
+            Transform3d xform = Transform3d::Identity();
+            xform.translate(Vec3d{x * span + x_off, y * span + y_off, 0});
+            scene_interactor.add_instance(xform.matrix());
+        }
+    }
+
+    x_size = 2;
+    y_size = 4;
+    span = 30;
+    x_off = -((x_size - 1) * span) / 2 + bed.center().x() + 65;
+    y_off = -((y_size - 1) * span) / 2 + bed.center().y() + 25;
+    {
+        scene_interactor.new_object_from_mesh(TriangleMesh{its_make_cube(10,10,10) });
+
+        Biz::Scene::TransformMemento xform_memento;
+        Transform3d xform = Transform3d::Identity();
+        xform.translate(Vec3d{0 * span + x_off, 0 * span + y_off, 0});
+        scene_interactor.transform_selection(xform.matrix(), xform_memento);
+
+        xform = Transform3d::Identity();
+        xform.translate(Vec3d{ 10, 10, 10});
+        scene_interactor.add_volume_from_mesh(TriangleMesh{its_make_cube(10,10,10)}, ModelVolumeType::NEGATIVE_VOLUME, xform.matrix());
+
+        xform = Transform3d::Identity();
+        xform.translate(Vec3d{ 0, -10, 10});
+        scene_interactor.add_volume_from_mesh(TriangleMesh{its_make_cube(10,10,10)}, ModelVolumeType::PARAMETER_MODIFIER, xform.matrix());
+
+        xform = Transform3d::Identity();
+        xform.translate(Vec3d{ 0, 5, 10});
+        scene_interactor.add_volume_from_mesh(TriangleMesh{its_make_sphere(10, 12)}, ModelVolumeType::SUPPORT_ENFORCER, xform.matrix());
+
+        xform = Transform3d::Identity();
+        xform.translate(Vec3d{ 0, 5, 10});
+        scene_interactor.add_volume_from_mesh(TriangleMesh{its_make_sphere(10, 12)}, ModelVolumeType::SUPPORT_BLOCKER, xform.matrix());
+
+    }
+
+    for (size_t x = 0; x < x_size; x++) {
+        for (size_t y = 0; y < y_size; y++) {
+            if (x == 0 && y == 0)
+                continue;
+
+            Transform3d xform = Transform3d::Identity();
+            xform.translate(Vec3d{x * span + x_off, y * span + y_off, 0});
+            scene_interactor.add_instance(xform.matrix());
+        }
+    }
+
+    x_size = 3;
+    y_size = 3;
+    span = 15;
+    x_off = -((x_size - 1) * span) / 2 + bed.center().x() - 70;
+    y_off = -((y_size - 1) * span) / 2 + bed.center().y() - 50;
+    {
+        scene_interactor.new_object_from_mesh(TriangleMesh{its_make_cube(10,10,10) });
+
+        Biz::Scene::TransformMemento xform_memento;
+        Transform3d xform = Transform3d::Identity();
+        xform.translate(Vec3d{0 * span + x_off, 0 * span + y_off, 0});
+        scene_interactor.transform_selection(xform.matrix(), xform_memento);
+
+        xform = Transform3d::Identity();
+        xform.translate(Vec3d{ 10, 10, 10});
+        scene_interactor.add_volume_from_mesh(TriangleMesh{its_make_cube(10,10,10)}, ModelVolumeType::NEGATIVE_VOLUME, xform.matrix());
+
+        xform = Transform3d::Identity();
+        xform.translate(Vec3d{ 0, -10, 10});
+        scene_interactor.add_volume_from_mesh(TriangleMesh{its_make_cube(10,10,10)}, ModelVolumeType::PARAMETER_MODIFIER, xform.matrix());
+
+    }
+
+    for (size_t x = 0; x < x_size; x++) {
+        for (size_t y = 0; y < y_size; y++) {
+            if (x == 0 && y == 0)
+                continue;
+
+            Transform3d xform = Transform3d::Identity();
+            xform.translate(Vec3d{x * span + x_off, y * span + y_off, 0});
+            scene_interactor.add_instance(xform.matrix());
+        }
+    }
+}
+
+void override_config(ModelConfigObject& config)
+{
+    config.set_key_value("fill_pattern", new ConfigOptionEnum<InfillPattern>(ipHoneycomb));
 }
 
 void PlaterRenderModule::init_scene()
@@ -65,7 +188,22 @@ void PlaterRenderModule::init_scene()
                           .config_containers()
                           .front()
                           ->bed();
+#if 1
+    my_model_experinets(scene_interactor, bed);
+    ModelObjectPtrs& objects = m_project_interactor.selected_project().model().objects;
+    override_config(objects[0]->config);
+    override_config(objects[0]->volumes[0]->config);
+    override_config(objects[0]->volumes[1]->config);
+//    override_config(objects[1]->config);
+    override_config(objects[2]->volumes[0]->config);
+    override_config(objects[2]->volumes[1]->config);
 
+ //   objects[1]->layer_config_ranges[{ 0., 1. }] = objects[0]->config;
+
+    objects[1]->instances[2]->printable = 
+    objects[1]->instances[4]->printable = 
+    objects[1]->instances[6]->printable = false;
+#else
     const size_t x_size = 5;
     const size_t y_size = 5;
     const double span = 20;
@@ -106,6 +244,7 @@ void PlaterRenderModule::init_scene()
         }
     }
 
+#endif
     m_scene_presenter->scene().log_nodes();
 }
 
@@ -565,7 +704,7 @@ void PlaterRenderModule::render_imgui()
     m_scene_presenter->render_imgui(m_screen_info);
 
     m_gizmo_manager->render_imgui();
-
+/*
     if (ImGui::Begin("Outline", &m_gui_win_open)) {
         ImGui::Text("Tool Gizmos");
         Scene::ToolType type = m_gizmo_manager->current_tool_type();
@@ -603,9 +742,20 @@ void PlaterRenderModule::render_imgui()
 #if ENABLED_DEBUG_IMGUI_ICONS
     render_imgui_debug_icons();
 #endif // ENABLED_DEBUG_IMGUI_ICONS
+*/
 #if ENABLED_DEBUG_BEDS
+    ImGui::SetNextWindowPos(ImVec2(ImGui::GetMainViewport()->GetCenter().x, 50.f), ImGuiCond_Always);
     render_imgui_debug_bed(m_project_interactor, *m_scene_presenter);
 #endif // ENABLED_DEBUG_BEDS
+
+    ImGui::SetNextWindowPos(ImVec2(ImGui::GetMainViewport()->GetCenter().x, 20.f), ImGuiCond_Always);
+    if (ImGui::Begin("Load test", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        if (ImGui::Button("Load project from test 3mf")) {
+            // temp solution because of ScenePresenter is created in canvas.render()
+            m_project_interactor.load_project("C:\\PS_3\\Test_ObjectList.3mf");
+        }
+    }
+    ImGui::End();
 
 }
 
