@@ -618,6 +618,16 @@ void PrintConfigDef::init_fff_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionInts{ 0 });
 
+    def = this->add("bed_temperature_extruder", coInt);
+    def->label = L("Bed temperature by extruder");
+    def->category = L("Extruders");
+    def->tooltip = L("The extruder which determines bed temperatures. "
+                     "Set to 0 to determine temperatures based on the first printing extruder "
+                     "of the first and the second layers.");
+    def->min = 0;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionInt(0));
+
     def = this->add("before_layer_gcode", coString);
     def->label = L("Before layer change G-code");
     def->tooltip = L("This custom code is inserted at every layer change, right before the Z move. "
@@ -728,6 +738,7 @@ void PrintConfigDef::init_fff_params()
     def->set_default_value(new ConfigOptionFloat(60));
 
     def = this->add("over_bridge_speed", coFloatOrPercent);
+    // TRN: Label for speed used to print infill above bridges.
     def->label = L("Over bridges");
     def->category = L("Speed");
     def->tooltip = L("Speed for printing solid infill above bridges. Set to 0 to use solid infill speed. "
@@ -1117,10 +1128,10 @@ void PrintConfigDef::init_fff_params()
 
     def = this->add("extruder_clearance_height", coFloat);
     def->label = L("Height");
-    def->tooltip = L("Set this to the vertical distance between your nozzle tip and (usually) the X carriage rods. "
-                   "In other words, this is the height of the clearance cylinder around your extruder, "
-                   "and it represents the maximum depth the extruder can peek before colliding with "
-                   "other printed objects.");
+    def->tooltip = L("Only used when 'Print Settings -> Complete individual objects' is active. Set this to the vertical "
+                   "distance between your nozzle tip and (usually) the X carriage rods. Used to check for collisions "
+                   "with previously printed objects and to prevent them when arranging.\n"
+                   "The value is ignored for most Prusa printers, which come with more detailed extruder model.");
     def->sidetext = L("mm");
     def->min = 0;
     def->mode = comExpert;
@@ -1128,10 +1139,10 @@ void PrintConfigDef::init_fff_params()
 
     def = this->add("extruder_clearance_radius", coFloat);
     def->label = L("Radius");
-    def->tooltip = L("Set this to the clearance radius around your extruder. "
-                   "If the extruder is not centered, choose the largest value for safety. "
-                   "This setting is used to check for collisions and to display the graphical preview "
-                   "in the plater.");
+    def->tooltip = L("Only used when 'Print Settings -> Complete individual objects' is active. Set this to a radius "
+                     "of a nozzle-centered cylinder big enough to enclose the extruder assembly. Used to check for collisions "
+                     "with previously printed objects and to prevent them when arranging.\n"
+                     "The value is ignored for most Prusa printers, which come with more detailed extruder model.");
     def->sidetext = L("mm");
     def->min = 0;
     def->mode = comExpert;
@@ -1990,6 +2001,56 @@ void PrintConfigDef::init_fff_params()
     def->category = L("Ironing");
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionBool(false));
+
+    def           = this->add("interlocking_beam", coBool);
+    def->label    = L("Use beam interlocking");
+    def->tooltip  = L("Generate interlocking beam structure at the locations where different filaments touch. This improves the adhesion between filaments, especially models printed in different materials.");
+    def->category = L("Advanced");
+    def->mode     = comAdvanced;
+    def->set_default_value(new ConfigOptionBool(false));
+
+    def           = this->add("interlocking_beam_width", coFloat);
+    def->label    = L("Interlocking beam width");
+    def->tooltip  = L("The width of the interlocking structure beams.");
+    def->sidetext = L("mm");
+    def->min      = 0.1f;
+    def->category = L("Advanced");
+    def->mode     = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(0.8));
+
+    def           = this->add("interlocking_orientation", coFloat);
+    def->label    = L("Interlocking direction");
+    def->tooltip  = L("Orientation of interlocking beams.");
+    def->sidetext = L("°");
+    def->min      = 0;
+    def->max      = 360;
+    def->category = L("Advanced");
+    def->mode     = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(22.5));
+
+    def           = this->add("interlocking_beam_layer_count", coInt);
+    def->label    = L("Interlocking beam layers");
+    def->tooltip  = L("The height of the beams of the interlocking structure, measured in number of layers. Less layers is stronger, but more prone to defects.");
+    def->min      = 1;
+    def->category = L("Advanced");
+    def->mode     = comAdvanced;
+    def->set_default_value(new ConfigOptionInt(2));
+
+    def           = this->add("interlocking_depth", coInt);
+    def->label    = L("Interlocking depth");
+    def->tooltip  = L("The distance from the boundary between filaments to generate interlocking structure, measured in cells. Too few cells will result in poor adhesion.");
+    def->min      = 1;
+    def->category = L("Advanced");
+    def->mode     = comAdvanced;
+    def->set_default_value(new ConfigOptionInt(2));
+
+    def           = this->add("interlocking_boundary_avoidance", coInt);
+    def->label    = L("Interlocking boundary avoidance");
+    def->tooltip  = L("The distance from the outside of a model where interlocking structures will not be generated, measured in cells.");
+    def->min      = 0;
+    def->category = L("Advanced");
+    def->mode     = comAdvanced;
+    def->set_default_value(new ConfigOptionInt(2));
 
     def = this->add("ironing_type", coEnum);
     def->label = L("Ironing Type");
@@ -4503,14 +4564,6 @@ void PrintConfigDef::init_sla_params()
     def->min = 0;
     def->set_default_value(new ConfigOptionInt(100));
 
-    def = this->add("support_points_minimal_distance", coFloat);
-    def->label = L("Minimal distance of the support points");
-    def->category = L("Supports");
-    def->tooltip = L("No support points will be placed closer than this threshold.");
-    def->sidetext = L("mm");
-    def->min = 0;
-    def->set_default_value(new ConfigOptionFloat(1.));
-
     def = this->add("pad_enable", coBool);
     def->label = L("Use pad");
     def->category = L("Pad");
@@ -4758,14 +4811,14 @@ void PrintConfigDef::init_sla_tilt_params()
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloats({ 0., 0.}));
 
-    def = this->add("tower_hop_height", coInts);
+    def = this->add("tower_hop_height", coFloats);
     def->full_label = L("Tower hop height");
     def->tooltip = L("The height of the tower raise.");
     def->sidetext = L("mm");
     def->min = 0;
     def->max = 100;
     def->mode = comExpert;
-    def->set_default_value(new ConfigOptionInts({ 0, 0}));
+    def->set_default_value(new ConfigOptionFloats({ 0., 0.}));
 
     def = this->add("tower_speed", coEnums); 
     def->full_label = L("Tower speed");
@@ -4933,7 +4986,8 @@ static std::set<std::string> PrintConfigDef_ignore = {
     "infill_only_where_needed",
     "gcode_binary", // Introduced in 2.7.0-alpha1, removed in 2.7.1 (replaced by binary_gcode).
     "wiping_volumes_extruders", // Removed in 2.7.3-alpha1.
-    "wipe_tower_x", "wipe_tower_y", "wipe_tower_rotation_angle" // Removed in 2.9.0
+    "wipe_tower_x", "wipe_tower_y", "wipe_tower_rotation_angle", // Removed in 2.9.0
+    "support_points_minimal_distance", // End of the using in 2.9.1 (change algorithm for the support generator)
 };
 
 void PrintConfigDef::handle_legacy(t_config_option_key &opt_key, std::string &value)
@@ -5086,8 +5140,6 @@ void PrintConfigDef::handle_legacy_composite(DynamicPrintConfig &config)
         }
         config.set_key_value("wiping_volumes_use_custom_matrix", new ConfigOptionBool(custom));
     }
-
-    handle_legacy_sla(config);
 }
 
 const PrintConfigDef print_config_def;
@@ -5165,6 +5217,16 @@ void DynamicPrintConfig::normalize_fdm()
     if (!this->has("solid_infill_extruder") && this->has("infill_extruder"))
         this->option("solid_infill_extruder", true)->setInt(this->option("infill_extruder")->getInt());
 
+    if (this->has("bed_temperature_extruder")) {
+        const size_t num_extruders = this->opt<ConfigOptionFloats>("nozzle_diameter")->size();
+        const int    extruder      = this->opt<ConfigOptionInt>("bed_temperature_extruder")->value;
+
+        // Replace invalid values with 0.
+        if (extruder < 0 || extruder > num_extruders) {
+            this->option("bed_temperature_extruder")->setInt(0);
+        }
+    }
+
     if (this->has("spiral_vase") && this->opt<ConfigOptionBool>("spiral_vase", true)->value) {
         {
             // this should be actually done only on the spiral layers instead of all
@@ -5199,14 +5261,14 @@ const std::map<std::string, ConfigOptionFloats> tilt_options_floats_defs =
     {"delay_before_exposure",    ConfigOptionFloats({ 3., 3., 0., 1., 3.5, 3.5, 0., 0. }) } ,
     {"delay_after_exposure",     ConfigOptionFloats({ 0., 0., 0., 0., 0., 0., 0., 0. }) } ,
     {"tilt_down_offset_delay",   ConfigOptionFloats({ 0., 0., 0., 0., 0., 0., 0., 0. }) } ,
-    {"tilt_down_delay",          ConfigOptionFloats({ 0., 0., 0., 0.5, 0., 0., 0., 0. }) } ,
+    {"tilt_down_delay",          ConfigOptionFloats({ 0., 0., 0., 0., 0., 0., 0., 0. }) } ,
     {"tilt_up_offset_delay",     ConfigOptionFloats({ 0., 0., 0., 0., 0., 0., 0., 0. }) } ,
     {"tilt_up_delay",            ConfigOptionFloats({ 0., 0., 0., 0., 0., 0., 0., 0. }) } ,
+    {"tower_hop_height",         ConfigOptionFloats({ 0., 0., 0., 0., 5., 5., 0., 0. }) } ,
 };
 
 const std::map<std::string, ConfigOptionInts> tilt_options_ints_defs =
 {
-    {"tower_hop_height",         ConfigOptionInts({ 0, 0, 0, 0, 5, 5, 0, 0 }) } ,
     {"tilt_down_offset_steps",   ConfigOptionInts({ 0, 0, 0, 0, 2200, 2200, 0, 0 }) } ,
     {"tilt_down_cycles",         ConfigOptionInts({ 1, 1, 1, 1, 1, 1, 0, 0 }) } ,
     {"tilt_up_offset_steps",     ConfigOptionInts({ 1200, 1200, 600, 600, 2200, 2200, 0, 0 }) } ,
@@ -5242,11 +5304,11 @@ const std::map<std::string, ConfigOptionFloats> tilt_options_floats_sl1_defs =
     {"tilt_down_delay",          ConfigOptionFloats({ 0., 0., 0., 0., 0., 0., 0., 0. }) } ,
     {"tilt_up_offset_delay",     ConfigOptionFloats({ 0., 0., 0., 0., 1., 1., 0., 0. }) } ,
     {"tilt_up_delay",            ConfigOptionFloats({ 0., 0., 0., 0., 0., 0., 0., 0. }) } ,
+    {"tower_hop_height",         ConfigOptionFloats({ 0., 0., 0., 0., 5., 5., 0., 0. }) } ,
 };
 
 const std::map<std::string, ConfigOptionInts> tilt_options_ints_sl1_defs =
 {
-    {"tower_hop_height",         ConfigOptionInts({ 0, 0, 0, 0, 5, 5, 0, 0 }) } ,
     {"tilt_down_offset_steps",   ConfigOptionInts({ 650, 650, 0, 0, 2200, 2200, 0, 0 }) } ,
     {"tilt_down_cycles",         ConfigOptionInts({ 1, 1, 1, 1, 1, 1, 0, 0 }) } ,
     {"tilt_up_offset_steps",     ConfigOptionInts({ 400, 400, 400, 400, 2200, 2200, 0, 0 }) } ,
@@ -5299,57 +5361,60 @@ void  handle_legacy_sla(DynamicPrintConfig &config)
         !config.has("tilt_down_offset_delay") // Config from old PS doesn't contain any of tilt options, so check it
         ) {
         int tilt_mode = config.option("material_print_speed")->getInt();
-
         const bool is_sl1_model = config.opt_string("printer_model") == "SL1";
+        update_tilts_by_mode(config, tilt_mode, is_sl1_model);
+    }
+}
 
-        const std::map<std::string, ConfigOptionFloats> floats_defs = is_sl1_model ? tilt_options_floats_sl1_defs : tilt_options_floats_defs;
-        const std::map<std::string, ConfigOptionInts>   ints_defs   = is_sl1_model ? tilt_options_ints_sl1_defs : tilt_options_ints_defs;
-        const std::map<std::string, ConfigOptionBools>  bools_defs  = is_sl1_model ? tilt_options_bools_sl1_defs : tilt_options_bools_defs;
-        const std::map<std::string, ConfigOptionEnums<TowerSpeeds>>   tower_enums_defs = is_sl1_model ? tower_tilt_options_enums_sl1_defs : tower_tilt_options_enums_defs;
-        const std::map<std::string, ConfigOptionEnums<TiltSpeeds>>    tilt_enums_defs  = is_sl1_model ? tilt_options_enums_sl1_defs : tilt_options_enums_defs;
+void update_tilts_by_mode(DynamicPrintConfig& config, int tilt_mode, bool is_sl1_model)
+{
+    const std::map<std::string, ConfigOptionFloats> floats_defs = is_sl1_model ? tilt_options_floats_sl1_defs : tilt_options_floats_defs;
+    const std::map<std::string, ConfigOptionInts>   ints_defs   = is_sl1_model ? tilt_options_ints_sl1_defs : tilt_options_ints_defs;
+    const std::map<std::string, ConfigOptionBools>  bools_defs  = is_sl1_model ? tilt_options_bools_sl1_defs : tilt_options_bools_defs;
+    const std::map<std::string, ConfigOptionEnums<TowerSpeeds>>   tower_enums_defs = is_sl1_model ? tower_tilt_options_enums_sl1_defs : tower_tilt_options_enums_defs;
+    const std::map<std::string, ConfigOptionEnums<TiltSpeeds>>    tilt_enums_defs  = is_sl1_model ? tilt_options_enums_sl1_defs : tilt_options_enums_defs;
 
-        for (const std::string& opt_key : tilt_options()) {
-            switch (config.def()->get(opt_key)->type) {
-            case coFloats: {
-                ConfigOptionFloats values = floats_defs.at(opt_key);
-                double val1 = values.get_at(2 * tilt_mode);
-                double val2 = values.get_at(2 * tilt_mode + 1);
-                config.set_key_value(opt_key, new ConfigOptionFloats({ val1, val2 }));
+    for (const std::string& opt_key : tilt_options()) {
+        switch (config.def()->get(opt_key)->type) {
+        case coFloats: {
+            ConfigOptionFloats values = floats_defs.at(opt_key);
+            double val1 = values.get_at(2 * tilt_mode);
+            double val2 = values.get_at(2 * tilt_mode + 1);
+            config.set_key_value(opt_key, new ConfigOptionFloats({ val1, val2 }));
+        }
+            break;
+        case coInts: {
+            auto values = ints_defs.at(opt_key);
+            int val1 = values.get_at(2 * tilt_mode);
+            int val2 = values.get_at(2 * tilt_mode + 1);
+            config.set_key_value(opt_key, new ConfigOptionInts({ val1, val2 }));
+        }
+            break;
+        case coBools: {
+            auto values = bools_defs.at(opt_key);
+            bool val1 = values.get_at(2 * tilt_mode);
+            bool val2 = values.get_at(2 * tilt_mode + 1);
+            config.set_key_value(opt_key, new ConfigOptionBools({ val1, val2 }));
+        }
+            break;
+        case coEnums: {
+            int val1, val2;
+            if (opt_key == "tower_speed") {
+                auto values = tower_enums_defs.at(opt_key);
+                val1 = values.get_at(2 * tilt_mode);
+                val2 = values.get_at(2 * tilt_mode + 1);
             }
-                break;
-            case coInts: {
-                auto values = ints_defs.at(opt_key);
-                int val1 = values.get_at(2 * tilt_mode);
-                int val2 = values.get_at(2 * tilt_mode + 1);
-                config.set_key_value(opt_key, new ConfigOptionInts({ val1, val2 }));
+            else {
+                auto values = tilt_enums_defs.at(opt_key);
+                val1 = values.get_at(2 * tilt_mode);
+                val2 = values.get_at(2 * tilt_mode + 1);
             }
-                break;
-            case coBools: {
-                auto values = bools_defs.at(opt_key);
-                bool val1 = values.get_at(2 * tilt_mode);
-                bool val2 = values.get_at(2 * tilt_mode + 1);
-                config.set_key_value(opt_key, new ConfigOptionBools({ val1, val2 }));
-            }
-                break;
-            case coEnums: {
-                int val1, val2;
-                if (opt_key == "tower_speed") {
-                    auto values = tower_enums_defs.at(opt_key);
-                    val1 = values.get_at(2 * tilt_mode);
-                    val2 = values.get_at(2 * tilt_mode + 1);
-                }
-                else {
-                    auto values = tilt_enums_defs.at(opt_key);
-                    val1 = values.get_at(2 * tilt_mode);
-                    val2 = values.get_at(2 * tilt_mode + 1);
-                }
-                config.set_key_value(opt_key, new ConfigOptionEnumsGeneric({ val1, val2 }));
-            }
-                break;
-            case coNone:
-            default:
-                break;
-            }
+            config.set_key_value(opt_key, new ConfigOptionEnumsGeneric({ val1, val2 }));
+        }
+            break;
+        case coNone:
+        default:
+            break;
         }
     }
 }
@@ -5718,11 +5783,10 @@ CLIActionsConfigDef::CLIActionsConfigDef()
     def->label = L("Slice");
 //    def->tooltip = L("Slice the model as FFF or SLA based on the printer_technology configuration value.");
     def->tooltip = L("Slice the model as FFF or SLA based on the printer_technology configuration value "
-                     "and export FFF printing toolpaths as G-code or SLA printing layers as PNG.");
+                     "and export the result.");
     def->cli = "slice|s";
     def->set_default_value(new ConfigOptionBool(false));
 
-    /* looks like redundant actions. "slice" is complitely enough
     def = this->add("export_sla", coBool);
     def->label = L("Export SLA");
     def->tooltip = L("Slice the model and export SLA printing layers as PNG.");
@@ -5734,7 +5798,6 @@ CLIActionsConfigDef::CLIActionsConfigDef()
     def->tooltip = L("Slice the model and export toolpaths as G-code.");
     def->cli = "export-gcode|gcode|g";
     def->set_default_value(new ConfigOptionBool(false));
-*/
 }
 
 CLITransformConfigDef::CLITransformConfigDef()

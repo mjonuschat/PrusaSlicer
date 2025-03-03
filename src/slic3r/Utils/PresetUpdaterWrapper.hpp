@@ -25,6 +25,8 @@ using PresetUpdaterStatusMessageEvent = GUI::Event<wxString>;
 wxDECLARE_EVENT(EVT_PRESET_UPDATER_STATUS_END, PresetUpdaterStatusSimpleEvent);
 wxDECLARE_EVENT(EVT_PRESET_UPDATER_STATUS_PRINT, PresetUpdaterStatusMessageEvent);
 wxDECLARE_EVENT(EVT_CONFIG_UPDATER_SYNC_DONE, wxCommandEvent);
+wxDECLARE_EVENT(EVT_CONFIG_UPDATER_FAILED_ARCHIVE, wxCommandEvent);
+
 class PresetBundle; 
 class Semver;
 
@@ -55,6 +57,8 @@ public:
     HttpRetryOpt get_retry_policy() const { return m_retry_policy; }
     std::string get_error() const { return m_error_msg; }
     std::string get_target() const { return m_target; }
+    void add_failed_archive(const std::string& id) { m_failed_archives.emplace_back(id); }
+    const std::vector<std::string>&  get_failed_archives() { return m_failed_archives; }
 
     // called from PresetUpdaterUIStatusCancel (ui thread)
     void set_canceled(bool val) { m_canceled.store(val); }
@@ -68,6 +72,8 @@ private:
 
     HttpRetryOpt m_retry_policy;
     static const std::map<PresetUpdaterUIStatus::PresetUpdaterRetryPolicy, HttpRetryOpt> policy_map;
+
+    std::vector<std::string> m_failed_archives;
 };
 
 // Purpose of this class:

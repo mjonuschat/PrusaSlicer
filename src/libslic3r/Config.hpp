@@ -974,6 +974,7 @@ public:
     // A scalar is nil, or all values of a vector are nil.
     bool 					is_nil() const override { for (auto v : this->values) if (v != nil_value()) return false; return true; }
     bool 					is_nil(size_t idx) const override { return values[idx < this->values.size() ? idx : 0] == nil_value(); }
+    std::vector<int>        getInts() const override { return this->values; }
 
     std::string serialize() const override
     {

@@ -547,7 +547,7 @@ protected:
     void connectJunctions(ptr_vector_t<LineJunctions>& edge_junctions);
 
     /*!
-     * Generate small segments for local maxima where the beading would only result in a single bead
+     * Genrate small segments for local maxima where the beading would only result in a single bead
      */
     void generateLocalMaximaSingleBeads();
 };

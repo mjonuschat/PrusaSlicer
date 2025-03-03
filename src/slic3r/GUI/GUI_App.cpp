@@ -1538,6 +1538,15 @@ bool GUI_App::on_init_inner()
             this->check_updates(false);
         });
 
+        Bind(EVT_CONFIG_UPDATER_FAILED_ARCHIVE, [this](const wxCommandEvent& evt) {
+            assert(!evt.GetString().empty());
+            // TRN Notification text, %1% is list of vendors.
+            std::string notification_text = format(_u8L("Update check failed for the following vendors:\n\n%1%\nThis may be due to an account logout or a lost connection. Please verify your account status and internet connection. Then select \"Check for Configuration Updates\" to repeat."), evt.GetString());
+            notification_manager()->push_notification(NotificationType::FailedSecretVendorUpdateSync,
+                NotificationManager::NotificationLevel::WarningNotificationLevel,
+                notification_text);
+        });
+
         Bind(wxEVT_ACTIVATE_APP, [this](const wxActivateEvent &evt) {
             if (plater_) {
                 if (auto user_account = plater_->get_user_account())
@@ -1631,6 +1640,10 @@ bool GUI_App::on_init_inner()
         update_mode(); // update view mode after fix of the object_list size
 
     show_printer_webview_tab();
+
+#ifdef _WIN32
+    mainframe->update_title(); // To ensure taskbar icons is updated.
+#endif
 
 #ifdef __APPLE__
     other_instance_message_handler()->bring_instance_forward();
@@ -4215,6 +4228,14 @@ void GUI_App::open_link_in_printables(const std::string& url)
 {
     mainframe->show_printables_tab(url);
 }
+
+ bool GUI_App::is_account_logged_in() const
+ {
+     if (!plater_ || !plater_->get_user_account()) {
+         return false;
+     }
+     return plater_->get_user_account()->is_logged();
+ }
 
 bool LogGui::ignorred_message(const wxString& msg)
 {    

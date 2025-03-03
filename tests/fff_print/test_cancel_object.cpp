@@ -170,7 +170,7 @@ TEST_CASE_METHOD(CancelObjectFixture, "Single extruder", "[CancelObject]") {
 }
 
 TEST_CASE_METHOD(CancelObjectFixture, "Sequential print", "[CancelObject]") {
-    config.set_deserialize_strict({{"complete_objects", 1}});
+    config.set_deserialize_strict({{"complete_objects", 1} });
 
     Print print;
     print.apply(two_cubes, config);

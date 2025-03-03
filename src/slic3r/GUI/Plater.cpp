@@ -106,6 +106,7 @@
 #include "ConfigWizardWebViewPage.hpp"
 
 #include "Jobs/RotoptimizeJob.hpp"
+#include "Jobs/SeqArrangeJob.hpp"
 #include "Jobs/SLAImportJob.hpp"
 #include "Jobs/SLAImportDialog.hpp"
 #include "Jobs/NotificationProgressIndicator.hpp"
@@ -137,6 +138,8 @@
 #include "ConfigWizardWebViewPage.hpp"
 #include "PresetArchiveDatabase.hpp"
 #include "BulkExportDialog.hpp"
+
+#include "libslic3r/ArrangeHelper.hpp"
 
 #ifdef __APPLE__
 #include "Gizmos/GLGizmosManager.hpp"
@@ -622,7 +625,7 @@ Plater::priv::priv(Plater* q, MainFrame* main_frame)
     : q(q)
     , main_frame(main_frame)
     , config(Slic3r::DynamicPrintConfig::new_from_defaults_keys({
-        "bed_shape", "bed_custom_texture", "bed_custom_model", "complete_objects", "duplicate_distance", "extruder_clearance_radius", "skirts", "skirt_distance",
+        "bed_shape", "bed_custom_texture", "bed_custom_model", "complete_objects", "duplicate_distance", "extruder_clearance_radius", "extruder_clearance_height", "skirts", "skirt_distance",
         "brim_width", "brim_separation", "brim_type", "variable_layer_height", "nozzle_diameter", "single_extruder_multi_material",
         "wipe_tower", "wipe_tower_width", "wipe_tower_brim_width", "wipe_tower_cone_angle", "wipe_tower_extra_spacing", "wipe_tower_extra_flow", "wipe_tower_extruder",
         "extruder_colour", "filament_colour", "material_colour", "max_print_height", "printer_model", "printer_notes", "printer_technology",
@@ -712,8 +715,8 @@ void Plater::priv::init()
         view3D_canvas->Bind(EVT_GLCANVAS_OBJECT_SELECT, &priv::on_object_select, this);
         view3D_canvas->Bind(EVT_GLCANVAS_RIGHT_CLICK, &priv::on_right_click, this);
         view3D_canvas->Bind(EVT_GLCANVAS_REMOVE_OBJECT, [this](SimpleEvent&) { q->remove_selected(); });
-        view3D_canvas->Bind(EVT_GLCANVAS_ARRANGE, [this](SimpleEvent&) { this->q->arrange(); });
-        view3D_canvas->Bind(EVT_GLCANVAS_ARRANGE_CURRENT_BED, [this](SimpleEvent&) { this->q->arrange_current_bed(); });
+        view3D_canvas->Bind(EVT_GLCANVAS_ARRANGE, [this](SimpleEvent&) { this->q->arrange(false); });
+        view3D_canvas->Bind(EVT_GLCANVAS_ARRANGE_CURRENT_BED, [this](SimpleEvent&) { this->q->arrange(true); });
         view3D_canvas->Bind(EVT_GLCANVAS_SELECT_ALL, [this](SimpleEvent&) { this->q->select_all(); });
         view3D_canvas->Bind(EVT_GLCANVAS_QUESTION_MARK, [](SimpleEvent&) { wxGetApp().keyboard_shortcuts(); });
         view3D_canvas->Bind(EVT_GLCANVAS_INCREASE_INSTANCES, [this](Event<int>& evt)
@@ -744,8 +747,8 @@ void Plater::priv::init()
         view3D_canvas->Bind(EVT_GLTOOLBAR_DELETE, [this](SimpleEvent&) { q->remove_selected(); });
         view3D_canvas->Bind(EVT_GLTOOLBAR_DELETE_ALL, [this](SimpleEvent&) { delete_all_objects_from_model(); });
 //        view3D_canvas->Bind(EVT_GLTOOLBAR_DELETE_ALL, [q](SimpleEvent&) { q->reset_with_confirm(); });
-        view3D_canvas->Bind(EVT_GLTOOLBAR_ARRANGE, [this](SimpleEvent&) { this->q->arrange(); });
-        view3D_canvas->Bind(EVT_GLTOOLBAR_ARRANGE_CURRENT_BED, [this](SimpleEvent&) { this->q->arrange_current_bed(); });
+        view3D_canvas->Bind(EVT_GLTOOLBAR_ARRANGE, [this](SimpleEvent&) { this->q->arrange(false); });
+        view3D_canvas->Bind(EVT_GLTOOLBAR_ARRANGE_CURRENT_BED, [this](SimpleEvent&) { this->q->arrange(true); });
         view3D_canvas->Bind(EVT_GLTOOLBAR_COPY, [this](SimpleEvent&) { q->copy_selection_to_clipboard(); });
         view3D_canvas->Bind(EVT_GLTOOLBAR_PASTE, [this](SimpleEvent&) { q->paste_from_clipboard(); });
         view3D_canvas->Bind(EVT_GLTOOLBAR_MORE, [this](SimpleEvent&) { q->increase_instances(); });
@@ -835,7 +838,8 @@ void Plater::priv::init()
 	    });
 
         this->q->Bind(EVT_REMOVABLE_DRIVE_ADDED, [this](wxCommandEvent& evt) {
-            if (!fs::exists(fs::path(evt.GetString().utf8_string()) / "prusa_printer_settings.ini"))
+            boost::system::error_code ec;
+            if (!fs::exists(fs::path(evt.GetString().utf8_string()) / "prusa_printer_settings.ini", ec) || ec)
                 return;
             if (evt.GetInt() == 0) { // not at startup, show dialog
                     wxGetApp().open_wifi_config_dialog(false, evt.GetString());
@@ -849,7 +853,6 @@ void Plater::priv::init()
                         wxGetApp().open_wifi_config_dialog(true, evt.GetString());
                         return true;});
             }
-            
         });
 
         // Start the background thread and register this window as a target for update events.
@@ -893,6 +896,11 @@ void Plater::priv::init()
             BOOST_LOG_TRIVIAL(trace) << "Received login from other instance event.";
             user_account->on_login_code_recieved(evt.data);
         });
+        this->q->Bind(EVT_STORE_READ_REQUEST, [this](SimpleEvent& evt) {
+            BOOST_LOG_TRIVIAL(debug) << "Received store read request from other instance event.";
+            user_account->on_store_read_request();
+        });
+        
         this->q->Bind(EVT_LOGIN_VIA_WIZARD, [this](Event<std::string> &evt) {
             BOOST_LOG_TRIVIAL(trace) << "Received login from wizard.";
             user_account->on_login_code_recieved(evt.data);
@@ -949,7 +957,7 @@ void Plater::priv::init()
             this->show_action_buttons(this->ready_to_slice);
         });
 
-        this->q->Bind(EVT_UA_ID_USER_SUCCESS, [this](UserAccountSuccessEvent& evt) {
+        auto on_id_user_success = [this](UserAccountSuccessEvent& evt, bool after_token_success) {
             if (login_dialog != nullptr) {
                 login_dialog->EndModal(wxID_CANCEL);
             }
@@ -957,16 +965,20 @@ void Plater::priv::init()
             evt.Skip();
             std::string who = user_account->get_username();
             std::string username;
-            if (user_account->on_user_id_success(evt.data, username)) {
+            if (user_account->on_user_id_success(evt.data, username, after_token_success)) {
                 if (who != username) {
                     // show notification only on login (not refresh).
                     std::string text = format(_u8L("Logged to Prusa Account as %1%."), username);
                     // login notification
                     this->notification_manager->close_notification_of_type(NotificationType::UserAccountID);
+                    this->notification_manager->close_notification_of_type(NotificationType::FailedSecretVendorUpdateSync);
                     // show connect tab
                     this->notification_manager->push_notification(NotificationType::UserAccountID, NotificationManager::NotificationLevel::ImportantNotificationLevel, text);
-                    
+
                     this->main_frame->on_account_login(user_account->get_access_token());
+
+                    // notify other instances
+                    Slic3r::GUI::wxGetApp().other_instance_message_handler()->multicast_message("STORE_READ"); 
                 } else {
                     // refresh do different operations than on_account_login
                     this->main_frame->on_account_did_refresh(user_account->get_access_token());
@@ -988,9 +1000,16 @@ void Plater::priv::init()
                 this->main_frame->refresh_account_menu(true);
                 // Update sidebar printer status
                 sidebar->update_printer_presets_combobox();
-            }
-        
+            }    
+        };
+
+        this->q->Bind(EVT_UA_ID_USER_SUCCESS, [on_id_user_success](UserAccountSuccessEvent& evt) {
+            on_id_user_success(evt, false);
         });
+        this->q->Bind(EVT_UA_ID_USER_SUCCESS_AFTER_TOKEN_SUCCESS, [on_id_user_success](UserAccountSuccessEvent& evt) {
+            on_id_user_success(evt, true);
+        });
+
         this->q->Bind(EVT_UA_RESET, [this](UserAccountFailEvent& evt) {
             BOOST_LOG_TRIVIAL(error) << "Reseting Prusa Account communication. Error message: " << evt.data;
             user_account->clear();
@@ -1006,6 +1025,11 @@ void Plater::priv::init()
             BOOST_LOG_TRIVIAL(error) << "Failed communication with Prusa Account: " << evt.data;
             user_account->on_communication_fail();
         });
+        this->q->Bind(EVT_UA_RACE_LOST, [this](UserAccountFailEvent& evt) {
+            BOOST_LOG_TRIVIAL(debug) << "Renew token race lost: " << evt.data;
+            user_account->on_race_lost();
+        });
+        
         this->q->Bind(EVT_UA_PRUSACONNECT_STATUS_SUCCESS, [this](UserAccountSuccessEvent& evt) {
             std::string text;
             bool printers_changed = false;
@@ -1031,17 +1055,17 @@ void Plater::priv::init()
                 user_account->on_communication_fail();
             }
         });
-        this->q->Bind(EVT_UA_AVATAR_SUCCESS, [this](UserAccountSuccessEvent& evt) {
-           boost::filesystem::path path = user_account->get_avatar_path(true);
-           FILE* file; 
-           file = boost::nowide::fopen(path.generic_string().c_str(), "wb");
-           if (file == NULL) {
-               BOOST_LOG_TRIVIAL(error) << "Failed to create file to store avatar picture at: " << path;
-               return;
-           }
-           fwrite(evt.data.c_str(), 1, evt.data.size(), file);
-           fclose(file);
-           this->main_frame->refresh_account_menu(true);
+        this->q->Bind(EVT_UA_AVATAR_SUCCESS, [this](UserAccountSuccessEvent& evt) {   
+            boost::filesystem::path path = user_account->get_avatar_path(true);
+            FILE* file; 
+            file = boost::nowide::fopen(path.generic_string().c_str(), "wb");
+            if (file == NULL) {
+                BOOST_LOG_TRIVIAL(error) << "Failed to create file to store avatar picture at: " << path;
+                return;
+            }
+            fwrite(evt.data.c_str(), 1, evt.data.size(), file);
+            fclose(file);
+            this->main_frame->refresh_account_menu(true);
         }); 
         this->q->Bind(EVT_UA_PRUSACONNECT_PRINTER_DATA_SUCCESS, [this](UserAccountSuccessEvent& evt) {
             this->user_account->set_current_printer_data(evt.data);
@@ -1057,11 +1081,11 @@ void Plater::priv::init()
 
         this->q->Bind(EVT_UA_REFRESH_TIME, [this](UserAccountTimeEvent& evt) {
             this->user_account->set_refresh_time(evt.data);
-        });  
+        });
         this->q->Bind(EVT_UA_ENQUEUED_REFRESH, [this](SimpleEvent& evt) {
              this->main_frame->on_account_will_refresh();
-        });  
-        
+        });
+
         this->q->Bind(EVT_PRINTABLES_CONNECT_PRINT, [this](wxCommandEvent& evt) {
             if (!this->user_account->is_logged()) {
                 // show login dialog instead of print dialog
@@ -1069,6 +1093,24 @@ void Plater::priv::init()
                 return;
             }
             this->q->printables_to_connect_gcode(into_u8(evt.GetString()));
+        });
+
+        this->q->Bind(EVT_UA_RETRY_NOTIFY, [this](UserAccountFailEvent& evt) {
+            this->notification_manager->close_notification_of_type(NotificationType::AccountTransientRetry);
+            this->notification_manager->push_notification(NotificationType::AccountTransientRetry
+                , NotificationManager::NotificationLevel::RegularNotificationLevel
+                , evt.data
+                // TRN: This is a hyperlink in a notification. It is preceded by a message from PrusaAccount (therefore not in this dictionary)
+                // saying something like "connection not established, I will keep trying".
+                , _u8L("Stop now.")
+                , [this](wxEvtHandler* ) {
+                    this->user_account->do_logout();
+			        return true; 
+		        });
+  
+        });
+        this->q->Bind(EVT_UA_CLOSE_RETRY_NOTIFICATION, [this](SimpleEvent& evt) {
+            this->notification_manager->close_notification_of_type(NotificationType::AccountTransientRetry);
         });
     }
 
@@ -1284,7 +1326,7 @@ std::vector<size_t> Plater::priv::load_files(const std::vector<fs::path>& input_
 #ifdef __linux__
         // On Linux Constructor of the ProgressDialog calls DisableOtherWindows() function which causes a disabling of all children of the find_toplevel_parent(q)
         // And a destructor of the ProgressDialog calls ReenableOtherWindows() function which revert previously disabled children.
-        // But if printer technology will be changes during project loading, 
+        // But if printer technology will be changes during project loading,
         // then related SLA Print and Materials Settings or FFF Print and Filaments Settings will be unparent from the wxNoteBook
         // and that is why they will never be enabled after destruction of the ProgressDialog.
         // So, distroy progress_gialog if we are loading project file
@@ -1334,6 +1376,21 @@ std::vector<size_t> Plater::priv::load_files(const std::vector<fs::path>& input_
                 config.null_nullables();
                 // and place the loaded config over the base.
                 config += std::move(config_loaded);
+            } else { // config_loaded.empty()
+                // Detection of possible breaking change in 3MF configuration loading sometimes in future.
+                if (prusaslicer_generator_version && // set only when loaded with configuration
+                    *prusaslicer_generator_version > Semver(SLIC3R_VERSION)) {
+                    wxString title = _L("Configuration was not loaded");
+                    const wxString url = "https://prusa.io/3mf-transfer";
+                    // TRN: %1% is filename of the project, %2% is url link.
+                    wxString message = format_wxstr(_L("<b>Unable to load configuration from project\n\nFile: </b>%1%\n\n"
+                        "This project was created in a newer version of PrusaSlicer. Only the geometry was loaded.\n"
+                        "Update to the latest version for full compatibility.\nFor more info: <a href=%2%>%2%</a>"),
+                        from_path(filename), url);
+                    HtmlCapableRichMessageDialog dialog(q, message ,title, wxOK,
+                        [&url](const std::string&) { wxGetApp().open_browser_with_warning_dialog(url); });
+                    dialog.ShowModal();
+                }
             }
             if (!config_substitutions.empty())
                 show_substitutions_info(config_substitutions.substitutions, filename.string());
@@ -1362,8 +1419,8 @@ std::vector<size_t> Plater::priv::load_files(const std::vector<fs::path>& input_
 
                 // For exporting from the 3mf we shouldn't check printer_presets for the containing information about "Print Host upload"
                 wxGetApp().load_current_presets(false);
-                // Update filament colors for the MM-printer profile in the full config 
-                // to avoid black (default) colors for Extruders in the ObjectList, 
+                // Update filament colors for the MM-printer profile in the full config
+                // to avoid black (default) colors for Extruders in the ObjectList,
                 // when for extruder colors are used filament colors
                 q->update_filament_colors_in_full_config();
                 is_project_file = true;
@@ -1964,7 +2021,6 @@ void Plater::priv::delete_all_objects_from_model()
     reset_gcode_toolpaths();
     std::for_each(gcode_results.begin(), gcode_results.end(), [](auto& g) { g.reset(); });
 
-    view3D->get_canvas3d()->reset_sequential_print_clearance();
     view3D->get_canvas3d()->reset_all_gizmos();
 
     m_worker.cancel_all();
@@ -1997,8 +2053,6 @@ void Plater::priv::reset()
 
     reset_gcode_toolpaths();
     std::for_each(gcode_results.begin(), gcode_results.end(), [](auto& g) { g.reset(); });
-
-    view3D->get_canvas3d()->reset_sequential_print_clearance();
 
     m_worker.cancel_all();
 
@@ -2131,9 +2185,20 @@ void Plater::priv::process_validation_warning(const std::vector<std::string>& wa
                 print_tab->on_value_change("support_material_auto", config.opt_bool("support_material_auto"));
                 return true;
             };
-        } else if (text == "_BED_TEMPS_DIFFER") {
-            text              = _u8L("Bed temperatures for the used filaments differ significantly.");
+        } else if (text == "_BED_TEMPS_DIFFER" || text == "_BED_TEMPS_CHANGED") {
+            // TRN: Text of a notification, followed by (single) hyperlink to two of the config options. The sentence had to be split because of the hyperlink, sorry.
+            // The hyperlink part of the sentence reads "'Bed temperature by extruder' and 'Wipe tower extruder'", and it is also to be translated.
+            text              = _u8L("Bed temperatures for the used filaments differ significantly.\n"
+                                     "For multi-material prints it is recommended to set the ");
+            // TRN: The other part of the sentence starting "Bed temperatures for the used" (also in the dictionary). Sorry for splitting it, technical reasons -
+            // this part of the sentence is a hyperlink.
+            hypertext = _u8L("'Bed temperature by extruder' and 'Wipe tower extruder'");
+            multiline = true;
             notification_type = NotificationType::BedTemperaturesDiffer;
+            action_fn = [](wxEvtHandler*) {
+                GUI::wxGetApp().get_tab(Preset::Type::TYPE_PRINT)->activate_option("bed_temperature_extruder", boost::nowide::widen("Multiple Extruders"), { "wipe_tower_extruder" });
+                return true;
+            };
         } else if (text == "_FILAMENT_SHRINKAGE_DIFFER") {
             text              = _u8L("Filament shrinkage will not be used because filament shrinkage "
                                      "for the used filaments differs significantly.");
@@ -2290,15 +2355,16 @@ unsigned int Plater::priv::update_background_process(bool force_validation, bool
         std::vector<Print::ApplyStatus>(1)
     };
 
-    // Apply new config to the possibly running background task.
+    std::vector<std::string> warnings;
+    // Apply new config to the possibly running background task and give the user feedback on warnings.
     if (printer_technology == ptFFF) {
         with_single_bed_model_fff(q->model(), s_multiple_beds.get_active_bed(), [&](){
-            invalidated = background_process.apply(q->model(), full_config);
+            invalidated = background_process.apply(q->model(), full_config, &warnings);
             apply_statuses[s_multiple_beds.get_active_bed()] = invalidated;
         });
     } else if (printer_technology == ptSLA) {
         with_single_bed_model_sla(q->model(), s_multiple_beds.get_active_bed(), [&](){
-            invalidated = background_process.apply(q->model(), full_config);
+            invalidated = background_process.apply(q->model(), full_config, &warnings);
             apply_statuses[0] = invalidated;
         });
     } else {
@@ -2354,9 +2420,6 @@ unsigned int Plater::priv::update_background_process(bool force_validation, bool
     if (view3D->is_layers_editing_enabled())
         view3D->get_wxglcanvas()->Refresh();
 
-    if (invalidated == Print::APPLY_STATUS_CHANGED || background_process.empty())
-        view3D->get_canvas3d()->reset_sequential_print_clearance();
-
     if (invalidated == Print::APPLY_STATUS_INVALIDATED) {
         // Some previously calculated data on the Print was invalidated.
         // Hide the slicing results, as the current slicing status is no more valid.
@@ -2381,7 +2444,6 @@ unsigned int Plater::priv::update_background_process(bool force_validation, bool
 		// The delayed error message is no more valid.
 		delayed_error_message.clear();
 		// The state of the Print changed, and it is non-zero. Let's validate it and give the user feedback on errors.
-        std::vector<std::string> warnings;
         std::string err = background_process.validate(&warnings);
         if (err.empty()) {
 			notification_manager->set_all_slicing_errors_gray(true);
@@ -2394,7 +2456,6 @@ unsigned int Plater::priv::update_background_process(bool force_validation, bool
             process_validation_warning(warnings);
             if (printer_technology == ptFFF) {
                 GLCanvas3D* canvas = view3D->get_canvas3d();
-                canvas->reset_sequential_print_clearance();
                 canvas->set_as_dirty();
                 canvas->request_extra_frame();
             }
@@ -2404,41 +2465,14 @@ unsigned int Plater::priv::update_background_process(bool force_validation, bool
             // Show error as notification.
             notification_manager->push_validate_error_notification(err);
             return_state |= UPDATE_BACKGROUND_PROCESS_INVALID;
-            if (printer_technology == ptFFF) {
-                GLCanvas3D* canvas = view3D->get_canvas3d();
-                if (canvas->is_sequential_print_clearance_empty() || canvas->is_sequential_print_clearance_evaluating()) {
-                    GLCanvas3D::ContoursList contours;
-                    contours.contours = background_process.fff_print()->get_sequential_print_clearance_contours();
-                    canvas->set_sequential_print_clearance_contours(contours, true);
-                }
-            }
         }
     }
     else {
         if (invalidated == Print::APPLY_STATUS_UNCHANGED && !background_process.empty()) {
-            if (printer_technology == ptFFF) {
-                // Object manipulation with gizmos may end up in a null transformation.
-                // In this case, we need to trigger the completion of the sequential print clearance contours evaluation 
-                GLCanvas3D* canvas = view3D->get_canvas3d();
-                if (canvas->is_sequential_print_clearance_evaluating()) {
-                    GLCanvas3D::ContoursList contours;
-                    contours.contours = background_process.fff_print()->get_sequential_print_clearance_contours();
-                    canvas->set_sequential_print_clearance_contours(contours, true);
-                }
-            }
             std::vector<std::string> warnings;
             std::string err = background_process.validate(&warnings);
-            if (!err.empty()) {
-                if (s_multiple_beds.get_number_of_beds() > 1 && printer_technology == ptFFF) {
-                    // user changed bed seletion, 
-                    // sequential print clearance contours were changed too
-                    GLCanvas3D* canvas = view3D->get_canvas3d();
-                    GLCanvas3D::ContoursList contours;
-                    contours.contours = background_process.fff_print()->get_sequential_print_clearance_contours();
-                    canvas->set_sequential_print_clearance_contours(contours, true);
-                }
+            if (!err.empty())
                 return return_state;
-            }
         }
 
         if (! this->delayed_error_message.empty())
@@ -3201,16 +3235,16 @@ void Plater::priv::on_slicing_update(SlicingStatusEvent &evt)
     std::vector<ObjectID> object_ids = { evt.status.warning_object_id };
     std::vector<int> warning_steps = { evt.status.warning_step };
     std::vector<int> flagss = { int(evt.status.flags) };
-    
+
     if (warning_steps.front() == -1) {
         flagss = { PrintBase::SlicingStatus::UPDATE_PRINT_STEP_WARNINGS, PrintBase::SlicingStatus::UPDATE_PRINT_OBJECT_STEP_WARNINGS };
         notification_manager->close_slicing_errors_and_warnings();
     }
-    
+
     for (int flags : flagss ) {
         if (warning_steps.front() == -1) {
             warning_steps.clear();
-            if (flags == PrintBase::SlicingStatus::UPDATE_PRINT_STEP_WARNINGS) {                
+            if (flags == PrintBase::SlicingStatus::UPDATE_PRINT_STEP_WARNINGS) {
                 int i = 0;
                 while (i < int(printer_technology == ptFFF ? psCount : slapsCount)) { warning_steps.push_back(i); ++i; }
             } else {
@@ -4997,7 +5031,8 @@ bool Plater::preview_zip_archive(const boost::filesystem::path& archive_path)
                                 break;
                             }
                             // if 3mf - read archive headers to find project file
-                            if ((boost::algorithm::iends_with(filename, ".3mf") && !is_project_3mf(final_path.string())) ||
+                            auto [is_project, ps_version] = is_project_3mf(final_path.string());
+                            if ((boost::algorithm::iends_with(filename, ".3mf") && !is_project) ||
                                 (boost::algorithm::iends_with(filename, ".amf") && !boost::algorithm::iends_with(filename, ".zip.amf"))) {
                                 non_project_paths.emplace_back(final_path);
                                 break;
@@ -5217,16 +5252,19 @@ bool Plater::load_files(const wxArrayString& filenames, bool delete_after_load/*
         std::string filename = (*it).filename().string();
 
         bool handle_as_project = boost::algorithm::iends_with(filename, ".3mf");
-        if (boost::algorithm::iends_with(filename, ".zip") && is_project_3mf(it->string())) {
+        auto [has_config, ps_version] = is_project_3mf(it->string());
+
+        if (boost::algorithm::iends_with(filename, ".zip") && has_config) {
             BOOST_LOG_TRIVIAL(warning) << "File with .zip extension is 3mf project, opening as it would have .3mf extension: " << *it;
             handle_as_project = true;
         }
         if (handle_as_project && load_just_one_file) {
             ProjectDropDialog::LoadType load_type = ProjectDropDialog::LoadType::Unknown;
             {
-                if (boost::algorithm::iends_with(filename, ".3mf") && !is_project_3mf(it->string()))
+                if (boost::algorithm::iends_with(filename, ".3mf") && (!has_config && !ps_version.has_value())) {
+                    // Projects generated by PrusaSlicer is expected to have config. If absent, it will be reported later.
                     load_type = ProjectDropDialog::LoadType::LoadGeometry;
-                else {
+                } else {
                     if (wxGetApp().app_config->get_bool("show_drop_project_dialog")) {
                         ProjectDropDialog dlg(filename);
                         if (dlg.ShowModal() == wxID_OK) {
@@ -5273,7 +5311,7 @@ bool Plater::load_files(const wxArrayString& filenames, bool delete_after_load/*
             return true;
         } else if (boost::algorithm::iends_with(filename, ".zip")) {
             if (!load_just_one_file) {
-                WarningDialog dlg(static_cast<wxWindow*>(this), 
+                WarningDialog dlg(static_cast<wxWindow*>(this),
                                   format_wxstr(_L("You have several files for loading and \"%1%\" is one of them.\n"
                                                   "Please note that only one .zip file can be loaded at a time.\n"
                                                   "In this case we can load just \"%1%\".\n\n"
@@ -5694,48 +5732,6 @@ static wxString check_binary_vs_ascii_gcode_extension(PrinterTechnology pt, cons
 
 
 
-// This function should be deleted when binary G-codes become more common. The dialog is there to make the
-// transition period easier for the users, because bgcode files are not recognized by older firmwares
-// without any error message.
-void alert_when_exporting_binary_gcode(const std::string& printer_notes)
-{
-    const bool supports_binary = wxGetApp()
-        .preset_bundle->printers
-        .get_edited_preset()
-        .config.opt_bool("binary_gcode");
-    const bool uses_binary = wxGetApp().app_config->get_bool("use_binary_gcode_when_supported");
-    const bool binary_output{supports_binary && uses_binary};
-
-    if (
-        binary_output
-        && (
-            boost::algorithm::contains(printer_notes, "PRINTER_MODEL_XL")
-            || boost::algorithm::contains(printer_notes, "PRINTER_MODEL_MINI")
-            || boost::algorithm::contains(printer_notes, "PRINTER_MODEL_MK4")
-            || boost::algorithm::contains(printer_notes, "PRINTER_MODEL_MK3.9")
-        )
-    ) {
-        AppConfig* app_config = wxGetApp().app_config;
-        wxWindow* parent = wxGetApp().mainframe;
-        const std::string option_key = "dont_warn_about_firmware_version_when_exporting_binary_gcode";
-
-        if (app_config->get(option_key) != "1") {
-            const wxString url = "https://prusa.io/binary-gcode";
-            HtmlCapableRichMessageDialog dialog(parent,
-                format_wxstr(_L("You are exporting binary G-code for a Prusa printer. "
-                                "Binary G-code enables significantly faster uploads. "
-                                "Ensure that your printer is running firmware version 5.1.0 or newer, as older versions do not support binary G-codes.\n\n"
-                                "To learn more about binary G-code, visit <a href=%1%>%1%</a>."),
-                             url),
-                _L("Warning"), wxOK,
-                [&url](const std::string&) { wxGetApp().open_browser_with_warning_dialog(url); });
-            dialog.ShowCheckBox(_L("Don't show again"));
-            if (dialog.ShowModal() == wxID_OK && dialog.IsCheckBoxChecked())
-                app_config->set(option_key, "1");
-        }
-    }
-}
-
 std::optional<fs::path> Plater::get_default_output_file() {
     try {
         // Update the background processing, so that the placeholder parser will get the correct values for the ouput file template.
@@ -5869,14 +5865,6 @@ void Plater::export_gcode(bool prefer_removable)
     }
     const fs::path &output_path{*optional_output_path};
 
-    if (printer_technology() == ptFFF) {
-        alert_when_exporting_binary_gcode(
-            wxGetApp()
-            .preset_bundle->printers
-            .get_edited_preset()
-            .config.opt_string("printer_notes")
-        );
-    }
     export_gcode_to_path(output_path, [&](const bool path_on_removable_media){
         p->export_gcode(output_path, path_on_removable_media, PrintHostJob());
     });
@@ -5985,7 +5973,7 @@ void Plater::export_all_gcodes(bool prefer_removable) {
         paths.emplace_back(print_index, output_file);
     }
 
-    BulkExportDialog dialog{paths};
+    BulkExportDialog dialog{paths, _L("Export beds"),  "<>[]:/\\|?*\""};
     if (dialog.ShowModal() != wxID_OK) {
         return;
     }
@@ -6518,11 +6506,12 @@ void Plater::printables_to_connect_gcode(const std::string& url)
 
 }
 
-std::optional<PrintHostJob> Plater::get_connect_print_host_job() {
+std::optional<PrintHostJob> Plater::get_connect_print_host_job(bool multiple_beds) 
+{
     assert(p->user_account->is_logged());
     std::string  dialog_msg;
     {
-        PrinterPickWebViewDialog dialog(this, dialog_msg);
+        PrinterPickWebViewDialog dialog(this, dialog_msg, multiple_beds);
         if (dialog.ShowModal() != wxID_OK) {
             return std::nullopt;
         }
@@ -6575,13 +6564,13 @@ std::optional<PrintHostJob> Plater::get_connect_print_host_job() {
 
 void Plater::connect_gcode()
 {
-    if (auto upload_job{get_connect_print_host_job()}) {
+    if (auto upload_job{get_connect_print_host_job(false)}) {
         p->export_gcode(fs::path(), false, std::move(*upload_job));
     }
 }
 
 void Plater::connect_gcode_all() {
-    auto optional_upload_job{get_connect_print_host_job()};
+    auto optional_upload_job{get_connect_print_host_job(true)};
     if (!optional_upload_job) {
         return;
     }
@@ -6593,6 +6582,7 @@ void Plater::connect_gcode_all() {
     if (print_host_ptr == nullptr) {
         throw std::runtime_error{"Sending to connect requires PrusaConnectNew host."};
     }
+
     const PrusaConnectNew connect{*print_host_ptr};
 
     std::vector<std::pair< int, std::optional<fs::path> >> paths;
@@ -6603,16 +6593,35 @@ void Plater::connect_gcode_all() {
             paths.emplace_back(print_index, std::nullopt);
             continue;
         }
+        // Prevously, filename from Connect FE was taken and used for each gcode file.
+        // Now naming is same as in gcode export.
+        fs::path default_filename{upload_job_template.upload_data.upload_path};
+        this->with_mocked_fff_background_process(
+            *print,
+            this->p->gcode_results[print_index],
+            print_index,
+            [&](){
+                const auto optional_file{this->get_default_output_file()};
+                if (!optional_file) {
+                    return;
+                }
+                if (print_index !=  s_multiple_beds.get_number_of_beds() - 1 || default_filename.empty()) {
+                    const fs::path &default_file{*optional_file};
+                    default_filename = default_file.filename();
+                }
+            }
+        );
 
-        const fs::path filename{upload_job_template.upload_data.upload_path};
-        paths.emplace_back(print_index, fs::path{
-            filename.stem().string()
-            + "_bed" + std::to_string(print_index + 1)
-            + filename.extension().string()
-        });
+        const fs::path filename_fixed{
+            default_filename.stem().string()
+            + "_bed"
+            + std::to_string(print_index + 1)
+            + default_filename.extension().string()
+        };
+        paths.emplace_back(print_index, filename_fixed);
     }
 
-    BulkExportDialog dialog{paths};
+    BulkExportDialog dialog{paths, _L("Send all to Connect"),  connect.get_unusable_symbols()};
     if (dialog.ShowModal() != wxID_OK) {
         return;
     }
@@ -6766,13 +6775,6 @@ void Plater::send_gcode_inner(DynamicPrintConfig* physical_printer_config)
                 ErrorDialog(this, error_str, t_kill_focus([](const std::string& key) -> void { wxGetApp().jump_to_option(key); })).ShowModal();
                 return;
             }
-
-            alert_when_exporting_binary_gcode(
-                wxGetApp().
-                preset_bundle->printers.
-                get_edited_preset().
-                config.opt_string("printer_notes")
-            );
         }
 
         upload_job.upload_data.upload_path = dlg.filename();
@@ -6896,7 +6898,6 @@ void Plater::on_config_change(const DynamicPrintConfig &config)
             this->set_printer_technology(printer_technology);
             p->sidebar->show_sliced_info_sizer(false);
             p->reset_gcode_toolpaths();
-            p->view3D->get_canvas3d()->reset_sequential_print_clearance();
             p->view3D->get_canvas3d()->set_sla_view_type(GLCanvas3D::ESLAViewType::Original);
             p->preview->get_canvas3d()->reset_volumes();
         }
@@ -7143,30 +7144,29 @@ static std::string concat_strings(const std::set<std::string> &strings,
         });
 }
 
-void Plater::arrange()
+void Plater::arrange(bool current_bed_only)
 {
-    const auto mode{
-        wxGetKeyState(WXK_SHIFT) ?
-        ArrangeSelectionMode::SelectionOnly :
-        ArrangeSelectionMode::Full
-    };
+    ArrangeSelectionMode mode;
+    if (current_bed_only)
+        mode = wxGetKeyState(WXK_SHIFT) ? ArrangeSelectionMode::CurrentBedSelectionOnly : ArrangeSelectionMode::CurrentBedFull;
+    else
+        mode = wxGetKeyState(WXK_SHIFT) ? ArrangeSelectionMode::SelectionOnly : ArrangeSelectionMode::Full;
+
+    const bool sequential = p->config->has("complete_objects") && p->config->opt_bool("complete_objects") && p->printer_technology == ptFFF;
 
     if (p->can_arrange()) {
-        auto &w = get_ui_job_worker();
-        arrange(w, mode);
-    }
-}
-
-void Plater::arrange_current_bed()
-{
-    const auto mode{
-        wxGetKeyState(WXK_SHIFT) ?
-        ArrangeSelectionMode::CurrentBedSelectionOnly :
-        ArrangeSelectionMode::CurrentBedFull
-    };
-    if (p->can_arrange()) {
-        auto &w = get_ui_job_worker();
-        arrange(w, mode);
+        if (sequential) {
+            try {
+                replace_job(this->get_ui_job_worker(), std::make_unique<SeqArrangeJob>(this->model(), *p->config, current_bed_only));
+            } catch (const ExceptionCannotAttemptSeqArrange&) {
+                ErrorDialog dlg(this, _L("Sequential arrange for a single bed is only allowed when all instances of the affected objects are on the same bed."), false);
+                dlg.ShowModal();
+            }
+        }
+        else {
+            auto& w = get_ui_job_worker();
+            arrange(w, mode);
+        }
     }
 }
 
@@ -7757,7 +7757,7 @@ PlaterAfterLoadAutoArrange::PlaterAfterLoadAutoArrange()
 PlaterAfterLoadAutoArrange::~PlaterAfterLoadAutoArrange()
 {
     if (m_enabled)
-        wxGetApp().plater()->arrange();
+        wxGetApp().plater()->arrange(false);
 }
 
 }}    // namespace Slic3r::GUI

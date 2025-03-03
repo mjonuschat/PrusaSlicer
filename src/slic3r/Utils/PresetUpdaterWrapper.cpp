@@ -1,6 +1,7 @@
 #include "PresetUpdaterWrapper.hpp"
 
 #include "slic3r/GUI/GUI_App.hpp"
+#include "slic3r/GUI/GUI.hpp"
 #include "slic3r/GUI/I18N.hpp"
 #include "slic3r/GUI/MsgDialog.hpp"
 #include "slic3r/GUI/format.hpp"
@@ -15,6 +16,50 @@ namespace Slic3r {
 wxDEFINE_EVENT(EVT_PRESET_UPDATER_STATUS_END, PresetUpdaterStatusSimpleEvent);
 wxDEFINE_EVENT(EVT_PRESET_UPDATER_STATUS_PRINT, PresetUpdaterStatusMessageEvent);
 wxDEFINE_EVENT(EVT_CONFIG_UPDATER_SYNC_DONE, wxCommandEvent);
+wxDEFINE_EVENT(EVT_CONFIG_UPDATER_FAILED_ARCHIVE, wxCommandEvent);
+
+
+namespace {
+// Returns string of vendors that failed archive download. divided by new line
+std::string proccess_failed_archives(const std::vector<std::string>& failed_archives, const VendorMap& vendors, const SharedArchiveRepositoryVector &repos)
+{
+    std::string failed_vendors;
+    for (const std::string& failed_archive : failed_archives) {
+        // find if failed_archive is secret
+        if (const auto it = 
+            std::find_if(repos.begin(), repos.end(), 
+                [failed_archive](const auto* rep){ 
+                    return rep->get_manifest().id == failed_archive; 
+                })
+            ; it != repos.end())
+        {
+            // add all installed vendors of failed_archive
+            for (const auto& pair :vendors) {
+                if (pair.second.repo_id == failed_archive) {
+                    failed_vendors += pair.second.name + "\n";
+                }
+            }
+        }
+    }
+    return failed_vendors;
+}
+void display_failed_vendors_dialog(wxWindow *parent, const std::string& failed_vendors, bool logged)
+{
+    std::string dialog_text; 
+    if (logged) {
+         // TRN Dialog text, %1% is list of vendors.
+        dialog_text = format(_u8L("Update check failed for the following vendors:\n\n%1%\n"
+            "This may be because you are no longer subscribed to some configuration sources.\n"
+            "Please manage your configuration sources in Configuration Wizard"), failed_vendors);
+    } else {
+         // TRN Dialog text, %1% is list of vendors.
+        dialog_text = format(_u8L("Update check failed for the following vendors:\n\n%1%\n"
+            "Please log in to restore access to all your subscribed configuration sources."), failed_vendors);
+    } 
+    GUI::WarningDialog dialog(parent, dialog_text, _L("Warning"), wxOK);
+    dialog.ShowModal();
+}
+}
 
 PresetUpdaterWrapper::PresetUpdaterWrapper()
     : m_preset_updater(std::make_unique<PresetUpdater>())
@@ -81,6 +126,13 @@ bool PresetUpdaterWrapper::wizard_sync(const PresetBundle* preset_bundle, const 
     // Should  m_preset_updater->config_update run even if there is cancel?
     if (m_ui_status->get_canceled() /*&& !full_sync*/) {
         return false;
+    }
+
+    // Find secret vendors that failed to download idx in archive
+    const SharedArchiveRepositoryVector &repos = m_preset_archive_database->get_selected_archive_repositories();
+    std::string failed_vendors = proccess_failed_archives(m_ui_status->get_failed_archives(), vendors_copy, repos);
+    if (!failed_vendors.empty()) {
+        display_failed_vendors_dialog(parent, failed_vendors, GUI::wxGetApp().is_account_logged_in());
     }
 
     // Offer update installation.  
@@ -158,6 +210,14 @@ PresetUpdater::UpdateResult PresetUpdaterWrapper::check_updates_on_user_request(
         GUI::ErrorDialog err_msg(nullptr, failed_paths, false);
         err_msg.ShowModal();
     }
+
+    // Find secret vendors that failed to download idx in archive
+    const SharedArchiveRepositoryVector &repos = m_preset_archive_database->get_selected_archive_repositories();
+    std::string failed_vendors = proccess_failed_archives(m_ui_status->get_failed_archives(), vendors_copy, repos);
+    if (!failed_vendors.empty()) {
+        display_failed_vendors_dialog(parent, failed_vendors, GUI::wxGetApp().is_account_logged_in());
+    }
+
     // preset_updater::config_update does show wxDialog
     updater_result = m_preset_updater->config_update(old_slic3r_version, PresetUpdater::UpdateParams::SHOW_TEXT_BOX, m_preset_archive_database->get_selected_archive_repositories(), m_ui_status.get());
     return updater_result;
@@ -207,6 +267,14 @@ void PresetUpdaterWrapper::sync_preset_updater(wxEvtHandler* end_evt_handler, co
         if (this->m_ui_status->get_canceled()) { return; }
         wxCommandEvent* evt = new wxCommandEvent(EVT_CONFIG_UPDATER_SYNC_DONE);
         wxQueueEvent(end_evt_handler, evt);
+
+        // Find secret vendors that failed to download idx in archive
+        std::string failed_vendors = proccess_failed_archives(m_ui_status->get_failed_archives(), vendors_copy, repos);
+        if (!failed_vendors.empty()) {
+            wxCommandEvent* evt_arch = new wxCommandEvent(EVT_CONFIG_UPDATER_FAILED_ARCHIVE);
+            evt_arch->SetString(GUI::from_u8(failed_vendors));
+            wxQueueEvent(end_evt_handler, evt_arch);
+        }
     };
     
     m_worker_thread = std::thread(worker_body);
@@ -244,6 +312,7 @@ void PresetUpdaterUIStatus::reset(PresetUpdaterUIStatus::PresetUpdaterRetryPolic
     m_evt_handler = nullptr;
     m_error_msg.clear();
     m_target.clear();
+    m_failed_archives.clear();
 }
 
 bool PresetUpdaterUIStatus::on_attempt(int attempt, unsigned delay)

@@ -378,6 +378,7 @@ public:
 // This vector containes list of parameters for preview of tilt profiles
 const std::vector<std::string>& tilt_options();
 
+void update_tilts_by_mode(DynamicPrintConfig& config, int tilt_mode, bool is_sl1_model);
 void handle_legacy_sla(DynamicPrintConfig &config);
 
 class StaticPrintConfig : public StaticConfig
@@ -680,6 +681,13 @@ PRINT_CONFIG_CLASS_DEFINE(
     ((ConfigOptionBool,                thick_bridges))
     ((ConfigOptionFloat,               xy_size_compensation))
     ((ConfigOptionBool,                wipe_into_objects))
+
+    ((ConfigOptionBool,                interlocking_beam))
+    ((ConfigOptionFloat,               interlocking_beam_width))
+    ((ConfigOptionFloat,               interlocking_orientation))
+    ((ConfigOptionInt,                 interlocking_beam_layer_count))
+    ((ConfigOptionInt,                 interlocking_depth))
+    ((ConfigOptionInt,                 interlocking_boundary_avoidance))
 )
 
 PRINT_CONFIG_CLASS_DEFINE(
@@ -797,6 +805,7 @@ PRINT_CONFIG_CLASS_DEFINE(
 
     ((ConfigOptionEnum<ArcFittingType>, arc_fitting))
     ((ConfigOptionBool,                autoemit_temperature_commands))
+    ((ConfigOptionInt,                 bed_temperature_extruder))
     ((ConfigOptionString,              before_layer_gcode))
     ((ConfigOptionString,              between_objects_gcode))
     ((ConfigOptionBool,                binary_gcode))
@@ -1134,11 +1143,8 @@ PRINT_CONFIG_CLASS_DEFINE(
     // and the model object's bounding box bottom. Units in mm.
     ((ConfigOptionFloat, branchingsupport_object_elevation))/*= 5.0*/
 
-
-
     /////// Following options influence automatic support points placement:
     ((ConfigOptionInt, support_points_density_relative))
-    ((ConfigOptionFloat, support_points_minimal_distance))
 
     // Now for the base pool (pad) /////////////////////////////////////////////
 
@@ -1247,7 +1253,7 @@ PRINT_CONFIG_CLASS_DEFINE(
     //tilt params
     ((ConfigOptionFloats,                      delay_before_exposure))
     ((ConfigOptionFloats,                      delay_after_exposure))
-    ((ConfigOptionInts,                        tower_hop_height))
+    ((ConfigOptionFloats,                      tower_hop_height))
     ((ConfigOptionEnums<TowerSpeeds>,          tower_speed))
     ((ConfigOptionBools,                       use_tilt))
     ((ConfigOptionEnums<TiltSpeeds>,           tilt_down_initial_speed))

@@ -14,6 +14,9 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/log/trivial.hpp>
 
+#include "InstanceCheck.hpp"
+#include "GUI_App.hpp"
+
 #include <wx/stdpaths.h>
 
 namespace pt = boost::property_tree;
@@ -30,10 +33,10 @@ UserAccount::UserAccount(wxEvtHandler* evt_handler, AppConfig* app_config, const
 UserAccount::~UserAccount()
 {}
 
-void UserAccount::set_username(const std::string& username)
+void UserAccount::set_username(const std::string& username, bool store)
 {
     m_username = username;
-    m_communication->set_username(username);
+    m_communication->set_username(username, store);
 }
 
 void UserAccount::clear()
@@ -57,7 +60,7 @@ bool UserAccount::get_remember_session()
     return m_communication->get_remember_session();
 }
 
-bool UserAccount::is_logged()
+bool UserAccount::is_logged() const
 {
     return m_communication->is_logged();
 }
@@ -67,7 +70,9 @@ void UserAccount::do_login()
 }
 void UserAccount::do_logout()
 {
+    BOOST_LOG_TRIVIAL(debug) << __FUNCTION__;
     m_communication->do_logout();
+    Slic3r::GUI::wxGetApp().other_instance_message_handler()->multicast_message("STORE_READ"); 
 }
 
 std::string UserAccount::get_access_token()
@@ -98,9 +103,13 @@ void UserAccount::enqueue_connect_status_action()
 {
     m_communication->enqueue_connect_status_action();
 }
-void UserAccount::enqueue_avatar_action()
+void UserAccount::enqueue_avatar_old_action()
 {
-    m_communication->enqueue_avatar_action(m_account_user_data["avatar"]);
+    m_communication->enqueue_avatar_old_action(m_account_user_data["avatar"]);
+}
+void UserAccount::enqueue_avatar_new_action(const std::string& url)
+{
+    m_communication->enqueue_avatar_new_action(url);
 }
 void UserAccount::enqueue_printer_data_action(const std::string& uuid)
 {
@@ -117,7 +126,7 @@ bool UserAccount::on_login_code_recieved(const std::string& url_message)
     return true;
 }
 
-bool UserAccount::on_user_id_success(const std::string data, std::string& out_username)
+bool UserAccount::on_user_id_success(const std::string data, std::string& out_username, bool after_token_success)
 {
     boost::property_tree::ptree ptree;
     try {
@@ -132,7 +141,7 @@ bool UserAccount::on_user_id_success(const std::string data, std::string& out_us
     for (const auto& section : ptree) {
         const auto opt = ptree.get_optional<std::string>(section.first);
         if (opt) {
-            BOOST_LOG_TRIVIAL(debug) << static_cast<std::string>(section.first) << "    " << *opt;
+            //BOOST_LOG_TRIVIAL(debug) << static_cast<std::string>(section.first) << "    " << *opt;
             m_account_user_data[section.first] = *opt;
         }
        
@@ -142,13 +151,22 @@ bool UserAccount::on_user_id_success(const std::string data, std::string& out_us
         return false;
     }
     std::string public_username = m_account_user_data["public_username"];
-    set_username(public_username);
+    set_username(public_username, after_token_success);
     out_username = public_username;
     // enqueue GET with avatar url
-    if (m_account_user_data.find("avatar") != m_account_user_data.end()) {
+
+    if (m_account_user_data.find("avatar_small") != m_account_user_data.end()) {
+        const boost::filesystem::path server_file(m_account_user_data["avatar_small"]);
+        m_avatar_extension = server_file.extension().string();
+        enqueue_avatar_new_action(m_account_user_data["avatar_small"]);
+    } else if (m_account_user_data.find("avatar_large") != m_account_user_data.end()) {
+        const boost::filesystem::path server_file(m_account_user_data["avatar_large"]);
+        m_avatar_extension = server_file.extension().string();
+        enqueue_avatar_new_action(m_account_user_data["avatar_large"]);
+    } else if (m_account_user_data.find("avatar") != m_account_user_data.end()) {
         const boost::filesystem::path server_file(m_account_user_data["avatar"]);
         m_avatar_extension = server_file.extension().string();
-        enqueue_avatar_action();
+        enqueue_avatar_old_action();
     }
     else {
         BOOST_LOG_TRIVIAL(error) << "User ID message from PrusaAuth did not contain avatar.";
@@ -168,11 +186,14 @@ void UserAccount::on_communication_fail()
     }
 }
 
-
+void UserAccount::on_race_lost()
+{
+    m_communication->on_race_lost();
+}
 
 bool UserAccount::on_connect_printers_success(const std::string& data, AppConfig* app_config, bool& out_printers_changed)
 {
-    BOOST_LOG_TRIVIAL(debug) << "Prusa Connect printers message: " << data;
+    BOOST_LOG_TRIVIAL(trace) << "Prusa Connect printers message: " << data;
     pt::ptree ptree;
     try {
         std::stringstream ss(data);
@@ -210,7 +231,7 @@ bool UserAccount::on_connect_printers_success(const std::string& data, AppConfig
             continue;
         }
         if (m_printer_uuid_map.find(*printer_uuid) == m_printer_uuid_map.end()) {
-            BOOST_LOG_TRIVIAL(error) << "Missing printer model for printer uuid: " << *printer_uuid;
+            BOOST_LOG_TRIVIAL(trace) << "Missing printer model for printer uuid: " << *printer_uuid;
             continue;
         }
         
@@ -290,7 +311,7 @@ bool UserAccount::on_connect_uiid_map_success(const std::string& data, AppConfig
             trimmed_name = printer_preset->trim_vendor_repo_prefix(trimmed_name, printer_with_vendor.vendor);
             m_printer_uuid_map[*printer_uuid] = trimmed_name;
         } else {
-            BOOST_LOG_TRIVIAL(error) << "Failed to find preset for printer model: " << *printer_model;
+            BOOST_LOG_TRIVIAL(trace) << "Failed to find preset for printer model: " << *printer_model;
         }
     }
     m_communication->on_uuid_map_success();

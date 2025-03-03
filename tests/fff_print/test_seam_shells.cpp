@@ -23,7 +23,12 @@ struct ProjectionFixture
     double extrusion_width{0.2};
 
     ProjectionFixture() {
-        extrusions.emplace_back(Polygon{extrusion_path}, extrusion_path.bounding_box(), extrusion_width, island_boundary);
+        extrusions.emplace_back(
+            Polygon{extrusion_path},
+            extrusion_path.bounding_box(),
+            extrusion_width, island_boundary,
+            Seams::Geometry::Overhangs{}
+        );
     }
 };
 

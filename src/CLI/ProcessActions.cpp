@@ -23,7 +23,6 @@
 #include "libslic3r/GCode/PostProcessor.hpp"
 #include "libslic3r/Model.hpp"
 #include "libslic3r/Preset.hpp"
-#include "libslic3r/ProfilesSharingUtils.hpp"
 #include <arrange-wrapper/ModelArrange.hpp>
 #include "libslic3r/Print.hpp"
 #include "libslic3r/SLAPrint.hpp"
@@ -35,8 +34,10 @@
 #include "libslic3r/miniz_extension.hpp"
 #include "libslic3r/PNGReadWrite.hpp"
 #include "libslic3r/MultipleBeds.hpp"
+#include "libslic3r/BuildVolume.hpp"
 
-#include "CLI.hpp"
+#include "CLI/CLI.hpp"
+#include "CLI/ProfilesSharingUtils.hpp"
 
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
 #include "stb_image_resize2.h"
@@ -170,6 +171,34 @@ static bool export_models(std::vector<Model>& models, IO::ExportFormat format, c
     return true;
 }
 
+
+static ThumbnailData resize_and_crop(const std::vector<unsigned char>& data, int width, int height, int width_new, int height_new) {
+    ThumbnailData th;
+
+    float scale_x = float(width_new) / width;
+    float scale_y = float(height_new) / height;
+    float scale = std::max(scale_x, scale_y);  // Choose the larger scale to fill the box
+    int resized_width = int(width * scale);
+    int resized_height = int(height * scale);
+
+    std::vector<unsigned char> resized_rgba(resized_width * resized_height * 4);
+    stbir_resize_uint8_linear(data.data(), width, height, 4 * width,
+                              resized_rgba.data(), resized_width, resized_height, 4 * resized_width,
+                              STBIR_RGBA);
+
+    th.set(width_new, height_new);
+    int crop_x = (resized_width - width_new) / 2;
+    int crop_y = (resized_height - height_new) / 2;
+
+    for (int y = 0; y < height_new; ++y) {
+        std::memcpy(th.pixels.data() + y * width_new * 4, 
+                    resized_rgba.data() + ((y + crop_y) * resized_width + crop_x) * 4, 
+                    width_new * 4);
+    }
+    return th;
+}
+
+
 static std::function<ThumbnailsList(const ThumbnailsParams&)> get_thumbnail_generator_cli(const std::string& filename)
 {
     if (boost::iends_with(filename, ".3mf")) {
@@ -213,21 +242,22 @@ static std::function<ThumbnailsList(const ThumbnailsParams&)> get_thumbnail_gene
             }
 
             for (const Vec2d& size : params.sizes) {
-                ThumbnailData th;
                 Point isize(size);
-                th.set(isize.x(), isize.y());
-                std::vector<unsigned char> resized_rgba(th.width * th.height * 4);
-                stbir_resize_uint8_linear(data.data(), width, height, 4 * width,
-                                          resized_rgba.data(), th.width, th.height, 4 * th.width,
-                                          STBIR_RGBA);
-                th.pixels = resized_rgba;
-                list_out.push_back(th);
+                list_out.push_back(resize_and_crop(data, width, height, isize.x(), isize.y()));
             }
             return list_out;
         };
     }
 
     return [](const ThumbnailsParams&) ->ThumbnailsList { return {}; };
+}
+
+static void update_instances_outside_state(Model& model, const DynamicPrintConfig& config)
+{
+    Pointfs bed_shape = dynamic_cast<const ConfigOptionPoints*>(config.option("bed_shape"))->values;
+    BuildVolume build_volume(bed_shape, config.opt_float("max_print_height"));
+    s_multiple_beds.update_build_volume(BoundingBoxf(bed_shape));
+    model.update_print_volume_state(build_volume);
 }
 
 bool process_actions(Data& cli, const DynamicPrintConfig& print_config, std::vector<Model>& models)
@@ -289,8 +319,16 @@ bool process_actions(Data& cli, const DynamicPrintConfig& print_config, std::vec
             return 1;
     }
 
-    if (actions.has("slice")) {
+    if (actions.has("slice") || actions.has("export_gcode") || actions.has("export_sla")) {
         PrinterTechnology       printer_technology = Preset::printer_technology(print_config);
+        if (actions.has("export_gcode") && printer_technology == ptSLA) {
+            boost::nowide::cerr << "error: cannot export G-code for an FFF configuration" << std::endl;
+            return 1;
+        }
+        else if (actions.has("export_sla") && printer_technology == ptFFF) {
+            boost::nowide::cerr << "error: cannot export SLA slices for a SLA configuration" << std::endl;
+            return 1;
+        }
 
         const Vec2crd           gap{ s_multiple_beds.get_bed_gap() };
         arr2::ArrangeBed        bed = arr2::to_arrange_bed(get_bed_shape(print_config), gap);
@@ -325,7 +363,13 @@ bool process_actions(Data& cli, const DynamicPrintConfig& print_config, std::vec
                 for (auto* mo : model.objects)
                     fff_print.auto_assign_extruders(mo);
             }
-            print->apply(model, print_config);
+
+            update_instances_outside_state(model, print_config);
+            MultipleBedsUtils::with_single_bed_model_fff(model, 0, [&print, &model, &print_config]()
+            {
+                print->apply(model, print_config);
+            });
+
             std::string err = print->validate();
             if (!err.empty()) {
                 boost::nowide::cerr << err << std::endl;
