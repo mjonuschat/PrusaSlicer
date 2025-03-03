@@ -3,7 +3,10 @@
 namespace Slic3r::App::Platform {
 
 void AbstractRenderModule::on_scene_mouse_event(const MouseEvent& e) {}
-void AbstractRenderModule::on_scene_keyboard_event(const KeyboardEvent& e) {}
+void AbstractRenderModule::on_scene_keyboard_event(const KeyboardEvent& e)
+{
+    m_command_registry.process_keyboard_event(e);
+}
 void AbstractRenderModule::on_activated() {}
 void AbstractRenderModule::on_deactivated() {}
 void AbstractRenderModule::on_screen_resized() {}

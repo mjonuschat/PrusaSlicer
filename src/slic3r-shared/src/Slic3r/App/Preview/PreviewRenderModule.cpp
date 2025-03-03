@@ -8,7 +8,11 @@
 #include <Slic3r/App/libvgcode/ViewerInputData.hpp>
 #include <Slic3r/Biz/libpgcode/Processor.hpp>
 
+#include <LibBGCode/core/core.hpp>
+#include <LibBGCode/convert/convert.hpp>
+
 #include <boost/nowide/cstdio.hpp>
+#include <boost/filesystem/operations.hpp>
 
 #define ENABLED_DEBUG_VIEWER 1
 
@@ -35,20 +39,49 @@ void PreviewRenderModule::render_scene()
 #if ENABLED_DEBUG_VIEWER
 static void render_imgui_debug_viewer(LibvgcodeWrapper::Wrapper& viewer)
 {
-    if (ImGui::Begin("Preview debug", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse)) {
-        bool visible = viewer.is_legend_visible();
-        if (ImGui::Checkbox("Show legend", &visible))
-            viewer.toggle_legend_visible();
-        visible = viewer.is_gcodewindow_visible();
-        if (ImGui::Checkbox("Show gcode window", &visible))
-            viewer.toggle_gcodewindow_visible();
+    ImGui::SetNextWindowCollapsed(true, ImGuiCond_Once);
+    if (ImGui::Begin("Preview debug", nullptr, ImGuiWindowFlags_AlwaysAutoResize |
+        ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoFocusOnAppearing)) {
+
+        if (ImGui::Button("COG marker scale factor", { -1.0f, 0.0f }))
+            viewer.set_scale_factor_popup_type(Biz::libpgcode::OptionType::CenterOfGravity);
+        if (ImGui::Button("Tool marker scale factor", { -1.0f, 0.0f }))
+            viewer.set_scale_factor_popup_type(Biz::libpgcode::OptionType::ToolMarker);
 
         ImGui::Separator();
 
-        if (ImGui::Button("COG marker scale factor"))
-            viewer.set_scale_factor_popup_type(Biz::libpgcode::OptionType::CenterOfGravity);
-        if (ImGui::Button("Tool marker scale factor"))
-            viewer.set_scale_factor_popup_type(Biz::libpgcode::OptionType::ToolMarker);
+        if (ImGui::Button("Travels radius", { -1.0f, 0.0f }))
+            viewer.set_radius_popup_type(Biz::libpgcode::MoveType::Travel);
+        if (ImGui::Button("Wipes radius", { -1.0f, 0.0f }))
+            viewer.set_radius_popup_type(Biz::libpgcode::MoveType::Wipe);
+
+        ImGui::Separator();
+
+        if (ImGui::Button("Extrusion roles color", { -1.0f, 0.0f }))
+            viewer.set_extrusion_roles_colors_popup_visible(true);
+        if (ImGui::Button("Options color", { -1.0f, 0.0f }))
+            viewer.set_options_colors_popup_visible(true);
+
+        ImGui::Separator();
+
+        if (ImGui::Button("Height range colors", { -1.0f, 0.0f }))
+            viewer.set_range_colors_popup_type(libvgcode::ViewType::Height);
+        if (ImGui::Button("Width range colors", { -1.0f, 0.0f }))
+            viewer.set_range_colors_popup_type(libvgcode::ViewType::Width);
+        if (ImGui::Button("Speed range colors", { -1.0f, 0.0f }))
+            viewer.set_range_colors_popup_type(libvgcode::ViewType::Speed);
+        if (ImGui::Button("Actual speed range colors", { -1.0f, 0.0f }))
+            viewer.set_range_colors_popup_type(libvgcode::ViewType::ActualSpeed);
+        if (ImGui::Button("Fan speed range colors", { -1.0f, 0.0f }))
+            viewer.set_range_colors_popup_type(libvgcode::ViewType::FanSpeed);
+        if (ImGui::Button("Temperature range colors", { -1.0f, 0.0f }))
+            viewer.set_range_colors_popup_type(libvgcode::ViewType::Temperature);
+        if (ImGui::Button("Volumetric flow rate range colors", { -1.0f, 0.0f }))
+            viewer.set_range_colors_popup_type(libvgcode::ViewType::VolumetricFlowRate);
+        if (ImGui::Button("Layer time linear range colors", { -1.0f, 0.0f }))
+            viewer.set_range_colors_popup_type(libvgcode::ViewType::LayerTimeLinear);
+        if (ImGui::Button("Layer time logarithmic range colors", { 0.0f, 0.0f }))
+            viewer.set_range_colors_popup_type(libvgcode::ViewType::LayerTimeLogarithmic);
     }
     ImGui::End();
 }
@@ -72,7 +105,8 @@ void PreviewRenderModule::on_scene_mouse_event(const Platform::MouseEvent& e)
 
 void PreviewRenderModule::on_scene_keyboard_event(const Platform::KeyboardEvent& e)
 {
-    m_gizmo_manager->on_scene_keyboard_event(e);
+    if (!m_gizmo_manager->on_scene_keyboard_event(e))
+      Platform::AbstractRenderModule::on_scene_keyboard_event(e);
 }
 
 void PreviewRenderModule::on_init(Render::Device& device)
@@ -103,6 +137,148 @@ void PreviewRenderModule::on_screen_resized()
     //m_scene->camera().set_viewport(Render::Rect::from(0, 0, m_screen_info));
     auto viewport = Render::Rect::from(0, 0, m_screen_info);
     m_scene_presenter->screen_resized(viewport);
+}
+
+void PreviewRenderModule::register_commands()
+{
+    m_command_registry
+        .register_command(
+            new Platform::FuncCommand(
+                "toggle-legend-visibility",
+                [&]() { m_viewer.toggle_legend_visible(); },
+                nullptr,
+                Platform::KeyboardShortcut{0, Platform::KeyCode::L}
+            ),
+            true
+        )
+        .register_command(
+            new Platform::FuncCommand(
+                "toggle-gcodewindow-visibility",
+                [&]() { m_viewer.toggle_gcodewindow_visible(); },
+                nullptr,
+                Platform::KeyboardShortcut{0, Platform::KeyCode::G}
+            ),
+            true
+        )
+        .register_command(
+            new Platform::FuncCommand(
+                "slider-gcode-increase-slow",
+                [&]() { m_viewer.slider_gcode_move_current_thumb(1); },
+                nullptr,
+                Platform::KeyboardShortcut{0, Platform::KeyCode::Right}
+            ),
+            true
+        )
+        .register_command(
+            new Platform::FuncCommand(
+                "slider-gcode-decrease-slow",
+                [&]() { m_viewer.slider_gcode_move_current_thumb(-1); },
+                nullptr,
+                Platform::KeyboardShortcut{0, Platform::KeyCode::Left}
+            )
+        )
+        .register_command(
+            new Platform::FuncCommand(
+                "slider-gcode-increase-medium",
+                [&]() { m_viewer.slider_gcode_move_current_thumb(5); },
+                nullptr,
+                Platform::KeyboardShortcut{
+                    Platform::KeyModifiers(Platform::KeyModifier::Shift), Platform::KeyCode::Right
+                }
+            ),
+            true
+        )
+        .register_command(
+            new Platform::FuncCommand(
+                "slider-gcode-decrease-medium",
+                [&]() { m_viewer.slider_gcode_move_current_thumb(-5); },
+                nullptr,
+                Platform::KeyboardShortcut{
+                    Platform::KeyModifiers(Platform::KeyModifier::Shift), Platform::KeyCode::Left
+                }
+            )
+        )
+        .register_command(
+            new Platform::FuncCommand(
+                "slider-gcode-increase-fast",
+                [&]() { m_viewer.slider_gcode_move_current_thumb(10); },
+                nullptr,
+                Platform::KeyboardShortcut{
+                    Platform::KeyModifiers(Platform::KeyModifier::Ctrl), Platform::KeyCode::Right
+                }
+            ),
+            true
+        )
+        .register_command(
+            new Platform::FuncCommand(
+                "slider-gcode-decrease-fast",
+                [&]() { m_viewer.slider_gcode_move_current_thumb(-10); },
+                nullptr,
+                Platform::KeyboardShortcut{
+                    Platform::KeyModifiers(Platform::KeyModifier::Ctrl), Platform::KeyCode::Left
+                }
+            )
+        )
+        .register_command(
+            new Platform::FuncCommand(
+                "slider-layers-increase-slow",
+                [&]() { m_viewer.slider_layers_move_current_thumb(1); },
+                nullptr,
+                Platform::KeyboardShortcut{0, Platform::KeyCode::Up}
+            ),
+            true
+        )
+        .register_command(
+            new Platform::FuncCommand(
+                "slider-layers-decrease-slow",
+                [&]() { m_viewer.slider_layers_move_current_thumb(-1); },
+                nullptr,
+                Platform::KeyboardShortcut{0, Platform::KeyCode::Down}
+            )
+        )
+        .register_command(
+            new Platform::FuncCommand(
+                "slider-layers-increase-medium",
+                [&]() { m_viewer.slider_layers_move_current_thumb(5); },
+                nullptr,
+                Platform::KeyboardShortcut{
+                    Platform::KeyModifiers(Platform::KeyModifier::Shift), Platform::KeyCode::Up
+                }
+            ),
+            true
+        )
+        .register_command(
+            new Platform::FuncCommand(
+                "slider-layers-decrease-medium",
+                [&]() { m_viewer.slider_layers_move_current_thumb(-5); },
+                nullptr,
+                Platform::KeyboardShortcut{ 
+                    Platform::KeyModifiers(Platform::KeyModifier::Shift), Platform::KeyCode::Down
+                }
+            )
+        )
+        .register_command(
+            new Platform::FuncCommand(
+                "slider-layers-increase-fast",
+                [&]() { m_viewer.slider_layers_move_current_thumb(10); },
+                nullptr,
+                Platform::KeyboardShortcut{
+                    Platform::KeyModifiers(Platform::KeyModifier::Ctrl), Platform::KeyCode::Up
+                }
+            ),
+            true
+        )
+        .register_command(
+            new Platform::FuncCommand(
+                "slider-layers-decrease-fast",
+                [&]() { m_viewer.slider_layers_move_current_thumb(-10); },
+                nullptr,
+                Platform::KeyboardShortcut{
+                    Platform::KeyModifiers(Platform::KeyModifier::Ctrl), Platform::KeyCode::Down
+                }
+            )
+        )
+    ;
 }
 
 void PreviewRenderModule::init_gizmos()
@@ -168,7 +344,7 @@ static std::pair<ProcessorConfig, std::string> extract_from_gcode(const std::str
 {
     std::pair<ProcessorConfig, std::string> ret;
 
-    FILE* in = fopen(filename.c_str(), "rb");
+    FILE* in = boost::nowide::fopen(filename.data(), "rb");
     if (in != nullptr) {
         fseek(in, 0, SEEK_END);
         const long file_size = ftell(in);
@@ -296,211 +472,55 @@ static std::pair<ProcessorConfig, std::string> extract_from_gcode(const std::str
 static ProcessorResult result_from_gcode_file()
 {
     // >>> filename of the test file
-    std::string filename = "c:/temp/test.gcode";
+//    std::string filename = "c:/temp/test.bgcode";
+//    std::string filename = "c:/temp/test.gcode";
+    std::string filename = "c:/temp/Bařtipán.gcode";
 
-    std::pair<ProcessorConfig, std::string> processor_data = extract_from_gcode(filename);
+    FILE* in = boost::nowide::fopen(filename.data(), "rb");
+    if (in == nullptr) {
+        assert(false);
+        return ProcessorResult();
+    }
+
+    std::vector<std::byte> cs_buffer(65536);
+    bool is_binary = bgcode::core::is_valid_binary_gcode(*in, true, cs_buffer.data(), cs_buffer.size()) == bgcode::core::EResult::Success;
+    boost::filesystem::path process_filename;
+    if (is_binary) {
+        // convert the binary gcode into an ASCII temporary file to be used by the libvgcode to populate the gcode window
+        boost::filesystem::path output_filename(filename);
+        output_filename.replace_extension("tmp.gcode");
+
+        process_filename = output_filename;
+
+        FILE* out = boost::nowide::fopen(process_filename.string().c_str(), "wb");
+        if (out == nullptr) {
+            assert(false);
+            fclose(in);
+            return ProcessorResult();
+        }
+
+        const bgcode::core::EResult res = bgcode::convert::from_binary_to_ascii(*in, *out, true);
+        if (res != bgcode::core::EResult::Success) {
+            assert(false);
+            fclose(out);
+            boost::filesystem::remove(process_filename);
+            fclose(in);
+            return ProcessorResult();
+        }
+        fclose(out);
+    }
+    else
+        process_filename = boost::filesystem::path(filename);
+
+    fclose(in);
+
+    std::pair<ProcessorConfig, std::string> processor_data = extract_from_gcode(process_filename.string());
+    if (is_binary)
+        boost::filesystem::remove(process_filename);
+
     Processor processor(std::move(processor_data.first));
     processor.process_buffer(std::move(processor_data).second);
     return processor.finalize();
-}
-
-//
-// Temporary function for test
-//
-static ProcessorResult import_test_result()
-{
-    // >>> filename of the test file
-    std::string filename = "c:/temp/processor_result.txt";
-
-    ProcessorResult ret;
-
-    FILE* f = { boost::nowide::fopen(filename.c_str(), "rb") };
-    if (f != nullptr) {
-        int producer = 0;
-        fread(&producer, 1, sizeof(producer), f);
-        ret.producer = GCodeProducer(producer);
-        fread(&ret.extruders_count, 1, sizeof(ret.extruders_count), f);
-        int spiral_vase_enabled = 0;
-        fread(&spiral_vase_enabled, 1, sizeof(spiral_vase_enabled), f);
-        ret.spiral_vase_enabled = spiral_vase_enabled == 1;
-        fread(&ret.z_offset, 1, sizeof(ret.z_offset), f);
-        fread(&ret.max_print_height, 1, sizeof(ret.max_print_height), f);
-        int filament_diameters = 0;
-        fread(&filament_diameters, 1, sizeof(filament_diameters), f);
-        for (int i = 0; i < filament_diameters; ++i) {
-            float filament_diameter = 0.0f;
-            fread(&filament_diameter, 1, sizeof(filament_diameter), f);
-            ret.filament_diameters.push_back(filament_diameter);
-        }
-        int filament_densities = 0;
-        fread(&filament_densities, 1, sizeof(filament_densities), f);
-        for (int i = 0; i < filament_densities; ++i) {
-            float filament_density = 0.0f;
-            fread(&filament_density, 1, sizeof(filament_density), f);
-            ret.filament_densities.push_back(filament_density);
-        }
-        int filament_costs = 0;
-        fread(&filament_costs, 1, sizeof(filament_costs), f);
-        for (int i = 0; i < filament_costs; ++i) {
-            float filament_cost = 0.0f;
-            fread(&filament_cost, 1, sizeof(filament_cost), f);
-            ret.filament_costs.push_back(filament_cost);
-        }
-        int bed_vertices = 0;
-        fread(&bed_vertices, 1, sizeof(bed_vertices), f);
-        for (int i = 0; i < bed_vertices; ++i) {
-            Vec2f bed_vertex = Vec2f::Zero();
-            fread(&bed_vertex.x(), 1, sizeof(bed_vertex.x()), f);
-            fread(&bed_vertex.y(), 1, sizeof(bed_vertex.y()), f);
-            ret.bed_shape.push_back(bed_vertex);
-        }
-        int gcode_lines = 0;
-        fread(&gcode_lines, 1, sizeof(gcode_lines), f);
-        for (int i = 0; i < gcode_lines; ++i) {
-            int line_length = 0;
-            fread(&line_length, 1, sizeof(line_length), f);
-            std::string data(line_length, '\0');
-            fread(data.data(), 1, size_t(line_length), f);
-            ret.gcode.push_lines(data);
-        }
-        int extruder_str_colors = 0;
-        fread(&extruder_str_colors, 1, sizeof(extruder_str_colors), f);
-        for (int i = 0; i < extruder_str_colors; ++i) {
-            int line_length = 0;
-            fread(&line_length, 1, sizeof(line_length), f);
-            std::string data(line_length, '\0');
-            fread(data.data(), 1, size_t(line_length), f);
-            ret.extruder_str_colors.push_back(data);
-        }
-        int moves = 0;
-        fread(&moves, 1, sizeof(moves), f);
-        for (int i = 0; i < moves; ++i) {
-            MoveVertex m;
-            int type = 0;
-            fread(&type, 1, sizeof(type), f);
-            m.type = MoveType(type);
-            int extrusion_role = 0;
-            fread(&extrusion_role, 1, sizeof(extrusion_role), f);
-            m.extrusion_role = GCodeExtrusionRole(extrusion_role);
-            fread(&m.extruder_id, 1, sizeof(m.extruder_id), f);
-            fread(&m.cp_color_id, 1, sizeof(m.cp_color_id), f);
-            fread(&m.gcode_id, 1, sizeof(m.gcode_id), f);
-            fread(&m.layer_id, 1, sizeof(m.layer_id), f);
-            int internal_only = 0;
-            fread(&internal_only, 1, sizeof(internal_only), f);
-            m.internal_only = internal_only == 1;
-            fread(&m.delta_extruder, 1, sizeof(m.delta_extruder), f);
-            fread(&m.feedrate, 1, sizeof(m.feedrate), f);
-            fread(&m.actual_feedrate, 1, sizeof(m.actual_feedrate), f);
-            fread(&m.width, 1, sizeof(m.width), f);
-            fread(&m.height, 1, sizeof(m.height), f);
-            fread(&m.mm3_per_mm, 1, sizeof(m.mm3_per_mm), f);
-            fread(&m.fan_speed, 1, sizeof(m.fan_speed), f);
-            fread(&m.temperature, 1, sizeof(m.temperature), f);
-            fread(&m.mass, 1, sizeof(m.mass), f);
-            fread(&m.position.x(), 1, sizeof(m.position.x()), f);
-            fread(&m.position.y(), 1, sizeof(m.position.y()), f);
-            fread(&m.position.z(), 1, sizeof(m.position.z()), f);
-            int times = 0;
-            fread(&times, 1, sizeof(times), f);
-            for (int j = 0; j < times; ++j) {
-                fread(&m.time[j], 1, sizeof(m.time[j]), f);
-            }
-            ret.moves.push_back(m);
-        }
-        int custom_gcode_per_print_z = 0;
-        fread(&custom_gcode_per_print_z, 1, sizeof(custom_gcode_per_print_z), f);
-        for (int i = 0; i < custom_gcode_per_print_z; ++i) {
-            CustomGCode::Item c;
-            fread(&c.print_z, 1, sizeof(c.print_z), f);
-            int type = 0;
-            fread(&type, 1, sizeof(type), f);
-            c.type = CustomGCode::Type(type);
-            fread(&c.extruder, 1, sizeof(c.extruder), f);
-            int line_length = 0;
-            fread(&line_length, 1, sizeof(line_length), f);
-            c.color = std::string(line_length, '\0');
-            fread(c.color.data(), 1, size_t(line_length), f);
-            line_length = 0;
-            fread(&line_length, 1, sizeof(line_length), f);
-            c.extra = std::string(line_length, '\0');
-            fread(c.extra.data(), 1, size_t(line_length), f);
-        }
-        int modes = 0;
-        fread(&modes, 1, sizeof(modes), f);
-        for (int i = 0; i < modes; ++i) {
-            Biz::libpgcode::PrintEstimatedStatistics::Mode& m = ret.print_statistics.modes[i];
-            fread(&m.time, 1, sizeof(m.time), f);
-            int custom_gcode_times = 0;
-            fread(&custom_gcode_times, 1, sizeof(custom_gcode_times), f);
-            for (int j = 0; j < custom_gcode_times; ++j) {
-                std::pair<Slic3r::CustomGCode::Type, std::pair<float, float>> cgt;
-                int type = 0;
-                fread(&type, 1, sizeof(type), f);
-                cgt.first = Slic3r::CustomGCode::Type(type);
-                fread(&cgt.second.first, 1, sizeof(cgt.second.first), f);
-                fread(&cgt.second.second, 1, sizeof(cgt.second.second), f);
-                m.custom_gcode_times.push_back(cgt);
-            }            
-        }
-        int volumes_per_color_change = 0;
-        fread(&volumes_per_color_change, 1, sizeof(volumes_per_color_change), f);
-        for (int i = 0; i < volumes_per_color_change; ++i) {
-            float volume = 0.0f;
-            fread(&volume, 1, sizeof(volume), f);
-            ret.print_statistics.volumes_per_color_change.push_back(volume);
-        }
-        int volumes_per_extruder = 0;
-        fread(&volumes_per_extruder, 1, sizeof(volumes_per_extruder), f);
-        for (int i = 0; i < volumes_per_extruder; ++i) {
-            uint8_t id = 0;
-            fread(&id, 1, sizeof(id), f);
-            float volume = 0.0f;
-            fread(&volume, 1, sizeof(volume), f);
-            ret.print_statistics.volumes_per_extruder[id] = volume;
-        }
-        int cost_per_extruder = 0;
-        fread(&cost_per_extruder, 1, sizeof(cost_per_extruder), f);
-        for (int i = 0; i < cost_per_extruder; ++i) {
-            uint8_t id = 0;
-            fread(&id, 1, sizeof(id), f);
-            float cost = 0.0f;
-            fread(&cost, 1, sizeof(cost), f);
-            ret.print_statistics.cost_per_extruder[id] = cost;
-        }
-        int used_filaments_per_role = 0;
-        fread(&used_filaments_per_role, 1, sizeof(used_filaments_per_role), f);
-        for (int i = 0; i < used_filaments_per_role; ++i) {
-            int role = 0;
-            fread(&role, 1, sizeof(role), f);
-            std::pair<float, float> values;
-            fread(&values.first, 1, sizeof(values.first), f);
-            fread(&values.second, 1, sizeof(values.second), f);
-            ret.print_statistics.used_filaments_per_role[Slic3r::GCodeExtrusionRole(role)] = values;
-        }
-        int line_length = 0;
-        fread(&line_length, 1, sizeof(line_length), f);
-        ret.print_settings.print = std::string(line_length, '\0');
-        fread(ret.print_settings.print.data(), 1, size_t(line_length), f);
-        line_length = 0;
-        fread(&line_length, 1, sizeof(line_length), f);
-        ret.print_settings.printer = std::string(line_length, '\0');
-        fread(ret.print_settings.printer.data(), 1, size_t(line_length), f);
-        int filaments = 0;
-        fread(&filaments, 1, sizeof(filaments), f);
-        for (int i = 0; i < filaments; ++i) {
-            line_length = 0;
-            fread(&line_length, 1, sizeof(line_length), f);
-            std::string data(line_length, '\0');
-            fread(data.data(), 1, size_t(line_length), f);
-            ret.print_settings.filament.push_back(data);
-        }
-
-        // MISSING gcode_result.conflict_result -> it contains pointers
-
-        fclose(f);
-    }
-    return ret;
 }
 
 //
@@ -573,10 +593,7 @@ static ViewerInputData extract_viewer_input_data_from_result(ProcessorResult&& r
         ret.gcode_events.push_back({ item.type, uint8_t(item.extruder - 1), times, used_filament });
     }
 
-    for (size_t i = 0; i < result.gcode.size(); ++i) {
-        ret.gcode.push_back(std::string(result.gcode[i]));
-    }
-
+    ret.gcode = std::move(result.gcode);
     ret.vertices = std::move(result.moves);
 
     return ret;
@@ -602,7 +619,6 @@ static LibvgcodeWrapper::WrapperInputData extract_wrapper_input_data_from_result
 void PreviewRenderModule::send_data_to_viewer()
 {
     ProcessorResult result = result_from_gcode_file();
-//    ProcessorResult result = import_test_result();
     ViewerInputData viewer_data = extract_viewer_input_data_from_result(std::move(result));
     LibvgcodeWrapper::WrapperInputData wrapper_data = extract_wrapper_input_data_from_result(result);
 
@@ -619,7 +635,7 @@ void PreviewRenderModule::on_invalidate_slice()
     // TODO
 }
 
-void PreviewRenderModule::on_update_layers_slider(const Slic3r::CustomGCode::Info& info)
+void PreviewRenderModule::on_update_layers_slider(const CustomGCode::Info& info)
 {
     // TODO
 }
@@ -656,7 +672,7 @@ bool PreviewRenderModule::on_slider_layers_auto_color_change()
     return false;
 }
 
-void PreviewRenderModule::on_slider_layers_check_gcode(Slic3r::CustomGCode::Type type)
+void PreviewRenderModule::on_slider_layers_check_gcode(CustomGCode::Type type)
 {
     // TODO
 }
@@ -691,7 +707,7 @@ int PreviewRenderModule::on_slider_layers_show_info_msg(const std::string& messa
     return 0;
 }
 
-std::string PreviewRenderModule::on_slider_layers_get_gcode(Slic3r::CustomGCode::Type type)
+std::string PreviewRenderModule::on_slider_layers_get_gcode(CustomGCode::Type type)
 {
     // TODO
     return "";
@@ -705,7 +721,15 @@ std::set<int> PreviewRenderModule::on_slider_layers_get_used_extruders_in_print(
 
 void PreviewRenderModule::on_slider_layers_app_config_changed(const std::string& key, const std::string& val)
 {
-    // TODO
+    if (key == "seq_top_layer_only") {
+        bool active = m_viewer.is_top_layer_only_view_range();
+        bool required = val == "1";
+        if (active != required) {
+            m_viewer.toggle_top_layer_only_view_range();
+            const Interval& range = m_viewer.layers_range();
+            m_viewer.set_layers_range(range[0], range[1]);
+        }
+    }
 }
 
 void PreviewRenderModule::on_slider_gcode_on_thumb_move()

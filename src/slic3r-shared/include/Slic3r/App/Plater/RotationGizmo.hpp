@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Slic3r/App/Scene/IGizmo.hpp"
-#include "Slic3r/App/Plater/ScenePresenter.hpp"
+#include "Slic3r/App/Plater/PlaterScenePresenter.hpp"
 #include "Slic3r/App/Plater/GizmoNodeTag.hpp"
 
 namespace Slic3r::App::Scene {
@@ -14,7 +14,7 @@ class RotationGizmo : public Scene::IToolGizmo
 {
 public:
     RotationGizmo(Render::Device& device, Scene::GeometryDataFactory& data_factory,
-        ScenePresenter& scene_provider, Biz::Scene::SceneInteractor& scene_interactor);
+        PlaterScenePresenter& scene_provider, Biz::Scene::SceneInteractor& scene_interactor);
 
     /**
      * @name Implementation of IGizmo interface
@@ -41,7 +41,7 @@ private:
 private:
     Render::Device& m_device;
     Scene::GeometryDataFactory& m_data_factory;
-    ScenePresenter& m_scene_presenter;
+    PlaterScenePresenter& m_scene_presenter;
     Biz::Scene::SceneInteractor& m_scene_interactor;
     bool m_activated{ false };
     bool m_dragging{ false };

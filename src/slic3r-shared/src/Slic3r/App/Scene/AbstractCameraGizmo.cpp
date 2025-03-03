@@ -4,44 +4,44 @@
 
 namespace Slic3r::App::Scene {
 
-void AbstractCameraGizmo::register_commands(CommandRegistry& registry)
+void AbstractCameraGizmo::register_commands(Platform::CommandRegistry& registry)
 {
     registry
         .register_command(
-            new FuncCommand(
+            new Platform::FuncCommand(
                 "zoom-in",
                 [&]() { m_scene_provider.scene().camera_trackball().update_zoom(1.); },
                 nullptr,
-                KeyboardShortcut{0, Platform::KeyCode::I}
+                Platform::KeyboardShortcut{0, Platform::KeyCode::I}
             ),
             true
         )
         .register_command(
-            new FuncCommand(
+            new Platform::FuncCommand(
                 "zoom-out",
                 [&]() { m_scene_provider.scene().camera_trackball().update_zoom(-1.); },
                 nullptr,
-                KeyboardShortcut{0, Platform::KeyCode::O}
+                Platform::KeyboardShortcut{0, Platform::KeyCode::O}
             ),
             true
         )
         .register_command(
-            new FuncCommand(
+            new Platform::FuncCommand(
                 "camera-projection-switch",
                 [&]() { m_scene_provider.scene().camera_trackball().switch_projection_type(); },
                 nullptr,
-                KeyboardShortcut{0, Platform::KeyCode::K}
+                Platform::KeyboardShortcut{0, Platform::KeyCode::K}
             ),
             true
         )
         .register_command(
-            new FuncCommand(
+            new Platform::FuncCommand(
                 "look-at-active-bed",
                 [&]() {
                     look_at(Vec3d(100, 100, 0), -M_PI_2 * 1.5, -M_PI_2 * 1.5);
                 },
                 nullptr,
-                KeyboardShortcut{0, Platform::KeyCode::L}
+                Platform::KeyboardShortcut{0, Platform::KeyCode::B}
             )
         )
     ;

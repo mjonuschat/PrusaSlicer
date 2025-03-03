@@ -923,6 +923,11 @@ void DoubleSliderForLayers::render_cog_menu()
             if (m_cb_app_config_changed != nullptr)
                 m_cb_app_config_changed("show_estimated_times_in_dbl_slider", m_show_estimated_times ? "1" : "0");
         }
+        if (ImGui::MenuItem(_u8L("Sequential slider applied only to top layer").c_str(), nullptr, m_seq_top_layer_only)) {
+            m_seq_top_layer_only = !m_seq_top_layer_only;
+            if (m_cb_app_config_changed)
+                m_cb_app_config_changed("seq_top_layer_only", m_seq_top_layer_only ? "1" : "0");
+        }
         if (m_mode == CustomGCode::Mode::MultiAsSingle && m_draw_mode == DrawMode::Regular &&
             ImGui::MenuItem(_u8L("Set extruder sequence for the entire print").c_str())) {
             if (m_ticks.edit_extruder_sequence(m_ctrl.max_pos(), m_mode))

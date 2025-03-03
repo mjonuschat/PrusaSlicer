@@ -120,6 +120,15 @@ public:
     void toggle_gcodewindow_visible();
     bool is_gcodewindow_visible() const;
 
+    bool is_top_layer_only_view_range() const;
+    void toggle_top_layer_only_view_range();
+
+    const libvgcode::Interval& layers_range() const;
+    void set_layers_range(libvgcode::Interval::value_type min, libvgcode::Interval::value_type max);
+
+    void slider_gcode_move_current_thumb(int delta);
+    void slider_layers_move_current_thumb(int delta);
+
     const libvgcode::Lights& lights() const;
     void set_lights(const libvgcode::Lights& lights);
     const libvgcode::Lights& default_lights() const;
@@ -130,7 +139,11 @@ public:
     float tool_marker_scale_factor() const;
     void set_tool_marker_scale_factor(float factor);
 
+    void set_extrusion_roles_colors_popup_visible(bool show);
+    void set_options_colors_popup_visible(bool show);
     void set_scale_factor_popup_type(Biz::libpgcode::OptionType type);
+    void set_range_colors_popup_type(libvgcode::ViewType type);
+    void set_radius_popup_type(Biz::libpgcode::MoveType type);
 
     void reset_default_extrusion_roles_colors();
 

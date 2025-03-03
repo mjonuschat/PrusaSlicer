@@ -6,10 +6,11 @@
 
 namespace Slic3r::App::LibvgcodeWrapper {
 
-static const ImVec4 COMMAND_COLOR    = { 0.8f, 0.8f, 0.0f, 1.0f };
-static const ImVec4 PARAMETERS_COLOR = { 1.0f, 1.0f, 1.0f, 1.0f };
-static const ImVec4 COMMENT_COLOR    = { 0.7f, 0.7f, 0.7f, 1.0f };
-static const ImVec4 ELLIPSIS_COLOR   = { 0.0f, 0.7f, 0.0f, 1.0f };
+static ImVec4 id_color() { return ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered); }
+static ImVec4 cmd_color() { return { 0.8f, 0.8f, 0.0f, 1.0f }; }
+static ImVec4 params_color() { return ImGui::GetStyleColorVec4(ImGuiCol_Text); }
+static ImVec4 comment_color() { return ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled); }
+static ImVec4 ellipsis_color() { return { 0.0f, 0.7f, 0.0f, 1.0f }; }
 
 GCodeWindowData::Line GCodeWindowData::line_at(uint32_t id) const
 {
@@ -104,7 +105,7 @@ void gcode_window(const GCodeWindowData& data, uint32_t curr_line_id)
                     ImVec2 pos(window->DC.CursorStartPos.x - 0.5f * style.WindowPadding.x, window->DC.CursorPos.y);
                     ImGui::GetWindowDrawList()->AddRect({ pos.x, pos.y },
                         { pos.x + ImGui::GetWindowWidth() - style.WindowPadding.x, pos.y + line_height + style.CellPadding.y },
-                        ImGui::GetColorU32(ImGuiCol_Separator));
+                        ImGui::GetColorU32(id_color()));
                 }
 
                 ImGui::TableNextRow();
@@ -115,7 +116,7 @@ void gcode_window(const GCodeWindowData& data, uint32_t curr_line_id)
                     ImGui::Dummy({ max_id_width - id_width, line_height });
                     ImGui::SameLine(0.0f, 0.0f);
                 }
-                ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_Separator), "%u", id);
+                ImGui::TextColored(id_color(), "%u", id);
 
                 const GCodeWindowData::Line& line = data.line_at(id - 1);
                 if (!line.empty()) {
@@ -125,7 +126,7 @@ void gcode_window(const GCodeWindowData& data, uint32_t curr_line_id)
                     bool show_ellipsis = false;
                     if (!line.command.empty()) {
                         std::string_view str = reduce_string(line.command, current_length);
-                        ImGui::TextColored(COMMAND_COLOR, "%s", std::string(str).c_str());
+                        ImGui::TextColored(cmd_color(), "%s", std::string(str).c_str());
                         current_length += str.length() + 1;
                         show_ellipsis = str != line.command;
                     }
@@ -133,7 +134,7 @@ void gcode_window(const GCodeWindowData& data, uint32_t curr_line_id)
                         if (current_length > 0)
                             ImGui::SameLine(0.0f, 0.0f);
                         std::string_view str = reduce_string(line.parameters, current_length);
-                        ImGui::TextColored(PARAMETERS_COLOR, "%s", std::string(str).c_str());
+                        ImGui::TextColored(params_color(), "%s", std::string(str).c_str());
                         current_length += str.length() + 1;
                         show_ellipsis = str != line.parameters;
                     }
@@ -141,12 +142,12 @@ void gcode_window(const GCodeWindowData& data, uint32_t curr_line_id)
                         if (current_length > 0)
                             ImGui::SameLine(0.0f, 0.0f);
                         std::string_view str = reduce_string(line.comment, current_length);
-                        ImGui::TextColored(COMMENT_COLOR, "%s", std::string(str).c_str());
+                        ImGui::TextColored(comment_color(), "%s", std::string(str).c_str());
                         show_ellipsis = str != line.comment;
                     }
                     if (show_ellipsis) {
                         ImGui::SameLine(0.0f, 0.0f);
-                        ImGui::TextColored(ELLIPSIS_COLOR, "...");
+                        ImGui::TextColored(ellipsis_color(), "...");
                     }
                 }
             }

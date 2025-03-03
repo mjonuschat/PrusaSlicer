@@ -13,36 +13,46 @@ using namespace Slic3r::Biz::libpgcode;
 
 namespace Slic3r::Biz {
 
-static const std::vector<std::string> UNITS_STR = {
-    // TRN: Following strings are units.
-    _u8L("bytes"),
-    _u8L("KB"),
-    _u8L("MB"),
-    _u8L("GB"),
-    _u8L("TB"),
-    _u8L("\u00B0C"), // _u8L(u8"\u00B0C"),
-    _u8L("d"),
-    _u8L("\u00B0F"), // _u8L(u8"\u00B0F"),
-    _u8L("ft"),
-    _u8L("ft\u00B3"), // _u8L(u8"ft\u00B3")
-    _u8L("g"),
-    _u8L("h"),
-    _u8L("in"),
-    _u8L("in/s"),
-    _u8L("in\u00B3"), // _u8L(u8"in\u00B3")
-    _u8L("in\u00B3/s"), // _u8L(u8"in\u00B3/s")
-    _u8L("m"),
-    _u8L("m\u00B3"), // _u8L(u8"m\u00B3")
-    _u8L("mm"),
-    _u8L("mm/s"),
-    _u8L("mm/m"),
-    _u8L("mm\u00B3"), // _u8L(u8"mm\u00B3")
-    _u8L("mm\u00B3/s"), // _u8L(u8"mm\u00B3/s")
-    _u8L("m"),
-    _u8L("oz"),
-    _u8L("s"),
-    _u8L("y"),
+struct UnitsStrings
+{
+    std::vector<std::string> data;
+    void init() {
+        // This data needs to be initialized after the application's
+        // locale has been set
+        data = {
+            // TRN: Following strings are units.
+            _u8L("bytes"),
+            _u8L("KB"),
+            _u8L("MB"),
+            _u8L("GB"),
+            _u8L("TB"),
+            _u8L("°C"),
+            _u8L("d"),
+            _u8L("°F"),
+            _u8L("ft"),
+            _u8L("ft³"),
+            _u8L("g"),
+            _u8L("h"),
+            _u8L("in"),
+            _u8L("in/s"),
+            _u8L("in³"),
+            _u8L("in³/s"),
+            _u8L("m"),
+            _u8L("m³"),
+            _u8L("mm"),
+            _u8L("mm/s"),
+            _u8L("mm/m"),
+            _u8L("mm³"),
+            _u8L("mm³/s"),
+            _u8L("m"),
+            _u8L("oz"),
+            _u8L("s"),
+            _u8L("y"),
+        };
+    }
 };
+
+static UnitsStrings g_units_strings;
 
 std::string format_units(float value, UnitsType units, uint8_t decimals)
 {
@@ -77,7 +87,9 @@ std::string convert_and_format_units(float value, UnitsType value_units, UnitsTy
 std::string format_units(UnitsType units)
 {
     DEBUG_ASSERT(units < UnitsType::COUNT);
-    return UNITS_STR[size_t(units)];
+    if (g_units_strings.data.empty())
+        g_units_strings.init();
+    return g_units_strings.data[size_t(units)];
 }
 
 struct TimeHDMS

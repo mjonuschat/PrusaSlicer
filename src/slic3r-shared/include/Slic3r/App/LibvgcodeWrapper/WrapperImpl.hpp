@@ -87,11 +87,18 @@ public:
     void toggle_gcodewindow_visible() { m_gcode_window_data.toggle_visible(); }
     bool is_gcodewindow_visible() const { return m_gcode_window_data.is_visible(); }
 
+    bool is_top_layer_only_view_range() const { return m_viewer.is_top_layer_only_view_range(); }
+    void toggle_top_layer_only_view_range() { m_viewer.toggle_top_layer_only_view_range(); }
+
     void set_settings_in_legend_visible(bool visible) { m_legend_params.settings_visible = visible; }
 
     bool is_legend_shown() const { return m_legend_params.is_shown(); }
 
+    const libvgcode::Interval& layers_range() const { return m_viewer.layers_range(); }
     void set_layers_range(libvgcode::Interval::value_type min, libvgcode::Interval::value_type max);
+
+    void slider_gcode_move_current_thumb(int delta) { m_slider_gcode.move_current_thumb(delta); }
+    void slider_layers_move_current_thumb(int delta) { m_slider_layers.move_current_thumb(delta); }
 
     void reset_default_extrusion_roles_colors() { m_viewer.reset_default_extrusion_roles_colors(); }
 

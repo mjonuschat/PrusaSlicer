@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Slic3r/Biz/libpgcode/LineView.hpp>
+
 #include <string>
 #include <vector>
 #include <string_view>
@@ -36,7 +38,7 @@ public:
     void set_visible(bool visible) { m_visible = visible; }
     void toggle_visible() { m_visible = !m_visible; }
 
-    void set_gcode(std::vector<std::string>&& gcode) { m_gcode = std::move(gcode); }
+    void set_gcode(Biz::libpgcode::LineView&& gcode) { m_gcode = std::move(gcode); }
     bool has_data() const { return !m_gcode.empty(); }
 
     void reset() { m_gcode.clear(); }
@@ -47,7 +49,7 @@ public:
 
 private:
     bool m_visible{ true };
-    std::vector<std::string> m_gcode;
+    Biz::libpgcode::LineView m_gcode;
 };
 
 /** @brief ImGui widget to show the gcode lines as list of strings.

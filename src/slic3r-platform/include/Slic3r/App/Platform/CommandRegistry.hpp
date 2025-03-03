@@ -4,10 +4,9 @@
 #include <unordered_map>
 
 #include "Slic3r/App/Platform/KeyboardEvent.hpp"
-#include "Slic3r/App/ICommand.hpp"
+#include "Slic3r/App/Platform/ICommand.hpp"
 
-
-namespace Slic3r::App {
+namespace Slic3r::App::Platform {
 
 /**
  * @brief Registry for commands user can invoke.
@@ -29,7 +28,7 @@ public:
      * @param e Keyboard generated event to process.
      * @return `true` if the event was consumed (command invoked), otherwise `false`.
      */
-    bool process_keyboard_event(const Platform::KeyboardEvent& e);
+    bool process_keyboard_event(const KeyboardEvent& e);
 
 private:
     struct CommandInfo final
@@ -53,4 +52,5 @@ private:
     std::vector<CommandInfo> m_commands;
     std::unordered_map<std::string, ICommand*> m_commands_by_id;
 };
-}
+
+} // Slic3r::App::Platform

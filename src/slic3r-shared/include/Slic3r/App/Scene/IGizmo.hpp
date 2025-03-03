@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Slic3r/App/Scene/GizmoEventContext.hpp"
-#include "Slic3r/App/CommandRegistry.hpp"
+#include "Slic3r/App/Platform/CommandRegistry.hpp"
 #include "libslic3r/Config.hpp"
 
 namespace Slic3r::App::Scene {
@@ -84,7 +84,7 @@ public:
     /**
      *
      */
-    virtual void register_commands(CommandRegistry& registry) {}
+    virtual void register_commands(Platform::CommandRegistry& registry) {}
     /**@}*/
 
     /**

@@ -4,6 +4,7 @@
 #include "Slic3r/App/Platform/KeyboardEvent.hpp"
 #include "Slic3r/Biz/Platform/IRenderRequestHandler.hpp"
 #include "Slic3r/App/Render/ScreenInfo.hpp"
+#include "Slic3r/App/Platform/CommandRegistry.hpp"
 
 namespace Slic3r::App::Render {
 class Device;
@@ -36,6 +37,7 @@ public:
     {
         if (!m_initialized) {
             on_init(device);
+            register_commands();
             m_initialized = true;
         }
     }
@@ -51,10 +53,12 @@ protected:
     virtual void on_deactivated();
     virtual void on_screen_resized();
 
+    virtual void register_commands() {}
     void request_render();
 
 protected:
     Render::Device* m_device{nullptr};
+    CommandRegistry m_command_registry;
 
     Render::ScreenInfo m_screen_info {0, 0, 1};
     bool m_initialized{false};

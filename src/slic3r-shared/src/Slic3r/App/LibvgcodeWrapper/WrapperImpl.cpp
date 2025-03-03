@@ -457,7 +457,7 @@ void WrapperImpl::render_legend(const WrapperLayoutData& layout)
         ImGuiWindow* wnd = ImGui::FindWindowByName("Legend##wrapper");
         if (wnd != nullptr && m_viewer.view_type() == ViewType::FeatureType)
             wnd->DC.CursorMaxPos.x = wnd->DC.CursorStartPos.x;
-        ImGui::Begin("Legend##wrapper", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+        ImGui::Begin("Legend##wrapper", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoFocusOnAppearing);
         legend(m_viewer, *this, m_legend_params.settings_visible, m_data.print_settings, m_cb_legend);
         m_legend_height = ImGui::GetWindowSize().y;
         ImGui::End();
@@ -486,12 +486,26 @@ void WrapperImpl::render_gcodewindow(const WrapperLayoutData& layout)
     if (m_viewer.view_enabled_range()[1] == m_viewer.view_visible_range()[1])
         return;
   
-    ImGui::SetNextWindowPos({ 0.0f, layout.menubar_height + m_legend_height }, ImGuiCond_Always, { 0.0f, 0.0f });
     float height = ImGui::GetMainViewport()->Size.y - (layout.menubar_height + m_legend_height + std::max(layout.view_toolbar_size[1], m_slider_gcode.height()));
+    if (height < ImGui::GetTextLineHeight())
+        return;
+
+    // the following is a hack which allows to properly resize the gcode window
+    ImGuiWindow* wnd = ImGui::FindWindowByName("G-Code##wrapper");
+    if (wnd != nullptr) {
+        ImGuiStyle& style = ImGui::GetStyle();
+        float min_height = 2.0f * (ImGui::GetTextLineHeight() + style.WindowPadding.y + style.FramePadding.y + style.CellPadding.y);
+        if (height < min_height)
+            return;
+        wnd->DC.CursorMaxPos.x = wnd->DC.CursorStartPos.x;
+    }
+
+    ImGui::SetNextWindowPos({ 0.0f, layout.menubar_height + m_legend_height }, ImGuiCond_Always, { 0.0f, 0.0f });
     ImGui::SetNextWindowSize({ 0.0f, height }, ImGuiCond_Always);
     Imgui::UnifiedWindowStyle unified_window_style;
     unified_window_style.push();
-    ImGui::Begin(_u8L("G-Code").c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse);
+    ImGui::Begin(_u8L("G-Code##wrapper").c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse |
+        ImGuiWindowFlags_NoFocusOnAppearing);
     gcode_window(m_gcode_window_data, size_t(m_viewer.current_vertex().gcode_id));
     ImGui::End();
     unified_window_style.pop();
@@ -519,7 +533,8 @@ void WrapperImpl::render_vertex_properties(const WrapperLayoutData& layout)
     ImGuiWindow* wnd = ImGui::FindWindowByName(title.c_str());
     if (wnd != nullptr)
         wnd->DC.CursorMaxPos.x = wnd->DC.CursorStartPos.x;
-    ImGui::Begin(title.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_MenuBar);
+    ImGui::Begin(title.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_MenuBar |
+        ImGuiWindowFlags_NoFocusOnAppearing);
 
     if (ImGui::BeginMenuBar()) {
         if (ImGui::BeginMenu(_u8L("Options").c_str())) {
@@ -701,11 +716,10 @@ void WrapperImpl::render_customize_extrusion_roles_colors_popup()
     std::string wnd_name = _u8L("Edit extrusion roles colors");
     Imgui::UnifiedWindowStyle unified_window_style;
     unified_window_style.push();
-    ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Always, { 0.5f, 0.5f });
+    ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_FirstUseEver, { 0.5f, 0.5f });
 
     ImGuiWindowFlags windows_flag = ImGuiWindowFlags_AlwaysAutoResize
                                   | ImGuiWindowFlags_NoCollapse
-                                  | ImGuiWindowFlags_NoMove
                                   | ImGuiWindowFlags_NoResize
                                   | ImGuiWindowFlags_NoScrollbar
                                   | ImGuiWindowFlags_NoScrollWithMouse;
@@ -749,11 +763,10 @@ void WrapperImpl::render_customize_options_colors_popup()
     std::string wnd_name = _u8L("Edit options colors");
     Imgui::UnifiedWindowStyle unified_window_style;
     unified_window_style.push();
-    ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Always, { 0.5f, 0.5f });
+    ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_FirstUseEver, { 0.5f, 0.5f });
 
     ImGuiWindowFlags windows_flag = ImGuiWindowFlags_AlwaysAutoResize
                                   | ImGuiWindowFlags_NoCollapse
-                                  | ImGuiWindowFlags_NoMove
                                   | ImGuiWindowFlags_NoResize
                                   | ImGuiWindowFlags_NoScrollbar
                                   | ImGuiWindowFlags_NoScrollWithMouse;
@@ -801,15 +814,17 @@ void WrapperImpl::render_customize_range_colors_popup()
     std::string label;
     switch (m_range_colors_popup_type)
     {
-    case ViewType::Height:               { label = _u8L("Height"); break; }
-    case ViewType::Width:                { label = _u8L("Width"); break; }
-    case ViewType::Speed:                { label = _u8L("Speed"); break; }
-    case ViewType::FanSpeed:             { label = _u8L("Fan speed"); break; }
-    case ViewType::Temperature:          { label = _u8L("Temperature"); break; }
-    case ViewType::VolumetricFlowRate:   { label = _u8L("Volumetric flow rate"); break; }
-    case ViewType::LayerTimeLinear:      { label = _u8L("Layer time linear"); break; }
-    case ViewType::LayerTimeLogarithmic: { label = _u8L("Layer time logarithmic"); break; }
-    default:                              { return; }
+    case ViewType::Height:                   { label = _u8L("Height"); break; }
+    case ViewType::Width:                    { label = _u8L("Width"); break; }
+    case ViewType::Speed:                    { label = _u8L("Speed"); break; }
+    case ViewType::ActualSpeed:              { label = _u8L("Actual speed"); break; }
+    case ViewType::FanSpeed:                 { label = _u8L("Fan speed"); break; }
+    case ViewType::Temperature:              { label = _u8L("Temperature"); break; }
+    case ViewType::VolumetricFlowRate:       { label = _u8L("Volumetric flow rate"); break; }
+    case ViewType::ActualVolumetricFlowRate: { label = _u8L("Actual volumetric flow rate"); break; }
+    case ViewType::LayerTimeLinear:          { label = _u8L("Layer time linear"); break; }
+    case ViewType::LayerTimeLogarithmic:     { label = _u8L("Layer time logarithmic"); break; }
+    default:                                 { return; }
     }
     label += " " + _u8L("range colors") + ":";
 
@@ -820,11 +835,10 @@ void WrapperImpl::render_customize_range_colors_popup()
 
     Imgui::UnifiedWindowStyle unified_window_style;
     unified_window_style.push();
-    ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Always, { 0.5f, 0.5f });
+    ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_FirstUseEver, { 0.5f, 0.5f });
 
     ImGuiWindowFlags windows_flag = ImGuiWindowFlags_AlwaysAutoResize | 
                                     ImGuiWindowFlags_NoCollapse |
-                                    ImGuiWindowFlags_NoMove |
                                     ImGuiWindowFlags_NoResize |
                                     ImGuiWindowFlags_NoScrollbar |
                                     ImGuiWindowFlags_NoScrollWithMouse;
@@ -924,11 +938,10 @@ void WrapperImpl::render_customize_radius_popup()
 
     Imgui::UnifiedWindowStyle unified_window_style;
     unified_window_style.push();
-    ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Always, { 0.5f, 0.5f });
+    ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_FirstUseEver, { 0.5f, 0.5f });
 
     ImGuiWindowFlags windows_flag = ImGuiWindowFlags_AlwaysAutoResize |
                                     ImGuiWindowFlags_NoCollapse |
-                                    ImGuiWindowFlags_NoMove |
                                     ImGuiWindowFlags_NoResize |
                                     ImGuiWindowFlags_NoScrollbar |
                                     ImGuiWindowFlags_NoScrollWithMouse;

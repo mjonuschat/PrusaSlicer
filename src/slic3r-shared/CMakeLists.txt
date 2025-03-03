@@ -1,6 +1,6 @@
 set(SLIC3R_SHARED_FILES
-        include/Slic3r/App/Plater/ScenePresenter.hpp
-        src/Slic3r/App/Plater/ScenePresenter.cpp
+        include/Slic3r/App/Plater/PlaterScenePresenter.hpp
+        src/Slic3r/App/Plater/PlaterScenePresenter.cpp
         include/Slic3r/App/Plater/PlaterRenderModule.hpp
         src/Slic3r/App/Plater/PlaterRenderModule.cpp
         include/Slic3r/App/Plater/PlaterCameraGizmo.hpp
@@ -92,10 +92,6 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/TestRenderModule.cpp
         src/Slic3r/App/Init.cpp
         include/Slic3r/App/Init.hpp
-        include/Slic3r/App/KeyboardShortcut.hpp
-        include/Slic3r/App/ICommand.hpp
-        include/Slic3r/App/CommandRegistry.hpp
-        src/Slic3r/App/CommandRegistry.cpp
 
         src/Slic3r/App/I18N/LanguageInfo.cpp
         include/Slic3r/App/I18N/LanguageInfo.hpp

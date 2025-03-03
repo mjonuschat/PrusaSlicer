@@ -21,12 +21,12 @@ namespace Slic3r::App::Plater {
 
 struct BedNodeTag;
 
-class ScenePresenter : public Biz::ISelectedProjectChangedListener,
-                       public Biz::Scene::ISceneSelectionChangedListener,
-                       public Biz::ISelectedBedInstanceChangedListener,
-                       public Biz::Scene::ISceneChangedListener,
-                       public Scene::MinimalSceneRenderCustomizer,
-                       public Scene::ISceneProvider
+class PlaterScenePresenter : public Biz::ISelectedProjectChangedListener,
+                             public Biz::Scene::ISceneSelectionChangedListener,
+                             public Biz::ISelectedBedInstanceChangedListener,
+                             public Biz::Scene::ISceneChangedListener,
+                             public Scene::MinimalSceneRenderCustomizer,
+                             public Scene::ISceneProvider
 {
 public:
     using ScenePresenterProjectContext = Scene::ScenePresenterProjectContext<AuxiliaryElementId>;
@@ -34,7 +34,7 @@ public:
     using GeometryManager = Render::GeometryManager<std::string>;
     using TriangleMeshManager = Scene::TriangleMeshManager<std::string>;
 
-    ScenePresenter(
+    PlaterScenePresenter(
         const Domain::Workbench& m_workbench,
         Biz::ProjectInteractor& project_interactor,
         Render::Device& device

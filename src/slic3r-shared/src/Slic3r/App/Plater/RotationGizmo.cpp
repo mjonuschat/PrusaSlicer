@@ -97,7 +97,7 @@ static Vec3d extract_position(const App::Scene::Transform& xform)
 }
 
 RotationGizmo::RotationGizmo(Render::Device& device, Scene::GeometryDataFactory& data_factory,
-    ScenePresenter& scene_presenter, Biz::Scene::SceneInteractor& scene_interactor
+    PlaterScenePresenter& scene_presenter, Biz::Scene::SceneInteractor& scene_interactor
 )
     : m_device(device)
     , m_data_factory(data_factory)
@@ -278,7 +278,7 @@ static void build_rotate_node(AxisType axis, Scene::NodeBuilder& builder, Render
             .set_debug_name("circle")
             .set_tag(RotationGizmoNodeTag{ axis })
             .set_mesh(data_factory.geometry(Scene::GeometryDataId::Circle), material, int(PlaterSceneLayer::GizmoHandles))
-            .transform([&](Transform3d& xform) {
+            .transform([](Transform3d& xform) {
                 xform.scale(CIRCLE_DIAMETER * Vec3d::Ones());
             });
     });
@@ -293,7 +293,7 @@ static void build_rotate_node(AxisType axis, Scene::NodeBuilder& builder, Render
             .set_tag(RotationGizmoNodeTag{ axis, AxisType::None, 2 })
             .set_mesh(data_factory.geometry(Scene::GeometryDataId::GradedCircle), material, int(PlaterSceneLayer::GizmoHandles))
             .set_enabled(false)
-            .transform([&](Transform3d& xform) {
+            .transform([](Transform3d& xform) {
                 xform.scale(CIRCLE_DIAMETER * Vec3d::Ones());
             });
     });
@@ -312,7 +312,7 @@ static void build_rotate_node(AxisType axis, Scene::NodeBuilder& builder, Render
                 .set_debug_name("stem")
                 .set_tag(RotationGizmoNodeTag{ axis })
                 .set_mesh(data_factory.geometry(Scene::GeometryDataId::Segment), material, int(PlaterSceneLayer::GizmoHandles))
-                .transform([&](Transform3d& xform) {
+                .transform([](Transform3d& xform) {
                     xform.scale(HANDLE_STEM_LENGTH * Vec3d::UnitX());
                 });
         });
@@ -330,7 +330,7 @@ static void build_rotate_node(AxisType axis, Scene::NodeBuilder& builder, Render
                 .set_tag(RotationGizmoNodeTag{ axis })
                 .set_mesh(geom, material, int(PlaterSceneLayer::GizmoHandles))
                 .set_aabb(mesh->aabb_mesh())
-                .transform([&](Transform3d& xform) {
+                .transform([](Transform3d& xform) {
                     xform
                         .translate(HANDLE_CUBE_OFFSET)
                         .scale(HANDLE_CUBE_SIZE);
@@ -350,7 +350,7 @@ static void build_rotate_node(AxisType axis, Scene::NodeBuilder& builder, Render
                 .set_tag(RotationGizmoNodeTag{ axis })
                 .set_mesh(geom, material, int(PlaterSceneLayer::GizmoHandles))
                 .set_aabb(mesh->aabb_mesh())
-                .transform([&](Transform3d& xform) {
+                .transform([](Transform3d& xform) {
                     xform
                         .translate(HANDLE_CONE_CCW_OFFSET)
                         .rotate(Eigen::AngleAxisd{ -HALF_PI, Vec3d::UnitX() })
@@ -371,7 +371,7 @@ static void build_rotate_node(AxisType axis, Scene::NodeBuilder& builder, Render
                 .set_tag(RotationGizmoNodeTag{ axis })
                 .set_mesh(geom, material, int(PlaterSceneLayer::GizmoHandles))
                 .set_aabb(mesh->aabb_mesh())
-                .transform([&](Transform3d& xform) {
+                .transform([](Transform3d& xform) {
                     xform
                         .translate(HANDLE_CONE_CW_OFFSET)
                         .rotate(Eigen::AngleAxisd{ HALF_PI, Vec3d::UnitX() })
@@ -409,14 +409,14 @@ void RotationGizmo::on_activated()
 
     builder.child([&](Scene::NodeBuilder& bldr) {
         build_rotate_node(AxisType::XAxis, bldr, m_device, m_data_factory);
-        bldr.transform([&](Transform3d& xform) {
+        bldr.transform([](Transform3d& xform) {
             xform = axis_transform(AxisType::XAxis) * xform;
         });
     });
 
     builder.child([&](Scene::NodeBuilder& bldr) {
         build_rotate_node(AxisType::YAxis, bldr, m_device, m_data_factory);
-        bldr.transform([&](Transform3d& xform) {
+        bldr.transform([](Transform3d& xform) {
             xform = axis_transform(AxisType::YAxis) * xform;
         });
     });

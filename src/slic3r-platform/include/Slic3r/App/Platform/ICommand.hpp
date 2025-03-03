@@ -3,9 +3,9 @@
 #include <functional>
 #include <optional>
 #include <string>
-#include "Slic3r/App/KeyboardShortcut.hpp"
+#include "Slic3r/App/Platform/KeyboardShortcut.hpp"
 
-namespace Slic3r::App {
+namespace Slic3r::App::Platform {
 class ICommand
 {
 public:
@@ -52,4 +52,4 @@ private:
     std::optional<KeyboardShortcut> m_keyboard_shortcut;
 };
 
-} // namespace Slic3r::App
+} // namespace Slic3r::App::Platform

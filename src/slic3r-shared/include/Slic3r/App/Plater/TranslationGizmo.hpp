@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ScenePresenter.hpp"
+#include "PlaterScenePresenter.hpp"
 #include "Slic3r/App/Scene/IGizmo.hpp"
 #include "Slic3r/App/Render/Device.hpp"
 
@@ -10,15 +10,13 @@ class GeometryDataFactory;
 
 namespace Slic3r::App::Plater {
 
-class ScenePresenter;
-
 class TranslationGizmo : public Scene::IToolGizmo
 {
 public:
     TranslationGizmo(
         Render::Device& device,
         Scene::GeometryDataFactory& data_factory,
-        ScenePresenter& scene_provider,
+        PlaterScenePresenter& scene_provider,
         Biz::Scene::SceneInteractor& scene_interactor
     )
         : m_device(device)

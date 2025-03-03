@@ -5,7 +5,7 @@
 #include "Slic3r/App/Platform/AbstractRenderModule.hpp"
 #include "Slic3r/App/Scene/Scene.hpp"
 #include "Slic3r/App/Scene/GizmoManager.hpp"
-#include "Slic3r/App/Plater/ScenePresenter.hpp"
+#include "Slic3r/App/Plater/PlaterScenePresenter.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 
 #include "Slic3r/App/TestRenderLayout.hpp"
@@ -37,7 +37,7 @@ private:
 private:
     const Domain::Workbench& m_workbench;
     Biz::ProjectInteractor& m_project_interactor;
-    std::unique_ptr<ScenePresenter> m_scene_presenter;
+    std::unique_ptr<PlaterScenePresenter> m_scene_presenter;
     std::unique_ptr<Scene::GizmoManager> m_gizmo_manager;
 
     bool m_gui_win_open{true};

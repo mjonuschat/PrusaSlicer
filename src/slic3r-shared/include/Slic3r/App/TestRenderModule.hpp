@@ -23,6 +23,8 @@ protected:
     void on_init(Render::Device& device) override;
     void on_screen_resized() override;
 
+    virtual void register_commands() override;
+
     void init_render();
     void init_scene();
 

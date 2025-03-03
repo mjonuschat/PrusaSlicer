@@ -7,6 +7,8 @@
 
 #include "Types.hpp"
 
+#include <Slic3r/Biz/libpgcode/LineView.hpp>
+
 #include <map>
 
 namespace Slic3r::App::libvgcode {
@@ -36,7 +38,7 @@ struct ViewerInputData
     //
     // gcode lines
     //
-    std::vector<std::string> gcode;
+    Biz::libpgcode::LineView gcode;
     //
     // List of custom gcode events
     // See: GCodeEvent

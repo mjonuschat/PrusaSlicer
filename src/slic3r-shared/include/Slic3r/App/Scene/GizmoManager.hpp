@@ -7,7 +7,7 @@
 #include "Slic3r/App/Scene/ISceneProvider.hpp"
 #include "Slic3r/App/Render/ScreenInfo.hpp"
 #include "Slic3r/App/Scene/GeometryDataFactory.hpp"
-#include "Slic3r/App/CommandRegistry.hpp"
+#include "Slic3r/App/Platform/CommandRegistry.hpp"
 #include "libslic3r/Config.hpp"
 
 
@@ -82,7 +82,7 @@ private:
     bool m_in_cycle {false};
     std::vector<IGizmo*> m_in_cycle_gizmos;
 
-    CommandRegistry m_command_registry;
+    Platform::CommandRegistry m_command_registry;
 
 #if DEBUG_GIZMO_MANAGER
     constexpr static size_t NUM_DEBUG_ACTIVATION_LAST_STEPS = 63;

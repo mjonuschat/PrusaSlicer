@@ -102,11 +102,11 @@ void Control::move_active_thumb(int delta)
         m_selection = SelectedSlider::Higher;
 
     if (m_selection == SelectedSlider::Lower) {
-        m_lower_pos -= delta;
+        m_lower_pos += delta;
         correct_lower_pos();
     }
     else if (m_selection == SelectedSlider::Higher) {
-        m_higher_pos -= delta;
+        m_higher_pos += delta;
         correct_higher_pos();
     }
 }
@@ -519,10 +519,15 @@ bool Control::draw_slider(int* higher_pos, int* lower_pos, const std::string& hi
     // get active(draggable) region.
     ImRect draggable_region = m_draw_opts.draggable_region(groove, is_horizontal());
 
+    if (m_is_dragging && !io.MouseDown[0]) {
+        m_is_dragging = false;
+        ImGui::ClearActiveID();
+    }
+
     if (m_is_dragging || (ImGui::ItemHoverable(draggable_region, id, ImGuiItemFlags_AllowDuplicateId) && io.MouseDown[0])) {
         ImGui::SetActiveID(id, window);
-        ImGui::SetFocusID(id, window);
-        ImGui::FocusWindow(window);
+        //ImGui::SetFocusID(id, window);
+        //ImGui::FocusWindow(window);
         m_is_dragging = true;
     }
     
@@ -655,10 +660,10 @@ bool Control::render()
 {
     bool result = false;
 
-    ImGui::PushStyleVar(ImGuiStyleVar_::ImGuiStyleVar_WindowBorderSize, 0.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_::ImGuiStyleVar_WindowRounding, 0.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_::ImGuiStyleVar_FramePadding, { 0.0f, 0.0f });
-    ImGui::PushStyleVar(ImGuiStyleVar_::ImGuiStyleVar_WindowPadding, { 0.0f, 0.0f });
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, { 0.0f, 0.0f });
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 0.0f, 0.0f });
 
     ImGui::SetNextWindowBgAlpha(0.0f);
 
@@ -668,6 +673,7 @@ bool Control::render()
                        ImGuiWindowFlags_NoMove | 
                        ImGuiWindowFlags_NoResize |
                        ImGuiWindowFlags_NoScrollbar |
+                       ImGuiWindowFlags_NoNav |
                        ImGuiWindowFlags_NoScrollWithMouse;
 
     ImGui::SetNextWindowPos(m_pos, ImGuiCond_Always);

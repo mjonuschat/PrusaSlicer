@@ -420,48 +420,45 @@ void TestRenderModule::on_scene_mouse_event(const Platform::MouseEvent &e)
 void TestRenderModule::on_scene_keyboard_event(const Platform::KeyboardEvent &e)
 {
     std::cout <<  "KeyboardEvent type: " << uint32_t(e.type()) << "\n";
-    switch (e.type())
-    {
-    case Platform::KeyboardEvent::Type::KeyDown:
-    {
-        switch (e.code())
-        {
-        case Platform::KeyCode::I: // zoom in
-        {
-            m_scene->camera_trackball().update_zoom(1.);
-            break;
-        }
-        case Platform::KeyCode::K: // switch camera type
-        {
-            m_scene->camera_trackball().switch_projection_type();
-            break;
-        }
-        case Platform::KeyCode::O: // zoom out
-        {
-            m_scene->camera_trackball().update_zoom(-1.);
-            break;
-        }
-        default:
-        {
-            break;
-        }
-        }
-        break;
-    }
-    case Platform::KeyboardEvent::Type::KeyUp:
-    {
-        break;
-    }
-    default:
-    {
-        break;
-    }
-    }
+    Platform::AbstractRenderModule::on_scene_keyboard_event(e);
 }
 
 void TestRenderModule::on_screen_resized()
 {
     m_scene->camera().set_viewport(Render::Rect::from(0, 0, m_screen_info));
+}
+
+void TestRenderModule::register_commands()
+{
+    m_command_registry
+        .register_command(
+            new Platform::FuncCommand(
+                "zoom-in",
+                [&]() { m_scene->camera_trackball().update_zoom(1.); },
+                nullptr,
+                Platform::KeyboardShortcut{0, Platform::KeyCode::I}
+            ),
+            true
+        )
+        .register_command(
+            new Platform::FuncCommand(
+                "switch-camera-type",
+                [&]() { m_scene->camera_trackball().switch_projection_type(); },
+                nullptr,
+                Platform::KeyboardShortcut{0, Platform::KeyCode::K}
+            ),
+            true
+        )
+        .register_command(
+            new Platform::FuncCommand(
+                "zoom-out",
+                [&]() { m_scene->camera_trackball().update_zoom(-1.); },
+                nullptr,
+                Platform::KeyboardShortcut{0, Platform::KeyCode::O}
+            ),
+            true
+        )
+    ;
 }
 
 }

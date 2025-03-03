@@ -99,6 +99,36 @@ bool Wrapper::is_gcodewindow_visible() const
     return m_impl->is_gcodewindow_visible();
 }
 
+bool Wrapper::is_top_layer_only_view_range() const
+{
+    return m_impl->is_top_layer_only_view_range();
+}
+
+void Wrapper::toggle_top_layer_only_view_range()
+{
+    m_impl->toggle_top_layer_only_view_range();
+}
+
+const Interval& Wrapper::layers_range() const
+{
+    return m_impl->layers_range();
+}
+
+void Wrapper::set_layers_range(Interval::value_type min, Interval::value_type max)
+{
+    m_impl->set_layers_range(min, max);
+}
+
+void Wrapper::slider_gcode_move_current_thumb(int delta)
+{
+    m_impl->slider_gcode_move_current_thumb(delta);
+}
+
+void Wrapper::slider_layers_move_current_thumb(int delta)
+{
+    m_impl->slider_layers_move_current_thumb(delta);
+}
+
 const Lights& Wrapper::lights() const
 {
     return m_impl->lights();
@@ -134,9 +164,29 @@ void Wrapper::set_tool_marker_scale_factor(float factor)
     m_impl->set_tool_marker_scale_factor(factor);
 }
 
+void Wrapper::set_extrusion_roles_colors_popup_visible(bool show)
+{
+    m_impl->set_extrusion_roles_colors_popup_visible(show);
+}
+
+void Wrapper::set_options_colors_popup_visible(bool show)
+{
+    m_impl->set_options_colors_popup_visible(show);
+}
+
 void Wrapper::set_scale_factor_popup_type(Biz::libpgcode::OptionType type)
 {
     m_impl->set_scale_factor_popup_type(type);
+}
+
+void Wrapper::set_range_colors_popup_type(libvgcode::ViewType type)
+{
+    m_impl->set_range_colors_popup_type(type);
+}
+
+void Wrapper::set_radius_popup_type(Biz::libpgcode::MoveType type)
+{
+    m_impl->set_radius_popup_type(type);
 }
 
 void Wrapper::reset_default_extrusion_roles_colors()

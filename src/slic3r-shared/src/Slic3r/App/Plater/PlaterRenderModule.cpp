@@ -29,7 +29,7 @@ void PlaterRenderModule::on_init(Render::Device& device)
 {
     AbstractRenderModule::on_init(device);
     m_scene_presenter =
-        std::make_unique<ScenePresenter>(m_workbench, m_project_interactor, *m_device);
+        std::make_unique<PlaterScenePresenter>(m_workbench, m_project_interactor, *m_device);
     m_project_interactor.add_listener<Biz::ISelectedProjectChangedListener>(m_scene_presenter.get());
     m_project_interactor.scene_interactor().add_listener<Biz::Scene::ISceneChangedListener>(
         m_scene_presenter.get()
@@ -451,7 +451,7 @@ static void render_imgui_debug_icons()
 #endif //ENABLED_DEBUG_IMGUI_ICONS
 
 #if ENABLED_DEBUG_BEDS
-static void render_imgui_debug_bed(Biz::ProjectInteractor& project_interactor, ScenePresenter& scene_presenter)
+static void render_imgui_debug_bed(Biz::ProjectInteractor& project_interactor, PlaterScenePresenter& scene_presenter)
 {
     ImGui::SetNextWindowCollapsed(true, ImGuiCond_Once);
     if (ImGui::Begin("Bed test/debug", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
@@ -625,7 +625,8 @@ void PlaterRenderModule::on_scene_keyboard_event(
     const Platform::KeyboardEvent& e
 )
 {
-    m_gizmo_manager->on_scene_keyboard_event(e);
+    if (!m_gizmo_manager->on_scene_keyboard_event(e))
+        Platform::AbstractRenderModule::on_scene_keyboard_event(e);
 }
 
 void PlaterRenderModule::on_activated()

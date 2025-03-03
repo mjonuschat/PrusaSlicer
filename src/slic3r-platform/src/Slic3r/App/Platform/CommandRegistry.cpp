@@ -1,8 +1,7 @@
-#include "Slic3r/App/CommandRegistry.hpp"
+#include "Slic3r/App/Platform/CommandRegistry.hpp"
 #include "Slic3r/Assert.hpp"
 
-
-namespace Slic3r::App {
+namespace Slic3r::App::Platform {
 
 CommandRegistry& CommandRegistry::register_command(ICommand* command, bool takes_over_ownership)
 {
@@ -14,9 +13,9 @@ CommandRegistry& CommandRegistry::register_command(ICommand* command, bool takes
     return *this;
 }
 
-bool CommandRegistry::process_keyboard_event(const Platform::KeyboardEvent& e)
+bool CommandRegistry::process_keyboard_event(const KeyboardEvent& e)
 {
-    if (e.type() != Platform::KeyboardEvent::Type::KeyDown)
+    if (e.type() != KeyboardEvent::Type::KeyDown)
         return false;
 
     for (auto& cmd : m_commands) {
@@ -32,4 +31,4 @@ bool CommandRegistry::process_keyboard_event(const Platform::KeyboardEvent& e)
     return false;
 }
 
-}
+} // Slic3r::App::Platform

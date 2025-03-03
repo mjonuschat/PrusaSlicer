@@ -27,7 +27,7 @@ public:
     virtual ~AbstractCameraGizmo() = default;
 
 
-    void register_commands(CommandRegistry& registry) override;
+    void register_commands(Platform::CommandRegistry& registry) override;
     GizmoActivationState on_mouse(GizmoEventContext& ctx, bool only_active) override;
     void on_cycle_prepare() override;
 #if CAMERA_GIZMO_DEBUG

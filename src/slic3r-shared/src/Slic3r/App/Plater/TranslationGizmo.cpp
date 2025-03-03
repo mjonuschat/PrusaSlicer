@@ -1,5 +1,4 @@
 #include "Slic3r/App/Plater/TranslationGizmo.hpp"
-#include "Slic3r/App/Plater/ScenePresenter.hpp"
 #include "Slic3r/App/Scene/GeometryDataFactory.hpp"
 #include "Slic3r/App/Plater/GizmoNodeTag.hpp"
 #include "Slic3r/App/Plater/PlaterSceneLayer.hpp"
@@ -148,7 +147,7 @@ static void build_axis_node(AxisType axis, Scene::NodeBuilder& builder, Render::
             .set_debug_name("stem")
             .set_tag(GizmoNodeTag{ axis })
             .set_mesh(data_factory.geometry(Scene::GeometryDataId::Segment), material, int(PlaterSceneLayer::GizmoHandles))
-            .transform([&](Transform3d& xform) {
+            .transform([](Transform3d& xform) {
                 xform.rotate(Eigen::AngleAxisd(-HALF_PI, Vec3d::UnitY()));
                 xform.scale(HANDLE_STEM_LENGTH * Vec3d::UnitX());
             });
@@ -167,7 +166,7 @@ static void build_axis_node(AxisType axis, Scene::NodeBuilder& builder, Render::
             .set_tag(GizmoNodeTag{ axis })
             .set_mesh(geom, material, int(PlaterSceneLayer::GizmoHandles))
             .set_aabb(mesh->aabb_mesh())
-            .transform([&](Transform3d& xform) {
+            .transform([](Transform3d& xform) {
                 xform
                     .translate(HANDLE_CONE_OFFSET)
                     .scale(HANDLE_CONE_SIZE);
@@ -196,14 +195,14 @@ void TranslationGizmo::on_activated()
 
     builder.child([&](Scene::NodeBuilder& bldr) {
         build_axis_node(AxisType::XAxis, bldr, m_device, m_data_factory);
-        bldr.transform([&](Transform3d& xform) {
+        bldr.transform([](Transform3d& xform) {
             xform = axis_transform(AxisType::XAxis) * xform;
         });
     });
 
     builder.child([&](Scene::NodeBuilder& bldr) {
         build_axis_node(AxisType::YAxis, bldr, m_device, m_data_factory);
-        bldr.transform([&](Transform3d& xform) {
+        bldr.transform([](Transform3d& xform) {
             xform = axis_transform(AxisType::YAxis) * xform;
         });
     });
