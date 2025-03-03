@@ -31,6 +31,7 @@ protected:
 
 private:
     void init_scene();
+    void init_scene_layout();
     void render_object_hud(const Scene::Node& n, const Eigen::AlignedBox<float, 2>& screen_bounding_box);
 
     void init_gizmos();

@@ -19,6 +19,16 @@ Domain::SelectionId ProjectInteractor::new_project()
     return project_id;
 }
 
+Domain::SelectionId ProjectInteractor::load_project(const std::string& file_path)
+{
+    Domain::Project project;
+    initialize_new_project_before_inserting(project);
+    project.load(file_path);
+    Domain::SelectionId project_id = add_project(std::move(project));
+
+    return project_id;
+}
+
 void ProjectInteractor::initialize_new_project_before_inserting(Domain::Project& p)
 {
     auto& cc_ptr = p.config_containers().emplace_back(std::make_unique<Domain::ConfigContainer>());
@@ -37,6 +47,7 @@ void ProjectInteractor::initialize_inserted_project(size_t project_id)
     Domain::Bed& bed = p.bed_container().add_bed(selected_printer_preset, m_workbench.preset_bundle());
     cc_ptr->set_bed(bed);
     m_scene_interactor.add_bed_instance(cc_id);
+    m_scene_interactor.notify_listener_on_objects();
 }
 
 void ProjectInteractor::select_project(Domain::SelectionId project_id)

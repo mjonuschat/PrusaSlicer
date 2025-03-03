@@ -6,6 +6,8 @@
 #include <libslic3r/Model.hpp>
 
 #include <Slic3r/Assert.hpp>
+#include <vector>
+#include <algorithm>
 
 namespace Slic3r::Biz::Scene {
 
@@ -182,6 +184,125 @@ void SceneInteractor::add_instance(const Transform& xform)
     set_selection({SelectionMode::Instance, updated});
 }
 
+void SceneInteractor::notify_listener_on_objects(const Slic3r::ModelObjectPtrs& objects)
+{
+    auto& project = m_workbench.project(m_selected_project_id);
+    for (const Slic3r::ModelObject* object : objects) {
+        Domain::ElementRefs updated;
+
+        for (const Slic3r::ModelInstance* inst : object->instances)
+            updated.push_back({ object->id().id, inst->id().id });
+
+        auto changes = update_instances_bed_placement(project, updated);
+        for (const auto& bed_ref : changes.updated_beds)
+            invoke_slicing_input_changed(bed_ref);
+
+        invoke_listeners<ISceneChangedListener>([&](auto* l) {
+            l->on_instance_added(m_selected_project_id, updated);
+        });
+
+        Domain::ElementRefs updated_vols;
+        for (const Slic3r::ModelVolume* vol : object->volumes)
+            updated_vols.push_back({ object->id().id, object->instances[0]->id().id, vol->id().id });
+        invoke_listeners<ISceneChangedListener>([&](auto* l) {
+            l->on_volume_added(m_selected_project_id, updated_vols);
+        });
+    }
+}
+
+void SceneInteractor::notify_listener_on_objects()
+{
+    auto& project = m_workbench.project(m_selected_project_id);
+    notify_listener_on_objects(project.model().objects);
+}
+
+void SceneInteractor::edit_name(const Domain::ElementRef& id, const std::string& new_name)
+{
+    Domain::Project& project = m_workbench.project(m_selected_project_id);
+    if (id.volume_id == 0)
+        project.find_object_by_id(id.object_id)->name = new_name;
+    else
+        project.find_volume_by_id(id.object_id, id.volume_id)->name = new_name;
+}
+
+void SceneInteractor::set_printable(const Domain::ElementRef& id, bool is_printable)
+{
+    assert(id.volume_id == 0);
+    Domain::Project& project = m_workbench.project(m_selected_project_id);
+    if (id.instance_id == 0)
+        project.find_object_by_id(id.object_id)->printable = is_printable;
+    else
+        project.find_instance_by_id(id.object_id, id.instance_id)->printable = is_printable;
+}
+
+void SceneInteractor::extract_selected_instances()
+{
+    const Selection& scene_selection = selection();
+    if (scene_selection.empty() || scene_selection.mode != SelectionMode::Instance)
+        return;
+
+    bool all_instances_from_one_object = true;
+    size_t object_id = scene_selection.elements[0].object_id;
+    for (const auto& el : scene_selection.elements) {
+        if (object_id != el.object_id) {
+            all_instances_from_one_object = false;
+            break;
+        }
+    }
+    ASSERT(all_instances_from_one_object);
+
+    Domain::Project& project = m_workbench.project(m_selected_project_id);
+    Slic3r::Model&   model   = project.model();
+
+    Selection::ElementRefs to_remove = scene_selection.elements;
+    ModelObjectPtrs        new_objects;
+    ModelObject*           old_object = project.find_object_by_id(object_id);
+    size_t                 sel_object_id = old_object->id().id;
+
+    if (old_object->instances.size() == to_remove.size()) {
+        // splite old_object instances into separate object
+        
+        for (int inst_cnt = int(old_object->instances.size()) - 1; inst_cnt > 0; inst_cnt--) {
+            // make a copy of the active object
+            Slic3r::ModelObject* new_object = model.add_object(*old_object);
+            new_objects.emplace_back(new_object);
+            // delete no needed instances from new_object
+            for (size_t idx = old_object->instances.size() - 1; idx != size_t(-1); idx--) {
+                if (inst_cnt != idx)
+                    new_object->delete_instance(idx);
+            }
+        }
+        // delete no needed instances from old_object
+        for (size_t idx = old_object->instances.size() - 1; idx > 0; idx--)
+            old_object->delete_instance(idx);
+
+        Domain::ElementRef stay_el({ sel_object_id, old_object->instances[0]->id().id });
+        to_remove.erase(std::remove_if(to_remove.begin(), to_remove.end(), [stay_el](const Domain::ElementRef& el) { return el == stay_el; }), to_remove.end());
+    }
+    else {
+        //extract selected instances into separate object
+
+        // make a copy of the active object
+        Slic3r::ModelObject* new_object = model.add_object(*old_object);
+        new_objects.emplace_back(new_object);
+
+        // delete no needed instances from both objects
+        for (size_t idx = old_object->instances.size() - 1; idx != size_t(-1); idx--) {
+            if (scene_selection.is_selected({ sel_object_id, old_object->instances[idx]->id().id }))
+                old_object->delete_instance(idx);
+            else
+                new_object->delete_instance(idx);
+        }
+    }
+
+    // notify listener on chnages
+
+    notify_listener_on_objects(new_objects);
+    invoke_listeners<ISceneChangedListener>([&](auto* l) {
+        l->on_instance_removed(m_selected_project_id, to_remove);
+    });
+}
+
 Domain::BedInstance& SceneInteractor::add_bed_instance(size_t config_container_id)
 {
     auto& project = m_projects.find(m_selected_project_id)->second.project;
@@ -273,6 +394,16 @@ void SceneInteractor::select_first_bed_instance()
 {
     const auto& cc = m_projects.find(m_selected_project_id)->second.project.config_containers().front();
     select_bed_instance({ cc->id().id, cc->bed_instances().front()->id().id });
+}
+
+const Domain::Project::ConfigContainerList& SceneInteractor::selected_project_config_containers()
+{
+    return m_projects.find(m_selected_project_id)->second.project.config_containers();
+}
+
+const Domain::ModelInstanceList& SceneInteractor::selected_project_unplaced_model_instances()
+{
+    return m_projects.find(m_selected_project_id)->second.project.unplaced_model_instances();
 }
 
 void SceneInteractor::transform_selection(const Transform& relative_transform)

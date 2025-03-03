@@ -15,6 +15,7 @@
 #include "Slic3r/Domain/ElementRef.hpp"
 #include "Slic3r/Domain/BedRef.hpp"
 
+namespace Slic3r { class ObjectModel; }
 namespace Slic3r::Domain { class Bed; }
 
 namespace Slic3r::Biz {
@@ -77,6 +78,12 @@ public:
     void new_object_from_mesh(TriangleMesh&& mesh);
     void add_volume_from_mesh(TriangleMesh&& mesh, ModelVolumeType volume_type, const Transform& xform = Matrix4d::Identity());
     void add_instance(const Transform& xform);
+    void notify_listener_on_objects(const std::vector<Slic3r::ModelObject*>& objects);
+    void notify_listener_on_objects();
+
+    void edit_name(const Domain::ElementRef& id, const std::string& new_name);
+    void set_printable(const Domain::ElementRef& id, bool is_printable);
+    void extract_selected_instances();
 
     Domain::BedInstance& add_bed_instance(size_t config_container_id);
     void remove_bed_instance(const Domain::BedRef& instance);
@@ -85,6 +92,9 @@ public:
     void select_bed_instance(const Domain::BedRef& instance);
     void select_first_bed_instance();
     const Domain::BedRef& selected_bed_instance() const { return m_selected_bed_instance; }
+
+    const Domain::Project::ConfigContainerList&     selected_project_config_containers();
+    const Domain::ModelInstanceList&                selected_project_unplaced_model_instances();
 
     /**
      * @name Scene selection

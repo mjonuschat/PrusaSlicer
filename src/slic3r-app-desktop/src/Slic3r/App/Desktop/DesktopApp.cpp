@@ -64,6 +64,10 @@ bool DesktopApp::OnInit()
     // Initial repaint
     canvas.render();
 #endif
+
+    // temp solution because of ScenePresenter is created in canvas.render()
+ //   m_project_interactor->load_project("C:\\PS_3\\Test_ObjectList.3mf");
+
     return true;
 }
 

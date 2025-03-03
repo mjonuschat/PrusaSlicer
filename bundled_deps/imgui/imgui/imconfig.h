@@ -252,6 +252,39 @@ namespace ImGui
     const wchar_t PrintRunning = 0x2813;
     const wchar_t PrintFinished = 0x2814;
     const wchar_t WarningMarkerDisabled = 0x2815;
+    // icon for object list
+    const wchar_t EyeOpen                  = 0x2820;
+    const wchar_t EyeClosed                = 0x2821;
+    const wchar_t SolidPartVolum           = 0x2822;
+    const wchar_t NegativeVolume           = 0x2823;
+    const wchar_t ModifierVolum            = 0x2824;
+    const wchar_t SupportBlocker           = 0x2825;
+    const wchar_t SupportModifier          = 0x2826;
+    const wchar_t TextSolidPartVolum       = 0x2827;
+    const wchar_t TextNegativeVolume       = 0x2828;
+    const wchar_t TextModifierVolum        = 0x2829;
+    const wchar_t SvgSolidPartVolum        = 0x282A;
+    const wchar_t SvgNegativeVolume        = 0x282B;
+    const wchar_t SvgModifierVolum         = 0x282C;
+    const wchar_t ObjectIcon               = 0x282D;
+    const wchar_t HRModifier               = 0x282E;
+    const wchar_t CustomSupports           = 0x282F;
+    const wchar_t CustomSeam               = 0x2830;
+    const wchar_t CutConnectors            = 0x2831;
+    const wchar_t MmSegmentation           = 0x2832;
+    const wchar_t Sinking                  = 0x2833;
+    const wchar_t VariableLayerHeight      = 0x2834;
+    const wchar_t FuzzySkin                = 0x2835;
+    const wchar_t BedIcon                  = 0x2836;
+    const wchar_t Details                  = 0x2837;
+    const wchar_t OpenArrow                = 0x2838;
+    const wchar_t CloseArrow               = 0x2839;
+    const wchar_t ConfigContainer          = 0x283A;
+    const wchar_t InstancesIcon            = 0x283B;
+    const wchar_t OverridesMarker          = 0x283C;
+    const wchar_t ExtruderMarker           = 0x283D;
+    const wchar_t AddBedIcon               = 0x283E;
+    //const wchar_t       = 0x283F;
 
 } // namespace ImGui
 // }
