@@ -408,8 +408,15 @@ static void toggle_icon_btn(const wchar_t icon, bool* is_toggled, ColumIndex ci 
 // object is simple: has just one instance, one volume and no aditional information
 static bool has_overrides(const Slic3r::ModelObject* object, bool is_sla_config)
 {
-    return !object->layer_config_ranges.empty() ||
-           !get_infos(object, is_sla_config).empty();
+    bool has_config_overrides = !object->config.empty() || !object->layer_config_ranges.empty();
+    if (!has_config_overrides) {
+        for (auto volume : object->volumes)
+            if (!volume->config.empty()) {
+                has_config_overrides = true;
+                break;
+            }
+    }
+    return has_config_overrides || !get_infos(object, is_sla_config).empty();
 }
 
 // object is simple: has just one instance, one volume and no aditional information
@@ -531,10 +538,13 @@ void ObjectList::render_header(ImVec2 pos, ImVec2 size)
     ImGui::SetCursorPos(ImVec2(pos) * 2);
     ImGui::Text("Objects");
 
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8.f, 6.f));
+
     float btn_width = 2 * ImGui::GetFontSize();
     float btn_pos = size.x - pos.x - btn_width;
     ImGui::SameLine(btn_pos);
     toggle_icon_btn(ImGui::Details, &m_show_details);
+    ImGui::SetItemTooltip("Show object details");
 
     btn_pos -= pos.x + btn_width;
     ImGui::SameLine(btn_pos);
@@ -542,14 +552,17 @@ void ObjectList::render_header(ImVec2 pos, ImVec2 size)
         // add bed
         m_scene_interactor->add_bed_instance(m_project_interactor->selected_config_container().id().id);
     }
+    ImGui::SetItemTooltip("Add bed");
+
+    ImGui::PopStyleVar();
 }
 
-static bool tree_node(const char* str_id, ImGuiTreeNodeFlags flags, const char* fmt, ...)
+static bool tree_node(const char* str_id, ImGuiTreeNodeFlags flags, const std::string& label, bool add_overrides_marker = false)
 {
     // get initial cursor position
     ImVec2 pos_old = ImGui::GetCursorScreenPos();
     // render node as it is
-    bool is_open = ImGui::TreeNodeEx(str_id, flags, fmt);
+    bool is_open = ImGui::TreeNodeEx(str_id, flags, label.c_str());
 
     // for leaf node no need to redrow of arrows
     if ((flags & ImGuiTreeNodeFlags_Leaf) != 0)
@@ -568,9 +581,9 @@ static bool tree_node(const char* str_id, ImGuiTreeNodeFlags flags, const char* 
     const float text_offset_x = g.FontSize + padding.x * 2;                             // Collapsing arrow width + Spacing
     const float text_offset_y = ImMax(padding.y, window->DC.CurrLineTextBaseOffset);    // Latch before ItemSize changes it
         
-    ImVec2 text_pos(pos_old.x + text_offset_x, pos_old.y + text_offset_y);
+    ImVec2 text_pos(pos_old.x + text_offset_x, pos_old.y + text_offset_y + style.FramePadding.y);
 
-    ImVec2 pos = ImVec2(text_pos.x - text_offset_x, text_pos.y + style.FramePadding.y);
+    ImVec2 pos = ImVec2(text_pos.x - text_offset_x, text_pos.y);
     ImVec2 pos_end = pos + ImVec2(g.FontSize, g.FontSize);
 
     // render rect over the triangle
@@ -596,16 +609,28 @@ static bool tree_node(const char* str_id, ImGuiTreeNodeFlags flags, const char* 
     // render open-close new arrow
     draw_list->AddText(pos, ImGui::GetColorU32(ImGuiCol_Text), boost::nowide::narrow(std::wstring(&(is_open ? ImGui::OpenArrow : ImGui::CloseArrow), 1)).c_str());
 
+    if (add_overrides_marker)
+        draw_list->AddText(text_pos, ImGui::GetColorU32(ImGuiCol_Text), icon_str(ImGui::OverridesMarker).c_str());
+
     // revert cursore position
     ImGui::SetCursorScreenPos(pos_new);
     return is_open;
 }
 
-static bool selectable(const char* label, bool selected = false, ImGuiSelectableFlags flags = ImGuiSelectableFlags_SpanAllColumns)
+static bool selectable(const char* label, bool selected = false, ImGuiSelectableFlags flags = ImGuiSelectableFlags_SpanAllColumns, bool add_overrides_marker = false)
 {
-    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(6.f, 2* GImGui->Style.FramePadding.y));
+    ImVec2 init_pos(ImGui::GetCursorScreenPos());
+
+    ImGuiStyle style = GImGui->Style;
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(6.f, 2 * style.FramePadding.y));
     bool ret = ImGui::Selectable(label, selected, flags);
     ImGui::PopStyleVar();
+
+    if (add_overrides_marker) {
+        ImGui::SameLine(init_pos.x - style.ItemSpacing.x - style.CellPadding.x);
+        ImGui::Text(icon_str(ImGui::OverridesMarker).c_str());
+        ImGui::SameLine();
+    }
 
     return ret;
 }
@@ -618,7 +643,7 @@ bool ObjectList::render_config_containers()
         ImGui::SetWindowFontScale(1.1f);
         ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetColorU32(ImGuiCol_TextDisabled));
         bool open = tree_node(("##cc_id" + std::to_string(cc->id().id)).c_str(), 
-                              node_flags | ImGuiTreeNodeFlags_DefaultOpen, get_cc_name(cc->print_config()).c_str());
+                              node_flags | ImGuiTreeNodeFlags_DefaultOpen, get_cc_name(cc->print_config()));
         ImGui::PopStyleColor();
         ImGui::SetWindowFontScale(1.f);
 
@@ -660,7 +685,7 @@ bool ObjectList::render_bed_node(const Domain::BedInstance* bed, bool is_sla_con
 
     RowBackground bg(bed->active() && selected_items.empty());
     new_row();
-    bool is_open = tree_node(name_id.c_str(), node_flags | ImGuiTreeNodeFlags_DefaultOpen, (icon_str(ImGui::BedIcon) + name).c_str());
+    bool is_open = tree_node(name_id.c_str(), node_flags | ImGuiTreeNodeFlags_DefaultOpen, icon_str(ImGui::BedIcon) + name);
 
     render_extruder_marker(0, { bed_id }, true);
     
@@ -698,14 +723,13 @@ bool ObjectList::render_object_node(const Slic3r::ModelObject* object, const Dom
     RowBackground bg(is_selected);
     new_row();
 
-    const wchar_t icon = has_overrides(object, is_sla_config) ? ImGui::OverridenObjectIcon : ImGui::ObjectIcon;
     bool isOpen = false; 
     if (m_edited_node_id == object_id && is_selected) {
-        isOpen = tree_node(name_id.c_str(), flags | ImGuiTreeNodeFlags_AllowOverlap, icon_str(icon).c_str());
+        isOpen = tree_node(name_id.c_str(), flags | ImGuiTreeNodeFlags_AllowOverlap, icon_str(ImGui::ObjectIcon), has_overrides(object, is_sla_config));
         render_edited(name.c_str(), { object_id });
     }
     else
-        isOpen = tree_node(name_id.c_str(), flags, (icon_str(icon) + name).c_str());
+        isOpen = tree_node(name_id.c_str(), flags, (icon_str(ImGui::ObjectIcon) + name), has_overrides(object, is_sla_config));
 
     bool is_changed_selection = handle_selection(sel_element);
     if (is_changed_selection) {
@@ -749,7 +773,7 @@ bool ObjectList::render_connectors_node(const Slic3r::ModelObject* object, size_
 
     new_row();
     ImGui::Unindent(ImGui::GetTreeNodeToLabelSpacing());
-    if (tree_node(name_id.c_str(), node_flags | ImGuiTreeNodeFlags_Leaf, (icon_str(ImGui::CutConnectors) + "Connectors").c_str()))
+    if (tree_node(name_id.c_str(), node_flags | ImGuiTreeNodeFlags_Leaf, icon_str(ImGui::CutConnectors) + "Connectors"))
         ImGui::TreePop();
     ImGui::Indent(ImGui::GetTreeNodeToLabelSpacing());
 
@@ -836,9 +860,10 @@ void ObjectList::render_volume_node(const Slic3r::ModelVolume* volume, size_t vo
         m_edited_node_id = 0;  // Exit edit mode
 
     NewRowWithSelectable row;
+    bool has_config_overrides = !volume->config.empty();
     ImGui::SetNextItemSelectionUserData(vol_id);
     if (m_edited_node_id == volume_id) {
-        if (selectable(icon_str(volume).c_str(), is_selected, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowItemOverlap)) {
+        if (selectable(icon_str(volume).c_str(), is_selected, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowItemOverlap, has_config_overrides)) {
             m_edited_node_id = 0;// Discard edit mode on selection
         }
         render_edited(volume_name.c_str(), sel_element);
@@ -850,11 +875,11 @@ void ObjectList::render_volume_node(const Slic3r::ModelVolume* volume, size_t vo
     }
     else {
         // Display as a selectable label
-        if (selectable((icon_str(volume) + volume_name).c_str(), is_selected, ImGuiSelectableFlags_SpanAllColumns))
+        if (selectable((icon_str(volume) + volume_name).c_str(), is_selected, ImGuiSelectableFlags_SpanAllColumns, has_config_overrides))
             m_edited_node_id = volume_id;  // Start edit mode on selection
     }
 
-    render_overrides_icon(sel_element, !volume->config.empty());
+    render_overrides_icon(sel_element, has_config_overrides);
     render_extruder_marker(2, sel_element);
 }
 
@@ -874,7 +899,7 @@ bool ObjectList::render_instances_node(const Slic3r::ModelObject* object, const 
     const std::string name_id = "Instances##obj_id" + std::to_string(object_id);
 
     new_row();
-    bool isOpen = tree_node(name_id.c_str(), node_flags | ImGuiTreeNodeFlags_DefaultOpen, (icon_str(ImGui::InstancesIcon) + "Instances").c_str());
+    bool isOpen = tree_node(name_id.c_str(), node_flags | ImGuiTreeNodeFlags_DefaultOpen, icon_str(ImGui::InstancesIcon) + "Instances");
 
     bool is_changed_selection = handle_selection(sel_element);
     if (is_changed_selection) {
@@ -1012,9 +1037,9 @@ void ObjectList::render_printable_icon(const Domain::ElementRef& sel_element, bo
             propagate_printable(sel_element, !is_printable);
 }
 
-void ObjectList::render_overrides_icon(const Domain::ElementRef& sel_element, bool render)
+void ObjectList::render_overrides_icon(const Domain::ElementRef& sel_element, bool force_render)
 {
-    if (hovered_current_row()) {
+    if (force_render && hovered_current_row()) {
         if (icon_btn(ciSettingsOverrides, icon_str(ImGui::PrintIconMarker)))
             show_overrides(sel_element);
     }
@@ -1098,6 +1123,7 @@ void ObjectList::extruder_clicked(const Domain::ElementRef& sel_element, bool is
     else
         test_out = Slic3r::format("etruder_clicked: obj%1%, inst%2%, vol%3%",
             sel_element.object_id, sel_element.instance_id, sel_element.volume_id);
+    show_test_window(test_out, true);
 }
 
 void ObjectList::show_layer_ranges(const Domain::ElementRef& sel_element)

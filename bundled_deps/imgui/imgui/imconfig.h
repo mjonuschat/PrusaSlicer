@@ -281,7 +281,7 @@ namespace ImGui
     const wchar_t CloseArrow               = 0x2839;
     const wchar_t ConfigContainer          = 0x283A;
     const wchar_t InstancesIcon            = 0x283B;
-    const wchar_t OverridenObjectIcon      = 0x283C;
+    const wchar_t OverridesMarker          = 0x283C;
     const wchar_t ExtruderMarker           = 0x283D;
     const wchar_t AddBedIcon               = 0x283E;
     //const wchar_t       = 0x283F;
