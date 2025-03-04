@@ -13,42 +13,6 @@
 
 #include <set>
 
-// Following two sets keeps characters that ImGui tried to render, but they were not in the atlas,
-// and ones that we already tried to add into the atlas.
-std::set<ImWchar> s_missing_chars;
-std::set<ImWchar> s_fixed_chars;
-bool s_font_cjk{ false };
-
-// This is a free function that ImGui calls when it renders
-// a fallback glyph for c.
-void imgui_rendered_fallback_glyph(ImWchar c)
-{
-    if (c == 0)
-        return;
-
-    if (ImGui::GetIO().Fonts->Fonts[0] == ImGui::GetFont()) {
-        // Only do this when we are using the default ImGui font. Otherwise this would conflict with
-        // EmbossStyleManager's font handling and we would load glyphs needlessly.
-        auto it = s_fixed_chars.find(c);
-        if (it == s_fixed_chars.end())
-            // This is the first time we are trying to fix this character.
-            s_missing_chars.emplace(c);
-        else {
-            // We already tried to add this, but it is still not there. There is a chance
-            // that loading the CJK font would make this available.
-            if (! s_font_cjk) {
-                s_font_cjk = true;
-                s_missing_chars.emplace(c);
-                s_fixed_chars.erase(it);
-            }
-            else {
-                // We did everything we could. The glyph was not available.
-                // Do not try to add it anymore.
-            }
-        }
-    }
-}
-
 namespace Slic3r::App::Render {
 
 static const ImWchar ranges_latin2[] =
@@ -350,24 +314,19 @@ void ImguiFontHelper::create_font_texture()
 {
     const ImWchar* glyph_ranges = nullptr;
 
+    bool font_cjk{false};
+
     // Get glyph ranges for current language, std CLK flag to inform which font files need to be loaded.
     for (const auto& [lang_str, lang_ranges, lang_cjk] : m_language_data.lang_glyphs_info) {
         if (boost::istarts_with(m_language_data.language, lang_str) || lang_str == "else") {
             glyph_ranges = lang_ranges;
-            s_font_cjk = lang_cjk;
+            font_cjk = lang_cjk;
             break;
         }
     }
 
-    s_missing_chars.clear();
-    s_fixed_chars.clear();
-
     if (glyph_ranges != m_language_data.glyph_ranges) {
         m_language_data.glyph_ranges = glyph_ranges;
-        for (ImWchar c : s_fixed_chars) {
-           s_missing_chars.emplace(c);
-        }
-        s_fixed_chars.clear();
     }
 
     ImGuiIO& io = ImGui::GetIO();
@@ -380,7 +339,7 @@ void ImguiFontHelper::create_font_texture()
 
     builder.AddChar(ImWchar(0x2026)); // …
 
-    if (s_font_cjk) {
+    if (font_cjk) {
         // https://github.com/prusa3d/PrusaSlicer/issues/8171: The translation
         // contains characters not in the ImGui ranges for simplified Chinese. Add them manually.
         // This should no longer be needed because the following block would add them automatically.
@@ -388,15 +347,8 @@ void ImguiFontHelper::create_font_texture()
         builder.AddChar(ImWchar(0x8F91));
     }
 
-    // Add the characters that that needed the fallback character.
-    for (ImWchar c : s_missing_chars) {
-        builder.AddChar(c);
-        s_fixed_chars.emplace(c);
-    }
-    s_missing_chars.clear();
-
 #ifdef __APPLE__
-  	if (s_font_cjk)
+  	if (font_cjk)
 	    	// Apple keyboard shortcuts are only contained in the CJK fonts.
 		    builder.AddRanges(ranges_keyboard_shortcuts);
 #endif // __APPLE__
@@ -404,7 +356,7 @@ void ImguiFontHelper::create_font_texture()
   	builder.BuildRanges(&ranges); // Build the final result (ordered ranges with all the unique characters submitted)
 
     ImFont* font = io.Fonts->AddFontFromFileTTF((Slic3r::resources_dir() + "/fonts/" + "NotoSans-Regular.ttf").c_str(), m_language_data.font_size, nullptr, ranges.Data);
-    if (s_font_cjk) {
+    if (font_cjk) {
         ImFontConfig config;
         config.MergeMode = true;
         io.Fonts->AddFontFromFileTTF((Slic3r::resources_dir() + "/fonts/" + "NotoSansCJK-Regular.ttc").c_str(), m_language_data.font_size, &config, ranges.Data);
