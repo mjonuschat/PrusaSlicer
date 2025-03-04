@@ -504,7 +504,7 @@ bool ObjectList::render_tree(ImVec2 size)
 {
     bool is_changed_selection = false;
     const float drop_area_height = 50.f;
-    if (ImGui::BeginTable("##ObjectListTable", 4, table_flags, ImVec2(size.x, ImMax(size.y, size.y - drop_area_height)))) {
+    if (ImGui::BeginTable("##ObjectListTable", 4, table_flags, ImVec2(size.x, ImMax(0.f, ImMin(size.y, size.y - drop_area_height))))) {
         ImGui::TableSetupColumn("##tree", ImGuiTableColumnFlags_WidthStretch);
         ImGui::TableSetupColumn("##visibility", ImGuiTableColumnFlags_WidthStretch, 0.1f);
         ImGui::TableSetupColumn("##settings_overrides", ImGuiTableColumnFlags_WidthStretch, 0.1f);
@@ -516,7 +516,7 @@ bool ObjectList::render_tree(ImVec2 size)
         new_row();
         // Make the entire window a valid drop target
         ImVec2 dropAreaSize = ImGui::GetContentRegionAvail();
-        ImGui::InvisibleButton("InstancesDropZone", ImVec2(size.x, drop_area_height));  // Creates an invisible instances drop target
+        ImGui::InvisibleButton("InstancesDropZone", ImVec2(dropAreaSize.x, drop_area_height));  // Creates an invisible instances drop target
         if (ImGui::BeginDragDropTarget()) {
             if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("MULTI_INSTANCES")) {
                 IM_ASSERT(payload->DataSize == sizeof(int));
