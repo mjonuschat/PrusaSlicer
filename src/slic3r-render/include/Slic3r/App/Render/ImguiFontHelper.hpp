@@ -30,7 +30,9 @@ class ImguiFontHelper
 public:
     explicit ImguiFontHelper(Device& device);
 
-    void set_font(const std::optional<std::string>& language = std::nullopt, const std::optional<float>& font_size = std::nullopt);
+    void set_font(const std::optional<std::string>& language = std::nullopt, 
+                  const std::optional<float>& font_size = std::nullopt, 
+                  const std::optional<float>& font_global_scale = std::nullopt);
 
     const std::string& language() const { return m_language_data.language; }
 

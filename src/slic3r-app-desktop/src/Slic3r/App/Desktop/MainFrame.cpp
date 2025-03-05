@@ -85,7 +85,7 @@ static void add_experimets_page(TopBar* top_bar, MainFrame* main_frame)
             font.SetPointSize(font_sz);
             w_config()->update_fonts(font, w_config()->em_unit());
             w_config()->force_fonts_update(main_frame, true);
-            main_frame->get_render_canvas().set_font_size(1.7777f * float(font_sz));
+            main_frame->update_canvas_ui_settings();
         }
 
         test_panel->Layout();
@@ -141,6 +141,8 @@ MainFrame::MainFrame(
         m_top_bar->Rescale();
         for (auto& [type, panel] : m_preset_editors)
             panel->msw_rescale();
+
+        m_canvas->set_font_global_scale(this->GetDPIScaleFactor());
     });
 #endif
 
@@ -321,6 +323,13 @@ bool MainFrame::select_language()
         MessageDialog(this, message, _L("PrusaSlicer - Switching language failed"), wxOK | wxICON_ERROR);
     }
     return false;
+}
+
+void MainFrame::update_canvas_ui_settings()
+{
+    m_canvas->set_language(localization().active_language());
+    m_canvas->set_font_size(1.7777f * float(w_config()->normal_font().GetPointSize()) * this->GetDPIScaleFactor());
+    m_canvas->set_font_global_scale(this->GetDPIScaleFactor());
 }
 
 }

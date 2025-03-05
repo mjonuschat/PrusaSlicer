@@ -53,10 +53,11 @@ void AbstractRenderCanvas::render()
     if (!m_imgui_render) {
         m_imgui_render = std::make_unique<Render::ImguiRender>(Render::Context::instance().device());
     }
-    if (m_pending_language.has_value() || m_pending_font_size.has_value()) {
-        m_imgui_render->set_font(m_pending_language, m_pending_font_size);
+    if (m_pending_language.has_value() || m_pending_font_size.has_value() || m_pending_font_global_scale.has_value()) {
+        m_imgui_render->set_font(m_pending_language, m_pending_font_size, m_pending_font_global_scale);
         m_pending_language.reset();
         m_pending_font_size.reset();
+        m_pending_font_global_scale.reset();
     }
 
     assert_no_gl_error();

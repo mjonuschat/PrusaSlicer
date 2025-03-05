@@ -55,8 +55,7 @@ bool DesktopApp::OnInit()
     m_main_frame = new MainFrame(m_workbench, m_project_interactor->preset_interactor());
     Platform::WX::WXRenderCanvas& canvas = m_main_frame->get_render_canvas();
     Biz::Platform::PlatformServices::instance().set_render_request_handler(&canvas);
-    canvas.set_language(localization().active_language());
-    canvas.set_font_size(1.7777f * float(App::WX::w_config()->normal_font().GetPointSize()));
+    m_main_frame->update_canvas_ui_settings();
 
     // >>> replace m_plater_module with m_preview_module in the following line to test libvgcode wrapper
     canvas.set_render_module(m_plater_module.get());

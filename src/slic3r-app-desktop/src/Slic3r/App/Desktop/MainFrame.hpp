@@ -33,6 +33,9 @@ public:
     void    sys_color_changed();
     bool    select_language();
 
+    // set language, font and all other ui settings for canvas
+    void    update_canvas_ui_settings();
+
 private:
     Domain::Workbench& m_workbench;
     Biz::Preset::PresetInteractor& m_preset_interactor;

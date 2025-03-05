@@ -198,7 +198,8 @@ ImguiFontHelper::ImguiFontHelper(Device& device)
     };
 }
 
-void ImguiFontHelper::set_font(const std::optional<std::string>& language, const std::optional<float>& font_size)
+void ImguiFontHelper::set_font(const std::optional<std::string>& language, const std::optional<float>& font_size,
+    const std::optional<float>& font_global_scale)
 {
     if (!language.has_value() && !font_size.has_value())
         return;
@@ -212,6 +213,9 @@ void ImguiFontHelper::set_font(const std::optional<std::string>& language, const
     }
 
     create_font_texture();
+
+    if (font_global_scale.has_value())
+        ImGui::GetIO().FontGlobalScale = 1.0f / *font_global_scale;
 }
 
 static void add_icons_rect_to_font_texture(const ImguiFontHelper& helper, ImguiLanguageData& language_data, ImFont* font)

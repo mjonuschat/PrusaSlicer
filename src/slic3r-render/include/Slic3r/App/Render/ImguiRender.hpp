@@ -23,7 +23,7 @@ public:
     const std::string& language() const { return m_font_helper.language(); }
     float font_size() const { return m_font_helper.font_size(); }
 
-    void set_font(const std::optional<std::string>& language = std::nullopt, const std::optional<float>& font_size = std::nullopt);
+    void set_font(const std::optional<std::string>& language = std::nullopt, const std::optional<float>& font_size = std::nullopt, const std::optional<float>& font_global_scale = std::nullopt);
 
     void new_frame();
     void render(CommandBuffer& buffer, const ImDrawData* draw_data);
