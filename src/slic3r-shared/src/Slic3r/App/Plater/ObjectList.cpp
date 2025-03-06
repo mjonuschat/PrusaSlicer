@@ -84,6 +84,7 @@ ImGuiTableFlags         table_flags   = ImGuiTableFlags_ScrollY |
                                         ImGuiTableFlags_NoPadInnerX;
 
 static ImVec4 def_color = ImVec4(0.21f, 0.29f, 0.46f, 1.0f);
+static ImVec2 tooltip_padding = ImVec2(8.f, 6.f);
 static std::string test_out;
 static std::string test_out2;
 static bool is_edit_name_input_hovered = false;
@@ -149,6 +150,19 @@ static std::string icon_str(const Slic3r::ModelVolume* volume)
     case Slic3r::ModelVolumeType::PARAMETER_MODIFIER: return icon_str(ImGui::ModifierVolum  );
     case Slic3r::ModelVolumeType::SUPPORT_BLOCKER   : return icon_str(ImGui::SupportBlocker );
     case Slic3r::ModelVolumeType::SUPPORT_ENFORCER  : return icon_str(ImGui::SupportModifier);
+    default: 
+        return "";
+    }
+}
+
+static std::string volume_icon_tooltip(const Slic3r::ModelVolume* volume)
+{
+    switch (volume->type()) {
+    case Slic3r::ModelVolumeType::MODEL_PART        : return "Solid Part Volume ";
+    case Slic3r::ModelVolumeType::NEGATIVE_VOLUME   : return "Negative Volume ";
+    case Slic3r::ModelVolumeType::PARAMETER_MODIFIER: return "Modifier Volume  ";
+    case Slic3r::ModelVolumeType::SUPPORT_BLOCKER   : return "Support Blocker ";
+    case Slic3r::ModelVolumeType::SUPPORT_ENFORCER  : return "Support Modifier";
     default: 
         return "";
     }
@@ -393,13 +407,18 @@ static bool icon_btn(ColumIndex ci, const std::string& icon)
     return pressed;
 }
 
+static bool icon_button(const wchar_t icon)
+{
+    return ImGui::Button((" " + boost::nowide::narrow(std::wstring(&icon, 1))).c_str());
+}
+
 static void toggle_icon_btn(const wchar_t icon, bool* is_toggled, ColumIndex ci = ColumIndex::ciCount/*undef*/)
 {
     if (ci != ColumIndex::ciCount)
         ImGui::TableSetColumnIndex(ci);
 
     ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetColorU32((*is_toggled) ? ImGuiCol_ButtonActive : ImGuiCol_Button));
-    if (ImGui::Button(icon_str(icon).c_str()))
+    if (icon_button(icon))
         *is_toggled = !*is_toggled; // Toggle state
 
     ImGui::PopStyleColor();
@@ -539,7 +558,8 @@ void ObjectList::render_header(ImVec2 pos, ImVec2 size)
     ImGui::SetCursorPos(ImVec2(pos) * 2);
     ImGui::Text("Objects");
 
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8.f, 6.f));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, tooltip_padding);
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.f, 6.f));
 
     float btn_width = 2 * ImGui::GetFontSize();
     float btn_pos = size.x - pos.x - btn_width;
@@ -549,13 +569,13 @@ void ObjectList::render_header(ImVec2 pos, ImVec2 size)
 
     btn_pos -= pos.x + btn_width;
     ImGui::SameLine(btn_pos);
-    if (ImGui::Button(icon_str(ImGui::AddBedIcon).c_str())) {
+    if (icon_button(ImGui::AddBedIcon)) {
         // add bed
         m_scene_interactor->add_bed_instance(m_project_interactor->selected_config_container().id().id);
     }
     ImGui::SetItemTooltip("Add bed");
 
-    ImGui::PopStyleVar();
+    ImGui::PopStyleVar(2);
 }
 
 static bool tree_node(const char* str_id, ImGuiTreeNodeFlags flags, const std::string& label, bool add_overrides_marker = false)
@@ -861,6 +881,7 @@ void ObjectList::render_volume_node(const Slic3r::ModelVolume* volume, size_t vo
         m_edited_node_id = 0;  // Exit edit mode
 
     NewRowWithSelectable row;
+    ImVec2 pos = ImGui::GetCursorScreenPos();
     bool has_config_overrides = !volume->config.empty();
     ImGui::SetNextItemSelectionUserData(vol_id);
     if (m_edited_node_id == volume_id) {
@@ -878,6 +899,13 @@ void ObjectList::render_volume_node(const Slic3r::ModelVolume* volume, size_t vo
         // Display as a selectable label
         if (selectable((icon_str(volume) + volume_name).c_str(), is_selected, ImGuiSelectableFlags_SpanAllColumns, has_config_overrides))
             m_edited_node_id = volume_id;  // Start edit mode on selection
+    }
+
+    const ImVec2 size = ImGui::CalcTextSize(icon_str(volume).c_str());
+    if (ImGui::IsMouseHoveringRect(pos, pos + size)) {
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, tooltip_padding);
+        ImGui::SetTooltip(volume_icon_tooltip(volume).c_str());
+        ImGui::PopStyleVar();
     }
 
     render_overrides_icon(sel_element, has_config_overrides);
