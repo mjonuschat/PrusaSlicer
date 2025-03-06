@@ -66,10 +66,6 @@ std::pair<bool, std::string> ShaderManager::init()
     valid &= append_shader("gouraud_light_clip", { prefix + "gouraud_light_clip.vs", prefix + "gouraud_light_clip.fs" });
     // used to render printbed
     valid &= append_shader("printbed", { prefix + "printbed.vs", prefix + "printbed.fs" });
-    // used to render options in gcode preview
-    if (m_context.gl_version() >=  Semver(3, 3, 0)) {
-        valid &= append_shader("gouraud_light_instanced", { prefix + "gouraud_light_instanced.vs", prefix + "gouraud_light_instanced.fs" });
-    }
     // used to render objects in 3d editor
     valid &= append_shader("gouraud", { prefix + "gouraud.vs", prefix + "gouraud.fs" }
 #if ENABLE_ENVIRONMENT_MAP

@@ -1553,20 +1553,16 @@ static void add_lights_to_material(Render::Material& material, const Lights& lig
     }
 }
 
-static Scene::Node* set_override_material(Scene::Scene& scene, GCodeElementType type, const Render::Material& material)
-{
-    Scene::Node* node = scene.root().query_first([type](const Scene::Node* n)->bool {
-        const GCodeNodeTag* tag = n->tag_of_type<GCodeNodeTag>();
-        return tag != nullptr && tag->type == type;
-    });
-
-    assert(node!= nullptr);
-    node->set_material_override(material);
-    return node;
-}
-
 void ViewerImpl::render_segments(const Vec3f& camera_position)
 {
+    Scene::Node* node = m_scene->root().query_first([](const Scene::Node* n)->bool {
+        const GCodeNodeTag* tag = n->tag_of_type<GCodeNodeTag>();
+        return tag != nullptr && tag->type == GCodeElementType::Toolpaths;
+    }, true);
+
+    assert(node != nullptr);
+    node->set_enabled(m_enabled_segments_count > 0);
+
     if (m_enabled_segments_count == 0)
         return;
 
@@ -1587,7 +1583,7 @@ void ViewerImpl::render_segments(const Vec3f& camera_position)
         .set_texture_buffer(COLOR_TEX_ID, m_colors_buffer)
         .set_texture_buffer(ENABLED_SEGMENTS_TEX_ID, m_enabled_segments_buffer);
 
-    Scene::Node* node = set_override_material(*m_scene, GCodeElementType::Toolpaths, material);
+    node->set_material_override(material);
     Scene::InstancedMeshRenderNodeComponent* r_comp = dynamic_cast<Scene::InstancedMeshRenderNodeComponent*>(node->render_component());
     r_comp->set_instances_count(m_enabled_segments_count);
 #else
@@ -1597,18 +1593,33 @@ void ViewerImpl::render_segments(const Vec3f& camera_position)
             continue;
         
         material
+            .set_uniform("position_tex", POSITION_TEX_ID)
+            .set_uniform("height_width_angle_tex", HEIGHT_WIDTH_ANGLE_TEX_ID)
+            .set_uniform("color_tex", COLOR_TEX_ID)
+            .set_uniform("segment_index_tex", ENABLED_SEGMENTS_TEX_ID)
+            .set_uniform("camera_position", camera_position)
             .set_texture(POSITION_TEX_ID, m_texture_data.positions_tex(i).first)
             .set_texture(HEIGHT_WIDTH_ANGLE_TEX_ID, m_texture_data.heights_widths_angles_tex(i).first)
             .set_texture(COLOR_TEX_ID, m_texture_data.colors_tex(i).first)
             .set_texture(ENABLED_SEGMENTS_TEX_ID, es_tex);
         
-        set_override_material(*m_scene, GCodeElementType::Toolpaths, material);
+        node->set_material_override(material);
+        Scene::InstancedMeshRenderNodeComponent* r_comp = dynamic_cast<Scene::InstancedMeshRenderNodeComponent*>(node->render_component());
+        r_comp->set_instances_count(count);
     }
 #endif // USE_TEXTURE_BUFFER
 }
 
 void ViewerImpl::render_options()
 {
+    Scene::Node* node = m_scene->root().query_first([](const Scene::Node* n)->bool {
+        const GCodeNodeTag* tag = n->tag_of_type<GCodeNodeTag>();
+        return tag != nullptr && tag->type == GCodeElementType::Options;
+    }, true);
+
+    assert(node != nullptr);
+    node->set_enabled(m_enabled_options_count > 0);
+
     if (m_enabled_options_count == 0)
         return;
 
@@ -1628,7 +1639,7 @@ void ViewerImpl::render_options()
         .set_texture_buffer(COLOR_TEX_ID, m_colors_buffer)
         .set_texture_buffer(ENABLED_OPTIONS_TEX_ID, m_enabled_options_buffer);
 
-    Scene::Node* node = set_override_material(*m_scene, GCodeElementType::Options, material);
+    node->set_material_override(material);
     Scene::InstancedMeshRenderNodeComponent* r_comp = dynamic_cast<Scene::InstancedMeshRenderNodeComponent*>(node->render_component());
     r_comp->set_instances_count(m_enabled_options_count);
 #else
@@ -1638,18 +1649,32 @@ void ViewerImpl::render_options()
             continue;
         
         material
+            .set_uniform("position_tex", POSITION_TEX_ID)
+            .set_uniform("height_width_angle_tex", HEIGHT_WIDTH_ANGLE_TEX_ID)
+            .set_uniform("color_tex", COLOR_TEX_ID)
+            .set_uniform("segment_index_tex", ENABLED_OPTIONS_TEX_ID)
             .set_texture(POSITION_TEX_ID, m_texture_data.positions_tex(i).first)
             .set_texture(HEIGHT_WIDTH_ANGLE_TEX_ID, m_texture_data.heights_widths_angles_tex(i).first)
             .set_texture(COLOR_TEX_ID, m_texture_data.colors_tex(i).first)
             .set_texture(ENABLED_OPTIONS_TEX_ID, eo_tex);
         
-        set_override_material(*m_scene, GCodeElementType::Options, material);
+        node->set_material_override(material);
+        Scene::InstancedMeshRenderNodeComponent* r_comp = dynamic_cast<Scene::InstancedMeshRenderNodeComponent*>(node->render_component());
+        r_comp->set_instances_count(count);
     }
 #endif // USE_TEXTURE_BUFFER
 }
 
 void ViewerImpl::render_cog_marker()
 {
+    Scene::Node* node = m_scene->root().query_first([](const Scene::Node* n)->bool {
+        const GCodeNodeTag* tag = n->tag_of_type<GCodeNodeTag>();
+        return tag != nullptr && tag->type == GCodeElementType::CogMarker;
+    }, true);
+
+    assert(node != nullptr);
+    node->set_enabled(m_cog_marker.total_mass() > 0.0f);
+
     if (m_cog_marker.total_mass() == 0.0f)
         return;
 
@@ -1659,11 +1684,19 @@ void ViewerImpl::render_cog_marker()
         .set_uniform("world_origin", m_cog_marker.position())
         .set_uniform("scale_factor", m_cog_marker.scale_factor());
     add_lights_to_material(material, m_lights);
-    set_override_material(*m_scene, GCodeElementType::CogMarker, material);
+    node->set_material_override(material);
 }
 
 void ViewerImpl::render_tool_marker()
 {
+    Scene::Node* node = m_scene->root().query_first([](const Scene::Node* n)->bool {
+        const GCodeNodeTag* tag = n->tag_of_type<GCodeNodeTag>();
+        return tag != nullptr && tag->type == GCodeElementType::ToolMarker;
+    }, true);
+
+    assert(node != nullptr);
+    node->set_enabled(m_view_range.visible()[1] != m_view_range.enabled()[1]);
+
     if (m_view_range.visible()[1] == m_view_range.enabled()[1])
         return;
 
@@ -1678,7 +1711,7 @@ void ViewerImpl::render_tool_marker()
         .set_uniform("color_base", color)
         .set_transparent(color.is_transparent());
     add_lights_to_material(material, m_lights);
-    set_override_material(*m_scene, GCodeElementType::ToolMarker, material);
+    node->set_material_override(material);
 }
 
 } // namespace Slic3r::App::libvgcode
