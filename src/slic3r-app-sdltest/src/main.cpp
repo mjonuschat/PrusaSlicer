@@ -139,7 +139,7 @@ int main(int argc, char** argv)
     SPDLOG_TRACE("Setting main loop");
     emscripten_set_main_loop(main_loop, 0, true);
 #endif
-
+    canvas.reset(); // explicit free to make sure this is called before Device Context dtor
     SPDLOG_TRACE("Quitting");
     return 0;
 }
