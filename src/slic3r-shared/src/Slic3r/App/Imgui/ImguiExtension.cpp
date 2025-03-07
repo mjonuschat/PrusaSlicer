@@ -67,6 +67,17 @@ void tooltip(const std::string& label, float wrap_width)
     tooltip(label.c_str(), wrap_width);
 }
 
+void item_tooltip(const char* label, float wrap_width)
+{
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip))
+        tooltip(label, wrap_width);
+}
+
+void item_tooltip(const std::string& label, float wrap_width)
+{
+    item_tooltip(label.c_str(), wrap_width);
+}
+
 static bool IsRootOfOpenMenuSet()
 {
     ImGuiContext& g = *ImGui::GetCurrentContext();
@@ -187,7 +198,7 @@ void icon_image(wchar_t icon, const ImVec2& size)
         ImGui::Image(font->ContainerAtlas->TexID, rect, { glyph->U0, glyph->V0 }, { glyph->U1, glyph->V1 });
 }
 
-bool icon_button(wchar_t icon, const ImVec2& size)
+bool icon_button(wchar_t icon, const ImVec2& size, const std::string& id)
 {
     ImFont* font = ImGui::GetFont();
     float h = ImGui::GetTextLineHeight();
@@ -195,7 +206,7 @@ bool icon_button(wchar_t icon, const ImVec2& size)
     if (rect.x == 0.0f) rect.x = h;
     if (rect.y == 0.0f) rect.y = h;
     const ImFontGlyph* glyph = font->FindGlyph(icon);
-    return (glyph != nullptr) ? ImGui::ImageButton("##btn", font->ContainerAtlas->TexID, rect, { glyph->U0, glyph->V0 }, { glyph->U1, glyph->V1 }) : false;
+    return (glyph != nullptr) ? ImGui::ImageButton(("##btn" + id).c_str(), font->ContainerAtlas->TexID, rect, { glyph->U0, glyph->V0 }, { glyph->U1, glyph->V1 }) : false;
 }
 
 ImU32 to_ImU32(const ColorRGBA& color)

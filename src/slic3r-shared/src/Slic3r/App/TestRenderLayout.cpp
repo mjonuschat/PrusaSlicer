@@ -210,7 +210,7 @@ struct SetOurStyleVars
         PushStyleVar(ImGuiStyleVar_WindowRounding, 5.f);
         PushStyleVar(ImGuiStyleVar_FrameRounding, 3.f);
         PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(6.f, 0.f));
-        PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(3.f, 4.f));
+        PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4.f, 6.f));
         PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(2.f, 0.f));
     }
         

@@ -6,6 +6,7 @@
 #include "Slic3r/Domain/ConfigContainer.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
+#include "Slic3r/App/Imgui/ImguiExtension.hpp"
 
 #include <libslic3r/Model.hpp>
 
@@ -84,7 +85,6 @@ ImGuiTableFlags         table_flags   = ImGuiTableFlags_ScrollY |
                                         ImGuiTableFlags_NoPadInnerX;
 
 static ImVec4 def_color = ImVec4(0.21f, 0.29f, 0.46f, 1.0f);
-static ImVec2 tooltip_padding = ImVec2(8.f, 6.f);
 static std::string test_out;
 static std::string test_out2;
 static bool is_edit_name_input_hovered = false;
@@ -129,25 +129,25 @@ static std::string icon_str(const Slic3r::ModelVolume* volume)
 {
     if (volume->is_text()) {
         switch (volume->type()) {
-        case Slic3r::ModelVolumeType::MODEL_PART        : return icon_str(ImGui::TextSolidPartVolum);
+        case Slic3r::ModelVolumeType::MODEL_PART        : return icon_str(ImGui::TextSolidPartVolume);
         case Slic3r::ModelVolumeType::NEGATIVE_VOLUME   : return icon_str(ImGui::TextNegativeVolume);
-        case Slic3r::ModelVolumeType::PARAMETER_MODIFIER: return icon_str(ImGui::TextModifierVolum );
+        case Slic3r::ModelVolumeType::PARAMETER_MODIFIER: return icon_str(ImGui::TextModifierVolume);
         }
         return "";    
     }
     if (volume->is_svg()) {
         switch (volume->type()) {
-        case Slic3r::ModelVolumeType::MODEL_PART        : return icon_str(ImGui::SvgSolidPartVolum);
+        case Slic3r::ModelVolumeType::MODEL_PART        : return icon_str(ImGui::SvgSolidPartVolume);
         case Slic3r::ModelVolumeType::NEGATIVE_VOLUME   : return icon_str(ImGui::SvgNegativeVolume);
-        case Slic3r::ModelVolumeType::PARAMETER_MODIFIER: return icon_str(ImGui::SvgModifierVolum );
+        case Slic3r::ModelVolumeType::PARAMETER_MODIFIER: return icon_str(ImGui::SvgModifierVolume);
         }
         return "";    
     }
 
     switch (volume->type()) {
-    case Slic3r::ModelVolumeType::MODEL_PART        : return icon_str(ImGui::SolidPartVolum );
+    case Slic3r::ModelVolumeType::MODEL_PART        : return icon_str(ImGui::SolidPartVolume);
     case Slic3r::ModelVolumeType::NEGATIVE_VOLUME   : return icon_str(ImGui::NegativeVolume );
-    case Slic3r::ModelVolumeType::PARAMETER_MODIFIER: return icon_str(ImGui::ModifierVolum  );
+    case Slic3r::ModelVolumeType::PARAMETER_MODIFIER: return icon_str(ImGui::ModifierVolume );
     case Slic3r::ModelVolumeType::SUPPORT_BLOCKER   : return icon_str(ImGui::SupportBlocker );
     case Slic3r::ModelVolumeType::SUPPORT_ENFORCER  : return icon_str(ImGui::SupportModifier);
     default: 
@@ -407,18 +407,13 @@ static bool icon_btn(ColumIndex ci, const std::string& icon)
     return pressed;
 }
 
-static bool icon_button(const wchar_t icon)
-{
-    return ImGui::Button((" " + boost::nowide::narrow(std::wstring(&icon, 1))).c_str());
-}
-
-static void toggle_icon_btn(const wchar_t icon, bool* is_toggled, ColumIndex ci = ColumIndex::ciCount/*undef*/)
+static void toggle_icon_btn(const wchar_t icon, bool* is_toggled, const std::string id, ColumIndex ci = ColumIndex::ciCount/*undef*/)
 {
     if (ci != ColumIndex::ciCount)
         ImGui::TableSetColumnIndex(ci);
 
     ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetColorU32((*is_toggled) ? ImGuiCol_ButtonActive : ImGuiCol_Button));
-    if (icon_button(icon))
+    if (Imgui::icon_button(icon, ImVec2(), id))
         *is_toggled = !*is_toggled; // Toggle state
 
     ImGui::PopStyleColor();
@@ -523,7 +518,7 @@ bool ObjectList::render_tree(ImVec2 size)
 {
     bool is_changed_selection = false;
     const float drop_area_height = 50.f;
-    if (ImGui::BeginTable("##ObjectListTable", 4, table_flags, ImVec2(size.x, ImMax(0.f, ImMin(size.y, size.y - drop_area_height))))) {
+    if (ImGui::BeginTable("##ObjectListTable", 4, table_flags, ImVec2(330.f, ImMax(0.f, ImMin(size.y, size.y - drop_area_height))))) {
         ImGui::TableSetupColumn("##tree", ImGuiTableColumnFlags_WidthStretch);
         ImGui::TableSetupColumn("##visibility", ImGuiTableColumnFlags_WidthStretch, 0.1f);
         ImGui::TableSetupColumn("##settings_overrides", ImGuiTableColumnFlags_WidthStretch, 0.1f);
@@ -558,24 +553,19 @@ void ObjectList::render_header(ImVec2 pos, ImVec2 size)
     ImGui::SetCursorPos(ImVec2(pos) * 2);
     ImGui::Text("Objects");
 
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, tooltip_padding);
-    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.f, 6.f));
-
     float btn_width = 2 * ImGui::GetFontSize();
     float btn_pos = size.x - pos.x - btn_width;
     ImGui::SameLine(btn_pos);
-    toggle_icon_btn(ImGui::Details, &m_show_details);
-    ImGui::SetItemTooltip("Show object details");
+    toggle_icon_btn(ImGui::Details, &m_show_details, "details");
+    Imgui::item_tooltip("Show object details");
 
     btn_pos -= pos.x + btn_width;
     ImGui::SameLine(btn_pos);
-    if (icon_button(ImGui::AddBedIcon)) {
+    if (Imgui::icon_button(ImGui::AddBedIcon, ImVec2(), "add_bed")) {
         // add bed
         m_scene_interactor->add_bed_instance(m_project_interactor->selected_config_container().id().id);
     }
-    ImGui::SetItemTooltip("Add bed");
-
-    ImGui::PopStyleVar(2);
+    Imgui::item_tooltip("Add bed");
 }
 
 static bool tree_node(const char* str_id, ImGuiTreeNodeFlags flags, const std::string& label, bool add_overrides_marker = false)
@@ -902,11 +892,8 @@ void ObjectList::render_volume_node(const Slic3r::ModelVolume* volume, size_t vo
     }
 
     const ImVec2 size = ImGui::CalcTextSize(icon_str(volume).c_str());
-    if (ImGui::IsMouseHoveringRect(pos, pos + size)) {
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, tooltip_padding);
-        ImGui::SetTooltip(volume_icon_tooltip(volume).c_str());
-        ImGui::PopStyleVar();
-    }
+    if (ImGui::IsMouseHoveringRect(pos, pos + size))
+        Imgui::tooltip(volume_icon_tooltip(volume));
 
     render_overrides_icon(sel_element, has_config_overrides);
     render_extruder_marker(2, sel_element);

@@ -255,17 +255,17 @@ namespace ImGui
     // icon for object list
     const wchar_t EyeOpen                  = 0x2820;
     const wchar_t EyeClosed                = 0x2821;
-    const wchar_t SolidPartVolum           = 0x2822;
+    const wchar_t SolidPartVolume          = 0x2822;
     const wchar_t NegativeVolume           = 0x2823;
-    const wchar_t ModifierVolum            = 0x2824;
+    const wchar_t ModifierVolume           = 0x2824;
     const wchar_t SupportBlocker           = 0x2825;
     const wchar_t SupportModifier          = 0x2826;
-    const wchar_t TextSolidPartVolum       = 0x2827;
+    const wchar_t TextSolidPartVolume      = 0x2827;
     const wchar_t TextNegativeVolume       = 0x2828;
-    const wchar_t TextModifierVolum        = 0x2829;
-    const wchar_t SvgSolidPartVolum        = 0x282A;
+    const wchar_t TextModifierVolume       = 0x2829;
+    const wchar_t SvgSolidPartVolume       = 0x282A;
     const wchar_t SvgNegativeVolume        = 0x282B;
-    const wchar_t SvgModifierVolum         = 0x282C;
+    const wchar_t SvgModifierVolume        = 0x282C;
     const wchar_t ObjectIcon               = 0x282D;
     const wchar_t HRModifier               = 0x282E;
     const wchar_t CustomSupports           = 0x282F;

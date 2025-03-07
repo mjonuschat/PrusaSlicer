@@ -42,12 +42,16 @@ void draw_hexagon(const ImVec2& center, float radius, ImU32 col, float start_ang
 
 void tooltip(const char* label, float wrap_width = 0.0f);
 void tooltip(const std::string& label, float wrap_width = 0.0f);
+void item_tooltip(const char* label, float wrap_width = 0.0f);
+void item_tooltip(const std::string& label, float wrap_width = 0.0f);
 
 bool menu_item_with_icon(const char* label, const char* shortcut = nullptr, ImU32 icon_color = 0,
     bool selected = false, bool enabled = true);
 
 void icon_image(wchar_t icon, const ImVec2& size = { 0.0f, 0.0f });
-bool icon_button(wchar_t icon, const ImVec2& size = { 0.0f, 0.0f });
+
+/* Use id, when the window has more than one icon_button to avoid using of the same ID generated from default label ("##btn") */
+bool icon_button(wchar_t icon, const ImVec2& size = { 0.0f, 0.0f }, const std::string& id = std::string());
 
 ImU32 to_ImU32(const ColorRGBA& color);
 ImU32 to_ImU32(const ColorRGB& color, uint8_t alpha = 255);
