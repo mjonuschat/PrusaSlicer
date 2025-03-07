@@ -19,9 +19,11 @@
 #include <imgui/imgui.h>
 #include <Eigen/SVD>
 
-#define ENABLED_DEBUG_IMGUI_FONT 1
-#define ENABLED_DEBUG_IMGUI_ICONS 1
+#define ENABLED_DEBUG_OUTLINE 1
+#define ENABLED_DEBUG_IMGUI_FONT 0
+#define ENABLED_DEBUG_IMGUI_ICONS 0
 #define ENABLED_DEBUG_BEDS 1
+#define ENABLED_DEBUG_LOAD_3MF 0
 
 namespace Slic3r::App::Plater {
 
@@ -704,8 +706,9 @@ void PlaterRenderModule::render_imgui()
     m_scene_presenter->render_imgui(m_screen_info);
 
     m_gizmo_manager->render_imgui();
-/*
-    if (ImGui::Begin("Outline", &m_gui_win_open)) {
+
+#if ENABLED_DEBUG_OUTLINE
+    if (ImGui::Begin("Outline", nullptr)) {
         ImGui::Text("Tool Gizmos");
         Scene::ToolType type = m_gizmo_manager->current_tool_type();
         if (type == Scene::ToolType::Translation) {
@@ -735,20 +738,21 @@ void PlaterRenderModule::render_imgui()
         imgui_scenegraph_node_info(m_scene_presenter->scene().root());
     }
     ImGui::End();
-
+#endif // ENABLED_DEBUG_OUTLINE
 #if ENABLED_DEBUG_IMGUI_FONT
     render_imgui_debug_input_font();
 #endif // ENABLED_DEBUG_IMGUI_FONT
 #if ENABLED_DEBUG_IMGUI_ICONS
     render_imgui_debug_icons();
 #endif // ENABLED_DEBUG_IMGUI_ICONS
-*/
+
 #if ENABLED_DEBUG_BEDS
-    ImGui::SetNextWindowPos(ImVec2(ImGui::GetMainViewport()->GetCenter().x, 50.f), ImGuiCond_Always);
+    //ImGui::SetNextWindowPos(ImVec2(ImGui::GetMainViewport()->GetCenter().x, 50.f), ImGuiCond_Always);
     render_imgui_debug_bed(m_project_interactor, *m_scene_presenter);
 #endif // ENABLED_DEBUG_BEDS
 
-    ImGui::SetNextWindowPos(ImVec2(ImGui::GetMainViewport()->GetCenter().x, 20.f), ImGuiCond_Always);
+#if ENABLED_DEBUG_LOAD_3MF
+    //ImGui::SetNextWindowPos(ImVec2(ImGui::GetMainViewport()->GetCenter().x, 20.f), ImGuiCond_Always);
     if (ImGui::Begin("Load test", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
         if (ImGui::Button("Load project from test 3mf")) {
             // temp solution because of ScenePresenter is created in canvas.render()
@@ -756,7 +760,7 @@ void PlaterRenderModule::render_imgui()
         }
     }
     ImGui::End();
-
+#endif // ENABLED_DEBUG_LOAD_3MF
 }
 
 void PlaterRenderModule::render_object_hud(const Scene::Node& n, const Eigen::AlignedBox<float, 2>& screen_bounding_box)

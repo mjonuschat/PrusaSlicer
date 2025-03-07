@@ -55,6 +55,13 @@ protected:
     virtual double platform_time() = 0;
     virtual Render::Device& device() = 0;
 
+    /**
+     * @brief Called after `request_render` is processed.
+     *
+     * Empty callback subclass can override to trigger rendering.
+     */
+    virtual void on_render_requested() {}
+
     void enqueue_mouse(const MouseEvent& e);
     void enqueue_keyboard(const KeyboardEvent& e);
 

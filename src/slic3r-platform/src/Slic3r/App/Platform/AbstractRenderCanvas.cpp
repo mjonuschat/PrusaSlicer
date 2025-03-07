@@ -203,6 +203,7 @@ void AbstractRenderCanvas::emit_enqueued_events()
 void AbstractRenderCanvas::request_render()
 {
     m_render_request_count += 2;
+    on_render_requested();
 }
 
 bool AbstractRenderCanvas::get_and_reset_render_requested()

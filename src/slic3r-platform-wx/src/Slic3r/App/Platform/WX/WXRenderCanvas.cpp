@@ -670,6 +670,12 @@ void WXRenderCanvas::on_idle(wxIdleEvent& event)
         render();
 }
 
+void WXRenderCanvas::on_render_requested()
+{
+    wxWakeUpIdle();
+}
+
+
 void WXRenderCanvas::begin_frame_platform()
 {
     // Setup display size (every frame to accommodate for window resizing)

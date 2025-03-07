@@ -24,6 +24,8 @@ public:
     void dispatch_on_main_thread(Biz::Platform::IMainThreadDispatcher::Function  func);
 
 protected:
+    void on_render_requested() override;
+
     void begin_frame_platform() override;
     void begin_imgui_frame_platform()override;
     void end_imgui_frame_platform() override;
@@ -32,6 +34,7 @@ protected:
     Render::Device& device() override;
 
 private:
+
     void on_paint(wxPaintEvent& event);
     void on_size(wxSizeEvent& event);
     void on_keyboard(wxKeyEvent&evt);
