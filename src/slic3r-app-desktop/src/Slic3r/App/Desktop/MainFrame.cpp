@@ -142,7 +142,7 @@ MainFrame::MainFrame(
         for (auto& [type, panel] : m_preset_editors)
             panel->msw_rescale();
 
-        m_canvas->set_font_global_scale(this->GetDPIScaleFactor());
+        update_canvas_ui_settings();
     });
 #endif
 
