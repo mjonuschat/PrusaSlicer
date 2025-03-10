@@ -665,6 +665,10 @@ void PreviewRenderModule::send_data_to_viewer(Biz::Slicing::FDMResult result)
 
     m_viewer.reset_default_extrusion_roles_colors();
     m_viewer.load(std::move(wrapper_data), std::move(viewer_data));
+
+    // request redraw
+    request_render();
+
     if (!m_viewer.has_data()) {
         // log some error message
         return;
