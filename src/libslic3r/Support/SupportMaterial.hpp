@@ -85,9 +85,9 @@ private:
 	void trim_support_layers_by_object(
 	    const PrintObject   &object,
 	    SupportGeneratorLayersPtr         &support_layers,
-	    const coordf_t       gap_extra_above,
-	    const coordf_t       gap_extra_below,
-	    const coordf_t       gap_xy) const;
+	    const double       gap_extra_above,
+	    const double       gap_extra_below,
+	    const double       gap_xy) const;
 
 /*
 	void generate_pillars_shape();

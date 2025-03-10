@@ -244,8 +244,8 @@ public:
     ObjectPart(
         const std::vector<const ExtrusionEntityCollection*>& extrusion_collections,
         const bool connected_to_bed,
-        const coordf_t print_head_z,
-        const coordf_t layer_height,
+        const double print_head_z,
+        const double layer_height,
         const std::optional<Polygons>& brim
     );
 

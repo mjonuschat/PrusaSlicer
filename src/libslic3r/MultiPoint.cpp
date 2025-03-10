@@ -146,7 +146,7 @@ Points MultiPoint::visivalingam(const Points &pts, const double tolerance)
     Points results;
      // Lambda to calculate effective area spanned by a point and its immediate 
     // successor + predecessor.
-    auto effective_area = [pts](const size_t& curr_pt_idx, const size_t& prev_pt_idx, const size_t& next_pt_idx)->coordf_t {
+    auto effective_area = [pts](const size_t& curr_pt_idx, const size_t& prev_pt_idx, const size_t& next_pt_idx)->double {
         const Point& curr = pts[curr_pt_idx];
         const Point& prev = pts[prev_pt_idx];
         const Point& next = pts[next_pt_idx];
@@ -157,7 +157,7 @@ Points MultiPoint::visivalingam(const Points &pts, const double tolerance)
 		return 0.50 * abs(cross2(curr_to_next, prev_to_next));
     };
      // We store the effective areas for each node
-    std::vector<coordf_t> areas;
+    std::vector<double> areas;
     areas.reserve(pts.size());
      // Construct the initial set of nodes. We will make a heap out of the "heap" vector using 
     // std::make_heap. node_list is used later.
@@ -167,7 +167,7 @@ Points MultiPoint::visivalingam(const Points &pts, const double tolerance)
     heap.reserve(pts.size());
     for (size_t i = 1; i < pts.size() - 1; ++ i) {
         // Get effective area of current node.
-        coordf_t area = effective_area(i, i - 1, i + 1);
+        double area = effective_area(i, i - 1, i + 1);
         // If area is greater than some arbitrarily small value, use it.
         node_list[i] = new vis_node(i, i - 1, i + 1, area);
         heap.push_back(node_list[i]);

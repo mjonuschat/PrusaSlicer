@@ -65,7 +65,7 @@ ExtrusionMultiPath PerimeterGenerator::thick_polyline_to_multi_path(const ThickP
         const ThickLine& line = lines[i];
         assert(line.a_width >= SCALED_EPSILON && line.b_width >= SCALED_EPSILON);
 
-        const coordf_t line_len = line.length();
+        const double line_len = line.length();
         if (line_len < SCALED_EPSILON) {
             // The line is so tiny that we don't care about its width when we connect it to another line.
             if (!path.empty())
@@ -82,16 +82,16 @@ ExtrusionMultiPath PerimeterGenerator::thick_polyline_to_multi_path(const ThickP
         double thickness_delta = fabs(line.a_width - line.b_width);
         if (thickness_delta > tolerance) {
             const auto segments = (unsigned int)ceil(thickness_delta / tolerance);
-            const coordf_t seg_len = line_len / segments;
+            const double seg_len = line_len / segments;
             Points pp;
-            std::vector<coordf_t> width;
+            std::vector<double> width;
             {
                 pp.push_back(line.a);
                 width.push_back(line.a_width);
                 for (size_t j = 1; j < segments; ++j) {
                     pp.push_back((line.a.cast<double>() + (line.b - line.a).cast<double>().normalized() * (j * seg_len)).cast<coord_t>());
 
-                    coordf_t w = line.a_width + (j*seg_len) * (line.b_width-line.a_width) / line_len;
+                    double w = line.a_width + (j*seg_len) * (line.b_width-line.a_width) / line_len;
                     width.push_back(w);
                     width.push_back(w);
                 }
@@ -560,7 +560,7 @@ static ExtrusionEntityCollection traverse_extrusions(const PerimeterGenerator::P
 #ifdef ARACHNE_DEBUG
 static void export_perimeters_to_svg(const std::string &path, const Polygons &contours, const Arachne::Perimeters &perimeters, const ExPolygons &infill_area)
 {
-    coordf_t    stroke_width = scale_(0.03);
+    double    stroke_width = scale_(0.03);
     BoundingBox bbox         = get_extents(contours);
     bbox.offset(scale_(1.));
     ::Slic3r::SVG svg(path.c_str(), bbox);
@@ -1328,9 +1328,9 @@ void PerimeterGenerator::process_classic(
                 // Split the polygons with top/not_top.
 
                 // Get the offset from solid surface anchor.
-                const coordf_t total_perimeter_spacing      = coordf_t(perimeter_spacing * (params.config.perimeters.value - 1));
-                const coordf_t top_surface_offset_threshold = params.config.perimeters.value <= 1 ? 0. : 0.9 * total_perimeter_spacing;
-                coordf_t       top_surface_offset           = params.config.perimeters.value == 0 ? 0. : 1.5 * coordf_t(ext_perimeter_width + total_perimeter_spacing);
+                const double total_perimeter_spacing      = double(perimeter_spacing * (params.config.perimeters.value - 1));
+                const double top_surface_offset_threshold = params.config.perimeters.value <= 1 ? 0. : 0.9 * total_perimeter_spacing;
+                double       top_surface_offset           = params.config.perimeters.value == 0 ? 0. : 1.5 * double(ext_perimeter_width + total_perimeter_spacing);
 
                 // If possible, try to not push the extra perimeters inside the sparse infill.
                 if (top_surface_offset > top_surface_offset_threshold) {
@@ -1373,7 +1373,7 @@ void PerimeterGenerator::process_classic(
                     top_fills = diff_ex(fill_clip, not_top_polygons, ApplySafetyOffset::Yes);
 
                     // Set the clip to the external perimeter but go back inside by infill_extrusion_width/2 to ensure the extrusion won't go outside even with a 100% overlap.
-                    fill_clip = offset_ex(last, float((coordf_t(ext_perimeter_spacing) / 2.) - params.config.infill_extrusion_width.get_abs_value(params.solid_infill_flow.nozzle_diameter()) / 2.));
+                    fill_clip = offset_ex(last, float((double(ext_perimeter_spacing) / 2.) - params.config.infill_extrusion_width.get_abs_value(params.solid_infill_flow.nozzle_diameter()) / 2.));
                     last      = intersection_ex(not_top_polygons, last);
 
                     if (has_gap_fill)
@@ -1496,7 +1496,7 @@ void PerimeterGenerator::process_classic(
             perimeter_spacing / 2;
 
     // Only apply infill overlap if we actually have one perimeter.
-    const coord_t infill_perimeter_overlap = (inset > 0) ? coord_t(params.config.get_abs_value("infill_overlap", coordf_t(inset + solid_infill_spacing / 2.))) : 0;
+    const coord_t infill_perimeter_overlap = (inset > 0) ? coord_t(params.config.get_abs_value("infill_overlap", double(inset + solid_infill_spacing / 2.))) : 0;
     inset -= infill_perimeter_overlap;
 
     // simplify infill contours according to resolution

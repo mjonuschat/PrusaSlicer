@@ -523,8 +523,8 @@ float compute_second_moment(
 ObjectPart::ObjectPart(
     const std::vector<const ExtrusionEntityCollection*>& extrusion_collections,
     const bool connected_to_bed,
-    const coordf_t print_head_z,
-    const coordf_t layer_height,
+    const double print_head_z,
+    const double layer_height,
     const std::optional<Polygons>& brim
 ) {
     if (connected_to_bed) {
@@ -1108,7 +1108,7 @@ SliceMappings update_active_object_parts(const Layer                        *lay
 }
 
 void reckon_global_supports(const tbb::concurrent_vector<ExtrusionLine> &external_perimeter_lines,
-                            const coordf_t                               layer_bottom_z,
+                            const double                               layer_bottom_z,
                             const Params                                &params,
                             ObjectPart                                  &part,
                             SliceConnection                             &weakest_connection,

@@ -118,7 +118,7 @@ BoundingBoxf get_print_extrusions_extents(const Print &print)
     return bbox;
 }
 
-BoundingBoxf get_print_object_extrusions_extents(const PrintObject &print_object, const coordf_t max_print_z)
+BoundingBoxf get_print_object_extrusions_extents(const PrintObject &print_object, const double max_print_z)
 {
     BoundingBoxf bbox;
     for (const Layer *layer : print_object.layers()) {
@@ -146,7 +146,7 @@ BoundingBoxf get_print_object_extrusions_extents(const PrintObject &print_object
 
 // Returns a bounding box of a projection of the wipe tower for the layers <= max_print_z.
 // The projection does not contain the priming regions.
-BoundingBoxf get_wipe_tower_extrusions_extents(const Print &print, const coordf_t max_print_z)
+BoundingBoxf get_wipe_tower_extrusions_extents(const Print &print, const double max_print_z)
 {
     // Wipe tower extrusions are saved as if the tower was at the origin with no rotation
     // We need to get position and angle of the wipe tower to transform them to actual position.
@@ -186,7 +186,7 @@ BoundingBoxf get_wipe_tower_priming_extrusions_extents(const Print &print)
                     const Vec2d& p1 = (&e - 1)->pos.cast<double>();
                     const Vec2d& p2 = e.pos.cast<double>();
                     bbox.merge(p1);
-                    coordf_t radius = 0.5 * e.width;
+                    double radius = 0.5 * e.width;
                     bbox.min(0) = std::min(bbox.min(0), std::min(p1(0), p2(0)) - radius);
                     bbox.min(1) = std::min(bbox.min(1), std::min(p1(1), p2(1)) - radius);
                     bbox.max(0) = std::max(bbox.max(0), std::max(p1(0), p2(0)) + radius);

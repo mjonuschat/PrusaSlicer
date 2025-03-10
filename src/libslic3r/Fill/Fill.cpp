@@ -64,9 +64,9 @@ struct SurfaceFillParams
 
     // FillBase
     // in unscaled coordinates
-    coordf_t    	spacing = 0.;
+    double    	spacing = 0.;
     // infill / perimeter overlap, in unscaled coordinates
-//    coordf_t    	overlap = 0.;
+//    double    	overlap = 0.;
     // Angle as provided by the region config, in radians.
     float       	angle = 0.f;
     // Is bridging used for this fill? Bridging parameters may be used even if this->flow.bridge() is not set.

@@ -196,7 +196,7 @@ using ColorPoints = std::vector<ColorPoint>;
 
 
 [[maybe_unused]] static void export_graph_to_svg(const std::string &path, const Voronoi::VD& vd, const std::vector<ColoredLines>& colored_polygons) {
-    const coordf_t                 stroke_width = scaled<coordf_t>(0.05f);
+    const double                 stroke_width = scaled<double>(0.05f);
     const BoundingBox              bbox         = get_extents(colored_polygons);
 
     SVG svg(path.c_str(), bbox);
@@ -228,7 +228,7 @@ using ColorPoints = std::vector<ColorPoint>;
 
 [[maybe_unused]] static void export_regions_to_svg(const std::string &path, const std::vector<ExPolygons> &regions, const ExPolygons &lslices) {
     const std::vector<std::string> colors       = {"blue", "cyan", "red", "orange", "magenta", "pink", "purple", "yellow"};
-    const coordf_t                 stroke_width = scaled<coordf_t>(0.05);
+    const double                 stroke_width = scaled<double>(0.05);
     const BoundingBox              bbox         = get_extents(lslices);
 
     ::Slic3r::SVG svg(path.c_str(), bbox);
@@ -244,7 +244,7 @@ using ColorPoints = std::vector<ColorPoint>;
 }
 
 [[maybe_unused]] void export_processed_input_expolygons_to_svg(const std::string &path, const LayerRegionPtrs &regions, const ExPolygons &processed_input_expolygons) {
-    const coordf_t stroke_width = scaled<coordf_t>(0.05);
+    const double stroke_width = scaled<double>(0.05);
     BoundingBox    bbox         = get_extents(regions);
     bbox.merge(get_extents(processed_input_expolygons));
 
@@ -261,7 +261,7 @@ using ColorPoints = std::vector<ColorPoint>;
 
 [[maybe_unused]] static void export_color_polygons_points_to_svg(const std::string &path, const std::vector<ColorPoints> &color_polygons_points, const ExPolygons &lslices) {
     const std::vector<std::string> colors       = {"aqua", "black", "blue", "fuchsia", "gray", "green", "lime", "maroon", "navy", "olive", "purple", "red", "silver", "teal", "yellow"};
-    const coordf_t                 stroke_width = scaled<coordf_t>(0.02);
+    const double                 stroke_width = scaled<double>(0.02);
     const BoundingBox              bbox         = get_extents(lslices);
 
     ::Slic3r::SVG svg(path.c_str(), bbox);
@@ -280,7 +280,7 @@ using ColorPoints = std::vector<ColorPoint>;
 [[maybe_unused]] static void export_color_polygons_to_svg(const std::string &path, const ColorPolygons &color_polygons, const ExPolygons &lslices) {
     const std::vector<std::string> colors        = {"blue", "cyan", "red", "orange", "pink", "yellow", "magenta", "purple", "black"};
     const std::string              default_color = "black";
-    const coordf_t                 stroke_width  = scaled<coordf_t>(0.05);
+    const double                 stroke_width  = scaled<double>(0.05);
     const BoundingBox              bbox          = get_extents(lslices);
 
     ::Slic3r::SVG svg(path.c_str(), bbox);
@@ -298,7 +298,7 @@ using ColorPoints = std::vector<ColorPoint>;
 [[maybe_unused]] static void export_color_polygons_lines_to_svg(const std::string &path, const std::vector<ColorLines> &color_polygons_lines, const ExPolygons &lslices) {
     const std::vector<std::string> colors        = {"blue", "cyan", "red", "orange", "pink", "yellow", "magenta", "purple", "black"};
     const std::string              default_color = "black";
-    const coordf_t                 stroke_width  = scaled<coordf_t>(0.05);
+    const double                 stroke_width  = scaled<double>(0.05);
     const BoundingBox              bbox          = get_extents(lslices);
 
     ::Slic3r::SVG svg(path.c_str(), bbox);
@@ -312,7 +312,7 @@ using ColorPoints = std::vector<ColorPoint>;
 [[maybe_unused]] static void export_color_projection_lines_color_ranges_to_svg(const std::string &path, const ColorProjectionExPolygon &color_projection_expolygon, const ExPolygons &lslices) {
     const std::vector<std::string> colors        = {"blue", "cyan", "red", "orange", "pink", "yellow", "magenta", "purple", "black"};
     const std::string              default_color = "black";
-    const coordf_t                 stroke_width  = scaled<coordf_t>(0.05);
+    const double                 stroke_width  = scaled<double>(0.05);
     const BoundingBox              bbox          = get_extents(lslices);
 
     ::Slic3r::SVG svg(path.c_str(), bbox);

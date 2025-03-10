@@ -64,14 +64,14 @@ Flow PrintRegion::flow(const PrintObject &object, FlowRole role, double layer_he
     return Flow::new_from_config_width(role, config_width, nozzle_diameter, float(layer_height));
 }
 
-coordf_t PrintRegion::nozzle_dmr_avg(const PrintConfig &print_config) const
+double PrintRegion::nozzle_dmr_avg(const PrintConfig &print_config) const
 {
     return (print_config.nozzle_diameter.get_at(m_config.perimeter_extruder.value    - 1) + 
             print_config.nozzle_diameter.get_at(m_config.infill_extruder.value       - 1) + 
             print_config.nozzle_diameter.get_at(m_config.solid_infill_extruder.value - 1)) / 3.;
 }
 
-coordf_t PrintRegion::bridging_height_avg(const PrintConfig &print_config) const
+double PrintRegion::bridging_height_avg(const PrintConfig &print_config) const
 {
     return this->nozzle_dmr_avg(print_config) * sqrt(m_config.bridge_flow_ratio.value);
 }

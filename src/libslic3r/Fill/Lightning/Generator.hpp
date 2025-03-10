@@ -48,7 +48,7 @@ public:
      * Lightning Infill for the infill areas in that mesh. The infill areas must
      * already be calculated at this point.
      */
-    explicit Generator(const PrintObject &print_object, const coordf_t fill_density, const std::function<void()> &throw_on_cancel_callback);
+    explicit Generator(const PrintObject &print_object, const double fill_density, const std::function<void()> &throw_on_cancel_callback);
 
     /*!
      * Get a tree of paths generated for a certain layer of the mesh.

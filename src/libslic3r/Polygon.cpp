@@ -300,13 +300,13 @@ Point Polygon::point_projection(const Point &point) const
                 dmin = d;
                 proj = pt1;
             }
-            Vec2d v1(coordf_t(pt1(0) - pt0(0)), coordf_t(pt1(1) - pt0(1)));
-            coordf_t div = v1.squaredNorm();
+            Vec2d v1(double(pt1(0) - pt0(0)), double(pt1(1) - pt0(1)));
+            double div = v1.squaredNorm();
             if (div > 0.) {
-                Vec2d v2(coordf_t(point(0) - pt0(0)), coordf_t(point(1) - pt0(1)));
-                coordf_t t = v1.dot(v2) / div;
+                Vec2d v2(double(point(0) - pt0(0)), double(point(1) - pt0(1)));
+                double t = v1.dot(v2) / div;
                 if (t > 0. && t < 1.) {
-                    Point foot(coord_t(floor(coordf_t(pt0(0)) + t * v1(0) + 0.5)), coord_t(floor(coordf_t(pt0(1)) + t * v1(1) + 0.5)));
+                    Point foot(coord_t(floor(double(pt0(0)) + t * v1(0) + 0.5)), coord_t(floor(double(pt0(1)) + t * v1(1) + 0.5)));
                     d = (point - foot).cast<double>().norm();
                     if (d < dmin) {
                         dmin = d;

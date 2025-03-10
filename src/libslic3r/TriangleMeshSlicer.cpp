@@ -1343,7 +1343,7 @@ static void chain_open_polylines_close_gaps(std::vector<OpenPolyline>           
             const OpenPolylineEnd *next_start = next_start_and_dist.first;
             // Check whether we closed this loop.
             double current_loop_closing_distance2 = (opl->points.back() - opl->points.front()).cast<double>().squaredNorm();
-            bool   loop_closed = current_loop_closing_distance2 < Slic3r::sqr(coordf_t(max_gap_scaled));
+            bool   loop_closed = current_loop_closing_distance2 < Slic3r::sqr(double(max_gap_scaled));
             if (next_start != nullptr && loop_closed && current_loop_closing_distance2 < next_start_and_dist.second) {
                 // Heuristics to decide, whether to close the loop, or connect another polyline.
                 // One should avoid closing loops shorter than max_gap_scaled.
@@ -1675,7 +1675,7 @@ static std::vector<Polygons> make_slab_loops(
                     if (! in.empty()) {
 #ifdef SLIC3R_DEBUG_SLICE_PROCESSING
                         BoundingBox bbox_svg;
-                        coordf_t stroke_width = scale_(0.02);
+                        double stroke_width = scale_(0.02);
                         {
                             for (const IntersectionLine &line : in) {
                                 bbox_svg.merge(line.a);

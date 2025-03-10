@@ -109,10 +109,10 @@ void FillPlanePath::_fill_surface_single(
     Polyline polyline;
     {
         auto distance_between_lines = scaled<double>(this->spacing) / params.density;
-        auto min_x = coord_t(ceil(coordf_t(bounding_box.min.x()) / distance_between_lines));
-        auto min_y = coord_t(ceil(coordf_t(bounding_box.min.y()) / distance_between_lines));
-        auto max_x = coord_t(ceil(coordf_t(bounding_box.max.x()) / distance_between_lines));
-        auto max_y = coord_t(ceil(coordf_t(bounding_box.max.y()) / distance_between_lines));
+        auto min_x = coord_t(ceil(double(bounding_box.min.x()) / distance_between_lines));
+        auto min_y = coord_t(ceil(double(bounding_box.min.y()) / distance_between_lines));
+        auto max_x = coord_t(ceil(double(bounding_box.max.x()) / distance_between_lines));
+        auto max_y = coord_t(ceil(double(bounding_box.max.y()) / distance_between_lines));
         auto resolution = scaled<double>(params.resolution) / distance_between_lines;
         if (align) {
             // Filling in a bounding box over the whole object, clip generated polyline against the snug bounding box.
@@ -149,12 +149,12 @@ template<typename Output>
 static void generate_archimedean_chords(coord_t min_x, coord_t min_y, coord_t max_x, coord_t max_y, const double resolution, Output &output)
 {
     // Radius to achieve.
-    coordf_t rmax = std::sqrt(coordf_t(max_x)*coordf_t(max_x)+coordf_t(max_y)*coordf_t(max_y)) * std::sqrt(2.) + 1.5;
+    double rmax = std::sqrt(double(max_x)*double(max_x)+double(max_y)*double(max_y)) * std::sqrt(2.) + 1.5;
     // Now unwind the spiral.
-    coordf_t a = 1.;
-    coordf_t b = 1./(2.*M_PI);
-    coordf_t theta = 0.;
-    coordf_t r = 1;
+    double a = 1.;
+    double b = 1./(2.*M_PI);
+    double theta = 0.;
+    double r = 1;
     Pointfs out;
     //FIXME Vojtech: If used as a solid infill, there is a gap left at the center.
     output.add_point({ 0, 0 });
@@ -254,15 +254,15 @@ template<typename Output>
 static void generate_octagram_spiral(coord_t min_x, coord_t min_y, coord_t max_x, coord_t max_y, Output &output)
 {
     // Radius to achieve.
-    coordf_t rmax = std::sqrt(coordf_t(max_x)*coordf_t(max_x)+coordf_t(max_y)*coordf_t(max_y)) * std::sqrt(2.) + 1.5;
+    double rmax = std::sqrt(double(max_x)*double(max_x)+double(max_y)*double(max_y)) * std::sqrt(2.) + 1.5;
     // Now unwind the spiral.
-    coordf_t r = 0;
-    coordf_t r_inc = sqrt(2.);
+    double r = 0;
+    double r_inc = sqrt(2.);
     output.add_point({ 0., 0. });
     while (r < rmax) {
         r += r_inc;
-        coordf_t rx = r / sqrt(2.);
-        coordf_t r2 = r + rx;
+        double rx = r / sqrt(2.);
+        double r2 = r + rx;
         output.add_point({ r,   0. });
         output.add_point({ r2,  rx });
         output.add_point({ rx,  rx });

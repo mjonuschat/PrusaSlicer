@@ -43,10 +43,10 @@ protected:
 	// Caching the 
 	struct CacheID 
 	{
-		CacheID(float adensity, coordf_t aspacing) : 
+		CacheID(float adensity, double aspacing) : 
 			density(adensity), spacing(aspacing) {}
 		float		density;
-		coordf_t	spacing;
+		double	spacing;
 		bool operator<(const CacheID &other) const 
 			{ return (density < other.density) || (density == other.density && spacing < other.spacing); }
 		bool operator==(const CacheID &other) const 

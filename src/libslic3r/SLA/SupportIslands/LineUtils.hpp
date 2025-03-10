@@ -208,7 +208,7 @@ public:
     static void draw(SVG &       svg,
                      const Line &line,
                      const char *color        = "gray",
-                     coordf_t    stroke_width = 0,
+                     double    stroke_width = 0,
                      const char *name         = nullptr,
                      bool        side_points  = false,
                      const char *color_a      = "lightgreen",
@@ -216,7 +216,7 @@ public:
     static void draw(SVG &       svg,
                      const Lines &lines,
                      const char *color        = "gray",
-                     coordf_t    stroke_width = 0,
+                     double    stroke_width = 0,
                      bool ord         = false, // write order as text
                      bool        side_points  = false,
                      const char *color_a      = "lightgreen",

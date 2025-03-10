@@ -47,8 +47,8 @@ SCENARIO("SupportMaterial: support_layers_z and contact_distance", "[SupportMate
 #if 0
 		double expected_top_spacing = print.default_object_config().layer_height + print.config().nozzle_diameter.get_at(0);
 		bool wrong_top_spacing = 0;
-        std::vector<coordf_t> top_z { 1.1 };
-		for (coordf_t top_z_el : top_z) {
+        std::vector<double> top_z { 1.1 };
+		for (double top_z_el : top_z) {
 			// find layer index of this top surface.
 			size_t layer_id = -1;
 			for (size_t i = 0; i < support_z.size(); ++ i) {
@@ -134,8 +134,8 @@ TEST_CASE("SupportMaterial: forced support is generated", "[SupportMaterial]")
 
     Print print = Print();
 
-    std::vector<coordf_t> contact_z = {1.9};
-    std::vector<coordf_t> top_z = {1.1};
+    std::vector<double> contact_z = {1.9};
+    std::vector<double> top_z = {1.1};
     print.default_object_config.support_material_enforce_layers = 100;
     print.default_object_config.support_material = 0;
     print.default_object_config.layer_height = 0.2;

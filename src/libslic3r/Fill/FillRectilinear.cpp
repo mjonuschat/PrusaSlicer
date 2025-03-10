@@ -54,7 +54,7 @@ namespace Slic3r {
 // Having a segment of a closed polygon, calculate its Euclidian length.
 // The segment indices seg1 and seg2 signify an end point of an edge in the forward direction of the loop,
 // therefore the point p1 lies on poly.points[seg1-1], poly.points[seg1] etc.
-static inline coordf_t segment_length(const Polygon &poly, size_t seg1, const Point &p1, size_t seg2, const Point &p2)
+static inline double segment_length(const Polygon &poly, size_t seg1, const Point &p1, size_t seg2, const Point &p2)
 {
 #ifdef SLIC3R_DEBUG
     // Verify that p1 lies on seg1. This is difficult to verify precisely,
@@ -74,7 +74,7 @@ static inline coordf_t segment_length(const Polygon &poly, size_t seg1, const Po
 #endif /* SLIC3R_DEBUG */
     const Point *pPrev = &p1;
     const Point *pThis = NULL;
-    coordf_t len = 0;
+    double len = 0;
     if (seg1 <= seg2) {
         for (size_t i = seg1; i < seg2; ++ i, pPrev = pThis)
            len += (*pPrev - *(pThis = &poly.points[i])).cast<double>().norm();
@@ -571,7 +571,7 @@ static inline bool intersection_on_next_vertical_line_valid(
 }
 
 // Measure an Euclidian length of a perimeter segment when going from iIntersection to iIntersection2.
-static inline coordf_t measure_perimeter_horizontal_segment_length(
+static inline double measure_perimeter_horizontal_segment_length(
     const ExPolygonWithOffset                     &poly_with_offset, 
     const std::vector<SegmentedIntersectionLine>  &segs,
     size_t                                         iVerticalLine,
@@ -639,7 +639,7 @@ static inline void emit_perimeter_prev_next_segment(
     out.points.push_back(Point(il2.pos, itsct2.pos()));
 }
 
-static inline coordf_t measure_perimeter_segment_on_vertical_line_length(
+static inline double measure_perimeter_segment_on_vertical_line_length(
     const ExPolygonWithOffset                     &poly_with_offset,
     const std::vector<SegmentedIntersectionLine>  &segs,
     size_t                                         iVerticalLine,
@@ -1515,8 +1515,8 @@ static void traverse_graph_generate_polylines(const ExPolygonWithOffset         
             	bool take_next = intersection_next_valid;
             	if (intersection_prev_valid && intersection_next_valid) {
             		// Take the shorter segment. This greedy heuristics may not be the best.
-            		coordf_t dist_prev = measure_perimeter_horizontal_segment_length(poly_with_offset, segs, i_vline - 1, i_prev, i_intersection);
-	                coordf_t dist_next = measure_perimeter_horizontal_segment_length(poly_with_offset, segs, i_vline, i_intersection, i_next);
+            		double dist_prev = measure_perimeter_horizontal_segment_length(poly_with_offset, segs, i_vline - 1, i_prev, i_intersection);
+	                double dist_next = measure_perimeter_horizontal_segment_length(poly_with_offset, segs, i_vline, i_intersection, i_next);
 	                take_next = dist_next < dist_prev;
 	            }
                 polyline_current->points.emplace_back(vline.pos, it->pos());
@@ -3050,7 +3050,7 @@ Polylines FillStars::fill_surface(const Surface *surface, const FillParams &para
 Polylines FillCubic::fill_surface(const Surface *surface, const FillParams &params)
 {
     Polylines polylines_out;
-    coordf_t dx = sqrt(0.5) * z;
+    double dx = sqrt(0.5) * z;
     if (! this->fill_surface_by_multilines(
             surface, params, 
             { { 0.f, float(dx) }, { float(M_PI / 3.), - float(dx) }, { float(M_PI * 2. / 3.), float(dx) } },

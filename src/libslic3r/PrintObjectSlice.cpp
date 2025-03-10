@@ -47,17 +47,17 @@ namespace Slic3r {
 LayerPtrs new_layers(
     PrintObject                 *print_object,
     // Object layers (pairs of bottom/top Z coordinate), without the raft.
-    const std::vector<coordf_t> &object_layers)
+    const std::vector<double> &object_layers)
 {
     LayerPtrs out;
     out.reserve(object_layers.size());
     auto     id   = int(print_object->slicing_parameters().raft_layers());
-    coordf_t zmin = print_object->slicing_parameters().object_print_z_min;
+    double zmin = print_object->slicing_parameters().object_print_z_min;
     Layer   *prev = nullptr;
     for (size_t i_layer = 0; i_layer < object_layers.size(); i_layer += 2) {
-        coordf_t lo = object_layers[i_layer];
-        coordf_t hi = object_layers[i_layer + 1];
-        coordf_t slice_z = 0.5 * (lo + hi);
+        double lo = object_layers[i_layer];
+        double hi = object_layers[i_layer + 1];
+        double slice_z = 0.5 * (lo + hi);
         Layer *layer = new Layer(id ++, print_object, hi - lo, hi + zmin, slice_z);
         out.emplace_back(layer);
         if (prev != nullptr) {
@@ -529,7 +529,7 @@ void PrintObject::slice()
     if (! this->set_started(posSlice))
         return;
     m_print->set_status(10, _u8L("Processing triangulated mesh"));
-    std::vector<coordf_t> layer_height_profile;
+    std::vector<double> layer_height_profile;
     this->update_layer_height_profile(*this->model_object(), m_slicing_params, layer_height_profile);
     m_print->throw_if_canceled();
     m_typed_slices = false;

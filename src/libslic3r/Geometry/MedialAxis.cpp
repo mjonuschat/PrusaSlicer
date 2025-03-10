@@ -676,11 +676,11 @@ bool MedialAxis::validate_edge(const VD::edge_type* edge)
         When cell_l or cell_r don't refer to the segment but only to an endpoint, we
         calculate the distance to that endpoint instead.  */
     
-    coordf_t w0 = cell_r->contains_segment()
+    double w0 = cell_r->contains_segment()
         ? segment_r.distance_to(line.a)*2
         : (retrieve_endpoint(cell_r) - line.a).cast<double>().norm()*2;
     
-    coordf_t w1 = cell_l->contains_segment()
+    double w1 = cell_l->contains_segment()
         ? segment_l.distance_to(line.b)*2
         : (retrieve_endpoint(cell_l) - line.b).cast<double>().norm()*2;
     

@@ -410,10 +410,10 @@ GCodeGenerator::ObjectsLayerToPrint GCodeGenerator::collect_layers_to_print(cons
 // Prepare for non-sequential printing of multiple objects: Support resp. object layers with nearly identical print_z
 // will be printed for  all objects at once.
 // Return a list of <print_z, per object ObjectLayerToPrint> items.
-std::vector<std::pair<coordf_t, GCodeGenerator::ObjectsLayerToPrint>> GCodeGenerator::collect_layers_to_print(const Print& print)
+std::vector<std::pair<double, GCodeGenerator::ObjectsLayerToPrint>> GCodeGenerator::collect_layers_to_print(const Print& print)
 {
     struct OrderingItem {
-        coordf_t    print_z;
+        double    print_z;
         size_t      object_idx;
         size_t      layer_idx;
     };
@@ -435,16 +435,16 @@ std::vector<std::pair<coordf_t, GCodeGenerator::ObjectsLayerToPrint>> GCodeGener
 
     std::sort(ordering.begin(), ordering.end(), [](const OrderingItem& oi1, const OrderingItem& oi2) { return oi1.print_z < oi2.print_z; });
 
-    std::vector<std::pair<coordf_t, ObjectsLayerToPrint>> layers_to_print;
+    std::vector<std::pair<double, ObjectsLayerToPrint>> layers_to_print;
 
     // Merge numerically very close Z values.
     for (size_t i = 0; i < ordering.size();) {
         // Find the last layer with roughly the same print_z.
         size_t j = i + 1;
-        coordf_t zmax = ordering[i].print_z + EPSILON;
+        double zmax = ordering[i].print_z + EPSILON;
         for (; j < ordering.size() && ordering[j].print_z <= zmax; ++j);
         // Merge into layers_to_print.
-        std::pair<coordf_t, ObjectsLayerToPrint> merged;
+        std::pair<double, ObjectsLayerToPrint> merged;
         // Assign an average print_z to the set of layers with nearly equal print_z.
         merged.first = 0.5 * (ordering[i].print_z + ordering[j - 1].print_z);
         merged.second.assign(print.objects().size(), ObjectLayerToPrint());
@@ -1045,7 +1045,7 @@ void GCodeGenerator::_do_export(Print& print, GCodeOutputStream &file, Thumbnail
     if (print.config().complete_objects.value) {
         // Add each of the object's layers separately.
         for (auto object : print.objects()) {
-            std::vector<coordf_t> zs;
+            std::vector<double> zs;
             zs.reserve(object->layers().size() + object->support_layers().size());
             for (auto layer : object->layers())
                 zs.push_back(layer->print_z);
@@ -1365,7 +1365,7 @@ void GCodeGenerator::_do_export(Print& print, GCodeOutputStream &file, Thumbnail
     } else {
         // Sort layers by Z.
         // All extrusion moves with the same top layer height are extruded uninterrupted.
-        std::vector<std::pair<coordf_t, ObjectsLayerToPrint>> layers_to_print = collect_layers_to_print(print);
+        std::vector<std::pair<double, ObjectsLayerToPrint>> layers_to_print = collect_layers_to_print(print);
         // Prusa Multi-Material wipe tower.
         if (has_wipe_tower && ! layers_to_print.empty()) {
             m_wipe_tower = std::make_unique<GCode::WipeTowerIntegration>(print.model().wipe_tower().position.cast<float>(), print.model().wipe_tower().rotation, print.config(), *print.wipe_tower_data().priming.get(), print.wipe_tower_data().tool_changes, *print.wipe_tower_data().final_purge.get());
@@ -1379,7 +1379,7 @@ void GCodeGenerator::_do_export(Print& print, GCodeOutputStream &file, Thumbnail
                 file.write(m_wipe_tower->prime(*this));
                 // Verify, whether the print overaps the priming extrusions.
                 BoundingBoxf bbox_print(get_print_extrusions_extents(print));
-                coordf_t twolayers_printz = ((layers_to_print.size() == 1) ? layers_to_print.front() : layers_to_print[1]).first + EPSILON;
+                double twolayers_printz = ((layers_to_print.size() == 1) ? layers_to_print.front() : layers_to_print[1]).first + EPSILON;
                 for (const PrintObject *print_object : print.objects())
                     bbox_print.merge(get_print_object_extrusions_extents(*print_object, twolayers_printz));
                 bbox_print.merge(get_wipe_tower_extrusions_extents(print, twolayers_printz));
@@ -1539,7 +1539,7 @@ void GCodeGenerator::process_layers(
     const Print                                                         &print,
     const ToolOrdering                                                  &tool_ordering,
     const std::vector<const PrintInstance*>                             &print_object_instances_ordering,
-    const std::vector<std::pair<coordf_t, ObjectsLayerToPrint>>         &layers_to_print,
+    const std::vector<std::pair<double, ObjectsLayerToPrint>>         &layers_to_print,
     const GCode::SmoothPathCache                                        &smooth_path_cache_global,
     GCodeOutputStream                                                   &output_stream)
 {
@@ -1574,7 +1574,7 @@ void GCodeGenerator::process_layers(
                 // Insert NOP (no operation) layer;
                 return LayerResult::make_nop_layer_result();
             } else {
-                const std::pair<coordf_t, ObjectsLayerToPrint> &layer = layers_to_print[layer_to_print_idx];
+                const std::pair<double, ObjectsLayerToPrint> &layer = layers_to_print[layer_to_print_idx];
                 const LayerTools& layer_tools = tool_ordering.tools_for_layer(layer.first);
                 if (m_wipe_tower && layer_tools.has_wipe_tower)
                     m_wipe_tower->next_layer();
@@ -2186,7 +2186,7 @@ namespace Skirt {
         const Print             				&print,
         const LayerTools                		&layer_tools,
         // Heights (print_z) at which the skirt has already been extruded.
-        std::vector<coordf_t>  			    	&skirt_done)
+        std::vector<double>  			    	&skirt_done)
     {
         // Extrude skirt at the print_z of the raft layers and normal object layers
         // not at the print_z of the interlaced support material layers.
@@ -2204,7 +2204,7 @@ namespace Skirt {
         const Print 							&print,
         const LayerTools                		&layer_tools,
         // Heights (print_z) at which the skirt has already been extruded.
-        std::vector<coordf_t>			    	&skirt_done)
+        std::vector<double>			    	&skirt_done)
     {
         // Extrude skirt at the print_z of the raft layers and normal object layers
         // not at the print_z of the interlaced support material layers.
@@ -2589,7 +2589,7 @@ LayerResult GCodeGenerator::process_layer(
         return result;
 
     // Extract 1st object_layer and support_layer of this set of layers with an equal print_z.
-    coordf_t             print_z       = layer.print_z + m_config.z_offset.value;
+    double             print_z       = layer.print_z + m_config.z_offset.value;
     bool                 first_layer   = layer.id() == 0;
     unsigned int         first_extruder_id = layer_tools.extruders.front();
 
@@ -2650,7 +2650,7 @@ LayerResult GCodeGenerator::process_layer(
         + float_to_string_decimal_point(height) + "\n";
 
     // update caches
-    const coordf_t previous_layer_z{m_last_layer_z};
+    const double previous_layer_z{m_last_layer_z};
     m_last_layer_z = static_cast<float>(print_z);
     m_max_layer_z  = std::max(m_max_layer_z, m_last_layer_z);
     m_last_height = height;
@@ -3021,8 +3021,8 @@ std::string GCodeGenerator::preamble()
 
 // called by GCodeGenerator::process_layer()
 std::string GCodeGenerator::change_layer(
-    coordf_t previous_layer_z,
-    coordf_t print_z,
+    double previous_layer_z,
+    double print_z,
     bool vase_mode,
     const Point &first_point,
     const bool first_layer

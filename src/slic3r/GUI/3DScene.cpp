@@ -1044,7 +1044,7 @@ std::vector<double> GLVolumeCollection::get_current_print_zs(bool active_only) c
     int k = 0;
     for (int i = 0; i < n;) {
         int j = i + 1;
-        coordf_t zmax = print_zs[i] + EPSILON;
+        double zmax = print_zs[i] + EPSILON;
         for (; j < n && print_zs[j] <= zmax; ++ j) ;
         print_zs[k ++] = (j > i + 1) ? (0.5 * (print_zs[i] + print_zs[j - 1])) : print_zs[i];
         i = j;

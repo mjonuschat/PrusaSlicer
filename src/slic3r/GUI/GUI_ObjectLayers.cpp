@@ -87,7 +87,7 @@ wxSizer* ObjectLayers::create_layer(const t_layer_height_range& range, PlusMinus
     // Add control for the "Min Z"
 
     auto editor = new LayerRangeEditor(this, double_to_string(range.first), etMinZ, set_focus_data, 
-        [range, update_focus_data, this, delete_button, add_button](coordf_t min_z, bool enter_pressed, bool dont_update_ui) 
+        [range, update_focus_data, this, delete_button, add_button](double min_z, bool enter_pressed, bool dont_update_ui) 
     {
         if (fabs(min_z - range.first) < EPSILON) {
             m_selection_type = etUndef;
@@ -95,7 +95,7 @@ wxSizer* ObjectLayers::create_layer(const t_layer_height_range& range, PlusMinus
         }
 
         // data for next focusing
-        coordf_t max_z = min_z < range.second ? range.second : min_z + 0.5;
+        double max_z = min_z < range.second ? range.second : min_z + 0.5;
         const t_layer_height_range new_range = { min_z, max_z };
         if (delete_button)
             delete_button->range = new_range;
@@ -112,7 +112,7 @@ wxSizer* ObjectLayers::create_layer(const t_layer_height_range& range, PlusMinus
     // Add control for the "Max Z"
 
     editor = new LayerRangeEditor(this, double_to_string(range.second), etMaxZ, set_focus_data, 
-        [range, update_focus_data, this, delete_button, add_button](coordf_t max_z, bool enter_pressed, bool dont_update_ui)
+        [range, update_focus_data, this, delete_button, add_button](double max_z, bool enter_pressed, bool dont_update_ui)
     {
         if (fabs(max_z - range.second) < EPSILON || range.first > max_z) {
             m_selection_type = etUndef;
@@ -136,7 +136,7 @@ wxSizer* ObjectLayers::create_layer(const t_layer_height_range& range, PlusMinus
     // Add control for the "Layer height"
 
     editor = new LayerRangeEditor(this, double_to_string(m_object->layer_config_ranges[range].option("layer_height")->getFloat()), etLayerHeight, set_focus_data,
-        [range](coordf_t layer_height, bool, bool)
+        [range](double layer_height, bool, bool)
     {
         return wxGetApp().obj_list()->edit_layer_range(range, layer_height);
     });
@@ -325,7 +325,7 @@ LayerRangeEditor::LayerRangeEditor( ObjectLayers* parent,
                                     const wxString& value,
                                     EditorType type,
                                     std::function<void(EditorType)> set_focus_data_fn,
-                                    std::function<bool(coordf_t, bool, bool)>   edit_fn
+                                    std::function<bool(double, bool, bool)>   edit_fn
                                     ) :
     m_valid_value(value),
     m_type(type),
@@ -423,11 +423,11 @@ LayerRangeEditor::LayerRangeEditor( ObjectLayers* parent,
     }));
 }
 
-coordf_t LayerRangeEditor::get_value()
+double LayerRangeEditor::get_value()
 {
     wxString str = GetValue();
 
-    coordf_t layer_height;
+    double layer_height;
     const char dec_sep = is_decimal_separator_point() ? '.' : ',';
     const char dec_sep_alt = dec_sep == '.' ? ',' : '.';
     // Replace the first incorrect separator in decimal number.

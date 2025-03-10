@@ -677,7 +677,7 @@ static inline rtree_segment_t mk_rtree_seg(const Line &l) {
 // Create a hook based on hook_line and append it to the begin or end of the polyline in the intersection
 static void add_hook(
     const Intersection &intersection, const double scaled_offset, 
-    const coordf_t hook_length, double scaled_trim_distance, 
+    const double hook_length, double scaled_trim_distance, 
     const rtree_t &rtree, const Lines &lines_src)
 {
     if (hook_length < SCALED_EPSILON)
@@ -806,7 +806,7 @@ bool validate_intersections(const std::vector<Intersection> &intersections)
 }
 #endif // NDEBUG
 
-static Polylines connect_lines_using_hooks(Polylines &&lines, const ExPolygon &boundary, const double spacing, const coordf_t hook_length, const coordf_t hook_length_max)
+static Polylines connect_lines_using_hooks(Polylines &&lines, const ExPolygon &boundary, const double spacing, const double hook_length, const double hook_length_max)
 {
     rtree_t rtree;
     size_t  poly_idx = 0;
@@ -1398,8 +1398,8 @@ void Filler::_fill_surface_single(
     }
 #endif /* ADAPTIVE_CUBIC_INFILL_DEBUG_OUTPUT */
 
-    const auto hook_length     = coordf_t(std::min<float>(std::numeric_limits<coord_t>::max(), scale_(params.anchor_length)));
-    const auto hook_length_max = coordf_t(std::min<float>(std::numeric_limits<coord_t>::max(), scale_(params.anchor_length_max)));
+    const auto hook_length     = double(std::min<float>(std::numeric_limits<coord_t>::max(), scale_(params.anchor_length)));
+    const auto hook_length_max = double(std::min<float>(std::numeric_limits<coord_t>::max(), scale_(params.anchor_length_max)));
 
     Polylines all_polylines_with_hooks = all_polylines.size() > 1 ? connect_lines_using_hooks(std::move(all_polylines), expolygon, this->spacing, hook_length, hook_length_max) : std::move(all_polylines);
 
@@ -1477,7 +1477,7 @@ OctreePtr build_octree(
     // Overhang triangles extracted from fill surfaces with stInternalBridge type,
     // rotated to the coordinate system of the octree.
     const std::vector<Vec3d>    &overhang_triangles, 
-    coordf_t                     line_spacing,
+    double                     line_spacing,
     bool                         support_overhangs_only)
 {
     assert(line_spacing > 0);

@@ -58,7 +58,7 @@ FillAdaptive::OctreePtr         build_octree(
     // Overhang triangles extracted from fill surfaces with stInternalBridge type, 
     // rotated to the coordinate system of the octree.
     const std::vector<Vec3d>    &overhang_triangles, 
-    coordf_t                     line_spacing, 
+    double                     line_spacing, 
     // If true, octree is densified below internal overhangs only.
     bool                         support_overhangs_only);
 

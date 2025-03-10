@@ -106,7 +106,7 @@ ToolOrdering::ToolOrdering(const PrintObject &object, unsigned int first_extrude
 
     // Initialize the print layers for just a single object.
     {
-        std::vector<coordf_t> zs;
+        std::vector<double> zs;
         zs.reserve(zs.size() + object.layers().size() + object.support_layers().size());
         for (auto layer : object.layers())
             zs.emplace_back(layer->print_z);
@@ -136,10 +136,10 @@ ToolOrdering::ToolOrdering(const Print &print, unsigned int first_extruder, bool
     m_print_config_ptr = &print.config();
 
     // Initialize the print layers for all objects and all layers.
-    coordf_t object_bottom_z = 0.;
-    coordf_t max_layer_height = 0.;
+    double object_bottom_z = 0.;
+    double max_layer_height = 0.;
     {
-        std::vector<coordf_t> zs;
+        std::vector<double> zs;
         for (auto object : print.objects()) {
             zs.reserve(zs.size() + object->layers().size() + object->support_layers().size());
             for (auto layer : object->layers())
@@ -202,14 +202,14 @@ ToolOrdering::ToolOrdering(const Print &print, unsigned int first_extruder, bool
     this->mark_skirt_layers(print.config(), max_layer_height);
 }
 
-void ToolOrdering::initialize_layers(std::vector<coordf_t> &zs)
+void ToolOrdering::initialize_layers(std::vector<double> &zs)
 {
     sort_remove_duplicates(zs);
     // Merge numerically very close Z values.
     for (size_t i = 0; i < zs.size();) {
         // Find the last layer with roughly the same print_z.
         size_t j = i + 1;
-        coordf_t zmax = zs[i] + EPSILON;
+        double zmax = zs[i] + EPSILON;
         for (; j < zs.size() && zs[j] <= zmax; ++ j) ;
         // Assign an average print_z to the set of layers with nearly equal print_z.
         m_layer_tools.emplace_back(LayerTools(0.5 * (zs[i] + zs[j-1])));
@@ -415,7 +415,7 @@ void ToolOrdering::reorder_extruders(unsigned int last_extruder_id)
         }    
 }
 
-void ToolOrdering::fill_wipe_tower_partitions(const PrintConfig &config, coordf_t object_bottom_z, coordf_t max_layer_height)
+void ToolOrdering::fill_wipe_tower_partitions(const PrintConfig &config, double object_bottom_z, double max_layer_height)
 {
     if (m_layer_tools.empty())
         return;
@@ -450,7 +450,7 @@ void ToolOrdering::fill_wipe_tower_partitions(const PrintConfig &config, coordf_
             for (; j < m_layer_tools.size() && ! m_layer_tools[j].has_wipe_tower; ++ j);
             if (j < m_layer_tools.size()) {
                 const LayerTools &lt_object = m_layer_tools[j];
-                coordf_t gap = lt_object.print_z - lt.print_z;
+                double gap = lt_object.print_z - lt.print_z;
                 assert(gap > 0.f);
                 if (gap > max_layer_height + EPSILON) {
                     // Insert one additional wipe tower layer between lh.print_z and lt_object.print_z.
@@ -501,7 +501,7 @@ void ToolOrdering::fill_wipe_tower_partitions(const PrintConfig &config, coordf_
     }
 
     // Calculate the wipe_tower_layer_height values.
-    coordf_t wipe_tower_print_z_last = 0.;
+    double wipe_tower_print_z_last = 0.;
     for (LayerTools &lt : m_layer_tools)
         if (lt.has_wipe_tower) {
             lt.wipe_tower_layer_height = lt.print_z - wipe_tower_print_z_last;
@@ -563,7 +563,7 @@ void ToolOrdering::collect_extruder_statistics(bool prime_multi_material)
 }
 
 // Layers are marked for infinite skirt aka draft shield. Not all the layers have to be printed.
-void ToolOrdering::mark_skirt_layers(const PrintConfig &config, coordf_t max_layer_height)
+void ToolOrdering::mark_skirt_layers(const PrintConfig &config, double max_layer_height)
 {
     if (m_layer_tools.empty())
         return;
@@ -643,7 +643,7 @@ void ToolOrdering::assign_custom_gcodes(const Print &print)
 		// Some custom G-code is configured for this layer or a layer below.
 		const CustomGCode::Item &custom_gcode = *custom_gcode_it;
 		// print_z of the layer below the current layer.
-		coordf_t print_z_below = 0.;
+		double print_z_below = 0.;
 		if (auto it_lt_below = it_lt; ++ it_lt_below != m_layer_tools.rend())
 			print_z_below = it_lt_below->print_z;
 		if (custom_gcode.print_z > print_z_below + 0.5 * EPSILON) {
@@ -665,13 +665,13 @@ void ToolOrdering::assign_custom_gcodes(const Print &print)
 	}
 }
 
-const LayerTools& ToolOrdering::tools_for_layer(coordf_t print_z) const
+const LayerTools& ToolOrdering::tools_for_layer(double print_z) const
 {
     auto it_layer_tools = std::lower_bound(m_layer_tools.begin(), m_layer_tools.end(), LayerTools(print_z - EPSILON));
     assert(it_layer_tools != m_layer_tools.end());
-    coordf_t dist_min = std::abs(it_layer_tools->print_z - print_z);
+    double dist_min = std::abs(it_layer_tools->print_z - print_z);
     for (++ it_layer_tools; it_layer_tools != m_layer_tools.end(); ++ it_layer_tools) {
-        coordf_t d = std::abs(it_layer_tools->print_z - print_z);
+        double d = std::abs(it_layer_tools->print_z - print_z);
         if (d >= dist_min)
             break;
         dist_min = d;

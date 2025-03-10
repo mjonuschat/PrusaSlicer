@@ -1974,7 +1974,7 @@ void ObjectList::del_settings_from_config(const wxDataViewItem& parent_item)
 
     int extruder = m_config->has("extruder") ? m_config->extruder() : -1;
 
-    coordf_t layer_height = 0.0;
+    double layer_height = 0.0;
     if (is_layer_settings)
         layer_height = m_config->opt_float("layer_height");
 
@@ -2415,7 +2415,7 @@ wxDataViewItem ObjectList::add_layer_root_item(const wxDataViewItem obj_item)
 DynamicPrintConfig ObjectList::get_default_layer_config(const int obj_idx)
 {
     DynamicPrintConfig config;
-    coordf_t layer_height = object(obj_idx)->config.has("layer_height") ? 
+    double layer_height = object(obj_idx)->config.has("layer_height") ? 
                             object(obj_idx)->config.opt_float("layer_height") : 
                             wxGetApp().preset_bundle->prints.get_edited_preset().config.opt_float("layer_height");
     config.set_key_value("layer_height",new ConfigOptionFloat(layer_height));
@@ -3418,7 +3418,7 @@ void ObjectList::add_layer_range_after_current(const t_layer_height_range curren
         ranges[new_range].assign_config(get_default_layer_config(obj_idx));
         add_layer_item(new_range, layers_item);
     }
-    else if (const std::pair<coordf_t, coordf_t> &next_range = it_next_range->first; current_range.second <= next_range.first)
+    else if (const std::pair<double, double> &next_range = it_next_range->first; current_range.second <= next_range.first)
     {
         const int layer_idx = m_objects_model->GetItemIdByLayerRange(obj_idx, next_range);
         assert(layer_idx >= 0);
@@ -3428,13 +3428,13 @@ void ObjectList::add_layer_range_after_current(const t_layer_height_range curren
             {
                 // Splitting the next layer height range to two.
                 const auto old_config = ranges.at(next_range);
-                const coordf_t delta = next_range.second - next_range.first;
+                const double delta = next_range.second - next_range.first;
                 // Layer height of the current layer.
-                const coordf_t old_min_layer_height = get_min_layer_height(old_config.opt_int("extruder"));
+                const double old_min_layer_height = get_min_layer_height(old_config.opt_int("extruder"));
                 // Layer height of the layer to be inserted.
-                const coordf_t new_min_layer_height = get_min_layer_height(0);
+                const double new_min_layer_height = get_min_layer_height(0);
                 if (delta >= old_min_layer_height + new_min_layer_height - EPSILON) {
-                    const coordf_t middle_layer_z = (new_min_layer_height > 0.5 * delta) ?
+                    const double middle_layer_z = (new_min_layer_height > 0.5 * delta) ?
 	                    next_range.second - new_min_layer_height :
                     	next_range.first + std::max(old_min_layer_height, 0.5 * delta);
                     t_layer_height_range new_range = { middle_layer_z, next_range.second };
@@ -3501,7 +3501,7 @@ wxString ObjectList::can_add_new_range_after_current(const t_layer_height_range 
     	// Adding a layer after the last layer is always possible.
         return "";
     
-    if (const std::pair<coordf_t, coordf_t>& next_range = it_next_range->first; current_range.second <= next_range.first)
+    if (const std::pair<double, double>& next_range = it_next_range->first; current_range.second <= next_range.first)
     {
         if (current_range.second == next_range.first) {
             if (next_range.second - next_range.first < get_min_layer_height(it_next_range->second.opt_int("extruder")) + get_min_layer_height(0) - EPSILON)
@@ -3539,7 +3539,7 @@ void ObjectList::add_layer_item(const t_layer_height_range& range,
     add_settings_item(layer_item, &config);
 }
 
-bool ObjectList::edit_layer_range(const t_layer_height_range& range, coordf_t layer_height)
+bool ObjectList::edit_layer_range(const t_layer_height_range& range, double layer_height)
 {
     // Use m_selected_object_id instead of get_selected_obj_idx()
     // because of get_selected_obj_idx() return obj_idx for currently selected item.

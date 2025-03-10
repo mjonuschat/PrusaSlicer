@@ -67,10 +67,8 @@ using coord_t =
     int64_t;
 #endif
 
-using coordf_t = Slic3r::Domain::coordf_t;
-
 using Slic3r::Domain::EPSILON;
-// Scaling factor for a conversion from coord_t to coordf_t: 10e-6
+// Scaling factor for a conversion from coord_t to double: 10e-6
 // This scaling generates a following fixed point representation with for a 32bit integer:
 // 0..4294mm with 1nm resolution
 // int32_t fits an interval of (-2147.48mm, +2147.48mm)

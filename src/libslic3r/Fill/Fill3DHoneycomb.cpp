@@ -34,10 +34,10 @@ Credits: David Eccles (gringer).
 // basic printing line (i.e. Y points for columns, X points for rows)
 // Note: a negative offset only causes a change in the perpendicular
 // direction
-static std::vector<coordf_t> colinearPoints(const coordf_t offset, const size_t baseLocation, size_t gridLength)
+static std::vector<double> colinearPoints(const double offset, const size_t baseLocation, size_t gridLength)
 {
-    const coordf_t offset2 = std::abs(offset / coordf_t(2.));
-    std::vector<coordf_t> points;
+    const double offset2 = std::abs(offset / double(2.));
+    std::vector<double> points;
     points.push_back(baseLocation - offset2);
     for (size_t i = 0; i < gridLength; ++i) {
         points.push_back(baseLocation + i + offset2);
@@ -49,11 +49,11 @@ static std::vector<coordf_t> colinearPoints(const coordf_t offset, const size_t 
 
 // Generate an array of points for the dimension that is perpendicular to
 // the basic printing line (i.e. X points for columns, Y points for rows)
-static std::vector<coordf_t> perpendPoints(const coordf_t offset, const size_t baseLocation, size_t gridLength)
+static std::vector<double> perpendPoints(const double offset, const size_t baseLocation, size_t gridLength)
 {
-    coordf_t offset2 = offset / coordf_t(2.);
+    double offset2 = offset / double(2.);
     coord_t  side    = 2 * (baseLocation & 1) - 1;
-    std::vector<coordf_t> points;
+    std::vector<double> points;
     points.push_back(baseLocation - offset2 * side);
     for (size_t i = 0; i < gridLength; ++i) {
         side = 2*((i+baseLocation) & 1) - 1;
@@ -66,7 +66,7 @@ static std::vector<coordf_t> perpendPoints(const coordf_t offset, const size_t b
 
 // Trims an array of points to specified rectangular limits. Point
 // components that are outside these limits are set to the limits.
-static inline void trim(Pointfs &pts, coordf_t minX, coordf_t minY, coordf_t maxX, coordf_t maxY)
+static inline void trim(Pointfs &pts, double minX, double minY, double maxX, double maxY)
 {
     for (Vec2d &pt : pts) {
         pt.x() = std::clamp(pt.x(), minX, maxX);
@@ -74,7 +74,7 @@ static inline void trim(Pointfs &pts, coordf_t minX, coordf_t minY, coordf_t max
     }
 }
 
-static inline Pointfs zip(const std::vector<coordf_t> &x, const std::vector<coordf_t> &y)
+static inline Pointfs zip(const std::vector<double> &x, const std::vector<double> &y)
 {
     assert(x.size() == y.size());
     Pointfs out;
@@ -88,15 +88,15 @@ static inline Pointfs zip(const std::vector<coordf_t> &x, const std::vector<coor
 // horizontal slice of a truncated regular octahedron with edge length 1.
 // curveType specifies which lines to print, 1 for vertical lines
 // (columns), 2 for horizontal lines (rows), and 3 for both.
-static std::vector<Pointfs> makeNormalisedGrid(coordf_t z, size_t gridWidth, size_t gridHeight, size_t curveType)
+static std::vector<Pointfs> makeNormalisedGrid(double z, size_t gridWidth, size_t gridHeight, size_t curveType)
 {
     // offset required to create a regular octagram
-    coordf_t octagramGap = coordf_t(0.5);
+    double octagramGap = double(0.5);
     
     // sawtooth wave function for range f($z) = [-$octagramGap .. $octagramGap]
-    coordf_t a = std::sqrt(coordf_t(2.));  // period
-    coordf_t wave = fabs(fmod(z, a) - a/2.)/a*4. - 1.;
-    coordf_t offset = wave * octagramGap;
+    double a = std::sqrt(double(2.));  // period
+    double wave = fabs(fmod(z, a) - a/2.)/a*4. - 1.;
+    double offset = wave * octagramGap;
     
     std::vector<Pointfs> points;
     if ((curveType & 1) != 0) {
@@ -107,7 +107,7 @@ static std::vector<Pointfs> makeNormalisedGrid(coordf_t z, size_t gridWidth, siz
                 perpendPoints(offset, x, gridHeight), 
                 colinearPoints(offset, 0, gridHeight));
             // trim points to grid edges
-            trim(newPoints, coordf_t(0.), coordf_t(0.), coordf_t(gridWidth), coordf_t(gridHeight));
+            trim(newPoints, double(0.), double(0.), double(gridWidth), double(gridHeight));
             if (x & 1)
                 std::reverse(newPoints.begin(), newPoints.end());
         }
@@ -120,7 +120,7 @@ static std::vector<Pointfs> makeNormalisedGrid(coordf_t z, size_t gridWidth, siz
                 colinearPoints(offset, 0, gridWidth),
                 perpendPoints(offset, y, gridWidth));
             // trim points to grid edges
-            trim(newPoints, coordf_t(0.), coordf_t(0.), coordf_t(gridWidth), coordf_t(gridHeight));
+            trim(newPoints, double(0.), double(0.), double(gridWidth), double(gridHeight));
             if (y & 1)
                 std::reverse(newPoints.begin(), newPoints.end());
         }
@@ -134,7 +134,7 @@ static std::vector<Pointfs> makeNormalisedGrid(coordf_t z, size_t gridWidth, siz
 static Polylines makeGrid(coord_t z, coord_t gridSize, size_t gridWidth, size_t gridHeight, size_t curveType)
 {
     coord_t  scaleFactor = gridSize;
-    coordf_t normalisedZ = coordf_t(z) / coordf_t(scaleFactor);
+    double normalisedZ = double(z) / double(scaleFactor);
     std::vector<Pointfs> polylines = makeNormalisedGrid(normalisedZ, gridWidth, gridHeight, curveType);
     Polylines result;
     result.reserve(polylines.size());

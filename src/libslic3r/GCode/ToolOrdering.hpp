@@ -100,7 +100,7 @@ public:
 	// Returns a zero based extruder this eec should be printed with, according to PrintRegion config or extruder_override if overriden.
 	unsigned int extruder(const ExtrusionEntityCollection &extrusions, const PrintRegion &region) const;
 
-    coordf_t 					print_z	= 0.;
+    double 					print_z	= 0.;
     bool 						has_object = false;
     bool						has_support = false;
     // Zero based extruder IDs, ordered to minimize tool switches.
@@ -121,7 +121,7 @@ public:
     // Number of wipe tower partitions to support the required number of tool switches
     // and to support the wipe tower partitions above this one.
     size_t                      wipe_tower_partitions = 0;
-    coordf_t 					wipe_tower_layer_height = 0.;
+    double 					wipe_tower_layer_height = 0.;
     // Custom G-code (color change, extruder switch, pause) to be performed before this layer starts to print.
     const Domain::CustomGCodeItem    *custom_gcode = nullptr;
 
@@ -131,7 +131,7 @@ public:
 private:
     // to access LayerTools private constructor
     friend class ToolOrdering;
-    LayerTools(const coordf_t z) : print_z(z) {}
+    LayerTools(const double z) : print_z(z) {}
 
     // This object holds list of extrusion that will be used for extruder wiping
     WipingExtrusions m_wiping_extrusions;
@@ -168,8 +168,8 @@ public:
     const std::vector<unsigned int>& all_extruders() const { return m_all_printing_extruders; }
 
     // Find LayerTools with the closest print_z.
-    const LayerTools&	tools_for_layer(coordf_t print_z) const;
-    LayerTools&			tools_for_layer(coordf_t print_z) { return const_cast<LayerTools&>(std::as_const(*this).tools_for_layer(print_z)); }
+    const LayerTools&	tools_for_layer(double print_z) const;
+    LayerTools&			tools_for_layer(double print_z) { return const_cast<LayerTools&>(std::as_const(*this).tools_for_layer(print_z)); }
 
     const LayerTools&   front()       const { return m_layer_tools.front(); }
     const LayerTools&   back()        const { return m_layer_tools.back(); }
@@ -181,12 +181,12 @@ public:
     int                 toolchanges_count() const;
 
 private:
-    void				initialize_layers(std::vector<coordf_t> &zs);
+    void				initialize_layers(std::vector<double> &zs);
     void 				collect_extruders(const PrintObject &object, const std::vector<std::pair<double, unsigned int>> &per_layer_extruder_switches, const std::vector<std::pair<double, unsigned int>> &per_layer_color_changes);
     void				reorder_extruders(unsigned int last_extruder_id);
-    void 				fill_wipe_tower_partitions(const PrintConfig &config, coordf_t object_bottom_z, coordf_t max_layer_height);
+    void 				fill_wipe_tower_partitions(const PrintConfig &config, double object_bottom_z, double max_layer_height);
     bool                insert_wipe_tower_extruder();
-    void                mark_skirt_layers(const PrintConfig &config, coordf_t max_layer_height);
+    void                mark_skirt_layers(const PrintConfig &config, double max_layer_height);
     void 				collect_extruder_statistics(bool prime_multi_material);
 
     std::vector<LayerTools>    m_layer_tools;

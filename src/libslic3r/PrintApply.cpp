@@ -308,10 +308,10 @@ public:
         m_ranges.clear();
         m_ranges.reserve(in.size());
         // Input ranges are sorted lexicographically. First range trims the other ranges.
-        coordf_t last_z = 0;
+        double last_z = 0;
         for (const std::pair<const t_layer_height_range, ModelConfig> &range : in)
             if (range.first.second > last_z) {
-                coordf_t min_z = std::max(range.first.first, 0.);
+                double min_z = std::max(range.first.first, 0.);
                 if (min_z > last_z + EPSILON) {
                     m_ranges.push_back({ t_layer_height_range(last_z, min_z) });
                     last_z = min_z;

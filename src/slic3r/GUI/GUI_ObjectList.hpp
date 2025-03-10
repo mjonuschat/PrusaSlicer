@@ -35,8 +35,8 @@ enum class ModelVolumeType : int;
 // FIXME: broken build on mac os because of this is missing:
 typedef std::vector<std::string>                    t_config_option_keys;
 typedef std::vector<ModelVolume*>                   ModelVolumePtrs;
-typedef double                                      coordf_t;
-typedef std::pair<coordf_t, coordf_t>               t_layer_height_range;
+typedef double                                      double;
+typedef std::pair<double, double>               t_layer_height_range;
 typedef std::map<t_layer_height_range, ModelConfig> t_layer_config_ranges;
 
 // Manifold mesh may contain self-intersections, so we want to always allow fixing the mesh.
@@ -340,7 +340,7 @@ public:
     void add_layer_item (const t_layer_height_range& range, 
                          const wxDataViewItem layers_item, 
                          const int layer_idx = -1);
-    bool edit_layer_range(const t_layer_height_range& range, coordf_t layer_height);
+    bool edit_layer_range(const t_layer_height_range& range, double layer_height);
     // This function may be called when a text field loses focus for a "add layer" or "remove layer" button.
     // In that case we don't want to destroy the panel with that "add layer" or "remove layer" buttons, as some messages
     // are already planned for them and destroying these widgets leads to crashes at least on OSX.

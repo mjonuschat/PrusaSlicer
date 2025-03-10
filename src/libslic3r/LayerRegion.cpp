@@ -757,7 +757,7 @@ void LayerRegion::process_external_surfaces(const Layer *lower_layer, const Poly
                     bridges[idx_last].bridge_angle = PI + std::atan2(bridging_dir.y(), bridging_dir.x());
 
                     // #if 1
-                    //     coordf_t    stroke_width = scale_(0.06);
+                    //     double    stroke_width = scale_(0.06);
                     //     BoundingBox bbox         = get_extents(initial);
                     //     bbox.offset(scale_(1.));
                     //     ::Slic3r::SVG

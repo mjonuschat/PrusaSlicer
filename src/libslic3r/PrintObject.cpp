@@ -657,7 +657,7 @@ std::pair<FillAdaptive::OctreePtr, FillAdaptive::OctreePtr> PrintObject::prepare
 FillLightning::GeneratorPtr PrintObject::prepare_lightning_infill_data()
 {
     bool     has_lightning_infill = false;
-    coordf_t lightning_density    = 0.;
+    double lightning_density    = 0.;
     size_t   lightning_cnt        = 0;
     for (size_t region_id = 0; region_id < this->num_printing_regions(); ++region_id)
         if (const PrintRegionConfig &config = this->printing_region(region_id).config(); config.fill_density > 0 && config.fill_pattern == ipLightning) {
@@ -667,7 +667,7 @@ FillLightning::GeneratorPtr PrintObject::prepare_lightning_infill_data()
         }
 
     if (has_lightning_infill)
-        lightning_density /= coordf_t(lightning_cnt);
+        lightning_density /= double(lightning_cnt);
 
     return has_lightning_infill ? FillLightning::build_generator(std::as_const(*this), lightning_density, [this]() -> void { this->throw_if_canceled(); }) : FillLightning::GeneratorPtr();
 }
@@ -679,7 +679,7 @@ void PrintObject::clear_layers()
     m_layers.clear();
 }
 
-Layer* PrintObject::add_layer(int id, coordf_t height, coordf_t print_z, coordf_t slice_z)
+Layer* PrintObject::add_layer(int id, double height, double print_z, double slice_z)
 {
     m_layers.emplace_back(new Layer(id, this, height, print_z, slice_z));
     return m_layers.back();
@@ -692,13 +692,13 @@ void PrintObject::clear_support_layers()
     m_support_layers.clear();
 }
 
-SupportLayer* PrintObject::add_support_layer(int id, int interface_id, coordf_t height, coordf_t print_z)
+SupportLayer* PrintObject::add_support_layer(int id, int interface_id, double height, double print_z)
 {
     m_support_layers.emplace_back(new SupportLayer(id, interface_id, this, height, print_z, -1));
     return m_support_layers.back();
 }
 
-SupportLayerPtrs::iterator PrintObject::insert_support_layer(SupportLayerPtrs::iterator pos, size_t id, size_t interface_id, coordf_t height, coordf_t print_z, coordf_t slice_z)
+SupportLayerPtrs::iterator PrintObject::insert_support_layer(SupportLayerPtrs::iterator pos, size_t id, size_t interface_id, double height, double print_z, double slice_z)
 {
     return m_support_layers.insert(pos, new SupportLayer(id, interface_id, this, height, print_z, slice_z));
 }
@@ -1534,7 +1534,7 @@ void PrintObject::discover_vertical_shells()
                     static constexpr const bool one_more_layer_below_top_bottom_surfaces = false;
 			        if (int n_top_layers = region_config.top_solid_layers.value; n_top_layers > 0) {
                         // Gather top regions projected to this layer.
-                        coordf_t print_z = layer->print_z;
+                        double print_z = layer->print_z;
                         int i = int(idx_layer) + 1;
                         int itop = int(idx_layer) + n_top_layers;
                         bool at_least_one_top_projected = false;
@@ -1566,7 +1566,7 @@ void PrintObject::discover_vertical_shells()
 	                }
 	                if (int n_bottom_layers = region_config.bottom_solid_layers.value; n_bottom_layers > 0) {
                         // Gather bottom regions projected to this layer.
-                        coordf_t bottom_z = layer->bottom_z();
+                        double bottom_z = layer->bottom_z();
                         int i = int(idx_layer) - 1;
                         int ibottom = int(idx_layer) - n_bottom_layers;
                         bool at_least_one_bottom_projected = false;
@@ -2390,8 +2390,8 @@ void PrintObject::bridge_over_infill()
                 }
 
                 // Gather deep infill areas, where thick bridges fit
-                coordf_t spacing            = surfaces_by_layer[lidx].front().region->bridging_flow(frSolidInfill, true).scaled_spacing();
-                coordf_t target_flow_height = surfaces_by_layer[lidx].front().region->bridging_flow(frSolidInfill, true).height() *
+                double spacing            = surfaces_by_layer[lidx].front().region->bridging_flow(frSolidInfill, true).scaled_spacing();
+                double target_flow_height = surfaces_by_layer[lidx].front().region->bridging_flow(frSolidInfill, true).height() *
                                               target_flow_height_factor;
                 Polygons deep_infill_area = gather_areas_w_depth(po, lidx, target_flow_height);
 
@@ -2750,7 +2750,7 @@ std::vector<unsigned int> PrintObject::object_extruders() const
     return extruders;
 }
 
-bool PrintObject::update_layer_height_profile(const ModelObject &model_object, const SlicingParameters &slicing_parameters, std::vector<coordf_t> &layer_height_profile)
+bool PrintObject::update_layer_height_profile(const ModelObject &model_object, const SlicingParameters &slicing_parameters, std::vector<double> &layer_height_profile)
 {
     bool updated = false;
 
@@ -2907,8 +2907,8 @@ void PrintObject::discover_horizontal_shells()
 
             assert(region_config.ensure_vertical_shell_thickness.value == EnsureVerticalShellThickness::Disabled);
 
-            coordf_t print_z  = layer->print_z;
-            coordf_t bottom_z = layer->bottom_z();
+            double print_z  = layer->print_z;
+            double bottom_z = layer->bottom_z();
             for (size_t idx_surface_type = 0; idx_surface_type < 3; ++ idx_surface_type) {
                 m_print->throw_if_canceled();
                 SurfaceType type = (idx_surface_type == 0) ? stTop : (idx_surface_type == 1) ? stBottom : stBottomBridge;
@@ -3432,31 +3432,31 @@ void PrintObject::project_and_append_custom_facets(
         }
 }
 
-const Layer* PrintObject::get_layer_at_printz(coordf_t print_z) const {
+const Layer* PrintObject::get_layer_at_printz(double print_z) const {
     auto it = Slic3r::lower_bound_by_predicate(m_layers.begin(), m_layers.end(), [print_z](const Layer *layer) { return layer->print_z < print_z; });
     return (it == m_layers.end() || (*it)->print_z != print_z) ? nullptr : *it;
 }
 
 
 
-Layer* PrintObject::get_layer_at_printz(coordf_t print_z) { return const_cast<Layer*>(std::as_const(*this).get_layer_at_printz(print_z)); }
+Layer* PrintObject::get_layer_at_printz(double print_z) { return const_cast<Layer*>(std::as_const(*this).get_layer_at_printz(print_z)); }
 
 
 
 // Get a layer approximately at print_z.
-const Layer* PrintObject::get_layer_at_printz(coordf_t print_z, coordf_t epsilon) const {
-    coordf_t limit = print_z - epsilon;
+const Layer* PrintObject::get_layer_at_printz(double print_z, double epsilon) const {
+    double limit = print_z - epsilon;
     auto it = Slic3r::lower_bound_by_predicate(m_layers.begin(), m_layers.end(), [limit](const Layer *layer) { return layer->print_z < limit; });
     return (it == m_layers.end() || (*it)->print_z > print_z + epsilon) ? nullptr : *it;
 }
 
 
 
-Layer* PrintObject::get_layer_at_printz(coordf_t print_z, coordf_t epsilon) { return const_cast<Layer*>(std::as_const(*this).get_layer_at_printz(print_z, epsilon)); }
+Layer* PrintObject::get_layer_at_printz(double print_z, double epsilon) { return const_cast<Layer*>(std::as_const(*this).get_layer_at_printz(print_z, epsilon)); }
 
-const Layer *PrintObject::get_first_layer_bellow_printz(coordf_t print_z, coordf_t epsilon) const
+const Layer *PrintObject::get_first_layer_bellow_printz(double print_z, double epsilon) const
 {
-    coordf_t limit = print_z + epsilon;
+    double limit = print_z + epsilon;
     auto it = Slic3r::lower_bound_by_predicate(m_layers.begin(), m_layers.end(), [limit](const Layer *layer) { return layer->print_z < limit; });
     return (it == m_layers.begin()) ? nullptr : *(--it);
 }

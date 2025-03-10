@@ -38,7 +38,7 @@
 
 namespace Slic3r::FillLightning {
 
-Generator::Generator(const PrintObject &print_object, const coordf_t fill_density, const std::function<void()> &throw_on_cancel_callback)
+Generator::Generator(const PrintObject &print_object, const double fill_density, const std::function<void()> &throw_on_cancel_callback)
 {
     const PrintConfig         &print_config         = print_object.print()->config();
     const PrintObjectConfig   &object_config        = print_object.config();

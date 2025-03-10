@@ -25,7 +25,7 @@ SCENARIO("PrintObject: object layer heights", "[PrintObject]") {
                 REQUIRE(layers.size() == 10);
             }
             AND_THEN("Each layer is approximately 2mm above the previous Z") {
-                coordf_t last = 0.0;
+                double last = 0.0;
                 for (size_t i = 0; i < layers.size(); ++ i) {
                     REQUIRE((layers[i]->print_z - last) == Approx(2.0));
                     last = layers[i]->print_z;
@@ -79,7 +79,7 @@ SCENARIO("PrintObject: object layer heights", "[PrintObject]") {
 			const std::vector<Slic3r::Layer*> &layers = print.objects().front()->layers();
 			THEN("The layer height is limited to 5mm.") {
                 CHECK(layers.size() == 5);
-                coordf_t last = 2.0;
+                double last = 2.0;
                 for (size_t i = 1; i < layers.size(); i++) {
                     REQUIRE((layers[i]->print_z - last) == Approx(5.0));
                     last = layers[i]->print_z;

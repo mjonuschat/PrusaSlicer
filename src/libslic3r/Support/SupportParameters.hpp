@@ -62,20 +62,20 @@ struct SupportParameters {
 	// Is merging of regions allowed? Could the interface & base support regions be printed with the same extruder?
 	bool 					can_merge_support_regions;
 
-    coordf_t 				support_layer_height_min;
-//	coordf_t				support_layer_height_max;
+    double 				support_layer_height_min;
+//	double				support_layer_height_max;
 
-	coordf_t				gap_xy;
+	double				gap_xy;
 
     float    				base_angle;
     float    				interface_angle;
 
     // Density of the top / bottom interface and contact layers.
-    coordf_t 				interface_density;
+    double 				interface_density;
     // Density of the raft interface and contact layers.
-    coordf_t 				raft_interface_density;
+    double 				raft_interface_density;
     // Density of the base support layers.
-    coordf_t 				support_density;
+    double 				support_density;
 
     // Pattern of the sparse infill including sparse raft layers.
     InfillPattern           base_fill_pattern;

@@ -17,8 +17,8 @@ enum class ModelVolumeType : int;
 
 namespace GUI {
 
-typedef double                          coordf_t;
-typedef std::pair<coordf_t, coordf_t>   t_layer_height_range;
+typedef double                          double;
+typedef std::pair<double, double>   t_layer_height_range;
 
 // ----------------------------------------------------------------------------
 // ObjectDataViewModelNode: a node inside ObjectDataViewModel

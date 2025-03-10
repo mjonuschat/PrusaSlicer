@@ -117,7 +117,7 @@ public:
     // Exported for the helper classes (OozePrevention, Wipe) and for the Perl binding for unit tests.
     const Vec2d&    origin() const { return m_origin; }
     void            set_origin(const Vec2d &pointf);
-    void            set_origin(const coordf_t x, const coordf_t y) { this->set_origin(Vec2d(x, y)); }
+    void            set_origin(const double x, const double y) { this->set_origin(Vec2d(x, y)); }
     // Convert coordinates of the active object to G-code coordinates, possibly adjusted for extruder offset.
     template<typename Derived>
     Eigen::Matrix<double, Derived::SizeAtCompileTime, 1, Eigen::DontAlign> point_to_gcode(const Eigen::MatrixBase<Derived> &point) const {
@@ -211,7 +211,7 @@ private:
     void _do_export(Print& print, GCodeOutputStream& file, ThumbnailsGeneratorCallback thumbnail_cb);
 
     static ObjectsLayerToPrint         		                     collect_layers_to_print(const PrintObject &object);
-    static std::vector<std::pair<coordf_t, ObjectsLayerToPrint>> collect_layers_to_print(const Print &print);
+    static std::vector<std::pair<double, ObjectsLayerToPrint>> collect_layers_to_print(const Print &print);
 
     Polyline get_layer_change_xy_path(const Vec3d &from, const Vec3d &to);
 
@@ -253,7 +253,7 @@ private:
         const Print                                                   &print,
         const ToolOrdering                                            &tool_ordering,
         const std::vector<const PrintInstance*>                       &print_object_instances_ordering,
-        const std::vector<std::pair<coordf_t, ObjectsLayerToPrint>>   &layers_to_print,
+        const std::vector<std::pair<double, ObjectsLayerToPrint>>   &layers_to_print,
         const GCode::SmoothPathCache                                  &smooth_path_cache_global,
         GCodeOutputStream                                             &output_stream);
     // Process all layers of a single object instance (sequential mode) with a parallel pipeline:
@@ -270,8 +270,8 @@ private:
     void            set_extruders(const std::vector<unsigned int> &extruder_ids);
     std::string     preamble();
     std::string change_layer(
-        coordf_t previous_layer_z,
-        coordf_t print_z,
+        double previous_layer_z,
+        double print_z,
         bool vase_mode,
         const Point &first_point,
         const bool first_layer
@@ -450,7 +450,7 @@ private:
     std::optional<float>                m_current_dynamic_fan_speed;
 
     // Heights (print_z) at which the skirt has already been extruded.
-    std::vector<coordf_t>               m_skirt_done;
+    std::vector<double>               m_skirt_done;
     // Has the brim been extruded already? Brim is being extruded only for the first object of a multi-object print.
     bool                                m_brim_done;
     // Flag indicating whether the nozzle temperature changes from 1st to 2nd layer were performed.

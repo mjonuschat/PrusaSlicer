@@ -174,10 +174,10 @@ public:
     Layer              *upper_layer;
     Layer              *lower_layer;
 //    bool                slicing_errors;
-    coordf_t            slice_z;       // Z used for slicing in unscaled coordinates
-    coordf_t            print_z;       // Z used for printing in unscaled coordinates
-    coordf_t            height;        // layer height in unscaled coordinates
-    coordf_t            bottom_z() const { return this->print_z - this->height; }
+    double            slice_z;       // Z used for slicing in unscaled coordinates
+    double            print_z;       // Z used for printing in unscaled coordinates
+    double            height;        // layer height in unscaled coordinates
+    double            bottom_z() const { return this->print_z - this->height; }
 
     //Extrusions estimated to be seriously malformed, estimated during "Estimating curled extrusions" step. These lines should be avoided during fast travels.
     CurledLines         curled_lines;
@@ -241,10 +241,10 @@ public:
 
 protected:
     friend class PrintObject;
-    friend std::vector<Layer*> new_layers(PrintObject*, const std::vector<coordf_t>&);
+    friend std::vector<Layer*> new_layers(PrintObject*, const std::vector<double>&);
     friend std::string fix_slicing_errors(LayerPtrs&, const std::function<void()>&);
 
-    Layer(size_t id, PrintObject *object, coordf_t height, coordf_t print_z, coordf_t slice_z) :
+    Layer(size_t id, PrintObject *object, double height, double print_z, double slice_z) :
         upper_layer(nullptr), lower_layer(nullptr), 
         //slicing_errors(false),
         slice_z(slice_z), print_z(print_z), height(height),
@@ -299,7 +299,7 @@ protected:
 
     // The constructor has been made public to be able to insert additional support layers for the skirt or a wipe tower
     // between the raft and the object first layer.
-    SupportLayer(size_t id, size_t interface_id, PrintObject *object, coordf_t height, coordf_t print_z, coordf_t slice_z) :
+    SupportLayer(size_t id, size_t interface_id, PrintObject *object, double height, double print_z, double slice_z) :
         Layer(id, object, height, print_z, slice_z), m_interface_id(interface_id) {}
     virtual ~SupportLayer() = default;
 

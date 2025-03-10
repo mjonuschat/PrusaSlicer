@@ -4,7 +4,6 @@
 namespace Slic3r::Domain {
 
 using coord_t = int32_t;
-using coordf_t = double;
 
 using Vec2crd = Eigen::Matrix<coord_t,  2, 1, Eigen::DontAlign>;
 using Vec3crd = Eigen::Matrix<coord_t,  3, 1, Eigen::DontAlign>;

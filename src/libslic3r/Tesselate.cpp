@@ -201,13 +201,13 @@ private:
     bool            m_flipped;
 };
 
-std::vector<Vec3d> triangulate_expolygon_3d(const ExPolygon &poly, coordf_t z, bool flip)
+std::vector<Vec3d> triangulate_expolygon_3d(const ExPolygon &poly, double z, bool flip)
 {
     GluTessWrapper tess;
     return tess.tesselate3d(poly, z, flip);
 }
 
-std::vector<Vec3d> triangulate_expolygons_3d(const ExPolygons &polys, coordf_t z, bool flip)
+std::vector<Vec3d> triangulate_expolygons_3d(const ExPolygons &polys, double z, bool flip)
 {
 	GluTessWrapper tess;
     return tess.tesselate3d(polys, z, flip);

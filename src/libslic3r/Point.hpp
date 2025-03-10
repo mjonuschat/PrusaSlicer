@@ -419,7 +419,7 @@ public:
                 }
             }
         }
-        return (value_min != nullptr && dist_min < coordf_t(m_search_radius) * coordf_t(m_search_radius)) ? 
+        return (value_min != nullptr && dist_min < double(m_search_radius) * double(m_search_radius)) ? 
             std::make_pair(value_min, dist_min) : 
             std::make_pair(nullptr, std::numeric_limits<double>::max());
     }

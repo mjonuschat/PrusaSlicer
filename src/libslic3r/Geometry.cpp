@@ -90,14 +90,14 @@ double linint(double value, double oldmin, double oldmax, double newmin, double 
 struct ArrangeItem {
     ArrangeItem() {}
     Vec2d    pos;
-    coordf_t  weight;
+    double  weight;
     bool operator<(const ArrangeItem &other) const {
         return weight < other.weight ||
             ((weight == other.weight) && (pos(1) < other.pos(1) || (pos(1) == other.pos(1) && pos(0) < other.pos(0))));
     }
 };
 
-Pointfs arrange(size_t num_parts, const Vec2d &part_size, coordf_t gap, const BoundingBoxf* bed_bounding_box)
+Pointfs arrange(size_t num_parts, const Vec2d &part_size, double gap, const BoundingBoxf* bed_bounding_box)
 {
     // Use actual part size (the largest) plus separation distance (half on each side) in spacing algorithm.
     const Vec2d       cell_size(part_size(0) + gap, part_size(1) + gap);
@@ -124,14 +124,14 @@ Pointfs arrange(size_t num_parts, const Vec2d &part_size, coordf_t gap, const Bo
     std::vector<ArrangeItem> cellsorder(cellw * cellh, ArrangeItem());
     for (size_t j = 0; j < cellh; ++ j) {
         // Center of the jth row on the bed.
-        coordf_t cy = linint(j + 0.5, 0., double(cellh), cells_bb.min(1), cells_bb.max(1));
+        double cy = linint(j + 0.5, 0., double(cellh), cells_bb.min(1), cells_bb.max(1));
         // Offset from the bed center.
-        coordf_t yd = cells_bb.center()(1) - cy;
+        double yd = cells_bb.center()(1) - cy;
         for (size_t i = 0; i < cellw; ++ i) {
             // Center of the ith column on the bed.
-            coordf_t cx = linint(i + 0.5, 0., double(cellw), cells_bb.min(0), cells_bb.max(0));
+            double cx = linint(i + 0.5, 0., double(cellw), cells_bb.min(0), cells_bb.max(0));
             // Offset from the bed center.
-            coordf_t xd = cells_bb.center()(0) - cx;
+            double xd = cells_bb.center()(0) - cx;
             // Cell with a distance from the bed center.
             ArrangeItem &ci = cellsorder[j * cellw + i];
             // Cell center
@@ -157,17 +157,17 @@ class ArrangeItem {
 public:
     Vec2d pos = Vec2d::Zero();
     size_t index_x, index_y;
-    coordf_t dist;
+    double dist;
 };
 class ArrangeItemIndex {
 public:
-    coordf_t index;
+    double index;
     ArrangeItem item;
-    ArrangeItemIndex(coordf_t _index, ArrangeItem _item) : index(_index), item(_item) {};
+    ArrangeItemIndex(double _index, ArrangeItem _item) : index(_index), item(_item) {};
 };
 
 bool
-arrange(size_t total_parts, const Vec2d &part_size, coordf_t dist, const BoundingBoxf* bb, Pointfs &positions)
+arrange(size_t total_parts, const Vec2d &part_size, double dist, const BoundingBoxf* bb, Pointfs &positions)
 {
     positions.clear();
 
@@ -212,11 +212,11 @@ arrange(size_t total_parts, const Vec2d &part_size, coordf_t dist, const Boundin
     // work out distance for all cells, sort into list
     for (size_t i = 0; i <= cellw-1; ++i) {
         for (size_t j = 0; j <= cellh-1; ++j) {
-            coordf_t cx = linint(i + 0.5, 0, cellw, cells_bb.min(0), cells_bb.max(0));
-            coordf_t cy = linint(j + 0.5, 0, cellh, cells_bb.min(1), cells_bb.max(1));
+            double cx = linint(i + 0.5, 0, cellw, cells_bb.min(0), cells_bb.max(0));
+            double cy = linint(j + 0.5, 0, cellh, cells_bb.min(1), cells_bb.max(1));
             
-            coordf_t xd = fabs((area(0) / 2) - cx);
-            coordf_t yd = fabs((area(1) / 2) - cy);
+            double xd = fabs((area(0) / 2) - cx);
+            double yd = fabs((area(1) / 2) - cy);
             
             ArrangeItem c;
             c.pos(0) = cx;
@@ -227,12 +227,12 @@ arrange(size_t total_parts, const Vec2d &part_size, coordf_t dist, const Boundin
             
             // binary insertion sort
             {
-                coordf_t index = c.dist;
+                double index = c.dist;
                 size_t low = 0;
                 size_t high = cellsorder.size();
                 while (low < high) {
                     size_t mid = (low + ((high - low) / 2)) | 0;
-                    coordf_t midval = cellsorder[mid].index;
+                    double midval = cellsorder[mid].index;
                     
                     if (midval < index) {
                         low = mid + 1;
@@ -250,16 +250,16 @@ arrange(size_t total_parts, const Vec2d &part_size, coordf_t dist, const Boundin
     }
     
     // the extents of cells actually used by objects
-    coordf_t lx = 0;
-    coordf_t ty = 0;
-    coordf_t rx = 0;
-    coordf_t by = 0;
+    double lx = 0;
+    double ty = 0;
+    double rx = 0;
+    double by = 0;
 
     // now find cells actually used by objects, map out the extents so we can position correctly
     for (size_t i = 1; i <= total_parts; ++i) {
         ArrangeItemIndex c = cellsorder[i - 1];
-        coordf_t cx = c.item.index_x;
-        coordf_t cy = c.item.index_y;
+        double cx = c.item.index_x;
+        double cy = c.item.index_y;
         if (i == 1) {
             lx = rx = cx;
             ty = by = cy;
@@ -274,8 +274,8 @@ arrange(size_t total_parts, const Vec2d &part_size, coordf_t dist, const Boundin
     for (size_t i = 1; i <= total_parts; ++i) {
         ArrangeItemIndex c = cellsorder.front();
         cellsorder.erase(cellsorder.begin());
-        coordf_t cx = c.item.index_x - lx;
-        coordf_t cy = c.item.index_y - ty;
+        double cx = c.item.index_x - lx;
+        double cy = c.item.index_y - ty;
         
         positions.push_back(Vec2d(cx * part(0), cy * part(1)));
     }

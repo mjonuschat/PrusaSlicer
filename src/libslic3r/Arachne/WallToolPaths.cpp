@@ -31,7 +31,7 @@ namespace Slic3r::Arachne
 {
 
 WallToolPaths::WallToolPaths(const Polygons& outline, const coord_t bead_width_0, const coord_t bead_width_x,
-                             const size_t inset_count, const coord_t wall_0_inset, const coordf_t layer_height,
+                             const size_t inset_count, const coord_t wall_0_inset, const double layer_height,
                              const PrintObjectConfig &print_object_config, const PrintConfig &print_config)
     : outline(outline)
     , bead_width_0(bead_width_0)

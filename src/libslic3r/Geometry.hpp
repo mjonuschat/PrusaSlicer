@@ -341,7 +341,7 @@ void simplify_polygons(const Polygons &polygons, double tolerance, Polygons* ret
 double linint(double value, double oldmin, double oldmax, double newmin, double newmax);
 bool arrange(
     // input
-    size_t num_parts, const Vec2d &part_size, coordf_t gap, const BoundingBoxf* bed_bounding_box, 
+    size_t num_parts, const Vec2d &part_size, double gap, const BoundingBoxf* bed_bounding_box, 
     // output
     Pointfs &positions);
 

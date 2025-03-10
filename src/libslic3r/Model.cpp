@@ -343,7 +343,7 @@ TriangleMesh Model::mesh() const
     return mesh;
 }
 
-void Model::duplicate_objects_grid(size_t x, size_t y, coordf_t dist)
+void Model::duplicate_objects_grid(size_t x, size_t y, double dist)
 {
     if (this->objects.size() > 1) throw "Grid duplication is not supported with multiple objects";
     if (this->objects.empty()) throw "No objects!";
@@ -372,7 +372,7 @@ void Model::adjust_min_z()
         {
             if (obj != nullptr)
             {
-                coordf_t obj_min_z = obj->min_z();
+                double obj_min_z = obj->min_z();
                 if (obj_min_z < 0.0)
                     obj->translate_instances(Vec3d(0.0, 0.0, -obj_min_z));
             }

@@ -486,7 +486,7 @@ namespace Slic3r {
         typedef std::vector<Instance> InstancesList;
         typedef std::map<int, ObjectMetadata> IdToMetadataMap;
         typedef std::map<PathId, Geometry> IdToGeometryMap;
-        typedef std::map<int, std::vector<coordf_t>> IdToLayerHeightsProfileMap;
+        typedef std::map<int, std::vector<double>> IdToLayerHeightsProfileMap;
         typedef std::map<int, t_layer_config_ranges> IdToLayerConfigRangesMap;
         typedef std::map<int, CutObjectInfo>         IdToCutObjectInfoMap;
         typedef std::map<int, std::vector<sla::SupportPoint>> IdToSlaSupportPointsMap;
@@ -1291,11 +1291,11 @@ namespace Slic3r {
                     continue;
                 }
 
-                std::vector<coordf_t> profile;
+                std::vector<double> profile;
                 profile.reserve(object_data_profile.size());
 
                 for (const std::string& value : object_data_profile) {
-                    profile.push_back((coordf_t)std::atof(value.c_str()));
+                    profile.push_back((double)std::atof(value.c_str()));
                 }
 
                 m_layer_heights_profiles.insert({ object_id, profile });

@@ -382,7 +382,7 @@ static void export_travel_to_svg(const Polygons                  &boundary,
                                  const std::vector<Intersection> &intersections,
                                  const std::string               &path)
 {
-    coordf_t      stroke_width = scale_(0.05);
+    double      stroke_width = scale_(0.05);
     BoundingBox   bbox         = get_extents(boundary);
     ::Slic3r::SVG svg(path, bbox);
     svg.draw_outline(boundary, "green", stroke_width);

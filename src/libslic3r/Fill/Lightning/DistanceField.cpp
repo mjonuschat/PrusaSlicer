@@ -29,7 +29,7 @@ constexpr coord_t radius_per_cell_size = 6;  // The cell-size should be small co
 #ifdef LIGHTNING_DISTANCE_FIELD_DEBUG_OUTPUT
 void export_distance_field_to_svg(const std::string &path, const Polygons &outline, const Polygons &overhang, const std::vector<DistanceField::UnsupportedCell> &unsupported_points, const Points &points = {})
 {
-    coordf_t    stroke_width = scaled<coordf_t>(0.01);
+    double    stroke_width = scaled<double>(0.01);
     BoundingBox bbox         = get_extents(outline);
 
     bbox.offset(SCALED_EPSILON);

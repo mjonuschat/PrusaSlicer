@@ -84,7 +84,7 @@ struct FillParams
     // For Concentric infill, to switch between Classic and Arachne.
     bool        use_arachne     { false };
     // Layer height for Concentric infill with Arachne.
-    coordf_t    layer_height    { 0.f };
+    double    layer_height    { 0.f };
 
     // For infills that produce closed loops to force printing those loops clockwise.
     bool        prefer_clockwise_movements { false };
@@ -97,11 +97,11 @@ public:
     // Index of the layer.
     size_t      layer_id;
     // Z coordinate of the top print surface, in unscaled coordinates
-    coordf_t    z;
+    double    z;
     // in unscaled coordinates
-    coordf_t    spacing;
+    double    spacing;
     // infill / perimeter overlap, in unscaled coordinates
-    coordf_t    overlap;
+    double    overlap;
     // in radians, ccw, 0 = East
     float       angle;
     // In scaled coordinates. Maximum lenght of a perimeter segment connecting two infill lines.

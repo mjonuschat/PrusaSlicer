@@ -234,13 +234,13 @@ std::pair<SupportGeneratorLayersPtr, SupportGeneratorLayersPtr> generate_interfa
                     Polygons polygons_bottom_contact_projected_base;
                     if (support_params.num_top_interface_layers > 0) {
                         // Top Z coordinate of a slab, over which we are collecting the top / bottom contact surfaces
-                        coordf_t top_z              = intermediate_layers[std::min(num_intermediate - 1, idx_intermediate_layer + int(support_params.num_top_interface_layers) - 1)]->print_z;
-                        coordf_t top_inteface_z     = std::numeric_limits<coordf_t>::max();
+                        double top_z              = intermediate_layers[std::min(num_intermediate - 1, idx_intermediate_layer + int(support_params.num_top_interface_layers) - 1)]->print_z;
+                        double top_inteface_z     = std::numeric_limits<double>::max();
                         if (support_params.num_top_base_interface_layers > 0)
                             // Some top base interface layers will be generated.
                             top_inteface_z = support_params.num_top_interface_layers_only() == 0 ?
                                 // Only base interface layers to generate.
-                                - std::numeric_limits<coordf_t>::max() :
+                                - std::numeric_limits<double>::max() :
                                 intermediate_layers[std::min(num_intermediate - 1, idx_intermediate_layer + int(support_params.num_top_interface_layers_only()) - 1)]->print_z;
                         // Move idx_top_contact_first up until above the current print_z.
                         idx_top_contact_first = idx_higher_or_equal(top_contacts, idx_top_contact_first, [&intermediate_layer](const SupportGeneratorLayer *layer){ return layer->print_z >= intermediate_layer.print_z; }); //  - EPSILON
@@ -258,13 +258,13 @@ std::pair<SupportGeneratorLayersPtr, SupportGeneratorLayersPtr> generate_interfa
                     }
                     if (support_params.num_bottom_interface_layers > 0) {
                         // Bottom Z coordinate of a slab, over which we are collecting the top / bottom contact surfaces
-                        coordf_t bottom_z           = intermediate_layers[std::max(0, idx_intermediate_layer - int(support_params.num_bottom_interface_layers) + 1)]->bottom_z;
-                        coordf_t bottom_interface_z = - std::numeric_limits<coordf_t>::max();
+                        double bottom_z           = intermediate_layers[std::max(0, idx_intermediate_layer - int(support_params.num_bottom_interface_layers) + 1)]->bottom_z;
+                        double bottom_interface_z = - std::numeric_limits<double>::max();
                         if (support_params.num_bottom_base_interface_layers > 0)
                             // Some bottom base interface layers will be generated.
                             bottom_interface_z = support_params.num_bottom_interface_layers_only() == 0 ? 
                                 // Only base interface layers to generate.
-                                std::numeric_limits<coordf_t>::max() :
+                                std::numeric_limits<double>::max() :
                                 intermediate_layers[std::max(0, idx_intermediate_layer - int(support_params.num_bottom_interface_layers_only()))]->bottom_z;
                         // Move idx_bottom_contact_first up until touching bottom_z.
                         idx_bottom_contact_first = idx_higher_or_equal(bottom_contacts, idx_bottom_contact_first, [bottom_z](const SupportGeneratorLayer *layer){ return layer->print_z >= bottom_z - EPSILON; });
@@ -276,7 +276,7 @@ std::pair<SupportGeneratorLayersPtr, SupportGeneratorLayersPtr> generate_interfa
                             polygons_append(bottom_contact_layer.print_z - EPSILON > bottom_interface_z ? polygons_bottom_contact_projected_interface : polygons_bottom_contact_projected_base, bottom_contact_layer.polygons);
                         }
                     }
-                    auto resolve_same_layer = [](SupportGeneratorLayersPtr &layers, int &idx, coordf_t print_z) -> SupportGeneratorLayer* {
+                    auto resolve_same_layer = [](SupportGeneratorLayersPtr &layers, int &idx, double print_z) -> SupportGeneratorLayer* {
                         if (! layers.empty()) {
                             idx = idx_higher_or_equal(layers, idx, [print_z](const SupportGeneratorLayer *layer) { return layer->print_z > print_z - EPSILON; });
                             if (idx < int(layers.size()) && layers[idx]->print_z < print_z + EPSILON)
@@ -437,7 +437,7 @@ SupportGeneratorLayersPtr generate_raft_base(
         }
         // Insert the base layers.
         for (size_t i = 1; i < slicing_params.base_raft_layers; ++ i) {
-            coordf_t print_z = raft_layers.back()->print_z;
+            double print_z = raft_layers.back()->print_z;
             SupportGeneratorLayer &new_layer  = layer_storage.allocate_unguarded(SupporLayerType::RaftBase);
             raft_layers.push_back(&new_layer);
             new_layer.print_z  = print_z + slicing_params.base_raft_layer_height;
@@ -447,7 +447,7 @@ SupportGeneratorLayersPtr generate_raft_base(
         }
         // Insert the interface layers.
         for (size_t i = 1; i < slicing_params.interface_raft_layers; ++ i) {
-            coordf_t print_z = raft_layers.back()->print_z;
+            double print_z = raft_layers.back()->print_z;
             SupportGeneratorLayer &new_layer = layer_storage.allocate_unguarded(SupporLayerType::RaftInterface);
             raft_layers.push_back(&new_layer);
             new_layer.print_z = print_z + slicing_params.interface_raft_layer_height;
@@ -910,7 +910,7 @@ typedef std::vector<SupportGeneratorLayerExtruded*> SupportGeneratorLayerExtrude
 
 struct LoopInterfaceProcessor
 {
-    LoopInterfaceProcessor(coordf_t circle_r) :
+    LoopInterfaceProcessor(double circle_r) :
         n_contact_loops(0),
         circle_radius(circle_r),
         circle_distance(circle_r * 3.)
@@ -928,8 +928,8 @@ struct LoopInterfaceProcessor
     void generate(SupportGeneratorLayerExtruded &top_contact_layer, const Flow &interface_flow_src) const;
 
     int         n_contact_loops;
-    coordf_t    circle_radius;
-    coordf_t    circle_distance;
+    double    circle_radius;
+    double    circle_distance;
     Polygon     circle;
 };
 
@@ -982,7 +982,7 @@ void LoopInterfaceProcessor::generate(SupportGeneratorLayerExtruded &top_contact
             for (size_t i_contour = 0; i_contour <= it_contact_expoly->holes.size(); ++ i_contour) {
                 Polygon     &contour = (i_contour == 0) ? it_contact_expoly->contour : it_contact_expoly->holes[i_contour - 1];
                 const Point *seg_current_pt = nullptr;
-                coordf_t     seg_current_t  = 0.;
+                double     seg_current_t  = 0.;
                 if (! intersection_pl(contour.split_at_first_point(), overhang_with_margin).empty()) {
                     // The contour is below the overhang at least to some extent.
                     //FIXME ideally one would place the circles below the overhang only.
@@ -1000,19 +1000,19 @@ void LoopInterfaceProcessor::generate(SupportGeneratorLayerExtruded &top_contact
                         const Point &p1 = *(it-1);
                         const Point &p2 = *it;
                         // Intersection of a ray (p1, p2) with a circle placed at center_last, with radius of circle_distance.
-                        const Vec2d v_seg(coordf_t(p2(0)) - coordf_t(p1(0)), coordf_t(p2(1)) - coordf_t(p1(1)));
-                        const Vec2d v_cntr(coordf_t(p1(0) - center_last(0)), coordf_t(p1(1) - center_last(1)));
-                        coordf_t a = v_seg.squaredNorm();
-                        coordf_t b = 2. * v_seg.dot(v_cntr);
-                        coordf_t c = v_cntr.squaredNorm() - circle_distance * circle_distance;
-                        coordf_t disc = b * b - 4. * a * c;
+                        const Vec2d v_seg(double(p2(0)) - double(p1(0)), double(p2(1)) - double(p1(1)));
+                        const Vec2d v_cntr(double(p1(0) - center_last(0)), double(p1(1) - center_last(1)));
+                        double a = v_seg.squaredNorm();
+                        double b = 2. * v_seg.dot(v_cntr);
+                        double c = v_cntr.squaredNorm() - circle_distance * circle_distance;
+                        double disc = b * b - 4. * a * c;
                         if (disc > 0.) {
                             // The circle intersects a ray. Avoid the parts of the segment inside the circle.
-                            coordf_t t1 = (-b - sqrt(disc)) / (2. * a);
-                            coordf_t t2 = (-b + sqrt(disc)) / (2. * a);
-                            coordf_t t0 = (seg_current_pt == &p1) ? seg_current_t : 0.;
+                            double t1 = (-b - sqrt(disc)) / (2. * a);
+                            double t2 = (-b + sqrt(disc)) / (2. * a);
+                            double t0 = (seg_current_pt == &p1) ? seg_current_t : 0.;
                             // Take the lowest t in <t0, 1.>, excluding <t1, t2>.
-                            coordf_t t;
+                            double t;
                             if (t0 <= t1)
                                 t = t0;
                             else if (t2 <= 1.)
@@ -1027,7 +1027,7 @@ void LoopInterfaceProcessor::generate(SupportGeneratorLayerExtruded &top_contact
                             center_last    = Point(p1(0) + coord_t(v_seg(0) * t), p1(1) + coord_t(v_seg(1) * t));
                             // It has been verified that the new point is far enough from center_last.
                             // Ensure, that it is far enough from all the centers.
-                            std::pair<const Point*, coordf_t> circle_closest = circle_centers_lookup.find(center_last);
+                            std::pair<const Point*, double> circle_closest = circle_centers_lookup.find(center_last);
                             if (circle_closest.first != nullptr) {
                                 -- it;
                                 continue;
@@ -1330,7 +1330,7 @@ static void modulate_extrusion_by_overlapping_layers(
         ExtrusionMultiPath multipath;
         for (;;) {
             // Find a closest end point to pt_current.
-            std::pair<const ExtrusionPathFragmentEnd*, coordf_t> end_and_dist2 = map_fragment_starts.find(pt_current);
+            std::pair<const ExtrusionPathFragmentEnd*, double> end_and_dist2 = map_fragment_starts.find(pt_current);
             // There may be a bug in Clipper flipping the order of two last points in a fragment?
             // assert(end_and_dist2.first != nullptr);
             assert(end_and_dist2.first == nullptr || end_and_dist2.second < search_radius * search_radius);
@@ -1338,7 +1338,7 @@ static void modulate_extrusion_by_overlapping_layers(
                 // New fragment connecting to pt_current was not found.
                 // Verify that the last point found is close to the original end point of the unfragmented path.
                 //const double d2 = (pt_end - pt_current).cast<double>.squaredNorm();
-                //assert(d2 < coordf_t(search_radius * search_radius));
+                //assert(d2 < double(search_radius * search_radius));
                 // End of the path.
                 break;
             }
@@ -1429,11 +1429,11 @@ SupportGeneratorLayersPtr generate_support_layers(
         // Find the last layer with roughly the same print_z, find the minimum layer height of all.
         // Due to the floating point inaccuracies, the print_z may not be the same even if in theory they should.
         size_t j = i + 1;
-        coordf_t zmax = layers_sorted[i]->print_z + EPSILON;
+        double zmax = layers_sorted[i]->print_z + EPSILON;
         for (; j < layers_sorted.size() && layers_sorted[j]->print_z <= zmax; ++j) ;
         // Assign an average print_z to the set of layers with nearly equal print_z.
-        coordf_t zavg = 0.5 * (layers_sorted[i]->print_z + layers_sorted[j - 1]->print_z);
-        coordf_t height_min = layers_sorted[i]->height;
+        double zavg = 0.5 * (layers_sorted[i]->print_z + layers_sorted[j - 1]->print_z);
+        double height_min = layers_sorted[i]->height;
         bool     empty = true;
         // For snug supports, layers where the direction of the support interface shall change are accounted for.
         size_t   num_interfaces = 0;
@@ -1500,8 +1500,8 @@ void generate_support_toolpaths(
 
     BoundingBox bbox_object(Point(-scale_(1.), -scale_(1.0)), Point(scale_(1.), scale_(1.)));
 
-//    const coordf_t link_max_length_factor = 3.;
-    const coordf_t link_max_length_factor = 0.;
+//    const double link_max_length_factor = 3.;
+    const double link_max_length_factor = 0.;
 
     // Insert the raft base layers.
     auto n_raft_layers = std::min<size_t>(support_layers.size(), std::max(0, int(slicing_params.raft_layers()) - 1));
@@ -1855,7 +1855,7 @@ void generate_support_toolpaths(
                 //FIXME When printing a briging path, what is an equivalent height of the squished extrudate of the same width?
                 // Collect overlapping top/bottom surfaces.
                 layer_cache_item.overlapping.reserve(20);
-                coordf_t bottom_z = layer_cache_item.layer_extruded->layer->bottom_print_z() + EPSILON;
+                double bottom_z = layer_cache_item.layer_extruded->layer->bottom_print_z() + EPSILON;
                 auto add_overlapping = [&layer_cache_item, bottom_z](const SupportGeneratorLayersPtr &layers, size_t idx_top) {
                     for (int i = int(idx_top) - 1; i >= 0 && layers[i]->print_z > bottom_z; -- i)
                         layer_cache_item.overlapping.push_back(layers[i]);

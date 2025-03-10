@@ -168,12 +168,12 @@ public:
 	ClosestPointResult closest_point_signed_distance(const Point &pt, coord_t search_radius) const;
 
 	// Only call this function for closed contours!
-	bool signed_distance_edges(const Point &pt, coord_t search_radius, coordf_t &result_min_dist, bool *pon_segment = nullptr) const;
+	bool signed_distance_edges(const Point &pt, coord_t search_radius, double &result_min_dist, bool *pon_segment = nullptr) const;
 
 	// Calculate a signed distance to the contours in search_radius from the point. If no edge is found in search_radius,
 	// return an interpolated value from m_signed_distance_field, if it exists.
 	// Only call this function for closed contours!
-	bool signed_distance(const Point &pt, coord_t search_radius, coordf_t &result_min_dist) const;
+	bool signed_distance(const Point &pt, coord_t search_radius, double &result_min_dist) const;
 
 	const BoundingBox& 	bbox() const { return m_bbox; }
 	const coord_t 		resolution() const { return m_resolution; }

@@ -1047,7 +1047,7 @@ void finalize_raft_contact(
             double threshold = scaled<double>(print_object.config().raft_expansion.value) * 2.;
             first_layer_move_bounds.erase(std::remove_if(first_layer_move_bounds.begin(), first_layer_move_bounds.end(),
                 [&grid, threshold](const SupportElement &el) {
-                    coordf_t dist;
+                    double dist;
                     if (grid.signed_distance_edges(el.state.result_on_layer, threshold, dist)) {
                         assert(std::abs(dist) < threshold + SCALED_EPSILON);
                         // Support point is inside the expanded raft, remove it.
@@ -3616,7 +3616,7 @@ static void generate_support_areas(Print &print, const BuildVolume &build_volume
                 // Find the last layer with roughly the same print_z, find the minimum layer height of all.
                 // Due to the floating point inaccuracies, the print_z may not be the same even if in theory they should.
                 int j = i + 1;
-                coordf_t zmax = layers_sorted[i]->print_z + EPSILON;
+                double zmax = layers_sorted[i]->print_z + EPSILON;
                 bool empty = layers_sorted[i]->polygons.empty();
                 for (; j < layers_sorted.size() && layers_sorted[j]->print_z <= zmax; ++j)
                     if (!layers_sorted[j]->polygons.empty())

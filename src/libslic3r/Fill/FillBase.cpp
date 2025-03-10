@@ -133,12 +133,12 @@ coord_t Fill::_adjust_solid_spacing(const coord_t width, const coord_t distance)
     coord_t     distance_new        = (number_of_intervals == 0) ? 
         distance : 
         coord_t((width - EPSILON) / number_of_intervals);
-    const coordf_t factor = coordf_t(distance_new) / coordf_t(distance);
+    const double factor = double(distance_new) / double(distance);
     assert(factor > 1. - 1e-5);
     // How much could the extrusion width be increased? By 20%.
-    const coordf_t factor_max = 1.2;
+    const double factor_max = 1.2;
     if (factor > factor_max)
-        distance_new = coord_t(floor((coordf_t(distance) * factor_max + 0.5)));
+        distance_new = coord_t(floor((double(distance) * factor_max + 0.5)));
     return distance_new;
 }
 
@@ -766,7 +766,7 @@ static void export_infill_to_svg(
     // Draw the pieces of boundary allowed to be used as anchors of infill lines, not yet consumed.
     const std::string color_boundary_trimmed     = "blue";
     const std::string color_boundary_not_trimmed = "yellow";
-    const coordf_t    boundary_line_width        = scaled_spacing;
+    const double    boundary_line_width        = scaled_spacing;
     svg.draw_outline(polygons, "red", boundary_line_width);
     for (const std::vector<ContourIntersectionPoint*> &intersections : boundary_intersections) {
         const size_t                 boundary_idx  = &intersections - boundary_intersections.data();

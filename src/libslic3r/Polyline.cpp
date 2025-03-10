@@ -378,11 +378,11 @@ void ThickPolyline::clip_end(double distance)
                 assert(this->width.empty());
                 break;
             }
-            coordf_t last_width = this->width.back();
+            double last_width = this->width.back();
             this->width.pop_back();
 
             Vec2d    vec            = this->last_point().cast<double>() - last_point;
-            coordf_t width_diff     = this->width.back() - last_width;
+            double width_diff     = this->width.back() - last_width;
             double   vec_length_sqr = vec.squaredNorm();
             if (vec_length_sqr > distance * distance) {
                 double t = (distance / std::sqrt(vec_length_sqr));

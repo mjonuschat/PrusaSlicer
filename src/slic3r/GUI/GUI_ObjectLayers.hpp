@@ -20,8 +20,8 @@ class ModelObject;
 namespace GUI {
 class ConfigOptionsGroup;
 
-typedef double                          coordf_t;
-typedef std::pair<coordf_t, coordf_t>   t_layer_height_range;
+typedef double                          double;
+typedef std::pair<double, double>   t_layer_height_range;
 
 class ObjectLayers;
 
@@ -48,7 +48,7 @@ public:
                         EditorType type = etUndef,
                         std::function<void(EditorType)>     set_focus_data_fn   = [](EditorType)      {;},
                         // callback parameters: new value, from enter, dont't update panel UI (when called from edit field's kill focus handler for the PlusMinusButton)
-                        std::function<bool(coordf_t, bool, bool)> edit_fn       = [](coordf_t, bool, bool) {return false; }
+                        std::function<bool(double, bool, bool)> edit_fn       = [](double, bool, bool) {return false; }
                         );
     ~LayerRangeEditor() {}
 
@@ -57,7 +57,7 @@ public:
     void                msw_rescale();
 
 private:
-    coordf_t            get_value();
+    double            get_value();
 };
 
 class ObjectLayers : public OG_Settings
@@ -81,9 +81,9 @@ public:
     class PlusMinusButton : public ScalableButton
     {
     public:
-        PlusMinusButton(wxWindow *parent, const ScalableBitmap &bitmap, std::pair<coordf_t, coordf_t> range) : ScalableButton(parent, wxID_ANY, bitmap), range(range) {}
+        PlusMinusButton(wxWindow *parent, const ScalableBitmap &bitmap, std::pair<double, double> range) : ScalableButton(parent, wxID_ANY, bitmap), range(range) {}
         // updated when the text edit field loses focus for any PlusMinusButton.
-        std::pair<coordf_t, coordf_t> range;
+        std::pair<double, double> range;
     };
 
     void        select_editor(LayerRangeEditor* editor, const bool is_last_edited_range);

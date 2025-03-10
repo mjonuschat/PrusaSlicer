@@ -210,7 +210,7 @@ public:
 
     // If the qverts or tverts contain thick extrusions, then offsets keeps pointers of the starts
     // of the extrusions per layer.
-    std::vector<coordf_t>       print_zs;
+    std::vector<double>       print_zs;
     // Offset into qverts & tverts, or offsets into indices stored into an OpenGL name_index_buffer.
     std::vector<size_t>         offsets;
 
@@ -337,7 +337,7 @@ public:
 
     // Return an estimate of the memory consumed by this class.
     size_t 				cpu_memory_used() const {
-          return sizeof(*this) + this->model.cpu_memory_used() + this->print_zs.capacity() * sizeof(coordf_t) +
+          return sizeof(*this) + this->model.cpu_memory_used() + this->print_zs.capacity() * sizeof(double) +
                this->offsets.capacity() * sizeof(size_t);
     }
     // Return an estimate of the memory held by GPU vertex buffers.

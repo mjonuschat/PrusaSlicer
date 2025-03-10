@@ -493,12 +493,12 @@ std::string Print::validate(std::vector<std::string>* warnings) const
     // 1) Whether all layers are synchronized if printing with wipe tower and / or unsynchronized supports.
     // 2) Whether layer height is constant for Organic supports.
     // 3) Whether build volume Z is not violated.
-    std::vector<std::vector<coordf_t>> layer_height_profiles;
-    auto layer_height_profile = [this, &layer_height_profiles](const size_t print_object_idx) -> const std::vector<coordf_t>& {
+    std::vector<std::vector<double>> layer_height_profiles;
+    auto layer_height_profile = [this, &layer_height_profiles](const size_t print_object_idx) -> const std::vector<double>& {
         const PrintObject       &print_object = *m_objects[print_object_idx];
         if (layer_height_profiles.empty())
-            layer_height_profiles.assign(m_objects.size(), std::vector<coordf_t>());
-        std::vector<coordf_t>   &profile      = layer_height_profiles[print_object_idx];
+            layer_height_profiles.assign(m_objects.size(), std::vector<double>());
+        std::vector<double>   &profile      = layer_height_profiles[print_object_idx];
         if (profile.empty())
             PrintObject::update_layer_height_profile(*print_object.model_object(), print_object.slicing_parameters(), profile);
         return profile;
@@ -536,7 +536,7 @@ std::string Print::validate(std::vector<std::string>* warnings) const
         if (const PrintObject &print_object = *m_objects[print_object_idx];
             print_object.has_support_material() && print_object.config().support_material_style.value == smsOrganic &&
             print_object.model_object()->has_custom_layering()) {
-            if (const std::vector<coordf_t> &layers = layer_height_profile(print_object_idx); ! layers.empty())
+            if (const std::vector<double> &layers = layer_height_profile(print_object_idx); ! layers.empty())
                 if (! check_object_layers_fixed(print_object.slicing_parameters(), layers))
                     return _u8L("Variable layer height is not supported with Organic supports.");
         }
@@ -605,7 +605,7 @@ std::string Print::validate(std::vector<std::string>* warnings) const
                     // The latter case might create a floating point inaccuracy mismatch, so compare
                     // element-wise using an epsilon check.
                     size_t i = 0;
-                    const coordf_t eps = 0.5 * EPSILON; // layers closer than EPSILON will be merged later. Let's make
+                    const double eps = 0.5 * EPSILON; // layers closer than EPSILON will be merged later. Let's make
                     // this check a bit more sensitive to make sure we never consider two different layers as one.
                     while (i < layer_height_profiles[idx_object].size()
                         && i < layer_height_profiles[tallest_object_idx].size()) {
@@ -1042,7 +1042,7 @@ void Print::_make_skirt()
     // include the thickest object first. It is just guaranteed that a skirt is
     // prepended to the first 'n' layers (with 'n' = skirt_height).
     // $skirt_height_z in this case is the highest possible skirt height for safety.
-    coordf_t skirt_height_z = 0.;
+    double skirt_height_z = 0.;
     for (const PrintObject *object : m_objects) {
         size_t skirt_layers = this->has_infinite_skirt() ?
             object->layer_count() : 
@@ -1121,7 +1121,7 @@ void Print::_make_skirt()
     auto   distance = float(scale_(m_config.skirt_distance.value - spacing/2.));
     // Draw outlines from outside to inside.
     // Loop while we have less skirts than required or any extruder hasn't reached the min length if any.
-    std::vector<coordf_t> extruded_length(extruders.size(), 0.);
+    std::vector<double> extruded_length(extruders.size(), 0.);
     for (size_t i = n_skirts, extruder_idx = 0; i > 0; -- i) {
         this->throw_if_canceled();
         // Offset the skirt outside.
@@ -1545,7 +1545,7 @@ void Print::_make_wipe_tower()
     m_wipe_tower_data.height = wipe_tower.get_wipe_tower_height();
 
     // Unload the current filament over the purge tower.
-    coordf_t layer_height = m_objects.front()->config().layer_height.value;
+    double layer_height = m_objects.front()->config().layer_height.value;
     if (m_wipe_tower_data.tool_ordering.back().wipe_tower_partitions > 0) {
         // The wipe tower goes up to the last layer of the print.
         if (wipe_tower.layer_finished()) {

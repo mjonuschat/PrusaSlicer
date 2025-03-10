@@ -40,7 +40,7 @@ static void export_graph_to_svg(const std::string                               
                                 const bool                                         transition_ends    = true)
 {
     const std::vector<std::string> colors       = {"blue", "cyan", "red", "orange", "magenta", "pink", "purple", "green", "yellow"};
-    coordf_t                       stroke_width = scale_(0.03);
+    double                       stroke_width = scale_(0.03);
     BoundingBox                    bbox         = get_extents(polys);
     for (const auto &node : graph.nodes)
         bbox.merge(node.p);
@@ -370,7 +370,7 @@ void SkeletalTrapezoidation::constructFromPolygons(const Polygons& polys)
         static int iRun = 0;
         BoundingBox bbox = get_extents(polys);
         SVG svg(debug_out_path("arachne_voronoi-input-%d.svg", iRun++).c_str(), bbox);
-        svg.draw_outline(polys, "black", scaled<coordf_t>(0.03f));
+        svg.draw_outline(polys, "black", scaled<double>(0.03f));
     }
 #endif
 

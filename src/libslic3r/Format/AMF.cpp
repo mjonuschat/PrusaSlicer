@@ -750,7 +750,7 @@ void AMFParserContext::endElement(const char * /* name */)
             } else if (m_path.size() == 3 && m_path[1] == NODE_TYPE_OBJECT && m_object && strcmp(opt_key, "layer_height_profile") == 0) {
                 // Parse object's layer height profile, a semicolon separated list of floats.
                 char *p = m_value[1].data();
-                std::vector<coordf_t> data;
+                std::vector<double> data;
                 for (;;) {
                     char *end = strchr(p, ';');
                     if (end != nullptr)

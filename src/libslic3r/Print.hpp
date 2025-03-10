@@ -112,9 +112,9 @@ public:
 	unsigned int 				extruder(FlowRole role) const;
     Flow                        flow(const PrintObject &object, FlowRole role, double layer_height, bool first_layer = false) const;
     // Average diameter of nozzles participating on extruding this region.
-    coordf_t                    nozzle_dmr_avg(const PrintConfig &print_config) const;
+    double                    nozzle_dmr_avg(const PrintConfig &print_config) const;
     // Average diameter of nozzles participating on extruding this region.
-    coordf_t                    bridging_height_avg(const PrintConfig &print_config) const;
+    double                    bridging_height_avg(const PrintConfig &print_config) const;
 
     // Collect 0-based extruder indices used to print this region's object.
 	void                        collect_object_printing_extruders(const Print &print, std::vector<unsigned int> &object_extruders) const;
@@ -314,27 +314,27 @@ public:
     const Layer* 	get_layer(int idx) const { return m_layers[idx]; }
     Layer* 			get_layer(int idx) 		 { return m_layers[idx]; }
     // Get a layer exactly at print_z.
-    const Layer*	get_layer_at_printz(coordf_t print_z) const;
-    Layer*			get_layer_at_printz(coordf_t print_z);
+    const Layer*	get_layer_at_printz(double print_z) const;
+    Layer*			get_layer_at_printz(double print_z);
     // Get a layer approximately at print_z.
-    const Layer*	get_layer_at_printz(coordf_t print_z, coordf_t epsilon) const;
-    Layer*			get_layer_at_printz(coordf_t print_z, coordf_t epsilon);
+    const Layer*	get_layer_at_printz(double print_z, double epsilon) const;
+    Layer*			get_layer_at_printz(double print_z, double epsilon);
     // Get the first layer approximately bellow print_z.
-    const Layer*	get_first_layer_bellow_printz(coordf_t print_z, coordf_t epsilon) const;
+    const Layer*	get_first_layer_bellow_printz(double print_z, double epsilon) const;
 
     // print_z: top of the layer; slice_z: center of the layer.
-    Layer*          add_layer(int id, coordf_t height, coordf_t print_z, coordf_t slice_z);
+    Layer*          add_layer(int id, double height, double print_z, double slice_z);
 
     size_t          support_layer_count() const { return m_support_layers.size(); }
     void            clear_support_layers();
     SupportLayer*   get_support_layer(int idx) { return m_support_layers[idx]; }
-    SupportLayer*   add_support_layer(int id, int interface_id, coordf_t height, coordf_t print_z);
-    SupportLayerPtrs::iterator insert_support_layer(SupportLayerPtrs::iterator pos, size_t id, size_t interface_id, coordf_t height, coordf_t print_z, coordf_t slice_z);
+    SupportLayer*   add_support_layer(int id, int interface_id, double height, double print_z);
+    SupportLayerPtrs::iterator insert_support_layer(SupportLayerPtrs::iterator pos, size_t id, size_t interface_id, double height, double print_z, double slice_z);
     void            delete_support_layer(int idx);
     
     // Initialize the layer_height_profile from the model_object's layer_height_profile, from model_object's layer height table, or from slicing parameters.
     // Returns true, if the layer_height_profile was changed.
-    static bool     update_layer_height_profile(const ModelObject &model_object, const SlicingParameters &slicing_parameters, std::vector<coordf_t> &layer_height_profile);
+    static bool     update_layer_height_profile(const ModelObject &model_object, const SlicingParameters &slicing_parameters, std::vector<double> &layer_height_profile);
 
     // Collect the slicing parameters, to be used by variable layer thickness algorithm,
     // by the interactive layer height editor and by the printing process itself.

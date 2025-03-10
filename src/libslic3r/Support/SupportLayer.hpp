@@ -85,19 +85,19 @@ public:
 
 	// For the bridging flow, bottom_print_z will be above bottom_z to account for the vertical separation.
 	// For the non-bridging flow, bottom_print_z will be equal to bottom_z.
-	coordf_t bottom_print_z() const { return print_z - height; }
+	double bottom_print_z() const { return print_z - height; }
 
 	// To sort the extremes of top / bottom interface layers.
-	coordf_t extreme_z() const { return (this->layer_type == SupporLayerType::TopContact) ? this->bottom_z : this->print_z; }
+	double extreme_z() const { return (this->layer_type == SupporLayerType::TopContact) ? this->bottom_z : this->print_z; }
 
 	SupporLayerType layer_type { SupporLayerType::Unknown };
 	// Z used for printing, in unscaled coordinates.
-	coordf_t print_z { 0 };
+	double print_z { 0 };
 	// Bottom Z of this layer. For soluble layers, bottom_z + height = print_z,
 	// otherwise bottom_z + gap + height = print_z.
-	coordf_t bottom_z { 0 };
+	double bottom_z { 0 };
 	// Layer height in unscaled coordinates.
-	coordf_t height { 0 };
+	double height { 0 };
 	// Index of a PrintObject layer_id supported by this layer. This will be set for top contact layers.
 	// If this is not a contact layer, it will be set to size_t(-1).
 	size_t 	 idx_object_layer_above { size_t(-1) };

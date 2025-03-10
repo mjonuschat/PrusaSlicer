@@ -197,10 +197,10 @@ public:
     void assign(const LayerHeightProfile &rhs) { if (! this->timestamp_matches(rhs)) { m_data = rhs.m_data; this->copy_timestamp(rhs); } }
     void assign(LayerHeightProfile &&rhs) { if (! this->timestamp_matches(rhs)) { m_data = std::move(rhs.m_data); this->copy_timestamp(rhs); } }
 
-    const std::vector<coordf_t>& get() const throw() { return m_data; }
+    const std::vector<double>& get() const throw() { return m_data; }
     bool                  empty() const throw() { return m_data.empty(); }
-    void                  set(const std::vector<coordf_t> &data) { if (m_data != data) { m_data = data; this->touch(); } }
-    void                  set(std::vector<coordf_t> &&data) { if (m_data != data) { m_data = std::move(data); this->touch(); } }
+    void                  set(const std::vector<double> &data) { if (m_data != data) { m_data = data; this->touch(); } }
+    void                  set(std::vector<double> &&data) { if (m_data != data) { m_data = std::move(data); this->touch(); } }
     void                  clear() { m_data.clear(); this->touch(); }
 
     template<class Archive> void serialize(Archive &ar)
@@ -224,7 +224,7 @@ private:
     LayerHeightProfile& operator=(const LayerHeightProfile &rhs) = default;
     LayerHeightProfile& operator=(LayerHeightProfile &&rhs) = default;
 
-    std::vector<coordf_t> m_data;
+    std::vector<double> m_data;
 
     // to access set_new_unique_id() when copy / pasting an object
     friend class ModelObject;
@@ -1326,11 +1326,11 @@ public:
     unsigned int  update_print_volume_state(const BuildVolume &build_volume);
     // Returns true if any ModelObject was modified.
     bool 		  center_instances_around_point(const Vec2d &point);
-    void 		  translate(coordf_t x, coordf_t y, coordf_t z) { for (ModelObject *o : this->objects) o->translate(x, y, z); }
+    void 		  translate(double x, double y, double z) { for (ModelObject *o : this->objects) o->translate(x, y, z); }
     TriangleMesh  mesh() const;
     
     // Croaks if the duplicated objects do not fit the print bed.
-    void duplicate_objects_grid(size_t x, size_t y, coordf_t dist);
+    void duplicate_objects_grid(size_t x, size_t y, double dist);
 
     // Ensures that the min z of the model is not negative
     void 		  adjust_min_z();

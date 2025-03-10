@@ -18,8 +18,8 @@ namespace Slic3r {
 const bool constexpr NORMALS_UP = false;
 const bool constexpr NORMALS_DOWN = true;
 
-extern std::vector<Vec3d> triangulate_expolygon_3d (const ExPolygon  &poly,  coordf_t z = 0, bool flip = NORMALS_UP);
-extern std::vector<Vec3d> triangulate_expolygons_3d(const ExPolygons &polys, coordf_t z = 0, bool flip = NORMALS_UP);
+extern std::vector<Vec3d> triangulate_expolygon_3d (const ExPolygon  &poly,  double z = 0, bool flip = NORMALS_UP);
+extern std::vector<Vec3d> triangulate_expolygons_3d(const ExPolygons &polys, double z = 0, bool flip = NORMALS_UP);
 extern std::vector<Vec2d> triangulate_expolygon_2d (const ExPolygon  &poly,  bool flip = NORMALS_UP);
 extern std::vector<Vec2d> triangulate_expolygons_2d(const ExPolygons &polys, bool flip = NORMALS_UP);
 extern std::vector<Vec2f> triangulate_expolygon_2f (const ExPolygon  &poly,  bool flip = NORMALS_UP);

@@ -1,4 +1,5 @@
 #include "libslic3r/Point.hpp"
+#include "libslic3r/libslic3r.h"
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
@@ -124,8 +125,8 @@ struct ObjectPartFixture {
     };
     const float width = 0.1f;
     bool connected_to_bed = true;
-    coordf_t print_head_z = 0.2;
-    coordf_t layer_height = 0.2;
+    double print_head_z = 0.2;
+    double layer_height = 0.2;
     ExtrusionAttributes attributes;
     ExtrusionEntityCollection collection;
     std::vector<const ExtrusionEntityCollection*> extrusions{};

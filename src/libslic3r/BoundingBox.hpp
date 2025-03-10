@@ -51,10 +51,10 @@ public:
     void scale(double factor);
     PointType size() const;
     double radius() const;
-    void translate(coordf_t x, coordf_t y) { assert(this->defined); PointType v(x, y); this->min += v; this->max += v; }
+    void translate(double x, double y) { assert(this->defined); PointType v(x, y); this->min += v; this->max += v; }
     void translate(const PointType &v) { this->min += v; this->max += v; }
-    void offset(coordf_t delta);
-    BoundingBoxBase<PointType, PointsType> inflated(coordf_t delta) const throw() { BoundingBoxBase<PointType, PointsType> out(*this); out.offset(delta); return out; }
+    void offset(double delta);
+    BoundingBoxBase<PointType, PointsType> inflated(double delta) const throw() { BoundingBoxBase<PointType, PointsType> out(*this); out.offset(delta); return out; }
     PointType center() const;
     bool contains(const PointType &point) const {
         return point.x() >= this->min.x() && point.x() <= this->max.x()
@@ -135,12 +135,12 @@ public:
     void merge(const BoundingBox3Base<PointType> &bb);
     PointType size() const;
     double radius() const;
-    void translate(coordf_t x, coordf_t y, coordf_t z) { assert(this->defined); PointType v(x, y, z); this->min += v; this->max += v; }
+    void translate(double x, double y, double z) { assert(this->defined); PointType v(x, y, z); this->min += v; this->max += v; }
     void translate(const Vec3d &v) { this->min += v; this->max += v; }
-    void offset(coordf_t delta);
-    BoundingBox3Base<PointType> inflated(coordf_t delta) const throw() { BoundingBox3Base<PointType> out(*this); out.offset(delta); return out; }
+    void offset(double delta);
+    BoundingBox3Base<PointType> inflated(double delta) const throw() { BoundingBox3Base<PointType> out(*this); out.offset(delta); return out; }
     PointType center() const;
-    coordf_t max_size() const;
+    double max_size() const;
 
     bool contains(const PointType &point) const {
         return BoundingBoxBase<PointType>::contains(point) && point.z() >= this->min.z() && point.z() <= this->max.z();
@@ -171,8 +171,8 @@ public:
 extern template void     BoundingBoxBase<Point, Points>::scale(double factor);
 extern template void     BoundingBoxBase<Vec2d>::scale(double factor);
 extern template void     BoundingBoxBase<Vec3d>::scale(double factor);
-extern template void     BoundingBoxBase<Point, Points>::offset(coordf_t delta);
-extern template void     BoundingBoxBase<Vec2d>::offset(coordf_t delta);
+extern template void     BoundingBoxBase<Point, Points>::offset(double delta);
+extern template void     BoundingBoxBase<Vec2d>::offset(double delta);
 extern template void     BoundingBoxBase<Point, Points>::merge(const Point &point);
 extern template void     BoundingBoxBase<Vec2f>::merge(const Vec2f &point);
 extern template void     BoundingBoxBase<Vec2d>::merge(const Vec2d &point);
@@ -196,11 +196,11 @@ extern template void     BoundingBox3Base<Vec3d>::merge(const BoundingBox3Base<V
 extern template Vec3f    BoundingBox3Base<Vec3f>::size() const;
 extern template Vec3d    BoundingBox3Base<Vec3d>::size() const;
 extern template double   BoundingBox3Base<Vec3d>::radius() const;
-extern template void     BoundingBox3Base<Vec3d>::offset(coordf_t delta);
+extern template void     BoundingBox3Base<Vec3d>::offset(double delta);
 extern template Vec3f    BoundingBox3Base<Vec3f>::center() const;
 extern template Vec3d    BoundingBox3Base<Vec3d>::center() const;
-extern template coordf_t BoundingBox3Base<Vec3f>::max_size() const;
-extern template coordf_t BoundingBox3Base<Vec3d>::max_size() const;
+extern template double BoundingBox3Base<Vec3f>::max_size() const;
+extern template double BoundingBox3Base<Vec3d>::max_size() const;
 
 class BoundingBox : public BoundingBoxBase<Point, Points>
 {
@@ -220,7 +220,7 @@ public:
     BoundingBox(const BoundingBoxBase<Vec2crd> &bb): BoundingBox(bb.min, bb.max) {}
     BoundingBox(const Points &points) : BoundingBoxBase<Point, Points>(points) {}
 
-    BoundingBox inflated(coordf_t delta) const noexcept { BoundingBox out(*this); out.offset(delta); return out; }
+    BoundingBox inflated(double delta) const noexcept { BoundingBox out(*this); out.offset(delta); return out; }
 
     BoundingBox scaled(double factor) const;
 

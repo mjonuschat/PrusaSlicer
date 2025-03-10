@@ -1178,7 +1178,7 @@ EdgeGrid::Grid::ClosestPointResult EdgeGrid::Grid::closest_point_signed_distance
 	return result;
 }
 
-bool EdgeGrid::Grid::signed_distance_edges(const Point &pt, coord_t search_radius, coordf_t &result_min_dist, bool *pon_segment) const 
+bool EdgeGrid::Grid::signed_distance_edges(const Point &pt, coord_t search_radius, double &result_min_dist, bool *pon_segment) const 
 {
 	BoundingBox bbox;
 	bbox.min = bbox.max = Point(pt(0) - m_bbox.min(0), pt(1) - m_bbox.min(1));
@@ -1273,7 +1273,7 @@ bool EdgeGrid::Grid::signed_distance_edges(const Point &pt, coord_t search_radiu
 	return true;
 }
 
-bool EdgeGrid::Grid::signed_distance(const Point &pt, coord_t search_radius, coordf_t &result_min_dist) const
+bool EdgeGrid::Grid::signed_distance(const Point &pt, coord_t search_radius, double &result_min_dist) const
 {
 	if (signed_distance_edges(pt, search_radius, result_min_dist))
 		return true;
@@ -1494,7 +1494,7 @@ void EdgeGrid::save_png(const EdgeGrid::Grid &grid, const BoundingBox &bbox, coo
     	for (coord_t c = 0; c < w; ++ c) {
 			unsigned char *pxl = pixels.data() + (((h - r - 1) * w) + c) * 3;
 			Point pt(c * resolution + bbox.min(0), r * resolution + bbox.min(1));
-			coordf_t min_dist;
+			double min_dist;
 			bool on_segment = true;
 			#if 0
 			if (grid.signed_distance_edges(pt, search_radius, min_dist, &on_segment)) {

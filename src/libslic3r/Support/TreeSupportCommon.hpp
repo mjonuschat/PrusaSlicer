@@ -379,7 +379,7 @@ public:
     coord_t min_feature_size;
 
     // Extra raft layers below the object.
-    std::vector<coordf_t> raft_layers;
+    std::vector<double> raft_layers;
 
 public:
     bool operator==(const TreeSupportSettings& other) const

@@ -7,7 +7,7 @@ namespace Slic3r::Domain {
 static constexpr double SCALING_FACTOR = 0.000001;
 
 //FIXME Better to use an inline function with an explicit return type.
-//inline coord_t scale_(coordf_t v) { return coord_t(floor(v / SCALING_FACTOR + 0.5f)); }
+//inline coord_t scale_(double v) { return coord_t(floor(v / SCALING_FACTOR + 0.5f)); }
 #define scale_(val) ((val) / SCALING_FACTOR)
 
 class Point : public Vec2crd
@@ -25,7 +25,7 @@ public:
     // This constructor has to be implicit (non-explicit) to allow implicit conversion from Eigen expressions.
     template<typename OtherDerived>
     Point(const Eigen::MatrixBase<OtherDerived> &other) : Vec2crd(other) {}
-    static Point new_scale(coordf_t x, coordf_t y) { return Point(coord_t(scale_(x)), coord_t(scale_(y))); }
+    static Point new_scale(double x, double y) { return Point(coord_t(scale_(x)), coord_t(scale_(y))); }
     template<typename OtherDerived>
     static Point new_scale(const Eigen::MatrixBase<OtherDerived> &v) { return Point(coord_t(scale_(v.x())), coord_t(scale_(v.y()))); }
 

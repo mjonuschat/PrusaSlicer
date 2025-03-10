@@ -61,40 +61,40 @@ public:
     bool open(const std::string &filename, const BoundingBox &bbox, const coord_t bbox_offset = scale_(1.), bool flipY = true)
         { return open(filename.c_str(), bbox, bbox_offset, flipY); }
 
-    void draw(const Line &line, std::string stroke = "black", coordf_t stroke_width = 0);
-    void draw(const ThickLine &line, const std::string &fill, const std::string &stroke, coordf_t stroke_width = 0);
-    void draw(const Lines &lines, std::string stroke = "black", coordf_t stroke_width = 0);
+    void draw(const Line &line, std::string stroke = "black", double stroke_width = 0);
+    void draw(const ThickLine &line, const std::string &fill, const std::string &stroke, double stroke_width = 0);
+    void draw(const Lines &lines, std::string stroke = "black", double stroke_width = 0);
     
     void draw(const ExPolygon &expolygon, std::string fill = "grey", const float fill_opacity=1.f);
-    void draw_outline(const ExPolygon &polygon, std::string stroke_outer = "black", std::string stroke_holes = "blue", coordf_t stroke_width = 0);
+    void draw_outline(const ExPolygon &polygon, std::string stroke_outer = "black", std::string stroke_holes = "blue", double stroke_width = 0);
     void draw(const ExPolygons &expolygons, std::string fill = "grey", const float fill_opacity=1.f);
-    void draw_outline(const ExPolygons &polygons, std::string stroke_outer = "black", std::string stroke_holes = "blue", coordf_t stroke_width = 0);
+    void draw_outline(const ExPolygons &polygons, std::string stroke_outer = "black", std::string stroke_holes = "blue", double stroke_width = 0);
 
     void draw(const Surface &surface, std::string fill = "grey", const float fill_opacity=1.f);
-    void draw_outline(const Surface &surface, std::string stroke_outer = "black", std::string stroke_holes = "blue", coordf_t stroke_width = 0);
+    void draw_outline(const Surface &surface, std::string stroke_outer = "black", std::string stroke_holes = "blue", double stroke_width = 0);
     void draw(const Surfaces &surfaces, std::string fill = "grey", const float fill_opacity=1.f);
-    void draw_outline(const Surfaces &surfaces, std::string stroke_outer = "black", std::string stroke_holes = "blue", coordf_t stroke_width = 0);
+    void draw_outline(const Surfaces &surfaces, std::string stroke_outer = "black", std::string stroke_holes = "blue", double stroke_width = 0);
     void draw(const SurfacesPtr &surfaces, std::string fill = "grey", const float fill_opacity=1.f);
-    void draw_outline(const SurfacesPtr &surfaces, std::string stroke_outer = "black", std::string stroke_holes = "blue", coordf_t stroke_width = 0);
+    void draw_outline(const SurfacesPtr &surfaces, std::string stroke_outer = "black", std::string stroke_holes = "blue", double stroke_width = 0);
  
     void draw(const Polygon &polygon, std::string fill = "grey");
-    void draw_outline(const Polygon &polygon, std::string stroke = "black", coordf_t stroke_width = 0);
+    void draw_outline(const Polygon &polygon, std::string stroke = "black", double stroke_width = 0);
     void draw(const Polygons &polygons, std::string fill = "grey");
-    void draw_outline(const Polygons &polygons, std::string stroke = "black", coordf_t stroke_width = 0);
-    void draw(const Polyline &polyline, std::string stroke = "black", coordf_t stroke_width = 0);
-    void draw(const Polylines &polylines, std::string stroke = "black", coordf_t stroke_width = 0);
-    void draw(const ThickLines &thicklines, const std::string &fill = "lime", const std::string &stroke = "black", coordf_t stroke_width = 0);
-    void draw(const ThickPolylines &polylines, const std::string &stroke = "black", coordf_t stroke_width = 0);
-    void draw(const ThickPolylines &thickpolylines, const std::string &fill, const std::string &stroke, coordf_t stroke_width);
+    void draw_outline(const Polygons &polygons, std::string stroke = "black", double stroke_width = 0);
+    void draw(const Polyline &polyline, std::string stroke = "black", double stroke_width = 0);
+    void draw(const Polylines &polylines, std::string stroke = "black", double stroke_width = 0);
+    void draw(const ThickLines &thicklines, const std::string &fill = "lime", const std::string &stroke = "black", double stroke_width = 0);
+    void draw(const ThickPolylines &polylines, const std::string &stroke = "black", double stroke_width = 0);
+    void draw(const ThickPolylines &thickpolylines, const std::string &fill, const std::string &stroke, double stroke_width);
     void draw(const Point &point, std::string fill = "black", coord_t radius = 0);
     void draw(const Points &points, std::string fill = "black", coord_t radius = 0);
 
     // Support for rendering the ClipperLib paths
-    void draw(const ClipperLib::Path  &polygon, double scale, std::string fill = "grey", coordf_t stroke_width = 0);
-    void draw(const ClipperLib::Paths &polygons, double scale, std::string fill = "grey", coordf_t stroke_width = 0);
+    void draw(const ClipperLib::Path  &polygon, double scale, std::string fill = "grey", double stroke_width = 0);
+    void draw(const ClipperLib::Paths &polygons, double scale, std::string fill = "grey", double stroke_width = 0);
 
-    void draw_text(const Point &pt, const char *text, const char *color, coordf_t font_size = 20.f);
-    void draw_legend(const Point &pt, const char *text, const char *color, coordf_t font_size = 10.f);
+    void draw_text(const Point &pt, const char *text, const char *color, double font_size = 20.f);
+    void draw_legend(const Point &pt, const char *text, const char *color, double font_size = 10.f);
 
     // Draw no scaled expolygon coordinates
     void draw_original(const ExPolygon &exPoly);
@@ -105,17 +105,17 @@ public:
     std::string filename;
     FILE* f;
     
-    void path(const std::string &d, bool fill, coordf_t stroke_width, const float fill_opacity);
+    void path(const std::string &d, bool fill, double stroke_width, const float fill_opacity);
     std::string get_path_d(const MultiPoint &mp, bool closed = false) const;
     std::string get_path_d(const ClipperLib::Path &mp, double scale, bool closed = false) const;
 
 public:
-    static void export_expolygons(const char *path, const BoundingBox &bbox, const Slic3r::ExPolygons &expolygons, std::string stroke_outer = "black", std::string stroke_holes = "blue", coordf_t stroke_width = 0);
-    static void export_expolygons(const std::string &path, const BoundingBox &bbox, const Slic3r::ExPolygons &expolygons, std::string stroke_outer = "black", std::string stroke_holes = "blue", coordf_t stroke_width = 0) 
+    static void export_expolygons(const char *path, const BoundingBox &bbox, const Slic3r::ExPolygons &expolygons, std::string stroke_outer = "black", std::string stroke_holes = "blue", double stroke_width = 0);
+    static void export_expolygons(const std::string &path, const BoundingBox &bbox, const Slic3r::ExPolygons &expolygons, std::string stroke_outer = "black", std::string stroke_holes = "blue", double stroke_width = 0) 
         { export_expolygons(path.c_str(), bbox, expolygons, stroke_outer, stroke_holes, stroke_width); }
-    static void export_expolygons(const char *path, const Slic3r::ExPolygons &expolygons, std::string stroke_outer = "black", std::string stroke_holes = "blue", coordf_t stroke_width = 0)
+    static void export_expolygons(const char *path, const Slic3r::ExPolygons &expolygons, std::string stroke_outer = "black", std::string stroke_holes = "blue", double stroke_width = 0)
         { export_expolygons(path, get_extents(expolygons), expolygons, stroke_outer, stroke_holes, stroke_width); }
-    static void export_expolygons(const std::string &path, const Slic3r::ExPolygons &expolygons, std::string stroke_outer = "black", std::string stroke_holes = "blue", coordf_t stroke_width = 0) 
+    static void export_expolygons(const std::string &path, const Slic3r::ExPolygons &expolygons, std::string stroke_outer = "black", std::string stroke_holes = "blue", double stroke_width = 0) 
         { export_expolygons(path.c_str(), get_extents(expolygons), expolygons, stroke_outer, stroke_holes, stroke_width); }
 
     struct ExPolygonAttributes

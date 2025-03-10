@@ -18,8 +18,8 @@
 #include <cinttypes>
 #include <cstddef>
 
-typedef double                          coordf_t;
-typedef std::pair<coordf_t, coordf_t>   t_layer_height_range;
+typedef double                          double;
+typedef std::pair<double, double>   t_layer_height_range;
 
 namespace Slic3r {
 

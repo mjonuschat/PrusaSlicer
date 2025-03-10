@@ -190,23 +190,23 @@ template <class PointType> double BoundingBox3Base<PointType>::radius() const
 template double BoundingBox3Base<Vec3d>::radius() const;
 
 template <class PointType, typename APointsType> void
-BoundingBoxBase<PointType, APointsType>::offset(coordf_t delta)
+BoundingBoxBase<PointType, APointsType>::offset(double delta)
 {
     PointType v(delta, delta);
     this->min -= v;
     this->max += v;
 }
-template void BoundingBoxBase<Point, Points>::offset(coordf_t delta);
-template void BoundingBoxBase<Vec2d>::offset(coordf_t delta);
+template void BoundingBoxBase<Point, Points>::offset(double delta);
+template void BoundingBoxBase<Vec2d>::offset(double delta);
 
 template <class PointType> void
-BoundingBox3Base<PointType>::offset(coordf_t delta)
+BoundingBox3Base<PointType>::offset(double delta)
 {
     PointType v(delta, delta, delta);
     this->min -= v;
     this->max += v;
 }
-template void BoundingBox3Base<Vec3d>::offset(coordf_t delta);
+template void BoundingBox3Base<Vec3d>::offset(double delta);
 
 template <class PointType, typename APointsType> PointType
 BoundingBoxBase<PointType, APointsType>::center() const
@@ -225,14 +225,14 @@ BoundingBox3Base<PointType>::center() const
 template Vec3f BoundingBox3Base<Vec3f>::center() const;
 template Vec3d BoundingBox3Base<Vec3d>::center() const;
 
-template <class PointType> coordf_t
+template <class PointType> double
 BoundingBox3Base<PointType>::max_size() const
 {
     PointType s = size();
     return std::max(s.x(), std::max(s.y(), s.z()));
 }
-template coordf_t BoundingBox3Base<Vec3f>::max_size() const;
-template coordf_t BoundingBox3Base<Vec3d>::max_size() const;
+template double BoundingBox3Base<Vec3f>::max_size() const;
+template double BoundingBox3Base<Vec3d>::max_size() const;
 
 void BoundingBox::align_to_grid(const coord_t cell_size)
 {

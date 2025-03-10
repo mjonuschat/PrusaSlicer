@@ -33,10 +33,10 @@ TreeSupportMeshGroupSettings::TreeSupportMeshGroupSettings(const PrintObject &pr
     assert(config.support_material_style == smsTree || config.support_material_style == smsOrganic);
 
     // Calculate maximum external perimeter width over all printing regions, taking into account the default layer height.
-    coordf_t external_perimeter_width = 0.;
+    double external_perimeter_width = 0.;
     for (size_t region_id = 0; region_id < print_object.num_printing_regions(); ++ region_id) {
         const PrintRegion &region = print_object.printing_region(region_id);
-        external_perimeter_width = std::max<coordf_t>(external_perimeter_width, region.flow(print_object, frExternalPerimeter, config.layer_height).width());
+        external_perimeter_width = std::max<double>(external_perimeter_width, region.flow(print_object, frExternalPerimeter, config.layer_height).width());
     }
 
     this->layer_height              = scaled<coord_t>(config.layer_height.value);
