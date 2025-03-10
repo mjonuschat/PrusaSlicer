@@ -33,11 +33,14 @@
 #include "Polygon.hpp"
 #include "ExPolygon.hpp"
 #include "libslic3r/Point.hpp"
+#include "Slic3r/Domain/Vectors.hpp"
 
 namespace Slic3r {
 
 class TriangleMesh;
 class TriangleMeshSlicer;
+using Domain::Index3;
+
 
 struct indexed_triangle_set_with_color
 {
@@ -135,8 +138,8 @@ class TriangleMesh
 {
 public:
     TriangleMesh() = default;
-    TriangleMesh(const std::vector<Vec3f> &vertices, const std::vector<Vec3i> &faces);
-    TriangleMesh(std::vector<Vec3f> &&vertices, const std::vector<Vec3i> &&faces);
+    TriangleMesh(const std::vector<Vec3f> &vertices, const std::vector<Index3> &faces);
+    TriangleMesh(std::vector<Vec3f> &&vertices, const std::vector<Index3> &&faces);
     explicit TriangleMesh(const indexed_triangle_set &M);
     explicit TriangleMesh(indexed_triangle_set &&M, const RepairedMeshErrors& repaired_errors = RepairedMeshErrors());
     void clear() { this->its.clear(); m_stats.clear(); }
@@ -235,19 +238,19 @@ private:
 // Two neighbor faces share a unique edge identifier even if they are flipped.
 // Used for chaining slice lines into polygons.
 template<AdditionalMeshInfo mesh_info = AdditionalMeshInfo::None>
-std::vector<Vec3i> its_face_edge_ids(const typename IndexedTriangleSetType<mesh_info>::type &its);
+std::vector<Index3> its_face_edge_ids(const typename IndexedTriangleSetType<mesh_info>::type &its);
 
-std::vector<Vec3i> its_face_edge_ids(const indexed_triangle_set &its, std::function<void()> throw_on_cancel_callback);
+std::vector<Index3> its_face_edge_ids(const indexed_triangle_set &its, std::function<void()> throw_on_cancel_callback);
 
 template<AdditionalMeshInfo mesh_info = AdditionalMeshInfo::None>
-std::vector<Vec3i> its_face_edge_ids(const typename IndexedTriangleSetType<mesh_info>::type &its, const std::vector<char> &face_mask);
+std::vector<Index3> its_face_edge_ids(const typename IndexedTriangleSetType<mesh_info>::type &its, const std::vector<char> &face_mask);
 
 // Having the face neighbors available, assign unique edge IDs to face edges for chaining of polygons over slices.
-std::vector<Vec3i> its_face_edge_ids(const indexed_triangle_set &its, std::vector<Vec3i> &face_neighbors, bool assign_unbound_edges = false, int *num_edges = nullptr);
+std::vector<Index3> its_face_edge_ids(const indexed_triangle_set &its, std::vector<Index3> &face_neighbors, bool assign_unbound_edges = false, int *num_edges = nullptr);
 
 // Create index that gives neighbor faces for each face. Ignores face orientations.
-std::vector<Vec3i> its_face_neighbors(const indexed_triangle_set &its);
-std::vector<Vec3i> its_face_neighbors_par(const indexed_triangle_set &its);
+std::vector<Index3> its_face_neighbors(const indexed_triangle_set &its);
+std::vector<Index3> its_face_neighbors_par(const indexed_triangle_set &its);
 
 // After applying a transformation with negative determinant, flip the faces to keep the transformed mesh volume positive.
 void its_flip_triangles(indexed_triangle_set &its);
@@ -270,18 +273,18 @@ bool its_store_triangle_to_obj(const indexed_triangle_set &its, const char *obj_
 bool its_store_triangles_to_obj(const indexed_triangle_set &its, const char *obj_filename, const std::vector<size_t>& triangles);
 
 std::vector<indexed_triangle_set> its_split(const indexed_triangle_set &its);
-std::vector<indexed_triangle_set> its_split(const indexed_triangle_set &its, std::vector<Vec3i> &face_neighbors);
+std::vector<indexed_triangle_set> its_split(const indexed_triangle_set &its, std::vector<Index3> &face_neighbors);
 
 // Number of disconnected patches (faces are connected if they share an edge, shared edge defined with 2 shared vertex indices).
 size_t its_number_of_patches(const indexed_triangle_set &its);
-size_t its_number_of_patches(const indexed_triangle_set &its, const std::vector<Vec3i> &face_neighbors);
+size_t its_number_of_patches(const indexed_triangle_set &its, const std::vector<Index3> &face_neighbors);
 // Same as its_number_of_patches(its) > 1, but faster.
 bool its_is_splittable(const indexed_triangle_set &its);
-bool its_is_splittable(const indexed_triangle_set &its, const std::vector<Vec3i> &face_neighbors);
+bool its_is_splittable(const indexed_triangle_set &its, const std::vector<Index3> &face_neighbors);
 
 // Calculate number of unconnected face edges. There should be no unconnected edge in a manifold mesh.
 size_t its_num_open_edges(const indexed_triangle_set &its);
-size_t its_num_open_edges(const std::vector<Vec3i> &face_neighbors);
+size_t its_num_open_edges(const std::vector<Index3> &face_neighbors);
 
 // Calculate and returns the list of unconnected face edges.
 // Each edge is represented by the indices of the two endpoint vertices
@@ -323,11 +326,11 @@ inline int its_triangle_edge_index(const stl_triangle_vertex_indices &triangle_i
 using its_triangle = std::array<stl_vertex, 3>;
 
 inline its_triangle its_triangle_vertices(const indexed_triangle_set &its,
-                                          const Vec3i &face)
+                                          const Index3 &face)
 {
-    return {its.vertices[face(0)],
-            its.vertices[face(1)],
-            its.vertices[face(2)]};
+    return {its.vertices[face[0]],
+            its.vertices[face[1]],
+            its.vertices[face[2]]};
 }
 
 inline its_triangle its_triangle_vertices(const indexed_triangle_set &its,

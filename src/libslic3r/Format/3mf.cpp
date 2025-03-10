@@ -373,7 +373,7 @@ namespace Slic3r {
         struct Geometry
         {
             std::vector<Vec3f> vertices;
-            std::vector<Vec3i> triangles;
+            std::vector<Index3> triangles;
             std::vector<std::string> custom_supports;
             std::vector<std::string> custom_seam;
             std::vector<std::string> mm_segmentation;
@@ -2110,10 +2110,11 @@ namespace Slic3r {
 
         // appends the triangle's vertices indices
         // missing values are set equal to ZERO
-        m_curr_object.geometry.triangles.emplace_back(
+        m_curr_object.geometry.triangles.push_back(Index3{
             get_attribute_value_int(attributes, num_attributes, V1_ATTR),
             get_attribute_value_int(attributes, num_attributes, V2_ATTR),
-            get_attribute_value_int(attributes, num_attributes, V3_ATTR));
+            get_attribute_value_int(attributes, num_attributes, V3_ATTR)
+        });
 
         m_curr_object.geometry.custom_supports.push_back(get_attribute_value_string(attributes, num_attributes, CUSTOM_SUPPORTS_ATTR));
         m_curr_object.geometry.custom_seam.push_back(get_attribute_value_string(attributes, num_attributes, CUSTOM_SEAM_ATTR));
@@ -2577,7 +2578,7 @@ namespace Slic3r {
             {
                 int min_id = its.indices.front()[0];
                 int max_id = min_id;
-                for (const Vec3i& face : its.indices) {
+                for (const Index3& face : its.indices) {
                     for (const int tri_id : face) {
                         if (tri_id < 0 || tri_id >= int(geometry.vertices.size())) {
                             add_error("Found invalid vertex id");
@@ -2590,7 +2591,7 @@ namespace Slic3r {
                 its.vertices.assign(geometry.vertices.begin() + min_id, geometry.vertices.begin() + max_id + 1);
 
                 // rebase indices to the current vertices list
-                for (Vec3i& face : its.indices)
+                for (Index3& face : its.indices)
                     for (int& tri_id : face)
                         tri_id -= min_id;
             }
@@ -3284,7 +3285,7 @@ namespace Slic3r {
 
             for (int i = 0; i < int(its.indices.size()); ++ i) {
                 {
-                    const Vec3i &idx = its.indices[i];
+                    const Index3 &idx = its.indices[i];
                     char *ptr = buf;
                     boost::spirit::karma::generate(ptr, boost::spirit::lit("     <") << TRIANGLE_TAG <<
                         " v1=\"" << boost::spirit::int_ <<

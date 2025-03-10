@@ -77,7 +77,7 @@ Vec2d get_intersection(const Vec2d &               point,
 }
 
 Vec3d calc_hit_point(const igl::Hit &          h,
-                     const Vec3i &             triangle,
+                     const Index3 &             triangle,
                      const std::vector<Vec3f> &vertices)
 {
     double c1 = h.u;
@@ -370,7 +370,7 @@ TEST_CASE("Test hit point", "[AABBTreeIndirect]")
         Vec3f(2, 10, 2),
         Vec3f(10, 0, 2),
     };
-    its.indices = {Vec3i(0, 2, 1)};
+    its.indices = {Index3{0, 2, 1}};
     auto tree   = AABBTreeIndirect::build_aabb_tree_over_indexed_triangle_set(
         its.vertices, its.indices);
 
@@ -721,7 +721,7 @@ namespace Slic3r::MeshBoolean::cgal2 {
         using VI = typename CGALMesh::Vertex_index;
         for (auto &f : F)
         {
-            auto fid = result.add_face(VI(f(0)), VI(f(1)), VI(f(2)));
+            auto fid = result.add_face(VI(f[0]), VI(f[1]), VI(f[2]));
             // index of face in source triangle mesh
             int32_t index = static_cast<int32_t>(&f - &F.front());
             face_map[fid] = index;
@@ -1240,13 +1240,13 @@ TEST_CASE("Emboss extrude cut", "[Emboss-Cut]")
         if (state == FaceState::Unmarked || 
             state == FaceState::UnmarkedSplit) {
             // Just copy the unsplit source face.
-            const Vec3i source_vertices = cube.indices[source_face_id];
-            Vec3i       target_vertices;
+            const Index3 source_vertices = cube.indices[source_face_id];
+            Index3       target_vertices;
             for (int i = 0; i < 3; ++i) {
-                target_vertices(i) = map_vertices[source_vertices(i)].first;
-                if (target_vertices(i) == -1) {
-                    map_vertices[source_vertices(i)].first = target_vertices(i) = int(its_extruded.vertices.size());
-                    its_extruded.vertices.emplace_back(cube.vertices[source_vertices(i)]);
+                target_vertices[i] = map_vertices[source_vertices[i]].first;
+                if (target_vertices[i] == -1) {
+                    map_vertices[source_vertices[i]].first = target_vertices[i] = int(its_extruded.vertices.size());
+                    its_extruded.vertices.emplace_back(cube.vertices[source_vertices[i]]);
                 }
             }
             its_extruded.indices.emplace_back(target_vertices);
@@ -1257,18 +1257,18 @@ TEST_CASE("Emboss extrude cut", "[Emboss-Cut]")
         auto hi = cgal_object.halfedge(fi);
         auto hi_prev = cgal_object.prev(hi);
         auto hi_next = cgal_object.next(hi);
-        const Vec3i source_vertices{ 
+        const Index3 source_vertices{ 
             int((std::size_t)cgal_object.target(hi)), 
             int((std::size_t)cgal_object.target(hi_next)), 
             int((std::size_t)cgal_object.target(hi_prev)) };
-        Vec3i target_vertices;
+        Index3 target_vertices;
         if (side_type_map[fi] != SideType::inside) {
             // Copy the face.
-            Vec3i target_vertices;
+            Index3 target_vertices;
             for (int i = 0; i < 3; ++ i) {
-                target_vertices(i) = map_vertices[source_vertices(i)].first;
-                if (target_vertices(i) == -1) {
-                    map_vertices[source_vertices(i)].first = target_vertices(i) = int(its_extruded.vertices.size());
+                target_vertices[i] = map_vertices[source_vertices[i]].first;
+                if (target_vertices[i] == -1) {
+                    map_vertices[source_vertices[i]].first = target_vertices[i] = int(its_extruded.vertices.size());
                     const auto &p = cgal_object.point(cgal_object.target(hi));
                     its_extruded.vertices.emplace_back(p.x(), p.y(), p.z());
                 }
@@ -1281,7 +1281,7 @@ TEST_CASE("Emboss extrude cut", "[Emboss-Cut]")
         // Extrude the face. Neighbor edges separating extruded face from
         // non-extruded face will be extruded.
         bool  boundary_vertex[3] = {false, false, false};
-        Vec3i target_vertices_extruded{-1, -1, -1};
+        Index3 target_vertices_extruded{-1, -1, -1};
         for (int i = 0; i < 3; ++i) {
             if (side_type_map[cgal_object.face(cgal_object.opposite(hi))] != SideType::inside)
                 // Edge separating extruded / non-extruded region.
@@ -1290,10 +1290,10 @@ TEST_CASE("Emboss extrude cut", "[Emboss-Cut]")
         }
 
         for (int i = 0; i < 3; ++i) {
-            target_vertices_extruded(i) = map_vertices[source_vertices(i)].second;
-            if (target_vertices_extruded(i) == -1) {
-                map_vertices[source_vertices(i)].second =
-                    target_vertices_extruded(i) = int(
+            target_vertices_extruded[i] = map_vertices[source_vertices[i]].second;
+            if (target_vertices_extruded[i] == -1) {
+                map_vertices[source_vertices[i]].second =
+                    target_vertices_extruded[i] = int(
                         its_extruded.vertices.size());
                 const auto &p = cgal_object.point(cgal_object.target(hi));
                 its_extruded.vertices.emplace_back(
@@ -1301,10 +1301,10 @@ TEST_CASE("Emboss extrude cut", "[Emboss-Cut]")
                     extrude_dir);
             }
             if (boundary_vertex[i]) {
-                target_vertices(i) = map_vertices[source_vertices(i)].first;
-                if (target_vertices(i) == -1) {
-                    map_vertices[source_vertices(i)].first = target_vertices(
-                        i)        = int(its_extruded.vertices.size());
+                target_vertices[i] = map_vertices[source_vertices[i]].first;
+                if (target_vertices[i] == -1) {
+                    map_vertices[source_vertices[i]].first = target_vertices[
+                        i]        = int(its_extruded.vertices.size());
                     const auto &p = cgal_object.point(cgal_object.target(hi));
                     its_extruded.vertices.emplace_back(p.x(), p.y(), p.z());
                 }
@@ -1320,10 +1320,10 @@ TEST_CASE("Emboss extrude cut", "[Emboss-Cut]")
             if (boundary_vertex[i] && boundary_vertex[j]) {
                 assert(target_vertices[i] != -1 && target_vertices[j] != -1);
                 its_extruded.indices.emplace_back(
-                    Vec3i{target_vertices[i], target_vertices[j],
+                    Index3{target_vertices[i], target_vertices[j],
                           target_vertices_extruded[i]});
                 its_extruded.indices.emplace_back(
-                    Vec3i{target_vertices_extruded[i], target_vertices[j],
+                    Index3{target_vertices_extruded[i], target_vertices[j],
                           target_vertices_extruded[j]});
             }
         }
@@ -1339,7 +1339,11 @@ TEST_CASE("Emboss extrude cut", "[Emboss-Cut]")
             const auto &p2 = cgal_object.point(cgal_object.vertex(ei, 1));
             bool constrained = get(ecm, ei);
             Vec3f color = constrained ? Vec3f{ 1.f, 0, 0 } : Vec3f{ 0, 1., 0 };
-            edges_its.indices.emplace_back(Vec3i(edges_its.vertices.size(), edges_its.vertices.size() + 1, edges_its.vertices.size() + 2));
+            edges_its.indices.emplace_back(Index3{
+                static_cast<int>(edges_its.vertices.size()),
+                static_cast<int>(edges_its.vertices.size() + 1),
+                static_cast<int>(edges_its.vertices.size() + 2)
+            });
             edges_its.vertices.emplace_back(Vec3f(p1.x(), p1.y(), p1.z()));
             edges_its.vertices.emplace_back(Vec3f(p2.x(), p2.y(), p2.z()));
             edges_its.vertices.emplace_back(Vec3f(p2.x(), p2.y(), p2.z() + 0.001));

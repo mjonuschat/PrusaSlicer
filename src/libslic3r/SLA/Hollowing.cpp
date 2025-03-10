@@ -358,7 +358,7 @@ FloatingOnly<T> get_distance(const Vec<3, T> &p, const Interior &interior)
 // part of that mesh and the vertices it consists of.
 enum { NEW_FACE = -1};
 struct DivFace {
-    Vec3i indx;
+    Index3 indx;
     std::array<Vec3f, 3> verts;
     long faceid = NEW_FACE;
     long parent = NEW_FACE;
@@ -381,9 +381,9 @@ void divide_triangle(const DivFace &face, Fn &&visitor)
     DivFace child1, child2;
 
     child1.parent   = face.faceid == NEW_FACE ? face.parent : face.faceid;
-    child1.indx(0)  = -1;
-    child1.indx(1)  = face.indx(edgeidx[1]);
-    child1.indx(2)  = face.indx((edgeidx[1] + 1) % 3);
+    child1.indx[0]  = -1;
+    child1.indx[1]  = face.indx[edgeidx[1]];
+    child1.indx[2]  = face.indx[(edgeidx[1] + 1) % 3];
     child1.verts[0] = (face.verts[edgeidx[0]] + face.verts[(edgeidx[0] + 1) % 3]) / 2.;
     child1.verts[1] = face.verts[edgeidx[1]];
     child1.verts[2] = face.verts[(edgeidx[1] + 1) % 3];
@@ -392,9 +392,9 @@ void divide_triangle(const DivFace &face, Fn &&visitor)
         divide_triangle(child1, std::forward<Fn>(visitor));
 
     child2.parent   = face.faceid == NEW_FACE ? face.parent : face.faceid;
-    child2.indx(0)  = -1;
-    child2.indx(1)  = face.indx(edgeidx[2]);
-    child2.indx(2)  = face.indx((edgeidx[2] + 1) % 3);
+    child2.indx[0]  = -1;
+    child2.indx[1]  = face.indx[edgeidx[2]];
+    child2.indx[2]  = face.indx[(edgeidx[2] + 1) % 3];
     child2.verts[0] = child1.verts[0];
     child2.verts[1] = face.verts[edgeidx[2]];
     child2.verts[2] = face.verts[(edgeidx[2] + 1) % 3];
@@ -506,14 +506,14 @@ void remove_inside_triangles(indexed_triangle_set &mesh, const Interior &interio
     execution::for_each(
         exec_policy, size_t(0), faces.size(),
         [&](size_t face_idx) {
-            const Vec3i &face = faces[face_idx];
+            const Index3 &face = faces[face_idx];
 
             // If the triangle is excluded, we need to keep it.
             if (is_excluded(face_idx))
                 return;
 
-            std::array<Vec3f, 3> pts = {vertices[face(0)], vertices[face(1)],
-                                        vertices[face(2)]};
+            std::array<Vec3f, 3> pts = {vertices[face[0]], vertices[face[1]],
+                                        vertices[face[2]]};
 
             BoundingBoxf3 facebb{pts.begin(), pts.end()};
 
@@ -528,7 +528,7 @@ void remove_inside_triangles(indexed_triangle_set &mesh, const Interior &interio
         execution::max_concurrency(exec_policy)
     );
 
-    auto new_faces = reserve_vector<Vec3i>(faces.size() +
+    auto new_faces = reserve_vector<Index3>(faces.size() +
                                            mesh_mods.new_triangles.size());
 
     for (size_t face_idx = 0; face_idx < faces.size(); ++face_idx) {
@@ -541,7 +541,7 @@ void remove_inside_triangles(indexed_triangle_set &mesh, const Interior &interio
         vertices.emplace_back(mesh_mods.new_triangles[i][0]);
         vertices.emplace_back(mesh_mods.new_triangles[i][1]);
         vertices.emplace_back(mesh_mods.new_triangles[i][2]);
-        new_faces.emplace_back(int(o), int(o + 1), int(o + 2));
+        new_faces.emplace_back(Index3{int(o), int(o + 1), int(o + 2)});
     }
 
     BOOST_LOG_TRIVIAL(info)
@@ -602,13 +602,13 @@ struct FaceHash {
         return ret;
     }
 
-    static std::string facekey(const Vec3i &face, const std::vector<Vec3f> &vertices)
+    static std::string facekey(const Index3 &face, const std::vector<Vec3f> &vertices)
     {
         // Scale to integer to avoid floating points
         std::array<Vec<3, int64_t>, 3> pts = {
-            scaled<int64_t>(vertices[face(0)]),
-            scaled<int64_t>(vertices[face(1)]),
-            scaled<int64_t>(vertices[face(2)])
+            scaled<int64_t>(vertices[face[0]]),
+            scaled<int64_t>(vertices[face[1]]),
+            scaled<int64_t>(vertices[face[2]])
         };
 
         // Get the first two sides of the triangle, do a cross product and move
@@ -623,8 +623,8 @@ struct FaceHash {
 
     FaceHash (const indexed_triangle_set &its): facehash(its.indices.size())
     {
-        for (Vec3i face : its.indices) {
-            std::swap(face(0), face(2));
+        for (Index3 face : its.indices) {
+            std::swap(face[0], face[2]);
             facehash.insert(facekey(face, its.vertices));
         }
     }
@@ -637,14 +637,14 @@ struct FaceHash {
 };
 
 
-static void exclude_neighbors(const Vec3i                &face,
+static void exclude_neighbors(const Index3                &face,
                               std::vector<bool>          &mask,
                               const indexed_triangle_set &its,
                               const VertexFaceIndex      &index,
                               size_t                      recursions)
 {
     for (int i = 0; i < 3; ++i) {
-        const auto &neighbors_range = index[face(i)];
+        const auto &neighbors_range = index[face[i]];
         for (size_t fi_n : neighbors_range) {
             mask[fi_n] = true;
             if (recursions > 0)
@@ -681,9 +681,9 @@ std::vector<bool> create_exclude_mask(const indexed_triangle_set   &its,
         // created by CGAL mesh boolean operation that modified the original
         // interior inside the input mesh to contain the holes.
         Vec3d tr_center = (
-                              its.vertices[face(0)] +
-                              its.vertices[face(1)] +
-                              its.vertices[face(2)]
+                              its.vertices[face[0]] +
+                              its.vertices[face[1]] +
+                              its.vertices[face[2]]
                               ).cast<double>() / 3.;
 
         // If the center is more than half a mm inside the interior,
@@ -691,8 +691,8 @@ std::vector<bool> create_exclude_mask(const indexed_triangle_set   &its,
         if (sla::get_distance(tr_center, interior) < -0.5)
             continue;
 
-        Vec3f U = its.vertices[face(1)] - its.vertices[face(0)];
-        Vec3f V = its.vertices[face(2)] - its.vertices[face(0)];
+        Vec3f U = its.vertices[face[1]] - its.vertices[face[0]];
+        Vec3f V = its.vertices[face[2]] - its.vertices[face[0]];
         Vec3f C = U.cross(V);
         Vec3f face_normal = C.normalized();
 
@@ -796,19 +796,19 @@ remove_unconnected_vertices(const indexed_triangle_set &its)
     for (auto &f : its.indices) {
 
         for (int i = 0; i < 3; ++i)
-            if (vtransl[size_t(f(i))] < 0) {
+            if (vtransl[size_t(f[i])] < 0) {
 
-                M.vertices.emplace_back(its.vertices[size_t(f(i))]);
-                vtransl[size_t(f(i))] = vcnt++;
+                M.vertices.emplace_back(its.vertices[size_t(f[i])]);
+                vtransl[size_t(f[i])] = vcnt++;
             }
 
         std::array<int, 3> new_f = {
-            vtransl[size_t(f(0))],
-            vtransl[size_t(f(1))],
-            vtransl[size_t(f(2))]
+            vtransl[size_t(f[0])],
+            vtransl[size_t(f[1])],
+            vtransl[size_t(f[2])]
         };
 
-        M.indices.emplace_back(new_f[0], new_f[1], new_f[2]);
+        M.indices.emplace_back(Index3{new_f[0], new_f[1], new_f[2]});
     }
 
     return M;

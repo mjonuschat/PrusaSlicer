@@ -38,9 +38,9 @@ std::array<Vec3f, 3> get_triangle_vertices(const TriangleMesh &mesh,
                                            size_t              faceidx)
 {
     const auto &face = mesh.its.indices[faceidx];
-    return {mesh.its.vertices[face(0)],
-            mesh.its.vertices[face(1)],
-            mesh.its.vertices[face(2)]};
+    return {mesh.its.vertices[face[0]],
+            mesh.its.vertices[face[1]],
+            mesh.its.vertices[face[2]]};
 }
 
 std::array<Vec3f, 3> get_transformed_triangle(const TriangleMesh &mesh,

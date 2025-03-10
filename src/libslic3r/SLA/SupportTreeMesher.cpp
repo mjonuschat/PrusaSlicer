@@ -54,8 +54,8 @@ indexed_triangle_set sphere(double rho, Portion portion, double fa) {
         vertices.emplace_back(Vec3d(b(0), b(1), z).cast<float>());
 
         if (sbegin == 0)
-            (i == 0) ? facets.emplace_back(coord_t(ring.size()), 0, 1) :
-                       facets.emplace_back(id - 1, 0, id);
+            (i == 0) ? facets.emplace_back(Domain::Index3{coord_t(ring.size()), 0, 1}) :
+                       facets.emplace_back(Domain::Index3{id - 1, 0, id});
         ++id;
     }
 
@@ -71,11 +71,11 @@ indexed_triangle_set sphere(double rho, Portion portion, double fa) {
             auto id_ringsize = coord_t(id - int(ring.size()));
             if (i == 0) {
                 // wrap around
-                facets.emplace_back(id - 1, id, id + coord_t(ring.size() - 1) );
-                facets.emplace_back(id - 1, id_ringsize, id);
+                facets.emplace_back(Domain::Index3{id - 1, id, id + coord_t(ring.size() - 1)});
+                facets.emplace_back(Domain::Index3{id - 1, id_ringsize, id});
             } else {
-                facets.emplace_back(id_ringsize - 1, id_ringsize, id);
-                facets.emplace_back(id - 1, id_ringsize - 1, id);
+                facets.emplace_back(Domain::Index3{id_ringsize - 1, id_ringsize, id});
+                facets.emplace_back(Domain::Index3{id - 1, id_ringsize - 1, id});
             }
             id++;
         }
@@ -89,10 +89,10 @@ indexed_triangle_set sphere(double rho, Portion portion, double fa) {
             auto id_ringsize = coord_t(id - int(ring.size()));
             if (i == 0) {
                 // third vertex is on the other side of the ring.
-                facets.emplace_back(id - 1, id_ringsize, id);
+                facets.emplace_back(Domain::Index3{id - 1, id_ringsize, id});
             } else {
                 auto ci = coord_t(id_ringsize + coord_t(i));
-                facets.emplace_back(ci - 1, ci, id);
+                facets.emplace_back(Domain::Index3{ci - 1, ci, id});
             }
         }
     }
@@ -150,8 +150,8 @@ indexed_triangle_set pinhead(double r_pin,
         coord_t i1s1 = coord_t(idx1), i1s2 = coord_t(idx2);
         coord_t i2s1 = i1s1 + 1, i2s2 = i1s2 + 1;
 
-        mesh.indices.emplace_back(i1s1, i2s1, i2s2);
-        mesh.indices.emplace_back(i1s1, i2s2, i1s2);
+        mesh.indices.emplace_back(Domain::Index3{i1s1, i2s1, i2s2});
+        mesh.indices.emplace_back(Domain::Index3{i1s1, i2s2, i1s2});
     }
 
     auto i1s1 = coord_t(s1.vertices.size()) - coord_t(steps);
@@ -159,8 +159,8 @@ indexed_triangle_set pinhead(double r_pin,
     auto i1s2 = coord_t(s1.vertices.size());
     auto i2s2 = coord_t(s1.vertices.size()) + coord_t(steps) - 1;
 
-    mesh.indices.emplace_back(i2s2, i2s1, i1s1);
-    mesh.indices.emplace_back(i1s2, i2s2, i1s1);
+    mesh.indices.emplace_back(Domain::Index3{i2s2, i2s1, i1s1});
+    mesh.indices.emplace_back(Domain::Index3{i1s2, i2s2, i1s1});
 
     return mesh;
 }
@@ -203,16 +203,16 @@ indexed_triangle_set halfcone(double       baseheight,
     auto  lcenter = int(base.vertices.size() - 2);
     auto  offs    = int(steps);
     for (int i = 0; i < last; ++i) {
-        indices.emplace_back(i, i + offs, offs + i + 1);
-        indices.emplace_back(i, offs + i + 1, i + 1);
-        indices.emplace_back(i, i + 1, hcenter);
-        indices.emplace_back(lcenter, offs + i + 1, offs + i);
+        indices.emplace_back(Domain::Index3{i, i + offs, offs + i + 1});
+        indices.emplace_back(Domain::Index3{i, offs + i + 1, i + 1});
+        indices.emplace_back(Domain::Index3{i, i + 1, hcenter});
+        indices.emplace_back(Domain::Index3{lcenter, offs + i + 1, offs + i});
     }
 
-    indices.emplace_back(0, last, offs);
-    indices.emplace_back(last, offs + last, offs);
-    indices.emplace_back(hcenter, last, 0);
-    indices.emplace_back(offs, offs + last, lcenter);
+    indices.emplace_back(Domain::Index3{0, last, offs});
+    indices.emplace_back(Domain::Index3{last, offs + last, offs});
+    indices.emplace_back(Domain::Index3{hcenter, last, 0});
+    indices.emplace_back(Domain::Index3{offs, offs + last, lcenter});
 
     return base;
 }

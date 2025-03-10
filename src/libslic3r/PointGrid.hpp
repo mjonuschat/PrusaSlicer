@@ -13,32 +13,32 @@ namespace Slic3r {
 
 template<class T>
 class PointGrid {
-    Vec3i m_size;
+    std::array<int, 3> m_size;
     std::vector<Vec<3, T>> m_data;
     const int XY;
 
 public:
-    explicit PointGrid(std::vector<Vec<3, T>> data, const Vec3i &size)
-        : m_data(std::move(data)), m_size{size}, XY{m_size.x() * m_size.y()}
+    explicit PointGrid(std::vector<Vec<3, T>> data, const std::array<int, 3> &size)
+        : m_data(std::move(data)), m_size{size}, XY{m_size[0] * m_size[1]}
     {}
 
     const Vec<3, T> & get(size_t idx) const { return m_data[idx]; }
-    const Vec<3, T> & get(const Vec3i &coord) const
+    const Vec<3, T> & get(const Domain::Index3 &coord) const
     {
         return m_data[get_idx(coord)];
     }
 
-    size_t get_idx(const Vec3i &coord) const
+    size_t get_idx(const Domain::Index3 &coord) const
     {
-        size_t ret = coord.z() * XY + coord.y() * m_size.x() + coord.x();
+        size_t ret = coord[2] * XY + coord[1] * m_size[0] + coord[0];
 
         return ret;
     }
 
-    Vec3i get_coord(size_t idx) const {
+    Domain::Index3 get_coord(size_t idx) const {
         int iz = idx / XY;
-        int iy = (idx / m_size.x()) % m_size.y();
-        int ix = idx % m_size.x();
+        int iy = (idx / m_size[0]) % m_size[1];
+        int ix = idx % m_size[0];
 
         return {ix, iy, iz};
     }
@@ -53,12 +53,12 @@ PointGrid<CoordT> point_grid(Ex                                      policy,
                              const BoundingBox3Base<Vec<3, CoordT>> &bounds,
                              const Vec<3, CoordT>                   &stride)
 {
-    Vec3i numpts = Vec3i::Zero();
+    std::array<int, 3> numpts = {0, 0, 0};
 
     for (int n = 0; n < 3; ++n)
-        numpts(n) = (bounds.max(n) - bounds.min(n)) / stride(n);
+        numpts[n] = (bounds.max(n) - bounds.min(n)) / stride(n);
 
-    std::vector<Vec<3, CoordT>> out(numpts.x() * numpts.y() * numpts.z());
+    std::vector<Vec<3, CoordT>> out(numpts[0] * numpts[1] * numpts[2]);
 
     size_t XY = numpts[X] * numpts[Y];
 

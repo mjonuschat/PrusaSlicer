@@ -415,7 +415,7 @@ namespace detail {
 		    double t, u, v;
 		    if (intersect_triangle(
 		    		ray_intersector.origin, ray_intersector.dir, 
-		    		ray_intersector.vertices[face(0)], ray_intersector.vertices[face(1)], ray_intersector.vertices[face(2)], 
+		    		ray_intersector.vertices[face[0]], ray_intersector.vertices[face[1]], ray_intersector.vertices[face[2]], 
                     t, u, v, ray_intersector.eps)
 		    	&& t > 0.) {
                 hit = igl::Hit { int(node.idx), -1, float(u), float(v), float(t) };
@@ -460,7 +460,7 @@ namespace detail {
 		    double t, u, v;
 		    if (intersect_triangle(
 		    		ray_intersector.origin, ray_intersector.dir, 
-		    		ray_intersector.vertices[face(0)], ray_intersector.vertices[face(1)], ray_intersector.vertices[face(2)], 
+		    		ray_intersector.vertices[face[0]], ray_intersector.vertices[face[1]], ray_intersector.vertices[face[2]], 
                     t, u, v, ray_intersector.eps)
 		    	&& t > 0.) {
                 ray_intersector.hits.emplace_back(igl::Hit{ int(node.idx), -1, float(u), float(v), float(t) });
@@ -544,9 +544,9 @@ namespace detail {
 		        ScalarType& squared_distance) const {
 		    const auto &triangle = this->faces[primitive_index];
 		    VectorType closest_point = closest_point_to_triangle<VectorType>(origin,
-		            this->vertices[triangle(0)].template cast<ScalarType>(),
-		            this->vertices[triangle(1)].template cast<ScalarType>(),
-		            this->vertices[triangle(2)].template cast<ScalarType>());
+		            this->vertices[triangle[0]].template cast<ScalarType>(),
+		            this->vertices[triangle[1]].template cast<ScalarType>(),
+		            this->vertices[triangle[2]].template cast<ScalarType>());
 		    squared_distance = (origin - closest_point).squaredNorm();
 		    return closest_point;
 		}
@@ -701,9 +701,9 @@ inline Tree<3, typename VertexType::Scalar> build_aabb_tree_over_indexed_triangl
     const VectorType veps(eps, eps, eps);
 	for (size_t i = 0; i < faces.size(); ++ i) {
         const IndexedFaceType &face = faces[i];
-		const VertexType &v1 = vertices[face(0)];
-		const VertexType &v2 = vertices[face(1)];
-		const VertexType &v3 = vertices[face(2)];
+		const VertexType &v1 = vertices[face[0]];
+		const VertexType &v2 = vertices[face[1]];
+		const VertexType &v3 = vertices[face[2]];
 		InputType n;
         n.m_idx      = i;
         n.m_centroid = (1./3.) * (v1 + v2 + v3);

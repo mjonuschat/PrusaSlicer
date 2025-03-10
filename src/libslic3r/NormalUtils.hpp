@@ -67,9 +67,7 @@ public:
     /// <param name="indice">address to vertices</param>
     /// <param name="vertices">vertices data</param>
     /// <returns>Angle [in radian]</returns>
-    static float indice_angle(int                            i,
-                              const Vec3crd &                indice,
-                              const std::vector<stl_vertex> &vertices);
+    static float indice_angle(int i, const std::vector<stl_vertex> &vertices);
 };
 
 } // namespace Slic3r

@@ -35,7 +35,7 @@ indexed_triangle_set its_subdivide(
     {
         Vec3f data[3];
         Vec3f lengths;
-        Edges(const Vec3crd &indices, const std::vector<Vec3f> &vertices)
+        Edges(const Index3 &indices, const std::vector<Vec3f> &vertices)
             : lengths(-1.f,-1.f,-1.f)
         {
             const Vec3f &v0 = vertices[indices[0]];
@@ -51,17 +51,17 @@ indexed_triangle_set its_subdivide(
         }
         bool is_dividable(const float& max_length) {
             Vec3f sum(abs_sum(data[0]), abs_sum(data[1]), abs_sum(data[2]));
-            Vec3i biggest_index = (sum[0] > sum[1]) ?
+            Index3 biggest_index = (sum[0] > sum[1]) ?
                                       ((sum[0] > sum[2]) ?
                                            ((sum[2] > sum[1]) ?
-                                                Vec3i(0, 2, 1) :
-                                                Vec3i(0, 1, 2)) :
-                                           Vec3i(2, 0, 1)) :
+                                                Index3{0, 2, 1} :
+                                                Index3{0, 1, 2}) :
+                                           Index3{2, 0, 1}) :
                                       ((sum[1] > sum[2]) ?
                                            ((sum[2] > sum[0]) ?
-                                                Vec3i(1, 2, 0) :
-                                                Vec3i(1, 0, 2)) :
-                                           Vec3i(2, 1, 0));
+                                                Index3{1, 2, 0} :
+                                                Index3{1, 0, 2}) :
+                                           Index3{2, 1, 0});
             for (int i = 0; i < 3; i++) {
                 int index = biggest_index[i];
                 if (sum[index] <= max_length) return false;
@@ -80,9 +80,9 @@ indexed_triangle_set its_subdivide(
     };
     struct TriangleLengths
     {
-        Vec3crd indices;
+        Index3 indices;
         Vec3f l; // lengths
-        TriangleLengths(const Vec3crd &indices, const Vec3f &lengths)
+        TriangleLengths(const Index3 &indices, const Vec3f &lengths)
             : indices(indices), l(lengths)
         {}
 
@@ -154,10 +154,10 @@ indexed_triangle_set its_subdivide(
             float len2 = l[i0] - len1;
             if (key_swap) std::swap(len1, len2);
 
-            Vec3crd indices1(vi0, new_index, vi2);
+            Index3 indices1{static_cast<int>(vi0), static_cast<int>(new_index), static_cast<int>(vi2)};
             Vec3f lengths1(len1, new_len, l[i2]);
 
-            Vec3crd indices2(new_index, vi1, vi2);
+            Index3 indices2{static_cast<int>(new_index), static_cast<int>(vi1), static_cast<int>(vi2)};
             Vec3f lengths2(len2, l[i1], new_len);
 
             // append key for divided edge when neccesary
@@ -202,7 +202,7 @@ indexed_triangle_set its_subdivide(
     std::queue<TriangleLengths> tls;
 
     EdgeDivides edge_divides;
-    for (const Vec3crd &indices : its.indices) {
+    for (const Index3 &indices : its.indices) {
         Edges edges(indices, vertices);
         // speed up only sum not sqrt is apply
         if (!edges.is_dividable(max_length)) {

@@ -45,7 +45,7 @@ TriangleMesh eigen_to_triangle_mesh(const EigenMesh &emesh)
         its.vertices.emplace_back(VC.row(i).cast<float>());
     
     for (Eigen::Index i = 0; i < FC.rows(); ++i)
-        its.indices.emplace_back(FC.row(i));
+        its.indices.emplace_back(Domain::Index3{FC.row(i)[0], FC.row(i)[1], FC.row(i)[2]});
     
     return TriangleMesh { std::move(its) };
 }
@@ -135,7 +135,7 @@ void triangle_mesh_to_cgal(const std::vector<stl_vertex> &                 V,
 
     using VI = typename _Mesh::Vertex_index;
     for (auto &f : F)
-        out.add_face(VI(f(0)), VI(f(1)), VI(f(2)));
+        out.add_face(VI(f[0]), VI(f[1]), VI(f[2]));
 }
 
 inline Vec3f to_vec3f(const _EpicMesh::Point& v)
@@ -170,11 +170,11 @@ indexed_triangle_set cgal_to_indexed_triangle_set(const _Mesh &cgalmesh)
         auto vtc = cgalmesh.vertices_around_face(cgalmesh.halfedge(face));
 
         int i = 0;
-        Vec3i facet;
+        Index3 facet;
         for (auto v : vtc) {
             int iv = v;
             if (i > 2 || iv < 0 || iv >= vsize) { i = 0; break; }
-            facet(i++) = iv;
+            facet[i++] = iv;
         }
 
         if (i == 3)

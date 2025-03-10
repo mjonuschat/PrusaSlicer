@@ -23,9 +23,9 @@ TriangleSetSamples sample_its_uniform_parallel(size_t samples_count, const index
             [&triangle_set, &triangles_area](
                     tbb::blocked_range<size_t> r) {
                 for (size_t t_idx = r.begin(); t_idx < r.end(); ++t_idx) {
-                    const Vec3f &a = triangle_set.vertices[triangle_set.indices[t_idx].x()];
-                    const Vec3f &b = triangle_set.vertices[triangle_set.indices[t_idx].y()];
-                    const Vec3f &c = triangle_set.vertices[triangle_set.indices[t_idx].z()];
+                    const Vec3f &a = triangle_set.vertices[triangle_set.indices[t_idx][0]];
+                    const Vec3f &b = triangle_set.vertices[triangle_set.indices[t_idx][1]];
+                    const Vec3f &c = triangle_set.vertices[triangle_set.indices[t_idx][2]];
                     double area = double(0.5 * (b - a).cross(c - a).norm());
                     triangles_area[t_idx] = area;
                 }
@@ -66,9 +66,9 @@ TriangleSetSamples sample_its_uniform_parallel(size_t samples_count, const index
                     double sq_u = std::sqrt(random_samples[s_idx].y());
                     double v = random_samples[s_idx].z();
 
-                    Vec3f A = triangle_set.vertices[triangle_set.indices[t_idx].x()];
-                    Vec3f B = triangle_set.vertices[triangle_set.indices[t_idx].y()];
-                    Vec3f C = triangle_set.vertices[triangle_set.indices[t_idx].z()];
+                    Vec3f A = triangle_set.vertices[triangle_set.indices[t_idx][0]];
+                    Vec3f B = triangle_set.vertices[triangle_set.indices[t_idx][1]];
+                    Vec3f C = triangle_set.vertices[triangle_set.indices[t_idx][2]];
 
                     result.positions[s_idx] = A * (1 - sq_u) + B * (sq_u * (1 - v)) + C * (v * sq_u);
                     result.normals[s_idx] = ((B - A).cross(C - B)).normalized();

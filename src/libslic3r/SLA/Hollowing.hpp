@@ -210,7 +210,7 @@ void cut_drainholes(std::vector<ExPolygons> & obj_slices,
 inline void swap_normals(indexed_triangle_set &its)
 {
     for (auto &face : its.indices)
-        std::swap(face(0), face(2));
+        std::swap(face[0], face[2]);
 }
 
 // Create exclude mask for triangle removal inside hollowed interiors.

@@ -245,15 +245,15 @@ BuildVolume::ObjectState object_state_templ(const indexed_triangle_set &its, con
         if (num_above < its.vertices.size() && ! (inside && outside)) {
             // Not completely above the build surface and status may still change by testing edges intersecting the build platform.
             for (const stl_triangle_vertex_indices &tri : its.indices) {
-                const int s[3] = { sides[tri(0)], sides[tri(1)], sides[tri(2)] };
+                const int s[3] = { sides[tri[0]], sides[tri[1]], sides[tri[2]] };
                 if (std::min(s[0], std::min(s[1], s[2])) < 0 && std::max(s[0], std::max(s[1], s[2])) > 0) {
                     // Some edge of this triangle intersects the build platform. Calculate the intersection.
                     int iprev = 2;
                     for (int iedge = 0; iedge < 3; ++ iedge) {
                         if (s[iprev] * s[iedge] == -1) {
                             // edge intersects the build surface. Calculate intersection point.
-                            const stl_vertex p1 = trafo * its.vertices[tri(iprev)];
-                            const stl_vertex p2 = trafo * its.vertices[tri(iedge)];
+                            const stl_vertex p1 = trafo * its.vertices[tri[iprev]];
+                            const stl_vertex p2 = trafo * its.vertices[tri[iedge]];
                             assert(sign(p1) == s[iprev]);
                             assert(sign(p2) == s[iedge]);
                             assert((p1.z() - world_min_z) * (p2.z() - world_min_z) < 0);

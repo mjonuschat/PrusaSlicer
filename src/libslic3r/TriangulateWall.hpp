@@ -83,16 +83,16 @@ class Triangulator {
         offring->init(imin);
     }
 
-    void emplace_indices(std::vector<Vec3i> &indices)
+    void emplace_indices(std::vector<Domain::Index3> &indices)
     {
-        Vec3i tr{int(onring->pos().first), int(onring->pos().second),
+        Domain::Index3 tr{int(onring->pos().first), int(onring->pos().second),
                  int(offring->pos().first)};
-        if (onring->is_lower()) std::swap(tr(0), tr(1));
+        if (onring->is_lower()) std::swap(tr[0], tr[1]);
         indices.emplace_back(tr);
     }
 
 public:
-    void run(std::vector<Vec3i> &indices)
+    void run(std::vector<Domain::Index3> &indices)
     {
         synchronize_rings();
 
@@ -119,7 +119,7 @@ public:
 
 template<class Sc, class I>
 void triangulate_wall(std::vector<Vec<3, Sc>> &pts,
-                      std::vector<Vec<3, I>> & ind,
+                      std::vector<std::array<I, 3>> & ind,
                       const Polygon &          lower,
                       const Polygon &          upper,
                       double                   lower_z_mm,
@@ -142,7 +142,7 @@ void triangulate_wall(std::vector<Vec<3, Sc>> &pts,
     t.run(ind);
 }
 
-//using Wall = std::pair<std::vector<Vec3d>, std::vector<Vec3i>>;
+//using Wall = std::pair<std::vector<Vec3d>, std::vector<Index3>>;
 
 //Wall triangulate_wall(
 //    const Polygon &       lower,

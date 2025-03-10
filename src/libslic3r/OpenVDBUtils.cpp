@@ -67,7 +67,7 @@ template VoxelGridPtr make_voxelgrid<>();
 
 inline Vec3f to_vec3f(const openvdb::Vec3s &v) { return Vec3f{v.x(), v.y(), v.z()}; }
 inline Vec3d to_vec3d(const openvdb::Vec3s &v) { return to_vec3f(v).cast<double>(); }
-inline Vec3i to_vec3i(const openvdb::Vec3I &v) { return Vec3i{int(v[2]), int(v[1]), int(v[0])}; }
+inline Domain::Index3 to_index3d(const openvdb::Vec3I &v) { return Domain::Index3{int(v[2]), int(v[1]), int(v[0])}; }
 
 class TriangleMeshDataAdapter {
 public:
@@ -83,7 +83,7 @@ public:
     // And the voxel count per unit volume can be affected this way.
     void getIndexSpacePoint(size_t n, size_t v, openvdb::Vec3d& pos) const
     {
-        auto vidx = size_t(its.indices[n](Eigen::Index(v)));
+        auto vidx = size_t(its.indices[n][v]);
         Slic3r::Vec3d p = trafo * its.vertices[vidx].cast<double>();
         pos = {p.x(), p.y(), p.z()};
     }
@@ -185,10 +185,18 @@ indexed_triangle_set grid_to_mesh(const VoxelGrid &vgrid,
     ret.indices.reserve(triangles.size() + quads.size() * 2);
 
     for (auto &v : points) ret.vertices.emplace_back(to_vec3f(v) /*/ scale*/);
-    for (auto &v : triangles) ret.indices.emplace_back(to_vec3i(v));
+    for (auto &v : triangles) ret.indices.emplace_back(to_index3d(v));
     for (auto &quad : quads) {
-        ret.indices.emplace_back(quad(2), quad(1), quad(0));
-        ret.indices.emplace_back(quad(3), quad(2), quad(0));
+        ret.indices.emplace_back(Index3{
+            static_cast<int>(quad(2)),
+            static_cast<int>(quad(1)),
+            static_cast<int>(quad(0))
+        });
+        ret.indices.emplace_back(Index3{
+            static_cast<int>(quad(3)),
+            static_cast<int>(quad(2)),
+            static_cast<int>(quad(0))
+        });
     }
 
     return ret;

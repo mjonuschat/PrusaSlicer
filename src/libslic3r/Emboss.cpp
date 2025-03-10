@@ -53,6 +53,7 @@ static unsigned MAX_HEAL_ITERATION_OF_TEXT = 10;
 using namespace Slic3r;
 using namespace Emboss;
 using fontinfo_opt = std::optional<stbtt_fontinfo>;
+using Domain::Index3;
 
 // NOTE: approach to heal shape by Clipper::Closing is not working
 
@@ -1515,8 +1516,16 @@ void add_quad(uint32_t              i1,
     // bottom indices
     uint32_t i1_ = i1 + count_point;
     uint32_t i2_ = i2 + count_point;
-    result.indices.emplace_back(i2, i2_, i1);
-    result.indices.emplace_back(i1_, i1, i2_);
+    result.indices.push_back(Index3{
+        static_cast<int>(i2),
+        static_cast<int>(i2_),
+        static_cast<int>(i1)
+        });
+    result.indices.push_back(Index3{
+        static_cast<int>(i1_),
+        static_cast<int>(i1),
+        static_cast<int>(i2_)
+    });
 };
 
 indexed_triangle_set polygons2model_unique(
@@ -1525,7 +1534,7 @@ indexed_triangle_set polygons2model_unique(
     const Points              &points)
 {
     // CW order of triangle indices
-    std::vector<Vec3i> shape_triangles=Triangulation::triangulate(shape2d, points);
+    std::vector<Index3> shape_triangles=Triangulation::triangulate(shape2d, points);
     uint32_t           count_point     = points.size();
 
     indexed_triangle_set result;
@@ -1546,13 +1555,15 @@ indexed_triangle_set polygons2model_unique(
                            std::make_move_iterator(back_points.end()));
     result.indices.reserve(shape_triangles.size() * 2 + points.size() * 2);
     // top triangles - change to CCW
-    for (const Vec3i &t : shape_triangles)
-        result.indices.emplace_back(t.x(), t.z(), t.y());
+    for (const Index3 &t : shape_triangles)
+        result.indices.push_back(Index3{t[0], t[2], t[1]});
     // bottom triangles - use CW
-    for (const Vec3i &t : shape_triangles)
-        result.indices.emplace_back(t.x() + count_point, 
-                                    t.y() + count_point,
-                                    t.z() + count_point);
+    for (const Index3 &t : shape_triangles)
+        result.indices.push_back(Index3{
+            static_cast<int>(t[0] + count_point),
+            static_cast<int>(t[1] + count_point),
+            static_cast<int>(t[2] + count_point)
+        });
 
     // quads around - zig zag by triangles
     size_t polygon_offset = 0;
@@ -1585,7 +1596,7 @@ indexed_triangle_set polygons2model_duplicit(
 {
     // CW order of triangle indices
     std::vector<uint32_t> changes = Triangulation::create_changes(points, duplicits);
-    std::vector<Vec3i> shape_triangles = Triangulation::triangulate(shape2d, points, changes);
+    std::vector<Index3> shape_triangles = Triangulation::triangulate(shape2d, points, changes);
     uint32_t count_point = *std::max_element(changes.begin(), changes.end()) + 1;
 
     indexed_triangle_set result;
@@ -1617,12 +1628,15 @@ indexed_triangle_set polygons2model_duplicit(
 
     result.indices.reserve(shape_triangles.size() * 2 + points.size() * 2);
     // top triangles - change to CCW
-    for (const Vec3i &t : shape_triangles)
-        result.indices.emplace_back(t.x(), t.z(), t.y());
+    for (const Index3 &t : shape_triangles)
+        result.indices.push_back(Index3{t[0], t[2], t[1]});
     // bottom triangles - use CW
-    for (const Vec3i &t : shape_triangles)
-        result.indices.emplace_back(t.x() + count_point, t.y() + count_point,
-                                    t.z() + count_point);
+    for (const Index3 &t : shape_triangles)
+        result.indices.push_back(Index3{
+            static_cast<int>(t[0] + count_point),
+            static_cast<int>(t[1] + count_point),
+            static_cast<int>(t[2] + count_point)
+        });
 
     // quads around - zig zag by triangles
     size_t polygon_offset = 0;

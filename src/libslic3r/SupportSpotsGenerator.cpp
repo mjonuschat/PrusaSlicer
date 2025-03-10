@@ -60,12 +60,6 @@ static Slic3r::Vec3f value_to_rgbf(float minimum, float maximum, float value)
     float g = 1.0f - b - r;
     return Slic3r::Vec3f{ r, g, b };
 }
-
-// Color mapping of a value into RGB false colors.
-static Slic3r::Vec3i value_to_rgbi(float minimum, float maximum, float value)
-{
-    return (value_to_rgbf(minimum, maximum, value) * 255).cast<int>();
-}
 #else
 constexpr bool debug_files = false;
 #endif
@@ -93,6 +87,8 @@ using LD = AABBTreeLines::LinesDistancer<ExtrusionLine>;
 struct SupportGridFilter
 {
 private:
+    using Vec3i = Eigen::Matrix<int, 3, 1, Eigen::DontAlign>;
+
     Vec3f cell_size;
     Vec3f origin;
     Vec3f size;

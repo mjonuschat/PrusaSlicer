@@ -684,9 +684,11 @@ indexed_triangle_set Slic3r::cut2model(const SurfaceCut         &cut,
         assert(i.y() >= 0 && i.y() < cut.vertices.size());
         assert(i.z() >= 0 && i.z() < cut.vertices.size());
         // Y and Z is swapped CCW triangles for back side
-        result.indices.emplace_back(i.x() + back_offset,
-                                    i.z() + back_offset,
-                                    i.y() + back_offset);
+        result.indices.emplace_back(Index3{
+            static_cast<int>(i[0] + back_offset),
+            static_cast<int>(i[1] + back_offset),
+            static_cast<int>(i[2] + back_offset)
+        });
     }
 
     // zig zag indices
@@ -696,8 +698,16 @@ indexed_triangle_set Slic3r::cut2model(const SurfaceCut         &cut,
         for (size_t front_index : contour) {
             assert(front_index < cut.vertices.size());
             size_t back_index  = back_offset + front_index;
-            result.indices.emplace_back(front_index, prev_front_index, back_index);
-            result.indices.emplace_back(prev_front_index, prev_back_index, back_index);
+            result.indices.emplace_back(Index3{
+                static_cast<int>(front_index),
+                static_cast<int>(prev_front_index),
+                static_cast<int>(back_index)
+            });
+            result.indices.emplace_back(Index3{
+                static_cast<int>(prev_front_index),
+                static_cast<int>(prev_back_index),
+                static_cast<int>(back_index)
+            });
             prev_front_index = front_index;
             prev_back_index  = back_index;
         }
@@ -730,7 +740,7 @@ using IsOnSides = std::vector<std::array<bool, 4>>;
 /// <param name="t">Triangle</param>
 /// <param name="is_on_sides">Flag is vertex index out of plane</param>
 /// <returns>True when triangle is out of one of plane</returns>
-bool is_all_on_one_side(const Vec3i &t, const IsOnSides& is_on_sides);
+bool is_all_on_one_side(const Index3 &t, const IsOnSides& is_on_sides);
 
 } // namespace priv
 
@@ -742,7 +752,7 @@ bool priv::is_out_of(const Vec3d &v, const PointNormal &point_normal)
     return signed_distance > 1e-5;
 };
 
-bool priv::is_all_on_one_side(const Vec3i &t, const IsOnSides& is_on_sides) {
+bool priv::is_all_on_one_side(const Index3 &t, const IsOnSides& is_on_sides) {
     for (size_t side = 0; side < 4; side++) {
         bool result = true;
         for (auto vi : t) {
@@ -880,8 +890,11 @@ indexed_triangle_set Slic3r::its_mask(const indexed_triangle_set &its,
 
     for (const stl_triangle_vertex_indices &f : its.indices)
         if (mask[&f - &its.indices.front()])        
-            result.indices.push_back(stl_triangle_vertex_indices(
-                cvt_vetices[f[0]], cvt_vetices[f[1]], cvt_vetices[f[2]]));
+            result.indices.push_back(stl_triangle_vertex_indices{
+                static_cast<int>(cvt_vetices[f[0]]),
+                static_cast<int>(cvt_vetices[f[1]]),
+                static_cast<int>(cvt_vetices[f[2]])
+            });
     
     return result;    
 }
@@ -3585,7 +3598,7 @@ SurfaceCut priv::patch2cut(SurfacePatch &patch)
         assert(mesh.next(mesh.next(mesh.next(hi))) == hi);
 
         // triangle indicies
-        Vec3i ti;
+        Index3 ti;
         size_t i = 0;
         for (VI vi : { mesh.source(hi), 
                        mesh.target(hi), 
@@ -3690,9 +3703,9 @@ void priv::store(const Vec3f       &vertex,
         float angle = i * 2 * M_PI / flatten;
         Vec3f v     = vertex + sin(angle) * side + cos(angle) * up;
         its.vertices.push_back(v);
-        its.indices.emplace_back(0, i, i + 1);
+        its.indices.emplace_back(Index3{0, i, i + 1});
     }
-    its.indices.emplace_back(0, flatten, 1);
+    its.indices.emplace_back(Index3{0, flatten, 1});
     its_write_obj(its, file.c_str());
 }
 
@@ -3768,7 +3781,7 @@ indexed_triangle_set priv::create_indexed_triangle_set(
         HI hi_end = hi;
 
         int   ti = 0;
-        Vec3i t;
+        Index3 t;
 
         do {
             VI   vi  = mesh.source(hi);
@@ -3828,8 +3841,8 @@ void priv::store(const CutAOIs &aois, const CutMesh &mesh, const std::string &di
             size_t bi2 = its.vertices.size();
             its.vertices.push_back(b + dir);
 
-            its.indices.push_back(Vec3i(ai, ai2, bi));
-            its.indices.push_back(Vec3i(ai2, bi2, bi));
+            its.indices.push_back(Index3(ai, ai2, bi));
+            its.indices.push_back(Index3(ai2, bi2, bi));
         }
         return its;    
     };
@@ -4028,8 +4041,8 @@ indexed_triangle_set priv::create_contour_its(
         size_t bi2 = result.vertices.size();
         result.vertices.push_back(b + dir);
 
-        result.indices.push_back(Vec3i(ai, bi, ai2));
-        result.indices.push_back(Vec3i(ai2, bi, bi2));
+        result.indices.push_back(Index3{ai, bi, ai2});
+        result.indices.push_back(Index3{ai2, bi, bi2});
         prev_vi = vi;
     }
     return result;

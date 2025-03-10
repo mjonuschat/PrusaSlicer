@@ -3264,7 +3264,7 @@ static void project_triangles_to_slabs(SpanOfConstPtrs<Layer> layers, const inde
 
         // Transform the triangle into worlds coords.
         for (int i=0; i<3; ++i)
-            facet[i] = tr * custom_facets.vertices[custom_facets.indices[idx](i)];
+            facet[i] = tr * custom_facets.vertices[custom_facets.indices[idx][i]];
 
         // Ignore triangles with upward-pointing normal. Don't forget about mirroring.
         float z_comp = (facet[1]-facet[0]).cross(facet[2]-facet[0]).z();

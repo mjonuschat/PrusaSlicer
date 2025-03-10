@@ -27,8 +27,11 @@ void to_eigen_mesh(const indexed_triangle_set &its,
 {
     V.resize(its.vertices.size(), 3);
     F.resize(its.indices.size(), 3);
-    for (unsigned int i = 0; i < its.indices.size(); ++i)
-        F.row(i) = its.indices[i];
+    for (unsigned int i = 0; i < its.indices.size(); ++i){
+        F.row(i)[0] = its.indices[i][0];
+        F.row(i)[1] = its.indices[i][1];
+        F.row(i)[2] = its.indices[i][2];
+    }
 
     for (unsigned int i = 0; i < its.vertices.size(); ++i)
         V.row(i) = its.vertices[i].cast<double>();
@@ -39,10 +42,10 @@ std::vector<Node> sample_mesh(const indexed_triangle_set &its, double radius)
     std::vector<Node> ret;
 
     double surface_area = 0.;
-    for (const Vec3i &face : its.indices) {
-        std::array<Vec3f, 3> tri = {its.vertices[face(0)],
-                                    its.vertices[face(1)],
-                                    its.vertices[face(2)]};
+    for (const Index3 &face : its.indices) {
+        std::array<Vec3f, 3> tri = {its.vertices[face[0]],
+                                    its.vertices[face[1]],
+                                    its.vertices[face[2]]};
 
         auto U = tri[1] - tri[0], V = tri[2] - tri[0];
         surface_area += 0.5 * U.cross(V).norm();
@@ -64,16 +67,16 @@ std::vector<Node> sample_mesh(const indexed_triangle_set &its, double radius)
         if (face_id < 0 || face_id >= int(its.indices.size()))
             continue;
 
-        Vec3i face = its.indices[face_id];
+        Index3 face = its.indices[face_id];
 
-        if (face(0) >= int(its.vertices.size()) ||
-            face(1) >= int(its.vertices.size()) ||
-            face(2) >= int(its.vertices.size()))
+        if (face[0] >= int(its.vertices.size()) ||
+            face[1] >= int(its.vertices.size()) ||
+            face[2] >= int(its.vertices.size()))
             continue;
 
-        Vec3f c = B.row(i)(0) * its.vertices[face(0)] +
-                  B.row(i)(1) * its.vertices[face(1)] +
-                  B.row(i)(2) * its.vertices[face(2)];
+        Vec3f c = B.row(i)(0) * its.vertices[face[0]] +
+                  B.row(i)(1) * its.vertices[face[1]] +
+                  B.row(i)(2) * its.vertices[face[2]];
 
         ret.emplace_back(c);
     }
@@ -92,7 +95,11 @@ std::vector<Node> sample_bed(const ExPolygons &bed, float z, double radius)
         its.vertices.emplace_back(triangles[i + 1].cast<float>());
         its.vertices.emplace_back(triangles[i + 2].cast<float>());
 
-        its.indices.emplace_back(i, i + 1, i + 2);
+        its.indices.emplace_back(Domain::Index3{
+            static_cast<int>(i),
+            static_cast<int>(i + 1),
+            static_cast<int>(i + 2)
+        });
     }
 
     return sample_mesh(its, radius);

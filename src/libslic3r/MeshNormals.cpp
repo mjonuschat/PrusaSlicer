@@ -40,9 +40,9 @@ Vec3d get_normal(const AABBMesh        &mesh,
 
     auto trindex = mesh.indices(faceid);
 
-    const Vec3d &p1 = mesh.vertices(trindex(0)).cast<double>();
-    const Vec3d &p2 = mesh.vertices(trindex(1)).cast<double>();
-    const Vec3d &p3 = mesh.vertices(trindex(2)).cast<double>();
+    const Vec3d &p1 = mesh.vertices(trindex[0]).cast<double>();
+    const Vec3d &p2 = mesh.vertices(trindex[1]).cast<double>();
+    const Vec3d &p3 = mesh.vertices(trindex[2]).cast<double>();
 
     // We should check if the point lies on an edge of the hosting
     // triangle. If it does then all the other triangles using the
@@ -59,11 +59,11 @@ Vec3d get_normal(const AABBMesh        &mesh,
     int edge_idx = -1;
     double epsSq = eps * eps;
     if ((p - p1).squaredNorm() < epsSq) {
-        vertex_idx = trindex(0);
+        vertex_idx = trindex[0];
     } else if ((p - p2).squaredNorm() < epsSq) {
-        vertex_idx = trindex(1);
+        vertex_idx = trindex[1];
     } else if ((p - p3).squaredNorm() < epsSq) {
-        vertex_idx = trindex(2);
+        vertex_idx = trindex[2];
     } else if (point_on_edge(p, p1, p2, epsSq)) {
         edge_idx = 0;
     } else if (point_on_edge(p, p2, p3, epsSq)) {
@@ -101,7 +101,7 @@ Vec3d get_normal(const AABBMesh        &mesh,
                 neigh.insert(oit, mesh.normal_by_face_id(*it));
         }
     } else if (edge_idx >= 0) { // the point is on and edge
-        size_t neighbor_face = mesh.face_neighbor_index()[faceid](edge_idx);
+        size_t neighbor_face = mesh.face_neighbor_index()[faceid][edge_idx];
         if (neighbor_face < mesh.indices().size()) {
             neigh.emplace_back(mesh.normal_by_face_id(faceid));
             neigh.emplace_back(mesh.normal_by_face_id(neighbor_face));

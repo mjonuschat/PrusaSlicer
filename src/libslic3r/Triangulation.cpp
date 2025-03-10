@@ -23,6 +23,8 @@
 #include "libslic3r/libslic3r.h"
 
 using namespace Slic3r;
+using Domain::Index3;
+
 namespace priv{
 inline void insert_edges(Triangulation::HalfEdges &edges, uint32_t &offset, const Polygon &polygon, const Triangulation::Changes& changes) {
     const Points &pts = polygon.points;
@@ -178,10 +180,14 @@ Triangulation::Indices Triangulation::triangulate(const Points    &points,
     };
 
 #ifdef VISUALIZE_TRIANGULATION
-    std::vector<Vec3i> indices2;
+    std::vector<Index3> indices2;
     indices2.reserve(num_faces);
     for (CDT::Face_handle fh : faces)
-        if (inside(fh)) indices2.emplace_back(fh->vertex(0)->info(), fh->vertex(1)->info(), fh->vertex(2)->info());
+        if (inside(fh)) indices2.emplace_back(Index3{
+            static_cast<int>(fh->vertex(0)->info()),
+            static_cast<int>(fh->vertex(1)->info()),
+            static_cast<int>(fh->vertex(2)->info())
+        });
     visualize(points, indices2, "C:/data/temp/triangulation_without_floodfill.obj");
 #endif // VISUALIZE_TRIANGULATION
 
@@ -209,11 +215,15 @@ Triangulation::Indices Triangulation::triangulate(const Points    &points,
         }
     }
 
-    std::vector<Vec3i> indices;
+    std::vector<Index3> indices;
     indices.reserve(num_faces);
     for (CDT::Face_handle fh : faces)
         if (inside(fh))
-            indices.emplace_back(fh->vertex(0)->info(), fh->vertex(1)->info(), fh->vertex(2)->info());
+            indices.emplace_back(Index3{
+                static_cast<int>(fh->vertex(0)->info()),
+                static_cast<int>(fh->vertex(1)->info()),
+                static_cast<int>(fh->vertex(2)->info())
+            });
 
 #ifdef VISUALIZE_TRIANGULATION
     visualize(points, indices, "C:/data/temp/triangulation.obj");
@@ -270,7 +280,7 @@ Triangulation::Indices Triangulation::triangulate(const ExPolygons &expolygons){
         changes2[changes[i]] = i;
 
     // convert indices into expolygons indicies
-    for (Vec3i &t : indices) 
+    for (Index3 &t : indices) 
         for (size_t ti = 0; ti < 3; ti++) t[ti] = changes2[t[ti]];
     
     return indices;

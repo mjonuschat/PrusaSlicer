@@ -78,10 +78,10 @@ TriangleMesh BedGeometry::plate_mesh(const Domain::Bed& bed)
         [](const std::pair<Vec3f, Vec2f>& v) {
             return v.first;
     });
-    std::vector<Vec3i> faces;
+    std::vector<Domain::Index3> faces;
     faces.reserve(triangles.size() / 3);
     for (int i = 0; i < int(triangles.size()); i += 3) {
-        faces.emplace_back(Vec3i(i + 0, i + 1, i + 2));
+        faces.emplace_back(Domain::Index3{i + 0, i + 1, i + 2});
     }
     return TriangleMesh(vertices, faces);
 }

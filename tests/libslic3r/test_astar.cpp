@@ -11,6 +11,7 @@
 
 using namespace Slic3r;
 using namespace Catch;
+using Domain::Index3;
 
 TEST_CASE("Testing basic invariants of AStar", "[AStar]") {
     struct DummyTracer {
@@ -42,6 +43,10 @@ TEST_CASE("Testing basic invariants of AStar", "[AStar]") {
     }
 }
 
+Index3 operator+(const Index3& a, const Index3& b) {
+    return {a[0] + b[0], a[1] + b[1], a[2] + b[2]};
+}
+
 struct PointGridTracer3D {
     using Node = size_t;
     const PointGrid<float> &grid;
@@ -53,21 +58,21 @@ struct PointGridTracer3D {
     template<class Fn>
     void foreach_reachable(size_t from, Fn &&fn) const
     {
-        Vec3i from_crd = grid.get_coord(from);
+        Index3 from_crd = grid.get_coord(from);
         REQUIRE(grid.get_idx(from_crd) == from);
 
-        if (size_t i = grid.get_idx(from_crd + Vec3i{ 1,  0,  0}); i < grid.point_count()) fn(i);
-        if (size_t i = grid.get_idx(from_crd + Vec3i{ 0,  1,  0}); i < grid.point_count()) fn(i);
-        if (size_t i = grid.get_idx(from_crd + Vec3i{ 0,  0,  1}); i < grid.point_count()) fn(i);
-        if (size_t i = grid.get_idx(from_crd + Vec3i{ 1,  1,  0}); i < grid.point_count()) fn(i);
-        if (size_t i = grid.get_idx(from_crd + Vec3i{ 0,  1,  1}); i < grid.point_count()) fn(i);
-        if (size_t i = grid.get_idx(from_crd + Vec3i{ 1,  1,  1}); i < grid.point_count()) fn(i);
-        if (size_t i = grid.get_idx(from_crd + Vec3i{-1,  0,  0}); from_crd.x() > 0 && i < grid.point_count()) fn(i);
-        if (size_t i = grid.get_idx(from_crd + Vec3i{ 0, -1,  0}); from_crd.y() > 0 && i < grid.point_count()) fn(i);
-        if (size_t i = grid.get_idx(from_crd + Vec3i{ 0,  0, -1}); from_crd.z() > 0 && i < grid.point_count()) fn(i);
-        if (size_t i = grid.get_idx(from_crd + Vec3i{-1, -1,  0}); from_crd.x() > 0 && from_crd.y() > 0 && i < grid.point_count()) fn(i);
-        if (size_t i = grid.get_idx(from_crd + Vec3i{ 0, -1, -1}); from_crd.y() > 0 && from_crd.z() && i < grid.point_count()) fn(i);
-        if (size_t i = grid.get_idx(from_crd + Vec3i{-1, -1, -1}); from_crd.x() > 0 && from_crd.y() > 0 && from_crd.z() && i < grid.point_count()) fn(i);
+        if (size_t i = grid.get_idx(from_crd + Index3{ 1,  0,  0}); i < grid.point_count()) fn(i);
+        if (size_t i = grid.get_idx(from_crd + Index3{ 0,  1,  0}); i < grid.point_count()) fn(i);
+        if (size_t i = grid.get_idx(from_crd + Index3{ 0,  0,  1}); i < grid.point_count()) fn(i);
+        if (size_t i = grid.get_idx(from_crd + Index3{ 1,  1,  0}); i < grid.point_count()) fn(i);
+        if (size_t i = grid.get_idx(from_crd + Index3{ 0,  1,  1}); i < grid.point_count()) fn(i);
+        if (size_t i = grid.get_idx(from_crd + Index3{ 1,  1,  1}); i < grid.point_count()) fn(i);
+        if (size_t i = grid.get_idx(from_crd + Index3{-1,  0,  0}); from_crd[0] > 0 && i < grid.point_count()) fn(i);
+        if (size_t i = grid.get_idx(from_crd + Index3{ 0, -1,  0}); from_crd[1] > 0 && i < grid.point_count()) fn(i);
+        if (size_t i = grid.get_idx(from_crd + Index3{ 0,  0, -1}); from_crd[2] > 0 && i < grid.point_count()) fn(i);
+        if (size_t i = grid.get_idx(from_crd + Index3{-1, -1,  0}); from_crd[0] > 0 && from_crd[1] > 0 && i < grid.point_count()) fn(i);
+        if (size_t i = grid.get_idx(from_crd + Index3{ 0, -1, -1}); from_crd[1] > 0 && from_crd[2] && i < grid.point_count()) fn(i);
+        if (size_t i = grid.get_idx(from_crd + Index3{-1, -1, -1}); from_crd[2] > 0 && from_crd[1] > 0 && from_crd[2] && i < grid.point_count()) fn(i);
 
     }
 

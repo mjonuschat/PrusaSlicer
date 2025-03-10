@@ -253,7 +253,7 @@ struct AMFParserContext
     // Current volume allocated for an amf/object/mesh/volume subtree.
     ModelVolume             *m_volume { nullptr };
     // Faces collected for the current m_volume.
-    std::vector<Vec3i>       m_volume_facets;
+    std::vector<Index3>       m_volume_facets;
     // Transformation matrix of a volume mesh from its coordinate system to Object's coordinate system.
     Transform3d 			 m_volume_transform;
     // Current material allocated for an amf/metadata subtree.
@@ -617,7 +617,7 @@ void AMFParserContext::endElement(const char * /* name */)
     // Faces of the current volume:
     case NODE_TYPE_TRIANGLE:
         assert(m_object && m_volume);
-        m_volume_facets.emplace_back(atoi(m_value[0].c_str()), atoi(m_value[1].c_str()), atoi(m_value[2].c_str()));
+        m_volume_facets.push_back(Index3{atoi(m_value[0].c_str()), atoi(m_value[1].c_str()), atoi(m_value[2].c_str())});
         m_value[0].clear();
         m_value[1].clear();
         m_value[2].clear();
@@ -636,7 +636,7 @@ void AMFParserContext::endElement(const char * /* name */)
             // Verify validity of face indices, find the vertex span.
             int min_id = m_volume_facets.front()[0];
             int max_id = min_id;
-            for (const Vec3i& face : m_volume_facets) {
+            for (const Index3& face : m_volume_facets) {
                 for (const int tri_id : face) {
                     if (tri_id < 0 || tri_id >= int(m_object_vertices.size())) {
                         this->stop("Malformed triangle mesh");
@@ -648,8 +648,11 @@ void AMFParserContext::endElement(const char * /* name */)
             }
 
             // rebase indices to the current vertices list
-            for (Vec3i &face : m_volume_facets)
-                face -= Vec3i(min_id, min_id, min_id);
+            for (Index3 &face : m_volume_facets) {
+                face[0] -= min_id;
+                face[1] -= min_id;
+                face[2] -= min_id;
+            }
 
             indexed_triangle_set its { std::move(m_volume_facets), { m_object_vertices.begin() + min_id, m_object_vertices.begin() + max_id + 1 } };
             its_compactify_vertices(its);

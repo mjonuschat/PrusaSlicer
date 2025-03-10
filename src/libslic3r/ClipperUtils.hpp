@@ -334,8 +334,8 @@ namespace ClipperUtils {
     };
 
     // For ClipperLib with Z coordinates.
-    using ZPoint = Vec3i32;
-    using ZPoints = std::vector<Vec3i32>;
+    using ZPoint = Vec3crd;
+    using ZPoints = std::vector<ZPoint>;
 
     // Clip source polygon to be used as a clipping polygon with a bouding box around the source (to be clipped) polygon.
     // Useful as an optimization for expensive ClipperLib operations, for example when clipping source polygons one by one

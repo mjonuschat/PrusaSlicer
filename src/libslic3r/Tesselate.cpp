@@ -278,12 +278,28 @@ indexed_triangle_set wall_strip(const Polygon &poly, double lower_z_mm, double u
         ret.vertices.emplace_back(to_3d(unscaled(p).cast<float>().eval(), float(upper_z_mm)));
 
     for (size_t i = startidx + 1; i < startidx + offs; ++i) {
-        ret.indices.emplace_back(i - 1, i, i + offs - 1);
-        ret.indices.emplace_back(i, i + offs, i + offs - 1);
+        ret.indices.emplace_back(Domain::Index3{
+            static_cast<int>(i - 1),
+            static_cast<int>(i),
+            static_cast<int>(i + offs - 1)
+        });
+        ret.indices.emplace_back(Domain::Index3{
+            static_cast<int>(i),
+            static_cast<int>(i + offs),
+            static_cast<int>(i + offs - 1)
+        });
     }
 
-    ret.indices.emplace_back(startidx + offs - 1, startidx, startidx + 2 * offs - 1);
-    ret.indices.emplace_back(startidx, startidx + offs, startidx + 2 * offs - 1);
+    ret.indices.emplace_back(Domain::Index3{
+        static_cast<int>(startidx + offs - 1),
+        static_cast<int>(startidx),
+        static_cast<int>(startidx + 2 * offs - 1)
+    });
+    ret.indices.emplace_back(Domain::Index3{
+        static_cast<int>(startidx),
+        static_cast<int>(startidx + offs),
+        static_cast<int>(startidx + 2 * offs - 1)
+    });
 
     return ret;
 }

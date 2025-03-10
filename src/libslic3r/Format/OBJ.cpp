@@ -91,9 +91,9 @@ bool load_obj(const char *path, TriangleMesh *meshptr)
             if (cnt) {
                 assert(cnt == 3 || cnt == 4);
                 // Insert one or two faces (triangulate a quad).
-                its.indices.emplace_back(indices[0], indices[1], indices[2]);
+                its.indices.push_back(Domain::Index3{indices[0], indices[1], indices[2]});
                 if (cnt == 4)
-                    its.indices.emplace_back(indices[0], indices[2], indices[3]);
+                    its.indices.push_back(Domain::Index3{indices[0], indices[2], indices[3]});
             }
         }
 

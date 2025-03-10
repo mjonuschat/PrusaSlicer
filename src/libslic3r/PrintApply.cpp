@@ -531,10 +531,10 @@ static PrintObjectRegions::BoundingBox transformed_its_bbox2d(const indexed_tria
 {
     assert(! its.indices.empty());
 
-    PrintObjectRegions::BoundingBox bbox(m * its.vertices[its.indices.front()(0)]);
+    PrintObjectRegions::BoundingBox bbox(m * its.vertices[its.indices.front()[0]]);
     for (const stl_triangle_vertex_indices &tri : its.indices)
         for (int i = 0; i < 3; ++ i)
-            bbox.extend(m * its.vertices[tri(i)]);
+            bbox.extend(m * its.vertices[tri[i]]);
     bbox.min() -= Vec3f(offset, offset, float(EPSILON));
     bbox.max() += Vec3f(offset, offset, float(EPSILON));
     return bbox;
@@ -549,7 +549,7 @@ static void transformed_its_bboxes_in_z_ranges(
 {
     bboxes.assign(z_ranges.size(), std::make_pair(PrintObjectRegions::BoundingBox(), false));
     for (const stl_triangle_vertex_indices &tri : its.indices) {
-        const Vec3f pts[3] = { m * its.vertices[tri(0)], m * its.vertices[tri(1)], m * its.vertices[tri(2)] };
+        const Vec3f pts[3] = { m * its.vertices[tri[0]], m * its.vertices[tri[1]], m * its.vertices[tri[2]] };
         for (size_t irange = 0; irange < z_ranges.size(); ++ irange) {
             const t_layer_height_range                       &z_range = z_ranges[irange];
             std::pair<PrintObjectRegions::BoundingBox, bool> &bbox    = bboxes[irange];

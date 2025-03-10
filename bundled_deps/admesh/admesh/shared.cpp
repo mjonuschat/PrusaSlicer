@@ -35,7 +35,7 @@
 void stl_generate_shared_vertices(stl_file *stl, indexed_triangle_set &its)
 {
 	// 3 indices to vertex per face
-	its.indices.assign(stl->stats.number_of_facets, stl_triangle_vertex_indices(-1, -1, -1));
+	its.indices.assign(stl->stats.number_of_facets, stl_triangle_vertex_indices{-1, -1, -1});
 	// Shared vertices (3D coordinates)
 	its.vertices.clear();
 	its.vertices.reserve(stl->stats.number_of_facets / 2);
