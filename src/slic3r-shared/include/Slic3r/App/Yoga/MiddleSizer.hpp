@@ -12,6 +12,7 @@ public:
 
     void    render(ImVec2 win_size = ImVec2(), ImVec2 win_pos = ImVec2(-1.f, -1.f)) override;
     void    initialize();
+    void    layout() override;
 
 private:
 
@@ -19,7 +20,6 @@ private:
     void    init_middle_bottom_sizer();
     void    init_middle_bottom_left_toolbar();
     void    init_middle_bottom_right_toolbar();
-    void    layout() override;
 
 private:
 

@@ -38,13 +38,14 @@ public :
 
     Item() {}
     // create as an item
-    Item(const std::string& name, const std::string& tooltip, Callbacks callbacks) :
+    Item(wchar_t name, const std::string& tooltip, const std::string& shortcut, Callbacks callbacks) :
       m_icon_name(name)
     , m_tooltip(tooltip)
+    , m_shortcut(shortcut)
     , m_callbacks(callbacks)
     {}
     // create as an item with submenu separator
-    Item(const std::string& name, Toolbar* sub_toolbar) :
+    Item(wchar_t name, Toolbar* sub_toolbar) :
       m_icon_name(name)
     , m_sub_toolbar(sub_toolbar) 
     {}
@@ -73,11 +74,12 @@ public :
     void    erase_sub_toolbar_item(int erase_pos);
 
     //tmp func
-    const std::string& name() const { return m_icon_name; }
+    std::string name() const;
 
 private:
-    std::string m_icon_name; // or icon or texture
+    wchar_t     m_icon_name; // or icon or texture
     std::string m_tooltip;
+    std::string m_shortcut;
     float       m_size_as_separator { 5.f };
     bool        m_has_arrow         { false };
     bool        m_is_toggled        { false };

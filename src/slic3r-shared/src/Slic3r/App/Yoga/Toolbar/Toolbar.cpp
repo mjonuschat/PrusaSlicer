@@ -164,14 +164,14 @@ static void add_(std::map<YGNodeRef, Item>&  m_nodes, YGNodeRef new_node, const 
     m_nodes[new_node] = new_item;
 }
 
-Item& Toolbar::add(const std::string& name, const std::string& tooltip, Callbacks callbacks)
+Item& Toolbar::add(wchar_t icon, const std::string& tooltip, const std::string& shortcut, Callbacks callbacks)
 {
     YGNodeRef node = add_node();
     int id = YGNodeGetChildCount(m_root) - m_separators_count;// -m_collapsed_count;
     if (m_collapsed_node)
         id--;
 
-    add_(m_nodes, node, Item(name.empty() ? m_name + std::to_string(id) : name, tooltip.empty() ? "Tooltip for " + std::to_string(id) : tooltip, callbacks));
+    add_(m_nodes, node, Item(icon, tooltip, shortcut, callbacks));
 
     if (m_collapsed_node && m_collapsed_count > 0) {
         hide(node);
@@ -183,19 +183,19 @@ Item& Toolbar::add(const std::string& name, const std::string& tooltip, Callback
     return m_nodes[node];
 }
 
-Item& Toolbar::insert(int id, const std::string& name, const std::string& tooltip, Callbacks callbacks)
+Item& Toolbar::insert(int id, wchar_t icon, const std::string& tooltip, const std::string& shortcut, Callbacks callbacks)
 {
     YGNodeRef node = insert_node(id);
-    add_(m_nodes, node, Item(name, tooltip, callbacks));
+    add_(m_nodes, node, Item(icon, tooltip, shortcut, callbacks));
     layout();
 
     return m_nodes[node];
 }
 
-Item& Toolbar::add(const std::string& name, Toolbar* sub_toolbar)
+Item& Toolbar::add(wchar_t icon, Toolbar* sub_toolbar)
 {
     YGNodeRef node = add_node();
-    add_(m_nodes, node, Item(name, sub_toolbar));
+    add_(m_nodes, node, Item(icon, sub_toolbar));
     layout();
 
     return m_nodes[node];
@@ -407,7 +407,7 @@ void Toolbar::collapse_if_needed()
     m_collapsed_node = add_node();
     int id = YGNodeGetChildCount(m_root) - m_separators_count;
 
-    m_nodes[m_collapsed_node] = Item("..."/*"...##sub"*/ + m_name, "", {});
+    m_nodes[m_collapsed_node] = Item(ImGui::WarningMarker, "", "", {});// !!!change to ElapsedMarker
     m_nodes[m_collapsed_node].init_sub_toolbar(m_min_side, m_max_side, 
                                                m_is_horizontal ? Align({ AlignH::Right, m_align.vertical }) : Align({ m_align.horizontal, AlignV::Bottom }), 
                                                m_is_horizontal ? Orientation::Horizontal : Orientation::Vertical);
@@ -617,7 +617,7 @@ int Toolbar::shown_items_cnt()
     int visible_cnt = 0;
     for (size_t i = 0; m_root && i < YGNodeGetChildCount(m_root); ++i) {
         YGNodeRef node = YGNodeGetChild(m_root, i);
-        if (!m_nodes[node].is_separator() && is_shown(node))
+        if (!m_nodes[node].is_separator() && m_nodes[node].is_visible() && is_shown(node))
             visible_cnt++;
     }
     return visible_cnt;
@@ -658,7 +658,7 @@ bool Toolbar::render_node(int id, ImVec2 win_pos, ImRect bb)
     YGNodeRef   node = YGNodeGetChild(m_root, id);
     Item&       item = m_nodes[node];
 
-    if (item.is_separator() || is_hidden(node))
+    if (item.is_separator() || !item.is_visible() || is_hidden(node))
         return false;
 
     const ImVec2 item_pos  = win_pos + ImVec2(YGNodeLayoutGetLeft(node), YGNodeLayoutGetTop(node));

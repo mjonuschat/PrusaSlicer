@@ -35,9 +35,9 @@ public:
 
     void    init(const std::string& name, float min_item_size = 25.f, float max_item_size = 50.f, Yoga::Align align = {}, Orientation orientation = Orientation::Vertical);
 
-    Item&   add(const std::string& name, const std::string& tooltip, Callbacks callbacks);
-    Item&   insert(int id, const std::string& name, const std::string& tooltip, Callbacks callbacks);
-    Item&   add(const std::string& name, Toolbar* sub_toolbar);
+    Item&   add(wchar_t icon, const std::string& tooltip, const std::string& shortcut, Callbacks callbacks);
+    Item&   insert(int id, wchar_t icon, const std::string& tooltip, const std::string& shortcut, Callbacks callbacks);
+    Item&   add(wchar_t icon, Toolbar* sub_toolbar);
     Item&   add(const Item& item);
     Item&   insert(int id, const Item& item);
     void    erase(int id = -1);

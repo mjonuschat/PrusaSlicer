@@ -30,9 +30,9 @@ private:
 #if flex_with_splitters
     Yoga::SplitterSizer     m_main_sizer;
 #else
-    Yoga::FlexSizer m_main_sizer;
+    Yoga::FlexSizer         m_main_sizer;
 #endif
-    Yoga::SplitterSizer     m_left_sizer;
+    Yoga::FlexSizer         m_left_sizer;
     Yoga::MiddleSizer       m_middle_sizer;
     Yoga::SplitterSizer     m_right_sizer;
 

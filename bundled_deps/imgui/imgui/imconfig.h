@@ -286,6 +286,14 @@ namespace ImGui
     const wchar_t AddBedIcon               = 0x283E;
     //const wchar_t       = 0x283F;
 
+    // icons for toolbar
+    const wchar_t ToolbarObjects           = 0x2901;
+    const wchar_t ToolbarAdd               = 0x2902;
+    const wchar_t ToolbarArrange           = 0x2903;
+    const wchar_t ToolbarHistory           = 0x2904;
+    const wchar_t ToolbarSidebar           = 0x2905;
+    const wchar_t ToolbarGraph             = 0x2906;
+
 } // namespace ImGui
 // }
 

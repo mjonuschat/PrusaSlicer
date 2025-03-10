@@ -43,7 +43,6 @@ void TestRenderLayout::init_main_sizer()
 #else
     m_main_sizer.init(3, 1);
 #endif
-    m_main_sizer.set_bg_alpha(1.f);
     m_main_sizer.set_grow_col(1);
 
     init_left_sizer();
@@ -61,7 +60,8 @@ void TestRenderLayout::init_main_sizer()
 
 void TestRenderLayout::init_left_sizer()
 {
-    m_left_sizer.init(1, ImVec2(), false);
+    m_left_sizer.init(1, 1);
+    m_left_sizer.set_bg_alpha(1.f);
     m_left_sizer.set_grow_row(0);
 
     m_left_sizer.add([this](ImVec2 size, ImVec2 pos) {
@@ -83,14 +83,33 @@ void TestRenderLayout::init_middle_sizer()
         m_main_sizer.show_col(panel_id, show);
     };
 
-    static bool show_left   { true };
+    static bool show_object_list   { true };
+    static bool show_undo   { true };
     static bool show_right  { true };
 
     // create top left toolbar, which contains just one item
-    m_middle_sizer.top_left_toolbar.add("S/H L", "Show/Hide left panel",   { [show_hide_panel](ImRect) { show_hide_panel(show_left, 0); }, cb_is_visible, cb_is_enable, []() { return !show_left; } });
+    m_middle_sizer.top_left_toolbar.add(ImGui::ToolbarObjects, "Object List", "Ctrl + Alt + O",  { [show_hide_panel](ImRect) { show_hide_panel(show_object_list, 0); }, cb_is_visible, cb_is_enable, []() { return !show_object_list; } });
 
     // create top right toolbar, which contains just one item
-    m_middle_sizer.top_right_toolbar.add("S/H R", "Show/Hide right panel", { [show_hide_panel](ImRect) { show_hide_panel(show_right, 2); }, cb_is_visible, cb_is_enable, []() { return !show_right; } });
+    m_middle_sizer.top_right_toolbar.add(ImGui::ToolbarSidebar, "Sidebar", "", { [show_hide_panel](ImRect) { show_hide_panel(show_right, 2); }, cb_is_visible, cb_is_enable, []() { return !show_right; } });
+
+    m_middle_sizer.left_middle_toolbar.add(ImGui::ToolbarAdd, "Add...", "Ctrl + I", { [](ImRect) {}, cb_is_visible, cb_is_enable, []() { return true; } });
+    m_middle_sizer.left_middle_toolbar.add(ImGui::ToolbarArrange, "Arrange", "A", { [](ImRect) {}, cb_is_visible, cb_is_enable, []() { return false; } });
+
+    // create bottom left toolbar
+    m_middle_sizer.bl_toolbar.add(ImGui::ToolbarHistory, "Actions History", "Shift + Alt + H", { [show_hide_panel](ImRect) { show_hide_panel(show_undo, 0); }, cb_is_visible, cb_is_enable, []() { return !show_undo; } });
+
+    auto cb_is_visible_legend = [this]() -> bool {
+        static bool is_visible{ false };
+        if (is_visible == show_object_list) {
+            is_visible = !show_object_list;
+            m_middle_sizer.layout();
+        }
+        return is_visible;
+    };
+    m_middle_sizer.bl_toolbar.insert(0, ImGui::ToolbarGraph, "Legend", "", { [show_hide_panel](ImRect) { show_hide_panel(show_undo, 0); }, cb_is_visible_legend , cb_is_enable, []() { return !show_undo; } });
+
+    m_middle_sizer.layout();
 }
 
 void TestRenderLayout::init_right_sizer()

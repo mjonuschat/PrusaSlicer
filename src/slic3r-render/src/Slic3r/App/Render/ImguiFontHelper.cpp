@@ -168,6 +168,13 @@ static const std::vector<std::pair<const wchar_t, std::string>> FONT_ICONS_LARGE
     { ImGui::OpenHoverButton         , "notification_open_hover"          },
     { ImGui::SlaViewOriginal         , "sla_view_original"                },
     { ImGui::SlaViewProcessed        , "sla_view_processed"               },
+    // toolbar icons
+    { ImGui::ToolbarObjects          , "toolbar_objects"                  },
+    { ImGui::ToolbarAdd              , "toolbar_add"                      },
+    { ImGui::ToolbarArrange          , "toolbar_arrange"                  },
+    { ImGui::ToolbarHistory          , "toolbar_history"                  },
+    { ImGui::ToolbarSidebar          , "toolbar_pizza"                    },
+    { ImGui::ToolbarGraph            , "toolbar_graph"                    },
 };
  
 static const std::vector<std::pair<const wchar_t, std::string>> FONT_ICONS_EXTRA_LARGE = {

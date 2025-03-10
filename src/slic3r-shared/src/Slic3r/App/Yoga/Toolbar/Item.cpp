@@ -2,10 +2,12 @@
 
 #include "Slic3r/App/Yoga/Toolbar/Item.hpp"
 #include "Slic3r/App/Yoga/Toolbar/Toolbar.hpp"
+#include "Slic3r/App/Imgui/ImguiExtension.hpp"
 #include "Slic3r/Log.hpp"
 
 #include <Yoga.h>
 #include <string.h>
+#include <boost/nowide/convert.hpp>
 
 namespace Slic3r::App::Yoga::Toolbar {
 
@@ -16,7 +18,7 @@ struct ButtonBehaviour {
     bool hovered_arrow  { false };
 };
 
-static ButtonBehaviour CustomRoundedButton(const std::string& label, const ImVec2& pos, const ImVec2& size, bool has_arrow, bool is_toggled, ImDrawFlags rounding_corners/* = ImDrawCornerFlags_None*/)
+static ButtonBehaviour CustomRoundedButton(wchar_t icon, const ImVec2& pos, const ImVec2& size, bool has_arrow, bool is_toggled, ImDrawFlags rounding_corners/* = ImDrawCornerFlags_None*/)
 {
     ImGui::SetNextWindowPos(pos);
     ImGui::SetNextWindowSize(size);
@@ -27,9 +29,9 @@ static ButtonBehaviour CustomRoundedButton(const std::string& label, const ImVec
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.f);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.f, 0.f));
 
-    ImGui::Begin((label + "_win").c_str(), nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove);
+    ImGui::Begin((boost::nowide::narrow(std::wstring(&icon, 1)) + "_win").c_str(), nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove);
 
-    float rounding{ 4.f };
+    float rounding = GImGui->Style.WindowRounding;// { 4.f };
     ImVec2 button_size = size;
     ImRect button_bb(pos, pos + button_size);
 
@@ -52,13 +54,13 @@ static ButtonBehaviour CustomRoundedButton(const std::string& label, const ImVec
     button_bb.Expand(-rounding);
 
     // Draw button background with custom rounding corner(s)
-    ImU32 col = ImGui::GetColorU32(hovered ? (is_toggled ? ImGuiCol_WindowBg : ImGuiCol_Button) : (is_toggled ? ImGuiCol_Button : ImGuiCol_WindowBg));
+
+    ImU32 col = ImGui::GetColorU32(hovered ? (is_toggled ? ImGuiCol_Button : ImGuiCol_ButtonHovered) : (is_toggled ? ImGuiCol_ButtonHovered : ImGuiCol_Button));
     draw_list->AddRectFilled(button_bb.Min, button_bb.Max, col, rounding, ImDrawFlags_RoundCornersAll);
 
-    // Render the text label in the center of the button
-    ImVec2 text_size = ImGui::CalcTextSize(label.c_str());
-    ImVec2 text_pos = pos + (button_size - text_size) * 0.5f;
-    draw_list->AddText(text_pos, ImGui::GetColorU32(ImGuiCol_Text), label.c_str());
+    // Render icon in the center of the button
+    ImGui::SetCursorScreenPos(button_bb.Min);
+    Imgui::icon_image(icon, button_bb.GetSize());
 
     if (has_arrow) {
         // Draw button background with custom rounding on only one corner
@@ -77,20 +79,33 @@ static ButtonBehaviour CustomRoundedButton(const std::string& label, const ImVec
     return { pressed, hovered, pressed_arrow, hovered_arrow };
 }
 
-static void Tooltip(const std::string& label, ImVec2 pos, ImVec2 pivot)
+static void Tooltip(const std::string& label, const std::string& short_cut, ImVec2 pos, ImVec2 pivot)
 {
     ImGui::SetNextWindowPos(pos, ImGuiCond_Always, pivot);
-    ImGui::SetNextWindowSize(ImVec2(-1.f, 25.f));
-    ImGui::SetNextWindowBgAlpha(0.75f);
+    ImGui::SetNextWindowBgAlpha(Imgui::DEFAULT_WINDOW_BG_ALPHA);
 
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 4.f);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 8.f, 8.f });
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 3.f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 6.f, 6.f });
 
-    ImGui::Begin((label + "_wintt").c_str(), nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove);
+    ImGuiWindowFlags flags =    ImGuiWindowFlags_Tooltip | 
+                                ImGuiWindowFlags_NoInputs | 
+                                ImGuiWindowFlags_NoTitleBar | 
+                                ImGuiWindowFlags_AlwaysAutoResize | 
+                                ImGuiWindowFlags_NoMove;
+    ImGui::Begin((label + "_wintt").c_str(), nullptr, flags);
     ImGui::TextUnformatted(label.c_str());
+    if (!short_cut.empty()) {
+        ImGui::SameLine();
+        ImGui::TextColored(GImGui->Style.Colors[ImGuiCol_TextDisabled], short_cut.c_str());
+    }
     ImGui::End();
 
     ImGui::PopStyleVar(2);
+}
+
+std::string Item::name() const
+{
+    return boost::nowide::narrow(std::wstring(&m_icon_name, 1));
 }
 
 Item::~Item() 
@@ -167,8 +182,11 @@ bool Item::render(ImRect item_bb, ImRect parent_bb, ImDrawFlags corners_flag, Im
             render_tooltip(item_bb.Min, item_bb.GetSize(), tooltip_pivot, true);
     }
 
-    return button_behav.hovered &&
-           active_sub_toolbar != m_sub_toolbar; // don't show all tooltips, when rendering sub toolbar
+    bool ret = button_behav.hovered;
+    if (active_sub_toolbar)
+        ret |= active_sub_toolbar != m_sub_toolbar; // don't show all tooltips, when rendering sub toolbar
+
+    return ret;
 }
 
 void Item::render_tooltip(ImVec2 pos, ImVec2 tt_shift /*= ImVec2()*/, ImVec2 pivot, bool for_arrow /*= false*/)
@@ -176,7 +194,7 @@ void Item::render_tooltip(ImVec2 pos, ImVec2 tt_shift /*= ImVec2()*/, ImVec2 piv
     if (m_tooltip.empty())
         return;
     std::string label = m_tooltip + (for_arrow ? " arrow tt" : "");
-    Tooltip(label, pos + tt_shift, pivot);
+    Tooltip(label, m_shortcut, pos + tt_shift, pivot);
 }
 
 void Item::set_sub_toolbar(Toolbar* sub_toolbar)

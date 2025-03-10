@@ -5,6 +5,8 @@
 
 #include <imgui/imgui_internal.h>
 
+#define SHOW_TEST 0
+
 namespace Slic3r::App::Yoga {
 
 static bool     show_tmp_window = false;
@@ -24,10 +26,17 @@ static void tmp_window()
 }
 
 const static float min_tt_size = 30.f;
-const static float max_tt_size = 60.f;
+const static float max_tt_size = 50.f;
 
 void MiddleSizer::initialize()
 {
+    // Just "sceleton" for the toolbars is created here
+    // All render functions are empty, because of no one item is added to the toolbar jet
+    // So, as a workaround, lets render button with max_tt_size and with 0 alpha
+    ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0);
+    ImGui::Button("win##workaround", ImVec2(max_tt_size, max_tt_size));
+    ImGui::PopStyleVar();
+
     left_middle_toolbar.init("L", min_tt_size, max_tt_size, { AlignH::Left, AlignV::Center }, FlexToolbarOrientation::Vertical);
     left_middle_toolbar.collapse_if_needed();
 
@@ -38,10 +47,7 @@ void MiddleSizer::initialize()
     this->set_grow_col(0);
     this->set_bg_alpha(0.15f);
 
-    this->set_grow_row(0, float(br_toolbar.shown_items_cnt()));
-    this->set_grow_row(2, float(br_toolbar.shown_items_cnt()));
-
-    static FlexSizer middle_sizer(1, 1, ImVec2(), ImVec2(5.f, 5.f));
+    static FlexSizer middle_sizer(1, 1, ImVec2(), ImVec2(GImGui->Style.WindowPadding.x, 5.f));
     middle_sizer.set_grow_col(0);
 
     middle_sizer.add([this](ImVec2 size, ImVec2 win_pos) {
@@ -64,7 +70,7 @@ void MiddleSizer::init_middle_top_sizer()
 
     // initialize top sizer and add toolbars
 
-    m_top_sizer.init(3, 1, ImVec2(), ImVec2(5.f, 0.f));
+    m_top_sizer.init(3, 1, ImVec2(), ImVec2(GImGui->Style.WindowPadding.x, 0.f));
     m_top_sizer.set_grow_col(0, 1.f);
     m_top_sizer.set_grow_col(1, 1.f);
     m_top_sizer.set_grow_col(2, 1.f);
@@ -81,11 +87,10 @@ void MiddleSizer::init_middle_top_sizer()
         top_right_toolbar.render(size, pos);
     });
 }
-
 void MiddleSizer::init_middle_bottom_left_toolbar()
 {
     // Create sub tooltips
-
+#if SHOW_TEST
     static FlexToolbar sub_left_toolbar("sub_left", min_tt_size, max_tt_size, { AlignH::Left, AlignV::Top }, FlexToolbarOrientation::Vertical);
     sub_left_toolbar.add("sub1", "sub 1 tooltip", {[](ImRect) { SPDLOG_INFO("sub 1 left is pressed"); }});
     sub_left_toolbar.add_separator(1.f);
@@ -97,11 +102,11 @@ void MiddleSizer::init_middle_bottom_left_toolbar()
     sub_top_toolbar.add("sub2t", "sub 2 tooltip", {[](ImRect) { SPDLOG_INFO("sub 2 top is pressed"); }});
     sub_top_toolbar.add_separator(1.f);
     sub_top_toolbar.add("sub3t", "sub 3 tooltip", {[](ImRect) { SPDLOG_INFO("sub 3 top is pressed"); }});
-
+#endif
     // initialize left toolbar for bottom sizer and add toolbar items
 
-    bl_toolbar.init("add_del", min_tt_size, max_tt_size, { AlignH::Left, AlignV::Bottom }, FlexToolbarOrientation::Horizontal);
-
+    bl_toolbar.init("add_del", min_tt_size, max_tt_size, { AlignH::Left, AlignV::Bottom });
+#if SHOW_TEST
     bl_toolbar.add("+ I", "Add item for L&T", { [this](ImRect) {
         if (top_middle_toolbar.shown_items_cnt() == 1)
             top_middle_toolbar.add("t...", &sub_top_toolbar);
@@ -148,12 +153,13 @@ void MiddleSizer::init_middle_bottom_left_toolbar()
         left_middle_toolbar.erase();
         layout();
     } });
+#endif
 }
 
 void MiddleSizer::init_middle_bottom_right_toolbar()
 {
     br_toolbar.init("del", min_tt_size, max_tt_size, { AlignH::Right, AlignV::Bottom });
-
+#if SHOW_TEST
     br_toolbar.add("+ AI T", "Add ArrowItem for Top", { [this](ImRect) {
         FlexToolbarItem& item = top_middle_toolbar.add("", "", {[](ImRect) { SPDLOG_INFO("left_tb btn is pressed"); }});
         item.set_action_on_arrow([](ImRect bb) {
@@ -170,24 +176,21 @@ void MiddleSizer::init_middle_bottom_right_toolbar()
         top_middle_toolbar.erase();
         layout();
     } });
+#endif
 }
-
 void MiddleSizer::init_middle_bottom_sizer()
 {
     init_middle_bottom_left_toolbar();
     init_middle_bottom_right_toolbar();
 
-    m_bottom_sizer.init(3, 1, ImVec2(), ImVec2(5.f, 0.f));
-    m_bottom_sizer.set_grow_col(0, float(bl_toolbar.shown_items_cnt()));
-    m_bottom_sizer.set_grow_col(1, 0.f);
-    m_bottom_sizer.set_grow_col(2, 1.f);
+    m_bottom_sizer.set_bg_alpha(0.5f);
+    m_bottom_sizer.init(2, 1, ImVec2(0.f, 60.f), ImVec2(GImGui->Style.WindowPadding.x, 0.f));
+    m_bottom_sizer.set_grow_col(0);
+    m_bottom_sizer.set_grow_col(1);
 
     m_bottom_sizer.add([this](ImVec2 size, ImVec2 pos) {
         bl_toolbar.render(size, pos);
     });
-
-    m_bottom_sizer.add();
-
     m_bottom_sizer.add([this](ImVec2 size, ImVec2 pos) {
         br_toolbar.render(size, pos);
     });
@@ -195,14 +198,11 @@ void MiddleSizer::init_middle_bottom_sizer()
 
 void MiddleSizer::layout()
 {
-    int mid_top_items = top_middle_toolbar.shown_items_cnt();
-
-    m_top_sizer.set_grow_col(1, float(mid_top_items));
-    m_bottom_sizer.set_grow_col(1, std::max(0.f, float(mid_top_items - bl_toolbar.shown_items_cnt() + 1)));
+    this->set_grow_row(0, 1.f);
     this->set_grow_row(1, float(left_middle_toolbar.shown_items_cnt()));
+    this->set_grow_row(2, float(bl_toolbar.shown_items_cnt()));
 
     FlexSizer::layout();
-    m_top_sizer.layout();
     m_bottom_sizer.layout();
 }
 
