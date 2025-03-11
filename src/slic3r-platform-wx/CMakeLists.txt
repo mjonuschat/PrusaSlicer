@@ -1,6 +1,8 @@
 set(SLIC3R_PLATFORM_WX_FILES
         include/Slic3r/App/Platform/WX/WXRenderCanvas.hpp
         src/Slic3r/App/Platform/WX/WXRenderCanvas.cpp
+        include/Slic3r/App/Platform/WX/WXMainThreadDispatcher.hpp
+        src/Slic3r/App/Platform/WX/WXMainThreadDispatcher.cpp
 )
 
 add_library(slic3r-platform-wx STATIC ${SLIC3R_PLATFORM_WX_FILES})

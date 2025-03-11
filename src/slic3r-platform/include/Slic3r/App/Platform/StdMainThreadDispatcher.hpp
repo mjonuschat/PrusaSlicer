@@ -17,6 +17,8 @@ public:
     [[nodiscard]] bool is_closed() const override;
     void close() override;
 
+protected:
+    virtual void on_queue_insert() {}
 private:
     using Functions = std::vector<Function>;
     static bool process_queue(Functions& queue, std::mutex& queue_mutex);
@@ -26,6 +28,7 @@ private:
 
     Functions m_queue;
     Functions m_call_after_queue;
+    std::function<void()> m_on_queue_insert {nullptr}; 
     std::atomic<bool> m_closed;
 };
 

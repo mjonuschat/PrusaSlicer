@@ -3,6 +3,7 @@
 #include "Slic3r/App/WX/StringConversions.hpp"
 
 #include <Slic3r/Log.hpp>
+#include <Slic3r/App/Platform/WX/WXMainThreadDispatcher.hpp>
 #include <Slic3r/App/WX/WidgetsConfig.hpp>
 #include <Slic3r/App/WX/format.hpp>
 #include <Slic3r/App/Init.hpp>
@@ -28,11 +29,11 @@ bool DesktopApp::OnInit()
     init_translations();
     m_workbench.load_configs();
 
-    using Platform::StdMainThreadDispatcher;
+    using Platform::WX::WXMainThreadDispatcher;
     using Biz::Platform::PlatformServices;
 
     PlatformServices::instance().set_main_thread_dispatcher(
-        std::make_unique<StdMainThreadDispatcher>()
+        std::make_unique<WXMainThreadDispatcher>()
     );
 
     m_project_interactor = std::make_unique<Biz::ProjectInteractor>(
@@ -43,8 +44,6 @@ bool DesktopApp::OnInit()
       std::make_unique<Plater::PlaterRenderModule>(m_workbench, *m_project_interactor);
     m_preview_module =
       std::make_unique<Preview::PreviewRenderModule>(m_workbench, *m_project_interactor);
-
-    //m_workbench.load_project("/Users/jan.bartipan/work/Models/3DBenchy.3mf");
 
     const bool is_dark = true;
     const bool is_sys_menu = true;
@@ -58,7 +57,7 @@ bool DesktopApp::OnInit()
     m_main_frame->update_canvas_ui_settings();
 
     // >>> replace m_plater_module with m_preview_module in the following line to test libvgcode wrapper
-    canvas.set_render_module(m_plater_module.get());
+    canvas.set_render_module(m_preview_module.get());
     m_project_interactor->fdm_result_cache().add_listener<Biz::IFDMResultCacheChangedListener>(
         m_preview_module.get()
     );

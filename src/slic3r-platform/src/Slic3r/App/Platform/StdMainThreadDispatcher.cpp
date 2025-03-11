@@ -10,6 +10,7 @@ bool StdMainThreadDispatcher::dispatch_on_main_thread(Function func)
 
     std::scoped_lock lock(m_queue_mutex);
     m_queue.push_back(std::move(func));
+    on_queue_insert();
 
     return true;
 }
@@ -22,6 +23,7 @@ bool StdMainThreadDispatcher::dispatch_on_main_thread_after(Function func)
 
     std::scoped_lock lock(m_call_after_queue_mutex);
     m_call_after_queue.push_back(std::move(func));
+    on_queue_insert();
     return true;
 }
 
