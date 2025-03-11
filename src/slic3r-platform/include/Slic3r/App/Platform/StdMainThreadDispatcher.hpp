@@ -28,7 +28,6 @@ private:
 
     Functions m_queue;
     Functions m_call_after_queue;
-    std::function<void()> m_on_queue_insert {nullptr}; 
     std::atomic<bool> m_closed;
 };
 
