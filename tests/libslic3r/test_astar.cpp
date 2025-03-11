@@ -116,7 +116,8 @@ TEST_CASE("astar algorithm test over 3D point grid", "[AStar]") {
 #ifndef NDEBUG
     std::cout << "Route taken: ";
     for (auto it = out.rbegin(); it != out.rend(); ++it) {
-        std::cout << "(" << pgrid.get_coord(*it).transpose() << ") ";
+        const auto coord{pgrid.get_coord(*it)};
+        std::cout << "(" << coord[0] << "," << coord[1] << "," << coord[2] << ") ";
     }
     std::cout << std::endl;
 #endif

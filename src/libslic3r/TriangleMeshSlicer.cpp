@@ -666,14 +666,14 @@ void slice_facet_with_slabs(
                         assert(il.edge_type == IntersectionLine::FacetEdgeType::Bottom);
                         edge_id = il.a_id == indices[0] ? 0 : il.a_id == indices[1] ? 1 : 2;
                         assert(il.a_id == indices[edge_id]);
-                        assert(il.b_id == indices[next_idx_modulo(edge_id, 3]));
+                        assert(il.b_id == indices[next_idx_modulo(edge_id, 3)]);
                     } else {
                         // The edge is oriented CW along the face perimeter.
                         assert(type == FacetSliceType::Slicing);
                         assert(il.edge_type == IntersectionLine::FacetEdgeType::Top);
                         edge_id = il.b_id == indices[0] ? 0 : il.b_id == indices[1] ? 1 : 2;
                         assert(il.b_id == indices[edge_id]);
-                        assert(il.a_id == indices[next_idx_modulo(edge_id, 3]));
+                        assert(il.a_id == indices[next_idx_modulo(edge_id, 3)]);
                     }
                     int neighbor_idx = facet_neighbors[edge_id];
                     if (neighbor_idx == -1) {
@@ -683,7 +683,7 @@ void slice_facet_with_slabs(
 #ifndef NDEBUG
                         const stl_triangle_vertex_indices &neighbor = mesh_triangles[neighbor_idx];
                         float z = *it;
-                        int num_on_plane = (mesh_vertices[neighbor(0)].z() == z) + (mesh_vertices[neighbor(1)].z() == z) + (mesh_vertices[neighbor(2)].z() == z);
+                        int num_on_plane = (mesh_vertices[neighbor[0]][2] == z) + (mesh_vertices[neighbor[1]][2] == z) + (mesh_vertices[neighbor[2]][2] == z);
                         assert(num_on_plane == 2 || num_on_plane == 3);
 #endif // NDEBUG
 #if 0
@@ -2550,7 +2550,7 @@ void cut_mesh(const indexed_triangle_set &mesh, float z, indexed_triangle_set *u
             // get vertices starting from the isolated one
             int iv = isolated_vertex;
             stl_vertex v0v1, v2v0;
-            assert(facets_edge_ids[facet_idx](iv) == line.edge_a_id || facets_edge_ids[facet_idx](iv) == line.edge_b_id);
+            assert(facets_edge_ids[facet_idx][iv] == line.edge_a_id || facets_edge_ids[facet_idx][iv] == line.edge_b_id);
             if (facets_edge_ids[facet_idx][iv] == line.edge_a_id) {
                 // Unscale to doubles first, then to floats to reach the same accuracy as triangulate_expolygons_2d().
                 v0v1 = contour_point_to_v3f(line.a, z);
