@@ -306,18 +306,18 @@ inline int its_triangle_vertex_index(const stl_triangle_vertex_indices &triangle
            vertex_idx == triangle_indices[2] ? 2 : -1;
 }
 
-inline Vec2i its_triangle_edge(const stl_triangle_vertex_indices &triangle_indices, int edge_idx)
+inline Domain::Index2 its_triangle_edge(const stl_triangle_vertex_indices &triangle_indices, int edge_idx)
 {
     int next_edge_idx = (edge_idx == 2) ? 0 : edge_idx + 1;
     return { triangle_indices[edge_idx], triangle_indices[next_edge_idx] };
 }
 
 // Index of an edge inside triangle.
-inline int its_triangle_edge_index(const stl_triangle_vertex_indices &triangle_indices, const Vec2i &triangle_edge)
+inline int its_triangle_edge_index(const stl_triangle_vertex_indices &triangle_indices, const std::array<int, 2> &triangle_edge)
 {
-    return triangle_edge(0) == triangle_indices[0] && triangle_edge(1) == triangle_indices[1] ? 0 :
-           triangle_edge(0) == triangle_indices[1] && triangle_edge(1) == triangle_indices[2] ? 1 :
-           triangle_edge(0) == triangle_indices[2] && triangle_edge(1) == triangle_indices[0] ? 2 : -1;
+    return triangle_edge[0] == triangle_indices[0] && triangle_edge[1] == triangle_indices[1] ? 0 :
+           triangle_edge[0] == triangle_indices[1] && triangle_edge[1] == triangle_indices[2] ? 1 :
+           triangle_edge[0] == triangle_indices[2] && triangle_edge[1] == triangle_indices[0] ? 2 : -1;
 }
 
 using its_triangle = std::array<stl_vertex, 3>;

@@ -243,7 +243,7 @@ std::vector<Vec3i> create_face_neighbors_index(ExPolicy &&ex, const indexed_tria
                 if (neighbor_edge != no_value) 
                     // This edge already has a neighbor assigned.
                     continue;
-                Vec2i edge_indices = its_triangle_edge(triangle_indices, edge_index);
+                    Domain::Index2 edge_indices = its_triangle_edge(triangle_indices, edge_index);
                 // IMPROVE: use same vector for 2 sides of triangle
                 for (const size_t other_face : vertex_triangles[edge_indices[0]]) {
                     if (other_face <= face_idx) continue;

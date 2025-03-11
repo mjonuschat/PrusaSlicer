@@ -518,7 +518,7 @@ void TriangleSelector::append_touching_subtriangles(int itriangle, int vertexi, 
 
 // It appends all edges that are touching the edge (vertexi, vertexj) of the triangle and are not selected by seed fill
 // It doesn't append the edges that are touching the triangle only by part of the edge that means the triangles are from lower depth.
-void TriangleSelector::append_touching_edges(int itriangle, int vertexi, int vertexj, std::vector<Vec2i> &touching_edges_out) const
+void TriangleSelector::append_touching_edges(int itriangle, int vertexi, int vertexj, std::vector<std::array<int, 2>> &touching_edges_out) const
 {
     if (itriangle == -1)
         return;
@@ -529,12 +529,12 @@ void TriangleSelector::append_touching_edges(int itriangle, int vertexi, int ver
             if (!m_triangles[subtriangle_idx].is_selected_by_seed_fill()) {
                 int midpoint = this->triangle_midpoint(itriangle, vertexi, vertexj);
                 if (partition == Partition::First && midpoint != -1) {
-                    touching_edges_out.emplace_back(vertexi, midpoint);
+                    touching_edges_out.emplace_back(Domain::Index2{vertexi, midpoint});
                 } else if (partition == Partition::First && midpoint == -1) {
-                    touching_edges_out.emplace_back(vertexi, vertexj);
+                    touching_edges_out.emplace_back(Domain::Index2{vertexi, vertexj});
                 } else {
                     assert(midpoint != -1 && partition == Partition::Second);
-                    touching_edges_out.emplace_back(midpoint, vertexj);
+                    touching_edges_out.emplace_back(Domain::Index2{midpoint, vertexj});
                 }
             }
         } else if (int midpoint = this->triangle_midpoint(itriangle, vertexi, vertexj); midpoint != -1)
@@ -1742,8 +1742,8 @@ void TriangleSelector::get_facets_split_by_tjoints(const Vec3i &vertices, const 
     }
 }
 
-std::vector<Vec2i> TriangleSelector::get_seed_fill_contour() const {
-    std::vector<Vec2i> edges_out;
+std::vector<Domain::Index2> TriangleSelector::get_seed_fill_contour() const {
+    std::vector<Domain::Index2> edges_out;
     for (int facet_idx = 0; facet_idx < m_orig_size_indices; ++facet_idx) {
         const Vec3i neighbors = m_neighbors[facet_idx];
         assert(this->verify_triangle_neighbors(m_triangles[facet_idx], neighbors));
@@ -1753,7 +1753,7 @@ std::vector<Vec2i> TriangleSelector::get_seed_fill_contour() const {
     return edges_out;
 }
 
-void TriangleSelector::get_seed_fill_contour_recursive(const int facet_idx, const Vec3i &neighbors, const Vec3i &neighbors_propagated, std::vector<Vec2i> &edges_out) const {
+void TriangleSelector::get_seed_fill_contour_recursive(const int facet_idx, const Vec3i &neighbors, const Vec3i &neighbors_propagated, std::vector<std::array<int, 2>> &edges_out) const {
     assert(facet_idx != -1 && facet_idx < int(m_triangles.size()));
     assert(this->verify_triangle_neighbors(m_triangles[facet_idx], neighbors));
     const Triangle *tr = &m_triangles[facet_idx];
@@ -1782,7 +1782,7 @@ void TriangleSelector::get_seed_fill_contour_recursive(const int facet_idx, cons
         // It appends the edges that are touching the triangle only by part of the edge that means the triangles are from lower depth.
         for (int idx = 0; idx < 3; ++idx)
             if (int neighbor_tr_idx = neighbors_propagated(idx); neighbor_tr_idx != -1 && !m_triangles[neighbor_tr_idx].is_split() && !m_triangles[neighbor_tr_idx].is_selected_by_seed_fill())
-                edges_out.emplace_back(vertices(idx), vertices(next_idx_modulo(idx, 3)));
+                edges_out.emplace_back(Domain::Index2{vertices(idx), vertices(next_idx_modulo(idx, 3))});
     }
 }
 

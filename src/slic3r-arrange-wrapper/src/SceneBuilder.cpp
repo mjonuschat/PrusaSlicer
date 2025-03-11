@@ -346,7 +346,7 @@ Transform3d YStriderVBedHandler::get_physical_bed_trafo(int bed_index) const
 
 int GridStriderVBedHandler::get_bed_index(const VBedPlaceable &obj) const
 {
-    Vec2i crd = {m_xstrider.get_bed_index(obj), m_ystrider.get_bed_index(obj)};
+    BedsGrid::GridCoords crd = {m_xstrider.get_bed_index(obj), m_ystrider.get_bed_index(obj)};
 
     return BedsGrid::grid_coords2index(crd);
 }
@@ -356,20 +356,20 @@ bool GridStriderVBedHandler::assign_bed(VBedPlaceable &inst, int bed_idx)
     if (bed_idx < 0) {
         return false;
     }
-    Vec2i crd = BedsGrid::index2grid_coords(bed_idx);
+    BedsGrid::GridCoords crd = BedsGrid::index2grid_coords(bed_idx);
 
-    bool retx = m_xstrider.assign_bed(inst, crd.x());
-    bool rety = m_ystrider.assign_bed(inst, crd.y());
+    bool retx = m_xstrider.assign_bed(inst, crd[0]);
+    bool rety = m_ystrider.assign_bed(inst, crd[1]);
 
     return retx && rety;
 }
 
 Transform3d GridStriderVBedHandler::get_physical_bed_trafo(int bed_idx) const
 {
-    Vec2i crd = BedsGrid::index2grid_coords(bed_idx);
+    BedsGrid::GridCoords crd = BedsGrid::index2grid_coords(bed_idx);
 
-    Transform3d ret = m_xstrider.get_physical_bed_trafo(crd.x()) *
-                      m_ystrider.get_physical_bed_trafo(crd.y());
+    Transform3d ret = m_xstrider.get_physical_bed_trafo(crd[0]) *
+                      m_ystrider.get_physical_bed_trafo(crd[1]);
 
     return ret;
 }

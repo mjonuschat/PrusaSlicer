@@ -6,13 +6,13 @@
 
 namespace Slic3r::App::Plater {
 
-void RectangleSelection::update(const Vec2i& curr_mouse_pos)
+void RectangleSelection::update(const MousePosition& curr_mouse_pos)
 {
     Render::Rect rect{
-        std::min(m_initial_mouse_pos.x(), curr_mouse_pos.x()),
-        std::min(m_initial_mouse_pos.y(), curr_mouse_pos.y()),
-        std::abs(curr_mouse_pos.x() - m_initial_mouse_pos.x()),
-        std::abs(curr_mouse_pos.y() - m_initial_mouse_pos.y())
+        std::min(m_initial_mouse_pos[0], curr_mouse_pos[0]),
+        std::min(m_initial_mouse_pos[1], curr_mouse_pos[1]),
+        std::abs(curr_mouse_pos[0] - m_initial_mouse_pos[0]),
+        std::abs(curr_mouse_pos[1] - m_initial_mouse_pos[1])
     };
 
     float scr_w = m_screen_info.logical_width();

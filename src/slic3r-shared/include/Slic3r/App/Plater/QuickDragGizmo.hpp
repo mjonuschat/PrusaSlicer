@@ -10,6 +10,8 @@
 
 namespace Slic3r::App::Plater {
 
+using MousePosition = std::array<int, 2>;
+
 class QuickDragGizmo : public Scene::IGizmo
 {
 public:
@@ -24,7 +26,10 @@ public:
 private:
     int mouse_dist_sq(int mouse_x, int mouse_y) const
     {
-        return (m_initial_mouse_pos - Vec2i{mouse_x, mouse_y}).squaredNorm();
+        const Vec2d initial_position{m_initial_mouse_pos[0], m_initial_mouse_pos[1]};
+        const Vec2d mouse_position{mouse_x, mouse_y};
+
+        return static_cast<int>((initial_position - mouse_position).squaredNorm());
     };
     bool mouse_pos(float screen_x, float screen_y, Vec3d& out_pos);
 
@@ -38,7 +43,7 @@ private:
     Biz::Scene::SceneInteractor& m_scene_interactor;
     Scene::ISceneProvider& m_scene_provider;
     SelectionHandler m_selection_handler;
-    Vec2i m_initial_mouse_pos;
+    MousePosition m_initial_mouse_pos;
     Vec3d m_initial_world_pos;
     State m_state{State::Inactive};
     Scene::Plane m_plane{Vec3d::UnitZ(), 0};

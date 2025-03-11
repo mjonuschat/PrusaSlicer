@@ -527,7 +527,7 @@ std::vector<ExPolygons> extract_slices_from_sla_archive(
 ConfigSubstitutions SL1Reader::read(std::vector<ExPolygons> &slices,
                                     DynamicPrintConfig      &profile_out)
 {
-    Vec2i windowsize;
+    std::array<int, 2> windowsize;
 
     switch(m_quality)
     {
@@ -539,8 +539,8 @@ ConfigSubstitutions SL1Reader::read(std::vector<ExPolygons> &slices,
     };
 
     // Ensure minimum window size for marching squares
-    windowsize.x() = std::max(2, windowsize.x());
-    windowsize.y() = std::max(2, windowsize.y());
+    windowsize[0] = std::max(2, windowsize[0]);
+    windowsize[1] = std::max(2, windowsize[1]);
 
     std::vector<std::string> includes = { "ini", "png"};
     std::vector<std::string> excludes = { "thumbnail" };
@@ -548,7 +548,7 @@ ConfigSubstitutions SL1Reader::read(std::vector<ExPolygons> &slices,
     auto [profile_use, config_substitutions] = extract_profile(arch, profile_out);
 
     RasterParams   rstp = get_raster_params(profile_use);
-    marchsq::Coord win  = {windowsize.y(), windowsize.x()};
+    marchsq::Coord win  = {windowsize[1], windowsize[0]};
     slices = extract_slices_from_sla_archive(arch, rstp, win, m_progr);
 
     return std::move(config_substitutions);

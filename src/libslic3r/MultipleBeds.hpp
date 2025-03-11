@@ -20,7 +20,7 @@ extern bool s_beds_just_switched;
 extern bool s_beds_switched_since_last_gcode_load;
 
 namespace BedsGrid {
-using GridCoords = Vec2crd;
+using GridCoords = std::array<int, 2>;
 using Index = int;
 Index grid_coords2index(const GridCoords &coords);
 GridCoords index2grid_coords(Index index);

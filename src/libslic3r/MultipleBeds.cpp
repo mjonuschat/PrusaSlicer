@@ -29,19 +29,19 @@ bool is_sliceable(const PrintStatus status) {
 
 namespace BedsGrid {
 Index grid_coords_abs2index(GridCoords coords) {
-    coords = {std::abs(coords.x()), std::abs(coords.y())};
+    coords = {std::abs(coords[0]), std::abs(coords[1])};
 
-    const int x{coords.x() + 1};
-    const int y{coords.y() + 1};
+    const int x{coords[0] + 1};
+    const int y{coords[1] + 1};
     const int a{std::max(x, y)};
 
     if (x == a && y == a) {
         return a*a - 1;
     } else if (x == a) {
-        return a*a - 2 * (a - 1) + coords.y() - 1;
+        return a*a - 2 * (a - 1) + coords[1] - 1;
     } else {
         assert(y == a);
-        return a*a - (a - 1) + coords.x() - 1;
+        return a*a - (a - 1) + coords[0] - 1;
     }
 }
 
@@ -54,11 +54,11 @@ Index grid_coords2index(const GridCoords &coords) {
         throw std::runtime_error("Object is too far from center!");
     }
 
-    if (coords.x() >= 0 && coords.y() >= 0) {
+    if (coords[0] >= 0 && coords[1] >= 0) {
         return index;
-    } else if (coords.x() >= 0 && coords.y() < 0) {
+    } else if (coords[0] >= 0 && coords[1] < 0) {
         return quadrant_offset + index;
-    } else if (coords.x() < 0 && coords.y() >= 0) {
+    } else if (coords[0] < 0 && coords[1] >= 0) {
         return 2*quadrant_offset + index;
     } else {
         return 3*quadrant_offset + index;
@@ -73,7 +73,7 @@ GridCoords index2grid_coords(Index index) {
     const int quadrant{index / quadrant_offset};
     index = index % quadrant_offset;
 
-    GridCoords result{GridCoords::Zero()};
+    GridCoords result{0, 0};
     if (index == 0) {
         return result;
     }
@@ -84,20 +84,20 @@ GridCoords index2grid_coords(Index index) {
     while ((a+1)*(a+1) < id)
         ++a;
     id = id - a*a;
-    result.x()=a;
-    result.y()=a;
+    result[0]=a;
+    result[1]=a;
     if (id <= a)
-        result.y() = id-1;
+        result[1] = id-1;
     else
-        result.x() = id-a-1;
+        result[0] = id-a-1;
 
     if (quadrant == 1) {
-        result.y() = -result.y();
+        result[1] = -result[1];
     } else if (quadrant == 2) {
-        result.x() = -result.x();
+        result[0] = -result[0];
     } else if (quadrant == 3) {
-        result.y() = -result.y();
-        result.x() = -result.x();
+        result[1] = -result[1];
+        result[0] = -result[0];
     } else if (quadrant != 0){
         throw std::runtime_error{"Impossible bed index > max int!"};
     }
@@ -115,8 +115,8 @@ Vec3d MultipleBeds::get_bed_translation(int id) const
         x = id;
     else {
         BedsGrid::GridCoords coords{BedsGrid::index2grid_coords(id)};
-        x = coords.x();
-        y = coords.y();
+        x = coords[0];
+        y = coords[1];
     }
 
     // As for the m_legacy_layout switch, see comments at definition of bed_gap_relative.

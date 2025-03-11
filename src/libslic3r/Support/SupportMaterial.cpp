@@ -97,10 +97,10 @@ namespace Slic3r {
 #define SUPPORT_SURFACES_OFFSET_PARAMETERS ClipperLib::jtSquare, 0.
 
 #ifdef SUPPORT_USE_AGG_RASTERIZER
-static std::vector<unsigned char> rasterize_polygons(const Vec2i &grid_size, const double pixel_size, const Point &left_bottom, const Polygons &polygons)
+static std::vector<unsigned char> rasterize_polygons(const std::array<int, 2> &grid_size, const double pixel_size, const Point &left_bottom, const Polygons &polygons)
 {
-    std::vector<unsigned char>                  data(grid_size.x() * grid_size.y());
-    agg::rendering_buffer                       rendering_buffer(data.data(), unsigned(grid_size.x()), unsigned(grid_size.y()), grid_size.x());
+    std::vector<unsigned char>                  data(grid_size[0] * grid_size[1]);
+    agg::rendering_buffer                       rendering_buffer(data.data(), unsigned(grid_size[0]), unsigned(grid_size[1]), grid_size[0]);
     agg::pixfmt_gray8                           pixel_renderer(rendering_buffer);
     agg::renderer_base<agg::pixfmt_gray8>       raw_renderer(pixel_renderer);
     agg::renderer_scanline_aa_solid<agg::renderer_base<agg::pixfmt_gray8>> renderer(raw_renderer);
@@ -131,7 +131,7 @@ static std::vector<unsigned char> rasterize_polygons(const Vec2i &grid_size, con
     return data;
 }
 // Grid has to have the boundary pixels unset.
-static Polygons contours_simplified(const Vec2i &grid_size, const double pixel_size, Point left_bottom, const std::vector<unsigned char> &grid, coord_t offset, bool fill_holes)
+static Polygons contours_simplified(const std::array<int, 2> &grid_size, const double pixel_size, Point left_bottom, const std::vector<unsigned char> &grid, coord_t offset, bool fill_holes)
 {
     assert(std::abs(2 * offset) < pixel_size - 10);
 
@@ -141,11 +141,11 @@ static Polygons contours_simplified(const Vec2i &grid_size, const double pixel_s
     const std::vector<unsigned char> &cell_inside = fill_holes ? cell_inside_data : grid;
     if (fill_holes) {
         cell_inside_data = grid;
-        for (int r = 1; r + 1 < grid_size.y(); ++ r) {
-            for (int c = 1; c + 1 < grid_size.x(); ++ c) {
-                int addr = r * grid_size.x() + c;
+        for (int r = 1; r + 1 < grid_size[1]; ++ r) {
+            for (int c = 1; c + 1 < grid_size[0]; ++ c) {
+                int addr = r * grid_size[0] + c;
                 if ((grid[addr - 1] != 0 && grid[addr + 1] != 0) ||
-                    (grid[addr - grid_size.x()] != 0 && grid[addr + grid_size.x()] != 0))
+                    (grid[addr - grid_size[0]] != 0 && grid[addr + grid_size[0]] != 0))
                     cell_inside_data[addr] = true;
             }
         }
@@ -154,11 +154,11 @@ static Polygons contours_simplified(const Vec2i &grid_size, const double pixel_s
     // 1) Collect the lines.
     std::vector<Line> lines;
     std::vector<std::pair<Point, int>> start_point_to_line_idx;
-    for (int r = 1; r < grid_size.y(); ++ r) {
-        for (int c = 1; c < grid_size.x(); ++ c) {
-            int  addr    = r * grid_size.x() + c;
+    for (int r = 1; r < grid_size[1]; ++ r) {
+        for (int c = 1; c < grid_size[0]; ++ c) {
+            int  addr    = r * grid_size[0] + c;
             bool left    = cell_inside[addr - 1] != 0;
-            bool top     = cell_inside[addr - grid_size.x()] != 0;
+            bool top     = cell_inside[addr - grid_size[0]] != 0;
             bool current = cell_inside[addr] != 0;
             if (left != current) {
                 lines.push_back(
@@ -566,15 +566,16 @@ public:
             // Add one empty column / row boundaries.
             m_bbox.offset(m_pixel_size);
             // Grid size fitting the support polygons plus one pixel boundary around the polygons.
-            Vec2i grid_size_raw(int(ceil((m_bbox.max.x() - m_bbox.min.x()) / m_pixel_size)),
-                                int(ceil((m_bbox.max.y() - m_bbox.min.y()) / m_pixel_size)));
+            std::array<int, 2> grid_size_raw{int(ceil((m_bbox.max.x() - m_bbox.min.x()) / m_pixel_size)),
+                                int(ceil((m_bbox.max.y() - m_bbox.min.y()) / m_pixel_size))};
             // Overlay macro blocks of (oversampling x oversampling) over the grid.
-            Vec2i grid_blocks((grid_size_raw.x() + oversampling - 1 - 2) / oversampling, 
-                              (grid_size_raw.y() + oversampling - 1 - 2) / oversampling);
+            std::array<int, 2> grid_blocks{(grid_size_raw[0] + oversampling - 1 - 2) / oversampling, 
+                              (grid_size_raw[1] + oversampling - 1 - 2) / oversampling};
             // and resize the grid to fit the macro blocks + one pixel boundary.
-            m_grid_size = grid_blocks * oversampling + Vec2i(2, 2);
-            assert(m_grid_size.x() >= grid_size_raw.x());
-            assert(m_grid_size.y() >= grid_size_raw.y());
+            m_grid_size[0] = grid_blocks[0] * oversampling + 2;
+            m_grid_size[1] = grid_blocks[1] * oversampling + 2;
+            assert(m_grid_size[0] >= grid_size_raw[0]);
+            assert(m_grid_size[1] >= grid_size_raw[1]);
             m_grid2 = rasterize_polygons(m_grid_size, m_pixel_size, m_bbox.min, *m_support_polygons);
 
             seed_fill_block(m_grid2, m_grid_size,
@@ -856,33 +857,33 @@ private:
 
 #ifdef SUPPORT_USE_AGG_RASTERIZER
     // Dilate the trimming region (unmask the boundary pixels).
-    static std::vector<unsigned char> dilate_trimming_region(const std::vector<unsigned char> &trimming, const Vec2i &grid_size)
+    static std::vector<unsigned char> dilate_trimming_region(const std::vector<unsigned char> &trimming, const std::array<int, 2> &grid_size)
     {
         std::vector<unsigned char> dilated(trimming.size(), 0);
-        for (int r = 1; r + 1 < grid_size.y(); ++ r)
-            for (int c = 1; c + 1 < grid_size.x(); ++ c) {
+        for (int r = 1; r + 1 < grid_size[1]; ++ r)
+            for (int c = 1; c + 1 < grid_size[0]; ++ c) {
                 //int addr = c + r * m_grid_size.x();
                 // 4-neighborhood is not sufficient.
                 // dilated[addr] = trimming[addr] != 0 && trimming[addr - 1] != 0 && trimming[addr + 1] != 0 && trimming[addr - m_grid_size.x()] != 0 && trimming[addr + m_grid_size.x()] != 0;
                 // 8-neighborhood
-                int addr = c + (r - 1) * grid_size.x();
+                int addr = c + (r - 1) * grid_size[0];
                 bool b = trimming[addr - 1] != 0 && trimming[addr] != 0 && trimming[addr + 1] != 0;
-                addr += grid_size.x();
+                addr += grid_size[0];
                 b = b && trimming[addr - 1] != 0 && trimming[addr] != 0 && trimming[addr + 1] != 0;
-                addr += grid_size.x();
+                addr += grid_size[0];
                 b = b && trimming[addr - 1] != 0 && trimming[addr] != 0 && trimming[addr + 1] != 0;
-                dilated[addr - grid_size.x()] = b;
+                dilated[addr - grid_size[0]] = b;
             }
         return dilated;
     }
 
     // Seed fill each of the (oversampling x oversampling) block up to the dilated trimming region.
-    static void seed_fill_block(std::vector<unsigned char> &grid, Vec2i grid_size, const std::vector<unsigned char> &trimming,const Vec2i &grid_blocks, int oversampling)
+    static void seed_fill_block(std::vector<unsigned char> &grid, std::array<int, 2> grid_size, const std::vector<unsigned char> &trimming,const std::array<int, 2> &grid_blocks, int oversampling)
     {
         int size      = oversampling;
-        int stride    = grid_size.x();
-        for (int block_r = 0; block_r < grid_blocks.y(); ++ block_r)
-            for (int block_c = 0; block_c < grid_blocks.x(); ++ block_c) {
+        int stride    = grid_size[0];
+        for (int block_r = 0; block_r < grid_blocks[1]; ++ block_r)
+            for (int block_c = 0; block_c < grid_blocks[0]; ++ block_c) {
                 // Propagate the support pixels over the macro cell up to the trimming mask.
                 int                  addr      = block_c * size + 1 + (block_r * size + 1) * stride;
                 unsigned char       *grid_data = grid.data() + addr;
@@ -987,7 +988,7 @@ private:
     double                m_support_material_closing_radius;
 
 #ifdef SUPPORT_USE_AGG_RASTERIZER
-    Vec2i                       m_grid_size;
+    std::array<int, 2>          m_grid_size;
     double                      m_pixel_size;
     BoundingBox                 m_bbox;
     std::vector<unsigned char>  m_grid2;

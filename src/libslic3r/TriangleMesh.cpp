@@ -690,15 +690,15 @@ std::vector<Vec3i> its_face_edge_ids(const indexed_triangle_set &its, std::vecto
             if (n > i) {
                 const stl_triangle_vertex_indices &triangle2 = its.indices[n];
                 int   edge_id = last_edge_id ++;
-                Vec2i edge    = its_triangle_edge(triangle, j);
+                Domain::Index2 edge    = its_triangle_edge(triangle, j);
                 // First find an edge with opposite orientation.
-                std::swap(edge(0), edge(1));
+                std::swap(edge[0], edge[1]);
                 int   k       = its_triangle_edge_index(triangle2, edge);
                 //FIXME is the following realistic? Could face_neighbors contain such faces?
                 // And if it does, do we want to produce the same edge ID for those mutually incorrectly oriented edges?
                 if (k == -1) {
                     // Second find an edge with the same orientation (the neighbor triangle may be flipped).
-                    std::swap(edge(0), edge(1));
+                    std::swap(edge[0], edge[1]);
                     k = its_triangle_edge_index(triangle2, edge);
                 }
                 assert(k >= 0);
@@ -1647,7 +1647,7 @@ std::vector<std::pair<int, int>> its_get_open_edges(const indexed_triangle_set& 
     for (size_t i = 0; i < face_neighbors.size(); ++i) {
         for (size_t j = 0; j < 3; ++j) {
             if (face_neighbors[i][j] < 0) {
-                const Vec2i edge_indices = its_triangle_edge(its.indices[i], j);
+                const Domain::Index2 edge_indices = its_triangle_edge(its.indices[i], j);
                 ret.emplace_back(edge_indices[0], edge_indices[1]);
             }
         }

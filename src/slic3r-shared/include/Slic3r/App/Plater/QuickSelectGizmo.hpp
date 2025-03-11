@@ -12,6 +12,8 @@
 
 namespace Slic3r::App::Plater {
 
+using MousePosition = std::array<int, 2>;
+
 class RectangleSelection
 {
 public:
@@ -32,7 +34,7 @@ public:
         , m_geometry(device, Render::BufferUsage::DynamicDraw)
     {}
 
-    void activate(Type type, const Vec2i& initial_mouse_pos) {
+    void activate(Type type, const MousePosition& initial_mouse_pos) {
         m_active = true;
         m_type = type;
         m_initial_mouse_pos = initial_mouse_pos;
@@ -45,7 +47,7 @@ public:
 
     [[nodiscard]] bool is_active() { return m_active; }
 
-    void update(const Vec2i& curr_mouse_pos);
+    void update(const MousePosition& curr_mouse_pos);
     [[nodiscard]] bool update_selection(SelectionHandler& selection_handler);
 
     void render(Render::CommandBuffer& cmd_buffer);
@@ -62,7 +64,7 @@ private:
     Type m_type{ Type::Undefined };
     bool m_active{ false };
     bool m_defined{ false };
-    Vec2i m_initial_mouse_pos;
+    MousePosition m_initial_mouse_pos;
     Render::Geometry m_geometry;
     Scene::Frustum m_frustum;
 };

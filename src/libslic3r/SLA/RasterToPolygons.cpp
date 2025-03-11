@@ -44,15 +44,15 @@ template<class Fn> void foreach_vertex(ExPolygon &poly, Fn &&fn)
         for (auto &p : h.points) fn(p);
 }
 
-ExPolygons raster_to_polygons(const RasterGrayscaleAA &rst, Vec2i windowsize)
+ExPolygons raster_to_polygons(const RasterGrayscaleAA &rst, std::array<int, 2> windowsize)
 {    
     size_t rows = rst.resolution().height_px, cols = rst.resolution().width_px;
     
     if (rows < 2 || cols < 2) return {};
     
     Polygons polys;
-    long w_rows = std::max(2l, long(windowsize.y()));
-    long w_cols = std::max(2l, long(windowsize.x()));
+    long w_rows = std::max(2l, long(windowsize[1]));
+    long w_cols = std::max(2l, long(windowsize[0]));
     
     std::vector<marchsq::Ring> rings =
         marchsq::execute(rst, 128, {w_rows, w_cols});

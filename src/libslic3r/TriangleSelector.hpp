@@ -377,7 +377,7 @@ public:
     indexed_triangle_set_with_color get_all_facets_strict_with_colors() const;
 
     // Get edges around the selected area by seed fill.
-    std::vector<Vec2i> get_seed_fill_contour() const;
+    std::vector<Domain::Index2> get_seed_fill_contour() const;
 
     // Set facet of the mesh to a given state. Only works for original triangles.
     void set_facet(int facet_idx, TriangleStateType state);
@@ -533,7 +533,7 @@ private:
     std::pair<int, int>        triangle_subtriangles(int itriangle, int vertexi, int vertexj) const;
 
     void append_touching_subtriangles(int itriangle, int vertexi, int vertexj, std::vector<int> &touching_subtriangles_out) const;
-    void append_touching_edges(int itriangle, int vertexi, int vertexj, std::vector<Vec2i> &touching_edges_out) const;
+    void append_touching_edges(int itriangle, int vertexi, int vertexj, std::vector<Domain::Index2> &touching_edges_out) const;
 
     // Returns all triangles that are touching the given facet.
     std::vector<int> get_all_touching_triangles(int facet_idx, const Vec3i &neighbors, const Vec3i &neighbors_propagated) const;
@@ -557,7 +557,7 @@ private:
     template<AdditionalMeshInfo facet_info>
     void get_facets_split_by_tjoints(const Vec3i &vertices, const Vec3i &neighbors, uint8_t color, std::vector<stl_triangle_vertex_indices> &out_triangles, std::vector<uint8_t> &out_colors) const;
 
-    void get_seed_fill_contour_recursive(int facet_idx, const Vec3i &neighbors, const Vec3i &neighbors_propagated, std::vector<Vec2i> &edges_out) const;
+    void get_seed_fill_contour_recursive(int facet_idx, const Vec3i &neighbors, const Vec3i &neighbors_propagated, std::vector<Domain::Index2> &edges_out) const;
 
     bool is_any_neighbor_selected_by_seed_fill(const Triangle &triangle);
 

@@ -122,70 +122,70 @@ TEST_CASE("astar algorithm test over 3D point grid", "[AStar]") {
 enum CellValue {ON, OFF};
 
 struct CellGridTracer2D_AllDirs {
-    using Node = Vec2i;
+    using Node = Vec2crd;
 
     static constexpr auto Cols = size_t(5);
     static constexpr auto Rows = size_t(8);
     static constexpr size_t GridSize = Cols * Rows;
 
     const std::array<std::array<CellValue, Cols>, Rows> &grid;
-    Vec2i goal;
+    Vec2crd goal;
 
     CellGridTracer2D_AllDirs(const std::array<std::array<CellValue, Cols>, Rows> &g,
-                     const Vec2i &goal_)
+                     const Vec2crd &goal_)
         : grid{g}, goal{goal_}
     {}
 
     template<class Fn>
-    void foreach_reachable(const Vec2i &src, Fn &&fn) const
+    void foreach_reachable(const Vec2crd &src, Fn &&fn) const
     {
-        auto is_inside = [](const Vec2i& v) { return v.x() >= 0 && v.x() < int(Cols) && v.y() >= 0 && v.y() < int(Rows); };
-        if (Vec2i crd = src + Vec2i{0, 1}; is_inside(crd) && grid[crd.y()] [crd.x()] == ON) fn(crd);
-        if (Vec2i crd = src + Vec2i{1, 0}; is_inside(crd) && grid[crd.y()] [crd.x()] == ON) fn(crd);
-        if (Vec2i crd = src + Vec2i{1, 1}; is_inside(crd) && grid[crd.y()] [crd.x()] == ON) fn(crd);
-        if (Vec2i crd = src + Vec2i{0, -1}; is_inside(crd) && grid[crd.y()] [crd.x()] == ON) fn(crd);
-        if (Vec2i crd = src + Vec2i{-1, 0}; is_inside(crd) && grid[crd.y()] [crd.x()] == ON) fn(crd);
-        if (Vec2i crd = src + Vec2i{-1, -1}; is_inside(crd) && grid[crd.y()] [crd.x()] == ON) fn(crd);
-        if (Vec2i crd = src + Vec2i{1, -1}; is_inside(crd) && grid[crd.y()] [crd.x()] == ON) fn(crd);
-        if (Vec2i crd = src + Vec2i{-1, 1}; is_inside(crd) && grid[crd.y()] [crd.x()] == ON) fn(crd);
+        auto is_inside = [](const Vec2crd& v) { return v.x() >= 0 && v.x() < int(Cols) && v.y() >= 0 && v.y() < int(Rows); };
+        if (Vec2crd crd = src + Vec2crd{0, 1}; is_inside(crd) && grid[crd.y()] [crd.x()] == ON) fn(crd);
+        if (Vec2crd crd = src + Vec2crd{1, 0}; is_inside(crd) && grid[crd.y()] [crd.x()] == ON) fn(crd);
+        if (Vec2crd crd = src + Vec2crd{1, 1}; is_inside(crd) && grid[crd.y()] [crd.x()] == ON) fn(crd);
+        if (Vec2crd crd = src + Vec2crd{0, -1}; is_inside(crd) && grid[crd.y()] [crd.x()] == ON) fn(crd);
+        if (Vec2crd crd = src + Vec2crd{-1, 0}; is_inside(crd) && grid[crd.y()] [crd.x()] == ON) fn(crd);
+        if (Vec2crd crd = src + Vec2crd{-1, -1}; is_inside(crd) && grid[crd.y()] [crd.x()] == ON) fn(crd);
+        if (Vec2crd crd = src + Vec2crd{1, -1}; is_inside(crd) && grid[crd.y()] [crd.x()] == ON) fn(crd);
+        if (Vec2crd crd = src + Vec2crd{-1, 1}; is_inside(crd) && grid[crd.y()] [crd.x()] == ON) fn(crd);
     }
 
-    float distance(const Vec2i & a, const Vec2i & b) const { return (a - b).squaredNorm(); }
+    float distance(const Vec2crd & a, const Vec2crd & b) const { return (a - b).squaredNorm(); }
 
-    float goal_heuristic(const Vec2i & n) const { return n == goal ? -1.f : (n - goal).squaredNorm(); }
+    float goal_heuristic(const Vec2crd & n) const { return n == goal ? -1.f : (n - goal).squaredNorm(); }
 
-    size_t unique_id(const Vec2i & n) const { return n.y() * Cols + n.x(); }
+    size_t unique_id(const Vec2crd & n) const { return n.y() * Cols + n.x(); }
 };
 
 struct CellGridTracer2D_Axis {
-    using Node = Vec2i;
+    using Node = Vec2crd;
 
     static constexpr auto Cols = size_t(5);
     static constexpr auto Rows = size_t(8);
     static constexpr size_t GridSize = Cols * Rows;
 
     const std::array<std::array<CellValue, Cols>, Rows> &grid;
-    Vec2i goal;
+    Vec2crd goal;
 
     CellGridTracer2D_Axis(
         const std::array<std::array<CellValue, Cols>, Rows> &g,
-        const Vec2i                                         &goal_)
+        const Vec2crd                                         &goal_)
         : grid{g}, goal{goal_}
     {}
 
     template<class Fn>
-    void foreach_reachable(const Vec2i &src, Fn &&fn) const
+    void foreach_reachable(const Vec2crd &src, Fn &&fn) const
     {
-        auto is_inside = [](const Vec2i& v) { return v.x() >= 0 && v.x() < int(Cols) && v.y() >= 0 && v.y() < int(Rows); };
-        if (Vec2i crd = src + Vec2i{0, 1}; is_inside(crd) && grid[crd.y()] [crd.x()] == ON) fn(crd);
-        if (Vec2i crd = src + Vec2i{0, -1}; is_inside(crd) && grid[crd.y()] [crd.x()] == ON) fn(crd);
-        if (Vec2i crd = src + Vec2i{1, 0}; is_inside(crd) && grid[crd.y()] [crd.x()] == ON) fn(crd);
-        if (Vec2i crd = src + Vec2i{-1, 0}; is_inside(crd) && grid[crd.y()] [crd.x()] == ON) fn(crd);
+        auto is_inside = [](const Vec2crd& v) { return v.x() >= 0 && v.x() < int(Cols) && v.y() >= 0 && v.y() < int(Rows); };
+        if (Vec2crd crd = src + Vec2crd{0, 1}; is_inside(crd) && grid[crd.y()] [crd.x()] == ON) fn(crd);
+        if (Vec2crd crd = src + Vec2crd{0, -1}; is_inside(crd) && grid[crd.y()] [crd.x()] == ON) fn(crd);
+        if (Vec2crd crd = src + Vec2crd{1, 0}; is_inside(crd) && grid[crd.y()] [crd.x()] == ON) fn(crd);
+        if (Vec2crd crd = src + Vec2crd{-1, 0}; is_inside(crd) && grid[crd.y()] [crd.x()] == ON) fn(crd);
     }
 
-    float distance(const Vec2i & a, const Vec2i & b) const { return (a - b).squaredNorm(); }
+    float distance(const Vec2crd & a, const Vec2crd & b) const { return (a - b).squaredNorm(); }
 
-    float goal_heuristic(const Vec2i &n) const
+    float goal_heuristic(const Vec2crd &n) const
     {
         int manhattan_dst = std::abs(n.x() - goal.x()) +
                             std::abs(n.y() - goal.y());
@@ -193,7 +193,7 @@ struct CellGridTracer2D_Axis {
         return n == goal ? -1.f : manhattan_dst;
     }
 
-    size_t unique_id(const Vec2i & n) const { return n.y() * Cols + n.x(); }
+    size_t unique_id(const Vec2crd & n) const { return n.y() * Cols + n.x(); }
 };
 
 using TestClasses = std::tuple< CellGridTracer2D_AllDirs, CellGridTracer2D_Axis >;
@@ -211,16 +211,16 @@ TEMPLATE_LIST_TEST_CASE("Astar should avoid simple barrier", "[AStar]", TestClas
         {ON , ON , ON , ON , ON}
     }};
 
-    Vec2i dst = {2, 0};
+    Vec2crd dst = {2, 0};
     TestType cgt{grid, dst};
 
-    std::vector<Vec2i> out;
+    std::vector<Vec2crd> out;
     bool found = astar::search_route(cgt, {2, 7}, std::back_inserter(out));
 
     REQUIRE(found);
     REQUIRE(!out.empty());
     REQUIRE(out.front() == dst);
-    REQUIRE(!has_duplicates(out, [](const Vec2i &a, const Vec2i &b) {
+    REQUIRE(!has_duplicates(out, [](const Vec2crd &a, const Vec2crd &b) {
         return a.x() == b.x() ? a.y() < b.y() : a.x() < b.x();
     }));
 
@@ -246,16 +246,16 @@ TEMPLATE_LIST_TEST_CASE("Astar should manage to avoid arbitrary barriers", "[ASt
         {ON , ON , ON , ON , ON}
     }};
 
-    Vec2i dst = {0, 0};
+    Vec2crd dst = {0, 0};
     TestType cgt{grid, dst};
 
-    std::vector<Vec2i> out;
+    std::vector<Vec2crd> out;
     bool found = astar::search_route(cgt, {0, 7}, std::back_inserter(out));
 
     REQUIRE(found);
     REQUIRE(!out.empty());
     REQUIRE(out.front() == dst);
-    REQUIRE(!has_duplicates(out, [](const Vec2i &a, const Vec2i &b) {
+    REQUIRE(!has_duplicates(out, [](const Vec2crd &a, const Vec2crd &b) {
         return a.x() == b.x() ? a.y() < b.y() : a.x() < b.x();
     }));
 
@@ -281,16 +281,16 @@ TEMPLATE_LIST_TEST_CASE("Astar should find the way out of a labyrinth", "[AStar]
         {OFF, OFF, OFF, OFF, ON }
     }};
 
-    Vec2i dst = {4, 0};
+    Vec2crd dst = {4, 0};
     TestType cgt{grid, dst};
 
-    std::vector<Vec2i> out;
+    std::vector<Vec2crd> out;
     bool found = astar::search_route(cgt, {4, 7}, std::back_inserter(out));
 
     REQUIRE(found);
     REQUIRE(!out.empty());
     REQUIRE(out.front() == dst);
-    REQUIRE(!has_duplicates(out, [](const Vec2i &a, const Vec2i &b) {
+    REQUIRE(!has_duplicates(out, [](const Vec2crd &a, const Vec2crd &b) {
         return a.x() == b.x() ? a.y() < b.y() : a.x() < b.x();
     }));
 
