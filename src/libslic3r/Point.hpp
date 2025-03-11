@@ -55,7 +55,6 @@ using DynVec = Eigen::Matrix<NumberType, Eigen::Dynamic, 1>;
 // Vector types with a fixed point coordinate base type.
 using Vec2crd = Domain::Vec2crd;
 using Vec3crd = Domain::Vec3crd;
-using Vec2i64 = Eigen::Matrix<int64_t,  2, 1, Eigen::DontAlign>;
 
 // Vector types with a double coordinate base type.
 using Vec2f = Domain::Vec2f;
@@ -601,7 +600,7 @@ namespace cereal {
 //    template<class Archive> void serialize(Archive& archive, Slic3r::Vec2crd &v) { archive(v.x(), v.y()); }
 //    template<class Archive> void serialize(Archive& archive, Slic3r::Vec3crd &v) { archive(v.x(), v.y(), v.z()); }
     template<class Archive> void serialize(Archive& archive, Slic3r::Vec2crd &v) { archive(v.x(), v.y()); }
-//    template<class Archive> void serialize(Archive& archive, Slic3r::Vec2i64 &v) { archive(v.x(), v.y()); }
+//    template<class Archive> void serialize(Archive& archive, Slic3r::Domain::Vec2big &v) { archive(v.x(), v.y()); }
 //    template<class Archive> void serialize(Archive& archive, Slic3r::Vec3i64 &v) { archive(v.x(), v.y(), v.z()); }
     template<class Archive> void serialize(Archive& archive, Slic3r::Vec2f   &v) { archive(v.x(), v.y()); }
     template<class Archive> void serialize(Archive& archive, Slic3r::Vec3f   &v) { archive(v.x(), v.y(), v.z()); }

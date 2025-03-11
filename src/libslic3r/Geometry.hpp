@@ -147,9 +147,9 @@ inline bool segments_intersect(
         const Slic3r::Point &ip1, const Slic3r::Point &ip2,
         const Slic3r::Point &jp1, const Slic3r::Point &jp2) -> std::pair<int, int>
     {
-        Vec2i64 iv   = (ip2 - ip1).cast<int64_t>();
-        Vec2i64 vij1 = (jp1 - ip1).cast<int64_t>();
-        Vec2i64 vij2 = (jp2 - ip1).cast<int64_t>();
+        Domain::Vec2big iv   = (ip2 - ip1).cast<int64_t>();
+        Domain::Vec2big vij1 = (jp1 - ip1).cast<int64_t>();
+        Domain::Vec2big vij2 = (jp2 - ip1).cast<int64_t>();
         int64_t tij1 = cross2(iv, vij1);
         int64_t tij2 = cross2(iv, vij2);
         return std::make_pair(

@@ -59,10 +59,10 @@ void remove_duplicates(MutablePolygon &polygon, coord_t scaled_eps, const double
         for (++it; it != begin;) {
             auto    prev        = it.prev();
             auto    next        = it.next();
-            Vec2i64 v1          = (*it - *prev).cast<int64_t>();
+            Domain::Vec2big v1          = (*it - *prev).cast<int64_t>();
             int64_t v1_sqr_norm = v1.squaredNorm();
             if (v1_sqr_norm < scaled_eps_sqr) {
-                if (Vec2i64 v2 = (*next - *prev).cast<int64_t>();
+                if (Domain::Vec2big v2 = (*next - *prev).cast<int64_t>();
                     Slic3r::sqr<double>(double(v1.dot(v2))) > cos_max_angle_2 * double(v1_sqr_norm) * double(v2.squaredNorm())) {
                     it = it.remove();
                     continue;
@@ -84,7 +84,7 @@ void remove_duplicates(MutablePolygon &polygon, coord_t scaled_eps, const double
 // Return true if a hole was completely closed (degenerated to an empty polygon) or a single CCW triangle was left, which is not to be simplified any further.
 // it0, it2 are updated to the final clipping edge.
 static bool clip_narrow_corner(
-    const Vec2i64               p1, 
+    const Domain::Vec2big               p1, 
     MutablePolygon::iterator   &it0, 
     MutablePolygon::iterator   &it2,
     MutablePolygon::range      &unprocessed_range,
@@ -104,10 +104,10 @@ static bool clip_narrow_corner(
     Status  forward  = Free;
     Status  backward = Free;
 
-    Vec2i64 p0 = it0->cast<int64_t>();
-    Vec2i64 p2 = it2->cast<int64_t>();
-    Vec2i64 p02;
-    Vec2i64 p22;
+    Domain::Vec2big p0 = it0->cast<int64_t>();
+    Domain::Vec2big p2 = it2->cast<int64_t>();
+    Domain::Vec2big p02;
+    Domain::Vec2big p22;
     int64_t dist2_next = 0;
 
     // As long as there is at least a single triangle left in the polygon.
@@ -284,8 +284,8 @@ void smooth_outward(MutablePolygon &polygon, coord_t clip_dist_scaled)
         const Point   p0   = *it0;
         const Point   p1   = *it1;
         const Point   p2   = *it2;
-        const Vec2i64 v1   = (p0 - p1).cast<int64_t>();
-        const Vec2i64 v2   = (p2 - p1).cast<int64_t>();
+        const Domain::Vec2big v1   = (p0 - p1).cast<int64_t>();
+        const Domain::Vec2big v2   = (p2 - p1).cast<int64_t>();
         if (cross2(v1, v2) > 0) {
             // Concave corner.
             int64_t dot  = v1.dot(v2);
@@ -294,7 +294,7 @@ void smooth_outward(MutablePolygon &polygon, coord_t clip_dist_scaled)
             if (dot > 0 || Slic3r::sqr(double(dot)) * 2. < l2v1 * l2v2) {
                 // Angle between v1 and v2 bigger than 135 degrees.
                 // Simplify the sharp angle.
-                Vec2i64 v02   = (p2 - p0).cast<int64_t>();
+                Domain::Vec2big v02   = (p2 - p0).cast<int64_t>();
                 int64_t l2v02 = v02.squaredNorm();
                 it1.remove();
                 if (l2v02 < clip_dist_scaled2) {
@@ -372,11 +372,11 @@ void smooth_outward(MutablePolygon &polygon, coord_t clip_dist_scaled)
         const Point   p0   = *polygon.begin().prev();
         const Point   p1   = *polygon.begin();
         const Point   p2   = *polygon.begin().next();
-        Vec2i64 v1   = (p0 - p1).cast<int64_t>();
-        Vec2i64 v2   = (p2 - p1).cast<int64_t>();
+        Domain::Vec2big v1   = (p0 - p1).cast<int64_t>();
+        Domain::Vec2big v2   = (p2 - p1).cast<int64_t>();
         if (cross2(v1, v2) > 0) {
             // CW triangle. Measure its height.
-            const Vec2i64 v3 = (p2 - p0).cast<int64_t>();
+            const Domain::Vec2big v3 = (p2 - p0).cast<int64_t>();
             int64_t l12 = v1.squaredNorm();
             int64_t l22 = v2.squaredNorm();
             int64_t l32 = v3.squaredNorm();

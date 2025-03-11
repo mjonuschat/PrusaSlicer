@@ -259,8 +259,8 @@ double LineUtils::perp_distance(const Linef &line, Vec2d p)
 
 bool LineUtils::is_parallel(const Line &first, const Line &second) 
 {
-    Vec2i64 dir1 = direction(first).cast<int64_t>();
-    Vec2i64 dir2 = direction(second).cast<int64_t>();
+    Domain::Vec2big dir1 = direction(first).cast<int64_t>();
+    Domain::Vec2big dir2 = direction(second).cast<int64_t>();
     return Slic3r::cross2(dir1, dir2) == 0;
 }
 

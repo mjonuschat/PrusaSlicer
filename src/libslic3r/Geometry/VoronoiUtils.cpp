@@ -218,8 +218,8 @@ VoronoiUtils::compute_segment_cell_range(const VD::cell_type &cell, const Segmen
     const Segment &source_segment = Geometry::VoronoiUtils::get_source_segment(cell, segment_begin, segment_end);
     const Point    from           = boost::polygon::segment_traits<Segment>::get(source_segment, boost::polygon::LOW);
     const Point    to             = boost::polygon::segment_traits<Segment>::get(source_segment, boost::polygon::HIGH);
-    const Vec2i64  from_i64       = from.template cast<int64_t>();
-    const Vec2i64  to_i64         = to.template cast<int64_t>();
+    const Domain::Vec2big  from_i64       = from.template cast<int64_t>();
+    const Domain::Vec2big  to_i64         = to.template cast<int64_t>();
 
     // FIXME @hejllukas: Ensure that there is no infinite edge during iteration between edge_begin and edge_end.
     SegmentCellRange cell_range(to, from);
@@ -233,8 +233,8 @@ VoronoiUtils::compute_segment_cell_range(const VD::cell_type &cell, const Segmen
         if (edge->is_infinite())
             continue;
 
-        Vec2i64 v0 = Geometry::VoronoiUtils::to_point(edge->vertex0());
-        Vec2i64 v1 = Geometry::VoronoiUtils::to_point(edge->vertex1());
+        Domain::Vec2big v0 = Geometry::VoronoiUtils::to_point(edge->vertex0());
+        Domain::Vec2big v1 = Geometry::VoronoiUtils::to_point(edge->vertex1());
         assert(v0 != to_i64 || v1 != from_i64);
 
         if (v0 == to_i64 && !after_start) { // Use the last edge which starts in source_segment.to
@@ -290,12 +290,12 @@ VoronoiUtils::compute_point_cell_range(const VD::cell_type &cell, const SegmentI
         return cell_range;
     }
 
-    const Vec2i64 source_point_i64 = source_point.template cast<int64_t>();
+    const Domain::Vec2big source_point_i64 = source_point.template cast<int64_t>();
     edge = cell.incident_edge();
     do {
         assert(edge->is_finite());
 
-        if (Vec2i64 v1 = Geometry::VoronoiUtils::to_point(edge->vertex1()); v1 == source_point_i64) {
+        if (Domain::Vec2big v1 = Geometry::VoronoiUtils::to_point(edge->vertex1()); v1 == source_point_i64) {
             cell_range.edge_begin = edge->next();
             cell_range.edge_end   = edge;
         } else {
@@ -309,13 +309,13 @@ VoronoiUtils::compute_point_cell_range(const VD::cell_type &cell, const SegmentI
     return cell_range;
 }
 
-Vec2i64 VoronoiUtils::to_point(const VD::vertex_type *vertex)
+Domain::Vec2big VoronoiUtils::to_point(const VD::vertex_type *vertex)
 {
     assert(vertex != nullptr);
     return VoronoiUtils::to_point(*vertex);
 }
 
-Vec2i64 VoronoiUtils::to_point(const VD::vertex_type &vertex)
+Domain::Vec2big VoronoiUtils::to_point(const VD::vertex_type &vertex)
 {
     const double x = vertex.x(), y = vertex.y();
 

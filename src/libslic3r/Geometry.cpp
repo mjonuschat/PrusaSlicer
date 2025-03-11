@@ -779,10 +779,10 @@ bool trafos_differ_in_rotation_by_z_and_mirroring_by_xy_only(const Transform3d &
 
 bool is_point_inside_polygon_corner(const Point &a, const Point &b, const Point &c, const Point &query_point) {
     // Cast all input points into int64_t to prevent overflows when points are close to max values of coord_t.
-    const Vec2i64 a_i64           = a.cast<int64_t>();
-    const Vec2i64 b_i64           = b.cast<int64_t>();
-    const Vec2i64 c_i64           = c.cast<int64_t>();
-    const Vec2i64 query_point_i64 = query_point.cast<int64_t>();
+    const Domain::Vec2big a_i64           = a.cast<int64_t>();
+    const Domain::Vec2big b_i64           = b.cast<int64_t>();
+    const Domain::Vec2big c_i64           = c.cast<int64_t>();
+    const Domain::Vec2big query_point_i64 = query_point.cast<int64_t>();
 
     // Shift all points to have a base in vertex B.
     // Then construct normalized vectors to ensure that we will work with vectors with endpoints on the unit circle.

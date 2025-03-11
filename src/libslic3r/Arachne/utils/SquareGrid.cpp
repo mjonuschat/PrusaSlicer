@@ -16,7 +16,7 @@ SquareGrid::SquareGrid(coord_t cell_size) : cell_size(cell_size)
 }
 
 
-SquareGrid::GridPoint SquareGrid::toGridPoint(const Vec2i64 &point)  const
+SquareGrid::GridPoint SquareGrid::toGridPoint(const Domain::Vec2big &point)  const
 {
     return Point(toGridCoord(point.x()), toGridCoord(point.y()));
 }

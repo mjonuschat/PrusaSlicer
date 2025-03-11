@@ -44,8 +44,8 @@ static inline int64_t pointIsLeftOfLine(const Point &p, const Point &a, const Po
  */
 static inline float getAngleLeft(const Point &a, const Point &b, const Point &c)
 {
-    const Vec2i64 ba   = (a - b).cast<int64_t>();
-    const Vec2i64 bc   = (c - b).cast<int64_t>();
+    const Domain::Vec2big ba   = (a - b).cast<int64_t>();
+    const Domain::Vec2big bc   = (c - b).cast<int64_t>();
     const int64_t dott = ba.dot(bc);      // dot product
     const int64_t det  = cross2(ba, bc); // determinant
     if (det == 0) {

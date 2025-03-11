@@ -67,9 +67,9 @@ double ParabolaUtils::focal_length(const Parabola &parabola)
 
 bool ParabolaUtils::is_over_zero(const ParabolaSegment &parabola)
 {
-    Vec2i64 line_direction = (parabola.directrix.b - parabola.directrix.a).cast<int64_t>();
-    Vec2i64 focus_from     = (parabola.focus - parabola.from).cast<int64_t>();
-    Vec2i64 focus_to       = (parabola.focus - parabola.to).cast<int64_t>();;
+    Domain::Vec2big line_direction = (parabola.directrix.b - parabola.directrix.a).cast<int64_t>();
+    Domain::Vec2big focus_from     = (parabola.focus - parabola.from).cast<int64_t>();
+    Domain::Vec2big focus_to       = (parabola.focus - parabola.to).cast<int64_t>();;
     bool    is_positive_x1 = line_direction.dot(focus_from) > 0;
     bool    is_positive_x2 = line_direction.dot(focus_to) > 0;
     return is_positive_x1 != is_positive_x2;

@@ -82,7 +82,7 @@ static std::optional<Circle> try_create_circle(const Point &p1, const Point &p2,
 // Returns false if the closest point is not inside the segment, but at its boundary.
 static bool foot_pt_on_segment(const Point &p1, const Point &p2, const Point &pt, Point &out)
 {
-    Vec2i64 v21 = (p2 - p1).cast<int64_t>();
+    Domain::Vec2big v21 = (p2 - p1).cast<int64_t>();
     int64_t l2  = v21.squaredNorm();
     if (l2 > int64_t(SCALED_EPSILON)) {
         if (int64_t t = (pt - p1).cast<int64_t>().dot(v21);
@@ -264,14 +264,14 @@ static std::optional<Circle> try_create_circle(const Points::const_iterator begi
             // Find an intersection point of the polyline to be fitted with the bisector of the arc chord.
             // At such a point the distance of a polyline to an arc wrt. the circle center (or circle radius) will have a largest gradient
             // of all points on the polyline to be fitted.
-            Vec2i64 first_point = begin->cast<int64_t>();
-            Vec2i64 last_point  = std::prev(end)->cast<int64_t>();
-            Vec2i64 v = last_point - first_point;
+            Domain::Vec2big first_point = begin->cast<int64_t>();
+            Domain::Vec2big last_point  = std::prev(end)->cast<int64_t>();
+            Domain::Vec2big v = last_point - first_point;
             Vec2d   vd = v.cast<double>();
             double  ld = v.squaredNorm();
             if (ld > sqr(scaled<double>(0.0015))) {
-                Vec2i64 c = (first_point.cast<int64_t>() + last_point.cast<int64_t>()) / 2;
-                Vec2i64 prev_point = first_point;
+                Domain::Vec2big c = (first_point.cast<int64_t>() + last_point.cast<int64_t>()) / 2;
+                Domain::Vec2big prev_point = first_point;
                 int     prev_side = sign(v.dot(prev_point - c));
                 assert(prev_side != 0);
                 Point   point_on_bisector;
@@ -279,7 +279,7 @@ static std::optional<Circle> try_create_circle(const Points::const_iterator begi
                 point_on_bisector = { std::numeric_limits<coord_t>::max(), std::numeric_limits<coord_t>::max() };
     #endif // NDEBUG
                 for (auto it = std::next(begin); it != end; ++ it) {
-                    Vec2i64 this_point = it->cast<int64_t>();
+                    Domain::Vec2big this_point = it->cast<int64_t>();
                     int64_t d         = v.dot(this_point - c);
                     int     this_side = sign(d);
                     int     sideness  = this_side * prev_side;
@@ -378,11 +378,11 @@ Orientation arc_orientation(
 {
     assert(end - begin >= 3);
     // Assumption: Two successive points of a single segment span an angle smaller than PI.
-    Vec2i64 vstart  = (*begin - center).cast<int64_t>();
-    Vec2i64 vprev   = vstart;
+    Domain::Vec2big vstart  = (*begin - center).cast<int64_t>();
+    Domain::Vec2big vprev   = vstart;
     int     arc_dir = 0;
     for (auto it = std::next(begin); it != end; ++ it) {
-        Vec2i64 v = (*it - center).cast<int64_t>();
+        Domain::Vec2big v = (*it - center).cast<int64_t>();
         int     dir = sign(cross2(vprev, v));
         if (dir == 0) {
             // Ignore radial segments.
@@ -417,8 +417,8 @@ static inline std::optional<Arc> try_create_arc_impl(
     if (orientation == Orientation::Unknown)
         return {};
 
-    Vec2i64 vstart = (*begin - circle.center).cast<int64_t>();
-    Vec2i64 vend   = (*std::prev(end) - circle.center).cast<int64_t>();
+    Domain::Vec2big vstart = (*begin - circle.center).cast<int64_t>();
+    Domain::Vec2big vend   = (*std::prev(end) - circle.center).cast<int64_t>();
     double  angle  = atan2(double(cross2(vstart, vend)), double(vstart.dot(vend)));
     if (orientation == Orientation::CW)
         angle *= -1.;
@@ -536,8 +536,8 @@ Path fit_path(const Points &src_in, double tolerance, double fit_circle_percent_
                     while (std::next(end) != src.end()) {
                         assert(end == next_end);
                         {
-                            Vec2i64 v1 = arc->start_point.cast<int64_t>() - arc->center.cast<int64_t>();
-                            Vec2i64 v2 = arc->end_point.cast<int64_t>() - arc->center.cast<int64_t>();
+                            Domain::Vec2big v1 = arc->start_point.cast<int64_t>() - arc->center.cast<int64_t>();
+                            Domain::Vec2big v2 = arc->end_point.cast<int64_t>() - arc->center.cast<int64_t>();
                             do {
                                 if (std::abs((arc->center.cast<double>() - next_end->cast<double>()).norm() - arc->radius) >= tolerance ||
                                     inside_arc_wedge_vectors(v1, v2,
@@ -799,11 +799,11 @@ PathSegmentProjection point_to_path_projection(const Path &path, const Point &po
                 }
             } else {
                 // Circular arc
-                Vec2i64 center = arc_center(prev.cast<double>(), it->point.cast<double>(), double(it->radius), it->ccw()).cast<int64_t>();
+                Domain::Vec2big center = arc_center(prev.cast<double>(), it->point.cast<double>(), double(it->radius), it->ccw()).cast<int64_t>();
                 // Test whether point is inside the wedge.
-                Vec2i64 v1 = prev.cast<int64_t>() - center;
-                Vec2i64 v2 = it->point.cast<int64_t>() - center;
-                Vec2i64 vp = point.cast<int64_t>() - center;
+                Domain::Vec2big v1 = prev.cast<int64_t>() - center;
+                Domain::Vec2big v2 = it->point.cast<int64_t>() - center;
+                Domain::Vec2big vp = point.cast<int64_t>() - center;
                 if (inside_arc_wedge_vectors(v1, v2, it->radius > 0, it->ccw(), vp)) {
                     // Distance of the radii.
                     const auto r = double(std::abs(it->radius));

@@ -270,7 +270,7 @@ void fixSelfIntersections(const coord_t epsilon, Polygons &thiss)
 
                 if (half_epsilon_sqrd >= (pt - segment_closest_point).cast<int64_t>().squaredNorm()) {
                     const Point  &other = thiss[poly_idx][(point_idx + 1) % pathlen];
-                    const Vec2i64 vec   = (LinearAlg2D::pointIsLeftOfLine(other, segment.a, segment.b) > 0 ? segment.b - segment.a : segment.a - segment.b).cast<int64_t>();
+                    const Domain::Vec2big vec   = (LinearAlg2D::pointIsLeftOfLine(other, segment.a, segment.b) > 0 ? segment.b - segment.a : segment.a - segment.b).cast<int64_t>();
                     assert(Slic3r::sqr(double(vec.x())) < double(std::numeric_limits<int64_t>::max()));
                     assert(Slic3r::sqr(double(vec.y())) < double(std::numeric_limits<int64_t>::max()));
                     const int64_t len   = vec.norm();
@@ -294,8 +294,8 @@ void removeDegenerateVerts(Polygons &thiss)
         Polygon  result;
 
         auto isDegenerate = [](const Point &last, const Point &now, const Point &next) {
-            Vec2i64 last_line = (now - last).cast<int64_t>();
-            Vec2i64 next_line = (next - now).cast<int64_t>();
+            Domain::Vec2big last_line = (now - last).cast<int64_t>();
+            Domain::Vec2big next_line = (next - now).cast<int64_t>();
             return last_line.dot(next_line) == -1 * last_line.norm() * next_line.norm();
         };
         bool isChanged = false;

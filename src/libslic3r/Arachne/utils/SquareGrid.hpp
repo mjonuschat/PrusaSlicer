@@ -77,7 +77,7 @@ public:
      * \param point The actual location.
      * \return The grid coordinates that correspond to \p point.
      */
-    GridPoint toGridPoint(const Vec2i64 &point) const;
+    GridPoint toGridPoint(const Domain::Vec2big &point) const;
 
     /*! \brief Compute the grid coordinate of a real space coordinate.
      * \param coord The actual location.
