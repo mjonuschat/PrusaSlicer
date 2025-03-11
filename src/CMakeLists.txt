@@ -17,6 +17,7 @@ if (NOT SLIC3R_OPENGL_ES AND NOT EMSCRIPTEN)
 endif ()
 
 add_subdirectory(slic3r-domain)
+add_subdirectory(slic3r-biz-algorithms)
 add_subdirectory(slic3r-gcode-reader)
 add_subdirectory(libpgcode)
 

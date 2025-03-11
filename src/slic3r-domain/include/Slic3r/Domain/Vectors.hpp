@@ -28,4 +28,25 @@ using Vec4d = Eigen::Matrix<double, 4, 1, Eigen::DontAlign>;
 
 using Index2 = std::array<int, 2>;
 using Index3 = std::array<int, 3>;
+
+template<typename T>
+concept ScaledScalar = (
+    std::is_same_v<T, int32_t> || std::is_same_v<T, int64_t>
+);
+
+template<typename T>
+concept UnscaledScalar = (
+    std::is_same_v<T, float> || std::is_same_v<T, double>
+);
+
+template<typename T>
+concept ScaledVector = (
+    std::is_same_v<typename T::Scalar, int32_t> || std::is_same_v<typename T::Scalar, int64_t>
+);
+
+template<typename T>
+concept UnscaledVector = (
+    std::is_same_v<typename T::Scalar, float> || std::is_same_v<typename T::Scalar, double>
+);
+
 }
