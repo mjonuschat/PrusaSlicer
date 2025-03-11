@@ -3,8 +3,10 @@
 
 namespace Slic3r::Domain {
 
+// Scaled scalar value, 1e6 represents 1mm.
 using coord_t = int32_t;
 
+// Scaled vector value, Vec2dcrd{1e6, 1e6} represents (1mm, 1mm).
 using Vec2crd = Eigen::Matrix<coord_t, 2, 1, Eigen::DontAlign>;
 using Vec3crd = Eigen::Matrix<coord_t, 3, 1, Eigen::DontAlign>;
 
