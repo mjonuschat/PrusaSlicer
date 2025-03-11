@@ -5,10 +5,10 @@ namespace Slic3r::Domain {
 
 using coord_t = int32_t;
 
-using Vec2crd = Eigen::Matrix<coord_t,  2, 1, Eigen::DontAlign>;
-using Vec3crd = Eigen::Matrix<coord_t,  3, 1, Eigen::DontAlign>;
+using Vec2crd = Eigen::Matrix<coord_t, 2, 1, Eigen::DontAlign>;
+using Vec3crd = Eigen::Matrix<coord_t, 3, 1, Eigen::DontAlign>;
 
-using Vec2big = Eigen::Matrix<int64_t,  2, 1, Eigen::DontAlign>;
+using Vec2big = Eigen::Matrix<int64_t, 2, 1, Eigen::DontAlign>;
 
 using Vec2f = Eigen::Matrix<float, 2, 1, Eigen::DontAlign>;
 using Vec3f = Eigen::Matrix<float, 3, 1, Eigen::DontAlign>;
