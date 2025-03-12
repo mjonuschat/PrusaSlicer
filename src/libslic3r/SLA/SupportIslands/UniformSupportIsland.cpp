@@ -19,6 +19,7 @@
 #include <libslic3r/SLA/SupportPointGenerator.hpp>
 #include <libslic3r/ExPolygonsIndex.hpp>
 #include <libslic3r/IntersectionPoints.hpp>
+#include <libslic3r/Exception.hpp>
 
 #include "VoronoiGraph.hpp"
 #include "Parabola.hpp"
@@ -1164,10 +1165,9 @@ Field create_thick_field(const ThickPart& part, const Lines &lines, const Sample
             assert(!changes.empty());
             size_t change_index = 0;
             if (!points.empty()) { // Not first point, could lead to termination
-                const Point &last_point = points.back();
                 LineUtils::SortFromAToB pred(lines[index]);
                 bool no_change = false;
-                while (pred.compare(changes[change_index].new_b, last_point)) {
+                while (pred.compare(changes[change_index].new_b, points.back())) {
                     ++change_index;
                     if (change_index >= changes.size()) {
                         no_change = true;
@@ -1244,13 +1244,39 @@ Field create_thick_field(const ThickPart& part, const Lines &lines, const Sample
     size_t outline_index = input_index;
     // Done indexes is used to detect holes in field
     std::set<size_t> done_indices; // IMPROVE: use vector(size of lines count) with bools
+#ifdef SLA_SAMPLE_ISLAND_UTILS_STORE_FIELD_TO_SVG_PATH    
+    static int counter = 0;
+    std::string field_to_svg_path = replace_first(
+        SLA_SAMPLE_ISLAND_UTILS_STORE_FIELD_TO_SVG_PATH, "<<COUNTER>>", std::to_string(counter++));
+    {
+        SVG svg(field_to_svg_path.c_str(), LineUtils::create_bounding_box(lines));
+        LineUtils::draw(svg, lines, "black", 0., /*indices*/ true);
+        for(const auto& change_it: wide_tiny_changes)
+            for (const auto& change: change_it.second){
+                Line bisector(change.new_b, change.next_new_a);
+                LineUtils::draw(svg, bisector, "red");
+                std::string text = "from " + std::to_string(change_it.first) 
+                    + " to " + std::to_string(change.next_line_index);
+                svg.draw_text(bisector.a/2 + bisector.b/2, text.c_str(), "orange");
+            }
+    } // flush svg file
+#endif // SLA_SAMPLE_ISLAND_UTILS_STORE_FIELD_TO_SVG_PATH
     do {
         if (!insert_changes(outline_index, points, done_indices, input_index))
             break;        
         inser_point_b(outline_index, points, done_indices);
+
+        if (points.size() > (lines.size() + 2*part.ends.size())){
+            // protection against endless loop
+            assert(false);
+            return {};
+        }
     } while (outline_index != input_index);
 
     assert(points.size() >= 3);
+    if (points.size() < 3)
+        return {}; // invalid field
+
     ExPolygon border{Polygon{points}};
     // finding holes(another closed polygon)
     if (done_indices.size() < field_line_indices.size()) {
@@ -1279,9 +1305,7 @@ Field create_thick_field(const ThickPart& part, const Lines &lines, const Sample
         bool draw_source_line_indexes = true;
         bool draw_border_line_indexes = false;
         bool draw_field_source_indexes = true;
-        static int  counter   = 0;
-        SVG svg(replace_first(SLA_SAMPLE_ISLAND_UTILS_STORE_FIELD_TO_SVG_PATH, 
-        "<<COUNTER>>", std::to_string(counter++)).c_str(),LineUtils::create_bounding_box(lines));
+        SVG svg(field_to_svg_path.c_str(),LineUtils::create_bounding_box(lines));
         LineUtils::draw(svg, lines, source_line_color, 0., draw_source_line_indexes);
         draw(svg, field, border, draw_border_line_indexes, draw_field_source_indexes);
     }
@@ -2098,6 +2122,14 @@ coord_t get_longest_distance(const IslandPartChanges& changes, Position* center 
 
     // case with center on change neighbor should be already handled
     assert(node_distance != nullptr);
+    if (node_distance == nullptr)
+        // weird situation - hack to not crash on SPE-2714
+        throw Slic3r::RuntimeError("SLA support point generator has failed."
+            "\n\nThe generator was unable to sample an island. You may try to work around the problem "
+            "by changing the orientation of the model slightly.\n\nWe are sorry for the inconvenience.");
+
+    //if (node_distance == nullptr)
+    //    return farest_from_change;
     assert(node_distance->shortest_distances[change_index].distance >= half_distance);
     assert(prev_node_distance->shortest_distances[change_index].distance <= half_distance);
     coord_t to_half_distance = half_distance - node_distance->shortest_distances[change_index].distance;

@@ -294,7 +294,7 @@ std::optional<std::pair<int, int> > check_ScheduledObjectsForSequentialConflict(
 							plate_polygons,
 							plate_unreachable_polygons))
 	{
-	    return std::pair<int, int>(objects_to_print[conflict.value().first].id, objects_to_print[conflict.value().second].id);
+	    return std::pair<int, int>(scheduled_plate.scheduled_objects[conflict.value().first].id, scheduled_plate.scheduled_objects[conflict.value().second].id);
 	}
 	#ifdef DEBUG
 	{
@@ -314,7 +314,7 @@ std::optional<std::pair<int, int> > check_ScheduledObjectsForSequentialConflict(
 							    plate_polygons,
 							    plate_unreachable_polygons))
 	{
-	    return std::pair<int, int>(objects_to_print[conflict.value().first].id, objects_to_print[conflict.value().second].id);
+	    return std::pair<int, int>(scheduled_plate.scheduled_objects[conflict.value().first].id, scheduled_plate.scheduled_objects[conflict.value().second].id);
 	}
 	#ifdef DEBUG
 	{
