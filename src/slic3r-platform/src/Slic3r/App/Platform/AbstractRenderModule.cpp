@@ -27,7 +27,9 @@ void AbstractRenderModule::deactivate()
 
 void AbstractRenderModule::request_render()
 {
-    m_render_request_handler->request_render();
+    // Only request render when activated
+    if (m_render_request_handler)
+        m_render_request_handler->request_render();
 }
 
 void AbstractRenderModule::set_screen_size(const Render::ScreenInfo& screen_info)
