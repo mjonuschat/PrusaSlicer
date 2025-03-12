@@ -983,7 +983,7 @@ std::pair<Slic3r::Point, Slic3r::Point> VoronoiGraphUtils::point_on_lines(
     //assert(edge->is_linear());
 
     Point edge_point = create_edge_point(position);
-    auto point_on_line           = [&](const VD::edge_type *edge) -> Point {
+    auto point_on_line = [&](const VD::edge_type *edge) -> Point {
         assert(edge->is_finite());
         const VD::cell_type *cell = edge->cell();
         size_t line_index = cell->source_index();
@@ -1000,7 +1000,16 @@ std::pair<Slic3r::Point, Slic3r::Point> VoronoiGraphUtils::point_on_lines(
         Line intersecting_line(edge_point, edge_point + PointUtils::perp(dir));
         std::optional<Vec2d> intersection = LineUtils::intersection(line, intersecting_line);
         assert(intersection.has_value());
-        return intersection->cast<coord_t>();
+        Point result = intersection->cast<coord_t>();
+        // result MUST lay on the line, accuracy of float intersection could move point out of line
+        coord_t tolerance = 5; // for sure it is 5 but found case which need tolerance(1) - SPE-2709
+        if (abs(result.x() - line.a.x()) < tolerance && 
+            abs(result.y() - line.a.y()) < tolerance)
+            return line.a; // almost point a
+        if (abs(result.x() - line.b.x()) < tolerance && 
+            abs(result.y() - line.b.y()) < tolerance)
+            return line.b; // almost point b
+        return result;
     };
     
     return {point_on_line(edge), point_on_line(edge->twin())};

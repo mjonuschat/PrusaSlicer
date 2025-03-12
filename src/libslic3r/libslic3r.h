@@ -21,9 +21,9 @@
 #include "Slic3r/Domain/Point.hpp"
 
 // Profiles for the alpha are stored into the PrusaSlicer-alpha directory to not mix with the current release.
-// #define SLIC3R_APP_FULL_NAME SLIC3R_APP_KEY
+   #define SLIC3R_APP_FULL_NAME SLIC3R_APP_KEY
 // #define SLIC3R_APP_FULL_NAME SLIC3R_APP_KEY "-alpha"
-   #define SLIC3R_APP_FULL_NAME SLIC3R_APP_KEY "-beta"
+// #define SLIC3R_APP_FULL_NAME SLIC3R_APP_KEY "-beta"
 
 
 
