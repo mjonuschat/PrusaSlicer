@@ -17,6 +17,8 @@ target_link_libraries(sequential_decimator PRIVATE libseqarrange)
 
 if (SLIC3R_BUILD_TESTS)
     find_package(Catch2 3.8 REQUIRED)
+    slic3r_remap_configs(Catch2::Catch2 RelWithDebInfo Release)
+    slic3r_remap_configs(Catch2::Catch2WithMain RelWithDebInfo Release)
 
     add_executable(libseqarrange_tests test/prusaparts.cpp test/seq_test_polygon.cpp test/seq_test_sequential.cpp test/seq_test_preprocess.cpp test/seq_test_interface.cpp)
     target_include_directories(libseqarrange_tests PRIVATE src )
