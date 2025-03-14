@@ -12,6 +12,7 @@ set(SLIC3R_BASE_FILES
         src/Slic3r/Semver.cpp
         include/Slic3r/Platform.hpp
         src/Slic3r/Platform.cpp
+        include/Slic3r/Utils.hpp
 )
 
 if (APPLE)

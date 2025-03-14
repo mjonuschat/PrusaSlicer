@@ -115,7 +115,7 @@ bool Polygon::make_clockwise()
 void Polygon::douglas_peucker(double tolerance)
 {
     this->points.push_back(this->points.front());
-    Points p = MultiPoint::douglas_peucker(this->points, tolerance);
+    Points p = Slic3r::douglas_peucker(this->points, tolerance);
     p.pop_back();
     this->points = std::move(p);
 }
@@ -129,7 +129,7 @@ Polygons Polygon::simplify(double tolerance) const
     // on the whole polygon
     Points points = this->points;
     points.push_back(points.front());
-    Polygon p(MultiPoint::douglas_peucker(points, tolerance));
+    Polygon p(Slic3r::douglas_peucker(points, tolerance));
     p.points.pop_back();
     
     Polygons pp;
@@ -630,7 +630,7 @@ void remove_collinear(Polygons &polys)
 
 static inline void simplify_polygon_impl(const Points &points, double tolerance, bool strictly_simple, Polygons &out)
 {
-    Points simplified = MultiPoint::douglas_peucker(points, tolerance);
+    Points simplified = Slic3r::douglas_peucker(points, tolerance);
     // then remove the last (repeated) point.
     simplified.pop_back();
     // Simplify the decimated contour by ClipperLib.

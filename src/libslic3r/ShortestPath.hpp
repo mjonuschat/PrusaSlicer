@@ -23,7 +23,7 @@ class Line;
 	namespace ClipperLib {
 		class PolyNode;
 
-		using PolyNodes = std::vector<PolyNode*, PointsAllocator<PolyNode*>>;
+		using PolyNodes = std::vector<PolyNode*, Domain::PointsAllocator<PolyNode*>>;
 	}
 
 class ExPolygon;

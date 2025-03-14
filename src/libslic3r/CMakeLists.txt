@@ -653,6 +653,7 @@ target_link_libraries(libslic3r PUBLIC
     NanoSVG::nanosvg
     NanoSVG::nanosvgrast
     slic3r-jthread
+    slic3r-biz-algorithms
     slic3r-domain
     slic3r-gcode-reader
     slic3r-biz-algorithms

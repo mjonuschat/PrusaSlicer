@@ -125,7 +125,7 @@ Points Polyline::equally_spaced_points(double distance) const
 
 void Polyline::simplify(double tolerance)
 {
-    this->points = MultiPoint::douglas_peucker(this->points, tolerance);
+    this->points = Slic3r::douglas_peucker(this->points, tolerance);
 }
 
 #if 0

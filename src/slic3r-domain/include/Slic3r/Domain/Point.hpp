@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Slic3r/Domain/Vectors.hpp"
+#include <oneapi/tbb/scalable_allocator.h>
 
 namespace Slic3r::Domain {
 
@@ -57,4 +58,9 @@ public:
 };
 
 Vec2crd rotated(const Vec2crd& point, const double angle, const Vec2crd &center = Vec2crd::Zero());
+
+template<typename BaseType>
+using PointsAllocator = tbb::scalable_allocator<BaseType>;
+using Points          = std::vector<Point, PointsAllocator<Point>>;
+
 }

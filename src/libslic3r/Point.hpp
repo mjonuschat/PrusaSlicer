@@ -177,12 +177,9 @@ inline const Vec3d get_z_base(const Transform3d::LinearPart &transform) { return
 template<int N, class T> using Vec = Eigen::Matrix<T,  N, 1, Eigen::DontAlign, N, 1>;
 
 using Domain::Point;
+using Domain::Points;
 
-template<typename BaseType>
-using PointsAllocator = tbb::scalable_allocator<BaseType>;
-//using PointsAllocator = std::allocator<BaseType>;
-using Points         = std::vector<Point, PointsAllocator<Point>>;
-using VecOfPoints    = std::vector<Points, PointsAllocator<Points>>;
+using VecOfPoints = std::vector<Points, Domain::PointsAllocator<Points>>;
 
 namespace Domain {
 inline bool operator<(const Point &l, const Point &r)

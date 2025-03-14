@@ -18,7 +18,6 @@
 #include <wx/statbox.h>
 #include <wx/tooltip.h>
 
-#include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/FileReader.hpp"
 #include "libslic3r/TriangleMesh.hpp"

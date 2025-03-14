@@ -21,6 +21,8 @@
 #include <cmath>
 #include <cstddef>
 
+#include "Slic3r/Domain/MultiPoint.hpp"
+#include "Slic3r/Biz/Algorithms/MultiPoint.hpp"
 #include "libslic3r.h"
 #include "Line.hpp"
 #include "Point.hpp"
@@ -168,91 +170,26 @@ inline Points douglas_peucker(const Points &src, const double tolerance)
     return out;
 }
 
-class MultiPoint
+// Temporary proxy class over Domain::MultiPoint.
+class MultiPoint : public Domain::MultiPoint
 {
 public:
-    Points points;
+    using Domain::MultiPoint::find_point;
 
     MultiPoint() = default;
-    MultiPoint(const MultiPoint &other) : points(other.points) {}
-    MultiPoint(MultiPoint &&other) : points(std::move(other.points)) {}
-    MultiPoint(std::initializer_list<Point> list) : points(list) {}
-    explicit MultiPoint(const Points &_points) : points(_points) {}
-    virtual ~MultiPoint() = default;
-    MultiPoint& operator=(const MultiPoint &other) { points = other.points; return *this; }
-    MultiPoint& operator=(MultiPoint &&other) { points = std::move(other.points); return *this; }
-    void scale(double factor);
-    void scale(double factor_x, double factor_y);
-    void translate(double x, double y) { this->translate(Point(coord_t(x), coord_t(y))); }
-    void translate(const Point &vector);
-    void rotate(double angle) { this->rotate(cos(angle), sin(angle)); }
-    void rotate(double cos_angle, double sin_angle);
-    void rotate(double angle, const Point &center);
-    virtual void reverse() { std::reverse(this->points.begin(), this->points.end()); }
+    MultiPoint(const MultiPoint &other) : Domain::MultiPoint(other.points) {}
+    MultiPoint(MultiPoint &&other) : Domain::MultiPoint(std::move(other)) {}
+    MultiPoint(std::initializer_list<Point> list) : Domain::MultiPoint(list) {}
+    explicit MultiPoint(const Points &_points) : Domain::MultiPoint(_points) {}
+    ~MultiPoint() override = default;
 
-    const Point& front() const { return this->points.front(); }
-    const Point& back() const { return this->points.back(); }
-    const Point& first_point() const { return this->front(); }
-    size_t size() const { return points.size(); }
-    bool   empty() const { return points.empty(); }
-    bool   is_valid() const { return this->points.size() >= 2; }
+    virtual void reverse() { Slic3r::Biz::Algorithms::MultiPoint::reverse(*this); }
 
-    // Return index of a polygon point exactly equal to point.
-    // Return -1 if no such point exists.
-    int  find_point(const Point &point) const;
-    // Return index of the closest point to point closer than scaled_epsilon.
-    // Return -1 if no such point exists.
-    int  find_point(const Point &point, const double scaled_epsilon) const;
-    int  closest_point_index(const Point &point) const {
-        int idx = -1;
-        if (! this->points.empty()) {
-            idx = 0;
-            double dist_min = (point - this->points.front()).cast<double>().norm();
-            for (int i = 1; i < int(this->points.size()); ++ i) {
-                double d = (this->points[i] - point).cast<double>().norm();
-                if (d < dist_min) {
-                    dist_min = d;
-                    idx = i;
-                }
-            }
-        }
-        return idx;
-    }
-    const Point* closest_point(const Point &point) const { return this->points.empty() ? nullptr : &this->points[this->closest_point_index(point)]; }
+    int find_point(const Point& point, const double scaled_epsilon) const { return Slic3r::Biz::Algorithms::MultiPoint::find_point(*this, point, scaled_epsilon); }
+    int closest_point_index(const Point &point) const { return Slic3r::Biz::Algorithms::MultiPoint::closest_point_index(*this, point); }
     BoundingBox bounding_box() const;
-    // Return true if there are exact duplicates.
-    bool has_duplicate_points() const;
-    // Remove exact duplicates, return true if any duplicate has been removed.
-    bool remove_duplicate_points();
-    void clear() { this->points.clear(); }
-    void append(const Point &point) { this->points.push_back(point); }
-    void append(const Points &src) { this->append(src.begin(), src.end()); }
-    void append(const Points::const_iterator &begin, const Points::const_iterator &end) { this->points.insert(this->points.end(), begin, end); }
-    void append(Points &&src)
-    {
-        if (this->points.empty()) {
-            this->points = std::move(src);
-        } else {
-            this->points.insert(this->points.end(), src.begin(), src.end());
-            src.clear();
-        }
-    }
-
-    static Points douglas_peucker(const Points &src, const double tolerance) { return Slic3r::douglas_peucker(src, tolerance); }
-    static Points visivalingam(const Points &src, const double tolerance);
-
-    inline auto begin()        { return points.begin(); }
-    inline auto begin()  const { return points.begin(); }
-    inline auto end()          { return points.end();   }
-    inline auto end()    const { return points.end();   }
-    inline auto cbegin() const { return points.begin(); }
-    inline auto cend()   const { return points.end();   }
-    inline auto rbegin()       { return points.rbegin(); }
-    inline auto rbegin() const { return points.rbegin(); }
-    inline auto rend()         { return points.rend();   }
-    inline auto rend()   const { return points.rend();   }
-    inline auto crbegin()const { return points.crbegin(); }
-    inline auto crend()  const { return points.crend(); }
+    bool has_duplicate_points() const { return Slic3r::Biz::Algorithms::MultiPoint::has_duplicate_points(*this); }
+    bool remove_duplicate_points() { return Slic3r::Biz::Algorithms::MultiPoint::remove_duplicate_points(*this); }
 };
 
 class MultiPoint3

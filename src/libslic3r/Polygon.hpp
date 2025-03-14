@@ -36,9 +36,9 @@ class Polygon;
 class BoundingBox;
 class ColorPolygon;
 
-using Polygons          = std::vector<Polygon, PointsAllocator<Polygon>>;
-using PolygonPtrs       = std::vector<Polygon*, PointsAllocator<Polygon*>>;
-using ConstPolygonPtrs  = std::vector<const Polygon*, PointsAllocator<const Polygon*>>;
+using Polygons          = std::vector<Polygon, Domain::PointsAllocator<Polygon>>;
+using PolygonPtrs       = std::vector<Polygon*, Domain::PointsAllocator<Polygon*>>;
+using ConstPolygonPtrs  = std::vector<const Polygon*, Domain::PointsAllocator<const Polygon*>>;
 
 using ColorPolygons     = std::vector<ColorPolygon>;
 

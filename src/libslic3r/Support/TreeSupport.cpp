@@ -97,7 +97,7 @@ static inline void validate_range(const Points &points)
         validate_range(p);
 }
 
-static inline void validate_range(const MultiPoint &mp) 
+static inline void validate_range(const Domain::MultiPoint &mp)
 {
     validate_range(mp.points);
 }

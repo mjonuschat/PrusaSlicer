@@ -70,7 +70,7 @@ void simplify_polygons(const Polygons &polygons, double tolerance, Polygons* ret
 {
     Polygons simplified_raw;
     for (const Polygon &source_polygon : polygons) {
-        Points simplified = MultiPoint::douglas_peucker(to_polyline(source_polygon).points, tolerance);
+        Points simplified = Slic3r::douglas_peucker(to_polyline(source_polygon).points, tolerance);
         if (simplified.size() > 3) {
             simplified.pop_back();
             simplified_raw.push_back(Polygon{ std::move(simplified) });

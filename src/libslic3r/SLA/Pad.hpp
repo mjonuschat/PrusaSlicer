@@ -22,7 +22,7 @@ class ExPolygon;
 class Polygon;
 
 using ExPolygons = std::vector<ExPolygon>;
-using Polygons = std::vector<Polygon, PointsAllocator<Polygon>>;
+using Polygons = std::vector<Polygon, Domain::PointsAllocator<Polygon>>;
 
 namespace sla {
 
