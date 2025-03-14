@@ -4,6 +4,7 @@
 #include "Slic3r/App/Render/Device.hpp"
 #include "Slic3r/App/Render/Context.hpp"
 #include "Slic3r/App/Render/MathUtils.hpp"
+#include "Slic3r/App/Render/ImguiFontHelper.hpp"
 
 #include <Slic3r/Assert.hpp>
 
@@ -15,15 +16,31 @@ ImguiRender::ImguiRender(Device& device)
           {VertexAttribType::Vertex, DataType::Float, 2, IM_OFFSETOF(ImDrawVert, pos)},
           {VertexAttribType::TexCoord0, DataType::Float, 2, IM_OFFSETOF(ImDrawVert, uv)},
           {VertexAttribType::Color, DataType::UByte, 4, IM_OFFSETOF(ImDrawVert, col), true, true}
-      })
-    , m_font_helper(device)
+    })
+    , m_font_helper(std::make_unique<ImguiFontHelper>(device))
 {}
 
 ImguiRender::~ImguiRender() = default;
 
-void ImguiRender::set_font(const std::optional<std::string>& language, const std::optional<float>& font_size, const std::optional<float>& font_global_scale)
+const std::string& ImguiRender::language() const
 {
-    m_font_helper.set_font(language, font_size, font_global_scale);
+    return m_font_helper->language();
+}
+
+float ImguiRender::font_size() const
+{
+    return m_font_helper->font_size();
+}
+
+void ImguiRender::set_font(const std::optional<std::string>& language, const std::optional<float>& font_size,
+    const std::optional<float>& font_global_scale)
+{
+    m_font_helper->set_font(language, font_size, font_global_scale);
+}
+
+ImFont* ImguiRender::font(Render::ImguiFontType type)
+{
+    return m_font_helper->font(type);
 }
 
 void ImguiRender::new_frame()

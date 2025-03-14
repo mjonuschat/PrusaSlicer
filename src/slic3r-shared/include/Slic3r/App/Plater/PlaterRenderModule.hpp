@@ -14,7 +14,7 @@ namespace Slic3r::App::Plater {
 
 class PlaterRenderModule final : public Platform::AbstractRenderModule {
 public:
-    explicit PlaterRenderModule(const Domain::Workbench& workbench, Biz::ProjectInteractor& project_interactor)
+    PlaterRenderModule(const Domain::Workbench& workbench, Biz::ProjectInteractor& project_interactor)
         : m_workbench(workbench), m_project_interactor(project_interactor)
     {}
 
@@ -28,6 +28,7 @@ protected:
     void on_activated() override;
     void on_deactivated() override;
     void on_screen_resized() override;
+    void on_set_imgui_render() override;
 
 private:
     void init_scene();

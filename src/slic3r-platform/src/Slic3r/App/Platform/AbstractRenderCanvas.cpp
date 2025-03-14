@@ -60,6 +60,8 @@ void AbstractRenderCanvas::render()
         m_pending_font_global_scale.reset();
     }
 
+    m_render_module->set_imgui_render(m_imgui_render.get());
+
     assert_no_gl_error();
     begin_frame();
     assert_no_gl_error();

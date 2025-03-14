@@ -225,6 +225,13 @@ void ImguiFontHelper::set_font(const std::optional<std::string>& language, const
         ImGui::GetIO().FontGlobalScale = 1.0f / *font_global_scale;
 }
 
+ImFont* ImguiFontHelper::font(Render::ImguiFontType type)
+{
+    auto it = m_fonts.find(type);
+    DEBUG_ASSERT(it != m_fonts.end());
+    return (it != m_fonts.end()) ? it->second : nullptr;
+}
+
 static void add_icons_rect_to_font_texture(const ImguiFontHelper& helper, ImguiLanguageData& language_data, ImFont* font)
 {
     ImGuiIO& io = ImGui::GetIO();
@@ -321,6 +328,28 @@ static void load_icons_into_font_texture(const ImguiFontHelper& helper, int& rec
     }
 }
 
+static ImFont* load_font(const std::string& filename, const std::string& filename_cjk, const ImguiLanguageData& language_data, const ImVector<ImWchar>& ranges,
+    bool font_cjk)
+{
+    ImGuiIO& io = ImGui::GetIO();
+    std::string path = Slic3r::resources_dir() + "/fonts/" + filename;
+    std::string path_cjk = Slic3r::resources_dir() + "/fonts/" + filename_cjk;
+    ImFont* font = io.Fonts->AddFontFromFileTTF(path.c_str(), language_data.font_size, nullptr, ranges.Data);
+    if (font_cjk) {
+        ImFontConfig config;
+        config.MergeMode = true;
+        io.Fonts->AddFontFromFileTTF(path_cjk.c_str(), language_data.font_size, &config, ranges.Data);
+    }
+
+    if (font == nullptr) {
+        font = io.Fonts->AddFontDefault();
+        if (font == nullptr)
+            throw Slic3r::RuntimeError("ImGui: Could not load default font");
+    }
+
+    return font;
+}
+
 void ImguiFontHelper::create_font_texture()
 {
     const ImWchar* glyph_ranges = nullptr;
@@ -366,21 +395,13 @@ void ImguiFontHelper::create_font_texture()
 
   	builder.BuildRanges(&ranges); // Build the final result (ordered ranges with all the unique characters submitted)
 
-    ImFont* font = io.Fonts->AddFontFromFileTTF((Slic3r::resources_dir() + "/fonts/" + "NotoSans-Regular.ttf").c_str(), m_language_data.font_size, nullptr, ranges.Data);
-    if (font_cjk) {
-        ImFontConfig config;
-        config.MergeMode = true;
-        io.Fonts->AddFontFromFileTTF((Slic3r::resources_dir() + "/fonts/" + "NotoSansCJK-Regular.ttc").c_str(), m_language_data.font_size, &config, ranges.Data);
-    }
-    
-    if (font == nullptr) {
-        font = io.Fonts->AddFontDefault();
-        if (font == nullptr)
-            throw Slic3r::RuntimeError("ImGui: Could not load deafult font");
-    }
+    m_fonts[ImguiFontType::Regular] = load_font("NotoSans-Regular.ttf", "NotoSansCJK-Regular.ttc", m_language_data, ranges, font_cjk);
+    m_fonts[ImguiFontType::Bold]    = load_font("NotoSans-Bold.ttf", "NotoSansCJK-Bold.ttc", m_language_data, ranges, font_cjk);
 
     int rect_id = ImGui::GetIO().Fonts->CustomRects.Size;  // id of the rectangle added next
-    add_icons_rect_to_font_texture(*this, m_language_data, font);
+    for (auto& [type, font] : m_fonts) {
+        add_icons_rect_to_font_texture(*this, m_language_data, font);
+    }
 
     // Build texture atlas
     unsigned char* pixels;

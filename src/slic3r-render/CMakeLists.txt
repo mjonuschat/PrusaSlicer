@@ -41,7 +41,8 @@ set(SLIC3R_RENDER_FILES
         include/Slic3r/App/Render/MathUtils.hpp
         include/Slic3r/App/Render/ImguiRender.hpp
         src/Slic3r/App/Render/ImguiRender.cpp
-        include/Slic3r/App/Render/ImguiFontHelper.hpp
+        include/Slic3r/App/Render/ImguiTypes.hpp
+        src/Slic3r/App/Render/ImguiFontHelper.hpp
         src/Slic3r/App/Render/ImguiFontHelper.cpp
         include/Slic3r/App/Render/WithInternal.hpp
         src/Slic3r/App/Render/GL/GLTypes.cpp

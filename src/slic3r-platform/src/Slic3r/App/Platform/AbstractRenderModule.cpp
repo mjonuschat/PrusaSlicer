@@ -40,6 +40,13 @@ void AbstractRenderModule::set_screen_size(const Render::ScreenInfo& screen_info
     }
 }
 
+void AbstractRenderModule::set_imgui_render(Render::ImguiRender* imgui_render)
+{
+    if (m_imgui_render != imgui_render) {
+        m_imgui_render = imgui_render;
+        on_set_imgui_render();
+    }
+}
 
 } // namespace Slic3r::App::Platform
 

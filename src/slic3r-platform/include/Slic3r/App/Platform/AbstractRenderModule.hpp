@@ -9,6 +9,7 @@
 namespace Slic3r::App::Render {
 class Device;
 class CommandBuffer;
+class ImguiRender;
 }
 
 namespace Slic3r::App::Platform {
@@ -42,6 +43,7 @@ public:
         }
     }
 
+    void set_imgui_render(Render::ImguiRender* imgui_render);
 
 protected:
     /**
@@ -52,6 +54,7 @@ protected:
     virtual void on_activated();
     virtual void on_deactivated();
     virtual void on_screen_resized();
+    virtual void on_set_imgui_render() {}
 
     virtual void register_commands() {}
     void request_render();
@@ -59,6 +62,7 @@ protected:
 protected:
     Render::Device* m_device{nullptr};
     CommandRegistry m_command_registry;
+    Render::ImguiRender* m_imgui_render{nullptr};
 
     Render::ScreenInfo m_screen_info {0, 0, 1};
     bool m_initialized{false};

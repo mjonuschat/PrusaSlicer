@@ -26,6 +26,10 @@ class SceneInteractor;
 struct Selection;
 }
 
+namespace Slic3r::App::Render {
+class ImguiRender;
+} // namespace Slic3r::App::Render
+
 namespace Slic3r::App::Plater {
 
 struct MultiSelectionStorage : public ImGuiSelectionBasicStorage
@@ -76,6 +80,8 @@ public:
         m_project_interactor = project_interactor;
     }
 
+    void set_imgui_render(Render::ImguiRender* imgui_render) { m_imgui_render = imgui_render; }
+
     void render(ImVec2 pos, ImVec2 size);
 
 protected:
@@ -118,6 +124,7 @@ private:
     Biz::ProjectInteractor*         m_project_interactor{ nullptr };
     Biz::Scene::SceneInteractor*    m_scene_interactor  { nullptr };
     const Slic3r::Model*            m_model             { nullptr };
+    Render::ImguiRender*            m_imgui_render      { nullptr };
 
     MultiSelections                 m_instances_ms;
     MultiSelections                 m_volumes_ms;

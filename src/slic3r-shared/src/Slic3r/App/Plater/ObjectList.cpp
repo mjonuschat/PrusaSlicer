@@ -7,6 +7,9 @@
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/App/Imgui/ImguiExtension.hpp"
+#include "Slic3r/App/Render/ImguiRender.hpp"
+
+#include "Slic3r/Assert.hpp"
 
 #include <libslic3r/Model.hpp>
 
@@ -551,7 +554,11 @@ bool ObjectList::render_tree(ImVec2 size)
 void ObjectList::render_header(ImVec2 pos, ImVec2 size)
 {
     ImGui::SetCursorPos(ImVec2(pos) * 2);
+    // temporary code to demonstate the use of imgui bold font
+    DEBUG_ASSERT(m_imgui_render != nullptr);
+    ImGui::PushFont(m_imgui_render->font(Render::ImguiFontType::Bold));
     ImGui::Text("Objects");
+    ImGui::PopFont();
 
     float btn_width = 2 * ImGui::GetFontSize();
     float btn_pos = size.x - pos.x - btn_width;

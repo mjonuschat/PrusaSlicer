@@ -808,5 +808,9 @@ void PlaterRenderModule::on_screen_resized()
     m_scene_presenter->screen_resized(viewport);
 }
 
+void PlaterRenderModule::on_set_imgui_render()
+{
+    m_scene_presenter->project_context().object_list()->set_imgui_render(m_imgui_render);
+}
 
 } // namespace Slic3r::App::Plater

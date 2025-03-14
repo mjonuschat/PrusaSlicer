@@ -35,6 +35,8 @@ public:
 
     ~AbstractRenderCanvas() override = default;
 
+    Render::ImguiRender* imgui_render() { return m_imgui_render.get(); }
+
     const std::string& language() const { return m_imgui_render->language(); }
     void set_language(const std::string& language) { m_pending_language = language; }
     float font_size() const { return m_imgui_render->font_size(); }

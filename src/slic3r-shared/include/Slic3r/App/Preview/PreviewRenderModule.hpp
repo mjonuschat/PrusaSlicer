@@ -18,7 +18,7 @@ namespace Slic3r::App::Preview {
 class PreviewRenderModule final : public Platform::AbstractRenderModule, public Biz::IFDMResultCacheChangedListener
 {
 public:
-    explicit PreviewRenderModule(const Domain::Workbench& workbench, Biz::ProjectInteractor& project_interactor)
+    PreviewRenderModule(const Domain::Workbench& workbench, Biz::ProjectInteractor& project_interactor)
         : m_workbench(workbench), m_project_interactor(project_interactor)
     {}
 

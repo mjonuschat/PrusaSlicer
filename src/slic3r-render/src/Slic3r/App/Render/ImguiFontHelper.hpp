@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Slic3r/App/Render/ImguiTypes.hpp"
+
 #include <imgui/imgui.h>
 
 #include <string>
@@ -25,6 +27,8 @@ struct ImguiLanguageData
     std::map<wchar_t, int> custom_glyph_rects_ids;
 };
 
+using ImguiFonts = std::map<ImguiFontType, ImFont*>;
+
 class ImguiFontHelper
 {
 public:
@@ -45,6 +49,8 @@ public:
     int icon_extra_large_size() const { return 4 * icon_size(); }
     float icon_advance() const { return 3.0f * font_scale(); }
 
+    ImFont* font(Render::ImguiFontType type);
+
 private:
     void create_font_texture();
 
@@ -52,6 +58,7 @@ private:
     Device& m_device;
     ImguiLanguageData m_language_data;
     Texture* m_font_texture{ nullptr };
+    ImguiFonts m_fonts;
 };
 
 } // namespace Slic3r::App::Render

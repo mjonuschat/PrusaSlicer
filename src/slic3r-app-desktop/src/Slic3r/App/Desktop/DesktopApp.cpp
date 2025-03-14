@@ -41,9 +41,9 @@ bool DesktopApp::OnInit()
         PlatformServices::instance().main_thread_dispatcher()
     );
     m_plater_module =
-      std::make_unique<Plater::PlaterRenderModule>(m_workbench, *m_project_interactor);
+        std::make_unique<Plater::PlaterRenderModule>(m_workbench, *m_project_interactor);
     m_preview_module =
-      std::make_unique<Preview::PreviewRenderModule>(m_workbench, *m_project_interactor);
+        std::make_unique<Preview::PreviewRenderModule>(m_workbench, *m_project_interactor);
 
     const bool is_dark = true;
     const bool is_sys_menu = true;
