@@ -27,17 +27,6 @@
 
 namespace Slic3r {
 
-double Polygon::length() const
-{
-    double l = 0;
-    if (this->points.size() > 1) {
-        l = (this->points.back() - this->points.front()).cast<double>().norm();
-        for (size_t i = 1; i < this->points.size(); ++ i)
-            l += (this->points[i] - this->points[i - 1]).cast<double>().norm();
-    }
-    return l;
-}
-
 Lines Polygon::lines() const
 {
     return to_lines(*this);
@@ -63,25 +52,6 @@ Polyline Polygon::split_at_index(int index) const
     for (Points::const_iterator it = this->points.begin(); it != this->points.begin() + index + 1; ++it)
         polyline.points.push_back(*it);
     return polyline;
-}
-
-double Polygon::area(const Points &points)
-{
-    double a = 0.;
-    if (points.size() >= 3) {
-        Vec2d p1 = points.back().cast<double>();
-        for (const Point &p : points) {
-            Vec2d p2 = p.cast<double>();
-            a += cross2(p1, p2);
-            p1 = p2;
-        }
-    }
-    return 0.5 * a;
-}
-
-double Polygon::area() const
-{
-    return Polygon::area(points);
 }
 
 bool Polygon::is_counter_clockwise() const
@@ -724,6 +694,11 @@ Polygon make_circle_num_segments(double radius, size_t num_segments)
         out.points.emplace_back(coord_t(cos(angle) * radius), coord_t(sin(angle) * radius));
     }
     return out;
+}
+
+BoundingBox Polygon::bounding_box() const
+{
+    return BoundingBox(this->points);
 }
 
 }

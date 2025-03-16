@@ -24,6 +24,9 @@
 #include <cassert>
 #include <cmath>
 
+#include "Slic3r/Domain/MultiPoint.hpp"
+#include "Slic3r/Domain/Point.hpp"
+#include "Slic3r/Domain/Polygon.hpp"
 #include "libslic3r.h"
 #include "Line.hpp"
 #include "Point.hpp"
@@ -36,41 +39,41 @@ class Polygon;
 class BoundingBox;
 class ColorPolygon;
 
-using Polygons          = std::vector<Polygon, Domain::PointsAllocator<Polygon>>;
-using PolygonPtrs       = std::vector<Polygon*, Domain::PointsAllocator<Polygon*>>;
-using ConstPolygonPtrs  = std::vector<const Polygon*, Domain::PointsAllocator<const Polygon*>>;
-
-using ColorPolygons     = std::vector<ColorPolygon>;
+using Polygons      = std::vector<Polygon, Domain::PointsAllocator<Polygon>>;
+using ColorPolygons = std::vector<ColorPolygon>;
 
 // Returns true if inside. Returns border_result if on boundary.
 bool contains(const Polygon& polygon, const Point& p, bool border_result = true);
 bool contains(const Polygons& polygons, const Point& p, bool border_result = true);
 
-class Polygon : public MultiPoint
+// Temporary proxy class over Domain::Polygon.
+class Polygon : public Domain::Polygon
 {
 public:
     Polygon() = default;
-    explicit Polygon(const Points &points) : MultiPoint(points) {}
-	Polygon(std::initializer_list<Point> points) : MultiPoint(points) {}
-    Polygon(const Polygon &other) : MultiPoint(other.points) {}
-    Polygon(Polygon &&other) : MultiPoint(std::move(other.points)) {}
-	static Polygon new_scale(const std::vector<Vec2d> &points) { 
+    explicit Polygon(const Points& points) : Domain::Polygon(points) {}
+    Polygon(std::initializer_list<Point> points) : Domain::Polygon(points) {}
+
+    ~Polygon() override = default;
+
+    virtual void reverse() { Slic3r::Biz::Algorithms::MultiPoint::reverse(*this); }
+
+    BoundingBox bounding_box() const;
+
+    bool remove_duplicate_points() { return Slic3r::Biz::Algorithms::MultiPoint::remove_duplicate_points(*this); }
+
+    int closest_point_index(const Point &point) const { return Slic3r::Biz::Algorithms::MultiPoint::closest_point_index(*this, point); }
+
+    bool has_duplicate_points() const { return Slic3r::Biz::Algorithms::MultiPoint::has_duplicate_points(*this); }
+
+    static Polygon new_scale(const std::vector<Vec2d> &points) {
         Polygon pgn;
         pgn.points.reserve(points.size());
         for (const Vec2d &pt : points)
             pgn.points.emplace_back(Point::new_scale(pt(0), pt(1)));
 		return pgn;
 	}
-    Polygon& operator=(const Polygon &other) { points = other.points; return *this; }
-    Polygon& operator=(Polygon &&other) { points = std::move(other.points); return *this; }
 
-    Point& operator[](Points::size_type idx) { return this->points[idx]; }
-    const Point& operator[](Points::size_type idx) const { return this->points[idx]; }
-
-    // last point == first point for polygons
-    const Point& last_point() const { return this->points.front(); }
-
-    double length() const;
     Lines lines() const;
     Polyline split_at_vertex(const Point &point) const;
     // Split a closed polygon into an open polyline, with the split point duplicated at both ends.
@@ -79,13 +82,11 @@ public:
     Polyline split_at_first_point() const { return this->split_at_index(0); }
     Points   equally_spaced_points(double distance) const { return this->split_at_first_point().equally_spaced_points(distance); }
     
-    static double area(const Points &pts);
-    double area() const;
     bool is_counter_clockwise() const;
     bool is_clockwise() const;
     bool make_counter_clockwise();
     bool make_clockwise();
-    bool is_valid() const { return this->points.size() >= 3; }
+
     void douglas_peucker(double tolerance);
 
     // Does an unoriented polygon contain a point?
@@ -112,13 +113,7 @@ public:
     // Projection of a point onto the polygon.
     Point point_projection(const Point &point) const;
     std::vector<float> parameter_by_length() const;
-
-    using iterator = Points::iterator;
-    using const_iterator = Points::const_iterator;
 };
-
-inline bool operator==(const Polygon &lhs, const Polygon &rhs) { return lhs.points == rhs.points; }
-inline bool operator!=(const Polygon &lhs, const Polygon &rhs) { return lhs.points != rhs.points; }
 
 BoundingBox get_extents(const Polygon &poly);
 BoundingBox get_extents(const Polygons &polygons);

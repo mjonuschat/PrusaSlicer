@@ -1,0 +1,40 @@
+#pragma once
+
+#include "Slic3r/Domain/MultiPoint.hpp"
+
+namespace Slic3r::Domain {
+
+class Polygon : public MultiPoint
+{
+public:
+    Polygon() = default;
+    Polygon(const Polygon& other) : MultiPoint(other.points) {}
+    Polygon(Polygon&& other) noexcept : MultiPoint(std::move(other)) {}
+    Polygon(std::initializer_list<Point> points) : MultiPoint(points) {}
+    explicit Polygon(const Points& points) : MultiPoint(points) {}
+
+    ~Polygon() override = default;
+
+    Polygon& operator=(const Polygon& other);
+    Polygon& operator=(Polygon&& other) noexcept;
+
+    bool operator==(const Polygon& rhs) const;
+    bool operator!=(const Polygon& rhs) const;
+
+    /**
+     * Returns the last point, which for polygons equals to the first point.
+     *
+     * @return Reference to the last point.
+     * @note Undefined behavior if empty.
+     */
+    const Point& last_point() const { return this->points.front(); }
+
+    bool is_valid() const override;
+
+    double length() const;
+    double area() const;
+};
+
+using Polygons = std::vector<Polygon, Domain::PointsAllocator<Polygon>>;
+
+} // namespace Slic3r::Domain

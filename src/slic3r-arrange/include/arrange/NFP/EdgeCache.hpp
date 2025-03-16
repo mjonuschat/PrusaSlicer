@@ -14,8 +14,8 @@
 #include <cassert>
 #include <cstddef>
 
-#include "libslic3r/Point.hpp"
-#include "libslic3r/Polygon.hpp"
+#include "Slic3r/Domain/Point.hpp"
+#include "Slic3r/Domain/Polygon.hpp"
 #include "libslic3r/libslic3r.h"
 
 namespace Slic3r { namespace arr2 {

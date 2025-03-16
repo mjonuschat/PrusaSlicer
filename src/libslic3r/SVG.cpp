@@ -279,7 +279,7 @@ void SVG::path(const std::string &d, bool fill, double stroke_width, const float
     );
 }
 
-std::string SVG::get_path_d(const MultiPoint &mp, bool closed) const
+std::string SVG::get_path_d(const Domain::MultiPoint &mp, bool closed) const
 {
     std::ostringstream d;
     d << "M ";

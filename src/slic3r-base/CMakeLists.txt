@@ -8,6 +8,7 @@ set(SLIC3R_BASE_FILES
 		src/Slic3r/TypeInfo.cpp
 		include/Slic3r/IdGenerator.hpp
         include/Slic3r/Exception.hpp
+        include/Slic3r/Math.hpp
         include/Slic3r/Semver.hpp
         src/Slic3r/Semver.cpp
         include/Slic3r/Platform.hpp

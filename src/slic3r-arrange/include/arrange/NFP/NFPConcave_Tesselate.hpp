@@ -7,7 +7,7 @@
 
 #include <libslic3r/ExPolygon.hpp>
 
-#include "libslic3r/Polygon.hpp"
+#include "Slic3r/Domain/Polygon.hpp"
 
 namespace Slic3r {
 

@@ -16,7 +16,7 @@
 #include <limits>
 #include <type_traits>
 
-#include "libslic3r/Polygon.hpp"
+#include "Slic3r/Domain/Polygon.hpp"
 #include "libslic3r/libslic3r.h"
 
 namespace Slic3r { namespace arr2 {

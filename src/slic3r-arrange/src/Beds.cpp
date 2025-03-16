@@ -75,7 +75,8 @@ inline coord_t height(const BoundingBox &box)
 }
 inline double poly_area(const Points &pts)
 {
-    return std::abs(Polygon::area(pts));
+    Polygon poly(pts);
+    return std::abs(poly.area());
 }
 inline double distance_to(const Point &p1, const Point &p2)
 {

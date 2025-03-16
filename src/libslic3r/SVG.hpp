@@ -106,7 +106,7 @@ public:
     FILE* f;
     
     void path(const std::string &d, bool fill, double stroke_width, const float fill_opacity);
-    std::string get_path_d(const MultiPoint &mp, bool closed = false) const;
+    std::string get_path_d(const Domain::MultiPoint &mp, bool closed = false) const;
     std::string get_path_d(const ClipperLib::Path &mp, double scale, bool closed = false) const;
 
 public:
