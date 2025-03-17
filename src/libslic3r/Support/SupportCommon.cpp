@@ -13,6 +13,7 @@
 #include <unordered_map>
 #include <cstdlib>
 
+#include "Slic3r/Biz/Algorithms/Polyline.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/ClipperZUtils.hpp" // IWYU pragma: keep
 #include "libslic3r/ExtrusionEntityCollection.hpp"
@@ -51,6 +52,8 @@
 #endif
 
 #include <cassert>
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r::FFFSupport {
 
@@ -103,9 +106,9 @@ void remove_bridges_from_contacts(
         const float w = float(0.5 * std::max(perimeter_bridge_flow.scaled_width(), perimeter_bridge_flow.scaled_spacing())) + scaled<float>(0.001);
         for (Polyline &polyline : overhang_perimeters)
             if (polyline.is_straight()) {
-                // This is a bridge 
-                polyline.extend_start(fw);
-                polyline.extend_end(fw);
+                // This is a bridge
+                Algorithms::Polyline::extend_start(polyline, fw);
+                Algorithms::Polyline::extend_end(polyline, fw);
                 // Is the straight perimeter segment supported at both sides?
                 Point pts[2]       = { polyline.first_point(), polyline.last_point() };
                 bool  supported[2] = { false, false };
@@ -550,7 +553,7 @@ static Polylines draw_perimeters(const ExPolygon &expoly, double clip_length, co
         if (const bool loop_reverse = prefer_clockwise_movements ? i == 0 : i > 0; loop_reverse)
             pl.reverse();
 
-        pl.clip_end(clip_length);
+        Algorithms::Polyline::clip_end(pl, clip_length);
         polylines.emplace_back(std::move(pl));
     }
     return polylines;
@@ -701,7 +704,7 @@ static inline void tree_supports_generate_paths(
                 pl.reverse();
 
             pl.points.emplace_back(pl.points.front());
-            pl.clip_end(clip_length);
+            Algorithms::Polyline::clip_end(pl, clip_length);
             if (pl.size() < 2)
                 continue;
             // Find the foot of the seam point on anchor_candidates. Only pick an anchor point that was created by offsetting the source contour.

@@ -12,6 +12,7 @@
 #include <cassert>
 #include <cstddef>
 
+#include "Slic3r/Biz/Algorithms/Polyline.hpp"
 #include "../ClipperUtils.hpp"
 #include "../ExPolygon.hpp"
 #include "libslic3r/Arachne/WallToolPaths.hpp"
@@ -23,6 +24,8 @@
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/libslic3r.h"
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r {
 
@@ -67,7 +70,7 @@ void FillConcentric::_fill_surface_single(
     // Keep valid paths only.
     size_t j = iPathFirst;
     for (size_t i = iPathFirst; i < polylines_out.size(); ++i) {
-        polylines_out[i].clip_end(this->loop_clipping);
+        Algorithms::Polyline::clip_end(polylines_out[i], this->loop_clipping);
         if (polylines_out[i].is_valid()) {
             if (params.prefer_clockwise_movements)
                 polylines_out[i].reverse();

@@ -16,6 +16,7 @@
 #include <cinttypes>
 #include <cstdlib>
 
+#include "Slic3r/Biz/Algorithms/Polyline.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/EdgeGrid.hpp"
 #include "libslic3r/Geometry.hpp"
@@ -40,6 +41,8 @@
 #include "libslic3r/ShortestPath.hpp"
 
 // #define INFILL_DEBUG_OUTPUT
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r {
 
@@ -2115,7 +2118,7 @@ void Fill::connect_base_support(Polylines &&infill_ordered, const std::vector<co
                 // Emit a perimeter.
                 Polyline pl(graph.boundary[i]);
                 pl.points.emplace_back(pl.points.front());
-                pl.clip_end(trim_length);
+                Algorithms::Polyline::clip_end(pl, trim_length);
                 if (pl.size() > 1)
                     polylines_out.emplace_back(std::move(pl));
             }
@@ -2497,7 +2500,7 @@ void Fill::connect_base_support(Polylines &&infill_ordered, const std::vector<co
             if (cp.contour_not_taken_length_prev > SCALED_EPSILON) {
                 take_cw_limited(pl, graph.boundary[cp.contour_idx], graph.boundary_params[cp.contour_idx], cp.point_idx, cp.prev_on_contour->point_idx, cp.contour_not_taken_length_prev);
                 cp.trim_prev(0);
-                pl.clip_start(line_half_width);
+                Algorithms::Polyline::clip_start(pl, line_half_width);
                 polylines_out.emplace_back(std::move(pl));
             }
         }
@@ -2514,7 +2517,7 @@ void Fill::connect_base_support(Polylines &&infill_ordered, const std::vector<co
             if (cp.contour_not_taken_length_next > SCALED_EPSILON) {
                 take_ccw_limited(pl, graph.boundary[cp.contour_idx], graph.boundary_params[cp.contour_idx], cp.point_idx, cp.next_on_contour->point_idx, cp.contour_not_taken_length_next); // line_half_width);
                 cp.trim_next(0);
-                pl.clip_start(line_half_width);
+                Algorithms::Polyline::clip_start(pl, line_half_width);
                 polylines_out.emplace_back(std::move(pl));
             }
         }

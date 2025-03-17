@@ -3,10 +3,12 @@
 */
 #include <catch2/catch_test_macros.hpp>
 
+#include "Slic3r/Biz/Algorithms/Polyline.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Polyline.hpp"
 
 using namespace Slic3r;
+using namespace Slic3r::Biz;
 
 struct PolylineTestCase {
     Polyline polyline{
@@ -26,7 +28,7 @@ TEST_CASE_METHOD(PolylineTestCase, "Lines can be retrieved", "[Polyline]") {
 
 TEST_CASE_METHOD(PolylineTestCase, "Clip", "[Polyline]") {
     const double len = polyline.length();
-    polyline.clip_end(len/3);
+    Algorithms::Polyline::clip_end(polyline, len / 3.);
     CHECK(std::abs(polyline.length() - 2.0/3.0*len) < 1);
 }
 
@@ -41,13 +43,13 @@ TEST_CASE_METHOD(PolylineTestCase, "Append", "[Polyline]") {
 
 TEST_CASE_METHOD(PolylineTestCase, "Extend end", "[Polyline]") {
     CHECK(polyline.length() == 100*2);
-    polyline.extend_end(50);
+    Algorithms::Polyline::extend_end(polyline, 50.);
     CHECK(polyline.length() == 100*2 + 50);
 }
 
 TEST_CASE_METHOD(PolylineTestCase, "Extend start", "[Polyline]") {
     CHECK(polyline.length() == 100*2);
-    polyline.extend_start(50);
+    Algorithms::Polyline::extend_start(polyline, 50.);
     CHECK(polyline.length() == 100*2 + 50);
 }
 

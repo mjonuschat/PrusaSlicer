@@ -7,6 +7,10 @@ add_library(slic3r-biz-algorithms
     src/Slic3r/Biz/Algorithms/MultiPoint.cpp
     include/Slic3r/Biz/Algorithms/Point.hpp
     src/Slic3r/Biz/Algorithms/Point.cpp
+    include/Slic3r/Biz/Algorithms/Polygon.hpp
+    src/Slic3r/Biz/Algorithms/Polygon.cpp
+    include/Slic3r/Biz/Algorithms/Polyline.hpp
+    src/Slic3r/Biz/Algorithms/Polyline.cpp
     include/Slic3r/Biz/Algorithms/Scaling.hpp
     src/Slic3r/Biz/Algorithms/Scaling.cpp
 )

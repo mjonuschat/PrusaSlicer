@@ -46,47 +46,6 @@ Lines Polyline::lines() const
     return lines;
 }
 
-// removes the given distance from the end of the polyline
-void Polyline::clip_end(double distance)
-{
-    while (distance > 0) {
-        Vec2d  last_point = this->last_point().cast<double>();
-        this->points.pop_back();
-        if (this->points.empty())
-            break;
-        Vec2d  v    = this->last_point().cast<double>() - last_point;
-        double lsqr = v.squaredNorm();
-        if (lsqr > distance * distance) {
-            this->points.emplace_back((last_point + v * (distance / sqrt(lsqr))).cast<coord_t>());
-            return;
-        }
-        distance -= sqrt(lsqr);
-    }
-}
-
-// removes the given distance from the start of the polyline
-void Polyline::clip_start(double distance)
-{
-    this->reverse();
-    this->clip_end(distance);
-    if (this->points.size() >= 2)
-        this->reverse();
-}
-
-void Polyline::extend_end(double distance)
-{
-    // relocate last point by extending the last segment by the specified length
-    Vec2d v = (this->points.back() - *(this->points.end() - 2)).cast<double>().normalized();
-    this->points.back() += (v * distance).cast<coord_t>();
-}
-
-void Polyline::extend_start(double distance)
-{
-    // relocate first point by extending the first segment by the specified length
-    Vec2d v = (this->points.front() - this->points[1]).cast<double>().normalized();
-    this->points.front() += (v * distance).cast<coord_t>();
-}
-
 /* this method returns a collection of points picked on the polygon contour
    so that they are evenly spaced according to the input distance */
 Points Polyline::equally_spaced_points(double distance) const

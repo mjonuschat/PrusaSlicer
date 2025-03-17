@@ -22,6 +22,8 @@
 #include <vector>
 #include <cstdlib>
 
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
+#include "Slic3r/Biz/Algorithms/Polyline.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/Geometry.hpp"
@@ -441,9 +443,10 @@ public:
         n_contours = n_contours_outer + n_contours_inner;
         polygons_ccw.assign(n_contours, false);
         for (size_t i = 0; i < n_contours; ++ i) {
-            contour(i).remove_duplicate_points();
-            assert(! contour(i).has_duplicate_points());
-            polygons_ccw[i] = Slic3r::Geometry::is_ccw(contour(i));
+            Polygon& curr_contour = contour(i);
+            Slic3r::Biz::Algorithms::Polygon::remove_duplicate_points(curr_contour);
+            assert(!Slic3r::Biz::Algorithms::Polygon::has_duplicate_points(curr_contour));
+            polygons_ccw[i] = Slic3r::Geometry::is_ccw(curr_contour);
         }
     }
 
@@ -1585,8 +1588,8 @@ static void traverse_graph_generate_polylines(const ExPolygonWithOffset         
         pointLast = Point(vline.pos, it->pos());
         polyline_current->points.emplace_back(pointLast);
         // Handle duplicate points and zero length segments.
-        polyline_current->remove_duplicate_points();
-        assert(! polyline_current->has_duplicate_points());
+        Slic3r::Biz::Algorithms::Polyline::remove_duplicate_points(*polyline_current);
+        assert(!Slic3r::Biz::Algorithms::Polyline::has_duplicate_points(*polyline_current));
         // Handle nearly zero length edges.
         if (polyline_current->points.size() <= 1 ||
             (polyline_current->points.size() == 2 &&
@@ -2598,9 +2601,9 @@ static void polylines_from_paths(const std::vector<MonotonicRegionLink> &path, c
 {
 	Polyline *polyline = nullptr;
 	auto finish_polyline = [&polyline, &polylines_out]() {
-        polyline->remove_duplicate_points();
+        Slic3r::Biz::Algorithms::Polyline::remove_duplicate_points(*polyline);
         // Handle duplicate points and zero length segments.
-        assert(!polyline->has_duplicate_points());
+        assert(!Slic3r::Biz::Algorithms::Polyline::has_duplicate_points(*polyline));
         // Handle nearly zero length edges.
         if (polyline->points.size() <= 1 ||
             (polyline->points.size() == 2 &&
@@ -2898,11 +2901,11 @@ bool FillRectilinear::fill_surface_by_lines(const Surface *surface, const FillPa
     for (Polylines::iterator it = polylines_out.begin() + n_polylines_out_initial; it != polylines_out.end(); ++ it) {
         // No need to translate, the absolute position is irrelevant.
         // it->translate(- rotate_vector.second(0), - rotate_vector.second(1));
-        assert(! it->has_duplicate_points());
+        assert(!Slic3r::Biz::Algorithms::Polyline::has_duplicate_points(*it));
         it->rotate(rotate_vector.first);
         //FIXME rather simplify the paths to avoid very short edges?
         //assert(! it->has_duplicate_points());
-        it->remove_duplicate_points();
+        Slic3r::Biz::Algorithms::Polyline::remove_duplicate_points(*it);
     }
 
 #ifdef SLIC3R_DEBUG

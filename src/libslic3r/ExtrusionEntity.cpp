@@ -10,6 +10,7 @@
 #include <limits>
 #include <iterator>
 
+#include "Slic3r/Biz/Algorithms/Polyline.hpp"
 #include "ExtrusionEntityCollection.hpp"
 #include "ClipperUtils.hpp"
 #include "Slic3r/Exception.hpp"
@@ -17,6 +18,8 @@
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/Polyline.hpp"
 #include "libslic3r/libslic3r.h"
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r {
 
@@ -32,7 +35,7 @@ void ExtrusionPath::subtract_expolygons(const ExPolygons &collection, ExtrusionE
 
 void ExtrusionPath::clip_end(double distance)
 {
-    this->polyline.clip_end(distance);
+    Algorithms::Polyline::clip_end(this->polyline, distance);
 }
 
 void ExtrusionPath::simplify(double tolerance)
@@ -304,7 +307,7 @@ void ExtrusionLoop::clip_end(double distance, ExtrusionPaths* paths) const
             paths->pop_back();
             distance -= len;
         } else {
-            last.polyline.clip_end(distance);
+            Algorithms::Polyline::clip_end(last.polyline, distance);
             break;
         }
     }

@@ -32,6 +32,7 @@
 #include <unordered_set>
 #include <cstdlib>
 
+#include "Slic3r/Biz/Algorithms/Polyline.hpp"
 #include "TreeSupportCommon.hpp"
 #include "SupportCommon.hpp"
 #include "OrganicSupport.hpp"
@@ -63,6 +64,7 @@
 // #define TREESUPPORT_DEBUG_SVG
 
 using namespace Slic3r::FFFSupport;
+using namespace Slic3r::Biz;
 
 namespace Slic3r
 {
@@ -563,7 +565,7 @@ static std::optional<std::pair<Point, size_t>> polyline_sample_next_point_at_dis
             // Insert the opposite point of the first one.
             //FIXME pretty expensive
             Polyline pl(part);
-            pl.clip_end(len / 2);
+            Algorithms::Polyline::clip_end(pl, len / 2);
             line.points.emplace_back(pl.points.back());
         }
         else
