@@ -44,15 +44,7 @@ concept BoundingBoxConcept = requires(T box) {
     { box.defined } -> std::convertible_to<bool&>;
 };
 
-namespace Impl {
-template <typename T>
-constexpr bool is_crd = std::is_same_v<typename T::Scalar, Domain::coord_t>;
-}
-
-template<Domain::BoundingBoxConcept BoxType>
-[[nodiscard]] std::enable_if_t<Impl::is_crd<BoxType>, bool> operator==(const BoxType& a, const BoxType& b) {
-    ASSERT(a.defined && b.defined);
-    return a.min == b.min && a.max == b.max;
-}
+[[nodiscard]] bool operator==(const BoundingBox2crd& a, const BoundingBox2crd& b);
+[[nodiscard]] bool operator==(const BoundingBox3crd& a, const BoundingBox3crd& b);
 
 } // namespace Slic3r::Domain
