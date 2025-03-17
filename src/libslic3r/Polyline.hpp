@@ -20,6 +20,9 @@
 #include <utility>
 #include <cstddef>
 
+#include "Slic3r/Domain/MultiPoint.hpp"
+#include "Slic3r/Domain/Polyline.hpp"
+#include "Slic3r/Domain/Point.hpp"
 #include "libslic3r.h"
 #include "Line.hpp"
 #include "MultiPoint.hpp"
@@ -34,17 +37,18 @@ class BoundingBox;
 typedef std::vector<Polyline> Polylines;
 typedef std::vector<ThickPolyline> ThickPolylines;
 
-class Polyline : public MultiPoint {
+// Temporary proxy class over Domain::Polyline.
+class Polyline : public Domain::Polyline
+{
 public:
+    using Domain::Polyline::find_point;
+
     Polyline() = default;
-    Polyline(const Polyline &other) : MultiPoint(other.points) {}
-    Polyline(Polyline &&other) : MultiPoint(std::move(other.points)) {}
-    Polyline(std::initializer_list<Point> list) : MultiPoint(list) {}
+    Polyline(std::initializer_list<Point> list) : Domain::Polyline(list) {}
     explicit Polyline(const Point &p1, const Point &p2) { points.reserve(2); points.emplace_back(p1); points.emplace_back(p2); }
-    explicit Polyline(const Points &points) : MultiPoint(points) {}
-    explicit Polyline(Points &&points) : MultiPoint(std::move(points)) {}
-    Polyline& operator=(const Polyline &other) { points = other.points; return *this; }
-    Polyline& operator=(Polyline &&other) { points = std::move(other.points); return *this; }
+    explicit Polyline(const Points &points) : Domain::Polyline(points) {}
+    explicit Polyline(Points &&points) : Domain::Polyline(std::move(points)) {}
+
 	static Polyline new_scale(const std::vector<Vec2d> &points) {
 		Polyline pl;
 		pl.points.reserve(points.size());
@@ -53,38 +57,14 @@ public:
 		return pl;
     }
     
-    void append(const Point &point) { this->points.push_back(point); }
-    void append(const Points &src) { this->append(src.begin(), src.end()); }
-    void append(const Points::const_iterator &begin, const Points::const_iterator &end) { this->points.insert(this->points.end(), begin, end); }
-    void append(Points &&src)
-    {
-        if (this->points.empty()) {
-            this->points = std::move(src);
-        } else {
-            this->points.insert(this->points.end(), src.begin(), src.end());
-            src.clear();
-        }
-    }
-    void append(const Polyline &src) 
-    { 
-        points.insert(points.end(), src.points.begin(), src.points.end());
-    }
+    virtual void reverse() { Slic3r::Biz::Algorithms::MultiPoint::reverse(*this); }
 
-    void append(Polyline &&src) 
-    {
-        if (this->points.empty()) {
-            this->points = std::move(src.points);
-        } else {
-            this->points.insert(this->points.end(), src.points.begin(), src.points.end());
-            src.points.clear();
-        }
-    }
-  
-    Point& operator[](Points::size_type idx) { return this->points[idx]; }
-    const Point& operator[](Points::size_type idx) const { return this->points[idx]; }
+    BoundingBox bounding_box() const;
 
-    double length() const;
-    const Point& last_point() const { return this->points.back(); }
+    int find_point(const Point& point, const double scaled_epsilon) const { return Slic3r::Biz::Algorithms::MultiPoint::find_point(*this, point, scaled_epsilon); }
+
+    bool remove_duplicate_points() { return Slic3r::Biz::Algorithms::MultiPoint::remove_duplicate_points(*this); }
+
     const Point& leftmost_point() const;
     Lines lines() const;
 
@@ -94,17 +74,10 @@ public:
     void extend_start(double distance);
     Points equally_spaced_points(double distance) const;
     void simplify(double tolerance);
-//    template <class T> void simplify_by_visibility(const T &area);
+
     void split_at(const Point &point, Polyline* p1, Polyline* p2) const;
     bool is_straight() const;
-    bool is_closed() const { return this->points.front() == this->points.back(); }
-
-    using iterator = Points::iterator;
-    using const_iterator = Points::const_iterator;
 };
-
-inline bool operator==(const Polyline &lhs, const Polyline &rhs) { return lhs.points == rhs.points; }
-inline bool operator!=(const Polyline &lhs, const Polyline &rhs) { return lhs.points != rhs.points; }
 
 extern BoundingBox get_extents(const Polyline &polyline);
 extern BoundingBox get_extents(const Polylines &polylines);

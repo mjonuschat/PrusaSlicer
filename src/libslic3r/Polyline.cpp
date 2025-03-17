@@ -34,14 +34,6 @@ const Point& Polyline::leftmost_point() const
     return *p;
 }
 
-double Polyline::length() const
-{
-    double l = 0;
-    for (size_t i = 1; i < this->points.size(); ++ i)
-        l += (this->points[i] - this->points[i - 1]).cast<double>().norm();
-    return l;
-}
-
 Lines Polyline::lines() const
 {
     Lines lines;
@@ -199,6 +191,11 @@ bool Polyline::is_straight() const
         if (! line.parallel_to(dir))
             return false;
     return true;
+}
+
+BoundingBox Polyline::bounding_box() const
+{
+    return BoundingBox(this->points);
 }
 
 BoundingBox ThickPolyline::bounding_box() const {
