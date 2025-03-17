@@ -192,23 +192,6 @@ public:
     bool remove_duplicate_points() { return Slic3r::Biz::Algorithms::MultiPoint::remove_duplicate_points(*this); }
 };
 
-class MultiPoint3
-{
-public:
-    Points3 points;
-
-    void append(const Vec3crd& point) { this->points.push_back(point); }
-
-    void translate(double x, double y);
-    void translate(const Point& vector);
-    bool is_valid() const { return this->points.size() >= 2; }
-
-    BoundingBox3 bounding_box() const;
-
-    // Remove exact duplicates, return true if any duplicate has been removed.
-    bool remove_duplicate_points();
-};
-
 extern BoundingBox get_extents(const MultiPoint &mp);
 extern BoundingBox get_extents_rotated(const Points &points, double angle);
 extern BoundingBox get_extents_rotated(const MultiPoint &mp, double angle);

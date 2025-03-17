@@ -245,15 +245,6 @@ Lines to_lines(const ThickPolylines &thick_polylines);
 BoundingBox get_extents(const ThickPolyline &thick_polyline);
 BoundingBox get_extents(const ThickPolylines &thick_polylines);
 
-class Polyline3 : public MultiPoint3
-{
-public:
-    double length() const;
-    Lines3 lines() const;
-};
-
-typedef std::vector<Polyline3> Polylines3;
-
 }
 
 #endif

@@ -21,46 +21,6 @@ BoundingBox MultiPoint::bounding_box() const
     return BoundingBox(this->points);
 }
 
-void MultiPoint3::translate(double x, double y)
-{
-    for (Vec3crd &p : points) {
-        p(0) += coord_t(x);
-        p(1) += coord_t(y);
-    }
-}
-
-void MultiPoint3::translate(const Point& vector)
-{
-    this->translate(vector(0), vector(1));
-}
-
-BoundingBox3 MultiPoint3::bounding_box() const
-{
-    return BoundingBox3(points);
-}
-
-bool MultiPoint3::remove_duplicate_points()
-{
-    size_t j = 0;
-    for (size_t i = 1; i < points.size(); ++i) {
-        if (points[j] == points[i]) {
-            // Just increase index i.
-        } else {
-            ++ j;
-            if (j < i)
-                points[j] = points[i];
-        }
-    }
-
-    if (++j < points.size())
-    {
-        points.erase(points.begin() + j, points.end());
-        return true;
-    }
-
-    return false;
-}
-
 BoundingBox get_extents(const MultiPoint &mp)
 { 
     return BoundingBox(mp.points);

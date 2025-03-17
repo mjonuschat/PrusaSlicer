@@ -409,26 +409,4 @@ void ThickPolyline::start_at_index(int index)
     }
 }
 
-double Polyline3::length() const
-{
-    double l = 0;
-    for (size_t i = 1; i < this->points.size(); ++ i)
-        l += (this->points[i] - this->points[i - 1]).cast<double>().norm();
-    return l;
-}
-
-Lines3 Polyline3::lines() const
-{
-    Lines3 lines;
-    if (points.size() >= 2)
-    {
-        lines.reserve(points.size() - 1);
-        for (Points3::const_iterator it = points.begin(); it != points.end() - 1; ++it)
-        {
-            lines.emplace_back(*it, *(it + 1));
-        }
-    }
-    return lines;
-}
-
 }

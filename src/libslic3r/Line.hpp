@@ -269,22 +269,6 @@ public:
 
 using CurledLines = std::vector<CurledLine>;
 
-class Line3
-{
-public:
-    Line3() : a(Vec3crd::Zero()), b(Vec3crd::Zero()) {}
-    Line3(const Vec3crd& _a, const Vec3crd& _b) : a(_a), b(_b) {}
-
-    double  length() const { return (this->a - this->b).cast<double>().norm(); }
-    Vec3crd vector() const { return this->b - this->a; }
-
-    Vec3crd a;
-    Vec3crd b;
-
-    static const constexpr int Dim = 3;
-    using Scalar = Vec3crd::Scalar;
-};
-
 class Linef
 {
 public:
