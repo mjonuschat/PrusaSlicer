@@ -9,10 +9,11 @@ struct WrapperInputData
 {
     Biz::libpgcode::GCodeProducer producer{ Biz::libpgcode::GCodeProducer::Unknown };
     bool sequential_print{ false };
-    bool one_extruder_printed_model{ true };
     bool keep_layers_times{ false };
-    int8_t only_extruder{ -1 };
-    Slic3r::CustomGCode::Info custom_gcode_info;
+    std::string color_change_gcode;
+    std::string pause_print_gcode;
+    std::string template_custom_gcode;
+    CustomGCode::Info custom_gcode_info;
     Biz::libpgcode::PrintSettings print_settings;
 };
 

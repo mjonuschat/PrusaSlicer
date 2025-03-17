@@ -47,12 +47,6 @@ public:
      */
     void init(Render::Device& device, Scene::Scene& scene, Scene::GeometryDataFactory& data_factory);
     //
-    // Release the resources used by the viewer.
-    // This method must be called before releasing the OpenGL context if the viewer
-    // goes out of scope after releasing it.
-    //
-    void shutdown();
-    //
     // Reset the contents of the viewer.
     // Automatically called by load() method.
     //

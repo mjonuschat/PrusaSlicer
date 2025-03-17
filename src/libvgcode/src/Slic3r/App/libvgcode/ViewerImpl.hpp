@@ -33,7 +33,7 @@ class ViewerImpl
 {
 public:
     ViewerImpl();
-    ~ViewerImpl() { shutdown(); }
+    ~ViewerImpl() = default;
     ViewerImpl(const ViewerImpl&) = delete;
     ViewerImpl(ViewerImpl&&) = delete;
     ViewerImpl& operator = (const ViewerImpl&) = delete;
@@ -47,10 +47,6 @@ public:
      * @param data_factory The geometry factory.
      */
     void init(Render::Device& device, Scene::Scene& scene, Scene::GeometryDataFactory& data_factory);
-    //
-    // Release the resources used by the viewer.
-    //
-    void shutdown();
     //
     // Reset all caches and free gpu memory.
     //
@@ -361,11 +357,11 @@ private:
     Scene::Scene* m_scene{ nullptr };
  
 #if USE_TEXTURE_BUFFER
-    Render::TextureBuffer* m_positions_buffer;
-    Render::TextureBuffer* m_heights_widths_angles_buffer;
-    Render::TextureBuffer* m_colors_buffer;
-    Render::TextureBuffer* m_enabled_segments_buffer;
-    Render::TextureBuffer* m_enabled_options_buffer;
+    Render::TextureBuffer* m_positions_buffer{ nullptr };
+    Render::TextureBuffer* m_heights_widths_angles_buffer{ nullptr };
+    Render::TextureBuffer* m_colors_buffer{ nullptr };
+    Render::TextureBuffer* m_enabled_segments_buffer{ nullptr };
+    Render::TextureBuffer* m_enabled_options_buffer{ nullptr };
 #else
     class TextureData
     {

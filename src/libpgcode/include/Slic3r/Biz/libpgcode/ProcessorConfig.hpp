@@ -74,14 +74,10 @@ struct ExtrudersConfig
 };
 
 typedef std::function<void(const std::string&)> ProcessorLogCallback;
-typedef std::function<double(const std::string_view, size_t*)> StringToDoubleDecimalPointCallback;
-typedef std::function<std::string(double, int)> FloatToStringDecimalPointCallback;
 
 struct ProcessorCallbacksConfig
 {
     ProcessorLogCallback cb_log;
-    StringToDoubleDecimalPointCallback cb_string_to_double_decimal_point;
-    FloatToStringDecimalPointCallback cb_float_to_string_decimal_point;
 };
 
 struct ProcessorConfig
@@ -92,6 +88,7 @@ struct ProcessorConfig
     bool export_remaining_time_enabled{ false };
     bool stealth_time_estimator_enabled{ false };
     bool spiral_vase_enabled{ false };
+    bool sequential_print{ false };
     bool is_XL_printer{ false };
     bool single_extruder_multi_material{ false };
     float z_offset{ 0.0f };
@@ -100,6 +97,9 @@ struct ProcessorConfig
     float parking_pos_retraction{ 0.0f };
     float extra_loading_move{ 0.0f };
     float kisslicer_toolchange_time_correction{ 0.0f };
+    std::string color_change_gcode;
+    std::string pause_print_gcode;
+    std::string template_custom_gcode;
     std::vector<Domain::Vec2f> bed_shape;
     FilamentsConfig filaments;
     ExtrudersConfig extruders;
@@ -110,27 +110,27 @@ struct ProcessorConfig
     void reset();
 };
 
-ProcessorConfig extract_processor_config_from_prusaslicer_gcode(const std::string& gcode, StringToDoubleDecimalPointCallback cb);
+ProcessorConfig extract_processor_config_from_prusaslicer_gcode(const std::string& gcode);
 
 // updated to AnkerMake Studio 1.5.24
-ProcessorConfig extract_processor_config_from_ankermakestudio_gcode(const std::string& gcode, StringToDoubleDecimalPointCallback cb);
+ProcessorConfig extract_processor_config_from_ankermakestudio_gcode(const std::string& gcode);
 // updated to BambuStudio 1.9.7.52
-ProcessorConfig extract_processor_config_from_bambustudio_gcode(const std::string& gcode, StringToDoubleDecimalPointCallback cb);
+ProcessorConfig extract_processor_config_from_bambustudio_gcode(const std::string& gcode);
 // updated to CraftWare 1.2.1.707
-ProcessorConfig extract_processor_config_from_craftware_gcode(const std::string& gcode, StringToDoubleDecimalPointCallback cb);
+ProcessorConfig extract_processor_config_from_craftware_gcode(const std::string& gcode);
 // updated to Cura 5.8.1
-ProcessorConfig extract_processor_config_from_cura_gcode(const std::string& gcode, StringToDoubleDecimalPointCallback cb);
+ProcessorConfig extract_processor_config_from_cura_gcode(const std::string& gcode);
 // updated to KISSlicer 23.05
-ProcessorConfig extract_processor_config_from_kisslicer_gcode(const std::string& gcode, StringToDoubleDecimalPointCallback cb);
+ProcessorConfig extract_processor_config_from_kisslicer_gcode(const std::string& gcode);
 // updated to ideaMaker 5.1.2
-ProcessorConfig extract_processor_config_from_ideamaker_gcode(const std::string& gcode, StringToDoubleDecimalPointCallback cb);
+ProcessorConfig extract_processor_config_from_ideamaker_gcode(const std::string& gcode);
 // updated to Orcaslicer 2.1.1
-ProcessorConfig extract_processor_config_from_orcaslicer_gcode(const std::string& gcode, StringToDoubleDecimalPointCallback cb);
+ProcessorConfig extract_processor_config_from_orcaslicer_gcode(const std::string& gcode);
 // updated to Simplify3D 5.1.2
-ProcessorConfig extract_processor_config_from_simplify3d_gcode(const std::string& gcode, StringToDoubleDecimalPointCallback cb);
+ProcessorConfig extract_processor_config_from_simplify3d_gcode(const std::string& gcode);
 // updated to SuperSlicer 2.5.59.13
-ProcessorConfig extract_processor_config_from_superslicer_gcode(const std::string& gcode, StringToDoubleDecimalPointCallback cb);
+ProcessorConfig extract_processor_config_from_superslicer_gcode(const std::string& gcode);
 // updated to XDesktop 3.0.2
-ProcessorConfig extract_processor_config_from_xdesktop_gcode(const std::string& gcode, StringToDoubleDecimalPointCallback cb);
+ProcessorConfig extract_processor_config_from_xdesktop_gcode(const std::string& gcode);
 
 } // namespace Slic3r::Biz::libpgcode

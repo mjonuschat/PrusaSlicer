@@ -224,8 +224,9 @@ namespace ImGui
     const wchar_t LegendToolMarker = 0x2712;
     const wchar_t WarningMarkerSmall = 0x2713;
     const wchar_t ExpandBtn = 0x2714;
-    const wchar_t InfoMarkerSmall = 0x2716;
     const wchar_t CollapseBtn = 0x2715;
+    const wchar_t InfoMarkerSmall = 0x2716;
+    const wchar_t PrusaSlicerIcon = 0x2717;
 
     // icons for double slider (middle size icons)
     const wchar_t Lock = 0x2801;

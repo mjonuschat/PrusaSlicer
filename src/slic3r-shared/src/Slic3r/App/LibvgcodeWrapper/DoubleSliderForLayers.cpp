@@ -5,18 +5,22 @@
 
 #include <libslic3r/format.hpp>
 #include <libslic3r/Color.hpp>
+#include <libslic3r/GCode.hpp>
 
 #include <Slic3r/Biz/libpgcode/Utils.hpp>
+#include <Slic3r/App/libvgcode/Types.hpp>
 
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/replace.hpp>
 
+#include <imgui/imgui_stdlib.h>
+
 #include <algorithm>
 
-//using namespace Slic3r;
 using namespace Slic3r::Biz::libpgcode;
 using namespace Slic3r::Biz;
+using namespace Slic3r::App::libvgcode;
 
 namespace Slic3r::App::LibvgcodeWrapper {
 
@@ -26,11 +30,8 @@ void DoubleSliderForLayers::init(
     int lowerValue,
     int higherValue,
     int minValue,
-    int maxValue,
-    bool allow_editing)
+    int maxValue)
 {
-    m_allow_editing = allow_editing;
-
 #ifdef __WXOSX__ 
     m_is_osx = true;
 #endif //__WXOSX__
@@ -139,13 +140,13 @@ void DoubleSliderForLayers::set_mode_and_only_extruder(const bool is_one_extrude
     m_ticks.is_wipe_tower = m_mode != CustomGCode::Mode::SingleExtruder;
 
     if (m_mode != CustomGCode::Mode::SingleExtruder)
-        use_default_colors(false);
+        set_use_default_colors(false);
 }
 
 void DoubleSliderForLayers::jump_to_value()
 {
     //Init "jump to value";
-    m_show_get_jump_value = true;
+    m_show_get_jump_value_popup = true;
     m_jump_to_value = m_values[m_ctrl.active_pos()];
     // force dimmed background for jump to value modal popup dialog without animation
     Imgui::disable_background_fadeout_animation();
@@ -192,16 +193,36 @@ void DoubleSliderForLayers::delete_current_tick()
         return;
 
     m_ticks.ticks.erase(it);
+    update_draw_scroll_line_cb();
     process_ticks_changed();
 }
 
-// !ysFIXME draw with imgui
 void DoubleSliderForLayers::auto_color_change()
 {
-    if (m_cb_auto_color_change && m_cb_auto_color_change()) {
-        update_draw_scroll_line_cb();
-        process_ticks_changed();
+    if (!m_ticks.empty()) {
+        m_yes_no_cancel_popup.caller = "auto_color_change";
+        m_yes_no_cancel_popup.caption = _u8L("Warning");
+        m_yes_no_cancel_popup.txt = _u8L("This action will cause deletion of all ticks on vertical slider.") + "\n\n" +
+                                    _u8L("This action is not revertible.") + "\n" +
+                                    _u8L("Do you want to proceed?");
+        m_yes_no_cancel_popup.result = PopupResult::Undefined;
+        m_yes_no_cancel_popup.show = true;
+        // force dimmed background for yes no cancel modal popup dialog without animation
+        Imgui::disable_background_fadeout_animation();
     }
+    else
+        perform_auto_color_change();
+}
+
+void DoubleSliderForLayers::perform_auto_color_change()
+{
+    if (m_cb_auto_color_change != nullptr && m_cb_auto_color_change()) {
+        if (m_ticks.empty() && m_cb_notify_empty_auto_color_change != nullptr)
+            m_cb_notify_empty_auto_color_change();
+    }
+
+    update_draw_scroll_line_cb();
+    process_ticks_changed();
 }
 
 void DoubleSliderForLayers::render(float scale_factor/* = 0.1f*/, float offset /*= 0.f*/)
@@ -260,16 +281,25 @@ void DoubleSliderForLayers::render(float scale_factor/* = 0.1f*/, float offset /
     if (m_draw_mode == DrawMode::SequentialFffPrint && m_ctrl.is_rclick_on_thumb()) {
         std::string tip = _u8L("The sequential print is on.\n"
                                "It's impossible to apply any custom G-code for objects printing sequentually.");
-        App::Imgui::tooltip(tip);
+        Imgui::tooltip(tip);
     }
     else
         render_menu();
 
-    if (m_show_get_jump_value && render_jump_to_window(viewport.GetCenter(), m_jump_to_value))
+    if (m_show_get_jump_value_popup && render_get_jump_to_value_popup(viewport.GetCenter()))
         process_jump_to_value();
 
-    if (can_edit())
-        render_color_picker();
+    if (m_pause_print_popup.show && render_pause_print_popup(viewport.GetCenter()))
+        process_pause_print();
+
+    if (m_color_picker_popup.show && render_color_picker_popup(viewport.GetCenter()))
+        process_color_picker();
+
+    if (m_custom_gcode_popup.show && render_custom_gcode_popup(viewport.GetCenter()))
+        process_custom_gcode();
+
+    if (m_yes_no_cancel_popup.show && render_yes_no_cancel_popup(viewport.GetCenter()))
+        process_yes_no_cancel();
 
     m_size = viewport.Size - pos;
 }
@@ -518,7 +548,7 @@ void DoubleSliderForLayers::draw_colored_band(const ImRect& groove, const ImRect
     ColorRGBA rgba;
     bool res = decode_color(m_ticks.colors[default_color_idx], rgba);
     DEBUG_ASSERT(res);
-    ImU32 band_clr = App::Imgui::to_ImU32(rgba);
+    ImU32 band_clr = Imgui::to_ImU32(rgba);
     draw_main_band(band_clr);
 
     static float tick_pos;
@@ -544,7 +574,7 @@ void DoubleSliderForLayers::draw_colored_band(const ImRect& groove, const ImRect
                     ColorRGBA rgba;
                     bool res = decode_color(clr_str, rgba);
                     DEBUG_ASSERT(res);
-                    ImU32 band_clr = App::Imgui::to_ImU32(rgba);
+                    ImU32 band_clr = Imgui::to_ImU32(rgba);
                     if (tick_it->tick == 0)
                         draw_main_band(band_clr);
                     else {
@@ -565,7 +595,7 @@ void DoubleSliderForLayers::draw_colored_band(const ImRect& groove, const ImRect
         if (rclicked_tick > 0)
             edit_tick(rclicked_tick);
         else if (auto tip = tooltip(); !tip.empty())
-            App::Imgui::tooltip(tip, ImGui::GetFontSize() * 20.f);
+            Imgui::tooltip(tip, ImGui::GetFontSize() * 20.f);
     }
 }
 
@@ -607,7 +637,7 @@ void DoubleSliderForLayers::draw_ticks(const ImRect& slideable_region)
             ImGui::RenderFrame(tick_hover_box.Min, tick_hover_box.Max, tick_hovered_clr, false);
             if (tick_it->type == CustomGCode::Type::ColorChange || tick_it->type == CustomGCode::Type::ToolChange) {
                 m_focus = FocusedItem::Tick;
-                App::Imgui::tooltip(tooltip(tick_it->tick), ImGui::GetFontSize() * 20.f);
+                Imgui::tooltip(tooltip(tick_it->tick), ImGui::GetFontSize() * 20.f);
             }
             is_hovered_tick = true;
             m_ctrl.set_hovered_region(tick_hover_box);
@@ -951,8 +981,8 @@ void DoubleSliderForLayers::render_cog_menu()
             ImGui::EndMenu();
         }
         if (can_edit()) {
-            if (ImGui::MenuItem(_u8L("Use default colors").c_str(), nullptr, m_ticks.used_default_colors()))
-                use_default_colors(!m_ticks.used_default_colors());
+            if (ImGui::MenuItem(_u8L("Use default colors").c_str(), nullptr, m_ticks.use_default_colors()))
+                set_use_default_colors(!m_ticks.use_default_colors());
 
             if (m_mode != CustomGCode::Mode::MultiExtruder && m_draw_mode == DrawMode::Regular &&
                 ImGui::MenuItem(_u8L("Set auto color changes").c_str())) {
@@ -982,7 +1012,7 @@ void DoubleSliderForLayers::render_edit_menu()
             std::string edit_item_name = it->type == CustomGCode::Type::ColorChange ? _u8L("Edit color") :
                                          it->type == CustomGCode::Type::PausePrint  ? _u8L("Edit pause print message") :
                                                                                       _u8L("Edit custom G-code");
-            if (App::Imgui::menu_item_with_icon(edit_item_name.c_str(), "")) {
+            if (Imgui::menu_item_with_icon(edit_item_name.c_str(), "")) {
                 edit_tick();
                 ImGui::EndPopup();
                 return;
@@ -1000,7 +1030,7 @@ void DoubleSliderForLayers::render_edit_menu()
                                        it->type == CustomGCode::Type::ToolChange  ? _u8L("Delete tool change") :
                                        it->type == CustomGCode::Type::PausePrint  ? _u8L("Delete pause print") :
                                                                                     _u8L("Delete custom G-code");
-        if (App::Imgui::menu_item_with_icon(delete_item_name.c_str(), ""))
+        if (Imgui::menu_item_with_icon(delete_item_name.c_str(), ""))
             delete_current_tick();
 
         ImGui::EndPopup();
@@ -1038,14 +1068,14 @@ bool DoubleSliderForLayers::render_button(wchar_t icon, wchar_t icon_hovered, co
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, { 0.0f, 0.0f, 0.0f, 0.0f });
     ImGui::PushStyleColor(ImGuiCol_ButtonActive, { 0.0f, 0.0f, 0.0f, 0.0f });
     ImVec2 size(m_icon_screen_size, m_icon_screen_size);
-    ret = App::Imgui::icon_button(icon_id, size);
+    ret = Imgui::icon_button(icon_id, size);
     ImGui::PopStyleColor(3);
     if (tick > 0 && tick == m_ctrl.active_pos() && ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
         m_show_edit_menu = true;
 
     std::string tip = m_allow_editing ? tooltip(tick) : "";
     if (!tip.empty() && ImGui::IsItemHovered())
-        App::Imgui::tooltip(tip);
+        Imgui::tooltip(tip);
 
     ImGui::End();
     ImGui::PopStyleVar(5);
@@ -1092,7 +1122,7 @@ bool DoubleSliderForLayers::render_multi_extruders_menu(bool switch_current_code
 {
     bool ret = false;
 
-    std::vector<std::string> colors;
+    Palette colors;
     if (m_cb_get_extruder_colors)
         colors = m_cb_get_extruder_colors();
 
@@ -1111,11 +1141,8 @@ bool DoubleSliderForLayers::render_multi_extruders_menu(bool switch_current_code
                     if (is_active_extruder)
                         item_name += " (" + _u8L("active") + ")";
 
-                    ColorRGBA rgba;
-                    bool res = decode_color(colors[i - 1], rgba);
-                    DEBUG_ASSERT(res);
-                    ImU32 icon_clr = App::Imgui::to_ImU32(rgba);
-                    if (App::Imgui::menu_item_with_icon(item_name.c_str(), nullptr, icon_clr, false, !is_active_extruder)) {
+                    ImU32 icon_clr = Imgui::to_ImU32(colors[i - 1]);
+                    if (Imgui::menu_item_with_icon(item_name.c_str(), nullptr, icon_clr, false, !is_active_extruder)) {
                         add_code_as_tick(CustomGCode::Type::ToolChange, i);
                         ret = true;
                     }
@@ -1148,7 +1175,7 @@ bool DoubleSliderForLayers::render_multi_extruders_menu(bool switch_current_code
     return ret;
 }
 
-bool DoubleSliderForLayers::render_jump_to_window(const ImVec2& pos, float& active_value)
+bool DoubleSliderForLayers::render_get_jump_to_value_popup(const ImVec2& pos)
 {
     if (m_values.empty())
         return false;
@@ -1159,14 +1186,13 @@ bool DoubleSliderForLayers::render_jump_to_window(const ImVec2& pos, float& acti
     std::string win_name = _u8L("Jump to height") + "##btn_win";
     float ctrl_width = 50.0f;
 
-    App::Imgui::UnifiedWindowStyle unified_window_style;
+    Imgui::UnifiedWindowStyle unified_window_style;
     unified_window_style.push();
 
-    ImGui::SetNextWindowPos(pos, ImGuiCond_Always, { 0.5f, 0.5f });
+    ImGui::SetNextWindowPos(pos, ImGuiCond_Once, { 0.5f, 0.5f });
 
     ImGuiWindowFlags windows_flag =   ImGuiWindowFlags_AlwaysAutoResize
                                     | ImGuiWindowFlags_NoCollapse
-                                    | ImGuiWindowFlags_NoMove
                                     | ImGuiWindowFlags_NoResize
                                     | ImGuiWindowFlags_NoScrollbar
                                     | ImGuiWindowFlags_NoScrollWithMouse;
@@ -1175,24 +1201,27 @@ bool DoubleSliderForLayers::render_jump_to_window(const ImVec2& pos, float& acti
     bool ok_pressed    = false;
 
     // convert to inches if needed
-    float value = convert(active_value, UnitsType::Millimeters,
+    float value = convert(m_jump_to_value, UnitsType::Millimeters,
         (m_units == UnitsSystem::SI) ?
             UnitsType::Millimeters : UnitsType::Inches);
 
     if (!ImGui::IsPopupOpen(win_name.c_str()))
         ImGui::OpenPopup(win_name.c_str());
 
-    if (ImGui::BeginPopupModal(win_name.c_str(), &m_show_get_jump_value, windows_flag)) {
+    if (ImGui::BeginPopupModal(win_name.c_str(), &m_show_get_jump_value_popup, windows_flag)) {
         ImGui::AlignTextToFramePadding();
         ImGui::Text("%s", msg_text.c_str());
         ImGui::SameLine();
         ImGui::PushItemWidth(ctrl_width);
         std::string mask = (m_units == UnitsSystem::Imperial) ? "%.4f" : "%.2f";
         ImGui::InputFloat("##jump_to", &value, 0.0f, 0.0f, mask.c_str(),
-            ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_AutoSelectAll);
+            ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_AutoSelectAll |
+            ImGuiInputTextFlags_ParseEmptyRefVal);
 
-        //check if Enter was pressed
-        enter_pressed = ImGui::IsItemDeactivatedAfterEdit();
+        // convert back to millimeters if needed
+        m_jump_to_value = convert(value,
+            (m_units == UnitsSystem::SI) ?
+            UnitsType::Millimeters : UnitsType::Inches, UnitsType::Millimeters);
 
         // convert to inches if needed
         float min_pos = convert(m_values[m_ctrl.min_pos()], UnitsType::Millimeters,
@@ -1210,43 +1239,314 @@ bool DoubleSliderForLayers::render_jump_to_window(const ImVec2& pos, float& acti
         ok_pressed = ImGui::Button("OK##jump_to", { ctrl_width, 0.0f });
         if (disable_ok) ImGui::EndDisabled();
 
+        if (ImGui::IsKeyPressed(ImGuiKey_Escape)) {
+            m_show_get_jump_value_popup = false;
+            ImGui::CloseCurrentPopup();
+        }
+
         ImGui::EndPopup();
     }
 
     unified_window_style.pop();
 
-    // convert back to millimeters if needed
-    active_value = convert(value, 
-        (m_units == UnitsSystem::SI) ?
-            UnitsType::Millimeters : UnitsType::Inches, UnitsType::Millimeters);
-
     return enter_pressed || ok_pressed;
 }
 
-void DoubleSliderForLayers::render_color_picker()
+bool DoubleSliderForLayers::render_pause_print_popup(const ImVec2& pos)
 {
-    ImGuiContext& context = *ImGui::GetCurrentContext();
-    std::string title = "Select color for Color Change";
-    if (m_show_color_picker) {
+    if (m_values.empty())
+        return false;
 
-        ImGui::SetNextWindowPos({ 1200.0f, 200.0f }, ImGuiCond_Always, { 0.5f, 0.0f });
-        ImGui::Begin(title.c_str(), nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize |
-            ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+    std::string msg_text = _u8L("Enter short message shown on Printer display when a print is paused") + ":";
+    std::string win_name = _u8L("Message for pause print on current layer") + " (" + 
+        convert_and_format_units(m_pause_print_popup.z, UnitsType::Millimeters,
+            (m_units == UnitsSystem::SI) ? UnitsType::Millimeters : UnitsType::Inches, 2) + ")";
 
-        ImGuiColorEditFlags misc_flags = ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_NoDragDrop;
+    Imgui::UnifiedWindowStyle unified_window_style;
+    unified_window_style.push();
 
-        ColorRGBA col;
-        bool res = decode_color(m_selectable_color, col);
-        DEBUG_ASSERT(res);
-        if (ImGui::ColorPicker4("color_picker", (float*)&col, misc_flags)) {
-            m_selectable_color = encode_color(col);
-            m_show_color_picker = false;
+    const ImGuiStyle& style = ImGui::GetStyle();
+    // ensure the full caption is visible
+    float min_width = ImGui::CalcTextSize(win_name.c_str()).x +
+        2.0f * (style.WindowPadding.x + style.FramePadding.x + style.ItemSpacing.x);
+    ImGui::SetNextWindowPos(pos, ImGuiCond_Once, { 0.5f, 0.5f });
+    ImGui::SetNextWindowSizeConstraints({ min_width, 0.0f }, { FLT_MAX, FLT_MAX });
+    ImGuiWindowFlags windows_flag =   ImGuiWindowFlags_AlwaysAutoResize
+                                    | ImGuiWindowFlags_NoCollapse
+                                    | ImGuiWindowFlags_NoResize
+                                    | ImGuiWindowFlags_NoScrollbar
+                                    | ImGuiWindowFlags_NoScrollWithMouse;
+
+    bool ok_pressed = false;
+
+    std::string str = m_pause_print_popup.data.empty() ? "Place bearings in slots and resume printing" : m_pause_print_popup.data;
+
+    if (!ImGui::IsPopupOpen(win_name.c_str()))
+        ImGui::OpenPopup(win_name.c_str());
+
+    if (ImGui::BeginPopupModal(win_name.c_str(), &m_pause_print_popup.show, windows_flag)) {
+
+        ImGui::Text(msg_text.c_str());
+        ImGui::SetNextItemWidth(-1.0f);
+        ImGui::InputText("##pause_print", &str, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_ElideLeft);
+        m_pause_print_popup.data = str;
+
+        std::string ok_btn = _u8L("OK");
+        std::string cancel_btn = _u8L("Cancel");
+        float max_len = std::max(ImGui::CalcTextSize(ok_btn.c_str()).x, ImGui::CalcTextSize(cancel_btn.c_str()).x);
+        float btn_width = max_len + 2.0f * style.FramePadding.x;
+
+        ImGui::Separator();
+        ImGui::NewLine();
+        ImGui::SameLine(ImGui::GetCurrentWindow()->Size.x - style.WindowPadding.x - style.ItemSpacing.x - 2.0f * btn_width);
+
+        bool disable_ok = str.empty();
+        if (disable_ok) ImGui::BeginDisabled();
+        ok_pressed = ImGui::Button(ok_btn.c_str(), { btn_width, 0.0f});
+        if (disable_ok) ImGui::EndDisabled();
+        ImGui::SameLine();
+        if (ImGui::Button(cancel_btn.c_str(), { btn_width, 0.0f }) ||
+            ImGui::IsKeyPressed(ImGuiKey_Escape)) {
+            m_pause_print_popup.show = false;
+            ImGui::CloseCurrentPopup();
         }
-        ImGui::End();
+
+        ImGui::EndPopup();
     }
 
-    if (auto clr_pcr_win = ImGui::FindWindowByName(title.c_str()); clr_pcr_win && context.CurrentWindow != clr_pcr_win)
-        m_show_color_picker = false;
+    unified_window_style.pop();
+
+    if (!m_pause_print_popup.show) {
+        m_pause_print_popup.data = m_pause_print_popup.cache;
+        m_pause_print_popup.editing = false;
+    }
+
+    return m_pause_print_popup.show && ok_pressed;
+}
+
+bool DoubleSliderForLayers::render_color_picker_popup(const ImVec2& pos)
+{
+    if (m_values.empty())
+        return false;
+
+    std::string win_name = _u8L("Select color for Color Change");
+
+    Imgui::UnifiedWindowStyle unified_window_style;
+    unified_window_style.push();
+
+    const ImGuiStyle& style = ImGui::GetStyle();
+    // ensure the full caption is visible
+    float min_width = ImGui::CalcTextSize(win_name.c_str()).x +
+        2.0f * (style.WindowPadding.x + style.FramePadding.x + style.ItemSpacing.x);
+    ImGui::SetNextWindowPos(pos, ImGuiCond_Once, { 0.5f, 0.5f });
+    ImGui::SetNextWindowSizeConstraints({ min_width, 0.0f }, { FLT_MAX, FLT_MAX });
+    ImGuiWindowFlags windows_flag =   ImGuiWindowFlags_AlwaysAutoResize
+                                    | ImGuiWindowFlags_NoCollapse
+                                    | ImGuiWindowFlags_NoResize
+                                    | ImGuiWindowFlags_NoScrollbar
+                                    | ImGuiWindowFlags_NoScrollWithMouse;
+
+    bool ok_pressed = false;
+
+    if (!ImGui::IsPopupOpen(win_name.c_str()))
+        ImGui::OpenPopup(win_name.c_str());
+
+    if (ImGui::BeginPopupModal(win_name.c_str(), &m_color_picker_popup.show, windows_flag)) {
+
+        ColorRGB color;
+        decode_color(m_color_picker_popup.data, color);
+        float col[4] = { color.r(), color.g(), color.b(), 1.0f };
+        ColorRGB ref_color;
+        decode_color(m_color_picker_popup.cache, ref_color);
+        float ref_col[4] = { ref_color.r(), ref_color.g(), ref_color.b(), 1.0f };
+        ImGui::ColorPicker4("##color", col, _u8L("Current").c_str(), _u8L("Original").c_str(),
+            ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_NoAlpha | ImGuiColorEditFlags_NoLabel |
+            ImGuiColorEditFlags_InputRGB, ref_col);
+        color = ColorRGB(col[0], col[1], col[2]);
+        m_color_picker_popup.data = encode_color(color);
+
+        std::string ok_btn = _u8L("OK");
+        std::string cancel_btn = _u8L("Cancel");
+        float max_len = std::max(ImGui::CalcTextSize(ok_btn.c_str()).x, ImGui::CalcTextSize(cancel_btn.c_str()).x);
+        float btn_width = max_len + 2.0f * style.FramePadding.x;
+
+        ImGui::Separator();
+        ImGui::NewLine();
+        ImGui::SameLine(ImGui::GetCurrentWindow()->Size.x - style.WindowPadding.x - style.ItemSpacing.x - 2.0f * btn_width);
+
+        ok_pressed = ImGui::Button(ok_btn.c_str(), { btn_width, 0.0f});
+        ImGui::SameLine();
+        if (ImGui::Button(cancel_btn.c_str(), { btn_width, 0.0f }) ||
+            ImGui::IsKeyPressed(ImGuiKey_Escape)) {
+            m_color_picker_popup.show = false;
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::EndPopup();
+    }
+
+    unified_window_style.pop();
+
+    if (!m_color_picker_popup.show) {
+        m_color_picker_popup.data = m_color_picker_popup.cache;
+        m_color_picker_popup.editing = false;
+    }
+
+    return m_color_picker_popup.show && ok_pressed;
+}
+
+bool DoubleSliderForLayers::render_custom_gcode_popup(const ImVec2& pos)
+{
+    if (m_values.empty())
+        return false;
+
+    // used to calculate the correct height of the text input widget
+    static float button_bar_height = 0.0f;
+
+    std::string msg_text = _u8L("Enter custom G-code used on current layer") + ":";
+    std::string win_name = _u8L("Custom G-Code on current layer") + " (" + 
+        convert_and_format_units(m_custom_gcode_popup.z, UnitsType::Millimeters,
+            (m_units == UnitsSystem::SI) ? UnitsType::Millimeters : UnitsType::Inches, 2) + ")";
+
+    Imgui::UnifiedWindowStyle unified_window_style;
+    unified_window_style.push();
+
+    const ImGuiStyle& style = ImGui::GetStyle();
+    // ensure the full caption is visible
+    float min_width = ImGui::CalcTextSize(win_name.c_str()).x +
+        2.0f * (style.WindowPadding.x + style.FramePadding.x + style.ItemSpacing.x);
+    ImGui::SetNextWindowPos(pos, ImGuiCond_Once, { 0.5f, 0.5f });
+    ImGui::SetNextWindowSizeConstraints({ min_width, 150.0f }, { FLT_MAX, FLT_MAX });
+    ImGuiWindowFlags windows_flag =   ImGuiWindowFlags_NoCollapse
+                                    | ImGuiWindowFlags_NoScrollbar
+                                    | ImGuiWindowFlags_NoScrollWithMouse;
+
+    bool ok_pressed = false;
+
+    std::string str = m_custom_gcode_popup.data;
+
+    if (!ImGui::IsPopupOpen(win_name.c_str()))
+        ImGui::OpenPopup(win_name.c_str());
+
+    if (ImGui::BeginPopupModal(win_name.c_str(), &m_custom_gcode_popup.show, windows_flag)) {
+
+        ImGui::Text(msg_text.c_str());
+
+        float h = (button_bar_height == 0.0f) ? 0.25f * ImGui::GetMainViewport()->Size.y : ImGui::GetContentRegionAvail().y - button_bar_height;
+        ImGui::InputTextMultiline("##custom_gcode", &str, { -1.0f, h });
+        m_custom_gcode_popup.data = str;
+
+        std::string ok_btn = _u8L("OK");
+        std::string cancel_btn = _u8L("Cancel");
+        float max_len = std::max(ImGui::CalcTextSize(ok_btn.c_str()).x, ImGui::CalcTextSize(cancel_btn.c_str()).x);
+        float btn_width = max_len + 2.0f * style.FramePadding.x;
+
+        float button_bar_top = ImGui::GetCursorPosY();
+
+        ImGui::Separator();
+        ImGui::NewLine();
+        ImGui::SameLine(ImGui::GetCurrentWindow()->Size.x - style.WindowPadding.x - style.ItemSpacing.x - 2.0f * btn_width);
+
+        std::vector<std::string> reserved_tags;
+        bool invalid = contains_reserved_tags(str, 1, reserved_tags);
+        bool disable_ok = str.empty() || invalid;
+
+        if (disable_ok) ImGui::BeginDisabled();
+        ok_pressed = ImGui::Button(ok_btn.c_str(), { btn_width, 0.0f});
+        if (disable_ok) ImGui::EndDisabled();
+        ImGui::SameLine();
+        if (ImGui::Button(cancel_btn.c_str(), { btn_width, 0.0f }) ||
+            ImGui::IsKeyPressed(ImGuiKey_Escape)) {
+            m_custom_gcode_popup.show = false;
+            ImGui::CloseCurrentPopup();
+        }
+
+        float button_bar_bottom = ImGui::GetCursorPosY();
+        button_bar_height = button_bar_bottom - button_bar_top;
+
+        ImGui::EndPopup();
+    }
+
+    unified_window_style.pop();
+
+    if (!m_custom_gcode_popup.show) {
+        m_custom_gcode_popup.data = m_custom_gcode_popup.cache;
+        m_custom_gcode_popup.editing = false;
+    }
+
+    return m_custom_gcode_popup.show && ok_pressed;
+}
+
+bool DoubleSliderForLayers::render_yes_no_cancel_popup(const ImVec2& pos)
+{
+    Imgui::UnifiedWindowStyle unified_window_style;
+    unified_window_style.push();
+
+    const ImGuiStyle& style = ImGui::GetStyle();
+    // ensure the full caption is visible
+    float min_width = ImGui::CalcTextSize(m_yes_no_cancel_popup.caption.c_str()).x +
+        2.0f * (style.WindowPadding.x + style.FramePadding.x + style.ItemSpacing.x);
+    ImGui::SetNextWindowPos(pos, ImGuiCond_Once, { 0.5f, 0.5f });
+    ImGui::SetNextWindowSizeConstraints({ min_width, 0.0f }, { FLT_MAX, FLT_MAX });
+    ImGuiWindowFlags windows_flag =   ImGuiWindowFlags_AlwaysAutoResize
+                                    | ImGuiWindowFlags_NoCollapse
+                                    | ImGuiWindowFlags_NoResize
+                                    | ImGuiWindowFlags_NoScrollbar
+                                    | ImGuiWindowFlags_NoScrollWithMouse;
+
+    bool yes_pressed = false;
+    bool no_pressed = false;
+
+    if (!ImGui::IsPopupOpen(m_yes_no_cancel_popup.caption.c_str()))
+        ImGui::OpenPopup(m_yes_no_cancel_popup.caption.c_str());
+
+    if (ImGui::BeginPopupModal(m_yes_no_cancel_popup.caption.c_str(), &m_yes_no_cancel_popup.show, windows_flag)) {
+
+        ImGui::BeginGroup();
+        Imgui::icon_image(ImGui::PrusaSlicerIcon, { 64.0f, 64.0f });
+        ImGui::EndGroup();
+
+        ImGui::SameLine();
+        ImGui::Text("%s", m_yes_no_cancel_popup.txt.c_str());
+
+        std::string yes_btn = _u8L("Yes");
+        std::string no_btn = _u8L("No");
+        std::string cancel_btn = _u8L("Cancel");
+        float max_len = std::max({
+            ImGui::CalcTextSize(yes_btn.c_str()).x,
+            ImGui::CalcTextSize(no_btn.c_str()).x,
+            ImGui::CalcTextSize(cancel_btn.c_str()).x 
+        });
+        float btn_width = max_len + 2.0f * style.FramePadding.x;
+
+        ImGui::Separator();
+        ImGui::NewLine();
+        ImGui::SameLine(ImGui::GetCurrentWindow()->Size.x - style.WindowPadding.x - 2.0f * style.ItemSpacing.x - 3.0f * btn_width);
+
+        yes_pressed = ImGui::Button(yes_btn.c_str(), { btn_width, 0.0f});
+        ImGui::SameLine();
+        no_pressed = ImGui::Button(no_btn.c_str(), { btn_width, 0.0f });
+        ImGui::SameLine();
+        if (ImGui::Button(cancel_btn.c_str(), { btn_width, 0.0f }) ||
+            ImGui::IsKeyPressed(ImGuiKey_Escape)) {
+            m_yes_no_cancel_popup.show = false;
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::EndPopup();
+    }
+
+    unified_window_style.pop();
+
+    m_yes_no_cancel_popup.result = PopupResult::Undefined;
+    if (yes_pressed)
+        m_yes_no_cancel_popup.result = PopupResult::Yes;
+    else if (no_pressed)
+        m_yes_no_cancel_popup.result = PopupResult::No;
+    else if (!m_yes_no_cancel_popup.show)
+        m_yes_no_cancel_popup.result = PopupResult::Cancel;
+
+    return m_yes_no_cancel_popup.show && m_yes_no_cancel_popup.result != PopupResult::Undefined;
 }
 
 void DoubleSliderForLayers::add_code_as_tick(CustomGCode::Type type, int selected_extruder/* = -1*/)
@@ -1264,9 +1564,57 @@ void DoubleSliderForLayers::add_code_as_tick(CustomGCode::Type type, int selecte
     bool was_ticks = m_ticks.empty();
     
     if (it == m_ticks.ticks.end()) {
-        // try to add tick
-        if (!m_ticks.add_tick(tick, type, extruder, m_values[tick]))
-            return;
+        if (type == CustomGCode::Type::PausePrint) {
+            m_pause_print_popup.data = "";
+            m_pause_print_popup.cache = "";
+            m_pause_print_popup.tick = -1;
+            m_pause_print_popup.z = m_values[m_ctrl.active_pos()];
+            m_pause_print_popup.editing = false;
+            m_pause_print_popup.show = true;
+            // force dimmed background for pause print modal popup dialog without animation
+            Imgui::disable_background_fadeout_animation();
+        }
+        else if (type == CustomGCode::Type::ColorChange) {
+            if (m_ticks.use_default_colors()) {
+                std::string color = m_ticks.color_for_tick(TickCode{ tick }, type, extruder);
+                m_ticks.add_color_change_tick(tick, color, extruder, m_values[tick]);
+                if (was_ticks != m_ticks.empty())
+                    update_draw_scroll_line_cb();
+                m_show_just_color_change_menu = false;
+                process_ticks_changed();
+            }
+            else {
+                m_color_picker_popup.data = "#FFFFFF";
+                m_color_picker_popup.cache = "#FFFFFF";
+                m_color_picker_popup.tick = -1;
+                m_color_picker_popup.z = m_values[m_ctrl.active_pos()];
+                m_color_picker_popup.editing = false;
+                m_color_picker_popup.show = true;
+                // force dimmed background for color picker modal popup dialog without animation
+                Imgui::disable_background_fadeout_animation();
+            }
+        }
+        else if (type == CustomGCode::Type::Custom) {
+            m_custom_gcode_popup.data = "";
+            m_custom_gcode_popup.cache = "";
+            m_custom_gcode_popup.tick = -1;
+            m_custom_gcode_popup.z = m_values[m_ctrl.active_pos()];
+            m_custom_gcode_popup.editing = false;
+            m_custom_gcode_popup.show = true;
+            // force dimmed background for color picker modal popup dialog without animation
+            Imgui::disable_background_fadeout_animation();
+        }
+        else if (type == CustomGCode::Type::Template) {
+            std::string color = m_ticks.color_for_tick(TickCode{ tick }, type, extruder);
+            m_ticks.add_template_tick(tick, color, extruder, m_values[tick]);
+            if (was_ticks != m_ticks.empty())
+                update_draw_scroll_line_cb();
+            m_show_just_color_change_menu = false;
+            process_ticks_changed();
+        }
+        else {
+            assert(false);
+        }
     }
     else if (type == CustomGCode::Type::ToolChange || type == CustomGCode::Type::ColorChange) {
         // try to switch tick code to ToolChange or ColorChange accordingly
@@ -1275,12 +1623,6 @@ void DoubleSliderForLayers::add_code_as_tick(CustomGCode::Type type, int selecte
     }
     else
         return;
-
-    if (was_ticks != m_ticks.empty())
-        update_draw_scroll_line_cb();
-
-    m_show_just_color_change_menu = false;
-    process_ticks_changed();
 }
 
 void DoubleSliderForLayers::edit_tick(int tick/* = -1*/)
@@ -1292,9 +1634,41 @@ void DoubleSliderForLayers::edit_tick(int tick/* = -1*/)
     if (it == m_ticks.ticks.end())    // this tick doesn't exist
         return;
 
-    if (!m_ticks.check_ticks_changed_event(it->type, m_mode) ||
-        m_ticks.edit_tick(it, m_values[it->tick]))
+    if (!m_ticks.check_ticks_changed_event(it->type, m_mode)) {
         process_ticks_changed();
+        return;
+    }
+
+    if (it->type == CustomGCode::Type::PausePrint) {
+        m_pause_print_popup.data = it->extra;
+        m_pause_print_popup.cache = it->extra;
+        m_pause_print_popup.tick = it->tick;
+        m_pause_print_popup.z = m_values[it->tick];
+        m_pause_print_popup.editing = true;
+        m_pause_print_popup.show = true;
+        // force dimmed background for pause print modal popup dialog without animation
+        Imgui::disable_background_fadeout_animation();
+    }
+    else if (it->type == CustomGCode::Type::ColorChange) {
+        m_color_picker_popup.data = it->color;
+        m_color_picker_popup.cache = it->color;
+        m_color_picker_popup.tick = it->tick;
+        m_color_picker_popup.z = m_values[it->tick];
+        m_color_picker_popup.editing = true;
+        m_color_picker_popup.show = true;
+        // force dimmed background for color picker modal popup dialog without animation
+        Imgui::disable_background_fadeout_animation();
+    }
+    else if (it->type == CustomGCode::Type::Custom || it->type == CustomGCode::Type::Template) {
+        m_custom_gcode_popup.data = it->extra;
+        m_custom_gcode_popup.cache = it->extra;
+        m_custom_gcode_popup.tick = it->tick;
+        m_custom_gcode_popup.z = m_values[it->tick];
+        m_custom_gcode_popup.editing = true;
+        m_custom_gcode_popup.show = true;
+        // force dimmed background for custom gcode modal popup dialog without animation
+        Imgui::disable_background_fadeout_animation();
+    }
 }
 
 // discard all custom changes on DoubleSlider
@@ -1309,7 +1683,7 @@ void DoubleSliderForLayers::discard_all_ticks()
 void DoubleSliderForLayers::process_jump_to_value()
 {
     if (int tick_value = m_ticks.tick_from_value(m_jump_to_value, true); tick_value > 0) {
-        m_show_get_jump_value = false;
+        m_show_get_jump_value_popup = false;
         ImGui::CloseCurrentPopup();
 
         if (m_ctrl.is_active_higher_thumb())
@@ -1317,6 +1691,106 @@ void DoubleSliderForLayers::process_jump_to_value()
         else
             set_lower_pos(tick_value);
     }
+}
+
+void DoubleSliderForLayers::process_pause_print()
+{
+    assert(!m_pause_print_popup.data.empty());
+
+    if (m_pause_print_popup.editing) {
+        assert(m_pause_print_popup.tick >= 0);
+        std::set<TickCode>::iterator it = m_ticks.ticks.find(TickCode{ m_pause_print_popup.tick });
+        assert(it != m_ticks.ticks.end());
+        m_ticks.edit_tick(it, m_pause_print_popup.z, m_pause_print_popup.data);
+        m_pause_print_popup.editing = false;
+    }
+    else {
+        bool was_ticks = m_ticks.empty();
+
+        int tick = m_ctrl.active_pos();
+        m_ticks.add_pause_print_tick(tick, m_pause_print_popup.data, -1, m_values[tick]);
+
+        if (was_ticks != m_ticks.empty())
+            update_draw_scroll_line_cb();
+    }
+
+    m_show_just_color_change_menu = false;
+    process_ticks_changed();
+
+    m_pause_print_popup.show = false;
+    ImGui::CloseCurrentPopup();
+}
+
+void DoubleSliderForLayers::process_color_picker()
+{
+    assert(!m_color_picker_popup.data.empty());
+
+    if (m_color_picker_popup.editing) {
+        assert(m_color_picker_popup.tick >= 0);
+        std::set<TickCode>::iterator it = m_ticks.ticks.find(TickCode{ m_color_picker_popup.tick });
+        assert(it != m_ticks.ticks.end());
+        m_ticks.edit_tick(it, m_color_picker_popup.z, m_color_picker_popup.data);
+        m_color_picker_popup.editing = false;
+    }
+    else {
+        bool was_ticks = m_ticks.empty();
+
+        int tick = m_ctrl.active_pos();
+        m_ticks.add_color_change_tick(tick, m_color_picker_popup.data, -1, m_values[tick]);
+
+        if (was_ticks != m_ticks.empty())
+            update_draw_scroll_line_cb();
+    }
+
+    m_show_just_color_change_menu = false;
+    process_ticks_changed();
+
+    m_color_picker_popup.show = false;
+    ImGui::CloseCurrentPopup();
+}
+
+void DoubleSliderForLayers::process_custom_gcode()
+{
+    assert(!m_custom_gcode_popup.data.empty());
+
+    if (m_custom_gcode_popup.editing) {
+        assert(m_custom_gcode_popup.tick >= 0);
+        std::set<TickCode>::iterator it = m_ticks.ticks.find(TickCode{ m_custom_gcode_popup.tick });
+        assert(it != m_ticks.ticks.end());
+        m_ticks.edit_tick(it, m_custom_gcode_popup.z, m_custom_gcode_popup.data);
+        m_custom_gcode_popup.editing = false;
+    }
+    else {
+        bool was_ticks = m_ticks.empty();
+
+        int tick = m_ctrl.active_pos();
+        m_ticks.add_custom_gcode_tick(tick, m_custom_gcode_popup.data, -1, m_values[tick]);
+
+        if (was_ticks != m_ticks.empty())
+            update_draw_scroll_line_cb();
+    }
+
+    m_show_just_color_change_menu = false;
+    process_ticks_changed();
+
+    m_custom_gcode_popup.show = false;
+    ImGui::CloseCurrentPopup();
+}
+
+void DoubleSliderForLayers::process_yes_no_cancel()
+{
+    assert(m_yes_no_cancel_popup.result == PopupResult::Yes ||
+           m_yes_no_cancel_popup.result == PopupResult::No);
+
+    if (m_yes_no_cancel_popup.result == PopupResult::Yes) {
+        if (m_yes_no_cancel_popup.caller == "auto_color_change") {
+            clear_ticks();
+            perform_auto_color_change();
+        }
+    }
+
+    m_yes_no_cancel_popup.show = false;
+    ImGui::CloseCurrentPopup();
 }
 
 } // namespace Slic3r::App::LibvgcodeWrapper

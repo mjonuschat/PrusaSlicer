@@ -8,6 +8,8 @@
 #include "Slic3r/Biz/libpgcode/Utils.hpp"
 #include "Slic3r/Biz/GCodeReader/GCodeReader.hpp"
 
+#include <LocalesUtils.hpp>
+
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/split.hpp>
@@ -140,6 +142,7 @@ void ProcessorConfig::reset()
     export_remaining_time_enabled = false;
     stealth_time_estimator_enabled = false;
     spiral_vase_enabled = false;
+    sequential_print = false;
     is_XL_printer = false;
     single_extruder_multi_material = false;
     z_offset = 0.0f;
@@ -168,6 +171,7 @@ enum class KeyType : uint8_t
 
 static const std::vector<std::pair<std::string_view, KeyType>> KEYS = {
     { "bed_shape"sv,                           KeyType::Vector_of_points },
+    { "complete_objects"sv,                    KeyType::Boolean },
     { "extra_loading_move"sv,                  KeyType::Float },
     { "extruder_offset"sv,                     KeyType::Vector_of_points },
     { "extruder_colour"sv,                     KeyType::Vector_of_strings },
@@ -212,6 +216,9 @@ static const std::vector<std::pair<std::string_view, KeyType>> KEYS = {
     { "machine_max_acceleration_travel"sv,     KeyType::Vector_of_floats },
     { "machine_min_extruding_rate"sv,          KeyType::Vector_of_floats },
     { "machine_min_travel_rate"sv,             KeyType::Vector_of_floats },
+    { "color_change_gcode"sv,                  KeyType::String },
+    { "pause_print_gcode"sv,                   KeyType::String },
+    { "template_custom_gcode"sv,               KeyType::String },
 };
 
 // updated to BambuStudio 1.9.7.52
@@ -253,20 +260,20 @@ static bool extract_boolean(std::string_view data)
     return data == "1";
 }
 
-static float extract_float(std::string_view data, StringToDoubleDecimalPointCallback cb)
+static float extract_float(std::string_view data)
 {
     data = skip_whitespaces_both_sides(data);
-    return float(cb(data, nullptr));
+    return float(string_to_double_decimal_point(data, nullptr));
 }
 
-static std::vector<float> extract_vector_of_floats(std::string_view data, StringToDoubleDecimalPointCallback cb)
+static std::vector<float> extract_vector_of_floats(std::string_view data)
 {
     data = skip_whitespaces_both_sides(data);
     std::vector<float> ret;
     std::vector<std::string> values;
     boost::split(values, std::string(data), boost::is_any_of(","));
     for (size_t i = 0; i < values.size(); ++i) {
-        ret.push_back(extract_float(values[i], cb));
+        ret.push_back(extract_float(values[i]));
     }
     return ret;
 }
@@ -292,7 +299,7 @@ static std::vector<int> extract_vector_of_integers(std::string_view data)
     return ret;
 }
 
-static std::vector<Vec2f> extract_vector_of_points(std::string_view data, StringToDoubleDecimalPointCallback cb)
+static std::vector<Vec2f> extract_vector_of_points(std::string_view data)
 {
     data = skip_whitespaces_both_sides(data);
     std::vector<Vec2f> ret;
@@ -304,7 +311,7 @@ static std::vector<Vec2f> extract_vector_of_points(std::string_view data, String
         if (coords.size() == 2) {
             Vec2f point = Vec2f::Zero();
             for (size_t j = 0; j < coords.size(); ++j) {
-                point[j] = extract_float(coords[j], cb);
+                point[j] = extract_float(coords[j]);
             }
             ret.push_back(point);
         }
@@ -357,7 +364,20 @@ GCodeFlavor flavor_from_string(std::string_view str)
     else                                { assert(false); return GCodeFlavor::gcfRepRapSprinter; }
 }
 
-ProcessorConfig extract_processor_config_from_prusaslicer_gcode_internal(const std::string& gcode, StringToDoubleDecimalPointCallback cb,
+static std::string replace_double_slash_n(const std::string& str)
+{
+    std::string ret = str;
+    std::string word = "\\n";
+    std::string replace_by = "\n";
+    size_t pos = ret.find(word);
+    while (pos != std::string::npos) {
+        ret.replace(pos, word.size(), replace_by);
+        pos = ret.find(word, pos + replace_by.size());
+    }
+    return ret;
+}
+
+ProcessorConfig extract_processor_config_from_prusaslicer_gcode_internal(const std::string& gcode,
     const std::string& data_separators = "=", const std::vector<std::pair<std::string_view, std::string_view>>& dictionary = {})
 {
     ProcessorConfig ret;
@@ -372,7 +392,7 @@ ProcessorConfig extract_processor_config_from_prusaslicer_gcode_internal(const s
     MachineLimitsConfig machine_limits;
 
     GCodeReader parser;
-    parser.parse_buffer(gcode, [cb, &ret, &dictionary, &data_separators , &has_silent_mode, &has_wipe_tower, &extra_loading_move,
+    parser.parse_buffer(gcode, [&ret, &dictionary, &data_separators , &has_silent_mode, &has_wipe_tower, &extra_loading_move,
         &parking_pos_retraction, &printer_notes, &machine_limits, &extruders_colors, &filaments_colors](GCodeReader&, const GCodeReader::GCodeLine& line) {
         const std::string& raw = line.raw();
         std::string_view sv_raw = skip_whitespaces(std::string_view(raw));
@@ -399,13 +419,14 @@ ProcessorConfig extract_processor_config_from_prusaslicer_gcode_internal(const s
                         if      (key_it->first == "silent_mode"sv)                    has_silent_mode = value;
                         else if (key_it->first == "single_extruder_multi_material"sv) ret.single_extruder_multi_material = value;
                         else if (key_it->first == "spiral_vase"sv)                    ret.spiral_vase_enabled = value;
+                        else if (key_it->first == "complete_objects"sv)               ret.sequential_print = value;
                         else if (key_it->first == "use_volumetric_e"sv)               ret.use_volumetric_e = value;
                         else if (key_it->first == "wipe_tower"sv)                     has_wipe_tower = value;
                         break;
                     }
                     case KeyType::Float:
                     {
-                        float value = extract_float(tokens.back(), cb);
+                        float value = extract_float(tokens.back());
                         if      (key_it->first == "extra_loading_move"sv)     extra_loading_move = value;
                         else if (key_it->first == "first_layer_height"sv)     ret.first_layer_height = value;
                         else if (key_it->first == "max_print_height"sv)       ret.max_print_height = value;
@@ -416,10 +437,13 @@ ProcessorConfig extract_processor_config_from_prusaslicer_gcode_internal(const s
                     case KeyType::String:
                     {
                         std::string value = skip_whitespaces_both_sides(tokens.back());
-                        if      (key_it->first == "gcode_flavor"sv)        ret.flavor = flavor_from_string(value);
-                        else if (key_it->first == "print_settings_id"sv)   ret.print_settings.print = value;
-                        else if (key_it->first == "printer_notes"sv)       printer_notes = value;
-                        else if (key_it->first == "printer_settings_id"sv) ret.print_settings.printer = value;
+                        if      (key_it->first == "gcode_flavor"sv)          ret.flavor = flavor_from_string(value);
+                        else if (key_it->first == "print_settings_id"sv)     ret.print_settings.print = value;
+                        else if (key_it->first == "printer_notes"sv)         printer_notes = value;
+                        else if (key_it->first == "printer_settings_id"sv)   ret.print_settings.printer = value;
+                        else if (key_it->first == "color_change_gcode"sv)    ret.color_change_gcode = value;
+                        else if (key_it->first == "pause_print_gcode"sv)     ret.pause_print_gcode = value;
+                        else if (key_it->first == "template_custom_gcode"sv) ret.template_custom_gcode = value;
                         else if (key_it->first == "machine_limits_usage"sv) {
                             if      (value == "emit_to_gcode")      machine_limits.usage = MachineLimitsUsageType::EmitToGCode;
                             else if (value == "time_estimate_only") machine_limits.usage = MachineLimitsUsageType::TimeEstimateOnly;
@@ -429,7 +453,7 @@ ProcessorConfig extract_processor_config_from_prusaslicer_gcode_internal(const s
                     }
                     case KeyType::Vector_of_floats:
                     {
-                        std::vector<float> values = extract_vector_of_floats(tokens.back(), cb);
+                        std::vector<float> values = extract_vector_of_floats(tokens.back());
                         if (!values.empty()) {
                             if      (key_it->first == "filament_cost"sv)                       ret.filaments.costs = values;
                             else if (key_it->first == "filament_density"sv)                    ret.filaments.densities = values;
@@ -469,7 +493,7 @@ ProcessorConfig extract_processor_config_from_prusaslicer_gcode_internal(const s
 
                     case KeyType::Vector_of_points:
                     {
-                        std::vector<Vec2f> values = extract_vector_of_points(tokens.back(), cb);
+                        std::vector<Vec2f> values = extract_vector_of_points(tokens.back());
                         if (!values.empty()) {
                             if      (key_it->first == "bed_shape"sv) ret.bed_shape = values;
                             else if (key_it->first == "extruder_offset"sv) {
@@ -538,29 +562,32 @@ ProcessorConfig extract_processor_config_from_prusaslicer_gcode_internal(const s
         ret.is_XL_printer = true;
 
     ret.producer = GCodeProducer::PrusaSlicer;
+    ret.color_change_gcode = replace_double_slash_n(ret.color_change_gcode);
+    ret.pause_print_gcode = replace_double_slash_n(ret.pause_print_gcode);
+    ret.template_custom_gcode = replace_double_slash_n(ret.template_custom_gcode);
     return ret;
 }
 
-ProcessorConfig extract_processor_config_from_prusaslicer_gcode(const std::string& gcode, StringToDoubleDecimalPointCallback cb)
+ProcessorConfig extract_processor_config_from_prusaslicer_gcode(const std::string& gcode)
 {
-    return extract_processor_config_from_prusaslicer_gcode_internal(gcode, cb);
+    return extract_processor_config_from_prusaslicer_gcode_internal(gcode);
 }
 
-ProcessorConfig extract_processor_config_from_ankermakestudio_gcode(const std::string& gcode, StringToDoubleDecimalPointCallback cb)
+ProcessorConfig extract_processor_config_from_ankermakestudio_gcode(const std::string& gcode)
 {
-    ProcessorConfig ret = extract_processor_config_from_prusaslicer_gcode_internal(gcode, cb, "=:");
+    ProcessorConfig ret = extract_processor_config_from_prusaslicer_gcode_internal(gcode, "=:");
     ret.producer = GCodeProducer::AnkerMakeStudio;
     return ret;
 }
 
-ProcessorConfig extract_processor_config_from_bambustudio_gcode(const std::string& gcode, StringToDoubleDecimalPointCallback cb)
+ProcessorConfig extract_processor_config_from_bambustudio_gcode(const std::string& gcode)
 {
-    ProcessorConfig ret = extract_processor_config_from_prusaslicer_gcode_internal(gcode, cb,  "=:", KEYS_BAMBUSTUDIO_DICTIONARY);
+    ProcessorConfig ret = extract_processor_config_from_prusaslicer_gcode_internal(gcode, "=:", KEYS_BAMBUSTUDIO_DICTIONARY);
     ret.producer = GCodeProducer::BambuStudio;
     return ret;
 }
 
-ProcessorConfig extract_processor_config_from_craftware_gcode(const std::string& gcode, StringToDoubleDecimalPointCallback cb)
+ProcessorConfig extract_processor_config_from_craftware_gcode(const std::string& gcode)
 {
     ProcessorConfig ret;
     ret.producer = GCodeProducer::CraftWare;
@@ -580,14 +607,14 @@ static const std::vector<std::pair<std::string_view, GCodeFlavor>> CURA_FLAVORS 
     { "Marlin"sv,             GCodeFlavor::gcfMarlinLegacy },
 };
 
-ProcessorConfig extract_processor_config_from_cura_gcode(const std::string& gcode, StringToDoubleDecimalPointCallback cb)
+ProcessorConfig extract_processor_config_from_cura_gcode(const std::string& gcode)
 {
     ProcessorConfig ret;
 
     static const std::string& DATA_SEPARATORS = ":";
 
     GCodeReader parser;
-    parser.parse_buffer(gcode, [cb, &ret](GCodeReader&, const GCodeReader::GCodeLine& line) {
+    parser.parse_buffer(gcode, [&ret](GCodeReader&, const GCodeReader::GCodeLine& line) {
         const std::string& raw = line.raw();
         std::string_view sv_raw = skip_whitespaces(std::string_view(raw));
         if (sv_raw.length() > 0 && sv_raw.front() == ';') {
@@ -613,14 +640,14 @@ ProcessorConfig extract_processor_config_from_cura_gcode(const std::string& gcod
     return ret;
 }
 
-ProcessorConfig extract_processor_config_from_kisslicer_gcode(const std::string& gcode, StringToDoubleDecimalPointCallback cb)
+ProcessorConfig extract_processor_config_from_kisslicer_gcode(const std::string& gcode)
 {
     ProcessorConfig ret;
 
     static const std::string& DATA_SEPARATORS = "=";
 
     GCodeReader parser;
-    parser.parse_buffer(gcode, [cb, &ret](GCodeReader& parser, const GCodeReader::GCodeLine& line) {
+    parser.parse_buffer(gcode, [&ret](GCodeReader& parser, const GCodeReader::GCodeLine& line) {
         const std::string& raw = line.raw();
         std::string_view sv_raw = skip_whitespaces(std::string_view(raw));
         if (sv_raw.length() > 0 && sv_raw.front() == ';') {
@@ -648,37 +675,37 @@ ProcessorConfig extract_processor_config_from_kisslicer_gcode(const std::string&
     return ret;
 }
 
-ProcessorConfig extract_processor_config_from_ideamaker_gcode(const std::string& gcode, StringToDoubleDecimalPointCallback cb)
+ProcessorConfig extract_processor_config_from_ideamaker_gcode(const std::string& gcode)
 {
     ProcessorConfig ret;
     ret.producer = GCodeProducer::ideaMaker;
     return ret;
 }
 
-ProcessorConfig extract_processor_config_from_orcaslicer_gcode(const std::string& gcode, StringToDoubleDecimalPointCallback cb)
+ProcessorConfig extract_processor_config_from_orcaslicer_gcode(const std::string& gcode)
 {
-    ProcessorConfig ret = extract_processor_config_from_prusaslicer_gcode_internal(gcode, cb, "=:", KEYS_ORCASLICER_DICTIONARY);
+    ProcessorConfig ret = extract_processor_config_from_prusaslicer_gcode_internal(gcode, "=:", KEYS_ORCASLICER_DICTIONARY);
     ret.producer = GCodeProducer::OrcaSlicer;
     return ret;
 }
 
-ProcessorConfig extract_processor_config_from_simplify3d_gcode(const std::string& gcode, StringToDoubleDecimalPointCallback cb)
+ProcessorConfig extract_processor_config_from_simplify3d_gcode(const std::string& gcode)
 {
     ProcessorConfig ret;
     ret.producer = GCodeProducer::Simplify3D;
     return ret;
 }
 
-ProcessorConfig extract_processor_config_from_superslicer_gcode(const std::string& gcode, StringToDoubleDecimalPointCallback cb)
+ProcessorConfig extract_processor_config_from_superslicer_gcode(const std::string& gcode)
 {
-    ProcessorConfig ret = extract_processor_config_from_prusaslicer_gcode_internal(gcode, cb);
+    ProcessorConfig ret = extract_processor_config_from_prusaslicer_gcode_internal(gcode);
     ret.producer = GCodeProducer::SuperSlicer;
     return ret;
 }
 
-ProcessorConfig extract_processor_config_from_xdesktop_gcode(const std::string& gcode, StringToDoubleDecimalPointCallback cb)
+ProcessorConfig extract_processor_config_from_xdesktop_gcode(const std::string& gcode)
 {
-    ProcessorConfig ret = extract_processor_config_from_prusaslicer_gcode_internal(gcode, cb);
+    ProcessorConfig ret = extract_processor_config_from_prusaslicer_gcode_internal(gcode);
     ret.producer = GCodeProducer::XDesktop;
     return ret;
 }

@@ -19,9 +19,14 @@ bool Wrapper::init(Render::Device& device, Scene::Scene& scene, Scene::GeometryD
     return m_impl->init(device, scene, data_factory, settings);
 }
 
-void Wrapper::shutdown()
+WrapperMode Wrapper::mode() const
 {
-    m_impl->shutdown();
+    return m_impl->mode();
+}
+
+void Wrapper::set_mode(WrapperMode mode)
+{
+    m_impl->set_mode(mode);
 }
 
 void Wrapper::reset()
@@ -37,6 +42,21 @@ void Wrapper::load(WrapperInputData&& wrapper_data, ViewerInputData&& data)
 void Wrapper::load_as_sla(WrapperSLAInputData&& wrapper_sla_data)
 {
     m_impl->load_as_sla(std::move(wrapper_sla_data));
+}
+
+void Wrapper::set_extrusion_role_color(Domain::GCodeExtrusionRole role, const ColorRGB& color)
+{
+    m_impl->set_extrusion_role_color(role, color);
+}
+
+ViewType Wrapper::view_type() const
+{
+    return m_impl->view_type();
+}
+
+void Wrapper::set_view_type(ViewType type)
+{
+    m_impl->set_view_type(type);
 }
 
 BoundingBoxf3 Wrapper::bounding_box(const Biz::libpgcode::MoveTypes& types) const
@@ -119,6 +139,21 @@ void Wrapper::set_layers_range(Interval::value_type min, Interval::value_type ma
     m_impl->set_layers_range(min, max);
 }
 
+const GCodeEvents& Wrapper::gcode_events() const
+{
+    return m_impl->gcode_events();
+}
+
+uint8_t Wrapper::used_extruders_count() const
+{
+    return m_impl->used_extruders_count();
+}
+
+std::vector<uint8_t> Wrapper::used_extruders_ids() const
+{
+    return m_impl->used_extruders_ids();
+}
+
 void Wrapper::slider_gcode_move_current_thumb(int delta)
 {
     m_impl->slider_gcode_move_current_thumb(delta);
@@ -127,6 +162,21 @@ void Wrapper::slider_gcode_move_current_thumb(int delta)
 void Wrapper::slider_layers_move_current_thumb(int delta)
 {
     m_impl->slider_layers_move_current_thumb(delta);
+}
+
+void Wrapper::slider_layers_jump_to_value()
+{
+    m_impl->slider_layers_jump_to_value();
+}
+
+void Wrapper::slider_layers_add_current_tick()
+{
+    m_impl->slider_layers_add_current_tick();
+}
+
+void Wrapper::slider_layers_delete_current_tick()
+{
+    m_impl->slider_layers_delete_current_tick();
 }
 
 const Lights& Wrapper::lights() const

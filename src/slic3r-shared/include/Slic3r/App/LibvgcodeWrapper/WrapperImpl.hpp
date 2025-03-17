@@ -33,12 +33,19 @@ public:
 
     bool init(Render::Device& device, Scene::Scene& scene, Scene::GeometryDataFactory& data_factory,
         const WrapperSettings& settings);
-    void shutdown();
+
+    WrapperMode mode() const { return m_settings.mode; }
+    void set_mode(WrapperMode mode);
 
     void reset();
 
     void load(WrapperInputData&& wrapper_data, libvgcode::ViewerInputData&& data);
     void load_as_sla(WrapperSLAInputData&& wrapper_sla_data);
+
+    void set_extrusion_role_color(Domain::GCodeExtrusionRole role, const ColorRGB& color) { return m_viewer.set_extrusion_role_color(role, color); }
+    
+    libvgcode::ViewType view_type() const { return m_viewer.view_type(); }
+    void set_view_type(libvgcode::ViewType type) { m_viewer.set_view_type(type); }
 
     BoundingBoxf3 bounding_box(const Biz::libpgcode::MoveTypes& types = {
         Biz::libpgcode::MoveType::Retract,
@@ -79,10 +86,6 @@ public:
     void toggle_legend_visible() { set_legend_visible(!m_legend_params.visible); }
     bool is_legend_visible() const { return m_legend_params.visible; }
 
-    void set_legend_enabled(bool enabled) { m_legend_params.enabled = enabled; }
-    void toggle_legend_enabled() { set_legend_enabled(!m_legend_params.enabled); }
-    bool is_legend_enabled() const { return m_legend_params.enabled; }
-
     void set_gcodewindow_visible(bool visible) { m_gcode_window_data.set_visible(visible); }
     void toggle_gcodewindow_visible() { m_gcode_window_data.toggle_visible(); }
     bool is_gcodewindow_visible() const { return m_gcode_window_data.is_visible(); }
@@ -90,15 +93,21 @@ public:
     bool is_top_layer_only_view_range() const { return m_viewer.is_top_layer_only_view_range(); }
     void toggle_top_layer_only_view_range() { m_viewer.toggle_top_layer_only_view_range(); }
 
-    void set_settings_in_legend_visible(bool visible) { m_legend_params.settings_visible = visible; }
-
     bool is_legend_shown() const { return m_legend_params.is_shown(); }
 
     const libvgcode::Interval& layers_range() const { return m_viewer.layers_range(); }
     void set_layers_range(libvgcode::Interval::value_type min, libvgcode::Interval::value_type max);
 
+    const libvgcode::GCodeEvents& gcode_events() const { return m_viewer.gcode_events(); }
+    uint8_t used_extruders_count() const { return m_viewer.used_extruders_count(); }
+    std::vector<uint8_t> used_extruders_ids() const { return m_viewer.used_extruders_ids(); }
+
     void slider_gcode_move_current_thumb(int delta) { m_slider_gcode.move_current_thumb(delta); }
     void slider_layers_move_current_thumb(int delta) { m_slider_layers.move_current_thumb(delta); }
+    void slider_layers_jump_to_value() { m_slider_layers.jump_to_value(); }
+    void slider_layers_add_current_tick() { m_slider_layers.add_current_tick(); }
+    void slider_layers_delete_current_tick() { m_slider_layers.delete_current_tick(); }
+    CustomGCode::Info slider_layers_ticks_values() { return m_slider_layers.ticks_values(); }
 
     void reset_default_extrusion_roles_colors() { m_viewer.reset_default_extrusion_roles_colors(); }
 
@@ -136,6 +145,8 @@ private:
     Biz::libpgcode::MoveType m_radius_popup_type{ Biz::libpgcode::MoveType::COUNT };
     Biz::libpgcode::OptionType m_scale_factor_popup_type{ Biz::libpgcode::OptionType::COUNT };
 
+    bool m_loading{ false };
+
 private:
     void update_slider_gcode(std::optional<size_t> visible_range_min = std::nullopt,
                              std::optional<size_t> visible_range_max = std::nullopt);
@@ -143,10 +154,12 @@ private:
     void update_view_visible_range(size_t first, size_t last);
 
     void on_slider_layers_scroll_changed();
-    void on_slider_layers_check_gcode(Slic3r::CustomGCode::Type type);
     void on_slider_gcode_scroll_changed();
     void on_extrusion_role_visibility_changed();
     void on_request_extra_frames(unsigned int count = 1);
+    void on_slider_layers_ticks_changed();
+    std::string on_slider_layers_get_gcode(CustomGCode::Type type);
+    libvgcode::Palette on_slider_layers_get_extruder_colors();
 
     void render_toolpaths_internal(const Vec3f& camera_position);
     void render_legend(const WrapperLayoutData& layout);

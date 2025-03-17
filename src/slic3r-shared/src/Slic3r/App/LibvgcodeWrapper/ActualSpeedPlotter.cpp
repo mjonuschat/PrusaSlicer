@@ -18,7 +18,7 @@ int plot_actual_speed_profile(const ActualSpeedPlotData& data, const ImVec2& siz
 
     static const char* title = "##ActualSpeedProfile";
 
-    App::Imgui::ScopedGroup group((std::string(window->Name) + "ActualSpeedProfilePlot").c_str());
+    Imgui::ScopedGroup group((std::string(window->Name) + "ActualSpeedProfilePlot").c_str());
 
     const ImGuiStyle& style = ImGui::GetStyle();
     const ImGuiIO& io = ImGui::GetIO();
@@ -84,7 +84,7 @@ int plot_actual_speed_profile(const ActualSpeedPlotData& data, const ImVec2& siz
             ImLerp(inner_bb.Min + offset, inner_bb.Max, { 1.0f, 1.0f }), grid_main_color);
 
         // profile
-        ImU32 col_base = ImGui::GetColorU32(PROFILE_BASE_COLOR);
+        ImU32 col_base = ImGui::GetColorU32(ImGuiCol_PlotLines);
         ImU32 col_hovered = ImGui::GetColorU32(ImGuiCol_PlotLinesHovered);
         for (int n = 0; n < values_count - 1; ++n) {
             ImVec2 tp1(ImSaturate((data.data[n].position - x0) * inv_scale_x),

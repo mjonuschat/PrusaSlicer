@@ -42,5 +42,12 @@ std::string_view skip_whitespaces(const std::string_view str);
 std::string skip_whitespaces_both_sides(const std::string& str);
 std::string_view skip_whitespaces_both_sides(const std::string_view str);
 
+/** @brief Checks if the given string contains a color in format #RRGGBB.
+ *
+ * @param color The string to check.
+ * @return true If the string is a color in format #RRGGBB
+ */
+bool is_valid_color(const std::string& color);
+
 } // namespace Slic3r::Biz::libpgcode
 

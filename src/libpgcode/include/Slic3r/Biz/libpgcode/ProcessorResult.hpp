@@ -21,8 +21,12 @@ struct ProcessorResult
     GCodeProducer producer{ GCodeProducer::Unknown };
     uint8_t extruders_count{ MIN_EXTRUDERS_COUNT };
     bool spiral_vase_enabled{ false };
+    bool sequential_print{ false };
     float z_offset{ 0.0f };
     float max_print_height{ 0.0f };
+    std::string color_change_gcode;
+    std::string pause_print_gcode;
+    std::string template_custom_gcode;
     std::vector<float> filament_diameters;
     std::vector<float> filament_densities;
     std::vector<float> filament_costs;

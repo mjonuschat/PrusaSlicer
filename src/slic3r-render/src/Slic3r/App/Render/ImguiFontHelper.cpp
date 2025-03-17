@@ -119,7 +119,7 @@ static const std::vector<std::pair<const wchar_t, std::string>> FONT_ICONS_MEDIU
     { ImGui::UnlockHovered    , "lock_open_f"       },
     { ImGui::DSRevert         , "undo"              },
     { ImGui::DSRevertHovered  , "undo_f"            },
-    { ImGui::DSSettings       , "cog"               },
+    { ImGui::DSSettings       , "cog_"              },
     { ImGui::DSSettingsHovered, "cog_f"             },
     { ImGui::ErrorTick        , "error_tick"        },
     { ImGui::ErrorTickHovered , "error_tick_f"      },
@@ -181,6 +181,7 @@ static const std::vector<std::pair<const wchar_t, std::string>> FONT_ICONS_EXTRA
     { ImGui::ClippyMarker         , "notification_clippy"       },
     { ImGui::SliceAllBtnIcon      , "slice_all"                 },
     { ImGui::WarningMarkerDisabled, "notification_warning_grey" },
+    { ImGui::PrusaSlicerIcon      , "PrusaSlicer"               },
 };
 
 ImguiFontHelper::ImguiFontHelper(Device& device)

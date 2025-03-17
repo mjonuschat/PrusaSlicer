@@ -31,21 +31,6 @@ constexpr inline T sqr(T x)
     return x * x;
 }
 
-static bool is_valid_color(const std::string& color)
-{
-    if (color.length() != 7)
-        return false;
-
-    if (color.front() != '#')
-        return false;
-
-    for (int i = 1; i <= 6; ++i) {
-        if (!is_hex_digit(color[i]))
-            return false;
-    }
-    return true;
-}
-
 ProcessorImpl::ProcessorImpl(ProcessorConfig&& config)
 : m_options_z_corrector(m_result)
 {
@@ -212,9 +197,14 @@ void ProcessorImpl::apply_config(ProcessorConfig&& config)
 
     m_result.producer = m_config.producer;
     m_result.z_offset = m_config.z_offset;
+    m_result.sequential_print = m_config.sequential_print;
+    m_result.spiral_vase_enabled = m_config.spiral_vase_enabled;
     m_result.max_print_height = m_config.max_print_height;
     m_result.extruders_count = m_config.extruders.count;
     m_result.extruder_str_colors = std::move(m_config.extruders.str_colors);
+    m_result.color_change_gcode = std::move(m_config.color_change_gcode);
+    m_result.pause_print_gcode = std::move(m_config.pause_print_gcode);
+    m_result.template_custom_gcode = std::move(m_config.template_custom_gcode);
     m_result.filament_diameters = std::move(m_config.filaments.diameters);
     m_result.filament_densities = std::move(m_config.filaments.densities);
     m_result.filament_costs = std::move(m_config.filaments.costs);
@@ -227,8 +217,6 @@ void ProcessorImpl::apply_config(ProcessorConfig&& config)
     m_time_processor.machines[size_t(TimeMode::Stealth)].enabled = m_config.stealth_time_estimator_enabled;
 
     m_cb_log = m_config.callbacks.cb_log;
-    m_cb_string_to_double_decimal_point = m_config.callbacks.cb_string_to_double_decimal_point;
-    m_cb_float_to_string_decimal_point = m_config.callbacks.cb_float_to_string_decimal_point;
 
     //
     // data validation
@@ -1611,7 +1599,7 @@ struct is_from_chars_convertible<T, std::void_t<decltype(std::from_chars(std::de
 
 // Returns true if the number was parsed correctly into out and the number spanned the whole input string.
 template<typename T>
-[[nodiscard]] static inline bool parse_number(const std::string_view sv, T& out, StringToDoubleDecimalPointCallback cb)
+[[nodiscard]] static inline bool parse_number(const std::string_view sv, T& out)
 {
     // https://www.bfilipek.com/2019/07/detect-overload-from-chars.html#example-stdfromchars
 #if __has_include(<charconv>)
@@ -1636,14 +1624,10 @@ template<typename T>
                 out = std::stoi(str, &read);
             else if constexpr (std::is_same_v<T, long>)
                 out = std::stol(str, &read);
-            else if constexpr (std::is_same_v<T, float>) {
-                assert(cb != nullptr);
-                out = float(cb(str, &read));
-            }
-            else if constexpr (std::is_same_v<T, double>) {
-                assert(cb != nullptr);
-                out = cb(str, &read);
-            }
+            else if constexpr (std::is_same_v<T, float>)
+                out = float(string_to_double_decimal_point(str, &read));
+            else if constexpr (std::is_same_v<T, double>)
+                out = string_to_double_decimal_point(str, &read);
 
             return str.size() == read;
         }
@@ -1657,7 +1641,7 @@ void ProcessorImpl::process_T(const std::string_view command)
 {
     if (command.length() > 1) {
         int eid = 0;
-        if (!parse_number(command.substr(1), eid, m_cb_string_to_double_decimal_point) || eid < 0 || eid > 255) {
+        if (!parse_number(command.substr(1), eid) || eid < 0 || eid > 255) {
             // Specific to the MMU2 V2 (see https://www.help.prusa3d.com/en/article/prusa-specific-g-codes_112173):
             if ((m_config.flavor == GCodeFlavor::gcfMarlinLegacy || m_config.flavor == GCodeFlavor::gcfMarlinFirmware) &&
                 (command == "Tx" || command == "Tc" || command == "T?"))
@@ -1785,7 +1769,7 @@ void ProcessorImpl::process_tags(const std::string_view comment)
     tag = reserved_tag(Tags::Height);
     pos = comment.find(tag);
     if (pos == 0) {
-        if (!parse_number(comment.substr(tag.size()), m_height_from_tag, m_cb_string_to_double_decimal_point)) {
+        if (!parse_number(comment.substr(tag.size()), m_height_from_tag)) {
             if (m_cb_log != nullptr)
                 m_cb_log("GCode::Processor encountered an invalid value for Height (" + std::string(comment) + ").");
         }
@@ -1796,7 +1780,7 @@ void ProcessorImpl::process_tags(const std::string_view comment)
     tag = reserved_tag(Tags::Width);
     pos = comment.find(tag);
     if (pos == 0) {
-        if (!parse_number(comment.substr(tag.size()), m_width_from_tag, m_cb_string_to_double_decimal_point)) {
+        if (!parse_number(comment.substr(tag.size()), m_width_from_tag)) {
             if (m_cb_log != nullptr)
                 m_cb_log("GCode::Processor encountered an invalid value for Width (" + std::string(comment) + ").");
         }
@@ -1815,7 +1799,7 @@ void ProcessorImpl::process_tags(const std::string_view comment)
         if (tokens.size() > 1) {
             if (tokens[1][0] == 'T') {
                 int eid;
-                if (!parse_number(tokens[1].substr(1), eid, m_cb_string_to_double_decimal_point) || eid < 0 || eid > 255) {
+                if (!parse_number(tokens[1].substr(1), eid) || eid < 0 || eid > 255) {
                     if (m_cb_log != nullptr)
                         m_cb_log("GCode::Processor encountered an invalid value for Color_Change (" + std::string(comment) + ").");
                     return;
@@ -1989,7 +1973,7 @@ void ProcessorImpl::process_bambustudio_tags(const std::string_view comment)
     tag = "LAYER_HEIGHT"sv;
     pos = comment.find(tag);
     if (pos == 0) {
-        if (!parse_number(comment.substr(tag.size()), m_height_from_tag, m_cb_string_to_double_decimal_point)) {
+        if (!parse_number(comment.substr(tag.size()), m_height_from_tag)) {
             if (m_cb_log != nullptr)
                 m_cb_log("GCode::Processor encountered an invalid value for Height (" + std::string(comment) + ").");
         }
@@ -2000,7 +1984,7 @@ void ProcessorImpl::process_bambustudio_tags(const std::string_view comment)
     tag = "LINE_WIDTH"sv;
     pos = comment.find(tag);
     if (pos == 0) {
-        if (!parse_number(comment.substr(tag.size()), m_width_from_tag, m_cb_string_to_double_decimal_point)) {
+        if (!parse_number(comment.substr(tag.size()), m_width_from_tag)) {
             if (m_cb_log != nullptr)
                 m_cb_log("GCode::Processor encountered an invalid value for Width (" + std::string(comment) + ").");
         }
@@ -2252,7 +2236,7 @@ void ProcessorImpl::process_ideamaker_tags(const std::string_view comment)
     tag = "WIDTH:"sv;
     pos = comment.find(tag);
     if (pos == 0) {
-        if (!parse_number(comment.substr(tag.length()), m_width_from_tag, m_cb_string_to_double_decimal_point)) {
+        if (!parse_number(comment.substr(tag.length()), m_width_from_tag)) {
             if (m_cb_log != nullptr)
                 m_cb_log("GCode::Processor encountered an invalid value for Width (" + std::string(comment) + ").");
         }
@@ -2263,7 +2247,7 @@ void ProcessorImpl::process_ideamaker_tags(const std::string_view comment)
     tag = "HEIGHT:"sv;
     pos = comment.find(tag);
     if (pos == 0) {
-        if (!parse_number(comment.substr(tag.length()), m_height_from_tag, m_cb_string_to_double_decimal_point)) {
+        if (!parse_number(comment.substr(tag.length()), m_height_from_tag)) {
             if (m_cb_log != nullptr)
                 m_cb_log("GCode::Processor encountered an invalid value for Height (" + std::string(comment) + ").");
         }
@@ -2344,7 +2328,7 @@ void ProcessorImpl::process_orcaslicer_tags(const std::string_view comment)
     tag = reserved_tag(Tags::Height);
     pos = comment.find(tag);
     if (pos == 0) {
-        if (!parse_number(comment.substr(tag.size()), m_height_from_tag, m_cb_string_to_double_decimal_point)) {
+        if (!parse_number(comment.substr(tag.size()), m_height_from_tag)) {
             if (m_cb_log != nullptr)
                 m_cb_log("GCode::Processor encountered an invalid value for Height (" + std::string(comment) + ").");
         }
@@ -2355,7 +2339,7 @@ void ProcessorImpl::process_orcaslicer_tags(const std::string_view comment)
     tag = reserved_tag(Tags::Width);
     pos = comment.find(tag);
     if (pos == 0) {
-        if (!parse_number(comment.substr(tag.size()), m_width_from_tag, m_cb_string_to_double_decimal_point)) {
+        if (!parse_number(comment.substr(tag.size()), m_width_from_tag)) {
             if (m_cb_log != nullptr)
                 m_cb_log("GCode::Processor encountered an invalid value for Width (" + std::string(comment) + ").");
         }
@@ -2404,13 +2388,13 @@ void ProcessorImpl::process_simplify3d_tags(const std::string_view comment)
         size_t w_begin = comment.find("W"sv);
         size_t w_end = comment.find_first_of(' ', w_begin);
         if (h_begin != data.npos) {
-            if (!parse_number(comment.substr(h_begin + 1, (h_end != data.npos) ? h_end - h_begin - 1 : h_end), m_height_from_tag, m_cb_string_to_double_decimal_point)) {
+            if (!parse_number(comment.substr(h_begin + 1, (h_end != data.npos) ? h_end - h_begin - 1 : h_end), m_height_from_tag)) {
                 if (m_cb_log != nullptr)
                     m_cb_log("GCode::Processor encountered an invalid value for Height (" + std::string(comment) + ").");
             }
         }
         if (w_begin != data.npos) {
-            if (!parse_number(comment.substr(w_begin + 1, (w_end != data.npos) ? w_end - w_begin - 1 : w_end), m_width_from_tag, m_cb_string_to_double_decimal_point)) {
+            if (!parse_number(comment.substr(w_begin + 1, (w_end != data.npos) ? w_end - w_begin - 1 : w_end), m_width_from_tag)) {
                 if (m_cb_log != nullptr)
                     m_cb_log("GCode::Processor encountered an invalid value for Width (" + std::string(comment) + ").");
             }

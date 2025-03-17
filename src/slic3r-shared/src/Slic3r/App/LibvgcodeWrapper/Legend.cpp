@@ -16,9 +16,6 @@ using namespace Slic3r::Domain;
 
 namespace Slic3r::App::LibvgcodeWrapper {
 
-static const ImVec4 COMBO_BG         = { 0.1f, 0.1f, 0.1f, 0.6f };
-static const ImVec4 COMBO_BG_HOVERED = { 0.2f, 0.2f, 0.2f, 0.6f };
-
 static void draw_view_type_selector(Viewer& viewer, const WrapperImpl& wrapper,
     GCodeViewTypeChangedCallback cb_view_type_changed)
 {
@@ -55,8 +52,6 @@ static void draw_view_type_selector(Viewer& viewer, const WrapperImpl& wrapper,
     const ImGuiWindow* wnd = ImGui::GetCurrentWindow();
     ImGui::PushItemWidth(std::max(min_width, wnd->ContentRegionRect.Max.x - wnd->ContentRegionRect.Min.x));
 
-    ImGui::PushStyleColor(ImGuiCol_FrameBg,        COMBO_BG);
-    ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, COMBO_BG_HOVERED);
     if (ImGui::BeginCombo("##ViewTypeSelector", to_string(ViewType(options_id[selection_id]), units).c_str(),
         ImGuiComboFlags_HeightLargest)) {
         for (int i = 0; i < int(options_id.size()); ++i) {
@@ -66,7 +61,6 @@ static void draw_view_type_selector(Viewer& viewer, const WrapperImpl& wrapper,
         ImGui::EndCombo();
     }
     ImGui::PopItemWidth();
-    ImGui::PopStyleColor(2);
 
     if (old_selection != selection) {
         viewer.set_view_type(ViewType(selection));
@@ -774,13 +768,11 @@ static void draw_options(Viewer& viewer, WrapperImpl& wrapper, Imgui::DoubleSlid
     options.push_back(OptionType::CenterOfGravity);
     options.push_back(OptionType::ToolMarker);
 
-    CustomOptions& custom_options = wrapper.custom_options();
+    CustomOptions dummy_options;
+    CustomOptions& custom_options = (wrapper.mode() == WrapperMode::GCodeViewer) ? dummy_options : wrapper.custom_options();
 
     float icon_size = line_height;
 
-    ImGui::PushStyleColor(ImGuiCol_FrameBg,        COMBO_BG);
-    ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, COMBO_BG_HOVERED);
-    ImGui::PushStyleColor(ImGuiCol_Separator,      { 0.3f, 0.3f, 0.3f, 0.5f });
     ImGui::PushItemWidth(-1.0f);
     if (ImGui::BeginCombo("##options", _u8L("Options").c_str(), ImGuiComboFlags_HeightLargest)) {
         for (const OptionType option : options) {
@@ -850,7 +842,6 @@ static void draw_options(Viewer& viewer, WrapperImpl& wrapper, Imgui::DoubleSlid
         ImGui::EndCombo();
     }
     ImGui::PopItemWidth();
-    ImGui::PopStyleColor(3);
 }
 
 static void draw_producer(GCodeProducer producer)
@@ -945,8 +936,6 @@ static bool draw_estimated_times(Viewer& viewer, Imgui::DoubleSlider::RequestExt
     ImGui::Text("%s", _u8L("Mode").c_str());
     ImGui::SameLine();
 
-    ImGui::PushStyleColor(ImGuiCol_FrameBg,        COMBO_BG);
-    ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, COMBO_BG_HOVERED);
     ImGui::PushItemWidth(-1.0f);
     if (ImGui::BeginCombo("##TimeMode", curr_mode_str.c_str(), ImGuiComboFlags_HeightLargest)) {
         for (int i = 0; i < int(time_modes_str.size()); ++i) {
@@ -958,7 +947,6 @@ static bool draw_estimated_times(Viewer& viewer, Imgui::DoubleSlider::RequestExt
         ImGui::EndCombo();
     }
     ImGui::PopItemWidth();
-    ImGui::PopStyleColor(2);
 
     ImGui::BeginGroup();
     if (ImGui::BeginTable("TimeEstimates", 2)) {
@@ -1028,8 +1016,6 @@ static void draw_popup_estimated_times(const char* popup_title, Viewer& viewer)
         ImGui::Text("%s", _u8L("Mode").c_str());
         ImGui::SameLine();
 
-        ImGui::PushStyleColor(ImGuiCol_FrameBg, COMBO_BG);
-        ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, COMBO_BG_HOVERED);
         ImGui::PushItemWidth(-1.0f);
         if (ImGui::BeginCombo("##TimeMode", mode_str.c_str(), ImGuiComboFlags_HeightLargest)) {
             for (int i = 0; i < int(time_modes_str.size()); ++i) {
@@ -1041,7 +1027,6 @@ static void draw_popup_estimated_times(const char* popup_title, Viewer& viewer)
             ImGui::EndCombo();
         }
         ImGui::PopItemWidth();
-        ImGui::PopStyleColor(2);
 
         viewer.set_time_mode(mode);
 

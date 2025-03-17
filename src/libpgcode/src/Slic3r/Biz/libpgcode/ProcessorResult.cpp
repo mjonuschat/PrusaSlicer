@@ -61,6 +61,7 @@ void ProcessorResult::reset()
     producer = GCodeProducer::Unknown;
     extruders_count = MIN_EXTRUDERS_COUNT;
     spiral_vase_enabled = false;
+    sequential_print = false;
     z_offset = 0.0f;
     max_print_height = 0.0f;
     filament_diameters.clear();

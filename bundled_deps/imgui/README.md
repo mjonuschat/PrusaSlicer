@@ -50,29 +50,6 @@ THIS DIRECTORY CONTAINS THE imgui-1.91.7 5c1d2d1 SOURCE DISTRIBUTION.
 > ```
 
 ## 2)
-> Method *ImFontGlyph* ImFont::FindGlyph(ImWchar c) const* (in *imgui_draw.cpp*) modified to automatically add missing glyphs into imgui atlas with the following code:
-> ```
->const ImFontGlyph* ImFont::FindGlyph(ImWchar c) const
->{
->    // PrusaSlicer extension: call the following function whenever the fallback is needed.
->    // The goal is to not modify ImGui code too much.
->    void imgui_rendered_fallback_glyph(ImWchar c);
->
->    if (c >= (size_t)IndexLookup.Size) {
->        imgui_rendered_fallback_glyph(c);
->        return FallbackGlyph;
->    }
->    const ImWchar i = IndexLookup.Data[c];
->    if (i == (ImWchar)-1) {
->       imgui_rendered_fallback_glyph(c);
->        return FallbackGlyph;
->    }
->    return &Glyphs.Data[i];
->}
-> ```
-
-
-## 3)
 > Icons added into FontAtlas in *imconfig.h*
 > ```
 >    // Special ASCII characters are used here as an ikons markers
@@ -140,6 +117,7 @@ THIS DIRECTORY CONTAINS THE imgui-1.91.7 5c1d2d1 SOURCE DISTRIBUTION.
 >    const wchar_t ExpandBtn = 0x2714;
 >    const wchar_t InfoMarkerSmall = 0x2716;
 >    const wchar_t CollapseBtn = 0x2715;
+>    const wchar_t PrusaSlicerIcon = 0x2717;
 >
 >    // icons for double slider (middle size icons)
 >    const wchar_t Lock = 0x2801;
@@ -166,14 +144,46 @@ THIS DIRECTORY CONTAINS THE imgui-1.91.7 5c1d2d1 SOURCE DISTRIBUTION.
 >    const wchar_t PrintRunning = 0x2813;
 >    const wchar_t PrintFinished = 0x2814;
 >    const wchar_t WarningMarkerDisabled = 0x2815;
+>    // icon for object list
+>    const wchar_t EyeOpen                  = 0x2820;
+>    const wchar_t EyeClosed                = 0x2821;
+>    const wchar_t SolidPartVolum           = 0x2822;
+>    const wchar_t NegativeVolume           = 0x2823;
+>    const wchar_t ModifierVolum            = 0x2824;
+>    const wchar_t SupportBlocker           = 0x2825;
+>    const wchar_t SupportModifier          = 0x2826;
+>    const wchar_t TextSolidPartVolum       = 0x2827;
+>    const wchar_t TextNegativeVolume       = 0x2828;
+>    const wchar_t TextModifierVolum        = 0x2829;
+>    const wchar_t SvgSolidPartVolum        = 0x282A;
+>    const wchar_t SvgNegativeVolume        = 0x282B;
+>    const wchar_t SvgModifierVolum         = 0x282C;
+>    const wchar_t ObjectIcon               = 0x282D;
+>    const wchar_t HRModifier               = 0x282E;
+>    const wchar_t CustomSupports           = 0x282F;
+>    const wchar_t CustomSeam               = 0x2830;
+>    const wchar_t CutConnectors            = 0x2831;
+>    const wchar_t MmSegmentation           = 0x2832;
+>    const wchar_t Sinking                  = 0x2833;
+>    const wchar_t VariableLayerHeight      = 0x2834;
+>    const wchar_t FuzzySkin                = 0x2835;
+>    const wchar_t BedIcon                  = 0x2836;
+>    const wchar_t Details                  = 0x2837;
+>    const wchar_t OpenArrow                = 0x2838;
+>    const wchar_t CloseArrow               = 0x2839;
+>    const wchar_t ConfigContainer          = 0x283A;
+>    const wchar_t InstancesIcon            = 0x283B;
+>    const wchar_t OverridesMarker          = 0x283C;
+>    const wchar_t ExtruderMarker           = 0x283D;
+>    const wchar_t AddBedIcon               = 0x283E;
 > ```
 
-## 4)
+## 3)
 > *imstb_truetype.h* modification:
 > Hot fix for open symbolic fonts on windows
 > Add case *STBTT_MS_EID_SYMBOL* to switch in file *imstb_truetype.h* on line 1480.
 
-## 5)
+## 4)
 > Added functions:
 > ```
 >    IMGUI_API bool ColorEdit4(const char* label, float col[4], const char* current_label, const char* original_label, ImGuiColorEditFlags flags = 0);
@@ -181,5 +191,5 @@ THIS DIRECTORY CONTAINS THE imgui-1.91.7 5c1d2d1 SOURCE DISTRIBUTION.
 > ```
 > into *imgui.h* and *imgui_widgets.cpp* to allow to localize the labels contained into the color picker dialog
  
-## 6)
+## 5)
 > Enabled #define IMGUI_DEFINE_MATH_OPERATORS into *imconfig.h*:

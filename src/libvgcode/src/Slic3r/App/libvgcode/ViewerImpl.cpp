@@ -432,13 +432,6 @@ void ViewerImpl::init(Render::Device& device, Scene::Scene& scene, Scene::Geomet
     m_initialized = true;
 }
 
-void ViewerImpl::shutdown()
-{
-    reset();
-
-    m_initialized = false;
-}
-
 void ViewerImpl::reset()
 {
     m_layers.reset();
@@ -455,11 +448,16 @@ void ViewerImpl::reset()
     m_valid_lines_bitset.clear();
     m_cog_marker.reset();
 
-#if !USE_TEXTURE_BUFFER
-    m_texture_data.reset();
-#else
+#if USE_TEXTURE_BUFFER
+    if (m_positions_buffer != nullptr) m_positions_buffer->set_data(nullptr, 1, Render::BufferUsage::StaticDraw);
+    if (m_heights_widths_angles_buffer != nullptr) m_heights_widths_angles_buffer->set_data(nullptr, 1, Render::BufferUsage::StaticDraw);
+    if (m_colors_buffer != nullptr) m_colors_buffer->set_data(nullptr, 1, Render::BufferUsage::StaticDraw);
+    if (m_enabled_segments_buffer != nullptr) m_enabled_segments_buffer->set_data(nullptr, 1, Render::BufferUsage::StaticDraw);
+    if (m_enabled_options_buffer != nullptr) m_enabled_options_buffer->set_data(nullptr, 1, Render::BufferUsage::StaticDraw);
     m_ranges_settings = std::nullopt;
-#endif // !USE_TEXTURE_BUFFER
+#else
+    m_texture_data.reset();
+#endif // USE_TEXTURE_BUFFER
 
     m_enabled_segments_count = 0;
     m_enabled_options_count = 0;

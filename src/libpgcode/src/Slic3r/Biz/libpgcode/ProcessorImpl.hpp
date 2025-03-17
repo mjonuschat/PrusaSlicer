@@ -105,8 +105,6 @@ private:
     CachedPosition m_cached_position;
 
     ProcessorLogCallback m_cb_log{ nullptr };
-    StringToDoubleDecimalPointCallback m_cb_string_to_double_decimal_point{ nullptr };
-    FloatToStringDecimalPointCallback m_cb_float_to_string_decimal_point{ nullptr };
 
     void init();
     void apply_config(ProcessorConfig&& config);

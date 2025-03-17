@@ -60,6 +60,7 @@ private:
     void init_gizmos();
     void init_viewer(Render::Device& device);
     void send_data_to_viewer(Biz::Slicing::FDMResult result);
+    void send_data_to_viewer_from_file(const std::string& filename);
 
     void on_invalidate_slice();
     void on_update_layers_slider(const CustomGCode::Info& info);
@@ -67,15 +68,11 @@ private:
     void on_gcode_view_type_changed();
     void on_slider_layers_on_thumb_move();
     void on_slider_layers_ticks_changed();
-    std::vector<std::string> on_slider_layers_get_extruder_colors();
     bool on_slider_layers_auto_color_change();
-    void on_slider_layers_check_gcode(CustomGCode::Type type);
+    void on_slider_layers_notify_empty_auto_color_change();
+    void on_slider_layers_notify_empty_color_change_gcode();
     bool on_slider_layers_get_extruders_sequence(LibvgcodeWrapper::ExtrudersSequence& sequence);
-    std::string on_slider_layers_get_custom_code(const std::string& code_in, float height);
-    std::string on_slider_layers_get_pause_print_msg(const std::string& msg_in, float height);
-    std::string on_slider_layers_get_new_color(const std::string& color);
     int on_slider_layers_show_info_msg(const std::string& message, int btns_flag);
-    std::string on_slider_layers_get_gcode(CustomGCode::Type type);
     std::set<int> on_slider_layers_get_used_extruders_in_print(float print_z);
     void on_slider_layers_app_config_changed(const std::string& key, const std::string& val);
     void on_slider_gcode_on_thumb_move();

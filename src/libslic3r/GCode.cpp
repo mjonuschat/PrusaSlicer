@@ -684,13 +684,6 @@ namespace DoExport {
             SPDLOG_WARN(msg);
         };
 
-        processor_config.callbacks.cb_float_to_string_decimal_point = [](double value, int precision){
-            return float_to_string_decimal_point(value, precision);
-        };
-        processor_config.callbacks.cb_string_to_double_decimal_point = [](const std::string_view string, size_t* pos){
-            return string_to_double_decimal_point(string, pos);
-        };
-
         return processor_config;
     }
 

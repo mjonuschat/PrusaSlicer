@@ -1,7 +1,10 @@
 #include "Slic3r/App/LibvgcodeWrapper/TickCodeManager.hpp"
 #include "Slic3r/App/I18N/I18N.hpp"
 
+#include <Slic3r/Biz/libpgcode/Utils.hpp>
+
 #include <libslic3r/Color.hpp>
+#include <libslic3r/GCode.hpp>
 
 #include <random>
 
@@ -13,11 +16,6 @@ static constexpr float EPSILON = 0.0011f;
 static constexpr int YES = 0x00000002; // an analogue of wxYES   
 static constexpr int NO = 0x00000008; // an analogue of wxNO    
 static constexpr int CANCEL = 0x00000010; // an analogue of wxCANCEL
-
-TickCodeManager::TickCodeManager()
-{
-    m_pause_print_msg = _u8L("Place bearings in slots and resume printing");
-}
 
 void TickCodeManager::set_ticks(const CustomGCode::Info& custom_gcode_per_print_z)
 {
@@ -41,32 +39,47 @@ bool TickCodeManager::has_tick(int tick) const
 
 bool TickCodeManager::add_tick(const int tick, CustomGCode::Type type, const int extruder, float print_z)
 {
-    std::string color;
     std::string extra;
-    if (type == CustomGCode::Type::Custom) {
-        // custom Gcode
-        extra = custom_code(m_custom_gcode, print_z);
-        if (extra.empty())
-            return false;
-        m_custom_gcode = extra;
-    }
-    else if (type == CustomGCode::Type::PausePrint) {
-        extra = pause_print_msg(m_pause_print_msg, print_z);
-        if (extra.empty())
-            return false;
-        m_pause_print_msg = extra;
-    }
-    else {
-        color = color_for_tick(TickCode{ tick }, type, extruder);
-        if (color.empty())
-            return false;
-    }
+    std::string color = color_for_tick(TickCode{ tick }, type, extruder);
+    if (color.empty())
+        return false;
 
     ticks.emplace(TickCode{ tick, type, extruder, color, extra });
     return true;
 }
 
-bool TickCodeManager::edit_tick(std::set<TickCode>::iterator it, float print_z)
+bool TickCodeManager::add_pause_print_tick(const int tick, const std::string& msg, int extruder, float print_z)
+{
+    assert(!msg.empty());
+    ticks.emplace(TickCode{ tick, CustomGCode::Type::PausePrint, extruder, "", msg });
+    return true;
+}
+
+bool TickCodeManager::add_color_change_tick(const int tick, const std::string& color, int extruder, float print_z)
+{
+    assert(Biz::libpgcode::is_valid_color(color));
+    ticks.emplace(TickCode{ tick, CustomGCode::Type::ColorChange, extruder, color, "" });
+    return true;
+}
+
+bool TickCodeManager::add_custom_gcode_tick(const int tick, const std::string& gcode, int extruder, float print_z)
+{
+    std::vector<std::string> reserved_tags;
+    assert(!contains_reserved_tags(gcode, 1, reserved_tags));
+    ticks.emplace(TickCode{ tick, CustomGCode::Type::Custom, extruder, "", gcode });
+    return true;
+}
+
+bool TickCodeManager::add_template_tick(const int tick, const std::string& color, int extruder, float print_z)
+{
+    assert(Biz::libpgcode::is_valid_color(color));
+    std::string extra = gcode(CustomGCode::Type::Template);
+    assert(!extra.empty());
+    ticks.emplace(TickCode{ tick, CustomGCode::Type::Template, extruder, color, extra });
+    return true;
+}
+
+bool TickCodeManager::edit_tick(std::set<TickCode>::iterator it, float print_z, const std::string& new_value)
 {
     // Save previously value of the tick before the call a Dialog from get_... functions,
     // otherwise a background process can change ticks values and current iterator wouldn't be valid for the moment of a Dialog close
@@ -75,12 +88,13 @@ bool TickCodeManager::edit_tick(std::set<TickCode>::iterator it, float print_z)
 
     std::string edited_value;
     if (it->type == CustomGCode::Type::ColorChange)
-        edited_value = new_color(it->color);
+        edited_value = new_value;
     else if (it->type == CustomGCode::Type::PausePrint)
-        edited_value = pause_print_msg(it->extra, print_z);
-    else
-        edited_value = custom_code((it->type == CustomGCode::Type::Template) ?
-            gcode(CustomGCode::Type::Template) : it->extra, print_z);
+        edited_value = new_value;
+    else if (it->type == CustomGCode::Type::Custom)
+        edited_value = new_value;
+    else if (it->type == CustomGCode::Type::Template)
+        edited_value = new_value;
 
     if (edited_value.empty())
         return false;
@@ -104,8 +118,6 @@ bool TickCodeManager::edit_tick(std::set<TickCode>::iterator it, float print_z)
         if (it->extra == edited_value)
             return false;
         changed_tick.extra = edited_value;
-        if (it->type == CustomGCode::Type::Template)
-            changed_tick.type = CustomGCode::Type::Custom;
     }
 
     ticks.erase(it);
@@ -119,8 +131,9 @@ void TickCodeManager::add_auto_color_change(CustomGCode::Mode main_mode, const i
     int tick = tick_from_value(print_z);
     if (tick >= 0 && !has_tick(tick)) {
         if (main_mode == CustomGCode::Mode::SingleExtruder) {
-            set_default_colors(true);
-            add_tick(tick, CustomGCode::Type::ColorChange, 1, print_z);
+            set_use_default_colors(true);
+            std::string color = color_for_tick(TickCode{ tick }, CustomGCode::Type::ColorChange, -1);
+            add_color_change_tick(tick, color, -1, print_z);
         }
         else {
             int extruder = 2;
@@ -251,9 +264,7 @@ int TickCodeManager::tick_from_value(float value, bool force_lower_bound/* = fal
 
 std::string TickCodeManager::gcode(CustomGCode::Type type) const
 {
-    if (m_cb_get_gcode)
-        return m_cb_get_gcode(type);
-    return std::string();
+    return (m_cb_get_gcode != nullptr) ? m_cb_get_gcode(type) : std::string();
 }
 
 // Get used extruders for tick. 
@@ -423,8 +434,10 @@ bool TickCodeManager::check_ticks_changed_event(CustomGCode::Type type, CustomGC
         return false;
     }
 
-    if (m_cb_check_gcode_and_notify)
-        m_cb_check_gcode_and_notify(type);
+    if (type == CustomGCode::Type::ColorChange && gcode(CustomGCode::Type::ColorChange).empty()) {
+        if (m_cb_notify_empty_color_change_gcode)
+            m_cb_notify_empty_color_change_gcode();
+    }
 
     return true;
 }
@@ -592,24 +605,8 @@ std::string TickCodeManager::color_for_tick(TickCode tick, CustomGCode::Type typ
     return color;
 }
 
-std::string TickCodeManager::custom_code(const std::string& code_in, float height)
-{
-    if (m_cb_get_custom_code) 
-        return m_cb_get_custom_code(code_in, height);
-    return std::string();
-}
-
-std::string TickCodeManager::pause_print_msg(const std::string& msg_in, float height)
-{
-    if (m_cb_get_pause_print_msg)
-        return m_cb_get_pause_print_msg(msg_in, height);
-    return std::string();
-}
-
 std::string TickCodeManager::new_color(const std::string& color)
 {
-    if (m_cb_get_new_color)
-        return m_cb_get_new_color(color);
     return std::string();
 }
 

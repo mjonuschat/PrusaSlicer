@@ -133,6 +133,21 @@ std::string_view skip_whitespaces_both_sides(const std::string_view str)
     return str.substr(begin, end - begin + 1);
 }
 
+bool is_valid_color(const std::string& color)
+{
+    if (color.length() != 7)
+        return false;
+
+    if (color.front() != '#')
+        return false;
+
+    for (int i = 1; i <= 6; ++i) {
+        if (!is_hex_digit(color[i]))
+            return false;
+    }
+    return true;
+}
+
 } // namespace Slic3r::Biz::libpgcode
 
 

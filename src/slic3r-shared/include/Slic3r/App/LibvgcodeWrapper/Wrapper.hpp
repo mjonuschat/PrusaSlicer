@@ -4,6 +4,8 @@
 #include "Slic3r/App/Imgui/DoubleSlider.hpp"
 #include "libslic3r/BoundingBox.hpp"
 
+#include <Slic3r/App/libvgcode/ViewerInputData.hpp>
+
 #include <memory>
 
 namespace Slic3r::App::Render {
@@ -15,19 +17,25 @@ class Scene;
 class GeometryDataFactory;
 } // namespace Slic3r::App::Scene
 
-namespace Slic3r::App::libvgcode {
-struct ViewerInputData;
-} // namespace Slic3r::App::libvgcode;
-
 namespace Slic3r::App::LibvgcodeWrapper {
+
+enum class WrapperMode
+{
+    EditorGCode,
+    GCodeViewer,
+    EditorPreGCode,
+    EditorSLA,
+};
 
 struct WrapperSettings
 {
+    WrapperMode mode{ WrapperMode::EditorGCode };
     bool slider_layers_editable{ false };
     bool slider_layers_show_ruler{ false };
     bool slider_layers_show_ruler_bg{ false };
     bool slider_layers_show_estimated_times{ false };
-    bool settings_in_legend_visible{ false };
+    bool slider_layers_use_default_colors{ false };
+    bool seq_top_layer_only{ false };
     bool gcodewindow_visible{ true };
 
     libvgcode::CustomOptions custom_options;
@@ -45,15 +53,11 @@ struct WrapperSettings
     //
     Imgui::DoubleSlider::OnThumbMoveCallback        cb_slider_layers_on_thumb_move{ nullptr };
     TicksChangedCallback                            cb_slider_layers_ticks_changed{ nullptr };
-    GetExtruderColorsCallback                       cb_slider_layers_get_extruder_colors{ nullptr };
     AutoColorChangeCallback                         cb_slider_layers_auto_color_change{ nullptr };
-    CheckGCodeCallback                              cb_slider_layers_check_gcode{ nullptr };
+    NotifyEmptyAutoColorChangeCallback              cb_slider_layers_notify_empty_auto_color_change{ nullptr };
+    NotifyEmptyColorChangeGCodeCallback             cb_slider_layers_notify_empty_color_change_gcode{ nullptr };
     GetExtrudersSequenceCallback                    cb_slider_layers_get_extruders_sequence{ nullptr };
-    GetCustomGCodeCallback                          cb_slider_layers_get_custom_code{ nullptr };
-    GetPausePrintMsgCallback                        cb_slider_layers_get_pause_print_msg{ nullptr };
-    GetNewColorCallback                             cb_slider_layers_get_new_color{ nullptr };
     ShowInfoMsgCallback                             cb_slider_layers_show_info_msg{ nullptr };
-    GetGCodeCallback                                cb_slider_layers_get_gcode{ nullptr };
     GetUsedExtrudersInPrintCallback                 cb_slider_layers_get_used_extruders_in_print{ nullptr };
     AppConfigChangedCallback                        cb_slider_layers_app_config_changed{ nullptr };
     //
@@ -86,12 +90,17 @@ public:
 
     bool init(Render::Device& device, Scene::Scene& scene, Scene::GeometryDataFactory& data_factory,
         const WrapperSettings& settings);
-    void shutdown();
+
+    WrapperMode mode() const;
+    void set_mode(WrapperMode mode);
 
     void reset();
 
     void load(WrapperInputData&& wrapper_data, libvgcode::ViewerInputData&& data);
     void load_as_sla(WrapperSLAInputData&& wrapper_sla_data);
+
+    libvgcode::ViewType view_type() const;
+    void set_view_type(libvgcode::ViewType type);
 
     BoundingBoxf3 bounding_box(const Biz::libpgcode::MoveTypes& types = {
         Biz::libpgcode::MoveType::Retract,
@@ -127,8 +136,17 @@ public:
     const libvgcode::Interval& layers_range() const;
     void set_layers_range(libvgcode::Interval::value_type min, libvgcode::Interval::value_type max);
 
+    void set_extrusion_role_color(Domain::GCodeExtrusionRole role, const ColorRGB& color);
+
+    const libvgcode::GCodeEvents& gcode_events() const;
+    uint8_t used_extruders_count() const;
+    std::vector<uint8_t> used_extruders_ids() const;
+
     void slider_gcode_move_current_thumb(int delta);
     void slider_layers_move_current_thumb(int delta);
+    void slider_layers_jump_to_value();
+    void slider_layers_add_current_tick();
+    void slider_layers_delete_current_tick();
 
     const libvgcode::Lights& lights() const;
     void set_lights(const libvgcode::Lights& lights);

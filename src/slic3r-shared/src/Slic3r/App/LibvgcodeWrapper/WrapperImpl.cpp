@@ -32,32 +32,33 @@ bool WrapperImpl::init(Render::Device& device, Scene::Scene& scene, Scene::Geome
     const WrapperSettings& settings)
 {
     m_settings = settings;
-    set_settings_in_legend_visible(m_settings.settings_in_legend_visible);
     set_gcodewindow_visible(m_settings.gcodewindow_visible);
 
     try {
         m_viewer.init(device, scene, data_factory);
 
+        if (m_viewer.is_top_layer_only_view_range() != settings.seq_top_layer_only)
+            m_viewer.toggle_top_layer_only_view_range();
+
         m_cb_legend.cb_extrusion_role_visibility_changed = std::bind(&WrapperImpl::on_extrusion_role_visibility_changed, this);
         m_cb_legend.cb_request_extra_frame = m_settings.cb_request_extra_frames;
         m_cb_legend.cb_view_type_changed = m_settings.cb_gcode_view_type_changed;
 
-        m_slider_layers.init(0, 0, 0, 100, m_settings.slider_layers_editable);
+        m_slider_layers.init(0, 0, 0, 100);
         m_slider_layers.show_ruler(m_settings.slider_layers_show_ruler, m_settings.slider_layers_show_ruler_bg);
         m_slider_layers.show_estimated_times(m_settings.slider_layers_show_estimated_times);
+        m_slider_layers.set_use_default_colors(m_settings.slider_layers_use_default_colors);
         // set layers slider callbacks
         m_slider_layers.set_request_extra_frames_callback(std::bind(&WrapperImpl::on_request_extra_frames, this, std::placeholders::_1));
         m_slider_layers.set_on_thumb_move_callback(std::bind(&WrapperImpl::on_slider_layers_scroll_changed, this));
-        m_slider_layers.set_check_gcode_callback(std::bind(&WrapperImpl::on_slider_layers_check_gcode, this, std::placeholders::_1));
-        m_slider_layers.set_ticks_changed_callback(m_settings.cb_slider_layers_ticks_changed);
-        m_slider_layers.set_get_extruder_colors_callback(m_settings.cb_slider_layers_get_extruder_colors);
+        m_slider_layers.set_notify_empty_color_change_gcode_callback(m_settings.cb_slider_layers_notify_empty_color_change_gcode);
+        m_slider_layers.set_ticks_changed_callback(std::bind(&WrapperImpl::on_slider_layers_ticks_changed, this));
+        m_slider_layers.set_get_extruder_colors_callback(std::bind(&WrapperImpl::on_slider_layers_get_extruder_colors, this));
         m_slider_layers.set_auto_color_change_callback(m_settings.cb_slider_layers_auto_color_change);
+        m_slider_layers.set_notify_empty_auto_color_change_callback(m_settings.cb_slider_layers_notify_empty_auto_color_change);
         m_slider_layers.set_get_extruders_sequence_callback(m_settings.cb_slider_layers_get_extruders_sequence);
-        m_slider_layers.set_get_custom_code_callback(m_settings.cb_slider_layers_get_custom_code);
-        m_slider_layers.set_get_pause_print_msg_callback(m_settings.cb_slider_layers_get_pause_print_msg);
-        m_slider_layers.set_get_new_color_callback(m_settings.cb_slider_layers_get_new_color);
         m_slider_layers.set_show_info_msg_callback(m_settings.cb_slider_layers_show_info_msg);
-        m_slider_layers.set_get_gcode_callback(m_settings.cb_slider_layers_get_gcode);
+        m_slider_layers.set_get_gcode_callback(std::bind(&WrapperImpl::on_slider_layers_get_gcode, this, std::placeholders::_1));
         m_slider_layers.set_get_used_extruders_in_print_callback(m_settings.cb_slider_layers_get_used_extruders_in_print);
         m_slider_layers.set_app_config_changed_callback(m_settings.cb_slider_layers_app_config_changed);
 
@@ -74,9 +75,27 @@ bool WrapperImpl::init(Render::Device& device, Scene::Scene& scene, Scene::Geome
     }
 }
 
-void WrapperImpl::shutdown()
+static void set_pregcode_extrusion_role_colors(WrapperImpl& wrapper)
 {
-    m_viewer.shutdown();
+    wrapper.set_extrusion_role_color(GCodeExtrusionRole::Skirt,                    ColorRGB(0.5f, 1.0f, 0.5f));
+    wrapper.set_extrusion_role_color(GCodeExtrusionRole::ExternalPerimeter,        ColorRGB(1.0f, 1.0f, 0.0f));
+    wrapper.set_extrusion_role_color(GCodeExtrusionRole::SupportMaterial,          ColorRGB(0.5f, 1.0f, 0.5f));
+    wrapper.set_extrusion_role_color(GCodeExtrusionRole::SupportMaterialInterface, ColorRGB(0.5f, 1.0f, 0.5f));
+    wrapper.set_extrusion_role_color(GCodeExtrusionRole::InternalInfill,           ColorRGB(1.0f, 0.5f, 0.5f));
+    wrapper.set_extrusion_role_color(GCodeExtrusionRole::SolidInfill,              ColorRGB(1.0f, 0.5f, 0.5f));
+    wrapper.set_extrusion_role_color(GCodeExtrusionRole::WipeTower,                ColorRGB(0.5f, 1.0f, 0.5f));
+}
+
+void WrapperImpl::set_mode(WrapperMode mode)
+{
+    m_settings.mode = mode;
+    m_slider_layers.enable_editing(m_settings.mode != WrapperMode::GCodeViewer);
+    m_legend_params.settings_visible = (m_settings.mode == WrapperMode::GCodeViewer);
+    m_legend_params.enabled = (m_settings.mode != WrapperMode::EditorPreGCode);
+    if (m_settings.mode == WrapperMode::EditorPreGCode)
+        set_pregcode_extrusion_role_colors(*this);
+    else
+        reset_default_extrusion_roles_colors();
 }
 
 void WrapperImpl::reset()
@@ -87,17 +106,29 @@ void WrapperImpl::reset()
 
 void WrapperImpl::load(WrapperInputData&& wrapper_data, ViewerInputData&& data)
 {
+    m_loading = true;
+
     m_printer_technology = PrinterTechnology::FFF;
 
     m_data = std::move(wrapper_data);
+
+    if (data.gcode.empty() && m_settings.mode == WrapperMode::EditorGCode)
+        set_mode(WrapperMode::EditorPreGCode);
+    else if (!data.gcode.empty() && m_settings.mode == WrapperMode::EditorPreGCode)
+        set_mode(WrapperMode::EditorGCode);
+
     m_gcode_window_data.set_gcode(std::move(data.gcode));
     m_viewer.load(std::move(data));
 
     update_slider_layers();
+
+    m_loading = false;
 }
 
 void WrapperImpl::load_as_sla(WrapperSLAInputData&& wrapper_sla_data)
 {
+    m_loading = true;
+
     m_printer_technology = PrinterTechnology::SLA;
     m_data = {};
 
@@ -110,6 +141,8 @@ void WrapperImpl::load_as_sla(WrapperSLAInputData&& wrapper_sla_data)
     m_slider_layers.set_max_pos(max_pos);
     m_slider_layers.set_selection_span(0, m_slider_layers.max_pos());
     m_slider_layers.set_draw_mode(true, false);
+
+    m_loading = false;
 }
 
 void WrapperImpl::render_toolpaths(const Vec3f& camera_position)
@@ -122,7 +155,8 @@ void WrapperImpl::render_gui(const WrapperLayoutData& layout)
 {
     m_legend_height = 0.0f;
 
-    if (m_printer_technology == PrinterTechnology::FFF) {
+    if (m_printer_technology == PrinterTechnology::FFF &&
+        m_settings.mode != WrapperMode::EditorPreGCode) {
         render_legend(layout);
         render_slider_gcode(layout);
     }
@@ -329,7 +363,9 @@ void WrapperImpl::update_slider_layers()
     }
 
     m_slider_layers.set_extruder_colors(convert(m_viewer.tool_colors()));
-    m_slider_layers.set_mode_and_only_extruder(m_data.one_extruder_printed_model, m_data.only_extruder);
+    bool one_extruder_printed_model = m_viewer.used_extruders_count() == 1;
+    int8_t only_extruder = (one_extruder_printed_model && m_viewer.extruders_count() > 1) ? m_viewer.used_extruders_ids().front() : -1;
+    m_slider_layers.set_mode_and_only_extruder(one_extruder_printed_model, only_extruder);
     m_slider_layers.set_slider_values(std::move(layers_zs));
     m_slider_layers.force_ruler_update();
     assert(m_slider_layers.min_pos() == 0);
@@ -409,16 +445,6 @@ void WrapperImpl::on_slider_layers_scroll_changed()
     }
 }
 
-void WrapperImpl::on_slider_layers_check_gcode(CustomGCode::Type type)
-{
-    if (m_slider_layers.is_shown()) {
-        if (type == CustomGCode::Type::ColorChange && m_slider_layers.gcode(CustomGCode::Type::ColorChange).empty()) {
-            if (m_settings.cb_slider_layers_check_gcode != nullptr)
-                m_settings.cb_slider_layers_check_gcode(type);
-        }
-    }
-}
-
 void WrapperImpl::on_slider_gcode_scroll_changed()
 {
     if (m_slider_gcode.is_shown()) {
@@ -438,6 +464,42 @@ void WrapperImpl::on_request_extra_frames(unsigned int count)
 {
     if (m_settings.cb_request_extra_frames != nullptr)
         m_settings.cb_request_extra_frames(count);
+}
+
+void WrapperImpl::on_slider_layers_ticks_changed()
+{
+    if (!m_loading) {
+        m_legend_params.enabled = false;
+        ViewType view_type = ViewType::FeatureType;
+        auto gcodes = slider_layers_ticks_values().gcodes;
+        if (std::any_of(gcodes.begin(), gcodes.end(), [](const CustomGCode::Item& item) {
+            return item.type == CustomGCode::Type::ColorChange;
+        })) {
+            view_type = ViewType::ColorPrint;
+        }
+        set_view_type(view_type);
+        set_pregcode_extrusion_role_colors(*this);
+        if (m_settings.mode == WrapperMode::EditorGCode)
+            set_mode(WrapperMode::EditorPreGCode);
+    }
+
+    if (m_settings.cb_slider_layers_ticks_changed != nullptr)
+        m_settings.cb_slider_layers_ticks_changed();
+}
+
+std::string WrapperImpl::on_slider_layers_get_gcode(CustomGCode::Type type)
+{
+    switch (type) {
+    case CustomGCode::ColorChange: { return m_data.color_change_gcode; }
+    case CustomGCode::PausePrint:  { return m_data.pause_print_gcode; }
+    case CustomGCode::Template:    { return m_data.template_custom_gcode; }
+    default:                       { return std::string(); }
+    }
+}
+
+Palette WrapperImpl::on_slider_layers_get_extruder_colors()
+{
+    return m_viewer.tool_colors();
 }
 
 void WrapperImpl::render_toolpaths_internal(const Vec3f& camera_position)
@@ -664,7 +726,7 @@ void WrapperImpl::render_vertex_properties(const WrapperLayoutData& layout)
                     Imgui::UnifiedWindowStyle unified_window_style;
                     unified_window_style.push();
                     ImGui::Begin(_u8L("Actual speed profile table").c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize |
-                        ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse);
+                        ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoFocusOnAppearing);
 
                     if (ImGui::BeginTable("ActualSpeedTable", 2, ImGuiTableFlags_Borders | ImGuiTableFlags_ScrollY)) {
                         char buff[1024];
@@ -683,10 +745,10 @@ void WrapperImpl::render_vertex_properties(const WrapperLayoutData& layout)
                             ImU32 row_bg_color = ImGui::GetColorU32(highlight ? ImGuiCol_TableRowBg : ImGuiCol_TableRowBgAlt);
                             ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, row_bg_color);
                             ImGui::TableSetColumnIndex(0);
-                            ImGui::TextColored(ImGui::GetStyleColorVec4(highlight ? ImGuiCol_TextSelectedBg : ImGuiCol_Text),
+                            ImGui::TextColored(ImGui::GetStyleColorVec4(highlight ? ImGuiCol_ButtonHovered : ImGuiCol_Text),
                                 "%s", convert_and_format_units(item.position, UnitsType::Millimeters, (m_units == UnitsSystem::SI) ? UnitsType::Millimeters : UnitsType::Inches, 3, false).c_str());
                             ImGui::TableSetColumnIndex(1);
-                            ImGui::TextColored(ImGui::GetStyleColorVec4(highlight ? ImGuiCol_TextSelectedBg : ImGuiCol_Text),
+                            ImGui::TextColored(ImGui::GetStyleColorVec4(highlight ? ImGuiCol_ButtonHovered : ImGuiCol_Text),
                                 "%s", convert_and_format_units(item.speed, UnitsType::MillimetersPerSecond, (m_units == UnitsSystem::SI) ? UnitsType::MillimetersPerSecond : UnitsType::InchesPerSecond, 1, false).c_str());
                             ++counter;
                         }
@@ -743,9 +805,9 @@ void WrapperImpl::render_customize_extrusion_roles_colors_popup()
 
         ImGui::Separator();
         ImGui::NewLine();
-        const float btn_width = 50.0f;
+        float btn_width = 50.0f;
         ImGui::SameLine(ImGui::GetCurrentWindow()->Size.x - ImGui::GetStyle().WindowPadding.x - btn_width);
-        if (ImGui::Button(_u8L("Close").c_str(), { btn_width, 0.0f })) {
+        if (ImGui::Button(_u8L("Close").c_str(), { btn_width, 0.0f }) || ImGui::IsKeyPressed(ImGuiKey_Escape)) {
             m_extrusion_roles_colors_popup_visible = false;
             ImGui::CloseCurrentPopup();
         }
@@ -792,7 +854,7 @@ void WrapperImpl::render_customize_options_colors_popup()
         ImGui::NewLine();
         float btn_width = 50.0f;
         ImGui::SameLine(ImGui::GetCurrentWindow()->Size.x - ImGui::GetStyle().WindowPadding.x - btn_width);
-        if (ImGui::Button(_u8L("Close").c_str(), { btn_width, 0.0f })) {
+        if (ImGui::Button(_u8L("Close").c_str(), { btn_width, 0.0f }) || ImGui::IsKeyPressed(ImGuiKey_Escape)) {
             m_options_colors_popup_visible = false;
             ImGui::CloseCurrentPopup();
         }
@@ -888,7 +950,7 @@ void WrapperImpl::render_customize_range_colors_popup()
         ImGui::NewLine();
         float btn_width = 50.0f;
         ImGui::SameLine(ImGui::GetCurrentWindow()->Size.x - ImGui::GetStyle().WindowPadding.x - btn_width);
-        if (ImGui::Button(_u8L("Close").c_str(), { btn_width, 0.0f })) {
+        if (ImGui::Button(_u8L("Close").c_str(), { btn_width, 0.0f }) || ImGui::IsKeyPressed(ImGuiKey_Escape)) {
             m_range_colors_popup_type = ViewType::COUNT;
             ImGui::CloseCurrentPopup();
         }
@@ -963,7 +1025,7 @@ void WrapperImpl::render_customize_radius_popup()
         ImGui::NewLine();
         float btn_width = 50.0f;
         ImGui::SameLine(ImGui::GetCurrentWindow()->Size.x - ImGui::GetStyle().WindowPadding.x - btn_width);
-        if (ImGui::Button(_u8L("Close").c_str(), { btn_width, 0.0f })) {
+        if (ImGui::Button(_u8L("Close").c_str(), { btn_width, 0.0f }) || ImGui::IsKeyPressed(ImGuiKey_Escape)) {
             m_radius_popup_type = MoveType::COUNT;
             ImGui::CloseCurrentPopup();
         }
@@ -1037,15 +1099,15 @@ void WrapperImpl::render_customize_scale_factor_popup()
         ImGui::Text("%.2f", min);
         ImGui::SameLine();
         if (ImGui::SliderFloat("##Radius", &scale_factor, min, max, "%.2f", ImGuiSliderFlags_NoInput))
-          edited = true;
+            edited = true;
         ImGui::SameLine();
         ImGui::Text("%.2f", max);
 
         ImGui::Separator();
         ImGui::NewLine();
-        const float btn_width = 50.0f;
+        float btn_width = 50.0f;
         ImGui::SameLine(ImGui::GetCurrentWindow()->Size.x - ImGui::GetStyle().WindowPadding.x - btn_width);
-        if (ImGui::Button(_u8L("Close").c_str(), { btn_width, 0.0f })) {
+        if (ImGui::Button(_u8L("Close").c_str(), { btn_width, 0.0f }) || ImGui::IsKeyPressed(ImGuiKey_Escape)) {
             m_scale_factor_popup_type = OptionType::COUNT;
             ImGui::CloseCurrentPopup();
         }

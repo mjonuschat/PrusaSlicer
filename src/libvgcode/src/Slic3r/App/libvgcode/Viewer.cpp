@@ -25,11 +25,6 @@ void Viewer::init(Render::Device& device, Scene::Scene& scene, Scene::GeometryDa
     m_impl->init(device, scene, data_factory);
 }
 
-void Viewer::shutdown()
-{
-    m_impl->shutdown();
-}
-
 void Viewer::reset()
 {
     m_impl->reset();
