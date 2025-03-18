@@ -29,8 +29,12 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Plater/BedRenderHelper.cpp
         include/Slic3r/App/Plater/BedMaterials.hpp
         src/Slic3r/App/Plater/BedMaterials.cpp
-        include/Slic3r/App/Plater/ObjectList.hpp
-        src/Slic3r/App/Plater/ObjectList.cpp
+        include/Slic3r/App/Plater/PlaterRenderLayout.hpp
+        src/Slic3r/App/Plater/PlaterRenderLayout.cpp
+        include/Slic3r/App/Plater/History.hpp
+        src/Slic3r/App/Plater/History.cpp
+        include/Slic3r/App/Plater/SidebarSlice.hpp
+        src/Slic3r/App/Plater/SidebarSlice.cpp
 
         include/Slic3r/App/View/IPanelView.hpp
 
@@ -43,6 +47,19 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Preview/PreviewSceneLayer.hpp
         include/Slic3r/App/Preview/PreviewSceneRenderCustomizer.hpp
         src/Slic3r/App/Preview/PreviewSceneRenderCustomizer.cpp
+        include/Slic3r/App/Preview/PreviewRenderLayout.hpp
+        src/Slic3r/App/Preview/PreviewRenderLayout.cpp
+        include/Slic3r/App/Preview/SidebarAutoReslice.hpp
+        src/Slic3r/App/Preview/SidebarAutoReslice.cpp
+        include/Slic3r/App/Preview/SidebarAfterSlice.hpp
+        src/Slic3r/App/Preview/SidebarAfterSlice.cpp
+
+        include/Slic3r/App/ObjectList.hpp
+        src/Slic3r/App/ObjectList.cpp
+        include/Slic3r/App/SidebarBed.hpp
+        src/Slic3r/App/SidebarBed.cpp
+        include/Slic3r/App/SidebarPrint.hpp
+        src/Slic3r/App/SidebarPrint.cpp
 
         src/Slic3r/App/Scene/Scene.cpp
         include/Slic3r/App/Scene/Scene.hpp
@@ -147,8 +164,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/LibvgcodeWrapper/Legend.cpp
         include/Slic3r/App/LibvgcodeWrapper/Legend.hpp
 
-        src/Slic3r/App/TestRenderLayout.cpp
-        include/Slic3r/App/TestRenderLayout.hpp
+        src/Slic3r/App/AbstractRenderLayout.cpp
+        include/Slic3r/App/AbstractRenderLayout.hpp
 
         include/Slic3r/Biz/PrintConfigInteractor.hpp
         src/Slic3r/Biz/PrintConfigInteractor.cpp

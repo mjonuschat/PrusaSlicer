@@ -295,6 +295,15 @@ namespace ImGui
     const wchar_t ToolbarSidebar           = 0x2905;
     const wchar_t ToolbarGraph             = 0x2906;
 
+    // printer icons (PNGs)
+    const wchar_t PrinterNEXT             = 0x2A01;
+
+    // sidebar icons
+    const wchar_t SavePrint               = 0x2B01;
+    const wchar_t SavePrintToFlash        = 0x2B02;
+    const wchar_t SavePrintToLocal        = 0x2B03;
+    const wchar_t SavePrintAddBookmark    = 0x2B04;
+
 } // namespace ImGui
 // }
 

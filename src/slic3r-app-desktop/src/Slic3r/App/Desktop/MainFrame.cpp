@@ -328,7 +328,7 @@ bool MainFrame::select_language()
 void MainFrame::update_canvas_ui_settings()
 {
     m_canvas->set_language(localization().active_language());
-    m_canvas->set_font_size(1.7777f * float(w_config()->normal_font().GetPointSize()) * this->GetDPIScaleFactor());
+    m_canvas->set_font_size(float(w_config()->normal_font().GetPointSize()) * this->GetDPIScaleFactor());
     m_canvas->set_font_global_scale(this->GetDPIScaleFactor());
 }
 

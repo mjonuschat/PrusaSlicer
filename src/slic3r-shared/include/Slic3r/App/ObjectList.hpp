@@ -30,7 +30,7 @@ namespace Slic3r::App::Render {
 class ImguiRender;
 } // namespace Slic3r::App::Render
 
-namespace Slic3r::App::Plater {
+namespace Slic3r::App {
 
 struct MultiSelectionStorage : public ImGuiSelectionBasicStorage
 {
@@ -76,11 +76,10 @@ class ObjectList
 public:
     ObjectList() {}
     
-    void init(Biz::ProjectInteractor* project_interactor) {
+    void init(Biz::ProjectInteractor* project_interactor, Render::ImguiRender* imgui_render) {
         m_project_interactor = project_interactor;
+        m_imgui_render = imgui_render;
     }
-
-    void set_imgui_render(Render::ImguiRender* imgui_render) { m_imgui_render = imgui_render; }
 
     void render(ImVec2 pos, ImVec2 size);
 
@@ -133,4 +132,4 @@ private:
     bool                            m_show_details      { false };
 };
 
-} // namespace Slic3r::App::Plater
+} // namespace Slic3r::App

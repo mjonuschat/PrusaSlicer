@@ -16,6 +16,11 @@
 #include "Slic3r/Domain/BedInstance.hpp"
 #include "Slic3r/App/Imgui/ImguiExtension.hpp"
 
+#include "Slic3r/App/Plater/History.hpp"
+#include "Slic3r/App/SidebarBed.hpp"
+#include "Slic3r/App/SidebarPrint.hpp"
+#include "Slic3r/App/Plater/SidebarSlice.hpp"
+
 #include <imgui/imgui.h>
 #include <Eigen/SVD>
 
@@ -52,11 +57,25 @@ void PlaterRenderModule::on_init(Render::Device& device)
 
 void PlaterRenderModule::init_scene_layout()
 {
-    Plater::ObjectList* ol = m_scene_presenter->project_context().object_list();
-    ol->init(&m_project_interactor);
+// >> This code is same for Plater/PreviewRenderModule
+    ObjectList* ol = m_scene_presenter->project_context().object_list();
+    DEBUG_ASSERT(m_imgui_render != nullptr);
+    ol->init(&m_project_interactor, m_imgui_render);
 
-    trl.set_object_list_render_fn([ol](ImVec2 size, ImVec2 pos) -> void
+    m_layout.set_object_list_render_fn([ol](ImVec2 size, ImVec2 pos) -> void
         { ol->render(pos, size); });
+
+    m_layout.set_sidebar_bed_render_fn([](ImVec2 size, ImVec2 pos) -> void
+        { SidebarBed::render(pos, size); });
+
+    m_layout.set_sidebar_print_render_fn([](ImVec2 size, ImVec2 pos) -> void
+        { SidebarPrint::render(pos, size); });
+// <<
+    m_layout.set_history_render_fn([](ImVec2 size, ImVec2 pos) -> void
+        { Plater::History::render(pos, size); });
+
+    m_layout.set_sidebar_slice_render_fn([](ImVec2 size, ImVec2 pos) -> void
+        { Plater::SidebarSlice::render(pos, size); });
 }
 
 void my_model_experinets(Biz::Scene::SceneInteractor& scene_interactor, const Domain::Bed& bed)
@@ -701,7 +720,7 @@ void PlaterRenderModule::render_imgui()
     if (!m_scene_presenter->project_ready())
         return;
 
-    trl.render(ImVec2(m_screen_info.logical_width(), m_screen_info.logical_height()));
+    m_layout.render(ImVec2(m_screen_info.logical_width(), m_screen_info.logical_height()));
 
     m_scene_presenter->render_imgui(m_screen_info);
 
@@ -810,7 +829,6 @@ void PlaterRenderModule::on_screen_resized()
 
 void PlaterRenderModule::on_set_imgui_render()
 {
-    m_scene_presenter->project_context().object_list()->set_imgui_render(m_imgui_render);
 }
 
 } // namespace Slic3r::App::Plater

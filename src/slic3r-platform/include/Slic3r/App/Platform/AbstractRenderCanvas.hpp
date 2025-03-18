@@ -40,7 +40,7 @@ public:
     const std::string& language() const { return m_imgui_render->language(); }
     void set_language(const std::string& language) { m_pending_language = language; }
     float font_size() const { return m_imgui_render->font_size(); }
-    void set_font_size(float font_size) { m_pending_font_size = font_size; }
+    void set_font_size(float font_size);
     void set_font_global_scale(float font_global_scale) { m_pending_font_global_scale = font_global_scale; }
 
     virtual void render();

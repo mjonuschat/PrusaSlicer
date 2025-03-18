@@ -83,7 +83,7 @@ if (EMSCRIPTEN)
 #    target_link_libraries(slic3r-render PUBLIC png-mt )
 else()
     find_package(PNG REQUIRED)
-    target_link_libraries(slic3r-render PUBLIC PNG::PNG)
+    target_link_libraries(slic3r-render PUBLIC PNG::PNG stb_image)
 endif ()
 target_include_directories(slic3r-render PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 

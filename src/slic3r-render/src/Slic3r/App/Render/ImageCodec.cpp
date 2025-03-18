@@ -141,12 +141,12 @@ std::vector<Image> PngReadCodec::load(std::istream& is, const ImageLoadOptions& 
     size_t new_h = out_h;
     adjust_size_to_opts(new_w, new_h, opts);
 
+    Image img(out_format, out_w, out_h, std::move(out_pixels));
     if (new_w != out_w || new_h != out_h) {
-        // TODO: resize dest image
-
+        ret.emplace_back(img.rescaled_with_preserved_ratio(new_w, new_h));
     }
-
-    ret.emplace_back(out_format, out_w, out_h, std::move(out_pixels));
+    else
+        ret.emplace_back(std::move(img));
 
     if (opts.gen_mipmaps) {
         // generate mipmaps

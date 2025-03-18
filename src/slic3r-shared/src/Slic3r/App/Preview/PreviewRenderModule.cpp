@@ -1,5 +1,9 @@
 #include "Slic3r/App/Preview/PreviewRenderModule.hpp"
 #include "Slic3r/App/Preview/PreviewCameraGizmo.hpp"
+#include "Slic3r/App/Preview/SidebarAutoReslice.hpp"
+#include "Slic3r/App/Preview/SidebarAfterSlice.hpp"
+#include "Slic3r/App/SidebarBed.hpp"
+#include "Slic3r/App/SidebarPrint.hpp"
 #include "Slic3r/App/Render/Device.hpp"
 #include "Slic3r/App/Render/CommandBuffer.hpp"
 #include "Slic3r/App/I18N/I18N.hpp"
@@ -177,6 +181,8 @@ static void render_imgui_debug_viewer_mode(Wrapper& viewer)
 
 void PreviewRenderModule::render_imgui()
 {
+    m_layout.render(ImVec2(m_screen_info.logical_width(), m_screen_info.logical_height()));
+
     WrapperLayoutData layout;
     // TODO: setup layout if needed
     m_viewer.render_gui(layout);
@@ -247,10 +253,9 @@ void PreviewRenderModule::on_init(Render::Device& device)
     cube5.translate(60, 60, 0);
     m_project_interactor.scene_interactor().new_object_from_mesh(std::move(cube5));
 
-
-
     init_gizmos();
     init_viewer(device);
+    init_scene_layout();
 }
 
 void PreviewRenderModule::on_activated()
@@ -506,6 +511,38 @@ void PreviewRenderModule::init_viewer(Render::Device& device)
     else {
         // log some error message
     }
+}
+
+void PreviewRenderModule::init_scene_layout()
+{
+// >> This code is same for Plater/PreviewRenderModule
+    ObjectList* ol = m_scene_presenter->project_context().object_list();
+    DEBUG_ASSERT(m_imgui_render != nullptr);
+    ol->init(&m_project_interactor, m_imgui_render);
+
+    m_layout.set_object_list_render_fn([ol](ImVec2 size, ImVec2 pos) -> void
+        { ol->render(pos, size); });
+
+    m_layout.set_sidebar_bed_render_fn([](ImVec2 size, ImVec2 pos) -> void
+        { SidebarBed::render(pos, size); });
+
+    m_layout.set_sidebar_print_render_fn([](ImVec2 size, ImVec2 pos) -> void
+        { SidebarPrint::render(pos, size); });
+// <<  
+    m_layout.set_legend_render_fn([this](ImVec2 size, ImVec2 pos) -> void
+        { ImGui::Text("Legend"); });
+
+    m_layout.set_sidebar_auto_reslice_render_fn([](ImVec2 size, ImVec2 pos) -> void
+        { Preview::SidebarAutoReslice::render(pos, size); });
+
+    m_layout.set_sidebar_after_slice_render_fn([](ImVec2 size, ImVec2 pos) -> void
+        { Preview::SidebarAfterSlice::render(pos, size); });
+
+    m_layout.set_layer_slider_render_fn([](ImVec2 size, ImVec2 pos) -> void
+        { ; });
+
+    m_layout.set_gcode_slider_render_fn([](ImVec2 size, ImVec2 pos) -> void
+        { ; });
 }
 
 //

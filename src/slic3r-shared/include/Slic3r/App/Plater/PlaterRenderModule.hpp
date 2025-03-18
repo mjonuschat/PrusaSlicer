@@ -6,9 +6,8 @@
 #include "Slic3r/App/Scene/Scene.hpp"
 #include "Slic3r/App/Scene/GizmoManager.hpp"
 #include "Slic3r/App/Plater/PlaterScenePresenter.hpp"
+#include "Slic3r/App/Plater/PlaterRenderLayout.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
-
-#include "Slic3r/App/TestRenderLayout.hpp"
 
 namespace Slic3r::App::Plater {
 
@@ -45,7 +44,7 @@ private:
     bool m_gui_win_open{true};
 
     // main window layout
-    TestRenderLayout trl;
+    PlaterRenderLayout m_layout;
 };
 
 } // namespace Slic3r::App::Plater

@@ -113,6 +113,7 @@ static const std::vector<std::pair<const wchar_t, std::string>> FONT_ICONS = {
 };
 
 static const std::vector<std::pair<const wchar_t, std::string>> FONT_ICONS_MEDIUM = {
+    // double slider icons
     { ImGui::Lock             , "lock_closed"       },
     { ImGui::LockHovered      , "lock_closed_f"     },
     { ImGui::Unlock           , "lock_open"         },
@@ -129,6 +130,11 @@ static const std::vector<std::pair<const wchar_t, std::string>> FONT_ICONS_MEDIU
     { ImGui::EditGCodeHovered , "edit_gcode_f"      },
     { ImGui::RemoveTick       , "colorchange_del"   },
     { ImGui::RemoveTickHovered, "colorchange_del_f" },
+    // sidebar icons
+    { ImGui::SavePrint           , "save_print"                 },
+    { ImGui::SavePrintToFlash    , "save_print_to_flash"        },
+    { ImGui::SavePrintToLocal    , "save_print_to_local"        },
+    { ImGui::SavePrintAddBookmark, "save_print_add_bookmark"    },
 };
 
 static const std::vector<std::pair<const wchar_t, std::string>> FONT_ICONS_LARGE = {
@@ -168,6 +174,9 @@ static const std::vector<std::pair<const wchar_t, std::string>> FONT_ICONS_LARGE
     { ImGui::OpenHoverButton         , "notification_open_hover"          },
     { ImGui::SlaViewOriginal         , "sla_view_original"                },
     { ImGui::SlaViewProcessed        , "sla_view_processed"               },
+};
+ 
+static const std::vector<std::pair<const wchar_t, std::string>> FONT_ICONS_TOOLBAR = {
     // toolbar icons
     { ImGui::ToolbarObjects          , "toolbar_objects"                  },
     { ImGui::ToolbarAdd              , "toolbar_add"                      },
@@ -175,6 +184,11 @@ static const std::vector<std::pair<const wchar_t, std::string>> FONT_ICONS_LARGE
     { ImGui::ToolbarHistory          , "toolbar_history"                  },
     { ImGui::ToolbarSidebar          , "toolbar_pizza"                    },
     { ImGui::ToolbarGraph            , "toolbar_graph"                    },
+};
+ 
+static const std::vector<std::pair<const wchar_t, std::string>> FONT_ICONS_PRINTER = {
+    // printer icons
+    { ImGui::PrinterNEXT             , "printer_NEXT"                     },
 };
  
 static const std::vector<std::pair<const wchar_t, std::string>> FONT_ICONS_EXTRA_LARGE = {
@@ -263,15 +277,40 @@ static void add_icons_rect_to_font_texture(const ImguiFontHelper& helper, ImguiL
         language_data.custom_glyph_rects_ids[icon.first] =
             io.Fonts->AddCustomRectFontGlyph(font, icon.first, px, px, advance + px);
     }
+
+    px = helper.icon_toolbar_size();
+    for (auto& icon : FONT_ICONS_TOOLBAR) {
+        language_data.custom_glyph_rects_ids[icon.first] =
+            io.Fonts->AddCustomRectFontGlyph(font, icon.first, px, px, advance + px);
+    }
+
+    px = helper.icon_toolbar_size();
+    for (auto& icon : FONT_ICONS_PRINTER) {
+        language_data.custom_glyph_rects_ids[icon.first] =
+            io.Fonts->AddCustomRectFontGlyph(font, icon.first, px, px, advance + px);
+    }
 }
 
-static void load_icon_from_svg(const std::pair<const wchar_t, std::string>& icon, int icon_sz, int rect_id, int tex_width,
-    unsigned char* pixels) {
+enum class IconFile
+{
+    SVG = 0,
+    PNG,
+};
+
+static void load_icon_from_file(const std::pair<const wchar_t, std::string>& icon, int icon_sz, int rect_id, int tex_width,
+    unsigned char* pixels, IconFile ext = IconFile::SVG) {
     ImGuiIO& io = ImGui::GetIO();
     if (const ImFontAtlasCustomRect* rect = io.Fonts->GetCustomRectByIndex(rect_id)) {
         DEBUG_ASSERT(rect->Width == icon_sz);
         DEBUG_ASSERT(rect->Height == icon_sz);
-        std::string filename = Slic3r::var(icon.second + ".svg");
+
+        std::string icon_name = icon.second;
+        if (ext == IconFile::SVG)
+            icon_name += ".svg";
+        else if (ext == IconFile::PNG)
+            icon_name += ".png";
+
+        std::string filename = Slic3r::var(icon_name);
         auto* codec = ImageCodecManager::instance().find_loader(filename);
         if (codec == nullptr) {
             SPDLOG_ERROR("Cannot find Image Reader Codec for file {}", filename);
@@ -305,6 +344,16 @@ static void load_icon_from_svg(const std::pair<const wchar_t, std::string>& icon
     }
 }
 
+static void load_icon_from_svg(const std::pair<const wchar_t, std::string>& icon, int icon_sz, int rect_id, int tex_width,
+    unsigned char* pixels) {
+    load_icon_from_file(icon, icon_sz, rect_id, tex_width, pixels, IconFile::SVG);
+}
+
+static void load_icon_from_png(const std::pair<const wchar_t, std::string>& icon, int icon_sz, int rect_id, int tex_width,
+    unsigned char* pixels) {
+    load_icon_from_file(icon, icon_sz, rect_id, tex_width, pixels, IconFile::PNG);
+}
+
 static void load_icons_into_font_texture(const ImguiFontHelper& helper, int& rect_id, int tex_width, unsigned char* pixels)
 {
     // Fill rectangles from the SVG-icons
@@ -326,6 +375,15 @@ static void load_icons_into_font_texture(const ImguiFontHelper& helper, int& rec
     px = helper.icon_extra_large_size();
     for (auto icon : FONT_ICONS_EXTRA_LARGE) {
         load_icon_from_svg(icon, px, rect_id++, tex_width, pixels);
+    }
+
+    px = helper.icon_toolbar_size();
+    for (auto icon : FONT_ICONS_TOOLBAR) {
+        load_icon_from_svg(icon, px, rect_id++, tex_width, pixels);
+    }
+
+    for (auto icon : FONT_ICONS_PRINTER) {
+        load_icon_from_png(icon, px, rect_id++, tex_width, pixels);
     }
 }
 

@@ -191,7 +191,7 @@ bool Item::render(ImRect item_bb, ImRect parent_bb, ImDrawFlags corners_flag, Im
 
 void Item::render_tooltip(ImVec2 pos, ImVec2 tt_shift /*= ImVec2()*/, ImVec2 pivot, bool for_arrow /*= false*/)
 {
-    if (m_tooltip.empty())
+    if (m_tooltip.empty() || !is_visible())
         return;
     std::string label = m_tooltip + (for_arrow ? " arrow tt" : "");
     Tooltip(label, m_shortcut, pos + tt_shift, pivot);

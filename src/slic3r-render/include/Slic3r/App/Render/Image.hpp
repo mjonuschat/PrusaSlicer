@@ -49,6 +49,7 @@ public:
 
     void blit(const Image& source, size_t x, size_t y);
     Image half_sampled() const;
+    Image rescaled_with_preserved_ratio(size_t target_w, size_t target_h);
 
     void fill(uint8_t r, uint8_t g, uint8_t b, uint8_t a = 255)
     {

@@ -40,14 +40,14 @@ void MiddleSizer::initialize()
     left_middle_toolbar.init("L", min_tt_size, max_tt_size, { AlignH::Left, AlignV::Center }, FlexToolbarOrientation::Vertical);
     left_middle_toolbar.collapse_if_needed();
 
-    init_middle_top_sizer();
-    init_middle_bottom_sizer();
+    init_top_sizer();
+    init_bottom_sizer();
 
-    this->init(1, 3, ImVec2(350.f, 350.f));
+    this->init(1, 3, ImVec2(350.f, 350.f), ImVec2(0.f, GImGui->Style.WindowPadding.y*0.5f));
     this->set_grow_col(0);
     this->set_bg_alpha(0.15f);
 
-    static FlexSizer middle_sizer(1, 1, ImVec2(), ImVec2(GImGui->Style.WindowPadding.x, 5.f));
+    static FlexSizer middle_sizer(1, 1);
     middle_sizer.set_grow_col(0);
 
     middle_sizer.add([this](ImVec2 size, ImVec2 win_pos) {
@@ -59,7 +59,7 @@ void MiddleSizer::initialize()
     this->add(m_bottom_sizer);
 }
 
-void MiddleSizer::init_middle_top_sizer()
+void MiddleSizer::init_top_sizer()
 {
     top_left_toolbar.init("s_h_top_left", min_tt_size, max_tt_size, { AlignH::Left, AlignV::Top });
 
@@ -70,7 +70,7 @@ void MiddleSizer::init_middle_top_sizer()
 
     // initialize top sizer and add toolbars
 
-    m_top_sizer.init(3, 1, ImVec2(), ImVec2(GImGui->Style.WindowPadding.x, 0.f));
+    m_top_sizer.init(3, 1);
     m_top_sizer.set_grow_col(0, 1.f);
     m_top_sizer.set_grow_col(1, 1.f);
     m_top_sizer.set_grow_col(2, 1.f);
@@ -87,10 +87,11 @@ void MiddleSizer::init_middle_top_sizer()
         top_right_toolbar.render(size, pos);
     });
 }
-void MiddleSizer::init_middle_bottom_left_toolbar()
+
+#if SHOW_TEST
+void MiddleSizer::init_bottom_left_toolbar()
 {
     // Create sub tooltips
-#if SHOW_TEST
     static FlexToolbar sub_left_toolbar("sub_left", min_tt_size, max_tt_size, { AlignH::Left, AlignV::Top }, FlexToolbarOrientation::Vertical);
     sub_left_toolbar.add("sub1", "sub 1 tooltip", {[](ImRect) { SPDLOG_INFO("sub 1 left is pressed"); }});
     sub_left_toolbar.add_separator(1.f);
@@ -102,12 +103,12 @@ void MiddleSizer::init_middle_bottom_left_toolbar()
     sub_top_toolbar.add("sub2t", "sub 2 tooltip", {[](ImRect) { SPDLOG_INFO("sub 2 top is pressed"); }});
     sub_top_toolbar.add_separator(1.f);
     sub_top_toolbar.add("sub3t", "sub 3 tooltip", {[](ImRect) { SPDLOG_INFO("sub 3 top is pressed"); }});
-#endif
+
     // initialize left toolbar for bottom sizer and add toolbar items
 
-    bl_toolbar.init("add_del", min_tt_size, max_tt_size, { AlignH::Left, AlignV::Bottom });
-#if SHOW_TEST
-    bl_toolbar.add("+ I", "Add item for L&T", { [this](ImRect) {
+    bottom_left_toolbar.init("add_del", min_tt_size, max_tt_size, { AlignH::Left, AlignV::Bottom });
+
+    bottom_left_toolbar.add("+ I", "Add item for L&T", { [this](ImRect) {
         if (top_middle_toolbar.shown_items_cnt() == 1)
             top_middle_toolbar.add("t...", &sub_top_toolbar);
         else
@@ -121,14 +122,14 @@ void MiddleSizer::init_middle_bottom_left_toolbar()
         layout();
     } });
 
-    bl_toolbar.add("+ S", "Add separator for L&T", { [this](ImRect) {
+    bottom_left_toolbar.add("+ S", "Add separator for L&T", { [this](ImRect) {
         top_middle_toolbar.add_separator(3.f);
         left_middle_toolbar.add_separator(4.f);
     } });
 
-    bl_toolbar.add_separator(5.f);
+    bottom_left_toolbar.add_separator(5.f);
 
-    bl_toolbar.add("+ AI L", "Add ArrowItem for Left", { [this](ImRect) {
+    bottom_left_toolbar.add("+ AI L", "Add ArrowItem for Left", { [this](ImRect) {
         FlexToolbarItem& item = left_middle_toolbar.add("", "", {[](ImRect) { SPDLOG_INFO("left_tb btn is pressed"); }});
         item.set_action_on_arrow([](ImRect) {
             SPDLOG_INFO("Arrow clicked");
@@ -147,60 +148,63 @@ void MiddleSizer::init_middle_bottom_left_toolbar()
         layout();
     } });
 
-    bl_toolbar.add_separator(5.f);
+    bottom_left_toolbar.add_separator(5.f);
 
-    bl_toolbar.add("-Left", "Delete item from left", { [this](ImRect) {
+    bottom_left_toolbar.add("-Left", "Delete item from left", { [this](ImRect) {
         left_middle_toolbar.erase();
         layout();
     } });
-#endif
 }
 
-void MiddleSizer::init_middle_bottom_right_toolbar()
+void MiddleSizer::init_bottom_right_toolbar()
 {
-    br_toolbar.init("del", min_tt_size, max_tt_size, { AlignH::Right, AlignV::Bottom });
-#if SHOW_TEST
-    br_toolbar.add("+ AI T", "Add ArrowItem for Top", { [this](ImRect) {
-        FlexToolbarItem& item = top_middle_toolbar.add("", "", {[](ImRect) { SPDLOG_INFO("left_tb btn is pressed"); }});
-        item.set_action_on_arrow([](ImRect bb) {
-            show_tmp_window = true; 
-            tmp_window_pos = bb.GetCenter();
-        });
-
-        layout();
-    } });
-
-    br_toolbar.add_separator(5.f);
-
-    br_toolbar.add("-Top", "Delete item from top", { [this](ImRect) {
-        top_middle_toolbar.erase();
-        layout();
-    } });
-#endif
+    bottom_right_toolbar.init("del", min_tt_size, max_tt_size, { AlignH::Right, AlignV::Bottom });
 }
-void MiddleSizer::init_middle_bottom_sizer()
-{
-    init_middle_bottom_left_toolbar();
-    init_middle_bottom_right_toolbar();
+#endif
 
-    m_bottom_sizer.set_bg_alpha(0.5f);
-    m_bottom_sizer.init(2, 1, ImVec2(0.f, 60.f), ImVec2(GImGui->Style.WindowPadding.x, 0.f));
-    m_bottom_sizer.set_grow_col(0);
+void MiddleSizer::init_bottom_middle_sizer()
+{
+    bottom_middle_sizer.init(1, 1, ImVec2(0.f, 50.f), ImVec2(GImGui->Style.WindowPadding.x, 0.f));
+    bottom_middle_sizer.set_grow_col(0);
+    bottom_middle_sizer.set_bg_alpha(1.f);
+    bottom_middle_sizer.add([this](ImVec2 size, ImVec2 pos) {
+        if (m_cb_bottom_middle_sizer_render)
+            m_cb_bottom_middle_sizer_render(size, pos);
+    }, Yoga::Align(), "bottom_middle_sizer");
+}
+
+void MiddleSizer::init_bottom_sizer()
+{
+    bottom_left_toolbar.init("bottom_left_toolbar", min_tt_size, max_tt_size, { AlignH::Left, AlignV::Bottom });
+    init_bottom_middle_sizer();
+    bottom_right_toolbar.init("bottom_right_toolbar", min_tt_size, max_tt_size, { AlignH::Right, AlignV::Bottom });
+
+    m_bottom_sizer.init(3, 1);
     m_bottom_sizer.set_grow_col(1);
 
     m_bottom_sizer.add([this](ImVec2 size, ImVec2 pos) {
-        bl_toolbar.render(size, pos);
+        bottom_left_toolbar.render(size, pos);
     });
+    
+    m_bottom_sizer.add(bottom_middle_sizer);
+
     m_bottom_sizer.add([this](ImVec2 size, ImVec2 pos) {
-        br_toolbar.render(size, pos);
+        bottom_right_toolbar.render(size, pos);
     });
 }
 
 void MiddleSizer::layout()
 {
-    this->set_grow_row(0, 1.f);
-    this->set_grow_row(1, float(left_middle_toolbar.shown_items_cnt()));
-    this->set_grow_row(2, float(bl_toolbar.shown_items_cnt()));
+    if (bottom_left_toolbar.shown_items_cnt() > 1) {
+        this->set_grow_row(0, 1.f);
+        this->set_grow_row(1, float(left_middle_toolbar.shown_items_cnt()));
+        this->set_grow_row(2, float(bottom_left_toolbar.shown_items_cnt()));
+    }
+    else {
+        this->set_grow_row(0, 0.f);
+        this->set_grow_row(1, 1.f);
+        this->set_grow_row(2, 0.f);
+    }
 
     FlexSizer::layout();
     m_bottom_sizer.layout();

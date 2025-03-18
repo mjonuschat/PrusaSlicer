@@ -41,12 +41,13 @@ public:
     const std::string& language() const { return m_language_data.language; }
 
     float font_size() const { return m_language_data.font_size; }
-    float font_scale() const { return font_size() / 15.0f; }
+    float font_scale() const { return font_size() / 16.0f; }
 
     int icon_size() const { return lround(16 * font_scale()); } // default size of icon is 16 px
     int icon_medium_size() const { return int(1.25f * icon_size()); }
     int icon_large_size() const { return 2 * icon_size(); }
     int icon_extra_large_size() const { return 4 * icon_size(); }
+    int icon_toolbar_size() const { return 2.5f * icon_size(); }
     float icon_advance() const { return 3.0f * font_scale(); }
 
     ImFont* font(Render::ImguiFontType type);

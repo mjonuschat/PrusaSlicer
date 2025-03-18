@@ -4,6 +4,7 @@
 #include "Slic3r/App/Preview/PreviewScenePresenter.hpp"
 #include "Slic3r/App/Scene/GizmoManager.hpp"
 #include "Slic3r/Biz/Preset/PresetInteractor.hpp"
+#include "Slic3r/App/Preview/PreviewRenderLayout.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/App/LibvgcodeWrapper/Wrapper.hpp"
 
@@ -56,10 +57,14 @@ private:
 
     LibvgcodeWrapper::Wrapper m_viewer;
 
+    // main window layout
+    PreviewRenderLayout m_layout;
+
 private:
     void init_gizmos();
     void init_viewer(Render::Device& device);
     void send_data_to_viewer(Biz::Slicing::FDMResult result);
+    void init_scene_layout();
     void send_data_to_viewer_from_file(const std::string& filename);
 
     void on_invalidate_slice();

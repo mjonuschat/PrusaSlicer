@@ -37,7 +37,7 @@ static YGNodeRef add_node(YGNodeRef parent_node, float width = -1.f, float heigh
     return node;
 };
 
-static YGSize get_item_size(std::function<void(ImVec2, ImVec2)> render_node_fn)
+static YGSize get_item_size(std::function<void(ImVec2, ImVec2)> render_node_fn, bool single_item = true)
 {
     if (!render_node_fn)
         return YGSize({ 0.f, 0.f });
@@ -47,20 +47,31 @@ static YGSize get_item_size(std::function<void(ImVec2, ImVec2)> render_node_fn)
     // render widget with 0 alpha and store thems size
     ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0);
         render_node_fn(ImVec2(), ImVec2());
-        ImVec2 size = ImGui::GetItemRectSize();
     ImGui::PopStyleVar();
 
-    // move cursore to the prevoius line to get correct position of the last rendered item
-    ImGui::SameLine();
-    // get end of the last rendered item
-    ImVec2 new_pos = ImGui::GetCursorScreenPos() - GImGui->Style.ItemSpacing;
+    if (single_item) {
+        // just one control is rendering
+        ImVec2 size = ImGui::GetItemRectSize();
+        // move cursore to the prevoius line to get correct position of the last rendered item
+        ImGui::SameLine();
+        // get end of the last rendered item
+        ImVec2 new_pos = ImGui::GetCursorScreenPos() - GImGui->Style.ItemSpacing;
 
-    ImVec2 real_size = new_pos - old_pos;
+        ImVec2 real_size = new_pos - old_pos;
+
+        // reset cursor pos
+        ImGui::SetCursorScreenPos(old_pos);
+
+        return YGSize({ real_size.x > size.x ? real_size.x : size.x, size.y });
+    }
+
+    // for non-single items (panels) we are interesting in height of content
+    ImVec2 size = ImGui::GetCursorScreenPos() - old_pos - ImVec2(0.f, GImGui->Style.ItemSpacing.y);
 
     // reset cursor pos
     ImGui::SetCursorScreenPos(old_pos);
 
-    return YGSize({ real_size.x > size.x ? real_size.x : size.x, size.y });
+    return YGSize({ ImMax(10.f, size.x), ImMax(10.f, size.y) });
 }
 
 static ImVec2 get_size(YGNodeRef node)
@@ -184,7 +195,7 @@ void FlexSizer::add(std::function<void(ImVec2, ImVec2)> render_fn /*= nullptr*/,
     if (node == nullptr)
         return; // all nodes are already initialized
 
-    YGSize sz = get_item_size(render_fn);
+    YGSize sz = get_item_size(render_fn, win_name_prefix.empty());
 
     // add inside child to make the flex cell in both diraction
     YGNodeRef child = add_node(node, sz.width, sz.height);

@@ -47,20 +47,19 @@ void AbstractRenderCanvas::render()
     if (m_render_module == nullptr)
         return;
 
+    if (!m_imgui_render) {
+        m_imgui_render = std::make_unique<Render::ImguiRender>(Render::Context::instance().device());
+        m_render_module->set_imgui_render(m_imgui_render.get());
+    }
 
     m_render_module->ensure_initialized(device());
 
-    if (!m_imgui_render) {
-        m_imgui_render = std::make_unique<Render::ImguiRender>(Render::Context::instance().device());
-    }
     if (m_pending_language.has_value() || m_pending_font_size.has_value() || m_pending_font_global_scale.has_value()) {
         m_imgui_render->set_font(m_pending_language, m_pending_font_size, m_pending_font_global_scale);
         m_pending_language.reset();
         m_pending_font_size.reset();
         m_pending_font_global_scale.reset();
     }
-
-    m_render_module->set_imgui_render(m_imgui_render.get());
 
     assert_no_gl_error();
     begin_frame();
@@ -78,7 +77,13 @@ void AbstractRenderCanvas::render()
     end_frame();
 }
 
-
+void AbstractRenderCanvas::set_font_size(float font_size)
+{
+    // Magic number 1.777777=16/9, where 
+    // 16 is default size for ImGui::font for 100% scale
+    // 9 is a font size for Windows for 100% scale
+    m_pending_font_size = 1.777777 * font_size;
+}
 
 void AbstractRenderCanvas::begin_frame()
 {

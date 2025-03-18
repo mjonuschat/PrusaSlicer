@@ -5,7 +5,7 @@
 #include "Slic3r/App/Render/GeometryManager.hpp"
 #include "Slic3r/App/Scene/TriangleMeshManager.hpp"
 #include "Slic3r/App/Scene/NodeBuilder.hpp"
-#include "Slic3r/App/Plater/ObjectList.hpp"
+#include "Slic3r/App/ObjectList.hpp"
 
 namespace Slic3r::App::Scene {
 
@@ -50,8 +50,8 @@ public:
 
     double screen_space_sized_modifier() const { return 0.0075; }
 
-    Plater::ObjectList* object_list() { return &m_object_list; }
-    const Plater::ObjectList& object_list() const { return m_object_list; }
+    ObjectList* object_list() { return &m_object_list; }
+    const ObjectList& object_list() const { return m_object_list; }
 
 private:
     void initialize_selection_root() {
@@ -70,7 +70,7 @@ private:
     ModelTriangleMeshManager m_model_triangle_mesh_manager;
     Node* m_selection_root{nullptr};
     Eigen::AlignedBox3f m_selection_bounding_box;
-    Plater::ObjectList m_object_list;
+    ObjectList m_object_list;
 };
 
 } // namespace Slic3r::App::Scene

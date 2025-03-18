@@ -1,4 +1,4 @@
-#include "Slic3r/App/Plater/ObjectList.hpp"
+#include "Slic3r/App/ObjectList.hpp"
 #include "Slic3r/Log.hpp"
 //#include "Slic3r/Biz/Scene/Selection.hpp"
 #include "Slic3r/Domain/ElementRef.hpp"
@@ -27,7 +27,7 @@
 //tmp include
 #include "libslic3r/format.hpp"
 
-namespace Slic3r::App::Plater {
+namespace Slic3r::App {
 
 void MultiSelectionStorage::ApplyRequests(ImGuiMultiSelectIO* ms_io)
 {
@@ -455,6 +455,8 @@ void ObjectList::render(ImVec2 pos, ImVec2 size)
     render_header(pos, size);
 
     is_dragging = false;
+
+    size.y -= (ImGui::GetCursorScreenPos().y - pos.y) + GImGui->Style.WindowRounding;
     // Define a region for the tree control
     if (render_tree(size)) {
         // update selection on scene
@@ -521,7 +523,7 @@ bool ObjectList::render_tree(ImVec2 size)
 {
     bool is_changed_selection = false;
     const float drop_area_height = 50.f;
-    if (ImGui::BeginTable("##ObjectListTable", 4, table_flags, ImVec2(330.f, ImMax(0.f, ImMin(size.y, size.y - drop_area_height))))) {
+    if (ImGui::BeginTable("##ObjectListTable", 4, table_flags, ImVec2(ImMax(100.f, size.x), ImMax(100.f, size.y)))) {
         ImGui::TableSetupColumn("##tree", ImGuiTableColumnFlags_WidthStretch);
         ImGui::TableSetupColumn("##visibility", ImGuiTableColumnFlags_WidthStretch, 0.1f);
         ImGui::TableSetupColumn("##settings_overrides", ImGuiTableColumnFlags_WidthStretch, 0.1f);
@@ -553,9 +555,7 @@ bool ObjectList::render_tree(ImVec2 size)
 
 void ObjectList::render_header(ImVec2 pos, ImVec2 size)
 {
-    ImGui::SetCursorPos(ImVec2(pos) * 2);
-    // temporary code to demonstate the use of imgui bold font
-    DEBUG_ASSERT(m_imgui_render != nullptr);
+    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + GImGui->Style.FramePadding.x * 4);
     ImGui::PushFont(m_imgui_render->font(Render::ImguiFontType::Bold));
     ImGui::Text("Objects");
     ImGui::PopFont();
@@ -1159,4 +1159,4 @@ void ObjectList::show_gizmo(const Domain::ElementRef& sel_element, wchar_t gizmo
     show_test_window(Slic3r::format("Open %1% %2% gizmo for object (id#%3%)", icon_str(gizmo_id), info_descriptions[gizmo_id], sel_element.object_id));
 }
 
-}// Slic3r::App::Plater namespace
+}// Slic3r::App namespace
