@@ -59,16 +59,6 @@ Pointf3s transform(const Pointf3s& points, const Transform3d& t)
     return ret_points;
 }
 
-void Point::rotate(double angle, const Point &center)
-{
-    Vec2d  cur = this->cast<double>();
-    double s   = ::sin(angle);
-    double c   = ::cos(angle);
-    auto   d   = cur - center.cast<double>();
-    this->x() = fast_round_up<coord_t>(center.x() + c * d.x() - s * d.y());
-    this->y() = fast_round_up<coord_t>(center.y() + s * d.x() + c * d.y());
-}
-
 bool has_duplicate_points(Points &&pts)
 {
     std::sort(pts.begin(), pts.end());
@@ -98,9 +88,13 @@ Points collect_duplicates(Points pts /* Copy */)
 
 template<bool IncludeBoundary>
 BoundingBox get_extents(const Points &pts)
-{ 
-    BoundingBox out;
-    BoundingBox::construct<IncludeBoundary>(out, pts.begin(), pts.end());
+{
+    using Biz::Algorithms::BoundingBox::construct;
+    const auto bbox{construct(pts.begin(), pts.end())};
+    BoundingBox out{bbox.min, bbox.max};
+    if constexpr (IncludeBoundary) {
+        out.defined = true;
+    }
     return out;
 }
 template BoundingBox get_extents<false>(const Points &pts);

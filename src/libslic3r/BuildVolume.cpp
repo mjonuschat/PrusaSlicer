@@ -309,7 +309,7 @@ BuildVolume::ObjectState BuildVolume::object_state(const indexed_triangle_set& i
     switch (m_type) {
     case Type::Rectangle:
     {
-        BoundingBox3Base<Vec3d> build_volume = this->bounding_volume().inflated(SceneEpsilon);
+        BoundingBoxBase<Vec3d> build_volume = this->bounding_volume().inflated(SceneEpsilon);
         if (m_max_print_height == 0.0)
             build_volume.max.z() = std::numeric_limits<double>::max();
         if (ignore_bottom)
@@ -358,7 +358,7 @@ BuildVolume::ObjectState BuildVolume::object_state(const indexed_triangle_set& i
 BuildVolume::ObjectState BuildVolume::volume_state_bbox(const BoundingBoxf3 volume_bbox_orig, bool ignore_bottom, int* bed_idx) const
 {
     assert(m_type == Type::Rectangle);
-    BoundingBox3Base<Vec3d> build_volume = this->bounding_volume().inflated(SceneEpsilon);
+    BoundingBoxBase<Vec3d> build_volume = this->bounding_volume().inflated(SceneEpsilon);
     if (m_max_print_height == 0.0)
         build_volume.max.z() = std::numeric_limits<double>::max();
     if (ignore_bottom)
@@ -372,7 +372,7 @@ BuildVolume::ObjectState BuildVolume::volume_state_bbox(const BoundingBoxf3 volu
 
         state = build_volume.max.z() <= -SceneEpsilon ? ObjectState::Below :
             build_volume.contains(volume_bbox) ? ObjectState::Inside :
-            build_volume.intersects(volume_bbox) ? ObjectState::Colliding : ObjectState::Outside;
+            build_volume.overlap(volume_bbox) ? ObjectState::Colliding : ObjectState::Outside;
         if (state != ObjectState::Outside) {
             obj_bed_id = bed_id;
             break;
@@ -394,7 +394,7 @@ bool BuildVolume::all_paths_inside(const Biz::libpgcode::ProcessorResult& paths,
     switch (m_type) {
     case Type::Rectangle:
     {
-        BoundingBox3Base<Vec3d> build_volume = this->bounding_volume().inflated(epsilon);
+        BoundingBoxBase<Vec3d> build_volume = this->bounding_volume().inflated(epsilon);
         if (m_max_print_height == 0.0)
             build_volume.max.z() = std::numeric_limits<double>::max();
         if (ignore_bottom)

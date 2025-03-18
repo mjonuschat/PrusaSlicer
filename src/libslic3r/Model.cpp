@@ -948,9 +948,9 @@ void ModelObject::translate(double x, double y, double z)
     }
 
     if (m_bounding_box_approx_valid)
-        m_bounding_box_approx.translate(x, y, z);
+        m_bounding_box_approx.translate(Vec3d{x, y, z});
     if (m_bounding_box_exact_valid)
-        m_bounding_box_exact.translate(x, y, z);
+        m_bounding_box_exact.translate(Vec3d{x, y, z});
 }
 
 void ModelObject::scale(const Vec3d &versor)

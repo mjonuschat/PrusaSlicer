@@ -370,7 +370,7 @@ const ModelObjectPtrs& Cut::perform_with_plane()
                 if (const ModelVolume* vol = mo->volumes[i];
                     !vol->is_model_part() && !vol->is_cut_connector()) {
                     auto bb = vol->mesh().transformed_bounding_box(inst_matrix * vol->get_matrix());
-                    if (!obj_bb.intersects(bb))
+                    if (!obj_bb.overlap(bb))
                         mo->delete_volume(i);
                 }
         };
@@ -413,9 +413,9 @@ static void distribute_modifiers_from_object(ModelObject* from_obj, const int in
 
             auto bb = vol->mesh().transformed_bounding_box(inst_matrix * vol->get_matrix());
             // Don't add modifiers which are not intersecting with solid parts
-            if (obj1_bb.intersects(bb))
+            if (obj1_bb.overlap(bb))
                 to_obj1->add_volume(*vol)->set_transformation(modifier_trafo);
-            if (obj2_bb.intersects(bb))
+            if (obj2_bb.overlap(bb))
                 to_obj2->add_volume(*vol)->set_transformation(modifier_trafo);
         }
 }

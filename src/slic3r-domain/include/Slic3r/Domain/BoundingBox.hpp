@@ -1,8 +1,6 @@
 #pragma once
 
-#include "Slic3r/Domain/Point.hpp"
-#include <vector>
-#include <libassert/assert.hpp>
+#include "Slic3r/Domain/Vectors.hpp"
 
 namespace Slic3r::Domain {
 

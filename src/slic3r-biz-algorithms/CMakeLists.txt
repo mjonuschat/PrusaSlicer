@@ -1,6 +1,8 @@
 project(slic3r-biz-algorithms)
 
 add_library(slic3r-biz-algorithms
+    include/Slic3r/Biz/Algorithms/BoundingBox.hpp
+    src/Slic3r/Biz/Algorithms/BoundingBox.cpp
     include/Slic3r/Biz/Algorithms/Scaling.hpp
     src/Slic3r/Biz/Algorithms/Scaling.cpp
 )

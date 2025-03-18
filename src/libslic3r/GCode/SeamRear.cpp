@@ -96,7 +96,6 @@ SeamChoice get_nearest(
 struct RearestPointCalculator {
     double rear_tolerance;
     double rear_y_offset;
-    BoundingBoxf bounding_box;
 
     std::optional<SeamChoice> operator()(
         const Perimeters::Perimeter &perimeter,
@@ -189,10 +188,9 @@ std::vector<std::vector<SeamPerimeterChoice>> get_object_seams(
                     result.back().push_back(SeamPerimeterChoice{SeamChoice{}, std::move(perimeter.perimeter)});
                 }
             } else {
-                BoundingBoxf bounding_box{unscaled(perimeter.bounding_box)};
                 const SeamChoice seam_choice{Seams::choose_seam_point(
                     perimeter.perimeter,
-                    Impl::RearestPointCalculator{rear_tolerance, rear_y_offset, bounding_box}
+                    Impl::RearestPointCalculator{rear_tolerance, rear_y_offset}
                 )};
                 result.back().push_back(
                     SeamPerimeterChoice{seam_choice, std::move(perimeter.perimeter)}

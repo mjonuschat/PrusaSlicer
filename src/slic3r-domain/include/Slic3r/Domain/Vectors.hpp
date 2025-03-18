@@ -30,6 +30,10 @@ using Vec3crd = Advanced::Vec<coord_t, 3>;
  * @brief Can hold result of Vec2crd arithmetic operations. */
 using Vec2big = Advanced::Vec<int64_t, 2>;
 
+/**@typedef Vec3big
+ * @brief See Vec2big */
+using Vec3big = Advanced::Vec<int64_t, 3>;
+
 using Vec2f = Advanced::Vec<float, 2>;
 using Vec3f = Advanced::Vec<float, 3>;
 using Vec4f = Advanced::Vec<float, 4>;

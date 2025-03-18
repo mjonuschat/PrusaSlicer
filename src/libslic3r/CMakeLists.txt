@@ -655,6 +655,7 @@ target_link_libraries(libslic3r PUBLIC
     slic3r-jthread
     slic3r-domain
     slic3r-gcode-reader
+    slic3r-biz-algorithms
     libpgcode
 )
 

@@ -135,6 +135,16 @@ TriangleMesh load_mesh(const std::string& input_file)
     return model.mesh();
 }
 
+// Shares some boundary.
+bool shares_boundary(const BoundingBoxf3& a, const BoundingBoxf3& b) {
+    return is_approx(a.min.x(), b.max.x())
+        || is_approx(a.max.x(), b.min.x())
+        || is_approx(a.min.y(), b.max.y())
+        || is_approx(a.max.y(), b.min.y())
+        || is_approx(a.min.z(), b.max.z())
+        || is_approx(a.max.z(), b.min.z());
+}
+
 static bool looks_like_multipart_object(const Model& model)
 {
     if (model.objects.size() <= 1)
@@ -155,7 +165,7 @@ static bool looks_like_multipart_object(const Model& model)
 
         if (!tbb.defined)
             tbb = tbb_this;
-        else if (tbb.intersects(tbb_this) || tbb.shares_boundary(tbb_this))
+        else if (tbb.overlap(tbb_this) || shares_boundary(tbb, tbb_this))
             // The volumes has intersects bounding boxes or share some boundary
             return true;
     }

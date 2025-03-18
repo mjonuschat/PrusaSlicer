@@ -459,10 +459,11 @@ void remove_inside_triangles(indexed_triangle_set &mesh, const Interior &interio
 
     // Must return true if further division of the face is needed.
     auto divfn = [&interior, bb, &mesh_mods](const DivFace &f) {
-        BoundingBoxf3 facebb { f.verts.begin(), f.verts.end() };
+        const BoundingBoxBase<Vec3f> facebb_float { f.verts.begin(), f.verts.end() };
+        BoundingBoxBase<Vec3d> facebb { cast<double>(facebb_float) };
 
         // Face is certainly outside the cavity
-        if (! facebb.intersects(bb) && f.faceid != NEW_FACE) {
+        if (! facebb.overlap(bb) && f.faceid != NEW_FACE) {
             return false;
         }
 
@@ -515,10 +516,11 @@ void remove_inside_triangles(indexed_triangle_set &mesh, const Interior &interio
             std::array<Vec3f, 3> pts = {vertices[face[0]], vertices[face[1]],
                                         vertices[face[2]]};
 
-            BoundingBoxf3 facebb{pts.begin(), pts.end()};
+            const BoundingBoxBase<Vec3f> facebb_float{pts.begin(), pts.end()};
+            BoundingBoxBase<Vec3d> facebb{cast<double>(facebb_float)};
 
             // Face is certainly outside the cavity
-            if (!facebb.intersects(bb))
+            if (!facebb.overlap(bb))
                 return;
 
             DivFace df{face, pts, long(face_idx)};

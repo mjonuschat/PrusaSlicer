@@ -55,4 +55,6 @@ public:
     Point  rotated(double cos_a, double sin_a) const { Point res(*this); res.rotate(cos_a, sin_a); return res; }
     Point  rotated(double angle, const Point &center) const { Point res(*this); res.rotate(angle, center); return res; }
 };
+
+Vec2crd rotated(const Vec2crd& point, const double angle, const Vec2crd &center = Vec2crd::Zero());
 }

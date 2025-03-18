@@ -262,6 +262,7 @@ target_link_libraries(slic3r-shared PUBLIC
         Boost::filesystem
         fmt::fmt
         yoga::yogacore
+        slic3r-biz-algorithms
 )
 if (EMSCRIPTEN)
 #    target_link_libraries(slic3r-shared PUBLIC png-mt )

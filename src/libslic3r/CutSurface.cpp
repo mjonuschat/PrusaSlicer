@@ -782,8 +782,8 @@ void priv::set_skip_for_out_of_aoi(std::vector<bool>          &skip_indicies,
     std::array<std::pair<Vec3d, Vec3d>, 4> bb;
     int index = 0;
     for (Point v :
-         {shapes_bb.min, Point{shapes_bb.min.x(), shapes_bb.max.y()},
-          shapes_bb.max, Point{shapes_bb.max.x(), shapes_bb.min.y()}})
+         {Point{shapes_bb.min}, Point{shapes_bb.min.x(), shapes_bb.max.y()},
+          Point{shapes_bb.max}, Point{shapes_bb.max.x(), shapes_bb.min.y()}})
         bb[index++] = projection.create_front_back(v);
 
     // define planes to test
@@ -2917,7 +2917,7 @@ bool priv::has_bb_intersection(const BoundingBoxf3  &bb,
     size_t next  = model_index + 1;
     size_t end   = (next < offsets.size()) ? offsets[next] : m2i.get_count();
     for (size_t bb_index = start; bb_index < end; bb_index++)
-        if (bb.intersects(bbs[bb_index])) return true;
+        if (bb.overlap(bbs[bb_index])) return true;
     return false;
 }
 

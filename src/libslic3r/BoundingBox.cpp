@@ -17,10 +17,11 @@
 
 namespace Slic3r {
 
+namespace bb = Biz::Algorithms::BoundingBox;
+
 template BoundingBoxBase<Point, Points>::BoundingBoxBase(const Points &points);
 template BoundingBoxBase<Vec2d>::BoundingBoxBase(const std::vector<Vec2d> &points);
 
-template BoundingBox3Base<Vec3d>::BoundingBox3Base(const std::vector<Vec3d> &points);
 
 void BoundingBox::polygon(Polygon* polygon) const
 {
@@ -41,9 +42,11 @@ Polygon BoundingBox::polygon() const
 
 BoundingBox BoundingBox::rotated(double angle) const
 {
+    using Domain::rotated;
+
     BoundingBox out;
-    out.merge(this->min.rotated(angle));
-    out.merge(this->max.rotated(angle));
+    out.merge(rotated(this->min, angle));
+    out.merge(rotated(this->max, angle));
     out.merge(Point(this->min.x(), this->max.y()).rotated(angle));
     out.merge(Point(this->max.x(), this->min.y()).rotated(angle));
     return out;
@@ -51,9 +54,11 @@ BoundingBox BoundingBox::rotated(double angle) const
 
 BoundingBox BoundingBox::rotated(double angle, const Point &center) const
 {
+    using Domain::rotated;
+
     BoundingBox out;
-    out.merge(this->min.rotated(angle, center));
-    out.merge(this->max.rotated(angle, center));
+    out.merge(rotated(this->min, angle, center));
+    out.merge(rotated(this->max, angle, center));
     out.merge(Point(this->min.x(), this->max.y()).rotated(angle, center));
     out.merge(Point(this->max.x(), this->min.y()).rotated(angle, center));
     return out;
@@ -79,18 +84,17 @@ template void BoundingBoxBase<Vec3d>::scale(double factor);
 template <class PointType, typename APointsType> void
 BoundingBoxBase<PointType, APointsType>::merge(const PointType &point)
 {
-    if (this->defined) {
-        this->min = this->min.cwiseMin(point);
-        this->max = this->max.cwiseMax(point);
-    } else {
-        this->min = point;
-        this->max = point;
-        this->defined = true;
-    }
+    const ParentType box{this->min, this->max, this->defined};
+    const auto result{bb::merge(box, point)};
+    this->min = result.min;
+    this->max = result.max;
+    this->defined = result.defined;
 }
 template void BoundingBoxBase<Point, Points>::merge(const Point &point);
 template void BoundingBoxBase<Vec2f>::merge(const Vec2f &point);
 template void BoundingBoxBase<Vec2d>::merge(const Vec2d &point);
+template void BoundingBoxBase<Vec3f>::merge(const Vec3f &point);
+template void BoundingBoxBase<Vec3d>::merge(const Vec3d &point);
 
 template <class PointType, typename APointsType> void
 BoundingBoxBase<PointType, APointsType>::merge(const PointsType &points)
@@ -99,81 +103,35 @@ BoundingBoxBase<PointType, APointsType>::merge(const PointsType &points)
 }
 template void BoundingBoxBase<Point, Points>::merge(const Points &points);
 template void BoundingBoxBase<Vec2d>::merge(const Pointfs &points);
+template void BoundingBoxBase<Vec3d>::merge(const Pointf3s &points);
 
 template <class PointType, typename APointsType> void
 BoundingBoxBase<PointType, APointsType>::merge(const BoundingBoxBase<PointType, PointsType> &bb)
 {
-    assert(bb.defined || bb.min.x() >= bb.max.x() || bb.min.y() >= bb.max.y());
-    if (bb.defined) {
-        if (this->defined) {
-            this->min = this->min.cwiseMin(bb.min);
-            this->max = this->max.cwiseMax(bb.max);
-        } else {
-            this->min = bb.min;
-            this->max = bb.max;
-            this->defined = true;
-        }
-    }
+    const ParentType box_a{this->min, this->max, this->defined};
+    const ParentType box_b{bb.min, bb.max, bb.defined};
+    const auto result{bb::merge(box_a, box_b)};
+    this->min = result.min;
+    this->max = result.max;
+    this->defined = result.defined;
 }
 template void BoundingBoxBase<Point, Points>::merge(const BoundingBoxBase<Point, Points> &bb);
 template void BoundingBoxBase<Vec2f>::merge(const BoundingBoxBase<Vec2f> &bb);
 template void BoundingBoxBase<Vec2d>::merge(const BoundingBoxBase<Vec2d> &bb);
-
-template <class PointType> void
-BoundingBox3Base<PointType>::merge(const PointType &point)
-{
-    if (this->defined) {
-        this->min = this->min.cwiseMin(point);
-        this->max = this->max.cwiseMax(point);
-    } else {
-        this->min = point;
-        this->max = point;
-        this->defined = true;
-    }
-}
-template void BoundingBox3Base<Vec3f>::merge(const Vec3f &point);
-template void BoundingBox3Base<Vec3d>::merge(const Vec3d &point);
-
-template <class PointType> void
-BoundingBox3Base<PointType>::merge(const PointsType &points)
-{
-    this->merge(BoundingBox3Base(points));
-}
-template void BoundingBox3Base<Vec3d>::merge(const Pointf3s &points);
-
-template <class PointType> void
-BoundingBox3Base<PointType>::merge(const BoundingBox3Base<PointType> &bb)
-{
-    assert(bb.defined || bb.min.x() >= bb.max.x() || bb.min.y() >= bb.max.y() || bb.min.z() >= bb.max.z());
-    if (bb.defined) {
-        if (this->defined) {
-            this->min = this->min.cwiseMin(bb.min);
-            this->max = this->max.cwiseMax(bb.max);
-        } else {
-            this->min = bb.min;
-            this->max = bb.max;
-            this->defined = true;
-        }
-    }
-}
-template void BoundingBox3Base<Vec3d>::merge(const BoundingBox3Base<Vec3d> &bb);
+template void BoundingBoxBase<Vec3d>::merge(const BoundingBoxBase<Vec3d> &bb);
 
 template <class PointType, typename APointsType> PointType
 BoundingBoxBase<PointType, APointsType>::size() const
 {
-    return this->max - this->min;
+    using Biz::Algorithms::BoundingBox::sizes;
+    const ParentType box{this->min, this->max, this->defined};
+    return sizes(box);
 }
 template Point BoundingBoxBase<Point, Points>::size() const;
 template Vec2f BoundingBoxBase<Vec2f>::size() const;
 template Vec2d BoundingBoxBase<Vec2d>::size() const;
-
-template <class PointType> PointType
-BoundingBox3Base<PointType>::size() const
-{
-    return this->max - this->min;
-}
-template Vec3f BoundingBox3Base<Vec3f>::size() const;
-template Vec3d BoundingBox3Base<Vec3d>::size() const;
+template Vec3f BoundingBoxBase<Vec3f>::size() const;
+template Vec3d BoundingBoxBase<Vec3d>::size() const;
 
 template <class PointType, typename APointsType> double BoundingBoxBase<PointType, APointsType>::radius() const
 {
@@ -182,31 +140,20 @@ template <class PointType, typename APointsType> double BoundingBoxBase<PointTyp
 }
 template double BoundingBoxBase<Point, Points>::radius() const;
 template double BoundingBoxBase<Vec2d>::radius() const;
-
-template <class PointType> double BoundingBox3Base<PointType>::radius() const
-{
-    return 0.5 * (this->max - this->min).template cast<double>().norm();
-}
-template double BoundingBox3Base<Vec3d>::radius() const;
+template double BoundingBoxBase<Vec3d>::radius() const;
 
 template <class PointType, typename APointsType> void
 BoundingBoxBase<PointType, APointsType>::offset(double delta)
 {
-    PointType v(delta, delta);
-    this->min -= v;
-    this->max += v;
+    const ParentType box{this->min, this->max, this->defined};
+    using Biz::Algorithms::BoundingBox::inflated;
+    const auto result{inflated(box, static_cast<typename PointType::Scalar>(delta))};
+    this->min = result.min;
+    this->max = result.max;
 }
 template void BoundingBoxBase<Point, Points>::offset(double delta);
 template void BoundingBoxBase<Vec2d>::offset(double delta);
-
-template <class PointType> void
-BoundingBox3Base<PointType>::offset(double delta)
-{
-    PointType v(delta, delta, delta);
-    this->min -= v;
-    this->max += v;
-}
-template void BoundingBox3Base<Vec3d>::offset(double delta);
+template void BoundingBoxBase<Vec3d>::offset(double delta);
 
 template <class PointType, typename APointsType> PointType
 BoundingBoxBase<PointType, APointsType>::center() const
@@ -216,23 +163,8 @@ BoundingBoxBase<PointType, APointsType>::center() const
 template Point BoundingBoxBase<Point, Points>::center() const;
 template Vec2f BoundingBoxBase<Vec2f>::center() const;
 template Vec2d BoundingBoxBase<Vec2d>::center() const;
-
-template <class PointType> PointType
-BoundingBox3Base<PointType>::center() const
-{
-    return (this->min + this->max) / 2;
-}
-template Vec3f BoundingBox3Base<Vec3f>::center() const;
-template Vec3d BoundingBox3Base<Vec3d>::center() const;
-
-template <class PointType> double
-BoundingBox3Base<PointType>::max_size() const
-{
-    PointType s = size();
-    return std::max(s.x(), std::max(s.y(), s.z()));
-}
-template double BoundingBox3Base<Vec3f>::max_size() const;
-template double BoundingBox3Base<Vec3d>::max_size() const;
+template Vec3f BoundingBoxBase<Vec3f>::center() const;
+template Vec3d BoundingBoxBase<Vec3d>::center() const;
 
 void BoundingBox::align_to_grid(const coord_t cell_size)
 {

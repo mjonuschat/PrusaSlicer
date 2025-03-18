@@ -17,155 +17,140 @@
 #include "Slic3r/Exception.hpp"
 #include "Point.hpp"
 #include "Polygon.hpp"
+#include "Slic3r/Domain/BoundingBox.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 namespace Slic3r {
 class BoundingBox;
 
 template <typename PointType, typename APointsType = std::vector<PointType>>
-class BoundingBoxBase
+class [[deprecated("Use Domain::BoundingBox")]] BoundingBoxBase : public Domain::BoundingBox<typename PointType::Scalar, PointType::RowsAtCompileTime>
 {
+    using ParentType = Domain::BoundingBox<typename PointType::Scalar, PointType::RowsAtCompileTime>;
 public:
     using PointsType = APointsType;
-    PointType min;
-    PointType max;
-    bool defined;
-    
-    BoundingBoxBase() : min(PointType::Zero()), max(PointType::Zero()), defined(false) {}
-    BoundingBoxBase(const PointType &pmin, const PointType &pmax) : 
-        min(pmin), max(pmax), defined(pmin.x() < pmax.x() && pmin.y() < pmax.y()) {}
-    BoundingBoxBase(const PointType &p1, const PointType &p2, const PointType &p3) :
-        min(p1), max(p1), defined(false) { merge(p2); merge(p3); }
+
+    [[deprecated("Use Domain::BoundingBox instead")]]
+    BoundingBoxBase() = default;
+    [[deprecated("Use Domain::BoundingBox instead")]]
+    BoundingBoxBase(const PointType &pmin, const PointType &pmax) : ParentType{pmin, pmax} {}
+    [[deprecated("Use Biz::Algorithms::BoundingBox::construct instead")]]
+    BoundingBoxBase(const PointType& p1, const PointType& p2, const PointType& p3)
+    {
+        namespace bb = Biz::Algorithms::BoundingBox;
+        this->min = p1;
+        this->max = p1;
+        this->defined = false;
+
+        *this = bb::merge(*this, p2);
+        *this = bb::merge(*this, p3);
+    }
 
     template<class It, class = IteratorOnly<It>>
+    [[deprecated("Use Biz::Algorithms::BoundingBox::construct instead")]]
     BoundingBoxBase(It from, It to)
-        { construct(*this, from, to); }
+    {
+        namespace bb = Biz::Algorithms::BoundingBox;
+        const auto box{bb::construct(from, to)};
+        this->min = box.min;
+        this->max = box.max;
+        this->defined = box.defined;
+    }
 
+    [[deprecated("Use Biz::Algorithms::BoundingBox::construct instead")]]
     BoundingBoxBase(const PointsType &points)
         : BoundingBoxBase(points.begin(), points.end())
     {}
 
+    [[deprecated("Use Domain::BoundingBox box = {} instead")]]
     void reset() { this->defined = false; this->min = PointType::Zero(); this->max = PointType::Zero(); }
+
+    [[deprecated("Use Biz::Algorithms::BoundingBox::merge instead")]]
     void merge(const PointType &point);
+
+    [[deprecated("Use Biz::Algorithms::BoundingBox::merge(Biz::Algorithms::BoundingBox::construct()) instead")]]
     void merge(const PointsType &points);
+
+    [[deprecated("Use Biz::Algorithms::BoundingBox::merge instead")]]
     void merge(const BoundingBoxBase<PointType, PointsType> &bb);
+
+    [[deprecated("Did you mean to use inflate()? If not, do the scaling directly on min and max.")]]
     void scale(double factor);
+
+    [[deprecated("Use Biz::Algorithms::BoundingBox::sizes instead")]]
     PointType size() const;
+
+    [[deprecated("Calculate the radius directly 0.5 * (bb.max - bb.min).norm()")]]
     double radius() const;
-    void translate(double x, double y) { assert(this->defined); PointType v(x, y); this->min += v; this->max += v; }
-    void translate(const PointType &v) { this->min += v; this->max += v; }
+
+    [[deprecated("Use Biz::Algorithms::BoundingBox::translated")]]
+    void translate(double x, double y) {
+        using Biz::Algorithms::BoundingBox::translated;
+        const ParentType box{this->min, this->max, this->defined};
+        const auto result{translated(box, PointType{x, y})};
+        this->min = result.min;
+        this->max = result.max;
+    }
+
+    [[deprecated("Use Biz::Algorithms::BoundingBox::translated")]]
+    void translate(const PointType &v) {
+        using Biz::Algorithms::BoundingBox::translated;
+        const ParentType box{this->min, this->max, this->defined};
+        const auto result{translated(box, v)};
+        this->min = result.min;
+        this->max = result.max;
+    }
+
+    [[deprecated("Use Biz::Algorithms::BoundingBox::inflated")]]
     void offset(double delta);
+
+    [[deprecated("Use Biz::Algorithms::BoundingBox::inflated")]]
     BoundingBoxBase<PointType, PointsType> inflated(double delta) const throw() { BoundingBoxBase<PointType, PointsType> out(*this); out.offset(delta); return out; }
+
+    [[deprecated("Use Biz::Algorithms::BoundingBox::center")]]
     PointType center() const;
+
+    [[deprecated("Use Biz::Algorithms::BoundingBox::contains")]]
     bool contains(const PointType &point) const {
-        return point.x() >= this->min.x() && point.x() <= this->max.x()
-            && point.y() >= this->min.y() && point.y() <= this->max.y();
+        using Biz::Algorithms::BoundingBox::contains;
+        const ParentType box{this->min, this->max, this->defined};
+        return contains(box, point);
     }
+
+    [[deprecated("Use Biz::Algorithms::BoundingBox::contains")]]
     bool contains(const BoundingBoxBase<PointType, PointsType> &other) const {
-        return contains(other.min) && contains(other.max);
+        using Biz::Algorithms::BoundingBox::contains;
+        const ParentType box{this->min, this->max, this->defined};
+        const ParentType other_box{other.min, other.max, other.defined};
+        return contains(box, other_box);
     }
+
+    [[deprecated("Use Biz::Algorithms::BoundingBox::overlap")]]
     bool overlap(const BoundingBoxBase<PointType, PointsType> &other) const {
-        return ! (this->max.x() < other.min.x() || this->min.x() > other.max.x() ||
-                  this->max.y() < other.min.y() || this->min.y() > other.max.y());
+        using Biz::Algorithms::BoundingBox::overlap;
+        const ParentType box{this->min, this->max, this->defined};
+        const ParentType other_box{other.min, other.max, other.defined};
+        return overlap(box, other_box);
     }
-    bool operator==(const BoundingBoxBase<PointType, PointsType> &rhs) const noexcept { return this->min == rhs.min && this->max == rhs.max; }
-    bool operator!=(const BoundingBoxBase<PointType, PointsType> &rhs) const noexcept { return ! (*this == rhs); }
 
-private:
-    // to access construct()
-    friend BoundingBox get_extents<false>(const Points &pts);
-    friend BoundingBox get_extents<true>(const Points &pts);
-
-    // if IncludeBoundary, then a bounding box is defined even for a single point.
-    // otherwise a bounding box is only defined if it has a positive area.
-    // The output bounding box is expected to be set to "undefined" initially.
-    template<bool IncludeBoundary = false, class BoundingBoxType, class It, class = IteratorOnly<It>>
-    static void construct(BoundingBoxType &out, It from, It to)
-    {
-        if (from == to) {
-            out.defined = false;
+    [[deprecated("Use Biz::Algorithms::BoundingBox::operator== for coord_t or aprox_equals for floating values")]]
+    bool operator==(const BoundingBoxBase<PointType, PointsType> &rhs) const noexcept {
+        const ParentType box{this->min, this->max, this->defined};
+        const ParentType rhs_box{rhs.min, rhs.max, rhs.defined};
+        if constexpr (std::is_same_v<typename PointType::Scalar, Domain::coord_t>) {
+            return box == rhs_box;
         } else {
-            auto it = from;
-            out.min = it->template cast<typename PointType::Scalar>();
-            out.max = out.min;
-            for (++ it; it != to; ++ it) {
-                auto vec = it->template cast<typename PointType::Scalar>();
-                out.min = out.min.cwiseMin(vec);
-                out.max = out.max.cwiseMax(vec);
-            }
-            out.defined = IncludeBoundary || (out.min.x() < out.max.x() && out.min.y() < out.max.y());
+            using Biz::Algorithms::BoundingBox::approx_equals;
+            return approx_equals(box, rhs_box);
         }
     }
+
+    [[deprecated("Use Biz::Algorithms::BoundingBox::operator== for coord_t or aprox_equals for floating values")]]
+    bool operator!=(const BoundingBoxBase<PointType, PointsType> &rhs) const noexcept { return ! (*this == rhs); }
 };
 
 template <class PointType>
-class BoundingBox3Base : public BoundingBoxBase<PointType, std::vector<PointType>>
-{
-public:
-    using PointsType = std::vector<PointType>;
-
-    BoundingBox3Base() : BoundingBoxBase<PointType>() {}
-    BoundingBox3Base(const PointType &pmin, const PointType &pmax) : 
-        BoundingBoxBase<PointType>(pmin, pmax) 
-        { if (pmin.z() >= pmax.z()) BoundingBoxBase<PointType>::defined = false; }
-    BoundingBox3Base(const PointType &p1, const PointType &p2, const PointType &p3) :
-        BoundingBoxBase<PointType>(p1, p1) { merge(p2); merge(p3); }
-
-    template<class It, class = IteratorOnly<It> > BoundingBox3Base(It from, It to)
-    {
-        if (from == to)
-            throw Slic3r::InvalidArgument("Empty point set supplied to BoundingBox3Base constructor");
-
-        auto it = from;
-        this->min = it->template cast<typename PointType::Scalar>();
-        this->max = this->min;
-        for (++ it; it != to; ++ it) {
-            auto vec = it->template cast<typename PointType::Scalar>();
-            this->min = this->min.cwiseMin(vec);
-            this->max = this->max.cwiseMax(vec);
-        }
-        this->defined = (this->min.x() < this->max.x()) && (this->min.y() < this->max.y()) && (this->min.z() < this->max.z());
-    }
-
-    BoundingBox3Base(const PointsType &points)
-        : BoundingBox3Base(points.begin(), points.end())
-    {}
-
-    void merge(const PointType &point);
-    void merge(const PointsType &points);
-    void merge(const BoundingBox3Base<PointType> &bb);
-    PointType size() const;
-    double radius() const;
-    void translate(double x, double y, double z) { assert(this->defined); PointType v(x, y, z); this->min += v; this->max += v; }
-    void translate(const Vec3d &v) { this->min += v; this->max += v; }
-    void offset(double delta);
-    BoundingBox3Base<PointType> inflated(double delta) const throw() { BoundingBox3Base<PointType> out(*this); out.offset(delta); return out; }
-    PointType center() const;
-    double max_size() const;
-
-    bool contains(const PointType &point) const {
-        return BoundingBoxBase<PointType>::contains(point) && point.z() >= this->min.z() && point.z() <= this->max.z();
-    }
-
-    bool contains(const BoundingBox3Base<PointType>& other) const {
-        return contains(other.min) && contains(other.max);
-    }
-
-    // Intersects without boundaries.
-    bool intersects(const BoundingBox3Base<PointType>& other) const {
-        return this->min.x() < other.max.x() && this->max.x() > other.min.x() && this->min.y() < other.max.y() && this->max.y() > other.min.y() && 
-            this->min.z() < other.max.z() && this->max.z() > other.min.z();
-    }
-
-    // Shares some boundary.
-    bool shares_boundary(const BoundingBox3Base<PointType>& other) const {
-        return is_approx(this->min.x(), other.max.x()) ||
-               is_approx(this->max.x(), other.min.x()) ||
-               is_approx(this->min.y(), other.max.y()) ||
-               is_approx(this->max.y(), other.min.y()) ||
-               is_approx(this->min.z(), other.max.z()) ||
-               is_approx(this->max.z(), other.min.z());
-    }
-};
+using BoundingBox3Base = BoundingBoxBase<PointType, std::vector<PointType>>;
 
 // Will prevent warnings caused by non existing definition of template in hpp
 extern template void     BoundingBoxBase<Point, Points>::scale(double factor);
@@ -181,187 +166,229 @@ extern template void     BoundingBoxBase<Vec2d>::merge(const Pointfs &points);
 extern template void     BoundingBoxBase<Point, Points>::merge(const BoundingBoxBase<Point, Points> &bb);
 extern template void     BoundingBoxBase<Vec2f>::merge(const BoundingBoxBase<Vec2f> &bb);
 extern template void     BoundingBoxBase<Vec2d>::merge(const BoundingBoxBase<Vec2d> &bb);
+
+extern template void     BoundingBoxBase<Vec3f>::merge(const Vec3f &point);
+extern template void     BoundingBoxBase<Vec3d>::merge(const Vec3d &point);
+extern template void     BoundingBoxBase<Vec3d>::merge(const Pointf3s &points);
+extern template void     BoundingBoxBase<Vec3d>::merge(const BoundingBoxBase<Vec3d> &bb);
+
 extern template Point    BoundingBoxBase<Point, Points>::size() const;
 extern template Vec2f    BoundingBoxBase<Vec2f>::size() const;
 extern template Vec2d    BoundingBoxBase<Vec2d>::size() const;
+
+extern template Vec3f    BoundingBoxBase<Vec3f>::size() const;
+extern template Vec3d    BoundingBoxBase<Vec3d>::size() const;
+
 extern template double   BoundingBoxBase<Point, Points>::radius() const;
 extern template double   BoundingBoxBase<Vec2d>::radius() const;
+extern template double   BoundingBoxBase<Vec3d>::radius() const;
+
 extern template Point    BoundingBoxBase<Point, Points>::center() const;
 extern template Vec2f    BoundingBoxBase<Vec2f>::center() const;
 extern template Vec2d    BoundingBoxBase<Vec2d>::center() const;
-extern template void     BoundingBox3Base<Vec3f>::merge(const Vec3f &point);
-extern template void     BoundingBox3Base<Vec3d>::merge(const Vec3d &point);
-extern template void     BoundingBox3Base<Vec3d>::merge(const Pointf3s &points);
-extern template void     BoundingBox3Base<Vec3d>::merge(const BoundingBox3Base<Vec3d> &bb);
-extern template Vec3f    BoundingBox3Base<Vec3f>::size() const;
-extern template Vec3d    BoundingBox3Base<Vec3d>::size() const;
-extern template double   BoundingBox3Base<Vec3d>::radius() const;
-extern template void     BoundingBox3Base<Vec3d>::offset(double delta);
-extern template Vec3f    BoundingBox3Base<Vec3f>::center() const;
-extern template Vec3d    BoundingBox3Base<Vec3d>::center() const;
-extern template double BoundingBox3Base<Vec3f>::max_size() const;
-extern template double BoundingBox3Base<Vec3d>::max_size() const;
 
-class BoundingBox : public BoundingBoxBase<Point, Points>
+extern template void     BoundingBoxBase<Vec3d>::offset(double delta);
+extern template Vec3f    BoundingBoxBase<Vec3f>::center() const;
+extern template Vec3d    BoundingBoxBase<Vec3d>::center() const;
+
+class [[deprecated("Use Domain::BoundingBox")]] BoundingBox : public BoundingBoxBase<Point, Points>
 {
 public:
+    [[deprecated("Use Domain::BoundingBox")]]
+    BoundingBox(const BoundingBoxBase<Point, Points>& box): BoundingBoxBase{box} {}
+
+    [[deprecated("Use Domain::BoundingBox")]]
+    BoundingBox(const BoundingBoxBase<Vec2crd> &bb): BoundingBox(bb.min, bb.max) {}
+
     void polygon(Polygon* polygon) const;
     Polygon polygon() const;
+
+    [[deprecated("BB rotation has unclear meaning, rotate min, max directly")]]
     BoundingBox rotated(double angle) const;
+
+    [[deprecated("BB rotation has unclear meaning, rotate min, max directly")]]
     BoundingBox rotated(double angle, const Point &center) const;
+
+    [[deprecated("BB rotation has unclear meaning, rotate min, max directly")]]
     void rotate(double angle) { (*this) = this->rotated(angle); }
+
+    [[deprecated("BB rotation has unclear meaning, rotate min, max directly")]]
     void rotate(double angle, const Point &center) { (*this) = this->rotated(angle, center); }
+
     // Align the min corner to a grid of cell_size x cell_size cells,
     // to encompass the original bounding box.
+    [[deprecated("Do not use this, implement it wherever it is needed")]]
     void align_to_grid(const coord_t cell_size);
-    
-    BoundingBox() : BoundingBoxBase<Point, Points>() {}
-    BoundingBox(const Point &pmin, const Point &pmax) : BoundingBoxBase<Point, Points>(pmin, pmax) {}
-    BoundingBox(const BoundingBoxBase<Vec2crd> &bb): BoundingBox(bb.min, bb.max) {}
-    BoundingBox(const Points &points) : BoundingBoxBase<Point, Points>(points) {}
 
+    using BoundingBoxBase::BoundingBoxBase;
+
+    [[deprecated("Use Biz::Algorithms::BoundingBox::inflated")]]
     BoundingBox inflated(double delta) const noexcept { BoundingBox out(*this); out.offset(delta); return out; }
 
+    [[deprecated("Did you mean to use inflate()? If not, do the scaling directly on min and max.")]]
     BoundingBox scaled(double factor) const;
-
-    friend BoundingBox get_extents_rotated(const Points &points, double angle);
 };
 
-using BoundingBoxes = std::vector<BoundingBox>;
+using  BoundingBoxes = std::vector<BoundingBox>;
 
-class BoundingBox3  : public BoundingBox3Base<Vec3crd> 
+class [[deprecated("Use Domain::BoundingBox")]] BoundingBox3  : public BoundingBoxBase<Vec3crd>
 {
 public:
-    BoundingBox3() : BoundingBox3Base<Vec3crd>() {}
-    BoundingBox3(const Vec3crd &pmin, const Vec3crd &pmax) : BoundingBox3Base<Vec3crd>(pmin, pmax) {}
-    BoundingBox3(const Points3& points) : BoundingBox3Base<Vec3crd>(points) {}
+    using BoundingBoxBase::BoundingBoxBase;
 };
 
-class BoundingBoxf : public BoundingBoxBase<Vec2d> 
+class [[deprecated("Use Domain::BoundingBox")]] BoundingBoxf : public BoundingBoxBase<Vec2d>
 {
 public:
-    BoundingBoxf() : BoundingBoxBase<Vec2d>() {}
-    BoundingBoxf(const Vec2d &pmin, const Vec2d &pmax) : BoundingBoxBase<Vec2d>(pmin, pmax) {}
-    BoundingBoxf(const std::vector<Vec2d> &points) : BoundingBoxBase<Vec2d>(points) {}
-    BoundingBoxf(const BoundingBoxBase<Vec2d> &bb): BoundingBoxf{bb.min, bb.max} {}
+    using BoundingBoxBase::BoundingBoxBase;
+
+    BoundingBoxf(const BoundingBoxBase<Vec2d>& box): BoundingBoxBase{box} {}
 };
 
-class BoundingBoxf3 : public BoundingBox3Base<Vec3d> 
+class [[deprecated("Use Domain::BoundingBox")]] BoundingBoxf3 : public BoundingBoxBase<Vec3d>
 {
 public:
-    using BoundingBox3Base::BoundingBox3Base;
+    using BoundingBoxBase::BoundingBoxBase;
 
     BoundingBoxf3 transformed(const Transform3d& matrix) const;
 };
 
 template<typename PointType, typename PointsType>
+[[deprecated("Use Biz::Algorithms::BoundingBox::empty")]]
 inline bool empty(const BoundingBoxBase<PointType, PointsType> &bb)
 {
-    return ! bb.defined || bb.min.x() >= bb.max.x() || bb.min.y() >= bb.max.y();
+    using Biz::Algorithms::BoundingBox::empty;
+
+    const Domain::BoundingBox<typename PointType::Scalar, PointType::RowsAtCompileTime> box{
+        bb.min, bb.max, bb.defined
+    };
+
+    return empty(box);
 }
 
-template<typename PointType>
-inline bool empty(const BoundingBox3Base<PointType> &bb)
+[[deprecated("Use Biz::Algorithms::BoundingBox::scaled instead")]]
+inline BoundingBox scaled(const BoundingBoxf &bb) {
+    using Biz::Algorithms::BoundingBox::scaled;
+
+    const Domain::BoundingBox2d box{
+        bb.min, bb.max, bb.defined
+    };
+    const auto result{scaled(box)};
+
+    return {result.min, result.max};
+}
+
+template<class T = coord_t, class Tin>
+[[deprecated("Use Biz::Algorithms::BoundingBox::scaled instead")]]
+BoundingBoxBase<Vec<2, T>> scaled(const BoundingBoxBase<Vec<2, Tin>> &bb)
 {
-    return ! bb.defined || bb.min.x() >= bb.max.x() || bb.min.y() >= bb.max.y() || bb.min.z() >= bb.max.z();
+    using Biz::Algorithms::BoundingBox::scaled;
+
+    const Domain::BoundingBox<Tin, 2> box{
+        bb.min, bb.max, bb.defined
+    };
+    const auto result{scaled<T>(box)};
+
+    return {result.min, result.max};
 }
-
-inline BoundingBox scaled(const BoundingBoxf &bb) { return {scaled(bb.min), scaled(bb.max)}; }
-
-template<class T = coord_t, class Tin>
-BoundingBoxBase<Vec<2, T>> scaled(const BoundingBoxBase<Vec<2, Tin>> &bb) { return {scaled<T>(bb.min), scaled<T>(bb.max)}; }
-
-template<class T = coord_t>
-BoundingBoxBase<Vec<2, T>> scaled(const BoundingBox &bb) { return {scaled<T>(bb.min), scaled<T>(bb.max)}; }
-
-template<class T = coord_t, class Tin>
-BoundingBox3Base<Vec<3, T>> scaled(const BoundingBox3Base<Vec<3, Tin>> &bb) { return {scaled<T>(bb.min), scaled<T>(bb.max)}; }
 
 template<class T = double, class Tin>
-BoundingBoxBase<Vec<2, T>> unscaled(const BoundingBoxBase<Vec<2, Tin>> &bb) { return {unscaled<T>(bb.min), unscaled<T>(bb.max)}; }
+[[deprecated("Use Biz::Algorithms::BoundingBox::unscaled instead")]]
+BoundingBoxBase<Vec<2, T>> unscaled(const BoundingBoxBase<Vec<2, Tin>> &bb) {
+    using Biz::Algorithms::BoundingBox::unscaled;
+
+    const Domain::BoundingBox<Tin, 2> box{
+        bb.min, bb.max, bb.defined
+    };
+    const auto result{unscaled<T>(box)};
+
+    return {result.min, result.max};
+}
 
 template<class T = double>
-BoundingBoxBase<Vec<2, T>> unscaled(const BoundingBox &bb) { return {unscaled<T>(bb.min), unscaled<T>(bb.max)}; }
+[[deprecated("Use Biz::Algorithms::BoundingBox::unscaled instead")]]
+BoundingBoxBase<Vec<2, T>> unscaled(const BoundingBox &bb) {
+    using Biz::Algorithms::BoundingBox::unscaled;
 
-template<class T = double, class Tin>
-BoundingBox3Base<Vec<3, T>> unscaled(const BoundingBox3Base<Vec<3, Tin>> &bb) { return {unscaled<T>(bb.min), unscaled<T>(bb.max)}; }
+    const Domain::BoundingBox2crd box{
+        bb.min, bb.max, bb.defined
+    };
+    const auto result{unscaled<T>(box)};
 
-template<class Tout, class Tin>
-auto cast(const BoundingBoxBase<Tin> &b)
-{
-    return BoundingBoxBase<Vec<3, Tout>>{b.min.template cast<Tout>(),
-                                         b.max.template cast<Tout>()};
+    return {result.min, result.max};
 }
 
 template<class Tout, class Tin>
-auto cast(const BoundingBox3Base<Tin> &b)
+[[deprecated("Use Biz::Algorithms::BoundingBox::cast instead")]]
+auto cast(const BoundingBoxBase<Tin> &b)
 {
-    return BoundingBox3Base<Vec<3, Tout>>{b.min.template cast<Tout>(),
-                                          b.max.template cast<Tout>()};
+    using Biz::Algorithms::BoundingBox::cast;
+
+    const Domain::BoundingBox<typename Tin::Scalar, Tin::RowsAtCompileTime> box{
+        b.min, b.max, b.defined
+    };
+    const auto result{cast<Tout>(box)};
+    return BoundingBoxBase<Vec<Tin::RowsAtCompileTime, Tout>>{
+        result.min,
+        result.max
+    };
 }
 
 // Distance of a point to a bounding box. Zero inside and on the boundary, positive outside.
+[[deprecated("Use Biz::Algorithms::BoundingBox::distance")]]
 inline double bbox_point_distance(const BoundingBox &bbox, const Point &pt)
 {
-    if (pt.x() < bbox.min.x())
-        return pt.y() < bbox.min.y() ? (bbox.min - pt).cast<double>().norm() :
-               pt.y() > bbox.max.y() ? (Point(bbox.min.x(), bbox.max.y()) - pt).cast<double>().norm() :
-               double(bbox.min.x() - pt.x());
-    else if (pt.x() > bbox.max.x())
-        return pt.y() < bbox.min.y() ? (Point(bbox.max.x(), bbox.min.y()) - pt).cast<double>().norm() :
-               pt.y() > bbox.max.y() ? (bbox.max - pt).cast<double>().norm() :
-               double(pt.x() - bbox.max.x());
-    else
-        return pt.y() < bbox.min.y() ? bbox.min.y() - pt.y() :
-               pt.y() > bbox.max.y() ? pt.y() - bbox.max.y() :
-               coord_t(0);
+    using Biz::Algorithms::BoundingBox::distance;
+
+    const Domain::BoundingBox2crd box{
+        bbox.min, bbox.max, bbox.defined
+    };
+
+    return distance(box, pt);
 }
 
+[[deprecated("Use Biz::Algorithms::BoundingBox::distance_squared")]]
 inline double bbox_point_distance_squared(const BoundingBox &bbox, const Point &pt)
 {
-    if (pt.x() < bbox.min.x())
-        return pt.y() < bbox.min.y() ? (bbox.min - pt).cast<double>().squaredNorm() :
-               pt.y() > bbox.max.y() ? (Point(bbox.min.x(), bbox.max.y()) - pt).cast<double>().squaredNorm() :
-               Slic3r::sqr(double(bbox.min.x() - pt.x()));
-    else if (pt.x() > bbox.max.x())
-        return pt.y() < bbox.min.y() ? (Point(bbox.max.x(), bbox.min.y()) - pt).cast<double>().squaredNorm() :
-               pt.y() > bbox.max.y() ? (bbox.max - pt).cast<double>().squaredNorm() :
-               Slic3r::sqr<double>(pt.x() - bbox.max.x());
-    else
-        return Slic3r::sqr<double>(pt.y() < bbox.min.y() ? bbox.min.y() - pt.y() :
-                                   pt.y() > bbox.max.y() ? pt.y() - bbox.max.y() :
-                                   coord_t(0));
+    using Biz::Algorithms::BoundingBox::distance_squared;
+
+    const Domain::BoundingBox2crd box{
+        bbox.min, bbox.max, bbox.defined
+    };
+
+    return distance_squared(box, pt);
 }
 
 // Minimum distance between two Bounding boxes.
 // Returns zero when Bounding boxes overlap.
+[[deprecated("Use Biz::Algorithms::BoundingBox::distance")]]
 inline double bbox_bbox_distance(const BoundingBox &first_bbox, const BoundingBox &second_bbox) {
-    if (first_bbox.overlap(second_bbox))
-        return 0.;
+    using Biz::Algorithms::BoundingBox::distance;
 
-    double bboxes_distance_squared = 0.;
+    const Domain::BoundingBox2crd a{
+        first_bbox.min, first_bbox.max, first_bbox.defined
+    };
+    const Domain::BoundingBox2crd b{
+        second_bbox.min, second_bbox.max, second_bbox.defined
+    };
 
-    for (size_t axis = 0; axis < 2; ++axis) {
-        const coord_t axis_distance = std::max(std::max(0, first_bbox.min[axis] - second_bbox.max[axis]),
-                                               second_bbox.min[axis] - first_bbox.max[axis]);
-        bboxes_distance_squared += Slic3r::sqr(static_cast<double>(axis_distance));
-    }
-
-    return std::sqrt(bboxes_distance_squared);
+    return distance(a, b);
 }
 
 template<class T>
-BoundingBoxBase<Vec<2, T>> to_2d(const BoundingBox3Base<Vec<3, T>> &bb)
+[[deprecated("Use Biz::Algorithms::BoundingBox::to_2d")]]
+BoundingBoxBase<Vec<2, T>> to_2d(const BoundingBoxBase<Vec<3, T>> &bb)
 {
-    return {to_2d(bb.min), to_2d(bb.max)};
-}
 
-template<class Tout, class T>
-BoundingBoxBase<Vec<2, Tout>> to_2d(const BoundingBox3Base<Vec<3, T>> &bb)
-{
-    return {to_2d(bb.min), to_2d(bb.max)};
-}
+    using Biz::Algorithms::BoundingBox::to_2d;
 
+    const Domain::BoundingBox<T, 3> box{
+        bb.min, bb.max, bb.defined
+    };
+    const auto result{to_2d(box)};
+
+    return {result.min, result.max};
+}
 
 } // namespace Slic3r
 

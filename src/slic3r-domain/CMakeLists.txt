@@ -5,6 +5,7 @@ add_library(slic3r-domain
     src/Slic3r/Domain/Vectors.cpp
     include/Slic3r/Domain/BoundingBox.hpp
     src/Slic3r/Domain/BoundingBox.cpp
+    src/Slic3r/Domain/Point.cpp
 )
 
 target_include_directories(slic3r-domain PUBLIC include)

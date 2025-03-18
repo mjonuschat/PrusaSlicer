@@ -45,7 +45,7 @@ TEST_CASE("Test kdtree query for a Box", "[KDTreeIndirect]")
 
     std::vector<size_t> out;
 
-    auto qbox = BoundingBox3Base{Vec3f{0.f, 0.f, 0.f}, Vec3f{.5f, .5f, .5f}};
+    auto qbox = BoundingBoxBase{Vec3f{0.f, 0.f, 0.f}, Vec3f{.5f, .5f, .5f}};
 
     size_t call_count = 0;
     out = find_nearby_points(tree, qbox.min, qbox.max, [&call_count](size_t) {

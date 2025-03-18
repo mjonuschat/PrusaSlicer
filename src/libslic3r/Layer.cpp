@@ -892,7 +892,9 @@ void Layer::sort_perimeters_into_islands(
             std::sort(fill_expolygons_bboxes_sorted.begin(), fill_expolygons_bboxes_sorted.end(), [&fill_expolygons_bboxes](uint32_t lhs, uint32_t rhs){
                 const BoundingBox &bbl = fill_expolygons_bboxes[lhs];
                 const BoundingBox &bbr = fill_expolygons_bboxes[rhs];
-                return bbl.min < bbr.min || (bbl.min == bbr.min && bbl.max < bbr.max);
+                return
+                    bbl.min.cast<double>() < bbr.min.cast<double>()
+                    || (bbl.min == bbr.min && bbl.max.cast<double>() < bbr.max.cast<double>());
             });
             map_expolygon_to_region_and_fill.assign(fill_expolygons.size(), {});
             for (uint32_t region_idx : layer_region_ids) {
@@ -904,7 +906,9 @@ void Layer::sort_perimeters_into_islands(
                     l.m_fill_expolygons_bboxes.emplace_back(bbox);
                     auto it_bbox = std::lower_bound(fill_expolygons_bboxes_sorted.begin(), fill_expolygons_bboxes_sorted.end(), bbox, [&fill_expolygons_bboxes](uint32_t lhs, const BoundingBox &bbr){
                         const BoundingBox &bbl = fill_expolygons_bboxes[lhs];
-                        return bbl.min < bbr.min || (bbl.min == bbr.min && bbl.max < bbr.max);
+                        return
+                            bbl.min.cast<double>() < bbr.min.cast<double>()
+                            || (bbl.min == bbr.min && bbl.max.cast<double>() < bbr.max.cast<double>());
                     });
                     if (it_bbox != fill_expolygons_bboxes_sorted.end())
                         if (uint32_t fill_id = *it_bbox; fill_expolygons_bboxes[fill_id] == bbox) {
