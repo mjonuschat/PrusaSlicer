@@ -186,7 +186,7 @@ bool menu_item_with_icon(const char* label, const char* shortcut, ImU32 icon_col
     return pressed;
 }
 
-void icon_image(wchar_t icon, const ImVec2& size)
+void icon_image(wchar_t icon, const ImVec2& size, bool disabled)
 {
     ImFont* font = ImGui::GetFont();
     float h = ImGui::GetTextLineHeight();
@@ -195,7 +195,7 @@ void icon_image(wchar_t icon, const ImVec2& size)
     if (rect.y == 0.0f) rect.y = h;
     const ImFontGlyph* glyph = font->FindGlyph(icon);
     if (glyph != nullptr)
-        ImGui::Image(font->ContainerAtlas->TexID, rect, { glyph->U0, glyph->V0 }, { glyph->U1, glyph->V1 });
+        ImGui::Image(font->ContainerAtlas->TexID, rect, { glyph->U0, glyph->V0 }, { glyph->U1, glyph->V1 }, {1, 1, 1, disabled ? 0.6f : 1.f});
 }
 
 bool icon_button(wchar_t icon, const ImVec2& size, const std::string& id)

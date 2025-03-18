@@ -181,6 +181,11 @@ static void render_imgui_debug_viewer_mode(Wrapper& viewer)
 
 void PreviewRenderModule::render_imgui()
 {
+    // ! This function will be processed just once, 
+    // but imgui_frame needs to be began before the toolbars initialization.
+    // So, call it here.
+    init_scene_layout();
+
     m_layout.render(ImVec2(m_screen_info.logical_width(), m_screen_info.logical_height()));
 
     WrapperLayoutData layout;
@@ -255,7 +260,6 @@ void PreviewRenderModule::on_init(Render::Device& device)
 
     init_gizmos();
     init_viewer(device);
-    init_scene_layout();
 }
 
 void PreviewRenderModule::on_activated()
@@ -515,6 +519,11 @@ void PreviewRenderModule::init_viewer(Render::Device& device)
 
 void PreviewRenderModule::init_scene_layout()
 {
+    if (m_layout.is_inited()) {
+        // this function needs to be processed just once before first rendering
+        return;
+    }
+
 // >> This code is same for Plater/PreviewRenderModule
     ObjectList* ol = m_scene_presenter->project_context().object_list();
     DEBUG_ASSERT(m_imgui_render != nullptr);

@@ -18,7 +18,15 @@ struct ButtonBehaviour {
     bool hovered_arrow  { false };
 };
 
-static ButtonBehaviour CustomRoundedButton(wchar_t icon, const ImVec2& pos, const ImVec2& size, bool has_arrow, bool is_toggled, ImDrawFlags rounding_corners/* = ImDrawCornerFlags_None*/)
+struct ButtonInfo
+{
+    wchar_t icon;
+    bool has_arrow      {false};
+    bool is_toggled     {false};
+    bool is_enabled     {true};
+};
+
+static ButtonBehaviour CustomRoundedButton(const ImVec2& pos, const ImVec2& size, ButtonInfo info, ImDrawFlags rounding_corners/* = ImDrawCornerFlags_None*/)
 {
     ImGui::SetNextWindowPos(pos);
     ImGui::SetNextWindowSize(size);
@@ -29,7 +37,7 @@ static ButtonBehaviour CustomRoundedButton(wchar_t icon, const ImVec2& pos, cons
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.f);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.f, 0.f));
 
-    ImGui::Begin((boost::nowide::narrow(std::wstring(&icon, 1)) + "_win").c_str(), nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove);
+    ImGui::Begin((boost::nowide::narrow(std::wstring(&info.icon, 1)) + "_win").c_str(), nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove);
 
     float rounding = GImGui->Style.WindowRounding;// { 4.f };
     ImVec2 button_size = size;
@@ -43,26 +51,26 @@ static ButtonBehaviour CustomRoundedButton(wchar_t icon, const ImVec2& pos, cons
     ImRect arrow_bb(arrow_pos, arrow_pos + arrow_size);
 
     // Check if the arrow is clicked or hovered
-    bool hovered_arrow = has_arrow && ImGui::IsMouseHoveringRect(arrow_bb.Min, arrow_bb.Max);
-    bool pressed_arrow = has_arrow && hovered_arrow && ImGui::IsMouseClicked(0);
+    bool hovered_arrow = info.has_arrow && ImGui::IsMouseHoveringRect(arrow_bb.Min, arrow_bb.Max);
+    bool pressed_arrow = info.has_arrow && hovered_arrow && ImGui::IsMouseClicked(0);
 
     // Check if the button is clicked or hovered
     bool hovered = ImGui::IsMouseHoveringRect(button_bb.Min, button_bb.Max) && !hovered_arrow;
-    bool pressed = hovered && ImGui::IsMouseClicked(0);
-
-    draw_list->AddRectFilled(button_bb.Min, button_bb.Max, ImGui::GetColorU32(ImGuiCol_WindowBg), rounding, rounding_corners);
-    button_bb.Expand(-rounding);
+    bool pressed = info.is_enabled && hovered && ImGui::IsMouseClicked(0);
 
     // Draw button background with custom rounding corner(s)
-
-    ImU32 col = ImGui::GetColorU32(hovered ? (is_toggled ? ImGuiCol_Button : ImGuiCol_ButtonHovered) : (is_toggled ? ImGuiCol_ButtonHovered : ImGuiCol_Button));
-    draw_list->AddRectFilled(button_bb.Min, button_bb.Max, col, rounding, ImDrawFlags_RoundCornersAll);
+    draw_list->AddRectFilled(button_bb.Min, button_bb.Max, ImGui::GetColorU32(ImGuiCol_WindowBg), rounding, rounding_corners);
+    button_bb.Expand(-rounding);
+    if (info.is_enabled) {
+        ImU32 col = ImGui::GetColorU32(hovered ? (info.is_toggled ? ImGuiCol_Button : ImGuiCol_ButtonHovered) : (info.is_toggled ? ImGuiCol_ButtonHovered : ImGuiCol_Button));
+        draw_list->AddRectFilled(button_bb.Min, button_bb.Max, col, rounding, ImDrawFlags_RoundCornersAll);
+    }
 
     // Render icon in the center of the button
     ImGui::SetCursorScreenPos(button_bb.Min);
-    Imgui::icon_image(icon, button_bb.GetSize());
+    Imgui::icon_image(info.icon, button_bb.GetSize(), !info.is_enabled);
 
-    if (has_arrow) {
+    if (info.has_arrow) {
         // Draw button background with custom rounding on only one corner
         ImU32 arrow_col = ImGui::GetColorU32(hovered_arrow ? ImGuiCol_ButtonHovered : ImGuiCol_Text);
 
@@ -161,7 +169,7 @@ bool Item::render(ImRect item_bb, ImRect parent_bb, ImDrawFlags corners_flag, Im
 
     // render button
 
-    ButtonBehaviour button_behav = CustomRoundedButton(m_icon_name, item_bb.Min, item_bb.GetSize(), has_arrow, is_toggled, corners_flag);
+    ButtonBehaviour button_behav = CustomRoundedButton(item_bb.Min, item_bb.GetSize(), { m_icon_name, has_arrow, is_toggled, m_callbacks.enabling() }, corners_flag);
     // and its sub_tollbar if any exists and have to be shown
     render_sub_toolbar(item_bb, parent_bb, button_behav.hovered || button_behav.pressed_arrow);
 
@@ -205,7 +213,7 @@ void Item::set_sub_toolbar(Toolbar* sub_toolbar)
 void Item::init_sub_toolbar(float min_item_size, float max_item_size, Yoga::Align align, Orientation orientation)
 {
     if (!m_sub_toolbar) {
-        m_sub_toolbar = new Toolbar("sub_" + m_icon_name, min_item_size, max_item_size, align, orientation);
+        m_sub_toolbar = new Toolbar("sub_" + std::to_string(m_icon_name), min_item_size, max_item_size, align, orientation);
         m_has_internal_tollbar = true;
     }
 }

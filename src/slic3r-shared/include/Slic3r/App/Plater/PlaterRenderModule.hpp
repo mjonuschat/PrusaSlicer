@@ -7,6 +7,7 @@
 #include "Slic3r/App/Scene/GizmoManager.hpp"
 #include "Slic3r/App/Plater/PlaterScenePresenter.hpp"
 #include "Slic3r/App/Plater/PlaterRenderLayout.hpp"
+#include "Slic3r/App/Plater/SidebarSlice.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 
 namespace Slic3r::App::Plater {
@@ -45,6 +46,7 @@ private:
 
     // main window layout
     PlaterRenderLayout m_layout;
+    SidebarSlice       m_sidebar_slice_panel;
 };
 
 } // namespace Slic3r::App::Plater

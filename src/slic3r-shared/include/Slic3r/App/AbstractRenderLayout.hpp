@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Slic3r/App/Yoga/FlexSizer.hpp"
-#include "Slic3r/App/Yoga/SplitterSizer.hpp"
+#include "Slic3r/App/Yoga/Toolbar.hpp"
 #include "Slic3r/App/Yoga/MiddleSizer.hpp"
 
 //#include <imgui/imgui.h>
@@ -23,6 +23,10 @@ public:
 
     void set_sidebar_print_render_fn(std::function<void(ImVec2, ImVec2)> render_fn) {
         m_cb_sidebar_print_render = render_fn; }
+
+    bool is_inited() { return m_main_sizer.is_inited(); };
+    void add_left_toolbar_item(wchar_t icon, const std::string& tooltip, const std::string& shortcut, Yoga::Toolbar::Callbacks callbacks);
+    void add_left_toolbar_separator();
 
 private:
     void init_main_sizer();

@@ -184,6 +184,8 @@ static const std::vector<std::pair<const wchar_t, std::string>> FONT_ICONS_TOOLB
     { ImGui::ToolbarHistory          , "toolbar_history"                  },
     { ImGui::ToolbarSidebar          , "toolbar_pizza"                    },
     { ImGui::ToolbarGraph            , "toolbar_graph"                    },
+    { ImGui::ToolbarMove             , "toolbar_move"                     },
+    { ImGui::ToolbarRotation         , "toolbar_rotation"                 },
 };
  
 static const std::vector<std::pair<const wchar_t, std::string>> FONT_ICONS_PRINTER = {

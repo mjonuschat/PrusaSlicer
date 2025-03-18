@@ -27,7 +27,7 @@ public:
     FlexSizer(int col, int row, ImVec2 min_size = ImVec2(), ImVec2 margins = ImVec2());
     virtual ~FlexSizer();
 
-    bool    is_init();
+    bool    is_inited();
     void    init(int col, int row, ImVec2 min_size = ImVec2(), ImVec2 margins = ImVec2());
 
     // Note for add(): win_name_prefix is a prefix name for windows, which will be created for this sizer item.

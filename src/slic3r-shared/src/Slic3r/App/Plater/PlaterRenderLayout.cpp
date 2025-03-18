@@ -49,9 +49,6 @@ void PlaterRenderLayout::init_middle_sizer()
           }, 
           cb_is_visible, cb_is_enable, []() { return !show_sidebar; } });
 
-    middle_sizer.left_middle_toolbar.add(ImGui::ToolbarAdd, "Add...", "Ctrl + I", { [](ImRect) {}, cb_is_visible, cb_is_enable, []() { return true; } });
-    middle_sizer.left_middle_toolbar.add(ImGui::ToolbarArrange, "Arrange", "A", { [](ImRect) {}, cb_is_visible, cb_is_enable, []() { return false; } });
-
     // create bottom left toolbar
 
     middle_sizer.bottom_left_toolbar.add(ImGui::ToolbarHistory, "Actions History", "Shift + Alt + H", 
@@ -59,7 +56,7 @@ void PlaterRenderLayout::init_middle_sizer()
                 show_history = !show_history;
                 left_sizer.show_row(1, show_history);
                 middle_sizer.layout(); 
-            }, cb_is_visible, cb_is_enable, []() { return !show_history; } });
+            }, cb_is_visible, cb_is_enable, []() { return show_history; } });
 
     middle_sizer.bottom_middle_sizer.show_col(0, false);
 

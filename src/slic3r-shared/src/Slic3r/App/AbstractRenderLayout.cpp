@@ -13,7 +13,8 @@ void AbstractRenderLayout::init_main_sizer()
     m_main_sizer.set_grow_col(1);
 
     init_left_sizer();
-    init_middle_sizer();
+    if (!middle_sizer.is_inited())
+        init_middle_sizer();
     init_right_sizer();
 
     m_main_sizer.add(left_sizer);
@@ -34,6 +35,20 @@ void AbstractRenderLayout::add_item(Yoga::FlexSizer& sizer, std::function<void(I
     sizer_in.add([render_item_fn](ImVec2 size, ImVec2 pos) { 
         render_item_fn(size, pos); }, { Yoga::AlignH::Left, Yoga::AlignV::Top }, item_name + "_in");
     sizer.add(sizer_in, item_name);
+}
+
+void AbstractRenderLayout::add_left_toolbar_item(wchar_t icon, const std::string& tooltip, const std::string& shortcut, Yoga::Toolbar::Callbacks callbacks)
+{
+    if (!middle_sizer.is_inited())
+        init_middle_sizer();
+
+    middle_sizer.left_middle_toolbar.add(icon, tooltip, shortcut, callbacks);
+    middle_sizer.layout();
+}
+
+void AbstractRenderLayout::add_left_toolbar_separator()
+{
+    middle_sizer.left_middle_toolbar.add_separator(GImGui->Style.WindowPadding.y);
 }
 
 void AbstractRenderLayout::show_left(bool show)
@@ -138,7 +153,7 @@ private:
 
 void AbstractRenderLayout::render(ImVec2 size)
 {
-    if (!m_main_sizer.is_init())
+    if (!m_main_sizer.is_inited())
         init_main_sizer();
 
     SetOurStyleColors();

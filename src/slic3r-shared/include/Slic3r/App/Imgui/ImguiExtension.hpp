@@ -48,7 +48,7 @@ void item_tooltip(const std::string& label, float wrap_width = 0.0f);
 bool menu_item_with_icon(const char* label, const char* shortcut = nullptr, ImU32 icon_color = 0,
     bool selected = false, bool enabled = true);
 
-void icon_image(wchar_t icon, const ImVec2& size = { 0.0f, 0.0f });
+void icon_image(wchar_t icon, const ImVec2& size = { 0.0f, 0.0f }, bool disabled = false);
 
 /* Use id, when the window has more than one icon_button to avoid using of the same ID generated from default label ("##btn") */
 bool icon_button(wchar_t icon, const ImVec2& size = { 0.0f, 0.0f }, const std::string& id = std::string());

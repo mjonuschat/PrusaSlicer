@@ -93,7 +93,7 @@ FlexSizer::FlexSizer(int col_cnt, int row_cnt, ImVec2 min_size/* = ImVec2(0.f, 0
     init(col_cnt, row_cnt, min_size, margins);
 }
 
-bool FlexSizer::is_init()
+bool FlexSizer::is_inited()
 {
     return m_root && YGNodeGetChildCount(m_root) > 0;
 }

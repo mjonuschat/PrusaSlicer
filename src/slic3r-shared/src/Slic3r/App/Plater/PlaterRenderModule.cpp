@@ -52,11 +52,15 @@ void PlaterRenderModule::on_init(Render::Device& device)
     );
     init_gizmos();
     init_scene();
-    init_scene_layout();
 }
 
 void PlaterRenderModule::init_scene_layout()
 {
+    if (m_layout.is_inited()) {
+        // this function needs to be processed just once before first rendering
+        return;
+    }
+
 // >> This code is same for Plater/PreviewRenderModule
     ObjectList* ol = m_scene_presenter->project_context().object_list();
     DEBUG_ASSERT(m_imgui_render != nullptr);
@@ -74,8 +78,48 @@ void PlaterRenderModule::init_scene_layout()
     m_layout.set_history_render_fn([](ImVec2 size, ImVec2 pos) -> void
         { Plater::History::render(pos, size); });
 
-    m_layout.set_sidebar_slice_render_fn([](ImVec2 size, ImVec2 pos) -> void
-        { Plater::SidebarSlice::render(pos, size); });
+    m_sidebar_slice_panel.init(m_imgui_render, [this] {m_project_interactor.slicing_interactor().slice_all(); });
+    m_layout.set_sidebar_slice_render_fn([this](ImVec2 size, ImVec2 pos) -> void
+        { m_sidebar_slice_panel.render(pos, size); });
+
+    // init toolbars
+
+    m_layout.add_left_toolbar_item(ImGui::ToolbarAdd, "Add...", "Ctrl + I", { 
+        [this](ImRect) {
+            auto& scene_interactor = m_project_interactor.scene_interactor();
+            const auto& bed = m_project_interactor.selected_project().config_containers().front()->bed();
+
+            scene_interactor.new_object_from_mesh(TriangleMesh{its_make_cube(10,15,20) });
+
+            Transform3d xform = Transform3d::Identity();
+            xform.translate(Vec3d{ bed.center().x(), bed.center().y(), 0});
+            scene_interactor.transform_selection(xform.matrix());
+
+            m_scene_presenter->scene().log_nodes();
+        }
+    });
+//    m_layout.add_left_toolbar_item(ImGui::ToolbarArrange, "Arrange", "A", { [](ImRect) {} });
+    m_layout.add_left_toolbar_separator();
+    m_layout.add_left_toolbar_item(ImGui::ToolbarMove, "Move", "M", {
+        [this](ImRect) {
+            m_gizmo_manager->toggle_activate_tool(Scene::ToolType::Translation, ptFFF);
+        }, 
+        []() { return true; }, 
+        [this]() { return !m_project_interactor.scene_interactor().selection().empty(); },
+        [this]() { 
+            return m_gizmo_manager->current_tool_type()== Scene::ToolType::Translation; 
+        }
+    });
+    m_layout.add_left_toolbar_item(ImGui::ToolbarRotation, "Rotate", "R", {
+        [this](ImRect) {
+            m_gizmo_manager->toggle_activate_tool(Scene::ToolType::Rotation, ptFFF);
+        }, 
+        []() { return true; }, 
+        [this]() { return !m_project_interactor.scene_interactor().selection().empty(); },
+        [this]() { 
+            return m_gizmo_manager->current_tool_type()== Scene::ToolType::Rotation;
+        }
+    });
 }
 
 void my_model_experinets(Biz::Scene::SceneInteractor& scene_interactor, const Domain::Bed& bed)
@@ -720,6 +764,11 @@ void PlaterRenderModule::render_imgui()
     if (!m_scene_presenter->project_ready())
         return;
 
+    // ! This function will be processed just once, 
+    // but imgui_frame needs to be began before the toolbars initialization.
+    // So, call it here.
+    init_scene_layout();
+
     m_layout.render(ImVec2(m_screen_info.logical_width(), m_screen_info.logical_height()));
 
     m_scene_presenter->render_imgui(m_screen_info);
@@ -728,32 +777,6 @@ void PlaterRenderModule::render_imgui()
 
 #if ENABLED_DEBUG_OUTLINE
     if (ImGui::Begin("Outline", nullptr)) {
-        ImGui::Text("Tool Gizmos");
-        Scene::ToolType type = m_gizmo_manager->current_tool_type();
-        if (type == Scene::ToolType::Translation) {
-            ImGui::PushStyleColor(ImGuiCol_Button, { 0.67f, 0.36f, 0.19f, 1.0f });
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, { 0.923f, 0.504f, 0.264f, 1.0f });
-            ImGui::PushStyleColor(ImGuiCol_ButtonActive, { 0.923f, 0.504f, 0.264f, 1.0f });
-        }
-        if (ImGui::Button("Slice all")) {
-            m_project_interactor.slicing_interactor().slice_all();
-        }
-        if (ImGui::Button("Translate"))
-            // TODO: get and pass the correct printer type
-            m_gizmo_manager->toggle_activate_tool(Scene::ToolType::Translation, ptFFF);
-        if (type == Scene::ToolType::Translation)
-            ImGui::PopStyleColor(3);
-        if (type == Scene::ToolType::Rotation) {
-            ImGui::PushStyleColor(ImGuiCol_Button, { 0.67f, 0.36f, 0.19f, 1.0f });
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, { 0.923f, 0.504f, 0.264f, 1.0f });
-            ImGui::PushStyleColor(ImGuiCol_ButtonActive, { 0.923f, 0.504f, 0.264f, 1.0f });
-        }
-        if (ImGui::Button("Rotate"))
-            // TODO: get and pass the correct printer type
-            m_gizmo_manager->toggle_activate_tool(Scene::ToolType::Rotation, ptFFF);
-        if (type == Scene::ToolType::Rotation)
-            ImGui::PopStyleColor(3);
-        ImGui::Separator();
         imgui_scenegraph_node_info(m_scene_presenter->scene().root());
     }
     ImGui::End();
