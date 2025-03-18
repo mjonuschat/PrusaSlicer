@@ -1,4 +1,6 @@
 #include <span>
+
+#include "Slic3r/Biz/Algorithms/Polyline.hpp"
 #include "libpgcode/include/Slic3r/Biz/libpgcode/Types.hpp"
 #include "libslic3r/Print.hpp"
 #include "libslic3r/PrePreview.hpp"
@@ -204,7 +206,7 @@ libpgcode::MoveVertices path_to_vertices(
     const Point &offset = Point::Zero()
 ) {
     Slic3r::Polyline polyline = path.polyline;
-    polyline.remove_duplicate_points();
+    Slic3r::Biz::Algorithms::Polyline::remove_duplicate_points(polyline);
     polyline.translate(offset);
     const Slic3r::Lines lines = polyline.lines();
     const std::vector<float> widths(lines.size(), path.width());

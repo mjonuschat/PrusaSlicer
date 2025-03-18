@@ -16,12 +16,7 @@
 
 namespace Slic3r {
 
-BoundingBox MultiPoint::bounding_box() const
-{
-    return BoundingBox(this->points);
-}
-
-BoundingBox get_extents(const MultiPoint &mp)
+BoundingBox get_extents(const Domain::MultiPoint &mp)
 { 
     return BoundingBox(mp.points);
 }
@@ -52,7 +47,7 @@ BoundingBox get_extents_rotated(const Points &points, double angle)
     return bbox;
 }
 
-BoundingBox get_extents_rotated(const MultiPoint &mp, double angle)
+BoundingBox get_extents_rotated(const Domain::MultiPoint &mp, double angle)
 {
     return get_extents_rotated(mp.points, angle);
 }

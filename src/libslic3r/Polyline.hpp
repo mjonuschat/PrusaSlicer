@@ -63,8 +63,6 @@ public:
 
     int find_point(const Point& point, const double scaled_epsilon) const { return Slic3r::Biz::Algorithms::MultiPoint::find_point(*this, point, scaled_epsilon); }
 
-    bool remove_duplicate_points() { return Slic3r::Biz::Algorithms::MultiPoint::remove_duplicate_points(*this); }
-
     const Point& leftmost_point() const;
     Lines lines() const;
 

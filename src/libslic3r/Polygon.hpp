@@ -60,11 +60,7 @@ public:
 
     BoundingBox bounding_box() const;
 
-    bool remove_duplicate_points() { return Slic3r::Biz::Algorithms::MultiPoint::remove_duplicate_points(*this); }
-
     int closest_point_index(const Point &point) const { return Slic3r::Biz::Algorithms::MultiPoint::closest_point_index(*this, point); }
-
-    bool has_duplicate_points() const { return Slic3r::Biz::Algorithms::MultiPoint::has_duplicate_points(*this); }
 
     static Polygon new_scale(const std::vector<Vec2d> &points) {
         Polygon pgn;

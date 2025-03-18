@@ -31,7 +31,6 @@
 namespace Slic3r {
 
 class BoundingBox;
-class BoundingBox3;
 
 // Reduces polyline in the <begin, end) range, outputs into the output iterator.
 // Output iterator may be equal to input iterator as long as the iterator value type move operator supports move at the same input / output address.
@@ -170,31 +169,9 @@ inline Points douglas_peucker(const Points &src, const double tolerance)
     return out;
 }
 
-// Temporary proxy class over Domain::MultiPoint.
-class MultiPoint : public Domain::MultiPoint
-{
-public:
-    using Domain::MultiPoint::find_point;
-
-    MultiPoint() = default;
-    MultiPoint(const MultiPoint &other) : Domain::MultiPoint(other.points) {}
-    MultiPoint(MultiPoint &&other) : Domain::MultiPoint(std::move(other)) {}
-    MultiPoint(std::initializer_list<Point> list) : Domain::MultiPoint(list) {}
-    explicit MultiPoint(const Points &_points) : Domain::MultiPoint(_points) {}
-    ~MultiPoint() override = default;
-
-    virtual void reverse() { Slic3r::Biz::Algorithms::MultiPoint::reverse(*this); }
-
-    int find_point(const Point& point, const double scaled_epsilon) const { return Slic3r::Biz::Algorithms::MultiPoint::find_point(*this, point, scaled_epsilon); }
-    int closest_point_index(const Point &point) const { return Slic3r::Biz::Algorithms::MultiPoint::closest_point_index(*this, point); }
-    BoundingBox bounding_box() const;
-    bool has_duplicate_points() const { return Slic3r::Biz::Algorithms::MultiPoint::has_duplicate_points(*this); }
-    bool remove_duplicate_points() { return Slic3r::Biz::Algorithms::MultiPoint::remove_duplicate_points(*this); }
-};
-
-extern BoundingBox get_extents(const MultiPoint &mp);
+extern BoundingBox get_extents(const Domain::MultiPoint &mp);
 extern BoundingBox get_extents_rotated(const Points &points, double angle);
-extern BoundingBox get_extents_rotated(const MultiPoint &mp, double angle);
+extern BoundingBox get_extents_rotated(const Domain::MultiPoint &mp, double angle);
 
 inline double length(const Points::const_iterator begin, const Points::const_iterator end) {
     double total = 0;
