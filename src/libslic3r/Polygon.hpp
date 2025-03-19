@@ -76,8 +76,7 @@ public:
     Polyline split_at_index(int index) const;
     // Split a closed polygon into an open polyline, with the split point duplicated at both ends.
     Polyline split_at_first_point() const { return this->split_at_index(0); }
-    Points   equally_spaced_points(double distance) const { return this->split_at_first_point().equally_spaced_points(distance); }
-    
+
     bool is_counter_clockwise() const;
     bool is_clockwise() const;
     bool make_counter_clockwise();
@@ -93,12 +92,10 @@ public:
 
     // Works on CCW polygons only, CW contour will be reoriented to CCW by Clipper's simplify_polygons()!
     Polygons simplify(double tolerance) const;
-    void densify(float min_length, std::vector<float>* lengths = nullptr);
     void triangulate_convex(Polygons* polygons) const;
     Point centroid() const;
 
     bool intersection(const Line& line, Point* intersection) const;
-    bool first_intersection(const Line& line, Point* intersection) const;
     bool intersections(const Line &line, Points *intersections) const;
 
     // Considering CCW orientation of this polygon, find all convex resp. concave points
@@ -108,13 +105,11 @@ public:
     Points concave_points(double angle_threshold = 0.) const;
     // Projection of a point onto the polygon.
     Point point_projection(const Point &point) const;
-    std::vector<float> parameter_by_length() const;
 };
 
 BoundingBox get_extents(const Polygon &poly);
 BoundingBox get_extents(const Polygons &polygons);
 BoundingBox get_extents_rotated(const Polygon &poly, double angle);
-BoundingBox get_extents_rotated(const Polygons &polygons, double angle);
 std::vector<BoundingBox> get_extents_vector(const Polygons &polygons);
 
 // Polygon must be valid (at least three points), collinear points and duplicate points removed.

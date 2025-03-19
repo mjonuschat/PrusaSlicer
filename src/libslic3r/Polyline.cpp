@@ -24,16 +24,6 @@
 
 namespace Slic3r {
 
-const Point& Polyline::leftmost_point() const
-{
-    const Point *p = &this->points.front();
-    for (Points::const_iterator it = this->points.begin() + 1; it != this->points.end(); ++ it) {
-        if (it->x() < p->x()) 
-        	p = &(*it);
-    }
-    return *p;
-}
-
 Lines Polyline::lines() const
 {
     Lines lines;
@@ -44,34 +34,6 @@ Lines Polyline::lines() const
         }
     }
     return lines;
-}
-
-/* this method returns a collection of points picked on the polygon contour
-   so that they are evenly spaced according to the input distance */
-Points Polyline::equally_spaced_points(double distance) const
-{
-    Points points;
-    points.emplace_back(this->first_point());
-    double len = 0;
-    
-    for (Points::const_iterator it = this->points.begin() + 1; it != this->points.end(); ++it) {
-        Vec2d  p1 = (it-1)->cast<double>();
-        Vec2d  v  = it->cast<double>() - p1;
-        double segment_length = v.norm();
-        len += segment_length;
-        if (len < distance)
-            continue;
-        if (len == distance) {
-            points.emplace_back(*it);
-            len = 0;
-            continue;
-        }
-        double take = segment_length - (len - distance);  // how much we take of this segment
-        points.emplace_back((p1 + v * (take / v.norm())).cast<coord_t>());
-        -- it;
-        len = - take;
-    }
-    return points;
 }
 
 void Polyline::simplify(double tolerance)
@@ -201,21 +163,6 @@ bool remove_same_neighbor(Polylines &polylines){
     // remove empty polylines
     polylines.erase(std::remove_if(polylines.begin(), polylines.end(), [](const Polyline &p) { return p.points.size() <= 1; }), polylines.end());
     return exist;
-}
-
-
-const Point& leftmost_point(const Polylines &polylines)
-{
-    if (polylines.empty())
-        throw Slic3r::InvalidArgument("leftmost_point() called on empty Polylines");
-    Polylines::const_iterator it = polylines.begin();
-    const Point *p = &it->leftmost_point();
-    for (++ it; it != polylines.end(); ++it) {
-        const Point *p2 = &it->leftmost_point();
-        if (p2->x() < p->x())
-            p = p2;
-    }
-    return *p;
 }
 
 bool remove_degenerate(Polylines &polylines)

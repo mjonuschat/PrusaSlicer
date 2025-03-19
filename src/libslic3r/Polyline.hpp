@@ -63,10 +63,8 @@ public:
 
     int find_point(const Point& point, const double scaled_epsilon) const { return Slic3r::Biz::Algorithms::MultiPoint::find_point(*this, point, scaled_epsilon); }
 
-    const Point& leftmost_point() const;
     Lines lines() const;
 
-    Points equally_spaced_points(double distance) const;
     void simplify(double tolerance);
 
     void split_at(const Point &point, Polyline* p1, Polyline* p2) const;
@@ -124,39 +122,6 @@ inline Lines to_lines(const Polylines &polylines) {
     return lines;
 }
 
-inline Polylines to_polylines(const std::vector<Points> &paths)
-{
-    Polylines out;
-    out.reserve(paths.size());
-    for (const Points &path : paths)
-        out.emplace_back(path);
-    return out;
-}
-
-inline Polylines to_polylines(std::vector<Points> &&paths)
-{
-    Polylines out;
-    out.reserve(paths.size());
-    for (Points &path : paths)
-        out.emplace_back(std::move(path));
-    return out;
-}
-
-inline void polylines_append(Polylines &dst, const Polylines &src) 
-{ 
-    dst.insert(dst.end(), src.begin(), src.end());
-}
-
-inline void polylines_append(Polylines &dst, Polylines &&src) 
-{
-    if (dst.empty()) {
-        dst = std::move(src);
-    } else {
-        std::move(std::begin(src), std::end(src), std::back_inserter(dst));
-        src.clear();
-    }
-}
-
 // Merge polylines at their respective end points.
 // dst_first: the merge point is at dst.begin() or dst.end()?
 // src_first: the merge point is at src.begin() or src.end()?
@@ -175,8 +140,6 @@ inline void polylines_merge(PointsType &dst, bool dst_first, PointsType &&src, b
     // Merge src into dst.
     append(dst, std::move(src));
 }
-
-const Point& leftmost_point(const Polylines &polylines);
 
 bool remove_degenerate(Polylines &polylines);
 

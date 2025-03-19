@@ -153,35 +153,6 @@ bool Polygon::intersection(const Line &line, Point *intersection) const
     return false;
 }
 
-bool Polygon::first_intersection(const Line& line, Point* intersection) const
-{
-    if (this->points.size() < 2)
-        return false;
-
-    bool   found = false;
-    double dmin  = 0.;
-    Line l(this->points.back(), this->points.front());
-    for (size_t i = 0; i < this->points.size(); ++ i) {
-        l.b = this->points[i];
-        Point ip;
-        if (l.intersection(line, &ip)) {
-            if (! found) {
-                found = true;
-                dmin = (line.a - ip).cast<double>().squaredNorm();
-                *intersection = ip;
-            } else {
-                double d = (line.a - ip).cast<double>().squaredNorm();
-                if (d < dmin) {
-                    dmin = d;
-                    *intersection = ip;
-                }
-            }
-        }
-        l.a = l.b;
-    }
-    return found;
-}
-
 bool Polygon::intersections(const Line &line, Points *intersections) const
 {
     if (this->points.size() < 2)
@@ -289,45 +260,7 @@ Point Polygon::point_projection(const Point &point) const
     return proj;
 }
 
-std::vector<float> Polygon::parameter_by_length() const
-{
-    // Parametrize the polygon by its length.
-    std::vector<float> lengths(points.size()+1, 0.);
-    for (size_t i = 1; i < points.size(); ++ i)
-        lengths[i] = lengths[i-1] + (points[i] - points[i-1]).cast<float>().norm();
-    lengths.back() = lengths[lengths.size()-2] + (points.front() - points.back()).cast<float>().norm();
-    return lengths;
-}
-
-void Polygon::densify(float min_length, std::vector<float>* lengths_ptr)
-{
-    std::vector<float> lengths_local;
-    std::vector<float>& lengths = lengths_ptr ? *lengths_ptr : lengths_local;
-
-    if (! lengths_ptr) {
-        // Length parametrization has not been provided. Calculate our own.
-        lengths = this->parameter_by_length();
-    }
-
-    assert(points.size() == lengths.size() - 1);
-
-    for (size_t j=1; j<=points.size(); ++j) {
-        bool last = j == points.size();
-        int i = last ? 0 : j;
-
-        if (lengths[j] - lengths[j-1] > min_length) {
-            Point diff = points[i] - points[j-1];
-            float diff_len = lengths[j] - lengths[j-1];
-            float r = (min_length/diff_len);
-            Point new_pt = points[j-1] + Point(r*diff[0], r*diff[1]);
-            points.insert(points.begin() + j, new_pt);
-            lengths.insert(lengths.begin() + j, lengths[j-1] + min_length);
-        }
-    }
-    assert(points.size() == lengths.size() - 1);
-}
-
-BoundingBox get_extents(const Polygon &poly) 
+BoundingBox get_extents(const Polygon &poly)
 { 
     return poly.bounding_box();
 }
@@ -346,17 +279,6 @@ BoundingBox get_extents(const Polygons &polygons)
 BoundingBox get_extents_rotated(const Polygon &poly, double angle) 
 { 
     return get_extents_rotated(poly.points, angle);
-}
-
-BoundingBox get_extents_rotated(const Polygons &polygons, double angle)
-{
-    BoundingBox bb;
-    if (! polygons.empty()) {
-        bb = get_extents_rotated(polygons.front().points, angle);
-        for (size_t i = 1; i < polygons.size(); ++ i)
-            bb.merge(get_extents_rotated(polygons[i].points, angle));
-    }
-    return bb;
 }
 
 extern std::vector<BoundingBox> get_extents_vector(const Polygons &polygons)
