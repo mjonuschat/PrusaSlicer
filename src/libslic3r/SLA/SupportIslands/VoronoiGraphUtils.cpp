@@ -2,6 +2,8 @@
 
 #include <cmath>
 #include <set>
+
+#include "Slic3r/Biz/Algorithms/Line.hpp"
 #include <libslic3r/Geometry/VoronoiOffset.hpp>
 #include "IStackFunction.hpp"
 #include "EvaluateNeighbor.hpp"
@@ -18,6 +20,7 @@
 
 //#define SLA_SVG_VISUALIZATION_CELL_2_POLYGON
 
+using namespace Slic3r::Biz;
 using namespace Slic3r::sla;
 
 coord_t VoronoiGraphUtils::to_coord(const VD::coordinate_type &coord)
@@ -302,7 +305,7 @@ VoronoiGraph::Node *VoronoiGraphUtils::getNode(VoronoiGraph &         graph,
     const Line &line = lines[cell->source_index()];
     // const Line &           line1     = lines[cell2->source_index()];
     Point  point = to_point(vertex);
-    double distance = line.distance_to(point);
+    double distance = Algorithms::Line::distance_to(line, point);
 
     auto [iterator, success] = data.emplace(vertex, VoronoiGraph::Node(vertex, distance));
 

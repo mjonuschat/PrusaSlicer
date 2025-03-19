@@ -1,5 +1,8 @@
 #include "libslic3r/GCode/SeamScarf.hpp"
 #include "libslic3r/GCode/SmoothPath.hpp"
+#include "Slic3r/Biz/Algorithms/Line.hpp"
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r::Seams::Scarf {
 
@@ -230,7 +233,7 @@ GCode::SmoothPath elevate_scarf(
 }
 
 bool is_on_line(const Point &point, const Line &line, const double tolerance) {
-    return line.distance_to_squared(point) < tolerance * tolerance;
+    return Algorithms::Line::distance_to_squared(line, point) < tolerance * tolerance;
 }
 
 std::optional<PathPoint> find_path_point_from_end(

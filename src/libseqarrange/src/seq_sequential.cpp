@@ -9,6 +9,7 @@
  */
 /*================================================================*/
 
+#include "Slic3r/Biz/Algorithms/Line.hpp"
 #include <libslic3r/SVG.hpp>
 #include <libslic3r/Geometry/ConvexHull.hpp>
 
@@ -22,6 +23,7 @@
 
 using namespace std;
 using namespace Slic3r;
+using namespace Slic3r::Biz;
 
 
 /*----------------------------------------------------------------*/
@@ -859,7 +861,7 @@ void introduce_LineNonIntersection_implicit(z3::solver         &Solver,
 {    
     Point point;
     
-    if (line1.intersection_infinite(line2, &point))
+    if (Algorithms::Line::intersection_infinite(line1, line2, point))
     {
 	int v1x = line1.b.x() - line1.a.x();
 	int v1y = line1.b.y() - line1.a.y();
@@ -900,7 +902,7 @@ void introduce_SequentialLineNonIntersection_implicit(z3::solver         &Solver
 {    
     Point point;
     
-    if (line1.intersection_infinite(line2, &point))
+    if (Algorithms::Line::intersection_infinite(line1, line2, point))
     {
 	int v1x = line1.b.x() - line1.a.x();
 	int v1y = line1.b.y() - line1.a.y();
@@ -943,7 +945,7 @@ void introduce_ConsequentialLineNonIntersection_implicit(z3::solver         &Sol
 {    
     Point point;
     
-    if (line1.intersection_infinite(line2, &point))
+    if (Algorithms::Line::intersection_infinite(line1, line2, point))
     {
 	int v1x = line1.b.x() - line1.a.x();
 	int v1y = line1.b.y() - line1.a.y();
@@ -985,7 +987,7 @@ void introduce_LineNonIntersection_explicit(z3::solver         &Solver,
 					    const Slic3r::Line &line2)
 {
     Point point;
-    if (line1.intersection_infinite(line2, &point))
+    if (Algorithms::Line::intersection_infinite(line1, line2, point))
     {    
 	int v1x = line1.b.x() - line1.a.x();
 	int v1y = line1.b.y() - line1.a.y();
@@ -1217,7 +1219,7 @@ void introduce_LineNonIntersectionAgainstFixedLine_implicit(z3::solver         &
 {    
     Point point;
     
-    if (line1.intersection_infinite(line2, &point))
+    if (Algorithms::Line::intersection_infinite(line1, line2, point))
     {
 	int v1x = line1.b.x() - line1.a.x();
 	int v1y = line1.b.y() - line1.a.y();
@@ -1255,7 +1257,7 @@ void introduce_LineNonIntersectionAgainstFixedLine_explicit(z3::solver         &
 							    const Slic3r::Line &line2)
 {
     Point point;
-    if (line1.intersection_infinite(line2, &point))
+    if (Algorithms::Line::intersection_infinite(line1, line2, point))
     {    
 	int v1x = line1.b.x() - line1.a.x();
 	int v1y = line1.b.y() - line1.a.y();
@@ -1352,7 +1354,7 @@ void introduce_SequentialLineNonIntersectionAgainstFixedLine_implicit(z3::solver
 {    
     Point point;
     
-    if (line1.intersection_infinite(line2, &point))
+    if (Algorithms::Line::intersection_infinite(line1, line2, point))
     {
 	int v1x = line1.b.x() - line1.a.x();
 	int v1y = line1.b.y() - line1.a.y();
@@ -1395,7 +1397,7 @@ void introduce_SequentialFixedLineNonIntersectionAgainstLine_implicit(z3::solver
 {    
     Point point;
     
-    if (line1.intersection_infinite(line2, &point))
+    if (Algorithms::Line::intersection_infinite(line1, line2, point))
     {
 	int v1x = line1.b.x() - line1.a.x();
 	int v1y = line1.b.y() - line1.a.y();
@@ -1440,7 +1442,7 @@ void introduce_ConsequentialLineNonIntersectionAgainstFixedLine_implicit(z3::sol
     {
 	Point point;
     
-	if (line1.intersection_infinite(line2, &point))
+	if (Algorithms::Line::intersection_infinite(line1, line2, point))
 	{
 	    int v1x = line1.b.x() - line1.a.x();
 	    int v1y = line1.b.y() - line1.a.y();
@@ -1487,7 +1489,7 @@ void introduce_ConsequentialFixedLineNonIntersectionAgainstLine_implicit(z3::sol
     {
 	Point point;
     
-	if (line1.intersection_infinite(line2, &point))
+	if (Algorithms::Line::intersection_infinite(line1, line2, point))
 	{
 	    int v1x = line1.b.x() - line1.a.x();
 	    int v1y = line1.b.y() - line1.a.y();

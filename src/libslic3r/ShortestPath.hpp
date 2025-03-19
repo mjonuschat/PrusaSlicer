@@ -18,7 +18,6 @@
 
 namespace Slic3r {
 class ExtrusionEntityCollection;
-class Line;
 
 	namespace ClipperLib {
 		class PolyNode;

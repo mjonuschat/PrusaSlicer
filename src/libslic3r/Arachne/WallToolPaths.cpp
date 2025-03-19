@@ -9,6 +9,7 @@
 #include <cmath>
 
 #include "WallToolPaths.hpp"
+#include "Slic3r/Biz/Algorithms/Line.hpp"
 #include "SkeletalTrapezoidation.hpp"
 #include "utils/linearAlg2D.hpp"
 #include "utils/SparseLineGrid.hpp"
@@ -26,6 +27,8 @@
 #include "libslic3r/PrintConfig.hpp"
 
 //#define ARACHNE_STITCH_PATCH_DEBUG
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r::Arachne
 {
@@ -131,7 +134,7 @@ void simplify(Polygon &thiss, const int64_t smallest_line_segment_squared, const
         //h^2 = L^2 / b^2     [factor the divisor]
         const int64_t height_2 = double(area_removed_so_far) * double(area_removed_so_far) / double(base_length_2);
         if ((height_2 <= Slic3r::sqr(scaled<coord_t>(0.005)) //Almost exactly colinear (barring rounding errors).
-             && Line::distance_to_infinite(current, previous, next) <= scaled<double>(0.005))) // make sure that height_2 is not small because of cancellation of positive and negative areas
+             && Algorithms::Line::distance_to_infinite(Line{previous, next}, current) <= scaled<double>(0.005))) // make sure that height_2 is not small because of cancellation of positive and negative areas
             continue;
 
         if (length2 < smallest_line_segment_squared
@@ -144,9 +147,9 @@ void simplify(Polygon &thiss, const int64_t smallest_line_segment_squared, const
                 // By taking the intersection of these two lines, we get a point that preserves the direction (so it makes the corner a bit more pointy).
                 // We just need to be sure that the intersection point does not introduce an artifact itself.
                 Point intersection_point;
-                bool has_intersection = Line(previous_previous, previous).intersection_infinite(Line(current, next), &intersection_point);
+                bool has_intersection = Algorithms::Line::intersection_infinite(Line(previous_previous, previous), Line(current, next), intersection_point);
                 if (!has_intersection
-                    || Line::distance_to_infinite_squared(intersection_point, previous, current) > double(allowed_error_distance_squared)
+                    || Algorithms::Line::distance_to_infinite_squared(Line{previous, current}, intersection_point) > double(allowed_error_distance_squared)
                     || (intersection_point - previous).cast<int64_t>().squaredNorm() > smallest_line_segment_squared  // The intersection point is way too far from the 'previous'
                     || (intersection_point - next).cast<int64_t>().squaredNorm() > smallest_line_segment_squared)     // and 'next' points, so it shouldn't replace 'current'
                 {
@@ -266,7 +269,7 @@ void fixSelfIntersections(const coord_t epsilon, Polygons &thiss)
 
                 const Line segment(thiss[line.poly_idx][line.point_idx], thiss[line.poly_idx][line_next_idx]);
                 Point      segment_closest_point;
-                segment.distance_to_squared(pt, &segment_closest_point);
+                Algorithms::Line::distance_to_squared(segment, pt, segment_closest_point);
 
                 if (half_epsilon_sqrd >= (pt - segment_closest_point).cast<int64_t>().squaredNorm()) {
                     const Point  &other = thiss[poly_idx][(point_idx + 1) % pathlen];

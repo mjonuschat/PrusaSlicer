@@ -9,6 +9,7 @@
 #include <utility>
 #include <cstdlib>
 
+#include "Slic3r/Biz/Algorithms/Line.hpp"
 #include "../FillRectilinear.hpp"
 #include "../../ClipperUtils.hpp"
 #include "libslic3r/BoundingBox.hpp"
@@ -20,6 +21,8 @@
 #ifdef LIGHTNING_DISTANCE_FIELD_DEBUG_OUTPUT
 #include "../../SVG.hpp"
 #endif
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r::FillLightning
 {
@@ -68,7 +71,7 @@ DistanceField::DistanceField(const coord_t& radius, const Polygons& current_outl
                     if (contour.size() > 2) {
                         Point prev = contour.points.back();
                         for (const Point &p2 : contour.points) {
-                            d2   = std::min(d2, Line::distance_to_squared(sp, prev, p2));
+                            d2   = std::min(d2, Algorithms::Line::distance_to_squared(Line{prev, p2}, sp));
                             prev = p2;
                         }
                     }

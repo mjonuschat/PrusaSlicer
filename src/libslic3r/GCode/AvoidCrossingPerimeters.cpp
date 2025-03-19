@@ -14,6 +14,7 @@
 #include <cmath>
 #include <cstddef>
 
+#include "Slic3r/Biz/Algorithms/Line.hpp"
 #include "../Layer.hpp"
 #include "../GCode.hpp"
 #include "../EdgeGrid.hpp"
@@ -33,6 +34,8 @@
 #include "libslic3r/libslic3r.h"
 
 //#define AVOID_CROSSING_PERIMETERS_DEBUG_OUTPUT
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r {
 
@@ -93,7 +96,7 @@ struct AllIntersectionsVisitor
         auto cell_data_range = grid.cell_data_range(iy, ix);
         for (auto it_contour_and_segment = cell_data_range.first; it_contour_and_segment != cell_data_range.second; ++it_contour_and_segment) {
             Point intersection_point;
-            if (travel_line.intersection(grid.line(*it_contour_and_segment), &intersection_point) &&
+            if (Algorithms::Line::intersection(travel_line, grid.line(*it_contour_and_segment), intersection_point) &&
                 intersection_set.find(*it_contour_and_segment) == intersection_set.end()) {
                 intersections.push_back({ it_contour_and_segment->first, it_contour_and_segment->second, intersection_point });
                 intersection_set.insert(*it_contour_and_segment);
@@ -161,7 +164,7 @@ struct MinDistanceVisitor
             auto  segment = grid.segment(*it_contour_and_segment);
             Point closest_point;
             if (closest_lines_set.find(*it_contour_and_segment) == closest_lines_set.end() &&
-                line_alg::distance_to_squared(Line(segment.first, segment.second), center, &closest_point) <= this->max_distance_squared) {
+                Algorithms::Line::distance_to_squared(Line(segment.first, segment.second), center, closest_point) <= this->max_distance_squared) {
                 closest_lines.push_back({it_contour_and_segment->first, it_contour_and_segment->second, closest_point});
                 closest_lines_set.insert(*it_contour_and_segment);
             }

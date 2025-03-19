@@ -1,10 +1,12 @@
 project(slic3r-domain)
 
 add_library(slic3r-domain
+    include/Slic3r/Domain/Line.hpp
     include/Slic3r/Domain/MultiPoint.hpp
     include/Slic3r/Domain/Polygon.hpp
     include/Slic3r/Domain/Polyline.hpp
     include/Slic3r/Domain/Vectors.hpp
+    src/Slic3r/Domain/Line.cpp
     src/Slic3r/Domain/MultiPoint.cpp
     src/Slic3r/Domain/Polygon.cpp
     src/Slic3r/Domain/Polyline.cpp

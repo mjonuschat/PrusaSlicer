@@ -10,10 +10,13 @@
 #include <cassert>
 #include <cinttypes>
 
+#include "Slic3r/Biz/Algorithms/Line.hpp"
 #include "../Line.hpp"
 #include "libslic3r/Arachne/SkeletalTrapezoidationEdge.hpp"
 #include "libslic3r/Arachne/SkeletalTrapezoidationJoint.hpp"
 #include "libslic3r/Point.hpp"
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r::Arachne
 {
@@ -321,7 +324,7 @@ void SkeletalTrapezoidationGraph::collapseSmallEdges(coord_t snap_dist)
 
 void SkeletalTrapezoidationGraph::makeRib(edge_t *&prev_edge, const Point &start_source_point, const Point &end_source_point) {
     Point p;
-    Line(start_source_point, end_source_point).distance_to_infinite_squared(prev_edge->to->p, &p);
+    Algorithms::Line::distance_to_infinite_squared(Line(start_source_point, end_source_point), prev_edge->to->p, p);
     coord_t dist = (prev_edge->to->p - p).cast<int64_t>().norm();
     prev_edge->to->data.distance_to_boundary = dist;
     assert(dist >= 0);
@@ -359,7 +362,7 @@ std::pair<SkeletalTrapezoidationGraph::edge_t*, SkeletalTrapezoidationGraph::edg
 
     const Line source_segment = getSource(edge);
     Point      px;
-    source_segment.distance_to_squared(p, &px);
+    Algorithms::Line::distance_to_squared(source_segment, p, px);
     coord_t dist = (p - px).cast<int64_t>().norm();
     assert(dist > 0);
     mid_node->data.distance_to_boundary = dist;

@@ -44,6 +44,8 @@
 #include "libslic3r/libslic3r.h"
 #include "MultiMaterialSegmentation.hpp"
 
+using namespace Slic3r::Biz;
+
 constexpr bool MM_SEGMENTATION_DEBUG_GRAPH                = false;
 constexpr bool MM_SEGMENTATION_DEBUG_REGIONS              = false;
 constexpr bool MM_SEGMENTATION_DEBUG_INPUT                = false;
@@ -1867,7 +1869,7 @@ static std::optional<ColorProjectionRange> project_color_line_on_projection_line
             // T value is outside <0, 1>, so we calculate the distance between the clamped T value and the nearest point on the color_line.
             // That means that we calculate the distance between one of the endpoints of the projection_line and the color_line.
             const Point &projection_line_nearest_pt = (t_raw < 0.) ? projection_line.a : projection_line.b;
-            return line_alg::distance_to(color_line.line(), projection_line_nearest_pt);
+            return Algorithms::Line::distance_to(color_line.line(), projection_line_nearest_pt);
         }
     };
 

@@ -22,6 +22,8 @@
 #include "libslic3r/MultiPoint.hpp"
 #include "libslic3r/libslic3r.h"
 
+using namespace Slic3r::Biz;
+
 namespace Slic3r {
 
 Lines Polyline::lines() const
@@ -85,7 +87,7 @@ void Polyline::split_at(const Point &point, Polyline* p1, Polyline* p2) const
     Point prev         = this->points.front();
     for (auto it = this->points.cbegin() + 1; it != this->points.cend(); ++ it) {
         Point proj;
-        if (double d2 = line_alg::distance_to_squared(Line(prev, *it), point, &proj); d2 < min_dist2) {
+        if (double d2 = Algorithms::Line::distance_to_squared(Line(prev, *it), point, proj); d2 < min_dist2) {
 	        min_dist2    = d2;
 	        min_point_it = it;
         }
@@ -109,7 +111,7 @@ bool Polyline::is_straight() const
     // one would cause the error to accumulate.)
     double dir = Line(this->first_point(), this->last_point()).direction();
     for (const auto &line: this->lines())
-        if (! line.parallel_to(dir))
+        if (!line.is_parallel_to(dir))
             return false;
     return true;
 }
@@ -194,7 +196,7 @@ std::pair<int, Point> foot_pt(const Points &polyline, const Point &pt)
     auto  it_proj = polyline.begin();
     for (++ it; it != polyline.end(); ++ it) {
         Point foot_pt;
-        if (double d2 = line_alg::distance_to_squared(Line(prev, *it), pt, &foot_pt); d2 < d2_min) {
+        if (double d2 = Algorithms::Line::distance_to_squared(Line(prev, *it), pt, foot_pt); d2 < d2_min) {
             d2_min      = d2;
             foot_pt_min = foot_pt;
             it_proj     = it;

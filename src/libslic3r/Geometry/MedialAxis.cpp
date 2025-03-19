@@ -9,6 +9,7 @@
 #include <cassert>
 #include <cmath>
 
+#include "Slic3r/Biz/Algorithms/Line.hpp"
 #include "VoronoiOffset.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/ExPolygon.hpp"
@@ -187,6 +188,8 @@ class voronoi_visual_utils {
 
 } } // namespace boost::polygon
 #endif // SLIC3R_DEBUG
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r { namespace Geometry {
 
@@ -677,11 +680,11 @@ bool MedialAxis::validate_edge(const VD::edge_type* edge)
         calculate the distance to that endpoint instead.  */
     
     double w0 = cell_r->contains_segment()
-        ? segment_r.distance_to(line.a)*2
+        ? Algorithms::Line::distance_to(segment_r, line.a)*2
         : (retrieve_endpoint(cell_r) - line.a).cast<double>().norm()*2;
     
     double w1 = cell_l->contains_segment()
-        ? segment_l.distance_to(line.b)*2
+        ? Algorithms::Line::distance_to(segment_l, line.b)*2
         : (retrieve_endpoint(cell_l) - line.b).cast<double>().norm()*2;
     
     if (cell_l->contains_segment() && cell_r->contains_segment()) {

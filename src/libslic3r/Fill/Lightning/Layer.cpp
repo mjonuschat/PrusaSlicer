@@ -21,6 +21,8 @@
 #include "libslic3r/Line.hpp"
 #include "libslic3r/Polygon.hpp"
 
+using namespace Slic3r::Biz;
+
 namespace Slic3r::FillLightning {
 
 coord_t Layer::getWeightedDistance(const Point& boundary_loc, const Point& unsupported_location)
@@ -142,7 +144,7 @@ GroundingLocation Layer::getBestGroundingLocation
                 Point prev = contour.points.back();
                 for (const Point &p2 : contour.points) {
                     Point closest_point;
-                    if (double d = line_alg::distance_to_squared(Line{prev, p2}, unsupported_location, &closest_point); d < d2) {
+                    if (double d = Algorithms::Line::distance_to_squared(Line{prev, p2}, unsupported_location, closest_point); d < d2) {
                         d2 = d;
                         node_location = closest_point;
                     }

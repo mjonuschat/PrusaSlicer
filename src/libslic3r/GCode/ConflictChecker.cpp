@@ -17,11 +17,14 @@
 #include <cfloat>
 #include <cstdlib>
 
+#include "Slic3r/Biz/Algorithms/Line.hpp"
 #include "libslic3r/ExtrusionEntityCollection.hpp"
 #include "libslic3r/GCode/WipeTower.hpp"
 #include "libslic3r/Geometry.hpp"
 #include "libslic3r/LayerRegion.hpp"
 #include "libslic3r/libslic3r.h"
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r {
 using Biz::libpgcode::ConflictResult;
@@ -386,7 +389,7 @@ ConflictComputeOpt ConflictChecker::line_intersect(const LineWithID &l1, const L
     if (l1._obj_id == l2._obj_id && l1._inst_id == l2._inst_id) { return {}; } // lines are from same instance
 
     Point inter;
-    bool  intersect = l1._line.intersection(l2._line, &inter);
+    bool  intersect = Algorithms::Line::intersection(l1._line, l2._line, inter);
     if (intersect) {
         auto dist1 = std::min(unscale(Point(l1._line.a - inter)).norm(), unscale(Point(l1._line.b - inter)).norm());
         auto dist2 = std::min(unscale(Point(l2._line.a - inter)).norm(), unscale(Point(l2._line.b - inter)).norm());

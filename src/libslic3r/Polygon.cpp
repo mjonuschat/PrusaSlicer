@@ -15,6 +15,7 @@
 #include <cinttypes>
 #include <cstring>
 
+#include "Slic3r/Biz/Algorithms/Line.hpp"
 #include "BoundingBox.hpp"
 #include "Slic3r/Exception.hpp"
 #include "Polygon.hpp"
@@ -24,6 +25,8 @@
 #include "libslic3r/MultiPoint.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/libslic3r.h"
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r {
 
@@ -145,10 +148,10 @@ bool Polygon::intersection(const Line &line, Point *intersection) const
 {
     if (this->points.size() < 2)
         return false;
-    if (Line(this->points.front(), this->points.back()).intersection(line, intersection))
+    if (Algorithms::Line::intersection(Line(this->points.front(), this->points.back()), line, *intersection))
         return true;
     for (size_t i = 1; i < this->points.size(); ++ i)
-        if (Line(this->points[i - 1], this->points[i]).intersection(line, intersection))
+        if (Algorithms::Line::intersection(Line(this->points[i - 1], this->points[i]), line, *intersection))
             return true;
     return false;
 }
@@ -163,7 +166,7 @@ bool Polygon::intersections(const Line &line, Points *intersections) const
     for (size_t i = 0; i < this->points.size(); ++ i) {
         l.b = this->points[i];
         Point intersection;
-        if (l.intersection(line, &intersection))
+        if (Algorithms::Line::intersection(l, line, intersection))
             intersections->emplace_back(std::move(intersection));
         l.a = l.b;
     }
@@ -499,8 +502,7 @@ void remove_collinear(Polygon &poly)
             while (k < pp.size()-1) {
                 const Point &p2 = pp[k];
                 const Point &p3 = pp[k+1];
-                Line l(p1, p3);
-                if(l.distance_to(p2) < SCALED_EPSILON) {
+                if(Algorithms::Line::distance_to(Line(p1, p3), p2) < SCALED_EPSILON) {
                     k++;
                 } else {
                     if(i > 0) poly.points.push_back(p1); // implicitly removes the first point we appended above

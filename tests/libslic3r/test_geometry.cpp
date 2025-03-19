@@ -1,5 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 
+#include "Slic3r/Biz/Algorithms/Line.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/Polygon.hpp"
@@ -19,25 +20,26 @@
 #include <unordered_set>
 
 using namespace Slic3r;
+using namespace Slic3r::Biz;
 
 TEST_CASE("Line::parallel_to", "[Geometry]"){
     Line l{ { 100000, 0 }, { 0, 0 } };
     Line l2{ { 200000, 0 }, { 0, 0 } };
-    REQUIRE(l.parallel_to(l));
-    REQUIRE(l.parallel_to(l2));
+    REQUIRE(l.is_parallel_to(l));
+    REQUIRE(l.is_parallel_to(l2));
 
     Line l3(l2);
     l3.rotate(0.9 * EPSILON, { 0, 0 });
-    REQUIRE(l.parallel_to(l3));
+    REQUIRE(l.is_parallel_to(l3));
 
     Line l4(l2);
     l4.rotate(1.1 * EPSILON, { 0, 0 });
-    REQUIRE(! l.parallel_to(l4));
+    REQUIRE(!l.is_parallel_to(l4));
 
     // The angle epsilon is so low that vectors shorter than 100um rotated by epsilon radians are not rotated at all.
     Line l5{ { 20000, 0 }, { 0, 0 } };
     l5.rotate(1.1 * EPSILON, { 0, 0 });
-    REQUIRE(l.parallel_to(l5));
+    REQUIRE(l.is_parallel_to(l5));
 
     l.rotate(1., { 0, 0 });
     Point offset{ 342876, 97636249 };
@@ -46,28 +48,28 @@ TEST_CASE("Line::parallel_to", "[Geometry]"){
     l3.translate(offset);
     l4.rotate(1., { 0, 0 });
     l4.translate(offset);
-    REQUIRE(l.parallel_to(l3));
-    REQUIRE(!l.parallel_to(l4));
+    REQUIRE(l.is_parallel_to(l3));
+    REQUIRE(!l.is_parallel_to(l4));
 }
 
 TEST_CASE("Line::perpendicular_to", "[Geometry]") {
     Line l{ { 100000, 0 }, { 0, 0 } };
     Line l2{ { 0, 200000 }, { 0, 0 } };
-    REQUIRE(! l.perpendicular_to(l));
-    REQUIRE(l.perpendicular_to(l2));
+    REQUIRE(!l.is_perpendicular_to(l));
+    REQUIRE(l.is_perpendicular_to(l2));
 
     Line l3(l2);
     l3.rotate(0.9 * EPSILON, { 0, 0 });
-    REQUIRE(l.perpendicular_to(l3));
+    REQUIRE(l.is_perpendicular_to(l3));
 
     Line l4(l2);
     l4.rotate(1.1 * EPSILON, { 0, 0 });
-    REQUIRE(! l.perpendicular_to(l4));
+    REQUIRE(!l.is_perpendicular_to(l4));
 
     // The angle epsilon is so low that vectors shorter than 100um rotated by epsilon radians are not rotated at all.
     Line l5{ { 0, 20000 }, { 0, 0 } };
     l5.rotate(1.1 * EPSILON, { 0, 0 });
-    REQUIRE(l.perpendicular_to(l5));
+    REQUIRE(l.is_perpendicular_to(l5));
 
     l.rotate(1., { 0, 0 });
     Point offset{ 342876, 97636249 };
@@ -76,8 +78,8 @@ TEST_CASE("Line::perpendicular_to", "[Geometry]") {
     l3.translate(offset);
     l4.rotate(1., { 0, 0 });
     l4.translate(offset);
-    REQUIRE(l.perpendicular_to(l3));
-    REQUIRE(! l.perpendicular_to(l4));
+    REQUIRE(l.is_perpendicular_to(l3));
+    REQUIRE(!l.is_perpendicular_to(l4));
 }
 
 TEST_CASE("Polygon::contains works properly", "[Geometry]"){
@@ -104,7 +106,7 @@ SCENARIO("Intersections of line segments", "[Geometry]"){
         Line line2(Point(10,20), Point(10,10));
         THEN("The intersection is valid"){
             Point point;
-            line1.intersection(line2,&point);
+            Algorithms::Line::intersection(line1, line2, point);
             REQUIRE(Point(10,15) == point);
         }
     }
@@ -114,7 +116,7 @@ SCENARIO("Intersections of line segments", "[Geometry]"){
         Line line2(Point(75/0.00001, 437.9853/0.00001), Point(62.7484/0.00001, 440.4223/0.00001));
         THEN("There is still an intersection"){
             Point point;
-            REQUIRE(line1.intersection(line2,&point));
+            REQUIRE(Algorithms::Line::intersection(line1, line2, point));
         }
     }
 }
@@ -464,14 +466,14 @@ SCENARIO("Line distances", "[Geometry]"){
     GIVEN("A line"){
         Line line(Point(0, 0), Point(20, 0));
         THEN("Points on the line segment have 0 distance"){
-            REQUIRE(line.distance_to(Point(0, 0))  == 0);
-            REQUIRE(line.distance_to(Point(20, 0)) == 0);
-            REQUIRE(line.distance_to(Point(10, 0)) == 0);
+            REQUIRE(Algorithms::Line::distance_to(line, Point(0, 0))  == 0);
+            REQUIRE(Algorithms::Line::distance_to(line, Point(20, 0)) == 0);
+            REQUIRE(Algorithms::Line::distance_to(line, Point(10, 0)) == 0);
         
         }
         THEN("Points off the line have the appropriate distance"){
-            REQUIRE(line.distance_to(Point(10, 10)) == 10);
-            REQUIRE(line.distance_to(Point(50, 0)) == 30);
+            REQUIRE(Algorithms::Line::distance_to(line, Point(10, 10)) == 10);
+            REQUIRE(Algorithms::Line::distance_to(line, Point(50, 0)) == 30);
         }
     }
 }

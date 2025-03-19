@@ -6,6 +6,7 @@
 #include <cstdlib>
 
 #include "ExtrusionLine.hpp"
+#include "Slic3r/Biz/Algorithms/Line.hpp"
 #include "../../PerimeterGenerator.hpp"
 #include "libslic3r/Arachne/utils/ExtrusionJunction.hpp"
 #include "libslic3r/BoundingBox.hpp"
@@ -13,6 +14,8 @@
 #include "libslic3r/Line.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/Polyline.hpp"
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r {
 class Flow;
@@ -119,7 +122,7 @@ void ExtrusionLine::simplify(const int64_t smallest_line_segment_squared, const 
         const auto    height_2 = int64_t(double(area_removed_so_far) * double(area_removed_so_far) / double(base_length_2));
         const int64_t extrusion_area_error = calculateExtrusionAreaDeviationError(previous, current, next);
         if ((height_2 <= scaled<coord_t>(0.001) //Almost exactly colinear (barring rounding errors).
-             && Line::distance_to_infinite(current.p, previous.p, next.p) <= scaled<double>(0.001)) // Make sure that height_2 is not small because of cancellation of positive and negative areas
+             && Algorithms::Line::distance_to_infinite(Line{previous.p, next.p}, current.p) <= scaled<double>(0.001)) // Make sure that height_2 is not small because of cancellation of positive and negative areas
             // We shouldn't remove middle junctions of colinear segments if the area changed for the C-P segment is exceeding the maximum allowed
              && extrusion_area_error <= maximum_extrusion_area_deviation)
         {
@@ -138,9 +141,9 @@ void ExtrusionLine::simplify(const int64_t smallest_line_segment_squared, const 
                 // By taking the intersection of these two lines, we get a point that preserves the direction (so it makes the corner a bit more pointy).
                 // We just need to be sure that the intersection point does not introduce an artifact itself.
                 Point intersection_point;
-                bool has_intersection = Line(previous_previous.p, previous.p).intersection_infinite(Line(current.p, next.p), &intersection_point);
+                bool has_intersection = Algorithms::Line::intersection_infinite(Line(previous_previous.p, previous.p), Line(current.p, next.p), intersection_point);
                 if (!has_intersection
-                    || Line::distance_to_infinite_squared(intersection_point, previous.p, current.p) > double(allowed_error_distance_squared)
+                    || Algorithms::Line::distance_to_infinite_squared(Line{previous.p, current.p}, intersection_point) > double(allowed_error_distance_squared)
                     || (intersection_point - previous.p).cast<int64_t>().squaredNorm() > smallest_line_segment_squared  // The intersection point is way too far from the 'previous'
                     || (intersection_point - next.p).cast<int64_t>().squaredNorm() > smallest_line_segment_squared)     // and 'next' points, so it shouldn't replace 'current'
                 {

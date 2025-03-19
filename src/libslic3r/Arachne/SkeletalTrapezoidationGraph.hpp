@@ -14,7 +14,7 @@
 #include "libslic3r/Arachne/utils/HalfEdgeNode.hpp"
 #include "libslic3r/libslic3r.h"
 
-namespace Slic3r
+namespace Slic3r::Domain
 {
 class Line;
 };

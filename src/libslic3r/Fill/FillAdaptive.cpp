@@ -17,6 +17,7 @@
 #include <cassert>
 #include <complex>
 
+#include "Slic3r/Biz/Algorithms/Line.hpp"
 #include "../ClipperUtils.hpp"
 #include "../ExPolygon.hpp"
 #include "../Geometry.hpp"
@@ -38,6 +39,7 @@
 #include <boost/geometry.hpp>
 #include <boost/geometry/geometries/segment.hpp>
 
+using namespace Slic3r::Biz;
 
 namespace Slic3r {
 namespace FillAdaptive {
@@ -615,7 +617,7 @@ struct Intersection
 
     bool      other_hook_intersects(const Line &l, Point &pt) {
         std::optional<Line> h = other_hook();
-        return h && h->intersection(l, &pt);
+        return h && Algorithms::Line::intersection(*h, l, pt);
     }
     bool      other_hook_intersects(const Line &l) { Point pt; return this->other_hook_intersects(l, pt); }
 
@@ -700,9 +702,9 @@ static void add_hook(
     // Trim the hook start by the infill line it will connect to.
     Point hook_start;
 
-    [[maybe_unused]] bool intersection_found = intersection.intersect_line->intersection(
+    [[maybe_unused]] bool intersection_found = Algorithms::Line::intersection(*intersection.intersect_line,
         create_offset_line(*intersection.closest_line, intersection, scaled_offset),
-        &hook_start);
+        hook_start);
     assert(intersection_found);
 
     std::optional<Line> other_hook = intersection.other_hook();
@@ -718,7 +720,7 @@ static void add_hook(
     std::vector<std::pair<rtree_segment_t, size_t>> hook_intersections;
     rtree.query(bgi::intersects(mk_rtree_seg(hook_forward)) && bgi::satisfies(filter_itself), std::back_inserter(hook_intersections));
     Point self_intersection_point;
-    bool  self_intersection = other_hook && other_hook->intersection(hook_forward, &self_intersection_point);
+    bool  self_intersection = other_hook && Algorithms::Line::intersection(*other_hook, hook_forward, self_intersection_point);
 
     // Find closest intersection of a line segment starting with pt pointing in dir
     // with any of the hook_intersections, returns Euclidian distance.
@@ -767,7 +769,7 @@ static void add_hook(
         hook_intersections.clear();
         Line hook_backward(hook_start, hook_start - hook_vector);
         rtree.query(bgi::intersects(mk_rtree_seg(hook_backward)) && bgi::satisfies(filter_itself), std::back_inserter(hook_intersections));
-        self_intersection = other_hook && other_hook->intersection(hook_backward, &self_intersection_point);
+        self_intersection = other_hook && Algorithms::Line::intersection(*other_hook, hook_backward, self_intersection_point);
         hook_backward_max_length = max_hook_length(hook_startf, - hook_vector_norm, hook_intersections, self_intersection, other_hook, self_intersection_point);
     }
 
@@ -939,7 +941,7 @@ static Polylines connect_lines_using_hooks(Polylines &&lines, const ExPolygon &b
     #endif // NDEBUG
                         } else if (pl.size() >= 2 && 
                             //FIXME Hoping that pl is really a line, trimmed by a polygon using ClipperUtils. Sometimes Clipper leaves some additional collinear points on the polyline, let's hope it is all right.
-                            Line{ pl.front(), pl.back() }.distance_to_squared(pt) <= 1000 * 1000)
+                            Algorithms::Line::distance_to_squared(Line{pl.front(), pl.back()}, pt) <= 1000 * 1000)
                             out = closest.front().second;
                     }
                     return out;
@@ -1176,8 +1178,8 @@ static Polylines connect_lines_using_hooks(Polylines &&lines, const ExPolygon &b
             Point first_i_point, nearest_i_point;
             bool could_connect = false;
             if (nearest_i.fresh()) {
-                could_connect = first_i.intersect_line->intersection(offset_line, &first_i_point) &&
-                                nearest_i.intersect_line->intersection(offset_line, &nearest_i_point);
+                could_connect = Algorithms::Line::intersection(*first_i.intersect_line, offset_line, first_i_point) &&
+                                Algorithms::Line::intersection(*nearest_i.intersect_line, offset_line, nearest_i_point);
                 assert(could_connect);
             }
             Points &first_points  = first_i.intersect_pl->points;

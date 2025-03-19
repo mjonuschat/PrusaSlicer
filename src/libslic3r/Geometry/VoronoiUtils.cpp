@@ -11,7 +11,10 @@
 
 #include "VoronoiUtils.hpp"
 #include "Slic3r/Exception.hpp"
+#include "Slic3r/Biz/Algorithms/Line.hpp"
 #include "libslic3r/Line.hpp"
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r::Geometry {
 
@@ -130,7 +133,7 @@ VoronoiUtils::discretize_parabola(const Point &source_point, const Segment &sour
     const coord_t px = ap.cast<int64_t>().dot(ab.cast<int64_t>()) / ab_size;
 
     Point pxx;
-    Line(a, b).distance_to_infinite_squared(source_point, &pxx);
+    Algorithms::Line::distance_to_infinite_squared(Line(a, b), source_point, pxx);
     const Point   ppxx = pxx - source_point;
     const coord_t d    = ppxx.cast<int64_t>().norm();
 

@@ -20,6 +20,7 @@
 #include <vector>
 #include <tuple>
 
+#include "Slic3r/Biz/Algorithms/Line.hpp"
 #include "AABBTreeLines.hpp"
 #include "BoundingBox.hpp"
 #include "BridgeDetector.hpp"
@@ -52,6 +53,8 @@
 #include "SVG.hpp"
 #include "Utils.hpp"
 #endif
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r {
 
@@ -385,7 +388,7 @@ static ClipperLib_Z::Paths clip_extrusion(const ClipperLib_Z::Path &subject, con
                 for (auto it = std::next(subject.begin()); it != subject.end(); ++it) {
                     Point curr(it->x(), it->y());
                     Point projected_pt;
-                    if (double dist_sqr = line_alg::distance_to_squared(Line(prev, curr), pt, &projected_pt); dist_sqr < dist_sqr_min) {
+                    if (double dist_sqr = Algorithms::Line::distance_to_squared(Line(prev, curr), pt, projected_pt); dist_sqr < dist_sqr_min) {
                         dist_sqr_min     = dist_sqr;
                         projected_pt_min = projected_pt;
                         it_min           = std::prev(it);
