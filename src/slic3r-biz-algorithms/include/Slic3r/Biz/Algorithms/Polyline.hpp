@@ -53,4 +53,6 @@ void extend_end(Domain::Polyline& polyline, double distance);
  */
 void extend_start(Domain::Polyline& polyline, double distance);
 
+Domain::Polyline scaled(const std::vector<Domain::Vec2d> &points);
+
 } // namespace Slic3r::Biz::Algorithms::Polyline

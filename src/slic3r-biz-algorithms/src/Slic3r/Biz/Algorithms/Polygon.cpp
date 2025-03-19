@@ -16,4 +16,9 @@ bool remove_duplicate_points(Domain::Polygon& polygon)
     return Point::remove_duplicate_points(polygon.points);
 }
 
+Domain::Polygon scaled(const std::vector<Domain::Vec2d>& points)
+{
+    return Domain::Polygon(Point::scaled(points));
+}
+
 } // namespace Slic3r::Biz::Algorithms::Polygon

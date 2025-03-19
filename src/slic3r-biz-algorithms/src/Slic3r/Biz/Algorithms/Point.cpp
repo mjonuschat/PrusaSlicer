@@ -26,4 +26,15 @@ bool remove_duplicate_points(Domain::Points& points)
     return true;
 }
 
+Domain::Points scaled(const std::vector<Domain::Vec2d>& points)
+{
+    Domain::Points scaled_points;
+    scaled_points.reserve(points.size());
+    for (const Domain::Vec2d& pt : points) {
+        scaled_points.emplace_back(Domain::Point::new_scale(pt.x(), pt.y()));
+    }
+
+    return scaled_points;
+}
+
 } // namespace Slic3r::Biz::Algorithms::Point

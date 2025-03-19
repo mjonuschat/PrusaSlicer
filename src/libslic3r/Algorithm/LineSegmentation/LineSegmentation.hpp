@@ -7,7 +7,6 @@
 
 namespace Slic3r {
 class ExPolygon;
-class Polyline;
 class Polygon;
 class PrintRegionConfig;
 

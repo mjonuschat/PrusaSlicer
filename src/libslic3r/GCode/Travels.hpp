@@ -25,7 +25,6 @@
 namespace Slic3r {
 class Layer;
 class Linef;
-class Polyline;
 class FullPrintConfig;
 class ExtrusionEntity;
 

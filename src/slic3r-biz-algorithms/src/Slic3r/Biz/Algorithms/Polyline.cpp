@@ -72,4 +72,9 @@ void extend_start(Domain::Polyline& polyline, double distance)
     polyline.points.front() += (v * distance).cast<coord_t>();
 }
 
+Domain::Polyline scaled(const std::vector<Domain::Vec2d>& points)
+{
+    return Domain::Polyline(Point::scaled(points));
+}
+
 } // namespace Slic3r::Biz::Algorithms::Polyline
