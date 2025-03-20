@@ -286,13 +286,6 @@ if (NOT MSVC AND ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_CXX_COMP
         add_compile_options(-Wno-ignored-attributes) # Tamas: Eigen include dirs are marked as SYSTEM
     endif()
 
-    # Clang reports legacy OpenGL calls as deprecated. Turn off the warning for now
-    # to reduce the clutter, we know about this one. It should be reenabled after
-    # we finally get rid of the deprecated code.
-    if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-        add_compile_options(-Wno-deprecated-declarations)
-    endif()
-
     # Clang reports misleading indentation for some IF blocks because of mixing tabs with spaces.
     if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
         add_compile_options(-Wno-misleading-indentation)
