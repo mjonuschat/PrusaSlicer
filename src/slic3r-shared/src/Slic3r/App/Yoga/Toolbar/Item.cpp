@@ -37,7 +37,8 @@ static ButtonBehaviour CustomRoundedButton(const ImVec2& pos, const ImVec2& size
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.f);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.f, 0.f));
 
-    ImGui::Begin((boost::nowide::narrow(std::wstring(&info.icon, 1)) + "_win").c_str(), nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove);
+    ImGui::Begin((boost::nowide::narrow(std::wstring(&info.icon, 1)) + "_win").c_str(), nullptr,
+        ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoFocusOnAppearing);
 
     float rounding = GImGui->Style.WindowRounding;// { 4.f };
     ImVec2 button_size = size;
@@ -99,6 +100,7 @@ static void Tooltip(const std::string& label, const std::string& short_cut, ImVe
                                 ImGuiWindowFlags_NoInputs | 
                                 ImGuiWindowFlags_NoTitleBar | 
                                 ImGuiWindowFlags_AlwaysAutoResize | 
+                                ImGuiWindowFlags_NoFocusOnAppearing |
                                 ImGuiWindowFlags_NoMove;
     ImGui::Begin((label + "_wintt").c_str(), nullptr, flags);
     ImGui::TextUnformatted(label.c_str());

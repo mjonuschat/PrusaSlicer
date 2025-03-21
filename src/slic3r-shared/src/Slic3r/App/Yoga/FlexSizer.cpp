@@ -390,7 +390,8 @@ void FlexSizer::render_node(YGNodeRef node, ImVec2 win_pos)
             ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.f);
             ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.f, 0.f));
 
-            ImGui::Begin(m_node_rendering[node].win_name.c_str(), nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove);
+            ImGui::Begin(m_node_rendering[node].win_name.c_str(), nullptr,
+                ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoFocusOnAppearing);
         }
 
         if (render_fn)
