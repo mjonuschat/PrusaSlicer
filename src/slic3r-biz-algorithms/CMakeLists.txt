@@ -29,8 +29,10 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
     target_include_directories(slic3r-biz-algorithms-tests PRIVATE test)
 
     find_package(Catch2 3.8 REQUIRED)
-    slic3r_remap_configs("Catch2::Catch2" RelWithDebInfo Release)
-    target_link_libraries(slic3r-biz-algorithms-tests PRIVATE slic3r-biz-algorithms Catch2::Catch2WithMain)
+    slic3r_remap_configs(Catch2::Catch2 RelWithDebInfo Release)
+    slic3r_remap_configs(Catch2::Catch2WithMain RelWithDebInfo Release)
+
+    target_link_libraries(slic3r-biz-algorithms-tests PRIVATE slic3r-biz-algorithms Catch2::Catch2WithMain TBB::tbb)
 
     set(_catch_args "exclude:[NotWorking] exclude:[Slow]")
     list(APPEND _catch_args "${CATCH_EXTRA_ARGS}")
