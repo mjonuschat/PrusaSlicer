@@ -13,8 +13,8 @@ struct line_traits
     using line_type = L;
     using point_type = typename line_type::point_type;
 
-    static point_type get_a(const line_type& line) = 0;
-    static point_type get_b(const line_type& line) = 0;
+    static point_type get_a(const line_type& line);
+    static point_type get_b(const line_type& line);
 };
 
 /**
