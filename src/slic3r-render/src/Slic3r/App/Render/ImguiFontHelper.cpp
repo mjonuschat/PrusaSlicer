@@ -199,6 +199,7 @@ static const std::vector<std::pair<const wchar_t, std::string>> FONT_ICONS_EXTRA
     { ImGui::SliceAllBtnIcon      , "slice_all"                 },
     { ImGui::WarningMarkerDisabled, "notification_warning_grey" },
     { ImGui::PrusaSlicerIcon      , "PrusaSlicer"               },
+    { ImGui::CubeViewIcon         , "view_cube_test"            },// !tmp, remove after view cube implementation
 };
 
 ImguiFontHelper::ImguiFontHelper(Device& device)

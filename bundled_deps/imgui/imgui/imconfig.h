@@ -299,6 +299,7 @@ namespace ImGui
 
     // printer icons (PNGs)
     const wchar_t PrinterNEXT             = 0x2A01;
+    const wchar_t CubeViewIcon            = 0x2A02;
 
     // sidebar icons
     const wchar_t SavePrint               = 0x2B01;

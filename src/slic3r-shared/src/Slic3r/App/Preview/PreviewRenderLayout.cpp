@@ -19,56 +19,38 @@ void PreviewRenderLayout::init_left_sizer()
     left_sizer.show_row(1, false);
 }
 
-void PreviewRenderLayout::init_middle_sizer()
+void PreviewRenderLayout::add_middle_flex_sizer()
 {
-    middle_sizer.initialize();
+    // flex sizer on the right side of toolbar
 
-    // add items with callbacks for top corner toolbars
+    middle_left_flex_sizer.init(1, 2);
+    middle_left_flex_sizer.set_grow_col(0);
+    middle_left_flex_sizer.set_grow_row(1, 0.f);
 
-    // callbacks for toolbar items
-    auto cb_is_visible      = []() -> bool {return true; };
-    auto cb_is_enable       = []() -> bool {return true; };
+    static Yoga::FlexSizer gcode_sizer(1, 1, ImVec2(0.f, 50.f));
+    gcode_sizer.set_bg_alpha(1.f);
+    gcode_sizer.set_grow_col(0);
+    gcode_sizer.add(m_cb_gcode_slider_render, { Yoga::AlignH::Left, Yoga::AlignV::Top }, "gcode_slider");
 
-    static bool show_object_list   { true };
-    static bool show_legend   { false };
-    static bool show_sidebar  { true };
+    middle_left_flex_sizer.add(view_cube_sizer, "", { Yoga::AlignH::Right, Yoga::AlignV::Top });
+    middle_left_flex_sizer.add(gcode_sizer);
 
-    // create top left toolbar, which contains just one item
-    middle_sizer.top_left_toolbar.add(ImGui::ToolbarObjects, "Object List", "Ctrl + Alt + O",  
-        { [this](ImRect) { 
-            show_object_list = !show_object_list; 
-            show_left(show_object_list); 
-          }, 
-          cb_is_visible, cb_is_enable, []() { return !show_object_list; } });
+    middle_flex_sizer.init(2, 1);
+    middle_flex_sizer.set_grow_col(0);
 
-    // create top right toolbar, which contains just one item
-    middle_sizer.top_right_toolbar.add(ImGui::ToolbarSidebar, "Sidebar", "", 
-        { [this](ImRect) { 
-            show_sidebar = !show_sidebar;
-            show_right(show_sidebar); 
-          }, 
-          cb_is_visible, cb_is_enable, []() { return !show_sidebar; } });
+    static Yoga::FlexSizer slider_sizer(1, 1, ImVec2(80.f, 0.f));
+    slider_sizer.set_bg_alpha(1.f);
+    slider_sizer.set_grow_col(0);
+    slider_sizer.add(m_cb_layer_slider_render, { Yoga::AlignH::Left, Yoga::AlignV::Top }, "layers_slider");
 
-//    middle_sizer.left_middle_toolbar.add(ImGui::ToolbarAdd, "Add...", "Ctrl + I", { [](ImRect) {}, cb_is_visible, cb_is_enable, []() { return true; } });
+    middle_flex_sizer.add(middle_left_flex_sizer);
+    middle_flex_sizer.add(slider_sizer);
 
-    // create bottom left toolbar
-
-    middle_sizer.bottom_left_toolbar.add(ImGui::ToolbarGraph, "Legend", "",
-        { [this](ImRect) { 
-                show_legend = !show_legend;
-                left_sizer.show_row(1, show_legend);
-            }, cb_is_visible, cb_is_enable, []() { return show_legend; } });
-
-    middle_sizer.layout();
+    middle_sizer.add(middle_flex_sizer);
 }
 
 void PreviewRenderLayout::init_right_sizer()
 {
-    static Yoga::FlexSizer slider_sizer(1, 1, ImVec2(80.f, 0.f), GImGui->Style.WindowPadding * 0.5f);
-    slider_sizer.set_bg_alpha(1.f);
-    slider_sizer.set_grow_col(0);
-    add_item(slider_sizer, m_cb_layer_slider_render, "layers_slider");
-
     static Yoga::FlexSizer sidebar_sizer(1, 4, ImVec2(280.f, 0.f), GImGui->Style.WindowPadding * 0.5f);
     sidebar_sizer.set_bg_alpha(1.f);
     sidebar_sizer.set_grow_col(0);
@@ -80,15 +62,19 @@ void PreviewRenderLayout::init_right_sizer()
     add_item(sidebar_sizer, m_cb_sidebar_auto_reslice_render, "auto re-slice", ImVec2(20.f, 20.f));
     add_item(sidebar_sizer, m_cb_sidebar_after_slice_render, "after slice", ImVec2(20.f, 20.f));
 
-    right_sizer.init(2, 1);
-
-    right_sizer.add(slider_sizer);
+    right_sizer.init(1, 1);
+    right_sizer.set_grow_col(0);
     right_sizer.add(sidebar_sizer);
 }
 
-void PreviewRenderLayout::show_bottom_middle_sizer(bool show)
+void PreviewRenderLayout::show_gcode_sizer(bool show)
 {
-    middle_sizer.bottom_middle_sizer.show_col(0, show);
+    middle_left_flex_sizer.show_row(1, show);
+}
+
+void PreviewRenderLayout::show_slider_sizer(bool show)
+{
+    middle_flex_sizer.show_col(1, show);
 }
 
 }

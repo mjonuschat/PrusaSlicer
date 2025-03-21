@@ -56,6 +56,8 @@ set(SLIC3R_SHARED_FILES
 
         include/Slic3r/App/ObjectList.hpp
         src/Slic3r/App/ObjectList.cpp
+        include/Slic3r/App/CubeView.hpp
+        src/Slic3r/App/CubeView.cpp
         include/Slic3r/App/SidebarBed.hpp
         src/Slic3r/App/SidebarBed.cpp
         include/Slic3r/App/SidebarPrint.hpp

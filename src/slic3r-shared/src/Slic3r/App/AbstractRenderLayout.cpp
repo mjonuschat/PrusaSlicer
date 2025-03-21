@@ -3,18 +3,22 @@
 
 #include <Yoga.h>
 
-//#include <imgui/imgui_internal.h>
-
 namespace Slic3r::App {
 
 void AbstractRenderLayout::init_main_sizer()
 {
-    m_main_sizer.init(3, 1, ImVec2(), GImGui->Style.WindowPadding*0.5f);
+#if main_with_splitters
+    m_main_sizer.init(3);
+    m_main_sizer.set_splitter_padding(0.f);
+    m_main_sizer.set_splitter_sz(3.f);
+#else
+    m_main_sizer.init(3, 1, ImVec2(), GImGui->Style.WindowPadding * 0.5f);
+#endif
     m_main_sizer.set_grow_col(1);
 
+    init_view_cube_sizer();
     init_left_sizer();
-    if (!middle_sizer.is_inited())
-        init_middle_sizer();
+    init_middle_sizer();
     init_right_sizer();
 
     m_main_sizer.add(left_sizer);
@@ -37,28 +41,124 @@ void AbstractRenderLayout::add_item(Yoga::FlexSizer& sizer, std::function<void(I
     sizer.add(sizer_in, item_name);
 }
 
-void AbstractRenderLayout::add_left_toolbar_item(wchar_t icon, const std::string& tooltip, const std::string& shortcut, Yoga::Toolbar::Callbacks callbacks)
-{
-    if (!middle_sizer.is_inited())
-        init_middle_sizer();
+const static float min_tt_size = 30.f;
+const static float max_tt_size = 50.f;
 
-    middle_sizer.left_middle_toolbar.add(icon, tooltip, shortcut, callbacks);
-    middle_sizer.layout();
+void AbstractRenderLayout::init_view_cube_sizer()
+{
+    view_cube_sizer.init(1, 1, ImVec2(70.f, 0.f));
+    view_cube_sizer.set_grow_col(0);
+    view_cube_sizer.add(m_cb_cube_view_render, Yoga::Align(), "cube_view");
 }
 
-void AbstractRenderLayout::add_left_toolbar_separator()
+void AbstractRenderLayout::init_toolbars_sizer()
 {
-    middle_sizer.left_middle_toolbar.add_separator(GImGui->Style.WindowPadding.y);
+    // Just "sceleton" for the toolbars is created here
+    // All render functions are empty, because of no one item is added to the toolbar jet
+    // So, as a workaround, lets render button with max_tt_size and with 0 alpha
+    ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0);
+    ImGui::Button("win##workaround", ImVec2(max_tt_size, max_tt_size));
+    ImGui::PopStyleVar();
+
+    top_toolbar.init("top_toolbar", min_tt_size, max_tt_size, { Yoga::AlignH::Left, Yoga::AlignV::Top });
+
+    middle_toolbar.init("middle_toolbar", min_tt_size, max_tt_size, { Yoga::AlignH::Left, Yoga::AlignV::Center }, FlexToolbarOrientation::Vertical);
+    middle_toolbar.collapse_if_needed();
+
+    bottom_toolbar.init("bottom_toolbar", min_tt_size, max_tt_size, { Yoga::AlignH::Left, Yoga::AlignV::Bottom });
+
+    m_toolbars_sizer.init(1, 3);
+    m_toolbars_sizer.set_grow_row(0, 0.f);
+    m_toolbars_sizer.set_grow_row(2, 0.f);
+
+    m_toolbars_sizer.add([this](ImVec2 size, ImVec2 pos) {
+        top_toolbar.render(size, pos);
+    });
+    m_toolbars_sizer.add([this](ImVec2 size, ImVec2 pos) {
+        middle_toolbar.render(size, pos);
+    });
+    m_toolbars_sizer.add([this](ImVec2 size, ImVec2 pos) {
+        bottom_toolbar.render(size, pos);
+    });
 }
 
-void AbstractRenderLayout::show_left(bool show)
+void AbstractRenderLayout::layout_toolbars_sizer()
 {
-    m_main_sizer.show_col(0, show);
+    m_toolbars_sizer.set_grow_row(0, float(top_toolbar.shown_items_cnt()));
+    m_toolbars_sizer.set_grow_row(1, float(middle_toolbar.shown_items_cnt()));
+    m_toolbars_sizer.set_grow_row(2, float(bottom_toolbar.shown_items_cnt()));
+    m_toolbars_sizer.layout();
 }
 
-void AbstractRenderLayout::show_right(bool show)
+void AbstractRenderLayout::add_middle_flex_sizer()
 {
-    m_main_sizer.show_col(2, show);
+    middle_sizer.add(view_cube_sizer, "", { Yoga::AlignH::Right, Yoga::AlignV::Top });
+}
+
+void AbstractRenderLayout::init_middle_sizer()
+{
+    if (!m_toolbars_sizer.is_inited())
+        init_toolbars_sizer();
+
+    middle_sizer.init(2, 1, ImVec2(), GImGui->Style.WindowPadding * 0.5f);
+    middle_sizer.set_grow_col(1);
+    middle_sizer.add(m_toolbars_sizer);
+    add_middle_flex_sizer();
+}
+
+void AbstractRenderLayout::add_toolbar_item(ToolbarID id, wchar_t icon, const std::string& tooltip, const std::string& shortcut, Yoga::Toolbar::Callbacks callbacks)
+{
+    if (!m_toolbars_sizer.is_inited())
+        init_toolbars_sizer();
+
+    FlexToolbar& toolbar = id == ToolbarID::Top     ? top_toolbar :
+                           id == ToolbarID::Middle  ? middle_toolbar : bottom_toolbar;
+
+    toolbar.add(icon, tooltip, shortcut, callbacks);
+    layout_toolbars_sizer();
+}
+
+void AbstractRenderLayout::add_toolbar_separator(ToolbarID id, float size)
+{
+    assert(m_toolbars_sizer.is_inited());
+
+    FlexToolbar& toolbar = id == ToolbarID::Top     ? top_toolbar :
+                           id == ToolbarID::Middle  ? middle_toolbar : bottom_toolbar;
+
+    toolbar.add_separator(size);
+    layout_toolbars_sizer();
+}
+
+void AbstractRenderLayout::show_left(int panel_id, bool show)
+{
+    left_sizer.show_row(panel_id, show);
+
+    bool is_any_visible{ false };
+    for (size_t id = 0; id < left_sizer.get_rows(); id++) {
+        if (left_sizer.is_shown_row(id)) {
+            is_any_visible = true;
+            break;
+        }
+    }
+
+    if (m_main_sizer.is_shown_col(0) != is_any_visible)
+        m_main_sizer.show_col(0, is_any_visible);
+}
+
+void AbstractRenderLayout::show_right(int panel_id, bool show)
+{
+    right_sizer.show_row(panel_id, show);
+
+    bool is_any_visible{ false };
+    for (size_t id = 0; id < right_sizer.get_rows(); id++) {
+        if (right_sizer.is_shown_row(id)) {
+            is_any_visible = true;
+            break;
+        }
+    }
+
+    if (m_main_sizer.is_shown_col(2) != is_any_visible)
+        m_main_sizer.show_col(2, is_any_visible);
 }
 
 static void SetOurStyleColors()
