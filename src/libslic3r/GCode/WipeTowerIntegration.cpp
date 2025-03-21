@@ -13,7 +13,7 @@
 #include "libslic3r/GCode.hpp"
 #include "libslic3r/libslic3r.h"
 #include "boost/algorithm/string/replace.hpp"
-#include "libslic3r/Exception.hpp"
+#include "Slic3r/Exception.hpp"
 #include "libslic3r/ExtrusionRole.hpp"
 #include "libslic3r/GCode/Wipe.hpp"
 #include "libslic3r/GCode/WipeTower.hpp"

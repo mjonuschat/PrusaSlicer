@@ -25,7 +25,7 @@
 #include <cinttypes>
 
 #include "libslic3r/BoundingBox.hpp"
-#include "libslic3r/Exception.hpp"
+#include "Slic3r/Exception.hpp"
 #include "libslic3r/Execution/Execution.hpp"
 #include "libslic3r/Geometry.hpp"
 #include "libslic3r/Line.hpp"

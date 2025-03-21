@@ -15,7 +15,7 @@
 
 #include "libslic3r/GCode/GCodeWriter.hpp"
 #include "PrintConfig.hpp"
-#include "libslic3r/Exception.hpp"
+#include "Slic3r/Exception.hpp"
 #include "libslic3r/libslic3r.h"
 
 namespace Slic3r {

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <libslic3r/Exception.hpp>
+#include "Slic3r/Exception.hpp"
 
 namespace Slic3r::App::Platform {
 

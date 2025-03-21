@@ -2,7 +2,7 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include "Platform.hpp"
+#include "Slic3r/Platform.hpp"
 
 #include <boost/log/trivial.hpp>
 #include <spdlog/spdlog.h>

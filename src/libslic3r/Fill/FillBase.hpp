@@ -27,7 +27,7 @@
 
 #include "libslic3r/libslic3r.h"
 #include "libslic3r/BoundingBox.hpp"
-#include "libslic3r/Exception.hpp"
+#include "Slic3r/Exception.hpp"
 #include "libslic3r/Utils.hpp"
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/PrintConfig.hpp"

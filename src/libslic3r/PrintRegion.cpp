@@ -9,7 +9,7 @@
 #include <cmath>
 #include <cstddef>
 
-#include "Exception.hpp"
+#include "Slic3r/Exception.hpp"
 #include "Print.hpp"
 #include "libslic3r/Config.hpp"
 #include "libslic3r/Flow.hpp"

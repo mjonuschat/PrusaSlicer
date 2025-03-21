@@ -1,5 +1,5 @@
 #pragma once
-#include <libslic3r/Semver.hpp>
+#include "Slic3r/Semver.hpp"
 #include <memory>
 
 #include "ShaderManager.hpp"

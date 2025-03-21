@@ -7,6 +7,11 @@ set(SLIC3R_BASE_FILES
 		include/Slic3r/TypeInfo.hpp
 		src/Slic3r/TypeInfo.cpp
 		include/Slic3r/IdGenerator.hpp
+        include/Slic3r/Exception.hpp
+        include/Slic3r/Semver.hpp
+        src/Slic3r/Semver.cpp
+        include/Slic3r/Platform.hpp
+        src/Slic3r/Platform.cpp
 )
 
 if (APPLE)
@@ -39,11 +44,12 @@ if ((NOT UNIX) OR APPLE)
 	# as part of autoconf generated file (setup.h.in)
 	target_compile_definitions(slic3r-base PUBLIC -DwxNO_IMPLICIT_WXSTRING_ENCODING=1)
 endif ()
-target_include_directories(slic3r-base PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
-target_include_directories(slic3r-base PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+target_include_directories(slic3r-base PUBLIC include)
+target_include_directories(slic3r-base PRIVATE src)
 target_link_libraries(slic3r-base PUBLIC
-		spdlog
-		libslic3r # To get semver
+    spdlog
+    semver
+    boost_headeronly
 )
 
 if(NOT EMSCRIPTEN)

@@ -12,7 +12,7 @@
 #include "libslic3r/Time.hpp"
 #include "libslic3r/Zipper.hpp"
 #include "libslic3r/SLAPrint.hpp"
-#include "libslic3r/Exception.hpp"
+#include "Slic3r/Exception.hpp"
 #include "libslic3r/MTUtils.hpp"
 #include "libslic3r/PrintConfig.hpp"
 

@@ -14,7 +14,7 @@
 #include <cstddef>
 
 #include "libslic3r.h"
-#include "Exception.hpp"
+#include "Slic3r/Exception.hpp"
 #include "ExtrusionEntity.hpp"
 #include "libslic3r/ExtrusionRole.hpp"
 #include "libslic3r/Point.hpp"

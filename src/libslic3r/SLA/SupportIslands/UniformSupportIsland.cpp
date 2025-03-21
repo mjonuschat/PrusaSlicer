@@ -19,7 +19,7 @@
 #include <libslic3r/SLA/SupportPointGenerator.hpp>
 #include <libslic3r/ExPolygonsIndex.hpp>
 #include <libslic3r/IntersectionPoints.hpp>
-#include <libslic3r/Exception.hpp>
+#include "Slic3r/Exception.hpp"
 
 #include "VoronoiGraph.hpp"
 #include "Parabola.hpp"

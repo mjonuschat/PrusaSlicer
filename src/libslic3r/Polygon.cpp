@@ -16,7 +16,7 @@
 #include <cstring>
 
 #include "BoundingBox.hpp"
-#include "Exception.hpp"
+#include "Slic3r/Exception.hpp"
 #include "Polygon.hpp"
 #include "Polyline.hpp"
 #include "libslic3r/ClipperUtils.hpp"

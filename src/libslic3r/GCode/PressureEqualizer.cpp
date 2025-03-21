@@ -17,7 +17,7 @@
 #include "libslic3r/GCode.hpp"
 #include "GCodeWriter.hpp"
 #include "libslic3r/GCode/PressureEqualizer.hpp"
-#include "libslic3r/Exception.hpp"
+#include "Slic3r/Exception.hpp"
 
 namespace Slic3r {
 

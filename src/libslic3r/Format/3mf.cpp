@@ -4,13 +4,13 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include "libslic3r/libslic3r.h"
-#include "libslic3r/Exception.hpp"
+#include "Slic3r/Exception.hpp"
 #include "libslic3r/Model.hpp"
 #include "libslic3r/Utils.hpp"
 #include "libslic3r/GCode.hpp"
 #include "libslic3r/Geometry.hpp"
 #include "libslic3r/GCode/ThumbnailData.hpp"
-#include "libslic3r/Semver.hpp"
+#include "Slic3r/Semver.hpp"
 #include "libslic3r/Time.hpp"
 
 #include "libslic3r/I18N.hpp"
@@ -31,6 +31,7 @@
 #include <boost/spirit/include/karma.hpp>
 #include <boost/spirit/include/qi_int.hpp>
 #include <boost/log/trivial.hpp>
+#include <boost/format.hpp>
 
 #include <boost/property_tree/xml_parser.hpp>
 namespace pt = boost::property_tree;

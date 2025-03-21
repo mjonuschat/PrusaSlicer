@@ -15,7 +15,7 @@
 #include "Emboss.hpp" // heal for shape
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/EmbossShape.hpp"
-#include "libslic3r/Exception.hpp"
+#include "Slic3r/Exception.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/Polyline.hpp"
 

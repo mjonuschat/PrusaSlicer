@@ -17,7 +17,7 @@
 
 #include "BoundingBox.hpp"
 #include "Polyline.hpp"
-#include "Exception.hpp"
+#include "Slic3r/Exception.hpp"
 #include "Line.hpp"
 #include "libslic3r/MultiPoint.hpp"
 #include "libslic3r/libslic3r.h"

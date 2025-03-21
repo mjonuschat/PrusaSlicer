@@ -56,7 +56,7 @@
 #endif // _WIN32
 
 #include "Technologies.hpp"
-#include "Semver.hpp"
+#include "Slic3r/Semver.hpp"
 
 using coord_t = 
 #if 1

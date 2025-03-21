@@ -59,7 +59,7 @@
 
 #include "libslic3r.h"
 #include "clonable_ptr.hpp"
-#include "Exception.hpp"
+#include "Slic3r/Exception.hpp"
 #include "Point.hpp"
 #include "LocalesUtils.hpp"
 

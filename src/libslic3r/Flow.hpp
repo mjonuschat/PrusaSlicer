@@ -16,7 +16,7 @@
 
 #include "libslic3r.h"
 #include "Config.hpp"
-#include "Exception.hpp"
+#include "Slic3r/Exception.hpp"
 #include "ExtrusionRole.hpp"
 
 namespace Slic3r {

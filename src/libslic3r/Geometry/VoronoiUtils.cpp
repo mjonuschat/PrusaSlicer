@@ -10,7 +10,7 @@
 #include <cstdlib>
 
 #include "VoronoiUtils.hpp"
-#include "libslic3r/Exception.hpp"
+#include "Slic3r/Exception.hpp"
 #include "libslic3r/Line.hpp"
 
 namespace Slic3r::Geometry {

@@ -21,7 +21,7 @@
 #include "libslic3r/AABBTreeIndirect.hpp"
 #include "libslic3r/EmbossShape.hpp"
 #include "libslic3r/ExPolygon.hpp"
-#include "libslic3r/Exception.hpp"
+#include "Slic3r/Exception.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/TextConfiguration.hpp"
 

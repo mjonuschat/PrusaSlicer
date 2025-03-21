@@ -14,7 +14,7 @@
 #include <stdio.h>
 #include <random>
 
-#include "Platform.hpp"
+#include "Slic3r/Platform.hpp"
 #include "Time.hpp"
 #include "format.hpp"
 #include "libslic3r.h"

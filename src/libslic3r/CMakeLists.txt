@@ -292,8 +292,6 @@ set(SLIC3R_SOURCES
     PerimeterGenerator.hpp
     PlaceholderParser.cpp
     PlaceholderParser.hpp
-    Platform.cpp
-    Platform.hpp
     Point.cpp
     Point.hpp
     Polygon.cpp
@@ -327,7 +325,6 @@ set(SLIC3R_SOURCES
     PNGReadWrite.cpp
     QuadricEdgeCollapse.cpp
     QuadricEdgeCollapse.hpp
-    Semver.cpp
     ShortEdgeCollapse.cpp
     ShortEdgeCollapse.hpp
     ShortestPath.cpp
@@ -594,7 +591,7 @@ if (_opts)
 endif()
 
 target_link_libraries(libslic3r_cgal PRIVATE ${_cgal_tgt} libigl)
-target_link_libraries(libslic3r_cgal PUBLIC semver admesh localesutils slic3r-domain)
+target_link_libraries(libslic3r_cgal PUBLIC admesh localesutils slic3r-domain)
 
 if (MSVC AND "${CMAKE_SIZEOF_VOID_P}" STREQUAL "4") # 32 bit MSVC workaround
     target_compile_definitions(libslic3r_cgal PRIVATE CGAL_DO_NOT_USE_MPZF)
@@ -643,7 +640,6 @@ endif ()
 
 target_link_libraries(libslic3r PUBLIC
     Eigen3::Eigen
-    semver
     admesh
     localesutils
     LibBGCode::bgcode_convert

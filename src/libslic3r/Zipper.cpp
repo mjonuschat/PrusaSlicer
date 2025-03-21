@@ -5,7 +5,7 @@
 #include <boost/log/trivial.hpp>
 #include <cstring>
 
-#include "Exception.hpp"
+#include "Slic3r/Exception.hpp"
 #include "Zipper.hpp"
 #include "miniz_extension.hpp"
 #include "I18N.hpp"

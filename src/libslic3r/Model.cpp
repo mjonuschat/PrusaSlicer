@@ -14,7 +14,7 @@
 #include "Model.hpp"
 #include "libslic3r.h"
 #include "BuildVolume.hpp"
-#include "Exception.hpp"
+#include "Slic3r/Exception.hpp"
 
 #include "Geometry/ConvexHull.hpp"
 #include "MTUtils.hpp"

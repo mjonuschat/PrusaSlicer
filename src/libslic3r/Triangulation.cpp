@@ -16,7 +16,7 @@
 
 #include "IntersectionPoints.hpp"
 #include "libslic3r/ExPolygon.hpp"
-#include "libslic3r/Exception.hpp"
+#include "Slic3r/Exception.hpp"
 #include "libslic3r/Line.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Polygon.hpp"

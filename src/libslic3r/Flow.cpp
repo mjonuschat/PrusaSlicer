@@ -17,7 +17,7 @@
 #include "I18N.hpp"
 #include "Print.hpp"
 #include "libslic3r/Config.hpp"
-#include "libslic3r/Exception.hpp"
+#include "Slic3r/Exception.hpp"
 #include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/libslic3r.h"
 

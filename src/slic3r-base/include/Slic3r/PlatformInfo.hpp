@@ -1,7 +1,7 @@
 #pragma once
 
-#include "libslic3r/Platform.hpp"
-#include "libslic3r/Semver.hpp"
+#include "Slic3r/Platform.hpp"
+#include "Slic3r/Semver.hpp"
 
 namespace Slic3r {
 

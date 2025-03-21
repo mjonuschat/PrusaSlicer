@@ -14,7 +14,7 @@
 #include <boost/property_tree/ptree_fwd.hpp>
 
 #include "PrintConfig.hpp"
-#include "Semver.hpp"
+#include "Slic3r/Semver.hpp"
 
 namespace Slic3r {
 

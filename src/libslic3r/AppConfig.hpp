@@ -12,7 +12,7 @@
 #include <boost/algorithm/string/trim_all.hpp>
 
 #include "libslic3r/Config.hpp"
-#include "libslic3r/Semver.hpp"
+#include "Slic3r/Semver.hpp"
 
 namespace Slic3r {
 

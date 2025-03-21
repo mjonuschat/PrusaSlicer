@@ -21,7 +21,7 @@
 #include <cstdio>
 #include <cstdlib>
 
-#include "Exception.hpp"
+#include "Slic3r/Exception.hpp"
 #include "Flow.hpp"
 #include "Utils.hpp"
 #include "libslic3r/Point.hpp"

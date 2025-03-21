@@ -27,7 +27,7 @@
 #include "libslic3r/GCode/ExtrusionProcessor.hpp"
 #include "I18N.hpp"
 #include "GCode.hpp"
-#include "Exception.hpp"
+#include "Slic3r/Exception.hpp"
 #include "ExtrusionEntity.hpp"
 #include "Geometry/ConvexHull.hpp"
 #include "libslic3r/GCode/LabelObjects.hpp"

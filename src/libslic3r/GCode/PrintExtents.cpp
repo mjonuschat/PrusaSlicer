@@ -19,7 +19,7 @@
 #include "../Print.hpp"
 #include "PrintExtents.hpp"
 #include "WipeTower.hpp"
-#include "libslic3r/Exception.hpp"
+#include "Slic3r/Exception.hpp"
 #include "libslic3r/Geometry.hpp"
 #include "libslic3r/LayerRegion.hpp"
 #include "libslic3r/Point.hpp"

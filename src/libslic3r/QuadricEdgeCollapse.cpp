@@ -20,7 +20,7 @@
 
 #include "MutablePriorityQueue.hpp"
 #include "admesh/stl.h"
-#include "libslic3r/Exception.hpp"
+#include "Slic3r/Exception.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/libslic3r.h"
 

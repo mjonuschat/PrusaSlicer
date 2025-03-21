@@ -14,7 +14,7 @@
 #include "libslic3r/Print.hpp"
 #include "../GCode.hpp"
 #include "libslic3r/ExPolygon.hpp"
-#include "libslic3r/Exception.hpp"
+#include "Slic3r/Exception.hpp"
 #include "libslic3r/ExtrusionEntity.hpp"
 #include "libslic3r/ExtrusionEntityCollection.hpp"
 #include "libslic3r/LayerRegion.hpp"

@@ -14,7 +14,7 @@
 #include <cstddef>
 
 #include "libslic3r.h"
-#include "Exception.hpp"
+#include "Slic3r/Exception.hpp"
 #include "Point.hpp"
 #include "Polygon.hpp"
 

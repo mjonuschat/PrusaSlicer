@@ -12,7 +12,7 @@
 
 #include "ExtrusionEntityCollection.hpp"
 #include "ClipperUtils.hpp"
-#include "Exception.hpp"
+#include "Slic3r/Exception.hpp"
 #include "Flow.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/Polyline.hpp"

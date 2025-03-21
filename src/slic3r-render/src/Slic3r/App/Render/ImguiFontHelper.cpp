@@ -1,6 +1,7 @@
 #include "Slic3r/App/Render/ImguiFontHelper.hpp"
 #include "Slic3r/App/Render/TextureManager.hpp"
 #include "Slic3r/App/Render/Device.hpp"
+#include "Slic3r/Exception.hpp"
 #include <Slic3r/App/Render/Context.hpp>
 
 #include <Slic3r/Assert.hpp>

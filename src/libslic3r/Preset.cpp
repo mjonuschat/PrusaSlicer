@@ -8,7 +8,7 @@
 ///|/
 #include <cassert>
 
-#include "Exception.hpp"
+#include "Slic3r/Exception.hpp"
 #include "Preset.hpp"
 #include "AppConfig.hpp"
 #include "I18N.hpp"

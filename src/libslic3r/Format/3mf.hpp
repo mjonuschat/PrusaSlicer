@@ -5,7 +5,7 @@
 #ifndef slic3r_Format_3mf_hpp_
 #define slic3r_Format_3mf_hpp_
 
-#include "libslic3r/Semver.hpp"
+#include "Slic3r/Semver.hpp"
 #include <optional>
 
 namespace Slic3r {

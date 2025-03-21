@@ -44,9 +44,9 @@
 #include "format.hpp"
 #include "Utils.hpp"
 #include "LocalesUtils.hpp"
-#include "libslic3r/Exception.hpp"
+#include "Slic3r/Exception.hpp"
 #include "libslic3r/Point.hpp"
-#include "libslic3r/Semver.hpp"
+#include "Slic3r/Semver.hpp"
 
 namespace Slic3r {
 

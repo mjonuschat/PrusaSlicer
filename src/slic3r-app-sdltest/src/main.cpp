@@ -10,7 +10,7 @@
 #include <Slic3r/Biz/Platform/PlatformServices.hpp>
 #include <Slic3r/App/Platform/SDL/SDLRenderCanvas.hpp>
 #include <libslic3r/Utils.hpp>
-#include <libslic3r/Platform.hpp>
+#include "Slic3r/Platform.hpp"
 #include "Slic3r/App/TestRenderModule.hpp"
 
 #ifdef WIN32

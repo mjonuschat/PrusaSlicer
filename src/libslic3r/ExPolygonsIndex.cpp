@@ -5,7 +5,7 @@
 #include <cassert>
 
 #include "libslic3r/ExPolygon.hpp"
-#include "libslic3r/Exception.hpp"
+#include "Slic3r/Exception.hpp"
 #include "libslic3r/Polygon.hpp"
 
 using namespace Slic3r;
