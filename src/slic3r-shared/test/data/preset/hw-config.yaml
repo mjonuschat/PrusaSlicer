@@ -1,0 +1,51 @@
+kind: printer
+technology: fff
+id: C1
+model:
+  base_model: 'C1'
+  model: 'C1'
+features:
+  - name: input_shaper
+    default_value: false
+    user_editable: false
+---
+kind: printer
+technology: fff
+id: 'MK4S'
+model:
+  base_model: 'MK4'
+  model: 'MK4S'
+features:
+  - name: input_shaper
+    default_value: true
+    user_editable: false
+---
+kind: tool
+technology: fff
+id: '0.4'
+features:
+  - name: nozzle_diameter
+    default_value: 0.4
+    user_editable: false
+  - name: nozzle_high_flow
+    default_value: false
+    user_editable: false
+---
+kind: tool
+technology: fff
+id: '0.4HF'
+features:
+  - name: nozzle_diameter
+    default_value: 0.4
+    user_editable: false
+  - name: nozzle_high_flow
+    default_value: true
+    user_editable: false
+---
+kind: feeder
+technology: fff
+id: MMU3S @ C1
+condition: 'pritner.base_model == "C1"'
+model:
+  base_model: MMU3
+  model: MMU3S

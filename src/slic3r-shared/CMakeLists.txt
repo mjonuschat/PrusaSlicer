@@ -278,6 +278,18 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/Preset/PresetBundleRuntime.cpp
         include/Slic3r/Biz/Preset/PresetBundleRuntime.hpp
 
+        include/Slic3r/Biz/Preset/Loader/PresetLoader.hpp
+        src/Slic3r/Biz/Preset/Loader/PresetLoader.cpp
+        include/Slic3r/Biz/Preset/Loader/HwConfigLoader.hpp
+        src/Slic3r/Biz/Preset/Loader/HwConfigLoader.cpp
+        src/Slic3r/Biz/Preset/Loader/Yaml.hpp
+        src/Slic3r/Biz/Preset/Loader/Yaml.cpp
+
+        include/Slic3r/Biz/Expr/Parser.hpp
+        src/Slic3r/Biz/Expr/Parser.cpp
+        include/Slic3r/Biz/Expr/Eval.hpp
+        src/Slic3r/Biz/Expr/Eval.cpp
+
         include/Slic3r/Biz/IProjectsChangedListener.hpp
         include/Slic3r/Biz/ISelectedBedInstanceChangedListener.hpp
         include/Slic3r/Biz/ISelectedConfigContainerChangedListener.hpp
@@ -435,6 +447,8 @@ find_package(NanoSVG REQUIRED)
 find_package(Boost REQUIRED COMPONENTS filesystem)
 find_package(yoga CONFIG REQUIRED)
 find_package(nlohmann_json 3.11 REQUIRED)
+find_package(fyaml REQUIRED)
+find_package(magic_enum REQUIRED)
 
 slic3r_remap_configs("yoga::yogacore" RelWithDebInfo Release)
 
@@ -450,6 +464,8 @@ target_link_libraries(slic3r-shared PUBLIC
         yoga::yogacore
         slic3r-biz-algorithms
         nlohmann_json::nlohmann_json
+        fyaml::fyaml
+        magic_enum::magic_enum
 )
 if (EMSCRIPTEN)
 #    target_link_libraries(slic3r-shared PUBLIC png-mt )
@@ -506,13 +522,19 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
         test/Slic3r/Biz/ProjectInteractorTests.cpp
         test/Slic3r/Biz/Scene/SceneInteractorTests.cpp
 
+        test/Slic3r/Biz/Preset/Loader/Yaml/YamlTests.cpp
+        test/Slic3r/Biz/Preset/Loader/HwConfigDefLoaderTests.cpp
+        test/Slic3r/Biz/Preset/Loader/PresetLoaderTests.cpp
+
+        test/Slic3r/Biz/Expr/ParserTests.cpp
+
         test/Slic3r/Biz/Slicing/TestUtils.cpp
         test/Slic3r/Biz/Slicing/GCodeUtils.cpp
         test/Slic3r/Biz/Slicing/ActionsTests.cpp
         test/Slic3r/Biz/Slicing/ListenersTests.cpp
         test/Slic3r/Biz/Slicing/ProcessActionsTests.cpp
     )
-    target_include_directories(slic3r-shared-tests PRIVATE test)
+    target_include_directories(slic3r-shared-tests PRIVATE test src)
 
     find_package(Catch2 3.8 REQUIRED)
     slic3r_remap_configs("Catch2::Catch2" RelWithDebInfo Release)
