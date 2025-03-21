@@ -6,7 +6,6 @@
 #pragma once
 
 #include "yoga/Yoga.h"
-#include "imgui/imgui.h"
 #include <string>
 
 #include "Slic3r/App/Yoga/FlexSizer.hpp"
@@ -18,23 +17,23 @@ class SplitterSizer : public FlexSizer
 {
 public:
     SplitterSizer() {}
-    SplitterSizer(int items_cnt, ImVec2 min_size = ImVec2(), bool is_horizontal = true);
+    SplitterSizer(int items_cnt, Vec2f min_size = Vec2f(0.f, 0.f), bool is_horizontal = true);
     ~SplitterSizer() override = default;
 
-    void    init(int items_cnt, ImVec2 min_size = ImVec2(), bool is_horizontal = true);
-    void    render(ImVec2 win_size = ImVec2(), ImVec2 win_pos = ImVec2(-1.f, -1.f)) override;
+    void    init(int items_cnt, Vec2f min_size = Vec2f(0.f, 0.f), bool is_horizontal = true);
+    void    render(Vec2f win_size = Vec2f(0.f, 0.f), Vec2f win_pos = Vec2f(-1.f, -1.f)) override;
     void    show_splitter(bool show);
     void    set_splitter_sz(float val);
     void    set_splitter_padding(float val);
 
 private:
 
-    float   render_splitter(YGNodeRef node, const std::string& suffix, ImVec2 pos, bool is_after_item = true);
-    float   splitter(YGNodeRef node, const std::string& suffix, ImVec2 pos, bool is_after_item = true);
+    float   render_splitter(YGNodeRef node, const std::string& suffix, Vec2f pos, bool is_after_item = true);
+    float   splitter(YGNodeRef node, const std::string& suffix, Vec2f pos, bool is_after_item = true);
 
     void    apply_width(YGNodeRef node, float delta,  float width);
     void    apply_height(YGNodeRef node, float delta, float height);
-    void    apply_size(YGNodeRef node, float delta, ImVec2 size);
+    void    apply_size(YGNodeRef node, float delta, Vec2f size);
     void    apply_splitter_spacing();
 
 private:
@@ -43,9 +42,9 @@ private:
     float       m_splitter_sz       { 6.f };
     float       m_splitter_padding  { 10.f };
 
-    ImVec2      m_splitter_spacing;
+    Vec2f      m_splitter_spacing;
 
-    ImVec2      WindowPadding       {ImVec2()};
+    Vec2f      WindowPadding       {Vec2f(0.f, 0.f)};
 };
 
 }

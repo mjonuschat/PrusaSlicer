@@ -444,7 +444,7 @@ static bool is_simple(const Slic3r::ModelObject* object, bool is_sla_config)
             !has_overrides(object, is_sla_config);
 }
 
-void ObjectList::render(ImVec2 pos, ImVec2 size)
+void ObjectList::render(Vec2f pos, Vec2f size)
 {
     m_scene_interactor = &m_project_interactor->scene_interactor();
     m_model            = &m_project_interactor->selected_project().model();
@@ -456,7 +456,7 @@ void ObjectList::render(ImVec2 pos, ImVec2 size)
 
     is_dragging = false;
 
-    size.y -= (ImGui::GetCursorScreenPos().y - pos.y) + GImGui->Style.WindowRounding;
+    size.y() -= (ImGui::GetCursorScreenPos().y - pos.y()) + GImGui->Style.WindowRounding;
     // Define a region for the tree control
     if (render_tree(size)) {
         // update selection on scene
@@ -519,11 +519,11 @@ void ObjectList::update_selection_from_scene()
     }
 }
 
-bool ObjectList::render_tree(ImVec2 size)
+bool ObjectList::render_tree(Domain::Vec2f size)
 {
     bool is_changed_selection = false;
     const float drop_area_height = 50.f;
-    if (ImGui::BeginTable("##ObjectListTable", 4, table_flags, ImVec2(ImMax(100.f, size.x), ImMax(100.f, size.y)))) {
+    if (ImGui::BeginTable("##ObjectListTable", 4, table_flags, ImVec2(ImMax(100.f, size.x()), ImMax(100.f, size.y())))) {
         ImGui::TableSetupColumn("##tree", ImGuiTableColumnFlags_WidthStretch);
         ImGui::TableSetupColumn("##visibility", ImGuiTableColumnFlags_WidthStretch, 0.1f);
         ImGui::TableSetupColumn("##settings_overrides", ImGuiTableColumnFlags_WidthStretch, 0.1f);
@@ -553,7 +553,7 @@ bool ObjectList::render_tree(ImVec2 size)
     return is_changed_selection;
 }
 
-void ObjectList::render_header(ImVec2 pos, ImVec2 size)
+void ObjectList::render_header(Domain::Vec2f pos, Domain::Vec2f size)
 {
     ImGui::SetCursorPosX(ImGui::GetCursorPosX() + GImGui->Style.FramePadding.x * 4);
     ImGui::PushFont(m_imgui_render->font(Render::ImguiFontType::Bold));
@@ -561,12 +561,12 @@ void ObjectList::render_header(ImVec2 pos, ImVec2 size)
     ImGui::PopFont();
 
     float btn_width = 2 * ImGui::GetFontSize();
-    float btn_pos = size.x - pos.x - btn_width;
+    float btn_pos = size.x() - pos.x() - btn_width;
     ImGui::SameLine(btn_pos);
     toggle_icon_btn(ImGui::Details, &m_show_details, "details");
     Imgui::item_tooltip("Show object details");
 
-    btn_pos -= pos.x + btn_width;
+    btn_pos -= pos.x() + btn_width;
     ImGui::SameLine(btn_pos);
     if (Imgui::icon_button(ImGui::AddBedIcon, ImVec2(), "add_bed")) {
         // add bed

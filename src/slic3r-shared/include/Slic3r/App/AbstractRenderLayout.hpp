@@ -3,7 +3,6 @@
 #include "Slic3r/App/Yoga/FlexSizer.hpp"
 #include "Slic3r/App/Yoga/SplitterSizer.hpp"
 #include "Slic3r/App/Yoga/Toolbar.hpp"
-#include "Slic3r/App/Yoga/MiddleSizer.hpp"
 
 #define main_with_splitters 0
 
@@ -18,26 +17,31 @@ enum class ToolbarID {
 class AbstractRenderLayout
 {
 public:
+    using Vec2f = Yoga::Vec2f;
+
     AbstractRenderLayout() {};
 
-    void render(ImVec2 size);
+    void render(Vec2f size);
 
-    void set_object_list_render_fn(std::function<void(ImVec2, ImVec2)> render_fn) {
+    Vec2f win_padding();
+    Vec2f frame_padding();
+
+    void set_object_list_render_fn(std::function<void(Vec2f, Vec2f)> render_fn) {
         m_cb_object_list_render = render_fn; }
 
-    void set_cube_view_render_fn(std::function<void(ImVec2, ImVec2)> render_fn) {
+    void set_cube_view_render_fn(std::function<void(Vec2f, Vec2f)> render_fn) {
         m_cb_cube_view_render = render_fn; }
 
-    void set_sidebar_bed_render_fn(std::function<void(ImVec2, ImVec2)> render_fn) {
+    void set_sidebar_bed_render_fn(std::function<void(Vec2f, Vec2f)> render_fn) {
         m_cb_sidebar_bed_render = render_fn; }
 
-    void set_sidebar_print_render_fn(std::function<void(ImVec2, ImVec2)> render_fn) {
+    void set_sidebar_print_render_fn(std::function<void(Vec2f, Vec2f)> render_fn) {
         m_cb_sidebar_print_render = render_fn; }
 
     bool is_inited() { return m_main_sizer.is_inited(); };
 
     void add_toolbar_item(ToolbarID id, wchar_t icon, const std::string& tooltip, const std::string& shortcut, Yoga::Toolbar::Callbacks callbacks);
-    void add_toolbar_separator(ToolbarID id, float size = GImGui->Style.WindowPadding.y);
+    void add_toolbar_separator(ToolbarID id, float size = -1.f);
 
     void show_left(int panel_id, bool show);
     void show_right(int panel_id, bool show);
@@ -54,7 +58,7 @@ protected:
     virtual void add_middle_flex_sizer();
     virtual void init_right_sizer()  = 0;
 
-    void add_item(Yoga::FlexSizer& sizer, std::function<void(ImVec2, ImVec2)> render_item_fn, std::string item_name, ImVec2 padding = GImGui->Style.FramePadding * 4);
+    void add_item(Yoga::FlexSizer& sizer, std::function<void(Vec2f, Vec2f)> render_item_fn, std::string item_name, Yoga::Margins margins = Yoga::Margins(-1.f, -1.f));
 
 private:
 #if main_with_splitters
@@ -74,10 +78,10 @@ protected:
     Yoga::FlexSizer         middle_sizer;
     Yoga::FlexSizer         right_sizer;
 
-    std::function<void(ImVec2, ImVec2)> m_cb_object_list_render;
-    std::function<void(ImVec2, ImVec2)> m_cb_cube_view_render;
-    std::function<void(ImVec2, ImVec2)> m_cb_sidebar_bed_render;
-    std::function<void(ImVec2, ImVec2)> m_cb_sidebar_print_render;
+    std::function<void(Vec2f, Vec2f)> m_cb_object_list_render;
+    std::function<void(Vec2f, Vec2f)> m_cb_cube_view_render;
+    std::function<void(Vec2f, Vec2f)> m_cb_sidebar_bed_render;
+    std::function<void(Vec2f, Vec2f)> m_cb_sidebar_print_render;
 };
 
 } // namespace Slic3r::App::AbstractRenderLayout

@@ -6,7 +6,7 @@
 #pragma once
 
 #include "yoga/Yoga.h"
-#include "imgui/imgui.h"
+#include "Slic3r/Domain/Vectors.hpp"
 #include "Slic3r/App/Yoga/Align.hpp"
 
 #include<map>
@@ -15,29 +15,48 @@
 
 namespace Slic3r::App::Yoga {
 
+using Vec2f = Slic3r::Domain::Vec2f;
+
 struct NodeRendering {
-    std::function<void(ImVec2, ImVec2)> render_fn   { nullptr };
+    std::function<void(Vec2f, Vec2f)> render_fn   { nullptr };
     std::string                         win_name    {};
+};
+
+struct Margins {
+    Margins(float horizontal = 0.f, float vertical = 0.f) {
+        left = right = horizontal;
+        top = bottom = vertical;
+    }
+
+    Margins(Vec2f margins) {
+        left = right = margins.x();
+        top = bottom = margins.y();
+    }
+
+    float left      { 0.f };
+    float right     { 0.f };
+    float top       { 0.f };
+    float bottom    { 0.f };
 };
 
 class FlexSizer
 {
 public:
     FlexSizer() {}
-    FlexSizer(int col, int row, ImVec2 min_size = ImVec2(), ImVec2 margins = ImVec2());
+    FlexSizer(int col, int row, Vec2f min_size = Vec2f(0.f, 0.f), Margins margins = Margins());
     virtual ~FlexSizer();
 
     bool    is_inited();
-    void    init(int col, int row, ImVec2 min_size = ImVec2(), ImVec2 margins = ImVec2());
+    void    init(int col, int row, Vec2f min_size = Vec2f(0.f, 0.f), Margins margins = Margins());
 
     // Note for add(): win_name_prefix is a prefix name for windows, which will be created for this sizer item.
     // Have to be empty, if this item is rendered inside the currect imgui window.
     // add some item as a control or line of controls.
-    void    add(std::function<void(ImVec2, ImVec2)> render_fn = nullptr, Align align = {}, const std::string& win_name_prefix = std::string());
+    void    add(std::function<void(Vec2f, Vec2f)> render_fn = nullptr, Align align = {}, const std::string& win_name_prefix = std::string());
     // add inner sizer
     void    add(FlexSizer& inner_sizer, const std::string& win_name_prefix = std::string(), Align align = {});
 
-    virtual void    render(ImVec2 win_size = ImVec2(), ImVec2 win_pos = ImVec2(-1.f, -1.f));
+    virtual void    render(Vec2f win_size = Vec2f(0.f, 0.f), Vec2f win_pos = Vec2f(-1.f, -1.f));
     virtual void    layout();
 
     void    set_grow_col(int col, float grow = 1.f);
@@ -61,11 +80,11 @@ public:
     bool    is_shown_col(int col);
     bool    is_shown_row(int row);
 protected:
-    void    render_node(YGNodeRef node, ImVec2 win_pos);
+    void    render_node(YGNodeRef node, Vec2f win_pos);
     void    finalize();
     void    ensure_min_size();
-    void    resize(ImVec2 win_size);
-    void    render_nodes_bg(ImVec2 win_pos);
+    void    resize(Vec2f win_size);
+    void    render_nodes_bg(Vec2f win_pos);
     bool    has_parent_window();
 
     YGNodeRef   get_node(int col, int row) const;
@@ -80,8 +99,7 @@ protected:
     bool        m_show_node_shapes  { false };
 
 private:
-    float       m_v_margin      { 0.f };
-    float       m_h_margin      { 0.f };
+    Margins     m_margins;
 
     int         m_next_col      { 0 };
     int         m_next_row      { 0 };

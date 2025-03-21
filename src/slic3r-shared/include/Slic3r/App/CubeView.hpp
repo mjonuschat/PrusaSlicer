@@ -1,5 +1,5 @@
 #pragma once
-#include "imgui/imgui.h"
+#include "Slic3r/Domain/Vectors.hpp"
 
 namespace Slic3r::App {
 
@@ -10,7 +10,7 @@ public:
     
     void init() {}
 
-    static void render(ImVec2 pos, ImVec2 size);
+    static void render(Domain::Vec2f pos, Domain::Vec2f size);
 
 protected:
 

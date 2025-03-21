@@ -6,10 +6,11 @@
 #pragma once
 
 #include "imgui/imgui.h"
-#include "imgui/imgui_internal.h"
 
 #include<string>
 #include<functional>
+
+struct ImRect;
 
 namespace Slic3r::App::Yoga {
 
@@ -22,12 +23,12 @@ enum class Orientation;
 
 // parameters for action functions is a bounding box of item
 struct Callbacks {
-    std::function<void(ImRect)>     action                      { nullptr };
-    std::function<bool()>           visibility                  { []() {return true; } };
-    std::function<bool()>           enabling                    { []() {return true; } };
-    std::function<bool()>           toggled                     { []() {return false; } };
-    std::function<void(ImRect)>     action_on_arrow             { nullptr };
-    std::function<void(ImRect)>     action_on_arrow_hovering    { nullptr };
+    std::function<void()>     action                      { nullptr };
+    std::function<bool()>     visibility                  { []() {return true; } };
+    std::function<bool()>     enabling                    { []() {return true; } };
+    std::function<bool()>     toggled                     { []() {return false; } };
+    std::function<void()>     action_on_arrow             { nullptr };
+    std::function<void()>     action_on_arrow_hovering    { nullptr };
 
     bool is_empty() const { return !action && !action_on_arrow && !action_on_arrow_hovering; }
 };
@@ -55,8 +56,8 @@ public :
     {}
     ~Item();
 
-    void    set_action_on_arrow(std::function<void(ImRect)> cb)             { m_callbacks.action_on_arrow = cb; }
-    void    set_action_on_arrow_hovering(std::function<void(ImRect)> cb)    { m_callbacks.action_on_arrow_hovering = cb; }
+    void    set_action_on_arrow(std::function<void()> cb)             { m_callbacks.action_on_arrow = cb; }
+    void    set_action_on_arrow_hovering(std::function<void()> cb)    { m_callbacks.action_on_arrow_hovering = cb; }
 
     bool    is_separator() const;
     bool    is_visible() const;

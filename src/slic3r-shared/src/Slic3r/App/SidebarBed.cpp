@@ -1,9 +1,6 @@
 #include "Slic3r/App/SidebarBed.hpp"
 #include "Slic3r/App/Imgui/ImguiExtension.hpp"
 
-#ifndef IMGUI_DEFINE_MATH_OPERATORS
-#define IMGUI_DEFINE_MATH_OPERATORS
-#endif
 #include <imgui/imgui_internal.h>
 
 namespace Slic3r::App {
@@ -43,7 +40,7 @@ static bool PrinterButton(wchar_t icon, float width, const std::string& model, c
     return pressed;
 }
 
-void SidebarBed::render(ImVec2 pos, ImVec2 size)
+void SidebarBed::render(Domain::Vec2f pos, Domain::Vec2f size)
 {
     ImGui::Text("Bed");
     PrinterButton(ImGui::PrinterNEXT, 240.f, "NEXT", "Elsa", false);
