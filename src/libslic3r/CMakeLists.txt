@@ -591,7 +591,7 @@ if (_opts)
 endif()
 
 target_link_libraries(libslic3r_cgal PRIVATE ${_cgal_tgt} libigl)
-target_link_libraries(libslic3r_cgal PUBLIC admesh localesutils slic3r-domain)
+target_link_libraries(libslic3r_cgal PUBLIC admesh localesutils slic3r-domain slic3r-biz-algorithms)
 
 if (MSVC AND "${CMAKE_SIZEOF_VOID_P}" STREQUAL "4") # 32 bit MSVC workaround
     target_compile_definitions(libslic3r_cgal PRIVATE CGAL_DO_NOT_USE_MPZF)
@@ -653,7 +653,6 @@ target_link_libraries(libslic3r PUBLIC
     NanoSVG::nanosvg
     NanoSVG::nanosvgrast
     slic3r-jthread
-    slic3r-biz-algorithms
     slic3r-domain
     slic3r-gcode-reader
     slic3r-biz-algorithms
