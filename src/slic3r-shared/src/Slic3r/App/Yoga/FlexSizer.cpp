@@ -222,7 +222,7 @@ void FlexSizer::add(std::function<void(ImVec2, ImVec2)> render_fn /*= nullptr*/,
     }
 }
 
-void FlexSizer::add(FlexSizer& inner_sizer, const std::string& win_name_prefix /*= std::string()*/)
+void FlexSizer::add(FlexSizer& inner_sizer, const std::string& win_name_prefix /*= std::string()*/, Align align/* = {}*/)
 {
     int row = m_next_row;// current row, !!! get before get next node
     int col = m_next_col;// current col, !!! get before get next node
@@ -235,7 +235,6 @@ void FlexSizer::add(FlexSizer& inner_sizer, const std::string& win_name_prefix /
     // add inside child to make the flex cell in both diraction
     YGNodeRef child = add_node(node, sz.width, sz.height);
 
-    Align align;
     // node is aligned horizontaly
     YGNodeStyleSetAlignSelf(node, align.get_yoga_h_align());
     // child is aligned verticaly
@@ -391,7 +390,8 @@ void FlexSizer::render_node(YGNodeRef node, ImVec2 win_pos)
             ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.f);
             ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.f, 0.f));
 
-            ImGui::Begin(m_node_rendering[node].win_name.c_str(), nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove);
+            ImGui::Begin(m_node_rendering[node].win_name.c_str(), nullptr,
+                ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoFocusOnAppearing);
         }
 
         if (render_fn)
@@ -528,6 +528,14 @@ void FlexSizer::show_col(int col, bool show /*= true*/)
     YGNodeCalculateLayout(m_root, YGUndefined, YGUndefined, YGDirectionLTR);
 }
 
+bool FlexSizer::is_shown_col(int col)
+{
+    if (auto col_node = YGNodeGetChild(m_root, col))
+        return YGNodeStyleGetDisplay(col_node) == YGDisplayFlex;
+
+    return false;
+}
+
 void FlexSizer::show_row(int row, bool show /*= true*/)
 {
     int cols = get_cols();
@@ -541,6 +549,18 @@ void FlexSizer::show_row(int row, bool show /*= true*/)
         }
     }
     YGNodeCalculateLayout(m_root, YGUndefined, YGUndefined, YGDirectionLTR);
+}
+
+bool FlexSizer::is_shown_row(int row)
+{
+    bool is_shown{ false };
+
+    int cols = get_cols();
+    for (int col = 0; col < cols; col++) {
+        if (auto row_node = get_node(col, row))
+            is_shown |= YGNodeStyleGetDisplay(row_node) == YGDisplayFlex;
+    }
+    return is_shown;
 }
 
 void FlexSizer::align_col(int col, Align align/* = Align({})*/)

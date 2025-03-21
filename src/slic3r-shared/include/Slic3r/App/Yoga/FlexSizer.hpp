@@ -35,7 +35,7 @@ public:
     // add some item as a control or line of controls.
     void    add(std::function<void(ImVec2, ImVec2)> render_fn = nullptr, Align align = {}, const std::string& win_name_prefix = std::string());
     // add inner sizer
-    void    add(FlexSizer& inner_sizer, const std::string& win_name_prefix = std::string());
+    void    add(FlexSizer& inner_sizer, const std::string& win_name_prefix = std::string(), Align align = {});
 
     virtual void    render(ImVec2 win_size = ImVec2(), ImVec2 win_pos = ImVec2(-1.f, -1.f));
     virtual void    layout();
@@ -57,6 +57,9 @@ public:
 
     void    show_col(int col, bool show = true);
     void    show_row(int row, bool show = true);
+
+    bool    is_shown_col(int col);
+    bool    is_shown_row(int row);
 protected:
     void    render_node(YGNodeRef node, ImVec2 win_pos);
     void    finalize();

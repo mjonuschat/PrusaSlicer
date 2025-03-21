@@ -19,50 +19,6 @@ void PlaterRenderLayout::init_left_sizer()
     left_sizer.show_row(1, false);
 }
 
-void PlaterRenderLayout::init_middle_sizer()
-{
-    middle_sizer.initialize();
-
-    // add items with callbacks for top corner toolbars
-
-    // callbacks for toolbar items
-    auto cb_is_visible      = []() -> bool {return true; };
-    auto cb_is_enable       = []() -> bool {return true; };
-
-    static bool show_object_list   { true };
-    static bool show_history   { false };
-    static bool show_sidebar  { true };
-
-    // create top left toolbar, which contains just one item
-    middle_sizer.top_left_toolbar.add(ImGui::ToolbarObjects, "Object List", "Ctrl + Alt + O",  
-        { [this](ImRect) { 
-            show_object_list = !show_object_list; 
-            show_left(show_object_list); 
-          }, 
-          cb_is_visible, cb_is_enable, []() { return !show_object_list; } });
-
-    // create top right toolbar, which contains just one item
-    middle_sizer.top_right_toolbar.add(ImGui::ToolbarSidebar, "Sidebar", "", 
-        { [this](ImRect) { 
-            show_sidebar = !show_sidebar;
-            show_right(show_sidebar); 
-          }, 
-          cb_is_visible, cb_is_enable, []() { return !show_sidebar; } });
-
-    // create bottom left toolbar
-
-    middle_sizer.bottom_left_toolbar.add(ImGui::ToolbarHistory, "Actions History", "Shift + Alt + H", 
-        { [this](ImRect) { 
-                show_history = !show_history;
-                left_sizer.show_row(1, show_history);
-                middle_sizer.layout(); 
-            }, cb_is_visible, cb_is_enable, []() { return show_history; } });
-
-    middle_sizer.bottom_middle_sizer.show_col(0, false);
-
-    middle_sizer.layout();
-}
-
 void PlaterRenderLayout::init_right_sizer()
 {
     right_sizer.init(1, 3, ImVec2(280.f, 0.f), GImGui->Style.WindowPadding * 0.5f);

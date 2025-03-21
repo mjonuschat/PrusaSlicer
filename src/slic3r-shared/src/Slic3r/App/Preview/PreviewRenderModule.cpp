@@ -2,6 +2,7 @@
 #include "Slic3r/App/Preview/PreviewCameraGizmo.hpp"
 #include "Slic3r/App/Preview/SidebarAutoReslice.hpp"
 #include "Slic3r/App/Preview/SidebarAfterSlice.hpp"
+#include "Slic3r/App/CubeView.hpp"
 #include "Slic3r/App/SidebarBed.hpp"
 #include "Slic3r/App/SidebarPrint.hpp"
 #include "Slic3r/App/Render/Device.hpp"
@@ -532,6 +533,9 @@ void PreviewRenderModule::init_scene_layout()
     m_layout.set_object_list_render_fn([ol](ImVec2 size, ImVec2 pos) -> void
         { ol->render(pos, size); });
 
+    m_layout.set_cube_view_render_fn([](ImVec2 size, ImVec2 pos) -> void
+        { CubeView::render(pos, size); });
+
     m_layout.set_sidebar_bed_render_fn([](ImVec2 size, ImVec2 pos) -> void
         { SidebarBed::render(pos, size); });
 
@@ -552,6 +556,39 @@ void PreviewRenderModule::init_scene_layout()
 
     m_layout.set_gcode_slider_render_fn([](ImVec2 size, ImVec2 pos) -> void
         { ; });
+
+    // init toolbars
+
+    // callbacks for toolbar items
+    auto cb_is_visible = []() -> bool {return true; };
+    auto cb_is_enable = []() -> bool {return true; };
+
+    static bool show_object_list    { true };
+    static bool show_legend         { true };
+
+    m_layout.add_toolbar_item(ToolbarID::Top, ImGui::ToolbarObjects, "Object List", "Ctrl + Alt + O",
+        { [this](ImRect) { m_layout.show_left(0, show_object_list = !show_object_list); },
+          cb_is_visible, cb_is_enable, []() { return !show_object_list; } });
+
+    m_layout.add_toolbar_item(ToolbarID::Bottom, ImGui::ToolbarGraph, "Legend", "",
+        { [this](ImRect) { m_layout.show_left(1, show_legend = !show_legend); },
+          cb_is_visible, cb_is_enable, []() { return show_legend; } });
+
+    // >> just for testing 
+    m_layout.add_toolbar_item(ToolbarID::Middle, ImGui::ToolbarAdd, "Show/Hide gcode slider", "", { 
+        [this](ImRect) {
+            static bool show {true};
+            m_layout.show_gcode_sizer(show = !show);
+        }
+    });
+    m_layout.add_toolbar_separator(ToolbarID::Middle);
+    m_layout.add_toolbar_item(ToolbarID::Middle, ImGui::ToolbarMove, "Show/Hide layer slider", "", {
+        [this](ImRect) {
+            static bool show {true};
+            m_layout.show_slider_sizer(show = !show);
+        }
+    });
+    // << 
 }
 
 //

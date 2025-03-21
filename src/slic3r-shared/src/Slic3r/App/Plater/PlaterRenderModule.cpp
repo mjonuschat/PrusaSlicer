@@ -17,6 +17,7 @@
 #include "Slic3r/App/Imgui/ImguiExtension.hpp"
 
 #include "Slic3r/App/Plater/History.hpp"
+#include "Slic3r/App/CubeView.hpp"
 #include "Slic3r/App/SidebarBed.hpp"
 #include "Slic3r/App/SidebarPrint.hpp"
 #include "Slic3r/App/Plater/SidebarSlice.hpp"
@@ -69,6 +70,9 @@ void PlaterRenderModule::init_scene_layout()
     m_layout.set_object_list_render_fn([ol](ImVec2 size, ImVec2 pos) -> void
         { ol->render(pos, size); });
 
+    m_layout.set_cube_view_render_fn([](ImVec2 size, ImVec2 pos) -> void
+        { CubeView::render(pos, size); });
+
     m_layout.set_sidebar_bed_render_fn([](ImVec2 size, ImVec2 pos) -> void
         { SidebarBed::render(pos, size); });
 
@@ -84,7 +88,23 @@ void PlaterRenderModule::init_scene_layout()
 
     // init toolbars
 
-    m_layout.add_left_toolbar_item(ImGui::ToolbarAdd, "Add...", "Ctrl + I", { 
+    // callbacks for toolbar items
+    auto cb_is_visible = []() -> bool {return true; };
+    auto cb_is_enable = []() -> bool {return true; };
+
+    static bool show_object_list{ true };
+    static bool show_history{ false };
+    static bool show_sidebar{ true };
+
+    m_layout.add_toolbar_item(ToolbarID::Top, ImGui::ToolbarObjects, "Object List", "Ctrl + Alt + O",
+        { [this](ImRect) { m_layout.show_left(0, show_object_list = !show_object_list); },
+        cb_is_visible, cb_is_enable, []() { return show_object_list; } });
+
+    m_layout.add_toolbar_item(ToolbarID::Bottom, ImGui::ToolbarHistory, "Actions History", "Shift + Alt + H",
+        { [this](ImRect) { m_layout.show_left(1, show_history = !show_history); }, 
+        cb_is_visible, cb_is_enable, []() { return show_history; } });
+
+    m_layout.add_toolbar_item(ToolbarID::Middle, ImGui::ToolbarAdd, "Add...", "Ctrl + I", { 
         [this](ImRect) {
             auto& scene_interactor = m_project_interactor.scene_interactor();
             const auto& bed = m_project_interactor.selected_project().config_containers().front()->bed();
@@ -98,9 +118,9 @@ void PlaterRenderModule::init_scene_layout()
             m_scene_presenter->scene().log_nodes();
         }
     });
-//    m_layout.add_left_toolbar_item(ImGui::ToolbarArrange, "Arrange", "A", { [](ImRect) {} });
-    m_layout.add_left_toolbar_separator();
-    m_layout.add_left_toolbar_item(ImGui::ToolbarMove, "Move", "M", {
+//    m_layout.add_toolbar_item(ToolbarID::Middle, ImGui::ToolbarArrange, "Arrange", "A", { [](ImRect) {} });
+    m_layout.add_toolbar_separator(ToolbarID::Middle);
+    m_layout.add_toolbar_item(ToolbarID::Middle, ImGui::ToolbarMove, "Move", "M", {
         [this](ImRect) {
             m_gizmo_manager->toggle_activate_tool(Scene::ToolType::Translation, ptFFF);
         }, 
@@ -110,7 +130,7 @@ void PlaterRenderModule::init_scene_layout()
             return m_gizmo_manager->current_tool_type()== Scene::ToolType::Translation; 
         }
     });
-    m_layout.add_left_toolbar_item(ImGui::ToolbarRotation, "Rotate", "R", {
+    m_layout.add_toolbar_item(ToolbarID::Middle, ImGui::ToolbarRotation, "Rotate", "R", {
         [this](ImRect) {
             m_gizmo_manager->toggle_activate_tool(Scene::ToolType::Rotation, ptFFF);
         }, 

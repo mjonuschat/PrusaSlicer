@@ -17,7 +17,6 @@ public:
 
 private:
     void init_left_sizer() override;
-    void init_middle_sizer() override;
     void init_right_sizer() override;
 
     std::function<void(ImVec2, ImVec2)> m_cb_history_render;
