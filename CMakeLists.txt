@@ -148,6 +148,9 @@ else ()
 endif ()
 
 if (MSVC)
+    # TEMPORARY!
+    add_compile_options(/wd4996)  # Disable deprecation warnings
+
     if (SLIC3R_MSVC_COMPILE_PARALLEL AND NOT IS_CLANG_CL)
            add_compile_options(/MP)
     endif ()
@@ -272,6 +275,9 @@ if (CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUXX)
 endif()
 
 if (NOT MSVC AND ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang"))
+    #TEMPORARY
+    add_compile_options(-Wno-deprecated-declarations)  # Disable deprecation warnings
+
     if (NOT MINGW)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall" )
     endif ()
