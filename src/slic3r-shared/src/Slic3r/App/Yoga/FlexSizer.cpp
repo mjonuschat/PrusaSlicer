@@ -46,10 +46,10 @@ static Vec2f from_im(ImVec2 val)
     return Vec2f(val.x, val.y);
 }
 
-static YGSize get_item_size(std::function<void(Vec2f, Vec2f)> render_node_fn, bool single_item = true)
+static Vec2f get_item_size(std::function<void(Vec2f, Vec2f)> render_node_fn, bool single_item = true)
 {
     if (!render_node_fn)
-        return YGSize({ 0.f, 0.f });
+        return { 0.f, 0.f };
 
     ImVec2 old_pos = ImGui::GetCursorScreenPos();
 
@@ -71,7 +71,7 @@ static YGSize get_item_size(std::function<void(Vec2f, Vec2f)> render_node_fn, bo
         // reset cursor pos
         ImGui::SetCursorScreenPos(old_pos);
 
-        return YGSize({ real_size.x > size.x ? real_size.x : size.x, size.y });
+        return { real_size.x > size.x ? real_size.x : size.x, size.y };
     }
 
     // for non-single items (panels) we are interesting in height of content
@@ -80,7 +80,7 @@ static YGSize get_item_size(std::function<void(Vec2f, Vec2f)> render_node_fn, bo
     // reset cursor pos
     ImGui::SetCursorScreenPos(old_pos);
 
-    return YGSize({ ImMax(10.f, size.x), ImMax(10.f, size.y) });
+    return { ImMax(10.f, size.x), ImMax(10.f, size.y) };
 }
 
 static Vec2f get_size(YGNodeRef node)
@@ -109,6 +109,7 @@ bool FlexSizer::is_inited()
 
 void FlexSizer::init(int col_cnt, int row_cnt, Vec2f min_size/* = Vec2f(0.f, 0.f)*/, Margins margins/* = Margins(0.f, 0.f)*/)
 {
+    m_bg_alpha = GImGui->Style.Alpha;
     if (m_root) {
         // Clean up Yoga
         YGNodeFreeRecursive(m_root);
@@ -117,7 +118,7 @@ void FlexSizer::init(int col_cnt, int row_cnt, Vec2f min_size/* = Vec2f(0.f, 0.f
     }
 
     m_margins = margins;
-    m_min_size = YGSize({ min_size.x(), min_size.y() });
+    m_min_size = Vec2f({ min_size.x(), min_size.y() });
 
     m_root = create_node(min_size.x(), min_size.y());
     YGNodeStyleSetFlexDirection(m_root, YGFlexDirectionRow);
@@ -156,9 +157,9 @@ FlexSizer::~FlexSizer()
 }
 
 // get min size in respect to children
-YGSize FlexSizer::get_min_size()
+Vec2f FlexSizer::get_min_size()
 {
-    YGSize result = YGSize({ 0.f, 0.f });
+    Vec2f result({ 0.f, 0.f });
 
     int col_cnt = get_cols();
     int row_cnt = get_rows();
@@ -179,7 +180,7 @@ YGSize FlexSizer::get_min_size()
                     if (height < h)
                         height = h;
                 }
-                result.height += height + m_margins.top + m_margins.bottom;
+                result.y() += height + m_margins.top + m_margins.bottom;
             }
 
             YGNodeRef in_node = YGNodeGetChild(get_node(col, row), 0);
@@ -188,13 +189,16 @@ YGSize FlexSizer::get_min_size()
             if (width < w)
                 width = w;
         }
-        result.width += width + m_margins.left + m_margins.right;
+        result.x() += width + m_margins.left + m_margins.right;
     }
 
     return result;
 }
 
-void FlexSizer::add(std::function<void(Vec2f, Vec2f)> render_fn /*= nullptr*/, Align align/* = Align({})*/, const std::string& win_name_prefix/* = std::string()*/)
+void FlexSizer::add(std::function<void(Vec2f, Vec2f)> render_fn /* = nullptr*/, 
+                    bool is_single_item                         /* = false*/, 
+                    const WindowParams& win                     /* = {}*/,
+                    Align align                                 /* = {Yoga::AlignH::Left, Yoga::AlignV::Top}*/)
 {
     int row = m_next_row;// current row, !!! get before get next node
     int col = m_next_col;// current col, !!! get before get next node
@@ -203,10 +207,10 @@ void FlexSizer::add(std::function<void(Vec2f, Vec2f)> render_fn /*= nullptr*/, A
     if (node == nullptr)
         return; // all nodes are already initialized
 
-    YGSize sz = get_item_size(render_fn, win_name_prefix.empty());
+    Vec2f sz = get_item_size(render_fn, is_single_item) + 2.f * win.paddings;
 
     // add inside child to make the flex cell in both diraction
-    YGNodeRef child = add_node(node, sz.width, sz.height);
+    YGNodeRef child = add_node(node, sz.x(), sz.y());
 
     // node is aligned horizontaly
     YGNodeStyleSetAlignSelf(node, align.get_yoga_h_align());
@@ -215,8 +219,8 @@ void FlexSizer::add(std::function<void(Vec2f, Vec2f)> render_fn /*= nullptr*/, A
 
     // save render function
     m_node_rendering[node].render_fn = render_fn;
-    if (!win_name_prefix.empty())
-        m_node_rendering[node].win_name = win_name_prefix + "_col" + std::to_string(col) + "_row" + std::to_string(row);
+    if (!win.name_prefix.empty())
+        m_node_rendering[node].win = { win.name_prefix + "_col" + std::to_string(col) + "_row" + std::to_string(row), win.paddings };
 
     // If flexibility for this row is discard, then
     if (YGNodeStyleGetFlex(node) == 0.f) {
@@ -224,13 +228,13 @@ void FlexSizer::add(std::function<void(Vec2f, Vec2f)> render_fn /*= nullptr*/, A
         for (col = 0; col < get_cols(); col++) {
             YGNodeRef row_node = get_node(col, row);
             const float min_h = YGNodeStyleGetMinHeight(row_node).value;
-            if (std::isnan(min_h) || min_h < sz.height)
-                YGNodeStyleSetMinHeight(row_node, sz.height);
+            if (std::isnan(min_h) || min_h < sz.y())
+                YGNodeStyleSetMinHeight(row_node, sz.y());
         }
     }
 }
 
-void FlexSizer::add(FlexSizer& inner_sizer, const std::string& win_name_prefix /*= std::string()*/, Align align/* = {}*/)
+void FlexSizer::add(FlexSizer& inner_sizer, const WindowParams& win /* = {}*/, Align align/* = {}*/)
 {
     int row = m_next_row;// current row, !!! get before get next node
     int col = m_next_col;// current col, !!! get before get next node
@@ -239,9 +243,10 @@ void FlexSizer::add(FlexSizer& inner_sizer, const std::string& win_name_prefix /
     if (node == nullptr)
         return; // all nodes are already initialized
 
-    YGSize sz = inner_sizer.get_best_size();
+    Vec2f sz = inner_sizer.get_best_size() + 2.f * win.paddings;
+
     // add inside child to make the flex cell in both diraction
-    YGNodeRef child = add_node(node, sz.width, sz.height);
+    YGNodeRef child = add_node(node, sz.x(), sz.y());
 
     // node is aligned horizontaly
     YGNodeStyleSetAlignSelf(node, align.get_yoga_h_align());
@@ -249,18 +254,20 @@ void FlexSizer::add(FlexSizer& inner_sizer, const std::string& win_name_prefix /
     YGNodeStyleSetAlignSelf(child, align.get_yoga_v_align());
 
     // save render function
-    m_node_rendering[node].render_fn = [&inner_sizer](Vec2f size, Vec2f pos) {
-        inner_sizer.render(size, pos);
+    m_node_rendering[node].render_fn = [&inner_sizer, paddings = win.paddings](Vec2f size, Vec2f pos) {
+        inner_sizer.render(size - 2.f * paddings, pos + paddings);
     };
-    if (!win_name_prefix.empty())
-        m_node_rendering[node].win_name = win_name_prefix + "_col" + std::to_string(col) + "_row" + std::to_string(row);
+    if (!win.name_prefix.empty())
+        m_node_rendering[node].win = { win.name_prefix + "_col" + std::to_string(col) + "_row" + std::to_string(row), win.paddings };
 
     // Set min height for whole row of the parent sizer to correct layout
     {
         auto min_sz = inner_sizer.get_min_size();
 
+        m_node_rendering[node].inner_sizer_min_size = min_sz; // !!! check
+
         // Node, that in this case MinHeight have to be decreased for minimal possible value of height
-        float min_height = sz.height - min_sz.height;
+        float min_height = sz.y() - min_sz.y();
 
         for (col = 0; col < get_cols(); col++) {
             YGNodeRef row_node = get_node(col, row);
@@ -279,10 +286,10 @@ void FlexSizer::finalize()
     // it can be bigger, the users input in constructor
     auto best_min_size = get_min_size();
 
-    if (m_min_size.width < best_min_size.width)
-        m_min_size.width = best_min_size.width;
-    if (m_min_size.height < best_min_size.height)
-        m_min_size.height = best_min_size.height;
+    if (m_min_size.x() < best_min_size.x())
+        m_min_size.x() = best_min_size.x();
+    if (m_min_size.y() < best_min_size.y())
+        m_min_size.y() = best_min_size.y();
 
     ensure_min_size();
 
@@ -298,11 +305,11 @@ void FlexSizer::layout()
 void FlexSizer::resize(Vec2f win_size)
 {
     bool force_recalc = false;
-    if (win_size.x() >= m_min_size.width && YGNodeLayoutGetWidth(m_root) != win_size.x()) {
+    if (win_size.x() >= m_min_size.x() && YGNodeLayoutGetWidth(m_root) != win_size.x()) {
         YGNodeStyleSetWidth(m_root, win_size.x());
         force_recalc = true;
     }
-    if (win_size.y() >= m_min_size.height && YGNodeLayoutGetHeight(m_root) != win_size.y()) {
+    if (win_size.y() >= m_min_size.y() && YGNodeLayoutGetHeight(m_root) != win_size.y()) {
         YGNodeStyleSetHeight(m_root, win_size.y());
         force_recalc = true;
     }
@@ -316,12 +323,12 @@ void FlexSizer::resize(Vec2f win_size)
 void FlexSizer::ensure_min_size()
 {
     bool force_recalc = false;
-    if (YGNodeLayoutGetWidth(m_root) < m_min_size.width) {
-        YGNodeStyleSetWidth(m_root, m_min_size.width);
+    if (YGNodeLayoutGetWidth(m_root) < m_min_size.x()) {
+        YGNodeStyleSetWidth(m_root, m_min_size.x());
         force_recalc = true;
     }
-    if (YGNodeLayoutGetHeight(m_root) < m_min_size.height) {
-        YGNodeStyleSetHeight(m_root, m_min_size.height);
+    if (YGNodeLayoutGetHeight(m_root) < m_min_size.y()) {
+        YGNodeStyleSetHeight(m_root, m_min_size.y());
         force_recalc = true;
     }
     if (force_recalc)
@@ -379,9 +386,9 @@ void FlexSizer::render_node(YGNodeRef node, Vec2f win_pos)
         if (YGNodeStyleGetDisplay(col_node) == YGDisplayNone)
             return;
 
-        const Vec2f cell_pos = win_pos + Vec2f(YGNodeLayoutGetLeft(col_node) + YGNodeLayoutGetLeft(node),
-                                               YGNodeLayoutGetTop (col_node) + YGNodeLayoutGetTop (node));
-        const Vec2f cell_size = Vec2f(YGNodeLayoutGetWidth(col_node), YGNodeLayoutGetHeight(node));
+        Vec2f cell_pos = win_pos + Vec2f(YGNodeLayoutGetLeft(col_node) + YGNodeLayoutGetLeft(node),
+                                         YGNodeLayoutGetTop (col_node) + YGNodeLayoutGetTop (node));
+        Vec2f cell_size = Vec2f(YGNodeLayoutGetWidth(col_node), YGNodeLayoutGetHeight(node));
 
         std::function<void(Vec2f, Vec2f)> render_fn = m_node_rendering[node].render_fn;
 
@@ -390,7 +397,8 @@ void FlexSizer::render_node(YGNodeRef node, Vec2f win_pos)
             ImGui::SetCursorScreenPos(to_im(pos));
         }
 
-        bool begin_separate_window = !m_node_rendering[node].win_name.empty() && render_fn;
+        const WindowParams& win = m_node_rendering[node].win;
+        bool begin_separate_window = !win.name_prefix.empty() && render_fn;
         if (begin_separate_window) {
             ImGui::SetNextWindowPos(to_im(cell_pos));
             ImGui::SetNextWindowSize(to_im(cell_size));
@@ -398,10 +406,17 @@ void FlexSizer::render_node(YGNodeRef node, Vec2f win_pos)
 
             // Discard current paddings and spacing of the window to corect apply of sizer's margins
             ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.f);
-            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2());
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, to_im(win.paddings));
 
-            ImGui::Begin(m_node_rendering[node].win_name.c_str(), nullptr,
-                ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoFocusOnAppearing);
+            auto win_flags = ImGuiWindowFlags_NoDecoration |
+                             ImGuiWindowFlags_NoMove |
+                             ImGuiWindowFlags_NoBringToFrontOnFocus |
+                             ImGuiWindowFlags_NoFocusOnAppearing;
+
+            ImGui::Begin(win.name_prefix.c_str(), nullptr, win_flags);
+
+            cell_pos += win.paddings;
+            cell_size -= 2.f * win.paddings;
         }
 
         if (render_fn)
@@ -445,11 +460,11 @@ void FlexSizer::render(Vec2f win_size, Vec2f win_pos)
     }
 }
 
-YGSize  FlexSizer::get_best_size()
+Vec2f  FlexSizer::get_best_size()
 {
     finalize();
 
-    return YGSize({ YGNodeLayoutGetWidth(m_root), YGNodeLayoutGetHeight(m_root) });
+    return { YGNodeLayoutGetWidth(m_root), YGNodeLayoutGetHeight(m_root) };
 }
 
 int FlexSizer::get_cols() const 

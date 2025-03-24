@@ -20,10 +20,11 @@ Vec2f AbstractRenderLayout::frame_padding()
 
 void AbstractRenderLayout::init_main_sizer()
 {
-#if main_with_splitters
+#if MAIN_WITH_SPLITTERS
     m_main_sizer.init(3);
     m_main_sizer.set_splitter_padding(0.f);
-    m_main_sizer.set_splitter_sz(3.f);
+    m_main_sizer.set_splitter_sz(2.f);
+    m_main_sizer.show_splitter(false);
 #else
     m_main_sizer.init(3, 1, Vec2f(0.f, 0.f), Yoga::Margins(win_padding() * 0.5f));
 #endif
@@ -39,32 +40,27 @@ void AbstractRenderLayout::init_main_sizer()
     m_main_sizer.add(right_sizer);
 }
 
-void AbstractRenderLayout::add_item(Yoga::FlexSizer& sizer, std::function<void(Vec2f, Vec2f)> render_item_fn, std::string item_name, Yoga::Margins margins /*= Yoga::Margins(-1.f, -1.f)*/)
+void AbstractRenderLayout::add_panel(Yoga::FlexSizer& sizer, std::function<void(Vec2f, Vec2f)> render_item_fn, std::string win_name, Vec2f win_paddings /*= { -1.f, -1.f }*/)
 {
-    static std::vector<Yoga::FlexSizer> sizers_in;
-    if (sizers_in.empty())
-        sizers_in.reserve(50);
+    if (win_paddings.x() < 0.f || win_paddings.y() < 0.f)
+        win_paddings = frame_padding() * 4.f;
 
-    if (margins.left < 0.f || margins.top < 0.f)
-        margins = Yoga::Margins(frame_padding() * 4.f);
-
-    Yoga::FlexSizer& sizer_in = sizers_in.emplace_back(Yoga::FlexSizer());
-    sizer_in.init(1, 1, Vec2f(0.f, 0.f), margins);
-    sizer_in.set_grow_col(0);
-
-    sizer_in.add([render_item_fn](Vec2f size, Vec2f pos) {
-        render_item_fn(size, pos); }, { Yoga::AlignH::Left, Yoga::AlignV::Top }, item_name + "_in");
-    sizer.add(sizer_in, item_name);
+    sizer.add(render_item_fn, false, { win_name, win_paddings });
 }
 
-const static float min_tt_size = 30.f;
+const static float min_tt_size = 50.f;// 30.f;
 const static float max_tt_size = 50.f;
 
 void AbstractRenderLayout::init_view_cube_sizer()
 {
-    view_cube_sizer.init(1, 1, Vec2f(70.f, 0.f));
+    static Yoga::FlexSizer sizer_in(1, 1);
+    sizer_in.set_bg_alpha(0.f);
+    sizer_in.add(m_cb_cube_view_render, true, { "view_cube" });
+
+    view_cube_sizer.init(1, 1);
     view_cube_sizer.set_grow_col(0);
-    view_cube_sizer.add(m_cb_cube_view_render, Yoga::Align(), "cube_view");
+    view_cube_sizer.set_grow_row(0, 0.f);
+    view_cube_sizer.add(sizer_in, {}, { Yoga::AlignH::Right, Yoga::AlignV::Top });
 }
 
 void AbstractRenderLayout::init_toolbars_sizer()
@@ -89,13 +85,13 @@ void AbstractRenderLayout::init_toolbars_sizer()
 
     m_toolbars_sizer.add([this](Vec2f size, Vec2f pos) {
         top_toolbar.render(size, pos);
-    });
+    }, true);
     m_toolbars_sizer.add([this](Vec2f size, Vec2f pos) {
         middle_toolbar.render(size, pos);
-    });
+    }, true);
     m_toolbars_sizer.add([this](Vec2f size, Vec2f pos) {
         bottom_toolbar.render(size, pos);
-    });
+    }, true);
 }
 
 void AbstractRenderLayout::layout_toolbars_sizer()
@@ -108,7 +104,7 @@ void AbstractRenderLayout::layout_toolbars_sizer()
 
 void AbstractRenderLayout::add_middle_flex_sizer()
 {
-    middle_sizer.add(view_cube_sizer, "", { Yoga::AlignH::Right, Yoga::AlignV::Top });
+    middle_sizer.add(view_cube_sizer);
 }
 
 void AbstractRenderLayout::init_middle_sizer()

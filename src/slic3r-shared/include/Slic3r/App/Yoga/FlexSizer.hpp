@@ -17,9 +17,17 @@ namespace Slic3r::App::Yoga {
 
 using Vec2f = Slic3r::Domain::Vec2f;
 
+// parameters for ImGui::Window
+struct WindowParams
+{
+    std::string name_prefix {};
+    Vec2f       paddings    { 0.f, 0.f };
+};
+
 struct NodeRendering {
-    std::function<void(Vec2f, Vec2f)> render_fn   { nullptr };
-    std::string                         win_name    {};
+    std::function<void(Vec2f, Vec2f)>   render_fn               { nullptr };
+    WindowParams                        win                     {};
+    Vec2f                               inner_sizer_min_size    {0.f, 0.f};
 };
 
 struct Margins {
@@ -52,9 +60,9 @@ public:
     // Note for add(): win_name_prefix is a prefix name for windows, which will be created for this sizer item.
     // Have to be empty, if this item is rendered inside the currect imgui window.
     // add some item as a control or line of controls.
-    void    add(std::function<void(Vec2f, Vec2f)> render_fn = nullptr, Align align = {}, const std::string& win_name_prefix = std::string());
+    void    add(std::function<void(Vec2f, Vec2f)> render_fn = nullptr, bool single_item = false, const WindowParams& win = {}, Align align = { Yoga::AlignH::Left, Yoga::AlignV::Top });
     // add inner sizer
-    void    add(FlexSizer& inner_sizer, const std::string& win_name_prefix = std::string(), Align align = {});
+    void    add(FlexSizer& inner_sizer, const WindowParams& win = {}, Align align = {});
 
     virtual void    render(Vec2f win_size = Vec2f(0.f, 0.f), Vec2f win_pos = Vec2f(-1.f, -1.f));
     virtual void    layout();
@@ -89,8 +97,9 @@ protected:
 
     YGNodeRef   get_node(int col, int row) const;
     YGNodeRef   get_next_node();              // get next node to intialize
-    YGSize      get_best_size();
-    YGSize      get_min_size();
+    Vec2f       get_best_size();
+    Vec2f       get_min_size();
+    Vec2f       get_inner_sizer_min_size(YGNodeRef node) { return m_node_rendering[node].inner_sizer_min_size; }
 
 protected:
     YGNodeRef   m_root              { nullptr };
@@ -106,7 +115,7 @@ private:
     float       m_bg_alpha      { 0.f }; // used for sizers without parent window
 
     // max{calculated min size; adjusted min size}
-    YGSize      m_min_size      { YGSize({ 0.f, 0.f }) };
+    Vec2f       m_min_size      { 0.f, 0.f };
 
     std::map<YGNodeRef, NodeRendering>  m_node_rendering;
 };

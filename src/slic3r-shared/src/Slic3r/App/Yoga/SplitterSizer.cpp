@@ -67,10 +67,22 @@ void SplitterSizer::apply_width(YGNodeRef node, float delta, float width)
         YGNodeStyleSetWidth(node, new_w);
         layout();
 
+        if (new_w <= old_w)
+            return;
+
         // check if new sum of widths doesn't overdraw the required width of root...
         float new_root_w{ 0.f };
-        for (int col = 0; col < get_cols(); col++)
-            new_root_w += YGNodeLayoutGetWidth(YGNodeGetChild(m_root, col));
+        for (int col = 0; col < get_cols(); col++) {
+            YGNodeRef child_node = YGNodeGetChild(m_root, col);
+            float new_col_w = YGNodeLayoutGetWidth(child_node);
+            const bool is_flex = YGNodeStyleGetFlexGrow(child_node) > 0.f;
+            if (is_flex && m_is_horizontal) {
+                float node_min_width = get_inner_sizer_min_size(YGNodeGetChild(child_node, 0)).x();
+                new_root_w += node_min_width;
+            }
+            else
+                new_root_w += new_col_w;
+        }
 
         if (new_root_w > width) {
             // ...revert previous width, if yes
@@ -122,11 +134,18 @@ float SplitterSizer::render_splitter(YGNodeRef node, const std::string& suffix, 
     pos += m_is_horizontal ? Vec2f(m_splitter_padding, 0.f) : Vec2f(0.f, m_splitter_padding);
     ImGui::SetCursorScreenPos(ImVec2(pos.x(), pos.y()));
 
-    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 3.f);
-    ImGui::PushStyleColor(ImGuiCol_Button,          ImVec4({ 0.67f, 0.67f, 0.67f, 1.0f }));
+    ImVec2 min(pos.x(), pos.y());
+    ImVec2 max = min;
+
+    if (!m_invisible_btn) {
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 3.f);
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4({ 0.67f, 0.67f, 0.67f, 1.0f }));
+    }
 
     if (m_is_horizontal) {
         float h = YGNodeLayoutGetHeight(node);
+        max.x += m_splitter_sz;
+        max.y += h;
         if (m_invisible_btn)
             ImGui::InvisibleButton(("vsplitter" + suffix).c_str(), ImVec2(m_splitter_sz, h));
         else
@@ -136,6 +155,8 @@ float SplitterSizer::render_splitter(YGNodeRef node, const std::string& suffix, 
     }
     else {
         float w = YGNodeLayoutGetWidth(YGNodeGetParent(node));
+        max.x += w;
+        max.y += m_splitter_sz;
         if (m_invisible_btn)
             ImGui::InvisibleButton(("hsplitter" + suffix).c_str(), ImVec2(w, m_splitter_sz));
         else
@@ -144,8 +165,22 @@ float SplitterSizer::render_splitter(YGNodeRef node, const std::string& suffix, 
             ret = is_after_item ? ImGui::GetIO().MouseDelta.y : (-ImGui::GetIO().MouseDelta.y);
     }
 
-    ImGui::PopStyleColor(1);
-    ImGui::PopStyleVar();
+    if (ImGui::IsItemActive() || ImGui::IsItemHovered())
+        ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
+
+    // Discard splitter movement when the mouse is outside the hover rectangle and on the side opposite to the moving direction.
+    if (ImGui::IsItemActive() && !ImGui::IsMouseHoveringRect(min, max, false)) {
+        const ImVec2 pos = ImGui::GetIO().MousePos;
+        const ImVec2 dir = ImGui::GetIO().MouseDelta;
+        if (( m_is_horizontal && ( (pos.x < min.x && dir.x > 0) || (pos.x > max.x && dir.x < 0) ) )  ||
+            (!m_is_horizontal && ( (pos.y < min.y && dir.y > 0) || (pos.y > max.y && dir.y < 0) ) ) )
+            ret = 0.f;
+    }
+
+    if (!m_invisible_btn) {
+        ImGui::PopStyleColor();
+        ImGui::PopStyleVar();
+    }
 
     return ret;
 }
@@ -196,26 +231,16 @@ void SplitterSizer::render(Vec2f win_size, Vec2f win_pos)
 
     // calculate count of visible splitters
     int splitters_cnt = 0;
-    bool    is_flex_prev_child = false;
+
     for (int row = 0; row < rows; row++) {
         for (int col = 0; col < cols; col++) {
             YGNodeRef node = get_node(col, row);
-
-            const bool is_visible = YGNodeStyleGetDisplay(m_is_horizontal ? YGNodeGetParent(node) : node) != YGDisplayNone;
-            const bool is_flex = YGNodeStyleGetFlexGrow(m_is_horizontal ? YGNodeGetParent(node) : node) > 0.f;
-
-            if (is_flex_prev_child && is_visible)
+            if (YGNodeStyleGetDisplay(m_is_horizontal ? YGNodeGetParent(node) : node) != YGDisplayNone) // is_visible
                 splitters_cnt++;
-
-            if (size_t(m_is_horizontal ? col : row) + 1 == size_t(m_is_horizontal ? cols : rows))
-                break;
-
-            if (!is_flex && is_visible)
-                splitters_cnt++;
-
-            is_flex_prev_child = is_flex;
         }
     }
+    if (splitters_cnt > 0)
+        splitters_cnt--;
 
     // decrease size in respect to the splitters
     if (m_is_horizontal)
@@ -239,7 +264,8 @@ void SplitterSizer::render(Vec2f win_size, Vec2f win_pos)
 
     Vec2f splitter_pos = win_pos;
 
-    is_flex_prev_child = false;
+    bool is_flex_on_your_left = false;
+
     for (int row = 0; row < rows; row++) {
         for (int col = 0; col < cols; col++) {
 
@@ -252,7 +278,11 @@ void SplitterSizer::render(Vec2f win_size, Vec2f win_pos)
             const bool is_visible = YGNodeStyleGetDisplay(m_is_horizontal ? YGNodeGetParent(node) : node) != YGDisplayNone;
             const bool is_flex = YGNodeStyleGetFlexGrow(m_is_horizontal ? YGNodeGetParent(node) : node) > 0.f;
 
-            if (is_flex_prev_child && is_visible) {
+            if (!is_flex_on_your_left && is_visible && is_flex) {
+                is_flex_on_your_left = true;
+            }
+
+            if (is_visible && !is_flex && is_flex_on_your_left) {
                 apply_size(node, splitter(node, suffix, splitter_pos, false), win_size);
                 win_pos += m_splitter_spacing;
                 splitter_pos += m_splitter_spacing;
@@ -270,12 +300,11 @@ void SplitterSizer::render(Vec2f win_size, Vec2f win_pos)
             if (i + 1 == size_t(m_is_horizontal ? cols : rows))
                 break;
 
-            if (!is_flex && is_visible) {
+            if (is_visible && !is_flex && !is_flex_on_your_left) {
                 apply_size(node, splitter(node, suffix, splitter_pos), win_size);
                 win_pos += m_splitter_spacing;
                 splitter_pos += m_splitter_spacing;
             }
-            is_flex_prev_child = is_flex;
         }
     }
 

@@ -4,7 +4,7 @@
 #include "Slic3r/App/Yoga/SplitterSizer.hpp"
 #include "Slic3r/App/Yoga/Toolbar.hpp"
 
-#define main_with_splitters 0
+#define MAIN_WITH_SPLITTERS 1
 
 namespace Slic3r::App {
 
@@ -58,10 +58,10 @@ protected:
     virtual void add_middle_flex_sizer();
     virtual void init_right_sizer()  = 0;
 
-    void add_item(Yoga::FlexSizer& sizer, std::function<void(Vec2f, Vec2f)> render_item_fn, std::string item_name, Yoga::Margins margins = Yoga::Margins(-1.f, -1.f));
+    void add_panel(Yoga::FlexSizer& sizer, std::function<void(Vec2f, Vec2f)> render_item_fn, std::string win_name, Vec2f win_paddings = { -1.f, -1.f });
 
 private:
-#if main_with_splitters
+#if MAIN_WITH_SPLITTERS
     Yoga::SplitterSizer     m_main_sizer;
 #else
     Yoga::FlexSizer         m_main_sizer;

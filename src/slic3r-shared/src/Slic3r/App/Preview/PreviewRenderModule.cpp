@@ -755,7 +755,7 @@ void PreviewRenderModule::init_scene_layout()
 
     m_layout.add_toolbar_item(ToolbarID::Top, ImGui::ToolbarObjects, "Object List", "Ctrl + Alt + O",
         { [this]() { m_layout.show_left(0, show_object_list = !show_object_list); },
-          cb_is_visible, cb_is_enable, []() { return !show_object_list; } });
+          cb_is_visible, cb_is_enable, []() { return show_object_list; } });
 
     m_layout.add_toolbar_item(ToolbarID::Bottom, ImGui::ToolbarGraph, "Legend", "", {
         [this]() { m_viewer.toggle_legend_visible(); },
