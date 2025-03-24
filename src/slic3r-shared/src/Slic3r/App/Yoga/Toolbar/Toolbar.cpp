@@ -3,9 +3,8 @@
 #include "Slic3r/App/Yoga/Toolbar/Toolbar.hpp"
 #include "Slic3r/Log.hpp"
 #include <chrono>
-
 #include <Yoga.h>
-#include <string.h>
+#include "imgui/imgui_internal.h"
 
 namespace Slic3r::App::Yoga::Toolbar {
 
@@ -550,7 +549,7 @@ void Toolbar::process_collapse(ImVec2 win_size)
     }
 }
 
-void Toolbar::render(ImVec2 win_size/* = ImVec2()*/, ImVec2 win_pos /*= ImVec2(-1.f, -1.f)*/)
+void Toolbar::render(Domain::Vec2f size, Domain::Vec2f pos)
 {
     if (!m_finalized)
         finalize();
@@ -559,6 +558,8 @@ void Toolbar::render(ImVec2 win_size/* = ImVec2()*/, ImVec2 win_pos /*= ImVec2(-
     if (m_running)
         m_elapsed_time = std::chrono::duration<float>( std::chrono::steady_clock::now() - start_time).count();
 
+    ImVec2 win_size = ImVec2(size.x(), size.y());
+    ImVec2 win_pos  = ImVec2(pos.x(), pos.y());
     resize(win_size);
 
     if (win_pos.x < 0 && win_pos.y < 0)

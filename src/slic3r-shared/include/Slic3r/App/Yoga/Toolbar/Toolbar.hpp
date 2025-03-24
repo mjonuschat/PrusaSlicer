@@ -6,15 +6,12 @@
 #pragma once
 
 #include "yoga/Yoga.h"
-#include "imgui/imgui.h"
-#include "imgui/imgui_internal.h"
 
 #include "Slic3r/App/Yoga/Toolbar/Item.hpp"
 #include "Slic3r/App/Yoga/Align.hpp"
+#include "Slic3r/Domain/Vectors.hpp"
 
 #include <map>
-#include <string>
-#include <functional>
 
 namespace Slic3r::App::Yoga::Toolbar {
 
@@ -44,7 +41,7 @@ public:
     void    add_separator(float size);
     void    set_margins(float h_margin, float v_margin);
 
-    void    render(ImVec2 win_size = ImVec2(), ImVec2 win_pos = ImVec2(-1.f, -1.f));
+    void    render(Domain::Vec2f win_size = Domain::Vec2f(0.f, 0.f), Domain::Vec2f win_pos = Domain::Vec2f(-1.f, -1.f));
     void    layout();
     void    collapse_if_needed();
 

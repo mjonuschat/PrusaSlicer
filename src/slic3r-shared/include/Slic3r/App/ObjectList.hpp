@@ -1,5 +1,6 @@
 #pragma once
 #include "imgui/imgui.h"
+#include "Slic3r/Domain/Vectors.hpp"
 
 #include <map>
 #include <set>
@@ -32,7 +33,7 @@ class ImguiRender;
 
 namespace Slic3r::App {
 
-struct MultiSelectionStorage : public ImGuiSelectionBasicStorage
+struct MultiSelectionStorage : public ImGuiSelectionBasicStorage // !!! move into separate files with imgui includes
 {
     // override ApplyRequests to check if selection was changed
     void ApplyRequests(ImGuiMultiSelectIO* ms_io);
@@ -81,15 +82,15 @@ public:
         m_imgui_render = imgui_render;
     }
 
-    void render(ImVec2 pos, ImVec2 size);
+    void render(Domain::Vec2f pos, Domain::Vec2f size);
 
 protected:
 
 private:
 
     void update_selection_from_scene();
-    bool render_tree(ImVec2 size);
-    void render_header(ImVec2 pos, ImVec2 size);
+    bool render_tree(Domain::Vec2f size);
+    void render_header(Domain::Vec2f pos, Domain::Vec2f size);
     bool render_config_containers();
     bool render_out_of_beds();
     bool render_bed_node(const Domain::BedInstance* bed, bool is_sla_config);

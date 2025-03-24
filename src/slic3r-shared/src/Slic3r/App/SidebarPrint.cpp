@@ -8,10 +8,10 @@
 
 namespace Slic3r::App {
 
-void SidebarPrint::render(ImVec2 pos, ImVec2 size)
+void SidebarPrint::render(Domain::Vec2f pos, Domain::Vec2f size)
 {
-    ImGui::Button("Balanced settings", ImVec2(size.x, 0.f));
-    ImGui::Button("Other button", ImVec2(size.x, 0.f));
+    ImGui::Button("Balanced settings", ImVec2(size.x(), 0.f));
+    ImGui::Button("Other button", ImVec2(size.x(), 0.f));
 }
 
 }// Slic3r::App::Plater namespace

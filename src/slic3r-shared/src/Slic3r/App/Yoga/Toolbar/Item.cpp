@@ -6,7 +6,7 @@
 #include "Slic3r/Log.hpp"
 
 #include <Yoga.h>
-#include <string.h>
+#include "imgui/imgui_internal.h"
 #include <boost/nowide/convert.hpp>
 
 namespace Slic3r::App::Yoga::Toolbar {
@@ -155,7 +155,7 @@ void Item::render_sub_toolbar(ImRect item_bb, ImRect parent_bb, bool force)
     }
 
     if (active_sub_toolbar && m_sub_toolbar == active_sub_toolbar && (force || ImGui::IsMouseHoveringRect(sub_tb_rect.Min, sub_tb_rect.Max, false)))
-        m_sub_toolbar->render(sub_tb_size, sub_tb_pos);
+        m_sub_toolbar->render(Domain::Vec2f(sub_tb_size.x, sub_tb_size.y), Domain::Vec2f(sub_tb_pos.x, sub_tb_pos.y));
 
     if (!ImGui::IsMouseHoveringRect(sub_tb_rect.Min, sub_tb_rect.Max, false))
         sub_tb_rect = ImRect(); //invalidate subtoolbar
@@ -179,15 +179,15 @@ bool Item::render(ImRect item_bb, ImRect parent_bb, ImDrawFlags corners_flag, Im
 
     if (button_behav.pressed) {
         if (m_callbacks.action)
-            m_callbacks.action(item_bb);
+            m_callbacks.action();
     }
     else if (button_behav.pressed_arrow) {
         if (m_callbacks.action_on_arrow)
-            m_callbacks.action_on_arrow(item_bb);
+            m_callbacks.action_on_arrow();
     }
     else if (button_behav.hovered_arrow) {
         if (m_callbacks.action_on_arrow_hovering)
-            m_callbacks.action_on_arrow_hovering(item_bb);
+            m_callbacks.action_on_arrow_hovering();
         else
             render_tooltip(item_bb.Min, item_bb.GetSize(), tooltip_pivot, true);
     }

@@ -1,5 +1,5 @@
 #pragma once
-#include "imgui/imgui.h"
+#include "Slic3r/Domain/Vectors.hpp"
 #include <functional>
 
 namespace Slic3r::App::Render {
@@ -18,7 +18,7 @@ public:
         m_slice_fn = slice_fn;
     }
 
-    void render(ImVec2 pos, ImVec2 size);
+    void render(Domain::Vec2f pos, Domain::Vec2f size);
 
 protected:
 

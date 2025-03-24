@@ -187,7 +187,7 @@ void PreviewRenderModule::render_imgui()
     // So, call it here.
     init_scene_layout();
 
-    m_layout.render(ImVec2(m_screen_info.logical_width(), m_screen_info.logical_height()));
+    m_layout.render(Vec2f(m_screen_info.logical_width(), m_screen_info.logical_height()));
 
     WrapperLayoutData layout;
     // TODO: setup layout if needed
@@ -530,31 +530,31 @@ void PreviewRenderModule::init_scene_layout()
     DEBUG_ASSERT(m_imgui_render != nullptr);
     ol->init(&m_project_interactor, m_imgui_render);
 
-    m_layout.set_object_list_render_fn([ol](ImVec2 size, ImVec2 pos) -> void
+    m_layout.set_object_list_render_fn([ol](Vec2f size, Vec2f pos) -> void
         { ol->render(pos, size); });
 
-    m_layout.set_cube_view_render_fn([](ImVec2 size, ImVec2 pos) -> void
+    m_layout.set_cube_view_render_fn([](Vec2f size, Vec2f pos) -> void
         { CubeView::render(pos, size); });
 
-    m_layout.set_sidebar_bed_render_fn([](ImVec2 size, ImVec2 pos) -> void
+    m_layout.set_sidebar_bed_render_fn([](Vec2f size, Vec2f pos) -> void
         { SidebarBed::render(pos, size); });
 
-    m_layout.set_sidebar_print_render_fn([](ImVec2 size, ImVec2 pos) -> void
+    m_layout.set_sidebar_print_render_fn([](Vec2f size, Vec2f pos) -> void
         { SidebarPrint::render(pos, size); });
 // <<  
-    m_layout.set_legend_render_fn([this](ImVec2 size, ImVec2 pos) -> void
+    m_layout.set_legend_render_fn([this](Vec2f size, Vec2f pos) -> void
         { ImGui::Text("Legend"); });
 
-    m_layout.set_sidebar_auto_reslice_render_fn([](ImVec2 size, ImVec2 pos) -> void
+    m_layout.set_sidebar_auto_reslice_render_fn([](Vec2f size, Vec2f pos) -> void
         { Preview::SidebarAutoReslice::render(pos, size); });
 
-    m_layout.set_sidebar_after_slice_render_fn([](ImVec2 size, ImVec2 pos) -> void
+    m_layout.set_sidebar_after_slice_render_fn([](Vec2f size, Vec2f pos) -> void
         { Preview::SidebarAfterSlice::render(pos, size); });
 
-    m_layout.set_layer_slider_render_fn([](ImVec2 size, ImVec2 pos) -> void
+    m_layout.set_layer_slider_render_fn([](Vec2f size, Vec2f pos) -> void
         { ; });
 
-    m_layout.set_gcode_slider_render_fn([](ImVec2 size, ImVec2 pos) -> void
+    m_layout.set_gcode_slider_render_fn([](Vec2f size, Vec2f pos) -> void
         { ; });
 
     // init toolbars
@@ -567,23 +567,23 @@ void PreviewRenderModule::init_scene_layout()
     static bool show_legend         { true };
 
     m_layout.add_toolbar_item(ToolbarID::Top, ImGui::ToolbarObjects, "Object List", "Ctrl + Alt + O",
-        { [this](ImRect) { m_layout.show_left(0, show_object_list = !show_object_list); },
+        { [this]() { m_layout.show_left(0, show_object_list = !show_object_list); },
           cb_is_visible, cb_is_enable, []() { return !show_object_list; } });
 
     m_layout.add_toolbar_item(ToolbarID::Bottom, ImGui::ToolbarGraph, "Legend", "",
-        { [this](ImRect) { m_layout.show_left(1, show_legend = !show_legend); },
+        { [this]() { m_layout.show_left(1, show_legend = !show_legend); },
           cb_is_visible, cb_is_enable, []() { return show_legend; } });
 
     // >> just for testing 
     m_layout.add_toolbar_item(ToolbarID::Middle, ImGui::ToolbarAdd, "Show/Hide gcode slider", "", { 
-        [this](ImRect) {
+        [this]() {
             static bool show {true};
             m_layout.show_gcode_sizer(show = !show);
         }
     });
     m_layout.add_toolbar_separator(ToolbarID::Middle);
     m_layout.add_toolbar_item(ToolbarID::Middle, ImGui::ToolbarMove, "Show/Hide layer slider", "", {
-        [this](ImRect) {
+        [this]() {
             static bool show {true};
             m_layout.show_slider_sizer(show = !show);
         }

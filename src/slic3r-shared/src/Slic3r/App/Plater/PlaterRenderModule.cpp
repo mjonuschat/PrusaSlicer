@@ -67,23 +67,23 @@ void PlaterRenderModule::init_scene_layout()
     DEBUG_ASSERT(m_imgui_render != nullptr);
     ol->init(&m_project_interactor, m_imgui_render);
 
-    m_layout.set_object_list_render_fn([ol](ImVec2 size, ImVec2 pos) -> void
+    m_layout.set_object_list_render_fn([ol](Vec2f size, Vec2f pos) -> void
         { ol->render(pos, size); });
 
-    m_layout.set_cube_view_render_fn([](ImVec2 size, ImVec2 pos) -> void
+    m_layout.set_cube_view_render_fn([](Vec2f size, Vec2f pos) -> void
         { CubeView::render(pos, size); });
 
-    m_layout.set_sidebar_bed_render_fn([](ImVec2 size, ImVec2 pos) -> void
+    m_layout.set_sidebar_bed_render_fn([](Vec2f size, Vec2f pos) -> void
         { SidebarBed::render(pos, size); });
 
-    m_layout.set_sidebar_print_render_fn([](ImVec2 size, ImVec2 pos) -> void
+    m_layout.set_sidebar_print_render_fn([](Vec2f size, Vec2f pos) -> void
         { SidebarPrint::render(pos, size); });
 // <<
-    m_layout.set_history_render_fn([](ImVec2 size, ImVec2 pos) -> void
+    m_layout.set_history_render_fn([](Vec2f size, Vec2f pos) -> void
         { Plater::History::render(pos, size); });
 
     m_sidebar_slice_panel.init(m_imgui_render, [this] {m_project_interactor.slicing_interactor().slice_all(); });
-    m_layout.set_sidebar_slice_render_fn([this](ImVec2 size, ImVec2 pos) -> void
+    m_layout.set_sidebar_slice_render_fn([this](Vec2f size, Vec2f pos) -> void
         { m_sidebar_slice_panel.render(pos, size); });
 
     // init toolbars
@@ -97,15 +97,15 @@ void PlaterRenderModule::init_scene_layout()
     static bool show_sidebar{ true };
 
     m_layout.add_toolbar_item(ToolbarID::Top, ImGui::ToolbarObjects, "Object List", "Ctrl + Alt + O",
-        { [this](ImRect) { m_layout.show_left(0, show_object_list = !show_object_list); },
+        { [this]() { m_layout.show_left(0, show_object_list = !show_object_list); },
         cb_is_visible, cb_is_enable, []() { return show_object_list; } });
 
     m_layout.add_toolbar_item(ToolbarID::Bottom, ImGui::ToolbarHistory, "Actions History", "Shift + Alt + H",
-        { [this](ImRect) { m_layout.show_left(1, show_history = !show_history); }, 
+        { [this]() { m_layout.show_left(1, show_history = !show_history); }, 
         cb_is_visible, cb_is_enable, []() { return show_history; } });
 
     m_layout.add_toolbar_item(ToolbarID::Middle, ImGui::ToolbarAdd, "Add...", "Ctrl + I", { 
-        [this](ImRect) {
+        [this]() {
             auto& scene_interactor = m_project_interactor.scene_interactor();
             const auto& bed = m_project_interactor.selected_project().config_containers().front()->bed();
 
@@ -118,10 +118,10 @@ void PlaterRenderModule::init_scene_layout()
             m_scene_presenter->scene().log_nodes();
         }
     });
-//    m_layout.add_toolbar_item(ToolbarID::Middle, ImGui::ToolbarArrange, "Arrange", "A", { [](ImRect) {} });
+//    m_layout.add_toolbar_item(ToolbarID::Middle, ImGui::ToolbarArrange, "Arrange", "A", { []() {} });
     m_layout.add_toolbar_separator(ToolbarID::Middle);
     m_layout.add_toolbar_item(ToolbarID::Middle, ImGui::ToolbarMove, "Move", "M", {
-        [this](ImRect) {
+        [this]() {
             m_gizmo_manager->toggle_activate_tool(Scene::ToolType::Translation, ptFFF);
         }, 
         []() { return true; }, 
@@ -131,7 +131,7 @@ void PlaterRenderModule::init_scene_layout()
         }
     });
     m_layout.add_toolbar_item(ToolbarID::Middle, ImGui::ToolbarRotation, "Rotate", "R", {
-        [this](ImRect) {
+        [this]() {
             m_gizmo_manager->toggle_activate_tool(Scene::ToolType::Rotation, ptFFF);
         }, 
         []() { return true; }, 
@@ -789,7 +789,7 @@ void PlaterRenderModule::render_imgui()
     // So, call it here.
     init_scene_layout();
 
-    m_layout.render(ImVec2(m_screen_info.logical_width(), m_screen_info.logical_height()));
+    m_layout.render(Vec2f(m_screen_info.logical_width(), m_screen_info.logical_height()));
 
     m_scene_presenter->render_imgui(m_screen_info);
 

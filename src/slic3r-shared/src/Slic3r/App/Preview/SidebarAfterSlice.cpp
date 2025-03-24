@@ -1,9 +1,6 @@
 #include "Slic3r/App/Preview/SidebarAfterSlice.hpp"
 #include "Slic3r/App/Imgui/ImguiExtension.hpp"
 
-#ifndef IMGUI_DEFINE_MATH_OPERATORS
-#define IMGUI_DEFINE_MATH_OPERATORS
-#endif
 #include <imgui/imgui_internal.h>
 
 namespace Slic3r::App::Preview {
@@ -18,7 +15,7 @@ static void add_centered_icon_button(wchar_t icon, const std::string& id)
     Imgui::icon_button(icon, btn_sz, id);
 }
 
-void SidebarAfterSlice::render(ImVec2 pos, ImVec2 size)
+void SidebarAfterSlice::render(Domain::Vec2f pos, Domain::Vec2f size)
 {
     ImGuiTableFlags table_flags = ImGuiTableFlags_Resizable | ImGuiTableFlags_NoBordersInBody | ImGuiTableFlags_NoPadInnerX;
     if (ImGui::BeginTable("##ObjectListTable", 4, table_flags)) {
@@ -41,7 +38,7 @@ void SidebarAfterSlice::render(ImVec2 pos, ImVec2 size)
 
     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.99f, 0.41f, 0.2f, 1.0f));
     const float next_pos = 40.f + GImGui->Style.ItemSpacing.x;
-    ImGui::Button("Print", ImVec2(size.x - next_pos, 45.f));
+    ImGui::Button("Print", ImVec2(size.x() - next_pos, 45.f));
     ImGui::PopStyleColor();
     ImGui::SetWindowFontScale(1.f);
 }

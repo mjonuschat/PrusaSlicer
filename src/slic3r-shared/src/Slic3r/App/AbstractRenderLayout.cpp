@@ -2,8 +2,21 @@
 #include "Slic3r/Log.hpp"
 
 #include <Yoga.h>
+#include <imgui_internal.h>
 
 namespace Slic3r::App {
+
+using Vec2f = Yoga::Vec2f;
+
+Vec2f AbstractRenderLayout::win_padding()
+{
+    return Vec2f(GImGui->Style.WindowPadding.x, GImGui->Style.WindowPadding.y);
+}
+
+Vec2f AbstractRenderLayout::frame_padding()
+{
+    return Vec2f(GImGui->Style.FramePadding.x, GImGui->Style.FramePadding.y);
+}
 
 void AbstractRenderLayout::init_main_sizer()
 {
@@ -12,7 +25,7 @@ void AbstractRenderLayout::init_main_sizer()
     m_main_sizer.set_splitter_padding(0.f);
     m_main_sizer.set_splitter_sz(3.f);
 #else
-    m_main_sizer.init(3, 1, ImVec2(), GImGui->Style.WindowPadding * 0.5f);
+    m_main_sizer.init(3, 1, Vec2f(0.f, 0.f), Yoga::Margins(win_padding() * 0.5f));
 #endif
     m_main_sizer.set_grow_col(1);
 
@@ -26,17 +39,20 @@ void AbstractRenderLayout::init_main_sizer()
     m_main_sizer.add(right_sizer);
 }
 
-void AbstractRenderLayout::add_item(Yoga::FlexSizer& sizer, std::function<void(ImVec2, ImVec2)> render_item_fn, std::string item_name, ImVec2 padding)
+void AbstractRenderLayout::add_item(Yoga::FlexSizer& sizer, std::function<void(Vec2f, Vec2f)> render_item_fn, std::string item_name, Yoga::Margins margins /*= Yoga::Margins(-1.f, -1.f)*/)
 {
     static std::vector<Yoga::FlexSizer> sizers_in;
     if (sizers_in.empty())
         sizers_in.reserve(50);
 
+    if (margins.left < 0.f || margins.top < 0.f)
+        margins = Yoga::Margins(frame_padding() * 4.f);
+
     Yoga::FlexSizer& sizer_in = sizers_in.emplace_back(Yoga::FlexSizer());
-    sizer_in.init(1, 1, ImVec2(), padding);
+    sizer_in.init(1, 1, Vec2f(0.f, 0.f), margins);
     sizer_in.set_grow_col(0);
 
-    sizer_in.add([render_item_fn](ImVec2 size, ImVec2 pos) { 
+    sizer_in.add([render_item_fn](Vec2f size, Vec2f pos) {
         render_item_fn(size, pos); }, { Yoga::AlignH::Left, Yoga::AlignV::Top }, item_name + "_in");
     sizer.add(sizer_in, item_name);
 }
@@ -46,7 +62,7 @@ const static float max_tt_size = 50.f;
 
 void AbstractRenderLayout::init_view_cube_sizer()
 {
-    view_cube_sizer.init(1, 1, ImVec2(70.f, 0.f));
+    view_cube_sizer.init(1, 1, Vec2f(70.f, 0.f));
     view_cube_sizer.set_grow_col(0);
     view_cube_sizer.add(m_cb_cube_view_render, Yoga::Align(), "cube_view");
 }
@@ -71,13 +87,13 @@ void AbstractRenderLayout::init_toolbars_sizer()
     m_toolbars_sizer.set_grow_row(0, 0.f);
     m_toolbars_sizer.set_grow_row(2, 0.f);
 
-    m_toolbars_sizer.add([this](ImVec2 size, ImVec2 pos) {
+    m_toolbars_sizer.add([this](Vec2f size, Vec2f pos) {
         top_toolbar.render(size, pos);
     });
-    m_toolbars_sizer.add([this](ImVec2 size, ImVec2 pos) {
+    m_toolbars_sizer.add([this](Vec2f size, Vec2f pos) {
         middle_toolbar.render(size, pos);
     });
-    m_toolbars_sizer.add([this](ImVec2 size, ImVec2 pos) {
+    m_toolbars_sizer.add([this](Vec2f size, Vec2f pos) {
         bottom_toolbar.render(size, pos);
     });
 }
@@ -100,7 +116,7 @@ void AbstractRenderLayout::init_middle_sizer()
     if (!m_toolbars_sizer.is_inited())
         init_toolbars_sizer();
 
-    middle_sizer.init(2, 1, ImVec2(), GImGui->Style.WindowPadding * 0.5f);
+    middle_sizer.init(2, 1, Vec2f(0.f, 0.f), Yoga::Margins(win_padding() * 0.5f));
     middle_sizer.set_grow_col(1);
     middle_sizer.add(m_toolbars_sizer);
     add_middle_flex_sizer();
@@ -125,7 +141,7 @@ void AbstractRenderLayout::add_toolbar_separator(ToolbarID id, float size)
     FlexToolbar& toolbar = id == ToolbarID::Top     ? top_toolbar :
                            id == ToolbarID::Middle  ? middle_toolbar : bottom_toolbar;
 
-    toolbar.add_separator(size);
+    toolbar.add_separator(size < 0.f ? win_padding().y() : size);
     layout_toolbars_sizer();
 }
 
@@ -251,7 +267,7 @@ private:
     size_t m_vars_cnt{ 0 };
 };
 
-void AbstractRenderLayout::render(ImVec2 size)
+void AbstractRenderLayout::render(Vec2f size)
 {
     if (!m_main_sizer.is_inited())
         init_main_sizer();
@@ -259,7 +275,7 @@ void AbstractRenderLayout::render(ImVec2 size)
     SetOurStyleColors();
     {
         SetOurStyleVars our_vars;
-        m_main_sizer.render(size, ImVec2());
+        m_main_sizer.render(size, Vec2f(0.f, 0.f));
     }
 }
 

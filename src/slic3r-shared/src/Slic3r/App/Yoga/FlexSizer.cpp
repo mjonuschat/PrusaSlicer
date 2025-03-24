@@ -3,9 +3,8 @@
 #include "Slic3r/App/Yoga/FlexSizer.hpp"
 
 #include <Yoga.h>
+#include <imgui_internal.h>
 #include <string.h>
-
-#include <imgui/imgui_internal.h>
 
 namespace Slic3r::App::Yoga {
 
@@ -35,9 +34,19 @@ static YGNodeRef add_node(YGNodeRef parent_node, float width = -1.f, float heigh
     YGNodeInsertChild(parent_node, node, YGNodeGetChildCount(parent_node));
 
     return node;
-};
+}
 
-static YGSize get_item_size(std::function<void(ImVec2, ImVec2)> render_node_fn, bool single_item = true)
+static ImVec2 to_im(Vec2f val)
+{
+    return ImVec2(val.x(), val.y());
+}
+
+static Vec2f from_im(ImVec2 val)
+{
+    return Vec2f(val.x, val.y);
+}
+
+static YGSize get_item_size(std::function<void(Vec2f, Vec2f)> render_node_fn, bool single_item = true)
 {
     if (!render_node_fn)
         return YGSize({ 0.f, 0.f });
@@ -46,7 +55,7 @@ static YGSize get_item_size(std::function<void(ImVec2, ImVec2)> render_node_fn, 
 
     // render widget with 0 alpha and store thems size
     ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0);
-        render_node_fn(ImVec2(), ImVec2());
+        render_node_fn(Vec2f(0.f, 0.f), Vec2f(0.f, 0.f));
     ImGui::PopStyleVar();
 
     if (single_item) {
@@ -74,21 +83,21 @@ static YGSize get_item_size(std::function<void(ImVec2, ImVec2)> render_node_fn, 
     return YGSize({ ImMax(10.f, size.x), ImMax(10.f, size.y) });
 }
 
-static ImVec2 get_size(YGNodeRef node)
+static Vec2f get_size(YGNodeRef node)
 {
-    return ImVec2 (YGNodeLayoutGetWidth(node), YGNodeLayoutGetHeight(node));
+    return Vec2f (YGNodeLayoutGetWidth(node), YGNodeLayoutGetHeight(node));
 }
 
-static ImVec2 get_render_pos(YGNodeRef node)
+static Vec2f get_render_pos(YGNodeRef node)
 {
     YGNodeRef col_node = YGNodeGetParent(node);
     YGNodeRef child = YGNodeGetChild(node, 0);
 
-    return ImVec2  (YGNodeLayoutGetLeft(col_node) + YGNodeLayoutGetLeft(child) + YGNodeLayoutGetLeft(node),
-                    YGNodeLayoutGetTop (col_node) + YGNodeLayoutGetTop (child) + YGNodeLayoutGetTop (node));
+    return Vec2f (YGNodeLayoutGetLeft(col_node) + YGNodeLayoutGetLeft(child) + YGNodeLayoutGetLeft(node),
+                  YGNodeLayoutGetTop (col_node) + YGNodeLayoutGetTop (child) + YGNodeLayoutGetTop (node));
 }
 
-FlexSizer::FlexSizer(int col_cnt, int row_cnt, ImVec2 min_size/* = ImVec2(0.f, 0.f)*/, ImVec2 margins/* = ImVec2(0.f, 0.f)*/)
+FlexSizer::FlexSizer(int col_cnt, int row_cnt, Vec2f min_size/* = Vec2f(0.f, 0.f)*/, Margins margins/* = Margins(0.f, 0.f)*/)
 {
     init(col_cnt, row_cnt, min_size, margins);
 }
@@ -98,7 +107,7 @@ bool FlexSizer::is_inited()
     return m_root && YGNodeGetChildCount(m_root) > 0;
 }
 
-void FlexSizer::init(int col_cnt, int row_cnt, ImVec2 min_size/* = ImVec2(0.f, 0.f)*/, ImVec2 margins/* = ImVec2(0.f, 0.f)*/)
+void FlexSizer::init(int col_cnt, int row_cnt, Vec2f min_size/* = Vec2f(0.f, 0.f)*/, Margins margins/* = Margins(0.f, 0.f)*/)
 {
     if (m_root) {
         // Clean up Yoga
@@ -107,11 +116,10 @@ void FlexSizer::init(int col_cnt, int row_cnt, ImVec2 min_size/* = ImVec2(0.f, 0
         m_node_rendering.clear();
     }
 
-    m_h_margin = margins.x;
-    m_v_margin = margins.y;
-    m_min_size = YGSize({ min_size.x, min_size.y });
+    m_margins = margins;
+    m_min_size = YGSize({ min_size.x(), min_size.y() });
 
-    m_root = create_node(min_size.x, min_size.y);
+    m_root = create_node(min_size.x(), min_size.y());
     YGNodeStyleSetFlexDirection(m_root, YGFlexDirectionRow);
 
     for (int i =0; i < col_cnt; i++) {
@@ -119,10 +127,10 @@ void FlexSizer::init(int col_cnt, int row_cnt, ImVec2 min_size/* = ImVec2(0.f, 0
         YGNodeRef col_node = add_node(m_root);
         YGNodeStyleSetFlexDirection(col_node, YGFlexDirectionColumn);
 
-        if (m_h_margin > 0.f) {
-            YGNodeStyleSetMargin(col_node, YGEdgeLeft,  m_h_margin);
-            YGNodeStyleSetMargin(col_node, YGEdgeRight, m_h_margin);
-        }
+        if (margins.left > 0.f)
+            YGNodeStyleSetMargin(col_node, YGEdgeLeft,  margins.left);
+        if (margins.right > 0.f)
+            YGNodeStyleSetMargin(col_node, YGEdgeRight, margins.right);
 
         // Create the row nodes
         for (size_t j = 0; j < row_cnt; j++) {
@@ -132,10 +140,10 @@ void FlexSizer::init(int col_cnt, int row_cnt, ImVec2 min_size/* = ImVec2(0.f, 0
             // To promise a same height for all cells in one row we have to set flex
             YGNodeStyleSetFlex(row_node, 1.f);
 
-            if (m_v_margin > 0.f) {
-                YGNodeStyleSetMargin(row_node, YGEdgeTop,    m_v_margin);
-                YGNodeStyleSetMargin(row_node, YGEdgeBottom, m_v_margin);
-            }
+            if (margins.top > 0.f)
+                YGNodeStyleSetMargin(row_node, YGEdgeTop,    margins.top);
+            if (margins.bottom > 0.f)
+                YGNodeStyleSetMargin(row_node, YGEdgeBottom, margins.bottom);
         }
     }
 }
@@ -171,7 +179,7 @@ YGSize FlexSizer::get_min_size()
                     if (height < h)
                         height = h;
                 }
-                result.height += height + 2 * m_v_margin;
+                result.height += height + m_margins.top + m_margins.bottom;
             }
 
             YGNodeRef in_node = YGNodeGetChild(get_node(col, row), 0);
@@ -180,13 +188,13 @@ YGSize FlexSizer::get_min_size()
             if (width < w)
                 width = w;
         }
-        result.width += width + 2 * m_h_margin;
+        result.width += width + m_margins.left + m_margins.right;
     }
 
     return result;
 }
 
-void FlexSizer::add(std::function<void(ImVec2, ImVec2)> render_fn /*= nullptr*/, Align align/* = Align({})*/, const std::string& win_name_prefix/* = std::string()*/)
+void FlexSizer::add(std::function<void(Vec2f, Vec2f)> render_fn /*= nullptr*/, Align align/* = Align({})*/, const std::string& win_name_prefix/* = std::string()*/)
 {
     int row = m_next_row;// current row, !!! get before get next node
     int col = m_next_col;// current col, !!! get before get next node
@@ -241,7 +249,7 @@ void FlexSizer::add(FlexSizer& inner_sizer, const std::string& win_name_prefix /
     YGNodeStyleSetAlignSelf(child, align.get_yoga_v_align());
 
     // save render function
-    m_node_rendering[node].render_fn = [&inner_sizer](ImVec2 size, ImVec2 pos) {
+    m_node_rendering[node].render_fn = [&inner_sizer](Vec2f size, Vec2f pos) {
         inner_sizer.render(size, pos);
     };
     if (!win_name_prefix.empty())
@@ -287,15 +295,15 @@ void FlexSizer::layout()
     ensure_min_size();
 }
 
-void FlexSizer::resize(ImVec2 win_size)
+void FlexSizer::resize(Vec2f win_size)
 {
     bool force_recalc = false;
-    if (win_size.x >= m_min_size.width && YGNodeLayoutGetWidth(m_root) != win_size.x) {
-        YGNodeStyleSetWidth(m_root, win_size.x);
+    if (win_size.x() >= m_min_size.width && YGNodeLayoutGetWidth(m_root) != win_size.x()) {
+        YGNodeStyleSetWidth(m_root, win_size.x());
         force_recalc = true;
     }
-    if (win_size.y >= m_min_size.height && YGNodeLayoutGetHeight(m_root) != win_size.y) {
-        YGNodeStyleSetHeight(m_root, win_size.y);
+    if (win_size.y() >= m_min_size.height && YGNodeLayoutGetHeight(m_root) != win_size.y()) {
+        YGNodeStyleSetHeight(m_root, win_size.y());
         force_recalc = true;
     }
 
@@ -321,34 +329,34 @@ void FlexSizer::ensure_min_size()
 }
 
 // used just for debugging
-void FlexSizer::render_nodes_bg(ImVec2 win_pos)
+void FlexSizer::render_nodes_bg(Vec2f win_pos)
 {
     int cols = get_cols();
     int rows = get_rows();
     
-    auto start = win_pos;
-    auto stop = start + get_size(m_root);
+    Vec2f start = win_pos;
+    Vec2f stop = start + get_size(m_root);
 
-    ImGui::RenderFrame(start, stop, IM_COL32(20, 220, 200, 25), false);
+    ImGui::RenderFrame(to_im(start), to_im(stop), IM_COL32(20, 220, 200, 25), false);
 
     for (int col = 0; col < cols; col++) {
 
         YGNodeRef node = YGNodeGetChild(m_root, col);
         if (node) {
-            auto pos = ImVec2(YGNodeLayoutGetLeft(m_root) + YGNodeLayoutGetLeft(node),
+            auto pos = Vec2f(YGNodeLayoutGetLeft(m_root) + YGNodeLayoutGetLeft(node),
                 YGNodeLayoutGetTop(m_root) + YGNodeLayoutGetTop(node));
-            auto start = win_pos + pos;
-            auto stop = start + get_size(node);
+            Vec2f start = win_pos + pos;
+            Vec2f stop = start + get_size(node);
 
-            ImGui::RenderFrame(start, stop, IM_COL32(220, 20, 200, 25), false);
+            ImGui::RenderFrame(to_im(start), to_im(stop), IM_COL32(220, 20, 200, 25), false);
 
             for (int row = 0; row < rows; row++) {
                 YGNodeRef node_row = get_node(col, row);
                 if (node_row) {
-                    auto start_row = start + ImVec2(YGNodeLayoutGetLeft(node_row), YGNodeLayoutGetTop(node_row));
+                    auto start_row = start + Vec2f(YGNodeLayoutGetLeft(node_row), YGNodeLayoutGetTop(node_row));
                     stop = start_row + get_size(node_row);
 
-                    ImGui::RenderFrame(start_row, stop, IM_COL32(200, 220, 20, 35), false);
+                    ImGui::RenderFrame(to_im(start), to_im(stop), IM_COL32(200, 220, 20, 35), false);
                 }
             }
         }
@@ -362,7 +370,7 @@ bool FlexSizer::has_parent_window()
     return parent_win_name != "Debug##Default";
 }
 
-void FlexSizer::render_node(YGNodeRef node, ImVec2 win_pos)
+void FlexSizer::render_node(YGNodeRef node, Vec2f win_pos)
 {
     if (node && YGNodeStyleGetDisplay(node) != YGDisplayNone) {
         // Send to the render function position and size of whole cell to use it, if needed
@@ -371,24 +379,26 @@ void FlexSizer::render_node(YGNodeRef node, ImVec2 win_pos)
         if (YGNodeStyleGetDisplay(col_node) == YGDisplayNone)
             return;
 
-        const ImVec2 cell_pos = win_pos + ImVec2(YGNodeLayoutGetLeft(col_node) + YGNodeLayoutGetLeft(node),
-                                                 YGNodeLayoutGetTop (col_node) + YGNodeLayoutGetTop (node));
-        const ImVec2 cell_size = ImVec2(YGNodeLayoutGetWidth(col_node), YGNodeLayoutGetHeight(node));
+        const Vec2f cell_pos = win_pos + Vec2f(YGNodeLayoutGetLeft(col_node) + YGNodeLayoutGetLeft(node),
+                                               YGNodeLayoutGetTop (col_node) + YGNodeLayoutGetTop (node));
+        const Vec2f cell_size = Vec2f(YGNodeLayoutGetWidth(col_node), YGNodeLayoutGetHeight(node));
 
-        std::function<void(ImVec2, ImVec2)> render_fn = m_node_rendering[node].render_fn;
+        std::function<void(Vec2f, Vec2f)> render_fn = m_node_rendering[node].render_fn;
 
-        if (has_parent_window())
-            ImGui::SetCursorScreenPos(win_pos + get_render_pos(node));
+        if (has_parent_window()) {
+            Vec2f pos = win_pos + get_render_pos(node);
+            ImGui::SetCursorScreenPos(to_im(pos));
+        }
 
         bool begin_separate_window = !m_node_rendering[node].win_name.empty() && render_fn;
         if (begin_separate_window) {
-            ImGui::SetNextWindowPos(cell_pos);
-            ImGui::SetNextWindowSize(cell_size);
+            ImGui::SetNextWindowPos(to_im(cell_pos));
+            ImGui::SetNextWindowSize(to_im(cell_size));
             ImGui::SetNextWindowBgAlpha(m_bg_alpha);
 
             // Discard current paddings and spacing of the window to corect apply of sizer's margins
             ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.f);
-            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.f, 0.f));
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2());
 
             ImGui::Begin(m_node_rendering[node].win_name.c_str(), nullptr,
                 ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoFocusOnAppearing);
@@ -405,15 +415,15 @@ void FlexSizer::render_node(YGNodeRef node, ImVec2 win_pos)
     }
 }
 
-void FlexSizer::render(ImVec2 win_size/* = ImVec2()*/, ImVec2 win_pos /*= ImVec2(-1.f, -1.f)*/)
+void FlexSizer::render(Vec2f win_size, Vec2f win_pos)
 {
     if (!m_finalized)
         finalize();
 
     resize(win_size);
 
-    if (win_pos.x < 0 && win_pos.y < 0)
-        win_pos = ImGui::GetCursorScreenPos();
+    if (win_pos.x() < 0 && win_pos.y() < 0)
+        win_pos = from_im(ImGui::GetCursorScreenPos());
 
     if (m_show_node_shapes)
         render_nodes_bg(win_pos);

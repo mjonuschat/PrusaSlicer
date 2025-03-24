@@ -3,17 +3,16 @@
 #include "Slic3r/App/Yoga/SplitterSizer.hpp"
 
 #include <Yoga.h>
-
-#include <imgui/imgui_internal.h>
+#include <imgui.h>
 
 namespace Slic3r::App::Yoga {
 
-SplitterSizer::SplitterSizer(int items_cnt, ImVec2 min_size/* = ImVec2()*/, bool is_horizontal /*= true*/)
+SplitterSizer::SplitterSizer(int items_cnt, Vec2f min_size, bool is_horizontal)
 {
     init(items_cnt, min_size, is_horizontal);
 }
 
-void SplitterSizer::init(int items_cnt, ImVec2 min_size/* = ImVec2()*/, bool is_horizontal/* = true*/)
+void SplitterSizer::init(int items_cnt, Vec2f min_size, bool is_horizontal)
 {
     FlexSizer::init(is_horizontal ? items_cnt : 1, is_horizontal ? 1 : items_cnt, min_size);
 
@@ -51,7 +50,7 @@ void SplitterSizer::set_splitter_padding(float val)
 void SplitterSizer::apply_splitter_spacing()
 {
     float splitter_space = m_splitter_sz + 2.f * m_splitter_padding;
-    m_splitter_spacing = m_is_horizontal ? ImVec2(splitter_space, 0.f) : ImVec2(0.f, splitter_space);
+    m_splitter_spacing = m_is_horizontal ? Vec2f(splitter_space, 0.f) : Vec2f(0.f, splitter_space);
 }
 
 void SplitterSizer::apply_width(YGNodeRef node, float delta, float width)
@@ -108,20 +107,20 @@ void SplitterSizer::apply_height(YGNodeRef node, float delta, float height)
     }
 }
 
-void SplitterSizer::apply_size(YGNodeRef node, float delta, ImVec2 size)
+void SplitterSizer::apply_size(YGNodeRef node, float delta, Vec2f size)
 {
     if (m_is_horizontal)
-        apply_width(node, delta, size.x);
+        apply_width(node, delta, size.x());
     else 
-        apply_height(node, delta, size.y);
+        apply_height(node, delta, size.y());
 }
 
-float SplitterSizer::render_splitter(YGNodeRef node, const std::string& suffix, ImVec2 pos, bool is_after_item/* = true*/)
+float SplitterSizer::render_splitter(YGNodeRef node, const std::string& suffix, Vec2f pos, bool is_after_item/* = true*/)
 {
     float ret = 0.f;
 
-    pos += m_is_horizontal ? ImVec2(m_splitter_padding, 0.f) : ImVec2(0.f, m_splitter_padding);
-    ImGui::SetCursorScreenPos(pos);
+    pos += m_is_horizontal ? Vec2f(m_splitter_padding, 0.f) : Vec2f(0.f, m_splitter_padding);
+    ImGui::SetCursorScreenPos(ImVec2(pos.x(), pos.y()));
 
     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 3.f);
     ImGui::PushStyleColor(ImGuiCol_Button,          ImVec4({ 0.67f, 0.67f, 0.67f, 1.0f }));
@@ -151,7 +150,7 @@ float SplitterSizer::render_splitter(YGNodeRef node, const std::string& suffix, 
     return ret;
 }
 
-float SplitterSizer::splitter(YGNodeRef node, const std::string& suffix, ImVec2 pos, bool is_after_item/* = true*/)
+float SplitterSizer::splitter(YGNodeRef node, const std::string& suffix, Vec2f pos, bool is_after_item/* = true*/)
 {
     bool in_separate_window = !has_parent_window();
 
@@ -159,17 +158,17 @@ float SplitterSizer::splitter(YGNodeRef node, const std::string& suffix, ImVec2 
         std::string win_name = "splitter_";
 
         if (m_is_horizontal) {
-            ImGui::SetNextWindowSize(ImVec2(m_splitter_spacing.x, YGNodeLayoutGetHeight(node)));
+            ImGui::SetNextWindowSize(ImVec2(m_splitter_spacing.x(), YGNodeLayoutGetHeight(node)));
             win_name += "h_" + suffix;
         }
         else {
             float col_width = YGNodeLayoutGetWidth(YGNodeGetParent(node));
-            ImGui::SetNextWindowSize(ImVec2(col_width, m_splitter_spacing.y));
+            ImGui::SetNextWindowSize(ImVec2(col_width, m_splitter_spacing.y()));
             win_name += "v_" + suffix;
         }
-        ImGui::SetNextWindowPos(pos);
+        ImGui::SetNextWindowPos(ImVec2(pos.x(), pos.y()));
 
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.f, 0.f));
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2());
         ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.f);
         ImGui::Begin(win_name.c_str(), nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBackground);
     }
@@ -184,7 +183,7 @@ float SplitterSizer::splitter(YGNodeRef node, const std::string& suffix, ImVec2 
     return ret;
 }
 
-void SplitterSizer::render(ImVec2 win_size/* = ImVec2()*/, ImVec2 win_pos /*= ImVec2(-1.f, -1.f)*/)
+void SplitterSizer::render(Vec2f win_size, Vec2f win_pos)
 {
     if (!m_finalized)
         finalize();
@@ -220,25 +219,25 @@ void SplitterSizer::render(ImVec2 win_size/* = ImVec2()*/, ImVec2 win_pos /*= Im
 
     // decrease size in respect to the splitters
     if (m_is_horizontal)
-        win_size.x -= m_splitter_spacing.x * splitters_cnt;
+        win_size.x() -= m_splitter_spacing.x() * splitters_cnt;
     else
-        win_size.y -= m_splitter_spacing.y * splitters_cnt;
+        win_size.y() -= m_splitter_spacing.y() * splitters_cnt;
 
     resize(win_size);
 
     // corect height, if it was default
-    if (in_win_sz.y == 0.f)
-        in_win_sz.y = YGNodeLayoutGetHeight(m_root);
+    if (in_win_sz.y() == 0.f)
+        in_win_sz.y() = YGNodeLayoutGetHeight(m_root);
 
-    if (win_pos.x < 0 && win_pos.y < 0)
-        win_pos = ImGui::GetCursorScreenPos();
+    if (win_pos.x() < 0 && win_pos.y() < 0)
+        win_pos = Vec2f(ImGui::GetCursorScreenPos().x, ImGui::GetCursorScreenPos().y);
 
     if (m_show_node_shapes)
         render_nodes_bg(win_pos);
 
     ImVec2 old_pos = ImGui::GetCursorScreenPos();
 
-    ImVec2 splitter_pos = win_pos;
+    Vec2f splitter_pos = win_pos;
 
     is_flex_prev_child = false;
     for (int row = 0; row < rows; row++) {
@@ -259,14 +258,14 @@ void SplitterSizer::render(ImVec2 win_size/* = ImVec2()*/, ImVec2 win_pos /*= Im
                 splitter_pos += m_splitter_spacing;
             }
 
-            const ImVec2 cell_size = ImVec2(YGNodeLayoutGetWidth(YGNodeGetParent(node)), YGNodeLayoutGetHeight(node));
+            const Vec2f cell_size = Vec2f(YGNodeLayoutGetWidth(YGNodeGetParent(node)), YGNodeLayoutGetHeight(node));
 
             render_node(node, win_pos);
 
             if (m_is_horizontal)
-                splitter_pos.x += cell_size.x;
+                splitter_pos.x() += cell_size.x();
             else
-                splitter_pos.y += cell_size.y;
+                splitter_pos.y() += cell_size.y();
 
             if (i + 1 == size_t(m_is_horizontal ? cols : rows))
                 break;

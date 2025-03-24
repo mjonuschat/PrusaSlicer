@@ -8,7 +8,7 @@
 
 namespace Slic3r::App::Plater {
 
-void History::render(ImVec2 pos, ImVec2 size)
+void History::render(Domain::Vec2f pos, Domain::Vec2f size)
 {
     ImGui::Text("Actions History");
 }
