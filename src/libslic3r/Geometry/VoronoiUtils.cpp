@@ -267,7 +267,7 @@ VoronoiUtils::compute_point_cell_range(const VD::cell_type &cell, const SegmentI
     using Segment        = typename std::iterator_traits<SegmentIterator>::value_type;
     using Point          = typename boost::polygon::segment_point_type<Segment>::type;
     using PointCellRange = PointCellRange<Point>;
-    using CoordType      = typename Point::coord_type;
+    using CoordType      = typename Domain::coord_t;
 
     const Point source_point = Geometry::VoronoiUtils::get_source_point(cell, segment_begin, segment_end);
 

@@ -64,7 +64,7 @@ public:
     double squared_distance(const indexed_triangle_set & its,
                             const Vec3d &                point,
                             int &                        i,
-                            Eigen::Matrix<double, 1, 3> &closest)
+                            Vec3d &closest)
     {
         size_t idx_unsigned = 0;
         Vec3d  closest_vec3d(closest);
@@ -329,9 +329,8 @@ AABBMesh::hit_result IndexedMesh::filter_hits(
 
 double AABBMesh::squared_distance(const Vec3d &p, int& i, Vec3d& c) const {
     double sqdst = 0;
-    Eigen::Matrix<double, 1, 3> pp = p;
-    Eigen::Matrix<double, 1, 3> cc;
-    sqdst = m_aabb->squared_distance(*m_tm, pp, i, cc);
+    Vec3d cc;
+    sqdst = m_aabb->squared_distance(*m_tm, p, i, cc);
     c = cc;
     return sqdst;
 }

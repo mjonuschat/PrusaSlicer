@@ -18,7 +18,7 @@ template<class T> constexpr bool IsSegmentedBed = IsSegmentedBed_<StripCVRef<T>>
 
 template<class SegX = void, class SegY = void, class Pivot = void>
 struct SegmentedRectangleBed {
-    Vec<2, size_t> segments = Vec<2, size_t>::Ones();
+    LegacyVec<2, size_t> segments = LegacyVec<2, size_t>::Ones();
     BoundingBox bb;
     Vec2crd gap;
     RectPivots pivot = RectPivots::Center;

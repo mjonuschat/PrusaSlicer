@@ -8,13 +8,51 @@ namespace Slic3r::Domain {
 using coord_t = int32_t;
 
 namespace Advanced {
-template<typename Scalar, std::size_t Dim>
-using Vec = Eigen::Matrix<Scalar, Dim, 1, Eigen::DontAlign>;
+template<typename Scalar, int Dim>
+class Vec : public Eigen::Matrix<Scalar, Dim, 1, Eigen::DontAlign>
+{
+    using Parent = Eigen::Matrix<Scalar, Dim, 1, Eigen::DontAlign>;
+public:
+    // Eigen vectors are not 0 initialized. Fix that.
+    Vec() : Parent(0, 0) {}
+    using Parent::Parent;
+    using Parent::operator=;
 
-template<typename Scalar, std::size_t Dim>
+    // These operators address undesired behavior of Eigen (actually c++ in general).
+    // Eigen defines operator*(Point, int) which sadly due to c++ implicit
+    // conversion can be used with double. It first implicitly narrows the double
+    // to int and then does the product. This means that (10, 10) * 1.2 == (10, 10).
+    // These operators do the product in doubles and than convert it to int,
+    // meaning (10, 10) * 1.2 == (12, 12).
+    Vec& operator*=(const double& scalar)
+    {
+        for (std::size_t i{0}; i < Dim; ++i) {
+            (*this)[i] = static_cast<Scalar>((*this)[i] * scalar);
+        }
+        return *this;
+    }
+    Vec operator*(const double& scalar) const
+    {
+        Vec result{*this};
+        result *= scalar;
+        return result;
+    }
+
+    bool operator<(const Vec& other) const {
+        for (std::size_t i{}; i < Dim; ++i) {
+            if ((*this)[i] == other[i]) {
+                continue;
+            }
+            return (*this)[i] < other[i];
+        }
+        return false;
+    }
+};
+
+template<typename Scalar, int Dim>
 using Transform = Eigen::Transform<Scalar, Dim, Eigen::Affine, Eigen::DontAlign>;
 
-template<typename Scalar, std::size_t Dim>
+template<typename Scalar, int Dim>
 using Translation = Eigen::Translation<Scalar, Dim>;
 } // namespace Advanced
 

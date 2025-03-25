@@ -978,13 +978,13 @@ void ProcessorImpl::process_G2_G3(const GCodeReader::GCodeLine& line, bool clock
     Arc arc;
 
     // arc start endpoint
-    arc.start = { m_start_position[X], m_start_position[Y], m_start_position[Z] };
+    arc.start = Vec3f{ m_start_position[X], m_start_position[Y], m_start_position[Z] };
 
     // arc center
     arc.center = arc.start + rel_center;
 
     // arc end endpoint
-    arc.end = { end_position[X], end_position[Y], end_position[Z] };
+    arc.end = Vec3f{ end_position[X], end_position[Y], end_position[Z] };
 
     // radii
     if (std::abs(arc.end_radius() - arc.start_radius()) > 0.001f) {
@@ -2521,7 +2521,8 @@ void ProcessorImpl::store_move(MoveType type, bool internal_only)
     move.fan_speed       = m_fan_speed;
     move.temperature     = m_extruder_temps[m_extruder_id];
     move.mass            = 0.0f; // mass set in finalize() method
-    move.position        = { m_end_position[X] + extruder_offset[X],
+    move.position        = Vec3f{
+                             m_end_position[X] + extruder_offset[X],
                              m_end_position[Y] + extruder_offset[Y],
                              m_end_position[Z] + extruder_offset[Z] - m_config.z_offset };
     move.time            = {};

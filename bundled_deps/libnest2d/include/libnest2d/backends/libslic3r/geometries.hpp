@@ -17,7 +17,7 @@ namespace Slic3r {
 
 template<class T, class En = void> struct IsVec_ : public std::false_type {};
 
-template<class T> struct IsVec_< Vec<2, T> >: public std::true_type {};
+template<class T> struct IsVec_< LegacyVec<2, T> >: public std::true_type {};
 
 template<class T>
 static constexpr const bool IsVec = IsVec_<libnest2d::remove_cvref_t<T>>::value;
@@ -59,7 +59,7 @@ inline Point operator*(const Point& p1, const Point& p2) {
 
 namespace libnest2d {
 
-template<class T> using Vec = Slic3r::Vec<2, T>;
+template<class T> using Vec = Slic3r::LegacyVec<2, T>;
 
 // Aliases for convinience
 using PointImpl = Slic3r::Point;
@@ -68,7 +68,6 @@ using HoleStore = Slic3r::Polygons;
 using PolygonImpl = Slic3r::ExPolygon;
 
 template<> struct ShapeTag<Slic3r::Vec2crd> { using Type = PointTag; };
-template<> struct ShapeTag<Slic3r::Point>   { using Type = PointTag; };
 
 template<> struct ShapeTag<std::vector<Slic3r::Vec2crd>> { using Type = PathTag; };
 template<> struct ShapeTag<Slic3r::Polygon> { using Type = PathTag; };
@@ -79,11 +78,6 @@ template<> struct ShapeTag<Slic3r::ExPolygons> { using Type = MultiPolygonTag; }
 // Type of coordinate units used by Clipper. Enough to specialize for point,
 // the rest of the types will work (Path, Polygon)
 template<> struct CoordType<Slic3r::Point> {
-    using Type = coord_t;
-    static const constexpr coord_t MM_IN_COORDS = 1000000;
-};
-
-template<> struct CoordType<Slic3r::Vec2crd> {
     using Type = coord_t;
     static const constexpr coord_t MM_IN_COORDS = 1000000;
 };

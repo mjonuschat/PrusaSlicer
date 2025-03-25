@@ -280,7 +280,7 @@ inline BoundingBox scaled(const BoundingBoxf &bb) {
 
 template<class T = coord_t, class Tin>
 [[deprecated("Use Biz::Algorithms::BoundingBox::scaled instead")]]
-BoundingBoxBase<Vec<2, T>> scaled(const BoundingBoxBase<Vec<2, Tin>> &bb)
+BoundingBoxBase<LegacyVec<2, T>> scaled(const BoundingBoxBase<LegacyVec<2, Tin>> &bb)
 {
     using Biz::Algorithms::BoundingBox::scaled;
 
@@ -294,7 +294,7 @@ BoundingBoxBase<Vec<2, T>> scaled(const BoundingBoxBase<Vec<2, Tin>> &bb)
 
 template<class T = double, class Tin>
 [[deprecated("Use Biz::Algorithms::BoundingBox::unscaled instead")]]
-BoundingBoxBase<Vec<2, T>> unscaled(const BoundingBoxBase<Vec<2, Tin>> &bb) {
+BoundingBoxBase<LegacyVec<2, T>> unscaled(const BoundingBoxBase<LegacyVec<2, Tin>> &bb) {
     using Biz::Algorithms::BoundingBox::unscaled;
 
     const Domain::BoundingBox<Tin, 2> box{
@@ -307,7 +307,7 @@ BoundingBoxBase<Vec<2, T>> unscaled(const BoundingBoxBase<Vec<2, Tin>> &bb) {
 
 template<class T = double>
 [[deprecated("Use Biz::Algorithms::BoundingBox::unscaled instead")]]
-BoundingBoxBase<Vec<2, T>> unscaled(const BoundingBox &bb) {
+BoundingBoxBase<LegacyVec<2, T>> unscaled(const BoundingBox &bb) {
     using Biz::Algorithms::BoundingBox::unscaled;
 
     const Domain::BoundingBox2crd box{
@@ -328,7 +328,7 @@ auto cast(const BoundingBoxBase<Tin> &b)
         b.min, b.max, b.defined
     };
     const auto result{cast<Tout>(box)};
-    return BoundingBoxBase<Vec<Tin::RowsAtCompileTime, Tout>>{
+    return BoundingBoxBase<LegacyVec<Tin::RowsAtCompileTime, Tout>>{
         result.min,
         result.max
     };
@@ -377,7 +377,7 @@ inline double bbox_bbox_distance(const BoundingBox &first_bbox, const BoundingBo
 
 template<class T>
 [[deprecated("Use Biz::Algorithms::BoundingBox::to_2d")]]
-BoundingBoxBase<Vec<2, T>> to_2d(const BoundingBoxBase<Vec<3, T>> &bb)
+BoundingBoxBase<LegacyVec<2, T>> to_2d(const BoundingBoxBase<LegacyVec<3, T>> &bb)
 {
 
     using Biz::Algorithms::BoundingBox::to_2d;

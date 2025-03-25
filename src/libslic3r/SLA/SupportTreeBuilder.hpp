@@ -67,12 +67,12 @@ namespace sla {
  * nearby pillar.
  */
 
-template<class T, int I> T distance(const Vec<I, T>& p) {
+template<class T, int I> T distance(const LegacyVec<I, T>& p) {
     return p.norm();
 }
 
 template<class T, int I>
-T distance(const Vec<I, T>& pp1, const Vec<I, T>& pp2) {
+T distance(const LegacyVec<I, T>& pp1, const LegacyVec<I, T>& pp2) {
     return (pp1 - pp2).norm();
 }
 

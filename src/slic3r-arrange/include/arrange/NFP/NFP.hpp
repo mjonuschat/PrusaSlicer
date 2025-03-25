@@ -18,7 +18,7 @@
 namespace Slic3r {
 
 template<class Unit = int64_t, class T>
-Unit dotperp(const Vec<2, T> &a, const Vec<2, T> &b)
+Unit dotperp(const LegacyVec<2, T> &a, const LegacyVec<2, T> &b)
 {
     return Unit(a.x()) * Unit(b.y()) - Unit(a.y()) * Unit(b.x());
 }

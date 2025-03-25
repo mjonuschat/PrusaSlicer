@@ -10,7 +10,7 @@
 #include <map>
 #include "Slic3r/Domain/CustomGCodeType.hpp"
 #include "Slic3r/Domain/GCodeExtrusionRole.hpp"
-#include "Slic3r/Domain/Vectors.hpp"
+#include "Slic3r/Domain/Types.hpp"
 
 using namespace std::literals;
 

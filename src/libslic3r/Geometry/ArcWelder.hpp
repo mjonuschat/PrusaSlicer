@@ -222,7 +222,7 @@ inline typename Eigen::Matrix<typename Derived::Scalar, 2, 1, Eigen::DontAlign> 
 // In case the input points are collinear or close to collinear (such as a small angle arc),
 // the solution may not converge and an error is indicated.
 template<typename Derived, typename Derived2, typename Derived3, typename Iterator>
-inline std::optional<typename Eigen::Matrix<typename Derived::Scalar, 2, 1, Eigen::DontAlign>> arc_fit_center_gauss_newton_ls(
+inline std::optional<typename Domain::Advanced::Vec<typename Derived::Scalar, 2>> arc_fit_center_gauss_newton_ls(
     const Eigen::MatrixBase<Derived>   &start_pos,
     const Eigen::MatrixBase<Derived2>  &end_pos,
     const Eigen::MatrixBase<Derived3>  &center_pos,
@@ -236,7 +236,7 @@ inline std::optional<typename Eigen::Matrix<typename Derived::Scalar, 2, 1, Eige
     static_assert(std::is_same<typename Derived::Scalar, typename Derived2::Scalar>::value &&
                   std::is_same<typename Derived::Scalar, typename Derived3::Scalar>::value, "arc_fit_center_gauss_newton_ls(): All third points must be of the same type.");
     using Float = typename Derived::Scalar;
-    using Vector = Eigen::Matrix<Float, 2, 1, Eigen::DontAlign>;
+    using Vector = Domain::Advanced::Vec<Float, 2>;
     // Prepare a vector space to transform the fitting into:
     // center_pos, dir_x, dir_y
     Vector v = end_pos - start_pos;

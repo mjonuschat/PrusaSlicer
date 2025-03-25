@@ -46,26 +46,26 @@ template<std::size_t d> struct access<Slic3r::Point, d > {
 
 // For Vec<N, T> ///////////////////////////////////////////////////////////////
 
-template<int N, class T> struct tag<Slic3r::Vec<N, T>> {
+template<int N, class T> struct tag<Slic3r::LegacyVec<N, T>> {
     using type = point_tag;
 };
 
-template<int N, class T> struct coordinate_type<Slic3r::Vec<N, T>> {
+template<int N, class T> struct coordinate_type<Slic3r::LegacyVec<N, T>> {
     using type = T;
 };
 
-template<int N, class T> struct coordinate_system<Slic3r::Vec<N, T>> {
+template<int N, class T> struct coordinate_system<Slic3r::LegacyVec<N, T>> {
     using type = cs::cartesian;
 };
 
-template<int N, class T> struct dimension<Slic3r::Vec<N, T>>: boost::mpl::int_<N> {};
+template<int N, class T> struct dimension<Slic3r::LegacyVec<N, T>>: boost::mpl::int_<N> {};
 
-template<int N, class T, std::size_t d> struct access<Slic3r::Vec<N, T>, d> {
-    static inline T get(Slic3r::Vec<N, T> const& a) {
+template<int N, class T, std::size_t d> struct access<Slic3r::LegacyVec<N, T>, d> {
+    static inline T get(Slic3r::LegacyVec<N, T> const& a) {
         return a(d);
     }
 
-    static inline void set(Slic3r::Vec<N, T>& a, T const& value) {
+    static inline void set(Slic3r::LegacyVec<N, T>& a, T const& value) {
         a(d) = value;
     }
 };
@@ -102,14 +102,14 @@ struct indexed_access<Slic3r::BoundingBox, 1, d> {
     }
 };
 
-template <class T> using BB3 = Slic3r::BoundingBox3Base<Slic3r::Vec<3, T>>;
+template <class T> using BB3 = Slic3r::BoundingBox3Base<Slic3r::LegacyVec<3, T>>;
 
 template<class T> struct tag<BB3<T>> {
     using type = box_tag;
 };
 
 template<class T> struct point_type<BB3<T>> {
-    using type = Slic3r::Vec<3, T>;
+    using type = Slic3r::LegacyVec<3, T>;
 };
 
 template<class T, std::size_t d>

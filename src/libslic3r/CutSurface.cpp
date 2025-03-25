@@ -3529,7 +3529,7 @@ Polygons priv::unproject_loops(const SurfacePatch &patch, const Project &project
             assert(p2_opt.has_value());
             if (!p2_opt.has_value()) continue;
 
-            pts.push_back(p2_opt->cast<Point::coord_type>());
+            pts.push_back(p2_opt->cast<coord_t>());
             depths.push_back(static_cast<float>(depth));
         }
         // minimal is triangle

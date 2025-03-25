@@ -2,7 +2,7 @@
 
 #include "Slic3r/Domain/Point.hpp"
 #include "Slic3r/Domain/Line.hpp"
-#include "Slic3r/Domain/Vectors.hpp"
+#include "Slic3r/Domain/Types.hpp"
 
 namespace Slic3r::Biz::Algorithms::Line {
 

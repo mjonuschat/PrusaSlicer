@@ -63,8 +63,8 @@ public:
         // becomes dangerous here due to division with zero. Instead, vector
         // 'a' can be an element-wise rotated version of 'v'
         if(is_one(n(X)) || is_one(n(Y)) || is_one(n(Z))) {
-            a = {n(Z), n(X), n(Y)};
-            b = {n(Y), n(Z), n(X)};
+            a = Vec3d{n(Z), n(X), n(Y)};
+            b = Vec3d{n(Y), n(Z), n(X)};
         }
         else {
             a(Z) = -(n(Y)*a(Y)) / n(Z); a.normalize();
@@ -92,7 +92,7 @@ public:
 };
 
 template<class T, int N>
-Vec<N, T> dirv(const Vec<N, T>& startp, const Vec<N, T>& endp) {
+LegacyVec<N, T> dirv(const LegacyVec<N, T>& startp, const LegacyVec<N, T>& endp) {
     return (endp - startp).normalized();
 }
 

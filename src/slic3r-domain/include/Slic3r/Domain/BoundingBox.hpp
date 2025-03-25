@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Slic3r/Domain/Vectors.hpp"
+#include "Slic3r/Domain/Types.hpp"
 
 namespace Slic3r::Domain {
 
@@ -9,7 +9,7 @@ struct BoundingBox {
 
     using Scalar = _Scalar;
     static constexpr std::size_t Dim = _Dim;
-    using VecType = Eigen::Matrix<Scalar, Dim, 1, Eigen::DontAlign>;
+    using VecType = Advanced::Vec<Scalar, Dim>;
 
     BoundingBox(): min{VecType::Zero()}, max{VecType::Zero()}, defined{false} {}
 

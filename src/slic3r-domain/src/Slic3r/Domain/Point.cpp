@@ -13,18 +13,6 @@ coord_t fast_round_up(double a)
 }
 }
 
-Point& Point::operator*=(const double& scalar)
-{
-    this->x() = coord_t(this->x() * scalar);
-    this->y() = coord_t(this->y() * scalar);
-    return *this;
-}
-
-Point Point::operator*(const double& scalar) const
-{
-    return {this->x() * scalar, this->y() * scalar};
-}
-
 Point rotated(const Point& point, const double cos_a, const double sin_a) {
     const auto cur_x{static_cast<double>(point.x())};
     const auto cur_y{static_cast<double>(point.y())};

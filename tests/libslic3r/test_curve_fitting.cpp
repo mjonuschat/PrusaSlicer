@@ -8,6 +8,7 @@
 
 using namespace Catch;
 
+
 TEST_CASE("Curves: cubic b spline fit test", "[Curves]") {
     using namespace Slic3r;
     using namespace Slic3r::Geometry;
@@ -20,11 +21,11 @@ TEST_CASE("Curves: cubic b spline fit test", "[Curves]") {
         return 1.0f;
     };
 
-    std::vector<Vec<1, float>> observations { };
+    std::vector<LegacyVec<1, float>> observations { };
     std::vector<float> observation_points { };
     std::vector<float> weights { };
     for (size_t index = 0; index < 200; ++index) {
-        observations.push_back(Vec<1, float> { fy(index) });
+        observations.push_back(LegacyVec<1, float> { fy(index) });
         observation_points.push_back(fx(index));
         weights.push_back(1);
     }
@@ -58,11 +59,11 @@ TEST_CASE("Curves: quadratic f cubic b spline fit test", "[Curves]") {
         return (fx(index) - 1) * (fx(index) - 1);
     };
 
-    std::vector<Vec<1, float>> observations { };
+    std::vector<LegacyVec<1, float>> observations { };
     std::vector<float> observation_points { };
     std::vector<float> weights { };
     for (size_t index = 0; index < 200; ++index) {
-        observations.push_back(Vec<1, float> { fy(index) });
+        observations.push_back(LegacyVec<1, float> { fy(index) });
         observation_points.push_back(fx(index));
         weights.push_back(1);
     }
@@ -97,11 +98,11 @@ TEST_CASE("Curves: polynomial fit test", "[Curves]") {
         return (fx(index) - 1) * (fx(index) - 1);
     };
 
-    std::vector<Vec<1, float>> observations { };
+    std::vector<LegacyVec<1, float>> observations { };
     std::vector<float> observation_points { };
     std::vector<float> weights { };
     for (size_t index = 0; index < 200; ++index) {
-        observations.push_back(Vec<1, float> { fy(index) });
+        observations.push_back(LegacyVec<1, float> { fy(index) });
         observation_points.push_back(fx(index));
         weights.push_back(1);
     }

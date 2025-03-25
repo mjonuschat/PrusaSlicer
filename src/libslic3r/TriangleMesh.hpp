@@ -33,7 +33,7 @@
 #include "Polygon.hpp"
 #include "ExPolygon.hpp"
 #include "libslic3r/Point.hpp"
-#include "Slic3r/Domain/Vectors.hpp"
+#include "Slic3r/Domain/Types.hpp"
 
 namespace Slic3r {
 

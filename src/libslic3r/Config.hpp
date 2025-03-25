@@ -375,10 +375,10 @@ template<> struct NilValueTempl<std::string> {
     static constexpr const char* value = "";
 };
 
-template<int N, class T> struct NilValueTempl<Vec<N, T>> {
-    using NilType = Vec<N, T>;
+template<int N, class T> struct NilValueTempl<LegacyVec<N, T>> {
+    using NilType = LegacyVec<N, T>;
     // No constexpr for Vec<N, T>
-    static inline const Vec<N, T> value = Vec<N, T>::Ones() * NilValueTempl<remove_cvref_t<T>>::value;
+    static inline const LegacyVec<N, T> value = LegacyVec<N, T>::Ones() * NilValueTempl<remove_cvref_t<T>>::value;
 };
 
 template<class T> using NilType = typename NilValueTempl<remove_cvref_t<T>>::NilType;

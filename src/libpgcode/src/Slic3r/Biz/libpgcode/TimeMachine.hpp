@@ -7,7 +7,7 @@
 
 #include "Slic3r/Biz/libpgcode/PostProcessorConfig.hpp"
 #include "TimeBlock.hpp"
-#include "Slic3r/Domain/Vectors.hpp"
+#include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Domain/CustomGCodeType.hpp"
 
 namespace Slic3r::Biz::libpgcode {

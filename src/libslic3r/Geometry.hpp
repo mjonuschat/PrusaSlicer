@@ -225,10 +225,10 @@ inline double ray_point_distance(const Line &iline, const Point &ipt)
 template<typename T>
 inline bool liang_barsky_line_clipping_interval(
     // Start and end points of the source line, result will be stored there as well.
-    const Eigen::Matrix<T, 2, 1, Eigen::DontAlign>                  &x0,
-    const Eigen::Matrix<T, 2, 1, Eigen::DontAlign>                  &v,
+    const Domain::Advanced::Vec<T, 2>                  &x0,
+    const Domain::Advanced::Vec<T, 2>                  &v,
     // Bounding box to clip with.
-    const BoundingBoxBase<Eigen::Matrix<T, 2, 1, Eigen::DontAlign>> &bbox,
+    const BoundingBoxBase<Domain::Advanced::Vec<T, 2>> &bbox,
     std::pair<double, double>                                       &out_interval)
 {
     double t0 = 0.0;
@@ -276,12 +276,12 @@ inline bool liang_barsky_line_clipping_interval(
 template<typename T>
 inline bool liang_barsky_line_clipping(
 	// Start and end points of the source line, result will be stored there as well.
-	Eigen::Matrix<T, 2, 1, Eigen::DontAlign> 						&x0,
-	Eigen::Matrix<T, 2, 1, Eigen::DontAlign> 						&x1,
+	Domain::Advanced::Vec<T, 2> 						&x0,
+	Domain::Advanced::Vec<T, 2> 						&x1,
 	// Bounding box to clip with.
-	const BoundingBoxBase<Eigen::Matrix<T, 2, 1, Eigen::DontAlign>> &bbox)
+	const BoundingBoxBase<Domain::Advanced::Vec<T, 2>> &bbox)
 {
-    Eigen::Matrix<T, 2, 1, Eigen::DontAlign> v = x1 - x0;
+    Domain::Advanced::Vec<T, 2> v = x1 - x0;
     std::pair<double, double> interval;
     if (liang_barsky_line_clipping_interval(x0, v, bbox, interval)) {
         // Clipped successfully.
@@ -296,13 +296,13 @@ inline bool liang_barsky_line_clipping(
 template<typename T>
 bool liang_barsky_line_clipping(
 	// Start and end points of the source line.
-	const Eigen::Matrix<T, 2, 1, Eigen::DontAlign> 					&x0src,
-	const Eigen::Matrix<T, 2, 1, Eigen::DontAlign> 					&x1src,
+	const Domain::Advanced::Vec<T, 2> 					&x0src,
+	const Domain::Advanced::Vec<T, 2> 					&x1src,
 	// Bounding box to clip with.
-	const BoundingBoxBase<Eigen::Matrix<T, 2, 1, Eigen::DontAlign>> &bbox,
+	const BoundingBoxBase<Domain::Advanced::Vec<T, 2>>  &bbox,
 	// Start and end points of the clipped line.
-	Eigen::Matrix<T, 2, 1, Eigen::DontAlign> 						&x0clip,
-	Eigen::Matrix<T, 2, 1, Eigen::DontAlign> 						&x1clip)
+	Domain::Advanced::Vec<T, 2> 						&x0clip,
+	Domain::Advanced::Vec<T, 2> 						&x1clip)
 {
 	x0clip = x0src;
 	x1clip = x1src;
@@ -542,7 +542,7 @@ inline bool trafos_differ_in_rotation_by_z_and_mirroring_by_xy_only(const Transf
     { return trafos_differ_in_rotation_by_z_and_mirroring_by_xy_only(t1.get_matrix(), t2.get_matrix()); }
 
 template <class Tout = double, class Tin>
-std::pair<Tout, Tout> dir_to_spheric(const Vec<3, Tin> &n, Tout norm = 1.)
+std::pair<Tout, Tout> dir_to_spheric(const LegacyVec<3, Tin> &n, Tout norm = 1.)
 {
     Tout z       = n.z();
     Tout r       = norm;
@@ -552,14 +552,14 @@ std::pair<Tout, Tout> dir_to_spheric(const Vec<3, Tin> &n, Tout norm = 1.)
 }
 
 template <class T = double>
-Vec<3, T> spheric_to_dir(double polar, double azimuth)
+LegacyVec<3, T> spheric_to_dir(double polar, double azimuth)
 {
     return {T(std::cos(azimuth) * std::sin(polar)),
             T(std::sin(azimuth) * std::sin(polar)), T(std::cos(polar))};
 }
 
 template <class T = double, class Pair>
-Vec<3, T> spheric_to_dir(const Pair &v)
+LegacyVec<3, T> spheric_to_dir(const Pair &v)
 {
     double plr = std::get<0>(v), azm = std::get<1>(v);
     return spheric_to_dir<T>(plr, azm);

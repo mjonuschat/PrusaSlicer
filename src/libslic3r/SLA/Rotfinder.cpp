@@ -51,10 +51,10 @@ std::array<Vec3f, 3> get_transformed_triangle(const TriangleMesh &mesh,
     return {tr * tri[0], tr * tri[1], tr * tri[2]};
 }
 
-template<class T> Vec<3, T> normal(const std::array<Vec<3, T>, 3> &tri)
+template<class T> LegacyVec<3, T> normal(const std::array<LegacyVec<3, T>, 3> &tri)
 {
-    Vec<3, T> U = tri[1] - tri[0];
-    Vec<3, T> V = tri[2] - tri[0];
+    LegacyVec<3, T> U = tri[1] - tri[0];
+    LegacyVec<3, T> V = tri[2] - tri[0];
     return U.cross(V).normalized();
 }
 

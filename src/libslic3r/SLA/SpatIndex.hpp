@@ -10,7 +10,6 @@
 #include <memory>
 #include <utility>
 #include <vector>
-#include <Eigen/Geometry>
 #include <functional>
 #include <cstddef>
 
@@ -19,7 +18,6 @@
 namespace Slic3r {
 namespace sla {
 
-typedef Eigen::Matrix<double,   3, 1, Eigen::DontAlign> Vec3d;
 using PointIndexEl = std::pair<Vec3d, unsigned>;
 
 class PointIndex {

@@ -175,7 +175,7 @@ size_t get_shapes_count(const NSVGimage &image)
 //    br.x() = std::ceil(br.x());
 //    br.y() = std::ceil(br.y());
 //    Vec2f s = br - tl;
-//    Point size = s.cast<Point::coord_type>();
+//    Point size = s.cast<coord_t>();
 //
 //    data << "<svg xmlns=\"http://www.w3.org/2000/svg\" "
 //         << "width=\"" << size.x() << "mm\" "
@@ -264,7 +264,7 @@ size_t get_shapes_count(const NSVGimage &image)
 namespace {
 using namespace Slic3r; // Polygon + Vec2f
 
-Point::coord_type to_coor(float val, double scale) { return static_cast<Point::coord_type>(std::round(val * scale)); }
+coord_t to_coor(float val, double scale) { return static_cast<coord_t>(std::round(val * scale)); }
 
 bool need_flattening(float tessTol, const Vec2f &p1, const Vec2f &p2, const Vec2f &p3, const Vec2f &p4) {
     // f .. first
@@ -314,8 +314,8 @@ bool is_line(const float *p, float precision){
 void flatten_cubic_bez(Points &points, float tessTol, const Vec2f& p1, const Vec2f& p2, const Vec2f& p3, const Vec2f& p4, int level)
 {
     if (!need_flattening(tessTol, p1, p2, p3, p4)) {
-        Point::coord_type x = static_cast<Point::coord_type>(std::round(p4.x()));
-        Point::coord_type y = static_cast<Point::coord_type>(std::round(p4.y()));
+        coord_t x = static_cast<coord_t>(std::round(p4.x()));
+        coord_t y = static_cast<coord_t>(std::round(p4.y()));
         points.emplace_back(x, y);
         return;
     }
@@ -344,16 +344,16 @@ LinesPath linearize_path(NSVGpath *first_path, const NSVGLineParams &param)
     Points points;
     for (NSVGpath *path = first_path; path != NULL; path = path->next) {
         // Flatten path
-        Point::coord_type x = to_coor(path->pts[0], param.scale);
-        Point::coord_type y = to_coor(path->pts[1], param.scale);
+        coord_t x = to_coor(path->pts[0], param.scale);
+        coord_t y = to_coor(path->pts[1], param.scale);
         points.emplace_back(x, y);
         size_t path_size = (path->npts > 1) ? static_cast<size_t>(path->npts - 1) : 0;
         for (size_t i = 0; i < path_size; i += 3) {
             const float *p = &path->pts[i * 2];
             if (is_line(p)) {
                 // point p4
-                Point::coord_type xx = to_coor(p[6], param.scale);
-                Point::coord_type yy = to_coor(p[7], param.scale);
+                coord_t xx = to_coor(p[6], param.scale);
+                coord_t yy = to_coor(p[7], param.scale);
                 points.emplace_back(xx, yy);
                 continue;
             }

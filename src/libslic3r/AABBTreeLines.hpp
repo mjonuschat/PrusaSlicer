@@ -33,7 +33,7 @@ template<typename ALineType, typename ATreeType, typename AVectorType> struct In
 
     inline VectorType closest_point_to_origin(size_t primitive_index, ScalarType &squared_distance) const
     {
-        Vec<LineType::Dim, typename LineType::Scalar> nearest_point;
+        LegacyVec<LineType::Dim, typename LineType::Scalar> nearest_point;
         const LineType                               &line = lines[primitive_index];
         squared_distance = line_alg::distance_to_squared(line, origin.template cast<typename LineType::Scalar>(), &nearest_point);
         return nearest_point.template cast<ScalarType>();
@@ -245,7 +245,7 @@ inline typename VectorType::Scalar squared_distance_to_indexed_lines(
     const TreeType                     &tree,
     const VectorType                   &point,
     size_t                             &hit_idx_out,
-    Eigen::PlainObjectBase<VectorType> &hit_point_out,
+    VectorType                         &hit_point_out,
     typename VectorType::Scalar         max_sqr_dist = std::numeric_limits<typename VectorType::Scalar>::infinity())
 {
     using Scalar = typename VectorType::Scalar;
@@ -353,15 +353,15 @@ public:
     LinesDistancer() = default;
 
     // 1 true, -1 false, 0 cannot determine
-    int outside(const Vec<2, Scalar> &point) const { return point_outside_closed_contours(lines, tree, point); }
+    int outside(const LegacyVec<2, Scalar> &point) const { return point_outside_closed_contours(lines, tree, point); }
 
     // negative sign means inside
     template<bool SIGNED_DISTANCE>
-    std::tuple<Floating, size_t, Vec<2, Floating>> distance_from_lines_extra(const Vec<2, Scalar> &point) const
+    std::tuple<Floating, size_t, LegacyVec<2, Floating>> distance_from_lines_extra(const LegacyVec<2, Scalar> &point) const
     {
         size_t           nearest_line_index_out = size_t(-1);
-        Vec<2, Floating> nearest_point_out      = Vec<2, Floating>::Zero();
-        Vec<2, Floating> p                      = point.template cast<Floating>();
+        LegacyVec<2, Floating> nearest_point_out      = LegacyVec<2, Floating>::Zero();
+        LegacyVec<2, Floating> p                      = point.template cast<Floating>();
         auto distance = AABBTreeLines::squared_distance_to_indexed_lines(lines, tree, p, nearest_line_index_out, nearest_point_out);
 
         if (distance < 0) {
@@ -376,20 +376,20 @@ public:
         return {distance, nearest_line_index_out, nearest_point_out};
     }
 
-    template<bool SIGNED_DISTANCE> Floating distance_from_lines(const Vec<2, Scalar> &point) const
+    template<bool SIGNED_DISTANCE> Floating distance_from_lines(const LegacyVec<2, Scalar> &point) const
     {
         auto [dist, idx, np] = distance_from_lines_extra<SIGNED_DISTANCE>(point);
         return dist;
     }
 
-    std::vector<size_t> all_lines_in_radius(const Vec<2, Scalar> &point, Floating radius) const
+    std::vector<size_t> all_lines_in_radius(const LegacyVec<2, Scalar> &point, Floating radius) const
     {
         return AABBTreeLines::all_lines_in_radius(this->lines, this->tree, point.template cast<Floating>(), radius * radius);
     }
 
-    template<bool sorted> std::vector<std::pair<Vec<2, Scalar>, size_t>> intersections_with_line(const LineType &line) const
+    template<bool sorted> std::vector<std::pair<LegacyVec<2, Scalar>, size_t>> intersections_with_line(const LineType &line) const
     {
-        return get_intersections_with_line<sorted, Vec<2, Scalar>>(lines, tree, line);
+        return get_intersections_with_line<sorted, LegacyVec<2, Scalar>>(lines, tree, line);
     }
 
     const LineType &get_line(size_t line_idx) const { return lines[line_idx]; }

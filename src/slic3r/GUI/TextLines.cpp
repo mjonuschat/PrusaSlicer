@@ -175,7 +175,7 @@ TextLines select_closest_contour(const std::vector<Polygons> &line_contours) {
             expolygons[index.expolygons_index].contour :
             expolygons[index.expolygons_index].holes[index.hole_index()];
 
-        Point hit_point_int = hit_point.cast<Point::coord_type>();
+        Point hit_point_int = hit_point.cast<coord_t>();
         TextLine tl{polygon, PolygonPoint{index.point_index, hit_point_int}};
         result.emplace_back(tl);
     }

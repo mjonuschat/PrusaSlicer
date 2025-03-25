@@ -17,7 +17,7 @@
 #include "Slic3r/Domain/Constants.hpp"
 #include "libslic3r_version.h"
 #include "Slic3r/Domain/Axis.hpp"
-#include "Slic3r/Domain/Vectors.hpp"
+#include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Domain/Point.hpp"
 
 // Profiles for the alpha are stored into the PrusaSlicer-alpha directory to not mix with the current release.

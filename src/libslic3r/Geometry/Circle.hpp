@@ -26,7 +26,7 @@ namespace Slic3r { namespace Geometry {
 // Circumcenter coordinates, Cartesian coordinates
 // In case the three points are collinear, returns their centroid.
 template<typename Derived, typename Derived2, typename Derived3>
-Eigen::Matrix<typename Derived::Scalar, 2, 1, Eigen::DontAlign> circle_center(const Derived &a, const Derived2 &bsrc, const Derived3 &csrc, typename Derived::Scalar epsilon)
+Domain::Advanced::Vec<typename Derived::Scalar, 2> circle_center(const Derived &a, const Derived2 &bsrc, const Derived3 &csrc, typename Derived::Scalar epsilon)
 {
     static_assert(Derived ::IsVectorAtCompileTime && int(Derived ::SizeAtCompileTime) == 2, "circle_center(): 1st point is not a 2D vector");
     static_assert(Derived2::IsVectorAtCompileTime && int(Derived2::SizeAtCompileTime) == 2, "circle_center(): 2nd point is not a 2D vector");
@@ -34,7 +34,7 @@ Eigen::Matrix<typename Derived::Scalar, 2, 1, Eigen::DontAlign> circle_center(co
     static_assert(std::is_same<typename Derived::Scalar, typename Derived2::Scalar>::value && std::is_same<typename Derived::Scalar, typename Derived3::Scalar>::value, 
         "circle_center(): All three points must be of the same type.");
     using Scalar = typename Derived::Scalar;
-    using Vector = Eigen::Matrix<Scalar, 2, 1, Eigen::DontAlign>;
+    using Vector = Domain::Advanced::Vec<Scalar, 2>;
     Vector b  = bsrc - a;
     Vector c  = csrc - a;
 	Scalar lb = b.squaredNorm();
@@ -56,7 +56,7 @@ Eigen::Matrix<typename Derived::Scalar, 2, 1, Eigen::DontAlign> circle_center(co
 // Circumcenter coordinates, Cartesian coordinates
 // Returns no value if the three points are collinear.
 template<typename Derived, typename Derived2, typename Derived3>
-std::optional<Eigen::Matrix<typename Derived::Scalar, 2, 1, Eigen::DontAlign>> try_circle_center(const Derived &a, const Derived2 &bsrc, const Derived3 &csrc, typename Derived::Scalar epsilon)
+std::optional<Domain::Advanced::Vec<typename Derived::Scalar, 2>> try_circle_center(const Derived &a, const Derived2 &bsrc, const Derived3 &csrc, typename Derived::Scalar epsilon)
 {
     static_assert(Derived ::IsVectorAtCompileTime && int(Derived ::SizeAtCompileTime) == 2, "try_circle_center(): 1st point is not a 2D vector");
     static_assert(Derived2::IsVectorAtCompileTime && int(Derived2::SizeAtCompileTime) == 2, "try_circle_center(): 2nd point is not a 2D vector");
@@ -64,7 +64,7 @@ std::optional<Eigen::Matrix<typename Derived::Scalar, 2, 1, Eigen::DontAlign>> t
     static_assert(std::is_same<typename Derived::Scalar, typename Derived2::Scalar>::value && std::is_same<typename Derived::Scalar, typename Derived3::Scalar>::value, 
         "try_circle_center(): All three points must be of the same type.");
     using Scalar = typename Derived::Scalar;
-    using Vector = Eigen::Matrix<Scalar, 2, 1, Eigen::DontAlign>;
+    using Vector = Domain::Advanced::Vec<Scalar, 2>;
     Vector b  = bsrc - a;
     Vector c  = csrc - a;
     Scalar lb = b.squaredNorm();
@@ -216,7 +216,7 @@ inline Circled smallest_enclosing_circle_welzl(const Points &points)
 // factor(solve([a * x + b * y + c, x**2 + y**2 - r**2], [x, y])[0])
 // factor(solve([a * x + b * y + c, x**2 + y**2 - r**2], [x, y])[1])
 template<typename T>
-int ray_circle_intersections_r2_lv2_c(T r2, T a, T b, T lv2, T c, std::pair<Eigen::Matrix<T, 2, 1, Eigen::DontAlign>, Eigen::Matrix<T, 2, 1, Eigen::DontAlign>> &out)
+int ray_circle_intersections_r2_lv2_c(T r2, T a, T b, T lv2, T c, std::pair<Domain::Advanced::Vec<T, 2>, Domain::Advanced::Vec<T, 2>> &out)
 {
     T x0 = - a * c;
     T y0 = - b * c;
@@ -231,7 +231,7 @@ int ray_circle_intersections_r2_lv2_c(T r2, T a, T b, T lv2, T c, std::pair<Eige
     return d == T(0) ? 1 : 2;
 }
 template<typename T>
-int ray_circle_intersections(T r, T a, T b, T c, std::pair<Eigen::Matrix<T, 2, 1, Eigen::DontAlign>, Eigen::Matrix<T, 2, 1, Eigen::DontAlign>> &out)
+int ray_circle_intersections(T r, T a, T b, T c, std::pair<Domain::Advanced::Vec<T, 2>, Domain::Advanced::Vec<T, 2>> &out)
 {
     T lv2 = a * a + b * b;
     if (lv2 < T(SCALED_EPSILON * SCALED_EPSILON)) {

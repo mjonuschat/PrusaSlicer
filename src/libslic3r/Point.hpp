@@ -30,7 +30,7 @@
 #include <utility>
 #include <cassert>
 
-#include "Slic3r/Domain/Vectors.hpp"
+#include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Domain/Point.hpp"
 #include "libslic3r.h"
 #include "LocalesUtils.hpp"
@@ -46,7 +46,7 @@ using Vector = Domain::Point;
 template<int N, int M, class T>
 using Mat = Eigen::Matrix<T, N, M, Eigen::DontAlign, N, M>;
 
-template<int N, class T> using Vec = Mat<N, 1, T>;
+template<int N, class T> using LegacyVec = Domain::Advanced::Vec<T, N>;
 
 template<typename NumberType>
 using DynVec = Eigen::Matrix<NumberType, Eigen::Dynamic, 1>;
@@ -92,8 +92,6 @@ template<int N, class T> Transform<N, T> identity() { return Transform<N, T>::Id
 inline const auto &identity3f = identity<3, float>;
 inline const auto &identity3d = identity<3, double>;
 
-inline bool operator<(const Vec2d &lhs, const Vec2d &rhs) { return lhs.x() < rhs.x() || (lhs.x() == rhs.x() && lhs.y() < rhs.y()); }
-
 // Cross product of two 2D vectors.
 // None of the vectors may be of int32_t type as the result would overflow.
 template<typename Derived, typename Derived2>
@@ -125,13 +123,13 @@ inline double angle(const Eigen::MatrixBase<Derived> &v1, const Eigen::MatrixBas
 }
 
 template<typename Derived>
-Eigen::Matrix<typename Derived::Scalar, 2, 1, Eigen::DontAlign> to_2d(const Eigen::MatrixBase<Derived> &ptN) {
+Domain::Advanced::Vec<typename Derived::Scalar, 2> to_2d(const Eigen::MatrixBase<Derived> &ptN) {
     static_assert(Derived::IsVectorAtCompileTime && int(Derived::SizeAtCompileTime) >= 3, "to_2d(): first parameter is not a 3D or higher dimensional vector");
     return ptN.template head<2>();
 }
 
 template<typename Derived>
-inline Eigen::Matrix<typename Derived::Scalar, 3, 1, Eigen::DontAlign> to_3d(const Eigen::MatrixBase<Derived> &pt, const typename Derived::Scalar z) {
+inline Domain::Advanced::Vec<typename Derived::Scalar, 3> to_3d(const Eigen::MatrixBase<Derived> &pt, const typename Derived::Scalar z) {
     static_assert(Derived::IsVectorAtCompileTime && int(Derived::SizeAtCompileTime) == 2, "to_3d(): first parameter is not a 2D vector");
     return { pt.x(), pt.y(), z };
 }
@@ -174,20 +172,10 @@ inline const Vec3d get_x_base(const Transform3d::LinearPart &transform) { return
 inline const Vec3d get_y_base(const Transform3d::LinearPart &transform) { return get_base(1, transform); }
 inline const Vec3d get_z_base(const Transform3d::LinearPart &transform) { return get_base(2, transform); }
 
-template<int N, class T> using Vec = Eigen::Matrix<T,  N, 1, Eigen::DontAlign, N, 1>;
-
 using Domain::Point;
 using Domain::Points;
 
 using VecOfPoints = std::vector<Points, Domain::PointsAllocator<Points>>;
-
-namespace Domain {
-inline bool operator<(const Point &l, const Point &r)
-{
-    return l.x() < r.x() || (l.x() == r.x() && l.y() < r.y());
-}
-}
-
 
 inline bool is_approx(const Point &p1, const Point &p2, coord_t epsilon = coord_t(SCALED_EPSILON))
 {

@@ -30,8 +30,8 @@ Point ConcaveHull::centroid(const Points &pp)
     case 1: c = pp.front(); break;
     case 2: c = (pp[0] + pp[1]) / 2; break;
     default: {
-        auto MAX = std::numeric_limits<Point::coord_type>::max();
-        auto MIN = std::numeric_limits<Point::coord_type>::min();
+        auto MAX = std::numeric_limits<coord_t>::max();
+        auto MIN = std::numeric_limits<coord_t>::min();
         Point min = {MAX, MAX}, max = {MIN, MIN};
 
         for(auto& p : pp) {

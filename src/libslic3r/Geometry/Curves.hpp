@@ -19,8 +19,8 @@ template<int Dimension, typename NumberType>
 struct PolynomialCurve {
     Eigen::MatrixXf coefficients;
 
-    Vec<Dimension, NumberType> get_fitted_value(const NumberType& value) const {
-        Vec<Dimension, NumberType> result = Vec<Dimension, NumberType>::Zero();
+    LegacyVec<Dimension, NumberType> get_fitted_value(const NumberType& value) const {
+        LegacyVec<Dimension, NumberType> result = LegacyVec<Dimension, NumberType>::Zero();
         size_t order = this->coefficients.rows() - 1;
         auto x = NumberType(1.);
         for (size_t index = 0; index < order + 1; ++index, x *= value)
@@ -31,7 +31,7 @@ struct PolynomialCurve {
 
 //https://towardsdatascience.com/least-square-polynomial-CURVES-using-c-eigen-package-c0673728bd01
 template<int Dimension, typename NumberType>
-PolynomialCurve<Dimension, NumberType> fit_polynomial(const std::vector<Vec<Dimension, NumberType>> &observations,
+PolynomialCurve<Dimension, NumberType> fit_polynomial(const std::vector<LegacyVec<Dimension, NumberType>> &observations,
         const std::vector<NumberType> &observation_points,
         const std::vector<NumberType> &weights, size_t order) {
     // check to make sure inputs are correct
@@ -71,8 +71,8 @@ struct PiecewiseFittedCurve {
     NumberType segment_size;
     size_t endpoints_level_of_freedom;
 
-    Vec<Dimension, NumberType> get_fitted_value(const NumberType &observation_point) const {
-        Vec<Dimension, NumberType> result = Vec<Dimension, NumberType>::Zero();
+    LegacyVec<Dimension, NumberType> get_fitted_value(const NumberType &observation_point) const {
+        LegacyVec<Dimension, NumberType> result = LegacyVec<Dimension, NumberType>::Zero();
 
         //find corresponding segment index; expects kernels to be centered
         int middle_right_segment_index = floor((observation_point - start) / segment_size);
@@ -99,7 +99,7 @@ struct PiecewiseFittedCurve {
 // endpoints_level_of_freedom: number of additional parameters at each end; reasonable values depend on the kernel span
 template<typename Kernel, int Dimension, typename NumberType>
 PiecewiseFittedCurve<Dimension, NumberType, Kernel> fit_curve(
-        const std::vector<Vec<Dimension, NumberType>> &observations,
+        const std::vector<LegacyVec<Dimension, NumberType>> &observations,
         const std::vector<NumberType> &observation_points,
         const std::vector<NumberType> &weights,
         size_t segments_count,
@@ -183,7 +183,7 @@ PiecewiseFittedCurve<Dimension, NumberType, Kernel> fit_curve(
 template<int Dimension, typename NumberType>
 PiecewiseFittedCurve<Dimension, NumberType, LinearKernel<NumberType>>
 fit_linear_spline(
-        const std::vector<Vec<Dimension, NumberType>> &observations,
+        const std::vector<LegacyVec<Dimension, NumberType>> &observations,
         std::vector<NumberType> observation_points,
         std::vector<NumberType> weights,
         size_t segments_count,
@@ -195,7 +195,7 @@ fit_linear_spline(
 template<int Dimension, typename NumberType>
 PiecewiseFittedCurve<Dimension, NumberType, CubicBSplineKernel<NumberType>>
 fit_cubic_bspline(
-        const std::vector<Vec<Dimension, NumberType>> &observations,
+        const std::vector<LegacyVec<Dimension, NumberType>> &observations,
         std::vector<NumberType> observation_points,
         std::vector<NumberType> weights,
         size_t segments_count,
@@ -207,7 +207,7 @@ fit_cubic_bspline(
 template<int Dimension, typename NumberType>
 PiecewiseFittedCurve<Dimension, NumberType, CubicCatmulRomKernel<NumberType>>
 fit_catmul_rom_spline(
-        const std::vector<Vec<Dimension, NumberType>> &observations,
+        const std::vector<LegacyVec<Dimension, NumberType>> &observations,
         std::vector<NumberType> observation_points,
         std::vector<NumberType> weights,
         size_t segments_count,

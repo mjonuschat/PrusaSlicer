@@ -349,7 +349,7 @@ inline double get_distance(const Vec3f &p, const Interior &interior)
 }
 
 template<class T>
-FloatingOnly<T> get_distance(const Vec<3, T> &p, const Interior &interior)
+FloatingOnly<T> get_distance(const LegacyVec<3, T> &p, const Interior &interior)
 {
     return get_distance(Vec3f(p.template cast<float>()), interior);
 }
@@ -593,7 +593,7 @@ struct FaceHash {
         return ret;
     }
 
-    static std::string hash(const Vec<3, int64_t> &v)
+    static std::string hash(const LegacyVec<3, int64_t> &v)
     {
         std::string ret;
         ret.reserve(3 * MAX_NUM_CHARS);
@@ -607,7 +607,7 @@ struct FaceHash {
     static std::string facekey(const Index3 &face, const std::vector<Vec3f> &vertices)
     {
         // Scale to integer to avoid floating points
-        std::array<Vec<3, int64_t>, 3> pts = {
+        std::array<LegacyVec<3, int64_t>, 3> pts = {
             scaled<int64_t>(vertices[face[0]]),
             scaled<int64_t>(vertices[face[1]]),
             scaled<int64_t>(vertices[face[2]])
@@ -616,8 +616,8 @@ struct FaceHash {
         // Get the first two sides of the triangle, do a cross product and move
         // that vector to the center of the triangle. This encodes all
         // information to identify an identical triangle at the same position.
-        Vec<3, int64_t> a = pts[0] - pts[2], b = pts[1] - pts[2];
-        Vec<3, int64_t> c = a.cross(b) + (pts[0] + pts[1] + pts[2]) / 3;
+        LegacyVec<3, int64_t> a = pts[0] - pts[2], b = pts[1] - pts[2];
+        LegacyVec<3, int64_t> c = a.cross(b) + (pts[0] + pts[1] + pts[2]) / 3;
 
         // Return a concatenated string representation of the coordinates
         return hash(c);

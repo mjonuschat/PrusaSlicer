@@ -562,7 +562,7 @@ namespace detail {
 		Scalar 							 low_sqr_d,
   		Scalar 							 up_sqr_d,
 		size_t 							&i,
-  		Eigen::PlainObjectBase<typename IndexedPrimitivesDistancerType::VectorType> &c)
+  		typename IndexedPrimitivesDistancerType::VectorType &c)
 	{
 		using Vector = typename IndexedPrimitivesDistancerType::VectorType;
 
@@ -812,7 +812,7 @@ inline typename VectorType::Scalar squared_distance_to_indexed_triangle_set(
 	// Index of the closest triangle in faces.
 	size_t 								&hit_idx_out,
 	// Position of the closest point on the indexed triangle set.
-	Eigen::PlainObjectBase<VectorType>	&hit_point_out)
+	VectorType	                        &hit_point_out)
 {
     using Scalar = typename VectorType::Scalar;
     auto distancer = detail::IndexedTriangleSetDistancer<VertexType, IndexedFaceType, TreeType, VectorType>

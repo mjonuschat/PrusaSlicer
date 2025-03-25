@@ -44,10 +44,10 @@ static bool line_cmp(const Line& e1, const Line& e2)
 {
     using Ratio = boost::rational<LargeInt>;
 
-    const Vec<2, int64_t> ax(1, 0); // Unit vector for the X axis
+    const LegacyVec<2, int64_t> ax(1, 0); // Unit vector for the X axis
 
-    Vec<2, int64_t> p1 = (e1.b - e1.a).cast<int64_t>();
-    Vec<2, int64_t> p2 = (e2.b - e2.a).cast<int64_t>();
+    LegacyVec<2, int64_t> p1 = (e1.b - e1.a).cast<int64_t>();
+    LegacyVec<2, int64_t> p2 = (e2.b - e2.a).cast<int64_t>();
 
     // Quadrant mapping array. The quadrant of a vector can be determined
     // from the dot product of the vector and its perpendicular pair

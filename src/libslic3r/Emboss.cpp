@@ -827,7 +827,7 @@ const Glyph* get_glyph(
             double ratio = *font_prop.skew;
             auto skew = [&ratio](Polygon &polygon) {
                 for (Slic3r::Point &p : polygon.points)
-                    p.x() += static_cast<Point::coord_type>(std::round(p.y() * ratio));
+                    p.x() += static_cast<coord_t>(std::round(p.y() * ratio));
             };
             for (ExPolygon &expolygon : glyph.shape) {
                 skew(expolygon.contour);
@@ -1873,7 +1873,7 @@ bool point_in_distance(const Coord2 &distance_sq, PolygonPoint &polygon_point, c
         return true;
     }
 
-    polygon_point.point = p + (t * line_dir2).cast<Point::coord_type>();
+    polygon_point.point = p + (t * line_dir2).cast<coord_t>();
     return true;
 }
 

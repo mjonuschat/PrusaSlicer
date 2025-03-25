@@ -49,7 +49,7 @@ struct CachedPosition
     float feedrate{ FLT_MAX };
 
     void reset() {
-        position = { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX };
+        position = Domain::Vec4f{ FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX };
         feedrate = FLT_MAX;
     }
 };

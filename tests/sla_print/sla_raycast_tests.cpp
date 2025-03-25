@@ -19,22 +19,22 @@ TEST_CASE("Raycaster - find intersections of a line and cylinder")
     Vec3f dir;
 
     // Start inside the hole and cast perpendicular to its axis.
-    s = {-1.f, 0, 5.f};
-    dir = {1.f, 0, 0};
+    s = Vec3f{-1.f, 0, 5.f};
+    dir = Vec3f{1.f, 0, 0};
     hole.get_intersections(s, dir, out);
     REQUIRE(out[0].first == Approx(-4.f));
     REQUIRE(out[1].first == Approx(6.f));
 
     // Start outside and cast parallel to axis.
-    s = {0, 0, -1.f};
-    dir = {0, 0, 1.f};
+    s = Vec3f{0, 0, -1.f};
+    dir = Vec3f{0, 0, 1.f};
     hole.get_intersections(s, dir, out);
     REQUIRE(std::abs(out[0].first - 1.f) < 0.001f);
     REQUIRE(std::abs(out[1].first - 11.f) < 0.001f);
 
     // Start outside and cast so that entry is in base and exit on the cylinder
-    s = {0, -1.f, -1.f};
-    dir = {0, 1.f, 1.f};
+    s = Vec3f{0, -1.f, -1.f};
+    dir = Vec3f{0, 1.f, 1.f};
     dir.normalize();
     hole.get_intersections(s, dir, out);
     REQUIRE(std::abs(out[0].first - std::sqrt(2.f)) < 0.001f);

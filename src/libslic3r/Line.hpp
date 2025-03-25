@@ -41,10 +41,10 @@ template<class L, class En = void> struct Traits {
     static constexpr int Dim = L::Dim;
     using Scalar = typename L::Scalar;
 
-    static Vec<Dim, Scalar>& get_a(L &l) { return l.a; }
-    static Vec<Dim, Scalar>& get_b(L &l) { return l.b; }
-    static const Vec<Dim, Scalar>& get_a(const L &l) { return l.a; }
-    static const Vec<Dim, Scalar>& get_b(const L &l) { return l.b; }
+    static LegacyVec<Dim, Scalar>& get_a(L &l) { return l.a; }
+    static LegacyVec<Dim, Scalar>& get_b(L &l) { return l.b; }
+    static const LegacyVec<Dim, Scalar>& get_a(const L &l) { return l.a; }
+    static const LegacyVec<Dim, Scalar>& get_b(const L &l) { return l.b; }
 };
 
 template<class L> const constexpr int Dim = Traits<remove_cvref_t<L>>::Dim;
@@ -55,9 +55,9 @@ template<class L> auto get_b(L &&l) { return Traits<remove_cvref_t<L>>::get_b(l)
 
 // Distance to the closest point of line.
 template<class L>
-inline double distance_to_squared(const L &line, const Vec<Dim<L>, Scalar<L>> &point, Vec<Dim<L>, Scalar<L>> *nearest_point)
+inline double distance_to_squared(const L &line, const LegacyVec<Dim<L>, Scalar<L>> &point, LegacyVec<Dim<L>, Scalar<L>> *nearest_point)
 {
-    using VecType = Vec<Dim<L>, double>;
+    using VecType = LegacyVec<Dim<L>, double>;
     const VecType  v  = (get_b(line) - get_a(line)).template cast<double>();
     const VecType  va = (point  - get_a(line)).template cast<double>();
     const double  l2 = v.squaredNorm();
@@ -87,14 +87,14 @@ inline double distance_to_squared(const L &line, const Vec<Dim<L>, Scalar<L>> &p
 
 // Distance to the closest point of line.
 template<class L>
-double distance_to_squared(const L &line, const Vec<Dim<L>, Scalar<L>> &point)
+double distance_to_squared(const L &line, const LegacyVec<Dim<L>, Scalar<L>> &point)
 {
-    Vec<Dim<L>, Scalar<L>> nearest_point;
+    LegacyVec<Dim<L>, Scalar<L>> nearest_point;
     return distance_to_squared<L>(line, point, &nearest_point);
 }
 
 template<class L>
-double distance_to(const L &line, const Vec<Dim<L>, Scalar<L>> &point)
+double distance_to(const L &line, const LegacyVec<Dim<L>, Scalar<L>> &point)
 {
     return std::sqrt(distance_to_squared(line, point));
 }
@@ -102,10 +102,10 @@ double distance_to(const L &line, const Vec<Dim<L>, Scalar<L>> &point)
 // Returns a squared distance to the closest point on the infinite.
 // Returned nearest_point (and returned squared distance to this point) could be beyond the 'a' and 'b' ends of the segment.
 template<class L>
-double distance_to_infinite_squared(const L &line, const Vec<Dim<L>, Scalar<L>> &point, Vec<Dim<L>, Scalar<L>> *closest_point)
+double distance_to_infinite_squared(const L &line, const LegacyVec<Dim<L>, Scalar<L>> &point, LegacyVec<Dim<L>, Scalar<L>> *closest_point)
 {
-    const Vec<Dim<L>, double> v  = (get_b(line) - get_a(line)).template cast<double>();
-    const Vec<Dim<L>, double> va = (point - get_a(line)).template cast<double>();
+    const LegacyVec<Dim<L>, double> v  = (get_b(line) - get_a(line)).template cast<double>();
+    const LegacyVec<Dim<L>, double> va = (point - get_a(line)).template cast<double>();
     const double              l2 = v.squaredNorm(); // avoid a sqrt
     if (l2 == 0.) {
         // a == b case
@@ -123,16 +123,16 @@ double distance_to_infinite_squared(const L &line, const Vec<Dim<L>, Scalar<L>> 
 // Returns a squared distance to the closest point on the infinite.
 // Closest point (and returned squared distance to this point) could be beyond the 'a' and 'b' ends of the segment.
 template<class L>
-double distance_to_infinite_squared(const L &line, const Vec<Dim<L>, Scalar<L>> &point)
+double distance_to_infinite_squared(const L &line, const LegacyVec<Dim<L>, Scalar<L>> &point)
 {
-    Vec<Dim<L>, Scalar<L>> nearest_point;
+    LegacyVec<Dim<L>, Scalar<L>> nearest_point;
     return distance_to_infinite_squared<L>(line, point, &nearest_point);
 }
 
-template<class L> bool intersection(const L &l1, const L &l2, Vec<Dim<L>, Scalar<L>> *intersection_pt)
+template<class L> bool intersection(const L &l1, const L &l2, LegacyVec<Dim<L>, Scalar<L>> *intersection_pt)
 {
     using Floating      = typename std::conditional<std::is_floating_point<Scalar<L>>::value, Scalar<L>, double>::type;
-    using VecType       = const Vec<Dim<L>, Floating>;
+    using VecType       = const LegacyVec<Dim<L>, Floating>;
     const VecType v1    = (l1.b - l1.a).template cast<Floating>();
     const VecType v2    = (l2.b - l2.a).template cast<Floating>();
     Floating      denom = cross2(v1, v2);

@@ -7,7 +7,6 @@
 
 #include <libslic3r/SLA/SpatIndex.hpp>
 #include <libslic3r/Execution/ExecutionTBB.hpp>
-#include <Eigen/Geometry>
 #include <algorithm>
 #include <map>
 #include <mutex>

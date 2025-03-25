@@ -14,16 +14,16 @@ namespace Slic3r {
 template<class T>
 class PointGrid {
     std::array<int, 3> m_size;
-    std::vector<Vec<3, T>> m_data;
+    std::vector<LegacyVec<3, T>> m_data;
     const int XY;
 
 public:
-    explicit PointGrid(std::vector<Vec<3, T>> data, const std::array<int, 3> &size)
+    explicit PointGrid(std::vector<LegacyVec<3, T>> data, const std::array<int, 3> &size)
         : m_data(std::move(data)), m_size{size}, XY{m_size[0] * m_size[1]}
     {}
 
-    const Vec<3, T> & get(size_t idx) const { return m_data[idx]; }
-    const Vec<3, T> & get(const Domain::Index3 &coord) const
+    const LegacyVec<3, T> & get(size_t idx) const { return m_data[idx]; }
+    const LegacyVec<3, T> & get(const Domain::Index3 &coord) const
     {
         return m_data[get_idx(coord)];
     }
@@ -43,22 +43,22 @@ public:
         return {ix, iy, iz};
     }
 
-    const std::vector<Vec<3, T>> & data() const { return m_data; }
+    const std::vector<LegacyVec<3, T>> & data() const { return m_data; }
     size_t point_count() const { return m_data.size(); }
     bool empty() const { return m_data.empty(); }
 };
 
 template<class Ex, class CoordT>
 PointGrid<CoordT> point_grid(Ex                                      policy,
-                             const BoundingBox3Base<Vec<3, CoordT>> &bounds,
-                             const Vec<3, CoordT>                   &stride)
+                             const BoundingBox3Base<LegacyVec<3, CoordT>> &bounds,
+                             const LegacyVec<3, CoordT>                   &stride)
 {
     std::array<int, 3> numpts = {0, 0, 0};
 
     for (int n = 0; n < 3; ++n)
         numpts[n] = (bounds.max(n) - bounds.min(n)) / stride(n);
 
-    std::vector<Vec<3, CoordT>> out(numpts[0] * numpts[1] * numpts[2]);
+    std::vector<LegacyVec<3, CoordT>> out(numpts[0] * numpts[1] * numpts[2]);
 
     size_t XY = numpts[X] * numpts[Y];
 
@@ -67,7 +67,7 @@ PointGrid<CoordT> point_grid(Ex                                      policy,
         int iy = (i / numpts[X]) % numpts[Y];
         int ix = i % numpts[X];
 
-        out[i] = Vec<3, CoordT>(ix * stride.x(), iy * stride.y(), iz * stride.z());
+        out[i] = LegacyVec<3, CoordT>(ix * stride.x(), iy * stride.y(), iz * stride.z());
     });
 
     return PointGrid{std::move(out), numpts};

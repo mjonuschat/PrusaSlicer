@@ -40,16 +40,16 @@ public:
 };
 
 template<class Sc>
-static Sc sq_dst(const Vec<3, Sc> &v1, const Vec<3, Sc>& v2)
+static Sc sq_dst(const LegacyVec<3, Sc> &v1, const LegacyVec<3, Sc>& v2)
 {
-    Vec<3, Sc> v = v1 - v2;
+    LegacyVec<3, Sc> v = v1 - v2;
     return v.x() * v.x() + v.y() * v.y() /*+ v.z() * v.z()*/;
 }
 
 template<class Sc>
 static Sc trscore(const Ring &                   onring,
                   const Ring &                   offring,
-                  const std::vector<Vec<3, Sc>> &pts)
+                  const std::vector<LegacyVec<3, Sc>> &pts)
 {
     Sc a = sq_dst(pts[onring.pos().first], pts[offring.pos().first]);
     Sc b = sq_dst(pts[onring.pos().second], pts[offring.pos().first]);
@@ -58,7 +58,7 @@ static Sc trscore(const Ring &                   onring,
 
 template<class Sc>
 class Triangulator {
-    const std::vector<Vec<3, Sc>> *pts;
+    const std::vector<LegacyVec<3, Sc>> *pts;
     Ring *onring, *offring;
 
     double calc_score() const
@@ -108,7 +108,7 @@ public:
         }
     }
 
-    explicit Triangulator(const std::vector<Vec<3, Sc>> *points,
+    explicit Triangulator(const std::vector<LegacyVec<3, Sc>> *points,
                           Ring &                    lower,
                           Ring &                    upper)
         : pts{points}, onring{&upper}, offring{&lower}
@@ -118,7 +118,7 @@ public:
 } // namespace trianglulate_wall_detail
 
 template<class Sc, class I>
-void triangulate_wall(std::vector<Vec<3, Sc>> &pts,
+void triangulate_wall(std::vector<LegacyVec<3, Sc>> &pts,
                       std::vector<std::array<I, 3>> & ind,
                       const Polygon &          lower,
                       const Polygon &          upper,

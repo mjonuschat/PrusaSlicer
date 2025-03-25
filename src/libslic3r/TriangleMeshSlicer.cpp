@@ -232,7 +232,7 @@ inline FacetSliceType slice_facet(
     // Z height of the slice in XY plane. Scaled or unscaled (same as vertices[].z()).
     T                                               slice_z,
     // 3 vertices of the triangle, XY scaled. Z scaled or unscaled (same as slice_z).
-    const Eigen::Matrix<T, 3, 1, Eigen::DontAlign> *vertices,
+    const Domain::Advanced::Vec<T, 3>               *vertices,
     const stl_triangle_vertex_indices              &indices,
     const Index3                                    &edge_ids,
     const int                                       idx_vertex_lowest,
@@ -240,7 +240,7 @@ inline FacetSliceType slice_facet(
     const ColorPolygon::Color                       facet_color,
     IntersectionLine                               &line_out)
 {
-    using             Vector = Eigen::Matrix<T, 3, 1, Eigen::DontAlign>;
+    using             Vector = Domain::Advanced::Vec<T, 3>;
     IntersectionPoint points[3];
     size_t            num_points = 0;
     auto              point_on_layer = size_t(-1);
