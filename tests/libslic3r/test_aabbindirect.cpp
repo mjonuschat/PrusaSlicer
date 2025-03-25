@@ -169,7 +169,7 @@ TEST_CASE("AABBTreeLines vs SignedDistanceGrid time Benchmark", "[AABBIndirect]"
 
     // NOTE: max coord value of the lines is approx 83 mm
     for (int r = 1; r < 1000; ++r) {
-        lines[0].push_back(Point::new_scale(Vec2d(exp(0.005f * r) * cos(r), exp(0.005f * r) * cos(r))));
+        lines[0].push_back(scaled(Vec2d(exp(0.005f * r) * cos(r), exp(0.005f * r) * cos(r))));
         linesf.emplace_back(prevf, Vec2d(exp(0.005f * r) * cos(r), exp(0.005f * r) * cos(r)));
         prevf = linesf.back().b;
     }
@@ -232,7 +232,7 @@ TEST_CASE("AABBTreeLines vs SignedDistanceGrid time Benchmark", "[AABBIndirect]"
         Vec2d qp { rand() / (double(RAND_MAX) + 1.0f) * 200.0 - 100.0, rand() / (double(RAND_MAX) + 1.0f) * 200.0
                 - 100.0 };
         query_pointsf.push_back(qp);
-        query_points.push_back(Point::new_scale(qp));
+        query_points.push_back(scaled(qp));
     }
 
     {
@@ -284,14 +284,14 @@ TEST_CASE("AABBTreeLines vs SignedDistanceGrid time Benchmark", "[AABBIndirect]"
         for (int x = 0; x < count; ++x) {
             Vec2d cp { rand() / (double(RAND_MAX) + 1.0f) * 200.0 - 100.0, rand() / (double(RAND_MAX) + 1.0f) * 200.0
                     - 100.0 };
-            lines[0].push_back(Point::new_scale(cp));
+            lines[0].push_back(scaled(cp));
             linesf.emplace_back(prevf, cp);
             prevf = linesf.back().b;
 
             Vec2d qp { rand() / (double(RAND_MAX) + 1.0f) * 200.0 - 100.0, rand() / (double(RAND_MAX) + 1.0f) * 200.0
                     - 100.0 };
             query_pointsf.push_back(qp);
-            query_points.push_back(Point::new_scale(qp));
+            query_points.push_back(scaled(qp));
         }
 
         std::cout << "Test for point count: " << count << std::endl;
@@ -354,14 +354,14 @@ TEST_CASE("AABBTreeLines vs SignedDistanceGrid time Benchmark", "[AABBIndirect]"
               Vec2d cp { rand() / (double(RAND_MAX) + 1.0f) * 200.0 - 100.0, rand() / (double(RAND_MAX) + 1.0f) * 200.0
                       - 100.0 };
               Vec2d contour = prevf + cp.normalized()*4.0; // limits the cnotour edge len to 4mm
-              lines[0].push_back(Point::new_scale(contour));
+              lines[0].push_back(scaled(contour));
               linesf.emplace_back(prevf, contour);
               prevf = linesf.back().b;
 
               Vec2d qp { rand() / (double(RAND_MAX) + 1.0f) * 200.0 - 100.0, rand() / (double(RAND_MAX) + 1.0f) * 200.0
                       - 100.0 };
               query_pointsf.push_back(qp);
-              query_points.push_back(Point::new_scale(qp));
+              query_points.push_back(scaled(qp));
           }
 
           std::cout << "Test for point count: " << count << std::endl;

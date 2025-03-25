@@ -246,7 +246,7 @@ SCENARIO("Original Slic3r Skirt/Brim tests", "[SkirtBrim]") {
                                 // Skirt uses first material extruder, support material speed.
                                 skirt_length += line.dist_XY(self);
                             } else
-                                extrusion_points.push_back(Slic3r::Point::new_scale(line.new_X(self), line.new_Y(self)));
+                                extrusion_points.push_back(scaled(Vec2d{line.new_X(self}), line.new_Y(self)));
                         }
                     }
                     if (self.z() == Approx(0.3) || line.new_Z(self) == Approx(0.3)) {

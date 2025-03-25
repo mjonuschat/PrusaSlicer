@@ -159,15 +159,15 @@ static std::vector<ExtrusionPaths> getFakeExtrusionPathsFromWipeTower(const Wipe
             path.polyline.clear();
             double r = cone_base_R * (1 - hh/height);
             for (double alpha=0; alpha<2.01*M_PI; alpha+=2*M_PI/20.)
-                path.polyline.points.emplace_back(Point::new_scale(width/2. + r * std::cos(alpha)/cone_scale_x, depth/2. + r * std::sin(alpha)));
+                path.polyline.points.emplace_back(scaled(Vec2d(width/2. + r * std::cos(alpha)/cone_scale_x, depth/2. + r * std::sin(alpha))));
             paths.back().emplace_back(path);
             if (hh == 0.f) { // Cone brim.
                 for (float bw=wtd.brim_width; bw>0.f; bw-=3.f) {
                     path.polyline.clear();
                     for (double alpha=0; alpha<2.01*M_PI; alpha+=2*M_PI/20.) // see load_wipe_tower_preview, where the same is a bit clearer
-                        path.polyline.points.emplace_back(Point::new_scale(
+                        path.polyline.points.emplace_back(scaled(Vec2d(
                             width/2. + cone_base_R * std::cos(alpha)/cone_scale_x * (1. + cone_scale_x*bw/cone_base_R),
-                            depth/2. + cone_base_R * std::sin(alpha) * (1. + bw/cone_base_R))
+                            depth/2. + cone_base_R * std::sin(alpha) * (1. + bw/cone_base_R)))
                         );
                     paths.back().emplace_back(path);
                 }

@@ -60,11 +60,11 @@ Pointf3s convex_hull(Pointf3s points)
         // Build lower hull
         for (int i = 0; i < n; ++i)
         {
-            Point p = Point::new_scale(points[i](0), points[i](1));
+            Point p = scaled(Vec2d(points[i](0), points[i](1)));
             while (k >= 2)
             {
-                Point k1 = Point::new_scale(hull[k - 1](0), hull[k - 1](1));
-                Point k2 = Point::new_scale(hull[k - 2](0), hull[k - 2](1));
+                Point k1 = scaled(Vec2d(hull[k - 1](0), hull[k - 1](1)));
+                Point k2 = scaled(Vec2d(hull[k - 2](0), hull[k - 2](1)));
 
                 if (Geometry::orient(p, k2, k1) != Geometry::ORIENTATION_CCW)
                     --k;
@@ -78,11 +78,11 @@ Pointf3s convex_hull(Pointf3s points)
         // Build upper hull
         for (int i = n - 2, t = k + 1; i >= 0; --i)
         {
-            Point p = Point::new_scale(points[i](0), points[i](1));
+            Point p = scaled(Vec2d(points[i](0), points[i](1)));
             while (k >= t)
             {
-                Point k1 = Point::new_scale(hull[k - 1](0), hull[k - 1](1));
-                Point k2 = Point::new_scale(hull[k - 2](0), hull[k - 2](1));
+                Point k1 = scaled(Vec2d(hull[k - 1](0), hull[k - 1](1)));
+                Point k2 = scaled(Vec2d(hull[k - 2](0), hull[k - 2](1)));
 
                 if (Geometry::orient(p, k2, k1) != Geometry::ORIENTATION_CCW)
                     --k;

@@ -172,7 +172,7 @@ static std::vector<PrintObjectTrafoAndInstances> print_objects_from_model_object
         if (model_instance->is_printable()) {
             Geometry::Transformation model_instance_transformation = model_instance->get_transformation();
             trafo.trafo = model_instance_transformation.get_matrix_with_applied_shrinkage_compensation(shrinkage_compensation);
-            auto shift = Point::new_scale(trafo.trafo.data()[12], trafo.trafo.data()[13]);
+            auto shift = scaled(Vec2d(trafo.trafo.data()[12], trafo.trafo.data()[13]));
             // Reset the XY axes of the transformation.
             trafo.trafo.data()[12] = 0;
             trafo.trafo.data()[13] = 0;

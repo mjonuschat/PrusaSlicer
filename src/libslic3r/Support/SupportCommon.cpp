@@ -1505,7 +1505,7 @@ void generate_support_toolpaths(
     if (config.support_material_pattern == smpRectilinearGrid)
         angles.push_back(support_params.interface_angle);
 
-    BoundingBox bbox_object(Point::new_scale(-1.0, -1.0), Point::new_scale(1.0, 1.0));
+    BoundingBox bbox_object(scaled(Vec2d(-1.0, -1.0)), scaled(Vec2d(1.0, 1.0)));
 
 //    const double link_max_length_factor = 3.;
     const double link_max_length_factor = 0.;

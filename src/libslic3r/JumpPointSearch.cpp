@@ -296,10 +296,10 @@ Polyline JPSPathFinder::find_path(const Point &p0, const Point &p1)
 #ifdef DEBUG_FILES
     auto scaled_points = [](const Points &ps) {
         Points r;
-        for (const Point &p : ps) { r.push_back(Point::new_scale(p.x(), p.y())); }
+        for (const Point &p : ps) { r.push_back(scaled(Vec2d(p.x(), p.y()))); }
         return r;
     };
-    auto          scaled_point = [](const Point &p) { return Point::new_scale(p.x(), p.y()); };
+    auto          scaled_point = [](const Point &p) { return scaled(Vec2d(p.x(), p.y())); };
     ::Slic3r::SVG svg(debug_out_path(("path_jps" + std::to_string(print_z) + "_" + std::to_string(rand() % 1000)).c_str()).c_str(),
                       BoundingBox(scaled_point(search_box.min), scaled_point(search_box.max)));
     for (const auto &p : inpassable) { svg.draw(scaled_point(p), "black", scale_(0.4)); }

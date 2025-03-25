@@ -188,7 +188,7 @@ static std::vector<SLAPrintObject::Instance> sla_instances(const ModelObject &mo
             if (model_instance->is_printable()) {
                 instances.emplace_back(
                     model_instance->id(),
-                    Point::new_scale(model_instance->get_offset(X), model_instance->get_offset(Y)),
+                    scaled(Vec2d(model_instance->get_offset(X), model_instance->get_offset(Y))),
                     float(Geometry::rotation_diff_z(trafo0, model_instance->get_matrix())));
             }
     }

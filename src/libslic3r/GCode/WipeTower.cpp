@@ -1440,7 +1440,7 @@ WipeTower::ToolChangeResult WipeTower::finish_layer()
         
         for (size_t i = 0; i < loops_num; ++ i) {
             poly = offset(poly, scale_(spacing)).front();
-            int cp = Algorithms::Polygon::closest_point_index(poly, Point::new_scale(writer.x(), writer.y()));
+            int cp = Algorithms::Polygon::closest_point_index(poly, scaled(Vec2d(writer.x(), writer.y())));
             writer.travel(unscale(poly.points[cp]).cast<float>());
             for (int i=cp+1; true; ++i ) {
                 if (i==int(poly.points.size()))
@@ -1457,7 +1457,7 @@ WipeTower::ToolChangeResult WipeTower::finish_layer()
     }
 
     // Now prepare future wipe.
-    int i = Algorithms::Polygon::closest_point_index(poly, Point::new_scale(writer.x(), writer.y()));
+    int i = Algorithms::Polygon::closest_point_index(poly, scaled(Vec2d(writer.x(), writer.y())));
     writer.add_wipe_point(writer.pos());
     writer.add_wipe_point(unscale(poly.points[i==0 ? int(poly.points.size())-1 : i-1]).cast<float>());
 

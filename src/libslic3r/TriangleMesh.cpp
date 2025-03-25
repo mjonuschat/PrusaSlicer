@@ -460,7 +460,7 @@ Polygon TriangleMesh::convex_hull()
     pp.reserve(this->its.vertices.size());
     for (size_t i = 0; i < this->its.vertices.size(); ++ i) {
         const stl_vertex &v = this->its.vertices[i];
-        pp.emplace_back(Point::new_scale(v(0), v(1)));
+        pp.emplace_back(scaled(Vec2d(v(0), v(1))));
     }
     return Slic3r::Geometry::convex_hull(pp);
 }

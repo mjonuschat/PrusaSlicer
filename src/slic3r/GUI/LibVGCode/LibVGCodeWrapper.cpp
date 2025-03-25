@@ -499,7 +499,7 @@ static void convert_wipe_tower_to_vertices(const Slic3r::Print& print, const std
                         ee.pos = Eigen::Rotation2Df(angle) * ee.pos;
                         ee.pos += position;
                     }
-                    lines.emplace_back(Slic3r::Point::new_scale(e_prev.pos.x(), e_prev.pos.y()), Slic3r::Point::new_scale(ee.pos.x(), ee.pos.y()));
+                    lines.emplace_back(scaled(Vec2d(e_prev.pos.x(), e_prev.pos.y())), scaled(Vec2d(ee.pos.x(), ee.pos.y())));
                     widths.emplace_back(ee.width);
                     e_prev = ee;
                 }

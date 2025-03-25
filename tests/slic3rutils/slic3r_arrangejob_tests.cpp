@@ -222,7 +222,7 @@ TEST_CASE("Basic arrange with cube", "[arrangejob]") {
         arr2::Scene scene{arr2::SceneBuilder{}
                                      .set_model(m)
                                      .set_arrange_settings(&settings)
-                                     .set_bed(cfg, Point::new_scale(10, 10))};
+                                     .set_bed(cfg, scaled(Vec2d{10, 10}))};
 
         w.push(std::make_unique<ArrangeJob2>(std::move(scene)));
         w.process_events();

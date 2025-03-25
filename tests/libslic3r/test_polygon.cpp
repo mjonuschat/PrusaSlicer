@@ -99,20 +99,20 @@ TEST_CASE("Centroid of Trapezoid must be inside", "[Polygon][Utils]")
 // All remaining tests are to be ported from xs/t/06_polygon.t
 
 Slic3r::Points collinear_circle({
-    Slic3r::Point::new_scale(0, 0), // 3 collinear points at beginning
-    Slic3r::Point::new_scale(10, 0),
-    Slic3r::Point::new_scale(20, 0),
-    Slic3r::Point::new_scale(30, 10),
-    Slic3r::Point::new_scale(40, 20), // 2 collinear points
-    Slic3r::Point::new_scale(40, 30),
-    Slic3r::Point::new_scale(30, 40), // 3 collinear points
-    Slic3r::Point::new_scale(20, 40),
-    Slic3r::Point::new_scale(10, 40),
-    Slic3r::Point::new_scale(-10, 20),
-    Slic3r::Point::new_scale(-20, 10),
-    Slic3r::Point::new_scale(-20, 0), // 3 collinear points at end
-    Slic3r::Point::new_scale(-10, 0),
-    Slic3r::Point::new_scale(-5, 0)
+    Slic3r::scaled(Vec2d{0, 0}), // 3 collinear points at beginning
+    Slic3r::scaled(Vec2d{10, 0}),
+    Slic3r::scaled(Vec2d{20, 0}),
+    Slic3r::scaled(Vec2d{30, 10}),
+    Slic3r::scaled(Vec2d{40, 20}), // 2 collinear points
+    Slic3r::scaled(Vec2d{40, 30}),
+    Slic3r::scaled(Vec2d{30, 40}), // 3 collinear points
+    Slic3r::scaled(Vec2d{20, 40}),
+    Slic3r::scaled(Vec2d{10, 40}),
+    Slic3r::scaled(Vec2d{-10, 20}),
+    Slic3r::scaled(Vec2d{-20, 10}),
+    Slic3r::scaled(Vec2d{-20, 0}), // 3 collinear points at end
+    Slic3r::scaled(Vec2d{-10, 0}),
+    Slic3r::scaled(Vec2d{-5, 0})
 });
 
 SCENARIO("Remove collinear points from Polygon", "[Polygon]") {
@@ -121,10 +121,10 @@ SCENARIO("Remove collinear points from Polygon", "[Polygon]") {
         WHEN("collinear points are removed") {
             remove_collinear(p);
             THEN("Leading collinear points are removed") {
-                REQUIRE(p.points.front() == Slic3r::Point::new_scale(20, 0));
+                REQUIRE(p.points.front() == Slic3r::scaled(Vec2d{20, 0}));
             }
             THEN("Trailing collinear points are removed") {
-                REQUIRE(p.points.back() == Slic3r::Point::new_scale(-20, 0));
+                REQUIRE(p.points.back() == Slic3r::scaled(Vec2d{-20, 0}));
             }
             THEN("Number of remaining points is correct") {
                 REQUIRE(p.points.size() == 7);

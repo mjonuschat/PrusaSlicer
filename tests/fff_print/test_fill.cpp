@@ -52,8 +52,8 @@ TEST_CASE("Fill: Pattern Path Length", "[Fill]") {
         test_set.reserve(4);
         std::vector<Vec2d> points { {0,0}, {100,0}, {100,100}, {0,100} };
         for (size_t i = 0; i < 4; ++i) {
-            std::transform(points.cbegin()+i, points.cend(),   std::back_inserter(test_set), [] (const Vec2d& a) -> Point { return Point::new_scale(a.x(), a.y()); } ); 
-            std::transform(points.cbegin(), points.cbegin()+i, std::back_inserter(test_set), [] (const Vec2d& a) -> Point { return Point::new_scale(a.x(), a.y()); } );
+            std::transform(points.cbegin()+i, points.cend(),   std::back_inserter(test_set), [] (const Vec2d& a) -> Point { return scaled(Vec2d(a.x(), a.y())); } ); 
+            std::transform(points.cbegin(), points.cbegin()+i, std::back_inserter(test_set), [] (const Vec2d& a) -> Point { return scaled(Vec2d(a.x(), a.y())); } );
             Slic3r::Polylines paths = test(Slic3r::ExPolygon(test_set));
             REQUIRE(paths.size() == 1); // one continuous path
 
@@ -69,7 +69,7 @@ TEST_CASE("Fill: Pattern Path Length", "[Fill]") {
         std::vector<Vec2d> points {Vec2d(0,0), Vec2d(100,0), Vec2d(150,50), Vec2d(100,100), Vec2d(0,100), Vec2d(-50,50)};
         Slic3r::Points test_set;
         test_set.reserve(6);
-        std::transform(points.cbegin(), points.cend(),   std::back_inserter(test_set), [] (const Vec2d& a) -> Point { return Point::new_scale(a.x(), a.y()); } );
+        std::transform(points.cbegin(), points.cend(),   std::back_inserter(test_set), [] (const Vec2d& a) -> Point { return scaled(Vec2d(a.x(), a.y())); } );
         Slic3r::Polylines paths = test(Slic3r::ExPolygon(test_set));
         REQUIRE(paths.size() == 1); // one continuous path
     }
@@ -82,8 +82,8 @@ TEST_CASE("Fill: Pattern Path Length", "[Fill]") {
         Slic3r::Points test_hole;
         Slic3r::Points test_square;
 
-        std::transform(square.cbegin(), square.cend(), std::back_inserter(test_square), [] (const Vec2d& a) -> Point { return Point::new_scale(a.x(), a.y()); } );
-        std::transform(hole.cbegin(), hole.cend(), std::back_inserter(test_hole), [] (const Vec2d& a) -> Point { return Point::new_scale(a.x(), a.y()); } );
+        std::transform(square.cbegin(), square.cend(), std::back_inserter(test_square), [] (const Vec2d& a) -> Point { return scaled(Vec2d(a.x(), a.y())); } );
+        std::transform(hole.cbegin(), hole.cend(), std::back_inserter(test_hole), [] (const Vec2d& a) -> Point { return scaled(Vec2d(a.x(), a.y())); } );
 
         for (double angle : {-(PI/2.0), -(PI/4.0), -(PI), PI/2.0, PI}) {
             for (double spacing : {25.0, 5.0, 7.5, 8.5}) {
@@ -152,10 +152,10 @@ TEST_CASE("Fill: Pattern Path Length", "[Fill]") {
     #if 0   // Disabled temporarily due to precission issues on the Mac VM
     SECTION("Solid surface fill") {
         Slic3r::Points points {
-            Point::new_scale(6883102, 9598327.01296997),
-            Point::new_scale(6883102, 20327272.01297),
-            Point::new_scale(3116896, 20327272.01297),
-            Point::new_scale(3116896, 9598327.01296997) 
+            scaled(Vec2d{6883102, 9598327.01296997}),
+            scaled(Vec2d{6883102, 20327272.01297}),
+            scaled(Vec2d{3116896, 20327272.01297}),
+            scaled(Vec2d{3116896, 9598327.01296997}) 
         };
         Slic3r::ExPolygon expolygon(points);
          
@@ -192,7 +192,7 @@ TEST_CASE("Fill: Pattern Path Length", "[Fill]") {
     }
     SECTION("Solid surface fill") {
         Slic3r::Points points {
-            Point::new_scale(0,0),Point::new_scale(98,0),Point::new_scale(98,10), Point::new_scale(0,10)
+            scaled(Vec2d(0,0)),scaled(Vec2d(98,0)),scaled(Vec2d(98,10)), scaled(Vec2d(0,10))
         };
         Slic3r::ExPolygon expolygon(points);
          

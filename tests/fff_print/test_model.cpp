@@ -43,7 +43,7 @@ SCENARIO("Model construction", "[Model]") {
             }
             model_object->add_instance();
             arrange_objects(model,
-                            arr2::to_arrange_bed(get_bed_shape(config), Point::new_scale(10, 10)),
+                            arr2::to_arrange_bed(get_bed_shape(config), scaled(Vec2d(10, 10))),
                             arr2::ArrangeSettings{}.set_distance_from_objects(
                                 min_object_distance(config)));
 

@@ -60,7 +60,7 @@ static Sequential::PrinterGeometry get_printer_geometry(const ConfigBase& config
 		// Generate an inscribed octagon.
 		double r = bv.bounding_volume2d().size().x() / 2.;
 		for (double a = 2*M_PI; a > 0.1; a -= M_PI/4.)
-			bed_polygon.points.emplace_back(Point::new_scale(r * std::sin(a), r * std::cos(a)));
+			bed_polygon.points.emplace_back(scaled(Vec2d(r * std::sin(a), r * std::cos(a))));
 	} else {
 		// Rectangle of Custom. Just use the bounding box.
 		bed_polygon = bb.polygon();
@@ -97,7 +97,7 @@ static Sequential::PrinterGeometry get_printer_geometry(const ConfigBase& config
 								double y = 0.;
 								ss >> x >> y;
 								if (ss)
-									pgn.points.emplace_back(Point::new_scale(x, y));
+									pgn.points.emplace_back(scaled(Vec2d(x, y)));
 							}
 							if (! pgn.points.empty())
 								slice.polygons.emplace_back(std::move(pgn));

@@ -114,9 +114,9 @@ TEST_CASE("arc basics", "[ArcWelder]") {
 TEST_CASE("arc discretization", "[ArcWelder]") {
     using namespace Slic3r::Geometry;
     WHEN("arc from { 2, 1 } to { 1, 2 }") {
-        const Point p1         = Point::new_scale(2., 1.);
-        const Point p2         = Point::new_scale(1., 2.);
-        const Point center     = Point::new_scale(1., 1.);
+        const Point p1         = scaled(Vec2d(2., 1.));
+        const Point p2         = scaled(Vec2d(1., 2.));
+        const Point center     = scaled(Vec2d(1., 1.));
         const float radius     = scaled<float>(1.);
         const float resolution = scaled<float>(0.002);
         auto test = [center, resolution, radius](const Point &p1, const Point &p2, const float r, const bool ccw) {
@@ -171,9 +171,9 @@ TEST_CASE("arc fitting", "[ArcWelder]") {
     using namespace Slic3r::Geometry;
 
     WHEN("arc from { 2, 1 } to { 1, 2 }") {
-        const Point p1         = Point::new_scale(2., 1.);
-        const Point p2         = Point::new_scale(1., 2.);
-        const Point center     = Point::new_scale(1., 1.);
+        const Point p1         = scaled(Vec2d(2., 1.));
+        const Point p2         = scaled(Vec2d(1., 2.));
+        const Point center     = scaled(Vec2d(1., 1.));
         const float radius     = scaled<float>(1.);
         const float resolution = scaled<float>(0.002);
         auto test = [center, resolution](const Point &p1, const Point &p2, const float r, const bool ccw) {
@@ -201,11 +201,11 @@ TEST_CASE("arc fitting", "[ArcWelder]") {
     }
 
     WHEN("arc from { 2, 1 } to { 1, 2 }, another arc from { 2, 1 } to { 0, 2 }, tangentially connected") {
-        const Point p1 = Point::new_scale(2., 1.);
-        const Point p2 = Point::new_scale(1., 2.);
-        const Point p3 = Point::new_scale(0., 3.);
-        const Point center1 = Point::new_scale(1., 1.);
-        const Point center2 = Point::new_scale(1., 3.);
+        const Point p1 = scaled(Vec2d(2., 1.));
+        const Point p2 = scaled(Vec2d(1., 2.));
+        const Point p3 = scaled(Vec2d(0., 3.));
+        const Point center1 = scaled(Vec2d(1., 1.));
+        const Point center2 = scaled(Vec2d(1., 3.));
         const float radius = scaled<float>(1.);
         const float resolution = scaled<float>(0.002);
         auto test = [center1, center2, resolution](const Point &p1, const Point &p2, const Point &p3, const float r, const bool ccw) {

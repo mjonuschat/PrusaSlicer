@@ -1224,7 +1224,7 @@ Points Print::first_layer_wipe_tower_corners() const
         for (Vec2d& pt : pts) {
             pt = Eigen::Rotation2Dd(Geometry::deg2rad(model().wipe_tower().rotation)) * pt;
             pt += model().wipe_tower().position;
-            pts_scaled.emplace_back(Point::new_scale(pt.x(), pt.y()));
+            pts_scaled.emplace_back(scaled(Vec2d(pt.x(), pt.y())));
         }
     }
     return pts_scaled;

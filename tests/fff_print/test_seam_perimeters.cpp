@@ -217,7 +217,7 @@ TEST_CASE("Offset along perimeter forward", "[Seams][SeamPerimeters]") {
     )};
     REQUIRE(result);
     const auto &[previous_index, next_index, point] = *result;
-    CHECK((scaled(point) - Point::new_scale(0.4, 0.0)).norm() < scaled(EPSILON));
+    CHECK((scaled(point) - scaled(Vec2d{0.4, 0.0})).norm() < scaled(EPSILON));
     CHECK(previous_index == 0);
     CHECK(next_index == 1);
 }
@@ -229,7 +229,7 @@ TEST_CASE("Offset along perimeter backward", "[Seams][SeamPerimeters]") {
     )};
     REQUIRE(result);
     const auto &[previous_index, next_index, point] = *result;
-    CHECK((scaled(point) - Point::new_scale(0.0, 0.3)).norm() < scaled(EPSILON));
+    CHECK((scaled(point) - scaled(Vec2d{0.0, 0.3})).norm() < scaled(EPSILON));
     CHECK(previous_index == 3);
     CHECK(next_index == 0);
 }
@@ -246,7 +246,7 @@ TEST_CASE("Offset along perimeter forward respects stop condition", "[Seams][Sea
     )};
     REQUIRE(result);
     const auto &[previous_index, next_index, point] = *result;
-    CHECK((scaled(point) - Point::new_scale(1.0, 0.0)).norm() < scaled(EPSILON));
+    CHECK((scaled(point) - scaled(Vec2d{1.0, 0.0})).norm() < scaled(EPSILON));
     CHECK(previous_index == 1);
     CHECK(next_index == 1);
 }

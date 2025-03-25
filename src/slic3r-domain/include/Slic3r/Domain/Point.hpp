@@ -9,7 +9,7 @@ static constexpr double SCALING_FACTOR = 0.000001;
 
 //FIXME Better to use an inline function with an explicit return type.
 //inline coord_t scale_(double v) { return coord_t(floor(v / SCALING_FACTOR + 0.5f)); }
-#define scale_(val) ((val) / SCALING_FACTOR)
+#define scale_(val) ((val) / Slic3r::Domain::SCALING_FACTOR)
 
 class Point : public Vec2crd
 {
@@ -19,8 +19,6 @@ public:
     Point() : Vec2crd(0, 0) {}
     using Vec2crd::Vec2crd;
     using Vec2crd::operator=;
-
-    static Point new_scale(double x, double y) { return Point(coord_t(scale_(x)), coord_t(scale_(y))); }
 
     // These operators address undesired behavior of Eigen (actually c++ in general).
     // Eigen defines operator*(Point, int) which sadly due to c++ implicit

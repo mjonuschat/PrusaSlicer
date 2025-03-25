@@ -76,7 +76,7 @@ SCENARIO("Bridge detector", "[Bridging]")
         ExPolygon bridge{ Algorithms::Polygon::scaled({ {0,0}, {20,0}, {20,10}, {0,10} }) };
         ExPolygons lower { ExPolygon{ Algorithms::Polygon::scaled({ {-2,0}, {0,0}, {0,10}, {-2,10} }) } };
         lower.emplace_back(lower.front());
-        lower.back().translate(Point::new_scale(22, 0));
+        lower.back().translate(scaled(Vec2d{22, 0}));
         THEN("Bridging angle 0 degrees") {
             REQUIRE(check_angle(lower, bridge, 0));
         }

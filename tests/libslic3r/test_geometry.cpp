@@ -301,10 +301,10 @@ SCENARIO("Circle Fit, TaubinFit with Newton's method", "[Geometry]") {
         }
     }
     GIVEN("A vector of Points arranged in a half-circle with approximately the same distance R from some point") {
-        Point expected_center { Point::new_scale(-3, 9)};
-        Points sample {Point::new_scale(6.0, 0), Point::new_scale(5.1961524, 3), Point::new_scale(3 ,5.1961524), 
-                        Point::new_scale(0, 6.0), 
-                        Point::new_scale(3, 5.1961524), Point::new_scale(-5.1961524, 3), Point::new_scale(-6.0, 0)};
+        Point expected_center { scaled(Vec2d{-3, 9})};
+        Points sample {scaled(Vec2d{6.0, 0}), scaled(Vec2d{5.1961524, 3}), scaled(Vec2d{3 ,5.1961524}), 
+                        scaled(Vec2d{0, 6.0}), 
+                        scaled(Vec2d{3, 5.1961524}), scaled(Vec2d{-5.1961524, 3}), scaled(Vec2d{-6.0, 0})};
 
         std::transform(sample.begin(), sample.end(), sample.begin(), [expected_center] (const Point& a) { return a + expected_center;});
 

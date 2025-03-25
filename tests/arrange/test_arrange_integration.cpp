@@ -657,7 +657,7 @@ TEMPLATE_TEST_CASE("Bed needs to be completely filled with 1cm cubes",
                                  .set_arrange_settings(settings)
                                  .set_selection(&sel)
                                  .set_bed_constraints(std::move(constraints))
-                                 .set_bed(cfg, Point::new_scale(10, 10))};
+                                 .set_bed(cfg, scaled(Vec2d(10, 10)))};
 
     auto task = arr2::FillBedTask<ArrItem>::create(scene);
     auto result = task->process_native(arr2::DummyCtl{});
@@ -666,7 +666,7 @@ TEMPLATE_TEST_CASE("Bed needs to be completely filled with 1cm cubes",
     store_3mf("fillbed_10mm_result.3mf", &m, &cfg, false);
 
     Points bedpts = get_bed_shape(cfg);
-    arr2::ArrangeBed bed = arr2::to_arrange_bed(bedpts, Point::new_scale(10, 10));
+    arr2::ArrangeBed bed = arr2::to_arrange_bed(bedpts, scaled(Vec2d(10, 10)));
 
     REQUIRE(bed.which() == 1); // Rectangle bed
 
@@ -811,7 +811,7 @@ TEST_CASE("Testing arrangement involving virtual beds", "[arrange2][integration]
     DynamicPrintConfig cfg;
     cfg.load_from_ini(std::string(TEST_DATA_DIR PATH_SEPARATOR) + "default_fff.ini",
                       ForwardCompatibilitySubstitutionRule::Enable);
-    auto bed = arr2::to_arrange_bed(get_bed_shape(cfg), Point::new_scale(10, 10));
+    auto bed = arr2::to_arrange_bed(get_bed_shape(cfg), scaled(Vec2d(10, 10)));
     auto bedbb = bounding_box(bed);
     auto bedsz = unscaled(bedbb.size());
 
@@ -827,7 +827,7 @@ TEST_CASE("Testing arrangement involving virtual beds", "[arrange2][integration]
     arr2::Scene scene{arr2::SceneBuilder{}
                           .set_model(model)
                           .set_arrange_settings(settings)
-                          .set_bed(cfg, Point::new_scale(10, 10))};
+                          .set_bed(cfg, scaled(Vec2d(10, 10)))};
 
     auto itm_conv = arr2::ArrangeableToItemConverter<arr2::ArrangeItem>::create(scene);
 
@@ -990,7 +990,7 @@ TEST_CASE("Test SceneBuilder", "[arrange2][integration]")
 
         WHEN("a scene is built with a bed initialized from this DynamicPrintConfig")
         {
-            arr2::Scene scene(arr2::SceneBuilder{}.set_bed(cfg, Point::new_scale(10, 10)));
+            arr2::Scene scene(arr2::SceneBuilder{}.set_bed(cfg, scaled(Vec2d(10, 10))));
 
             auto bedbb = bounding_box(get_bed_shape(cfg));
 

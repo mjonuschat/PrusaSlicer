@@ -328,7 +328,7 @@ TEST_CASE("Voronoi division by zero 12903", "[Voronoi]")
         const_cast<double&>(pt.y()) = scale_(pt.y());
     }
     for (auto &pt : pts)
-        pt = Point::new_scale(pt.x(), pt.y());
+        pt = scaled(Vec2d{pt.x(}), pt.y());
     dump_voronoi_to_svg(debug_out_path("voronoi-div-by-zero.svg").c_str(), vd, pts, Lines());
 #endif
 }

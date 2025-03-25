@@ -23,7 +23,7 @@ namespace Slic3r::GCode {
 
 static inline Point wipe_tower_point_to_object_point(GCodeGenerator &gcodegen, const Vec2f& wipe_tower_pt)
 {
-    return Point::new_scale(wipe_tower_pt.x() - gcodegen.origin()(0), wipe_tower_pt.y() - gcodegen.origin()(1));
+    return scaled(Vec2d(wipe_tower_pt.x() - gcodegen.origin()(0), wipe_tower_pt.y() - gcodegen.origin()(1)));
 }
 
 std::string WipeTowerIntegration::append_tcr(GCodeGenerator &gcodegen, const WipeTower::ToolChangeResult& tcr, int new_extruder_id, double z) const

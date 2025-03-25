@@ -56,7 +56,7 @@ public:
         float new_E(const GCodeReader &reader) const { return this->has(Domain::Axis::E) ? this->e() : reader.e(); }
         float new_F(const GCodeReader &reader) const { return this->has(Domain::Axis::F) ? this->f() : reader.f(); }
         Domain::Point new_XY_scaled(const GCodeReader &reader) const 
-            { return Domain::Point::new_scale(this->new_X(reader), this->new_Y(reader)); }
+            { return {scale_(this->new_X(reader)), scale_(this->new_Y(reader))}; }
         float dist_X(const GCodeReader &reader) const { return this->has(Domain::Axis::X) ? (this->x() - reader.x()) : 0; }
         float dist_Y(const GCodeReader &reader) const { return this->has(Domain::Axis::Y) ? (this->y() - reader.y()) : 0; }
         float dist_Z(const GCodeReader &reader) const { return this->has(Domain::Axis::Z) ? (this->z() - reader.z()) : 0; }
@@ -167,7 +167,7 @@ public:
     float  e() const { return m_position[Domain::Axis::E]; }
     float& f()       { return m_position[Domain::Axis::F]; }
     float  f() const { return m_position[Domain::Axis::F]; }
-    Domain::Point  xy_scaled() const { return Domain::Point::new_scale(this->x(), this->y()); }
+    Domain::Point  xy_scaled() const { return Domain::Point(scale_(this->x()), scale_(this->y())); }
 
 
     // Returns 0 for gcfNoExtrusion.

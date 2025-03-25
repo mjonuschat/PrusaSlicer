@@ -21,7 +21,7 @@ Point circle_center_taubin_newton(const Points::const_iterator& input_begin, con
     tmp.reserve(std::distance(input_begin, input_end));
     std::transform(input_begin, input_end, std::back_inserter(tmp), [] (const Point& in) { return unscale(in); } );
     Vec2d center = circle_center_taubin_newton(tmp.cbegin(), tmp.end(), cycles);
-	return Point::new_scale(center.x(), center.y());
+	return scaled(Vec2d(center.x(), center.y()));
 }
 
 // Robust and accurate algebraic circle fit, which works well even if data points are observed only within a small arc.
