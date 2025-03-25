@@ -4,9 +4,11 @@
 #include <cstddef>
 #include <map>
 #include <memory>
+#include <variant>
 #include <vector>
 #include <optional>
 #include <ranges>
+#include <utility>
 
 #include <boost/preprocessor/variadic/to_seq.hpp>
 #include <boost/preprocessor/seq/for_each.hpp>
@@ -50,7 +52,8 @@ void parse_all_documents_in_string(const char* yaml, const std::function<void(co
 
 struct ParseError : std::runtime_error
 {
-    ParseError(fy_node* node, const std::string& msg) : std::runtime_error(describe(node) + ": " + msg)
+    ParseError(fy_node* node, const std::string& msg)
+        : std::runtime_error(describe(node) + ": " + msg)
     {}
 
     ParseError(const ParseError&) = default;
@@ -410,6 +413,15 @@ struct TypeTraits<T, std::enable_if_t<HasStructTraits<T>::value>>
 template <typename E, typename = void>
 struct EnumTraits {};
 
+template <typename E>
+struct EnumValue
+{
+    const char* name;
+    const E value;
+
+    constexpr EnumValue(const char* name, E value) noexcept : name(name), value(value) {}
+};
+
 
 template <typename, typename = void>
 struct HasEnumTraits : std::false_type {};
@@ -445,17 +457,19 @@ struct TypeTraits<T, std::enable_if_t<HasEnumTraits<T>::value>>
         auto value = TypeTraits<std::string>::parse(node);
         const auto& values = EnumTraits<T>::values;
         auto it = std::find_if(values.begin(), values.end(), [&](const auto& v) {
-            return v.first == value;
+            return v.name == value;
         });
         if (it == values.end()) {
-            auto keys = values | std::views::elements<0>;
+            auto keys = values | std::views::transform([](const EnumValue<T>& ev) -> const char* {
+                return ev.name;
+            });
             throw ParseError(node, fmt::format(
                 "Invalid enum value: '{}', allowed values: {}",
                 value,
                 fmt::join(keys, ",")
             ));
         }
-        return it->second;
+        return it->value;
     }
 };
 
@@ -569,8 +583,9 @@ struct BOOST_PP_CAT(Field_, BOOST_PP_TUPLE_ELEM(0, elem)) {                     
 // Struct - type
 // __VA_ARGS__ - field description tuple (field, opt_name, opt_impl_value, opt_validation)
 #define STRUCT_DESC(Struct, ...)                                                                   \
+namespace Yaml::Details {                                                                          \
 template <>                                                                                        \
-struct ::Yaml::Details::StructTraits<Struct> {                                                     \
+struct StructTraits<Struct> {                                                                      \
     BOOST_PP_SEQ_FOR_EACH(DETAILS_STRUCT_DESC_FIELD, Struct, BOOST_PP_VARIADIC_TO_SEQ(__VA_ARGS__))\
     using Fields = ::Yaml::Details::TypeList<                                                      \
         BOOST_PP_SEQ_ENUM(                                                                         \
@@ -582,7 +597,8 @@ struct ::Yaml::Details::StructTraits<Struct> {                                  
         )                                                                                          \
     >;                                                                                             \
     using Type = Struct;                                                                           \
-};
+};                                                                                                 \
+} // namespace  Yaml::Details
 
 #define FIELD_DESC_SIMPLE(field) (field, #field,,)
 
@@ -591,7 +607,7 @@ struct ::Yaml::Details::StructTraits<Struct> {                                  
     STRUCT_DESC(Struct,                                                 \
         BOOST_PP_SEQ_ENUM(                                              \
             BOOST_PP_SEQ_TRANSFORM(                                     \
-                DETAILS_TRANSFORM_FIELD_SIMPLE,                                 \
+                DETAILS_TRANSFORM_FIELD_SIMPLE,                         \
                 ~,                                                      \
                 BOOST_PP_VARIADIC_TO_SEQ(__VA_ARGS__)                   \
             )                                                           \
@@ -603,38 +619,40 @@ struct ::Yaml::Details::StructTraits<Struct> {                                  
     (field, opt_field_name, opt_implicit_value, opt_validation)
 
 
-#define DETAILS_ENUM_VALUE_IF(r, data, elem)                        \
+#define DETAILS_ENUM_VALUE_IF(r, data, elem)                \
     if (value == BOOST_PP_TUPLE_ELEM(0, elem))              \
         return data::BOOST_PP_TUPLE_ELEM(1, elem);
-#define DETAILS_ENUM_VALUE_GET(r, data, elem) std::make_pair(BOOST_PP_TUPLE_ELEM(0, elem), data::BOOST_PP_TUPLE_ELEM(1, elem))
+#define DETAILS_ENUM_VALUE_GET(r, data, elem)               \
+    EnumValue(BOOST_PP_TUPLE_ELEM(0, elem), data::BOOST_PP_TUPLE_ELEM(1, elem))
 
 
 
 #define ENUM_DESC(Enum, ...)                                                                    \
+namespace Yaml::Details {                                                                       \
 template <>                                                                                     \
-struct ::Yaml::Details::EnumTraits<Enum>                                                        \
+struct EnumTraits<Enum>                                                                         \
 {                                                                                               \
     using Type = Enum;                                                                          \
     static constexpr std::optional<Type> parse(const std::string& value)                        \
     {                                                                                           \
         BOOST_PP_SEQ_FOR_EACH(                                                                  \
-            DETAILS_ENUM_VALUE_IF,                                                                      \
+            DETAILS_ENUM_VALUE_IF,                                                              \
             Enum,                                                                               \
             BOOST_PP_VARIADIC_TO_SEQ(__VA_ARGS__)                                               \
         )                                                                                       \
         return std::nullopt;                                                                    \
     }                                                                                           \
-    using StrPair = std::pair<std::string, Type>;                                               \
-    static constexpr std::array<StrPair, BOOST_PP_VARIADIC_SIZE(__VA_ARGS__)> values = {        \
+    using NameValuePair = EnumValue<Type>;                                                      \
+    static constexpr std::array<NameValuePair, BOOST_PP_VARIADIC_SIZE(__VA_ARGS__)> values = {  \
         BOOST_PP_SEQ_ENUM(                                                                      \
             BOOST_PP_SEQ_TRANSFORM(                                                             \
-                DETAILS_ENUM_VALUE_GET,                                                                 \
+                DETAILS_ENUM_VALUE_GET,                                                         \
                 Enum,                                                                           \
                 BOOST_PP_VARIADIC_TO_SEQ(__VA_ARGS__)                                           \
             )                                                                                   \
         )                                                                                       \
     };                                                                                          \
-};
-
+};                                                                                              \
+} //namespace Yaml::Details
 
 

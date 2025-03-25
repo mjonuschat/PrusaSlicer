@@ -11,9 +11,11 @@ struct FuncCall;
 struct VarRef;
 
 using ExprAst = boost::variant<
+    bool,
     float,
     std::string,
     boost::recursive_wrapper<Binary>,
+    boost::recursive_wrapper<Unary>,
     boost::recursive_wrapper<FuncCall>,
     boost::recursive_wrapper<VarRef>
 >;
@@ -21,15 +23,27 @@ using ExprAst = boost::variant<
 enum class BinaryOp
 {
     Add, Subtract, Multiply, Divide,
-    Eq, NotEq, Lt, LtEq, Gt, GtEq,
+    Eq, NotEq,
+    Lt, LtEq, Gt, GtEq,
     And, Or,
 };
 
 struct Binary
 {
-    BinaryOp op;
+    BinaryOp op{BinaryOp::Add};
     ExprAst left;
     ExprAst right;
+
+    Binary() = default;
+    Binary(const Binary&) = default;
+    Binary(Binary&&) = default;
+
+    Binary& operator=(Binary&&) = default;
+    Binary& operator=(const Binary&) = default;
+
+    Binary(BinaryOp op, ExprAst left, ExprAst right)
+        : op(op), left(std::move(left)), right(std::move(right))
+    {}
 };
 
 enum class UnaryOp
@@ -41,17 +55,50 @@ struct Unary
 {
     UnaryOp op;
     ExprAst expr;
+
+    Unary() = default;
+    Unary(const Unary&) = default;
+    Unary(Unary&&) = default;
+
+    Unary& operator=(const Unary&) = default;
+    Unary& operator=(Unary&&) = default;
+
+    Unary(UnaryOp op, ExprAst expr)
+        : op(op), expr(std::move(expr))
+    {}
 };
 
 struct FuncCall
 {
     std::string name;
     std::vector<ExprAst> args;
+
+    FuncCall() = default;
+    FuncCall(const FuncCall&) = default;
+    FuncCall(FuncCall&&) = default;
+
+    FuncCall& operator=(const FuncCall&) = default;
+    FuncCall& operator=(FuncCall&&) = default;
+
+    FuncCall(std::string name, std::vector<ExprAst> args)
+        : name(std::move(name)), args(std::move(args))
+    {}
 };
 
 struct VarRef
 {
     std::string name;
+
+    VarRef() = default;
+    VarRef(const VarRef&) = default;
+    VarRef(VarRef&&) = default;
+
+    VarRef& operator=(const VarRef&) = default;
+    VarRef& operator=(VarRef&&) = default;
+
+    VarRef(std::string name)
+        : name(std::move(name))
+    {}
 };
 
 } // namespace Slic3r::Domain::Expr

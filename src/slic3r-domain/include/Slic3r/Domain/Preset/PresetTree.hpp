@@ -1,6 +1,8 @@
 #pragma once
 
+#include <optional>
 #include "Slic3r/Domain/Preset/Types.hpp"
+
 
 namespace Slic3r::Domain::Preset {
 

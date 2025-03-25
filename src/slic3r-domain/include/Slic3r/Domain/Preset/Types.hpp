@@ -1,7 +1,9 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 #include <map>
+#include <variant>
 #include <vector>
 
 namespace Slic3r::Domain::Preset {

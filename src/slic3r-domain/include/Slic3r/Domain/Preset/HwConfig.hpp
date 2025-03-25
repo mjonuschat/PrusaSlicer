@@ -4,6 +4,7 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <optional>
 
 #include "Slic3r/Domain/PrinterTechnology.hpp"
 #include "Slic3r/Domain/Preset/Types.hpp"

@@ -4,7 +4,9 @@
 
 #include <catch2/catch_approx.hpp>
 #include <catch2/matchers/catch_matchers.hpp>
+#include <catch2/matchers/catch_matchers_exception.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
+#include <catch2/matchers/catch_matchers_templated.hpp>
 
 namespace Tests {
 struct Ver
@@ -36,6 +38,35 @@ STRUCT_DESC_SIMPLE(Tests::Ver, major, minor, patch);
 STRUCT_DESC_SIMPLE(Tests::Item, id);
 STRUCT_DESC_SIMPLE(Tests::MyData, version, a, b, items, opt_int, param);
 
+template <typename T>
+struct ExceptionSubstringMatcher : Catch::Matchers::MatcherBase<T>//Catch::Matchers::MatcherGenericBase
+{
+    explicit ExceptionSubstringMatcher(std::string substring)
+        : m_substring(std::move(substring))
+    {}
+
+    bool match(const T& e) const
+    {
+        std::string msg = e.what();
+        return msg.find(m_substring) != std::string::npos;
+    }
+
+protected:
+    std::string describe() const override
+    {
+        return "Matches substring '" + m_substring + "'";
+    }
+
+private:
+    std::string m_substring;
+};
+
+template <typename T>
+ExceptionSubstringMatcher<T> exception_substring(const std::string& substring)
+{
+    return ExceptionSubstringMatcher<T>(substring);
+}
+
 TEST_CASE("Load Yaml from file into MyData")
 {
 
@@ -65,13 +96,30 @@ TEST_CASE("Load Yaml from file into MyData")
 
 TEST_CASE("Load Yaml from string")
 {
-    std::string yaml = R"(
-minor: 1
+    std::string yaml_ver_no_minor = R"(
 major: 1
 )";
-    Yaml::Document doc = Yaml::parse_string(yaml.c_str());
-    REQUIRE_THROWS_WITH(Yaml::parse_struct<Tests::Ver>(doc), Catch::Matchers::ContainsSubstring("'minor'"));
-    Tests::Ver ver = Yaml::parse_struct<Tests::Ver>(doc);
+    std::string yaml_ver_ok = R"(
+major: 3
+minor: 2
+patch: 321
+)";
+
+    Yaml::Document doc = Yaml::parse_string(yaml_ver_no_minor.c_str());
+
+    REQUIRE_THROWS_MATCHES(
+        Yaml::parse_struct<Tests::Ver>(doc),
+        Yaml::ParseError,
+        //Catch::Matchers::ContainsSubstring("Required field 'minor' not found")
+        Catch::Matchers::MessageMatches(Catch::Matchers::ContainsSubstring("Required field 'minor' not found"))
+    );
+
+    doc = Yaml::parse_string(yaml_ver_ok.c_str());
+    Tests::Ver ver;
+    REQUIRE_NOTHROW(ver = Yaml::parse_struct<Tests::Ver>(doc));
+    REQUIRE(ver.major == 3);
+    REQUIRE(ver.minor == 2);
+    REQUIRE(ver.patch == 321);
 }
 
 

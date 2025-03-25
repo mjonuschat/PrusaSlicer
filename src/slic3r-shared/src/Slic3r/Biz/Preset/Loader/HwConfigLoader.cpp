@@ -3,8 +3,8 @@
 #include "Yaml.hpp"
 #include "Yaml.hpp"
 
-namespace Yaml {
 using namespace Slic3r::Domain::Preset;
+
 STRUCT_DESC(HwModel,
     FIELD_DESC_SIMPLE(model),
     FIELD_DESC_SIMPLE(base_model)
@@ -53,8 +53,6 @@ STRUCT_DESC(HwFeederConfigDef,
     FIELD_DESC(features, FIELD_DEFAULT, {}, FIELD_DEFAULT),
     FIELD_DESC_SIMPLE(condition)
 );
-
-}
 
 
 namespace Slic3r::Biz::Preset::Loader {
