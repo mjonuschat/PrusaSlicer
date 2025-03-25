@@ -56,7 +56,8 @@ private:
  *
  * @param data The data to show
  * @param curr_line_id The current line id 
+ * @param clip_text Whether or not to clip the text
  */
-void gcode_window(const GCodeWindowData& data, uint32_t curr_line_id);
+void gcode_window(const GCodeWindowData& data, uint32_t curr_line_id, bool clip_text = false);
 
 } // namespace Slic3r::App::LibvgcodeWrapper

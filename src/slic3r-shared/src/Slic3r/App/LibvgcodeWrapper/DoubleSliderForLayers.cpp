@@ -225,7 +225,7 @@ void DoubleSliderForLayers::perform_auto_color_change()
     process_ticks_changed();
 }
 
-void DoubleSliderForLayers::render(float scale_factor/* = 0.1f*/, float offset /*= 0.f*/)
+void DoubleSliderForLayers::render(const ImVec2& pos, float scale_factor, float offset)
 {
     if (!m_ctrl.is_shown())
         return;
@@ -238,15 +238,25 @@ void DoubleSliderForLayers::render(float scale_factor/* = 0.1f*/, float offset /
 
     float SLIDER_LAYERS_WIDTH = m_show_ruler ? 125.0f : 105.0f;
     float width = SLIDER_LAYERS_WIDTH * m_scale;
-    ImVec2 pos;
-    pos.x = viewport.Size.x - width - m_icon_screen_size;
-    pos.y = 1.5f * m_icon_screen_size + offset;
+    ImVec2 position;
+    if (pos.x == -1.0f && pos.y == -1.0f) {
+        // temporary hack to allow to render the slider outside Yoga layout
+        position.x = viewport.Size.x - width - m_icon_screen_size;
+        position.y = 1.5f * m_icon_screen_size + offset;
+    }
+    else {
+        ImVec2 av = ImGui::GetContentRegionAvail();
+        ImVec2 cp = ImGui::GetCursorScreenPos();
+
+        position.x = cp.x + 0.5f * (av.x - width - m_icon_screen_size);
+        position.y = cp.y + offset;
+    }
     if (m_allow_editing)
-        pos.y += 2.f;
+        position.y += 2.f;
 
     ImVec2 size(width, viewport.Size.y - 4.0f * m_icon_screen_size - offset);
 
-    m_ctrl.init(pos, size, m_scale, m_show_ruler);
+    m_ctrl.init(position, size, m_scale, m_show_ruler);
     if (m_ctrl.render()) {
         // request one more frame if value was changes with mouse wheel
         if (ImGui::GetIO().MouseWheel != 0.0f)
@@ -261,7 +271,7 @@ void DoubleSliderForLayers::render(float scale_factor/* = 0.1f*/, float offset /
 
     float groove_center_x = m_ctrl.groove_rect().GetCenter().x;
 
-    ImVec2 btn_pos(groove_center_x - 0.5f * m_icon_screen_size, pos.y - 0.75f * m_icon_screen_size);
+    ImVec2 btn_pos(groove_center_x - 0.5f * m_icon_screen_size, position.y - 0.75f * m_icon_screen_size);
 
     if (!m_ticks.empty() && can_edit() &&
         render_button(ImGui::DSRevert, ImGui::DSRevertHovered, "revert", btn_pos, FocusedItem::RevertIcon))
@@ -301,7 +311,7 @@ void DoubleSliderForLayers::render(float scale_factor/* = 0.1f*/, float offset /
     if (m_yes_no_cancel_popup.show && render_yes_no_cancel_popup(viewport.GetCenter()))
         process_yes_no_cancel();
 
-    m_size = viewport.Size - pos;
+    m_size = viewport.Size - position;
 }
 
 bool DoubleSliderForLayers::is_wipe_tower_layer(int tick) const
@@ -747,7 +757,7 @@ void DoubleSliderForLayers::draw_ruler(const ImRect& slideable_region)
         ImGui::RenderText(start, lbl.c_str());
     };
 
-    auto draw_tick = [x_center, tick_width, inner_x, tick_clr](const float tick_pos, const float outer_x)
+    auto draw_tick = [x_center, tick_width, inner_x](const float tick_pos, const float outer_x)
     {
         ImRect tick_right = ImRect(x_center + inner_x, tick_pos - tick_width, x_center + outer_x, tick_pos);
         ImGui::RenderFrame(tick_right.Min, tick_right.Max, tick_clr, false);
@@ -1286,7 +1296,7 @@ bool DoubleSliderForLayers::render_pause_print_popup(const ImVec2& pos)
 
     if (ImGui::BeginPopupModal(win_name.c_str(), &m_pause_print_popup.show, windows_flag)) {
 
-        ImGui::Text(msg_text.c_str());
+        ImGui::Text("%s", msg_text.c_str());
         ImGui::SetNextItemWidth(-1.0f);
         ImGui::InputText("##pause_print", &str, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_ElideLeft);
         m_pause_print_popup.data = str;
@@ -1430,7 +1440,7 @@ bool DoubleSliderForLayers::render_custom_gcode_popup(const ImVec2& pos)
 
     if (ImGui::BeginPopupModal(win_name.c_str(), &m_custom_gcode_popup.show, windows_flag)) {
 
-        ImGui::Text(msg_text.c_str());
+        ImGui::Text("%s", msg_text.c_str());
 
         float h = (button_bar_height == 0.0f) ? 0.25f * ImGui::GetMainViewport()->Size.y : ImGui::GetContentRegionAvail().y - button_bar_height;
         ImGui::InputTextMultiline("##custom_gcode", &str, { -1.0f, h });
@@ -1618,11 +1628,13 @@ void DoubleSliderForLayers::add_code_as_tick(CustomGCode::Type type, int selecte
     }
     else if (type == CustomGCode::Type::ToolChange || type == CustomGCode::Type::ColorChange) {
         // try to switch tick code to ToolChange or ColorChange accordingly
-        if (!m_ticks.switch_code_for_tick(it, type, extruder))
-            return;
+        if (m_ticks.switch_code_for_tick(it, type, extruder)) {
+            if (was_ticks != m_ticks.empty())
+                update_draw_scroll_line_cb();
+            m_show_just_color_change_menu = false;
+            process_ticks_changed();
+        }
     }
-    else
-        return;
 }
 
 void DoubleSliderForLayers::edit_tick(int tick/* = -1*/)

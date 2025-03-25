@@ -448,6 +448,16 @@ void Viewer::set_cog_marker_scale_factor(float factor)
     m_impl->set_cog_marker_scale_factor(factor);
 }
 
+bool Viewer::tool_marker_enabled() const
+{
+    return m_impl->tool_marker_enabled();
+}
+
+void Viewer::set_tool_marker_enabled(bool enabled)
+{
+    m_impl->set_tool_marker_enabled(enabled);
+}
+
 float Viewer::tool_marker_offset_z() const
 {
     return m_impl->tool_marker_offset_z();

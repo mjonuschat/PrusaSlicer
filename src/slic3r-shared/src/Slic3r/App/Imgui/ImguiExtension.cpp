@@ -1,4 +1,5 @@
 
+#include "Slic3r/App/Imgui/ImguiExtension.hpp"
 #include "Slic3r/App/Imgui/DoubleSlider.hpp"
 #include "Slic3r/Assert.hpp"
 
@@ -207,6 +208,51 @@ bool icon_button(wchar_t icon, const ImVec2& size, const std::string& id)
     if (rect.y == 0.0f) rect.y = h;
     const ImFontGlyph* glyph = font->FindGlyph(icon);
     return (glyph != nullptr) ? ImGui::ImageButton(("##btn" + id).c_str(), font->ContainerAtlas->TexID, rect, { glyph->U0, glyph->V0 }, { glyph->U1, glyph->V1 }) : false;
+}
+
+void toggle_button(const std::string& label, bool* on, bool right_align)
+{
+    DEBUG_ASSERT(on != nullptr);
+
+    // see: https://github.com/ocornut/imgui/issues/1537#issuecomment-355569554 for reference
+
+    const ImGuiStyle& style = ImGui::GetStyle();
+    float txt_height = ImGui::GetTextLineHeight();
+    float switch_height = 0.8f * txt_height;
+    float switch_width = switch_height * 2.0f;
+    float switch_radius = switch_height * 0.50f;
+    float switch_total_width = switch_width + switch_radius;
+
+    ImVec2 select_size = { switch_total_width + ImGui::CalcTextSize(label.c_str()).x,
+        txt_height };
+
+    if (right_align) {
+        ImGui::Dummy({ ImGui::GetContentRegionAvail().x - select_size.x - switch_radius, txt_height });
+        ImGui::SameLine();
+    }
+
+    ImVec2 csp = ImGui::GetCursorScreenPos();
+
+    ImGui::InvisibleButton(label.c_str(), select_size);
+    if (ImGui::IsItemClicked())
+        *on = !*on;
+
+    float t = *on ? 1.0f : 0.0f;
+
+    ImVec4 col_bg = ImGui::IsItemHovered() ? ImVec4(0.675f, 0.675f, 0.675f, 1.0f) :
+        (t == 1.0f) ? ImVec4(0.85f, 0.85f, 0.85f, 1.0f) : ImVec4(0.5f, 0.5f, 0.5f, 1.0f);
+    ImVec4 col_knob = (t == 1.0f) ? ImVec4(0.31f, 0.51f, 0.97f, 1.0f) : ImVec4(0.2f, 0.2f, 0.2f, 1.0f);
+
+    ImDrawList* draw_list = ImGui::GetWindowDrawList();
+    ImVec2 p = csp + ImVec2(0.0f, 0.5f * txt_height);
+    draw_list->AddRectFilled(p, ImVec2(p.x + switch_width, p.y + switch_height),
+        ImGui::GetColorU32(col_bg), switch_height * 0.5f);
+    ImVec2 knob_center = { p.x + switch_radius + t * (switch_width - switch_radius * 2.0f), p.y + switch_radius };
+    draw_list->AddCircleFilled(knob_center, switch_radius - 1.75f, ImGui::GetColorU32(col_knob));
+
+    ImGui::GetCurrentWindow()->DC.CursorPos = csp + ImVec2(switch_total_width, 0.0f);
+    ImGui::AlignTextToFramePadding();
+    ImGui::Text("%s", label.c_str());
 }
 
 ImU32 to_ImU32(const ColorRGBA& color)

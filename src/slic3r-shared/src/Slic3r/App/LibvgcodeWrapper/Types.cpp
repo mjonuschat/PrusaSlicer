@@ -61,7 +61,7 @@ std::string to_string(OptionType type)
     case OptionType::Travels:         { return _u8L("Travels"); }
     case OptionType::Wipes:           { return _u8L("Wipes"); }
     case OptionType::Retractions:     { return _u8L("Retractions"); }
-    case OptionType::Unretractions:   { return _u8L("Unretractions"); }
+    case OptionType::Unretractions:   { return _u8L("Deretractions"); }
     case OptionType::Seams:           { return _u8L("Seams"); }
     case OptionType::ToolChanges:     { return _u8L("Tool Changes"); }
     case OptionType::ColorChanges:    { return _u8L("Color Changes"); }
@@ -73,7 +73,7 @@ std::string to_string(OptionType type)
     }
 }
 
-std::string to_string(ViewType type, UnitsSystem sys)
+std::string to_string(libvgcode::ViewType type, std::optional<Biz::libpgcode::UnitsSystem> sys)
 {
     switch (type)
     {
@@ -84,44 +84,72 @@ std::string to_string(ViewType type, UnitsSystem sys)
     }
     case ViewType::Height:
     {
-        std::string units = format_units((sys == UnitsSystem::SI) ? UnitsType::Millimeters : UnitsType::Inches);
-        return _u8L("Height") + " (" + units + ")";
+        if (sys.has_value()) {
+            std::string units = format_units((sys == UnitsSystem::SI) ? UnitsType::Millimeters : UnitsType::Inches);
+            return _u8L("Height") + " (" + units + ")";
+        }
+        else
+            return _u8L("Height");
     }
     case ViewType::Width:
     {
-        std::string units = format_units((sys == UnitsSystem::SI) ? UnitsType::Millimeters : UnitsType::Inches);
-        return _u8L("Width") + " (" + units + ")";
+        if (sys.has_value()) {
+            std::string units = format_units((sys == UnitsSystem::SI) ? UnitsType::Millimeters : UnitsType::Inches);
+            return _u8L("Width") + " (" + units + ")";
+        }
+        else
+            return _u8L("Width");
     }
     case ViewType::Speed:
     {
-        std::string units = format_units((sys == UnitsSystem::SI) ? UnitsType::MillimetersPerSecond : UnitsType::InchesPerSecond);
-        return _u8L("Speed") + " (" + units + ")";
+        if (sys.has_value()) {
+            std::string units = format_units((sys == UnitsSystem::SI) ? UnitsType::MillimetersPerSecond : UnitsType::InchesPerSecond);
+            return _u8L("Speed") + " (" + units + ")";
+        }
+        else
+            return _u8L("Speed");
     }
     case ViewType::ActualSpeed:
     {
-        std::string units = format_units((sys == UnitsSystem::SI) ? UnitsType::MillimetersPerSecond : UnitsType::InchesPerSecond);
-        return _u8L("Actual speed") + " (" + units + ")";
+        if (sys.has_value()) {
+            std::string units = format_units((sys == UnitsSystem::SI) ? UnitsType::MillimetersPerSecond : UnitsType::InchesPerSecond);
+            return _u8L("Actual speed") + " (" + units + ")";
+        }
+        else
+            return _u8L("Actual speed");
     }
     case ViewType::FanSpeed:
     {
-        return _u8L("Fan speed") + " (%)";
+        return sys.has_value() ? _u8L("Fan speed") + " (%)" : _u8L("Fan speed");
     }
     case ViewType::Temperature:
     {
-        std::string units = format_units((sys == UnitsSystem::SI) ? UnitsType::Celsius : UnitsType::Farhenheit);
-        return _u8L("Temperature") + " (" + units + ")";
+        if (sys.has_value()) {
+            std::string units = format_units((sys == UnitsSystem::SI) ? UnitsType::Celsius : UnitsType::Farhenheit);
+            return _u8L("Temperature") + " (" + units + ")";
+        }
+        else
+            return _u8L("Temperature");
     }
     case ViewType::VolumetricFlowRate:
     {
-        std::string units = format_units((sys == UnitsSystem::SI) ? UnitsType::MillimetersCube : UnitsType::InchesCube);
-        units += "/" + format_units(UnitsType::Seconds);
-        return _u8L("Volumetric flow rate") + " (" + units + ")";
+        if (sys.has_value()) {
+            std::string units = format_units((sys == UnitsSystem::SI) ? UnitsType::MillimetersCube : UnitsType::InchesCube);
+            units += "/" + format_units(UnitsType::Seconds);
+            return _u8L("Volumetric flow rate") + " (" + units + ")";
+        }
+        else
+            return _u8L("Volumetric flow rate");
     }
     case ViewType::ActualVolumetricFlowRate:
     {
-        std::string units = format_units((sys == UnitsSystem::SI) ? UnitsType::MillimetersCube : UnitsType::InchesCube);
-        units += "/" + format_units(UnitsType::Seconds);
-        return _u8L("Actual volumetric flow rate") + " (" + units + ")";
+        if (sys.has_value()) {
+            std::string units = format_units((sys == UnitsSystem::SI) ? UnitsType::MillimetersCube : UnitsType::InchesCube);
+            units += "/" + format_units(UnitsType::Seconds);
+            return _u8L("Actual volumetric flow rate") + " (" + units + ")";
+        }
+        else
+            return _u8L("Actual volumetric flow rate");
     }
     case ViewType::LayerTimeLinear:
     {

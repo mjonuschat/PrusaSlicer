@@ -39,6 +39,6 @@ typedef std::function<void(const std::string&, const std::string&)> AppConfigCha
 std::string to_string(Biz::libpgcode::MoveType type);
 std::string to_string(Domain::GCodeExtrusionRole role);
 std::string to_string(Biz::libpgcode::OptionType type);
-std::string to_string(libvgcode::ViewType type, Biz::libpgcode::UnitsSystem sys);
+std::string to_string(libvgcode::ViewType type, std::optional<Biz::libpgcode::UnitsSystem> sys = std::nullopt);
 
 } // namespace Slic3r::App::LibvgcodeWrapper

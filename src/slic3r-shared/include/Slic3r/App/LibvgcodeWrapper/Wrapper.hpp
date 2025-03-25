@@ -116,6 +116,10 @@ public:
 
     void render_toolpaths(const Vec3f& camera_position);
     void render_gui(const WrapperLayoutData& layout);
+    void render_gcode_window();
+    void render_legend();
+    void render_gcode_slider();
+    void render_layers_slider();
 
     Biz::libpgcode::UnitsSystem units() const;
     void set_units(Biz::libpgcode::UnitsSystem sys);
@@ -125,6 +129,7 @@ public:
     void set_legend_visible(bool visible);
     void toggle_legend_visible();
     bool is_legend_visible() const;
+    bool is_legend_shown() const;
 
     void set_gcodewindow_visible(bool visible);
     void toggle_gcodewindow_visible();
@@ -132,6 +137,13 @@ public:
 
     bool is_top_layer_only_view_range() const;
     void toggle_top_layer_only_view_range();
+
+    const libvgcode::Interval& view_visible_range() const;
+    const libvgcode::Interval& view_enabled_range() const;
+
+    bool is_option_visible(Biz::libpgcode::OptionType type);
+    void toggle_option_visibility(Biz::libpgcode::OptionType type);
+    const Biz::libpgcode::OptionTypes& options() const;
 
     const libvgcode::Interval& layers_range() const;
     void set_layers_range(libvgcode::Interval::value_type min, libvgcode::Interval::value_type max);
@@ -155,6 +167,8 @@ public:
     float cog_marker_scale_factor() const;
     void set_cog_marker_scale_factor(float factor);
 
+    bool tool_marker_enabled() const;
+    void set_tool_marker_enabled(bool enabled);
     float tool_marker_scale_factor() const;
     void set_tool_marker_scale_factor(float factor);
 

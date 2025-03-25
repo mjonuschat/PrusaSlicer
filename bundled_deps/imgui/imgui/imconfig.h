@@ -296,6 +296,7 @@ namespace ImGui
     const wchar_t ToolbarGraph             = 0x2906;
     const wchar_t ToolbarMove              = 0x2907;
     const wchar_t ToolbarRotation          = 0x2908;
+    const wchar_t ToolbarGCode             = 0x2909;
 
     // printer icons (PNGs)
     const wchar_t PrinterNEXT             = 0x2A01;

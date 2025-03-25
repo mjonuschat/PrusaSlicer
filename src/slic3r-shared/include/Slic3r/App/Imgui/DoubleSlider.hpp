@@ -258,7 +258,7 @@ public:
     float width() const { return m_ctrl.is_shown() ? m_ctrl.ctrl_size().x : 0.0f; }
     float height() const { return m_ctrl.is_shown() ? m_ctrl.ctrl_size().y : 0.0f; }
 
-    virtual void render(float scale_factor = 1.0f, float offset = 0.0f) = 0;
+    virtual void render(const ImVec2& pos, float scale_factor = 1.0f, float offset = 0.0f) = 0;
 
     void set_on_thumb_move_callback(OnThumbMoveCallback cb) { m_cb_thumb_move = cb; };
     void set_request_extra_frames_callback(RequestExtraFramesCallback cb) { m_cb_request_extra_frames = cb; };

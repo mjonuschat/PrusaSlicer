@@ -461,6 +461,8 @@ void ViewerImpl::reset()
 
     m_enabled_segments_count = 0;
     m_enabled_options_count = 0;
+
+    set_view_type(ViewType::FeatureType);
 }
 
 static void extract_pos_and_or_hwa(const MoveVertices& vertices, float travels_radius, float wipes_radius, BitSet<>& valid_lines_bitset,
@@ -823,6 +825,12 @@ void ViewerImpl::update_colors()
 
 void ViewerImpl::render(const Vec3f& camera_position)
 {
+    render_tool_marker();
+    render_cog_marker();
+
+    if (m_layers.empty())
+        return;
+
     if (m_settings.update_view_full_range)
         update_view_full_range();
 
@@ -834,11 +842,6 @@ void ViewerImpl::render(const Vec3f& camera_position)
 
     render_segments(camera_position);
     render_options();
-
-    if (m_settings.options_visibility[size_t(OptionType::ToolMarker)])
-        render_tool_marker();
-    if (m_settings.options_visibility[size_t(OptionType::CenterOfGravity)])
-        render_cog_marker();
 }
 
 #if ENABLE_RENDER_TO_TEXTURE
@@ -1671,9 +1674,9 @@ void ViewerImpl::render_cog_marker()
     }, true);
 
     assert(node != nullptr);
-    node->set_enabled(m_cog_marker.total_mass() > 0.0f);
-
-    if (m_cog_marker.total_mass() == 0.0f)
+    bool enabled = m_cog_marker.total_mass() > 0.0f && m_settings.options_visibility[size_t(OptionType::CenterOfGravity)];
+    node->set_enabled(enabled);
+    if (!enabled)
         return;
 
     Render::Material material;
@@ -1693,9 +1696,9 @@ void ViewerImpl::render_tool_marker()
     }, true);
 
     assert(node != nullptr);
-    node->set_enabled(m_view_range.visible()[1] != m_view_range.enabled()[1]);
-
-    if (m_view_range.visible()[1] == m_view_range.enabled()[1])
+    bool enabled = m_tool_marker.enabled() && m_settings.options_visibility[size_t(OptionType::ToolMarker)];
+    node->set_enabled(enabled);
+    if (!enabled)
         return;
 
     Vec3f origin = get_current_vertex().position + m_tool_marker.offset_z() * Vec3f::UnitZ();

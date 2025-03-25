@@ -12,6 +12,9 @@ public:
     void set_legend_render_fn(std::function<void(Vec2f, Vec2f)> render_fn) {
         m_cb_legend_render = render_fn; }
 
+    void set_gcode_render_fn(std::function<void(Vec2f, Vec2f)> render_fn) {
+        m_cb_gcode_render = render_fn; }
+
     void set_sidebar_auto_reslice_render_fn(std::function<void(Vec2f, Vec2f)> render_fn) {
         m_cb_sidebar_auto_reslice_render = render_fn; }
 
@@ -37,6 +40,7 @@ private:
     Yoga::FlexSizer middle_left_flex_sizer;
 
     std::function<void(Vec2f, Vec2f)> m_cb_legend_render;
+    std::function<void(Vec2f, Vec2f)> m_cb_gcode_render;
 
     std::function<void(Vec2f, Vec2f)> m_cb_layer_slider_render;
     std::function<void(Vec2f, Vec2f)> m_cb_gcode_slider_render;

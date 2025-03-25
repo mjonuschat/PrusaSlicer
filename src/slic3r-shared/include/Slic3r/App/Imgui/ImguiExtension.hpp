@@ -53,6 +53,8 @@ void icon_image(wchar_t icon, const ImVec2& size = { 0.0f, 0.0f }, bool disabled
 /* Use id, when the window has more than one icon_button to avoid using of the same ID generated from default label ("##btn") */
 bool icon_button(wchar_t icon, const ImVec2& size = { 0.0f, 0.0f }, const std::string& id = std::string());
 
+void toggle_button(const std::string& label, bool* on, bool right_align = false);
+
 ImU32 to_ImU32(const ColorRGBA& color);
 ImU32 to_ImU32(const ColorRGB& color, uint8_t alpha = 255);
 

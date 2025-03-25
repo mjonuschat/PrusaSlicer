@@ -25,7 +25,7 @@ public:
      * @name Implementation of Imgui::DoubleSlider::Manager public interface
      * @{
      */
-    void render(float scale_factor = 1.0f, float offset = 0.0f) override;
+    void render(const ImVec2& pos, float scale_factor = 1.0f, float offset = 0.0f) override;
     /**@}*/
 
 private:

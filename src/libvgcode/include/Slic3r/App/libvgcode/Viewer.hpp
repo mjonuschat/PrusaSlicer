@@ -489,6 +489,9 @@ public:
     float cog_marker_scale_factor() const;
     void set_cog_marker_scale_factor(float factor);
 
+    bool tool_marker_enabled() const;
+    void set_tool_marker_enabled(bool enabled);
+
     float tool_marker_offset_z() const;
     void set_tool_marker_offset_z(float offset_z);
 

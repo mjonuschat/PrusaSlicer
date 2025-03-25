@@ -74,6 +74,26 @@ void Wrapper::render_gui(const WrapperLayoutData& layout)
     m_impl->render_gui(layout);
 }
 
+void Wrapper::render_gcode_window()
+{
+    m_impl->render_gcode_window();
+}
+
+void Wrapper::render_legend()
+{
+    m_impl->render_legend();
+}
+
+void Wrapper::render_gcode_slider()
+{
+    m_impl->render_gcode_slider();
+}
+
+void Wrapper::render_layers_slider()
+{
+    m_impl->render_layers_slider();
+}
+
 UnitsSystem Wrapper::units() const
 {
     return m_impl->units();
@@ -104,6 +124,11 @@ bool Wrapper::is_legend_visible() const
     return m_impl->is_legend_visible();
 }
 
+bool Wrapper::is_legend_shown() const
+{
+    return m_impl->is_legend_shown();
+}
+
 void Wrapper::set_gcodewindow_visible(bool visible)
 {
     m_impl->set_gcodewindow_visible(visible);
@@ -127,6 +152,31 @@ bool Wrapper::is_top_layer_only_view_range() const
 void Wrapper::toggle_top_layer_only_view_range()
 {
     m_impl->toggle_top_layer_only_view_range();
+}
+
+const Interval& Wrapper::view_visible_range() const
+{
+    return m_impl->view_visible_range();
+}
+
+const Interval& Wrapper::view_enabled_range() const
+{
+    return m_impl->view_enabled_range();
+}
+
+bool Wrapper::is_option_visible(Biz::libpgcode::OptionType type)
+{
+    return m_impl->is_option_visible(type);
+}
+
+void Wrapper::toggle_option_visibility(Biz::libpgcode::OptionType type)
+{
+    m_impl->toggle_option_visibility(type);
+}
+
+const Biz::libpgcode::OptionTypes& Wrapper::options() const
+{
+    return m_impl->options();
 }
 
 const Interval& Wrapper::layers_range() const
@@ -202,6 +252,16 @@ float Wrapper::cog_marker_scale_factor() const
 void Wrapper::set_cog_marker_scale_factor(float factor)
 {
     m_impl->set_cog_marker_scale_factor(factor);
+}
+
+bool Wrapper::tool_marker_enabled() const
+{
+    return m_impl->tool_marker_enabled();
+}
+
+void Wrapper::set_tool_marker_enabled(bool enabled)
+{
+    m_impl->set_tool_marker_enabled(enabled);
 }
 
 float Wrapper::tool_marker_scale_factor() const

@@ -222,6 +222,8 @@ public:
     float cog_marker_scale_factor() const { return m_cog_marker.scale_factor(); }
     void set_cog_marker_scale_factor(float factor) { m_cog_marker.set_scale_factor(factor); }
 
+    bool tool_marker_enabled() const { return m_tool_marker.enabled(); }
+    void set_tool_marker_enabled(bool enabled) { m_tool_marker.set_enabled(enabled); }
     float tool_marker_offset_z() const { return m_tool_marker.offset_z(); }
     void set_tool_marker_offset_z(float offset_z) { m_tool_marker.set_offset_z(offset_z); }
     float tool_marker_scale_factor() const { return m_tool_marker.scale_factor(); }

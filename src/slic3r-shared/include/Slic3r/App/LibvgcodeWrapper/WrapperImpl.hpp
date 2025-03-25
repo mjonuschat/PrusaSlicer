@@ -61,6 +61,10 @@ public:
 
     void render_toolpaths(const Vec3f& camera_position);
     void render_gui(const WrapperLayoutData& layout);
+    void render_gcode_window();
+    void render_legend();
+    void render_gcode_slider();
+    void render_layers_slider();
 
     Biz::libpgcode::UnitsSystem units() const { return m_units; }
     void set_units(Biz::libpgcode::UnitsSystem sys);
@@ -79,6 +83,8 @@ public:
     float cog_marker_scale_factor() const { return m_viewer.cog_marker_scale_factor(); }
     void set_cog_marker_scale_factor(float factor) { m_viewer.set_cog_marker_scale_factor(factor); }
 
+    bool tool_marker_enabled() const { return m_viewer.tool_marker_enabled(); }
+    void set_tool_marker_enabled(bool enabled) { m_viewer.set_tool_marker_enabled(enabled); }
     float tool_marker_scale_factor() const { return m_viewer.tool_marker_scale_factor(); }
     void set_tool_marker_scale_factor(float factor) { m_viewer.set_tool_marker_scale_factor(factor); }
 
@@ -92,6 +98,13 @@ public:
 
     bool is_top_layer_only_view_range() const { return m_viewer.is_top_layer_only_view_range(); }
     void toggle_top_layer_only_view_range() { m_viewer.toggle_top_layer_only_view_range(); }
+
+    const libvgcode::Interval& view_visible_range() const { return m_viewer.view_visible_range(); }
+    const libvgcode::Interval& view_enabled_range() const { return m_viewer.view_enabled_range(); }
+
+    bool is_option_visible(Biz::libpgcode::OptionType type) { return m_viewer.is_option_visible(type); }
+    void toggle_option_visibility(Biz::libpgcode::OptionType type) { m_viewer.toggle_option_visibility(type); }
+    const Biz::libpgcode::OptionTypes& options() const { return m_viewer.options(); }
 
     bool is_legend_shown() const { return m_legend_params.is_shown(); }
 
@@ -161,7 +174,6 @@ private:
     std::string on_slider_layers_get_gcode(CustomGCode::Type type);
     libvgcode::Palette on_slider_layers_get_extruder_colors();
 
-    void render_toolpaths_internal(const Vec3f& camera_position);
     void render_legend(const WrapperLayoutData& layout);
     void render_slider_gcode(const WrapperLayoutData& layout);
     void render_slider_layers(const WrapperLayoutData& layout);

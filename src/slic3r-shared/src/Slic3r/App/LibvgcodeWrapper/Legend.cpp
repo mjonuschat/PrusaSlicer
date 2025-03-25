@@ -16,8 +16,8 @@ using namespace Slic3r::Domain;
 
 namespace Slic3r::App::LibvgcodeWrapper {
 
-static void draw_view_type_selector(Viewer& viewer, const WrapperImpl& wrapper,
-    GCodeViewTypeChangedCallback cb_view_type_changed)
+void legend_view_type_selector(Viewer& viewer, const WrapperImpl& wrapper, GCodeViewTypeChangedCallback cb_view_type_changed,
+    float width)
 {
     std::vector<float> layers_times = viewer.layers_estimated_times();
     bool has_layers_times = !layers_times.empty() && layers_times.size() == viewer.layers_count();
@@ -38,24 +38,11 @@ static void draw_view_type_selector(Viewer& viewer, const WrapperImpl& wrapper,
         selection = int(ViewType::FeatureType);
     int selection_id = int(std::distance(options_id.begin(), std::find(options_id.begin(), options_id.end(), selection)));
 
-    UnitsSystem units = wrapper.units();
-
-    // this is an hack to avoid the legend to 'animate' itself when the items table resizes
-    std::string longest_string;
-    for (int i : options_id) {
-        std::string option_string = to_string(ViewType(options_id[i]), units);
-        if (longest_string.length() < option_string.length())
-            longest_string = option_string;
-    }
-    float min_width = ImGui::CalcTextSize(longest_string.c_str(), nullptr, true).x +
-        ImGui::GetFrameHeight() + ImGui::GetStyle().FramePadding.x * 2.0f;
-    const ImGuiWindow* wnd = ImGui::GetCurrentWindow();
-    ImGui::PushItemWidth(std::max(min_width, wnd->ContentRegionRect.Max.x - wnd->ContentRegionRect.Min.x));
-
-    if (ImGui::BeginCombo("##ViewTypeSelector", to_string(ViewType(options_id[selection_id]), units).c_str(),
+    ImGui::PushItemWidth(width);
+    if (ImGui::BeginCombo("##ViewTypeSelector", to_string(ViewType(options_id[selection_id])).c_str(),
         ImGuiComboFlags_HeightLargest)) {
         for (int i = 0; i < int(options_id.size()); ++i) {
-            if (ImGui::Selectable(to_string(ViewType(options_id[i]), units).c_str(), i == selection))
+            if (ImGui::Selectable(to_string(ViewType(options_id[i])).c_str(), i == selection))
                 selection = options_id[i];
         }
         ImGui::EndCombo();
@@ -1172,7 +1159,7 @@ void legend(Viewer& viewer, WrapperImpl& wrapper, bool settings_visible, const P
     Imgui::ScopedGroup group((std::string(window->Name) + "Legend").c_str());
 
     // show view type selector
-    draw_view_type_selector(viewer, wrapper, cbs.cb_view_type_changed);
+    legend_view_type_selector(viewer, wrapper, cbs.cb_view_type_changed, -1.0f);
     // shown items list
     draw_type_items(viewer, wrapper, cbs);
     // show options
@@ -1196,6 +1183,236 @@ void legend(Viewer& viewer, WrapperImpl& wrapper, bool settings_visible, const P
         if (draw_estimated_times(viewer, cbs.cb_request_extra_frame) || popup_open)
             draw_popup_estimated_times(popup_title.c_str(), viewer);
     }
+}
+
+struct CoarseItem
+{
+    ColorRGB color;
+    std::string text;
+    CoarseItem(const ColorRGB& color, const std::string& text) : color(color), text(text) {}
+};
+
+using CoarseItems = std::vector<CoarseItem>;
+
+static CoarseItems collect_feature_type_coarse_items(Viewer& viewer)
+{
+    GCodeExtrusionRoles roles = viewer.extrusion_roles();
+    CoarseItems ret;
+    ret.reserve(roles.size());
+    for (GCodeExtrusionRole role : roles) {
+        ret.emplace_back(viewer.extrusion_role_color(role), to_string(role));
+    }
+    return ret;
+}
+
+static CoarseItems collect_color_range_coarse_items(Viewer& viewer, WrapperImpl& wrapper)
+{
+    ViewType type = viewer.view_type();
+    const ColorRange& range = viewer.color_range(type);
+    std::vector<float> values = range.values();
+
+    CoarseItems ret;
+    ret.reserve(values.size());
+    for (auto it = values.rbegin(); it != values.rend(); ++it) {
+        std::string txt;
+        switch (type)
+        {
+        case ViewType::Height:
+        case ViewType::Width:
+        {
+            txt = convert_and_format_units(*it, UnitsType::Millimeters,
+                (wrapper.units() == UnitsSystem::SI) ? UnitsType::Millimeters : UnitsType::Inches, 3, true);
+            break;
+        }
+        case ViewType::Speed:
+        case ViewType::ActualSpeed:
+        {
+            txt = convert_and_format_units(*it, UnitsType::MillimetersPerSecond,
+                (wrapper.units() == UnitsSystem::SI) ? UnitsType::MillimetersPerSecond : UnitsType::InchesPerSecond, 1, true);
+            break;
+        }
+        case ViewType::VolumetricFlowRate:
+        case ViewType::ActualVolumetricFlowRate:
+        {
+            unsigned int decimals = (wrapper.units() == UnitsSystem::SI) ? 3 : 6;
+            txt = convert_and_format_units(*it, UnitsType::MillimetersCubePerSecond,
+                (wrapper.units() == UnitsSystem::SI) ? UnitsType::MillimetersCubePerSecond : UnitsType::InchesCubePerSecond, decimals, true);
+            break;
+        }
+        case ViewType::FanSpeed:
+        {
+            txt = format("%.0f%%", *it);
+            break;
+        }
+        case ViewType::Temperature:
+        {
+            txt = convert_and_format_units(*it, UnitsType::Celsius,
+                (wrapper.units() == UnitsSystem::SI) ? UnitsType::Celsius : UnitsType::Farhenheit, 0, true);
+            break;
+        }
+        case ViewType::LayerTimeLinear:
+        case ViewType::LayerTimeLogarithmic:
+        {
+            txt = format_time_dhms(*it);
+            break;
+        }
+        default:
+        {
+            txt = "Error";
+            break;
+        }
+        }
+        ret.emplace_back(range.color_at(*it), txt);
+    }
+    return ret;
+}
+
+static CoarseItems collect_tool_coarse_items(Viewer& viewer)
+{
+    const std::vector<uint8_t>& used_extruders_ids = viewer.used_extruders_ids();
+    const Palette& tool_colors = viewer.tool_colors();
+
+    CoarseItems ret;
+    ret.reserve(used_extruders_ids.size());
+    for (size_t i = 0; i < used_extruders_ids.size(); ++i) {
+        uint8_t extruder_id = used_extruders_ids[i];
+        ret.emplace_back(tool_colors[extruder_id], format("%s %d", _u8L("Extruder").c_str(), 1 + extruder_id));
+    }
+    return ret;
+}
+
+static CoarseItems collect_color_print_coarse_items(Viewer& viewer, WrapperImpl& wrapper)
+{
+    const Palette& color_print_colors = viewer.color_print_colors();
+    std::vector<uint8_t> used_extruders_ids = viewer.used_extruders_ids();
+    uint8_t extruders_count = viewer.extruders_count();
+
+    CoarseItems ret;
+    for (uint8_t id : used_extruders_ids) {
+        const ColorPrints& extr_color_prints = viewer.extruder_color_prints(id);
+        if (extr_color_prints.size() == 1) {
+            std::string txt;
+            if (extruders_count > 1)
+                txt = format("%s %d %s", _u8L("Extruder").c_str(), 1 + id, _u8L("default color"));
+            else
+                txt = format("%s", _u8L("Default color"));
+            ret.emplace_back(color_print_colors[id], txt);
+        }
+        else {
+            size_t counter = 0;
+            for (auto it = extr_color_prints.rbegin(); it != extr_color_prints.rend(); ++it) {
+                std::string txt;
+
+                if (counter == 0) {
+                    if (extruders_count == 1) {
+                        txt = format("%s %s", _u8L("above").c_str(),
+                            convert_and_format_units(viewer.layer_z(it->layer_id), UnitsType::Millimeters,
+                                (wrapper.units() == UnitsSystem::SI) ? UnitsType::Millimeters : UnitsType::Inches,
+                                2).c_str());
+                    }
+                    else {
+                        txt = format("%s %d %s %s", _u8L("Extruder").c_str(), 1 + it->extruder_id,
+                            _u8L("above").c_str(), convert_and_format_units(viewer.layer_z(it->layer_id), UnitsType::Millimeters,
+                                (wrapper.units() == UnitsSystem::SI) ? UnitsType::Millimeters : UnitsType::Inches, 2).c_str());
+                  }
+                }
+                else if (counter == extr_color_prints.size() - 1) {
+                    if (extruders_count == 1) {
+                        txt = format("%s %s", _u8L("up to").c_str(),
+                            convert_and_format_units(viewer.layer_z(std::prev(it)->layer_id - 1), UnitsType::Millimeters,
+                                (wrapper.units() == UnitsSystem::SI) ? UnitsType::Millimeters : UnitsType::Inches, 2).c_str());
+                    }
+                    else {
+                        txt = format("%s %d %s %s", _u8L("Extruder").c_str(), 1 + it->extruder_id,
+                            _u8L("up to").c_str(), convert_and_format_units(viewer.layer_z(std::prev(it)->layer_id - 1),
+                                UnitsType::Millimeters, (wrapper.units() == UnitsSystem::SI) ? UnitsType::Millimeters : UnitsType::Inches, 2).c_str());
+                    }
+                }
+                else {
+                    if (extruders_count == 1) {
+                        UnitsType length_units = (wrapper.units() == UnitsSystem::SI) ? UnitsType::Millimeters : UnitsType::Inches;
+                        std::string txt_from = convert_and_format_units(viewer.layer_z(it->layer_id),
+                          UnitsType::Millimeters, length_units, 2, false);
+                        std::string txt_to = convert_and_format_units(viewer.layer_z(std::prev(it)->layer_id - 1),
+                          UnitsType::Millimeters, length_units, 2);
+                        txt = format("%s %s %s %s", _u8L("from").c_str(), txt_from.c_str(),
+                            _u8L("to").c_str(), txt_to.c_str());
+                    }
+                    else {
+                        UnitsType length_units = (wrapper.units() == UnitsSystem::SI) ? UnitsType::Millimeters : UnitsType::Inches;
+                        std::string txt_from = convert_and_format_units(viewer.layer_z(it->layer_id),
+                          UnitsType::Millimeters, length_units, 2, false);
+                        std::string txt_to = convert_and_format_units(viewer.layer_z(std::prev(it)->layer_id - 1),
+                          UnitsType::Millimeters, length_units, 2);
+                        txt = format("%s %d %s %s %s %s", _u8L("Extruder").c_str(), 1 + it->extruder_id,
+                            _u8L("from").c_str(), txt_from.c_str(), _u8L("to").c_str(), txt_to.c_str());
+                    }
+                }
+                ++counter;
+
+                ret.emplace_back(color_print_colors[it->color_id % color_print_colors.size()], txt);
+            }
+        }
+    }
+    return ret;
+}
+
+static CoarseItems collect_coarse_items(Viewer& viewer, WrapperImpl& wrapper)
+{
+    ViewType type = viewer.view_type();
+    switch (type)
+    {
+    case ViewType::FeatureType:              { return collect_feature_type_coarse_items(viewer); }
+    case ViewType::Height:
+    case ViewType::Width:
+    case ViewType::ActualSpeed:
+    case ViewType::Speed:
+    case ViewType::FanSpeed:
+    case ViewType::Temperature:
+    case ViewType::VolumetricFlowRate:
+    case ViewType::ActualVolumetricFlowRate:
+    case ViewType::LayerTimeLinear:
+    case ViewType::LayerTimeLogarithmic:     { return collect_color_range_coarse_items(viewer, wrapper); }
+    case ViewType::Tool:                     { return collect_tool_coarse_items(viewer); }
+    case ViewType::ColorPrint:               { return collect_color_print_coarse_items(viewer, wrapper); }
+    default:                                 { break; }
+    }
+    return CoarseItems();
+}
+
+static void draw_coarse_item(CoarseItem& item, const ImVec2& icon_size, float cell_height)
+{
+    ImVec2 pos = ImGui::GetCursorScreenPos();
+    ImGui::RenderFrame(pos + ImVec2(1.0f, 1.0f), pos + icon_size, Imgui::to_ImU32(item.color), false, 3.0f);
+    ImGui::Dummy({ icon_size.x, cell_height });
+    ImGui::SameLine();
+    ImGui::Text("%s", item.text.c_str());
+}
+
+static void draw_coarse_items(Viewer& viewer, WrapperImpl& wrapper)
+{
+    CoarseItems items = collect_coarse_items(viewer, wrapper);
+    float line_height = ImGui::GetTextLineHeight();
+    ImVec2 icon_size(line_height, line_height);
+    float cell_height = 2.0f * line_height;
+
+    if (ImGui::BeginTable("LegendItems", 2)) {
+        for (size_t i = 0; i < items.size(); i += 2) {
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            draw_coarse_item(items[i], icon_size, cell_height);
+            if (i + 1 < items.size()) {
+                ImGui::TableSetColumnIndex(1);
+                draw_coarse_item(items[i + 1], icon_size, cell_height);
+            }
+        }
+        ImGui::EndTable();
+    }
+}
+
+void legend_coarse(Viewer& viewer, WrapperImpl& wrapper)
+{
+    draw_coarse_items(viewer, wrapper);
 }
 
 } // namespace Slic3r::App::LibvgcodeWrapper

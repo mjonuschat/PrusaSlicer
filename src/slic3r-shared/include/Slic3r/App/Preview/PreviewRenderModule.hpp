@@ -59,6 +59,8 @@ private:
 
     // main window layout
     PreviewRenderLayout m_layout;
+    // temporary variable to allow to switch yoga layout on/off
+    bool m_use_yoga_layout{ true };
 
 private:
     void init_gizmos();

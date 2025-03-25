@@ -5,14 +5,16 @@ namespace Slic3r::App::Preview {
 
 void PreviewRenderLayout::init_left_sizer()
 {
-    left_sizer.init(1, 2, Vec2f(330.f + win_padding().x(), 0), Yoga::Margins(win_padding() * 0.5f));
+    left_sizer.init(1, 3, Vec2f(330.f + win_padding().x(), 0), Yoga::Margins(win_padding() * 0.5f));
     left_sizer.set_bg_alpha(1.f);
     left_sizer.set_grow_col(0);
 
     add_item(left_sizer, m_cb_object_list_render , "object_list", Yoga::Margins(0.f, frame_padding().y() * 4));
     add_item(left_sizer, m_cb_legend_render, "legend");
+    add_item(left_sizer, m_cb_gcode_render, "gcode");
 
     left_sizer.show_row(1, false);
+    left_sizer.show_row(2, false);
 }
 
 void PreviewRenderLayout::add_middle_flex_sizer()
@@ -28,7 +30,7 @@ void PreviewRenderLayout::add_middle_flex_sizer()
     static Yoga::FlexSizer gcode_sizer(1, 1, Vec2f(0.f, 50.f), gcode_sizer_margins);
     gcode_sizer.set_bg_alpha(1.f);
     gcode_sizer.set_grow_col(0);
-    gcode_sizer.add(m_cb_gcode_slider_render, { Yoga::AlignH::Left, Yoga::AlignV::Top }, "gcode_slider");
+    add_item(gcode_sizer, m_cb_gcode_slider_render, "gcode_slider");
 
     middle_left_flex_sizer.add(view_cube_sizer, "", { Yoga::AlignH::Right, Yoga::AlignV::Top });
     middle_left_flex_sizer.add(gcode_sizer);
@@ -39,7 +41,7 @@ void PreviewRenderLayout::add_middle_flex_sizer()
     static Yoga::FlexSizer slider_sizer(1, 1, Vec2f(80.f, 0.f));
     slider_sizer.set_bg_alpha(1.f);
     slider_sizer.set_grow_col(0);
-    slider_sizer.add(m_cb_layer_slider_render, { Yoga::AlignH::Left, Yoga::AlignV::Top }, "layers_slider");
+    add_item(slider_sizer, m_cb_layer_slider_render, "layers_slider");
 
     middle_flex_sizer.add(middle_left_flex_sizer);
     middle_flex_sizer.add(slider_sizer);

@@ -9,6 +9,8 @@
 #include "Slic3r/App/Render/CommandBuffer.hpp"
 #include "Slic3r/App/I18N/I18N.hpp"
 #include "Slic3r/App/LibvgcodeWrapper/WrapperInputData.hpp"
+#include "Slic3r/App/LibvgcodeWrapper/Types.hpp"
+#include "Slic3r/App/Render/ImguiRender.hpp"
 
 #include <Slic3r/App/libvgcode/ViewerInputData.hpp>
 #include <Slic3r/Biz/libpgcode/Processor.hpp>
@@ -187,11 +189,30 @@ void PreviewRenderModule::render_imgui()
     // So, call it here.
     init_scene_layout();
 
-    m_layout.render(Vec2f(m_screen_info.logical_width(), m_screen_info.logical_height()));
+    // temporary to allow to switch yoga layout on/off
+    if (m_use_yoga_layout) {
+        bool gcode_window_enabled = m_viewer.mode() != WrapperMode::EditorPreGCode && m_viewer.has_data() &&
+            m_viewer.is_gcodewindow_visible();
 
-    WrapperLayoutData layout;
-    // TODO: setup layout if needed
-    m_viewer.render_gui(layout);
+        if (m_layout.is_inited()) {
+            m_layout.show_left(1, m_viewer.has_data() && m_viewer.is_legend_shown());
+            m_layout.show_left(2, gcode_window_enabled);
+            m_layout.show_slider_sizer(m_viewer.has_data());
+            m_layout.show_gcode_sizer(gcode_window_enabled);
+        }
+        m_layout.render({ m_screen_info.logical_width(), m_screen_info.logical_height() });
+        m_viewer.set_tool_marker_enabled(gcode_window_enabled);
+    }
+    else {
+        const libvgcode::Interval& visible_range = m_viewer.view_visible_range();
+        const libvgcode::Interval& enabled_range = m_viewer.view_enabled_range();
+        bool gcode_window_enabled = m_viewer.mode() != WrapperMode::EditorPreGCode && m_viewer.has_data() &&
+            visible_range[1] != enabled_range[1];
+        m_viewer.set_tool_marker_enabled(gcode_window_enabled);
+        WrapperLayoutData layout;
+        // TODO: setup layout if needed
+        m_viewer.render_gui(layout);
+    }
 
 #if ENABLED_DEBUG_VIEWER
     render_imgui_debug_viewer(m_viewer);
@@ -280,6 +301,7 @@ void PreviewRenderModule::on_screen_resized()
 
 void PreviewRenderModule::register_commands()
 {
+    // temporary: to be removed when gui using Yoga library is complete
     m_command_registry
         .register_command(
             new Platform::FuncCommand(
@@ -298,7 +320,9 @@ void PreviewRenderModule::register_commands()
                 Platform::KeyboardShortcut{0, Platform::KeyCode::G}
             ),
             true
-        )
+        );
+
+    m_command_registry
         .register_command(
             new Platform::FuncCommand(
                 "slider-gcode-increase-slow",
@@ -458,7 +482,17 @@ void PreviewRenderModule::register_commands()
                 nullptr,
                 Platform::KeyboardShortcut{0, Platform::KeyCode::KpMinus}
             )
-        )    ;
+        )
+        // temporary to allow to switch yoga layout on/off
+        .register_command(
+            new Platform::FuncCommand(
+                "use-yoga-layout",
+                [this]() { m_use_yoga_layout = !m_use_yoga_layout; },
+                nullptr,
+                Platform::KeyboardShortcut{ 0, Platform::KeyCode::Y }
+            )
+        )
+        ;
 }
 
 void PreviewRenderModule::init_gizmos()
@@ -511,8 +545,10 @@ void PreviewRenderModule::init_viewer(Render::Device& device)
         shells_option.cb_action = std::bind(&PreviewRenderModule::on_legend_shells_action, this, std::placeholders::_1);
     }
 
-    if (m_viewer.init(device, m_scene_presenter->scene(), m_gizmo_manager->data_factory(), settings))
+    if (m_viewer.init(device, m_scene_presenter->scene(), m_gizmo_manager->data_factory(), settings)) {
         m_viewer.set_lights(m_viewer.default_lights());
+        m_viewer.set_gcodewindow_visible(false);
+    }
     else {
         // log some error message
     }
@@ -542,20 +578,171 @@ void PreviewRenderModule::init_scene_layout()
     m_layout.set_sidebar_print_render_fn([](Vec2f size, Vec2f pos) -> void
         { SidebarPrint::render(pos, size); });
 // <<  
-    m_layout.set_legend_render_fn([this](Vec2f size, Vec2f pos) -> void
-        { ImGui::Text("Legend"); });
-
     m_layout.set_sidebar_auto_reslice_render_fn([](Vec2f size, Vec2f pos) -> void
         { Preview::SidebarAutoReslice::render(pos, size); });
 
     m_layout.set_sidebar_after_slice_render_fn([](Vec2f size, Vec2f pos) -> void
         { Preview::SidebarAfterSlice::render(pos, size); });
 
-    m_layout.set_layer_slider_render_fn([](Vec2f size, Vec2f pos) -> void
-        { ; });
+    m_layout.set_legend_render_fn([this](Vec2f size, Vec2f pos) {
+        ImGui::PushFont(m_imgui_render->font(Render::ImguiFontType::Bold));
+        ImGui::Text("%s", _u8L("Legend").c_str());
+        ImGui::PopFont();
+        m_viewer.render_legend();
+    });
 
-    m_layout.set_gcode_slider_render_fn([](Vec2f size, Vec2f pos) -> void
-        { ; });
+    m_layout.set_gcode_render_fn([this](Vec2f size, Vec2f pos) {
+        ImGui::PushFont(m_imgui_render->font(Render::ImguiFontType::Bold));
+        ImGui::Text("%s", _u8L("G-code viewer").c_str());
+        ImGui::PopFont();
+        m_viewer.render_gcode_window();
+    });
+
+    m_layout.add_toolbar_item(ToolbarID::Middle, ImGui::LegendTravel, LibvgcodeWrapper::to_string(OptionType::Travels), "", {
+        [this]() { m_viewer.toggle_option_visibility(OptionType::Travels); },
+        []() { return true; },
+        [this]() {
+            const OptionTypes& options = m_viewer.options();
+            return m_viewer.mode() != WrapperMode::EditorPreGCode &&
+                std::find(options.begin(), options.end(), OptionType::Travels) != options.end();
+        },
+        [this]() { return m_viewer.is_option_visible(OptionType::Travels); }
+    });
+
+    m_layout.add_toolbar_item(ToolbarID::Middle, ImGui::LegendWipe, LibvgcodeWrapper::to_string(OptionType::Wipes), "", {
+        [this]() { m_viewer.toggle_option_visibility(OptionType::Wipes); },
+        []() { return true; },
+        [this]() {
+            const OptionTypes& options = m_viewer.options();
+            return m_viewer.mode() != WrapperMode::EditorPreGCode &&
+                std::find(options.begin(), options.end(), OptionType::Wipes) != options.end();
+        },
+        [this]() { return m_viewer.is_option_visible(OptionType::Wipes); }
+    });
+
+    m_layout.add_toolbar_item(ToolbarID::Middle, ImGui::LegendRetract, LibvgcodeWrapper::to_string(OptionType::Retractions), "", {
+        [this]() { m_viewer.toggle_option_visibility(OptionType::Retractions); },
+        []() { return true; },
+        [this]() {
+            const OptionTypes& options = m_viewer.options();
+            return m_viewer.mode() != WrapperMode::EditorPreGCode && 
+                std::find(options.begin(), options.end(), OptionType::Retractions) != options.end();
+        },
+        [this]() { return m_viewer.is_option_visible(OptionType::Retractions); }
+    });
+
+    m_layout.add_toolbar_item(ToolbarID::Middle, ImGui::LegendDeretract, LibvgcodeWrapper::to_string(OptionType::Unretractions), "", {
+        [this]() { m_viewer.toggle_option_visibility(OptionType::Unretractions); },
+        []() { return true; },
+        [this]() {
+            const OptionTypes& options = m_viewer.options();
+            return m_viewer.mode() != WrapperMode::EditorPreGCode && 
+                std::find(options.begin(), options.end(), OptionType::Unretractions) != options.end();
+        },
+        [this]() { return m_viewer.is_option_visible(OptionType::Unretractions); }
+    });
+
+    m_layout.add_toolbar_item(ToolbarID::Middle, ImGui::LegendSeams, LibvgcodeWrapper::to_string(OptionType::Seams), "", {
+        [this]() { m_viewer.toggle_option_visibility(OptionType::Seams); },
+        []() { return true; },
+        [this]() {
+            const OptionTypes& options = m_viewer.options();
+            return m_viewer.mode() != WrapperMode::EditorPreGCode && 
+                std::find(options.begin(), options.end(), OptionType::Seams) != options.end();
+        },
+        [this]() { return m_viewer.is_option_visible(OptionType::Seams); }
+    });
+
+    m_layout.add_toolbar_item(ToolbarID::Middle, ImGui::LegendToolChanges, LibvgcodeWrapper::to_string(OptionType::ToolChanges), "", {
+        [this]() { m_viewer.toggle_option_visibility(OptionType::ToolChanges); },
+        []() { return true; },
+        [this]() {
+            const OptionTypes& options = m_viewer.options();
+            return m_viewer.mode() != WrapperMode::EditorPreGCode && 
+                std::find(options.begin(), options.end(), OptionType::ToolChanges) != options.end();
+        },
+        [this]() { return m_viewer.is_option_visible(OptionType::ToolChanges); }
+    });
+
+    m_layout.add_toolbar_item(ToolbarID::Middle, ImGui::LegendColorChanges, LibvgcodeWrapper::to_string(OptionType::ColorChanges), "", {
+        [this]() { m_viewer.toggle_option_visibility(OptionType::ColorChanges); },
+        []() { return true; },
+        [this]() {
+            const OptionTypes& options = m_viewer.options();
+            return m_viewer.mode() != WrapperMode::EditorPreGCode && 
+                std::find(options.begin(), options.end(), OptionType::ColorChanges) != options.end();
+        },
+        [this]() { return m_viewer.is_option_visible(OptionType::ColorChanges); }
+    });
+
+    m_layout.add_toolbar_item(ToolbarID::Middle, ImGui::LegendPausePrints, LibvgcodeWrapper::to_string(OptionType::PausePrints), "", {
+        [this]() { m_viewer.toggle_option_visibility(OptionType::PausePrints); },
+        []() { return true; },
+        [this]() {
+            const OptionTypes& options = m_viewer.options();
+            return m_viewer.mode() != WrapperMode::EditorPreGCode && 
+                std::find(options.begin(), options.end(), OptionType::PausePrints) != options.end();
+        },
+        [this]() { return m_viewer.is_option_visible(OptionType::PausePrints); }
+    });
+
+    m_layout.add_toolbar_item(ToolbarID::Middle, ImGui::LegendCustomGCodes, LibvgcodeWrapper::to_string(OptionType::CustomGCodes), "", {
+        [this]() { m_viewer.toggle_option_visibility(OptionType::CustomGCodes); },
+        []() { return true; },
+        [this]() {
+            const OptionTypes& options = m_viewer.options();
+            return m_viewer.mode() != WrapperMode::EditorPreGCode && 
+                std::find(options.begin(), options.end(), OptionType::CustomGCodes) != options.end();
+        },
+        [this]() { return m_viewer.is_option_visible(OptionType::CustomGCodes); }
+    });
+
+    m_layout.add_toolbar_item(ToolbarID::Middle, ImGui::LegendCOG, LibvgcodeWrapper::to_string(OptionType::CenterOfGravity), "", {
+        [this]() { m_viewer.toggle_option_visibility(OptionType::CenterOfGravity); },
+        []() { return true; },
+        [this]() { return m_viewer.has_data(); },
+        [this]() { return m_viewer.is_option_visible(OptionType::CenterOfGravity); }
+    });
+
+    m_layout.add_toolbar_item(ToolbarID::Middle, ImGui::LegendToolMarker, LibvgcodeWrapper::to_string(OptionType::ToolMarker), "", {
+        [this]() { m_viewer.toggle_option_visibility(OptionType::ToolMarker); },
+        []() { return true; },
+        [this]() { return m_viewer.has_data(); },
+        [this]() { return m_viewer.is_option_visible(OptionType::ToolMarker); }
+    });
+
+    m_layout.add_toolbar_item(ToolbarID::Middle, ImGui::LegendShells, "Shells", "", {
+        [this]() { /* TODO */ },
+        [this]() { return m_viewer.mode() != WrapperMode::GCodeViewer; },
+        [this]() { return m_viewer.mode() != WrapperMode::GCodeViewer; }
+    });
+
+    m_layout.set_layer_slider_render_fn([this](Vec2f size, Vec2f pos) {
+        ImGui::PushFont(m_imgui_render->font(Render::ImguiFontType::Bold));
+        const std::string label = _u8L("Layers");
+        float offset = size.x() - ImGui::CalcTextSize(label.c_str()).x;
+        if (offset > 0.0f) {
+            ImGui::Dummy({ 0.5f * offset, ImGui::GetTextLineHeight() });
+            ImGui::SameLine(0.0f, 0.0f);
+        }
+        ImGui::Text("%s", label.c_str());
+        ImGui::PopFont();
+        m_viewer.render_layers_slider();
+    });
+
+    m_layout.set_gcode_slider_render_fn([this](Vec2f size, Vec2f pos) {
+        ImGui::PushFont(m_imgui_render->font(Render::ImguiFontType::Bold));
+        ImGui::BeginGroup();
+        const std::string label = _u8L("Steps");
+        float offset = size.y() - ImGui::GetTextLineHeight();
+        if (offset > 0.0f)
+            ImGui::Dummy({ ImGui::CalcTextSize(label.c_str()).x, 0.5f * offset });
+        ImGui::Text("%s", label.c_str());
+        ImGui::PopFont();
+        ImGui::EndGroup();
+        ImGui::SameLine();
+        m_viewer.render_gcode_slider();
+    });
 
     // init toolbars
 
@@ -564,29 +751,23 @@ void PreviewRenderModule::init_scene_layout()
     auto cb_is_enable = []() -> bool {return true; };
 
     static bool show_object_list    { true };
-    static bool show_legend         { true };
 
     m_layout.add_toolbar_item(ToolbarID::Top, ImGui::ToolbarObjects, "Object List", "Ctrl + Alt + O",
         { [this]() { m_layout.show_left(0, show_object_list = !show_object_list); },
           cb_is_visible, cb_is_enable, []() { return !show_object_list; } });
 
-    m_layout.add_toolbar_item(ToolbarID::Bottom, ImGui::ToolbarGraph, "Legend", "",
-        { [this]() { m_layout.show_left(1, show_legend = !show_legend); },
-          cb_is_visible, cb_is_enable, []() { return show_legend; } });
-
-    // >> just for testing 
-    m_layout.add_toolbar_item(ToolbarID::Middle, ImGui::ToolbarAdd, "Show/Hide gcode slider", "", { 
-        [this]() {
-            static bool show {true};
-            m_layout.show_gcode_sizer(show = !show);
-        }
+    m_layout.add_toolbar_item(ToolbarID::Bottom, ImGui::ToolbarGraph, "Legend", "", {
+        [this]() { m_viewer.toggle_legend_visible(); },
+        [this]() { return true; },
+        [this]() { return m_viewer.mode() != WrapperMode::EditorPreGCode && m_viewer.has_data(); },
+        [this]() { return m_viewer.has_data() && m_viewer.is_legend_shown(); }
     });
-    m_layout.add_toolbar_separator(ToolbarID::Middle);
-    m_layout.add_toolbar_item(ToolbarID::Middle, ImGui::ToolbarMove, "Show/Hide layer slider", "", {
-        [this]() {
-            static bool show {true};
-            m_layout.show_slider_sizer(show = !show);
-        }
+
+    m_layout.add_toolbar_item(ToolbarID::Bottom, ImGui::ToolbarGCode, "G-code", "", {
+        [this]() { m_viewer.toggle_gcodewindow_visible(); },
+        [this]() { return true; },
+        [this]() { return m_viewer.mode() != WrapperMode::EditorPreGCode && m_viewer.has_data(); },
+        [this]() { return m_viewer.has_data() && m_viewer.is_gcodewindow_visible(); }
     });
     // << 
 }

@@ -148,7 +148,7 @@ void WrapperImpl::load_as_sla(WrapperSLAInputData&& wrapper_sla_data)
 void WrapperImpl::render_toolpaths(const Vec3f& camera_position)
 {
     if (m_printer_technology == PrinterTechnology::FFF)
-        render_toolpaths_internal(camera_position);
+        m_viewer.render(camera_position);
 }
 
 void WrapperImpl::render_gui(const WrapperLayoutData& layout)
@@ -180,6 +180,50 @@ void WrapperImpl::render_gui(const WrapperLayoutData& layout)
         else if (m_scale_factor_popup_type != OptionType::COUNT)
             render_customize_scale_factor_popup();
     }
+}
+
+void WrapperImpl::render_gcode_window()
+{
+    gcode_window(m_gcode_window_data, m_viewer.current_vertex().gcode_id);
+}
+
+void WrapperImpl::render_legend()
+{
+    static std::string msg = _u8L("No data available");
+
+    if (m_printer_technology != PrinterTechnology::FFF ||
+        m_settings.mode == WrapperMode::EditorPreGCode ||
+        !has_data()) {
+        ImVec2 msg_size = ImGui::CalcTextSize(msg.c_str());
+        ImVec2 available_size = ImGui::GetContentRegionAvail();
+        if (msg_size.x < available_size.x && msg_size.y < available_size.y) {
+            ImVec2 pos = ImGui::GetCurrentWindow()->DC.CursorPos + (available_size - msg_size) * 0.5f;
+            ImGui::RenderText(pos, msg.c_str());
+        }
+    }
+    else {
+        static bool detail = false;
+        if (detail)
+            ImGui::Text("Not implemented yet");
+        else {
+            ImGui::GetCurrentWindow()->DC.CursorPos.y += ImGui::GetTextLineHeight();
+            legend_coarse(m_viewer, *this);
+        }
+        ImVec2 available_size = ImGui::GetContentRegionAvail();
+        legend_view_type_selector(m_viewer, *this, m_cb_legend.cb_view_type_changed, 0.666f * available_size.x);
+        ImGui::SameLine();
+        Imgui::toggle_button(_u8L("Detail view"), &detail, true);
+    }
+}
+
+void WrapperImpl::render_gcode_slider()
+{ 
+    m_slider_gcode.render(ImGui::GetCurrentWindow()->DC.CursorPos, 1.0f, 0.0f);
+}
+
+void WrapperImpl::render_layers_slider()
+{
+    m_slider_layers.render(ImGui::GetCurrentWindow()->DC.CursorPos, 1.0f, 0.0f);
 }
 
 void WrapperImpl::set_units(UnitsSystem sys)
@@ -502,12 +546,6 @@ Palette WrapperImpl::on_slider_layers_get_extruder_colors()
     return m_viewer.tool_colors();
 }
 
-void WrapperImpl::render_toolpaths_internal(const Vec3f& camera_position)
-{
-    if (has_data())
-        m_viewer.render(camera_position);
-}
-
 void WrapperImpl::render_legend(const WrapperLayoutData& layout)
 {
     if (is_legend_shown() && has_data()) {
@@ -532,13 +570,13 @@ void WrapperImpl::render_slider_gcode(const WrapperLayoutData& layout)
 {
     const Interval& enabled_range = m_viewer.view_enabled_range();
     if (enabled_range[1] > enabled_range[0])
-        m_slider_gcode.render(layout.scale_factor, std::max(layout.view_toolbar_size[0], m_slider_layers.size().x));
+        m_slider_gcode.render({ -1.0f, -1.0f }, layout.scale_factor, std::max(layout.view_toolbar_size[0], m_slider_layers.size().x));
 }
 
 void WrapperImpl::render_slider_layers(const WrapperLayoutData& layout)
 {
     if (m_viewer.layers_count() > 0)
-        m_slider_layers.render(layout.scale_factor, layout.collapse_toolbar_height);
+        m_slider_layers.render({ -1.0f, -1.0f }, layout.scale_factor, layout.collapse_toolbar_height);
 }
 
 void WrapperImpl::render_gcodewindow(const WrapperLayoutData& layout)
@@ -569,7 +607,7 @@ void WrapperImpl::render_gcodewindow(const WrapperLayoutData& layout)
     unified_window_style.push();
     ImGui::Begin(_u8L("G-Code##wrapper").c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse |
         ImGuiWindowFlags_NoFocusOnAppearing);
-    gcode_window(m_gcode_window_data, size_t(m_viewer.current_vertex().gcode_id));
+    gcode_window(m_gcode_window_data, size_t(m_viewer.current_vertex().gcode_id), true);
     ImGui::End();
     unified_window_style.pop();
 }

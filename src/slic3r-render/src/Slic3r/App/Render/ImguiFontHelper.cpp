@@ -187,6 +187,7 @@ static const std::vector<std::pair<const wchar_t, std::string>> FONT_ICONS_TOOLB
     { ImGui::ToolbarGraph            , "toolbar_graph"                    },
     { ImGui::ToolbarMove             , "toolbar_move"                     },
     { ImGui::ToolbarRotation         , "toolbar_rotation"                 },
+    { ImGui::ToolbarGCode            , "toolbar_gcode"                    },
 };
  
 static const std::vector<std::pair<const wchar_t, std::string>> FONT_ICONS_PRINTER = {

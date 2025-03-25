@@ -41,6 +41,9 @@ public:
      */
     void init(Render::Device& device, Scene::NodeBuilder& builder, Scene::GeometryDataFactory& data_factory);
 
+    bool enabled() const { return m_enabled; }
+    void set_enabled(bool enabled) { m_enabled = enabled; }
+
     float offset_z() const { return m_offset_z; }
     void set_offset_z(float offset_z) { m_offset_z = std::max(offset_z, 0.0f); }
 
@@ -56,6 +59,7 @@ public:
     const BoundingBoxf3& bounding_box() const { return m_bounding_box; }
 
 private:
+    bool m_enabled{ false };
     float m_offset_z{ 0.5f };
     ColorRGB m_color{ ColorRGB::WHITE() };
     float m_alpha{ 0.5f };
