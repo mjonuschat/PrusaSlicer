@@ -183,11 +183,11 @@ public:
             transform(cpoly, m_trafo, m_bb);
 
             for (auto &p : cpoly.contour.points)
-                p = {static_cast<coord_t>(std::round(p.x() * m_sc.x())), static_cast<coord_t>(std::round(p.y() * m_sc.y()))};
+                p = Point{static_cast<coord_t>(std::round(p.x() * m_sc.x())), static_cast<coord_t>(std::round(p.y() * m_sc.y()))};
 
             for (auto &h : cpoly.holes)
                 for (auto &p : h)
-                    p = {static_cast<coord_t>(std::round(p.x() * m_sc.x())), static_cast<coord_t>(std::round(p.y() * m_sc.y()))};
+                    p = Point{static_cast<coord_t>(std::round(p.x() * m_sc.x())), static_cast<coord_t>(std::round(p.y() * m_sc.y()))};
 
             append_svg(m_svg, cpoly.contour);
             for (auto &h : cpoly.holes)

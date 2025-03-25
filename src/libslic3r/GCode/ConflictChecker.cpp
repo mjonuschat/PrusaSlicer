@@ -119,7 +119,7 @@ static std::vector<ExtrusionPaths> getFakeExtrusionPathsFromWipeTower(const Wipe
     int   w = scale_(wtd.width);
     int   bd = scale_(wtd.brim_width);
     Point minCorner = Point{round(Vec2d{ -wtd.brim_width, -wtd.brim_width }).cast<coord_t>()};
-    Point maxCorner = { minCorner.x() + w + bd, minCorner.y() + d + bd };
+    Point maxCorner = Point{ minCorner.x() + w + bd, minCorner.y() + d + bd };
     float width = wtd.width;
     float depth = wtd.depth;
     float height = wtd.height;
@@ -139,7 +139,7 @@ static std::vector<ExtrusionPaths> getFakeExtrusionPathsFromWipeTower(const Wipe
                     break;
             d = scale_(z_and_depth_pairs[i].second);
             minCorner = round(Vec2d{0.f, -d/2 + scale_(z_and_depth_pairs.front().second/2.f)}).cast<coord_t>();
-            maxCorner = { minCorner.x() + w, minCorner.y() + d };
+            maxCorner = Point{ minCorner.x() + w, minCorner.y() + d };
         }
 
 

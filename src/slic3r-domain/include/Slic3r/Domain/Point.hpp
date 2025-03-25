@@ -18,20 +18,9 @@ public:
 
     Point() : Vec2crd(0, 0) {}
     using Vec2crd::Vec2crd;
+    using Vec2crd::operator=;
 
     static Point new_scale(double x, double y) { return Point(coord_t(scale_(x)), coord_t(scale_(y))); }
-
-    // Compatibility with Eigen.
-    template<typename OtherDerived>
-    Point(const Eigen::MatrixBase<OtherDerived> &other) : Vec2crd(other) {}
-
-    // Compatibility with Eigen.
-    template<typename OtherDerived>
-    Point& operator=(const Eigen::MatrixBase<OtherDerived> &other)
-    {
-        this->Vec2crd::operator=(other);
-        return *this;
-    }
 
     // These operators address undesired behavior of Eigen (actually c++ in general).
     // Eigen defines operator*(Point, int) which sadly due to c++ implicit
