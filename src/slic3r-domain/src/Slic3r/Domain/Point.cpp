@@ -25,17 +25,16 @@ Point Point::operator*(const double& scalar) const
     return {this->x() * scalar, this->y() * scalar};
 }
 
-void Point::rotate(double angle, const Point &center)
-{
-    Vec2d  cur = this->cast<double>();
-    double s   = ::sin(angle);
-    double c   = ::cos(angle);
-    auto   d   = cur - center.cast<double>();
-    this->x() = Impl::fast_round_up(center.x() + c * d.x() - s * d.y());
-    this->y() = Impl::fast_round_up(center.y() + s * d.x() + c * d.y());
+Point rotated(const Point& point, const double cos_a, const double sin_a) {
+    const auto cur_x{static_cast<double>(point.x())};
+    const auto cur_y{static_cast<double>(point.y())};
+    return {
+        static_cast<coord_t>(std::round(cos_a * cur_x - sin_a * cur_y)),
+        static_cast<coord_t>(std::round(cos_a * cur_y + sin_a * cur_x))
+    };
 }
 
-Vec2crd rotated(const Vec2crd& point, const double angle, const Vec2crd &center) {
+Point rotated(const Point& point, const double angle, const Point &center) {
     const Vec2d current{point.cast<double>()};
     const double s{std::sin(angle)};
     const double c{std::cos(angle)};
@@ -45,4 +44,5 @@ Vec2crd rotated(const Vec2crd& point, const double angle, const Vec2crd &center)
         Impl::fast_round_up(center.y() + s * d.x() + c * d.y())
     };
 }
+
 }

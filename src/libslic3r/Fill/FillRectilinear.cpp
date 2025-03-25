@@ -2804,7 +2804,7 @@ bool FillRectilinear::fill_surface_by_lines(const Surface *surface, const FillPa
     } else {
         // extend bounding box so that our pattern will be aligned with other layers
         // Transform the reference point to the rotated coordinate system.
-        Point refpt = rotate_vector.second.rotated(- rotate_vector.first);
+        Point refpt = Domain::rotated(rotate_vector.second, - rotate_vector.first);
         // align_to_grid will not work correctly with positive pattern_shift.
         coord_t pattern_shift_scaled = coord_t(scale_(pattern_shift)) % line_spacing;
         refpt.x() -= (pattern_shift_scaled >= 0) ? pattern_shift_scaled : (line_spacing + pattern_shift_scaled);
@@ -2949,7 +2949,7 @@ void make_fill_lines(const ExPolygonWithOffset &poly_with_offset, Point refpt, d
                     if (angle == 0.)
                         fill_lines.emplace_back(Point(vline.pos, it_low->pos()), Point(vline.pos, it_high->pos()));
                     else
-                        fill_lines.emplace_back(Point(vline.pos, it_low->pos()).rotated(cos_a, sin_a), Point(vline.pos, it_high->pos()).rotated(cos_a, sin_a));
+                        fill_lines.emplace_back(Domain::rotated(Point(vline.pos, it_low->pos()), cos_a, sin_a), Domain::rotated(Point(vline.pos, it_high->pos()), cos_a, sin_a));
                     ++ it;
                 }
             }
@@ -2975,7 +2975,7 @@ bool FillRectilinear::fill_surface_by_multilines(const Surface *surface, FillPar
     for (const SweepParams &sweep : sweep_params) {
         // Rotate polygons so that we can work with vertical lines here
         float angle = rotate_vector.first + sweep.angle_base;
-        make_fill_lines(ExPolygonWithOffset(poly_with_offset_base, - angle), rotate_vector.second.rotated(-angle), angle, line_width + coord_t(SCALED_EPSILON), line_spacing, coord_t(scale_(sweep.pattern_shift)), fill_lines);
+        make_fill_lines(ExPolygonWithOffset(poly_with_offset_base, - angle), Domain::rotated(rotate_vector.second, -angle), angle, line_width + coord_t(SCALED_EPSILON), line_spacing, coord_t(scale_(sweep.pattern_shift)), fill_lines);
     }
 
     if (params.dont_connect() || fill_lines.size() <= 1) {
@@ -3073,7 +3073,7 @@ Polylines FillSupportBase::fill_surface(const Surface *surface, const FillParams
         Polylines fill_lines;
         coord_t line_spacing = coord_t(scale_(this->spacing) / params.density);
         // Create infill lines, keep them vertical.
-        make_fill_lines(poly_with_offset, rotate_vector.second.rotated(- rotate_vector.first), 0, 0, line_spacing, 0, fill_lines);
+        make_fill_lines(poly_with_offset, Domain::rotated(rotate_vector.second, - rotate_vector.first), 0, 0, line_spacing, 0, fill_lines);
         // Both the poly_with_offset and polylines_out are rotated, so the infill lines are strictly vertical.
         connect_base_support(std::move(fill_lines), poly_with_offset.polygons_outer, poly_with_offset.bounding_box_outer(), polylines_out, this->spacing, params);
         // Rotate back by rotate_vector.first
@@ -3081,7 +3081,7 @@ Polylines FillSupportBase::fill_surface(const Surface *surface, const FillParams
         const double sin_a = sin(rotate_vector.first);
         for (Polyline &pl : polylines_out)
             for (Point &pt : pl.points)
-                pt.rotate(cos_a, sin_a);
+                pt = Domain::rotated(pt, cos_a, sin_a);
     }
     return polylines_out;
 }

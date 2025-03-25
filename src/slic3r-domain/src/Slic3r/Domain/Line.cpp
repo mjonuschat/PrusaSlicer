@@ -59,8 +59,8 @@ void Line::translate(const coord_t x, const coord_t y) { this->translate(Point(x
 
 void Line::rotate(const double angle, const Point& center)
 {
-    this->a.rotate(angle, center);
-    this->b.rotate(angle, center);
+    this->a = Domain::rotated(this->a, angle, center);
+    this->b = Domain::rotated(this->b, angle, center);
 }
 
 void Line::reverse() { std::swap(this->a, this->b); }

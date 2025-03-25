@@ -1428,7 +1428,7 @@ Slic3r::Points sample_expolygons_with_centering(const ExPolygons &expolys, coord
         expoly_tr.rotate(angle, center);
         Points samples = sample_expolygon(expoly_tr, triangle_side);
         for (Point &sample : samples) 
-            sample.rotate(-angle, center);
+            sample = Domain::rotated(sample, -angle, center);
         append(result, samples);        
     }
     return result;

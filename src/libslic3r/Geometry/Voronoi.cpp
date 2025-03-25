@@ -300,7 +300,7 @@ VoronoiDiagram::try_to_repair_degenerated_voronoi_diagram_by_rotation(const Segm
     for (auto segment_it = segment_begin; segment_it != segment_end; ++segment_it) {
         PointType from = boost::polygon::segment_traits<SegmentType>::get(*segment_it, boost::polygon::LOW);
         PointType to   = boost::polygon::segment_traits<SegmentType>::get(*segment_it, boost::polygon::HIGH);
-        segments_rotated.emplace_back(from.rotated(fix_angle), to.rotated(fix_angle));
+        segments_rotated.emplace_back(Domain::rotated(from, fix_angle), Domain::rotated(to, fix_angle));
     }
 
     VoronoiDiagram::voronoi_diagram_type voronoi_diagram_rotated;

@@ -59,7 +59,7 @@ Points arc_discretize(const Point &p1, const Point &p2, const double radius, con
     if (! ccw)
         angle_step *= -1.;
     for (size_t i = 1; i < num_steps; ++ i)
-        out.emplace_back(p1.rotated(angle_step * i, center.cast<coord_t>()));
+        out.emplace_back(Domain::rotated(p1, angle_step * i, center.cast<coord_t>()));
     out.emplace_back(p2);
     return out;
 }
@@ -751,7 +751,7 @@ double clip_end(Path &path, double distance)
                 // Otherwise, we must flip the radius sign to take the shorter angle.
                 const bool flip_radius_sign = last.radius < 0 && std::abs(angle) > M_PI && std::abs(angle - rotate_by_angle) <= M_PI;
 
-                path.push_back({last.point.rotated(rotate_by_angle, arc_center(path.back().point.cast<double>(), last.point.cast<double>(), double(last.radius), last.ccw()).cast<coord_t>()),
+                path.push_back({Domain::rotated(last.point, rotate_by_angle, arc_center(path.back().point.cast<double>(), last.point.cast<double>(), double(last.radius), last.ccw()).cast<coord_t>()),
                                 (flip_radius_sign ? -last.radius : last.radius), last.orientation});
 
                 // Length to go is zero.

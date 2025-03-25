@@ -47,7 +47,7 @@ void FillLine::_fill_surface_single(
         bounding_box.merge(align_to_grid(
             bounding_box.min, 
             Point(this->_line_spacing, this->_line_spacing), 
-            direction.second.rotated(- direction.first)));
+            Domain::rotated(direction.second, - direction.first)));
     }
 
     // generate the basic pattern

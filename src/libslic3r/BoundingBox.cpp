@@ -47,8 +47,8 @@ BoundingBox BoundingBox::rotated(double angle) const
     BoundingBox out;
     out.merge(rotated(this->min, angle));
     out.merge(rotated(this->max, angle));
-    out.merge(Point(this->min.x(), this->max.y()).rotated(angle));
-    out.merge(Point(this->max.x(), this->min.y()).rotated(angle));
+    out.merge(rotated(Point(this->min.x(), this->max.y()), angle));
+    out.merge(rotated(Point(this->max.x(), this->min.y()), angle));
     return out;
 }
 
@@ -59,8 +59,8 @@ BoundingBox BoundingBox::rotated(double angle, const Point &center) const
     BoundingBox out;
     out.merge(rotated(this->min, angle, center));
     out.merge(rotated(this->max, angle, center));
-    out.merge(Point(this->min.x(), this->max.y()).rotated(angle, center));
-    out.merge(Point(this->max.x(), this->min.y()).rotated(angle, center));
+    out.merge(rotated(Point(this->min.x(), this->max.y()), angle, center));
+    out.merge(rotated(Point(this->max.x(), this->min.y()), angle, center));
     return out;
 }
 

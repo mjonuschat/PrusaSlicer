@@ -59,7 +59,7 @@ std::optional<Point> sample_path_point_at_distance_from_start(const SmoothPath &
                         const Point center_pt    = Geometry::ArcWelder::arc_center(prev_point.cast<float>(), point.cast<float>(), segment_it->radius, segment_it->ccw()).cast<coord_t>();
                         const float rotation_dir = (segment_it->ccw() ? 1.f : -1.f);
                         // Rotate the segment start point based on the arc orientation.
-                        return prev_point.rotated(rotation_dir * angle * (distance / len), center_pt);
+                        return Domain::rotated(prev_point, rotation_dir * angle * (distance / len), center_pt);
                     }
 
                     distance -= len;

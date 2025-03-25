@@ -16,6 +16,7 @@ class Point : public Vec2crd
 public:
     using coord_type = coord_t;
 
+    // Eigen vectors are not 0 initialized. Fix that.
     Point() : Vec2crd(0, 0) {}
     using Vec2crd::Vec2crd;
     using Vec2crd::operator=;
@@ -28,24 +29,12 @@ public:
     // meaning (10, 10) * 1.2 == (12, 12).
     Point& operator*=(const double &scalar);
     Point operator*(const double &scalar) const;
-
-    void   rotate(double angle) { this->rotate(std::cos(angle), std::sin(angle)); }
-    void   rotate(double cos_a, double sin_a) {
-        double cur_x = (double)this->x();
-        double cur_y = (double)this->y();
-        this->x() = (coord_t)round(cos_a * cur_x - sin_a * cur_y);
-        this->y() = (coord_t)round(cos_a * cur_y + sin_a * cur_x);
-    }
-
-    void   rotate(double angle, const Point &center);
-    Point  rotated(double angle) const { Point res(*this); res.rotate(angle); return res; }
-    Point  rotated(double cos_a, double sin_a) const { Point res(*this); res.rotate(cos_a, sin_a); return res; }
-    Point  rotated(double angle, const Point &center) const { Point res(*this); res.rotate(angle, center); return res; }
 };
 
-Vec2crd rotated(const Vec2crd& point, const double angle, const Vec2crd &center = Vec2crd::Zero());
+Point rotated(const Point& point, const double angle, const Point &center = Point::Zero());
+Point rotated(const Point& point, const double cos_a, const double sin_a);
 
 template<typename BaseType>
 using PointsAllocator = tbb::scalable_allocator<BaseType>;
-using Points          = std::vector<Point, PointsAllocator<Point>>;
+using Points = std::vector<Point, PointsAllocator<Point>>;
 }
