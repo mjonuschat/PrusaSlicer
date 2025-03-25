@@ -53,8 +53,8 @@ void MultiPoint::rotate(double cos_angle, double sin_angle)
     for (Point& pt : this->points) {
         double cur_x = double(pt.x());
         double cur_y = double(pt.y());
-        pt.x() = coord_t(round(cos_angle * cur_x - sin_angle * cur_y));
-        pt.y() = coord_t(round(cos_angle * cur_y + sin_angle * cur_x));
+        pt.x() = coord_t(std::round(cos_angle * cur_x - sin_angle * cur_y));
+        pt.y() = coord_t(std::round(cos_angle * cur_y + sin_angle * cur_x));
     }
 }
 
@@ -64,8 +64,8 @@ void MultiPoint::rotate(double angle, const Point& center)
     double c = cos(angle);
     for (Point& pt : this->points) {
         Vec2crd v(pt - center);
-        pt.x() = (coord_t) round(double(center.x()) + c * v.x() - s * v.y());
-        pt.y() = (coord_t) round(double(center.y()) + c * v.y() + s * v.x());
+        pt.x() = (coord_t) std::round(double(center.x()) + c * v.x() - s * v.y());
+        pt.y() = (coord_t) std::round(double(center.y()) + c * v.y() + s * v.x());
     }
 }
 

@@ -20,6 +20,7 @@
 #include "libslic3r/Surface.hpp"
 #include "libslic3r/libslic3r.h"
 #include "libslic3r/Utils.hpp"
+#include "Slic3r/Biz/Algorithms/Point.hpp"
 
 namespace Slic3r {
 
@@ -354,6 +355,8 @@ void SVG::export_expolygons(const char *path, const BoundingBox &bbox, const Sli
 // 4) Paint ExPolygonAttributes::legend into legend using the ExPolygonAttributes::color_fill if legend is not empty.
 void SVG::export_expolygons(const char *path, const std::vector<std::pair<Slic3r::ExPolygons, ExPolygonAttributes>> &expolygons_with_attributes)
 {
+    using Slic3r::Biz::Algorithms::Point::round;
+
     if (expolygons_with_attributes.empty())
         return;
 
@@ -362,7 +365,10 @@ void SVG::export_expolygons(const char *path, const std::vector<std::pair<Slic3r
     size_t num_columns = 3;
     // Width of the column.
     coord_t step_x = scale_(20.);
-    Point legend_size(scale_(1.) + num_columns * step_x, scale_(0.4 + 1.3 * (num_legend + num_columns - 1) / num_columns));
+    Point legend_size(round(Vec2d{
+        scale_(1.) + num_columns * step_x,
+        scale_(0.4 + 1.3 * (num_legend + num_columns - 1) / num_columns)
+    }).cast<coord_t>());
 
     BoundingBox bbox = get_extents(expolygons_with_attributes.front().first);
     for (size_t i = 0; i < expolygons_with_attributes.size(); ++ i)

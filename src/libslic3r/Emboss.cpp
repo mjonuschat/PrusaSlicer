@@ -479,8 +479,8 @@ Points get_unique_intersections(const Slic3r::IntersectionsLines &intersections)
     result.reserve(intersections.size());
     std::transform(intersections.begin(), intersections.end(), std::back_inserter(result),
         [](const Slic3r::IntersectionLines &i) { return Point(
-            std::floor(i.intersection.x()), 
-            std::floor(i.intersection.y())); 
+            static_cast<coord_t>(std::floor(i.intersection.x())),
+            static_cast<coord_t>(std::floor(i.intersection.y())));
         });
     // intersections should be unique poits
     std::sort(result.begin(), result.end());

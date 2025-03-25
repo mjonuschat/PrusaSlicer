@@ -4,7 +4,6 @@
 namespace Slic3r::Domain {
 
 namespace Impl {
-
 // TODO: Legacy, maybe we should look into it.
 coord_t fast_round_up(double a)
 {
@@ -12,6 +11,18 @@ coord_t fast_round_up(double a)
     // https://stackoverflow.com/questions/9902968/why-does-math-round0-49999999999999994-return-1
     return a == 0.49999999999999994 ? coord_t{0} : static_cast<coord_t>(std::floor(a + 0.5));
 }
+}
+
+Point& Point::operator*=(const double& scalar)
+{
+    this->x() = coord_t(this->x() * scalar);
+    this->y() = coord_t(this->y() * scalar);
+    return *this;
+}
+
+Point Point::operator*(const double& scalar) const
+{
+    return {this->x() * scalar, this->y() * scalar};
 }
 
 void Point::rotate(double angle, const Point &center)

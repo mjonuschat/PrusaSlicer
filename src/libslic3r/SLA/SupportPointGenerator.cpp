@@ -14,6 +14,7 @@
 // SupportIslands
 #include "libslic3r/SLA/SupportIslands/UniformSupportIsland.hpp"
 #include "libslic3r/SLA/SupportIslands/SampleConfigFactory.hpp"
+#include "Slic3r/Biz/Algorithms/Point.hpp"
 
 using namespace Slic3r;
 using namespace Slic3r::sla;
@@ -163,6 +164,8 @@ public:
 };
 using NearPointss = std::vector<NearPoints>;
 
+using Slic3r::Biz::Algorithms::Point::round;
+
 /// <summary>
 /// Intersection of line segment and circle
 /// </summary>
@@ -195,13 +198,13 @@ Point intersection_line_circle(const Point &p1, const Point &p2, const Point &cn
 
     // Check for valid intersection points within the line segment
     if (t1 >= 0 && t1 <= 1) {
-        return {p1.x() + t1 * dp_d.x(), p1.y() + t1 * dp_d.y()};
+        return round(Vec2d{p1.x() + t1 * dp_d.x(), p1.y() + t1 * dp_d.y()}).cast<coord_t>();
     }
 
     // should not be in use
     double t2 = (-b + discriminant) / (2 * a);
     if (t2 >= 0 && t2 <= 1 && t1 != t2) {
-        return {p1.x() + t2 * dp_d.x(), p1.y() + t2 * dp_d.y()};
+        return round(Vec2d{p1.x() + t2 * dp_d.x(), p1.y() + t2 * dp_d.y()}).cast<coord_t>();
     }
     return {};
 }

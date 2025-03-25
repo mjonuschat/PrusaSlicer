@@ -190,7 +190,8 @@ public:
                           const Context &packing_context,
                           const Range<RemIt> &remaining_items)
     {
-        item_sink = get_gravity_sink(itm);
+        const std::optional<Vec2crd> gravity_sink{get_gravity_sink(itm)};
+        item_sink = gravity_sink ? std::optional{Point{*gravity_sink}} : std::nullopt;
 
         if (!sink) {
             sink = bounding_box(bed).center();

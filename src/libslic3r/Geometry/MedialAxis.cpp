@@ -15,6 +15,7 @@
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/libslic3r.h"
+#include "Slic3r/Biz/Algorithms/Point.hpp"
 
 #ifdef SLIC3R_DEBUG
 namespace boost { namespace polygon {
@@ -644,10 +645,11 @@ bool MedialAxis::validate_edge(const VD::edge_type* edge)
         std::abs(edge->vertex1()->y()) > double(CLIPPER_MAX_COORD_UNSCALED))
         return false;
 #endif // CLIPPERLIB_INT32
-
+       //
+    using Slic3r::Biz::Algorithms::Point::round;
     // construct the line representing this edge of the Voronoi diagram
-    const Line line({ edge->vertex0()->x(), edge->vertex0()->y() },
-                    { edge->vertex1()->x(), edge->vertex1()->y() });
+    const Line line(round(Vec2d{ edge->vertex0()->x(), edge->vertex0()->y() }).cast<coord_t>(),
+                    round(Vec2d{ edge->vertex1()->x(), edge->vertex1()->y() }).cast<coord_t>());
     
     // retrieve the original line segments which generated the edge we're checking
     const VD::cell_type* cell_l = edge->cell();

@@ -60,6 +60,7 @@
 #include "libslic3r/Surface.hpp"
 #include "libslic3r/TriangleSelector.hpp"
 #include "libslic3r/Utils.hpp"
+#include "Slic3r/Biz/Algorithms/Point.hpp"
 
 // #define TREESUPPORT_DEBUG_SVG
 
@@ -2873,8 +2874,12 @@ static void generate_branch_areas(
                         used_scale * (1 + moveY * moveY * vsize_inv),
                     };
                     Polygon circle;
+                    using Slic3r::Biz::Algorithms::Point::round;
                     for (Point vertex : branch_circle)
-                        circle.points.emplace_back(center_position + Point(matrix[0] * vertex.x() + matrix[1] * vertex.y(), matrix[2] * vertex.x() + matrix[3] * vertex.y()));
+                        circle.points.emplace_back(center_position + Point(round(Vec2d{
+                            matrix[0] * vertex.x() + matrix[1] * vertex.y(),
+                            matrix[2] * vertex.x() + matrix[3] * vertex.y()
+                            }).cast<coord_t>()));
                     poly.emplace_back(std::move(circle));
                 }
 

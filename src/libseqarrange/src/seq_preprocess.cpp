@@ -14,6 +14,7 @@
 #include "Slic3r/Biz/Algorithms/DouglasPeucker.hpp"
 #include "libslic3r/Geometry.hpp"
 #include "libslic3r/ClipperUtils.hpp"
+#include "Slic3r/Biz/Algorithms/Point.hpp"
 
 #include "seq_preprocess.hpp"
 #include "libseqarrange/seq_interface.hpp"
@@ -457,15 +458,17 @@ Slic3r::Polygon scaleUp_PolygonForSlicer(const Polygon &polygon, double x_pos, d
     return scaleUp_PolygonForSlicer(SEQ_SLICER_SCALE_FACTOR, polygon, x_pos, y_pos);
 }
 
-
 Slic3r::Polygon scaleUp_PolygonForSlicer(coord_t scale_factor, const Polygon &polygon, double x_pos, double y_pos)
 {
     Slic3r::Polygon poly = polygon;
 
     for (unsigned int i = 0; i < poly.points.size(); ++i)
-    {	
-	poly.points[i] = Point(poly.points[i].x() * scale_factor + x_pos * scale_factor,
-			       poly.points[i].y() * scale_factor + y_pos * scale_factor);
+    {
+        using Slic3r::Biz::Algorithms::Point::round;
+        poly.points[i] = Point(round(Vec2d{
+            poly.points[i].x() * scale_factor + x_pos * scale_factor,
+            poly.points[i].y() * scale_factor + y_pos * scale_factor
+        }).cast<coord_t>());
     }
 
     return poly;

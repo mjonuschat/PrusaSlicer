@@ -2512,7 +2512,7 @@ std::vector<GCode::ExtrusionOrder::ExtruderExtrusions> GCodeGenerator::get_sorte
     using GCode::ExtrusionOrder::get_extrusions;
 
     const std::optional<Point> previous_position{
-        this->last_position ? std::optional{scaled(this->point_to_gcode(*this->last_position))} :
+        this->last_position ? std::optional{Point{scaled(this->point_to_gcode(*this->last_position))}} :
                               std::nullopt};
     std::vector<ExtruderExtrusions> extrusions{
         get_extrusions(

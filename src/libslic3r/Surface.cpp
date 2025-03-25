@@ -61,7 +61,7 @@ const char* surface_type_to_color_name(const SurfaceType surface_type)
 
 Point export_surface_type_legend_to_svg_box_size()
 {
-    return Point(scale_(1.+10.*8.), scale_(3.)); 
+    return Point::new_scale(1.+10.*8., 3.);
 }
 
 void export_surface_type_legend_to_svg(SVG &svg, const Point &pos)

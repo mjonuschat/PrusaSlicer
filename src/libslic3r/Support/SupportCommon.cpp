@@ -40,6 +40,7 @@
 #include "libslic3r/Surface.hpp"
 #include "libslic3r/Utils.hpp"
 #include "libslic3r/libslic3r.h"
+#include "Slic3r/Biz/Algorithms/Point.hpp"
 
 // #define SLIC3R_DEBUG
 
@@ -923,7 +924,9 @@ struct LoopInterfaceProcessor
         circle.points.reserve(6);
         for (size_t i = 0; i < 6; ++ i) {
             double angle = double(i) * M_PI / 3.;
-            circle.points.push_back(Point(circle_radius * cos(angle), circle_radius * sin(angle)));
+
+            using Slic3r::Biz::Algorithms::Point::round;
+            circle.points.push_back(Point(round(Vec2d{circle_radius * cos(angle), circle_radius * sin(angle)}).cast<coord_t>()));
         }
     }
 
@@ -1502,7 +1505,7 @@ void generate_support_toolpaths(
     if (config.support_material_pattern == smpRectilinearGrid)
         angles.push_back(support_params.interface_angle);
 
-    BoundingBox bbox_object(Point(-scale_(1.), -scale_(1.0)), Point(scale_(1.), scale_(1.)));
+    BoundingBox bbox_object(Point::new_scale(-1.0, -1.0), Point::new_scale(1.0, 1.0));
 
 //    const double link_max_length_factor = 3.;
     const double link_max_length_factor = 0.;

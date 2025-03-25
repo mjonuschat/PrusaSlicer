@@ -4,6 +4,11 @@
 
 namespace Slic3r::Biz::Algorithms::Point {
 
+template <Domain::UnscaledVector Vec>
+Vec round(const Vec& vector) {
+    return {std::round(vector.x()), std::round(vector.y())};
+}
+
 /**
  * Checks if the Points contains successive duplicate points.
  *

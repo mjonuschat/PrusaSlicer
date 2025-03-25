@@ -23,6 +23,7 @@
 #include "libslic3r/Geometry.hpp"
 #include "libslic3r/LayerRegion.hpp"
 #include "libslic3r/libslic3r.h"
+#include "Slic3r/Biz/Algorithms/Point.hpp"
 
 using namespace Slic3r::Biz;
 
@@ -108,7 +109,7 @@ inline Grids line_rasterization(const Line &line, int64_t xdist = RasteXDistance
 }
 } // namespace RasterizationImpl
 
-
+using Slic3r::Biz::Algorithms::Point::round;
 
 static std::vector<ExtrusionPaths> getFakeExtrusionPathsFromWipeTower(const WipeTowerData& wtd)
 {
@@ -117,7 +118,7 @@ static std::vector<ExtrusionPaths> getFakeExtrusionPathsFromWipeTower(const Wipe
     int   d = scale_(wtd.depth);
     int   w = scale_(wtd.width);
     int   bd = scale_(wtd.brim_width);
-    Point minCorner = { -wtd.brim_width, -wtd.brim_width };
+    Point minCorner = Point{round(Vec2d{ -wtd.brim_width, -wtd.brim_width }).cast<coord_t>()};
     Point maxCorner = { minCorner.x() + w + bd, minCorner.y() + d + bd };
     float width = wtd.width;
     float depth = wtd.depth;
@@ -137,7 +138,7 @@ static std::vector<ExtrusionPaths> getFakeExtrusionPathsFromWipeTower(const Wipe
                 if (hh >= z_and_depth_pairs[i].first && hh < z_and_depth_pairs[i+1].first)
                     break;
             d = scale_(z_and_depth_pairs[i].second);
-            minCorner = {0.f, -d/2 + scale_(z_and_depth_pairs.front().second/2.f)};
+            minCorner = round(Vec2d{0.f, -d/2 + scale_(z_and_depth_pairs.front().second/2.f)}).cast<coord_t>();
             maxCorner = { minCorner.x() + w, minCorner.y() + d };
         }
 
@@ -324,9 +325,9 @@ Biz::libpgcode::ConflictResultOpt ConflictChecker::find_inter_of_lines_in_diff_o
     LinesBucketQueue conflictQueue;
     if (! wipe_tower_data.z_and_depth_pairs.empty()) {
         // The wipe tower is being generated.
-        const Vec2d plate_origin = Vec2d::Zero();
+        const Point plate_origin = Point::Zero();
         std::vector<ExtrusionPaths> wtpaths = getFakeExtrusionPathsFromWipeTower(wipe_tower_data);
-        conflictQueue.emplace_back_bucket(std::move(wtpaths), &wtptr, Points{Point(plate_origin)});
+        conflictQueue.emplace_back_bucket(std::move(wtpaths), &wtptr, Points{plate_origin});
     }
     for (const PrintObject *obj : objs) {
         std::pair<std::vector<ExtrusionPaths>, std::vector<ExtrusionPaths>> layers = getAllLayersExtrusionPathsFromObject(obj);

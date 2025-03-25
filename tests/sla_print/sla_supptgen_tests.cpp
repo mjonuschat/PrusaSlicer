@@ -14,6 +14,7 @@
 #include <libslic3r/SLA/SupportIslands/PolygonUtils.hpp>
 #include "nanosvg/nanosvg.h"    // load SVG file
 #include "sla_test_utils.hpp"
+#include "Slic3r/Biz/Algorithms/Point.hpp"
 
 using namespace Slic3r;
 using namespace Slic3r::sla;
@@ -290,16 +291,18 @@ ExPolygon create_tiny_between_holes(double wide, double tiny)
     return result;
 }
 
+using Slic3r::Biz::Algorithms::Point::round;
+
 // stress test for longest path
 // needs reshape
 ExPolygon create_mountains(double size) {
-    return ExPolygon({{0., 0.},
-                      {size, 0.},
-                      {5 * size / 6, size},
-                      {4 * size / 6, size / 6},
-                      {3 * size / 7, 2 * size},
-                      {2 * size / 7, size / 6},
-                      {size / 7, size}});
+    return ExPolygon({round(Vec2d{0., 0.}).cast<coord_t>(),
+                      round(Vec2d{size, 0.}).cast<coord_t>(),
+                      round(Vec2d{5 * size / 6, size}).cast<coord_t>(),
+                      round(Vec2d{4 * size / 6, size / 6}).cast<coord_t>(),
+                      round(Vec2d{3 * size / 7, 2 * size}).cast<coord_t>(),
+                      round(Vec2d{2 * size / 7, size / 6}).cast<coord_t>(),
+                      round(Vec2d{size / 7, size}).cast<coord_t>()});
 }
 
 /// Neighbor points create trouble for voronoi - test of neccessary offseting(closing) of contour
@@ -324,7 +327,7 @@ ExPolygon load_svg(const std::string& svg_filepath) {
         Polygon r;
         r.points.reserve(path->npts);
         for (int i = 0; i < path->npts; i++)
-            r.points.push_back(Point(path->pts[2 * i], path->pts[2 * i + 1]));
+            r.points.push_back(Point(round(Vec2d{path->pts[2 * i], path->pts[2 * i + 1]}).cast<coord_t>()));
         return r;
     };
 
@@ -462,8 +465,10 @@ SupportIslandPoints test_island_sampling(const ExPolygon &   island,
         bool         exist_close_support_point = false;
         for (const auto &island_point : points) {
             const Point& p = island_point->point;
-            Point abs_diff(fabs(p.x() - chck_point.x()),
-                           fabs(p.y() - chck_point.y()));
+            Point abs_diff(round(Vec2d{
+                fabs(p.x() - chck_point.x()),
+                fabs(p.y() - chck_point.y())
+            }).cast<coord_t>());
             if (abs_diff.x() < min_distance && abs_diff.y() < min_distance) {
                 double distance = sqrt((double) abs_diff.x() * abs_diff.x() +
                                        (double) abs_diff.y() * abs_diff.y());

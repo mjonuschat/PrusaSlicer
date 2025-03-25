@@ -11,6 +11,7 @@
 #include "Slic3r/Biz/Algorithms/Line.hpp"
 #include "../../Geometry.hpp"
 #include "libslic3r/Line.hpp"
+#include "Slic3r/Biz/Algorithms/Point.hpp"
 
 using namespace Slic3r::Biz;
 
@@ -178,7 +179,8 @@ bool lineSegmentPolygonsIntersection(const Point& a, const Point& b, const EdgeG
 
     outline_locator.visit_cells_intersecting_line(a, b, visitor);
     if (visitor.d2min < double(within_max_dist) * double(within_max_dist)) {
-        result = Point(visitor.intersection_pt);
+        using Slic3r::Biz::Algorithms::Point::round;
+        result = Point(round(visitor.intersection_pt).cast<coord_t>());
         return true;
     }
     return false;

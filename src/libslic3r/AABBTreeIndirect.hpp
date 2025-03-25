@@ -230,7 +230,10 @@ public:
 	BoundingBoxWrapper(const size_t idx, const Slic3r::BoundingBox &bbox) :
         m_idx(idx),
         // Inflate the bounding box a bit to account for numerical issues.
-        m_bbox(bbox.min - Point(SCALED_EPSILON, SCALED_EPSILON), bbox.max + Point(SCALED_EPSILON, SCALED_EPSILON)) {}
+        m_bbox(
+            bbox.min - Point(static_cast<coord_t>(SCALED_EPSILON), static_cast<coord_t>(SCALED_EPSILON)),
+            bbox.max + Point(static_cast<coord_t>(SCALED_EPSILON), static_cast<coord_t>(SCALED_EPSILON))
+        ) {}
     size_t             idx() const { return m_idx; }
     const BoundingBox& bbox() const { return m_bbox; }
     Point              centroid() const { return ((m_bbox.min().cast<int64_t>() + m_bbox.max().cast<int64_t>()) / 2).cast<int32_t>(); }

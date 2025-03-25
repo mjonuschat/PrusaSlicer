@@ -37,12 +37,14 @@ Slic3r::Polygon PolygonUtils::create_equilateral_triangle(double edge_size)
 
 Slic3r::Polygon PolygonUtils::create_isosceles_triangle(double side, double height)
 {
-    return {{-side / 2, 0.}, {side / 2, 0.}, {.0, height}};
+    const auto side_2{static_cast<coord_t>(std::round(side / 2))};
+    const auto height_coord{static_cast<coord_t>(std::round(height))};
+    return {{-side_2, 0}, {side_2, 0}, {0, height_coord}};
 }
 
 Slic3r::Polygon PolygonUtils::create_square(double size)
 {
-    double size_2 = size / 2;
+    const auto size_2{static_cast<coord_t>(std::round(size / 2))};
     return {{-size_2, size_2},
             {-size_2, -size_2},
             {size_2, -size_2},
@@ -51,8 +53,8 @@ Slic3r::Polygon PolygonUtils::create_square(double size)
 
 Slic3r::Polygon PolygonUtils::create_rect(double width, double height)
 {
-    double x_2 = width / 2;
-    double y_2 = height / 2;
+    const auto x_2{static_cast<coord_t>(std::round(width / 2))};
+    const auto y_2{static_cast<coord_t>(std::round(height / 2))};
     return {{-x_2, y_2}, {-x_2, -y_2}, {x_2, -y_2}, {x_2, y_2}};
 }
 

@@ -75,6 +75,8 @@ bool ParabolaUtils::is_over_zero(const ParabolaSegment &parabola)
     return is_positive_x1 != is_positive_x2;
 }
 
+using Slic3r::Biz::Algorithms::Point::round;
+
 void ParabolaUtils::draw(SVG &                  svg,
                          const ParabolaSegment &parabola,
                          const char *           color,
@@ -96,7 +98,7 @@ void ParabolaUtils::draw(SVG &                  svg,
     for (size_t index = 1; index < parabola_samples.size(); ++index) {
         const auto& s0 = parabola_samples[index - 1];
         const auto& s1 = parabola_samples[index];
-        Line        l(Point(s0.x(), s0.y()), Point(s1.x(), s1.y()));
+        Line        l(Point(round(Vec2d{s0.x(), s0.y()}).cast<coord_t>()), Point(round(Vec2d{s1.x(), s1.y()}).cast<coord_t>()));
         svg.draw(l, color, width);
     }    
 }

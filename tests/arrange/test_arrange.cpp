@@ -380,7 +380,7 @@ TEST_CASE("Static type tests for arrange items", "[arrange2]")
 template<class Bed> Bed init_bed() { return {}; }
 template<> inline Slic3r::arr2::InfiniteBed init_bed<Slic3r::arr2::InfiniteBed>()
 {
-    return Slic3r::arr2::InfiniteBed{{scaled(250.) / 2., scaled(210.) / 2.}};
+    return Slic3r::arr2::InfiniteBed{Slic3r::Point::new_scale(250. / 2., 210. / 2.)};
 }
 
 template<> inline Slic3r::arr2::RectangleBed init_bed<Slic3r::arr2::RectangleBed>()

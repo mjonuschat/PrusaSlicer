@@ -12,6 +12,7 @@
 #include "Slic3r/Biz/Algorithms/Line.hpp"
 #include <libslic3r/SVG.hpp>
 #include <libslic3r/Geometry/ConvexHull.hpp>
+#include "Slic3r/Biz/Algorithms/Point.hpp"
 
 #include "seq_defs.hpp"
 
@@ -3723,6 +3724,7 @@ void introduce_ConsequentialPolygonWeakNonoverlapping(const SolverConfiguration 
 						     _unreachable_polygons);   
 }
 
+using Slic3r::Biz::Algorithms::Point::round;
 
 void introduce_ConsequentialPolygonWeakNonoverlapping(const SolverConfiguration                        &solver_configuration,
 						      z3::solver                                       &Solver,
@@ -3824,7 +3826,9 @@ void introduce_ConsequentialPolygonWeakNonoverlapping(const SolverConfiguration 
 	    
 	    for (unsigned int p = 0; p < fixed_polygon.points.size(); ++p)
 	    {		
-		fixed_polygon.points[p] += Point(dec_values_X[fixed[i]].as_double(), dec_values_Y[fixed[i]].as_double());
+            fixed_polygon.points[p] += Point(round(Vec2d{
+                dec_values_X[fixed[i]].as_double(), dec_values_Y[fixed[i]].as_double()
+            }).cast<coord_t>());
 	    }
 	    flat_polygons.push_back(fixed_polygon);
 	}
@@ -3838,7 +3842,7 @@ void introduce_ConsequentialPolygonWeakNonoverlapping(const SolverConfiguration 
 		
 		for (unsigned int p = 0; p < fixed_polygon.points.size(); ++p)
 		{		
-		    fixed_polygon.points[p] += Point(dec_values_X[fixed[i]].as_double(), dec_values_Y[fixed[i]].as_double());
+		    fixed_polygon.points[p] += Point(round(Vec2d{dec_values_X[fixed[i]].as_double(), dec_values_Y[fixed[i]].as_double()}).cast<coord_t>());
 		}
 		flat_unreachable_polygons.push_back(fixed_polygon);
 	    }

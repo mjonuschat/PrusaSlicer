@@ -13,6 +13,7 @@
 #include <libslic3r/SVG.hpp>
 
 #include "VoronoiOffset.hpp"
+#include "Slic3r/Biz/Algorithms/Point.hpp"
 
 namespace boost { namespace polygon {
 
@@ -316,9 +317,12 @@ static inline void dump_voronoi_to_svg(
     bbox.merge(get_extents(lines));
     bbox.merge(get_extents(offset_curves));
     bbox.merge(get_extents(helper_lines));
+
+    using Slic3r::Biz::Algorithms::Point::round;
+
     for (boost::polygon::voronoi_diagram<double>::const_vertex_iterator it = vd.vertices().begin(); it != vd.vertices().end(); ++it)
         if (! internalEdgesOnly || it->color() != Voronoi::Internal::EXTERNAL_COLOR)
-            bbox.merge(Point(it->x(), it->y()));
+            bbox.merge(Point(round(Vec2d{it->x(), it->y()}).cast<coord_t>()));
     bbox.min -= (0.01 * bbox.size().cast<double>()).cast<coord_t>();
     bbox.max += (0.01 * bbox.size().cast<double>()).cast<coord_t>();
 

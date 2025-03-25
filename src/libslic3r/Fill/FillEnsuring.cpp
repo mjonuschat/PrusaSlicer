@@ -32,6 +32,7 @@
 #include "libslic3r/Arachne/utils/ExtrusionLine.hpp"
 #include "libslic3r/Fill/FillBase.hpp"
 #include "libslic3r/Surface.hpp"
+#include "Slic3r/Biz/Algorithms/Point.hpp"
 
 using namespace Slic3r::Biz;
 
@@ -370,8 +371,9 @@ ThickPolylines make_fill_polylines(
             std::vector<std::vector<Line>> polygon_sections_w_width = polygon_sections;
             for (auto &slice : polygon_sections_w_width) {
                 for (Line &l : slice) {
-                    l.a -= Point{0.0, 0.5 * scaled_spacing};
-                    l.b += Point{0.0, 0.5 * scaled_spacing};
+                    using Slic3r::Biz::Algorithms::Point::round;
+                    l.a -= Point{round(Vec2d{0.0, 0.5 * scaled_spacing}).cast<coord_t>()};
+                    l.b += Point{round(Vec2d{0.0, 0.5 * scaled_spacing}).cast<coord_t>()};
                 }
             }
 

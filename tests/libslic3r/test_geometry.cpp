@@ -13,6 +13,7 @@
 #include "libslic3r/Geometry/ConvexHull.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/ShortestPath.hpp"
+#include "Slic3r/Biz/Algorithms/Point.hpp"
 
 //#include <random>
 #include "libslic3r/SVG.hpp"
@@ -112,10 +113,16 @@ SCENARIO("Intersections of line segments", "[Geometry]"){
             REQUIRE(Point(10,15) == point);
         }
     }
-
+    using Slic3r::Biz::Algorithms::Point::round;
     GIVEN("Scaled coordinates"){
-        Line line1(Point(73.6310778185108 / 0.00001, 371.74239268924 / 0.00001), Point(73.6310778185108 / 0.00001, 501.74239268924 / 0.00001));
-        Line line2(Point(75/0.00001, 437.9853/0.00001), Point(62.7484/0.00001, 440.4223/0.00001));
+        Line line1(
+            Point(round(Vec2d{73.6310778185108 / 0.00001, 371.74239268924 / 0.00001}).cast<coord_t>()),
+            Point(round(Vec2d{73.6310778185108 / 0.00001, 501.74239268924 / 0.00001}).cast<coord_t>())
+        );
+        Line line2(
+            Point(round(Vec2d{75 / 0.00001, 437.9853 / 0.00001}).cast<coord_t>()),
+            Point(round(Vec2d{62.7484 / 0.00001, 440.4223 / 0.00001}).cast<coord_t>())
+        );
         THEN("There is still an intersection"){
             Point point;
             REQUIRE(Algorithms::Line::intersection(line1, line2, point));

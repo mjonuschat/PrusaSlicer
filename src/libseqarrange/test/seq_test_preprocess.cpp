@@ -22,6 +22,7 @@
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/Geometry/ConvexHull.hpp"
 #include "libslic3r/SVG.hpp"
+#include "Slic3r/Biz/Algorithms/Point.hpp"
 
 #include <z3++.h>
 
@@ -74,9 +75,12 @@ static Polygon scale_UP(const Polygon &polygon, double x_pos, double y_pos)
     Polygon poly = polygon;
 
     for (unsigned int i = 0; i < poly.points.size(); ++i)
-    {	
-	poly.points[i] = Point(poly.points[i].x() * SCALE_FACTOR + x_pos * SCALE_FACTOR,
-			       poly.points[i].y() * SCALE_FACTOR + y_pos * SCALE_FACTOR);
+    {
+        using Slic3r::Biz::Algorithms::Point::round;
+	    poly.points[i] = Point(round(Vec2d{
+            poly.points[i].x() * SCALE_FACTOR + x_pos * SCALE_FACTOR,
+			poly.points[i].y() * SCALE_FACTOR + y_pos * SCALE_FACTOR
+        }).cast<coord_t>());
     }
 
     return poly;

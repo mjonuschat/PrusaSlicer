@@ -5,6 +5,7 @@
 #include "libslic3r/ObjectID.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/BoundingBox.hpp"
+#include "Slic3r/Biz/Algorithms/Point.hpp"
 
 #include <map>
 
@@ -88,9 +89,15 @@ public:
     }
 	Vec2d   get_bed_size() const { return m_build_volume_bb.size(); }
 	BoundingBoxf get_build_volume_box() const { return m_build_volume_bb; }
-        BoundingBox get_bed_box() const { return BoundingBox({m_build_volume_bb.min.x(), m_build_volume_bb.min.y()},
-							     {m_build_volume_bb.max.x(), m_build_volume_bb.max.y()}); }
-        Vec2d   bed_gap() const;
+    BoundingBox get_bed_box() const
+    {
+        using Slic3r::Biz::Algorithms::Point::round;
+        return BoundingBox(
+            round(Vec2d{m_build_volume_bb.min.x(), m_build_volume_bb.min.y()}).cast<coord_t>(),
+            round(Vec2d{m_build_volume_bb.max.x(), m_build_volume_bb.max.y()}).cast<coord_t>()
+        );
+    }
+    Vec2d   bed_gap() const;
 	Vec2crd get_bed_gap() const;
 	void   ensure_wipe_towers_on_beds(Model& model, const std::vector<std::unique_ptr<Print>>& prints);
 

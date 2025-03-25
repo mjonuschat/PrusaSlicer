@@ -87,6 +87,8 @@ bool VoronoiGraphUtils::is_point_in_limits(const VD::vertex_type *vertex,
            is_coord_in_limits(vertex->y(), source.y(), max_distance);
 }
 
+using Slic3r::Biz::Algorithms::Point::round;
+
 // create line segment between (in the middle) points. With size depend on their distance
 Slic3r::Line VoronoiGraphUtils::create_line_between_source_points(
     const Point &point1, const Point &point2, double maximal_distance)
@@ -100,7 +102,7 @@ Slic3r::Line VoronoiGraphUtils::create_line_between_source_points(
     double size = sqrt(maximal_distance * maximal_distance - half_distance_2);
     // normalized direction to side multiplied by size/2
     double scale = size / half_distance / 2;
-    Point  side_dir(-diff.y() * scale, diff.x() * scale);
+    Point  side_dir(round(Vec2d{-diff.y() * scale, diff.x() * scale}).cast<coord_t>());
     return Line(middle - side_dir, middle + side_dir);
 }
 
@@ -903,27 +905,27 @@ Slic3r::Point VoronoiGraphUtils::create_edge_point(
 Slic3r::Point VoronoiGraphUtils::create_edge_point(const VD::edge_type *edge,
                                                    double               ratio)
 {
-    const VD::vertex_type *v0 = edge->vertex0();
-    const VD::vertex_type *v1 = edge->vertex1();
+    const Point v0 = round(Vec2d{edge->vertex0()->x(), edge->vertex0()->y()}).cast<coord_t>();
+    const Point v1 = round(Vec2d{edge->vertex1()->x(), edge->vertex1()->y()}).cast<coord_t>();
     if (ratio <= std::numeric_limits<double>::epsilon())
-        return Point(v0->x(), v0->y());
+        return v0;
     if (ratio >= 1. - std::numeric_limits<double>::epsilon())
-        return Point(v1->x(), v1->y());
+        return v1;
 
     if (edge->is_linear()) {
-        Point dir(v1->x() - v0->x(), v1->y() - v0->y());
+        Point dir(v1 - v0);
         // normalize
         dir *= ratio;
-        return Point(v0->x() + dir.x(), v0->y() + dir.y());
+        return v0 + dir;
     }
 
     assert(edge->is_curved());
     // TODO: distance on curve
 
     // approx by line
-    Point dir(v1->x() - v0->x(), v1->y() - v0->y());
+    Point dir(v1 - v0);
     dir *= ratio;
-    return Point(v0->x() + dir.x(), v0->y() + dir.y());
+    return v0 + dir;
 }
 
 // NOTE: Heuristic is bad -> Width is not linear on edge e.g. VD of hexagon
@@ -1384,7 +1386,7 @@ void VoronoiGraphUtils::draw(SVG &               svg,
     };
         
     for (const auto &[key, value] : graph.data) {
-        Point p(key->x(), key->y());
+        Point p(round(Vec2d{key->x(), key->y()}).cast<coord_t>());
         svg.draw(p, "lightgray", width);
         print_address(p, "vertex ptr ",(void*)key, "lightgray");
         for (const auto &n : value.neighbors) {
@@ -1392,7 +1394,7 @@ void VoronoiGraphUtils::draw(SVG &               svg,
             Point to   = to_point(n.edge->vertex1());
             bool  is_second = n.edge->vertex0() > n.edge->vertex1();
             Point center    = (from + to) / 2;
-            Point p = center + ((is_second) ? Point(0., -2e5) : Point(0., 2e5));
+            Point p = center + ((is_second) ? Point(0, static_cast<coord_t>(-2e5)) : Point(0, static_cast<coord_t>(2e5)));
             print_address(p, "neighbor ptr ", (void *) &n, "gray");
             if (is_second) continue;
             const char *color = get_color(n);

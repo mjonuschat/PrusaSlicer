@@ -22,6 +22,7 @@
 #include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Polygon.hpp"
+#include "Slic3r/Biz/Algorithms/Point.hpp"
 
 // #define CONTOUR_DISTANCE_DEBUG_SVG
 
@@ -395,7 +396,8 @@ std::vector<float> contour_distance2(const EdgeGrid::Grid &grid, const size_t id
 		} visitor(grid, idx_contour, resampled_point_parameters, 0.5 * compensation * M_PI, search_radius);
 
 		out.reserve(contour.size());
-		Point radius_vector(search_radius, search_radius);
+        using Slic3r::Biz::Algorithms::Point::round;
+		Point radius_vector(round(Vec2d{search_radius, search_radius}).cast<coord_t>());
 		for (const Point &pt : contour) {
 			visitor.init(contour, pt);
 			grid.visit_cells_intersecting_box(BoundingBox(pt - radius_vector, pt + radius_vector), visitor);

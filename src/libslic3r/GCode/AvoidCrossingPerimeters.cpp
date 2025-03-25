@@ -33,6 +33,7 @@
 #include "libslic3r/Surface.hpp"
 #include "libslic3r/Utils.hpp"
 #include "libslic3r/libslic3r.h"
+#include "Slic3r/Biz/Algorithms/Point.hpp"
 
 //#define AVOID_CROSSING_PERIMETERS_DEBUG_OUTPUT
 
@@ -181,10 +182,12 @@ struct MinDistanceVisitor
     double                                                                                max_distance_squared = std::numeric_limits<double>::max();
 };
 
+using Slic3r::Biz::Algorithms::Point::round;
+
 // Returns sorted list of closest lines to a passed point within a passed radius
 static std::vector<ClosestLine> get_closest_lines_in_radius(const EdgeGrid::Grid &grid, const Point &center, float search_radius)
 {
-    Point              radius_vector(search_radius, search_radius);
+    Point              radius_vector(round(Vec2d{search_radius, search_radius}).cast<coord_t>());
     MinDistanceVisitor visitor(grid, center, search_radius * search_radius);
     grid.visit_cells_intersecting_box(BoundingBox(center - radius_vector, center + radius_vector), visitor);
     std::sort(visitor.closest_lines.begin(), visitor.closest_lines.end(), [&center](const auto &l, const auto &r) {
@@ -986,7 +989,7 @@ static std::vector<float> contour_distance(const EdgeGrid::Grid     &grid,
         } visitor(grid, contour_idx, poly_distances, 0.5 * compensation * M_PI, search_radius);
 
         out.reserve(polygon.size());
-        Point radius_vector(search_radius, search_radius);
+        Point radius_vector(round(Vec2d{search_radius, search_radius}).cast<coord_t>());
         for (const Point &pt : polygon.points) {
             visitor.init(polygon.points, pt);
             grid.visit_cells_intersecting_box(BoundingBox(pt - radius_vector, pt + radius_vector), visitor);

@@ -17,6 +17,7 @@
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/libslic3r.h"
+#include "Slic3r/Biz/Algorithms/Point.hpp"
 
 using namespace Slic3r::Biz;
 
@@ -178,8 +179,9 @@ void FillGyroid::_fill_surface_single(
     // Distance between the gyroid waves in scaled coordinates.
     coord_t     distance = coord_t(scale_(this->spacing) / density_adjusted);
 
+    using Slic3r::Biz::Algorithms::Point::round;
     // align bounding box to a multiple of our grid module
-    bb.merge(align_to_grid(bb.min, Point(2*M_PI*distance, 2*M_PI*distance)));
+    bb.merge(align_to_grid(bb.min, Point(round(Vec2d{2*M_PI*distance, 2*M_PI*distance}).cast<coord_t>())));
 
     // generate pattern
     Polylines polylines = make_gyroid_waves(

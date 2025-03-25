@@ -21,6 +21,7 @@
 #include "libslic3r/Arachne/utils/ExtrusionJunction.hpp"
 #include "libslic3r/Arachne/utils/ExtrusionLine.hpp"
 #include "libslic3r/Polygon.hpp"
+#include "Slic3r/Biz/Algorithms/Point.hpp"
 
 #ifndef NDEBUG
     #include "libslic3r/EdgeGrid.hpp"
@@ -2051,6 +2052,8 @@ void SkeletalTrapezoidation::connectJunctions(ptr_vector_t<LineJunctions>& edge_
     }
 }
 
+using Slic3r::Biz::Algorithms::Point::round;
+
 void SkeletalTrapezoidation::generateLocalMaximaSingleBeads()
 {
     std::vector<VariableWidthLines> &generated_toolpaths = *p_generated_toolpaths;
@@ -2081,7 +2084,7 @@ void SkeletalTrapezoidation::generateLocalMaximaSingleBeads()
             constexpr coord_t n_segments = 6;
             for (coord_t segment = 0; segment < n_segments; segment++) {
                 float a = 2.0 * M_PI / n_segments * segment;
-                line.junctions.emplace_back(node.p + Point(r * cos(a), r * sin(a)), width, inset_index);
+                line.junctions.emplace_back(node.p + Point(round(Vec2d{r * cos(a), r * sin(a)}).cast<coord_t>()), width, inset_index);
             }
         }
     }
