@@ -266,6 +266,77 @@ static wxGLAttributes create_wxglattributes()
     return ret;
 }
 
+struct ImGui_ImplWX_Data
+{
+    wxCursor MouseCursors[ImGuiMouseCursor_COUNT];
+};
+
+static ImGui_ImplWX_Data* ImGui_ImplWX_GetBackendData()
+{
+    return ImGui::GetCurrentContext() ? (ImGui_ImplWX_Data*)ImGui::GetIO().BackendPlatformUserData : nullptr;
+}
+
+static void ImGui_ImplWX_InitMouseCursor()
+{
+    ImGuiIO& io = ImGui::GetIO();
+
+    IM_ASSERT(io.BackendPlatformUserData == nullptr && "Already initialized a platform backend!");
+
+    ImGui_ImplWX_Data* bd = IM_NEW(ImGui_ImplWX_Data)();
+    io.BackendPlatformUserData = (void*)bd;
+    io.BackendPlatformName = "imgui_impl_wx";
+
+    io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors;
+    io.MouseDrawCursor = false;
+
+    bd->MouseCursors[ImGuiMouseCursor_Arrow]        = wxCursor(wxCURSOR_ARROW);
+    bd->MouseCursors[ImGuiMouseCursor_TextInput]    = wxCursor(wxCURSOR_IBEAM);
+    bd->MouseCursors[ImGuiMouseCursor_ResizeAll]    = wxCursor(wxCURSOR_SIZENWSE); // Used for corner resizing, so need NWSE, not SIZING, which is moving
+    bd->MouseCursors[ImGuiMouseCursor_ResizeNS]     = wxCursor(wxCURSOR_SIZENS);
+    bd->MouseCursors[ImGuiMouseCursor_ResizeEW]     = wxCursor(wxCURSOR_SIZEWE);
+    bd->MouseCursors[ImGuiMouseCursor_ResizeNESW]   = wxCursor(wxCURSOR_SIZENESW);
+    bd->MouseCursors[ImGuiMouseCursor_ResizeNWSE]   = wxCursor(wxCURSOR_SIZENWSE);
+    bd->MouseCursors[ImGuiMouseCursor_Hand]         = wxCursor(wxCURSOR_HAND);
+    bd->MouseCursors[ImGuiMouseCursor_NotAllowed]   = wxCursor(wxCURSOR_NO_ENTRY);
+}
+
+static void ImGui_ImplWX_UpdateMouseCursor()
+{
+    ImGuiIO& io = ImGui::GetIO();
+    ImGui_ImplWX_Data* bd = ImGui_ImplWX_GetBackendData();
+    if ((io.ConfigFlags & ImGuiConfigFlags_NoMouseCursorChange))
+        return;
+
+    ImGuiMouseCursor imgui_cursor = ImGui::GetMouseCursor();
+    // (those braces are here to reduce diff with multi-viewports support in 'docking' branch)
+    {
+        if (imgui_cursor == ImGuiMouseCursor_None || io.MouseDrawCursor) {
+            // Hide OS mouse cursor if imgui is drawing it or if it wants no cursor
+            wxSetCursor(wxCursor(wxCURSOR_NONE));
+        }
+        else if (imgui_cursor >= ImGuiMouseCursor_COUNT) {
+            // Set by default arrow cursor
+            wxSetCursor(wxCursor(wxCURSOR_ARROW));
+        }
+        else {
+            // Show OS mouse cursor
+            wxSetCursor(bd->MouseCursors[imgui_cursor]);
+        }
+    }
+}
+
+static void ImGui_ImplWX_Shutdown()
+{
+    ImGuiIO& io = ImGui::GetIO();
+    ImGui_ImplWX_Data* bd = ImGui_ImplWX_GetBackendData();
+    IM_ASSERT(bd != nullptr && "No platform backend to shutdown, or already shutdown?");
+
+    io.BackendPlatformName = nullptr;
+    io.BackendPlatformUserData = nullptr;
+    io.BackendFlags &= ~(ImGuiBackendFlags_HasMouseCursors);
+    IM_DELETE(bd);
+}
+
 WXRenderCanvas::WXRenderCanvas(wxWindow* parent)
 : wxGLCanvas(parent, create_wxglattributes(), wxID_ANY, wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS), m_start_time(Clock::now())
 {
@@ -305,7 +376,10 @@ WXRenderCanvas::WXRenderCanvas(wxWindow* parent)
 }
 
 WXRenderCanvas::~WXRenderCanvas()
-{ Render::shutdown_render(); }
+{
+    ImGui_ImplWX_Shutdown();
+    Render::shutdown_render();
+}
 
 
 void WXRenderCanvas::init()
@@ -453,6 +527,8 @@ void WXRenderCanvas::init_wx_imgui()
 
     // Don't let imgui special-case Mac, wxWidgets already do that
     io.ConfigMacOSXBehaviors = false;
+
+    ImGui_ImplWX_InitMouseCursor();
 }
 
 void WXRenderCanvas::render()
@@ -697,6 +773,8 @@ void WXRenderCanvas::begin_frame_platform()
     //SPDLOG_DEBUG("Setting screen resolution {} {} @ scale {} (phys {} {})", w, h, scale_factor, display_w, display_h);
     set_screen_size({display_w, display_h, float(scale_factor)});
     io.DisplayFramebufferScale = ImVec2(float(scale_factor), float(scale_factor));
+
+    ImGui_ImplWX_UpdateMouseCursor();
 }
 
 void WXRenderCanvas::begin_imgui_frame_platform()
