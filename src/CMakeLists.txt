@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.13)
 project(PrusaSlicer-native)
 
-add_subdirectory(clipper)
 find_package(Qhull 7.2 REQUIRED)
 add_library(qhull INTERFACE)
 if(SLIC3R_STATIC)

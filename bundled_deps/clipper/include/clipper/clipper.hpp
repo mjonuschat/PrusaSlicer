@@ -37,7 +37,7 @@
 #include <inttypes.h>
 #include <functional>
 
-#include <Eigen/Geometry> 
+#include "Slic3r/Domain/Types.hpp"
 
 #include <oneapi/tbb/scalable_allocator.h>
 
@@ -62,8 +62,8 @@
 #include <functional>
 #include <queue>
 
-#ifdef CLIPPERLIB_NAMESPACE_PREFIX
-  namespace CLIPPERLIB_NAMESPACE_PREFIX {
+#ifndef CLIPPERLIB_USE_XYZ
+  namespace Slic3r {
 #endif // CLIPPERLIB_NAMESPACE_PREFIX
 
 #ifdef CLIPPERLIB_USE_XYZ
@@ -99,8 +99,8 @@ enum PolyFillType { pftEvenOdd, pftNonZero, pftPositive, pftNegative };
   static constexpr cInt const hiRange = 0x3FFFFFFFFFFFFFFFLL;
 #endif // CLIPPERLIB_INT32
 
-#ifdef CLIPPERLIB_INTPOINT_TYPE
-using IntPoint = CLIPPERLIB_INTPOINT_TYPE;
+#ifndef CLIPPERLIB_USE_XYZ
+using IntPoint = Slic3r::Domain::Vec2crd;
 #else // CLIPPERLIB_INTPOINT_TYPE
 using IntPoint = Eigen::Matrix<cInt, 
 #ifdef CLIPPERLIB_USE_XYZ
@@ -599,7 +599,7 @@ inline Paths SimplifyPolygons(PathsProvider &&in_polys, PolyFillType fillType = 
 
 } //ClipperLib namespace
 
-#ifdef CLIPPERLIB_NAMESPACE_PREFIX
+#ifndef CLIPPERLIB_USE_XYZ
 } // namespace CLIPPERLIB_NAMESPACE_PREFIX
 #endif // CLIPPERLIB_NAMESPACE_PREFIX
 

@@ -8,6 +8,7 @@ add_subdirectory(agg)
 add_subdirectory(libigl)
 add_subdirectory(hints)
 add_subdirectory(libnest2d)
+add_subdirectory(clipper)
 
 add_subdirectory(fmt)
 add_subdirectory(spdlog)

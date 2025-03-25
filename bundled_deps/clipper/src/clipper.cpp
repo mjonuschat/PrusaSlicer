@@ -38,7 +38,12 @@
 *                                                                              *
 *******************************************************************************/
 
-#include "clipper.hpp"
+#ifdef CLIPPERLIB_USE_XYZ
+#include "clipper/clipper_z.hpp"
+#else
+#include "clipper/clipper.hpp"
+#endif
+
 #include <cmath>
 #include <vector>
 #include <algorithm>
@@ -50,8 +55,8 @@
 #include <assert.h>
 #include <Int128.hpp>
 
-#ifdef CLIPPERLIB_NAMESPACE_PREFIX
-namespace CLIPPERLIB_NAMESPACE_PREFIX {
+#ifndef CLIPPERLIB_USE_XYZ
+namespace Slic3r {
 #endif // CLIPPERLIB_NAMESPACE_PREFIX
 
 #ifdef CLIPPERLIB_USE_XYZ
@@ -4208,6 +4213,6 @@ std::ostream& operator <<(std::ostream &s, const Paths &p)
 
 } //ClipperLib namespace
 
-#ifdef CLIPPERLIB_NAMESPACE_PREFIX
+#ifndef CLIPPERLIB_USE_XYZ
 } // namespace CLIPPERLIB_NAMESPACE_PREFIX
 #endif // CLIPPERLIB_NAMESPACE_PREFIX

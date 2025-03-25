@@ -31,7 +31,7 @@
 
 #else /* SLIC3R_USE_CLIPPER2 */
 
-#include "libslic3r/clipper.hpp"
+#include "clipper/clipper.hpp"
 
 // import these wherever we're included
 using Slic3r::ClipperLib::jtMiter;

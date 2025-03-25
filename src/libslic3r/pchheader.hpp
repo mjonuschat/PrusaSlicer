@@ -121,7 +121,7 @@
 #include <cereal/types/base_class.hpp>
 
 #include <clipper/clipper_z.hpp>
-#include "libslic3r/clipper.hpp"
+#include "clipper/clipper.hpp"
 #include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/Config.hpp"

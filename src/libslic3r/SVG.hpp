@@ -17,7 +17,7 @@
 #include <cstdio>
 
 #include "libslic3r.h"
-#include "libslic3r/clipper.hpp"
+#include "clipper/clipper.hpp"
 #include "ExPolygon.hpp"
 #include "Line.hpp"
 #include "TriangleMesh.hpp"
