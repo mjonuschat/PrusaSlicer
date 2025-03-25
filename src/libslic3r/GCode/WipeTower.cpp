@@ -1358,14 +1358,14 @@ WipeTower::ToolChangeResult WipeTower::finish_layer()
         // Create a Polygon from the points.
         Polygon poly;
         for (const auto& [pt, tag] : pts)
-            poly.points.push_back(Point::new_scale(pt));
+            poly.points.push_back(scaled(pt));
 
         // Prepare polygons to be filled by infill.
         Polylines polylines;
         if (infill_cone && m_wipe_tower_width > 2*spacing && m_wipe_tower_depth > 2*spacing) {
             ExPolygons infill_areas;
             ExPolygon wt_contour(poly);
-            Polygon wt_rectangle(Points{Point::new_scale(wt_box.ld), Point::new_scale(wt_box.rd), Point::new_scale(wt_box.ru), Point::new_scale(wt_box.lu)});
+            Polygon wt_rectangle(Points{scaled(wt_box.ld), scaled(wt_box.rd), scaled(wt_box.ru), scaled(wt_box.lu)});
             wt_rectangle = offset(wt_rectangle, scale_(-spacing/2.)).front();
             wt_contour = offset_ex(wt_contour, scale_(-spacing/2.)).front();
             infill_areas = diff_ex(wt_contour, wt_rectangle);

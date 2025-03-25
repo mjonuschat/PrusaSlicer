@@ -495,7 +495,7 @@ static void generate_infill_lines_recursive(
         assert(verify_traversal_order(context, cube, depth, from, to));
         // Either extend an existing line or start a new one.
         Line &last_line = context.temp_lines[address];
-        Line  new_line(Point::new_scale(from), Point::new_scale(to));
+        Line  new_line(scaled(from), scaled(to));
         if (last_line.a.x() == std::numeric_limits<coord_t>::max()) {
             last_line.a = new_line.a;
         } else if ((new_line.a - last_line.b).cwiseAbs().maxCoeff() > 1000) { // SCALED_EPSILON is 100 and it is not enough

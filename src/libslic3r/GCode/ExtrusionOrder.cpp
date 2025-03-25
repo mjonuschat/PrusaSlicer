@@ -558,9 +558,9 @@ std::vector<ExtruderExtrusions> get_extrusions(
                 const bool ignore_sparse{print.config().wipe_tower_no_sparse_layers.value};
                 if (const auto tool_change{wipe_tower->get_toolchange(toolchange_number, ignore_sparse)}) {
                     toolchange_number++;
-                    previous_position = Point::new_scale(wipe_tower->transform_wt_pt(tool_change->end_pos));
+                    previous_position = scaled(wipe_tower->transform_wt_pt(tool_change->end_pos));
                     current_extruder_id = tool_change->new_tool;
-                    extruder_extrusions.wipe_tower_start = Point::new_scale(wipe_tower->transform_wt_pt(tool_change->start_pos));
+                    extruder_extrusions.wipe_tower_start = scaled(wipe_tower->transform_wt_pt(tool_change->start_pos));
                 }
             }
         }

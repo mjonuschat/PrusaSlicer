@@ -20,8 +20,6 @@ public:
     using Vec2crd::Vec2crd;
 
     static Point new_scale(double x, double y) { return Point(coord_t(scale_(x)), coord_t(scale_(y))); }
-    template<typename OtherDerived>
-    static Point new_scale(const Eigen::MatrixBase<OtherDerived> &v) { return Point(coord_t(scale_(v.x())), coord_t(scale_(v.y()))); }
 
     // Compatibility with Eigen.
     template<typename OtherDerived>

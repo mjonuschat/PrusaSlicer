@@ -37,7 +37,7 @@ ExtrusionPaths calculate_and_split_overhanging_extrusions(const ExtrusionPath   
         const double dist_limit                = 10.0 * path.width();
         {
             Vec2d middle       = 0.5 * (curr.position + next.position);
-            auto  line_indices = prev_layer_curled_lines.all_lines_in_radius(Point::new_scale(middle), scale_(dist_limit));
+            auto  line_indices = prev_layer_curled_lines.all_lines_in_radius(scaled(middle), scale_(dist_limit));
             if (!line_indices.empty()) {
                 double len = (next.position - curr.position).norm();
                 // For long lines, there is a problem with the additional slowdown. If by accident, there is small curled line near the middle
@@ -72,7 +72,7 @@ ExtrusionPaths calculate_and_split_overhanging_extrusions(const ExtrusionPath   
 
                 for (size_t idx : line_indices) {
                     const CurledLine &line                 = prev_layer_curled_lines.get_line(idx);
-                    float             distance_from_curled = unscaled(line_alg::distance_to(line, Point::new_scale(middle)));
+                    float             distance_from_curled = unscaled(line_alg::distance_to(line, scaled(middle)));
                     float proximity = (1.0 - (distance_from_curled / dist_limit)) * (1.0 - (distance_from_curled / dist_limit)) *
                                       (line.curled_height / (path.height() * 10.0f)); // max_curled_height_factor from SupportSpotGenerator
                     proximity_to_curled_lines = std::max(proximity_to_curled_lines, proximity);
@@ -88,10 +88,10 @@ ExtrusionPaths calculate_and_split_overhanging_extrusions(const ExtrusionPath   
     new_attrs.overhang_attributes = std::optional<OverhangAttributes>(
         {calculated_distances[0].first, calculated_distances[0].first, calculated_distances[0].second});
     result.emplace_back(new_attrs);
-    result.back().polyline.append(Point::new_scale(extended_points[0].position));
+    result.back().polyline.append(scaled(extended_points[0].position));
     size_t sequence_start_index = 0;
     for (size_t i = 1; i < extended_points.size(); i++) {
-        result.back().polyline.append(Point::new_scale(extended_points[i].position));
+        result.back().polyline.append(scaled(extended_points[i].position));
         result.back().overhang_attributes_mutable()->end_distance_from_prev_layer = extended_points[i].distance;
 
         if (std::abs(calculated_distances[sequence_start_index].first - calculated_distances[i].first) < 0.001 * path.attributes().width &&
@@ -106,7 +106,7 @@ ExtrusionPaths calculate_and_split_overhanging_extrusions(const ExtrusionPath   
             new_attrs.overhang_attributes->proximity_to_curled_lines      = calculated_distances[i].second;
             sequence_start_index                                          = i;
             result.emplace_back(new_attrs);
-            result.back().polyline.append(Point::new_scale(extended_points[i].position));
+            result.back().polyline.append(scaled(extended_points[i].position));
         }
     }
 

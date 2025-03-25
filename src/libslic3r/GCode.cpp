@@ -2995,7 +2995,7 @@ void GCodeGenerator::set_extruders(const std::vector<unsigned int> &extruder_ids
 void GCodeGenerator::set_origin(const Vec2d &pointf)
 {
     // if origin increases (goes towards right), last_pos decreases because it goes towards left
-    const auto offset = Point::new_scale(m_origin - pointf);
+    const auto offset = scaled(Vec2d{m_origin - pointf});
     if (last_position.has_value())
         *(this->last_position) += offset;
 

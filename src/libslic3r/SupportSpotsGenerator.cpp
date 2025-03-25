@@ -1301,7 +1301,7 @@ void estimate_supports_malformations(SupportLayerPtrs &layers, float flow_width,
 
         for (const ExtrusionLine &line : current_layer_lines) {
             if (line.curled_up_height > params.curling_tolerance_limit) {
-                l->curled_lines.push_back(CurledLine{Point::new_scale(line.a), Point::new_scale(line.b), line.curled_up_height});
+                l->curled_lines.push_back(CurledLine{scaled(line.a), scaled(line.b), line.curled_up_height});
             }
         }
 
@@ -1382,7 +1382,7 @@ void estimate_malformations(LayerPtrs &layers, const Params &params)
 
         for (const ExtrusionLine &line : current_layer_lines) {
             if (line.curled_up_height > params.curling_tolerance_limit) {
-                l->curled_lines.push_back(CurledLine{Point::new_scale(line.a), Point::new_scale(line.b), line.curled_up_height});
+                l->curled_lines.push_back(CurledLine{scaled(line.a), scaled(line.b), line.curled_up_height});
             }
         }
 
