@@ -55,10 +55,6 @@
 #include <assert.h>
 #include <Int128.hpp>
 
-#ifndef CLIPPERLIB_USE_XYZ
-namespace Slic3r {
-#endif // CLIPPERLIB_NAMESPACE_PREFIX
-
 #ifdef CLIPPERLIB_USE_XYZ
 namespace ClipperLib_Z {
 #else /* CLIPPERLIB_USE_XYZ */
@@ -4212,7 +4208,3 @@ std::ostream& operator <<(std::ostream &s, const Paths &p)
 //------------------------------------------------------------------------------
 
 } //ClipperLib namespace
-
-#ifndef CLIPPERLIB_USE_XYZ
-} // namespace CLIPPERLIB_NAMESPACE_PREFIX
-#endif // CLIPPERLIB_NAMESPACE_PREFIX

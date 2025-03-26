@@ -537,7 +537,7 @@ SCENARIO("Infill density zero", "[Fill]")
             auto inflate_lines = [grow_d](const Lines &lines) {
                 Polygons out;
                 for (const Line &line : lines)
-                    append(out, offset(Polyline{ line.a, line.b }, grow_d, Slic3r::ClipperLib::jtSquare, 3.));
+                    append(out, offset(Polyline{ line.a, line.b }, grow_d, ClipperLib::jtSquare, 3.));
                 return union_(out);
             };
             Polygons     layer0_infill = inflate_lines(infill[scaled<coord_t>(0.2)]);

@@ -16,14 +16,15 @@
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/Polyline.hpp"
 
+namespace ClipperLib {
+    class PolyNode;
+
+    using PolyNodes = std::vector<PolyNode*, Slic3r::Domain::PointsAllocator<PolyNode*>>;
+}
+
 namespace Slic3r {
 class ExtrusionEntityCollection;
 
-	namespace ClipperLib {
-		class PolyNode;
-
-		using PolyNodes = std::vector<PolyNode*, Domain::PointsAllocator<PolyNode*>>;
-	}
 
 class ExPolygon;
 struct LayerIsland;

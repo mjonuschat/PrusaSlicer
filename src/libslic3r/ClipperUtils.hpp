@@ -19,7 +19,6 @@
 #include "ExPolygon.hpp"
 #include "Polygon.hpp"
 #include "Surface.hpp"
-#include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/Line.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Polyline.hpp"
@@ -34,9 +33,9 @@
 #include "clipper/clipper.hpp"
 
 // import these wherever we're included
-using Slic3r::ClipperLib::jtMiter;
-using Slic3r::ClipperLib::jtRound;
-using Slic3r::ClipperLib::jtSquare;
+using ClipperLib::jtMiter;
+using ClipperLib::jtRound;
+using ClipperLib::jtSquare;
 
 #endif /* SLIC3R_USE_CLIPPER2 */
 
@@ -46,9 +45,9 @@ class BoundingBox;
 
 static constexpr const float                        ClipperSafetyOffset     = 10.f;
 
-static constexpr const Slic3r::ClipperLib::JoinType DefaultJoinType         = Slic3r::ClipperLib::jtMiter;
+static constexpr const ClipperLib::JoinType DefaultJoinType         = ClipperLib::jtMiter;
 
-static constexpr const Slic3r::ClipperLib::EndType DefaultEndType           = Slic3r::ClipperLib::etOpenButt;
+static constexpr const ClipperLib::EndType DefaultEndType           = ClipperLib::etOpenButt;
 
 //FIXME evaluate the default miter limit. 3 seems to be extreme, Cura uses 1.2.
 // Mitter Limit 3 is useful for perimeter generator, where sharp corners are extruded without needing a gap fill.
@@ -56,7 +55,7 @@ static constexpr const Slic3r::ClipperLib::EndType DefaultEndType           = Sl
 // is extended excessively.
 static constexpr const double                       DefaultMiterLimit       = 3.;
 
-static constexpr const Slic3r::ClipperLib::JoinType DefaultLineJoinType     = Slic3r::ClipperLib::jtSquare;
+static constexpr const ClipperLib::JoinType DefaultLineJoinType     = ClipperLib::jtSquare;
 // Miter limit is ignored for jtSquare.
 static constexpr const double                       DefaultLineMiterLimit   = 0.;
 

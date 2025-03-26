@@ -62,10 +62,6 @@
 #include <functional>
 #include <queue>
 
-#ifndef CLIPPERLIB_USE_XYZ
-  namespace Slic3r {
-#endif // CLIPPERLIB_NAMESPACE_PREFIX
-
 #ifdef CLIPPERLIB_USE_XYZ
   namespace ClipperLib_Z {
 #else
@@ -598,9 +594,5 @@ inline Paths SimplifyPolygons(PathsProvider &&in_polys, PolyFillType fillType = 
 }
 
 } //ClipperLib namespace
-
-#ifndef CLIPPERLIB_USE_XYZ
-} // namespace CLIPPERLIB_NAMESPACE_PREFIX
-#endif // CLIPPERLIB_NAMESPACE_PREFIX
 
 #endif //clipper_hpp

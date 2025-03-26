@@ -126,14 +126,14 @@ template<>
 inline void offset(Slic3r::ExPolygon& sh, coord_t distance, const PolygonTag&)
 {
 #define DISABLE_BOOST_OFFSET
-    auto res = Slic3r::offset_ex(sh, distance, Slic3r::ClipperLib::jtSquare);
+    auto res = Slic3r::offset_ex(sh, distance, ClipperLib::jtSquare);
     if (!res.empty()) sh = res.front();
 }
 
 template<>
 inline void offset(Slic3r::Polygon& sh, coord_t distance, const PathTag&)
 {
-    auto res = Slic3r::offset(sh, distance, Slic3r::ClipperLib::jtSquare);
+    auto res = Slic3r::offset(sh, distance, ClipperLib::jtSquare);
     if (!res.empty()) sh = res.front();
 }
 

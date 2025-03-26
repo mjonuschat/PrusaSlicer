@@ -646,7 +646,7 @@ void extend_PolygonConvexUnreachableZone(const SolverConfiguration          &SEQ
 {
     if (!polygon.points.empty())
     {
-	Slic3r::ClipperLib::Paths paths;
+	ClipperLib::Paths paths;
 	
 	for (unsigned int i = 0; i < extruder_polygons.size(); ++i)
 	{
