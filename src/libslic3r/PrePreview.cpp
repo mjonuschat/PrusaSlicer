@@ -286,9 +286,14 @@ libpgcode::MoveVertices convert_to_vertices(
         if (entity == nullptr) {
             continue;
         }
-        append(result, convert_entity_to_vertices(*entity, std::forward<Args>(args)...));
-        result.push_back(result.back());
-        result.back().type = libpgcode::MoveType::Noop;
+        libpgcode::MoveVertices vertices{
+            convert_entity_to_vertices(*entity, std::forward<Args>(args)...)
+        };
+        if (!vertices.empty()) {
+            append(result, std::move(vertices));
+            result.push_back(result.back());
+            result.back().type = libpgcode::MoveType::Noop;
+        }
     }
     return result;
 }
