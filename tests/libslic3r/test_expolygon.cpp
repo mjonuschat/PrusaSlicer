@@ -25,8 +25,8 @@ static bool polygons_close_permuted(const Polygon &poly1, const Polygon &poly2, 
 
 SCENARIO("Basics", "[ExPolygon]") {
     GIVEN("ccw_square") {
-        Polygon ccw_square{ { 100, 100 }, { 200, 100 }, { 200, 200 }, { 100, 200 } };
-        Polygon cw_hole_in_square{ { 140, 140 }, { 140, 160 }, { 160, 160 }, { 160, 140 } };
+        Polygon ccw_square{ Point{ 100, 100 }, Point{ 200, 100 }, Point{ 200, 200 }, Point{ 100, 200 } };
+        Polygon cw_hole_in_square{ Point{ 140, 140 }, Point{ 140, 160 }, Point{ 160, 160 }, Point{ 160, 140 } };
         ExPolygon expolygon { ccw_square, cw_hole_in_square };
         THEN("expolygon is valid") {
             REQUIRE(expolygon.is_valid());
@@ -76,10 +76,10 @@ TEST_CASE("Serialization of expolygons", "[ExPolygon, Cereal, serialization]")
 {
     ExPolygons expolys{{
         // expolygon 1 - without holes
-        {{0,0}, {10,0}, {10,10}, {0,10}}, // contour
+        {Point{0,0}, Point{10,0}, Point{10,10}, Point{0,10}}, // contour
         // expolygon 2 - with rect 1px hole
-        {{{0,0}, {10,0}, {10,10}, {0,10}},
-        {{5, 5}, {6, 5}, {6, 6}, {5, 6}}}
+        {{Point{0,0}, Point{10,0}, Point{10,10}, Point{0,10}},
+        {Point{5, 5}, Point{6, 5}, Point{6, 6}, Point{5, 6}}}
     }};
 
     std::stringstream ss; // any stream can be used
@@ -107,10 +107,10 @@ TEST_CASE("Serialization of expolygons to string", "[ExPolygon, Cereal, serializ
 {
     ExPolygons expolys{{
         // expolygon 1 - without holes
-        {{0,0}, {10,0}, {10,10}, {0,10}}, // contour
+        {Point{0,0}, Point{10,0}, Point{10,10}, Point{0,10}}, // contour
         // expolygon 2 - with rect 1px hole
-        {{{0,0}, {10,0}, {10,10}, {0,10}},
-        {{5, 5}, {6, 5}, {6, 6}, {5, 6}}} 
+        {{Point{0,0}, Point{10,0}, Point{10,10}, Point{0,10}},
+        {Point{5, 5}, Point{6, 5}, Point{6, 6}, Point{5, 6}}} 
     }};
 
     std::stringstream ss_out; // any stream can be used

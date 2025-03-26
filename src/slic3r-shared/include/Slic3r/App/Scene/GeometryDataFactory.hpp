@@ -29,7 +29,7 @@ enum class GeometryDataId
 class GeometryDataFactory
 {
 public:
-    using TriangleMeshManager = TriangleMeshManager<GeometryDataId>;
+    using MeshManager = TriangleMeshManager<GeometryDataId>;
     using GeometryManager = Render::GeometryManager<GeometryDataId>;
 
     explicit GeometryDataFactory(Render::Device& device) : m_device(device) {}
@@ -81,7 +81,7 @@ private:
 
 private:
     Render::Device& m_device;
-    TriangleMeshManager m_triangle_mesh_manager;
+    MeshManager m_triangle_mesh_manager;
     GeometryManager m_geometry_manager;
 };
 

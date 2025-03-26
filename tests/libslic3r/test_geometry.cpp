@@ -133,20 +133,20 @@ SCENARIO("Intersections of line segments", "[Geometry]"){
 SCENARIO("polygon_is_convex works") {
     GIVEN("A square of dimension 10") {
         WHEN("Polygon is convex clockwise") {
-            Polygon cw_square  { { {0, 0}, {0,10}, {10,10}, {10,0} } };
+            Polygon cw_square  { { Point{0, 0}, Point{0,10}, Point{10,10}, Point{10,0} } };
             THEN("it is not convex") {
                 REQUIRE(! polygon_is_convex(cw_square));
             }
         }
         WHEN("Polygon is convex counter-clockwise") {
-            Polygon ccw_square { { {0, 0}, {10,0}, {10,10}, {0,10} } };
+            Polygon ccw_square { { Point{0, 0}, Point{10,0}, Point{10,10}, Point{0,10} } };
             THEN("it is convex") {
                 REQUIRE(polygon_is_convex(ccw_square));
             }
         } 
     }
     GIVEN("A concave polygon") {
-        Polygon concave = { {0,0}, {10,0}, {10,10}, {0,10}, {0,6}, {4,6}, {4,4}, {0,4} };
+        Polygon concave = { Point{0,0}, Point{10,0}, Point{10,10}, Point{0,10}, Point{0,6}, Point{4,6}, Point{4,4}, Point{0,4} };
         THEN("It is not convex") {
             REQUIRE(! polygon_is_convex(concave));
         }
