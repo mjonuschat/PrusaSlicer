@@ -292,7 +292,7 @@ namespace ImGui
     const wchar_t ToolbarAdd               = 0x2902;
     const wchar_t ToolbarArrange           = 0x2903;
     const wchar_t ToolbarHistory           = 0x2904;
-    const wchar_t ToolbarSidebar           = 0x2905;
+    const wchar_t ToolbarEllipsis          = 0x2905;
     const wchar_t ToolbarGraph             = 0x2906;
     const wchar_t ToolbarMove              = 0x2907;
     const wchar_t ToolbarRotation          = 0x2908;

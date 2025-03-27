@@ -406,7 +406,7 @@ void Toolbar::collapse_if_needed()
     m_collapsed_node = add_node();
     int id = YGNodeGetChildCount(m_root) - m_separators_count;
 
-    m_nodes[m_collapsed_node] = Item(ImGui::WarningMarker, "", "", {});// !!!change to ElapsedMarker
+    m_nodes[m_collapsed_node] = Item(ImGui::ToolbarEllipsis, "", "", {});
     m_nodes[m_collapsed_node].init_sub_toolbar(m_min_side, m_max_side, 
                                                m_is_horizontal ? Align({ AlignH::Right, m_align.vertical }) : Align({ m_align.horizontal, AlignV::Bottom }), 
                                                m_is_horizontal ? Orientation::Horizontal : Orientation::Vertical);

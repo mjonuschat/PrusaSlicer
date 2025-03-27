@@ -193,7 +193,7 @@ bool Item::render(ImRect item_bb, ImRect parent_bb, ImDrawFlags corners_flag, Im
     }
 
     bool ret = button_behav.hovered;
-    if (active_sub_toolbar)
+    if (ret && active_sub_toolbar)
         ret |= active_sub_toolbar != m_sub_toolbar; // don't show all tooltips, when rendering sub toolbar
 
     return ret;
