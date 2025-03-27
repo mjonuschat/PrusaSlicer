@@ -1,4 +1,6 @@
 #include "Slic3r/Domain/MultiPoint.hpp"
+
+#include "Slic3r/Domain/BoundingBox.hpp"
 #include "Slic3r/Utils.hpp"
 
 namespace Slic3r::Domain {
@@ -22,6 +24,8 @@ const Point& MultiPoint::operator[](const Points::size_type idx) const { return 
 bool MultiPoint::operator==(const MultiPoint& rhs) const { return this->points == rhs.points; }
 
 bool MultiPoint::operator!=(const MultiPoint& rhs) const { return this->points != rhs.points; }
+
+void MultiPoint::reverse() { std::reverse(this->points.begin(), this->points.end()); }
 
 bool MultiPoint::is_valid() const { return this->points.size() >= 2; }
 

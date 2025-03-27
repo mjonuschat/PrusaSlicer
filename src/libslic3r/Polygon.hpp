@@ -56,8 +56,6 @@ public:
 
     ~Polygon() override = default;
 
-    virtual void reverse() { Slic3r::Biz::Algorithms::MultiPoint::reverse(*this); }
-
     BoundingBox bounding_box() const;
 
     int closest_point_index(const Point &point) const { return Slic3r::Biz::Algorithms::MultiPoint::closest_point_index(*this, point); }

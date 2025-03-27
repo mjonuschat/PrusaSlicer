@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Slic3r/Domain/BoundingBox.hpp"
 #include "Slic3r/Domain/MultiPoint.hpp"
 
 namespace Slic3r::Biz::Algorithms::MultiPoint {
@@ -43,5 +44,7 @@ bool remove_duplicate_points(Domain::MultiPoint& multi_point);
  * @return Index of the closest point in the list, or -1 if the list is empty.
  */
 int closest_point_index(const Domain::MultiPoint& multi_point, const Domain::Point& point);
+
+Domain::BoundingBox2crd get_bounding_box(const Domain::MultiPoint& multi_point);
 
 } // namespace Slic3r::Biz::Algorithms::MultiPoint

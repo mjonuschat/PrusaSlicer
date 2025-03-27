@@ -5,6 +5,8 @@
 #include "libslic3r/Print.hpp"
 #include "libslic3r/PrePreview.hpp"
 
+using namespace Slic3r::Biz;
+
 namespace Slic3r::Biz::Print {
 
 MoveVerticesPerLayer merge(MoveVerticesPerLayer&& a, MoveVerticesPerLayer&& b) {
@@ -206,9 +208,9 @@ libpgcode::MoveVertices path_to_vertices(
     const Point &offset = Point::Zero()
 ) {
     Slic3r::Polyline polyline = path.polyline;
-    Slic3r::Biz::Algorithms::Polyline::remove_duplicate_points(polyline);
+    Algorithms::Polyline::remove_duplicate_points(polyline);
     polyline.translate(offset);
-    const Slic3r::Lines lines = polyline.lines();
+    const Slic3r::Lines lines = Algorithms::Polyline::to_lines(polyline);
     const std::vector<float> widths(lines.size(), path.width());
     const std::vector<float> heights(lines.size(), path.height());
 

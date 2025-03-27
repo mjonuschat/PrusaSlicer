@@ -57,13 +57,7 @@ public:
 		return pl;
     }
     
-    virtual void reverse() { Slic3r::Biz::Algorithms::MultiPoint::reverse(*this); }
-
-    BoundingBox bounding_box() const;
-
     int find_point(const Point& point, const double scaled_epsilon) const { return Slic3r::Biz::Algorithms::MultiPoint::find_point(*this, point, scaled_epsilon); }
-
-    Lines lines() const;
 
     void simplify(double tolerance);
 
@@ -71,8 +65,8 @@ public:
     bool is_straight() const;
 };
 
-extern BoundingBox get_extents(const Polyline &polyline);
-extern BoundingBox get_extents(const Polylines &polylines);
+extern BoundingBox get_extents(const Slic3r::Polyline &polyline);
+extern BoundingBox get_extents(const Slic3r::Polylines &polylines);
 
 // Return True when erase some otherwise False.
 bool remove_same_neighbor(Polyline &polyline);

@@ -68,7 +68,7 @@ public:
             for (int i = 0; i < (int)_offsets.size(); ++i) {
                 check_polyline = path.polyline;
                 check_polyline.translate(_offsets[i]);
-                Lines tmpLines = check_polyline.lines();
+                Lines tmpLines = to_lines(check_polyline);
                 for (const Line& line : tmpLines) { lines.emplace_back(line, _id, i, path.role()); }
             }
         }

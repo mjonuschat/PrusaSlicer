@@ -46,4 +46,6 @@ public:
     double length() const;
 };
 
+using Polylines = std::vector<Polyline>;
+
 } // namespace Slic3r::Domain

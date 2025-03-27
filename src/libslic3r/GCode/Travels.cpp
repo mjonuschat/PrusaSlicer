@@ -390,7 +390,7 @@ ElevatedTravelParams get_elevated_traval_params(
         elevation_params.slope_end = elevation_params.lift_height / std::tan(slope_rad);
     }
 
-    const double obstacle_adjusted_slope_end = get_obstacle_adjusted_slope_end(xy_path.lines(), obstacle_tracker);
+    const double obstacle_adjusted_slope_end = get_obstacle_adjusted_slope_end(to_lines(xy_path), obstacle_tracker);
     if (obstacle_adjusted_slope_end < elevation_params.slope_end)
         elevation_params.slope_end = obstacle_adjusted_slope_end;
 

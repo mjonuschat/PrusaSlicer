@@ -20,7 +20,7 @@ struct PolylineTestCase {
 
 TEST_CASE_METHOD(PolylineTestCase, "Lines can be retrieved", "[Polyline]") {
 
-    CHECK(polyline.lines() == Lines{
+    CHECK(Algorithms::Polyline::to_lines(polyline) == Lines{
         {{100, 100}, {200, 100}},
         {{200, 100}, {200, 200}},
     });

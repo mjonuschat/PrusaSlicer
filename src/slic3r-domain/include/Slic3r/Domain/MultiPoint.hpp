@@ -37,6 +37,7 @@ public:
     bool   empty()    const { return this->points.empty(); }
     void   clear()          { this->points.clear(); }
 
+    virtual void reverse();
     virtual bool is_valid() const;
 
     void append(const Point& point);
@@ -74,8 +75,6 @@ public:
      * @return Index of the matching point, or -1 if no such point exists.
      */
     int find_point(const Point& query_pt) const;
-
-//    BoundingBox2crd bounding_box() const;
 };
 
 } // namespace Slic3r::Domain

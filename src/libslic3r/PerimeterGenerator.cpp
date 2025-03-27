@@ -584,11 +584,11 @@ static void export_perimeters_to_svg(const std::string &path, const Polygons &co
 // find out if paths touch - at least one point of one path is within limit distance of second path
 bool paths_touch(const ExtrusionPath &path_one, const ExtrusionPath &path_two, double limit_distance)
 {
-    AABBTreeLines::LinesDistancer<Line> lines_two{path_two.as_polyline().lines()};
+    AABBTreeLines::LinesDistancer<Line> lines_two{to_lines(path_two.as_polyline())};
     for (size_t pt_idx = 0; pt_idx < path_one.polyline.size(); pt_idx++) {
         if (lines_two.distance_from_lines<false>(path_one.polyline.points[pt_idx]) < limit_distance) { return true; }
     }
-    AABBTreeLines::LinesDistancer<Line> lines_one{path_one.as_polyline().lines()};
+    AABBTreeLines::LinesDistancer<Line> lines_one{to_lines(path_one.as_polyline())};
     for (size_t pt_idx = 0; pt_idx < path_two.polyline.size(); pt_idx++) {
         if (lines_one.distance_from_lines<false>(path_two.polyline.points[pt_idx]) < limit_distance) { return true; }
     }

@@ -50,4 +50,22 @@ double Polygon::area() const
     return 0.5 * total_area;
 }
 
+Point Polygon::centroid() const
+{
+    double area_sum = 0.;
+    Vec2d c(0., 0.);
+    if (points.size() >= 3) {
+        Vec2d p1 = points.back().cast<double>();
+        for (const Point& p : points) {
+            const Vec2d  p2 = p.cast<double>();
+            const double a  = cross2(p1, p2);
+            area_sum += a;
+            c        += (p1 + p2) * a;
+            p1        = p2;
+        }
+    }
+
+    return Point(Vec2d(c / (3. * area_sum)));
+}
+
 } // namespace Slic3r::Domain

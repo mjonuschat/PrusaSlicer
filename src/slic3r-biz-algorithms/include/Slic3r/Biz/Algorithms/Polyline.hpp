@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Slic3r/Domain/BoundingBox.hpp"
+#include "Slic3r/Domain/Line.hpp"
 #include "Slic3r/Domain/Polyline.hpp"
 
 namespace Slic3r::Biz::Algorithms::Polyline {
@@ -54,5 +56,14 @@ void extend_end(Domain::Polyline& polyline, double distance);
 void extend_start(Domain::Polyline& polyline, double distance);
 
 Domain::Polyline scaled(const std::vector<Domain::Vec2d> &points);
+
+Domain::BoundingBox2crd get_bounding_box(const Domain::Polyline& polyline);
+Domain::BoundingBox2crd get_bounding_box(const Domain::Polylines& polylines);
+
+Domain::Lines to_lines(const Domain::Polyline& polyline);
+Domain::Lines to_lines(const Domain::Polylines& polylines);
+
+double total_length(const Domain::Polylines& polylines);
+size_t total_lines_count(const Domain::Polylines& polylines);
 
 } // namespace Slic3r::Biz::Algorithms::Polyline

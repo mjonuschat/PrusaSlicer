@@ -1,6 +1,9 @@
 #include "Slic3r/Biz/Algorithms/Polyline.hpp"
 
+#include "Slic3r/Domain/BoundingBox.hpp"
 #include "Slic3r/Domain/Point.hpp"
+#include "Slic3r/Domain/Line.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 #include "Slic3r/Biz/Algorithms/Point.hpp"
 
 namespace Slic3r::Biz::Algorithms::Polyline {
@@ -75,6 +78,72 @@ void extend_start(Domain::Polyline& polyline, double distance)
 Domain::Polyline scaled(const std::vector<Domain::Vec2d>& points)
 {
     return Domain::Polyline(Point::scaled(points));
+}
+
+Domain::BoundingBox2crd get_bounding_box(const Domain::Polyline& polyline)
+{
+    return BoundingBox::construct(polyline.points);
+}
+
+Domain::BoundingBox2crd get_bounding_box(const Domain::Polylines& polylines)
+{
+    Domain::BoundingBox2crd bounding_box;
+    for (const Domain::Polyline& polyline : polylines) {
+        bounding_box = BoundingBox::merge(bounding_box, get_bounding_box(polyline));
+    }
+
+    return bounding_box;
+}
+
+Domain::Lines to_lines(const Domain::Polyline& polyline)
+{
+    if (polyline.points.size() < 2)
+        return {};
+
+    Lines lines;
+    lines.reserve(polyline.points.size() - 1);
+    for (Points::const_iterator it = polyline.points.begin(); it != polyline.points.end() - 1; ++it) {
+        lines.emplace_back(*it, *(it + 1));
+    }
+
+    return lines;
+}
+
+Domain::Lines to_lines(const Domain::Polylines& polylines)
+{
+    const size_t lines_cnt = total_lines_count(polylines);
+
+    Lines lines;
+    lines.reserve(lines_cnt);
+    for (const Domain::Polyline& polyline : polylines) {
+        for (Points::const_iterator it = polyline.points.begin(); it != polyline.points.end() - 1; ++it) {
+            lines.emplace_back(*it, *(it + 1));
+        }
+    }
+
+    return lines;
+}
+
+double total_length(const Domain::Polylines& polylines)
+{
+    double total_length = 0;
+    for (const Domain::Polyline& pl : polylines) {
+        total_length += pl.length();
+    }
+
+    return total_length;
+}
+
+size_t total_lines_count(const Domain::Polylines& polylines)
+{
+    size_t lines_cnt = 0;
+    for (const Domain::Polyline& polyline : polylines) {
+        if (polyline.points.size() > 1) {
+            lines_cnt += polyline.points.size() - 1;
+        }
+    }
+
+    return lines_cnt;
 }
 
 } // namespace Slic3r::Biz::Algorithms::Polyline

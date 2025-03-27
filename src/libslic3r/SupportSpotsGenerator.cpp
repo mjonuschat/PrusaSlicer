@@ -196,7 +196,7 @@ Integrals::Integrals(const Polygons &polygons)
 Integrals::Integrals(const Polylines& polylines, const std::vector<float>& widths) {
     assert(polylines.size() == widths.size());
     for (size_t i = 0; i < polylines.size(); ++i) {
-        Lines polyline{polylines[i].lines()};
+        Lines polyline{to_lines(polylines[i])};
         float width{widths[i]};
         for (const Line& line : polyline) {
             Vec2f line_direction = unscaled(line.vector()).cast<float>();

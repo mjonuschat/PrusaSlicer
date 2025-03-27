@@ -6,10 +6,12 @@
 
 #include "test_data.hpp" // get access to init_print, etc
 
+#include "Slic3r/Biz/Algorithms/Polyline.hpp"
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/libslic3r.h"
 
 using namespace Slic3r;
+using namespace Slic3r::Biz;
 
 SCENARIO("Medial Axis", "[ThinWalls]") {
     GIVEN("Square with hole") {
@@ -175,7 +177,8 @@ SCENARIO("Medial Axis", "[ThinWalls]") {
             // order polyline from left to right
             if (polyline.first_point().x() > polyline.last_point().x())
                 polyline.reverse();
-            BoundingBox polyline_bb = polyline.bounding_box();
+
+            Domain::BoundingBox2crd polyline_bb = Algorithms::Polyline::get_bounding_box(polyline);
             THEN("expected x_min") {
                 REQUIRE(polyline.first_point().x() == polyline_bb.min.x());
             }

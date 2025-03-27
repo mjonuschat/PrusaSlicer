@@ -1,6 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "Slic3r/Biz/Algorithms/Line.hpp"
+#include "Slic3r/Biz/Algorithms/PolyLine.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/Polygon.hpp"
@@ -147,10 +148,10 @@ SCENARIO("polygon_is_convex works") {
 TEST_CASE("Creating a polyline generates the obvious lines", "[Geometry]"){
     Slic3r::Polyline polyline;
     polyline.points = Points({Point(0, 0), Point(10, 0), Point(20, 0)});
-    REQUIRE(polyline.lines().at(0).a == Point(0,0));
-    REQUIRE(polyline.lines().at(0).b == Point(10,0));
-    REQUIRE(polyline.lines().at(1).a == Point(10,0));
-    REQUIRE(polyline.lines().at(1).b == Point(20,0));
+    REQUIRE(Algorithms::Polyline::to_lines(polyline).at(0).a == Point(0,0));
+    REQUIRE(Algorithms::Polyline::to_lines(polyline).at(0).b == Point(10,0));
+    REQUIRE(Algorithms::Polyline::to_lines(polyline).at(1).a == Point(10,0));
+    REQUIRE(Algorithms::Polyline::to_lines(polyline).at(1).b == Point(20,0));
 }
 
 TEST_CASE("Splitting a Polygon generates a polyline correctly", "[Geometry]"){

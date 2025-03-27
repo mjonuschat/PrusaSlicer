@@ -1,12 +1,15 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_all.hpp>
 #include <catch2/catch_approx.hpp>
+
+#include "Slic3r/Biz/Algorithms/Polyline.hpp"
 #include <libslic3r/GCode/Travels.hpp>
 #include <libslic3r/ExPolygon.hpp>
 #include <libslic3r/GCode.hpp>
 #include <boost/math/special_functions/pow.hpp>
 
 using namespace Slic3r;
+using namespace Slic3r::Biz;
 using namespace Slic3r::GCode::Impl::Travels;
 using namespace Catch;
 
@@ -155,7 +158,7 @@ TEST_CASE("Get first crossed line distance", "[GCode]") {
     };
 
     // Bottom-up travel intersecting the squares.
-    Lines travel{Polyline{
+    Lines travel{Algorithms::Polyline::to_lines(Polyline{
         scaled(Vec2f{0, -2}),
         scaled(Vec2f{0, -0.7}),
         scaled(Vec2f{0, 0}),
@@ -164,7 +167,7 @@ TEST_CASE("Get first crossed line distance", "[GCode]") {
         scaled(Vec2f{0, 2.4}),
         scaled(Vec2f{0, 4.5}),
         scaled(Vec2f{0, 5}),
-    }.lines()};
+    })};
 
     std::vector<GCode::ObjectOrExtrusionLinef> lines;
     for (const ExPolygon& polygon : {square_with_hole, square_above}) {

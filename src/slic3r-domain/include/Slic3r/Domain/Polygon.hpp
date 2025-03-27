@@ -33,6 +33,14 @@ public:
 
     double length() const;
     double area() const;
+
+    /**
+     * Compute center of mass for this polygon.
+     *
+     * @return Center of mass for this polygon.
+     * @note Source: https://en.wikipedia.org/wiki/Centroid
+     */
+    Point centroid() const;
 };
 
 using Polygons = std::vector<Polygon, Domain::PointsAllocator<Polygon>>;

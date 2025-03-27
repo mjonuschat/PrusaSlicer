@@ -15,6 +15,7 @@
 #include <limits>
 #include <cassert>
 
+#include "Slic3r/Biz/Algorithms/Polyline.hpp"
 #include "BoundingBox.hpp"
 #include "Polyline.hpp"
 #include "Slic3r/Exception.hpp"
@@ -26,46 +27,10 @@ using namespace Slic3r::Biz;
 
 namespace Slic3r {
 
-Lines Polyline::lines() const
-{
-    Lines lines;
-    if (this->points.size() >= 2) {
-        lines.reserve(this->points.size() - 1);
-        for (Points::const_iterator it = this->points.begin(); it != this->points.end()-1; ++it) {
-            lines.push_back(Line(*it, *(it + 1)));
-        }
-    }
-    return lines;
-}
-
 void Polyline::simplify(double tolerance)
 {
     this->points = Slic3r::douglas_peucker(this->points, tolerance);
 }
-
-#if 0
-// This method simplifies all *lines* contained in the supplied area
-template <class T>
-void Polyline::simplify_by_visibility(const T &area)
-{
-    Points &pp = this->points;
-    
-    size_t s = 0;
-    bool did_erase = false;
-    for (size_t i = s+2; i < pp.size(); i = s + 2) {
-        if (area.contains(Line(pp[s], pp[i]))) {
-            pp.erase(pp.begin() + s + 1, pp.begin() + i);
-            did_erase = true;
-        } else {
-            ++s;
-        }
-    }
-    if (did_erase)
-        this->simplify_by_visibility(area);
-}
-template void Polyline::simplify_by_visibility<ExPolygon>(const ExPolygon &area);
-template void Polyline::simplify_by_visibility<ExPolygonCollection>(const ExPolygonCollection &area);
-#endif
 
 void Polyline::split_at(const Point &point, Polyline* p1, Polyline* p2) const
 {
@@ -110,35 +75,33 @@ bool Polyline::is_straight() const
     // first point and last point. (Checking each line against the previous
     // one would cause the error to accumulate.)
     double dir = Line(this->first_point(), this->last_point()).direction();
-    for (const auto &line: this->lines())
+    for (const auto &line: to_lines(*this))
         if (!line.is_parallel_to(dir))
             return false;
     return true;
-}
-
-BoundingBox Polyline::bounding_box() const
-{
-    return BoundingBox(this->points);
 }
 
 BoundingBox ThickPolyline::bounding_box() const {
     return BoundingBox(this->points);
 }
 
-BoundingBox get_extents(const Polyline &polyline)
+// Temporary proxy function.
+BoundingBox get_extents(const Polyline& polyline)
 {
-    return polyline.bounding_box();
+    const Domain::BoundingBox2crd bbox = Algorithms::Polyline::get_bounding_box(polyline);
+    return BoundingBox{bbox.min, bbox.max};
 }
 
+// Temporary proxy function.
 BoundingBox get_extents(const Polylines &polylines)
 {
-    BoundingBox bb;
+    Domain::BoundingBox2crd bb;
     if (! polylines.empty()) {
-        bb = polylines.front().bounding_box();
+        bb = Algorithms::Polyline::get_bounding_box(polylines.front());
         for (size_t i = 1; i < polylines.size(); ++ i)
-            bb.merge(polylines[i].points);
+            bb = Algorithms::BoundingBox::merge(bb, Algorithms::Polyline::get_bounding_box(polylines[i]));
     }
-    return bb;
+    return BoundingBox{bb.min, bb.max};
 }
 
 // Return True when erase some otherwise False.

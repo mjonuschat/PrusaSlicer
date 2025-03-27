@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Slic3r/Domain/BoundingBox.hpp"
 #include "Slic3r/Domain/Polygon.hpp"
 
 namespace Slic3r::Biz::Algorithms::Polygon {
@@ -22,5 +23,8 @@ bool has_duplicate_points(const Domain::Polygon& polygon);
 bool remove_duplicate_points(Domain::Polygon& polygon);
 
 Domain::Polygon scaled(const std::vector<Domain::Vec2d>& points);
+
+Domain::BoundingBox2crd get_bounding_box(const Domain::Polygon& polygon);
+Domain::BoundingBox2crd get_bounding_box(const Domain::Polygons& polygons);
 
 } // namespace Slic3r::Biz::Algorithms::Polygon

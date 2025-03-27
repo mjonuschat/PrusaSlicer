@@ -1,5 +1,6 @@
 #include "Slic3r/Biz/Algorithms/MultiPoint.hpp"
 
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 #include "Slic3r/Biz/Algorithms/Point.hpp"
 
 namespace Slic3r::Biz::Algorithms::MultiPoint {
@@ -65,6 +66,11 @@ int closest_point_index(const Domain::MultiPoint& multi_point, const Domain::Poi
     }
 
     return idx;
+}
+
+Domain::BoundingBox2crd get_bounding_box(const Domain::MultiPoint& multi_point)
+{
+    return BoundingBox::construct(multi_point.points);
 }
 
 } // namespace Slic3r::Biz::Algorithms::MultiPoint
