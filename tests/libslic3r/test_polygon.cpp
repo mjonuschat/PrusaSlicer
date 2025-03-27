@@ -72,23 +72,6 @@ SCENARIO("Converted Perl tests", "[Polygon]") {
             REQUIRE(&ccw_square.first_point() == &ccw_square.points.front());
         }
     }
-    GIVEN("Triangulating hexagon") {
-        Polygon hexagon{ { 100, 0 } };
-        for (size_t i = 1; i < 6; ++ i) {
-            Point p = hexagon.points.front();
-            p.rotate(PI / 3 * i);
-            hexagon.points.emplace_back(p);
-        }
-        Polygons triangles;
-        hexagon.triangulate_convex(&triangles);
-        THEN("right number of triangles") {
-            REQUIRE(triangles.size() == 4);
-        }
-        THEN("all triangles are ccw") {
-            auto it = std::find_if(triangles.begin(), triangles.end(), [](const Polygon &tri) { return Algorithms::Polygon::is_clockwise(tri); });
-            REQUIRE(it == triangles.end());
-        }
-    }
     GIVEN("General triangle") {
         Polygon polygon { { 50000000, 100000000 }, { 300000000, 102000000 }, { 50000000, 104000000 } };
         Line    line { { 175992032, 102000000 }, { 47983964, 102000000 } };

@@ -66,37 +66,23 @@ public:
 		return pgn;
 	}
 
-    Lines lines() const;
-    Polyline split_at_vertex(const Point &point) const;
-    // Split a closed polygon into an open polyline, with the split point duplicated at both ends.
-    Polyline split_at_index(int index) const;
-    // Split a closed polygon into an open polyline, with the split point duplicated at both ends.
-    Polyline split_at_first_point() const { return this->split_at_index(0); }
-
-    void douglas_peucker(double tolerance);
-
     // Does an unoriented polygon contain a point?
     bool contains(const Point &point) const { return Slic3r::contains(*this, point, true); }
-    // Approximate on boundary test.
-    bool on_boundary(const Point &point, double eps) const
-        { return (this->point_projection(point) - point).cast<double>().squaredNorm() < eps * eps; }
-
-    // Works on CCW polygons only, CW contour will be reoriented to CCW by Clipper's simplify_polygons()!
-    Polygons simplify(double tolerance) const;
-    void triangulate_convex(Polygons* polygons) const;
-    Point centroid() const;
-
-    bool intersection(const Line& line, Point* intersection) const;
-    bool intersections(const Line &line, Points *intersections) const;
-
-    // Considering CCW orientation of this polygon, find all convex resp. concave points
-    // with the angle at the vertex larger than a threshold.
-    // Zero angle_threshold means to accept all convex resp. concave points.
-    Points convex_points(double angle_threshold = 0.) const;
-    Points concave_points(double angle_threshold = 0.) const;
-    // Projection of a point onto the polygon.
-    Point point_projection(const Point &point) const;
 };
+
+// Considering CCW orientation of this polygon, find all convex resp. concave points
+// with the angle at the vertex larger than a threshold.
+// Zero angle_threshold means to accept all convex resp. concave points.
+Points convex_points(const Polygon &polygon, double angle_threshold = 0.);
+Points concave_points(const Polygon &polygon, double angle_threshold = 0.);
+// Projection of a point onto the polygon.
+Point point_projection(const Polygon &polygon, const Point &point);
+
+// Approximate on boundary test.
+inline bool polygon_on_boundary(const Polygon &polygon, const Point &point, double eps)
+{
+    return (point_projection(polygon, point) - point).cast<double>().squaredNorm() < eps * eps;
+}
 
 BoundingBox get_extents(const Polygon &poly);
 BoundingBox get_extents(const Polygons &polygons);

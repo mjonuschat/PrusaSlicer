@@ -135,10 +135,10 @@ bool ExPolygon::contains(const Point &point, bool border_result /* = true */) co
 
 bool ExPolygon::on_boundary(const Point &point, double eps) const
 {
-    if (this->contour.on_boundary(point, eps))
+    if (::Slic3r::polygon_on_boundary(this->contour, point, eps))
         return true;
     for (const Polygon &hole : this->holes)
-        if (hole.on_boundary(point, eps))
+        if (::Slic3r::polygon_on_boundary(hole, point, eps))
             return true;
     return false;
 }
@@ -147,12 +147,12 @@ bool ExPolygon::on_boundary(const Point &point, double eps) const
 Point ExPolygon::point_projection(const Point &point) const
 {
     if (this->holes.empty()) {
-        return this->contour.point_projection(point);
+        return ::Slic3r::point_projection(this->contour, point);
     } else {
         double dist_min2 = std::numeric_limits<double>::max();
         Point  closest_pt_min;
         for (size_t i = 0; i < this->num_contours(); ++ i) {
-            Point closest_pt = this->contour_or_hole(i).point_projection(point);
+            Point closest_pt = ::Slic3r::point_projection(this->contour_or_hole(i), point);
             double d2 = (closest_pt - point).cast<double>().squaredNorm();
             if (d2 < dist_min2) {
                 dist_min2      = d2;

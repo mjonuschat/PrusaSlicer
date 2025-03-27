@@ -32,121 +32,6 @@ using namespace Slic3r::Biz;
 
 namespace Slic3r {
 
-Lines Polygon::lines() const
-{
-    return to_lines(*this);
-}
-
-Polyline Polygon::split_at_vertex(const Point &point) const
-{
-    // find index of point
-    for (const Point &pt : this->points)
-        if (pt == point)
-            return this->split_at_index(int(&pt - &this->points.front()));
-    throw Slic3r::InvalidArgument("Point not found");
-    return Polyline();
-}
-
-// Split a closed polygon into an open polyline, with the split point duplicated at both ends.
-Polyline Polygon::split_at_index(int index) const
-{
-    Polyline polyline;
-    polyline.points.reserve(this->points.size() + 1);
-    for (Points::const_iterator it = this->points.begin() + index; it != this->points.end(); ++it)
-        polyline.points.push_back(*it);
-    for (Points::const_iterator it = this->points.begin(); it != this->points.begin() + index + 1; ++it)
-        polyline.points.push_back(*it);
-    return polyline;
-}
-
-void Polygon::douglas_peucker(double tolerance)
-{
-    this->points.push_back(this->points.front());
-    Points p = Algorithms::DouglasPeucker::douglas_peucker(this->points, tolerance);
-    p.pop_back();
-    this->points = std::move(p);
-}
-
-Polygons Polygon::simplify(double tolerance) const
-{
-    // Works on CCW polygons only, CW contour will be reoriented to CCW by Clipper's simplify_polygons()!
-    assert(Algorithms::Polygon::is_counter_clockwise(*this));
-
-    // repeat first point at the end in order to apply Douglas-Peucker
-    // on the whole polygon
-    Points points = this->points;
-    points.push_back(points.front());
-    Polygon p(Algorithms::DouglasPeucker::douglas_peucker(points, tolerance));
-    p.points.pop_back();
-    
-    Polygons pp;
-    pp.push_back(p);
-    return simplify_polygons(pp);
-}
-
-// Only call this on convex polygons or it will return invalid results
-void Polygon::triangulate_convex(Polygons* polygons) const
-{
-    for (Points::const_iterator it = this->points.begin() + 2; it != this->points.end(); ++it) {
-        Polygon p;
-        p.points.reserve(3);
-        p.points.push_back(this->points.front());
-        p.points.push_back(*(it-1));
-        p.points.push_back(*it);
-        
-        // this should be replaced with a more efficient call to a merge_collinear_segments() method
-        if (p.area() > 0) polygons->push_back(p);
-    }
-}
-
-// center of mass
-// source: https://en.wikipedia.org/wiki/Centroid
-Point Polygon::centroid() const
-{
-    double area_sum = 0.;
-    Vec2d  c(0., 0.);
-    if (points.size() >= 3) {
-        Vec2d p1 = points.back().cast<double>();
-        for (const Point &p : points) {
-            Vec2d p2 = p.cast<double>();
-            double a = cross2(p1, p2);
-            area_sum += a;
-            c += (p1 + p2) * a;
-            p1 = p2;
-        }
-    }
-    return Point(Vec2d(c / (3. * area_sum)));
-}
-
-bool Polygon::intersection(const Line &line, Point *intersection) const
-{
-    if (this->points.size() < 2)
-        return false;
-    if (Algorithms::Line::intersection(Line(this->points.front(), this->points.back()), line, *intersection))
-        return true;
-    for (size_t i = 1; i < this->points.size(); ++ i)
-        if (Algorithms::Line::intersection(Line(this->points[i - 1], this->points[i]), line, *intersection))
-            return true;
-    return false;
-}
-
-bool Polygon::intersections(const Line &line, Points *intersections) const
-{
-    if (this->points.size() < 2)
-        return false;
-
-    size_t intersections_size = intersections->size();
-    Line l(this->points.back(), this->points.front());
-    for (size_t i = 0; i < this->points.size(); ++ i) {
-        l.b = this->points[i];
-        Point intersection;
-        if (Algorithms::Line::intersection(l, line, intersection))
-            intersections->emplace_back(std::move(intersection));
-        l.a = l.b;
-    }
-    return intersections->size() > intersections_size;
-}
-
 // Filter points from poly to the output with the help of FilterFn.
 // filter function receives two vectors:
 // v1: this_point - previous_point
@@ -189,25 +74,25 @@ Points filter_convex_concave_points_by_angle_threshold(const Points &poly, doubl
     }
 }
 
-Points Polygon::convex_points(double angle_threshold) const
+Points convex_points(const Polygon &polygon, double angle_threshold)
 {
-    return filter_convex_concave_points_by_angle_threshold(this->points, angle_threshold, [](const Vec2d &v1, const Vec2d &v2){ return cross2(v1, v2) > 0.; });
+    return filter_convex_concave_points_by_angle_threshold(polygon.points, angle_threshold, [](const Vec2d &v1, const Vec2d &v2){ return cross2(v1, v2) > 0.; });
 }
 
-Points Polygon::concave_points(double angle_threshold) const
+Points concave_points(const Polygon &polygon, double angle_threshold)
 {
-    return filter_convex_concave_points_by_angle_threshold(this->points, angle_threshold, [](const Vec2d &v1, const Vec2d &v2){ return cross2(v1, v2) < 0.; });
+    return filter_convex_concave_points_by_angle_threshold(polygon.points, angle_threshold, [](const Vec2d &v1, const Vec2d &v2){ return cross2(v1, v2) < 0.; });
 }
 
 // Projection of a point onto the polygon.
-Point Polygon::point_projection(const Point &point) const
+Point point_projection(const Polygon &polygon, const Point &point)
 {
     Point proj = point;
     double dmin = std::numeric_limits<double>::max();
-    if (! this->points.empty()) {
-        for (size_t i = 0; i < this->points.size(); ++ i) {
-            const Point &pt0 = this->points[i];
-            const Point &pt1 = this->points[(i + 1 == this->points.size()) ? 0 : i + 1];
+    if (! polygon.points.empty()) {
+        for (size_t i = 0; i < polygon.points.size(); ++ i) {
+            const Point &pt0 = polygon.points[i];
+            const Point &pt1 = polygon.points[(i + 1 == polygon.points.size()) ? 0 : i + 1];
             double d = (point - pt0).cast<double>().norm();
             if (d < dmin) {
                 dmin = d;
