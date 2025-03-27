@@ -32,6 +32,7 @@
 #include <cstdint>
 #include <iterator>
 
+#include "Slic3r/Biz/Algorithms/DouglasPeucker.hpp"
 #include "Slic3r/Biz/Algorithms/Line.hpp"
 #include "Circle.hpp"
 #include "../MultiPoint.hpp"
@@ -510,7 +511,7 @@ Path fit_path(const Points &src_in, double tolerance, double fit_circle_percent_
         out.erase(douglas_peucker_in_place(out.begin(), out.end(), tolerance), out.end());
     } else {
         // Simplify the polyline first using a fine threshold.
-        Points src = douglas_peucker(src_in, tolerance_fine);
+        Points src = Algorithms::DouglasPeucker::douglas_peucker(src_in, tolerance_fine);
         // Perform simplification & fitting.
         // Index of the start of a last polyline, which has not yet been decimated.
         int begin_pl_idx = 0;

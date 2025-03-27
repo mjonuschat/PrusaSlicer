@@ -4,6 +4,7 @@
 #include "Slic3r/Domain/Point.hpp"
 #include "Slic3r/Domain/Line.hpp"
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
+#include "Slic3r/Biz/Algorithms/DouglasPeucker.hpp"
 #include "Slic3r/Biz/Algorithms/Line.hpp"
 #include "Slic3r/Biz/Algorithms/MultiPoint.hpp"
 #include "Slic3r/Biz/Algorithms/Point.hpp"
@@ -165,6 +166,18 @@ bool is_straight(const Domain::Polyline& polyline)
     }
 
     return true;
+}
+
+void simplify(Domain::Polyline& polyline, const double tolerance)
+{
+    polyline.points = Algorithms::DouglasPeucker::douglas_peucker(polyline.points, tolerance);
+}
+
+Domain::Polyline simplified(const Domain::Polyline& polyline, const double tolerance)
+{
+    Domain::Polyline simplified_polyline = polyline;
+    Polyline::simplify(simplified_polyline, tolerance);
+    return simplified_polyline;
 }
 
 std::pair<Domain::Polyline, Domain::Polyline> split_at_point(const Domain::Polyline& polyline, const Domain::Point& split_point)

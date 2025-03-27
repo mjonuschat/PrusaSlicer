@@ -17,6 +17,7 @@
 #include <limits>
 #include <cstring>
 
+#include "Slic3r/Biz/Algorithms/DouglasPeucker.hpp"
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "BoundingBox.hpp"
 #include "ExPolygon.hpp"
@@ -87,9 +88,10 @@ bool ExPolygon::is_valid() const
 
 void ExPolygon::douglas_peucker(double tolerance)
 {
-    this->contour.douglas_peucker(tolerance);
-    for (Polygon &poly : this->holes)
-        poly.douglas_peucker(tolerance);
+    Algorithms::DouglasPeucker::douglas_peucker(this->contour, tolerance);
+    for (Polygon &poly : this->holes) {
+        Algorithms::DouglasPeucker::douglas_peucker(poly, tolerance);
+    }
 }
 
 bool ExPolygon::contains(const Line &line) const
@@ -203,14 +205,14 @@ Polygons ExPolygon::simplify_p(double tolerance) const
     {
         Polygon p = this->contour;
         p.points.push_back(p.points.front());
-        p.points = Slic3r::douglas_peucker(p.points, tolerance);
+        p.points = Algorithms::DouglasPeucker::douglas_peucker(p.points, tolerance);
         p.points.pop_back();
         pp.emplace_back(std::move(p));
     }
     // holes
     for (Polygon p : this->holes) {
         p.points.push_back(p.points.front());
-        p.points = Slic3r::douglas_peucker(p.points, tolerance);
+        p.points = Algorithms::DouglasPeucker::douglas_peucker(p.points, tolerance);
         p.points.pop_back();
         pp.emplace_back(std::move(p));
     }

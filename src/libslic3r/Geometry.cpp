@@ -23,6 +23,7 @@
 #include <array>
 #include <complex>
 
+#include "Slic3r/Biz/Algorithms/DouglasPeucker.hpp"
 #include "libslic3r.h"
 #include "Geometry.hpp"
 #include "ClipperUtils.hpp"
@@ -39,6 +40,8 @@ template <typename T> class point_data;
 #if defined(_MSC_VER) && defined(__clang__)
 #define BOOST_NO_CXX17_HDR_STRING_VIEW
 #endif
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r::Geometry {
 
@@ -70,7 +73,7 @@ void simplify_polygons(const Polygons &polygons, double tolerance, Polygons* ret
 {
     Polygons simplified_raw;
     for (const Polygon &source_polygon : polygons) {
-        Points simplified = Slic3r::douglas_peucker(to_polyline(source_polygon).points, tolerance);
+        Points simplified = Algorithms::DouglasPeucker::douglas_peucker(to_polyline(source_polygon).points, tolerance);
         if (simplified.size() > 3) {
             simplified.pop_back();
             simplified_raw.push_back(Polygon{ std::move(simplified) });

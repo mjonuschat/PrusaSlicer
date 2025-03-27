@@ -5,6 +5,7 @@
 #include <map>
 #include <cassert>
 
+#include "Slic3r/Biz/Algorithms/DouglasPeucker.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/GCode/GCodeWriter.hpp"
 #include "libslic3r/Model.hpp"
@@ -17,6 +18,7 @@
 #include "libslic3r/TriangleMesh.hpp"
 #include "libslic3r/libslic3r.h"
 
+using namespace Slic3r::Biz;
 
 namespace Slic3r::GCode {
 
@@ -121,7 +123,7 @@ void LabelObjects::init(const SpanOfConstPtrs<PrintObject>& objects, LabelObject
             // Now calculate the polygon and center for Cancel Object (this is not always used).
             Polygon outline = instance_outline(pi);
             assert(! outline.empty());
-            outline.douglas_peucker(50000.f);
+            Algorithms::DouglasPeucker::douglas_peucker(outline, 50000.f);
             Point center = outline.centroid();
             char buffer[64];
             std::snprintf(buffer, sizeof(buffer) - 1, "%.3f,%.3f", unscale<float>(center[0]), unscale<float>(center[1]));

@@ -15,6 +15,7 @@
 #include <cinttypes>
 #include <cstring>
 
+#include "Slic3r/Biz/Algorithms/DouglasPeucker.hpp"
 #include "Slic3r/Biz/Algorithms/Line.hpp"
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "BoundingBox.hpp"
@@ -61,7 +62,7 @@ Polyline Polygon::split_at_index(int index) const
 void Polygon::douglas_peucker(double tolerance)
 {
     this->points.push_back(this->points.front());
-    Points p = Slic3r::douglas_peucker(this->points, tolerance);
+    Points p = Algorithms::DouglasPeucker::douglas_peucker(this->points, tolerance);
     p.pop_back();
     this->points = std::move(p);
 }
@@ -75,7 +76,7 @@ Polygons Polygon::simplify(double tolerance) const
     // on the whole polygon
     Points points = this->points;
     points.push_back(points.front());
-    Polygon p(Slic3r::douglas_peucker(points, tolerance));
+    Polygon p(Algorithms::DouglasPeucker::douglas_peucker(points, tolerance));
     p.points.pop_back();
     
     Polygons pp;
@@ -497,7 +498,7 @@ void remove_collinear(Polygons &polys)
 
 static inline void simplify_polygon_impl(const Points &points, double tolerance, bool strictly_simple, Polygons &out)
 {
-    Points simplified = Slic3r::douglas_peucker(points, tolerance);
+    Points simplified = Algorithms::DouglasPeucker::douglas_peucker(points, tolerance);
     // then remove the last (repeated) point.
     simplified.pop_back();
     // Simplify the decimated contour by ClipperLib.

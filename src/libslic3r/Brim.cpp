@@ -18,6 +18,7 @@
 #include <cinttypes>
 #include <cstddef>
 
+#include "Slic3r/Biz/Algorithms/DouglasPeucker.hpp"
 #include "clipper/clipper_z.hpp"
 #include "ClipperUtils.hpp"
 #include "EdgeGrid.hpp"
@@ -43,6 +44,8 @@
 #if defined(BRIM_DEBUG_TO_SVG)
     #include "SVG.hpp"
 #endif
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r {
 
@@ -163,7 +166,7 @@ static Polygons top_level_outer_brim_islands(const ConstPrintObjectPtrs &top_lev
         for (const ExPolygon &ex_poly : get_print_object_bottom_layer_expolygons(*object)) {
             Polygons contour_offset = offset(ex_poly.contour, brim_separation, ClipperLib::jtSquare);
             for (Polygon &poly : contour_offset)
-                poly.douglas_peucker(scaled_resolution);
+                Algorithms::DouglasPeucker::douglas_peucker(poly, scaled_resolution);
 
             polygons_append(islands_object, std::move(contour_offset));
         }
@@ -535,7 +538,7 @@ ExtrusionEntityCollection make_brim(const Print &print, PrintTryCancel try_cance
         try_cancel();
         islands = expand(islands, float(flow.scaled_spacing()), ClipperLib::jtSquare);
         for (Polygon &poly : islands) 
-            poly.douglas_peucker(scaled_resolution);
+            Algorithms::DouglasPeucker::douglas_peucker(poly, scaled_resolution);
         polygons_append(loops, shrink(islands, 0.5f * float(flow.scaled_spacing())));
     }
     loops = union_pt_chained_outside_in(loops);

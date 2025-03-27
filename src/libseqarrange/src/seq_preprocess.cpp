@@ -11,6 +11,7 @@
 
 #include "seq_defs.hpp"
 
+#include "Slic3r/Biz/Algorithms/DouglasPeucker.hpp"
 #include "libslic3r/Geometry.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 
@@ -584,7 +585,7 @@ void decimate_PolygonForSequentialSolver(double                 DP_tolerance,
     decimated_polygon = polygon;
     Algorithms::Polygon::make_counter_clockwise(decimated_polygon);
 
-    decimated_polygon.douglas_peucker(DP_tolerance);
+    Algorithms::DouglasPeucker::douglas_peucker(decimated_polygon, DP_tolerance);
 
     BoundingBox polygon_box = get_extents(polygon);
     
