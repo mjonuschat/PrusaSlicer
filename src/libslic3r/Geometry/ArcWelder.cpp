@@ -280,7 +280,7 @@ static std::optional<Circle> try_create_circle(const Points::const_iterator begi
                 assert(prev_side != 0);
                 Point   point_on_bisector;
     #ifndef NDEBUG
-                point_on_bisector = { std::numeric_limits<coord_t>::max(), std::numeric_limits<coord_t>::max() };
+                point_on_bisector = Point{ std::numeric_limits<coord_t>::max(), std::numeric_limits<coord_t>::max() };
     #endif // NDEBUG
                 for (auto it = std::next(begin); it != end; ++ it) {
                     Domain::Vec2big this_point = it->cast<int64_t>();

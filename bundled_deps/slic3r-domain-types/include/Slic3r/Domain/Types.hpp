@@ -14,7 +14,7 @@ class Vec : public Eigen::Matrix<Scalar, Dim, 1, Eigen::DontAlign>
     using Parent = Eigen::Matrix<Scalar, Dim, 1, Eigen::DontAlign>;
 public:
     // Eigen vectors are not 0 initialized. Fix that.
-    Vec() : Parent(0, 0) {}
+    Vec() : Parent{Parent::Zero()} {}
     using Parent::Parent;
     using Parent::operator=;
 
