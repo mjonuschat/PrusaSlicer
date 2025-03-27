@@ -16,6 +16,7 @@
 #include <cstring>
 
 #include "Slic3r/Biz/Algorithms/Line.hpp"
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "BoundingBox.hpp"
 #include "Slic3r/Exception.hpp"
 #include "Polygon.hpp"
@@ -57,34 +58,6 @@ Polyline Polygon::split_at_index(int index) const
     return polyline;
 }
 
-bool Polygon::is_counter_clockwise() const
-{
-    return ClipperLib::Orientation(this->points);
-}
-
-bool Polygon::is_clockwise() const
-{
-    return !this->is_counter_clockwise();
-}
-
-bool Polygon::make_counter_clockwise()
-{
-    if (!this->is_counter_clockwise()) {
-        this->reverse();
-        return true;
-    }
-    return false;
-}
-
-bool Polygon::make_clockwise()
-{
-    if (this->is_counter_clockwise()) {
-        this->reverse();
-        return true;
-    }
-    return false;
-}
-
 void Polygon::douglas_peucker(double tolerance)
 {
     this->points.push_back(this->points.front());
@@ -96,7 +69,7 @@ void Polygon::douglas_peucker(double tolerance)
 Polygons Polygon::simplify(double tolerance) const
 {
     // Works on CCW polygons only, CW contour will be reoriented to CCW by Clipper's simplify_polygons()!
-    assert(this->is_counter_clockwise());
+    assert(Algorithms::Polygon::is_counter_clockwise(*this));
 
     // repeat first point at the end in order to apply Douglas-Peucker
     // on the whole polygon

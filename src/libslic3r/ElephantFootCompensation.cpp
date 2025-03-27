@@ -10,6 +10,7 @@
 #include <vector>
 #include <cstddef>
 
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "libslic3r.h"
 #include "ClipperUtils.hpp"
 #include "EdgeGrid.hpp"
@@ -23,6 +24,8 @@
 #include "libslic3r/Polygon.hpp"
 
 // #define CONTOUR_DISTANCE_DEBUG_SVG
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r {
 
@@ -543,9 +546,9 @@ static inline void smooth_compensation_banded(const Points &contour, float band,
 #ifndef NDEBUG
 static bool validate_expoly_orientation(const ExPolygon &expoly)
 {
-	bool valid = expoly.contour.is_counter_clockwise();
+	bool valid = Algorithms::Polygon::is_counter_clockwise(expoly.contour);
     for (auto &h : expoly.holes) 
-		valid &= h.is_clockwise();
+		valid &= Algorithms::Polygon::is_clockwise(h);
 	return valid;
 }
 #endif /* NDEBUG */
@@ -587,7 +590,7 @@ ExPolygon elephant_foot_compensation(const ExPolygon &input_expoly, double min_c
 			Polygon &poly = (idx_contour == 0) ? resampled.contour : resampled.holes[idx_contour - 1];
 			std::vector<ResampledPoint> resampled_point_parameters;
 			poly.points = resample_polygon(poly.points, resample_interval, resampled_point_parameters);
-			assert(poly.is_counter_clockwise() == (idx_contour == 0));
+			assert(Algorithms::Polygon::is_counter_clockwise(poly) == (idx_contour == 0));
 			std::vector<float> dists = contour_distance2(grid, idx_contour, poly.points, resampled_point_parameters, scaled_compensation, search_radius);
 			for (float &d : dists) {
 	//			printf("Point %d, Distance: %lf\n", int(&d - dists.data()), unscale<double>(d));

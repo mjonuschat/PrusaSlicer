@@ -12,6 +12,7 @@
 #include "libslic3r/SurfaceCollection.hpp"
 #include "libslic3r/libslic3r.h"
 #include "Slic3r/Biz/GCodeReader/GCodeReader.hpp"
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 
 #include "test_data.hpp"
 
@@ -20,6 +21,8 @@ using Biz::GCodeReader::GCodeReader;
 
 SCENARIO("Perimeter nesting", "[Perimeters]")
 {
+    using namespace Slic3r::Biz;
+
     struct TestData {
         ExPolygons          expolygons;
         // expected number of loops
@@ -101,13 +104,13 @@ SCENARIO("Perimeter nesting", "[Perimeters]")
         }
         THEN("expected number of ccw loops") {
             size_t ccw = std::count_if(loops.entities.begin(), loops.entities.end(), 
-                [](const ExtrusionEntity *ee){ return dynamic_cast<const ExtrusionLoop*>(ee)->polygon().is_counter_clockwise(); });
+                [](const ExtrusionEntity *ee){ return Algorithms::Polygon::is_counter_clockwise(dynamic_cast<const ExtrusionLoop*>(ee)->polygon()); });
             REQUIRE(ccw == data.ccw);
         }
         THEN("expected ccw/cw order") {
             std::vector<bool> ccw_order;
             for (auto *ee : loops.entities)
-                ccw_order.emplace_back(dynamic_cast<const ExtrusionLoop*>(ee)->polygon().is_counter_clockwise());
+                ccw_order.emplace_back(Algorithms::Polygon::is_counter_clockwise(dynamic_cast<const ExtrusionLoop*>(ee)->polygon()));
             REQUIRE(ccw_order == data.ccw_order);
         }
         THEN("expected nesting order") {
@@ -216,7 +219,7 @@ SCENARIO("Perimeters", "[Perimeters]")
                     current_loop.points.emplace_back(line.new_XY_scaled(self));
                 } else if (! line.cmd_is("M73")) {
                     // skips remaining time lines (M73)
-                    if (! current_loop.empty() && current_loop.is_clockwise())
+                    if (! current_loop.empty() && Slic3r::Biz::Algorithms::Polygon::is_clockwise(current_loop))
                         has_cw_loops = true;
                     current_loop.clear();
                 }
@@ -246,7 +249,7 @@ SCENARIO("Perimeters", "[Perimeters]")
             } else if (! line.cmd_is("M73")) {
                 // skips remaining time lines (M73)
                 if (! current_loop.empty()) {
-                    if (current_loop.is_clockwise())
+                    if (Slic3r::Biz::Algorithms::Polygon::is_clockwise(current_loop))
                         has_cw_loops = true;
                     if (is_approx<double>(self.f(), external_perimeter_speed)) {
                         // reset counter for second object
@@ -491,7 +494,7 @@ SCENARIO("Some weird coverage test", "[Perimeters]")
         Polygons acc;
         for (const ExtrusionEntity *ee : layerm->perimeters())
             for (const ExtrusionEntity *ee : dynamic_cast<const ExtrusionEntityCollection*>(ee)->entities)
-                append(acc, offset(dynamic_cast<const ExtrusionLoop*>(ee)->polygon().split_at_first_point(), float(pflow.scaled_width() / 2.f + SCALED_EPSILON)));
+                append(acc, offset(Slic3r::Biz::Algorithms::Polygon::split_at_first_point(dynamic_cast<const ExtrusionLoop*>(ee)->polygon()), float(pflow.scaled_width() / 2.f + SCALED_EPSILON)));
         covered_by_perimeters = union_(acc);
     }
     {

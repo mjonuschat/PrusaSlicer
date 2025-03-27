@@ -14,6 +14,7 @@
 #include <cstdlib>
 
 #include "Slic3r/Biz/Algorithms/Polyline.hpp"
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/ClipperZUtils.hpp" // IWYU pragma: keep
 #include "libslic3r/ExtrusionEntityCollection.hpp"
@@ -986,7 +987,7 @@ void LoopInterfaceProcessor::generate(SupportGeneratorLayerExtruded &top_contact
                 Polygon     &contour = (i_contour == 0) ? it_contact_expoly->contour : it_contact_expoly->holes[i_contour - 1];
                 const Point *seg_current_pt = nullptr;
                 double     seg_current_t  = 0.;
-                if (! intersection_pl(contour.split_at_first_point(), overhang_with_margin).empty()) {
+                if (! intersection_pl(Algorithms::Polygon::split_at_first_point(contour), overhang_with_margin).empty()) {
                     // The contour is below the overhang at least to some extent.
                     //FIXME ideally one would place the circles below the overhang only.
                     // Walk around the contour and place circles so their centers are not closer than circle_distance from each other.
@@ -1075,7 +1076,7 @@ void LoopInterfaceProcessor::generate(SupportGeneratorLayerExtruded &top_contact
         for (Polygons::const_iterator it = loop_polygons.begin(); it != loop_polygons.end(); ++ it) {
             assert(map_split_points.find(it->first_point()) == map_split_points.end());
             map_split_points[it->first_point()] = -1;
-            loop_lines.push_back(it->split_at_first_point());
+            loop_lines.push_back(Algorithms::Polygon::split_at_first_point(*it));
         }
         loop_lines = intersection_pl(loop_lines, expand(overhang_polygons, scale_(SUPPORT_MATERIAL_MARGIN)));
         // Because a closed loop has been split to a line, loop_lines may contain continuous segments split to 2 pieces.

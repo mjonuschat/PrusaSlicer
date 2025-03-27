@@ -4,6 +4,8 @@
 #include <catch2/catch_approx.hpp>
 #include "test_utils.hpp"
 
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
+
 #include <libslic3r/Execution/ExecutionSeq.hpp>
 
 #include <arrange/ArrangeBase.hpp>
@@ -40,6 +42,7 @@
 #include <random>
 
 using namespace Catch;
+using namespace Slic3r::Biz;
 
 template<class ArrItem = Slic3r::arr2::ArrangeItem>
 static std::vector<ArrItem> prusa_parts(double infl = 0.) {
@@ -56,7 +59,7 @@ static std::vector<ArrItem> prusa_parts(double infl = 0.) {
             std::reverse(inp_cpy.back().contour.begin(),
                          inp_cpy.back().contour.end());
 
-            REQUIRE(inp_cpy.back().contour.is_counter_clockwise());
+            REQUIRE(Algorithms::Polygon::is_counter_clockwise(inp_cpy.back().contour));
 
             if (infl > 0.)
                 inp_cpy = offset_ex(inp_cpy, scaled(std::ceil(infl / 2.)));
@@ -83,7 +86,7 @@ static std::vector<Slic3r::arr2::ArrangeItem> prusa_parts_ex(double infl = 0.)
 
             REQUIRE(std::all_of(inp_cpy.begin(), inp_cpy.end(),
                                 [](const ExPolygon &p) {
-                                    return p.contour.is_counter_clockwise();
+                                    return Algorithms::Polygon::is_counter_clockwise(p.contour);
                                 }));
 
             if (infl > 0.)

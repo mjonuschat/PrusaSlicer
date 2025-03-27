@@ -3,6 +3,7 @@ project(slic3r-biz-algorithms)
 add_library(slic3r-biz-algorithms
     include/Slic3r/Biz/Algorithms/BoundingBox.hpp
     src/Slic3r/Biz/Algorithms/BoundingBox.cpp
+    src/Slic3r/Biz/Algorithms/Scaling.cpp
     include/Slic3r/Biz/Algorithms/Line.hpp
     src/Slic3r/Biz/Algorithms/Line.cpp
     include/Slic3r/Biz/Algorithms/MultiPoint.hpp
@@ -19,7 +20,8 @@ add_library(slic3r-biz-algorithms
 target_include_directories(slic3r-biz-algorithms PUBLIC include)
 target_include_directories(slic3r-biz-algorithms PRIVATE src)
 
-target_link_libraries(slic3r-biz-algorithms PUBLIC slic3r-domain slic3r-base)
+# FIXME: Temporarily link libslic3r until Clipper integration refactoring.
+target_link_libraries(slic3r-biz-algorithms PUBLIC slic3r-domain slic3r-base libslic3r)
 
 if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
     add_executable(slic3r-biz-algorithms-tests

@@ -3,11 +3,13 @@
 #include <catch2/catch_approx.hpp>
 #include <test_utils.hpp>
 
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include <libslic3r/TriangleMesh.hpp>
 #include <libslic3r/AABBTreeIndirect.hpp>
 #include <libslic3r/AABBTreeLines.hpp>
 
 using namespace Slic3r;
+using namespace Slic3r::Biz;
 using namespace Catch;
 
 TEST_CASE("Building a tree over a box, ray caster and closest query", "[AABBIndirect]")
@@ -126,7 +128,7 @@ TEST_CASE("Find the closest point from ExPolys", "[ClosestPoint]") {
 
     std::vector<Linef> lines;
     auto add_lines = [&lines](const Polygon& poly) {
-        for (const auto &line : poly.lines())
+        for (const auto &line : Algorithms::Polygon::to_lines(poly))
             lines.emplace_back(
                 line.a.cast<double>(), 
                 line.b.cast<double>());

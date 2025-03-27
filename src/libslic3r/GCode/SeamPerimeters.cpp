@@ -7,6 +7,7 @@
 
 #include <boost/hana/functional/overload_linearly.hpp>
 
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/Layer.hpp"
 #include "libslic3r/GCode/SeamGeometry.hpp"
@@ -15,6 +16,8 @@
 #include "libslic3r/GCode/SeamPainting.hpp"
 #include "libslic3r/MultiPoint.hpp"
 #include "tcbspan/span.hpp"
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r::Seams::Perimeters::Impl {
 PerimeterPoints oversample_painted(
@@ -529,7 +532,8 @@ Perimeter Perimeter::create(
         Impl::get_angle_types(smooth_angles, params.convex_threshold, params.concave_threshold)};
     angle_types = Impl::merge_angle_types(angle_types, smooth_angle_types, positions, params.smooth_angle_arm_length);
 
-    const bool is_hole{polygon.is_clockwise()};
+
+    const bool is_hole{Algorithms::Polygon::is_clockwise(polygon)};
 
     return Perimeter{
         layer_info.slice_z,

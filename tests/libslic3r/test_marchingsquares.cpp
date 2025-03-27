@@ -3,6 +3,7 @@
 
 #include <fstream>
 
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include <libslic3r/MarchingSquares.hpp>
 #include <libslic3r/SLA/RasterToPolygons.hpp>
 
@@ -17,6 +18,7 @@
 #include <libslic3r/SlicesToTriangleMesh.hpp>
 
 using namespace Slic3r;
+using namespace Slic3r::Biz;
 
 static double area(const sla::PixelDim &pxd)
 {
@@ -116,10 +118,10 @@ static void test_expolys(Rst &&             rst,
     
     REQUIRE(extracted.size() == ref.size());
     for (size_t i = 0; i < ref.size(); ++i) {
-        REQUIRE(extracted[i].contour.is_counter_clockwise());
+        REQUIRE(Algorithms::Polygon::is_counter_clockwise(extracted[i].contour));
         REQUIRE(extracted[i].holes.size() == ref[i].holes.size());
         
-        for (auto &h : extracted[i].holes) REQUIRE(h.is_clockwise());
+        for (auto &h : extracted[i].holes) REQUIRE(Algorithms::Polygon::is_clockwise(h));
         
         double refa = ref[i].area();
         double abs_err = std::abs(extracted[i].area() - refa);

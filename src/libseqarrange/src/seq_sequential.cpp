@@ -9940,7 +9940,7 @@ bool optimize_ConsequentialWeakPolygonNonoverlappingBinaryCentered(z3::solver   
 								   const ProgressRange                              &progress_range,								   
 								   std::function<void(int)>                          progress_callback)
 {
-    assert(solver_configuration.plate_bounding_polygon.is_counter_clockwise());
+    assert(Algorithms::Polygon::is_counter_clockwise(solver_configuration.plate_bounding_polygon));
     assert(solver_configuration.plate_bounding_polygon.points.size() > 0);
 	   
     z3::set_param("timeout", solver_configuration.optimization_timeout.c_str());

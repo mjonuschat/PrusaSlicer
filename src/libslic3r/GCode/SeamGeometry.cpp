@@ -6,6 +6,7 @@
 #include <limits>
 #include <cinttypes>
 
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/Layer.hpp"
 #include "libslic3r/AABBTreeLines.hpp"
@@ -13,6 +14,8 @@
 #include "libslic3r/Flow.hpp"
 #include "libslic3r/LayerRegion.hpp"
 #include "libslic3r/Point.hpp"
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r::Seams::Geometry {
 
@@ -285,14 +288,14 @@ BoundedPolygons project_to_geometry(const Geometry::Extrusions &external_perimet
                         expanded_extrusion.front(),
                         external_perimeter.overhangs,
                         expanded_extrusion.front().bounding_box(),
-                        external_perimeter.polygon.is_clockwise(),
+                        Algorithms::Polygon::is_clockwise(external_perimeter.polygon),
                     };
                 }
                 return BoundedPolygon{
                     external_perimeter.polygon,
                     external_perimeter.overhangs,
                     external_perimeter.polygon.bounding_box(),
-                    external_perimeter.polygon.is_clockwise()
+                    Algorithms::Polygon::is_clockwise(external_perimeter.polygon)
                 };
             }
 

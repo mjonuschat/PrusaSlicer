@@ -58,8 +58,6 @@ public:
 
     BoundingBox bounding_box() const;
 
-    int closest_point_index(const Point &point) const { return Slic3r::Biz::Algorithms::MultiPoint::closest_point_index(*this, point); }
-
     static Polygon new_scale(const std::vector<Vec2d> &points) {
         Polygon pgn;
         pgn.points.reserve(points.size());
@@ -74,11 +72,6 @@ public:
     Polyline split_at_index(int index) const;
     // Split a closed polygon into an open polyline, with the split point duplicated at both ends.
     Polyline split_at_first_point() const { return this->split_at_index(0); }
-
-    bool is_counter_clockwise() const;
-    bool is_clockwise() const;
-    bool make_counter_clockwise();
-    bool make_clockwise();
 
     void douglas_peucker(double tolerance);
 

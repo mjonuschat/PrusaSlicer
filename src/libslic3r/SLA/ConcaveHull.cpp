@@ -8,9 +8,12 @@
 #include <iterator>
 #include <limits>
 
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/Line.hpp"
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r {
 namespace sla {
@@ -143,7 +146,7 @@ Polygons offset_waffle_style(const ConcaveHull &hull, coord_t delta)
     auto arc_tolerance = scaled<double>(0.01);
     Polygons res = closing(hull.polygons(), 2 * delta, delta, ClipperLib::jtRound, arc_tolerance);
 
-    auto it = std::remove_if(res.begin(), res.end(), [](Polygon &p) { return p.is_clockwise(); });
+    auto it = std::remove_if(res.begin(), res.end(), [](Polygon &p) { return Algorithms::Polygon::is_clockwise(p); });
     res.erase(it, res.end());
 
     return res;

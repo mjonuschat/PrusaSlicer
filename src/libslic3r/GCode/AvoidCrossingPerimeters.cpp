@@ -15,6 +15,7 @@
 #include <cstddef>
 
 #include "Slic3r/Biz/Algorithms/Line.hpp"
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "../Layer.hpp"
 #include "../GCode.hpp"
 #include "../EdgeGrid.hpp"
@@ -1027,7 +1028,7 @@ static ExPolygons inner_offset(const ExPolygons &ex_polygons, double offset)
             offsets.reserve(ex_poly.holes.size() + 1);
             for (size_t idx_contour = 0; idx_contour <= ex_poly.holes.size(); ++idx_contour) {
                 const Polygon &poly = (idx_contour == 0) ? ex_poly.contour : ex_poly.holes[idx_contour - 1];
-                assert(poly.is_counter_clockwise() == (idx_contour == 0));
+                assert(Algorithms::Polygon::is_counter_clockwise(poly) == (idx_contour == 0));
                 std::vector<float> distances = contour_distance(grid, ex_poly_distances[idx_contour], idx_contour, poly, offset, search_radius);
                 for (float &distance : distances) {
                     if (distance < min_contour_width)

@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <cstddef>
 
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "ClipperUtils.hpp"
 #include "Geometry.hpp"
 #include "libslic3r/BoundingBox.hpp"
@@ -310,7 +311,7 @@ Polygons BridgeDetector::coverage(double angle) const
                 for (const Polygon &trapezoid : trapezoids) {
                     // not nice, we need a more robust non-numeric check
                     size_t n_supported = 0;
-                    for (const Line &supported_line : intersection_ln(trapezoid.lines(), anchors))
+                    for (const Line &supported_line : intersection_ln(Algorithms::Polygon::to_lines(trapezoid), anchors))
                         if (supported_line.length() >= this->spacing)
                             ++ n_supported;
                     if (n_supported >= 2) 

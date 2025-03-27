@@ -1,3 +1,4 @@
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/Geometry.hpp"
 #include "libslic3r/Point.hpp"
@@ -8,6 +9,7 @@
 
 using namespace Slic3r;
 using namespace Slic3r::Algorithm;
+using namespace Slic3r::Biz;
 using namespace Catch;
 
 constexpr bool export_svgs = false;
@@ -103,9 +105,9 @@ TEST_CASE_METHOD(LayerRegionFixture, "test the surface expansion", "[LayerRegion
     CHECK(result.at(1).expolygon.contour.size() == 14);
 
     // These lines in the polygons should correspond to the expansion depth.
-    CHECK(result.at(0).expolygon.contour.lines().at(2).length() == shells_expansion_depth);
-    CHECK(result.at(1).expolygon.contour.lines().at(7).length() == sparse_expansion_depth);
-    CHECK(result.at(1).expolygon.contour.lines().at(11).length() == sparse_expansion_depth);
+    CHECK(Algorithms::Polygon::to_lines(result.at(0).expolygon.contour).at(2).length() == shells_expansion_depth);
+    CHECK(Algorithms::Polygon::to_lines(result.at(1).expolygon.contour).at(7).length() == sparse_expansion_depth);
+    CHECK(Algorithms::Polygon::to_lines(result.at(1).expolygon.contour).at(11).length() == sparse_expansion_depth);
 
     CHECK(intersection_ex({result.at(0).expolygon}, expansion_zones[0].expolygons).size() == 0);
     CHECK(intersection_ex({result.at(0).expolygon}, expansion_zones[1].expolygons).size() == 0);
@@ -139,9 +141,9 @@ TEST_CASE_METHOD(LayerRegionFixture, "test the bridge expansion with the bridge 
     CHECK(result.at(1).expolygon.contour.size() == 14);
 
     // These lines in the polygons should correspond to the expansion depth.
-    CHECK(result.at(0).expolygon.contour.lines().at(2).length() == shells_expansion_depth);
-    CHECK(result.at(1).expolygon.contour.lines().at(7).length() == sparse_expansion_depth);
-    CHECK(result.at(1).expolygon.contour.lines().at(11).length() == sparse_expansion_depth);
+    CHECK(Algorithms::Polygon::to_lines(result.at(0).expolygon.contour).at(2).length() == shells_expansion_depth);
+    CHECK(Algorithms::Polygon::to_lines(result.at(1).expolygon.contour).at(7).length() == sparse_expansion_depth);
+    CHECK(Algorithms::Polygon::to_lines(result.at(1).expolygon.contour).at(11).length() == sparse_expansion_depth);
 
     CHECK(intersection_ex({result.at(0).expolygon}, expansion_zones[0].expolygons).size() == 0);
     CHECK(intersection_ex({result.at(0).expolygon}, expansion_zones[1].expolygons).size() == 0);

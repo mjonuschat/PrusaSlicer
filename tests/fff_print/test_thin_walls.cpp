@@ -142,8 +142,8 @@ SCENARIO("Medial Axis", "[ThinWalls]") {
                 REQUIRE(res.size() == 1);
             }
             THEN("medial axis has reasonable length") {
-                double perimeter = expolygon.contour.split_at_first_point().length();
-                REQUIRE(total_length(res) > perimeter / 2. / 4. * 3.);
+                double perimeter = Algorithms::Polygon::split_at_first_point(expolygon.contour).length();
+                REQUIRE(Algorithms::Polyline::total_length(res) > perimeter / 2. / 4. * 3.);
             }
         }
     }

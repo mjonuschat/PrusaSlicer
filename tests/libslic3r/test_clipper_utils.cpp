@@ -5,6 +5,7 @@
 #include <iostream>
 #include <boost/filesystem.hpp>
 
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "Slic3r/Biz/Algorithms/Polyline.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/ExPolygon.hpp"
@@ -256,7 +257,7 @@ SCENARIO("Various Clipper operations - t/clipper.t", "[ClipperUtils]") {
     }
     GIVEN("yet another square") {
         Slic3r::Polygon  square { { 10, 10 }, { 20, 10 }, { 20, 20 }, { 10, 20 } };
-        Slic3r::Polyline square_pl = square.split_at_first_point();
+        Slic3r::Polyline square_pl = Algorithms::Polygon::split_at_first_point(square);
         WHEN("no-op diff_pl") {
             Slic3r::Polylines res = Slic3r::diff_pl({ square_pl }, Polygons{});
             THEN("returns the right number of polylines") {
@@ -289,11 +290,11 @@ SCENARIO("Various Clipper operations - t/clipper.t", "[ClipperUtils]") {
                 { 123.5943,201.0306 }, { 132.8461,208.1296 }, { 141.4901,211.7094 }, { 147.172,214.4458 }
             }) };
         THEN("contour is counter-clockwise") {
-            REQUIRE(circle_with_hole.contour.is_counter_clockwise());
+            REQUIRE(Algorithms::Polygon::is_counter_clockwise(circle_with_hole.contour));
         }
         THEN("hole is counter-clockwise") {
             REQUIRE(circle_with_hole.holes.size() == 1);
-            REQUIRE(circle_with_hole.holes.front().is_clockwise());
+            REQUIRE(Algorithms::Polygon::is_clockwise(circle_with_hole.holes.front()));
         }
     
         WHEN("clipping a line") {

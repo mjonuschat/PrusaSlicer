@@ -1,9 +1,11 @@
 #include <catch2/catch_test_macros.hpp>
 
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Polygon.hpp"
 
 using namespace Slic3r;
+using namespace Slic3r::Biz;
 
 SCENARIO("Converted Perl tests", "[Polygon]") {
     GIVEN("ccw_square") {
@@ -36,35 +38,35 @@ SCENARIO("Converted Perl tests", "[Polygon]") {
             REQUIRE(cw_square.contains({ 150, 150 }));
         }
         THEN("conversion to lines") {
-            REQUIRE(ccw_square.lines() == Lines{
+            REQUIRE(Algorithms::Polygon::to_lines(ccw_square) == Lines{
                 { { 100, 100 }, { 200, 100 } },
                 { { 200, 100 }, { 200, 200 } },
                 { { 200, 200 }, { 100, 200 } },
                 { { 100, 200 }, { 100, 100 } } });
         }
         THEN("split_at_first_point") {
-            REQUIRE(ccw_square.split_at_first_point() == Polyline { ccw_square[0], ccw_square[1], ccw_square[2], ccw_square[3], ccw_square[0] });
+            REQUIRE(Algorithms::Polygon::split_at_first_point(ccw_square) == Polyline { ccw_square[0], ccw_square[1], ccw_square[2], ccw_square[3], ccw_square[0] });
         }
         THEN("split_at_index(2)") {
-            REQUIRE(ccw_square.split_at_index(2) == Polyline { ccw_square[2], ccw_square[3], ccw_square[0], ccw_square[1], ccw_square[2] });
+            REQUIRE(Algorithms::Polygon::split_at_index(ccw_square, 2) == Polyline { ccw_square[2], ccw_square[3], ccw_square[0], ccw_square[1], ccw_square[2] });
         }
         THEN("split_at_vertex(ccw_square[2])") {
-            REQUIRE(ccw_square.split_at_vertex(ccw_square[2]) == Polyline { ccw_square[2], ccw_square[3], ccw_square[0], ccw_square[1], ccw_square[2] });
+            REQUIRE(Algorithms::Polygon::split_at_vertex(ccw_square, ccw_square[2]) == Polyline { ccw_square[2], ccw_square[3], ccw_square[0], ccw_square[1], ccw_square[2] });
         }
         THEN("is_counter_clockwise") {
-            REQUIRE(ccw_square.is_counter_clockwise());
+            REQUIRE(Algorithms::Polygon::is_counter_clockwise(ccw_square));
         }
         THEN("! is_counter_clockwise") {
-            REQUIRE(! cw_square.is_counter_clockwise());
+            REQUIRE(!Algorithms::Polygon::is_counter_clockwise(cw_square));
         }
         THEN("make_counter_clockwise") {
-            cw_square.make_counter_clockwise();
-            REQUIRE(cw_square.is_counter_clockwise());
+            Algorithms::Polygon::make_counter_clockwise(cw_square);
+            REQUIRE(Algorithms::Polygon::is_counter_clockwise(cw_square));
         }
         THEN("make_counter_clockwise^2") {
-            cw_square.make_counter_clockwise();
-            cw_square.make_counter_clockwise();
-            REQUIRE(cw_square.is_counter_clockwise());
+            Algorithms::Polygon::make_counter_clockwise(cw_square);
+            Algorithms::Polygon::make_counter_clockwise(cw_square);
+            REQUIRE(Algorithms::Polygon::is_counter_clockwise(cw_square));
         }
         THEN("first_point") {
             REQUIRE(&ccw_square.first_point() == &ccw_square.points.front());
@@ -83,7 +85,7 @@ SCENARIO("Converted Perl tests", "[Polygon]") {
             REQUIRE(triangles.size() == 4);
         }
         THEN("all triangles are ccw") {
-            auto it = std::find_if(triangles.begin(), triangles.end(), [](const Polygon &tri) { return tri.is_clockwise(); });
+            auto it = std::find_if(triangles.begin(), triangles.end(), [](const Polygon &tri) { return Algorithms::Polygon::is_clockwise(tri); });
             REQUIRE(it == triangles.end());
         }
     }

@@ -3,6 +3,7 @@
 #include <iostream>
 #include <boost/filesystem.hpp>
 
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/ElephantFootCompensation.hpp"
 #include "libslic3r/ExPolygon.hpp"
@@ -10,6 +11,7 @@
 #include "libslic3r/SVG.hpp"
 
 using namespace Slic3r;
+using namespace Slic3r::Biz;
 
 // #define TESTS_EXPORT_SVGS
 
@@ -401,8 +403,8 @@ static ExPolygon contour_with_hole()
 
 static bool is_valid_orientation(const ExPolygon &p)
 {
-    bool ret = p.contour.is_counter_clockwise();
-    for (auto &h : p.holes) ret = ret && h.is_clockwise();
+    bool ret = Algorithms::Polygon::is_counter_clockwise(p.contour);
+    for (auto &h : p.holes) ret = ret && Algorithms::Polygon::is_clockwise(h);
     return ret;
 }
 

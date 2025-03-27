@@ -9,6 +9,7 @@
 #include <arrange/NFP/NFPConcave_Tesselate.hpp>
 
 #include "CircularEdgeIterator.hpp"
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include <libslic3r/ClipperUtils.hpp>
 #include <libslic3r/ExPolygon.hpp>
 #include <libslic3r/Line.hpp>
@@ -34,6 +35,8 @@ namespace Slic3r { using LargeInt = boost::multiprecision::int128_t; }
 #include <utility>
 #include <vector>
 #include <cassert>
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r {
 
@@ -160,7 +163,7 @@ Polygon ifp_convex_convex(const Polygon &fixed, const Polygon &movable)
 
     // find the first hole
     auto it = std::find_if(ifp.begin(), ifp.end(), [](const Polygon &subifp){
-        return subifp.is_clockwise();
+        return Algorithms::Polygon::is_clockwise(subifp);
     });
 
     if (it != ifp.end()) {
@@ -200,7 +203,7 @@ ExPolygons ifp_convex(const arr2::IrregularBed &bed, const Polygon &convexpoly)
     Polygons ret;
 
     std::copy_if(ifp.begin(), ifp.end(), std::back_inserter(ret),
-                 [](const Polygon &p) { return p.is_clockwise(); });
+                 [](const Polygon &p) { return Algorithms::Polygon::is_clockwise(p); });
 
     for (Polygon &p : ret)
         std::reverse(p.begin(), p.end());

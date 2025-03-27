@@ -1,7 +1,8 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "Slic3r/Biz/Algorithms/Line.hpp"
-#include "Slic3r/Biz/Algorithms/PolyLine.hpp"
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
+#include "Slic3r/Biz/Algorithms/Polyline.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/Polygon.hpp"
@@ -156,7 +157,7 @@ TEST_CASE("Creating a polyline generates the obvious lines", "[Geometry]"){
 
 TEST_CASE("Splitting a Polygon generates a polyline correctly", "[Geometry]"){
     Slic3r::Polygon polygon(Points({Point(0, 0), Point(10, 0), Point(5, 5)}));
-    Slic3r::Polyline split = polygon.split_at_index(1);
+    Slic3r::Polyline split = Algorithms::Polygon::split_at_index(polygon, 1);
     REQUIRE(split.points[0]==Point(10,0));
     REQUIRE(split.points[1]==Point(5,5));
     REQUIRE(split.points[2]==Point(0,0));
@@ -527,7 +528,7 @@ SCENARIO("Polygon convex/concave detection", "[Geometry]"){
             REQUIRE(square.convex_points(angle_threshold).size() == 4);
         }
         THEN("It has 4 concave points clockwise"){
-            square.make_clockwise();
+            Algorithms::Polygon::make_clockwise(square);
             REQUIRE(square.concave_points(angle_threshold).size() == 4);
             REQUIRE(square.convex_points(angle_threshold).size() == 0);
         }

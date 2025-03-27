@@ -7,6 +7,7 @@
 
 #include "ExtrusionLine.hpp"
 #include "Slic3r/Biz/Algorithms/Line.hpp"
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "../../PerimeterGenerator.hpp"
 #include "libslic3r/Arachne/utils/ExtrusionJunction.hpp"
 #include "libslic3r/BoundingBox.hpp"
@@ -240,7 +241,7 @@ bool ExtrusionLine::is_contour() const
         poly.points.emplace_back(junction.p);
 
     // Arachne produces contour with clockwise orientation and holes with counterclockwise orientation.
-    return poly.is_clockwise();
+    return Algorithms::Polygon::is_clockwise(poly);
 }
 
 double ExtrusionLine::area() const {

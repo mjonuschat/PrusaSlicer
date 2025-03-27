@@ -11,6 +11,7 @@
 #include <cassert>
 #include <cstddef>
 
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "ClipperUtils.hpp"
 #include "Geometry/ConvexHull.hpp"
 #include "Point.hpp"
@@ -23,6 +24,8 @@
 #include "libslic3r/Polygon.hpp"
 
 #include "MultipleBeds.hpp"
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r {
 

@@ -17,6 +17,7 @@
 #include <limits>
 #include <cstring>
 
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "BoundingBox.hpp"
 #include "ExPolygon.hpp"
 #include "Geometry/MedialAxis.hpp"
@@ -27,6 +28,8 @@
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Polyline.hpp"
 #include "libslic3r/libslic3r.h"
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r {
 
@@ -75,9 +78,9 @@ double ExPolygon::area() const
 
 bool ExPolygon::is_valid() const
 {
-    if (!this->contour.is_valid() || !this->contour.is_counter_clockwise()) return false;
+    if (!this->contour.is_valid() || !Algorithms::Polygon::is_counter_clockwise(this->contour)) return false;
     for (Polygons::const_iterator it = this->holes.begin(); it != this->holes.end(); ++it) {
-        if (!(*it).is_valid() || (*it).is_counter_clockwise()) return false;
+        if (!(*it).is_valid() || Algorithms::Polygon::is_counter_clockwise((*it))) return false;
     }
     return true;
 }
@@ -345,9 +348,9 @@ void ExPolygon::medial_axis(double min_width, double max_width, Polylines* polyl
 
 Lines ExPolygon::lines() const
 {
-    Lines lines = this->contour.lines();
+    Lines lines = Algorithms::Polygon::to_lines(this->contour);
     for (Polygons::const_iterator h = this->holes.begin(); h != this->holes.end(); ++h) {
-        Lines hole_lines = h->lines();
+        Lines hole_lines = Algorithms::Polygon::to_lines(*h);
         lines.insert(lines.end(), hole_lines.begin(), hole_lines.end());
     }
     return lines;

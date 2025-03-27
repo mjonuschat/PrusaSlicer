@@ -17,6 +17,7 @@
 #include <cstdio>
 #include <cstdlib>
 
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "Slic3r/Biz/libpgcode/Utils.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/BoundingBox.hpp"
@@ -30,6 +31,7 @@
 #include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/libslic3r.h"
 
+using namespace Slic3r::Biz;
 
 namespace Slic3r
 {
@@ -1438,7 +1440,7 @@ WipeTower::ToolChangeResult WipeTower::finish_layer()
         
         for (size_t i = 0; i < loops_num; ++ i) {
             poly = offset(poly, scale_(spacing)).front();
-            int cp = poly.closest_point_index(Point::new_scale(writer.x(), writer.y()));
+            int cp = Algorithms::Polygon::closest_point_index(poly, Point::new_scale(writer.x(), writer.y()));
             writer.travel(unscale(poly.points[cp]).cast<float>());
             for (int i=cp+1; true; ++i ) {
                 if (i==int(poly.points.size()))
@@ -1455,7 +1457,7 @@ WipeTower::ToolChangeResult WipeTower::finish_layer()
     }
 
     // Now prepare future wipe.
-    int i = poly.closest_point_index(Point::new_scale(writer.x(), writer.y()));
+    int i = Algorithms::Polygon::closest_point_index(poly, Point::new_scale(writer.x(), writer.y()));
     writer.add_wipe_point(writer.pos());
     writer.add_wipe_point(unscale(poly.points[i==0 ? int(poly.points.size())-1 : i-1]).cast<float>());
 

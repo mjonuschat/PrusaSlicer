@@ -18,6 +18,7 @@
 #include <cassert>
 #include <cstdlib>
 
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "BoundingBox.hpp"
 #include "ClipperUtils.hpp"
 #include "Layer.hpp"
@@ -1412,7 +1413,7 @@ static ColorProjectionLines create_color_projection_lines(const Polygon &polygon
     ColorProjectionLines color_projection_lines;
     color_projection_lines.reserve(polygon.size());
 
-    for (const Line &line : polygon.lines()) {
+    for (const Line &line : Algorithms::Polygon::to_lines(polygon)) {
         color_projection_lines.emplace_back(line);
     }
 

@@ -22,6 +22,7 @@
 #include <cassert>
 
 #include "Slic3r/Biz/Algorithms/Polyline.hpp"
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "BoundingBox.hpp"
 #include "ExPolygon.hpp"
 #include "ExtrusionEntity.hpp"
@@ -1268,7 +1269,7 @@ void estimate_supports_malformations(SupportLayerPtrs &layers, float flow_width,
         for (const ExtrusionEntity *extrusion : l->support_fills.flatten().entities) {
             Polyline pl = extrusion->as_polyline();
             Polygon  pol(pl.points);
-            pol.make_counter_clockwise();
+            Algorithms::Polygon::make_counter_clockwise(pol);
 
             ExtrusionProcessor::PropertiesEstimationConfig config{};
             config.flow_width = flow_width;

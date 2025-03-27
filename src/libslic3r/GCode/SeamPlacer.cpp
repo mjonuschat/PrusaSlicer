@@ -10,6 +10,7 @@
 
 #include "SeamPlacer.hpp"
 
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/GCode/SeamShells.hpp"
 #include "libslic3r/GCode/SeamAligned.hpp"
@@ -17,6 +18,8 @@
 #include "libslic3r/GCode/SeamRandom.hpp"
 #include "libslic3r/GCode/ModelVisibility.hpp"
 #include "libslic3r/GCode/SeamGeometry.hpp"
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r::Seams {
 
@@ -245,7 +248,7 @@ Geometry::Direction1D get_direction(
     // In rare cases it may happen that the original geometry perimeter
     // polygon has different direction to the actual extrusion loop.
     // In that case the logic is exactly opposite.
-    if (perimeter_polygon.contour.is_clockwise() != loop.is_clockwise()) {
+    if (Algorithms::Polygon::is_clockwise(perimeter_polygon.contour) != loop.is_clockwise()) {
         result = result == Dir::forward ? Dir::backward : Dir::forward;
     }
     return result;

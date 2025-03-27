@@ -149,7 +149,7 @@ void preprocessing_test_2(void)
     {
 	Polygon scale_down_polygon;
 	scaleDown_PolygonForSequentialSolver(PRUSA_PART_POLYGONS[i], scale_down_polygon);
-	scale_down_polygon.make_counter_clockwise();
+	Slic3r::Biz::Algorithms::Polygon::make_counter_clockwise(scale_down_polygon);
 	polygons.push_back(scale_down_polygon);
 	unreachable_polygons.push_back(scale_down_polygon);
     }

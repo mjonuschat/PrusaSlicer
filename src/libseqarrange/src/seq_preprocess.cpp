@@ -22,6 +22,7 @@
 
 using namespace std;
 using namespace Slic3r;
+using namespace Slic3r::Biz;
 //using namespace ClipperLib;
 
 
@@ -375,7 +376,7 @@ void scaleDown_PolygonForSequentialSolver(coord_t                scale_factor,
     {
 	scale_down_polygon.points.insert(scale_down_polygon.points.begin() + i, Point(polygon.points[i].x() / scale_factor, polygon.points[i].y() / scale_factor));
     }
-    scale_down_polygon.make_counter_clockwise();    
+    Algorithms::Polygon::make_counter_clockwise(scale_down_polygon);
 }
 
 
@@ -387,7 +388,7 @@ Slic3r::Polygon scaleDown_PolygonForSequentialSolver(coord_t scale_factor, const
     {
 	scale_down_polygon.points.insert(scale_down_polygon.points.begin() + i, Point(polygon.points[i].x() / scale_factor, polygon.points[i].y() / scale_factor));
     }
-    scale_down_polygon.make_counter_clockwise();
+    Algorithms::Polygon::make_counter_clockwise(scale_down_polygon);
 
     return scale_down_polygon;
 }
@@ -581,7 +582,7 @@ void decimate_PolygonForSequentialSolver(double                 DP_tolerance,
 					 bool                   extra_safety)
 {
     decimated_polygon = polygon;
-    decimated_polygon.make_counter_clockwise();
+    Algorithms::Polygon::make_counter_clockwise(decimated_polygon);
 
     decimated_polygon.douglas_peucker(DP_tolerance);
 
@@ -711,7 +712,7 @@ void prepare_ExtruderPolygons(const SolverConfiguration                  &solver
 	    else
 	    {
 		decimated_polygon = object_to_print.pgns_at_height[j].second;
-		decimated_polygon.make_counter_clockwise();
+        Algorithms::Polygon::make_counter_clockwise(decimated_polygon);
 	    }
 	    
 	    if (!check_PolygonSizeFitToPlate(solver_configuration, SEQ_SLICER_SCALE_FACTOR, decimated_polygon))
@@ -769,7 +770,7 @@ void prepare_ObjectPolygons(const SolverConfiguration                        &so
 
     scaleDown_PolygonForSequentialSolver(raw_polygon,
 					 object_polygon);
-    object_polygon.make_counter_clockwise();    
+    Algorithms::Polygon::make_counter_clockwise(object_polygon);
 }
 
 
@@ -810,7 +811,7 @@ void prepare_UnreachableZonePolygons(const SolverConfiguration                  
 	
 	    scaleDown_PolygonForSequentialSolver(scaled_unreachable_polygons[i][j],
 						 scale_down_polygon);
-	    scale_down_polygon.make_counter_clockwise();
+        Algorithms::Polygon::make_counter_clockwise(scale_down_polygon);
 	    unreachable_polygons.push_back(scale_down_polygon);
 	}
     }    
@@ -857,7 +858,7 @@ void prepare_UnreachableZonePolygons(const SolverConfiguration                  
 	    
 	    scaleDown_PolygonForSequentialSolver(scaled_unreachable_polygons[i][j],
 						 scale_down_polygon);
-	    scale_down_polygon.make_counter_clockwise();	
+        Algorithms::Polygon::make_counter_clockwise(scale_down_polygon);
 	    unreachable_polygons.push_back(scale_down_polygon);
 	}
     }

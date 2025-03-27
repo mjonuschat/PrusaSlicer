@@ -17,6 +17,7 @@
 #include <cassert>
 #include <cstdlib>
 
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "Tesselate.hpp"
 #include "TriangleMesh.hpp"
 #include "TriangleMeshSlicer.hpp"
@@ -55,6 +56,8 @@
 #if defined(SLIC3R_DEBUG) || defined(SLIC3R_DEBUG_SLICE_PROCESSING)
 #include "SVG.hpp"
 #endif
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r {
 
@@ -1575,7 +1578,7 @@ static std::vector<typename PolygonsType<mesh_info>::type> make_loops(
                     if (this_mode == MeshSlicingParams::SlicingMode::Positive) {
                         // Reorient all loops to be CCW.
                         for (PolygonType &p : polygons) {
-                            p.make_counter_clockwise();
+                            Algorithms::Polygon::make_counter_clockwise(p);
                         }
                     } else if (this_mode == MeshSlicingParams::SlicingMode::PositiveLargestContour) {
                         // Keep just the largest polygon, make it CCW.

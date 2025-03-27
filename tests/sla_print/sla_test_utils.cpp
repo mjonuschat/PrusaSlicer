@@ -1,10 +1,13 @@
 #include "sla_test_utils.hpp"
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "libslic3r/TriangleMeshSlicer.hpp"
 #include "libslic3r/SLA/AGGRaster.hpp"
 #include "libslic3r/SLA/DefaultSupportTree.hpp"
 #include "libslic3r/SLA/BranchingTreeSLA.hpp"
 
 #include <iomanip>
+
+using namespace Slic3r::Biz;
 
 void test_support_model_collision(
     const std::string            &obj_filename,
@@ -287,7 +290,7 @@ static void _test_concave_hull(const Polygons &hull, const ExPolygons &polys)
     
     size_t cchull_holes = 0;
     for (const Slic3r::Polygon &p : hull)
-        cchull_holes += p.is_clockwise() ? 1 : 0;
+        cchull_holes += Algorithms::Polygon::is_clockwise(p) ? 1 : 0;
     
     REQUIRE(cchull_holes == 0);
     

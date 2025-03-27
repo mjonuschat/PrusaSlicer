@@ -20,6 +20,7 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "Slic3r/Exception.hpp"
 #include "Print.hpp"
 #include "BoundingBox.hpp"
@@ -50,6 +51,8 @@
 #include <boost/format.hpp>
 #include <boost/log/trivial.hpp>
 #include <boost/regex.hpp>
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r {
 
@@ -1146,7 +1149,7 @@ void Print::_make_skirt()
                     float(first_layer_height) // this will be overridden at G-code export time
                 }
             });
-        eloop.paths.back().polyline = loop.split_at_first_point();
+        eloop.paths.back().polyline = Algorithms::Polygon::split_at_first_point(loop);
         m_skirt.append(eloop);
         if (m_config.min_skirt_length.value > 0) {
             // The skirt length is limited. Sum the total amount of filament length extruded, in mm.

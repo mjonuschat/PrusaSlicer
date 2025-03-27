@@ -22,6 +22,7 @@
 
 #include "Slic3r/Biz/Algorithms/Line.hpp"
 #include "Slic3r/Biz/Algorithms/Polyline.hpp"
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "AABBTreeLines.hpp"
 #include "BoundingBox.hpp"
 #include "BridgeDetector.hpp"
@@ -267,7 +268,7 @@ static ExtrusionEntityCollection traverse_loops_classic(const PerimeterGenerator
             // We allow polyline reversal because Clipper may have randomly reversed polylines during clipping.
             chain_and_reorder_extrusion_paths(paths, &paths.front().first_point());
         } else {
-            paths.emplace_back(polygon.split_at_first_point(),
+            paths.emplace_back(Algorithms::Polygon::split_at_first_point(polygon),
                 ExtrusionAttributes{
                     role_normal,
                     ExtrusionFlow{
