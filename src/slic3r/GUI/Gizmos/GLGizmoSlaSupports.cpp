@@ -885,8 +885,21 @@ void GLGizmoSlaSupports::draw_island_config() {
     ImGui::SameLine();
     ImGui::Text("head radius %.2f mm", unscale<float>(sample_config.head_radius));
 
-    bool exist_change = false;
+    // copied from SLAPrint::Steps::support_points()
+    const SLAPrintObject *po = m_c->selection_info()->print_object();
+    const SLAPrintObjectConfig &cfg = po->config();
+    float head_diameter = (cfg.support_tree_type == sla::SupportTreeType::Branching) ?
+        float(cfg.branchingsupport_head_front_diameter):
+        float(cfg.support_head_front_diameter); // SupportTreeType::Organic
+    std::string button_title = "apply " + std::to_string(head_diameter);
+    ImGui::SameLine();
+    if (ImGui::Button(button_title.c_str())) {
+        float density_relative = float(cfg.support_points_density_relative / 100.f); 
+        sample_config = sla::SampleConfigFactory::apply_density(
+            sla::SampleConfigFactory::create(head_diameter), density_relative);
+    }
 
+    bool exist_change = false;
     if (float max_for_one = unscale<float>(sample_config.max_length_for_one_support_point); // [in mm]
         ImGui::InputFloat("One support", &max_for_one, .1f, 1.f, "%.2f mm")) {
         sample_config.max_length_for_one_support_point = scale_(max_for_one);

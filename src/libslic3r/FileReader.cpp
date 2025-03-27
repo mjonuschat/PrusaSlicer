@@ -37,7 +37,7 @@ bool is_project_file(const std::string& input_file)
 } 
 
 // Loading model from a file, it may be a simple geometry file as STL or OBJ, however it may be a project file as well.
-static Model read_model_from_file(const std::string& input_file, LoadAttributes options)
+static Model read_model_from_file(const std::string& input_file, LoadAttributes options, const std::optional<std::pair<double, double>>& step_deflections = std::nullopt)
 {
     Model model;
 
@@ -49,8 +49,9 @@ static Model read_model_from_file(const std::string& input_file, LoadAttributes 
         result = load_stl(input_file.c_str(), &model);
     else if (boost::algorithm::iends_with(input_file, ".obj"))
         result = load_obj(input_file.c_str(), &model);
-    else if (boost::algorithm::iends_with(input_file, ".step") || boost::algorithm::iends_with(input_file, ".stp"))
-        result = load_step(input_file.c_str(), &model);
+    else if (boost::algorithm::iends_with(input_file, ".step") || boost::algorithm::iends_with(input_file, ".stp")) {
+        result = load_step(input_file.c_str(), &model, step_deflections);
+    }
     else if (boost::algorithm::iends_with(input_file, ".amf") || boost::algorithm::iends_with(input_file, ".amf.xml"))
 //?        result = load_amf(input_file.c_str(), &temp_config, &temp_config_substitutions_context, &model, options & LoadAttribute::CheckVersion);
 //? LoadAttribute::CheckVersion is needed here, when we loading just a geometry
@@ -216,9 +217,10 @@ static int removed_objects_with_zero_volume(Model& model)
 
 Model load_model(const std::string& input_file,
                  LoadAttributes options/* = LoadAttribute::AddDefaultInstances*/, 
-                 LoadStats* stats/*= nullptr*/)
+                 LoadStats* stats/*= nullptr*/,
+                 std::optional<std::pair<double, double>> step_deflections/* = std::nullopt*/)
 {
-    Model model = read_model_from_file(input_file, options);
+    Model model = read_model_from_file(input_file, options, step_deflections);
 
     for (auto obj : model.objects)
         if (obj->name.empty())
