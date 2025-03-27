@@ -40,7 +40,7 @@ void ExtrusionPath::clip_end(double distance)
 
 void ExtrusionPath::simplify(double tolerance)
 {
-    this->polyline.simplify(tolerance);
+    Algorithms::Polyline::simplify(this->polyline, tolerance);
 }
 
 double ExtrusionPath::length() const
@@ -180,7 +180,7 @@ double ExtrusionLoop::length() const
 bool ExtrusionLoop::split_at_vertex(const Point &point, const double scaled_epsilon)
 {
     for (ExtrusionPaths::iterator path = this->paths.begin(); path != this->paths.end(); ++path)
-        if (int idx = path->polyline.find_point(point, scaled_epsilon); idx != -1) {
+        if (int idx = Algorithms::Polyline::find_point(path->polyline, point, scaled_epsilon); idx != -1) {
             if (this->paths.size() == 1) {
                 // just change the order of points
                 path->polyline.points.insert(path->polyline.points.end(), path->polyline.points.begin() + 1, path->polyline.points.begin() + idx + 1);
@@ -276,7 +276,7 @@ void ExtrusionLoop::split_at(const Point &point, bool prefer_non_overhang, const
     const ExtrusionPath &path = this->paths[path_idx];
     ExtrusionPath p1(path.attributes());
     ExtrusionPath p2(path.attributes());
-    path.polyline.split_at(p, &p1.polyline, &p2.polyline);
+    std::tie(p1.polyline, p2.polyline) = Algorithms::Polyline::split_at_point(path.polyline, p);
     
     if (this->paths.size() == 1) {
         if (p2.polyline.is_valid()) {

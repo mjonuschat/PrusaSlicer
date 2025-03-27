@@ -5,11 +5,13 @@
 #include <iostream>
 #include <boost/filesystem.hpp>
 
+#include "Slic3r/Biz/Algorithms/Polyline.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/SVG.hpp"
 
 using namespace Slic3r;
+using namespace Slic3r::Biz;
 using namespace Catch;
 
 SCENARIO("Various Clipper operations - xs/t/11_clipper.t", "[ClipperUtils]") {
@@ -295,7 +297,7 @@ SCENARIO("Various Clipper operations - t/clipper.t", "[ClipperUtils]") {
         }
     
         WHEN("clipping a line") {
-            auto line = Polyline::new_scale({ { 152.742,288.086671142818 }, { 152.742,34.166466971035 } });    
+            auto line = Algorithms::Polyline::scaled({ { 152.742,288.086671142818 }, { 152.742,34.166466971035 } });
             Polylines intersection = intersection_pl(line, to_polygons(circle_with_hole));
             THEN("clipped to two pieces") {
                 REQUIRE(intersection.front().length() == Approx((Vec2d(152742000, 215178843) - Vec2d(152742000, 288086661)).norm()));

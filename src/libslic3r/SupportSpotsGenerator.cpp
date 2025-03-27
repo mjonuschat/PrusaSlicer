@@ -21,6 +21,7 @@
 #include <stdexcept>
 #include <cassert>
 
+#include "Slic3r/Biz/Algorithms/Polyline.hpp"
 #include "BoundingBox.hpp"
 #include "ExPolygon.hpp"
 #include "ExtrusionEntity.hpp"
@@ -64,6 +65,7 @@ static Slic3r::Vec3f value_to_rgbf(float minimum, float maximum, float value)
 constexpr bool debug_files = false;
 #endif
 
+using namespace Slic3r::Biz;
 
 namespace Slic3r::SupportSpotsGenerator {
 
@@ -196,7 +198,7 @@ Integrals::Integrals(const Polygons &polygons)
 Integrals::Integrals(const Polylines& polylines, const std::vector<float>& widths) {
     assert(polylines.size() == widths.size());
     for (size_t i = 0; i < polylines.size(); ++i) {
-        Lines polyline{to_lines(polylines[i])};
+        Lines polyline{Algorithms::Polyline::to_lines(polylines[i])};
         float width{widths[i]};
         for (const Line& line : polyline) {
             Vec2f line_direction = unscaled(line.vector()).cast<float>();

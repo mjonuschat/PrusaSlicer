@@ -9,6 +9,7 @@
 #include <cassert>
 #include <cinttypes>
 
+#include "Slic3r/Biz/Algorithms/Polyline.hpp"
 #include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/Layer.hpp"
 #include "libslic3r/Print.hpp"
@@ -24,14 +25,16 @@
 #include "tcbspan/span.hpp"
 #include "libslic3r/ShortestPath.hpp"
 
+using namespace Slic3r::Biz;
+
 namespace Slic3r::GCode {
 
 static Lines extrusion_entity_to_lines(const ExtrusionEntity &e_entity)
 {
     if (const auto *path = dynamic_cast<const ExtrusionPath *>(&e_entity)) {
-        return to_lines(path->as_polyline());
+        return Algorithms::Polyline::to_lines(path->as_polyline());
     } else if (const auto *multipath = dynamic_cast<const ExtrusionMultiPath *>(&e_entity)) {
-        return to_lines(multipath->as_polyline());
+        return Algorithms::Polyline::to_lines(multipath->as_polyline());
     } else if (const auto *loop = dynamic_cast<const ExtrusionLoop *>(&e_entity)) {
         return to_lines(loop->polygon());
     } else {
@@ -390,7 +393,7 @@ ElevatedTravelParams get_elevated_traval_params(
         elevation_params.slope_end = elevation_params.lift_height / std::tan(slope_rad);
     }
 
-    const double obstacle_adjusted_slope_end = get_obstacle_adjusted_slope_end(to_lines(xy_path), obstacle_tracker);
+    const double obstacle_adjusted_slope_end = get_obstacle_adjusted_slope_end(Algorithms::Polyline::to_lines(xy_path), obstacle_tracker);
     if (obstacle_adjusted_slope_end < elevation_params.slope_end)
         elevation_params.slope_end = obstacle_adjusted_slope_end;
 

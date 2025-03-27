@@ -15,6 +15,7 @@
 #include <vector>
 #include <cstddef>
 
+#include "Slic3r/Biz/Algorithms/Polyline.hpp"
 #include "ExPolygon.hpp"
 #include "Flow.hpp"
 #include "Layer.hpp"
@@ -38,6 +39,8 @@
 #include "libslic3r/Utils.hpp"
 #include "libslic3r/libslic3r.h"
 #include "LayerRegion.hpp"
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r {
 
@@ -316,7 +319,7 @@ Surfaces merge_bridges(
             // union_safety_offset_ex(acc)
 
             for (ExPolygon &bridge_expolygon : merged_bridges) {
-                const Lines lines{to_lines(diff_pl(to_polylines(bridge_expolygon), expand(expansions, float(SCALED_EPSILON))))};
+                const Lines lines{Algorithms::Polyline::to_lines(diff_pl(to_polylines(bridge_expolygon), expand(expansions, float(SCALED_EPSILON))))};
                 auto [bridging_dir, unsupported_dist] = detect_bridging_direction(lines, to_polygons(bridge_expolygon));
                 Surface surface{ stBottomBridge, std::move(bridge_expolygon) };
                 surface.bridge_angle = M_PI + std::atan2(bridging_dir.y(), bridging_dir.x());

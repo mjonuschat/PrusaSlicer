@@ -15,6 +15,7 @@
 #include <tuple>
 #include <utility>
 
+#include "Slic3r/Biz/Algorithms/Polyline.hpp"
 #include "ClipperUtils.hpp"
 #include "Line.hpp"
 #include "Point.hpp"
@@ -134,6 +135,8 @@ inline std::tuple<Vec2d, double> detect_bridging_direction(const Lines &floating
 //return ideal bridge direction and unsupported bridge endpoints distance.
 inline std::tuple<Vec2d, double> detect_bridging_direction(const Polygons &to_cover, const Polygons &anchors_area)
 {
+    using Slic3r::Biz::Algorithms::Polyline::to_lines;
+
     Polygons  overhang_area      = diff(to_cover, anchors_area);
     Lines     floating_edges     = to_lines(diff_pl(to_polylines(overhang_area), expand(anchors_area, float(SCALED_EPSILON))));
     return detect_bridging_direction(floating_edges, overhang_area);

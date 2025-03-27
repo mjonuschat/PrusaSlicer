@@ -30,40 +30,13 @@
 
 namespace Slic3r {
 
-class Polyline;
+using Polyline = Slic3r::Domain::Polyline;
+using Polylines = Slic3r::Domain::Polylines;
+
 struct ThickPolyline;
 class BoundingBox;
 
-typedef std::vector<Polyline> Polylines;
 typedef std::vector<ThickPolyline> ThickPolylines;
-
-// Temporary proxy class over Domain::Polyline.
-class Polyline : public Domain::Polyline
-{
-public:
-    using Domain::Polyline::find_point;
-
-    Polyline() = default;
-    Polyline(std::initializer_list<Point> list) : Domain::Polyline(list) {}
-    explicit Polyline(const Point &p1, const Point &p2) { points.reserve(2); points.emplace_back(p1); points.emplace_back(p2); }
-    explicit Polyline(const Points &points) : Domain::Polyline(points) {}
-    explicit Polyline(Points &&points) : Domain::Polyline(std::move(points)) {}
-
-	static Polyline new_scale(const std::vector<Vec2d> &points) {
-		Polyline pl;
-		pl.points.reserve(points.size());
-		for (const Vec2d &pt : points)
-			pl.points.emplace_back(Point::new_scale(pt(0), pt(1)));
-		return pl;
-    }
-    
-    int find_point(const Point& point, const double scaled_epsilon) const { return Slic3r::Biz::Algorithms::MultiPoint::find_point(*this, point, scaled_epsilon); }
-
-    void simplify(double tolerance);
-
-    void split_at(const Point &point, Polyline* p1, Polyline* p2) const;
-    bool is_straight() const;
-};
 
 extern BoundingBox get_extents(const Slic3r::Polyline &polyline);
 extern BoundingBox get_extents(const Slic3r::Polylines &polylines);
@@ -71,50 +44,6 @@ extern BoundingBox get_extents(const Slic3r::Polylines &polylines);
 // Return True when erase some otherwise False.
 bool remove_same_neighbor(Polyline &polyline);
 bool remove_same_neighbor(Polylines &polylines);
-
-inline double total_length(const Polylines &polylines) {
-    double total = 0;
-    for (const Polyline &pl : polylines)
-        total += pl.length();
-    return total;
-}
-
-inline size_t total_lines_count(const Polylines &polylines) {
-    size_t lines_cnt = 0;
-    for (const Polyline &polyline : polylines) {
-        if (polyline.points.size() > 1) {
-            lines_cnt += polyline.points.size() - 1;
-        }
-    }
-
-    return lines_cnt;
-}
-
-inline Lines to_lines(const Polyline &poly) {
-    Lines lines;
-    if (poly.points.size() >= 2) {
-        lines.reserve(poly.points.size() - 1);
-        for (Points::const_iterator it = poly.points.begin(); it != poly.points.end() - 1; ++it) {
-            lines.emplace_back(*it, *(it + 1));
-        }
-    }
-
-    return lines;
-}
-
-inline Lines to_lines(const Polylines &polylines) {
-    const size_t lines_cnt = total_lines_count(polylines);
-
-    Lines lines;
-    lines.reserve(lines_cnt);
-    for (const Polyline &polyline : polylines) {
-        for (Points::const_iterator it = polyline.points.begin(); it != polyline.points.end() - 1; ++it) {
-            lines.emplace_back(*it, *(it + 1));
-        }
-    }
-
-    return lines;
-}
 
 // Merge polylines at their respective end points.
 // dst_first: the merge point is at dst.begin() or dst.end()?

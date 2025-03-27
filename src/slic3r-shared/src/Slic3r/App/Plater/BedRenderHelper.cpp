@@ -1,6 +1,7 @@
 #include "Slic3r/App/Plater/BedRenderHelper.hpp"
 #include "Slic3r/Domain/Bed.hpp"
 #include "Slic3r/App/Render/Context.hpp"
+#include "Slic3r/Biz/Algorithms/Polyline.hpp"
 
 #include <libslic3r/ClipperUtils.hpp>
 #include <libslic3r/Utils.hpp>
@@ -13,6 +14,8 @@
   * @brief Z offset to prevent z-fighting
   */
 static constexpr double GROUND_Z = -0.005;
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r::App::Plater {
 
@@ -53,7 +56,7 @@ std::vector<Vec3f> BedRenderHelper::plate_grid(const Domain::Bed& bed)
     }
     
     // clip with a slightly grown expolygon because our lines lay on the contours and may get erroneously clipped
-    Lines lines = to_lines(intersection_pl(gridlines, offset(contour, float(SCALED_EPSILON))));
+    Lines lines = Algorithms::Polyline::to_lines(intersection_pl(gridlines, offset(contour, float(SCALED_EPSILON))));
     // append bed contours
     Lines contour_lines = to_lines(contour);
     std::copy(contour_lines.begin(), contour_lines.end(), std::back_inserter(lines));

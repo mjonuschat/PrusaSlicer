@@ -57,7 +57,7 @@ TEST_CASE_METHOD(PolylineTestCase, "Split", "[Polyline]") {
     Polyline p1;
     Polyline p2;
     const Point point{150, 100};
-    polyline.split_at(point, &p1, &p2);
+    std::tie(p1, p2) = Algorithms::Polyline::split_at_point(polyline, point);
     CHECK(p1.size() == 2);
     CHECK(p2.size() == 3);
     CHECK(p1.last_point() == point);
@@ -73,7 +73,7 @@ TEST_CASE_METHOD(PolylineTestCase, "Split at first point", "[Polyline]") {
     };
     Polyline p1;
     Polyline p2;
-    to_split.split_at(to_split.first_point(), &p1, &p2);
+    std::tie(p1, p2) = Algorithms::Polyline::split_at_point(to_split, to_split.first_point());
     CHECK(p1.size() == 1);
     CHECK(p2.size() == 4);
 }
@@ -102,7 +102,7 @@ SCENARIO("Simplify polyline", "[Polyline]")
     GIVEN("polyline 1") {
         auto polyline = Polyline{ {0,0},{1,0},{2,0},{2,1},{2,2},{1,2},{0,2},{0,1},{0,0} };
         WHEN("simplified with Douglas-Peucker") {
-            polyline.simplify(1.);
+            Algorithms::Polyline::simplify(polyline, 1.);
             THEN("simplified correctly") {
                 REQUIRE(polyline == Polyline{ {0,0}, {2,0}, {2,2}, {0,2}, {0,0} });
             }
@@ -111,7 +111,7 @@ SCENARIO("Simplify polyline", "[Polyline]")
     GIVEN("polyline 2") {
         auto polyline = Polyline{ {0,0}, {50,50}, {100,0}, {125,-25}, {150,50} };
         WHEN("simplified with Douglas-Peucker") {
-            polyline.simplify(25.);
+            Algorithms::Polyline::simplify(polyline, 25.);
             THEN("not simplified") {
                 REQUIRE(polyline == Polyline{ {0,0}, {50,50}, {125,-25}, {150,50} });
             }
@@ -121,7 +121,7 @@ SCENARIO("Simplify polyline", "[Polyline]")
     GIVEN("polyline 3") {
         auto polyline = Polyline{ {0,0}, {100,0}, {50,10} };
         WHEN("simplified with Douglas-Peucker") {
-            polyline.simplify(25.);
+            Algorithms::Polyline::simplify(polyline, 25.);
             THEN("not simplified") {
                 REQUIRE(polyline == Polyline{ {0,0}, {100, 0}, {50,10} });
             }
@@ -131,7 +131,7 @@ SCENARIO("Simplify polyline", "[Polyline]")
     GIVEN("polyline 4") {
         auto polyline = Polyline{ {0,0}, {20,0}, {50,0}, {80,0}, {100,0} };
         WHEN("simplified with Douglas-Peucker") {
-            polyline.simplify(2.);
+            Algorithms::Polyline::simplify(polyline, 2.);
             THEN("not simplified") {
                 REQUIRE(polyline == Polyline{ {0,0}, {100,0} });
             }

@@ -21,6 +21,7 @@
 #include <tuple>
 
 #include "Slic3r/Biz/Algorithms/Line.hpp"
+#include "Slic3r/Biz/Algorithms/Polyline.hpp"
 #include "AABBTreeLines.hpp"
 #include "BoundingBox.hpp"
 #include "BridgeDetector.hpp"
@@ -584,11 +585,11 @@ static void export_perimeters_to_svg(const std::string &path, const Polygons &co
 // find out if paths touch - at least one point of one path is within limit distance of second path
 bool paths_touch(const ExtrusionPath &path_one, const ExtrusionPath &path_two, double limit_distance)
 {
-    AABBTreeLines::LinesDistancer<Line> lines_two{to_lines(path_two.as_polyline())};
+    AABBTreeLines::LinesDistancer<Line> lines_two{Algorithms::Polyline::to_lines(path_two.as_polyline())};
     for (size_t pt_idx = 0; pt_idx < path_one.polyline.size(); pt_idx++) {
         if (lines_two.distance_from_lines<false>(path_one.polyline.points[pt_idx]) < limit_distance) { return true; }
     }
-    AABBTreeLines::LinesDistancer<Line> lines_one{to_lines(path_one.as_polyline())};
+    AABBTreeLines::LinesDistancer<Line> lines_one{Algorithms::Polyline::to_lines(path_one.as_polyline())};
     for (size_t pt_idx = 0; pt_idx < path_two.polyline.size(); pt_idx++) {
         if (lines_one.distance_from_lines<false>(path_two.polyline.points[pt_idx]) < limit_distance) { return true; }
     }
@@ -812,8 +813,8 @@ std::tuple<std::vector<ExtrusionPaths>, Polygons> generate_extra_perimeters_over
         BoundingBox bbox = get_extents(inset_overhang_area);
         bbox.offset(scale_(1.));
         ::Slic3r::SVG svg(debug_out_path("inset_overhang_area").c_str(), bbox);
-        for (const Line &line : to_lines(inset_anchors)) svg.draw(line, "purple", scale_(0.25));
-        for (const Line &line : to_lines(inset_overhang_area)) svg.draw(line, "red", scale_(0.15));
+        for (const Line &line : Algorithms::Polyline::to_lines(inset_anchors)) svg.draw(line, "purple", scale_(0.25));
+        for (const Line &line : Algorithms::Polyline::to_lines(inset_overhang_area)) svg.draw(line, "red", scale_(0.15));
         svg.Close();
     }
 #endif

@@ -4,6 +4,8 @@
 #include "Slic3r/Domain/Point.hpp"
 #include "Slic3r/Domain/Line.hpp"
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
+#include "Slic3r/Biz/Algorithms/Line.hpp"
+#include "Slic3r/Biz/Algorithms/MultiPoint.hpp"
 #include "Slic3r/Biz/Algorithms/Point.hpp"
 
 namespace Slic3r::Biz::Algorithms::Polyline {
@@ -21,6 +23,11 @@ Domain::Polyline reversed(const Domain::Polyline& polyline)
     Domain::Polyline polyline_out = polyline;
     reverse(polyline_out);
     return polyline_out;
+}
+
+int find_point(const Domain::Polyline& polyline, const Domain::Point& query_pt, const double scaled_epsilon)
+{
+    return MultiPoint::find_point(polyline, query_pt, scaled_epsilon);
 }
 
 bool has_duplicate_points(const Domain::Polyline& polyline)
@@ -144,6 +151,59 @@ size_t total_lines_count(const Domain::Polylines& polylines)
     }
 
     return lines_cnt;
+}
+
+bool is_straight(const Domain::Polyline& polyline)
+{
+    // Check that each segment's direction is equal to the line connecting
+    // first point and last point. (Checking each line against the previous
+    // one would cause the error to accumulate.)
+    double dir = Domain::Line(polyline.first_point(), polyline.last_point()).direction();
+    for (const Domain::Line& line : to_lines(polyline)) {
+        if (!line.is_parallel_to(dir))
+            return false;
+    }
+
+    return true;
+}
+
+std::pair<Domain::Polyline, Domain::Polyline> split_at_point(const Domain::Polyline& polyline, const Domain::Point& split_point)
+{
+    if (polyline.size() < 2)
+        return {polyline, Domain::Polyline{}};
+
+    if (polyline.points.front() == split_point)
+        return {Domain::Polyline{split_point}, polyline};
+
+    auto          min_dist2    = std::numeric_limits<double>::max();
+    auto          min_point_it = polyline.points.cbegin();
+    Domain::Point prev         = polyline.points.front();
+    for (auto it = polyline.points.cbegin() + 1; it != polyline.points.cend(); ++it) {
+        Domain::Point proj;
+        if (double d2 = Algorithms::Line::distance_to_squared(Domain::Line(prev, *it), split_point, proj);
+            d2 < min_dist2) {
+            min_dist2    = d2;
+            min_point_it = it;
+        }
+
+        prev = *it;
+    }
+
+    Domain::Polyline first_part;
+    first_part.points.assign(polyline.points.cbegin(), min_point_it);
+    if (first_part.points.back() != split_point) {
+        first_part.points.emplace_back(split_point);
+    }
+
+    Domain::Polyline second_part;
+    second_part.points = {split_point};
+    if (*min_point_it == split_point) {
+        ++min_point_it;
+    }
+
+    second_part.points.insert(second_part.points.end(), min_point_it, polyline.points.cend());
+
+    return {std::move(first_part), std::move(second_part)};
 }
 
 } // namespace Slic3r::Biz::Algorithms::Polyline

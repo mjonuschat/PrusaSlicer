@@ -13,6 +13,7 @@
 #include <string>
 #include <utility>
 
+#include "Slic3r/Biz/Algorithms/Polyline.hpp"
 #include "libslic3r/Print.hpp"
 #include "libslic3r/ExtrusionEntity.hpp"
 #include "libslic3r/ExtrusionRole.hpp"
@@ -62,6 +63,8 @@ public:
     double      curHeight() const { return _curHeight; }
     LineWithIDs curLines() const
     {
+        using Slic3r::Biz::Algorithms::Polyline::to_lines;
+
         LineWithIDs lines;
         for (const ExtrusionPath &path : _piles[_curPileIdx]) {
             Polyline check_polyline;

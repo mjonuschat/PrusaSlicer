@@ -19,6 +19,8 @@
 #include "libslic3r/Polyline.hpp"
 #include "libslic3r/libslic3r.h"
 
+using namespace Slic3r::Biz;
+
 namespace Slic3r {
 
 BridgeDetector::BridgeDetector(
@@ -348,6 +350,8 @@ Polygons BridgeDetector::coverage(double angle) const
 void
 BridgeDetector::unsupported_edges(double angle, Polylines* unsupported) const
 {
+    using Algorithms::Polyline::to_lines;
+
     if (angle == -1) angle = this->angle;
     if (angle == -1) return;
 

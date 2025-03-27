@@ -29,6 +29,7 @@
 #include <chrono>
 #include <cstdlib>
 
+#include "Slic3r/Biz/Algorithms/Polyline.hpp"
 #include "AABBTreeLines.hpp"
 #include "ExPolygon.hpp"
 #include "Flow.hpp"
@@ -100,6 +101,8 @@ using namespace std::literals;
     #undef assert 
     #include <cassert>
 #endif
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r {
 
@@ -235,7 +238,7 @@ void PrintObject::make_perimeters()
                             // check whether a portion of the upper slices falls inside the critical area
                             const Polylines intersection = intersection_pl(to_polylines(upper_layerm_polygons), critical_area);
                             // only add an additional loop if at least 30% of the slice loop would benefit from it
-                            if (total_length(intersection) <=  total_loop_length*0.3)
+                            if (Algorithms::Polyline::total_length(intersection) <=  total_loop_length*0.3)
                                 break;
                             /*
                             if (0) {
@@ -2480,19 +2483,19 @@ void PrintObject::bridge_over_infill()
 
                     double bridging_angle = 0;
                     if (!anchors.empty()) {
-                        bridging_angle = determine_bridging_angle(area_to_be_bridge, to_lines(anchors),
+                        bridging_angle = determine_bridging_angle(area_to_be_bridge, Algorithms::Polyline::to_lines(anchors),
                                                                   candidate.region->region().config().fill_pattern.value);
                     } else {
                         // use expansion boundaries as anchors.
                         // Also, use Infill pattern that is neutral for angle determination, since there are no infill lines.
-                        bridging_angle = determine_bridging_angle(area_to_be_bridge, to_lines(boundary_plines), InfillPattern::ipLine);
+                        bridging_angle = determine_bridging_angle(area_to_be_bridge, Algorithms::Polyline::to_lines(boundary_plines), InfillPattern::ipLine);
                     }
 
                     boundary_plines.insert(boundary_plines.end(), anchors.begin(), anchors.end());
                     if (!lightning_area.empty() && !intersection(area_to_be_bridge, lightning_area).empty()) {
                         boundary_plines = intersection_pl(boundary_plines, expand(area_to_be_bridge, scale_(10)));
                     }
-                    Polygons bridging_area = construct_anchored_polygon(area_to_be_bridge, to_lines(boundary_plines), flow, bridging_angle);
+                    Polygons bridging_area = construct_anchored_polygon(area_to_be_bridge, Algorithms::Polyline::to_lines(boundary_plines), flow, bridging_angle);
 
                     // Check collision with other expanded surfaces
                     {
@@ -2506,7 +2509,7 @@ void PrintObject::bridge_over_infill()
                             }
                         }
                         if (reconstruct) {
-                            bridging_area = construct_anchored_polygon(area_to_be_bridge, to_lines(boundary_plines), flow, bridging_angle);
+                            bridging_area = construct_anchored_polygon(area_to_be_bridge, Algorithms::Polyline::to_lines(boundary_plines), flow, bridging_angle);
                         }
                     }
 

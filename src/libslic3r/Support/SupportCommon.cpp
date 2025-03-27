@@ -105,7 +105,7 @@ void remove_bridges_from_contacts(
         // may not expand them to the edge of their respective islands.
         const float w = float(0.5 * std::max(perimeter_bridge_flow.scaled_width(), perimeter_bridge_flow.scaled_spacing())) + scaled<float>(0.001);
         for (Polyline &polyline : overhang_perimeters)
-            if (polyline.is_straight()) {
+            if (Algorithms::Polyline::is_straight(polyline)) {
                 // This is a bridge
                 Algorithms::Polyline::extend_start(polyline, fw);
                 Algorithms::Polyline::extend_end(polyline, fw);
