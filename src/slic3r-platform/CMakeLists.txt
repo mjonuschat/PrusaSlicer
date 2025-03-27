@@ -23,6 +23,8 @@ set(SLIC3R_PLATFORM_FILES
         include/Slic3r/Biz/Platform/ListenerList.hpp
         include/Slic3r/Biz/Platform/Termination.hpp
         src/Slic3r/Biz/Platform/Termination.cpp
+        include/Slic3r/Biz/Platform/TimerQueue.hpp
+        src/Slic3r/Biz/Platform/TimerQueue.cpp
 )
 
 
