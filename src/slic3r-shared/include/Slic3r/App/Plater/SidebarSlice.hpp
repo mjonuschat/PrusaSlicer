@@ -1,5 +1,5 @@
 #pragma once
-#include "Slic3r/Domain/Vectors.hpp"
+#include "Slic3r/Domain/Types.hpp"
 #include <functional>
 
 namespace Slic3r::App::Render {

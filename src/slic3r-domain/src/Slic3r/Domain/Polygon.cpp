@@ -65,7 +65,8 @@ Point Polygon::centroid() const
         }
     }
 
-    return Point(Vec2d(c / (3. * area_sum)));
+    Vec2d result{c / (3. * area_sum)};
+    return Point(Vec2d{std::round(result.x()), std::round(result.y())}.cast<coord_t>());
 }
 
 } // namespace Slic3r::Domain

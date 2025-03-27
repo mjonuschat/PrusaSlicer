@@ -9,7 +9,7 @@
 
 #include "Slic3r/App/Yoga/Toolbar/Item.hpp"
 #include "Slic3r/App/Yoga/Align.hpp"
-#include "Slic3r/Domain/Vectors.hpp"
+#include "Slic3r/Domain/Types.hpp"
 
 #include <map>
 

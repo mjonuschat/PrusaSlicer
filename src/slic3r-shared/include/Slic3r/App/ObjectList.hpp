@@ -1,6 +1,6 @@
 #pragma once
 #include "imgui/imgui.h"
-#include "Slic3r/Domain/Vectors.hpp"
+#include "Slic3r/Domain/Types.hpp"
 
 #include <map>
 #include <set>

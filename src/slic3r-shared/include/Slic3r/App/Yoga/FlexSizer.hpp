@@ -6,7 +6,7 @@
 #pragma once
 
 #include "yoga/Yoga.h"
-#include "Slic3r/Domain/Vectors.hpp"
+#include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/App/Yoga/Align.hpp"
 
 #include<map>
