@@ -3,6 +3,7 @@
 #include <numeric>
 #include <sstream>
 
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/Geometry.hpp"
 #include "libslic3r/Geometry/ConvexHull.hpp"
@@ -141,7 +142,7 @@ SCENARIO("Ooze prevention", "[Multi]")
         // offset the skirt by the maximum displacement between extruders plus a safety extra margin
         const float delta = scaled<float>(20. * sqrt(2.) + 1.);
         Polygon outer_convex_hull = expand(convex_hull, delta).front();
-        size_t inside = std::count_if(toolchange_points.begin(), toolchange_points.end(), [&outer_convex_hull](const Point &p){ return outer_convex_hull.contains(p); });
+        size_t inside = std::count_if(toolchange_points.begin(), toolchange_points.end(), [&outer_convex_hull](const Point &p){ return Slic3r::Biz::Algorithms::Polygon::contains(outer_convex_hull, p); });
         REQUIRE(inside == toolchange_points.size());
     }
 }

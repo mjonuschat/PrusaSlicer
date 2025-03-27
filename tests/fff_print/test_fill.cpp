@@ -3,6 +3,7 @@
 #include <numeric>
 #include <sstream>
 
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "libslic3r/libslic3r.h"
 
 #include "libslic3r/ClipperUtils.hpp"
@@ -241,7 +242,7 @@ SCENARIO("Infill does not exceed perimeters", "[Fill]")
                     }
                 });
                 auto convex_hull = Geometry::convex_hull(perimeter_points);
-                int num_inside = std::count_if(infill_points.begin(), infill_points.end(), [&convex_hull](const Point &pt){ return convex_hull.contains(pt); });
+                int num_inside = std::count_if(infill_points.begin(), infill_points.end(), [&convex_hull](const Point &pt){ return Slic3r::Biz::Algorithms::Polygon::contains(convex_hull, pt); });
                 REQUIRE(num_inside == infill_points.size());
             }
         }

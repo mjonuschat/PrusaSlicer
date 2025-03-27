@@ -32,10 +32,10 @@ SCENARIO("Converted Perl tests", "[Polygon]") {
             REQUIRE(cw_square.centroid() == Point { 150, 150 });
         }
         THEN("ccw_square.contains_point(150, 150)") {
-            REQUIRE(ccw_square.contains({ 150, 150 }));
+            REQUIRE(Algorithms::Polygon::contains(ccw_square, { 150, 150 }));
         }
         THEN("cw_square.contains_point(150, 150)") {
-            REQUIRE(cw_square.contains({ 150, 150 }));
+            REQUIRE(Algorithms::Polygon::contains(cw_square, { 150, 150 }));
         }
         THEN("conversion to lines") {
             REQUIRE(Algorithms::Polygon::to_lines(ccw_square) == Lines{
@@ -75,11 +75,10 @@ SCENARIO("Converted Perl tests", "[Polygon]") {
     GIVEN("General triangle") {
         Polygon polygon { { 50000000, 100000000 }, { 300000000, 102000000 }, { 50000000, 104000000 } };
         Line    line { { 175992032, 102000000 }, { 47983964, 102000000 } };
-        Point   intersection;
-        bool    has_intersection = polygon.intersection(line, &intersection);
+        std::optional<Point> intersection_pt = Algorithms::Polygon::intersection(polygon, line);
         THEN("Intersection with line") {
-            REQUIRE(has_intersection);
-            REQUIRE(intersection == Point { 50000000, 102000000 });
+            REQUIRE(intersection_pt.has_value());
+            REQUIRE(intersection_pt.value() == Point { 50000000, 102000000 });
         }
     }
 }
@@ -93,7 +92,7 @@ TEST_CASE("Centroid of Trapezoid must be inside", "[Polygon][Utils]")
         { 9404268, 1049531706 },
     };
     Point centroid = trapezoid.centroid();
-    CHECK(trapezoid.contains(centroid));
+    CHECK(Algorithms::Polygon::contains(trapezoid, centroid));
 }
 
 // This test currently only covers remove_collinear_points.
@@ -171,7 +170,7 @@ SCENARIO("Simplify polygon", "[Polygon]")
      
         WHEN("simplified") {
             size_t num_points = gear.size();
-            Polygons simplified = gear.simplify(1000.);
+            Domain::Polygons simplified = Algorithms::Polygon::simplify(gear, 1000.);
             THEN("gear simplified to a single polygon") {
                 REQUIRE(simplified.size() == 1);
             }

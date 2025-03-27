@@ -65,9 +65,6 @@ public:
             pgn.points.emplace_back(Point::new_scale(pt(0), pt(1)));
 		return pgn;
 	}
-
-    // Does an unoriented polygon contain a point?
-    bool contains(const Point &point) const { return Slic3r::contains(*this, point, true); }
 };
 
 // Considering CCW orientation of this polygon, find all convex resp. concave points

@@ -8,6 +8,7 @@
 
 #include <boost/log/trivial.hpp>
 
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include <libslic3r/ClipperUtils.hpp> // allign
 #include <libslic3r/KDTreeIndirect.hpp> // closest point
 #include <libslic3r/Geometry.hpp>
@@ -45,6 +46,7 @@
 namespace {
 using namespace Slic3r;
 using namespace Slic3r::sla;
+using namespace Slic3r::Biz;
 
 /// <summary>
 /// Replace first occurence of string
@@ -455,10 +457,10 @@ coord_t align_once(
             // intersection island and cell made by suppot point
             // must generate polygon containing initial source for voronoi cell
             // otherwise it is invalid voronoi diagram
-            assert(island_cell->contains(support->point));
+            assert(Algorithms::Polygon::contains(*island_cell, support->point));
         } else {
             for (const Polygon &intersection : intersections) {
-                if (intersection.contains(support->point)) {
+                if (Algorithms::Polygon::contains(intersection, support->point)) {
                     island_cell = &intersection;
                     break;
                 }

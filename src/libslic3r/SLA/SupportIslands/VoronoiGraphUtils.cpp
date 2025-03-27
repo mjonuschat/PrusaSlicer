@@ -4,6 +4,7 @@
 #include <set>
 
 #include "Slic3r/Biz/Algorithms/Line.hpp"
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include <libslic3r/Geometry/VoronoiOffset.hpp>
 #include "IStackFunction.hpp"
 #include "EvaluateNeighbor.hpp"
@@ -229,11 +230,11 @@ Slic3r::Polygon VoronoiGraphUtils::to_polygon(const Lines &lines,
         points.push_back(p2);
     }
     Polygon polygon(points);
-    if (!polygon.contains(center)) { 
+    if (!Algorithms::Polygon::contains(polygon, center)) {
         draw(polygon, lines, center); 
     }
     assert(polygon.is_valid());
-    assert(polygon.contains(center));
+    assert(Algorithms::Polygon::contains(polygon, center));
     assert(PolygonUtils::is_not_self_intersect(polygon, center));
     return polygon;
 }

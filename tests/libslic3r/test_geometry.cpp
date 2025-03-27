@@ -99,7 +99,7 @@ TEST_CASE("Polygon::contains works properly", "[Geometry]"){
         {160244873,-84542120}
     }));
     Point point(95706562, -57294774);
-    REQUIRE(polygon.contains(point));
+    REQUIRE(Algorithms::Polygon::contains(polygon, point));
 }
 
 SCENARIO("Intersections of line segments", "[Geometry]"){
@@ -603,10 +603,10 @@ SCENARIO("Polygon convex/concave detection", "[Geometry]"){
 }
 
 TEST_CASE("Triangle Simplification does not result in less than 3 points", "[Geometry]"){
-    auto triangle = Slic3r::Polygon(Points({
+    auto triangle = Polygon(Points({
         Point(16000170,26257364), Point(714223,461012), Point(31286371,461008)
     }));
-    REQUIRE(triangle.simplify(250000).at(0).points.size() == 3);
+    REQUIRE(Algorithms::Polygon::simplify(triangle, 250000).at(0).points.size() == 3);
 }
 
 SCENARIO("Ported from xs/t/14_geometry.t", "[Geometry]"){

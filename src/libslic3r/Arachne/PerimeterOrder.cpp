@@ -2,9 +2,12 @@
 #include <algorithm>
 #include <cmath>
 
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "PerimeterOrder.hpp"
 #include "libslic3r/Arachne/utils/ExtrusionJunction.hpp"
 #include "libslic3r/Point.hpp"
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r::Arachne::PerimeterOrder {
 
@@ -61,7 +64,7 @@ static void construct_perimeter_extrusions_adjacency_graph(PerimeterExtrusions &
             if (!root_candidates[root_candidate_idx])
                 continue;
 
-            if (perimeter_extrusion.bbox.contains(root_candidate.bbox) && perimeter_extrusion.polygon.contains(root_candidate.extrusion.junctions.front().p)) {
+            if (perimeter_extrusion.bbox.contains(root_candidate.bbox) && Algorithms::Polygon::contains(perimeter_extrusion.polygon, root_candidate.extrusion.junctions.front().p)) {
                 perimeter_extrusion.adjacent_perimeter_extrusions.emplace_back(&root_candidate);
                 root_candidate.adjacent_perimeter_extrusions.emplace_back(&perimeter_extrusion);
                 root_candidates[root_candidate_idx] = false;

@@ -1,5 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "Slic3r/Biz/GCodeReader/GCodeReader.hpp"
 #include "libslic3r/Geometry/ConvexHull.hpp"
 #include "libslic3r/Layer.hpp"
@@ -48,7 +49,7 @@ SCENARIO("Gaps", "[Gaps]") {
                     last = "perimeter";
                 } else if (is_approx(f, gap_fill_speed)) {
                     Polygon convex_hull = Geometry::convex_hull(perimeter_points);
-                    if (! convex_hull.contains(point))
+                    if (! Slic3r::Biz::Algorithms::Polygon::contains(convex_hull, point))
                         ++ gap_fills_outside_last_perimeters;
                     last = "gap";
                 }

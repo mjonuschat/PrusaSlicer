@@ -9,6 +9,7 @@
 #include <regex>
 #include <fstream>
 
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "libslic3r/GCode.hpp"
 #include "libslic3r/Geometry/ConvexHull.hpp"
 #include "test_data.hpp"
@@ -193,7 +194,7 @@ TEST_CASE("Extrusion, travels, temperatures", "[GCode]") {
     const Polygon convex_hull{Geometry::convex_hull(extrusions)};
     INFO("All travel moves happen within skirt.");
     for (const Point& travel_move : travel_moves) {
-        CHECK(convex_hull.contains(travel_move));
+        CHECK(Slic3r::Biz::Algorithms::Polygon::contains(convex_hull, travel_move));
     }
     INFO("Expected temperature changes");
     CHECK(temps == std::vector<double>{210, 200, 210, 200, 0});

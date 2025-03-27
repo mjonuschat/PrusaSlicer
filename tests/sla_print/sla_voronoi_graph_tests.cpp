@@ -1,8 +1,10 @@
 #include "sla_test_utils.hpp"
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include <libslic3r/SLA/SupportIslands/VoronoiGraphUtils.hpp>
 #include <libslic3r/Geometry/VoronoiVisualUtils.hpp>
 
 using namespace Slic3r;
+using namespace Slic3r::Biz;
 using namespace Slic3r::sla;
 
 TEST_CASE("Convert coordinate datatype", "[Voronoi]")
@@ -41,7 +43,7 @@ void check(Slic3r::Points points, double max_distance) {
     for (const VD::cell_type &cell : vd.cells()) {
         Slic3r::Polygon polygon = VoronoiGraphUtils::to_polygon(cell, points, max_distance);
         CHECK(polygon.area() < max_area);
-        CHECK(polygon.contains(points[cell.source_index()]));
+        CHECK(Algorithms::Polygon::contains(polygon, points[cell.source_index()]));
     }
 }
 

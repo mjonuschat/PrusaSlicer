@@ -1403,7 +1403,7 @@ void PerimeterGenerator::process_classic(
                 for (int t = d + 1; t <= loop_number; ++ t) {
                     for (int j = 0; j < (int)holes[t].size(); ++ j) {
                         PerimeterGeneratorLoop &candidate_parent = holes[t][j];
-                        if (candidate_parent.polygon.contains(loop.polygon.first_point())) {
+                        if (Algorithms::Polygon::contains(candidate_parent.polygon, loop.polygon.first_point())) {
                             candidate_parent.children.push_back(loop);
                             holes_d.erase(holes_d.begin() + i);
                             -- i;
@@ -1415,7 +1415,7 @@ void PerimeterGenerator::process_classic(
                 for (int t = loop_number; t >= 0; -- t) {
                     for (int j = 0; j < (int)contours[t].size(); ++ j) {
                         PerimeterGeneratorLoop &candidate_parent = contours[t][j];
-                        if (candidate_parent.polygon.contains(loop.polygon.first_point())) {
+                        if (Algorithms::Polygon::contains(candidate_parent.polygon, loop.polygon.first_point())) {
                             candidate_parent.children.push_back(loop);
                             holes_d.erase(holes_d.begin() + i);
                             -- i;
@@ -1436,7 +1436,7 @@ void PerimeterGenerator::process_classic(
                 for (int t = d - 1; t >= 0; -- t) {
                     for (size_t j = 0; j < contours[t].size(); ++ j) {
                         PerimeterGeneratorLoop &candidate_parent = contours[t][j];
-                        if (candidate_parent.polygon.contains(loop.polygon.first_point())) {
+                        if (Algorithms::Polygon::contains(candidate_parent.polygon, loop.polygon.first_point())) {
                             candidate_parent.children.push_back(loop);
                             contours_d.erase(contours_d.begin() + i);
                             -- i;

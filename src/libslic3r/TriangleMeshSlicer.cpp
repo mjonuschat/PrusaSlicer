@@ -1758,7 +1758,7 @@ static ExPolygons make_expolygons_simple(IntersectionLines &lines)
             int     slice_idx            = -1;
             double  current_contour_area = std::numeric_limits<double>::max();
             for (ExPolygon &slice : slices)
-                if (slice.contour.contains(hole.points.front())) {
+                if (Algorithms::Polygon::contains(slice.contour, hole.points.front())) {
                     double area = slice.contour.area();
                     if (area < current_contour_area) {
                         slice_idx = &slice - slices.data();

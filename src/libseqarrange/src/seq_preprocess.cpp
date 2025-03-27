@@ -601,7 +601,7 @@ void decimate_PolygonForSequentialSolver(double                 DP_tolerance,
 	    bool contains = true;
 	    for (unsigned int i = 0; i < polygon.points.size(); ++i)
 	    {
-		if (!decimated_polygon.contains(polygon.points[i]))
+		if (!Algorithms::Polygon::contains(decimated_polygon, polygon.points[i]))
 		{
 		    contains = false;
 		    break;

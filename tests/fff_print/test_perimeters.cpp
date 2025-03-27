@@ -116,7 +116,7 @@ SCENARIO("Perimeter nesting", "[Perimeters]")
         THEN("expected nesting order") {
             for (const std::vector<int> &nesting : data.nesting) {
                 for (size_t i = 1; i < nesting.size(); ++ i)
-                    REQUIRE(dynamic_cast<const ExtrusionLoop*>(loops.entities[nesting[i - 1]])->polygon().contains(loops.entities[nesting[i]]->first_point()));
+                    REQUIRE(Algorithms::Polygon::contains(dynamic_cast<const ExtrusionLoop*>(loops.entities[nesting[i - 1]])->polygon(), loops.entities[nesting[i]]->first_point()));
             }
         }
     };
@@ -263,7 +263,7 @@ SCENARIO("Perimeters", "[Perimeters]")
                         bool is_contour          = it->second == 2;
                         bool is_hole             = it->second == 1;
                         // Testing whether the move point after loop ends up inside the extruded loop.
-                        bool loop_contains_point = current_loop.contains(line.new_XY_scaled(self));
+                        bool loop_contains_point = Slic3r::Biz::Algorithms::Polygon::contains(current_loop, line.new_XY_scaled(self));
                         if (// contour should include destination
                             (! loop_contains_point && is_contour) ||
                             // hole should not

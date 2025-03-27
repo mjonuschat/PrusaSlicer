@@ -20,6 +20,7 @@
 #include <cinttypes>
 #include <cstdlib>
 
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "../ClipperUtils.hpp"
 #include "../Geometry.hpp"
 #include "../Layer.hpp"
@@ -44,6 +45,8 @@
 #include "libslic3r/Polyline.hpp"
 #include "libslic3r/libslic3r.h"
 #include "libslic3r/ShortestPath.hpp"
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r {
 namespace FillAdaptive {
@@ -392,7 +395,7 @@ static void insert_fills_into_islands(Layer &layer, uint32_t fill_region_id, uin
 	        const BoundingBox &bbox = layer.lslices_ex[lslice_idx].bbox;
 	        return point.x() >= bbox.min.x() && point.x() < bbox.max.x() &&
 	               point.y() >= bbox.min.y() && point.y() < bbox.max.y() &&
-	               layer.lslices[lslice_idx].contour.contains(point);
+                   Algorithms::Polygon::contains(layer.lslices[lslice_idx].contour, point);
 	    };
 	    Point point = layer.get_region(fill_region_id)->fills().entities[fill_begin]->first_point();
 	    int lslice_idx = int(layer.lslices_ex.size()) - 1;

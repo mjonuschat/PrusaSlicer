@@ -5,6 +5,8 @@
 #include "Slic3r/Domain/Polygon.hpp"
 #include "Slic3r/Domain/Polyline.hpp"
 
+#include <optional>
+
 namespace Slic3r::Biz::Algorithms::Polygon {
 
 /**
@@ -52,6 +54,15 @@ Domain::Polyline split_at_vertex(const Domain::Polygon& polygon, const Domain::P
 Domain::Polyline split_at_index(const Domain::Polygon& polygon, size_t index);
 
 Domain::Polyline split_at_first_point(const Domain::Polygon& polygon);
+
+std::optional<Domain::Point> intersection(const Domain::Polygon& polygon, const Domain::Line& line);
+
+/**
+ * @note Works on CCW polygons only, CW contour will be reoriented to CCW by Clipper's simplify_polygons()!
+ */
+Domain::Polygons simplify(const Domain::Polygon& polygon, double tolerance);
+
+bool contains(const Domain::Polygon& polygon, const Domain::Point& point, bool border_result = true);
 
 Domain::Lines to_lines(const Domain::Polygon& polygon);
 Domain::Lines to_lines(const Domain::Polygons& polygons);

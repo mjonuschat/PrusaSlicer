@@ -271,7 +271,9 @@ void ExPolygon::medial_axis(double min_width, double max_width, ThickPolylines* 
                 p2 = (p1 + p2) * 0.5;
             // Extend the start of the segment.
             p1 -= (p2 - p1).normalized() * max_width;
-            this->contour.intersection(Line(p1.cast<coord_t>(), p2.cast<coord_t>()), &new_front);
+            if (const std::optional<Point> intersection_pt = Algorithms::Polygon::intersection(this->contour, Line(p1.cast<coord_t>(), p2.cast<coord_t>())); intersection_pt.has_value()) {
+                new_front = intersection_pt.value();
+            }
         }
         if (polyline.endpoints.second && !this->on_boundary(new_back, SCALED_EPSILON)) {
             Vec2d p1 = (polyline.points.end() - 2)->cast<double>();
@@ -281,7 +283,9 @@ void ExPolygon::medial_axis(double min_width, double max_width, ThickPolylines* 
                 p1 = (p1 + p2) * 0.5;
             // Extend the start of the segment.
             p2 += (p2 - p1).normalized() * max_width;
-            this->contour.intersection(Line(p1.cast<coord_t>(), p2.cast<coord_t>()), &new_back);
+            if (const std::optional<Point> intersection_pt = Algorithms::Polygon::intersection(this->contour, Line(p1.cast<coord_t>(), p2.cast<coord_t>())); intersection_pt.has_value()) {
+                new_back = intersection_pt.value();
+            }
         }
         polyline.points.front() = new_front;
         polyline.points.back()  = new_back;

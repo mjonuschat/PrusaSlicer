@@ -374,7 +374,7 @@ void removeSmallAreas(Polygons &thiss, const double min_area_size, const bool re
         const auto removed_outlines_start = new_end;
         for (auto hole_it = small_holes.rbegin(); hole_it < small_holes.rend(); hole_it++)
             for (auto outline_it = removed_outlines_start; outline_it < thiss.end(); outline_it++)
-                if (Polygon(*outline_it).contains(*hole_it->begin())) {
+                if (Algorithms::Polygon::contains(Polygon(*outline_it), *hole_it->begin())) {
                     new_end--;
                     *hole_it = std::move(*new_end);
                     break;
