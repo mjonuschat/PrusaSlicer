@@ -24,6 +24,7 @@
 #include <cassert>
 #include <cinttypes>
 
+#include "Slic3r/Domain/ExPolygon.hpp"
 #include "Point.hpp"
 #include "libslic3r.h"
 #include "Polygon.hpp"
@@ -37,38 +38,26 @@ class ExPolygon;
 
 using ExPolygons = std::vector<ExPolygon>;
 
-class ExPolygon
+class ExPolygon : public Domain::ExPolygon
 {
 public:
     ExPolygon() = default;
 	ExPolygon(const ExPolygon &other) = default;
     ExPolygon(ExPolygon &&other) = default;
-	explicit ExPolygon(const Polygon &contour) : contour(contour) {}
-	explicit ExPolygon(Polygon &&contour) : contour(std::move(contour)) {}
-	explicit ExPolygon(const Points &contour) : contour(contour) {}
-	explicit ExPolygon(Points &&contour) : contour(std::move(contour)) {}
-	explicit ExPolygon(const Polygon &contour, const Polygon &hole) : contour(contour) { holes.emplace_back(hole); }
-	explicit ExPolygon(Polygon &&contour, Polygon &&hole) : contour(std::move(contour)) { holes.emplace_back(std::move(hole)); }
-	explicit ExPolygon(const Points &contour, const Points &hole) : contour(contour) { holes.emplace_back(hole); }
-	explicit ExPolygon(Points &&contour, Polygon &&hole) : contour(std::move(contour)) { holes.emplace_back(std::move(hole)); }
-	ExPolygon(std::initializer_list<Point> contour) : contour(contour) {}
-	ExPolygon(std::initializer_list<Point> contour, std::initializer_list<Point> hole) : contour(contour), holes({ hole }) {}
+	explicit ExPolygon(const Polygon &contour) : Domain::ExPolygon(contour) {}
+	explicit ExPolygon(Polygon &&contour) : Domain::ExPolygon(std::move(contour)) {}
+	explicit ExPolygon(const Points &contour) : Domain::ExPolygon(contour) {}
+	explicit ExPolygon(Points &&contour) : Domain::ExPolygon(std::move(contour)) {}
+	explicit ExPolygon(const Polygon &contour, const Polygon &hole) : Domain::ExPolygon(contour, hole) {}
+	explicit ExPolygon(Polygon &&contour, Polygon &&hole) : Domain::ExPolygon(std::move(contour), std::move(hole)) {}
+	explicit ExPolygon(const Points &contour, const Points &hole) : Domain::ExPolygon(contour, hole) {}
+	explicit ExPolygon(Points &&contour, Polygon &&hole) : Domain::ExPolygon(std::move(contour), std::move(hole)) {}
+	ExPolygon(std::initializer_list<Point> contour) : Domain::ExPolygon(contour) {}
+	ExPolygon(std::initializer_list<Point> contour, std::initializer_list<Point> hole) : Domain::ExPolygon(contour, hole) {}
 
     ExPolygon& operator=(const ExPolygon &other) = default;
     ExPolygon& operator=(ExPolygon &&other) = default;
 
-    Polygon  contour; //CCW
-    Polygons holes; //CW
-
-    void clear() { contour.points.clear(); holes.clear(); }
-    void scale(double factor);
-    void scale(double factor_x, double factor_y);
-    void translate(double x, double y) { this->translate(Point(coord_t(x), coord_t(y))); }
-    void translate(const Point &vector);
-    void rotate(double angle);
-    void rotate(double angle, const Point &center);
-    double area() const;
-    bool empty() const { return contour.points.empty(); }
     bool is_valid() const;
     void douglas_peucker(double tolerance);
 
@@ -100,15 +89,7 @@ public:
     Polylines medial_axis(double min_width, double max_width) const 
         { Polylines out; this->medial_axis(min_width, max_width, &out); return out; }
     Lines lines() const;
-
-    // Number of contours (outer contour with holes).
-    size_t   		num_contours() const { return this->holes.size() + 1; }
-    Polygon& 		contour_or_hole(size_t idx) 		{ return (idx == 0) ? this->contour : this->holes[idx - 1]; }
-    const Polygon& 	contour_or_hole(size_t idx) const 	{ return (idx == 0) ? this->contour : this->holes[idx - 1]; }
 };
-
-inline bool operator==(const ExPolygon &lhs, const ExPolygon &rhs) { return lhs.contour == rhs.contour && lhs.holes == rhs.holes; }
-inline bool operator!=(const ExPolygon &lhs, const ExPolygon &rhs) { return lhs.contour != rhs.contour || lhs.holes != rhs.holes; }
 
 inline size_t count_points(const ExPolygons &expolys)
 {

@@ -34,49 +34,6 @@ using namespace Slic3r::Biz;
 
 namespace Slic3r {
 
-void ExPolygon::scale(double factor)
-{
-    contour.scale(factor);
-    for (Polygon &hole : holes)
-        hole.scale(factor);
-}
-
-void ExPolygon::scale(double factor_x, double factor_y)
-{
-    contour.scale(factor_x, factor_y);
-    for (Polygon &hole : holes)
-        hole.scale(factor_x, factor_y);
-}
-
-void ExPolygon::translate(const Point &p)
-{
-    contour.translate(p);
-    for (Polygon &hole : holes)
-        hole.translate(p);
-}
-
-void ExPolygon::rotate(double angle)
-{
-    contour.rotate(angle);
-    for (Polygon &hole : holes)
-        hole.rotate(angle);
-}
-
-void ExPolygon::rotate(double angle, const Point &center)
-{
-    contour.rotate(angle, center);
-    for (Polygon &hole : holes)
-        hole.rotate(angle, center);
-}
-
-double ExPolygon::area() const
-{
-    double a = this->contour.area();
-    for (const Polygon &hole : holes)
-        a -= - hole.area();  // holes have negative area
-    return a;
-}
-
 bool ExPolygon::is_valid() const
 {
     if (!this->contour.is_valid() || !Algorithms::Polygon::is_counter_clockwise(this->contour)) return false;
