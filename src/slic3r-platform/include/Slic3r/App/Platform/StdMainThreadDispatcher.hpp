@@ -11,8 +11,8 @@ namespace Slic3r::App::Platform {
 class StdMainThreadDispatcher : public Biz::Platform::IMainThreadDispatcher
 {
 public:
-    [[nodiscard]] bool dispatch_on_main_thread(Function func) override;
-    [[nodiscard]] bool dispatch_on_main_thread_after(Function func) override;
+    [[nodiscard]] bool dispatch_on_main_thread(Function&& func) override;
+    [[nodiscard]] bool dispatch_on_main_thread_after(Function&& func) override;
     bool dispatch_enqueued() override;
     [[nodiscard]] bool is_closed() const override;
     void close() override;

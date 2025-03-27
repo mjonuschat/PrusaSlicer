@@ -1,4 +1,5 @@
 #include "Slic3r/Biz/FDMResultCache.hpp"
+#include "Slic3r/Biz/Platform/FunctionUtils.hpp"
 #include "Slic3r/Biz/Platform/Termination.hpp"
 #include <Slic3r/Biz/Slicing/SlicingInteractor.hpp>
 #include <Slic3r/Biz/Platform/PlatformServices.hpp>
@@ -70,8 +71,8 @@ void SlicingInteractor::remove_bed(const Domain::SelectionId bed_instance_id) {
     }
     process_slicing_queue();
 
-    invoke_listeners<IFDMResultListener>([id](auto* listener){
-        listener->on_fdm_result_changed(std::make_shared<FDMResult>(), id);
+    invoke_listeners<IFDMResultListener>([&](auto* listener){
+        listener->on_fdm_result_changed({}, id);
     });
 }
 
@@ -151,14 +152,19 @@ void SlicingInteractor::on_status(const Status status, const SlicingId id) {
 void SlicingInteractor::on_fdm_result(FDMResult&& result, const SlicingId id) {
     SPDLOG_INFO("{}: FDMResult{{moves_count: {}}}", fmt::streamed(id), result.moves.size());
 
+    using Platform::MoveOnlyFunction;
+
     if(!m_dispatcher.dispatch_on_main_thread(
         [
             this,
             id,
-            _result = std::make_shared<FDMResult>(std::move(result))
+            _result = std::move(result)
         ]() mutable {
+            bool already_called{false};
             invoke_listeners<IFDMResultListener>([&](auto* listener){
-                listener->on_fdm_result_changed(_result, id);
+                ASSERT(!already_called, "Fdm result listener must not be called twice!");
+                listener->on_fdm_result_changed(std::move(_result), id);
+                already_called = true;
             });
         }
     )) {

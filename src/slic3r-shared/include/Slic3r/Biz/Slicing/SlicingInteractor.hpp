@@ -25,7 +25,7 @@ class IFDMResultListener : public ISlicingListener
 {
 public:
     virtual void on_fdm_result_changed(
-        std::shared_ptr<FDMResult>, const SlicingId
+        FDMResult&&, const SlicingId
     ) = 0;
 };
 

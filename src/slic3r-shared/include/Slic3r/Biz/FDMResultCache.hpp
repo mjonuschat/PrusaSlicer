@@ -22,8 +22,8 @@ public:
     const Slicing::FDMResult& get_result(const Slicing::SlicingId id) const;
 
     void on_fdm_result_changed(
-        std::shared_ptr<Slicing::FDMResult>,
-        const Slicing::SlicingId
+        Slicing::FDMResult&& result,
+        const Slicing::SlicingId id
     ) override;
 
 private:

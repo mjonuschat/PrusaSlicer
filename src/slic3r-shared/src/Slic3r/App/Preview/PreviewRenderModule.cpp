@@ -242,6 +242,7 @@ void PreviewRenderModule::on_scene_keyboard_event(const Platform::KeyboardEvent&
 void PreviewRenderModule::on_fdm_result_cache_changed(
     const Biz::Slicing::SlicingId id
 ) {
+    // TODO send_data_to_viewer should take const& to ProcessorResult.
     send_data_to_viewer(m_project_interactor.fdm_result_cache().get_result(id));
 }
 

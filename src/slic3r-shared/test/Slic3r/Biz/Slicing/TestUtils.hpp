@@ -59,7 +59,7 @@ using GCodes = std::map<Domain::SelectionId, std::string>;
 struct ResultListener : public Biz::Slicing::IFDMResultListener
 {
     void on_fdm_result_changed(
-        std::shared_ptr<Biz::Slicing::FDMResult> result,
+        Biz::Slicing::FDMResult&& result,
         const Biz::Slicing::SlicingId id
     ) override;
 

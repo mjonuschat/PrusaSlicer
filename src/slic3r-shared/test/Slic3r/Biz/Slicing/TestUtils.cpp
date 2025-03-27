@@ -100,10 +100,10 @@ using Biz::Slicing::SlicingId;
 using Biz::Slicing::IStatusListener;
 
 void ResultListener::on_fdm_result_changed(
-    std::shared_ptr<FDMResult> result, const SlicingId id
+    FDMResult&& result, const SlicingId id
 )
 {
-    gcodes[id.bed_instance_id] = result->gcode.str();
+    gcodes[id.bed_instance_id] = result.gcode.str();
 }
 
 SlicingFixture::SlicingFixture() {

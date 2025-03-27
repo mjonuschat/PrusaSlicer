@@ -8,11 +8,11 @@ const Slicing::FDMResult& FDMResultCache::get_result(const Slicing::SlicingId id
 }
 
 void FDMResultCache::on_fdm_result_changed(
-    std::shared_ptr<Slicing::FDMResult> result,
+    Slicing::FDMResult&& result,
     const Slicing::SlicingId id
 )
 {
-    m_results[id] = std::move(*result);
+    m_results[id] = std::move(result);
     invoke_listeners<IFDMResultCacheChangedListener>([&](auto* listener) {
         listener->on_fdm_result_cache_changed(id);
     });

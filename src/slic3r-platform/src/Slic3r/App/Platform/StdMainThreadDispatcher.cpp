@@ -2,7 +2,7 @@
 
 namespace Slic3r::App::Platform {
 
-bool StdMainThreadDispatcher::dispatch_on_main_thread(Function func)
+bool StdMainThreadDispatcher::dispatch_on_main_thread(Function&& func)
 {
     if (m_closed) {
         return false;
@@ -15,7 +15,7 @@ bool StdMainThreadDispatcher::dispatch_on_main_thread(Function func)
     return true;
 }
 
-bool StdMainThreadDispatcher::dispatch_on_main_thread_after(Function func)
+bool StdMainThreadDispatcher::dispatch_on_main_thread_after(Function&& func)
 {
     if (m_closed) {
         return false;
@@ -41,7 +41,7 @@ bool StdMainThreadDispatcher::process_queue(Functions& queue, std::mutex& queue_
         queue.clear();
     }
 
-    for (const auto& func : to_process)
+    for (auto& func : to_process)
     {
         func();
     }

@@ -2,17 +2,19 @@
 
 #include <functional>
 #include <vector>
+#include <memory>
+#include "Slic3r/Assert.hpp"
+#include "Slic3r/Biz/Platform/FunctionUtils.hpp"
 
 namespace Slic3r::Biz::Platform {
-
 class IMainThreadDispatcher
 {
 public:
-    using Function = std::function<void()>;
+    using Function = MoveOnlyFunction;
     virtual ~IMainThreadDispatcher() = default;
 
-    [[nodiscard]] virtual bool dispatch_on_main_thread(Function func) = 0;
-    [[nodiscard]] virtual bool dispatch_on_main_thread_after(Function func) = 0;
+    [[nodiscard]] virtual bool dispatch_on_main_thread(Function&& func) = 0;
+    [[nodiscard]] virtual bool dispatch_on_main_thread_after(Function&& func) = 0;
     virtual bool dispatch_enqueued() = 0;
     [[nodiscard]] virtual bool is_closed() const = 0;
 
