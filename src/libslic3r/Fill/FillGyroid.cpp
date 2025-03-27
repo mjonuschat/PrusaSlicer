@@ -8,6 +8,7 @@
 #include <vector>
 #include <cstddef>
 
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "../ClipperUtils.hpp"
 #include "../ShortestPath.hpp"
 #include "FillGyroid.hpp"
@@ -16,6 +17,8 @@
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/libslic3r.h"
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r {
 
@@ -169,7 +172,7 @@ void FillGyroid::_fill_surface_single(
     if(std::abs(infill_angle) >= EPSILON)
         expolygon.rotate(-infill_angle);
 
-    BoundingBox bb = expolygon.contour.bounding_box();
+    BoundingBox bb = Algorithms::Polygon::get_bounding_box(expolygon.contour);
     // Density adjusted to have a good %of weight.
     double      density_adjusted = std::max(0., params.density * DensityAdjust);
     // Distance between the gyroid waves in scaled coordinates.

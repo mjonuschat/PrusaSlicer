@@ -11,6 +11,8 @@ using Biz::GCodeReader::GCodeReader;
 
 SCENARIO("Bridge detector", "[Bridging]") 
 {
+    using namespace Slic3r::Biz;
+
     auto check_angle = [](const ExPolygons &lower, const ExPolygon &bridge, double expected, double tolerance = -1, double expected_coverage = -1) 
     {
         if (expected_coverage < 0)
@@ -37,8 +39,8 @@ SCENARIO("Bridge detector", "[Bridging]")
     GIVEN("O-shaped overhang") {
         auto test = [&check_angle](const Point &size, double rotate, double expected_angle, double tolerance = -1) {
             ExPolygon lower{
-                Polygon::new_scale({ {-2,-2}, {size.x()+2,-2}, {size.x()+2,size.y()+2}, {-2,size.y()+2} }),
-                Polygon::new_scale({ {0,0}, {0,size.y()}, {size.x(),size.y()}, {size.x(),0} } )
+                Algorithms::Polygon::scaled({ {-2,-2}, {size.x()+2,-2}, {size.x()+2,size.y()+2}, {-2,size.y()+2} }),
+                Algorithms::Polygon::scaled({ {0,0}, {0,size.y()}, {size.x(),size.y()}, {size.x(),0} } )
             };
             lower.rotate(Geometry::deg2rad(rotate), size / 2);
             ExPolygon bridge_expoly(lower.holes.front());
@@ -71,8 +73,8 @@ SCENARIO("Bridge detector", "[Bridging]")
         }
     }
     GIVEN("two-sided bridge") {
-        ExPolygon bridge{ Polygon::new_scale({ {0,0}, {20,0}, {20,10}, {0,10} }) };
-        ExPolygons lower { ExPolygon{ Polygon::new_scale({ {-2,0}, {0,0}, {0,10}, {-2,10} }) } };
+        ExPolygon bridge{ Algorithms::Polygon::scaled({ {0,0}, {20,0}, {20,10}, {0,10} }) };
+        ExPolygons lower { ExPolygon{ Algorithms::Polygon::scaled({ {-2,0}, {0,0}, {0,10}, {-2,10} }) } };
         lower.emplace_back(lower.front());
         lower.back().translate(Point::new_scale(22, 0));
         THEN("Bridging angle 0 degrees") {
@@ -80,16 +82,16 @@ SCENARIO("Bridge detector", "[Bridging]")
         }
     }
     GIVEN("for C-shaped overhang") {
-        ExPolygon bridge{ Polygon::new_scale({ {0,0}, {20,0}, {10,10}, {0,10} }) };
-        ExPolygon lower{ Polygon::new_scale({ {0,0}, {0,10}, {10,10}, {10,12}, {-2,12}, {-2,-2}, {22,-2}, {22,0} }) };
+        ExPolygon bridge{ Algorithms::Polygon::scaled({ {0,0}, {20,0}, {10,10}, {0,10} }) };
+        ExPolygon lower{ Algorithms::Polygon::scaled({ {0,0}, {0,10}, {10,10}, {10,12}, {-2,12}, {-2,-2}, {22,-2}, {22,0} }) };
         bool valid = check_angle({ lower }, bridge, 135);
         THEN("Bridging angle is 135 degrees") {
             REQUIRE(valid);
         }
     }
     GIVEN("square overhang with L-shaped anchors") {
-        ExPolygon bridge{ Polygon::new_scale({ {10,10}, {20,10}, {20,20}, {10,20} }) };
-        ExPolygon lower{ Polygon::new_scale({ {10,10}, {10,20}, {20,20}, {30,30}, {0,30}, {0,0} }) };
+        ExPolygon bridge{ Algorithms::Polygon::scaled({ {10,10}, {20,10}, {20,20}, {10,20} }) };
+        ExPolygon lower{ Algorithms::Polygon::scaled({ {10,10}, {10,20}, {20,20}, {30,30}, {0,30}, {0,0} }) };
         bool valid = check_angle({ lower }, bridge, 45., -1., bridge.area() / 2.);
         THEN("Bridging angle is 45 degrees") {
             REQUIRE(valid);

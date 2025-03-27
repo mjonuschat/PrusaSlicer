@@ -19,6 +19,7 @@
 #include "libslic3r/Flow.hpp"
 #include "libslic3r/LayerRegion.hpp"
 #include "libslic3r/Point.hpp"
+#include "libslic3r/Polygon.hpp"
 #include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/Surface.hpp"
 
@@ -116,7 +117,7 @@ void Generator::generateTrees(const PrintObject &print_object, const std::functi
 
     // For various operations its beneficial to quickly locate nearby features on the polygon:
     const size_t top_layer_id = print_object.layers().size() - 1;
-    EdgeGrid::Grid outlines_locator(get_extents(infill_outlines[top_layer_id]).inflated(SCALED_EPSILON));
+    EdgeGrid::Grid outlines_locator(Slic3r::get_extents(infill_outlines[top_layer_id]).inflated(SCALED_EPSILON));
     outlines_locator.create(infill_outlines[top_layer_id], locator_cell_size);
 
     // For-each layer from top to bottom:
@@ -124,7 +125,7 @@ void Generator::generateTrees(const PrintObject &print_object, const std::functi
         throw_on_cancel_callback();
         Layer             &current_lightning_layer = m_lightning_layers[layer_id];
         const Polygons    &current_outlines        = infill_outlines[layer_id];
-        const BoundingBox &current_outlines_bbox   = get_extents(current_outlines);
+        const BoundingBox &current_outlines_bbox   = Slic3r::get_extents(current_outlines);
 
         // register all trees propagated from the previous layer as to-be-reconnected
         std::vector<NodeSPtr> to_be_reconnected_tree_roots = current_lightning_layer.tree_roots;
@@ -137,7 +138,7 @@ void Generator::generateTrees(const PrintObject &print_object, const std::functi
             return;
 
         const Polygons &below_outlines      = infill_outlines[layer_id - 1];
-        BoundingBox     below_outlines_bbox = get_extents(below_outlines).inflated(SCALED_EPSILON);
+        BoundingBox     below_outlines_bbox = Slic3r::get_extents(below_outlines).inflated(SCALED_EPSILON);
         if (const BoundingBox &outlines_locator_bbox = outlines_locator.bbox(); outlines_locator_bbox.defined)
             below_outlines_bbox.merge(outlines_locator_bbox);
 

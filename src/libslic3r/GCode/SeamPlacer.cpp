@@ -191,7 +191,7 @@ const SeamPerimeterChoice &choose_closest_seam(
     }
 
     const std::size_t choice_index{
-        Geometry::pick_closest_bounding_box(loop_polygon.bounding_box(), choose_from).first};
+        Geometry::pick_closest_bounding_box(Algorithms::Polygon::get_bounding_box(loop_polygon), choose_from).first};
 
     return seams[choice_index];
 }
@@ -503,7 +503,7 @@ std::pair<SeamChoice, std::size_t> place_seam_near(
     const Polygon loop_polygon{Geometry::to_polygon(loop)};
 
     const std::size_t choice_index{
-        Geometry::pick_closest_bounding_box(loop_polygon.bounding_box(), choose_from).first};
+        Geometry::pick_closest_bounding_box(Algorithms::Polygon::get_bounding_box(loop_polygon), choose_from).first};
 
     const NearestCorner nearest_corner{unscaled(position)};
     const std::optional<SeamChoice> corner_choice{

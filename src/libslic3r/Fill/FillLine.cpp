@@ -7,6 +7,7 @@
 #include <cassert>
 #include <cstdlib>
 
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "../ClipperUtils.hpp"
 #include "../ExPolygon.hpp"
 #include "../ShortestPath.hpp"
@@ -14,6 +15,8 @@
 #include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/Fill/FillBase.hpp"
 #include "libslic3r/Polygon.hpp"
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r {
 
@@ -32,7 +35,7 @@ void FillLine::_fill_surface_single(
     this->_line_spacing = coord_t(double(this->_min_spacing) / params.density);
     this->_diagonal_distance = this->_line_spacing * 2;
     this->_line_oscillation = this->_line_spacing - this->_min_spacing; // only for Line infill
-    BoundingBox bounding_box = expolygon.contour.bounding_box();
+    BoundingBox bounding_box = Algorithms::Polygon::get_bounding_box(expolygon.contour);
     
     // define flow spacing according to requested density
     if (params.density > 0.9999f && !params.dont_adjust) {

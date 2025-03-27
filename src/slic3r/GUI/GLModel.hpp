@@ -9,6 +9,7 @@
 #include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/Color.hpp"
 #include "libslic3r/Utils.hpp"
+#include "libslic3r/Polygon.hpp"
 #include <vector>
 #include <string>
 
@@ -17,8 +18,6 @@ struct indexed_triangle_set;
 namespace Slic3r {
 
 class TriangleMesh;
-class Polygon;
-using Polygons = std::vector<Polygon, PointsAllocator<Polygon>>;
 class BuildVolume;
 
 namespace GUI {

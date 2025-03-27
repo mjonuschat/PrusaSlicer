@@ -7,7 +7,6 @@
 
 namespace Slic3r {
 class ExPolygon;
-class Polygon;
 class PrintRegionConfig;
 
 struct PerimeterRegion;

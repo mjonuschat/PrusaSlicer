@@ -150,12 +150,12 @@ Extrusion::Extrusion(
     , width(width)
     , island_boundary(island_boundary)
     , overhangs(std::move(overhangs)) {
-    this->island_boundary_bounding_boxes.push_back(island_boundary.contour.bounding_box());
+    this->island_boundary_bounding_boxes.push_back(Algorithms::Polygon::get_bounding_box(island_boundary.contour));
 
     std::transform(
         this->island_boundary.holes.begin(), this->island_boundary.holes.end(),
         std::back_inserter(this->island_boundary_bounding_boxes),
-        [](const Polygon &polygon) { return polygon.bounding_box(); }
+        [](const Polygon &polygon) { return Algorithms::Polygon::get_bounding_box(polygon); }
     );
 }
 
@@ -231,7 +231,7 @@ Geometry::Extrusions get_external_perimeters(const Slic3r::Layer &layer, const L
                 if (entity->role().is_external_perimeter()) {
                     Overhangs overhangs{get_overhangs(entity)};
                     Polygon polygon{entity->as_polyline().points};
-                    const BoundingBox bounding_box{polygon.bounding_box()};
+                    const BoundingBox bounding_box{Algorithms::Polygon::get_bounding_box(polygon)};
                     const double width{layer_region.flow(FlowRole::frExternalPerimeter).width()};
                     result.emplace_back(std::move(polygon), bounding_box, width, island.boundary, std::move(overhangs));
                 }
@@ -287,14 +287,14 @@ BoundedPolygons project_to_geometry(const Geometry::Extrusions &external_perimet
                     return BoundedPolygon{
                         expanded_extrusion.front(),
                         external_perimeter.overhangs,
-                        expanded_extrusion.front().bounding_box(),
+                        Algorithms::Polygon::get_bounding_box(expanded_extrusion.front()),
                         Algorithms::Polygon::is_clockwise(external_perimeter.polygon),
                     };
                 }
                 return BoundedPolygon{
                     external_perimeter.polygon,
                     external_perimeter.overhangs,
-                    external_perimeter.polygon.bounding_box(),
+                    Algorithms::Polygon::get_bounding_box(external_perimeter.polygon),
                     Algorithms::Polygon::is_clockwise(external_perimeter.polygon)
                 };
             }

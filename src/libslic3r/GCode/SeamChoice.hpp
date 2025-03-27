@@ -6,6 +6,7 @@
 #include <optional>
 #include <utility>
 
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/GCode/SeamShells.hpp"
 #include "libslic3r/BoundingBox.hpp"
@@ -21,7 +22,7 @@ struct SeamPerimeterChoice
     SeamPerimeterChoice(const SeamChoice &choice, Perimeters::Perimeter &&perimeter)
         : choice(choice)
         , perimeter(std::move(perimeter))
-        , bounding_box(Polygon{Geometry::scaled(this->perimeter.positions)}.bounding_box()) {}
+        , bounding_box(Slic3r::Biz::Algorithms::Polygon::get_bounding_box(Polygon{Geometry::scaled(this->perimeter.positions)})) {}
 
     SeamChoice choice;
     Perimeters::Perimeter perimeter;

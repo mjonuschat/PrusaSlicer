@@ -126,7 +126,7 @@ TEST_CASE("Fill: Pattern Path Length", "[Fill]") {
     }
 
     SECTION("Rotated Square produces one continuous path") {
-        Slic3r::ExPolygon expolygon(Polygon::new_scale({ {0, 0}, {50, 0}, {50, 50}, {0, 50} }));
+        Slic3r::ExPolygon expolygon(Slic3r::Biz::Algorithms::Polygon::scaled({ {0, 0}, {50, 0}, {50, 50}, {0, 50} }));
         std::unique_ptr<Slic3r::Fill> filler(Slic3r::Fill::new_from_type("rectilinear"));
 		filler->bounding_box = get_extents(expolygon);
         filler->angle = 0;

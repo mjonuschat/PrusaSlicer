@@ -9,6 +9,7 @@
 #include <cassert>
 #include <cstddef>
 
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "../ClipperUtils.hpp"
 #include "../ShortestPath.hpp"
 #include "Fill3DHoneycomb.hpp"
@@ -17,6 +18,8 @@
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/libslic3r.h"
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r {
 
@@ -155,7 +158,7 @@ void Fill3DHoneycomb::_fill_surface_single(
     Polylines                       &polylines_out)
 {
     // no rotation is supported for this infill pattern
-    BoundingBox bb = expolygon.contour.bounding_box();
+    BoundingBox bb = Algorithms::Polygon::get_bounding_box(expolygon.contour);
     coord_t     distance = coord_t(scale_(this->spacing) / params.density);
 
     // align bounding box to a multiple of our honeycomb grid module

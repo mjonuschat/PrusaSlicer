@@ -10,7 +10,6 @@
 
 namespace Slic3r {
 
-class Polygon;
 class ExPolygon;
 
 void remove_collinear_points(Polygon& p);

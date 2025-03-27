@@ -33,7 +33,7 @@ bool find_initial_position(Itm &itm,
             for (double rot : rotations) {
                 auto chullcpy = chull;
                 chullcpy.rotate(rot);
-                auto bbitm = bounding_box(chullcpy);
+                auto bbitm = Slic3r::bounding_box(chullcpy);
 
                 Vec2crd cb = sink;
                 Vec2crd ci = bbitm.center();

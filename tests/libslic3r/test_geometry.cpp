@@ -805,8 +805,8 @@ TEST_CASE("Convex polygon intersection test prusa polygons", "[Geometry][Rotcali
         A = Geometry::convex_hull(A.points);
         B = Geometry::convex_hull(B.points);
 
-        auto bba = A.bounding_box();
-        auto bbb = B.bounding_box();
+        auto bba = Algorithms::Polygon::get_bounding_box(A);
+        auto bbb = Algorithms::Polygon::get_bounding_box(B);
 
         A.translate(-bba.center());
         B.translate(-bbb.center());
@@ -832,8 +832,8 @@ TEST_CASE("Convex polygon intersection test prusa polygons", "[Geometry][Rotcali
         A = Geometry::convex_hull(A.points);
         B = Geometry::convex_hull(B.points);
 
-        auto bba = A.bounding_box();
-        auto bbb = B.bounding_box();
+        auto bba = Algorithms::Polygon::get_bounding_box(A);
+        auto bbb = Algorithms::Polygon::get_bounding_box(B);
 
         A.translate(-bba.center());
         B.translate(-bbb.center());

@@ -43,6 +43,6 @@ public:
     Point centroid() const;
 };
 
-using Polygons = std::vector<Polygon, Domain::PointsAllocator<Polygon>>;
+using Polygons = std::vector<Domain::Polygon, Domain::PointsAllocator<Domain::Polygon>>;
 
 } // namespace Slic3r::Domain

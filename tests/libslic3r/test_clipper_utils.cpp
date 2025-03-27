@@ -7,6 +7,7 @@
 
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "Slic3r/Biz/Algorithms/Polyline.hpp"
+#include "libslic3r/Polygon.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/SVG.hpp"
@@ -269,7 +270,7 @@ SCENARIO("Various Clipper operations - t/clipper.t", "[ClipperUtils]") {
         }
     }
     GIVEN("circle") {
-        Slic3r::ExPolygon circle_with_hole { Polygon::new_scale({
+        Slic3r::ExPolygon circle_with_hole { Algorithms::Polygon::scaled({
                 { 151.8639,288.1192 }, {133.2778,284.6011}, { 115.0091,279.6997 }, { 98.2859,270.8606 }, { 82.2734,260.7933 }, 
                 { 68.8974,247.4181 }, { 56.5622,233.0777 }, { 47.7228,216.3558 }, { 40.1617,199.0172 }, { 36.6431,180.4328 }, 
                 { 34.932,165.2312 }, { 37.5567,165.1101 }, { 41.0547,142.9903 }, { 36.9056,141.4295 }, { 40.199,124.1277 }, 
@@ -280,7 +281,7 @@ SCENARIO("Various Clipper operations - t/clipper.t", "[ClipperUtils]") {
                 { 281.8856,198.8664 }, { 275.6283,216.7169 }, { 265.5604,232.7294 }, { 254.3211,247.942 }, { 239.9802,260.2776 }, 
                 { 224.757,271.5022 }, { 207.4179,279.0635 }, { 189.5605,285.3035 }, { 170.7649,287.4188 }
             }) };
-        circle_with_hole.holes = { Polygon::new_scale({
+        circle_with_hole.holes = { Algorithms::Polygon::scaled({
                 { 158.227,215.9007 }, { 164.5136,215.9007 }, { 175.15,214.5007 }, { 184.5576,210.6044 }, { 190.2268,207.8743 }, 
                 { 199.1462,201.0306 }, { 209.0146,188.346 }, { 213.5135,177.4829 }, { 214.6979,168.4866 }, { 216.1025,162.3325 }, 
                 { 214.6463,151.2703 }, { 213.2471,145.1399 }, { 209.0146,134.9203 }, { 199.1462,122.2357 }, { 189.8944,115.1366 }, 

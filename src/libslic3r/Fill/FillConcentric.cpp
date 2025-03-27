@@ -37,7 +37,7 @@ void FillConcentric::_fill_surface_single(
     Polylines                       &polylines_out)
 {
     // no rotation is supported for this infill pattern
-    BoundingBox bounding_box = expolygon.contour.bounding_box();
+    BoundingBox bounding_box = Algorithms::Polygon::get_bounding_box(expolygon.contour);
 
     coord_t min_spacing = scaled<coord_t>(this->spacing);
     coord_t distance    = coord_t(min_spacing / params.density);
@@ -99,7 +99,7 @@ void FillConcentric::_fill_surface_single(const FillParams              &params,
     assert(this->print_config != nullptr && this->print_object_config != nullptr);
 
     // no rotation is supported for this infill pattern
-    Point   bbox_size   = expolygon.contour.bounding_box().size();
+    Point   bbox_size   = Algorithms::Polygon::get_bounding_box(expolygon.contour).size();
     coord_t min_spacing = scaled<coord_t>(this->spacing);
 
     if (params.density > 0.9999f && !params.dont_adjust) {

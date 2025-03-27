@@ -122,9 +122,10 @@ Point point_projection(const Polygon &polygon, const Point &point)
     return proj;
 }
 
-BoundingBox get_extents(const Polygon &poly)
-{ 
-    return poly.bounding_box();
+BoundingBox get_extents(const Polygon& poly)
+{
+    const Domain::BoundingBox2crd bbox = Algorithms::BoundingBox::construct(poly.points);
+    return Slic3r::BoundingBox{bbox.min, bbox.max};
 }
 
 BoundingBox get_extents(const Polygons &polygons)
@@ -479,9 +480,20 @@ Polygon make_circle_num_segments(double radius, size_t num_segments)
     return out;
 }
 
-BoundingBox Polygon::bounding_box() const
+BoundingBox ColorPolygon::bounding_box() const
 {
     return BoundingBox(this->points);
 }
 
+} // namespace Slic3r
+
+namespace Slic3r::Biz::Algorithms::Polygon {
+
+// TODO: Temporary proxy method that will be removed after migration to BoundingBox2crd.
+Slic3r::BoundingBox get_bounding_box(const Slic3r::Polygon& poly)
+{
+    const Domain::BoundingBox2crd bbox = BoundingBox::construct(poly.points);
+    return Slic3r::BoundingBox{bbox.min, bbox.max};
 }
+
+} // namespace Slic3r::Biz::Algorithms::Polygon

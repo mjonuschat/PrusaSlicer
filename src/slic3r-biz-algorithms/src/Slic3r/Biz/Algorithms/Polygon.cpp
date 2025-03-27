@@ -45,6 +45,8 @@ Domain::Polygon scaled(const std::vector<Domain::Vec2d>& points)
     return Domain::Polygon(Point::scaled(points));
 }
 
+// TODO: Uncomment after migration to BoundingBox2crd.
+/*
 Domain::BoundingBox2crd get_bounding_box(const Domain::Polygon& polygon)
 {
     return BoundingBox::construct(polygon.points);
@@ -58,7 +60,7 @@ Domain::BoundingBox2crd get_bounding_box(const Domain::Polygons& polygons)
     }
 
     return bounding_box;
-}
+}*/
 
 bool is_counter_clockwise(const Domain::Polygon& polygon)
 {

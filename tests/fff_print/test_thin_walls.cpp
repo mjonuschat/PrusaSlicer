@@ -15,8 +15,8 @@ using namespace Slic3r::Biz;
 
 SCENARIO("Medial Axis", "[ThinWalls]") {
     GIVEN("Square with hole") {
-        auto square = Polygon::new_scale({ {100, 100}, {200, 100}, {200, 200}, {100, 200} });
-        auto hole_in_square = Polygon::new_scale({ {140, 140}, {140, 160}, {160, 160}, {160, 140} });
+        auto square = Algorithms::Polygon::scaled({ {100, 100}, {200, 100}, {200, 200}, {100, 200} });
+        auto hole_in_square = Algorithms::Polygon::scaled({ {140, 140}, {140, 160}, {160, 160}, {160, 140} });
         ExPolygon expolygon{ square, hole_in_square };
         WHEN("Medial axis is extracted") {
             Polylines res = expolygon.medial_axis(scaled<double>(0.5), scaled<double>(40.));
@@ -33,7 +33,7 @@ SCENARIO("Medial Axis", "[ThinWalls]") {
         }
     }
     GIVEN("narrow rectangle") {
-        ExPolygon expolygon{ Polygon::new_scale({ {100, 100}, {120, 100}, {120, 200}, {100, 200} }) };
+        ExPolygon expolygon{ Algorithms::Polygon::scaled({ {100, 100}, {120, 100}, {120, 200}, {100, 200} }) };
         WHEN("Medial axis is extracted") {
             Polylines res = expolygon.medial_axis(scaled<double>(0.5), scaled<double>(20.));
             THEN("medial axis of a narrow rectangle is a single line") {
@@ -47,7 +47,7 @@ SCENARIO("Medial Axis", "[ThinWalls]") {
 #if 0
     //FIXME this test never worked
     GIVEN("narrow rectangle with an extra vertex") {
-        ExPolygon expolygon{ Polygon::new_scale({ 
+        ExPolygon expolygon{ Algorithms::Polygon::scaled({
             {100, 100}, {120, 100}, {120, 200}, 
             {105, 200} /* extra point in the short side*/, 
             {100, 200} 
@@ -104,7 +104,7 @@ SCENARIO("Medial Axis", "[ThinWalls]") {
         }
     }
     GIVEN("narrow trapezoid") {
-        ExPolygon expolygon{ Polygon::new_scale({ {100, 100}, {120, 100}, {112, 200}, {108, 200} }) };
+        ExPolygon expolygon{ Algorithms::Polygon::scaled({ {100, 100}, {120, 100}, {112, 200}, {108, 200} }) };
         WHEN("Medial axis is extracted") {
             Polylines res = expolygon.medial_axis(scaled<double>(0.5), scaled<double>(20.));
             THEN("medial axis of a narrow trapezoid is a single line") {
@@ -116,7 +116,7 @@ SCENARIO("Medial Axis", "[ThinWalls]") {
         }
     }
     GIVEN("L shape") {
-        ExPolygon expolygon{ Polygon::new_scale({ {100, 100}, {120, 100}, {120, 180}, {200, 180}, {200, 200}, {100, 200}, }) };
+        ExPolygon expolygon{ Algorithms::Polygon::scaled({ {100, 100}, {120, 100}, {120, 180}, {200, 180}, {200, 200}, {100, 200}, }) };
         WHEN("Medial axis is extracted") {
             Polylines res = expolygon.medial_axis(scaled<double>(0.5), scaled<double>(20.));
             THEN("medial axis of an L shape is a single line") {
@@ -148,7 +148,7 @@ SCENARIO("Medial Axis", "[ThinWalls]") {
         }
     }
     GIVEN("narrow triangle") {
-        ExPolygon expolygon{ Polygon::new_scale({ {50, 100}, {1000, 102}, {50, 104} }) };
+        ExPolygon expolygon{ Algorithms::Polygon::scaled({ {50, 100}, {1000, 102}, {50, 104} }) };
         WHEN("Medial axis is extracted") {
             Polylines res = expolygon.medial_axis(scaled<double>(0.5), scaled<double>(4.));
             THEN("medial axis of a narrow triangle is a single line") {
@@ -168,7 +168,7 @@ SCENARIO("Medial Axis", "[ThinWalls]") {
             }
             Polyline &polyline = res.front();
             THEN("medial axis is horizontal and is centered") {
-                double expected_y = expolygon.contour.bounding_box().center().y();
+                double expected_y = Algorithms::Polygon::get_bounding_box(expolygon.contour).center().y();
                 double center_y   = 0.;
                 for (auto &p : polyline.points)
                     center_y += double(p.y());

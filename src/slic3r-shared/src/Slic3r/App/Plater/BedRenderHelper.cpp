@@ -1,4 +1,5 @@
 #include "Slic3r/App/Plater/BedRenderHelper.hpp"
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "Slic3r/Domain/Bed.hpp"
 #include "Slic3r/App/Render/Context.hpp"
 #include "Slic3r/Biz/Algorithms/Polyline.hpp"
@@ -39,8 +40,8 @@ std::vector<Vec3f> BedRenderHelper::plate_grid(const Domain::Bed& bed)
 {
     std::vector<Vec3f> ret;
 
-    ExPolygon contour = ExPolygon(Polygon::new_scale(bed.contour()));
-    BoundingBox bbox = contour.contour.bounding_box();
+    ExPolygon contour = ExPolygon(Algorithms::Polygon::scaled(bed.contour()));
+    BoundingBox bbox = Algorithms::Polygon::get_bounding_box(contour.contour);
     if (!bbox.defined) {
         SPDLOG_ERROR("Invalid bed contour");
         return ret;

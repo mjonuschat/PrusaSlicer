@@ -111,7 +111,7 @@ static void test_expolys(Rst &&             rst,
     double max_abs_err = area(pxd) * scaled(1.) * scaled(1.);
     
     BoundingBox ref_bb;
-    for (auto &expoly : ref) ref_bb.merge(expoly.contour.bounding_box());
+    for (auto &expoly : ref) ref_bb.merge(Algorithms::Polygon::get_bounding_box(expoly.contour));
     
     double max_displacement = 4. * (std::pow(pxd.h_mm, 2) + std::pow(pxd.w_mm, 2));
     max_displacement *= scaled<double>(1.) * scaled(1.);
@@ -130,7 +130,7 @@ static void test_expolys(Rst &&             rst,
         REQUIRE((rel_err <= max_rel_err || abs_err <= max_abs_err));
         
         BoundingBox bb;
-        for (auto &expoly : extracted) bb.merge(expoly.contour.bounding_box());
+        for (auto &expoly : extracted) bb.merge(Algorithms::Polygon::get_bounding_box(expoly.contour));
         
         Point d = bb.center() - ref_bb.center();
         REQUIRE(double(d.transpose() * d) <= max_displacement);

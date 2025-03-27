@@ -1,4 +1,5 @@
 #include "Slic3r/Biz/Plater/BedGeometry.hpp"
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "Slic3r/Domain/Bed.hpp"
 #include "Slic3r/Domain/BedInstance.hpp"
 
@@ -18,6 +19,8 @@
   */
 static constexpr double GROUND_Z = -0.005;
 
+using namespace Slic3r::Biz;
+
 namespace Slic3r::Biz::Plater {
 
 TriangleMesh BedGeometry::model(const Domain::Bed& bed)
@@ -36,8 +39,8 @@ std::vector<std::pair<Vec3f, Vec2f>> BedGeometry::plate_triangles(const Domain::
 {
     std::vector<std::pair<Vec3f, Vec2f>> ret;
 
-    ExPolygon contour = ExPolygon(Polygon::new_scale(bed.contour()));
-    BoundingBox bbox = contour.contour.bounding_box();
+    ExPolygon contour = ExPolygon(Algorithms::Polygon::scaled(bed.contour()));
+    BoundingBox bbox = Algorithms::Polygon::get_bounding_box(contour.contour);
     if (!bbox.defined) {
         SPDLOG_ERROR("Invalid bed contour");
         return ret;
@@ -90,8 +93,8 @@ std::vector<Vec3f> BedGeometry::plate_contour(const Domain::Bed& bed)
 {
     std::vector<Vec3f> ret;
 
-    ExPolygon contour = ExPolygon(Polygon::new_scale(bed.contour()));
-    BoundingBox bbox = contour.contour.bounding_box();
+    ExPolygon contour = ExPolygon(Algorithms::Polygon::scaled(bed.contour()));
+    BoundingBox bbox = Algorithms::Polygon::get_bounding_box(contour.contour);
     if (!bbox.defined) {
         SPDLOG_ERROR("Invalid bed contour");
         return ret;
@@ -120,8 +123,8 @@ std::vector<Vec3f> BedGeometry::print_volume(const Domain::Bed& bed)
 {
     std::vector<Vec3f> ret;
 
-    ExPolygon contour = ExPolygon(Polygon::new_scale(bed.contour()));
-    BoundingBox bbox = contour.contour.bounding_box();
+    ExPolygon contour = ExPolygon(Algorithms::Polygon::scaled(bed.contour()));
+    BoundingBox bbox = Algorithms::Polygon::get_bounding_box(contour.contour);
     if (!bbox.defined) {
         SPDLOG_ERROR("Invalid bed contour");
         return ret;

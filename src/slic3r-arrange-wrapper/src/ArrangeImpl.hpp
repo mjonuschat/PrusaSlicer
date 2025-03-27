@@ -275,7 +275,7 @@ class DefaultArranger: public Arranger<ArrItem> {
             int pa = get_priority(itm1);
             int pb = get_priority(itm2);
 
-            return pa == pb ? area(envelope_convex_hull(itm1)) > area(envelope_convex_hull(itm2)) :
+            return pa == pb ? Slic3r::area(envelope_convex_hull(itm1)) > Slic3r::area(envelope_convex_hull(itm2)) :
                               pa > pb;
         };
 
@@ -386,9 +386,9 @@ ArrItem ConvexItemConverter<ArrItem>::convert(const Arrangeable &arrbl,
     coord_t infl = offs + coord_t(std::ceil(this->safety_dist() / 2.));
 
     if (infl != 0) {
-        outline = Geometry::convex_hull(offset(outline, infl));
+        outline = Geometry::convex_hull(Slic3r::offset(outline, infl));
         if (! envelope.empty())
-            envelope = Geometry::convex_hull(offset(envelope, infl));
+            envelope = Geometry::convex_hull(Slic3r::offset(envelope, infl));
     }
 
     ArrItem ret;

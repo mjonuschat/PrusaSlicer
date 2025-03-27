@@ -37,8 +37,11 @@ int closest_point_index(const Domain::Polygon& polygon, const Domain::Point& poi
 
 Domain::Polygon scaled(const std::vector<Domain::Vec2d>& points);
 
+// TODO: Uncomment after migration to BoundingBox2crd.
+/*
 Domain::BoundingBox2crd get_bounding_box(const Domain::Polygon& polygon);
 Domain::BoundingBox2crd get_bounding_box(const Domain::Polygons& polygons);
+*/
 
 bool is_counter_clockwise(const Domain::Polygon& polygon);
 bool is_clockwise(const Domain::Polygon& polygon);

@@ -587,6 +587,9 @@ void foreach_node(const ClipperLib::PolyNodes &nodes, Fn &&fn)
     _foreach_node<o, Fn>()(nodes, std::forward<Fn>(fn));
 }
 
+template<e_ordering o, class ExOrJustPolygons>
+void traverse_pt(const ClipperLib::PolyNodes &nodes, ExOrJustPolygons *retval);
+
 // Collecting polygons of the tree into a list of Polygons, holes have clockwise
 // orientation.
 template<e_ordering ordering = e_ordering::OFF>

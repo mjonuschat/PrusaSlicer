@@ -10,12 +10,15 @@
 #include <algorithm>
 #include <cmath>
 
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "../ClipperUtils.hpp"
 #include "../ShortestPath.hpp"
 #include "FillHoneycomb.hpp"
 #include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/Fill/FillBase.hpp"
 #include "libslic3r/Polygon.hpp"
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r {
 
@@ -50,12 +53,12 @@ void FillHoneycomb::_fill_surface_single(
         // adjust actual bounding box to the nearest multiple of our hex pattern
         // and align it so that it matches across layers
         
-        BoundingBox bounding_box = expolygon.contour.bounding_box();
+        BoundingBox bounding_box = Algorithms::Polygon::get_bounding_box(expolygon.contour);
         {
             // rotate bounding box according to infill direction
             Polygon bb_polygon = bounding_box.polygon();
             bb_polygon.rotate(direction.first, m.hex_center);
-            bounding_box = bb_polygon.bounding_box();
+            bounding_box = Algorithms::Polygon::get_bounding_box(bb_polygon);
             
             // extend bounding box so that our pattern will be aligned with other layers
             // $bounding_box->[X1] and [Y1] represent the displacement between new bounding box offset and old one

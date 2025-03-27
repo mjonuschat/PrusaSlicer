@@ -18,12 +18,6 @@ struct indexed_triangle_set;
 
 namespace Slic3r {
 
-class ExPolygon;
-class Polygon;
-
-using ExPolygons = std::vector<ExPolygon>;
-using Polygons = std::vector<Polygon, Domain::PointsAllocator<Polygon>>;
-
 namespace sla {
 
 using ThrowOnCancel = std::function<void(void)>;

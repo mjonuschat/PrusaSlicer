@@ -125,7 +125,7 @@ SCENARIO("Perimeter nesting", "[Perimeters]")
         config.perimeters.value = 3;
         TestData data;
         data.expolygons  = { 
-            ExPolygon{ Polygon::new_scale({ {0,0}, {100,0}, {100,100}, {0,100} }) }
+            ExPolygon{ Algorithms::Polygon::scaled({ {0,0}, {100,0}, {100,100}, {0,100} }) }
         };
         data.total       = 3;
         data.external    = 1;
@@ -140,8 +140,8 @@ SCENARIO("Perimeter nesting", "[Perimeters]")
         config.perimeters.value = 3;
         TestData data;
         data.expolygons  = { 
-            ExPolygon{ Polygon::new_scale({ {0,0}, {100,0}, {100,100}, {0,100} }), 
-                       Polygon::new_scale({ {40,40}, {40,60}, {60,60}, {60,40} }) } 
+            ExPolygon{ Algorithms::Polygon::scaled({ {0,0}, {100,0}, {100,100}, {0,100} }),
+                       Algorithms::Polygon::scaled({ {40,40}, {40,60}, {60,60}, {60,40} }) }
         };
         data.total       = 6;
         data.external    = 2;
@@ -156,10 +156,10 @@ SCENARIO("Perimeter nesting", "[Perimeters]")
         config.perimeters.value = 3;
         TestData data;
         data.expolygons  = {
-            ExPolygon{ Polygon::new_scale({ {0,0}, {200,0}, {200,200}, {0,200} }), 
-                       Polygon::new_scale({ {20,20}, {20,180}, {180,180}, {180,20} }) },
-            ExPolygon{ Polygon::new_scale({ {50,50}, {150,50}, {150,150}, {50,150} }), 
-                       Polygon::new_scale({ {80,80}, {80,120}, {120,120}, {120,80} }) }
+            ExPolygon{ Algorithms::Polygon::scaled({ {0,0}, {200,0}, {200,200}, {0,200} }),
+                       Algorithms::Polygon::scaled({ {20,20}, {20,180}, {180,180}, {180,20} }) },
+            ExPolygon{ Algorithms::Polygon::scaled({ {50,50}, {150,50}, {150,150}, {50,150} }),
+                       Algorithms::Polygon::scaled({ {80,80}, {80,120}, {120,120}, {120,80} }) }
         };
         data.total       = 4*3;
         data.external    = 4;
@@ -172,12 +172,12 @@ SCENARIO("Perimeter nesting", "[Perimeters]")
     WHEN("Rectangle with multiple holes") {
         config.perimeters.value = 2;
         TestData data;
-        ExPolygon expoly{ Polygon::new_scale({ {0,0}, {50,0}, {50,50}, {0,50} }) };
-        expoly.holes.emplace_back(Polygon::new_scale({ {7.5,7.5},  {7.5,12.5},  {12.5,12.5}, {12.5,7.5}  }));
-        expoly.holes.emplace_back(Polygon::new_scale({ {7.5,17.5}, {7.5,22.5},  {12.5,22.5}, {12.5,17.5} }));
-        expoly.holes.emplace_back(Polygon::new_scale({ {7.5,27.5}, {7.5,32.5},  {12.5,32.5}, {12.5,27.5} }));
-        expoly.holes.emplace_back(Polygon::new_scale({ {7.5,37.5}, {7.5,42.5},  {12.5,42.5}, {12.5,37.5} }));
-        expoly.holes.emplace_back(Polygon::new_scale({ {17.5,7.5}, {17.5,12.5}, {22.5,12.5}, {22.5,7.5}  }));
+        ExPolygon expoly{ Algorithms::Polygon::scaled({ {0,0}, {50,0}, {50,50}, {0,50} }) };
+        expoly.holes.emplace_back(Algorithms::Polygon::scaled({ {7.5,7.5},  {7.5,12.5},  {12.5,12.5}, {12.5,7.5}  }));
+        expoly.holes.emplace_back(Algorithms::Polygon::scaled({ {7.5,17.5}, {7.5,22.5},  {12.5,22.5}, {12.5,17.5} }));
+        expoly.holes.emplace_back(Algorithms::Polygon::scaled({ {7.5,27.5}, {7.5,32.5},  {12.5,32.5}, {12.5,27.5} }));
+        expoly.holes.emplace_back(Algorithms::Polygon::scaled({ {7.5,37.5}, {7.5,42.5},  {12.5,42.5}, {12.5,37.5} }));
+        expoly.holes.emplace_back(Algorithms::Polygon::scaled({ {17.5,7.5}, {17.5,12.5}, {22.5,12.5}, {22.5,7.5}  }));
         data.expolygons  = { expoly };
         data.total       = 12;
         data.external    = 6;

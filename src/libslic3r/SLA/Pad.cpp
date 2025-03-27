@@ -11,6 +11,7 @@
 #include <utility>
 #include <cstdlib>
 
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "ConcaveHull.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/Tesselate.hpp"
@@ -26,6 +27,7 @@
 #include "libslic3r/SVG.hpp"
 #endif
 
+using namespace Slic3r::Biz;
 
 namespace Slic3r { namespace sla {
 
@@ -213,7 +215,7 @@ public:
     bool intersects(const ExPolygon &poly)
     {
         // Create a suitable query bounding box.
-        auto bb = poly.contour.bounding_box();
+        auto bb = Algorithms::Polygon::get_bounding_box(poly.contour);
 
         std::vector<BoxIndexEl> qres = m_index.query(bb, BoxIndex::qtIntersects);
 

@@ -35,37 +35,17 @@
 
 namespace Slic3r {
 
-class Polygon;
+using Polygon = Slic3r::Domain::Polygon;
+using Polygons = Slic3r::Domain::Polygons;
+
 class BoundingBox;
 class ColorPolygon;
 
-using Polygons      = std::vector<Polygon, Domain::PointsAllocator<Polygon>>;
 using ColorPolygons = std::vector<ColorPolygon>;
 
 // Returns true if inside. Returns border_result if on boundary.
 bool contains(const Polygon& polygon, const Point& p, bool border_result = true);
 bool contains(const Polygons& polygons, const Point& p, bool border_result = true);
-
-// Temporary proxy class over Domain::Polygon.
-class Polygon : public Domain::Polygon
-{
-public:
-    Polygon() = default;
-    explicit Polygon(const Points& points) : Domain::Polygon(points) {}
-    Polygon(std::initializer_list<Point> points) : Domain::Polygon(points) {}
-
-    ~Polygon() override = default;
-
-    BoundingBox bounding_box() const;
-
-    static Polygon new_scale(const std::vector<Vec2d> &points) {
-        Polygon pgn;
-        pgn.points.reserve(points.size());
-        for (const Vec2d &pt : points)
-            pgn.points.emplace_back(Point::new_scale(pt(0), pt(1)));
-		return pgn;
-	}
-};
 
 // Considering CCW orientation of this polygon, find all convex resp. concave points
 // with the angle at the vertex larger than a threshold.
@@ -316,6 +296,8 @@ public:
         this->colors = other.colors;
         return *this;
     }
+
+    BoundingBox bounding_box() const;
 };
 
 using ColorPolygons = std::vector<ColorPolygon>;
@@ -405,5 +387,12 @@ namespace boost::polygon {
     };
 } // namespace boost::polygon
 // end Boost
+
+namespace Slic3r::Biz::Algorithms::Polygon {
+
+// TODO: Temporary proxy method that will be removed after migration to BoundingBox2crd.
+Slic3r::BoundingBox get_bounding_box(const Slic3r::Polygon& poly);
+
+} // namespace Slic3r::Biz::Algorithms::Polygon
 
 #endif

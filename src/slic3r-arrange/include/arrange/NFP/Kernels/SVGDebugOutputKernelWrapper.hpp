@@ -60,7 +60,7 @@ struct SVGDebugOutputKernelWrapper {
         svg->draw(nfp, "green", 0.2f);
 
         for (const auto &fixeditm : fixed) {
-            ExPolygons fixeditm_outline = to_expolygons(fixed_outline(fixeditm));
+            ExPolygons fixeditm_outline = Slic3r::to_expolygons(fixed_outline(fixeditm));
             svg->draw_outline(fixeditm_outline);
             svg->draw(fixeditm_outline, "yellow", 0.5f);
         }
@@ -83,7 +83,7 @@ struct SVGDebugOutputKernelWrapper {
         bool ret = KernelTraits<Kernel>::on_item_packed(k, itm);
 
         if (svg) {
-            ExPolygons itm_outline = to_expolygons(fixed_outline(itm));
+            ExPolygons itm_outline = Slic3r::to_expolygons(fixed_outline(itm));
 
             svg->draw_outline(itm_outline);
             svg->draw(itm_outline, "grey");

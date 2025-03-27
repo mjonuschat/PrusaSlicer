@@ -33,7 +33,7 @@ BuildVolume::BuildVolume(const std::vector<Vec2d> &bed_shape, const double max_p
 {
     assert(max_print_height >= 0);
 
-    m_polygon     = Polygon::new_scale(bed_shape);
+    m_polygon     = Algorithms::Polygon::scaled(bed_shape);
 
     // Calcuate various metrics of the input polygon.
     m_convex_hull = Geometry::convex_hull(m_polygon.points);

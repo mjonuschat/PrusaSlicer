@@ -15,6 +15,7 @@
 #include <iterator>
 #include <queue>
 
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/ShortestPath.hpp"
 #include "libslic3r/Arachne/WallToolPaths.hpp"
@@ -31,6 +32,8 @@
 #include "libslic3r/Arachne/utils/ExtrusionLine.hpp"
 #include "libslic3r/Fill/FillBase.hpp"
 #include "libslic3r/Surface.hpp"
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r {
 
@@ -457,7 +460,7 @@ ThickPolylines make_fill_polylines(
         // svg.Close();
 
         for (ExPolygon &ex_poly : gaps_for_additional_filling) {
-            BoundingBox            ex_bb       = ex_poly.contour.bounding_box();
+            BoundingBox            ex_bb       = Algorithms::Polygon::get_bounding_box(ex_poly.contour);
             coord_t                loops_count = (std::max(ex_bb.size().x(), ex_bb.size().y()) + scaled_spacing - 1) / scaled_spacing;
             Polygons               polygons    = to_polygons(ex_poly);
             Arachne::WallToolPaths wall_tool_paths(polygons, scaled_spacing, scaled_spacing, loops_count, 0, params.layer_height,

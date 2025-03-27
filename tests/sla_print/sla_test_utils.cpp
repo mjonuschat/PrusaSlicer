@@ -389,7 +389,7 @@ void check_raster_transformations(sla::RasterBase::Orientation o, sla::RasterBas
     
     raster.draw(box);
     
-    Point expected_coords = expected_box.contour.bounding_box().center();
+    Point expected_coords = Algorithms::Polygon::get_bounding_box(expected_box.contour).center();
     double rx = unscaled(expected_coords.x() + bb.center().x()) / pixdim.w_mm;
     double ry = unscaled(expected_coords.y() + bb.center().y()) / pixdim.h_mm;
     auto w = size_t(std::floor(rx));

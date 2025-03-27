@@ -20,6 +20,7 @@
 #include "libslic3r/Arachne/SkeletalTrapezoidationJoint.hpp"
 #include "libslic3r/Arachne/utils/ExtrusionJunction.hpp"
 #include "libslic3r/Arachne/utils/ExtrusionLine.hpp"
+#include "libslic3r/Polygon.hpp"
 
 #ifndef NDEBUG
     #include "libslic3r/EdgeGrid.hpp"
@@ -352,7 +353,7 @@ void SkeletalTrapezoidation::constructFromPolygons(const Polygons& polys)
     // Check self intersections.
     assert([&polys]() -> bool {
         EdgeGrid::Grid grid;
-        grid.set_bbox(get_extents(polys));
+        grid.set_bbox(Slic3r::get_extents(polys));
         grid.create(polys, scaled<coord_t>(10.));
         return !grid.has_intersecting_edges();
     }());
