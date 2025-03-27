@@ -4,6 +4,7 @@
 
 #include "IRenderRequestHandler.hpp"
 #include "IMainThreadDispatcher.hpp"
+#include "TimerQueue.hpp"
 
 namespace Slic3r::Biz::Platform {
 
@@ -27,9 +28,16 @@ public:
         return *m_main_thread_dispatcher;
     }
 
+    TimerQueue& timer_queue()
+    {
+        ASSERT(m_timer_queue != nullptr);
+        return *m_timer_queue;
+    }
+
 private:
     IRenderRequestHandler* m_render_request_handler{nullptr};
     std::unique_ptr<IMainThreadDispatcher> m_main_thread_dispatcher{};
+    std::unique_ptr<TimerQueue> m_timer_queue{};
 };
 
 } // namespace Slic3r::Biz::Platform

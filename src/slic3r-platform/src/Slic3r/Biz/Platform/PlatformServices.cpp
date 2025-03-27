@@ -23,6 +23,7 @@ void PlatformServices::set_main_thread_dispatcher(std::unique_ptr<IMainThreadDis
         "Mutliple places take a reference to it!"
     );
     m_main_thread_dispatcher = std::move(main_thread_dispatcher);
+    m_timer_queue = std::make_unique<TimerQueue>(m_main_thread_dispatcher.get());
 }
 
 } // namespace Slic3r::Biz::Platform
