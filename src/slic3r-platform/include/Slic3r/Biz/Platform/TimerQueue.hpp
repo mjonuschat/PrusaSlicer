@@ -15,6 +15,9 @@ namespace Slic3r::Biz::Platform {
 
 class TimerQueue
 {
+private:
+    using Callback = std::function<void()>;
+
 public:
     struct TimerID {
         explicit TimerID(int id) : id(id) {}
@@ -22,15 +25,10 @@ public:
         int id;
     };
 
-    TimerQueue(IMainThreadDispatcher* thread_dispatcher);
+    TimerQueue(IMainThreadDispatcher& thread_dispatcher);
     ~TimerQueue();
 
-    TimerQueue(const TimerQueue&) = delete;
-    TimerQueue& operator=(const TimerQueue&) = delete;
-    TimerQueue(TimerQueue&&) = delete;
-    TimerQueue& operator=(TimerQueue&&) = delete;
-
-    TimerID set_timer(std::chrono::milliseconds duration_ms, IMainThreadDispatcher::Function callback, bool repeat = false);
+    TimerID set_timer(std::chrono::milliseconds duration_ms, Callback callback, bool repeat = false);
     void cancel_timer(TimerID id);
     bool is_timer_running(TimerID id) const;
 
@@ -38,24 +36,23 @@ private:
     using Clock = std::chrono::steady_clock;
 
     struct TimerEvent {
-        TimerEvent(TimerID id, std::chrono::milliseconds duration_ms, IMainThreadDispatcher::Function callback, bool repeat);
+        TimerEvent(TimerID id, std::chrono::milliseconds duration_ms, Callback callback, bool repeat);
         bool operator<(const TimerEvent& other) const { return time < other.time; }
 
         std::chrono::time_point<Clock> time;
-        IMainThreadDispatcher::Function callback;
+        Callback callback;
         std::optional<std::chrono::milliseconds> repeat_ms;
         TimerID id;
     };
     int m_next_timer_id{0};
 
-    
+
     mutable std::mutex m_mutex;
     std::condition_variable m_cv;
     std::vector<TimerEvent> m_timers;
     JThread::JThread m_thread;
 
-    IMainThreadDispatcher* m_main_thread_dispatcher{ nullptr };
-    
+    IMainThreadDispatcher& m_main_thread_dispatcher;
 };
 
 } // namespace Slic3r::Biz::Platform

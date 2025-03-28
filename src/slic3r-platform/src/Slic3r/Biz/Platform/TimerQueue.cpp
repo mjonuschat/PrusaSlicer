@@ -8,7 +8,7 @@
 namespace Slic3r::Biz::Platform {
 
 
-TimerQueue::TimerQueue(IMainThreadDispatcher* thread_dispatcher)
+TimerQueue::TimerQueue(IMainThreadDispatcher& thread_dispatcher)
     : m_main_thread_dispatcher(thread_dispatcher)
 {
     m_thread = JThread::JThread([this](JThread::StopToken stop_token) {
@@ -20,7 +20,10 @@ TimerQueue::TimerQueue(IMainThreadDispatcher* thread_dispatcher)
                 return;
             auto now = Clock::now();
             while (!m_timers.empty() && m_timers.front().time <= now) {
-                m_main_thread_dispatcher->dispatch_on_main_thread(m_timers.front().callback);
+                // If the timer does not dispatch because the dispatcher is locked, just ignore it.
+                [[maybe_unused]] const bool dispatched{
+                    m_main_thread_dispatcher.dispatch_on_main_thread(m_timers.front().callback)
+                };
 
                 if (m_timers.front().repeat_ms) {
                     m_timers.front().time = now + *m_timers.front().repeat_ms;
@@ -51,7 +54,7 @@ TimerQueue::~TimerQueue()
 
 
 
-TimerQueue::TimerID TimerQueue::set_timer(std::chrono::milliseconds duration_ms, IMainThreadDispatcher::Function callback, bool repeat)
+TimerQueue::TimerID TimerQueue::set_timer(std::chrono::milliseconds duration_ms, Callback callback, bool repeat)
 {
     TimerID id(m_next_timer_id++);
     {
@@ -84,7 +87,7 @@ bool TimerQueue::is_timer_running(TimerID id) const
 
 
 
-TimerQueue::TimerEvent::TimerEvent(TimerID id_, std::chrono::milliseconds duration_ms, IMainThreadDispatcher::Function callback, bool repeat)
+TimerQueue::TimerEvent::TimerEvent(TimerID id_, std::chrono::milliseconds duration_ms, Callback callback, bool repeat)
 : time(Clock::now() + duration_ms),
   callback(std::move(callback)),
   repeat_ms{ std::nullopt },
