@@ -6,4 +6,5 @@ add_cmake_project(Cereal
         -DSKIP_PERFORMANCE_COMPARISON=ON
         -DBUILD_TESTS=OFF
         -DCMAKE_FIND_ROOT_PATH=/
+        -DCMAKE_POLICY_VERSION_MINIMUM=3.5
 )

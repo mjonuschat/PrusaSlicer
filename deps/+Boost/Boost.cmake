@@ -30,6 +30,7 @@ add_cmake_project(Boost
         "-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}"
         "${_context_abi_line}"
         "${_context_arch_line}"
+        -DCMAKE_POLICY_VERSION_MINIMUM=3.5
 )
 
 set(DEP_Boost_DEPENDS ZLIB)

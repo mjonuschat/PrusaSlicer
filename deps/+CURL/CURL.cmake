@@ -68,6 +68,7 @@ add_cmake_project(CURL
   CMAKE_ARGS
     -DBUILD_TESTING:BOOL=OFF
     -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+    -DCMAKE_POLICY_VERSION_MINIMUM=3.5
     ${_curl_platform_flags}
 )
 

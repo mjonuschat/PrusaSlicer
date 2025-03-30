@@ -24,4 +24,5 @@ add_cmake_project(Blosc
         -DBUILD_BENCHMARKS=OFF 
         -DPREFER_EXTERNAL_ZLIB=ON
         -DPREFER_EXTERNAL_ZSTD=ON
+        -DCMAKE_POLICY_VERSION_MINIMUM=3.5
 )

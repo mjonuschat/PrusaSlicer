@@ -57,6 +57,7 @@ add_cmake_project(wxWidgets
         -DwxUSE_UNSAFE_WXSTRING_CONV=OFF
         ${_wx_webview}
         ${_wx_secretstore}
+        -DCMAKE_POLICY_VERSION_MINIMUM=3.5
 )
 
     set(DEP_wxWidgets_DEPENDS ZLIB PNG EXPAT JPEG NanoSVG)
