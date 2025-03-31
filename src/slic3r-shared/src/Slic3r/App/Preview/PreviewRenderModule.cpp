@@ -499,7 +499,7 @@ void PreviewRenderModule::register_commands()
 void PreviewRenderModule::init_gizmos()
 {
     m_gizmo_manager = std::make_unique<Scene::GizmoManager>(*m_device, *m_scene_presenter);
-    m_gizmo_manager->add_base_gizmo<PreviewCameraGizmo>(*m_scene_presenter);
+    m_gizmo_manager->add_base_gizmo<PreviewCameraGizmo>(m_workbench, *m_scene_presenter);
 }
 
 void PreviewRenderModule::init_viewer(Render::Device& device)
@@ -1042,9 +1042,9 @@ void PreviewRenderModule::send_data_to_viewer(Biz::Slicing::FDMResult result)
     m_viewer.set_view_type(m_viewer.used_extruders_count() > 1 ? ViewType::Tool : 
         gcode_events.empty() ? ViewType::FeatureType : ViewType::ColorPrint);
 
-    Scene::CameraTrackballController& camera_trackball = m_scene_presenter->scene().camera_trackball();
-    camera_trackball.set_focal_point(m_viewer.bounding_box().center());
-    camera_trackball.set_azimuth_and_zenith(1.25 * PI, 1.25 * PI);
+    Scene::CameraTrackballController& trackball = m_scene_presenter->scene().camera_trackball();
+    trackball.set_target(m_viewer.bounding_box().center());
+    trackball.set_azimuth_and_zenith(Scene::DEFAULT_AZIMUTH, Scene::DEFAULT_ZENITH);
 
     request_render();
 }

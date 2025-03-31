@@ -130,8 +130,9 @@ class Camera : public WithListeners<ICameraUpdateListener> {
 public:
     Camera();
 
-    Transform& model() { return m_model; }
     const Transform& model() const { return m_model; }
+    void set_model(const Transform& m);
+
     void look_at(const Vec3d& eye, const Vec3d& center, const Vec3d& up);
 
     Transform& projection() { return m_projection; }
@@ -139,14 +140,13 @@ public:
 
     void switch_projection_type();
 
-    Transform view() const
-    { return m_model.inverse(); }
+    Transform view() const { return m_model.inverse(); }
 
     Vec3d position() const { return m_model.block<3, 1>(0, 3); }
 
-    Vec3d forward() const { return -view().block<1, 3>(2, 0); }
-    Vec3d right() const { return view().block<1, 3>(0, 0); }
-    Vec3d up() const { return view().block<1, 3>(1, 0); }
+    Vec3d forward() const { return -m_model.block<3, 1>(0, 2); }
+    Vec3d right() const { return m_model.block<3, 1>(0, 0); }
+    Vec3d up() const { return m_model.block<3, 1>(0, 1); }
 
     void set_viewport(const Render::Rect& viewport);
     const Render::Rect& viewport() const { return m_viewport; }

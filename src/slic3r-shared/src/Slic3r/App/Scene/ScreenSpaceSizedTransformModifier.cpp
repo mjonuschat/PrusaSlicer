@@ -10,7 +10,7 @@ void ScreenSpaceSizedTransformModifier::modify_world_transform(
 )
 {
     const auto obj_world_pos = world_xform.block<3, 1>(0, 3);
-    const auto cam_world_pos = m_camera.model().block<3, 1>(0, 3);
+    const auto cam_world_pos = m_camera.position();
     const double dist = (obj_world_pos - cam_world_pos).norm();
 
     const double scale = m_camera.cam_projection()

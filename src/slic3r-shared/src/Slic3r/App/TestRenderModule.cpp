@@ -102,9 +102,6 @@ void TestRenderModule::init_scene()
     auto& device  = *m_device;
     m_scene = std::make_unique<Scene::Scene>();
     m_scene->camera().set_viewport(Render::Rect::from(0, 0, m_screen_info));
-    Transform3d cam_xform = Transform3d::Identity();
-    cam_xform.translate(Vec3d{0, 0 , 30});
-    m_scene->camera().model() = cam_xform.matrix();
     
     Scene::NodeBuilder node_builder{*m_scene};
     auto* cone_mesh = m_scene->triangle_mesh_manager().get_or_create("cone-2-5", [](){
@@ -185,7 +182,7 @@ void TestRenderModule::init_scene()
                 .set_aabb(&cube_mesh->aabb_mesh());
         });
     m_scene->add_child(node_builder.build().release());
-    m_scene->camera_trackball().set_focal_distance(30);
+    m_scene->camera_trackball().set_distance_to_target(30);
 }
 
 void TestRenderModule::render_scene()
@@ -379,7 +376,7 @@ void TestRenderModule::on_scene_mouse_event(const Platform::MouseEvent &e)
         // trackball()
         //);
 
-        trackball.add_azimuth_and_zenith(dx * M_PI / 180.0f, -dy * M_PI / 180.0f);
+        trackball.add_azimuth_and_zenith(-Geometry::deg2rad(dx), -Geometry::deg2rad(dy));
 
         m_last_mouse_x = e.x();
         m_last_mouse_y = e.y();

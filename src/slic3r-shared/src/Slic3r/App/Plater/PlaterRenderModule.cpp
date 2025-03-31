@@ -30,6 +30,7 @@
 #define ENABLED_DEBUG_IMGUI_ICONS 0
 #define ENABLED_DEBUG_BEDS 1
 #define ENABLED_DEBUG_LOAD_3MF 0
+#define ENABLED_DEBUG_CAMERA 0
 
 namespace Slic3r::App::Plater {
 
@@ -336,7 +337,8 @@ void PlaterRenderModule::init_scene()
 void PlaterRenderModule::init_gizmos()
 {
     m_gizmo_manager = std::make_unique<Scene::GizmoManager>(*m_device, *m_scene_presenter);
-    m_gizmo_manager->add_base_gizmo<PlaterCameraGizmo>(*m_scene_presenter);
+    PlaterCameraGizmo* camera_gizmo = &m_gizmo_manager->add_base_gizmo<PlaterCameraGizmo>(m_workbench, *m_scene_presenter);
+    m_project_interactor.scene_interactor().add_listener<Biz::ISelectedBedInstanceChangedListener>(camera_gizmo);
     m_gizmo_manager->add_base_gizmo<QuickSelectGizmo>(m_project_interactor.scene_interactor(), *m_device, *m_scene_presenter, m_screen_info);
     m_gizmo_manager->add_base_gizmo<BedSelectGizmo>(m_project_interactor.scene_interactor(), *m_scene_presenter);
     m_gizmo_manager->add_base_gizmo<QuickDragGizmo>(m_project_interactor.scene_interactor(), *m_scene_presenter);
@@ -779,6 +781,95 @@ static void render_imgui_debug_bed(Biz::ProjectInteractor& project_interactor, P
 }
 #endif //ENABLED_DEBUG_BEDS
 
+#if ENABLED_DEBUG_CAMERA
+static void render_imgui_debug_camera(const Scene::Camera& camera, const Scene::CameraTrackballController& trackball)
+{
+    ImGui::SetNextWindowCollapsed(true, ImGuiCond_Once);
+    if (ImGui::Begin("Camera debug", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        if (ImGui::BeginTable("Camera", 2, ImGuiTableFlags_Borders)) {
+
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::Text("Position");
+            ImGui::TableSetColumnIndex(1);
+            ImGui::Text("%s", to_string(camera.position()).c_str());
+
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::Text("Target");
+            ImGui::TableSetColumnIndex(1);
+            ImGui::Text("%s", to_string(trackball.target()).c_str());
+
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::Text("Distance to target");
+            ImGui::TableSetColumnIndex(1);
+            ImGui::Text("%.3f", trackball.distance_to_target());
+
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::Text("Pivot");
+            ImGui::TableSetColumnIndex(1);
+            ImGui::Text("%s", to_string(trackball.pivot()).c_str());
+
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::Text("Azimuth");
+            ImGui::TableSetColumnIndex(1);
+            ImGui::Text("%.3f", Geometry::rad2deg(trackball.azimuth()));
+
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::Text("Zenith");
+            ImGui::TableSetColumnIndex(1);
+            ImGui::Text("%.3f", Geometry::rad2deg(trackball.zenith()));
+
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::Text("Forward");
+            ImGui::TableSetColumnIndex(1);
+            ImGui::Text("%s", to_string(camera.forward()).c_str());
+
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::Text("Right");
+            ImGui::TableSetColumnIndex(1);
+            ImGui::Text("%s", to_string(camera.right()).c_str());
+
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::Text("Up");
+            ImGui::TableSetColumnIndex(1);
+            ImGui::Text("%s", to_string(camera.up()).c_str());
+
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::Text("Zoom");
+            ImGui::TableSetColumnIndex(1);
+            ImGui::Text("%.3f", camera.zoom());
+
+            auto& proj = camera.cam_projection();
+            if (proj.type() == Scene::CameraProjectionType::Perspective) {
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0);
+                ImGui::Text("FOVy");
+                ImGui::TableSetColumnIndex(1);
+                ImGui::Text("%.3f", dynamic_cast<const Scene::PerspectiveCameraProjection&>(proj).fovy());
+
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0);
+                ImGui::Text("FOVy/Zoom");
+                ImGui::TableSetColumnIndex(1);
+                ImGui::Text("%.3f", dynamic_cast<const Scene::PerspectiveCameraProjection&>(proj).fovy() / camera.zoom());
+            }
+
+            ImGui::EndTable();
+        }
+    }
+    ImGui::End();
+}
+#endif // ENABLED_DEBUG_CAMERA
+
 void PlaterRenderModule::render_imgui()
 {
     if (!m_scene_presenter->project_ready())
@@ -823,6 +914,9 @@ void PlaterRenderModule::render_imgui()
     }
     ImGui::End();
 #endif // ENABLED_DEBUG_LOAD_3MF
+#if ENABLED_DEBUG_CAMERA
+    render_imgui_debug_camera(m_scene_presenter->scene().camera(), m_scene_presenter->scene().camera_trackball());
+#endif // ENABLED_DEBUG_CAMERA
 }
 
 void PlaterRenderModule::render_object_hud(const Scene::Node& n, const Eigen::AlignedBox<float, 2>& screen_bounding_box)
@@ -835,7 +929,7 @@ void PlaterRenderModule::render_object_hud(const Scene::Node& n, const Eigen::Al
     });
     if (ImGui::Begin(node_name.c_str(), nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBackground)) {
         if (ImGui::SmallButton("Foc"))
-            m_scene_presenter->scene().camera_trackball().set_focal_point({0, 0, 0});
+            m_scene_presenter->scene().camera_trackball().set_target(Vec3d::Zero());
     }
     ImGui::End();
 }

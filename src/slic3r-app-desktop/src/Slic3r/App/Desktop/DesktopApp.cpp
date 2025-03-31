@@ -69,6 +69,9 @@ bool DesktopApp::OnInit()
     canvas.render();
 #endif
 
+    // force bed selection to update bed changed listeners
+    m_project_interactor->scene_interactor().select_first_bed_instance();
+
     // temp solution because of ScenePresenter is created in canvas.render()
  //   m_project_interactor->load_project("C:\\PS_3\\Test_ObjectList.3mf");
 

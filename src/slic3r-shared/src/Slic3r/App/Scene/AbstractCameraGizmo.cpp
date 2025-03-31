@@ -10,7 +10,7 @@ void AbstractCameraGizmo::register_commands(Platform::CommandRegistry& registry)
         .register_command(
             new Platform::FuncCommand(
                 "zoom-in",
-                [&]() { m_scene_provider.scene().camera_trackball().update_zoom(1.); },
+                [this]() { m_scene_provider.scene().camera_trackball().update_zoom(1.); },
                 nullptr,
                 Platform::KeyboardShortcut{0, Platform::KeyCode::I}
             ),
@@ -19,7 +19,7 @@ void AbstractCameraGizmo::register_commands(Platform::CommandRegistry& registry)
         .register_command(
             new Platform::FuncCommand(
                 "zoom-out",
-                [&]() { m_scene_provider.scene().camera_trackball().update_zoom(-1.); },
+                [this]() { m_scene_provider.scene().camera_trackball().update_zoom(-1.); },
                 nullptr,
                 Platform::KeyboardShortcut{0, Platform::KeyCode::O}
             ),
@@ -28,7 +28,7 @@ void AbstractCameraGizmo::register_commands(Platform::CommandRegistry& registry)
         .register_command(
             new Platform::FuncCommand(
                 "camera-projection-switch",
-                [&]() { m_scene_provider.scene().camera_trackball().switch_projection_type(); },
+                [this]() { m_scene_provider.scene().camera_trackball().switch_projection_type(); },
                 nullptr,
                 Platform::KeyboardShortcut{0, Platform::KeyCode::K}
             ),
@@ -37,14 +37,81 @@ void AbstractCameraGizmo::register_commands(Platform::CommandRegistry& registry)
         .register_command(
             new Platform::FuncCommand(
                 "look-at-active-bed",
-                [&]() {
-                    look_at(Vec3d(100, 100, 0), -M_PI_2 * 1.5, -M_PI_2 * 1.5);
+                [this]() {
+                    const CameraTrackballController& trackball = m_scene_provider.scene().camera_trackball();
+                    look_at(m_selected_bed_center, trackball.azimuth(), trackball.zenith());
                 },
                 nullptr,
                 Platform::KeyboardShortcut{0, Platform::KeyCode::B}
             )
         )
+        .register_command(
+            new Platform::FuncCommand(
+                "camera-default-view",
+                [this]() { look_at(m_scene_provider.scene().camera_trackball().target(), DEFAULT_AZIMUTH, DEFAULT_ZENITH); },
+                nullptr,
+                Platform::KeyboardShortcut{0, Platform::KeyCode::Num0}
+            )
+        )
+        .register_command(
+            new Platform::FuncCommand(
+                "camera-top-view",
+                [this]() { look_at(m_scene_provider.scene().camera_trackball().target(), M_PI_2, M_PI); },
+                nullptr,
+                Platform::KeyboardShortcut{0, Platform::KeyCode::Num1}
+            )
+        )
+        .register_command(
+            new Platform::FuncCommand(
+                "camera-bottom-view",
+                [this]() { look_at(m_scene_provider.scene().camera_trackball().target(), M_PI_2, 0.0); },
+                nullptr,
+                Platform::KeyboardShortcut{0, Platform::KeyCode::Num2}
+            )
+        )
+        .register_command(
+            new Platform::FuncCommand(
+                "camera-front-view",
+                [this]() { look_at(m_scene_provider.scene().camera_trackball().target(), M_PI_2, M_PI_2); },
+                nullptr,
+                Platform::KeyboardShortcut{0, Platform::KeyCode::Num3}
+            )
+        )
+        .register_command(
+            new Platform::FuncCommand(
+                "camera-rear-view",
+                [this]() { look_at(m_scene_provider.scene().camera_trackball().target(), -M_PI_2, M_PI_2); },
+                nullptr,
+                Platform::KeyboardShortcut{0, Platform::KeyCode::Num4}
+            )
+        )
+        .register_command(
+            new Platform::FuncCommand(
+                "camera-left-view",
+                [this]() { look_at(m_scene_provider.scene().camera_trackball().target(), 0.0, M_PI_2); },
+                nullptr,
+                Platform::KeyboardShortcut{0, Platform::KeyCode::Num5}
+            )
+        )
+        .register_command(
+            new Platform::FuncCommand(
+                "camera-right-view",
+                [this]() { look_at(m_scene_provider.scene().camera_trackball().target(), M_PI, M_PI_2); },
+                nullptr,
+                Platform::KeyboardShortcut{0, Platform::KeyCode::Num6}
+            )
+        )
     ;
+}
+
+void AbstractCameraGizmo::on_selected_bed_instance_changed(Domain::SelectionId project_id, Domain::SelectionId container_id, Domain::SelectionId bed_instance_id)
+{
+    const auto& proj = m_workbench.project(project_id);
+    const Domain::ConfigContainer* cc = proj.find_config_container(container_id);
+    DEBUG_ASSERT(cc != nullptr);
+    const Domain::BedInstance& inst = cc->find_bed_instance(bed_instance_id);
+    m_selected_bed_center = to_3d(cc->bed().center(), 0.0) + inst.transformation().get_offset();
+    m_scene_provider.scene().camera_trackball().set_pivot(m_selected_bed_center);
 }
 
 // TODO: move these draw_* function into own module so they can be reused (+ add drawing-in-plane renderer utilizing x-axis and y-axis and origin on the plane)
@@ -90,12 +157,12 @@ bool AbstractCameraGizmo::pick_plane(double mouse_x, double mouse_y, const Rende
     auto& cam = scene.camera();
     auto r = cam.ray_at(screen_info.mouse_to_screen(mouse_x), screen_info.mouse_to_screen(mouse_y));
 
-    Vec3d n = -cam.model().block<3, 1>(0, 2);
-    Vec3d p = cam.model().block<3, 1>(0, 3);
+    Vec3d n = cam.forward();
+    Vec3d p = cam.position();
     double q = p.dot(n) / n.dot(n);
     const Plane plane {
         n,
-        -scene.camera_trackball().cam_focal_dist() - q
+        -scene.camera_trackball().distance_to_target() - q
     };
 
 
@@ -160,10 +227,8 @@ GizmoActivationState AbstractCameraGizmo::on_mouse(GizmoEventContext& ctx, bool 
             Vec3d last_mouse_world_pos;
             if (pick_plane(event.x(), event.y(), ctx.screen_info(), current_mouse_world_pos) &&
                 pick_plane(m_last_x, m_last_y, ctx.screen_info(), last_mouse_world_pos)) {
-                for (size_t i = 0; i < 32; i++) {
-
-                }
-                update_pan(last_mouse_world_pos - current_mouse_world_pos);
+                bool shift_down = (ctx.mouse_event().key_modifiers() & Platform::KeyModifiers(Platform::KeyModifier::Shift)) != 0;
+                update_pan(last_mouse_world_pos - current_mouse_world_pos, shift_down);
             } else
                 return GizmoActivationState::Inactive;
         }
@@ -200,7 +265,7 @@ void AbstractCameraGizmo::render_scene(Render::CommandBuffer& cmd_buffer)
 #endif
 
 
-void AbstractCameraGizmo::update_pan(const Vec3d& delta)
+void AbstractCameraGizmo::update_pan(const Vec3d& delta, bool synchronize_cam_pivot)
 {
     auto& scene = m_scene_provider.scene();
     // auto& cam = scene.camera();
@@ -211,7 +276,9 @@ void AbstractCameraGizmo::update_pan(const Vec3d& delta)
 
     // double dist = trackball.cam_focal_dist();
     // trackball.set_focal_point(trackball.cam_focal() + right * -delta_x * dist + up * delta_y * dist);
-    trackball.set_focal_point(trackball.cam_focal() + delta);
+    trackball.set_target(trackball.target() + delta);
+    if (synchronize_cam_pivot)
+        trackball.synchronize_pivot_with_target();
 }
 
 void AbstractCameraGizmo::update_zoom(float wheel_delta_y)
@@ -229,14 +296,14 @@ void AbstractCameraGizmo::update_rotation(float delta_x, float delta_y)
 {
     auto& scene = m_scene_provider.scene();
     auto& trackball = scene.camera_trackball();
-    trackball.add_azimuth_and_zenith(-delta_x * M_PI, -delta_y * M_PI);
+    trackball.add_azimuth_and_zenith(delta_x * M_PI, delta_y * M_PI, true);
 }
 
 void AbstractCameraGizmo::look_at(const Vec3d& pos, double azimuth, double zenith)
 {
     auto& scene = m_scene_provider.scene();
     auto& trackball = scene.camera_trackball();
-    trackball.set_focal_point(pos);
+    trackball.set_target(pos);
     trackball.set_azimuth_and_zenith(azimuth, zenith);
 }
 

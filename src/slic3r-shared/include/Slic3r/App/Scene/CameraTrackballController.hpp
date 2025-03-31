@@ -4,84 +4,66 @@
 
 namespace Slic3r::App::Scene {
 
+static constexpr double DEFAULT_AZIMUTH = M_PI_4;
+static constexpr double DEFAULT_ZENITH = 3.0 * M_PI_4;
+
 class CameraTrackballController
 {
 public:
-    explicit CameraTrackballController(Camera& camera) : m_camera(camera) { update_camera(); }
+  explicit CameraTrackballController(Camera& camera) : m_camera(camera) { set_camera_orientation(); }
 
-    void set_focal_point(const Vec3d& pos)
+    void set_target(const Vec3d& pos)
     {
-        m_cam_focal = pos;
-        update_camera();
+        m_target = pos;
+        m_camera.look_at(m_target - m_distance * m_camera.forward(), m_target, m_camera.up());
     }
+
+    void set_distance_to_target(double value)
+    {
+        m_distance = std::max(MIN_FOCAL_DISTANCE, value);
+        m_camera.look_at(m_target - m_distance * m_camera.forward(), m_target, m_camera.up());
+    }
+
+    void set_pivot(const Vec3d& pos) { m_pivot = pos; }
+    void synchronize_pivot_with_target() { m_pivot = m_target; }
 
     void set_zoom(double value) { m_camera.set_zoom(value); }
     void update_zoom(double value) { m_camera.update_zoom(value); }
     void switch_projection_type() { m_camera.switch_projection_type(); }
-
-    void set_focal_distance(double value)
-    {
-        m_cam_focal_dist = std::max(MIN_FOCAL_DISTANCE, value);
-        update_camera();
-    }
-
-    void set_azimuth(double value)
-    {
-        m_azimuth = value;
-        normalize_azimuth_and_zenith();
-        update_camera();
-    }
-
-    void set_zenith(double value);
 
     void set_azimuth_and_zenith(double azimuth, double zenith)
     {
         m_azimuth = azimuth;
         m_zenith = zenith;
         normalize_azimuth_and_zenith();
-        update_camera();
+        set_camera_orientation();
     }
 
-    void add_azimuth(double value)
-    {
-        m_azimuth += value;
-        normalize_azimuth_and_zenith();
-        update_camera();
-    }
+    void add_azimuth_and_zenith(double delta_azimuth, double delta_zenith, bool apply_limits = false);
 
-    void add_zenith(double value)
-    {
-        m_zenith += value;
-        normalize_azimuth_and_zenith();
-        update_camera();
-    }
+    const Vec3d& target() const { return m_target; }
+    double distance_to_target() const { return m_distance; }
 
-    void add_azimuth_and_zenith(double azimuth, double zenith)
-    {
-        m_azimuth += azimuth;
-        m_zenith += zenith;
-        normalize_azimuth_and_zenith();
-        update_camera();
-    }
+    const Vec3d& pivot() const { return m_pivot; }
 
-    const Vec3d& cam_focal() const { return m_cam_focal; }
-    double cam_focal_dist() const { return m_cam_focal_dist; }
     double azimuth() const { return m_azimuth; }
     double zenith() const { return m_zenith; }
 
 private:
-    void update_camera();
+    void set_camera_orientation();
     void normalize_azimuth_and_zenith();
+
 private:
     Camera& m_camera;
 
     constexpr static double MIN_FOCAL_DISTANCE = 1e-02;
 
-    Vec3d m_cam_focal{0,0,0};
-    double m_cam_focal_dist{400};
-    double m_azimuth{-M_PI_2};
-    double m_zenith{-M_PI_2};
-
+    Vec3d m_target{ Vec3d::Zero() };
+    double m_distance{ 400.0 };
+    Vec3d m_pivot{ Vec3d ::Zero() };
+    Eigen::Quaterniond m_view_rotation{ 1.0, 0.0, 0.0, 0.0 };
+    double m_azimuth{ DEFAULT_AZIMUTH };
+    double m_zenith{ DEFAULT_ZENITH };
 };
 
-}
+} // namespace Slic3r::App::Scene

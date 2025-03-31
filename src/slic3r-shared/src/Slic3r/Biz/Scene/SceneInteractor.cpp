@@ -371,29 +371,13 @@ void SceneInteractor::transform_bed_instance(const Domain::BedRef& instance, con
 
 void SceneInteractor::select_bed_instance(const Domain::BedRef& instance)
 {
-    if (instance == m_selected_bed_instance)
-        return;
-
-    Domain::Project::ConfigContainerList& ccs = m_projects.find(m_selected_project_id)->second.project.config_containers();
-    for (auto& cc : ccs) {        
-        Domain::ConfigContainer::BedInstanceList& instances = cc->bed_instances();
-        for (auto& inst : instances) {
-            inst->set_active(cc->id().id == instance.config_container_id && inst->id().id == instance.instance_id);
-        }
-    }
-
-    m_selected_bed_instance = instance;
-
-    invoke_listeners<ISelectedBedInstanceChangedListener>([&](auto* l) {
-        l->on_selected_bed_instance_changed(
-            m_selected_project_id, instance.config_container_id, instance.instance_id);
-    });
+    select_bed_instance_internal(instance, false);
 }
 
 void SceneInteractor::select_first_bed_instance()
 {
     const auto& cc = m_projects.find(m_selected_project_id)->second.project.config_containers().front();
-    select_bed_instance({ cc->id().id, cc->bed_instances().front()->id().id });
+    select_bed_instance_internal({ cc->id().id, cc->bed_instances().front()->id().id }, true);
 }
 
 const Domain::Project::ConfigContainerList& SceneInteractor::selected_project_config_containers()
@@ -488,6 +472,27 @@ void SceneInteractor::update_selection_instance_bed_placement()
 void SceneInteractor::invoke_slicing_input_changed(const Domain::BedRef& bed_instance) {
     invoke_listeners<ISlicingInputChangedListener>([&](auto listener) {
         listener->on_slicing_input_changed(bed_instance);
+    });
+}
+
+void SceneInteractor::select_bed_instance_internal(const Domain::BedRef& bed_instance, bool force_update)
+{
+    if (!force_update && bed_instance == m_selected_bed_instance)
+        return;
+
+    Domain::Project::ConfigContainerList& ccs = m_projects.find(m_selected_project_id)->second.project.config_containers();
+    for (auto& cc : ccs) {        
+        Domain::ConfigContainer::BedInstanceList& instances = cc->bed_instances();
+        for (auto& inst : instances) {
+            inst->set_active(cc->id().id == bed_instance.config_container_id && inst->id().id == bed_instance.instance_id);
+        }
+    }
+
+    m_selected_bed_instance = bed_instance;
+
+    invoke_listeners<ISelectedBedInstanceChangedListener>([&](auto* l) {
+        l->on_selected_bed_instance_changed(
+            m_selected_project_id, bed_instance.config_container_id, bed_instance.instance_id);
     });
 }
 

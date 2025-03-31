@@ -145,6 +145,7 @@ public:
 private:
     void update_selection_instance_bed_placement();
     void invoke_slicing_input_changed(const Domain::BedRef& bed_instance);
+    void select_bed_instance_internal(const Domain::BedRef& bed_instance, bool force_update);
 
 private:
     using ProjectContexts = std::unordered_map<Domain::SelectionId, SceneInteractorProjectContext>;
