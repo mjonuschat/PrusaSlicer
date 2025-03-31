@@ -13,7 +13,7 @@
 #include "ClipperUtils.hpp"
 #include "EdgeGrid.hpp"
 #include "Geometry.hpp"
-#include "SVG.hpp"
+#include "Slic3r/Biz/Algorithms/SVG.hpp"
 #include "PNGReadWrite.hpp"
 #include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/ExPolygon.hpp"
@@ -1603,7 +1603,7 @@ void export_intersections_to_svg(const std::string &filename, const Polygons &po
 {
 	std::vector<std::pair<EdgeGrid::Grid::ContourEdge, EdgeGrid::Grid::ContourEdge>> intersections = intersecting_edges(polygons);
     BoundingBox bbox = get_extents(polygons);
-    SVG svg(filename.c_str(), bbox);
+    Biz::Algorithms::SVG::SVG svg(filename.c_str(), bbox);
     svg.draw(union_ex(polygons), "gray", 0.25f);
     svg.draw_outline(polygons, "black");
     std::set<const EdgeGrid::Contour*> intersecting_contours;

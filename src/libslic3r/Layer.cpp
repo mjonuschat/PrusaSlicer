@@ -25,7 +25,7 @@
 #include "Polygon.hpp"
 #include "Print.hpp"
 #include "ShortestPath.hpp"
-#include "SVG.hpp"
+#include "Slic3r/Biz/Algorithms/SVG.hpp"
 #include "BoundingBox.hpp"
 #include "libslic3r/ExtrusionEntity.hpp"
 #include "libslic3r/ExtrusionEntityCollection.hpp"
@@ -176,7 +176,7 @@ void Layer::make_slices()
         if (! outside.empty()) {
             BoundingBox bbox(get_extents(expoly));
             bbox.merge(get_extents(test));
-            SVG svg(debug_out_path("expolygons_to_zpaths_shrunk-self-intersections.svg").c_str(), bbox);
+            Biz::Algorithms::SVG::SVG svg(debug_out_path("expolygons_to_zpaths_shrunk-self-intersections.svg").c_str(), bbox);
             svg.draw(expoly, "blue");
             svg.draw(test, "green");
             svg.draw(outside, "red");
@@ -1135,7 +1135,7 @@ void Layer::export_region_slices_to_svg(const char *path) const
     Point legend_pos(bbox.min(0), bbox.max(1));
     bbox.merge(Point(std::max(bbox.min(0) + legend_size(0), bbox.max(0)), bbox.max(1) + legend_size(1)));
 
-    SVG svg(path, bbox);
+    Biz::Algorithms::SVG::SVG svg(path, bbox);
     const float transparency = 0.5f;
     for (const auto *region : m_regions)
         for (const auto &surface : region->slices())
@@ -1161,7 +1161,7 @@ void Layer::export_region_fill_surfaces_to_svg(const char *path) const
     Point legend_pos(bbox.min(0), bbox.max(1));
     bbox.merge(Point(std::max(bbox.min(0) + legend_size(0), bbox.max(0)), bbox.max(1) + legend_size(1)));
 
-    SVG svg(path, bbox);
+    Biz::Algorithms::SVG::SVG svg(path, bbox);
     const float transparency = 0.5f;
     for (const auto *region : m_regions)
         for (const auto &surface : region->slices())

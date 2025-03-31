@@ -212,4 +212,21 @@ Domain::Lines to_lines(const Domain::Polygons& polygons)
     return lines;
 }
 
+Domain::BoundingBox2crd get_extents(const Domain::Polygon& poly)
+{
+    const Domain::BoundingBox2crd bbox = Algorithms::BoundingBox::construct(poly.points);
+    return Slic3r::BoundingBox{bbox.min, bbox.max};
+}
+
+Domain::BoundingBox2crd get_extents(const Domain::Polygons &polygons)
+{
+    Domain::BoundingBox2crd bb;
+    if (! polygons.empty()) {
+        bb = get_extents(polygons.front());
+        for (size_t i = 1; i < polygons.size(); ++ i)
+            bb = BoundingBox::merge(bb, get_extents(polygons[i]));
+    }
+    return bb;
+}
+
 } // namespace Slic3r::Biz::Algorithms::Polygon

@@ -36,7 +36,7 @@ void export_distance_field_to_svg(const std::string &path, const Polygons &outli
     BoundingBox bbox         = get_extents(outline);
 
     bbox.offset(SCALED_EPSILON);
-    SVG svg(path, bbox);
+    Biz::Algorithms::SVG::SVG svg(path, bbox);
     svg.draw_outline(outline, "green", stroke_width);
     svg.draw_outline(overhang, "blue", stroke_width);
 

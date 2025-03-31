@@ -6,7 +6,7 @@
 #include <string>
 #include <map>
 #include <libslic3r/Line.hpp>
-#include <libslic3r/SVG.hpp>
+#include "Slic3r/Biz/Algorithms/SVG.hpp"
 #include "PointUtils.hpp"
 
 namespace Slic3r::sla {
@@ -205,7 +205,7 @@ public:
         }
     };
 
-    static void draw(SVG &       svg,
+    static void draw(Biz::Algorithms::SVG::SVG &       svg,
                      const Line &line,
                      const char *color        = "gray",
                      double    stroke_width = 0,
@@ -213,7 +213,7 @@ public:
                      bool        side_points  = false,
                      const char *color_a      = "lightgreen",
                      const char *color_b      = "lightblue");
-    static void draw(SVG &       svg,
+    static void draw(Biz::Algorithms::SVG::SVG &       svg,
                      const Lines &lines,
                      const char *color        = "gray",
                      double    stroke_width = 0,

@@ -363,8 +363,6 @@ set(SLIC3R_SOURCES
     SurfaceCollection.cpp
     SurfaceCollection.hpp
     SurfaceMesh.hpp
-    SVG.cpp
-    SVG.hpp
     Technologies.hpp
     Tesselate.cpp
     Tesselate.hpp

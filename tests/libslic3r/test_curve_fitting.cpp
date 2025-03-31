@@ -4,7 +4,7 @@
 
 #include <libslic3r/Geometry/Curves.hpp>
 #include <libslic3r/Utils.hpp>
-#include <libslic3r/SVG.hpp>
+#include "Slic3r/Biz/Algorithms/SVG.hpp"
 
 using namespace Catch;
 

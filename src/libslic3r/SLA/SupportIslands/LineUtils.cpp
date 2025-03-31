@@ -227,7 +227,7 @@ std::tuple<double, double, double> LineUtils::get_param(const Linef &line)
     return {a, b, c};
 }
 
-void LineUtils::draw(SVG &       svg,
+void LineUtils::draw(Biz::Algorithms::SVG::SVG &       svg,
                      const Line &line,
                      const char *color,
                      double stroke_width,
@@ -441,7 +441,7 @@ std::map<size_t, size_t> LineUtils::create_line_connection_over_b(const Lines &l
     return line_connection;
 }
 
-void LineUtils::draw(SVG &        svg,
+void LineUtils::draw(Biz::Algorithms::SVG::SVG &        svg,
                      const Lines &lines,
                      const char * color,
                      double     stroke_width,

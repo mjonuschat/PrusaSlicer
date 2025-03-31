@@ -24,7 +24,7 @@
 
 //#define DEBUG_FILES
 #ifdef DEBUG_FILES
-#include "libslic3r/SVG.hpp"
+#include "Slic3r/Biz/Algorithms/SVG.hpp"
 #endif
 
 namespace Slic3r {
@@ -300,7 +300,7 @@ Polyline JPSPathFinder::find_path(const Point &p0, const Point &p1)
         return r;
     };
     auto          scaled_point = [](const Point &p) { return scaled(Vec2d(p.x(), p.y())); };
-    ::Slic3r::SVG svg(debug_out_path(("path_jps" + std::to_string(print_z) + "_" + std::to_string(rand() % 1000)).c_str()).c_str(),
+    ::Slic3r::Biz::Algorithms::SVG::SVG svg(debug_out_path(("path_jps" + std::to_string(print_z) + "_" + std::to_string(rand() % 1000)).c_str()).c_str(),
                       BoundingBox(scaled_point(search_box.min), scaled_point(search_box.max)));
     for (const auto &p : inpassable) { svg.draw(scaled_point(p), "black", scale_(0.4)); }
     for (const auto &qn : astar_cache) { svg.draw(scaled_point(qn.second.node.position), "blue", scale_(0.3)); }

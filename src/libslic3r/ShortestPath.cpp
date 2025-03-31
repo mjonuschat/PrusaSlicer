@@ -1141,7 +1141,7 @@ std::vector<size_t> chain_expolygons(const ExPolygons &expolygons)
 void svg_draw_polyline_chain(const char *name, size_t idx, const Polylines &polylines)
 {
 	BoundingBox bbox = get_extents(polylines);
-	SVG svg(debug_out_path("%s-%d.svg", name, idx).c_str(), bbox);
+	Biz::Algorithms::SVG::SVG svg(debug_out_path("%s-%d.svg", name, idx).c_str(), bbox);
 	svg.draw(polylines);
 	for (size_t i = 1; i < polylines.size(); ++i)
 		svg.draw(Line(polylines[i - 1].last_point(), polylines[i].first_point()), "red");

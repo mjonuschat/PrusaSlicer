@@ -525,7 +525,7 @@ static void export_infill_lines_to_svg(const ExPolygon &expoly, const Polylines 
     BoundingBox bbox = get_extents(expoly);
     bbox.offset(scale_(3.));
 
-    ::Slic3r::SVG svg(path, bbox);
+    ::Slic3r::Biz::Algorithms::SVG::SVG svg(path, bbox);
     svg.draw(expoly);
     svg.draw_outline(expoly, "green");
     svg.draw(polylines, "red");

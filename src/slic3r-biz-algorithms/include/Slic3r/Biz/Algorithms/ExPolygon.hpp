@@ -4,6 +4,7 @@
 #include "Slic3r/Domain/Line.hpp"
 #include "Slic3r/Domain/Polygon.hpp"
 #include "Slic3r/Domain/Polyline.hpp"
+#include "Slic3r/Domain/BoundingBox.hpp"
 
 namespace Slic3r::Biz::Algorithms::ExPolygon {
 
@@ -33,5 +34,21 @@ Domain::Lines to_lines(const Domain::ExPolygons& expolygons);
 
 Domain::ExPolygons simplify(const Domain::ExPolygon& expolygon, double tolerance);
 Domain::Polygons simplify_to_polygons(const Domain::ExPolygon& expolygon, double tolerance);
+
+Domain::Polygons to_polygons(const Domain::ExPolygon &src);
+
+Domain::Polygons to_polygons(const Domain::ExPolygons &src);
+
+Domain::Polygons to_polygons(Domain::ExPolygon &&src);
+
+Domain::Polygons to_polygons(Domain::ExPolygons &&src);
+
+Domain::BoundingBox2crd get_extents(const Domain::ExPolygon &expolygon);
+
+Domain::BoundingBox2crd get_extents(const Domain::ExPolygons &expolygons);
+
+Domain::Points to_points(const Domain::ExPolygon &expoly);
+
+Domain::Points to_points(const Domain::ExPolygons &src);
 
 } // namespace Slic3r::Biz::Algorithms::ExPolygon

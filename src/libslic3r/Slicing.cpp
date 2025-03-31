@@ -19,7 +19,7 @@
     #undef NDEBUG
     #define DEBUG
     #define _DEBUG
-    #include "SVG.hpp"
+    #include "Slic3r/Biz/Algorithms/SVG.hpp"
 
     #undef assert 
     #include <cassert>

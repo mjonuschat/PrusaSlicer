@@ -155,18 +155,11 @@ inline Linesf to_unscaled_linesf(const ExPolygons &src)
 }
 
 
-inline Points to_points(const ExPolygons &src)
-{
-    Points points;
-    size_t count = count_points(src);
-    points.reserve(count);
-    for (const ExPolygon &expolygon : src) {
-        append(points, expolygon.contour.points);
-        for (const Polygon &hole : expolygon.holes)
-            append(points, hole.points);
-    }
-    return points;
-}
+[[deprecated("Use Biz::Algorithms::ExPolygon::to_points")]]
+Points to_points(const ExPolygons &src);
+
+[[deprecated("Use Biz::Algorithms::ExPolygon::to_points")]]
+Points to_points(const ExPolygon &expoly);
 
 inline Polylines to_polylines(const ExPolygon &src)
 {
@@ -240,49 +233,7 @@ inline Polylines to_polylines(ExPolygons &&src)
     return polylines;
 }
 
-inline Polygons to_polygons(const ExPolygon &src)
-{
-    Polygons polygons;
-    polygons.reserve(src.holes.size() + 1);
-    polygons.push_back(src.contour);
-    polygons.insert(polygons.end(), src.holes.begin(), src.holes.end());
-    return polygons;
-}
-
-inline Polygons to_polygons(const ExPolygons &src)
-{
-    Polygons polygons;
-    polygons.reserve(number_polygons(src));
-    for (ExPolygons::const_iterator it = src.begin(); it != src.end(); ++it) {
-        polygons.push_back(it->contour);
-        polygons.insert(polygons.end(), it->holes.begin(), it->holes.end());
-    }
-    return polygons;
-}
-
-inline Polygons to_polygons(ExPolygon &&src)
-{
-    Polygons polygons;
-    polygons.reserve(src.holes.size() + 1);
-    polygons.push_back(std::move(src.contour));
-    polygons.insert(polygons.end(),
-        std::make_move_iterator(src.holes.begin()),
-        std::make_move_iterator(src.holes.end()));
-    return polygons;
-}
-
-inline Polygons to_polygons(ExPolygons &&src)
-{
-    Polygons polygons;
-    polygons.reserve(number_polygons(src));
-    for (ExPolygon& expoly: src) {
-        polygons.push_back(std::move(expoly.contour));
-        polygons.insert(polygons.end(),
-            std::make_move_iterator(expoly.holes.begin()),
-            std::make_move_iterator(expoly.holes.end()));
-    }
-    return polygons;
-}
+using Biz::Algorithms::ExPolygon::to_polygons;
 
 inline ExPolygons to_expolygons(const Polygons &polys)
 {
@@ -300,16 +251,6 @@ inline ExPolygons to_expolygons(Polygons &&polys)
     for (size_t idx = 0; idx < polys.size(); ++idx)
         ex_polys[idx].contour = std::move(polys[idx]);
     return ex_polys;
-}
-
-inline Points to_points(const ExPolygon &expoly)
-{
-    Points out;
-    out.reserve(count_points(expoly));
-    append(out, expoly.contour.points);
-    for (const Polygon &hole : expoly.holes)
-        append(out, hole.points);
-    return out;
 }
 
 inline void translate(ExPolygons &expolys, const Point &p) {
@@ -381,8 +322,12 @@ inline ExPolygons expolygons_simplify(const ExPolygons &expolys, double toleranc
 // however their contours may be rotated.
 bool expolygons_match(const ExPolygon &l, const ExPolygon &r);
 
+[[deprecated("Use Biz::Algorithms::ExPolygon::get_extents")]]
 BoundingBox get_extents(const ExPolygon &expolygon);
+
+[[deprecated("Use Biz::Algorithms::ExPolygon::get_extents")]]
 BoundingBox get_extents(const ExPolygons &expolygons);
+
 BoundingBox get_extents_rotated(const ExPolygon &poly, double angle);
 BoundingBox get_extents_rotated(const ExPolygons &polygons, double angle);
 std::vector<BoundingBox> get_extents_vector(const ExPolygons &polygons);

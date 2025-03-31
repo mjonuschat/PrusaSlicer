@@ -425,7 +425,7 @@ void export_to_svg(const std::string &path, const Polygons &contour, const std::
     BoundingBox bbox = get_extents(contour);
 
     bbox.offset(SCALED_EPSILON);
-    SVG svg(path, bbox);
+    Biz::Algorithms::SVG::SVG svg(path, bbox);
     svg.draw_outline(contour, "blue");
 
     for (const NodeSPtr &root_node: root_nodes) {

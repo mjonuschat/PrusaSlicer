@@ -6,7 +6,7 @@
 #include <set>
 #include <libslic3r/Geometry.hpp>
 #include <libslic3r/Point.hpp>
-#include <libslic3r/SVG.hpp>
+#include "Slic3r/Biz/Algorithms/SVG.hpp"
 
 #include "VoronoiGraph.hpp"
 #include "Parabola.hpp"
@@ -476,23 +476,23 @@ public:
         std::function<void(const VoronoiGraph::Node::Neighbor &, coord_t)> fnc);
 
 public: // draw function for debug
-    static void draw(SVG &               svg,
+    static void draw(Biz::Algorithms::SVG::SVG &               svg,
                      const VoronoiGraph &graph,
                      const Lines &       lines,
                      const SampleConfig &config,
                      bool                pointer_caption = false);
-    static void draw(SVG &                svg,
+    static void draw(Biz::Algorithms::SVG::SVG &                svg,
                      const VD::edge_type &edge,
                      const Lines &        lines,
                      const char *         color,
                      coord_t              width);
-    static void draw(SVG &                      svg,
+    static void draw(Biz::Algorithms::SVG::SVG &                      svg,
                      const VoronoiGraph::Nodes &path,
                      coord_t                    width,
                      const char *               color,
                      bool                       finish = false,
                      bool caption = false);
-    static void draw(SVG &                       svg,
+    static void draw(Biz::Algorithms::SVG::SVG &                       svg,
                      const VoronoiGraph::ExPath &path,
                      coord_t                     width);
 

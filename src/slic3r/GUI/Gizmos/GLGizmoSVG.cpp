@@ -13,7 +13,7 @@
 #include "slic3r/Utils/UndoRedo.hpp"
 
 #include "libslic3r/Point.hpp"      
-#include "libslic3r/SVG.hpp"      // debug store
+#include "Slic3r/Biz/Algorithms/SVG.hpp"      // debug store
 #include "libslic3r/Geometry.hpp" // covex hull 2d
 #include "libslic3r/Timer.hpp" // covex hull 2d
 #include "libslic3r/Emboss.hpp" // heal_shape

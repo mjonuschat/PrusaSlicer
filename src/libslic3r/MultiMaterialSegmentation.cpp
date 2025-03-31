@@ -38,7 +38,7 @@
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/Surface.hpp"
-#include "libslic3r/SVG.hpp"
+#include "Slic3r/Biz/Algorithms/SVG.hpp"
 #include "libslic3r/TriangleMeshSlicer.hpp"
 #include "libslic3r/TriangleSelector.hpp"
 #include "libslic3r/Utils.hpp"
@@ -197,12 +197,13 @@ struct ColorPoint
 
 using ColorPoints = std::vector<ColorPoint>;
 
+using Slic3r::Biz::Algorithms::SVG::SVG;
 
 [[maybe_unused]] static void export_graph_to_svg(const std::string &path, const Voronoi::VD& vd, const std::vector<ColoredLines>& colored_polygons) {
     const double                 stroke_width = scaled<double>(0.05f);
     const BoundingBox              bbox         = get_extents(colored_polygons);
 
-    SVG svg(path.c_str(), bbox);
+    Biz::Algorithms::SVG::SVG svg(path.c_str(), bbox);
     for (const ColoredLines &colored_lines : colored_polygons)
         for (const ColoredLine &colored_line : colored_lines)
             svg.draw(colored_line.line, "black", stroke_width);
@@ -234,7 +235,7 @@ using ColorPoints = std::vector<ColorPoint>;
     const double                 stroke_width = scaled<double>(0.05);
     const BoundingBox              bbox         = get_extents(lslices);
 
-    ::Slic3r::SVG svg(path.c_str(), bbox);
+    ::Slic3r::Biz::Algorithms::SVG::SVG svg(path.c_str(), bbox);
     svg.draw_outline(lslices, "green", "lime", stroke_width);
 
     for (const ExPolygons &by_extruder : regions) {
@@ -251,11 +252,11 @@ using ColorPoints = std::vector<ColorPoint>;
     BoundingBox    bbox         = get_extents(regions);
     bbox.merge(get_extents(processed_input_expolygons));
 
-    ::Slic3r::SVG svg(path.c_str(), bbox);
+    ::Slic3r::Biz::Algorithms::SVG::SVG svg(path.c_str(), bbox);
 
     for (LayerRegion *region : regions) {
         for (const Surface &surface : region->slices()) {
-            svg.draw_outline(surface, "blue", "cyan", stroke_width);
+            svg.draw_outline(surface.expolygon, "blue", "cyan", stroke_width);
         }
     }
 
@@ -267,7 +268,7 @@ using ColorPoints = std::vector<ColorPoint>;
     const double                 stroke_width = scaled<double>(0.02);
     const BoundingBox              bbox         = get_extents(lslices);
 
-    ::Slic3r::SVG svg(path.c_str(), bbox);
+    ::Slic3r::Biz::Algorithms::SVG::SVG svg(path.c_str(), bbox);
 
     for (const ColorPoints &color_polygon_points : color_polygons_points) {
         for (size_t pt_idx = 1; pt_idx < color_polygon_points.size(); ++pt_idx) {
@@ -286,7 +287,7 @@ using ColorPoints = std::vector<ColorPoint>;
     const double                 stroke_width  = scaled<double>(0.05);
     const BoundingBox              bbox          = get_extents(lslices);
 
-    ::Slic3r::SVG svg(path.c_str(), bbox);
+    ::Slic3r::Biz::Algorithms::SVG::SVG svg(path.c_str(), bbox);
     for (const ColorPolygon &color_polygon : color_polygons) {
         for (size_t pt_idx = 1; pt_idx < color_polygon.size(); ++pt_idx) {
             const uint8_t color = color_polygon.colors[pt_idx - 1];
@@ -304,7 +305,7 @@ using ColorPoints = std::vector<ColorPoint>;
     const double                 stroke_width  = scaled<double>(0.05);
     const BoundingBox              bbox          = get_extents(lslices);
 
-    ::Slic3r::SVG svg(path.c_str(), bbox);
+    ::Slic3r::Biz::Algorithms::SVG::SVG svg(path.c_str(), bbox);
     for (const ColorLines &color_polygon_lines : color_polygons_lines) {
         for (const ColorLine &color_line : color_polygon_lines) {
             svg.draw(Line(color_line.a, color_line.b), (color_line.color < colors.size() ? colors[color_line.color] : default_color), stroke_width);
@@ -318,7 +319,7 @@ using ColorPoints = std::vector<ColorPoint>;
     const double                 stroke_width  = scaled<double>(0.05);
     const BoundingBox              bbox          = get_extents(lslices);
 
-    ::Slic3r::SVG svg(path.c_str(), bbox);
+    ::Slic3r::Biz::Algorithms::SVG::SVG svg(path.c_str(), bbox);
 
     const auto draw_color_projection_line = [&](const ColorProjectionLines &color_projection_lines) -> void {
         for (const ColorProjectionLine &color_projection_line : color_projection_lines) {

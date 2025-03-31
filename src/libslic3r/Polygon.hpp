@@ -57,8 +57,12 @@ inline bool polygon_on_boundary(const Polygon &polygon, const Point &point, doub
     return (point_projection(polygon, point) - point).cast<double>().squaredNorm() < eps * eps;
 }
 
+[[deprecated("Use Biz::Algorithms::Polygon::get_extents")]]
 BoundingBox get_extents(const Polygon &poly);
+
+[[deprecated("Use Biz::Algorithms::Polygon::get_extents")]]
 BoundingBox get_extents(const Polygons &polygons);
+
 BoundingBox get_extents_rotated(const Polygon &poly, double angle);
 std::vector<BoundingBox> get_extents_vector(const Polygons &polygons);
 

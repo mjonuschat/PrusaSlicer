@@ -20,7 +20,7 @@
 #include "libslic3r/SLA/ConcaveHull.hpp"
 #include "libslic3r/MTUtils.hpp"
 
-#include "libslic3r/SVG.hpp"
+#include "Slic3r/Biz/Algorithms/SVG.hpp"
 
 using namespace Slic3r;
 using Catch::Approx;

@@ -10,7 +10,7 @@
 #include <libslic3r/GCode/SmoothPath.hpp>
 #include <libslic3r/Geometry/ArcWelder.hpp>
 #include <libslic3r/Geometry/Circle.hpp>
-#include <libslic3r/SVG.hpp>
+#include "Slic3r/Biz/Algorithms/SVG.hpp"
 #include <libslic3r/libslic3r.h>
 
 using namespace Slic3r;

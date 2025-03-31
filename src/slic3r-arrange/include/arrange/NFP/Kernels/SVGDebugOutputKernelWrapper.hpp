@@ -13,14 +13,14 @@
 #include "arrange/NFP/NFPArrangeItemTraits.hpp"
 #include "arrange/Beds.hpp"
 
-#include <libslic3r/SVG.hpp>
+#include "Slic3r/Biz/Algorithms/SVG.hpp"
 
 namespace Slic3r { namespace arr2 {
 
 template<class Kernel>
 struct SVGDebugOutputKernelWrapper {
     Kernel &k;
-    std::unique_ptr<Slic3r::SVG> svg;
+    std::unique_ptr<Biz::Algorithms::SVG::SVG> svg;
     BoundingBox drawbounds;
 
     template<class... Args>
@@ -46,7 +46,7 @@ struct SVGDebugOutputKernelWrapper {
         svg.reset();
         auto bounds = drawbounds;
         auto fixed = all_items_range(packing_context);
-        svg = std::make_unique<SVG>(std::string("arrange_bed") +
+        svg = std::make_unique<Biz::Algorithms::SVG::SVG>(std::string("arrange_bed") +
                                         std::to_string(
                                             arr2::get_bed_index(itm)) +
                                         "_" + std::to_string(fixed.size()) +

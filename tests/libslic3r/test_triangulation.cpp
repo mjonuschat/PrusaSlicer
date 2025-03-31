@@ -1,9 +1,12 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <libslic3r/Triangulation.hpp>
-#include <libslic3r/SVG.hpp> // only debug visualization
+#include "Slic3r/Domain/Types.hpp"
+#include "Slic3r/Biz/Algorithms/SVG.hpp" // only debug visualization
 
 using namespace Slic3r;
+using Domain::Index3;
+using Biz::Algorithms::SVG::SVG;
 
 namespace Private{
 void store_trinagulation(const ExPolygons &shape,

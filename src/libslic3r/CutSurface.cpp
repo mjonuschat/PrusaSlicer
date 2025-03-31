@@ -547,7 +547,7 @@ void store(const Emboss::IProjection &projection, const Point &point_to_project,
 #include <boost/log/trivial.hpp>
 #include <filesystem>
 
-#include "libslic3r/SVG.hpp"
+#include "Slic3r/Biz/Algorithms/SVG.hpp"
 #endif // DEBUG_OUTPUT_DIR
 
 SurfaceCut Slic3r::cut_surface(const ExPolygons &shapes,
@@ -3337,7 +3337,7 @@ std::vector<bool> priv::select_patches(const ProjectionDistances &best_distances
         ExPolygons rest = diff_ex(ExPolygons{shape}, fill, ApplySafetyOffset::Yes);
 #ifdef DEBUG_OUTPUT_DIR
         BoundingBox shape_bb = get_extents(shape);
-        SVG svg(store_dir + "shape_" + std::to_string(shape_index) + ".svg", shape_bb);
+        Biz::Algorithms::SVG::SVG svg(store_dir + "shape_" + std::to_string(shape_index) + ".svg", shape_bb);
         svg.draw(fill, "darkgreen");
         svg.draw(rest, "green");
 #endif // DEBUG_OUTPUT_DIR
@@ -3737,7 +3737,7 @@ void priv::store(const CutMesh &mesh, const FaceTypeMap &face_type_map, const st
 }
 
 void priv::store(const ExPolygons &shapes, const std::string &svg_file) { 
-    SVG svg(svg_file);
+    Biz::Algorithms::SVG::SVG svg(svg_file);
     svg.draw(shapes);
 }
 
@@ -3922,7 +3922,7 @@ void priv::store(const ExPolygons &shapes, const std::vector<bool> &mask, const 
     auto bb = get_extents(shapes);
     int  width = get_extents(shapes.front()).size().x() / 70;
 
-    SVG svg(file_svg, bb);
+    Biz::Algorithms::SVG::SVG svg(file_svg, bb);
     svg.draw(shapes);
     
     ExPolygonsIndices s2i(shapes);

@@ -698,7 +698,7 @@ static inline bool line_rounded_thick_segment_collision(
         bbox.merge(segment_a.cast<coord_t>());
         bbox.merge(segment_b.cast<coord_t>());
         static int iRun = 0;
-        ::Slic3r::SVG svg(debug_out_path("%s-%03d.svg", "line-thick-segment-intersect", iRun ++), bbox);
+        ::Slic3r::Biz::Algorithms::SVG::SVG svg(debug_out_path("%s-%03d.svg", "line-thick-segment-intersect", iRun ++), bbox);
         svg.draw(Line(line_a.cast<coord_t>(), line_b.cast<coord_t>()), "black");
         svg.draw(Line(segment_a.cast<coord_t>(), segment_b.cast<coord_t>()), "blue", offset * 2.);
         svg.draw(segment_a.cast<coord_t>(), "blue", offset);
@@ -762,7 +762,7 @@ static void export_infill_to_svg(
     BoundingBox bbox = get_extents(polygons);
     bbox.offset(scale_(3.));
 
-    ::Slic3r::SVG svg(path, bbox);
+    ::Slic3r::Biz::Algorithms::SVG::SVG svg(path, bbox);
     // Draw the filled infill polygons.
     svg.draw(expolygons);
 
@@ -995,7 +995,7 @@ void mark_boundary_segments_touching_infill(
 						ExPolygon expoly(Polygon(*grid.contours().front()));
 						for (size_t i = 1; i < grid.contours().size(); ++i)
 							expoly.holes.emplace_back(Polygon(*grid.contours()[i]));
-						SVG svg(debug_out_path("%s-%d.svg", "FillBase-mark_boundary_segments_touching_infill", iRun ++).c_str(), get_extents(expoly));
+						Biz::Algorithms::SVG::SVG svg(debug_out_path("%s-%d.svg", "FillBase-mark_boundary_segments_touching_infill", iRun ++).c_str(), get_extents(expoly));
 						svg.draw(expoly, "green");
 						svg.draw(Line(segment.first, segment.second), "red");
 						svg.draw(Line(this->infill_pt1->cast<coord_t>(), this->infill_pt2->cast<coord_t>()), "magenta");
@@ -1069,7 +1069,7 @@ void mark_boundary_segments_touching_infill(
 						ExPolygon expoly(Polygon(*grid.contours().front()));
 						for (size_t i = 1; i < grid.contours().size(); ++i)
 							expoly.holes.emplace_back(Polygon(*grid.contours()[i]));
-						SVG svg(debug_out_path("%s-%d.svg", "FillBase-mark_boundary_segments_touching_infill0", iRun ++).c_str(), get_extents(expoly));
+						Biz::Algorithms::SVG::SVG svg(debug_out_path("%s-%d.svg", "FillBase-mark_boundary_segments_touching_infill0", iRun ++).c_str(), get_extents(expoly));
 						svg.draw(expoly, "green");
 						svg.draw(polyline, "blue");
 						svg.draw(Line(pt1.cast<coord_t>(), pt2.cast<coord_t>()), "magenta", scale_(0.1));
@@ -1980,7 +1980,7 @@ static void export_partial_infill_to_svg(const std::string &path, const Boundary
         polygons.emplace_back(pts);
     BoundingBox bbox = get_extents(polygons);
     bbox.merge(get_extents(infill));
-    ::Slic3r::SVG svg(path, bbox);
+    ::Slic3r::Biz::Algorithms::SVG::SVG svg(path, bbox);
     svg.draw(union_ex(polygons));
     svg.draw(infill, "blue");
     svg.draw(emitted, "darkblue");

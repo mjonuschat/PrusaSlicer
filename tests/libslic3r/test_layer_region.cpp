@@ -2,7 +2,7 @@
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/Geometry.hpp"
 #include "libslic3r/Point.hpp"
-#include "libslic3r/SVG.hpp"
+#include "Slic3r/Biz/Algorithms/SVG.hpp"
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
 #include <libslic3r/LayerRegion.hpp>
@@ -11,6 +11,8 @@ using namespace Slic3r;
 using namespace Slic3r::Algorithm;
 using namespace Slic3r::Biz;
 using namespace Catch;
+
+using Algorithms::SVG::SVG;
 
 constexpr bool export_svgs = false;
 
@@ -92,10 +94,14 @@ TEST_CASE_METHOD(LayerRegionFixture, "test the surface expansion", "[LayerRegion
             Point{scaled(2.0), scaled(2.0)}
         });
 
-        svg.draw(surfaces, "blue");
+        for (const Surface& surface : surfaces) {
+            svg.draw(surface.expolygon, "blue");
+        }
         svg.draw(expansion_zones[0].expolygons, "green");
         svg.draw(expansion_zones[1].expolygons, "red");
-        svg.draw_outline(result, "black", "", scale_(0.01));
+        for (const Surface& surface : result) {
+            svg.draw_outline(surface.expolygon, "black", "", scale_(0.01));
+        }
     }
 
     REQUIRE(result.size() == 2);
@@ -128,10 +134,14 @@ TEST_CASE_METHOD(LayerRegionFixture, "test the bridge expansion with the bridge 
             Point{scaled(2.0), scaled(2.0)}
         });
 
-        svg.draw(surfaces, "blue");
+        for (const Surface& surface : surfaces) {
+            svg.draw(surface.expolygon, "blue");
+        }
         svg.draw(expansion_zones[0].expolygons, "green");
         svg.draw(expansion_zones[1].expolygons, "red");
-        svg.draw_outline(result, "black", "", scale_(0.01));
+        for (const Surface& surface : result) {
+            svg.draw_outline(surface.expolygon, "black", "", scale_(0.01));
+        }
     }
 
     REQUIRE(result.size() == 2);

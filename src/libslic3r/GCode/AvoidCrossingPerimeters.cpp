@@ -392,7 +392,7 @@ static void export_travel_to_svg(const Polygons                  &boundary,
 {
     double      stroke_width = scale_(0.05);
     BoundingBox   bbox         = get_extents(boundary);
-    ::Slic3r::SVG svg(path, bbox);
+    ::Slic3r::Biz::Algorithms::SVG::SVG svg(path, bbox);
     svg.draw_outline(boundary, "green", stroke_width);
     svg.draw(original_travel, "blue", stroke_width);
     svg.draw(result_travel, "red", stroke_width);

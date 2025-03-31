@@ -20,6 +20,8 @@ add_library(slic3r-biz-algorithms
     src/Slic3r/Biz/Algorithms/Polyline.cpp
     include/Slic3r/Biz/Algorithms/Scaling.hpp
     src/Slic3r/Biz/Algorithms/Scaling.cpp
+    include/Slic3r/Biz/Algorithms/SVG.hpp
+    src/Slic3r/Biz/Algorithms/SVG.cpp
 )
 target_include_directories(slic3r-biz-algorithms PUBLIC include)
 target_include_directories(slic3r-biz-algorithms PRIVATE src)

@@ -39,11 +39,11 @@
 // Make assert active if SLIC3R_DEBUG
 #ifdef SLIC3R_DEBUG
     #undef NDEBUG
-    #include "SVG.hpp"
+    #include "Slic3r/Biz/Algorithms/SVG.hpp"
 #endif
 
 #if defined(SLIC3R_DEBUG) || defined(INFILL_DEBUG_OUTPUT)
-    #include "libslic3r/SVG.hpp"
+    #include "Slic3r/Biz/Algorithms/SVG.hpp"
 #endif
 
 #include <cassert>
@@ -958,7 +958,7 @@ static std::vector<SegmentedIntersectionLine> slice_region_by_vertical_lines(con
         static int iRun = 0;
         BoundingBox bbox = get_extents(poly_with_offset.polygons_src);
         bbox.offset(scale_(3.));
-        ::Slic3r::SVG svg(debug_out_path("slice_region_by_vertical_lines-failed-%d.svg", iRun ++), bbox);
+        ::Slic3r::Biz::Algorithms::SVG::SVG svg(debug_out_path("slice_region_by_vertical_lines-failed-%d.svg", iRun ++), bbox);
         svg.draw(poly_with_offset.polygons_src);
         svg.draw_outline(poly_with_offset.polygons_src, "green");
         svg.draw_outline(poly_with_offset.polygons_outer, "green");
@@ -1956,7 +1956,7 @@ static void export_monotonous_regions_to_svg(
     BoundingBox bbox = get_extents(poly_with_offset.polygons_src);
     bbox.offset(scale_(3.));
 
-    ::Slic3r::SVG svg(path, bbox);
+    ::Slic3r::Biz::Algorithms::SVG::SVG svg(path, bbox);
     svg.draw(poly_with_offset.polygons_src);
     svg.draw_outline(poly_with_offset.polygons_src, "green");
     svg.draw_outline(poly_with_offset.polygons_outer, "green");
@@ -2824,10 +2824,10 @@ bool FillRectilinear::fill_surface_by_lines(const Surface *surface, const FillPa
 #ifdef SLIC3R_DEBUG
     static int iRun = 0;
     BoundingBox bbox_svg = poly_with_offset.bounding_box_outer();
-    ::Slic3r::SVG svg(debug_out_path("FillRectilinear-%d.svg", iRun), bbox_svg); // , scale_(1.));
+    ::Slic3r::Biz::Algorithms::SVG::SVG svg(debug_out_path("FillRectilinear-%d.svg", iRun), bbox_svg); // , scale_(1.));
     poly_with_offset.export_to_svg(svg);
     {
-        ::Slic3r::SVG svg(debug_out_path("FillRectilinear-initial-%d.svg", iRun), bbox_svg); // , scale_(1.));
+        ::Slic3r::Biz::Algorithms::SVG::SVG svg(debug_out_path("FillRectilinear-initial-%d.svg", iRun), bbox_svg); // , scale_(1.));
         poly_with_offset.export_to_svg(svg);
     }
     iRun ++;
@@ -2884,14 +2884,14 @@ bool FillRectilinear::fill_surface_by_lines(const Surface *surface, const FillPa
 #ifdef SLIC3R_DEBUG
     {
         {
-            ::Slic3r::SVG svg(debug_out_path("FillRectilinear-final-%03d.svg", iRun), bbox_svg); // , scale_(1.));
+            ::Slic3r::Biz::Algorithms::SVG::SVG svg(debug_out_path("FillRectilinear-final-%03d.svg", iRun), bbox_svg); // , scale_(1.));
             poly_with_offset.export_to_svg(svg);
             for (size_t i = n_polylines_out_initial; i < polylines_out.size(); ++ i)
                 svg.draw(polylines_out[i].lines(), "black");
         }
         // Paint a picture per polyline. This makes it easier to discover the order of the polylines and their overlap.
         for (size_t i_polyline = n_polylines_out_initial; i_polyline < polylines_out.size(); ++ i_polyline) {
-            ::Slic3r::SVG svg(debug_out_path("FillRectilinear-final-%03d-%03d.svg", iRun, i_polyline), bbox_svg); // , scale_(1.));
+            ::Slic3r::Biz::Algorithms::SVG::SVG svg(debug_out_path("FillRectilinear-final-%03d-%03d.svg", iRun, i_polyline), bbox_svg); // , scale_(1.));
             svg.draw(polylines_out[i_polyline].lines(), "black");
         }
     }

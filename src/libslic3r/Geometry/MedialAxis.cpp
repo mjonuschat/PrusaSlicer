@@ -329,7 +329,7 @@ void dump_voronoi_to_svg(const Lines &lines, /* const */ boost::polygon::voronoi
     bbox.max(0) += coord_t(1. / SCALING_FACTOR);
     bbox.max(1) += coord_t(1. / SCALING_FACTOR);
 
-    ::Slic3r::SVG svg(path, bbox);
+    ::Slic3r::Biz::Algorithms::SVG::SVG svg(path, bbox);
 
     if (polylines != NULL)
         svg.draw(*polylines, "lime", "lime", voronoiLineWidth);
@@ -659,7 +659,7 @@ bool MedialAxis::validate_edge(const VD::edge_type* edge)
     const Line &segment_r = retrieve_segment(cell_r);
     
     /*
-    SVG svg("edge.svg");
+    Biz::Algorithms::SVG::SVG svg("edge.svg");
     svg.draw(m_expolygon);
     svg.draw(line);
     svg.draw(segment_l, "red");

@@ -8,7 +8,7 @@
 #include "libslic3r/ElephantFootCompensation.hpp"
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/Flow.hpp"
-#include "libslic3r/SVG.hpp"
+#include "Slic3r/Biz/Algorithms/SVG.hpp"
 
 using namespace Slic3r;
 using namespace Slic3r::Biz;

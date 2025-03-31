@@ -132,7 +132,7 @@
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/Polyline.hpp"
-#include "libslic3r/SVG.hpp"
+#include "Slic3r/Biz/Algorithms/SVG.hpp"
 
 #include "libslic3r/libslic3r.h"
 #include "libslic3r_version.h"

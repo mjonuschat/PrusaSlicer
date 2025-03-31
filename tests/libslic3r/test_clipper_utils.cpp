@@ -10,7 +10,7 @@
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/ExPolygon.hpp"
-#include "libslic3r/SVG.hpp"
+#include "Slic3r/Biz/Algorithms/SVG.hpp"
 
 using namespace Slic3r;
 using namespace Slic3r::Biz;

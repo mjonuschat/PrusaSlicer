@@ -183,7 +183,7 @@ std::vector<float> contour_distance(const EdgeGrid::Grid &grid, const size_t idx
 			int num_rays = 15;
 
 #ifdef CONTOUR_DISTANCE_DEBUG_SVG
-			SVG svg(debug_out_path("contour_distance_raycasted-%d-%d.svg", iRun, &pt_next - contour.data()).c_str(), bbox);
+			Biz::Algorithms::SVG::SVG svg(debug_out_path("contour_distance_raycasted-%d-%d.svg", iRun, &pt_next - contour.data()).c_str(), bbox);
 			svg.draw(expoly_grid);
 			svg.draw_outline(Polygon(contour), "blue", scale_(0.01));
 			svg.draw(*pt_this, "red", coord_t(scale_(0.1)));
@@ -407,7 +407,7 @@ std::vector<float> contour_distance2(const EdgeGrid::Grid &grid, const size_t id
 #if 0
 //#ifdef CONTOUR_DISTANCE_DEBUG_SVG
 			if (out.back() < search_radius) {
-				SVG svg(debug_out_path("contour_distance_filtered-%d-%d.svg", iRun, int(&pt - contour.data())).c_str(), bbox);
+				Biz::Algorithms::SVG::SVG svg(debug_out_path("contour_distance_filtered-%d-%d.svg", iRun, int(&pt - contour.data())).c_str(), bbox);
 				svg.draw(expoly_grid);
 				svg.draw_outline(Polygon(contour), "blue", scale_(0.01));
 				svg.draw(pt, "green", coord_t(scale_(0.1)));
@@ -418,7 +418,7 @@ std::vector<float> contour_distance2(const EdgeGrid::Grid &grid, const size_t id
 		}
 #ifdef CONTOUR_DISTANCE_DEBUG_SVG
 		if (out.back() < search_radius) {
-			SVG svg(debug_out_path("contour_distance_filtered-final-%d.svg", iRun).c_str(), bbox);
+			Biz::Algorithms::SVG::SVG svg(debug_out_path("contour_distance_filtered-final-%d.svg", iRun).c_str(), bbox);
 			svg.draw(expoly_grid);
 			svg.draw_outline(Polygon(contour), "blue", scale_(0.01));
 			for (size_t i = 0; i < contour.size(); ++ i)

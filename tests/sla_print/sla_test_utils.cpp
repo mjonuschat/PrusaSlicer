@@ -5,10 +5,12 @@
 #include "libslic3r/SLA/AGGRaster.hpp"
 #include "libslic3r/SLA/DefaultSupportTree.hpp"
 #include "libslic3r/SLA/BranchingTreeSLA.hpp"
+#include "libslic3r/ClipperUtils.hpp"
 
 #include <iomanip>
 
 using namespace Slic3r::Biz;
+using Algorithms::SVG::SVG;
 
 void test_support_model_collision(
     const std::string            &obj_filename,

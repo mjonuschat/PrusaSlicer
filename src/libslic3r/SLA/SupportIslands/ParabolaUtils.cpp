@@ -77,7 +77,7 @@ bool ParabolaUtils::is_over_zero(const ParabolaSegment &parabola)
 
 using Slic3r::Biz::Algorithms::Point::round;
 
-void ParabolaUtils::draw(SVG &                  svg,
+void ParabolaUtils::draw(Biz::Algorithms::SVG::SVG &                  svg,
                          const ParabolaSegment &parabola,
                          const char *           color,
                          coord_t                width,

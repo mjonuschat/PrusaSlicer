@@ -276,7 +276,7 @@ Slic3r::Polygon VoronoiGraphUtils::to_polygon(const VD::cell_type & cell,
                          center + Point(maximal_distance, maximal_distance));
         static int  counter  = 0;
         std::string filename = "polygon" + std::to_string(counter++) + ".svg";
-        SVG svg(filename.c_str(), bbox);
+        Biz::Algorithms::SVG::SVG svg(filename.c_str(), bbox);
         svg.draw(center, "lightgreen", maximal_distance);
         svg.draw(polygon, "lightblue");
         int index = 0;
@@ -1312,7 +1312,7 @@ double VoronoiGraphUtils::outline_angle(const VoronoiGraph::Node::Neighbor &neig
     return std::acos(dot/d1.norm() / d2.norm());
 }
 
-void VoronoiGraphUtils::draw(SVG &               svg,
+void VoronoiGraphUtils::draw(Biz::Algorithms::SVG::SVG &               svg,
                              const VoronoiGraph &graph,
                              const Lines &       lines,
                              const SampleConfig &config,
@@ -1408,7 +1408,7 @@ void VoronoiGraphUtils::draw(SVG &               svg,
     }
 }
 
-void VoronoiGraphUtils::draw(SVG &                svg,
+void VoronoiGraphUtils::draw(Biz::Algorithms::SVG::SVG &                svg,
                              const VD::edge_type &edge,
                              const Lines &        lines,
                              const char *         color,
@@ -1426,7 +1426,7 @@ void VoronoiGraphUtils::draw(SVG &                svg,
 }
 
 
-void VoronoiGraphUtils::draw(SVG &                      svg,
+void VoronoiGraphUtils::draw(Biz::Algorithms::SVG::SVG &                      svg,
                              const VoronoiGraph::Nodes &path,
                              coord_t                    width,
                              const char *               color,
@@ -1453,7 +1453,7 @@ void VoronoiGraphUtils::draw(SVG &                      svg,
     }
 }
 
-void VoronoiGraphUtils::draw(SVG &                       svg,
+void VoronoiGraphUtils::draw(Biz::Algorithms::SVG::SVG &                       svg,
                              const VoronoiGraph::ExPath &path,
                              coord_t                     width)
 {
@@ -1494,7 +1494,8 @@ void VoronoiGraphUtils::draw(const Polygon &polygon,
                              const Lines &  lines,
                              const Point &  center)
 {
-    SVG  svg("Bad_polygon.svg", {polygon.points});
+    namespace bb = Biz::Algorithms::BoundingBox;
+    Biz::Algorithms::SVG::SVG  svg("Bad_polygon.svg", bb::construct(polygon.points));
     svg.draw(polygon, "orange");
     LineUtils::draw(svg, lines, "red", 0., true, true);
     svg.draw(center);

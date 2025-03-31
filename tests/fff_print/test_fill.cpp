@@ -13,7 +13,7 @@
 #include "libslic3r/Geometry/ConvexHull.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Print.hpp"
-#include "libslic3r/SVG.hpp"
+#include "Slic3r/Biz/Algorithms/SVG.hpp"
 #include "Slic3r/Biz/GCodeReader/GCodeReader.hpp"
 
 #include "test_data.hpp"

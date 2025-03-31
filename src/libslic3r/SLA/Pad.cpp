@@ -24,7 +24,7 @@
 #include "libslic3r/libslic3r.h"
 
 #ifndef NDEBUG
-#include "libslic3r/SVG.hpp"
+#include "Slic3r/Biz/Algorithms/SVG.hpp"
 #endif
 
 using namespace Slic3r::Biz;
@@ -68,7 +68,7 @@ void breakstick_holes(Points& pts,
     if(stride <= EPSILON || stick_width <= EPSILON || padding <= EPSILON)
         return;
 
-    // SVG svg("bridgestick_plate.svg");
+    // Biz::Algorithms::SVG::SVG svg("bridgestick_plate.svg");
     // svg.draw(poly);
 
     // The connector stick will be a small rectangle with dimensions
@@ -444,7 +444,7 @@ indexed_triangle_set create_pad_geometry(const PadSkeleton &skelet,
                                          ThrowOnCancel      thr)
 {
 #ifndef NDEBUG
-    SVG svg("pad_skeleton.svg");
+    Biz::Algorithms::SVG::SVG svg("pad_skeleton.svg");
     svg.draw(skelet.outer, "green");
     svg.draw(skelet.inner, "blue");
     svg.Close();
