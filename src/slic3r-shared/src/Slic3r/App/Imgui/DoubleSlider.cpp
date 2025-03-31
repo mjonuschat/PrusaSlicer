@@ -4,10 +4,10 @@
 
 namespace Slic3r::App::Imgui::DoubleSlider {
 
-static ImU32 bg_color() { return ImGui::GetColorU32(ImGuiCol_ButtonHovered); }
-static ImU32 groove_bg_color() { return ImGui::GetColorU32(ImGuiCol_WindowBg); }
+static ImVec4 fg_color() { return { 0.99f, 0.41f, 0.2f, 1.0f }; } // color from SidebarAfterSlice::render()
+static ImVec4 bg_color() { return { 0.5f, 0.5f, 0.5f, 1.0f }; }
+static ImVec4 border_color() { return { 0.168f, 0.168f, 0.168f, 1.0f }; } // color from SetOurStyleColors() - ImGuiCol_WindowBg
 static ImU32 tooltip_bg_color() { return ImGui::GetColorU32(ImGuiCol_WindowBg); }
-static ImU32 border_color() { return ImGui::GetColorU32(ImGuiCol_Text); }
 
 ImRect Control::DrawOptions::groove(const ImVec2& pos, const ImVec2& size, bool is_horizontal) const
 {
@@ -209,7 +209,7 @@ void Control::draw_scroll_line(const ImRect& scroll_line, const ImRect& slideabl
     if (m_cb_draw_scroll_line)
         m_cb_draw_scroll_line(scroll_line, slideable_region);
     else
-        ImGui::RenderFrame(scroll_line.Min, scroll_line.Max, bg_color(), false, m_draw_opts.rounding());
+        ImGui::RenderFrame(scroll_line.Min, scroll_line.Max, ImGui::GetColorU32(fg_color()), false, m_draw_opts.rounding());
 }
 
 void Control::draw_background(const ImRect& slideable_region)
@@ -224,10 +224,8 @@ void Control::draw_background(const ImRect& slideable_region)
     ImRect bg_rect = groove;
     bg_rect.Expand(groove_padding);
 
-    // draw bg of slider
-    ImGui::RenderFrame(bg_rect.Min, bg_rect.Max, border_color(), false, 0.5f * bg_rect.GetWidth());
     // draw bg of scroll
-    ImGui::RenderFrame(groove.Min, groove.Max, groove_bg_color(), false, 0.5f * groove.GetWidth());
+    ImGui::RenderFrame(groove.Min, groove.Max, ImGui::GetColorU32(bg_color()), false, 0.5f * groove.GetWidth());
 }
 
 void Control::draw_label(std::string label, const ImRect& thumb, bool is_mirrored /*= false*/, bool with_border /*= false*/)
@@ -276,8 +274,8 @@ void Control::draw_label(std::string label, const ImRect& thumb, bool is_mirrore
             pos_3 = is_horizontal() ? pos_1 - ImVec2(0.f, triangle_offset_y_b) : pos_1 + ImVec2(triangle_offset_x_b, 0.f);
         }
 
-        ImGui::RenderFrame(text_rect_b.Min, text_rect_b.Max, bg_color(), true, rounding);
-        ImGui::GetCurrentWindow()->DrawList->AddTriangleFilled(pos_1, pos_2, pos_3, bg_color());
+        ImGui::RenderFrame(text_rect_b.Min, text_rect_b.Max, ImGui::GetColorU32(bg_color()), true, rounding);
+        ImGui::GetCurrentWindow()->DrawList->AddTriangleFilled(pos_1, pos_2, pos_3, ImGui::GetColorU32(bg_color()));
     }
 
     ImVec2 pos_1 = is_horizontal() ?
@@ -304,20 +302,14 @@ void Control::draw_thumb(const ImVec2& center, bool mark/* = false*/)
     float thumb_radius = m_draw_opts.thumb_radius();
     bool is_hovered = ImGui::IsMouseHoveringRect({ center.x - thumb_radius, center.y - thumb_radius }, { center.x + thumb_radius, center.y + thumb_radius });
     float radius = is_hovered ? 1.1f * thumb_radius : thumb_radius;
-    float line_width  = 1.5f * m_draw_opts.scale;
-    float rounding    = 1.5f * m_draw_opts.rounding();
 
     float hexagon_angle = is_horizontal() ? 0.f : IM_PI * 0.5f;
 
-    draw_hexagon(center, radius, border_color(), hexagon_angle, rounding);
-    draw_hexagon(center, radius - line_width, bg_color(), hexagon_angle, rounding);
+    ImGui::GetCurrentWindow()->DrawList->AddCircleFilled(center, radius, ImGui::GetColorU32(border_color()), 16);
+    ImGui::GetCurrentWindow()->DrawList->AddCircleFilled(center, 0.5f * radius, ImGui::GetColorU32(fg_color()), 16);
 
-    if (mark) {
-        draw_hexagon(center, radius - 3.0f * line_width, border_color(), hexagon_angle, rounding);
-//        ImGuiWindow* window = ImGui::GetCurrentWindow();
-//        window->DrawList->AddLine(center + ImVec2(-line_offset, 0.0f), center + ImVec2(line_offset, 0.0f), BORDER_COLOR, line_width);
-//        window->DrawList->AddLine(center + ImVec2(0.0f, -line_offset), center + ImVec2(0.0f, line_offset), BORDER_COLOR, line_width);
-    }
+    if (mark)
+      ImGui::GetCurrentWindow()->DrawList->AddCircleFilled(center, 0.25f * radius, ImGui::GetColorU32(border_color()), 16);
 }
 
 void Control::apply_regions(int higher_pos, int lower_pos, const ImRect& draggable_region)
@@ -700,6 +692,7 @@ bool Control::render()
     }
 
     ImGui::End();
+
     ImGui::PopStyleVar(4);
 
     return result;

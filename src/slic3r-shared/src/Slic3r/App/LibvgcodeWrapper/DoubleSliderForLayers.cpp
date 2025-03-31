@@ -239,22 +239,23 @@ void DoubleSliderForLayers::render(const ImVec2& pos, float scale_factor, float 
     float SLIDER_LAYERS_WIDTH = m_show_ruler ? 125.0f : 105.0f;
     float width = SLIDER_LAYERS_WIDTH * m_scale;
     ImVec2 position;
+    ImVec2 size;
     if (pos.x == -1.0f && pos.y == -1.0f) {
         // temporary hack to allow to render the slider outside Yoga layout
         position.x = viewport.Size.x - width - m_icon_screen_size;
         position.y = 1.5f * m_icon_screen_size + offset;
+        if (m_allow_editing)
+            position.y += 2.0f;
+
+        size = { width, viewport.Size.y - 4.0f * m_icon_screen_size - offset };
     }
     else {
         ImVec2 av = ImGui::GetContentRegionAvail();
         ImVec2 cp = ImGui::GetCursorScreenPos();
-
-        position.x = cp.x + 0.5f * (av.x - width - m_icon_screen_size);
-        position.y = cp.y + offset;
+        position = cp;
+        size.x = av.x;
+        size.y = av.y - 1.25f * m_icon_screen_size;
     }
-    if (m_allow_editing)
-        position.y += 2.f;
-
-    ImVec2 size(width, viewport.Size.y - 4.0f * m_icon_screen_size - offset);
 
     m_ctrl.init(position, size, m_scale, m_show_ruler);
     if (m_ctrl.render()) {
@@ -269,22 +270,34 @@ void DoubleSliderForLayers::render(const ImVec2& pos, float scale_factor, float 
 
     // draw action buttons
 
-    float groove_center_x = m_ctrl.groove_rect().GetCenter().x;
-
-    ImVec2 btn_pos(groove_center_x - 0.5f * m_icon_screen_size, position.y - 0.75f * m_icon_screen_size);
+    ImVec2 btn_pos;
+    if (pos.x == -1.0f && pos.y == -1.0f){
+        float groove_center_x = m_ctrl.groove_rect().GetCenter().x;
+        btn_pos = { groove_center_x - 0.5f * m_icon_screen_size, position.y - 0.75f * m_icon_screen_size };
+    }
+    else
+        btn_pos = { position.x + 0.5f * size.x - 1.65f * m_icon_screen_size, position.y + size.y + 0.25f * m_icon_screen_size };
 
     if (!m_ticks.empty() && can_edit() &&
         render_button(ImGui::DSRevert, ImGui::DSRevertHovered, "revert", btn_pos, FocusedItem::RevertIcon))
         discard_all_ticks();
+    else if (m_ticks.empty() && can_edit() && (pos.x != -1.0f || pos.y != -1.0f))
+        render_button(ImGui::DSRevertDisabled, ImGui::DSRevertDisabled, "revert", btn_pos, FocusedItem::None);
 
-    btn_pos.y += 0.5f * m_icon_screen_size + size.y;
+    if (pos.x == -1.0f && pos.y == -1.0f)
+        btn_pos.y += 0.5f * m_icon_screen_size + size.y;
+    else
+        btn_pos.x += 1.1f * m_icon_screen_size;
     bool is_one_layer = m_ctrl.is_combine_thumbs();
     if (render_button(is_one_layer ? ImGui::Lock : ImGui::Unlock, 
         is_one_layer ? ImGui::LockHovered : ImGui::UnlockHovered, 
         "one_layer", btn_pos, FocusedItem::OneLayerIcon))
         change_one_layer_lock();
 
-    btn_pos.y += 1.2f * m_icon_screen_size;
+    if (pos.x == -1.0f && pos.y == -1.0f)
+        btn_pos.y += 1.2f * m_icon_screen_size;
+    else
+        btn_pos.x += 1.1f * m_icon_screen_size;
     if (render_button(ImGui::DSSettings, ImGui::DSSettingsHovered, "settings", btn_pos, FocusedItem::CogIcon))
         m_show_cog_menu = true;
 

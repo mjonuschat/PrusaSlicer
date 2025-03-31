@@ -36,7 +36,7 @@ void PreviewRenderLayout::add_middle_flex_sizer()
     middle_flex_sizer.init(2, 1);
     middle_flex_sizer.set_grow_col(0);
 
-    static Yoga::FlexSizer slider_sizer(1, 1, Vec2f(80.f, 0.f));
+    static Yoga::FlexSizer slider_sizer(1, 1, Vec2f(110.f, 0.f));
     slider_sizer.set_grow_col(0);
     add_panel(slider_sizer, m_cb_layer_slider_render, "layers_slider");
 
