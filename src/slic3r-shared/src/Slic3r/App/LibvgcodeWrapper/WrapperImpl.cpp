@@ -187,7 +187,7 @@ void WrapperImpl::render_gcode_window()
     gcode_window(m_gcode_window_data, m_viewer.current_vertex().gcode_id);
 }
 
-void WrapperImpl::render_legend()
+void WrapperImpl::render_legend(Render::ImguiRender* imgui_render)
 {
     static std::string msg = _u8L("No data available");
 
@@ -203,17 +203,19 @@ void WrapperImpl::render_legend()
     }
     else {
         static bool detail = false;
+        ImGui::GetCurrentWindow()->DC.CursorPos.y += ImGui::GetTextLineHeight();
         if (detail)
-            ImGui::Text("Not implemented yet");
-        else {
-            ImGui::GetCurrentWindow()->DC.CursorPos.y += ImGui::GetTextLineHeight();
+            legend_detail(imgui_render, m_viewer, *this, m_cb_legend);
+        else
             legend_coarse(m_viewer, *this);
-        }
         ImVec2 available_size = ImGui::GetContentRegionAvail();
         legend_view_type_selector(m_viewer, *this, m_cb_legend.cb_view_type_changed, 0.666f * available_size.x);
         ImGui::SameLine();
         Imgui::toggle_button(_u8L("Detail view"), &detail, true);
     }
+
+    if (m_radius_popup_type != MoveType::COUNT)
+        render_customize_radius_popup();
 }
 
 void WrapperImpl::render_gcode_slider()

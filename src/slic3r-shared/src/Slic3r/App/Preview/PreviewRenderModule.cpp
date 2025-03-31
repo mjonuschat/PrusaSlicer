@@ -589,7 +589,7 @@ void PreviewRenderModule::init_scene_layout()
         ImGui::PushFont(m_imgui_render->font(Render::ImguiFontType::Bold));
         ImGui::Text("%s", _u8L("Legend").c_str());
         ImGui::PopFont();
-        m_viewer.render_legend();
+        m_viewer.render_legend(m_imgui_render);
     });
 
     m_layout.set_gcode_render_fn([this](Vec2f size, Vec2f pos) {
