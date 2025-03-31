@@ -8,6 +8,8 @@
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 #include "Slic3r/Biz/ISelectedBedInstanceChangedListener.hpp"
 #include "Slic3r/Biz/Slicing/SlicingInteractor.hpp"
+#include "Slic3r/Biz/PrintHost/PrintHostInteractor.hpp"
+#include "Slic3r/Biz/FDMResultCache.hpp"
 
 namespace Slic3r::Domain {
 class Project;
@@ -43,7 +45,7 @@ class ProjectInteractor final :
 {
 public:
     explicit ProjectInteractor(Domain::Workbench& workbench, Platform::IMainThreadDispatcher& dispatcher)
-        : m_workbench(workbench), m_preset_interactor(workbench), m_scene_interactor(workbench), m_slicing_interactor(dispatcher)
+        : m_workbench(workbench), m_preset_interactor(workbench), m_scene_interactor(workbench), m_slicing_interactor(dispatcher), m_print_host_interactor(dispatcher)
     {
         add_listener<ISelectedConfigContainerChangedListener>(&m_preset_interactor);
         add_listener<ISelectedConfigContainerChangedListener>(&m_scene_interactor);
@@ -63,7 +65,7 @@ public:
      * @brief Create new project
      * @return Returns ID of newly created project
      */
-    Domain::SelectionId new_project();
+    Domain::SelectionId new_project();      
 
     /**
      * @name Project manipulation
@@ -190,6 +192,20 @@ public:
     void on_selected_bed_instance_changed(Domain::SelectionId project_id, Domain::SelectionId container_id, Domain::SelectionId bed_instance_id) override;
     /** @} */
 
+    /**
+     * @brief Creates PrintHostConfig and PrintHostData and passes it to PrintHostInteractor to start export.
+     * PrintHostData copies gcode data from m_fdm_result_cache.
+     * PrintHostConfig origin is yet to be decided.
+     */
+    void do_export(const Slicing::SlicingId id, const boost::filesystem::path& dest_path);
+
+     /**
+     * @brief Creates PrintHostConfig and PrintHostData and passes it to PrintHostInteractor to start upload.
+     * PrintHostData copies gcode data from m_fdm_result_cache.
+     * PrintHostConfig origin is yet to be decided.
+     */
+    void do_upload(const Slicing::SlicingId id);
+
 private:
     void on_slicing_input_changed(const Domain::BedRef& bed_instance) override;
     void on_slicing_input_removed(const Domain::BedRef& bed_instance) override;
@@ -215,6 +231,7 @@ private:
     Scene::SceneInteractor m_scene_interactor;
     Slicing::SlicingInteractor m_slicing_interactor;
     FDMResultCache m_fdm_result_cache;
+    PrintHost::PrintHostInteractor m_print_host_interactor;
 };
 
 } // namespace Slic3r::Biz

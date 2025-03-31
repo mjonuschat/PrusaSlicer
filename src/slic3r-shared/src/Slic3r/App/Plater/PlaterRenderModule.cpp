@@ -75,14 +75,14 @@ void PlaterRenderModule::init_scene_layout()
 
     m_layout.set_sidebar_bed_render_fn([](Vec2f size, Vec2f pos) -> void
         { SidebarBed::render(pos, size); });
-
+        
     m_layout.set_sidebar_print_render_fn([](Vec2f size, Vec2f pos) -> void
         { SidebarPrint::render(pos, size); });
 // <<
     m_layout.set_history_render_fn([](Vec2f size, Vec2f pos) -> void
         { Plater::History::render(pos, size); });
 
-    m_sidebar_slice_panel.init(m_imgui_render, [this] {m_project_interactor.slicing_interactor().slice_all(); });
+    m_sidebar_slice_panel.init(m_imgui_render, [this] {m_project_interactor.slicing_interactor().slice_all(); }, std::bind(&PlaterRenderModule::do_upload, this));
     m_layout.set_sidebar_slice_render_fn([this](Vec2f size, Vec2f pos) -> void
         { m_sidebar_slice_panel.render(pos, size); });
 
@@ -872,6 +872,21 @@ void PlaterRenderModule::on_screen_resized()
 
 void PlaterRenderModule::on_set_imgui_render()
 {
+}
+
+void PlaterRenderModule::on_fdm_cache_changed()
+{
+    // Show export / upload button that will trigger do_export()
+    m_sidebar_slice_panel.set_export_allowed(true);
+}
+
+void PlaterRenderModule::do_export()
+{
+    m_project_interactor.do_export(m_fdm_result_cache_changed_listener.get_last_id(), {});
+}
+void PlaterRenderModule::do_upload()
+{
+    m_project_interactor.do_upload(m_fdm_result_cache_changed_listener.get_last_id());
 }
 
 } // namespace Slic3r::App::Plater

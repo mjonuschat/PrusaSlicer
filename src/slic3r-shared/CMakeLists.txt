@@ -35,6 +35,7 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Plater/History.cpp
         include/Slic3r/App/Plater/SidebarSlice.hpp
         src/Slic3r/App/Plater/SidebarSlice.cpp
+		include/Slic3r/App/Plater/PlaterIFDMResultCacheChangedListener.hpp
 
         include/Slic3r/App/View/IPanelView.hpp
 
@@ -243,6 +244,56 @@ set(SLIC3R_SHARED_FILES
 
         include/Slic3r/Biz/FDMResultCache.hpp
         src/Slic3r/Biz/FDMResultCache.cpp
+
+		include/Slic3r/Biz/PrintHost/IPrintHost.hpp
+		include/Slic3r/Biz/PrintHost/IPrintHostListener.hpp
+		include/Slic3r/Biz/PrintHost/IPrintHostJobCallbacks.hpp
+		include/Slic3r/Biz/PrintHost/PrintHostJob.hpp
+		include/Slic3r/Biz/PrintHost/PrintHostJobManager.hpp
+		include/Slic3r/Biz/PrintHost/PrintHostInteractor.hpp
+		include/Slic3r/Biz/PrintHost/PrintHostConfig.hpp
+		include/Slic3r/Biz/PrintHost/PrintHostFactory.hpp
+		include/Slic3r/Biz/PrintHost/PrintHostLocal.hpp
+		include/Slic3r/Biz/PrintHost/PrintHostOctoPrint.hpp
+		include/Slic3r/Biz/PrintHost/PrintHostPrusaLink.hpp
+        include/Slic3r/Biz/PrintHost/PrintHostPrusaLinkStorage.hpp
+		include/Slic3r/Biz/PrintHost/PrintHostPrusaConnect.hpp
+		include/Slic3r/Biz/PrintHost/PrintHostSL1Host.hpp
+		include/Slic3r/Biz/PrintHost/PrintHostMoonraker.hpp
+		include/Slic3r/Biz/PrintHost/PrintHostDuet.hpp
+		include/Slic3r/Biz/PrintHost/PrintHostFlashAir.hpp
+		include/Slic3r/Biz/PrintHost/PrintHostAstroBox.hpp
+		include/Slic3r/Biz/PrintHost/PrintHostRepetier.hpp
+		include/Slic3r/Biz/PrintHost/PrintHostMKS.hpp
+        src/Slic3r/Biz/PrintHost/PrintHostJobManager.cpp
+		src/Slic3r/Biz/PrintHost/PrintHostInteractor.cpp
+		src/Slic3r/Biz/PrintHost/PrintHostJob.cpp
+		src/Slic3r/Biz/PrintHost/PrintHostFactory.cpp
+		src/Slic3r/Biz/PrintHost/PrintHostLocal.cpp
+		src/Slic3r/Biz/PrintHost/PrintHostOctoPrint.cpp
+		src/Slic3r/Biz/PrintHost/PrintHostPrusaLink.cpp
+        src/Slic3r/Biz/PrintHost/PrintHostPrusaLinkStorage.cpp
+		src/Slic3r/Biz/PrintHost/PrintHostPrusaConnect.cpp
+		src/Slic3r/Biz/PrintHost/PrintHostSL1Host.cpp
+		src/Slic3r/Biz/PrintHost/PrintHostMoonraker.cpp
+		src/Slic3r/Biz/PrintHost/PrintHostDuet.cpp
+		src/Slic3r/Biz/PrintHost/PrintHostFlashAir.cpp
+		src/Slic3r/Biz/PrintHost/PrintHostAstroBox.cpp
+		src/Slic3r/Biz/PrintHost/PrintHostRepetier.cpp
+		src/Slic3r/Biz/PrintHost/PrintHostMKS.cpp
+
+		include/Slic3r/Biz/Network/IHttp.hpp
+		include/Slic3r/Biz/Network/HttpFactory.hpp
+		include/Slic3r/Biz/Network/HttpCurl.hpp
+		include/Slic3r/Biz/Network/Bonjour.hpp
+		include/Slic3r/Biz/Network/TCPConsole.hpp
+		include/Slic3r/Biz/Network/ServiceConfig.hpp
+		src/Slic3r/Biz/Network/IHttp.cpp
+		src/Slic3r/Biz/Network/HttpCurl.cpp
+		src/Slic3r/Biz/Network/HttpCurlFactory.cpp
+		src/Slic3r/Biz/Network/Bonjour.cpp
+		src/Slic3r/Biz/Network/TCPConsole.cpp
+		src/Slic3r/Biz/Network/ServiceConfig.cpp
 )
 
 find_package(NanoSVG REQUIRED)
@@ -268,7 +319,7 @@ if (EMSCRIPTEN)
 #    target_link_libraries(slic3r-shared PUBLIC png-mt )
 else()
     find_package(PNG REQUIRED)
-    target_link_libraries(slic3r-shared PUBLIC PNG::PNG libvgcode)
+    target_link_libraries(slic3r-shared PUBLIC PNG::PNG libvgcode libcurl)
 endif ()
 target_include_directories(slic3r-shared PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 

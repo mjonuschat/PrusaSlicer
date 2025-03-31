@@ -62,7 +62,6 @@ void ProjectInteractor::on_selected_bed_instance_changed(Domain::SelectionId pro
         do_select_config_container(container_id);
 }
 
-
 void ProjectInteractor::on_slicing_input_changed(const Domain::BedRef& bed_instance)
 {
     const Domain::BedInstance* instance{selected_project().find_bed_instance_by_id(bed_instance.instance_id)};
@@ -135,6 +134,23 @@ void ProjectInteractor::remove_project(Domain::SelectionId project_id)
             next_selected_project_id = it->first;
         do_select_project(next_selected_project_id);
     }
+}
+
+void ProjectInteractor::do_export(const Slicing::SlicingId id, const boost::filesystem::path& dest_path)
+{
+    const Slicing::FDMResult& fdm_result = m_fdm_result_cache.get_result(id);
+    const std::string& gcode = fdm_result.gcode.str();
+    PrintHost::PrintHostConfig config{PrintHost::PrintHostType::Local,""};
+    PrintHost::PrintHostJobData data{gcode, dest_path};
+    m_print_host_interactor.export_gcode(std::move(config), std::move(data));
+}
+void ProjectInteractor::do_upload(const Slicing::SlicingId id)
+{
+    const Slicing::FDMResult& fdm_result = m_fdm_result_cache.get_result(id);
+    const std::string& gcode = fdm_result.gcode.str();
+    PrintHost::PrintHostConfig config{PrintHost::PrintHostType::OctoPrint,""};
+    PrintHost::PrintHostJobData data{gcode, "filename.gcode"};
+    m_print_host_interactor.upload_gcode(std::move(config), std::move(data));
 }
 
 } // namespace Slic3r::Biz
