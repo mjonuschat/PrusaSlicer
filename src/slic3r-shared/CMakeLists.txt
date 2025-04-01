@@ -299,6 +299,7 @@ set(SLIC3R_SHARED_FILES
 find_package(NanoSVG REQUIRED)
 find_package(Boost REQUIRED COMPONENTS filesystem)
 find_package(yoga CONFIG REQUIRED)
+find_package(nlohmann_json 3.11 REQUIRED)
 
 slic3r_remap_configs("yoga::yogacore" RelWithDebInfo Release)
 
@@ -314,6 +315,7 @@ target_link_libraries(slic3r-shared PUBLIC
         fmt::fmt
         yoga::yogacore
         slic3r-biz-algorithms
+        nlohmann_json::nlohmann_json
 )
 if (EMSCRIPTEN)
 #    target_link_libraries(slic3r-shared PUBLIC png-mt )
