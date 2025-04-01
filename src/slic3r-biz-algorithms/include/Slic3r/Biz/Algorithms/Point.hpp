@@ -28,4 +28,15 @@ bool remove_duplicate_points(Domain::Points& points);
 
 Domain::Points scaled(const std::vector<Domain::Vec2d> &points);
 
+template<typename T>
+concept UnscaledVector2 = Domain::UnscaledVector<T> && (T::SizeAtCompileTime == 2);
+
+/**
+ * Cross product of two 2D vectors.
+ *
+ * None of the vectors may be of int32_t type as the result would overflow.
+**/
+template<UnscaledVector2 Vec>
+typename Vec::Scalar cross2(const Vec &v1, const Vec &v2);
+
 } // namespace Slic3r::Biz::Algorithms::Point

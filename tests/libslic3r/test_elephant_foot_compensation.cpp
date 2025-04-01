@@ -15,10 +15,6 @@ using namespace Slic3r::Biz;
 
 // #define TESTS_EXPORT_SVGS
 
-namespace Slic3r {
-	ClipperLib::Path mittered_offset_path_scaled(const Points& contour, const std::vector<float>& deltas, double miter_limit);
-}
-
 static ExPolygon spirograph_gear_1mm()
 {
 	ExPolygon out;

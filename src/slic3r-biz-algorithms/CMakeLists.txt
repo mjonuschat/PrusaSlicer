@@ -22,6 +22,12 @@ add_library(slic3r-biz-algorithms
     src/Slic3r/Biz/Algorithms/Scaling.cpp
     include/Slic3r/Biz/Algorithms/SVG.hpp
     src/Slic3r/Biz/Algorithms/SVG.cpp
+    include/Slic3r/Biz/Algorithms/TravelingSalesman.hpp
+    src/Slic3r/Biz/Algorithms/TravelingSalesman.cpp
+    include/Slic3r/Biz/Algorithms/ClipperUtils.hpp
+    src/Slic3r/Biz/Algorithms/ClipperUtils.cpp
+    include/Slic3r/Biz/Algorithms/KDTreeIndirect.hpp
+    include/Slic3r/Biz/Algorithms/MutablePriorityQueue.hpp
 )
 target_include_directories(slic3r-biz-algorithms PUBLIC include)
 target_include_directories(slic3r-biz-algorithms PRIVATE src)
