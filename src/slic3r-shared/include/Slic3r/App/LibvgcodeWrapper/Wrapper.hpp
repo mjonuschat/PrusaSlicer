@@ -10,6 +10,7 @@
 
 namespace Slic3r::App::Render {
 class Device;
+class ImguiRender;
 } // namespace Slic3r::App::Render
 
 namespace Slic3r::App::Scene {
@@ -117,7 +118,7 @@ public:
     void render_toolpaths(const Vec3f& camera_position);
     void render_gui(const WrapperLayoutData& layout);
     void render_gcode_window();
-    void render_legend();
+    void render_legend(Render::ImguiRender* imgui_render);
     void render_gcode_slider();
     void render_layers_slider();
 

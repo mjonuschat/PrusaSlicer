@@ -15,12 +15,13 @@ void UnifiedWindowStyle::push()
 {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 4.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 8.0f, 8.0f } );
     ImGui::SetNextWindowBgAlpha(DEFAULT_WINDOW_BG_ALPHA);
 }
 
 void UnifiedWindowStyle::pop()
 {
-    ImGui::PopStyleVar(2);
+    ImGui::PopStyleVar(3);
 }
 
 void draw_hexagon(const ImVec2& center, float radius, ImU32 col, float start_angle, float rounding)

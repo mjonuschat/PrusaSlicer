@@ -246,13 +246,14 @@ namespace ImGui
     const wchar_t EditGCodeHovered = 0x280E;
     const wchar_t RemoveTick = 0x280F;
     const wchar_t RemoveTickHovered = 0x2810;
+    const wchar_t DSRevertDisabled = 0x2811;
 
     // icon for multiple beds
-    const wchar_t SliceAllBtnIcon = 0x2811;
-    const wchar_t PrintIdle = 0x2812;
-    const wchar_t PrintRunning = 0x2813;
-    const wchar_t PrintFinished = 0x2814;
-    const wchar_t WarningMarkerDisabled = 0x2815;
+    const wchar_t SliceAllBtnIcon = 0x2812;
+    const wchar_t PrintIdle = 0x2813;
+    const wchar_t PrintRunning = 0x2814;
+    const wchar_t PrintFinished = 0x2815;
+    const wchar_t WarningMarkerDisabled = 0x2816;
     // icon for object list
     const wchar_t EyeOpen                  = 0x2820;
     const wchar_t EyeClosed                = 0x2821;

@@ -79,9 +79,9 @@ void Wrapper::render_gcode_window()
     m_impl->render_gcode_window();
 }
 
-void Wrapper::render_legend()
+void Wrapper::render_legend(Render::ImguiRender* imgui_render)
 {
-    m_impl->render_legend();
+    m_impl->render_legend(imgui_render);
 }
 
 void Wrapper::render_gcode_slider()
