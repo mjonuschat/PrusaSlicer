@@ -1420,7 +1420,7 @@ void legend_coarse(Viewer& viewer, WrapperImpl& wrapper)
     draw_items_coarse(viewer, wrapper);
 }
 
-static void draw_feature_type_items_detail(Render::ImguiRender* imgui_render, Viewer& viewer, WrapperImpl& wrapper, const LegendCallbacks& cbs)
+static void draw_feature_type_items_detail(Render::ImguiRender& imgui_render, Viewer& viewer, WrapperImpl& wrapper, const LegendCallbacks& cbs)
 {
     static const ColorRGB PERCENTAGE_COLOR{ 0.56f, 0.56f, 0.56f };
     static constexpr float max_percentage_rect_width = 30.0f;
@@ -1446,7 +1446,7 @@ static void draw_feature_type_items_detail(Render::ImguiRender* imgui_render, Vi
         ImGui::TableSetupColumn(_u8L("Percentage").c_str());
         ImGui::TableSetupScrollFreeze(0, 1);
 
-        ImGui::PushFont(imgui_render->font(Render::ImguiFontType::Bold));
+        ImGui::PushFont(imgui_render.font(Render::ImguiFontType::Bold));
         ImGui::TableHeadersRow();
         ImGui::PopFont();
 
@@ -1706,7 +1706,7 @@ static void draw_color_range_items_detail(const Viewer& viewer, const WrapperImp
     ImGui::PopStyleVar();
 }
 
-static void draw_tool_items_details(Render::ImguiRender* imgui_render, const Viewer& viewer, const WrapperImpl& wrapper)
+static void draw_tool_items_details(Render::ImguiRender& imgui_render, const Viewer& viewer, const WrapperImpl& wrapper)
 {
     const std::vector<uint8_t>& used_extruders_ids = viewer.used_extruders_ids();
     const Palette& tool_colors = viewer.tool_colors();
@@ -1730,7 +1730,7 @@ static void draw_tool_items_details(Render::ImguiRender* imgui_render, const Vie
         ImGui::TableSetupColumn(_u8L("Used Filament").c_str());
         ImGui::TableSetupScrollFreeze(0, 1);
 
-        ImGui::PushFont(imgui_render->font(Render::ImguiFontType::Bold));
+        ImGui::PushFont(imgui_render.font(Render::ImguiFontType::Bold));
         ImGui::TableHeadersRow();
         ImGui::PopFont();
 
@@ -1763,7 +1763,7 @@ static void draw_tool_items_details(Render::ImguiRender* imgui_render, const Vie
     ImGui::PopStyleVar();
 }
 
-static void draw_color_print_items_detail(Render::ImguiRender* imgui_render, const Viewer& viewer, const WrapperImpl& wrapper,
+static void draw_color_print_items_detail(Render::ImguiRender& imgui_render, const Viewer& viewer, const WrapperImpl& wrapper,
     Imgui::DoubleSlider::RequestExtraFramesCallback cb)
 {
     static bool show_time_estimate = true;
@@ -1897,7 +1897,7 @@ static void draw_color_print_items_detail(Render::ImguiRender* imgui_render, con
                 ImGui::TableSetupColumn(_u8L("Used filament").c_str());
             ImGui::TableSetupScrollFreeze(0, 1);
 
-            ImGui::PushFont(imgui_render->font(Render::ImguiFontType::Bold));
+            ImGui::PushFont(imgui_render.font(Render::ImguiFontType::Bold));
             ImGui::TableHeadersRow();
             ImGui::PopFont();
 
@@ -2060,7 +2060,7 @@ static void draw_color_print_items_detail(Render::ImguiRender* imgui_render, con
     }
 }
 
-static void draw_items_detail(Render::ImguiRender* imgui_render, Viewer& viewer, WrapperImpl& wrapper, const LegendCallbacks& cbs)
+static void draw_items_detail(Render::ImguiRender& imgui_render, Viewer& viewer, WrapperImpl& wrapper, const LegendCallbacks& cbs)
 {
     ViewType type = viewer.view_type();
     switch (type)
@@ -2083,9 +2083,8 @@ static void draw_items_detail(Render::ImguiRender* imgui_render, Viewer& viewer,
 }
 
 
-void legend_detail(Render::ImguiRender* imgui_render, libvgcode::Viewer& viewer, WrapperImpl& wrapper, const LegendCallbacks& cbs)
+void legend_detail(Render::ImguiRender& imgui_render, libvgcode::Viewer& viewer, WrapperImpl& wrapper, const LegendCallbacks& cbs)
 {
-    assert(imgui_render != nullptr);
     draw_items_detail(imgui_render, viewer, wrapper, cbs);
 }
 

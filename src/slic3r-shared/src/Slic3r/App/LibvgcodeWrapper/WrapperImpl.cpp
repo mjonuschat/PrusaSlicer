@@ -205,7 +205,7 @@ void WrapperImpl::render_legend(Render::ImguiRender* imgui_render)
         static bool detail = false;
         ImGui::GetCurrentWindow()->DC.CursorPos.y += ImGui::GetTextLineHeight();
         if (detail)
-            legend_detail(imgui_render, m_viewer, *this, m_cb_legend);
+            legend_detail(*imgui_render, m_viewer, *this, m_cb_legend);
         else
             legend_coarse(m_viewer, *this);
         ImVec2 available_size = ImGui::GetContentRegionAvail();

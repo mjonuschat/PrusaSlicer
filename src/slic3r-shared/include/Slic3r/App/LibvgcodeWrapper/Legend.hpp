@@ -30,7 +30,7 @@ void legend(libvgcode::Viewer& viewer, WrapperImpl& wrapper, bool settings_visib
     const Biz::libpgcode::PrintSettings& settings, const LegendCallbacks& cbs);
 
 void legend_coarse(libvgcode::Viewer& viewer, WrapperImpl& wrapper);
-void legend_detail(Render::ImguiRender* imgui_render, libvgcode::Viewer& viewer, WrapperImpl& wrapper, const LegendCallbacks& cbs);
+void legend_detail(Render::ImguiRender& imgui_render, libvgcode::Viewer& viewer, WrapperImpl& wrapper, const LegendCallbacks& cbs);
 
 void legend_view_type_selector(libvgcode::Viewer& viewer, const WrapperImpl& wrapper, GCodeViewTypeChangedCallback cb_view_type_changed,
     float width);
