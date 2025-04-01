@@ -26,10 +26,7 @@ namespace Slic3r {
 class ExtrusionEntityCollection;
 
 
-class ExPolygon;
 struct LayerIsland;
-
-using ExPolygons = std::vector<ExPolygon>;
 
 // Used by chain_expolygons()
 std::vector<size_t> 				 chain_points(const Points &points, const Point *start_near = nullptr);

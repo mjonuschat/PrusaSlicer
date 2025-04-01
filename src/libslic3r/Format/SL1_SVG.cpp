@@ -6,6 +6,7 @@
 
 #include <LocalesUtils.hpp>
 
+#include "Slic3r/Biz/Algorithms/ExPolygon.hpp"
 #include "libslic3r/SLA/RasterBase.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/BoundingBox.hpp"
@@ -29,6 +30,8 @@
 #include <cstddef>
 
 #include "nanosvg/nanosvg.h"
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r {
 class SLAPrint;
@@ -177,7 +180,7 @@ public:
         double tol = std::min(m_bb.size().x() / double(m_res.width_px),
                               m_bb.size().y() / double(m_res.height_px));
 
-        ExPolygons cpolys = poly.simplify(tol);
+        ExPolygons cpolys = Algorithms::ExPolygon::simplify(poly, tol);
 
         for (auto &cpoly : cpolys) {
             transform(cpoly, m_trafo, m_bb);

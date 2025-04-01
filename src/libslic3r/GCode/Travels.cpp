@@ -9,6 +9,7 @@
 #include <cassert>
 #include <cinttypes>
 
+#include "Slic3r/Biz/Algorithms/ExPolygon.hpp"
 #include "Slic3r/Biz/Algorithms/Polyline.hpp"
 #include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/Layer.hpp"
@@ -53,8 +54,8 @@ AABBTreeLines::LinesDistancer<ObjectOrExtrusionLinef> get_previous_layer_distanc
             const size_t object_layer_idx = &object_to_print - &objects_to_print.front();
             for (const PrintInstance &instance : object->instances()) {
                 const size_t instance_idx = &instance - &object->instances().front();
-                for (const ExPolygon &polygon : slices)
-                    for (const Line &line : polygon.lines())
+                for (const ExPolygon &expolygon : slices)
+                    for (const Line &line : Algorithms::ExPolygon::to_lines(expolygon))
                         lines.emplace_back(unscaled(Point{line.a + instance.shift}), unscaled(Point{line.b + instance.shift}), object_layer_idx, instance_idx);
             }
         }
@@ -271,7 +272,7 @@ double get_first_crossed_line_distance(
             const ObjectOrExtrusionLinef &intersection_line = distancer.get_line(intersections.front().second);
             const Point shift = objects_to_print[intersection_line.object_layer_idx].layer()->object()->instances()[intersection_line.instance_idx].shift;
             const Point shifted_first_point = path_first_point - shift;
-            const bool contain_first_point = expolygons_contain(objects_to_print[intersection_line.object_layer_idx].layer()->lslices, shifted_first_point);
+            const bool contain_first_point = Algorithms::ExPolygon::contains(objects_to_print[intersection_line.object_layer_idx].layer()->lslices, shifted_first_point);
 
             first_intersection = {intersection_line.object_layer_idx, intersection_line.instance_idx, contain_first_point};
         }

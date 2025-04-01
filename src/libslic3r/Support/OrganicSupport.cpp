@@ -19,6 +19,7 @@
 #include <cinttypes>
 #include <cstddef>
 
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "../AABBTreeLines.hpp"
 #include "../ClipperUtils.hpp"
 #include "../Polygon.hpp"
@@ -44,6 +45,8 @@
     // Old version using OpenVDB, works but it is extremely slow for complex meshes.
     #include "../OpenVDBUtilsLegacy.hpp"
 #endif // TREE_SUPPORT_ORGANIC_NUDGE_NEW
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r
 {
@@ -359,7 +362,7 @@ void smooth_trees_inside_influence_areas(Branch &root, bool is_root)
 
     auto adjust_position = [](Element &el, Vec2f new_pos) {
         Point new_pos_scaled = scaled<coord_t>(new_pos);
-        if (! contains(el.influence_area, new_pos_scaled)) {
+        if (! Algorithms::Polygon::contains(el.influence_area, new_pos_scaled)) {
             int64_t min_dist = std::numeric_limits<int64_t>::max();
             Point   min_proj_scaled;
             for (const Polygon& polygon : el.influence_area) {

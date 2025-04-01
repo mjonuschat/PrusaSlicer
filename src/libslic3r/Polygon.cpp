@@ -440,27 +440,6 @@ bool polygons_match(const Polygon &l, const Polygon &r)
     return true;
 }
 
-bool contains(const Polygon &polygon, const Point &p, bool border_result)
-{
-    if (const int poly_count_inside = ClipperLib::PointInPolygon(p, polygon.points); 
-        poly_count_inside == -1)
-        return border_result;
-    else
-        return (poly_count_inside % 2) == 1;
-}
-
-bool contains(const Polygons &polygons, const Point &p, bool border_result)
-{
-    int poly_count_inside = 0;
-    for (const Polygon &poly : polygons) {
-        const int is_inside_this_poly = ClipperLib::PointInPolygon(p, poly.points);
-        if (is_inside_this_poly == -1)
-            return border_result;
-        poly_count_inside += is_inside_this_poly;
-    }
-    return (poly_count_inside % 2) == 1;
-}
-
 Polygon make_circle(double radius, double error)
 {
     double angle = 2. * acos(1. - error / radius);

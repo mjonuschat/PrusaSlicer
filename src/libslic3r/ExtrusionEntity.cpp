@@ -23,16 +23,6 @@ using namespace Slic3r::Biz;
 
 namespace Slic3r {
 
-void ExtrusionPath::intersect_expolygons(const ExPolygons &collection, ExtrusionEntityCollection* retval) const
-{
-    this->_inflate_collection(intersection_pl(Polylines{ polyline }, collection), retval);
-}
-
-void ExtrusionPath::subtract_expolygons(const ExPolygons &collection, ExtrusionEntityCollection* retval) const
-{
-    this->_inflate_collection(diff_pl(Polylines{ this->polyline }, collection), retval);
-}
-
 void ExtrusionPath::clip_end(double distance)
 {
     Algorithms::Polyline::clip_end(this->polyline, distance);
@@ -48,15 +38,9 @@ double ExtrusionPath::length() const
     return this->polyline.length();
 }
 
-void ExtrusionPath::_inflate_collection(const Polylines &polylines, ExtrusionEntityCollection* collection) const
-{
-    for (const Polyline &polyline : polylines)
-        collection->entities.emplace_back(new ExtrusionPath(polyline, this->attributes()));
-}
-
 void ExtrusionPath::polygons_covered_by_width(Polygons &out, const float scaled_epsilon) const
 {
-    polygons_append(out, offset(this->polyline, float(scale_(m_attributes.width/2)) + scaled_epsilon));
+    Slic3r::append(out, offset(this->polyline, float(scale_(m_attributes.width / 2)) + scaled_epsilon));
 }
 
 void ExtrusionPath::polygons_covered_by_spacing(Polygons &out, const float scaled_epsilon) const
@@ -66,7 +50,7 @@ void ExtrusionPath::polygons_covered_by_spacing(Polygons &out, const float scale
     bool bridge = this->role().is_bridge();
     assert(! bridge || m_attributes.width == m_attributes.height);
     auto flow = bridge ? Flow::bridging_flow(m_attributes.width, 0.f) : Flow(m_attributes.width, m_attributes.height, 0.f);
-    polygons_append(out, offset(this->polyline, 0.5f * float(flow.scaled_spacing()) + scaled_epsilon));
+    Slic3r::append(out, offset(this->polyline, 0.5f * float(flow.scaled_spacing()) + scaled_epsilon));
 }
 
 void ExtrusionMultiPath::reverse()
@@ -311,19 +295,6 @@ void ExtrusionLoop::clip_end(double distance, ExtrusionPaths* paths) const
             break;
         }
     }
-}
-
-bool ExtrusionLoop::has_overhang_point(const Point &point) const
-{
-    for (const ExtrusionPath &path : this->paths) {
-        int pos = path.polyline.find_point(point);
-        if (pos != -1) {
-            // point belongs to this path
-            // we consider it overhang only if it's not an endpoint
-            return (path.role().is_bridge() && pos > 0 && pos != int(path.polyline.points.size())-1);
-        }
-    }
-    return false;
 }
 
 void ExtrusionLoop::polygons_covered_by_width(Polygons &out, const float scaled_epsilon) const

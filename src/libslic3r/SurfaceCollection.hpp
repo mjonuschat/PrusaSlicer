@@ -12,6 +12,7 @@
 #include <utility>
 #include <cstddef>
 
+#include "Slic3r/Biz/Algorithms/ExPolygon.hpp"
 #include "libslic3r.h"
 #include "Surface.hpp"
 #include "libslic3r/ExPolygon.hpp"
@@ -31,11 +32,11 @@ public:
     void simplify(double tolerance);
     void group(std::vector<SurfacesPtr> *retval) const;
     template <class T> bool any_internal_contains(const T &item) const {
-        for (const Surface &surface : this->surfaces) if (surface.is_internal() && surface.expolygon.contains(item)) return true;
+        for (const Surface &surface : this->surfaces) if (surface.is_internal() && Slic3r::Biz::Algorithms::ExPolygon::contains(surface.expolygon, item)) return true;
         return false;
     }
     template <class T> bool any_bottom_contains(const T &item) const {
-        for (const Surface &surface : this->surfaces) if (surface.is_bottom() && surface.expolygon.contains(item)) return true;
+        for (const Surface &surface : this->surfaces) if (surface.is_bottom() && Slic3r::Biz::Algorithms::ExPolygon::contains(surface.expolygon, item)) return true;
         return false;
     }
     SurfacesPtr filter_by_type(const SurfaceType type) const;
@@ -80,10 +81,10 @@ public:
     void append(SurfaceCollection &&coll) { this->append(std::move(coll.surfaces)); }
     void append(const ExPolygons &src, SurfaceType surfaceType) { surfaces_append(this->surfaces, src, surfaceType); }
     void append(const ExPolygons &src, const Surface &surfaceTempl) { surfaces_append(this->surfaces, src, surfaceTempl); }
-    void append(const Surfaces &src) { surfaces_append(this->surfaces, src); }
+    void append(const Surfaces &src) { Slic3r::append(this->surfaces, src); }
     void append(ExPolygons &&src, SurfaceType surfaceType) { surfaces_append(this->surfaces, std::move(src), surfaceType); }
     void append(ExPolygons &&src, const Surface &surfaceTempl) { surfaces_append(this->surfaces, std::move(src), surfaceTempl); }
-    void append(Surfaces &&src) { surfaces_append(this->surfaces, std::move(src)); }
+    void append(Surfaces &&src) { Slic3r::append(this->surfaces, std::move(src)); }
 
     // For debugging purposes:
     void export_to_svg(const char *path, bool show_labels);

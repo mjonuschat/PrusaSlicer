@@ -14,6 +14,7 @@
 #include <cmath>
 #include <cstddef>
 
+#include "Slic3r/Biz/Algorithms/ExPolygon.hpp"
 #include "Slic3r/Biz/Algorithms/Line.hpp"
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "../Layer.hpp"
@@ -720,7 +721,7 @@ static bool any_expolygon_contains(const ExPolygons               &lslices_offse
     if (!visitor.intersect) {
         for (const ExPolygon &ex_polygon : lslices_offset) {
             const BoundingBox &bbox = lslices_offset_bboxes[&ex_polygon - &lslices_offset.front()];
-            if (bbox.contains(travel.a) && bbox.contains(travel.b) && ex_polygon.contains(travel.a))
+            if (bbox.contains(travel.a) && bbox.contains(travel.b) && Algorithms::ExPolygon::contains(ex_polygon, travel.a))
                 return true;
         }
     }
@@ -749,7 +750,7 @@ static bool any_expolygon_contains(const ExPolygons &ex_polygons, const std::vec
         for (const ExPolygon &ex_polygon : ex_polygons) {
             const BoundingBox &bbox = ex_polygons_bboxes[&ex_polygon - &ex_polygons.front()];
             if (std::all_of(travel.points.begin(), travel.points.end(), [&bbox](const Point &point) { return bbox.contains(point); }) &&
-                ex_polygon.contains(travel.points.front()))
+                Algorithms::ExPolygon::contains(ex_polygon, travel.points.front()))
                 return true;
         }
     }

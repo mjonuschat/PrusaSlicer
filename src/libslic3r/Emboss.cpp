@@ -1272,7 +1272,7 @@ HealedExPolygons union_with_delta(const ExPolygonsWithIds &shapes, float delta, 
     for (const ExPolygonsWithId &shape : shapes) {
         if (shape.expoly.empty())
             continue;
-        expolygons_append(expolygons, offset_ex(shape.expoly, delta));
+        Slic3r::append(expolygons, offset_ex(shape.expoly, delta));
     }
     ExPolygons result = union_ex(expolygons);
     result            = offset_ex(result, -delta);

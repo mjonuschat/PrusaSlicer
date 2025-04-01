@@ -1801,7 +1801,7 @@ static ExPolygons make_expolygons_simple(IntersectionLines &lines)
             contours.emplace_back(std::move(it_slice->contour));
             for (auto it = it_slice->holes.begin(); it != it_slice->holes.end(); ++ it)
                 it->reverse();
-            expolygons_append(poly, diff_ex(contours, it_slice->holes));
+            Slic3r::append(poly, diff_ex(contours, it_slice->holes));
         }
         // If the input mesh is not valid, the input contours may intersect.
         *slices = std::move(poly);
@@ -1892,7 +1892,7 @@ static void make_expolygons(const Polygons &loops, const float closing_radius, c
     #endif
     
     // append to the supplied collection
-    expolygons_append(*slices,
+    Slic3r::append(*slices,
         offset_out > 0 && offset_in < 0 ? offset2_ex(union_ex(loops, fill_type), offset_out, offset_in) :
         offset_out > 0 ? offset_ex(union_ex(loops, fill_type), offset_out) :
         offset_in  < 0 ? offset_ex(union_ex(loops, fill_type), offset_in) :
@@ -2194,7 +2194,7 @@ std::vector<ExPolygons> slice_mesh_ex(
                     ExPolygons simplified;
                     simplified.reserve(expolygons.size());
                     for (const ExPolygon &ex : expolygons)
-                        append(simplified, ex.simplify(resolution));
+                        append(simplified, Algorithms::ExPolygon::simplify(ex, resolution));
                     expolygons = std::move(simplified);
                 }
 #if 0

@@ -8,6 +8,7 @@
 
 #include <boost/log/trivial.hpp>
 
+#include "Slic3r/Biz/Algorithms/ExPolygon.hpp"
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include <libslic3r/ClipperUtils.hpp> // allign
 #include <libslic3r/KDTreeIndirect.hpp> // closest point
@@ -138,7 +139,7 @@ ExPolygon get_simplified(const ExPolygon &island, const SampleConfig &config) {
     //ExPolygon closed_expolygon = get_expolygon_with_biggest_contour(closed_expolygons);
     //// "Close" operation still create neighbor pixel for sharp triangle tip - cause VD issues
 
-    ExPolygons simplified_expolygons = island.simplify(config.simplification_tolerance);
+    ExPolygons simplified_expolygons = Algorithms::ExPolygon::simplify(island, config.simplification_tolerance);
     if (simplified_expolygons.empty())
         return island;
         

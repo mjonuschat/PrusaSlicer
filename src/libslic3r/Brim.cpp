@@ -51,14 +51,14 @@ namespace Slic3r {
 
 static void append_and_translate(ExPolygons &dst, const ExPolygons &src, const PrintInstance &instance) {
     size_t dst_idx = dst.size();
-    expolygons_append(dst, src);
+    Slic3r::append(dst, src);
     for (; dst_idx < dst.size(); ++dst_idx)
         dst[dst_idx].translate(instance.shift.x(), instance.shift.y());
 }
 
 static void append_and_translate(Polygons &dst, const Polygons &src, const PrintInstance &instance) {
     size_t dst_idx = dst.size();
-    polygons_append(dst, src);
+    Slic3r::append(dst, src);
     for (; dst_idx < dst.size(); ++dst_idx)
         dst[dst_idx].translate(instance.shift.x(), instance.shift.y());
 }
@@ -168,7 +168,7 @@ static Polygons top_level_outer_brim_islands(const ConstPrintObjectPtrs &top_lev
             for (Polygon &poly : contour_offset)
                 Algorithms::DouglasPeucker::douglas_peucker(poly, scaled_resolution);
 
-            polygons_append(islands_object, std::move(contour_offset));
+            Slic3r::append(islands_object, std::move(contour_offset));
         }
 
         for (const PrintInstance &instance : object->instances())
@@ -501,11 +501,11 @@ static void make_inner_brim(const Print                   &print,
             ExPolygons                 islands_ex    = offset_ex(inner_brim_ex.brim_area, -0.5f * float(flow.scaled_spacing()), ClipperLib::jtSquare);
             for (size_t i = 0; (inner_brim_ex.type == InnerBrimType::INNERMOST ? i < num_loops : !islands_ex.empty()); ++i) {
                 for (ExPolygon &poly_ex : islands_ex)
-                    poly_ex.douglas_peucker(scaled_resolution);
+                    Algorithms::DouglasPeucker::douglas_peucker(poly_ex, scaled_resolution);
 
                 {
                     boost::lock_guard<std::mutex> lock(loops_mutex);
-                    polygons_append(loops, to_polygons(islands_ex));
+                    Slic3r::append(loops, to_polygons(islands_ex));
                 }
                 islands_ex = offset_ex(islands_ex, -float(flow.scaled_spacing()), ClipperLib::jtSquare);
             }
@@ -539,7 +539,7 @@ ExtrusionEntityCollection make_brim(const Print &print, PrintTryCancel try_cance
         islands = expand(islands, float(flow.scaled_spacing()), ClipperLib::jtSquare);
         for (Polygon &poly : islands) 
             Algorithms::DouglasPeucker::douglas_peucker(poly, scaled_resolution);
-        polygons_append(loops, shrink(islands, 0.5f * float(flow.scaled_spacing())));
+        Slic3r::append(loops, shrink(islands, 0.5f * float(flow.scaled_spacing())));
     }
     loops = union_pt_chained_outside_in(loops);
 

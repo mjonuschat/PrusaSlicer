@@ -9,6 +9,7 @@
 #include <cassert>
 #include <cmath>
 
+#include "Slic3r/Biz/Algorithms/ExPolygon.hpp"
 #include "Slic3r/Biz/Algorithms/Line.hpp"
 #include "VoronoiOffset.hpp"
 #include "libslic3r/ClipperUtils.hpp"
@@ -459,7 +460,7 @@ private:
 };
 
 MedialAxis::MedialAxis(double min_width, double max_width, const ExPolygon &expolygon) :
-    m_expolygon(expolygon), m_lines(expolygon.lines()), m_min_width(min_width), m_max_width(max_width)
+    m_expolygon(expolygon), m_lines(Algorithms::ExPolygon::to_lines(expolygon)), m_min_width(min_width), m_max_width(max_width)
 {
     (void)m_expolygon; // supress unused variable warning
 }

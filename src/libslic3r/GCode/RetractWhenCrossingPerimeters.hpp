@@ -13,7 +13,6 @@
 namespace Slic3r {
 
 // Forward declarations.
-class ExPolygon;
 class Layer;
 
 class RetractWhenCrossingPerimeters

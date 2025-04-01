@@ -223,7 +223,7 @@ public:
         bool is_overlap = false;
         auto qit        = qres.begin();
         while (!is_overlap && qit != qres.end())
-            is_overlap = is_overlap || poly.overlaps(m_polys[(qit++)->second]);
+            is_overlap = is_overlap || Algorithms::ExPolygon::overlaps(poly, m_polys[(qit++)->second]);
 
         return is_overlap;
     }
@@ -493,14 +493,14 @@ void pad_blueprint(const indexed_triangle_set &mesh,
     auto tmp = reserve_vector<ExPolygon>(count);
     for(ExPolygons& o : out)
         for(ExPolygon& e : o) {
-            auto&& exss = e.simplify(scaled<double>(0.1));
+            auto&& exss = Algorithms::ExPolygon::simplify(e, scaled<double>(0.1));
             for(ExPolygon& ep : exss) tmp.emplace_back(std::move(ep));
         }
 
     ExPolygons utmp = union_ex(tmp);
 
     for(auto& o : utmp) {
-        auto&& smp = o.simplify(scaled<double>(0.1));
+        auto&& smp = Algorithms::ExPolygon::simplify(o, scaled<double>(0.1));
         output.insert(output.end(), smp.begin(), smp.end());
     }
 }

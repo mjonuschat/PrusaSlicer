@@ -23,6 +23,7 @@
 #include <array>
 #include <complex>
 
+#include "Slic3r/Biz/Algorithms/ExPolygon.hpp"
 #include "Slic3r/Biz/Algorithms/DouglasPeucker.hpp"
 #include "libslic3r.h"
 #include "Geometry.hpp"
@@ -63,7 +64,7 @@ template<class T>
 bool contains(const std::vector<T> &vector, const Point &point)
 {
     for (typename std::vector<T>::const_iterator it = vector.begin(); it != vector.end(); ++it) {
-        if (it->contains(point)) return true;
+        if (Algorithms::ExPolygon::contains(*it, point)) return true;
     }
     return false;
 }

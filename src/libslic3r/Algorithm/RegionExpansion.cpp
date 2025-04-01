@@ -4,6 +4,7 @@
 ///|/
 #include "RegionExpansion.hpp"
 
+#include <Slic3r/Biz/Algorithms/ExPolygon.hpp>
 #include <libslic3r/AABBTreeIndirect.hpp>
 #include <libslic3r/ClipperZUtils.hpp>
 #include <libslic3r/ClipperUtils.hpp>
@@ -22,6 +23,8 @@
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/Polyline.hpp"
 #include "libslic3r/libslic3r.h"
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r {
 namespace Algorithm {
@@ -199,7 +202,7 @@ static int sample_in_expolygons(
         [&expolygons, &sample, &out](const AABBTreeBBoxes::Node &node) {
             assert(node.is_leaf());
             assert(node.is_valid());
-            if (expolygons[node.idx].contains(sample)) {
+            if (Algorithms::ExPolygon::contains(expolygons[node.idx], sample)) {
                 out = int(node.idx);
                 // Stop traversal.
                 return false;

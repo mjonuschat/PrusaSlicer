@@ -167,6 +167,20 @@ bool contains(const Domain::Polygon& polygon, const Domain::Point& point, const 
     }
 }
 
+bool contains(const Domain::Polygons& polygons, const Domain::Point& point, const bool border_result)
+{
+    int poly_count_inside = 0;
+    for (const Domain::Polygon& polygon : polygons) {
+        const int is_inside_this_poly = ClipperLib::PointInPolygon(point, polygon.points);
+        if (is_inside_this_poly == -1)
+            return border_result;
+
+        poly_count_inside += is_inside_this_poly;
+    }
+
+    return (poly_count_inside % 2) == 1;
+}
+
 Domain::Lines to_lines(const Domain::Polygon& polygon)
 {
     if (polygon.size() < 3)

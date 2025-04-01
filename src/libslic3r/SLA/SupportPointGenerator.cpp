@@ -14,9 +14,11 @@
 // SupportIslands
 #include "libslic3r/SLA/SupportIslands/UniformSupportIsland.hpp"
 #include "libslic3r/SLA/SupportIslands/SampleConfigFactory.hpp"
+#include "Slic3r/Biz/Algorithms/ExPolygon.hpp"
 #include "Slic3r/Biz/Algorithms/Point.hpp"
 
 using namespace Slic3r;
+using namespace Slic3r::Biz;
 using namespace Slic3r::sla;
 
 namespace {
@@ -79,7 +81,7 @@ public:
                     return false;
                 return !std::any_of(shapes.begin(), shapes.end(), 
                     [&p = lsp.position_on_layer](const ExPolygon &shape) {
-                        return shape.contains(p);
+                        return Algorithms::ExPolygon::contains(shape, p);
                     });
             });
         if (it == indices.end())
@@ -1155,9 +1157,9 @@ size_t get_index_of_closest_part(const Point &coor, const LayerParts &parts, dou
         if (line_idx < part_lines_ends[part_index]) {
             // check point lais inside prev or next part shape
             // When assert appear check that part index is really the correct one
-            assert(union_ex(
+            assert(Algorithms::ExPolygon::contains(union_ex(
                 get_shapes(parts[part_index].prev_parts),
-                get_shapes(parts[part_index].next_parts))[0].contains(coor));
+                get_shapes(parts[part_index].next_parts))[0], coor));
             return part_index;
         }
     
@@ -1189,7 +1191,7 @@ size_t get_index_of_layer_part(const Point& coor, const LayerParts& parts, doubl
     size_t part_index = parts.size();
     // find part for support point
     for (const LayerPart &part : parts) {
-        if (part.shape_extent.contains(coor) && part.shape->contains(coor)) {
+        if (part.shape_extent.contains(coor) && Algorithms::ExPolygon::contains(*part.shape, coor)) {
             // parts do not overlap each other
             assert(part_index >= parts.size());
             part_index = &part - &parts.front();
@@ -1211,7 +1213,7 @@ LayerParts::const_iterator get_closest_part(const PartLinks &links, Vec2d &coor)
     for (const PartLink &link : links) {
         LayerParts::const_iterator part_it = link;
         if (part_it->shape_extent.contains(coor_p) && 
-            part_it->shape->contains(coor_p)) {
+            Algorithms::ExPolygon::contains(*part_it->shape, coor_p)) {
             return part_it;
         }
     }
@@ -1242,9 +1244,9 @@ LayerParts::const_iterator get_closest_part(const PartLinks &links, Vec2d &coor)
         
         // check point lais inside prev or next part shape
         // When assert appear check that part index is really the correct one
-        assert(union_ex(
+        assert(Algorithms::ExPolygon::contains(union_ex(
             get_shapes(links[part_index]->prev_parts),
-            get_shapes(links[part_index]->next_parts))[0].contains(coor.cast<coord_t>()));
+            get_shapes(links[part_index]->next_parts))[0], coor.cast<coord_t>()));
         coor = hit_point; // update closest point
         return links[part_index];        
     }

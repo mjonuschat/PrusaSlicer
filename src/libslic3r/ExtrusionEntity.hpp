@@ -31,9 +31,6 @@
 
 namespace Slic3r {
 
-class ExPolygon;
-
-using ExPolygons = std::vector<ExPolygon>;
 class ExtrusionEntityCollection;
 class Extruder;
 
@@ -187,12 +184,6 @@ public:
     size_t size() const { return this->polyline.size(); }
     bool empty() const { return this->polyline.empty(); }
     bool is_closed() const { return ! this->empty() && this->polyline.points.front() == this->polyline.points.back(); }
-    // Produce a list of extrusion paths into retval by clipping this path by ExPolygons.
-    // Currently not used.
-    void intersect_expolygons(const ExPolygons &collection, ExtrusionEntityCollection* retval) const;
-    // Produce a list of extrusion paths into retval by removing parts of this path by ExPolygons.
-    // Currently not used.
-    void subtract_expolygons(const ExPolygons &collection, ExtrusionEntityCollection* retval) const;
     void clip_end(double distance);
     void simplify(double tolerance);
     double length() const override;
@@ -224,8 +215,6 @@ public:
     double      total_volume() const override { return m_attributes.mm3_per_mm * unscale<double>(length()); }
 
 private:
-    void        _inflate_collection(const Polylines &polylines, ExtrusionEntityCollection* collection) const;
-
     ExtrusionAttributes     m_attributes;
 };
 
@@ -337,9 +326,6 @@ public:
     };
     ClosestPathPoint get_closest_path_and_point(const Point& point, bool prefer_non_overhang) const;
     void clip_end(double distance, ExtrusionPaths* paths) const;
-    // Test, whether the point is extruded by a bridging flow.
-    // This used to be used to avoid placing seams on overhangs, but now the EdgeGrid is used instead.
-    bool has_overhang_point(const Point &point) const;
     ExtrusionRole role() const override { return this->paths.empty() ? ExtrusionRole::None : this->paths.front().role(); }
     ExtrusionLoopRole loop_role() const { return m_loop_role; }
     // Produce a list of 2D polygons covered by the extruded paths, offsetted by the extrusion width.

@@ -231,7 +231,7 @@ std::vector<ExPolygons> InterlockingGenerator::computeUnionedVolumeRegions() con
         auto& layer_region = layer_regions[static_cast<size_t>(layer_nr)];
         for (size_t region_idx : {region_a_index, region_b_index}) {
             auto layer = print_object.get_layer(layer_nr);
-            expolygons_append(layer_region, to_expolygons(layer->get_region(region_idx)->slices().surfaces));
+            Slic3r::append(layer_region, to_expolygons(layer->get_region(region_idx)->slices().surfaces));
         }
         layer_region = closing_ex(layer_region, ignored_gap_); // Morphological close to merge meshes into single volume
         expolygons_rotate(layer_region, rotation);
@@ -299,7 +299,7 @@ void InterlockingGenerator::applyMicrostructureToOutlines(const std::unordered_s
                 for (auto & here : areas_here) {
                     here.translate(bottom_corner.x(), bottom_corner.y());
                 }
-                expolygons_append(structure_per_layer[mesh_idx][static_cast<size_t>(layer_nr / beam_layer_count)], areas_here);
+                Slic3r::append(structure_per_layer[mesh_idx][static_cast<size_t>(layer_nr / beam_layer_count)], areas_here);
             }
         }
     }

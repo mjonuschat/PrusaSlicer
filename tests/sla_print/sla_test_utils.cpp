@@ -1,4 +1,5 @@
 #include "sla_test_utils.hpp"
+#include "Slic3r/Biz/Algorithms/ExPolygon.hpp"
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "libslic3r/TriangleMeshSlicer.hpp"
 #include "libslic3r/SLA/AGGRaster.hpp"
@@ -450,7 +451,7 @@ double raster_white_area(const sla::RasterGrayscaleAA &raster)
 
 double predict_error(const ExPolygon &p, const sla::PixelDim &pd)
 {
-    auto lines = p.lines();
+    auto lines = Algorithms::ExPolygon::to_lines(p);
     double pix_err = pixel_area(FullWhite, pd)  / 2.;
     
     // Worst case is when a line is parallel to the shorter axis of one pixel,

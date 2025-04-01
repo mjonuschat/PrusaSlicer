@@ -887,7 +887,7 @@ std::tuple<std::vector<ExtrusionPaths>, Polygons> generate_extra_perimeters_over
                     ExPolygons gap = shrinked.empty() ? offset_ex(prev, overhang_flow.scaled_spacing() * 0.5) : to_expolygons(shrinked);
 
                     for (const ExPolygon &ep : gap) {
-                        ep.medial_axis(0.75 * overhang_flow.scaled_width(), 3.0 * overhang_flow.scaled_spacing(), &fills);
+                        Slic3r::medial_axis(ep, 0.75 * overhang_flow.scaled_width(), 3.0 * overhang_flow.scaled_spacing(), &fills);
                     }
                     if (!fills.empty()) {
                         fills = intersection_pl(fills, shrinked_overhang_to_cover);
@@ -1036,7 +1036,7 @@ void PerimeterGenerator::process_arachne(
     if (params.config.top_one_perimeter_type == TopOnePerimeterType::TopSurfaces)
         loop_number = 0;
 
-    ExPolygons last   = offset_ex(surface.expolygon.simplify_p(params.scaled_resolution), - float(ext_perimeter_width / 2. - ext_perimeter_spacing / 2.));
+    ExPolygons last   = offset_ex(Algorithms::ExPolygon::simplify_to_polygons(surface.expolygon, params.scaled_resolution), - float(ext_perimeter_width / 2. - ext_perimeter_spacing / 2.));
     Polygons   last_p = to_polygons(last);
     Arachne::WallToolPaths wall_tool_paths(last_p, ext_perimeter_spacing, perimeter_spacing, coord_t(loop_number + 1), 0, params.layer_height, params.object_config, params.print_config);
     Arachne::Perimeters    perimeters     = wall_tool_paths.getToolPaths();
@@ -1144,8 +1144,9 @@ void PerimeterGenerator::process_arachne(
 
     inset = coord_t(scale_(params.config.get_abs_value("infill_overlap", unscale<double>(inset))));
     Polygons pp;
-    for (ExPolygon &ex : infill_contour)
-        ex.simplify_p(params.scaled_resolution, &pp);
+    for (ExPolygon &ex : infill_contour) {
+        Slic3r::append(pp, Algorithms::ExPolygon::simplify_to_polygons(ex, params.scaled_resolution));
+    }
     // collapse too narrow infill areas
     const auto    min_perimeter_infill_spacing = coord_t(solid_infill_spacing * (1. - INSET_OVERLAP_TOLERANCE));
     // append infill areas to fill_surfaces
@@ -1235,7 +1236,7 @@ void PerimeterGenerator::process_classic(
     if (loop_number > 0 && ((params.config.top_one_perimeter_type != TopOnePerimeterType::None && upper_slices == nullptr) || (params.config.only_one_perimeter_first_layer && params.layer_id == 0)))
         loop_number = 0;
 
-    ExPolygons last = union_ex(surface.expolygon.simplify_p(params.scaled_resolution));
+    ExPolygons last = union_ex(Algorithms::ExPolygon::simplify_to_polygons(surface.expolygon, params.scaled_resolution));
     ExPolygons gaps;
     ExPolygons top_fills;
     ExPolygons fill_clip;
@@ -1268,7 +1269,7 @@ void PerimeterGenerator::process_classic(
                         float(min_width / 2.));
                     // the maximum thickness of our thin wall area is equal to the minimum thickness of a single loop
                     for (ExPolygon &ex : expp)
-                        ex.medial_axis(min_width, ext_perimeter_width + ext_perimeter_spacing2, &thin_walls);
+                        Slic3r::medial_axis(ex, min_width, ext_perimeter_width + ext_perimeter_spacing2, &thin_walls);
                 }
                 if (params.spiral_vase && offsets.size() > 1) {
                 	// Remove all but the largest area polygon.
@@ -1471,7 +1472,7 @@ void PerimeterGenerator::process_classic(
             offset2_ex(gaps, - float(max / 2.), float(max / 2. + ClipperSafetyOffset)));
         ThickPolylines polylines;
         for (const ExPolygon &ex : gaps_ex)
-            ex.medial_axis(min, max, &polylines);
+            Slic3r::medial_axis(ex, min, max, &polylines);
         if (! polylines.empty()) {
 			ExtrusionEntityCollection gap_fill;
 			variable_width_classic(polylines, ExtrusionRole::GapFill, params.solid_infill_flow, gap_fill.entities);
@@ -1506,8 +1507,9 @@ void PerimeterGenerator::process_classic(
 
     // simplify infill contours according to resolution
     Polygons pp;
-    for (ExPolygon &ex : last)
-        ex.simplify_p(params.scaled_resolution, &pp);
+    for (ExPolygon &ex : last) {
+        Slic3r::append(pp, Algorithms::ExPolygon::simplify_to_polygons(ex, params.scaled_resolution));
+    }
     // collapse too narrow infill areas
     coord_t min_perimeter_infill_spacing = coord_t(solid_infill_spacing * (1. - INSET_OVERLAP_TOLERANCE));
     // append infill areas to fill_surfaces

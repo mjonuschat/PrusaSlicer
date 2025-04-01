@@ -15,6 +15,7 @@
 #include <vector>
 #include <cstddef>
 
+#include "Slic3r/Biz/Algorithms/ExPolygon.hpp"
 #include "Slic3r/Biz/Algorithms/Polyline.hpp"
 #include "ExPolygon.hpp"
 #include "Flow.hpp"
@@ -946,7 +947,7 @@ void LayerRegion::export_region_slices_to_svg(const char *path) const
     for (const Surface &surface : this->slices())
         svg.draw(surface.expolygon, surface_type_to_color_name(surface.surface_type), transparency);
     for (const Surface &surface : this->fill_surfaces())
-        svg.draw(surface.expolygon.lines(), surface_type_to_color_name(surface.surface_type));
+        svg.draw(Algorithms::ExPolygon::to_lines(surface.expolygon), surface_type_to_color_name(surface.surface_type));
     export_surface_type_legend_to_svg(svg, legend_pos);
     svg.Close();
 }

@@ -19,6 +19,7 @@
 #include "Slic3r/Domain/Axis.hpp"
 #include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Domain/Point.hpp"
+#include "Slic3r/Utils.hpp"
 
 // Profiles for the alpha are stored into the PrusaSlicer-alpha directory to not mix with the current release.
    #define SLIC3R_APP_FULL_NAME SLIC3R_APP_KEY
@@ -123,30 +124,6 @@ using Domain::F;
 using Domain::NUM_AXES;
 using Domain::UNKNOWN_AXIS;
 using Domain::NUM_AXES_WITH_UNKNOWN;
-
-template <typename T, typename Alloc, typename Alloc2>
-inline void append(std::vector<T, Alloc> &dest, const std::vector<T, Alloc2> &src)
-{
-    if (dest.empty())
-        dest = src; // copy
-    else
-        dest.insert(dest.end(), src.begin(), src.end());
-}
-
-template <typename T, typename Alloc>
-inline void append(std::vector<T, Alloc> &dest, std::vector<T, Alloc> &&src)
-{
-    if (dest.empty())
-        dest = std::move(src);
-    else {
-        dest.insert(dest.end(),
-            std::make_move_iterator(src.begin()),
-            std::make_move_iterator(src.end()));
-        // Release memory of the source contour now.
-        src.clear();
-        src.shrink_to_fit();
-    }
-}
 
 template<class T, class... Args> // Arbitrary allocator can be used
 void clear_and_shrink(std::vector<T, Args...>& vec)

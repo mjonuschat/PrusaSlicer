@@ -691,7 +691,7 @@ bool test_if_solid_surface_filled(const ExPolygon& expolygon, double flow_spacin
     // figure out what is actually going on here re: data types
     float line_offset = float(scale_(filler->spacing / 2.0 + EPSILON));
     std::for_each(paths.begin(), paths.end(), [line_offset, &grown_paths] (const Slic3r::Polyline& p) {
-        polygons_append(grown_paths, offset(p, line_offset));
+        Slic3r::append(grown_paths, offset(p, line_offset));
     });
 
 	// Shrink the initial expolygon a bit, this simulates the infill / perimeter overlap that we usually apply.

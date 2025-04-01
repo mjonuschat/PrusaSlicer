@@ -155,4 +155,12 @@ void douglas_peucker(Domain::Polygon& polygon, const double tolerance)
     polygon.points = std::move(points);
 }
 
+void douglas_peucker(Domain::ExPolygon& expolygon, const double tolerance)
+{
+    Algorithms::DouglasPeucker::douglas_peucker(expolygon.contour, tolerance);
+    for (Polygon& hole : expolygon.holes) {
+        Algorithms::DouglasPeucker::douglas_peucker(hole, tolerance);
+    }
+}
+
 } // namespace Slic3r::Biz::Algorithms::DouglasPeucker

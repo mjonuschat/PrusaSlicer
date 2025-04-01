@@ -13,6 +13,7 @@
 #include <unordered_map>
 #include <cstdlib>
 
+#include "Slic3r/Biz/Algorithms/ExPolygon.hpp"
 #include "Slic3r/Biz/Algorithms/Polyline.hpp"
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "libslic3r/ClipperUtils.hpp"
@@ -116,11 +117,11 @@ void remove_bridges_from_contacts(
                 bool  supported[2] = { false, false };
                 for (size_t i = 0; i < lower_layer.lslices.size() && ! (supported[0] && supported[1]); ++ i)
                     for (int j = 0; j < 2; ++ j)
-                        if (! supported[j] && lower_layer.lslices_ex[i].bbox.contains(pts[j]) && lower_layer.lslices[i].contains(pts[j]))
+                        if (! supported[j] && lower_layer.lslices_ex[i].bbox.contains(pts[j]) && Algorithms::ExPolygon::contains(lower_layer.lslices[i], pts[j]))
                             supported[j] = true;
                 if (supported[0] && supported[1])
                     // Offset a polyline into a thick line.
-                    polygons_append(bridges, offset(polyline, w));
+                    Slic3r::append(bridges, offset(polyline, w));
             }
         bridges = union_(bridges);
     }
@@ -255,7 +256,7 @@ std::pair<SupportGeneratorLayersPtr, SupportGeneratorLayersPtr> generate_interfa
                             //FIXME maybe this adds one interface layer in excess?
                             if (top_contact_layer.bottom_z - EPSILON > top_z)
                                 break;
-                            polygons_append(top_contact_layer.bottom_z - EPSILON > top_inteface_z ? polygons_top_contact_projected_base : polygons_top_contact_projected_interface, 
+                            Slic3r::append(top_contact_layer.bottom_z - EPSILON > top_inteface_z ? polygons_top_contact_projected_base : polygons_top_contact_projected_interface,
                                 // For snug supports, project the overhang polygons covering the whole overhang, so that they will merge without a gap with support polygons of the other layers.
                                 // For grid supports, merging of support regions will be performed by the projection into grid.
                                 snug_supports ? *top_contact_layer.overhang_polygons : top_contact_layer.polygons);
@@ -278,7 +279,7 @@ std::pair<SupportGeneratorLayersPtr, SupportGeneratorLayersPtr> generate_interfa
                             const SupportGeneratorLayer &bottom_contact_layer = *bottom_contacts[idx_bottom_contact];
                             if (bottom_contact_layer.print_z - EPSILON > intermediate_layer.bottom_z)
                                 break;
-                            polygons_append(bottom_contact_layer.print_z - EPSILON > bottom_interface_z ? polygons_bottom_contact_projected_interface : polygons_bottom_contact_projected_base, bottom_contact_layer.polygons);
+                            Slic3r::append(bottom_contact_layer.print_z - EPSILON > bottom_interface_z ? polygons_bottom_contact_projected_interface : polygons_bottom_contact_projected_base, bottom_contact_layer.polygons);
                         }
                     }
                     auto resolve_same_layer = [](SupportGeneratorLayersPtr &layers, int &idx, double print_z) -> SupportGeneratorLayer* {
@@ -357,10 +358,10 @@ SupportGeneratorLayersPtr generate_raft_base(
         const auto     brim_separation = scaled<float>(object.config().brim_separation.value + object.config().brim_width.value);
         for (const ExPolygon &ex : object.layers().front()->lslices) {
             if (brim_outer && brim_inner)
-                polygons_append(brim, offset(ex, brim_separation));
+                Slic3r::append(brim, offset(ex, brim_separation));
             else {
                 if (brim_outer)
-                    polygons_append(brim, offset(ex.contour, brim_separation, ClipperLib::jtRound, float(scale_(0.1))));
+                    Slic3r::append(brim, offset(ex.contour, brim_separation, ClipperLib::jtRound, float(scale_(0.1))));
                 else
                     brim.emplace_back(ex.contour);
                 if (brim_inner) {
@@ -368,9 +369,9 @@ SupportGeneratorLayersPtr generate_raft_base(
                     polygons_reverse(holes);
                     holes = shrink(holes, brim_separation, ClipperLib::jtRound, float(scale_(0.1)));
                     polygons_reverse(holes);
-                    polygons_append(brim, std::move(holes));
+                    Slic3r::append(brim, std::move(holes));
                 } else
-                    polygons_append(brim, ex.holes);
+                    Slic3r::append(brim, ex.holes);
             }
         }
         brim = union_(brim);
@@ -398,11 +399,11 @@ SupportGeneratorLayersPtr generate_raft_base(
 
     Polygons interface_polygons;
     if (contacts != nullptr && ! contacts->polygons.empty())
-        polygons_append(interface_polygons, expand(contacts->polygons, inflate_factor_fine, SUPPORT_SURFACES_OFFSET_PARAMETERS));
+        Slic3r::append(interface_polygons, expand(contacts->polygons, inflate_factor_fine, SUPPORT_SURFACES_OFFSET_PARAMETERS));
     if (interfaces != nullptr && ! interfaces->polygons.empty())
-        polygons_append(interface_polygons, expand(interfaces->polygons, inflate_factor_fine, SUPPORT_SURFACES_OFFSET_PARAMETERS));
+        Slic3r::append(interface_polygons, expand(interfaces->polygons, inflate_factor_fine, SUPPORT_SURFACES_OFFSET_PARAMETERS));
     if (base_interfaces != nullptr && ! base_interfaces->polygons.empty())
-        polygons_append(interface_polygons, expand(base_interfaces->polygons, inflate_factor_fine, SUPPORT_SURFACES_OFFSET_PARAMETERS));
+        Slic3r::append(interface_polygons, expand(base_interfaces->polygons, inflate_factor_fine, SUPPORT_SURFACES_OFFSET_PARAMETERS));
  
     // Output vector.
     SupportGeneratorLayersPtr raft_layers;
@@ -876,28 +877,28 @@ struct SupportGeneratorLayerExtruded
                 assert(this->extrusions.empty());
                 m_polygons_to_extrude = std::make_unique<Polygons>(this->layer->polygons);
             }
-            Slic3r::polygons_append(*m_polygons_to_extrude, std::move(*other.m_polygons_to_extrude));
+            Slic3r::append(*m_polygons_to_extrude, std::move(*other.m_polygons_to_extrude));
             *m_polygons_to_extrude = union_safety_offset(*m_polygons_to_extrude);
             other.m_polygons_to_extrude.reset();
         } else if (m_polygons_to_extrude != nullptr) {
             assert(other.m_polygons_to_extrude == nullptr);
             // The other layer has no extrusions generated yet, if it has no m_polygons_to_extrude (its area to extrude was not reduced yet).
             assert(other.extrusions.empty());
-            Slic3r::polygons_append(*m_polygons_to_extrude, other.layer->polygons);
+            Slic3r::append(*m_polygons_to_extrude, other.layer->polygons);
             *m_polygons_to_extrude = union_safety_offset(*m_polygons_to_extrude);
         }
         // 2) Merge the extrusions.
         this->extrusions.insert(this->extrusions.end(), other.extrusions.begin(), other.extrusions.end());
         other.extrusions.clear();
         // 3) Merge the infill polygons.
-        Slic3r::polygons_append(this->layer->polygons, std::move(other.layer->polygons));
+        Slic3r::append(this->layer->polygons, std::move(other.layer->polygons));
         this->layer->polygons = union_safety_offset(this->layer->polygons);
         other.layer->polygons.clear();
     }
 
     void polygons_append(Polygons &dst) const {
         if (layer != NULL && ! layer->polygons.empty())
-            Slic3r::polygons_append(dst, layer->polygons);
+            Slic3r::append(dst, layer->polygons);
     }
 
     // The source layer. It carries the height and extrusion type (bridging / non bridging, extrusion height).
@@ -1066,7 +1067,7 @@ void LoopInterfaceProcessor::generate(SupportGeneratorLayerExtruded &top_contact
         // make more loops
         Polygons loop_polygons = loops0;
         for (int i = 1; i < n_contact_loops; ++ i)
-            polygons_append(loop_polygons,
+            Slic3r::append(loop_polygons,
                 opening(
                     loops0, 
                     i * flow.scaled_spacing() + 0.5f * flow.scaled_spacing(),

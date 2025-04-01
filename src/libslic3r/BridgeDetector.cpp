@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <cstddef>
 
+#include "Slic3r/Biz/Algorithms/ExPolygon.hpp"
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "ClipperUtils.hpp"
 #include "Geometry.hpp"
@@ -143,7 +144,7 @@ bool BridgeDetector::detect_angle(double bridge_direction_override)
             Lines clipped_lines = intersection_ln(lines, clip_area);
             for (size_t i = 0; i < clipped_lines.size(); ++i) {
                 const Line &line = clipped_lines[i];
-                if (expolygons_contain(this->_anchor_regions, line.a) && expolygons_contain(this->_anchor_regions, line.b)) {
+                if (Algorithms::ExPolygon::contains(this->_anchor_regions, line.a) && Algorithms::ExPolygon::contains(this->_anchor_regions, line.b)) {
                     // This line could be anchored.
                     double len = line.length();
                     total_length += len;
@@ -271,7 +272,7 @@ static void get_trapezoids2(const ExPolygon& expoly, Polygons* polygons)
             // intersect with rectangle
             // append results to return value
             rectangle.front() = { { *x, bb.min.y() }, { next_x, bb.min.y() }, { next_x, bb.max.y() }, { *x, bb.max.y() } };
-            polygons_append(*polygons, intersection(rectangle, src_polygons));
+            Slic3r::append(*polygons, intersection(rectangle, src_polygons));
         }
     }
 }

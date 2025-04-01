@@ -1065,14 +1065,14 @@ namespace SupportMaterialInternal {
                         poly.points.pop_back();
                         if (poly.area() < 0)
                             poly.reverse();
-                        polygons_append(out, offset(poly, exp, SUPPORT_SURFACES_OFFSET_PARAMETERS));
+                        Slic3r::append(out, offset(poly, exp, SUPPORT_SURFACES_OFFSET_PARAMETERS));
                         Polygons holes = offset(poly, - exp, SUPPORT_SURFACES_OFFSET_PARAMETERS);
                         polygons_reverse(holes);
-                        polygons_append(out, holes);
+                        Slic3r::append(out, holes);
                     }
                 } else if (ep.size() >= 2) {
                     // Offset the polyline.
-                    polygons_append(out, offset(ep.polyline, exp, SUPPORT_SURFACES_OFFSET_PARAMETERS));
+                    Slic3r::append(out, offset(ep.polyline, exp, SUPPORT_SURFACES_OFFSET_PARAMETERS));
                 }
             }
     }
@@ -1110,7 +1110,7 @@ std::vector<Polygons> PrintObjectSupportMaterial::buildplate_covered(const Print
             // inflate the polygons over and over.
             Polygons &covered = buildplate_covered[layer_id];
             covered = buildplate_covered[layer_id - 1];
-            polygons_append(covered, offset(lower_layer.lslices, scale_(0.01)));
+            Slic3r::append(covered, offset(lower_layer.lslices, scale_(0.01)));
             covered = union_(covered);
         }
         BOOST_LOG_TRIVIAL(debug) << "PrintObjectSupportMaterial::buildplate_covered() - end";
@@ -1323,7 +1323,7 @@ static inline std::tuple<Polygons, Polygons, Polygons, float> detect_overhangs(
             //FIXME the overhang_polygons are used to construct the support towers as well.
             //if (this->has_contact_loops())
                 // Store the exact contour of the overhang for the contact loops.
-                polygons_append(overhang_polygons, diff_polygons);
+                Slic3r::append(overhang_polygons, diff_polygons);
 
             // Let's define the required contact area by using a max gap of half the upper 
             // extrusion width and extending the area according to the configured margin.
@@ -1351,7 +1351,7 @@ static inline std::tuple<Polygons, Polygons, Polygons, float> detect_overhangs(
                 diff_polygons = diff(diff_polygons, slices_margin.polygons);
 #endif
             }
-            polygons_append(contact_polygons, diff_polygons);
+            Slic3r::append(contact_polygons, diff_polygons);
         } // for each layer.region
 
         if (has_enforcer)
@@ -1371,9 +1371,9 @@ static inline std::tuple<Polygons, Polygons, Polygons, float> detect_overhangs(
                       { { union_safety_offset_ex(enforcer_polygons) }, { "new_contacts",               "red",    "black", "", scaled<coord_t>(0.1f), 0.5f } } });
     #endif /* SLIC3R_DEBUG */
                 if (! enforcer_polygons.empty()) {
-                    polygons_append(overhang_polygons, enforcer_polygons);
+                    Slic3r::append(overhang_polygons, enforcer_polygons);
                     slices_margin_update(std::min(lower_layer_offset, float(scale_(gap_xy))), no_interface_offset);
-                    polygons_append(contact_polygons, diff(enforcer_polygons, slices_margin.all_polygons.empty() ? slices_margin.polygons : slices_margin.all_polygons));
+                    Slic3r::append(contact_polygons, diff(enforcer_polygons, slices_margin.all_polygons.empty() ? slices_margin.polygons : slices_margin.all_polygons));
                 }
             }
         }
@@ -2019,15 +2019,15 @@ SupportGeneratorLayersPtr PrintObjectSupportMaterial::bottom_contact_layers_and_
 #else
             // Consume the contact_polygons. The contact polygons are already expanded into a grid form, and they are a tiny bit smaller
             // than the grid cells.
-            polygons_append(polygons_new,  std::move(*top_contact.contact_polygons));
+            Slic3r::append(polygons_new,  std::move(*top_contact.contact_polygons));
             if (top_contact.enforcer_polygons)
-                polygons_append(enforcers_new, std::move(*top_contact.enforcer_polygons));
+                Slic3r::append(enforcers_new, std::move(*top_contact.enforcer_polygons));
 #endif
             // These are the overhang surfaces. They are touching the object and they are not expanded away from the object.
             // Use a slight positive offset to overlap the touching regions.
-            polygons_append(polygons_new, expand(*top_contact.overhang_polygons, float(SCALED_EPSILON)));
-            polygons_append(overhangs_projection, union_(polygons_new));
-            polygons_append(enforcers_projection, enforcers_new);
+            Slic3r::append(polygons_new, expand(*top_contact.overhang_polygons, float(SCALED_EPSILON)));
+            Slic3r::append(overhangs_projection, union_(polygons_new));
+            Slic3r::append(enforcers_projection, enforcers_new);
         }
         if (overhangs_projection.empty() && enforcers_projection.empty())
             continue;
@@ -2393,7 +2393,7 @@ void PrintObjectSupportMaterial::generate_base_layers(
                     assert(! (layer_intermediate.print_z > layer_top_overlapping.bottom_z + EPSILON && layer_intermediate.bottom_z < layer_top_overlapping.bottom_z - EPSILON));
                     if (layer_intermediate.print_z <= layer_top_overlapping.print_z + EPSILON && layer_intermediate.bottom_z >= layer_top_overlapping.bottom_z - EPSILON)
                         // Base is fully inside top. Trim base by top.
-                        polygons_append(polygons_trimming, layer_top_overlapping.polygons);
+                        Slic3r::append(polygons_trimming, layer_top_overlapping.polygons);
                 }
 
                 if (idx_object_layer_above < 0) {
@@ -2407,7 +2407,7 @@ void PrintObjectSupportMaterial::generate_base_layers(
                         if (contacts.print_z > first_layer_z + EPSILON)
                             break;
                         assert(contacts.bottom_z > layer_intermediate.print_z - EPSILON);
-                        polygons_append(polygons_new, contacts.polygons);
+                        Slic3r::append(polygons_new, contacts.polygons);
                     }
                 } else
                     polygons_new = layer_support_areas[idx_object_layer_above];
@@ -2430,7 +2430,7 @@ void PrintObjectSupportMaterial::generate_base_layers(
                     assert(! (layer_intermediate.print_z > layer_bottom_overlapping.print_z + EPSILON && layer_intermediate.bottom_z < layer_bottom_overlapping.print_z - EPSILON));
                     if (layer_intermediate.print_z <= layer_bottom_overlapping.print_z + EPSILON && layer_intermediate.bottom_z >= layer_bottom_overlapping.bottom_print_z() - EPSILON)
                         // Base is fully inside bottom. Trim base by bottom.
-                        polygons_append(polygons_trimming, layer_bottom_overlapping.polygons);
+                        Slic3r::append(polygons_trimming, layer_bottom_overlapping.polygons);
                 }
 
         #ifdef SLIC3R_DEBUG
@@ -2527,7 +2527,7 @@ void PrintObjectSupportMaterial::trim_support_layers_by_object(
                     const Layer &object_layer = *object.layers()[i];
                     if (object_layer.bottom_z() > support_layer.print_z + gap_extra_above - EPSILON)
                         break;
-                    polygons_append(polygons_trimming, offset(object_layer.lslices, gap_xy_scaled, SUPPORT_SURFACES_OFFSET_PARAMETERS));
+                    Slic3r::append(polygons_trimming, offset(object_layer.lslices, gap_xy_scaled, SUPPORT_SURFACES_OFFSET_PARAMETERS));
                 }
                 if (! m_slicing_params.soluble_interface && m_object_config->thick_bridges) {
                     // Collect all bottom surfaces, which will be extruded with a bridging flow.
@@ -2539,7 +2539,7 @@ void PrintObjectSupportMaterial::trim_support_layers_by_object(
                             if (object_layer.print_z - bridging_height > support_layer.print_z + gap_extra_above - EPSILON)
                                 break;
                             some_region_overlaps = true;
-                            polygons_append(polygons_trimming, 
+                            Slic3r::append(polygons_trimming,
                                 offset(region->fill_surfaces().filter_by_type(stBottomBridge), gap_xy_scaled, SUPPORT_SURFACES_OFFSET_PARAMETERS));
                             if (region->region().config().overhangs.value)
                                 // Add bridging perimeters.

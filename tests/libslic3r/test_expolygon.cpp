@@ -1,11 +1,13 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
 
+#include "Slic3r/Biz/Algorithms/ExPolygon.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/ExPolygon.hpp"
 
 using namespace Slic3r;
+using namespace Slic3r::Biz;
 using namespace Catch;
 
 static inline bool points_close(const Point &p1, const Point &p2)
@@ -29,7 +31,7 @@ SCENARIO("Basics", "[ExPolygon]") {
         Polygon cw_hole_in_square{ Point{ 140, 140 }, Point{ 140, 160 }, Point{ 160, 160 }, Point{ 160, 140 } };
         ExPolygon expolygon { ccw_square, cw_hole_in_square };
         THEN("expolygon is valid") {
-            REQUIRE(expolygon.is_valid());
+            REQUIRE(Algorithms::ExPolygon::is_valid(expolygon));
         }
         THEN("expolygon area") {
             REQUIRE(expolygon.area() == Approx(100*100-20*20));

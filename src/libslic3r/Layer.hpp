@@ -35,9 +35,6 @@
 
 namespace Slic3r {
 
-class ExPolygon;
-
-using ExPolygons = std::vector<ExPolygon>;
 class Layer;
 
 using LayerPtrs = std::vector<Layer*>;

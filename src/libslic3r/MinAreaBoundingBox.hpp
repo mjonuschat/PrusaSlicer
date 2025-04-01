@@ -7,10 +7,9 @@
 
 #include "libslic3r/Point.hpp"
 #include "libslic3r/BoundingBox.hpp"
+#include "libslic3r/ExPolygon.hpp"
 
 namespace Slic3r {
-
-class ExPolygon;
 
 void remove_collinear_points(Polygon& p);
 void remove_collinear_points(ExPolygon& p);

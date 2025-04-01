@@ -1,7 +1,9 @@
 #include "SupportIslandPoint.hpp"
 #include "VoronoiGraphUtils.hpp"
 #include "LineUtils.hpp"
+#include "Slic3r/Biz/Algorithms/ExPolygon.hpp"
 
+using namespace Slic3r::Biz;
 using namespace Slic3r::sla;
 
 SupportIslandPoint::SupportIslandPoint(Slic3r::Point point, Type type)
@@ -170,7 +172,7 @@ coord_t SupportIslandInnerPoint::move(const Point &destination) {
     // IMPROVE: Do not move over island hole if there is no connected island. 
     // Can cause bad supported area in very special case.
     for (const ExPolygon& inner_expolygon: *inner)
-        if (inner_expolygon.contains(destination))
+        if (Algorithms::ExPolygon::contains(inner_expolygon, destination))
             return SupportIslandPoint::move(destination);
 
     // find closest line cross area border

@@ -18,6 +18,7 @@
 #include <tuple>
 #include <cassert>
 
+#include "Slic3r/Biz/Algorithms/ExPolygon.hpp"
 #include "ClipperZUtils.hpp"
 #include "ClipperUtils.hpp"
 #include "Point.hpp"
@@ -35,6 +36,8 @@
 #include "libslic3r/SurfaceCollection.hpp"
 #include "libslic3r/Utils.hpp"
 #include "libslic3r/libslic3r.h"
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r {
 
@@ -73,7 +76,7 @@ void Layer::make_slices()
         } else {
             Polygons slices_p;
             for (LayerRegion *layerm : m_regions)
-                polygons_append(slices_p, to_polygons(layerm->slices().surfaces));
+                Slic3r::append(slices_p, to_polygons(layerm->slices().surfaces));
             slices = union_safety_offset_ex(slices_p);
         }
         // lslices are sorted by topological order from outside to inside from the clipper union used above
@@ -449,7 +452,7 @@ static void connect_layer_slices(
                 // The contour below is likely completely inside another contour above. Look-it up in the island above.
                 Point pt(polynode.Contour.front().x(), polynode.Contour.front().y());
                 for (int i = int(other_layer.lslices_ex.size()) - 1; i >= 0; -- i)
-                    if (other_layer.lslices_ex[i].bbox.contains(pt) && other_layer.lslices[i].contains(pt))
+                    if (other_layer.lslices_ex[i].bbox.contains(pt) && Algorithms::ExPolygon::contains(other_layer.lslices[i], pt))
                         return i;
                 // The following shall not happen now as the source expolygons are being shrunk a bit before intersecting,
                 // thus each point of each intersection polygon should fit completely inside one of the original (unshrunk) expolygons.
@@ -1065,7 +1068,7 @@ void Layer::sort_perimeters_into_islands(
                // test also whether the point is not inside some hole of the same expolygon.
                // This is unfortunatelly necessary because the point may be inside an expolygon of one of this expolygon's hole
                // and missed due to numerical issues.
-               lslices[lslice_idx].contains(point);
+            Algorithms::ExPolygon::contains(lslices[lslice_idx], point);
     };
     for (int lslice_idx = int(lslices_ex.size()) - 1; lslice_idx >= 0 && ! perimeter_slices_queue.empty(); -- lslice_idx)
         for (auto it_source_slice = perimeter_slices_queue.begin(); it_source_slice != perimeter_slices_queue.end(); ++ it_source_slice)
@@ -1097,7 +1100,7 @@ void Layer::sort_perimeters_into_islands(
                 point.x() < bbox.min.x() - bbox_eps || point.x() > bbox.max.x() + bbox_eps ||
                 point.y() < bbox.min.y() - bbox_eps || point.y() > bbox.max.y() + bbox_eps ?
                 std::numeric_limits<double>::max() :
-                (lslices[lslice_idx].point_projection(point) - point).cast<double>().squaredNorm();
+                (Slic3r::point_projection(lslices[lslice_idx], point) - point).cast<double>().squaredNorm();
         };
         for (auto it_source_slice  = perimeter_slices_queue.begin(); it_source_slice != perimeter_slices_queue.end(); ++ it_source_slice) {
             double d2min = std::numeric_limits<double>::max();
@@ -1111,7 +1114,7 @@ void Layer::sort_perimeters_into_islands(
                 // This should not happen, but Arachne seems to produce a perimeter point far outside its source contour.
                 // As a last resort, find the closest source contours to the sample point.
                 for (int lslice_idx = int(lslices_ex.size()) - 1; lslice_idx >= 0; -- lslice_idx)
-                    if (double d2 = (lslices[lslice_idx].point_projection(it_source_slice->second) - it_source_slice->second).cast<double>().squaredNorm(); d2 < d2min) {
+                    if (double d2 = (Slic3r::point_projection(lslices[lslice_idx], it_source_slice->second) - it_source_slice->second).cast<double>().squaredNorm(); d2 < d2min) {
                         d2min = d2;
                         lslice_idx_min = lslice_idx;
                     }

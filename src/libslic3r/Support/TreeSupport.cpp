@@ -32,6 +32,7 @@
 #include <unordered_set>
 #include <cstdlib>
 
+#include "Slic3r/Biz/Algorithms/ExPolygon.hpp"
 #include "Slic3r/Biz/Algorithms/Polyline.hpp"
 #include "TreeSupportCommon.hpp"
 #include "SupportCommon.hpp"
@@ -392,15 +393,15 @@ static std::vector<std::pair<TreeSupportSettings, std::vector<size_t>>> group_me
     for (const Polyline &line : polylines) {
         LineInformation res_line;
         for (Point p : line) {
-            if (! contains(volumes.getAvoidance(config.getRadius(0), layer_idx, TreeModelVolumes::AvoidanceType::FastSafe, false, min_xy_dist), p))
+            if (!Algorithms::Polygon::contains(volumes.getAvoidance(config.getRadius(0), layer_idx, TreeModelVolumes::AvoidanceType::FastSafe, false, min_xy_dist), p))
                 res_line.emplace_back(p, LineStatus::TO_BP_SAFE);
-            else if (! contains(volumes.getAvoidance(config.getRadius(0), layer_idx, TreeModelVolumes::AvoidanceType::Fast, false, min_xy_dist), p))
+            else if (!Algorithms::Polygon::contains(volumes.getAvoidance(config.getRadius(0), layer_idx, TreeModelVolumes::AvoidanceType::Fast, false, min_xy_dist), p))
                 res_line.emplace_back(p, LineStatus::TO_BP);
-            else if (config.support_rests_on_model && ! contains(volumes.getAvoidance(config.getRadius(0), layer_idx, TreeModelVolumes::AvoidanceType::FastSafe, true, min_xy_dist), p))
+            else if (config.support_rests_on_model && !Algorithms::Polygon::contains(volumes.getAvoidance(config.getRadius(0), layer_idx, TreeModelVolumes::AvoidanceType::FastSafe, true, min_xy_dist), p))
                 res_line.emplace_back(p, LineStatus::TO_MODEL_GRACIOUS_SAFE);
-            else if (config.support_rests_on_model && ! contains(volumes.getAvoidance(config.getRadius(0), layer_idx, TreeModelVolumes::AvoidanceType::Fast, true, min_xy_dist), p))
+            else if (config.support_rests_on_model && !Algorithms::Polygon::contains(volumes.getAvoidance(config.getRadius(0), layer_idx, TreeModelVolumes::AvoidanceType::Fast, true, min_xy_dist), p))
                 res_line.emplace_back(p, LineStatus::TO_MODEL_GRACIOUS);
-            else if (config.support_rests_on_model && ! contains(volumes.getCollision(config.getRadius(0), layer_idx, min_xy_dist), p))
+            else if (config.support_rests_on_model && !Algorithms::Polygon::contains(volumes.getCollision(config.getRadius(0), layer_idx, min_xy_dist), p))
                 res_line.emplace_back(p, LineStatus::TO_MODEL);
             else if (!res_line.empty()) {
                 result.emplace_back(res_line);
@@ -450,10 +451,10 @@ static std::vector<std::pair<TreeSupportSettings, std::vector<size_t>>> group_me
 {
     using AvoidanceType = TreeModelVolumes::AvoidanceType;
     const bool min_xy_dist = config.xy_distance > config.xy_min_distance;
-    if (! contains(volumes.getAvoidance(config.getRadius(0), current_layer - 1, p.second == LineStatus::TO_BP_SAFE ? AvoidanceType::FastSafe : AvoidanceType::Fast, false, min_xy_dist), p.first))
+    if (!Algorithms::Polygon::contains(volumes.getAvoidance(config.getRadius(0), current_layer - 1, p.second == LineStatus::TO_BP_SAFE ? AvoidanceType::FastSafe : AvoidanceType::Fast, false, min_xy_dist), p.first))
         return true;
     if (config.support_rests_on_model && (p.second != LineStatus::TO_BP && p.second != LineStatus::TO_BP_SAFE))
-        return ! contains(
+        return !Algorithms::Polygon::contains(
             p.second == LineStatus::TO_MODEL_GRACIOUS || p.second == LineStatus::TO_MODEL_GRACIOUS_SAFE ? 
                 volumes.getAvoidance(config.getRadius(0), current_layer - 1, p.second == LineStatus::TO_MODEL_GRACIOUS_SAFE ? AvoidanceType::FastSafe : AvoidanceType::Fast, true, min_xy_dist) :
                 volumes.getCollision(config.getRadius(0), current_layer - 1, min_xy_dist),
@@ -1550,7 +1551,7 @@ static unsigned int move_inside(const Polygons &polygons, Point &from, int dista
 
 static Point move_inside_if_outside(const Polygons &polygons, Point from, int distance = 0, int64_t maxDist2 = std::numeric_limits<int64_t>::max())
 {
-    if (! contains(polygons, from))
+    if (!Algorithms::Polygon::contains(polygons, from))
         move_inside(polygons, from);
     return from;
 }
@@ -2907,7 +2908,7 @@ static void generate_branch_areas(
                         ExPolygons polygons_with_correct_center;
                         for (ExPolygon &part : nozzle_path) {
                             bool drop = false;
-                            if (! part.contains(draw_area.element->state.result_on_layer)) {
+                            if (! Algorithms::ExPolygon::contains(part, draw_area.element->state.result_on_layer)) {
                                 // try a fuzzy inside as sometimes the point should be on the border, but is not because of rounding errors...
                                 Point pt = draw_area.element->state.result_on_layer;
                                 move_inside(to_polygons(part), pt, 0);
@@ -2917,7 +2918,7 @@ static void generate_branch_areas(
                                 polygons_with_correct_center.emplace_back(std::move(part));
                         }
                         // Increase the area again, to ensure the nozzle path when calculated later is very similar to the one assumed above.
-                        assert(contains(polygons, draw_area.element->state.result_on_layer));
+                        assert(Algorithms::Polygon::contains(polygons, draw_area.element->state.result_on_layer));
                         polygons = diff_clipped(offset(polygons_with_correct_center, config.support_line_width / 2, jtMiter, 1.2),
                             //FIXME Vojtech: Clipping may split the region into multiple pieces again, reversing the fixing effort.
                             collision);
@@ -2980,13 +2981,13 @@ static void smooth_branch_areas(
                 }
                 max_outer_wall_distance += max_radius_change_per_layer; // As this change is a bit larger than what usually appears, lost radius can be slowly reclaimed over the layers.
                 if (do_something) {
-                    assert(contains(draw_area.polygons, draw_area.element->state.result_on_layer));
+                    assert(Algorithms::Polygon::contains(draw_area.polygons, draw_area.element->state.result_on_layer));
                     Polygons max_allowed_area = offset(draw_area.polygons, float(max_outer_wall_distance), jtMiter, 1.2);
                     for (int32_t parent_idx : draw_area.element->parents) {
                         const SupportElement &parent = layer_above[parent_idx];
 #ifndef NDEBUG
                         assert(parent.state.layer_idx == layer_idx + 1);
-                        assert(contains(linear_data[processing_base_above + parent_idx].polygons, parent.state.result_on_layer));
+                        assert(Algorithms::Polygon::contains(linear_data[processing_base_above + parent_idx].polygons, parent.state.result_on_layer));
                         double radius_increase = support_element_radius(config, *draw_area.element) - support_element_radius(config, parent);
                         assert(radius_increase >= 0);
                         double shift = (draw_area.element->state.result_on_layer - parent.state.result_on_layer).cast<double>().norm();

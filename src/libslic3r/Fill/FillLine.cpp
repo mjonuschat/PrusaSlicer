@@ -7,6 +7,7 @@
 #include <cassert>
 #include <cstdlib>
 
+#include "Slic3r/Biz/Algorithms/ExPolygon.hpp"
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "../ClipperUtils.hpp"
 #include "../ExPolygon.hpp"
@@ -112,7 +113,7 @@ void FillLine::_fill_surface_single(
                 // TODO: we should also check that both points are on a fill_boundary to avoid 
                 // connecting paths on the boundaries of internal regions
                 if (this->_can_connect(std::abs(distance(0)), std::abs(distance(1))) && 
-                    expolygon_off.contains(Line(last_point, first_point))) {
+                    Algorithms::ExPolygon::contains(expolygon_off, Line(last_point, first_point))) {
                     // Append the polyline.
                     pts_end.insert(pts_end.end(), polyline.points.begin(), polyline.points.end());
                     continue;

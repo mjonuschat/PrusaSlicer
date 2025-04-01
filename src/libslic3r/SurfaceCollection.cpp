@@ -9,10 +9,13 @@
 #include <algorithm>
 #include <cstdio>
 
+#include "Slic3r/Biz/Algorithms/ExPolygon.hpp"
 #include "BoundingBox.hpp"
 #include "SVG.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Surface.hpp"
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r {
 
@@ -21,7 +24,7 @@ void SurfaceCollection::simplify(double tolerance)
     Surfaces ss;
     for (Surfaces::const_iterator it_s = this->surfaces.begin(); it_s != this->surfaces.end(); ++it_s) {
         ExPolygons expp;
-        it_s->expolygon.simplify(tolerance, &expp);
+        Slic3r::append(expp, Algorithms::ExPolygon::simplify(it_s->expolygon, tolerance));
         for (ExPolygons::const_iterator it_e = expp.begin(); it_e != expp.end(); ++it_e) {
             Surface s = *it_s;
             s.expolygon = *it_e;
@@ -74,7 +77,7 @@ void SurfaceCollection::filter_by_type(SurfaceType type, Polygons *polygons) con
 {
     for (const Surface &surface : this->surfaces)
         if (surface.surface_type == type)
-            polygons_append(*polygons, to_polygons(surface.expolygon));
+            Slic3r::append(*polygons, to_polygons(surface.expolygon));
 }
 
 void SurfaceCollection::keep_type(const SurfaceType type)

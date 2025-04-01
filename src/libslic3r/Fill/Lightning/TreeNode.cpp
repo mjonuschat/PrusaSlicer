@@ -9,6 +9,7 @@
 #include <cstdlib>
 
 #include "Slic3r/Biz/Algorithms/Line.hpp"
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "../../Geometry.hpp"
 #include "libslic3r/Line.hpp"
 #include "Slic3r/Biz/Algorithms/Point.hpp"
@@ -191,7 +192,7 @@ bool Node::realign(const Polygons& outlines, const EdgeGrid::Grid& outline_locat
     if (outlines.empty())
         return false;
 
-    if (contains(outlines, m_p)) {
+    if (Algorithms::Polygon::contains(outlines, m_p)) {
         // Only keep children that have an unbroken connection to here, realign will put the rest in rerooted parts due to recursion:
         Point coll;
         bool reground_me = false;

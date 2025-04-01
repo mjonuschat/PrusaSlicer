@@ -17,12 +17,9 @@
 
 namespace Slic3r {
 
-class ExPolygon;
 class ModelVolume;
 class PrintObject;
 class FacetsAnnotation;
-
-using ExPolygons = std::vector<ExPolygon>;
 
 struct ColoredLine
 {

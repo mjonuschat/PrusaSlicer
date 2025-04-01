@@ -3,6 +3,7 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include "Slic3r/Exception.hpp"
+#include "Slic3r/Biz/Algorithms/ExPolygon.hpp"
 #include <libslic3r/SLAPrintSteps.hpp>
 #include <libslic3r/MeshBoolean.hpp>
 #include <libslic3r/TriangleMeshSlicer.hpp>
@@ -57,6 +58,8 @@
 #include "libslic3r/SLA/SupportIslands/SampleConfigFactory.hpp"
 #include "libslic3r/SLAPrint.hpp"
 #include "libslic3r/TriangleMesh.hpp"
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r {
 
@@ -673,7 +676,7 @@ static void filter_support_points_by_modifiers(sla::SupportPoints &pts,
                      !is_enforced && enf_idx < mask.enforcers[idx].size();
                      ++enf_idx)
                 {
-                    if (mask.enforcers[idx][enf_idx].contains(sp2d))
+                    if (Algorithms::ExPolygon::contains(mask.enforcers[idx][enf_idx], sp2d))
                         is_enforced = true;
                 }
             }
@@ -686,7 +689,7 @@ static void filter_support_points_by_modifiers(sla::SupportPoints &pts,
                              !is_blocked && blk_idx < mask.blockers[idx].size();
                              ++blk_idx)
                         {
-                            if (mask.blockers[idx][blk_idx].contains(sp2d))
+                            if (Algorithms::ExPolygon::contains(mask.blockers[idx][blk_idx], sp2d))
                                 is_blocked = true;
                         }
                     }

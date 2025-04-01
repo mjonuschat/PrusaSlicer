@@ -65,7 +65,15 @@ std::optional<Domain::Point> intersection(const Domain::Polygon& polygon, const 
  */
 Domain::Polygons simplify(const Domain::Polygon& polygon, double tolerance);
 
+/*
+ * Returns true if inside. Returns border_result if on boundary.
+ */
 bool contains(const Domain::Polygon& polygon, const Domain::Point& point, bool border_result = true);
+
+/*
+ * Returns true if inside. Returns border_result if on boundary.
+ */
+bool contains(const Domain::Polygons& polygons, const Domain::Point& point, bool border_result = true);
 
 Domain::Lines to_lines(const Domain::Polygon& polygon);
 Domain::Lines to_lines(const Domain::Polygons& polygons);

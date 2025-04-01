@@ -5,6 +5,8 @@ add_library(slic3r-biz-algorithms
     src/Slic3r/Biz/Algorithms/BoundingBox.cpp
     include/Slic3r/Biz/Algorithms/DouglasPeucker.hpp
     src/Slic3r/Biz/Algorithms/DouglasPeucker.cpp
+    include/Slic3r/Biz/Algorithms/ExPolygon.hpp
+    src/Slic3r/Biz/Algorithms/ExPolygon.cpp
     src/Slic3r/Biz/Algorithms/Scaling.cpp
     include/Slic3r/Biz/Algorithms/Line.hpp
     src/Slic3r/Biz/Algorithms/Line.cpp

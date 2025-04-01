@@ -43,10 +43,6 @@ class ColorPolygon;
 
 using ColorPolygons = std::vector<ColorPolygon>;
 
-// Returns true if inside. Returns border_result if on boundary.
-bool contains(const Polygon& polygon, const Point& p, bool border_result = true);
-bool contains(const Polygons& polygons, const Point& p, bool border_result = true);
-
 // Considering CCW orientation of this polygon, find all convex resp. concave points
 // with the angle at the vertex larger than a threshold.
 // Zero angle_threshold means to accept all convex resp. concave points.
@@ -105,19 +101,6 @@ bool remove_degenerate(Polygons &polys);
 bool remove_small(Polygons &polys, double min_area);
 void remove_collinear(Polygon &poly);
 void remove_collinear(Polygons &polys);
-
-// Append a vector of polygons at the end of another vector of polygons.
-inline void polygons_append(Polygons &dst, const Polygons &src) { dst.insert(dst.end(), src.begin(), src.end()); }
-
-inline void polygons_append(Polygons &dst, Polygons &&src) 
-{
-    if (dst.empty()) {
-        dst = std::move(src);
-    } else {
-        std::move(std::begin(src), std::end(src), std::back_inserter(dst));
-        src.clear();
-    }
-}
 
 Polygons polygons_simplify(Polygons &&polys, double tolerance, bool strictly_simple = true);
 Polygons polygons_simplify(const Polygons &polys, double tolerance, bool strictly_simple = true);

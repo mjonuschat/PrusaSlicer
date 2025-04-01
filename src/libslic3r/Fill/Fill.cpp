@@ -20,6 +20,7 @@
 #include <cinttypes>
 #include <cstdlib>
 
+#include "Slic3r/Biz/Algorithms/ExPolygon.hpp"
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "../ClipperUtils.hpp"
 #include "../Geometry.hpp"
@@ -423,7 +424,7 @@ static void insert_fills_into_islands(Layer &layer, uint32_t fill_region_id, uin
 	    				layer.get_region(li.perimeters.region())->fill_expolygons_composite() :
 	    				layer.get_region(li.fill_region_id)->fill_expolygons();
 	    			for (uint32_t fill_expolygon_id : li.fill_expolygons)
-	    				if (bboxes[fill_expolygon_id].contains(point) && expolygons[fill_expolygon_id].contains(point)) {
+	    				if (bboxes[fill_expolygon_id].contains(point) && Algorithms::ExPolygon::contains(expolygons[fill_expolygon_id], point)) {
 	    					island = &li;
 	    					goto found;
 	    				}
@@ -455,7 +456,7 @@ static void insert_fills_into_islands(Layer &layer, uint32_t fill_region_id, uin
 	    				const ExPolygons  &expolygons = li.fill_expolygons_composite() ?
 	    					layer.get_region(li.perimeters.region())->fill_expolygons_composite() :
 	    					layer.get_region(li.fill_region_id)->fill_expolygons();
-	    				double d2 = (expolygons[isl.expolygon_idx].point_projection(point) - point).cast<double>().squaredNorm();
+	    				double d2 = (Slic3r::point_projection(expolygons[isl.expolygon_idx], point) - point).cast<double>().squaredNorm();
 	    				if (d2 < dist_min2) {
 	    					dist_min2 = d2;
 	    					island = &li;

@@ -2,6 +2,7 @@
 #include <catch2/matchers/catch_matchers_all.hpp>
 #include <catch2/catch_approx.hpp>
 
+#include "Slic3r/Biz/Algorithms/ExPolygon.hpp"
 #include "Slic3r/Biz/Algorithms/Polyline.hpp"
 #include <libslic3r/GCode/Travels.hpp>
 #include <libslic3r/ExPolygon.hpp>
@@ -171,7 +172,7 @@ TEST_CASE("Get first crossed line distance", "[GCode]") {
 
     std::vector<GCode::ObjectOrExtrusionLinef> lines;
     for (const ExPolygon& polygon : {square_with_hole, square_above}) {
-        for (const Line& line : polygon.lines()) {
+        for (const Line& line : Algorithms::ExPolygon::to_lines(polygon)) {
             lines.emplace_back(unscale(line.a), unscale(line.b));
         }
     }

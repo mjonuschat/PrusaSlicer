@@ -6,12 +6,10 @@
 #include "libslic3r/Arachne/utils/ExtrusionLine.hpp"
 
 namespace Slic3r {
-class ExPolygon;
 class PrintRegionConfig;
 
 struct PerimeterRegion;
 
-using ExPolygons       = std::vector<ExPolygon>;
 using PerimeterRegions = std::vector<PerimeterRegion>;
 } // namespace Slic3r
 

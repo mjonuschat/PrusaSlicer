@@ -25,6 +25,7 @@
 #include <cinttypes>
 
 #include "Slic3r/Domain/ExPolygon.hpp"
+#include "Slic3r/Biz/Algorithms/ExPolygon.hpp"
 #include "Point.hpp"
 #include "libslic3r.h"
 #include "Polygon.hpp"
@@ -34,62 +35,17 @@
 
 namespace Slic3r {
 
-class ExPolygon;
+using ExPolygon = Slic3r::Domain::ExPolygon;
+using ExPolygons = Slic3r::Domain::ExPolygons;
 
-using ExPolygons = std::vector<ExPolygon>;
+// Approximate on boundary test.
+bool on_boundary(const ExPolygon &expolygon, const Point &point, double eps);
+// Projection of a point onto the polygon.
+Point point_projection(const ExPolygon &expolygon, const Point &point);
 
-class ExPolygon : public Domain::ExPolygon
-{
-public:
-    ExPolygon() = default;
-	ExPolygon(const ExPolygon &other) = default;
-    ExPolygon(ExPolygon &&other) = default;
-	explicit ExPolygon(const Polygon &contour) : Domain::ExPolygon(contour) {}
-	explicit ExPolygon(Polygon &&contour) : Domain::ExPolygon(std::move(contour)) {}
-	explicit ExPolygon(const Points &contour) : Domain::ExPolygon(contour) {}
-	explicit ExPolygon(Points &&contour) : Domain::ExPolygon(std::move(contour)) {}
-	explicit ExPolygon(const Polygon &contour, const Polygon &hole) : Domain::ExPolygon(contour, hole) {}
-	explicit ExPolygon(Polygon &&contour, Polygon &&hole) : Domain::ExPolygon(std::move(contour), std::move(hole)) {}
-	explicit ExPolygon(const Points &contour, const Points &hole) : Domain::ExPolygon(contour, hole) {}
-	explicit ExPolygon(Points &&contour, Polygon &&hole) : Domain::ExPolygon(std::move(contour), std::move(hole)) {}
-	ExPolygon(std::initializer_list<Point> contour) : Domain::ExPolygon(contour) {}
-	ExPolygon(std::initializer_list<Point> contour, std::initializer_list<Point> hole) : Domain::ExPolygon(contour, hole) {}
-
-    ExPolygon& operator=(const ExPolygon &other) = default;
-    ExPolygon& operator=(ExPolygon &&other) = default;
-
-    bool is_valid() const;
-    void douglas_peucker(double tolerance);
-
-    // Contains the line / polyline / polylines etc COMPLETELY.
-    bool contains(const Line &line) const;
-    bool contains(const Polyline &polyline) const;
-    bool contains(const Polylines &polylines) const;
-    bool contains(const Point &point, bool border_result = true) const;
-    // Approximate on boundary test.
-    bool on_boundary(const Point &point, double eps) const;
-    // Projection of a point onto the polygon.
-    Point point_projection(const Point &point) const;
-
-    // Does this expolygon overlap another expolygon?
-    // Either the ExPolygons intersect, or one is fully inside the other,
-    // and it is not inside a hole of the other expolygon.
-    // The test may not be commutative if the two expolygons touch by a boundary only,
-    // see unit test SCENARIO("Clipper diff with polyline", "[Clipper]").
-    // Namely expolygons touching at a vertical boundary are considered overlapping, while expolygons touching
-    // at a horizontal boundary are NOT considered overlapping.
-    bool overlaps(const ExPolygon &other) const;
-
-    void simplify_p(double tolerance, Polygons* polygons) const;
-    Polygons simplify_p(double tolerance) const;
-    ExPolygons simplify(double tolerance) const;
-    void simplify(double tolerance, ExPolygons* expolygons) const;
-    void medial_axis(double min_width, double max_width, ThickPolylines* polylines) const;
-    void medial_axis(double min_width, double max_width, Polylines* polylines) const;
-    Polylines medial_axis(double min_width, double max_width) const 
-        { Polylines out; this->medial_axis(min_width, max_width, &out); return out; }
-    Lines lines() const;
-};
+void medial_axis(const ExPolygon& expolygon, double min_width, double max_width, ThickPolylines* polylines);
+void medial_axis(const ExPolygon& expolygon, double min_width, double max_width, Polylines* polylines);
+Polylines medial_axis(const ExPolygon& expolygon, double min_width, double max_width);
 
 inline size_t count_points(const ExPolygons &expolys)
 {
@@ -397,22 +353,6 @@ inline void polygons_append(Polygons &dst, ExPolygons &&src)
     }
 }
 
-inline void expolygons_append(ExPolygons &dst, const ExPolygons &src) 
-{ 
-    dst.insert(dst.end(), src.begin(), src.end());
-}
-
-inline void expolygons_append(ExPolygons &dst, ExPolygons &&src)
-{ 
-    if (dst.empty()) {
-        dst = std::move(src);
-    } else {
-        dst.insert(dst.end(), 
-            std::make_move_iterator(src.begin()),
-            std::make_move_iterator(src.end()));
-    }
-}
-
 inline void expolygons_rotate(ExPolygons &expolys, double angle)
 {
     for (ExPolygon &expoly : expolys)
@@ -422,7 +362,7 @@ inline void expolygons_rotate(ExPolygons &expolys, double angle)
 inline bool expolygons_contain(const ExPolygons &expolys, const Point &pt, bool border_result = true)
 {
     for (const ExPolygon &expoly : expolys)
-        if (expoly.contains(pt, border_result))
+        if (Slic3r::Biz::Algorithms::ExPolygon::contains(expoly, pt, border_result))
             return true;
     return false;
 }
@@ -431,8 +371,9 @@ inline ExPolygons expolygons_simplify(const ExPolygons &expolys, double toleranc
 {
 	ExPolygons out;
 	out.reserve(expolys.size());
-	for (const ExPolygon &exp : expolys)
-		exp.simplify(tolerance, &out);
+	for (const ExPolygon &exp : expolys) {
+        Slic3r::append(out, Slic3r::Biz::Algorithms::ExPolygon::simplify(exp, tolerance));
+    }
 	return out;
 }
 

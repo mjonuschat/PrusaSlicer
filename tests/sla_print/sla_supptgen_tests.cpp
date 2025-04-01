@@ -1,6 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <test_utils.hpp>
 
+#include "Slic3r/Biz/Algorithms/ExPolygon.hpp"
 #include <libslic3r/ExPolygon.hpp>
 #include <libslic3r/BoundingBox.hpp>
 #include <libslic3r/SLA/SpatIndex.hpp>
@@ -17,6 +18,7 @@
 #include "Slic3r/Biz/Algorithms/Point.hpp"
 
 using namespace Slic3r;
+using namespace Slic3r::Biz;
 using namespace Slic3r::sla;
 
 //#define STORE_SAMPLE_INTO_SVG_FILES "C:/data/temp/test_islands/sample_"
@@ -446,7 +448,7 @@ Points rasterize(const ExPolygon &island, double distance) {
     Points result;
     result.reserve(fullNet.size());
     std::copy_if(fullNet.begin(), fullNet.end(), std::back_inserter(result),
-                 [&island](const Point &p) { return island.contains(p); });
+                 [&island](const Point &p) { return Algorithms::ExPolygon::contains(island, p); });
     return result;
 }
 
@@ -483,7 +485,7 @@ SupportIslandPoints test_island_sampling(const ExPolygon &   island,
 
     bool is_all_points_inside_island = true;
     for (const auto &point : points)
-        if (!island.contains(point->point))
+        if (!Algorithms::ExPolygon::contains(island, point->point))
             is_all_points_inside_island = false;
     
 #ifdef STORE_ISLAND_ISSUES

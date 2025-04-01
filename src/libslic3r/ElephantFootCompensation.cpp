@@ -10,6 +10,7 @@
 #include <vector>
 #include <cstddef>
 
+#include "Slic3r/Biz/Algorithms/ExPolygon.hpp"
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "libslic3r.h"
 #include "ClipperUtils.hpp"
@@ -578,7 +579,7 @@ ExPolygon elephant_foot_compensation(const ExPolygon &input_expoly, double min_c
 	else
 	{
 		EdgeGrid::Grid grid;
-		ExPolygon simplified = input_expoly.simplify(SCALED_EPSILON).front();
+		ExPolygon simplified = Algorithms::ExPolygon::simplify(input_expoly, SCALED_EPSILON).front();
 		assert(validate_expoly_orientation(simplified));
 		BoundingBox bbox = get_extents(simplified.contour);
 		bbox.offset(SCALED_EPSILON);

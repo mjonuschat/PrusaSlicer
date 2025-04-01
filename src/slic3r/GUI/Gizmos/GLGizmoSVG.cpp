@@ -951,7 +951,7 @@ ExPolygons union_ex(const ExPolygonsWithIds &shapes)
     for (const ExPolygonsWithId &shape : shapes) {
         if (shape.expoly.empty())
             continue;
-        expolygons_append(result, shape.expoly);
+        Slic3r::append(result, shape.expoly);
     }
     return union_ex(result);
 }

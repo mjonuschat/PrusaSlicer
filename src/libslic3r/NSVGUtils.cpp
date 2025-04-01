@@ -80,9 +80,9 @@ Polygons to_polygons(const NSVGimage &image, const NSVGLineParams &param)
         if (shape->fill.type == NSVG_PAINT_NONE)
             continue;
         const LinesPath lines_path = linearize_path(shape->paths, param);
-        polygons_append(result, lines_path.polygons);
+        Slic3r::append(result, lines_path.polygons);
         // close polyline to create polygon
-        polygons_append(result, to_polygons(lines_path.polylines));        
+        Slic3r::append(result, to_polygons(lines_path.polylines));
     }
     return result;
 }
@@ -391,7 +391,7 @@ HealedExPolygons fill_to_expolygons(const LinesPath &lines_path, const NSVGshape
     Polygons fill = lines_path.polygons; // copy
 
     // close polyline to create polygon
-    polygons_append(fill, to_polygons(lines_path.polylines));
+    Slic3r::append(fill, to_polygons(lines_path.polylines));
     if (fill.empty())
         return {};
 
@@ -545,7 +545,7 @@ HealedExPolygons stroke_to_expolygons(const LinesPath &lines_path, const NSVGsha
         result = offset(dashes, stroke_width / 2, join_type, mitter, end_type);
     } else {
         result = contour_to_polygons(lines_path.polygons, stroke_width, join_type, mitter);
-        polygons_append(result, offset(lines_path.polylines, stroke_width / 2, join_type, mitter, end_type));    
+        Slic3r::append(result, offset(lines_path.polylines, stroke_width / 2, join_type, mitter, end_type));
     }
 
     bool is_non_zero = true;
