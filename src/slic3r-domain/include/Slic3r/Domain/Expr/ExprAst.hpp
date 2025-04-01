@@ -1,8 +1,17 @@
 #pragma once
 
+#include <regex>
 #include <vector>
 #include <boost/variant/recursive_variant.hpp>
 
+#include "Slic3r/Domain/Expr/RegEx.hpp"
+
+/**
+ * @brief Data structures for holding parsed expression if form of AST (abstract syntax tree).
+ *
+ * AST is output of expression parsing from string and serve as input into the expression
+ * evaluation. The main class holding expression is `ExprAst`
+ */
 namespace Slic3r::Domain::Expr {
 
 struct Binary;
@@ -14,6 +23,7 @@ using ExprAst = boost::variant<
     bool,
     float,
     std::string,
+    RegEx,
     boost::recursive_wrapper<Binary>,
     boost::recursive_wrapper<Unary>,
     boost::recursive_wrapper<FuncCall>,
@@ -23,7 +33,7 @@ using ExprAst = boost::variant<
 enum class BinaryOp
 {
     Add, Subtract, Multiply, Divide,
-    Eq, NotEq,
+    Eq, NotEq, RegExMatch,
     Lt, LtEq, Gt, GtEq,
     And, Or,
 };
@@ -96,7 +106,7 @@ struct VarRef
     VarRef& operator=(const VarRef&) = default;
     VarRef& operator=(VarRef&&) = default;
 
-    VarRef(std::string name)
+    explicit VarRef(std::string name)
         : name(std::move(name))
     {}
 };

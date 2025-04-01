@@ -1,6 +1,7 @@
 #include "Slic3r/Biz/Expr/Parser.hpp"
 
 #include <boost/lexical_cast.hpp>
+#include <boost/spirit/repository/include/qi.hpp>
 #include <boost/spirit/include/qi.hpp>
 #include <boost/spirit/include/phoenix.hpp>
 #include <boost/fusion/include/adapt_struct.hpp>
@@ -58,6 +59,8 @@ std::ostream& operator<<(std::ostream& os, const BinaryOp& rhs)
         return os << "<=";
     case BinaryOp::GtEq:
         return os << ">=";
+    case BinaryOp::RegExMatch:
+        return os << "=~";
     }
     return os;
 }
@@ -143,9 +146,12 @@ struct ExprParser : qi::grammar<Iterator, ExprAst(), ascii::space_type>
         using ascii::alpha;
         using ascii::alnum;
 
-        qi::rule<Iterator, std::string(), ascii::space_type> identifier =
+        auto kw = boost::spirit::repository::qi::distinct(qi::copy(alnum | '_'));
+
+        raw_identifier = (alpha | char_('_')) >> *(alnum | char_('_'));
+        identifier =
             qi::as_string[
-                lexeme[(alpha | char_('_')) >> *(alnum | char_('_'))]
+                lexeme[raw_identifier]
             ];
 
         bool_constant = lexeme[
@@ -154,24 +160,34 @@ struct ExprParser : qi::grammar<Iterator, ExprAst(), ascii::space_type>
         ];
 
         string_constant %= lexeme[qi::as_string[
-            qi::omit[qi::lit('"')] >>
+            qi::omit[lit('"')] >>
             *(('\\' >> char_) | (char_ - '"')) >>
             qi::omit[lit('"')]
         ]];
 
-        func_call = qi::as_string[lexeme[alpha >> *alnum]] >> '(' >> -(logical_or % ',') >> ')';
+        regex_constant %= lexeme[qi::as_string[
+            qi::omit[lit('/')] >>
+            qi::raw[
+                *( (lit('\\') >> char_) | (char_ - '/') )
+            ] >>
+            qi::omit[lit('/')]
+        ]];
+
+
+        func_call = qi::as_string[lexeme[raw_identifier]] >> '(' >> -(logical_or % ',') >> ')';
 
         var_ref = qi::as_string[
             lexeme[
-                ( (alpha | char_('_')) >> *(alnum | char_('_')) )
+                raw_identifier
                 >> *(
-                    char_('.') >> ((alpha | char_('_')) >> *(alnum | char_('_')))
+                    char_('.') >> raw_identifier
                 )
             ]
         ];
         factor = float_
             | bool_constant
             | string_constant
+            | regex_constant
             | func_call
             | var_ref
             | '(' >> logical_or >> ')'
@@ -180,7 +196,7 @@ struct ExprParser : qi::grammar<Iterator, ExprAst(), ascii::space_type>
         unary =
               ( (lit('+') >> unary) [ qi::_val = phx::construct<Unary>(UnaryOp::Plus, qi::_1) ]
               | (lit('-') >> unary) [ qi::_val = phx::construct<Unary>(UnaryOp::Minus, qi::_1) ]
-              | ( (lit('!') | string("not")) >> unary) [ qi::_val = phx::construct<Unary>(UnaryOp::Not, qi::_2) ]
+              | ( (lit('!') | kw["not"]) >> unary) [ qi::_val = phx::construct<Unary>(UnaryOp::Not, qi::_1) ]
               )
             | factor [ qi::_val = qi::_1 ]
             ;
@@ -201,6 +217,9 @@ struct ExprParser : qi::grammar<Iterator, ExprAst(), ascii::space_type>
              | (string(">=") >> additive) [ qi::_val = phx::construct<Binary>(BinaryOp::GtEq, qi::_val, qi::_2) ]
              | (char_('<') >> additive) [ qi::_val = phx::construct<Binary>(BinaryOp::Lt, qi::_val, qi::_2) ]
              | (char_('>') >> additive) [ qi::_val = phx::construct<Binary>(BinaryOp::Gt, qi::_val, qi::_2) ]
+             | (string("=~") >> regex_constant) [qi::_val = phx::construct<Binary>(
+                    BinaryOp::RegExMatch, qi::_val, phx::construct<RegEx>(qi::_2)
+                )]
              );
 
         equality = relational [ qi::_val = qi::_1 ] >>
@@ -210,12 +229,12 @@ struct ExprParser : qi::grammar<Iterator, ExprAst(), ascii::space_type>
 
         logical_and = equality [ qi::_val = qi::_1 ] >>
             *(
-                ((string("&&") | string("and")) >> equality)[ qi::_val = phx::construct<Binary>(BinaryOp::And, qi::_val, qi::_2) ]
+                ((string("&&") | kw["and"]) >> equality)[ qi::_val = phx::construct<Binary>(BinaryOp::And, qi::_val, qi::_2) ]
              );
 
         logical_or = logical_and [ qi::_val = qi::_1 ] >>
             *(
-                ((string("||") | string("or")) >> logical_and) [ qi::_val = phx::construct<Binary>(BinaryOp::Or, qi::_val, qi::_2) ]
+                ((string("||") | kw["or"]) >> logical_and) [ qi::_val = phx::construct<Binary>(BinaryOp::Or, qi::_val, qi::_2) ]
              );
         factor.name("factor");
         unary.name("unary");
@@ -229,6 +248,7 @@ struct ExprParser : qi::grammar<Iterator, ExprAst(), ascii::space_type>
         string_constant.name("string_constant");
         func_call.name("func_call");
         var_ref.name("var_ref");
+        regex_constant.name("regex_constant");
 
 #if 0
         debug(factor);
@@ -243,6 +263,7 @@ struct ExprParser : qi::grammar<Iterator, ExprAst(), ascii::space_type>
         debug(string_constant);
         debug(func_call);
         debug(var_ref);
+        debug(regex_constant);
 #endif
     }
 
@@ -251,7 +272,9 @@ struct ExprParser : qi::grammar<Iterator, ExprAst(), ascii::space_type>
     qi::rule<Iterator, FuncCall(), ascii::space_type> func_call;
     qi::rule<Iterator, VarRef(), ascii::space_type> var_ref;
     qi::rule<Iterator, bool(), ascii::space_type> bool_constant;
-    qi::rule<Iterator, std::string(), ascii::space_type> string_constant;
+    qi::rule<Iterator, std::string(), ascii::space_type> string_constant, identifier;
+    qi::rule<Iterator, RegEx(), ascii::space_type> regex_constant;
+    qi::rule<Iterator, std::vector<char>()> raw_identifier;
 };
 
 } // namespace

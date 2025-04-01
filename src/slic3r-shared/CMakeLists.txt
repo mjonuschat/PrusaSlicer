@@ -527,6 +527,7 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
         test/Slic3r/Biz/Preset/Loader/PresetLoaderTests.cpp
 
         test/Slic3r/Biz/Expr/ParserTests.cpp
+        test/Slic3r/Biz/Expr/EvalTests.cpp
 
         test/Slic3r/Biz/Slicing/TestUtils.cpp
         test/Slic3r/Biz/Slicing/GCodeUtils.cpp
