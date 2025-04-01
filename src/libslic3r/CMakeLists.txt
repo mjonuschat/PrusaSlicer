@@ -594,6 +594,7 @@ target_link_libraries(libslic3r_cgal PUBLIC
     slic3r-biz-algorithms
     clipper
     clipper_z
+    libslic3r
 )
 
 if (MSVC AND "${CMAKE_SIZEOF_VOID_P}" STREQUAL "4") # 32 bit MSVC workaround

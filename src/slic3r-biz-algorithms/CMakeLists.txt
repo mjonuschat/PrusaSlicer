@@ -32,8 +32,7 @@ add_library(slic3r-biz-algorithms
 target_include_directories(slic3r-biz-algorithms PUBLIC include)
 target_include_directories(slic3r-biz-algorithms PRIVATE src)
 
-# FIXME: Temporarily link libslic3r until Clipper integration refactoring.
-target_link_libraries(slic3r-biz-algorithms PUBLIC slic3r-domain slic3r-base libslic3r)
+target_link_libraries(slic3r-biz-algorithms PUBLIC slic3r-domain slic3r-base clipper)
 
 if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
     add_executable(slic3r-biz-algorithms-tests

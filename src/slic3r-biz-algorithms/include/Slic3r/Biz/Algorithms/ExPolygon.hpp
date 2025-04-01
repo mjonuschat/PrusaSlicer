@@ -51,4 +51,13 @@ Domain::Points to_points(const Domain::ExPolygon &expoly);
 
 Domain::Points to_points(const Domain::ExPolygons &src);
 
+Domain::Polylines to_polylines(const Domain::ExPolygon &src);
+
+Domain::Polylines to_polylines(const Domain::ExPolygons &src);
+
+Domain::Polylines to_polylines(Domain::ExPolygon &&src);
+
+Domain::Polylines to_polylines(Domain::ExPolygons &&src);
+
+
 } // namespace Slic3r::Biz::Algorithms::ExPolygon
