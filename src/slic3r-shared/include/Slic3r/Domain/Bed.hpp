@@ -19,7 +19,7 @@ public:
 
     [[nodiscard]] const std::string& model_filename() const { return m_model_filename; }
     [[nodiscard]] const std::string& texture_filename() const { return m_texture_filename; }
-    [[nodiscard]] bool contains(const Vec2d& bed_inst_position, const BoundingBoxf& object_bb) const;
+    [[nodiscard]] bool contains(const Vec2d& bed_inst_position, const BoundingBox2d& object_bb) const;
 
 
 private:

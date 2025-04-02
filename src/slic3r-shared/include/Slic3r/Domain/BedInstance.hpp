@@ -35,7 +35,7 @@ public:
 
     const Bed& bed() const { return m_bed; }
 
-    bool contains(const BoundingBoxf& bounds) const
+    bool contains(const BoundingBox2d& bounds) const
     {
         Vec3d pos = m_transformation.get_offset();
         return m_bed.contains(Vec2d{pos.x(), pos.y()}, bounds);

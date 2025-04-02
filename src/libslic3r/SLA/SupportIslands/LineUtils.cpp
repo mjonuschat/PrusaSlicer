@@ -4,6 +4,7 @@
 #include <functional>
 #include "VectorUtils.hpp"
 #include "PointUtils.hpp"
+#include "libslic3r/BoundingBox.hpp"
 
 using namespace Slic3r::sla;
 

@@ -134,7 +134,7 @@ public:
     /// <param name="minimal_distance">Merge points closer than minimal_distance</param>
     /// <param name="count_points">Count checking points, create help points for result polygon</param>
     /// <returns>Valid CCW polygon with center inside of polygon</returns>
-    static Polygon to_polygon(const Lines &lines,
+    static Domain::Polygon to_polygon(const Lines &lines,
                               const Point &center,
                               double       maximal_distance,
                               double       minimal_distance,
@@ -148,7 +148,7 @@ public:
     /// <param name="points">source points for VD</param>
     /// <param name="maximal_distance">maximal distance from source point - only for infinite edges(cells)</param>
     /// <returns>polygon created by cell</returns>
-    static Polygon to_polygon(const VD::cell_type &cell,
+    static Domain::Polygon to_polygon(const VD::cell_type &cell,
                               const Points &       points,
                               double               maximal_distance);
 
@@ -497,9 +497,9 @@ public: // draw function for debug
                      coord_t                     width);
 
     // draw polygon when convert from cell
-    static void draw(const Slic3r::Polygon &polygon,
-                     const Slic3r::Lines &  lines,
-                     const Slic3r::Point &  center);
+    static void draw(const Domain::Polygon &polygon,
+                     const Domain::Lines &  lines,
+                     const Domain::Point &  center);
 };
 
 } // namespace Slic3r::sla

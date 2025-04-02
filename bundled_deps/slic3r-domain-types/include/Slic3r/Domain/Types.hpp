@@ -8,6 +8,10 @@ namespace Slic3r::Domain {
 using coord_t = int32_t;
 
 namespace Advanced {
+
+template<typename Scalar, int Dim>
+using SquareMatrix = Eigen::Matrix<Scalar, Dim, Dim, Eigen::DontAlign>;
+
 template<typename Scalar, int Dim>
 class Vec : public Eigen::Matrix<Scalar, Dim, 1, Eigen::DontAlign>
 {
@@ -79,8 +83,23 @@ using Vec2d = Advanced::Vec<double, 2>;
 using Vec3d = Advanced::Vec<double, 3>;
 using Vec4d = Advanced::Vec<double, 4>;
 
+using Vec2fs = std::vector<Domain::Vec2f>;
+using Vec2ds = std::vector<Domain::Vec2d>;
+using Vec3fs = std::vector<Domain::Vec3f>;
+using Vec3ds = std::vector<Domain::Vec3d>;
+
 using Index2 = std::array<int, 2>;
 using Index3 = std::array<int, 3>;
+
+using Transform2f = Advanced::Transform<float, 2>;
+using Transform2d = Advanced::Transform<double, 2>;
+using Transform3f = Advanced::Transform<float, 3>;
+using Transform3d = Advanced::Transform<double, 3>;
+
+using SquareMatrix2f = Advanced::SquareMatrix<float, 2>;
+using SquareMatrix2d = Advanced::SquareMatrix<double, 2>;
+using SquareMatrix3f = Advanced::SquareMatrix<float, 3>;
+using SquareMatrix3d = Advanced::SquareMatrix<double, 3>;
 
 template<typename T>
 concept ScaledScalar = (

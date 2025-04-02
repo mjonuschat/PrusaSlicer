@@ -25,6 +25,7 @@
 #include "Slic3r/Domain/Polygon.hpp"
 #include "Slic3r/Utils.hpp"
 #include "Slic3r/Biz/Algorithms/TravelingSalesman.hpp"
+#include "Slic3r/Math.hpp"
 
 #include <oneapi/tbb/blocked_range.h>
 #include <oneapi/tbb/parallel_reduce.h>
@@ -1969,7 +1970,7 @@ ClipperLib::Path mittered_offset_path_scaled(
                 Vec2d nnext = perp(ptnext - pt).normalized();
 
                 double delta = deltas[i];
-                double sin_a = std::clamp(Biz::Algorithms::Point::cross2(nprev, nnext), -1., 1.);
+                double sin_a = std::clamp(cross2(nprev, nnext), -1., 1.);
                 double convex = sin_a * delta;
                 if (convex <= -sin_min_parallel) {
                     // Concave corner.

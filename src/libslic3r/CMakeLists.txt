@@ -227,14 +227,12 @@ set(SLIC3R_SOURCES
     GCode.hpp
     # GCodeSender.cpp
     # GCodeSender.hpp
-    Geometry.cpp
     Geometry.hpp
     Geometry/ArcWelder.cpp
     Geometry/ArcWelder.hpp
     Geometry/Bicubic.hpp
     Geometry/Circle.cpp
     Geometry/Circle.hpp
-    Geometry/ConvexHull.cpp
     Geometry/ConvexHull.hpp
     Geometry/Curves.hpp
     Geometry/MedialAxis.cpp

@@ -23,14 +23,17 @@
 #include <array>
 #include <complex>
 
+#include <LocalesUtils.hpp>
+
 #include "Slic3r/Biz/Algorithms/ExPolygon.hpp"
 #include "Slic3r/Biz/Algorithms/DouglasPeucker.hpp"
-#include "libslic3r.h"
-#include "Geometry.hpp"
-#include "ClipperUtils.hpp"
-#include "libslic3r/BoundingBox.hpp"
-#include "libslic3r/MultiPoint.hpp"
-#include "libslic3r/Polygon.hpp"
+#include "Slic3r/Biz/Algorithms/Geometry/Geometry.hpp"
+#include "Slic3r/Biz/Algorithms/ClipperUtils.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
+#include "Slic3r/Domain/BoundingBox.hpp"
+#include "Slic3r/Domain/MultiPoint.hpp"
+#include "Slic3r/Domain/Polygon.hpp"
 
 namespace boost {
 namespace polygon {
@@ -44,7 +47,23 @@ template <typename T> class point_data;
 
 using namespace Slic3r::Biz;
 
-namespace Slic3r::Geometry {
+namespace Slic3r::Biz::Algorithms::Geometry {
+
+using Domain::EPSILON;
+using Domain::Point;
+using Domain::Polygon;
+using Domain::Polygons;
+using Domain::ExPolygon;
+using Domain::ExPolygons;
+using Domain::Points;
+using Domain::Vec2d;
+using Domain::Vec3d;
+using Domain::Vec2ds;
+using Domain::BoundingBox2d;
+using Domain::Transform3d;
+using Domain::SquareMatrix3d;
+using Domain::Axis;
+using Domain::is_approx;
 
 bool directions_parallel(double angle1, double angle2, double max_diff)
 {
@@ -72,15 +91,18 @@ template bool contains(const ExPolygons &vector, const Point &point);
 
 void simplify_polygons(const Polygons &polygons, double tolerance, Polygons* retval)
 {
+    using Algorithms::Polygon::to_polyline;
+    using Algorithms::DouglasPeucker::douglas_peucker;
     Polygons simplified_raw;
     for (const Polygon &source_polygon : polygons) {
-        Points simplified = Algorithms::DouglasPeucker::douglas_peucker(to_polyline(source_polygon).points, tolerance);
+        Points simplified = douglas_peucker(to_polyline(source_polygon).points, tolerance);
         if (simplified.size() > 3) {
             simplified.pop_back();
             simplified_raw.push_back(Polygon{ std::move(simplified) });
         }
     }
-    *retval = Slic3r::simplify_polygons(simplified_raw);
+    using Slic3r::Biz::Algorithms::ClipperUtils::simplify_polygons;
+    *retval = simplify_polygons(simplified_raw);
 }
 
 double linint(double value, double oldmin, double oldmax, double newmin, double newmax)
@@ -171,8 +193,9 @@ public:
 };
 
 bool
-arrange(size_t total_parts, const Vec2d &part_size, double dist, const BoundingBoxf* bb, Pointfs &positions)
+arrange(size_t total_parts, const Vec2d &part_size, double dist, const BoundingBox2d* bb, Vec2ds &positions)
 {
+    namespace bounding_box = Slic3r::Biz::Algorithms::BoundingBox;
     positions.clear();
 
     Vec2d part = part_size;
@@ -183,7 +206,7 @@ arrange(size_t total_parts, const Vec2d &part_size, double dist, const BoundingB
     
     Vec2d area(Vec2d::Zero());
     if (bb != NULL && bb->defined) {
-        area = bb->size();
+        area = bounding_box::sizes(*bb);
     } else {
         // bogus area size, large enough not to trigger the error below
         area(0) = part(0) * total_parts;
@@ -200,15 +223,15 @@ arrange(size_t total_parts, const Vec2d &part_size, double dist, const BoundingB
     Vec2d cells(cellw * part(0), cellh * part(1));
     
     // bounding box of total space used by cells
-    BoundingBoxf cells_bb;
-    cells_bb.merge(Vec2d(0,0)); // min
-    cells_bb.merge(cells);  // max
+    BoundingBox2d cells_bb;
+    cells_bb = bounding_box::merge(cells_bb, Vec2d(0,0)); // min
+    cells_bb = bounding_box::merge(cells_bb, cells);  // max
     
     // center bounding box to area
-    cells_bb.translate(
+    cells_bb = bounding_box::translated(cells_bb, Vec2d{
         (area(0) - cells(0)) / 2,
         (area(1) - cells(1)) / 2
-    );
+    });
     
     // list of cells, sorted by distance from center
     std::vector<ArrangeItemIndex> cellsorder;
@@ -285,7 +308,7 @@ arrange(size_t total_parts, const Vec2d &part_size, double dist, const BoundingB
     }
     
     if (bb != NULL && bb->defined) {
-        for (Pointfs::iterator p = positions.begin(); p != positions.end(); ++p) {
+        for (auto p = positions.begin(); p != positions.end(); ++p) {
             p->x() += bb->min(0);
             p->y() += bb->min(1);
         }
@@ -422,32 +445,32 @@ Transform3d Transformation::get_offset_matrix() const
 
 static Transform3d extract_rotation_matrix(const Transform3d& trafo)
 {
-    Matrix3d rotation;
-    Matrix3d scale;
+    SquareMatrix3d rotation;
+    SquareMatrix3d scale;
     trafo.computeRotationScaling(&rotation, &scale);
     return Transform3d(rotation);
 }
 
 static Transform3d extract_scale(const Transform3d& trafo)
 {
-    Matrix3d rotation;
-    Matrix3d scale;
+    SquareMatrix3d rotation;
+    SquareMatrix3d scale;
     trafo.computeRotationScaling(&rotation, &scale);
     return Transform3d(scale);
 }
 
 static std::pair<Transform3d, Transform3d> extract_rotation_scale(const Transform3d& trafo)
 {
-    Matrix3d rotation;
-    Matrix3d scale;
+    SquareMatrix3d rotation;
+    SquareMatrix3d scale;
     trafo.computeRotationScaling(&rotation, &scale);
     return { Transform3d(rotation), Transform3d(scale) };
 }
 
 static bool contains_skew(const Transform3d& trafo)
 {
-    Matrix3d rotation;
-    Matrix3d scale;
+    SquareMatrix3d rotation;
+    SquareMatrix3d scale;
     trafo.computeRotationScaling(&rotation, &scale);
 
     if (scale.isDiagonal())
@@ -457,7 +480,7 @@ static bool contains_skew(const Transform3d& trafo)
       return true;
 
     // the matrix contains mirror
-    const Matrix3d ratio = scale.cwiseQuotient(trafo.matrix().block<3,3>(0,0));
+    const SquareMatrix3d ratio = scale.cwiseQuotient(trafo.matrix().block<3,3>(0,0));
 
     auto check_skew = [&ratio](int i, int j, bool& skew) {
       if (!std::isnan(ratio(i, j)) && !std::isnan(ratio(j, i)))
@@ -621,7 +644,7 @@ void Transformation::reset_scaling_factor()
 
 void Transformation::reset_skew()
 {
-    auto new_scale_factor = [](const Matrix3d& s) {
+    auto new_scale_factor = [](const SquareMatrix3d& s) {
         return pow(s(0, 0) * s(1, 1) * s(2, 2), 1. / 3.); // scale average
     };
 
@@ -668,17 +691,17 @@ TransformationSVD::TransformationSVD(const Transform3d& trafo)
     const auto &m0 = trafo.matrix().block<3, 3>(0, 0);
     mirror = m0.determinant() < 0.0;
 
-    Matrix3d m;
+    SquareMatrix3d m;
     if (mirror)
         m = m0 * Eigen::DiagonalMatrix<double, 3, 3>(-1.0, 1.0, 1.0);
     else
         m = m0;
-    const Eigen::JacobiSVD<Matrix3d> svd(m, Eigen::ComputeFullU | Eigen::ComputeFullV);
+    const Eigen::JacobiSVD<SquareMatrix3d> svd(m, Eigen::ComputeFullU | Eigen::ComputeFullV);
     u = svd.matrixU();
     v = svd.matrixV();
     s = svd.singularValues().asDiagonal();
 
-    scale = !s.isApprox(Matrix3d::Identity());
+    scale = !s.isApprox(SquareMatrix3d::Identity());
     anisotropic_scale = ! is_approx(s(0, 0), s(1, 1)) || ! is_approx(s(1, 1), s(2, 2));
     rotation = !v.isApprox(u);
 
@@ -694,7 +717,7 @@ TransformationSVD::TransformationSVD(const Transform3d& trafo)
             }
         }
         // Detect skew by brute force: check if the axes are still orthogonal after transformation
-        const Matrix3d trafo_linear = trafo.linear();
+        const SquareMatrix3d trafo_linear = trafo.linear();
         const std::array<Vec3d, 3> axes = { Vec3d::UnitX(), Vec3d::UnitY(), Vec3d::UnitZ() };
         std::array<Vec3d, 3> transformed_axes;
         for (int i = 0; i < 3; ++i) {
@@ -760,9 +783,9 @@ bool trafos_differ_in_rotation_by_z_and_mirroring_by_xy_only(const Transform3d &
     if (std::abs(t1.translation().z() - t2.translation().z()) > EPSILON)
         // One of the object is higher than the other above the build plate (or below the build plate).
         return false;
-    Matrix3d m1 = t1.matrix().block<3, 3>(0, 0);
-    Matrix3d m2 = t2.matrix().block<3, 3>(0, 0);
-    Matrix3d m = m2.inverse() * m1;
+    SquareMatrix3d m1 = t1.matrix().block<3, 3>(0, 0);
+    SquareMatrix3d m2 = t2.matrix().block<3, 3>(0, 0);
+    SquareMatrix3d m = m2.inverse() * m1;
     Vec3d    z = m.block<3, 1>(0, 2);
     if (std::abs(z.x()) > EPSILON || std::abs(z.y()) > EPSILON || std::abs(z.z() - 1.) > EPSILON)
         // Z direction or length changed.

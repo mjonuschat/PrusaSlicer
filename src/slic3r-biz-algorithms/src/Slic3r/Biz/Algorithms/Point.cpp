@@ -37,14 +37,4 @@ Domain::Points scaled(const std::vector<Domain::Vec2d>& points)
 
     return scaled_points;
 }
-
-template<UnscaledVector2 Vec>
-typename Vec::Scalar cross2(const Vec &v1, const Vec &v2)
-{
-    return v1.x() * v2.y() - v1.y() * v2.x();
-}
-
-template double cross2<Domain::Vec2d>(const Domain::Vec2d &v1, const Domain::Vec2d &v2);
-template float cross2<Domain::Vec2f>(const Domain::Vec2f &v1, const Domain::Vec2f &v2);
-
 } // namespace Slic3r::Biz::Algorithms::Point

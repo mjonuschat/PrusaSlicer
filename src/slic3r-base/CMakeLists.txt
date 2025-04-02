@@ -52,6 +52,7 @@ target_link_libraries(slic3r-base PUBLIC
     spdlog
     semver
     boost_headeronly
+    slic3r-domain-types
 )
 
 if(NOT EMSCRIPTEN)

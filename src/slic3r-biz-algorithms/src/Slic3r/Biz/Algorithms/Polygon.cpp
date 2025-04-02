@@ -231,4 +231,36 @@ Domain::BoundingBox2crd get_extents(const Domain::Polygons &polygons)
     return bb;
 }
 
+Domain::Polyline to_polyline(const Domain::Polygon &polygon)
+{
+    Domain::Polyline out;
+    out.points.reserve(polygon.size() + 1);
+    out.points.assign(polygon.points.begin(), polygon.points.end());
+    out.points.push_back(polygon.points.front());
+    return out;
+}
+
+Domain::Polylines to_polylines(const Domain::Polygons &polygons)
+{
+    Domain::Polylines out;
+    out.reserve(polygons.size());
+    for (const Domain::Polygon &polygon : polygons)
+        out.emplace_back(to_polyline(polygon));
+    return out;
+}
+
+Domain::Polylines to_polylines(Domain::Polygons &&polys)
+{
+    Domain::Polylines polylines;
+    polylines.assign(polys.size(), Domain::Polyline());
+    size_t idx = 0;
+    for (auto it = polys.begin(); it != polys.end(); ++ it) {
+        Domain::Polyline &pl = polylines[idx ++];
+        pl.points = std::move(it->points);
+        pl.points.push_back(pl.points.front());
+    }
+    assert(idx == polylines.size());
+    return polylines;
+}
+
 } // namespace Slic3r::Biz::Algorithms::Polygon

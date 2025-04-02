@@ -27,6 +27,7 @@
 #include "Slic3r/Domain/MultiPoint.hpp"
 #include "Slic3r/Domain/Point.hpp"
 #include "Slic3r/Domain/Polygon.hpp"
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "libslic3r.h"
 #include "Line.hpp"
 #include "Point.hpp"
@@ -168,37 +169,8 @@ inline Lines to_lines(const Polygons &polys)
     return lines;
 }
 
-inline Polyline to_polyline(const Polygon &polygon)
-{
-    Polyline out;
-    out.points.reserve(polygon.size() + 1);
-    out.points.assign(polygon.points.begin(), polygon.points.end());
-    out.points.push_back(polygon.points.front());
-    return out;
-}
-
-inline Polylines to_polylines(const Polygons &polygons)
-{
-    Polylines out;
-    out.reserve(polygons.size());
-    for (const Polygon &polygon : polygons)
-        out.emplace_back(to_polyline(polygon));
-    return out;
-}
-
-inline Polylines to_polylines(Polygons &&polys)
-{
-    Polylines polylines;
-    polylines.assign(polys.size(), Polyline());
-    size_t idx = 0;
-    for (auto it = polys.begin(); it != polys.end(); ++ it) {
-        Polyline &pl = polylines[idx ++];
-        pl.points = std::move(it->points);
-        pl.points.push_back(pl.points.front());
-    }
-    assert(idx == polylines.size());
-    return polylines;
-}
+using Slic3r::Biz::Algorithms::Polygon::to_polyline;
+using Slic3r::Biz::Algorithms::Polygon::to_polylines;
 
 // close polyline to polygon (connect first and last point in polyline)
 inline Polygons to_polygons(const Polylines &polylines)

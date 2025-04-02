@@ -23,6 +23,14 @@ inline typename Derived::Scalar cross2(const Eigen::MatrixBase<Derived>& v1, con
     return v1.x() * v2.y() - v1.y() * v2.x();
 }
 
+// 2D vector perpendicular to the argument.
+template<typename Derived>
+inline Eigen::Matrix<typename Derived::Scalar, 2, 1, Eigen::DontAlign> perp(const Eigen::MatrixBase<Derived> &v)
+{
+    static_assert(Derived::IsVectorAtCompileTime && int(Derived::SizeAtCompileTime) == 2, "perp(): parameter is not a 2D vector");
+    return { - v.y(), v.x() };
+}
+
 template<typename T>
 constexpr inline T sqr(T x)
 {

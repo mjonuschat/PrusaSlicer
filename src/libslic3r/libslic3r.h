@@ -20,6 +20,7 @@
 #include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Domain/Point.hpp"
 #include "Slic3r/Utils.hpp"
+#include "Slic3r/Math.hpp"
 
 // Profiles for the alpha are stored into the PrusaSlicer-alpha directory to not mix with the current release.
    #define SLIC3R_APP_FULL_NAME SLIC3R_APP_KEY
@@ -249,11 +250,7 @@ template<typename ContainerType, typename ValueType> inline bool one_of(const Va
 template<typename T> inline bool one_of(const T& v, const std::initializer_list<T>& il)
     { return contains(il, v); }
 
-template<typename T>
-constexpr inline T sqr(T x)
-{
-    return x * x;
-}
+using Slic3r::sqr;
 
 template <typename T, typename Number>
 constexpr inline T lerp(const T& a, const T& b, Number t)

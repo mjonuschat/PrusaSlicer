@@ -14,6 +14,7 @@
 
 #include "VoronoiOffset.hpp"
 #include "Slic3r/Biz/Algorithms/Point.hpp"
+#include "libslic3r/BoundingBox.hpp"
 
 namespace boost { namespace polygon {
 

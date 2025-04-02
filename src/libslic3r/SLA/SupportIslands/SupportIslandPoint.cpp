@@ -2,6 +2,7 @@
 #include "VoronoiGraphUtils.hpp"
 #include "LineUtils.hpp"
 #include "Slic3r/Biz/Algorithms/ExPolygon.hpp"
+#include "libslic3r/ExPolygon.hpp"
 
 using namespace Slic3r::Biz;
 using namespace Slic3r::sla;
