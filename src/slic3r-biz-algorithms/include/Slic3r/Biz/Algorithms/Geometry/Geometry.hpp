@@ -61,199 +61,51 @@ constexpr double PI = std::numbers::pi;
 // temporaries. which means, the Domain::coord_t types must not have some of the topmost bits
 // utilized. As the points are limited to 30 bits + signum, the temporaries u, v, w are limited to
 // 61 bits + signum, and d is limited to 63 bits + signum and we are good.
-static inline Orientation orient(
+Orientation orient(
     const Domain::Point& a, const Domain::Point& b, const Domain::Point& c
-)
-{
-    static_assert(
-        sizeof(Domain::coord_t) * 2 == sizeof(int64_t), "orient works with 32 bit coordinates"
-    );
-    int64_t u = int64_t(b.x()) * int64_t(c.y()) - int64_t(b.y()) * int64_t(c.x());
-    int64_t v = int64_t(a.x()) * int64_t(c.y()) - int64_t(a.y()) * int64_t(c.x());
-    int64_t w = int64_t(a.x()) * int64_t(b.y()) - int64_t(a.y()) * int64_t(b.x());
-    int64_t d = u - v + w;
-    return (d > 0) ? ORIENTATION_CCW : ((d == 0) ? ORIENTATION_COLINEAR : ORIENTATION_CW);
-}
+);
 
 // Return orientation of the polygon by checking orientation of the left bottom corner of the polygon
 // using exact arithmetics. The input polygon must not contain duplicate points
 // (or at least the left bottom corner point must not have duplicates).
-static inline bool is_ccw(const Domain::Polygon& poly)
-{
-    // The polygon shall be at least a triangle.
-    assert(poly.points.size() >= 3);
-    if (poly.points.size() < 3)
-        return true;
+bool is_ccw(const Domain::Polygon& poly);
 
-    // 1) Find the lowest lexicographical point.
-    unsigned int imin = 0;
-    for (unsigned int i = 1; i < poly.points.size(); ++i) {
-        const Domain::Point& pmin = poly.points[imin];
-        const Domain::Point& p = poly.points[i];
-        if (p(0) < pmin(0) || (p(0) == pmin(0) && p(1) < pmin(1)))
-            imin = i;
-    }
-
-    // 2) Detect the orientation of the corner imin.
-    size_t iPrev = ((imin == 0) ? poly.points.size() : imin) - 1;
-    size_t iNext = ((imin + 1 == poly.points.size()) ? 0 : imin + 1);
-    Orientation o = orient(poly.points[iPrev], poly.points[imin], poly.points[iNext]);
-    // The lowest bottom point must not be collinear if the polygon does not contain duplicate
-    // points or overlapping segments.
-    assert(o != ORIENTATION_COLINEAR);
-    return o == ORIENTATION_CCW;
-}
-
-inline bool ray_ray_intersection(
+bool ray_ray_intersection(
     const Domain::Vec2d& p1,
     const Domain::Vec2d& v1,
     const Domain::Vec2d& p2,
     const Domain::Vec2d& v2,
     Domain::Vec2d& res
-)
-{
-    double denom = v1(0) * v2(1) - v2(0) * v1(1);
-    if (std::abs(denom) < Domain::EPSILON)
-        return false;
-    double t = (v2(0) * (p1(1) - p2(1)) - v2(1) * (p1(0) - p2(0))) / denom;
-    res(0) = p1(0) + t * v1(0);
-    res(1) = p1(1) + t * v1(1);
-    return true;
-}
+);
 
-inline bool segment_segment_intersection(
+bool segment_segment_intersection(
     const Domain::Vec2d& p1,
     const Domain::Vec2d& v1,
     const Domain::Vec2d& p2,
     const Domain::Vec2d& v2,
     Domain::Vec2d& res
-)
-{
-    double denom = v1(0) * v2(1) - v2(0) * v1(1);
-    if (std::abs(denom) < Domain::EPSILON)
-        // Lines are collinear.
-        return false;
-    double s12_x = p1(0) - p2(0);
-    double s12_y = p1(1) - p2(1);
-    double s_numer = v1(0) * s12_y - v1(1) * s12_x;
-    bool denom_is_positive = false;
-    if (denom < 0.) {
-        denom_is_positive = true;
-        denom = -denom;
-        s_numer = -s_numer;
-    }
-    if (s_numer < 0.)
-        // Intersection outside of the 1st segment.
-        return false;
-    double t_numer = v2(0) * s12_y - v2(1) * s12_x;
-    if (!denom_is_positive)
-        t_numer = -t_numer;
-    if (t_numer < 0. || s_numer > denom || t_numer > denom)
-        // Intersection outside of the 1st or 2nd segment.
-        return false;
-    // Intersection inside both of the segments.
-    double t = t_numer / denom;
-    res(0) = p1(0) + t * v1(0);
-    res(1) = p1(1) + t * v1(1);
-    return true;
-}
+);
 
-inline bool segments_intersect(
+
+bool segments_intersect(
     const Domain::Point& ip1,
     const Domain::Point& ip2,
     const Domain::Point& jp1,
     const Domain::Point& jp2
-)
-{
-    assert(ip1 != ip2);
-    assert(jp1 != jp2);
+);
 
-    auto segments_could_intersect =
-        [](const Domain::Point& ip1, const Domain::Point& ip2, const Domain::Point& jp1,
-           const Domain::Point& jp2) -> std::pair<int, int> {
-        Domain::Vec2big iv = (ip2 - ip1).cast<int64_t>();
-        Domain::Vec2big vij1 = (jp1 - ip1).cast<int64_t>();
-        Domain::Vec2big vij2 = (jp2 - ip1).cast<int64_t>();
-        int64_t tij1 = cross2(iv, vij1);
-        int64_t tij2 = cross2(iv, vij2);
-        return std::make_pair(
-            // signum
-            (tij1 > 0) ? 1 : ((tij1 < 0) ? -1 : 0), (tij2 > 0) ? 1 : ((tij2 < 0) ? -1 : 0)
-        );
-    };
-
-    std::pair<int, int> sign1 = segments_could_intersect(ip1, ip2, jp1, jp2);
-    std::pair<int, int> sign2 = segments_could_intersect(jp1, jp2, ip1, ip2);
-    int test1 = sign1.first * sign1.second;
-    int test2 = sign2.first * sign2.second;
-    if (test1 <= 0 && test2 <= 0) {
-        // The segments possibly intersect. They may also be collinear, but not intersect.
-        if (test1 != 0 || test2 != 0)
-            // Certainly not collinear, then the segments intersect.
-            return true;
-        // If the first segment is collinear with the other, the other is collinear with the first segment.
-        assert((sign1.first == 0 && sign1.second == 0) == (sign2.first == 0 && sign2.second == 0));
-        if (sign1.first == 0 && sign1.second == 0) {
-            // The segments are certainly collinear. Now verify whether they overlap.
-            Domain::Point vi = ip2 - ip1;
-            // Project both on the longer coordinate of vi.
-            int axis = std::abs(vi.x()) > std::abs(vi.y()) ? 0 : 1;
-            Domain::coord_t i = ip1(axis);
-            Domain::coord_t j = ip2(axis);
-            Domain::coord_t k = jp1(axis);
-            Domain::coord_t l = jp2(axis);
-            if (i > j)
-                std::swap(i, j);
-            if (k > l)
-                std::swap(k, l);
-            return (k >= i && k <= j) || (i >= k && i <= l);
-        }
-    }
-    return false;
-}
-
-template<typename T>
-inline T foot_pt(const T& line_pt, const T& line_dir, const T& pt)
-{
-    T v = pt - line_pt;
-    auto l2 = line_dir.squaredNorm();
-    auto t = (l2 == 0) ? 0 : v.dot(line_dir) / l2;
-    return line_pt + line_dir * t;
-}
-
-inline Domain::Vec2d foot_pt(const Domain::Line& iline, const Domain::Point& ipt)
-{
-    return foot_pt<Domain::Vec2d>(
-        iline.a.cast<double>(), (iline.b - iline.a).cast<double>(), ipt.cast<double>()
-    );
-}
-
-template<typename T>
-inline auto ray_point_distance_squared(const T& ray_pt, const T& ray_dir, const T& pt)
-{
-    return (foot_pt(ray_pt, ray_dir, pt) - pt).squaredNorm();
-}
-
-template<typename T>
-inline auto ray_point_distance(const T& ray_pt, const T& ray_dir, const T& pt)
-{
-    return (foot_pt(ray_pt, ray_dir, pt) - pt).norm();
-}
-
-inline double ray_point_distance_squared(const Domain::Line& iline, const Domain::Point& ipt)
-{
-    return (foot_pt(iline, ipt) - ipt.cast<double>()).squaredNorm();
-}
-
-inline double ray_point_distance(const Domain::Line& iline, const Domain::Point& ipt)
-{
-    return (foot_pt(iline, ipt) - ipt.cast<double>()).norm();
-}
+Domain::Vec2d foot_pt(const Domain::Line& iline, const Domain::Point& ipt);
+Domain::Vec2d foot_pt(
+    const Domain::Vec2d& line_pt, const Domain::Vec2d& line_dir, const Domain::Vec2d& pt
+);
+double ray_point_distance_squared(const Domain::Line& iline, const Domain::Point& ipt);
+double ray_point_distance(const Domain::Line& iline, const Domain::Point& ipt);
+double ray_point_distance(const Domain::Vec2d& ray_pt, const Domain::Vec2d& ray_dir, const Domain::Vec2d& pt);
 
 // Based on Liang-Barsky function by Daniel White @
 // http://www.skytopia.com/project/articles/compsci/clipping.html
 template<typename T>
-inline bool liang_barsky_line_clipping_interval(
+bool liang_barsky_line_clipping_interval(
     // Start and end points of the source line, result will be stored there as well.
     const Domain::Advanced::Vec<T, 2>& x0,
     const Domain::Advanced::Vec<T, 2>& v,
@@ -303,7 +155,7 @@ inline bool liang_barsky_line_clipping_interval(
 }
 
 template<typename T>
-inline bool liang_barsky_line_clipping(
+bool liang_barsky_line_clipping(
     // Start and end points of the source line, result will be stored there as well.
     Domain::Advanced::Vec<T, 2>& x0,
     Domain::Advanced::Vec<T, 2>& x1,
@@ -588,31 +440,21 @@ extern Domain::Transform3d transform3d_from_string(const std::string& transform_
 
 // Rotation when going from the first coordinate system with rotation rot_xyz_from applied
 // to a coordinate system with rot_xyz_to applied.
-extern Eigen::Quaterniond rotation_xyz_diff(
+Eigen::Quaterniond rotation_xyz_diff(
     const Domain::Vec3d& rot_xyz_from, const Domain::Vec3d& rot_xyz_to
 );
 // Rotation by Z to align rot_xyz_from to rot_xyz_to.
 // This should only be called if it is known, that the two rotations only differ in rotation around
 // the Z axis.
-extern double rotation_diff_z(
+double rotation_diff_z(
     const Domain::Transform3d& trafo_from, const Domain::Transform3d& trafo_to
 );
 
 // Is the angle close to a multiple of 90 degrees?
-inline bool is_rotation_ninety_degrees(double a)
-{
-    a = fmod(std::abs(a), 0.5 * PI);
-    if (a > 0.25 * PI)
-        a = 0.5 * PI - a;
-    return a < 0.001;
-}
+bool is_rotation_ninety_degrees(double a);
 
 // Is the angle close to a multiple of 90 degrees?
-inline bool is_rotation_ninety_degrees(const Domain::Vec3d& rotation)
-{
-    return is_rotation_ninety_degrees(rotation.x()) && is_rotation_ninety_degrees(rotation.y()) &&
-        is_rotation_ninety_degrees(rotation.z());
-}
+bool is_rotation_ninety_degrees(const Domain::Vec3d& rotation);
 
 // Returns true if one transformation may be converted into another transformation by
 // rotation around Z and by mirroring in X / Y only. Two objects sharing such transformation
@@ -620,12 +462,9 @@ inline bool is_rotation_ninety_degrees(const Domain::Vec3d& rotation)
 bool trafos_differ_in_rotation_by_z_and_mirroring_by_xy_only(
     const Domain::Transform3d& t1, const Domain::Transform3d& t2
 );
-inline bool trafos_differ_in_rotation_by_z_and_mirroring_by_xy_only(
+bool trafos_differ_in_rotation_by_z_and_mirroring_by_xy_only(
     const Transformation& t1, const Transformation& t2
-)
-{
-    return trafos_differ_in_rotation_by_z_and_mirroring_by_xy_only(t1.get_matrix(), t2.get_matrix());
-}
+);
 
 template<class Tout = double, class Tin>
 std::pair<Tout, Tout> dir_to_spheric(const Domain::Advanced::Vec<Tin, 3>& n, Tout norm = 1.)
