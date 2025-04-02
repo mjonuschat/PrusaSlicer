@@ -95,40 +95,6 @@ T reduce(const EP &ep,
         ep, from, to, init, std::forward<MergeFn>(mergefn),
         [](const auto &i) { return i; }, std::max(granularity, size_t(1)));
 }
-
-template<class EP,
-         class I,
-         class T,
-         class AccessFn,
-         class = ExecutionPolicyOnly<EP>>
-T accumulate(const EP & ep,
-             I          from,
-             I          to,
-             const T &  init,
-             AccessFn &&accessfn,
-             size_t     granularity = 1)
-{
-    return reduce(ep, from, to, init, std::plus<T>{},
-                  std::forward<AccessFn>(accessfn),
-                  std::max(granularity, size_t(1)));
-}
-
-
-template<class EP,
-         class I,
-         class T,
-         class = ExecutionPolicyOnly<EP> >
-T accumulate(const EP &ep,
-             I         from,
-             I         to,
-             const T & init,
-             size_t    granularity = 1)
-{
-    return reduce(
-        ep, from, to, init, std::plus<T>{}, [](const auto &i) { return i; },
-        std::max(granularity, size_t(1)));
-}
-
 } // namespace execution_policy
 } // namespace Slic3r
 

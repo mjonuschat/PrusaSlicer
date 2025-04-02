@@ -214,14 +214,3 @@ TEST_CASE("halfcone test", "[halfcone]") {
     its_merge_vertices(m);
     its_write_obj(m, "Halfcone.obj");
 }
-
-TEST_CASE("Test concurrency")
-{
-    std::vector<double> vals = grid(0., 100., 10.);
-
-    double ref = std::accumulate(vals.begin(), vals.end(), 0.);
-
-    double s = execution::accumulate(ex_tbb, vals.begin(), vals.end(), 0.);
-
-    REQUIRE(s == Approx(ref));
-}
