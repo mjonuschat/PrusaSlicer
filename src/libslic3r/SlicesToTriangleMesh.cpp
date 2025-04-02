@@ -7,12 +7,11 @@
 #include <cstddef>
 
 #include "SlicesToTriangleMesh.hpp"
-#include "libslic3r/Execution/ExecutionTBB.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/Tesselate.hpp"
-#include "libslic3r/Execution/Execution.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/TriangleMesh.hpp"
+#include "Slic3r/Biz/Algorithms/Execution/ExecutionTBB.hpp"
 
 namespace Slic3r {
 
@@ -46,6 +45,8 @@ indexed_triangle_set inline straight_walls(const ExPolygons &slice,
     return ret;
 }
 
+namespace execution = Slic3r::Biz::Algorithms::Execution;
+
 indexed_triangle_set slices_to_mesh(
     const std::vector<ExPolygons> &slices,
     double                         zmin,
@@ -57,8 +58,8 @@ indexed_triangle_set slices_to_mesh(
     Layers layers(slices.size());
     size_t len = slices.size() - 1;
 
-    auto threads_cnt = execution::max_concurrency(ex_tbb);
-    execution::for_each(ex_tbb, size_t(0), len, [&slices, &layers, &grid](size_t i) {
+    auto threads_cnt = execution::max_concurrency(execution::ex_tbb);
+    execution::for_each(execution::ex_tbb, size_t(0), len, [&slices, &layers, &grid](size_t i) {
         const ExPolygons &upper = slices[i + 1];
         const ExPolygons &lower = slices[i];
 
@@ -76,7 +77,7 @@ indexed_triangle_set slices_to_mesh(
         indexed_triangle_set res{a}; its_merge(res, b); return res;
     };
 
-    auto ret = execution::reduce(ex_tbb, layers.begin(), layers.end(),
+    auto ret = execution::reduce(execution::ex_tbb, layers.begin(), layers.end(),
                                  indexed_triangle_set{}, merge_fn,
                                  threads_cnt);
 

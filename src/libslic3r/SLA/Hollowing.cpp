@@ -9,7 +9,7 @@
 #include <libslic3r/AABBTreeIndirect.hpp>
 #include <libslic3r/AABBMesh.hpp>
 #include <libslic3r/ClipperUtils.hpp>
-#include <libslic3r/Execution/ExecutionSeq.hpp>
+#include "Slic3r/Biz/Algorithms/Execution/ExecutionSeq.hpp"
 #include <libslic3r/Model.hpp>
 #include <libslic3r/MeshBoolean.hpp>
 #include <boost/log/trivial.hpp>
@@ -26,7 +26,7 @@
 
 #include "libslic3r/BoundingBox.hpp"
 #include "Slic3r/Exception.hpp"
-#include "libslic3r/Execution/Execution.hpp"
+#include "Slic3r/Biz/Algorithms/Execution/Execution.hpp"
 #include "libslic3r/Geometry.hpp"
 #include "libslic3r/Line.hpp"
 #include "libslic3r/SLA/JobController.hpp"
@@ -34,6 +34,7 @@
 
 namespace Slic3r {
 struct VoxelGrid;
+namespace execution = Slic3r::Biz::Algorithms::Execution;
 
 namespace sla {
 
@@ -418,7 +419,7 @@ void remove_inside_triangles(indexed_triangle_set &mesh, const Interior &interio
     };
 
     // TODO: Parallel mode not working yet
-    constexpr auto &exec_policy = ex_seq;
+    constexpr auto &exec_policy = execution::ex_seq;
 
     // Info about the needed modifications on the input mesh.
     struct MeshMods {

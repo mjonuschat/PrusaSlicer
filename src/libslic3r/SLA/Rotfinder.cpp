@@ -3,7 +3,7 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include <libslic3r/SLA/Rotfinder.hpp>
-#include <libslic3r/Execution/ExecutionTBB.hpp>
+#include "Slic3r/Biz/Algorithms/Execution/ExecutionTBB.hpp"
 #include <libslic3r/Optimize/BruteforceOptimizer.hpp>
 #include <libslic3r/Geometry.hpp>
 #include <limits>
@@ -19,7 +19,7 @@
 #include "libslic3r/PrintConfig.hpp"
 #include "admesh/stl.h"
 #include "libslic3r/BoundingBox.hpp"
-#include "libslic3r/Execution/Execution.hpp"
+#include "Slic3r/Biz/Algorithms/Execution/Execution.hpp"
 #include "libslic3r/Model.hpp"
 #include "libslic3r/Optimize/Optimizer.hpp"
 #include "libslic3r/Point.hpp"
@@ -58,6 +58,8 @@ template<class T> LegacyVec<3, T> normal(const std::array<LegacyVec<3, T>, 3> &t
     return U.cross(V).normalized();
 }
 
+namespace execution = Slic3r::Biz::Algorithms::Execution;
+
 template<class T, class AccessFn>
 T sum_score(AccessFn &&accessfn, size_t facecount, size_t Nthreads)
 {
@@ -66,7 +68,7 @@ T sum_score(AccessFn &&accessfn, size_t facecount, size_t Nthreads)
     size_t grainsize = facecount / Nthreads;
     size_t from = 0, to = facecount;
 
-    return execution::reduce(ex_tbb, from, to, initv, mergefn, accessfn, grainsize);
+    return execution::reduce(execution::ex_tbb, from, to, initv, mergefn, accessfn, grainsize);
 }
 
 // Get area and normal of a triangle
@@ -157,7 +159,7 @@ float find_ground_level(const TriangleMesh &mesh,
 
     auto zmin = std::numeric_limits<float>::max();
     size_t granularity = vsize / threads;
-    return execution::reduce(ex_tbb, size_t(0), vsize, zmin, minfn, accessfn, granularity);
+    return execution::reduce(execution::ex_tbb, size_t(0), vsize, zmin, minfn, accessfn, granularity);
 }
 
 double get_supportedness_onfloor_score(const TriangleMesh &mesh,
@@ -276,7 +278,7 @@ std::array<double, N> find_min_score(Fn &&fn, It from, It to, StopCond &&stopfn)
     std::vector<double> scores(dist, score);
 
     execution::for_each(
-        ex_tbb, size_t(0), dist, [&stopfn, &scores, &fn, &from](size_t i) {
+        execution::ex_tbb, size_t(0), dist, [&stopfn, &scores, &fn, &from](size_t i) {
             if (stopfn()) return;
 
             scores[i] = fn(*(from + i));

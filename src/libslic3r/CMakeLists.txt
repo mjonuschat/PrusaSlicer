@@ -397,9 +397,6 @@ set(SLIC3R_SOURCES
     MarchingSquares.hpp
     MultipleBeds.cpp
     MultipleBeds.hpp
-    Execution/Execution.hpp
-    Execution/ExecutionSeq.hpp
-    Execution/ExecutionTBB.hpp
     Optimize/Optimizer.hpp
     Optimize/NLoptOptimizer.hpp
     Optimize/BruteforceOptimizer.hpp

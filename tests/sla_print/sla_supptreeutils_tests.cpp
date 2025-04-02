@@ -4,7 +4,7 @@
 
 #include <unordered_set>
 
-#include "libslic3r/Execution/ExecutionSeq.hpp"
+#include "Slic3r/Biz/Algorithms/Execution/ExecutionSeq.hpp"
 #include "libslic3r/SLA/SupportTreeUtils.hpp"
 #include "libslic3r/SLA/SupportTreeUtilsLegacy.hpp"
 
@@ -107,6 +107,7 @@ static void eval_ground_conn(const Slic3r::sla::GroundConnection &conn,
 
 TEST_CASE("Pillar search dumb case", "[suptreeutils]") {
     using namespace Slic3r;
+    using Slic3r::Biz::Algorithms::Execution::ex_seq;
 
     constexpr double FromR = 0.5;
     auto j = sla::Junction{Vec3d::Zero(), FromR};
@@ -159,6 +160,8 @@ TEST_CASE("Pillar search dumb case", "[suptreeutils]") {
 
 TEST_CASE("Avoid disk below junction", "[suptreeutils]")
 {
+    using Slic3r::Biz::Algorithms::Execution::ex_tbb;
+
     // In this test there will be a disk mesh with some radius, centered at
     // (0, 0, 0) and above the disk, a junction from which the support pillar
     // should be routed. The algorithm needs to find an avoidance route.
@@ -212,6 +215,7 @@ TEST_CASE("Avoid disk below junction", "[suptreeutils]")
 
 TEST_CASE("Avoid disk below junction with barrier on the side", "[suptreeutils]")
 {
+    using Slic3r::Biz::Algorithms::Execution::ex_seq;
     // In this test there will be a disk mesh with some radius, centered at
     // (0, 0, 0) and above the disk, a junction from which the support pillar
     // should be routed. The algorithm needs to find an avoidance route.
@@ -268,6 +272,7 @@ TEST_CASE("Avoid disk below junction with barrier on the side", "[suptreeutils]"
 
 TEST_CASE("Find ground route just above ground", "[suptreeutils]") {
     using namespace Slic3r;
+    using Slic3r::Biz::Algorithms::Execution::ex_seq;
 
     sla::SupportTreeConfig cfg;
     cfg.object_elevation_mm = 0.;

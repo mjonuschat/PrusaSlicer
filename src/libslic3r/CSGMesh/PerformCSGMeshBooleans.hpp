@@ -10,8 +10,8 @@
 
 #include "CSGMesh.hpp"
 
-#include "libslic3r/Execution/ExecutionTBB.hpp"
-//#include "libslic3r/Execution/ExecutionSeq.hpp"
+#include "Slic3r/Biz/Algorithms/Execution/ExecutionTBB.hpp"
+//#include "Slic3r/Biz/Algorithms/Execution/ExecutionSeq.hpp"
 #include "libslic3r/MeshBoolean.hpp"
 
 namespace Slic3r { namespace csg {
@@ -72,6 +72,8 @@ inline void perform_csg(CSGType op, CGALMeshPtr &dst, CGALMeshPtr &src)
 template<class Ex, class It>
 std::vector<CGALMeshPtr> get_cgalptrs(Ex policy, const Range<It> &csgrange)
 {
+    namespace execution = Slic3r::Biz::Algorithms::Execution;
+
     std::vector<CGALMeshPtr> ret(csgrange.size());
     execution::for_each(policy, size_t(0), csgrange.size(),
                         [&csgrange, &ret](size_t i) {
@@ -91,6 +93,8 @@ template<class It>
 void perform_csgmesh_booleans(MeshBoolean::cgal::CGALMeshPtr &cgalm,
                               const Range<It>                &csgrange)
 {
+    namespace execution = Slic3r::Biz::Algorithms::Execution;
+
     using MeshBoolean::cgal::CGALMesh;
     using MeshBoolean::cgal::CGALMeshPtr;
     using namespace detail_cgal;
@@ -107,7 +111,7 @@ void perform_csgmesh_booleans(MeshBoolean::cgal::CGALMeshPtr &cgalm,
 
     opstack.push(Frame{});
 
-    std::vector<CGALMeshPtr> cgalmeshes = get_cgalptrs(ex_tbb, csgrange);
+    std::vector<CGALMeshPtr> cgalmeshes = get_cgalptrs(execution::ex_tbb, csgrange);
 
     size_t csgidx = 0;
     for (auto &csgpart : csgrange) {
@@ -142,6 +146,8 @@ void perform_csgmesh_booleans(MeshBoolean::cgal::CGALMeshPtr &cgalm,
 template<class It, class Visitor>
 It check_csgmesh_booleans(const Range<It> &csgrange, Visitor &&vfn)
 {
+    namespace execution = Slic3r::Biz::Algorithms::Execution;
+
     using namespace detail_cgal;
 
     std::vector<CGALMeshPtr> cgalmeshes(csgrange.size());
@@ -172,7 +178,7 @@ It check_csgmesh_booleans(const Range<It> &csgrange, Visitor &&vfn)
 
         cgalmeshes[i] = std::move(m);
     };
-    execution::for_each(ex_tbb, size_t(0), csgrange.size(), check_part);
+    execution::for_each(execution::ex_tbb, size_t(0), csgrange.size(), check_part);
 
     It ret = csgrange.end();
     for (size_t i = 0; i < csgrange.size(); ++i) {

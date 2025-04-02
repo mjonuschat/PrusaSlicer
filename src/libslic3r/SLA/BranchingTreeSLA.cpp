@@ -15,14 +15,14 @@
 #include <vector>
 #include <cstddef>
 
-#include "libslic3r/Execution/ExecutionTBB.hpp"
+#include "Slic3r/Biz/Algorithms/Execution/ExecutionTBB.hpp"
 #include "libslic3r/KDTreeIndirect.hpp"
 #include "SupportTreeUtils.hpp"
 #include "libslic3r/BranchingTree/PointCloud.hpp"
 #include "Pad.hpp"
 #include "libslic3r/BranchingTree/BranchingTree.hpp"
-#include "libslic3r/Execution/Execution.hpp"
-#include "libslic3r/Execution/ExecutionSeq.hpp"
+#include "Slic3r/Biz/Algorithms/Execution/Execution.hpp"
+#include "Slic3r/Biz/Algorithms/Execution/ExecutionSeq.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/SLA/SupportTree.hpp"
 #include "libslic3r/SLA/SupportTreeBuilder.hpp"
@@ -30,7 +30,9 @@
 
 namespace Slic3r { namespace sla {
 
-inline constexpr const auto &beam_ex_policy = ex_tbb;
+namespace execution = Slic3r::Biz::Algorithms::Execution;
+
+inline constexpr const auto &beam_ex_policy = execution::ex_tbb;
 
 class BranchingTreeBuilder: public branchingtree::Builder {
     SupportTreeBuilder &m_builder;
@@ -41,7 +43,7 @@ class BranchingTreeBuilder: public branchingtree::Builder {
 
     // cache succesfull ground connections
     mutable std::map<int, GroundConnection> m_gnd_connections;
-    mutable execution::SpinningMutex<ExecutionTBB>  m_gnd_connections_mtx;
+    mutable execution::SpinningMutex<execution::ExecutionTBB>  m_gnd_connections_mtx;
 
     // Scaling of the input value 'widening_factor:<0, 1>' to produce resonable
     // widening behaviour
@@ -380,12 +382,12 @@ void create_branching_tree(SupportTreeBuilder &builder, const SupportableMesh &s
     auto leafs = reserve_vector<branchingtree::Node>(nondup_idx.size());
 
     execution::for_each(
-        ex_tbb, size_t(0), nondup_idx.size(),
+        execution::ex_tbb, size_t(0), nondup_idx.size(),
         [&sm, &heads, &nondup_idx, &builder](size_t i) {
             if (!builder.ctl().stopcondition())
-                heads[i] = calculate_pinhead_placement(ex_seq, sm, nondup_idx[i]);
+                heads[i] = calculate_pinhead_placement(execution::ex_seq, sm, nondup_idx[i]);
         },
-        execution::max_concurrency(ex_tbb)
+        execution::max_concurrency(execution::ex_tbb)
     );
 
     if (builder.ctl().stopcondition())
@@ -424,7 +426,7 @@ void create_branching_tree(SupportTreeBuilder &builder, const SupportableMesh &s
 
     BranchingTreeBuilder vbuilder{builder, sm, nodes};
 
-    execution::for_each(ex_tbb,
+    execution::for_each(execution::ex_tbb,
                         size_t(0),
                         nodes.get_leafs().size(),
                         [&nodes, &vbuilder](size_t leaf_idx) {

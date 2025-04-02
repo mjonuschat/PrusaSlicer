@@ -23,6 +23,14 @@
 namespace Slic3r {
 class BoundingBox;
 
+// TEMPORARY, until BoundingBox is replace by algorithms bounding box.
+namespace Impl {
+    template<class T, class O = T>
+    using IteratorOnly = std::enable_if_t<
+        !std::is_same_v<typename std::iterator_traits<T>::value_type, void>, O
+    >;
+}
+
 template <typename PointType, typename APointsType = std::vector<PointType>>
 class [[deprecated("Use Domain::BoundingBox")]] BoundingBoxBase : public Domain::BoundingBox<typename PointType::Scalar, PointType::RowsAtCompileTime>
 {
@@ -46,7 +54,7 @@ public:
         *this = bb::merge(*this, p3);
     }
 
-    template<class It, class = IteratorOnly<It>>
+    template<class It, class = Impl::IteratorOnly<It>>
     [[deprecated("Use Biz::Algorithms::BoundingBox::construct instead")]]
     BoundingBoxBase(It from, It to)
     {

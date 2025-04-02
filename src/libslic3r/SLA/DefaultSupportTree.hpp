@@ -6,7 +6,7 @@
 #define LEGACYSUPPORTTREE_HPP
 
 #include <libslic3r/SLA/SpatIndex.hpp>
-#include <libslic3r/Execution/ExecutionTBB.hpp>
+#include "Slic3r/Biz/Algorithms/Execution/ExecutionTBB.hpp"
 #include <algorithm>
 #include <map>
 #include <mutex>
@@ -16,7 +16,7 @@
 
 #include "SupportTreeUtilsLegacy.hpp"
 #include "libslic3r/AABBMesh.hpp"
-#include "libslic3r/Execution/Execution.hpp"
+#include "Slic3r/Biz/Algorithms/Execution/Execution.hpp"
 #include "libslic3r/SLA/Pad.hpp"
 #include "libslic3r/SLA/SupportTree.hpp"
 #include "libslic3r/SLA/SupportTreeBuilder.hpp"
@@ -24,11 +24,11 @@
 
 namespace Slic3r { namespace sla {
 
-inline constexpr const auto &suptree_ex_policy = ex_tbb;
+inline constexpr const auto &suptree_ex_policy = Slic3r::Biz::Algorithms::Execution::ex_tbb;
 
 class PillarIndex {
     PointIndex m_index;
-    using Mutex = execution::BlockingMutex<decltype(suptree_ex_policy)>;
+    using Mutex = Slic3r::Biz::Algorithms::Execution::BlockingMutex<decltype(suptree_ex_policy)>;
     mutable Mutex m_mutex;
 
 public:
@@ -103,7 +103,7 @@ class DefaultSupportTree {
     PillarIndex m_pillar_index;
 
     // When bridging heads to pillars... TODO: find a cleaner solution
-    execution::BlockingMutex<ExecutionTBB> m_bridge_mutex;
+    Biz::Algorithms::Execution::BlockingMutex<Biz::Algorithms::Execution::ExecutionTBB> m_bridge_mutex;
 
     inline AABBMesh::hit_result ray_mesh_intersect(const Vec3d& s,
                                                       const Vec3d& dir)

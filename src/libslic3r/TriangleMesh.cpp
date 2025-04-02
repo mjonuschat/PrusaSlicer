@@ -43,8 +43,8 @@
 #include "Geometry.hpp"
 #include "Geometry/ConvexHull.hpp"
 #include "Point.hpp"
-#include "Execution/ExecutionTBB.hpp"
-#include "Execution/ExecutionSeq.hpp"
+#include "Slic3r/Biz/Algorithms/Execution/ExecutionTBB.hpp"
+#include "Slic3r/Biz/Algorithms/Execution/ExecutionSeq.hpp"
 #include "Utils.hpp"
 #include "admesh/stl.h"
 #include "libslic3r/BoundingBox.hpp"
@@ -1699,11 +1699,13 @@ void VertexFaceIndex::create(const indexed_triangle_set &its)
 
 std::vector<Index3> its_face_neighbors(const indexed_triangle_set &its)
 {
+    using Slic3r::Biz::Algorithms::Execution::ex_seq;
     return create_face_neighbors_index(ex_seq, its);
 }
 
 std::vector<Index3> its_face_neighbors_par(const indexed_triangle_set &its)
 {
+    using Slic3r::Biz::Algorithms::Execution::ex_tbb;
     return create_face_neighbors_index(ex_tbb, its);
 }
 

@@ -12,7 +12,7 @@
 #include <arrange/NFP/NFPArrangeItemTraits.hpp>
 
 #include "libslic3r/Optimize/NLoptOptimizer.hpp"
-#include "libslic3r/Execution/ExecutionSeq.hpp"
+#include "Slic3r/Biz/Algorithms/Execution/ExecutionSeq.hpp"
 
 namespace Slic3r { namespace arr2 {
 
@@ -41,7 +41,7 @@ struct DummyArrangeKernel
 template<class Strategy> using OptAlg = typename Strategy::OptAlg;
 
 template<class ArrangeKernel = DummyArrangeKernel,
-         class ExecPolicy = ExecutionSeq,
+         class ExecPolicy = Slic3r::Biz::Algorithms::Execution::ExecutionSeq,
          class OptMethod = opt::AlgNLoptSubplex,
          class StopCond  = DefaultStopCondition>
 struct PackStrategyNFP {
@@ -140,6 +140,8 @@ double pick_best_spot_on_nfp(ArrItem                        &item,
                              const Bed                      &bed,
                              const PackStrategyNFP<Args...> &strategy)
 {
+    namespace execution = Slic3r::Biz::Algorithms::Execution;
+
     auto &ex_policy = strategy.ep;
     using KernelT = KernelTraits<decltype(strategy.kernel)>;
 

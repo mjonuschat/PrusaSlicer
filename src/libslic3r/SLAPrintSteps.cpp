@@ -7,7 +7,7 @@
 #include <libslic3r/SLAPrintSteps.hpp>
 #include <libslic3r/MeshBoolean.hpp>
 #include <libslic3r/TriangleMeshSlicer.hpp>
-#include <libslic3r/Execution/ExecutionTBB.hpp>
+#include "Slic3r/Biz/Algorithms/Execution/ExecutionTBB.hpp"
 #include <libslic3r/SLA/Pad.hpp>
 #include <libslic3r/SLA/SupportPointGenerator.hpp>
 #include <libslic3r/SLA/ZCorrection.hpp>
@@ -44,7 +44,7 @@
 #include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/CSGMesh/CSGMesh.hpp"
 #include "libslic3r/ExPolygon.hpp"
-#include "libslic3r/Execution/Execution.hpp"
+#include "Slic3r/Biz/Algorithms/Execution/Execution.hpp"
 #include "libslic3r/Model.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Polygon.hpp"
@@ -62,6 +62,8 @@
 using namespace Slic3r::Biz;
 
 namespace Slic3r {
+
+namespace execution = Slic3r::Biz::Algorithms::Execution;
 
 namespace {
 
@@ -1429,8 +1431,8 @@ void SLAPrint::Steps::merge_slices_and_eval_stats() {
 
     // sequential version for debugging:
     // for(size_t i = 0; i < printer_input.size(); ++i) printlayerfn(i);
-    execution::for_each(ex_tbb, size_t(0), printer_input.size(), printlayerfn,
-                        execution::max_concurrency(ex_tbb));
+    execution::for_each(execution::ex_tbb, size_t(0), printer_input.size(), printlayerfn,
+                        execution::max_concurrency(execution::ex_tbb));
 
     print_statistics.clear();
 
@@ -1474,7 +1476,7 @@ void SLAPrint::Steps::rasterize()
     double increment = (slot * sd) / m_print->m_printer_input.size();
     double dstatus = current_status();
 
-    execution::SpinningMutex<ExecutionTBB> slck;
+    execution::SpinningMutex<execution::ExecutionTBB> slck;
 
     // procedure to process one height level. This will run in parallel
     auto lvlfn =
@@ -1504,7 +1506,7 @@ void SLAPrint::Steps::rasterize()
 
     // Print all the layers in parallel
     m_print->m_archiver->draw_layers(m_print->m_printer_input.size(), lvlfn,
-                                    [this]() { return canceled(); }, ex_tbb);
+                                    [this]() { return canceled(); }, execution::ex_tbb);
 }
 
 std::string SLAPrint::Steps::label(SLAPrintObjectStep step)

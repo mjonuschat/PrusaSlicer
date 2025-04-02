@@ -6,7 +6,7 @@
 #define MESHSPLITIMPL_HPP
 
 #include "TriangleMesh.hpp"
-#include "Execution/ExecutionTBB.hpp"
+#include "Slic3r/Biz/Algorithms/Execution/ExecutionTBB.hpp"
 
 namespace Slic3r {
 
@@ -14,6 +14,7 @@ template<class ExPolicy>
 std::vector<Index3> create_face_neighbors_index(ExPolicy &&ex, const indexed_triangle_set &its);
 
 namespace meshsplit_detail {
+
 
 template<class Its, class Enable = void> struct ItsWithNeighborsIndex_ {
     using Index = typename Its::Index;
@@ -27,7 +28,8 @@ template<> struct ItsWithNeighborsIndex_<indexed_triangle_set> {
     static const indexed_triangle_set &get_its(const indexed_triangle_set &its) noexcept { return its; }
     static Index get_index(const indexed_triangle_set &its) noexcept
     {
-        return create_face_neighbors_index(ex_tbb, its);
+        namespace execution = Slic3r::Biz::Algorithms::Execution;
+        return create_face_neighbors_index(execution::ex_tbb, its);
     }
 };
 
@@ -231,6 +233,7 @@ std::vector<Index3> create_face_neighbors_index(ExPolicy &&ex, const indexed_tri
     std::vector<Index3> neighbors(indices.size(),
                                  Index3{no_value, no_value, no_value});
 
+    namespace execution = Slic3r::Biz::Algorithms::Execution;
     //for (const stl_triangle_vertex_indices& triangle_indices : indices) {
     execution::for_each(ex, size_t(0), indices.size(),
         [&neighbors, &indices, &vertex_triangles] (size_t face_idx)

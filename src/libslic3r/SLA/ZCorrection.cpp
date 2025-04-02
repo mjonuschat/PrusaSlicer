@@ -2,7 +2,7 @@
 
 #include <iterator>
 
-#include "libslic3r/Execution/ExecutionTBB.hpp"
+#include "Slic3r/Biz/Algorithms/Execution/ExecutionTBB.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "Slic3r/Exception.hpp"
 #include "libslic3r/libslic3r.h"
@@ -12,6 +12,7 @@ namespace Slic3r { namespace sla {
 std::vector<ExPolygons> apply_zcorrection(
     const std::vector<ExPolygons> &slices, size_t layers)
 {
+    using Slic3r::Biz::Algorithms::Execution::ex_tbb;
     return zcorr_detail::apply_zcorrection(ex_tbb, slices, layers);
 }
 
@@ -19,6 +20,7 @@ std::vector<ExPolygons> apply_zcorrection(const std::vector<ExPolygons> &slices,
                                           const std::vector<float> &grid,
                                           float depth)
 {
+    using Slic3r::Biz::Algorithms::Execution::ex_tbb;
     return zcorr_detail::apply_zcorrection(ex_tbb, slices, grid, depth);
 }
 

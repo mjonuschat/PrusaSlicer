@@ -6,7 +6,7 @@
 
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
 
-#include <libslic3r/Execution/ExecutionSeq.hpp>
+#include "Slic3r/Biz/Algorithms/Execution/ExecutionSeq.hpp"
 
 #include <arrange/ArrangeBase.hpp>
 #include <arrange/ArrangeFirstFit.hpp>

@@ -12,9 +12,9 @@
 #include <cstddef>
 
 #include "libslic3r/SLA/RasterBase.hpp"
-#include "libslic3r/Execution/ExecutionTBB.hpp"
+#include "Slic3r/Biz/Algorithms/Execution/ExecutionTBB.hpp"
 #include "libslic3r/GCode/ThumbnailData.hpp"
-#include "libslic3r/Execution/Execution.hpp"
+#include "Slic3r/Biz/Algorithms/Execution/Execution.hpp"
 
 namespace Slic3r {
 
@@ -32,13 +32,15 @@ public:
     virtual ~SLAArchiveWriter() = default;
 
     // Fn have to be thread safe: void(sla::RasterBase& raster, size_t lyrid);
-    template<class Fn, class CancelFn, class EP = ExecutionTBB>
+    template<class Fn, class CancelFn, class EP = Slic3r::Biz::Algorithms::Execution::ExecutionTBB>
     void draw_layers(
         size_t     layer_num,
         Fn &&      drawfn,
         CancelFn cancelfn = []() { return false; },
         const EP & ep       = {})
     {
+        namespace execution = Slic3r::Biz::Algorithms::Execution;
+
         m_layers.resize(layer_num);
         execution::for_each(
             ep, size_t(0), m_layers.size(),

@@ -5,7 +5,7 @@
 #ifndef POINTGRID_HPP
 #define POINTGRID_HPP
 
-#include <libslic3r/Execution/Execution.hpp>
+#include "Slic3r/Biz/Algorithms/Execution/Execution.hpp"
 #include <libslic3r/Point.hpp>
 #include <libslic3r/BoundingBox.hpp>
 
@@ -53,6 +53,8 @@ PointGrid<CoordT> point_grid(Ex                                      policy,
                              const BoundingBox3Base<LegacyVec<3, CoordT>> &bounds,
                              const LegacyVec<3, CoordT>                   &stride)
 {
+    namespace execution = Slic3r::Biz::Algorithms::Execution;
+
     std::array<int, 3> numpts = {0, 0, 0};
 
     for (int n = 0; n < 3; ++n)

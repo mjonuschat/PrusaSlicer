@@ -12,9 +12,9 @@
 #include <tbb/parallel_reduce.h>
 #include <tbb/task_arena.h>
 
-#include "Execution.hpp"
+#include "Slic3r/Biz/Algorithms/Execution/Execution.hpp"
 
-namespace Slic3r {
+namespace Slic3r::Biz::Algorithms::Execution {
 
 struct ExecutionTBB {};
 template<> struct IsExecutionPolicy_<ExecutionTBB> : public std::true_type {};
@@ -22,7 +22,7 @@ template<> struct IsExecutionPolicy_<ExecutionTBB> : public std::true_type {};
 // Execution policy using Intel TBB library under the hood.
 static constexpr ExecutionTBB ex_tbb = {};
 
-template<> struct execution::Traits<ExecutionTBB> {
+template<> struct Traits<ExecutionTBB> {
 private:
 
     template<class Fn, class It>

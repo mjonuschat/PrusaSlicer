@@ -32,6 +32,9 @@ add_library(slic3r-biz-algorithms
     src/Slic3r/Biz/Algorithms/Geometry/Geometry.cpp
     include/Slic3r/Biz/Algorithms/Geometry/ConvexHull.hpp
     src/Slic3r/Biz/Algorithms/Geometry/ConvexHull.cpp
+    include/Slic3r/Biz/Algorithms/Execution/Execution.hpp
+    include/Slic3r/Biz/Algorithms/Execution/ExecutionSeq.hpp
+    include/Slic3r/Biz/Algorithms/Execution/ExecutionTBB.hpp
 )
 target_include_directories(slic3r-biz-algorithms PUBLIC include)
 target_include_directories(slic3r-biz-algorithms PRIVATE src)

@@ -28,7 +28,7 @@
 #include "libslic3r/MarchingSquares.hpp"
 #include "libslic3r/PNGReadWrite.hpp"
 #include "libslic3r/ClipperUtils.hpp"
-#include "libslic3r/Execution/ExecutionTBB.hpp"
+#include "Slic3r/Biz/Algorithms/Execution/ExecutionTBB.hpp"
 
 #include "libslic3r/SLA/RasterBase.hpp"
 
@@ -40,6 +40,7 @@
 
 namespace Slic3r {
 
+namespace execution = Slic3r::Biz::Algorithms::Execution;
 using ConfMap = std::map<std::string, std::string>;
 
 namespace {
@@ -481,11 +482,11 @@ std::vector<ExPolygons> extract_slices_from_sla_archive(
     {
         double                                 incr, val, prev;
         bool                                   stop  = false;
-        execution::SpinningMutex<ExecutionTBB> mutex = {};
+        execution::SpinningMutex<execution::ExecutionTBB> mutex = {};
     } st{100. / slices.size(), 0., 0.};
 
     execution::for_each(
-        ex_tbb, size_t(0), arch.entries.size(),
+        execution::ex_tbb, size_t(0), arch.entries.size(),
         [&arch, &slices, &st, &rstp, &win, progr](size_t i) {
             // Status indication guarded with the spinlock
             {
@@ -515,7 +516,7 @@ std::vector<ExPolygons> extract_slices_from_sla_archive(
 
             slices[i] = std::move(expolys);
         },
-        execution::max_concurrency(ex_tbb));
+        execution::max_concurrency(execution::ex_tbb));
 
     if (st.stop) slices = {};
 
