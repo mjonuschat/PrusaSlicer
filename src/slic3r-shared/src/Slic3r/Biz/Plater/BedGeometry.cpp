@@ -4,7 +4,7 @@
 #include "Slic3r/Domain/BedInstance.hpp"
 
 #include <libslic3r/Point.hpp>
-#include <libslic3r/Tesselate.hpp>
+#include "Slic3r/Biz/Algorithms/Tesselate.hpp"
 #include <libslic3r/ClipperUtils.hpp>
 
 #include <Slic3r/Log.hpp>
@@ -46,6 +46,8 @@ std::vector<std::pair<Vec3f, Vec2f>> BedGeometry::plate_triangles(const Domain::
         return ret;
     }
 
+    using Slic3r::Biz::Algorithms::Tesselate::triangulate_expolygon_2f;
+    using Slic3r::Biz::Algorithms::Tesselate::NORMALS_UP;
     std::vector<Vec2f> triangles = triangulate_expolygon_2f(contour, NORMALS_UP);
     if (triangles.empty() || triangles.size() % 3 != 0) {
         SPDLOG_ERROR("Unable to triangulate bed contour");

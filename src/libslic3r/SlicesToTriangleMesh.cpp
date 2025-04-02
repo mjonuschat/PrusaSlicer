@@ -8,7 +8,7 @@
 
 #include "SlicesToTriangleMesh.hpp"
 #include "libslic3r/ClipperUtils.hpp"
-#include "libslic3r/Tesselate.hpp"
+#include "Slic3r/Biz/Algorithms/Tesselate.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/TriangleMesh.hpp"
 #include "Slic3r/Biz/Algorithms/Execution/ExecutionTBB.hpp"
@@ -20,6 +20,7 @@ indexed_triangle_set inline straight_walls(const Polygon &plate,
                                      double         lo_z,
                                      double         hi_z)
 {
+    using Slic3r::Biz::Algorithms::Tesselate::wall_strip;
     return wall_strip(plate, lo_z, hi_z);
 }
 
@@ -52,6 +53,11 @@ indexed_triangle_set slices_to_mesh(
     double                         zmin,
     const std::vector<float> &     grid)
 {
+
+    using Slic3r::Biz::Algorithms::Tesselate::triangulate_expolygons_3d;
+    using Slic3r::Biz::Algorithms::Tesselate::NORMALS_UP;
+    using Slic3r::Biz::Algorithms::Tesselate::NORMALS_DOWN;
+
     assert(slices.size() == grid.size());
 
     using Layers = std::vector<indexed_triangle_set>;

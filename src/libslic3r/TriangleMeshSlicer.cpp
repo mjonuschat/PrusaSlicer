@@ -18,7 +18,7 @@
 #include <cstdlib>
 
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
-#include "Tesselate.hpp"
+#include "Slic3r/Biz/Algorithms/Tesselate.hpp"
 #include "TriangleMesh.hpp"
 #include "TriangleMeshSlicer.hpp"
 #include "Utils.hpp"
@@ -58,6 +58,10 @@
 #endif
 
 using namespace Slic3r::Biz;
+
+using Slic3r::Biz::Algorithms::Tesselate::triangulate_expolygons_3d;
+using Slic3r::Biz::Algorithms::Tesselate::NORMALS_UP;
+using Slic3r::Biz::Algorithms::Tesselate::NORMALS_DOWN;
 
 namespace Slic3r {
 

@@ -32,6 +32,7 @@
 
 #include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Domain/Point.hpp"
+#include "Slic3r/Biz/Algorithms/Point.hpp"
 #include "Slic3r/Math.hpp"
 #include "libslic3r.h"
 #include "LocalesUtils.hpp"
@@ -115,11 +116,7 @@ Domain::Advanced::Vec<typename Derived::Scalar, 2> to_2d(const Eigen::MatrixBase
     return ptN.template head<2>();
 }
 
-template<typename Derived>
-inline Domain::Advanced::Vec<typename Derived::Scalar, 3> to_3d(const Eigen::MatrixBase<Derived> &pt, const typename Derived::Scalar z) {
-    static_assert(Derived::IsVectorAtCompileTime && int(Derived::SizeAtCompileTime) == 2, "to_3d(): first parameter is not a 2D vector");
-    return { pt.x(), pt.y(), z };
-}
+using Slic3r::Biz::Algorithms::Point::to_3d;
 
 inline Vec2d   unscale(coord_t x, coord_t y) { return Vec2d(unscale<double>(x), unscale<double>(y)); }
 inline Vec2d   unscale(const Vec2crd &pt) { return Vec2d(unscale<double>(pt.x()), unscale<double>(pt.y())); }

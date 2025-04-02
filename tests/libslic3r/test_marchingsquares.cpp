@@ -14,7 +14,6 @@
 
 #include <libslic3r/TriangleMeshSlicer.hpp>
 #include <libslic3r/TriangulateWall.hpp>
-#include <libslic3r/Tesselate.hpp>
 #include <libslic3r/SlicesToTriangleMesh.hpp>
 
 using namespace Slic3r;

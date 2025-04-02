@@ -8,7 +8,7 @@
 #include <array>
 #include <limits>
 
-#include "libslic3r/Tesselate.hpp"
+#include "Slic3r/Biz/Algorithms/Tesselate.hpp"
 #include "libslic3r/SLA/SupportTreeUtils.hpp"
 #include "admesh/stl.h"
 #include "libslic3r/BranchingTree/BranchingTree.hpp"
@@ -86,6 +86,7 @@ std::vector<Node> sample_mesh(const indexed_triangle_set &its, double radius)
 
 std::vector<Node> sample_bed(const ExPolygons &bed, float z, double radius)
 {
+    using Slic3r::Biz::Algorithms::Tesselate::triangulate_expolygons_3d;
     auto triangles = triangulate_expolygons_3d(bed, z);
     indexed_triangle_set its;
     its.vertices.reserve(triangles.size());

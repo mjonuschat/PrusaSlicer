@@ -35,12 +35,19 @@ add_library(slic3r-biz-algorithms
     include/Slic3r/Biz/Algorithms/Execution/Execution.hpp
     include/Slic3r/Biz/Algorithms/Execution/ExecutionSeq.hpp
     include/Slic3r/Biz/Algorithms/Execution/ExecutionTBB.hpp
+    src/Slic3r/Biz/Algorithms/Tesselate.cpp
+    include/Slic3r/Biz/Algorithms/Tesselate.hpp
 )
 target_include_directories(slic3r-biz-algorithms PUBLIC include)
 target_include_directories(slic3r-biz-algorithms PRIVATE src)
 
-target_link_libraries(slic3r-biz-algorithms PRIVATE localesutils)
-target_link_libraries(slic3r-biz-algorithms PUBLIC slic3r-domain slic3r-base clipper)
+target_link_libraries(slic3r-biz-algorithms PRIVATE localesutils glu-libtess)
+target_link_libraries(slic3r-biz-algorithms PUBLIC
+    slic3r-domain
+    slic3r-base
+    clipper
+    admesh
+)
 
 if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
     add_executable(slic3r-biz-algorithms-tests

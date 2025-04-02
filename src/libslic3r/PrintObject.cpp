@@ -49,7 +49,7 @@
 #include "Surface.hpp"
 #include "Slicing.hpp"
 #include "SurfaceCollection.hpp"
-#include "Tesselate.hpp"
+#include "Slic3r/Biz/Algorithms/Tesselate.hpp"
 #include "TriangleMeshSlicer.hpp"
 #include "Utils.hpp"
 #include "libslic3r/Fill/FillAdaptive.hpp"
@@ -642,6 +642,8 @@ std::pair<FillAdaptive::OctreePtr, FillAdaptive::OctreePtr> PrintObject::prepare
             for (int surface_idx = range.begin(); surface_idx < range.end(); ++surface_idx) {
                 std::vector<Vec3d> &out = overhangs[surface_idx];
                 m_print->throw_if_canceled();
+
+                using Slic3r::Biz::Algorithms::Tesselate::triangulate_expolygon_3d;
                 append(out, triangulate_expolygon_3d(surfaces_w_bottom_z[surface_idx].first->expolygon,
                                                    surfaces_w_bottom_z[surface_idx].second));
                 for (Vec3d &p : out)
