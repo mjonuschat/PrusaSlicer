@@ -21,8 +21,8 @@ TEST_CASE("SupportMaterial: Three raft layers created", "[SupportMaterial]")
 SCENARIO("SupportMaterial: support_layers_z and contact_distance", "[SupportMaterial]")
 {
     // Box h = 20mm, hole bottom at 5mm, hole height 10mm (top edge at 15mm).
-    TriangleMesh mesh = Slic3r::Test::mesh(Slic3r::Test::TestMesh::cube_with_hole);
-    mesh.rotate_x(float(M_PI / 2));
+    Domain::TriangleMesh mesh = Slic3r::Test::mesh(Slic3r::Test::TestMesh::cube_with_hole);
+    mesh.rotate(float(M_PI / 2), Domain::Axis::X);
 //    mesh.write_binary("d:\\temp\\cube_with_hole.stl");
 
 	auto check = [](Slic3r::Print &print, bool &first_support_layer_height_ok, bool &layer_height_minimum_ok, bool &layer_height_maximum_ok, bool &top_spacing_ok)

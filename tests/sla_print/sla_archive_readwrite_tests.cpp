@@ -2,7 +2,7 @@
 #include <test_utils.hpp>
 
 #include "libslic3r/SLAPrint.hpp"
-#include "libslic3r/TriangleMesh.hpp"
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "libslic3r/Format/SLAArchiveFormatRegistry.hpp"
 #include "libslic3r/Format/SLAArchiveWriter.hpp"
 #include "libslic3r/Format/SLAArchiveReader.hpp"
@@ -63,7 +63,7 @@ TEST_CASE("Archive export test", "[sla_archives]") {
             REQUIRE(!cfg.empty());
             REQUIRE(!its.empty());
 
-            double vol_read = its_volume(its);
+            double vol_read = Domain::its_volume(its);
             double rel_err  = std::abs(vol_written - vol_read) / vol_written;
             REQUIRE(rel_err < 0.1);
         }

@@ -32,7 +32,7 @@ void InterlockingGenerator::generate_interlocking_structure(PrintObject &print_o
 
     const std::vector<double> &nozzle_diameters    = print_object.print()->config().nozzle_diameter.values;
     double                     min_nozzle_diameter = *std::min_element(nozzle_diameters.begin(), nozzle_diameters.end());
-    const float                rotation            = Geometry::deg2rad(config.interlocking_orientation.value);
+    const float                rotation            = deg2rad(config.interlocking_orientation.value);
     const coord_t              beam_layer_count    = config.interlocking_beam_layer_count;
     const int                  interface_depth     = config.interlocking_depth;
     const int                  boundary_avoidance  = config.interlocking_boundary_avoidance;

@@ -184,7 +184,7 @@ static std::vector<ExtrusionPaths> getFakeExtrusionPathsFromWipeTower(const Wipe
     // Rotate and translate the tower into the final position.
     for (ExtrusionPaths& ps : paths) {
         for (ExtrusionPath& p : ps) {
-            p.polyline.rotate(Geometry::deg2rad(wtd.rotation_angle));
+            p.polyline.rotate(deg2rad(wtd.rotation_angle));
             p.polyline.translate(scale_(wtd.position.x()), scale_(wtd.position.y()));
         }
     }

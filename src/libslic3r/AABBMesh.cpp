@@ -5,7 +5,7 @@
 #include "AABBMesh.hpp"
 
 #include <libslic3r/AABBTreeIndirect.hpp>
-#include <libslic3r/TriangleMesh.hpp>
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include <igl/Hit.h>
 #include <algorithm>
 
@@ -18,6 +18,10 @@
 
 namespace Slic3r {
 
+using Domain::TriangleMesh;
+using Domain::Index3;
+namespace TriMesh = Biz::Algorithms::TriangleMesh;
+
 class AABBMesh::AABBImpl {
 private:
     AABBTreeIndirect::Tree3f m_tree;
@@ -29,7 +33,7 @@ public:
         m_triangle_ray_epsilon = 0.000001;
         if (calculate_epsilon) {
             // Calculate epsilon from average triangle edge length.
-            double l = its_average_edge_length(its);
+            double l = TriMesh::its_average_edge_length(its);
             if (l > 0)
                 m_triangle_ray_epsilon = 0.000001 * l * l;
         }
@@ -88,7 +92,7 @@ AABBMesh::AABBMesh(const indexed_triangle_set &tmesh, bool calculate_epsilon)
     : m_tm(&tmesh)
     , m_aabb(new AABBImpl())
     , m_vfidx{tmesh}
-    , m_fnidx{its_face_neighbors(tmesh)}
+    , m_fnidx{TriMesh::its_face_neighbors(tmesh)}
 {
     init(tmesh, calculate_epsilon);
 }
@@ -97,7 +101,7 @@ AABBMesh::AABBMesh(const TriangleMesh &mesh, bool calculate_epsilon)
     : m_tm(&mesh.its)
     , m_aabb(new AABBImpl())
     , m_vfidx{mesh.its}
-    , m_fnidx{its_face_neighbors(mesh.its)}
+    , m_fnidx{TriMesh::its_face_neighbors(mesh.its)}
 {
     init(mesh, calculate_epsilon);
 }
@@ -161,7 +165,7 @@ const Eigen::AlignedBox<float, 3>& AABBMesh::bounding_box() const
 
 Vec3d AABBMesh::normal_by_face_id(int face_id) const {
 
-    return its_unnormalized_normal(*m_tm, face_id).cast<double>().normalized();
+    return TriMesh::its_unnormalized_normal(*m_tm, face_id).cast<double>().normalized();
 }
 
 

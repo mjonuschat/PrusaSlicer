@@ -15,7 +15,7 @@
 #include <cstddef>
 
 #include "libslic3r/Model.hpp"
-#include "libslic3r/TriangleMesh.hpp"
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "libslic3r/NSVGUtils.hpp"
 #include "libslic3r/Emboss.hpp"
 #include "admesh/stl.h"
@@ -91,7 +91,9 @@ bool load_svg(const std::string &input_file, Model &output_model)
 
     // convert 2d shape to 3d triangles
     indexed_triangle_set its = Emboss::polygons2model(union_shape, project);
-    TriangleMesh triangl_mesh(std::move(its));
+
+    using Biz::Algorithms::TriangleMesh::construct;
+    Domain::TriangleMesh triangl_mesh(construct(std::move(its)));
 
     // add mesh to model
     ModelObject *object = output_model.add_object();

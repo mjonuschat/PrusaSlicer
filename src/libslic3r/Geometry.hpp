@@ -25,8 +25,6 @@ using Slic3r::Biz::Algorithms::Geometry::liang_barsky_line_clipping;
 using Slic3r::Biz::Algorithms::Geometry::directions_parallel;
 using Slic3r::Biz::Algorithms::Geometry::directions_perpendicular;
 using Slic3r::Biz::Algorithms::Geometry::contains;
-using Slic3r::Biz::Algorithms::Geometry::rad2deg;
-using Slic3r::Biz::Algorithms::Geometry::deg2rad;
 using Slic3r::Biz::Algorithms::Geometry::angle_to_0_2PI;
 using Slic3r::Biz::Algorithms::Geometry::to_range_pi_pi;
 using Slic3r::Biz::Algorithms::Geometry::simplify_polygons;

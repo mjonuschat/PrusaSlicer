@@ -203,7 +203,7 @@ std::vector<SurfaceFill> group_fills(const Layer &layer)
                     }
                 }
 		        params.bridge_angle = float(surface.bridge_angle);
-		        params.angle 		= float(Geometry::deg2rad(region_config.fill_angle.value));
+		        params.angle 		= float(deg2rad(region_config.fill_angle.value));
 
 		        // Calculate the actual flow we'll be using for this infill.
 		        params.bridge = is_bridge || Fill::use_bridge_flow(params.pattern);
@@ -337,7 +337,7 @@ std::vector<SurfaceFill> group_fills(const Layer &layer)
 	            params.pattern 		 = fill_type_monotonic(layerm.region().config().top_fill_pattern) ? ipMonotonic : ipRectilinear;
 	            params.density 		 = 100.f;
 		        params.extrusion_role = ExtrusionRole::InternalInfill;
-		        params.angle 		= float(Geometry::deg2rad(layerm.region().config().fill_angle.value));
+		        params.angle 		= float(deg2rad(layerm.region().config().fill_angle.value));
 		        // calculate the actual flow we'll be using for this infill
 				params.flow = layerm.flow(frSolidInfill);
 		        params.spacing = params.flow.spacing();	        

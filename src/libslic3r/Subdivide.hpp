@@ -5,7 +5,7 @@
 #ifndef libslic3r_Subdivide_hpp_
 #define libslic3r_Subdivide_hpp_
 
-#include "TriangleMesh.hpp"
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "admesh/stl.h"
 
 namespace Slic3r {

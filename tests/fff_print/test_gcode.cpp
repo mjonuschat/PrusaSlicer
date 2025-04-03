@@ -305,7 +305,7 @@ TEST_CASE("M73s have correct percent values", "[GCode]") {
         });
         Print print;
         Model model;
-        TriangleMesh test_mesh{mesh(TestMesh::cube_20x20x20)};
+        Domain::TriangleMesh test_mesh{mesh(TestMesh::cube_20x20x20)};
         const auto layer_height = static_cast<float>(config.opt_float("layer_height"));
         test_mesh.scale(Vec3f{1.0F, 1.0F, layer_height/20.0F});
         Test::init_print({test_mesh}, print, model, config);

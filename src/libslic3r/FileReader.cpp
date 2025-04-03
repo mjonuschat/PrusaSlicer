@@ -14,7 +14,7 @@
 #include "FileReader.hpp"
 #include "Model.hpp"
 #include "ModelProcessing.hpp"
-#include "TriangleMesh.hpp"
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 
 #include "Format/AMF.hpp"
 #include "Format/OBJ.hpp"
@@ -122,7 +122,7 @@ static Model read_all_from_file(const std::string& input_file,
     return model;
 }
 
-TriangleMesh load_mesh(const std::string& input_file)
+Domain::TriangleMesh load_mesh(const std::string& input_file)
 {
     Model model;
     try {
@@ -135,8 +135,11 @@ TriangleMesh load_mesh(const std::string& input_file)
     return model.mesh();
 }
 
+using Domain::BoundingBox3d;
+using Biz::Algorithms::BoundingBox::overlap;
+
 // Shares some boundary.
-bool shares_boundary(const BoundingBoxf3& a, const BoundingBoxf3& b) {
+bool shares_boundary(const BoundingBox3d& a, const BoundingBox3d& b) {
     return is_approx(a.min.x(), b.max.x())
         || is_approx(a.max.x(), b.min.x())
         || is_approx(a.min.y(), b.max.y())
@@ -150,22 +153,22 @@ static bool looks_like_multipart_object(const Model& model)
     if (model.objects.size() <= 1)
         return false;
 
-    BoundingBoxf3 tbb;
+    BoundingBox3d tbb;
 
     for (const ModelObject* obj : model.objects) {
         if (obj->volumes.size() > 1 || obj->config.keys().size() > 1)
             return false;
 
-        BoundingBoxf3 bb_this = obj->volumes[0]->mesh().bounding_box();
+        BoundingBox3d bb_this = obj->volumes[0]->mesh().bounding_box();
 
         // FIXME: There is sadly the case when instances are empty (AMF files). The normalization of instances in that
         // case is performed only after this function is called. For now (shortly before the 2.7.2 release, let's
         // just do this non-invasive check. Reordering all the functions could break it much more.
-        BoundingBoxf3 tbb_this = (!obj->instances.empty() ? obj->instances[0]->transform_bounding_box(bb_this) : bb_this);
+        BoundingBox3d tbb_this = (!obj->instances.empty() ? obj->instances[0]->transform_bounding_box(bb_this) : bb_this);
 
         if (!tbb.defined)
             tbb = tbb_this;
-        else if (tbb.overlap(tbb_this) || shares_boundary(tbb, tbb_this))
+        else if (overlap(tbb, tbb_this) || shares_boundary(tbb, tbb_this))
             // The volumes has intersects bounding boxes or share some boundary
             return true;
     }

@@ -1981,11 +1981,13 @@ static std::vector<ColorPolygons> slice_model_volume_with_color(const ModelVolum
                                                                const PrintObject                                               &print_object,
                                                                const size_t                                                     num_facets_states)
 {
+    using Domain::indexed_triangle_set_with_color;
+
     const ModelVolumeFacetsInfo facets_info = extract_facets_info(model_volume);
 
     const auto extract_mesh_with_color = [&model_volume, &facets_info]() -> indexed_triangle_set_with_color {
         if (const int volume_extruder_id = model_volume.extruder_id(); facets_info.replace_default_extruder && !facets_info.is_painted && volume_extruder_id >= 0) {
-            const TriangleMesh &mesh = model_volume.mesh();
+            const Domain::TriangleMesh &mesh = model_volume.mesh();
             return {mesh.its.indices, mesh.its.vertices, std::vector<uint8_t>(mesh.its.indices.size(), uint8_t(volume_extruder_id))};
         }
 

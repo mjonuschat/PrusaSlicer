@@ -36,7 +36,7 @@
 #include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/Slicing.hpp"
 #include "libslic3r/Surface.hpp"
-#include "libslic3r/TriangleMesh.hpp"
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "libslic3r/TriangleMeshSlicer.hpp"
 #include "libslic3r/Utils.hpp"
 #include "libslic3r/libslic3r.h"
@@ -83,7 +83,7 @@ static std::vector<ExPolygons> slice_volume(
             MeshSlicingParamsEx params2 { params };
             params2.trafo = params2.trafo * volume.get_matrix();
             if (params2.trafo.rotation().determinant() < 0.)
-                its_flip_triangles(its);
+                Domain::its_flip_triangles(its);
             layers = slice_mesh_ex(its, zs, params2, throw_on_cancel_callback);
             throw_on_cancel_callback();
         }

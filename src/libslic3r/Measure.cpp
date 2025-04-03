@@ -19,13 +19,14 @@
 #include "libslic3r/SurfaceMesh.hpp"
 #include "admesh/stl.h"
 #include "libslic3r/Point.hpp"
-#include "libslic3r/TriangleMesh.hpp"
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 
 #define DEBUG_EXTRACT_ALL_FEATURES_AT_ONCE 0
 
 namespace Slic3r {
 namespace Measure {
 
+namespace TriMesh = Biz::Algorithms::TriangleMesh;
 
 constexpr double feature_hover_limit = 0.5; // how close to a feature the mouse must be to highlight it
 
@@ -121,8 +122,8 @@ void MeasuringImpl::update_planes()
     // This part is still performed in mesh coordinate system.
     const size_t             num_of_facets = m_its.indices.size();
     m_face_to_plane.resize(num_of_facets, size_t(-1));
-    const std::vector<Vec3f> face_normals = its_face_normals(m_its);
-    const std::vector<Index3> face_neighbors = its_face_neighbors(m_its);
+    const std::vector<Vec3f> face_normals = TriMesh::its_face_normals(m_its);
+    const std::vector<Domain::Index3> face_neighbors = TriMesh::its_face_neighbors(m_its);
     std::vector<int>         facet_queue(num_of_facets, 0);
     int                      facet_queue_cnt = 0;
     const stl_normal*        normal_ptr      = nullptr;

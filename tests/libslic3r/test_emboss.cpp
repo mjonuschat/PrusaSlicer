@@ -2,13 +2,19 @@
 
 #include <libslic3r/Emboss.hpp>
 #include "Slic3r/Biz/Algorithms/SVG.hpp" // only debug visualization
+#include "Slic3r/Domain/TriangleMesh.hpp"
 
 #include <optional>
 #include <libslic3r/AABBTreeIndirect.hpp>
 #include <libslic3r/Utils.hpp> // for next_highest_power_of_2()
 #include <libslic3r/IntersectionPoints.hpp>
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
+
+
 using namespace Slic3r;
 using Domain::Index3;
+using Domain::its_merge;
+namespace triangle_mesh = Biz::Algorithms::TriangleMesh;
 
 namespace Private{
         
@@ -510,7 +516,7 @@ TEST_CASE("Cut surface", "[its]")
     tr.scale(text_shape_scale);
     Emboss::OrthoProject cut_projection(tr, Vec3d(0., 0., z_depth));
 
-    auto object = its_make_cube(782 - 49 + 50, 724 + 10 + 50, 5);
+    auto object = triangle_mesh::its_make_cube(782 - 49 + 50, 724 + 10 + 50, 5);
     its_translate(object, Vec3f(49 - 25, -10 - 25, -40));
     auto cube2 = object; // copy
     its_translate(cube2, Vec3f(100, -40, 7.5));
@@ -808,7 +814,7 @@ namespace Slic3r::MeshBoolean::cgal2 {
         return result;
     }
 }
-#include "libslic3r/TriangleMesh.hpp"
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 
 //// 1 ////
 
@@ -885,7 +891,7 @@ TEST_CASE("Emboss extrude cut", "[Emboss-Cut]")
     CHECK(!text.indices.empty());
 #endif
     
-    auto cube = its_make_cube(782 - 49 + 50, 724 + 10 + 50, 5);
+    auto cube = triangle_mesh::its_make_cube(782 - 49 + 50, 724 + 10 + 50, 5);
     its_translate(cube, Vec3f(49 - 25, -10 - 25, 2.5));
     auto cube2 = cube;
 //    its_translate(cube2, Vec3f(0, 0, 40));

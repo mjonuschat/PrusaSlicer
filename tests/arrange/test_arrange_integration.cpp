@@ -19,6 +19,11 @@
 #include "libslic3r/Format/3mf.hpp"
 
 using namespace Catch;
+using Slic3r::Biz::Algorithms::BoundingBox::center;
+using Slic3r::Biz::Algorithms::BoundingBox::contains;
+using Slic3r::Biz::Algorithms::BoundingBox::scaled;
+using Slic3r::Domain::TriangleMesh;
+namespace triangle_mesh = Slic3r::Biz::Algorithms::TriangleMesh;
 
 static Slic3r::Model get_example_model_with_20mm_cube()
 {
@@ -29,7 +34,7 @@ static Slic3r::Model get_example_model_with_20mm_cube()
     ModelObject* new_object = model.add_object();
     new_object->name = "20mm_cube";
     new_object->add_instance();
-    TriangleMesh mesh = make_cube(20., 20., 20.);
+    TriangleMesh mesh = triangle_mesh::make_cube(20., 20., 20.);
     mesh.translate(Vec3f{-10.f, -10.f, 0.});
     ModelVolume* new_volume = new_object->add_volume(mesh);
     new_volume->name = new_object->name;
@@ -50,7 +55,7 @@ static Slic3r::Model get_example_model_with_random_cube_objects(size_t N = 0)
 
     ModelObject* new_object = model.add_object();
     new_object->name = "20mm_cube";
-    TriangleMesh mesh = make_cube(20., 20., 20.);
+    TriangleMesh mesh = triangle_mesh::make_cube(20., 20., 20.);
     ModelVolume* new_volume = new_object->add_volume(mesh);
     new_volume->name = new_object->name;
 
@@ -74,7 +79,7 @@ static Slic3r::Model get_example_model_with_arranged_primitives()
     ModelObject* new_object = model.add_object();
     new_object->name = "20mm_cube";
     ModelInstance *cube_inst = new_object->add_instance();
-    TriangleMesh mesh = make_cube(20., 20., 20.);
+    TriangleMesh mesh = triangle_mesh::make_cube(20., 20., 20.);
     mesh.translate(Vec3f{-10.f, -10.f, 0.});
     ModelVolume* new_volume = new_object->add_volume(mesh);
     new_volume->name = new_object->name;
@@ -87,7 +92,7 @@ static Slic3r::Model get_example_model_with_arranged_primitives()
     new_object = model.add_object();
     new_object->name = "20mm_cyl";
     new_object->add_instance();
-    mesh = make_cylinder(10., 20.);
+    mesh = triangle_mesh::make_cylinder(10., 20.);
     mesh.translate(Vec3f{0., -25.f, 0.});
     new_volume = new_object->add_volume(mesh);
     new_volume->name = new_object->name;
@@ -95,7 +100,7 @@ static Slic3r::Model get_example_model_with_arranged_primitives()
     new_object = model.add_object();
     new_object->name = "20mm_sphere";
     new_object->add_instance();
-    mesh = make_sphere(10.);
+    mesh = triangle_mesh::make_sphere(10.);
     mesh.translate(Vec3f{25., -25.f, 0.});
     new_volume = new_object->add_volume(mesh);
     new_volume->name = new_object->name;
@@ -193,7 +198,9 @@ TEMPLATE_TEST_CASE("Writing arrange transformations into ModelInstance should be
 
     auto mi = model.objects.front()->instances.front();
 
-    BoundingBox bb_before = scaled(to_2d(arr2::instance_bounding_box(*mi)));
+    BoundingBoxf3 bb{arr2::instance_bounding_box(*mi)};
+    namespace bounding_box = Slic3r::Biz::Algorithms::BoundingBox;
+    Domain::BoundingBox2crd bb_before = scaled(bounding_box::to_2d(Domain::BoundingBox3d{bb.min, bb.max}));
 
     TestType bed_case;
     auto bed_index = random_value<int>(bed_case.bed_idx_min, bed_case.bed_idx_max);
@@ -302,7 +309,8 @@ TEMPLATE_TEST_CASE("Outline extraction from ModelInstance",
                  "same as the outline's bb")
             {
                 auto bb = unscaled(get_extents(outline));
-                auto modelbb = to_2d(model.bounding_box_exact());
+                namespace bounding_box = Slic3r::Biz::Algorithms::BoundingBox;
+                auto modelbb = bounding_box::to_2d(model.bounding_box_exact());
 
                 REQUIRE((bb.min - modelbb.min).norm() < EPSILON);
                 REQUIRE((bb.max - modelbb.max).norm() < EPSILON);
@@ -367,7 +375,7 @@ TEMPLATE_TEST_CASE("Common virtual bed handlers",
 
     // Center the single instance within the model
     arr2::transform_instance(*model.objects.front()->instances.front(),
-                             unscaled(bedbb.center()) - to_2d(modelbb.center()),
+                             unscaled(bedbb.center()) - to_2d(center(modelbb)),
                              0.);
 
     const auto vbed_gap = GENERATE(0, random_value(1, scaled(100.)));
@@ -442,11 +450,11 @@ TEMPLATE_TEST_CASE("Common virtual bed handlers",
             THEN("the bounding box should be inside bed")
             {
                 auto bbf = arr2::instance_bounding_box(mi_back_to_phys);
-                auto bb = BoundingBox{scaled(to_2d(bbf))};
+                auto bb = Domain::BoundingBox2crd{scaled(to_2d(bbf))};
                 INFO("bb = { {" << unscaled(bb.min).transpose() << "}, {"
                                 << unscaled(bb.max).transpose() << "} }" );
 
-                REQUIRE(bedbb.contains(bb));
+                REQUIRE(contains(Domain::BoundingBox2crd{bedbb.min, bedbb.max}, bb));
             }
         }
 
@@ -462,14 +470,14 @@ TEMPLATE_TEST_CASE("Common virtual bed handlers",
 
             auto bbf = arr2::instance_bounding_box(mi_back_to_phys);
 
-            auto bb = BoundingBox{scaled(to_2d(bbf))};
+            auto bb = Domain::BoundingBox2crd{scaled(to_2d(bbf))};
 
             THEN("the bounding box should be inside bed")
             {
                 INFO("bb = { {" << unscaled(bb.min).transpose() << "}, {"
                                 << unscaled(bb.max).transpose() << "} }" );
 
-                REQUIRE(bedbb.contains(bb));
+                REQUIRE(contains(Domain::BoundingBox2crd{bedbb.min, bedbb.max}, bb));
             }
 
             THEN("the outline should be inside the physical bed")
@@ -502,7 +510,7 @@ TEST_CASE("Virtual bed handlers - StriderVBedHandler", "[arrange2][integration][
     {
         auto [instance_pos, instance_displace] = GENERATE(table<std::string, Vec2d>({
             {"start", unscaled(bedbb.min) - to_2d(modelbb.min) + Vec2d::Ones() * EPSILON},  // at the min edge of vbed
-            {"middle", unscaled(bedbb.center()) - to_2d(modelbb.center())}, // at the center
+            {"middle", unscaled(bedbb.center()) - to_2d(center(modelbb))}, // at the center
             {"end", unscaled(bedbb.max) - to_2d(modelbb.max) - Vec2d::Ones() * EPSILON} // at the max edge of vbed
         }));
 
@@ -541,11 +549,11 @@ TEST_CASE("Virtual bed handlers - StriderVBedHandler", "[arrange2][integration][
                 mi_to_move.set_transformation(Geometry::Transformation{tr * mi_to_move.get_matrix()});
                 REQUIRE(vbh.get_bed_index(VBP{mi_to_move}) == 0);
 
-                auto instbb = BoundingBox{scaled(to_2d(arr2::instance_bounding_box(mi_to_move)))};
+                auto instbb = Domain::BoundingBox2crd{scaled(to_2d(arr2::instance_bounding_box(mi_to_move)))};
                 INFO("bedbb = { {" << bedbb.min.transpose() << "}, {" << bedbb.max.transpose() << "} }" );
                 INFO("instbb = { {" << instbb.min.transpose() << "}, {" << instbb.max.transpose() << "} }" );
 
-                REQUIRE(bedbb.contains(instbb));
+                REQUIRE(contains(Domain::BoundingBox2crd{bedbb.min, bedbb.max}, instbb));
             }
         }
 
@@ -606,11 +614,11 @@ TEST_CASE("Virtual bed handlers - StriderVBedHandler", "[arrange2][integration][
             {
                 REQUIRE(vbh.get_bed_index(VBP{mi_to_move}) == bed_index);
 
-                auto instbb = BoundingBox{scaled(to_2d(arr2::instance_bounding_box(mi_to_move)))};
+                auto instbb = Domain::BoundingBox2crd{scaled(to_2d(arr2::instance_bounding_box(mi_to_move)))};
                 INFO("bedbb = { {" << bedbb.min.transpose() << "}, {" << bedbb.max.transpose() << "} }" );
                 INFO("instbb = { {" << instbb.min.transpose() << "}, {" << instbb.max.transpose() << "} }" );
 
-                REQUIRE(! bedbb.contains(instbb));
+                REQUIRE(!contains(Domain::BoundingBox2crd{bedbb.min, bedbb.max}, instbb));
             }
         }
     }
@@ -637,7 +645,7 @@ TEMPLATE_TEST_CASE("Bed needs to be completely filled with 1cm cubes",
     ModelObject* new_object = m.add_object();
     new_object->name = "10mm_box";
     ModelInstance *instance = new_object->add_instance();
-    TriangleMesh mesh = make_cube(10., 10., 10.);
+    TriangleMesh mesh = triangle_mesh::make_cube(10., 10., 10.);
     ModelVolume* new_volume = new_object->add_volume(mesh);
     new_volume->name = new_object->name;
 
@@ -836,7 +844,7 @@ TEST_CASE("Testing arrangement involving virtual beds", "[arrange2][integration]
     ModelObject* new_object = model.add_object();
     new_object->name = "big_cube";
     ModelInstance *bigcube_inst = new_object->add_instance();
-    TriangleMesh mesh = make_cube(bedsz.x() - 5., bedsz.y() - 5., 20.);
+    TriangleMesh mesh = triangle_mesh::make_cube(bedsz.x() - 5., bedsz.y() - 5., 20.);
     ModelVolume* new_volume = new_object->add_volume(mesh);
     new_volume->name = new_object->name;
 

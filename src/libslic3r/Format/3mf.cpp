@@ -52,6 +52,10 @@ namespace pt = boost::property_tree;
 
 #include <fast_float.h>
 
+using Slic3r::Domain::TriangleMesh;
+using Slic3r::Domain::Index3;
+using Slic3r::Domain::RepairedMeshErrors;
+
 // Slightly faster than sprintf("%.9g"), but there is an issue with the karma floating point formatter,
 // https://github.com/boostorg/spirit/pull/586
 // where the exported string is one digit shorter than it should be to guarantee lossless round trip.
@@ -2597,14 +2601,16 @@ namespace Slic3r {
                         tri_id -= min_id;
             }
 
+            namespace tm = Biz::Algorithms::TriangleMesh;
             if (m_prusaslicer_generator_version && 
                 *m_prusaslicer_generator_version >= *Semver::parse("2.4.0-alpha1") &&
                 *m_prusaslicer_generator_version < *Semver::parse("2.4.0-alpha3"))
                 // PrusaSlicer 2.4.0-alpha2 contained a bug, where all vertices of a single object were saved for each volume the object contained.
                 // Remove the vertices, that are not referenced by any face.
-                its_compactify_vertices(its, true);
+                tm::its_compactify_vertices(its, true);
 
-            TriangleMesh triangle_mesh(std::move(its), volume_data.mesh_stats);
+            using Biz::Algorithms::TriangleMesh::construct;
+            TriangleMesh triangle_mesh(construct(std::move(its), volume_data.mesh_stats));
 
             if (m_version == 0) {
                 // if the 3mf was not produced by PrusaSlicer and there is only one instance,

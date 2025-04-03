@@ -1,9 +1,12 @@
 #include "libslic3r/GCode/SeamPainting.hpp"
 
-#include "libslic3r/TriangleMesh.hpp"
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "libslic3r/TriangleSelector.hpp"
 
 namespace Slic3r::Seams::ModelInfo {
+
+using Domain::its_merge;
+
 Painting::Painting(const Transform3d &obj_transform, const ModelVolumePtrs &volumes) {
     for (const ModelVolume *mv : volumes) {
         if (mv->is_seam_painted()) {

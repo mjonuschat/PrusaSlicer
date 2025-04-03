@@ -57,7 +57,7 @@
 #include "libslic3r/SLA/SupportTreeStrategies.hpp"
 #include "libslic3r/SLA/SupportIslands/SampleConfigFactory.hpp"
 #include "libslic3r/SLAPrint.hpp"
-#include "libslic3r/TriangleMesh.hpp"
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 
 using namespace Slic3r::Biz;
 
@@ -464,8 +464,9 @@ void SLAPrint::Steps::hollow_model(SLAPrintObject &po)
             float loss_less_max_error = 2*std::numeric_limits<float>::epsilon();
             its_quadric_edge_collapse(m, 0U, &loss_less_max_error);
 
-            its_compactify_vertices(m);
-            its_merge_vertices(m);
+            namespace TriMesh = Biz::Algorithms::TriangleMesh;
+            TriMesh::its_compactify_vertices(m);
+            TriMesh::its_merge_vertices(m);
         }
 
         // Put the interior into the target mesh as a negative
@@ -508,7 +509,7 @@ static std::vector<ExPolygons> slice_volumes(
         if (predicate(vol)) {
             indexed_triangle_set vol_mesh = vol->mesh().its;
             its_transform(vol_mesh, trafo * vol->get_matrix());
-            its_merge(mesh, vol_mesh);
+            Domain::its_merge(mesh, vol_mesh);
         }
     }
 
@@ -521,11 +522,12 @@ static std::vector<ExPolygons> slice_volumes(
     return out;
 }
 
-template<class Cont> BoundingBoxf3 csgmesh_positive_bb(const Cont &csg)
+template<class Cont> Domain::BoundingBox3d csgmesh_positive_bb(const Cont &csg)
 {
+    using Biz::Algorithms::BoundingBox::merge;
     // Calculate the biggest possible bounding box of the mesh to be sliced
     // from all the positive parts that it contains.
-    BoundingBoxf3 bb3d;
+    Domain::BoundingBox3d bb3d;
 
     bool skip = false;
     for (const auto &m : csg) {
@@ -535,7 +537,7 @@ template<class Cont> BoundingBoxf3 csgmesh_positive_bb(const Cont &csg)
             skip = true;
 
         if (!skip && csg::get_mesh(m) && op == csg::CSGType::Union)
-            bb3d.merge(bounding_box(*csg::get_mesh(m), csg::get_transform(m)));
+            bb3d = merge(bb3d, Domain::bounding_box(*csg::get_mesh(m), csg::get_transform(m)));
 
         if (stackop == csg::CSGStackOp::Pop)
             skip = false;

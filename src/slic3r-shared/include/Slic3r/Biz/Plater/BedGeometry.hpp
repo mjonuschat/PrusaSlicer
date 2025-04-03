@@ -1,6 +1,6 @@
 #pragma once
 
-#include <libslic3r/TriangleMesh.hpp>
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 
 namespace Slic3r::Domain {
 class Bed;
@@ -20,7 +20,7 @@ public:
      * 
      * @note The filename of the model is specified into the bed, see Slic3r::Domain::Bed definition.
      */
-    [[nodiscard]] static TriangleMesh model(const Domain::Bed& bed);
+    [[nodiscard]] static Domain::TriangleMesh model(const Domain::Bed& bed);
 
     /**
      * @brief Return the geometry (triangulated contour) of the bed plate.
@@ -31,7 +31,7 @@ public:
      *
      * @note The bed contour is specified into the bed, see Slic3r::Domain::Bed definition.
      */
-    [[nodiscard]] static std::vector<std::pair<Vec3f, Vec2f>> plate_triangles(const Domain::Bed& bed);
+    [[nodiscard]] static std::vector<std::pair<Domain::Vec3f, Domain::Vec2f>> plate_triangles(const Domain::Bed& bed);
 
     /**
      * @brief Return the geometry (triangulated contour) of the bed plate as mesh.
@@ -42,7 +42,7 @@ public:
      *
      * @note The bed contour is specified into the bed, see Slic3r::Domain::Bed definition.
      */
-    [[nodiscard]] static TriangleMesh plate_mesh(const Domain::Bed& bed);
+    [[nodiscard]] static Domain::TriangleMesh plate_mesh(const Domain::Bed& bed);
 
     /**
      * @brief Return the geometry of the bed contour.
@@ -53,7 +53,7 @@ public:
      *
      * @note The bed contour is specified into the bed, see Slic3r::Domain::Bed definition.
      */
-    [[nodiscard]] static std::vector<Vec3f> plate_contour(const Domain::Bed& bed);
+    [[nodiscard]] static std::vector<Domain::Vec3f> plate_contour(const Domain::Bed& bed);
 
     /**
      * @brief Return the geometry of the bed print volume.
@@ -64,7 +64,7 @@ public:
      *
      * @note The bed contour is specified into the bed, see Slic3r::Domain::Bed definition.
      */
-    [[nodiscard]] static std::vector<Vec3f> print_volume(const Domain::Bed& bed);
+    [[nodiscard]] static std::vector<Domain::Vec3f> print_volume(const Domain::Bed& bed);
 };
 
 } // namespace Slic3r::Biz::Plater

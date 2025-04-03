@@ -9,7 +9,7 @@
 #include <cstddef>
 
 #include "PointCloud.hpp"
-#include "libslic3r/TriangleMesh.hpp"
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "libslic3r/BoundingBox.hpp"
 
 struct indexed_triangle_set;
@@ -187,7 +187,7 @@ void build_tree(const indexed_triangle_set &its,
 
 ExPolygon make_bed_poly(const indexed_triangle_set &its)
 {
-    auto bb = bounding_box(its);
+    auto bb = Domain::bounding_box(its);
 
     BoundingBox bbcrd{scaled(to_2d(bb.min)), scaled(to_2d(bb.max))};
     bbcrd.offset(scaled(10.));

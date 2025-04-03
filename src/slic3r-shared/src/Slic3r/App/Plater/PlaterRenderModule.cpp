@@ -34,6 +34,8 @@
 
 namespace Slic3r::App::Plater {
 
+namespace TriMesh = Biz::Algorithms::TriangleMesh;
+
 void PlaterRenderModule::on_init(Render::Device& device)
 {
     AbstractRenderModule::on_init(device);
@@ -110,7 +112,7 @@ void PlaterRenderModule::init_scene_layout()
             auto& scene_interactor = m_project_interactor.scene_interactor();
             const auto& bed = m_project_interactor.selected_project().config_containers().front()->bed();
 
-            scene_interactor.new_object_from_mesh(TriangleMesh{its_make_cube(10,15,20) });
+            scene_interactor.new_object_from_mesh(TriMesh::make_cube(10,15,20));
 
             Transform3d xform = Transform3d::Identity();
             xform.translate(Vec3d{ bed.center().x(), bed.center().y(), 0});
@@ -152,7 +154,7 @@ void my_model_experinets(Biz::Scene::SceneInteractor& scene_interactor, const Do
     double y_off = -((y_size - 1) * span) / 2 + bed.center().y();
 
     {
-        scene_interactor.new_object_from_mesh(TriangleMesh{its_make_cube(10,10,10) });
+        scene_interactor.new_object_from_mesh(TriMesh::make_cube(10,10,10));
 
         Biz::Scene::TransformMemento xform_memento;
         Transform3d xform = Transform3d::Identity();
@@ -161,15 +163,15 @@ void my_model_experinets(Biz::Scene::SceneInteractor& scene_interactor, const Do
 
         xform = Transform3d::Identity();
         xform.translate(Vec3d{ 10, 10, 10});
-        scene_interactor.add_volume_from_mesh(TriangleMesh{its_make_cube(10,10,10)}, ModelVolumeType::NEGATIVE_VOLUME, xform.matrix());
+        scene_interactor.add_volume_from_mesh(TriMesh::make_cube(10,10,10), ModelVolumeType::NEGATIVE_VOLUME, xform.matrix());
 
         xform = Transform3d::Identity();
         xform.translate(Vec3d{ 0, -10, 10});
-        scene_interactor.add_volume_from_mesh(TriangleMesh{its_make_cube(10,10,10)}, ModelVolumeType::PARAMETER_MODIFIER, xform.matrix());
+        scene_interactor.add_volume_from_mesh(TriMesh::make_cube(10,10,10), ModelVolumeType::PARAMETER_MODIFIER, xform.matrix());
 
         xform = Transform3d::Identity();
         xform.translate(Vec3d{ 0, 5, 10});
-        scene_interactor.add_volume_from_mesh(TriangleMesh{its_make_sphere(10, 12)}, ModelVolumeType::SUPPORT_ENFORCER, xform.matrix());
+        scene_interactor.add_volume_from_mesh(TriMesh::make_sphere(10, 12), ModelVolumeType::SUPPORT_ENFORCER, xform.matrix());
 
     }
 
@@ -190,7 +192,7 @@ void my_model_experinets(Biz::Scene::SceneInteractor& scene_interactor, const Do
     x_off = -((x_size - 1) * span) / 2 + bed.center().x() + 65;
     y_off = -((y_size - 1) * span) / 2 + bed.center().y() + 25;
     {
-        scene_interactor.new_object_from_mesh(TriangleMesh{its_make_cube(10,10,10) });
+        scene_interactor.new_object_from_mesh(TriMesh::make_cube(10,10,10));
 
         Biz::Scene::TransformMemento xform_memento;
         Transform3d xform = Transform3d::Identity();
@@ -199,19 +201,19 @@ void my_model_experinets(Biz::Scene::SceneInteractor& scene_interactor, const Do
 
         xform = Transform3d::Identity();
         xform.translate(Vec3d{ 10, 10, 10});
-        scene_interactor.add_volume_from_mesh(TriangleMesh{its_make_cube(10,10,10)}, ModelVolumeType::NEGATIVE_VOLUME, xform.matrix());
+        scene_interactor.add_volume_from_mesh(TriMesh::make_cube(10,10,10), ModelVolumeType::NEGATIVE_VOLUME, xform.matrix());
 
         xform = Transform3d::Identity();
         xform.translate(Vec3d{ 0, -10, 10});
-        scene_interactor.add_volume_from_mesh(TriangleMesh{its_make_cube(10,10,10)}, ModelVolumeType::PARAMETER_MODIFIER, xform.matrix());
+        scene_interactor.add_volume_from_mesh(TriMesh::make_cube(10,10,10), ModelVolumeType::PARAMETER_MODIFIER, xform.matrix());
 
         xform = Transform3d::Identity();
         xform.translate(Vec3d{ 0, 5, 10});
-        scene_interactor.add_volume_from_mesh(TriangleMesh{its_make_sphere(10, 12)}, ModelVolumeType::SUPPORT_ENFORCER, xform.matrix());
+        scene_interactor.add_volume_from_mesh(TriMesh::make_sphere(10, 12), ModelVolumeType::SUPPORT_ENFORCER, xform.matrix());
 
         xform = Transform3d::Identity();
         xform.translate(Vec3d{ 0, 5, 10});
-        scene_interactor.add_volume_from_mesh(TriangleMesh{its_make_sphere(10, 12)}, ModelVolumeType::SUPPORT_BLOCKER, xform.matrix());
+        scene_interactor.add_volume_from_mesh(TriMesh::make_sphere(10, 12), ModelVolumeType::SUPPORT_BLOCKER, xform.matrix());
 
     }
 
@@ -232,7 +234,7 @@ void my_model_experinets(Biz::Scene::SceneInteractor& scene_interactor, const Do
     x_off = -((x_size - 1) * span) / 2 + bed.center().x() - 70;
     y_off = -((y_size - 1) * span) / 2 + bed.center().y() - 50;
     {
-        scene_interactor.new_object_from_mesh(TriangleMesh{its_make_cube(10,10,10) });
+        scene_interactor.new_object_from_mesh(TriMesh::make_cube(10,10,10));
 
         Biz::Scene::TransformMemento xform_memento;
         Transform3d xform = Transform3d::Identity();
@@ -241,11 +243,11 @@ void my_model_experinets(Biz::Scene::SceneInteractor& scene_interactor, const Do
 
         xform = Transform3d::Identity();
         xform.translate(Vec3d{ 10, 10, 10});
-        scene_interactor.add_volume_from_mesh(TriangleMesh{its_make_cube(10,10,10)}, ModelVolumeType::NEGATIVE_VOLUME, xform.matrix());
+        scene_interactor.add_volume_from_mesh(TriMesh::make_cube(10,10,10), ModelVolumeType::NEGATIVE_VOLUME, xform.matrix());
 
         xform = Transform3d::Identity();
         xform.translate(Vec3d{ 0, -10, 10});
-        scene_interactor.add_volume_from_mesh(TriangleMesh{its_make_cube(10,10,10)}, ModelVolumeType::PARAMETER_MODIFIER, xform.matrix());
+        scene_interactor.add_volume_from_mesh(TriMesh::make_cube(10,10,10), ModelVolumeType::PARAMETER_MODIFIER, xform.matrix());
 
     }
 
@@ -297,7 +299,7 @@ void PlaterRenderModule::init_scene()
     const double y_off = -((y_size - 1) * span) / 2 + bed.center().y();
 
     {
-        scene_interactor.new_object_from_mesh(TriangleMesh{its_make_cube(10,10,10) });
+        scene_interactor.new_object_from_mesh(TriangleMesh{TriMesh::its_make_cube(10,10,10) });
 
         Biz::Scene::TransformMemento xform_memento;
         Transform3d xform = Transform3d::Identity();
@@ -306,15 +308,15 @@ void PlaterRenderModule::init_scene()
 
         xform = Transform3d::Identity();
         xform.translate(Vec3d{ 10, 10, 10});
-        scene_interactor.add_volume_from_mesh(TriangleMesh{its_make_cube(10,10,10)}, ModelVolumeType::NEGATIVE_VOLUME, xform.matrix());
+        scene_interactor.add_volume_from_mesh(TriangleMesh{TriMesh::its_make_cube(10,10,10)}, ModelVolumeType::NEGATIVE_VOLUME, xform.matrix());
 
         xform = Transform3d::Identity();
         xform.translate(Vec3d{ 0, -10, 10});
-        scene_interactor.add_volume_from_mesh(TriangleMesh{its_make_cube(10,10,10)}, ModelVolumeType::PARAMETER_MODIFIER, xform.matrix());
+        scene_interactor.add_volume_from_mesh(TriangleMesh{TriMesh::its_make_cube(10,10,10)}, ModelVolumeType::PARAMETER_MODIFIER, xform.matrix());
 
         xform = Transform3d::Identity();
         xform.translate(Vec3d{ 0, 5, 10});
-        scene_interactor.add_volume_from_mesh(TriangleMesh{its_make_sphere(10, 12)}, ModelVolumeType::SUPPORT_ENFORCER, xform.matrix());
+        scene_interactor.add_volume_from_mesh(TriangleMesh{TriMesh::its_make_sphere(10, 12)}, ModelVolumeType::SUPPORT_ENFORCER, xform.matrix());
 
     }
 

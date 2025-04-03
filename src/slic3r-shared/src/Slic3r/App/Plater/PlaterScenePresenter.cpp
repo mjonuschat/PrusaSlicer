@@ -212,7 +212,7 @@ void PlaterScenePresenter::build_bed_plate_node(Scene::NodeBuilder& builder, Dom
     });
     const auto& trimesh =
         trimesh_mgr.get_or_create(id, [&]() -> std::unique_ptr<Scene::TriangleMesh> {
-            TriangleMesh mesh = Biz::Plater::BedGeometry::plate_mesh(bed);
+            Domain::TriangleMesh mesh = Biz::Plater::BedGeometry::plate_mesh(bed);
             return std::make_unique<Scene::TriangleMesh>(std::move(mesh.its));
         });
 
@@ -311,7 +311,7 @@ void PlaterScenePresenter::build_bed_print_volume_node(Scene::NodeBuilder& build
 void PlaterScenePresenter::build_bed_model_node(Scene::NodeBuilder& builder, Domain::SelectionId project_id,
     const Domain::Bed& bed, const BedNodeTag& tag)
 {
-    TriangleMesh mesh = Biz::Plater::BedGeometry::model(bed);
+    Domain::TriangleMesh mesh = Biz::Plater::BedGeometry::model(bed);
     if (mesh.empty()) {
         SPDLOG_ERROR("Found empty mesh");
         return;

@@ -16,6 +16,8 @@
 
 namespace Slic3r { namespace branchingtree {
 
+using Domain::Index3;
+
 std::optional<Vec3f> find_merge_pt(const Vec3f &A, const Vec3f &B, float max_slope)
 {
     return sla::find_merge_pt(A, B, max_slope);

@@ -10,6 +10,8 @@
 
 namespace Slic3r { namespace sla {
 
+using Domain::its_merge;
+
 indexed_triangle_set sphere(double rho, Portion portion, double fa) {
 
     indexed_triangle_set ret;

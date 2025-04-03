@@ -20,6 +20,10 @@
 using namespace Slic3r;
 using namespace Slic3r::Biz;
 using namespace Slic3r::sla;
+using Domain::TriangleMesh;
+namespace triangle_mesh = Biz::Algorithms::TriangleMesh;
+
+using Biz::Algorithms::BoundingBox::center;
 
 //#define STORE_SAMPLE_INTO_SVG_FILES "C:/data/temp/test_islands/sample_"
 //#define STORE_ISLAND_ISSUES "C:/data/temp/issues/"
@@ -27,9 +31,9 @@ using namespace Slic3r::sla;
 TEST_CASE("Overhanging point should be supported", "[SupGen]") {
 
     // Pyramid with 45 deg slope
-    TriangleMesh mesh = make_pyramid(10.f, 10.f);
-    mesh.rotate_y(float(PI));
-    //mesh.WriteOBJFile("Pyramid.obj");
+    TriangleMesh mesh = triangle_mesh::make_pyramid(10.f, 10.f);
+    mesh.rotate(float(PI), Domain::Axis::Y);
+    //mesh.write_obj_file("Pyramid.obj");
 
     sla::SupportPoints pts = calc_support_pts(mesh);
 
@@ -69,9 +73,9 @@ double min_point_distance(const sla::SupportPoints &pts)
 TEST_CASE("Overhanging horizontal surface should be supported", "[SupGen]") {
     double width = 10., depth = 10., height = 1.;
 
-    TriangleMesh mesh = make_cube(width, depth, height); 
-    mesh.translate(0., 0., 5.); // lift up
-    // mesh.WriteOBJFile("Cuboid.obj");
+    TriangleMesh mesh = triangle_mesh::make_cube(width, depth, height); 
+    mesh.translate(Vec3f{0., 0., 5.}); // lift up
+    // mesh.write_obj_file("Cuboid.obj");
     sla::SupportPoints pts = calc_support_pts(mesh);
     REQUIRE(!pts.empty());
 }
@@ -79,7 +83,7 @@ TEST_CASE("Overhanging horizontal surface should be supported", "[SupGen]") {
 template<class M> auto&& center_around_bb(M &&mesh)
 {
     auto bb = mesh.bounding_box();
-    mesh.translate(-bb.center().template cast<float>());
+    mesh.translate(-center(bb).template cast<float>());
 
     return std::forward<M>(mesh);
 }
@@ -87,10 +91,10 @@ template<class M> auto&& center_around_bb(M &&mesh)
 TEST_CASE("Overhanging edge should be supported", "[SupGen]") {
     float width = 10.f, depth = 10.f, height = 5.f;
 
-    TriangleMesh mesh = make_prism(width, depth, height);
-    mesh.rotate_y(float(PI)); // rotate on its back
-    mesh.translate(0., 0., height);
-    mesh.WriteOBJFile("Prism.obj");
+    TriangleMesh mesh = triangle_mesh::make_prism(width, depth, height);
+    mesh.rotate(float(PI), Domain::Axis::Y); // rotate on its back
+    mesh.translate(Vec3f{0., 0., height});
+    triangle_mesh::write_obj_file(mesh, "Prism.obj");
 
     sla::SupportPoints pts = calc_support_pts(mesh);
 
@@ -109,15 +113,15 @@ TEST_CASE("Overhanging edge should be supported", "[SupGen]") {
 }
 
 TEST_CASE("Hollowed cube should be supported from the inside", "[SupGen][Hollowed]") {
-    TriangleMesh mesh = make_cube(20., 20., 20.);
+    TriangleMesh mesh = triangle_mesh::make_cube(20., 20., 20.);
 
     hollow_mesh(mesh, HollowingConfig{});
 
-    mesh.WriteOBJFile("cube_hollowed.obj");
+    triangle_mesh::write_obj_file(mesh, "cube_hollowed.obj");
 
     auto bb = mesh.bounding_box();
     auto h  = float(bb.max.z() - bb.min.z());
-    Vec3f mv = bb.center().cast<float>() - Vec3f{0.f, 0.f, 0.5f * h};
+    Vec3f mv = center(bb).cast<float>() - Vec3f{0.f, 0.f, 0.5f * h};
     mesh.translate(-mv);
 
     sla::SupportPoints pts = calc_support_pts(mesh);
@@ -130,12 +134,12 @@ TEST_CASE("Two parallel plates should be supported", "[SupGen][Hollowed]")
 {
     double width = 20., depth = 20., height = 1.;
 
-    TriangleMesh mesh = center_around_bb(make_cube(width + 5., depth + 5., height));
-    TriangleMesh mesh_high = center_around_bb(make_cube(width, depth, height));
-    mesh_high.translate(0., 0., 10.); // lift up
+    TriangleMesh mesh = center_around_bb(triangle_mesh::make_cube(width + 5., depth + 5., height));
+    TriangleMesh mesh_high = center_around_bb(triangle_mesh::make_cube(width, depth, height));
+    mesh_high.translate(Vec3f{0., 0., 10.}); // lift up
     mesh.merge(mesh_high);
 
-    mesh.WriteOBJFile("parallel_plates.obj");
+    triangle_mesh::write_obj_file(mesh, "parallel_plates.obj");
 
     sla::SupportPoints pts = calc_support_pts(mesh);
     //sla::remove_bottom_points(pts, mesh.bounding_box().min.z() + EPSILON);
@@ -309,7 +313,7 @@ ExPolygon create_mountains(double size) {
 
 /// Neighbor points create trouble for voronoi - test of neccessary offseting(closing) of contour
 ExPolygon create_cylinder_bottom_slice() {
-    indexed_triangle_set its_cylinder = its_make_cylinder(6.6551999999999998, 11.800000000000001);
+    indexed_triangle_set its_cylinder = triangle_mesh::its_make_cylinder(6.6551999999999998, 11.800000000000001);
     MeshSlicingParams param;
     Polygons polygons = slice_mesh(its_cylinder, 0.0125000002, param);
     return ExPolygon{polygons.front()};

@@ -23,10 +23,12 @@
 #include "libslic3r/Model.hpp"
 #include "libslic3r/Optimize/Optimizer.hpp"
 #include "libslic3r/Point.hpp"
-#include "libslic3r/TriangleMesh.hpp"
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "libslic3r/libslic3r.h"
 
 namespace Slic3r { namespace sla {
+namespace tm = Slic3r::Biz::Algorithms::TriangleMesh;
+using Domain::TriangleMesh;
 
 namespace {
 
@@ -217,8 +219,8 @@ inline bool is_on_floor(const SLAPrintObjectConfig &cfg)
 // collect the rotations for each face of the convex hull
 std::vector<XYRotation> get_chull_rotations(const TriangleMesh &mesh, size_t max_count)
 {
-    TriangleMesh chull = mesh.convex_hull_3d();
-    double chull2d_area = chull.convex_hull().area();
+    TriangleMesh chull = tm::convex_hull_3d(mesh);
+    double chull2d_area = tm::convex_hull(chull).area();
     double area_threshold = chull2d_area / (scaled<double>(1e3) * scaled(1.));
 
     size_t facecount = chull.its.indices.size();
@@ -449,7 +451,7 @@ Vec2d find_min_z_height_rotation(const ModelObject &mo,
 {
     RotfinderBoilerplate<1000> bp{mo, params};
 
-    TriangleMesh chull = bp.mesh.convex_hull_3d();
+    TriangleMesh chull = tm::convex_hull_3d(bp.mesh);
     auto inputs = reserve_vector<XYRotation>(chull.its.indices.size());
     auto rotcmp = [](const XYRotation &r1, const XYRotation &r2) {
         double xdiff = r1[X] - r2[X], ydiff = r1[Y] - r2[Y];

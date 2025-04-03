@@ -88,7 +88,7 @@ TEST_CASE("GCode has reasonable height", "[Layers]") {
 
     Print print;
     Model model;
-    TriangleMesh test_mesh{mesh(TestMesh::cube_20x20x20)};
+    Domain::TriangleMesh test_mesh{mesh(TestMesh::cube_20x20x20)};
     test_mesh.scale(2);
     Test::init_print({test_mesh}, print, model, config);
     const std::string gcode{Test::gcode(print)};

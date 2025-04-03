@@ -363,11 +363,8 @@ set(SLIC3R_SOURCES
     SurfaceMesh.hpp
     Technologies.hpp
     TextConfiguration.hpp
-    TriangleMesh.cpp
-    TriangleMesh.hpp
     TriangleMeshSlicer.cpp
     TriangleMeshSlicer.hpp
-    MeshSplitImpl.hpp
     TriangulateWall.hpp
     utils.cpp
     Utils.hpp

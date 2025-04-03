@@ -9,7 +9,7 @@
 
 #include "libslic3r.h"
 #include "Model.hpp"
-#include "TriangleMesh.hpp"
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "SlicingAdaptive.hpp"
 #include "admesh/stl.h"
 
@@ -85,9 +85,11 @@ void SlicingAdaptive::clear()
 
 void SlicingAdaptive::prepare(const ModelObject &object)
 {
+    namespace TriMesh = Biz::Algorithms::TriangleMesh;
+
     this->clear();
 
-    TriangleMesh		 mesh			= object.raw_mesh();
+    Domain::TriangleMesh		 mesh			= object.raw_mesh();
     const ModelInstance &first_instance = *object.instances.front();
     mesh.transform(first_instance.get_matrix(), first_instance.is_left_handed());
 
@@ -95,7 +97,7 @@ void SlicingAdaptive::prepare(const ModelObject &object)
     m_faces.reserve(mesh.facets_count());
 	for (stl_triangle_vertex_indices face : mesh.its.indices) {
 		stl_vertex vertex[3] = { mesh.its.vertices[face[0]], mesh.its.vertices[face[1]], mesh.its.vertices[face[2]] };
-		stl_vertex n         = face_normal_normalized(vertex);
+		stl_vertex n         = TriMesh::face_normal_normalized(vertex);
 		std::pair<float, float> face_z_span {
 			std::min(std::min(vertex[0].z(), vertex[1].z()), vertex[2].z()),
 			std::max(std::max(vertex[0].z(), vertex[1].z()), vertex[2].z())

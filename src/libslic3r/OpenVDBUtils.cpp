@@ -32,7 +32,7 @@
 #include <vector>
 #include <cstddef>
 
-#include "libslic3r/TriangleMesh.hpp"
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "libslic3r/libslic3r.h"
 
 namespace Slic3r {
@@ -108,11 +108,12 @@ VoxelGridPtr mesh_to_grid(const indexed_triangle_set &mesh,
     // Might not be needed but this is now proven to be working
     openvdb::initialize();
 
-    std::vector<indexed_triangle_set> meshparts = its_split(mesh);
+    namespace TriMesh = Biz::Algorithms::TriangleMesh;
+    std::vector<indexed_triangle_set> meshparts = TriMesh::its_split(mesh);
 
     auto it = std::remove_if(meshparts.begin(), meshparts.end(),
                              [](auto &m) {
-                                 return its_volume(m) < EPSILON;
+                                 return Domain::its_volume(m) < EPSILON;
                              });
 
     meshparts.erase(it, meshparts.end());
@@ -187,12 +188,12 @@ indexed_triangle_set grid_to_mesh(const VoxelGrid &vgrid,
     for (auto &v : points) ret.vertices.emplace_back(to_vec3f(v) /*/ scale*/);
     for (auto &v : triangles) ret.indices.emplace_back(to_index3d(v));
     for (auto &quad : quads) {
-        ret.indices.emplace_back(Index3{
+        ret.indices.emplace_back(Domain::Index3{
             static_cast<int>(quad(2)),
             static_cast<int>(quad(1)),
             static_cast<int>(quad(0))
         });
-        ret.indices.emplace_back(Index3{
+        ret.indices.emplace_back(Domain::Index3{
             static_cast<int>(quad(3)),
             static_cast<int>(quad(2)),
             static_cast<int>(quad(0))

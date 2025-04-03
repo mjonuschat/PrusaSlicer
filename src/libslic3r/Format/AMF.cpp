@@ -67,6 +67,8 @@ const char* SLIC3R_CONFIG_TYPE = "slic3rpe_config";
 namespace Slic3r
 {
 
+using Domain::Index3;
+using Domain::TriangleMesh;
 
 struct AMFParserContext
 {
@@ -656,9 +658,11 @@ void AMFParserContext::endElement(const char * /* name */)
             }
 
             indexed_triangle_set its { std::move(m_volume_facets), { m_object_vertices.begin() + min_id, m_object_vertices.begin() + max_id + 1 } };
-            its_compactify_vertices(its);
-            if (its_volume(its) < 0)
-                its_flip_triangles(its);
+
+            namespace TriMesh = Biz::Algorithms::TriangleMesh;
+            TriMesh::its_compactify_vertices(its);
+            if (Domain::its_volume(its) < 0)
+                Domain::its_flip_triangles(its);
             m_volume->set_mesh(std::move(its));
         }
 

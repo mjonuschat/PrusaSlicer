@@ -5,7 +5,7 @@
 #ifndef SLA_HOLLOWING_HPP
 #define SLA_HOLLOWING_HPP
 
-#include <libslic3r/TriangleMesh.hpp>
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include <libslic3r/OpenVDBUtils.hpp>
 #include <libslic3r/SLA/JobController.hpp>
 #include <libslic3r/CSGMesh/VoxelizeCSGMesh.hpp>
@@ -119,7 +119,7 @@ template<class Cont> double csgmesh_positive_maxvolume(const Cont &csg)
 
         if (!skip && csg::get_mesh(m) && op == csg::CSGType::Union)
             mesh_vol = std::max(mesh_vol,
-                                double(its_volume(*(csg::get_mesh(m)))));
+                                double(Domain::its_volume(*(csg::get_mesh(m)))));
 
         if (stackop == csg::CSGStackOp::Pop)
             skip = false;
@@ -167,10 +167,10 @@ inline InteriorPtr generate_interior(const indexed_triangle_set &mesh,
 }
 
 // Will do the hollowing
-void hollow_mesh(TriangleMesh &mesh, const HollowingConfig &cfg, int flags = 0);
+void hollow_mesh(Domain::TriangleMesh &mesh, const HollowingConfig &cfg, int flags = 0);
 
 // Hollowing prepared in "interior", merge with original mesh
-void hollow_mesh(TriangleMesh &mesh, const Interior &interior, int flags = 0);
+void hollow_mesh(Domain::TriangleMesh &mesh, const Interior &interior, int flags = 0);
 
 // Will do the hollowing
 void hollow_mesh(indexed_triangle_set &mesh, const HollowingConfig &cfg, int flags = 0);
@@ -192,7 +192,7 @@ int hollow_mesh_and_drill(
     const DrainHoles &holes,
     std::function<void(size_t)> on_hole_fail = [](size_t){});
 
-void remove_inside_triangles(TriangleMesh &mesh, const Interior &interior,
+void remove_inside_triangles(Domain::TriangleMesh &mesh, const Interior &interior,
                              const std::vector<bool> &exclude_mask = {});
 
 void remove_inside_triangles(indexed_triangle_set &mesh, const Interior &interior,

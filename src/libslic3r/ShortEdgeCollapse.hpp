@@ -8,7 +8,7 @@
 #include <stddef.h>
 #include <cstddef>
 
-#include "libslic3r/TriangleMesh.hpp"
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 
 struct indexed_triangle_set;
 

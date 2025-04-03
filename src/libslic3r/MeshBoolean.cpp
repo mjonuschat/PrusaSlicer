@@ -4,7 +4,7 @@
 ///|/
 #include "Slic3r/Exception.hpp"
 #include "MeshBoolean.hpp"
-#include "libslic3r/TriangleMesh.hpp"
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "libslic3r/TryCatchSignal.hpp"
 #include "libslic3r/Point.hpp"
 
@@ -32,6 +32,7 @@ namespace MeshBoolean {
 
 using MapMatrixXfUnaligned = Eigen::Map<const Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor | Eigen::DontAlign>>;
 using MapMatrixXiUnaligned = Eigen::Map<const Eigen::Matrix<int,   Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor | Eigen::DontAlign>>;
+using Domain::TriangleMesh;
 
 TriangleMesh eigen_to_triangle_mesh(const EigenMesh &emesh)
 {
@@ -47,7 +48,8 @@ TriangleMesh eigen_to_triangle_mesh(const EigenMesh &emesh)
     for (Eigen::Index i = 0; i < FC.rows(); ++i)
         its.indices.emplace_back(Domain::Index3{FC.row(i)[0], FC.row(i)[1], FC.row(i)[2]});
     
-    return TriangleMesh { std::move(its) };
+    using Biz::Algorithms::TriangleMesh::construct;
+    return construct(std::move(its));
 }
 
 EigenMesh triangle_mesh_to_eigen(const TriangleMesh &mesh)
@@ -170,7 +172,7 @@ indexed_triangle_set cgal_to_indexed_triangle_set(const _Mesh &cgalmesh)
         auto vtc = cgalmesh.vertices_around_face(cgalmesh.halfedge(face));
 
         int i = 0;
-        Index3 facet;
+        Domain::Index3 facet;
         for (auto v : vtc) {
             int iv = v;
             if (i > 2 || iv < 0 || iv >= vsize) { i = 0; break; }
@@ -195,7 +197,8 @@ triangle_mesh_to_cgal(const std::vector<stl_vertex> &V,
 
 TriangleMesh cgal_to_triangle_mesh(const CGALMesh &cgalmesh)
 {
-    return TriangleMesh{cgal_to_indexed_triangle_set(cgalmesh.m)};
+    using Biz::Algorithms::TriangleMesh::construct;
+    return construct(cgal_to_indexed_triangle_set(cgalmesh.m));
 }
 
 indexed_triangle_set cgal_to_indexed_triangle_set(const CGALMesh &cgalmesh)

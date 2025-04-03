@@ -15,7 +15,7 @@ struct indexed_triangle_set;
 #include <cstdint>
 #include <functional>
 
-#include "TriangleMesh.hpp"
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 
 namespace Slic3r {
 

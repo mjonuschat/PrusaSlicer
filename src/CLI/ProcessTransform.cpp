@@ -124,19 +124,19 @@ bool process_transform(Data& cli, const DynamicPrintConfig& print_config, std::v
         for (auto& model : models)
             for (auto& o : model.objects)
                 // this affects volumes:
-                o->rotate(Geometry::deg2rad(transform.opt_float("rotate")), Z);
+                o->rotate(deg2rad(transform.opt_float("rotate")), Z);
     }
     if (transform.has("rotate_x")) {
         for (auto& model : models)
             for (auto& o : model.objects)
                 // this affects volumes:
-                o->rotate(Geometry::deg2rad(transform.opt_float("rotate_x")), X);
+                o->rotate(deg2rad(transform.opt_float("rotate_x")), X);
     }
     if (transform.has("rotate_y")) {
         for (auto& model : models)
             for (auto& o : model.objects)
                 // this affects volumes:
-                o->rotate(Geometry::deg2rad(transform.opt_float("rotate_y")), Y);
+                o->rotate(deg2rad(transform.opt_float("rotate_y")), Y);
     }
 
     if (transform.has("scale")) {

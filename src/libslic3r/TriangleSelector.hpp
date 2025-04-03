@@ -22,7 +22,7 @@
 #include <cstddef>
 
 #include "Point.hpp"
-#include "TriangleMesh.hpp"
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "admesh/stl.h"
 
 namespace cereal {
@@ -30,7 +30,6 @@ class access;
 }  // namespace cereal
 
 namespace Slic3r {
-class TriangleMesh;
 
 enum class TriangleStateType : int8_t {
     // Maximum is 3. The value is serialized in TriangleSelector into 2 bits.
@@ -248,7 +247,7 @@ public:
     public:
         HeightRange() = delete;
 
-        explicit HeightRange(const Vec3f &mesh_hit, const BoundingBoxf3 &mesh_bbox, float z_range, const Transform3d &trafo, const ClippingPlane &clipping_plane);
+        explicit HeightRange(const Vec3f &mesh_hit, const Domain::BoundingBox3d &mesh_bbox, float z_range, const Transform3d &trafo, const ClippingPlane &clipping_plane);
         ~HeightRange() override = default;
 
         bool is_pointer_in_triangle(const Vec3f &p1, const Vec3f &p2, const Vec3f &p3) const override { return false; }
@@ -313,8 +312,8 @@ public:
         template<class Archive> void serialize(Archive &ar) { ar(triangles_to_split, bitstream, used_states); }
     };
 
-    std::pair<std::vector<Index3>, std::vector<Index3>> precompute_all_neighbors() const;
-    void precompute_all_neighbors_recursive(int facet_idx, const Index3 &neighbors, const Index3 &neighbors_propagated, std::vector<Index3> &neighbors_out, std::vector<Index3> &neighbors_normal_out) const;
+    std::pair<std::vector<Domain::Index3>, std::vector<Domain::Index3>> precompute_all_neighbors() const;
+    void precompute_all_neighbors_recursive(int facet_idx, const Domain::Index3 &neighbors, const Domain::Index3 &neighbors_propagated, std::vector<Domain::Index3> &neighbors_out, std::vector<Domain::Index3> &neighbors_normal_out) const;
 
     // Set a limit to the edge length, below which the edge will not be split by select_patch().
     // Called by select_patch() internally. Made public for debugging purposes, see TriangleSelectorGUI::render_debug().
@@ -322,11 +321,11 @@ public:
 
     // Create new object on a TriangleMesh. The referenced mesh must
     // stay valid, a ptr to it is saved and used.
-    explicit TriangleSelector(const TriangleMesh& mesh);
+    explicit TriangleSelector(const Domain::TriangleMesh& mesh);
 
     // Returns the facet_idx of the unsplit triangle containing the "hit". Returns -1 if the triangle isn't found.
     [[nodiscard]] int select_unsplit_triangle(const Vec3f &hit, int facet_idx) const;
-    [[nodiscard]] int select_unsplit_triangle(const Vec3f &hit, int facet_idx, const Index3 &neighbors) const;
+    [[nodiscard]] int select_unsplit_triangle(const Vec3f &hit, int facet_idx, const Domain::Index3 &neighbors) const;
 
     // Select all triangles fully inside the circle, subdivide where needed.
     void select_patch(int                       facet_start,                   // facet of the original mesh (unsplit) that the hit point belongs to
@@ -357,24 +356,24 @@ public:
     static bool          has_facets(const TriangleSplittingData &data, TriangleStateType test_state);
     int                  num_facets(TriangleStateType state) const;
     // Get facets that pass the filter. Don't triangulate T-joints.
-    template<AdditionalMeshInfo facet_info = AdditionalMeshInfo::None>
-    typename IndexedTriangleSetType<facet_info>::type get_facets(const std::function<bool(const Triangle &)> &facet_filter) const;
+    template<Domain::AdditionalMeshInfo facet_info = Domain::AdditionalMeshInfo::None>
+    typename Domain::IndexedTriangleSetType<facet_info>::type get_facets(const std::function<bool(const Triangle &)> &facet_filter) const;
     // Get facets at a given state. Don't triangulate T-joints.
     indexed_triangle_set get_facets(TriangleStateType state) const;
     // Get all facets. Don't triangulate T-joints.
     indexed_triangle_set get_all_facets() const;
     // Get all facets with information about the colors of the facets. Don't triangulate T-joints.
-    indexed_triangle_set_with_color get_all_facets_with_colors() const;
+    Domain::indexed_triangle_set_with_color get_all_facets_with_colors() const;
 
     // Get facets that pass the filter. Triangulate T-joints.
-    template<AdditionalMeshInfo facet_info = AdditionalMeshInfo::None>
-    typename IndexedTriangleSetType<facet_info>::type get_facets_strict(const std::function<bool(const Triangle &)> &facet_filter) const;
+    template<Domain::AdditionalMeshInfo facet_info = Domain::AdditionalMeshInfo::None>
+    typename Domain::IndexedTriangleSetType<facet_info>::type get_facets_strict(const std::function<bool(const Triangle &)> &facet_filter) const;
     // Get facets at a given state. Triangulate T-joints.
     indexed_triangle_set get_facets_strict(TriangleStateType state) const;
     // Get all facets. Triangulate T-joints.
     indexed_triangle_set get_all_facets_strict() const;
     // Get all facets with information about the colord of the facetd. Triangulate T-joints.
-    indexed_triangle_set_with_color get_all_facets_strict_with_colors() const;
+    Domain::indexed_triangle_set_with_color get_all_facets_strict_with_colors() const;
 
     // Get edges around the selected area by seed fill.
     std::vector<Domain::Index2> get_seed_fill_contour() const;
@@ -486,8 +485,8 @@ protected:
     // Lists of vertices and triangles, both original and new
     std::vector<Vertex> m_vertices;
     std::vector<Triangle> m_triangles;
-    const TriangleMesh &m_mesh;
-    const std::vector<Index3> m_neighbors;
+    const Domain::TriangleMesh &m_mesh;
+    const std::vector<Domain::Index3> m_neighbors;
     const std::vector<Vec3f> m_face_normals;
 
     // Number of invalid triangles (to trigger garbage collection).
@@ -508,15 +507,15 @@ protected:
     // Private functions:
 private:
     bool select_triangle(int facet_idx, TriangleStateType type, bool triangle_splitting);
-    bool select_triangle_recursive(int facet_idx, const Index3 &neighbors, TriangleStateType type, bool triangle_splitting);
+    bool select_triangle_recursive(int facet_idx, const Domain::Index3 &neighbors, TriangleStateType type, bool triangle_splitting);
     void undivide_triangle(int facet_idx);
-    void split_triangle(int facet_idx, const Index3 &neighbors);
+    void split_triangle(int facet_idx, const Domain::Index3 &neighbors);
     bool remove_useless_children(int facet_idx); // No hidden meaning. Triangles are meant.
     bool is_facet_clipped(int facet_idx, const ClippingPlane &clp) const;
     int  push_triangle(int a, int b, int c, int source_triangle, TriangleStateType state = TriangleStateType::NONE);
-    void perform_split(int facet_idx, const Index3 &neighbors, TriangleStateType old_state);
-    Index3 child_neighbors(const Triangle &tr, const Index3 &neighbors, int child_idx) const;
-    Index3 child_neighbors_propagated(const Triangle &tr, const Index3 &neighbors_propagated, int child_idx, const Index3 &child_neighbors) const;
+    void perform_split(int facet_idx, const Domain::Index3 &neighbors, TriangleStateType old_state);
+    Domain::Index3 child_neighbors(const Triangle &tr, const Domain::Index3 &neighbors, int child_idx) const;
+    Domain::Index3 child_neighbors_propagated(const Triangle &tr, const Domain::Index3 &neighbors_propagated, int child_idx, const Domain::Index3 &child_neighbors) const;
     // Return child of itriangle at a CCW oriented side (vertexi, vertexj), either first or 2nd part.
     // If itriangle == -1 or if the side sharing (vertexi, vertexj) is not split, return -1.
     enum class Partition {
@@ -536,28 +535,28 @@ private:
     void append_touching_edges(int itriangle, int vertexi, int vertexj, std::vector<Domain::Index2> &touching_edges_out) const;
 
     // Returns all triangles that are touching the given facet.
-    std::vector<int> get_all_touching_triangles(int facet_idx, const Index3 &neighbors, const Index3 &neighbors_propagated) const;
+    std::vector<int> get_all_touching_triangles(int facet_idx, const Domain::Index3 &neighbors, const Domain::Index3 &neighbors_propagated) const;
 
     // Check if the triangle index is the original triangle from mesh, or it was additionally created by splitting.
     bool is_original_triangle(int triangle_idx) const { return triangle_idx < m_orig_size_indices; }
 
 #ifndef NDEBUG
-    bool verify_triangle_neighbors(const Triangle& tr, const Index3& neighbors) const;
+    bool verify_triangle_neighbors(const Triangle& tr, const Domain::Index3& neighbors) const;
     bool verify_triangle_midpoints(const Triangle& tr) const;
 #endif // NDEBUG
 
-    template<AdditionalMeshInfo facet_info>
+    template<Domain::AdditionalMeshInfo facet_info>
     void get_facets_strict_recursive(
         const Triangle                              &tr,
-        const Index3                                 &neighbors,
+        const Domain::Index3                                 &neighbors,
         const std::function<bool(const Triangle &)> &facet_filter,
         std::vector<stl_triangle_vertex_indices>    &out_triangles,
         std::vector<uint8_t>                        &out_colors) const;
 
-    template<AdditionalMeshInfo facet_info>
-    void get_facets_split_by_tjoints(const Index3 &vertices, const Index3 &neighbors, uint8_t color, std::vector<stl_triangle_vertex_indices> &out_triangles, std::vector<uint8_t> &out_colors) const;
+    template<Domain::AdditionalMeshInfo facet_info>
+    void get_facets_split_by_tjoints(const Domain::Index3 &vertices, const Domain::Index3 &neighbors, uint8_t color, std::vector<stl_triangle_vertex_indices> &out_triangles, std::vector<uint8_t> &out_colors) const;
 
-    void get_seed_fill_contour_recursive(int facet_idx, const Index3 &neighbors, const Index3 &neighbors_propagated, std::vector<Domain::Index2> &edges_out) const;
+    void get_seed_fill_contour_recursive(int facet_idx, const Domain::Index3 &neighbors, const Domain::Index3 &neighbors_propagated, std::vector<Domain::Index2> &edges_out) const;
 
     bool is_any_neighbor_selected_by_seed_fill(const Triangle &triangle);
 
@@ -567,8 +566,8 @@ private:
     void bucket_fill_fill_gaps(const std::vector<int>   &gap_fill_candidate_facets, // Facet of the mesh (unsplit), which needs to be checked if the surrounding gap can be filled (selected).
                                float                     bucket_fill_gap_area,      // The maximal area that will be automatically selected when the surrounding triangles have already been selected.
                                TriangleStateType         start_facet_state,         // The state of the starting facet that determines which neighbors to consider.
-                               const std::vector<Index3> &neighbors,
-                               const std::vector<Index3> &neighbors_propagate);
+                               const std::vector<Domain::Index3> &neighbors,
+                               const std::vector<Domain::Index3> &neighbors_propagate);
 
     int m_free_triangles_head { -1 };
     int m_free_vertices_head { -1 };

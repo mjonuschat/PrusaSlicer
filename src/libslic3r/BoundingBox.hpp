@@ -257,9 +257,11 @@ class [[deprecated("Use Domain::BoundingBox")]] BoundingBoxf3 : public BoundingB
 {
 public:
     using BoundingBoxBase::BoundingBoxBase;
-
-    BoundingBoxf3 transformed(const Transform3d& matrix) const;
 };
+
+Domain::BoundingBox3d transformed(
+    const Domain::BoundingBox3d& box, const Domain::Transform3d& matrix
+);
 
 template<typename PointType, typename PointsType>
 [[deprecated("Use Biz::Algorithms::BoundingBox::empty")]]

@@ -16,9 +16,15 @@ add_library(slic3r-domain
 
     include/Slic3r/Domain/ExPolygon.hpp
     src/Slic3r/Domain/ExPolygon.cpp
+
+    include/Slic3r/Domain/TriangleMesh.hpp
+    src/Slic3r/Domain/TriangleMesh.cpp
 )
 
 target_include_directories(slic3r-domain PUBLIC include)
 target_include_directories(slic3r-domain PRIVATE src)
+
+# TODO, remove dependency on admesh by refactoring triangle mesh
+target_link_libraries(slic3r-domain PUBLIC admesh)
 
 target_link_libraries(slic3r-domain PUBLIC slic3r-domain-types slic3r-base TBB::tbbmalloc)

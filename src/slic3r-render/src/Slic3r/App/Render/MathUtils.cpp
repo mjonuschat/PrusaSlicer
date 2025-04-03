@@ -58,7 +58,7 @@ Matrix4d frustum(double left, double right, double bottom, double top, double ne
 template <typename T>
 Matrix4<T> perspective(T fovy, T aspect, T near_z, T far_z)
 {
-    const T f = T(1.0) / std::tan(Geometry::deg2rad(fovy) / 2);
+    const T f = T(1.0) / std::tan(deg2rad(fovy) / 2);
     const double dist_z = near_z - far_z;
     Matrix4<T> ret;
     ret <<

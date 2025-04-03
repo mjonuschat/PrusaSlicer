@@ -5,7 +5,7 @@
 #ifndef libslic3r_MeshBoolean_hpp_
 #define libslic3r_MeshBoolean_hpp_
 
-#include <libslic3r/TriangleMesh.hpp>
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include <memory>
 #include <exception>
 #include <Eigen/Geometry>
@@ -21,14 +21,14 @@ namespace MeshBoolean {
 
 using EigenMesh = std::pair<Eigen::MatrixXd, Eigen::MatrixXi>;
 
-TriangleMesh eigen_to_triangle_mesh(const EigenMesh &emesh);
-EigenMesh triangle_mesh_to_eigen(const TriangleMesh &mesh);
+Domain::TriangleMesh eigen_to_triangle_mesh(const EigenMesh &emesh);
+EigenMesh triangle_mesh_to_eigen(const Domain::TriangleMesh &mesh);
 
 void minus(EigenMesh &A, const EigenMesh &B);
 void self_union(EigenMesh &A);
     
-void minus(TriangleMesh& A, const TriangleMesh& B);
-void self_union(TriangleMesh& mesh);
+void minus(Domain::TriangleMesh& A, const Domain::TriangleMesh& B);
+void self_union(Domain::TriangleMesh& mesh);
 
 namespace cgal {
 
@@ -47,18 +47,18 @@ inline CGALMeshPtr triangle_mesh_to_cgal(const indexed_triangle_set &M)
 {
     return triangle_mesh_to_cgal(M.vertices, M.indices);
 }
-inline CGALMeshPtr triangle_mesh_to_cgal(const TriangleMesh &M)
+inline CGALMeshPtr triangle_mesh_to_cgal(const Domain::TriangleMesh &M)
 {
     return triangle_mesh_to_cgal(M.its);
 }
 
-TriangleMesh cgal_to_triangle_mesh(const CGALMesh &cgalmesh);
+Domain::TriangleMesh cgal_to_triangle_mesh(const CGALMesh &cgalmesh);
 indexed_triangle_set cgal_to_indexed_triangle_set(const CGALMesh &cgalmesh);
 
 // Do boolean mesh difference with CGAL bypassing igl.
-void minus(TriangleMesh &A, const TriangleMesh &B);
-void plus(TriangleMesh &A, const TriangleMesh &B);
-void intersect(TriangleMesh &A, const TriangleMesh &B);
+void minus(Domain::TriangleMesh &A, const Domain::TriangleMesh &B);
+void plus(Domain::TriangleMesh &A, const Domain::TriangleMesh &B);
+void intersect(Domain::TriangleMesh &A, const Domain::TriangleMesh &B);
 
 void minus(indexed_triangle_set &A, const indexed_triangle_set &B);
 void plus(indexed_triangle_set &A, const indexed_triangle_set &B);
@@ -68,7 +68,7 @@ void minus(CGALMesh &A, CGALMesh &B);
 void plus(CGALMesh &A, CGALMesh &B);
 void intersect(CGALMesh &A, CGALMesh &B);
 
-bool does_self_intersect(const TriangleMesh &mesh);
+bool does_self_intersect(const Domain::TriangleMesh &mesh);
 bool does_self_intersect(const CGALMesh &mesh);
 
 bool does_bound_a_volume(const CGALMesh &mesh);

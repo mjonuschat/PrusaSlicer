@@ -1222,7 +1222,7 @@ Points Print::first_layer_wipe_tower_corners() const
             pts.emplace_back(center + r*Vec2d(std::cos(alpha)/cone_x_scale, std::sin(alpha)));
 
         for (Vec2d& pt : pts) {
-            pt = Eigen::Rotation2Dd(Geometry::deg2rad(model().wipe_tower().rotation)) * pt;
+            pt = Eigen::Rotation2Dd(deg2rad(model().wipe_tower().rotation)) * pt;
             pt += model().wipe_tower().position;
             pts_scaled.emplace_back(scaled(Vec2d(pt.x(), pt.y())));
         }

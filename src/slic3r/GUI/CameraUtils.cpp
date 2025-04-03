@@ -16,7 +16,7 @@
 #include "libslic3r/Geometry/ConvexHull.hpp"
 #include "admesh/stl.h"
 #include "libslic3r/Exception.hpp"
-#include "libslic3r/TriangleMesh.hpp"
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "slic3r/GUI/Camera.hpp"
 #include "slic3r/GUI/GLModel.hpp"
 

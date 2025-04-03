@@ -313,11 +313,13 @@ TEST_CASE("Circle with hole in the middle", "[MarchingSquares]") {
 }
 
 static void recreate_object_from_rasters(const std::string &objname, float lh) {
-    TriangleMesh mesh = load_model(objname);
+    using Biz::Algorithms::BoundingBox::center;
+
+    Domain::TriangleMesh mesh = load_model(objname);
     
     auto bb = mesh.bounding_box();
-    Vec3f tr = -bb.center().cast<float>();
-    mesh.translate(tr.x(), tr.y(), tr.z());
+    Vec3f tr = -center(bb).cast<float>();
+    mesh.translate(tr);
     bb = mesh.bounding_box();
     
     std::vector<ExPolygons> layers = slice_mesh_ex(mesh.its, grid(float(bb.min.z()) + lh, float(bb.max.z()), lh));

@@ -12,9 +12,13 @@
 
 using Catch::Approx;
 using Slic3r::Biz::Algorithms::SVG::SVG;
+using Slic3r::Biz::Algorithms::BoundingBox::inflated;
+using Slic3r::Biz::Algorithms::BoundingBox::to_2d;
+using Slic3r::Biz::Algorithms::BoundingBox::scaled;
+using Slic3r::Domain::TriangleMesh;
 
 void print_depthmap(std::string_view prefix,
-                    const Slic3r::BoundingBox &bb,
+                    const Slic3r::Domain::BoundingBox2crd &bb,
                     const Slic3r::sla::zcorr_detail::DepthMap &dm)
 {
     using namespace Slic3r;
@@ -52,7 +56,7 @@ TEST_CASE("Testing DepthMap for a cube", "[ZCorr]")
 
     TriangleMesh mesh = load_model("20mm_cube.obj");
     auto bb = bounding_box(mesh);
-    bb.offset(-0.1);
+    bb = inflated(bb, -0.1);
 
     std::vector<float> hgrid = grid<float>(bb.min.z(), bb.max.z(), 1.f);
 
@@ -81,7 +85,7 @@ TEST_CASE("Testing DepthMap for arbitrary shapes", "[ZCorr]")
 
     TriangleMesh mesh = load_model(modelname);
     auto bb = bounding_box(mesh);
-    bb.offset(-0.1);
+    bb = inflated(bb, -0.1);
 
     std::vector<float> hgrid = grid<float>(bb.min.z(), bb.max.z(), 0.5f);
 

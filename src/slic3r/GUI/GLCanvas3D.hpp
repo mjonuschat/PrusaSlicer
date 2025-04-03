@@ -441,7 +441,7 @@ class GLCanvas3D
         void use(bool use) { m_volumes.set_slope_active(m_enabled ? use : false); }
         bool is_used() const { return m_volumes.is_slope_active(); }
         void set_normal_angle(float angle_in_deg) const {
-            m_volumes.set_slope_normal_z(-::cos(Geometry::deg2rad(90.0f - angle_in_deg)));
+            m_volumes.set_slope_normal_z(-::cos(deg2rad(90.0f - angle_in_deg)));
         }
     };
 

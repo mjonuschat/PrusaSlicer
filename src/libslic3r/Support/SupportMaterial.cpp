@@ -506,7 +506,7 @@ struct SupportGridParams {
     SupportGridParams(const PrintObjectConfig &object_config, const Flow &support_material_flow) :
         style(object_config.support_material_style.value),
         grid_resolution(object_config.support_material_spacing.value + support_material_flow.spacing()),
-        support_angle(Geometry::deg2rad(object_config.support_material_angle.value)),
+        support_angle(deg2rad(object_config.support_material_angle.value)),
         extrusion_width(support_material_flow.spacing()),
         support_material_closing_radius(object_config.support_material_closing_radius.value),
         expansion_to_slice(coord_t(support_material_flow.scaled_spacing() / 2 + 5)),

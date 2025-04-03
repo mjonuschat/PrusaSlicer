@@ -6,7 +6,7 @@
 #include "occt_wrapper/OCCTWrapper.hpp"
 
 #include "libslic3r/Model.hpp"
-#include "libslic3r/TriangleMesh.hpp"
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "libslic3r/Utils.hpp"
 
 #include <boost/filesystem.hpp>
@@ -109,9 +109,9 @@ bool load_step(const char *path, Model *model /*BBS:, ImportStepProgressFn proFn
     else
         new_object->name = occt_object.object_name;
 
+    using Biz::Algorithms::TriangleMesh::construct;
     for (size_t i = 0; i < occt_object.volumes.size(); ++i) {
-        TriangleMesh triangle_mesh;
-        triangle_mesh.from_facets(std::move(occt_object.volumes[i].facets));
+        Domain::TriangleMesh triangle_mesh{construct(std::move(occt_object.volumes[i].facets))};
         ModelVolume* new_volume = new_object->add_volume(std::move(triangle_mesh));
 
         new_volume->name = occt_object.volumes[i].volume_name.empty()

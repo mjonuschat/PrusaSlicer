@@ -5,7 +5,7 @@
 #ifndef OPENVDBUTILS_HPP
 #define OPENVDBUTILS_HPP
 
-#include <libslic3r/TriangleMesh.hpp>
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include <functional>
 #include <memory>
 

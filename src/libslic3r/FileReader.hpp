@@ -16,11 +16,11 @@
 #include "enum_bitmask.hpp"
 #include <utility>
 #include <optional>
+#include "Slic3r/Domain/TriangleMesh.hpp"
 
 namespace Slic3r {
 
 class Model;
-class TriangleMesh;
 
 namespace FileReader
 {
@@ -41,7 +41,7 @@ namespace FileReader
 
     // Load model from input file and return the its mesh. 
     // Throw RuntimeError if some problem was detected during model loading
-    TriangleMesh    load_mesh(const std::string& input_file);
+    Domain::TriangleMesh    load_mesh(const std::string& input_file);
 
     // Load model from input file and fill statistics if it's required.
     // In respect to the params will be applied needed convertions over the model.

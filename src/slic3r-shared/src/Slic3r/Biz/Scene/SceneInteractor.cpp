@@ -12,6 +12,7 @@
 namespace Slic3r::Biz::Scene {
 
 static const Vec2d BED_GAP = { 20.0, 20.0 };
+using Domain::TriangleMesh;
 
 namespace {
 

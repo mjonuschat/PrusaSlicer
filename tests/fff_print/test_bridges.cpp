@@ -20,7 +20,7 @@ SCENARIO("Bridge detector", "[Bridging]")
         
         BridgeDetector bridge_detector(bridge, lower, scaled<coord_t>(0.5)); // extrusion width
         if (tolerance < 0)
-            tolerance = Geometry::rad2deg(bridge_detector.resolution) + EPSILON;
+            tolerance = rad2deg(bridge_detector.resolution) + EPSILON;
 
         bridge_detector.detect_angle();
         double   result   = bridge_detector.angle;
@@ -31,7 +31,7 @@ SCENARIO("Bridge detector", "[Bridging]")
         // our epsilon is equal to the steps used by the bridge detection algorithm
         //##use XXX; YYY [ rad2deg($result), $expected ];
         // returned value must be non-negative, check for that too
-        double delta = Geometry::rad2deg(result) - expected;
+        double delta = rad2deg(result) - expected;
         if (delta >= 180. - EPSILON)
             delta -= 180;
         return result >= 0. && std::abs(delta) < tolerance;
@@ -42,7 +42,7 @@ SCENARIO("Bridge detector", "[Bridging]")
                 Algorithms::Polygon::scaled({ {-2,-2}, {size.x()+2,-2}, {size.x()+2,size.y()+2}, {-2,size.y()+2} }),
                 Algorithms::Polygon::scaled({ {0,0}, {0,size.y()}, {size.x(),size.y()}, {size.x(),0} } )
             };
-            lower.rotate(Geometry::deg2rad(rotate), size / 2);
+            lower.rotate(deg2rad(rotate), size / 2);
             ExPolygon bridge_expoly(lower.holes.front());
             bridge_expoly.contour.reverse();
             return check_angle({ lower }, bridge_expoly, expected_angle, tolerance);

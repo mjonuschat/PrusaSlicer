@@ -38,6 +38,15 @@
 
 namespace Slic3r {
 
+using Biz::Algorithms::BoundingBox::merge;
+using Biz::Algorithms::BoundingBox::center;
+using Biz::Algorithms::BoundingBox::sizes;
+using Biz::Algorithms::BoundingBox::translated;
+using Domain::BoundingBox3d;
+using Domain::TriangleMesh;
+namespace tm = Slic3r::Biz::Algorithms::TriangleMesh;
+using Domain::indexed_triangle_set_with_color;
+
 Model& Model::assign_copy(const Model &rhs)
 {
     this->copy_id(rhs);
@@ -279,19 +288,19 @@ bool Model::add_default_instances()
 }
 
 // this returns the bounding box of the *transformed* instances
-BoundingBoxf3 Model::bounding_box_approx() const
+BoundingBox3d Model::bounding_box_approx() const
 {
-    BoundingBoxf3 bb;
+    BoundingBox3d bb;
     for (ModelObject *o : this->objects)
-        bb.merge(o->bounding_box_approx());
+        bb = merge(bb, o->bounding_box_approx());
     return bb;
 }
 
-BoundingBoxf3 Model::bounding_box_exact() const
+BoundingBox3d Model::bounding_box_exact() const
 {
-    BoundingBoxf3 bb;
+    BoundingBox3d bb;
     for (ModelObject *o : this->objects)
-        bb.merge(o->bounding_box_exact());
+        bb = merge(bb, o->bounding_box_exact());
     return bb;
 }
 
@@ -315,12 +324,12 @@ unsigned int Model::update_print_volume_state(const BuildVolume &build_volume)
 
 bool Model::center_instances_around_point(const Vec2d &point)
 {
-    BoundingBoxf3 bb;
+    BoundingBox3d bb;
     for (ModelObject *o : this->objects)
         for (size_t i = 0; i < o->instances.size(); ++ i)
-            bb.merge(o->instance_bounding_box(i, false));
+            bb = merge(bb, o->instance_bounding_box(i, false));
 
-    Vec2d shift2 = point - to_2d(bb.center());
+    Vec2d shift2 = point - to_2d(center(bb));
 	if (std::abs(shift2(0)) < EPSILON && std::abs(shift2(1)) < EPSILON)
 		// No significant shift, don't do anything.
 		return false;
@@ -351,7 +360,7 @@ void Model::duplicate_objects_grid(size_t x, size_t y, double dist)
     ModelObject* object = this->objects.front();
     object->clear_instances();
 
-    Vec3d ext_size = object->bounding_box_exact().size() + dist * Vec3d::Ones();
+    Vec3d ext_size = sizes(object->bounding_box_exact()) + dist * Vec3d::Ones();
 
     for (size_t x_copy = 1; x_copy <= x; ++x_copy) {
         for (size_t y_copy = 1; y_copy <= y; ++y_copy) {
@@ -686,28 +695,29 @@ void ModelObject::clear_instances()
 
 // Returns the bounding box of the transformed instances.
 // This bounding box is approximate and not snug.
-const BoundingBoxf3& ModelObject::bounding_box_approx() const
+const BoundingBox3d& ModelObject::bounding_box_approx() const
 {
     if (! m_bounding_box_approx_valid) {
         m_bounding_box_approx_valid = true;
-        BoundingBoxf3 raw_bbox = this->raw_mesh_bounding_box();
-        m_bounding_box_approx.reset();
-        for (const ModelInstance *i : this->instances)
-            m_bounding_box_approx.merge(i->transform_bounding_box(raw_bbox));
+        BoundingBox3d raw_bbox = this->raw_mesh_bounding_box();
+        m_bounding_box_approx = {};
+        for (const ModelInstance *i : this->instances) {
+            m_bounding_box_approx = merge(m_bounding_box_approx, i->transform_bounding_box(raw_bbox));
+        }
     }
     return m_bounding_box_approx;
 }
 
 // Returns the bounding box of the transformed instances.
 // This bounding box is approximate and not snug.
-const BoundingBoxf3& ModelObject::bounding_box_exact() const
+const BoundingBox3d& ModelObject::bounding_box_exact() const
 {
     if (! m_bounding_box_exact_valid) {
         m_bounding_box_exact_valid = true;
         m_min_max_z_valid = true;
-        m_bounding_box_exact.reset();
+        m_bounding_box_exact = {};
         for (size_t i = 0; i < this->instances.size(); ++ i)
-            m_bounding_box_exact.merge(this->instance_bounding_box(i));
+            m_bounding_box_exact = merge(m_bounding_box_exact, this->instance_bounding_box(i));
     }
     return m_bounding_box_exact;
 }
@@ -815,56 +825,59 @@ indexed_triangle_set ModelObject::raw_indexed_triangle_set() const
     return out;
 }
 
-
-const BoundingBoxf3& ModelObject::raw_mesh_bounding_box() const
+const BoundingBox3d& ModelObject::raw_mesh_bounding_box() const
 {
+
     if (! m_raw_mesh_bounding_box_valid) {
         m_raw_mesh_bounding_box_valid = true;
-        m_raw_mesh_bounding_box.reset();
-        for (const ModelVolume *v : this->volumes)
-            if (v->is_model_part())
-                m_raw_mesh_bounding_box.merge(v->mesh().transformed_bounding_box(v->get_matrix()));
+        m_raw_mesh_bounding_box = {};
+        for (const ModelVolume *v : this->volumes) {
+            if (v->is_model_part()) {
+                m_raw_mesh_bounding_box = merge(m_raw_mesh_bounding_box, tm::transformed_bounding_box(v->mesh(), v->get_matrix()));
+            }
+        }
     }
     return m_raw_mesh_bounding_box;
 }
 
-BoundingBoxf3 ModelObject::full_raw_mesh_bounding_box() const
+BoundingBox3d ModelObject::full_raw_mesh_bounding_box() const
 {
-	BoundingBoxf3 bb;
-	for (const ModelVolume *v : this->volumes)
-		bb.merge(v->mesh().transformed_bounding_box(v->get_matrix()));
+    BoundingBox3d bb;
+	for (const ModelVolume *v : this->volumes) {
+		bb = merge(bb, tm::transformed_bounding_box(v->mesh(), v->get_matrix()));
+    }
 	return bb;
 }
 
 // A transformed snug bounding box around the non-modifier object volumes, without the translation applied.
 // This bounding box is only used for the actual slicing and for layer editing UI to calculate the layers.
-const BoundingBoxf3& ModelObject::raw_bounding_box() const
+const BoundingBox3d& ModelObject::raw_bounding_box() const
 {
     if (! m_raw_bounding_box_valid) {
         m_raw_bounding_box_valid = true;
-        m_raw_bounding_box.reset();
+        m_raw_bounding_box = {};
         if (this->instances.empty())
             throw Slic3r::InvalidArgument("Can't call raw_bounding_box() with no instances");
 
         const Transform3d inst_matrix = this->instances.front()->get_transformation().get_matrix_no_offset();
         for (const ModelVolume *v : this->volumes)
             if (v->is_model_part())
-                m_raw_bounding_box.merge(v->mesh().transformed_bounding_box(inst_matrix * v->get_matrix()));
+                m_raw_bounding_box =merge(m_raw_bounding_box, tm::transformed_bounding_box(v->mesh(), inst_matrix * v->get_matrix()));
     }
 	return m_raw_bounding_box;
 }
 
 // This returns an accurate snug bounding box of the transformed object instance, without the translation applied.
-BoundingBoxf3 ModelObject::instance_bounding_box(const ModelInstance& model_instance, bool dont_translate) const
+BoundingBox3d ModelObject::instance_bounding_box(const ModelInstance& model_instance, bool dont_translate) const
 {
-    BoundingBoxf3 bb;
+    BoundingBox3d bb;
     const Transform3d inst_matrix = dont_translate ?
         model_instance.get_transformation().get_matrix_no_offset() :
         model_instance.get_transformation().get_matrix();
 
     for (ModelVolume *v : this->volumes) {
         if (v->is_model_part())
-            bb.merge(v->mesh().transformed_bounding_box(inst_matrix * v->get_matrix()));
+            bb = merge(bb, tm::transformed_bounding_box(v->mesh(), inst_matrix * v->get_matrix()));
     }
     return bb;
 }
@@ -880,7 +893,7 @@ Polygon ModelObject::convex_hull_2d(const Transform3d& trafo_instance) const
         for (size_t i = range.begin(); i < range.end(); ++i) {
             const ModelVolume* v = volumes[i];
             if (v->is_model_part())
-                chs.emplace_back(its_convex_hull_2d_above(v->mesh().its, (trafo_instance * v->get_matrix()).cast<float>(), 0.0f));
+                chs.emplace_back(tm::its_convex_hull_2d_above(v->mesh().its, (trafo_instance * v->get_matrix()).cast<float>(), 0.0f));
         }
     });
 
@@ -893,10 +906,10 @@ void ModelObject::center_around_origin(bool include_modifiers)
 {
     // calculate the displacements needed to 
     // center this object around the origin
-    const BoundingBoxf3 bb = include_modifiers ? full_raw_mesh_bounding_box() : raw_mesh_bounding_box();
+    const BoundingBox3d bb = include_modifiers ? full_raw_mesh_bounding_box() : raw_mesh_bounding_box();
 
     // Shift is the vector from the center of the bounding box to the origin
-    const Vec3d shift = -bb.center();
+    const Vec3d shift = - center(bb);
 
     this->translate(shift);
     this->origin_translation += shift;
@@ -948,9 +961,9 @@ void ModelObject::translate(double x, double y, double z)
     }
 
     if (m_bounding_box_approx_valid)
-        m_bounding_box_approx.translate(Vec3d{x, y, z});
+        m_bounding_box_approx = translated(m_bounding_box_approx, Vec3d{x, y, z});
     if (m_bounding_box_exact_valid)
-        m_bounding_box_exact.translate(Vec3d{x, y, z});
+        m_bounding_box_exact = translated(m_bounding_box_exact, Vec3d{x, y, z});
 }
 
 void ModelObject::scale(const Vec3d &versor)
@@ -1137,7 +1150,7 @@ void ModelObject::bake_xy_rotation_into_meshes(size_t instance_idx)
             volume_trafo_mod.reset_mirror();
         Eigen::Matrix3d volume_trafo_3x3 = volume_trafo_mod.get_matrix().matrix().block<3, 3>(0, 0);
         // Following method creates a new shared_ptr<TriangleMesh>
-        model_volume->transform_this_mesh(mesh_trafo_3x3 * volume_trafo_3x3, left_handed != volume_left_handed);
+        model_volume->transform_this_mesh(Domain::Transform3d{mesh_trafo_3x3 * volume_trafo_3x3}, left_handed != volume_left_handed);
         // Reset the rotation, scaling and mirroring.
         model_volume->set_rotation(Vec3d(0., 0., 0.));
         model_volume->set_scaling_factor(Vec3d(volume_new_scaling_factor, volume_new_scaling_factor, volume_new_scaling_factor));
@@ -1241,8 +1254,8 @@ void ModelObject::print_info() const
     boost::nowide::cout << "[" << boost::filesystem::path(this->input_file).filename().string() << "]" << endl;
     
     TriangleMesh mesh = this->raw_mesh();
-    BoundingBoxf3 bb = mesh.bounding_box();
-    Vec3d size = bb.size();
+    BoundingBox3d bb = mesh.bounding_box();
+    Vec3d size = sizes(bb);
     cout << "size_x = " << size(0) << endl;
     cout << "size_y = " << size(1) << endl;
     cout << "size_z = " << size(2) << endl;
@@ -1259,7 +1272,7 @@ void ModelObject::print_info() const
         cout << "open_edges = " << mesh.stats().open_edges << endl;
     
     if (mesh.stats().repaired()) {
-        const RepairedMeshErrors& stats = mesh.stats().repaired_errors;
+        const Domain::RepairedMeshErrors& stats = mesh.stats().repaired_errors;
         if (stats.degenerate_facets > 0)
             cout << "degenerate_facets = "  << stats.degenerate_facets << endl;
         if (stats.edges_fixed > 0)
@@ -1348,20 +1361,20 @@ bool ModelVolume::is_splittable() const
 {
     // the call mesh.is_splittable() is expensive, so cache the value to calculate it only once
     if (m_is_splittable == -1)
-        m_is_splittable = its_is_splittable(this->mesh().its);
+        m_is_splittable = tm::its_is_splittable(this->mesh().its);
 
     return m_is_splittable == 1;
 }
 
 void ModelVolume::center_geometry_after_creation(bool update_source_offset)
 {
-    Vec3d shift = this->mesh().bounding_box().center();
+    Vec3d shift = center(this->mesh().bounding_box());
     if (!shift.isApprox(Vec3d::Zero()))
     {
     	if (m_mesh)
-        	const_cast<TriangleMesh*>(m_mesh.get())->translate(-(float)shift(0), -(float)shift(1), -(float)shift(2));
+        	const_cast<TriangleMesh*>(m_mesh.get())->translate(Vec3f{-(float)shift(0), -(float)shift(1), -(float)shift(2)});
         if (m_convex_hull)
-			const_cast<TriangleMesh*>(m_convex_hull.get())->translate(-(float)shift(0), -(float)shift(1), -(float)shift(2));
+			const_cast<TriangleMesh*>(m_convex_hull.get())->translate(Vec3f{-(float)shift(0), -(float)shift(1), -(float)shift(2)});
         translate(shift);
     }
 
@@ -1371,7 +1384,7 @@ void ModelVolume::center_geometry_after_creation(bool update_source_offset)
 
 void ModelVolume::calculate_convex_hull()
 {
-    m_convex_hull = std::make_shared<TriangleMesh>(this->mesh().convex_hull_3d());
+    m_convex_hull = std::make_shared<TriangleMesh>(tm::convex_hull_3d(this->mesh()));
     assert(m_convex_hull.get());
 }
 
@@ -1427,7 +1440,7 @@ void ModelVolume::scale(const Vec3d& scaling_factors)
 
 void ModelObject::scale_to_fit(const Vec3d &size)
 {
-    Vec3d orig_size = this->bounding_box_exact().size();
+    Vec3d orig_size = sizes(this->bounding_box_exact());
     double factor = std::min(
         size.x() / orig_size.x(),
         std::min(
@@ -1496,18 +1509,6 @@ void ModelVolume::transform_this_mesh(const Transform3d &mesh_trafo, bool fix_le
     this->set_new_unique_id();
 }
 
-void ModelVolume::transform_this_mesh(const Matrix3d &matrix, bool fix_left_handed)
-{
-	TriangleMesh mesh = this->mesh();
-	mesh.transform(matrix, fix_left_handed);
-	this->set_mesh(std::move(mesh));
-    TriangleMesh convex_hull = this->get_convex_hull();
-    convex_hull.transform(matrix, fix_left_handed);
-    m_convex_hull = std::make_shared<TriangleMesh>(std::move(convex_hull));
-    // Let the rest of the application know that the geometry changed, so the meshes have to be reloaded.
-    this->set_new_unique_id();
-}
-
 std::vector<size_t> ModelVolume::get_extruders_from_multi_material_painting() const {
     if (!this->is_mm_painted())
         return {};
@@ -1529,9 +1530,9 @@ void ModelInstance::transform_mesh(TriangleMesh* mesh, bool dont_translate) cons
     mesh->transform(dont_translate ? get_matrix_no_offset() : get_matrix());
 }
 
-BoundingBoxf3 ModelInstance::transform_bounding_box(const BoundingBoxf3 &bbox, bool dont_translate) const
+BoundingBox3d ModelInstance::transform_bounding_box(const Domain::BoundingBox3d &bbox, bool dont_translate) const
 {
-    return bbox.transformed(dont_translate ? get_matrix_no_offset() : get_matrix());
+    return transformed(bbox, dont_translate ? get_matrix_no_offset() : get_matrix());
 }
 
 Vec3d ModelInstance::transform_vector(const Vec3d& v, bool dont_translate) const

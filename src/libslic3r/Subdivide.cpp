@@ -18,6 +18,8 @@
 
 namespace Slic3r{
 
+using Domain::Index3;
+
 indexed_triangle_set its_subdivide(
     const indexed_triangle_set &its, float max_length)
 {

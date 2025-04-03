@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Eigen/Dense>
+#include <numbers>
 
 namespace Slic3r {
 
@@ -35,6 +36,17 @@ template<typename T>
 constexpr inline T sqr(T x)
 {
     return x * x;
+}
+
+template<typename T>
+T rad2deg(T angle)
+{
+    return T(180.0) * angle / std::numbers::pi_v<T>;
+}
+template<typename T>
+constexpr T deg2rad(const T angle)
+{
+    return std::numbers::pi_v<T> * angle / T(180.0);
 }
 
 } // namespace Slic3r

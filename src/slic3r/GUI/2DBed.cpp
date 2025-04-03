@@ -126,7 +126,7 @@ void Bed_2D::repaint(const std::vector<Vec2d>& shape)
 	// draw axes
 	auto axes_len = 50;
 	auto arrow_len = 6;
-	auto arrow_angle = Geometry::deg2rad(45.0);
+	auto arrow_angle = deg2rad(45.0);
     dc.SetPen(wxPen(wxColour(255, 0, 0), 2, wxPENSTYLE_SOLID));  // red
 	auto x_end = Vec2d(origin_px(0) + axes_len, origin_px(1));
 	dc.DrawLine(wxPoint(origin_px(0), origin_px(1)), wxPoint(x_end(0), x_end(1)));

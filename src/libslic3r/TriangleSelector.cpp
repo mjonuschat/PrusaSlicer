@@ -12,13 +12,17 @@
 
 #include "libslic3r/Geometry.hpp"
 #include "libslic3r/Point.hpp"
-#include "libslic3r/TriangleMesh.hpp"
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "libslic3r/Utils.hpp"
 #include "libslic3r/libslic3r.h"
 
 namespace Slic3r {
 
-using Index3 = Domain::Index3;
+using Domain::Index3;
+using Domain::AdditionalMeshInfo;
+using Domain::IndexedTriangleSetType;
+using Domain::indexed_triangle_set_with_color;
+namespace TriMesh = Slic3r::Biz::Algorithms::TriangleMesh;
 
 // Check if the line is whole inside the sphere, or it is partially inside (intersecting) the sphere.
 // Inspired by Christer Ericson's Real-Time Collision Detection, pp. 177-179.
@@ -252,7 +256,7 @@ void TriangleSelector::select_patch(int facet_start, std::unique_ptr<Cursor> &&c
     // In case user changed cursor parameters size since last time, update triangle edge limit.
     set_edge_limit(m_cursor->get_edge_limit());
 
-    const float highlight_angle_limit = cos(Geometry::deg2rad(highlight_by_angle_deg));
+    const float highlight_angle_limit = cos(deg2rad(highlight_by_angle_deg));
     Vec3f       vec_down              = (trafo_no_translate.inverse() * -Vec3d::UnitZ()).normalized().cast<float>();
 
     // Now start with the facet the pointer points to and check all adjacent facets.
@@ -318,8 +322,8 @@ void TriangleSelector::seed_fill_select_triangles(const Vec3f &hit, int facet_st
     std::queue<int>   facet_queue;
     facet_queue.push(facet_start);
 
-    const float  facet_angle_limit     = cos(Geometry::deg2rad(seed_fill_angle)) - EPSILON;
-    const float  highlight_angle_limit = cos(Geometry::deg2rad(highlight_by_angle_deg));
+    const float  facet_angle_limit     = cos(deg2rad(seed_fill_angle)) - EPSILON;
+    const float  highlight_angle_limit = cos(deg2rad(highlight_by_angle_deg));
     Vec3f        vec_down              = (trafo_no_translate.inverse() * -Vec3d::UnitZ()).normalized().cast<float>();
 
     // Facets that need to be checked for gap filling.
@@ -598,7 +602,7 @@ void TriangleSelector::bucket_fill_select_triangles(const Vec3f &hit, int facet_
         this->seed_fill_unselect_all_triangles();
     }
 
-    const float facet_angle_limit = std::cos(Geometry::deg2rad(bucket_fill_angle)) - EPSILON;
+    const float facet_angle_limit = std::cos(deg2rad(bucket_fill_angle)) - EPSILON;
 
     auto [neighbors, neighbors_propagated] = this->precompute_all_neighbors();
     std::vector<bool>  visited(m_triangles.size(), false);
@@ -1390,8 +1394,8 @@ void TriangleSelector::garbage_collect()
     m_free_vertices_head = -1;
 }
 
-TriangleSelector::TriangleSelector(const TriangleMesh& mesh)
-    : m_mesh{mesh}, m_neighbors(its_face_neighbors(mesh.its)), m_face_normals(its_face_normals(mesh.its))
+TriangleSelector::TriangleSelector(const Domain::TriangleMesh& mesh)
+    : m_mesh{mesh}, m_neighbors(TriMesh::its_face_neighbors(mesh.its)), m_face_normals(TriMesh::its_face_normals(mesh.its))
 {
     reset();
 }
@@ -2346,7 +2350,7 @@ bool TriangleSelector::Capsule2D::is_any_edge_inside_cursor(const Triangle &tr, 
     return false;
 }
 
-TriangleSelector::HeightRange::HeightRange(const Vec3f &mesh_hit, const BoundingBoxf3 &mesh_bbox, float z_range, const Transform3d &trafo, const ClippingPlane &clipping_plane)
+TriangleSelector::HeightRange::HeightRange(const Vec3f &mesh_hit, const Domain::BoundingBox3d &mesh_bbox, float z_range, const Transform3d &trafo, const ClippingPlane &clipping_plane)
     : Cursor(Vec3f::Zero(), 0.f, trafo, clipping_plane) {
     const Vec3f mesh_hit_world = (trafo * mesh_hit.cast<double>()).cast<float>();
 

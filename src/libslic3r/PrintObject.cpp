@@ -106,6 +106,10 @@ using namespace Slic3r::Biz;
 
 namespace Slic3r {
 
+using Domain::BoundingBox3d;
+using Biz::Algorithms::BoundingBox::center;
+using Biz::Algorithms::BoundingBox::sizes;
+
 // Constructor is called from the main thread, therefore all Model / ModelObject / ModelIntance data are valid.
 PrintObject::PrintObject(Print* print, ModelObject* model_object, const Transform3d& trafo, PrintInstances&& instances) :
     PrintObjectBaseWithState(print, model_object),
@@ -118,20 +122,20 @@ PrintObject::PrintObject(Print* print, ModelObject* model_object, const Transfor
 	// All the instances share the transformation matrix with the exception of translation in XY and rotation by Z,
 	// therefore a bounding box from 1st instance of a ModelObject is good enough for calculating the object center,
 	// snug height and an approximate bounding box in XY.
-    BoundingBoxf3  bbox        = model_object->raw_bounding_box();
-    Vec3d 		   bbox_center = bbox.center();
+    BoundingBox3d  bbox        = model_object->raw_bounding_box();
+    Vec3d 		   bbox_center = center(bbox);
 	// We may need to rotate the bbox / bbox_center from the original instance to the current instance.
     double z_diff = Geometry::rotation_diff_z(model_object->instances.front()->get_matrix(), instances.front().model_instance->get_matrix());
     if (std::abs(z_diff) > EPSILON) {
 		auto z_rot  = Eigen::AngleAxisd(z_diff, Vec3d::UnitZ());
-		bbox 		= bbox.transformed(Transform3d(z_rot));
+		bbox 		= transformed(bbox, Transform3d(z_rot));
 		bbox_center = (z_rot * bbox_center).eval();
 	}
 
     // Center of the transformed mesh (without translation).
     m_center_offset = scaled(Vec2d(bbox_center.x(), bbox_center.y()));
     // Size of the transformed mesh. This bounding may not be snug in XY plane, but it is snug in Z.
-    m_size = (bbox.size() * (1. / SCALING_FACTOR)).cast<coord_t>();
+    m_size = (sizes(bbox) * (1. / SCALING_FACTOR)).cast<coord_t>();
     m_size.z() = coord_t(model_object->max_z() * (1. / SCALING_FACTOR));
 
     this->set_instances(std::move(instances));
@@ -2739,7 +2743,7 @@ SlicingParameters PrintObject::slicing_parameters(const DynamicPrintConfig &full
     //FIXME add painting extruders
 
     if (object_max_z <= 0.f)
-        object_max_z = (float)model_object.raw_bounding_box().size().z();
+        object_max_z = (float)sizes(model_object.raw_bounding_box()).z();
 
     return SlicingParameters::create_from_config(print_config, object_config, object_max_z, object_extruders, object_shrinkage_compensation);
 }

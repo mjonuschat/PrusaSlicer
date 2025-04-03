@@ -1,7 +1,7 @@
 #include "ArrangeHelper.hpp"
 
 #include "libslic3r/Model.hpp"
-#include "libslic3r/TriangleMesh.hpp"
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "libslic3r/MultipleBeds.hpp"
 #include "libslic3r/PresetBundle.hpp"
 #include "libslic3r/BuildVolume.hpp"
@@ -149,8 +149,9 @@ static std::vector<Sequential::ObjectToPrint> get_objects_to_print(const Model& 
 	// Now collect all objects and projections of convex hull above respective heights.
 	std::vector<std::pair<Sequential::ObjectToPrint, std::vector<Sequential::ObjectToPrint>>> objects; // first = object id, the vector = ids of its instances
 	for (const ModelObject* mo : model.objects) {
-		const TriangleMesh& raw_mesh = mo->raw_mesh();
-		coord_t height = scaled(mo->instance_bounding_box(0).size().z());
+		const Domain::TriangleMesh& raw_mesh = mo->raw_mesh();
+        using Biz::Algorithms::BoundingBox::sizes;
+		coord_t height = scaled(sizes(mo->instance_bounding_box(0)).z());
 		std::vector<Sequential::ObjectToPrint> instances;
 		for (const ModelInstance* mi : mo->instances) {
 			if (selected_bed != -1) {
@@ -164,7 +165,8 @@ static std::vector<Sequential::ObjectToPrint> get_objects_to_print(const Model& 
 				for (double height : heights) {
 					// It seems that zero level in the object instance is mi->get_offset().z(), however need to have bed as zero level,
 					// hence substracting mi->get_offset().z() from height seems to be an easy hack
-					Polygon pgn = its_convex_hull_2d_above(raw_mesh.its, mi->get_matrix_no_offset().cast<float>(), height - mi->get_offset().z());
+                    namespace TriMesh = Biz::Algorithms::TriangleMesh;
+					Polygon pgn = TriMesh::its_convex_hull_2d_above(raw_mesh.its, mi->get_matrix_no_offset().cast<float>(), height - mi->get_offset().z());
 					instances.back().pgns_at_height.emplace_back(std::make_pair(scaled(height), pgn));
 				}
 			}

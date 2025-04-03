@@ -4,6 +4,7 @@
 #include <boost/filesystem.hpp>
 
 namespace Slic3r::Tests {
+
 void precise_sleep(const std::chrono::milliseconds duration) {
     const auto start = std::chrono::high_resolution_clock::now();
     const auto nano_duration{duration_cast<std::chrono::nanoseconds>(duration)};
@@ -14,13 +15,15 @@ void precise_sleep(const std::chrono::milliseconds duration) {
 
 Slic3r::Model generate_cubes(const int count, const int row_size)
 {
-    const double size{20};
+    const float size{20};
     Slic3r::Model model;
     for (int i{}; i < count; ++i) {
         const int row{i / row_size};
         const int column{i % row_size};
-        Slic3r::TriangleMesh cube_mesh = Slic3r::make_cube(size, size, size);
-        cube_mesh.translate(column * (size + 5), row * (size + 5), 0);
+
+        namespace TriMesh = Biz::Algorithms::TriangleMesh;
+        Domain::TriangleMesh cube_mesh = TriMesh::make_cube(size, size, size);
+        cube_mesh.translate(Vec3f{column * (size + 5.0f), row * (size + 5.0f), 0.0f});
 
         Slic3r::ModelObject* model_object = model.add_object();
         model_object->add_volume(cube_mesh);

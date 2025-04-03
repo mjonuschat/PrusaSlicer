@@ -15,7 +15,7 @@
 #include "libslic3r/libslic3r.h"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Line.hpp"
-#include "libslic3r/TriangleMesh.hpp"
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "libslic3r/Utils.hpp"
 #include "libslic3r/Geometry.hpp"
 #include "libslic3r/Color.hpp"
@@ -481,7 +481,7 @@ public:
 
     float get_slope_normal_z() const { return m_slope.normal_z; }
     void set_slope_normal_z(float normal_z) { m_slope.normal_z = normal_z; }
-    void set_default_slope_normal_z() { m_slope.normal_z = -::cos(Geometry::deg2rad(90.0f - 45.0f)); }
+    void set_default_slope_normal_z() { m_slope.normal_z = -::cos(deg2rad(90.0f - 45.0f)); }
     void set_show_sinking_contours(bool show) { m_show_sinking_contours = show; }
     void set_show_non_manifold_edges(bool show) { m_show_non_manifold_edges = show; }
 

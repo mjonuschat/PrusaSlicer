@@ -20,7 +20,7 @@
 
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/FileReader.hpp"
-#include "libslic3r/TriangleMesh.hpp"
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/filesystem.hpp>

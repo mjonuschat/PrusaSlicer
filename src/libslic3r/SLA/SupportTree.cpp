@@ -22,7 +22,7 @@
 #include "libslic3r/SLA/JobController.hpp"
 #include "libslic3r/SLA/Pad.hpp"
 #include "libslic3r/SLA/SupportTreeStrategies.hpp"
-#include "libslic3r/TriangleMesh.hpp"
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "libslic3r/libslic3r.h"
 
 
@@ -99,7 +99,8 @@ indexed_triangle_set create_pad(const SupportableMesh      &sm,
     Vec3f offs{.0f, .0f, gndlvl};
     for (auto &p : out.vertices) p += offs;
 
-    its_merge_vertices(out);
+    namespace TriMesh = Biz::Algorithms::TriangleMesh;
+    TriMesh::its_merge_vertices(out);
 
     return out;
 }
@@ -122,7 +123,7 @@ std::vector<ExPolygons> slice(const indexed_triangle_set &sup_mesh,
     if (!pad_mesh.empty()) {
         slices.emplace_back();
 
-        auto bb     = bounding_box(pad_mesh);
+        auto bb     = Domain::bounding_box(pad_mesh);
         auto maxzit = std::upper_bound(grid.begin(), grid.end(), bb.max.z());
 
         auto cap     = grid.end() - maxzit;

@@ -37,7 +37,7 @@ SCENARIO("Export+Import geometry to/from 3mf file cycle", "[3mf]") {
         // apply generic transformation to the 1st volume
         Geometry::Transformation src_volume_transform;
         src_volume_transform.set_offset({ 10.0, 20.0, 0.0 });
-        src_volume_transform.set_rotation({ Geometry::deg2rad(25.0), Geometry::deg2rad(35.0), Geometry::deg2rad(45.0) });
+        src_volume_transform.set_rotation({ deg2rad(25.0), deg2rad(35.0), deg2rad(45.0) });
         src_volume_transform.set_scaling_factor({ 1.1, 1.2, 1.3 });
         src_volume_transform.set_mirror({ -1.0, 1.0, -1.0 });
         src_object->volumes.front()->set_transformation(src_volume_transform);
@@ -45,7 +45,7 @@ SCENARIO("Export+Import geometry to/from 3mf file cycle", "[3mf]") {
         // apply generic transformation to the 1st instance
         Geometry::Transformation src_instance_transform;
         src_instance_transform.set_offset({ 5.0, 10.0, 0.0 });
-        src_instance_transform.set_rotation({ Geometry::deg2rad(12.0), Geometry::deg2rad(13.0), Geometry::deg2rad(14.0) });
+        src_instance_transform.set_rotation({ deg2rad(12.0), deg2rad(13.0), deg2rad(14.0) });
         src_instance_transform.set_scaling_factor({ 0.9, 0.8, 0.7 });
         src_instance_transform.set_mirror({ 1.0, -1.0, -1.0 });
         src_object->instances.front()->set_transformation(src_instance_transform);
@@ -66,8 +66,8 @@ SCENARIO("Export+Import geometry to/from 3mf file cycle", "[3mf]") {
             boost::filesystem::remove(test_file);
 
             // compare meshes
-            TriangleMesh src_mesh = src_model.mesh();
-            TriangleMesh dst_mesh = dst_model.mesh();
+            Domain::TriangleMesh src_mesh = src_model.mesh();
+            Domain::TriangleMesh dst_mesh = dst_model.mesh();
 
             bool res = src_mesh.its.vertices.size() == dst_mesh.its.vertices.size();
             if (res) {

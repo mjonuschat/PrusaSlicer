@@ -9,7 +9,7 @@
 
 #include "libslic3r/Model.hpp"
 #include "libslic3r/SLA/Hollowing.hpp"
-#include "libslic3r/MeshSplitImpl.hpp"
+#include "Slic3r/Biz/Algorithms/MeshSplitImpl.hpp"
 
 namespace Slic3r { namespace csg {
 
@@ -50,12 +50,12 @@ void model_to_csgmesh(const ModelObject &mo,
                 its_split(vol->mesh().its, SplitOutputFn{[&meshes_union, &meshes_difference, &split_failed](indexed_triangle_set &&its) {
                     if (its.empty())
                         return;
-                    double volume = its_volume(its);
+                    double volume = Domain::its_volume(its);
                     if (std::abs(volume) > 1.) {
                         if (volume > 0.)
                             meshes_union.emplace_back(std::move(its));
                         else if (volume < 0.) {
-                            its_flip_triangles(its);
+                            Domain::its_flip_triangles(its);
                             meshes_difference.emplace_back(std::move(its));
                         }
                     } else {

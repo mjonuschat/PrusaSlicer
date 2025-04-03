@@ -20,7 +20,7 @@
 #include "libslic3r/I18N.hpp"
 #include "admesh/stl.h"
 #include "libslic3r/Point.hpp"
-#include "libslic3r/TriangleMesh.hpp"
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "libslic3r/libslic3r.h"
 
 #ifndef NDEBUG
@@ -28,6 +28,8 @@
 #endif
 
 using namespace Slic3r::Biz;
+using Slic3r::Domain::Index3;
+using Slic3r::Domain::its_merge;
 
 namespace Slic3r { namespace sla {
 
@@ -517,7 +519,7 @@ void pad_blueprint(const indexed_triangle_set &mesh,
                    float                       layerh,
                    ThrowOnCancel               thrfn)
 {
-    float gnd = float(bounding_box(mesh).min(Z));
+    float gnd = float(Domain::bounding_box(mesh).min(Z));
 
     std::vector<float> slicegrid = grid(gnd, gnd + h, layerh);
     pad_blueprint(mesh, output, slicegrid, thrfn);

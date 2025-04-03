@@ -1,8 +1,10 @@
 #include "Slic3r/App/Render/GeometryBuilder.hpp"
 
-#include <libslic3r/TriangleMesh.hpp>
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 
 namespace Slic3r::App::Render {
+
+using Domain::TriangleMesh;
 
 const VertexAttribsDesc& VertexP3::format()
 {
@@ -49,7 +51,8 @@ std::unique_ptr<Geometry> geometry_from_triangle_mesh(
     builder.reserve(num_verts, 0);
 
     for (const auto& tri : triangle_mesh.indices) {
-        const auto n = its_face_normal(triangle_mesh, tri);
+        namespace tm = Biz::Algorithms::TriangleMesh;
+        const auto n = tm::its_face_normal(triangle_mesh, tri);
         builder
             .add_vertex({triangle_mesh.vertices[tri[0]], n})
             .add_vertex({triangle_mesh.vertices[tri[1]], n})

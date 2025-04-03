@@ -1812,7 +1812,7 @@ void generate_support_toolpaths(
                 if (base_layer.layer->bottom_z < EPSILON) {
                     // Base flange (the 1st layer).
                     filler = filler_first_layer;
-                    filler->angle = Geometry::deg2rad(float(config.support_material_angle.value + 90.));
+                    filler->angle = deg2rad(float(config.support_material_angle.value + 90.));
                     density = float(config.raft_first_layer_density.value * 0.01);
                     flow = support_params.first_layer_flow;
                     // use the proper spacing for first layer as we don't need to align

@@ -11,6 +11,8 @@
 
 using namespace Slic3r::Biz;
 using Algorithms::SVG::SVG;
+using Biz::Algorithms::TriangleMesh::construct;
+using Domain::TriangleMesh;
 
 void test_support_model_collision(
     const std::string            &obj_filename,
@@ -88,9 +90,10 @@ void export_failed_case(const std::vector<ExPolygons> &support_slices, const Sup
     if (do_export_stl) {
         indexed_triangle_set its;
         byproducts.suptree_builder.retrieve_full_mesh(its);
-        TriangleMesh m{its};
+        TriangleMesh m{construct(its)};
         m.merge(byproducts.input_mesh);
-        m.WriteOBJFile((Catch::getResultCapture().getCurrentTestName() + "_" +
+        namespace triangle_mesh = Biz::Algorithms::TriangleMesh;
+        triangle_mesh::write_obj_file(m, (Catch::getResultCapture().getCurrentTestName() + "_" +
                         byproducts.obj_fname).c_str());
     }
 }
@@ -109,7 +112,7 @@ void test_supports(const std::string          &obj_filename,
     if (hollowingcfg.enabled) {
         sla::InteriorPtr interior = sla::generate_interior(mesh.its, hollowingcfg);
         REQUIRE(interior);
-        mesh.merge(TriangleMesh{sla::get_mesh(*interior)});
+        mesh.merge(TriangleMesh{construct(sla::get_mesh(*interior))});
     }
 
     auto   bb      = mesh.bounding_box();
@@ -173,7 +176,7 @@ void test_supports(const std::string          &obj_filename,
     default:;
     }
 
-    TriangleMesh output_mesh{treebuilder.retrieve_mesh(sla::MeshType::Support)};
+    TriangleMesh output_mesh{construct(treebuilder.retrieve_mesh(sla::MeshType::Support))};
 
     check_validity(output_mesh, validityflags);
 
@@ -190,9 +193,11 @@ void test_supports(const std::string          &obj_filename,
     {
         indexed_triangle_set its;
         treebuilder.retrieve_full_mesh(its);
-        TriangleMesh m{its};
+        TriangleMesh m{construct(its)};
         m.merge(mesh);
-        m.WriteOBJFile((Catch::getResultCapture().getCurrentTestName() + "_" +
+
+        namespace triangle_mesh = Biz::Algorithms::TriangleMesh;
+        triangle_mesh::write_obj_file(m, (Catch::getResultCapture().getCurrentTestName() + "_" +
                         obj_filename).c_str());
     }
 #endif
@@ -271,7 +276,7 @@ void test_pad(const std::string &obj_filename, const sla::PadConfig &padcfg, Pad
     // Create the pad geometry for the model contours only
     indexed_triangle_set out_its;
     Slic3r::sla::create_pad({}, out.model_contours, out_its, padcfg);
-    out.mesh = TriangleMesh{out_its};
+    out.mesh = TriangleMesh{construct(out_its)};
     
     check_validity(out.mesh);
     
@@ -349,7 +354,7 @@ void check_validity(const TriangleMesh &input_mesh, int flags)
     }
     
     if (flags & ASSUME_MANIFOLD) {
-        if (!mesh.is_manifold()) mesh.WriteOBJFile("non_manifold.obj");
+        if (!mesh.is_manifold()) mesh.write_obj_file("non_manifold.obj");
         REQUIRE(mesh.is_manifold());
     }
     */
@@ -471,6 +476,8 @@ sla::SupportPoints calc_support_pts(
     const TriangleMesh &                      mesh,
     const sla::SupportPointGeneratorConfig &cfg)
 {
+    using Slic3r::Biz::Algorithms::BoundingBox::cast;
+
     // Prepare the slice grid and the slices
     auto                    bb      = cast<float>(mesh.bounding_box());
     std::vector<float>      heights = grid(bb.min.z(), bb.max.z(), 0.1f);

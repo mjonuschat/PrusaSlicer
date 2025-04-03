@@ -5,6 +5,8 @@
 
 namespace Slic3r::App::Scene {
 
+namespace TriMesh = Biz::Algorithms::TriangleMesh;
+
 namespace {
 
 constexpr double TWO_PI = 2.0 * PI;
@@ -42,12 +44,12 @@ void GeometryDataFactory::create_data(GeometryDataId id)
         // the cone axis is the Z axis
         // the cone tip is in the direction of positive Z axis
         // the center of the cone base is at (0,0,0)
-        its = its_make_cone(0.5, 1.0, ANGLE_STEP);
+        its = TriMesh::its_make_cone(0.5, 1.0, ANGLE_STEP);
         break;
 
     case GeometryDataId::Cube:
         // creates an axis aligned 1x1x1 cube 
-        its = its_make_cube(1.0, 1.0, 1.0);
+        its = TriMesh::its_make_cube(1.0, 1.0, 1.0);
         its_translate(its, -0.5f * Vec3f::Ones());
         break;
 
@@ -66,7 +68,7 @@ void GeometryDataFactory::create_data(GeometryDataId id)
     case GeometryDataId::Sphere:
         // creates a sphere with diameter equal to 1 
         // the sphere center is (0,0,0)
-        its = its_make_sphere(0.5, SPHERE_ANGLE_STEP);
+        its = TriMesh::its_make_sphere(0.5, SPHERE_ANGLE_STEP);
         break;
 
     case GeometryDataId::Cylinder:
@@ -74,7 +76,7 @@ void GeometryDataFactory::create_data(GeometryDataId id)
         // creates a cylinder contained into a 1x1x1 box 
         // the cylinder axis is the Z axis
         // the center of the cylinder base is at (0,0,0)
-        its = its_make_cylinder(0.5, 1.0, SPHERE_ANGLE_STEP);
+        its = TriMesh::its_make_cylinder(0.5, 1.0, SPHERE_ANGLE_STEP);
         break;
 
     case GeometryDataId::ToolMarker:

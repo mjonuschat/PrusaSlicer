@@ -20,7 +20,7 @@
 #include "Slicing.hpp"
 #include "SLA/SupportPoint.hpp"
 #include "SLA/Hollowing.hpp"
-#include "TriangleMesh.hpp"
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "CustomGCode.hpp"
 #include "TextConfiguration.hpp"
 #include "EmbossShape.hpp"
@@ -416,11 +416,11 @@ public:
     Model*                  get_model() { return m_model; }
     const Model*            get_model() const { return m_model; }
 
-    ModelVolume*            add_volume(const TriangleMesh &mesh);
-    ModelVolume*            add_volume(TriangleMesh &&mesh, ModelVolumeType type = ModelVolumeType::MODEL_PART);
+    ModelVolume*            add_volume(const Domain::TriangleMesh &mesh);
+    ModelVolume*            add_volume(Domain::TriangleMesh &&mesh, ModelVolumeType type = ModelVolumeType::MODEL_PART);
     ModelVolume*            add_volume(const ModelVolume &volume, ModelVolumeType type = ModelVolumeType::INVALID);
-    ModelVolume*            add_volume(const ModelVolume &volume, TriangleMesh &&mesh);
-    ModelVolume*            insert_volume(size_t idx, const ModelVolume &volume, TriangleMesh &&mesh);
+    ModelVolume*            add_volume(const ModelVolume &volume, Domain::TriangleMesh &&mesh);
+    ModelVolume*            insert_volume(size_t idx, const ModelVolume &volume, Domain::TriangleMesh &&mesh);
     void                    delete_volume(size_t idx);
     void                    clear_volumes();
     void                    sort_volumes(bool full_sort);
@@ -448,9 +448,9 @@ public:
     void                    clear_instances();
 
     // Returns the bounding box of the transformed instances. This bounding box is approximate and not snug, it is being cached.
-    const BoundingBoxf3&    bounding_box_approx() const;
+    const Domain::BoundingBox3d&    bounding_box_approx() const;
     // Returns an exact bounding box of the transformed instances. The result it is being cached.
-    const BoundingBoxf3&    bounding_box_exact() const;
+    const Domain::BoundingBox3d&    bounding_box_exact() const;
     // Return minimum / maximum of a printable object transformed into the world coordinate system.
     // All instances share the same min / max Z.
     double                  min_z() const;
@@ -465,24 +465,24 @@ public:
     }
 
     // A mesh containing all transformed instances of this object.
-    TriangleMesh mesh() const;
+    Domain::TriangleMesh mesh() const;
     // Non-transformed (non-rotated, non-scaled, non-translated) sum of non-modifier object volumes.
     // Currently used by ModelObject::mesh() and to calculate the 2D envelope for 2D plater.
-    TriangleMesh raw_mesh() const;
+    Domain::TriangleMesh raw_mesh() const;
     // The same as above, but producing a lightweight indexed_triangle_set.
     indexed_triangle_set raw_indexed_triangle_set() const;
     // A transformed snug bounding box around the non-modifier object volumes, without the translation applied.
     // This bounding box is only used for the actual slicing.
-    const BoundingBoxf3& raw_bounding_box() const;
+    const Domain::BoundingBox3d& raw_bounding_box() const;
     // A snug bounding box around the transformed non-modifier object volumes.
-    BoundingBoxf3 instance_bounding_box(size_t instance_idx, bool dont_translate = false) const
+    Domain::BoundingBox3d instance_bounding_box(size_t instance_idx, bool dont_translate = false) const
     { return instance_bounding_box(*this->instances[instance_idx], dont_translate); }
     // A snug bounding box around the transformed non-modifier object volumes.
-    BoundingBoxf3 instance_bounding_box(const ModelInstance& instance, bool dont_translate = false) const;
+    Domain::BoundingBox3d instance_bounding_box(const ModelInstance& instance, bool dont_translate = false) const;
     // A snug bounding box of non-transformed (non-rotated, non-scaled, non-translated) sum of non-modifier object volumes.
-	const BoundingBoxf3& raw_mesh_bounding_box() const;
+	const Domain::BoundingBox3d& raw_mesh_bounding_box() const;
 	// A snug bounding box of non-transformed (non-rotated, non-scaled, non-translated) sum of all object volumes.
-    BoundingBoxf3 full_raw_mesh_bounding_box() const;
+    Domain::BoundingBox3d full_raw_mesh_bounding_box() const;
 
     // Calculate 2D convex hull of of a projection of the transformed printable volumes into the XY plane.
     // This method is cheap in that it does not make any unnecessary copy of the volume meshes.
@@ -631,15 +631,15 @@ private:
     Model                *m_model { nullptr };
 
     // Bounding box, cached.
-    mutable BoundingBoxf3 m_bounding_box_approx;
-    mutable bool          m_bounding_box_approx_valid { false };
-    mutable BoundingBoxf3 m_bounding_box_exact;
-    mutable bool          m_bounding_box_exact_valid { false };
-    mutable bool          m_min_max_z_valid { false };
-    mutable BoundingBoxf3 m_raw_bounding_box;
-    mutable bool          m_raw_bounding_box_valid { false };
-    mutable BoundingBoxf3 m_raw_mesh_bounding_box;
-    mutable bool          m_raw_mesh_bounding_box_valid { false };
+    mutable Domain::BoundingBox3d m_bounding_box_approx;
+    mutable bool m_bounding_box_approx_valid { false };
+    mutable Domain::BoundingBox3d m_bounding_box_exact;
+    mutable bool m_bounding_box_exact_valid { false };
+    mutable bool m_min_max_z_valid { false };
+    mutable Domain::BoundingBox3d m_raw_bounding_box;
+    mutable bool m_raw_bounding_box_valid { false };
+    mutable Domain::BoundingBox3d m_raw_mesh_bounding_box;
+    mutable bool m_raw_mesh_bounding_box_valid { false };
 
     // Only use this method if now the source and dest ModelObjects are equal, for example they were synchronized by Print::apply().
     void copy_transformation_caches(const ModelObject &src) {
@@ -697,8 +697,8 @@ public:
     bool set(const TriangleSelector &selector);
     indexed_triangle_set get_facets(const ModelVolume &mv, TriangleStateType type) const;
     indexed_triangle_set get_facets_strict(const ModelVolume &mv, TriangleStateType type) const;
-    indexed_triangle_set_with_color get_all_facets_with_colors(const ModelVolume &mv) const;
-    indexed_triangle_set_with_color get_all_facets_strict_with_colors(const ModelVolume &mv) const;
+    Domain::indexed_triangle_set_with_color get_all_facets_with_colors(const ModelVolume &mv) const;
+    Domain::indexed_triangle_set_with_color get_all_facets_strict_with_colors(const ModelVolume &mv) const;
     bool has_facets(const ModelVolume &mv, TriangleStateType type) const;
     bool empty() const { return m_data.triangles_to_split.empty(); }
 
@@ -806,16 +806,24 @@ public:
     void                invalidate_cut_info()    { cut_info.invalidate(); }
 
     // The triangular model.
-    const TriangleMesh& mesh() const { return *m_mesh.get(); }
-    std::shared_ptr<const TriangleMesh> mesh_ptr() const { return m_mesh; }
-    void                set_mesh(const TriangleMesh &mesh) { m_mesh = std::make_shared<const TriangleMesh>(mesh); }
-    void                set_mesh(TriangleMesh &&mesh) { m_mesh = std::make_shared<const TriangleMesh>(std::move(mesh)); }
-    void                set_mesh(const indexed_triangle_set &mesh) { m_mesh = std::make_shared<const TriangleMesh>(mesh); }
-    void                set_mesh(indexed_triangle_set &&mesh) { m_mesh = std::make_shared<const TriangleMesh>(std::move(mesh)); }
-    void                set_mesh(std::shared_ptr<const TriangleMesh> &mesh) { m_mesh = mesh; }
-    void                set_mesh(std::unique_ptr<const TriangleMesh> &&mesh) { m_mesh = std::move(mesh); }
-	void				reset_mesh() { m_mesh = std::make_shared<const TriangleMesh>(); }
-    const std::shared_ptr<const TriangleMesh>& get_mesh_shared_ptr() const { return m_mesh; }
+    const Domain::TriangleMesh& mesh() const { return *m_mesh.get(); }
+    std::shared_ptr<const Domain::TriangleMesh> mesh_ptr() const { return m_mesh; }
+    void                set_mesh(const Domain::TriangleMesh &mesh) { m_mesh = std::make_shared<const Domain::TriangleMesh>(mesh); }
+    void                set_mesh(Domain::TriangleMesh &&mesh) { m_mesh = std::make_shared<const Domain::TriangleMesh>(std::move(mesh)); }
+    void set_mesh(const indexed_triangle_set& mesh)
+    {
+        using Biz::Algorithms::TriangleMesh::construct;
+        m_mesh = std::make_shared<const Domain::TriangleMesh>(construct(mesh));
+    }
+    void set_mesh(indexed_triangle_set&& mesh)
+    {
+        using Biz::Algorithms::TriangleMesh::construct;
+        m_mesh = std::make_shared<const Domain::TriangleMesh>(construct(std::move(mesh)));
+    }
+    void                set_mesh(std::shared_ptr<const Domain::TriangleMesh> &mesh) { m_mesh = mesh; }
+    void                set_mesh(std::unique_ptr<const Domain::TriangleMesh> &&mesh) { m_mesh = std::move(mesh); }
+	void				reset_mesh() { m_mesh = std::make_shared<const Domain::TriangleMesh>(); }
+    const std::shared_ptr<const Domain::TriangleMesh>& get_mesh_shared_ptr() const { return m_mesh; }
     // Configuration parameters specific to an object model geometry or a modifier volume, 
     // overriding the global Slic3r settings and the ModelObject settings.
     ModelConfigObject	config;
@@ -883,8 +891,8 @@ public:
     void                center_geometry_after_creation(bool update_source_offset = true);
 
     void                calculate_convex_hull();
-    const TriangleMesh& get_convex_hull() const;
-    const std::shared_ptr<const TriangleMesh>& get_convex_hull_shared_ptr() const { return m_convex_hull; }
+    const Domain::TriangleMesh& get_convex_hull() const;
+    const std::shared_ptr<const Domain::TriangleMesh>& get_convex_hull_shared_ptr() const { return m_convex_hull; }
 
     // Helpers for loading / storing into AMF / 3MF files.
     static ModelVolumeType type_from_string(const std::string &s);
@@ -957,18 +965,17 @@ protected:
     void     set_model_object(ModelObject *model_object) { object = model_object; }
 	void 	 assign_new_unique_ids_recursive() override;
     void     transform_this_mesh(const Transform3d& t, bool fix_left_handed);
-    void     transform_this_mesh(const Matrix3d& m, bool fix_left_handed);
 
 private:
     // Parent object owning this ModelVolume.
     ModelObject*                    	object;
     // The triangular model.
-    std::shared_ptr<const TriangleMesh> m_mesh;
+    std::shared_ptr<const Domain::TriangleMesh> m_mesh;
     // Is it an object to be printed, or a modifier volume?
     ModelVolumeType                 	m_type;
     t_model_material_id             	m_material_id;
     // The convex hull of this model's mesh.
-    std::shared_ptr<const TriangleMesh> m_convex_hull;
+    std::shared_ptr<const Domain::TriangleMesh> m_convex_hull;
     Geometry::Transformation        	m_transformation;
 
     // flag to optimize the checking if the volume is splittable
@@ -992,20 +999,20 @@ private:
         return true;
     }
 
-	ModelVolume(ModelObject *object, const TriangleMesh &mesh, ModelVolumeType type = ModelVolumeType::MODEL_PART) :
-        m_mesh(new TriangleMesh(mesh)), m_type(type), object(object)
+	ModelVolume(ModelObject *object, const Domain::TriangleMesh &mesh, ModelVolumeType type = ModelVolumeType::MODEL_PART) :
+        m_mesh(new Domain::TriangleMesh(mesh)), m_type(type), object(object)
     {
         assert(check());
         if (m_mesh->facets_count() > 1) calculate_convex_hull();
     }
-    ModelVolume(ModelObject *object, TriangleMesh &&mesh, ModelVolumeType type = ModelVolumeType::MODEL_PART)
-        : m_mesh(new TriangleMesh(std::move(mesh))), m_type(type), object(object)
+    ModelVolume(ModelObject *object, Domain::TriangleMesh &&mesh, ModelVolumeType type = ModelVolumeType::MODEL_PART)
+        : m_mesh(new Domain::TriangleMesh(std::move(mesh))), m_type(type), object(object)
     {
         assert(check());
         if (m_mesh->facets_count() > 1) calculate_convex_hull();
     }
-    ModelVolume(ModelObject *object, TriangleMesh &&mesh, TriangleMesh &&convex_hull, ModelVolumeType type = ModelVolumeType::MODEL_PART) :
-		m_mesh(new TriangleMesh(std::move(mesh))), m_convex_hull(new TriangleMesh(std::move(convex_hull))), m_type(type), object(object) {
+    ModelVolume(ModelObject *object, Domain::TriangleMesh &&mesh, Domain::TriangleMesh &&convex_hull, ModelVolumeType type = ModelVolumeType::MODEL_PART) :
+		m_mesh(new Domain::TriangleMesh(std::move(mesh))), m_convex_hull(new Domain::TriangleMesh(std::move(convex_hull))), m_type(type), object(object) {
         assert(check());
 	}
 
@@ -1036,8 +1043,8 @@ private:
         this->set_material_id(other.material_id());
     }
     // Providing a new mesh, therefore this volume will get a new unique ID assigned.
-    ModelVolume(ModelObject *object, const ModelVolume &other, TriangleMesh &&mesh) :
-        name(other.name), source(other.source), config(other.config), object(object), m_mesh(new TriangleMesh(std::move(mesh))), m_type(other.m_type), m_transformation(other.m_transformation),
+    ModelVolume(ModelObject *object, const ModelVolume &other, Domain::TriangleMesh &&mesh) :
+        name(other.name), source(other.source), config(other.config), object(object), m_mesh(new Domain::TriangleMesh(std::move(mesh))), m_type(other.m_type), m_transformation(other.m_transformation),
         cut_info(other.cut_info), text_configuration(other.text_configuration), emboss_shape(other.emboss_shape)
     {
 		assert(this->id().valid()); 
@@ -1180,9 +1187,9 @@ public:
     void set_mirror(Axis axis, double mirror) { m_transformation.set_mirror(axis, mirror); }
 
     // To be called on an external mesh
-    void transform_mesh(TriangleMesh* mesh, bool dont_translate = false) const;
+    void transform_mesh(Domain::TriangleMesh* mesh, bool dont_translate = false) const;
     // Transform an external bounding box, thus the resulting bounding box is no more snug.
-    BoundingBoxf3 transform_bounding_box(const BoundingBoxf3 &bbox, bool dont_translate = false) const;
+    Domain::BoundingBox3d transform_bounding_box(const Domain::BoundingBox3d &bbox, bool dont_translate = false) const;
     // Transform an external vector.
     Vec3d transform_vector(const Vec3d& v, bool dont_translate = false) const;
     // To be called on an external polygon. It does not translate the polygon, only rotates and scales.
@@ -1297,8 +1304,8 @@ public:
 
     // Add a new ModelObject to this Model, generate a new ID for this ModelObject.
     ModelObject* add_object();
-    ModelObject* add_object(const char *name, const char *path, const TriangleMesh &mesh);
-    ModelObject* add_object(const char *name, const char *path, TriangleMesh &&mesh);
+    ModelObject* add_object(const char *name, const char *path, const Domain::TriangleMesh &mesh);
+    ModelObject* add_object(const char *name, const char *path, Domain::TriangleMesh &&mesh);
     ModelObject* add_object(const ModelObject &other);
     void         delete_object(size_t idx);
     bool         delete_object(ObjectID id);
@@ -1316,9 +1323,9 @@ public:
     void          clear_materials();
     bool          add_default_instances();
     // Returns approximate axis aligned bounding box of this model.
-    BoundingBoxf3 bounding_box_approx() const;
+    Domain::BoundingBox3d bounding_box_approx() const;
     // Returns exact axis aligned bounding box of this model.
-    BoundingBoxf3 bounding_box_exact() const;
+    Domain::BoundingBox3d bounding_box_exact() const;
     // Return maximum height of all printable objects.
     double        max_z() const;
     // Set the print_volume_state of PrintObject::instances, 
@@ -1327,7 +1334,7 @@ public:
     // Returns true if any ModelObject was modified.
     bool 		  center_instances_around_point(const Vec2d &point);
     void 		  translate(double x, double y, double z) { for (ModelObject *o : this->objects) o->translate(x, y, z); }
-    TriangleMesh  mesh() const;
+    Domain::TriangleMesh  mesh() const;
     
     // Croaks if the duplicated objects do not fit the print bed.
     void duplicate_objects_grid(size_t x, size_t y, double dist);

@@ -1,7 +1,8 @@
 #ifndef SLIC3R_TEST_UTILS
 #define SLIC3R_TEST_UTILS
 
-#include <libslic3r/TriangleMesh.hpp>
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
+#include "libslic3r/libslic3r.h"
 #include <libslic3r/Format/OBJ.hpp>
 #include <random>
 
@@ -11,9 +12,9 @@
 #define PATH_SEPARATOR R"(/)"
 #endif
 
-inline Slic3r::TriangleMesh load_model(const std::string &obj_filename)
+inline Slic3r::Domain::TriangleMesh load_model(const std::string &obj_filename)
 {
-    Slic3r::TriangleMesh mesh;
+    Slic3r::Domain::TriangleMesh mesh;
     auto fpath = TEST_DATA_DIR PATH_SEPARATOR + obj_filename;
     Slic3r::load_obj(fpath.c_str(), &mesh);
     return mesh;

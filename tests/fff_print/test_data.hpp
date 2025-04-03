@@ -10,7 +10,7 @@
 #include "libslic3r/Model.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Print.hpp"
-#include "libslic3r/TriangleMesh.hpp"
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "libslic3r/GCode/SeamPlacer.hpp"
 #include "libslic3r/GCode/SeamAligned.hpp"
 
@@ -56,10 +56,10 @@ extern const std::unordered_map<TestMesh, const char *, TestMeshHash> mesh_names
 
 /// Port of Slic3r::Test::mesh
 /// Basic cubes/boxes should call TriangleMesh::make_cube() directly and rescale/translate it
-TriangleMesh mesh(TestMesh m);
+Domain::TriangleMesh mesh(TestMesh m);
 
-TriangleMesh mesh(TestMesh m, Vec3d translate, Vec3d scale = Vec3d(1.0, 1.0, 1.0));
-TriangleMesh mesh(TestMesh m, Vec3d translate, double scale = 1.0);
+Domain::TriangleMesh mesh(TestMesh m, Vec3d translate, Vec3d scale = Vec3d(1.0, 1.0, 1.0));
+Domain::TriangleMesh mesh(TestMesh m, Vec3d translate, double scale = 1.0);
 
 /// Templated function to see if two values are equivalent (+/- epsilon)
 template<typename T> bool _equiv(const T &a, const T &b) { return std::abs(a - b) < EPSILON; }
@@ -68,9 +68,9 @@ template<typename T> bool _equiv(const T &a, const T &b, double epsilon) {
     return abs(a - b) < epsilon;
 }
 
-Slic3r::Model model(const std::string &model_name, TriangleMesh &&_mesh);
+Slic3r::Model model(const std::string &model_name, Domain::TriangleMesh &&_mesh);
 void init_print(
-    std::vector<TriangleMesh> &&meshes,
+    std::vector<Domain::TriangleMesh> &&meshes,
     Slic3r::Print &print,
     Slic3r::Model &model,
     const DynamicPrintConfig &config_in,
@@ -86,7 +86,7 @@ void init_print(
     unsigned duplicate_count = 1
 );
 void init_print(
-    std::initializer_list<TriangleMesh> meshes,
+    std::initializer_list<Domain::TriangleMesh> meshes,
     Slic3r::Print &print,
     Slic3r::Model &model,
     const Slic3r::DynamicPrintConfig &config_in = Slic3r::DynamicPrintConfig::full_print_config(),
@@ -102,7 +102,7 @@ void init_print(
     unsigned duplicate = 1
 );
 void init_print(
-    std::initializer_list<TriangleMesh> meshes,
+    std::initializer_list<Domain::TriangleMesh> meshes,
     Slic3r::Print &print,
     Slic3r::Model &model,
     std::initializer_list<Slic3r::ConfigBase::SetDeserializeItem> config_items,
@@ -117,7 +117,7 @@ void init_and_process_print(
     bool comments = false
 );
 void init_and_process_print(
-    std::initializer_list<TriangleMesh> meshes,
+    std::initializer_list<Domain::TriangleMesh> meshes,
     Slic3r::Print &print,
     const DynamicPrintConfig &config,
     bool comments = false
@@ -129,7 +129,7 @@ void init_and_process_print(
     bool comments = false
 );
 void init_and_process_print(
-    std::initializer_list<TriangleMesh> meshes,
+    std::initializer_list<Domain::TriangleMesh> meshes,
     Slic3r::Print &print,
     std::initializer_list<Slic3r::ConfigBase::SetDeserializeItem> config_items,
     bool comments = false
@@ -141,7 +141,7 @@ std::string slice(
     std::initializer_list<TestMesh> meshes, const DynamicPrintConfig &config, bool comments = false
 );
 std::string slice(
-    std::initializer_list<TriangleMesh> meshes,
+    std::initializer_list<Domain::TriangleMesh> meshes,
     const DynamicPrintConfig &config,
     bool comments = false
 );
@@ -151,7 +151,7 @@ std::string slice(
     bool comments = false
 );
 std::string slice(
-    std::initializer_list<TriangleMesh> meshes,
+    std::initializer_list<Domain::TriangleMesh> meshes,
     std::initializer_list<Slic3r::ConfigBase::SetDeserializeItem> config_items,
     bool comments = false
 );
@@ -168,7 +168,7 @@ inline std::unique_ptr<Print> process_3mf(const boost::filesystem::path &path) {
     boost::optional<Semver> version;
     load_3mf(path.string().c_str(), config, context, &model, false, version);
 
-    Slic3r::Test::init_print(std::vector<TriangleMesh>{}, *print, model, config);
+    Slic3r::Test::init_print(std::vector<Domain::TriangleMesh>{}, *print, model, config);
     print->process();
 
     return print;

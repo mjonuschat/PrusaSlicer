@@ -12,6 +12,8 @@
 #include "Slic3r/App/LibvgcodeWrapper/Types.hpp"
 #include "Slic3r/App/Render/ImguiRender.hpp"
 
+#include "Slic3r/Domain/TriangleMesh.hpp"
+
 #include <Slic3r/App/libvgcode/ViewerInputData.hpp>
 #include <Slic3r/Biz/libpgcode/Processor.hpp>
 
@@ -30,6 +32,8 @@ using namespace Slic3r::App::libvgcode;
 using namespace Slic3r::App::LibvgcodeWrapper;
 
 namespace Slic3r::App::Preview {
+
+using Domain::TriangleMesh;
 
 void PreviewRenderModule::render_scene()
 {
@@ -248,6 +252,8 @@ void PreviewRenderModule::on_fdm_result_cache_changed(
 
 void PreviewRenderModule::on_init(Render::Device& device)
 {
+    namespace TriMesh = Biz::Algorithms::TriangleMesh;
+
     AbstractRenderModule::on_init(device);
     m_scene_presenter =
         std::make_unique<PreviewScenePresenter>(m_workbench, m_project_interactor, *m_device);
@@ -261,24 +267,24 @@ void PreviewRenderModule::on_init(Render::Device& device)
     config.option<ConfigOptionEnum<DraftShield>>("draft_shield", true)->value = dsEnabled;
     m_project_interactor.selected_config_container().set_print_config(config);
     const double cube1_side{40};
-    TriangleMesh cube1{its_make_cube(cube1_side, cube1_side, cube1_side)};
-    cube1.translate(30, 0, 0);
+    TriangleMesh cube1{TriMesh::make_cube(cube1_side, cube1_side, cube1_side)};
+    cube1.translate(Vec3f{30, 0, 0});
     m_project_interactor.scene_interactor().new_object_from_mesh(std::move(cube1));
     const double cube2_side{30};
-    TriangleMesh cube2{its_make_cube(cube2_side, cube2_side, cube2_side)};
-    cube2.translate(60, 0, 0);
+    TriangleMesh cube2{TriMesh::make_cube(cube2_side, cube2_side, cube2_side)};
+    cube2.translate(Vec3f{60, 0, 0});
     m_project_interactor.scene_interactor().new_object_from_mesh(std::move(cube2));
     const double cube3_side{80};
-    TriangleMesh cube3{its_make_cube(cube3_side, cube3_side, cube3_side)};
-    cube3.translate(-80, -60, 0);
+    TriangleMesh cube3{TriMesh::make_cube(cube3_side, cube3_side, cube3_side)};
+    cube3.translate(Vec3f{-80, -60, 0});
     m_project_interactor.scene_interactor().new_object_from_mesh(std::move(cube3));
     const double cube4_side{70};
-    TriangleMesh cube4{its_make_cube(cube4_side, cube4_side, cube4_side)};
-    cube4.translate(0, 90, 0);
+    TriangleMesh cube4{TriMesh::make_cube(cube4_side, cube4_side, cube4_side)};
+    cube4.translate(Vec3f{0, 90, 0});
     m_project_interactor.scene_interactor().new_object_from_mesh(std::move(cube4));
     const double cube5_side{50};
-    TriangleMesh cube5{its_make_cube(cube5_side, cube5_side, cube5_side)};
-    cube5.translate(60, 60, 0);
+    TriangleMesh cube5{TriMesh::make_cube(cube5_side, cube5_side, cube5_side)};
+    cube5.translate(Vec3f{60, 60, 0});
     m_project_interactor.scene_interactor().new_object_from_mesh(std::move(cube5));
 
     init_gizmos();

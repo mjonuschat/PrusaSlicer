@@ -4,7 +4,7 @@
 
 #include "Slic3r/Biz/ISlicingInputChangedListener.hpp"
 #include "Slic3r/Biz/Platform/WithListeners.hpp"
-#include "libslic3r/TriangleMesh.hpp"
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "Slic3r/Assert.hpp"
 #include "Slic3r/Domain/Workbench.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractorProjectContext.hpp"
@@ -75,8 +75,8 @@ public:
     void on_selected_project_changed(size_t index) override;
     void on_selected_config_container_changed(Domain::SelectionId project_id, Domain::SelectionId container_id) override;
 
-    void new_object_from_mesh(TriangleMesh&& mesh);
-    void add_volume_from_mesh(TriangleMesh&& mesh, ModelVolumeType volume_type, const Transform& xform = Matrix4d::Identity());
+    void new_object_from_mesh(Domain::TriangleMesh&& mesh);
+    void add_volume_from_mesh(Domain::TriangleMesh&& mesh, ModelVolumeType volume_type, const Transform& xform = Matrix4d::Identity());
     void add_instance(const Transform& xform);
     void notify_listener_on_objects(const std::vector<Slic3r::ModelObject*>& objects);
     void notify_listener_on_objects();

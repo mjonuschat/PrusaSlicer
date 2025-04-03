@@ -51,7 +51,7 @@ using namespace Slic3r;
 
 #include "ExPolygonsIndex.hpp"
 // libslic3r
-#include "TriangleMesh.hpp" // its_merge
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp" // its_merge
 #include "Utils.hpp" // next_highest_power_of_2
 #include "admesh/stl.h"
 #include "libslic3r/AABBTreeIndirect.hpp"
@@ -550,6 +550,9 @@ void store(const Emboss::IProjection &projection, const Point &point_to_project,
 #include "Slic3r/Biz/Algorithms/SVG.hpp"
 #endif // DEBUG_OUTPUT_DIR
 
+using Domain::Index3;
+using Domain::TriangleMesh;
+
 SurfaceCut Slic3r::cut_surface(const ExPolygons &shapes,
                                const std::vector<indexed_triangle_set> &models,
                                const Emboss::IProjection &projection,
@@ -921,7 +924,8 @@ void priv::set_skip_by_angle(std::vector<bool>          &skip_indicies,
     for (const stl_triangle_vertex_indices& face : its.indices) {
         size_t index = &face - &its.indices.front();
         if (skip_indicies[index]) continue;
-        Vec3f n = its_face_normal(its, face);
+        namespace TriMesh = Biz::Algorithms::TriangleMesh;
+        Vec3f n = TriMesh::its_face_normal(its, face);
         const Vec3f& v = its.vertices[face[0]];
         const Vec3d vd = v.cast<double>();
         // Improve: For Orthogonal Projection it is same for each vertex
@@ -3636,7 +3640,7 @@ void priv::append(SurfaceCut &sc, SurfaceCut &&sc_add)
             for (SurfaceCut::Index &i : cut) i += offset;
         Slic3r::append(sc.contours, std::move(sc_add.contours));
     }
-    its_merge(sc, std::move(sc_add));
+    Slic3r::Domain::its_merge(sc, std::move(sc_add));
 }
 
 SurfaceCut priv::merge_patches(SurfacePatches &patches, const std::vector<bool>& mask)

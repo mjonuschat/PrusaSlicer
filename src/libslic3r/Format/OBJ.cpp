@@ -13,7 +13,7 @@
 #include <cstring>
 
 #include "libslic3r/Model.hpp"
-#include "libslic3r/TriangleMesh.hpp"
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "OBJ.hpp"
 #include "objparser.hpp"
 #include "admesh/stl.h"
@@ -25,6 +25,9 @@
 #endif
 
 namespace Slic3r {
+
+using Domain::TriangleMesh;
+namespace TriMesh = Biz::Algorithms::TriangleMesh;
 
 bool load_obj(const char *path, TriangleMesh *meshptr)
 {
@@ -97,7 +100,8 @@ bool load_obj(const char *path, TriangleMesh *meshptr)
             }
         }
 
-    *meshptr = TriangleMesh(std::move(its));
+    using Biz::Algorithms::TriangleMesh::construct;
+    *meshptr = TriangleMesh(construct(std::move(its)));
     if (meshptr->empty()) {
         BOOST_LOG_TRIVIAL(error) << "load_obj: This OBJ file couldn't be read because it's empty. " << path;
         return false;
@@ -130,7 +134,7 @@ bool load_obj(const char *path, Model *model, const char *object_name_in)
 bool store_obj(const char *path, TriangleMesh *mesh)
 {
     //FIXME returning false even if write failed.
-    mesh->WriteOBJFile(path);
+    TriMesh::write_obj_file(*mesh, path);
     return true;
 }
 
