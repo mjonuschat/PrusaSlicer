@@ -33,7 +33,6 @@ PlaterScenePresenter::PlaterScenePresenter(
 {
     size_t project_id = m_project_interactor.selected_project_id();
     PlaterScenePresenter::on_selected_project_changed(project_id);
-    project_context().scene().camera().add_listener<Scene::ICameraUpdateListener>(&m_bed_render_updater);
     const auto& p = m_workbench.project(project_id);
     Domain::BedRefs updated;
     for (const auto& cc : p.config_containers()) {
@@ -77,6 +76,8 @@ void PlaterScenePresenter::on_selected_project_changed(size_t index)
         ScenePresenterProjectContext context{};
         m_projects.emplace(m_selected_project_id, std::move(context));
         m_bed_render_updater.on_selected_project_changed(m_selected_project_id);
+        // a new camera has been created, add the bed updater as listener
+        project_context().scene().camera().add_listener<Scene::ICameraUpdateListener>(&m_bed_render_updater);
     }
 }
 
