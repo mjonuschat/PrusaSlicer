@@ -9,7 +9,7 @@
 
 #include <libslic3r/SLA/AGGRaster.hpp>
 #include <libslic3r/MTUtils.hpp>
-#include <libslic3r/SVG.hpp>
+#include "Slic3r/Biz/Algorithms/SVG.hpp"
 #include <libslic3r/ClipperUtils.hpp>
 
 #include <libslic3r/TriangleMeshSlicer.hpp>
@@ -19,6 +19,8 @@
 
 using namespace Slic3r;
 using namespace Slic3r::Biz;
+using Algorithms::SVG::SVG;
+
 
 static double area(const sla::PixelDim &pxd)
 {

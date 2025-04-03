@@ -10,7 +10,7 @@
 
 #include "CSGMesh.hpp"
 #include "libslic3r/OpenVDBUtils.hpp"
-#include "libslic3r/Execution/ExecutionTBB.hpp"
+#include "Slic3r/Biz/Algorithms/Execution/ExecutionTBB.hpp"
 
 namespace Slic3r { namespace csg {
 
@@ -64,12 +64,13 @@ VoxelGridPtr voxelize_csgmesh(const Range<It>      &csgrange,
                               const VoxelizeParams &params = {})
 {
     using namespace detail;
+    namespace execution = Slic3r::Biz::Algorithms::Execution;
 
     VoxelGridPtr ret;
 
     std::vector<VoxelGridPtr> grids (csgrange.size());
 
-    execution::for_each(ex_tbb, size_t(0), csgrange.size(), [&](size_t csgidx) {
+    execution::for_each(execution::ex_tbb, size_t(0), csgrange.size(), [&](size_t csgidx) {
         if (params.statusfn() && params.statusfn()(-1))
             return;
 
@@ -77,7 +78,7 @@ VoxelGridPtr voxelize_csgmesh(const Range<It>      &csgrange,
         std::advance(it, csgidx);
         auto &csgpart = *it;
         grids[csgidx] = get_voxelgrid(csgpart, params);
-    }, execution::max_concurrency(ex_tbb));
+    }, execution::max_concurrency(execution::ex_tbb));
 
     size_t csgidx = 0;
     struct Frame { CSGType op = CSGType::Union; VoxelGridPtr grid; };

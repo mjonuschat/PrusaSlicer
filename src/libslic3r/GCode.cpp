@@ -68,7 +68,7 @@
 #include <boost/nowide/cstdio.hpp>
 #include <boost/nowide/cstdlib.hpp>
 
-#include "SVG.hpp"
+#include "Slic3r/Biz/Algorithms/SVG.hpp"
 #include "LocalesUtils.hpp"
 #include "spdlog/spdlog.h"
 

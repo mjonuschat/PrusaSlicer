@@ -1,6 +1,7 @@
 #include "Slic3r/Biz/Network/IHttp.hpp"
 
 #include "Slic3r/Biz/Network/HttpFactory.hpp"
+#include <sstream>
 
 namespace Slic3r::Biz::Network {
 

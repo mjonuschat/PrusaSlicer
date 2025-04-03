@@ -147,7 +147,7 @@ bool intersection(const L& line, const L& other_line, typename line_traits<L>::p
     using ScalarType = typename line_traits<L>::scalar_type;
     using PointType  = typename line_traits<L>::point_type;
     using Floating   = typename std::conditional<std::is_floating_point<ScalarType>::value, ScalarType, double>::type;
-    using VecType    = decltype(std::declval<PointType>().template cast<Floating>().eval());
+    using VecType    = Domain::Advanced::Vec<Floating, PointType::RowsAtCompileTime>;
 
     const VecType  v1    = (line_traits<L>::get_b(line) - line_traits<L>::get_a(line)).template cast<Floating>();
     const VecType  v2    = (line_traits<L>::get_b(other_line) - line_traits<L>::get_a(other_line)).template cast<Floating>();

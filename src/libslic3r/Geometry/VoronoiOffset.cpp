@@ -202,8 +202,8 @@ namespace detail {
         out.pts[0] += pt;
         out.pts[1] += pt;
 
-        assert(std::abs(Geometry::ray_point_distance<Vec2d>(line.a.cast<double>(), (line.b - line.a).cast<double>(), out.pts[0]) - d) < SCALED_EPSILON);
-        assert(std::abs(Geometry::ray_point_distance<Vec2d>(line.a.cast<double>(), (line.b - line.a).cast<double>(), out.pts[1]) - d) < SCALED_EPSILON);
+        assert(std::abs(Geometry::ray_point_distance(line.a.cast<double>(), (line.b - line.a).cast<double>(), out.pts[0]) - d) < SCALED_EPSILON);
+        assert(std::abs(Geometry::ray_point_distance(line.a.cast<double>(), (line.b - line.a).cast<double>(), out.pts[1]) - d) < SCALED_EPSILON);
         assert(std::abs((out.pts[0] - ipt.cast<double>()).norm() - d) < SCALED_EPSILON);
         assert(std::abs((out.pts[1] - ipt.cast<double>()).norm() - d) < SCALED_EPSILON);
         return out;
@@ -240,7 +240,7 @@ namespace detail {
         const Line &line = lines[cell.source_index()];
         return cell.contains_point() ?
             (((cell.source_category() == boost::polygon::SOURCE_CATEGORY_SEGMENT_START_POINT) ? line.a : line.b).cast<double>() - point).norm() :
-            (Geometry::foot_pt<Vec2d>(line.a.cast<double>(), (line.b - line.a).cast<double>(), point) - point).norm();
+            (Geometry::foot_pt(line.a.cast<double>(), (line.b - line.a).cast<double>(), point) - point).norm();
     };
 
     bool on_site(const Lines &lines, const VD::cell_type &cell, const Vec2d &pt)
@@ -1000,7 +1000,7 @@ std::vector<double> signed_vertex_distances(const VD &vd, const Lines &lines)
             if (point_cell == 0) {
                 // Project vertex onto a contour segment.
                 const Line &line = lines[edge->cell()->source_index()];
-                dist = Geometry::ray_point_distance<Vec2d>(
+                dist = Geometry::ray_point_distance(
                     line.a.cast<double>(), (line.b - line.a).cast<double>(), vertex_point(vertex));
             } else {
                 // Distance to a contour point.
@@ -1221,7 +1221,7 @@ std::vector<Vec2d> edge_offset_contour_intersections(
                             // of the distance to a nearest site somewhere inside this Voronoi edge (at the intersection of the bisector
                             // and the Voronoi edge.
                             const Line &line = cell->contains_segment() ? line0 : line1;
-                            dmin_new = 0.5 * (Geometry::foot_pt<Vec2d>(line.a.cast<double>(), dir, px) - px).norm();
+                            dmin_new = 0.5 * (Geometry::foot_pt(line.a.cast<double>(), dir, px) - px).norm();
                             found    = true;
                         }
                     } else {

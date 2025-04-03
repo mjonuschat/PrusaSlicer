@@ -9,7 +9,7 @@
 
 #include <boost/log/trivial.hpp>
 
-#include <libslic3r/SVG.hpp>
+#include "Slic3r/Biz/Algorithms/SVG.hpp"
 
 #include <arrange-wrapper/Tasks/ArrangeTask.hpp>
 #include <arrange-wrapper/Items/ArrangeItem.hpp>

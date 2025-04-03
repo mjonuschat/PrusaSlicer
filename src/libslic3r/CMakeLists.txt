@@ -227,14 +227,12 @@ set(SLIC3R_SOURCES
     GCode.hpp
     # GCodeSender.cpp
     # GCodeSender.hpp
-    Geometry.cpp
     Geometry.hpp
     Geometry/ArcWelder.cpp
     Geometry/ArcWelder.hpp
     Geometry/Bicubic.hpp
     Geometry/Circle.cpp
     Geometry/Circle.hpp
-    Geometry/ConvexHull.cpp
     Geometry/ConvexHull.hpp
     Geometry/Curves.hpp
     Geometry/MedialAxis.cpp
@@ -363,8 +361,6 @@ set(SLIC3R_SOURCES
     SurfaceCollection.cpp
     SurfaceCollection.hpp
     SurfaceMesh.hpp
-    SVG.cpp
-    SVG.hpp
     Technologies.hpp
     Tesselate.cpp
     Tesselate.hpp
@@ -401,9 +397,6 @@ set(SLIC3R_SOURCES
     MarchingSquares.hpp
     MultipleBeds.cpp
     MultipleBeds.hpp
-    Execution/Execution.hpp
-    Execution/ExecutionSeq.hpp
-    Execution/ExecutionTBB.hpp
     Optimize/Optimizer.hpp
     Optimize/NLoptOptimizer.hpp
     Optimize/BruteforceOptimizer.hpp
@@ -596,6 +589,7 @@ target_link_libraries(libslic3r_cgal PUBLIC
     slic3r-biz-algorithms
     clipper
     clipper_z
+    libslic3r
 )
 
 if (MSVC AND "${CMAKE_SIZEOF_VOID_P}" STREQUAL "4") # 32 bit MSVC workaround

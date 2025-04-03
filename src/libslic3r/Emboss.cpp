@@ -72,7 +72,7 @@ namespace { void remove_small_islands(ExPolygons &shape, double minimal_area);}
 namespace {
 // for debug purpose only
 // NOTE: check scale when store svg !!
-#include "libslic3r/SVG.hpp" // for visualize_heal
+#include "Slic3r/Biz/Algorithms/SVG.hpp" // for visualize_heal
 
 Points get_unique_intersections(const Slic3r::IntersectionsLines &intersections); // fast forward declaration
 static std::string visualize_heal_svg_filepath = "C:/data/temp/heal.svg";
@@ -82,7 +82,7 @@ void               visualize_heal(const std::string &svg_filepath, const ExPolyg
     BoundingBox bb(pts);
     // double svg_scale = SHAPE_SCALE / unscale<double>(1.);
     //  bb.scale(svg_scale);
-    SVG svg(svg_filepath, bb);
+    Biz::Algorithms::SVG::SVG svg(svg_filepath, bb);
     svg.draw(expolygons);
 
     Points duplicits  = collect_duplicates(pts);

@@ -3,9 +3,11 @@
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 #include "Slic3r/Biz/Algorithms/DouglasPeucker.hpp"
 #include "Slic3r/Biz/Algorithms/Point.hpp"
+#include "Slic3r/Biz/Algorithms/ClipperUtils.hpp"
+#include "Slic3r/Biz/Algorithms/MultiPoint.hpp"
+#include "Slic3r/Biz/Algorithms/Line.hpp"
+#include "Slic3r/Exception.hpp"
 
-// FIXME: Temporarily use includes from libslic3r until Clipper integration refactoring.
-#include <libslic3r/ClipperUtils.hpp>
 
 using namespace Slic3r::Biz::Algorithms;
 
@@ -109,11 +111,11 @@ Domain::Polyline split_at_index(const Domain::Polygon& polygon, const size_t ind
 {
     Domain::Polyline polyline;
     polyline.points.reserve(polygon.points.size() + 1);
-    for (Points::const_iterator it = polygon.points.begin() + static_cast<int>(index); it != polygon.points.end(); ++it) {
+    for (auto it = polygon.points.begin() + static_cast<int>(index); it != polygon.points.end(); ++it) {
         polyline.points.push_back(*it);
     }
 
-    for (Points::const_iterator it = polygon.points.begin(); it != polygon.points.begin() + static_cast<int>(index) + 1; ++it) {
+    for (auto it = polygon.points.begin(); it != polygon.points.begin() + static_cast<int>(index) + 1; ++it) {
         polyline.points.push_back(*it);
     }
 
@@ -148,13 +150,14 @@ Domain::Polygons simplify(const Domain::Polygon& polygon, double tolerance)
     assert(Polygon::is_counter_clockwise(polygon));
 
     // Repeat the first point at the end in order to apply Douglas-Peucker on the whole polygon.
-    Points points = polygon.points;
+    Domain::Points points = polygon.points;
     points.push_back(points.front());
     Domain::Polygon p(Algorithms::DouglasPeucker::douglas_peucker(points, tolerance));
     p.points.pop_back();
 
     Domain::Polygons pp;
     pp.push_back(p);
+    using Slic3r::Biz::Algorithms::ClipperUtils::simplify_polygons;
     return simplify_polygons(pp);
 }
 
@@ -210,6 +213,54 @@ Domain::Lines to_lines(const Domain::Polygons& polygons)
     }
 
     return lines;
+}
+
+Domain::BoundingBox2crd get_extents(const Domain::Polygon& poly)
+{
+    return Algorithms::BoundingBox::construct(poly.points);
+}
+
+Domain::BoundingBox2crd get_extents(const Domain::Polygons &polygons)
+{
+    Domain::BoundingBox2crd bb;
+    if (! polygons.empty()) {
+        bb = get_extents(polygons.front());
+        for (size_t i = 1; i < polygons.size(); ++ i)
+            bb = BoundingBox::merge(bb, get_extents(polygons[i]));
+    }
+    return bb;
+}
+
+Domain::Polyline to_polyline(const Domain::Polygon &polygon)
+{
+    Domain::Polyline out;
+    out.points.reserve(polygon.size() + 1);
+    out.points.assign(polygon.points.begin(), polygon.points.end());
+    out.points.push_back(polygon.points.front());
+    return out;
+}
+
+Domain::Polylines to_polylines(const Domain::Polygons &polygons)
+{
+    Domain::Polylines out;
+    out.reserve(polygons.size());
+    for (const Domain::Polygon &polygon : polygons)
+        out.emplace_back(to_polyline(polygon));
+    return out;
+}
+
+Domain::Polylines to_polylines(Domain::Polygons &&polys)
+{
+    Domain::Polylines polylines;
+    polylines.assign(polys.size(), Domain::Polyline());
+    size_t idx = 0;
+    for (auto it = polys.begin(); it != polys.end(); ++ it) {
+        Domain::Polyline &pl = polylines[idx ++];
+        pl.points = std::move(it->points);
+        pl.points.push_back(pl.points.front());
+    }
+    assert(idx == polylines.size());
+    return polylines;
 }
 
 } // namespace Slic3r::Biz::Algorithms::Polygon

@@ -2,7 +2,7 @@
 
 #include "libslic3r/Arachne/WallToolPaths.hpp"
 #include "libslic3r/ClipperUtils.hpp"
-#include "libslic3r/SVG.hpp"
+#include "Slic3r/Biz/Algorithms/SVG.hpp"
 #include "libslic3r/Utils.hpp"
 
 using namespace Slic3r;

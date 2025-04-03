@@ -72,7 +72,7 @@
     #define _DEBUG
     #undef NDEBUG
     #include "../utils.hpp"
-    #include "../SVG.hpp"
+    #include "Slic3r/Biz/Algorithms/SVG.hpp"
 #endif
 
 #include <cassert>
@@ -701,7 +701,7 @@ public:
                 bbox.merge(get_extents(out));
             if (!support_polygons_simplified.empty())
                 bbox.merge(get_extents(support_polygons_simplified));
-            SVG svg(debug_out_path("extract_support_from_grid_trimmed-%s-%d-%d-%lf.svg", step_name, iRun, layer_id, print_z).c_str(), bbox);
+            Biz::Algorithms::SVG::SVG svg(debug_out_path("extract_support_from_grid_trimmed-%s-%d-%d-%lf.svg", step_name, iRun, layer_id, print_z).c_str(), bbox);
             svg.draw(union_ex(support_polygons_simplified), "gray", 0.25f);
             svg.draw(islands, "red", 0.5f);
             svg.draw(union_ex(out), "green", 0.5f);
@@ -1295,7 +1295,7 @@ static inline std::tuple<Polygons, Polygons, Polygons, float> detect_overhangs(
 
             #ifdef SLIC3R_DEBUG
             {
-                ::Slic3r::SVG svg(debug_out_path("support-top-contacts-raw-run%d-layer%d-region%d.svg", 
+                ::Slic3r::Biz::Algorithms::SVG::SVG svg(debug_out_path("support-top-contacts-raw-run%d-layer%d-region%d.svg", 
                     iRun, layer_id, 
                     std::find_if(layer.regions().begin(), layer.regions().end(), [layerm](const LayerRegion* other){return other == layerm;}) - layer.regions().begin()),
                     get_extents(diff_polygons));
@@ -2437,7 +2437,7 @@ void PrintObjectSupportMaterial::generate_base_layers(
                 {
                     BoundingBox bbox = get_extents(polygons_new);
                     bbox.merge(get_extents(polygons_trimming));
-                    ::Slic3r::SVG svg(debug_out_path("support-intermediate-layers-raw-%d-%lf.svg", iRun, layer_intermediate.print_z), bbox);
+                    ::Slic3r::Biz::Algorithms::SVG::SVG svg(debug_out_path("support-intermediate-layers-raw-%d-%lf.svg", iRun, layer_intermediate.print_z), bbox);
                     svg.draw(union_ex(polygons_new),                    "blue", 0.5f);
                     svg.draw(to_polylines(polygons_new),                "blue");
                     svg.draw(union_safety_offset_ex(polygons_trimming), "red", 0.5f);

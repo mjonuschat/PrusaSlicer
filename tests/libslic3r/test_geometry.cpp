@@ -16,7 +16,7 @@
 #include "Slic3r/Biz/Algorithms/Point.hpp"
 
 //#include <random>
-#include "libslic3r/SVG.hpp"
+#include "Slic3r/Biz/Algorithms/SVG.hpp"
 
 #include "../data/prusaparts.hpp"
 
@@ -24,6 +24,7 @@
 
 using namespace Slic3r;
 using namespace Slic3r::Biz;
+using Slic3r::Biz::Algorithms::SVG::SVG;
 
 TEST_CASE("Line::parallel_to", "[Geometry]"){
     Line l{ { 100000, 0 }, { 0, 0 } };

@@ -541,7 +541,7 @@ std::vector<ExPolygon> merge_expansions_into_expolygons(ExPolygons &&src, std::v
             static int iRun = 0;
             BoundingBox bbox = get_extents(acc);
             bbox.merge(get_extents(src_ex));
-            SVG svg(debug_out_path("expand_merge_expolygons-failed-union=%d.svg", iRun ++).c_str(), bbox);
+            Biz::Algorithms::SVG::SVG svg(debug_out_path("expand_merge_expolygons-failed-union=%d.svg", iRun ++).c_str(), bbox);
             svg.draw(acc);
             svg.draw_outline(acc, "black", scale_(0.05));
             svg.draw(src_ex, "red");

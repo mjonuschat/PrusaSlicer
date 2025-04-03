@@ -289,10 +289,10 @@ private:
 class SupportIslandInnerPoint: public SupportIslandPoint
 {    
     // define inner area of island where inner point could move during aligning
-    std::shared_ptr<ExPolygons> inner;
+    std::shared_ptr<Domain::ExPolygons> inner;
 public:
     SupportIslandInnerPoint(Point     point,
-                            std::shared_ptr<ExPolygons> inner,
+                            std::shared_ptr<Domain::ExPolygons> inner,
                             Type      type = Type::thick_part_inner);
     
     bool can_move() const override { return true; };

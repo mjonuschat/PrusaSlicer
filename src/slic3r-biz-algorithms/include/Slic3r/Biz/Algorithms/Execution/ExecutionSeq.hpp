@@ -5,13 +5,9 @@
 #ifndef EXECUTIONSEQ_HPP
 #define EXECUTIONSEQ_HPP
 
-#ifdef PRUSASLICER_USE_EXECUTION_STD // Conflicts with our version of TBB
-#include <execution>
-#endif
+#include "Slic3r/Biz/Algorithms/Execution/Execution.hpp"
 
-#include "Execution.hpp"
-
-namespace Slic3r {
+namespace Slic3r::Biz::Algorithms::Execution {
 
 // Execution policy implementing dummy sequential algorithms
 struct ExecutionSeq {};
@@ -23,19 +19,15 @@ static constexpr ExecutionSeq ex_seq = {};
 template<class EP> struct IsSequentialEP_ { static constexpr bool value = false; };
 
 template<> struct IsSequentialEP_<ExecutionSeq>: public std::true_type {};
-#ifdef PRUSASLICER_USE_EXECUTION_STD
-template<> struct IsExecutionPolicy_<std::execution::sequenced_policy>: public std::true_type {};
-template<> struct IsSequentialEP_<std::execution::sequenced_policy>: public std::true_type {};
-#endif
 
 template<class EP>
-constexpr bool IsSequentialEP = IsSequentialEP_<remove_cvref_t<EP>>::value;
+constexpr bool IsSequentialEP = IsSequentialEP_<std::remove_cvref_t<EP>>::value;
 
 template<class EP, class R = EP>
 using SequentialEPOnly = std::enable_if_t<IsSequentialEP<EP>, R>;
 
 template<class EP>
-struct execution::Traits<EP, SequentialEPOnly<EP, void>> {
+struct Traits<EP, SequentialEPOnly<EP, void>> {
 private:
     struct _Mtx { inline void lock() {} inline void unlock() {} };
 

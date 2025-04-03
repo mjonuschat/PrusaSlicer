@@ -1,4 +1,5 @@
-///|/ Copyright (c) Prusa Research 2021 - 2023 Lukáš Matěna @lukasmatena, Pavel Mikuš @Godrak, Vojtěch Bubník @bubnikv, Filip Sykala @Jony01
+///|/ Copyright (c) Prusa Research 2021 - 2023 Lukáš Matěna @lukasmatena, Pavel Mikuš @Godrak,
+///Vojtěch Bubník @bubnikv, Filip Sykala @Jony01
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
@@ -7,35 +8,53 @@
 #include <cinttypes>
 #include <cstddef>
 
-#include "ConvexHull.hpp"
-#include "libslic3r/BoundingBox.hpp"
-#include "libslic3r/Geometry.hpp"
-#include "libslic3r/ExPolygon.hpp"
+#include "Slic3r/Biz/Algorithms/Geometry/ConvexHull.hpp"
+#include "Slic3r/Domain/BoundingBox.hpp"
+#include "Slic3r/Domain/ExPolygon.hpp"
+#include "Slic3r/Biz/Algorithms/Scaling.hpp"
+#include "Slic3r/Biz/Algorithms/Geometry/Geometry.hpp"
 
-namespace Slic3r { namespace Geometry {
+namespace Slic3r::Biz::Algorithms::Geometry {
+
+using Domain::Polygon;
+using Domain::Points;
+using Domain::Point;
+using Domain::Vec2d;
+using Domain::Vec3d;
+using Biz::Algorithms::Scaling::scaled;
 
 // This implementation is based on Andrew's monotone chain 2D convex hull algorithm
 Polygon convex_hull(Points pts)
 {
-    std::sort(pts.begin(), pts.end(), [](const Point& a, const Point& b) { return a.x() < b.x() || (a.x() == b.x() && a.y() < b.y()); });
-    pts.erase(std::unique(pts.begin(), pts.end(), [](const Point& a, const Point& b) { return a.x() == b.x() && a.y() == b.y(); }), pts.end());
+    std::sort(pts.begin(), pts.end(), [](const Point& a, const Point& b) {
+        return a.x() < b.x() || (a.x() == b.x() && a.y() < b.y());
+    });
+    pts.erase(
+        std::unique(
+            pts.begin(), pts.end(),
+            [](const Point& a, const Point& b) { return a.x() == b.x() && a.y() == b.y(); }
+        ),
+        pts.end()
+    );
 
     Polygon hull;
-    int n = (int)pts.size();
+    int n = (int) pts.size();
     if (n >= 3) {
         int k = 0;
         hull.points.resize(2 * n);
         // Build lower hull
-        for (int i = 0; i < n; ++ i) {
-            while (k >= 2 && Geometry::orient(pts[i], hull[k-2], hull[k-1]) != Geometry::ORIENTATION_CCW)
-                -- k;
-            hull[k ++] = pts[i];
+        for (int i = 0; i < n; ++i) {
+            while (k >= 2 &&
+                   Geometry::orient(pts[i], hull[k - 2], hull[k - 1]) != Geometry::ORIENTATION_CCW)
+                --k;
+            hull[k++] = pts[i];
         }
         // Build upper hull
-        for (int i = n-2, t = k+1; i >= 0; i--) {
-            while (k >= t && Geometry::orient(pts[i], hull[k-2], hull[k-1]) != Geometry::ORIENTATION_CCW)
-                -- k;
-            hull[k ++] = pts[i];
+        for (int i = n - 2, t = k + 1; i >= 0; i--) {
+            while (k >= t &&
+                   Geometry::orient(pts[i], hull[k - 2], hull[k - 1]) != Geometry::ORIENTATION_CCW)
+                --k;
+            hull[k++] = pts[i];
         }
         hull.points.resize(k);
         assert(hull.points.front() == hull.points.back());
@@ -44,25 +63,24 @@ Polygon convex_hull(Points pts)
     return hull;
 }
 
-Pointf3s convex_hull(Pointf3s points)
+Points3d convex_hull(Points3d points)
 {
     assert(points.size() >= 3);
     // sort input points
-    std::sort(points.begin(), points.end(), [](const Vec3d &a, const Vec3d &b){ return a.x() < b.x() || (a.x() == b.x() && a.y() < b.y()); });
+    std::sort(points.begin(), points.end(), [](const Vec3d& a, const Vec3d& b) {
+        return a.x() < b.x() || (a.x() == b.x() && a.y() < b.y());
+    });
 
     int n = points.size(), k = 0;
-    Pointf3s hull;
+    Points3d hull;
 
-    if (n >= 3)
-    {
+    if (n >= 3) {
         hull.resize(2 * n);
 
         // Build lower hull
-        for (int i = 0; i < n; ++i)
-        {
+        for (int i = 0; i < n; ++i) {
             Point p = scaled(Vec2d(points[i](0), points[i](1)));
-            while (k >= 2)
-            {
+            while (k >= 2) {
                 Point k1 = scaled(Vec2d(hull[k - 1](0), hull[k - 1](1)));
                 Point k2 = scaled(Vec2d(hull[k - 2](0), hull[k - 2](1)));
 
@@ -76,11 +94,9 @@ Pointf3s convex_hull(Pointf3s points)
         }
 
         // Build upper hull
-        for (int i = n - 2, t = k + 1; i >= 0; --i)
-        {
+        for (int i = n - 2, t = k + 1; i >= 0; --i) {
             Point p = scaled(Vec2d(points[i](0), points[i](1)));
-            while (k >= t)
-            {
+            while (k >= t) {
                 Point k1 = scaled(Vec2d(hull[k - 1](0), hull[k - 1](1)));
                 Point k2 = scaled(Vec2d(hull[k - 2](0), hull[k - 2](1)));
 
@@ -102,35 +118,35 @@ Pointf3s convex_hull(Pointf3s points)
     return hull;
 }
 
-Polygon convex_hull(const Polygons &polygons)
+Polygon convex_hull(const Domain::Polygons& polygons)
 {
     Points pp;
-    for (Polygons::const_iterator p = polygons.begin(); p != polygons.end(); ++p) {
+    for (auto p = polygons.begin(); p != polygons.end(); ++p) {
         pp.insert(pp.end(), p->points.begin(), p->points.end());
     }
     return convex_hull(std::move(pp));
 }
 
-Polygon convex_hull(const ExPolygons &expolygons)
+Polygon convex_hull(const Domain::ExPolygons& expolygons)
 {
     Points pp;
     size_t sz = 0;
-    for (const auto &expoly : expolygons)
+    for (const auto& expoly : expolygons)
         sz += expoly.contour.size();
     pp.reserve(sz);
-    for (const auto &expoly : expolygons)
+    for (const auto& expoly : expolygons)
         pp.insert(pp.end(), expoly.contour.points.begin(), expoly.contour.points.end());
     return convex_hull(pp);
 }
 
-Polygon convex_hulll(const Polylines &polylines)
+Polygon convex_hulll(const Domain::Polylines& polylines)
 {
     Points pp;
     size_t sz = 0;
-    for (const auto &polyline : polylines)
+    for (const auto& polyline : polylines)
         sz += polyline.points.size();
     pp.reserve(sz);
-    for (const auto &polyline : polylines)
+    for (const auto& polyline : polylines)
         pp.insert(pp.end(), polyline.points.begin(), polyline.points.end());
     return convex_hull(pp);
 }
@@ -141,19 +157,19 @@ using int256_t = boost::multiprecision::int256_t;
 using int128_t = boost::multiprecision::int128_t;
 
 template<class Scalar = int64_t>
-inline Scalar magnsq(const Point &p)
+inline Scalar magnsq(const Point& p)
 {
     return Scalar(p.x()) * p.x() + Scalar(p.y()) * p.y();
 }
 
 template<class Scalar = int64_t>
-inline Scalar dot(const Point &a, const Point &b)
+inline Scalar dot(const Point& a, const Point& b)
 {
     return Scalar(a.x()) * b.x() + Scalar(a.y()) * b.y();
 }
 
 template<class Scalar = int64_t>
-inline Scalar dotperp(const Point &a, const Point &b)
+inline Scalar dotperp(const Point& a, const Point& b)
 {
     return Scalar(a.x()) * b.y() - Scalar(a.y()) * b.x();
 }
@@ -164,14 +180,15 @@ using boost::multiprecision::abs;
 // enclosed by -dir and dirB (beta). Returns -1 if alpha is less than beta, 0
 // if they are equal and 1 if alpha is greater than beta. Note that dir is
 // reversed for beta, because it represents the opposite side of a caliper.
-int cmp_angles(const Point &dir, const Point &dirA, const Point &dirB) {
+int cmp_angles(const Point& dir, const Point& dirA, const Point& dirB)
+{
     int128_t dotA = dot(dir, dirA);
     int128_t dotB = dot(-dir, dirB);
     int256_t dcosa = int256_t(magnsq(dirB)) * int256_t(abs(dotA)) * dotA;
     int256_t dcosb = int256_t(magnsq(dirA)) * int256_t(abs(dotB)) * dotB;
     int256_t diff = dcosa - dcosb;
 
-    return diff > 0? -1 : (diff < 0 ? 1 : 0);
+    return diff > 0 ? -1 : (diff < 0 ? 1 : 0);
 }
 
 // A helper class to navigate on a polygon. Given a vertex index, one can
@@ -180,29 +197,35 @@ int cmp_angles(const Point &dir, const Point &dirA, const Point &dirB) {
 class Idx
 {
     size_t m_idx;
-    const Polygon *m_poly;
+    const Polygon* m_poly;
+
 public:
-    explicit Idx(const Polygon &p): m_idx{0}, m_poly{&p} {}
-    explicit Idx(size_t idx, const Polygon &p): m_idx{idx}, m_poly{&p} {}
+    explicit Idx(const Polygon& p) : m_idx{0}, m_poly{&p} {}
+    explicit Idx(size_t idx, const Polygon& p) : m_idx{idx}, m_poly{&p} {}
 
     size_t idx() const { return m_idx; }
     void set_idx(size_t i) { m_idx = i; }
     size_t next() const { return (m_idx + 1) % m_poly->size(); }
     size_t inc() { return m_idx = (m_idx + 1) % m_poly->size(); }
-    Point prev_dir() const {
+    Point prev_dir() const
+    {
         return pt() - (*m_poly)[(m_idx + m_poly->size() - 1) % m_poly->size()];
     }
 
-    const Point &pt() const { return (*m_poly)[m_idx]; }
+    const Point& pt() const { return (*m_poly)[m_idx]; }
     const Point dir() const { return (*m_poly)[next()] - pt(); }
-    const Point  next_dir() const
+    const Point next_dir() const
     {
         return (*m_poly)[(m_idx + 2) % m_poly->size()] - (*m_poly)[next()];
     }
-    const Polygon &poly() const { return *m_poly; }
+    const Polygon& poly() const { return *m_poly; }
 };
 
-enum class AntipodalVisitMode { Full, EdgesOnly };
+enum class AntipodalVisitMode
+{
+    Full,
+    EdgesOnly
+};
 
 // Visit all antipodal pairs starting from the initial ia, ib pair which
 // has to be a valid antipodal pair (not checked). fn is called for every
@@ -211,12 +234,12 @@ enum class AntipodalVisitMode { Full, EdgesOnly };
 // where i,j are the vertex indices of the antipodal pair and dir is the
 // direction of the calipers touching the i vertex.
 template<AntipodalVisitMode mode = AntipodalVisitMode::Full, class Fn>
-void visit_antipodals (Idx& ia, Idx &ib, Fn &&fn)
+void visit_antipodals(Idx& ia, Idx& ib, Fn&& fn)
 {
     // Set current caliper direction to be the lower edge angle from X axis
     int cmp = cmp_angles(ia.prev_dir(), ia.dir(), ib.dir());
     Idx *current = cmp <= 0 ? &ia : &ib, *other = cmp <= 0 ? &ib : &ia;
-    Idx *initial = current;
+    Idx* initial = current;
     bool visitor_continue = true;
 
     size_t start = initial->idx();
@@ -230,9 +253,9 @@ void visit_antipodals (Idx& ia, Idx &ib, Fn &&fn)
         // can be yielded.
         if constexpr (mode == AntipodalVisitMode::Full)
             if (cmp == 0 && visitor_continue) {
-                visitor_continue = fn(current == &ia ? ia.idx() : ia.next(),
-                                      current == &ib ? ib.idx() : ib.next(),
-                                      current_dir_a);
+                visitor_continue =
+                    fn(current == &ia ? ia.idx() : ia.next(), current == &ib ? ib.idx() : ib.next(),
+                       current_dir_a);
             }
 
         cmp = cmp_angles(current->dir(), current->next_dir(), other->dir());
@@ -242,13 +265,14 @@ void visit_antipodals (Idx& ia, Idx &ib, Fn &&fn)
             std::swap(current, other);
         }
 
-        if (initial->idx() == start) finished = true;
+        if (initial->idx() == start)
+            finished = true;
     }
 }
 
 } // namespace rotcalip
 
-bool convex_polygons_intersect(const Polygon &A, const Polygon &B)
+bool convex_polygons_intersect(const Polygon& A, const Polygon& B)
 {
     using namespace rotcalip;
 
@@ -257,42 +281,50 @@ bool convex_polygons_intersect(const Polygon &A, const Polygon &B)
     // and return false if the are.
     struct BB
     {
-        size_t         xmin = 0, xmax = 0, ymin = 0, ymax = 0;
-        const Polygon &P;
-        static bool cmpy(const Point &l, const Point &u)
+        size_t xmin = 0, xmax = 0, ymin = 0, ymax = 0;
+        const Polygon& P;
+        static bool cmpy(const Point& l, const Point& u)
         {
             return l.y() < u.y() || (l.y() == u.y() && l.x() < u.x());
         }
 
-        BB(const Polygon &poly): P{poly}
+        BB(const Polygon& poly) : P{poly}
         {
             for (size_t i = 0; i < P.size(); ++i) {
-                if (P[i] < P[xmin]) xmin = i;
-                if (P[xmax] < P[i]) xmax = i;
-                if (cmpy(P[i], P[ymin])) ymin = i;
-                if (cmpy(P[ymax], P[i])) ymax = i;
+                if (P[i] < P[xmin])
+                    xmin = i;
+                if (P[xmax] < P[i])
+                    xmax = i;
+                if (cmpy(P[i], P[ymin]))
+                    ymin = i;
+                if (cmpy(P[ymax], P[i]))
+                    ymax = i;
             }
         }
     };
 
     BB bA{A}, bB{B};
-    BoundingBox bbA{{A[bA.xmin].x(), A[bA.ymin].y()}, {A[bA.xmax].x(), A[bA.ymax].y()}};
-    BoundingBox bbB{{B[bB.xmin].x(), B[bB.ymin].y()}, {B[bB.xmax].x(), B[bB.ymax].y()}};
+    Domain::BoundingBox2crd bbA{{A[bA.xmin].x(), A[bA.ymin].y()}, {A[bA.xmax].x(), A[bA.ymax].y()}};
+    Domain::BoundingBox2crd bbB{{B[bB.xmin].x(), B[bB.ymin].y()}, {B[bB.xmax].x(), B[bB.ymax].y()}};
 
-//    if (!bbA.overlap(bbB))
-//        return false;
+    //    if (!bbA.overlap(bbB))
+    //        return false;
 
     // Establish starting antipodals as extreme vertex pairs in X or Y direction
     // which reside on different polygons. If no such pair is found, the two
     // polygons are certainly not disjoint.
     Idx imin{bA.xmin, A}, imax{bB.xmax, B};
-    if (B[bB.xmin] < imin.pt())  imin = Idx{bB.xmin, B};
-    if (imax.pt()  < A[bA.xmax]) imax = Idx{bA.xmax, A};
+    if (B[bB.xmin] < imin.pt())
+        imin = Idx{bB.xmin, B};
+    if (imax.pt() < A[bA.xmax])
+        imax = Idx{bA.xmax, A};
     if (&imin.poly() == &imax.poly()) {
         imin = Idx{bA.ymin, A};
         imax = Idx{bB.ymax, B};
-        if (B[bB.ymin] < imin.pt())  imin = Idx{bB.ymin, B};
-        if (imax.pt()  < A[bA.ymax]) imax = Idx{bA.ymax, A};
+        if (B[bB.ymin] < imin.pt())
+            imin = Idx{bB.ymin, B};
+        if (imax.pt() < A[bA.ymax])
+            imax = Idx{bA.ymax, A};
     }
 
     if (&imin.poly() == &imax.poly())
@@ -301,14 +333,14 @@ bool convex_polygons_intersect(const Polygon &A, const Polygon &B)
     bool found_divisor = false;
     visit_antipodals<AntipodalVisitMode::EdgesOnly>(
         imin, imax,
-        [&imin, &imax, &found_divisor](size_t ia, size_t ib, const Point &dir) {
+        [&imin, &imax, &found_divisor](size_t ia, size_t ib, const Point& dir) {
             //        std::cout << "A" << ia << " B" << ib << " dir " <<
             //        dir.x() << " " << dir.y() << std::endl;
             const Polygon &A = imin.poly(), &B = imax.poly();
 
             Point ref_a = A[(ia + 2) % A.size()], ref_b = B[(ib + 2) % B.size()];
 
-            bool is_left_a = dotperp( dir, ref_a - A[ia]) > 0;
+            bool is_left_a = dotperp(dir, ref_a - A[ia]) > 0;
             bool is_left_b = dotperp(-dir, ref_b - B[ib]) > 0;
 
             // If both reference points are on the left (or right) of their
@@ -330,7 +362,8 @@ bool convex_polygons_intersect(const Polygon &A, const Polygon &B)
             }
 
             return !found_divisor;
-        });
+        }
+    );
 
     // Intersects if the divisor was not found
     return !found_divisor;
@@ -339,15 +372,21 @@ bool convex_polygons_intersect(const Polygon &A, const Polygon &B)
 // Decompose source convex hull points into a top / bottom chains with monotonically increasing x,
 // creating an implicit trapezoidal decomposition of the source convex polygon.
 // The source convex polygon has to be CCW oriented. O(n) time complexity.
-std::pair<std::vector<Vec2d>, std::vector<Vec2d>> decompose_convex_polygon_top_bottom(const std::vector<Vec2d> &src)
+std::pair<std::vector<Vec2d>, std::vector<Vec2d>> decompose_convex_polygon_top_bottom(
+    const std::vector<Vec2d>& src
+)
 {
     std::pair<std::vector<Vec2d>, std::vector<Vec2d>> out;
-    std::vector<Vec2d> &bottom = out.first;
-    std::vector<Vec2d> &top    = out.second;
+    std::vector<Vec2d>& bottom = out.first;
+    std::vector<Vec2d>& top = out.second;
 
     // Find the minimum point.
-    auto left_bottom  = std::min_element(src.begin(), src.end(), [](const auto &l, const auto &r) { return l.x() < r.x() || (l.x() == r.x() && l.y() < r.y()); });
-    auto right_top    = std::max_element(src.begin(), src.end(), [](const auto &l, const auto &r) { return l.x() < r.x() || (l.x() == r.x() && l.y() < r.y()); });
+    auto left_bottom = std::min_element(src.begin(), src.end(), [](const auto& l, const auto& r) {
+        return l.x() < r.x() || (l.x() == r.x() && l.y() < r.y());
+    });
+    auto right_top = std::max_element(src.begin(), src.end(), [](const auto& l, const auto& r) {
+        return l.x() < r.x() || (l.x() == r.x() && l.y() < r.y());
+    });
     if (left_bottom != src.end() && left_bottom != right_top) {
         // Produce the bottom and bottom chains.
         if (left_bottom < right_top) {
@@ -366,12 +405,14 @@ std::pair<std::vector<Vec2d>, std::vector<Vec2d>> decompose_convex_polygon_top_b
         // Remove strictly vertical segments at the end.
         if (bottom.size() > 1) {
             auto it = bottom.end();
-            for (-- it; it != bottom.begin() && (it - 1)->x() == bottom.back().x(); -- it) ;
+            for (--it; it != bottom.begin() && (it - 1)->x() == bottom.back().x(); --it)
+                ;
             bottom.erase(it + 1, bottom.end());
         }
         if (top.size() > 1) {
             auto it = top.end();
-            for (-- it; it != top.begin() && (it - 1)->x() == top.back().x(); -- it) ;
+            for (--it; it != top.begin() && (it - 1)->x() == top.back().x(); --it)
+                ;
             top.erase(it + 1, top.end());
         }
         std::reverse(top.begin(), top.end());
@@ -386,10 +427,19 @@ std::pair<std::vector<Vec2d>, std::vector<Vec2d>> decompose_convex_polygon_top_b
 }
 
 // Convex polygon check using a top / bottom chain decomposition with O(log n) time complexity.
-bool inside_convex_polygon(const std::pair<std::vector<Vec2d>, std::vector<Vec2d>> &top_bottom_decomposition, const Vec2d &pt)
+bool inside_convex_polygon(
+    const std::pair<std::vector<Vec2d>, std::vector<Vec2d>>& top_bottom_decomposition,
+    const Vec2d& pt
+)
 {
-    auto it_bottom = std::lower_bound(top_bottom_decomposition.first.begin(),  top_bottom_decomposition.first.end(),  pt, [](const auto &l, const auto &r){ return l.x() < r.x(); });
-    auto it_top    = std::lower_bound(top_bottom_decomposition.second.begin(), top_bottom_decomposition.second.end(), pt, [](const auto &l, const auto &r){ return l.x() < r.x(); });
+    auto it_bottom = std::lower_bound(
+        top_bottom_decomposition.first.begin(), top_bottom_decomposition.first.end(), pt,
+        [](const auto& l, const auto& r) { return l.x() < r.x(); }
+    );
+    auto it_top = std::lower_bound(
+        top_bottom_decomposition.second.begin(), top_bottom_decomposition.second.end(), pt,
+        [](const auto& l, const auto& r) { return l.x() < r.x(); }
+    );
     if (it_bottom == top_bottom_decomposition.first.end()) {
         // Above max x.
         assert(it_top == top_bottom_decomposition.second.end());
@@ -410,11 +460,17 @@ bool inside_convex_polygon(const std::pair<std::vector<Vec2d>, std::vector<Vec2d
     }
 
     // Trapezoid or a triangle.
-    assert(it_bottom != top_bottom_decomposition.first .begin() && it_bottom != top_bottom_decomposition.first .end());
-    assert(it_top    != top_bottom_decomposition.second.begin() && it_top    != top_bottom_decomposition.second.end());
+    assert(
+        it_bottom != top_bottom_decomposition.first.begin() &&
+        it_bottom != top_bottom_decomposition.first.end()
+    );
+    assert(
+        it_top != top_bottom_decomposition.second.begin() &&
+        it_top != top_bottom_decomposition.second.end()
+    );
     assert(pt.x() <= it_bottom->x());
     assert(pt.x() <= it_top->x());
-    auto it_top_prev    = it_top - 1;
+    auto it_top_prev = it_top - 1;
     auto it_bottom_prev = it_bottom - 1;
     assert(pt.x() >= it_top_prev->x());
     assert(pt.x() >= it_bottom_prev->x());
@@ -425,6 +481,11 @@ bool inside_convex_polygon(const std::pair<std::vector<Vec2d>, std::vector<Vec2d
     return det <= 0;
 }
 
-} // namespace Geometry
-} // namespace Slic3r
+Domain::Polygon convex_hull(const Domain::Polygon& poly) { return convex_hull(poly.points); }
 
+Domain::Polygon convex_hull(const Domain::ExPolygon& poly)
+{
+    return convex_hull(poly.contour.points);
+}
+
+} // namespace Slic3r::Biz::Algorithms::Geometry

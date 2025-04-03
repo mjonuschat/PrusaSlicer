@@ -20,12 +20,27 @@ add_library(slic3r-biz-algorithms
     src/Slic3r/Biz/Algorithms/Polyline.cpp
     include/Slic3r/Biz/Algorithms/Scaling.hpp
     src/Slic3r/Biz/Algorithms/Scaling.cpp
+    include/Slic3r/Biz/Algorithms/SVG.hpp
+    src/Slic3r/Biz/Algorithms/SVG.cpp
+    include/Slic3r/Biz/Algorithms/TravelingSalesman.hpp
+    src/Slic3r/Biz/Algorithms/TravelingSalesman.cpp
+    include/Slic3r/Biz/Algorithms/ClipperUtils.hpp
+    src/Slic3r/Biz/Algorithms/ClipperUtils.cpp
+    include/Slic3r/Biz/Algorithms/KDTreeIndirect.hpp
+    include/Slic3r/Biz/Algorithms/MutablePriorityQueue.hpp
+    include/Slic3r/Biz/Algorithms/Geometry/Geometry.hpp
+    src/Slic3r/Biz/Algorithms/Geometry/Geometry.cpp
+    include/Slic3r/Biz/Algorithms/Geometry/ConvexHull.hpp
+    src/Slic3r/Biz/Algorithms/Geometry/ConvexHull.cpp
+    include/Slic3r/Biz/Algorithms/Execution/Execution.hpp
+    include/Slic3r/Biz/Algorithms/Execution/ExecutionSeq.hpp
+    include/Slic3r/Biz/Algorithms/Execution/ExecutionTBB.hpp
 )
 target_include_directories(slic3r-biz-algorithms PUBLIC include)
 target_include_directories(slic3r-biz-algorithms PRIVATE src)
 
-# FIXME: Temporarily link libslic3r until Clipper integration refactoring.
-target_link_libraries(slic3r-biz-algorithms PUBLIC slic3r-domain slic3r-base libslic3r)
+target_link_libraries(slic3r-biz-algorithms PRIVATE localesutils)
+target_link_libraries(slic3r-biz-algorithms PUBLIC slic3r-domain slic3r-base clipper)
 
 if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
     add_executable(slic3r-biz-algorithms-tests

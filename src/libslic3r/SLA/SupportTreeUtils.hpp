@@ -8,7 +8,7 @@
 #include <cstdint>
 #include <optional>
 
-#include <libslic3r/Execution/Execution.hpp>
+#include "Slic3r/Biz/Algorithms/Execution/Execution.hpp"
 #include <libslic3r/Optimize/NLoptOptimizer.hpp>
 #include <libslic3r/Optimize/BruteforceOptimizer.hpp>
 #include <libslic3r/MeshNormals.hpp>
@@ -152,6 +152,8 @@ Hit beam_mesh_hit(Ex policy,
                   const Beam_<RayCount> &beam,
                   double sd)
 {
+    namespace execution = Slic3r::Biz::Algorithms::Execution;
+
     Vec3d src = beam.src;
     Vec3d dst = src + beam.dir;
     double r_src = beam.r1;
@@ -203,6 +205,8 @@ Hit pinhead_mesh_hit(Ex              ex,
                      double          width,
                      double          sd)
 {
+    namespace execution = Slic3r::Biz::Algorithms::Execution;
+
     // Support tree generation speed depends heavily on this value. 8 is almost
     // ok, but to prevent rare cases of collision, 16 is necessary, which makes
     // the algorithm run about 60% longer.

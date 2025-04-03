@@ -20,6 +20,7 @@
 #include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Domain/Point.hpp"
 #include "Slic3r/Utils.hpp"
+#include "Slic3r/Math.hpp"
 
 // Profiles for the alpha are stored into the PrusaSlicer-alpha directory to not mix with the current release.
    #define SLIC3R_APP_FULL_NAME SLIC3R_APP_KEY
@@ -249,11 +250,7 @@ template<typename ContainerType, typename ValueType> inline bool one_of(const Va
 template<typename T> inline bool one_of(const T& v, const std::initializer_list<T>& il)
     { return contains(il, v); }
 
-template<typename T>
-constexpr inline T sqr(T x)
-{
-    return x * x;
-}
+using Slic3r::sqr;
 
 template <typename T, typename Number>
 constexpr inline T lerp(const T& a, const T& b, Number t)
@@ -306,11 +303,6 @@ using IntegerOnly = std::enable_if_t<std::is_integral<T>::value, O>;
 
 template<class T, class O = T>
 using ArithmeticOnly = std::enable_if_t<std::is_arithmetic<T>::value, O>;
-
-template<class T, class O = T>
-using IteratorOnly = std::enable_if_t<
-    !std::is_same_v<typename std::iterator_traits<T>::value_type, void>, O
->;
 
 template<class T, class I, class... Args> // Arbitrary allocator can be used
 IntegerOnly<I, std::vector<T, Args...>> reserve_vector(I capacity)

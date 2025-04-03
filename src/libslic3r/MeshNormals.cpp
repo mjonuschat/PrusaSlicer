@@ -12,7 +12,7 @@
 #include <cstddef>
 
 #include "libslic3r/AABBMesh.hpp"
-#include "libslic3r/Execution/Execution.hpp"
+#include "Slic3r/Biz/Algorithms/Execution/Execution.hpp"
 #include "libslic3r/libslic3r.h"
 
 namespace Slic3r {
@@ -124,6 +124,8 @@ Vec3d get_normal(const AABBMesh        &mesh,
     return ret;
 }
 
+namespace execution = Slic3r::Biz::Algorithms::Execution;
+
 template<class Ex>
 Eigen::MatrixXd normals(Ex                           ex_policy,
                         const PointSet              &points,
@@ -158,18 +160,22 @@ Eigen::MatrixXd normals(Ex                           ex_policy,
     return ret;
 }
 
-template Eigen::MatrixXd normals(ExecutionSeq                 policy,
-                                 const PointSet              &points,
-                                 const AABBMesh              &convert_mesh,
-                                 double                       eps,
-                                 std::function<void()>        throw_on_cancel,
-                                 const std::vector<unsigned> &selected_points);
+template Eigen::MatrixXd normals(
+    Slic3r::Biz::Algorithms::Execution::ExecutionSeq policy,
+    const PointSet& points,
+    const AABBMesh& convert_mesh,
+    double eps,
+    std::function<void()> throw_on_cancel,
+    const std::vector<unsigned>& selected_points
+);
 
-template Eigen::MatrixXd normals(ExecutionTBB                 policy,
-                                 const PointSet              &points,
-                                 const AABBMesh              &convert_mesh,
-                                 double                       eps,
-                                 std::function<void()>        throw_on_cancel,
-                                 const std::vector<unsigned> &selected_points);
+template Eigen::MatrixXd normals(
+    Slic3r::Biz::Algorithms::Execution::ExecutionTBB policy,
+    const PointSet& points,
+    const AABBMesh& convert_mesh,
+    double eps,
+    std::function<void()> throw_on_cancel,
+    const std::vector<unsigned>& selected_points
+);
 
 } // namespace Slic3r

@@ -8,9 +8,10 @@
 #include "libslic3r/TriangleMeshSlicer.hpp"
 #include "libslic3r/SLA/ZCorrection.hpp"
 #include "libslic3r/MTUtils.hpp"
-#include "libslic3r/SVG.hpp"
+#include "Slic3r/Biz/Algorithms/SVG.hpp"
 
 using Catch::Approx;
+using Slic3r::Biz::Algorithms::SVG::SVG;
 
 void print_depthmap(std::string_view prefix,
                     const Slic3r::BoundingBox &bb,

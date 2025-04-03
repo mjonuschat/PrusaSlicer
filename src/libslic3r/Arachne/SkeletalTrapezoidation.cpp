@@ -49,7 +49,7 @@ static void export_graph_to_svg(const std::string                               
 
     bbox.offset(scale_(1.));
 
-    ::Slic3r::SVG svg(path.c_str(), bbox);
+    ::Slic3r::Biz::Algorithms::SVG::SVG svg(path.c_str(), bbox);
     for (const auto &line : to_lines(polys))
         svg.draw(line, "gray", stroke_width);
 
@@ -371,7 +371,7 @@ void SkeletalTrapezoidation::constructFromPolygons(const Polygons& polys)
     {
         static int iRun = 0;
         BoundingBox bbox = get_extents(polys);
-        SVG svg(debug_out_path("arachne_voronoi-input-%d.svg", iRun++).c_str(), bbox);
+        Biz::Algorithms::SVG::SVG svg(debug_out_path("arachne_voronoi-input-%d.svg", iRun++).c_str(), bbox);
         svg.draw_outline(polys, "black", scaled<double>(0.03f));
     }
 #endif

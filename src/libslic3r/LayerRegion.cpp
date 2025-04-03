@@ -27,7 +27,7 @@
 #include "Print.hpp"
 #include "Surface.hpp"
 #include "BoundingBox.hpp"
-#include "SVG.hpp"
+#include "Slic3r/Biz/Algorithms/SVG.hpp"
 #include "Algorithm/RegionExpansion.hpp"
 #include "libslic3r/ExtrusionEntity.hpp"
 #include "libslic3r/Line.hpp"
@@ -662,7 +662,7 @@ void LayerRegion::process_external_surfaces(const Layer *lower_layer, const Poly
 #ifdef SLIC3R_DEBUG_SLICE_PROCESSING
         {
             static int iRun = 0;
-            SVG svg(debug_out_path("4_process_external_surfaces-fill_regions-%d.svg", iRun ++).c_str(), get_extents(fill_boundaries_ex));
+            Biz::Algorithms::SVG::SVG svg(debug_out_path("4_process_external_surfaces-fill_regions-%d.svg", iRun ++).c_str(), get_extents(fill_boundaries_ex));
             svg.draw(fill_boundaries_ex);
             svg.draw_outline(fill_boundaries_ex, "black", "blue", scale_(0.05)); 
             svg.Close();
@@ -942,7 +942,7 @@ void LayerRegion::export_region_slices_to_svg(const char *path) const
     Point legend_pos(bbox.min(0), bbox.max(1));
     bbox.merge(Point(std::max(bbox.min(0) + legend_size(0), bbox.max(0)), bbox.max(1) + legend_size(1)));
 
-    SVG svg(path, bbox);
+    Biz::Algorithms::SVG::SVG svg(path, bbox);
     const float transparency = 0.5f;
     for (const Surface &surface : this->slices())
         svg.draw(surface.expolygon, surface_type_to_color_name(surface.surface_type), transparency);
@@ -969,7 +969,7 @@ void LayerRegion::export_region_fill_surfaces_to_svg(const char *path) const
     Point legend_pos(bbox.min(0), bbox.max(1));
     bbox.merge(Point(std::max(bbox.min(0) + legend_size(0), bbox.max(0)), bbox.max(1) + legend_size(1)));
 
-    SVG svg(path, bbox);
+    Biz::Algorithms::SVG::SVG svg(path, bbox);
     const float transparency = 0.5f;
     for (const Surface &surface : this->fill_surfaces()) {
         svg.draw(surface.expolygon, surface_type_to_color_name(surface.surface_type), transparency);

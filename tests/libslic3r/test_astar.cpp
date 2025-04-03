@@ -6,7 +6,7 @@
 
 #include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/AStar.hpp"
-#include "libslic3r/Execution/ExecutionSeq.hpp"
+#include "Slic3r/Biz/Algorithms/Execution/ExecutionSeq.hpp"
 #include "libslic3r/PointGrid.hpp"
 
 using namespace Slic3r;
@@ -101,6 +101,7 @@ bool has_duplicates(const std::vector<Node> &res, Cmp cmp = {})
 TEST_CASE("astar algorithm test over 3D point grid", "[AStar]") {
     auto vol = BoundingBox3Base<Vec3f>{{0.f, 0.f, 0.f}, {1.f, 1.f, 1.f}};
 
+    using Slic3r::Biz::Algorithms::Execution::ex_seq;
     auto pgrid = point_grid(ex_seq, vol, {0.1f, 0.1f, 0.1f});
 
     size_t target = pgrid.point_count() - 1;

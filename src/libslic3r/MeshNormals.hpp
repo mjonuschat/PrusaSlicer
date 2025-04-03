@@ -10,8 +10,8 @@
 #include <vector>
 
 #include "AABBMesh.hpp"
-#include "libslic3r/Execution/ExecutionSeq.hpp"
-#include "libslic3r/Execution/ExecutionTBB.hpp"
+#include "Slic3r/Biz/Algorithms/Execution/ExecutionSeq.hpp"
+#include "Slic3r/Biz/Algorithms/Execution/ExecutionTBB.hpp"
 #include "libslic3r/Point.hpp"
 
 namespace Slic3r {
@@ -41,20 +41,22 @@ Eigen::MatrixXd normals(
     const std::vector<unsigned> &selected_points = {});
 
 extern template Eigen::MatrixXd normals(
-    ExecutionSeq                policy,
-    const PointSet              &points,
-    const AABBMesh              &convert_mesh,
-    double                       eps,
-    std::function<void()>        throw_on_cancel,
-    const std::vector<unsigned> &selected_points);
+    Biz::Algorithms::Execution::ExecutionSeq policy,
+    const PointSet& points,
+    const AABBMesh& convert_mesh,
+    double eps,
+    std::function<void()> throw_on_cancel,
+    const std::vector<unsigned>& selected_points
+);
 
 extern template Eigen::MatrixXd normals(
-    ExecutionTBB                 policy,
-    const PointSet              &points,
-    const AABBMesh              &convert_mesh,
-    double                       eps,
-    std::function<void()>        throw_on_cancel,
-    const std::vector<unsigned> &selected_points);
+    Biz::Algorithms::Execution::ExecutionTBB policy,
+    const PointSet& points,
+    const AABBMesh& convert_mesh,
+    double eps,
+    std::function<void()> throw_on_cancel,
+    const std::vector<unsigned>& selected_points
+);
 
 } // namespace Slic3r
 

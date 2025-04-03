@@ -8,7 +8,7 @@
 #include <random>
 #include <map>
 
-#include <libslic3r/Execution/ExecutionTBB.hpp>
+#include "Slic3r/Biz/Algorithms/Execution/ExecutionTBB.hpp"
 #include <libslic3r/Geometry/ConvexHull.hpp>
 
 #include <arrange/ArrangeBase.hpp>
@@ -291,7 +291,7 @@ class DefaultArranger: public Arranger<ArrItem> {
 
         firstfit::SelectionStrategy sel{cmpfn, on_arranged, stop_cond};
 
-        constexpr auto ep = ex_tbb;
+        constexpr auto ep = Slic3r::Biz::Algorithms::Execution::ex_tbb;
 
         VariantKernel basekernel;
         switch (m_settings.get_arrange_strategy()) {

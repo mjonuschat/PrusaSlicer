@@ -2,7 +2,7 @@
 #define slic3r_SLA_SuppotstIslands_ParabolaUtils_hpp_
 
 #include "Parabola.hpp"
-#include <libslic3r/SVG.hpp>
+#include "Slic3r/Biz/Algorithms/SVG.hpp"
 
 namespace Slic3r::sla {
 
@@ -53,7 +53,7 @@ public:
     /// <param name="color">color</param>
     /// <param name="width">width</param>
     /// <param name="discretization_step">step between discretized lines</param>
-    static void draw(SVG &                  svg,
+    static void draw(Biz::Algorithms::SVG::SVG &                  svg,
                      const ParabolaSegment &parabola,
                      const char *           color,
                      coord_t                width,

@@ -42,7 +42,7 @@
 #include "libslic3r/PrintConfig.hpp"
 
 #if defined(BRIM_DEBUG_TO_SVG)
-    #include "SVG.hpp"
+    #include "Slic3r/Biz/Algorithms/SVG.hpp"
 #endif
 
 using namespace Slic3r::Biz;
@@ -572,7 +572,7 @@ ExtrusionEntityCollection make_brim(const Print &print, PrintTryCancel try_cance
     ++ irun;
 
     {
-        SVG svg(debug_out_path("brim-%d.svg", irun).c_str(), get_extents(all_loops));
+        Biz::Algorithms::SVG::SVG svg(debug_out_path("brim-%d.svg", irun).c_str(), get_extents(all_loops));
         svg.draw(union_ex(islands), "blue");
         svg.draw(islands_area_ex, "green");
         svg.draw(all_loops, "black", coord_t(scale_(0.1)));
@@ -583,7 +583,7 @@ ExtrusionEntityCollection make_brim(const Print &print, PrintTryCancel try_cance
 
 #ifdef BRIM_DEBUG_TO_SVG
     {
-        SVG svg(debug_out_path("brim-connected-%d.svg", irun).c_str(), get_extents(all_loops));
+        Biz::Algorithms::SVG::SVG svg(debug_out_path("brim-connected-%d.svg", irun).c_str(), get_extents(all_loops));
         svg.draw(union_ex(islands), "blue");
         svg.draw(islands_area_ex, "green");
         svg.draw(all_loops, "black", coord_t(scale_(0.1)));

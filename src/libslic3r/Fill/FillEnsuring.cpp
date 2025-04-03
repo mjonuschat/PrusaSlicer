@@ -454,7 +454,7 @@ ThickPolylines make_fill_polylines(
 
         // BoundingBox bbox = get_extents(filled_area);
         // bbox.offset(scale_(1.));
-        // ::Slic3r::SVG svg(debug_out_path(("surface" + std::to_string(surface->area())).c_str()).c_str(), bbox);
+        // ::Slic3r::Biz::Algorithms::SVG::SVG svg(debug_out_path(("surface" + std::to_string(surface->area())).c_str()).c_str(), bbox);
         // svg.draw(to_lines(filled_area), "red", scale_(0.4));
         // svg.draw(to_lines(reconstructed_area), "blue", scale_(0.3));
         // svg.draw(to_lines(gaps_for_additional_filling), "green", scale_(0.2));

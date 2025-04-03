@@ -5,8 +5,8 @@
 
 #include "SupportPointGenerator.hpp"
 
-#include "libslic3r/Execution/ExecutionTBB.hpp" // parallel preparation of data for sampling
-#include "libslic3r/Execution/Execution.hpp"
+#include "Slic3r/Biz/Algorithms/Execution/ExecutionTBB.hpp" // parallel preparation of data for sampling
+#include "Slic3r/Biz/Algorithms/Execution/Execution.hpp"
 #include "libslic3r/KDTreeIndirect.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/AABBTreeLines.hpp" // closest point to layer part
@@ -20,6 +20,8 @@
 using namespace Slic3r;
 using namespace Slic3r::Biz;
 using namespace Slic3r::sla;
+
+namespace execution = Slic3r::Biz::Algorithms::Execution;
 
 namespace {
 #ifndef NDEBUG
@@ -891,7 +893,7 @@ SmallParts get_small_parts(const Layers &layers, float radius_in_mm) {
     // multithreaded investigate islands
     std::mutex m; // write access into result
     SmallParts result;
-    execution::for_each(ex_tbb, size_t(0), islands.size(),
+    execution::for_each(execution::ex_tbb, size_t(0), islands.size(),
     [&layers, radius_in_mm, &islands, &result, &m](size_t island_i) {
         std::optional<SmallPart> small_part_opt = create_small_part(layers, islands[island_i], radius_in_mm);
         if (!small_part_opt.has_value())
@@ -986,7 +988,7 @@ SupportPointGeneratorData Slic3r::sla::prepare_generator_data(
     result.layers = Layers(result.slices.size());
 
     // Generate Extents and SampleLayers
-    execution::for_each(ex_tbb, size_t(0), result.slices.size(),
+    execution::for_each(execution::ex_tbb, size_t(0), result.slices.size(),
     [&result, &heights, throw_on_cancel](size_t layer_id) {
         if ((layer_id % 128) == 0)
             // Don't call the following function too often as it flushes
@@ -1007,7 +1009,7 @@ SupportPointGeneratorData Slic3r::sla::prepare_generator_data(
     }, 4 /*gransize*/);
 
     // Link parts by intersections
-    execution::for_each(ex_tbb, size_t(1), result.slices.size(),
+    execution::for_each(execution::ex_tbb, size_t(1), result.slices.size(),
     [&result, throw_on_cancel](size_t layer_id) {
         if ((layer_id % 16) == 0)
             throw_on_cancel();
@@ -1040,7 +1042,7 @@ SupportPointGeneratorData Slic3r::sla::prepare_generator_data(
     // Sample overhangs part of island
     double sample_distance_in_um = scale_(config.discretize_overhang_step);
     double sample_distance_in_um2 = sample_distance_in_um * sample_distance_in_um;
-    execution::for_each(ex_tbb, size_t(1), result.layers.size(),
+    execution::for_each(execution::ex_tbb, size_t(1), result.layers.size(),
     [&result, sample_distance_in_um2, throw_on_cancel](size_t layer_id) {
         if ((layer_id % 32) == 0)
             throw_on_cancel();
@@ -1059,7 +1061,7 @@ SupportPointGeneratorData Slic3r::sla::prepare_generator_data(
     }, 8 /* gransize */);
 
     // Detect peninsula
-    execution::for_each(ex_tbb, size_t(1), result.layers.size(),
+    execution::for_each(execution::ex_tbb, size_t(1), result.layers.size(),
     [&layers = result.layers, &config, throw_on_cancel](size_t layer_id) {
         if ((layer_id % 32) == 0)
             throw_on_cancel();
@@ -1072,7 +1074,7 @@ SupportPointGeneratorData Slic3r::sla::prepare_generator_data(
     }, 8 /* gransize */);
 
     // calc extended parts, more info PrepareSupportConfig::removing_delta
-    execution::for_each(ex_tbb, size_t(1), result.layers.size(),
+    execution::for_each(execution::ex_tbb, size_t(1), result.layers.size(),
     [&layers = result.layers, delta = config.removing_delta, throw_on_cancel](size_t layer_id) {
         if ((layer_id % 16) == 0)
             throw_on_cancel();
@@ -1578,7 +1580,7 @@ SupportPoints move_on_mesh_surface(
 
     // The function  makes sure that all the points are really exactly placed on the mesh.
     execution::for_each(
-        ex_tbb, size_t(0), pts.size(),
+        execution::ex_tbb, size_t(0), pts.size(),
         [&pts, &mesh, &throw_on_cancel, allowed_move](size_t idx) {
             if ((idx % 16) == 0)
                 // Don't call the following function too often as it flushes CPU write caches due to

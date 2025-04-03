@@ -10,10 +10,11 @@
 #include <libslic3r/Geometry.hpp>
 #include <libslic3r/Line.hpp>
 #include <libslic3r/Polygon.hpp>
-#include <libslic3r/SVG.hpp>
+#include "Slic3r/Biz/Algorithms/SVG.hpp"
 
 #include "VoronoiOffset.hpp"
 #include "Slic3r/Biz/Algorithms/Point.hpp"
+#include "libslic3r/BoundingBox.hpp"
 
 namespace boost { namespace polygon {
 
@@ -356,7 +357,7 @@ static inline void dump_voronoi_to_svg(
 
     const bool          primaryEdgesOnly            = false;
 
-    ::Slic3r::SVG svg(path, bbox);
+    ::Slic3r::Biz::Algorithms::SVG::SVG svg(path, bbox);
 
     // For clipping of half-lines to some reasonable value.
     // The line will then be clipped by the SVG viewer anyway.

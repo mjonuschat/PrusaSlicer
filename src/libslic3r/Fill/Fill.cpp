@@ -376,7 +376,7 @@ void export_group_fills_to_svg(const char *path, const std::vector<SurfaceFill> 
     Point legend_pos(bbox.min(0), bbox.max(1));
     bbox.merge(Point(std::max(bbox.min(0) + legend_size(0), bbox.max(0)), bbox.max(1) + legend_size(1)));
 
-    SVG svg(path, bbox);
+    Biz::Algorithms::SVG::SVG svg(path, bbox);
     const float transparency = 0.5f;
     for (const auto &fill : fills)
         for (const auto &expoly : fill.expolygons)

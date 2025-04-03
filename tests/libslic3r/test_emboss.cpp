@@ -1,13 +1,14 @@
 ﻿#include <catch2/catch_test_macros.hpp>
 
 #include <libslic3r/Emboss.hpp>
-#include <libslic3r/SVG.hpp> // only debug visualization
+#include "Slic3r/Biz/Algorithms/SVG.hpp" // only debug visualization
 
 #include <optional>
 #include <libslic3r/AABBTreeIndirect.hpp>
 #include <libslic3r/Utils.hpp> // for next_highest_power_of_2()
 #include <libslic3r/IntersectionPoints.hpp>
 using namespace Slic3r;
+using Domain::Index3;
 
 namespace Private{
         

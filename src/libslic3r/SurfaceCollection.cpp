@@ -11,7 +11,7 @@
 
 #include "Slic3r/Biz/Algorithms/ExPolygon.hpp"
 #include "BoundingBox.hpp"
-#include "SVG.hpp"
+#include "Slic3r/Biz/Algorithms/SVG.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Surface.hpp"
 
@@ -159,7 +159,7 @@ void SurfaceCollection::export_to_svg(const char *path, bool show_labels)
     Point legend_pos(bbox.min(0), bbox.max(1));
     bbox.merge(Point(std::max(bbox.min(0) + legend_size(0), bbox.max(0)), bbox.max(1) + legend_size(1)));
 
-    SVG svg(path, bbox);
+    Biz::Algorithms::SVG::SVG svg(path, bbox);
     const float transparency = 0.5f;
     for (Surfaces::const_iterator surface = this->surfaces.begin(); surface != this->surfaces.end(); ++surface) {
         svg.draw(surface->expolygon, surface_type_to_color_name(surface->surface_type), transparency);

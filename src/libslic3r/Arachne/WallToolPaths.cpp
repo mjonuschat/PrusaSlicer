@@ -568,7 +568,7 @@ void WallToolPaths::stitchToolPaths(std::vector<VariableWidthLines> &toolpaths, 
                         aabb.merge(j.p);
                 {
                     static int iRun = 0;
-                    SVG svg(debug_out_path("contours_before.svg-%d.png", iRun), aabb);
+                    Biz::Algorithms::SVG::SVG svg(debug_out_path("contours_before.svg-%d.png", iRun), aabb);
                     std::array<const char *, 8> colors    = {"gray", "black", "blue", "green", "lime", "purple", "red", "yellow"};
                     size_t                      color_idx = 0;
                     for (auto& inset : toolpaths)
@@ -592,7 +592,7 @@ void WallToolPaths::stitchToolPaths(std::vector<VariableWidthLines> &toolpaths, 
                 }
                 {
                     static int iRun = 0;
-                    SVG svg(debug_out_path("contours-%d.svg", iRun), aabb);
+                    Biz::Algorithms::SVG::SVG svg(debug_out_path("contours-%d.svg", iRun), aabb);
                     for (auto& inset : toolpaths)
                         for (auto& line2 : inset)
                             svg.draw_outline(line2.toPolygon(), "gray");

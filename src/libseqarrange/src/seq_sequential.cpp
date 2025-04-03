@@ -10,7 +10,7 @@
 /*================================================================*/
 
 #include "Slic3r/Biz/Algorithms/Line.hpp"
-#include <libslic3r/SVG.hpp>
+#include "Slic3r/Biz/Algorithms/SVG.hpp"
 #include <libslic3r/Geometry/ConvexHull.hpp>
 #include "Slic3r/Biz/Algorithms/Point.hpp"
 
@@ -25,6 +25,7 @@
 using namespace std;
 using namespace Slic3r;
 using namespace Slic3r::Biz;
+using Algorithms::SVG::SVG;
 
 
 /*----------------------------------------------------------------*/
@@ -11678,7 +11679,7 @@ bool optimize_SubglobalConsequentialPolygonNonoverlappingBinaryCentered(const So
 							  trans_bed_lepox,
 							  presence_assumptions);	    
 	    
-	    #ifdef DEBUG
+	    #ifdef DEBUG_
 	    {
 		printf("Undecided\n");
 		for (unsigned int j = 0; j < undecided.size(); ++j)

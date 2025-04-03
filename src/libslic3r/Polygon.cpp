@@ -124,19 +124,18 @@ Point point_projection(const Polygon &polygon, const Point &point)
 
 BoundingBox get_extents(const Polygon& poly)
 {
-    const Domain::BoundingBox2crd bbox = Algorithms::BoundingBox::construct(poly.points);
-    return Slic3r::BoundingBox{bbox.min, bbox.max};
+    const auto bb{Algorithms::Polygon::get_extents(poly)};
+    BoundingBox result{bb.min, bb.max};
+    result.defined = bb.defined;
+    return result;
 }
 
 BoundingBox get_extents(const Polygons &polygons)
 {
-    BoundingBox bb;
-    if (! polygons.empty()) {
-        bb = get_extents(polygons.front());
-        for (size_t i = 1; i < polygons.size(); ++ i)
-            bb.merge(get_extents(polygons[i]));
-    }
-    return bb;
+    const auto bb{Algorithms::Polygon::get_extents(polygons)};
+    BoundingBox result{bb.min, bb.max};
+    result.defined = bb.defined;
+    return result;
 }
 
 BoundingBox get_extents_rotated(const Polygon &poly, double angle) 

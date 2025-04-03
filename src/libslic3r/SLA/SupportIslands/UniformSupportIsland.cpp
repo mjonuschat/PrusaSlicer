@@ -17,7 +17,7 @@
 #include <libslic3r/Geometry/VoronoiOffset.hpp>
 #include <libslic3r/Geometry/VoronoiVisualUtils.hpp>
 #include <libslic3r/Point.hpp>
-#include <libslic3r/SVG.hpp>
+#include "Slic3r/Biz/Algorithms/SVG.hpp"
 #include <libslic3r/SLA/SupportPointGenerator.hpp>
 #include <libslic3r/ExPolygonsIndex.hpp>
 #include <libslic3r/IntersectionPoints.hpp>
@@ -186,9 +186,11 @@ Points to_points(const SupportIslandPoints &support_points){
     return result;
 }
 
+using Slic3r::Biz::Algorithms::SVG::SVG;
+
 #ifdef OPTION_TO_STORE_ISLAND
 SVG draw_island(const std::string &path, const ExPolygon &island, const ExPolygon &simplified_island) {
-    SVG svg(path, BoundingBox{island.contour.points});
+    Biz::Algorithms::SVG::SVG svg(path, BoundingBox{island.contour.points});
     svg.draw_original(island);
     svg.draw(island, "lightgray");
     svg.draw(simplified_island, "gray");
@@ -197,7 +199,7 @@ SVG draw_island(const std::string &path, const ExPolygon &island, const ExPolygo
 SVG draw_island_graph(const std::string &path, const ExPolygon &island, 
     const ExPolygon &simplified_island, const VoronoiGraph& skeleton,
     const VoronoiGraph::ExPath& longest_path, const Lines& lines, const SampleConfig &config) {
-    SVG svg = draw_island(path, island, simplified_island);
+    Biz::Algorithms::SVG::SVG svg = draw_island(path, island, simplified_island);
     VoronoiGraphUtils::draw(svg, skeleton, lines, config, true /*print Pointer address*/);
     coord_t width = config.head_radius / 10;
     VoronoiGraphUtils::draw(svg, longest_path.nodes, width, "orange");
@@ -424,7 +426,7 @@ coord_t align_once(
     std::string color_static_point = "black";
     BoundingBox bbox(island.contour.points);
     static int counter = 0;
-    Slic3r::SVG svg(replace_first(SLA_SAMPLE_ISLAND_UTILS_STORE_ALIGN_ONCE_TO_SVG_PATH, 
+    Slic3r::Biz::Algorithms::SVG::SVG svg(replace_first(SLA_SAMPLE_ISLAND_UTILS_STORE_ALIGN_ONCE_TO_SVG_PATH, 
         "<<COUNTER>>", std::to_string(counter++)).c_str(), bbox);
     svg.draw(island, color_of_island);
 #endif // SLA_SAMPLE_ISLAND_UTILS_STORE_ALIGN_ONCE_TO_SVG_PATH
@@ -543,7 +545,7 @@ void align_samples(SupportIslandPoints &samples, const ExPolygon &island, const 
 
 #ifdef SLA_SAMPLE_ISLAND_UTILS_STORE_ALIGNED_TO_SVG_PATH
     static int  counter = 0;
-    SVG svg(replace_first(SLA_SAMPLE_ISLAND_UTILS_STORE_ALIGNED_TO_SVG_PATH, 
+    Biz::Algorithms::SVG::SVG svg(replace_first(SLA_SAMPLE_ISLAND_UTILS_STORE_ALIGNED_TO_SVG_PATH, 
         "<<COUNTER>>", std::to_string(counter++)).c_str(),BoundingBox(island.contour.points));
     svg.draw(island);
     draw(svg, samples, config.head_radius);
@@ -1253,7 +1255,7 @@ Field create_thick_field(const ThickPart& part, const Lines &lines, const Sample
     std::string field_to_svg_path = replace_first(
         SLA_SAMPLE_ISLAND_UTILS_STORE_FIELD_TO_SVG_PATH, "<<COUNTER>>", std::to_string(counter++));
     {
-        SVG svg(field_to_svg_path.c_str(), LineUtils::create_bounding_box(lines));
+        Biz::Algorithms::SVG::SVG svg(field_to_svg_path.c_str(), LineUtils::create_bounding_box(lines));
         LineUtils::draw(svg, lines, "black", 0., /*indices*/ true);
         for(const auto& change_it: wide_tiny_changes)
             for (const auto& change: change_it.second){
@@ -1309,7 +1311,7 @@ Field create_thick_field(const ThickPart& part, const Lines &lines, const Sample
         bool draw_source_line_indexes = true;
         bool draw_border_line_indexes = false;
         bool draw_field_source_indexes = true;
-        SVG svg(field_to_svg_path.c_str(),LineUtils::create_bounding_box(lines));
+        Biz::Algorithms::SVG::SVG svg(field_to_svg_path.c_str(),LineUtils::create_bounding_box(lines));
         LineUtils::draw(svg, lines, source_line_color, 0., draw_source_line_indexes);
         draw(svg, field, border, draw_border_line_indexes, draw_field_source_indexes);
     }
@@ -2350,7 +2352,7 @@ void draw(const IslandParts &parts, const ProcessItems &queue, const ProcessItem
 
     static int counter = 0;
     std::string svg_path = replace_first(SLA_SAMPLE_ISLAND_UTILS_DEBUG_PARTS_PATH, "<<COUNTER>>", std::to_string(counter++));
-    SVG svg(svg_path.c_str(), LineUtils::create_bounding_box(lines));
+    Biz::Algorithms::SVG::SVG svg(svg_path.c_str(), LineUtils::create_bounding_box(lines));
     LineUtils::draw(svg, lines, "black", 0.);
 
     const char *thin_color = "blue";
@@ -2663,7 +2665,7 @@ SupportIslandPoints uniform_support_island(
             center, SupportIslandInnerPoint::Type::one_bb_center_point));
 #ifdef OPTION_TO_STORE_ISLAND
         if (!path.empty()){ // add center support point into image
-            SVG svg = draw_island(path, island, simplified_island);
+            Biz::Algorithms::SVG::SVG svg = draw_island(path, island, simplified_island);
             svg.draw_text(Point{0, 0}, "one center support point", "black");
             draw(svg, supports, config.head_radius);
         }
@@ -2683,7 +2685,7 @@ SupportIslandPoints uniform_support_island(
             center, SupportIslandInnerPoint::Type::bad_shape_for_vd));
 #ifdef OPTION_TO_STORE_ISLAND
         if (!path.empty()) { // add center support point into image
-            SVG svg = draw_island(path, island, simplified_island);
+            Biz::Algorithms::SVG::SVG svg = draw_island(path, island, simplified_island);
             svg.draw_text(Point{0, 0}, "Can't create Voronoi Diagram for the shape", "red");
             draw(svg, supports, config.head_radius);
         }
@@ -2711,7 +2713,7 @@ SupportIslandPoints uniform_support_island(
             longest_path, SupportIslandPoint::Type::one_center_point));
 #ifdef OPTION_TO_STORE_ISLAND
         if (!path.empty()){
-            SVG svg = draw_island(path, island, simplified_island);
+            Biz::Algorithms::SVG::SVG svg = draw_island(path, island, simplified_island);
             draw(svg, supports, config.head_radius);
         }
 #endif // OPTION_TO_STORE_ISLAND
@@ -2724,7 +2726,7 @@ SupportIslandPoints uniform_support_island(
         SupportIslandPoints supports = create_side_points(longest_path, lines, config);        
 #ifdef OPTION_TO_STORE_ISLAND
         if (!path.empty()){
-            SVG svg = draw_island(path, island, simplified_island);
+            Biz::Algorithms::SVG::SVG svg = draw_island(path, island, simplified_island);
             draw(svg, supports, config.head_radius);
         }
 #endif // OPTION_TO_STORE_ISLAND
@@ -2747,7 +2749,7 @@ SupportIslandPoints uniform_support_island(
         SupportIslandPoints two_supports = create_side_points(longest_path, lines, config, type);
 #ifdef OPTION_TO_STORE_ISLAND
         if (!path.empty()) {
-            SVG svg = draw_island(path, island, simplified_island);
+            Biz::Algorithms::SVG::SVG svg = draw_island(path, island, simplified_island);
             draw(svg, two_supports, config.head_radius);
         }
 #endif // OPTION_TO_STORE_ISLAND
@@ -2757,7 +2759,7 @@ SupportIslandPoints uniform_support_island(
 #ifdef OPTION_TO_STORE_ISLAND
     Points supports_before_align = ::to_points(supports);
     if (!path.empty()) {
-        SVG svg = draw_island_graph(path, island, simplified_island, skeleton, longest_path, lines, config);
+        Biz::Algorithms::SVG::SVG svg = draw_island_graph(path, island, simplified_island, skeleton, longest_path, lines, config);
         draw(svg, supports, config.head_radius);
     }
 #endif // OPTION_TO_STORE_ISLAND
@@ -2770,7 +2772,7 @@ SupportIslandPoints uniform_support_island(
 
 #ifdef OPTION_TO_STORE_ISLAND
     if (!path.empty()) {
-        SVG svg = draw_island(path, island, simplified_island);
+        Biz::Algorithms::SVG::SVG svg = draw_island(path, island, simplified_island);
         coord_t width = config.head_radius / 5;
         VoronoiGraphUtils::draw(svg, longest_path.nodes, width, "darkorange");
         VoronoiGraphUtils::draw(svg, skeleton, lines, config, false /*print Pointer address*/);
@@ -2804,7 +2806,7 @@ SupportIslandPoints uniform_support_peninsula(
         bool draw_border_line_indexes = false;
         bool draw_field_source_indexes = true;
         static int counter = 0;
-        SVG svg(replace_first(SLA_SAMPLE_ISLAND_UTILS_STORE_PENINSULA_FIELD_TO_SVG_PATH,
+        Biz::Algorithms::SVG::SVG svg(replace_first(SLA_SAMPLE_ISLAND_UTILS_STORE_PENINSULA_FIELD_TO_SVG_PATH,
             "<<COUNTER>>", std::to_string(counter++)).c_str(),
                 LineUtils::create_bounding_box(lines));
         LineUtils::draw(svg, lines, source_line_color, 0., draw_source_line_indexes);

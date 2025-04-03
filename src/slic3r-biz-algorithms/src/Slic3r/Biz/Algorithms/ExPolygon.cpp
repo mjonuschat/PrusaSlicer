@@ -3,11 +3,13 @@
 #include "Slic3r/Biz/Algorithms/DouglasPeucker.hpp"
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "Slic3r/Utils.hpp"
-
-// FIXME: Temporarily use includes from libslic3r until Clipper integration refactoring.
-#include <libslic3r/ClipperUtils.hpp>
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
+#include "Slic3r/Biz/Algorithms/ClipperUtils.hpp"
 
 using namespace Slic3r::Biz::Algorithms;
+namespace bb = Slic3r::Biz::Algorithms::BoundingBox;
+namespace poly = Slic3r::Biz::Algorithms::Polygon;
 
 namespace Slic3r::Biz::Algorithms::ExPolygon {
 
@@ -75,14 +77,16 @@ bool contains(const Domain::ExPolygon& expolygon, const Domain::Line& line)
     return ExPolygon::contains(expolygon, Domain::Polyline(line.a, line.b));
 }
 
+using Slic3r::Biz::Algorithms::ClipperUtils::diff_pl;
+
 bool contains(const Domain::ExPolygon& expolygon, const Domain::Polyline& polyline)
 {
-    return Slic3r::diff_pl(polyline, expolygon).empty();
+    return diff_pl(polyline, expolygon).empty();
 }
 
-bool contains(const Domain::ExPolygon& expolygon, const Polylines& polylines)
+bool contains(const Domain::ExPolygon& expolygon, const Domain::Polylines& polylines)
 {
-    return Slic3r::diff_pl(polylines, expolygon).empty();
+    return diff_pl(polylines, expolygon).empty();
 }
 
 bool overlaps(const Domain::ExPolygon& expolygon, const Domain::ExPolygon &other_expolygon)
@@ -90,7 +94,8 @@ bool overlaps(const Domain::ExPolygon& expolygon, const Domain::ExPolygon &other
     if (expolygon.empty() || other_expolygon.empty())
         return false;
 
-    Polylines pl_out = Slic3r::intersection_pl(Slic3r::to_polylines(other_expolygon), expolygon);
+    using Slic3r::Biz::Algorithms::ClipperUtils::intersection_pl;
+    Domain::Polylines pl_out = intersection_pl(to_polylines(other_expolygon), expolygon);
 
     // See unit test SCENARIO("Clipper diff with polyline", "[Clipper]")
     // for in which case the intersection_pl produces any intersection.
@@ -129,7 +134,8 @@ Domain::Lines to_lines(const Domain::ExPolygons& expolygons)
 
 Domain::ExPolygons simplify(const Domain::ExPolygon& expolygon, const double tolerance)
 {
-    return Slic3r::union_ex(ExPolygon::simplify_to_polygons(expolygon, tolerance));
+    using Slic3r::Biz::Algorithms::ClipperUtils::union_ex;
+    return union_ex(ExPolygon::simplify_to_polygons(expolygon, tolerance));
 }
 
 Domain::Polygons simplify_to_polygons(const Domain::ExPolygon& expolygon, const double tolerance)
@@ -154,7 +160,172 @@ Domain::Polygons simplify_to_polygons(const Domain::ExPolygon& expolygon, const 
         pp.emplace_back(std::move(p));
     }
 
-    return Slic3r::simplify_polygons(pp);
+    using Slic3r::Biz::Algorithms::ClipperUtils::simplify_polygons;
+    return simplify_polygons(pp);
+}
+
+Domain::Polygons to_polygons(const Domain::ExPolygon &src)
+{
+    Domain::Polygons polygons;
+    polygons.reserve(src.holes.size() + 1);
+    polygons.push_back(src.contour);
+    polygons.insert(polygons.end(), src.holes.begin(), src.holes.end());
+    return polygons;
+}
+
+size_t count_polygons(const Domain::ExPolygons &expolys)
+{
+    size_t n_polygons = 0;
+    for (const Domain::ExPolygon &ex : expolys) {
+        n_polygons += ex.holes.size() + 1;
+    }
+    return n_polygons;
+}
+
+Domain::Polygons to_polygons(const Domain::ExPolygons &src)
+{
+    Domain::Polygons polygons;
+    polygons.reserve(count_polygons(src));
+    for (Domain::ExPolygons::const_iterator it = src.begin(); it != src.end(); ++it) {
+        polygons.push_back(it->contour);
+        polygons.insert(polygons.end(), it->holes.begin(), it->holes.end());
+    }
+    return polygons;
+}
+
+Domain::Polygons to_polygons(Domain::ExPolygon &&src)
+{
+    Domain::Polygons polygons;
+    polygons.reserve(src.holes.size() + 1);
+    polygons.push_back(std::move(src.contour));
+    polygons.insert(polygons.end(),
+        std::make_move_iterator(src.holes.begin()),
+        std::make_move_iterator(src.holes.end()));
+    return polygons;
+}
+
+Domain::Polygons to_polygons(Domain::ExPolygons &&src)
+{
+    Domain::Polygons polygons;
+    polygons.reserve(count_polygons(src));
+    for (Domain::ExPolygon& expoly: src) {
+        polygons.push_back(std::move(expoly.contour));
+        polygons.insert(polygons.end(),
+            std::make_move_iterator(expoly.holes.begin()),
+            std::make_move_iterator(expoly.holes.end()));
+    }
+    return polygons;
+}
+
+Domain::BoundingBox2crd get_extents(const Domain::ExPolygon &expolygon)
+{
+    return poly::get_extents(expolygon.contour);
+}
+
+Domain::BoundingBox2crd get_extents(const Domain::ExPolygons &expolygons)
+{
+    Domain::BoundingBox2crd bbox;
+    if (! expolygons.empty()) {
+        for (size_t i = 0; i < expolygons.size(); ++ i)
+			if (! expolygons[i].contour.points.empty())
+				bbox = bb::merge(bbox, get_extents(expolygons[i]));
+    }
+    return bbox;
+}
+
+Domain::Points to_points(const Domain::ExPolygon &expoly)
+{
+    Domain::Points out;
+    out.reserve(count_points(expoly));
+    append(out, expoly.contour.points);
+    for (const Domain::Polygon &hole : expoly.holes)
+        append(out, hole.points);
+    return out;
+}
+
+Domain::Points to_points(const Domain::ExPolygons &src)
+{
+    Domain::Points points;
+    size_t count = count_points(src);
+    points.reserve(count);
+    for (const Domain::ExPolygon &expolygon : src) {
+        append(points, expolygon.contour.points);
+        for (const Domain::Polygon &hole : expolygon.holes)
+            append(points, hole.points);
+    }
+    return points;
+}
+
+Domain::Polylines to_polylines(const Domain::ExPolygon &src)
+{
+    Domain::Polylines polylines;
+    polylines.assign(src.holes.size() + 1, Domain::Polyline());
+    size_t idx = 0;
+    Domain::Polyline &pl = polylines[idx ++];
+    pl.points = src.contour.points;
+    pl.points.push_back(pl.points.front());
+    for (Domain::Polygons::const_iterator ith = src.holes.begin(); ith != src.holes.end(); ++ith) {
+        Domain::Polyline &pl = polylines[idx ++];
+        pl.points = ith->points;
+        pl.points.push_back(ith->points.front());
+    }
+    assert(idx == polylines.size());
+    return polylines;
+}
+
+Domain::Polylines to_polylines(const Domain::ExPolygons &src)
+{
+    Domain::Polylines polylines;
+    polylines.assign(count_polygons(src), Domain::Polyline());
+    size_t idx = 0;
+    for (auto it = src.begin(); it != src.end(); ++it) {
+        Domain::Polyline &pl = polylines[idx ++];
+        pl.points = it->contour.points;
+        pl.points.push_back(pl.points.front());
+        for (auto ith = it->holes.begin(); ith != it->holes.end(); ++ith) {
+            Domain::Polyline &pl = polylines[idx ++];
+            pl.points = ith->points;
+            pl.points.push_back(ith->points.front());
+        }
+    }
+    assert(idx == polylines.size());
+    return polylines;
+}
+
+Domain::Polylines to_polylines(Domain::ExPolygon &&src)
+{
+    Domain::Polylines polylines;
+    polylines.assign(src.holes.size() + 1, Domain::Polyline());
+    size_t idx = 0;
+    Domain::Polyline &pl = polylines[idx ++];
+    pl.points = std::move(src.contour.points);
+    pl.points.push_back(pl.points.front());
+    for (auto ith = src.holes.begin(); ith != src.holes.end(); ++ith) {
+        Domain::Polyline &pl = polylines[idx ++];
+        pl.points = std::move(ith->points);
+        pl.points.push_back(pl.points.front());
+    }
+    assert(idx == polylines.size());
+    return polylines;
+}
+
+Domain::Polylines to_polylines(Domain::ExPolygons &&src)
+{
+    Domain::Polylines polylines;
+    polylines.assign(count_polygons(src), Domain::Polyline());
+    size_t idx = 0;
+    for (auto it = src.begin(); it != src.end(); ++it) {
+        Domain::Polyline &pl = polylines[idx ++];
+        pl.points = std::move(it->contour.points);
+        pl.points.push_back(pl.points.front());
+        for (auto ith = it->holes.begin(); ith != it->holes.end(); ++ith) {
+            Domain::Polyline &pl = polylines[idx ++];
+            pl.points = std::move(ith->points);
+            pl.points.push_back(pl.points.front());
+        }
+    }
+    assert(idx == polylines.size());
+    return polylines;
 }
 
 } // namespace Slic3r::Biz::Algorithms::ExPolygon

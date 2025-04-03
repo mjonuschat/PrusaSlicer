@@ -2,7 +2,7 @@
 #include <algorithm>
 
 #include "libslic3r/KDTreeIndirect.hpp"
-#include "libslic3r/Execution/ExecutionSeq.hpp"
+#include "Slic3r/Biz/Algorithms/Execution/ExecutionSeq.hpp"
 #include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/PointGrid.hpp"
 
@@ -36,6 +36,8 @@ TEST_CASE("Test kdtree query for a Box", "[KDTreeIndirect]")
 {
     auto vol = BoundingBox3Base<Vec3f>{{0.f, 0.f, 0.f}, {10.f, 10.f, 10.f}};
 
+
+    using Slic3r::Biz::Algorithms::Execution::ex_seq;
     auto pgrid = point_grid(ex_seq, vol, Vec3f{0.1f, 0.1f, 0.1f});
 
     REQUIRE(!pgrid.empty());

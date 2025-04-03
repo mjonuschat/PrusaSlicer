@@ -37,5 +37,4 @@ Domain::Points scaled(const std::vector<Domain::Vec2d>& points)
 
     return scaled_points;
 }
-
 } // namespace Slic3r::Biz::Algorithms::Point

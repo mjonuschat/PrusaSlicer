@@ -65,6 +65,16 @@ Point point_projection(const ExPolygon &expolygon, const Point &point)
     }
 }
 
+Points to_points(const ExPolygon &expoly)
+{
+    return Algorithms::ExPolygon::to_points(expoly);
+}
+
+Points to_points(const ExPolygons &src)
+{
+    return Algorithms::ExPolygon::to_points(src);
+}
+
 void medial_axis(const ExPolygon& expolygon, const double min_width, const double max_width, ThickPolylines* polylines)
 {
     // init helper object
@@ -75,7 +85,7 @@ void medial_axis(const ExPolygon& expolygon, const double min_width, const doubl
     ma.build(&pp);
     
     /*
-    SVG svg("medial_axis.svg");
+    Biz::Algorithms::SVG::SVG svg("medial_axis.svg");
     svg.draw(*this);
     svg.draw(pp);
     svg.Close();
@@ -209,18 +219,18 @@ bool expolygons_match(const ExPolygon &l, const ExPolygon &r)
 
 BoundingBox get_extents(const ExPolygon &expolygon)
 {
-    return get_extents(expolygon.contour);
+    const auto bb{Algorithms::ExPolygon::get_extents(expolygon)};
+    BoundingBox result{bb.min, bb.max};
+    result.defined = bb.defined;
+    return result;
 }
 
 BoundingBox get_extents(const ExPolygons &expolygons)
 {
-    BoundingBox bbox;
-    if (! expolygons.empty()) {
-        for (size_t i = 0; i < expolygons.size(); ++ i)
-			if (! expolygons[i].contour.points.empty())
-				bbox.merge(get_extents(expolygons[i]));
-    }
-    return bbox;
+    const auto bb{Algorithms::ExPolygon::get_extents(expolygons)};
+    BoundingBox result{bb.min, bb.max};
+    result.defined = bb.defined;
+    return result;
 }
 
 BoundingBox get_extents_rotated(const ExPolygon &expolygon, double angle)

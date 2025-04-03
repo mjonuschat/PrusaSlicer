@@ -11,7 +11,7 @@
 
 #include "libslic3r/TriangleMeshSlicer.hpp"
 #include "libslic3r/ClipperUtils.hpp"
-#include "libslic3r/Execution/ExecutionTBB.hpp"
+#include "Slic3r/Biz/Algorithms/Execution/ExecutionTBB.hpp"
 
 namespace Slic3r { namespace csg {
 
@@ -59,6 +59,7 @@ std::vector<ExPolygons> slice_csgmesh_ex(
     const std::function<void()> &throw_on_cancel = [] {})
 {
     using namespace detail;
+    namespace execution = Slic3r::Biz::Algorithms::Execution;
 
     struct Frame { CSGType op; std::vector<ExPolygons> slices; };
 
@@ -93,10 +94,10 @@ std::vector<ExPolygons> slice_csgmesh_ex(
             collect_nonempty_indices(op, slicegrid, slices, nonempty_indices);
 
             execution::for_each(
-                ex_tbb, nonempty_indices.begin(), nonempty_indices.end(),
+                execution::ex_tbb, nonempty_indices.begin(), nonempty_indices.end(),
                 [op, &slices, &top](size_t i) {
                     merge_slices(op, i, top->slices, slices);
-                }, execution::max_concurrency(ex_tbb));
+                }, execution::max_concurrency(execution::ex_tbb));
         }
 
         if (get_stack_operation(csgpart) == CSGStackOp::Pop) {
@@ -108,17 +109,17 @@ std::vector<ExPolygons> slice_csgmesh_ex(
             collect_nonempty_indices(popop, slicegrid, popslices, nonempty_indices);
 
             execution::for_each(
-                ex_tbb, nonempty_indices.begin(), nonempty_indices.end(),
+                execution::ex_tbb, nonempty_indices.begin(), nonempty_indices.end(),
                 [&popslices, &prev_slices, popop](size_t i) {
                     merge_slices(popop, i, prev_slices, popslices);
-                }, execution::max_concurrency(ex_tbb));
+                }, execution::max_concurrency(execution::ex_tbb));
         }
     }
 
     std::vector<ExPolygons> ret = std::move(opstack.top().slices);
 
     // TODO: verify if this part can be omitted or not.
-    execution::for_each(ex_tbb, ret.begin(), ret.end(), [](ExPolygons &slice) {
+    execution::for_each(execution::ex_tbb, ret.begin(), ret.end(), [](ExPolygons &slice) {
         auto it = std::remove_if(slice.begin(), slice.end(), [](const ExPolygon &p){
             return p.area() < double(SCALED_EPSILON) * double(SCALED_EPSILON);
         });
@@ -127,7 +128,7 @@ std::vector<ExPolygons> slice_csgmesh_ex(
         // and that is cheap for expolygons
         slice.erase(it, slice.end());
         slice = union_ex(slice);
-    }, execution::max_concurrency(ex_tbb));
+    }, execution::max_concurrency(execution::ex_tbb));
 
     return ret;
 }

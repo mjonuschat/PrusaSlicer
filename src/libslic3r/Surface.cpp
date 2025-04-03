@@ -10,7 +10,7 @@
 ///|/
 #include "BoundingBox.hpp"
 #include "Surface.hpp"
-#include "SVG.hpp"
+#include "Slic3r/Biz/Algorithms/SVG.hpp"
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/libslic3r.h"
 
@@ -64,7 +64,7 @@ Point export_surface_type_legend_to_svg_box_size()
     return scaled(Vec2d(1.+10.*8., 3.));
 }
 
-void export_surface_type_legend_to_svg(SVG &svg, const Point &pos)
+void export_surface_type_legend_to_svg(Biz::Algorithms::SVG::SVG &svg, const Point &pos)
 {
     // 1st row
     coord_t pos_x0 = pos(0) + scale_(1.);
@@ -100,7 +100,7 @@ bool export_to_svg(const char *path, const Surfaces &surfaces, const float trans
     for (Surfaces::const_iterator surface = surfaces.begin(); surface != surfaces.end(); ++surface)
         bbox.merge(get_extents(surface->expolygon));
 
-    SVG svg(path, bbox);
+    Biz::Algorithms::SVG::SVG svg(path, bbox);
     for (Surfaces::const_iterator surface = surfaces.begin(); surface != surfaces.end(); ++surface)
         svg.draw(surface->expolygon, surface_type_to_color_name(surface->surface_type), transparency);
     svg.Close();

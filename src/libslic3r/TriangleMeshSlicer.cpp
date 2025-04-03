@@ -54,7 +54,7 @@
 #endif
 
 #if defined(SLIC3R_DEBUG) || defined(SLIC3R_DEBUG_SLICE_PROCESSING)
-#include "SVG.hpp"
+#include "Slic3r/Biz/Algorithms/SVG.hpp"
 #endif
 
 using namespace Slic3r::Biz;
@@ -1475,7 +1475,7 @@ static typename PolygonsType<mesh_info>::type make_loops(
                 bbox_svg.merge(line.a);
                 bbox_svg.merge(line.b);
             }
-            SVG svg(debug_out_path("TriangleMeshSlicer_make_loops-raw_lines-%d.svg", iRun ++).c_str(), bbox_svg);
+            Biz::Algorithms::SVG::SVG svg(debug_out_path("TriangleMeshSlicer_make_loops-raw_lines-%d.svg", iRun ++).c_str(), bbox_svg);
             for (const Line &line : lines)
                 svg.draw(line);
             svg.Close();
@@ -1488,7 +1488,7 @@ static typename PolygonsType<mesh_info>::type make_loops(
 #ifdef SLIC3R_DEBUG_SLICE_PROCESSING
         {
             static int iRun = 0;
-            SVG svg(debug_out_path("TriangleMeshSlicer_make_loops-polylines-%d.svg", iRun ++).c_str(), bbox_svg);
+            Biz::Algorithms::SVG::SVG svg(debug_out_path("TriangleMeshSlicer_make_loops-polylines-%d.svg", iRun ++).c_str(), bbox_svg);
             svg.draw(union_ex(loops));
             for (const OpenPolyline &pl : open_polylines)
                 svg.draw(Polyline(pl.points), "red");
@@ -1505,7 +1505,7 @@ static typename PolygonsType<mesh_info>::type make_loops(
 #ifdef SLIC3R_DEBUG_SLICE_PROCESSING
     {
         static int iRun = 0;
-        SVG svg(debug_out_path("TriangleMeshSlicer_make_loops-polylines2-%d.svg", iRun++).c_str(), bbox_svg);
+        Biz::Algorithms::SVG::SVG svg(debug_out_path("TriangleMeshSlicer_make_loops-polylines2-%d.svg", iRun++).c_str(), bbox_svg);
         svg.draw(union_ex(loops));
         for (const OpenPolyline &pl : open_polylines) {
             if (pl.points.empty())
@@ -1535,7 +1535,7 @@ static typename PolygonsType<mesh_info>::type make_loops(
 #ifdef SLIC3R_DEBUG_SLICE_PROCESSING
     {
         static int iRun = 0;
-        SVG svg(debug_out_path("TriangleMeshSlicer_make_loops-polylines-final-%d.svg", iRun++).c_str(), bbox_svg);
+        Biz::Algorithms::SVG::SVG svg(debug_out_path("TriangleMeshSlicer_make_loops-polylines-final-%d.svg", iRun++).c_str(), bbox_svg);
         svg.draw(union_ex(loops));
         for (const OpenPolyline &pl : open_polylines) {
             if (pl.points.empty())
@@ -1691,7 +1691,7 @@ static std::vector<Polygons> make_slab_loops(
                                 bbox_svg.merge(line.a);
                                 bbox_svg.merge(line.b);
                             }
-                            SVG svg(debug_out_path("make_slab_loops-in-%d-%d-%s.svg", iRun, line_idx, ProjectionFromTop ? "top" : "bottom").c_str(), bbox_svg);
+                            Biz::Algorithms::SVG::SVG svg(debug_out_path("make_slab_loops-in-%d-%d-%s.svg", iRun, line_idx, ProjectionFromTop ? "top" : "bottom").c_str(), bbox_svg);
                             svg.arrows = true;
                             for (const IntersectionLine& line : in) {
                                 const char* color = line.source == IntersectionLine::Source::BottomPlane ? "red" : line.source == IntersectionLine::Source::TopPlane ? "blue" : "green";
@@ -1705,7 +1705,7 @@ static std::vector<Polygons> make_slab_loops(
                         chain_lines_by_triangle_connectivity<AdditionalMeshInfo::None>(in, loops, open_polylines);
 #ifdef SLIC3R_DEBUG_SLICE_PROCESSING
                         {
-                            SVG svg(debug_out_path("make_slab_loops-out-%d-%d-%s.svg", iRun, line_idx, ProjectionFromTop ? "top" : "bottom").c_str(), bbox_svg);
+                            Biz::Algorithms::SVG::SVG svg(debug_out_path("make_slab_loops-out-%d-%d-%s.svg", iRun, line_idx, ProjectionFromTop ? "top" : "bottom").c_str(), bbox_svg);
                             svg.arrows = true;
                             for (const IntersectionLine& line : in) {
                                 const char* color = line.source == IntersectionLine::Source::BottomPlane ? "red" : line.source == IntersectionLine::Source::TopPlane ? "blue" : "green";
@@ -1715,7 +1715,7 @@ static std::vector<Polygons> make_slab_loops(
                             svg.Close();
                         }
                         {
-                            SVG svg(debug_out_path("make_slab_loops-open-polylines-%d-%d-%s.svg", iRun, line_idx, ProjectionFromTop ? "top" : "bottom").c_str(), bbox_svg);
+                            Biz::Algorithms::SVG::SVG svg(debug_out_path("make_slab_loops-open-polylines-%d-%d-%s.svg", iRun, line_idx, ProjectionFromTop ? "top" : "bottom").c_str(), bbox_svg);
                             svg.draw(loops, "black");
                             svg.arrows = true;
                             for (const OpenPolyline &open_polyline : open_polylines)
@@ -2001,7 +2001,7 @@ std::vector<typename PolygonsType<mesh_info>::type> slice_mesh(
                     bbox.merge(l.a);
                     bbox.merge(l.b);
                 }
-                SVG svg(debug_out_path("slice_loops_%d_%d.svg", iRun, i).c_str(), bbox);
+                Biz::Algorithms::SVG::SVG svg(debug_out_path("slice_loops_%d_%d.svg", iRun, i).c_str(), bbox);
                 svg.draw(expolygons);
                 for (const IntersectionLine &l : lines[i])
                     svg.draw(l, "red", 0);

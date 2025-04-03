@@ -51,7 +51,7 @@
     #define _DEBUG
     #undef NDEBUG
     #include "../utils.hpp"
-    #include "../SVG.hpp"
+    #include "Slic3r/Biz/Algorithms/SVG.hpp"
 #endif
 
 #include <cassert>
@@ -1214,7 +1214,7 @@ static void modulate_extrusion_by_overlapping_layers(
         assert(path != nullptr);
         bbox.merge(get_extents(path->polyline));
     }
-    SVG svg(debug_out_path("support-fragments-%d-%lf.svg", iRun, this_layer.print_z).c_str(), bbox);
+    Biz::Algorithms::SVG::SVG svg(debug_out_path("support-fragments-%d-%lf.svg", iRun, this_layer.print_z).c_str(), bbox);
     const float transparency = 0.5f;
     // Filled polygons for the overlapping regions.
     svg.draw(union_ex(this_layer.polygons), dbg_index_to_color(-1), transparency);

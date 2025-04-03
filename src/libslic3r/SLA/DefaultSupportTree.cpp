@@ -7,7 +7,7 @@
 #include <libslic3r/Optimize/NLoptOptimizer.hpp>
 #include <libslic3r/SLA/Clustering.hpp>
 #include <libslic3r/MeshNormals.hpp>
-#include <libslic3r/Execution/ExecutionTBB.hpp>
+#include "Slic3r/Biz/Algorithms/Execution/ExecutionTBB.hpp"
 #include <boost/log/trivial.hpp>
 #include <cmath>
 #include <functional>
@@ -35,6 +35,8 @@ using Slic3r::opt::StopCriteria;
 using Slic3r::opt::Optimizer;
 using Slic3r::opt::AlgNLoptSubplex;
 using Slic3r::opt::AlgNLoptGenetic;
+
+namespace execution = Slic3r::Biz::Algorithms::Execution;
 
 DefaultSupportTree::DefaultSupportTree(SupportTreeBuilder &   builder,
                                      const SupportableMesh &sm)

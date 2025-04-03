@@ -7,7 +7,7 @@
 #include <algorithm>
 
 #include "../ClipperUtils.hpp"
-#include "../SVG.hpp"
+#include "Slic3r/Biz/Algorithms/SVG.hpp"
 #include "../Layer.hpp"
 #include "SupportLayer.hpp"
 #include "libslic3r/BoundingBox.hpp"
@@ -37,7 +37,7 @@ Point export_support_surface_type_legend_to_svg_box_size()
     return scaled(Vec2d(1.+10.*8., 3.));
 }
 
-void export_support_surface_type_legend_to_svg(SVG &svg, const Point &pos)
+void export_support_surface_type_legend_to_svg(Biz::Algorithms::SVG::SVG &svg, const Point &pos)
 {
     // 1st row
     coord_t pos_x0 = pos(0) + scale_(1.);
@@ -73,7 +73,7 @@ void export_print_z_polygons_to_svg(const char *path, SupportGeneratorLayer ** c
     Point legend_size = export_support_surface_type_legend_to_svg_box_size();
     Point legend_pos(bbox.min(0), bbox.max(1));
     bbox.merge(Point(std::max(bbox.min(0) + legend_size(0), bbox.max(0)), bbox.max(1) + legend_size(1)));
-    SVG svg(path, bbox);
+    Biz::Algorithms::SVG::SVG svg(path, bbox);
     const float transparency = 0.5f;
     for (int i = 0; i < n_layers; ++ i)
         svg.draw(union_ex(layers[i]->polygons), support_surface_type_to_color_name(layers[i]->layer_type), transparency);
@@ -95,7 +95,7 @@ void export_print_z_polygons_and_extrusions_to_svg(
     Point legend_size = export_support_surface_type_legend_to_svg_box_size();
     Point legend_pos(bbox.min(0), bbox.max(1));
     bbox.merge(Point(std::max(bbox.min(0) + legend_size(0), bbox.max(0)), bbox.max(1) + legend_size(1)));
-    SVG svg(path, bbox);
+    Biz::Algorithms::SVG::SVG svg(path, bbox);
     const float transparency = 0.5f;
     for (int i = 0; i < n_layers; ++ i)
         svg.draw(union_ex(layers[i]->polygons), support_surface_type_to_color_name(layers[i]->layer_type), transparency);

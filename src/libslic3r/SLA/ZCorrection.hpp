@@ -8,7 +8,7 @@
 #include <cstddef>
 
 #include "libslic3r/ExPolygon.hpp"
-#include "libslic3r/Execution/Execution.hpp"
+#include "Slic3r/Biz/Algorithms/Execution/Execution.hpp"
 
 namespace Slic3r {
 namespace sla {
@@ -31,6 +31,8 @@ std::vector<ExPolygons> apply_zcorrection(Ex ep,
                                           const std::vector<ExPolygons> &slices,
                                           size_t layers)
 {
+    namespace execution = Slic3r::Biz::Algorithms::Execution;
+
     std::vector<ExPolygons> output(slices.size());
 
     execution::for_each(ep, size_t{0}, slices.size(),
@@ -59,6 +61,8 @@ std::vector<ExPolygons> apply_zcorrection(Ex ep,
                                           const std::vector<float> &grid,
                                           float depth)
 {
+    namespace execution = Slic3r::Biz::Algorithms::Execution;
+
     std::vector<ExPolygons> output(slices.size());
 
     execution::for_each(ep, size_t{0}, slices.size(),

@@ -78,4 +78,15 @@ bool contains(const Domain::Polygons& polygons, const Domain::Point& point, bool
 Domain::Lines to_lines(const Domain::Polygon& polygon);
 Domain::Lines to_lines(const Domain::Polygons& polygons);
 
+Domain::BoundingBox2crd get_extents(const Domain::Polygon& poly);
+
+Domain::BoundingBox2crd get_extents(const Domain::Polygons &polygons);
+
+Domain::Polyline to_polyline(const Domain::Polygon &polygon);
+
+Domain::Polylines to_polylines(const Domain::Polygons &polygons);
+
+Domain::Polylines to_polylines(Domain::Polygons &&polys);
+
+
 } // namespace Slic3r::Biz::Algorithms::Polygon

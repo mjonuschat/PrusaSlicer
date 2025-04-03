@@ -1,6 +1,7 @@
 #include "Slic3r/Domain/Bed.hpp"
 #include "Slic3r/Log.hpp"
 #include "Slic3r/Assert.hpp"
+#include "libslic3r/BoundingBox.hpp"
 
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/filesystem.hpp>
@@ -64,12 +65,13 @@ Bed Bed::from(
 }
 
 
-bool Bed::contains(const Vec2d& bed_inst_position, const BoundingBoxf& object_bb) const
+bool Bed::contains(const Vec2d& bed_inst_position, const BoundingBox2d& object_bb) const
 {
     Vec2d half_extent = m_contour_aabb_extent * 0.5;
     Vec2d center = Vec2d{m_center.x(), m_center.y()} + bed_inst_position;
-    BoundingBoxf bed_bounds{center - half_extent, center + half_extent};
-    return bed_bounds.overlap(object_bb);
+    BoundingBox2d bed_bounds{center - half_extent, center + half_extent};
+    using Biz::Algorithms::BoundingBox::overlap;
+    return overlap(bed_bounds, object_bb);
 }
 
 

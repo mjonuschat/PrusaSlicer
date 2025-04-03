@@ -32,7 +32,7 @@
 
 #include <tbb/concurrent_vector.h>
 
-#include "SVG.hpp"
+#include "Slic3r/Biz/Algorithms/SVG.hpp"
 #include <Eigen/Dense>
 #include "libslic3r/GCode/GCodeWriter.hpp"
 

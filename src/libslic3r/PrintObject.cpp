@@ -96,7 +96,7 @@ using namespace std::literals;
     #undef NDEBUG
     #define DEBUG
     #define _DEBUG
-    #include "SVG.hpp"
+    #include "Slic3r/Biz/Algorithms/SVG.hpp"
 
     #undef assert 
     #include <cassert>
@@ -1405,7 +1405,7 @@ void PrintObject::discover_vertical_shells()
                         Slic3r::append(cache.holes, offset2(layer.lslices, 0.3f * perimeter_min_spacing, - perimeter_offset - 0.3f * perimeter_min_spacing));
 #ifdef SLIC3R_DEBUG_SLICE_PROCESSING
                         {
-                            Slic3r::SVG svg(debug_out_path("discover_vertical_shells-extra-holes-%d.svg", debug_idx), get_extents(layer.lslices));
+                            Slic3r::Biz::Algorithms::SVG::SVG svg(debug_out_path("discover_vertical_shells-extra-holes-%d.svg", debug_idx), get_extents(layer.lslices));
                             svg.draw(layer.lslices, "blue");
                             svg.draw(union_ex(cache.holes), "red");
                             svg.draw_outline(union_ex(cache.holes), "black", "blue", scale_(0.05));
@@ -1498,13 +1498,13 @@ void PrintObject::discover_vertical_shells()
 #if 0
 // #ifdef SLIC3R_DEBUG_SLICE_PROCESSING
                     {
-        				Slic3r::SVG svg_cummulative(debug_out_path("discover_vertical_shells-perimeters-before-union-run%d.svg", debug_idx), this->bounding_box());
+        				Slic3r::Biz::Algorithms::SVG::SVG svg_cummulative(debug_out_path("discover_vertical_shells-perimeters-before-union-run%d.svg", debug_idx), this->bounding_box());
                         for (int n = (int)idx_layer - n_extra_bottom_layers; n <= (int)idx_layer + n_extra_top_layers; ++ n) {
                             if (n < 0 || n >= (int)m_layers.size())
                                 continue;
                             ExPolygons &expolys = m_layers[n]->perimeter_expolygons;
                             for (size_t i = 0; i < expolys.size(); ++ i) {
-        						Slic3r::SVG svg(debug_out_path("discover_vertical_shells-perimeters-before-union-run%d-layer%d-expoly%d.svg", debug_idx, n, i), get_extents(expolys[i]));
+        						Slic3r::Biz::Algorithms::SVG::SVG svg(debug_out_path("discover_vertical_shells-perimeters-before-union-run%d-layer%d-expoly%d.svg", debug_idx, n, i), get_extents(expolys[i]));
                                 svg.draw(expolys[i]);
                                 svg.draw_outline(expolys[i].contour, "black", scale_(0.05));
                                 svg.draw_outline(expolys[i].holes, "blue", scale_(0.05));
@@ -1599,7 +1599,7 @@ void PrintObject::discover_vertical_shells()
 	                }
 #ifdef SLIC3R_DEBUG_SLICE_PROCESSING
                     {
-        				Slic3r::SVG svg(debug_out_path("discover_vertical_shells-perimeters-before-union-%d.svg", debug_idx), get_extents(shell));
+        				Slic3r::Biz::Algorithms::SVG::SVG svg(debug_out_path("discover_vertical_shells-perimeters-before-union-%d.svg", debug_idx), get_extents(shell));
                         svg.draw(shell);
                         svg.draw_outline(shell, "black", scale_(0.05));
                         svg.Close(); 
@@ -1618,7 +1618,7 @@ void PrintObject::discover_vertical_shells()
 
 #ifdef SLIC3R_DEBUG_SLICE_PROCESSING
                     {
-                        Slic3r::SVG svg(debug_out_path("discover_vertical_shells-perimeters-after-union-%d.svg", debug_idx), get_extents(shell));
+                        Slic3r::Biz::Algorithms::SVG::SVG svg(debug_out_path("discover_vertical_shells-perimeters-after-union-%d.svg", debug_idx), get_extents(shell));
                         svg.draw(shell_ex);
                         svg.draw_outline(shell_ex, "black", "blue", scale_(0.05));
                         svg.Close();  
@@ -1627,7 +1627,7 @@ void PrintObject::discover_vertical_shells()
 
 #ifdef SLIC3R_DEBUG_SLICE_PROCESSING
                     {
-                        Slic3r::SVG svg(debug_out_path("discover_vertical_shells-internal-wshell-%d.svg", debug_idx), get_extents(shell));
+                        Slic3r::Biz::Algorithms::SVG::SVG svg(debug_out_path("discover_vertical_shells-internal-wshell-%d.svg", debug_idx), get_extents(shell));
                         svg.draw(layerm->fill_surfaces().filter_by_type(stInternal), "yellow", 0.5);
                         svg.draw_outline(layerm->fill_surfaces().filter_by_type(stInternal), "black", "blue", scale_(0.05));
                         svg.draw(shell_ex, "blue", 0.5);
@@ -1635,7 +1635,7 @@ void PrintObject::discover_vertical_shells()
                         svg.Close();
                     } 
                     {
-                        Slic3r::SVG svg(debug_out_path("discover_vertical_shells-internalvoid-wshell-%d.svg", debug_idx), get_extents(shell));
+                        Slic3r::Biz::Algorithms::SVG::SVG svg(debug_out_path("discover_vertical_shells-internalvoid-wshell-%d.svg", debug_idx), get_extents(shell));
                         svg.draw(layerm->fill_surfaces().filter_by_type(stInternalVoid), "yellow", 0.5);
                         svg.draw_outline(layerm->fill_surfaces().filter_by_type(stInternalVoid), "black", "blue", scale_(0.05));
                         svg.draw(shell_ex, "blue", 0.5);
@@ -1643,7 +1643,7 @@ void PrintObject::discover_vertical_shells()
                         svg.Close();
                     } 
                     {
-                        Slic3r::SVG svg(debug_out_path("discover_vertical_shells-internalsolid-wshell-%d.svg", debug_idx), get_extents(shell));
+                        Slic3r::Biz::Algorithms::SVG::SVG svg(debug_out_path("discover_vertical_shells-internalsolid-wshell-%d.svg", debug_idx), get_extents(shell));
                         svg.draw(layerm->fill_surfaces().filter_by_type(stInternalSolid), "yellow", 0.5);
                         svg.draw_outline(layerm->fill_surfaces().filter_by_type(stInternalSolid), "black", "blue", scale_(0.05));
                         svg.draw(shell_ex, "blue", 0.5);
@@ -1723,7 +1723,7 @@ void PrintObject::discover_vertical_shells()
                     ExPolygons new_internal_solid = intersection_ex(polygonsInternal, regularized_shell);
 #ifdef SLIC3R_DEBUG_SLICE_PROCESSING
                     {
-                        Slic3r::SVG svg(debug_out_path("discover_vertical_shells-regularized-%d.svg", debug_idx), get_extents(shell_before));
+                        Slic3r::Biz::Algorithms::SVG::SVG svg(debug_out_path("discover_vertical_shells-regularized-%d.svg", debug_idx), get_extents(shell_before));
                         // Source shell.
                         svg.draw(union_safety_offset_ex(shell_before));
                         // Shell trimmed to the internal surfaces.
@@ -1776,7 +1776,7 @@ template<typename T> void debug_draw(std::string name, const T& a, const T& b, c
     bbox.merge(get_extents(c));
     bbox.merge(get_extents(d));
     bbox.offset(scale_(1.));
-    ::Slic3r::SVG svg(debug_out_path(name.c_str()).c_str(), bbox);   
+    ::Slic3r::Biz::Algorithms::SVG::SVG svg(debug_out_path(name.c_str()).c_str(), bbox);   
     svg.draw(a, colors[0], scale_(0.3));
     svg.draw(b, colors[1], scale_(0.23));
     svg.draw(c, colors[2], scale_(0.16));

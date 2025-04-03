@@ -23,6 +23,7 @@
 #include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Polygon.hpp"
+#include "Slic3r/Biz/Algorithms/SVG.hpp"
 
 namespace Slic3r {
 
@@ -282,10 +283,8 @@ inline bool surfaces_could_merge(const Surface &s1, const Surface &s2)
         s1.bridge_angle      == s2.bridge_angle;
 }
 
-class SVG;
-
 extern const char* surface_type_to_color_name(const SurfaceType surface_type);
-extern void export_surface_type_legend_to_svg(SVG &svg, const Point &pos);
+extern void export_surface_type_legend_to_svg(Biz::Algorithms::SVG::SVG &svg, const Point &pos);
 extern Point export_surface_type_legend_to_svg_box_size();
 extern bool export_to_svg(const char *path, const Surfaces &surfaces, const float transparency = 1.f);
 

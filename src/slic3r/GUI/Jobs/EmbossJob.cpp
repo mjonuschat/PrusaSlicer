@@ -808,7 +808,7 @@ ExPolygons create_shape(DataBase &input, Fnc was_canceled) {
 
 //#define STORE_SAMPLING
 #ifdef STORE_SAMPLING
-#include "libslic3r/SVG.hpp"
+#include "Slic3r/Biz/Algorithms/SVG.hpp"
 #endif // STORE_SAMPLING
 
 std::vector<BoundingBoxes> create_line_bounds(const ExPolygonsWithIds &shapes, size_t count_lines = 0)

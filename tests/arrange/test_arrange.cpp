@@ -6,7 +6,7 @@
 
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
 
-#include <libslic3r/Execution/ExecutionSeq.hpp>
+#include "Slic3r/Biz/Algorithms/Execution/ExecutionSeq.hpp"
 
 #include <arrange/ArrangeBase.hpp>
 #include <arrange/ArrangeFirstFit.hpp>
@@ -29,7 +29,7 @@
 
 #include "../data/prusaparts.hpp"
 
-#include <libslic3r/SVG.hpp>
+#include "Slic3r/Biz/Algorithms/SVG.hpp"
 #include <libslic3r/BoostAdapter.hpp>
 
 #include <boost/log/trivial.hpp>
@@ -43,6 +43,7 @@
 
 using namespace Catch;
 using namespace Slic3r::Biz;
+using Algorithms::SVG::SVG;
 
 template<class ArrItem = Slic3r::arr2::ArrangeItem>
 static std::vector<ArrItem> prusa_parts(double infl = 0.) {

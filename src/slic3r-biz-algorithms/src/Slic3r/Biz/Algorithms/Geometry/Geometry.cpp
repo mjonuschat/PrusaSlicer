@@ -23,14 +23,17 @@
 #include <array>
 #include <complex>
 
+#include <LocalesUtils.hpp>
+
 #include "Slic3r/Biz/Algorithms/ExPolygon.hpp"
 #include "Slic3r/Biz/Algorithms/DouglasPeucker.hpp"
-#include "libslic3r.h"
-#include "Geometry.hpp"
-#include "ClipperUtils.hpp"
-#include "libslic3r/BoundingBox.hpp"
-#include "libslic3r/MultiPoint.hpp"
-#include "libslic3r/Polygon.hpp"
+#include "Slic3r/Biz/Algorithms/Geometry/Geometry.hpp"
+#include "Slic3r/Biz/Algorithms/ClipperUtils.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
+#include "Slic3r/Domain/BoundingBox.hpp"
+#include "Slic3r/Domain/MultiPoint.hpp"
+#include "Slic3r/Domain/Polygon.hpp"
 
 namespace boost {
 namespace polygon {
@@ -44,7 +47,224 @@ template <typename T> class point_data;
 
 using namespace Slic3r::Biz;
 
-namespace Slic3r::Geometry {
+namespace Slic3r::Biz::Algorithms::Geometry {
+
+using Domain::EPSILON;
+using Domain::Point;
+using Domain::Polygon;
+using Domain::Polygons;
+using Domain::ExPolygon;
+using Domain::ExPolygons;
+using Domain::Points;
+using Domain::Vec2d;
+using Domain::Vec3d;
+using Domain::Vec2ds;
+using Domain::BoundingBox2d;
+using Domain::Transform3d;
+using Domain::SquareMatrix3d;
+using Domain::Axis;
+using Domain::is_approx;
+
+Orientation orient(
+    const Domain::Point& a, const Domain::Point& b, const Domain::Point& c
+)
+{
+    static_assert(
+        sizeof(Domain::coord_t) * 2 == sizeof(int64_t), "orient works with 32 bit coordinates"
+    );
+    int64_t u = int64_t(b.x()) * int64_t(c.y()) - int64_t(b.y()) * int64_t(c.x());
+    int64_t v = int64_t(a.x()) * int64_t(c.y()) - int64_t(a.y()) * int64_t(c.x());
+    int64_t w = int64_t(a.x()) * int64_t(b.y()) - int64_t(a.y()) * int64_t(b.x());
+    int64_t d = u - v + w;
+    return (d > 0) ? ORIENTATION_CCW : ((d == 0) ? ORIENTATION_COLINEAR : ORIENTATION_CW);
+}
+
+// Return orientation of the polygon by checking orientation of the left bottom corner of the polygon
+// using exact arithmetics. The input polygon must not contain duplicate points
+// (or at least the left bottom corner point must not have duplicates).
+bool is_ccw(const Domain::Polygon& poly)
+{
+    // The polygon shall be at least a triangle.
+    assert(poly.points.size() >= 3);
+    if (poly.points.size() < 3)
+        return true;
+
+    // 1) Find the lowest lexicographical point.
+    unsigned int imin = 0;
+    for (unsigned int i = 1; i < poly.points.size(); ++i) {
+        const Domain::Point& pmin = poly.points[imin];
+        const Domain::Point& p = poly.points[i];
+        if (p(0) < pmin(0) || (p(0) == pmin(0) && p(1) < pmin(1)))
+            imin = i;
+    }
+
+    // 2) Detect the orientation of the corner imin.
+    size_t iPrev = ((imin == 0) ? poly.points.size() : imin) - 1;
+    size_t iNext = ((imin + 1 == poly.points.size()) ? 0 : imin + 1);
+    Orientation o = orient(poly.points[iPrev], poly.points[imin], poly.points[iNext]);
+    // The lowest bottom point must not be collinear if the polygon does not contain duplicate
+    // points or overlapping segments.
+    assert(o != ORIENTATION_COLINEAR);
+    return o == ORIENTATION_CCW;
+}
+
+bool ray_ray_intersection(
+    const Domain::Vec2d& p1,
+    const Domain::Vec2d& v1,
+    const Domain::Vec2d& p2,
+    const Domain::Vec2d& v2,
+    Domain::Vec2d& res
+)
+{
+    double denom = v1(0) * v2(1) - v2(0) * v1(1);
+    if (std::abs(denom) < Domain::EPSILON)
+        return false;
+    double t = (v2(0) * (p1(1) - p2(1)) - v2(1) * (p1(0) - p2(0))) / denom;
+    res(0) = p1(0) + t * v1(0);
+    res(1) = p1(1) + t * v1(1);
+    return true;
+}
+
+bool segment_segment_intersection(
+    const Domain::Vec2d& p1,
+    const Domain::Vec2d& v1,
+    const Domain::Vec2d& p2,
+    const Domain::Vec2d& v2,
+    Domain::Vec2d& res
+)
+{
+    double denom = v1(0) * v2(1) - v2(0) * v1(1);
+    if (std::abs(denom) < Domain::EPSILON)
+        // Lines are collinear.
+        return false;
+    double s12_x = p1(0) - p2(0);
+    double s12_y = p1(1) - p2(1);
+    double s_numer = v1(0) * s12_y - v1(1) * s12_x;
+    bool denom_is_positive = false;
+    if (denom < 0.) {
+        denom_is_positive = true;
+        denom = -denom;
+        s_numer = -s_numer;
+    }
+    if (s_numer < 0.)
+        // Intersection outside of the 1st segment.
+        return false;
+    double t_numer = v2(0) * s12_y - v2(1) * s12_x;
+    if (!denom_is_positive)
+        t_numer = -t_numer;
+    if (t_numer < 0. || s_numer > denom || t_numer > denom)
+        // Intersection outside of the 1st or 2nd segment.
+        return false;
+    // Intersection inside both of the segments.
+    double t = t_numer / denom;
+    res(0) = p1(0) + t * v1(0);
+    res(1) = p1(1) + t * v1(1);
+    return true;
+}
+
+bool segments_intersect(
+    const Domain::Point& ip1,
+    const Domain::Point& ip2,
+    const Domain::Point& jp1,
+    const Domain::Point& jp2
+)
+{
+    assert(ip1 != ip2);
+    assert(jp1 != jp2);
+
+    auto segments_could_intersect =
+        [](const Domain::Point& ip1, const Domain::Point& ip2, const Domain::Point& jp1,
+           const Domain::Point& jp2) -> std::pair<int, int> {
+        Domain::Vec2big iv = (ip2 - ip1).cast<int64_t>();
+        Domain::Vec2big vij1 = (jp1 - ip1).cast<int64_t>();
+        Domain::Vec2big vij2 = (jp2 - ip1).cast<int64_t>();
+        int64_t tij1 = cross2(iv, vij1);
+        int64_t tij2 = cross2(iv, vij2);
+        return std::make_pair(
+            // signum
+            (tij1 > 0) ? 1 : ((tij1 < 0) ? -1 : 0), (tij2 > 0) ? 1 : ((tij2 < 0) ? -1 : 0)
+        );
+    };
+
+    std::pair<int, int> sign1 = segments_could_intersect(ip1, ip2, jp1, jp2);
+    std::pair<int, int> sign2 = segments_could_intersect(jp1, jp2, ip1, ip2);
+    int test1 = sign1.first * sign1.second;
+    int test2 = sign2.first * sign2.second;
+    if (test1 <= 0 && test2 <= 0) {
+        // The segments possibly intersect. They may also be collinear, but not intersect.
+        if (test1 != 0 || test2 != 0)
+            // Certainly not collinear, then the segments intersect.
+            return true;
+        // If the first segment is collinear with the other, the other is collinear with the first segment.
+        assert((sign1.first == 0 && sign1.second == 0) == (sign2.first == 0 && sign2.second == 0));
+        if (sign1.first == 0 && sign1.second == 0) {
+            // The segments are certainly collinear. Now verify whether they overlap.
+            Domain::Point vi = ip2 - ip1;
+            // Project both on the longer coordinate of vi.
+            int axis = std::abs(vi.x()) > std::abs(vi.y()) ? 0 : 1;
+            Domain::coord_t i = ip1(axis);
+            Domain::coord_t j = ip2(axis);
+            Domain::coord_t k = jp1(axis);
+            Domain::coord_t l = jp2(axis);
+            if (i > j)
+                std::swap(i, j);
+            if (k > l)
+                std::swap(k, l);
+            return (k >= i && k <= j) || (i >= k && i <= l);
+        }
+    }
+    return false;
+}
+
+template<typename T>
+T foot_pt(const T& line_pt, const T& line_dir, const T& pt)
+{
+    T v = pt - line_pt;
+    auto l2 = line_dir.squaredNorm();
+    auto t = (l2 == 0) ? 0 : v.dot(line_dir) / l2;
+    return line_pt + line_dir * t;
+}
+
+Domain::Vec2d foot_pt(const Vec2d& line_pt, const Vec2d& line_dir, const Vec2d& pt)
+{
+    return foot_pt<Domain::Vec2d>(
+        line_pt, line_dir, pt
+    );
+}
+
+Domain::Vec2d foot_pt(const Domain::Line& iline, const Domain::Point& ipt)
+{
+    return foot_pt<Domain::Vec2d>(
+        iline.a.cast<double>(), (iline.b - iline.a).cast<double>(), ipt.cast<double>()
+    );
+}
+
+template<typename T>
+auto ray_point_distance_squared(const T& ray_pt, const T& ray_dir, const T& pt)
+{
+    return (foot_pt(ray_pt, ray_dir, pt) - pt).squaredNorm();
+}
+
+template<typename T>
+auto ray_point_distance(const T& ray_pt, const T& ray_dir, const T& pt)
+{
+    return (foot_pt(ray_pt, ray_dir, pt) - pt).norm();
+}
+
+double ray_point_distance_squared(const Domain::Line& iline, const Domain::Point& ipt)
+{
+    return (foot_pt(iline, ipt) - ipt.cast<double>()).squaredNorm();
+}
+
+double ray_point_distance(const Domain::Line& iline, const Domain::Point& ipt)
+{
+    return (foot_pt(iline, ipt) - ipt.cast<double>()).norm();
+}
+
+double ray_point_distance(const Vec2d& ray_pt, const Vec2d& ray_dir, const Vec2d& pt)
+{
+    return ray_point_distance<Vec2d>(ray_pt, ray_dir, pt);
+}
 
 bool directions_parallel(double angle1, double angle2, double max_diff)
 {
@@ -72,15 +292,18 @@ template bool contains(const ExPolygons &vector, const Point &point);
 
 void simplify_polygons(const Polygons &polygons, double tolerance, Polygons* retval)
 {
+    using Algorithms::Polygon::to_polyline;
+    using Algorithms::DouglasPeucker::douglas_peucker;
     Polygons simplified_raw;
     for (const Polygon &source_polygon : polygons) {
-        Points simplified = Algorithms::DouglasPeucker::douglas_peucker(to_polyline(source_polygon).points, tolerance);
+        Points simplified = douglas_peucker(to_polyline(source_polygon).points, tolerance);
         if (simplified.size() > 3) {
             simplified.pop_back();
             simplified_raw.push_back(Polygon{ std::move(simplified) });
         }
     }
-    *retval = Slic3r::simplify_polygons(simplified_raw);
+    using Slic3r::Biz::Algorithms::ClipperUtils::simplify_polygons;
+    *retval = simplify_polygons(simplified_raw);
 }
 
 double linint(double value, double oldmin, double oldmax, double newmin, double newmax)
@@ -171,8 +394,9 @@ public:
 };
 
 bool
-arrange(size_t total_parts, const Vec2d &part_size, double dist, const BoundingBoxf* bb, Pointfs &positions)
+arrange(size_t total_parts, const Vec2d &part_size, double dist, const BoundingBox2d* bb, Vec2ds &positions)
 {
+    namespace bounding_box = Slic3r::Biz::Algorithms::BoundingBox;
     positions.clear();
 
     Vec2d part = part_size;
@@ -183,7 +407,7 @@ arrange(size_t total_parts, const Vec2d &part_size, double dist, const BoundingB
     
     Vec2d area(Vec2d::Zero());
     if (bb != NULL && bb->defined) {
-        area = bb->size();
+        area = bounding_box::sizes(*bb);
     } else {
         // bogus area size, large enough not to trigger the error below
         area(0) = part(0) * total_parts;
@@ -200,15 +424,15 @@ arrange(size_t total_parts, const Vec2d &part_size, double dist, const BoundingB
     Vec2d cells(cellw * part(0), cellh * part(1));
     
     // bounding box of total space used by cells
-    BoundingBoxf cells_bb;
-    cells_bb.merge(Vec2d(0,0)); // min
-    cells_bb.merge(cells);  // max
+    BoundingBox2d cells_bb;
+    cells_bb = bounding_box::merge(cells_bb, Vec2d(0,0)); // min
+    cells_bb = bounding_box::merge(cells_bb, cells);  // max
     
     // center bounding box to area
-    cells_bb.translate(
+    cells_bb = bounding_box::translated(cells_bb, Vec2d{
         (area(0) - cells(0)) / 2,
         (area(1) - cells(1)) / 2
-    );
+    });
     
     // list of cells, sorted by distance from center
     std::vector<ArrangeItemIndex> cellsorder;
@@ -285,7 +509,7 @@ arrange(size_t total_parts, const Vec2d &part_size, double dist, const BoundingB
     }
     
     if (bb != NULL && bb->defined) {
-        for (Pointfs::iterator p = positions.begin(); p != positions.end(); ++p) {
+        for (auto p = positions.begin(); p != positions.end(); ++p) {
             p->x() += bb->min(0);
             p->y() += bb->min(1);
         }
@@ -422,32 +646,32 @@ Transform3d Transformation::get_offset_matrix() const
 
 static Transform3d extract_rotation_matrix(const Transform3d& trafo)
 {
-    Matrix3d rotation;
-    Matrix3d scale;
+    SquareMatrix3d rotation;
+    SquareMatrix3d scale;
     trafo.computeRotationScaling(&rotation, &scale);
     return Transform3d(rotation);
 }
 
 static Transform3d extract_scale(const Transform3d& trafo)
 {
-    Matrix3d rotation;
-    Matrix3d scale;
+    SquareMatrix3d rotation;
+    SquareMatrix3d scale;
     trafo.computeRotationScaling(&rotation, &scale);
     return Transform3d(scale);
 }
 
 static std::pair<Transform3d, Transform3d> extract_rotation_scale(const Transform3d& trafo)
 {
-    Matrix3d rotation;
-    Matrix3d scale;
+    SquareMatrix3d rotation;
+    SquareMatrix3d scale;
     trafo.computeRotationScaling(&rotation, &scale);
     return { Transform3d(rotation), Transform3d(scale) };
 }
 
 static bool contains_skew(const Transform3d& trafo)
 {
-    Matrix3d rotation;
-    Matrix3d scale;
+    SquareMatrix3d rotation;
+    SquareMatrix3d scale;
     trafo.computeRotationScaling(&rotation, &scale);
 
     if (scale.isDiagonal())
@@ -457,7 +681,7 @@ static bool contains_skew(const Transform3d& trafo)
       return true;
 
     // the matrix contains mirror
-    const Matrix3d ratio = scale.cwiseQuotient(trafo.matrix().block<3,3>(0,0));
+    const SquareMatrix3d ratio = scale.cwiseQuotient(trafo.matrix().block<3,3>(0,0));
 
     auto check_skew = [&ratio](int i, int j, bool& skew) {
       if (!std::isnan(ratio(i, j)) && !std::isnan(ratio(j, i)))
@@ -621,7 +845,7 @@ void Transformation::reset_scaling_factor()
 
 void Transformation::reset_skew()
 {
-    auto new_scale_factor = [](const Matrix3d& s) {
+    auto new_scale_factor = [](const SquareMatrix3d& s) {
         return pow(s(0, 0) * s(1, 1) * s(2, 2), 1. / 3.); // scale average
     };
 
@@ -668,17 +892,17 @@ TransformationSVD::TransformationSVD(const Transform3d& trafo)
     const auto &m0 = trafo.matrix().block<3, 3>(0, 0);
     mirror = m0.determinant() < 0.0;
 
-    Matrix3d m;
+    SquareMatrix3d m;
     if (mirror)
         m = m0 * Eigen::DiagonalMatrix<double, 3, 3>(-1.0, 1.0, 1.0);
     else
         m = m0;
-    const Eigen::JacobiSVD<Matrix3d> svd(m, Eigen::ComputeFullU | Eigen::ComputeFullV);
+    const Eigen::JacobiSVD<SquareMatrix3d> svd(m, Eigen::ComputeFullU | Eigen::ComputeFullV);
     u = svd.matrixU();
     v = svd.matrixV();
     s = svd.singularValues().asDiagonal();
 
-    scale = !s.isApprox(Matrix3d::Identity());
+    scale = !s.isApprox(SquareMatrix3d::Identity());
     anisotropic_scale = ! is_approx(s(0, 0), s(1, 1)) || ! is_approx(s(1, 1), s(2, 2));
     rotation = !v.isApprox(u);
 
@@ -694,7 +918,7 @@ TransformationSVD::TransformationSVD(const Transform3d& trafo)
             }
         }
         // Detect skew by brute force: check if the axes are still orthogonal after transformation
-        const Matrix3d trafo_linear = trafo.linear();
+        const SquareMatrix3d trafo_linear = trafo.linear();
         const std::array<Vec3d, 3> axes = { Vec3d::UnitX(), Vec3d::UnitY(), Vec3d::UnitZ() };
         std::array<Vec3d, 3> transformed_axes;
         for (int i = 0; i < 3; ++i) {
@@ -755,14 +979,28 @@ double rotation_diff_z(const Transform3d &trafo_from, const Transform3d &trafo_t
     return atan2(vx.y(), vx.x());
 }
 
+bool is_rotation_ninety_degrees(double a)
+{
+    a = fmod(std::abs(a), 0.5 * PI);
+    if (a > 0.25 * PI)
+        a = 0.5 * PI - a;
+    return a < 0.001;
+}
+
+bool is_rotation_ninety_degrees(const Domain::Vec3d& rotation)
+{
+    return is_rotation_ninety_degrees(rotation.x()) && is_rotation_ninety_degrees(rotation.y()) &&
+        is_rotation_ninety_degrees(rotation.z());
+}
+
 bool trafos_differ_in_rotation_by_z_and_mirroring_by_xy_only(const Transform3d &t1, const Transform3d &t2)
 {
     if (std::abs(t1.translation().z() - t2.translation().z()) > EPSILON)
         // One of the object is higher than the other above the build plate (or below the build plate).
         return false;
-    Matrix3d m1 = t1.matrix().block<3, 3>(0, 0);
-    Matrix3d m2 = t2.matrix().block<3, 3>(0, 0);
-    Matrix3d m = m2.inverse() * m1;
+    SquareMatrix3d m1 = t1.matrix().block<3, 3>(0, 0);
+    SquareMatrix3d m2 = t2.matrix().block<3, 3>(0, 0);
+    SquareMatrix3d m = m2.inverse() * m1;
     Vec3d    z = m.block<3, 1>(0, 2);
     if (std::abs(z.x()) > EPSILON || std::abs(z.y()) > EPSILON || std::abs(z.z() - 1.) > EPSILON)
         // Z direction or length changed.
@@ -779,6 +1017,13 @@ bool trafos_differ_in_rotation_by_z_and_mirroring_by_xy_only(const Transform3d &
     // Verify whether the vectors x, y are still perpendicular.
     double   d   = x.dot(y);
     return std::abs(d * d) < EPSILON * lx2 * ly2;
+}
+
+bool trafos_differ_in_rotation_by_z_and_mirroring_by_xy_only(
+    const Transformation& t1, const Transformation& t2
+)
+{
+    return trafos_differ_in_rotation_by_z_and_mirroring_by_xy_only(t1.get_matrix(), t2.get_matrix());
 }
 
 bool is_point_inside_polygon_corner(const Point &a, const Point &b, const Point &c, const Point &query_point) {
