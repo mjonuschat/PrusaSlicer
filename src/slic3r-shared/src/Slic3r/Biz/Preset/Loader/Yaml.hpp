@@ -254,7 +254,7 @@ V parse_variant(fy_node* node)
 {
     try {
         return TypeTraits<T>::parse(node);
-    } catch (const ParseError& e) {
+    } catch (const ParseError&) {
         return parse_variant<V, Ts...>(node);
     }
 }
