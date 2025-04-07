@@ -64,13 +64,13 @@ void AbstractRenderCanvas::render()
     assert_no_gl_error();
     begin_frame();
     assert_no_gl_error();
+    emit_enqueued_events();
+    assert_no_gl_error();
     begin_imgui_frame();
     assert_no_gl_error();
     m_render_module->render_imgui();
     assert_no_gl_error();
     end_imgui_frame();
-    assert_no_gl_error();
-    emit_enqueued_events();
     assert_no_gl_error();
     m_render_module->render_scene();
     assert_no_gl_error();
