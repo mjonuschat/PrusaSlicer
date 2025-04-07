@@ -18,12 +18,11 @@ struct FilamentGeometry
 
 struct ProcessorResult
 {
-    // TODO enable this once viewer takes const& to ProcessorResult.
-    // ProcessorResult() = default;
-    // ProcessorResult(const ProcessorResult&) = delete;
-    // ProcessorResult(ProcessorResult&&) = default;
-    // ProcessorResult& operator=(const ProcessorResult&) = delete;
-    // ProcessorResult& operator=(ProcessorResult&&) = default;
+    ProcessorResult() = default;
+    ProcessorResult(const ProcessorResult&) = delete;
+    ProcessorResult(ProcessorResult&&) = default;
+    ProcessorResult& operator=(const ProcessorResult&) = delete;
+    ProcessorResult& operator=(ProcessorResult&&) = default;
 
     GCodeProducer producer{ GCodeProducer::Unknown };
     uint8_t extruders_count{ MIN_EXTRUDERS_COUNT };

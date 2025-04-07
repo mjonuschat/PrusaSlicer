@@ -247,7 +247,6 @@ void PreviewRenderModule::on_scene_keyboard_event(const Platform::KeyboardEvent&
 void PreviewRenderModule::on_fdm_result_cache_changed(
     const Biz::Slicing::SlicingId id
 ) {
-    // TODO send_data_to_viewer should take const& to ProcessorResult.
     send_data_to_viewer(m_project_interactor.fdm_result_cache().get_result(id));
 }
 
@@ -919,7 +918,7 @@ static ProcessorResult result_from_gcode_file(const std::string& filename)
 //
 // Temporary function for test
 //
-static ViewerInputData extract_viewer_input_data_from_result(ProcessorResult&& result)
+static ViewerInputData extract_viewer_input_data_from_result(const ProcessorResult& result)
 {
     ViewerInputData ret;
 
@@ -986,9 +985,10 @@ static ViewerInputData extract_viewer_input_data_from_result(ProcessorResult&& r
         ret.gcode_events.push_back({ item.type, uint8_t(item.extruder - 1), times, used_filament });
     }
 
-    ret.gcode = std::move(result.gcode);
-    ret.vertices = std::move(result.moves);
     ret.extruders_count = result.extruders_count;
+    // TODO: we should avoid the copy and refer instead to the data stored in FDMResultCache
+    ret.gcode = result.gcode;
+    ret.vertices = result.moves;
 
     return ret;
 }
@@ -1014,9 +1014,9 @@ static WrapperInputData extract_wrapper_input_data_from_result(const ProcessorRe
     return ret;
 }
 
-void PreviewRenderModule::send_data_to_viewer(Biz::Slicing::FDMResult result)
+void PreviewRenderModule::send_data_to_viewer(const Biz::Slicing::FDMResult& result)
 {
-    ViewerInputData viewer_data = extract_viewer_input_data_from_result(std::move(result));
+    ViewerInputData viewer_data = extract_viewer_input_data_from_result(result);
     WrapperInputData wrapper_data = extract_wrapper_input_data_from_result(result);
 
     m_viewer.load(std::move(wrapper_data), std::move(viewer_data));

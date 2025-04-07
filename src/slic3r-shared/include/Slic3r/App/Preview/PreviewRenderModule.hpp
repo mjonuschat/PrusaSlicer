@@ -65,7 +65,7 @@ private:
 private:
     void init_gizmos();
     void init_viewer(Render::Device& device);
-    void send_data_to_viewer(Biz::Slicing::FDMResult result);
+    void send_data_to_viewer(const Biz::Slicing::FDMResult& result);
     void init_scene_layout();
     void send_data_to_viewer_from_file(const std::string& filename);
 
