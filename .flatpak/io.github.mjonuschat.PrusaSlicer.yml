@@ -3,7 +3,7 @@ runtime: org.gnome.Platform
 runtime-version: "46"
 sdk: org.gnome.Sdk
 command: entrypoint
-desktop-file-name-suffix: ""
+desktop-file-name-suffix: " (rc2)"
 separate-locales: true
 finish-args:
 - --share=ipc
