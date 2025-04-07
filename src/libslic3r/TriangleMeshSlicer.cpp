@@ -18,8 +18,8 @@
 #include <cstdlib>
 
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
-#include "Tesselate.hpp"
-#include "TriangleMesh.hpp"
+#include "Slic3r/Biz/Algorithms/Tesselate.hpp"
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "TriangleMeshSlicer.hpp"
 #include "Utils.hpp"
 #include "admesh/stl.h"
@@ -58,6 +58,16 @@
 #endif
 
 using namespace Slic3r::Biz;
+
+using Slic3r::Biz::Algorithms::Tesselate::triangulate_expolygons_3d;
+using Slic3r::Biz::Algorithms::Tesselate::NORMALS_UP;
+using Slic3r::Biz::Algorithms::Tesselate::NORMALS_DOWN;
+using Slic3r::Domain::TriangleMesh;
+using Slic3r::Domain::Index3;
+using Slic3r::Domain::AdditionalMeshInfo;
+using Slic3r::Domain::indexed_triangle_set_with_color;
+using Slic3r::Domain::IndexedTriangleSetType;
+namespace TriMesh = Slic3r::Biz::Algorithms::TriangleMesh;
 
 namespace Slic3r {
 
@@ -1964,7 +1974,7 @@ std::vector<typename PolygonsType<mesh_info>::type> slice_mesh(
         // Instead of edge identifiers, one shall use a sorted pair of edge vertex indices.
         // However facets_edges assigns a single edge ID to two triangles only, thus when factoring facets_edges out, one will have
         // to make sure that no code relies on it.
-        std::vector<Index3> face_edge_ids = its_face_edge_ids<mesh_info>(mesh);
+        std::vector<Index3> face_edge_ids = TriMesh::its_face_edge_ids<mesh_info>(mesh);
         if (zs.size() <= 1) {
             // It likely is not worthwile to copy the vertices. Apply the transformation in place.
             if (is_identity(params.trafo)) {
@@ -2096,7 +2106,7 @@ typename PolygonsType<mesh_info>::type slice_mesh(
         }
 
         // 3) Calculate face neighbors for just the faces in face_mask.
-        std::vector<Index3> face_edge_ids = its_face_edge_ids<mesh_info>(mesh, face_mask);
+        std::vector<Index3> face_edge_ids = TriMesh::its_face_edge_ids<mesh_info>(mesh, face_mask);
 
         // 4) Slice "face_mask" triangles, collect line segments.
         // It likely is not worthwile to copy the vertices. Apply the transformation in place.
@@ -2301,9 +2311,9 @@ void slice_mesh_slabs(
         face_orientation[&tri - mesh.indices.data()] = fo;
     }
 
-    std::vector<Index3> facet_neighbors = its_face_neighbors_par(mesh);
+    std::vector<Index3> facet_neighbors = TriMesh::its_face_neighbors_par(mesh);
     int                num_edges;
-    std::vector<Index3> face_edge_ids  = its_face_edge_ids(mesh, facet_neighbors, true, &num_edges);
+    std::vector<Index3> face_edge_ids  = TriMesh::its_face_edge_ids(mesh, facet_neighbors, true, &num_edges);
     std::pair<SlabLines, SlabLines> lines = slice_slabs_make_lines(
         vertices_transformed, mesh.indices, facet_neighbors, face_edge_ids, num_edges, face_orientation, zs, 
         out_top != nullptr, out_bottom != nullptr, throw_on_cancel);
@@ -2414,7 +2424,7 @@ static void triangulate_slice(
     }
 
     // Remove vertices, which are not referenced by any face.
-    its_compactify_vertices(its);
+    TriMesh::its_compactify_vertices(its);
 
     // Degenerate faces should not be created.
     // its_remove_degenerate_faces(its);
@@ -2457,7 +2467,7 @@ void cut_mesh(const indexed_triangle_set &mesh, float z, indexed_triangle_set *u
         return;
 
 #ifndef NDEBUG
-    const size_t had_degenerate_faces = its_num_degenerate_faces(mesh);
+    const size_t had_degenerate_faces = TriMesh::its_num_degenerate_faces(mesh);
 #endif // NDEBUG
 
     BOOST_LOG_TRIVIAL(trace) << "cut_mesh - slicing object";
@@ -2475,13 +2485,13 @@ void cut_mesh(const indexed_triangle_set &mesh, float z, indexed_triangle_set *u
     }
 
 #ifndef NDEBUG
-    size_t num_open_edges_old = triangulate_caps ? its_num_open_edges(mesh) : 0;
+    size_t num_open_edges_old = triangulate_caps ? TriMesh::its_num_open_edges(mesh) : 0;
 #endif // NDEBUG
 
     // To triangulate the caps after slicing.
     IntersectionLines  upper_lines, lower_lines;
     std::vector<int>   upper_slice_vertices, lower_slice_vertices;
-    std::vector<Index3> facets_edge_ids = its_face_edge_ids(mesh);
+    std::vector<Index3> facets_edge_ids = TriMesh::its_face_edge_ids(mesh);
 
     for (int facet_idx = 0; facet_idx < int(mesh.indices.size()); ++ facet_idx) {
         const stl_triangle_vertex_indices &facet = mesh.indices[facet_idx];
@@ -2637,14 +2647,14 @@ void cut_mesh(const indexed_triangle_set &mesh, float z, indexed_triangle_set *u
 */
     }
 
-    assert(had_degenerate_faces || ! upper || its_num_degenerate_faces(*upper) == 0);
-    assert(had_degenerate_faces || ! lower || its_num_degenerate_faces(*lower) == 0);
+    assert(had_degenerate_faces || ! upper || TriMesh::its_num_degenerate_faces(*upper) == 0);
+    assert(had_degenerate_faces || ! lower || TriMesh::its_num_degenerate_faces(*lower) == 0);
 
     if (upper != nullptr) {
         triangulate_slice(*upper, upper_lines, upper_slice_vertices, int(mesh.vertices.size()), z, triangulate_caps, NORMALS_DOWN);
 #ifndef NDEBUG
         if (triangulate_caps) {
-            size_t num_open_edges_new = its_num_open_edges(*upper);
+            size_t num_open_edges_new = TriMesh::its_num_open_edges(*upper);
             assert(num_open_edges_new <= num_open_edges_old);
         }
 #endif // NDEBUG
@@ -2654,14 +2664,14 @@ void cut_mesh(const indexed_triangle_set &mesh, float z, indexed_triangle_set *u
         triangulate_slice(*lower, lower_lines, lower_slice_vertices, int(mesh.vertices.size()), z, triangulate_caps, NORMALS_UP);
 #ifndef NDEBUG
         if (triangulate_caps) {
-            size_t num_open_edges_new = its_num_open_edges(*lower);
+            size_t num_open_edges_new = TriMesh::its_num_open_edges(*lower);
             assert(num_open_edges_new <= num_open_edges_old);
         }
 #endif // NDEBUG
     }
 
-    assert(had_degenerate_faces || ! upper || its_num_degenerate_faces(*upper) == 0);
-    assert(had_degenerate_faces || ! lower || its_num_degenerate_faces(*lower) == 0);
+    assert(had_degenerate_faces || ! upper || TriMesh::its_num_degenerate_faces(*upper) == 0);
+    assert(had_degenerate_faces || ! lower || TriMesh::its_num_degenerate_faces(*lower) == 0);
 }
 
 } // namespace Slic3r

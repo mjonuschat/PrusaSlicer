@@ -19,6 +19,11 @@
 
 namespace Slic3r::ModelProcessing {
 
+namespace tm = Slic3r::Biz::Algorithms::TriangleMesh;
+using Domain::TriangleMesh;
+using Domain::TriangleMeshStats;
+using Domain::RepairedMeshErrors;
+
 // Generate next extruder ID string, in the range of (1, max_extruders).
 static inline int auto_extruder_id(unsigned int max_extruders, unsigned int& cntr)
 {
@@ -262,7 +267,7 @@ static bool is_front_up_left(const TriangleMesh &trinagle_mesh1, const TriangleM
 // This is useful to assign different materials to different volumes of an object.
 size_t split(ModelVolume* volume, unsigned int max_extruders)
 {
-    std::vector<TriangleMesh> meshes = volume->mesh().split();
+    std::vector<TriangleMesh> meshes = tm::split(volume->mesh());
     if (meshes.size() <= 1)
         return 1;
 
@@ -331,7 +336,7 @@ void split(ModelObject* object, ModelObjectPtrs* new_objects)
         if (volume->text_configuration.has_value())
             volume->text_configuration.reset();
 
-        std::vector<TriangleMesh> meshes = volume->mesh().split();
+        std::vector<TriangleMesh> meshes = tm::split(volume->mesh());
         std::sort(meshes.begin(), meshes.end(), is_front_up_left);
 
         size_t counter = 1;

@@ -11,6 +11,7 @@
 #include "libslic3r/Point.hpp"
 
 using namespace Slic3r;
+using Domain::Index3;
 
 Vec3f NormalUtils::create_triangle_normal(
     const stl_triangle_vertex_indices &indices,

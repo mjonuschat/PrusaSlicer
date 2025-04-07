@@ -20,7 +20,7 @@
 #include <libslic3r/Geometry.hpp>
 #include <libslic3r/PrintConfig.hpp>
 #include <libslic3r/SLA/Pad.hpp>
-#include <libslic3r/TriangleMesh.hpp>
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include <libslic3r/TriangleMeshSlicer.hpp>
 
 #include <arrange/Beds.hpp>
@@ -30,6 +30,7 @@
 #include <arrange-wrapper/Scene.hpp>
 
 namespace Slic3r { namespace arr2 {
+namespace tm = Slic3r::Biz::Algorithms::TriangleMesh;
 
 coord_t get_skirt_inset(const Print &fffprint)
 {
@@ -87,19 +88,25 @@ BoundingBoxf3 instance_bounding_box(const ModelInstance &mi,
                                     const Transform3d &tr,
                                     bool dont_translate)
 {
-    BoundingBoxf3 bb;
+    using Slic3r::Biz::Algorithms::BoundingBox::merge;
+
+    Domain::BoundingBox3d bb;
     const Transform3d inst_matrix
         = dont_translate ? mi.get_transformation().get_matrix_no_offset()
                          : mi.get_transformation().get_matrix();
 
     for (ModelVolume *v : mi.get_object()->volumes) {
         if (v->is_model_part()) {
-            bb.merge(v->mesh().transformed_bounding_box(tr * inst_matrix
-                                                        * v->get_matrix()));
+            bb = merge(bb, tm::transformed_bounding_box(v->mesh(), tr * inst_matrix * v->get_matrix()));
         }
     }
 
-    return bb;
+    BoundingBoxf3 result{
+        bb.min,
+        bb.max
+    };
+    result.defined = bb.defined;
+    return result;
 }
 
 BoundingBoxf3 instance_bounding_box(const ModelInstance &mi, bool dont_translate)
@@ -847,11 +854,11 @@ Polygon ArrangeableSLAPrintObject::convex_outline() const
 
         if (omesh) {
             polys.emplace_back(
-                its_convex_hull_2d_above(*omesh, trafo_instance, zlvl));
+                tm::its_convex_hull_2d_above(*omesh, trafo_instance, zlvl));
         }
 
         polys.emplace_back(
-            its_convex_hull_2d_above(smesh.its, trafo_instance, zlvl));
+            tm::its_convex_hull_2d_above(smesh.its, trafo_instance, zlvl));
     }
 
     return Geometry::convex_hull(polys);
@@ -873,7 +880,7 @@ Polygon ArrangeableSLAPrintObject::convex_envelope() const
             auto zlvl = -m_po->get_elevation();
 
             polys.emplace_back(
-                its_convex_hull_2d_above(pmesh.its, trafo_instance, zlvl));
+                tm::its_convex_hull_2d_above(pmesh.its, trafo_instance, zlvl));
         }
     }
 

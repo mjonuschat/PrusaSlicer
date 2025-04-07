@@ -115,12 +115,12 @@ double PerspectiveCameraProjection::constant_screen_space_size_scale(
     double phi_half = m_fovy / (2 * cam.zoom());
     /*
     // TODO: This needs to be checked
-    double denom = 2 * std::tan(Geometry::deg2rad(phi_half));
+    double denom = 2 * std::tan(deg2rad(phi_half));
     double ret = cam_object_dist / denom;
     SPDLOG_INFO("Screen scale: {}   dist: {}  fovy (actual): {}  fovy (zoomed): {}", ret, cam_object_dist, m_fovy, phi_half);
     return ret;
     */
-    return cam_object_dist/2 * std::tan(Geometry::deg2rad(phi_half));
+    return cam_object_dist/2 * std::tan(deg2rad(phi_half));
 }
 
 Transform OrthographicCameraProjection::projection(const Render::Rect& viewport, double zoom) const
@@ -138,7 +138,7 @@ double OrthographicCameraProjection::constant_screen_space_size_scale(const Came
 {
     // TODO: This needs to be checked
     //return 2 * cam.zoom() / (cam.viewport().width);
-    //return cam_object_dist / (2 * std::tan(Geometry::deg2rad(m_fovy / 2)));
+    //return cam_object_dist / (2 * std::tan(deg2rad(m_fovy / 2)));
     // Note: For orhto this is: 2 / (r - l)
     return 0.5/cam.zoom();
 

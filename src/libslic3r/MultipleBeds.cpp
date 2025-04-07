@@ -468,7 +468,7 @@ void MultipleBeds::ensure_wipe_towers_on_beds(Model& model, const std::vector<st
         double brim  = prints[bed_idx]->wipe_tower_data().brim_width;
 
         Polygon plg(Points{scaled(Vec2d(-brim,-brim)), scaled(Vec2d(brim+width, -brim)), scaled(Vec2d(brim+width, brim+depth)), scaled(Vec2d(-brim, brim+depth))});
-        plg.rotate(Geometry::deg2rad(mwt.rotation));
+        plg.rotate(deg2rad(mwt.rotation));
         plg.translate(scaled(mwt.position));
         if (std::all_of(plg.points.begin(), plg.points.end(), [this](const Point& pt) { return !m_build_volume_bb.contains(unscale(pt)); }))
             mwt.position = 2*brim*Vec2d(1.,1.);

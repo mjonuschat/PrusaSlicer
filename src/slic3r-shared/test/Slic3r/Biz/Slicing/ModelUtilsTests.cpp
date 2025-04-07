@@ -17,7 +17,8 @@ TEST_CASE("With limited instances temporarily removes instances and objects", "[
 {
     Slic3r::Model model{generate_cubes(5, 5)};
 
-    Slic3r::TriangleMesh cube_mesh = Slic3r::make_cube(10, 10, 10);
+    namespace TriMesh = Slic3r::Biz::Algorithms::TriangleMesh;
+    Slic3r::Domain::TriangleMesh cube_mesh = TriMesh::make_cube(10, 10, 10);
     Slic3r::ModelObject* model_object = model.objects.front();
     model_object->add_volume(cube_mesh);
     model_object->add_instance();

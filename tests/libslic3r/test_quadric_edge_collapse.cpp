@@ -3,10 +3,12 @@
 #include <test_utils.hpp>
 
 #include <libslic3r/QuadricEdgeCollapse.hpp>
-#include <libslic3r/TriangleMesh.hpp> // its - indexed_triangle_set
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp" // its - indexed_triangle_set
 #include "libslic3r/AABBTreeIndirect.hpp" // is similar
 
 using namespace Slic3r;
+using Domain::Index3;
+using Domain::TriangleMesh;
 
 namespace Private {
 
@@ -226,7 +228,7 @@ TEST_CASE("Reduce to one tetrahedron by Quadric Edge Collapse", "[its]")
 TEST_CASE("Simplify frog_legs.obj to 5% by Quadric edge collapse", "[its][quadric_edge_collapse]")
 {
     TriangleMesh mesh            = load_model("frog_legs.obj");
-    double       original_volume = its_volume(mesh.its);
+    double       original_volume = Domain::its_volume(mesh.its);
     uint32_t     wanted_count    = mesh.its.indices.size() * 0.05;
     REQUIRE_FALSE(mesh.empty());
     indexed_triangle_set its       = mesh.its; // copy
@@ -234,7 +236,7 @@ TEST_CASE("Simplify frog_legs.obj to 5% by Quadric edge collapse", "[its][quadri
     its_quadric_edge_collapse(its, wanted_count, &max_error);
     // its_write_obj(its, "frog_legs_qec.obj");
     CHECK(its.indices.size() <= wanted_count);
-    double volume = its_volume(its);
+    double volume = Domain::its_volume(its);
     CHECK(fabs(original_volume - volume) < 33.);
 
     Private::is_better_similarity(mesh.its, its, Private::frog_leg_5);
@@ -296,7 +298,8 @@ TEST_CASE("Simplify trouble case", "[its]")
 
 TEST_CASE("Simplified cube should not be empty.", "[its]")
 {
-    auto     its          = its_make_cube(1, 2, 3);
+    namespace triangle_mesh = Biz::Algorithms::TriangleMesh;
+    auto     its          = triangle_mesh::its_make_cube(1, 2, 3);
     float    max_error    = std::numeric_limits<float>::max();
     uint32_t wanted_count = 0;
     its_quadric_edge_collapse(its, wanted_count, &max_error);

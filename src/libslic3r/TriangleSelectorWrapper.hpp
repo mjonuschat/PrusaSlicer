@@ -11,7 +11,6 @@
 #include "libslic3r/Point.hpp"
 
 namespace Slic3r {
-class TriangleMesh;
 
 //NOTE: We need to replace the FacetsAnnotation struct for support storage (or extend/add another)
 // Problems: Does not support negative volumes, strange usage for supports computed from extrusion -
@@ -21,12 +20,12 @@ class TriangleMesh;
 
 class TriangleSelectorWrapper {
 public:
-    const TriangleMesh &mesh;
+    const Domain::TriangleMesh &mesh;
     const Transform3d& mesh_transform;
     TriangleSelector selector;
     AABBTreeIndirect::Tree<3, float> triangles_tree;
 
-    TriangleSelectorWrapper(const TriangleMesh &mesh, const Transform3d& mesh_transform);
+    TriangleSelectorWrapper(const Domain::TriangleMesh &mesh, const Transform3d& mesh_transform);
 
     void enforce_spot(const Vec3f &point, const Vec3f& origin, float radius);
 

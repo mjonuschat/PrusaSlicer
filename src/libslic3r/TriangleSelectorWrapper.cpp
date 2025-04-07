@@ -11,12 +11,12 @@
 
 #include "admesh/stl.h"
 #include "libslic3r/AABBTreeIndirect.hpp"
-#include "libslic3r/TriangleMesh.hpp"
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "libslic3r/TriangleSelector.hpp"
 
 namespace Slic3r {
 
-TriangleSelectorWrapper::TriangleSelectorWrapper(const TriangleMesh &mesh, const Transform3d& mesh_transform) :
+TriangleSelectorWrapper::TriangleSelectorWrapper(const Domain::TriangleMesh &mesh, const Transform3d& mesh_transform) :
         mesh(mesh), mesh_transform(mesh_transform), selector(mesh), triangles_tree(
                 AABBTreeIndirect::build_aabb_tree_over_indexed_triangle_set(mesh.its.vertices, mesh.its.indices)) {
 }
@@ -34,7 +34,9 @@ void TriangleSelectorWrapper::enforce_spot(const Vec3f &point, const Vec3f &orig
         for (int hit_idx = hits.size() - 1; hit_idx >= 0; --hit_idx) {
             const igl::Hit &hit = hits[hit_idx];
             Vec3f pos = origin + dir * hit.t;
-            Vec3f face_normal = its_face_normal(mesh.its, hit.id);
+
+            namespace TriMesh = Biz::Algorithms::TriangleMesh;
+            Vec3f face_normal = TriMesh::its_face_normal(mesh.its, hit.id);
             if ((point - pos).norm() < radius && face_normal.dot(dir) < 0) {
                 std::unique_ptr<TriangleSelector::Cursor> cursor = std::make_unique<TriangleSelector::Sphere>(
                         pos, origin, radius, this->mesh_transform, TriangleSelector::ClippingPlane { });

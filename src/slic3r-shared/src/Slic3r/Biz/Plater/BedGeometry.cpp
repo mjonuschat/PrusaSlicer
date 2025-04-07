@@ -4,7 +4,7 @@
 #include "Slic3r/Domain/BedInstance.hpp"
 
 #include <libslic3r/Point.hpp>
-#include <libslic3r/Tesselate.hpp>
+#include "Slic3r/Biz/Algorithms/Tesselate.hpp"
 #include <libslic3r/ClipperUtils.hpp>
 
 #include <Slic3r/Log.hpp>
@@ -23,16 +23,22 @@ using namespace Slic3r::Biz;
 
 namespace Slic3r::Biz::Plater {
 
+using Domain::TriangleMesh;
+
 TriangleMesh BedGeometry::model(const Domain::Bed& bed)
 {
-    std::string model_filename = bed.model_filename();
-    TriangleMesh ret;
-    bool res = !model_filename.empty() && ret.ReadSTLFile(model_filename.c_str());
-    if (res)
-        ret.translate(to_3d(bed.center(), 3.0 * GROUND_Z).cast<float>());
-    else
+    namespace TriMesh = Biz::Algorithms::TriangleMesh;
+    const std::string& model_filename = bed.model_filename();
+    std::optional<TriangleMesh> mesh{TriMesh::read_stl_file(model_filename.c_str())};
+
+    const bool res = !model_filename.empty() && mesh;
+    if (!res) {
         SPDLOG_ERROR("Unable to load bed model from file: {}", model_filename);
-    return ret;
+        return TriangleMesh{};
+    }
+
+    mesh->translate(to_3d(bed.center(), 3.0 * GROUND_Z).cast<float>());
+    return *mesh;
 }
 
 std::vector<std::pair<Vec3f, Vec2f>> BedGeometry::plate_triangles(const Domain::Bed& bed)
@@ -46,6 +52,8 @@ std::vector<std::pair<Vec3f, Vec2f>> BedGeometry::plate_triangles(const Domain::
         return ret;
     }
 
+    using Slic3r::Biz::Algorithms::Tesselate::triangulate_expolygon_2f;
+    using Slic3r::Biz::Algorithms::Tesselate::NORMALS_UP;
     std::vector<Vec2f> triangles = triangulate_expolygon_2f(contour, NORMALS_UP);
     if (triangles.empty() || triangles.size() % 3 != 0) {
         SPDLOG_ERROR("Unable to triangulate bed contour");
@@ -86,7 +94,9 @@ TriangleMesh BedGeometry::plate_mesh(const Domain::Bed& bed)
     for (int i = 0; i < int(triangles.size()); i += 3) {
         faces.emplace_back(Domain::Index3{i + 0, i + 1, i + 2});
     }
-    return TriangleMesh(vertices, faces);
+
+    using Biz::Algorithms::TriangleMesh::construct;
+    return construct(vertices, faces);
 }
 
 std::vector<Vec3f> BedGeometry::plate_contour(const Domain::Bed& bed)

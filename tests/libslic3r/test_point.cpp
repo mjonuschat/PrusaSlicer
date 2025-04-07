@@ -14,6 +14,7 @@
 using namespace Slic3r;
 using namespace Slic3r::Biz;
 using namespace Catch;
+using Slic3r::Domain::Line;
 
 TEST_CASE("Nearest point", "[Point]") {
     const Point point{10, 15};

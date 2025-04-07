@@ -9,10 +9,13 @@
 #include "libslic3r/GCode/ModelVisibility.hpp"
 #include "libslic3r/AABBTreeIndirect.hpp"
 #include "admesh/stl.h"
-#include "libslic3r/TriangleMesh.hpp"
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "libslic3r/libslic3r.h"
 
 namespace Slic3r::ModelInfo {
+
+using Domain::its_merge;
+
 namespace Impl {
 
 CoordinateFunctor::CoordinateFunctor(const std::vector<Vec3f> *coords) : coordinates(coords) {}
@@ -101,6 +104,8 @@ std::vector<float> raycast_visibility(
     size_t negative_volumes_start_index,
     const Visibility::Params &params
 ) {
+    namespace TriMesh = Biz::Algorithms::TriangleMesh;
+
     BOOST_LOG_TRIVIAL(debug)
     << "SeamPlacer: raycast visibility of " << samples.positions.size() << " samples over " << triangles.indices.size()
             << " triangles: end";
@@ -147,7 +152,7 @@ std::vector<float> raycast_visibility(
                             Vec3d ray_origin_d = (center + normal * 0.01f).cast<double>(); // start above surface.
                             bool hit = AABBTreeIndirect::intersect_ray_first_hit(triangles.vertices,
                                     triangles.indices, raycasting_tree, ray_origin_d, final_ray_dir_d, hitpoint);
-                            if (hit && its_face_normal(triangles, hitpoint.id).dot(final_ray_dir) <= 0) {
+                            if (hit && TriMesh::its_face_normal(triangles, hitpoint.id).dot(final_ray_dir) <= 0) {
                                 result[s_idx] -= decrease_step;
                             }
                         } else { //TODO improve logic for order based boolean operations - consider order of volumes
@@ -168,7 +173,7 @@ std::vector<float> raycast_visibility(
                                 // NOTE: iterating in reverse, from the last hit for one simple reason: We know the state of the ray at that point;
                                 //  It cannot be inside model, and it cannot be inside negative volume
                                 for (int hit_index = int(hits.size()) - 1; hit_index >= 0; --hit_index) {
-                                    Vec3f face_normal = its_face_normal(triangles, hits[hit_index].id);
+                                    Vec3f face_normal = TriMesh::its_face_normal(triangles, hits[hit_index].id);
                                     if (hits[hit_index].id >= int(negative_volumes_start_index)) { //negative volume hit
                                         counter -= sgn(face_normal.dot(final_ray_dir)); // if volume face aligns with ray dir, we are leaving negative space
                                         // which in reverse hit analysis means, that we are entering negative space :) and vice versa

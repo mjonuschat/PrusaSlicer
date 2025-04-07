@@ -14,13 +14,13 @@
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "ConcaveHull.hpp"
 #include "libslic3r/ClipperUtils.hpp"
-#include "libslic3r/Tesselate.hpp"
+#include "Slic3r/Biz/Algorithms/Tesselate.hpp"
 #include "libslic3r/MTUtils.hpp"
 #include "libslic3r/TriangulateWall.hpp"
 #include "libslic3r/I18N.hpp"
 #include "admesh/stl.h"
 #include "libslic3r/Point.hpp"
-#include "libslic3r/TriangleMesh.hpp"
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "libslic3r/libslic3r.h"
 
 #ifndef NDEBUG
@@ -28,8 +28,14 @@
 #endif
 
 using namespace Slic3r::Biz;
+using Slic3r::Domain::Index3;
+using Slic3r::Domain::its_merge;
 
 namespace Slic3r { namespace sla {
+
+using Slic3r::Biz::Algorithms::Tesselate::triangulate_expolygon_3d;
+using Slic3r::Biz::Algorithms::Tesselate::NORMALS_UP;
+using Slic3r::Biz::Algorithms::Tesselate::NORMALS_DOWN;
 
 namespace {
 
@@ -51,6 +57,7 @@ inline indexed_triangle_set straight_walls(const Polygon &plate,
                                            double         lo_z,
                                            double         hi_z)
 {
+    using Slic3r::Biz::Algorithms::Tesselate::wall_strip;
     return wall_strip(plate, hi_z, lo_z); //walls(plate, plate, lo_z, hi_z);
 }
 
@@ -383,6 +390,7 @@ bool add_cavity(indexed_triangle_set &pad,
     double z_min = -cfg.wing_height, z_max = 0;
     its_merge(pad, walls(inner_base.contour, middle_base.contour, z_min, z_max));
     thr();
+
     its_merge(pad, triangulate_expolygon_3d(inner_base, z_min, NORMALS_UP));
 
     return true;
@@ -511,7 +519,7 @@ void pad_blueprint(const indexed_triangle_set &mesh,
                    float                       layerh,
                    ThrowOnCancel               thrfn)
 {
-    float gnd = float(bounding_box(mesh).min(Z));
+    float gnd = float(Domain::bounding_box(mesh).min(Z));
 
     std::vector<float> slicegrid = grid(gnd, gnd + h, layerh);
     pad_blueprint(mesh, output, slicegrid, thrfn);

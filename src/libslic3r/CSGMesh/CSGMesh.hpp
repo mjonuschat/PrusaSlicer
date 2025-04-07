@@ -8,7 +8,7 @@
 #include "libslic3r/Point.hpp"
 
 #include <libslic3r/AnyPtr.hpp>
-#include <libslic3r/TriangleMesh.hpp>
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 
 namespace Slic3r { namespace csg {
 
@@ -112,7 +112,7 @@ indexed_triangle_set csgmesh_merge_positive_parts(const Cont &csgmesh)
         if (pmesh && op == csg::CSGType::Union) {
             indexed_triangle_set mcpy = *pmesh;
             its_transform(mcpy, csg::get_transform(csgpart), true);
-            its_merge(m, mcpy);
+            Domain::its_merge(m, mcpy);
         }
     }
 

@@ -42,7 +42,7 @@
 #include "libslic3r/SLA/Hollowing.hpp"
 #include "libslic3r/SLA/Pad.hpp"
 #include "libslic3r/SLA/SupportPoint.hpp"
-#include "libslic3r/TriangleMesh.hpp"
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "libslic3r/libslic3r.h"
 
 namespace Slic3r {
@@ -146,10 +146,10 @@ public:
 
     // Get a support mesh centered around origin in XY, and with zero rotation around Z applied.
     // Support mesh is only valid if this->is_step_done(slaposSupportTree) is true.
-    const TriangleMesh&     support_mesh() const;
+    const Domain::TriangleMesh&     support_mesh() const;
     // Get a pad mesh centered around origin in XY, and with zero rotation around Z applied.
     // Support mesh is only valid if this->is_step_done(slaposPad) is true.
-    const TriangleMesh&     pad_mesh() const;
+    const Domain::TriangleMesh&     pad_mesh() const;
 
     // Get the mesh that is going to be printed with all the modifications
     // like hollowing and drilled holes.
@@ -375,9 +375,9 @@ private:
     {
         sla::SupportableMesh    input; // the input
         std::vector<ExPolygons> support_slices;   // sliced supports
-        TriangleMesh tree_mesh, pad_mesh, full_mesh; // cached artifacts
+        Domain::TriangleMesh tree_mesh, pad_mesh, full_mesh; // cached artifacts
         
-        inline SupportData(const TriangleMesh &t)
+        inline SupportData(const Domain::TriangleMesh &t)
             : input{t.its, {}, {}}
         {}
 
@@ -387,12 +387,14 @@ private:
         
         void create_support_tree(const sla::JobController &ctl)
         {
-            tree_mesh = TriangleMesh{sla::create_support_tree(input, ctl)};
+            using Biz::Algorithms::TriangleMesh::construct;
+            tree_mesh = Domain::TriangleMesh{construct(sla::create_support_tree(input, ctl))};
         }
 
         void create_pad(const sla::JobController &ctl)
         {
-            pad_mesh = TriangleMesh{sla::create_pad(input, tree_mesh.its, ctl)};
+            using Biz::Algorithms::TriangleMesh::construct;
+            pad_mesh = Domain::TriangleMesh{construct(sla::create_pad(input, tree_mesh.its, ctl))};
         }
     };
 
@@ -429,8 +431,6 @@ private:
 using PrintObjects = std::vector<SLAPrintObject*>;
 
 using SliceRecord  = SLAPrintObject::SliceRecord;
-
-class TriangleMesh;
 
 struct SLAPrintStatistics
 {

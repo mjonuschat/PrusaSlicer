@@ -12,7 +12,7 @@
 ///|/
 #pragma once
 
-#include "TriangleMesh.hpp"
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include <vector>
 
 namespace Slic3r {
@@ -44,7 +44,7 @@ namespace ModelProcessing
     void    convert_units(Model& model_to, ModelObject* object_from, ConversionType conv_type, std::vector<int> volume_idxs);
 
     // Get full stl statistics for all object's meshes
-    TriangleMeshStats   get_object_mesh_stats(const ModelObject* object);
+    Domain::TriangleMeshStats   get_object_mesh_stats(const ModelObject* object);
     // Get count of errors in the mesh
     int     get_repaired_errors_count(const ModelVolume* volume);
     // Get count of errors in the mesh( or all object's meshes, if volume index isn't defined)

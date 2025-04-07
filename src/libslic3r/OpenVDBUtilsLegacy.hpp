@@ -5,7 +5,7 @@
 #ifndef OPENVDBUTILSLEGACY_HPP
 #define OPENVDBUTILSLEGACY_HPP
 
-#include "libslic3r/TriangleMesh.hpp"
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 
 #ifdef _MSC_VER
 // Suppress warning C4146 in OpenVDB: unary minus operator applied to unsigned type, result still unsigned

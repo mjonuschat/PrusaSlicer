@@ -792,7 +792,7 @@ namespace cereal
 }
 
 #include <libslic3r/Model.hpp> // IWYU pragma: keep
-#include <libslic3r/TriangleMesh.hpp> // IWYU pragma: keep
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp" // IWYU pragma: keep
 #include <slic3r/GUI/Selection.hpp> // IWYU pragma: keep
 #include <slic3r/GUI/Gizmos/GLGizmosManager.hpp> // IWYU pragma: keep
 

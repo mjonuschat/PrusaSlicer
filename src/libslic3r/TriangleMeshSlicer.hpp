@@ -14,13 +14,12 @@
 
 #include "Polygon.hpp"
 #include "ExPolygon.hpp"
+#include "Slic3r/Domain/TriangleMesh.hpp"
 #include "libslic3r/Point.hpp"
 
 struct indexed_triangle_set;
 
 namespace Slic3r {
-
-struct indexed_triangle_set_with_color;
 
 struct MeshSlicingParams
 {
@@ -81,7 +80,7 @@ std::vector<Polygons>           slice_mesh(
     std::function<void()>             throw_on_cancel = []{});
 
 std::vector<ColorPolygons>      slice_mesh(
-    const indexed_triangle_set_with_color &mesh,
+    const Domain::indexed_triangle_set_with_color &mesh,
     const std::vector<float>              &zs,
     const MeshSlicingParams               &params,
     std::function<void()>                  throw_on_cancel = []{});
@@ -93,7 +92,7 @@ Polygons                        slice_mesh(
     const MeshSlicingParams          &params);
 
 ColorPolygons                   slice_mesh(
-    const indexed_triangle_set_with_color &mesh,
+    const Domain::indexed_triangle_set_with_color &mesh,
     float                                  plane_z,
     const MeshSlicingParams               &params);
 

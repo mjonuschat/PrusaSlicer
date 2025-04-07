@@ -12,7 +12,7 @@
 #include <cstring>
 
 #include "libslic3r/Model.hpp"
-#include "libslic3r/TriangleMesh.hpp"
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "STL.hpp"
 
 #ifdef _WIN32
@@ -23,35 +23,39 @@
 
 namespace Slic3r {
 
-bool load_stl(const char *path, Model *model, const char *object_name_in)
+using Domain::TriangleMesh;
+namespace TriMesh = Biz::Algorithms::TriangleMesh;
+
+bool load_stl(const char* path, Model* model, const char* object_name_in)
 {
-    TriangleMesh mesh;
-    if (! mesh.ReadSTLFile(path)) {
-//    die "Failed to open $file\n" if !-e $path;
+    std::optional<TriangleMesh> mesh{TriMesh::read_stl_file(path)};
+    if (!mesh) {
+        //    die "Failed to open $file\n" if !-e $path;
         return false;
     }
-    if (mesh.empty()) {
+    if (mesh->empty()) {
         // die "This STL file couldn't be read because it's empty.\n"
         return false;
     }
 
     std::string object_name;
     if (object_name_in == nullptr) {
-        const char *last_slash = strrchr(path, DIR_SEPARATOR);
+        const char* last_slash = strrchr(path, DIR_SEPARATOR);
         object_name.assign((last_slash == nullptr) ? path : last_slash + 1);
-    } else
-       object_name.assign(object_name_in);
+    } else {
+        object_name.assign(object_name_in);
+    }
 
-    model->add_object(object_name.c_str(), path, std::move(mesh));
+    model->add_object(object_name.c_str(), path, std::move(*mesh));
     return true;
 }
 
 bool store_stl(const char *path, TriangleMesh *mesh, bool binary)
 {
     if (binary)
-        mesh->write_binary(path);
+        TriMesh::write_binary(*mesh, path);
     else
-        mesh->write_ascii(path);
+        TriMesh::write_ascii(*mesh, path);
     //FIXME returning false even if write failed.
     return true;
 }

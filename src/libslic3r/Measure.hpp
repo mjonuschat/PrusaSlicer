@@ -18,6 +18,7 @@
 
 #include "Point.hpp"
 #include "libslic3r/libslic3r.h"
+#include "Slic3r/Domain/TriangleMesh.hpp"
 
 struct indexed_triangle_set;
 
@@ -25,7 +26,7 @@ struct indexed_triangle_set;
 
 namespace Slic3r {
 
-class TriangleMesh;
+using Domain::TriangleMesh;
 
 namespace Measure {
 

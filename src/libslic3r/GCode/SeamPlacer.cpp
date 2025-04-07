@@ -125,9 +125,9 @@ Params Placer::get_params(const DynamicPrintConfig &config) {
     params.aligned.continuity_modifier = 2.0;
     params.convex_visibility_modifier = 1.1;
     params.concave_visibility_modifier = 0.9;
-    params.perimeter.overhang_threshold = Slic3r::Geometry::deg2rad(55.0);
-    params.perimeter.convex_threshold = Slic3r::Geometry::deg2rad(10.0);
-    params.perimeter.concave_threshold = Slic3r::Geometry::deg2rad(15.0);
+    params.perimeter.overhang_threshold = Slic3r::deg2rad(55.0);
+    params.perimeter.convex_threshold = Slic3r::deg2rad(10.0);
+    params.perimeter.concave_threshold = Slic3r::deg2rad(15.0);
 
     params.staggered_inner_seams = config.opt_bool("staggered_inner_seams");
 

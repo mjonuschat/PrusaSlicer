@@ -1,7 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <libslic3r/CutSurface.hpp>
-#include <libslic3r/TriangleMesh.hpp> // its_make_cube + its_merge
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp" // its_make_cube + its_merge
 
 using namespace Slic3r;
 TEST_CASE("Cut character from surface", "[Emboss]")
@@ -27,11 +27,12 @@ TEST_CASE("Cut character from surface", "[Emboss]")
     tr.scale(text_shape_scale);
     Emboss::OrthoProject cut_projection(tr, Vec3d(0., 0., z_depth));
 
-    auto object = its_make_cube(782 - 49 + 50, 724 + 10 + 50, 5);
+    namespace triangle_mesh = Biz::Algorithms::TriangleMesh;
+    auto object = triangle_mesh::its_make_cube(782 - 49 + 50, 724 + 10 + 50, 5);
     its_translate(object, Vec3f(49 - 25, -10 - 25, -40));
     auto cube2 = object; // copy
     its_translate(cube2, Vec3f(100, -40, 7.5));
-    its_merge(object, std::move(cube2));
+    Domain::its_merge(object, std::move(cube2));
 
     std::vector<indexed_triangle_set> objects{object};
     // Call core function for cut surface

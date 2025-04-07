@@ -36,66 +36,65 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "TriangleMesh.hpp"
-#include "TriangleMeshSlicer.hpp"
-#include "MeshSplitImpl.hpp"
-#include "ClipperUtils.hpp"
-#include "Geometry.hpp"
-#include "Geometry/ConvexHull.hpp"
-#include "Point.hpp"
+#include "Slic3r/Biz/Algorithms/MeshSplitImpl.hpp"
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
+#include "Slic3r/Biz/Algorithms/ClipperUtils.hpp"
+#include "Slic3r/Biz/Algorithms/Geometry/Geometry.hpp"
+#include "Slic3r/Biz/Algorithms/Geometry/ConvexHull.hpp"
 #include "Slic3r/Biz/Algorithms/Execution/ExecutionTBB.hpp"
 #include "Slic3r/Biz/Algorithms/Execution/ExecutionSeq.hpp"
-#include "Utils.hpp"
+#include "Slic3r/Utils.hpp"
 #include "admesh/stl.h"
-#include "libslic3r/BoundingBox.hpp"
-#include "libslic3r/Polygon.hpp"
-#include "libslic3r/libslic3r.h"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
+#include "Slic3r/Domain/Polygon.hpp"
+#include "Slic3r/Domain/Axis.hpp"
+#include "Slic3r/Biz/Algorithms/Scaling.hpp"
 
-namespace Slic3r {
+namespace Slic3r::Biz::Algorithms::TriangleMesh {
 
-static void update_bounding_box(const indexed_triangle_set &its, TriangleMeshStats &out)
+using Domain::coord_t;
+using Domain::Axis;
+using Domain::Point;
+using Domain::Points;
+using Domain::Vec2f;
+using Domain::Vec2d;
+using Domain::Vec3d;
+using Domain::Vec3ds;
+using Domain::Vec3f;
+using Domain::Polygon;
+using Domain::Polygons;
+using Domain::BoundingBox3d;
+using Domain::Transform3f;
+using Domain::Transform3d;
+using Domain::SquareMatrix3f;
+using Domain::SquareMatrix3d;
+using Slic3r::Biz::Algorithms::Scaling::scaled;
+using Domain::Index3;
+using Domain::TriangleMesh;
+using Domain::TriangleMeshStats;
+using Domain::RepairedMeshErrors;
+using Domain::IndexedTriangleSetType;
+using Domain::AdditionalMeshInfo;
+
+TriangleMeshStats calculate_stats(const indexed_triangle_set& its)
 {
-    BoundingBoxf3 bbox      = Slic3r::bounding_box(its);
-    out.min                 = bbox.min.cast<float>();
-    out.max                 = bbox.max.cast<float>();
-    out.size                = out.max - out.min;    
-}
-
-static void fill_initial_stats(const indexed_triangle_set &its, TriangleMeshStats &out)
-{
-    out.number_of_facets    = its.indices.size();
-    out.volume              = its_volume(its);
-    update_bounding_box(its, out);
+    TriangleMeshStats result;
+    result.number_of_facets = its.indices.size();
+    result.volume = Domain::its_volume(its);
+    const BoundingBox3d bbox = Domain::bounding_box(its);
+    result.min = bbox.min.cast<float>();
+    result.max = bbox.max.cast<float>();
+    result.size = result.max - result.min;
 
     const std::vector<Index3> face_neighbors = its_face_neighbors(its);
-    out.number_of_parts = its_number_of_patches(its, face_neighbors);
-    out.open_edges      = its_num_open_edges(face_neighbors);
-}
-
-TriangleMesh::TriangleMesh(const std::vector<Vec3f> &vertices, const std::vector<Index3> &faces) : its { faces, vertices }
-{
-    fill_initial_stats(this->its, m_stats);
-}
-
-TriangleMesh::TriangleMesh(std::vector<Vec3f> &&vertices, const std::vector<Index3> &&faces) : its { std::move(faces), std::move(vertices) }
-{
-    fill_initial_stats(this->its, m_stats);
-}
-
-TriangleMesh::TriangleMesh(const indexed_triangle_set &its) : its(its)
-{
-    fill_initial_stats(this->its, m_stats);
-}
-
-TriangleMesh::TriangleMesh(indexed_triangle_set &&its, const RepairedMeshErrors& errors/* = RepairedMeshErrors()*/) : its(std::move(its))
-{
-    m_stats.repaired_errors = errors;
-    fill_initial_stats(this->its, m_stats);
+    result.number_of_parts = its_number_of_patches(its, face_neighbors);
+    result.open_edges = its_num_open_edges(face_neighbors);
+    return result;
 }
 
 // #define SLIC3R_TRACE_REPAIR
 
-static void trianglemesh_repair_on_import(stl_file &stl)
+void trianglemesh_repair_on_import(stl_file &stl)
 {
     // admesh fails when repairing empty meshes
     if (stl.stats.number_of_facets == 0)
@@ -197,7 +196,34 @@ static void trianglemesh_repair_on_import(stl_file &stl)
     BOOST_LOG_TRIVIAL(debug) << "TriangleMesh::repair() finished";
 }
 
-void TriangleMesh::from_facets(std::vector<stl_facet> &&facets, bool repair)
+TriangleMesh construct(const std::vector<Vec3f> &vertices, const std::vector<Index3> &faces)
+{
+    indexed_triangle_set its{faces, vertices};
+    TriangleMeshStats stats{calculate_stats(its)};
+    return {std::move(its), std::move(stats)};
+}
+
+TriangleMesh construct(std::vector<Vec3f> &&vertices, std::vector<Index3> &&faces)
+{
+    indexed_triangle_set its{std::move(faces), std::move(vertices)};
+    TriangleMeshStats stats{calculate_stats(its)};
+    return {std::move(its), std::move(stats)};
+}
+
+TriangleMesh construct(const indexed_triangle_set &its)
+{
+    const TriangleMeshStats stats{calculate_stats(its)};
+    return {its, stats};
+}
+
+TriangleMesh construct(indexed_triangle_set &&its, const RepairedMeshErrors& errors/* = RepairedMeshErrors()*/)
+{
+    TriangleMeshStats stats{calculate_stats(its)};
+    stats.repaired_errors = errors;
+    return {std::move(its), std::move(stats)};
+}
+
+TriangleMesh construct(std::vector<stl_facet> &&facets, bool repair)
 {
     stl_file stl;
     stl.stats.type                = inmemory;
@@ -211,227 +237,66 @@ void TriangleMesh::from_facets(std::vector<stl_facet> &&facets, bool repair)
         trianglemesh_repair_on_import(stl);
     }
 
-    stl_generate_shared_vertices(&stl, this->its);
-    fill_initial_stats(this->its, this->m_stats);
+    indexed_triangle_set its;
+    stl_generate_shared_vertices(&stl, its);
+    TriangleMeshStats stats{calculate_stats(its)};
+
+    return {std::move(its), std::move(stats)};
 }
 
-bool TriangleMesh::ReadSTLFile(const char* input_file, bool repair)
-{ 
-    stl_file stl;
-    if (! stl_open(&stl, input_file))
-        return false;
-    if (repair)
-        trianglemesh_repair_on_import(stl);
-
-    m_stats.number_of_facets        = stl.stats.number_of_facets;
-    m_stats.min                     = stl.stats.min;
-    m_stats.max                     = stl.stats.max;
-    m_stats.size                    = stl.stats.size;
-    m_stats.volume                  = stl.stats.volume;
-
-    auto facets_w_1_bad_edge = stl.stats.connected_facets_2_edge - stl.stats.connected_facets_3_edge;
-    auto facets_w_2_bad_edge = stl.stats.connected_facets_1_edge - stl.stats.connected_facets_2_edge;
-    auto facets_w_3_bad_edge = stl.stats.number_of_facets - stl.stats.connected_facets_1_edge;
-    m_stats.open_edges              = stl.stats.backwards_edges + facets_w_1_bad_edge + facets_w_2_bad_edge * 2 + facets_w_3_bad_edge * 3;
-
-    m_stats.repaired_errors = { stl.stats.edges_fixed,
-                                stl.stats.degenerate_facets,
-                                stl.stats.facets_removed,
-                                stl.stats.facets_reversed,
-                                stl.stats.backwards_edges };
-
-    m_stats.number_of_parts         = stl.stats.number_of_parts;
-
-    stl_generate_shared_vertices(&stl, this->its);
-    return true;
-}
-
-bool TriangleMesh::write_ascii(const char* output_file)
-{ 
-    return its_write_stl_ascii(output_file, "", this->its);
-}
-
-bool TriangleMesh::write_binary(const char* output_file)
-{ 
-    return its_write_stl_binary(output_file, "", this->its);
-}
-
-float TriangleMesh::volume()
-{
-    if (m_stats.volume == -1)
-        m_stats.volume = its_volume(this->its);
-    return m_stats.volume;
-}
-
-void TriangleMesh::WriteOBJFile(const char* output_file) const
-{
-    its_write_obj(this->its, output_file);
-}
-
-void TriangleMesh::scale(float factor)
-{
-    this->scale(Vec3f(factor, factor, factor));
-}
-
-void TriangleMesh::scale(const Vec3f &versor)
-{
-    // Scale extents.
-    auto s = versor.array();
-    m_stats.min.array() *= s;
-    m_stats.max.array() *= s;
-    // Scale size.
-    m_stats.size.array() *= s;
-    // Scale volume.
-    if (m_stats.volume > 0.0)
-        m_stats.volume *= s(0) * s(1) * s(2);
-    if (versor.x() == versor.y() && versor.x() == versor.z()) {
-        float s = versor.x();
-        for (stl_vertex &v : this->its.vertices)
-            v *= s;
-    } else {
-        for (stl_vertex &v : this->its.vertices) {
-            v.x() *= versor.x();
-            v.y() *= versor.y();
-            v.z() *= versor.z();
-        }
-    }
-}
-
-void TriangleMesh::translate(const Vec3f &displacement)
-{
-    if (displacement.x() != 0.f || displacement.y() != 0.f || displacement.z() != 0.f) {
-        for (stl_vertex& v : this->its.vertices)
-            v += displacement;
-        m_stats.min += displacement;
-        m_stats.max += displacement;
-    }
-}
-
-void TriangleMesh::translate(float x, float y, float z)
-{
-    this->translate(Vec3f(x, y, z));
-}
-
-void TriangleMesh::rotate(float angle, const Axis &axis)
-{
-    if (angle != 0.f) {
-        angle = Slic3r::Geometry::rad2deg(angle);
-        switch (axis) {
-        case X:  its_rotate_x(this->its, angle); break;
-        case Y:  its_rotate_y(this->its, angle); break;
-        case Z:  its_rotate_z(this->its, angle); break;
-        default: assert(false);                  return;
-        }
-        update_bounding_box(this->its, m_stats);
-    }
-}
-
-void TriangleMesh::rotate(float angle, const Vec3d& axis)
-{
-    if (angle != 0.f) {
-        Vec3d axis_norm = axis.normalized();
-        Transform3d m = Transform3d::Identity();
-        m.rotate(Eigen::AngleAxisd(angle, axis_norm));
-        its_transform(its, m);
-        update_bounding_box(this->its, m_stats);
-    }
-}
-
-void TriangleMesh::mirror(const Axis axis)
-{
-    switch (axis) {
-    case X:
-        for (stl_vertex &v : its.vertices)
-            v.x() *= -1.f;
-        break;
-    case Y:
-        for (stl_vertex& v : this->its.vertices)
-            v.y() *= -1.0;
-        break;
-    case Z:
-        for (stl_vertex &v : this->its.vertices)
-            v.z() *= -1.0;
-        break;
-    default:
-        assert(false);
-        return;
-    };
-    its_flip_triangles(this->its);
-    int iaxis = int(axis);
-    std::swap(m_stats.min[iaxis], m_stats.max[iaxis]);
-    m_stats.min[iaxis] *= -1.0;
-    m_stats.max[iaxis] *= -1.0;
-}
-
-void TriangleMesh::transform(const Transform3d& t, bool fix_left_handed)
-{
-    its_transform(its, t);
-    double det = t.matrix().block(0, 0, 3, 3).determinant();
-    if (fix_left_handed && det < 0.) {
-        its_flip_triangles(its);
-        det = -det;
-    }
-    m_stats.volume *= det;
-    update_bounding_box(this->its, m_stats);
-}
-
-void TriangleMesh::transform(const Matrix3d& m, bool fix_left_handed)
-{
-    its_transform(its, m);
-    double det = m.block(0, 0, 3, 3).determinant();
-    if (fix_left_handed && det < 0.) {
-        its_flip_triangles(its);
-        det = -det;
-    }
-    m_stats.volume *= det;
-    update_bounding_box(this->its, m_stats);
-}
-
-void TriangleMesh::flip_triangles()
-{
-    its_flip_triangles(its);
-    m_stats.volume = - m_stats.volume;
-}
-
-void TriangleMesh::align_to_origin()
-{
-    this->translate(- m_stats.min(0), - m_stats.min(1), - m_stats.min(2));
-}
-
-void TriangleMesh::rotate(double angle, Point* center)
-{
-    if (angle != 0.) {
-        Vec2f c = center->cast<float>();
-        this->translate(-c(0), -c(1), 0);
-        its_rotate_z(this->its, (float)angle);
-        this->translate(c(0), c(1), 0);
-    }
+Domain::Vec3d center(const TriangleMesh& mesh) {
+    return Biz::Algorithms::BoundingBox::center(mesh.bounding_box());
 }
 
 /**
  * Calculates whether or not the mesh is splittable.
  */
-bool TriangleMesh::is_splittable() const
+bool is_splittable(const TriangleMesh& mesh)
 {
-    return its_is_splittable(this->its);
+    return its_is_splittable(mesh.its);
 }
 
-bool TriangleMesh::has_zero_volume() const
+// 2D convex hull of a 3D mesh projected into the Z=0 plane.
+Polygon convex_hull(const TriangleMesh& mesh)
 {
-    const Vec3d sz = size();
-    const double volume_val = sz.x() * sz.y() * sz.z();
-
-    return is_approx(volume_val, 0., 0.1);
+    Points pp;
+    pp.reserve(mesh.its.vertices.size());
+    for (size_t i = 0; i < mesh.its.vertices.size(); ++ i) {
+        const stl_vertex &v = mesh.its.vertices[i];
+        pp.emplace_back(scaled(Vec2d(v(0), v(1))));
+    }
+    using Biz::Algorithms::Geometry::convex_hull;
+    return convex_hull(pp);
 }
 
-std::vector<TriangleMesh> TriangleMesh::split() const
+BoundingBox3d transformed_bounding_box(const TriangleMesh& mesh, const Transform3d &trafo)
 {
-    std::vector<indexed_triangle_set> itss = its_split(this->its);
+    using Biz::Algorithms::BoundingBox::merge;
+    BoundingBox3d bbox;
+    for (const stl_vertex &v : mesh.its.vertices)
+        bbox = merge(bbox, trafo * v.cast<double>());
+    return bbox;
+}
+
+TriangleMesh convex_hull_3d(const TriangleMesh& mesh)
+{
+    using Biz::Algorithms::TriangleMesh::construct;
+    TriangleMesh result(construct(its_convex_hull(mesh.its)));
+    // Quite often qhull produces non-manifold mesh.
+    // assert(mesh.stats().manifold());
+    return result;
+}
+
+std::vector<TriangleMesh> split(const TriangleMesh& mesh)
+{
+    using Biz::Algorithms::TriangleMesh::construct;
+
+    std::vector<indexed_triangle_set> itss = its_split(mesh.its);
     std::vector<TriangleMesh> out;
     out.reserve(itss.size());
     for (indexed_triangle_set &m : itss) {
         // The TriangleMesh constructor shall fill in the mesh statistics including volume.
-        out.emplace_back(std::move(m));
+        out.push_back(construct(std::move(m)));
         if (TriangleMesh &triangle_mesh = out.back(); triangle_mesh.volume() < 0)
             // Some source mesh parts may be incorrectly oriented. Correct them.
             triangle_mesh.flip_triangles();
@@ -440,118 +305,51 @@ std::vector<TriangleMesh> TriangleMesh::split() const
     return out;
 }
 
-void TriangleMesh::merge(const TriangleMesh &mesh)
+std::optional<TriangleMesh> read_stl_file(const char* input_file, bool repair)
 {
-    its_merge(this->its, mesh.its);
-    m_stats = m_stats.merge(mesh.m_stats);
+    stl_file stl;
+    if (!stl_open(&stl, input_file))
+        return std::nullopt;
+    if (repair)
+        trianglemesh_repair_on_import(stl);
+
+    TriangleMeshStats stats;
+    stats.number_of_facets = stl.stats.number_of_facets;
+    stats.min = stl.stats.min;
+    stats.max = stl.stats.max;
+    stats.size = stl.stats.size;
+    stats.volume = stl.stats.volume;
+
+    auto facets_w_1_bad_edge = stl.stats.connected_facets_2_edge - stl.stats.connected_facets_3_edge;
+    auto facets_w_2_bad_edge = stl.stats.connected_facets_1_edge - stl.stats.connected_facets_2_edge;
+    auto facets_w_3_bad_edge = stl.stats.number_of_facets - stl.stats.connected_facets_1_edge;
+    stats.open_edges = stl.stats.backwards_edges + facets_w_1_bad_edge + facets_w_2_bad_edge * 2 +
+        facets_w_3_bad_edge * 3;
+
+    stats.repaired_errors =
+        {stl.stats.edges_fixed, stl.stats.degenerate_facets, stl.stats.facets_removed,
+         stl.stats.facets_reversed, stl.stats.backwards_edges};
+
+    stats.number_of_parts = stl.stats.number_of_parts;
+
+    indexed_triangle_set its;
+    stl_generate_shared_vertices(&stl, its);
+    return TriangleMesh{std::move(its), std::move(stats)};
 }
 
-// Calculate projection of the mesh into the XY plane, in scaled coordinates.
-//FIXME This could be extremely slow! Use it for tiny meshes only!
-ExPolygons TriangleMesh::horizontal_projection() const
+bool write_ascii(const TriangleMesh& mesh, const char* output_file)
 {
-    return union_ex(project_mesh(this->its, Transform3d::Identity(), []() {}));
+    return its_write_stl_ascii(output_file, "", mesh.its);
 }
 
-// 2D convex hull of a 3D mesh projected into the Z=0 plane.
-Polygon TriangleMesh::convex_hull()
+bool write_binary(const TriangleMesh& mesh, const char* output_file)
 {
-    Points pp;
-    pp.reserve(this->its.vertices.size());
-    for (size_t i = 0; i < this->its.vertices.size(); ++ i) {
-        const stl_vertex &v = this->its.vertices[i];
-        pp.emplace_back(scaled(Vec2d(v(0), v(1))));
-    }
-    return Slic3r::Geometry::convex_hull(pp);
+    return its_write_stl_binary(output_file, "", mesh.its);
 }
 
-BoundingBoxf3 TriangleMesh::bounding_box() const
+void write_obj_file(const TriangleMesh& mesh, const char* output_file)
 {
-    BoundingBoxf3 bb;
-    bb.defined = true;
-    bb.min = m_stats.min.cast<double>();
-    bb.max = m_stats.max.cast<double>();
-    return bb;
-}
-
-BoundingBoxf3 TriangleMesh::transformed_bounding_box(const Transform3d &trafo) const
-{
-    BoundingBoxf3 bbox;
-    for (const stl_vertex &v : this->its.vertices)
-        bbox.merge(trafo * v.cast<double>());
-    return bbox;
-}
-
-BoundingBoxf3 TriangleMesh::transformed_bounding_box(const Transform3d& trafod, double world_min_z) const
-{
-    // 1) Allocate transformed vertices with their position with respect to print bed surface.
-    std::vector<char>           sides;
-    size_t                      num_above = 0;
-    Eigen::AlignedBox<float, 3> bbox;
-    Transform3f                 trafo = trafod.cast<float>();
-    sides.reserve(its.vertices.size());
-    for (const stl_vertex &v : this->its.vertices) {
-        const stl_vertex pt   = trafo * v;
-        const int        sign = pt.z() > world_min_z ? 1 : pt.z() < world_min_z ? -1 : 0;
-        sides.emplace_back(sign);
-        if (sign >= 0) {
-            // Vertex above or on print bed surface. Test whether it is inside the build volume.
-            ++ num_above;
-            bbox.extend(pt);
-        }
-    }
-
-    // 2) Calculate intersections of triangle edges with the build surface.
-    if (num_above < its.vertices.size()) {
-        // Not completely above the build surface and status may still change by testing edges intersecting the build platform.
-        for (const stl_triangle_vertex_indices &tri : its.indices) {
-            const int s[3] = { sides[tri[0]], sides[tri[1]], sides[tri[2]] };
-            if (std::min(s[0], std::min(s[1], s[2])) < 0 && std::max(s[0], std::max(s[1], s[2])) > 0) {
-                // Some edge of this triangle intersects the build platform. Calculate the intersection.
-                int iprev = 2;
-                for (int iedge = 0; iedge < 3; ++ iedge) {
-                    if (s[iprev] * s[iedge] == -1) {
-                        // edge intersects the build surface. Calculate intersection point.
-                        const stl_vertex p1 = trafo * its.vertices[tri[iprev]];
-                        const stl_vertex p2 = trafo * its.vertices[tri[iedge]];
-                        // Edge crosses the z plane. Calculate intersection point with the plane.
-                        const float t = (world_min_z - p1.z()) / (p2.z() - p1.z());
-                        bbox.extend(Vec3f(p1.x() + (p2.x() - p1.x()) * t, p1.y() + (p2.y() - p1.y()) * t, world_min_z));
-                    }
-                    iprev = iedge;
-                }
-            }
-        }
-    }
-
-    BoundingBoxf3 out;
-    if (! bbox.isEmpty()) {
-        out.min = bbox.min().cast<double>();
-        out.max = bbox.max().cast<double>();
-        out.defined = true;
-    };
-    return out;
-}
-
-TriangleMesh TriangleMesh::convex_hull_3d() const
-{
-    TriangleMesh mesh(its_convex_hull(this->its));
-    // Quite often qhull produces non-manifold mesh.
-    // assert(mesh.stats().manifold());
-    return mesh;
-}
-
-std::vector<ExPolygons> TriangleMesh::slice(const std::vector<double> &z) const
-{
-    // convert doubles to floats
-    std::vector<float> z_f(z.begin(), z.end());
-    return slice_mesh_ex(this->its, z_f, 0.0004f);
-}
-
-size_t TriangleMesh::memsize() const
-{
-    size_t memsize = 8 + this->its.memsize() + sizeof(m_stats);
-    return memsize;
+    its_write_obj(mesh.its, output_file);
 }
 
 // Create a mapping from triangle edge into face.
@@ -569,7 +367,7 @@ struct EdgeToFace {
 };
 
 template<AdditionalMeshInfo mesh_info = AdditionalMeshInfo::None, typename FaceFilter, typename ThrowOnCancelCallback>
-static std::vector<EdgeToFace> create_edge_map(const typename IndexedTriangleSetType<mesh_info>::type &its,
+std::vector<EdgeToFace> create_edge_map(const typename IndexedTriangleSetType<mesh_info>::type &its,
                                                FaceFilter                                              face_filter,
                                                ThrowOnCancelCallback                                   throw_on_cancel)
 {
@@ -601,7 +399,7 @@ static std::vector<EdgeToFace> create_edge_map(const typename IndexedTriangleSet
 // Map from a face edge to a unique edge identifier or -1 if no neighbor exists.
 // Two neighbor faces share a unique edge identifier even if they are flipped.
 template<AdditionalMeshInfo mesh_info = AdditionalMeshInfo::None, typename FaceFilter, typename ThrowOnCancelCallback>
-static inline std::vector<Index3> its_face_edge_ids_impl(const typename IndexedTriangleSetType<mesh_info>::type &its,
+std::vector<Index3> its_face_edge_ids_impl(const typename IndexedTriangleSetType<mesh_info>::type &its,
                                                         FaceFilter                                              face_filter,
                                                         ThrowOnCancelCallback                                   throw_on_cancel)
 {
@@ -722,7 +520,8 @@ std::vector<Index3> its_face_edge_ids(const indexed_triangle_set &its, std::vect
 int its_merge_vertices(indexed_triangle_set &its, bool shrink_to_fit)
 {
     // 1) Sort indices to vertices lexicographically by coordinates AND vertex index.
-    auto sorted = reserve_vector<int>(its.vertices.size());
+    std::vector<int> sorted;
+    sorted.reserve(its.vertices.size());
     for (int i = 0; i < int(its.vertices.size()); ++ i)
         sorted.emplace_back(i);
     std::sort(sorted.begin(), sorted.end(), [&its](int il, int ir) {
@@ -779,12 +578,6 @@ int its_merge_vertices(indexed_triangle_set &its, bool shrink_to_fit)
     }
 
     return num_erased;
-}
-
-void its_flip_triangles(indexed_triangle_set &its)
-{
-    for (stl_triangle_vertex_indices &face : its.indices)
-        std::swap(face[1], face[2]);
 }
 
 int its_num_degenerate_faces(const indexed_triangle_set &its)
@@ -909,7 +702,7 @@ void its_collect_mesh_projection_points_above(const indexed_triangle_set &its, c
     }
 }
 
-void its_collect_mesh_projection_points_above(const indexed_triangle_set &its, const Matrix3f &m, const float z, Points &all_pts)
+void its_collect_mesh_projection_points_above(const indexed_triangle_set &its, const SquareMatrix3f &m, const float z, Points &all_pts)
 {
     return its_collect_mesh_projection_points_above(its, [m](const Vec3f &p){ return m * p; }, z, all_pts);
 }
@@ -942,7 +735,8 @@ Polygon its_convex_hull_2d_above(const indexed_triangle_set& its, const Transfor
                 iprev = iedge;
             }
         }
-        return Geometry::convex_hull(std::move(pts));
+        using Biz::Algorithms::Geometry::convex_hull;
+        return convex_hull(std::move(pts));
     };
 
     tbb::concurrent_vector<Polygon> chs;
@@ -951,10 +745,11 @@ Polygon its_convex_hull_2d_above(const indexed_triangle_set& its, const Transfor
     });
 
     const Polygons polygons(std::make_move_iterator(chs.begin()), std::make_move_iterator(chs.end()));
-    return Geometry::convex_hull(polygons);
+    using Biz::Algorithms::Geometry::convex_hull;
+    return convex_hull(polygons);
 }
 
-Polygon its_convex_hull_2d_above(const indexed_triangle_set &its, const Matrix3f &m, const float z)
+Polygon its_convex_hull_2d_above(const indexed_triangle_set &its, const SquareMatrix3f &m, const float z)
 {
     return its_convex_hull_2d_above(its, [m](const Vec3f &p){ return m * p; }, z);
 }
@@ -1002,8 +797,8 @@ indexed_triangle_set its_make_prism(float width, float length, float height)
 indexed_triangle_set its_make_cylinder(double r, double h, double fa)
 {
     indexed_triangle_set mesh;
-    size_t n_steps    = (size_t)ceil(2. * PI / fa);
-    double angle_step = 2. * PI / n_steps;
+    size_t n_steps    = (size_t)ceil(2. * std::numbers::pi / fa);
+    double angle_step = 2. * std::numbers::pi / n_steps;
 
     auto &vertices = mesh.vertices;
     auto &facets   = mesh.indices;
@@ -1044,8 +839,8 @@ indexed_triangle_set its_make_cylinder(double r, double h, double fa)
 indexed_triangle_set its_make_frustum(double r, double h, double fa)
 {
     indexed_triangle_set mesh;
-    size_t n_steps    = (size_t)ceil(2. * PI / fa);
-    double angle_step = 2. * PI / n_steps;
+    size_t n_steps    = (size_t)ceil(2. * std::numbers::pi / fa);
+    double angle_step = 2. * std::numbers::pi / n_steps;
 
     auto &vertices = mesh.vertices;
     auto &facets   = mesh.indices;
@@ -1091,7 +886,7 @@ indexed_triangle_set its_make_cone(double r, double h, double fa)
     indexed_triangle_set mesh;
     auto& vertices = mesh.vertices;
     auto& facets = mesh.indices;
-    vertices.reserve(3 + 2 * size_t(2 * PI / fa));
+    vertices.reserve(3 + 2 * size_t(2 * std::numbers::pi / fa));
 
     // base center and top vertex
     vertices.emplace_back(Vec3f::Zero());
@@ -1099,7 +894,7 @@ indexed_triangle_set its_make_cone(double r, double h, double fa)
 
     size_t i = 0;
     const auto vec = Eigen::Vector2f(0, float(r));
-    for (double angle=0; angle<2*PI; angle+=fa) {
+    for (double angle=0; angle<2*std::numbers::pi; angle+=fa) {
         Vec2f p = Eigen::Rotation2Df(angle) * vec;
         vertices.emplace_back(Vec3f(p(0), p(1), 0.f));
         if (angle > 0.) {
@@ -1323,7 +1118,7 @@ indexed_triangle_set its_make_snap(double r, double h, float space_proportion, f
     const float radius = (float)r;
     const float height = (float)h;
     const size_t sectors_cnt = 10; //(float)fa;
-    const float halfPI = 0.5f * (float)PI;
+    const float halfPI = 0.5f * (float)std::numbers::pi;
 
     const float space_len = space_proportion * radius;
 
@@ -1407,7 +1202,7 @@ indexed_triangle_set its_make_snap(double r, double h, float space_proportion, f
         }
 
         // add d side vertices and facets
-        while (!is_approx(b_angle_start, b_angle_stop)) {
+        while (!Domain::is_approx(b_angle_start, b_angle_stop)) {
             b_angle_start += b_angle_step;
             t_angle_start += t_angle_step;
 
@@ -1529,79 +1324,6 @@ void its_reverse_all_facets(indexed_triangle_set &its)
         std::swap(face[0], face[1]);
 }
 
-void its_merge(indexed_triangle_set &its, indexed_triangle_set &&its_add)
-{
-    if (its.empty()) {
-        its = std::move(its_add);
-        return;
-    }
-    auto  &verts      = its.vertices;
-    size_t verts_size = verts.size();
-    Slic3r::append(verts, std::move(its_add.vertices));
-
-    // increase face indices
-    int offset = static_cast<int>(verts_size);
-    for (auto &face : its_add.indices)
-        for (int i = 0; i < 3; ++i) face[i] += offset;
-    Slic3r::append(its.indices, std::move(its_add.indices));
-}
-
-void its_merge(indexed_triangle_set &A, const indexed_triangle_set &B)
-{
-    auto N   = int(A.vertices.size());
-    auto N_f = A.indices.size();
-
-    A.vertices.insert(A.vertices.end(), B.vertices.begin(), B.vertices.end());
-    A.indices.insert(A.indices.end(), B.indices.begin(), B.indices.end());
-
-    for(size_t n = N_f; n < A.indices.size(); n++) {
-        A.indices[n][0] += N;
-        A.indices[n][1] += N;
-        A.indices[n][2] += N;
-    }
-}
-
-void its_merge(indexed_triangle_set &A, const std::vector<Vec3f> &triangles)
-{
-    const size_t offs = A.vertices.size();
-    A.vertices.insert(A.vertices.end(), triangles.begin(), triangles.end());
-    A.indices.reserve(A.indices.size() + A.vertices.size() / 3);
-
-    for(int i = int(offs); i < int(A.vertices.size()); i += 3)
-        A.indices.emplace_back(Index3{i, i + 1, i + 2});
-}
-
-void its_merge(indexed_triangle_set &A, const Pointf3s &triangles)
-{
-    auto trianglesf = reserve_vector<Vec3f> (triangles.size());
-    for (auto &t : triangles)
-        trianglesf.emplace_back(t.cast<float>());
-
-    its_merge(A, trianglesf);
-}
-
-float its_volume(const indexed_triangle_set &its)
-{
-    if (its.empty()) return 0.;
-
-    // Choose a point, any point as the reference.
-    auto p0 = its.vertices.front();
-    float volume = 0.f;
-    for (size_t i = 0; i < its.indices.size(); ++ i) {
-        // Do dot product to get distance from point to plane.
-        its_triangle triangle = its_triangle_vertices(its, i);
-        Vec3f U = triangle[1] - triangle[0];
-        Vec3f V = triangle[2] - triangle[0];
-        Vec3f C = U.cross(V);
-        Vec3f normal = C.normalized();
-        float area = 0.5 * C.norm();
-        float height = normal.dot(triangle[0] - p0);
-        volume += (area * height) / 3.0f;
-    }
-
-    return volume;
-}
-
 float its_average_edge_length(const indexed_triangle_set &its)
 {
     if (its.indices.empty())
@@ -1609,7 +1331,7 @@ float its_average_edge_length(const indexed_triangle_set &its)
 
     double edge_length = 0.f;
     for (size_t i = 0; i < its.indices.size(); ++ i) {
-        const its_triangle v = its_triangle_vertices(its, i);
+        const Domain::its_triangle v = Domain::its_triangle_vertices(its, i);
         edge_length += (v[1] - v[0]).cast<double>().norm() + 
                        (v[2] - v[0]).cast<double>().norm() +
                        (v[1] - v[2]).cast<double>().norm();
@@ -1619,13 +1341,13 @@ float its_average_edge_length(const indexed_triangle_set &its)
 
 std::vector<indexed_triangle_set> its_split(const indexed_triangle_set &its)
 {
-    return its_split<>(its);
+    return Slic3r::its_split<>(its);
 }
 
 // Number of disconnected patches (faces are connected if they share an edge, shared edge defined with 2 shared vertex indices).
 size_t its_number_of_patches(const indexed_triangle_set &its)
 {
-    return its_number_of_patches<>(its);
+    return Slic3r::its_number_of_patches<>(its);
 }
 size_t its_number_of_patches(const indexed_triangle_set &its, const std::vector<Index3> &face_neighbors)
 {
@@ -1635,7 +1357,7 @@ size_t its_number_of_patches(const indexed_triangle_set &its, const std::vector<
 // Same as its_number_of_patches(its) > 1, but faster.
 bool its_is_splittable(const indexed_triangle_set &its)
 {
-    return its_is_splittable<>(its);
+    return Slic3r::its_is_splittable<>(its);
 }
 bool its_is_splittable(const indexed_triangle_set &its, const std::vector<Index3> &face_neighbors)
 {

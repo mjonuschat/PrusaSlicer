@@ -7,10 +7,13 @@
 
 #include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/SLA/SupportTree.hpp"
-#include "libslic3r/TriangleMesh.hpp"
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 
 namespace Slic3r {
 namespace sla {
+
+using Domain::Index3;
+using Domain::its_merge;
 
 Head::Head(double       r_big_mm,
            double       r_small_mm,
@@ -143,9 +146,10 @@ const indexed_triangle_set &SupportTreeBuilder::merged_mesh(size_t steps) const
     
     // The mesh will be passed by const-pointer to TriangleMeshSlicer,
     // which will need this.
-    its_merge_vertices(m_meshcache);
+    namespace TriMesh = Biz::Algorithms::TriangleMesh;
+    TriMesh::its_merge_vertices(m_meshcache);
     
-    BoundingBoxf3 bb = bounding_box(m_meshcache);
+    Domain::BoundingBox3d bb = Domain::bounding_box(m_meshcache);
     m_model_height   = bb.max(Z) - bb.min(Z);
 
     m_meshcache_valid = true;

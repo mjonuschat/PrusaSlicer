@@ -19,11 +19,13 @@
 #include "admesh/stl.h"
 #include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/Point.hpp"
-#include "libslic3r/TriangleMesh.hpp"
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 
 namespace Slic3r {
 
 using namespace Geometry;
+namespace tm = Slic3r::Biz::Algorithms::TriangleMesh;
+using Domain::TriangleMesh;
 
 static void apply_tolerance(ModelVolume* vol)
 {
@@ -88,12 +90,14 @@ static void process_volume_cut( ModelVolume* volume, const Transform3d& instance
     TriangleMesh mesh(volume->mesh());
     mesh.transform(invert_cut_matrix * instance_matrix * volume_matrix, true);
 
+    using Biz::Algorithms::TriangleMesh::construct;
+
     indexed_triangle_set upper_its, lower_its;
     cut_mesh(mesh.its, 0.0f, &upper_its, &lower_its);
     if (attributes.has(ModelObjectCutAttribute::KeepUpper))
-        upper_mesh = TriangleMesh(upper_its);
+        upper_mesh = TriangleMesh(construct(upper_its));
     if (attributes.has(ModelObjectCutAttribute::KeepLower))
-        lower_mesh = TriangleMesh(lower_its);
+        lower_mesh = TriangleMesh(construct(lower_its));
 }
 
 static void process_connector_cut(  ModelVolume* volume, const Transform3d& instance_matrix, const Transform3d& cut_matrix,
@@ -111,7 +115,8 @@ static void process_connector_cut(  ModelVolume* volume, const Transform3d& inst
         if (attributes.has(ModelObjectCutAttribute::KeepUpper)) {
             ModelVolume* vol = nullptr;
             if (volume->cut_info.connector_type == CutConnectorType::Snap) {
-                TriangleMesh mesh = TriangleMesh(its_make_cylinder(1.0, 1.0, PI / 180.));
+                namespace TriMesh = Biz::Algorithms::TriangleMesh;
+                TriangleMesh mesh = TriMesh::make_cylinder(1.0, 1.0, PI / 180.);
 
                 vol = upper->add_volume(std::move(mesh));
                 vol->set_transformation(volume->get_transformation());
@@ -182,7 +187,7 @@ static void process_modifier_cut(ModelVolume* volume, const Transform3d& instanc
     }
 
     // Some logic for the negative volumes/connectors. Add only needed modifiers
-    auto bb = volume->mesh().transformed_bounding_box(inverse_cut_matrix * volume_matrix);
+    auto bb = tm::transformed_bounding_box(volume->mesh(), inverse_cut_matrix * volume_matrix);
     bool is_crossed_by_cut = bb.min[Z] <= 0 && bb.max[Z] >= 0;
     if (attributes.has(ModelObjectCutAttribute::KeepUpper) && (bb.min[Z] >= 0 || is_crossed_by_cut))
         upper->add_volume(*volume);
@@ -300,6 +305,7 @@ void Cut::finalize(const ModelObjectPtrs& objects)
     m_model.objects = objects;
 }
 
+using Biz::Algorithms::BoundingBox::overlap;
 
 const ModelObjectPtrs& Cut::perform_with_plane()
 {
@@ -363,14 +369,14 @@ const ModelObjectPtrs& Cut::perform_with_plane()
         // Delete all modifiers which are not intersecting with solid parts bounding box
         auto delete_extra_modifiers = [this](ModelObject* mo) {
             if (!mo) return;
-            const BoundingBoxf3 obj_bb = mo->instance_bounding_box(m_instance);
+            const Domain::BoundingBox3d obj_bb = mo->instance_bounding_box(m_instance);
             const Transform3d inst_matrix = mo->instances[m_instance]->get_transformation().get_matrix();
 
             for (int i = int(mo->volumes.size()) - 1; i >= 0; --i)
                 if (const ModelVolume* vol = mo->volumes[i];
                     !vol->is_model_part() && !vol->is_cut_connector()) {
-                    auto bb = vol->mesh().transformed_bounding_box(inst_matrix * vol->get_matrix());
-                    if (!obj_bb.overlap(bb))
+                    auto bb = tm::transformed_bounding_box(vol->mesh(), inst_matrix * vol->get_matrix());
+                    if (!overlap(obj_bb, bb))
                         mo->delete_volume(i);
                 }
         };
@@ -411,11 +417,11 @@ static void distribute_modifiers_from_object(ModelObject* from_obj, const int in
             // to the modifier volume transformation to preserve their shape properly.
             const auto modifier_trafo = Transformation(from_obj->instances[instance_idx]->get_transformation().get_matrix_no_offset() * vol->get_matrix());
 
-            auto bb = vol->mesh().transformed_bounding_box(inst_matrix * vol->get_matrix());
+            auto bb = tm::transformed_bounding_box(vol->mesh(), inst_matrix * vol->get_matrix());
             // Don't add modifiers which are not intersecting with solid parts
-            if (obj1_bb.overlap(bb))
+            if (overlap(obj1_bb, bb))
                 to_obj1->add_volume(*vol)->set_transformation(modifier_trafo);
-            if (obj2_bb.overlap(bb))
+            if (overlap(obj2_bb, bb))
                 to_obj2->add_volume(*vol)->set_transformation(modifier_trafo);
         }
 }

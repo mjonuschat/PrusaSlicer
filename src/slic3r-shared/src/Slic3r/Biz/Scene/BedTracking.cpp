@@ -33,7 +33,7 @@ void remove_instance_from_bed(Domain::Project& project, ModelInstance* model_ins
 
 
 
-std::pair<Domain::ConfigContainer*, Domain::BedInstance*> find_bed_instance_for_bounds(Domain::Project& project, const BoundingBoxf& bounds)
+std::pair<Domain::ConfigContainer*, Domain::BedInstance*> find_bed_instance_for_bounds(Domain::Project& project, const Domain::BoundingBox2d& bounds)
 {
     for (auto& cc : project.config_containers())
         for (auto& bi : cc->bed_instances())
@@ -44,6 +44,7 @@ std::pair<Domain::ConfigContainer*, Domain::BedInstance*> find_bed_instance_for_
 
 void update_instance_bed_placement(Domain::Project& project, ModelInstance& inst, BedTrackingChanges& changes)
 {
+    using Algorithms::BoundingBox::to_2d;
 
     const auto bb = to_2d(inst.get_object()->instance_bounding_box(inst));
     if (auto [cc, bi] = find_bed_instance_for_bounds(project, bb); bi != nullptr) {

@@ -3,17 +3,20 @@
 #include "Slic3r/Domain/BedContainer.hpp"
 #include "Slic3r/Domain/Project.hpp"
 
-#include <libslic3r/TriangleMesh.hpp>
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 namespace Slic3r::Biz::Scene {
 
-static Vec2d max(const Vec2d& v1, const Vec2d& v2)
+Vec2d max(const Vec2d& v1, const Vec2d& v2)
 {
     return { std::max(v1.x(), v2.x()), std::max(v1.y(), v2.y()) };
 }
 
 void BedPlacement::layout(Domain::Project& project, const Vec2d& gap)
 {
+    using Algorithms::BoundingBox::sizes;
+
     Domain::Project::ConfigContainerList& ccs = project.config_containers();
     double offset_y = 0.0;
     for (size_t i = 0; i < ccs.size(); ++i) {
@@ -21,9 +24,9 @@ void BedPlacement::layout(Domain::Project& project, const Vec2d& gap)
         const Domain::Bed& bed = cc->bed();
         Vec2d size = bed.contour_aabb_extent();
         Vec2d pos = offset_y * Vec2d::UnitY();
-        TriangleMesh model = Biz::Plater::BedGeometry::model(bed);
+        Domain::TriangleMesh model = Biz::Plater::BedGeometry::model(bed);
         if (!model.empty())
-            size = max(size, to_2d(model.bounding_box().size()));
+            size = max(size, to_2d(sizes(model.bounding_box())));
 
         Domain::ConfigContainer::BedInstanceList& instances = cc->bed_instances();
         for (size_t j = 0; j < instances.size(); ++j) {

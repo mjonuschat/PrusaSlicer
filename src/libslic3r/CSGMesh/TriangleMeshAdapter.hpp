@@ -7,7 +7,7 @@
 
 #include "CSGMesh.hpp"
 
-#include "libslic3r/TriangleMesh.hpp"
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 
 namespace Slic3r { namespace csg {
 

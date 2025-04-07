@@ -12,7 +12,7 @@
 #include "libslic3r/libslic3r.h"
 #include "libslic3r/Format/OBJ.hpp"
 #include "libslic3r/SLAPrint.hpp"
-#include "libslic3r/TriangleMesh.hpp"
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "libslic3r/SLA/Pad.hpp"
 #include "libslic3r/SLA/SupportTreeBuilder.hpp"
 #include "libslic3r/SLA/SupportPointGenerator.hpp"
@@ -31,7 +31,7 @@ enum e_validity {
     ASSUME_NO_REPAIR = 4
 };
 
-void check_validity(const TriangleMesh &input_mesh,
+void check_validity(const Domain::TriangleMesh &input_mesh,
                     int flags = ASSUME_NO_EMPTY | ASSUME_MANIFOLD |
                                 ASSUME_NO_REPAIR);
 
@@ -39,7 +39,7 @@ struct PadByproducts
 {
     ExPolygons   model_contours;
     ExPolygons   support_contours;
-    TriangleMesh mesh;
+    Domain::TriangleMesh mesh;
 };
 
 void test_concave_hull(const ExPolygons &polys);
@@ -61,7 +61,7 @@ struct SupportByproducts
     std::vector<float>      slicegrid;
     std::vector<ExPolygons> model_slices;
     sla::SupportTreeBuilder suptree_builder;
-    TriangleMesh            input_mesh;
+    Domain::TriangleMesh            input_mesh;
 };
 
 const constexpr float CLOSING_RADIUS = 0.005f;
@@ -135,7 +135,7 @@ long raster_pxsum(const sla::RasterGrayscaleAA &raster);
 double predict_error(const ExPolygon &p, const sla::PixelDim &pd);
 
 sla::SupportPoints calc_support_pts(
-    const TriangleMesh &                      mesh,
+    const Domain::TriangleMesh &                      mesh,
     const sla::SupportPointGeneratorConfig &cfg = {});
 
 #endif // SLA_TEST_UTILS_HPP

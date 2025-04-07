@@ -6,15 +6,11 @@
 #define slic3r_SurfaceMesh_hpp_
 
 #include <admesh/stl.h>
-#include <libslic3r/TriangleMesh.hpp>
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 
 #include "boost/container/small_vector.hpp"
 
 namespace Slic3r {
-
-class TriangleMesh;
-
-
 
 enum Face_index : int;
 
@@ -59,7 +55,7 @@ class SurfaceMesh {
 public:
     explicit SurfaceMesh(const indexed_triangle_set& its)
     : m_its(its),
-      m_face_neighbors(its_face_neighbors_par(its))
+      m_face_neighbors(Biz::Algorithms::TriangleMesh::its_face_neighbors_par(its))
     {}
     SurfaceMesh(const SurfaceMesh&)            = delete;
     SurfaceMesh& operator=(const SurfaceMesh&) = delete;
@@ -153,12 +149,12 @@ public:
     bool is_border(Halfedge_index h) const { return m_face_neighbors[h.m_face][h.m_side] == -1; }
 
     bool is_same_vertex(const Vertex_index& a, const Vertex_index& b) const { return m_its.indices[a.m_face][a.m_vertex_idx] == m_its.indices[b.m_face][b.m_vertex_idx]; }
-    Index3 get_face_neighbors(Face_index face_id) const { assert(int(face_id) < int(m_face_neighbors.size())); return m_face_neighbors[face_id]; }
+    Domain::Index3 get_face_neighbors(Face_index face_id) const { assert(int(face_id) < int(m_face_neighbors.size())); return m_face_neighbors[face_id]; }
 
 
 
 private:
-    const std::vector<Index3> m_face_neighbors;
+    const std::vector<Domain::Index3> m_face_neighbors;
     const indexed_triangle_set& m_its;
 };
 

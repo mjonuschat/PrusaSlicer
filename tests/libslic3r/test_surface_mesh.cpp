@@ -23,7 +23,8 @@ indexed_triangle_set its_make_cube_broken(double xd, double yd, double zd)
 
 
 TEST_CASE("SurfaceMesh on a cube", "[SurfaceMesh]") {
-    indexed_triangle_set cube = its_make_cube(1., 1., 1.);
+    namespace triangle_mesh = Biz::Algorithms::TriangleMesh;
+    indexed_triangle_set cube = triangle_mesh::its_make_cube(1., 1., 1.);
     SurfaceMesh sm(cube);
     const Halfedge_index hi_first = sm.halfedge(Face_index(0));
     Halfedge_index hi = hi_first;

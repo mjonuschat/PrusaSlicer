@@ -3,8 +3,6 @@
 
 #include "libslic3r/AABBMesh.hpp"
 
-namespace Slic3r { class TriangleMesh; }
-
 namespace Slic3r::App::Scene
 {
 
@@ -19,7 +17,7 @@ public:
         : m_triangles(std::move(triangles)), m_aabb_mesh(std::make_unique<AABBMesh>(this->m_triangles))
     {}
 
-    explicit TriangleMesh(std::shared_ptr<const Slic3r::TriangleMesh> triangles)
+    explicit TriangleMesh(std::shared_ptr<const Slic3r::Domain::TriangleMesh> triangles)
         : m_shared_triangles(std::move(triangles))
         , m_aabb_mesh(std::make_unique<AABBMesh>(this->m_shared_triangles->its))
     {}
@@ -37,7 +35,7 @@ private:
     // These stats will be computed in ctor, but we likely not need it. That's the reason having
     // m_triangles and m_shared_triangles separated
     indexed_triangle_set m_triangles;
-    std::shared_ptr<const Slic3r::TriangleMesh> m_shared_triangles;
+    std::shared_ptr<const Slic3r::Domain::TriangleMesh> m_shared_triangles;
     std::unique_ptr<AABBMesh> m_aabb_mesh;
 
 };

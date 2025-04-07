@@ -1175,6 +1175,8 @@ Vec3d SLAPrint::relative_correction() const
     return corr;
 }
 
+using Domain::TriangleMesh;
+
 namespace { // dummy empty static containers for return values in some methods
 const std::vector<ExPolygons> EMPTY_SLICES;
 const TriangleMesh EMPTY_MESH;

@@ -11,7 +11,7 @@
 
 #include "libslic3r/Point.hpp"
 #include "libslic3r/SLA/SupportTreeBuilder.hpp"
-#include "libslic3r/TriangleMesh.hpp"
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "admesh/stl.h"
 #include "libslic3r/libslic3r.h"
 //#include "libslic3r/SLA/Contour3D.hpp"
@@ -38,7 +38,9 @@ inline indexed_triangle_set cylinder(double       r,
                               double       h,
                               size_t       steps = 45)
 {
-    return its_make_cylinder(r, h, 2 * PI / steps);
+
+    namespace TriMesh = Biz::Algorithms::TriangleMesh;
+    return TriMesh::its_make_cylinder(r, h, 2 * PI / steps);
 }
 
 indexed_triangle_set pinhead(double r_pin,

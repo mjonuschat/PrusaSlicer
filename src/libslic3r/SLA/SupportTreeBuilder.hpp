@@ -7,7 +7,7 @@
 
 #include "Slic3r/Biz/Algorithms/Execution/ExecutionTBB.hpp"
 #include <libslic3r/SLA/SupportTree.hpp>
-#include <libslic3r/TriangleMesh.hpp>
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include <libslic3r/SLA/Pad.hpp>
 #include <libslic3r/MTUtils.hpp>
 #include <assert.h>
@@ -443,8 +443,8 @@ public:
 
     void retrieve_full_mesh(indexed_triangle_set &outmesh) const
     {
-        its_merge(outmesh, retrieve_mesh(MeshType::Support));
-        its_merge(outmesh, retrieve_mesh(MeshType::Pad));
+        Domain::its_merge(outmesh, retrieve_mesh(MeshType::Support));
+        Domain::its_merge(outmesh, retrieve_mesh(MeshType::Pad));
     }
 };
 

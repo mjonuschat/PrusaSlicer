@@ -6,7 +6,7 @@
 #define PRUSASLICER_AABBMESH_H
 
 #include <libslic3r/Point.hpp>
-#include <libslic3r/TriangleMesh.hpp>
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include <assert.h>
 #include <stddef.h>
 #include <memory>
@@ -29,18 +29,17 @@ struct indexed_triangle_set;
 
 namespace Slic3r {
 
-class TriangleMesh;
-
 // An index-triangle structure coupled with an AABB index to support ray
 // casting and other higher level operations.
 class AABBMesh {
+    using VertexFaceIndex = Slic3r::Biz::Algorithms::TriangleMesh::VertexFaceIndex;
     class AABBImpl;
 
     const indexed_triangle_set* m_tm;
 
     std::unique_ptr<AABBImpl> m_aabb;
     VertexFaceIndex m_vfidx;    // vertex-face index
-    std::vector<Index3> m_fnidx; // face-neighbor index
+    std::vector<Domain::Index3> m_fnidx; // face-neighbor index
 
 #ifdef SLIC3R_HOLE_RAYCASTER
     // This holds a copy of holes in the mesh. Initialized externally
@@ -55,7 +54,7 @@ public:
     // calculate_epsilon ... calculate epsilon for triangle-ray intersection from an average triangle edge length.
     // If set to false, a default epsilon is used, which works for "reasonable" meshes.
     explicit AABBMesh(const indexed_triangle_set &tmesh, bool calculate_epsilon = false);
-    explicit AABBMesh(const TriangleMesh &mesh, bool calculate_epsilon = false);
+    explicit AABBMesh(const Domain::TriangleMesh &mesh, bool calculate_epsilon = false);
     
     AABBMesh(const AABBMesh& other);
     AABBMesh& operator=(const AABBMesh&);
@@ -66,9 +65,9 @@ public:
     ~AABBMesh();
 
     const std::vector<Vec3f>& vertices() const;
-    const std::vector<Index3>& indices()  const;
+    const std::vector<Domain::Index3>& indices()  const;
     const Vec3f& vertices(size_t idx) const;
-    const Index3& indices(size_t idx) const;
+    const Domain::Index3& indices(size_t idx) const;
 
     const Eigen::AlignedBox<float, 3>& bounding_box() const;
 
@@ -144,7 +143,7 @@ public:
     const indexed_triangle_set * get_triangle_mesh() const { return m_tm; }
 
     const VertexFaceIndex &vertex_face_index() const { return m_vfidx; }
-    const std::vector<Index3> &face_neighbor_index() const { return m_fnidx; }
+    const std::vector<Domain::Index3> &face_neighbor_index() const { return m_fnidx; }
 };
 
 

@@ -4,17 +4,20 @@
 #include <test_utils.hpp>
 
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
-#include <libslic3r/TriangleMesh.hpp>
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include <libslic3r/AABBTreeIndirect.hpp>
 #include <libslic3r/AABBTreeLines.hpp>
 
 using namespace Slic3r;
 using namespace Slic3r::Biz;
 using namespace Catch;
+using Domain::ExPolygon;
+using Domain::ExPolygons;
 
 TEST_CASE("Building a tree over a box, ray caster and closest query", "[AABBIndirect]")
 {
-    TriangleMesh tmesh = make_cube(1., 1., 1.);
+    namespace triangle_mesh = Biz::Algorithms::TriangleMesh;
+    Domain::TriangleMesh tmesh = triangle_mesh::make_cube(1., 1., 1.);
 
     auto tree = AABBTreeIndirect::build_aabb_tree_over_indexed_triangle_set(tmesh.its.vertices, tmesh.its.indices);
     REQUIRE(! tree.empty());

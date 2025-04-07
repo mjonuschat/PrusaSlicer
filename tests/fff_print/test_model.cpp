@@ -15,7 +15,8 @@ using namespace Slic3r::Test;
 SCENARIO("Model construction", "[Model]") {
     GIVEN("A Slic3r Model") {
 		Slic3r::Model model;
-        Slic3r::TriangleMesh sample_mesh = Slic3r::make_cube(20,20,20);
+        namespace triangle_mesh = Biz::Algorithms::TriangleMesh;
+        Domain::TriangleMesh sample_mesh = triangle_mesh::make_cube(20,20,20);
         Slic3r::DynamicPrintConfig config = Slic3r::DynamicPrintConfig::full_print_config();
         Slic3r::Print print;
 

@@ -19,6 +19,8 @@
 
 namespace Slic3r::App {
 
+namespace TriMesh = Biz::Algorithms::TriangleMesh;
+
 std::chrono::duration<double, std::milli> get_delta()
 {
     static auto last = std::chrono::high_resolution_clock::now();
@@ -105,10 +107,10 @@ void TestRenderModule::init_scene()
     
     Scene::NodeBuilder node_builder{*m_scene};
     auto* cone_mesh = m_scene->triangle_mesh_manager().get_or_create("cone-2-5", [](){
-        return std::make_unique<Scene::TriangleMesh>(its_make_cone(2, 5, M_PI / 8));
+        return std::make_unique<Scene::TriangleMesh>(TriMesh::its_make_cone(2, 5, M_PI / 8));
     });
     auto* cube_mesh = m_scene->triangle_mesh_manager().get_or_create("box-2-2-2", [](){
-        return std::make_unique<Scene::TriangleMesh>(its_make_cube(2, 2, 2));
+        return std::make_unique<Scene::TriangleMesh>(TriMesh::its_make_cube(2, 2, 2));
     });
 
     auto cone = m_scene->geometry_manager().get_or_create("cone-2-5", [&]() {
@@ -376,7 +378,7 @@ void TestRenderModule::on_scene_mouse_event(const Platform::MouseEvent &e)
         // trackball()
         //);
 
-        trackball.add_azimuth_and_zenith(-Geometry::deg2rad(dx), -Geometry::deg2rad(dy));
+        trackball.add_azimuth_and_zenith(-deg2rad(dx), -deg2rad(dy));
 
         m_last_mouse_x = e.x();
         m_last_mouse_y = e.y();

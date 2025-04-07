@@ -8,18 +8,22 @@
 
 #include "SlicesToTriangleMesh.hpp"
 #include "libslic3r/ClipperUtils.hpp"
-#include "libslic3r/Tesselate.hpp"
+#include "Slic3r/Biz/Algorithms/Tesselate.hpp"
 #include "libslic3r/Polygon.hpp"
-#include "libslic3r/TriangleMesh.hpp"
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "Slic3r/Biz/Algorithms/Execution/ExecutionTBB.hpp"
 
 namespace Slic3r {
+
+using Domain::its_merge;
+namespace TriMesh = Biz::Algorithms::TriangleMesh;
 
 // Same as walls() but with identical higher and lower polygons.
 indexed_triangle_set inline straight_walls(const Polygon &plate,
                                      double         lo_z,
                                      double         hi_z)
 {
+    using Slic3r::Biz::Algorithms::Tesselate::wall_strip;
     return wall_strip(plate, lo_z, hi_z);
 }
 
@@ -52,6 +56,11 @@ indexed_triangle_set slices_to_mesh(
     double                         zmin,
     const std::vector<float> &     grid)
 {
+
+    using Slic3r::Biz::Algorithms::Tesselate::triangulate_expolygons_3d;
+    using Slic3r::Biz::Algorithms::Tesselate::NORMALS_UP;
+    using Slic3r::Biz::Algorithms::Tesselate::NORMALS_DOWN;
+
     assert(slices.size() == grid.size());
 
     using Layers = std::vector<indexed_triangle_set>;
@@ -88,13 +97,13 @@ indexed_triangle_set slices_to_mesh(
     // FIXME: these repairs do not fix the mesh entirely. There will be cracks
     // in the output. It is very hard to do the meshing in a way that does not
     // leave errors.
-    int num_mergedv = its_merge_vertices(ret);
+    int num_mergedv = TriMesh::its_merge_vertices(ret);
     BOOST_LOG_TRIVIAL(debug) << "Merged vertices count: " << num_mergedv;
 
-    int remcnt = its_remove_degenerate_faces(ret);
+    int remcnt = TriMesh::its_remove_degenerate_faces(ret);
     BOOST_LOG_TRIVIAL(debug) << "Removed degenerate faces count: " << remcnt;
 
-    int num_erasedv = its_compactify_vertices(ret);
+    int num_erasedv = TriMesh::its_compactify_vertices(ret);
     BOOST_LOG_TRIVIAL(debug) << "Erased vertices count: " << num_erasedv;
 
     return ret;

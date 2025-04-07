@@ -114,8 +114,8 @@ SupportParameters::SupportParameters(const PrintObject &object)
         ipConcentric :
         (this->interface_density > 0.95 ? ipRectilinear : ipSupportBase);
 
-    this->base_angle            = Geometry::deg2rad(float(object_config.support_material_angle.value));
-    this->interface_angle       = Geometry::deg2rad(float(object_config.support_material_angle.value + 90.));
+    this->base_angle            = deg2rad(float(object_config.support_material_angle.value));
+    this->interface_angle       = deg2rad(float(object_config.support_material_angle.value + 90.));
     this->raft_angle_1st_layer  = 0.f;
     this->raft_angle_base       = 0.f;
     this->raft_angle_interface  = 0.f;

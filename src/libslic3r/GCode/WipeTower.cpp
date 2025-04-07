@@ -1332,7 +1332,7 @@ WipeTower::ToolChangeResult WipeTower::finish_layer()
 
         double z = m_no_sparse_layers ? (m_current_height + m_layer_info->height) : m_layer_info->z; // the former should actually work in both cases, but let's stay on the safe side (the 2.6.0 is close)
 
-        double r = std::tan(Geometry::deg2rad(m_wipe_tower_cone_angle/2.f)) * (m_wipe_tower_height - z);
+        double r = std::tan(deg2rad(m_wipe_tower_cone_angle/2.f)) * (m_wipe_tower_height - z);
         Vec2f center = (wt_box.lu + wt_box.rd) / 2.;
         double w = wt_box.lu.y() - wt_box.ld.y();
         enum Type {
@@ -1372,7 +1372,7 @@ WipeTower::ToolChangeResult WipeTower::finish_layer()
             if (infill_areas.size() == 2) {
                 ExPolygon& bottom_expoly = infill_areas.front().contour.points.front().y() < infill_areas.back().contour.points.front().y() ? infill_areas[0] : infill_areas[1];
                 std::unique_ptr<Fill> filler(Fill::new_from_type(ipMonotonicLines));
-                filler->angle = Geometry::deg2rad(45.f);
+                filler->angle = deg2rad(45.f);
                 filler->spacing = spacing;
                 FillParams params;
                 params.density = 1.f;
@@ -1475,7 +1475,7 @@ WipeTower::ToolChangeResult WipeTower::finish_layer()
 // Static method to get the radius and x-scaling of the stabilizing cone base.
 std::pair<double, double> WipeTower::get_wipe_tower_cone_base(double width, double height, double depth, double angle_deg)
 {
-    double R = std::tan(Geometry::deg2rad(angle_deg/2.)) * height;
+    double R = std::tan(deg2rad(angle_deg/2.)) * height;
     double fake_width = 0.66 * width;
     double diag = std::hypot(fake_width / 2., depth / 2.);
     double support_scale = 1.;

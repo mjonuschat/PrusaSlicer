@@ -85,5 +85,37 @@ template<class T> size_t next_highest_power_of_2(T v,
     return next_highest_power_of_2(uint32_t(v));
 }
 
+// A very simple range concept implementation with iterator-like objects.
+// This should be replaced by std::ranges::subrange (C++20)
+template<class It> class Range
+{
+    It from, to;
+public:
+
+    // The class is ready for range based for loops.
+    It begin() const { return from; }
+    It end() const { return to; }
+
+    // The iterator type can be obtained this way.
+    using iterator = It;
+    using value_type = typename std::iterator_traits<It>::value_type;
+
+    Range() = default;
+    Range(It b, It e) : from(std::move(b)), to(std::move(e)) {}
+
+    // Some useful container-like methods...
+    inline size_t size() const { return std::distance(from, to); }
+    inline bool   empty() const { return from == to; }
+};
+
+template<class Cont> auto range(Cont &&cont)
+{
+    return Range{std::begin(cont), std::end(cont)};
+}
+
+template<class Cont> auto crange(Cont &&cont)
+{
+    return Range{std::cbegin(cont), std::cend(cont)};
+}
 
 } // namespace Slic3r

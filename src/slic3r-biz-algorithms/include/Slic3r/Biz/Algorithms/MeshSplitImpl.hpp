@@ -5,13 +5,13 @@
 #ifndef MESHSPLITIMPL_HPP
 #define MESHSPLITIMPL_HPP
 
-#include "TriangleMesh.hpp"
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "Slic3r/Biz/Algorithms/Execution/ExecutionTBB.hpp"
 
 namespace Slic3r {
 
 template<class ExPolicy>
-std::vector<Index3> create_face_neighbors_index(ExPolicy &&ex, const indexed_triangle_set &its);
+std::vector<Domain::Index3> create_face_neighbors_index(ExPolicy &&ex, const indexed_triangle_set &its);
 
 namespace meshsplit_detail {
 
@@ -24,7 +24,7 @@ template<class Its, class Enable = void> struct ItsWithNeighborsIndex_ {
 
 // Define a default neighbors index for indexed_triangle_set
 template<> struct ItsWithNeighborsIndex_<indexed_triangle_set> {
-    using Index = std::vector<Index3>;
+    using Index = std::vector<Domain::Index3>;
     static const indexed_triangle_set &get_its(const indexed_triangle_set &its) noexcept { return its; }
     static Index get_index(const indexed_triangle_set &its) noexcept
     {
@@ -32,6 +32,7 @@ template<> struct ItsWithNeighborsIndex_<indexed_triangle_set> {
         return create_face_neighbors_index(execution::ex_tbb, its);
     }
 };
+
 
 // Discover connected patches of facets one by one.
 template<class NeighborIndex>
@@ -160,7 +161,7 @@ void its_split(const Its &m, OutputIt out_it)
         // Assign the facets to the new mesh.
         for (size_t face_id : facets) {
             const auto &face = its.indices[face_id];
-            Index3       new_face;
+            Domain::Index3       new_face;
             for (size_t v = 0; v < 3; ++v) {
                 auto vi = face[v];
 
@@ -183,7 +184,9 @@ void its_split(const Its &m, OutputIt out_it)
 template<class Its>
 std::vector<indexed_triangle_set> its_split(const Its &its)
 {
-    auto ret = reserve_vector<indexed_triangle_set>(3);
+    std::vector<indexed_triangle_set> ret;
+    ret.reserve(3);
+
     its_split(its, std::back_inserter(ret));
 
     return ret;
@@ -220,7 +223,7 @@ size_t its_number_of_patches(const Its &m)
 }
 
 template<class ExPolicy>
-std::vector<Index3> create_face_neighbors_index(ExPolicy &&ex, const indexed_triangle_set &its)
+std::vector<Domain::Index3> create_face_neighbors_index(ExPolicy &&ex, const indexed_triangle_set &its)
 {
     const std::vector<stl_triangle_vertex_indices> &indices = its.indices;
 
@@ -228,17 +231,18 @@ std::vector<Index3> create_face_neighbors_index(ExPolicy &&ex, const indexed_tri
 
     assert(! its.vertices.empty());
 
-    auto               vertex_triangles = VertexFaceIndex{its};
+    auto               vertex_triangles = Biz::Algorithms::TriangleMesh::VertexFaceIndex{its};
     static constexpr int no_value         = -1;
-    std::vector<Index3> neighbors(indices.size(),
-                                 Index3{no_value, no_value, no_value});
+    std::vector<Domain::Index3> neighbors(indices.size(),
+                                 Domain::Index3{no_value, no_value, no_value});
 
     namespace execution = Slic3r::Biz::Algorithms::Execution;
+    namespace TriMesh = Slic3r::Biz::Algorithms::TriangleMesh;
     //for (const stl_triangle_vertex_indices& triangle_indices : indices) {
     execution::for_each(ex, size_t(0), indices.size(),
         [&neighbors, &indices, &vertex_triangles] (size_t face_idx)
         {
-            Index3& neighbor = neighbors[face_idx];
+        Domain::Index3& neighbor = neighbors[face_idx];
             const stl_triangle_vertex_indices & triangle_indices = indices[face_idx];
             for (int edge_index = 0; edge_index < 3; ++edge_index) {
                 // check if done
@@ -246,12 +250,12 @@ std::vector<Index3> create_face_neighbors_index(ExPolicy &&ex, const indexed_tri
                 if (neighbor_edge != no_value) 
                     // This edge already has a neighbor assigned.
                     continue;
-                    Domain::Index2 edge_indices = its_triangle_edge(triangle_indices, edge_index);
+                    Domain::Index2 edge_indices = TriMesh::its_triangle_edge(triangle_indices, edge_index);
                 // IMPROVE: use same vector for 2 sides of triangle
                 for (const size_t other_face : vertex_triangles[edge_indices[0]]) {
                     if (other_face <= face_idx) continue;
                     const stl_triangle_vertex_indices &face_indices = indices[other_face];
-                    int vertex_index = its_triangle_vertex_index(face_indices, edge_indices[1]);
+                    int vertex_index = TriMesh::its_triangle_vertex_index(face_indices, edge_indices[1]);
                     // NOT Contain second vertex?
                     if (vertex_index < 0) continue;
                     // Has NOT oposite direction?

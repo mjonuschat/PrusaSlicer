@@ -3,7 +3,7 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include <libslic3r/OpenVDBUtils.hpp>
-#include <libslic3r/TriangleMesh.hpp>
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include <libslic3r/TriangleMeshSlicer.hpp>
 #include <libslic3r/SLA/Hollowing.hpp>
 #include <libslic3r/AABBTreeIndirect.hpp>
@@ -35,6 +35,15 @@
 namespace Slic3r {
 struct VoxelGrid;
 namespace execution = Slic3r::Biz::Algorithms::Execution;
+
+using Biz::Algorithms::BoundingBox::overlap;
+using Biz::Algorithms::BoundingBox::cast;
+using Biz::Algorithms::BoundingBox::center;
+using Biz::Algorithms::BoundingBox::construct;
+using Biz::Algorithms::TriangleMesh::VertexFaceIndex;
+using Domain::Index3;
+using Domain::TriangleMesh;
+namespace TriMesh = Biz::Algorithms::TriangleMesh;
 
 namespace sla {
 
@@ -133,7 +142,7 @@ indexed_triangle_set DrainHole::to_mesh() const
 {
     auto r = double(radius);
     auto h = double(height);
-    indexed_triangle_set hole = its_make_cylinder(r, h); //sla::cylinder(r, h, steps);
+    indexed_triangle_set hole = TriMesh::its_make_cylinder(r, h); //sla::cylinder(r, h, steps);
     Eigen::Quaternionf q;
     q.setFromTwoVectors(Vec3f::UnitZ(), normal);
     for(auto& p : hole.vertices) p = q * p + pos;
@@ -264,9 +273,11 @@ void cut_drainholes(std::vector<ExPolygons> & obj_slices,
                     const sla::DrainHoles &   holes,
                     std::function<void(void)> thr)
 {
+    using Biz::Algorithms::TriangleMesh::construct;
+
     TriangleMesh mesh;
     for (const sla::DrainHole &holept : holes)
-        mesh.merge(TriangleMesh{holept.to_mesh()});
+        mesh.merge(TriangleMesh{construct(holept.to_mesh())});
     
     if (mesh.empty()) return;
     
@@ -299,7 +310,9 @@ void hollow_mesh(TriangleMesh &mesh, const Interior &interior, int flags)
 
     indexed_triangle_set interi = interior.mesh;
     sla::swap_normals(interi);
-    TriangleMesh inter{std::move(interi)};
+
+    using Biz::Algorithms::TriangleMesh::construct;
+    TriangleMesh inter{construct(std::move(interi))};
 
     mesh.merge(inter);
 }
@@ -314,7 +327,7 @@ void hollow_mesh(indexed_triangle_set &mesh, const Interior &interior, int flags
     indexed_triangle_set interi = interior.mesh;
     sla::swap_normals(interi);
 
-    its_merge(mesh, interi);
+    Domain::its_merge(mesh, interi);
 }
 
 // Get the distance of p to the interior's zero iso_surface. Interior should
@@ -411,7 +424,7 @@ void remove_inside_triangles(indexed_triangle_set &mesh, const Interior &interio
 
     auto &faces       = mesh.indices;
     auto &vertices    = mesh.vertices;
-    auto bb           = bounding_box(mesh); //mesh.bounding_box();
+    auto bb           = Domain::bounding_box(mesh); //mesh.bounding_box();
 
     bool use_exclude_mask = faces.size() == exclude_mask.size();
     auto is_excluded = [&exclude_mask, use_exclude_mask](size_t face_id) {
@@ -460,15 +473,15 @@ void remove_inside_triangles(indexed_triangle_set &mesh, const Interior &interio
 
     // Must return true if further division of the face is needed.
     auto divfn = [&interior, bb, &mesh_mods](const DivFace &f) {
-        const BoundingBoxBase<Vec3f> facebb_float { f.verts.begin(), f.verts.end() };
-        BoundingBoxBase<Vec3d> facebb { cast<double>(facebb_float) };
+        const Domain::BoundingBox3f facebb_float{construct(f.verts.begin(), f.verts.end())};
+        Domain::BoundingBox3d facebb{cast<double>(facebb_float)};
 
         // Face is certainly outside the cavity
-        if (! facebb.overlap(bb) && f.faceid != NEW_FACE) {
+        if (! overlap(facebb, bb) && f.faceid != NEW_FACE) {
             return false;
         }
-
-        TriangleBubble bubble{facebb.center().cast<float>(), facebb.radius()};
+        const auto facebb_radius{0.5 * (facebb.max - facebb.min).template cast<double>().norm()};
+        TriangleBubble bubble{center(facebb).cast<float>(), facebb_radius};
 
         double D = get_distance(bubble, interior);
         double R = bubble.R;
@@ -517,11 +530,12 @@ void remove_inside_triangles(indexed_triangle_set &mesh, const Interior &interio
             std::array<Vec3f, 3> pts = {vertices[face[0]], vertices[face[1]],
                                         vertices[face[2]]};
 
-            const BoundingBoxBase<Vec3f> facebb_float{pts.begin(), pts.end()};
-            BoundingBoxBase<Vec3d> facebb{cast<double>(facebb_float)};
+            const Domain::BoundingBox3f facebb_float{construct(pts.begin(), pts.end())};
+            Domain::BoundingBox3d facebb{cast<double>(facebb_float)};
 
+            using Biz::Algorithms::BoundingBox::overlap;
             // Face is certainly outside the cavity
-            if (!facebb.overlap(bb))
+            if (!overlap(facebb, bb))
                 return;
 
             DivFace df{face, pts, long(face_idx)};
@@ -842,7 +856,7 @@ int hollow_mesh_and_drill(indexed_triangle_set &hollowed_mesh,
         indexed_triangle_set m = holept.to_mesh();
 
         part_to_drill.indices.clear();
-        auto bb = bounding_box(m);
+        auto bb = Domain::bounding_box(m);
         Eigen::AlignedBox<float, 3> ebb{bb.min.cast<float>(),
                                         bb.max.cast<float>()};
 

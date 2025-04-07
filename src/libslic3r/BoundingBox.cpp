@@ -174,19 +174,19 @@ void BoundingBox::align_to_grid(const coord_t cell_size)
     }
 }
 
-BoundingBoxf3 BoundingBoxf3::transformed(const Transform3d& matrix) const
+Domain::BoundingBox3d transformed(const Domain::BoundingBox3d& box, const Domain::Transform3d& matrix)
 {
     typedef Eigen::Matrix<double, 3, 8, Eigen::DontAlign> Vertices;
 
     Vertices src_vertices;
-    src_vertices(0, 0) = min.x(); src_vertices(1, 0) = min.y(); src_vertices(2, 0) = min.z();
-    src_vertices(0, 1) = max.x(); src_vertices(1, 1) = min.y(); src_vertices(2, 1) = min.z();
-    src_vertices(0, 2) = max.x(); src_vertices(1, 2) = max.y(); src_vertices(2, 2) = min.z();
-    src_vertices(0, 3) = min.x(); src_vertices(1, 3) = max.y(); src_vertices(2, 3) = min.z();
-    src_vertices(0, 4) = min.x(); src_vertices(1, 4) = min.y(); src_vertices(2, 4) = max.z();
-    src_vertices(0, 5) = max.x(); src_vertices(1, 5) = min.y(); src_vertices(2, 5) = max.z();
-    src_vertices(0, 6) = max.x(); src_vertices(1, 6) = max.y(); src_vertices(2, 6) = max.z();
-    src_vertices(0, 7) = min.x(); src_vertices(1, 7) = max.y(); src_vertices(2, 7) = max.z();
+    src_vertices(0, 0) = box.min.x(); src_vertices(1, 0) = box.min.y(); src_vertices(2, 0) = box.min.z();
+    src_vertices(0, 1) = box.max.x(); src_vertices(1, 1) = box.min.y(); src_vertices(2, 1) = box.min.z();
+    src_vertices(0, 2) = box.max.x(); src_vertices(1, 2) = box.max.y(); src_vertices(2, 2) = box.min.z();
+    src_vertices(0, 3) = box.min.x(); src_vertices(1, 3) = box.max.y(); src_vertices(2, 3) = box.min.z();
+    src_vertices(0, 4) = box.min.x(); src_vertices(1, 4) = box.min.y(); src_vertices(2, 4) = box.max.z();
+    src_vertices(0, 5) = box.max.x(); src_vertices(1, 5) = box.min.y(); src_vertices(2, 5) = box.max.z();
+    src_vertices(0, 6) = box.max.x(); src_vertices(1, 6) = box.max.y(); src_vertices(2, 6) = box.max.z();
+    src_vertices(0, 7) = box.min.x(); src_vertices(1, 7) = box.max.y(); src_vertices(2, 7) = box.max.z();
 
     Vertices dst_vertices = matrix * src_vertices.colwise().homogeneous();
 
@@ -204,5 +204,4 @@ BoundingBoxf3 BoundingBoxf3::transformed(const Transform3d& matrix) const
 
     return BoundingBoxf3(v_min, v_max);
 }
-
 }

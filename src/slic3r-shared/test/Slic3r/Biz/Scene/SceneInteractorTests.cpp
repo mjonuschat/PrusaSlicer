@@ -8,6 +8,8 @@
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 #include "libslic3r/Model.hpp"
 
+namespace TriMesh = Slic3r::Biz::Algorithms::TriangleMesh;
+
 struct SlicingInputChangedListener : Slic3r::Biz::ISlicingInputChangedListener
 {
     MAKE_MOCK1(on_slicing_input_changed, void(const Slic3r::Domain::BedRef&));
@@ -62,7 +64,7 @@ TEST_CASE("Scene Interactor Bed Tracking")
     {
         REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(_))
             .WITH(_1.instance_id == bi1_id);
-        scene_interactor.new_object_from_mesh(TriangleMesh{its_make_cube(cube_side, cube_side, cube_side)});
+        scene_interactor.new_object_from_mesh(Domain::TriangleMesh{TriMesh::make_cube(cube_side, cube_side, cube_side)});
     }
 
     Transform3d xform = Transform3d::Identity();
@@ -302,7 +304,7 @@ TEST_CASE("Scene Interactor Bed Tracking")
             .WITH(_1.instance_id == bi4_id);
 
         scene_interactor.add_volume_from_mesh(
-            TriangleMesh{its_make_cube(cube_side, cube_side, cube_side)},
+            Domain::TriangleMesh{TriMesh::make_cube(cube_side, cube_side, cube_side)},
             ModelVolumeType::MODEL_PART,
             xform.matrix()
         );

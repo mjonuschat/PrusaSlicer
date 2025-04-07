@@ -25,6 +25,7 @@
 #include "libslic3r/libslic3r.h"
 
 using namespace Slic3r;
+using Slic3r::Domain::Index3;
 
 // only private namespace not neccessary be in .hpp
 namespace QuadricEdgeCollapse {

@@ -14,9 +14,12 @@
 #include "libslic3r/NormalUtils.hpp"
 #include "admesh/stl.h"
 #include "libslic3r/Point.hpp"
-#include "libslic3r/TriangleMesh.hpp"
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 
 namespace Slic3r {
+
+using Domain::Index3;
+namespace TriMesh = Biz::Algorithms::TriangleMesh;
 
 /**
  * Simple implementation of Fisher-Yates algorithm using uniform int
@@ -60,7 +63,7 @@ void its_short_edge_collpase(indexed_triangle_set &mesh, size_t target_triangle_
     // if face is removed, mark it here
     std::vector<bool> face_removal_flags(mesh.indices.size(), false);
 
-    std::vector<Index3> triangles_neighbors = its_face_neighbors_par(mesh);
+    std::vector<Index3> triangles_neighbors = TriMesh::its_face_neighbors_par(mesh);
 
     // now compute vertices dot product - this is used during edge collapse,
     // to determine which vertex to remove and which to keep;  We try to keep the one with larger angle, because it defines the shape "more".
@@ -69,7 +72,7 @@ void its_short_edge_collpase(indexed_triangle_set &mesh, size_t target_triangle_
     // NOTE: This score is not updated, even though the decimation does change the mesh. It saves computation time, and there are no strong reasons to update.
     std::vector<float> min_vertex_dot_product(mesh.vertices.size(), 1);
     {
-        std::vector<Vec3f> face_normals = its_face_normals(mesh);
+        std::vector<Vec3f> face_normals = TriMesh::its_face_normals(mesh);
         std::vector<Vec3f> vertex_normals = NormalUtils::create_normals(mesh);
 
         for (size_t face_idx = 0; face_idx < mesh.indices.size(); ++face_idx) {

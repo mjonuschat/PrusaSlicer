@@ -362,14 +362,9 @@ set(SLIC3R_SOURCES
     SurfaceCollection.hpp
     SurfaceMesh.hpp
     Technologies.hpp
-    Tesselate.cpp
-    Tesselate.hpp
     TextConfiguration.hpp
-    TriangleMesh.cpp
-    TriangleMesh.hpp
     TriangleMeshSlicer.cpp
     TriangleMeshSlicer.hpp
-    MeshSplitImpl.hpp
     TriangulateWall.hpp
     utils.cpp
     Utils.hpp
@@ -610,7 +605,6 @@ target_link_libraries(libslic3r PRIVATE
     libcereal
     boost_libs
     libexpat
-    glu-libtess
     qhull
     TBB::tbb
     TBB::tbbmalloc

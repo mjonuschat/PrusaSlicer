@@ -7,7 +7,7 @@
 
 #include <vector>
 
-#include "libslic3r/TriangleMesh.hpp"
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "libslic3r/ExPolygon.hpp"
 #include "admesh/stl.h"
 

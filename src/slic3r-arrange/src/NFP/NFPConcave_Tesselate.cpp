@@ -4,7 +4,7 @@
 ///|/
 
 #include <libslic3r/ClipperUtils.hpp>
-#include <libslic3r/Tesselate.hpp>
+#include "Slic3r/Biz/Algorithms/Tesselate.hpp"
 #include <algorithm>
 #include <iterator>
 #include <vector>
@@ -26,7 +26,8 @@ Polygons convex_decomposition_tess(const Polygon &expoly)
 
 Polygons convex_decomposition_tess(const ExPolygon &expoly)
 {
-    std::vector<Vec2d> tr = Slic3r::triangulate_expolygon_2d(expoly);
+    using Slic3r::Biz::Algorithms::Tesselate::triangulate_expolygon_2d;
+    std::vector<Vec2d> tr = triangulate_expolygon_2d(expoly);
 
     auto ret = Slic3r::reserve_polygons(tr.size() / 3);
     for (size_t i = 0; i < tr.size(); i += 3) {

@@ -412,7 +412,7 @@ struct FillContext
     std::vector<Line>                   output_lines;
 };
 
-static constexpr double octree_rot[3] = { 5.0 * M_PI / 4.0, Geometry::deg2rad(215.264), M_PI / 6.0 };
+static constexpr double octree_rot[3] = { 5.0 * M_PI / 4.0, deg2rad(215.264), M_PI / 6.0 };
 
 Eigen::Quaterniond transform_to_world()
 {

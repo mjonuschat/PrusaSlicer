@@ -466,7 +466,7 @@ const std::vector<VariableWidthLines> &WallToolPaths::generate()
     const coord_t smallest_segment = Slic3r::Arachne::meshfix_maximum_resolution;
     const coord_t allowed_distance = Slic3r::Arachne::meshfix_maximum_deviation;
     const coord_t epsilon_offset = (allowed_distance / 2) - 1;
-    const double  transitioning_angle = Geometry::deg2rad(this->print_object_config.wall_transition_angle.value);
+    const double  transitioning_angle = deg2rad(this->print_object_config.wall_transition_angle.value);
     constexpr coord_t discretization_step_size = scaled<coord_t>(0.8);
 
     // Simplify outline for boost::voronoi consumption. Absolutely no self intersections or near-self intersections allowed:

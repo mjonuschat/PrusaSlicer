@@ -13,7 +13,7 @@
 #include "GLCanvas3D.hpp"
 #endif // ENABLE_GLMODEL_STATISTICS
 
-#include "libslic3r/TriangleMesh.hpp"
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "libslic3r/FileReader.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/BuildVolume.hpp"

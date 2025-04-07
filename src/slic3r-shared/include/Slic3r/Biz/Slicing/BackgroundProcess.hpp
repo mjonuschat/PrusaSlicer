@@ -11,7 +11,7 @@
 #include <libslic3r/Print.hpp>
 #include <libslic3r/GCode.hpp>
 #include <libslic3r/SLAPrint.hpp>
-#include <libslic3r/TriangleMesh.hpp>
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include <libslic3r/Model.hpp>
 
 #include <jthread/JThread.hpp>

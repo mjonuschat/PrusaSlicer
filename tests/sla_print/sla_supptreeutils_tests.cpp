@@ -9,6 +9,7 @@
 #include "libslic3r/SLA/SupportTreeUtilsLegacy.hpp"
 
 using Catch::Approx;
+namespace triangle_mesh = Slic3r::Biz::Algorithms::TriangleMesh;
 
 // Test pair hash for 'nums' random number pairs.
 template <class I, class II> void test_pairhash()
@@ -87,9 +88,9 @@ static void eval_ground_conn(const Slic3r::sla::GroundConnection &conn,
     sla::build_ground_connection(builder, sm, conn);
 
     indexed_triangle_set mesh = *sm.emesh.get_triangle_mesh();
-    its_merge(mesh, builder.merged_mesh());
+    Domain::its_merge(mesh, builder.merged_mesh());
 
-    its_write_stl_ascii(stl_fname.c_str(), "stl_fname", mesh);
+    triangle_mesh::its_write_stl_ascii(stl_fname.c_str(), "stl_fname", mesh);
 //#endif
 
     REQUIRE(bool(conn));
@@ -175,7 +176,7 @@ TEST_CASE("Avoid disk below junction", "[suptreeutils]")
 
     sla::SupportTreeConfig cfg;
 
-    indexed_triangle_set disk = its_make_cylinder(CylRadius, CylHeight);
+    indexed_triangle_set disk = triangle_mesh::its_make_cylinder(CylRadius, CylHeight);
 
     // 2.5 * CyRadius height should be enough to be able to insert a bridge
     // with 45 degree tilt above the disk.
@@ -230,10 +231,10 @@ TEST_CASE("Avoid disk below junction with barrier on the side", "[suptreeutils]"
 
     sla::SupportTreeConfig cfg;
 
-    indexed_triangle_set disk = its_make_cylinder(CylRadius, CylHeight);
-    indexed_triangle_set wall = its_make_cube(1., 2 * CylRadius, JElevX * CylRadius);
+    indexed_triangle_set disk = triangle_mesh::its_make_cylinder(CylRadius, CylHeight);
+    indexed_triangle_set wall = triangle_mesh::its_make_cube(1., 2 * CylRadius, JElevX * CylRadius);
     its_translate(wall, Vec3f{float(FromRadius), -float(CylRadius), 0.f});
-    its_merge(disk, wall);
+    Domain::its_merge(disk, wall);
 
     // 2.5 * CyRadius height should be enough to be able to insert a bridge
     // with 45 degree tilt above the disk.

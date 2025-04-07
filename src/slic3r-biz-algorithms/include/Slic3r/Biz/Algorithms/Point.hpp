@@ -27,4 +27,11 @@ bool has_duplicate_points(const Domain::Points& points);
 bool remove_duplicate_points(Domain::Points& points);
 
 Domain::Points scaled(const std::vector<Domain::Vec2d> &points);
+
+template<typename Derived>
+inline Domain::Advanced::Vec<typename Derived::Scalar, 3> to_3d(const Eigen::MatrixBase<Derived> &pt, const typename Derived::Scalar z) {
+    static_assert(Derived::IsVectorAtCompileTime && int(Derived::SizeAtCompileTime) == 2, "to_3d(): first parameter is not a 2D vector");
+    return { pt.x(), pt.y(), z };
+}
+
 } // namespace Slic3r::Biz::Algorithms::Point
