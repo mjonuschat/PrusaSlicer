@@ -9,7 +9,7 @@
 #include <libslic3r/ExPolygon.hpp>
 #include <libslic3r/AABBMesh.hpp>
 #include <libslic3r/SLA/Pad.hpp>
-#include <libslic3r/SLA/SupportPoint.hpp>
+#include "Slic3r/Domain/SLA/SupportPoint.hpp"
 #include <libslic3r/SLA/JobController.hpp>
 #include <libslic3r/SLA/SupportTreeStrategies.hpp>
 #include <math.h>
@@ -17,6 +17,8 @@
 #include <memory>
 #include <algorithm>
 #include <cmath>
+
+#include "Slic3r/Domain/SLA/SupportPoint.hpp"
 
 #include "admesh/stl.h"
 
@@ -121,13 +123,13 @@ enum class MeshType { Support, Pad };
 struct SupportableMesh
 {
     AABBMesh          emesh;
-    SupportPoints     pts;
+    Domain::SLA::SupportPoints     pts;
     SupportTreeConfig cfg;
     PadConfig         pad_cfg;
     double            zoffset = 0.;
 
     explicit SupportableMesh(const indexed_triangle_set &trmsh,
-                             const SupportPoints        &sp,
+                             const Domain::SLA::SupportPoints &sp,
                              const SupportTreeConfig    &c)
         : emesh{trmsh}, pts{sp}, cfg{c}
     {}

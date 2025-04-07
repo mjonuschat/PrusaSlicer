@@ -30,6 +30,7 @@
 #include <boost/log/trivial.hpp>
 #include <boost/nowide/iostream.hpp>
 
+#include <oneapi/tbb/parallel_for.h>
 #include <tbb/concurrent_vector.h>
 
 #include "Slic3r/Biz/Algorithms/SVG.hpp"
@@ -1067,7 +1068,7 @@ void ModelObject::clone_for_cut(ModelObject** obj)
     (*obj)->set_model(this->get_model());
     (*obj)->sla_support_points.clear();
     (*obj)->sla_drain_holes.clear();
-    (*obj)->sla_points_status = sla::PointsStatus::NoPoints;
+    (*obj)->sla_points_status = Domain::SLA::PointsStatus::NoPoints;
     (*obj)->clear_volumes();
     (*obj)->input_file.clear();
 }

@@ -38,6 +38,8 @@
 
 namespace Slic3r {
 
+using Domain::SLA::PointsStatus;
+
 
 bool is_zero_elevation(const SLAPrintObjectConfig &c)
 {
@@ -515,8 +517,8 @@ SLAPrint::ApplyStatus SLAPrint::apply(const Model &model, DynamicPrintConfig con
                     }
                 }
 
-                bool old_user_modified = model_object.sla_points_status == sla::PointsStatus::UserModified;
-                bool new_user_modified = model_object_new.sla_points_status == sla::PointsStatus::UserModified;
+                bool old_user_modified = model_object.sla_points_status == PointsStatus::UserModified;
+                bool new_user_modified = model_object_new.sla_points_status == PointsStatus::UserModified;
                 if ((old_user_modified && ! new_user_modified) || // switching to automatic supports from manual supports
                     (! old_user_modified && new_user_modified) || // switching to manual supports from automatic supports
                     (new_user_modified && model_object.sla_support_points != model_object_new.sla_support_points)) {
@@ -630,7 +632,7 @@ std::string SLAPrint::validate(std::vector<std::string>*) const
         bool supports_en = po->config().supports_enable.getBool();
 
         if(supports_en &&
-           mo->sla_points_status == sla::PointsStatus::UserModified &&
+           mo->sla_points_status == PointsStatus::UserModified &&
            mo->sla_support_points.empty())
             return _u8L("Cannot proceed without support points! "
                      "Add support points or disable support generation.");
@@ -1182,12 +1184,12 @@ const std::vector<ExPolygons> EMPTY_SLICES;
 const TriangleMesh EMPTY_MESH;
 const indexed_triangle_set EMPTY_TRIANGLE_SET;
 const ExPolygons EMPTY_SLICE;
-const std::vector<sla::SupportPoint> EMPTY_SUPPORT_POINTS;
+const std::vector<Domain::SLA::SupportPoint> EMPTY_SUPPORT_POINTS;
 }
 
 const SliceRecord SliceRecord::EMPTY(0, std::nanf(""), 0.f);
 
-const std::vector<sla::SupportPoint>& SLAPrintObject::get_support_points() const
+const std::vector<Domain::SLA::SupportPoint>& SLAPrintObject::get_support_points() const
 {
     return m_supportdata? m_supportdata->input.pts : EMPTY_SUPPORT_POINTS;
 }
@@ -1264,18 +1266,18 @@ SLAPrintObject::get_parts_to_slice(SLAPrintObjectStep untilstep) const
     return ret;
 }
 
-sla::SupportPoints SLAPrintObject::transformed_support_points() const
+Domain::SLA::SupportPoints SLAPrintObject::transformed_support_points() const
 {
     assert(model_object());
     auto spts = model_object()->sla_support_points;
     Transform3f tr = trafo().cast<float>();
-    for (sla::SupportPoint &suppt : spts) {
+    for (Domain::SLA::SupportPoint &suppt : spts) {
         suppt.pos = tr * suppt.pos;
     }
     return spts;
 }
 
-sla::DrainHoles SLAPrintObject::transformed_drainhole_points() const
+Domain::SLA::DrainHoles SLAPrintObject::transformed_drainhole_points() const
 {
     assert(model_object());
 

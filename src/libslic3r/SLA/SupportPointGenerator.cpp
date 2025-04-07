@@ -21,6 +21,10 @@ using namespace Slic3r;
 using namespace Slic3r::Biz;
 using namespace Slic3r::sla;
 
+using Domain::SLA::SupportPoint;
+using Domain::SLA::SupportPoints;
+using Domain::SLA::SupportPointType;
+
 namespace execution = Slic3r::Biz::Algorithms::Execution;
 
 namespace {

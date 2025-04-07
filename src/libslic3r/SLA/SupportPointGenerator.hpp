@@ -12,7 +12,7 @@
 
 #include "libslic3r/Point.hpp"
 #include "libslic3r/ExPolygon.hpp"
-#include "libslic3r/SLA/SupportPoint.hpp"
+#include "Slic3r/Domain/SLA/SupportPoint.hpp"
 #include "libslic3r/SLA/SupportIslands/SampleConfig.hpp"
 
 namespace Slic3r::sla {
@@ -105,7 +105,7 @@ struct LayerPart {
 /// <summary>
 /// Extend support point with information from layer
 /// </summary>
-struct LayerSupportPoint: public SupportPoint
+struct LayerSupportPoint: public Domain::SLA::SupportPoint
 {
     // 2d coordinate on layer
     // use only when part is not nullptr
@@ -154,7 +154,7 @@ struct SupportPointGeneratorData
     Layers layers;
 
     // Manualy edited supports by user should be permanent
-    SupportPoints permanent_supports;
+    Domain::SLA::SupportPoints permanent_supports;
 };
 
 // call during generation of support points to check cancel event
@@ -220,7 +220,7 @@ namespace sla {
 /// <param name="mesh">Define surface for move points</param>
 /// <param name="throw_on_cancel">Call in meanwhile to check cancel event</param>
 /// <returns>Support points laying on mesh surface</returns>
-SupportPoints move_on_mesh_surface(
+Domain::SLA::SupportPoints move_on_mesh_surface(
     const LayerSupportPoints &points,
     const AABBMesh &mesh,
     double allowed_move,

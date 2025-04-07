@@ -19,6 +19,12 @@ add_library(slic3r-domain
 
     include/Slic3r/Domain/TriangleMesh.hpp
     src/Slic3r/Domain/TriangleMesh.cpp
+
+    include/Slic3r/Domain/SLA/DrainHole.hpp
+    src/Slic3r/Domain/SLA/DrainHole.cpp
+
+    include/Slic3r/Domain/SLA/SupportPoint.hpp
+    src/Slic3r/Domain/SLA/SupportPoint.cpp
 )
 
 target_include_directories(slic3r-domain PUBLIC include)

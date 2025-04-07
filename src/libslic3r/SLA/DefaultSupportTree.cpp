@@ -21,7 +21,7 @@
 #include "libslic3r/Optimize/Optimizer.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/SLA/SpatIndex.hpp"
-#include "libslic3r/SLA/SupportPoint.hpp"
+#include "Slic3r/Domain/SLA/SupportPoint.hpp"
 #include "libslic3r/SLA/SupportTreeStrategies.hpp"
 #include "libslic3r/SLA/SupportTreeUtils.hpp"
 #include "libslic3r/SLA/SupportTreeUtilsLegacy.hpp"
@@ -50,7 +50,7 @@ DefaultSupportTree::DefaultSupportTree(SupportTreeBuilder &   builder,
     // it mostly in this form.
 
     long i = 0;
-    for (const SupportPoint &sp : m_sm.pts) {
+    for (const Domain::SLA::SupportPoint &sp : m_sm.pts) {
         m_points.row(i).x() = double(sp.pos.x());
         m_points.row(i).y() = double(sp.pos.y());
         m_points.row(i).z() = double(sp.pos.z());
@@ -412,7 +412,7 @@ void DefaultSupportTree::add_pinheads()
     // these reasons.
 
     auto heads = reserve_vector<Head>(m_sm.pts.size());
-    for (const SupportPoint &sp : m_sm.pts) {
+    for (const Domain::SLA::SupportPoint &sp : m_sm.pts) {
         m_thr();
         heads.emplace_back(
             NaNd,

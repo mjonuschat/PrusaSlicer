@@ -69,6 +69,8 @@ namespace Slic3r
 
 using Domain::Index3;
 using Domain::TriangleMesh;
+using Domain::SLA::SupportPoint;
+using Domain::SLA::PointsStatus;
 
 struct AMFParserContext
 {
@@ -782,14 +784,14 @@ void AMFParserContext::endElement(const char * /* name */)
 
                     point(coord_idx) = float(atof(p));
                     if (++coord_idx == 5) {
-                        m_object->sla_support_points.push_back(sla::SupportPoint{Vec3f(point[0], point[1], point[2]), point[3]});
+                        m_object->sla_support_points.push_back(SupportPoint{Vec3f(point[0], point[1], point[2]), point[3]});
                         coord_idx = 0;
                     }
 					if (end == nullptr)
 						break;
 					p = end + 1;
                 }
-                m_object->sla_points_status = sla::PointsStatus::UserModified;
+                m_object->sla_points_status = PointsStatus::UserModified;
             }
             else if (m_path.size() == 5 && m_path[1] == NODE_TYPE_OBJECT && m_path[3] == NODE_TYPE_RANGE && 
                      m_object && strcmp(opt_key, "layer_height_range") == 0) {

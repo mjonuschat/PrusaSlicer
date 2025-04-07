@@ -10,6 +10,7 @@
 
 using Catch::Approx;
 namespace triangle_mesh = Slic3r::Biz::Algorithms::TriangleMesh;
+using Slic3r::Domain::SLA::SupportPoints;
 
 // Test pair hash for 'nums' random number pairs.
 template <class I, class II> void test_pairhash()
@@ -115,7 +116,7 @@ TEST_CASE("Pillar search dumb case", "[suptreeutils]") {
 
     SECTION("with empty mesh") {
         sla::SupportableMesh sm{indexed_triangle_set{},
-                                sla::SupportPoints{},
+                                SupportPoints{},
                                 sla::SupportTreeConfig{}};
 
         constexpr double EndR = 1.;
@@ -129,7 +130,7 @@ TEST_CASE("Pillar search dumb case", "[suptreeutils]") {
 
     SECTION("with zero R source and destination") {
         sla::SupportableMesh sm{indexed_triangle_set{},
-                                sla::SupportPoints{},
+                                SupportPoints{},
                                 sla::SupportTreeConfig{}};
 
         j.r = 0.;
@@ -145,7 +146,7 @@ TEST_CASE("Pillar search dumb case", "[suptreeutils]") {
 
     SECTION("with zero init direction") {
         sla::SupportableMesh sm{indexed_triangle_set{},
-                                sla::SupportPoints{},
+                                SupportPoints{},
                                 sla::SupportTreeConfig{}};
 
         constexpr double EndR = 1.;
@@ -182,7 +183,7 @@ TEST_CASE("Avoid disk below junction", "[suptreeutils]")
     // with 45 degree tilt above the disk.
     sla::Junction j{Vec3d{0., 0., 2.5 * CylRadius}, FromRadius};
 
-    sla::SupportableMesh sm{disk, sla::SupportPoints{}, cfg};
+    sla::SupportableMesh sm{disk, SupportPoints{}, cfg};
 
     SECTION("with elevation") {
 
@@ -240,7 +241,7 @@ TEST_CASE("Avoid disk below junction with barrier on the side", "[suptreeutils]"
     // with 45 degree tilt above the disk.
     sla::Junction j{Vec3d{0., 0., JElevX * CylRadius}, FromRadius};
 
-    sla::SupportableMesh sm{disk, sla::SupportPoints{}, cfg};
+    sla::SupportableMesh sm{disk, SupportPoints{}, cfg};
 
     SECTION("with elevation") {
         sla::GroundConnection conn =
@@ -280,7 +281,7 @@ TEST_CASE("Find ground route just above ground", "[suptreeutils]") {
 
     sla::Junction j{Vec3d{0., 0., 2. * cfg.head_back_radius_mm}, cfg.head_back_radius_mm};
 
-    sla::SupportableMesh sm{{}, sla::SupportPoints{}, cfg};
+    sla::SupportableMesh sm{{}, SupportPoints{}, cfg};
 
     sla::GroundConnection conn =
         sla::deepsearch_ground_connection(ex_seq, sm, j, Geometry::spheric_to_dir(3 * PI/ 4, PI));

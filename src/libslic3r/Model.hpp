@@ -13,14 +13,15 @@
 #ifndef slic3r_Model_hpp_
 #define slic3r_Model_hpp_
 
+#include "Slic3r/Domain/SLA/DrainHole.hpp"
 #include "libslic3r.h"
 #include "Geometry.hpp"
 #include "ObjectID.hpp"
 #include "Point.hpp"
 #include "Slicing.hpp"
-#include "SLA/SupportPoint.hpp"
-#include "SLA/Hollowing.hpp"
+#include "libslic3r/PrintConfig.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
+#include "Slic3r/Domain/SLA/SupportPoint.hpp"
 #include "CustomGCode.hpp"
 #include "TextConfiguration.hpp"
 #include "EmbossShape.hpp"
@@ -395,13 +396,13 @@ public:
     // This vector holds position of selected support points for SLA. The data are
     // saved in mesh coordinates to allow using them for several instances.
     // The format is (x, y, z, point_size, supports_island)
-    sla::SupportPoints      sla_support_points;
+    Domain::SLA::SupportPoints      sla_support_points;
     // To keep track of where the points came from (used for synchronization between
     // the SLA gizmo and the backend).
-    sla::PointsStatus       sla_points_status = sla::PointsStatus::NoPoints;
+    Domain::SLA::PointsStatus       sla_points_status = Domain::SLA::PointsStatus::NoPoints;
 
     // Holes to be drilled into the object so resin can flow out
-    sla::DrainHoles         sla_drain_holes;
+    Domain::SLA::DrainHoles         sla_drain_holes;
 
     // Connectors to be added into the object before cut and are used to create a solid/negative volumes during a cut perform
     CutConnectors           cut_connectors;

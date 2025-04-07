@@ -64,6 +64,10 @@ using namespace Slic3r::Biz;
 namespace Slic3r {
 
 namespace execution = Slic3r::Biz::Algorithms::Execution;
+using Domain::SLA::SupportPoint;
+using Domain::SLA::SupportPoints;
+using Domain::SLA::SupportPointType;
+using Domain::SLA::PointsStatus;
 
 namespace {
 
@@ -318,7 +322,7 @@ void SLAPrint::Steps::generate_preview(SLAPrintObject &po, SLAPrintObjectStep st
             } else if (can_hollow) {
                 m = csgmesh_merge_positive_parts(r);
                 sla::hollow_mesh(m, *po.m_hollowing_data->interior);
-                sla::DrainHoles drainholes = po.transformed_drainhole_points();
+                Domain::SLA::DrainHoles drainholes = po.transformed_drainhole_points();
 
                 auto ret = sla::hollow_mesh_and_drill(
                     m, *po.m_hollowing_data->interior, drainholes,
@@ -658,17 +662,17 @@ struct SuppPtMask {
     bool enforcers_only = false;
 };
 
-static void filter_support_points_by_modifiers(sla::SupportPoints &pts,
+static void filter_support_points_by_modifiers(SupportPoints &pts,
                                                const SuppPtMask &mask,
                                                const std::vector<float> &slice_grid)
 {
     assert((mask.blockers.empty() || mask.blockers.size() == slice_grid.size()) &&
            (mask.enforcers.empty() || mask.enforcers.size() == slice_grid.size()));
 
-    auto new_pts = reserve_vector<sla::SupportPoint>(pts.size());
+    auto new_pts = reserve_vector<SupportPoint>(pts.size());
 
     for (size_t i = 0; i < pts.size(); ++i) {
-        const sla::SupportPoint &sp = pts[i];
+        const SupportPoint &sp = pts[i];
         Point sp2d = scaled(to_2d(sp.pos));
 
         auto it = std::lower_bound(slice_grid.begin(), slice_grid.end(), sp.pos.z());
@@ -852,12 +856,12 @@ void SLAPrint::Steps::support_tree(SLAPrintObject &po)
     // points that are on the bottom of the object
     if (is_zero_elevation(po.config())) {
         // remove_bottom_points
-        std::vector<sla::SupportPoint> &pts = po.m_supportdata->input.pts;
+        std::vector<SupportPoint> &pts = po.m_supportdata->input.pts;
         float lvl(po.m_supportdata->input.zoffset + EPSILON); 
 
         // get iterator to the reorganized vector end
         auto endit = std::remove_if(pts.begin(), pts.end(), 
-            [lvl](const sla::SupportPoint &sp) {
+            [lvl](const SupportPoint &sp) {
                 return sp.pos.z() <= lvl; });
 
         // erase all elements after the new end

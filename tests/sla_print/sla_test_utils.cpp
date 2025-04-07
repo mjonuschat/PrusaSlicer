@@ -18,7 +18,7 @@ void test_support_model_collision(
     const std::string            &obj_filename,
     const sla::SupportTreeConfig &input_supportcfg,
     const sla::HollowingConfig   &hollowingcfg,
-    const sla::DrainHoles        &drainholes)
+    const Domain::SLA::DrainHoles        &drainholes)
 {
     SupportByproducts byproducts;
 
@@ -101,7 +101,7 @@ void export_failed_case(const std::vector<ExPolygons> &support_slices, const Sup
 void test_supports(const std::string          &obj_filename,
                    const sla::SupportTreeConfig   &supportcfg,
                    const sla::HollowingConfig &hollowingcfg,
-                   const sla::DrainHoles      &drainholes,
+                   const Domain::SLA::DrainHoles      &drainholes,
                    SupportByproducts          &out)
 {
     using namespace Slic3r;
@@ -472,7 +472,7 @@ double predict_error(const ExPolygon &p, const sla::PixelDim &pd)
     return error;
 }
 
-sla::SupportPoints calc_support_pts(
+Domain::SLA::SupportPoints calc_support_pts(
     const TriangleMesh &                      mesh,
     const sla::SupportPointGeneratorConfig &cfg)
 {

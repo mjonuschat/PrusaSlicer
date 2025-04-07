@@ -41,7 +41,7 @@
 #include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/SLA/Hollowing.hpp"
 #include "libslic3r/SLA/Pad.hpp"
-#include "libslic3r/SLA/SupportPoint.hpp"
+#include "Slic3r/Domain/SLA/SupportPoint.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "libslic3r/libslic3r.h"
 
@@ -159,8 +159,8 @@ public:
 
     std::vector<csg::CSGPart> get_parts_to_slice(SLAPrintObjectStep step) const;
 
-    sla::SupportPoints      transformed_support_points() const;
-    sla::DrainHoles         transformed_drainhole_points() const;
+    Domain::SLA::SupportPoints      transformed_support_points() const;
+    Domain::SLA::DrainHoles         transformed_drainhole_points() const;
 
     // Get the needed Z elevation for the model geometry if supports should be
     // displayed. This Z offset should also be applied to the support
@@ -174,7 +174,7 @@ public:
     double get_current_elevation() const;
 
     // This method returns the support points of this SLAPrintObject.
-    const std::vector<sla::SupportPoint>& get_support_points() const;
+    const std::vector<Domain::SLA::SupportPoint>& get_support_points() const;
 
     // The public Slice record structure. It corresponds to one printable layer.
     class SliceRecord {

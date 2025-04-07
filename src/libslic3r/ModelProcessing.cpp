@@ -133,7 +133,7 @@ void convert_units(Model& model_to, ModelObject* object_from, ConversionType con
     ModelObject* new_object = model_to.add_object(*object_from);
     new_object->sla_support_points.clear();
     new_object->sla_drain_holes.clear();
-    new_object->sla_points_status = sla::PointsStatus::NoPoints;
+    new_object->sla_points_status = Domain::SLA::PointsStatus::NoPoints;
     new_object->clear_volumes();
     new_object->input_file.clear();
 
