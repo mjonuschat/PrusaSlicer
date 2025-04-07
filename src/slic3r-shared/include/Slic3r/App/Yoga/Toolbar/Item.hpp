@@ -25,7 +25,7 @@ enum class Orientation;
 struct Callbacks {
     std::function<void()>     action                      { nullptr };
     std::function<bool()>     visibility                  { []() {return true; } };
-    std::function<bool()>     enabling                    { []() {return true; } };
+    std::function<bool()>     enabled                     { []() {return true; } };
     std::function<bool()>     toggled                     { []() {return false; } };
     std::function<void()>     action_on_arrow             { nullptr };
     std::function<void()>     action_on_arrow_hovering    { nullptr };
@@ -69,16 +69,16 @@ public :
     void    render_tooltip(ImVec2 win_pos, ImVec2 tt_shift = ImVec2(), ImVec2 pivot = ImVec2(), bool for_arrow = false);
 
     void    set_sub_toolbar(Toolbar* sub_toolbar);
-    void    init_sub_toolbar(float min_item_size, float max_item_size, Yoga::Align align, Orientation orientation);
+    void    init_sub_toolbar(const std::string& name, float min_item_size, float max_item_size, Yoga::Align align, Orientation orientation);
     void    add_sub_toolbar_item(const Item& item);
-    void    insert_sub_toolbar_item(int insert_pos, const Item& item);
-    void    erase_sub_toolbar_item(int erase_pos);
+    void    clear_sub_toolbar();
+    size_t  sub_toolbar_items_cnt() const;
 
     //tmp func
-    std::string name() const;
+    wchar_t icon_name() const { return m_icon_name; };
 
 private:
-    wchar_t     m_icon_name; // or icon or texture
+    wchar_t     m_icon_name         { L'\0' };
     std::string m_tooltip;
     std::string m_shortcut;
     float       m_size_as_separator { 5.f };

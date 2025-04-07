@@ -15,6 +15,8 @@
 
 namespace Slic3r::App::Yoga::Toolbar {
 
+using Vec2f = Domain::Vec2f;
+
 struct Callbacks;
 class Item;
 
@@ -39,16 +41,20 @@ public:
     Item&   insert(int id, const Item& item);
     void    erase(int id = -1);
     void    add_separator(float size);
+    void    clear();
+    bool    is_empty() const;
     void    set_margins(float h_margin, float v_margin);
 
-    void    render(Domain::Vec2f win_size = Domain::Vec2f(0.f, 0.f), Domain::Vec2f win_pos = Domain::Vec2f(-1.f, -1.f));
+    void    render(Vec2f win_size = Vec2f(0.f, 0.f), Vec2f win_pos = Vec2f(-1.f, -1.f));
     void    layout();
-    void    collapse_if_needed();
+    void    set_collapsible();
+    void    set_cb_on_visible_items_changed(std::function<void()> cb) { m_cb_on_visible_items_changed = cb; }
 
-    int     shown_items_cnt();
+    size_t  items_cnt() const;
+    float   get_flex_ration() const;
     bool    is_horizontal() const { return m_is_horizontal; }
     // get real bounding box of the control in respect to the layout
-    ImRect  get_bb(ImVec2 win_pos);
+    ImRect  get_bb(Vec2f win_pos);
 
 private:
 
@@ -60,27 +66,29 @@ private:
     YGNodeRef   insert_separator_node(int id, float size);
     size_t      insert_pos();
 
+    void        add_item(std::map<YGNodeRef, Item>&  nodes, YGNodeRef new_node, const Item& new_item);
+
     void        finalize();
     void        ensure_min_size();
     void        update_min_size();
-    void        resize(ImVec2 win_size);
+    void        resize(Vec2f win_size);
 
     // get real size of the control in respect to the layout
-    YGSize      get_size(float side);
-    ImVec2      tooltip_pivot();
+    Vec2f       get_size(float side);
+    Vec2f       tooltip_pivot();
     ImDrawFlags corners_flag(int id);
 
     // render node and return true, if item was hovered
-    bool        render_node(int id, ImVec2 win_pos, ImRect bb);
-    void        render_tooltip(int id, ImVec2 win_pos, bool for_arrow = false);
+    bool        render_node(int id, Vec2f win_pos, ImRect bb);
+    void        render_tooltip(int id, Vec2f win_pos, bool for_arrow = false);
 
-    Item&       collapsed_item();
+    bool        is_collapsible();
+    Item&       subtoolbar_expander();
 
-    void        collapse_node(YGNodeRef node);
-    bool        collapse(ImVec2 win_size, YGSize control_size);
-    void        expand_node(YGNodeRef node);
-    bool        expand(ImVec2 win_size, YGSize control_size);
-    void        process_collapse(ImVec2 win_size);
+    void        refresh_full_layout(bool force_parent_layout = true);
+    void        collapse_from(size_t start_collapse_id);
+    void        process_collapse(Vec2f win_size);
+    void        process_items_visibility();
 
 private:
     YGNodeRef   m_root              { nullptr };
@@ -97,19 +105,19 @@ private:
     float       m_min_side          { 0.f };
     float       m_max_side          { 0.f };
 
-    int         m_separators_count  { 0 };
-
-    int         m_collapsed_count   { 0 };
-    YGNodeRef   m_collapsed_node    { nullptr };
+    YGNodeRef   m_subtoolbar_expander_node    { nullptr };
+    bool        m_show_subtoolbar_expander{ false };
 
     // max{calculated min size; adjusted min size}
-    YGSize      m_min_size          { YGSize({ 0.f, 0.f }) };
+    Vec2f       m_min_size          { 0.f, 0.f };
 
     std::map<YGNodeRef, Item>  m_nodes;
 
     // for delay tooltip showing 
     bool        m_running       { false };
     float       m_elapsed_time  { 0.f };
+
+    std::function<void()> m_cb_on_visible_items_changed{nullptr};
 };
 
 }

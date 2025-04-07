@@ -88,25 +88,22 @@ void PlaterRenderModule::init_scene_layout()
         { m_sidebar_slice_panel.render(pos, size); });
 
     // init toolbars
-
-    // callbacks for toolbar items
-    auto cb_is_visible = []() -> bool {return true; };
-    auto cb_is_enable = []() -> bool {return true; };
-
     static bool show_object_list{ true };
     static bool show_history{ false };
     static bool show_sidebar{ true };
 
-    m_layout.add_toolbar_item(ToolbarID::Top, ImGui::ToolbarObjects, "Object List", "Ctrl + Alt + O",
-        { [this]() { m_layout.show_left(0, show_object_list = !show_object_list); },
-        cb_is_visible, cb_is_enable, []() { return show_object_list; } });
+    m_layout.add_toolbar_item(ToolbarID::Top, ImGui::ToolbarObjects, "Object List", "Ctrl + Alt + O", {
+        .action  = [this]() { m_layout.show_left(0, show_object_list = !show_object_list); },
+        .toggled = []() { return show_object_list; } 
+    });
 
-    m_layout.add_toolbar_item(ToolbarID::Bottom, ImGui::ToolbarHistory, "Actions History", "Shift + Alt + H",
-        { [this]() { m_layout.show_left(1, show_history = !show_history); }, 
-        cb_is_visible, cb_is_enable, []() { return show_history; } });
+    m_layout.add_toolbar_item(ToolbarID::Bottom, ImGui::ToolbarHistory, "Actions History", "Shift + Alt + H", { 
+        .action = [this]() { m_layout.show_left(1, show_history = !show_history); }, 
+        .toggled = []() { return show_history; } 
+    });
 
     m_layout.add_toolbar_item(ToolbarID::Middle, ImGui::ToolbarAdd, "Add...", "Ctrl + I", { 
-        [this]() {
+        .action  = [this]() {
             auto& scene_interactor = m_project_interactor.scene_interactor();
             const auto& bed = m_project_interactor.selected_project().config_containers().front()->bed();
 
@@ -122,22 +119,20 @@ void PlaterRenderModule::init_scene_layout()
 //    m_layout.add_toolbar_item(ToolbarID::Middle, ImGui::ToolbarArrange, "Arrange", "A", { []() {} });
     m_layout.add_toolbar_separator(ToolbarID::Middle);
     m_layout.add_toolbar_item(ToolbarID::Middle, ImGui::ToolbarMove, "Move", "M", {
-        [this]() {
+        .action  = [this]() {
             m_gizmo_manager->toggle_activate_tool(Scene::ToolType::Translation, ptFFF);
         }, 
-        []() { return true; }, 
-        [this]() { return !m_project_interactor.scene_interactor().selection().empty(); },
-        [this]() { 
+        .enabled = [this]() { return !m_project_interactor.scene_interactor().selection().empty(); },
+        .toggled = [this]() { 
             return m_gizmo_manager->current_tool_type()== Scene::ToolType::Translation; 
         }
     });
     m_layout.add_toolbar_item(ToolbarID::Middle, ImGui::ToolbarRotation, "Rotate", "R", {
-        [this]() {
+        .action  = [this]() {
             m_gizmo_manager->toggle_activate_tool(Scene::ToolType::Rotation, ptFFF);
-        }, 
-        []() { return true; }, 
-        [this]() { return !m_project_interactor.scene_interactor().selection().empty(); },
-        [this]() { 
+        },
+        .enabled = [this]() { return !m_project_interactor.scene_interactor().selection().empty(); },
+        .toggled = [this]() { 
             return m_gizmo_manager->current_tool_type()== Scene::ToolType::Rotation;
         }
     });

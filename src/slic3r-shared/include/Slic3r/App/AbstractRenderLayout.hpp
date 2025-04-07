@@ -45,12 +45,12 @@ public:
 
     void show_left(int panel_id, bool show);
     void show_right(int panel_id, bool show);
+    void layout_toolbars_sizer();
 
 private:
     void init_main_sizer();
     void init_view_cube_sizer();
     void init_toolbars_sizer();
-    void layout_toolbars_sizer();
     void init_middle_sizer();
 
 protected:

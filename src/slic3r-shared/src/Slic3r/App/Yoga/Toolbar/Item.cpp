@@ -7,7 +7,7 @@
 
 #include <Yoga.h>
 #include "imgui/imgui_internal.h"
-#include <boost/nowide/convert.hpp>
+#include <libassert/assert.hpp>
 
 namespace Slic3r::App::Yoga::Toolbar {
 
@@ -37,7 +37,7 @@ static ButtonBehaviour CustomRoundedButton(const ImVec2& pos, const ImVec2& size
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.f);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.f, 0.f));
 
-    ImGui::Begin((boost::nowide::narrow(std::wstring(&info.icon, 1)) + "_win").c_str(), nullptr,
+    ImGui::Begin(("tt_item_win_" + std::to_string(info.icon)).c_str(), nullptr,
         ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoFocusOnAppearing);
 
     float rounding = GImGui->Style.WindowRounding;// { 4.f };
@@ -113,11 +113,6 @@ static void Tooltip(const std::string& label, const std::string& short_cut, ImVe
     ImGui::PopStyleVar(2);
 }
 
-std::string Item::name() const
-{
-    return boost::nowide::narrow(std::wstring(&m_icon_name, 1));
-}
-
 Item::~Item() 
 {
     if (m_has_internal_tollbar && m_sub_toolbar)
@@ -126,7 +121,7 @@ Item::~Item()
 
 bool Item::is_separator() const
 {
-    return m_callbacks.is_empty() && !m_sub_toolbar;
+    return m_icon_name == L'\0';
 }
 
 bool Item::is_visible() const
@@ -139,14 +134,17 @@ static ImRect   sub_tb_rect         { ImRect() };
 
 void Item::render_sub_toolbar(ImRect item_bb, ImRect parent_bb, bool force)
 {
-    static ImVec2   sub_tb_pos{ ImVec2() };
-    static ImVec2   sub_tb_size{ ImVec2() };
+    static Vec2f   sub_tb_pos{ 0.f, 0.f };
+    static Vec2f   sub_tb_size{ 0.f, 0.f };
 
     if (force && m_sub_toolbar) {
         const float space = 5.f;
 
-        sub_tb_pos = parent_bb.Min + (m_sub_toolbar->is_horizontal() ? ImVec2(0.f, item_bb.GetHeight() + space) : ImVec2(item_bb.GetWidth() + space, 0.f));
-        sub_tb_size = m_sub_toolbar->is_horizontal() ? ImVec2(parent_bb.GetWidth(), item_bb.GetHeight()) : ImVec2(item_bb.GetWidth(), parent_bb.GetHeight());
+        sub_tb_pos = Vec2f(parent_bb.Min.x, parent_bb.Min.y) + 
+                     (m_sub_toolbar->is_horizontal() ? Vec2f(0.f, item_bb.GetHeight() + space) : 
+                                                       Vec2f(item_bb.GetWidth() + space, 0.f/*-item_bb.GetWidth()*/));
+        sub_tb_size = m_sub_toolbar->is_horizontal() ? Vec2f(parent_bb.GetWidth(), item_bb.GetHeight()) :
+                                                       Vec2f(item_bb.GetWidth(), parent_bb.GetHeight());
 
         sub_tb_rect = m_sub_toolbar->get_bb(sub_tb_pos);
         sub_tb_rect.Min -= (m_sub_toolbar->is_horizontal() ? ImVec2(0, 1) : ImVec2(1, 0)) * (space + 10.f);
@@ -155,7 +153,7 @@ void Item::render_sub_toolbar(ImRect item_bb, ImRect parent_bb, bool force)
     }
 
     if (active_sub_toolbar && m_sub_toolbar == active_sub_toolbar && (force || ImGui::IsMouseHoveringRect(sub_tb_rect.Min, sub_tb_rect.Max, false)))
-        m_sub_toolbar->render(Domain::Vec2f(sub_tb_size.x, sub_tb_size.y), Domain::Vec2f(sub_tb_pos.x, sub_tb_pos.y));
+        m_sub_toolbar->render(sub_tb_size, sub_tb_pos);
 
     if (!ImGui::IsMouseHoveringRect(sub_tb_rect.Min, sub_tb_rect.Max, false))
         sub_tb_rect = ImRect(); //invalidate subtoolbar
@@ -171,7 +169,7 @@ bool Item::render(ImRect item_bb, ImRect parent_bb, ImDrawFlags corners_flag, Im
 
     // render button
 
-    ButtonBehaviour button_behav = CustomRoundedButton(item_bb.Min, item_bb.GetSize(), { m_icon_name, has_arrow, is_toggled, m_callbacks.enabling() }, corners_flag);
+    ButtonBehaviour button_behav = CustomRoundedButton(item_bb.Min, item_bb.GetSize(), { m_icon_name, has_arrow, is_toggled, m_callbacks.enabled() }, corners_flag);
     // and its sub_tollbar if any exists and have to be shown
     render_sub_toolbar(item_bb, parent_bb, button_behav.hovered || button_behav.pressed_arrow);
 
@@ -212,30 +210,30 @@ void Item::set_sub_toolbar(Toolbar* sub_toolbar)
     m_sub_toolbar = sub_toolbar;
 }
 
-void Item::init_sub_toolbar(float min_item_size, float max_item_size, Yoga::Align align, Orientation orientation)
+void Item::init_sub_toolbar(const std::string& name, float min_item_size, float max_item_size, Yoga::Align align, Orientation orientation)
 {
     if (!m_sub_toolbar) {
-        m_sub_toolbar = new Toolbar("sub_" + std::to_string(m_icon_name), min_item_size, max_item_size, align, orientation);
+        m_sub_toolbar = new Toolbar(name, min_item_size, max_item_size, align, orientation);
         m_has_internal_tollbar = true;
     }
 }
 
 void Item::add_sub_toolbar_item(const Item& item)
 {
-    assert(m_sub_toolbar);
+    ASSERT(m_sub_toolbar);
     m_sub_toolbar->add(item);
 }
 
-void Item::insert_sub_toolbar_item(int insert_pos, const Item& item)
+size_t Item::sub_toolbar_items_cnt() const
 {
-    assert(m_sub_toolbar);
-    m_sub_toolbar->insert(insert_pos, item);
+    ASSERT(m_sub_toolbar);
+    return m_sub_toolbar->items_cnt();
 }
 
-void Item::erase_sub_toolbar_item(int erase_pos)
+void Item::clear_sub_toolbar()
 {
-    assert(m_sub_toolbar);
-    m_sub_toolbar->erase(erase_pos);
+    ASSERT(m_sub_toolbar);
+    m_sub_toolbar->clear();
 }
 
 } // namespace Slic3r::Yoga::Toolbar

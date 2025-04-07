@@ -48,7 +48,7 @@ void AbstractRenderLayout::add_panel(Yoga::FlexSizer& sizer, std::function<void(
     sizer.add(render_item_fn, false, { win_name, win_paddings });
 }
 
-const static float min_tt_size = 50.f;// 30.f;
+const static float min_tt_size = 50.f;//**/ 30.f;
 const static float max_tt_size = 50.f;
 
 void AbstractRenderLayout::init_view_cube_sizer()
@@ -63,26 +63,40 @@ void AbstractRenderLayout::init_view_cube_sizer()
     view_cube_sizer.add(sizer_in, {}, { Yoga::AlignH::Right, Yoga::AlignV::Top });
 }
 
+//#define SHOW_BG
 void AbstractRenderLayout::init_toolbars_sizer()
 {
     // Just "sceleton" for the toolbars is created here
     // All render functions are empty, because of no one item is added to the toolbar jet
     // So, as a workaround, lets render button with max_tt_size and with 0 alpha
     ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0);
-    ImGui::Button("win##workaround", ImVec2(max_tt_size, max_tt_size));
+    ImGui::Button("win##workaround", ImVec2(min_tt_size, min_tt_size));
     ImGui::PopStyleVar();
 
     top_toolbar.init("top_toolbar", min_tt_size, max_tt_size, { Yoga::AlignH::Left, Yoga::AlignV::Top });
 
-    middle_toolbar.init("middle_toolbar", min_tt_size, max_tt_size, { Yoga::AlignH::Left, Yoga::AlignV::Center }, FlexToolbarOrientation::Vertical);
-    middle_toolbar.collapse_if_needed();
+    middle_toolbar.init("middle_toolbar", min_tt_size, max_tt_size, { Yoga::AlignH::Left, Yoga::AlignV::Center });
+    middle_toolbar.set_collapsible();
+    middle_toolbar.set_cb_on_visible_items_changed([this]() { layout_toolbars_sizer(); });
 
     bottom_toolbar.init("bottom_toolbar", min_tt_size, max_tt_size, { Yoga::AlignH::Left, Yoga::AlignV::Bottom });
 
     m_toolbars_sizer.init(1, 3);
-    m_toolbars_sizer.set_grow_row(0, 0.f);
-    m_toolbars_sizer.set_grow_row(2, 0.f);
+    m_toolbars_sizer.set_grow_col(0);
 
+#ifdef SHOW_BG
+    m_toolbars_sizer.set_bg_alpha(0.2f);
+
+    m_toolbars_sizer.add([this](Vec2f size, Vec2f pos) {
+        top_toolbar.render(size, pos);
+    }, true, {"top_toolbar"});
+    m_toolbars_sizer.add([this](Vec2f size, Vec2f pos) {
+        middle_toolbar.render(size, pos);
+    }, true, {"middle_toolbar"});
+    m_toolbars_sizer.add([this](Vec2f size, Vec2f pos) {
+        bottom_toolbar.render(size, pos);
+    }, true, {"bottom_toolbar"});
+#else
     m_toolbars_sizer.add([this](Vec2f size, Vec2f pos) {
         top_toolbar.render(size, pos);
     }, true);
@@ -92,13 +106,24 @@ void AbstractRenderLayout::init_toolbars_sizer()
     m_toolbars_sizer.add([this](Vec2f size, Vec2f pos) {
         bottom_toolbar.render(size, pos);
     }, true);
+#endif
 }
 
 void AbstractRenderLayout::layout_toolbars_sizer()
 {
-    m_toolbars_sizer.set_grow_row(0, float(top_toolbar.shown_items_cnt()));
-    m_toolbars_sizer.set_grow_row(1, float(middle_toolbar.shown_items_cnt()));
-    m_toolbars_sizer.set_grow_row(2, float(bottom_toolbar.shown_items_cnt()));
+    float tt_cnt = top_toolbar.get_flex_ration()    ;
+    float mt_cnt = middle_toolbar.get_flex_ration() ;
+    float bt_cnt = bottom_toolbar.get_flex_ration() ;
+
+    m_toolbars_sizer.set_grow_row(0, std::max(0.f, tt_cnt-1.f));
+    m_toolbars_sizer.set_grow_row(1, std::max(3.f, mt_cnt-1.f));
+    m_toolbars_sizer.set_grow_row(2, std::max(0.f, bt_cnt-1.f));
+
+    m_toolbars_sizer.show_row(0, tt_cnt > 0.f);
+    m_toolbars_sizer.show_row(1, mt_cnt > 0.f);
+    m_toolbars_sizer.show_row(2, bt_cnt > 0.f);
+
+//    SPDLOG_INFO("!!! layout_toolbars_sizer as {}:{}:{}\n", tt_cnt, mt_cnt, bt_cnt);
     m_toolbars_sizer.layout();
 }
 
