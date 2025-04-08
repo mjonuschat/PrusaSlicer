@@ -43,6 +43,9 @@ using Biz::Algorithms::BoundingBox::merge;
 using Biz::Algorithms::BoundingBox::center;
 using Biz::Algorithms::BoundingBox::sizes;
 using Biz::Algorithms::BoundingBox::translated;
+using Biz::Algorithms::Geometry::Transformation;
+using Biz::Algorithms::Geometry::rotation_diff_z;
+using Biz::Algorithms::Geometry::extract_rotation;
 using Domain::BoundingBox3d;
 using Domain::TriangleMesh;
 namespace tm = Slic3r::Biz::Algorithms::TriangleMesh;
@@ -141,12 +144,12 @@ ModelWipeTower& Model::wipe_tower(const int bed_index)
     return wipe_tower_vector[bed_index];
 }
 
-CustomGCode::Info& Model::custom_gcode_per_print_z()
+Domain::CustomGCode::Info& Model::custom_gcode_per_print_z()
 {
-    return const_cast<CustomGCode::Info&>(const_cast<const Model*>(this)->custom_gcode_per_print_z());
+    return const_cast<Domain::CustomGCode::Info&>(const_cast<const Model*>(this)->custom_gcode_per_print_z());
 }
 
-const CustomGCode::Info& Model::custom_gcode_per_print_z() const
+const Domain::CustomGCode::Info& Model::custom_gcode_per_print_z() const
 {
     return custom_gcode_per_print_z_vector[s_multiple_beds.get_active_bed()];
 }
@@ -591,9 +594,9 @@ void ModelObject::delete_volume(size_t idx)
         Transform3d v_t = v->get_transformation().get_matrix();
         for (ModelInstance* inst : this->instances)
         {
-            inst->set_transformation(Geometry::Transformation(inst->get_transformation().get_matrix() * v_t));
+            inst->set_transformation(Transformation(inst->get_transformation().get_matrix() * v_t));
         }
-        Geometry::Transformation t;
+        Transformation t;
         v->set_transformation(t);
         v->set_new_unique_id();
     }
@@ -666,7 +669,7 @@ ModelInstance* ModelObject::add_instance(const ModelInstance &other)
     return i;
 }
 
-ModelInstance* ModelObject::add_instance(const Geometry::Transformation& trafo)
+ModelInstance* ModelObject::add_instance(const Transformation& trafo)
 {
     ModelInstance* instance = add_instance();
     instance->set_transformation(trafo);
@@ -1110,7 +1113,7 @@ void ModelObject::bake_xy_rotation_into_meshes(size_t instance_idx)
 {
     assert(instance_idx < this->instances.size());
 
-    const Geometry::Transformation reference_trafo = this->instances[instance_idx]->get_transformation();
+    const Transformation reference_trafo = this->instances[instance_idx]->get_transformation();
     bool   left_handed        = reference_trafo.is_left_handed();
     bool   has_mirrorring     = ! reference_trafo.get_mirror().isApprox(Vec3d(1., 1., 1.));
     bool   uniform_scaling    = std::abs(reference_trafo.get_scaling_factor().x() - reference_trafo.get_scaling_factor().y()) < EPSILON &&
@@ -1120,14 +1123,14 @@ void ModelObject::bake_xy_rotation_into_meshes(size_t instance_idx)
     // Adjust the instances.
     for (size_t i = 0; i < this->instances.size(); ++ i) {
         ModelInstance &model_instance = *this->instances[i];
-        model_instance.set_rotation(Vec3d(0., 0., Geometry::rotation_diff_z(reference_trafo.get_matrix(), model_instance.get_matrix())));
+        model_instance.set_rotation(Vec3d(0., 0., rotation_diff_z(reference_trafo.get_matrix(), model_instance.get_matrix())));
         model_instance.set_scaling_factor(Vec3d(new_scaling_factor, new_scaling_factor, new_scaling_factor));
         model_instance.set_mirror(Vec3d(1., 1., 1.));
     }
 
     // Adjust the meshes.
     // Transformation to be applied to the meshes.
-    Geometry::Transformation reference_trafo_mod = reference_trafo;
+    Transformation reference_trafo_mod = reference_trafo;
     reference_trafo_mod.reset_offset();
     if (uniform_scaling)
         reference_trafo_mod.reset_scaling_factor();
@@ -1136,14 +1139,14 @@ void ModelObject::bake_xy_rotation_into_meshes(size_t instance_idx)
     Eigen::Matrix3d mesh_trafo_3x3 = reference_trafo_mod.get_matrix().matrix().block<3, 3>(0, 0);
     Transform3d     volume_offset_correction = this->instances[instance_idx]->get_transformation().get_matrix().inverse() * reference_trafo.get_matrix();
     for (ModelVolume *model_volume : this->volumes) {
-        const Geometry::Transformation volume_trafo = model_volume->get_transformation();
+        const Transformation volume_trafo = model_volume->get_transformation();
         bool   volume_left_handed        = volume_trafo.is_left_handed();
         bool   volume_has_mirrorring     = ! volume_trafo.get_mirror().isApprox(Vec3d(1., 1., 1.));
         bool   volume_uniform_scaling    = std::abs(volume_trafo.get_scaling_factor().x() - volume_trafo.get_scaling_factor().y()) < EPSILON &&
                                            std::abs(volume_trafo.get_scaling_factor().x() - volume_trafo.get_scaling_factor().z()) < EPSILON;
         double volume_new_scaling_factor = volume_uniform_scaling ? volume_trafo.get_scaling_factor().x() : 1.;
         // Transform the mesh.
-        Geometry::Transformation volume_trafo_mod = volume_trafo;
+        Transformation volume_trafo_mod = volume_trafo;
         volume_trafo_mod.reset_offset();
         if (volume_uniform_scaling)
             volume_trafo_mod.reset_scaling_factor();
@@ -1475,7 +1478,7 @@ void ModelVolume::rotate(double angle, Axis axis)
 
 void ModelVolume::rotate(double angle, const Vec3d& axis)
 {
-    set_rotation(get_rotation() + Geometry::extract_rotation(Eigen::Quaterniond(Eigen::AngleAxisd(angle, axis)).toRotationMatrix()));
+    set_rotation(get_rotation() + extract_rotation(Eigen::Quaterniond(Eigen::AngleAxisd(angle, axis)).toRotationMatrix()));
 }
 
 void ModelVolume::mirror(Axis axis)

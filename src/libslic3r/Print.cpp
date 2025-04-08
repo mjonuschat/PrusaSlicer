@@ -1133,7 +1133,7 @@ void Print::_make_skirt()
         Polygon loop;
         {
             Polygons loops = offset(convex_hull, distance, ClipperLib::jtRound, float(scale_(0.1)));
-            Geometry::simplify_polygons(loops, scale_(0.05), &loops);
+            Biz::Algorithms::Geometry::simplify_polygons(loops, scale_(0.05), &loops);
 			if (loops.empty())
 				break;
 			loop = loops.front();

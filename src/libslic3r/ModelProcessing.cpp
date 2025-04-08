@@ -53,7 +53,8 @@ void convert_to_multipart_object(Model& model, unsigned int max_extruders)
             // If there are more than one object, put all volumes together 
             // Each object may contain any number of volumes and instances
             // The volumes transformations are relative to the object containing them...
-            Geometry::Transformation trafo_volume = v->get_transformation();
+            using Biz::Algorithms::Geometry::Transformation;
+            Transformation trafo_volume = v->get_transformation();
             // Revert the centering operation.
             trafo_volume.set_offset(trafo_volume.get_offset() - o->origin_translation);
             int counter = 1;

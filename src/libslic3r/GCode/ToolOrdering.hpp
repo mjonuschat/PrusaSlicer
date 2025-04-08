@@ -18,7 +18,7 @@
 #include <vector>
 #include <cinttypes>
 
-#include "Slic3r/Domain/CustomGCodeType.hpp"
+#include "Slic3r/Domain/CustomGCode.hpp"
 #include "libslic3r/libslic3r.h"
 #include "libslic3r/PrintConfig.hpp"
 
@@ -123,7 +123,7 @@ public:
     size_t                      wipe_tower_partitions = 0;
     double 					wipe_tower_layer_height = 0.;
     // Custom G-code (color change, extruder switch, pause) to be performed before this layer starts to print.
-    const Domain::CustomGCodeItem    *custom_gcode = nullptr;
+    const Domain::CustomGCode::Item    *custom_gcode = nullptr;
 
     WipingExtrusions&       wiping_extrusions_nonconst() { return m_wiping_extrusions; }
     const WipingExtrusions& wiping_extrusions() const    { return m_wiping_extrusions; }

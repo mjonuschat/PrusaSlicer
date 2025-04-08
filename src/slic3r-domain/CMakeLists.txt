@@ -1,6 +1,7 @@
 project(slic3r-domain)
 
 add_library(slic3r-domain
+    include/Slic3r/Domain/CustomGCode.hpp
     include/Slic3r/Domain/Line.hpp
     include/Slic3r/Domain/MultiPoint.hpp
     include/Slic3r/Domain/Polygon.hpp

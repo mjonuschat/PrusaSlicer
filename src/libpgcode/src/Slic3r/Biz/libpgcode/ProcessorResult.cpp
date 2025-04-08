@@ -47,8 +47,8 @@ std::vector<std::string> ProcessorResult::color_strings_for_color_print() const
 {
     std::vector<std::string> ret = extruder_str_colors;
     ret.reserve(ret.size() + custom_gcode_per_print_z.size() + 1);
-    for (const CustomGCodeItem& code : custom_gcode_per_print_z) {
-        if (code.type == CustomGCodeType::ColorChange)
+    for (const CustomGCode::Item& code : custom_gcode_per_print_z) {
+        if (code.type == CustomGCode::Type::ColorChange)
             ret.emplace_back(code.color);
     }
     // gray color for pause print or custom G-code 

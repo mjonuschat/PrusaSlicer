@@ -12,6 +12,7 @@
 #include "libslic3r/GCode/ThumbnailData.hpp"
 #include "Slic3r/Semver.hpp"
 #include "libslic3r/Time.hpp"
+#include "libslic3r/CustomGCode.hpp"
 
 #include "libslic3r/I18N.hpp"
 
@@ -58,6 +59,7 @@ using Slic3r::Domain::RepairedMeshErrors;
 using Slic3r::Domain::SLA::SupportPoint;
 using Slic3r::Domain::SLA::PointsStatus;
 using Slic3r::Domain::SLA::SupportPointType;
+namespace CustomGCode = Slic3r::Domain::CustomGCode;
 
 // Slightly faster than sprintf("%.9g"), but there is an issue with the karma floating point formatter,
 // https://github.com/boostorg/spirit/pull/586
@@ -1654,8 +1656,8 @@ namespace Slic3r {
                     if (code.first == "mode") {
                         pt::ptree tree = code.second;
                         std::string mode = tree.get<std::string>("<xmlattr>.value");
-                        m_model->get_custom_gcode_per_print_z_vector()[bed_idx].mode = mode == CustomGCode::SingleExtruderMode ? CustomGCode::Mode::SingleExtruder :
-                                                                   mode == CustomGCode::MultiAsSingleMode  ? CustomGCode::Mode::MultiAsSingle  :
+                        m_model->get_custom_gcode_per_print_z_vector()[bed_idx].mode = mode == CustomGCodeUtils::SingleExtruderMode ? CustomGCode::Mode::SingleExtruder :
+                                                                   mode == CustomGCodeUtils::MultiAsSingleMode  ? CustomGCode::Mode::MultiAsSingle  :
                                                                    CustomGCode::Mode::MultiExtruder;
                     }
                     if (code.first != "code")
@@ -1674,11 +1676,11 @@ namespace Slic3r {
                         // read old data ... 
                         std::string gcode       = tree.get<std::string> ("<xmlattr>.gcode");
                         // ... and interpret them to the new data
-                        type  = gcode == "M600"           ? CustomGCode::ColorChange : 
-                                gcode == "M601"           ? CustomGCode::PausePrint  :   
-                                gcode == "tool_change"    ? CustomGCode::ToolChange  :   CustomGCode::Custom;
-                        extra = type == CustomGCode::PausePrint ? color :
-                                type == CustomGCode::Custom     ? gcode : "";
+                        type  = gcode == "M600"           ? CustomGCode::Type::ColorChange : 
+                                gcode == "M601"           ? CustomGCode::Type::PausePrint  :   
+                                gcode == "tool_change"    ? CustomGCode::Type::ToolChange  :   CustomGCode::Type::Custom;
+                        extra = type == CustomGCode::Type::PausePrint ? color :
+                                type == CustomGCode::Type::Custom     ? gcode : "";
                     }
                     else {
                         type  = static_cast<CustomGCode::Type>(tree.get<int>("<xmlattr>.type"));
@@ -3855,18 +3857,18 @@ bool _3MF_Exporter::_add_custom_gcode_per_print_z_file_to_archive( mz_zip_archiv
                 code_tree.put("<xmlattr>.extra"     , code.extra    );
 
                 // add gcode field data for the old version of the PrusaSlicer
-                std::string gcode = code.type == CustomGCode::ColorChange ? config->opt_string("color_change_gcode")    :
-                                    code.type == CustomGCode::PausePrint  ? config->opt_string("pause_print_gcode")     :
-                                    code.type == CustomGCode::Template    ? config->opt_string("template_custom_gcode") :
-                                    code.type == CustomGCode::ToolChange  ? "tool_change"   : code.extra; 
+                std::string gcode = code.type == CustomGCode::Type::ColorChange ? config->opt_string("color_change_gcode")    :
+                                    code.type == CustomGCode::Type::PausePrint  ? config->opt_string("pause_print_gcode")     :
+                                    code.type == CustomGCode::Type::Template    ? config->opt_string("template_custom_gcode") :
+                                    code.type == CustomGCode::Type::ToolChange  ? "tool_change"   : code.extra; 
                 code_tree.put("<xmlattr>.gcode"     , gcode   );
             }
 
             pt::ptree& mode_tree = main_tree.add("mode", "");
             // store mode of a custom_gcode_per_print_z 
-            mode_tree.put("<xmlattr>.value", model.custom_gcode_per_print_z().mode == CustomGCode::Mode::SingleExtruder ? CustomGCode::SingleExtruderMode :
-                                             model.custom_gcode_per_print_z().mode == CustomGCode::Mode::MultiAsSingle ? CustomGCode::MultiAsSingleMode :
-                                             CustomGCode::MultiExtruderMode);
+            mode_tree.put("<xmlattr>.value", model.custom_gcode_per_print_z().mode == CustomGCode::Mode::SingleExtruder ? CustomGCodeUtils::SingleExtruderMode :
+                                             model.custom_gcode_per_print_z().mode == CustomGCode::Mode::MultiAsSingle ? CustomGCodeUtils::MultiAsSingleMode :
+                                             CustomGCodeUtils::MultiExtruderMode);
         }
 
         if (!tree.empty()) {

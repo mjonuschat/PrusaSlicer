@@ -13,7 +13,7 @@ struct WrapperInputData
     std::string color_change_gcode;
     std::string pause_print_gcode;
     std::string template_custom_gcode;
-    CustomGCode::Info custom_gcode_info;
+    Domain::CustomGCode::Info custom_gcode_info;
     Biz::libpgcode::PrintSettings print_settings;
 };
 

@@ -37,6 +37,8 @@
 
 namespace Slic3r {
 
+namespace CustomGCode = Domain::CustomGCode;
+
 // Add or remove support modifier ModelVolumes from model_object_dst to match the ModelVolumes of model_object_new
 // in the exact order and with the same IDs.
 // It is expected, that the model_object_dst already contains the non-support volumes of model_object_new in the correct order.
@@ -1177,14 +1179,14 @@ Print::ApplyStatus Print::apply(const Model &model, DynamicPrintConfig new_full_
             const CustomGCode::Mode current_mode = m_model.custom_gcode_per_print_z().mode;
             const CustomGCode::Mode next_mode    = model.custom_gcode_per_print_z().mode;
 
-            const bool multi_extruder_differ = (current_mode == next_mode) && (current_mode == CustomGCode::MultiExtruder || next_mode == CustomGCode::MultiExtruder);
+            const bool multi_extruder_differ = (current_mode == next_mode) && (current_mode == CustomGCode::Mode::MultiExtruder || next_mode == CustomGCode::Mode::MultiExtruder);
             // Tool change G-codes are applied as color changes for a single extruder printer, no need to invalidate tool ordering.
             // FIXME The tool ordering may be invalidated unnecessarily if the custom_gcode_per_print_z.mode is not applicable
             // to the active print / model state, and then it is reset, so it is being applicable, but empty, thus the effect is the same.
-            const bool tool_change_differ    = num_extruders > 1 && custom_per_printz_gcodes_tool_changes_differ(m_model.custom_gcode_per_print_z().gcodes, model.custom_gcode_per_print_z().gcodes, CustomGCode::ToolChange);
+            const bool tool_change_differ    = num_extruders > 1 && custom_per_printz_gcodes_tool_changes_differ(m_model.custom_gcode_per_print_z().gcodes, model.custom_gcode_per_print_z().gcodes, CustomGCode::Type::ToolChange);
             // For multi-extruder printers, we perform a tool change before a color change.
             // So, in that case, we must invalidate tool ordering and wipe tower even if custom color change g-codes differ.
-            const bool color_change_differ   = num_extruders > 1 && (next_mode == CustomGCode::MultiExtruder) && custom_per_printz_gcodes_tool_changes_differ(m_model.custom_gcode_per_print_z().gcodes, model.custom_gcode_per_print_z().gcodes, CustomGCode::ColorChange);
+            const bool color_change_differ   = num_extruders > 1 && (next_mode == CustomGCode::Mode::MultiExtruder) && custom_per_printz_gcodes_tool_changes_differ(m_model.custom_gcode_per_print_z().gcodes, model.custom_gcode_per_print_z().gcodes, CustomGCode::Type::ColorChange);
 
             update_apply_status(
                 (num_extruders_changed || tool_change_differ || multi_extruder_differ || color_change_differ) ?

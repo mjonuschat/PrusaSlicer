@@ -214,8 +214,8 @@ private:
     void process_orcaslicer_tags(const std::string_view comment);
     void process_simplify3d_tags(const std::string_view comment);
 
-    void process_custom_gcode_time(Domain::CustomGCodeType code);
-    void process_filaments(Domain::CustomGCodeType code);
+    void process_custom_gcode_time(Domain::CustomGCode::Type code);
+    void process_filaments(Domain::CustomGCode::Type code);
 
     void set_extrusion_role(Domain::GCodeExtrusionRole role);
 

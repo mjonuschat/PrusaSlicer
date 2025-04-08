@@ -70,7 +70,7 @@ private:
     void send_data_to_viewer_from_file(const std::string& filename);
 
     void on_invalidate_slice();
-    void on_update_layers_slider(const CustomGCode::Info& info);
+    void on_update_layers_slider(const Domain::CustomGCode::Info& info);
     void on_request_extra_frames(unsigned int count = 1);
     void on_gcode_view_type_changed();
     void on_slider_layers_on_thumb_move();

@@ -44,8 +44,8 @@ public:
 
     void change_one_layer_lock();
 
-    CustomGCode::Info ticks_values() const;
-    void set_ticks_values(const CustomGCode::Info& custom_gcode_per_print_z);
+    Domain::CustomGCode::Info ticks_values() const;
+    void set_ticks_values(const Domain::CustomGCode::Info& custom_gcode_per_print_z);
 
     void set_layers_times(const std::vector<float>& layers_times, float total_time);
     void set_layers_times(const std::vector<float>& layers_times);
@@ -95,7 +95,7 @@ public:
     void set_get_used_extruders_in_print_callback(GetUsedExtrudersInPrintCallback cb) { m_ticks.set_get_used_extruders_in_print_callback(cb); }
     void set_get_extruders_sequence_callback(GetExtrudersSequenceCallback cb) { m_ticks.set_get_extruders_sequence_callback(cb); }
 
-    std::string gcode(CustomGCode::Type type) const { return m_ticks.gcode(type); }
+    std::string gcode(Domain::CustomGCode::Type type) const { return m_ticks.gcode(type); }
 
     const ImVec2 size() const { return m_size; }
 
@@ -138,7 +138,7 @@ private:
     void auto_color_change();
     void perform_auto_color_change();
 
-    void add_code_as_tick(CustomGCode::Type type, int selected_extruder = -1);
+    void add_code_as_tick(Domain::CustomGCode::Type type, int selected_extruder = -1);
     void edit_tick(int tick = -1);
     void discard_all_ticks();
 
@@ -173,7 +173,7 @@ private:
     int m_pos_on_move{ -1 };
 
     DrawMode m_draw_mode{ DrawMode::Regular };
-    CustomGCode::Mode m_mode{ CustomGCode::SingleExtruder };
+    Domain::CustomGCode::Mode m_mode{ Domain::CustomGCode::Mode::SingleExtruder };
     FocusedItem m_focus{ FocusedItem::None };
 
     Imgui::DoubleSlider::Ruler m_ruler;

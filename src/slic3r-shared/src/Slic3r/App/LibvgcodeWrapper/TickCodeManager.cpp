@@ -12,6 +12,8 @@ using namespace Slic3r;
 
 namespace Slic3r::App::LibvgcodeWrapper {
 
+namespace CustomGCode = Domain::CustomGCode;
+
 static constexpr float EPSILON = 0.0011f;
 static constexpr int YES = 0x00000002; // an analogue of wxYES   
 static constexpr int NO = 0x00000008; // an analogue of wxNO    

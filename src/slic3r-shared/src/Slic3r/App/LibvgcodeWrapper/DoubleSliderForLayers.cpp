@@ -24,6 +24,8 @@ using namespace Slic3r::App::libvgcode;
 
 namespace Slic3r::App::LibvgcodeWrapper {
 
+namespace CustomGCode = Domain::CustomGCode;
+
 static constexpr float EPSILON = 0.0011f;
 
 void DoubleSliderForLayers::init(
@@ -435,9 +437,9 @@ std::string DoubleSliderForLayers::tooltip(int tick/*=-1*/) const
 
         // Show mode as a first string of tooltop
         tooltip = "    " + _u8L("Print mode") + ": ";
-        tooltip += (m_mode == CustomGCode::Mode::SingleExtruder ? CustomGCode::SingleExtruderMode :
-                    m_mode == CustomGCode::Mode::MultiAsSingle ?  CustomGCode::MultiAsSingleMode :
-                                                                  CustomGCode::MultiExtruderMode);
+        tooltip += (m_mode == CustomGCode::Mode::SingleExtruder ? CustomGCodeUtils::SingleExtruderMode :
+                    m_mode == CustomGCode::Mode::MultiAsSingle ?  CustomGCodeUtils::MultiAsSingleMode :
+                                                                  CustomGCodeUtils::MultiExtruderMode);
         tooltip += "\n\n";
 
         /* Note: just on OSX!!!

@@ -12,7 +12,12 @@
 
 namespace Slic3r {
 
-namespace CustomGCode {
+namespace CustomGCodeUtils {
+
+using Domain::CustomGCode::Info;
+using Domain::CustomGCode::Mode;
+using Domain::CustomGCode::Type;
+using Domain::CustomGCode::Item;
 
 // If loaded configuration has a "colorprint_heights" option (if it was imported from older Slicer), 
 // and if CustomGCode::Info.gcodes is empty (there is no color print data available in a new format
@@ -30,9 +35,9 @@ extern void update_custom_gcode_per_print_z_from_config(Info& info, DynamicPrint
         info.gcodes.reserve(colorprint_values.size());
         int i = 0;
         for (auto val : colorprint_values)
-            info.gcodes.emplace_back(Item{ val, ColorChange, 1, colors[(++i)%7] });
+            info.gcodes.emplace_back(Item{ val, Type::ColorChange, 1, colors[(++i)%7] });
 
-        info.mode = SingleExtruder;
+        info.mode = Mode::SingleExtruder;
 	}
 
 	// The "colorprint_heights" config value has been deprecated. At this point of time it has been converted
@@ -44,21 +49,21 @@ extern void update_custom_gcode_per_print_z_from_config(Info& info, DynamicPrint
 // So, we should set CustomGCode::Info.mode should be updated considering code values from items.
 extern void check_mode_for_custom_gcode_per_print_z(Info& info)
 {
-    if (info.mode != Undef)
+    if (info.mode != Mode::Undef)
         return;
 
     bool is_single_extruder = true;
     for (const Item& item : info.gcodes)
     {
-        if (item.type == ToolChange) {
-            info.mode = MultiAsSingle;
+        if (item.type == Type::ToolChange) {
+            info.mode = Mode::MultiAsSingle;
             return;
         }
-        if (item.type == ColorChange && item.extruder > 1)
+        if (item.type == Type::ColorChange && item.extruder > 1)
             is_single_extruder = false;
     }
 
-    info.mode = is_single_extruder ? SingleExtruder : MultiExtruder;
+    info.mode = is_single_extruder ? Mode::SingleExtruder : Mode::MultiExtruder;
 }
 
 // Return pairs of <print_z, 1-based extruder ID> sorted by increasing print_z from custom_gcode_per_print_z.
@@ -67,7 +72,7 @@ std::vector<std::pair<double, unsigned int>> custom_tool_changes(const Info& cus
 {
     std::vector<std::pair<double, unsigned int>> custom_tool_changes;
     for (const Item& custom_gcode : custom_gcode_per_print_z.gcodes)
-        if (custom_gcode.type == ToolChange) {
+        if (custom_gcode.type == Type::ToolChange) {
             // If extruder count in PrinterSettings was changed, use default (0) extruder for extruders, more than num_extruders
             assert(custom_gcode.extruder >= 0);
             custom_tool_changes.emplace_back(custom_gcode.print_z, static_cast<unsigned int>(size_t(custom_gcode.extruder) > num_extruders ? 1 : custom_gcode.extruder));
@@ -81,7 +86,7 @@ std::vector<std::pair<double, unsigned int>> custom_color_changes(const Info& cu
 {
     std::vector<std::pair<double, unsigned int>> custom_color_changes;
     for (const Item& custom_gcode : custom_gcode_per_print_z.gcodes)
-        if (custom_gcode.type == ColorChange) {
+        if (custom_gcode.type == Type::ColorChange) {
             // If extruder count in PrinterSettings was changed, ignore custom g-codes for extruder ids bigger than num_extruders.
             assert(custom_gcode.extruder >= 0);
             if (size_t(custom_gcode.extruder) <= num_extruders) {

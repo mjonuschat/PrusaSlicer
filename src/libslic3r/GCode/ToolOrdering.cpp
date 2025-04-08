@@ -32,6 +32,8 @@
 
 namespace Slic3r {
 
+namespace CustomGCode = Domain::CustomGCode;
+
 
 // Returns true in case that extruder a comes before b (b does not have to be present). False otherwise.
 bool LayerTools::is_extruder_order(unsigned int a, unsigned int b) const
@@ -165,17 +167,17 @@ ToolOrdering::ToolOrdering(const Print &print, unsigned int first_extruder, bool
 	std::vector<std::pair<double, unsigned int>> per_layer_extruder_switches;
     auto num_extruders = unsigned(print.config().nozzle_diameter.size());
 	if (num_extruders > 1 && print.object_extruders().size() == 1 && // the current Print's configuration is CustomGCode::MultiAsSingle
-		print.model().custom_gcode_per_print_z().mode == CustomGCode::MultiAsSingle) {
+		print.model().custom_gcode_per_print_z().mode == CustomGCode::Mode::MultiAsSingle) {
 		// Printing a single extruder platter on a printer with more than 1 extruder (or single-extruder multi-material).
 		// There may be custom per-layer tool changes available at the model.
-		per_layer_extruder_switches = custom_tool_changes(print.model().custom_gcode_per_print_z(), num_extruders);
+		per_layer_extruder_switches = CustomGCodeUtils::custom_tool_changes(print.model().custom_gcode_per_print_z(), num_extruders);
 	}
 
     // Color changes for each layer to determine which extruder needs to be picked before color change.
     // This is done just for multi-extruder printers without enabled Single Extruder Multi Material (tool changer printers).
     std::vector<std::pair<double, unsigned int>> per_layer_color_changes;
-    if (num_extruders > 1 && print.model().custom_gcode_per_print_z().mode == CustomGCode::MultiExtruder && !print.config().single_extruder_multi_material) {
-        per_layer_color_changes = custom_color_changes(print.model().custom_gcode_per_print_z(), num_extruders);
+    if (num_extruders > 1 && print.model().custom_gcode_per_print_z().mode == CustomGCode::Mode::MultiExtruder && !print.config().single_extruder_multi_material) {
+        per_layer_color_changes = CustomGCodeUtils::custom_color_changes(print.model().custom_gcode_per_print_z(), num_extruders);
     }
 
     // Collect extruders required to print the layers.
@@ -618,16 +620,16 @@ void ToolOrdering::assign_custom_gcodes(const Print &print)
 
 	auto 						num_extruders = unsigned(print.config().nozzle_diameter.size());
 	CustomGCode::Mode 			mode          =
-		(num_extruders == 1) ? CustomGCode::SingleExtruder :
-		print.object_extruders().size() == 1 ? CustomGCode::MultiAsSingle : CustomGCode::MultiExtruder;
+		(num_extruders == 1) ? CustomGCode::Mode::SingleExtruder :
+		print.object_extruders().size() == 1 ? CustomGCode::Mode::MultiAsSingle : CustomGCode::Mode::MultiExtruder;
 	CustomGCode::Mode           model_mode    = print.model().custom_gcode_per_print_z().mode;
 	std::vector<unsigned char> 	extruder_printing_above(num_extruders, false);
 	auto 						custom_gcode_it = custom_gcode_per_print_z.gcodes.rbegin();
 	// Tool changes and color changes will be ignored, if the model's tool/color changes were entered in mm mode and the print is in non mm mode
 	// or vice versa.
-	bool 						ignore_tool_and_color_changes = (mode == CustomGCode::MultiExtruder) != (model_mode == CustomGCode::MultiExtruder);
+	bool 						ignore_tool_and_color_changes = (mode == CustomGCode::Mode::MultiExtruder) != (model_mode == CustomGCode::Mode::MultiExtruder);
 	// If printing on a single extruder machine, make the tool changes trigger color change (M600) events.
-	bool 						tool_changes_as_color_changes = mode == CustomGCode::SingleExtruder && model_mode == CustomGCode::MultiAsSingle;
+	bool 						tool_changes_as_color_changes = mode == CustomGCode::Mode::SingleExtruder && model_mode == CustomGCode::Mode::MultiAsSingle;
 
 	// From the last layer to the first one:
 	for (auto it_lt = m_layer_tools.rbegin(); it_lt != m_layer_tools.rend(); ++ it_lt) {
@@ -636,7 +638,7 @@ void ToolOrdering::assign_custom_gcodes(const Print &print)
 		for (unsigned int i : lt.extruders)
 			extruder_printing_above[i] = true;
 		// Skip all custom G-codes above this layer and skip all extruder switches.
-		for (; custom_gcode_it != custom_gcode_per_print_z.gcodes.rend() && (custom_gcode_it->print_z > lt.print_z + EPSILON || custom_gcode_it->type == CustomGCode::ToolChange); ++ custom_gcode_it);
+		for (; custom_gcode_it != custom_gcode_per_print_z.gcodes.rend() && (custom_gcode_it->print_z > lt.print_z + EPSILON || custom_gcode_it->type == CustomGCode::Type::ToolChange); ++ custom_gcode_it);
 		if (custom_gcode_it == custom_gcode_per_print_z.gcodes.rend())
 			// Custom G-codes were processed.
 			break;
@@ -648,13 +650,13 @@ void ToolOrdering::assign_custom_gcodes(const Print &print)
 			print_z_below = it_lt_below->print_z;
 		if (custom_gcode.print_z > print_z_below + 0.5 * EPSILON) {
 			// The custom G-code applies to the current layer.
-			bool color_change = custom_gcode.type == CustomGCode::ColorChange;
-			bool tool_change  = custom_gcode.type == CustomGCode::ToolChange;
+			bool color_change = custom_gcode.type == CustomGCode::Type::ColorChange;
+			bool tool_change  = custom_gcode.type == CustomGCode::Type::ToolChange;
 			bool pause_or_custom_gcode = ! color_change && ! tool_change;
 			bool apply_color_change = ! ignore_tool_and_color_changes &&
 				// If it is color change, it will actually be useful as the exturder above will print.
 				(color_change ? 
-					mode == CustomGCode::SingleExtruder || 
+					mode == CustomGCode::Mode::SingleExtruder || 
 						(custom_gcode.extruder <= int(num_extruders) && extruder_printing_above[unsigned(custom_gcode.extruder - 1)]) :
 				 	tool_change && tool_changes_as_color_changes);
 			if (pause_or_custom_gcode || apply_color_change)

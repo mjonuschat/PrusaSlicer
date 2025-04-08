@@ -23,14 +23,14 @@ static constexpr size_t PRINTER_TECHNOLOGIES_COUNT = size_t(PrinterTechnology::C
 
 typedef std::function<void(void)>                                   InvalidateSliceCallback;
 typedef std::function<void(void)>                                   TicksChangedCallback;
-typedef std::function<void(const CustomGCode::Info&)>               UpdateLayersSlider;
+typedef std::function<void(const Domain::CustomGCode::Info&)>               UpdateLayersSlider;
 typedef std::function<libvgcode::Palette(void)>                     GetExtruderColorsCallback;
 typedef std::function<bool(void)>                                   AutoColorChangeCallback;
 typedef std::function<void()>                                       NotifyEmptyColorChangeGCodeCallback;
 typedef std::function<void()>                                       NotifyEmptyAutoColorChangeCallback;
 typedef std::function<bool(ExtrudersSequence&)>                     GetExtrudersSequenceCallback;
 typedef std::function<int(const std::string&, int)>                 ShowInfoMsgCallback;
-typedef std::function<std::string(CustomGCode::Type)>               GetGCodeCallback;
+typedef std::function<std::string(Domain::CustomGCode::Type)>               GetGCodeCallback;
 typedef std::function<std::set<int>(float)>                         GetUsedExtrudersInPrintCallback;
 typedef std::function<void(void)>                                   GCodeViewTypeChangedCallback;
 typedef std::function<void(void)>                                   ExtrusionRoleVisibilityChangedCallback;
