@@ -15,6 +15,7 @@ public:
     void set_data(PixelFormat format, size_t level, size_t w, size_t h, const void* data);
     void set_sub_data(PixelFormat format, size_t level, size_t offset_x, size_t offset_y, size_t w, size_t h, const void* data);
     void set_filtering(TextureMinFilter min_filter, TextureMagFilter mag_filter);
+    void set_object_name(const std::string& object_name);
 
 private:
     friend class Device;

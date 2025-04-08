@@ -14,6 +14,7 @@
 
 namespace Slic3r::App::Render {
 class Device;
+class CommandBuffer;
 }
 
 
@@ -88,7 +89,7 @@ private:
     void begin_frame();
     void begin_imgui_frame();
     void end_imgui_frame();
-    void end_frame();
+    void end_frame(Render::CommandBuffer& cmd_buffer);
     void emit_enqueued_events();
 
 protected:

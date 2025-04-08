@@ -7,6 +7,7 @@
 #include "Slic3r/App/SidebarPrint.hpp"
 #include "Slic3r/App/Render/Device.hpp"
 #include "Slic3r/App/Render/CommandBuffer.hpp"
+#include "Slic3r/App/Render/ScopedDebugGroup.hpp"
 #include "Slic3r/App/I18N/I18N.hpp"
 #include "Slic3r/App/LibvgcodeWrapper/WrapperInputData.hpp"
 #include "Slic3r/App/LibvgcodeWrapper/Types.hpp"
@@ -35,19 +36,19 @@ namespace Slic3r::App::Preview {
 
 using Domain::TriangleMesh;
 
-void PreviewRenderModule::render_scene()
+void PreviewRenderModule::render_scene(Render::CommandBuffer& cmd_buffer)
 {
+    Render::ScopedDebugGroup event_imgui_render("Preview Render", cmd_buffer);
     m_device->load_state();
-    auto cmd_buffer = m_device->create_command_buffer();
 
-    cmd_buffer->set_viewport(Render::Rect::from(0, 0, m_screen_info));
-    cmd_buffer->set_clear_values({0.61f, 0.61f, 0.61f, 1.00f});
-    cmd_buffer->clear_buffers(true, true);
+    cmd_buffer.set_viewport(Render::Rect::from(0, 0, m_screen_info));
+    cmd_buffer.set_clear_values({0.61f, 0.61f, 0.61f, 1.00f});
+    cmd_buffer.clear_buffers(true, true);
 
     m_viewer.render_toolpaths(m_scene_presenter->scene().camera().position().cast<float>());
-    m_scene_presenter->render_scene(*cmd_buffer);
+    m_scene_presenter->render_scene(cmd_buffer);
 
-    cmd_buffer->submit();
+    cmd_buffer.submit();
 }
 
 #if ENABLED_DEBUG_VIEWER
@@ -186,7 +187,7 @@ static void render_imgui_debug_viewer_mode(Wrapper& viewer)
 }
 #endif // ENABLED_DEBUG_VIEWER_MODE
 
-void PreviewRenderModule::render_imgui()
+void PreviewRenderModule::render_imgui(Render::CommandBuffer& cmd_buffer)
 {
     // ! This function will be processed just once, 
     // but imgui_frame needs to be began before the toolbars initialization.

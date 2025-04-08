@@ -167,6 +167,14 @@ void CommandBuffer::submit()
     device.unbind_geometry();
 }
 
+void CommandBuffer::begin_debug_group(const std::string& message) {
+    // The cost of this should be negligible
+    static int id = 0;
+    glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, id++, message.size(), message.data());
+}
 
+void CommandBuffer::end_debug_group() {
+    glPopDebugGroup();
+}
 
 }

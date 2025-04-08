@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <string>
 #include "Slic3r/App/Render/Types.hpp"
 #include "Slic3r/App/Render/DrawCommand.hpp"
 #include "Slic3r/App/Render/WithInternal.hpp"
@@ -60,6 +61,9 @@ public:
 
     void bind_and_draw(const Geometry& g, const Material& material_override);
     void bind_and_draw_instanced(const Geometry& g, const Material& material_override, size_t instances_count);
+
+    void begin_debug_group(const std::string& message);
+    void end_debug_group();
 
     void submit();
 private:

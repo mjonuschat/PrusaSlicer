@@ -59,4 +59,11 @@ void Texture::set_filtering(TextureMinFilter min_filter, TextureMagFilter mag_fi
     glCheck();
 }
 
+void Texture::set_object_name(const std::string &object_name)
+{
+    m_device.get_internal_as<GL::GLDeviceInternal>().bind_texture(0, *this);
+    glObjectLabel(GL_TEXTURE, get_internal_as<GL::GLTextureInternal>().m_id, object_name.size(), object_name.data());
+    glCheck();
+}
+
 }

@@ -10,6 +10,7 @@
 #include <Slic3r/App/Render/CommandBuffer.hpp>
 #include <Slic3r/App/Render/Geometry.hpp>
 #include <Slic3r/App/Render/Texture.hpp>
+#include <Slic3r/App/Render/ScopedDebugGroup.hpp>
 
 #include <GL/glew.h>
 #include <Slic3r/Log.hpp>
@@ -61,20 +62,25 @@ void AbstractRenderCanvas::render()
         m_pending_font_global_scale.reset();
     }
 
+    std::unique_ptr<Render::CommandBuffer> cmd_buffer = device().create_command_buffer();
+
     assert_no_gl_error();
-    begin_frame();
-    assert_no_gl_error();
-    emit_enqueued_events();
-    assert_no_gl_error();
-    begin_imgui_frame();
-    assert_no_gl_error();
-    m_render_module->render_imgui();
-    assert_no_gl_error();
-    end_imgui_frame();
-    assert_no_gl_error();
-    m_render_module->render_scene();
-    assert_no_gl_error();
-    end_frame();
+    {
+        Render::ScopedDebugGroup event_new_frame("AbstractRenderCanvas", *cmd_buffer);
+        begin_frame();
+        assert_no_gl_error();
+        emit_enqueued_events();
+        assert_no_gl_error();
+        begin_imgui_frame();
+        assert_no_gl_error();
+        m_render_module->render_imgui(*cmd_buffer);
+        assert_no_gl_error();
+        end_imgui_frame();
+        assert_no_gl_error();
+        m_render_module->render_scene(*cmd_buffer);
+        assert_no_gl_error();
+        end_frame(*cmd_buffer);
+    }
 }
 
 void AbstractRenderCanvas::set_font_size(float font_size)
@@ -130,16 +136,15 @@ void AbstractRenderCanvas::end_imgui_frame()
 
 }
 
-void AbstractRenderCanvas::end_frame()
+void AbstractRenderCanvas::end_frame(Render::CommandBuffer& cmd_buffer)
 {
-
     const ImDrawData* draw_data = ImGui::GetDrawData();
     if (draw_data) {
+        Render::ScopedDebugGroup event_imgui_render("ImGui", cmd_buffer);
         auto& dev = Render::Context::instance().device();
         dev.load_state();
-        auto buffer = dev.create_command_buffer();
-        m_imgui_render->render(*buffer, draw_data);
-        buffer->submit();
+        m_imgui_render->render(cmd_buffer, draw_data);
+        cmd_buffer.submit();
     }
     end_frame_platform();
 }
