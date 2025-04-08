@@ -1,6 +1,7 @@
 #include "Slic3r/Biz/Scene/BedTracking.hpp"
 
 #include "Slic3r/Domain/Project.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 #include <libslic3r/Model.hpp>
 

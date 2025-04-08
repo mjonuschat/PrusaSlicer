@@ -15,6 +15,7 @@
 #include "Model.hpp"
 #include "ModelProcessing.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 #include "libslic3r/CustomGCode.hpp"
 
 #include "Format/AMF.hpp"

@@ -19,9 +19,13 @@
 #include "libslic3r/NSVGUtils.hpp"
 #include "libslic3r/Emboss.hpp"
 #include "admesh/stl.h"
-#include "libslic3r/EmbossShape.hpp"
+#include "Slic3r/Domain/EmbossShape.hpp"
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/Point.hpp"
+
+using Slic3r::Domain::EmbossShape;
+using Slic3r::Domain::ExPolygonsWithIds;
+using Slic3r::Domain::EmbossProjection;
 
 namespace {
 std::string get_file_name(const std::string &file_path)

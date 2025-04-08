@@ -23,7 +23,7 @@
 #include "Slic3r/Biz/Algorithms/Geometry/Geometry.hpp"
 #include "Slic3r/Domain/CustomGCode.hpp"
 #include "Slic3r/Domain/TextConfiguration.hpp"
-#include "EmbossShape.hpp"
+#include "Slic3r/Domain/EmbossShape.hpp"
 #include "TriangleSelector.hpp"
 
 #include <map>
@@ -488,7 +488,7 @@ public:
     // Calculate 2D convex hull of of a projection of the transformed printable volumes into the XY plane.
     // This method is cheap in that it does not make any unnecessary copy of the volume meshes.
     // This method is used by the auto arrange function.
-    Polygon       convex_hull_2d(const Transform3d &trafo_instance) const;
+    Domain::Polygon       convex_hull_2d(const Transform3d &trafo_instance) const;
 
     void center_around_origin(bool include_modifiers = true);
     void ensure_on_bed(bool allow_negative_z = false);
@@ -847,7 +847,7 @@ public:
 
     // Is set only when volume is Embossed Shape
     // Contain 2d information about embossed shape to be editabled
-    std::optional<EmbossShape> emboss_shape; 
+    std::optional<Domain::EmbossShape> emboss_shape; 
 
     // A parent object owning this modifier volume.
     ModelObject*        get_object() const { return this->object; }
@@ -1194,7 +1194,7 @@ public:
     // Transform an external vector.
     Vec3d transform_vector(const Vec3d& v, bool dont_translate = false) const;
     // To be called on an external polygon. It does not translate the polygon, only rotates and scales.
-    void transform_polygon(Polygon* polygon) const;
+    void transform_polygon(Domain::Polygon* polygon) const;
 
     const Transform3d& get_matrix() const { return m_transformation.get_matrix(); }
     Transform3d get_matrix_no_offset() const { return m_transformation.get_matrix_no_offset(); }

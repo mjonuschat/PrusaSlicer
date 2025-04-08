@@ -44,7 +44,7 @@ namespace pt = boost::property_tree;
 #include "libslic3r/miniz_extension.hpp"
 
 #include "Slic3r/Domain/TextConfiguration.hpp"
-#include "libslic3r/EmbossShape.hpp"
+#include "Slic3r/Domain/EmbossShape.hpp"
 #include "libslic3r/ExPolygonSerialize.hpp" 
 
 #include "libslic3r/NSVGUtils.hpp"
@@ -62,6 +62,10 @@ using Slic3r::Domain::SLA::SupportPointType;
 using Slic3r::Domain::EmbossStyle;
 using Slic3r::Domain::FontProp;
 using Slic3r::Domain::TextConfiguration;
+using Slic3r::Domain::EmbossShape;
+using Slic3r::Domain::HealedExPolygons;
+using Slic3r::Domain::ExPolygonsWithIds;
+using Slic3r::Domain::EmbossProjection;
 namespace CustomGCode = Slic3r::Domain::CustomGCode;
 
 // Slightly faster than sprintf("%.9g"), but there is an issue with the karma floating point formatter,

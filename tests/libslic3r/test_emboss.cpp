@@ -9,6 +9,7 @@
 #include <libslic3r/Utils.hpp> // for next_highest_power_of_2()
 #include <libslic3r/IntersectionPoints.hpp>
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
+#include <libslic3r/ExPolygonSerialize.hpp>
 
 
 using namespace Slic3r;
@@ -18,6 +19,9 @@ namespace triangle_mesh = Biz::Algorithms::TriangleMesh;
 using Domain::TextConfiguration;
 using Domain::EmbossStyle;
 using Domain::FontProp;
+using Domain::EmbossShape;
+using Domain::ExPolygonsWithIds;
+using Domain::ExPolygonsWithId;
 
 namespace Private{
         
@@ -570,7 +574,7 @@ TEST_CASE("UndoRedo TextConfiguration serialization", "[Emboss]")
     CHECK(tc.text == tc_loaded.text);
 }
 
-#include "libslic3r/EmbossShape.hpp"
+#include "Slic3r/Domain/EmbossShape.hpp"
 TEST_CASE("UndoRedo EmbossShape serialization", "[Emboss]")
 {
     EmbossShape emboss;

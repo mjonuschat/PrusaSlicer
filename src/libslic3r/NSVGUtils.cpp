@@ -14,12 +14,17 @@
 
 #include "Emboss.hpp" // heal for shape
 #include "libslic3r/ClipperUtils.hpp"
-#include "libslic3r/EmbossShape.hpp"
+#include "Slic3r/Domain/EmbossShape.hpp"
 #include "Slic3r/Exception.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/Polyline.hpp"
 
 namespace {    
+
+using Slic3r::Domain::EmbossShape;
+using Slic3r::Domain::HealedExPolygons;
+using Slic3r::Domain::ExPolygonsWithIds;
+
 using namespace Slic3r; // Polygon
 // see function nsvg__lineTo(NSVGparser* p, float x, float y)
 bool is_line(const float *p, float precision = 1e-4f);

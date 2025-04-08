@@ -102,7 +102,7 @@ SCENARIO("2D convex hull of sinking object", "[3mf]") {
             instance->set_scaling_factor({ 2.0, 2.0, 2.0 });
 
             // calculate 2D convex hull
-            Polygon hull_2d = object->convex_hull_2d(instance->get_transformation().get_matrix());
+            Domain::Polygon hull_2d = object->convex_hull_2d(instance->get_transformation().get_matrix());
 
             // verify result
             Points result = {

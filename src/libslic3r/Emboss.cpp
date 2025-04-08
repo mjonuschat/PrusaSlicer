@@ -19,7 +19,7 @@
 #include "IntersectionPoints.hpp"
 #include "admesh/stl.h"
 #include "libslic3r/AABBTreeIndirect.hpp"
-#include "libslic3r/EmbossShape.hpp"
+#include "Slic3r/Domain/EmbossShape.hpp"
 #include "libslic3r/ExPolygon.hpp"
 #include "Slic3r/Exception.hpp"
 #include "libslic3r/Polygon.hpp"
@@ -59,6 +59,10 @@ using Domain::FontProp;
 using Domain::EmbossStyle;
 #endif
 using Domain::EmbossStyles;
+using Domain::EmbossShape;
+using Domain::HealedExPolygons;
+using Domain::ExPolygonsWithId;
+using Domain::ExPolygonsWithIds;
 
 // NOTE: approach to heal shape by Clipper::Closing is not working
 

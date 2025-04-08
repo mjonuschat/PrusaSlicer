@@ -1,5 +1,4 @@
-#ifndef slic3r_EmbossShape_hpp_
-#define slic3r_EmbossShape_hpp_
+#pragma once
 
 #include <string>
 #include <optional>
@@ -9,12 +8,11 @@
 #include <cereal/types/vector.hpp>
 #include <cereal/types/optional.hpp>
 #include <cereal/archives/binary.hpp>
-#include "Point.hpp" // Transform3d
-#include "ExPolygon.hpp"
-#include "ExPolygonSerialize.hpp"
-#include "nanosvg/nanosvg.h" // NSVGimage
+#include "Slic3r/Domain/Types.hpp" // Transform3d
+#include "Slic3r/Domain/ExPolygon.hpp"
+#include <nanosvg/nanosvg.h>
 
-namespace Slic3r {
+namespace Slic3r::Domain {
 
 struct EmbossProjection{
     // Emboss depth, Size in local Z direction
@@ -82,7 +80,7 @@ struct EmbossShape
     // Only place for fill this is when load from .3mf
     // This is correction for volume transformation
     // Stored_Transform3d * fix_3mf_tr = Transform3d_before_store_to_3mf
-    std::optional<Slic3r::Transform3d> fix_3mf_tr;
+    std::optional<Transform3d> fix_3mf_tr;
 
     struct SvgFile {
         // File(.svg) path on local computer 
@@ -136,8 +134,6 @@ struct EmbossShape
 
 // Serialization through the Cereal library
 namespace cereal {
-template<class Archive> void serialize(Archive &ar, Slic3r::ExPolygonsWithId &o) { ar(o.id, o.expoly, o.is_healed); }
-template<class Archive> void serialize(Archive &ar, Slic3r::HealedExPolygons &o) { ar(o.expolygons, o.is_healed); }
+template<class Archive> void serialize(Archive &ar, Slic3r::Domain::ExPolygonsWithId &o) { ar(o.id, o.expoly, o.is_healed); }
+template<class Archive> void serialize(Archive &ar, Slic3r::Domain::HealedExPolygons &o) { ar(o.expolygons, o.is_healed); }
 }; // namespace cereal
-
-#endif // slic3r_EmbossShape_hpp_

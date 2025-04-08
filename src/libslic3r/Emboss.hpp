@@ -24,7 +24,7 @@
 
 #include "Polygon.hpp"
 #include "ExPolygon.hpp"
-#include "EmbossShape.hpp" // ExPolygonsWithIds
+#include "Slic3r/Domain/EmbossShape.hpp" // ExPolygonsWithIds
 #include "BoundingBox.hpp"
 #include "Slic3r/Domain/TextConfiguration.hpp"
 #include "libslic3r/Point.hpp"
@@ -169,14 +169,14 @@ namespace Emboss
     /// <param name="font_prop">User defined property of the font</param>
     /// <param name="was_canceled">Way to interupt processing</param>
     /// <returns>Inner polygon cw(outer ccw)</returns>
-    HealedExPolygons  text2shapes (FontFileWithCache &font, const char *text,         const Domain::FontProp &font_prop, const std::function<bool()> &was_canceled = []() {return false;});
-    ExPolygonsWithIds text2vshapes(FontFileWithCache &font, const std::wstring& text, const Domain::FontProp &font_prop, const std::function<bool()>& was_canceled = []() {return false;});
+    Domain::HealedExPolygons  text2shapes (FontFileWithCache &font, const char *text,         const Domain::FontProp &font_prop, const std::function<bool()> &was_canceled = []() {return false;});
+    Domain::ExPolygonsWithIds text2vshapes(FontFileWithCache &font, const std::wstring& text, const Domain::FontProp &font_prop, const std::function<bool()>& was_canceled = []() {return false;});
 
     const unsigned ENTER_UNICODE = static_cast<unsigned>('\n');
     /// Sum of character '\n'
     unsigned get_count_lines(const std::wstring &ws);
     unsigned get_count_lines(const std::string &text);
-    unsigned get_count_lines(const ExPolygonsWithIds &shape);
+    unsigned get_count_lines(const Domain::ExPolygonsWithIds &shape);
 
     /// <summary>
     /// Fix duplicit points and self intersections in polygons.
@@ -185,7 +185,7 @@ namespace Emboss
     /// <param name="is_non_zero">Fill type ClipperLib::pftNonZero for overlapping otherwise </param>
     /// <param name="max_iteration">Look at heal_expolygon()::max_iteration</param>
     /// <returns>Healed shapes with flag is fully healed</returns>
-    HealedExPolygons heal_polygons(const Polygons &shape, bool is_non_zero = true, unsigned max_iteration = 10);
+    Domain::HealedExPolygons heal_polygons(const Polygons &shape, bool is_non_zero = true, unsigned max_iteration = 10);
 
     /// <summary>
     /// NOTE: call Slic3r::union_ex before this call
@@ -482,11 +482,11 @@ namespace Emboss
 
 ///////////////////////
 // Move to ExPolygonsWithIds Utils
-void translate(ExPolygonsWithIds &e, const Point &p);
-BoundingBox get_extents(const ExPolygonsWithIds &e);
-void center(ExPolygonsWithIds &e);
+void translate(Domain::ExPolygonsWithIds &e, const Point &p);
+BoundingBox get_extents(const Domain::ExPolygonsWithIds &e);
+void center(Domain::ExPolygonsWithIds &e);
 // delta .. safe offset before union (use as boolean close)
 // NOTE: remove unprintable spaces between neighbor curves (made by linearization of curve)
-ExPolygons union_with_delta(EmbossShape &shape, float delta, unsigned max_heal_iteration);
+ExPolygons union_with_delta(Domain::EmbossShape &shape, float delta, unsigned max_heal_iteration);
 } // namespace Slic3r
 #endif // slic3r_Emboss_hpp_
