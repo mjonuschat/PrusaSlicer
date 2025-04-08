@@ -22,7 +22,7 @@
 #include "Slic3r/Domain/SLA/SupportPoint.hpp"
 #include "Slic3r/Biz/Algorithms/Geometry/Geometry.hpp"
 #include "Slic3r/Domain/CustomGCode.hpp"
-#include "TextConfiguration.hpp"
+#include "Slic3r/Domain/TextConfiguration.hpp"
 #include "EmbossShape.hpp"
 #include "TriangleSelector.hpp"
 
@@ -843,7 +843,7 @@ public:
 
     // Is set only when volume is Embossed Text type
     // Contain information how to re-create volume
-    std::optional<TextConfiguration> text_configuration;
+    std::optional<Domain::TextConfiguration> text_configuration;
 
     // Is set only when volume is Embossed Shape
     // Contain 2d information about embossed shape to be editabled

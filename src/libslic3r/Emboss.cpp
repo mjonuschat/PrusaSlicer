@@ -23,7 +23,7 @@
 #include "libslic3r/ExPolygon.hpp"
 #include "Slic3r/Exception.hpp"
 #include "libslic3r/Polygon.hpp"
-#include "libslic3r/TextConfiguration.hpp"
+#include "Slic3r/Domain/TextConfiguration.hpp"
 
 #define STB_TRUETYPE_IMPLEMENTATION // force following include to generate implementation
 
@@ -54,6 +54,11 @@ using namespace Slic3r;
 using namespace Emboss;
 using fontinfo_opt = std::optional<stbtt_fontinfo>;
 using Domain::Index3;
+using Domain::FontProp;
+#ifdef _WIN32
+using Domain::EmbossStyle;
+#endif
+using Domain::EmbossStyles;
 
 // NOTE: approach to heal shape by Clipper::Closing is not working
 

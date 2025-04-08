@@ -362,7 +362,6 @@ set(SLIC3R_SOURCES
     SurfaceCollection.hpp
     SurfaceMesh.hpp
     Technologies.hpp
-    TextConfiguration.hpp
     TriangleMeshSlicer.cpp
     TriangleMeshSlicer.hpp
     TriangulateWall.hpp

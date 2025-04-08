@@ -15,6 +15,9 @@ using namespace Slic3r;
 using Domain::Index3;
 using Domain::its_merge;
 namespace triangle_mesh = Biz::Algorithms::TriangleMesh;
+using Domain::TextConfiguration;
+using Domain::EmbossStyle;
+using Domain::FontProp;
 
 namespace Private{
         

@@ -2,8 +2,8 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#ifndef slic3r_TextConfiguration_hpp_
-#define slic3r_TextConfiguration_hpp_
+
+#pragma once
 
 #include <vector>
 #include <string>
@@ -12,9 +12,10 @@
 #include <cereal/types/optional.hpp>
 #include <cereal/types/string.hpp>
 #include <cereal/archives/binary.hpp>
-#include "Point.hpp" // Transform3d
+#include "Slic3r/Domain/Types.hpp"
+#include "Slic3r/Domain/Constants.hpp"
 
-namespace Slic3r {
+namespace Slic3r::Domain {
 
 /// <summary>
 /// User modifiable property of text style
@@ -76,19 +77,9 @@ struct FontProp
     /// </summary>
     /// <param name="line_height">Y size of text [in mm]</param>
     /// <param name="depth">Z size of text [in mm]</param>
-    FontProp(float line_height = 10.f) : size_in_mm(line_height), per_glyph(false)
-    {}
+    FontProp(float line_height = 10.f);
 
-    bool operator==(const FontProp& other) const {
-        return 
-            char_gap == other.char_gap && 
-            line_gap == other.line_gap &&
-            per_glyph == other.per_glyph &&
-            align == other.align &&
-            is_approx(size_in_mm, other.size_in_mm) && 
-            is_approx(boldness, other.boldness) &&
-            is_approx(skew, other.skew);
-    }
+    bool operator==(const FontProp& other) const;
 
     // undo / redo stack recovery
     template<class Archive> void save(Archive &ar) const
@@ -150,15 +141,7 @@ struct EmbossStyle
         file_path
     };
 
-    bool operator==(const EmbossStyle &other) const
-    {
-        return 
-            type == other.type &&
-            prop == other.prop &&
-            name == other.name &&
-            path == other.path
-            ;
-    }
+    bool operator==(const EmbossStyle &other) const;
 
     // undo / redo stack recovery
     template<class Archive> void serialize(Archive &ar){ ar(name, path, type, prop); }
@@ -187,5 +170,3 @@ struct TextConfiguration
 };    
 
 } // namespace Slic3r
-
-#endif // slic3r_TextConfiguration_hpp_

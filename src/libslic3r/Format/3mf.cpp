@@ -43,7 +43,7 @@ namespace pt = boost::property_tree;
 
 #include "libslic3r/miniz_extension.hpp"
 
-#include "libslic3r/TextConfiguration.hpp"
+#include "Slic3r/Domain/TextConfiguration.hpp"
 #include "libslic3r/EmbossShape.hpp"
 #include "libslic3r/ExPolygonSerialize.hpp" 
 
@@ -59,6 +59,9 @@ using Slic3r::Domain::RepairedMeshErrors;
 using Slic3r::Domain::SLA::SupportPoint;
 using Slic3r::Domain::SLA::PointsStatus;
 using Slic3r::Domain::SLA::SupportPointType;
+using Slic3r::Domain::EmbossStyle;
+using Slic3r::Domain::FontProp;
+using Slic3r::Domain::TextConfiguration;
 namespace CustomGCode = Slic3r::Domain::CustomGCode;
 
 // Slightly faster than sprintf("%.9g"), but there is an issue with the karma floating point formatter,
@@ -462,7 +465,7 @@ namespace Slic3r {
                 unsigned int last_triangle_id;
                 MetadataList metadata;
                 RepairedMeshErrors mesh_stats;
-                std::optional<TextConfiguration> text_configuration;
+                std::optional<Domain::TextConfiguration> text_configuration;
                 std::optional<EmbossShape> shape_configuration;
                 VolumeMetadata(unsigned int first_triangle_id, unsigned int last_triangle_id)
                     : first_triangle_id(first_triangle_id)

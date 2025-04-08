@@ -26,6 +26,9 @@ add_library(slic3r-domain
 
     include/Slic3r/Domain/SLA/SupportPoint.hpp
     src/Slic3r/Domain/SLA/SupportPoint.cpp
+
+    include/Slic3r/Domain/TextConfiguration.hpp
+    src/Slic3r/Domain/TextConfiguration.cpp
 )
 
 target_include_directories(slic3r-domain PUBLIC include)
