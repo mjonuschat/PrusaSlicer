@@ -23,6 +23,7 @@
 #include <boost/log/trivial.hpp>
 
 #include "libslic3r/MultipleBeds.hpp"
+#include "libslic3r/Utils.hpp"
 
 // #define SLAPRINT_DO_BENCHMARK
 

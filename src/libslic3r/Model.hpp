@@ -16,7 +16,6 @@
 #include "Slic3r/Domain/SLA/DrainHole.hpp"
 #include "ObjectID.hpp"
 #include "Slic3r/Domain/Point.hpp"
-#include "Slicing.hpp"
 #include "libslic3r/PrintConfig.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "Slic3r/Domain/SLA/SupportPoint.hpp"
@@ -367,6 +366,10 @@ enum class ModelVolumeType : int {
     SUPPORT_ENFORCER,
 };
 
+
+using LayerHeightRange = std::pair<double,double>;
+using LayerConfigRanges = std::map<LayerHeightRange, ModelConfig>;
+
 // A printable object, possibly having multiple print volumes (each with its own set of parameters and materials),
 // and possibly having multiple modifier volumes, each modifier volume with its set of parameters and materials.
 // Each ModelObject may be instantiated mutliple times, each instance having different placement on the print bed,
@@ -385,7 +388,7 @@ public:
     // Configuration parameters specific to a single ModelObject, overriding the global Slic3r settings.
     ModelConfigObject 		config;
     // Variation of a layer thickness for spans of Z coordinates + optional parameter overrides.
-    t_layer_config_ranges   layer_config_ranges;
+    LayerConfigRanges       layer_config_ranges;
     // Profile of increasing z to a layer height, to be linearly interpolated when calculating the layers.
     // The pairs of <z, layer_height> are packed into a 1D array.
     LayerHeightProfile      layer_height_profile;

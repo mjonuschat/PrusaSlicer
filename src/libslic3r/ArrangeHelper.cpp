@@ -11,6 +11,7 @@
 #include "boost/regex.hpp"
 #include "boost/property_tree/json_parser.hpp"
 #include "boost/algorithm/string/replace.hpp"
+#include "libslic3r/Utils.hpp"
 #include <boost/nowide/fstream.hpp>
 
 

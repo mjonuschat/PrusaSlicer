@@ -13,6 +13,7 @@
 #include <libslic3r/SLA/SupportIslands/VoronoiGraphUtils.hpp>
 #include <libslic3r/SLA/SupportIslands/UniformSupportIsland.hpp>
 #include <libslic3r/SLA/SupportIslands/PolygonUtils.hpp>
+#include "libslic3r/Utils.hpp"
 #include "nanosvg/nanosvg.h"    // load SVG file
 #include "sla_test_utils.hpp"
 #include "Slic3r/Biz/Algorithms/Point.hpp"
