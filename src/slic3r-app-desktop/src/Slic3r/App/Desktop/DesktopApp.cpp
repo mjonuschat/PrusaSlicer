@@ -15,10 +15,19 @@
 
 #include <boost/log/trivial.hpp>
 
-wxIMPLEMENT_APP(Slic3r::App::Desktop::DesktopApp);
-
+wxIMPLEMENT_APP_NO_MAIN(Slic3r::App::Desktop::DesktopApp);
 
 namespace Slic3r::App::Desktop {
+
+int run(const Slic3r::App::InitParams& init_params)
+{
+    auto* app = new Slic3r::App::Desktop::DesktopApp();
+    Slic3r::App::Desktop::DesktopApp::SetInstance(app);
+    int argc = init_params.argc;
+    char** argv = init_params.argv;
+    app->set_init_params(init_params); // this is called before OnInit.
+    return wxEntry(argc, argv);
+}
 
 bool DesktopApp::OnInit()
 {

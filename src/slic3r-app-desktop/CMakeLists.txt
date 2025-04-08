@@ -1,4 +1,6 @@
 set(SLIC3R_APP_DESKTOP_FILES
+        include/Slic3r/App/Desktop/Run.hpp
+
         src/Slic3r/App/Desktop/DesktopApp.cpp
         src/Slic3r/App/Desktop/DesktopApp.hpp
         src/Slic3r/App/Desktop/MainFrame.cpp
@@ -48,13 +50,8 @@ set(SLIC3R_APP_DESKTOP_FILES
         src/Slic3r/App/Desktop/Preset/Manipulators.hpp
 )
 
-# Create a slic3r-app-desktop executable
-# Process mainfests for various platforms.
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../platform/msw/slic3r-app-desktop.rc.in ${CMAKE_CURRENT_BINARY_DIR}/slic3r-app-desktop.rc @ONLY)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../platform/msw/PrusaSlicer.manifest.in ${CMAKE_CURRENT_BINARY_DIR}/slic3r-app-desktop.manifest @ONLY)
 
-add_executable(slic3r-app-desktop WIN32 ${SLIC3R_APP_DESKTOP_FILES} 
-                                        ${CMAKE_CURRENT_BINARY_DIR}/slic3r-app-desktop.rc)
+add_library(slic3r-app-desktop ${SLIC3R_APP_DESKTOP_FILES} )
 
 find_package(NanoSVG REQUIRED)
 
@@ -64,20 +61,12 @@ target_link_libraries(slic3r-app-desktop PUBLIC
         slic3r-shared slic3r-shared-wx
 )
 
+target_include_directories(slic3r-app-desktop PUBLIC include)
+
 # See https://github.com/prusa3d/PrusaSlicer/issues/4584.
 if (UNIX AND NOT APPLE)
     find_package(GTK3 REQUIRED)
     target_link_libraries(slic3r-app-desktop PUBLIC GTK3::GTK3)
-endif ()
-
-if (MSVC)
-    # Manifest is provided through PrusaSlicer.rc, don't generate your own.
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /MANIFEST:NO")
-endif ()
-
-slic3r_link_resources(slic3r-app-desktop)
-if (WIN32)
-    prusaslicer_copy_dlls(slic3r-app-desktop)
 endif ()
 
 install(TARGETS slic3r-app-desktop RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")

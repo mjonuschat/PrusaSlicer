@@ -323,6 +323,8 @@ if (SLIC3R3_ENABLED)
         add_subdirectory(slic3r-platform-wx)
         add_subdirectory(slic3r-app-wxtest)
         add_subdirectory(slic3r-app-desktop)
+        add_subdirectory(slic3r-app-cli)
+        add_subdirectory(slic3r-app-launcher)
     endif ()
 
     add_subdirectory(slic3r-render)
