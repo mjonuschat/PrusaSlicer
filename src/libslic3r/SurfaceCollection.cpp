@@ -77,7 +77,7 @@ void SurfaceCollection::filter_by_type(SurfaceType type, Polygons *polygons) con
 {
     for (const Surface &surface : this->surfaces)
         if (surface.surface_type == type)
-            Slic3r::append(*polygons, to_polygons(surface.expolygon));
+            Slic3r::append(*polygons, Algorithms::ExPolygon::to_polygons(surface.expolygon));
 }
 
 void SurfaceCollection::keep_type(const SurfaceType type)

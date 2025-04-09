@@ -934,8 +934,8 @@ Field create_field(const Slic3r::ExPolygon &island, float offset_delta, const st
     // Use offset with Z coordinate and then connect by Z coordinate
     const double angle_tolerace = 1e-4;
     const double distance_tolerance = 20.;
-    Lines island_lines = to_lines(island);
-    Lines inner_lines = to_lines(inner);
+    Lines island_lines = Algorithms::ExPolygon::to_lines(island);
+    Lines inner_lines = Algorithms::ExPolygon::to_lines(inner);
     size_t inner_line_index = 0; // continue where prev seach stop
     // Convert index map from island index to inner index
     size_t invalid_conversion = island_lines.size();
@@ -1343,7 +1343,7 @@ Slic3r::Points sample_expolygon(const ExPolygon &expoly, coord_t triangle_side){
     coord_t triangle_height = static_cast<coord_t>(std::round(triangle_side * coef2));
 
     // IMPROVE: use line end y
-    Lines lines = to_lines(expoly);
+    Lines lines = Algorithms::ExPolygon::to_lines(expoly);
     // remove lines paralel with axe x
     lines.erase(std::remove_if(lines.begin(), lines.end(),
                                [](const Line &l) {
@@ -1465,7 +1465,7 @@ SupportIslandPoints sample_outline(const Field &field, const SampleConfig &confi
     auto add_circle_sample = [max_align_distance, sample_distance, &add_sample]
         (const Polygon &polygon) {
         // IMPROVE: find interesting points to start sampling
-        Lines lines = to_lines(polygon);
+        Lines lines = Algorithms::Polygon::to_lines(polygon);
         std::vector<double> lengths;
         lengths.reserve(lines.size());
         double sum_lengths = 0;
@@ -1578,7 +1578,7 @@ SupportIslandPoints sample_outline(const Field &field, const SampleConfig &confi
             }
         } while (!is_outline[inner_index + inner_offset]);
 
-        const Lines inner_lines = to_lines(inner_polygon);
+        const Lines inner_lines = Algorithms::Polygon::to_lines(inner_polygon);
         for (;inner_index != stop_index; ++inner_index) {
             if (inner_index == inner_lines.size())
                 inner_index = 0;
@@ -2674,7 +2674,7 @@ SupportIslandPoints uniform_support_island(
     }
 
     Geometry::VoronoiDiagram vd;
-    Lines lines = to_lines(simplified_island);
+    Lines lines = Algorithms::ExPolygon::to_lines(simplified_island);
     vd.construct_voronoi(lines.begin(), lines.end());
     assert(vd.get_issue_type() == Geometry::VoronoiDiagram::IssueType::NO_ISSUE_DETECTED);
     if (vd.get_issue_type() != Geometry::VoronoiDiagram::IssueType::NO_ISSUE_DETECTED) {

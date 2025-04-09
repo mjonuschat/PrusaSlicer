@@ -193,7 +193,7 @@ bool has_duplicate_points(const Polygons &polys)
         }
     };
     ankerl::unordered_dense::set<Point, PointHash> allpts;
-    allpts.reserve(count_points(polys));
+    allpts.reserve(Algorithms::Polygon::count_points(polys));
     for (const Polygon &poly : polys)
         for (const Point &pt : poly.points)
         if (! allpts.insert(pt).second)
@@ -275,23 +275,6 @@ bool remove_sticks(Polygons &polys)
     return modified;
 }
 
-bool remove_small(Polygons &polys, double min_area)
-{
-    bool modified = false;
-    size_t j = 0;
-    for (size_t i = 0; i < polys.size(); ++ i) {
-        if (std::abs(polys[i].area()) >= min_area) {
-            if (j < i) 
-                std::swap(polys[i].points, polys[j].points);
-            ++ j;
-        } else
-            modified = true;
-    }
-    if (j < polys.size())
-        polys.erase(polys.begin() + j, polys.end());
-    return modified;
-}
-
 void remove_collinear(Polygon &poly)
 {
     if (poly.points.size() > 2) {
@@ -324,12 +307,6 @@ void remove_collinear(Polygon &poly)
         }
         poly.points.push_back(pp[i]);
     }
-}
-
-void remove_collinear(Polygons &polys)
-{
-	for (Polygon &poly : polys)
-		remove_collinear(poly);
 }
 
 static inline void simplify_polygon_impl(const Points &points, double tolerance, bool strictly_simple, Polygons &out)
@@ -365,7 +342,7 @@ Polygons polygons_simplify(const Polygons &source_polygons, double tolerance, bo
     out.reserve(source_polygons.size());
     for (const Polygon &source_polygon : source_polygons) {
         // Run Douglas / Peucker simplification algorithm on an open polyline (by repeating the first point at the end of the polyline),
-        simplify_polygon_impl(to_polyline(source_polygon).points, tolerance, strictly_simple, out);
+        simplify_polygon_impl(Algorithms::Polygon::to_polyline(source_polygon).points, tolerance, strictly_simple, out);
     }
     return out;
 }

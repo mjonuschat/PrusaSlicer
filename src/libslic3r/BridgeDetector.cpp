@@ -70,7 +70,7 @@ void BridgeDetector::initialize()
 	contours.reserve(this->lower_slices.size());
 	for (const ExPolygon &expoly : this->lower_slices)
 		contours.push_back(expoly.contour);
-    this->_edges = intersection_pl(to_polylines(grown), contours);
+    this->_edges = intersection_pl(Algorithms::Polygon::to_polylines(grown), contours);
     
     #ifdef SLIC3R_DEBUG
     printf("  bridge has %zu support(s)\n", this->_edges.size());
@@ -199,7 +199,7 @@ std::vector<double> BridgeDetector::bridge_direction_candidates() const
     
     // we also test angles of each bridge contour
     {
-        Lines lines = to_lines(this->expolygons);
+        Lines lines = Algorithms::ExPolygon::to_lines(this->expolygons);
         for (Lines::const_iterator line = lines.begin(); line != lines.end(); ++line)
             angles.push_back(line->direction());
     }
@@ -249,9 +249,9 @@ void ExPolygon::get_trapezoids(ExPolygon clone, Polygons* polygons, double angle
 // other parts of the object have x coordinates in the middle)
 static void get_trapezoids2(const ExPolygon& expoly, Polygons* polygons)
 {
-    Polygons     src_polygons = to_polygons(expoly);
+    Polygons     src_polygons = Algorithms::ExPolygon::to_polygons(expoly);
     // get all points of this ExPolygon
-    const Points pp = to_points(src_polygons);
+    const Points pp = Algorithms::Polygon::to_points(src_polygons);
 
     // build our bounding box
     BoundingBox bb(pp);
@@ -296,9 +296,9 @@ Polygons BridgeDetector::coverage(double angle) const
 
     if (angle != -1) {
         // Get anchors, convert them to Polygons and rotate them.
-        Polygons anchors = to_polygons(this->_anchor_regions);
-        polygons_rotate(anchors, PI/2.0 - angle);
-        
+        Polygons anchors = Algorithms::ExPolygon::to_polygons(this->_anchor_regions);
+        Algorithms::Polygon::rotate(anchors, PI / 2. - angle);
+
         for (ExPolygon expolygon : this->expolygons) {
             // Clone our expolygon and rotate it so that we work with vertical lines.
             expolygon.rotate(PI/2.0 - angle);            
@@ -325,8 +325,8 @@ Polygons BridgeDetector::coverage(double angle) const
         // instead of exact overlaps.
         covered = union_(covered);
         // Intersect trapezoids with actual bridge area to remove extra margins and append it to result.
-        polygons_rotate(covered, -(PI/2.0 - angle));
-    	covered = intersection(this->expolygons, covered);
+        Algorithms::Polygon::rotate(covered, -(PI / 2. - angle));
+        covered = intersection(this->expolygons, covered);
 #if 0
         {
             my @lines = map @{$_->lines}, @$trapezoids;
@@ -361,7 +361,7 @@ BridgeDetector::unsupported_edges(double angle, Polylines* unsupported) const
 
     for (ExPolygons::const_iterator it_expoly = this->expolygons.begin(); it_expoly != this->expolygons.end(); ++ it_expoly) {    
         // get unsupported bridge edges (both contour and holes)
-        Lines unsupported_lines = to_lines(diff_pl(to_polylines(*it_expoly), grown_lower));
+        Lines unsupported_lines = to_lines(diff_pl(Algorithms::ExPolygon::to_polylines(*it_expoly), grown_lower));
         /*  Split into individual segments and filter out edges parallel to the bridging angle
             TODO: angle tolerance should probably be based on segment length and flow width,
             so that we build supports whenever there's a chance that at least one or two bridge

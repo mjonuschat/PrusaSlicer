@@ -41,6 +41,7 @@
 #include "libslic3r/Utils.hpp"
 #include "libslic3r/libslic3r.h"
 
+using namespace Slic3r::Biz;
 
 namespace Slic3r {
 
@@ -983,7 +984,7 @@ void PrintObject::slice_volumes()
 	                        static const float eps = float(scale_(m_config.slice_closing_radius.value) * 1.5);
 	                        if (elfoot > 0.f) {
 	                        	lslices_1st_layer = offset_ex(layer->merged(eps), std::min(xy_compensation_scaled, 0.f) - eps);
-								trimming = to_polygons(Slic3r::elephant_foot_compensation(lslices_1st_layer,
+								trimming = Algorithms::ExPolygon::to_polygons(Slic3r::elephant_foot_compensation(lslices_1st_layer,
 									layer->m_regions.front()->flow(frExternalPerimeter), unscale<double>(elfoot)));
 	                        } else
 		                        trimming = offset(layer->merged(float(SCALED_EPSILON)), xy_compensation_scaled - float(SCALED_EPSILON));
@@ -1032,15 +1033,15 @@ std::vector<Polygons> PrintObject::slice_support_volumes(const ModelVolumeType m
                 if (slices.empty()) {
                     slices.reserve(slices2.size());
                     for (ExPolygons &src : slices2)
-                        slices.emplace_back(to_polygons(std::move(src)));
+                        slices.emplace_back(Algorithms::ExPolygon::to_polygons(std::move(src)));
                 } else if (!slices2.empty()) {
                     if (merge_layers.empty())
                         merge_layers.assign(zs.size(), false);
                     for (size_t i = 0; i < zs.size(); ++ i) {
                         if (slices[i].empty())
-                            slices[i] = to_polygons(std::move(slices2[i]));
+                            slices[i] = Algorithms::ExPolygon::to_polygons(std::move(slices2[i]));
                         else if (! slices2[i].empty()) {
-                            append(slices[i], to_polygons(std::move(slices2[i])));
+                            append(slices[i], Algorithms::ExPolygon::to_polygons(std::move(slices2[i])));
                             merge_layers[i] = true;
                             merge = true;
                         }

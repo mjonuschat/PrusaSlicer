@@ -47,7 +47,7 @@ class ConcaveHull {
 public:
 
     ConcaveHull(const ExPolygons& polys, double merge_dist, ThrowOnCancel thr)
-        : ConcaveHull{to_polygons(polys), merge_dist, thr} {}
+        : ConcaveHull{Slic3r::Biz::Algorithms::ExPolygon::to_polygons(polys), merge_dist, thr} {}
 
     ConcaveHull(const Polygons& polys, double mergedist, ThrowOnCancel thr);
 

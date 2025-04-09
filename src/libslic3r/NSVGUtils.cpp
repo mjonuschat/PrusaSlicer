@@ -90,7 +90,7 @@ Polygons to_polygons(const NSVGimage &image, const NSVGLineParams &param)
         const LinesPath lines_path = linearize_path(shape->paths, param);
         Slic3r::append(result, lines_path.polygons);
         // close polyline to create polygon
-        Slic3r::append(result, to_polygons(lines_path.polylines));
+        Slic3r::append(result, Algorithms::Polyline::to_polygons(lines_path.polylines));
     }
     return result;
 }
@@ -399,7 +399,7 @@ HealedExPolygons fill_to_expolygons(const LinesPath &lines_path, const NSVGshape
     Polygons fill = lines_path.polygons; // copy
 
     // close polyline to create polygon
-    Slic3r::append(fill, to_polygons(lines_path.polylines));
+    Slic3r::append(fill, Algorithms::Polyline::to_polygons(lines_path.polylines));
     if (fill.empty())
         return {};
 
@@ -549,7 +549,7 @@ HealedExPolygons stroke_to_expolygons(const LinesPath &lines_path, const NSVGsha
         for (const Polyline &polyline : lines_path.polylines)
             Slic3r::append(dashes, to_dashes(polyline, params));
         for (const Polygon &polygon : lines_path.polygons)
-            Slic3r::append(dashes, to_dashes(to_polyline(polygon), params));
+            Slic3r::append(dashes, to_dashes(Algorithms::Polygon::to_polyline(polygon), params));
         result = offset(dashes, stroke_width / 2, join_type, mitter, end_type);
     } else {
         result = contour_to_polygons(lines_path.polygons, stroke_width, join_type, mitter);

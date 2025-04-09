@@ -77,6 +77,7 @@
 
 #include <cassert>
 
+using namespace Slic3r::Biz;
 using namespace Slic3r::FFFSupport;
 
 namespace Slic3r {
@@ -487,7 +488,7 @@ Polygons collect_region_slices_by_type(const Layer &layer, SurfaceType surface_t
     for (const LayerRegion *region : layer.regions())
         for (const Surface &surface : region->slices())
             if (surface.surface_type == surface_type)
-                polygons_append(out, surface.expolygon);
+                Algorithms::Polygon::append(out, surface.expolygon);
     return out;
 }
 
@@ -546,8 +547,8 @@ public:
                 m_trimming_polygons_rotated = *trimming_polygons;
                 m_support_polygons  = &m_support_polygons_rotated;
                 m_trimming_polygons = &m_trimming_polygons_rotated;
-                polygons_rotate(m_support_polygons_rotated, - params.support_angle);
-                polygons_rotate(m_trimming_polygons_rotated, - params.support_angle);
+                Algorithms::Polygon::rotate(m_support_polygons_rotated, - params.support_angle);
+                Algorithms::Polygon::rotate(m_trimming_polygons_rotated, - params.support_angle);
             }
 
             // Resolution of the sparse support grid.
@@ -686,7 +687,7 @@ public:
                     // If any of the sample is inside this island, add this island to the output.
                     for (auto &sample_inside : samples_inside)
                         if (sample_inside.second) {
-                            polygons_append(out, std::move(island));
+                            Algorithms::Polygon::append(out, std::move(island));
                             island.clear();
                             break;
                         }
@@ -714,8 +715,10 @@ public:
             svg.Close();
     #endif /* SLIC3R_DEBUG */
 
-            if (m_support_angle != 0.)
-                polygons_rotate(out, m_support_angle);
+            if (m_support_angle != 0.) {
+                Algorithms::Polygon::rotate(out, m_support_angle);
+            }
+
             return out;
         }
         case smsTree:
@@ -1067,7 +1070,7 @@ namespace SupportMaterialInternal {
                             poly.reverse();
                         Slic3r::append(out, offset(poly, exp, SUPPORT_SURFACES_OFFSET_PARAMETERS));
                         Polygons holes = offset(poly, - exp, SUPPORT_SURFACES_OFFSET_PARAMETERS);
-                        polygons_reverse(holes);
+                        Algorithms::Polygon::reverse(holes);
                         Slic3r::append(out, holes);
                     }
                 } else if (ep.size() >= 2) {
@@ -1185,7 +1188,7 @@ static inline std::tuple<Polygons, Polygons, Polygons, float> detect_overhangs(
         overhang_polygons = collect_slices_outer(layer);
 #else
         // Don't fill in the holes. The user may apply a higher raft_expansion if one wants a better 1st layer adhesion.
-        overhang_polygons = to_polygons(layer.lslices);
+        overhang_polygons = Algorithms::ExPolygon::to_polygons(layer.lslices);
 #endif
         // Expand for better stability.
         contact_polygons = object_config.raft_expansion.value > 0 ? expand(overhang_polygons, scaled<float>(object_config.raft_expansion.value)) : overhang_polygons;
@@ -1703,7 +1706,7 @@ SupportGeneratorLayersPtr PrintObjectSupportMaterial::top_contact_layers(
             for (size_t layer_id = range.begin(); layer_id < range.end(); ++ layer_id) 
             {
                 const Layer        &layer                = *object.layers()[layer_id];
-                Polygons            lower_layer_polygons = (layer_id == 0) ? Polygons() : to_polygons(object.layers()[layer_id - 1]->lslices);
+                Polygons            lower_layer_polygons = (layer_id == 0) ? Polygons() : Algorithms::ExPolygon::to_polygons(object.layers()[layer_id - 1]->lslices);
                 SlicesMarginCache   slices_margin;
 
                 auto [overhang_polygons, contact_polygons, enforcer_polygons, no_interface_offset] =
@@ -1900,7 +1903,7 @@ static inline std::pair<Polygons, Polygons> project_support_to_grid(const Layer 
 #endif /* SLIC3R_DEBUG */
 
     remove_sticks(overhangs_projection);
-    remove_degenerate(overhangs_projection);
+    Algorithms::Polygon::remove_degenerate(overhangs_projection);
 
 #ifdef SLIC3R_DEBUG
     SVG::export_expolygons(debug_out_path("support-support-areas-%s-raw-cleaned-%d-%lf.svg", debug_name, iRun, layer.print_z),

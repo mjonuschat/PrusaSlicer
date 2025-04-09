@@ -59,7 +59,7 @@ std::vector<Vec3f> BedRenderHelper::plate_grid(const Domain::Bed& bed)
     // clip with a slightly grown expolygon because our lines lay on the contours and may get erroneously clipped
     Lines lines = Algorithms::Polyline::to_lines(intersection_pl(gridlines, offset(contour, float(SCALED_EPSILON))));
     // append bed contours
-    Lines contour_lines = to_lines(contour);
+    Lines contour_lines = Algorithms::ExPolygon::to_lines(contour);
     std::copy(contour_lines.begin(), contour_lines.end(), std::back_inserter(lines));
 
     ret.reserve(2 * lines.size());

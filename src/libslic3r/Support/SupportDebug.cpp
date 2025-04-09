@@ -15,6 +15,8 @@
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/libslic3r.h"
 
+using namespace Slic3r::Biz;
+
 namespace Slic3r::FFFSupport {
 
 const char* support_surface_type_to_color_name(const SupporLayerType surface_type)
@@ -78,7 +80,7 @@ void export_print_z_polygons_to_svg(const char *path, SupportGeneratorLayer ** c
     for (int i = 0; i < n_layers; ++ i)
         svg.draw(union_ex(layers[i]->polygons), support_surface_type_to_color_name(layers[i]->layer_type), transparency);
     for (int i = 0; i < n_layers; ++ i)
-        svg.draw(to_polylines(layers[i]->polygons), support_surface_type_to_color_name(layers[i]->layer_type));
+        svg.draw(Algorithms::Polygon::to_polylines(layers[i]->polygons), support_surface_type_to_color_name(layers[i]->layer_type));
     export_support_surface_type_legend_to_svg(svg, legend_pos);
     svg.Close();
 }
@@ -100,7 +102,7 @@ void export_print_z_polygons_and_extrusions_to_svg(
     for (int i = 0; i < n_layers; ++ i)
         svg.draw(union_ex(layers[i]->polygons), support_surface_type_to_color_name(layers[i]->layer_type), transparency);
     for (int i = 0; i < n_layers; ++ i)
-        svg.draw(to_polylines(layers[i]->polygons), support_surface_type_to_color_name(layers[i]->layer_type));
+        svg.draw(Algorithms::Polygon::to_polylines(layers[i]->polygons), support_surface_type_to_color_name(layers[i]->layer_type));
 
     Polygons polygons_support, polygons_interface;
     support_layer.support_fills.polygons_covered_by_width(polygons_support, float(SCALED_EPSILON));

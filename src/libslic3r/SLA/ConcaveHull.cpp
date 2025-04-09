@@ -138,7 +138,7 @@ ExPolygons ConcaveHull::to_expolygons() const
 
 ExPolygons offset_waffle_style_ex(const ConcaveHull &hull, coord_t delta)
 {
-    return to_expolygons(offset_waffle_style(hull, delta));
+    return Algorithms::Polygon::to_expolygons(offset_waffle_style(hull, delta));
 }
 
 Polygons offset_waffle_style(const ConcaveHull &hull, coord_t delta)

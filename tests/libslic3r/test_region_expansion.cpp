@@ -9,6 +9,7 @@
 #include "Slic3r/Biz/Algorithms/SVG.hpp"
 
 using namespace Slic3r;
+using namespace Slic3r::Biz;
 using namespace Catch;
 
 //#define DEBUG_TEMP_DIR "d:\\temp\\"
@@ -29,7 +30,7 @@ SCENARIO("Region expansion basics", "[RegionExpansion]") {
                 REQUIRE(expanded.size() == 1);
             }
             THEN("The area of the anchor is 10mm2") {
-                REQUIRE(area(expanded.front()) == Approx(expansion * ten));
+                REQUIRE(Algorithms::Polygon::area(expanded.front()) == Approx(expansion * ten));
             }
         };
 
@@ -63,8 +64,8 @@ SCENARIO("Region expansion basics", "[RegionExpansion]") {
                 REQUIRE(expanded.front().size() == 2);
             }
             THEN("The area of each anchor is 10mm2") {
-                REQUIRE(area(expanded.front().front()) == Approx(expansion * ten));
-                REQUIRE(area(expanded.front().back()) == Approx(expansion * ten));
+                REQUIRE(Algorithms::Polygon::area(expanded.front().front()) == Approx(expansion * ten));
+                REQUIRE(Algorithms::Polygon::area(expanded.front().back()) == Approx(expansion * ten));
             }
         }
 
@@ -79,8 +80,8 @@ SCENARIO("Region expansion basics", "[RegionExpansion]") {
                 REQUIRE(expanded.front().size() == 2);
             }
             THEN("The area of each anchor is 100mm2") {
-                REQUIRE(area(expanded.front().front()) == Approx(sqr<double>(ten)));
-                REQUIRE(area(expanded.front().back()) == Approx(sqr<double>(ten)));
+                REQUIRE(Algorithms::Polygon::area(expanded.front().front()) == Approx(sqr<double>(ten)));
+                REQUIRE(Algorithms::Polygon::area(expanded.front().back()) == Approx(sqr<double>(ten)));
             }
         }
     }
@@ -111,10 +112,10 @@ SCENARIO("Region expansion basics", "[RegionExpansion]") {
             THEN("The area of each anchor is 10mm2") {
                 double a = expansion * ten + M_PI * sqr(expansion) / 4;
                 double eps = sqr(scaled<double>(0.1));
-                REQUIRE(is_approx(area(expanded.front().front()), a, eps));
-                REQUIRE(is_approx(area(expanded.front().back()), a, eps));
-                REQUIRE(is_approx(area(expanded.back().front()), a, eps));
-                REQUIRE(is_approx(area(expanded.back().back()), a, eps));
+                REQUIRE(is_approx(Algorithms::Polygon::area(expanded.front().front()), a, eps));
+                REQUIRE(is_approx(Algorithms::Polygon::area(expanded.front().back()), a, eps));
+                REQUIRE(is_approx(Algorithms::Polygon::area(expanded.back().front()), a, eps));
+                REQUIRE(is_approx(Algorithms::Polygon::area(expanded.back().back()), a, eps));
             }
         }
     }
@@ -140,7 +141,7 @@ SCENARIO("Region expansion basics", "[RegionExpansion]") {
                 REQUIRE(expanded.size() == 1);
             }
             THEN("The area of anchor is correct") {
-                double area_calculated = area(expanded.front());
+                double area_calculated = Algorithms::Polygon::area(expanded.front());
                 double area_expected = 2. * diag * expansion + M_PI * sqr(expansion) * 0.75;
                 REQUIRE(is_approx(area_expected, area_calculated, sqr(scaled<double>(0.2))));
             }
@@ -162,7 +163,7 @@ SCENARIO("Region expansion basics", "[RegionExpansion]") {
                 REQUIRE(expanded.size() == 1);
             }
             THEN("The area of anchor is correct") {
-                double area_calculated = area(expanded.front());
+                double area_calculated = Algorithms::Polygon::area(expanded.front());
                 double area_expected = 2. * diag * expansion + M_PI * sqr(expansion) * 0.75;
                 REQUIRE(is_approx(area_expected, area_calculated, sqr(scaled<double>(0.3))));
             }
@@ -195,7 +196,7 @@ SCENARIO("Region expansion basics", "[RegionExpansion]") {
                 REQUIRE(expanded.front().size() == 1);
             }
             THEN("The area of anchor is correct") {
-                double area_calculated = area(expanded.front());
+                double area_calculated = Algorithms::Polygon::area(expanded.front());
                 double area_expected = double(expansion) * 2. * double(ten) + M_PI * sqr(expansion) * 0.5;
                 REQUIRE(is_approx(area_expected, area_calculated, sqr(scaled<double>(0.45))));
             }
@@ -249,7 +250,7 @@ SCENARIO("Region expansion basics", "[RegionExpansion]") {
             THEN("The anchor expands into a single region with two holes, fully covering the boundary") {
                 REQUIRE(expanded.size() == 1);
                 REQUIRE(expanded.front().size() == 3);
-                REQUIRE(area(expanded.front()) == Approx(area(boundary)));
+                REQUIRE(Algorithms::Polygon::area(expanded.front()) == Approx(Algorithms::ExPolygon::area(boundary)));
             }
         }
     }
@@ -277,7 +278,7 @@ SCENARIO("Region expansion basics", "[RegionExpansion]") {
                 REQUIRE(expanded.front().size() == 2);
             }
             THEN("The area of anchor is correct") {
-                double area_calculated = area(expanded.front());
+                double area_calculated = Algorithms::Polygon::area(expanded.front());
                 double area_expected = double(expansion) * 4. * double(ten) + M_PI * sqr(expansion);
                 REQUIRE(is_approx(area_expected, area_calculated, sqr(scaled<double>(0.6))));
             }

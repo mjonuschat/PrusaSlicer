@@ -16,6 +16,8 @@
 
 #include "LineSegmentation.hpp"
 
+using namespace Slic3r::Biz;
+
 namespace Slic3r::Algorithm::LineSegmentation {
 
 const constexpr coord_t POINT_IS_ON_LINE_THRESHOLD_SQR = Slic3r::sqr(scaled<coord_t>(EPSILON));
@@ -504,7 +506,7 @@ PolylineSegments polyline_segmentation(const Polyline &subject, const std::vecto
 
 PolylineSegments polygon_segmentation(const Polygon &subject, const std::vector<ExPolygons> &expolygons_clips, const size_t default_clip_idx)
 {
-    return polyline_segmentation(to_polyline(subject), expolygons_clips, default_clip_idx);
+    return polyline_segmentation(Algorithms::Polygon::to_polyline(subject), expolygons_clips, default_clip_idx);
 }
 
 ExtrusionSegments extrusion_segmentation(const Arachne::ExtrusionLine &subject, const std::vector<ExPolygons> &expolygons_clips, const size_t default_clip_idx)
@@ -550,7 +552,7 @@ PolylineRegionSegments polyline_segmentation(const Polyline &subject, const Prin
 
 PolylineRegionSegments polygon_segmentation(const Polygon &subject, const PrintRegionConfig &base_config, const PerimeterRegions &perimeter_regions_clips)
 {
-    return polyline_segmentation(to_polyline(subject), base_config, perimeter_regions_clips);
+    return polyline_segmentation(Algorithms::Polygon::to_polyline(subject), base_config, perimeter_regions_clips);
 }
 
 ExtrusionRegionSegments extrusion_segmentation(const Arachne::ExtrusionLine &subject, const PrintRegionConfig &base_config, const PerimeterRegions &perimeter_regions_clips)

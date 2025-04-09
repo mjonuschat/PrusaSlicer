@@ -1,6 +1,7 @@
 ﻿#include <catch2/catch_test_macros.hpp>
 
 #include <libslic3r/Emboss.hpp>
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "Slic3r/Biz/Algorithms/SVG.hpp" // only debug visualization
 #include "Slic3r/Domain/TriangleMesh.hpp"
 
@@ -13,6 +14,7 @@
 
 
 using namespace Slic3r;
+using namespace Slic3r::Biz;
 using Domain::Index3;
 using Domain::its_merge;
 namespace triangle_mesh = Biz::Algorithms::TriangleMesh;
@@ -217,7 +219,7 @@ TEST_CASE("Visualize glyph from font", "[Emboss]")
 ExPolygons heal_and_check(const Polygons &polygons)
 {
     IntersectionsLines intersections_prev = get_intersections(polygons);
-    Points  polygons_points    = to_points(polygons);
+    Points  polygons_points    = Algorithms::Polygon::to_points(polygons);
     Points  duplicits_prev     = collect_duplicates(polygons_points);
 
     auto [shape, success] = Emboss::heal_polygons(polygons);
@@ -232,7 +234,7 @@ ExPolygons heal_and_check(const Polygons &polygons)
     CHECK(!is_default_shape);
 
     IntersectionsLines intersections = get_intersections(shape);
-    Points  shape_points  = to_points(shape);
+    Points  shape_points  = Algorithms::ExPolygon::to_points(shape);
     Points  duplicits     = collect_duplicates(shape_points);
     //{
     //    BoundingBox bb(polygons_points);
@@ -343,7 +345,7 @@ TEST_CASE("Heal of points close to line", "[Emboss]")
     ExPolygons expoly({ExPolygon(polygon)});
     CHECK(Emboss::divide_segments_for_close_point(expoly, .6));
     //{ SVG svg("C:/data/temp/healed.svg"); svg.draw(expoly);}
-    CHECK(to_points(expoly).size() >= (to_points(polygon).size() + 2));
+    CHECK(Algorithms::ExPolygon::to_points(expoly).size() >= (Algorithms::Polygon::to_points(polygon).size() + 2));
 }
 
 TEST_CASE("Convert text with glyph cache to model", "[Emboss]")
@@ -806,7 +808,7 @@ namespace Slic3r::MeshBoolean::cgal2 {
             }
         };
 
-        size_t count_point = count_points(shape);
+        size_t count_point = Algorithms::ExPolygon::count_points(shape);
         result.reserve(result.number_of_vertices() + 2 * count_point, result.number_of_edges() + 4 * count_point, result.number_of_faces() + 2 * count_point);
 
         // Identify polygon

@@ -120,7 +120,7 @@ std::vector<Vec3f> BedGeometry::plate_contour(const Domain::Bed& bed)
     }
 #endif
 
-    Lines lines = to_lines(contour);
+    Lines lines = Algorithms::ExPolygon::to_lines(contour);
     ret.reserve(2 * lines.size());
     for (const Slic3r::Line& l : lines) {
         ret.emplace_back(to_3d(unscale(l.a), GROUND_Z).cast<float>());
@@ -142,7 +142,7 @@ std::vector<Vec3f> BedGeometry::print_volume(const Domain::Bed& bed)
 
     float max_print_height = bed.max_print_height();
 
-    Lines lines = to_lines(contour);
+    Lines lines = Algorithms::ExPolygon::to_lines(contour);
     ret.reserve(6 * lines.size());
     for (const Slic3r::Line& l : lines) {
         ret.emplace_back(to_3d(unscale(l.a), GROUND_Z).cast<float>());

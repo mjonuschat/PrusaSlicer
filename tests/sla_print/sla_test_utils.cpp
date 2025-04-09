@@ -57,7 +57,7 @@ void test_support_model_collision(
         double pinhead_r  = scaled(input_supportcfg.head_front_radius_mm);
 
         // TODO:: make it strict without a threshold of PI * pihead_radius ^ 2
-        notouch = notouch && area(intersections) < PI * pinhead_r * pinhead_r;
+        notouch = notouch && Algorithms::Polygon::area(intersections) < PI * pinhead_r * pinhead_r;
     }
 
     if (!notouch)
@@ -302,7 +302,7 @@ static void _test_concave_hull(const Polygons &hull, const ExPolygons &polys)
     
     REQUIRE(cchull_holes == 0);
     
-    Polygons diff_poly = diff(to_polygons(polys), hull);
+    Polygons diff_poly = diff(Algorithms::ExPolygon::to_polygons(polys), hull);
 
     if (!diff_poly.empty()) {
         BOOST_LOG_TRIVIAL(warning)
@@ -315,7 +315,7 @@ static void _test_concave_hull(const Polygons &hull, const ExPolygons &polys)
         svg.draw(diff_poly, "blue");
     }
 
-    double diff_area = area(diff_poly);
+    double diff_area = Algorithms::Polygon::area(diff_poly);
 
     REQUIRE(std::abs(diff_area) < std::pow(scaled(2 * EPSILON), 2));
 }
@@ -331,7 +331,7 @@ void test_concave_hull(const ExPolygons &polys) {
     ExPolygons wafflex = sla::offset_waffle_style_ex(cchull, delta);
     Polygons waffl = sla::offset_waffle_style(cchull, delta);
     
-    _test_concave_hull(to_polygons(wafflex), polys);
+    _test_concave_hull(Algorithms::ExPolygon::to_polygons(wafflex), polys);
     _test_concave_hull(waffl, polys);
 }
 

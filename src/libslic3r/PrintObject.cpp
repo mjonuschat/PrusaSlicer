@@ -220,7 +220,7 @@ void PrintObject::make_perimeters()
                     const Polygons upper_layerm_polygons    = to_polygons(upper_layerm.slices().surfaces);
                     // Filter upper layer polygons in intersection_ppl by their bounding boxes?
                     // my $upper_layerm_poly_bboxes= [ map $_->bounding_box, @{$upper_layerm_polygons} ];
-                    const double total_loop_length      = total_length(upper_layerm_polygons);
+                    const double total_loop_length      = Algorithms::Polygon::total_length(upper_layerm_polygons);
                     const coord_t perimeter_spacing     = layerm.flow(frPerimeter).scaled_spacing();
                     const Flow ext_perimeter_flow       = layerm.flow(frExternalPerimeter);
                     const coord_t ext_perimeter_width   = ext_perimeter_flow.scaled_width();
@@ -240,7 +240,7 @@ void PrintObject::make_perimeters()
                                 offset(slice.expolygon, float(- perimeters_thickness - critical_area_depth))
                             );
                             // check whether a portion of the upper slices falls inside the critical area
-                            const Polylines intersection = intersection_pl(to_polylines(upper_layerm_polygons), critical_area);
+                            const Polylines intersection = intersection_pl(Algorithms::Polygon::to_polylines(upper_layerm_polygons), critical_area);
                             // only add an additional loop if at least 30% of the slice loop would benefit from it
                             if (Algorithms::Polyline::total_length(intersection) <=  total_loop_length*0.3)
                                 break;
@@ -1400,7 +1400,7 @@ void PrintObject::discover_vertical_shells()
                                 0.5f * float(extflow.scaled_width() + extflow.scaled_spacing()) + (float(perimeters) - 1.f) * flow.scaled_spacing());
                             perimeter_min_spacing = std::min(perimeter_min_spacing, float(std::min(extflow.scaled_spacing(), flow.scaled_spacing())));
                         }
-                        Slic3r::append(cache.holes, to_polygons(layerm.fill_expolygons()));
+                        Slic3r::append(cache.holes, Algorithms::ExPolygon::to_polygons(layerm.fill_expolygons()));
                     }
                     // Save some computing time by reducing the number of polygons.
                     cache.top_surfaces    = union_(cache.top_surfaces);
@@ -1460,7 +1460,7 @@ void PrintObject::discover_vertical_shells()
                         // Holes over all regions. Only collect them once, they are valid for all region_id iterations.
                         if (cache.holes.empty()) {
                             for (size_t region_id = 0; region_id < layer.regions().size(); ++ region_id)
-                                Slic3r::append(cache.holes, to_polygons(layer.regions()[region_id]->fill_expolygons()));
+                                Slic3r::append(cache.holes, Algorithms::ExPolygon::to_polygons(layer.regions()[region_id]->fill_expolygons()));
                         }
                     }
                 });
@@ -1564,7 +1564,7 @@ void PrintObject::discover_vertical_shells()
                             // perimeter width of area
                             Polygons anchor_area = intersection(expand(cache_top_botom_regions[idx_layer].top_surfaces,
                                                                        layerm->flow(frExternalPerimeter).scaled_spacing()),
-                                                                to_polygons(m_layers[i]->lslices));
+                                                                Algorithms::ExPolygon::to_polygons(m_layers[i]->lslices));
                             combine_shells(anchor_area);
                         }
 
@@ -1594,7 +1594,7 @@ void PrintObject::discover_vertical_shells()
                         if (!at_least_one_bottom_projected && i >= 0) {
                             Polygons anchor_area = intersection(expand(cache_top_botom_regions[idx_layer].bottom_surfaces,
                                                                        layerm->flow(frExternalPerimeter).scaled_spacing()),
-                                                                to_polygons(m_layers[i]->lslices));
+                                                                Algorithms::ExPolygon::to_polygons(m_layers[i]->lslices));
                             combine_shells(anchor_area);
                         }
 
@@ -1696,9 +1696,9 @@ void PrintObject::discover_vertical_shells()
                         Polygons object_volume;
                         Polygons internal_volume;
                         {
-                            Polygons shrinked_bottom_slice = idx_layer > 0 ? to_polygons(m_layers[idx_layer - 1]->lslices) : Polygons{};
+                            Polygons shrinked_bottom_slice = idx_layer > 0 ? Algorithms::ExPolygon::to_polygons(m_layers[idx_layer - 1]->lslices) : Polygons{};
                             Polygons shrinked_upper_slice  = (idx_layer + 1) < m_layers.size() ?
-                                                                 to_polygons(m_layers[idx_layer + 1]->lslices) :
+                                                                 Algorithms::ExPolygon::to_polygons(m_layers[idx_layer + 1]->lslices) :
                                                                  Polygons{};
                             object_volume = intersection(shrinked_bottom_slice, shrinked_upper_slice);
                             internal_volume = closing(polygonsInternal, float(SCALED_EPSILON));
@@ -1716,9 +1716,9 @@ void PrintObject::discover_vertical_shells()
                                                                 &object_volume](const ExPolygon &p) {
                                                                    return (p.area() < min_perimeter_infill_spacing * scaled(1.5) ||
                                                                            (p.area() < min_perimeter_infill_spacing * scaled(8.0) &&
-                                                                            diff(to_polygons(p), object_volume).empty())) &&
+                                                                            diff(Algorithms::ExPolygon::to_polygons(p), object_volume).empty())) &&
                                                                           diff(internal_volume,
-                                                                               expand(to_polygons(p), min_perimeter_infill_spacing))
+                                                                               expand(Algorithms::ExPolygon::to_polygons(p), min_perimeter_infill_spacing))
                                                                                   .size() >= internal_volume.size();
                                                                }),
                                                 regularized_shell.end());
@@ -1834,12 +1834,12 @@ void PrintObject::bridge_over_infill()
                 Polygons   unsupported_area;
                 Polygons   lower_layer_solids;
                 for (const LayerRegion *region : layer->lower_layer->regions()) {
-                    Polygons fill_polys = to_polygons(region->fill_expolygons());
+                    Polygons fill_polys = Algorithms::ExPolygon::to_polygons(region->fill_expolygons());
                     // initially consider the whole layer unsupported, but also gather solid layers to later cut off supported parts
                     unsupported_area.insert(unsupported_area.end(), fill_polys.begin(), fill_polys.end());
                     for (const Surface &surface : region->fill_surfaces()) {
                         if (surface.surface_type != stInternal || region->region().config().fill_density.value == 100) {
-                            Polygons p = to_polygons(surface.expolygon);
+                            Polygons p = Algorithms::ExPolygon::to_polygons(surface.expolygon);
                             lower_layer_solids.insert(lower_layer_solids.end(), p.begin(), p.end());
                         }
                     }
@@ -1856,14 +1856,14 @@ void PrintObject::bridge_over_infill()
                 for (const LayerRegion *region : layer->regions()) {
                     SurfacesPtr region_internal_solids = region->fill_surfaces().filter_by_type(stInternalSolid);
                     for (const Surface *s : region_internal_solids) {
-                        Polygons unsupported         = intersection(to_polygons(s->expolygon), unsupported_area);
+                        Polygons unsupported         = intersection(Algorithms::ExPolygon::to_polygons(s->expolygon), unsupported_area);
                         // The following flag marks those surfaces, which overlap with unuspported area, but at least part of them is supported. 
                         // These regions can be filtered by area, because they for sure are touching solids on lower layers, and it does not make sense to bridge their tiny overhangs 
-                        bool     partially_supported = area(unsupported) < area(to_polygons(s->expolygon)) - EPSILON;
-                        if (!unsupported.empty() && (!partially_supported || area(unsupported) > 3 * 3 * spacing * spacing)) {
-                            Polygons worth_bridging = intersection(to_polygons(s->expolygon), expand(unsupported, 4 * spacing));
+                        bool     partially_supported = Algorithms::Polygon::area(unsupported) < Algorithms::Polygon::area(Algorithms::ExPolygon::to_polygons(s->expolygon)) - EPSILON;
+                        if (!unsupported.empty() && (!partially_supported || Algorithms::Polygon::area(unsupported) > 3 * 3 * spacing * spacing)) {
+                            Polygons worth_bridging = intersection(Algorithms::ExPolygon::to_polygons(s->expolygon), expand(unsupported, 4 * spacing));
                             // after we extracted the part worth briding, we go over the leftovers and merge the tiny ones back, to not brake the surface too much
-                            for (const Polygon& p : diff(to_polygons(s->expolygon), expand(worth_bridging, spacing))) {
+                            for (const Polygon& p : diff(Algorithms::ExPolygon::to_polygons(s->expolygon), expand(worth_bridging, spacing))) {
                                 double area = p.area();
                                 if (area < spacing * scale_(12.0) && area > spacing * spacing) {
                                     worth_bridging.push_back(p);
@@ -2211,7 +2211,7 @@ void PrintObject::bridge_over_infill()
         Polygons expanded_bridged_area{};
         double   aligning_angle = -bridging_angle + PI * 0.5;
         {
-            polygons_rotate(bridged_area, aligning_angle);
+            Algorithms::Polygon::rotate(bridged_area, aligning_angle);
             lines_rotate(anchors, cos(aligning_angle), sin(aligning_angle));
             BoundingBox bb_x = get_extents(bridged_area);
             BoundingBox bb_y = get_extents(anchors);
@@ -2227,7 +2227,7 @@ void PrintObject::bridge_over_infill()
             }
 
             auto anchors_and_walls_tree = AABBTreeLines::LinesDistancer<Line>{std::move(anchors)};
-            auto bridged_area_tree      = AABBTreeLines::LinesDistancer<Line>{to_lines(bridged_area)};
+            auto bridged_area_tree      = AABBTreeLines::LinesDistancer<Line>{Algorithms::Polygon::to_lines(bridged_area)};
 
             std::vector<std::vector<Line>> polygon_sections(n_vlines);
             for (size_t i = 0; i < n_vlines; i++) {
@@ -2355,7 +2355,7 @@ void PrintObject::bridge_over_infill()
             expanded_bridged_area = union_safety_offset(expanded_bridged_area);
         }
 
-        polygons_rotate(expanded_bridged_area, -aligning_angle);
+        Algorithms::Polygon::rotate(expanded_bridged_area, -aligning_angle);
         return expanded_bridged_area;
     };
 
@@ -2438,7 +2438,7 @@ void PrintObject::bridge_over_infill()
                     total_top_area.insert(total_top_area.end(), top_polys.begin(), top_polys.end());
                     Polygons internal_polys = to_polygons(region->fill_surfaces().filter_by_types({stInternal, stInternalSolid}));
                     expansion_area.insert(expansion_area.end(), internal_polys.begin(), internal_polys.end());
-                    Polygons fill_polys = to_polygons(region->fill_expolygons());
+                    Polygons fill_polys = Algorithms::ExPolygon::to_polygons(region->fill_expolygons());
                     total_fill_area.insert(total_fill_area.end(), fill_polys.begin(), fill_polys.end());
                     if (region->region().config().fill_pattern == ipLightning) {
                         Polygons l = to_polygons(region->fill_surfaces().filter_by_type(stInternal));
@@ -2474,9 +2474,9 @@ void PrintObject::bridge_over_infill()
                     if (area_to_be_bridge.empty())
                         continue;
 
-                    Polylines boundary_plines = to_polylines(expand(total_fill_area, 1.3 * flow.scaled_spacing()));
+                    Polylines boundary_plines = Algorithms::Polygon::to_polylines(expand(total_fill_area, 1.3 * flow.scaled_spacing()));
                     {
-                        Polylines limiting_plines = to_polylines(expand(limiting_area, 0.3*flow.spacing()));
+                        Polylines limiting_plines = Algorithms::Polygon::to_polylines(expand(limiting_area, 0.3 * flow.spacing()));
                         boundary_plines.insert(boundary_plines.end(), limiting_plines.begin(), limiting_plines.end());
                     }
 
@@ -2568,7 +2568,7 @@ void PrintObject::bridge_over_infill()
             for (LayerRegion *region : layer->regions()) {
                 Surfaces new_surfaces;
 
-                Polygons near_perimeters = to_polygons(union_safety_offset_ex(to_polygons(region->fill_surfaces().surfaces)));
+                Polygons near_perimeters = Algorithms::ExPolygon::to_polygons(union_safety_offset_ex(to_polygons(region->fill_surfaces().surfaces)));
                 near_perimeters          = diff(near_perimeters, shrink(near_perimeters, region->flow(frSolidInfill).scaled_spacing()));
                 ExPolygons additional_ensuring = intersection_ex(additional_ensuring_areas, near_perimeters);
 
@@ -2940,11 +2940,11 @@ void PrintObject::discover_horizontal_shells()
                 Polygons solid;
                 for (const Surface &surface : layerm->slices())
                     if (surface.surface_type == type)
-                        Slic3r::append(solid, to_polygons(surface.expolygon));
+                        Slic3r::append(solid, Algorithms::ExPolygon::to_polygons(surface.expolygon));
                 // Infill areas (slices without the perimeters).
                 for (const Surface &surface : layerm->fill_surfaces())
                     if (surface.surface_type == type)
-                        Slic3r::append(solid, to_polygons(surface.expolygon));
+                        Slic3r::append(solid, Algorithms::ExPolygon::to_polygons(surface.expolygon));
                 if (solid.empty())
                     continue;
 
@@ -2975,7 +2975,7 @@ void PrintObject::discover_horizontal_shells()
                         Polygons internal;
                         for (const Surface &surface : neighbor_layerm->fill_surfaces())
                             if (surface.surface_type == stInternal || surface.surface_type == stInternalSolid)
-                                Slic3r::append(internal, to_polygons(surface.expolygon));
+                                Slic3r::append(internal, Algorithms::ExPolygon::to_polygons(surface.expolygon));
                         new_internal_solid = intersection(solid, internal, ApplySafetyOffset::Yes);
                     }
                     if (new_internal_solid.empty()) {
@@ -3038,7 +3038,7 @@ void PrintObject::discover_horizontal_shells()
                             Polygons internal;
                             for (const Surface &surface : neighbor_layerm->fill_surfaces())
                                 if (surface.is_internal() && !surface.is_bridge())
-                                    Slic3r::append(internal, to_polygons(surface.expolygon));
+                                    Slic3r::append(internal, Algorithms::ExPolygon::to_polygons(surface.expolygon));
                             Slic3r::append(new_internal_solid,
                                 intersection(
                                     expand(too_narrow, +margin),
@@ -3061,11 +3061,11 @@ void PrintObject::discover_horizontal_shells()
                     // assign new internal-solid surfaces to layer
                     neighbor_layerm->m_fill_surfaces.set(internal_solid, stInternalSolid);
                     // subtract intersections from layer surfaces to get resulting internal surfaces
-                    Polygons polygons_internal = to_polygons(std::move(internal_solid));
+                    Polygons polygons_internal = Algorithms::ExPolygon::to_polygons(std::move(internal_solid));
                     ExPolygons internal = diff_ex(backup.filter_by_type(stInternal), polygons_internal, ApplySafetyOffset::Yes);
                     // assign resulting internal surfaces to layer
                     neighbor_layerm->m_fill_surfaces.append(internal, stInternal);
-                    Slic3r::append(polygons_internal, to_polygons(std::move(internal)));
+                    Slic3r::append(polygons_internal, Algorithms::ExPolygon::to_polygons(std::move(internal)));
                     // assign top and bottom surfaces to layer
                     backup.keep_types({ stTop, stBottom, stBottomBridge });
                     std::vector<SurfacesPtr> top_bottom_groups;

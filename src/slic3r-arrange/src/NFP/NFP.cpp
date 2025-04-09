@@ -208,7 +208,7 @@ ExPolygons ifp_convex(const arr2::IrregularBed &bed, const Polygon &convexpoly)
     for (Polygon &p : ret)
         std::reverse(p.begin(), p.end());
 
-    return to_expolygons(ret);
+    return Algorithms::Polygon::to_expolygons(ret);
 }
 
 Vec2crd reference_vertex(const Polygon &poly)

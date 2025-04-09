@@ -47,11 +47,11 @@ void FillConcentric::_fill_surface_single(
         this->spacing = unscale<double>(distance);
     }
 
-    Polygons   loops = to_polygons(expolygon);
+    Polygons   loops = Algorithms::ExPolygon::to_polygons(expolygon);
     ExPolygons last { std::move(expolygon) };
     while (! last.empty()) {
         last = offset2_ex(last, -(distance + min_spacing/2), +min_spacing/2);
-        append(loops, to_polygons(last));
+        append(loops, Algorithms::ExPolygon::to_polygons(last));
     }
 
     // generate paths from the outermost to the innermost, to avoid

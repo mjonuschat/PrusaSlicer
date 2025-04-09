@@ -920,7 +920,7 @@ static inline std::vector<std::vector<ExPolygons>> segmentation_top_and_bottom_l
                 if (raw_surfaces[extruder_idx][layer_idx].empty())
                     continue;
 
-                remove_small(raw_surfaces[extruder_idx][layer_idx], min_area);
+                Algorithms::Polygon::remove_small(raw_surfaces[extruder_idx][layer_idx], min_area);
             }
         }
     };
@@ -2111,7 +2111,7 @@ std::vector<std::vector<ExPolygons>> segmentation_by_painting(const PrintObject 
             // to ensure that very close polygons will be merged.
             ex_polygons = union_ex(ex_polygons);
             // Remove all expolygons and holes with an area less than 0.1mm^2
-            remove_small_and_small_holes(ex_polygons, Slic3r::sqr(POLYGON_FILTER_MIN_AREA_SCALED));
+            Algorithms::ExPolygon::remove_small_expolygons_and_holes(ex_polygons, Slic3r::sqr(POLYGON_FILTER_MIN_AREA_SCALED));
             // Occasionally, some input polygons contained self-intersections that caused problems with Voronoi diagrams
             // and consequently with the extraction of colored segments by function extract_colored_segments.
             // Calling simplify_polygons removes these self-intersections.
@@ -2119,7 +2119,7 @@ std::vector<std::vector<ExPolygons>> segmentation_by_painting(const PrintObject 
             // Such close points sometimes caused that the Voronoi diagram has self-intersecting edges around these vertices.
             // This consequently leads to issues with the extraction of colored segments by function extract_colored_segments.
             // Calling expolygons_simplify fixed these issues.
-            input_expolygons[layer_idx]                         = remove_duplicates(expolygons_simplify(offset_ex(ex_polygons, -10.f * float(SCALED_EPSILON)), 5 * SCALED_EPSILON), scaled<coord_t>(0.01), PI / 6);
+            input_expolygons[layer_idx]                         = remove_duplicates(Algorithms::ExPolygon::simplify(offset_ex(ex_polygons, -10.f * float(SCALED_EPSILON)), 5 * SCALED_EPSILON), scaled<coord_t>(0.01), PI / 6);
             input_expolygons_projection_lines_layers[layer_idx] = create_color_projection_expolygons(input_expolygons[layer_idx]);
 
             if constexpr (MM_SEGMENTATION_DEBUG_INPUT) {

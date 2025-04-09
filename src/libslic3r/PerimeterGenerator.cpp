@@ -803,7 +803,7 @@ std::tuple<std::vector<ExtrusionPaths>, Polygons> generate_extra_perimeters_over
 
     if (overhangs.empty()) { return {}; }
 
-    AABBTreeLines::LinesDistancer<Line> lower_layer_aabb_tree{to_lines(optimized_lower_slices)};
+    AABBTreeLines::LinesDistancer<Line> lower_layer_aabb_tree{Algorithms::Polygon::to_lines(optimized_lower_slices)};
     Polygons                            anchors             = intersection(infill_area, optimized_lower_slices);
     Polygons                            inset_anchors       = diff(anchors,
                                                                    expand(overhangs, anchors_size + 0.1 * overhang_flow.scaled_width(), EXTRA_PERIMETER_OFFSET_PARAMETERS));
@@ -823,8 +823,8 @@ std::tuple<std::vector<ExtrusionPaths>, Polygons> generate_extra_perimeters_over
     Polygons inset_overhang_area_left_unfilled;
 
     std::vector<ExtrusionPaths> extra_perims; // overhang region -> extrusion paths
-    for (const ExPolygon &overhang : union_ex(to_expolygons(inset_overhang_area))) {
-        Polygons overhang_to_cover = to_polygons(overhang);
+    for (const ExPolygon &overhang : union_ex(Algorithms::Polygon::to_expolygons(inset_overhang_area))) {
+        Polygons overhang_to_cover = Algorithms::ExPolygon::to_polygons(overhang);
         Polygons expanded_overhang_to_cover = expand(overhang_to_cover, 1.1 * overhang_flow.scaled_spacing());
         Polygons shrinked_overhang_to_cover = shrink(overhang_to_cover, 0.1 * overhang_flow.scaled_spacing());
 
@@ -841,7 +841,7 @@ std::tuple<std::vector<ExtrusionPaths>, Polygons> generate_extra_perimeters_over
                                             -overhang_flow.scaled_spacing() * 0.6);
 
         Polygon anchoring_convex_hull = Geometry::convex_hull(anchoring);
-        double  unbridgeable_area     = area(diff(real_overhang, {anchoring_convex_hull}));
+        double  unbridgeable_area     = Algorithms::Polygon::area(diff(real_overhang, {anchoring_convex_hull}));
 
         auto [dir, unsupp_dist] = detect_bridging_direction(real_overhang, anchors);
 
@@ -861,7 +861,7 @@ std::tuple<std::vector<ExtrusionPaths>, Polygons> generate_extra_perimeters_over
         }
 #endif
 
-        if (unbridgeable_area < 0.2 * area(real_overhang) && unsupp_dist < total_length(real_overhang) * 0.2) {
+        if (unbridgeable_area < 0.2 * Algorithms::Polygon::area(real_overhang) && unsupp_dist < Algorithms::Polygon::total_length(real_overhang) * 0.2) {
             inset_overhang_area_left_unfilled.insert(inset_overhang_area_left_unfilled.end(),overhang_to_cover.begin(),overhang_to_cover.end());
             perimeter_polygon.clear();
         } else {
@@ -870,7 +870,7 @@ std::tuple<std::vector<ExtrusionPaths>, Polygons> generate_extra_perimeters_over
             while (continuation_loops >= 0) {
                 auto prev = perimeter_polygon;
                 // prepare next perimeter lines
-                Polylines perimeter = intersection_pl(to_polylines(perimeter_polygon), shrinked_overhang_to_cover);
+                Polylines perimeter = intersection_pl(Algorithms::Polygon::to_polylines(perimeter_polygon), shrinked_overhang_to_cover);
 
                 // do not add the perimeter to result yet, first check if perimeter_polygon is not empty after shrinking - this would mean
                 //  that the polygon was possibly too small for full perimeter loop and in that case try gap fill first
@@ -884,7 +884,7 @@ std::tuple<std::vector<ExtrusionPaths>, Polygons> generate_extra_perimeters_over
                                                ExtrusionAttributes{ ExtrusionRole::OverhangPerimeter, overhang_flow });
 
                     Polylines  fills;
-                    ExPolygons gap = shrinked.empty() ? offset_ex(prev, overhang_flow.scaled_spacing() * 0.5) : to_expolygons(shrinked);
+                    ExPolygons gap = shrinked.empty() ? offset_ex(prev, overhang_flow.scaled_spacing() * 0.5) : Algorithms::Polygon::to_expolygons(shrinked);
 
                     for (const ExPolygon &ep : gap) {
                         Slic3r::medial_axis(ep, 0.75 * overhang_flow.scaled_width(), 3.0 * overhang_flow.scaled_spacing(), &fills);
@@ -1037,7 +1037,7 @@ void PerimeterGenerator::process_arachne(
         loop_number = 0;
 
     ExPolygons last   = offset_ex(Algorithms::ExPolygon::simplify_to_polygons(surface.expolygon, params.scaled_resolution), - float(ext_perimeter_width / 2. - ext_perimeter_spacing / 2.));
-    Polygons   last_p = to_polygons(last);
+    Polygons   last_p = Algorithms::ExPolygon::to_polygons(last);
     Arachne::WallToolPaths wall_tool_paths(last_p, ext_perimeter_spacing, perimeter_spacing, coord_t(loop_number + 1), 0, params.layer_height, params.object_config, params.print_config);
     Arachne::Perimeters    perimeters     = wall_tool_paths.getToolPaths();
     ExPolygons             infill_contour = union_ex(wall_tool_paths.getInnerContour());
@@ -1075,7 +1075,7 @@ void PerimeterGenerator::process_arachne(
             // Get final top ExPolygons.
             top_expolygons = intersection_ex(top_expolygons, infill_contour);
 
-            const Polygons not_top_polygons = to_polygons(not_top_expolygons);
+            const Polygons not_top_polygons = Algorithms::ExPolygon::to_polygons(not_top_expolygons);
             Arachne::WallToolPaths inner_wall_tool_paths(not_top_polygons, perimeter_spacing, perimeter_spacing, coord_t(inner_loop_number + 1), 0, params.layer_height, params.object_config, params.print_config);
             Arachne::Perimeters inner_perimeters = inner_wall_tool_paths.getToolPaths();
 

@@ -37,9 +37,9 @@ static Lines extrusion_entity_to_lines(const ExtrusionEntity &e_entity)
     } else if (const auto *multipath = dynamic_cast<const ExtrusionMultiPath *>(&e_entity)) {
         return Algorithms::Polyline::to_lines(multipath->as_polyline());
     } else if (const auto *loop = dynamic_cast<const ExtrusionLoop *>(&e_entity)) {
-        return to_lines(loop->polygon());
+        return Algorithms::Polygon::to_lines(loop->polygon());
     } else {
-        throw Slic3r::InvalidArgument("Invalid argument supplied to TODO()");
+        throw Slic3r::InvalidArgument("Invalid argument supplied to extrusion_entity_to_lines()");
     }
 
     return {};

@@ -63,6 +63,8 @@ using namespace Slic3r;
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/libslic3r.h"
 
+using namespace Slic3r::Biz;
+
 namespace priv {
 
 using Project = Emboss::IProjection;
@@ -1090,7 +1092,7 @@ priv::CutMesh priv::to_cgal(const ExPolygons  &shapes,
         }
     };
 
-    size_t count_point = count_points(shapes);
+    size_t count_point = Algorithms::ExPolygon::count_points(shapes);
     result.reserve(result.number_of_vertices() + 2 * count_point,
                    result.number_of_edges() + 4 * count_point,
                    result.number_of_faces() + 2 * count_point);
@@ -2007,7 +2009,7 @@ std::pair<uint32_t, uint32_t> priv::find_closest_point_pair(
 
     size_t index = 0;
     for (size_t shape_index = 0; shape_index < shapes.size(); shape_index++) {
-        size_t count = count_points(shapes[shape_index]);
+        size_t count = Algorithms::ExPolygon::count_points(shapes[shape_index]);
         if (done_shapes[shape_index]) { 
             for (size_t i = 0; i < count; ++i, ++index)
                 unfinished_mask[index] = false;
@@ -2030,7 +2032,7 @@ std::pair<uint32_t, uint32_t> priv::find_closest_point_pair(
     for (size_t shape_index = 0; shape_index < shapes.size(); shape_index++) {
         const ExPolygon shape = shapes[shape_index];
         if (!done_shapes[shape_index]) {            
-            index += count_points(shape);
+            index += Algorithms::ExPolygon::count_points(shape);
             continue;
         }        
 
@@ -2264,7 +2266,7 @@ priv::ClosePoint priv::find_close_point(const Point         &p,
 priv::ProjectionDistances priv::choose_best_distance(
     const VDistances &distances, const ExPolygons &shapes, const Point &start, const ExPolygonsIndices &s2i, const SurfacePatches &patches)
 {
-    assert(distances.size() == count_points(shapes));
+    assert(distances.size() == Algorithms::ExPolygon::count_points(shapes));
 
     // vector of patches for shape
     std::vector<std::vector<uint32_t>> shapes_patches(shapes.size());
@@ -2310,7 +2312,7 @@ priv::ProjectionDistances priv::choose_best_distance(
         if (shape_patches.size() == 1){
             // Speed up, only one patch so copy distance from patch
             uint32_t first_shape_index = s2i.cvt({expolygons_index, 0, 0});
-            uint32_t laset_shape_index = first_shape_index + count_points(shape);
+            uint32_t laset_shape_index = first_shape_index + Algorithms::ExPolygon::count_points(shape);
             for (uint32_t i = first_shape_index; i < laset_shape_index; ++i) { 
                 const ProjectionDistances &pds = distances[i];
                 if (pds.empty()) continue;

@@ -1359,7 +1359,7 @@ void SLAPrint::Steps::merge_slices_and_eval_stats() {
         model_polygons = union_ex(model_polygons);
         double layer_model_area = 0;
         for (const ExPolygon& polygon : model_polygons)
-            layer_model_area += area(polygon);
+            layer_model_area += Algorithms::ExPolygon::area(polygon);
 
         const double models_volume = (layer_model_area < 0 || layer_model_area > 0) ? layer_model_area * l_height : 0.;
 
@@ -1371,7 +1371,7 @@ void SLAPrint::Steps::merge_slices_and_eval_stats() {
 
         double layer_support_area = 0;
         for (const ExPolygon& polygon : supports_polygons)
-            layer_support_area += area(polygon);
+            layer_support_area += Algorithms::ExPolygon::area(polygon);
 
         const double supports_volume = (layer_support_area < 0 || layer_support_area > 0) ? layer_support_area * l_height : 0.;
         const double layer_area = layer_model_area + layer_support_area;

@@ -487,7 +487,7 @@ const std::vector<VariableWidthLines> &WallToolPaths::generate()
     // didn't have twin edges. (a non-planar Voronoi diagram probably caused this).
     prepared_outline = union_(prepared_outline);
 
-    if (area(prepared_outline) <= 0) {
+    if (Algorithms::Polygon::area(prepared_outline) <= 0) {
         assert(toolpaths.empty());
         return toolpaths;
     }

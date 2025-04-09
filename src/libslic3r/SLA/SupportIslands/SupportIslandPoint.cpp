@@ -179,7 +179,7 @@ coord_t SupportIslandInnerPoint::move(const Point &destination) {
     // find closest line cross area border
     Vec2d v1 = (destination-point).cast<double>();
     double closest_ratio = 1.;
-    Lines lines = to_lines(*inner);
+    Lines lines = Algorithms::ExPolygon::to_lines(*inner);
     for (const Line &line : lines) {
         // line intersection       
         const Vec2d v2 = LineUtils::direction(line).cast<double>();

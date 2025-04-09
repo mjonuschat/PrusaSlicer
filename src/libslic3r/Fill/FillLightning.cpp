@@ -10,6 +10,8 @@
 #include "libslic3r/Fill/Lightning/Layer.hpp"
 #include "libslic3r/Point.hpp"
 
+using namespace Slic3r::Biz;
+
 namespace Slic3r::FillLightning {
 
 void Filler::_fill_surface_single(
@@ -20,7 +22,7 @@ void Filler::_fill_surface_single(
     Polylines                     &polylines_out)
 {
     const Layer &layer      = generator->getTreesForLayer(this->layer_id);
-    Polylines    fill_lines = layer.convertToLines(to_polygons(expolygon), scaled<coord_t>(0.5 * this->spacing - this->overlap));
+    Polylines    fill_lines = layer.convertToLines(Algorithms::ExPolygon::to_polygons(expolygon), scaled<coord_t>(0.5 * this->spacing - this->overlap));
 
     if (params.dont_connect() || fill_lines.size() <= 1) {
         append(polylines_out, chain_polylines(std::move(fill_lines)));

@@ -85,12 +85,12 @@ public:
      *
      * \warning Voxels may be processed multiple times!
      *
-     * \param polys The polygons to walk
+     * \param expolygons The polygons to walk
      * \param z The height at which the polygons occur
      * \param process_cell_func Function to perform on each voxel cell
      * \return Whether executing was stopped short as indicated by the \p cell_processing_function
      */
-    bool walkPolygons(const ExPolygon& polys, coord_t z, const std::function<bool(GridPoint3)>& process_cell_func) const;
+    bool walkPolygons(const ExPolygon& expolygons, coord_t z, const std::function<bool(GridPoint3)>& process_cell_func) const;
 
     /*!
      * Process voxels near the line segments of a polygon.

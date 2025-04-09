@@ -129,7 +129,7 @@ void remove_bridges_from_contacts(
     //FIXME the brided regions are already collected as layerm.bridged. Use it?
     for (const Surface &surface : layerm.fill_surfaces())
         if (surface.surface_type == stBottomBridge && surface.bridge_angle >= 0.0)
-            polygons_append(bridges, surface.expolygon);
+            Algorithms::Polygon::append(bridges, surface.expolygon);
     //FIXME add the gap filled areas. Extrude the gaps with a bridge flow?
     // Remove the unsupported ends of the bridges from the bridged areas.
     //FIXME add supports at regular intervals to support long bridges!
@@ -366,9 +366,9 @@ SupportGeneratorLayersPtr generate_raft_base(
                     brim.emplace_back(ex.contour);
                 if (brim_inner) {
                     Polygons holes = ex.holes;
-                    polygons_reverse(holes);
+                    Algorithms::Polygon::reverse(holes);
                     holes = shrink(holes, brim_separation, ClipperLib::jtRound, float(scale_(0.1)));
-                    polygons_reverse(holes);
+                    Algorithms::Polygon::reverse(holes);
                     Slic3r::append(brim, std::move(holes));
                 } else
                     Slic3r::append(brim, ex.holes);

@@ -8,6 +8,8 @@
 #include "libslic3r/Fill/FillRectilinear.hpp"
 #include "libslic3r/Surface.hpp"
 
+using namespace Slic3r::Biz;
+
 namespace Slic3r
 {
 
@@ -96,9 +98,9 @@ bool VoxelUtils::walkLine(Vec3crd start, Vec3crd end, const std::function<bool(G
 }
 
 
-bool VoxelUtils::walkPolygons(const ExPolygon& polys, coord_t z, const std::function<bool(GridPoint3)>& process_cell_func) const
+bool VoxelUtils::walkPolygons(const ExPolygon& expolygons, coord_t z, const std::function<bool(GridPoint3)>& process_cell_func) const
 {
-    for (const Polygon& poly : to_polygons(polys))
+    for (const Polygon& poly : Algorithms::ExPolygon::to_polygons(expolygons))
     {
         Point last = poly.back();
         for (Point p : poly)

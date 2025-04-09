@@ -23,6 +23,7 @@
 #include "Slic3r/Domain/MultiPoint.hpp"
 #include "Slic3r/Domain/Polyline.hpp"
 #include "Slic3r/Domain/Point.hpp"
+#include "Slic3r/Biz/Algorithms/Polyline.hpp"
 #include "libslic3r.h"
 #include "Line.hpp"
 #include "MultiPoint.hpp"
@@ -72,7 +73,7 @@ struct ThickPolyline {
     size_t       size()         const { return this->points.size(); }
     bool         is_valid()     const { return this->points.size() >= 2; }
     bool         empty()        const { return this->points.empty(); }
-    double       length()       const { return Slic3r::length(this->points); }
+    double       length()       const { return Slic3r::Biz::Algorithms::Polyline::length(this->points); }
 
     void         clear() { this->points.clear(); this->width.clear(); }
 
