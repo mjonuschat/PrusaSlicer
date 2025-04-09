@@ -29,6 +29,7 @@
 #include <chrono>
 #include <cstdlib>
 
+#include "Slic3r/Biz/Algorithms/FacetsAnnotation.hpp"
 #include "Slic3r/Biz/Algorithms/Polyline.hpp"
 #include "Slic3r/Domain/TriangleSelector.hpp"
 #include "AABBTreeLines.hpp"
@@ -3417,8 +3418,8 @@ void PrintObject::project_and_append_custom_facets(
     for (const ModelVolume* mv : this->model_object()->volumes)
         if (mv->is_model_part()) {
             const indexed_triangle_set custom_facets = seam
-                    ? mv->seam_facets.get_facets_strict(*mv, type)
-                    : mv->supported_facets.get_facets_strict(*mv, type);
+                    ? Algorithms::FacetsAnnotation::get_facets_strict(mv->seam_facets, *mv, type)
+                    : Algorithms::FacetsAnnotation::get_facets_strict(mv->supported_facets, *mv, type);
             if (! custom_facets.indices.empty()) {
                 if (seam)
                     project_triangles_to_slabs(this->layers(), custom_facets,

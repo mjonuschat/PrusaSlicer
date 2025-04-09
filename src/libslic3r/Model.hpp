@@ -13,6 +13,7 @@
 #ifndef slic3r_Model_hpp_
 #define slic3r_Model_hpp_
 
+#include "Slic3r/Domain/FacetsAnnotation.hpp"
 #include "Slic3r/Domain/SLA/DrainHole.hpp"
 #include "Slic3r/Domain/ObjectID.hpp"
 #include "Slic3r/Domain/Point.hpp"
@@ -693,61 +694,6 @@ private:
     void update_min_max_z();
 };
 
-class FacetsAnnotation final : public Domain::ObjectWithTimestamp {
-public:
-    // Assign the content if the timestamp differs, don't assign an ObjectID.
-    void assign(const FacetsAnnotation &rhs) { if (! this->timestamp_matches(rhs)) { m_data = rhs.m_data; this->copy_timestamp(rhs); } }
-    void assign(FacetsAnnotation &&rhs) { if (! this->timestamp_matches(rhs)) { m_data = std::move(rhs.m_data); this->copy_timestamp(rhs); } }
-    const Domain::TriangleSelector::TriangleSplittingData &get_data() const noexcept { return m_data; }
-    bool set(const Biz::Algorithms::TriangleSelector &selector);
-    indexed_triangle_set get_facets(const ModelVolume &mv, Domain::TriangleSelector::TriangleStateType type) const;
-    indexed_triangle_set get_facets_strict(const ModelVolume &mv, Domain::TriangleSelector::TriangleStateType type) const;
-    Domain::indexed_triangle_set_with_color get_all_facets_with_colors(const ModelVolume &mv) const;
-    Domain::indexed_triangle_set_with_color get_all_facets_strict_with_colors(const ModelVolume &mv) const;
-    bool has_facets(const ModelVolume &mv, Domain::TriangleSelector::TriangleStateType type) const;
-    bool empty() const { return m_data.triangles_to_split.empty(); }
-
-    // Following method clears the config and increases its timestamp, so the deleted
-    // state is considered changed from perspective of the undo/redo stack.
-    void reset();
-
-    // Serialize triangle into string, for serialization into 3MF/AMF.
-    std::string get_triangle_as_string(int i) const;
-
-    // Before deserialization, reserve space for n_triangles.
-    void reserve(int n_triangles) { m_data.triangles_to_split.reserve(n_triangles); }
-    // Deserialize triangles one by one, with strictly increasing triangle_id.
-    void set_triangle_from_string(int triangle_id, const std::string& str);
-    // After deserializing the last triangle, shrink data to fit.
-    void shrink_to_fit() { m_data.triangles_to_split.shrink_to_fit(); m_data.bitstream.shrink_to_fit(); }
-
-private:
-    // Constructors to be only called by derived classes.
-    // Default constructor to assign a unique ID.
-    explicit FacetsAnnotation() = default;
-    // Constructor with ignored int parameter to assign an invalid ID, to be replaced
-    // by an existing ID copied from elsewhere.
-    explicit FacetsAnnotation(int) : ObjectWithTimestamp(-1) {}
-    // Copy constructor copies the ID.
-    FacetsAnnotation(const FacetsAnnotation &rhs) = default;
-    // Move constructor copies the ID.
-    FacetsAnnotation(FacetsAnnotation &&rhs) = default;
-
-    // called by ModelVolume::assign_copy()
-    FacetsAnnotation& operator=(const FacetsAnnotation &rhs) = default;
-    FacetsAnnotation& operator=(FacetsAnnotation &&rhs) = default;
-
-    friend class cereal::access;
-    friend class UndoRedo::StackImpl;
-
-    template<class Archive> void serialize(Archive &ar) { ar(cereal::base_class<ObjectWithTimestamp>(this), m_data); }
-
-    Domain::TriangleSelector::TriangleSplittingData m_data;
-
-    // To access set_new_unique_id() when copy / pasting a ModelVolume.
-    friend class ModelVolume;
-};
-
 // An object STL, or a modifier volume, over which a different set of parameters shall be applied.
 // ModelVolume instances are owned by a ModelObject.
 class ModelVolume final : public Domain::ObjectBase
@@ -834,16 +780,16 @@ public:
     ModelConfigObject	config;
 
     // List of mesh facets to be supported/unsupported.
-    FacetsAnnotation    supported_facets;
+    Domain::FacetsAnnotation supported_facets;
 
     // List of seam enforcers/blockers.
-    FacetsAnnotation    seam_facets;
+    Domain::FacetsAnnotation seam_facets;
 
     // List of mesh facets painted for MM segmentation.
-    FacetsAnnotation    mm_segmentation_facets;
+    Domain::FacetsAnnotation mm_segmentation_facets;
 
     // List of mesh facets painted for fuzzy skin.
-    FacetsAnnotation    fuzzy_skin_facets;
+    Domain::FacetsAnnotation fuzzy_skin_facets;
 
     // Is set only when volume is Embossed Text type
     // Contain information how to re-create volume

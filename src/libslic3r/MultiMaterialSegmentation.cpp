@@ -18,6 +18,7 @@
 #include <cassert>
 #include <cstdlib>
 
+#include "Slic3r/Biz/Algorithms/FacetsAnnotation.hpp"
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "Slic3r/Domain/TriangleSelector.hpp"
 #include "BoundingBox.hpp"
@@ -863,7 +864,7 @@ static inline std::vector<std::vector<ExPolygons>> segmentation_top_and_bottom_l
             if (mv->is_model_part()) {
                 const Transform3d volume_trafo = object_trafo * mv->get_matrix();
                 for (size_t extruder_idx = 0; extruder_idx < num_facets_states; ++extruder_idx) {
-                    const indexed_triangle_set painted = extract_facets_info(*mv).facets_annotation.get_facets_strict(*mv, Domain::TriangleSelector::TriangleStateType(extruder_idx));
+                    const indexed_triangle_set painted = Algorithms::FacetsAnnotation::get_facets_strict(extract_facets_info(*mv).facets_annotation, *mv, Domain::TriangleSelector::TriangleStateType(extruder_idx));
 
                     if constexpr (MM_SEGMENTATION_DEBUG_TOP_BOTTOM) {
                         its_write_obj(painted, debug_out_path("mm-painted-patch-%d.obj", extruder_idx).c_str());
@@ -1991,7 +1992,7 @@ static std::vector<ColorPolygons> slice_model_volume_with_color(const ModelVolum
             return {mesh.its.indices, mesh.its.vertices, std::vector<uint8_t>(mesh.its.indices.size(), uint8_t(volume_extruder_id))};
         }
 
-        return facets_info.facets_annotation.get_all_facets_strict_with_colors(model_volume);
+        return Algorithms::FacetsAnnotation::get_all_facets_strict_with_colors(facets_info.facets_annotation, model_volume);
     };
 
     const indexed_triangle_set_with_color mesh_with_color = extract_mesh_with_color();

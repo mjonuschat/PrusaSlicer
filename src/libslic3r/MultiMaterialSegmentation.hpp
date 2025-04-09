@@ -10,6 +10,7 @@
 #include <vector>
 #include <functional>
 
+#include "Slic3r/Domain/FacetsAnnotation.hpp"
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/Line.hpp"
 #include "libslic3r/Point.hpp"
@@ -19,7 +20,6 @@ namespace Slic3r {
 
 class ModelVolume;
 class PrintObject;
-class FacetsAnnotation;
 
 struct ColoredLine
 {
@@ -37,11 +37,11 @@ enum class IncludeTopAndBottomLayers {
 };
 
 struct ModelVolumeFacetsInfo {
-    const FacetsAnnotation &facets_annotation;
+    const Domain::FacetsAnnotation &facets_annotation;
     // Indicate if model volume is painted.
-    const bool              is_painted;
+    const bool                      is_painted;
     // Indicate if the default extruder (TriangleStateType::NONE) should be replaced with the volume extruder.
-    const bool              replace_default_extruder;
+    const bool                      replace_default_extruder;
 };
 
 BoundingBox get_extents(const std::vector<ColoredLines> &colored_polygons);

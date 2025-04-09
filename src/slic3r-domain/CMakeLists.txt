@@ -20,6 +20,9 @@ add_library(slic3r-domain
     include/Slic3r/Domain/ExPolygon.hpp
     src/Slic3r/Domain/ExPolygon.cpp
 
+    include/Slic3r/Domain/FacetsAnnotation.hpp
+    src/Slic3r/Domain/FacetsAnnotation.cpp
+
     include/Slic3r/Domain/ObjectID.hpp
     src/Slic3r/Domain/ObjectID.cpp
 
