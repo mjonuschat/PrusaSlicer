@@ -20,6 +20,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/operations.hpp>
 
+#include "Slic3r/Domain/TriangleSelector.hpp"
 #include "Model.hpp"
 #include "Print.hpp"
 #include "admesh/stl.h"
@@ -32,7 +33,6 @@
 #include "libslic3r/PrintBase.hpp"
 #include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/Slicing.hpp"
-#include "libslic3r/TriangleSelector.hpp"
 #include "libslic3r/libslic3r.h"
 
 namespace Slic3r {
@@ -1491,7 +1491,7 @@ Print::ApplyStatus Print::apply(const Model &model, DynamicPrintConfig new_full_
         }
         std::vector<unsigned int> painting_extruders;
         if (const auto &volumes = print_object.model_object()->volumes; num_extruders > 1 && print_object.model_object()->is_mm_painted()) {
-            std::array<bool, static_cast<size_t>(TriangleStateType::Count)> used_facet_states{};
+            std::array<bool, static_cast<size_t>(Domain::TriangleSelector::TriangleStateType::Count)> used_facet_states{};
             for (const ModelVolume *volume : volumes) {
                 if (volume->is_mm_painted()) {
                     const std::vector<bool> &volume_used_facet_states = volume->mm_segmentation_facets.get_data().used_states;
@@ -1514,7 +1514,7 @@ Print::ApplyStatus Print::apply(const Model &model, DynamicPrintConfig new_full_
 #endif
             }
 
-            for (size_t state_idx = static_cast<size_t>(TriangleStateType::Extruder1); state_idx < used_facet_states.size(); ++state_idx) {
+            for (size_t state_idx = static_cast<size_t>(Domain::TriangleSelector::TriangleStateType::Extruder1); state_idx < used_facet_states.size(); ++state_idx) {
                 if (used_facet_states[state_idx]) {
                     painting_extruders.emplace_back(state_idx);
                 }

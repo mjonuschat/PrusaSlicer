@@ -34,6 +34,7 @@
 
 #include "Slic3r/Biz/Algorithms/ExPolygon.hpp"
 #include "Slic3r/Biz/Algorithms/Polyline.hpp"
+#include "Slic3r/Domain/TriangleSelector.hpp"
 #include "TreeSupportCommon.hpp"
 #include "SupportCommon.hpp"
 #include "OrganicSupport.hpp"
@@ -59,7 +60,6 @@
 #include "libslic3r/Support/SupportParameters.hpp"
 #include "libslic3r/Support/TreeModelVolumes.hpp"
 #include "libslic3r/Surface.hpp"
-#include "libslic3r/TriangleSelector.hpp"
 #include "libslic3r/Utils.hpp"
 #include "Slic3r/Biz/Algorithms/Point.hpp"
 
@@ -233,8 +233,8 @@ static std::vector<std::pair<TreeSupportSettings, std::vector<size_t>>> group_me
     const int                support_enforce_layers = config.support_material_enforce_layers.value;
     std::vector<Polygons>    enforcers_layers{ print_object.slice_support_enforcers() };
     std::vector<Polygons>    blockers_layers{ print_object.slice_support_blockers() };
-    print_object.project_and_append_custom_facets(false, TriangleStateType::ENFORCER, enforcers_layers);
-    print_object.project_and_append_custom_facets(false, TriangleStateType::BLOCKER, blockers_layers);
+    print_object.project_and_append_custom_facets(false, Domain::TriangleSelector::TriangleStateType::ENFORCER, enforcers_layers);
+    print_object.project_and_append_custom_facets(false, Domain::TriangleSelector::TriangleStateType::BLOCKER, blockers_layers);
     const int                support_threshold      = config.support_material_threshold.value;
     const bool               support_threshold_auto = support_threshold == 0;
     // +1 makes the threshold inclusive

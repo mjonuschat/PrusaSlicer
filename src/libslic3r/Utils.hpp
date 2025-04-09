@@ -143,40 +143,11 @@ template<class VectorType> void reserve_more_power_of_2(VectorType &vector, size
     vector.reserve(next_highest_power_of_2(vector.size() + n));
 }
 
-template<typename INDEX_TYPE>
-inline INDEX_TYPE prev_idx_modulo(INDEX_TYPE idx, const INDEX_TYPE count)
-{
-	if (idx == 0)
-		idx = count;
-	return -- idx;
-}
-
-template<typename INDEX_TYPE>
-inline INDEX_TYPE next_idx_modulo(INDEX_TYPE idx, const INDEX_TYPE count)
-{
-	if (++ idx == count)
-		idx = 0;
-	return idx;
-}
-
-
 // Return dividend divided by divisor rounded to the nearest integer
 template<typename INDEX_TYPE>
 inline INDEX_TYPE round_up_divide(const INDEX_TYPE dividend, const INDEX_TYPE divisor)
 {
     return (dividend + divisor - 1) / divisor;
-}
-
-template<typename CONTAINER_TYPE>
-inline typename CONTAINER_TYPE::size_type prev_idx_modulo(typename CONTAINER_TYPE::size_type idx, const CONTAINER_TYPE &container) 
-{ 
-	return prev_idx_modulo(idx, container.size());
-}
-
-template<typename CONTAINER_TYPE>
-inline typename CONTAINER_TYPE::size_type next_idx_modulo(typename CONTAINER_TYPE::size_type idx, const CONTAINER_TYPE &container)
-{ 
-	return next_idx_modulo(idx, container.size());
 }
 
 template<typename CONTAINER_TYPE>

@@ -19,6 +19,7 @@
 #include <cstdlib>
 
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
+#include "Slic3r/Domain/TriangleSelector.hpp"
 #include "BoundingBox.hpp"
 #include "ClipperUtils.hpp"
 #include "Layer.hpp"
@@ -40,7 +41,6 @@
 #include "libslic3r/Surface.hpp"
 #include "Slic3r/Biz/Algorithms/SVG.hpp"
 #include "libslic3r/TriangleMeshSlicer.hpp"
-#include "libslic3r/TriangleSelector.hpp"
 #include "libslic3r/Utils.hpp"
 #include "libslic3r/libslic3r.h"
 #include "MultiMaterialSegmentation.hpp"
@@ -863,7 +863,7 @@ static inline std::vector<std::vector<ExPolygons>> segmentation_top_and_bottom_l
             if (mv->is_model_part()) {
                 const Transform3d volume_trafo = object_trafo * mv->get_matrix();
                 for (size_t extruder_idx = 0; extruder_idx < num_facets_states; ++extruder_idx) {
-                    const indexed_triangle_set painted = extract_facets_info(*mv).facets_annotation.get_facets_strict(*mv, TriangleStateType(extruder_idx));
+                    const indexed_triangle_set painted = extract_facets_info(*mv).facets_annotation.get_facets_strict(*mv, Domain::TriangleSelector::TriangleStateType(extruder_idx));
 
                     if constexpr (MM_SEGMENTATION_DEBUG_TOP_BOTTOM) {
                         its_write_obj(painted, debug_out_path("mm-painted-patch-%d.obj", extruder_idx).c_str());
@@ -2004,7 +2004,7 @@ static std::vector<ColorPolygons> slice_model_volume_with_color(const ModelVolum
     if (const int volume_extruder_id = model_volume.extruder_id(); facets_info.replace_default_extruder && facets_info.is_painted && volume_extruder_id > 0) {
         for (ColorPolygons &color_polygons : color_polygons_per_layer) {
             for (ColorPolygon &color_polygon : color_polygons) {
-                std::replace(color_polygon.colors.begin(), color_polygon.colors.end(), static_cast<uint8_t>(TriangleStateType::NONE), static_cast<uint8_t>(volume_extruder_id));
+                std::replace(color_polygon.colors.begin(), color_polygon.colors.end(), static_cast<uint8_t>(Domain::TriangleSelector::TriangleStateType::NONE), static_cast<uint8_t>(volume_extruder_id));
             }
         }
     }
@@ -2014,7 +2014,7 @@ static std::vector<ColorPolygons> slice_model_volume_with_color(const ModelVolum
         for (ColorPolygon &color_polygon : color_polygons) {
             std::replace_if(color_polygon.colors.begin(), color_polygon.colors.end(),
                             [&num_facets_states](const uint8_t color) { return color >= num_facets_states; },
-                            static_cast<uint8_t>(TriangleStateType::NONE));
+                            static_cast<uint8_t>(Domain::TriangleSelector::TriangleStateType::NONE));
         }
     }
 

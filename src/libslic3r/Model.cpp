@@ -19,7 +19,6 @@
 #include "Geometry/ConvexHull.hpp"
 #include "MTUtils.hpp"
 #include "TriangleMeshSlicer.hpp"
-#include "TriangleSelector.hpp"
 #include "MultipleBeds.hpp"
 
 #include <float.h>
@@ -46,10 +45,13 @@ using Biz::Algorithms::BoundingBox::translated;
 using Biz::Algorithms::Geometry::Transformation;
 using Biz::Algorithms::Geometry::rotation_diff_z;
 using Biz::Algorithms::Geometry::extract_rotation;
+using Biz::Algorithms::TriangleSelector;
 using Domain::BoundingBox3d;
 using Domain::TriangleMesh;
-namespace tm = Slic3r::Biz::Algorithms::TriangleMesh;
+using Domain::TriangleSelector::TriangleStateType;
 using Domain::indexed_triangle_set_with_color;
+
+namespace tm = Slic3r::Biz::Algorithms::TriangleMesh;
 
 Model& Model::assign_copy(const Model &rhs)
 {
@@ -1518,7 +1520,7 @@ std::vector<size_t> ModelVolume::get_extruders_from_multi_material_painting() co
         return {};
 
     assert(static_cast<size_t>(TriangleStateType::Extruder1) - 1 == 0);
-    const TriangleSelector::TriangleSplittingData &data = this->mm_segmentation_facets.get_data();
+    const Domain::TriangleSelector::TriangleSplittingData &data = this->mm_segmentation_facets.get_data();
 
     std::vector<size_t> extruders;
     for (size_t state_idx = static_cast<size_t>(TriangleStateType::Extruder1); state_idx < data.used_states.size(); ++state_idx) {
@@ -1585,7 +1587,7 @@ bool FacetsAnnotation::has_facets(const ModelVolume &mv, TriangleStateType type)
 }
 
 bool FacetsAnnotation::set(const TriangleSelector &selector) {
-    TriangleSelector::TriangleSplittingData sel_map = selector.serialize();
+    Domain::TriangleSelector::TriangleSplittingData sel_map = selector.serialize();
     if (sel_map != m_data) {
         m_data = std::move(sel_map);
         this->touch();
@@ -1609,7 +1611,7 @@ std::string FacetsAnnotation::get_triangle_as_string(int triangle_idx) const
 {
     std::string out;
 
-    auto triangle_it = std::lower_bound(m_data.triangles_to_split.begin(), m_data.triangles_to_split.end(), triangle_idx, [](const TriangleSelector::TriangleBitStreamMapping &l, const int r) { return l.triangle_idx < r; });
+    auto triangle_it = std::lower_bound(m_data.triangles_to_split.begin(), m_data.triangles_to_split.end(), triangle_idx, [](const Domain::TriangleSelector::TriangleBitStreamMapping &l, const int r) { return l.triangle_idx < r; });
     if (triangle_it != m_data.triangles_to_split.end() && triangle_it->triangle_idx == triangle_idx) {
         int offset = triangle_it->bitstream_start_idx;
         int end    = ++ triangle_it == m_data.triangles_to_split.end() ? int(m_data.bitstream.size()) : triangle_it->bitstream_start_idx;

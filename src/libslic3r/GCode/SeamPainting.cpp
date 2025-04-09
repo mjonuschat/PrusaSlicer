@@ -1,7 +1,7 @@
 #include "libslic3r/GCode/SeamPainting.hpp"
 
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
-#include "libslic3r/TriangleSelector.hpp"
+#include "Slic3r/Domain/TriangleSelector.hpp"
 
 namespace Slic3r::Seams::ModelInfo {
 
@@ -13,12 +13,12 @@ Painting::Painting(const Transform3d &obj_transform, const ModelVolumePtrs &volu
             auto model_transformation = obj_transform * mv->get_matrix();
 
             indexed_triangle_set enforcers = mv->seam_facets
-                                                 .get_facets(*mv, TriangleStateType::ENFORCER);
+                                                 .get_facets(*mv, Domain::TriangleSelector::TriangleStateType::ENFORCER);
             its_transform(enforcers, model_transformation);
             its_merge(this->enforcers, enforcers);
 
             indexed_triangle_set blockers = mv->seam_facets
-                                                .get_facets(*mv, TriangleStateType::BLOCKER);
+                                                .get_facets(*mv, Domain::TriangleSelector::TriangleStateType::BLOCKER);
             its_transform(blockers, model_transformation);
             its_merge(this->blockers, blockers);
         }

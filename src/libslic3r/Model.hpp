@@ -23,7 +23,8 @@
 #include "Slic3r/Domain/CustomGCode.hpp"
 #include "Slic3r/Domain/TextConfiguration.hpp"
 #include "Slic3r/Domain/EmbossShape.hpp"
-#include "TriangleSelector.hpp"
+#include "Slic3r/Biz/Algorithms/TriangleSelector.hpp"
+#include "Slic3r/Domain/TriangleSelector.hpp"
 
 #include <map>
 #include <memory>
@@ -697,13 +698,13 @@ public:
     // Assign the content if the timestamp differs, don't assign an ObjectID.
     void assign(const FacetsAnnotation &rhs) { if (! this->timestamp_matches(rhs)) { m_data = rhs.m_data; this->copy_timestamp(rhs); } }
     void assign(FacetsAnnotation &&rhs) { if (! this->timestamp_matches(rhs)) { m_data = std::move(rhs.m_data); this->copy_timestamp(rhs); } }
-    const TriangleSelector::TriangleSplittingData &get_data() const noexcept { return m_data; }
-    bool set(const TriangleSelector &selector);
-    indexed_triangle_set get_facets(const ModelVolume &mv, TriangleStateType type) const;
-    indexed_triangle_set get_facets_strict(const ModelVolume &mv, TriangleStateType type) const;
+    const Domain::TriangleSelector::TriangleSplittingData &get_data() const noexcept { return m_data; }
+    bool set(const Biz::Algorithms::TriangleSelector &selector);
+    indexed_triangle_set get_facets(const ModelVolume &mv, Domain::TriangleSelector::TriangleStateType type) const;
+    indexed_triangle_set get_facets_strict(const ModelVolume &mv, Domain::TriangleSelector::TriangleStateType type) const;
     Domain::indexed_triangle_set_with_color get_all_facets_with_colors(const ModelVolume &mv) const;
     Domain::indexed_triangle_set_with_color get_all_facets_strict_with_colors(const ModelVolume &mv) const;
-    bool has_facets(const ModelVolume &mv, TriangleStateType type) const;
+    bool has_facets(const ModelVolume &mv, Domain::TriangleSelector::TriangleStateType type) const;
     bool empty() const { return m_data.triangles_to_split.empty(); }
 
     // Following method clears the config and increases its timestamp, so the deleted
@@ -741,7 +742,7 @@ private:
 
     template<class Archive> void serialize(Archive &ar) { ar(cereal::base_class<ObjectWithTimestamp>(this), m_data); }
 
-    TriangleSelector::TriangleSplittingData m_data;
+    Domain::TriangleSelector::TriangleSplittingData m_data;
 
     // To access set_new_unique_id() when copy / pasting a ModelVolume.
     friend class ModelVolume;
@@ -850,7 +851,7 @@ public:
 
     // Is set only when volume is Embossed Shape
     // Contain 2d information about embossed shape to be editabled
-    std::optional<Domain::EmbossShape> emboss_shape; 
+    std::optional<Domain::EmbossShape> emboss_shape;
 
     // A parent object owning this modifier volume.
     ModelObject*        get_object() const { return this->object; }

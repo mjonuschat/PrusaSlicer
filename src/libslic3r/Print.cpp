@@ -21,6 +21,7 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
+#include "Slic3r/Domain/TriangleSelector.hpp"
 #include "Slic3r/Exception.hpp"
 #include "Print.hpp"
 #include "BoundingBox.hpp"
@@ -698,7 +699,7 @@ std::string Print::validate(std::vector<std::string>* warnings) const
             if (! object->has_support() && warnings) {
                 for (const ModelVolume* mv : object->model_object()->volumes) {
                     bool has_enforcers = mv->is_support_enforcer() || 
-                        (mv->is_model_part() && mv->supported_facets.has_facets(*mv, TriangleStateType::ENFORCER));
+                        (mv->is_model_part() && mv->supported_facets.has_facets(*mv, Domain::TriangleSelector::TriangleStateType::ENFORCER));
                     if (has_enforcers) {
                         warnings->emplace_back("_SUPPORTS_OFF");
                         break;

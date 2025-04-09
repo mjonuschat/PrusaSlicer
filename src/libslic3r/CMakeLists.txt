@@ -370,8 +370,6 @@ set(SLIC3R_SOURCES
     Timer.hpp
     Thread.cpp
     Thread.hpp
-    TriangleSelector.cpp
-    TriangleSelector.hpp
     TriangleSetSampling.cpp
     TriangleSetSampling.hpp
     TriangleSelectorWrapper.cpp

@@ -39,6 +39,8 @@ add_library(slic3r-biz-algorithms
     include/Slic3r/Biz/Algorithms/Tesselate.hpp
     src/Slic3r/Biz/Algorithms/TriangleMesh.cpp
     include/Slic3r/Biz/Algorithms/TriangleMesh.hpp
+    src/Slic3r/Biz/Algorithms/TriangleSelector.cpp
+    include/Slic3r/Biz/Algorithms/TriangleSelector.hpp
 )
 target_include_directories(slic3r-biz-algorithms PUBLIC include)
 target_include_directories(slic3r-biz-algorithms PRIVATE src)

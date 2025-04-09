@@ -26,6 +26,9 @@ add_library(slic3r-domain
     include/Slic3r/Domain/TriangleMesh.hpp
     src/Slic3r/Domain/TriangleMesh.cpp
 
+    include/Slic3r/Domain/TriangleSelector.hpp
+    src/Slic3r/Domain/TriangleSelector.cpp
+
     include/Slic3r/Domain/SLA/DrainHole.hpp
     src/Slic3r/Domain/SLA/DrainHole.cpp
 

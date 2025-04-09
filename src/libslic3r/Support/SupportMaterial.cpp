@@ -25,6 +25,7 @@
 #include <cinttypes>
 #include <cstdlib>
 
+#include "Slic3r/Domain/TriangleSelector.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/ExtrusionEntityCollection.hpp"
 #include "libslic3r/Layer.hpp"
@@ -49,7 +50,6 @@
 #include "libslic3r/Support/SupportLayer.hpp"
 #include "libslic3r/Support/SupportParameters.hpp"
 #include "libslic3r/Surface.hpp"
-#include "libslic3r/TriangleSelector.hpp"
 #include "tcbspan/span.hpp"
 
 #define SUPPORT_USE_AGG_RASTERIZER
@@ -1129,8 +1129,8 @@ struct SupportAnnotations
         buildplate_covered(buildplate_covered)
     {
         // Append custom supports.
-        object.project_and_append_custom_facets(false, TriangleStateType::ENFORCER, enforcers_layers);
-        object.project_and_append_custom_facets(false, TriangleStateType::BLOCKER, blockers_layers);
+        object.project_and_append_custom_facets(false, Domain::TriangleSelector::TriangleStateType::ENFORCER, enforcers_layers);
+        object.project_and_append_custom_facets(false, Domain::TriangleSelector::TriangleStateType::BLOCKER, blockers_layers);
     }
 
     std::vector<Polygons>         enforcers_layers;

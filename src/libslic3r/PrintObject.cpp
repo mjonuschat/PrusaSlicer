@@ -30,6 +30,7 @@
 #include <cstdlib>
 
 #include "Slic3r/Biz/Algorithms/Polyline.hpp"
+#include "Slic3r/Domain/TriangleSelector.hpp"
 #include "AABBTreeLines.hpp"
 #include "ExPolygon.hpp"
 #include "Flow.hpp"
@@ -62,7 +63,6 @@
 #include "libslic3r/LayerRegion.hpp"
 #include "libslic3r/Model.hpp"
 #include "libslic3r/MultiMaterialSegmentation.hpp"
-#include "libslic3r/TriangleSelector.hpp"
 #include "tcbspan/span.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/InfillAboveBridges.hpp"
@@ -3412,7 +3412,7 @@ static void project_triangles_to_slabs(SpanOfConstPtrs<Layer> layers, const inde
 }
 
 void PrintObject::project_and_append_custom_facets(
-        bool seam, TriangleStateType type, std::vector<Polygons>& out) const
+        bool seam, Domain::TriangleSelector::TriangleStateType type, std::vector<Polygons>& out) const
 {
     for (const ModelVolume* mv : this->model_object()->volumes)
         if (mv->is_model_part()) {

@@ -369,7 +369,7 @@ public:
     std::vector<Polygons>       slice_support_enforcers() const { return this->slice_support_volumes(ModelVolumeType::SUPPORT_ENFORCER); }
 
     // Helpers to project custom facets on slices
-    void project_and_append_custom_facets(bool seam, TriangleStateType type, std::vector<Polygons>& expolys) const;
+    void project_and_append_custom_facets(bool seam, Domain::TriangleSelector::TriangleStateType type, std::vector<Polygons>& expolys) const;
 
 private:
     // to be called from Print only.
