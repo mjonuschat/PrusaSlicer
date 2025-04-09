@@ -41,10 +41,6 @@ typedef std::vector<ThickPolyline> ThickPolylines;
 extern BoundingBox get_extents(const Slic3r::Polyline &polyline);
 extern BoundingBox get_extents(const Slic3r::Polylines &polylines);
 
-// Return True when erase some otherwise False.
-bool remove_same_neighbor(Polyline &polyline);
-bool remove_same_neighbor(Polylines &polylines);
-
 // Merge polylines at their respective end points.
 // dst_first: the merge point is at dst.begin() or dst.end()?
 // src_first: the merge point is at src.begin() or src.end()?
@@ -63,8 +59,6 @@ inline void polylines_merge(PointsType &dst, bool dst_first, PointsType &&src, b
     // Merge src into dst.
     append(dst, std::move(src));
 }
-
-bool remove_degenerate(Polylines &polylines);
 
 // Returns index of a segment of a polyline and foot point of pt on polyline.
 std::pair<int, Point> foot_pt(const Points &polyline, const Point &pt);

@@ -1127,7 +1127,7 @@ void LoopInterfaceProcessor::generate(SupportGeneratorLayerExtruded &top_contact
             }
         }
         // Remove empty lines.
-        remove_degenerate(loop_lines);
+        Algorithms::Polyline::remove_degenerate(loop_lines);
     }
     
     // add the contact infill area to the interface area

@@ -210,38 +210,6 @@ bool has_duplicate_points(const Polygons &polys)
 #endif
 }
 
-bool remove_same_neighbor(Polygon &polygon)
-{
-    Points &points = polygon.points;
-    if (points.empty())
-        return false;
-    auto last = std::unique(points.begin(), points.end());
-
-    // remove first and last neighbor duplication
-    if (const Point &last_point = *(last - 1); last_point == points.front()) {
-        --last;
-    }
-
-    // no duplicits
-    if (last == points.end())
-        return false;
-
-    points.erase(last, points.end());
-    return true;
-}
-
-bool remove_same_neighbor(Polygons &polygons)
-{
-    if (polygons.empty())
-        return false;
-    bool exist = false;
-    for (Polygon &polygon : polygons)
-        exist |= remove_same_neighbor(polygon);
-    // remove empty polygons
-    polygons.erase(std::remove_if(polygons.begin(), polygons.end(), [](const Polygon &p) { return p.points.size() <= 2; }), polygons.end());
-    return exist;
-}
-
 static inline bool is_stick(const Point &p1, const Point &p2, const Point &p3)
 {
     Point v1 = p2 - p1;
@@ -301,23 +269,6 @@ bool remove_sticks(Polygons &polys)
                 std::swap(polys[i].points, polys[j].points);
             ++ j;
         }
-    }
-    if (j < polys.size())
-        polys.erase(polys.begin() + j, polys.end());
-    return modified;
-}
-
-bool remove_degenerate(Polygons &polys)
-{
-    bool modified = false;
-    size_t j = 0;
-    for (size_t i = 0; i < polys.size(); ++ i) {
-        if (polys[i].points.size() >= 3) {
-            if (j < i) 
-                std::swap(polys[i].points, polys[j].points);
-            ++ j;
-        } else
-            modified = true;
     }
     if (j < polys.size())
         polys.erase(polys.begin() + j, polys.end());

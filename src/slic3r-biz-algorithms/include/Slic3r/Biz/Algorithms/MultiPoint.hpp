@@ -20,21 +20,21 @@ Domain::MultiPoint reversed(const Domain::MultiPoint& multi_point);
 int find_point(const Domain::MultiPoint& multi_point, const Domain::Point& query_pt, double scaled_epsilon);
 
 /**
- * Checks if the MultiPoint contains successive duplicate points.
+ * Checks if the MultiPoint contains consecutive duplicate points.
  *
  * @param multi_point MultiPoint to search within.
- * @return true If at least one pair of successive duplicate points is found.
+ * @return true If at least one pair of consecutive duplicate points is found.
  * @return false Otherwise.
  */
-bool has_duplicate_points(const Domain::MultiPoint& multi_point);
+bool has_consecutive_duplicate_points(const Domain::MultiPoint& multi_point);
 
 /**
- * Removes successive duplicate points from the MultiPoint.
+ * Removes consecutive duplicate points from the MultiPoint.
  *
  * @return true If at least one duplicate point was removed.
  * @return false If no duplicates were found.
  */
-bool remove_duplicate_points(Domain::MultiPoint& multi_point);
+bool remove_consecutive_duplicate_points(Domain::MultiPoint& multi_point);
 
 /**
  * Finds the index of the closest point in the MultiPoint to the given point.

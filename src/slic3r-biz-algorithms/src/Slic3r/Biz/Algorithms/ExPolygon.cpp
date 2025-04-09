@@ -222,14 +222,15 @@ Domain::BoundingBox2crd get_extents(const Domain::ExPolygon &expolygon)
     return poly::get_extents(expolygon.contour);
 }
 
-Domain::BoundingBox2crd get_extents(const Domain::ExPolygons &expolygons)
+Domain::BoundingBox2crd get_extents(const Domain::ExPolygons& expolygons)
 {
     Domain::BoundingBox2crd bbox;
-    if (! expolygons.empty()) {
-        for (size_t i = 0; i < expolygons.size(); ++ i)
-			if (! expolygons[i].contour.points.empty())
-				bbox = bb::merge(bbox, get_extents(expolygons[i]));
+    for (const Domain::ExPolygon& expolygon : expolygons) {
+        if (!expolygon.contour.points.empty()) {
+            bbox = bb::merge(bbox, get_extents(expolygon));
+        }
     }
+
     return bbox;
 }
 

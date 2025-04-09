@@ -12,12 +12,15 @@
 #include <cassert>
 #include <cstring>
 
+#include "Slic3r/Biz/Algorithms/Polyline.hpp"
 #include "Emboss.hpp" // heal for shape
 #include "libslic3r/ClipperUtils.hpp"
 #include "Slic3r/Domain/EmbossShape.hpp"
 #include "Slic3r/Exception.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/Polyline.hpp"
+
+using namespace Slic3r::Biz;
 
 namespace {    
 
@@ -386,8 +389,8 @@ LinesPath linearize_path(NSVGpath *first_path, const NSVGLineParams &param)
         // prepare for new path - recycle alocated memory
         points.clear();
     }
-    remove_same_neighbor(polygons);
-    remove_same_neighbor(polylines);
+    Algorithms::Polygon::remove_consecutive_duplicate_points(polygons);
+    Algorithms::Polyline::remove_consecutive_duplicate_points(polylines);
     return result;
 }
 

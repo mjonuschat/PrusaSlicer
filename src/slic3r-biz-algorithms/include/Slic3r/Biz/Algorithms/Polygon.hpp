@@ -10,21 +10,42 @@
 namespace Slic3r::Biz::Algorithms::Polygon {
 
 /**
- * Checks if the Polygon contains successive duplicate points.
+ * Checks if the Polygon contains consecutive duplicate points.
  *
  * @param polygon Polygon to search within.
- * @return true If at least one pair of successive duplicate points is found.
+ * @return true If at least one pair of consecutive duplicate points is found.
  * @return false Otherwise.
  */
-bool has_duplicate_points(const Domain::Polygon& polygon);
+bool has_consecutive_duplicate_points(const Domain::Polygon& polygon);
 
 /**
- * Removes successive duplicate points from the Polygon.
+ * Removes consecutive duplicate points from the Polygon.
  *
+ * @param polygon Reference to Polygon to process and modify in-place.
+ * @param check_first_and_last Indicate whether to check for a duplicate between the first and last point.
  * @return true If at least one duplicate point was removed.
  * @return false If no duplicates were found.
  */
-bool remove_duplicate_points(Domain::Polygon& polygon);
+bool remove_consecutive_duplicate_points(Domain::Polygon& polygon, bool check_first_and_last = true);
+
+/**
+ * Removes consecutive duplicate points from all Polygons.
+ *
+ * @param polygons Reference to Polygons to process and modify in-place.
+ * @param check_first_and_last Indicate whether to check for a duplicate between the first and last point.
+ * @return true If at least one duplicate point was removed from any Polygon.
+ * @return false If no duplicates were found.
+ */
+bool remove_consecutive_duplicate_points(Domain::Polygons& Polygons, bool check_first_and_last = true);
+
+/**
+ * Removes degenerate Polygons (those that are empty or have fewer than three points).
+ *
+ * @param polygon Reference to Polygon to process and modify in-place.
+ * @return true If at least one degenerate Polygon was removed.
+ * @return false If no degenerate Polygon were found.
+ */
+bool remove_degenerate(Domain::Polygons& polygons);
 
 /**
  * Finds the index of the closest point in the Polygon to the given point.

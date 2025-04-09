@@ -31,14 +31,34 @@ int find_point(const Domain::Polyline& polyline, const Domain::Point& query_pt, 
     return MultiPoint::find_point(polyline, query_pt, scaled_epsilon);
 }
 
-bool has_duplicate_points(const Domain::Polyline& polyline)
+bool has_consecutive_duplicate_points(const Domain::Polyline& polyline)
 {
-    return Point::has_duplicate_points(polyline.points);
+    return Point::has_consecutive_duplicate_points(polyline.points);
 }
 
-bool remove_duplicate_points(Domain::Polyline& polyline)
+bool remove_consecutive_duplicate_points(Domain::Polyline& polyline)
 {
-    return Point::remove_duplicate_points(polyline.points);
+    return Point::remove_consecutive_duplicate_points(polyline.points);
+}
+
+bool remove_consecutive_duplicate_points(Domain::Polylines& polylines)
+{
+    if (polylines.empty())
+        return false;
+
+    bool modified = false;
+    for (Domain::Polyline& polyline : polylines) {
+        modified |= remove_consecutive_duplicate_points(polyline);
+    }
+
+    // Remove empty or invalid polylines.
+    std::erase_if(polylines, [](const Domain::Polyline& p) { return p.points.size() < 2; });
+    return modified;
+}
+
+bool remove_degenerate(Domain::Polylines& polylines)
+{
+    return std::erase_if(polylines, [](const Domain::Polyline& p) { return p.points.size() < 2; }) > 0;
 }
 
 void clip_end(Domain::Polyline& polyline, double distance)

@@ -332,8 +332,8 @@ bool remove_same_neighbor(ExPolygons &expolygons)
     bool remove_from_holes   = false;
     bool remove_from_contour = false;
     for (ExPolygon &expoly : expolygons) {
-        remove_from_contour |= remove_same_neighbor(expoly.contour);
-        remove_from_holes |= remove_same_neighbor(expoly.holes);
+        remove_from_contour |= Algorithms::Polygon::remove_consecutive_duplicate_points(expoly.contour);
+        remove_from_holes |= Algorithms::Polygon::remove_consecutive_duplicate_points(expoly.holes);
     }
     // Removing of expolygons without contour
     if (remove_from_contour)

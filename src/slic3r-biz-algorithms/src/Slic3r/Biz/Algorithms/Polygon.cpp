@@ -27,14 +27,34 @@ size_t count_points(const Domain::Polygons& polys)
 
 } // namespace Impl
 
-bool has_duplicate_points(const Domain::Polygon& polygon)
+bool has_consecutive_duplicate_points(const Domain::Polygon& polygon)
 {
-    return Point::has_duplicate_points(polygon.points);
+    return Point::has_consecutive_duplicate_points(polygon.points);
 }
 
-bool remove_duplicate_points(Domain::Polygon& polygon)
+bool remove_consecutive_duplicate_points(Domain::Polygon& polygon, const bool check_first_and_last)
 {
-    return Point::remove_duplicate_points(polygon.points);
+    return Point::remove_consecutive_duplicate_points(polygon.points, check_first_and_last);
+}
+
+bool remove_consecutive_duplicate_points(Domain::Polygons& polygons, const bool check_first_and_last)
+{
+    if (polygons.empty())
+        return false;
+
+    bool modified = false;
+    for (Domain::Polygon& polygon : polygons) {
+        modified |= remove_consecutive_duplicate_points(polygon, check_first_and_last);
+    }
+
+    // Remove empty or invalid polygons.
+    std::erase_if(polygons, [](const Domain::Polygon& p) { return p.points.size() < 3; });
+    return modified;
+}
+
+bool remove_degenerate(Domain::Polygons& polygons)
+{
+    return std::erase_if(polygons, [](const Domain::Polygon& p) { return p.points.size() < 3; }) > 0;
 }
 
 int closest_point_index(const Domain::Polygon& polygon, const Domain::Point& point)

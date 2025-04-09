@@ -38,14 +38,14 @@ int find_point(const Domain::MultiPoint& multi_point, const Domain::Point& query
     return dist2_min < eps2 ? idx_min : -1;
 }
 
-bool has_duplicate_points(const Domain::MultiPoint& multi_point)
+bool has_consecutive_duplicate_points(const Domain::MultiPoint& multi_point)
 {
-    return Point::has_duplicate_points(multi_point.points);
+    return Point::has_consecutive_duplicate_points(multi_point.points);
 }
 
-bool remove_duplicate_points(Domain::MultiPoint& multi_point)
+bool remove_consecutive_duplicate_points(Domain::MultiPoint& multi_point)
 {
-    return Point::remove_duplicate_points(multi_point.points);
+    return Point::remove_consecutive_duplicate_points(multi_point.points);
 }
 
 int closest_point_index(const Domain::MultiPoint& multi_point, const Domain::Point& query_pt)
