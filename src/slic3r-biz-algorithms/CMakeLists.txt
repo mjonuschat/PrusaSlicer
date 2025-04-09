@@ -43,10 +43,19 @@ add_library(slic3r-biz-algorithms
 target_include_directories(slic3r-biz-algorithms PUBLIC include)
 target_include_directories(slic3r-biz-algorithms PRIVATE src)
 
+find_package(Qhull 7.2 REQUIRED)
+add_library(qhull INTERFACE)
+if(SLIC3R_STATIC)
+    slic3r_remap_configs("Qhull::qhullcpp;Qhull::qhullstatic_r" RelWithDebInfo Release)
+    target_link_libraries(qhull INTERFACE Qhull::qhullcpp Qhull::qhullstatic_r)
+else()
+    slic3r_remap_configs("Qhull::qhullcpp;Qhull::qhull_r" RelWithDebInfo Release)
+    target_link_libraries(qhull INTERFACE Qhull::qhullcpp Qhull::qhull_r)
+endif()
+
 target_link_libraries(slic3r-biz-algorithms PRIVATE localesutils glu-libtess qhull)
 target_link_libraries(slic3r-biz-algorithms PUBLIC
     slic3r-domain
-    slic3r-base
     clipper
     admesh
 )

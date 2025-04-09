@@ -27,4 +27,4 @@ target_include_directories(slic3r-domain PRIVATE src)
 # TODO, remove dependency on admesh by refactoring triangle mesh
 target_link_libraries(slic3r-domain PUBLIC admesh)
 
-target_link_libraries(slic3r-domain PUBLIC slic3r-domain-types slic3r-base TBB::tbbmalloc)
+target_link_libraries(slic3r-domain PUBLIC slic3r-base TBB::tbbmalloc)

@@ -15,9 +15,9 @@ on:
 
 jobs:
   build_win:
-    uses: Prusa-Development/PrusaSlicer-Actions/.github/workflows/build_windows.yml@slic3r3_prototype
+    uses: Prusa-Development/PrusaSlicer-Actions/.github/workflows/build_windows.yml@ms_cmake_refactor
     secrets: inherit
     with:
-      actions_branch: slic3r3_prototype
+      actions_branch: ms_cmake_refactor
       create_pdb: ${{ inputs.create_pdb || false }}
       create_installer: ${{ inputs.create_installer || false }}

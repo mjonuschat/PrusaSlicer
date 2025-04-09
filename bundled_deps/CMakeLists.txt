@@ -18,14 +18,12 @@ add_library(semver STATIC
     semver/semver.h
 )
 target_include_directories(semver PUBLIC semver)
-encoding_check(semver)
 
 add_library(qoi STATIC
     qoi/qoilib.c
     qoi/qoi.h
 )
 target_include_directories(qoi PUBLIC qoi)
-encoding_check(qoi)
 
 add_library(fastfloat INTERFACE)
 target_include_directories(fastfloat INTERFACE fast_float)
@@ -52,7 +50,7 @@ target_include_directories(stb_image INTERFACE stb_image)
 add_library(tcbspan INTERFACE)
 target_include_directories(tcbspan INTERFACE tcbspan)
 
-if (SLIC3R_GUI OR SLIC3R3_ENABLED)
+if (SLIC3R_GUI)
     add_subdirectory(imgui)
     add_subdirectory(hidapi)
 endif ()
