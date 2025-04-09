@@ -372,6 +372,7 @@ endif()
 set(OpenVDB_LIB_COMPONENTS "")
 set(OpenVDB_DEBUG_SUFFIX "d" CACHE STRING "Suffix for the debug libraries")
 get_property(_multi_config GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
+set(_single_config_debug CMAKE_BUILD_TYPE STREQUAL "Debug" AND MSVC AND NOT _multi_config)
 
 foreach(COMPONENT ${OpenVDB_FIND_COMPONENTS})
   message("COMPONENT = " ${COMPONENT})
@@ -411,13 +412,13 @@ foreach(COMPONENT ${OpenVDB_FIND_COMPONENTS})
       PATH_SUFFIXES ${OPENVDB_LIB_PATH_SUFFIXES}
     )
 
-    if (_multi_config)
+    if (_multi_config OR _single_config_debug)
       find_library(OpenVDB_${COMPONENT}_LIBRARY_DEBUG ${PrusaSlicer_OpenVDB_prefix}${LIB_NAME}${OpenVDB_DEBUG_SUFFIX}
               ${_FIND_OPENVDB_ADDITIONAL_OPTIONS}
               PATHS ${_VDB_COMPONENT_SEARCH_DIRS}
               PATH_SUFFIXES ${OPENVDB_LIB_PATH_SUFFIXES}
       )
-    endif(_multi_config)
+    endif(_multi_config OR _single_config_debug)
 
   endif()
 
@@ -762,10 +763,10 @@ if(NOT TARGET OpenVDB::openvdb)
     INTERFACE_LINK_LIBRARIES "${_OPENVDB_VISIBLE_DEPENDENCIES}" # visible deps (headers)
     INTERFACE_COMPILE_FEATURES cxx_std_17
   )
-  if (_multi_config)
+  if (_multi_config OR _single_config_debug)
     set_target_properties(OpenVDB::openvdb PROPERTIES
             IMPORTED_LOCATION_DEBUG "${OpenVDB_openvdb_LIBRARY_DEBUG}")
-  endif (_multi_config)
+  endif (_multi_config OR _single_config_debug)
 endif()
 
 # OpenVDB::openvdb_je
