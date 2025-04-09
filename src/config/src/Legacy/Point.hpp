@@ -29,11 +29,15 @@
 #include <utility>
 #include <cassert>
 
-#include "libslic3r.h"
+
 #include "LocalesUtils.hpp"
+
+
+// Following are LEGACY headers.
+#include "libslic3r_legacy.h"
 #include "Point.hpp"
 
-namespace Slic3r {
+namespace Slic3rLegacy {
 
 class BoundingBox;
 class BoundingBoxf;
@@ -144,18 +148,6 @@ inline Eigen::Matrix<typename Derived::Scalar, 3, 1, Eigen::DontAlign> to_3d(con
     static_assert(Derived::IsVectorAtCompileTime && int(Derived::SizeAtCompileTime) == 2, "to_3d(): first parameter is not a 2D vector");
     return { pt.x(), pt.y(), z };
 }
-
-inline Vec2d   unscale(coord_t x, coord_t y) { return Vec2d(unscale<double>(x), unscale<double>(y)); }
-inline Vec2d   unscale(const Vec2crd &pt) { return Vec2d(unscale<double>(pt.x()), unscale<double>(pt.y())); }
-inline Vec2d   unscale(const Vec2d   &pt) { return Vec2d(unscale<double>(pt.x()), unscale<double>(pt.y())); }
-inline Vec3d   unscale(coord_t x, coord_t y, coord_t z) { return Vec3d(unscale<double>(x), unscale<double>(y), unscale<double>(z)); }
-inline Vec3d   unscale(const Vec3crd &pt) { return Vec3d(unscale<double>(pt.x()), unscale<double>(pt.y()), unscale<double>(pt.z())); }
-inline Vec3d   unscale(const Vec3d   &pt) { return Vec3d(unscale<double>(pt.x()), unscale<double>(pt.y()), unscale<double>(pt.z())); }
-
-inline std::string to_string(const Vec2crd &pt) { return std::string("[") + float_to_string_decimal_point(pt.x()) + ", " + float_to_string_decimal_point(pt.y()) + "]"; }
-inline std::string to_string(const Vec2d   &pt) { return std::string("[") + float_to_string_decimal_point(pt.x()) + ", " + float_to_string_decimal_point(pt.y()) + "]"; }
-inline std::string to_string(const Vec3crd &pt) { return std::string("[") + float_to_string_decimal_point(pt.x()) + ", " + float_to_string_decimal_point(pt.y()) + ", " + float_to_string_decimal_point(pt.z()) + "]"; }
-inline std::string to_string(const Vec3d   &pt) { return std::string("[") + float_to_string_decimal_point(pt.x()) + ", " + float_to_string_decimal_point(pt.y()) + ", " + float_to_string_decimal_point(pt.z()) + "]"; }
 
 std::vector<Vec3f> transform(const std::vector<Vec3f>& points, const Transform3f& t);
 Pointf3s transform(const Pointf3s& points, const Transform3d& t);
@@ -346,7 +338,7 @@ inline bool shorter_then(const Point& p0, const coord_t len)
         return false;
     if (p0.y() > len || p0.y() < -len)
         return false;
-    return p0.cast<int64_t>().squaredNorm() <= Slic3r::sqr(int64_t(len));
+    return p0.cast<int64_t>().squaredNorm() <= Slic3rLegacy::sqr(int64_t(len));
 }
 
 // To be used by std::unordered_map, std::unordered_multimap and friends.
@@ -601,7 +593,7 @@ static bool apply(T &val, const MinMax<T> &limit)
     return false;
 }
 
-} // namespace Slic3r
+} // namespace Slic3rLegacy
 
 // start Boost
 #include <boost/version.hpp>
@@ -609,25 +601,25 @@ static bool apply(T &val, const MinMax<T> &limit)
 
 namespace boost { namespace polygon {
     template <>
-    struct geometry_concept<Slic3r::Point> { using type = point_concept; };
+    struct geometry_concept<Slic3rLegacy::Point> { using type = point_concept; };
    
     template <>
-    struct point_traits<Slic3r::Point> {
+    struct point_traits<Slic3rLegacy::Point> {
         using coordinate_type = coord_t;
     
-        static inline coordinate_type get(const Slic3r::Point& point, orientation_2d orient) {
+        static inline coordinate_type get(const Slic3rLegacy::Point& point, orientation_2d orient) {
             return static_cast<coordinate_type>(point((orient == HORIZONTAL) ? 0 : 1));
         }
     };
     
     template <>
-    struct point_mutable_traits<Slic3r::Point> {
+    struct point_mutable_traits<Slic3rLegacy::Point> {
         using coordinate_type = coord_t;
-        static inline void set(Slic3r::Point& point, orientation_2d orient, coord_t value) {
+        static inline void set(Slic3rLegacy::Point& point, orientation_2d orient, coord_t value) {
             point((orient == HORIZONTAL) ? 0 : 1) = value;
         }
-        static inline Slic3r::Point construct(coord_t x_value, coord_t y_value) {
-            return Slic3r::Point(x_value, y_value);
+        static inline Slic3rLegacy::Point construct(coord_t x_value, coord_t y_value) {
+            return Slic3rLegacy::Point(x_value, y_value);
         }
     };
 } }
@@ -637,16 +629,16 @@ namespace boost { namespace polygon {
 // To be able to use Vec<> and Mat<> in range based for loops:
 namespace Eigen {
 template<class T, int N, int M>
-T* begin(Slic3r::Mat<N, M, T> &mat) { return mat.data(); }
+T* begin(Slic3rLegacy::Mat<N, M, T> &mat) { return mat.data(); }
 
 template<class T, int N, int M>
-T* end(Slic3r::Mat<N, M, T> &mat) { return mat.data() + N * M; }
+T* end(Slic3rLegacy::Mat<N, M, T> &mat) { return mat.data() + N * M; }
 
 template<class T, int N, int M>
-const T* begin(const Slic3r::Mat<N, M, T> &mat) { return mat.data(); }
+const T* begin(const Slic3rLegacy::Mat<N, M, T> &mat) { return mat.data(); }
 
 template<class T, int N, int M>
-const T* end(const Slic3r::Mat<N, M, T> &mat) { return mat.data() + N * M; }
+const T* end(const Slic3rLegacy::Mat<N, M, T> &mat) { return mat.data() + N * M; }
 } // namespace Eigen
 
 #endif

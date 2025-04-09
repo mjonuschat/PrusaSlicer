@@ -38,14 +38,14 @@
 #include <set>
 #include <cstdlib>
 #include <cstring>
-#include <format>
+#include <boost/format.hpp>
 
 #include "Slic3r/Semver.hpp"
 #include "Slic3r/Exception.hpp"
 
 #include "Point.hpp" // This is the LEGACY Point.hpp
 
-namespace Slic3r {
+namespace Slic3rLegacy {
 
 
 bool is_gcode_file(const std::string& path)
@@ -390,7 +390,7 @@ std::string ConfigBase::SetDeserializeItem::format(std::initializer_list<float> 
     for (float v : values) {
         if (i ++ > 0)
             out += ", ";
-        out += float_to_string_decimal_point(double(v));
+        out += Slic3r::float_to_string_decimal_point(double(v));
     }
     return out;
 }
@@ -402,7 +402,7 @@ std::string ConfigBase::SetDeserializeItem::format(std::initializer_list<double>
     for (float v : values) {
         if (i ++ > 0)
             out += ", ";
-        out += float_to_string_decimal_point(v);
+        out += Slic3r::float_to_string_decimal_point(v);
     }
     return out;
 }
@@ -494,7 +494,7 @@ void ConfigBase::set(const std::string &opt_key, double value, bool create)
     switch (opt->type()) {
     	case coFloat:  			static_cast<ConfigOptionFloat*>(opt)->value = value; break;
     	case coFloatOrPercent:  static_cast<ConfigOptionFloatOrPercent*>(opt)->value = value; static_cast<ConfigOptionFloatOrPercent*>(opt)->percent = false; break;
-        case coString: 			static_cast<ConfigOptionString*>(opt)->value = float_to_string_decimal_point(value); break;
+        case coString: 			static_cast<ConfigOptionString*>(opt)->value = Slic3r::float_to_string_decimal_point(value); break;
     	default: throw BadOptionTypeException("Configbase::set() - conversion from float not possible");
     }
 }
@@ -515,7 +515,7 @@ bool ConfigBase::set_deserialize_nothrow(const t_config_option_key &opt_key_src,
 void ConfigBase::set_deserialize(const t_config_option_key &opt_key_src, const std::string &value_src, ConfigSubstitutionContext& substitutions_ctxt, bool append)
 {
 	if (! this->set_deserialize_nothrow(opt_key_src, value_src, substitutions_ctxt, append))
-		throw BadOptionValueException(std::format("Invalid value provided for parameter {}: {}", opt_key_src,  value_src));
+		throw BadOptionValueException((boost::format("Invalid value provided for parameter %1%: %2%") % opt_key_src % value_src).str());
 }
 
 void ConfigBase::set_deserialize(std::initializer_list<SetDeserializeItem> items, ConfigSubstitutionContext& substitutions_ctxt)
@@ -678,7 +678,7 @@ ConfigSubstitutions ConfigBase::load(const std::string& filename, ForwardCompati
     if (is_gcode_file(filename)) {
         FILE* file = boost::nowide::fopen(filename.c_str(), "rb");
         if (file == nullptr)
-            throw Slic3r::RuntimeError(std::format("Error opening file {}", filename));
+            throw Slic3r::RuntimeError((boost::format("Error opening file %1%") % filename).str());
 
         std::vector<std::byte> cs_buffer(65536);
         using namespace bgcode::core;
@@ -693,7 +693,7 @@ ConfigSubstitutions ConfigBase::load(const std::string& filename, ForwardCompati
     case EFileType::Ini:         { return this->load_from_ini(filename, compatibility_rule); }
     case EFileType::AsciiGCode:  { return this->load_from_gcode_file(filename, compatibility_rule);}
     case EFileType::BinaryGCode: { return this->load_from_binary_gcode_file(filename, compatibility_rule);}
-    default:                     { throw Slic3r::RuntimeError(std::format("Invalid file {}", filename)); }
+    default:                     { throw Slic3r::RuntimeError((boost::format("Invalid file %1%") % filename).str()); }
     }
 }
 
@@ -705,7 +705,7 @@ ConfigSubstitutions ConfigBase::load_from_ini(const std::string &file, ForwardCo
         boost::property_tree::read_ini(ifs, tree);
         return this->load(tree, compatibility_rule);
     } catch (const ConfigurationError &e) {
-        throw ConfigurationError(std::format("Failed loading configuration file \"{}\": {}", file, e.what()));
+        throw ConfigurationError((boost::format("Failed loading configuration file \"%1%\": %2%") % file % e.what()).str());
     }
 }
 
@@ -925,9 +925,9 @@ ConfigSubstitutions ConfigBase::load_from_gcode_file(const std::string &filename
                 size_t j = i;
                 for (; j < header.size() && header[j] != ' '; ++ j) ;
                 try {
-                    Semver semver(header.substr(i, j - i));
-                    has_delimiters = semver >= Semver(2, 4, 0, nullptr, "alpha0");
-                } catch (const RuntimeError &) {
+                    Slic3r::Semver semver(header.substr(i, j - i));
+                    has_delimiters = semver >= Slic3r::Semver(2, 4, 0, nullptr, "alpha0");
+                } catch (const Slic3r::RuntimeError &) {
                 }
                 header_found = true;
                 break;
@@ -960,7 +960,7 @@ ConfigSubstitutions ConfigBase::load_from_gcode_file(const std::string &filename
                 break;
             }
         if (! end_found) 
-            throw Slic3r::RuntimeError(std::format("Configuration block closing tag \"; prusaslicer_config = end\" not found when reading {}", filename));
+            throw Slic3r::RuntimeError((boost::format("Configuration block closing tag \"; prusaslicer_config = end\" not found when reading %1%") % filename).str());
         std::string key, value;
         while (reader.getline(line)) {
             if (line == "; prusaslicer_config = begin") {
@@ -983,7 +983,7 @@ ConfigSubstitutions ConfigBase::load_from_gcode_file(const std::string &filename
             }
         }
         if (! begin_found) 
-            throw Slic3r::RuntimeError(std::format("Configuration block opening tag \"; prusaslicer_config = begin\" not found when reading {}", filename));
+            throw Slic3r::RuntimeError((boost::format("Configuration block opening tag \"; prusaslicer_config = begin\" not found when reading %1%") % filename).str());
     }
     else
     {
@@ -1000,7 +1000,7 @@ ConfigSubstitutions ConfigBase::load_from_gcode_file(const std::string &filename
     }
 
     if (key_value_pairs < 80)
-        throw Slic3r::RuntimeError(std::format("Suspiciously low number of configuration values extracted from {}: {}", filename, key_value_pairs));
+        throw Slic3r::RuntimeError((boost::format("Suspiciously low number of configuration values extracted from %1%: %2%") % filename % key_value_pairs).str());
 
     // Do legacy conversion on a completely loaded dictionary.
     // Perform composite conversions, for example merging multiple keys into one key.
@@ -1014,32 +1014,32 @@ ConfigSubstitutions ConfigBase::load_from_binary_gcode_file(const std::string& f
 
     FilePtr file{ boost::nowide::fopen(filename.c_str(), "rb") };
     if (file.f == nullptr)
-        throw Slic3r::RuntimeError(std::format("Error opening file {}", filename));
+        throw Slic3r::RuntimeError((boost::format("Error opening file %1%") % filename).str());
 
     using namespace bgcode::core;
     using namespace bgcode::binarize;
     std::vector<std::byte> cs_buffer(65536);
     EResult res = is_valid_binary_gcode(*file.f, true, cs_buffer.data(), cs_buffer.size());
     if (res != EResult::Success)
-        throw Slic3r::RuntimeError(std::format("File {} does not contain a valid binary gcode\nError: {}", filename,
-            std::string(translate_result(res))));
+        throw Slic3r::RuntimeError((boost::format("File %1% does not contain a valid binary gcode\nError: %2%") % filename
+            % std::string(translate_result(res))).str());
 
     FileHeader file_header;
     res = read_header(*file.f, file_header, nullptr);
     if (res != EResult::Success)
-        throw Slic3r::RuntimeError(std::format("Error while reading file {}: {}", filename, std::string(translate_result(res))));
+        throw Slic3r::RuntimeError((boost::format("Error while reading file %1%: %2%") % filename % std::string(translate_result(res))).str());
 
     // searches for config block
     BlockHeader block_header;
     res = read_next_block_header(*file.f, file_header, block_header, EBlockType::SlicerMetadata, cs_buffer.data(), cs_buffer.size());
     if (res != EResult::Success)
-        throw Slic3r::RuntimeError(std::format("Error while reading file {}: {}", filename, std::string(translate_result(res))));
+        throw Slic3r::RuntimeError((boost::format("Error while reading file %1%: %2%") % filename % std::string(translate_result(res))).str());
     if ((EBlockType)block_header.type != EBlockType::SlicerMetadata)
-        throw Slic3r::RuntimeError(std::format("Unable to find slicer metadata block in file {}", filename));
+        throw Slic3r::RuntimeError((boost::format("Unable to find slicer metadata block in file %1%") % filename).str());
     SlicerMetadataBlock slicer_metadata_block;
     res = slicer_metadata_block.read_data(*file.f, file_header, block_header);
     if (res != EResult::Success)
-        throw Slic3r::RuntimeError(std::format("Error while reading file {}: {}", filename, std::string(translate_result(res))));
+        throw Slic3r::RuntimeError((boost::format("Error while reading file %1%: %2%") % filename % std::string(translate_result(res))).str());
 
     // extracts data from block
     for (const auto& [key, value] : slicer_metadata_block.raw_data) {

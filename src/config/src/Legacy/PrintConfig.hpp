@@ -52,12 +52,13 @@
 #include <utility>
 #include <vector>
 
-#include "libslic3r.h"
+// Following are LEGACY headers.
+#include "libslic3r_legacy.h"
 #include "Config.hpp"
 #include "Point.hpp"
 
 
-namespace Slic3r {
+namespace Slic3rLegacy {
 
     namespace sla {
         enum class SupportTreeType { Default, Branching, Organic };
@@ -1535,7 +1536,7 @@ private:
     static uint64_t             s_last_timestamp;
 };
 
-} // namespace Slic3r
+} // namespace Slic3rLegacy
 
 
 #endif

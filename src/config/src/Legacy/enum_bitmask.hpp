@@ -7,7 +7,7 @@
 
 #include <type_traits>
 
-namespace Slic3r {
+namespace Slic3rLegacy {
 
 // enum_bitmasks can only be used with enums.
 template<class option_type, typename = typename std::enable_if<std::is_enum<option_type>::value>::type>

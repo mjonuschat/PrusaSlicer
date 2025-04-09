@@ -5,11 +5,9 @@
 #ifndef slic3r_GCodeThumbnails_hpp_
 #define slic3r_GCodeThumbnails_hpp_
 
-#include <boost/beast/core/detail/base64.hpp>
 #include <assert.h>
 #include <stdint.h>
 #include <string.h>
-#include <boost/beast/core.hpp>
 #include <boost/format.hpp>
 #include <vector>
 #include <memory>
@@ -20,10 +18,9 @@
 
 #include "Point.hpp"
 #include "PrintConfig.hpp"
-//#include "ThumbnailData.hpp"
 #include "enum_bitmask.hpp"
 
-namespace Slic3r {
+namespace Slic3rLegacy {
 class ConfigBase;
 
     enum class ThumbnailError : int { InvalidVal, OutOfRange, InvalidExt };
@@ -31,7 +28,7 @@ class ConfigBase;
     ENABLE_ENUM_BITMASK_OPERATORS(ThumbnailError);
 }
 
-namespace Slic3r::GCodeThumbnails {
+namespace Slic3rLegacy::GCodeThumbnails {
 
 struct CompressedImageBuffer
 {

@@ -15,10 +15,8 @@
 #include <algorithm>
 #include <cstring>
 
-//#include "BoundingBox.hpp"
-#include "libslic3r.h"
 
-namespace Slic3r {
+namespace Slic3rLegacy {
 
 std::vector<Vec3f> transform(const std::vector<Vec3f>& points, const Transform3f& t)
 {

@@ -4,24 +4,18 @@
 ///|/
 #include "Thumbnails.hpp"
 
-//#include <qoi.h>
-//#include <jpeglib.h>
-//#include <jmorecfg.h>
 #include <stdlib.h>
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/log/trivial.hpp>
+#include <boost/format.hpp>
 #include <string>
 #include <cstdint>
-#include <format>
 
-//#include "libslic3r/miniz_extension.hpp" // IWYU pragma: keep
 #include "Config.hpp"
-//#include "ThumbnailData.hpp"
 #include "Point.hpp"
 #include "PrintConfig.hpp"
-//#include "miniz.h"
 
-namespace Slic3r::GCodeThumbnails {
+namespace Slic3rLegacy::GCodeThumbnails {
 
 using namespace std::literals;
 
@@ -96,7 +90,7 @@ std::string get_error_string(const ThumbnailErrors& errors)
     std::string error_str;
 
     if (errors.has(ThumbnailError::InvalidVal))
-        error_str += "\n - " + std::format("Invalid input format. Expected vector of dimensions in the following format: \"{}\"", "XxY/EXT, XxY/EXT, ...");
+        error_str += "\n - " + (boost::format("Invalid input format. Expected vector of dimensions in the following format: \"%1%\"") % "XxY/EXT, XxY/EXT, ...").str();
     if (errors.has(ThumbnailError::OutOfRange))
         error_str += "\n - Input value is out of range";
     if (errors.has(ThumbnailError::InvalidExt))

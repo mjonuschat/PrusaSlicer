@@ -3,7 +3,8 @@
 
 #include "Legacy/PrintConfig.hpp"
 
-static void convert_enum(const Slic3r::ConfigOption* co, ConfigItem& item)
+
+static void convert_enum(const Slic3rLegacy::ConfigOption* co, ConfigItem& item)
 {
 	const std::string old_str = co->serialize();
 	for (const EnumValueDef& evd : item.def().enum_values)
@@ -17,21 +18,23 @@ static void convert_enum(const Slic3r::ConfigOption* co, ConfigItem& item)
 
 void load_from_legacy_file(const std::string& filename, ConfigBox& box)
 {
-	Slic3r::DynamicPrintConfig cfg;
-	Slic3r::ForwardCompatibilitySubstitutionRule substitutions_ctxt = Slic3r::ForwardCompatibilitySubstitutionRule::EnableSilent;
+	using namespace Slic3rLegacy;
+	DynamicPrintConfig cfg;
+	ForwardCompatibilitySubstitutionRule substitutions_ctxt = ForwardCompatibilitySubstitutionRule::EnableSilent;
 	cfg.load(filename, substitutions_ctxt);
 	// TODO handle errors
 
 	for (const auto& key : cfg.keys()) {
 		if (! box.has(key))
 			continue;
-		Slic3r::ConfigOption* opt = cfg.option(key);
+		ConfigOption* opt = cfg.option(key);
 		ConfigItem& item = box.opt(key);
 		
-		using namespace Slic3r;
 		if (opt->nullable()) {
 			bool old_nil = opt->is_nil();
 			bool nullable_new = std::find(item.def().belongs_to_optional.begin(), item.def().belongs_to_optional.end(), box.type()) != item.def().belongs_to_optional.end();
+			// TODO: We really should enumerate all nullables present in old slicer and handle them separately.
+			// Otherwise, the new slicer will not know in which box shall the nullable item be set.
 
 			if (nullable_new) {
 				item.set_null(old_nil);

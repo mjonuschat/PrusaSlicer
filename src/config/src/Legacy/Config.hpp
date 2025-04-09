@@ -60,9 +60,9 @@
 // FOLLOWING FILES ARE THE LEGACY ONES!
 #include "Point.hpp"
 #include "clonable_ptr.hpp"
-#include "libslic3r.h"
+#include "libslic3r_legacy.h"
 
-namespace Slic3r {
+namespace Slic3rLegacy {
     struct FloatOrPercent
     {
         double  value;
@@ -77,23 +77,23 @@ namespace Slic3r {
 }
 
 namespace std {
-    template<> struct hash<Slic3r::FloatOrPercent> {
-        std::size_t operator()(const Slic3r::FloatOrPercent& v) const noexcept {
+    template<> struct hash<Slic3rLegacy::FloatOrPercent> {
+        std::size_t operator()(const Slic3rLegacy::FloatOrPercent& v) const noexcept {
             std::size_t seed = std::hash<double>{}(v.value);
             return v.percent ? seed ^ 0x9e3779b9 : seed;
         }
     };
 
-    template<> struct hash<Slic3r::Vec2d> {
-        std::size_t operator()(const Slic3r::Vec2d& v) const noexcept {
+    template<> struct hash<Slic3rLegacy::Vec2d> {
+        std::size_t operator()(const Slic3rLegacy::Vec2d& v) const noexcept {
             std::size_t seed = std::hash<double>{}(v.x());
             boost::hash_combine(seed, std::hash<double>{}(v.y()));
             return seed;
         }
     };
 
-    template<> struct hash<Slic3r::Vec3d> {
-        std::size_t operator()(const Slic3r::Vec3d& v) const noexcept {
+    template<> struct hash<Slic3rLegacy::Vec3d> {
+        std::size_t operator()(const Slic3rLegacy::Vec3d& v) const noexcept {
             std::size_t seed = std::hash<double>{}(v.x());
             boost::hash_combine(seed, std::hash<double>{}(v.y()));
             boost::hash_combine(seed, std::hash<double>{}(v.z()));
@@ -102,7 +102,7 @@ namespace std {
     };
 }
 
-namespace Slic3r {
+namespace Slic3rLegacy {
 
 // Name of the configuration option.
 typedef std::string                 t_config_option_key;
@@ -2167,8 +2167,8 @@ public:
 	// If a type is nullable, then it accepts a "nil" value (scalar) or "nil" values (vector).
 	bool								nullable		= false;
     // Default value of this option. The default value object is owned by ConfigDef, it is released in its destructor.
-    Slic3r::clonable_ptr<const ConfigOption> default_value;
-    void 								set_default_value(const ConfigOption* ptr) { this->default_value = Slic3r::clonable_ptr<const ConfigOption>(ptr); }
+    Slic3rLegacy::clonable_ptr<const ConfigOption> default_value;
+    void 								set_default_value(const ConfigOption* ptr) { this->default_value = Slic3rLegacy::clonable_ptr<const ConfigOption>(ptr); }
     template<typename T> const T* 		get_default_value() const { return static_cast<const T*>(this->default_value.get()); }
 
     // Create an empty option to be used as a base for deserialization of DynamicConfig.
@@ -2311,7 +2311,7 @@ public:
     // Currently used for aliasing "solid_layers" to "top_solid_layers", "bottom_solid_layers".
     std::vector<t_config_option_key>    shortcut;
 
-    Slic3r::clonable_ptr<ConfigOptionEnumDef> enum_def;
+    Slic3rLegacy::clonable_ptr<ConfigOptionEnumDef> enum_def;
 
     void set_enum_values(const std::initializer_list<std::string_view> il) {
         this->enum_def_new();
@@ -2394,7 +2394,7 @@ private:
         if (enum_def)
             enum_def->clear();
         else
-            enum_def = Slic3r::clonable_ptr<ConfigOptionEnumDef>(new ConfigOptionEnumDef{});
+            enum_def = Slic3rLegacy::clonable_ptr<ConfigOptionEnumDef>(new ConfigOptionEnumDef{});
     }
 };
 
@@ -2604,10 +2604,10 @@ public:
     	SetDeserializeItem(const std::string &opt_key, const int value, bool append = false) : opt_key(opt_key), opt_value(std::to_string(value)), append(append) {}
         SetDeserializeItem(const char *opt_key, const std::initializer_list<int> values, bool append = false) : opt_key(opt_key), opt_value(format(values)), append(append) {}
         SetDeserializeItem(const std::string &opt_key, const std::initializer_list<int> values, bool append = false) : opt_key(opt_key), opt_value(format(values)), append(append) {}
-        SetDeserializeItem(const char *opt_key, const float value, bool append = false) : opt_key(opt_key), opt_value(float_to_string_decimal_point(value)), append(append) {}
-        SetDeserializeItem(const std::string &opt_key, const float value, bool append = false) : opt_key(opt_key), opt_value(float_to_string_decimal_point(value)), append(append) {}
-        SetDeserializeItem(const char *opt_key, const double value, bool append = false) : opt_key(opt_key), opt_value(float_to_string_decimal_point(value)), append(append) {}
-        SetDeserializeItem(const std::string &opt_key, const double value, bool append = false) : opt_key(opt_key), opt_value(float_to_string_decimal_point(value)), append(append) {}
+        SetDeserializeItem(const char *opt_key, const float value, bool append = false) : opt_key(opt_key), opt_value(Slic3r::float_to_string_decimal_point(value)), append(append) {}
+        SetDeserializeItem(const std::string &opt_key, const float value, bool append = false) : opt_key(opt_key), opt_value(Slic3r::float_to_string_decimal_point(value)), append(append) {}
+        SetDeserializeItem(const char *opt_key, const double value, bool append = false) : opt_key(opt_key), opt_value(Slic3r::float_to_string_decimal_point(value)), append(append) {}
+        SetDeserializeItem(const std::string &opt_key, const double value, bool append = false) : opt_key(opt_key), opt_value(Slic3r::float_to_string_decimal_point(value)), append(append) {}
         SetDeserializeItem(const char *opt_key, const std::initializer_list<float> values, bool append = false) : opt_key(opt_key), opt_value(format(values)), append(append) {}
         SetDeserializeItem(const std::string &opt_key, const std::initializer_list<float> values, bool append = false) : opt_key(opt_key), opt_value(format(values)), append(append) {}
         SetDeserializeItem(const char *opt_key, const std::initializer_list<double> values, bool append = false) : opt_key(opt_key), opt_value(format(values)), append(append) {}

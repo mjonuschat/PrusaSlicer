@@ -23,12 +23,12 @@
 
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
-#include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/log/trivial.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/lexical_cast/bad_lexical_cast.hpp>
 #include <boost/preprocessor/cat.hpp>
+#include <boost/format.hpp>
 #include <set>
 #include <cmath>
 #include <optional>
@@ -38,12 +38,11 @@
 #include "Config.hpp"
 #include "Thumbnails.hpp"
 #include "enum_bitmask.hpp"
-#include "libslic3r.h"
 
 #define L(s) (s)
 #define L_CONTEXT(s,d) (s)
 
-namespace Slic3r {
+namespace Slic3rLegacy {
 
 static std::vector<std::string> s_Preset_sla_tilt_options{
      "delay_before_exposure"
@@ -1085,7 +1084,7 @@ void PrintConfigDef::init_fff_params()
     def->category = L("Infill");
     def->tooltip = L("Fill pattern for bottom infill. This only affects the bottom external visible layer, and not its adjacent solid shells.");
     def->cli = "bottom-fill-pattern|external-fill-pattern|solid-fill-pattern";
-    def->enum_def = Slic3r::clonable_ptr<Slic3r::ConfigOptionEnumDef>(def_top_fill_pattern->enum_def->clone());
+    def->enum_def = Slic3rLegacy::clonable_ptr<Slic3rLegacy::ConfigOptionEnumDef>(def_top_fill_pattern->enum_def->clone());
     def->aliases = def_top_fill_pattern->aliases;
     def->set_default_value(new ConfigOptionEnum<InfillPattern>(ipMonotonic));
 
@@ -5126,7 +5125,7 @@ void PrintConfigDef::handle_legacy_composite(DynamicPrintConfig &config)
         auto [thumbnails_list, errors] = GCodeThumbnails::make_and_check_thumbnail_list(thumbnails_str, extention);
 
         if (errors != enum_bitmask<ThumbnailError>()) {
-            std::string error_str = "\n" + format("Invalid value provided for parameter %1%: %2%", "thumbnails", thumbnails_str);
+            std::string error_str = "\n" + (boost::format("Invalid value provided for parameter %1%: %2%") % "thumbnails" % thumbnails_str).str();
             error_str += GCodeThumbnails::get_error_string(errors);
             throw BadOptionValueException(error_str);
         }
@@ -5135,7 +5134,7 @@ void PrintConfigDef::handle_legacy_composite(DynamicPrintConfig &config)
             const auto& extentions = ConfigOptionEnum<GCodeThumbnailsFormat>::get_enum_names();
             thumbnails_str.clear();
             for (const auto& [ext, size] : thumbnails_list)
-                thumbnails_str += format("%1%x%2%/%3%, ", size.x(), size.y(), extentions[int(ext)]);
+                thumbnails_str += (boost::format("%1%x%2%/%3%, ") % size.x() % size.y() % extentions[int(ext)]).str();
             thumbnails_str.resize(thumbnails_str.length() - 2);
 
             config.set_key_value("thumbnails", new ConfigOptionString(thumbnails_str));
@@ -5467,7 +5466,7 @@ std::string DynamicPrintConfig::validate()
         FullPrintConfig fpc;
         fpc.apply(*this, true);
         // Verify this print options through the FullPrintConfig.
-        return Slic3r::validate(fpc);
+        return Slic3rLegacy::validate(fpc);
     }
     default:
         //FIXME no validation on SLA data?
@@ -5677,8 +5676,8 @@ std::string validate(const FullPrintConfig &cfg)
 }
 
 // Declare and initialize static caches of StaticPrintConfig derived classes.
-#define PRINT_CONFIG_CACHE_ELEMENT_DEFINITION(r, data, CLASS_NAME) StaticPrintConfig::StaticCache<class Slic3r::CLASS_NAME> BOOST_PP_CAT(CLASS_NAME::s_cache_, CLASS_NAME);
-#define PRINT_CONFIG_CACHE_ELEMENT_INITIALIZATION(r, data, CLASS_NAME) Slic3r::CLASS_NAME::initialize_cache();
+#define PRINT_CONFIG_CACHE_ELEMENT_DEFINITION(r, data, CLASS_NAME) StaticPrintConfig::StaticCache<class Slic3rLegacy::CLASS_NAME> BOOST_PP_CAT(CLASS_NAME::s_cache_, CLASS_NAME);
+#define PRINT_CONFIG_CACHE_ELEMENT_INITIALIZATION(r, data, CLASS_NAME) Slic3rLegacy::CLASS_NAME::initialize_cache();
 #define PRINT_CONFIG_CACHE_INITIALIZE(CLASSES_SEQ) \
     BOOST_PP_SEQ_FOR_EACH(PRINT_CONFIG_CACHE_ELEMENT_DEFINITION, _, BOOST_PP_TUPLE_TO_SEQ(CLASSES_SEQ)) \
     int print_config_static_initializer() { \
@@ -6373,4 +6372,4 @@ bool is_XL_printer(const PrintConfig &cfg)
     return is_XL_printer(cfg.printer_notes.value);
 }
 
-} // namespace Slic3r
+} // namespace Slic3rLegacy

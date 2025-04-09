@@ -23,7 +23,7 @@
 
 #include "assert.h"
 
-namespace Slic3r {
+namespace Slic3rLegacy {
 
 // Detect whether the compiler supports C++11 noexcept exception specifications.
 #if defined(_MSC_VER) && _MSC_VER < 1900 && ! defined(noexcept)
