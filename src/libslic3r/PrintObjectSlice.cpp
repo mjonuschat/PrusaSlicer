@@ -29,7 +29,7 @@
 #include "libslic3r/Flow.hpp"
 #include "libslic3r/LayerRegion.hpp"
 #include "libslic3r/Model.hpp"
-#include "libslic3r/ObjectID.hpp"
+#include "Slic3r/Domain/ObjectID.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/PrintBase.hpp"
@@ -135,7 +135,7 @@ static std::vector<ExPolygons> slice_volume(
 
 struct VolumeSlices
 {
-    ObjectID                volume_id;
+    Domain::ObjectID        volume_id;
     std::vector<ExPolygons> slices;
 };
 
@@ -227,7 +227,7 @@ static std::vector<VolumeSlices> slice_volumes_inner(
     return out;
 }
 
-static inline VolumeSlices& volume_slices_find_by_id(std::vector<VolumeSlices> &volume_slices, const ObjectID id)
+static inline VolumeSlices& volume_slices_find_by_id(std::vector<VolumeSlices> &volume_slices, const Domain::ObjectID id)
 {
     auto it = lower_bound_by_predicate(volume_slices.begin(), volume_slices.end(), [id](const VolumeSlices &vs) { return vs.volume_id < id; });
     assert(it != volume_slices.end() && it->volume_id == id);
@@ -344,8 +344,8 @@ static std::vector<std::vector<ExPolygons>> slices_to_regions(
                 struct RegionSlice { 
                     ExPolygons  expolygons;
                     // Identifier of this region in PrintObjectRegions::all_regions
-                    int         region_id;
-                    ObjectID    volume_id;
+                    int              region_id;
+                    Domain::ObjectID volume_id;
                     bool operator<(const RegionSlice &rhs) const {
                         bool this_empty = this->region_id < 0 || this->expolygons.empty();
                         bool rhs_empty  = rhs.region_id < 0 || rhs.expolygons.empty();

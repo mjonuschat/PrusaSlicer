@@ -30,12 +30,12 @@ std::unique_ptr<MultiplySelectionTask<ArrItem>> MultiplySelectionTask<ArrItem>::
     if (selected_ids.empty())
         return task_ptr;
 
-    std::set<ObjectID> selected_objects = selected_geometry_ids(scene);
+    std::set<Domain::ObjectID> selected_objects = selected_geometry_ids(scene);
 
     if (selected_objects.size() != 1)
         return task_ptr;
 
-    ObjectID prototype_geometry_id = *(selected_objects.begin());
+    Domain::ObjectID prototype_geometry_id = *(selected_objects.begin());
 
     auto set_prototype_item = [&task, &itm_conv](const Arrangeable &arrbl) {
         if (arrbl.is_printable())
@@ -86,7 +86,7 @@ MultiplySelectionTask<ArrItem>::process_native(Ctl &ctl)
     if (!prototype_item)
         return result;
 
-    result->prototype_id = retrieve_id(*prototype_item).value_or(ObjectID{});
+    result->prototype_id = retrieve_id(*prototype_item).value_or(Domain::ObjectID{});
 
     class MultiplySelectionCtl: public ArrangerCtl<ArrItem>
     {

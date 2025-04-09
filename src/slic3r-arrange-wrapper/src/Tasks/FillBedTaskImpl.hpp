@@ -55,12 +55,12 @@ void extract(FillBedTask<ArrItem> &task,
     if (selected_ids.empty())
         return;
 
-    std::set<ObjectID> selected_objects = selected_geometry_ids(scene);
+    std::set<Domain::ObjectID> selected_objects = selected_geometry_ids(scene);
 
     if (selected_objects.size() != 1)
         return;
 
-    ObjectID prototype_geometry_id = *(selected_objects.begin());
+    Domain::ObjectID prototype_geometry_id = *(selected_objects.begin());
 
     auto set_prototype_item = [&task, &itm_conv](const Arrangeable &arrbl) {
         if (arrbl.is_printable())
@@ -153,7 +153,7 @@ std::unique_ptr<FillBedTaskResult> FillBedTask<ArrItem>::process_native(
     if (!prototype_item)
         return result;
 
-    result->prototype_id = retrieve_id(*prototype_item).value_or(ObjectID{});
+    result->prototype_id = retrieve_id(*prototype_item).value_or(Domain::ObjectID{});
 
     class FillBedCtl: public ArrangerCtl<ArrItem>
     {

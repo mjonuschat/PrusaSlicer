@@ -410,9 +410,9 @@ double Print::max_allowed_layer_height() const
     return nozzle_diameter_max;
 }
 
-std::vector<ObjectID> Print::print_object_ids() const 
+std::vector<Domain::ObjectID> Print::print_object_ids() const
 { 
-    std::vector<ObjectID> out; 
+    std::vector<Domain::ObjectID> out;
     // Reserve one more for the caller to append the ID of the Print itself.
     out.reserve(m_objects.size() + 1);
     for (const PrintObject *print_object : m_objects)

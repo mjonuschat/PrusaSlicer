@@ -26,7 +26,7 @@
 #include "libslic3r/Config.hpp"
 #include "libslic3r/CustomGCode.hpp"
 #include "libslic3r/Geometry.hpp"
-#include "libslic3r/ObjectID.hpp"
+#include "Slic3r/Domain/ObjectID.hpp"
 #include "libslic3r/PlaceholderParser.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/PrintBase.hpp"
@@ -371,11 +371,11 @@ struct ModelObjectStatus {
         PartiallyValid,
     };
 
-    ModelObjectStatus(ObjectID id, Status status = Unknown) : id(id), status(status) {}
+    ModelObjectStatus(Domain::ObjectID id, Status status = Unknown) : id(id), status(status) {}
     ~ModelObjectStatus() { if (print_object_regions) print_object_regions->ref_cnt_dec(); }
 
     // Key of the set.
-    ObjectID                                    id;
+    Domain::ObjectID                            id;
     // Status of this ModelObject with id on apply().
     Status                                      status;
     // PrintObjects to be generated for this ModelObject including their base transformation.
@@ -433,10 +433,10 @@ struct PrintObjectStatus {
         print_object(print_object),
         trafo(print_object->trafo()),
         status(status) {}
-    PrintObjectStatus(ObjectID id) : id(id), print_object(nullptr), trafo(Transform3d::Identity()), status(Unknown) {}
+    PrintObjectStatus(Domain::ObjectID id) : id(id), print_object(nullptr), trafo(Transform3d::Identity()), status(Unknown) {}
 
     // ID of the ModelObject & PrintObject
-    ObjectID         id;
+    Domain::ObjectID id;
     // Pointer to the old PrintObject
     PrintObject     *print_object;
     // Trafo generated with model_object->world_matrix(true) 
@@ -834,7 +834,7 @@ bool verify_update_print_object_regions(
 // Update caches of volume bounding boxes.
 void update_volume_bboxes(
     std::vector<PrintObjectRegions::LayerRangeRegions>  &layer_ranges,
-    std::vector<ObjectID>                               &cached_volume_ids,
+    std::vector<Domain::ObjectID>                       &cached_volume_ids,
     ModelVolumePtrs                                      model_volumes,
     const Transform3d                                   &object_trafo, 
     const float                                          offset)

@@ -21,7 +21,7 @@
 #include <libslic3r/BoundingBox.hpp>
 #include <libslic3r/ExPolygon.hpp>
 #include <libslic3r/Model.hpp>
-#include <libslic3r/ObjectID.hpp>
+#include <Slic3r/Domain/ObjectID.hpp>
 #include <libslic3r/Point.hpp>
 #include <libslic3r/Polygon.hpp>
 #include <libslic3r/libslic3r.h>
@@ -57,7 +57,7 @@ public:
     virtual void visit(std::function<void(Arrangeable &)>) = 0;
     virtual void visit(std::function<void(const Arrangeable &)>) const = 0;
     virtual void set_selection_predicate(SelectionPredicate pred) = 0;
-    virtual ObjectID get_id() const = 0;
+    virtual Domain::ObjectID get_id() const = 0;
 };
 
 // Something that has a bounding box and can be displaced by arbitrary 2D offset and rotated
@@ -147,14 +147,14 @@ public:
 // Common part of any Arrangeable which is a wipe tower
 struct ArrangeableWipeTowerBase: public Arrangeable
 {
-    ObjectID oid;
+    Domain::ObjectID oid;
 
     Polygon poly;
     SelectionPredicate selection_pred;
     int bed_index{0};
 
     ArrangeableWipeTowerBase(
-        const ObjectID &objid,
+        const Domain::ObjectID &objid,
         Polygon shape,
         int bed_index,
         SelectionPredicate selection_predicate = [](int){ return false; })
@@ -164,8 +164,8 @@ struct ArrangeableWipeTowerBase: public Arrangeable
           selection_pred{std::move(selection_predicate)}
     {}
 
-    ObjectID id() const override { return oid; }
-    ObjectID geometry_id() const override { return {}; }
+    Domain::ObjectID id() const override { return oid; }
+    Domain::ObjectID geometry_id() const override { return {}; }
 
     ExPolygons full_outline() const override
     {
@@ -204,7 +204,7 @@ class SceneBuilder;
 
 struct InstPos { size_t obj_idx = 0, inst_idx = 0; };
 
-using BedConstraints = std::map<ObjectID, int>;
+using BedConstraints = std::map<Domain::ObjectID, int>;
 
 // Implementing ArrangeableModel interface for PrusaSlicer's Model, ModelObject, ModelInstance data
 // hierarchy
@@ -216,7 +216,7 @@ protected:
     AnyPtr<VirtualBedHandler> m_vbed_handler; // Determines how virtual beds are handled
     AnyPtr<const SelectionMask> m_selmask;  // Determines which objects are selected/unselected
     BedConstraints m_bed_constraints;
-    std::optional<std::set<ObjectID>> m_considered_instances;
+    std::optional<std::set<Domain::ObjectID>> m_considered_instances;
 
 private:
     friend class SceneBuilder;
@@ -225,7 +225,7 @@ private:
     static void for_each_arrangeable_(Self &&self, Fn &&fn);
 
     template<class Self, class Fn>
-    static void visit_arrangeable_(Self &&self, const ObjectID &id, Fn &&fn);
+    static void visit_arrangeable_(Self &&self, const Domain::ObjectID &id, Fn &&fn);
 
 public:
     explicit ArrangeableSlicerModel(SceneBuilder &builder);
@@ -234,10 +234,10 @@ public:
     void for_each_arrangeable(std::function<void(Arrangeable &)>) override;
     void for_each_arrangeable(std::function<void(const Arrangeable&)>) const override;
 
-    void visit_arrangeable(const ObjectID &id, std::function<void(const Arrangeable &)>) const override;
-    void visit_arrangeable(const ObjectID &id, std::function<void(Arrangeable &)>) override;
+    void visit_arrangeable(const Domain::ObjectID &id, std::function<void(const Arrangeable &)>) const override;
+    void visit_arrangeable(const Domain::ObjectID &id, std::function<void(Arrangeable &)>) override;
 
-    ObjectID add_arrangeable(const ObjectID &prototype_id) override;
+    Domain::ObjectID add_arrangeable(const Domain::ObjectID &prototype_id) override;
 
     Model & get_model() { return *m_model; }
     const Model &get_model() const { return *m_model; }
@@ -250,7 +250,7 @@ protected:
     AnyPtr<Model> m_model;
     std::vector<AnyPtr<WipeTowerHandler>> m_wipetower_handlers;
     BedConstraints m_bed_constraints;
-    std::optional<std::set<ObjectID>> m_considered_instances;
+    std::optional<std::set<Domain::ObjectID>> m_considered_instances;
     AnyPtr<VirtualBedHandler> m_vbed_handler;
     AnyPtr<const SelectionMask> m_selection;
 
@@ -290,7 +290,7 @@ public:
         return std::move(*this);
     }
 
-    SceneBuilder && set_considered_instances(std::set<ObjectID> &&considered_instances)
+    SceneBuilder && set_considered_instances(std::set<Domain::ObjectID> &&considered_instances)
     {
         m_considered_instances = std::move(considered_instances);
         return std::move(*this);
@@ -466,8 +466,8 @@ public:
     }
 
     // Arrangeable:
-    ObjectID   id() const override { return m_mi->id(); }
-    ObjectID   geometry_id() const override { return m_mi->get_object()->id(); }
+    Domain::ObjectID id() const override { return m_mi->id(); }
+    Domain::ObjectID geometry_id() const override { return m_mi->get_object()->id(); }
     ExPolygons full_outline() const override;
     Polygon    convex_outline() const override;
     bool       is_printable() const override { return m_mi->printable; }
@@ -507,8 +507,8 @@ public:
         : m_po{po}, m_arrbl{arrbl}, m_inst_trafo{inst_tr}, m_bed_constraint(bed_constraint)
     {}
 
-    ObjectID id() const override { return m_arrbl->id(); }
-    ObjectID geometry_id() const override { return m_arrbl->geometry_id(); }
+    Domain::ObjectID id() const override { return m_arrbl->id(); }
+    Domain::ObjectID geometry_id() const override { return m_arrbl->geometry_id(); }
 
     ExPolygons full_outline() const override;
     ExPolygons full_envelope() const override;
@@ -543,7 +543,7 @@ class ArrangeableSLAPrint : public ArrangeableSlicerModel {
     static void for_each_arrangeable_(Self &&self, Fn &&fn);
 
     template<class Self, class Fn>
-    static void visit_arrangeable_(Self &&self, const ObjectID &id, Fn &&fn);
+    static void visit_arrangeable_(Self &&self, const Domain::ObjectID &id, Fn &&fn);
 
 public:
     explicit ArrangeableSLAPrint(const SLAPrint *slaprint, SceneBuilder &builder)
@@ -559,15 +559,15 @@ public:
         std::function<void(const Arrangeable &)>) const override;
 
     void visit_arrangeable(
-        const ObjectID &id,
+        const Domain::ObjectID &id,
         std::function<void(const Arrangeable &)>) const override;
 
-    void visit_arrangeable(const ObjectID &id,
+    void visit_arrangeable(const Domain::ObjectID &id,
                            std::function<void(Arrangeable &)>) override;
 };
 
 template<class Mdl>
-auto find_instance_by_id(Mdl &&model, const ObjectID &id)
+auto find_instance_by_id(Mdl &&model, const Domain::ObjectID &id)
 {
     std::remove_reference_t<
         decltype(std::declval<Mdl>().objects[0]->instances[0])>
@@ -596,10 +596,10 @@ auto find_instance_by_id(Mdl &&model, const ObjectID &id)
 
 struct ModelDuplicate
 {
-    ObjectID id;
-    Vec2d    tr  = Vec2d::Zero();
-    double   rot = 0.;
-    int      bed_idx = Unarranged;
+    Domain::ObjectID id;
+    Vec2d            tr  = Vec2d::Zero();
+    double           rot = 0.;
+    int              bed_idx = Unarranged;
 };
 
 // Implementing the Arrangeable interface with the whole Model being one outline
@@ -620,8 +620,8 @@ public:
         assert(m_mdl != nullptr);
     }
 
-    ObjectID id() const override { return m_dup->id.id + 1; }
-    ObjectID geometry_id() const override;
+    Domain::ObjectID id() const override { return m_dup->id.id + 1; }
+    Domain::ObjectID geometry_id() const override;
 
     ExPolygons full_outline() const override;
 
@@ -674,7 +674,7 @@ class DuplicableModel: public ArrangeableModel {
     BoundingBox m_bedbb;
 
     template<class Self, class Fn>
-    static void visit_arrangeable_(Self &&self, const ObjectID &id, Fn &&fn)
+    static void visit_arrangeable_(Self &&self, const Domain::ObjectID &id, Fn &&fn)
     {
         if (id.valid()) {
             size_t idx = id.id - 1;
@@ -706,16 +706,16 @@ public:
             fn(arrbl);
         }
     }
-    void visit_arrangeable(const ObjectID &id, std::function<void(const Arrangeable &)> fn) const override
+    void visit_arrangeable(const Domain::ObjectID &id, std::function<void(const Arrangeable &)> fn) const override
     {
         visit_arrangeable_(*this, id, fn);
     }
-    void visit_arrangeable(const ObjectID &id, std::function<void(Arrangeable &)> fn) override
+    void visit_arrangeable(const Domain::ObjectID &id, std::function<void(Arrangeable &)> fn) override
     {
         visit_arrangeable_(*this, id, fn);
     }
 
-    ObjectID add_arrangeable(const ObjectID &prototype_id) override;
+    Domain::ObjectID add_arrangeable(const Domain::ObjectID &prototype_id) override;
 
     void apply_duplicates();
 };

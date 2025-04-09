@@ -1,6 +1,6 @@
 #pragma once
 
-#include "libslic3r/ObjectID.hpp"
+#include "Slic3r/Domain/ObjectID.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Geometry.hpp"
 

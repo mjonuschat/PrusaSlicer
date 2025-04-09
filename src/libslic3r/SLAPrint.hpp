@@ -37,7 +37,7 @@
 #include "libslic3r/AnyPtr.hpp"
 #include "libslic3r/Config.hpp"
 #include "libslic3r/Model.hpp"
-#include "libslic3r/ObjectID.hpp"
+#include "Slic3r/Domain/ObjectID.hpp"
 #include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/SLA/Hollowing.hpp"
 #include "libslic3r/SLA/Pad.hpp"
@@ -133,10 +133,10 @@ public:
     bool                        is_left_handed() const { return m_left_handed; }
 
     struct Instance {
-        Instance(ObjectID inst_id, const Point &shft, float rot) : instance_id(inst_id), shift(shft), rotation(rot) {}
+        Instance(Domain::ObjectID inst_id, const Point &shft, float rot) : instance_id(inst_id), shift(shft), rotation(rot) {}
         bool operator==(const Instance &rhs) const { return this->instance_id == rhs.instance_id && this->shift == rhs.shift && this->rotation == rhs.rotation; }
         // ID of the corresponding ModelInstance.
-        ObjectID instance_id;
+        Domain::ObjectID instance_id;
         // Slic3r::Point objects in scaled G-code coordinates
         Point 	shift;
         // Rotation along the Z axis, in radians.
@@ -493,7 +493,7 @@ public:
     void                clear() override;
     bool                empty() const override { return m_objects.empty(); }
     // List of existing PrintObject IDs, to remove notifications for non-existent IDs.
-    std::vector<ObjectID> print_object_ids() const override;
+    std::vector<Domain::ObjectID> print_object_ids() const override;
     ApplyStatus         apply(const Model &model, DynamicPrintConfig config, std::vector<std::string> *warnings = nullptr) override;
     void                set_task(const TaskParams &params) override { PrintBaseWithState<SLAPrintStep, slapsCount>::set_task_impl(params, m_objects); }
     void                process() override;
@@ -510,12 +510,12 @@ public:
     const PrintObjects& objects() const { return m_objects; }
     // PrintObject by its ObjectID, to be used to uniquely bind slicing warnings to their source PrintObjects
     // in the notification center.
-    const SLAPrintObject* get_print_object_by_model_object_id(ObjectID object_id) const {
+    const SLAPrintObject* get_print_object_by_model_object_id(Domain::ObjectID object_id) const {
         auto it = std::find_if(m_objects.begin(), m_objects.end(),
             [object_id](const SLAPrintObject* obj) { return obj->model_object()->id() == object_id; });
         return (it == m_objects.end()) ? nullptr : *it;
     }
-    const SLAPrintObject* get_object(ObjectID object_id) const {
+    const SLAPrintObject* get_object(Domain::ObjectID object_id) const {
         auto it = std::find_if(m_objects.begin(), m_objects.end(),
             [object_id](const SLAPrintObject *obj) { return obj->id() == object_id; });
         return (it == m_objects.end()) ? nullptr : *it;

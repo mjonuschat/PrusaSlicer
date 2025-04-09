@@ -11,7 +11,7 @@
 namespace Slic3r { namespace arr2 {
 
 struct MultiplySelectionTaskResult: public ArrangeResult {
-    ObjectID prototype_id;
+    Domain::ObjectID prototype_id;
 
     std::vector<TrafoOnlyArrangeItem> arranged_items;
     std::vector<TrafoOnlyArrangeItem> to_add;

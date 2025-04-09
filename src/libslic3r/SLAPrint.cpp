@@ -198,9 +198,9 @@ static std::vector<SLAPrintObject::Instance> sla_instances(const ModelObject &mo
     return instances;
 }
 
-std::vector<ObjectID> SLAPrint::print_object_ids() const 
+std::vector<Domain::ObjectID> SLAPrint::print_object_ids() const
 { 
-    std::vector<ObjectID> out;
+    std::vector<Domain::ObjectID> out;
     // Reserve one more for the caller to append the ID of the Print itself.
     out.reserve(m_objects.size() + 1);
     for (const SLAPrintObject *print_object : m_objects)
@@ -344,8 +344,8 @@ SLAPrint::ApplyStatus SLAPrint::apply(const Model &model, DynamicPrintConfig con
             Moved,
             Deleted,
         };
-        ModelObjectStatus(ObjectID id, Status status = Unknown) : id(id), status(status) {}
-        ObjectID                id;
+        ModelObjectStatus(Domain::ObjectID id, Status status = Unknown) : id(id), status(status) {}
+        Domain::ObjectID        id;
         Status                  status;
         // Search by id.
         bool operator<(const ModelObjectStatus &rhs) const { return id < rhs.id; }
@@ -448,9 +448,9 @@ SLAPrint::ApplyStatus SLAPrint::apply(const Model &model, DynamicPrintConfig con
             print_object(print_object),
             trafo(print_object->trafo()),
             status(status) {}
-        PrintObjectStatus(ObjectID id) : id(id), print_object(nullptr), trafo(Transform3d::Identity()), status(Unknown) {}
+        PrintObjectStatus(Domain::ObjectID id) : id(id), print_object(nullptr), trafo(Transform3d::Identity()), status(Unknown) {}
         // ID of the ModelObject & PrintObject
-        ObjectID         id;
+        Domain::ObjectID id;
         // Pointer to the old PrintObject
         SLAPrintObject  *print_object;
         // Trafo generated with model_object->world_matrix(true)

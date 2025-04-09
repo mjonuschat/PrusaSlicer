@@ -9,9 +9,9 @@
 
 namespace Slic3r { namespace arr2 {
 
-std::vector<ObjectID> Scene::selected_ids() const
+std::vector<Domain::ObjectID> Scene::selected_ids() const
 {
-    auto items = reserve_vector<ObjectID>(model().arrangeable_count());
+    auto items = reserve_vector<Domain::ObjectID>(model().arrangeable_count());
 
     model().for_each_arrangeable([ &items](auto &arrbl) mutable {
         if (arrbl.is_selected())
@@ -40,12 +40,12 @@ std::unique_ptr<ArrangeTaskBase> ArrangeTaskBase::create(Tasks task_type, const 
     return ret;
 }
 
-std::set<ObjectID> selected_geometry_ids(const Scene &sc)
+std::set<Domain::ObjectID> selected_geometry_ids(const Scene &sc)
 {
-    std::set<ObjectID> result;
+    std::set<Domain::ObjectID> result;
 
-    std::vector<ObjectID> selected_ids = sc.selected_ids();
-    for (const ObjectID &id : selected_ids) {
+    std::vector<Domain::ObjectID> selected_ids = sc.selected_ids();
+    for (const Domain::ObjectID &id : selected_ids) {
         sc.model().visit_arrangeable(id, [&result](const Arrangeable &arrbl) {
             auto id = arrbl.geometry_id();
             if (id.valid())

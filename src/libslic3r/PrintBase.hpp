@@ -15,7 +15,7 @@
 
 #include <jthread/JThread.hpp>
 
-#include "ObjectID.hpp"
+#include "Slic3r/Domain/ObjectID.hpp"
 #include "Model.hpp"
 #include "PlaceholderParser.hpp"
 #include "PrintConfig.hpp"
@@ -426,7 +426,7 @@ private:
 
 class PrintBase;
 
-class PrintObjectBase : public ObjectBase
+class PrintObjectBase : public Domain::ObjectBase
 {
 public:
     const ModelObject*      model_object() const    { return m_model_object; }
@@ -498,7 +498,7 @@ public:
  * The PrintBase class will abstract this flow for different technologies.
  *
  */
-class PrintBase : public ObjectBase, public Biz::Print::IPrint
+class PrintBase : public Domain::ObjectBase, public Biz::Print::IPrint
 {
 public:
 	PrintBase() : m_placeholder_parser(&m_full_print_config) { this->restart(); }
@@ -509,7 +509,7 @@ public:
     // Reset the print status including the copy of the Model / ModelObject hierarchy.
     virtual void            clear() = 0;
     // List of existing PrintObject IDs, to remove notifications for non-existent IDs.
-    virtual std::vector<ObjectID> print_object_ids() const = 0;
+    virtual std::vector<Domain::ObjectID> print_object_ids() const = 0;
 
     // Validate the print, return empty string if valid, return error if process() cannot (or should not) be started.
     virtual std::string     validate(std::vector<std::string>* warnings = nullptr) const { return std::string(); }
@@ -537,7 +537,7 @@ public:
     struct TaskParams {
 		TaskParams() : single_model_object(0), single_model_instance_only(false), to_object_step(-1), to_print_step(-1) {}
         // If non-empty, limit the processing to this ModelObject.
-        ObjectID                single_model_object;
+        Domain::ObjectID        single_model_object;
 		// If set, only process single_model_object. Otherwise process everything, but single_model_object first.
 		bool					single_model_instance_only;
         // If non-negative, stop processing at the successive object step.
@@ -576,12 +576,12 @@ public:
             UPDATE_PRINT_OBJECT_STEP_WARNINGS   = 1 << 5
         };
         // Bitmap of FlagBits
-        unsigned int    flags;
+        unsigned int     flags;
         // set to an ObjectID of a Print or a PrintObject based on flags
         // (whether UPDATE_PRINT_STEP_WARNINGS or UPDATE_PRINT_OBJECT_STEP_WARNINGS is set).
-        ObjectID        warning_object_id;
+        Domain::ObjectID warning_object_id;
         // For which Print or PrintObject step a new warning is being issued?
-        int             warning_step { -1 };
+        int              warning_step { -1 };
     };
     typedef std::function<void(const SlicingStatus&)>  status_callback_type;
     // Default status console print out in the form of percent => message.

@@ -14,7 +14,7 @@
 #define slic3r_Model_hpp_
 
 #include "Slic3r/Domain/SLA/DrainHole.hpp"
-#include "ObjectID.hpp"
+#include "Slic3r/Domain/ObjectID.hpp"
 #include "Slic3r/Domain/Point.hpp"
 #include "libslic3r/PrintConfig.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
@@ -58,7 +58,7 @@ namespace UndoRedo {
 	class StackImpl;
 }
 
-class ModelConfigObject : public ObjectBase, public ModelConfig
+class ModelConfigObject : public Domain::ObjectBase, public ModelConfig
 {
 private:
 	friend class cereal::access;
@@ -147,7 +147,7 @@ typedef std::vector<ModelInstance*> ModelInstancePtrs;
     }
 
 // Material, which may be shared across multiple ModelObjects of a single Model.
-class ModelMaterial final : public ObjectBase
+class ModelMaterial final : public Domain::ObjectBase
 {
 public:
     // Attributes are defined by the AMF file format, but they don't seem to be used by Slic3r for any purpose.
@@ -190,7 +190,7 @@ private:
     ModelMaterial& operator=(ModelMaterial &&rhs) = delete;
 };
 
-class LayerHeightProfile final : public ObjectWithTimestamp {
+class LayerHeightProfile final : public Domain::ObjectWithTimestamp {
 public:
     // Assign the content if the timestamp differs, don't assign an ObjectID.
     void assign(const LayerHeightProfile &rhs) { if (! this->timestamp_matches(rhs)) { m_data = rhs.m_data; this->copy_timestamp(rhs); } }
@@ -374,7 +374,7 @@ using LayerConfigRanges = std::map<LayerHeightRange, ModelConfig>;
 // and possibly having multiple modifier volumes, each modifier volume with its set of parameters and materials.
 // Each ModelObject may be instantiated mutliple times, each instance having different placement on the print bed,
 // different rotation and different uniform scaling.
-class ModelObject final : public ObjectBase
+class ModelObject final : public Domain::ObjectBase
 {
 public:
     std::string             name;
@@ -692,7 +692,7 @@ private:
     void update_min_max_z();
 };
 
-class FacetsAnnotation final : public ObjectWithTimestamp {
+class FacetsAnnotation final : public Domain::ObjectWithTimestamp {
 public:
     // Assign the content if the timestamp differs, don't assign an ObjectID.
     void assign(const FacetsAnnotation &rhs) { if (! this->timestamp_matches(rhs)) { m_data = rhs.m_data; this->copy_timestamp(rhs); } }
@@ -749,7 +749,7 @@ private:
 
 // An object STL, or a modifier volume, over which a different set of parameters shall be applied.
 // ModelVolume instances are owned by a ModelObject.
-class ModelVolume final : public ObjectBase
+class ModelVolume final : public Domain::ObjectBase
 {
 public:
     std::string         name;
@@ -1133,7 +1133,7 @@ inline void model_volumes_sort_by_id(ModelVolumePtrs &model_volumes)
     std::sort(model_volumes.begin(), model_volumes.end(), [](const ModelVolume *l, const ModelVolume *r) { return l->id() < r->id(); });
 }
 
-inline const ModelVolume* model_volume_find_by_id(const ModelVolumePtrs &model_volumes, const ObjectID id)
+inline const ModelVolume* model_volume_find_by_id(const ModelVolumePtrs &model_volumes, const Domain::ObjectID id)
 {
     auto it = lower_bound_by_predicate(model_volumes.begin(), model_volumes.end(), [id](const ModelVolume *mv) { return mv->id() < id; });
     return it != model_volumes.end() && (*it)->id() == id ? *it : nullptr;
@@ -1149,7 +1149,7 @@ enum ModelInstanceEPrintVolumeState : unsigned char
 
 // A single instance of a ModelObject.
 // Knows the affine transformation of an object.
-class ModelInstance final : public ObjectBase
+class ModelInstance final : public Domain::ObjectBase
 {
 private:
     Biz::Algorithms::Geometry::Transformation m_transformation;
@@ -1265,7 +1265,7 @@ public:
 // and with multiple modifier meshes.
 // A model groups multiple objects, each object having possibly multiple instances,
 // all objects may share mutliple materials.
-class Model final : public ObjectBase
+class Model final : public Domain::ObjectBase
 {
 public:
     // Materials are owned by a model and referenced by objects through t_model_material_id.
@@ -1312,7 +1312,7 @@ public:
     ModelObject* add_object(const char *name, const char *path, Domain::TriangleMesh &&mesh);
     ModelObject* add_object(const ModelObject &other);
     void         delete_object(size_t idx);
-    bool         delete_object(ObjectID id);
+    bool         delete_object(Domain::ObjectID id);
     bool         delete_object(ModelObject* object);
     void         clear_objects();
 

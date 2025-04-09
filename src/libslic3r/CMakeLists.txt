@@ -281,8 +281,6 @@ set(SLIC3R_SOURCES
     NormalUtils.hpp
     NSVGUtils.cpp
     NSVGUtils.hpp
-    ObjectID.cpp
-    ObjectID.hpp
     PerimeterGenerator.cpp
     PerimeterGenerator.hpp
     PlaceholderParser.cpp

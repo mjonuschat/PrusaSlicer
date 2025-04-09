@@ -220,7 +220,7 @@ bool Model::delete_object(ModelObject* object)
     return false;
 }
 
-bool Model::delete_object(ObjectID id)
+bool Model::delete_object(Domain::ObjectID id)
 {
     if (id.id != 0) {
         size_t idx = 0;
@@ -1819,8 +1819,8 @@ bool model_has_advanced_features(const Model &model)
 // Verify whether the IDs of Model / ModelObject / ModelVolume / ModelInstance / ModelMaterial are valid and unique.
 void check_model_ids_validity(const Model &model)
 {
-    std::set<ObjectID> ids;
-    auto check = [&ids](ObjectID id) { 
+    std::set<Domain::ObjectID> ids;
+    auto check = [&ids](Domain::ObjectID id) {
         assert(id.valid());
         assert(ids.find(id) == ids.end());
         ids.insert(id);

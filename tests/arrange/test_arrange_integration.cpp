@@ -152,7 +152,7 @@ TEST_CASE("ModelInstance should be retrievable when imbued into ArrangeItem",
     auto arrbl = arr2::ArrangeableModelInstance{mi, vbedh_ptr, nullptr, {0, 0}, std::nullopt};
     arr2::imbue_id(itm, arrbl.id());
 
-    std::optional<ObjectID> id_returned = arr2::retrieve_id(itm);
+    std::optional<Domain::ObjectID> id_returned = arr2::retrieve_id(itm);
 
     REQUIRE((id_returned && *id_returned == mi->id()));
 }
@@ -905,10 +905,10 @@ public:
 
 class MocWTH : public WipeTowerHandler {
     std::function<bool(int)> m_sel_pred;
-    ObjectID m_id;
+    Domain::ObjectID m_id;
 
 public:
-    MocWTH(const ObjectID &id) : m_id{id} {}
+    MocWTH(const Domain::ObjectID &id) : m_id{id} {}
 
     void visit(std::function<void(Arrangeable &)> fn) override
     {
@@ -925,7 +925,7 @@ public:
         m_sel_pred = std::move(pred);
     }
 
-    ObjectID get_id() const override {
+    Domain::ObjectID get_id() const override {
         return m_id;
     }
 };
@@ -1028,7 +1028,7 @@ TEST_CASE("Test SceneBuilder", "[arrange2][integration]")
         bld.set_model(mdl);
 
         std::vector<AnyPtr<arr2::WipeTowerHandler>> handlers;
-        handlers.push_back(std::make_unique<arr2::MocWTH>(wipe_tower_instance_id(0)));
+        handlers.push_back(std::make_unique<arr2::MocWTH>(Domain::wipe_tower_instance_id(0)));
         bld.set_wipe_tower_handlers(std::move(handlers));
 
         WHEN("the selection mask is initialized as a fallback default in the created scene")
@@ -1042,7 +1042,7 @@ TEST_CASE("Test SceneBuilder", "[arrange2][integration]")
 
                 bool wt_selected = false;
                 scene.model()
-                    .visit_arrangeable(wipe_tower_instance_id(0),
+                    .visit_arrangeable(Domain::wipe_tower_instance_id(0),
                                        [&wt_selected](
                                            const arr2::Arrangeable &arrbl) {
                                            wt_selected = arrbl.is_selected();

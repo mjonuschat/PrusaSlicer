@@ -15,7 +15,7 @@
 #include <libslic3r/Geometry/ConvexHull.hpp>
 #include <libslic3r/BoundingBox.hpp>
 #include <libslic3r/ClipperUtils.hpp>
-#include <libslic3r/ObjectID.hpp>
+#include <Slic3r/Domain/ObjectID.hpp>
 #include <libslic3r/Point.hpp>
 
 #include <arrange/ArrangeItemTraits.hpp>
@@ -42,7 +42,7 @@ class SimpleArrangeItem {
     std::optional<int> m_bed_constraint;
 
     std::vector<double> m_allowed_rotations = {0.};
-    ObjectID m_obj_id;
+    Domain::ObjectID m_obj_id;
 
 public:
     explicit SimpleArrangeItem(Polygon chull = {}): m_shape{std::move(chull)} {}
@@ -76,8 +76,8 @@ public:
         m_allowed_rotations = std::move(rots);
     }
 
-    void set_object_id(const ObjectID &id) noexcept { m_obj_id = id; }
-    const ObjectID & get_object_id() const noexcept { return m_obj_id; }
+    void set_object_id(const Domain::ObjectID &id) noexcept { m_obj_id = id; }
+    const Domain::ObjectID & get_object_id() const noexcept { return m_obj_id; }
 };
 
 template<> struct NFPArrangeItemTraits_<SimpleArrangeItem>
@@ -211,14 +211,14 @@ struct MutableItemTraits_<SimpleArrangeItem> {
 
 template<> struct ImbueableItemTraits_<SimpleArrangeItem>
 {
-    static void imbue_id(SimpleArrangeItem &itm, const ObjectID &id)
+    static void imbue_id(SimpleArrangeItem &itm, const Domain::ObjectID &id)
     {
         itm.set_object_id(id);
     }
 
-    static std::optional<ObjectID> retrieve_id(const SimpleArrangeItem &itm)
+    static std::optional<Domain::ObjectID> retrieve_id(const SimpleArrangeItem &itm)
     {
-        std::optional<ObjectID> ret;
+        std::optional<Domain::ObjectID> ret;
         if (itm.get_object_id().valid())
             ret = itm.get_object_id();
 

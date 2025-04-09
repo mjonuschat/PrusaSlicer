@@ -133,7 +133,7 @@ void MultipleBeds::clear_inst_map()
     m_occupied_beds_cache.fill(false);
 }
 
-void MultipleBeds::set_instance_bed(ObjectID id, bool printable, int bed_idx)
+void MultipleBeds::set_instance_bed(Domain::ObjectID id, bool printable, int bed_idx)
 {
     assert(bed_idx < get_max_beds());
     m_inst_to_bed[id] = bed_idx;
@@ -278,7 +278,7 @@ void with_single_bed_model_sla(Model &model, const int bed_index, const std::fun
 
 }
 
-bool MultipleBeds::is_instance_on_bed(const ObjectID id, const int bed_index) const
+bool MultipleBeds::is_instance_on_bed(const Domain::ObjectID id, const int bed_index) const
 {
     auto it = m_inst_to_bed.find(id);
     return (it != m_inst_to_bed.end() && it->second == bed_index);
@@ -353,7 +353,7 @@ void MultipleBeds::update_shown_beds(Model& model, const BuildVolume& build_volu
     model.update_print_volume_state(build_volume);
     const int max_bed{std::accumulate(
         this->m_inst_to_bed.begin(), this->m_inst_to_bed.end(), 0,
-        [](const int max_so_far, const std::pair<ObjectID, int> &value){
+        [](const int max_so_far, const std::pair<Domain::ObjectID, int> &value){
             return std::max(max_so_far, value.second);
         }
     )};
@@ -403,7 +403,7 @@ bool MultipleBeds::rearrange_after_load(Model& model, const BuildVolume& build_v
     int max_bed = 0;
 
     // Check that no instances are out of any bed.
-    std::map<ObjectID, std::pair<ModelInstance*, int>> id_to_ptr_and_bed;
+    std::map<Domain::ObjectID, std::pair<ModelInstance*, int>> id_to_ptr_and_bed;
     for (ModelObject* mo : model.objects) {
         for (ModelInstance* mi : mo->instances) {
             auto it = m_inst_to_bed.find(mi->id());
