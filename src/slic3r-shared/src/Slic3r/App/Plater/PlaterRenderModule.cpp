@@ -86,9 +86,25 @@ void PlaterRenderModule::init_scene_layout()
     m_layout.set_history_render_fn([](Vec2f size, Vec2f pos) -> void
         { Plater::History::render(pos, size); });
 
-    m_sidebar_slice_panel.init(m_imgui_render, [this] {m_project_interactor.slicing_interactor().slice_all(); }, std::bind(&PlaterRenderModule::do_upload, this));
-    m_layout.set_sidebar_slice_render_fn([this](Vec2f size, Vec2f pos) -> void
-        { m_sidebar_slice_panel.render(pos, size); });
+    m_sidebar_slice_panel.init(
+        m_imgui_render, [this] { m_project_interactor.slicing_interactor().slice_all(); },
+        std::bind(&PlaterRenderModule::do_upload, this)
+    );
+    m_layout.set_sidebar_slice_render_fn([this](Vec2f size, Vec2f pos) -> void {
+        const auto& scene_interactor = m_project_interactor.scene_interactor();
+        const Domain::BedRef& active_tag = scene_interactor.selected_bed_instance();
+        const Domain::SelectionId& project_id{m_project_interactor.selected_project_id()};
+        const Biz::Slicing::SlicingId id{
+            project_id,
+            active_tag.instance_id
+        };
+        const std::optional<Biz::Slicing::Status> status{
+            m_project_interactor.status_cache().get_status(id)};
+
+        if (status == Biz::Slicing::Status::Modified) {
+            m_sidebar_slice_panel.render(pos, size);
+        }
+    });
 
     // init toolbars
     static bool show_object_list{ true };

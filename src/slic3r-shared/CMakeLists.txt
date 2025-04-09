@@ -237,6 +237,9 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/FDMResultCache.hpp
         src/Slic3r/Biz/FDMResultCache.cpp
 
+        include/Slic3r/Biz/StatusCache.hpp
+        src/Slic3r/Biz/StatusCache.cpp
+
 		include/Slic3r/Biz/PrintHost/IPrintHost.hpp
 		include/Slic3r/Biz/PrintHost/IPrintHostListener.hpp
 		include/Slic3r/Biz/PrintHost/IPrintHostJobCallbacks.hpp

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Slic3r/Biz/FDMResultCache.hpp"
+#include "Slic3r/Biz/StatusCache.hpp"
 #include "Slic3r/Biz/ISlicingInputChangedListener.hpp"
 #include "Slic3r/Domain/SelectionId.hpp"
 #include "Slic3r/Biz/Platform/ListenerList.hpp"
@@ -55,6 +56,7 @@ public:
         m_scene_interactor.add_listener<ISlicingInputChangedListener>(this);
         m_preset_interactor.add_listener<ISlicingInputChangedListener>(this);
         m_slicing_interactor.add_listener<Slicing::IFDMResultListener>(&m_fdm_result_cache);
+        m_slicing_interactor.add_listener<Slicing::IStatusListener>(&m_status_cache);
     }
 
     /**
@@ -184,6 +186,7 @@ public:
     Slicing::SlicingInteractor& slicing_interactor() { return m_slicing_interactor; }
 
     FDMResultCache& fdm_result_cache() { return m_fdm_result_cache; }
+    StatusCache& status_cache() { return m_status_cache; }
 
     /**
      * @name ISelectedBedInstanceChangedListener interface implementation
@@ -231,6 +234,7 @@ private:
     Scene::SceneInteractor m_scene_interactor;
     Slicing::SlicingInteractor m_slicing_interactor;
     FDMResultCache m_fdm_result_cache;
+    StatusCache m_status_cache;
     PrintHost::PrintHostInteractor m_print_host_interactor;
 };
 
