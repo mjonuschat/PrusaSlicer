@@ -20,22 +20,24 @@
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/operations.hpp>
 
+#include "Slic3r/Domain/TriangleSelector.hpp"
 #include "Model.hpp"
 #include "Print.hpp"
 #include "admesh/stl.h"
 #include "libslic3r/Config.hpp"
 #include "libslic3r/CustomGCode.hpp"
 #include "libslic3r/Geometry.hpp"
-#include "libslic3r/ObjectID.hpp"
+#include "Slic3r/Domain/ObjectID.hpp"
 #include "libslic3r/PlaceholderParser.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/PrintBase.hpp"
 #include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/Slicing.hpp"
-#include "libslic3r/TriangleSelector.hpp"
 #include "libslic3r/libslic3r.h"
 
 namespace Slic3r {
+
+namespace CustomGCode = Domain::CustomGCode;
 
 // Add or remove support modifier ModelVolumes from model_object_dst to match the ModelVolumes of model_object_new
 // in the exact order and with the same IDs.
@@ -369,11 +371,11 @@ struct ModelObjectStatus {
         PartiallyValid,
     };
 
-    ModelObjectStatus(ObjectID id, Status status = Unknown) : id(id), status(status) {}
+    ModelObjectStatus(Domain::ObjectID id, Status status = Unknown) : id(id), status(status) {}
     ~ModelObjectStatus() { if (print_object_regions) print_object_regions->ref_cnt_dec(); }
 
     // Key of the set.
-    ObjectID                                    id;
+    Domain::ObjectID                            id;
     // Status of this ModelObject with id on apply().
     Status                                      status;
     // PrintObjects to be generated for this ModelObject including their base transformation.
@@ -431,10 +433,10 @@ struct PrintObjectStatus {
         print_object(print_object),
         trafo(print_object->trafo()),
         status(status) {}
-    PrintObjectStatus(ObjectID id) : id(id), print_object(nullptr), trafo(Transform3d::Identity()), status(Unknown) {}
+    PrintObjectStatus(Domain::ObjectID id) : id(id), print_object(nullptr), trafo(Transform3d::Identity()), status(Unknown) {}
 
     // ID of the ModelObject & PrintObject
-    ObjectID         id;
+    Domain::ObjectID id;
     // Pointer to the old PrintObject
     PrintObject     *print_object;
     // Trafo generated with model_object->world_matrix(true) 
@@ -832,7 +834,7 @@ bool verify_update_print_object_regions(
 // Update caches of volume bounding boxes.
 void update_volume_bboxes(
     std::vector<PrintObjectRegions::LayerRangeRegions>  &layer_ranges,
-    std::vector<ObjectID>                               &cached_volume_ids,
+    std::vector<Domain::ObjectID>                       &cached_volume_ids,
     ModelVolumePtrs                                      model_volumes,
     const Transform3d                                   &object_trafo, 
     const float                                          offset)
@@ -1177,14 +1179,14 @@ Print::ApplyStatus Print::apply(const Model &model, DynamicPrintConfig new_full_
             const CustomGCode::Mode current_mode = m_model.custom_gcode_per_print_z().mode;
             const CustomGCode::Mode next_mode    = model.custom_gcode_per_print_z().mode;
 
-            const bool multi_extruder_differ = (current_mode == next_mode) && (current_mode == CustomGCode::MultiExtruder || next_mode == CustomGCode::MultiExtruder);
+            const bool multi_extruder_differ = (current_mode == next_mode) && (current_mode == CustomGCode::Mode::MultiExtruder || next_mode == CustomGCode::Mode::MultiExtruder);
             // Tool change G-codes are applied as color changes for a single extruder printer, no need to invalidate tool ordering.
             // FIXME The tool ordering may be invalidated unnecessarily if the custom_gcode_per_print_z.mode is not applicable
             // to the active print / model state, and then it is reset, so it is being applicable, but empty, thus the effect is the same.
-            const bool tool_change_differ    = num_extruders > 1 && custom_per_printz_gcodes_tool_changes_differ(m_model.custom_gcode_per_print_z().gcodes, model.custom_gcode_per_print_z().gcodes, CustomGCode::ToolChange);
+            const bool tool_change_differ    = num_extruders > 1 && custom_per_printz_gcodes_tool_changes_differ(m_model.custom_gcode_per_print_z().gcodes, model.custom_gcode_per_print_z().gcodes, CustomGCode::Type::ToolChange);
             // For multi-extruder printers, we perform a tool change before a color change.
             // So, in that case, we must invalidate tool ordering and wipe tower even if custom color change g-codes differ.
-            const bool color_change_differ   = num_extruders > 1 && (next_mode == CustomGCode::MultiExtruder) && custom_per_printz_gcodes_tool_changes_differ(m_model.custom_gcode_per_print_z().gcodes, model.custom_gcode_per_print_z().gcodes, CustomGCode::ColorChange);
+            const bool color_change_differ   = num_extruders > 1 && (next_mode == CustomGCode::Mode::MultiExtruder) && custom_per_printz_gcodes_tool_changes_differ(m_model.custom_gcode_per_print_z().gcodes, model.custom_gcode_per_print_z().gcodes, CustomGCode::Type::ColorChange);
 
             update_apply_status(
                 (num_extruders_changed || tool_change_differ || multi_extruder_differ || color_change_differ) ?
@@ -1489,7 +1491,7 @@ Print::ApplyStatus Print::apply(const Model &model, DynamicPrintConfig new_full_
         }
         std::vector<unsigned int> painting_extruders;
         if (const auto &volumes = print_object.model_object()->volumes; num_extruders > 1 && print_object.model_object()->is_mm_painted()) {
-            std::array<bool, static_cast<size_t>(TriangleStateType::Count)> used_facet_states{};
+            std::array<bool, static_cast<size_t>(Domain::TriangleSelector::TriangleStateType::Count)> used_facet_states{};
             for (const ModelVolume *volume : volumes) {
                 if (volume->is_mm_painted()) {
                     const std::vector<bool> &volume_used_facet_states = volume->mm_segmentation_facets.get_data().used_states;
@@ -1512,7 +1514,7 @@ Print::ApplyStatus Print::apply(const Model &model, DynamicPrintConfig new_full_
 #endif
             }
 
-            for (size_t state_idx = static_cast<size_t>(TriangleStateType::Extruder1); state_idx < used_facet_states.size(); ++state_idx) {
+            for (size_t state_idx = static_cast<size_t>(Domain::TriangleSelector::TriangleStateType::Extruder1); state_idx < used_facet_states.size(); ++state_idx) {
                 if (used_facet_states[state_idx]) {
                     painting_extruders.emplace_back(state_idx);
                 }

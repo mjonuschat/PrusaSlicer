@@ -205,7 +205,7 @@ static ExPolygons top_level_outer_brim_area(const Print                   &print
 
             // After 7ff76d07684858fd937ef2f5d863f105a10f798e offset and shrink don't work with CW polygons (holes), so let's make it CCW.
             Polygons ex_poly_holes_reversed = ex_poly.holes;
-            polygons_reverse(ex_poly_holes_reversed);
+            Algorithms::Polygon::reverse(ex_poly_holes_reversed);
             if (brim_type == BrimType::btOuterOnly || brim_type == BrimType::btNoBrim)
                 append(no_brim_area_object, shrink_ex(ex_poly_holes_reversed, no_brim_offset, ClipperLib::jtSquare));
 
@@ -235,7 +235,7 @@ static std::vector<bool> has_polygons_nothing_inside(const Print &print, const s
     Polygons islands;
     for(size_t print_object_idx = 0; print_object_idx < print.objects().size(); ++print_object_idx) {
         const PrintObject *object         = print.objects()[print_object_idx];
-        const Polygons     islands_object = to_polygons(bottom_layers_expolygons[print_object_idx]);
+        const Polygons     islands_object = Algorithms::ExPolygon::to_polygons(bottom_layers_expolygons[print_object_idx]);
 
         islands.reserve(islands.size() + object->instances().size() * islands_object.size());
         for (const PrintInstance &instance : object->instances())
@@ -336,7 +336,7 @@ static std::vector<InnerBrimExPolygons> inner_brim_area(const Print             
 
             // After 7ff76d07684858fd937ef2f5d863f105a10f798e offset and shrink don't work with CW polygons (holes), so let's make it CCW.
             Polygons ex_poly_holes_reversed = ex_poly.holes;
-            polygons_reverse(ex_poly_holes_reversed);
+            Algorithms::Polygon::reverse(ex_poly_holes_reversed);
             for ([[maybe_unused]] const PrintInstance &instance : object->instances()) {
                 ++polygon_idx; // Increase idx because of the contour of the ExPolygon.
 
@@ -381,7 +381,7 @@ static std::vector<InnerBrimExPolygons> inner_brim_area(const Print             
         }
 
     // Append all normal brim areas.
-    brim_area_out.push_back({diff_ex(intersection_ex(to_polygons(std::move(brim_area)), holes_reversed), no_brim_area), InnerBrimType::NORMAL});
+    brim_area_out.push_back({diff_ex(intersection_ex(Algorithms::ExPolygon::to_polygons(std::move(brim_area)), holes_reversed), no_brim_area), InnerBrimType::NORMAL});
 
     // Cut out a huge brim areas that overflows into the INNERMOST holes.
     brim_area_out.back().brim_area = diff_ex(brim_area_out.back().brim_area, brim_area_innermost_merged);
@@ -505,7 +505,7 @@ static void make_inner_brim(const Print                   &print,
 
                 {
                     boost::lock_guard<std::mutex> lock(loops_mutex);
-                    Slic3r::append(loops, to_polygons(islands_ex));
+                    Slic3r::append(loops, Algorithms::ExPolygon::to_polygons(islands_ex));
                 }
                 islands_ex = offset_ex(islands_ex, -float(flow.scaled_spacing()), ClipperLib::jtSquare);
             }
@@ -530,7 +530,7 @@ ExtrusionEntityCollection make_brim(const Print &print, PrintTryCancel try_cance
     ConstPrintObjectPtrs    top_level_objects_with_brim = get_top_level_objects_with_brim(print, bottom_layers_expolygons);
     Polygons                islands                     = top_level_outer_brim_islands(top_level_objects_with_brim, scaled_resolution);
     ExPolygons              islands_area_ex             = top_level_outer_brim_area(print, top_level_objects_with_brim, bottom_layers_expolygons, float(flow.scaled_spacing()));
-    islands_area                                        = to_polygons(islands_area_ex);
+    islands_area                                        = Algorithms::ExPolygon::to_polygons(islands_area_ex);
 
     Polygons        loops;
     size_t          num_loops = size_t(floor(max_brim_width(print.objects()) / flow.spacing()));
@@ -545,7 +545,7 @@ ExtrusionEntityCollection make_brim(const Print &print, PrintTryCancel try_cance
 
     std::vector<Polylines> loops_pl_by_levels;
     {
-        Polylines              loops_pl = to_polylines(loops);
+        Polylines loops_pl = Algorithms::Polygon::to_polylines(loops);
         loops_pl_by_levels.assign(loops_pl.size(), Polylines());
         tbb::parallel_for(tbb::blocked_range<size_t>(0, loops_pl.size()),
             [&loops_pl_by_levels, &loops_pl, &islands_area](const tbb::blocked_range<size_t> &range) {

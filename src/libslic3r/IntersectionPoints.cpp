@@ -4,6 +4,7 @@
 ///|/
 #include "IntersectionPoints.hpp"
 
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include <libslic3r/AABBTreeLines.hpp>
 
 #include "libslic3r/AABBTreeIndirect.hpp"
@@ -11,6 +12,8 @@
 #include "Slic3r/Exception.hpp"
 
 //NOTE: using CGAL SweepLines is slower !!! (example in git history)
+
+using namespace Slic3r::Biz;
 
 namespace {    
 using namespace Slic3r;
@@ -47,8 +50,8 @@ IntersectionsLines compute_intersections(const Lines &lines)
 
 namespace Slic3r {
 IntersectionsLines get_intersections(const Lines &lines)           { return compute_intersections(lines); }
-IntersectionsLines get_intersections(const Polygon &polygon)       { return compute_intersections(to_lines(polygon)); }
-IntersectionsLines get_intersections(const Polygons &polygons)     { return compute_intersections(to_lines(polygons)); }
-IntersectionsLines get_intersections(const ExPolygon &expolygon)   { return compute_intersections(to_lines(expolygon)); }
-IntersectionsLines get_intersections(const ExPolygons &expolygons) { return compute_intersections(to_lines(expolygons)); }
+IntersectionsLines get_intersections(const Polygon &polygon)       { return compute_intersections(Algorithms::Polygon::to_lines(polygon)); }
+IntersectionsLines get_intersections(const Polygons &polygons)     { return compute_intersections(Algorithms::Polygon::to_lines(polygons)); }
+IntersectionsLines get_intersections(const ExPolygon &expolygon)   { return compute_intersections(Algorithms::ExPolygon::to_lines(expolygon)); }
+IntersectionsLines get_intersections(const ExPolygons &expolygons) { return compute_intersections(Algorithms::ExPolygon::to_lines(expolygons)); }
 }

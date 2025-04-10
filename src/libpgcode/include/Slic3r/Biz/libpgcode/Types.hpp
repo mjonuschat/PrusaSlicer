@@ -8,7 +8,7 @@
 #include <string_view>
 #include <optional>
 #include <map>
-#include "Slic3r/Domain/CustomGCodeType.hpp"
+#include "Slic3r/Domain/CustomGCode.hpp"
 #include "Slic3r/Domain/GCodeExtrusionRole.hpp"
 #include "Slic3r/Domain/Types.hpp"
 
@@ -284,7 +284,7 @@ struct PrintEstimatedStatistics
     struct Mode
     {
         float time{ 0.0f };
-        std::vector<std::pair<Domain::CustomGCodeType, std::pair<float, float>>> custom_gcode_times;
+        std::vector<std::pair<Domain::CustomGCode::Type, std::pair<float, float>>> custom_gcode_times;
 
         void reset();
     };

@@ -13,6 +13,7 @@
 #include <libslic3r/SLA/SupportIslands/VoronoiGraphUtils.hpp>
 #include <libslic3r/SLA/SupportIslands/UniformSupportIsland.hpp>
 #include <libslic3r/SLA/SupportIslands/PolygonUtils.hpp>
+#include "libslic3r/Utils.hpp"
 #include "nanosvg/nanosvg.h"    // load SVG file
 #include "sla_test_utils.hpp"
 #include "Slic3r/Biz/Algorithms/Point.hpp"
@@ -21,6 +22,8 @@ using namespace Slic3r;
 using namespace Slic3r::Biz;
 using namespace Slic3r::sla;
 using Domain::TriangleMesh;
+using Domain::SLA::SupportPoints;
+using Domain::SLA::SupportPoint;
 namespace triangle_mesh = Biz::Algorithms::TriangleMesh;
 
 using Biz::Algorithms::BoundingBox::center;
@@ -35,7 +38,7 @@ TEST_CASE("Overhanging point should be supported", "[SupGen]") {
     mesh.rotate(float(PI), Domain::Axis::Y);
     //mesh.write_obj_file("Pyramid.obj");
 
-    sla::SupportPoints pts = calc_support_pts(mesh);
+    SupportPoints pts = calc_support_pts(mesh);
 
     // The overhang, which is the upside-down pyramid's edge
     Vec3f overh{0., 0., -10.};
@@ -52,7 +55,7 @@ TEST_CASE("Overhanging point should be supported", "[SupGen]") {
     REQUIRE(dist < 1.f);
 }
 
-double min_point_distance(const sla::SupportPoints &pts)
+double min_point_distance(const SupportPoints &pts)
 {
     sla::PointIndex index;
 
@@ -76,7 +79,7 @@ TEST_CASE("Overhanging horizontal surface should be supported", "[SupGen]") {
     TriangleMesh mesh = triangle_mesh::make_cube(width, depth, height); 
     mesh.translate(Vec3f{0., 0., 5.}); // lift up
     // mesh.write_obj_file("Cuboid.obj");
-    sla::SupportPoints pts = calc_support_pts(mesh);
+    SupportPoints pts = calc_support_pts(mesh);
     REQUIRE(!pts.empty());
 }
 
@@ -96,15 +99,15 @@ TEST_CASE("Overhanging edge should be supported", "[SupGen]") {
     mesh.translate(Vec3f{0., 0., height});
     triangle_mesh::write_obj_file(mesh, "Prism.obj");
 
-    sla::SupportPoints pts = calc_support_pts(mesh);
+    SupportPoints pts = calc_support_pts(mesh);
 
     Linef3 overh{ {0.f, -depth / 2.f, 0.f}, {0.f, depth / 2.f, 0.f}};
 
     // Get all the points closer that 1 mm to the overhanging edge:
-    sla::SupportPoints overh_pts; overh_pts.reserve(pts.size());
+    SupportPoints overh_pts; overh_pts.reserve(pts.size());
 
     std::copy_if(pts.begin(), pts.end(), std::back_inserter(overh_pts),
-                 [&overh](const sla::SupportPoint &pt){
+                 [&overh](const SupportPoint &pt){
                      return line_alg::distance_to(overh, Vec3d{pt.pos.cast<double>()}) < 1.;
                  });
 
@@ -124,7 +127,7 @@ TEST_CASE("Hollowed cube should be supported from the inside", "[SupGen][Hollowe
     Vec3f mv = center(bb).cast<float>() - Vec3f{0.f, 0.f, 0.5f * h};
     mesh.translate(-mv);
 
-    sla::SupportPoints pts = calc_support_pts(mesh);
+    SupportPoints pts = calc_support_pts(mesh);
     //sla::remove_bottom_points(pts, mesh.bounding_box().min.z() + EPSILON);
 
     REQUIRE(!pts.empty());
@@ -141,7 +144,7 @@ TEST_CASE("Two parallel plates should be supported", "[SupGen][Hollowed]")
 
     triangle_mesh::write_obj_file(mesh, "parallel_plates.obj");
 
-    sla::SupportPoints pts = calc_support_pts(mesh);
+    SupportPoints pts = calc_support_pts(mesh);
     //sla::remove_bottom_points(pts, mesh.bounding_box().min.z() + EPSILON);
 
     REQUIRE(!pts.empty());

@@ -21,6 +21,10 @@ using namespace Slic3r;
 using namespace Slic3r::Biz;
 using namespace Slic3r::sla;
 
+using Domain::SLA::SupportPoint;
+using Domain::SLA::SupportPoints;
+using Domain::SLA::SupportPointType;
+
 namespace execution = Slic3r::Biz::Algorithms::Execution;
 
 namespace {
@@ -405,7 +409,7 @@ bool contain_point(const Point &p, const Points &sorted_points) {
 
 #ifndef NDEBUG
 bool exist_same_points(const ExPolygon &shape, const Points& prev_points) {
-    auto shape_points = to_points(shape);
+    auto shape_points = Algorithms::ExPolygon::to_points(shape);
     return shape_points.end() !=
         std::find_if(shape_points.begin(), shape_points.end(), [&prev_points](const Point &p) {
             return contain_point(p, prev_points);
@@ -423,7 +427,7 @@ Points sample_overhangs(const LayerPart& part, double dist2) {
     if (overhangs.empty()) // above part is smaller in whole contour
         return {};
     
-    Points prev_points = to_points(prev_shapes);
+    Points prev_points = Algorithms::ExPolygon::to_points(prev_shapes);
     std::sort(prev_points.begin(), prev_points.end());
 
     // TODO: solve case when shape and prev points has same point
@@ -588,7 +592,7 @@ void create_peninsulas(LayerPart &part, const PrepareSupportConfig &config) {
     ExPolygons peninsulas_shape = diff_ex(part_shape, below_self_supported);
 
     // IMPROVE: Anotate source of diff by ClipperLib_Z
-    Lines below_lines = to_lines(below_self_supported);
+    Lines below_lines = Algorithms::ExPolygon::to_lines(below_self_supported);
     auto get_angle = [](const Line &l) {
         Point diff = l.b - l.a;
         if (diff.x() < 0) // Only positive direction X
@@ -679,7 +683,7 @@ void create_peninsulas(LayerPart &part, const PrepareSupportConfig &config) {
             continue; 
 
         // need to know shape and edges of peninsula
-        Lines lines = to_lines(peninsula);
+        Lines lines = Algorithms::ExPolygon::to_lines(peninsula);
         std::vector<bool> is_outline(lines.size());
         // when line overlap with belowe lines it is not outline
         for (size_t i = 0; i < lines.size(); i++) 
@@ -1135,7 +1139,7 @@ size_t get_index_of_closest_part(const Point &coor, const LayerParts &parts, dou
     std::vector<size_t> part_lines_ends;
     part_lines_ends.reserve(parts.size());
     for (const LayerPart &part : parts) {
-        count_lines += count_points(*part.shape);
+        count_lines += Algorithms::ExPolygon::count_points(*part.shape);
         part_lines_ends.push_back(count_lines);
     }
     Linesf lines;
@@ -1224,7 +1228,7 @@ LayerParts::const_iterator get_closest_part(const PartLinks &links, Vec2d &coor)
     std::vector<size_t> part_lines_ends;
     part_lines_ends.reserve(links.size());
     for (const PartLink &link: links) {
-        count_lines += count_points(*link->shape);
+        count_lines += Algorithms::ExPolygon::count_points(*link->shape);
         part_lines_ends.push_back(count_lines);
     }
     Linesf lines;

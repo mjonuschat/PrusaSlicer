@@ -19,7 +19,6 @@
 #include "Geometry/ConvexHull.hpp"
 #include "MTUtils.hpp"
 #include "TriangleMeshSlicer.hpp"
-#include "TriangleSelector.hpp"
 #include "MultipleBeds.hpp"
 
 #include <float.h>
@@ -30,6 +29,7 @@
 #include <boost/log/trivial.hpp>
 #include <boost/nowide/iostream.hpp>
 
+#include <oneapi/tbb/parallel_for.h>
 #include <tbb/concurrent_vector.h>
 
 #include "Slic3r/Biz/Algorithms/SVG.hpp"
@@ -42,10 +42,16 @@ using Biz::Algorithms::BoundingBox::merge;
 using Biz::Algorithms::BoundingBox::center;
 using Biz::Algorithms::BoundingBox::sizes;
 using Biz::Algorithms::BoundingBox::translated;
+using Biz::Algorithms::Geometry::Transformation;
+using Biz::Algorithms::Geometry::rotation_diff_z;
+using Biz::Algorithms::Geometry::extract_rotation;
+using Biz::Algorithms::TriangleSelector;
 using Domain::BoundingBox3d;
 using Domain::TriangleMesh;
-namespace tm = Slic3r::Biz::Algorithms::TriangleMesh;
+using Domain::TriangleSelector::TriangleStateType;
 using Domain::indexed_triangle_set_with_color;
+
+namespace tm = Slic3r::Biz::Algorithms::TriangleMesh;
 
 Model& Model::assign_copy(const Model &rhs)
 {
@@ -140,12 +146,12 @@ ModelWipeTower& Model::wipe_tower(const int bed_index)
     return wipe_tower_vector[bed_index];
 }
 
-CustomGCode::Info& Model::custom_gcode_per_print_z()
+Domain::CustomGCode::Info& Model::custom_gcode_per_print_z()
 {
-    return const_cast<CustomGCode::Info&>(const_cast<const Model*>(this)->custom_gcode_per_print_z());
+    return const_cast<Domain::CustomGCode::Info&>(const_cast<const Model*>(this)->custom_gcode_per_print_z());
 }
 
-const CustomGCode::Info& Model::custom_gcode_per_print_z() const
+const Domain::CustomGCode::Info& Model::custom_gcode_per_print_z() const
 {
     return custom_gcode_per_print_z_vector[s_multiple_beds.get_active_bed()];
 }
@@ -216,7 +222,7 @@ bool Model::delete_object(ModelObject* object)
     return false;
 }
 
-bool Model::delete_object(ObjectID id)
+bool Model::delete_object(Domain::ObjectID id)
 {
     if (id.id != 0) {
         size_t idx = 0;
@@ -590,9 +596,9 @@ void ModelObject::delete_volume(size_t idx)
         Transform3d v_t = v->get_transformation().get_matrix();
         for (ModelInstance* inst : this->instances)
         {
-            inst->set_transformation(Geometry::Transformation(inst->get_transformation().get_matrix() * v_t));
+            inst->set_transformation(Transformation(inst->get_transformation().get_matrix() * v_t));
         }
-        Geometry::Transformation t;
+        Transformation t;
         v->set_transformation(t);
         v->set_new_unique_id();
     }
@@ -665,7 +671,7 @@ ModelInstance* ModelObject::add_instance(const ModelInstance &other)
     return i;
 }
 
-ModelInstance* ModelObject::add_instance(const Geometry::Transformation& trafo)
+ModelInstance* ModelObject::add_instance(const Transformation& trafo)
 {
     ModelInstance* instance = add_instance();
     instance->set_transformation(trafo);
@@ -1067,7 +1073,7 @@ void ModelObject::clone_for_cut(ModelObject** obj)
     (*obj)->set_model(this->get_model());
     (*obj)->sla_support_points.clear();
     (*obj)->sla_drain_holes.clear();
-    (*obj)->sla_points_status = sla::PointsStatus::NoPoints;
+    (*obj)->sla_points_status = Domain::SLA::PointsStatus::NoPoints;
     (*obj)->clear_volumes();
     (*obj)->input_file.clear();
 }
@@ -1109,7 +1115,7 @@ void ModelObject::bake_xy_rotation_into_meshes(size_t instance_idx)
 {
     assert(instance_idx < this->instances.size());
 
-    const Geometry::Transformation reference_trafo = this->instances[instance_idx]->get_transformation();
+    const Transformation reference_trafo = this->instances[instance_idx]->get_transformation();
     bool   left_handed        = reference_trafo.is_left_handed();
     bool   has_mirrorring     = ! reference_trafo.get_mirror().isApprox(Vec3d(1., 1., 1.));
     bool   uniform_scaling    = std::abs(reference_trafo.get_scaling_factor().x() - reference_trafo.get_scaling_factor().y()) < EPSILON &&
@@ -1119,14 +1125,14 @@ void ModelObject::bake_xy_rotation_into_meshes(size_t instance_idx)
     // Adjust the instances.
     for (size_t i = 0; i < this->instances.size(); ++ i) {
         ModelInstance &model_instance = *this->instances[i];
-        model_instance.set_rotation(Vec3d(0., 0., Geometry::rotation_diff_z(reference_trafo.get_matrix(), model_instance.get_matrix())));
+        model_instance.set_rotation(Vec3d(0., 0., rotation_diff_z(reference_trafo.get_matrix(), model_instance.get_matrix())));
         model_instance.set_scaling_factor(Vec3d(new_scaling_factor, new_scaling_factor, new_scaling_factor));
         model_instance.set_mirror(Vec3d(1., 1., 1.));
     }
 
     // Adjust the meshes.
     // Transformation to be applied to the meshes.
-    Geometry::Transformation reference_trafo_mod = reference_trafo;
+    Transformation reference_trafo_mod = reference_trafo;
     reference_trafo_mod.reset_offset();
     if (uniform_scaling)
         reference_trafo_mod.reset_scaling_factor();
@@ -1135,14 +1141,14 @@ void ModelObject::bake_xy_rotation_into_meshes(size_t instance_idx)
     Eigen::Matrix3d mesh_trafo_3x3 = reference_trafo_mod.get_matrix().matrix().block<3, 3>(0, 0);
     Transform3d     volume_offset_correction = this->instances[instance_idx]->get_transformation().get_matrix().inverse() * reference_trafo.get_matrix();
     for (ModelVolume *model_volume : this->volumes) {
-        const Geometry::Transformation volume_trafo = model_volume->get_transformation();
+        const Transformation volume_trafo = model_volume->get_transformation();
         bool   volume_left_handed        = volume_trafo.is_left_handed();
         bool   volume_has_mirrorring     = ! volume_trafo.get_mirror().isApprox(Vec3d(1., 1., 1.));
         bool   volume_uniform_scaling    = std::abs(volume_trafo.get_scaling_factor().x() - volume_trafo.get_scaling_factor().y()) < EPSILON &&
                                            std::abs(volume_trafo.get_scaling_factor().x() - volume_trafo.get_scaling_factor().z()) < EPSILON;
         double volume_new_scaling_factor = volume_uniform_scaling ? volume_trafo.get_scaling_factor().x() : 1.;
         // Transform the mesh.
-        Geometry::Transformation volume_trafo_mod = volume_trafo;
+        Transformation volume_trafo_mod = volume_trafo;
         volume_trafo_mod.reset_offset();
         if (volume_uniform_scaling)
             volume_trafo_mod.reset_scaling_factor();
@@ -1474,7 +1480,7 @@ void ModelVolume::rotate(double angle, Axis axis)
 
 void ModelVolume::rotate(double angle, const Vec3d& axis)
 {
-    set_rotation(get_rotation() + Geometry::extract_rotation(Eigen::Quaterniond(Eigen::AngleAxisd(angle, axis)).toRotationMatrix()));
+    set_rotation(get_rotation() + extract_rotation(Eigen::Quaterniond(Eigen::AngleAxisd(angle, axis)).toRotationMatrix()));
 }
 
 void ModelVolume::mirror(Axis axis)
@@ -1514,7 +1520,7 @@ std::vector<size_t> ModelVolume::get_extruders_from_multi_material_painting() co
         return {};
 
     assert(static_cast<size_t>(TriangleStateType::Extruder1) - 1 == 0);
-    const TriangleSelector::TriangleSplittingData &data = this->mm_segmentation_facets.get_data();
+    const Domain::TriangleSelector::TriangleSplittingData &data = this->mm_segmentation_facets.get_data();
 
     std::vector<size_t> extruders;
     for (size_t state_idx = static_cast<size_t>(TriangleStateType::Extruder1); state_idx < data.used_states.size(); ++state_idx) {
@@ -1546,116 +1552,6 @@ void ModelInstance::transform_polygon(Polygon* polygon) const
     polygon->rotate(get_rotation(Z)); // rotate around polygon origin
     // CHECK_ME -> Is the following correct ?
     polygon->scale(get_scaling_factor(X), get_scaling_factor(Y)); // scale around polygon origin
-}
-
-indexed_triangle_set FacetsAnnotation::get_facets(const ModelVolume &mv, TriangleStateType type) const {
-    TriangleSelector selector(mv.mesh());
-    // Reset of TriangleSelector is done inside TriangleSelector's constructor, so we don't need it to perform it again in deserialize().
-    selector.deserialize(m_data, false);
-    return selector.get_facets(type);
-}
-
-indexed_triangle_set FacetsAnnotation::get_facets_strict(const ModelVolume &mv, TriangleStateType type) const {
-    TriangleSelector selector(mv.mesh());
-    // Reset of TriangleSelector is done inside TriangleSelector's constructor, so we don't need it to perform it again in deserialize().
-    selector.deserialize(m_data, false);
-    return selector.get_facets_strict(type);
-}
-
-indexed_triangle_set_with_color FacetsAnnotation::get_all_facets_with_colors(const ModelVolume &mv) const {
-    TriangleSelector selector(mv.mesh());
-    // Reset of TriangleSelector is done inside TriangleSelector's constructor, so we don't need it to perform it again in deserialize().
-    selector.deserialize(m_data, false);
-    return selector.get_all_facets_with_colors();
-}
-
-indexed_triangle_set_with_color FacetsAnnotation::get_all_facets_strict_with_colors(const ModelVolume &mv) const {
-    TriangleSelector selector(mv.mesh());
-    // Reset of TriangleSelector is done inside TriangleSelector's constructor, so we don't need it to perform it again in deserialize().
-    selector.deserialize(m_data, false);
-    return selector.get_all_facets_strict_with_colors();
-}
-
-bool FacetsAnnotation::has_facets(const ModelVolume &mv, TriangleStateType type) const {
-    return TriangleSelector::has_facets(m_data, type);
-}
-
-bool FacetsAnnotation::set(const TriangleSelector &selector) {
-    TriangleSelector::TriangleSplittingData sel_map = selector.serialize();
-    if (sel_map != m_data) {
-        m_data = std::move(sel_map);
-        this->touch();
-        return true;
-    }
-
-    return false;
-}
-
-void FacetsAnnotation::reset()
-{
-    m_data.triangles_to_split.clear();
-    m_data.bitstream.clear();
-    this->touch();
-}
-
-// Following function takes data from a triangle and encodes it as string
-// of hexadecimal numbers (one digit per triangle). Used for 3MF export,
-// changing it may break backwards compatibility !!!!!
-std::string FacetsAnnotation::get_triangle_as_string(int triangle_idx) const
-{
-    std::string out;
-
-    auto triangle_it = std::lower_bound(m_data.triangles_to_split.begin(), m_data.triangles_to_split.end(), triangle_idx, [](const TriangleSelector::TriangleBitStreamMapping &l, const int r) { return l.triangle_idx < r; });
-    if (triangle_it != m_data.triangles_to_split.end() && triangle_it->triangle_idx == triangle_idx) {
-        int offset = triangle_it->bitstream_start_idx;
-        int end    = ++ triangle_it == m_data.triangles_to_split.end() ? int(m_data.bitstream.size()) : triangle_it->bitstream_start_idx;
-        while (offset < end) {
-            int next_code = 0;
-            for (int i=3; i>=0; --i) {
-                next_code = next_code << 1;
-                next_code |= int(m_data.bitstream[offset + i]);
-            }
-            offset += 4;
-
-            assert(next_code >=0 && next_code <= 15);
-            char digit = next_code < 10 ? next_code + '0' : (next_code-10)+'A';
-            out.insert(out.begin(), digit);
-        }
-    }
-    return out;
-}
-
-// Recover triangle splitting & state from string of hexadecimal values previously
-// generated by get_triangle_as_string. Used to load from 3MF.
-void FacetsAnnotation::set_triangle_from_string(int triangle_id, const std::string &str)
-{
-    if (str.empty()) {
-        // The triangle isn't painted, so it means that it will use the default extruder.
-        m_data.used_states[static_cast<int>(TriangleStateType::NONE)] = true;
-        return;
-    }
-
-    assert(!str.empty());
-    assert(m_data.triangles_to_split.empty() || m_data.triangles_to_split.back().triangle_idx < triangle_id);
-    m_data.triangles_to_split.emplace_back(triangle_id, int(m_data.bitstream.size()));
-
-    const size_t bitstream_start_idx = m_data.bitstream.size();
-    for (auto it = str.crbegin(); it != str.crend(); ++it) {
-        const char ch = *it;
-        int dec = 0;
-        if (ch >= '0' && ch<='9')
-            dec = int(ch - '0');
-        else if (ch >='A' && ch <= 'F')
-            dec = 10 + int(ch - 'A');
-        else
-            assert(false);
-
-        // Convert to binary and append into code.
-        for (int i = 0; i < 4; ++i)
-            m_data.bitstream.insert(m_data.bitstream.end(), bool(dec & (1 << i)));
-    }
-
-    m_data.update_used_states(bitstream_start_idx);
 }
 
 // Test whether the two models contain the same number of ModelObjects with the same set of IDs
@@ -1815,8 +1711,8 @@ bool model_has_advanced_features(const Model &model)
 // Verify whether the IDs of Model / ModelObject / ModelVolume / ModelInstance / ModelMaterial are valid and unique.
 void check_model_ids_validity(const Model &model)
 {
-    std::set<ObjectID> ids;
-    auto check = [&ids](ObjectID id) { 
+    std::set<Domain::ObjectID> ids;
+    auto check = [&ids](Domain::ObjectID id) {
         assert(id.valid());
         assert(ids.find(id) == ids.end());
         ids.insert(id);

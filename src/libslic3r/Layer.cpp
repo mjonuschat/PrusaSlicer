@@ -478,7 +478,7 @@ static void connect_layer_slices(
                     if (Polygons overlap = intersection(contour_poly, other_layer.lslices[i]); ! overlap.empty()) {
                         if (other_has_duplicates) {
                             // Find the contour with the largest overlap. It is expected that the other overlap will be very small.
-                            double a = area(overlap);
+                            double a = Algorithms::Polygon::area(overlap);
                             if (a > a_largest) {
                                 a_largest = a;
                                 i_largest = i;

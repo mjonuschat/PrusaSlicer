@@ -208,7 +208,7 @@ libpgcode::MoveVertices path_to_vertices(
     const Point &offset = Point::Zero()
 ) {
     Slic3r::Polyline polyline = path.polyline;
-    Algorithms::Polyline::remove_duplicate_points(polyline);
+    Algorithms::Polyline::remove_consecutive_duplicate_points(polyline);
     polyline.translate(offset);
     const Slic3r::Lines lines = Algorithms::Polyline::to_lines(polyline);
     const std::vector<float> widths(lines.size(), path.width());

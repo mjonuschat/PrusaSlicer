@@ -2,7 +2,7 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include "TriangleSelector.hpp"
+#include "Slic3r/Biz/Algorithms/TriangleSelector.hpp"
 
 #include <boost/container/small_vector.hpp>
 #include <boost/container/vector.hpp>
@@ -10,18 +10,26 @@
 #include <queue>
 #include <cstring>
 
-#include "libslic3r/Geometry.hpp"
-#include "libslic3r/Point.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
-#include "libslic3r/Utils.hpp"
-#include "libslic3r/libslic3r.h"
+#include "Slic3r/Biz/Algorithms/Geometry/Geometry.hpp"
+#include "Slic3r/Domain/Constants.hpp"
+#include "Slic3r/Domain/TriangleSelector.hpp"
+#include "Slic3r/Math.hpp"
+#include "Slic3r/Utils.hpp"
 
-namespace Slic3r {
+namespace Slic3r::Biz::Algorithms {
 
 using Domain::Index3;
 using Domain::AdditionalMeshInfo;
 using Domain::IndexedTriangleSetType;
 using Domain::indexed_triangle_set_with_color;
+
+using Biz::Algorithms::Geometry::Transformation;
+using Domain::Vec3d;
+using Domain::EPSILON;
+using Domain::is_approx;
+using Domain::TriangleSelector::TriangleBitStreamMapping;
+
 namespace TriMesh = Slic3r::Biz::Algorithms::TriangleMesh;
 
 // Check if the line is whole inside the sphere, or it is partially inside (intersecting) the sphere.
@@ -198,7 +206,7 @@ inline bool is_point_inside_triangle(const Vec3f &pt, const Vec3f &p1, const Vec
     };
 
     Vec3f barycentric_cords = barycentric();
-    return std::all_of(begin(barycentric_cords), end(barycentric_cords), [](float cord) { return 0.f <= cord && cord <= 1.0; });
+    return std::all_of(std::begin(barycentric_cords), std::end(barycentric_cords), [](float cord) { return 0.f <= cord && cord <= 1.0; });
 }
 
 int TriangleSelector::select_unsplit_triangle(const Vec3f &hit, int facet_idx, const Index3 &neighbors) const
@@ -796,7 +804,7 @@ int TriangleSelector::neighbor_child(int itriangle, int vertexi, int vertexj, Pa
 
 std::pair<int, int> TriangleSelector::triangle_subtriangles(int itriangle, int vertexi, int vertexj) const
 {
-    return itriangle == -1 ? std::make_pair(-1, -1) : Slic3r::TriangleSelector::triangle_subtriangles(m_triangles[itriangle], vertexi, vertexj);
+    return itriangle == -1 ? std::make_pair(-1, -1) : TriangleSelector::triangle_subtriangles(m_triangles[itriangle], vertexi, vertexj);
 }
 
 std::pair<int, int> TriangleSelector::triangle_subtriangles(const Triangle &tr, int vertexi, int vertexj)
@@ -1792,7 +1800,7 @@ void TriangleSelector::get_seed_fill_contour_recursive(const int facet_idx, cons
     }
 }
 
-TriangleSelector::TriangleSplittingData TriangleSelector::serialize() const {
+TriangleSplittingData TriangleSelector::serialize() const {
     // Each original triangle of the mesh is assigned a number encoding its state
     // or how it is split. Each triangle is encoded by 4 bits (xxyy) or 8 bits (zzzzxxyy):
     // leaf triangle: xx = TriangleStateType (Only values 0, 1, and 2. Value 3 is used as an indicator for additional 4 bits.), yy = 0
@@ -1972,39 +1980,6 @@ void TriangleSelector::deserialize(const TriangleSplittingData &data, bool needs
             if (parents.empty())
                 break;
         }
-    }
-}
-
-void TriangleSelector::TriangleSplittingData::update_used_states(const size_t bitstream_start_idx) {
-    assert(bitstream_start_idx < this->bitstream.size());
-    assert(!this->bitstream.empty() && this->bitstream.size() != bitstream_start_idx);
-    assert((this->bitstream.size() - bitstream_start_idx) % 4 == 0);
-
-    if (this->bitstream.empty() || this->bitstream.size() == bitstream_start_idx)
-        return;
-
-    size_t nibble_idx = bitstream_start_idx;
-
-    auto read_next_nibble = [&data_bitstream = std::as_const(this->bitstream), &nibble_idx]() -> uint8_t {
-        assert(nibble_idx + 3 < data_bitstream.size());
-        uint8_t code = 0;
-        for (size_t bit_idx = 0; bit_idx < 4; ++bit_idx)
-            code |= data_bitstream[nibble_idx++] << bit_idx;
-        return code;
-    };
-
-    while (nibble_idx < this->bitstream.size()) {
-        const uint8_t code = read_next_nibble();
-
-        if (const bool is_split = (code & 0b11) != 0; is_split)
-            continue;
-
-        const uint8_t facet_state = (code & 0b1100) == 0b1100 ? read_next_nibble() + 3 : code >> 2;
-        assert(facet_state < this->used_states.size());
-        if (facet_state >= this->used_states.size())
-            continue;
-
-        this->used_states[facet_state] = true;
     }
 }
 
@@ -2405,4 +2380,4 @@ std::vector<int> TriangleSelector::HeightRange::get_facets_to_select(const int f
     return facets_to_check;
 }
 
-} // namespace Slic3r
+} // namespace Slic3r::Biz::Algorithms

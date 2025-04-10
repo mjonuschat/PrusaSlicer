@@ -127,12 +127,12 @@ typedef std::vector<const Surface*> SurfacesPtr;
 
 inline Polygons to_polygons(const Surface &surface)
 {
-    return to_polygons(surface.expolygon);
+    return Biz::Algorithms::ExPolygon::to_polygons(surface.expolygon);
 }
 
 inline Polygons to_polygons(Surface &&surface)
 {
-    return to_polygons(std::move(surface.expolygon));
+    return Biz::Algorithms::ExPolygon::to_polygons(std::move(surface.expolygon));
 }
 
 inline Polygons to_polygons(const Surfaces &src)
@@ -249,7 +249,7 @@ inline void surfaces_append(Surfaces &dst, const ExPolygons &src, SurfaceType su
 }
 inline void surfaces_append(Surfaces &dst, const ExPolygons &src, const Surface &surfaceTempl) 
 { 
-    dst.reserve(dst.size() + number_polygons(src));
+    dst.reserve(dst.size() + Slic3r::Biz::Algorithms::ExPolygon::count_polygons(src));
     for (const ExPolygon &expoly : src)
         dst.emplace_back(Surface(surfaceTempl, expoly));
 }
@@ -264,7 +264,7 @@ inline void surfaces_append(Surfaces &dst, ExPolygons &&src, SurfaceType surface
 
 inline void surfaces_append(Surfaces &dst, ExPolygons &&src, const Surface &surfaceTempl) 
 { 
-    dst.reserve(dst.size() + number_polygons(src));
+    dst.reserve(dst.size() + Slic3r::Biz::Algorithms::ExPolygon::count_polygons(src));
     for (ExPolygon& explg : src)
         dst.emplace_back(Surface(surfaceTempl, std::move(explg)));
     src.clear();

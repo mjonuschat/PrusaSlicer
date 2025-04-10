@@ -33,7 +33,7 @@ class JPSPathFinder
 
 public:
     JPSPathFinder() = default;
-    void     init_bed_shape(const Points &bed_shape) { this->bed_shape = (to_lines(Polygon{bed_shape})); };
+    void     init_bed_shape(const Points &bed_shape) { this->bed_shape = (Slic3r::Biz::Algorithms::Polygon::to_lines(Polygon{bed_shape})); };
     void     clear();
     void     add_obstacles(const Lines &obstacles);
     void     add_obstacles(const Layer *layer, const Point &global_origin);

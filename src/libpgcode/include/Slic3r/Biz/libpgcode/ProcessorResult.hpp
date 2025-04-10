@@ -42,7 +42,7 @@ struct ProcessorResult
 
     std::vector<std::string> extruder_str_colors;
     MoveVertices moves;
-    std::vector<Domain::CustomGCodeItem> custom_gcode_per_print_z;
+    std::vector<Domain::CustomGCode::Item> custom_gcode_per_print_z;
     PrintEstimatedStatistics print_statistics;
     PrintSettings print_settings;
     std::optional<ConflictResult> conflict_result;

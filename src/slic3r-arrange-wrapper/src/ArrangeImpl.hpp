@@ -275,7 +275,7 @@ class DefaultArranger: public Arranger<ArrItem> {
             int pa = get_priority(itm1);
             int pb = get_priority(itm2);
 
-            return pa == pb ? Slic3r::area(envelope_convex_hull(itm1)) > Slic3r::area(envelope_convex_hull(itm2)) :
+            return pa == pb ? Slic3r::Biz::Algorithms::Polygon::area(envelope_convex_hull(itm1)) > Slic3r::Biz::Algorithms::Polygon::area(envelope_convex_hull(itm2)) :
                               pa > pb;
         };
 
@@ -447,9 +447,9 @@ ArrItem AdvancedItemConverter<ArrItem>::get_arritem(const Arrangeable &arrbl,
 
     if (simpl_tol > 0.)
     {
-        outline = expolygons_simplify(outline, simpl_tol);
+        outline = Slic3r::Biz::Algorithms::ExPolygon::simplify(outline, simpl_tol);
         if (!envelope.empty())
-            envelope = expolygons_simplify(envelope, simpl_tol);
+            envelope = Slic3r::Biz::Algorithms::ExPolygon::simplify(envelope, simpl_tol);
     }
 
     ArrItem ret;

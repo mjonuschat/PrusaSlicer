@@ -18,6 +18,7 @@
 #include <vector>
 #include <cstddef>
 
+#include "Slic3r/Domain/SLA/DrainHole.hpp"
 #include "admesh/stl.h"
 #include "libslic3r/CSGMesh/CSGMesh.hpp"
 #include "libslic3r/ExPolygon.hpp"
@@ -54,45 +55,7 @@ const indexed_triangle_set &get_mesh(const Interior &interior);
 const VoxelGrid & get_grid(const Interior &interior);
 VoxelGrid &get_grid(Interior &interior);
 
-struct DrainHole
-{
-    Vec3f pos;
-    Vec3f normal;
-    float radius;
-    float height;
-    bool  failed = false;
-
-    DrainHole()
-        : pos(Vec3f::Zero()), normal(Vec3f::UnitZ()), radius(5.f), height(10.f)
-    {}
-
-    DrainHole(Vec3f p, Vec3f n, float r, float h, bool fl = false)
-        : pos(p), normal(n), radius(r), height(h), failed(fl)
-    {}
-
-    DrainHole(const DrainHole& rhs) :
-        DrainHole(rhs.pos, rhs.normal, rhs.radius, rhs.height, rhs.failed) {}
-
-    bool operator==(const DrainHole &sp) const;
-
-    bool operator!=(const DrainHole &sp) const { return !(sp == (*this)); }
-
-    bool is_inside(const Vec3f& pt) const;
-
-    bool get_intersections(const Vec3f& s, const Vec3f& dir,
-                           std::array<std::pair<float, Vec3d>, 2>& out) const;
-
-    indexed_triangle_set to_mesh() const;
-
-    template<class Archive> inline void serialize(Archive &ar)
-    {
-        ar(pos, normal, radius, height, failed);
-    }
-
-    static constexpr size_t steps = 32;
-};
-
-using DrainHoles = std::vector<DrainHole>;
+[[nodiscard]] indexed_triangle_set to_mesh(const Domain::SLA::DrainHole& hole);
 
 constexpr float HoleStickOutLength = 1.f;
 
@@ -189,7 +152,7 @@ enum class HollowMeshResult {
 int hollow_mesh_and_drill(
     indexed_triangle_set &mesh,
     const Interior& interior,
-    const DrainHoles &holes,
+    const Domain::SLA::DrainHoles &holes,
     std::function<void(size_t)> on_hole_fail = [](size_t){});
 
 void remove_inside_triangles(Domain::TriangleMesh &mesh, const Interior &interior,
@@ -198,13 +161,13 @@ void remove_inside_triangles(Domain::TriangleMesh &mesh, const Interior &interio
 void remove_inside_triangles(indexed_triangle_set &mesh, const Interior &interior,
                              const std::vector<bool> &exclude_mask = {});
 
-sla::DrainHoles transformed_drainhole_points(const ModelObject &mo,
+Domain::SLA::DrainHoles transformed_drainhole_points(const ModelObject &mo,
                                              const Transform3d &trafo);
 
 void cut_drainholes(std::vector<ExPolygons> & obj_slices,
                     const std::vector<float> &slicegrid,
                     float                     closing_radius,
-                    const sla::DrainHoles &   holes,
+                    const Domain::SLA::DrainHoles &   holes,
                     std::function<void(void)> thr);
 
 inline void swap_normals(indexed_triangle_set &its)
@@ -221,7 +184,7 @@ inline void swap_normals(indexed_triangle_set &its)
 std::vector<bool> create_exclude_mask(
     const indexed_triangle_set &its,
     const sla::Interior &interior,
-    const std::vector<sla::DrainHole> &holes);
+    const std::vector<Domain::SLA::DrainHole> &holes);
 
 } // namespace sla
 } // namespace Slic3r

@@ -26,7 +26,7 @@ SCENARIO("Bridge detector", "[Bridging]")
         double   result   = bridge_detector.angle;
         Polygons coverage = bridge_detector.coverage();
         THEN("correct coverage area") {
-            REQUIRE(is_approx(area(coverage), expected_coverage));
+            REQUIRE(is_approx(Algorithms::Polygon::area(coverage), expected_coverage));
         }
         // our epsilon is equal to the steps used by the bridge detection algorithm
         //##use XXX; YYY [ rad2deg($result), $expected ];

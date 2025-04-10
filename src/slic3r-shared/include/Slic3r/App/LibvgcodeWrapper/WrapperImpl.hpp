@@ -120,7 +120,7 @@ public:
     void slider_layers_jump_to_value() { m_slider_layers.jump_to_value(); }
     void slider_layers_add_current_tick() { m_slider_layers.add_current_tick(); }
     void slider_layers_delete_current_tick() { m_slider_layers.delete_current_tick(); }
-    CustomGCode::Info slider_layers_ticks_values() { return m_slider_layers.ticks_values(); }
+    Domain::CustomGCode::Info slider_layers_ticks_values() { return m_slider_layers.ticks_values(); }
 
     void reset_default_extrusion_roles_colors() { m_viewer.reset_default_extrusion_roles_colors(); }
 
@@ -171,7 +171,7 @@ private:
     void on_extrusion_role_visibility_changed();
     void on_request_extra_frames(unsigned int count = 1);
     void on_slider_layers_ticks_changed();
-    std::string on_slider_layers_get_gcode(CustomGCode::Type type);
+    std::string on_slider_layers_get_gcode(Domain::CustomGCode::Type type);
     libvgcode::Palette on_slider_layers_get_extruder_colors();
 
     void render_legend(const WrapperLayoutData& layout);

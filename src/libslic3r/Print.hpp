@@ -173,7 +173,7 @@ public:
     static_assert(sizeof(Eigen::AlignedBox<float, 3>) == 24, "Eigen::AlignedBox<float, 3> is not being vectorized, thus it does not need to be aligned");
     using BoundingBox = Eigen::AlignedBox<float, 3>;
     struct VolumeExtents {
-        ObjectID             volume_id;
+        Domain::ObjectID     volume_id;
         BoundingBox          bbox;
     };
 
@@ -233,7 +233,7 @@ public:
         std::vector<PaintedRegion>          painted_regions;
         std::vector<FuzzySkinPaintedRegion> fuzzy_skin_painted_regions;
 
-        bool has_volume(const ObjectID id) const {
+        bool has_volume(const Domain::ObjectID id) const {
             auto it = lower_bound_by_predicate(this->volumes.begin(), this->volumes.end(), [id](const VolumeExtents &l) { return l.volume_id < id; });
             return it != this->volumes.end() && it->volume_id == id;
         }
@@ -250,7 +250,7 @@ public:
     // Transformation of this ModelObject into one of the associated PrintObjects (all PrintObjects derived from a single modelObject differ by a Z rotation only).
     // This transformation is used to calculate VolumeExtents.
     Transform3d                                 trafo_bboxes;
-    std::vector<ObjectID>                       cached_volume_ids;
+    std::vector<Domain::ObjectID>               cached_volume_ids;
 
     std::optional<GeneratedSupportPoints> generated_support_points;
 
@@ -369,7 +369,7 @@ public:
     std::vector<Polygons>       slice_support_enforcers() const { return this->slice_support_volumes(ModelVolumeType::SUPPORT_ENFORCER); }
 
     // Helpers to project custom facets on slices
-    void project_and_append_custom_facets(bool seam, TriangleStateType type, std::vector<Polygons>& expolys) const;
+    void project_and_append_custom_facets(bool seam, Domain::TriangleSelector::TriangleStateType type, std::vector<Polygons>& expolys) const;
 
 private:
     // to be called from Print only.
@@ -543,7 +543,7 @@ public:
     void                clear() override;
     bool                empty() const override { return m_objects.empty(); }
     // List of existing PrintObject IDs, to remove notifications for non-existent IDs.
-    std::vector<ObjectID> print_object_ids() const override;
+    std::vector<Domain::ObjectID> print_object_ids() const override;
 
     ApplyStatus         apply(const Model &model, DynamicPrintConfig config, std::vector<std::string> *warnings = nullptr) override;
     void                set_task(const TaskParams &params) override { PrintBaseWithState<PrintStep, psCount>::set_task_impl(params, m_objects); }
@@ -588,14 +588,14 @@ public:
     SpanOfConstPtrs<PrintObject> objects() const { return SpanOfConstPtrs<PrintObject>(const_cast<const PrintObject* const* const>(m_objects.data()), m_objects.size()); }
     PrintObject*                get_object(size_t idx) { return const_cast<PrintObject*>(m_objects[idx]); }
     const PrintObject*          get_object(size_t idx) const { return m_objects[idx]; }
-    const PrintObject* get_print_object_by_model_object_id(ObjectID object_id) const {
+    const PrintObject* get_print_object_by_model_object_id(Domain::ObjectID object_id) const {
         auto it = std::find_if(m_objects.begin(), m_objects.end(),
                                [object_id](const PrintObject* obj) { return obj->model_object()->id() == object_id; });
         return (it == m_objects.end()) ? nullptr : *it;
     }
     // PrintObject by its ObjectID, to be used to uniquely bind slicing warnings to their source PrintObjects
     // in the notification center.
-    const PrintObject*          get_object(ObjectID object_id) const { 
+    const PrintObject*          get_object(Domain::ObjectID object_id) const {
         auto it = std::find_if(m_objects.begin(), m_objects.end(), 
             [object_id](const PrintObject *obj) { return obj->id() == object_id; });
         return (it == m_objects.end()) ? nullptr : *it;

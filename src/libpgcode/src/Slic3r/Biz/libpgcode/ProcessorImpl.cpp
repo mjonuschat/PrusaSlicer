@@ -144,7 +144,7 @@ ProcessorResult ProcessorImpl::finalize()
         TimeMachine& machine = m_time_processor.machines[i];
         CustomGCodeTime& gcode_time = machine.gcode_time;
         if (gcode_time.needed && gcode_time.cache != 0.0f)
-            gcode_time.times.push_back({ CustomGCodeType::ColorChange, gcode_time.cache });
+            gcode_time.times.push_back({ CustomGCode::Type::ColorChange, gcode_time.cache });
     }
 
     m_used_filaments.process_caches(m_result, m_extruder_id, m_extrusion_role);
@@ -1663,7 +1663,7 @@ void ProcessorImpl::process_T(const std::string_view command)
                 }
                 else {
                     uint8_t old_extruder_id = m_extruder_id;
-                    process_filaments(CustomGCodeType::ToolChange);
+                    process_filaments(CustomGCode::Type::ToolChange);
                     m_extruder_id = id;
                     m_extruder_color.current = m_extruder_colors[id];
                     // Specific to the MK3 MMU2:
@@ -1841,15 +1841,15 @@ void ProcessorImpl::process_tags(const std::string_view comment)
             if (m_config.extruders.count > 1)
                 m_extruder_id = curr_extruder_id;
 
-            CustomGCodeItem item;
+            CustomGCode::Item item;
             item.print_z = m_end_position[Z];
-            item.type = CustomGCodeType::ColorChange;
+            item.type = CustomGCode::Type::ColorChange;
             item.extruder = int8_t(extruder_id + 1);
             item.color = str_color;
             m_result.custom_gcode_per_print_z.emplace_back(item);
             m_options_z_corrector.set();
-            process_custom_gcode_time(CustomGCodeType::ColorChange);
-            process_filaments(CustomGCodeType::ColorChange);
+            process_custom_gcode_time(CustomGCode::Type::ColorChange);
+            process_filaments(CustomGCode::Type::ColorChange);
         }
 
         return;
@@ -1860,13 +1860,13 @@ void ProcessorImpl::process_tags(const std::string_view comment)
     pos = comment.find(tag);
     if (pos == 0) {
         store_move(MoveType::PausePrint);
-        CustomGCodeItem item;
+        CustomGCode::Item item;
         item.print_z  = m_end_position[Z];
-        item.type     = CustomGCodeType::PausePrint;
+        item.type     = CustomGCode::Type::PausePrint;
         item.extruder = int8_t(m_extruder_id + 1);
         m_result.custom_gcode_per_print_z.emplace_back(item);
         m_options_z_corrector.set();
-        process_custom_gcode_time(CustomGCodeType::PausePrint);
+        process_custom_gcode_time(CustomGCode::Type::PausePrint);
         return;
     }
 
@@ -1875,9 +1875,9 @@ void ProcessorImpl::process_tags(const std::string_view comment)
     pos = comment.find(tag);
     if (pos == 0) {
         store_move(MoveType::CustomGCode);
-        CustomGCodeItem item;
+        CustomGCode::Item item;
         item.print_z  = m_end_position[Z];
-        item.type     = CustomGCodeType::Custom;
+        item.type     = CustomGCode::Type::Custom;
         item.extruder = int8_t(m_extruder_id + 1);
         m_result.custom_gcode_per_print_z.emplace_back(item);
         m_options_z_corrector.set();
@@ -2414,7 +2414,7 @@ void ProcessorImpl::process_simplify3d_tags(const std::string_view comment)
     }
 }
 
-void ProcessorImpl::process_custom_gcode_time(CustomGCodeType code)
+void ProcessorImpl::process_custom_gcode_time(CustomGCode::Type code)
 {
     //FIXME this simulates st_synchronize! is it correct?
     // The estimated time may be longer than the real print time.
@@ -2433,12 +2433,12 @@ void ProcessorImpl::process_custom_gcode_time(CustomGCodeType code)
     }
 }
 
-void ProcessorImpl::process_filaments(CustomGCodeType code)
+void ProcessorImpl::process_filaments(CustomGCode::Type code)
 {
     switch (code)
     {
-    case CustomGCodeType::ColorChange: { m_used_filaments.process_color_change_cache(); break; }
-    case CustomGCodeType::ToolChange:  { m_used_filaments.process_extruder_cache(m_extruder_id); break; }
+    case CustomGCode::Type::ColorChange: { m_used_filaments.process_color_change_cache(); break; }
+    case CustomGCode::Type::ToolChange:  { m_used_filaments.process_extruder_cache(m_extruder_id); break; }
     default:                           { break; }
     }
 }

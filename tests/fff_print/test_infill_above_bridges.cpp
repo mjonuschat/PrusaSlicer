@@ -3,6 +3,7 @@
 #include <libslic3r/InfillAboveBridges.hpp>
 
 using namespace Slic3r;
+using namespace Slic3r::Biz;
 using Catch::Approx;
 
 const ExPolygon square{
@@ -14,7 +15,7 @@ const ExPolygon square{
 
 ExPolygon translate(const ExPolygon &polygon, const Point &offset) {
     ExPolygons result{polygon};
-    translate(result, offset);
+    Algorithms::ExPolygon::translate(result, offset);
     return result.front();
 }
 

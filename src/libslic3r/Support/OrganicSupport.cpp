@@ -757,7 +757,7 @@ static void organic_smooth_branches_avoid_collisions(
             std::optional<std::pair<coord_t, std::reference_wrapper<const Polygons>>> res = volumes.get_collision_lower_bound_area(layer_idx, l.min_element_radius);
             assert(res.has_value());
             l.collision_radius = res->first;
-            Lines alines = to_lines(res->second.get());
+            Lines alines = Algorithms::Polygon::to_lines(res->second.get());
             l.lines.reserve(alines.size());
             for (const Line &line : alines)
                 l.lines.push_back({ unscaled<double>(line.a), unscaled<double>(line.b) });
@@ -1276,7 +1276,7 @@ void organic_draw_branches(
                                 //double                          support_area_min = 0.1 * support_area_min_radius;
                                 for (LayerIndex layer_idx = layer_begin - 1; layer_idx >= layer_bottommost; -- layer_idx) {
                                     rest_support = diff_clipped(rest_support.empty() ? slices.front() : rest_support, volumes.getCollision(0, layer_idx, false));
-                                    double rest_support_area = area(rest_support);
+                                    double rest_support_area = Algorithms::Polygon::area(rest_support);
                                     if (rest_support_area < support_area_stop)
                                         // Don't propagate a fraction of the tree contact surface.
                                         break;

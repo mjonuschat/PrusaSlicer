@@ -10,6 +10,8 @@
 #include "libslic3r/MTUtils.hpp"
 #include "Slic3r/Biz/Algorithms/SVG.hpp"
 
+using namespace Slic3r::Biz;
+
 using Catch::Approx;
 using Slic3r::Biz::Algorithms::SVG::SVG;
 using Slic3r::Biz::Algorithms::BoundingBox::inflated;
@@ -71,8 +73,8 @@ TEST_CASE("Testing DepthMap for a cube", "[ZCorr]")
         const ExPolygons &slayer = slices[i];
         REQUIRE(dlayer.size() == 1);
         REQUIRE(dlayer.begin()->first == i);
-        double ad = area(dlayer.begin()->second);
-        double as = area(slayer);
+        double ad = Algorithms::ExPolygon::area(dlayer.begin()->second);
+        double as = Algorithms::ExPolygon::area(slayer);
         REQUIRE(ad == Approx(as).margin(EPSILON));
     }
 }
@@ -108,8 +110,8 @@ TEST_CASE("Testing DepthMap for arbitrary shapes", "[ZCorr]")
     for (size_t i = 0; i < corrslices_fast.size(); ++i) {
         ExPolygons dlayer = sla::zcorr_detail::merged_layer(dmap[i]);
         const ExPolygons &slayer = corrslices_fast[i];
-        double ad = area(dlayer);
-        double as = area(slayer);
+        double ad = Algorithms::ExPolygon::area(dlayer);
+        double as = Algorithms::ExPolygon::area(slayer);
         REQUIRE(ad == Approx(as).margin(EPSILON));
     }
 }

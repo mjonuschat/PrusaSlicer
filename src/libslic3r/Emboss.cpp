@@ -16,14 +16,15 @@
 #include <limits>
 
 #include "Emboss.hpp"
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "IntersectionPoints.hpp"
 #include "admesh/stl.h"
 #include "libslic3r/AABBTreeIndirect.hpp"
-#include "libslic3r/EmbossShape.hpp"
+#include "Slic3r/Domain/EmbossShape.hpp"
 #include "libslic3r/ExPolygon.hpp"
 #include "Slic3r/Exception.hpp"
 #include "libslic3r/Polygon.hpp"
-#include "libslic3r/TextConfiguration.hpp"
+#include "Slic3r/Domain/TextConfiguration.hpp"
 
 #define STB_TRUETYPE_IMPLEMENTATION // force following include to generate implementation
 
@@ -41,6 +42,8 @@
 #include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/Point.hpp"
 
+using namespace Slic3r::Biz;
+
 // Experimentaly suggested ration of font ascent by multiple fonts
 // to get approx center of normal text line
 const double ASCENT_CENTER = 1/3.; // 0.5 is above small letter
@@ -54,6 +57,15 @@ using namespace Slic3r;
 using namespace Emboss;
 using fontinfo_opt = std::optional<stbtt_fontinfo>;
 using Domain::Index3;
+using Domain::FontProp;
+#ifdef _WIN32
+using Domain::EmbossStyle;
+#endif
+using Domain::EmbossStyles;
+using Domain::EmbossShape;
+using Domain::HealedExPolygons;
+using Domain::ExPolygonsWithId;
+using Domain::ExPolygonsWithIds;
 
 // NOTE: approach to heal shape by Clipper::Closing is not working
 
@@ -267,7 +279,7 @@ void remove_spikes_in_duplicates(ExPolygons &expolygons, const Points &duplicate
 
     bool exist_remove = false;
     for (ExPolygon &expolygon : expolygons) {
-        BoundingBox bb(to_points(expolygon.contour));
+        BoundingBox bb(Algorithms::Polygon::to_points(expolygon.contour));
         for (const Point &d : duplicates) {
             if (!bb.contains(d))
                 continue;
@@ -330,7 +342,7 @@ bool Emboss::divide_segments_for_close_point(ExPolygons &expolygons, double dist
     if (distance < 0.) return false;
 
     // ExPolygons can't contain same neigbours
-    remove_same_neighbor(expolygons);
+    Algorithms::ExPolygon::remove_consecutive_duplicate_points(expolygons);
 
     // IMPROVE: use int(insted of double) lines and tree
     const ExPolygonsIndices ids(expolygons);
@@ -447,7 +459,7 @@ HealedExPolygons Emboss::heal_polygons(const Polygons &shape, bool is_non_zero, 
 
     // Do not remove all duplicates but do it better way
     // Overlap all duplicit points by rectangle 3x3
-    Points duplicits = collect_duplicates(to_points(polygons));
+    Points duplicits = collect_duplicates(Algorithms::Polygon::to_points(polygons));
     if (!duplicits.empty()) {
         polygons.reserve(polygons.size() + duplicits.size());
         for (const Point &p : duplicits) {
@@ -536,7 +548,7 @@ struct Duplicate {
 using Duplicates = std::vector<Duplicate>;
 Duplicates collect_duplicit_indices(const ExPolygons &expoly)
 {
-    Points pts = to_points(expoly);
+    Points pts = Algorithms::ExPolygon::to_points(expoly);
 
     // initialize original index locations
     std::vector<uint32_t> idx(pts.size());
@@ -581,7 +593,7 @@ Points get_points(const Duplicates& duplicate_indices)
 bool heal_dupl_inter(ExPolygons &shape, unsigned max_iteration)
 {    
     if (shape.empty()) return true;
-    remove_same_neighbor(shape);
+    Algorithms::ExPolygon::remove_consecutive_duplicate_points(shape);
 
     // create loop permanent memory
     Polygons holes;
@@ -1296,7 +1308,7 @@ ExPolygons Slic3r::union_with_delta(EmbossShape &shape, float delta, unsigned ma
 void Slic3r::translate(ExPolygonsWithIds &expolygons_with_ids, const Point &p)
 {
     for (ExPolygonsWithId &expolygons_with_id : expolygons_with_ids)
-        translate(expolygons_with_id.expoly, p);
+        Algorithms::ExPolygon::translate(expolygons_with_id.expoly, p);
 }
 
 BoundingBox Slic3r::get_extents(const ExPolygonsWithIds &expolygons_with_ids)
@@ -1665,7 +1677,7 @@ indexed_triangle_set polygons2model_duplicit(
 indexed_triangle_set Emboss::polygons2model(const ExPolygons &shape2d,
                                             const IProjection &projection)
 {
-    Points points = to_points(shape2d);    
+    Points points = Algorithms::ExPolygon::to_points(shape2d);
     Points duplicits = collect_duplicates(points);
     return (duplicits.empty()) ?
         polygons2model_unique(shape2d, projection, points) :

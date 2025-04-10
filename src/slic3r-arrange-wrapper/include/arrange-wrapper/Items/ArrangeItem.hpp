@@ -47,7 +47,7 @@ struct InfiniteBed;
 
 inline bool check_polygons_are_convex(const Polygons &pp) {
     return std::all_of(pp.begin(), pp.end(), [](const Polygon &p) {
-        return polygon_is_convex(p);
+        return Slic3r::Biz::Algorithms::Polygon::is_convex(p);
     });
 }
 

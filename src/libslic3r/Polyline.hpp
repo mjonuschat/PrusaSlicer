@@ -23,6 +23,7 @@
 #include "Slic3r/Domain/MultiPoint.hpp"
 #include "Slic3r/Domain/Polyline.hpp"
 #include "Slic3r/Domain/Point.hpp"
+#include "Slic3r/Biz/Algorithms/Polyline.hpp"
 #include "libslic3r.h"
 #include "Line.hpp"
 #include "MultiPoint.hpp"
@@ -40,10 +41,6 @@ typedef std::vector<ThickPolyline> ThickPolylines;
 
 extern BoundingBox get_extents(const Slic3r::Polyline &polyline);
 extern BoundingBox get_extents(const Slic3r::Polylines &polylines);
-
-// Return True when erase some otherwise False.
-bool remove_same_neighbor(Polyline &polyline);
-bool remove_same_neighbor(Polylines &polylines);
 
 // Merge polylines at their respective end points.
 // dst_first: the merge point is at dst.begin() or dst.end()?
@@ -64,8 +61,6 @@ inline void polylines_merge(PointsType &dst, bool dst_first, PointsType &&src, b
     append(dst, std::move(src));
 }
 
-bool remove_degenerate(Polylines &polylines);
-
 // Returns index of a segment of a polyline and foot point of pt on polyline.
 std::pair<int, Point> foot_pt(const Points &polyline, const Point &pt);
 
@@ -78,7 +73,7 @@ struct ThickPolyline {
     size_t       size()         const { return this->points.size(); }
     bool         is_valid()     const { return this->points.size() >= 2; }
     bool         empty()        const { return this->points.empty(); }
-    double       length()       const { return Slic3r::length(this->points); }
+    double       length()       const { return Slic3r::Biz::Algorithms::Polyline::length(this->points); }
 
     void         clear() { this->points.clear(); this->width.clear(); }
 

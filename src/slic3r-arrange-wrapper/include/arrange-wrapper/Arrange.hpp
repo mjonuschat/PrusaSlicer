@@ -186,15 +186,15 @@ template<class ArrItem, class En = void> struct ImbueableItemTraits_
 {
     static constexpr const char *Key = "object_id";
 
-    static void imbue_id(ArrItem &itm, const ObjectID &id)
+    static void imbue_id(ArrItem &itm, const Domain::ObjectID &id)
     {
         set_arbitrary_data(itm, Key, id);
     }
 
-    static std::optional<ObjectID> retrieve_id(const ArrItem &itm)
+    static std::optional<Domain::ObjectID> retrieve_id(const ArrItem &itm)
     {
-        std::optional<ObjectID> ret;
-        auto                    idptr = get_data<const ObjectID>(itm, Key);
+        std::optional<Domain::ObjectID> ret;
+        auto                            idptr = get_data<const Domain::ObjectID>(itm, Key);
         if (idptr)
             ret = *idptr;
 
@@ -206,13 +206,13 @@ template<class ArrItem>
 using ImbueableItemTraits = ImbueableItemTraits_<StripCVRef<ArrItem>>;
 
 template<class ArrItem>
-void imbue_id(ArrItem &itm, const ObjectID &id)
+void imbue_id(ArrItem &itm, const Domain::ObjectID &id)
 {
     ImbueableItemTraits<ArrItem>::imbue_id(itm, id);
 }
 
 template<class ArrItem>
-std::optional<ObjectID> retrieve_id(const ArrItem &itm)
+std::optional<Domain::ObjectID> retrieve_id(const ArrItem &itm)
 {
     return ImbueableItemTraits<ArrItem>::retrieve_id(itm);
 }

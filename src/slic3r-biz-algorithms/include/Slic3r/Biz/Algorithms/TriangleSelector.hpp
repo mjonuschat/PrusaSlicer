@@ -2,15 +2,11 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#ifndef libslic3r_TriangleSelector_hpp_
-#define libslic3r_TriangleSelector_hpp_
+#pragma once
 
 // #define PRUSASLICER_TRIANGLE_SELECTOR_DEBUG
 
 
-#include <assert.h>
-#include <stddef.h>
-#include <stdint.h>
 #include <cfloat>
 #include <algorithm>
 #include <array>
@@ -21,41 +17,20 @@
 #include <cinttypes>
 #include <cstddef>
 
-#include "Point.hpp"
-#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
+#include "Slic3r/Domain/BoundingBox.hpp"
+#include "Slic3r/Domain/TriangleMesh.hpp"
+#include "Slic3r/Domain/TriangleSelector.hpp"
+#include "Slic3r/Domain/Types.hpp"
+
 #include "admesh/stl.h"
 
-namespace cereal {
-class access;
-}  // namespace cereal
+namespace Slic3r::Biz::Algorithms {
 
-namespace Slic3r {
-
-enum class TriangleStateType : int8_t {
-    // Maximum is 3. The value is serialized in TriangleSelector into 2 bits.
-    NONE      = 0,
-    ENFORCER  = 1,
-    BLOCKER   = 2,
-    // For the fuzzy skin, we use just two values (NONE and FUZZY_SKIN).
-    FUZZY_SKIN = ENFORCER,
-    // Maximum is 15. The value is serialized in TriangleSelector into 6 bits using a 2 bit prefix code.
-    Extruder1 = ENFORCER,
-    Extruder2 = BLOCKER,
-    Extruder3,
-    Extruder4,
-    Extruder5,
-    Extruder6,
-    Extruder7,
-    Extruder8,
-    Extruder9,
-    Extruder10,
-    Extruder11,
-    Extruder12,
-    Extruder13,
-    Extruder14,
-    Extruder15,
-    Count
-};
+using Domain::Vec3f;
+using Domain::Transform3f;
+using Domain::Transform3d;
+using Domain::TriangleSelector::TriangleStateType;
+using Domain::TriangleSelector::TriangleSplittingData;
 
 // Following class holds information about selected triangles. It also has power
 // to recursively subdivide the triangles and make the selection finer.
@@ -101,7 +76,7 @@ public:
         Cursor()          = delete;
         virtual ~Cursor() = default;
 
-        float get_edge_limit() { return m_edge_limit; };
+        float get_edge_limit() const { return m_edge_limit; };
 
         bool is_pointer_in_triangle(const Triangle &tr, const std::vector<Vertex> &vertices) const;
         std::array<Vec3f, 3> transform_triangle(const Triangle &tr, const std::vector<Vertex> &vertices) const;
@@ -262,56 +237,6 @@ public:
         float m_z_range_bottom;
     };
 
-    struct TriangleBitStreamMapping
-    {
-        // Index of the triangle to which we assign the bitstream containing splitting information.
-        int triangle_idx        = -1;
-        // Index of the first bit of the bitstream assigned to this triangle.
-        int bitstream_start_idx = -1;
-
-        TriangleBitStreamMapping() = default;
-        explicit TriangleBitStreamMapping(int triangleIdx, int bitstreamStartIdx) : triangle_idx(triangleIdx), bitstream_start_idx(bitstreamStartIdx) {}
-
-        friend bool operator==(const TriangleBitStreamMapping &lhs, const TriangleBitStreamMapping &rhs) { return lhs.triangle_idx == rhs.triangle_idx && lhs.bitstream_start_idx == rhs.bitstream_start_idx; }
-        friend bool operator!=(const TriangleBitStreamMapping &lhs, const TriangleBitStreamMapping &rhs) { return !(lhs == rhs); }
-
-    private:
-        friend class cereal::access;
-        template<class Archive> void serialize(Archive &ar) { ar(triangle_idx, bitstream_start_idx); }
-    };
-
-    struct TriangleSplittingData {
-        // Vector of triangles and its indexes to the bitstream.
-        std::vector<TriangleBitStreamMapping> triangles_to_split;
-        // Bit stream containing splitting information.
-        std::vector<bool>                     bitstream;
-        // Array indicating which triangle state types are used (encoded inside bitstream).
-        std::vector<bool>                     used_states { std::vector<bool>(static_cast<size_t>(TriangleStateType::Count), false) };
-
-        TriangleSplittingData() = default;
-
-        friend bool operator==(const TriangleSplittingData &lhs, const TriangleSplittingData &rhs) {
-            return lhs.triangles_to_split == rhs.triangles_to_split
-                && lhs.bitstream          == rhs.bitstream
-                && lhs.used_states        == rhs.used_states;
-        }
-
-        friend bool operator!=(const TriangleSplittingData &lhs, const TriangleSplittingData &rhs) { return !(lhs == rhs); }
-
-        // Reset all used states before they are recomputed based on the bitstream.
-        void reset_used_states() {
-            used_states.resize(static_cast<size_t>(TriangleStateType::Count), false);
-            std::fill(used_states.begin(), used_states.end(), false);
-        }
-
-        // Update used states based on the bitstream. It just iterated over the bitstream from the bitstream_start_idx till the end.
-        void update_used_states(size_t bitstream_start_idx);
-
-    private:
-        friend class cereal::access;
-        template<class Archive> void serialize(Archive &ar) { ar(triangles_to_split, bitstream, used_states); }
-    };
-
     std::pair<std::vector<Domain::Index3>, std::vector<Domain::Index3>> precompute_all_neighbors() const;
     void precompute_all_neighbors_recursive(int facet_idx, const Domain::Index3 &neighbors, const Domain::Index3 &neighbors_propagated, std::vector<Domain::Index3> &neighbors_out, std::vector<Domain::Index3> &neighbors_normal_out) const;
 
@@ -409,7 +334,7 @@ public:
 
     // For the triangle selected by seed fill, set a new TriangleStateType and remove the flag indicating that the triangle was selected by seed fill.
     // The operation may merge a split triangle if it is being assigned the same color.
-    void seed_fill_apply_on_single_triangle(TriangleStateType new_state, const int facet_idx);
+    void seed_fill_apply_on_single_triangle(TriangleStateType new_state, int facet_idx);
 
     // Compute total area of the triangle.
     double get_triangle_area(const Triangle &triangle) const;
@@ -573,9 +498,4 @@ private:
     int m_free_vertices_head { -1 };
 };
 
-
-
-
-} // namespace Slic3r
-
-#endif // libslic3r_TriangleSelector_hpp_
+} // namespace Slic3r::Biz::Algorithms

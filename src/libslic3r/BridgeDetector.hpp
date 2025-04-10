@@ -138,7 +138,7 @@ inline std::tuple<Vec2d, double> detect_bridging_direction(const Polygons &to_co
     using Slic3r::Biz::Algorithms::Polyline::to_lines;
 
     Polygons  overhang_area      = diff(to_cover, anchors_area);
-    Lines     floating_edges     = to_lines(diff_pl(to_polylines(overhang_area), expand(anchors_area, float(SCALED_EPSILON))));
+    Lines     floating_edges     = to_lines(diff_pl(Slic3r::Biz::Algorithms::Polygon::to_polylines(overhang_area), expand(anchors_area, float(SCALED_EPSILON))));
     return detect_bridging_direction(floating_edges, overhang_area);
 }
 

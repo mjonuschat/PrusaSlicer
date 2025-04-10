@@ -22,6 +22,7 @@ using namespace Catch;
 using Slic3r::Biz::Algorithms::BoundingBox::center;
 using Slic3r::Biz::Algorithms::BoundingBox::contains;
 using Slic3r::Biz::Algorithms::BoundingBox::scaled;
+using Slic3r::Biz::Algorithms::Geometry::Transformation;
 using Slic3r::Domain::TriangleMesh;
 namespace triangle_mesh = Slic3r::Biz::Algorithms::TriangleMesh;
 
@@ -87,7 +88,7 @@ static Slic3r::Model get_example_model_with_arranged_primitives()
     ModelInstance *inst = new_object->add_instance(*cube_inst);
     auto tr = inst->get_matrix();
     tr.translate(Vec3d{25., 0., 0.});
-    inst->set_transformation(Geometry::Transformation{tr});
+    inst->set_transformation(Transformation{tr});
 
     new_object = model.add_object();
     new_object->name = "20mm_cyl";
@@ -151,7 +152,7 @@ TEST_CASE("ModelInstance should be retrievable when imbued into ArrangeItem",
     auto arrbl = arr2::ArrangeableModelInstance{mi, vbedh_ptr, nullptr, {0, 0}, std::nullopt};
     arr2::imbue_id(itm, arrbl.id());
 
-    std::optional<ObjectID> id_returned = arr2::retrieve_id(itm);
+    std::optional<Domain::ObjectID> id_returned = arr2::retrieve_id(itm);
 
     REQUIRE((id_returned && *id_returned == mi->id()));
 }
@@ -284,7 +285,7 @@ TEMPLATE_TEST_CASE("Outline extraction from ModelInstance",
                            random_value(-100., 100.),
                            random_value(0., 100.)});
 
-    mi->set_transformation(Geometry::Transformation{matrix});
+    mi->set_transformation(Transformation{matrix});
 
     GIVEN("An empty ModelInstance without mesh")
     {
@@ -465,7 +466,7 @@ TEMPLATE_TEST_CASE("Common virtual bed handlers",
             auto physical_bed_trafo = vbedh->get_physical_bed_trafo(from_bed_idx);
 
             auto &mi_back_to_phys = *model.objects.front()->add_instance(mi_to_move);
-            mi_back_to_phys.set_transformation(Geometry::Transformation{
+            mi_back_to_phys.set_transformation(Transformation{
                 physical_bed_trafo * mi_back_to_phys.get_matrix()});
 
             auto bbf = arr2::instance_bounding_box(mi_back_to_phys);
@@ -546,7 +547,7 @@ TEST_CASE("Virtual bed handlers - StriderVBedHandler", "[arrange2][integration][
             THEN("the physical trafo should move the instance back to bed 0")
             {
                 auto tr = vbh.get_physical_bed_trafo(bed_index);
-                mi_to_move.set_transformation(Geometry::Transformation{tr * mi_to_move.get_matrix()});
+                mi_to_move.set_transformation(Transformation{tr * mi_to_move.get_matrix()});
                 REQUIRE(vbh.get_bed_index(VBP{mi_to_move}) == 0);
 
                 auto instbb = Domain::BoundingBox2crd{scaled(to_2d(arr2::instance_bounding_box(mi_to_move)))};
@@ -904,10 +905,10 @@ public:
 
 class MocWTH : public WipeTowerHandler {
     std::function<bool(int)> m_sel_pred;
-    ObjectID m_id;
+    Domain::ObjectID m_id;
 
 public:
-    MocWTH(const ObjectID &id) : m_id{id} {}
+    MocWTH(const Domain::ObjectID &id) : m_id{id} {}
 
     void visit(std::function<void(Arrangeable &)> fn) override
     {
@@ -924,7 +925,7 @@ public:
         m_sel_pred = std::move(pred);
     }
 
-    ObjectID get_id() const override {
+    Domain::ObjectID get_id() const override {
         return m_id;
     }
 };
@@ -1027,7 +1028,7 @@ TEST_CASE("Test SceneBuilder", "[arrange2][integration]")
         bld.set_model(mdl);
 
         std::vector<AnyPtr<arr2::WipeTowerHandler>> handlers;
-        handlers.push_back(std::make_unique<arr2::MocWTH>(wipe_tower_instance_id(0)));
+        handlers.push_back(std::make_unique<arr2::MocWTH>(Domain::wipe_tower_instance_id(0)));
         bld.set_wipe_tower_handlers(std::move(handlers));
 
         WHEN("the selection mask is initialized as a fallback default in the created scene")
@@ -1041,7 +1042,7 @@ TEST_CASE("Test SceneBuilder", "[arrange2][integration]")
 
                 bool wt_selected = false;
                 scene.model()
-                    .visit_arrangeable(wipe_tower_instance_id(0),
+                    .visit_arrangeable(Domain::wipe_tower_instance_id(0),
                                        [&wt_selected](
                                            const arr2::Arrangeable &arrbl) {
                                            wt_selected = arrbl.is_selected();

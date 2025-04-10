@@ -31,14 +31,34 @@ int find_point(const Domain::Polyline& polyline, const Domain::Point& query_pt, 
     return MultiPoint::find_point(polyline, query_pt, scaled_epsilon);
 }
 
-bool has_duplicate_points(const Domain::Polyline& polyline)
+bool has_consecutive_duplicate_points(const Domain::Polyline& polyline)
 {
-    return Point::has_duplicate_points(polyline.points);
+    return Point::has_consecutive_duplicate_points(polyline.points);
 }
 
-bool remove_duplicate_points(Domain::Polyline& polyline)
+bool remove_consecutive_duplicate_points(Domain::Polyline& polyline)
 {
-    return Point::remove_duplicate_points(polyline.points);
+    return Point::remove_consecutive_duplicate_points(polyline.points);
+}
+
+bool remove_consecutive_duplicate_points(Domain::Polylines& polylines)
+{
+    if (polylines.empty())
+        return false;
+
+    bool modified = false;
+    for (Domain::Polyline& polyline : polylines) {
+        modified |= remove_consecutive_duplicate_points(polyline);
+    }
+
+    // Remove empty or invalid polylines.
+    std::erase_if(polylines, [](const Domain::Polyline& p) { return p.points.size() < 2; });
+    return modified;
+}
+
+bool remove_degenerate(Domain::Polylines& polylines)
+{
+    return std::erase_if(polylines, [](const Domain::Polyline& p) { return p.points.size() < 2; }) > 0;
 }
 
 void clip_end(Domain::Polyline& polyline, double distance)
@@ -217,6 +237,39 @@ std::pair<Domain::Polyline, Domain::Polyline> split_at_point(const Domain::Polyl
     second_part.points.insert(second_part.points.end(), min_point_it, polyline.points.cend());
 
     return {std::move(first_part), std::move(second_part)};
+}
+
+double length(const Domain::Points& polyline_pts)
+{
+    return length(polyline_pts.cbegin(), polyline_pts.cend());
+}
+
+double length(const Points::const_iterator polyline_pts_begin, const Points::const_iterator polyline_pts_end)
+{
+    if (polyline_pts_begin == polyline_pts_end)
+        return 0.;
+
+    double total_length = 0.;
+    for (auto curr_it = std::next(polyline_pts_begin); curr_it != polyline_pts_end; ++curr_it) {
+        auto prev_it = std::prev(curr_it);
+        total_length += (*curr_it - *prev_it).cast<double>().norm();
+    }
+
+    return total_length;
+}
+
+Domain::Polygons to_polygons(const Domain::Polylines& polylines)
+{
+    Domain::Polygons out;
+    out.reserve(polylines.size());
+    for (const Domain::Polyline& polyline : polylines) {
+        if (polyline.empty())
+            continue;
+
+        out.emplace_back(polyline.points);
+    }
+
+    return out;
 }
 
 } // namespace Slic3r::Biz::Algorithms::Polyline

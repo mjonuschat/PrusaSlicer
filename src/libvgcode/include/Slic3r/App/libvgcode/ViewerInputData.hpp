@@ -15,7 +15,7 @@ namespace Slic3r::App::libvgcode {
 
 struct GCodeEvent
 {
-    Domain::CustomGCodeType type{ Domain::CustomGCodeType::Custom };
+    Domain::CustomGCode::Type type{ Domain::CustomGCode::Type::Custom };
     uint8_t extruder_id{ 0 };
     Biz::libpgcode::Times times{};
     std::array<float, 2> used_filament{ 0.0f, 0.0f };

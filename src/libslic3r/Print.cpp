@@ -20,7 +20,9 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
+#include "Slic3r/Biz/Algorithms/FacetsAnnotation.hpp"
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
+#include "Slic3r/Domain/TriangleSelector.hpp"
 #include "Slic3r/Exception.hpp"
 #include "Print.hpp"
 #include "BoundingBox.hpp"
@@ -410,9 +412,9 @@ double Print::max_allowed_layer_height() const
     return nozzle_diameter_max;
 }
 
-std::vector<ObjectID> Print::print_object_ids() const 
+std::vector<Domain::ObjectID> Print::print_object_ids() const
 { 
-    std::vector<ObjectID> out; 
+    std::vector<Domain::ObjectID> out;
     // Reserve one more for the caller to append the ID of the Print itself.
     out.reserve(m_objects.size() + 1);
     for (const PrintObject *print_object : m_objects)
@@ -698,7 +700,7 @@ std::string Print::validate(std::vector<std::string>* warnings) const
             if (! object->has_support() && warnings) {
                 for (const ModelVolume* mv : object->model_object()->volumes) {
                     bool has_enforcers = mv->is_support_enforcer() || 
-                        (mv->is_model_part() && mv->supported_facets.has_facets(*mv, TriangleStateType::ENFORCER));
+                        (mv->is_model_part() && Algorithms::FacetsAnnotation::has_facets(mv->supported_facets, Domain::TriangleSelector::TriangleStateType::ENFORCER));
                     if (has_enforcers) {
                         warnings->emplace_back("_SUPPORTS_OFF");
                         break;
@@ -1133,7 +1135,7 @@ void Print::_make_skirt()
         Polygon loop;
         {
             Polygons loops = offset(convex_hull, distance, ClipperLib::jtRound, float(scale_(0.1)));
-            Geometry::simplify_polygons(loops, scale_(0.05), &loops);
+            Biz::Algorithms::Geometry::simplify_polygons(loops, scale_(0.05), &loops);
 			if (loops.empty())
 				break;
 			loop = loops.front();

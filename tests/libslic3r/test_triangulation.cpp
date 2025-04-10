@@ -5,6 +5,7 @@
 #include "Slic3r/Biz/Algorithms/SVG.hpp" // only debug visualization
 
 using namespace Slic3r;
+using namespace Slic3r::Biz;
 using Domain::Index3;
 using Biz::Algorithms::SVG::SVG;
 
@@ -19,7 +20,7 @@ void store_trinagulation(const ExPolygons &shape,
     bb.scale(scale);
     SVG svg_vis(file_name, bb);
     svg_vis.draw(shape, "gray", .7f);
-    Points pts = to_points(shape);
+    Points pts = Algorithms::ExPolygon::to_points(shape);
     svg_vis.draw(pts, "black", 4 * scale);
 
     for (const Index3 &t : triangles) {

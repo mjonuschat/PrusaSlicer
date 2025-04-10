@@ -12,14 +12,22 @@
 #include <cassert>
 #include <cstring>
 
+#include "Slic3r/Biz/Algorithms/Polyline.hpp"
 #include "Emboss.hpp" // heal for shape
 #include "libslic3r/ClipperUtils.hpp"
-#include "libslic3r/EmbossShape.hpp"
+#include "Slic3r/Domain/EmbossShape.hpp"
 #include "Slic3r/Exception.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/Polyline.hpp"
 
+using namespace Slic3r::Biz;
+
 namespace {    
+
+using Slic3r::Domain::EmbossShape;
+using Slic3r::Domain::HealedExPolygons;
+using Slic3r::Domain::ExPolygonsWithIds;
+
 using namespace Slic3r; // Polygon
 // see function nsvg__lineTo(NSVGparser* p, float x, float y)
 bool is_line(const float *p, float precision = 1e-4f);
@@ -82,7 +90,7 @@ Polygons to_polygons(const NSVGimage &image, const NSVGLineParams &param)
         const LinesPath lines_path = linearize_path(shape->paths, param);
         Slic3r::append(result, lines_path.polygons);
         // close polyline to create polygon
-        Slic3r::append(result, to_polygons(lines_path.polylines));
+        Slic3r::append(result, Algorithms::Polyline::to_polygons(lines_path.polylines));
     }
     return result;
 }
@@ -381,8 +389,8 @@ LinesPath linearize_path(NSVGpath *first_path, const NSVGLineParams &param)
         // prepare for new path - recycle alocated memory
         points.clear();
     }
-    remove_same_neighbor(polygons);
-    remove_same_neighbor(polylines);
+    Algorithms::Polygon::remove_consecutive_duplicate_points(polygons);
+    Algorithms::Polyline::remove_consecutive_duplicate_points(polylines);
     return result;
 }
 
@@ -391,7 +399,7 @@ HealedExPolygons fill_to_expolygons(const LinesPath &lines_path, const NSVGshape
     Polygons fill = lines_path.polygons; // copy
 
     // close polyline to create polygon
-    Slic3r::append(fill, to_polygons(lines_path.polylines));
+    Slic3r::append(fill, Algorithms::Polyline::to_polygons(lines_path.polylines));
     if (fill.empty())
         return {};
 
@@ -541,7 +549,7 @@ HealedExPolygons stroke_to_expolygons(const LinesPath &lines_path, const NSVGsha
         for (const Polyline &polyline : lines_path.polylines)
             Slic3r::append(dashes, to_dashes(polyline, params));
         for (const Polygon &polygon : lines_path.polygons)
-            Slic3r::append(dashes, to_dashes(to_polyline(polygon), params));
+            Slic3r::append(dashes, to_dashes(Algorithms::Polygon::to_polyline(polygon), params));
         result = offset(dashes, stroke_width / 2, join_type, mitter, end_type);
     } else {
         result = contour_to_polygons(lines_path.polygons, stroke_width, join_type, mitter);

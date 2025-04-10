@@ -267,13 +267,13 @@ std::vector<SurfaceFill> group_fills(const Layer &layer)
 		for (SurfaceFill &fill : surface_fills)
 			if (! fill.expolygons.empty()) {
 				if (fill.expolygons.size() > 1 || ! all_polygons.empty()) {
-					Polygons polys = to_polygons(std::move(fill.expolygons));
+					Polygons polys = Algorithms::ExPolygon::to_polygons(std::move(fill.expolygons));
 		            // Make a union of polygons, use a safety offset, subtract the preceding polygons.
 				    // Bridges are processed first (see SurfaceFill::operator<())
 		            fill.expolygons = all_polygons.empty() ? union_safety_offset_ex(polys) : diff_ex(polys, all_polygons, ApplySafetyOffset::Yes);
 					append(all_polygons, std::move(polys));
 				} else if (&fill != &surface_fills.back())
-					append(all_polygons, to_polygons(fill.expolygons));
+					append(all_polygons, Algorithms::ExPolygon::to_polygons(fill.expolygons));
 	        }
 	}
 
@@ -297,7 +297,7 @@ std::vector<SurfaceFill> group_fills(const Layer &layer)
     	for (SurfaceFill &surface_fill : surface_fills)
 			if (! surface_fill.expolygons.empty()) {
     			distance_between_surfaces = std::max(distance_between_surfaces, surface_fill.params.flow.scaled_spacing());
-				append((surface_fill.surface.surface_type == stInternalVoid) ? voids : surfaces_polygons, to_polygons(surface_fill.expolygons));
+				append((surface_fill.surface.surface_type == stInternalVoid) ? voids : surfaces_polygons, Algorithms::ExPolygon::to_polygons(surface_fill.expolygons));
 				if (surface_fill.surface.surface_type == stInternalSolid)
 					region_internal_infill = (int)surface_fill.region_id;
 				if (surface_fill.surface.is_solid())
@@ -906,19 +906,19 @@ void Layer::make_ironing()
 				if (iron_completely) {
 					// Iron everything. This is likely only good for solid transparent objects.
 					for (const Surface &surface : ironing_params.layerm->slices())
-						polygons_append(polys, surface.expolygon);
+                        Algorithms::Polygon::append(polys, surface.expolygon);
 				} else {
 					for (const Surface &surface : ironing_params.layerm->slices())
 						if (surface.surface_type == stTop || (iron_everything && surface.surface_type == stBottom))
 							// stBottomBridge is not being ironed on purpose, as it would likely destroy the bridges.
-							polygons_append(polys, surface.expolygon);
+                            Algorithms::Polygon::append(polys, surface.expolygon);
 				}
 				if (iron_everything && ! iron_completely) {
 					// Add solid fill surfaces. This may not be ideal, as one will not iron perimeters touching these
 					// solid fill surfaces, but it is likely better than nothing.
 					for (const Surface &surface : ironing_params.layerm->fill_surfaces())
 						if (surface.surface_type == stInternalSolid)
-							polygons_append(infills, surface.expolygon);
+                            Algorithms::Polygon::append(infills, surface.expolygon);
 				}
 			}
 

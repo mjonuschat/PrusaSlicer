@@ -1014,7 +1014,7 @@ static inline void remove_tangent_edges(std::vector<IntersectionLine> &lines)
 struct OpenPolyline {
     OpenPolyline() = default;
     OpenPolyline(const IntersectionReference &start, const IntersectionReference &end, Points &&points, ColorPolygon::Colors &&colors) :
-        start(start), end(end), points(std::move(points)), colors(std::move(colors)), length(Slic3r::length(this->points)), consumed(false) {}
+        start(start), end(end), points(std::move(points)), colors(std::move(colors)), length(Algorithms::Polyline::length(this->points)), consumed(false) {}
     void reverse() {
         std::swap(start, end);
         std::reverse(points.begin(), points.end());
@@ -1160,7 +1160,7 @@ std::vector<OpenPolyline*> open_polylines_sorted(std::vector<OpenPolyline> &open
     for (OpenPolyline &opl : open_polylines)
         if (! opl.consumed) {
             if (update_lengths)
-                opl.length = Slic3r::length(opl.points);
+                opl.length = Algorithms::Polyline::length(opl.points);
             out.emplace_back(&opl);
         }
     std::sort(out.begin(), out.end(), [](const OpenPolyline *lhs, const OpenPolyline *rhs){ return lhs->length > rhs->length; });
@@ -1259,7 +1259,7 @@ static void chain_open_polylines_exact(std::vector<OpenPolyline>              &o
                 // Contrary to the points, the assigned colors will not be duplicated, so we will not remove them.
                 opl->points.pop_back();
                 if (opl->points.size() >= 3) {
-                    if (try_connect_reversed && area(opl->points) < 0) {
+                    if (try_connect_reversed && Algorithms::Polygon::area(opl->points) < 0) {
                         // The closed polygon is patched from pieces with messed up orientation, therefore
                         // the orientation of the patched up polygon is not known.
                         // Orient the patched up polygons CCW. This heuristic may close some holes and cavities.
@@ -1367,7 +1367,7 @@ static void chain_open_polylines_close_gaps(std::vector<OpenPolyline>           
             if (next_start != nullptr && loop_closed && current_loop_closing_distance2 < next_start_and_dist.second) {
                 // Heuristics to decide, whether to close the loop, or connect another polyline.
                 // One should avoid closing loops shorter than max_gap_scaled.
-                loop_closed = sqrt(current_loop_closing_distance2) < 0.3 * length(opl->points);
+                loop_closed = sqrt(current_loop_closing_distance2) < 0.3 * Algorithms::Polyline::length(opl->points);
             }
             if (loop_closed) {
                 // Remove the start point of the current polyline from the lookup.
@@ -1388,7 +1388,7 @@ static void chain_open_polylines_close_gaps(std::vector<OpenPolyline>           
 
                 // When we split the gap into two pieces by adding a midpoint, then a valid polygon has at least 4 points.
                 if (opl->points.size() >= (3 + size_t(midpoint_inserted))) {
-                    if (try_connect_reversed && n_segments_joined > 1 && area(opl->points) < 0) {
+                    if (try_connect_reversed && n_segments_joined > 1 && Algorithms::Polygon::area(opl->points) < 0) {
                         // The closed polygon is patched from pieces with messed up orientation, therefore
                         // the orientation of the patched up polygon is not known.
                         // Orient the patched up polygons CCW. This heuristic may close some holes and cavities.

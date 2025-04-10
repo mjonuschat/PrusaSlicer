@@ -19,7 +19,7 @@
 #include <vector>
 #include <cstddef>
 
-#include <libslic3r/ObjectID.hpp>
+#include <Slic3r/Domain/ObjectID.hpp>
 #include <libslic3r/AnyPtr.hpp>
 #include <libslic3r/BoundingBox.hpp>
 #include <libslic3r/ExPolygon.hpp>
@@ -60,12 +60,12 @@ public:
 
     // ID is implementation specific, must uniquely identify an Arrangeable
     // object.
-    virtual ObjectID id() const = 0;
+    virtual Domain::ObjectID id() const = 0;
 
     // This is different than id(), and identifies an underlying group into
     // which the Arrangeable belongs. Can be used to group arrangeables sharing
     // the same outline.
-    virtual ObjectID   geometry_id() const    = 0;
+    virtual Domain::ObjectID geometry_id() const = 0;
 
     // Outline extraction can be a demanding operation, so there is a separate
     // method the extract the full outline of an object and the convex hull only
@@ -139,13 +139,13 @@ public:
     virtual void for_each_arrangeable(std::function<void(const Arrangeable&)>) const = 0;
 
     // Visit a specific arrangeable identified by it's id
-    virtual void visit_arrangeable(const ObjectID &id, std::function<void(const Arrangeable &)>) const = 0;
-    virtual void visit_arrangeable(const ObjectID &id, std::function<void(Arrangeable &)>) = 0;
+    virtual void visit_arrangeable(const Domain::ObjectID &id, std::function<void(const Arrangeable &)>) const = 0;
+    virtual void visit_arrangeable(const Domain::ObjectID &id, std::function<void(Arrangeable &)>) = 0;
 
     // Add a new arrangeable which is a copy of the one matching prototype_id
     // Return the new object id or an invalid id if the new object was not
     // created.
-    virtual ObjectID add_arrangeable(const ObjectID &prototype_id) = 0;
+    virtual Domain::ObjectID add_arrangeable(const Domain::ObjectID &prototype_id) = 0;
 
     size_t arrangeable_count() const
     {
@@ -313,11 +313,11 @@ public:
 
     const ExtendedBed & bed() const { return m_bed; }
 
-    std::vector<ObjectID> selected_ids() const;
+    std::vector<Domain::ObjectID> selected_ids() const;
 };
 
 // Get all the ObjectIDs of Arrangeables which are in selected state
-std::set<ObjectID> selected_geometry_ids(const Scene &sc);
+std::set<Domain::ObjectID> selected_geometry_ids(const Scene &sc);
 
 // A dummy, empty ArrangeableModel for testing and as placeholder to avoiod using nullptr
 class EmptyArrangeableModel: public ArrangeableModel
@@ -325,9 +325,9 @@ class EmptyArrangeableModel: public ArrangeableModel
 public:
     void for_each_arrangeable(std::function<void(Arrangeable &)>) override {}
     void for_each_arrangeable(std::function<void(const Arrangeable&)>) const override {}
-    void visit_arrangeable(const ObjectID &id, std::function<void(const Arrangeable &)>) const override {}
-    void visit_arrangeable(const ObjectID &id, std::function<void(Arrangeable &)>) override {}
-    ObjectID add_arrangeable(const ObjectID &prototype_id) override { return {}; }
+    void visit_arrangeable(const Domain::ObjectID &id, std::function<void(const Arrangeable &)>) const override {}
+    void visit_arrangeable(const Domain::ObjectID &id, std::function<void(Arrangeable &)>) override {}
+    Domain::ObjectID add_arrangeable(const Domain::ObjectID &prototype_id) override { return {}; }
 };
 
 template<class Subclass>

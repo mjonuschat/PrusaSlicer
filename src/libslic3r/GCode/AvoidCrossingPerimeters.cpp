@@ -1145,7 +1145,7 @@ static Polygons get_boundary_external(const Layer &layer)
 
         // After 7ff76d07684858fd937ef2f5d863f105a10f798e, when expand is called on CW polygons (holes), they are shrunk
         // instead of expanded because union that makes CCW from CW isn't called anymore. So let's make it CCW.
-        polygons_reverse(holes_per_obj);
+        Algorithms::Polygon::reverse(holes_per_obj);
 
         for (const PrintInstance &instance : object->instances()) {
             size_t boundary_idx = boundary.size();
@@ -1213,7 +1213,7 @@ Polyline AvoidCrossingPerimeters::travel_to(const GCodeGenerator &gcodegen, cons
     if (!use_external && (is_support_layer || (!m_lslices_offset.empty() && !any_expolygon_contains(m_lslices_offset, m_lslices_offset_bboxes, m_grid_lslices_offset, travel)))) {
         // Initialize m_internal only when it is necessary.
         if (m_internal.boundaries.empty())
-            init_boundary(&m_internal, to_polygons(get_boundary(*gcodegen.layer())));
+            init_boundary(&m_internal, Algorithms::ExPolygon::to_polygons(get_boundary(*gcodegen.layer())));
 
         // Trim the travel line by the bounding box.
         if (!m_internal.boundaries.empty() && Geometry::liang_barsky_line_clipping(startf, endf, m_internal.bbox)) {

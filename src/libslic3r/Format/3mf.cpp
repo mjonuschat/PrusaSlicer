@@ -12,6 +12,7 @@
 #include "libslic3r/GCode/ThumbnailData.hpp"
 #include "Slic3r/Semver.hpp"
 #include "libslic3r/Time.hpp"
+#include "libslic3r/CustomGCode.hpp"
 
 #include "libslic3r/I18N.hpp"
 
@@ -42,8 +43,8 @@ namespace pt = boost::property_tree;
 
 #include "libslic3r/miniz_extension.hpp"
 
-#include "libslic3r/TextConfiguration.hpp"
-#include "libslic3r/EmbossShape.hpp"
+#include "Slic3r/Domain/TextConfiguration.hpp"
+#include "Slic3r/Domain/EmbossShape.hpp"
 #include "libslic3r/ExPolygonSerialize.hpp" 
 
 #include "libslic3r/NSVGUtils.hpp"
@@ -55,6 +56,17 @@ namespace pt = boost::property_tree;
 using Slic3r::Domain::TriangleMesh;
 using Slic3r::Domain::Index3;
 using Slic3r::Domain::RepairedMeshErrors;
+using Slic3r::Domain::SLA::SupportPoint;
+using Slic3r::Domain::SLA::PointsStatus;
+using Slic3r::Domain::SLA::SupportPointType;
+using Slic3r::Domain::EmbossStyle;
+using Slic3r::Domain::FontProp;
+using Slic3r::Domain::TextConfiguration;
+using Slic3r::Domain::EmbossShape;
+using Slic3r::Domain::HealedExPolygons;
+using Slic3r::Domain::ExPolygonsWithIds;
+using Slic3r::Domain::EmbossProjection;
+namespace CustomGCode = Slic3r::Domain::CustomGCode;
 
 // Slightly faster than sprintf("%.9g"), but there is an issue with the karma floating point formatter,
 // https://github.com/boostorg/spirit/pull/586
@@ -457,7 +469,7 @@ namespace Slic3r {
                 unsigned int last_triangle_id;
                 MetadataList metadata;
                 RepairedMeshErrors mesh_stats;
-                std::optional<TextConfiguration> text_configuration;
+                std::optional<Domain::TextConfiguration> text_configuration;
                 std::optional<EmbossShape> shape_configuration;
                 VolumeMetadata(unsigned int first_triangle_id, unsigned int last_triangle_id)
                     : first_triangle_id(first_triangle_id)
@@ -494,8 +506,8 @@ namespace Slic3r {
         typedef std::map<int, std::vector<double>> IdToLayerHeightsProfileMap;
         typedef std::map<int, t_layer_config_ranges> IdToLayerConfigRangesMap;
         typedef std::map<int, CutObjectInfo>         IdToCutObjectInfoMap;
-        typedef std::map<int, std::vector<sla::SupportPoint>> IdToSlaSupportPointsMap;
-        typedef std::map<int, std::vector<sla::DrainHole>> IdToSlaDrainHolesMap;
+        typedef std::map<int, std::vector<SupportPoint>> IdToSlaSupportPointsMap;
+        typedef std::map<int, std::vector<Domain::SLA::DrainHole>> IdToSlaDrainHolesMap;
         using PathToEmbossShapeFileMap = std::map<std::string, std::shared_ptr<std::string>>;
         // Version of the 3mf file
         unsigned int m_version;
@@ -951,7 +963,7 @@ namespace Slic3r {
             IdToSlaSupportPointsMap::iterator obj_sla_support_points = m_sla_support_points.find(object.second + 1);
             if (obj_sla_support_points != m_sla_support_points.end() && !obj_sla_support_points->second.empty()) {
                 model_object->sla_support_points = std::move(obj_sla_support_points->second);
-                model_object->sla_points_status = sla::PointsStatus::UserModified;
+                model_object->sla_points_status = PointsStatus::UserModified;
             }
 
             IdToSlaDrainHolesMap::iterator obj_drain_holes = m_sla_drain_holes.find(object.second + 1);
@@ -1421,28 +1433,28 @@ namespace Slic3r {
                 std::vector<std::string> object_data_points;
                 boost::split(object_data_points, object_data[1], boost::is_any_of(" "), boost::token_compress_off);
 
-                std::vector<sla::SupportPoint> sla_support_points;
+                std::vector<SupportPoint> sla_support_points;
 
                 if (version == 0) {
                     assert(object_data_points.size() % 3 == 0);
                     for (unsigned int i=0; i<object_data_points.size(); i+=3)
-                        sla_support_points.push_back(sla::SupportPoint{Vec3f(
+                        sla_support_points.push_back(SupportPoint{Vec3f(
                                                     float(std::atof(object_data_points[i+0].c_str())),
                                                     float(std::atof(object_data_points[i+1].c_str())),
 													float(std::atof(object_data_points[i+2].c_str()))),
                                                     0.4f});
                 }
                 if (version == 1) {
-                    auto get_support_point_type = [](double val)->sla::SupportPointType{
-                        return (std::abs(val - 1.) < EPSILON) ? sla::SupportPointType::island :
-                               (std::abs(val - 2.) < EPSILON) ? sla::SupportPointType::manual_add :
-                               //(std::abs(val - 3.) < EPSILON) ? sla::SupportPointType::slope :
-                                sla::SupportPointType::slope; // default for previous version of store points
+                    auto get_support_point_type = [](double val)->SupportPointType{
+                        return (std::abs(val - 1.) < EPSILON) ? SupportPointType::island :
+                               (std::abs(val - 2.) < EPSILON) ? SupportPointType::manual_add :
+                               //(std::abs(val - 3.) < EPSILON) ? SupportPointType::slope :
+                                SupportPointType::slope; // default for previous version of store points
                     };
                     assert(object_data_points.size() % 5 == 0);
                     for (unsigned int i=0; i<object_data_points.size(); i+=5)
                         sla_support_points.push_back(
-                            sla::SupportPoint{
+                            SupportPoint{
                                 Vec3f{float(std::atof(object_data_points[i+0].c_str())),
                                       float(std::atof(object_data_points[i+1].c_str())),
                                       float(std::atof(object_data_points[i+2].c_str()))},
@@ -1513,25 +1525,30 @@ namespace Slic3r {
                 std::vector<std::string> object_data_points;
                 boost::split(object_data_points, object_data[1], boost::is_any_of(" "), boost::token_compress_off);
                 
-                sla::DrainHoles sla_drain_holes;
+                Domain::SLA::DrainHoles sla_drain_holes;
 
                 if (version == 1) {
                     for (unsigned int i=0; i<object_data_points.size(); i+=8)
-                        sla_drain_holes.emplace_back(Vec3f{float(std::atof(object_data_points[i+0].c_str())),
-                                                      float(std::atof(object_data_points[i+1].c_str())),
-                                                      float(std::atof(object_data_points[i+2].c_str()))},
-                                                     Vec3f{float(std::atof(object_data_points[i+3].c_str())),
-                                                      float(std::atof(object_data_points[i+4].c_str())),
-                                                      float(std::atof(object_data_points[i+5].c_str()))},
-                                                      float(std::atof(object_data_points[i+6].c_str())),
-                                                      float(std::atof(object_data_points[i+7].c_str())));
+                        sla_drain_holes.emplace_back(Domain::SLA::DrainHole{
+                            .pos =
+                                Vec3f{
+                                    float(std::atof(object_data_points[i + 0].c_str())),
+                                    float(std::atof(object_data_points[i + 1].c_str())),
+                                    float(std::atof(object_data_points[i + 2].c_str()))},
+                            .normal =
+                                Vec3f{
+                                    float(std::atof(object_data_points[i + 3].c_str())),
+                                    float(std::atof(object_data_points[i + 4].c_str())),
+                                    float(std::atof(object_data_points[i + 5].c_str()))},
+                            .radius = float(std::atof(object_data_points[i + 6].c_str())),
+                            .height = float(std::atof(object_data_points[i + 7].c_str()))});
                 }
 
                 // The holes are saved elevated above the mesh and deeper (bad idea indeed).
                 // This is retained for compatibility.
                 // Place the hole to the mesh and make it shallower to compensate.
                 // The offset is 1 mm above the mesh.
-                for (sla::DrainHole& hole : sla_drain_holes) {
+                for (Domain::SLA::DrainHole& hole : sla_drain_holes) {
                     hole.pos += hole.normal.normalized();
                     hole.height -= 1.f;
                 }
@@ -1646,8 +1663,8 @@ namespace Slic3r {
                     if (code.first == "mode") {
                         pt::ptree tree = code.second;
                         std::string mode = tree.get<std::string>("<xmlattr>.value");
-                        m_model->get_custom_gcode_per_print_z_vector()[bed_idx].mode = mode == CustomGCode::SingleExtruderMode ? CustomGCode::Mode::SingleExtruder :
-                                                                   mode == CustomGCode::MultiAsSingleMode  ? CustomGCode::Mode::MultiAsSingle  :
+                        m_model->get_custom_gcode_per_print_z_vector()[bed_idx].mode = mode == CustomGCodeUtils::SingleExtruderMode ? CustomGCode::Mode::SingleExtruder :
+                                                                   mode == CustomGCodeUtils::MultiAsSingleMode  ? CustomGCode::Mode::MultiAsSingle  :
                                                                    CustomGCode::Mode::MultiExtruder;
                     }
                     if (code.first != "code")
@@ -1666,11 +1683,11 @@ namespace Slic3r {
                         // read old data ... 
                         std::string gcode       = tree.get<std::string> ("<xmlattr>.gcode");
                         // ... and interpret them to the new data
-                        type  = gcode == "M600"           ? CustomGCode::ColorChange : 
-                                gcode == "M601"           ? CustomGCode::PausePrint  :   
-                                gcode == "tool_change"    ? CustomGCode::ToolChange  :   CustomGCode::Custom;
-                        extra = type == CustomGCode::PausePrint ? color :
-                                type == CustomGCode::Custom     ? gcode : "";
+                        type  = gcode == "M600"           ? CustomGCode::Type::ColorChange : 
+                                gcode == "M601"           ? CustomGCode::Type::PausePrint  :   
+                                gcode == "tool_change"    ? CustomGCode::Type::ToolChange  :   CustomGCode::Type::Custom;
+                        extra = type == CustomGCode::Type::PausePrint ? color :
+                                type == CustomGCode::Type::Custom     ? gcode : "";
                     }
                     else {
                         type  = static_cast<CustomGCode::Type>(tree.get<int>("<xmlattr>.type"));
@@ -3553,15 +3570,15 @@ namespace Slic3r {
         unsigned int count = 0;
         for (const ModelObject* object : model.objects) {
             ++count;
-            const std::vector<sla::SupportPoint>& sla_support_points = object->sla_support_points;
+            const std::vector<SupportPoint>& sla_support_points = object->sla_support_points;
             if (!sla_support_points.empty()) {
                 sprintf(buffer, "object_id=%d|", count);
                 out += buffer;
-                auto support_point_type_to_float = [](sla::SupportPointType t) -> float {
+                auto support_point_type_to_float = [](SupportPointType t) -> float {
                     switch (t) {
-                    case Slic3r::sla::SupportPointType::manual_add: return 2.f;
-                    case Slic3r::sla::SupportPointType::island: return 1.f;
-                    case Slic3r::sla::SupportPointType::slope: return 3.f;
+                    case SupportPointType::manual_add: return 2.f;
+                    case SupportPointType::island: return 1.f;
+                    case SupportPointType::slope: return 3.f;
                     default: assert(false); return 0.f;
                     }
                 };
@@ -3600,13 +3617,13 @@ namespace Slic3r {
         unsigned int count = 0;
         for (const ModelObject* object : model.objects) {
             ++count;
-            sla::DrainHoles drain_holes = object->sla_drain_holes;
+            Domain::SLA::DrainHoles drain_holes = object->sla_drain_holes;
 
             // The holes were placed 1mm above the mesh in the first implementation.
             // This was a bad idea and the reference point was changed in 2.3 so
             // to be on the mesh exactly. The elevated position is still saved
             // in 3MFs for compatibility reasons.
-            for (sla::DrainHole& hole : drain_holes) {
+            for (Domain::SLA::DrainHole& hole : drain_holes) {
                 hole.pos -= hole.normal.normalized();
                 hole.height += 1.f;
             }
@@ -3847,18 +3864,18 @@ bool _3MF_Exporter::_add_custom_gcode_per_print_z_file_to_archive( mz_zip_archiv
                 code_tree.put("<xmlattr>.extra"     , code.extra    );
 
                 // add gcode field data for the old version of the PrusaSlicer
-                std::string gcode = code.type == CustomGCode::ColorChange ? config->opt_string("color_change_gcode")    :
-                                    code.type == CustomGCode::PausePrint  ? config->opt_string("pause_print_gcode")     :
-                                    code.type == CustomGCode::Template    ? config->opt_string("template_custom_gcode") :
-                                    code.type == CustomGCode::ToolChange  ? "tool_change"   : code.extra; 
+                std::string gcode = code.type == CustomGCode::Type::ColorChange ? config->opt_string("color_change_gcode")    :
+                                    code.type == CustomGCode::Type::PausePrint  ? config->opt_string("pause_print_gcode")     :
+                                    code.type == CustomGCode::Type::Template    ? config->opt_string("template_custom_gcode") :
+                                    code.type == CustomGCode::Type::ToolChange  ? "tool_change"   : code.extra; 
                 code_tree.put("<xmlattr>.gcode"     , gcode   );
             }
 
             pt::ptree& mode_tree = main_tree.add("mode", "");
             // store mode of a custom_gcode_per_print_z 
-            mode_tree.put("<xmlattr>.value", model.custom_gcode_per_print_z().mode == CustomGCode::Mode::SingleExtruder ? CustomGCode::SingleExtruderMode :
-                                             model.custom_gcode_per_print_z().mode == CustomGCode::Mode::MultiAsSingle ? CustomGCode::MultiAsSingleMode :
-                                             CustomGCode::MultiExtruderMode);
+            mode_tree.put("<xmlattr>.value", model.custom_gcode_per_print_z().mode == CustomGCode::Mode::SingleExtruder ? CustomGCodeUtils::SingleExtruderMode :
+                                             model.custom_gcode_per_print_z().mode == CustomGCode::Mode::MultiAsSingle ? CustomGCodeUtils::MultiAsSingleMode :
+                                             CustomGCodeUtils::MultiExtruderMode);
         }
 
         if (!tree.empty()) {

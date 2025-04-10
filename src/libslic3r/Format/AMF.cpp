@@ -69,6 +69,9 @@ namespace Slic3r
 
 using Domain::Index3;
 using Domain::TriangleMesh;
+using Domain::SLA::SupportPoint;
+using Domain::SLA::PointsStatus;
+namespace CustomGCode = Domain::CustomGCode;
 
 struct AMFParserContext
 {
@@ -358,12 +361,12 @@ void AMFParserContext::startElement(const char *name, const char **atts)
                     // read old data ... 
                     std::string gcode = get_attribute(atts, "gcode");
                     // ... and interpret them to the new data
-                    CustomGCode::Type type= gcode == "M600" ? CustomGCode::ColorChange :
-                                            gcode == "M601" ? CustomGCode::PausePrint :
-                                            gcode == "tool_change" ? CustomGCode::ToolChange : CustomGCode::Custom;
+                    CustomGCode::Type type= gcode == "M600" ? CustomGCode::Type::ColorChange :
+                                            gcode == "M601" ? CustomGCode::Type::PausePrint :
+                                            gcode == "tool_change" ? CustomGCode::Type::ToolChange : CustomGCode::Type::Custom;
                     m_value[3] = std::to_string(static_cast<int>(type));
-                    m_value[4] = type == CustomGCode::PausePrint ? m_value[2] :
-                                 type == CustomGCode::Custom ? gcode : "";
+                    m_value[4] = type == CustomGCode::Type::PausePrint ? m_value[2] :
+                                 type == CustomGCode::Type::Custom ? gcode : "";
                 }
             }
             else if (strcmp(name, "mode") == 0) {
@@ -718,8 +721,8 @@ void AMFParserContext::endElement(const char * /* name */)
     case NODE_TYPE_CUSTOM_GCODE_MODE: {
         const std::string& mode = m_value[0];
 
-        m_model.custom_gcode_per_print_z().mode = mode == CustomGCode::SingleExtruderMode ? CustomGCode::Mode::SingleExtruder :
-                                                    mode == CustomGCode::MultiAsSingleMode  ? CustomGCode::Mode::MultiAsSingle  :
+        m_model.custom_gcode_per_print_z().mode = mode == CustomGCodeUtils::SingleExtruderMode ? CustomGCode::Mode::SingleExtruder :
+                                                    mode == CustomGCodeUtils::MultiAsSingleMode  ? CustomGCode::Mode::MultiAsSingle  :
                                                                                               CustomGCode::Mode::MultiExtruder;
         for (std::string& val: m_value)
             val.clear();
@@ -782,14 +785,14 @@ void AMFParserContext::endElement(const char * /* name */)
 
                     point(coord_idx) = float(atof(p));
                     if (++coord_idx == 5) {
-                        m_object->sla_support_points.push_back(sla::SupportPoint{Vec3f(point[0], point[1], point[2]), point[3]});
+                        m_object->sla_support_points.push_back(SupportPoint{Vec3f(point[0], point[1], point[2]), point[3]});
                         coord_idx = 0;
                     }
 					if (end == nullptr)
 						break;
 					p = end + 1;
                 }
-                m_object->sla_points_status = sla::PointsStatus::UserModified;
+                m_object->sla_points_status = PointsStatus::UserModified;
             }
             else if (m_path.size() == 5 && m_path[1] == NODE_TYPE_OBJECT && m_path[3] == NODE_TYPE_RANGE && 
                      m_object && strcmp(opt_key, "layer_height_range") == 0) {

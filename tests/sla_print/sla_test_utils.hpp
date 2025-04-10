@@ -73,7 +73,7 @@ void check_support_tree_integrity(const sla::SupportTreeBuilder &stree,
 void test_supports(const std::string          &obj_filename,
                    const sla::SupportTreeConfig   &supportcfg,
                    const sla::HollowingConfig &hollowingcfg,
-                   const sla::DrainHoles      &drainholes,
+                   const Domain::SLA::DrainHoles      &drainholes,
                    SupportByproducts          &out);
 
 inline void test_supports(const std::string &obj_filename,
@@ -100,7 +100,7 @@ void test_support_model_collision(
     const std::string          &obj_filename,
     const sla::SupportTreeConfig   &input_supportcfg,
     const sla::HollowingConfig &hollowingcfg,
-    const sla::DrainHoles      &drainholes);
+    const Domain::SLA::DrainHoles      &drainholes);
 
 inline void test_support_model_collision(
     const std::string        &obj_filename,
@@ -134,7 +134,7 @@ long raster_pxsum(const sla::RasterGrayscaleAA &raster);
 
 double predict_error(const ExPolygon &p, const sla::PixelDim &pd);
 
-sla::SupportPoints calc_support_pts(
+Domain::SLA::SupportPoints calc_support_pts(
     const Domain::TriangleMesh &                      mesh,
     const sla::SupportPointGeneratorConfig &cfg = {});
 

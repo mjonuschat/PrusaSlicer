@@ -71,7 +71,6 @@ set(SLIC3R_SOURCES
     ElephantFootCompensation.hpp
     Emboss.cpp
     Emboss.hpp
-    EmbossShape.hpp
     enum_bitmask.hpp
     ExPolygon.cpp
     ExPolygon.hpp
@@ -282,8 +281,6 @@ set(SLIC3R_SOURCES
     NormalUtils.hpp
     NSVGUtils.cpp
     NSVGUtils.hpp
-    ObjectID.cpp
-    ObjectID.hpp
     PerimeterGenerator.cpp
     PerimeterGenerator.hpp
     PlaceholderParser.cpp
@@ -362,7 +359,6 @@ set(SLIC3R_SOURCES
     SurfaceCollection.hpp
     SurfaceMesh.hpp
     Technologies.hpp
-    TextConfiguration.hpp
     TriangleMeshSlicer.cpp
     TriangleMeshSlicer.hpp
     TriangulateWall.hpp
@@ -374,8 +370,6 @@ set(SLIC3R_SOURCES
     Timer.hpp
     Thread.cpp
     Thread.hpp
-    TriangleSelector.cpp
-    TriangleSelector.hpp
     TriangleSetSampling.cpp
     TriangleSetSampling.hpp
     TriangleSelectorWrapper.cpp
@@ -422,7 +416,6 @@ set(SLIC3R_SOURCES
     SLA/Hollowing.hpp
     SLA/Hollowing.cpp
     SLA/JobController.hpp
-    SLA/SupportPoint.hpp
     SLA/SupportPointGenerator.hpp
     SLA/SupportPointGenerator.cpp
     SLA/Clustering.hpp
@@ -598,7 +591,6 @@ target_include_directories(libslic3r PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/.. ${CMA
 target_include_directories(libslic3r PUBLIC ${EXPAT_INCLUDE_DIRS})
 
 find_package(JPEG REQUIRED)
-find_package(NanoSVG REQUIRED)
 
 target_link_libraries(libslic3r PRIVATE
     libnest2d
@@ -642,8 +634,6 @@ target_link_libraries(libslic3r PUBLIC
     ankerl
     boost_headeronly
     libseqarrange
-    NanoSVG::nanosvg
-    NanoSVG::nanosvgrast
     slic3r-jthread
     slic3r-domain
     slic3r-gcode-reader

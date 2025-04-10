@@ -13,18 +13,19 @@
 #ifndef slic3r_Model_hpp_
 #define slic3r_Model_hpp_
 
-#include "libslic3r.h"
-#include "Geometry.hpp"
-#include "ObjectID.hpp"
-#include "Point.hpp"
-#include "Slicing.hpp"
-#include "SLA/SupportPoint.hpp"
-#include "SLA/Hollowing.hpp"
+#include "Slic3r/Domain/FacetsAnnotation.hpp"
+#include "Slic3r/Domain/SLA/DrainHole.hpp"
+#include "Slic3r/Domain/ObjectID.hpp"
+#include "Slic3r/Domain/Point.hpp"
+#include "libslic3r/PrintConfig.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
-#include "CustomGCode.hpp"
-#include "TextConfiguration.hpp"
-#include "EmbossShape.hpp"
-#include "TriangleSelector.hpp"
+#include "Slic3r/Domain/SLA/SupportPoint.hpp"
+#include "Slic3r/Biz/Algorithms/Geometry/Geometry.hpp"
+#include "Slic3r/Domain/CustomGCode.hpp"
+#include "Slic3r/Domain/TextConfiguration.hpp"
+#include "Slic3r/Domain/EmbossShape.hpp"
+#include "Slic3r/Biz/Algorithms/TriangleSelector.hpp"
+#include "Slic3r/Domain/TriangleSelector.hpp"
 
 #include <map>
 #include <memory>
@@ -59,7 +60,7 @@ namespace UndoRedo {
 	class StackImpl;
 }
 
-class ModelConfigObject : public ObjectBase, public ModelConfig
+class ModelConfigObject : public Domain::ObjectBase, public ModelConfig
 {
 private:
 	friend class cereal::access;
@@ -148,7 +149,7 @@ typedef std::vector<ModelInstance*> ModelInstancePtrs;
     }
 
 // Material, which may be shared across multiple ModelObjects of a single Model.
-class ModelMaterial final : public ObjectBase
+class ModelMaterial final : public Domain::ObjectBase
 {
 public:
     // Attributes are defined by the AMF file format, but they don't seem to be used by Slic3r for any purpose.
@@ -191,7 +192,7 @@ private:
     ModelMaterial& operator=(ModelMaterial &&rhs) = delete;
 };
 
-class LayerHeightProfile final : public ObjectWithTimestamp {
+class LayerHeightProfile final : public Domain::ObjectWithTimestamp {
 public:
     // Assign the content if the timestamp differs, don't assign an ObjectID.
     void assign(const LayerHeightProfile &rhs) { if (! this->timestamp_matches(rhs)) { m_data = rhs.m_data; this->copy_timestamp(rhs); } }
@@ -367,11 +368,15 @@ enum class ModelVolumeType : int {
     SUPPORT_ENFORCER,
 };
 
+
+using LayerHeightRange = std::pair<double,double>;
+using LayerConfigRanges = std::map<LayerHeightRange, ModelConfig>;
+
 // A printable object, possibly having multiple print volumes (each with its own set of parameters and materials),
 // and possibly having multiple modifier volumes, each modifier volume with its set of parameters and materials.
 // Each ModelObject may be instantiated mutliple times, each instance having different placement on the print bed,
 // different rotation and different uniform scaling.
-class ModelObject final : public ObjectBase
+class ModelObject final : public Domain::ObjectBase
 {
 public:
     std::string             name;
@@ -385,7 +390,7 @@ public:
     // Configuration parameters specific to a single ModelObject, overriding the global Slic3r settings.
     ModelConfigObject 		config;
     // Variation of a layer thickness for spans of Z coordinates + optional parameter overrides.
-    t_layer_config_ranges   layer_config_ranges;
+    LayerConfigRanges       layer_config_ranges;
     // Profile of increasing z to a layer height, to be linearly interpolated when calculating the layers.
     // The pairs of <z, layer_height> are packed into a 1D array.
     LayerHeightProfile      layer_height_profile;
@@ -395,13 +400,13 @@ public:
     // This vector holds position of selected support points for SLA. The data are
     // saved in mesh coordinates to allow using them for several instances.
     // The format is (x, y, z, point_size, supports_island)
-    sla::SupportPoints      sla_support_points;
+    Domain::SLA::SupportPoints      sla_support_points;
     // To keep track of where the points came from (used for synchronization between
     // the SLA gizmo and the backend).
-    sla::PointsStatus       sla_points_status = sla::PointsStatus::NoPoints;
+    Domain::SLA::PointsStatus       sla_points_status = Domain::SLA::PointsStatus::NoPoints;
 
     // Holes to be drilled into the object so resin can flow out
-    sla::DrainHoles         sla_drain_holes;
+    Domain::SLA::DrainHoles         sla_drain_holes;
 
     // Connectors to be added into the object before cut and are used to create a solid/negative volumes during a cut perform
     CutConnectors           cut_connectors;
@@ -442,7 +447,8 @@ public:
 
     ModelInstance*          add_instance();
     ModelInstance*          add_instance(const ModelInstance &instance);
-    ModelInstance*          add_instance(const Geometry::Transformation& trafo);
+
+    ModelInstance*          add_instance(const Biz::Algorithms::Geometry::Transformation& trafo);
     void                    delete_instance(size_t idx);
     void                    delete_last_instance();
     void                    clear_instances();
@@ -487,7 +493,7 @@ public:
     // Calculate 2D convex hull of of a projection of the transformed printable volumes into the XY plane.
     // This method is cheap in that it does not make any unnecessary copy of the volume meshes.
     // This method is used by the auto arrange function.
-    Polygon       convex_hull_2d(const Transform3d &trafo_instance) const;
+    Domain::Polygon       convex_hull_2d(const Transform3d &trafo_instance) const;
 
     void center_around_origin(bool include_modifiers = true);
     void ensure_on_bed(bool allow_negative_z = false);
@@ -688,64 +694,9 @@ private:
     void update_min_max_z();
 };
 
-class FacetsAnnotation final : public ObjectWithTimestamp {
-public:
-    // Assign the content if the timestamp differs, don't assign an ObjectID.
-    void assign(const FacetsAnnotation &rhs) { if (! this->timestamp_matches(rhs)) { m_data = rhs.m_data; this->copy_timestamp(rhs); } }
-    void assign(FacetsAnnotation &&rhs) { if (! this->timestamp_matches(rhs)) { m_data = std::move(rhs.m_data); this->copy_timestamp(rhs); } }
-    const TriangleSelector::TriangleSplittingData &get_data() const noexcept { return m_data; }
-    bool set(const TriangleSelector &selector);
-    indexed_triangle_set get_facets(const ModelVolume &mv, TriangleStateType type) const;
-    indexed_triangle_set get_facets_strict(const ModelVolume &mv, TriangleStateType type) const;
-    Domain::indexed_triangle_set_with_color get_all_facets_with_colors(const ModelVolume &mv) const;
-    Domain::indexed_triangle_set_with_color get_all_facets_strict_with_colors(const ModelVolume &mv) const;
-    bool has_facets(const ModelVolume &mv, TriangleStateType type) const;
-    bool empty() const { return m_data.triangles_to_split.empty(); }
-
-    // Following method clears the config and increases its timestamp, so the deleted
-    // state is considered changed from perspective of the undo/redo stack.
-    void reset();
-
-    // Serialize triangle into string, for serialization into 3MF/AMF.
-    std::string get_triangle_as_string(int i) const;
-
-    // Before deserialization, reserve space for n_triangles.
-    void reserve(int n_triangles) { m_data.triangles_to_split.reserve(n_triangles); }
-    // Deserialize triangles one by one, with strictly increasing triangle_id.
-    void set_triangle_from_string(int triangle_id, const std::string& str);
-    // After deserializing the last triangle, shrink data to fit.
-    void shrink_to_fit() { m_data.triangles_to_split.shrink_to_fit(); m_data.bitstream.shrink_to_fit(); }
-
-private:
-    // Constructors to be only called by derived classes.
-    // Default constructor to assign a unique ID.
-    explicit FacetsAnnotation() = default;
-    // Constructor with ignored int parameter to assign an invalid ID, to be replaced
-    // by an existing ID copied from elsewhere.
-    explicit FacetsAnnotation(int) : ObjectWithTimestamp(-1) {}
-    // Copy constructor copies the ID.
-    FacetsAnnotation(const FacetsAnnotation &rhs) = default;
-    // Move constructor copies the ID.
-    FacetsAnnotation(FacetsAnnotation &&rhs) = default;
-
-    // called by ModelVolume::assign_copy()
-    FacetsAnnotation& operator=(const FacetsAnnotation &rhs) = default;
-    FacetsAnnotation& operator=(FacetsAnnotation &&rhs) = default;
-
-    friend class cereal::access;
-    friend class UndoRedo::StackImpl;
-
-    template<class Archive> void serialize(Archive &ar) { ar(cereal::base_class<ObjectWithTimestamp>(this), m_data); }
-
-    TriangleSelector::TriangleSplittingData m_data;
-
-    // To access set_new_unique_id() when copy / pasting a ModelVolume.
-    friend class ModelVolume;
-};
-
 // An object STL, or a modifier volume, over which a different set of parameters shall be applied.
 // ModelVolume instances are owned by a ModelObject.
-class ModelVolume final : public ObjectBase
+class ModelVolume final : public Domain::ObjectBase
 {
 public:
     std::string         name;
@@ -756,7 +707,7 @@ public:
         int object_idx{ -1 };
         int volume_idx{ -1 };
         Vec3d mesh_offset{ Vec3d::Zero() };
-        Geometry::Transformation transform;
+        Biz::Algorithms::Geometry::Transformation transform;
         bool is_converted_from_inches{ false };
         bool is_converted_from_meters{ false };
         bool is_from_builtin_objects{ false };
@@ -829,24 +780,24 @@ public:
     ModelConfigObject	config;
 
     // List of mesh facets to be supported/unsupported.
-    FacetsAnnotation    supported_facets;
+    Domain::FacetsAnnotation supported_facets;
 
     // List of seam enforcers/blockers.
-    FacetsAnnotation    seam_facets;
+    Domain::FacetsAnnotation seam_facets;
 
     // List of mesh facets painted for MM segmentation.
-    FacetsAnnotation    mm_segmentation_facets;
+    Domain::FacetsAnnotation mm_segmentation_facets;
 
     // List of mesh facets painted for fuzzy skin.
-    FacetsAnnotation    fuzzy_skin_facets;
+    Domain::FacetsAnnotation fuzzy_skin_facets;
 
     // Is set only when volume is Embossed Text type
     // Contain information how to re-create volume
-    std::optional<TextConfiguration> text_configuration;
+    std::optional<Domain::TextConfiguration> text_configuration;
 
     // Is set only when volume is Embossed Shape
     // Contain 2d information about embossed shape to be editabled
-    std::optional<EmbossShape> emboss_shape; 
+    std::optional<Domain::EmbossShape> emboss_shape;
 
     // A parent object owning this modifier volume.
     ModelObject*        get_object() const { return this->object; }
@@ -898,8 +849,8 @@ public:
     static ModelVolumeType type_from_string(const std::string &s);
     static std::string  type_to_string(const ModelVolumeType t);
 
-    const Geometry::Transformation& get_transformation() const { return m_transformation; }
-    void set_transformation(const Geometry::Transformation& transformation) { m_transformation = transformation; }
+    const Biz::Algorithms::Geometry::Transformation& get_transformation() const { return m_transformation; }
+    void set_transformation(const Biz::Algorithms::Geometry::Transformation& transformation) { m_transformation = transformation; }
     void set_transformation(const Transform3d& trafo) { m_transformation.set_matrix(trafo); }
 
     Vec3d get_offset() const { return m_transformation.get_offset(); }
@@ -976,7 +927,7 @@ private:
     t_model_material_id             	m_material_id;
     // The convex hull of this model's mesh.
     std::shared_ptr<const Domain::TriangleMesh> m_convex_hull;
-    Geometry::Transformation        	m_transformation;
+    Biz::Algorithms::Geometry::Transformation        	m_transformation;
 
     // flag to optimize the checking if the volume is splittable
     //     -1   ->   is unknown value (before first cheking)
@@ -1129,7 +1080,7 @@ inline void model_volumes_sort_by_id(ModelVolumePtrs &model_volumes)
     std::sort(model_volumes.begin(), model_volumes.end(), [](const ModelVolume *l, const ModelVolume *r) { return l->id() < r->id(); });
 }
 
-inline const ModelVolume* model_volume_find_by_id(const ModelVolumePtrs &model_volumes, const ObjectID id)
+inline const ModelVolume* model_volume_find_by_id(const ModelVolumePtrs &model_volumes, const Domain::ObjectID id)
 {
     auto it = lower_bound_by_predicate(model_volumes.begin(), model_volumes.end(), [id](const ModelVolume *mv) { return mv->id() < id; });
     return it != model_volumes.end() && (*it)->id() == id ? *it : nullptr;
@@ -1145,10 +1096,10 @@ enum ModelInstanceEPrintVolumeState : unsigned char
 
 // A single instance of a ModelObject.
 // Knows the affine transformation of an object.
-class ModelInstance final : public ObjectBase
+class ModelInstance final : public Domain::ObjectBase
 {
 private:
-    Geometry::Transformation m_transformation;
+    Biz::Algorithms::Geometry::Transformation m_transformation;
 
 public:
     // flag showing the position of this instance with respect to the print volume (set by Print::validate() using ModelObject::check_instances_print_volume_state())
@@ -1158,8 +1109,8 @@ public:
 
     ModelObject* get_object() const { return this->object; }
 
-    const Geometry::Transformation& get_transformation() const { return m_transformation; }
-    void set_transformation(const Geometry::Transformation& transformation) { m_transformation = transformation; }
+    const Biz::Algorithms::Geometry::Transformation& get_transformation() const { return m_transformation; }
+    void set_transformation(const Biz::Algorithms::Geometry::Transformation& transformation) { m_transformation = transformation; }
 
     Vec3d get_offset() const { return m_transformation.get_offset(); }
     double get_offset(Axis axis) const { return m_transformation.get_offset(axis); }
@@ -1193,7 +1144,7 @@ public:
     // Transform an external vector.
     Vec3d transform_vector(const Vec3d& v, bool dont_translate = false) const;
     // To be called on an external polygon. It does not translate the polygon, only rotates and scales.
-    void transform_polygon(Polygon* polygon) const;
+    void transform_polygon(Domain::Polygon* polygon) const;
 
     const Transform3d& get_matrix() const { return m_transformation.get_matrix(); }
     Transform3d get_matrix_no_offset() const { return m_transformation.get_matrix_no_offset(); }
@@ -1261,7 +1212,7 @@ public:
 // and with multiple modifier meshes.
 // A model groups multiple objects, each object having possibly multiple instances,
 // all objects may share mutliple materials.
-class Model final : public ObjectBase
+class Model final : public Domain::ObjectBase
 {
 public:
     // Materials are owned by a model and referenced by objects through t_model_material_id.
@@ -1277,16 +1228,16 @@ public:
     std::vector<ModelWipeTower>& get_wipe_tower_vector() { return wipe_tower_vector; }
     const std::vector<ModelWipeTower>& get_wipe_tower_vector() const { return wipe_tower_vector; }
 
-    CustomGCode::Info& custom_gcode_per_print_z();
-    const CustomGCode::Info& custom_gcode_per_print_z() const;
-    std::vector<CustomGCode::Info>& get_custom_gcode_per_print_z_vector() { return custom_gcode_per_print_z_vector; }
+    Domain::CustomGCode::Info& custom_gcode_per_print_z();
+    const Domain::CustomGCode::Info& custom_gcode_per_print_z() const;
+    std::vector<Domain::CustomGCode::Info>& get_custom_gcode_per_print_z_vector() { return custom_gcode_per_print_z_vector; }
 
 private:
     // Wipe tower object.
     std::vector<ModelWipeTower> wipe_tower_vector = std::vector<ModelWipeTower>(MAX_NUMBER_OF_BEDS);
 
     // Extensions for color print
-    std::vector<CustomGCode::Info> custom_gcode_per_print_z_vector = std::vector<CustomGCode::Info>(MAX_NUMBER_OF_BEDS);
+    std::vector<Domain::CustomGCode::Info> custom_gcode_per_print_z_vector = std::vector<Domain::CustomGCode::Info>(MAX_NUMBER_OF_BEDS);
 
 public:
     // Default constructor assigns a new ID to the model.
@@ -1308,7 +1259,7 @@ public:
     ModelObject* add_object(const char *name, const char *path, Domain::TriangleMesh &&mesh);
     ModelObject* add_object(const ModelObject &other);
     void         delete_object(size_t idx);
-    bool         delete_object(ObjectID id);
+    bool         delete_object(Domain::ObjectID id);
     bool         delete_object(ModelObject* object);
     void         clear_objects();
 

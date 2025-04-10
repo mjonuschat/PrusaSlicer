@@ -500,7 +500,7 @@ SCENARIO("Some weird coverage test", "[Perimeters]")
     {
         Polygons acc;
         for (const ExPolygon &expolygon : layerm->fill_expolygons())
-            append(acc, to_polygons(expolygon));
+            append(acc, Slic3r::Biz::Algorithms::ExPolygon::to_polygons(expolygon));
         for (const ExtrusionEntity *ee : layerm->thin_fills().entities)
             append(acc, offset(dynamic_cast<const ExtrusionPath*>(ee)->polyline, float(iflow.scaled_width() / 2.f + SCALED_EPSILON)));
         covered_by_infill = union_(acc);

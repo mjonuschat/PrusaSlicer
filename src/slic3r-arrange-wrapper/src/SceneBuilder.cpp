@@ -539,9 +539,9 @@ void ArrangeableSlicerModel::for_each_arrangeable(
     }
 }
 
-ObjectID ArrangeableSlicerModel::add_arrangeable(const ObjectID &prototype_id)
+Domain::ObjectID ArrangeableSlicerModel::add_arrangeable(const Domain::ObjectID &prototype_id)
 {
-    ObjectID ret;
+    Domain::ObjectID ret;
 
     auto [inst, pos] = find_instance_by_id(*m_model, prototype_id);
     if (inst) {
@@ -555,7 +555,7 @@ ObjectID ArrangeableSlicerModel::add_arrangeable(const ObjectID &prototype_id)
 }
 
 std::optional<int> get_bed_constraint(
-        const ObjectID &id,
+        const Domain::ObjectID &id,
         const BedConstraints &bed_constraints
 ) {
     const auto found_constraint{bed_constraints.find(id)};
@@ -566,8 +566,8 @@ std::optional<int> get_bed_constraint(
 }
 
 bool should_include_instance(
-    const ObjectID &instance_id,
-    const std::set<ObjectID> &considered_instances
+    const Domain::ObjectID &instance_id,
+    const std::set<Domain::ObjectID> &considered_instances
 ) {
     if (considered_instances.find(instance_id) == considered_instances.end()) {
         return false;
@@ -599,7 +599,7 @@ void ArrangeableSlicerModel::for_each_arrangeable_(Self &&self, Fn &&fn)
 }
 
 template<class Self, class Fn>
-void ArrangeableSlicerModel::visit_arrangeable_(Self &&self, const ObjectID &id, Fn &&fn)
+void ArrangeableSlicerModel::visit_arrangeable_(Self &&self, const Domain::ObjectID &id, Fn &&fn)
 {
     for (auto &wth : self.m_wths) {
         if (id == wth->get_id()) {
@@ -623,13 +623,13 @@ void ArrangeableSlicerModel::visit_arrangeable_(Self &&self, const ObjectID &id,
 }
 
 void ArrangeableSlicerModel::visit_arrangeable(
-    const ObjectID &id, std::function<void(const Arrangeable &)> fn) const
+    const Domain::ObjectID &id, std::function<void(const Arrangeable &)> fn) const
 {
     visit_arrangeable_(*this, id, fn);
 }
 
 void ArrangeableSlicerModel::visit_arrangeable(
-    const ObjectID &id, std::function<void(Arrangeable &)> fn)
+    const Domain::ObjectID &id, std::function<void(Arrangeable &)> fn)
 {
     visit_arrangeable_(*this, id, fn);
 }
@@ -690,7 +690,7 @@ void ArrangeableSLAPrint::for_each_arrangeable(
 }
 
 template<class Self, class Fn>
-void ArrangeableSLAPrint::visit_arrangeable_(Self &&self, const ObjectID &id, Fn &&fn)
+void ArrangeableSLAPrint::visit_arrangeable_(Self &&self, const Domain::ObjectID &id, Fn &&fn)
 {
     auto [inst, pos] = find_instance_by_id(*self.m_model, id);
 
@@ -719,13 +719,13 @@ void ArrangeableSLAPrint::visit_arrangeable_(Self &&self, const ObjectID &id, Fn
 }
 
 void ArrangeableSLAPrint::visit_arrangeable(
-    const ObjectID &id, std::function<void(const Arrangeable &)> fn) const
+    const Domain::ObjectID &id, std::function<void(const Arrangeable &)> fn) const
 {
     visit_arrangeable_(*this, id, fn);
 }
 
 void ArrangeableSLAPrint::visit_arrangeable(
-    const ObjectID &id, std::function<void(Arrangeable &)> fn)
+    const Domain::ObjectID &id, std::function<void(Arrangeable &)> fn)
 {
     visit_arrangeable_(*this, id, fn);
 }
@@ -894,9 +894,9 @@ DuplicableModel::DuplicableModel(AnyPtr<Model> mdl, AnyPtr<VirtualBedHandler> vb
 
 DuplicableModel::~DuplicableModel() = default;
 
-ObjectID DuplicableModel::add_arrangeable(const ObjectID &prototype_id)
+Domain::ObjectID DuplicableModel::add_arrangeable(const Domain::ObjectID &prototype_id)
 {
-    ObjectID ret;
+    Domain::ObjectID ret;
     if (prototype_id.valid()) {
         size_t idx = prototype_id.id - 1;
         if (idx < m_duplicates.size()) {
@@ -933,7 +933,7 @@ void DuplicableModel::apply_duplicates()
 }
 
 template<class Mdl, class Dup, class VBH>
-ObjectID ArrangeableFullModel<Mdl, Dup, VBH>::geometry_id() const { return m_mdl->id(); }
+Domain::ObjectID ArrangeableFullModel<Mdl, Dup, VBH>::geometry_id() const { return m_mdl->id(); }
 
 template<class Mdl, class Dup, class VBH>
 ExPolygons ArrangeableFullModel<Mdl, Dup, VBH>::full_outline() const

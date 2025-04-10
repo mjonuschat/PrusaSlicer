@@ -3,27 +3,27 @@
 
 namespace Slic3r::Biz::Algorithms::Point {
 
-bool has_duplicate_points(const Domain::Points& points)
+bool has_consecutive_duplicate_points(const Domain::Points& points)
 {
-    for (size_t i = 1; i < points.size(); ++i) {
-        if (points[i - 1] == points[i]) {
-            return true;
-        }
-    }
-
-    return false;
+    return std::adjacent_find(points.begin(), points.end()) != points.end();
 }
 
-bool remove_duplicate_points(Domain::Points& points)
+bool remove_consecutive_duplicate_points(Domain::Points& points, const bool check_first_and_last)
 {
     if (points.empty())
         return false;
 
-    auto last = std::unique(points.begin(), points.end());
-    if (last == points.end())
+    auto last_it = std::unique(points.begin(), points.end());
+
+    // If requested, check if the first and last points are duplicates and remove the last one if true.
+    if (check_first_and_last && last_it != points.begin() && points.front() == *(last_it - 1)) {
+        --last_it;
+    }
+
+    if (last_it == points.end())
         return false;
 
-    points.erase(last, points.end());
+    points.erase(last_it, points.end());
     return true;
 }
 

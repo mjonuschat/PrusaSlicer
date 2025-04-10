@@ -293,14 +293,14 @@ Hit pinhead_mesh_hit(Ex              ex,
                             head.r_back_mm, head.width_mm, safety_d);
 }
 
-inline double distance(const SupportPoint &a, const SupportPoint &b)
+inline double distance(const Domain::SLA::SupportPoint &a, const Domain::SLA::SupportPoint &b)
 {
     return (a.pos - b.pos).norm();
 }
 
 template<class PtIndex>
 std::vector<size_t> non_duplicate_suppt_indices(const PtIndex &index,
-                                                const SupportPoints &suppts,
+                                                const Domain::SLA::SupportPoints &suppts,
                                                 double         eps)
 {
     std::vector<bool> to_remove(suppts.size(), false);
@@ -429,7 +429,7 @@ std::optional<Head> calculate_pinhead_placement(Ex                     policy,
     if (suppt_idx >= sm.pts.size())
         return {};
 
-    const SupportPoint &sp = sm.pts[suppt_idx];
+    const Domain::SLA::SupportPoint &sp = sm.pts[suppt_idx];
     Head                head{
         sm.cfg.head_back_radius_mm,
         sp.head_front_radius,

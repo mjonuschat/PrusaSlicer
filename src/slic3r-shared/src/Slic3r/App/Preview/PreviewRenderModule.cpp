@@ -34,6 +34,7 @@ using namespace Slic3r::App::LibvgcodeWrapper;
 namespace Slic3r::App::Preview {
 
 using Domain::TriangleMesh;
+namespace CustomGCode = Domain::CustomGCode;
 
 void PreviewRenderModule::render_scene()
 {

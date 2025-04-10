@@ -65,16 +65,6 @@ Point point_projection(const ExPolygon &expolygon, const Point &point)
     }
 }
 
-Points to_points(const ExPolygon &expoly)
-{
-    return Algorithms::ExPolygon::to_points(expoly);
-}
-
-Points to_points(const ExPolygons &src)
-{
-    return Algorithms::ExPolygon::to_points(src);
-}
-
 void medial_axis(const ExPolygon& expolygon, const double min_width, const double max_width, ThickPolylines* polylines)
 {
     // init helper object
@@ -258,115 +248,9 @@ extern std::vector<BoundingBox> get_extents_vector(const ExPolygons &polygons)
     return out;
 }
 
-bool has_duplicate_points(const ExPolygon &expoly)
-{
-#if 1
-    // Check globally.
-    size_t cnt = expoly.contour.points.size();
-    for (const Polygon &hole : expoly.holes)
-        cnt += hole.points.size();
-    Points allpts;
-    allpts.reserve(cnt);
-    allpts.insert(allpts.begin(), expoly.contour.points.begin(), expoly.contour.points.end());
-    for (const Polygon &hole : expoly.holes)
-        allpts.insert(allpts.end(), hole.points.begin(), hole.points.end());
-    return has_duplicate_points(std::move(allpts));
-#else
-    // Check per contour.
-    if (has_duplicate_points(expoly.contour))
-        return true;
-    for (const Polygon &hole : expoly.holes)
-        if (has_duplicate_points(hole))
-            return true;
-    return false;
-#endif
-}
-
-bool has_duplicate_points(const ExPolygons &expolys)
-{
-#if 1
-    // Check globally.
-#if 0
-    // Detect duplicates by sorting with quicksort. It is quite fast, but ankerl::unordered_dense is around 1/4 faster.
-    Points allpts;
-    allpts.reserve(count_points(expolys));
-    for (const ExPolygon &expoly : expolys) {
-        allpts.insert(allpts.begin(), expoly.contour.points.begin(), expoly.contour.points.end());
-        for (const Polygon &hole : expoly.holes)
-            allpts.insert(allpts.end(), hole.points.begin(), hole.points.end());
-    }
-    return has_duplicate_points(std::move(allpts));
-#else
-    // Detect duplicates by inserting into an ankerl::unordered_dense hash set, which is is around 1/4 faster than qsort.
-    struct PointHash {
-        uint64_t operator()(const Point &p) const noexcept {
-            uint64_t h;
-            static_assert(sizeof(h) == sizeof(p));
-            memcpy(&h, &p, sizeof(p));
-            return ankerl::unordered_dense::detail::wyhash::hash(h);
-        }
-    };
-    ankerl::unordered_dense::set<Point, PointHash> allpts;
-    allpts.reserve(count_points(expolys));
-    for (const ExPolygon &expoly : expolys)
-        for (size_t icontour = 0; icontour < expoly.num_contours(); ++ icontour)
-            for (const Point &pt : expoly.contour_or_hole(icontour).points)
-                if (! allpts.insert(pt).second)
-                    // Duplicate point was discovered.
-                    return true;
-    return false;
-#endif
-#else
-    // Check per contour.
-    for (const ExPolygon &expoly : expolys)
-        if (has_duplicate_points(expoly))
-            return true;
-    return false;
-#endif
-}
-
-bool remove_same_neighbor(ExPolygons &expolygons)
-{
-    if (expolygons.empty())
-        return false;
-    bool remove_from_holes   = false;
-    bool remove_from_contour = false;
-    for (ExPolygon &expoly : expolygons) {
-        remove_from_contour |= remove_same_neighbor(expoly.contour);
-        remove_from_holes |= remove_same_neighbor(expoly.holes);
-    }
-    // Removing of expolygons without contour
-    if (remove_from_contour)
-        expolygons.erase(std::remove_if(expolygons.begin(), expolygons.end(),
-                                        [](const ExPolygon &p) { return p.contour.points.size() <= 2; }),
-                         expolygons.end());
-    return remove_from_holes || remove_from_contour;
-}
-
 bool remove_sticks(ExPolygon &poly)
 {
     return remove_sticks(poly.contour) || remove_sticks(poly.holes);
-}
-
-bool remove_small_and_small_holes(ExPolygons &expolygons, double min_area)
-{
-    bool   modified = false;
-    size_t free_idx = 0;
-    for (size_t expoly_idx = 0; expoly_idx < expolygons.size(); ++expoly_idx) {
-        if (std::abs(expolygons[expoly_idx].area()) >= min_area) {
-            // Expolygon is big enough, so also check all its holes
-            modified |= remove_small(expolygons[expoly_idx].holes, min_area);
-            if (free_idx < expoly_idx) {
-                std::swap(expolygons[expoly_idx].contour, expolygons[free_idx].contour);
-                std::swap(expolygons[expoly_idx].holes, expolygons[free_idx].holes);
-            }
-            ++free_idx;
-        } else
-            modified = true;
-    }
-    if (free_idx < expolygons.size())
-        expolygons.erase(expolygons.begin() + free_idx, expolygons.end());
-    return modified;
 }
 
 void keep_largest_contour_only(ExPolygons &polygons)

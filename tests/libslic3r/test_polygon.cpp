@@ -190,8 +190,8 @@ TEST_CASE("Indexing expolygons", "[ExPolygon]")
         ExPolygon{Polygon{{0, 0}, {10, 0}, {0, 5}}, Polygon{{4, 3}, {6, 3}, {5, 2}}},
         ExPolygon{Polygon{{100, 0}, {110, 0}, {100, 5}}, Polygon{{104, 3}, {106, 3}, {105, 2}}}    
     };
-    Points points = to_points(expolys);
-    Lines lines = to_lines(expolys);
+    Points points = Algorithms::ExPolygon::to_points(expolys);
+    Lines lines = Algorithms::ExPolygon::to_lines(expolys);
     Linesf linesf = to_linesf(expolys);
     ExPolygonsIndices ids(expolys);
     REQUIRE(points.size() == lines.size());

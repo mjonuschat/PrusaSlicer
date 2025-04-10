@@ -2,7 +2,7 @@
 #define libslic3r_MultipleBeds_hpp_
 
 #include "libslic3r/Model.hpp"
-#include "libslic3r/ObjectID.hpp"
+#include "Slic3r/Domain/ObjectID.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/BoundingBox.hpp"
 #include "Slic3r/Biz/Algorithms/Point.hpp"
@@ -53,9 +53,9 @@ public:
 	Vec3d get_bed_translation(int id) const;
 
 	void   clear_inst_map();
-	void   set_instance_bed(ObjectID id, bool printable, int bed_idx);
+	void   set_instance_bed(Domain::ObjectID id, bool printable, int bed_idx);
 	void   inst_map_updated();
-    const std::map<ObjectID, int> &get_inst_map() const { return m_inst_to_bed; }
+    const std::map<Domain::ObjectID, int> &get_inst_map() const { return m_inst_to_bed; }
 	bool   is_bed_occupied(int bed_idx) const;
 
 	int    get_number_of_beds() const   { return m_number_of_beds; }
@@ -107,13 +107,13 @@ public:
 	void   autoslice_next_bed();
 
 private:
-	bool   is_instance_on_bed(const ObjectID id, const int bed_index) const;
+	bool   is_instance_on_bed(const Domain::ObjectID id, const int bed_index) const;
 
 	int m_number_of_beds = 1;
 	int m_active_bed     = 0;
 	int m_bed_for_thumbnails_generation = -1;
 	bool m_show_next_bed = false;
-	std::map<ObjectID, int> m_inst_to_bed;
+	std::map<Domain::ObjectID, int> m_inst_to_bed;
 	std::map<PrintBase*, size_t> m_printbase_to_texture;
 	std::array<int, MAX_NUMBER_OF_BEDS> m_occupied_beds_cache;
 	int m_last_hovered_bed = -1;

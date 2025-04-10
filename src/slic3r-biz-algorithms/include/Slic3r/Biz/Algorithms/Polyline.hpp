@@ -2,6 +2,7 @@
 
 #include "Slic3r/Domain/BoundingBox.hpp"
 #include "Slic3r/Domain/Line.hpp"
+#include "Slic3r/Domain/Polygon.hpp"
 #include "Slic3r/Domain/Polyline.hpp"
 
 namespace Slic3r::Biz::Algorithms::Polyline {
@@ -21,21 +22,39 @@ Domain::Polyline reversed(const Domain::Polyline& polyline);
 int find_point(const Domain::Polyline& polyline, const Domain::Point& query_pt, double scaled_epsilon);
 
 /**
- * Checks if the Polyline contains successive duplicate points.
+ * Checks if the Polyline contains consecutive duplicate points.
  *
  * @param polyline Polyline to search within.
- * @return true If at least one pair of successive duplicate points is found.
+ * @return true If at least one pair of consecutive duplicate points is found.
  * @return false Otherwise.
  */
-bool has_duplicate_points(const Domain::Polyline& polyline);
+bool has_consecutive_duplicate_points(const Domain::Polyline& polyline);
 
 /**
- * Removes successive duplicate points from the Polyline.
+ * Removes consecutive duplicate points from the Polyline.
  *
+ * @param polyline Reference to Polyline to process and modify in-place.
  * @return true If at least one duplicate point was removed.
  * @return false If no duplicates were found.
  */
-bool remove_duplicate_points(Domain::Polyline& polyline);
+bool remove_consecutive_duplicate_points(Domain::Polyline& polyline);
+
+/**
+ * Removes consecutive duplicate points from all Polylines.
+ *
+ * @param polylines Reference to Polylines to process and modify in-place.
+ * @return true If at least one duplicate point was removed from any Polyline.
+ * @return false If no duplicates were found.
+ */
+bool remove_consecutive_duplicate_points(Domain::Polylines& polylines);
+
+/**
+ * Removes degenerate Polylines (those that are empty or have fewer than two points).
+ *
+ * @return true If at least one degenerate Polyline was removed.
+ * @return false If no degenerate Polyline were found.
+ */
+bool remove_degenerate(Domain::Polylines& polylines);
 
 /**
  * @brief Trims the given distance from the end of the polyline.
@@ -86,5 +105,15 @@ void simplify(Domain::Polyline& polyline, double tolerance);
 Domain::Polyline simplified(const Domain::Polyline& polyline, double tolerance);
 
 std::pair<Domain::Polyline, Domain::Polyline> split_at_point(const Domain::Polyline& polyline, const Domain::Point& split_point);
+
+double length(const Domain::Points& polyline_pts);
+double length(Domain::Points::const_iterator polyline_pts_begin, Domain::Points::const_iterator polyline_pts_end);
+
+/**
+ * Close polyline to polygon (connect first and last point in polyline).
+ *
+ * @note It doesn't handle closed polylines differently. So, for closed polylines, the last point is duplicate.
+ */
+Domain::Polygons to_polygons(const Domain::Polylines& polylines);
 
 } // namespace Slic3r::Biz::Algorithms::Polyline

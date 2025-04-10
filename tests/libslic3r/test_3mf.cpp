@@ -7,6 +7,7 @@
 #include <boost/filesystem/operations.hpp>
 
 using namespace Slic3r;
+using Slic3r::Biz::Algorithms::Geometry::Transformation;
 
 SCENARIO("Reading 3mf file", "[3mf]") {
     GIVEN("umlauts in the path of the file") {
@@ -35,7 +36,7 @@ SCENARIO("Export+Import geometry to/from 3mf file cycle", "[3mf]") {
         ModelObject* src_object = src_model.objects.front();
 
         // apply generic transformation to the 1st volume
-        Geometry::Transformation src_volume_transform;
+        Transformation src_volume_transform;
         src_volume_transform.set_offset({ 10.0, 20.0, 0.0 });
         src_volume_transform.set_rotation({ deg2rad(25.0), deg2rad(35.0), deg2rad(45.0) });
         src_volume_transform.set_scaling_factor({ 1.1, 1.2, 1.3 });
@@ -43,7 +44,7 @@ SCENARIO("Export+Import geometry to/from 3mf file cycle", "[3mf]") {
         src_object->volumes.front()->set_transformation(src_volume_transform);
 
         // apply generic transformation to the 1st instance
-        Geometry::Transformation src_instance_transform;
+        Transformation src_instance_transform;
         src_instance_transform.set_offset({ 5.0, 10.0, 0.0 });
         src_instance_transform.set_rotation({ deg2rad(12.0), deg2rad(13.0), deg2rad(14.0) });
         src_instance_transform.set_scaling_factor({ 0.9, 0.8, 0.7 });
@@ -101,7 +102,7 @@ SCENARIO("2D convex hull of sinking object", "[3mf]") {
             instance->set_scaling_factor({ 2.0, 2.0, 2.0 });
 
             // calculate 2D convex hull
-            Polygon hull_2d = object->convex_hull_2d(instance->get_transformation().get_matrix());
+            Domain::Polygon hull_2d = object->convex_hull_2d(instance->get_transformation().get_matrix());
 
             // verify result
             Points result = {

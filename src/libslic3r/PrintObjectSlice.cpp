@@ -29,7 +29,7 @@
 #include "libslic3r/Flow.hpp"
 #include "libslic3r/LayerRegion.hpp"
 #include "libslic3r/Model.hpp"
-#include "libslic3r/ObjectID.hpp"
+#include "Slic3r/Domain/ObjectID.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/PrintBase.hpp"
@@ -41,6 +41,7 @@
 #include "libslic3r/Utils.hpp"
 #include "libslic3r/libslic3r.h"
 
+using namespace Slic3r::Biz;
 
 namespace Slic3r {
 
@@ -134,7 +135,7 @@ static std::vector<ExPolygons> slice_volume(
 
 struct VolumeSlices
 {
-    ObjectID                volume_id;
+    Domain::ObjectID        volume_id;
     std::vector<ExPolygons> slices;
 };
 
@@ -226,7 +227,7 @@ static std::vector<VolumeSlices> slice_volumes_inner(
     return out;
 }
 
-static inline VolumeSlices& volume_slices_find_by_id(std::vector<VolumeSlices> &volume_slices, const ObjectID id)
+static inline VolumeSlices& volume_slices_find_by_id(std::vector<VolumeSlices> &volume_slices, const Domain::ObjectID id)
 {
     auto it = lower_bound_by_predicate(volume_slices.begin(), volume_slices.end(), [id](const VolumeSlices &vs) { return vs.volume_id < id; });
     assert(it != volume_slices.end() && it->volume_id == id);
@@ -343,8 +344,8 @@ static std::vector<std::vector<ExPolygons>> slices_to_regions(
                 struct RegionSlice { 
                     ExPolygons  expolygons;
                     // Identifier of this region in PrintObjectRegions::all_regions
-                    int         region_id;
-                    ObjectID    volume_id;
+                    int              region_id;
+                    Domain::ObjectID volume_id;
                     bool operator<(const RegionSlice &rhs) const {
                         bool this_empty = this->region_id < 0 || this->expolygons.empty();
                         bool rhs_empty  = rhs.region_id < 0 || rhs.expolygons.empty();
@@ -983,7 +984,7 @@ void PrintObject::slice_volumes()
 	                        static const float eps = float(scale_(m_config.slice_closing_radius.value) * 1.5);
 	                        if (elfoot > 0.f) {
 	                        	lslices_1st_layer = offset_ex(layer->merged(eps), std::min(xy_compensation_scaled, 0.f) - eps);
-								trimming = to_polygons(Slic3r::elephant_foot_compensation(lslices_1st_layer,
+								trimming = Algorithms::ExPolygon::to_polygons(Slic3r::elephant_foot_compensation(lslices_1st_layer,
 									layer->m_regions.front()->flow(frExternalPerimeter), unscale<double>(elfoot)));
 	                        } else
 		                        trimming = offset(layer->merged(float(SCALED_EPSILON)), xy_compensation_scaled - float(SCALED_EPSILON));
@@ -1032,15 +1033,15 @@ std::vector<Polygons> PrintObject::slice_support_volumes(const ModelVolumeType m
                 if (slices.empty()) {
                     slices.reserve(slices2.size());
                     for (ExPolygons &src : slices2)
-                        slices.emplace_back(to_polygons(std::move(src)));
+                        slices.emplace_back(Algorithms::ExPolygon::to_polygons(std::move(src)));
                 } else if (!slices2.empty()) {
                     if (merge_layers.empty())
                         merge_layers.assign(zs.size(), false);
                     for (size_t i = 0; i < zs.size(); ++ i) {
                         if (slices[i].empty())
-                            slices[i] = to_polygons(std::move(slices2[i]));
+                            slices[i] = Algorithms::ExPolygon::to_polygons(std::move(slices2[i]));
                         else if (! slices2[i].empty()) {
-                            append(slices[i], to_polygons(std::move(slices2[i])));
+                            append(slices[i], Algorithms::ExPolygon::to_polygons(std::move(slices2[i])));
                             merge_layers[i] = true;
                             merge = true;
                         }

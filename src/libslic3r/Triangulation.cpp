@@ -14,6 +14,7 @@
 #include <cassert>
 #include <cstddef>
 
+#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "IntersectionPoints.hpp"
 #include "libslic3r/ExPolygon.hpp"
 #include "Slic3r/Exception.hpp"
@@ -23,6 +24,7 @@
 #include "libslic3r/libslic3r.h"
 
 using namespace Slic3r;
+using namespace Slic3r::Biz;
 using Domain::Index3;
 
 namespace priv{
@@ -245,7 +247,7 @@ Triangulation::Indices Triangulation::triangulate(const Polygon &polygon)
 
 Triangulation::Indices Triangulation::triangulate(const Polygons &polygons)
 {
-    size_t count = count_points(polygons);
+    size_t count = Algorithms::Polygon::count_points(polygons);
     Points points;
     points.reserve(count);
 
@@ -268,7 +270,7 @@ Triangulation::Indices Triangulation::triangulate(const ExPolygon &expolygon){
 }
 
 Triangulation::Indices Triangulation::triangulate(const ExPolygons &expolygons){
-    Points pts = to_points(expolygons);
+    Points pts = Algorithms::ExPolygon::to_points(expolygons);
     Points d_pts = collect_duplicates(pts);
     if (d_pts.empty()) return triangulate(expolygons, pts);
 
@@ -288,7 +290,7 @@ Triangulation::Indices Triangulation::triangulate(const ExPolygons &expolygons){
 
 Triangulation::Indices Triangulation::triangulate(const ExPolygons &expolygons, const Points &points)
 {
-    assert(count_points(expolygons) == points.size());
+    assert(Algorithms::ExPolygon::count_points(expolygons) == points.size());
     // when contain duplicit coordinate in points will not work properly
     assert(collect_duplicates(points).empty());
 
@@ -307,7 +309,7 @@ Triangulation::Indices Triangulation::triangulate(const ExPolygons &expolygons, 
 Triangulation::Indices Triangulation::triangulate(const ExPolygons &expolygons, const Points& points, const Changes& changes)
 {
     assert(!points.empty());
-    assert(count_points(expolygons) == points.size());
+    assert(Algorithms::ExPolygon::count_points(expolygons) == points.size());
     assert(changes.size() == points.size());
     // IMPROVE: search from end and somehow distiquish that value is not a change
     uint32_t count_points = *std::max_element(changes.begin(), changes.end())+1;

@@ -104,6 +104,7 @@ using namespace std::literals::string_view_literals;
 namespace Slic3r {
     using Biz::libpgcode::ProcessorResult;
     using Biz::GCodeReader::GCodeReader;
+    namespace CustomGCode = Domain::CustomGCode;
 
 // Only add a newline in case the current G-code does not end with a newline.
     static inline void check_add_eol(std::string& gcode)
@@ -2064,7 +2065,7 @@ namespace ProcessLayer
 
 static std::string emit_custom_color_change_gcode_per_print_z(
     GCodeGenerator          &gcodegen,
-    const Domain::CustomGCodeItem &custom_gcode,
+    const Domain::CustomGCode::Item &custom_gcode,
     unsigned int             current_extruder_id,
     unsigned int             first_extruder_id, // ID of the first extruder printing this layer.
     const PrintConfig       &config
@@ -2074,7 +2075,7 @@ static std::string emit_custom_color_change_gcode_per_print_z(
 
     const bool single_extruder_multi_material = config.single_extruder_multi_material;
     const bool single_extruder_printer        = config.nozzle_diameter.size() == 1;
-    const bool color_change                   = custom_gcode.type == Domain::CustomGCodeType::ColorChange;
+    const bool color_change                   = custom_gcode.type == Domain::CustomGCode::Type::ColorChange;
 
     std::string gcode;
 
@@ -2110,23 +2111,23 @@ static std::string emit_custom_color_change_gcode_per_print_z(
 
     static std::string emit_custom_gcode_per_print_z(
         GCodeGenerator                                          &gcodegen,
-        const Domain::CustomGCodeItem                                   &custom_gcode,
+        const Domain::CustomGCode::Item                                   &custom_gcode,
         unsigned int                                             current_extruder_id,
         // ID of the first extruder printing this layer.
         unsigned int                                             first_extruder_id,
         const PrintConfig                                       &config)
     {
-        using Domain::CustomGCodeType;
+        using Domain::CustomGCode::Type;
         using Biz::libpgcode::reserved_tag;
         using Biz::libpgcode::Tags;
         std::string gcode;
 
         // Extruder switches are processed by LayerTools, they should be filtered out.
-        assert(custom_gcode.type != CustomGCode::ToolChange);
+        assert(custom_gcode.type != CustomGCode::Type::ToolChange);
 
-        CustomGCodeType gcode_type = custom_gcode.type;
-        const bool      color_change = gcode_type == CustomGCodeType::ColorChange;
-        const bool      tool_change = gcode_type == CustomGCodeType::ToolChange;
+        CustomGCode::Type gcode_type = custom_gcode.type;
+        const bool      color_change = gcode_type == CustomGCode::Type::ColorChange;
+        const bool      tool_change = gcode_type == CustomGCode::Type::ToolChange;
         // Tool Change is applied as Color Change for a single extruder printer only.
         assert(!tool_change || config.nozzle_diameter.size() == 1);
 
@@ -2135,7 +2136,7 @@ static std::string emit_custom_color_change_gcode_per_print_z(
             gcode += emit_custom_color_change_gcode_per_print_z(gcodegen, custom_gcode, current_extruder_id, first_extruder_id, config);
         }
         else {
-            if (gcode_type == CustomGCodeType::PausePrint) { // Pause print
+            if (gcode_type == CustomGCode::Type::PausePrint) { // Pause print
                 const std::string pause_print_msg = custom_gcode.extra;
 
                 // add tag for processor
@@ -2150,7 +2151,7 @@ static std::string emit_custom_color_change_gcode_per_print_z(
             } else {
                 // add tag for processor
                 gcode += ";" + std::string(reserved_tag(Tags::Custom_Code)) + "\n";
-                if (gcode_type == CustomGCodeType::Template)
+                if (gcode_type == CustomGCode::Type::Template)
                     // Template Custom Gcode
                     gcode += gcodegen.placeholder_parser_process("template_custom_gcode", config.template_custom_gcode, current_extruder_id);
                 else
@@ -2555,7 +2556,7 @@ LayerResult GCodeGenerator::process_layer(
 {
     using Biz::libpgcode::reserved_tag;
     using Biz::libpgcode::Tags;
-    using Domain::CustomGCodeType;
+    using Domain::CustomGCode::Type;
 
     assert(! layers.empty());
     // Either printing all copies of all objects, or just a single copy of a single object.
@@ -2739,7 +2740,7 @@ LayerResult GCodeGenerator::process_layer(
         // Otherwise, we will emit the g-code after picking the specific extruder.
 
         std::string custom_gcode = ProcessLayer::emit_custom_gcode_per_print_z(*this, *layer_tools.custom_gcode, m_writer.extruder()->id(), first_extruder_id, print.config());
-        if (layer_tools.custom_gcode->type == CustomGCodeType::ColorChange) {
+        if (layer_tools.custom_gcode->type == CustomGCode::Type::ColorChange) {
             // We have a color change to do on this layer, but we want to do it immediately before the first extrusion instead of now, in order to fix GH #2672.
             m_pending_pre_extrusion_gcode = custom_gcode;
         } else {

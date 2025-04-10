@@ -52,7 +52,7 @@ struct TimeProcessor
     float filament_load_time(uint8_t extruder_id, bool is_XL_printer) const;
     float filament_unload_time(uint8_t extruder_id, bool is_XL_printer) const;
 
-    std::vector<std::pair<Domain::CustomGCodeType, std::pair<float, float>>>
+    std::vector<std::pair<Domain::CustomGCode::Type, std::pair<float, float>>>
         custom_gcode_times(TimeMode mode, bool include_remaining) const;
 
     void reset();

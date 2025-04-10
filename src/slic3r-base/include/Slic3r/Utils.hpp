@@ -118,4 +118,42 @@ template<class Cont> auto crange(Cont &&cont)
     return Range{std::cbegin(cont), std::cend(cont)};
 }
 
+template<typename INDEX_TYPE>
+inline INDEX_TYPE prev_idx_modulo(INDEX_TYPE idx, const INDEX_TYPE count)
+{
+    if (idx == 0) {
+        idx = count;
+    }
+
+    return --idx;
+}
+
+template<typename INDEX_TYPE>
+inline INDEX_TYPE next_idx_modulo(INDEX_TYPE idx, const INDEX_TYPE count)
+{
+    if (++idx == count) {
+        idx = 0;
+    }
+
+    return idx;
+}
+
+template<typename CONTAINER_TYPE>
+inline typename CONTAINER_TYPE::size_type prev_idx_modulo(typename CONTAINER_TYPE::size_type idx, const CONTAINER_TYPE& container)
+{
+    return prev_idx_modulo(idx, container.size());
+}
+
+template<typename CONTAINER_TYPE>
+inline typename CONTAINER_TYPE::size_type next_idx_modulo(typename CONTAINER_TYPE::size_type idx, const CONTAINER_TYPE& container)
+{
+    return next_idx_modulo(idx, container.size());
+}
+
+template<typename T>
+inline bool is_in_range(const T& value, const T& low, const T& high)
+{
+    return low <= value && value <= high;
+}
+
 } // namespace Slic3r

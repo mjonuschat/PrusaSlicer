@@ -549,7 +549,7 @@ std::vector<ExPolygon> merge_expansions_into_expolygons(ExPolygons &&src, std::v
         }
 #endif
         Point sample = src_ex.contour.front();
-        append(acc, to_polygons(std::move(src_ex)));
+        append(acc, Algorithms::ExPolygon::to_polygons(std::move(src_ex)));
         ExPolygons merged = union_safety_offset_ex(acc);
         // Expanding one expolygon by waves should not change connectivity of the source expolygon:
         // Single expolygon should be produced possibly with increased number of holes.

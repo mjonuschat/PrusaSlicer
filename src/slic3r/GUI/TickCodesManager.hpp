@@ -13,9 +13,8 @@
 #include <string>
 #include <cstddef>
 
-#include "libslic3r/CustomGCode.hpp"
+#include "Slic3r/Domain/CustomGCode.hpp"
 
-using namespace Slic3r::CustomGCode;
 namespace Slic3r {
 class PrintObject;
 class Print;
@@ -23,6 +22,9 @@ class Layer;
 }
 
 namespace DoubleSlider {
+
+// TODO remove
+using namespace Slic3r::Domain::CustomGCode;
 
 // return true when areas are mostly equivalent
 bool equivalent_areas(const double& bottom_area, const double& top_area);
@@ -97,7 +99,7 @@ struct TickCode
     bool operator>(const TickCode& other) const { return other.tick < this->tick; }
 
     int         tick = 0;
-    Type        type = ColorChange;
+    Type        type = Type::ColorChange;
     int         extruder = 0;
     std::string color;
     std::string extra;
@@ -141,7 +143,7 @@ public:
     TickCodeManager();
     ~TickCodeManager() {}
     std::set<TickCode>          ticks           {};
-    Mode                        mode            { Undef };
+    Mode                        mode            { Mode::Undef };
     bool                        is_wipe_tower   { false }; //This flag indicates that there is multiple extruder print with wipe tower
     int                         only_extruder_id{ -1 };
 
@@ -163,11 +165,11 @@ public:
 
     int             get_tick_from_value(double value, bool force_lower_bound = false);
 
-    std::string     gcode(Slic3r::CustomGCode::Type type);
+    std::string     gcode(Type type);
 
     // Get used extruders for tick.
     // Means all extruders(tools) which will be used during printing from current tick to the end
-    std::set<int>   get_used_extruders_for_tick(int tick, double print_z, Mode force_mode = Undef) const;
+    std::set<int>   get_used_extruders_for_tick(int tick, double print_z, Mode force_mode = Mode::Undef) const;
 
     // Get active extruders for tick. 
     // Means one current extruder for not existing tick OR 

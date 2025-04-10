@@ -18,7 +18,9 @@
 #include <cassert>
 #include <cstdlib>
 
+#include "Slic3r/Biz/Algorithms/FacetsAnnotation.hpp"
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
+#include "Slic3r/Domain/TriangleSelector.hpp"
 #include "BoundingBox.hpp"
 #include "ClipperUtils.hpp"
 #include "Layer.hpp"
@@ -40,7 +42,6 @@
 #include "libslic3r/Surface.hpp"
 #include "Slic3r/Biz/Algorithms/SVG.hpp"
 #include "libslic3r/TriangleMeshSlicer.hpp"
-#include "libslic3r/TriangleSelector.hpp"
 #include "libslic3r/Utils.hpp"
 #include "libslic3r/libslic3r.h"
 #include "MultiMaterialSegmentation.hpp"
@@ -863,7 +864,7 @@ static inline std::vector<std::vector<ExPolygons>> segmentation_top_and_bottom_l
             if (mv->is_model_part()) {
                 const Transform3d volume_trafo = object_trafo * mv->get_matrix();
                 for (size_t extruder_idx = 0; extruder_idx < num_facets_states; ++extruder_idx) {
-                    const indexed_triangle_set painted = extract_facets_info(*mv).facets_annotation.get_facets_strict(*mv, TriangleStateType(extruder_idx));
+                    const indexed_triangle_set painted = Algorithms::FacetsAnnotation::get_facets_strict(extract_facets_info(*mv).facets_annotation, *mv, Domain::TriangleSelector::TriangleStateType(extruder_idx));
 
                     if constexpr (MM_SEGMENTATION_DEBUG_TOP_BOTTOM) {
                         its_write_obj(painted, debug_out_path("mm-painted-patch-%d.obj", extruder_idx).c_str());
@@ -920,7 +921,7 @@ static inline std::vector<std::vector<ExPolygons>> segmentation_top_and_bottom_l
                 if (raw_surfaces[extruder_idx][layer_idx].empty())
                     continue;
 
-                remove_small(raw_surfaces[extruder_idx][layer_idx], min_area);
+                Algorithms::Polygon::remove_small(raw_surfaces[extruder_idx][layer_idx], min_area);
             }
         }
     };
@@ -1991,7 +1992,7 @@ static std::vector<ColorPolygons> slice_model_volume_with_color(const ModelVolum
             return {mesh.its.indices, mesh.its.vertices, std::vector<uint8_t>(mesh.its.indices.size(), uint8_t(volume_extruder_id))};
         }
 
-        return facets_info.facets_annotation.get_all_facets_strict_with_colors(model_volume);
+        return Algorithms::FacetsAnnotation::get_all_facets_strict_with_colors(facets_info.facets_annotation, model_volume);
     };
 
     const indexed_triangle_set_with_color mesh_with_color = extract_mesh_with_color();
@@ -2004,7 +2005,7 @@ static std::vector<ColorPolygons> slice_model_volume_with_color(const ModelVolum
     if (const int volume_extruder_id = model_volume.extruder_id(); facets_info.replace_default_extruder && facets_info.is_painted && volume_extruder_id > 0) {
         for (ColorPolygons &color_polygons : color_polygons_per_layer) {
             for (ColorPolygon &color_polygon : color_polygons) {
-                std::replace(color_polygon.colors.begin(), color_polygon.colors.end(), static_cast<uint8_t>(TriangleStateType::NONE), static_cast<uint8_t>(volume_extruder_id));
+                std::replace(color_polygon.colors.begin(), color_polygon.colors.end(), static_cast<uint8_t>(Domain::TriangleSelector::TriangleStateType::NONE), static_cast<uint8_t>(volume_extruder_id));
             }
         }
     }
@@ -2014,7 +2015,7 @@ static std::vector<ColorPolygons> slice_model_volume_with_color(const ModelVolum
         for (ColorPolygon &color_polygon : color_polygons) {
             std::replace_if(color_polygon.colors.begin(), color_polygon.colors.end(),
                             [&num_facets_states](const uint8_t color) { return color >= num_facets_states; },
-                            static_cast<uint8_t>(TriangleStateType::NONE));
+                            static_cast<uint8_t>(Domain::TriangleSelector::TriangleStateType::NONE));
         }
     }
 
@@ -2111,7 +2112,7 @@ std::vector<std::vector<ExPolygons>> segmentation_by_painting(const PrintObject 
             // to ensure that very close polygons will be merged.
             ex_polygons = union_ex(ex_polygons);
             // Remove all expolygons and holes with an area less than 0.1mm^2
-            remove_small_and_small_holes(ex_polygons, Slic3r::sqr(POLYGON_FILTER_MIN_AREA_SCALED));
+            Algorithms::ExPolygon::remove_small_expolygons_and_holes(ex_polygons, Slic3r::sqr(POLYGON_FILTER_MIN_AREA_SCALED));
             // Occasionally, some input polygons contained self-intersections that caused problems with Voronoi diagrams
             // and consequently with the extraction of colored segments by function extract_colored_segments.
             // Calling simplify_polygons removes these self-intersections.
@@ -2119,7 +2120,7 @@ std::vector<std::vector<ExPolygons>> segmentation_by_painting(const PrintObject 
             // Such close points sometimes caused that the Voronoi diagram has self-intersecting edges around these vertices.
             // This consequently leads to issues with the extraction of colored segments by function extract_colored_segments.
             // Calling expolygons_simplify fixed these issues.
-            input_expolygons[layer_idx]                         = remove_duplicates(expolygons_simplify(offset_ex(ex_polygons, -10.f * float(SCALED_EPSILON)), 5 * SCALED_EPSILON), scaled<coord_t>(0.01), PI / 6);
+            input_expolygons[layer_idx]                         = remove_duplicates(Algorithms::ExPolygon::simplify(offset_ex(ex_polygons, -10.f * float(SCALED_EPSILON)), 5 * SCALED_EPSILON), scaled<coord_t>(0.01), PI / 6);
             input_expolygons_projection_lines_layers[layer_idx] = create_color_projection_expolygons(input_expolygons[layer_idx]);
 
             if constexpr (MM_SEGMENTATION_DEBUG_INPUT) {

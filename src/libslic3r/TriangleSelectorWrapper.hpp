@@ -5,7 +5,7 @@
 #ifndef SRC_LIBSLIC3R_TRIANGLESELECTORWRAPPER_HPP_
 #define SRC_LIBSLIC3R_TRIANGLESELECTORWRAPPER_HPP_
 
-#include "TriangleSelector.hpp"
+#include "Slic3r/Biz/Algorithms/TriangleSelector.hpp"
 #include "Model.hpp"
 #include "AABBTreeIndirect.hpp"
 #include "libslic3r/Point.hpp"
@@ -22,7 +22,7 @@ class TriangleSelectorWrapper {
 public:
     const Domain::TriangleMesh &mesh;
     const Transform3d& mesh_transform;
-    TriangleSelector selector;
+    Biz::Algorithms::TriangleSelector selector;
     AABBTreeIndirect::Tree<3, float> triangles_tree;
 
     TriangleSelectorWrapper(const Domain::TriangleMesh &mesh, const Transform3d& mesh_transform);

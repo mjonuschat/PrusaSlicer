@@ -67,122 +67,14 @@ BoundingBox get_extents(const Polygons &polygons);
 BoundingBox get_extents_rotated(const Polygon &poly, double angle);
 std::vector<BoundingBox> get_extents_vector(const Polygons &polygons);
 
-// Polygon must be valid (at least three points), collinear points and duplicate points removed.
-bool        polygon_is_convex(const Points &poly);
-inline bool polygon_is_convex(const Polygon &poly) { return polygon_is_convex(poly.points); }
-
-// Test for duplicate points. The points are copied, sorted and checked for duplicates globally.
-inline bool has_duplicate_points(Polygon &&poly)      { return has_duplicate_points(std::move(poly.points)); }
-inline bool has_duplicate_points(const Polygon &poly) { return has_duplicate_points(poly.points); }
-bool        has_duplicate_points(const Polygons &polys);
-
-// Return True when erase some otherwise False.
-bool remove_same_neighbor(Polygon &polygon);
-bool remove_same_neighbor(Polygons &polygons);
-
-inline double total_length(const Polygons &polylines) {
-    double total = 0;
-    for (Polygons::const_iterator it = polylines.begin(); it != polylines.end(); ++it)
-        total += it->length();
-    return total;
-}
-
-inline double area(const Polygon &poly) { return poly.area(); }
-
-inline double area(const Polygons &polys)
-{
-    double s = 0.;
-    for (auto &p : polys) s += p.area();
-
-    return s;
-}
-
 // Remove sticks (tentacles with zero area) from the polygon.
 bool remove_sticks(Polygon &poly);
 bool remove_sticks(Polygons &polys);
 
-// Remove polygons with less than 3 edges.
-bool remove_degenerate(Polygons &polys);
-bool remove_small(Polygons &polys, double min_area);
 void remove_collinear(Polygon &poly);
-void remove_collinear(Polygons &polys);
 
 Polygons polygons_simplify(Polygons &&polys, double tolerance, bool strictly_simple = true);
 Polygons polygons_simplify(const Polygons &polys, double tolerance, bool strictly_simple = true);
-
-inline void polygons_rotate(Polygons &polys, double angle)
-{
-    const double cos_angle = cos(angle);
-    const double sin_angle = sin(angle);
-    for (Polygon &p : polys)
-        p.rotate(cos_angle, sin_angle);
-}
-
-inline void polygons_reverse(Polygons &polys)
-{
-    for (Polygon &p : polys)
-        p.reverse();
-}
-
-inline Points to_points(const Polygon &poly)
-{
-    return poly.points;
-}
-
-inline size_t count_points(const Polygons &polys) {
-    size_t n_points = 0;
-    for (const auto &poly: polys) n_points += poly.points.size();
-    return n_points;
-}
-
-inline Points to_points(const Polygons &polys) 
-{
-    Points points;
-    points.reserve(count_points(polys));
-    for (const Polygon &poly : polys)
-        append(points, poly.points);
-    return points;
-}
-
-inline Lines to_lines(const Polygon &poly) 
-{
-    Lines lines;
-    lines.reserve(poly.points.size());
-    if (poly.points.size() > 2) {
-        for (Points::const_iterator it = poly.points.begin(); it != poly.points.end()-1; ++it)
-            lines.push_back(Line(*it, *(it + 1)));
-        lines.push_back(Line(poly.points.back(), poly.points.front()));
-    }
-    return lines;
-}
-
-inline Lines to_lines(const Polygons &polys) 
-{
-    Lines lines;
-    lines.reserve(count_points(polys));
-    for (size_t i = 0; i < polys.size(); ++ i) {
-        const Polygon &poly = polys[i];
-        for (Points::const_iterator it = poly.points.begin(); it != poly.points.end()-1; ++it)
-            lines.push_back(Line(*it, *(it + 1)));
-        lines.push_back(Line(poly.points.back(), poly.points.front()));
-    }
-    return lines;
-}
-
-using Slic3r::Biz::Algorithms::Polygon::to_polyline;
-using Slic3r::Biz::Algorithms::Polygon::to_polylines;
-
-// close polyline to polygon (connect first and last point in polyline)
-inline Polygons to_polygons(const Polylines &polylines)
-{
-    Polygons out;
-    out.reserve(polylines.size());
-    for (const Polyline &polyline : polylines) {
-        if (polyline.size())
-        out.emplace_back(polyline.points);
-    }
-    return out;
-}
 
 inline Polygons to_polygons(const VecOfPoints &paths)
 {
@@ -262,90 +154,6 @@ public:
 using ColorPolygons = std::vector<ColorPolygon>;
 
 } // namespace Slic3r
-
-// start Boost
-#include <boost/polygon/polygon.hpp>
-
-namespace boost::polygon {
-    template <>
-    struct geometry_concept<Slic3r::Polygon>{ typedef polygon_concept type; };
-
-    template <>
-    struct polygon_traits<Slic3r::Polygon> {
-        typedef coord_t coordinate_type;
-        typedef Slic3r::Points::const_iterator iterator_type;
-        typedef Slic3r::Point point_type;
-
-        // Get the begin iterator
-        static inline iterator_type begin_points(const Slic3r::Polygon& t) {
-            return t.points.begin();
-        }
-
-        // Get the end iterator
-        static inline iterator_type end_points(const Slic3r::Polygon& t) {
-            return t.points.end();
-        }
-
-        // Get the number of sides of the polygon
-        static inline std::size_t size(const Slic3r::Polygon& t) {
-            return t.points.size();
-        }
-
-        // Get the winding direction of the polygon
-        static inline winding_direction winding(const Slic3r::Polygon& /* t */) {
-            return unknown_winding;
-        }
-    };
-
-    template <>
-    struct polygon_mutable_traits<Slic3r::Polygon> {
-        // expects stl style iterators
-        template <typename iT>
-        static inline Slic3r::Polygon& set_points(Slic3r::Polygon& polygon, iT input_begin, iT input_end) {
-            polygon.points.clear();
-            while (input_begin != input_end) {
-                polygon.points.push_back(Slic3r::Point());
-                boost::polygon::assign(polygon.points.back(), *input_begin);
-                ++input_begin;
-            }
-            // skip last point since Boost will set last point = first point
-            polygon.points.pop_back();
-            return polygon;
-        }
-    };
-    
-    template <>
-    struct geometry_concept<Slic3r::Polygons> { typedef polygon_set_concept type; };
-
-    //next we map to the concept through traits
-    template <>
-    struct polygon_set_traits<Slic3r::Polygons> {
-        typedef coord_t coordinate_type;
-        typedef Slic3r::Polygons::const_iterator iterator_type;
-        typedef Slic3r::Polygons operator_arg_type;
-
-        static inline iterator_type begin(const Slic3r::Polygons& polygon_set) {
-            return polygon_set.begin();
-        }
-
-        static inline iterator_type end(const Slic3r::Polygons& polygon_set) {
-            return polygon_set.end();
-        }
-
-        //don't worry about these, just return false from them
-        static inline bool clean(const Slic3r::Polygons& /* polygon_set */) { return false; }
-        static inline bool sorted(const Slic3r::Polygons& /* polygon_set */) { return false; }
-    };
-
-    template <>
-    struct polygon_set_mutable_traits<Slic3r::Polygons> {
-        template <typename input_iterator_type>
-        static inline void set(Slic3r::Polygons& polygons, input_iterator_type input_begin, input_iterator_type input_end) {
-          polygons.assign(input_begin, input_end);
-        }
-    };
-} // namespace boost::polygon
-// end Boost
 
 namespace Slic3r::Biz::Algorithms::Polygon {
 

@@ -303,11 +303,11 @@ Surfaces merge_bridges(
             Polygons expansions;
             for (uint32_t bridge_id2 = bridge_id; bridge_id2 < uint32_t(bridges.size()); ++ bridge_id2) {
                 if (group_id(bridges, bridge_id2) == bridge_id) {
-                    append(bridge_group, to_polygons(std::move(bridges[bridge_id2].expolygon)));
+                    append(bridge_group, Algorithms::ExPolygon::to_polygons(std::move(bridges[bridge_id2].expolygon)));
                     auto it_bridge_expansion = bridges[bridge_id2].bridge_expansion_begin;
                     assert(it_bridge_expansion == bridge_expansions.end() || it_bridge_expansion->src_id == bridge_id2);
                     for (; it_bridge_expansion != bridge_expansions.end() && it_bridge_expansion->src_id == bridge_id2; ++ it_bridge_expansion)
-                        append(expansions, to_polygons(it_bridge_expansion->expolygon));
+                        append(expansions, Algorithms::ExPolygon::to_polygons(it_bridge_expansion->expolygon));
                 }
             }
             append(bridge_group, expansions);
@@ -320,8 +320,8 @@ Surfaces merge_bridges(
             // union_safety_offset_ex(acc)
 
             for (ExPolygon &bridge_expolygon : merged_bridges) {
-                const Lines lines{Algorithms::Polyline::to_lines(diff_pl(to_polylines(bridge_expolygon), expand(expansions, float(SCALED_EPSILON))))};
-                auto [bridging_dir, unsupported_dist] = detect_bridging_direction(lines, to_polygons(bridge_expolygon));
+                const Lines lines{Algorithms::Polyline::to_lines(diff_pl(Algorithms::ExPolygon::to_polylines(bridge_expolygon), expand(expansions, float(SCALED_EPSILON))))};
+                auto [bridging_dir, unsupported_dist] = detect_bridging_direction(lines, Algorithms::ExPolygon::to_polygons(bridge_expolygon));
                 Surface surface{ stBottomBridge, std::move(bridge_expolygon) };
                 surface.bridge_angle = M_PI + std::atan2(bridging_dir.y(), bridging_dir.x());
                 result.push_back(std::move(surface));

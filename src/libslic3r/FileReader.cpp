@@ -15,6 +15,8 @@
 #include "Model.hpp"
 #include "ModelProcessing.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
+#include "libslic3r/CustomGCode.hpp"
 
 #include "Format/AMF.hpp"
 #include "Format/OBJ.hpp"
@@ -30,6 +32,8 @@
 
 namespace Slic3r::FileReader
 {
+
+namespace CustomGCode = Domain::CustomGCode;
 
 bool is_project_file(const std::string& input_file)
 {
@@ -115,8 +119,8 @@ static Model read_all_from_file(const std::string& input_file,
         model.add_default_instances();
 
     for (CustomGCode::Info& info : model.get_custom_gcode_per_print_z_vector()) {
-        CustomGCode::update_custom_gcode_per_print_z_from_config(info, config);
-        CustomGCode::check_mode_for_custom_gcode_per_print_z(info);
+        CustomGCodeUtils::update_custom_gcode_per_print_z_from_config(info, config);
+        CustomGCodeUtils::check_mode_for_custom_gcode_per_print_z(info);
     }
     sort_remove_duplicates(config_substitutions->substitutions);
     return model;

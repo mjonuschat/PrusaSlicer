@@ -295,10 +295,10 @@ ThickPolylines make_fill_polylines(
     const coord_t           scaled_spacing                      = scaled<coord_t>(fill->spacing);
     double                  distance_limit_reconnection         = 2.0 * double(scaled_spacing);
     double                  squared_distance_limit_reconnection = distance_limit_reconnection * distance_limit_reconnection;
-    Polygons                filled_area                         = to_polygons(surface->expolygon);
+    Polygons                filled_area                         = Algorithms::ExPolygon::to_polygons(surface->expolygon);
     std::pair<float, Point> rotate_vector                       = fill->_infill_direction(surface);
     double                  aligning_angle                      = -rotate_vector.first + PI;
-    polygons_rotate(filled_area, aligning_angle);
+    Algorithms::Polygon::rotate(filled_area, aligning_angle);
     BoundingBox bb = get_extents(filled_area);
 
     Polygons inner_area = stop_vibrations ? intersection(filled_area, opening(filled_area, 2 * scaled_spacing, 3 * scaled_spacing)) :
@@ -306,7 +306,7 @@ ThickPolylines make_fill_polylines(
     
     inner_area = shrink(inner_area, scaled_spacing * 0.5 - scaled<double>(fill->overlap));
     
-    AABBTreeLines::LinesDistancer<Line> area_walls{to_lines(inner_area)};
+    AABBTreeLines::LinesDistancer<Line> area_walls{Algorithms::Polygon::to_lines(inner_area)};
 
     const size_t  n_vlines = (bb.max.x() - bb.min.x() + scaled_spacing - 1) / scaled_spacing;
     const coord_t y_min    = bb.min.y();
@@ -464,7 +464,7 @@ ThickPolylines make_fill_polylines(
         for (ExPolygon &ex_poly : gaps_for_additional_filling) {
             BoundingBox            ex_bb       = Algorithms::Polygon::get_bounding_box(ex_poly.contour);
             coord_t                loops_count = (std::max(ex_bb.size().x(), ex_bb.size().y()) + scaled_spacing - 1) / scaled_spacing;
-            Polygons               polygons    = to_polygons(ex_poly);
+            Polygons               polygons    = Algorithms::ExPolygon::to_polygons(ex_poly);
             Arachne::WallToolPaths wall_tool_paths(polygons, scaled_spacing, scaled_spacing, loops_count, 0, params.layer_height,
                                                    *fill->print_object_config, *fill->print_config);
             if (std::vector<Arachne::VariableWidthLines> loops = wall_tool_paths.getToolPaths(); !loops.empty()) {

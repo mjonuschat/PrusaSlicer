@@ -487,7 +487,7 @@ void MedialAxis::build(ThickPolylines* polylines)
     // Those thin lines and holes are both unprintable and cause the Voronoi diagram to be invalid.
     // So we filter out such thin lines and holes and try to compute the Voronoi diagram again.
     if (!m_vd.is_valid()) {
-        m_lines = to_lines(closing_ex({m_expolygon}, float(2. * SCALED_EPSILON)));
+        m_lines = Algorithms::ExPolygon::to_lines(closing_ex({m_expolygon}, float(2. * SCALED_EPSILON)));
         m_vd.construct_voronoi(m_lines.begin(), m_lines.end());
 
         if (!m_vd.is_valid())

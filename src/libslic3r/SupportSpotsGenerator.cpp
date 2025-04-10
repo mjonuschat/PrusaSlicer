@@ -234,7 +234,7 @@ SliceConnection estimate_slice_connection(size_t slice_idx, const Layer *layer)
     SliceConnection connection;
 
     const LayerSlice   &slice       = layer->lslices_ex[slice_idx];
-    Polygons           slice_polys  = to_polygons(layer->lslices[slice_idx]);
+    Polygons           slice_polys  = Algorithms::ExPolygon::to_polygons(layer->lslices[slice_idx]);
     BoundingBox slice_bb = get_extents(slice_polys);
     const Layer        *lower_layer = layer->lower_layer;
 
@@ -243,7 +243,7 @@ SliceConnection estimate_slice_connection(size_t slice_idx, const Layer *layer)
 
     ExPolygons below{};
     for (const auto &linked_slice_idx_below : linked_slices_below) { below.push_back(lower_layer->lslices[linked_slice_idx_below]); }
-    Polygons below_polys = to_polygons(below);
+    Polygons below_polys = Algorithms::ExPolygon::to_polygons(below);
 
     BoundingBox below_bb = get_extents(below_polys);
 
@@ -807,16 +807,16 @@ Polygons get_brim(const ExPolygon& slice_polygon, const BrimType brim_type, cons
     }
     if (brim_type == BrimType::btOuterAndInner || brim_type == BrimType::btInnerOnly) {
         Polygons brim_contours = slice_polygon.holes;
-        polygons_reverse(brim_contours);
+        Algorithms::Polygon::reverse(brim_contours);
         for (const Polygon &brim_contour : brim_contours) {
             Polygons brim_holes = shrink({brim_contour}, scale_(brim_width));
-            polygons_reverse(brim_holes);
+            Algorithms::Polygon::reverse(brim_holes);
             ExPolygon inner_brim{brim_contour};
             inner_brim.holes = brim_holes;
             brim.push_back(inner_brim);
         }
     }
-    return to_polygons(brim);
+    return Algorithms::ExPolygon::to_polygons(brim);
 }
 
 class ActiveObjectParts

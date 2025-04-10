@@ -43,7 +43,7 @@ double Polygon::area() const
     Vec2d p1 = points.back().cast<double>();
     for (const Point& p : points) {
         Vec2d p2 = p.cast<double>();
-        total_area += cross2(p1, p2);
+        total_area += Slic3r::cross2(p1, p2);
         p1 = p2;
     }
 

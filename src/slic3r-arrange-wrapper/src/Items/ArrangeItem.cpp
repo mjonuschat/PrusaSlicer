@@ -14,6 +14,8 @@
 #include "Tasks/FillBedTaskImpl.hpp" // IWYU pragma: keep
 #include "Tasks/MultiplySelectionTaskImpl.hpp" // IWYU pragma: keep
 
+using namespace Slic3r::Biz;
+
 namespace Slic3r { namespace arr2 {
 
 const Polygons &DecomposedShape::transformed_outline() const
@@ -126,7 +128,7 @@ DecomposedShape decompose(const Polygon &shape)
 {
     Polygons convex_shapes;
 
-    bool is_convex = polygon_is_convex(shape);
+    bool is_convex = Algorithms::Polygon::is_convex(shape);
     if (is_convex) {
         convex_shapes.emplace_back(shape);
     } else {

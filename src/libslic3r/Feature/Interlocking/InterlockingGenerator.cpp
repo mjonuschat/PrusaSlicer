@@ -5,6 +5,8 @@
 
 #include "libslic3r/ClipperUtils.hpp"
 
+using namespace Slic3r::Biz;
+
 namespace std {
 template<> struct hash<Slic3r::GridPoint3>
 {
@@ -111,7 +113,7 @@ void InterlockingGenerator::handleThinAreas(const std::unordered_set<GridPoint3>
     }
     for (auto& near_interlock : near_interlock_per_layer) {
         near_interlock = offset(union_(closing(near_interlock, rounding_errors)), detect);
-        polygons_rotate(near_interlock, rotation);
+        Algorithms::Polygon::rotate(near_interlock, rotation);
     }
 
     // Only alter layers when they are present in both meshes, zip should take care if that.
@@ -188,7 +190,7 @@ std::vector<std::unordered_set<GridPoint3>> InterlockingGenerator::getShellVoxel
         {
             auto layer = print_object.get_layer(layer_nr);
             rotated_polygons_per_layer[layer_nr] = to_expolygons(layer->get_region(region)->slices().surfaces);
-            expolygons_rotate(rotated_polygons_per_layer[layer_nr], rotation);
+            Algorithms::ExPolygon::rotate(rotated_polygons_per_layer[layer_nr], rotation);
         }
 
         addBoundaryCells(rotated_polygons_per_layer, kernel, mesh_voxels);
@@ -234,7 +236,7 @@ std::vector<ExPolygons> InterlockingGenerator::computeUnionedVolumeRegions() con
             Slic3r::append(layer_region, to_expolygons(layer->get_region(region_idx)->slices().surfaces));
         }
         layer_region = closing_ex(layer_region, ignored_gap_); // Morphological close to merge meshes into single volume
-        expolygons_rotate(layer_region, rotation);
+        Algorithms::ExPolygon::rotate(layer_region, rotation);
     }
     return layer_regions;
 }
@@ -308,7 +310,7 @@ void InterlockingGenerator::applyMicrostructureToOutlines(const std::unordered_s
         for (size_t layer_nr = 0; layer_nr < structure_per_layer[mesh_idx].size(); layer_nr++) {
             ExPolygons& layer_structure = structure_per_layer[mesh_idx][layer_nr];
             layer_structure = union_ex(layer_structure);
-            expolygons_rotate(layer_structure, unapply_rotation);
+            Algorithms::ExPolygon::rotate(layer_structure, unapply_rotation);
         }
     }
 
@@ -316,7 +318,7 @@ void InterlockingGenerator::applyMicrostructureToOutlines(const std::unordered_s
         const size_t region = (region_idx == 0) ? region_a_index : region_b_index;
         for (size_t layer_nr = 0; layer_nr < max_layer_count; layer_nr++) {
             ExPolygons layer_outlines = layer_regions[layer_nr];
-            expolygons_rotate(layer_outlines, unapply_rotation);
+            Algorithms::ExPolygon::rotate(layer_outlines, unapply_rotation);
 
             const ExPolygons areas_here = intersection_ex(structure_per_layer[region_idx][layer_nr / static_cast<size_t>(beam_layer_count)], layer_outlines);
             const ExPolygons& areas_other = structure_per_layer[!region_idx][layer_nr / static_cast<size_t>(beam_layer_count)];

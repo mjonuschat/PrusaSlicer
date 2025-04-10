@@ -10,21 +10,23 @@ Vec round(const Vec& vector) {
 }
 
 /**
- * Checks if the Points contains successive duplicate points.
+ * Checks if the Points contains consecutive duplicate points.
  *
  * @param points Points to search within.
- * @return true If at least one pair of successive duplicate points is found.
+ * @return true If at least one pair of consecutive duplicate points is found.
  * @return false Otherwise.
  */
-bool has_duplicate_points(const Domain::Points& points);
+bool has_consecutive_duplicate_points(const Domain::Points& points);
 
 /**
- * Removes successive duplicate points from the Points.
+ * Removes consecutive duplicate points from the Points.
  *
+ * @param points Reference to Points to process and modify in-place.
+ * @param check_first_and_last Indicate whether to check for a duplicate between the first and last point.
  * @return true If at least one duplicate point was removed.
  * @return false If no duplicates were found.
  */
-bool remove_duplicate_points(Domain::Points& points);
+bool remove_consecutive_duplicate_points(Domain::Points& points, bool check_first_and_last = false);
 
 Domain::Points scaled(const std::vector<Domain::Vec2d> &points);
 

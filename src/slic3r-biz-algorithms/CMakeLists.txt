@@ -7,6 +7,8 @@ add_library(slic3r-biz-algorithms
     src/Slic3r/Biz/Algorithms/DouglasPeucker.cpp
     include/Slic3r/Biz/Algorithms/ExPolygon.hpp
     src/Slic3r/Biz/Algorithms/ExPolygon.cpp
+    include/Slic3r/Biz/Algorithms/FacetsAnnotation.hpp
+    src/Slic3r/Biz/Algorithms/FacetsAnnotation.cpp
     src/Slic3r/Biz/Algorithms/Scaling.cpp
     include/Slic3r/Biz/Algorithms/Line.hpp
     src/Slic3r/Biz/Algorithms/Line.cpp
@@ -39,16 +41,20 @@ add_library(slic3r-biz-algorithms
     include/Slic3r/Biz/Algorithms/Tesselate.hpp
     src/Slic3r/Biz/Algorithms/TriangleMesh.cpp
     include/Slic3r/Biz/Algorithms/TriangleMesh.hpp
+    src/Slic3r/Biz/Algorithms/TriangleSelector.cpp
+    include/Slic3r/Biz/Algorithms/TriangleSelector.hpp
 )
 target_include_directories(slic3r-biz-algorithms PUBLIC include)
 target_include_directories(slic3r-biz-algorithms PRIVATE src)
 
 target_link_libraries(slic3r-biz-algorithms PRIVATE localesutils glu-libtess qhull)
+#FIXME: Temporarily link libslic3r until ModelVolume is moved into the domain.
 target_link_libraries(slic3r-biz-algorithms PUBLIC
     slic3r-domain
     slic3r-base
     clipper
     admesh
+    libslic3r
 )
 
 if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)

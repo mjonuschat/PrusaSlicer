@@ -1,13 +1,10 @@
-///|/ Copyright (c) Prusa Research 2020 - 2023 Tomáš Mészáros @tamasmeszaros, Lukáš Matěna @lukasmatena
-///|/
-///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
-///|/
-#ifndef SLA_SUPPORTPOINT_HPP
-#define SLA_SUPPORTPOINT_HPP
+#pragma once
 
-#include <libslic3r/Point.hpp>
 
-namespace Slic3r::sla {
+#include "Slic3r/Domain/Constants.hpp"
+#include "Slic3r/Domain/Point.hpp"
+
+namespace Slic3r::Domain::SLA {
 
 // An enum to keep track of where the current points on the ModelObject came from.
 enum class PointsStatus {
@@ -41,23 +38,18 @@ struct SupportPoint
 
     // type
     SupportPointType type{SupportPointType::manual_add};
-    
+
     bool is_island() const { return type == SupportPointType::island; }
     template<class Archive> void serialize(Archive &ar){
         ar(pos, head_front_radius, type);
     }
 
     // unsaved changes + cache invalidation
-    bool operator==(const SupportPoint &sp) const {
-        float rdiff = std::abs(head_front_radius - sp.head_front_radius);
-        return (pos == sp.pos) && rdiff < float(EPSILON) && type == sp.type;
-    }
+    bool operator==(const SupportPoint &sp) const;
 
-    bool operator!=(const SupportPoint &sp) const { return !(sp == (*this)); }
+    bool operator!=(const SupportPoint &sp) const;
 
 };
 using SupportPoints = std::vector<SupportPoint>;
 
-} // namespace Slic3r::sla
-
-#endif // SUPPORTPOINT_HPP
+} // namespace Slic3r::Domain::SLA

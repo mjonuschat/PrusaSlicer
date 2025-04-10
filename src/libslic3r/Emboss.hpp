@@ -24,9 +24,9 @@
 
 #include "Polygon.hpp"
 #include "ExPolygon.hpp"
-#include "EmbossShape.hpp" // ExPolygonsWithIds
+#include "Slic3r/Domain/EmbossShape.hpp" // ExPolygonsWithIds
 #include "BoundingBox.hpp"
-#include "TextConfiguration.hpp"
+#include "Slic3r/Domain/TextConfiguration.hpp"
 #include "libslic3r/Point.hpp"
 
 namespace Slic3r {
@@ -44,11 +44,11 @@ namespace Emboss
     /// Collect fonts registred inside OS
     /// </summary>
     /// <returns>OS registred TTF font files(full path) with names</returns>
-    EmbossStyles get_font_list();
+    Domain::EmbossStyles get_font_list();
 #ifdef _WIN32
-    EmbossStyles get_font_list_by_register();
-    EmbossStyles get_font_list_by_enumeration();
-    EmbossStyles get_font_list_by_folder();
+    Domain::EmbossStyles get_font_list_by_register();
+    Domain::EmbossStyles get_font_list_by_enumeration();
+    Domain::EmbossStyles get_font_list_by_folder();
 #endif
 
     /// <summary>
@@ -169,14 +169,14 @@ namespace Emboss
     /// <param name="font_prop">User defined property of the font</param>
     /// <param name="was_canceled">Way to interupt processing</param>
     /// <returns>Inner polygon cw(outer ccw)</returns>
-    HealedExPolygons  text2shapes (FontFileWithCache &font, const char *text,         const FontProp &font_prop, const std::function<bool()> &was_canceled = []() {return false;});
-    ExPolygonsWithIds text2vshapes(FontFileWithCache &font, const std::wstring& text, const FontProp &font_prop, const std::function<bool()>& was_canceled = []() {return false;});
+    Domain::HealedExPolygons  text2shapes (FontFileWithCache &font, const char *text,         const Domain::FontProp &font_prop, const std::function<bool()> &was_canceled = []() {return false;});
+    Domain::ExPolygonsWithIds text2vshapes(FontFileWithCache &font, const std::wstring& text, const Domain::FontProp &font_prop, const std::function<bool()>& was_canceled = []() {return false;});
 
     const unsigned ENTER_UNICODE = static_cast<unsigned>('\n');
     /// Sum of character '\n'
     unsigned get_count_lines(const std::wstring &ws);
     unsigned get_count_lines(const std::string &text);
-    unsigned get_count_lines(const ExPolygonsWithIds &shape);
+    unsigned get_count_lines(const Domain::ExPolygonsWithIds &shape);
 
     /// <summary>
     /// Fix duplicit points and self intersections in polygons.
@@ -185,7 +185,7 @@ namespace Emboss
     /// <param name="is_non_zero">Fill type ClipperLib::pftNonZero for overlapping otherwise </param>
     /// <param name="max_iteration">Look at heal_expolygon()::max_iteration</param>
     /// <returns>Healed shapes with flag is fully healed</returns>
-    HealedExPolygons heal_polygons(const Polygons &shape, bool is_non_zero = true, unsigned max_iteration = 10);
+    Domain::HealedExPolygons heal_polygons(const Polygons &shape, bool is_non_zero = true, unsigned max_iteration = 10);
 
     /// <summary>
     /// NOTE: call Slic3r::union_ex before this call
@@ -245,7 +245,7 @@ namespace Emboss
     /// <param name="fp">Property of font</param>
     /// <param name="ff">Font data</param>
     /// <returns>Conversion to mm</returns>
-    double get_text_shape_scale(const FontProp &fp, const FontFile &ff);
+    double get_text_shape_scale(const Domain::FontProp &fp, const FontFile &ff);
 
     /// <summary>
     /// getter of font info by collection defined in prop
@@ -253,7 +253,7 @@ namespace Emboss
     /// <param name="font">Contain infos about all fonts(collections) in file</param>
     /// <param name="prop">Index of collection</param>
     /// <returns>Ascent, descent, line gap</returns>
-    const FontFile::Info &get_font_info(const FontFile &font, const FontProp &prop);
+    const FontFile::Info &get_font_info(const FontFile &font, const Domain::FontProp &prop);
 
     /// <summary>
     /// Read from font file and properties height of line with spacing
@@ -261,7 +261,7 @@ namespace Emboss
     /// <param name="font">Infos for collections</param>
     /// <param name="prop">Collection index + Additional line gap</param>
     /// <returns>Line height with spacing in scaled font points (same as ExPolygons)</returns>
-    int get_line_height(const FontFile &font, const FontProp &prop);
+    int get_line_height(const FontFile &font, const Domain::FontProp &prop);
 
     /// <summary>
     /// Calculate Vertical align
@@ -269,7 +269,7 @@ namespace Emboss
     /// <param name="align">Top | Center | Bottom</param>
     /// <param name="count_lines"></param>
     /// <returns>Return align Y offset in mm</returns>
-    double get_align_y_offset_in_mm(FontProp::VerticalAlign align, unsigned count_lines, const FontFile &ff, const FontProp &fp);
+    double get_align_y_offset_in_mm(Domain::FontProp::VerticalAlign align, unsigned count_lines, const FontFile &ff, const Domain::FontProp &fp);
 
     /// <summary>
     /// Project spatial point
@@ -482,11 +482,11 @@ namespace Emboss
 
 ///////////////////////
 // Move to ExPolygonsWithIds Utils
-void translate(ExPolygonsWithIds &e, const Point &p);
-BoundingBox get_extents(const ExPolygonsWithIds &e);
-void center(ExPolygonsWithIds &e);
+void translate(Domain::ExPolygonsWithIds &e, const Point &p);
+BoundingBox get_extents(const Domain::ExPolygonsWithIds &e);
+void center(Domain::ExPolygonsWithIds &e);
 // delta .. safe offset before union (use as boolean close)
 // NOTE: remove unprintable spaces between neighbor curves (made by linearization of curve)
-ExPolygons union_with_delta(EmbossShape &shape, float delta, unsigned max_heal_iteration);
+ExPolygons union_with_delta(Domain::EmbossShape &shape, float delta, unsigned max_heal_iteration);
 } // namespace Slic3r
 #endif // slic3r_Emboss_hpp_

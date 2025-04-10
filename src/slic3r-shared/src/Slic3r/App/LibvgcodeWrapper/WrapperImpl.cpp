@@ -10,6 +10,7 @@ using namespace Slic3r::Biz::libpgcode;
 using namespace Slic3r::App::libvgcode;
 using namespace Slic3r::Biz;
 using Slic3r::Domain::GCodeExtrusionRole;
+namespace CustomGCode = Slic3r::Domain::CustomGCode;
 
 namespace Slic3r::App::LibvgcodeWrapper {
 
@@ -536,9 +537,9 @@ void WrapperImpl::on_slider_layers_ticks_changed()
 std::string WrapperImpl::on_slider_layers_get_gcode(CustomGCode::Type type)
 {
     switch (type) {
-    case CustomGCode::ColorChange: { return m_data.color_change_gcode; }
-    case CustomGCode::PausePrint:  { return m_data.pause_print_gcode; }
-    case CustomGCode::Template:    { return m_data.template_custom_gcode; }
+    case CustomGCode::Type::ColorChange: { return m_data.color_change_gcode; }
+    case CustomGCode::Type::PausePrint:  { return m_data.pause_print_gcode; }
+    case CustomGCode::Type::Template:    { return m_data.template_custom_gcode; }
     default:                       { return std::string(); }
     }
 }

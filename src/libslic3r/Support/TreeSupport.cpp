@@ -34,6 +34,7 @@
 
 #include "Slic3r/Biz/Algorithms/ExPolygon.hpp"
 #include "Slic3r/Biz/Algorithms/Polyline.hpp"
+#include "Slic3r/Domain/TriangleSelector.hpp"
 #include "TreeSupportCommon.hpp"
 #include "SupportCommon.hpp"
 #include "OrganicSupport.hpp"
@@ -59,7 +60,6 @@
 #include "libslic3r/Support/SupportParameters.hpp"
 #include "libslic3r/Support/TreeModelVolumes.hpp"
 #include "libslic3r/Surface.hpp"
-#include "libslic3r/TriangleSelector.hpp"
 #include "libslic3r/Utils.hpp"
 #include "Slic3r/Biz/Algorithms/Point.hpp"
 
@@ -233,8 +233,8 @@ static std::vector<std::pair<TreeSupportSettings, std::vector<size_t>>> group_me
     const int                support_enforce_layers = config.support_material_enforce_layers.value;
     std::vector<Polygons>    enforcers_layers{ print_object.slice_support_enforcers() };
     std::vector<Polygons>    blockers_layers{ print_object.slice_support_blockers() };
-    print_object.project_and_append_custom_facets(false, TriangleStateType::ENFORCER, enforcers_layers);
-    print_object.project_and_append_custom_facets(false, TriangleStateType::BLOCKER, blockers_layers);
+    print_object.project_and_append_custom_facets(false, Domain::TriangleSelector::TriangleStateType::ENFORCER, enforcers_layers);
+    print_object.project_and_append_custom_facets(false, Domain::TriangleSelector::TriangleStateType::BLOCKER, blockers_layers);
     const int                support_threshold      = config.support_material_threshold.value;
     const bool               support_threshold_auto = support_threshold == 0;
     // +1 makes the threshold inclusive
@@ -559,7 +559,7 @@ static std::optional<std::pair<Point, size_t>> polyline_sample_next_point_at_dis
         if (part.empty())
             continue;
 
-        double len = length(part.points);
+        double len = Algorithms::Polyline::length(part.points);
         Polyline line;
         double current_distance = std::max(distance, scaled<double>(0.1));
         if (len < 2 * distance && min_points <= 1)
@@ -718,12 +718,12 @@ static std::optional<std::pair<Point, size_t>> polyline_sample_next_point_at_dis
     Polylines out;
     for (ExPolygon &expoly : union_ex(polygon)) {
         // The surface type does not matter.
-        assert(area(expoly) > 0.);
+        assert(Algorithms::ExPolygon::area(expoly) > 0.);
 #ifdef TREE_SUPPORT_SHOW_ERRORS_WIN32
         if (area(expoly) <= 0.)
             ::MessageBoxA(nullptr, "TreeSupport infill negative area", "Bug detected!", MB_OK | MB_SYSTEMMODAL | MB_SETFOREGROUND | MB_ICONWARNING);
 #endif // TREE_SUPPORT_SHOW_ERRORS_WIN32
-        assert(intersecting_edges(to_polygons(expoly)).empty());
+        assert(intersecting_edges(Algorithms::ExPolygon::to_polygons(expoly)).empty());
         check_self_intersections(expoly, "generate_support_infill_lines");
         Surface surface(stInternal, std::move(expoly));
         try {
@@ -775,7 +775,7 @@ static std::optional<std::pair<Point, size_t>> polyline_sample_next_point_at_dis
         if (result.empty()) {
             BOOST_LOG_TRIVIAL(debug) << "Caught an area destroying union, enlarging areas a bit.";
             // just take the few lines we have, and offset them a tiny bit. Needs to be offsetPolylines, as offset may aleady have problems with the area.
-            result = union_(offset(to_polylines(first), scaled<float>(0.002), jtMiter, 1.2), offset(to_polylines(second), scaled<float>(0.002), jtMiter, 1.2));
+            result = union_(offset(Algorithms::Polygon::to_polylines(first), scaled<float>(0.002), jtMiter, 1.2), offset(Algorithms::Polygon::to_polylines(second), scaled<float>(0.002), jtMiter, 1.2));
         }
     }
     
@@ -1023,7 +1023,7 @@ int generate_raft_contact(
         // Create the raft contact layer.
         const ExPolygons &lslices   = print_object.get_layer(0)->lslices;
         double            expansion = print_object.config().raft_expansion.value;
-        interface_placer.add_roof_unguarded(expansion > 0 ? expand(lslices, scaled<float>(expansion)) : to_polygons(lslices), raft_contact_layer_idx, 0);
+        interface_placer.add_roof_unguarded(expansion > 0 ? expand(lslices, scaled<float>(expansion)) : Algorithms::ExPolygon::to_polygons(lslices), raft_contact_layer_idx, 0);
     }
     return raft_contact_layer_idx;
 }
@@ -1142,7 +1142,7 @@ void sample_overhang_area(
                 forbidden_next = offset(union_ex(forbidden_next_raw), scaled<float>(0.005), jtMiter, 1.2);
             }
             Polygons overhang_area_next = diff(overhang_area, forbidden_next);
-            if (area(overhang_area_next) < mesh_group_settings.minimum_roof_area) {
+            if (Algorithms::Polygon::area(overhang_area_next) < mesh_group_settings.minimum_roof_area) {
                 // Next layer down the roof area would be to small so we have to insert our roof support here.
                 if (dtt_roof > 0) {
                     size_t dtt_before = dtt_roof - 1;
@@ -1189,7 +1189,7 @@ void sample_overhang_area(
         size_t point_count = 0;
         for (const Polyline &poly : polylines)
             point_count += poly.size();
-        const size_t min_support_points = std::max(coord_t(1), std::min(coord_t(3), coord_t(total_length(overhang_area) / connect_length)));
+        const size_t min_support_points = std::max(coord_t(1), std::min(coord_t(3), coord_t(Algorithms::Polygon::total_length(overhang_area) / connect_length)));
         if (point_count <= min_support_points) {
             // add the outer wall (of the overhang) to ensure it is correct supported instead. Try placing the support points in a way that they fully support the outer wall, instead of just the with half of the the support line width.
             // I assume that even small overhangs are over one line width wide, so lets try to place the support points in a way that the full support area generated from them 
@@ -1197,9 +1197,9 @@ void sample_overhang_area(
             // as some support is better than none.
             Polygons reduced_overhang_area = offset(union_ex(overhang_area), - interface_placer.config.support_line_width / 2.2, jtMiter, 1.2);
             polylines = ensure_maximum_distance_polyline(
-                to_polylines(
+                Algorithms::Polygon::to_polylines(
                     ! reduced_overhang_area.empty() &&
-                        area(offset(diff_ex(overhang_area, reduced_overhang_area), std::max(interface_placer.config.support_line_width, connect_length), jtMiter, 1.2)) < sqr(scaled<double>(0.001)) ?
+                        Algorithms::Polygon::area(offset(diff_ex(overhang_area, reduced_overhang_area), std::max(interface_placer.config.support_line_width, connect_length), jtMiter, 1.2)) < sqr(scaled<double>(0.001)) ?
                     reduced_overhang_area :
                     overhang_area),
                 connect_length, min_support_points);
@@ -1421,11 +1421,11 @@ static void generate_initial_areas(
                 static constexpr const coord_t support_roof_offset = 0;
                 Polygons overhang_roofs = safe_offset_inc(overhang_raw, support_roof_offset, relevant_forbidden, config.min_radius * 2 + config.xy_min_distance, 0, 1);
                 if (mesh_group_settings.minimum_support_area > 0)
-                    remove_small(overhang_roofs, mesh_group_settings.minimum_roof_area);
+                    Algorithms::Polygon::remove_small(overhang_roofs, mesh_group_settings.minimum_roof_area);
                 overhang_regular = diff(overhang_regular, overhang_roofs, ApplySafetyOffset::Yes);
                 //check_self_intersections(overhang_regular, "overhang_regular3");
                 for (ExPolygon &roof_part : union_ex(overhang_roofs)) {
-                    sample_overhang_area(to_polygons(std::move(roof_part)), true, layer_idx, num_support_roof_layers, connect_length,
+                    sample_overhang_area(Algorithms::ExPolygon::to_polygons(std::move(roof_part)), true, layer_idx, num_support_roof_layers, connect_length,
                         mesh_group_settings, rich_interface_placer);
                     throw_on_cancel();
                 }
@@ -1433,9 +1433,9 @@ static void generate_initial_areas(
             // Either the roof is not enabled, then these are all the overhangs to be supported,
             // or roof is enabled and these are the thin overhangs at object slopes (not horizontal overhangs).
             if (mesh_group_settings.minimum_support_area > 0)
-                remove_small(overhang_regular, mesh_group_settings.minimum_support_area);
+                Algorithms::Polygon::remove_small(overhang_regular, mesh_group_settings.minimum_support_area);
             for (ExPolygon &support_part : union_ex(overhang_regular)) {
-                sample_overhang_area(to_polygons(std::move(support_part)), 
+                sample_overhang_area(Algorithms::ExPolygon::to_polygons(std::move(support_part)),
                     false, layer_idx, num_support_roof_layers, connect_length,
                     mesh_group_settings, rich_interface_placer);
                 throw_on_cancel();
@@ -1615,7 +1615,7 @@ static Point move_inside_if_outside(const Polygons &polygons, Point from, int di
 
     if (mergelayer || current_elem.to_buildplate) {
         to_bp_data = safe_union(diff_clipped(increased, volumes.getAvoidance(radius, layer_idx - 1, settings.type, false, settings.use_min_distance)));
-        if (! current_elem.to_buildplate && area(to_bp_data) > tiny_area_threshold) {
+        if (! current_elem.to_buildplate && Algorithms::Polygon::area(to_bp_data) > tiny_area_threshold) {
             // mostly happening in the tip, but with merges one should check every time, just to be sure.
             current_elem.to_buildplate = true; // sometimes nodes that can reach the buildplate are marked as cant reach, tainting subtrees. This corrects it.
             BOOST_LOG_TRIVIAL(debug) << "Corrected taint leading to a wrong to model value on layer " << layer_idx - 1 << " targeting " << 
@@ -1627,7 +1627,7 @@ static Point move_inside_if_outside(const Polygons &polygons, Point from, int di
             to_model_data = safe_union(diff_clipped(increased, volumes.getAvoidance(radius, layer_idx - 1, settings.type, true, settings.use_min_distance)));
 
         if (!current_elem.to_model_gracious) {
-            if (mergelayer && area(to_model_data) >= tiny_area_threshold) {
+            if (mergelayer && Algorithms::Polygon::area(to_model_data) >= tiny_area_threshold) {
                 current_elem.to_model_gracious = true;
                 BOOST_LOG_TRIVIAL(debug) << "Corrected taint leading to a wrong non gracious value on layer " << layer_idx - 1 << " targeting " << 
                     current_elem.target_height << " with radius " << radius;
@@ -1639,7 +1639,7 @@ static Point move_inside_if_outside(const Polygons &polygons, Point from, int di
 
     check_layer_data = current_elem.to_buildplate ? to_bp_data : to_model_data;
 
-    if (settings.increase_radius && area(check_layer_data) > tiny_area_threshold) {
+    if (settings.increase_radius && Algorithms::Polygon::area(check_layer_data) > tiny_area_threshold) {
         auto validWithRadius = [&](coord_t next_radius) {
             if (volumes.ceilRadius(next_radius, settings.use_min_distance) <= volumes.ceilRadius(radius, settings.use_min_distance))
                 return true;
@@ -1655,7 +1655,7 @@ static Point move_inside_if_outside(const Polygons &polygons, Point from, int di
                         volumes.getAvoidance(next_radius, layer_idx - 1, settings.type, true, settings.use_min_distance) :
                         volumes.getCollision(next_radius, layer_idx - 1, settings.use_min_distance));
             Polygons check_layer_data_2 = current_elem.to_buildplate ? to_bp_data_2 : to_model_data_2;
-            return area(check_layer_data_2) > tiny_area_threshold;
+            return Algorithms::Polygon::area(check_layer_data_2) > tiny_area_threshold;
         };
         coord_t ceil_radius_before = volumes.ceilRadius(radius, settings.use_min_distance);
 
@@ -1698,7 +1698,7 @@ static Point move_inside_if_outside(const Polygons &polygons, Point from, int di
                         volumes.getCollision(radius, layer_idx - 1, settings.use_min_distance)
                 ));
             check_layer_data = current_elem.to_buildplate ? to_bp_data : to_model_data;
-            if (area(check_layer_data) < tiny_area_threshold) {
+            if (Algorithms::Polygon::area(check_layer_data) < tiny_area_threshold) {
                 BOOST_LOG_TRIVIAL(error) << "Lost area by doing catch up from " << ceil_radius_before << " to radius " << 
                     volumes.ceilRadius(support_element_collision_radius(config, current_elem), settings.use_min_distance);
                 tree_supports_show_error("Area lost catching up radius. May not cause visible malformation."sv, true);
@@ -1706,7 +1706,7 @@ static Point move_inside_if_outside(const Polygons &polygons, Point from, int di
         }
     }
 
-    return area(check_layer_data) > tiny_area_threshold ? std::optional<SupportElementState>(current_elem) : std::optional<SupportElementState>();
+    return Algorithms::Polygon::area(check_layer_data) > tiny_area_threshold ? std::optional<SupportElementState>(current_elem) : std::optional<SupportElementState>();
 }
 
 struct SupportElementInfluenceAreas {
@@ -1950,7 +1950,7 @@ static void increase_areas_one_layer(
                 if (!settings.no_error) { 
                     // ERROR CASE
                     // if the area becomes for whatever reason something that clipper sees as a line, offset would stop working, so ensure that even if if wrongly would be a line, it still actually has an area that can be increased
-                    Polygons lines_offset = offset(to_polylines(parent.influence_area), scaled<float>(0.005), jtMiter, 1.2);
+                    Polygons lines_offset = offset(Algorithms::Polygon::to_polylines(parent.influence_area), scaled<float>(0.005), jtMiter, 1.2);
                     Polygons base_error_area = union_(parent.influence_area, lines_offset);
                     result = increase_single_area(volumes, config, settings, layer_idx, parent, 
                         base_error_area, to_bp_data, to_model_data, inc_wo_collision, (config.maximum_move_distance + extra_speed) * 1.5, mergelayer);
@@ -2177,11 +2177,11 @@ static bool merge_influence_areas_two_elements(
 
     // dont use empty as a line is not empty, but for this use-case it very well may be (and would be one layer down as union does not keep lines)
     // check if the overlap is large enough (Small ares tend to attract rounding errors in clipper). 
-    if (area(intersect) <= tiny_area_threshold)
+    if (Algorithms::Polygon::area(intersect) <= tiny_area_threshold)
         return false;
 
     // While 0.025 was guessed as enough, i did not have reason to change it.
-    if (area(offset(intersect, scaled<float>(-0.025), jtMiter, 1.2)) <= tiny_area_threshold)
+    if (Algorithms::Polygon::area(offset(intersect, scaled<float>(-0.025), jtMiter, 1.2)) <= tiny_area_threshold)
         return false;
 
 #ifdef TREES_MERGE_RATHER_LATER
@@ -2480,7 +2480,7 @@ static void create_layer_pathing(const TreeModelVolumes &volumes, const TreeSupp
                         // This area was removed completely due to collisions.
                         return true;
                     if (elem.areas.to_bp_areas.empty() && elem.areas.to_model_areas.empty()) {
-                        if (area(elem.areas.influence_areas) < tiny_area_threshold) {
+                        if (Algorithms::Polygon::area(elem.areas.influence_areas) < tiny_area_threshold) {
                             BOOST_LOG_TRIVIAL(error) << "Insert Error of Influence area bypass on layer " << layer_idx - 1;
                             tree_supports_show_error("Insert error of area after bypassing merge.\n"sv, true);
                         }
@@ -2513,7 +2513,7 @@ static void create_layer_pathing(const TreeModelVolumes &volumes, const TreeSupp
             for (SupportElementMerging &elem : influence_areas)
                 if (! elem.areas.influence_areas.empty()) {
                     Polygons new_area = safe_union(elem.areas.influence_areas);
-                    if (area(new_area) < tiny_area_threshold) {
+                    if (Algorithms::Polygon::area(new_area) < tiny_area_threshold) {
                         BOOST_LOG_TRIVIAL(error) << "Insert Error of Influence area on layer " << layer_idx - 1 << ". Origin of " << elem.parents.size() << " areas. Was to bp " << elem.state.to_buildplate;
                         tree_supports_show_error("Insert error of area after merge.\n"sv, true);
                     }
@@ -2911,7 +2911,7 @@ static void generate_branch_areas(
                             if (! Algorithms::ExPolygon::contains(part, draw_area.element->state.result_on_layer)) {
                                 // try a fuzzy inside as sometimes the point should be on the border, but is not because of rounding errors...
                                 Point pt = draw_area.element->state.result_on_layer;
-                                move_inside(to_polygons(part), pt, 0);
+                                move_inside(Algorithms::ExPolygon::to_polygons(part), pt, 0);
                                 drop = (draw_area.element->state.result_on_layer - pt).cast<double>().norm() >= scaled<double>(0.025);
                             }
                             if (! drop)
@@ -3051,7 +3051,7 @@ static void smooth_branch_areas(
                 if (do_something) {
                     // Trim the current drawing areas with max_allowed_area.
                     Polygons result = intersection(max_allowed_area, draw_area.polygons);
-                    if (area(result) < area(draw_area.polygons)) {
+                    if (Algorithms::Polygon::area(result) < Algorithms::Polygon::area(draw_area.polygons)) {
                         // Mark parent as modified to propagate down.
                         draw_area.element->state.marked = true;
                         draw_area.polygons = std::move(result);
@@ -3090,7 +3090,7 @@ static void drop_non_gracious_areas(
             if (const DrawArea &draw_element = linear_data[idx]; ! draw_element.element->state.to_model_gracious && draw_element.child_element == nullptr) {
                 Polygons rest_support;
                 const LayerIndex layer_idx_first = draw_element.element->state.layer_idx - 1;
-                for (LayerIndex layer_idx = layer_idx_first; area(rest_support) > tiny_area_threshold && layer_idx >= 0; -- layer_idx) {
+                for (LayerIndex layer_idx = layer_idx_first; Algorithms::Polygon::area(rest_support) > tiny_area_threshold && layer_idx >= 0; -- layer_idx) {
                     rest_support = diff_clipped(layer_idx == layer_idx_first ? draw_element.polygons : rest_support, volumes.getCollision(0, layer_idx, false));
                     dropped_down_areas[idx].emplace_back(layer_idx, rest_support);
                 }

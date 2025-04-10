@@ -2,7 +2,7 @@
 
 #include "Bed.hpp"
 #include "Slic3r/Assert.hpp"
-#include "libslic3r/ObjectID.hpp"
+#include "Slic3r/Domain/ObjectID.hpp"
 #include "libslic3r/Geometry.hpp"
 
 namespace Slic3r {

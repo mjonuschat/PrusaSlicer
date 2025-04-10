@@ -34,6 +34,7 @@
 
 #include "Slic3r/Biz/Algorithms/DouglasPeucker.hpp"
 #include "Slic3r/Biz/Algorithms/Line.hpp"
+#include "Slic3r/Biz/Algorithms/Polyline.hpp"
 #include "Circle.hpp"
 #include "../MultiPoint.hpp"
 #include "libslic3r/Line.hpp"
@@ -435,7 +436,7 @@ static inline std::optional<Arc> try_create_arc_impl(
     // but also could indicate that the vector calculation above
     // got wrong direction
     const double arc_length                     = circle.radius * angle;
-    const double approximate_length             = length(begin, end);
+    const double approximate_length             = Algorithms::Polyline::length(begin, end);
     assert(approximate_length > 0);
     const double arc_length_difference_relative = (arc_length - approximate_length) / approximate_length;
 

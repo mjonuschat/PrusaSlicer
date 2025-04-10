@@ -8,7 +8,7 @@
 #include "Slic3r/Biz/libpgcode/PostProcessorConfig.hpp"
 #include "TimeBlock.hpp"
 #include "Slic3r/Domain/Types.hpp"
-#include "Slic3r/Domain/CustomGCodeType.hpp"
+#include "Slic3r/Domain/CustomGCode.hpp"
 
 namespace Slic3r::Biz::libpgcode {
 
@@ -34,7 +34,7 @@ struct CustomGCodeTime
 {
     bool needed{ false };
     float cache{ 0.0f };
-    std::vector<std::pair<Domain::CustomGCodeType, float>> times;
+    std::vector<std::pair<Domain::CustomGCode::Type, float>> times;
 
     void reset();
 };
