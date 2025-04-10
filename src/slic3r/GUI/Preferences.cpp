@@ -631,7 +631,7 @@ void PreferencesDialog::build()
 
 		append_bool_option(m_optgroup_other, "show_step_import_parameters",
 			L("Show STEP file import parameters"),
-			L("If enabled, PrusaSlicer will show dialog with quality selection when importing STEP file."),
+			L("If enabled, PrusaSlicer will show a dialog with quality selection when importing a STEP file."),
 			app_config->get_bool("show_step_import_parameters"));
 
 		append_bool_option(m_optgroup_other, "show_login_button",

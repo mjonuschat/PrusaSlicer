@@ -74,7 +74,7 @@ static Model read_model_from_file(const std::string& input_file, LoadAttributes 
     if (!result)
         throw Slic3r::RuntimeError(L("Loading of a model file failed."));
 
-    if (model.objects.empty())
+    if (model.objects.empty() && temp_config.empty())
         throw Slic3r::RuntimeError(L("The supplied file couldn't be read because it's empty"));
 
     if (!boost::ends_with(input_file, ".printRequest"))
@@ -109,7 +109,7 @@ static Model read_all_from_file(const std::string& input_file,
     if (!result)
         throw Slic3r::RuntimeError(L("Loading of a model file failed."));
 
-    if (model.objects.empty())
+    if (model.objects.empty() && config->empty())
         throw Slic3r::RuntimeError(L("The supplied file couldn't be read because it's empty"));
 
     for (ModelObject* o : model.objects)

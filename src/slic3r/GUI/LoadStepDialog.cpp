@@ -35,9 +35,9 @@
 namespace Slic3r::GUI {
 
 static std::vector<std::pair<std::string, PrecisionParams>> default_step_import_params = {
-    {"Low"      , {0.1, 1.    }},
-    {"Medium"   , {0.05, 0.5  }},
-    {"High"     , {0.001, 0.03}},
+    {"Low"      , {0.005, 1.  }},
+    {"Medium"   , {0.003, 0.5 }},
+    {"High"     , {0.001, 0.25}},
 };
 
 LoadStepDialog::LoadStepDialog(wxWindow* parent, const std::string& filename, double linear_precision, double angle_precision, bool multiple_loading)
@@ -69,7 +69,7 @@ LoadStepDialog::LoadStepDialog(wxWindow* parent, const std::string& filename, do
     auto buttons_sizer = CreateStdDialogButtonSizer(wxOK | wxCANCEL);
 
     if (multiple_loading) {
-        auto apply_btn = new wxButton(this, wxID_APPLY, "Apply to all");
+        auto apply_btn = new wxButton(this, wxID_APPLY, _L("Apply to all"));
         apply_btn->Bind(wxEVT_BUTTON, [this](wxEvent&) {
             m_apply_to_all = true;
             EndModal(wxID_OK);
@@ -83,7 +83,7 @@ LoadStepDialog::LoadStepDialog(wxWindow* parent, const std::string& filename, do
     SetSizer(main_sizer);
     main_sizer->SetSizeHints(this);
 
-    m_custom_sizer->ShowItems(!m_default);
+    enable_customs(!m_default);
 
     // Update DarkUi just for buttons
     wxGetApp().UpdateDlgDarkUI(this, true);
@@ -98,14 +98,14 @@ void LoadStepDialog::add_params(wxSizer* sizer)
     // add radio buttons for selection default parameters
 
     for (const auto& [name, params] : default_step_import_params) {
-        wxRadioButton* radio_def = new wxRadioButton(this, wxID_ANY, format_wxstr("%1%", _L(name)));
+        wxRadioButton* radio_def = new wxRadioButton(this, wxID_ANY, format_wxstr("%1%", _(name)));
         radio_def->Bind(wxEVT_RADIOBUTTON, [params_copy = params, this](wxEvent&) {
             m_params.linear = params_copy.linear;
             m_params.angle = params_copy.angle;
 
-            m_custom_sizer->ShowItems(false);
+            enable_customs(false);
         });
-        bool is_selected = m_params.linear == params.linear && params.angle == params.angle;
+        bool is_selected = m_params.linear == params.linear && m_params.angle == params.angle;
         radio_def->SetValue(is_selected);
 
         m_default |= is_selected;
@@ -117,7 +117,7 @@ void LoadStepDialog::add_params(wxSizer* sizer)
 
     wxRadioButton* radio_custom = new wxRadioButton(this, wxID_ANY, _L("Custom"));
     radio_custom->Bind(wxEVT_RADIOBUTTON, [&, this](wxEvent&) {
-        m_custom_sizer->ShowItems(true);
+        enable_customs(true);
 #ifdef __linux__
         this->Fit();
 #endif // __linux__
@@ -183,7 +183,7 @@ void LoadStepDialog::add_params(wxSizer* sizer)
     // Add "Linear precision"
 
     m_linear_precision_slider = new wxSlider(this, wxID_ANY, m_linear_precision_sl.get_pos(m_params.linear), m_linear_precision_sl.beg_sl_pos, m_linear_precision_sl.end_sl_pos, wxDefaultPosition, def_slider_size, slyder_style);
-    m_linear_precision_slider->SetTickFreq(10);
+    m_linear_precision_slider->SetTickFreq(1);
     m_linear_precision_slider->Bind(wxEVT_SLIDER, [this](wxCommandEvent e) {
         m_params.linear = m_linear_precision_sl.get_value(m_linear_precision_slider->GetValue());
         m_linear_precision_val->SetValue(format_wxstr("%1%", m_params.linear));
@@ -208,7 +208,7 @@ void LoadStepDialog::add_params(wxSizer* sizer)
     // Add "Angle precision"
 
     m_angle_precision_slider = new wxSlider(this, wxID_ANY, m_angle_precision_sl.get_pos(m_params.angle), m_angle_precision_sl.beg_sl_pos, m_angle_precision_sl.end_sl_pos, wxDefaultPosition, def_slider_size, slyder_style);
-    m_angle_precision_slider->SetTickFreq(10);
+    m_angle_precision_slider->SetTickFreq(5);
     m_angle_precision_slider->Bind(wxEVT_SLIDER, [this](wxCommandEvent e) {
         m_params.angle = m_angle_precision_sl.get_value(m_angle_precision_slider->GetValue());
         m_angle_precision_val->SetValue(format_wxstr("%1%", m_params.angle));
@@ -236,6 +236,14 @@ void LoadStepDialog::add_params(wxSizer* sizer)
 
     main_sizer->Add(m_custom_sizer, 1, wxEXPAND | wxLEFT, 3 * em_unit());
     sizer->Add(main_sizer, 1, wxEXPAND | wxALL, em_unit());
+}
+
+void LoadStepDialog::enable_customs(bool enable)
+{
+    m_linear_precision_slider->Enable(enable);
+    m_linear_precision_val->Enable(enable);
+    m_angle_precision_slider->Enable(enable);
+    m_angle_precision_val->Enable(enable);
 }
 
 bool LoadStepDialog::IsCheckBoxChecked()
