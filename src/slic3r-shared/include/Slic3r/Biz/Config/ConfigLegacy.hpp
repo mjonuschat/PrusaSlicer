@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 
-#include "libslicerconfig/Config.hpp"
+#include "Slic3r/Domain/Config.hpp"
 
 // Loads config from INI / GCODE / BGCODE produced by PrusaSlicer < 3.0.0 and converts
 // all matching keys into the provided ConfigBox.

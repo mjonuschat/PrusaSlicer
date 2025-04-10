@@ -1,5 +1,5 @@
-#include "libslicerconfig/ConfigLegacy.hpp"
-#include "libslicerconfig/Config.hpp"
+#include "Slic3r/Biz/Config/ConfigLegacy.hpp"
+#include "Slic3r/Domain/Config.hpp"
 
 #include "Legacy/PrintConfig.hpp"
 

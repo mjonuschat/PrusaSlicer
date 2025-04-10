@@ -5,7 +5,7 @@
 
 #include "nlohmann/json.hpp"
 
-#include "Config.hpp"
+#include "Slic3r/Domain/Config.hpp"
 
 
 

@@ -72,6 +72,13 @@ add_library(slic3r-domain
 
     include/Slic3r/Domain/Transformation.hpp
     src/Slic3r/Domain/Transformation.cpp
+
+    include/Slic3r/Domain/Config.hpp
+    include/Slic3r/Domain/ConfigFDM.hpp
+
+    src/Slic3r/Domain/ConfigItemValue.hpp
+    src/Slic3r/Domain/Config.cpp
+    src/Slic3r/Domain/ConfigFDM.cpp
 )
 
 target_include_directories(slic3r-domain PUBLIC include)

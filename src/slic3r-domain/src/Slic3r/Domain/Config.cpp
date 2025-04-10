@@ -1,4 +1,4 @@
-#include "libslicerconfig/Config.hpp"
+#include "Slic3r/Domain/Config.hpp"
 
 #include <algorithm>
 

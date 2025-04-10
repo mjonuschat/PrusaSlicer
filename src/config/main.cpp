@@ -1,8 +1,6 @@
-﻿#include "libslicerconfig/Config.hpp"
-#include "libslicerconfig/ConfigSerialize.hpp"
-#include "libslicerconfig/ConfigLegacy.hpp"
-
-#include "ConfigFDM.hpp"
+﻿#include "Slic3r/Domain/ConfigFDM.hpp"
+#include "Slic3r/Biz/Config/ConfigSerialize.hpp"
+#include "Slic3r/Biz/Config/ConfigLegacy.hpp"
 
 #include <iostream>
 #include <vector>

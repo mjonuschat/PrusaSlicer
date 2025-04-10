@@ -1,5 +1,5 @@
-#include "libslicerconfig/Config.hpp"
-#include "libslicerconfig/ConfigSerialize.hpp"
+#include "Slic3r/Domain/Config.hpp"
+#include "Slic3r/Biz/Config/ConfigSerialize.hpp"
 
 #include "boost/algorithm/string.hpp"
 

@@ -15,7 +15,7 @@ inline void ASSERT(bool x) { if (!x) throw std::exception(); } // TODO - libasse
 inline void ASSERT(bool x, const char*) { if (!x) throw std::exception(); } // TODO - libassert
 inline void PANIC() { throw std::exception(); } // TODO - libassert
 
-#include "../../src/ConfigItemValue.hpp"
+#include "../../../src/Slic3r/Domain/ConfigItemValue.hpp"
 
 
 class ConfigItemValue;

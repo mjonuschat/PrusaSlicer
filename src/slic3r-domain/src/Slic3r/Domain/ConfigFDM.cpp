@@ -1,4 +1,4 @@
-﻿#include "ConfigFDM.hpp"
+﻿#include "Slic3r/Domain/ConfigFDM.hpp"
 
 
 // Implementation of FDM configs is done in this file.

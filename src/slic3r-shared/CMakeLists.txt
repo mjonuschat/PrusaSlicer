@@ -394,6 +394,7 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/Network/TCPConsole.cpp
         src/Slic3r/Biz/Network/ServiceConfig.cpp
         src/Slic3r/Biz/Network/Jwt.cpp
+
         include/Slic3r/Biz/SLAResultCache.hpp
         src/Slic3r/Biz/SLAResultCache.cpp
         include/Slic3r/Biz/SLAObjectCache.hpp
@@ -428,6 +429,20 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/AppInstance/IAppInstanceMessageContentListener.hpp
         include/Slic3r/Biz/AppInstance/AppInstanceMessageHandlerFactory.hpp
         src/Slic3r/Biz/AppInstance/AbstractAppInstanceMessageHandler.cpp
+        include/Slic3r/Biz/Config/ConfigSerialize.hpp
+        include/Slic3r/Biz/Config/ConfigLegacy.hpp
+        src/Slic3r/Biz/Config/ConfigSerialize.cpp
+        src/Slic3r/Biz/Config/Legacy/Config.hpp
+        src/Slic3r/Biz/Config/Legacy/Config.cpp
+        src/Slic3r/Biz/Config/Legacy/PrintConfig.hpp
+        src/Slic3r/Biz/Config/Legacy/PrintConfig.cpp
+        src/Slic3r/Biz/Config/Legacy/Point.hpp
+        src/Slic3r/Biz/Config/Legacy/Point.cpp
+        src/Slic3r/Biz/Config/Legacy/clonable_ptr.hpp
+        src/Slic3r/Biz/Config/Legacy/Thumbnails.hpp
+        src/Slic3r/Biz/Config/Legacy/Thumbnails.cpp
+        src/Slic3r/Biz/Config/Legacy/enum_bitmask.hpp
+        src/Slic3r/Biz/Config/ConfigLegacy.cpp
 )
 
 if (WIN32)

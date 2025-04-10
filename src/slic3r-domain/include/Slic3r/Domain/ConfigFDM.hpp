@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "libslicerconfig/Config.hpp"
+#include "Slic3r/Domain/Config.hpp"
 
 
 // This is an example of using Config infrastructure.
