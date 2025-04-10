@@ -8,8 +8,8 @@
 
 ConfigDefinitions::ConfigDefinitions(const std::vector<std::string>& acceptable_boxes, std::function<void(ConfigDefinitions&)> init_fn)
 {
-	m_acceptable_boxes = acceptable_boxes;
-	init_fn(*this);
+    m_acceptable_boxes = acceptable_boxes;
+    init_fn(*this);
     std::sort(m_defs.begin(), m_defs.end());
     this->check_valid();
     m_finalized = true;
@@ -41,8 +41,8 @@ void ConfigDefinitions::check_valid() const
         ASSERT(std::adjacent_find(def.enum_values.begin(), def.enum_values.end(), // check for duplicates
         [](const auto& a, const auto& b) { return a.enum_value == b.enum_value; }) == def.enum_values.end());
 
-		// Check that all items are assigned to valid boxes.
-		ASSERT(std::all_of(def.belongs_to.begin(), def.belongs_to.end(), [this](const auto& box) {
+        // Check that all items are assigned to valid boxes.
+        ASSERT(std::all_of(def.belongs_to.begin(), def.belongs_to.end(), [this](const auto& box) {
             return std::any_of(m_acceptable_boxes.begin(), m_acceptable_boxes.end(), [&box](const auto& b) { return box == b; });
         })); 
         ASSERT(std::all_of(def.belongs_to_optional.begin(), def.belongs_to_optional.end(), [this](const auto& box) {
@@ -85,7 +85,7 @@ ConfigItem::ConfigItem(const ConfigItemDef& def, std::string_view box_type)
 
 
 ConfigItem::~ConfigItem() {
-	delete m_data;
+    delete m_data;
 }
 
 
@@ -138,10 +138,10 @@ T ConfigItem::get() const
     }
     if constexpr (std::is_same_v<T, double>) {
         if (m_type == ConfigItemType::Double)
-		    return static_cast<ConfigItemValueDouble*>(m_data)->get();
-	    else if (m_type == ConfigItemType::FloatOrPercent) {
-		    ASSERT(! static_cast<ConfigItemValueFloatOrPercent*>(m_data)->is_percent());
-		    return static_cast<ConfigItemValueFloatOrPercent*>(m_data)->get();
+            return static_cast<ConfigItemValueDouble*>(m_data)->get();
+        else if (m_type == ConfigItemType::FloatOrPercent) {
+            ASSERT(! static_cast<ConfigItemValueFloatOrPercent*>(m_data)->is_percent());
+            return static_cast<ConfigItemValueFloatOrPercent*>(m_data)->get();
         }
     }
     if constexpr (std::is_same_v<T, std::string>) {
@@ -149,7 +149,7 @@ T ConfigItem::get() const
         return static_cast<ConfigItemValueString*>(m_data)->get();
     }
     PANIC();
-	throw std::exception(); // to silence a warning
+    throw std::exception(); // to silence a warning
 }
 
 
@@ -194,13 +194,13 @@ void ConfigItem::set_percent(double value)
 {
     ASSERT(m_type == ConfigItemType::FloatOrPercent);
     static_cast<ConfigItemValueFloatOrPercent*>(m_data)->set(value);
-	static_cast<ConfigItemValueFloatOrPercent*>(m_data)->set_percent(true);
+    static_cast<ConfigItemValueFloatOrPercent*>(m_data)->set_percent(true);
 }
 
 double ConfigItem::get_percent() const
 {
     ASSERT(m_type == ConfigItemType::FloatOrPercent);
-	ASSERT(static_cast<ConfigItemValueFloatOrPercent*>(m_data)->is_percent());
+    ASSERT(static_cast<ConfigItemValueFloatOrPercent*>(m_data)->is_percent());
     return static_cast<ConfigItemValueFloatOrPercent*>(m_data)->get();
 }
 
@@ -308,11 +308,11 @@ ConfigBox::ConfigBox(const ConfigDefinitions& defs, std::string_view type)
 
 const ConfigItem& ConfigView::opt(const std::string_view key, int extruder_idx) const
 {
-	for (auto rev_it = m_config_boxes.rbegin(); rev_it != m_config_boxes.rend(); ++rev_it) {
-		if (auto opt = (*rev_it)->has(key))
-			return **opt;
-	}
-	return m_full_config->opt(key, extruder_idx);
+    for (auto rev_it = m_config_boxes.rbegin(); rev_it != m_config_boxes.rend(); ++rev_it) {
+        if (auto opt = (*rev_it)->has(key))
+            return **opt;
+    }
+    return m_full_config->opt(key, extruder_idx);
 }
 
 
@@ -320,8 +320,8 @@ const ConfigItem& ConfigView::opt(const std::string_view key, int extruder_idx) 
 void FullConfig::add(const ConfigBox* box)
 {
     for (const ConfigItem& item : *box) {
-		if (auto it_m = m_multi_items.find(item.name()); it_m != m_multi_items.end() && ! item.is_null())
-			it_m->second = std::vector<const ConfigItem*>(it_m->second.size(), &item);
+        if (auto it_m = m_multi_items.find(item.name()); it_m != m_multi_items.end() && ! item.is_null())
+            it_m->second = std::vector<const ConfigItem*>(it_m->second.size(), &item);
         else {
             auto it_s = m_single_items.find(item.name());
             if (it_s == m_single_items.end() || !item.is_null())
@@ -334,30 +334,30 @@ void FullConfig::add(const ConfigBox* box)
 
 void FullConfig::add(const std::vector<const ConfigBox*> boxes)
 {
-	std::set<std::string> box_types;
+    std::set<std::string> box_types;
 
     for (size_t box_id=0; box_id<boxes.size(); ++box_id) {
         const ConfigBox& box = *boxes[box_id];
-		box_types.insert(std::string(box.type()));
+        box_types.insert(std::string(box.type()));
 
-		for (const ConfigItem& item : box) {
+        for (const ConfigItem& item : box) {
             if (auto it_s = m_single_items.find(item.name()); it_s != m_single_items.end()) {
                 ASSERT(m_multi_items.find(item.name()) == m_multi_items.end());
-				m_multi_items.emplace(item.name(), std::vector<const ConfigItem*>(box_id, it_s->second));
-				m_single_items.erase(it_s);
+                m_multi_items.emplace(item.name(), std::vector<const ConfigItem*>(box_id, it_s->second));
+                m_single_items.erase(it_s);
             }
 
-			auto it_m = m_multi_items.find(item.name());
+            auto it_m = m_multi_items.find(item.name());
             if (it_m == m_multi_items.end())
-				it_m = m_multi_items.emplace(item.name(), std::vector<const ConfigItem*>()).first;
+                it_m = m_multi_items.emplace(item.name(), std::vector<const ConfigItem*>()).first;
 
             if (box_id >= it_m->second.size() || ! item.is_null()) {
-				it_m->second.resize(box_id + 1);
-				it_m->second[box_id] = &item;
+                it_m->second.resize(box_id + 1);
+                it_m->second[box_id] = &item;
             }
         }
     }
-	ASSERT(box_types.size() == 1);
+    ASSERT(box_types.size() == 1);
 }
 
 
@@ -366,12 +366,12 @@ const ConfigItem& FullConfig::opt(const std::string_view key, int extruder_idx) 
     if (extruder_idx == -1) {
         auto it = m_single_items.find(std::string(key));
         ASSERT(it != m_single_items.end());
-		return *it->second;
+        return *it->second;
     } else {
         auto it = m_multi_items.find(std::string(key));
         ASSERT(it != m_multi_items.end());
         ASSERT(extruder_idx < it->second.size());
-		return *(it->second[extruder_idx]);
+        return *(it->second[extruder_idx]);
     }
 }
 

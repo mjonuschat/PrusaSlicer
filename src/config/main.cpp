@@ -8,16 +8,16 @@
 
 static void print(const std::variant<std::string, std::vector<std::string>>& in)
 {
-	if (std::holds_alternative<std::string>(in)) {
-		std::cout << std::get<std::string>(in) << std::endl;
-	}
-	else {
-		const auto& vec = std::get<std::vector<std::string>>(in);
+    if (std::holds_alternative<std::string>(in)) {
+        std::cout << std::get<std::string>(in) << std::endl;
+    }
+    else {
+        const auto& vec = std::get<std::vector<std::string>>(in);
         std::cout << std::endl;
-		for (const auto& str : vec) {
-			std::cout << "  - " << str << std::endl;
-		}
-	}
+        for (const auto& str : vec) {
+            std::cout << "  - " << str << std::endl;
+        }
+    }
 }
 
 

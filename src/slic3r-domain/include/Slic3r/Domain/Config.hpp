@@ -52,7 +52,7 @@ class ConfigItem;
 // including where it is supposed to be.
 struct ConfigItemDef
 {
-	bool operator<(const ConfigItemDef& other) const { return name < other.name; }
+    bool operator<(const ConfigItemDef& other) const { return name < other.name; }
 
     std::string name{};
     ConfigItemType type{ ConfigItemType::None };
@@ -89,14 +89,14 @@ public:
     ConfigDefinitions(const std::vector<std::string>& acceptable_boxes, std::function<void(ConfigDefinitions&)> init_fn);
     const std::vector<ConfigItemDef>& defs() const { return m_defs; }
 
-	// Add a config definition. Calling this after ctr finishes is an error.
+    // Add a config definition. Calling this after ctr finishes is an error.
     ConfigItemDef* add(const std::string_view name, ConfigItemType type);
 
 private:
     void check_valid() const;
     std::vector<ConfigItemDef> m_defs;
     std::vector<std::string> m_acceptable_boxes;
-	bool m_finalized{ false };
+    bool m_finalized{ false };
 };
 
 
@@ -127,9 +127,9 @@ public:
     template<class T> void set(T);
 
     // Getters and setters for specific cases.
-	void set_percent(double value);
+    void set_percent(double value);
     double get_percent() const;
-	bool is_percent() const;
+    bool is_percent() const;
 
     // Enums getters and setters have same signature as the general ones, but they are 
     // defined here so that they can be instantiated for types not known in Config.cpp.
@@ -182,7 +182,7 @@ private:
 class ConfigBox
 {
 public:
-	const ConfigItem& opt(const std::string_view key) const { return const_cast<ConfigBox*>(this)->opt(key); }
+    const ConfigItem& opt(const std::string_view key) const { return const_cast<ConfigBox*>(this)->opt(key); }
     ConfigItem& opt(const std::string_view key);
 
     std::string_view type() const { return m_type; }
@@ -217,7 +217,7 @@ public:
     virtual ~FullConfig() = default;
 
 protected:
-	FullConfig() = default;
+    FullConfig() = default;
     void add(const ConfigBox* box);
     void add(const std::vector<const ConfigBox*> boxes);
 
@@ -251,7 +251,7 @@ public:
     }
 
 private:
-	std::vector<ConfigBox*> m_config_boxes;
+    std::vector<ConfigBox*> m_config_boxes;
     const FullConfig* m_full_config;
 
     const ConfigItem& opt(const std::string_view key, int extruder_idx) const;

@@ -6,47 +6,47 @@
 
 static void serialize_and_append(const ConfigItem& item, nlohmann::json& j)
 {
-	j[item.name()] = nullptr;
-	auto& jval = j.back();
-	if (item.is_null())
-		return;
+    j[item.name()] = nullptr;
+    auto& jval = j.back();
+    if (item.is_null())
+        return;
 
-	switch (item.def().type) {
-		case ConfigItemType::Bool   : jval = item.get<bool>(); break;
-		case ConfigItemType::Int    : jval = item.get<int>(); break;
-	    case ConfigItemType::Double : jval = item.get<double>(); break;
-		case ConfigItemType::String : jval = item.get<std::string>(); break;
-		case ConfigItemType::Enum   : jval = item.get_enum_strings().first; break;
-		
-		case ConfigItemType::Bools   : jval = item.vec<bool>(); break;
-		case ConfigItemType::Ints    : jval = item.vec<int>(); break;
-	    case ConfigItemType::Doubles : jval = item.vec<double>(); break;
-		case ConfigItemType::Strings : jval = item.vec<std::string>(); break;
-		default : PANIC();
-	}
-	return;
+    switch (item.def().type) {
+        case ConfigItemType::Bool   : jval = item.get<bool>(); break;
+        case ConfigItemType::Int    : jval = item.get<int>(); break;
+        case ConfigItemType::Double : jval = item.get<double>(); break;
+        case ConfigItemType::String : jval = item.get<std::string>(); break;
+        case ConfigItemType::Enum   : jval = item.get_enum_strings().first; break;
+        
+        case ConfigItemType::Bools   : jval = item.vec<bool>(); break;
+        case ConfigItemType::Ints    : jval = item.vec<int>(); break;
+        case ConfigItemType::Doubles : jval = item.vec<double>(); break;
+        case ConfigItemType::Strings : jval = item.vec<std::string>(); break;
+        default : PANIC();
+    }
+    return;
 }
 
 
 static std::string trim_quotes(const std::string& json_str)
 {
-	std::string out(json_str);
-	boost::trim_if(out, boost::is_any_of("\""));
-	return out;
+    std::string out(json_str);
+    boost::trim_if(out, boost::is_any_of("\""));
+    return out;
 }
 
 
 std::variant<std::string, std::vector<std::string>> serialize_to_string(const ConfigItem& item)
 {
-	nlohmann::json j;
-	serialize_and_append(item, j);
+    nlohmann::json j;
+    serialize_and_append(item, j);
 
-	ASSERT(! j.empty());
+    ASSERT(! j.empty());
 
     auto it = j.begin(); // Get the first (and assumed to be only) key-value pair
     const auto& value = it.value();
 
-	if (value.is_array()) {
+    if (value.is_array()) {
         std::vector<std::string> serialized_elements;
         for (const auto& element : value) {
             serialized_elements.push_back(trim_quotes(element.dump(-1, ' ', false)));
@@ -60,16 +60,16 @@ std::variant<std::string, std::vector<std::string>> serialize_to_string(const Co
 
 nlohmann::json serialize(const ConfigBox& box)
 {
-	nlohmann::json out;
-	for (const ConfigItem& item : box) {
-		if (item.is_null() && std::find(item.def().belongs_to.begin(),
-			item.def().belongs_to.end(),
-			std::string(box.type()))
-			== item.def().belongs_to.end()) {
-			// Null items are only serialized if they are mandatory for the box type.
-			continue;
-		}
-		serialize_and_append(item, out);
-	}
-	return out;
+    nlohmann::json out;
+    for (const ConfigItem& item : box) {
+        if (item.is_null() && std::find(item.def().belongs_to.begin(),
+            item.def().belongs_to.end(),
+            std::string(box.type()))
+            == item.def().belongs_to.end()) {
+            // Null items are only serialized if they are mandatory for the box type.
+            continue;
+        }
+        serialize_and_append(item, out);
+    }
+    return out;
 }
