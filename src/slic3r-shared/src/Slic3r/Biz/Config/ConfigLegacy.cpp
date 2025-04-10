@@ -44,13 +44,13 @@ void load_from_legacy_file(const std::string& filename, ConfigBox& box)
 		}
 
 		if (opt->type() == coBool && item.type() == ConfigItemType::Bool)
-			item.set_bool(opt->getBool());
+			item.set<bool>(opt->getBool());
 		else if (opt->type() == coInt && item.type() == ConfigItemType::Int)
-			item.set_int(opt->getInt());
+			item.set<int>(opt->getInt());
 		else if (opt->type() == coFloat && item.type() == ConfigItemType::Double)
-			item.set_double(opt->getFloat());
+			item.set<double>(opt->getFloat());
 		else if (opt->type() == coString && item.type() == ConfigItemType::String)
-			item.set_str(static_cast<ConfigOptionString*>(opt)->value);
+			item.set<std::string>(static_cast<ConfigOptionString*>(opt)->value);
 		else if (opt->type() == coEnum && item.type() == ConfigItemType::Enum)
 			convert_enum(opt, item);
 		else {

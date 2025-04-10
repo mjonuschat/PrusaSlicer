@@ -1,6 +1,7 @@
 #pragma once
 
 #include <any>
+#include <concepts>
 #include <exception>
 #include <functional>
 #include <map>
@@ -8,6 +9,7 @@
 #include <set>
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <vector>
 
 #include "Slic3r/Assert.hpp"
@@ -15,6 +17,8 @@
 
 class ConfigItemValue;
 
+template<typename T>
+concept IsEnum = std::is_enum_v<T>;
 
 enum class ConfigItemType
 {
@@ -117,56 +121,42 @@ public:
     const std::string& name() const { return m_name; }
     ConfigItemType type() const { return m_type; }
 
-    // Getters and setters. Assert hard when the type does not match.
-    void set_bool(bool value);
-    bool get_bool() const;
+    // Getters and setters for single config values.
+    // Assert hard when the type does not match.
+    template<class T> T get() const;
+    template<class T> void set(T);
 
-    void set_int(int value);
-    int  get_int() const;
-
-    void set_double(double value);
-    double get_double() const;
-    
+    // Getters and setters for specific cases.
 	void set_percent(double value);
     double get_percent() const;
 	bool is_percent() const;
 
-    void set_str(const std::string& value);
-    const std::string& get_str() const;
-
-    template <typename T>
-    void set_enum(T value)
+    // Enums getters and setters have same signature as the general ones, but they are 
+    // defined here so that they can be instantiated for types not known in Config.cpp.
+    template <IsEnum T>
+    void set(T value)
     {
-        static_assert(std::is_enum_v<T>);
         ASSERT(m_type == ConfigItemType::Enum);
         ASSERT(typeid(T) == def().enum_type.type(), "Enum types mismatch.");
         set_enum_from_int(int(value));
     }
-    template <typename T>
-    T get_enum() const
+    template <IsEnum T>
+    T get() const
     {
-        static_assert(std::is_enum_v<T>);
         ASSERT(m_type == ConfigItemType::Enum);
         ASSERT(typeid(T) == def().enum_type.type(), "Enum types mismatch.");
         return get_enum_as_int();
     }
 
+    // Getter and setter for enums for use with serialized values.
     void set_enum_from_string(std::string_view value);
     std::pair<std::string_view, std::string_view> get_enum_strings() const;
 
+    // Getters and setters for vector config options. They just
+    // expose the underlying vector for now.
+    template<class T> const std::vector<T>& vec() const { return const_cast<ConfigItem*>(this)->vec<T>(); }
+    template<class T> std::vector<T>& vec();
 
-    // Vector setters and getters. Exposes the underlying vector (if the type matches).
-    std::vector<bool>& bools();
-    const std::vector<bool>& bools() const;
-
-    std::vector<int>& ints();
-    const std::vector<int>& ints() const;
-
-    std::vector<double>& doubles();
-    const std::vector<double>& doubles() const;
-
-    std::vector<std::string>& strings();
-    const std::vector<std::string>& strings() const;
     
 private:
     std::string m_name{};
@@ -219,17 +209,11 @@ protected:
 // It is the responsibility of the derived class to ensure that the ConfigBoxes stay alive.
 class FullConfig {
 public:
-	const ConfigItem& opt(const std::string_view key) const {
-		auto it = m_single_items.find(std::string(key));
-        ASSERT(it != m_single_items.end());
-		return *it->second;
-	}
-    const ConfigItem& opt(const std::string_view key, size_t extruder_idx) const {
-        auto it = m_multi_items.find(std::string(key));
-        ASSERT(it != m_multi_items.end());
-        ASSERT(extruder_idx < it->second.size());
-		return *(it->second[extruder_idx]);
+    template<class T>
+    T get(const std::string_view key, int extruder_idx = -1) const {
+        return opt(key, extruder_idx).get<T>();
     }
+
     virtual ~FullConfig() = default;
 
 protected:
@@ -240,6 +224,9 @@ protected:
 private:
     std::map<std::string, const ConfigItem*> m_single_items;
     std::map<std::string, std::vector<const ConfigItem*>> m_multi_items;
+
+    friend class ConfigView; // Ugly, but we can probably live with that.
+    const ConfigItem& opt(const std::string_view key, int extruder_idx) const;
 };
 
 
@@ -249,16 +236,23 @@ private:
 // To be used by backend to extract values for a given object while accounting
 // for possible per-object / per volume overrides. Keeps references to objects
 // used during its construction!
+//
+// IT DOES NOT SUPPORT E.G. MULTIPLE ObjectSettings PER EXTRUDER. DO WE NEED THAT?
 class ConfigView
 {
 public:
     template <typename... Args>
     ConfigView(const FullConfig& fc, Args... args)
         : m_config_boxes{ args... }, m_full_config{fc} {}
-    
-    const ConfigItem& opt(const std::string_view key) const;
+
+    template<class T>
+    T get(const std::string_view key, int extruder_idx = -1) const {
+        return opt(key, extruder_idx).get<T>();
+    }
 
 private:
 	std::vector<ConfigBox*> m_config_boxes;
     const FullConfig* m_full_config;
+
+    const ConfigItem& opt(const std::string_view key, int extruder_idx) const;
 };

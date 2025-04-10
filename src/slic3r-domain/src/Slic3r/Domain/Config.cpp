@@ -1,4 +1,5 @@
 #include "Slic3r/Domain/Config.hpp"
+#include "Slic3r/Assert.hpp"
 
 #include "ConfigItemValue.hpp"
 
@@ -124,58 +125,70 @@ bool ConfigItem::is_null() const
 }
 
 
-
-void ConfigItem::set_bool(bool value)
+template <class T>
+T ConfigItem::get() const
 {
-    ASSERT(m_type == ConfigItemType::Bool);
-    static_cast<ConfigItemValueBool*>(m_data)->set(value);
-}
-
-bool ConfigItem::get_bool() const
-{
-    ASSERT(m_type == ConfigItemType::Bool);
-    return static_cast<ConfigItemValueBool*>(m_data)->get();
-}
-
-
-
-void ConfigItem::set_int(int value)
-{
-    ASSERT(m_type == ConfigItemType::Int);
-    static_cast<ConfigItemValueInt*>(m_data)->set(value);
-}
-
-int  ConfigItem::get_int() const
-{
-    ASSERT(m_type == ConfigItemType::Int);
-    return static_cast<ConfigItemValueInt*>(m_data)->get();
-}
-
-
-
-void ConfigItem::set_double(double value)
-{
-    if (m_type == ConfigItemType::Double)
-        static_cast<ConfigItemValueDouble*>(m_data)->set(value);
-    else if (m_type == ConfigItemType::FloatOrPercent) {
-        static_cast<ConfigItemValueFloatOrPercent*>(m_data)->set(value);
-        static_cast<ConfigItemValueFloatOrPercent*>(m_data)->set_percent(false);
+    if constexpr (std::is_same_v<T, bool>) {
+        ASSERT(m_type == ConfigItemType::Bool);
+        return static_cast<ConfigItemValueBool*>(m_data)->get();
     }
-	else
-		PANIC();
-}
-
-double ConfigItem::get_double() const
-{
-    if (m_type == ConfigItemType::Double)
-		return static_cast<ConfigItemValueDouble*>(m_data)->get();
-	else if (m_type == ConfigItemType::FloatOrPercent) {
-		ASSERT(! static_cast<ConfigItemValueFloatOrPercent*>(m_data)->is_percent());
-		return static_cast<ConfigItemValueFloatOrPercent*>(m_data)->get();
+    if constexpr (std::is_same_v<T, int>) {
+        ASSERT(m_type == ConfigItemType::Int);
+        return static_cast<ConfigItemValueInt*>(m_data)->get();
     }
-	PANIC();
+    if constexpr (std::is_same_v<T, double>) {
+        if (m_type == ConfigItemType::Double)
+		    return static_cast<ConfigItemValueDouble*>(m_data)->get();
+	    else if (m_type == ConfigItemType::FloatOrPercent) {
+		    ASSERT(! static_cast<ConfigItemValueFloatOrPercent*>(m_data)->is_percent());
+		    return static_cast<ConfigItemValueFloatOrPercent*>(m_data)->get();
+        }
+    }
+    if constexpr (std::is_same_v<T, std::string>) {
+        ASSERT(m_type == ConfigItemType::String);
+        return static_cast<ConfigItemValueString*>(m_data)->get();
+    }
+    PANIC();
 	throw std::exception(); // to silence a warning
 }
+
+
+
+template<class T>
+void ConfigItem::set(T value)
+{
+    if constexpr (std::is_same_v<T, bool>) {
+        ASSERT(m_type == ConfigItemType::Bool);
+        static_cast<ConfigItemValueBool*>(m_data)->set(value);
+    }
+    else if constexpr (std::is_same_v<T, int>) {
+        ASSERT(m_type == ConfigItemType::Int);
+        static_cast<ConfigItemValueInt*>(m_data)->set(value);
+    }
+    else if constexpr (std::is_same_v<T, double>) {
+        if (m_type == ConfigItemType::Double)
+            static_cast<ConfigItemValueDouble*>(m_data)->set(value);
+        else if (m_type == ConfigItemType::FloatOrPercent) {
+            static_cast<ConfigItemValueFloatOrPercent*>(m_data)->set(value);
+            static_cast<ConfigItemValueFloatOrPercent*>(m_data)->set_percent(false);
+        } else {
+            PANIC();
+        }
+    }
+    else if constexpr (std::is_same_v<T, std::string>) {
+        ASSERT(m_type == ConfigItemType::String);
+        static_cast<ConfigItemValueString*>(m_data)->set(value);
+    }
+    else if constexpr (std::is_same_v<T, const char*>) {
+        this->set(std::string(value));
+    }
+    else {
+        PANIC();
+        throw std::exception(); // silence warning
+    }
+}
+
+
     
 void ConfigItem::set_percent(double value)
 {
@@ -194,20 +207,6 @@ double ConfigItem::get_percent() const
 bool ConfigItem::is_percent() const {
     ASSERT(m_type == ConfigItemType::FloatOrPercent);
     return static_cast<ConfigItemValueFloatOrPercent*>(m_data)->is_percent();
-}
-
-
-
-void ConfigItem::set_str(const std::string& value)
-{
-    ASSERT(m_type == ConfigItemType::String);
-    static_cast<ConfigItemValueString*>(m_data)->set(value);
-}
-
-const std::string& ConfigItem::get_str() const
-{
-    ASSERT(m_type == ConfigItemType::String);
-    return static_cast<ConfigItemValueString*>(m_data)->get();
 }
 
 
@@ -245,18 +244,28 @@ int ConfigItem::get_enum_as_int() const
 
 
 
-std::vector<bool>& ConfigItem::bools() { ASSERT(m_type == ConfigItemType::Bools); return static_cast<ConfigItemValueBools*>(m_data)->get(); }
-const std::vector<bool>& ConfigItem::bools() const { return const_cast<ConfigItem*>(this)->bools(); }
-
-std::vector<int>& ConfigItem::ints() { ASSERT(m_type == ConfigItemType::Ints); return static_cast<ConfigItemValueInts*>(m_data)->get(); }
-const std::vector<int>& ConfigItem::ints() const { return const_cast<ConfigItem*>(this)->ints(); }
-
-std::vector<double>& ConfigItem::doubles() { ASSERT(m_type == ConfigItemType::Doubles); return static_cast<ConfigItemValueDoubles*>(m_data)->get(); }
-const std::vector<double>& ConfigItem::doubles() const { return const_cast<ConfigItem*>(this)->doubles(); }
-
-std::vector<std::string>& ConfigItem::strings() { ASSERT(m_type == ConfigItemType::Strings); return static_cast<ConfigItemValueStrings*>(m_data)->get(); }
-const std::vector<std::string>& ConfigItem::strings() const { return const_cast<ConfigItem*>(this)->strings(); }
-
+template<class T>
+std::vector<T>& ConfigItem::vec()
+{
+    if constexpr (std::is_same_v<T, bool>) {
+        ASSERT(m_type == ConfigItemType::Bools);
+        return static_cast<ConfigItemValueBools*>(m_data)->get();
+    }
+    else if constexpr (std::is_same_v<T, int>) {
+        ASSERT(m_type == ConfigItemType::Ints);
+        return static_cast<ConfigItemValueInts*>(m_data)->get();
+    }
+    else if constexpr (std::is_same_v<T, double>) {
+        ASSERT(m_type == ConfigItemType::Doubles);
+        return static_cast<ConfigItemValueDoubles*>(m_data)->get();
+    }
+    else if constexpr (std::is_same_v<T, std::string>) {
+        ASSERT(m_type == ConfigItemType::Strings);
+        return static_cast<ConfigItemValueStrings*>(m_data)->get();
+    }
+    PANIC();
+    throw std::exception(); // silence warning
+}
 
 
 
@@ -297,13 +306,13 @@ ConfigBox::ConfigBox(const ConfigDefinitions& defs, std::string_view type)
 
 
 
-const ConfigItem& ConfigView::opt(const std::string_view key) const
+const ConfigItem& ConfigView::opt(const std::string_view key, int extruder_idx) const
 {
 	for (auto rev_it = m_config_boxes.rbegin(); rev_it != m_config_boxes.rend(); ++rev_it) {
 		if (auto opt = (*rev_it)->has(key))
 			return **opt;
 	}
-	return m_full_config->opt(key);
+	return m_full_config->opt(key, extruder_idx);
 }
 
 
@@ -350,3 +359,39 @@ void FullConfig::add(const std::vector<const ConfigBox*> boxes)
     }
 	ASSERT(box_types.size() == 1);
 }
+
+
+
+const ConfigItem& FullConfig::opt(const std::string_view key, int extruder_idx) const {
+    if (extruder_idx == -1) {
+        auto it = m_single_items.find(std::string(key));
+        ASSERT(it != m_single_items.end());
+		return *it->second;
+    } else {
+        auto it = m_multi_items.find(std::string(key));
+        ASSERT(it != m_multi_items.end());
+        ASSERT(extruder_idx < it->second.size());
+		return *(it->second[extruder_idx]);
+    }
+}
+
+
+
+// Explicit instantiations for getters.
+template bool ConfigItem::get<bool>() const;
+template int ConfigItem::get<int>() const;
+template double ConfigItem::get<double>() const;
+template std::string ConfigItem::get<std::string>() const;
+
+// Explicit instantiations for setters.
+template void ConfigItem::set(bool);
+template void ConfigItem::set(int);
+template void ConfigItem::set(double);
+template void ConfigItem::set(std::string);
+template void ConfigItem::set(const char*);
+
+// And the respective explicit instantiations.
+template std::vector<bool>& ConfigItem::vec();
+template std::vector<int>& ConfigItem::vec();
+template std::vector<double>& ConfigItem::vec();
+template std::vector<std::string>& ConfigItem::vec();

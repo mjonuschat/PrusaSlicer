@@ -12,16 +12,16 @@ static void serialize_and_append(const ConfigItem& item, nlohmann::json& j)
 		return;
 
 	switch (item.def().type) {
-		case ConfigItemType::Bool   : jval = item.get_bool(); break;
-		case ConfigItemType::Int    : jval = item.get_int(); break;
-	    case ConfigItemType::Double : jval = item.get_double(); break;
-		case ConfigItemType::String : jval = item.get_str(); break;
+		case ConfigItemType::Bool   : jval = item.get<bool>(); break;
+		case ConfigItemType::Int    : jval = item.get<int>(); break;
+	    case ConfigItemType::Double : jval = item.get<double>(); break;
+		case ConfigItemType::String : jval = item.get<std::string>(); break;
 		case ConfigItemType::Enum   : jval = item.get_enum_strings().first; break;
 		
-		case ConfigItemType::Bools   : jval = item.bools(); break;
-		case ConfigItemType::Ints    : jval = item.ints(); break;
-	    case ConfigItemType::Doubles : jval = item.doubles(); break;
-		case ConfigItemType::Strings : jval = item.strings(); break;
+		case ConfigItemType::Bools   : jval = item.vec<bool>(); break;
+		case ConfigItemType::Ints    : jval = item.vec<int>(); break;
+	    case ConfigItemType::Doubles : jval = item.vec<double>(); break;
+		case ConfigItemType::Strings : jval = item.vec<std::string>(); break;
 		default : PANIC();
 	}
 	return;
