@@ -1,5 +1,7 @@
 #include "Slic3r/Domain/Config.hpp"
 
+#include "ConfigItemValue.hpp"
+
 #include <algorithm>
 
 
@@ -110,6 +112,47 @@ ConfigItem& ConfigItem::operator=(const ConfigItem& other) {
 
 
 
+void ConfigItem::set_null(bool null)
+{
+    ASSERT(m_is_nullable);
+    m_data->set_null(null);
+}
+
+bool ConfigItem::is_null() const
+{
+    return m_data->get_null();
+}
+
+
+
+void ConfigItem::set_bool(bool value)
+{
+    ASSERT(m_type == ConfigItemType::Bool);
+    static_cast<ConfigItemValueBool*>(m_data)->set(value);
+}
+
+bool ConfigItem::get_bool() const
+{
+    ASSERT(m_type == ConfigItemType::Bool);
+    return static_cast<ConfigItemValueBool*>(m_data)->get();
+}
+
+
+
+void ConfigItem::set_int(int value)
+{
+    ASSERT(m_type == ConfigItemType::Int);
+    static_cast<ConfigItemValueInt*>(m_data)->set(value);
+}
+
+int  ConfigItem::get_int() const
+{
+    ASSERT(m_type == ConfigItemType::Int);
+    return static_cast<ConfigItemValueInt*>(m_data)->get();
+}
+
+
+
 void ConfigItem::set_double(double value)
 {
     if (m_type == ConfigItemType::Double)
@@ -155,6 +198,20 @@ bool ConfigItem::is_percent() const {
 
 
 
+void ConfigItem::set_str(const std::string& value)
+{
+    ASSERT(m_type == ConfigItemType::String);
+    static_cast<ConfigItemValueString*>(m_data)->set(value);
+}
+
+const std::string& ConfigItem::get_str() const
+{
+    ASSERT(m_type == ConfigItemType::String);
+    return static_cast<ConfigItemValueString*>(m_data)->get();
+}
+
+
+
 void ConfigItem::set_enum_from_string(std::string_view value) {
     ASSERT(m_type == ConfigItemType::Enum);
     for (const EnumValueDef& evd : def().enum_values) {
@@ -166,8 +223,6 @@ void ConfigItem::set_enum_from_string(std::string_view value) {
     PANIC();
 }
 
-
-
 std::pair<std::string_view, std::string_view> ConfigItem::get_enum_strings() const {
     for (const EnumValueDef& evd : def().enum_values)
         if (evd.enum_value == static_cast<ConfigItemValueEnum*>(m_data)->get())
@@ -175,6 +230,33 @@ std::pair<std::string_view, std::string_view> ConfigItem::get_enum_strings() con
     PANIC();
     throw std::exception();
 }
+
+void ConfigItem::set_enum_from_int(int value)
+{
+    ASSERT(std::find_if(def().enum_values.begin(), def().enum_values.end(),
+        [value](const EnumValueDef& evd) { return evd.enum_value == value; }) != def().enum_values.end());
+    static_cast<ConfigItemValueInt*>(m_data)->set(int(value));
+}
+
+int ConfigItem::get_enum_as_int() const
+{
+    return static_cast<int>(static_cast<ConfigItemValueInt*>(m_data)->get());
+}
+
+
+
+std::vector<bool>& ConfigItem::bools() { ASSERT(m_type == ConfigItemType::Bools); return static_cast<ConfigItemValueBools*>(m_data)->get(); }
+const std::vector<bool>& ConfigItem::bools() const { return const_cast<ConfigItem*>(this)->bools(); }
+
+std::vector<int>& ConfigItem::ints() { ASSERT(m_type == ConfigItemType::Ints); return static_cast<ConfigItemValueInts*>(m_data)->get(); }
+const std::vector<int>& ConfigItem::ints() const { return const_cast<ConfigItem*>(this)->ints(); }
+
+std::vector<double>& ConfigItem::doubles() { ASSERT(m_type == ConfigItemType::Doubles); return static_cast<ConfigItemValueDoubles*>(m_data)->get(); }
+const std::vector<double>& ConfigItem::doubles() const { return const_cast<ConfigItem*>(this)->doubles(); }
+
+std::vector<std::string>& ConfigItem::strings() { ASSERT(m_type == ConfigItemType::Strings); return static_cast<ConfigItemValueStrings*>(m_data)->get(); }
+const std::vector<std::string>& ConfigItem::strings() const { return const_cast<ConfigItem*>(this)->strings(); }
+
 
 
 

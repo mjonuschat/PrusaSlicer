@@ -10,12 +10,7 @@
 #include <string_view>
 #include <vector>
 
-
-inline void ASSERT(bool x) { if (!x) throw std::exception(); } // TODO - libassert
-inline void ASSERT(bool x, const char*) { if (!x) throw std::exception(); } // TODO - libassert
-inline void PANIC() { throw std::exception(); } // TODO - libassert
-
-#include "../../../src/Slic3r/Domain/ConfigItemValue.hpp"
+#include "Slic3r/Assert.hpp"
 
 
 class ConfigItemValue;
@@ -30,7 +25,7 @@ enum class ConfigItemType
     String,
     Enum,
     FloatOrPercent,
-    Bools, // Vector types follow, Bools MUST be first.
+    Bools, // Vector types follow, Bools MUST be first (see ConfigItem::is_vector)
     Ints,
     Doubles,
     Strings
@@ -117,20 +112,17 @@ public:
     const ConfigItemDef& def() const { ASSERT(m_def); return *m_def; }
 
     bool is_vector() const { return m_type >= ConfigItemType::Bools; }
-    void set_null(bool null) {
-        ASSERT(m_is_nullable);
-        m_data->set_null(null);
-    }
-    bool is_null() const { return m_data->get_null(); }
+    void set_null(bool null);
+    bool is_null() const;
     const std::string& name() const { return m_name; }
     ConfigItemType type() const { return m_type; }
 
     // Getters and setters. Assert hard when the type does not match.
-    void set_bool(bool value) { ASSERT(m_type == ConfigItemType::Bool); static_cast<ConfigItemValueBool*>(m_data)->set(value); }
-    bool get_bool() const { ASSERT(m_type == ConfigItemType::Bool); return static_cast<ConfigItemValueBool*>(m_data)->get();}
+    void set_bool(bool value);
+    bool get_bool() const;
 
-    void set_int(int value) { ASSERT(m_type == ConfigItemType::Int); static_cast<ConfigItemValueInt*>(m_data)->set(value); }
-    int  get_int() const { ASSERT(m_type == ConfigItemType::Int); return static_cast<ConfigItemValueInt*>(m_data)->get(); }
+    void set_int(int value);
+    int  get_int() const;
 
     void set_double(double value);
     double get_double() const;
@@ -139,8 +131,8 @@ public:
     double get_percent() const;
 	bool is_percent() const;
 
-    void set_str(const std::string& value) { ASSERT(m_type == ConfigItemType::String); static_cast<ConfigItemValueString*>(m_data)->set(value); }
-    const std::string& get_str() const { ASSERT(m_type == ConfigItemType::String); return static_cast<ConfigItemValueString*>(m_data)->get(); }
+    void set_str(const std::string& value);
+    const std::string& get_str() const;
 
     template <typename T>
     void set_enum(T value)
@@ -148,7 +140,7 @@ public:
         static_assert(std::is_enum_v<T>);
         ASSERT(m_type == ConfigItemType::Enum);
         ASSERT(typeid(T) == def().enum_type.type(), "Enum types mismatch.");
-        static_cast<ConfigItemValueInt*>(m_data)->set(int(value));
+        set_enum_from_int(int(value));
     }
     template <typename T>
     T get_enum() const
@@ -156,26 +148,25 @@ public:
         static_assert(std::is_enum_v<T>);
         ASSERT(m_type == ConfigItemType::Enum);
         ASSERT(typeid(T) == def().enum_type.type(), "Enum types mismatch.");
-        return static_cast<T>(static_cast<ConfigItemValueInt*>(m_data)->get());
+        return get_enum_as_int();
     }
+
     void set_enum_from_string(std::string_view value);
     std::pair<std::string_view, std::string_view> get_enum_strings() const;
 
 
-
-
     // Vector setters and getters. Exposes the underlying vector (if the type matches).
-    std::vector<bool>& bools() { ASSERT(m_type == ConfigItemType::Bools); return static_cast<ConfigItemValueBools*>(m_data)->get(); }
-    const std::vector<bool>& bools() const { return const_cast<ConfigItem*>(this)->bools(); }
+    std::vector<bool>& bools();
+    const std::vector<bool>& bools() const;
 
-    std::vector<int>& ints() { ASSERT(m_type == ConfigItemType::Ints); return static_cast<ConfigItemValueInts*>(m_data)->get(); }
-    const std::vector<int>& ints() const { return const_cast<ConfigItem*>(this)->ints(); }
+    std::vector<int>& ints();
+    const std::vector<int>& ints() const;
 
-    std::vector<double>& doubles() { ASSERT(m_type == ConfigItemType::Doubles); return static_cast<ConfigItemValueDoubles*>(m_data)->get(); }
-    const std::vector<double>& doubles() const { return const_cast<ConfigItem*>(this)->doubles(); }
+    std::vector<double>& doubles();
+    const std::vector<double>& doubles() const;
 
-    std::vector<std::string>& strings() { ASSERT(m_type == ConfigItemType::Strings); return static_cast<ConfigItemValueStrings*>(m_data)->get(); }
-    const std::vector<std::string>& strings() const { return const_cast<ConfigItem*>(this)->strings(); }
+    std::vector<std::string>& strings();
+    const std::vector<std::string>& strings() const;
     
 private:
     std::string m_name{};
@@ -183,6 +174,11 @@ private:
     bool m_is_nullable{ false };
     const ConfigItemDef* m_def{ nullptr };
     ConfigItemValue* m_data{ nullptr };
+
+    // Private setter/getter to avoid leaking implementation into header
+    // through set_enum/get_enum templates.
+    void set_enum_from_int(int value);
+    int get_enum_as_int() const;
 };
 
 
