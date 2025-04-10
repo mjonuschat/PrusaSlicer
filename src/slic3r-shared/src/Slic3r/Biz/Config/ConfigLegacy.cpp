@@ -18,6 +18,8 @@ static void convert_enum(const Slic3rLegacy::ConfigOption* co, ConfigItem& item)
 
 void load_from_legacy_file(const std::string& filename, ConfigBox& box)
 {
+    PANIC("This function is not finished. Don't use it yet.");
+
     using namespace Slic3rLegacy;
     DynamicPrintConfig cfg;
     ForwardCompatibilitySubstitutionRule substitutions_ctxt = ForwardCompatibilitySubstitutionRule::EnableSilent;

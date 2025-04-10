@@ -34,7 +34,7 @@ int main()
     os.opt("travel_lift_before_obstacles").set<bool>(true);
     ps.opt("gcode_flavor").set_enum_from_string("two");
 
-    load_from_legacy_file("test.ini", ps);
+    //load_from_legacy_file("test.ini", ps);
 
 
     FullConfigFDM fullc(printer_s, std::vector<FilamentSettings*>{&fs}, ps, std::vector<ToolPrintSettings*>{&tps});    
