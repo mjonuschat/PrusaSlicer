@@ -1632,9 +1632,10 @@ void Print::cleanup()
 
 void Print::slice() {
     this->process();
+    Biz::libpgcode::ProcessorResult result{this->process_gcode(nullptr)};
     this->finalize();
     this->cleanup();
-    m_on_fdm_result({this->process_gcode(nullptr)});
+    m_on_fdm_result(std::move(result));
 }
 
 bool Print::is_shared_print_object_step_valid_unguarded(SpanOfConstPtrs<PrintObject> print_objects, PrintObjectStep print_object_step)

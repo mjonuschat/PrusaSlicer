@@ -532,8 +532,8 @@ private: // Prevents erroneous use by other classes.
 public:
     using OnFdmResult = std::function<void(Biz::libpgcode::ProcessorResult&&)>;
     using OnWipeTowerGeometry = std::function<void(Biz::Print::WipeTowerGeometry&&)>;
-    Print(){}
-    Print(OnFdmResult& on_fdm_result, OnWipeTowerGeometry& on_wipe_tower_geometry);
+    Print();
+    Print(const OnFdmResult& on_fdm_result, const OnWipeTowerGeometry& on_wipe_tower_geometry);
 	virtual ~Print() { this->clear(); }
 
 	PrinterTechnology	technology() const noexcept override { return ptFFF; }

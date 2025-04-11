@@ -64,7 +64,12 @@ template class PrintState<PrintObjectStep, posCount>;
 PrintRegion::PrintRegion(const PrintRegionConfig &config) : PrintRegion(config, config.hash()) {}
 PrintRegion::PrintRegion(PrintRegionConfig &&config) : PrintRegion(std::move(config), config.hash()) {}
 
-Print::Print(OnFdmResult& on_fdm_result, OnWipeTowerGeometry& on_wipe_tower_geometry)
+Print::Print() 
+    : m_on_fdm_result([](Biz::libpgcode::ProcessorResult&&) {})
+    , m_on_wipe_tower_geometry([](Biz::Print::WipeTowerGeometry&&) {})
+{}
+
+Print::Print(const OnFdmResult& on_fdm_result, const OnWipeTowerGeometry& on_wipe_tower_geometry)
     : m_on_fdm_result(on_fdm_result), m_on_wipe_tower_geometry(on_wipe_tower_geometry)
 {}
 

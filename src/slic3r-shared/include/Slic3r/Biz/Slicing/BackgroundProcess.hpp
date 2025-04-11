@@ -129,16 +129,15 @@ public:
 private:
     Slic3r::PrinterTechnology m_printer_technology;
     std::unique_ptr<Print::IPrint> m_print;
-    IProcessCallbacks& m_callbacks;
+    std::function<void(Status)> m_on_status;
+    std::function<Status()> m_get_status;
     SlicingId m_id;
 
-    std::function<Status()> m_get_status;
     JThread::JThread m_thread;
     JThread::JThread m_helper_thread;
 
     void queue_action(const std::function<void()>& action);
-    void on_status(const Status status);
-    void hook_callbacks(Print::IPrint* print);
+    
 
     // Update and slice must not run at the same time.
     std::mutex m_mutex;
