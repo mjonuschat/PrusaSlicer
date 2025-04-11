@@ -1,5 +1,7 @@
 #include "Slic3r/App/Scene/GizmoManager.hpp"
 
+#include "Slic3r/App/Render/ScopedDebugGroup.hpp"
+
 #if DEBUG_GIZMO_MANAGER
 #include "Slic3r/TypeInfo.hpp"
 #include "Slic3r/Log.hpp"
@@ -103,6 +105,7 @@ void GizmoManager::prepare_cycle()
 
 void GizmoManager::render_scene(Render::CommandBuffer& cmd_buffer)
 {
+    Render::ScopedDebugGroup event_gizmo_manager("Gizmo Manager", cmd_buffer);
     // Most gizmos will render on top of scene, so disable depth test here so gizmos shouldn't care
     cmd_buffer.set_depth_test_enabled(false);
     for (auto* g : m_in_cycle_gizmos)

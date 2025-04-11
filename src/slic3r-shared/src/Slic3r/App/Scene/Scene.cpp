@@ -1,6 +1,7 @@
 #include "Slic3r/App/Scene/Scene.hpp"
 #include "Slic3r/App/Render/Device.hpp"
 #include "Slic3r/App/Render/Material.hpp"
+#include "Slic3r/App/Render/ScopedDebugGroup.hpp"
 #include "Slic3r/App/Scene/MeshRenderNodeComponent.hpp"
 #include "Slic3r/App/Scene/NodeVisitor.hpp"
 
@@ -146,6 +147,7 @@ Render::Material resolve_material(const Node& n)
 
 void Scene::render(Render::CommandBuffer& cmd_buffer, ISceneRenderCustomizer* customizer) const
 {
+    Render::ScopedDebugGroup event_scene_render("Scene", cmd_buffer);
     Node::ConstNodeList nodes;
     m_root.query([](auto n){ return n->has_render_component();}, nodes);
 

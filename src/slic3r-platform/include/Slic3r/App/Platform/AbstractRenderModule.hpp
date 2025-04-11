@@ -24,8 +24,8 @@ class AbstractRenderModule
 public:
     virtual ~AbstractRenderModule() = default;
 
-    virtual void render_scene() = 0;
-    virtual void render_imgui() = 0;
+    virtual void render_scene(Render::CommandBuffer& cmd_buffer) = 0;
+    virtual void render_imgui(Render::CommandBuffer& cmd_buffer) = 0;
 
     virtual void on_scene_mouse_event(const MouseEvent& e);
     virtual void on_scene_keyboard_event(const KeyboardEvent& e);

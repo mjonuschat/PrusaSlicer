@@ -2,6 +2,7 @@
 #include "Slic3r/App/Scene/NodeBuilder.hpp"
 #include "Slic3r/App/Scene/NodeVisitor.hpp"
 #include "Slic3r/App/Render/Device.hpp"
+#include "Slic3r/App/Render/ScopedDebugGroup.hpp"
 #include "Slic3r/App/Render/GeometryBuilder.hpp"
 #include "Slic3r/App/Plater/PlaterCameraGizmo.hpp"
 #include "Slic3r/App/Plater/SceneNodeTag.hpp"
@@ -348,20 +349,20 @@ void PlaterRenderModule::init_gizmos()
 }
 
 
-void PlaterRenderModule::render_scene()
+void PlaterRenderModule::render_scene(Render::CommandBuffer& cmd_buffer)
 {
+    Render::ScopedDebugGroup event_imgui_render("Plater Render", cmd_buffer);
     m_device->load_state();
-    auto cmd_buffer = m_device->create_command_buffer();
 
-    cmd_buffer->set_viewport(Render::Rect::from(0, 0, m_screen_info));
-    cmd_buffer->set_clear_values({0.61f, 0.61f, 0.61f, 1.00f});
-    cmd_buffer->clear_buffers(true, true);
+    cmd_buffer.set_viewport(Render::Rect::from(0, 0, m_screen_info));
+    cmd_buffer.set_clear_values({0.61f, 0.61f, 0.61f, 1.00f});
+    cmd_buffer.clear_buffers(true, true);
 
-    m_scene_presenter->render_scene(*cmd_buffer);
+    m_scene_presenter->render_scene(cmd_buffer);
 
-    m_gizmo_manager->render_scene(*cmd_buffer);
+    m_gizmo_manager->render_scene(cmd_buffer);
 
-    cmd_buffer->submit();
+    cmd_buffer.submit();
 }
 
 class ImguiVecRender
@@ -868,7 +869,7 @@ static void render_imgui_debug_camera(const Scene::Camera& camera, const Scene::
 }
 #endif // ENABLED_DEBUG_CAMERA
 
-void PlaterRenderModule::render_imgui()
+void PlaterRenderModule::render_imgui(Render::CommandBuffer& cmd_buffer)
 {
     if (!m_scene_presenter->project_ready())
         return;

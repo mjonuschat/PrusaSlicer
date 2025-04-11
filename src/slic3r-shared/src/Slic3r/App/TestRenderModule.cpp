@@ -187,7 +187,7 @@ void TestRenderModule::init_scene()
     m_scene->camera_trackball().set_distance_to_target(30);
 }
 
-void TestRenderModule::render_scene()
+void TestRenderModule::render_scene(Render::CommandBuffer& cmd_buffer)
 {
     m_device->load_state();
 
@@ -306,7 +306,7 @@ void TestRenderModule::render_object_hud(const Scene::Node& n, const Eigen::Alig
     ImGui::PopStyleVar(2);
 }
 
-void TestRenderModule::render_imgui()
+void TestRenderModule::render_imgui(Render::CommandBuffer& cmd_buffer)
 {
     if (ImGui::Begin("Slicer")) {
         ImGui::Checkbox("Low level rendering", &m_render_low);

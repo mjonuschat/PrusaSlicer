@@ -3,6 +3,7 @@
 #include "Slic3r/App/Render/Device.hpp"
 #include "Slic3r/App/Scene/Node.hpp"
 #include "Slic3r/App/Render/GeometryBuilder.hpp"
+#include "Slic3r/App/Render/ScopedDebugGroup.hpp"
 
 namespace Slic3r::App::Plater {
 
@@ -234,6 +235,7 @@ Scene::GizmoActivationState QuickSelectGizmo::on_mouse(Scene::GizmoEventContext&
 
 void QuickSelectGizmo::render_scene(Render::CommandBuffer& cmd_buffer)
 {
+    Render::ScopedDebugGroup event_gizmo_manager("Quick Select Gizmo", cmd_buffer);
     m_rectangle_selection.render(cmd_buffer);
 }
 

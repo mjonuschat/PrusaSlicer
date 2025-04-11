@@ -64,6 +64,7 @@ Texture* TextureManager::create_empty(const std::string& name, PixelFormat pf, s
         data.resize(w * h * pixel_format_bytes_per_pixel(pf), 0x7f);
         tex->set_data(pf, 0, w, h, data.data());
     }
+    tex->set_object_name(name);
     m_textures[name] = std::move(tex);
     return m_textures[name].get();
 }

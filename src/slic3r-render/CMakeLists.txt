@@ -61,6 +61,10 @@ set(SLIC3R_RENDER_FILES
         src/Slic3r/App/Render/Material.cpp
         include/Slic3r/App/Render/DrawCommand.hpp
         include/Slic3r/App/Render/DynamicGeometry.hpp
+        include/Slic3r/App/Render/ScopedDebugGroup.hpp
+        src/Slic3r/App/Render/ScopedDebugGroup.cpp
+
+
 
         include/Slic3r/Memory.hpp
 )

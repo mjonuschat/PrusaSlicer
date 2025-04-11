@@ -22,8 +22,8 @@ public:
     {
     }
 
-    void render_scene() override;
-    void render_imgui() override;
+    void render_scene(Render::CommandBuffer& cmd_buffer) override;
+    void render_imgui(Render::CommandBuffer& cmd_buffer) override;
     void on_scene_mouse_event(const Platform::MouseEvent& e) override;
     void on_scene_keyboard_event(const Platform::KeyboardEvent& e) override;
 
