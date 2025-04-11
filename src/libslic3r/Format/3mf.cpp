@@ -3905,7 +3905,7 @@ bool _3MF_Exporter::_add_wipe_tower_information_file_to_archive( mz_zip_archive&
     pt::ptree tree;
 
     size_t bed_idx = 0;
-    for (const ModelWipeTower& wipe_tower : model.get_wipe_tower_vector()) {
+    for (const Domain::ModelWipeTower& wipe_tower : model.get_wipe_tower_vector()) {
         pt::ptree& main_tree = tree.add("wipe_tower_information", "");
 
         main_tree.put("<xmlattr>.bed_idx", bed_idx);

@@ -26,6 +26,7 @@
 #include "Slic3r/Domain/EmbossShape.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleSelector.hpp"
 #include "Slic3r/Domain/TriangleSelector.hpp"
+#include "Slic3r/Domain/Model.hpp"
 
 #include <map>
 #include <memory>
@@ -52,7 +53,6 @@ class ModelInstance;
 class ModelMaterial;
 class ModelObject;
 class ModelVolume;
-class ModelWipeTower;
 class Print;
 class SLAPrint;
 
@@ -1185,28 +1185,6 @@ private:
     }
 };
 
-
-// Note: The following class does not have to inherit from ObjectID, it is currently
-// only used for arrangement. It might be good to refactor this in future.
-class ModelWipeTower
-{
-public:
-	Vec2d		position = Vec2d(180., 140.);
-	double 		rotation = 0.;
-
-    bool operator==(const ModelWipeTower& other) const { return position == other.position && rotation == other.rotation; }
-    bool operator!=(const ModelWipeTower& other) const { return !((*this) == other); }
-
-    // Assignment operator does not touch the ID!
-    ModelWipeTower& operator=(const ModelWipeTower& rhs) { position = rhs.position; rotation = rhs.rotation; return *this; }
-
-    explicit ModelWipeTower() {}
-	explicit ModelWipeTower(const ModelWipeTower &cfg) = default;
-
-    // For serialization / deserialization of ModelWipeTower composed into another class into the Undo / Redo stack as a separate object.
-    template<typename Archive> void serialize(Archive &ar) { ar(position, rotation); }
-};
-
 // The print bed content.
 // Description of a triangular model with multiple materials, multiple instances with various affine transformations
 // and with multiple modifier meshes.
@@ -1221,12 +1199,12 @@ public:
     // Objects are owned by a model. Each model may have multiple instances, each instance having its own transformation (shift, scale, rotation).
     ModelObjectPtrs     objects;
 
-    ModelWipeTower& wipe_tower();
-    const ModelWipeTower& wipe_tower() const;
-    const ModelWipeTower& wipe_tower(const int bed_index) const;
-    ModelWipeTower& wipe_tower(const int bed_index);
-    std::vector<ModelWipeTower>& get_wipe_tower_vector() { return wipe_tower_vector; }
-    const std::vector<ModelWipeTower>& get_wipe_tower_vector() const { return wipe_tower_vector; }
+    Domain::ModelWipeTower& wipe_tower();
+    const Domain::ModelWipeTower& wipe_tower() const;
+    const Domain::ModelWipeTower& wipe_tower(const int bed_index) const;
+    Domain::ModelWipeTower& wipe_tower(const int bed_index);
+    std::vector<Domain::ModelWipeTower>& get_wipe_tower_vector() { return wipe_tower_vector; }
+    const std::vector<Domain::ModelWipeTower>& get_wipe_tower_vector() const { return wipe_tower_vector; }
 
     Domain::CustomGCode::Info& custom_gcode_per_print_z();
     const Domain::CustomGCode::Info& custom_gcode_per_print_z() const;
@@ -1234,7 +1212,7 @@ public:
 
 private:
     // Wipe tower object.
-    std::vector<ModelWipeTower> wipe_tower_vector = std::vector<ModelWipeTower>(MAX_NUMBER_OF_BEDS);
+    std::vector<Domain::ModelWipeTower> wipe_tower_vector = std::vector<Domain::ModelWipeTower>(MAX_NUMBER_OF_BEDS);
 
     // Extensions for color print
     std::vector<Domain::CustomGCode::Info> custom_gcode_per_print_z_vector = std::vector<Domain::CustomGCode::Info>(MAX_NUMBER_OF_BEDS);
