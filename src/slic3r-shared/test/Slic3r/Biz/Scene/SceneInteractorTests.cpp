@@ -96,12 +96,12 @@ TEST_CASE("Scene Interactor Bed Tracking")
         //   [1]        Unselected instance
         REQUIRE(bed_instances.size() == 2);
         REQUIRE(p.unplaced_model_instances().empty());
-        REQUIRE(bed_instances[0]->model_instances()[0]->id().id == first_el_ref.instance_id);
-        REQUIRE(bed_instances[0]->model_instances().size() == 1);
-        REQUIRE(bed_instances[1]->model_instances().empty());
+        REQUIRE(bed_instances[0]->model_instances[0]->id().id == first_el_ref.instance_id);
+        REQUIRE(bed_instances[0]->model_instances.size() == 1);
+        REQUIRE(bed_instances[1]->model_instances.empty());
     };
 
-    Vec3d bed_pitch = bed_instances[1]->transformation().get_offset() - bed_instances[0]->transformation().get_offset();
+    Vec3d bed_pitch = bed_instances[1]->transformation.get_offset() - bed_instances[0]->transformation.get_offset();
     const auto bi2_id = bed_instances[1]->id().id;
 
     {
@@ -123,9 +123,9 @@ TEST_CASE("Scene Interactor Bed Tracking")
         //    o----->
         //         +x
         REQUIRE(p.unplaced_model_instances().empty());
-        REQUIRE(bed_instances[0]->model_instances().empty());
-        REQUIRE(bed_instances[1]->model_instances().size() == 1);
-        REQUIRE(bed_instances[1]->model_instances()[0]->id().id == first_el_ref.instance_id);
+        REQUIRE(bed_instances[0]->model_instances.empty());
+        REQUIRE(bed_instances[1]->model_instances.size() == 1);
+        REQUIRE(bed_instances[1]->model_instances[0]->id().id == first_el_ref.instance_id);
     }
     {
         // Outside of second bed
@@ -145,8 +145,8 @@ TEST_CASE("Scene Interactor Bed Tracking")
         //         +x
         REQUIRE(p.unplaced_model_instances().size() == 1);
         REQUIRE(p.unplaced_model_instances()[0]->id().id == first_el_ref.instance_id);
-        REQUIRE(bed_instances[0]->model_instances().empty());
-        REQUIRE(bed_instances[1]->model_instances().empty());
+        REQUIRE(bed_instances[0]->model_instances.empty());
+        REQUIRE(bed_instances[1]->model_instances.empty());
     }
 
     {
@@ -183,7 +183,7 @@ TEST_CASE("Scene Interactor Bed Tracking")
     auto old_bed_two_id = bed_instances[1]->id().id;
     {
         // after removing middle bed
-        Transform3d bed_xform = bed_instances[1]->transformation().get_matrix();
+        Transform3d bed_xform = bed_instances[1]->transformation.get_matrix();
         REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(_))
             .WITH(_1.instance_id == bi3_id);
         REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_removed(_))
@@ -198,12 +198,12 @@ TEST_CASE("Scene Interactor Bed Tracking")
         //         +x
         REQUIRE(bed_instances.size() == 2);
         REQUIRE(bed_instances[1]->id().id != old_bed_two_id);
-        REQUIRE(bed_instances[1]->transformation().get_matrix().isApprox(bed_xform));
+        REQUIRE(bed_instances[1]->transformation.get_matrix().isApprox(bed_xform));
 
         REQUIRE(p.unplaced_model_instances().empty());
-        REQUIRE(bed_instances[0]->model_instances().empty());
-        REQUIRE(bed_instances[1]->model_instances().size() == 1);
-        REQUIRE(bed_instances[1]->model_instances()[0]->id().id == first_el_ref.instance_id);
+        REQUIRE(bed_instances[0]->model_instances.empty());
+        REQUIRE(bed_instances[1]->model_instances.size() == 1);
+        REQUIRE(bed_instances[1]->model_instances[0]->id().id == first_el_ref.instance_id);
     }
     {
         // after removing bed number two again
@@ -221,7 +221,7 @@ TEST_CASE("Scene Interactor Bed Tracking")
         REQUIRE(bed_instances.size() == 1);
         REQUIRE(p.unplaced_model_instances().size() == 1);
         REQUIRE(p.unplaced_model_instances()[0]->id().id == first_el_ref.instance_id);
-        REQUIRE(bed_instances[0]->model_instances().empty());
+        REQUIRE(bed_instances[0]->model_instances.empty());
     }
     {
         // back to object amid first (and only) bed
@@ -239,8 +239,8 @@ TEST_CASE("Scene Interactor Bed Tracking")
         //         +x
         REQUIRE(bed_instances.size() == 1);
         REQUIRE(p.unplaced_model_instances().empty());
-        REQUIRE(bed_instances[0]->model_instances()[0]->id().id == first_el_ref.instance_id);
-        REQUIRE(bed_instances[0]->model_instances().size() == 1);
+        REQUIRE(bed_instances[0]->model_instances[0]->id().id == first_el_ref.instance_id);
+        REQUIRE(bed_instances[0]->model_instances.size() == 1);
     }
     Domain::ElementRef second_el_ref;
     {
@@ -257,8 +257,8 @@ TEST_CASE("Scene Interactor Bed Tracking")
         //         +x
         REQUIRE(p.unplaced_model_instances().size() == 1);
         REQUIRE(p.unplaced_model_instances()[0]->id().id == second_el_ref.instance_id);
-        REQUIRE(bed_instances[0]->model_instances().size() == 1);
-        REQUIRE(bed_instances[0]->model_instances()[0]->id().id == first_el_ref.instance_id);
+        REQUIRE(bed_instances[0]->model_instances.size() == 1);
+        REQUIRE(bed_instances[0]->model_instances[0]->id().id == first_el_ref.instance_id);
     }
     {
         REQUIRE_CALL(slicing_input_changed_listener, on_slicing_input_changed(_));
@@ -270,10 +270,10 @@ TEST_CASE("Scene Interactor Bed Tracking")
         //    o----->
         //         +x
         REQUIRE(p.unplaced_model_instances().empty());
-        REQUIRE(bed_instances[0]->model_instances().size() == 1);
-        REQUIRE(bed_instances[0]->model_instances()[0]->id().id == first_el_ref.instance_id);
-        REQUIRE(bed_instances[1]->model_instances().size() == 1);
-        REQUIRE(bed_instances[1]->model_instances()[0]->id().id == second_el_ref.instance_id);
+        REQUIRE(bed_instances[0]->model_instances.size() == 1);
+        REQUIRE(bed_instances[0]->model_instances[0]->id().id == first_el_ref.instance_id);
+        REQUIRE(bed_instances[1]->model_instances.size() == 1);
+        REQUIRE(bed_instances[1]->model_instances[0]->id().id == second_el_ref.instance_id);
     }
     const auto bi4_id = bed_instances[1]->id().id;
     {
@@ -291,8 +291,8 @@ TEST_CASE("Scene Interactor Bed Tracking")
         //         +x
         REQUIRE(p.unplaced_model_instances().size() == 1);
         REQUIRE(p.unplaced_model_instances()[0]->id().id == second_el_ref.instance_id);
-        REQUIRE(bed_instances[0]->model_instances().size() == 1);
-        REQUIRE(bed_instances[0]->model_instances()[0]->id().id == first_el_ref.instance_id);
+        REQUIRE(bed_instances[0]->model_instances.size() == 1);
+        REQUIRE(bed_instances[0]->model_instances[0]->id().id == first_el_ref.instance_id);
     }
     {
         xform = Transform3d::Identity();
@@ -316,10 +316,10 @@ TEST_CASE("Scene Interactor Bed Tracking")
         //    o----->
         //         +x
         REQUIRE(p.unplaced_model_instances().empty());
-        REQUIRE(bed_instances[0]->model_instances().size() == 1);
-        REQUIRE(bed_instances[0]->model_instances()[0]->id().id == first_el_ref.instance_id);
-        REQUIRE(bed_instances[1]->model_instances().size() == 1);
-        REQUIRE(bed_instances[1]->model_instances()[0]->id().id == second_el_ref.instance_id);
+        REQUIRE(bed_instances[0]->model_instances.size() == 1);
+        REQUIRE(bed_instances[0]->model_instances[0]->id().id == first_el_ref.instance_id);
+        REQUIRE(bed_instances[1]->model_instances.size() == 1);
+        REQUIRE(bed_instances[1]->model_instances[0]->id().id == second_el_ref.instance_id);
     }
     {
         xform = Transform3d::Identity();
@@ -338,8 +338,8 @@ TEST_CASE("Scene Interactor Bed Tracking")
         //         +x
         REQUIRE(p.unplaced_model_instances().size() == 1);
         REQUIRE(p.unplaced_model_instances()[0]->id().id == second_el_ref.instance_id);
-        REQUIRE(bed_instances[0]->model_instances().size() == 1);
-        REQUIRE(bed_instances[0]->model_instances()[0]->id().id == first_el_ref.instance_id);
+        REQUIRE(bed_instances[0]->model_instances.size() == 1);
+        REQUIRE(bed_instances[0]->model_instances[0]->id().id == first_el_ref.instance_id);
     }
     // Queue must be clear before ProjectInteractor can be destroyed.
     //dispatcher.close();

@@ -50,7 +50,7 @@ ModelOnBed::ModelOnBed(Model&& model, DynamicPrintConfig&& config)
 {
     for (ModelObject* object : this->model.objects) {
         for (ModelInstance* instance : object->instances) {
-            this->bed_instance.model_instances().push_back(instance);
+            this->bed_instance.model_instances.push_back(instance);
         }
     }
 }

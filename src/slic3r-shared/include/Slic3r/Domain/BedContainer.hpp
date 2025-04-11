@@ -15,7 +15,7 @@ class PresetBundle;
 namespace Slic3r::Domain {
 
 class Bed;
-class BedInstance;
+struct BedInstance;
 
 class BedContainer
 {

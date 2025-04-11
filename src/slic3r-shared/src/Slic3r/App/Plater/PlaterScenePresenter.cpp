@@ -75,7 +75,7 @@ void PlaterScenePresenter::update_cameras(const std::function<void(Scene::Camera
 void PlaterScenePresenter::update_objects_shadows_data()
 {
     const Domain::BedInstance& bed_inst = selected_bed_instance();
-    const Domain::ModelInstanceList& insts_on_bed = bed_inst.model_instances();
+    const Domain::ModelInstanceList& insts_on_bed = bed_inst.model_instances;
     const Slic3r::Model* model = &m_project_interactor.selected_project().model();
 
     auto& scene = m_projects[m_project_interactor.selected_project_id()].scene();
@@ -187,7 +187,7 @@ void PlaterScenePresenter::on_scene_selection_transformed(Domain::SelectionId pr
 void PlaterScenePresenter::on_selected_bed_instance_changed(Domain::SelectionId project_id, Domain::SelectionId container_id, Domain::SelectionId bed_instance_id)
 {
     m_bed_render_updater.update_all(project_context().scene().camera());
-    const Domain::Bed& bed = selected_bed_instance().bed();
+    const Domain::Bed& bed = selected_bed_instance().bed;
     std::vector<Domain::Vec3f> print_volume = Biz::Plater::BedGeometry::print_volume(bed);
     Eigen::AlignedBox3d bed_aabb;
     for (const auto& v : print_volume) {
@@ -430,7 +430,7 @@ void PlaterScenePresenter::on_instance_removed(Domain::SelectionId project_id, c
 void PlaterScenePresenter::on_instance_transformed(Domain::SelectionId project_id, const Domain::ElementRefs& elements)
 {
     const Domain::BedInstance& bed_inst = selected_bed_instance();
-    const Domain::ModelInstanceList& insts_on_bed = bed_inst.model_instances();
+    const Domain::ModelInstanceList& insts_on_bed = bed_inst.model_instances;
 
     auto& scene = m_projects[m_selected_project_id].scene();
     const auto& proj = m_workbench.project(project_id);

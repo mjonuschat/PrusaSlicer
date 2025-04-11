@@ -36,7 +36,7 @@ void SlicingInteractor::create_process(
             *this,
             model,
             DynamicPrintConfig{config},
-            bed.model_instances(),
+            bed.model_instances,
             id
         )
     );
@@ -258,7 +258,7 @@ void SlicingInteractor::process_update_requests() {
         process.update(
             request.model.get(),
             DynamicPrintConfig{config},
-            bed.model_instances()
+            bed.model_instances
         );
         to_remove.insert(id);
     }

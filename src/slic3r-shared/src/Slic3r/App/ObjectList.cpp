@@ -701,7 +701,7 @@ bool ObjectList::render_bed_node(const Domain::BedInstance* bed, bool is_sla_con
     const std::string name = "Bed " + std::to_string(bed_id);
     const std::string name_id = "##bed_id" + std::to_string(bed_id);
 
-    RowBackground bg(bed->active() && selected_items.empty());
+    RowBackground bg(bed->active && selected_items.empty());
     new_row();
     bool is_open = tree_node(name_id.c_str(), node_flags | ImGuiTreeNodeFlags_DefaultOpen, icon_str(ImGui::BedIcon) + name);
 
@@ -711,7 +711,7 @@ bool ObjectList::render_bed_node(const Domain::BedInstance* bed, bool is_sla_con
     if (is_open) {
         bg.set_next();
         for (const Slic3r::ModelObject* object : m_model->objects) {
-            if (bed_has_object(bed->model_instances(), object))
+            if (bed_has_object(bed->model_instances, object))
                 is_changed_selection |= render_object_node(object, bed, is_sla_config);
         }
         ImGui::TreePop();
@@ -910,7 +910,7 @@ bool ObjectList::render_instances_node(const Slic3r::ModelObject* object, const 
 {
     if (object->instances.size() == 1)
         return false;
-    std::set<size_t> instances_on_bed = get_object_instance_ids_on_bed(bed ? bed->model_instances() : m_scene_interactor->selected_project_unplaced_model_instances(), object);
+    std::set<size_t> instances_on_bed = get_object_instance_ids_on_bed(bed ? bed->model_instances : m_scene_interactor->selected_project_unplaced_model_instances(), object);
     if (instances_on_bed.empty())
         return false;
 
