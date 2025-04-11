@@ -3,6 +3,7 @@
 #define slic3r_Geometry_hpp_
 
 #include "Slic3r/Biz/Algorithms/Geometry/Geometry.hpp"
+#include "Slic3r/Domain/Transformation.hpp"
 
 namespace Slic3r::Geometry {
 using Slic3r::Biz::Algorithms::Geometry::Orientation;
@@ -25,18 +26,18 @@ using Slic3r::Biz::Algorithms::Geometry::liang_barsky_line_clipping;
 using Slic3r::Biz::Algorithms::Geometry::directions_parallel;
 using Slic3r::Biz::Algorithms::Geometry::directions_perpendicular;
 using Slic3r::Biz::Algorithms::Geometry::contains;
-using Slic3r::Biz::Algorithms::Geometry::angle_to_0_2PI;
+using Slic3r::angle_to_0_2PI;
 using Slic3r::Biz::Algorithms::Geometry::to_range_pi_pi;
 using Slic3r::Biz::Algorithms::Geometry::simplify_polygons;
 using Slic3r::Biz::Algorithms::Geometry::linint;
 using Slic3r::Biz::Algorithms::Geometry::arrange;
 using Slic3r::Biz::Algorithms::Geometry::assemble_transform;
-using Slic3r::Biz::Algorithms::Geometry::translation_transform;
-using Slic3r::Biz::Algorithms::Geometry::rotation_transform;
-using Slic3r::Biz::Algorithms::Geometry::scale_transform;
-using Slic3r::Biz::Algorithms::Geometry::extract_rotation;
-using Slic3r::Biz::Algorithms::Geometry::Transformation;
-using Slic3r::Biz::Algorithms::Geometry::TransformationSVD;
+using Slic3r::Domain::translation_transform;
+using Slic3r::Domain::rotation_transform;
+using Slic3r::Domain::scale_transform;
+using Slic3r::Domain::extract_rotation;
+using Slic3r::Domain::Transformation;
+using Slic3r::Domain::TransformationSVD;
 using Slic3r::Biz::Algorithms::Geometry::transform3d_from_string;
 using Slic3r::Biz::Algorithms::Geometry::rotation_xyz_diff;
 using Slic3r::Biz::Algorithms::Geometry::rotation_diff_z;

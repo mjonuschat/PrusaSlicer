@@ -13,20 +13,21 @@ namespace Slic3r::Biz::Scene {
 
 static const Vec2d BED_GAP = { 20.0, 20.0 };
 using Domain::TriangleMesh;
+using Domain::Transformation;
 
 namespace {
 
-Geometry::Transformation transform_product(const Geometry::Transformation& orig_xform, const SceneInteractor::Transform& delta)
+Transformation transform_product(const Transformation& orig_xform, const SceneInteractor::Transform& delta)
 {
     Transform3d xform = orig_xform.get_matrix();
     xform = delta * xform.matrix();
-    return Geometry::Transformation{xform};
+    return Transformation{xform};
 }
 
-Geometry::Transformation transform_product(const  SceneInteractor::Transform& orig_xform, const SceneInteractor::Transform& delta)
+Transformation transform_product(const  SceneInteractor::Transform& orig_xform, const SceneInteractor::Transform& delta)
 {
     SceneInteractor::Transform xform = delta * orig_xform;
-    return Geometry::Transformation{Transform3d {xform}};
+    return Transformation{Transform3d {xform}};
 }
 
 void transform_selection_instance_mode(
@@ -171,7 +172,7 @@ void SceneInteractor::add_instance(const Transform& xform)
 
     auto& obj = *project.find_object_by_id(obj_id);
     auto& inst = *obj.add_instance();
-    inst.set_transformation(Geometry::Transformation{Transform3d{xform}});
+    inst.set_transformation(Transformation{Transform3d{xform}});
     updated.push_back({obj.id().id, inst.id().id, 0});
 
     auto changes = update_instances_bed_placement(project, updated);
@@ -357,7 +358,7 @@ void SceneInteractor::transform_bed_instance(const Domain::BedRef& instance, con
     Domain::ConfigContainer* cc = proj.project
         .find_config_container(instance.config_container_id);
     Domain::BedInstance& inst = cc->find_bed_instance(instance.instance_id);
-    inst.set_transformation(Geometry::Transformation{ Transform3d{xform} });
+    inst.set_transformation(Transformation{ Transform3d{xform} });
 
     auto updated = inst.model_instances();
     inst.model_instances().clear();
@@ -429,7 +430,7 @@ void SceneInteractor::finalize_transform_selection(TransformMemento& memento, bo
     auto& proj = m_projects.find(m_selected_project_id)->second;
     const bool vol_mode = proj.selection.mode == SelectionMode::Volume;
     for (const auto& [_, e] : memento.elements) {
-        const Geometry::Transformation xform{Transform3d {e.original_xform}};
+        const Transformation xform{Transform3d {e.original_xform}};
         if (vol_mode) {
             auto* vol = proj.project.find_volume_by_id(e.element.object_id, e.element.volume_id);
             vol->set_transformation(xform);

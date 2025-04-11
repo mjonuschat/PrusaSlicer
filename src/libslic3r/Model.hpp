@@ -448,7 +448,7 @@ public:
     ModelInstance*          add_instance();
     ModelInstance*          add_instance(const ModelInstance &instance);
 
-    ModelInstance*          add_instance(const Biz::Algorithms::Geometry::Transformation& trafo);
+    ModelInstance*          add_instance(const Domain::Transformation& trafo);
     void                    delete_instance(size_t idx);
     void                    delete_last_instance();
     void                    clear_instances();
@@ -707,7 +707,7 @@ public:
         int object_idx{ -1 };
         int volume_idx{ -1 };
         Vec3d mesh_offset{ Vec3d::Zero() };
-        Biz::Algorithms::Geometry::Transformation transform;
+        Domain::Transformation transform;
         bool is_converted_from_inches{ false };
         bool is_converted_from_meters{ false };
         bool is_from_builtin_objects{ false };
@@ -849,8 +849,8 @@ public:
     static ModelVolumeType type_from_string(const std::string &s);
     static std::string  type_to_string(const ModelVolumeType t);
 
-    const Biz::Algorithms::Geometry::Transformation& get_transformation() const { return m_transformation; }
-    void set_transformation(const Biz::Algorithms::Geometry::Transformation& transformation) { m_transformation = transformation; }
+    const Domain::Transformation& get_transformation() const { return m_transformation; }
+    void set_transformation(const Domain::Transformation& transformation) { m_transformation = transformation; }
     void set_transformation(const Transform3d& trafo) { m_transformation.set_matrix(trafo); }
 
     Vec3d get_offset() const { return m_transformation.get_offset(); }
@@ -927,7 +927,7 @@ private:
     t_model_material_id             	m_material_id;
     // The convex hull of this model's mesh.
     std::shared_ptr<const Domain::TriangleMesh> m_convex_hull;
-    Biz::Algorithms::Geometry::Transformation        	m_transformation;
+    Domain::Transformation        	m_transformation;
 
     // flag to optimize the checking if the volume is splittable
     //     -1   ->   is unknown value (before first cheking)
@@ -1099,7 +1099,7 @@ enum ModelInstanceEPrintVolumeState : unsigned char
 class ModelInstance final : public Domain::ObjectBase
 {
 private:
-    Biz::Algorithms::Geometry::Transformation m_transformation;
+    Domain::Transformation m_transformation;
 
 public:
     // flag showing the position of this instance with respect to the print volume (set by Print::validate() using ModelObject::check_instances_print_volume_state())
@@ -1109,8 +1109,8 @@ public:
 
     ModelObject* get_object() const { return this->object; }
 
-    const Biz::Algorithms::Geometry::Transformation& get_transformation() const { return m_transformation; }
-    void set_transformation(const Biz::Algorithms::Geometry::Transformation& transformation) { m_transformation = transformation; }
+    const Domain::Transformation& get_transformation() const { return m_transformation; }
+    void set_transformation(const Domain::Transformation& transformation) { m_transformation = transformation; }
 
     Vec3d get_offset() const { return m_transformation.get_offset(); }
     double get_offset(Axis axis) const { return m_transformation.get_offset(axis); }

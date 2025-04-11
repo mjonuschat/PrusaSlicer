@@ -5,6 +5,7 @@
 
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
+#include "Slic3r/Domain/Transformation.hpp"
 
 namespace Slic3r::Biz::Scene {
 
@@ -32,8 +33,8 @@ void BedPlacement::layout(Domain::Project& project, const Vec2d& gap)
         for (size_t j = 0; j < instances.size(); ++j) {
             if (j > 0)
                 pos.x() += size.x() + gap.x();
-            Transform3d xform = Geometry::translation_transform(to_3d(pos, 0.0));
-            instances[j]->set_transformation(Geometry::Transformation(xform));
+            Transform3d xform = Domain::translation_transform(to_3d(pos, 0.0));
+            instances[j]->set_transformation(Domain::Transformation(xform));
         }
 
         offset_y += size.y() + gap.y();

@@ -193,19 +193,6 @@ template bool contains<BoundingBox3f>(const BoundingBox3f&, const BoundingBox3f&
 template bool contains<BoundingBox2d>(const BoundingBox2d&, const BoundingBox2d&);
 template bool contains<BoundingBox3d>(const BoundingBox3d&, const BoundingBox3d&);
 
-[[nodiscard]] bool overlap(
-    const Domain::BoundingBoxConcept auto& box, const Domain::BoundingBoxConcept auto& other
-)
-{
-    return !((box.max.array() < other.min.array()).any() || (box.min.array() > other.max.array()).any());
-}
-template bool overlap<BoundingBox2crd>(const BoundingBox2crd&, const BoundingBox2crd&);
-template bool overlap<BoundingBox3crd>(const BoundingBox3crd&, const BoundingBox3crd&);
-template bool overlap<BoundingBox2f>(const BoundingBox2f&, const BoundingBox2f&);
-template bool overlap<BoundingBox3f>(const BoundingBox3f&, const BoundingBox3f&);
-template bool overlap<BoundingBox2d>(const BoundingBox2d&, const BoundingBox2d&);
-template bool overlap<BoundingBox3d>(const BoundingBox3d&, const BoundingBox3d&);
-
 template<Domain::ScaledScalar OutputScalarType, Domain::BoundingBoxConcept InputBoxType>
 [[nodiscard]] Domain::BoundingBox<OutputScalarType, InputBoxType::Dim> scaled(const InputBoxType& box)
 {

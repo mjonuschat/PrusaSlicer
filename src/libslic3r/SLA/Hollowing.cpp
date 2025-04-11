@@ -36,7 +36,6 @@ namespace Slic3r {
 struct VoxelGrid;
 namespace execution = Slic3r::Biz::Algorithms::Execution;
 
-using Biz::Algorithms::BoundingBox::overlap;
 using Biz::Algorithms::BoundingBox::cast;
 using Biz::Algorithms::BoundingBox::center;
 using Biz::Algorithms::BoundingBox::construct;
@@ -360,7 +359,7 @@ void remove_inside_triangles(indexed_triangle_set &mesh, const Interior &interio
         Domain::BoundingBox3d facebb{cast<double>(facebb_float)};
 
         // Face is certainly outside the cavity
-        if (! overlap(facebb, bb) && f.faceid != NEW_FACE) {
+        if (! facebb.overlap(bb) && f.faceid != NEW_FACE) {
             return false;
         }
         const auto facebb_radius{0.5 * (facebb.max - facebb.min).template cast<double>().norm()};
@@ -416,9 +415,8 @@ void remove_inside_triangles(indexed_triangle_set &mesh, const Interior &interio
             const Domain::BoundingBox3f facebb_float{construct(pts.begin(), pts.end())};
             Domain::BoundingBox3d facebb{cast<double>(facebb_float)};
 
-            using Biz::Algorithms::BoundingBox::overlap;
             // Face is certainly outside the cavity
-            if (!overlap(facebb, bb))
+            if (!facebb.overlap(bb))
                 return;
 
             DivFace df{face, pts, long(face_idx)};

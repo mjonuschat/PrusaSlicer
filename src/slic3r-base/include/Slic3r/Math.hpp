@@ -49,4 +49,18 @@ constexpr T deg2rad(const T angle)
     return std::numbers::pi_v<T> * angle / T(180.0);
 }
 
+template<typename T>
+T angle_to_0_2PI(T angle)
+{
+    static const T TWO_PI = T(2) * std::numbers::pi_v<T>;
+    while (angle < T(0)) {
+        angle += TWO_PI;
+    }
+    while (TWO_PI < angle) {
+        angle -= TWO_PI;
+    }
+
+    return angle;
+}
+
 } // namespace Slic3r

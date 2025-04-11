@@ -83,10 +83,6 @@ template<Domain::BoundingBoxConcept BoxType>
     const Domain::BoundingBoxConcept auto& box, const Domain::BoundingBoxConcept auto& other
 );
 
-[[nodiscard]] bool overlap(
-    const Domain::BoundingBoxConcept auto& box, const Domain::BoundingBoxConcept auto& other
-);
-
 template<Domain::ScaledScalar OutputScalarType = Domain::coord_t, Domain::BoundingBoxConcept InputBoxType>
 [[nodiscard]] Domain::BoundingBox<OutputScalarType, InputBoxType::Dim> scaled(const InputBoxType& box);
 

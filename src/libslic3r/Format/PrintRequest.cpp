@@ -95,7 +95,7 @@ void add_instance(Model* model, const boost::filesystem::path& model_path, const
 
 
 		ModelObject* object = model->objects.back();
-        Biz::Algorithms::Geometry::Transformation transformation(matrix);
+        Domain::Transformation transformation(matrix);
 		transformation.set_offset(offset_vector);
 		object->add_instance(transformation);
 	}

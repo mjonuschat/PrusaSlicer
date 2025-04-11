@@ -1,9 +1,9 @@
 #pragma once
 
-#include "Bed.hpp"
+#include "Slic3r/Domain/Bed.hpp"
 #include "Slic3r/Assert.hpp"
 #include "Slic3r/Domain/ObjectID.hpp"
-#include "libslic3r/Geometry.hpp"
+#include "Slic3r/Domain/Transformation.hpp"
 
 namespace Slic3r {
 class ModelInstance;
@@ -20,8 +20,8 @@ public:
 
     explicit BedInstance(const Bed& bed) : m_bed(bed) {}
 
-    const Geometry::Transformation& transformation() const { return m_transformation; }
-    void set_transformation(const Geometry::Transformation& transformation) { m_transformation = transformation; }
+    const Transformation& transformation() const { return m_transformation; }
+    void set_transformation(const Transformation& transformation) { m_transformation = transformation; }
     const Transform3d& matrix() const { return m_transformation.get_matrix(); }
 
     bool active() const { return m_active; }
@@ -46,7 +46,7 @@ public:
 
 private:
     const Bed& m_bed;
-    Geometry::Transformation m_transformation;
+    Transformation m_transformation;
     ModelInstanceList m_model_instances;
     bool m_active{ false };
     bool m_contour_enabled{ false };

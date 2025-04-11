@@ -213,16 +213,8 @@ set(SLIC3R_SHARED_FILES
 
         include/Slic3r/StringUtils.hpp
 
-        include/Slic3r/Domain/SelectionId.hpp
-        include/Slic3r/Domain/ElementRef.hpp
-        src/Slic3r/Domain/ElementId.cpp
         src/Slic3r/Domain/Project.cpp
         include/Slic3r/Domain/Project.hpp
-        include/Slic3r/Domain/Bed.hpp
-        src/Slic3r/Domain/Bed.cpp
-        include/Slic3r/Domain/BedRef.hpp
-        include/Slic3r/Domain/BedInstance.hpp
-        src/Slic3r/Domain/BedInstance.cpp
         include/Slic3r/Domain/BedContainer.hpp
         src/Slic3r/Domain/BedContainer.cpp
         src/Slic3r/Domain/Workbench.cpp
