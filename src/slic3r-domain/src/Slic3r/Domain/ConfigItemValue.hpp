@@ -102,3 +102,16 @@ public:
         return ptr;
     }
 };
+
+
+
+class ConfigItemValuePercent : public ConfigItemValueDouble
+{
+public:
+    ConfigItemValuePercent* clone() {
+        auto ptr = new ConfigItemValuePercent();
+        ptr->set(value);
+        ptr->is_null = is_null;
+        return ptr;
+    }
+};

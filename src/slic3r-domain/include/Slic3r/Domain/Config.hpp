@@ -1,6 +1,7 @@
 #pragma once
 
 #include <any>
+#include <cfloat>
 #include <concepts>
 #include <exception>
 #include <functional>
@@ -29,6 +30,7 @@ enum class ConfigItemType
     String,
     Enum,
     FloatOrPercent,
+    Percent,
     Bools, // Vector types follow, Bools MUST be first (see ConfigItem::is_vector)
     Ints,
     Doubles,
@@ -56,26 +58,83 @@ struct ConfigItemDef
 
     std::string name{};
     ConfigItemType type{ ConfigItemType::None };
-
-    // Sets default.
     std::function<void(ConfigItem&)> init_fn;
-
-    // Sets default, possibly different per box.
     std::function<void(ConfigItem&, std::string_view box)> init_fn_ex;
+    std::vector<std::string> belongs_to{ }; // Which box it belongs to. Can be None, in which case the latter cannot be.
+    std::vector<std::string> belongs_to_optional{ }; // It is also here, but always nullable (overrides).
+    
+    // Enum specific:
+    std::any enum_type; // holds an object of the required enum type.
+    std::vector<EnumValueDef> enum_values; // Value (as int), serialized string and non-translated UI label.
 
-    // Which box it belongs to. Can be None, in which case the latter cannot be.
-    std::vector<std::string> belongs_to{ };
+    // Non-translated Label of the GUI input field. In case the GUI input fields are grouped in some views,
+    // the label defines a short label of a grouped value, while full_label contains a label of a stand-alone field.
+    // The full label is shown, when adding an override parameter for an object or a modified object.
+    std::string label;
+    std::string full_label;
+    
+    // Category of a configuration field, from the GUI perspective. One of: "Layers and Perimeters",
+    // "Infill", "Support material", "Speed", "Extruders", "Advanced", "Extrusion Width"
+    std::string category;
+    std::string tooltip; // A tooltip text shown in the GUI.
+    std::string sidetext; // Text right from the input field.
+    std::string cli; // Format of this parameter on a command line.
 
-    // It is also here, but always nullable (overrides).
-    std::vector<std::string> belongs_to_optional{ };
+    // Set for type == FloatOrPercent. It provides a link to a configuration value, of which this option
+    // provides a ratio. E.g. external_perimeter_speed may be defined as a fraction of perimeter_speed.
+    std::string ratio_over;
+    
+    // For text only:
+    bool multiline  = false; // True for multiline strings.
+    bool full_width = false; // For text input: If true, the GUI text box spans the complete page width.
+    bool is_code    = false; // GUI formats text as code (fixed-width).
+    int height          = -1; // Height of a multiline GUI text box.
 
-    // For enums. std::any holding an object of the required enum type.
-    std::any enum_type;
+    float min = -FLT_MAX; // <min, max> limit of a numeric input.
+    float max =  FLT_MAX; // If not set, the <min, max> is set to <INT_MIN, INT_MAX>
 
-    // For enums. Value (as int), serialized string and UI label.
-    std::vector<EnumValueDef> enum_values;
+    static constexpr const char* nocli = "~~nocli";
 
+    // ARE THE FOLLOWING EVER USED?
+    bool readonly = false; // Not editable. Currently only used for the display of the number of threads.
+    int width = -1; // Optional width of an input field.
+    std::vector<std::string> shortcut;
+
+    // In case we want to show list of choices, the following holds pairs of value - GUI string.
+    std::vector<std::pair<std::variant<int, double, std::string>, std::string>> choices;
+
+    // NEEDS MORE WORK (TODO):
+    int mode = 0; // Should really be an enum. It is not used right now, just need the defs to compile.
+    std::vector<std::string> aliases; // We can probably clear them in all cases and start fresh. Legacy loading will handle them.
+    double max_literal = 1; // // To check if it's not a typo and a % is missing - TODO Check how this is used.
+
+    // NEEDS MORE WORK (TODO)
+    // Usually empty. Otherwise "serialized" or "show_value"
+    // The flags may be combined.
+    // "serialized" - vector valued option is entered in a single edit field. Values are separated by a semicolon.
+    // "show_value" - even if enum_values / enum_labels are set, still display the value, not the enum label.
+    std::string gui_flags;
+
+    enum class GUIType { // TODO Go through this one after everything is ported and remove what we don't use.
+        undefined,
+        i_enum_open,  // Open enums, integer value could be one of the enumerated values or something else.
+        f_enum_open,  // Open enums, float value could be one of the enumerated values or something else.
+        select_open,  // Open enums, string value could be one of the enumerated values or something else.
+        color,        // Color picker, string value.
+        one_string,   // Vector value, but edited as a single string.
+        select_close, // Close parameter, string value could be one of the list values.
+        password,     // Password, string vaule is hidden by asterisk.
+    };
+    GUIType gui_type = GUIType::undefined;
 };
+
+
+//max_literal
+
+
+
+
+
 
 
 

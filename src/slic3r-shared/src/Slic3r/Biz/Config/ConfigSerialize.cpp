@@ -3,6 +3,15 @@
 
 #include "boost/algorithm/string.hpp"
 
+static nlohmann::json serialize_float_or_percent(const ConfigItem& item)
+{
+    ASSERT(item.type() == ConfigItemType::FloatOrPercent || item.type() == ConfigItemType::Percent);
+    nlohmann::json j;
+    bool is_percent = item.type() == ConfigItemType::Percent || item.is_percent();
+    j["value"] = (is_percent && item.type() == ConfigItemType::FloatOrPercent) ? item.get_percent() : item.get<double>();
+    j["is_percent"] = is_percent;
+    return j;
+}
 
 static void serialize_and_append(const ConfigItem& item, nlohmann::json& j)
 {
@@ -17,6 +26,8 @@ static void serialize_and_append(const ConfigItem& item, nlohmann::json& j)
         case ConfigItemType::Double : jval = item.get<double>(); break;
         case ConfigItemType::String : jval = item.get<std::string>(); break;
         case ConfigItemType::Enum   : jval = item.get_enum_strings().first; break;
+        case ConfigItemType::Percent : [[fallthrough]];
+        case ConfigItemType::FloatOrPercent : jval = serialize_float_or_percent(item); break;
         
         case ConfigItemType::Bools   : jval = item.vec<bool>(); break;
         case ConfigItemType::Ints    : jval = item.vec<int>(); break;

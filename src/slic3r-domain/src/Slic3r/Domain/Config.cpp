@@ -47,7 +47,20 @@ void ConfigDefinitions::check_valid() const
         })); 
         ASSERT(std::all_of(def.belongs_to_optional.begin(), def.belongs_to_optional.end(), [this](const auto& box) {
             return std::any_of(m_acceptable_boxes.begin(), m_acceptable_boxes.end(), [&box](const auto& b) { return box == b; });
-        })); 
+        }));
+
+        // Check that all choices (if used) have the same key type and that it matches the item type.
+        if (!def.choices.empty()) {
+            for (const auto& [value, str] : def.choices) {
+                ASSERT((def.type == ConfigItemType::String && std::holds_alternative<std::string>(value))
+                    || (def.type == ConfigItemType::Int && std::holds_alternative<int>(value))
+                    || (def.type == ConfigItemType::Double && std::holds_alternative<double>(value))
+                    || (def.type == ConfigItemType::Percent && std::holds_alternative<double>(value))
+                    || (def.type == ConfigItemType::FloatOrPercent && std::holds_alternative<double>(value)));
+            }
+        }
+        
+
     }
 }
 
@@ -66,6 +79,8 @@ ConfigItem::ConfigItem(const ConfigItemDef& def, std::string_view box_type)
         case ConfigItemType::Double  : m_data = new ConfigItemValueDouble;  break;
         case ConfigItemType::String  : m_data = new ConfigItemValueString;  break;
         case ConfigItemType::Enum    : m_data = new ConfigItemValueEnum;    break;
+        case ConfigItemType::Percent : m_data = new ConfigItemValuePercent; break;
+        case ConfigItemType::FloatOrPercent : m_data = new ConfigItemValueFloatOrPercent; break;
         case ConfigItemType::Bools   : m_data = new ConfigItemValueBools;   break;
         case ConfigItemType::Ints    : m_data = new ConfigItemValueInts;    break;
         case ConfigItemType::Doubles : m_data = new ConfigItemValueDoubles; break;
@@ -139,6 +154,8 @@ T ConfigItem::get() const
     if constexpr (std::is_same_v<T, double>) {
         if (m_type == ConfigItemType::Double)
             return static_cast<ConfigItemValueDouble*>(m_data)->get();
+        else if (m_type == ConfigItemType::Percent)
+            return static_cast<ConfigItemValuePercent*>(m_data)->get();
         else if (m_type == ConfigItemType::FloatOrPercent) {
             ASSERT(! static_cast<ConfigItemValueFloatOrPercent*>(m_data)->is_percent());
             return static_cast<ConfigItemValueFloatOrPercent*>(m_data)->get();
@@ -168,6 +185,8 @@ void ConfigItem::set(T value)
     else if constexpr (std::is_same_v<T, double>) {
         if (m_type == ConfigItemType::Double)
             static_cast<ConfigItemValueDouble*>(m_data)->set(value);
+        else if (m_type == ConfigItemType::Percent)
+            static_cast<ConfigItemValuePercent*>(m_data)->set(value);
         else if (m_type == ConfigItemType::FloatOrPercent) {
             static_cast<ConfigItemValueFloatOrPercent*>(m_data)->set(value);
             static_cast<ConfigItemValueFloatOrPercent*>(m_data)->set_percent(false);

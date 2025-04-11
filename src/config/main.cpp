@@ -30,9 +30,9 @@ int main()
     ObjectSettings os;
     VolumeSettings vs;
 
-    os.opt("travel_lift_before_obstacles").set_null(false);
-    os.opt("travel_lift_before_obstacles").set<bool>(true);
-    ps.opt("gcode_flavor").set_enum_from_string("two");
+    //os.opt("travel_lift_before_obstacles").set_null(false);
+    //os.opt("travel_lift_before_obstacles").set<bool>(true);
+    //ps.opt("gcode_flavor").set_enum_from_string("two");
 
     //load_from_legacy_file("test.ini", ps);
 
