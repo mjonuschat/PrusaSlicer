@@ -166,7 +166,8 @@ inline std::unique_ptr<Print> process_3mf(const boost::filesystem::path &path) {
 
     ConfigSubstitutionContext context{ForwardCompatibilitySubstitutionRule::Disable};
     boost::optional<Semver> version;
-    load_3mf(path.string().c_str(), config, context, &model, false, version);
+    WipeTowersOnBeds wipe_towers;
+    load_3mf(path.string().c_str(), config, context, &model, false, version, wipe_towers);
 
     Slic3r::Test::init_print(std::vector<Domain::TriangleMesh>{}, *print, model, config);
     print->process();

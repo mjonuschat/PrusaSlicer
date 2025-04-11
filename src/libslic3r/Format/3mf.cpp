@@ -549,7 +549,14 @@ namespace Slic3r {
         _3MF_Importer();
         ~_3MF_Importer();
 
-        bool load_model_from_file(const std::string& filename, Model& model, DynamicPrintConfig& config, ConfigSubstitutionContext& config_substitutions, bool check_version);
+        bool load_model_from_file(
+            const std::string& filename,
+            Model& model,
+            DynamicPrintConfig& config,
+            ConfigSubstitutionContext& config_substitutions,
+            bool check_version,
+            WipeTowersOnBeds& wipe_towers
+        );
         unsigned int version() const { return m_version; }
         boost::optional<Semver> prusaslicer_generator_version() const { return m_prusaslicer_generator_version; }
 
@@ -566,7 +573,13 @@ namespace Slic3r {
                 XML_ErrorString(XML_GetErrorCode(m_xml_parser));
         }
 
-        bool _load_model_from_file(const std::string& filename, Model& model, DynamicPrintConfig& config, ConfigSubstitutionContext& config_substitutions);
+        bool _load_model_from_file(
+            const std::string& filename,
+            Model& model,
+            DynamicPrintConfig& config,
+            ConfigSubstitutionContext& config_substitutions,
+            WipeTowersOnBeds& wipe_towers
+        );
         bool _extract_relationships_from_archive(mz_zip_archive &archive, const mz_zip_archive_file_stat &stat);
         bool _extract_model_from_archive(mz_zip_archive &archive, const mz_zip_archive_file_stat &stat);
         bool _is_svg_shape_file(const std::string &filename) const;
@@ -577,8 +590,13 @@ namespace Slic3r {
         void _extract_sla_drain_holes_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat);
 
         void _extract_custom_gcode_per_print_z_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat);
-        void _extract_wipe_tower_information_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat, Model& model);
-        void _extract_wipe_tower_information_from_archive_legacy(::mz_zip_archive &archive, const mz_zip_archive_file_stat &stat, Model& model);
+
+        WipeTowersOnBeds _extract_wipe_tower_information_from_archive(
+            ::mz_zip_archive& archive, const mz_zip_archive_file_stat& stat
+        );
+        Domain::ModelWipeTower _extract_wipe_tower_information_from_archive_legacy(
+            ::mz_zip_archive& archive, const mz_zip_archive_file_stat& stat
+        );
 
         void _extract_print_config_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat, DynamicPrintConfig& config, ConfigSubstitutionContext& subs_context, const std::string& archive_filename);
         bool _extract_model_config_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat, Model& model);
@@ -689,7 +707,14 @@ namespace Slic3r {
         _destroy_xml_parser();
     }
 
-    bool _3MF_Importer::load_model_from_file(const std::string& filename, Model& model, DynamicPrintConfig& config, ConfigSubstitutionContext& config_substitutions, bool check_version)
+    bool _3MF_Importer::load_model_from_file(
+        const std::string& filename,
+        Model& model,
+        DynamicPrintConfig& config,
+        ConfigSubstitutionContext& config_substitutions,
+        bool check_version,
+        WipeTowersOnBeds& wipe_towers
+    )
     {
         m_version = 0;
         m_fdm_supports_painting_version = 0;
@@ -714,7 +739,7 @@ namespace Slic3r {
         m_start_part_path = MODEL_FILE; // set default value for invalid .rel file
         clear_errors();
 
-        return _load_model_from_file(filename, model, config, config_substitutions);
+        return _load_model_from_file(filename, model, config, config_substitutions, wipe_towers);
     }
 
     void _3MF_Importer::_destroy_xml_parser()
@@ -735,7 +760,13 @@ namespace Slic3r {
         XML_StopParser(m_xml_parser, false);
     }
 
-    bool _3MF_Importer::_load_model_from_file(const std::string& filename, Model& model, DynamicPrintConfig& config, ConfigSubstitutionContext& config_substitutions)
+    bool _3MF_Importer::_load_model_from_file(
+        const std::string& filename,
+        Model& model,
+        DynamicPrintConfig& config,
+        ConfigSubstitutionContext& config_substitutions,
+        WipeTowersOnBeds& wipe_towers
+    )
     {
         mz_zip_archive archive;
         mz_zip_zero_struct(&archive);
@@ -790,9 +821,6 @@ namespace Slic3r {
                 }
             }
         }
-
-        // Initialize the wipe tower position (see the end of this function):
-        model.get_wipe_tower_vector().front().position.x() = std::numeric_limits<double>::max();
 
         // Read root model file
         if (start_part_stat.m_file_index < num_entries) {
@@ -852,7 +880,7 @@ namespace Slic3r {
                 }
                 else if (boost::algorithm::iequals(name, WIPE_TOWER_INFORMATION_FILE)) {
                     // extract wipe tower information file
-                    _extract_wipe_tower_information_from_archive(archive, stat, model);
+                    wipe_towers = _extract_wipe_tower_information_from_archive(archive, stat);
                 }
                 else if (boost::algorithm::iequals(name, MODEL_CONFIG_FILE)) {
                     // extract slic3r model config file
@@ -869,13 +897,15 @@ namespace Slic3r {
         }
 
 
-        if (model.get_wipe_tower_vector().front().position.x() == std::numeric_limits<double>::max()) {
+        if (wipe_towers.empty()) {
             // This is apparently an old project from before PS 2.9.0, which saved wipe tower pos and rotation
             // into config, not into Model. Try to load it from the config file.
             // First set default in case we do not find it (these were the default values of the config options).
-            model.get_wipe_tower_vector().front().position.x() = 180;
-            model.get_wipe_tower_vector().front().position.y() = 140;
-            model.get_wipe_tower_vector().front().rotation = 0.;
+
+            Domain::ModelWipeTower wipe_tower{
+                .position=Vec2d{180.0, 140.0},
+                .rotation=0.0
+            };
 
             for (mz_uint i = 0; i < num_entries; ++i) {
                 if (mz_zip_reader_file_stat(&archive, i, &stat)) {
@@ -883,11 +913,12 @@ namespace Slic3r {
                     std::replace(name.begin(), name.end(), '\\', '/');
 
                     if (boost::algorithm::iequals(name, PRINT_CONFIG_FILE)) {
-                        _extract_wipe_tower_information_from_archive_legacy(archive, stat, model);
+                        wipe_tower = _extract_wipe_tower_information_from_archive_legacy(archive, stat);
                         break;
                     }
                 }
             }
+            wipe_towers = {{0, wipe_tower}};
         }
 
         close_zip_reader(&archive);
@@ -1699,87 +1730,101 @@ namespace Slic3r {
         }
     }
 
-    void _3MF_Importer::_extract_wipe_tower_information_from_archive(::mz_zip_archive &archive, const mz_zip_archive_file_stat &stat, Model& model)
+    WipeTowersOnBeds _3MF_Importer::_extract_wipe_tower_information_from_archive(
+        ::mz_zip_archive& archive, const mz_zip_archive_file_stat& stat
+    )
     {
-        if (stat.m_uncomp_size > 0) {
-            std::string buffer((size_t)stat.m_uncomp_size, 0);
-            mz_bool res = mz_zip_reader_extract_to_mem(&archive, stat.m_file_index, (void*)buffer.data(), (size_t)stat.m_uncomp_size, 0);
-            if (res == 0) {
-                add_error("Error while reading wipe tower information data to buffer");
-                return;
-            }
+        WipeTowersOnBeds result;
 
-            std::istringstream iss(buffer); // wrap returned xml to istringstream
-            pt::ptree main_tree;
-            pt::read_xml(iss, main_tree);
-
-            for (const auto& bed_block : main_tree) {
-                if (bed_block.first != "wipe_tower_information")
-                    continue;
-                try {
-                    int bed_idx = 0;
-                    try {
-                        bed_idx = bed_block.second.get<int>("<xmlattr>.bed_idx");
-                    } catch (const boost::property_tree::ptree_bad_path&) {
-                        // Probably an old project with no bed_idx info - pretend that we saw 0.
-                    }
-                    if (bed_idx >= int(m_model->get_wipe_tower_vector().size()))
-                        continue;                
-                    double pos_x = bed_block.second.get<double>("<xmlattr>.position_x");
-                    double pos_y = bed_block.second.get<double>("<xmlattr>.position_y");
-                    double rot_deg = bed_block.second.get<double>("<xmlattr>.rotation_deg");
-                    model.get_wipe_tower_vector()[bed_idx].position = Vec2d(pos_x, pos_y);
-                    model.get_wipe_tower_vector()[bed_idx].rotation = rot_deg;
-                }
-                catch (const boost::property_tree::ptree_bad_path&) {
-                    // Handles missing node or attribute.
-                    add_error("Error while reading wipe tower information.");
-                    return;
-                }
-            }
-
+        if (stat.m_uncomp_size <= 0) {
+            return {};
         }
+        std::string buffer((size_t)stat.m_uncomp_size, 0);
+        mz_bool res = mz_zip_reader_extract_to_mem(&archive, stat.m_file_index, (void*)buffer.data(), (size_t)stat.m_uncomp_size, 0);
+        if (res == 0) {
+            add_error("Error while reading wipe tower information data to buffer");
+            return {};
+        }
+
+        std::istringstream iss(buffer); // wrap returned xml to istringstream
+        pt::ptree main_tree;
+        pt::read_xml(iss, main_tree);
+
+        for (const auto& bed_block : main_tree) {
+            if (bed_block.first != "wipe_tower_information")
+                continue;
+            try {
+                int bed_idx = 0;
+                try {
+                    bed_idx = bed_block.second.get<int>("<xmlattr>.bed_idx");
+                } catch (const boost::property_tree::ptree_bad_path&) {
+                    // Probably an old project with no bed_idx info - pretend that we saw 0.
+                }
+                if (bed_idx >= int(m_model->get_wipe_tower_vector().size()))
+                    continue;
+                double pos_x = bed_block.second.get<double>("<xmlattr>.position_x");
+                double pos_y = bed_block.second.get<double>("<xmlattr>.position_y");
+                double rot_deg = bed_block.second.get<double>("<xmlattr>.rotation_deg");
+
+                result[bed_idx] = Domain::ModelWipeTower{
+                    .position = Vec2d(pos_x, pos_y),
+                    .rotation = rot_deg
+                };
+            }
+            catch (const boost::property_tree::ptree_bad_path&) {
+                // Handles missing node or attribute.
+                add_error("Error while reading wipe tower information.");
+                return {};
+            }
+        }
+        return result;
     }
 
-    void _3MF_Importer::_extract_wipe_tower_information_from_archive_legacy(::mz_zip_archive &archive, const mz_zip_archive_file_stat &stat, Model& model)
+    Domain::ModelWipeTower _3MF_Importer::_extract_wipe_tower_information_from_archive_legacy(::mz_zip_archive &archive, const mz_zip_archive_file_stat &stat)
     {
-        if (stat.m_uncomp_size > 0) {
-            std::string buffer((size_t)stat.m_uncomp_size, 0);
-            mz_bool res = mz_zip_reader_extract_to_mem(&archive, stat.m_file_index, (void*)buffer.data(), (size_t)stat.m_uncomp_size, 0);
-            if (res == 0) {
-                add_error("Error while reading config data to buffer");
-                return;
-            }
+        if (stat.m_uncomp_size <= 0) {
+            return {};
+        }
 
-            // Try to find wipe tower data in the config, where pre-2.9.0 slicers saved them.
-            // Do not load the config as usual, it no longer knows those values.
-            std::istringstream iss(buffer);
-            std::string line;
+        std::string buffer((size_t)stat.m_uncomp_size, 0);
+        mz_bool res = mz_zip_reader_extract_to_mem(&archive, stat.m_file_index, (void*)buffer.data(), (size_t)stat.m_uncomp_size, 0);
+        if (res == 0) {
+            add_error("Error while reading config data to buffer");
+            return {};
+        }
 
-            while (iss) {
-                std::getline(iss, line);
-                boost::algorithm::trim_left_if(line, [](char ch) { return std::isspace(ch) || ch == ';'; });
-                if (boost::starts_with(line, "wipe_tower_x") || boost::starts_with(line, "wipe_tower_y") || boost::starts_with(line, "wipe_tower_rotation_angle")) {
-                    std::string value_str;
-                    try {
-                        value_str = line.substr(line.find("=") + 1, std::string::npos);
-                    } catch (const std::out_of_range&) {
-                        continue;
-                    }
-                    double val = 0.;
-                    std::istringstream value_ss(value_str);
-                    value_ss >> val;
-                    if (! value_ss.fail()) {
-                        if (boost::starts_with(line, "wipe_tower_x"))
-                            model.get_wipe_tower_vector().front().position.x() = val;
-                        else if (boost::starts_with(line, "wipe_tower_y"))
-                            model.get_wipe_tower_vector().front().position.y() = val;
-                        else
-                            model.get_wipe_tower_vector().front().rotation = val;
-                    }
+        // Try to find wipe tower data in the config, where pre-2.9.0 slicers saved them.
+        // Do not load the config as usual, it no longer knows those values.
+        std::istringstream iss(buffer);
+        std::string line;
+
+        Domain::ModelWipeTower result;
+
+        while (iss) {
+            std::getline(iss, line);
+            boost::algorithm::trim_left_if(line, [](char ch) { return std::isspace(ch) || ch == ';'; });
+            if (boost::starts_with(line, "wipe_tower_x") || boost::starts_with(line, "wipe_tower_y") || boost::starts_with(line, "wipe_tower_rotation_angle")) {
+                std::string value_str;
+                try {
+                    value_str = line.substr(line.find('=') + 1, std::string::npos);
+                } catch (const std::out_of_range&) {
+                    continue;
+                }
+                double val = 0.;
+                std::istringstream value_ss(value_str);
+                value_ss >> val;
+                if (! value_ss.fail()) {
+                    if (boost::starts_with(line, "wipe_tower_x"))
+                        result.position.x() = val;
+                    else if (boost::starts_with(line, "wipe_tower_y"))
+                        result.position.y() = val;
+                    else
+                        result.rotation = val;
                 }
             }
         }
+
+        return result;
     }
 
     void XMLCALL _3MF_Importer::_handle_start_relationships_element(void *userData, const char *name, const char **attributes)
@@ -2800,11 +2845,25 @@ namespace Slic3r {
         bool m_zip64 { true };
 
     public:
-        bool save_model_to_file(const std::string& filename, Model& model, const DynamicPrintConfig* config, bool fullpath_sources, const ThumbnailData* thumbnail_data, bool zip64);
+        bool save_model_to_file(
+            const std::string& filename,
+            Model& model,
+            const DynamicPrintConfig* config,
+            bool fullpath_sources,
+            const ThumbnailData* thumbnail_data,
+            bool zip64,
+            const WipeTowersOnBeds& wipe_towers
+        );
         static void add_transformation(std::stringstream &stream, const Transform3d &tr);
     private:
         void _publish(Model &model);
-        bool _save_model_to_file(const std::string& filename, Model& model, const DynamicPrintConfig* config, const ThumbnailData* thumbnail_data);
+        bool _save_model_to_file(
+            const std::string& filename,
+            Model& model,
+            const DynamicPrintConfig* config,
+            const ThumbnailData* thumbnail_data,
+            const WipeTowersOnBeds& wipe_towers
+        );
         bool _add_content_types_file_to_archive(mz_zip_archive& archive);
         bool _add_thumbnail_file_to_archive(mz_zip_archive& archive, const ThumbnailData& thumbnail_data);
         bool _add_relationships_file_to_archive(mz_zip_archive& archive);
@@ -2820,18 +2879,32 @@ namespace Slic3r {
         bool _add_print_config_file_to_archive(mz_zip_archive& archive, const DynamicPrintConfig &config, const Model& model);
         bool _add_model_config_file_to_archive(mz_zip_archive& archive, const Model& model, const IdToObjectDataMap &objects_data);
         bool _add_custom_gcode_per_print_z_file_to_archive(mz_zip_archive& archive, Model& model, const DynamicPrintConfig* config);
-        bool _add_wipe_tower_information_file_to_archive( mz_zip_archive& archive, Model& model);
+        bool _add_wipe_tower_information_file_to_archive( mz_zip_archive& archive, const WipeTowersOnBeds& wipe_towers);
     };
 
-    bool _3MF_Exporter::save_model_to_file(const std::string& filename, Model& model, const DynamicPrintConfig* config, bool fullpath_sources, const ThumbnailData* thumbnail_data, bool zip64)
+    bool _3MF_Exporter::save_model_to_file(
+        const std::string& filename,
+        Model& model,
+        const DynamicPrintConfig* config,
+        bool fullpath_sources,
+        const ThumbnailData* thumbnail_data,
+        bool zip64,
+        const WipeTowersOnBeds& wipe_towers
+    )
     {
         clear_errors();
         m_fullpath_sources = fullpath_sources;
         m_zip64 = zip64;
-        return _save_model_to_file(filename, model, config, thumbnail_data);
+        return _save_model_to_file(filename, model, config, thumbnail_data, wipe_towers);
     }
 
-    bool _3MF_Exporter::_save_model_to_file(const std::string& filename, Model& model, const DynamicPrintConfig* config, const ThumbnailData* thumbnail_data)
+    bool _3MF_Exporter::_save_model_to_file(
+        const std::string& filename,
+        Model& model,
+        const DynamicPrintConfig* config,
+        const ThumbnailData* thumbnail_data,
+        const WipeTowersOnBeds& wipe_towers
+    )
     {
         mz_zip_archive archive;
         mz_zip_zero_struct(&archive);
@@ -2929,7 +3002,7 @@ namespace Slic3r {
 
 
         // Adds wipe tower information ("Metadata/Prusa_Slicer_wipe_tower_information.xml").
-        if (!_add_wipe_tower_information_file_to_archive(archive, model)) {
+        if (!_add_wipe_tower_information_file_to_archive(archive, wipe_towers)) {
             close_zip_writer(&archive);
             boost::filesystem::remove(filename);
             return false;
@@ -3898,32 +3971,29 @@ bool _3MF_Exporter::_add_custom_gcode_per_print_z_file_to_archive( mz_zip_archiv
     return true;
 }
 
-bool _3MF_Exporter::_add_wipe_tower_information_file_to_archive( mz_zip_archive& archive, Model& model)
+bool _3MF_Exporter::_add_wipe_tower_information_file_to_archive( mz_zip_archive& archive, const WipeTowersOnBeds& wipe_towers)
 {
     std::string out = "";
 
     pt::ptree tree;
 
     size_t bed_idx = 0;
-    for (const Domain::ModelWipeTower& wipe_tower : model.get_wipe_tower_vector()) {
+    for (const auto& [bed_idx, wipe_tower] : wipe_towers) {
         pt::ptree& main_tree = tree.add("wipe_tower_information", "");
 
         main_tree.put("<xmlattr>.bed_idx", bed_idx);
         main_tree.put("<xmlattr>.position_x", wipe_tower.position.x());
         main_tree.put("<xmlattr>.position_y", wipe_tower.position.y());
         main_tree.put("<xmlattr>.rotation_deg", wipe_tower.rotation);
-        ++bed_idx;
-        if (bed_idx >= s_multiple_beds.get_number_of_beds())
-            break;
     }
-    
+
     std::ostringstream oss;
     boost::property_tree::write_xml(oss, tree);
     out = oss.str();
 
     // Post processing("beautification") of the output string
     boost::replace_all(out, "><", ">\n<");
-    
+
     if (!out.empty()) {
         if (!mz_zip_writer_add_mem(&archive, WIPE_TOWER_INFORMATION_FILE.c_str(), (const void*)out.data(), out.length(), MZ_DEFAULT_COMPRESSION)) {
             add_error("Unable to add wipe tower information file to archive");
@@ -4019,7 +4089,8 @@ bool load_3mf(
     ConfigSubstitutionContext& config_substitutions,
     Model* model,
     bool check_version,
-    boost::optional<Semver> &prusaslicer_generator_version
+    boost::optional<Semver> &prusaslicer_generator_version,
+    WipeTowersOnBeds& wipe_towers
 )
 {
     if (path == nullptr || model == nullptr)
@@ -4028,7 +4099,7 @@ bool load_3mf(
     // All import should use "C" locales for number formatting.
     CNumericLocalesSetter locales_setter;
     _3MF_Importer         importer;
-    bool res = importer.load_model_from_file(path, *model, config, config_substitutions, check_version);
+    bool res = importer.load_model_from_file(path, *model, config, config_substitutions, check_version, wipe_towers);
     importer.log_errors();
     handle_legacy_project_loaded(config, importer.prusaslicer_generator_version());
     prusaslicer_generator_version = importer.prusaslicer_generator_version();
@@ -4036,7 +4107,15 @@ bool load_3mf(
     return res;
 }
 
-bool store_3mf(const char* path, Model* model, const DynamicPrintConfig* config, bool fullpath_sources, const ThumbnailData* thumbnail_data, bool zip64)
+bool store_3mf(
+    const char* path,
+    Model* model,
+    const DynamicPrintConfig* config,
+    bool fullpath_sources,
+    const WipeTowersOnBeds& wipe_towers,
+    const ThumbnailData* thumbnail_data,
+    bool zip64
+)
 {
     // All export should use "C" locales for number formatting.
     CNumericLocalesSetter locales_setter;
@@ -4045,7 +4124,7 @@ bool store_3mf(const char* path, Model* model, const DynamicPrintConfig* config,
         return false;
 
     _3MF_Exporter exporter;
-    bool res = exporter.save_model_to_file(path, *model, config, fullpath_sources, thumbnail_data, zip64);
+    bool res = exporter.save_model_to_file(path, *model, config, fullpath_sources, thumbnail_data, zip64, wipe_towers);
     if (!res)
         exporter.log_errors();
 

@@ -17,6 +17,7 @@
 #include <utility>
 #include <optional>
 #include "Slic3r/Domain/TriangleMesh.hpp"
+#include "libslic3r/Format/3mf.hpp"
 
 namespace Slic3r {
 
@@ -51,14 +52,17 @@ namespace FileReader
                                LoadStats* statistics = nullptr,
                                std::optional<std::pair<double, double>> step_deflections = std::nullopt);
 
-    // Load model, config and config substitutions from input file and fill statistics if it's required.
-    // Exceptions don't catched inside
-    Model           load_model_with_config(const std::string& input_file,
-                                           DynamicPrintConfig* config,
-                                           ConfigSubstitutionContext* config_substitutions,
-                                           boost::optional<Semver> &prusaslicer_generator_version,
-                                           LoadAttributes options,
-                                           LoadStats* statistics = nullptr);
+    // Load model, config and config substitutions from input file and fill statistics if it's
+    // required. Exceptions don't catched inside
+    Model load_model_with_config(
+        const std::string& input_file,
+        DynamicPrintConfig* config,
+        ConfigSubstitutionContext* config_substitutions,
+        WipeTowersOnBeds& wipe_towers,
+        boost::optional<Semver>& prusaslicer_generator_version,
+        LoadAttributes options,
+        LoadStats* statistics = nullptr
+    );
 }
     
 ENABLE_ENUM_BITMASK_OPERATORS(FileReader::LoadAttribute)

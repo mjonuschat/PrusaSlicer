@@ -25,7 +25,8 @@ namespace Tests {
 
         ConfigSubstitutionContext context{ForwardCompatibilitySubstitutionRule::Disable};
         boost::optional<Semver> version;
-        Slic3r::load_3mf(path.string().c_str(), config, context, &model, false, version);
+        WipeTowersOnBeds wipe_towers;
+        Slic3r::load_3mf(path.string().c_str(), config, context, &model, false, version, wipe_towers);
 
         return {std::move(model), std::move(config)};
     }

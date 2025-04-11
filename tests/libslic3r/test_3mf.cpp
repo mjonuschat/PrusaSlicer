@@ -5,6 +5,7 @@
 #include "libslic3r/Format/STL.hpp"
 
 #include <boost/filesystem/operations.hpp>
+#include <catch2/matchers/catch_matchers_string.hpp>
 
 using namespace Slic3r;
 using Domain::Transformation;
@@ -17,7 +18,8 @@ SCENARIO("Reading 3mf file", "[3mf]") {
         	DynamicPrintConfig config;
             ConfigSubstitutionContext ctxt{ ForwardCompatibilitySubstitutionRule::Disable };
             boost::optional<Semver> version;
-            bool ret = load_3mf(path.c_str(), config, ctxt, &model, false, version);
+            WipeTowersOnBeds wipe_towers;
+            bool ret = load_3mf(path.c_str(), config, ctxt, &model, false, version, wipe_towers);
             THEN("load should succeed") {
                 REQUIRE(ret);
             }
@@ -54,15 +56,19 @@ SCENARIO("Export+Import geometry to/from 3mf file cycle", "[3mf]") {
         WHEN("model is saved+loaded to/from 3mf file") {
             // save the model to 3mf file
             std::string test_file = std::string(TEST_DATA_DIR) + "/test_3mf/prusa.3mf";
-            store_3mf(test_file.c_str(), &src_model, nullptr, false);
+            const WipeTowersOnBeds src_wipe_towers{
+                {0, Domain::ModelWipeTower{Domain::Vec2d{30, 30}, 0.3}}
+            };
+            store_3mf(test_file.c_str(), &src_model, nullptr, false, src_wipe_towers);
 
             // load back the model from the 3mf file
             Model dst_model;
             DynamicPrintConfig dst_config;
+            WipeTowersOnBeds dst_wipe_towers;
             {
                 ConfigSubstitutionContext ctxt{ ForwardCompatibilitySubstitutionRule::Disable };
                 boost::optional<Semver> version;
-                load_3mf(test_file.c_str(), dst_config, ctxt, &dst_model, false, version);
+                load_3mf(test_file.c_str(), dst_config, ctxt, &dst_model, false, version, dst_wipe_towers);
             }
             boost::filesystem::remove(test_file);
 
@@ -79,6 +85,9 @@ SCENARIO("Export+Import geometry to/from 3mf file cycle", "[3mf]") {
             THEN("world vertices coordinates after load match") {
                 REQUIRE(res);
             }
+            REQUIRE(dst_wipe_towers.size() == 1);
+            REQUIRE(dst_wipe_towers.contains(0));
+            CHECK(dst_wipe_towers.at(0) == src_wipe_towers.at(0));
         }
     }
 }
