@@ -481,9 +481,7 @@ public:
     virtual ~IPrint() = default;
 
     JThread::StopToken stop_token;
-    std::function<void(libpgcode::ProcessorResult&&)> on_fdm_result;
     std::function<void()> on_sla_result;
-    std::function<void(WipeTowerGeometry&&)> on_wipe_tower_geometry;
 };
 }
 

@@ -530,7 +530,10 @@ private: // Prevents erroneous use by other classes.
     typedef std::pair<PrintObject *, bool>         PrintObjectInfo;
 
 public:
-    Print() = default;
+    using OnFdmResult = std::function<void(Biz::libpgcode::ProcessorResult&&)>;
+    using OnWipeTowerGeometry = std::function<void(Biz::Print::WipeTowerGeometry&&)>;
+    Print(){}
+    Print(OnFdmResult& on_fdm_result, OnWipeTowerGeometry& on_wipe_tower_geometry);
 	virtual ~Print() { this->clear(); }
 
 	PrinterTechnology	technology() const noexcept override { return ptFFF; }
@@ -655,6 +658,9 @@ private:
     // Otherwise the shared data shall be released.
     // Unguarded variant, thus it shall only be called from main thread with background processing stopped.
     static bool         is_shared_print_object_step_valid_unguarded(SpanOfConstPtrs<PrintObject> print_objects, PrintObjectStep print_object_step);
+
+    OnFdmResult         m_on_fdm_result;
+    OnWipeTowerGeometry m_on_wipe_tower_geometry;
 
     PrintConfig                             m_config;
     PrintObjectConfig                       m_default_object_config;

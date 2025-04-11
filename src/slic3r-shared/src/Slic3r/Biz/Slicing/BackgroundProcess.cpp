@@ -4,6 +4,41 @@
 #include <Slic3r/Biz/Slicing/ModelUtils.hpp>
 #include <libassert/assert.hpp>
 
+namespace {
+using namespace Slic3r;
+using namespace Slic3r::Biz::Slicing;
+using namespace Slic3r::Biz::Print;
+std::unique_ptr<IPrint> init_print(
+    const PrinterTechnology& printer_technology, 
+    IProcessCallbacks& callbacks,
+    const SlicingId id)
+{
+    std::unique_ptr<PrintBase> print;
+    switch (printer_technology) {
+    case ptFFF: {
+        Print::OnFdmResult on_fdm_result = 
+            [&callbacks, id](FDMResult&& result) {
+            callbacks.on_fdm_result(std::move(result), id); };
+        Print::OnWipeTowerGeometry on_wipe_tower_geometry = 
+            [&callbacks, id](WipeTowerGeometry&& geometry) {
+            callbacks.on_wipe_tower_geometry(std::move(geometry), id); };
+        print = std::make_unique<Print>(on_fdm_result, on_wipe_tower_geometry);
+        break;
+    }
+    case ptSLA:
+        // TODO: Implement SLA callbacks
+        print = std::make_unique<SLAPrint>();
+        break;
+    // case ptSLA: print = std::make_unique<Slic3r::SLAPrint>(callbacks); break;
+    default:
+        UNREACHABLE("Only FFF and SLA are viable options!");
+    }
+    print->set_status_silent();
+    return print;
+}
+
+} // namespace
+
 namespace Slic3r::Biz::Slicing {
 
 using Print::IPrint;
@@ -53,19 +88,6 @@ Slic3r::PrinterTechnology get_printer_technology(const DynamicPrintConfig& confi
     return option->value;
 }
 
-std::unique_ptr<IPrint> init_print(const Slic3r::PrinterTechnology &printer_technology) {
-    if (printer_technology == ptFFF) {
-        auto print{std::make_unique<Slic3r::Print>()};
-        print->set_status_silent();
-        return print;
-    } else if (printer_technology == ptSLA) {
-        auto print{std::make_unique<Slic3r::SLAPrint>()};
-        print->set_status_silent();
-        return print;
-    }
-    UNREACHABLE("Only FFF and SLA are viable options!");
-}
-
 BackgroundProcess::BackgroundProcess(
     IProcessCallbacks& callbacks,
     Model& model,
@@ -74,8 +96,8 @@ BackgroundProcess::BackgroundProcess(
     const SlicingId id
 )
     : m_printer_technology{Slicing::get_printer_technology(config)}
-    , m_print{init_print(m_printer_technology)}
-    , m_callbacks{callbacks}
+    , m_print{init_print(m_printer_technology, callbacks, id)}
+    , m_callbacks{callbacks} // use only set_status()
     , m_id{id}
 {
     this->update(model, std::move(config), bed_instances);
@@ -130,24 +152,6 @@ void BackgroundProcess::update(
     });
 }
 
-void BackgroundProcess::hook_callbacks(IPrint* print) {
-    if (m_printer_technology == ptFFF) {
-        print->on_fdm_result =
-            [this](FDMResult&& result) {
-                this->m_callbacks.on_fdm_result(std::move(result), m_id);
-            };
-        print->on_wipe_tower_geometry = [this](Print::WipeTowerGeometry&& geometry) {
-            this->m_callbacks.on_wipe_tower_geometry(std::move(geometry), m_id);
-        };
-    } else if (m_printer_technology == ptSLA) {
-        print->on_sla_result = [this]() {
-            this->m_callbacks.on_sla_result(m_id);
-        };
-    } else {
-        ASSERT(false, "Unknown printer technology!");
-    }
-};
-
 void BackgroundProcess::slice()
 {
     SPDLOG_INFO("{}: slice", fmt::streamed(m_id));
@@ -166,8 +170,6 @@ void BackgroundProcess::slice()
         this->m_thread = JThread{
             [this](StopToken stop_token, IPrint* print) {
                 print->stop_token = stop_token;
-
-                hook_callbacks(print);
 
                 bool finished{false};
                 const ScopeGuard guard{[this, &finished]() {
