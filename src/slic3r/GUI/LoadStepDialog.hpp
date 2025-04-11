@@ -73,6 +73,7 @@ protected:
 
 private:
     void add_params(wxSizer* sizer);
+    void enable_customs(bool enable);
 
 private:
     PrecisionParams     m_params;
