@@ -126,26 +126,6 @@ void Model::update_links_bottom_up_recursive()
 	}
 }
 
-Domain::ModelWipeTower& Model::wipe_tower()
-{
-    return const_cast<Domain::ModelWipeTower&>(const_cast<const Model*>(this)->wipe_tower());
-}
-
-const Domain::ModelWipeTower& Model::wipe_tower() const
-{
-    return wipe_tower_vector[s_multiple_beds.get_active_bed()];
-}
-
-const Domain::ModelWipeTower& Model::wipe_tower(const int bed_index) const
-{
-    return wipe_tower_vector[bed_index];
-}
-
-Domain::ModelWipeTower& Model::wipe_tower(const int bed_index)
-{
-    return wipe_tower_vector[bed_index];
-}
-
 Domain::CustomGCode::Info& Model::custom_gcode_per_print_z()
 {
     return const_cast<Domain::CustomGCode::Info&>(const_cast<const Model*>(this)->custom_gcode_per_print_z());

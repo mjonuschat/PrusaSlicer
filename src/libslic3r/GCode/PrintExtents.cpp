@@ -148,11 +148,12 @@ BoundingBoxf get_print_object_extrusions_extents(const PrintObject &print_object
 // The projection does not contain the priming regions.
 BoundingBoxf get_wipe_tower_extrusions_extents(const Print &print, const double max_print_z)
 {
+    ASSERT(print.wipe_tower());
     // Wipe tower extrusions are saved as if the tower was at the origin with no rotation
     // We need to get position and angle of the wipe tower to transform them to actual position.
     Transform2d trafo =
-        Eigen::Translation2d(print.model().wipe_tower().position.x(), print.model().wipe_tower().position.y()) *
-        Eigen::Rotation2Dd(deg2rad(print.model().wipe_tower().rotation));
+        Eigen::Translation2d(print.wipe_tower()->position.x(), print.wipe_tower()->position.y()) *
+        Eigen::Rotation2Dd(deg2rad(print.wipe_tower()->rotation));
 
     BoundingBoxf bbox;
     for (const std::vector<WipeTower::ToolChangeResult> &tool_changes : print.wipe_tower_data().tool_changes) {

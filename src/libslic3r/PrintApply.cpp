@@ -1071,7 +1071,12 @@ static void validate_print_config_change(const PrintConfig &old_config, const Dy
     }
 }
 
-Print::ApplyStatus Print::apply(const Model &model, DynamicPrintConfig new_full_config, std::vector<std::string> *warnings)
+Print::ApplyStatus Print::apply(
+    const Model& model,
+    DynamicPrintConfig new_full_config,
+    const std::optional<Domain::ModelWipeTower>& wipe_tower,
+    std::vector<std::string>* warnings
+)
 {
 #ifdef _DEBUG
     check_model_ids_validity(model);
@@ -1147,13 +1152,16 @@ Print::ApplyStatus Print::apply(const Model &model, DynamicPrintConfig new_full_
     }
 
     // Check the position and rotation of the wipe tower.
-    if (model.wipe_tower() != m_model.wipe_tower())
+    if (wipe_tower != m_wipe_tower)
         update_apply_status(this->invalidate_step(psSkirtBrim));
-    m_model.wipe_tower() = model.wipe_tower();
+    m_wipe_tower = wipe_tower;
     // Inform the placeholder parser about the position and rotation of the wipe tower.
-    m_placeholder_parser.set("wipe_tower_x", model.wipe_tower().position.x());
-    m_placeholder_parser.set("wipe_tower_y", model.wipe_tower().position.y());
-    m_placeholder_parser.set("wipe_tower_rotation_angle", model.wipe_tower().rotation);
+
+    if (wipe_tower) {
+        m_placeholder_parser.set("wipe_tower_x", wipe_tower->position.x());
+        m_placeholder_parser.set("wipe_tower_y", wipe_tower->position.y());
+        m_placeholder_parser.set("wipe_tower_rotation_angle", wipe_tower->rotation);
+    }
 
     ModelObjectStatusDB model_object_status_db;
 

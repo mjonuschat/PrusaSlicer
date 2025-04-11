@@ -5,6 +5,7 @@
 #ifndef slic3r_PrintBase_hpp_
 #define slic3r_PrintBase_hpp_
 
+#include "Slic3r/Domain/BedInstance.hpp"
 #include "libslic3r.h"
 #include <set>
 #include <vector>
@@ -20,6 +21,7 @@
 #include "PlaceholderParser.hpp"
 #include "PrintConfig.hpp"
 #include "Slic3r/Biz/libpgcode/ProcessorResult.hpp"
+#include "libslic3r/ModelUtils.hpp"
 
 namespace Slic3r {
 
@@ -475,7 +477,7 @@ using WipeTowerGeometry = std::vector<ZDepth>;
 
 class IPrint {
 public:
-    virtual ApplyStatus update(const Model &model, DynamicPrintConfig config) = 0;
+    virtual ApplyStatus update(Model &model, DynamicPrintConfig config, const Domain::BedInstance& bed) = 0;
     virtual void slice() = 0;
     virtual bool empty() const = 0;
     virtual ~IPrint() = default;
@@ -521,16 +523,31 @@ public:
         // Some data was changed, which in turn invalidated already calculated steps.
         APPLY_STATUS_INVALIDATED,
     };
-    virtual ApplyStatus     apply(const Model &model, DynamicPrintConfig config, std::vector<std::string> *warnings = nullptr) = 0;
+    virtual ApplyStatus apply(
+        const Model& model,
+        DynamicPrintConfig config,
+        const std::optional<Domain::ModelWipeTower>& wipe_tower,
+        std::vector<std::string>* warnings = nullptr
+    ) = 0;
 
-    virtual Biz::Print::ApplyStatus update(const Model &model, DynamicPrintConfig config) override {
-        const ApplyStatus status{this->apply(model, std::move(config))};
-        if (status == APPLY_STATUS_UNCHANGED) {
-            return Biz::Print::ApplyStatus::unchanged;
-        }
-        return Biz::Print::ApplyStatus::changed;
+    virtual Biz::Print::ApplyStatus update(
+        Model& model, DynamicPrintConfig config, const Domain::BedInstance& bed
+    ) override
+    {
+        Biz::Print::ApplyStatus result{Biz::Print::ApplyStatus::unchanged};
+        Biz::Slicing::with_limited_instances(model, bed.model_instances, [&](){
+            const ApplyStatus status{this->apply(model, std::move(config), bed.wipe_tower)};
+            if (status == APPLY_STATUS_UNCHANGED) {
+                return;
+            }
+            result = Biz::Print::ApplyStatus::changed;
+        });
+        return result;
     }
     const Model&            model() const { return m_model; }
+    const std::optional<Domain::ModelWipeTower>& wipe_tower() const {
+        return m_wipe_tower;
+    }
 
     struct TaskParams {
 		TaskParams() : single_model_object(0), single_model_instance_only(false), to_object_step(-1), to_print_step(-1) {}
@@ -656,6 +673,8 @@ protected:
     void                   update_object_placeholders(DynamicConfig &config, const std::string &default_output_ext) const;
 
 	Model                                   m_model;
+    std::optional<Domain::ModelWipeTower>   m_wipe_tower;
+
 	DynamicPrintConfig						m_full_print_config;
     PlaceholderParser                       m_placeholder_parser;
 

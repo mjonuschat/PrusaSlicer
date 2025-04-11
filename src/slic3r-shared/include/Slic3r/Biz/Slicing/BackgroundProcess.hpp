@@ -101,7 +101,7 @@ public:
         IProcessCallbacks& callbacks,
         Model& model,
         DynamicPrintConfig&& config,
-        const Domain::ModelInstanceList& bed_instances,
+        const Domain::BedInstance& bed,
         const SlicingId id
     );
     BackgroundProcess(
@@ -109,7 +109,7 @@ public:
         IProcessCallbacks& callbacks,
         Model& model,
         DynamicPrintConfig&& config,
-        const Domain::ModelInstanceList& bed_instances,
+        const Domain::BedInstance& bed,
         const SlicingId id
     );
     ~BackgroundProcess();
@@ -118,7 +118,7 @@ public:
     void update(
         Model& model,
         DynamicPrintConfig&& config,
-        const Domain::ModelInstanceList& bed_instances
+        const Domain::BedInstance& bed
     );
 
     void slice();

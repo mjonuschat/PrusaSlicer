@@ -1000,8 +1000,8 @@ void Print::process()
     if (this->has_wipe_tower()) {
         // These values have to be updated here, not during wipe tower generation.
         // When the wipe tower is moved/rotated, it is not regenerated.
-        m_wipe_tower_data.position = model().wipe_tower().position;
-        m_wipe_tower_data.rotation_angle = model().wipe_tower().rotation;
+        m_wipe_tower_data.position = m_wipe_tower->position;
+        m_wipe_tower_data.rotation_angle = m_wipe_tower->rotation;
     }
     auto conflictRes = ConflictChecker::find_inter_of_lines_in_diff_objs(objects(), m_wipe_tower_data);
 
@@ -1228,8 +1228,8 @@ Points Print::first_layer_wipe_tower_corners() const
             pts.emplace_back(center + r*Vec2d(std::cos(alpha)/cone_x_scale, std::sin(alpha)));
 
         for (Vec2d& pt : pts) {
-            pt = Eigen::Rotation2Dd(deg2rad(model().wipe_tower().rotation)) * pt;
-            pt += model().wipe_tower().position;
+            pt = Eigen::Rotation2Dd(deg2rad(wipe_tower()->rotation)) * pt;
+            pt += m_wipe_tower->position;
             pts_scaled.emplace_back(scaled(Vec2d(pt.x(), pt.y())));
         }
     }
@@ -1403,7 +1403,8 @@ void Print::alert_when_supports_needed()
 // Wipe tower support.
 bool Print::has_wipe_tower() const
 {
-    return 
+    return
+        m_wipe_tower &&
         ! m_config.spiral_vase.value &&
         m_config.wipe_tower.value && 
         m_config.nozzle_diameter.values.size() > 1;
@@ -1503,7 +1504,7 @@ void Print::_make_wipe_tower()
     this->throw_if_canceled();
 
     // Initialize the wipe tower.
-    WipeTower wipe_tower(model().wipe_tower().position.cast<float>(), model().wipe_tower().rotation, m_config, m_default_region_config, wipe_volumes, m_wipe_tower_data.tool_ordering.first_extruder());
+    WipeTower wipe_tower(this->wipe_tower()->position.cast<float>(), this->wipe_tower()->rotation, m_config, m_default_region_config, wipe_volumes, m_wipe_tower_data.tool_ordering.first_extruder());
 
     // Set the extruder & material properties at the wipe tower object.
     for (size_t i = 0; i < m_config.nozzle_diameter.size(); ++ i)

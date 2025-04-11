@@ -1199,13 +1199,6 @@ public:
     // Objects are owned by a model. Each model may have multiple instances, each instance having its own transformation (shift, scale, rotation).
     ModelObjectPtrs     objects;
 
-    Domain::ModelWipeTower& wipe_tower();
-    const Domain::ModelWipeTower& wipe_tower() const;
-    const Domain::ModelWipeTower& wipe_tower(const int bed_index) const;
-    Domain::ModelWipeTower& wipe_tower(const int bed_index);
-    std::vector<Domain::ModelWipeTower>& get_wipe_tower_vector() { return wipe_tower_vector; }
-    const std::vector<Domain::ModelWipeTower>& get_wipe_tower_vector() const { return wipe_tower_vector; }
-
     Domain::CustomGCode::Info& custom_gcode_per_print_z();
     const Domain::CustomGCode::Info& custom_gcode_per_print_z() const;
     std::vector<Domain::CustomGCode::Info>& get_custom_gcode_per_print_z_vector() { return custom_gcode_per_print_z_vector; }

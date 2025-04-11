@@ -4,7 +4,6 @@
 #include <boost/filesystem/operations.hpp>
 
 #include "Slic3r/Biz/Slicing/SlicingInteractor.hpp"
-#include "Slic3r/Biz/Slicing/ModelUtils.hpp"
 #include "Slic3r/Biz/Slicing/TestUtils.hpp"
 #include "Slic3r/Log.hpp"
 #include "Slic3r/TestUtils/TestData.hpp"

@@ -34,7 +34,7 @@ struct BedInstance : public ObjectBase
     bool active{ false };
     bool contour_enabled{ false };
     bool print_volume_enabled{ false };
-    ModelWipeTower wipe_tower;
+    std::optional<ModelWipeTower> wipe_tower;
     CustomGCode::Info custom_gcode;
 };
 

@@ -1,19 +1,37 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_vector.hpp>
 
-#include <Slic3r/Biz/Slicing/ModelUtils.hpp>
-#include "Slic3r/Biz/Slicing/TestUtils.hpp"
+#include "libslic3r/ModelUtils.hpp"
 
 using namespace Catch;
 using Catch::Matchers::Equals;
 
-using Slic3r::Tests::generate_cubes;
 using Slic3r::Domain::ModelInstanceList;
 using Slic3r::Biz::Slicing::with_limited_instances;
 using Slic3r::ModelInstance;
 
 
-TEST_CASE("With limited instances temporarily removes instances and objects", "[slicing][slicing-model-utils]")
+Slic3r::Model generate_cubes(const int count, const int row_size)
+{
+    const float size{20};
+    Slic3r::Model model;
+    for (int i{}; i < count; ++i) {
+        const int row{i / row_size};
+        const int column{i % row_size};
+
+        namespace TriMesh = Slic3r::Biz::Algorithms::TriangleMesh;
+        Slic3r::Domain::TriangleMesh cube_mesh = TriMesh::make_cube(size, size, size);
+        cube_mesh.translate(Slic3r::Domain::Vec3f{column * (size + 5.0f), row * (size + 5.0f), 0.0f});
+
+        Slic3r::ModelObject* model_object = model.add_object();
+        model_object->add_volume(cube_mesh);
+        model_object->add_instance();
+        model_object->ensure_on_bed();
+    }
+    return model;
+}
+
+TEST_CASE("With limited instances temporarily removes instances and objects", "[slicing-model-utils]")
 {
     Slic3r::Model model{generate_cubes(5, 5)};
 

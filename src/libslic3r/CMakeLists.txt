@@ -272,6 +272,8 @@ set(SLIC3R_SOURCES
     CutUtils.hpp
     Model.cpp
     Model.hpp
+    ModelUtils.hpp
+    ModelUtils.cpp
     ModelProcessing.cpp
     ModelProcessing.hpp
     FileReader.cpp

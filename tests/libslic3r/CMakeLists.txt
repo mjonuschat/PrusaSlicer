@@ -46,7 +46,8 @@ add_executable(${_TEST_NAME}_tests
     test_layer_region.cpp
     ../data/prusaparts.cpp
     ../data/prusaparts.hpp
-     test_static_map.cpp
+    test_static_map.cpp
+    test_model_utils.cpp
 	)
 
 if (TARGET OpenVDB::openvdb)

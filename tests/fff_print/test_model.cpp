@@ -52,7 +52,7 @@ SCENARIO("Model construction", "[Model]") {
 			print.auto_assign_extruders(model_object);
 			THEN("Print works?") {
 				print.set_status_silent();
-				print.apply(model, config);
+				print.apply(model, config, {});
 				print.process();
                 const Biz::libpgcode::ProcessorResult result{print.process_gcode(nullptr)};
                 CHECK(result.gcode.str().size() > 0);

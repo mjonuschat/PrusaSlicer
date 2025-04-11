@@ -1760,8 +1760,6 @@ namespace Slic3r {
                 } catch (const boost::property_tree::ptree_bad_path&) {
                     // Probably an old project with no bed_idx info - pretend that we saw 0.
                 }
-                if (bed_idx >= int(m_model->get_wipe_tower_vector().size()))
-                    continue;
                 double pos_x = bed_block.second.get<double>("<xmlattr>.position_x");
                 double pos_y = bed_block.second.get<double>("<xmlattr>.position_y");
                 double rot_deg = bed_block.second.get<double>("<xmlattr>.rotation_deg");
@@ -2876,7 +2874,7 @@ namespace Slic3r {
         bool _add_layer_config_ranges_file_to_archive(mz_zip_archive& archive, Model& model);
         bool _add_sla_support_points_file_to_archive(mz_zip_archive& archive, Model& model);
         bool _add_sla_drain_holes_file_to_archive(mz_zip_archive& archive, Model& model);
-        bool _add_print_config_file_to_archive(mz_zip_archive& archive, const DynamicPrintConfig &config, const Model& model);
+        bool _add_print_config_file_to_archive(mz_zip_archive& archive, const DynamicPrintConfig &config, const Model& model, const WipeTowersOnBeds& wipe_towers);
         bool _add_model_config_file_to_archive(mz_zip_archive& archive, const Model& model, const IdToObjectDataMap &objects_data);
         bool _add_custom_gcode_per_print_z_file_to_archive(mz_zip_archive& archive, Model& model, const DynamicPrintConfig* config);
         bool _add_wipe_tower_information_file_to_archive( mz_zip_archive& archive, const WipeTowersOnBeds& wipe_towers);
@@ -3012,7 +3010,7 @@ namespace Slic3r {
         // Adds slic3r print config file ("Metadata/Slic3r_PE.config").
         // This file contains the content of FullPrintConfing / SLAFullPrintConfig.
         if (config != nullptr) {
-            if (!_add_print_config_file_to_archive(archive, *config, model)) {
+            if (!_add_print_config_file_to_archive(archive, *config, model, wipe_towers)) {
                 close_zip_writer(&archive);
                 boost::filesystem::remove(filename);
                 return false;
@@ -3732,7 +3730,7 @@ namespace Slic3r {
         return true;
     }
 
-    bool _3MF_Exporter::_add_print_config_file_to_archive(mz_zip_archive& archive, const DynamicPrintConfig &config, const Model& model)
+    bool _3MF_Exporter::_add_print_config_file_to_archive(mz_zip_archive& archive, const DynamicPrintConfig &config, const Model& model, const WipeTowersOnBeds& wipe_towers)
     {
         assert(is_decimal_separator_point());
         char buffer[1024];
@@ -3753,13 +3751,16 @@ namespace Slic3r {
                 continue;
 
             std::string opt_serialized;
-            
+
+            const Domain::ModelWipeTower wipe_tower{
+                wipe_towers.contains(0) ? wipe_towers.at(0) : Domain::ModelWipeTower{}};
+
             if (key == "wipe_tower_x")
-                opt_serialized = float_to_string_decimal_point(model.get_wipe_tower_vector().front().position.x());
+                opt_serialized = float_to_string_decimal_point(wipe_tower.position.x());
             else if (key == "wipe_tower_y")
-                opt_serialized = float_to_string_decimal_point(model.get_wipe_tower_vector().front().position.y());
+                opt_serialized = float_to_string_decimal_point(wipe_tower.position.y());
             else if (key == "wipe_tower_rotation_angle")
-                opt_serialized = float_to_string_decimal_point(model.get_wipe_tower_vector().front().rotation);
+                opt_serialized = float_to_string_decimal_point(wipe_tower.rotation);
             else
                 opt_serialized = config.opt_serialize(key);
 
