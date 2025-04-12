@@ -54,8 +54,11 @@ std::string WipeTowerIntegration::append_tcr(GCodeGenerator &gcodegen, const Wip
 
     const bool needs_toolchange = gcodegen.writer().need_toolchange(new_extruder_id);
     const bool will_go_down = ! is_approx(z, current_z);
-    const bool is_ramming = (gcodegen.config().single_extruder_multi_material)
-                         || (! gcodegen.config().single_extruder_multi_material && gcodegen.config().filament_multitool_ramming.get_at(tcr.initial_tool));
+    const bool is_ramming =
+        (gcodegen.config().wipe_tower_disable_filament_ramming &&
+         ((gcodegen.config().single_extruder_multi_material) ||
+          (!gcodegen.config().single_extruder_multi_material &&
+           gcodegen.config().filament_multitool_ramming.get_at(tcr.initial_tool))));
     const bool should_travel_to_tower = ! tcr.priming
                                      && (tcr.force_travel        // wipe tower says so
                                          || ! needs_toolchange   // this is just finishing the tower with no toolchange
