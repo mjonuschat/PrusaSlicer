@@ -3740,6 +3740,18 @@ void PrintConfigDef::init_fff_params()
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionBool(false));
 
+    def = this->add("wipe_tower_disable_filament_ramming", coBool);
+    def->label = L("Disable all filament ramming");
+    def->tooltip = L("If enabled, all filament ramming will be disabled, and the per-filament configuration options will be ignored.");
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionBool(false));
+
+    def = this->add("wipe_tower_disable_cooling_moves", coBool);
+    def->label = L("Disable all cooling moves");
+    def->tooltip = L("If enabled, all filament cooling moves will be disabled, and the per-filament configuration options will be ignored.");
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionBool(false));
+
     def = this->add("slice_closing_radius", coFloat);
     def->label = L("Slice gap closing radius");
     def->category = L("Advanced");
