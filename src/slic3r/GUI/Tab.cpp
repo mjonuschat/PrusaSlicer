@@ -1795,6 +1795,8 @@ void TabPrint::build()
         optgroup->append_single_option_line("wipe_tower_extra_flow");
         optgroup->append_single_option_line("wipe_tower_no_sparse_layers");
         optgroup->append_single_option_line("single_extruder_multi_material_priming");
+        optgroup->append_single_option_line("wipe_tower_disable_cooling_moves");
+        optgroup->append_single_option_line("wipe_tower_disable_filament_ramming");
 
         optgroup = page->new_optgroup(L("Advanced"));
         optgroup->append_single_option_line("interface_shells");
