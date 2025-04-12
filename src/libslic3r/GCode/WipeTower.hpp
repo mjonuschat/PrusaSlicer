@@ -310,6 +310,10 @@ private:
     bool            m_adhesion                  = true;
     GCodeFlavor     m_gcode_flavor;
 
+	// BOSS
+	bool			m_disable_filament_ramming	= false;
+	bool			m_disable_cooling_moves		= false;
+
     // Bed properties
     enum {
         RectangularBed,
