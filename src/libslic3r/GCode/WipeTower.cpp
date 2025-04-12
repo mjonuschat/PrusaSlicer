@@ -547,6 +547,8 @@ WipeTower::ToolChangeResult WipeTower::construct_tcr(WipeTowerWriter& writer,
 WipeTower::WipeTower(const Vec2f& pos, double rotation_deg, const PrintConfig& config, const PrintRegionConfig& default_region_config, const std::vector<std::vector<float>>& wiping_matrix, size_t initial_tool) :
     m_config(&config),
     m_semm(config.single_extruder_multi_material.value),
+    m_disable_cooling_moves(config.wipe_tower_disable_cooling_moves.value),
+    m_disable_filament_ramming(config.wipe_tower_disable_filament_ramming.value),
     m_wipe_tower_pos(pos),
     m_wipe_tower_width(float(config.wipe_tower_width)),
     m_wipe_tower_brim_width(float(config.wipe_tower_brim_width)),
@@ -904,7 +906,7 @@ void WipeTower::toolchange_Unload(
 	float remaining = xr - xl ;							// keeps track of distance to the next turnaround
 	float e_done = 0;									// measures E move done from each segment   
 
-    const bool do_ramming = m_semm || m_filpar[m_current_tool].multitool_ramming;
+    const bool do_ramming = (m_semm || m_filpar[m_current_tool].multitool_ramming) && !m_disable_filament_ramming;
     const bool cold_ramming = m_is_mk4mmu3;
 
     if (do_ramming) {
@@ -994,7 +996,7 @@ void WipeTower::toolchange_Unload(
     }
 
     const int& number_of_cooling_moves = m_filpar[m_current_tool].cooling_moves;
-    const bool cooling_will_happen = m_semm && number_of_cooling_moves > 0;
+    const bool cooling_will_happen = m_semm && number_of_cooling_moves > 0 && !m_disable_cooling_moves;
     bool change_temp_later = false;
 
     // Wipe tower should only change temperature with single extruder MM. Otherwise, all temperatures should
