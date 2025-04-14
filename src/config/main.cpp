@@ -1,4 +1,5 @@
 ﻿#include "Slic3r/Domain/ConfigFDM.hpp"
+#include "Slic3r/Domain/ConfigPhysical.hpp"
 #include "Slic3r/Biz/Config/ConfigSerialize.hpp"
 #include "Slic3r/Biz/Config/ConfigLegacy.hpp"
 
@@ -30,6 +31,8 @@ int main()
     ObjectSettings os;
     VolumeSettings vs;
 
+    PhysicalPrinterSettings pps;
+
     //os.opt("travel_lift_before_obstacles").set_null(false);
     //os.opt("travel_lift_before_obstacles").set<bool>(true);
     //ps.opt("gcode_flavor").set_enum_from_string("two");
@@ -44,6 +47,7 @@ int main()
     std::cout << "PRINT SETTINGS\n" << serialize(ps).dump(4) << std::endl << "=============================" << std::endl;
     std::cout << "TOOL PRINT SETTINGS\n" << serialize(tps).dump(4) << std::endl << "=============================\n\n\n" << std::endl;
     std::cout << "OBJECT SETTINGS\n" << serialize(os).dump(4) << std::endl << "=============================\n\n\n" << std::endl;
+    std::cout << "PHYSICAL PRINTER SETTINGS\n" << serialize(pps).dump(4) << std::endl << "=============================\n\n\n" << std::endl;
 
     for (const ConfigItemDef& def : s_defs_fdm.defs()) {
         bool tool_dependent = false;

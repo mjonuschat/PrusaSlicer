@@ -20,9 +20,6 @@ enum class PrinterTechnology
 enum class GCodeThumbnailsFormat {
     PNG, JPG, QOI
 };
-enum class AuthorizationType {
-    KeyPassword, UserPassword
-};
 enum class ArcFittingType {
     Disabled,
     EmitCenter

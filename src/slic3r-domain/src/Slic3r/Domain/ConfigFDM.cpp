@@ -9,12 +9,12 @@
 static const std::string& L(const std::string& s) { return s; }
 static const std::string& L_CONTEXT(const std::string& s, const std::string& ctx) { return s; }
 
-void init_fn(ConfigDefinitions& defs);
+void fdm_config_init_fn(ConfigDefinitions& defs);
 
 // Define the static object holding all definitions. Provide list of acceptable
 // boxes and the init function.
 ConfigDefinitions s_defs_fdm({"printer_settings", "filament_settings", "print_settings",
-    "toolprint_settings", "object_settings", "volume_settings"}, init_fn);
+    "toolprint_settings", "object_settings", "volume_settings"}, fdm_config_init_fn);
 
 
 // JUST TEMPORARY UNTIL WE DECIDE WHAT TO DO WITH MODES.
@@ -28,7 +28,7 @@ enum { comSimple, comAdvanced, comExpert };
 
 // Now define the init function. This function will be called by ConfigDefinitions
 // constructor and will fill the definitions with all the necessary data.
-void init_fn(ConfigDefinitions& defs)
+void fdm_config_init_fn(ConfigDefinitions& defs)
 {
     using ConfigItemType::Bool;
     using ConfigItemType::Int;
@@ -127,79 +127,6 @@ void init_fn(ConfigDefinitions& defs)
     def->max = 1200;
     def->mode = comAdvanced;
     SET_DEFAULT(200.);
-
-    /* TODO - physical printers
-    def = defs.add("print_host", String);
-    def->label = L("Hostname, IP or URL");
-    def->tooltip = L("Slic3r can upload G-code files to a printer host. This field should contain "
-                   "the hostname, IP address or URL of the printer host instance. "
-                   "Print host behind HAProxy with basic auth enabled can be accessed by putting the user name and password into the URL "
-                   "in the following format: https://username:password@your-octopi-address/");
-    def->mode = comAdvanced;
-    def->cli = ConfigItemDef::nocli;
-    SET_DEFAULT("");
-
-    def = defs.add("printhost_apikey", String);
-    def->label = L("API Key / Password");
-    def->tooltip = L("Slic3r can upload G-code files to a printer host. This field should contain "
-                   "the API Key or the password required for authentication.");
-    def->mode = comAdvanced;
-    def->cli = ConfigItemDef::nocli;
-    SET_DEFAULT("");
-    
-    def = defs.add("printhost_port", String);
-    def->label = L("Printer");
-    def->tooltip = L("Name of the printer");
-    def->gui_type = ConfigItemDef::GUIType::select_close;
-    def->mode = comAdvanced;
-    def->cli = ConfigItemDef::nocli;
-    SET_DEFAULT("");
-    
-    def = defs.add("printhost_cafile", String);
-    def->label = L("HTTPS CA File");
-    def->tooltip = L("Custom CA certificate file can be specified for HTTPS OctoPrint connections, in crt/pem format. "
-                   "If left blank, the default OS CA certificate repository is used.");
-    def->mode = comAdvanced;
-    def->cli = ConfigItemDef::nocli;
-    SET_DEFAULT("");
-    
-    // Options used by physical printers
-    
-    def = defs.add("printhost_user", String);
-    def->label = L("User");
-    def->mode = comAdvanced;
-    def->cli = ConfigItemDef::nocli;
-    def->init_fn = [](ConfigItem& item) { item.set(""); };
-    
-    def = defs.add("printhost_password", String);
-    def->label = L("Password");
-    def->gui_type = ConfigItemDef::GUIType::password;
-    def->mode = comAdvanced;
-    def->cli = ConfigItemDef::nocli;
-    SET_DEFAULT("");
-
-    // Only available on Windows.
-    def = defs.add("printhost_ssl_ignore_revoke", Bool);
-    def->label = L("Ignore HTTPS certificate revocation checks");
-    def->tooltip = L("Ignore HTTPS certificate revocation checks in case of missing or offline distribution points. "
-                     "One may want to enable this option for self signed certificates if connection fails.");
-    def->mode = comAdvanced;
-    def->cli = ConfigItemDef::nocli;
-    SET_DEFAULT(false);
-    
-    def = defs.add("preset_names", Strings);
-    def->label = L("Printer preset names");
-    def->tooltip = L("Names of presets related to the physical printer");
-    def->mode = comAdvanced;
-    def->init_fn = [](ConfigItem& item) { item.vec<std::string>() = {}; };
-
-    def = defs.add("printhost_authorization_type", Enum);
-    def->label = L("Authorization Type");
-    def->enum_values = { { int(AuthorizationType::KeyPassword), "key", L("API key") },
-                         { int(AuthorizationType::UserPassword), "user", L("HTTP digest") } };
-    def->mode = comAdvanced;
-    def->cli = ConfigItemDef::nocli;
-    SET_DEFAULT(AuthorizationType::KeyPassword);*/
 
     /* TODO - where does this belong to ?
     def = defs.add("profile_vendor", String);
@@ -2263,26 +2190,6 @@ void init_fn(ConfigDefinitions& defs)
     def->tooltip = L("This is the diameter of your extruder nozzle (for example: 0.5, 0.35 etc.)");
     def->sidetext = L("mm");
     def->init_fn = [](ConfigItem& item) { item.vec<double>() = { 0.4 }; };
-
-    /* TODO: Physical printer?
-    def = defs.add("host_type", Enum);
-    def->label = L("Host Type");
-    def->tooltip = L("Slic3r can upload G-code files to a printer host. This field must contain "
-                   "the kind of the host.");
-    def->set_enum<PrintHostType>({
-        std::pair{ "prusalink",      "PrusaLink" },
-        std::pair{ "prusaconnect",   "PrusaConnect" },
-        std::pair{ "octoprint",      "OctoPrint" },
-        std::pair{ "moonraker",      "Klipper (via Moonraker)" },
-        std::pair{ "duet",           "Duet" },
-        std::pair{ "flashair",       "FlashAir" },
-        std::pair{ "astrobox",       "AstroBox" },
-        std::pair{ "repetier",       "Repetier" },
-        std::pair{ "mks",            "MKS" }
-    });
-    def->mode = comAdvanced;
-    def->cli = ConfigOptionDef::nocli;
-    SET_DEFAULT( new ConfigOptionEnum<PrintHostType>(htPrusaLink));*/
 
     def = defs.add("only_retract_when_crossing_perimeters", Bool);
     def->belongs_to = { "print_settings" };
