@@ -14,12 +14,13 @@ struct IFDMResultCacheChangedListener
     virtual void on_fdm_result_cache_changed(const Slicing::SlicingId id) = 0;
 };
 
+using FDMResultRef = std::reference_wrapper<const Slicing::FDMResult>;
 class FDMResultCache :
     public Slicing::IFDMResultListener,
     public WithListeners<IFDMResultCacheChangedListener>
 {
 public:
-    const Slicing::FDMResult& get_result(const Slicing::SlicingId id) const;
+    std::optional<FDMResultRef> get_result(const Slicing::SlicingId id) const;
 
     void on_fdm_result_changed(
         Slicing::FDMResult&& result,

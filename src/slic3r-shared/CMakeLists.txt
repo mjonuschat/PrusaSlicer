@@ -33,8 +33,6 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Plater/PlaterRenderLayout.cpp
         include/Slic3r/App/Plater/History.hpp
         src/Slic3r/App/Plater/History.cpp
-        include/Slic3r/App/Plater/SidebarSlice.hpp
-        src/Slic3r/App/Plater/SidebarSlice.cpp
 		include/Slic3r/App/Plater/PlaterIFDMResultCacheChangedListener.hpp
 
         include/Slic3r/App/View/IPanelView.hpp
@@ -52,8 +50,6 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Preview/PreviewRenderLayout.cpp
         include/Slic3r/App/Preview/SidebarAutoReslice.hpp
         src/Slic3r/App/Preview/SidebarAutoReslice.cpp
-        include/Slic3r/App/Preview/SidebarAfterSlice.hpp
-        src/Slic3r/App/Preview/SidebarAfterSlice.cpp
 
         include/Slic3r/App/ObjectList.hpp
         src/Slic3r/App/ObjectList.cpp
@@ -63,6 +59,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/SidebarBed.cpp
         include/Slic3r/App/SidebarPrint.hpp
         src/Slic3r/App/SidebarPrint.cpp
+        include/Slic3r/App/SidebarActionButtons.hpp
+        src/Slic3r/App/SidebarActionButtons.cpp
 
         src/Slic3r/App/Scene/Scene.cpp
         include/Slic3r/App/Scene/Scene.hpp
@@ -124,6 +122,10 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Localization.cpp
         include/Slic3r/App/Localization.hpp
         include/Slic3r/App/ILanguageChangedListener.hpp
+
+        include/Slic3r/App/IRenderModuleChangedListener.hpp
+        src/Slic3r/App/Navigator.cpp
+        include/Slic3r/App/Navigator.hpp
 
         include/Slic3r/App/Yoga/Align.hpp
         src/Slic3r/App/Yoga/FlexSizer.cpp

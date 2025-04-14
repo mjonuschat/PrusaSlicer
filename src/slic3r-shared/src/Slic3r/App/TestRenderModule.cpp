@@ -53,9 +53,9 @@ TestRenderModule::TestRenderModule()
     }
 }
 
-void TestRenderModule::on_init(Render::Device& device)
+void TestRenderModule::on_init(Render::Device& device, Render::ImguiRender& imgui_render)
 {
-    AbstractRenderModule::on_init(device);
+    AbstractRenderModule::on_init(device, imgui_render);
     init_render();
     init_scene();
 }

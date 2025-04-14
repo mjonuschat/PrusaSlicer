@@ -36,8 +36,6 @@ public:
 
     ~AbstractRenderCanvas() override = default;
 
-    Render::ImguiRender* imgui_render() { return m_imgui_render.get(); }
-
     const std::string& language() const { return m_imgui_render->language(); }
     void set_language(const std::string& language) { m_pending_language = language; }
     float font_size() const { return m_imgui_render->font_size(); }
@@ -46,6 +44,7 @@ public:
 
     virtual void render();
     void set_render_module(AbstractRenderModule* render_module);
+    void set_next_render_module(AbstractRenderModule* render_module);
 
     // IRenderRequestHandler interface impl
     void request_render() override;
@@ -92,6 +91,8 @@ private:
     void end_frame(Render::CommandBuffer& cmd_buffer);
     void emit_enqueued_events();
 
+    Render::ImguiRender& imgui_render();
+
 protected:
     void set_screen_size(const Render::ScreenInfo& screen_info);
 
@@ -99,7 +100,8 @@ protected:
     using MouseEvents = std::vector<MouseEvent>;
     using KeyboardEvents = std::vector<KeyboardEvent>;
 
-    AbstractRenderModule* m_render_module{nullptr};
+    AbstractRenderModule* m_render_module       {nullptr};
+    AbstractRenderModule* m_next_render_module  {nullptr};
     KeyModifiers m_key_modifiers{KeyModifiers(KeyModifier::None)};
 
     int m_mouse_x {0};

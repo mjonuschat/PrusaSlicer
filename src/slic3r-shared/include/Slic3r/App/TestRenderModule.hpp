@@ -18,9 +18,11 @@ public:
     void render_imgui(Render::CommandBuffer& cmd_buffer) override;
     void on_scene_mouse_event(const Platform::MouseEvent &e) override;
     void on_scene_keyboard_event(const Platform::KeyboardEvent &e) override;
+    void add_type_changed_listener(IRenderModuleChangedListener* l) override {};
+    void remove_type_changed_listener(IRenderModuleChangedListener* l) override {};
 
 protected:
-    void on_init(Render::Device& device) override;
+    void on_init(Render::Device& device, Render::ImguiRender& imgui_render) override;
     void on_screen_resized() override;
 
     virtual void register_commands() override;

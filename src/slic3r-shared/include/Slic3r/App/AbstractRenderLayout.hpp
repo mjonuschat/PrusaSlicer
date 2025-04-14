@@ -75,6 +75,7 @@ private:
 protected:
     Yoga::FlexSizer         left_sizer;
     Yoga::FlexSizer         view_cube_sizer;
+    Yoga::FlexSizer         view_cube_sizer_in;
     Yoga::FlexSizer         middle_sizer;
     Yoga::FlexSizer         right_sizer;
 

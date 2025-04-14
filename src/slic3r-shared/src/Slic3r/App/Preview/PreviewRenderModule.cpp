@@ -1,7 +1,6 @@
 #include "Slic3r/App/Preview/PreviewRenderModule.hpp"
 #include "Slic3r/App/Preview/PreviewCameraGizmo.hpp"
 #include "Slic3r/App/Preview/SidebarAutoReslice.hpp"
-#include "Slic3r/App/Preview/SidebarAfterSlice.hpp"
 #include "Slic3r/App/CubeView.hpp"
 #include "Slic3r/App/SidebarBed.hpp"
 #include "Slic3r/App/SidebarPrint.hpp"
@@ -12,6 +11,7 @@
 #include "Slic3r/App/LibvgcodeWrapper/WrapperInputData.hpp"
 #include "Slic3r/App/LibvgcodeWrapper/Types.hpp"
 #include "Slic3r/App/Render/ImguiRender.hpp"
+#include "Slic3r/App/IRenderModuleChangedListener.hpp"
 
 #include "Slic3r/Domain/TriangleMesh.hpp"
 
@@ -25,7 +25,7 @@
 #include <boost/filesystem/operations.hpp>
 
 #define ENABLED_DEBUG_VIEWER 1
-#define ENABLED_DEBUG_LOAD_DATA 1
+#define ENABLED_DEBUG_LOAD_DATA 0
 #define ENABLED_DEBUG_VIEWER_MODE 1
 
 using namespace Slic3r::Biz::libpgcode;
@@ -246,48 +246,51 @@ void PreviewRenderModule::on_scene_keyboard_event(const Platform::KeyboardEvent&
       Platform::AbstractRenderModule::on_scene_keyboard_event(e);
 }
 
+void PreviewRenderModule::add_type_changed_listener(IRenderModuleChangedListener* l)
+{
+    m_sidebar_actions_panel.add_listener<IRenderModuleChangedListener>(l);
+}
+
+void PreviewRenderModule::remove_type_changed_listener(IRenderModuleChangedListener* l)
+{
+    m_sidebar_actions_panel.remove_listener<IRenderModuleChangedListener>(l);
+}
+
+void PreviewRenderModule::on_selected_bed_instance_changed(
+    Domain::SelectionId project_id, 
+    Domain::SelectionId container_id, 
+    Domain::SelectionId bed_instance_id)
+{
+    send_active_bed_data_to_viewer({ project_id, bed_instance_id });
+}
+
 void PreviewRenderModule::on_fdm_result_cache_changed(
     const Biz::Slicing::SlicingId id
 ) {
-    send_data_to_viewer(m_project_interactor.fdm_result_cache().get_result(id));
+    const Biz::Slicing::SlicingId active_bed_slicing_id{
+        m_project_interactor.selected_project_id(),
+        m_project_interactor.scene_interactor().selected_bed_instance().instance_id
+    };
+
+    if (active_bed_slicing_id == id)
+        send_active_bed_data_to_viewer(id);
 }
 
-void PreviewRenderModule::on_init(Render::Device& device)
+void PreviewRenderModule::on_status_cache_changed(const Biz::Slicing::SlicingId id)
 {
-    namespace TriMesh = Biz::Algorithms::TriangleMesh;
+    // request redraw
+    request_render();
+}
 
-    AbstractRenderModule::on_init(device);
+void PreviewRenderModule::on_init(Render::Device& device, Render::ImguiRender& imgui_render)
+{
+
+    AbstractRenderModule::on_init(device, imgui_render);
     m_scene_presenter =
         std::make_unique<PreviewScenePresenter>(m_workbench, m_project_interactor, *m_device);
 
-
-    // Temporary (ugly) hack to enable slicing. Remove once switching from plater to
-    // preview is possible.
-    auto config{m_project_interactor.selected_config_container().print_config()};
-    config.set("skirts", 2);
-    config.set("brim_width", 10.0);
-    config.option<ConfigOptionEnum<DraftShield>>("draft_shield", true)->value = dsEnabled;
-    m_project_interactor.selected_config_container().set_print_config(config);
-    const double cube1_side{40};
-    TriangleMesh cube1{TriMesh::make_cube(cube1_side, cube1_side, cube1_side)};
-    cube1.translate(Vec3f{30, 0, 0});
-    m_project_interactor.scene_interactor().new_object_from_mesh(std::move(cube1));
-    const double cube2_side{30};
-    TriangleMesh cube2{TriMesh::make_cube(cube2_side, cube2_side, cube2_side)};
-    cube2.translate(Vec3f{60, 0, 0});
-    m_project_interactor.scene_interactor().new_object_from_mesh(std::move(cube2));
-    const double cube3_side{80};
-    TriangleMesh cube3{TriMesh::make_cube(cube3_side, cube3_side, cube3_side)};
-    cube3.translate(Vec3f{-80, -60, 0});
-    m_project_interactor.scene_interactor().new_object_from_mesh(std::move(cube3));
-    const double cube4_side{70};
-    TriangleMesh cube4{TriMesh::make_cube(cube4_side, cube4_side, cube4_side)};
-    cube4.translate(Vec3f{0, 90, 0});
-    m_project_interactor.scene_interactor().new_object_from_mesh(std::move(cube4));
-    const double cube5_side{50};
-    TriangleMesh cube5{TriMesh::make_cube(cube5_side, cube5_side, cube5_side)};
-    cube5.translate(Vec3f{60, 60, 0});
-    m_project_interactor.scene_interactor().new_object_from_mesh(std::move(cube5));
+    m_project_interactor.scene_interactor().add_listener<Biz::ISelectedBedInstanceChangedListener>( this );
+    m_project_interactor.fdm_result_cache().add_listener<Biz::IFDMResultCacheChangedListener>( this );
 
     init_gizmos();
     init_viewer(device);
@@ -590,8 +593,9 @@ void PreviewRenderModule::init_scene_layout()
     m_layout.set_sidebar_auto_reslice_render_fn([](Vec2f size, Vec2f pos) -> void
         { Preview::SidebarAutoReslice::render(pos, size); });
 
-    m_layout.set_sidebar_after_slice_render_fn([](Vec2f size, Vec2f pos) -> void
-        { Preview::SidebarAfterSlice::render(pos, size); });
+    m_sidebar_actions_panel.on_init(&m_project_interactor, m_imgui_render, Render::ModuleType::Preview);
+    m_layout.set_sidebar_after_slice_render_fn([this](Vec2f size, Vec2f pos) -> void
+        { m_sidebar_actions_panel.render(pos, size); });
 
     m_layout.set_legend_render_fn([this](Vec2f size, Vec2f pos) {
         ImGui::PushFont(m_imgui_render->font(Render::ImguiFontType::Bold));
@@ -1014,6 +1018,15 @@ static WrapperInputData extract_wrapper_input_data_from_result(const ProcessorRe
     ret.template_custom_gcode = result.template_custom_gcode;
 
     return ret;
+}
+
+void PreviewRenderModule::send_active_bed_data_to_viewer(const Biz::Slicing::SlicingId id)
+{
+    const std::optional<Biz::FDMResultRef> fdm_result{ m_project_interactor.fdm_result_cache().get_result(id) };
+    if (fdm_result)
+        send_data_to_viewer(*fdm_result);
+    else
+        m_viewer.reset();
 }
 
 void PreviewRenderModule::send_data_to_viewer(const Biz::Slicing::FDMResult& result)

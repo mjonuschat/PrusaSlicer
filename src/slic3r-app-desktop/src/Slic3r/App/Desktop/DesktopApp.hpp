@@ -12,6 +12,7 @@
 #include <Slic3r/App/Init.hpp>
 
 #include <Slic3r/Biz/ProjectInteractor.hpp>
+#include "Slic3r/App/Navigator.hpp"
 
 namespace Slic3r::App::Desktop {
 class MainFrame;
@@ -34,6 +35,7 @@ private:
     Domain::Workbench m_workbench;
     std::unique_ptr<Biz::ProjectInteractor> m_project_interactor;
     InitParams m_init_params;
+    Navigator m_navigator;
 };
 
 } // namespace Slic3r::App::Desktop

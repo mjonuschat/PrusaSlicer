@@ -6,6 +6,10 @@
 #include "Slic3r/App/Render/ScreenInfo.hpp"
 #include "Slic3r/App/Platform/CommandRegistry.hpp"
 
+namespace Slic3r::App {
+class IRenderModuleChangedListener;
+}
+
 namespace Slic3r::App::Render {
 class Device;
 class CommandBuffer;
@@ -34,10 +38,10 @@ public:
     void deactivate();
 
     void set_screen_size(const Render::ScreenInfo& screen_info);
-    void ensure_initialized(Render::Device& device)
+    void ensure_initialized(Render::Device& device, Render::ImguiRender& imgui_render)
     {
         if (!m_initialized) {
-            on_init(device);
+            on_init(device, imgui_render);
             register_commands();
             m_initialized = true;
         }
@@ -49,7 +53,10 @@ protected:
     /**
      * Initialize all Render objects here.
      */
-    virtual void on_init(Render::Device& device) { m_device = &device; }
+    virtual void on_init(Render::Device& device, Render::ImguiRender& imgui_render) { 
+        m_device = &device;
+        m_imgui_render = &imgui_render; 
+    }
 
     virtual void on_activated();
     virtual void on_deactivated();
@@ -58,6 +65,9 @@ protected:
 
     virtual void register_commands() {}
     void request_render();
+
+    virtual void add_type_changed_listener(IRenderModuleChangedListener* l) = 0;
+    virtual void remove_type_changed_listener(IRenderModuleChangedListener* l) = 0;
 
 protected:
     Render::Device* m_device{nullptr};

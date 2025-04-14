@@ -3,7 +3,11 @@
 
 namespace Slic3r::Biz {
 
-const Slicing::FDMResult& FDMResultCache::get_result(const Slicing::SlicingId id) const {
+std::optional<FDMResultRef> FDMResultCache::get_result(const Slicing::SlicingId id) const
+{
+    if (!m_results.contains(id)) {
+        return std::nullopt;
+    }
     return m_results.at(id);
 }
 

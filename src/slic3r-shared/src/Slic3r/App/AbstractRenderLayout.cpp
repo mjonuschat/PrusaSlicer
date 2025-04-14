@@ -53,14 +53,14 @@ const static float max_tt_size = 50.f;
 
 void AbstractRenderLayout::init_view_cube_sizer()
 {
-    static Yoga::FlexSizer sizer_in(1, 1);
-    sizer_in.set_bg_alpha(0.f);
-    sizer_in.add(m_cb_cube_view_render, true, { "view_cube" });
+    view_cube_sizer_in.init(1, 1);
+    view_cube_sizer_in.set_bg_alpha(0.f);
+    view_cube_sizer_in.add(m_cb_cube_view_render, true, { "view_cube" });
 
     view_cube_sizer.init(1, 1);
     view_cube_sizer.set_grow_col(0);
     view_cube_sizer.set_grow_row(0, 0.f);
-    view_cube_sizer.add(sizer_in, {}, { Yoga::AlignH::Right, Yoga::AlignV::Top });
+    view_cube_sizer.add(view_cube_sizer_in, {}, { Yoga::AlignH::Right, Yoga::AlignV::Top });
 }
 
 //#define SHOW_BG
