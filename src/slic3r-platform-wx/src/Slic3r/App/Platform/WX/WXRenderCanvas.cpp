@@ -1,10 +1,12 @@
 #include "Slic3r/App/Platform/WX/WXRenderCanvas.hpp"
+#include "fmt/ostream.h"
 
 #include <iostream>
 
 #include <wx/dcclient.h>
 #include <imgui/imgui.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
+#include <cpptrace/from_current.hpp>
 
 #include <Slic3r/Biz/Platform/Termination.hpp>
 #include <Slic3r/App/Platform/PlatformError.hpp>
@@ -337,6 +339,23 @@ static void ImGui_ImplWX_Shutdown()
     IM_DELETE(bd);
 }
 
+/*
+* WxWidgests swallow exception backtraces. Wrap all wx event handlers in
+* this, to print the backtrace before letting wxWidgets handle the exception.
+*/
+template <typename Class, typename EventType>
+auto catching_handler(Class* instance, void (Class::*handler)(EventType&)) {
+    return [=](wxEvent& evt) {
+        CPPTRACE_TRY {
+            (instance->*handler)(static_cast<EventType&>(evt));
+        } CPPTRACE_CATCH(const std::exception& e) {
+            SPDLOG_ERROR("unhandled exception: '{}'", e.what());
+            cpptrace::from_current_exception().print();
+            throw;
+        }
+    };
+}
+
 WXRenderCanvas::WXRenderCanvas(wxWindow* parent)
 : wxGLCanvas(parent, create_wxglattributes(), wxID_ANY, wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS), m_start_time(Clock::now())
 {
@@ -357,22 +376,22 @@ WXRenderCanvas::WXRenderCanvas(wxWindow* parent)
     m_gl_context = std::make_unique<wxGLContext>(this, nullptr, &attrs);
     //SetCurrent(*m_gl_context);
 
-    Bind(wxEVT_ENTER_WINDOW, &WXRenderCanvas::on_mouse_enter, this);
-    Bind(wxEVT_SIZE, &WXRenderCanvas::on_size, this);
-    Bind(wxEVT_IDLE, &WXRenderCanvas::on_idle, this);
-    Bind(wxEVT_PAINT, &WXRenderCanvas::on_paint, this);
-    Bind(wxEVT_CHAR, &WXRenderCanvas::on_keyboard, this);
-    Bind(wxEVT_KEY_DOWN, &WXRenderCanvas::on_keyboard, this);
-    Bind(wxEVT_KEY_UP, &WXRenderCanvas::on_keyboard, this);
-    Bind(wxEVT_MOUSEWHEEL, &WXRenderCanvas::on_mouse, this);
-    Bind(wxEVT_MOTION, &WXRenderCanvas::on_mouse, this);
-    Bind(wxEVT_LEFT_DOWN, &WXRenderCanvas::on_mouse, this);
-    Bind(wxEVT_LEFT_UP, &WXRenderCanvas::on_mouse, this);
-    Bind(wxEVT_RIGHT_DOWN, &WXRenderCanvas::on_mouse, this);
-    Bind(wxEVT_RIGHT_UP, &WXRenderCanvas::on_mouse, this);
-    Bind(wxEVT_MIDDLE_DOWN, &WXRenderCanvas::on_mouse, this);
-    Bind(wxEVT_MIDDLE_UP, &WXRenderCanvas::on_mouse, this);
-    Bind(wxEVT_LEAVE_WINDOW, &WXRenderCanvas::on_mouse_leave, this);
+    Bind(wxEVT_ENTER_WINDOW, catching_handler(this, &WXRenderCanvas::on_mouse_enter));
+    Bind(wxEVT_SIZE, catching_handler(this, &WXRenderCanvas::on_size));
+    Bind(wxEVT_IDLE, catching_handler(this, &WXRenderCanvas::on_idle));
+    Bind(wxEVT_PAINT, catching_handler(this, &WXRenderCanvas::on_paint));
+    Bind(wxEVT_CHAR, catching_handler(this, &WXRenderCanvas::on_keyboard));
+    Bind(wxEVT_KEY_DOWN, catching_handler(this, &WXRenderCanvas::on_keyboard));
+    Bind(wxEVT_KEY_UP, catching_handler(this, &WXRenderCanvas::on_keyboard));
+    Bind(wxEVT_MOUSEWHEEL, catching_handler(this, &WXRenderCanvas::on_mouse));
+    Bind(wxEVT_MOTION, catching_handler(this, &WXRenderCanvas::on_mouse));
+    Bind(wxEVT_LEFT_DOWN, catching_handler(this, &WXRenderCanvas::on_mouse));
+    Bind(wxEVT_LEFT_UP, catching_handler(this, &WXRenderCanvas::on_mouse));
+    Bind(wxEVT_RIGHT_DOWN, catching_handler(this, &WXRenderCanvas::on_mouse));
+    Bind(wxEVT_RIGHT_UP, catching_handler(this, &WXRenderCanvas::on_mouse));
+    Bind(wxEVT_MIDDLE_DOWN, catching_handler(this, &WXRenderCanvas::on_mouse));
+    Bind(wxEVT_MIDDLE_UP, catching_handler(this, &WXRenderCanvas::on_mouse));
+    Bind(wxEVT_LEAVE_WINDOW, catching_handler(this, &WXRenderCanvas::on_mouse_leave));
 }
 
 WXRenderCanvas::~WXRenderCanvas()
