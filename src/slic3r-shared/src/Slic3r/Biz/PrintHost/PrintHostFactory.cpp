@@ -18,6 +18,8 @@ namespace Slic3r::Biz::PrintHost {
 
 std::unique_ptr<IPrintHost> create_print_host(PrintHostConfig config, PrintHostJobData data)
 {
+    using PrintHostType = Domain::PrintHostType;
+
     switch (config.type) {
         case PrintHostType::Local: return std::make_unique<PrintHostLocal>(std::move(config), std::move(data));
         case PrintHostType::OctoPrint: return std::make_unique<PrintHostOctoPrint>(std::move(config), std::move(data));

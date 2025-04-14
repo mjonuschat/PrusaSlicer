@@ -59,5 +59,9 @@ void load_from_legacy_file(const std::string& filename, ConfigBox& box)
             // Old and new types do not match.
         }
     }
-
 }
+
+
+// TODO: New slicer changed enums PrintHostType and AuthorizationType (=PrintHostAuthType).
+// We need to convert old options to the new ones properly. BEWARE especially of PrusaConnect and
+// PrusaConnectNew. PrusaConnect was removed and PrusaConnectNew was renamed to PrusaConnect.

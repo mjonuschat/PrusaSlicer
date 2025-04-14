@@ -3,6 +3,8 @@
 #include "Slic3r/Domain/Config.hpp"
 
 
+namespace Slic3r::Domain {
+
 // This is an example of using Config infrastructure.
 
 // First, define a static object of ConfigDefinitions. This object will hold all
@@ -12,11 +14,24 @@ extern ConfigDefinitions s_defs_physical;
 
 
 // Next, define all enums that should be used in the config.
-enum class AuthorizationType {
-    KeyPassword, UserPassword
+enum class PrintHostAuthType {
+    None,
+    ApiKey,
+    Digest
 };
 enum PrintHostType {
-   htPrusaLink, htPrusaConnect, htOctoPrint, htMoonraker, htDuet, htFlashAir, htAstroBox, htRepetier, htMKS, htPrusaConnectNew
+    Local,
+    PrusaLink,
+    PrusaLinkStorage,
+    PrusaConnect,
+    SL1Host,
+    OctoPrint,
+    Moonraker,
+    Duet,
+    FlashAir,
+    AstroBox,
+    Repetier,
+    MKS
 };
 
 // Then, define all types of ConfigBoxes that will be used. Provide our list
@@ -27,3 +42,5 @@ class PhysicalPrinterSettings : public ConfigBox
 public:
     PhysicalPrinterSettings() : ConfigBox(s_defs_physical, "physical_printer_settings") {}
 };
+
+} // namespace Slic3r::Domain

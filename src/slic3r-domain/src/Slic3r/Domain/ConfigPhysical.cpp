@@ -1,6 +1,9 @@
 ﻿#include "Slic3r/Domain/ConfigPhysical.hpp"
 
 
+
+namespace Slic3r::Domain {
+
 // Implementation of physical printer configs is done in this file.
 
 // Define our own marking functions, the regular ones are not accessible in Domain.
@@ -44,20 +47,23 @@ void physical_printer_init_fn(ConfigDefinitions& defs)
     def->label = L("Host Type");
     def->tooltip = L("Slic3r can upload G-code files to a printer host. This field must contain "
                    "the kind of the host.");
-    def->enum_type = PrintHostType::htPrusaLink;
+    def->enum_type = PrintHostType::PrusaLink;
     def->enum_values = {
-        { int(PrintHostType::htPrusaLink),    "prusalink",    "PrusaLink" },
-        { int(PrintHostType::htPrusaConnect), "prusaconnect", "PrusaConnect" },
-        { int(PrintHostType::htOctoPrint),    "octoprint",    "OctoPrint" },
-        { int(PrintHostType::htMoonraker),    "moonraker",    "Klipper (via Moonraker)" },
-        { int(PrintHostType::htDuet),         "duet",         "Duet" },
-        { int(PrintHostType::htFlashAir),     "flashair",     "FlashAir" },
-        { int(PrintHostType::htAstroBox),     "astrobox",     "AstroBox" },
-        { int(PrintHostType::htRepetier),     "repetier",     "Repetier" },
-        { int(PrintHostType::htMKS),          "mks",          "MKS" } };
+        { int(PrintHostType::Local),            "local",            "Local"             },
+        { int(PrintHostType::PrusaLink),        "prusalink",        "PrusaLink"         },
+        { int(PrintHostType::PrusaLinkStorage), "prusalinkstorage", "PrusaLink Storage" },
+        { int(PrintHostType::PrusaConnect),     "prusaconnect",     "PrusaConnect"      },
+        { int(PrintHostType::SL1Host),          "sl1",              "SL1"               },
+        { int(PrintHostType::OctoPrint),        "octoprint",        "OctoPrint"         },
+        { int(PrintHostType::Moonraker),        "moonraker",        "Moonraker"         },
+        { int(PrintHostType::Duet),             "duet",             "Duet"              },
+        { int(PrintHostType::FlashAir),         "flashair",         "FlashAir"          },
+        { int(PrintHostType::AstroBox),         "astrobox",         "AstroBox"          },
+        { int(PrintHostType::Repetier),         "repetier",         "Repetier"          },
+        { int(PrintHostType::MKS),              "mks",              "MKS"               } };
     def->mode = comAdvanced;
     def->cli = ConfigItemDef::nocli;
-    SET_DEFAULT(PrintHostType::htPrusaLink);
+    SET_DEFAULT(PrintHostType::PrusaLink);
     
     def = defs.add("print_host", String);
     def->belongs_to = { "physical_printer_settings" };
@@ -132,13 +138,13 @@ void physical_printer_init_fn(ConfigDefinitions& defs)
     def = defs.add("printhost_authorization_type", Enum);
     def->belongs_to = { "physical_printer_settings" };
     def->label = L("Authorization Type");
-    def->enum_type = AuthorizationType::KeyPassword;
-    def->enum_values = { { int(AuthorizationType::KeyPassword), "key", L("API key") },
-                         { int(AuthorizationType::UserPassword), "user", L("HTTP digest") } };
+    def->enum_type = PrintHostAuthType::None;
+    def->enum_values = { { int(PrintHostAuthType::None),   "none", L("None")        },
+                         { int(PrintHostAuthType::ApiKey), "key",  L("API key")     },
+                         { int(PrintHostAuthType::Digest), "user", L("HTTP digest") } };
     def->mode = comAdvanced;
     def->cli = ConfigItemDef::nocli;
-    SET_DEFAULT(AuthorizationType::KeyPassword);
+    SET_DEFAULT(PrintHostAuthType::ApiKey);
 }
 
-
-
+} // namespace Slic3r::Domain

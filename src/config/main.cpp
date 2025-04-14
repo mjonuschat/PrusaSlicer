@@ -6,6 +6,7 @@
 #include <iostream>
 #include <vector>
 
+namespace Slic3r {
 
 static void print(const std::variant<std::string, std::vector<std::string>>& in)
 {
@@ -31,7 +32,7 @@ int main()
     ObjectSettings os;
     VolumeSettings vs;
 
-    PhysicalPrinterSettings pps;
+    Domain::PhysicalPrinterSettings pps;
 
     //os.opt("travel_lift_before_obstacles").set_null(false);
     //os.opt("travel_lift_before_obstacles").set<bool>(true);
@@ -67,6 +68,7 @@ int main()
     return 0;
 }
 
+} // namespace Slic3r
 
 
 

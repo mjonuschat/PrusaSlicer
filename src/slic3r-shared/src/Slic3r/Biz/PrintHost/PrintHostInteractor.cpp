@@ -50,7 +50,7 @@ void get_storage_choices_from_json(const std::string& json_text, std::vector<Pri
 PrintHostInteractor::PrintHostInteractor(Platform::IMainThreadDispatcher& dispatcher)
     : m_print_host_job_manager(dispatcher)
     , m_print_host_data_finalizer(dispatcher)
-{ 
+{
     m_print_host_job_manager.add_listener<PrintHost::IPrintHostListener>(this);
     m_print_host_data_finalizer.add_listener<PrintHost::IPrintHostBinarizeListener>(this);
 }
@@ -93,7 +93,7 @@ void PrintHostInteractor::upload_gcode(PrintHostConfig config, PrintHostJobData 
 
 void PrintHostInteractor::proccess_gcode_inner(PrintHostConfig config, PrintHostJobData data)
 {
-    if (config.type == PrintHostType::PrusaLink) {
+    if (config.type == Domain::PrintHostType::PrusaLink) {
         upload_gcode_with_storage_choice(std::move(config), std::move(data));
         return;
     }
@@ -121,7 +121,7 @@ void PrintHostInteractor::upload_gcode_with_storage_choice(PrintHostConfig confi
 
     // Create PrusaLinkStorage config by copying the shared pointer.
     // PrintHostConfig has deleted copy constructor.
-    PrintHostConfig storage_config = {Slic3r::Biz::PrintHost::PrintHostType::PrusaLinkStorage
+    PrintHostConfig storage_config = {Domain::PrintHostType::PrusaLinkStorage
         , config_ptr->host
         , config_ptr->ca_file
         , config_ptr->ssl_revoke_best_effort
@@ -148,5 +148,5 @@ void PrintHostInteractor::on_print_host_binarize_fail(const std::string& msg)
 {
     SPDLOG_ERROR("PrintHostDataFinalizer has failed: {}", msg);
 }
-    
+
 } // namespace Slic3r::Biz::PrintHost
