@@ -4,6 +4,44 @@
 #include <Slic3r/Biz/Slicing/ModelUtils.hpp>
 #include <libassert/assert.hpp>
 
+namespace {
+using namespace Slic3r;
+using Biz::Slicing::IProcessCallbacks;
+using Biz::Slicing::SlicingId;
+using Biz::Slicing::FDMResult;
+using Biz::Print::IPrint;
+using Biz::Print::WipeTowerGeometry;
+std::unique_ptr<IPrint> init_print(
+    const PrinterTechnology& printer_technology, 
+    IProcessCallbacks& callbacks,
+    const SlicingId id)
+{
+    std::unique_ptr<PrintBase> print;
+    std::reference_wrapper<IProcessCallbacks> callbacks_ref{callbacks};
+    switch (printer_technology) {
+    case ptFFF: {
+        Print::OnFdmResult on_fdm_result = [callbacks_ref, id](FDMResult&& result) {
+            callbacks_ref.get().on_fdm_result(std::move(result), id);
+        };
+        Print::OnWipeTowerGeometry on_wipe_tower_geometry = [callbacks_ref, id](WipeTowerGeometry&& geometry) {
+            callbacks_ref.get().on_wipe_tower_geometry(std::move(geometry), id); };
+        print = std::make_unique<Print>(on_fdm_result, on_wipe_tower_geometry);
+        break;
+    }
+    case ptSLA:
+        // TODO: Implement SLA callbacks
+        print = std::make_unique<SLAPrint>();
+        break;
+    // case ptSLA: print = std::make_unique<Slic3r::SLAPrint>(callbacks); break;
+    default:
+        UNREACHABLE("Only FFF and SLA are viable options!");
+    }
+    print->set_status_silent();
+    return print;
+}
+
+} // namespace
+
 namespace Slic3r::Biz::Slicing {
 
 using Print::IPrint;
@@ -53,19 +91,6 @@ Slic3r::PrinterTechnology get_printer_technology(const DynamicPrintConfig& confi
     return option->value;
 }
 
-std::unique_ptr<IPrint> init_print(const Slic3r::PrinterTechnology &printer_technology) {
-    if (printer_technology == ptFFF) {
-        auto print{std::make_unique<Slic3r::Print>()};
-        print->set_status_silent();
-        return print;
-    } else if (printer_technology == ptSLA) {
-        auto print{std::make_unique<Slic3r::SLAPrint>()};
-        print->set_status_silent();
-        return print;
-    }
-    UNREACHABLE("Only FFF and SLA are viable options!");
-}
-
 BackgroundProcess::BackgroundProcess(
     IProcessCallbacks& callbacks,
     Model& model,
@@ -74,8 +99,9 @@ BackgroundProcess::BackgroundProcess(
     const SlicingId id
 )
     : m_printer_technology{Slicing::get_printer_technology(config)}
-    , m_print{init_print(m_printer_technology)}
-    , m_callbacks{callbacks}
+    , m_print{init_print(m_printer_technology, callbacks, id)}
+    , m_on_status{[call = std::reference_wrapper(callbacks), id](const Status status) {call.get().on_status(status, id); }}
+    , m_get_status{[call = std::reference_wrapper(callbacks), id]() { return call.get().get_status(id); }}
     , m_id{id}
 {
     this->update(model, std::move(config), bed_instances);
@@ -91,7 +117,8 @@ BackgroundProcess::BackgroundProcess(
 )
     : m_printer_technology{Slicing::get_printer_technology(config)}
     , m_print{std::move(print)}
-    , m_callbacks{callbacks}
+    , m_on_status{[call = std::reference_wrapper(callbacks), id](const Status status) {call.get().on_status(status, id); }}
+    , m_get_status{[call = std::reference_wrapper(callbacks), id]() { return call.get().get_status(id); }}
     , m_id{id}
 {
     this->update(model, std::move(config), bed_instances);
@@ -111,42 +138,24 @@ void BackgroundProcess::update(
 
     const LoggingScopeLock lock{m_mutex, "background process"};
 
-    const Status previous_status{m_callbacks.get_status(m_id)};
+    const Status previous_status{m_get_status()};
     ASSERT(!is_thread_active(previous_status), "Update must be called on stopped thread!");
     std::optional<ApplyStatus> apply_status;
     const ScopeGuard guard{[this, &previous_status, &apply_status]() {
         if (this->m_print->empty()) {
-            this->on_status(Status::Empty);
+            this->m_on_status(Status::Empty);
         } else if (previous_status == Status::Finished && apply_status == ApplyStatus::unchanged) {
-            this->on_status(Status::Finished);
+            this->m_on_status(Status::Finished);
         } else {
-            this->on_status(Status::Modified);
+            this->m_on_status(Status::Modified);
         }
     }};
 
-    this->on_status(Status::Updating);
+    this->m_on_status(Status::Updating);
     with_limited_instances(model, bed_instances, [&](){
         apply_status = this->m_print->update(model, std::move(config));
     });
 }
-
-void BackgroundProcess::hook_callbacks(IPrint* print) {
-    if (m_printer_technology == ptFFF) {
-        print->on_fdm_result =
-            [this](FDMResult&& result) {
-                this->m_callbacks.on_fdm_result(std::move(result), m_id);
-            };
-        print->on_wipe_tower_geometry = [this](Print::WipeTowerGeometry&& geometry) {
-            this->m_callbacks.on_wipe_tower_geometry(std::move(geometry), m_id);
-        };
-    } else if (m_printer_technology == ptSLA) {
-        print->on_sla_result = [this]() {
-            this->m_callbacks.on_sla_result(m_id);
-        };
-    } else {
-        ASSERT(false, "Unknown printer technology!");
-    }
-};
 
 void BackgroundProcess::slice()
 {
@@ -155,26 +164,24 @@ void BackgroundProcess::slice()
     this->stop();
     this->queue_action([this]() {
         this->m_thread = {}; // Wait for join.
-        ASSERT(!is_thread_active(m_callbacks.get_status(m_id)), "The thread is stopped afterwards!");
+        ASSERT(!is_thread_active(m_get_status()), "The thread is stopped afterwards!");
 
         const LoggingScopeLock lock{m_mutex, "background process"};
 
-        if (m_callbacks.get_status(m_id) == Status::Empty) {
+        if (m_get_status() == Status::Empty) {
             return;
         }
-        on_status(Status::Running);
+        m_on_status(Status::Running);
         this->m_thread = JThread{
             [this](StopToken stop_token, IPrint* print) {
                 print->stop_token = stop_token;
 
-                hook_callbacks(print);
-
                 bool finished{false};
                 const ScopeGuard guard{[this, &finished]() {
                     if (finished) {
-                        on_status(Status::Finished);
+                        m_on_status(Status::Finished);
                     } else {
-                        on_status(Status::Modified);
+                        m_on_status(Status::Modified);
                     }
                 }};
 
@@ -192,10 +199,10 @@ void BackgroundProcess::slice()
 void BackgroundProcess::stop()
 {
     this->queue_action([this]() {
-        if (m_callbacks.get_status(m_id) == Status::Running) {
+        if (m_get_status() == Status::Running) {
             SPDLOG_INFO("{}: stop", fmt::streamed(m_id));
             this->m_thread.request_stop();
-            this->on_status(Status::Stopping);
+            this->m_on_status(Status::Stopping);
         }
     });
 }
@@ -208,10 +215,6 @@ void BackgroundProcess::queue_action(const std::function<void()>& action)
 {
     this->m_helper_thread = {}; // Wait for previous action to finish.
     this->m_helper_thread = JThread{action};
-}
-
-void BackgroundProcess::on_status(const Status status) {
-    m_callbacks.on_status(status, m_id);
 }
 
 } // namespace Slic3r::Biz::BSP

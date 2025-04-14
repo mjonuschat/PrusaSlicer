@@ -64,6 +64,15 @@ template class PrintState<PrintObjectStep, posCount>;
 PrintRegion::PrintRegion(const PrintRegionConfig &config) : PrintRegion(config, config.hash()) {}
 PrintRegion::PrintRegion(PrintRegionConfig &&config) : PrintRegion(std::move(config), config.hash()) {}
 
+Print::Print() 
+    : m_on_fdm_result([](Biz::libpgcode::ProcessorResult&&) {})
+    , m_on_wipe_tower_geometry([](Biz::Print::WipeTowerGeometry&&) {})
+{}
+
+Print::Print(const OnFdmResult& on_fdm_result, const OnWipeTowerGeometry& on_wipe_tower_geometry)
+    : m_on_fdm_result(on_fdm_result), m_on_wipe_tower_geometry(on_wipe_tower_geometry)
+{}
+
 void Print::clear() 
 {
 	std::scoped_lock<std::mutex> lock(this->state_mutex());
@@ -950,10 +959,7 @@ void Print::process()
             if (m_tool_ordering.empty() || m_tool_ordering.last_extruder() == unsigned(-1))
                 throw Slic3r::SlicingError("The print is empty. The model is not printable with current print settings.");
         }
-        if (this->on_wipe_tower_geometry) {
-            this->on_wipe_tower_geometry(get_wipe_tower_geometry(m_wipe_tower_data));
-        }
-
+        m_on_wipe_tower_geometry(get_wipe_tower_geometry(m_wipe_tower_data));
         this->set_done(psWipeTower);
     }
     if (this->set_started(psSkirtBrim)) {
@@ -999,10 +1005,8 @@ void Print::process()
     }
     auto conflictRes = ConflictChecker::find_inter_of_lines_in_diff_objs(objects(), m_wipe_tower_data);
 
-    if (on_fdm_result) {
-        on_fdm_result(Biz::Print::get_result_preview(*this));
-    }
-
+    
+    m_on_fdm_result(Biz::Print::get_result_preview(*this));
     m_conflict_result = conflictRes;
     if (conflictRes.has_value())
         BOOST_LOG_TRIVIAL(error) << boost::format("gcode path conflicts found between %1% and %2%") % conflictRes->obj_name_1 % conflictRes->obj_name_2;
