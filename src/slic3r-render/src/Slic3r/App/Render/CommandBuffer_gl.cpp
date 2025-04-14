@@ -168,12 +168,18 @@ void CommandBuffer::submit()
 }
 
 void CommandBuffer::begin_debug_group(const std::string& message) {
+    // glPushDebugGroup is OpenGL 4.3, OpenGL version @ Mac is 4.1
+    if (glPushDebugGroup == nullptr)
+        return;
     // The cost of this should be negligible
     static int id = 0;
     glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, id++, message.size(), message.data());
 }
 
 void CommandBuffer::end_debug_group() {
+    // glPopDebugGroup is OpenGL 4.3, OpenGL version @ Mac is 4.1
+    if (glPopDebugGroup == nullptr)
+        return;
     glPopDebugGroup();
 }
 

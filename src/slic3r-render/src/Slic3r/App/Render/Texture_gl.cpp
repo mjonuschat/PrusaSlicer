@@ -61,6 +61,9 @@ void Texture::set_filtering(TextureMinFilter min_filter, TextureMagFilter mag_fi
 
 void Texture::set_object_name(const std::string &object_name)
 {
+    // glObjectLabel is OpenGL 4.3, OpenGL version @ Mac is 4.1
+    if (glObjectLabel == nullptr)
+        return;
     m_device.get_internal_as<GL::GLDeviceInternal>().bind_texture(0, *this);
     glObjectLabel(GL_TEXTURE, get_internal_as<GL::GLTextureInternal>().m_id, object_name.size(), object_name.data());
     glCheck();
