@@ -495,9 +495,13 @@ public:
     // List of existing PrintObject IDs, to remove notifications for non-existent IDs.
     std::vector<Domain::ObjectID> print_object_ids() const override;
 
-    // TODO remove wipe_tower once we get rid of the obsolete PrintBase.
+    // TODO remove wipe_tower and custom gcode once we get rid of the obsolete PrintBase.
     ApplyStatus apply(
-        const Model& model, DynamicPrintConfig config, const std::optional<Domain::ModelWipeTower>&, std::vector<std::string>* warnings = nullptr
+        const Model& model,
+        DynamicPrintConfig config,
+        const std::optional<Domain::ModelWipeTower>&,
+        const std::optional<Domain::CustomGCode::Info>&,
+        std::vector<std::string>* warnings = nullptr
     ) override;
 
     void                set_task(const TaskParams &params) override { PrintBaseWithState<SLAPrintStep, slapsCount>::set_task_impl(params, m_objects); }

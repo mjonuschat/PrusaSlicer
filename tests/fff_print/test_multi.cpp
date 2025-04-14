@@ -169,7 +169,7 @@ std::string slice_stacked_cubes(const DynamicPrintConfig &config, const DynamicP
     THEN("auto_assign_extruders() assigned correct extruder to second volume") {
         REQUIRE(v2->config.extruder() == 2);
     }
-    print.apply(model, config, {});
+    print.apply(model, config, {}, {});
     print.validate();
     return Test::gcode(print);
 }

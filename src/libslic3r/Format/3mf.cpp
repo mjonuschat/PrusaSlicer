@@ -555,7 +555,8 @@ namespace Slic3r {
             DynamicPrintConfig& config,
             ConfigSubstitutionContext& config_substitutions,
             bool check_version,
-            WipeTowersOnBeds& wipe_towers
+            WipeTowersOnBeds& wipe_towers,
+            CustomGCodesOnBeds& custom_gcodes
         );
         unsigned int version() const { return m_version; }
         boost::optional<Semver> prusaslicer_generator_version() const { return m_prusaslicer_generator_version; }
@@ -578,7 +579,8 @@ namespace Slic3r {
             Model& model,
             DynamicPrintConfig& config,
             ConfigSubstitutionContext& config_substitutions,
-            WipeTowersOnBeds& wipe_towers
+            WipeTowersOnBeds& wipe_towers,
+            CustomGCodesOnBeds& custom_gcodes
         );
         bool _extract_relationships_from_archive(mz_zip_archive &archive, const mz_zip_archive_file_stat &stat);
         bool _extract_model_from_archive(mz_zip_archive &archive, const mz_zip_archive_file_stat &stat);
@@ -589,7 +591,7 @@ namespace Slic3r {
         void _extract_sla_support_points_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat);
         void _extract_sla_drain_holes_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat);
 
-        void _extract_custom_gcode_per_print_z_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat);
+        CustomGCodesOnBeds _extract_custom_gcode_per_print_z_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat);
 
         WipeTowersOnBeds _extract_wipe_tower_information_from_archive(
             ::mz_zip_archive& archive, const mz_zip_archive_file_stat& stat
@@ -713,7 +715,8 @@ namespace Slic3r {
         DynamicPrintConfig& config,
         ConfigSubstitutionContext& config_substitutions,
         bool check_version,
-        WipeTowersOnBeds& wipe_towers
+        WipeTowersOnBeds& wipe_towers,
+        CustomGCodesOnBeds& custom_gcodes
     )
     {
         m_version = 0;
@@ -739,7 +742,7 @@ namespace Slic3r {
         m_start_part_path = MODEL_FILE; // set default value for invalid .rel file
         clear_errors();
 
-        return _load_model_from_file(filename, model, config, config_substitutions, wipe_towers);
+        return _load_model_from_file(filename, model, config, config_substitutions, wipe_towers, custom_gcodes);
     }
 
     void _3MF_Importer::_destroy_xml_parser()
@@ -765,7 +768,8 @@ namespace Slic3r {
         Model& model,
         DynamicPrintConfig& config,
         ConfigSubstitutionContext& config_substitutions,
-        WipeTowersOnBeds& wipe_towers
+        WipeTowersOnBeds& wipe_towers,
+        CustomGCodesOnBeds& custom_gcodes
     )
     {
         mz_zip_archive archive;
@@ -785,7 +789,7 @@ namespace Slic3r {
         int index = mz_zip_reader_locate_file(&archive, RELATIONSHIPS_FILE.c_str(), nullptr, 0);
         if (index < 0 || !mz_zip_reader_file_stat(&archive, index, &stat))
             return false;
-        
+
         mz_zip_archive_file_stat start_part_stat{std::numeric_limits<mz_uint32>::max()};
         m_model_path = MODEL_FILE;
         _extract_relationships_from_archive(archive, stat);
@@ -876,7 +880,7 @@ namespace Slic3r {
                 }
                 else if (boost::algorithm::iequals(name, CUSTOM_GCODE_PER_PRINT_Z_FILE)) {
                     // extract slic3r layer config ranges file
-                    _extract_custom_gcode_per_print_z_from_archive(archive, stat);
+                    custom_gcodes = _extract_custom_gcode_per_print_z_from_archive(archive, stat);
                 }
                 else if (boost::algorithm::iequals(name, WIPE_TOWER_INFORMATION_FILE)) {
                     // extract wipe tower information file
@@ -1656,78 +1660,80 @@ namespace Slic3r {
         return true;
     }
 
-    void _3MF_Importer::_extract_custom_gcode_per_print_z_from_archive(::mz_zip_archive &archive, const mz_zip_archive_file_stat &stat)
+    CustomGCodesOnBeds _3MF_Importer::_extract_custom_gcode_per_print_z_from_archive(::mz_zip_archive &archive, const mz_zip_archive_file_stat &stat)
     {
-        if (stat.m_uncomp_size > 0) {
-            std::string buffer((size_t)stat.m_uncomp_size, 0);
-            mz_bool res = mz_zip_reader_extract_to_mem(&archive, stat.m_file_index, (void*)buffer.data(), (size_t)stat.m_uncomp_size, 0);
-            if (res == 0) {
-                add_error("Error while reading custom Gcodes per height data to buffer");
-                return;
+        if (stat.m_uncomp_size <= 0) {
+            return {};
+        }
+        std::string buffer((size_t)stat.m_uncomp_size, 0);
+        mz_bool res = mz_zip_reader_extract_to_mem(&archive, stat.m_file_index, (void*)buffer.data(), (size_t)stat.m_uncomp_size, 0);
+        if (res == 0) {
+            add_error("Error while reading custom Gcodes per height data to buffer");
+            return {};
+        }
+
+        std::istringstream iss(buffer); // wrap returned xml to istringstream
+        pt::ptree main_tree;
+        pt::read_xml(iss, main_tree);
+
+        if (main_tree.front().first != "custom_gcodes_per_print_z")
+            return {};
+
+        CustomGCodesOnBeds result;
+
+        for (const auto& bed_block : main_tree) {
+            if (bed_block.first != "custom_gcodes_per_print_z")
+                continue;
+            int bed_idx = 0;
+            try {
+                bed_idx = bed_block.second.get<int>("<xmlattr>.bed_idx");
+            } catch (const boost::property_tree::ptree_bad_path&) {
+                // Probably an old project with no bed_idx info. Imagine that we saw 0.
             }
 
-            std::istringstream iss(buffer); // wrap returned xml to istringstream
-            pt::ptree main_tree;
-            pt::read_xml(iss, main_tree);
+            pt::ptree code_tree = bed_block.second;
 
-            if (main_tree.front().first != "custom_gcodes_per_print_z")
-                return;
-
-            for (CustomGCode::Info& info : m_model->get_custom_gcode_per_print_z_vector())
-                info.gcodes.clear();
-
-            for (const auto& bed_block : main_tree) {
-                if (bed_block.first != "custom_gcodes_per_print_z")
-                    continue;
-                int bed_idx = 0;
-                try {
-                    bed_idx = bed_block.second.get<int>("<xmlattr>.bed_idx");
-                } catch (const boost::property_tree::ptree_bad_path&) {
-                    // Probably an old project with no bed_idx info. Imagine that we saw 0.
-                }
-                if (bed_idx >= int(m_model->get_custom_gcode_per_print_z_vector().size()))
-                    continue;
-
-                pt::ptree code_tree = bed_block.second;
-
-                for (const auto& code : code_tree) {
-                    if (code.first == "mode") {
-                        pt::ptree tree = code.second;
-                        std::string mode = tree.get<std::string>("<xmlattr>.value");
-                        m_model->get_custom_gcode_per_print_z_vector()[bed_idx].mode = mode == CustomGCodeUtils::SingleExtruderMode ? CustomGCode::Mode::SingleExtruder :
-                                                                   mode == CustomGCodeUtils::MultiAsSingleMode  ? CustomGCode::Mode::MultiAsSingle  :
-                                                                   CustomGCode::Mode::MultiExtruder;
-                    }
-                    if (code.first != "code")
-                        continue;
-
+            for (const auto& code : code_tree) {
+                if (code.first == "mode") {
                     pt::ptree tree = code.second;
-                    double print_z          = tree.get<double>      ("<xmlattr>.print_z" );
-                    int extruder            = tree.get<int>         ("<xmlattr>.extruder");
-                    std::string color       = tree.get<std::string> ("<xmlattr>.color"   );
+                    std::string mode = tree.get<std::string>("<xmlattr>.value");
 
-                    CustomGCode::Type   type;
-                    std::string         extra;
-                    pt::ptree attr_tree = tree.find("<xmlattr>")->second;
-                    if (attr_tree.find("type") == attr_tree.not_found()) {
-                        // It means that data was saved in old version (2.2.0 and older) of PrusaSlicer
-                        // read old data ... 
-                        std::string gcode       = tree.get<std::string> ("<xmlattr>.gcode");
-                        // ... and interpret them to the new data
-                        type  = gcode == "M600"           ? CustomGCode::Type::ColorChange : 
-                                gcode == "M601"           ? CustomGCode::Type::PausePrint  :   
-                                gcode == "tool_change"    ? CustomGCode::Type::ToolChange  :   CustomGCode::Type::Custom;
-                        extra = type == CustomGCode::Type::PausePrint ? color :
-                                type == CustomGCode::Type::Custom     ? gcode : "";
-                    }
-                    else {
-                        type  = static_cast<CustomGCode::Type>(tree.get<int>("<xmlattr>.type"));
-                        extra = tree.get<std::string>("<xmlattr>.extra");
-                    }
-                    m_model->get_custom_gcode_per_print_z_vector()[bed_idx].gcodes.push_back(CustomGCode::Item{print_z, type, extruder, color, extra});
+                    result[bed_idx].mode = mode == CustomGCodeUtils::SingleExtruderMode
+                        ? CustomGCode::Mode::SingleExtruder
+                        : mode == CustomGCodeUtils::MultiAsSingleMode
+                        ? CustomGCode::Mode::MultiAsSingle
+                        : CustomGCode::Mode::MultiExtruder;
                 }
-            }  
+                if (code.first != "code")
+                    continue;
+
+                pt::ptree tree = code.second;
+                double print_z          = tree.get<double>      ("<xmlattr>.print_z" );
+                int extruder            = tree.get<int>         ("<xmlattr>.extruder");
+                std::string color       = tree.get<std::string> ("<xmlattr>.color"   );
+
+                CustomGCode::Type   type;
+                std::string         extra;
+                pt::ptree attr_tree = tree.find("<xmlattr>")->second;
+                if (attr_tree.find("type") == attr_tree.not_found()) {
+                    // It means that data was saved in old version (2.2.0 and older) of PrusaSlicer
+                    // read old data ... 
+                    std::string gcode       = tree.get<std::string> ("<xmlattr>.gcode");
+                    // ... and interpret them to the new data
+                    type  = gcode == "M600"           ? CustomGCode::Type::ColorChange : 
+                            gcode == "M601"           ? CustomGCode::Type::PausePrint  :   
+                            gcode == "tool_change"    ? CustomGCode::Type::ToolChange  :   CustomGCode::Type::Custom;
+                    extra = type == CustomGCode::Type::PausePrint ? color :
+                            type == CustomGCode::Type::Custom     ? gcode : "";
+                }
+                else {
+                    type  = static_cast<CustomGCode::Type>(tree.get<int>("<xmlattr>.type"));
+                    extra = tree.get<std::string>("<xmlattr>.extra");
+                }
+                result[bed_idx].gcodes.push_back(CustomGCode::Item{print_z, type, extruder, color, extra});
+            }
         }
+        return result;
     }
 
     WipeTowersOnBeds _3MF_Importer::_extract_wipe_tower_information_from_archive(
@@ -2850,7 +2856,8 @@ namespace Slic3r {
             bool fullpath_sources,
             const ThumbnailData* thumbnail_data,
             bool zip64,
-            const WipeTowersOnBeds& wipe_towers
+            const WipeTowersOnBeds& wipe_towers,
+            const CustomGCodesOnBeds& custom_gcodes
         );
         static void add_transformation(std::stringstream &stream, const Transform3d &tr);
     private:
@@ -2860,7 +2867,8 @@ namespace Slic3r {
             Model& model,
             const DynamicPrintConfig* config,
             const ThumbnailData* thumbnail_data,
-            const WipeTowersOnBeds& wipe_towers
+            const WipeTowersOnBeds& wipe_towers,
+            const CustomGCodesOnBeds& custom_gcodes
         );
         bool _add_content_types_file_to_archive(mz_zip_archive& archive);
         bool _add_thumbnail_file_to_archive(mz_zip_archive& archive, const ThumbnailData& thumbnail_data);
@@ -2876,7 +2884,7 @@ namespace Slic3r {
         bool _add_sla_drain_holes_file_to_archive(mz_zip_archive& archive, Model& model);
         bool _add_print_config_file_to_archive(mz_zip_archive& archive, const DynamicPrintConfig &config, const Model& model, const WipeTowersOnBeds& wipe_towers);
         bool _add_model_config_file_to_archive(mz_zip_archive& archive, const Model& model, const IdToObjectDataMap &objects_data);
-        bool _add_custom_gcode_per_print_z_file_to_archive(mz_zip_archive& archive, Model& model, const DynamicPrintConfig* config);
+        bool _add_custom_gcode_per_print_z_file_to_archive(mz_zip_archive& archive, const CustomGCodesOnBeds& custom_gcodes, const DynamicPrintConfig* config);
         bool _add_wipe_tower_information_file_to_archive( mz_zip_archive& archive, const WipeTowersOnBeds& wipe_towers);
     };
 
@@ -2887,13 +2895,14 @@ namespace Slic3r {
         bool fullpath_sources,
         const ThumbnailData* thumbnail_data,
         bool zip64,
-        const WipeTowersOnBeds& wipe_towers
+        const WipeTowersOnBeds& wipe_towers,
+        const CustomGCodesOnBeds& custom_gcodes
     )
     {
         clear_errors();
         m_fullpath_sources = fullpath_sources;
         m_zip64 = zip64;
-        return _save_model_to_file(filename, model, config, thumbnail_data, wipe_towers);
+        return _save_model_to_file(filename, model, config, thumbnail_data, wipe_towers, custom_gcodes);
     }
 
     bool _3MF_Exporter::_save_model_to_file(
@@ -2901,7 +2910,8 @@ namespace Slic3r {
         Model& model,
         const DynamicPrintConfig* config,
         const ThumbnailData* thumbnail_data,
-        const WipeTowersOnBeds& wipe_towers
+        const WipeTowersOnBeds& wipe_towers,
+        const CustomGCodesOnBeds& custom_gcodes
     )
     {
         mz_zip_archive archive;
@@ -2992,7 +3002,7 @@ namespace Slic3r {
 
         // Adds custom gcode per height file ("Metadata/Prusa_Slicer_custom_gcode_per_print_z.xml").
         // All custom gcode per height of whole Model are stored here
-        if (!_add_custom_gcode_per_print_z_file_to_archive(archive, model, config)) {
+        if (!_add_custom_gcode_per_print_z_file_to_archive(archive, custom_gcodes, config)) {
             close_zip_writer(&archive);
             boost::filesystem::remove(filename);
             return false;
@@ -3911,65 +3921,87 @@ namespace Slic3r {
         return true;
     }
 
-bool _3MF_Exporter::_add_custom_gcode_per_print_z_file_to_archive( mz_zip_archive& archive, Model& model, const DynamicPrintConfig* config)
-{
-    std::string out = "";
+    bool _3MF_Exporter::_add_custom_gcode_per_print_z_file_to_archive(
+        mz_zip_archive& archive,
+        const CustomGCodesOnBeds& custom_gcodes,
+        const DynamicPrintConfig* config
+    )
+    {
+        std::string out = "";
 
-    if (std::any_of(model.get_custom_gcode_per_print_z_vector().begin(), model.get_custom_gcode_per_print_z_vector().end(), [](const auto& cg) { return !cg.gcodes.empty(); })) {
-        pt::ptree tree;
-        for (size_t bed_idx=0; bed_idx<model.get_custom_gcode_per_print_z_vector().size(); ++bed_idx) {
-            if (bed_idx != 0 && model.get_custom_gcode_per_print_z_vector()[bed_idx].gcodes.empty()) {
-                // Always save the first bed so older slicers are able to tell
-                // that there are no color changes on it.
-                continue;
+        if (std::any_of(custom_gcodes.begin(), custom_gcodes.end(), [](const auto& pair) {
+                return !pair.second.gcodes.empty();
+            })) {
+            pt::ptree tree;
+            for (size_t bed_idx = 0; bed_idx < custom_gcodes.size(); ++bed_idx) {
+                if (bed_idx != 0 && !custom_gcodes.contains(bed_idx)) {
+                    continue;
+                }
+                if (bed_idx != 0 && custom_gcodes.at(bed_idx).gcodes.empty()) {
+                    // Always save the first bed so older slicers are able to tell
+                    // that there are no color changes on it.
+                    continue;
+                }
+
+                pt::ptree& main_tree = tree.add("custom_gcodes_per_print_z", "");
+                main_tree.put("<xmlattr>.bed_idx", bed_idx);
+
+                for (const CustomGCode::Item& code : custom_gcodes.at(bed_idx).gcodes) {
+                    pt::ptree& code_tree = main_tree.add("code", "");
+
+                    // store data of custom_gcode_per_print_z
+                    code_tree.put("<xmlattr>.print_z", code.print_z);
+                    code_tree.put("<xmlattr>.type", static_cast<int>(code.type));
+                    code_tree.put("<xmlattr>.extruder", code.extruder);
+                    code_tree.put("<xmlattr>.color", code.color);
+                    code_tree.put("<xmlattr>.extra", code.extra);
+
+                    // add gcode field data for the old version of the PrusaSlicer
+                    std::string gcode = code.type == CustomGCode::Type::ColorChange
+                        ? config->opt_string("color_change_gcode")
+                        : code.type == CustomGCode::Type::PausePrint
+                        ? config->opt_string("pause_print_gcode")
+                        : code.type == CustomGCode::Type::Template
+                        ? config->opt_string("template_custom_gcode")
+                        : code.type == CustomGCode::Type::ToolChange
+                        ? "tool_change"
+                        : code.extra;
+                    code_tree.put("<xmlattr>.gcode", gcode);
+                }
+
+                pt::ptree& mode_tree = main_tree.add("mode", "");
+                // store mode of a custom_gcode_per_print_z
+                mode_tree.put(
+                    "<xmlattr>.value",
+                    custom_gcodes.at(bed_idx).mode == CustomGCode::Mode::SingleExtruder
+                        ? CustomGCodeUtils::SingleExtruderMode
+                        : custom_gcodes.at(bed_idx).mode == CustomGCode::Mode::MultiAsSingle
+                        ? CustomGCodeUtils::MultiAsSingleMode
+                        : CustomGCodeUtils::MultiExtruderMode
+                );
             }
 
-            pt::ptree& main_tree = tree.add("custom_gcodes_per_print_z", "");
-            main_tree.put("<xmlattr>.bed_idx"   , bed_idx);
+            if (!tree.empty()) {
+                std::ostringstream oss;
+                boost::property_tree::write_xml(oss, tree);
+                out = oss.str();
 
-            for (const CustomGCode::Item& code : model.get_custom_gcode_per_print_z_vector()[bed_idx].gcodes) {
-                pt::ptree& code_tree = main_tree.add("code", "");
-
-                // store data of custom_gcode_per_print_z
-                code_tree.put("<xmlattr>.print_z"   , code.print_z  );
-                code_tree.put("<xmlattr>.type"      , static_cast<int>(code.type));
-                code_tree.put("<xmlattr>.extruder"  , code.extruder );
-                code_tree.put("<xmlattr>.color"     , code.color    );
-                code_tree.put("<xmlattr>.extra"     , code.extra    );
-
-                // add gcode field data for the old version of the PrusaSlicer
-                std::string gcode = code.type == CustomGCode::Type::ColorChange ? config->opt_string("color_change_gcode")    :
-                                    code.type == CustomGCode::Type::PausePrint  ? config->opt_string("pause_print_gcode")     :
-                                    code.type == CustomGCode::Type::Template    ? config->opt_string("template_custom_gcode") :
-                                    code.type == CustomGCode::Type::ToolChange  ? "tool_change"   : code.extra; 
-                code_tree.put("<xmlattr>.gcode"     , gcode   );
+                // Post processing("beautification") of the output string
+                boost::replace_all(out, "><", ">\n<");
             }
-
-            pt::ptree& mode_tree = main_tree.add("mode", "");
-            // store mode of a custom_gcode_per_print_z 
-            mode_tree.put("<xmlattr>.value", model.custom_gcode_per_print_z().mode == CustomGCode::Mode::SingleExtruder ? CustomGCodeUtils::SingleExtruderMode :
-                                             model.custom_gcode_per_print_z().mode == CustomGCode::Mode::MultiAsSingle ? CustomGCodeUtils::MultiAsSingleMode :
-                                             CustomGCodeUtils::MultiExtruderMode);
         }
 
-        if (!tree.empty()) {
-            std::ostringstream oss;
-            boost::property_tree::write_xml(oss, tree);
-            out = oss.str();
-
-            // Post processing("beautification") of the output string
-            boost::replace_all(out, "><", ">\n<");
+        if (!out.empty()) {
+            if (!mz_zip_writer_add_mem(
+                    &archive, CUSTOM_GCODE_PER_PRINT_Z_FILE.c_str(), (const void*) out.data(),
+                    out.length(), MZ_DEFAULT_COMPRESSION
+                )) {
+                add_error("Unable to add custom Gcodes per print_z file to archive");
+                return false;
+            }
         }
-    } 
 
-    if (!out.empty()) {
-        if (!mz_zip_writer_add_mem(&archive, CUSTOM_GCODE_PER_PRINT_Z_FILE.c_str(), (const void*)out.data(), out.length(), MZ_DEFAULT_COMPRESSION)) {
-            add_error("Unable to add custom Gcodes per print_z file to archive");
-            return false;
-        }
-    }
-
-    return true;
+        return true;
 }
 
 bool _3MF_Exporter::_add_wipe_tower_information_file_to_archive( mz_zip_archive& archive, const WipeTowersOnBeds& wipe_towers)
@@ -4091,7 +4123,8 @@ bool load_3mf(
     Model* model,
     bool check_version,
     boost::optional<Semver> &prusaslicer_generator_version,
-    WipeTowersOnBeds& wipe_towers
+    WipeTowersOnBeds& wipe_towers,
+    CustomGCodesOnBeds& custom_gcodes
 )
 {
     if (path == nullptr || model == nullptr)
@@ -4100,7 +4133,7 @@ bool load_3mf(
     // All import should use "C" locales for number formatting.
     CNumericLocalesSetter locales_setter;
     _3MF_Importer         importer;
-    bool res = importer.load_model_from_file(path, *model, config, config_substitutions, check_version, wipe_towers);
+    bool res = importer.load_model_from_file(path, *model, config, config_substitutions, check_version, wipe_towers, custom_gcodes);
     importer.log_errors();
     handle_legacy_project_loaded(config, importer.prusaslicer_generator_version());
     prusaslicer_generator_version = importer.prusaslicer_generator_version();
@@ -4114,6 +4147,7 @@ bool store_3mf(
     const DynamicPrintConfig* config,
     bool fullpath_sources,
     const WipeTowersOnBeds& wipe_towers,
+    const CustomGCodesOnBeds& custom_gcodes,
     const ThumbnailData* thumbnail_data,
     bool zip64
 )
@@ -4125,7 +4159,7 @@ bool store_3mf(
         return false;
 
     _3MF_Exporter exporter;
-    bool res = exporter.save_model_to_file(path, *model, config, fullpath_sources, thumbnail_data, zip64, wipe_towers);
+    bool res = exporter.save_model_to_file(path, *model, config, fullpath_sources, thumbnail_data, zip64, wipe_towers, custom_gcodes);
     if (!res)
         exporter.log_errors();
 

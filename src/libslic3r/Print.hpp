@@ -552,6 +552,7 @@ public:
         const Model& model,
         DynamicPrintConfig config,
         const std::optional<Domain::ModelWipeTower>& wipe_tower,
+        const std::optional<Domain::CustomGCode::Info>& custom_gcode,
         std::vector<std::string>* warnings = nullptr
     ) override;
 

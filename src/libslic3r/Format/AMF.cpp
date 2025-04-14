@@ -75,11 +75,18 @@ namespace CustomGCode = Domain::CustomGCode;
 
 struct AMFParserContext
 {
-    AMFParserContext(XML_Parser parser, DynamicPrintConfig* config, ConfigSubstitutionContext* config_substitutions, Model* model) :
-        m_parser(parser),
-        m_model(*model), 
-        m_config(config),
-        m_config_substitutions(config_substitutions)
+    AMFParserContext(
+        XML_Parser parser,
+        DynamicPrintConfig* config,
+        ConfigSubstitutionContext* config_substitutions,
+        Model* model,
+        AMF::CustomGCodesOnBeds& custom_gcodes
+    )
+        : m_parser(parser)
+        , m_model(*model)
+        , m_config(config)
+        , m_config_substitutions(config_substitutions)
+        , m_custom_gcodes(custom_gcodes)
     {
         m_path.reserve(12);
     }
@@ -272,6 +279,8 @@ struct AMFParserContext
     DynamicPrintConfig      *m_config { nullptr };
     // Config substitution rules and collected config substitution log.
     ConfigSubstitutionContext *m_config_substitutions { nullptr };
+
+    AMF::CustomGCodesOnBeds& m_custom_gcodes;
 
 private:
     AMFParserContext& operator=(AMFParserContext&);
@@ -711,7 +720,7 @@ void AMFParserContext::endElement(const char * /* name */)
         CustomGCode::Type type  = static_cast<CustomGCode::Type>(atoi(m_value[3].c_str()));
         const std::string& extra= m_value[4];
 
-        m_model.custom_gcode_per_print_z().gcodes.push_back(CustomGCode::Item{print_z, type, extruder, color, extra});
+        m_custom_gcodes[0].gcodes.push_back(CustomGCode::Item{print_z, type, extruder, color, extra});
 
         for (std::string& val: m_value)
             val.clear();
@@ -721,7 +730,7 @@ void AMFParserContext::endElement(const char * /* name */)
     case NODE_TYPE_CUSTOM_GCODE_MODE: {
         const std::string& mode = m_value[0];
 
-        m_model.custom_gcode_per_print_z().mode = mode == CustomGCodeUtils::SingleExtruderMode ? CustomGCode::Mode::SingleExtruder :
+        m_custom_gcodes[0].mode = mode == CustomGCodeUtils::SingleExtruderMode ? CustomGCode::Mode::SingleExtruder :
                                                     mode == CustomGCodeUtils::MultiAsSingleMode  ? CustomGCode::Mode::MultiAsSingle  :
                                                                                               CustomGCode::Mode::MultiExtruder;
         for (std::string& val: m_value)
@@ -881,7 +890,13 @@ void AMFParserContext::endDocument()
 }
 
 // Load an AMF file into a provided model.
-bool load_amf_file(const char *path, DynamicPrintConfig *config, ConfigSubstitutionContext *config_substitutions, Model *model)
+bool load_amf_file(
+    const char* path,
+    DynamicPrintConfig* config,
+    ConfigSubstitutionContext* config_substitutions,
+    Model* model,
+    AMF::CustomGCodesOnBeds& custom_gcodes
+)
 {
     if ((path == nullptr) || (model == nullptr))
         return false;
@@ -898,7 +913,7 @@ bool load_amf_file(const char *path, DynamicPrintConfig *config, ConfigSubstitut
         return false;
     }
 
-    AMFParserContext ctx(parser, config, config_substitutions, model);
+    AMFParserContext ctx(parser, config, config_substitutions, model, custom_gcodes);
     XML_SetUserData(parser, (void*)&ctx);
     XML_SetElementHandler(parser, AMFParserContext::startElement, AMFParserContext::endElement);
     XML_SetCharacterDataHandler(parser, AMFParserContext::characters);
@@ -945,7 +960,15 @@ bool load_amf_file(const char *path, DynamicPrintConfig *config, ConfigSubstitut
     return result;
 }
 
-bool extract_model_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat, DynamicPrintConfig* config, ConfigSubstitutionContext* config_substitutions, Model* model, bool check_version)
+bool extract_model_from_archive(
+    mz_zip_archive& archive,
+    const mz_zip_archive_file_stat& stat,
+    DynamicPrintConfig* config,
+    ConfigSubstitutionContext* config_substitutions,
+    Model* model,
+    bool check_version,
+    AMF::CustomGCodesOnBeds& custom_gcodes
+)
 {
     if (stat.m_uncomp_size == 0)
     {
@@ -961,7 +984,7 @@ bool extract_model_from_archive(mz_zip_archive& archive, const mz_zip_archive_fi
         return false;
     }
 
-    AMFParserContext ctx(parser, config, config_substitutions, model);
+    AMFParserContext ctx(parser, config, config_substitutions, model, custom_gcodes);
     XML_SetUserData(parser, (void*)&ctx);
     XML_SetElementHandler(parser, AMFParserContext::startElement, AMFParserContext::endElement);
     XML_SetCharacterDataHandler(parser, AMFParserContext::characters);
@@ -1021,7 +1044,14 @@ bool extract_model_from_archive(mz_zip_archive& archive, const mz_zip_archive_fi
 }
 
 // Load an AMF archive into a provided model.
-bool load_amf_archive(const char* path, DynamicPrintConfig* config, ConfigSubstitutionContext* config_substitutions, Model* model, bool check_version)
+bool load_amf_archive(
+    const char* path,
+    DynamicPrintConfig* config,
+    ConfigSubstitutionContext* config_substitutions,
+    Model* model,
+    bool check_version,
+    AMF::CustomGCodesOnBeds& custom_gcodes
+)
 {
     if ((path == nullptr) || (model == nullptr))
         return false;
@@ -1047,7 +1077,7 @@ bool load_amf_archive(const char* path, DynamicPrintConfig* config, ConfigSubsti
             {
                 try
                 {
-                    if (!extract_model_from_archive(archive, stat, config, config_substitutions, model, check_version))
+                    if (!extract_model_from_archive(archive, stat, config, config_substitutions, model, check_version, custom_gcodes))
                     {
                         close_zip_reader(&archive);
                         BOOST_LOG_TRIVIAL(error) << "Archive does not contain a valid model";
@@ -1089,13 +1119,20 @@ bool load_amf_archive(const char* path, DynamicPrintConfig* config, ConfigSubsti
 
 // Load an AMF file into a provided model.
 // If config is not a null pointer, updates it if the amf file/archive contains config data
-bool load_amf(const char* path, DynamicPrintConfig* config, ConfigSubstitutionContext* config_substitutions, Model* model, bool check_version)
+bool load_amf(
+    const char* path,
+    DynamicPrintConfig* config,
+    ConfigSubstitutionContext* config_substitutions,
+    Model* model,
+    bool check_version,
+    AMF::CustomGCodesOnBeds& custom_gcodes
+)
 {
     CNumericLocalesSetter locales_setter; // use "C" locales and point as a decimal separator
 
     if (boost::iends_with(path, ".amf.xml"))
         // backward compatibility with older slic3r output
-        return load_amf_file(path, config, config_substitutions, model);
+        return load_amf_file(path, config, config_substitutions, model, custom_gcodes);
     else if (boost::iends_with(path, ".amf"))
     {
         boost::nowide::ifstream file(path, boost::nowide::ifstream::binary);
@@ -1106,7 +1143,9 @@ bool load_amf(const char* path, DynamicPrintConfig* config, ConfigSubstitutionCo
         file.read(zip_mask.data(), 2);
         file.close();
 
-        return (zip_mask == "PK") ? load_amf_archive(path, config, config_substitutions, model, check_version) : load_amf_file(path, config, config_substitutions, model);
+        return (zip_mask == "PK")
+            ? load_amf_archive(path, config, config_substitutions, model, check_version, custom_gcodes)
+            : load_amf_file(path, config, config_substitutions, model, custom_gcodes);
     }
     else
         return false;

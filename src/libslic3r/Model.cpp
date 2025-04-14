@@ -74,10 +74,6 @@ Model& Model::assign_copy(const Model &rhs)
 		this->objects.emplace_back(mo);
     }
 
-    // copy custom code per height
-    this->custom_gcode_per_print_z_vector = rhs.custom_gcode_per_print_z_vector;
-    this->wipe_tower_vector = rhs.wipe_tower_vector;
-
     return *this;
 }
 
@@ -96,10 +92,6 @@ Model& Model::assign_copy(Model &&rhs)
     for (ModelObject *model_object : this->objects)
         model_object->set_model(this);
     rhs.objects.clear();
-
-    // copy custom code per height
-    this->custom_gcode_per_print_z_vector = std::move(rhs.custom_gcode_per_print_z_vector);
-    this->wipe_tower_vector = rhs.wipe_tower_vector;
 
     return *this;
 }
@@ -126,15 +118,6 @@ void Model::update_links_bottom_up_recursive()
 	}
 }
 
-Domain::CustomGCode::Info& Model::custom_gcode_per_print_z()
-{
-    return const_cast<Domain::CustomGCode::Info&>(const_cast<const Model*>(this)->custom_gcode_per_print_z());
-}
-
-const Domain::CustomGCode::Info& Model::custom_gcode_per_print_z() const
-{
-    return custom_gcode_per_print_z_vector[s_multiple_beds.get_active_bed()];
-}
 ModelObject* Model::add_object()
 {
     this->objects.emplace_back(new ModelObject(this));

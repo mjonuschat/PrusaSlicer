@@ -527,6 +527,7 @@ public:
         const Model& model,
         DynamicPrintConfig config,
         const std::optional<Domain::ModelWipeTower>& wipe_tower,
+        const std::optional<Domain::CustomGCode::Info>& custom_gcode,
         std::vector<std::string>* warnings = nullptr
     ) = 0;
 
@@ -536,7 +537,7 @@ public:
     {
         Biz::Print::ApplyStatus result{Biz::Print::ApplyStatus::unchanged};
         Biz::Slicing::with_limited_instances(model, bed.model_instances, [&](){
-            const ApplyStatus status{this->apply(model, std::move(config), bed.wipe_tower)};
+            const ApplyStatus status{this->apply(model, std::move(config), bed.wipe_tower, bed.custom_gcode)};
             if (status == APPLY_STATUS_UNCHANGED) {
                 return;
             }
@@ -545,8 +546,12 @@ public:
         return result;
     }
     const Model&            model() const { return m_model; }
-    const std::optional<Domain::ModelWipeTower>& wipe_tower() const {
+    std::optional<Domain::ModelWipeTower> wipe_tower() const {
         return m_wipe_tower;
+    }
+
+    std::optional<std::reference_wrapper<const Domain::CustomGCode::Info>> custom_gcode() const {
+        return m_custom_gcode;
     }
 
     struct TaskParams {
@@ -674,6 +679,7 @@ protected:
 
 	Model                                   m_model;
     std::optional<Domain::ModelWipeTower>   m_wipe_tower;
+    std::optional<Domain::CustomGCode::Info>m_custom_gcode;
 
 	DynamicPrintConfig						m_full_print_config;
     PlaceholderParser                       m_placeholder_parser;

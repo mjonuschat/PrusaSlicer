@@ -9,13 +9,27 @@
 #ifndef slic3r_Format_AMF_hpp_
 #define slic3r_Format_AMF_hpp_
 
+#include "Slic3r/Domain/CustomGCode.hpp"
+#include "libslic3r/Config.hpp"
+
 namespace Slic3r {
 
 class Model;
 class DynamicPrintConfig;
 
+namespace AMF {
+using CustomGCodesOnBeds = std::map<int, Domain::CustomGCode::Info>;
+}
+
 // Load the content of an amf file into the given model and configuration.
-extern bool load_amf(const char* path, DynamicPrintConfig* config, ConfigSubstitutionContext* config_substitutions, Model* model, bool check_version);
+extern bool load_amf(
+    const char* path,
+    DynamicPrintConfig* config,
+    ConfigSubstitutionContext* config_substitutions,
+    Model* model,
+    bool check_version,
+    AMF::CustomGCodesOnBeds& custom_gcodes
+);
 
 // Function to save AMF has been removed in 2.9.0, we no longer support saving data in AMF format.
 // The option has been missing in the UI since 2.4.0 (except for CLI).

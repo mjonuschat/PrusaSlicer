@@ -29,10 +29,11 @@ namespace Tests {
         DynamicPrintConfig config;
         Model model;
         WipeTowersOnBeds wipe_towers;
+        CustomGCodesOnBeds custom_gcodes;
 
         ConfigSubstitutionContext context{ForwardCompatibilitySubstitutionRule::Disable};
         boost::optional<Semver> version;
-        Slic3r::load_3mf(path.string().c_str(), config, context, &model, false, version, wipe_towers);
+        Slic3r::load_3mf(path.string().c_str(), config, context, &model, false, version, wipe_towers, custom_gcodes);
 
         return {model, std::move(config), std::move(wipe_towers)};
     }

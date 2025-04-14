@@ -35,7 +35,7 @@ struct BedInstance : public ObjectBase
     bool contour_enabled{ false };
     bool print_volume_enabled{ false };
     std::optional<ModelWipeTower> wipe_tower;
-    CustomGCode::Info custom_gcode;
+    std::optional<CustomGCode::Info> custom_gcode;
 };
 
 } // namespace Slic3r::Domain

@@ -59,6 +59,7 @@ namespace FileReader
         DynamicPrintConfig* config,
         ConfigSubstitutionContext* config_substitutions,
         WipeTowersOnBeds& wipe_towers,
+        CustomGCodesOnBeds& custom_gcodes,
         boost::optional<Semver>& prusaslicer_generator_version,
         LoadAttributes options,
         LoadStats* statistics = nullptr

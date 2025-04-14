@@ -545,11 +545,13 @@ namespace DoExport {
             }
         }
         if (ret.size() < MAX_TAGS_COUNT) {
-            const CustomGCode::Info& custom_gcode_per_print_z = print.model().custom_gcode_per_print_z();
-            for (const auto& gcode : custom_gcode_per_print_z.gcodes) {
-                check(_u8L("Custom G-code"), gcode.extra);
-                if (ret.size() == MAX_TAGS_COUNT)
-                    break;
+            const auto custom_gcode_per_print_z{print.custom_gcode()};
+            if (custom_gcode_per_print_z) {
+                for (const auto& gcode : custom_gcode_per_print_z->get().gcodes) {
+                    check(_u8L("Custom G-code"), gcode.extra);
+                    if (ret.size() == MAX_TAGS_COUNT)
+                        break;
+                }
             }
         }
 

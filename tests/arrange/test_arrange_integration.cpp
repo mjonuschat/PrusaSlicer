@@ -650,7 +650,7 @@ TEMPLATE_TEST_CASE("Bed needs to be completely filled with 1cm cubes",
     ModelVolume* new_volume = new_object->add_volume(mesh);
     new_volume->name = new_object->name;
 
-    store_3mf("fillbed_10mm.3mf", &m, &cfg, false, {});
+    store_3mf("fillbed_10mm.3mf", &m, &cfg, false, {}, {});
 
     arr2::ArrangeSettings settings;
     settings.values().d_obj = 0.;
@@ -672,7 +672,7 @@ TEMPLATE_TEST_CASE("Bed needs to be completely filled with 1cm cubes",
     auto result = task->process_native(arr2::DummyCtl{});
     result->apply_on(scene.model());
 
-    store_3mf("fillbed_10mm_result.3mf", &m, &cfg, false, {});
+    store_3mf("fillbed_10mm_result.3mf", &m, &cfg, false, {}, {});
 
     Points bedpts = get_bed_shape(cfg);
     arr2::ArrangeBed bed = arr2::to_arrange_bed(bedpts, scaled(Vec2d(10, 10)));
@@ -876,7 +876,7 @@ TEST_CASE("Testing arrangement involving virtual beds", "[arrange2][integration]
 
     bool applied = result->apply_on(scene.model());
     REQUIRE(applied);
-    store_3mf("vbed_test_result.3mf", &model, &cfg, false, {});
+    store_3mf("vbed_test_result.3mf", &model, &cfg, false, {}, {});
 
     REQUIRE(std::all_of(task->printable.selected.begin(), task->printable.selected.end(),
                         [&bed](auto &item) { return bounding_box(bed).contains(arr2::envelope_bounding_box(item)); }));
@@ -1061,7 +1061,7 @@ TEST_CASE("Testing duplicate function to really duplicate the whole Model",
 
     Model model = get_example_model_with_arranged_primitives();
 
-    store_3mf("dupl_example.3mf", &model, nullptr, false, {});
+    store_3mf("dupl_example.3mf", &model, nullptr, false, {}, {});
 
     size_t instcnt = arr2::model_instance_count(model);
 
@@ -1084,7 +1084,7 @@ TEST_CASE("Testing duplicate function to really duplicate the whole Model",
     bool applied = result->apply_on(scene.model());
     if (applied) {
         dup_model.apply_duplicates();
-        store_3mf("dupl_example_result.3mf", &model, nullptr, false, {});
+        store_3mf("dupl_example_result.3mf", &model, nullptr, false, {}, {});
         REQUIRE(applied);
     }
 

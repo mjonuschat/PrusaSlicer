@@ -5,6 +5,7 @@
 #ifndef slic3r_Format_3mf_hpp_
 #define slic3r_Format_3mf_hpp_
 
+#include "Slic3r/Domain/CustomGCode.hpp"
 #include "Slic3r/Domain/Model.hpp"
 #include "Slic3r/Semver.hpp"
 #include <optional>
@@ -53,6 +54,8 @@ namespace Slic3r {
     extern std::pair<bool, std::optional<Semver>> is_project_3mf(const std::string&);
 
     using WipeTowersOnBeds = std::map<int, Domain::ModelWipeTower>;
+    using CustomGCodesOnBeds = std::map<int, Domain::CustomGCode::Info>;
+
     // Load the content of a 3mf file into the given model and preset bundle.
     extern bool load_3mf(
         const char* path,
@@ -61,7 +64,8 @@ namespace Slic3r {
         Model* model,
         bool check_version,
         boost::optional<Semver> &prusaslicer_generator_version,
-        WipeTowersOnBeds& wipe_towers
+        WipeTowersOnBeds& wipe_towers,
+        CustomGCodesOnBeds& custom_gcodes
     );
 
     // Save the given model and the config data contained in the given Print into a 3mf file.
@@ -72,6 +76,7 @@ namespace Slic3r {
         const DynamicPrintConfig* config,
         bool fullpath_sources,
         const WipeTowersOnBeds& wipe_towers,
+        const CustomGCodesOnBeds& custom_gcodes,
         const ThumbnailData* thumbnail_data = nullptr,
         bool zip64 = true
     );
