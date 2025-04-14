@@ -2,6 +2,8 @@
 
 #include <vector>
 
+namespace Slic3r::Domain::detail {
+
 class ConfigItemValue
 {
 public:
@@ -115,3 +117,5 @@ public:
         return ptr;
     }
 };
+
+} // namespace Slic3r::Domain::detail

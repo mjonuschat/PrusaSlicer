@@ -16,7 +16,11 @@
 #include "Slic3r/Assert.hpp"
 
 
-class ConfigItemValue;
+namespace Slic3r::Domain {
+
+namespace detail {
+    class ConfigItemValue;
+}
 
 template<typename T>
 concept IsEnum = std::is_enum_v<T>;
@@ -222,7 +226,7 @@ private:
     ConfigItemType m_type{ ConfigItemType::None };
     bool m_is_nullable{ false };
     const ConfigItemDef* m_def{ nullptr };
-    ConfigItemValue* m_data{ nullptr };
+    detail::ConfigItemValue* m_data{ nullptr };
 
     // Private setter/getter to avoid leaking implementation into header
     // through set_enum/get_enum templates.
@@ -302,7 +306,7 @@ class ConfigView
 public:
     template <typename... Args>
     ConfigView(const FullConfig& fc, Args... args)
-        : m_config_boxes{ args... }, m_full_config{fc} {}
+        : m_config_boxes{ args... }, m_full_config{&fc} {}
 
     template<class T>
     T get(const std::string_view key, int extruder_idx = -1) const {
@@ -315,3 +319,5 @@ private:
 
     const ConfigItem& opt(const std::string_view key, int extruder_idx) const;
 };
+
+} // namespace Slic3r::Domain

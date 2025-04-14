@@ -6,7 +6,6 @@
 #include <iostream>
 #include <vector>
 
-namespace Slic3r {
 
 static void print(const std::variant<std::string, std::vector<std::string>>& in)
 {
@@ -23,8 +22,11 @@ static void print(const std::variant<std::string, std::vector<std::string>>& in)
 }
 
 
-int main()
+int main(int, char* [])
 {
+    using namespace Slic3r::Domain;
+    using namespace Slic3r::Biz;
+
     PrinterSettings printer_s;
     FilamentSettings fs;
     PrintSettings ps;
@@ -32,7 +34,7 @@ int main()
     ObjectSettings os;
     VolumeSettings vs;
 
-    Domain::PhysicalPrinterSettings pps;
+    PhysicalPrinterSettings pps;
 
     //os.opt("travel_lift_before_obstacles").set_null(false);
     //os.opt("travel_lift_before_obstacles").set<bool>(true);
@@ -50,25 +52,24 @@ int main()
     std::cout << "OBJECT SETTINGS\n" << serialize(os).dump(4) << std::endl << "=============================\n\n\n" << std::endl;
     std::cout << "PHYSICAL PRINTER SETTINGS\n" << serialize(pps).dump(4) << std::endl << "=============================\n\n\n" << std::endl;
 
-    for (const ConfigItemDef& def : s_defs_fdm.defs()) {
-        bool tool_dependent = false;
-        for (const auto& list : { &def.belongs_to, &def.belongs_to_optional })
-            tool_dependent |= std::any_of(list->begin(), list->end(),
-                [](const auto& t) { return t == "toolprint_settings" || t == "filament_settings"; });
+    //for (const ConfigItemDef& def : s_defs_fdm.defs()) {
+    //    bool tool_dependent = false;
+    //    for (const auto& list : { &def.belongs_to, &def.belongs_to_optional })
+    //        tool_dependent |= std::any_of(list->begin(), list->end(),
+    //            [](const auto& t) { return t == "toolprint_settings" || t == "filament_settings"; });
 
-        std::cout << def.name << ": ";
-        //if (tool_dependent)
-        //    print(serialize_to_string(fullc.opt(def.name, 0)));
-        //else
-        //    print(serialize_to_string(fullc.opt(def.name)));
-    }
+    //    std::cout << def.name << ": ";
+    //    //if (tool_dependent)
+    //    //    print(serialize_to_string(fullc.opt(def.name, 0)));
+    //    //else
+    //    //    print(serialize_to_string(fullc.opt(def.name)));
+    //}
 
 
 
     return 0;
 }
 
-} // namespace Slic3r
 
 
 

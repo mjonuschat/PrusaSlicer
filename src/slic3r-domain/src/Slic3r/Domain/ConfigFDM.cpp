@@ -3,6 +3,8 @@
 #include "boost/algorithm/string.hpp"
 #include "boost/format.hpp"
 
+namespace Slic3r::Domain {
+
 // Implementation of FDM configs is done in this file.
 
 // Define our own marking functions, the regular ones are not accessible in Domain.
@@ -3807,5 +3809,4 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
 }
 
-
-
+} // namespace Slic3r::Domain

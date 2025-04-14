@@ -3,6 +3,8 @@
 #include "Slic3r/Domain/Config.hpp"
 
 
+namespace Slic3r::Domain {
+
 // This is an example of using Config infrastructure.
 
 // First, define a static object of ConfigDefinitions. This object will hold all
@@ -192,3 +194,5 @@ private:
     PrintSettings m_print_settings;
     std::vector<ToolPrintSettings> m_tool_print_settings;
 };
+
+} // namespace Slic3r::Domain

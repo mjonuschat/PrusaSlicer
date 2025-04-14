@@ -3,6 +3,11 @@
 
 #include "boost/algorithm/string.hpp"
 
+namespace Slic3r::Biz {
+
+using ConfigItem = Domain::ConfigItem;
+using ConfigItemType = Domain::ConfigItemType;
+
 static nlohmann::json serialize_float_or_percent(const ConfigItem& item)
 {
     ASSERT(item.type() == ConfigItemType::FloatOrPercent || item.type() == ConfigItemType::Percent);
@@ -69,7 +74,7 @@ std::variant<std::string, std::vector<std::string>> serialize_to_string(const Co
 
 
 
-nlohmann::json serialize(const ConfigBox& box)
+nlohmann::json serialize(const Domain::ConfigBox& box)
 {
     nlohmann::json out;
     for (const ConfigItem& item : box) {
@@ -84,3 +89,5 @@ nlohmann::json serialize(const ConfigBox& box)
     }
     return out;
 }
+
+} // namespace Slic3r::Biz

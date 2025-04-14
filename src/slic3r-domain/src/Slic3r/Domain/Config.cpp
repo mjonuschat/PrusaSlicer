@@ -5,6 +5,9 @@
 
 #include <algorithm>
 
+using namespace Slic3r::Domain::detail;
+
+namespace Slic3r::Domain {
 
 ConfigDefinitions::ConfigDefinitions(const std::vector<std::string>& acceptable_boxes, std::function<void(ConfigDefinitions&)> init_fn)
 {
@@ -414,3 +417,5 @@ template std::vector<bool>& ConfigItem::vec();
 template std::vector<int>& ConfigItem::vec();
 template std::vector<double>& ConfigItem::vec();
 template std::vector<std::string>& ConfigItem::vec();
+
+} // namespace Slic3r::Domain
