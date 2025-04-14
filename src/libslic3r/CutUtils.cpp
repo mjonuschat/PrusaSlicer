@@ -305,8 +305,6 @@ void Cut::finalize(const ModelObjectPtrs& objects)
     m_model.objects = objects;
 }
 
-using Biz::Algorithms::BoundingBox::overlap;
-
 const ModelObjectPtrs& Cut::perform_with_plane()
 {
     if (!m_attributes.has(ModelObjectCutAttribute::KeepUpper) && !m_attributes.has(ModelObjectCutAttribute::KeepLower)) {
@@ -376,7 +374,7 @@ const ModelObjectPtrs& Cut::perform_with_plane()
                 if (const ModelVolume* vol = mo->volumes[i];
                     !vol->is_model_part() && !vol->is_cut_connector()) {
                     auto bb = tm::transformed_bounding_box(vol->mesh(), inst_matrix * vol->get_matrix());
-                    if (!overlap(obj_bb, bb))
+                    if (!obj_bb.overlap(bb))
                         mo->delete_volume(i);
                 }
         };
@@ -419,9 +417,9 @@ static void distribute_modifiers_from_object(ModelObject* from_obj, const int in
 
             auto bb = tm::transformed_bounding_box(vol->mesh(), inst_matrix * vol->get_matrix());
             // Don't add modifiers which are not intersecting with solid parts
-            if (overlap(obj1_bb, bb))
+            if (obj1_bb.overlap(bb))
                 to_obj1->add_volume(*vol)->set_transformation(modifier_trafo);
-            if (overlap(obj2_bb, bb))
+            if (obj2_bb.overlap(bb))
                 to_obj2->add_volume(*vol)->set_transformation(modifier_trafo);
         }
 }

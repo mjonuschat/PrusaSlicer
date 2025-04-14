@@ -135,10 +135,9 @@ public:
 
     [[deprecated("Use Biz::Algorithms::BoundingBox::overlap")]]
     bool overlap(const BoundingBoxBase<PointType, PointsType> &other) const {
-        using Biz::Algorithms::BoundingBox::overlap;
         const ParentType box{this->min, this->max, this->defined};
         const ParentType other_box{other.min, other.max, other.defined};
-        return overlap(box, other_box);
+        return box.overlap(other_box);
     }
 
     [[deprecated("Use Biz::Algorithms::BoundingBox::operator== for coord_t or aprox_equals for floating values")]]

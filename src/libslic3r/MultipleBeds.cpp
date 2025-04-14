@@ -462,7 +462,7 @@ Vec2crd MultipleBeds::get_bed_gap() const {
 void MultipleBeds::ensure_wipe_towers_on_beds(Model& model, const std::vector<std::unique_ptr<Print>>& prints)
 {
     for (size_t bed_idx = 0; bed_idx < get_number_of_beds(); ++bed_idx) {
-        ModelWipeTower& mwt = model.get_wipe_tower_vector()[bed_idx];
+        Domain::ModelWipeTower& mwt = model.get_wipe_tower_vector()[bed_idx];
         double depth = prints[bed_idx]->wipe_tower_data().depth;
         double width = prints[bed_idx]->wipe_tower_data().width;
         double brim  = prints[bed_idx]->wipe_tower_data().brim_width;

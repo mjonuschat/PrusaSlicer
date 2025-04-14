@@ -119,9 +119,9 @@ TEST_CASE("Bounding box contains", "[algorithms][algorithms-bounding-box]") {
 TEST_CASE("Bounding box overlap", "[algorithms][algorithms-bounding-box]") {
     const BoundingBox2d box{{0, 0}, {1, 1}};
     const BoundingBox2d overlapping_box{{0.5, 0.5}, {1.5, 1.5}};
-    CHECK(bb::overlap(box, overlapping_box));
+    CHECK(box.overlap(overlapping_box));
     const BoundingBox2d not_overlapping_box{{2, 2}, {3, 3}};
-    CHECK(!bb::overlap(box, not_overlapping_box));
+    CHECK(!box.overlap(not_overlapping_box));
 }
 
 TEST_CASE("Bounding box cast", "[algorithms][algorithms-bounding-box]") {

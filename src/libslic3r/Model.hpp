@@ -26,6 +26,7 @@
 #include "Slic3r/Domain/EmbossShape.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleSelector.hpp"
 #include "Slic3r/Domain/TriangleSelector.hpp"
+#include "Slic3r/Domain/Model.hpp"
 
 #include <map>
 #include <memory>
@@ -52,7 +53,6 @@ class ModelInstance;
 class ModelMaterial;
 class ModelObject;
 class ModelVolume;
-class ModelWipeTower;
 class Print;
 class SLAPrint;
 
@@ -448,7 +448,7 @@ public:
     ModelInstance*          add_instance();
     ModelInstance*          add_instance(const ModelInstance &instance);
 
-    ModelInstance*          add_instance(const Biz::Algorithms::Geometry::Transformation& trafo);
+    ModelInstance*          add_instance(const Domain::Transformation& trafo);
     void                    delete_instance(size_t idx);
     void                    delete_last_instance();
     void                    clear_instances();
@@ -707,7 +707,7 @@ public:
         int object_idx{ -1 };
         int volume_idx{ -1 };
         Vec3d mesh_offset{ Vec3d::Zero() };
-        Biz::Algorithms::Geometry::Transformation transform;
+        Domain::Transformation transform;
         bool is_converted_from_inches{ false };
         bool is_converted_from_meters{ false };
         bool is_from_builtin_objects{ false };
@@ -849,8 +849,8 @@ public:
     static ModelVolumeType type_from_string(const std::string &s);
     static std::string  type_to_string(const ModelVolumeType t);
 
-    const Biz::Algorithms::Geometry::Transformation& get_transformation() const { return m_transformation; }
-    void set_transformation(const Biz::Algorithms::Geometry::Transformation& transformation) { m_transformation = transformation; }
+    const Domain::Transformation& get_transformation() const { return m_transformation; }
+    void set_transformation(const Domain::Transformation& transformation) { m_transformation = transformation; }
     void set_transformation(const Transform3d& trafo) { m_transformation.set_matrix(trafo); }
 
     Vec3d get_offset() const { return m_transformation.get_offset(); }
@@ -927,7 +927,7 @@ private:
     t_model_material_id             	m_material_id;
     // The convex hull of this model's mesh.
     std::shared_ptr<const Domain::TriangleMesh> m_convex_hull;
-    Biz::Algorithms::Geometry::Transformation        	m_transformation;
+    Domain::Transformation        	m_transformation;
 
     // flag to optimize the checking if the volume is splittable
     //     -1   ->   is unknown value (before first cheking)
@@ -1099,7 +1099,7 @@ enum ModelInstanceEPrintVolumeState : unsigned char
 class ModelInstance final : public Domain::ObjectBase
 {
 private:
-    Biz::Algorithms::Geometry::Transformation m_transformation;
+    Domain::Transformation m_transformation;
 
 public:
     // flag showing the position of this instance with respect to the print volume (set by Print::validate() using ModelObject::check_instances_print_volume_state())
@@ -1109,8 +1109,8 @@ public:
 
     ModelObject* get_object() const { return this->object; }
 
-    const Biz::Algorithms::Geometry::Transformation& get_transformation() const { return m_transformation; }
-    void set_transformation(const Biz::Algorithms::Geometry::Transformation& transformation) { m_transformation = transformation; }
+    const Domain::Transformation& get_transformation() const { return m_transformation; }
+    void set_transformation(const Domain::Transformation& transformation) { m_transformation = transformation; }
 
     Vec3d get_offset() const { return m_transformation.get_offset(); }
     double get_offset(Axis axis) const { return m_transformation.get_offset(axis); }
@@ -1185,28 +1185,6 @@ private:
     }
 };
 
-
-// Note: The following class does not have to inherit from ObjectID, it is currently
-// only used for arrangement. It might be good to refactor this in future.
-class ModelWipeTower
-{
-public:
-	Vec2d		position = Vec2d(180., 140.);
-	double 		rotation = 0.;
-
-    bool operator==(const ModelWipeTower& other) const { return position == other.position && rotation == other.rotation; }
-    bool operator!=(const ModelWipeTower& other) const { return !((*this) == other); }
-
-    // Assignment operator does not touch the ID!
-    ModelWipeTower& operator=(const ModelWipeTower& rhs) { position = rhs.position; rotation = rhs.rotation; return *this; }
-
-    explicit ModelWipeTower() {}
-	explicit ModelWipeTower(const ModelWipeTower &cfg) = default;
-
-    // For serialization / deserialization of ModelWipeTower composed into another class into the Undo / Redo stack as a separate object.
-    template<typename Archive> void serialize(Archive &ar) { ar(position, rotation); }
-};
-
 // The print bed content.
 // Description of a triangular model with multiple materials, multiple instances with various affine transformations
 // and with multiple modifier meshes.
@@ -1221,12 +1199,12 @@ public:
     // Objects are owned by a model. Each model may have multiple instances, each instance having its own transformation (shift, scale, rotation).
     ModelObjectPtrs     objects;
 
-    ModelWipeTower& wipe_tower();
-    const ModelWipeTower& wipe_tower() const;
-    const ModelWipeTower& wipe_tower(const int bed_index) const;
-    ModelWipeTower& wipe_tower(const int bed_index);
-    std::vector<ModelWipeTower>& get_wipe_tower_vector() { return wipe_tower_vector; }
-    const std::vector<ModelWipeTower>& get_wipe_tower_vector() const { return wipe_tower_vector; }
+    Domain::ModelWipeTower& wipe_tower();
+    const Domain::ModelWipeTower& wipe_tower() const;
+    const Domain::ModelWipeTower& wipe_tower(const int bed_index) const;
+    Domain::ModelWipeTower& wipe_tower(const int bed_index);
+    std::vector<Domain::ModelWipeTower>& get_wipe_tower_vector() { return wipe_tower_vector; }
+    const std::vector<Domain::ModelWipeTower>& get_wipe_tower_vector() const { return wipe_tower_vector; }
 
     Domain::CustomGCode::Info& custom_gcode_per_print_z();
     const Domain::CustomGCode::Info& custom_gcode_per_print_z() const;
@@ -1234,7 +1212,7 @@ public:
 
 private:
     // Wipe tower object.
-    std::vector<ModelWipeTower> wipe_tower_vector = std::vector<ModelWipeTower>(MAX_NUMBER_OF_BEDS);
+    std::vector<Domain::ModelWipeTower> wipe_tower_vector = std::vector<Domain::ModelWipeTower>(MAX_NUMBER_OF_BEDS);
 
     // Extensions for color print
     std::vector<Domain::CustomGCode::Info> custom_gcode_per_print_z_vector = std::vector<Domain::CustomGCode::Info>(MAX_NUMBER_OF_BEDS);

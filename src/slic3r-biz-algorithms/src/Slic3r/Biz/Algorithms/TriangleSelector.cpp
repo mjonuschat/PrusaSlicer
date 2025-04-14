@@ -24,7 +24,7 @@ using Domain::AdditionalMeshInfo;
 using Domain::IndexedTriangleSetType;
 using Domain::indexed_triangle_set_with_color;
 
-using Biz::Algorithms::Geometry::Transformation;
+using Domain::Transformation;
 using Domain::Vec3d;
 using Domain::EPSILON;
 using Domain::is_approx;
@@ -2087,7 +2087,7 @@ double TriangleSelector::get_triangle_area(const Triangle &triangle) const {
 TriangleSelector::Cursor::Cursor(const Vec3f &source_, float radius_world, const Transform3d &trafo_, const ClippingPlane &clipping_plane_)
     : source{source_}, trafo{trafo_.cast<float>()}, clipping_plane{clipping_plane_}
 {
-    Vec3d sf = Geometry::Transformation(trafo_).get_scaling_factor();
+    Vec3d sf = Transformation(trafo_).get_scaling_factor();
     if (is_approx(sf.x(), sf.y()) && is_approx(sf.y(), sf.z())) {
         radius                = float(radius_world / sf.x());
         radius_sqr            = float(Slic3r::sqr(radius_world / sf.x()));

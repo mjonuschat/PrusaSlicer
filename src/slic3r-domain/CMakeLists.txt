@@ -42,6 +42,22 @@ add_library(slic3r-domain
     src/Slic3r/Domain/TextConfiguration.cpp
 
     include/Slic3r/Domain/EmbossShape.hpp
+
+    include/Slic3r/Domain/SelectionId.hpp
+
+    include/Slic3r/Domain/ElementRef.hpp
+    src/Slic3r/Domain/ElementId.cpp
+
+    include/Slic3r/Domain/Bed.hpp
+    src/Slic3r/Domain/Bed.cpp
+
+    include/Slic3r/Domain/BedRef.hpp
+
+    include/Slic3r/Domain/BedInstance.hpp
+    src/Slic3r/Domain/BedInstance.cpp
+
+    include/Slic3r/Domain/Transformation.hpp
+    src/Slic3r/Domain/Transformation.cpp
 )
 
 target_include_directories(slic3r-domain PUBLIC include)

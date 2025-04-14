@@ -1,7 +1,7 @@
 #include "Slic3r/Domain/Bed.hpp"
 #include "Slic3r/Log.hpp"
 #include "Slic3r/Assert.hpp"
-#include "libslic3r/BoundingBox.hpp"
+#include "Slic3r/Domain/BoundingBox.hpp"
 
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/filesystem.hpp>
@@ -27,7 +27,7 @@ static bool check_model(const std::string& filename)
 }
 
 Bed Bed::from(
-    const Pointfs& contour,
+    const Vec2ds& contour,
     float max_print_height,
     const std::string& model_filename,
     const std::string& texture_filename
@@ -70,8 +70,7 @@ bool Bed::contains(const Vec2d& bed_inst_position, const BoundingBox2d& object_b
     Vec2d half_extent = m_contour_aabb_extent * 0.5;
     Vec2d center = Vec2d{m_center.x(), m_center.y()} + bed_inst_position;
     BoundingBox2d bed_bounds{center - half_extent, center + half_extent};
-    using Biz::Algorithms::BoundingBox::overlap;
-    return overlap(bed_bounds, object_bb);
+    return bed_bounds.overlap(object_bb);
 }
 
 

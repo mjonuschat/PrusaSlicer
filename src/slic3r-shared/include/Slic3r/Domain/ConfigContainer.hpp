@@ -1,6 +1,6 @@
 #pragma once
 
-#include "FindById.hpp"
+#include "Slic3r/Domain/FindById.hpp"
 #include "Slic3r/Domain/ObjectID.hpp"
 #include "Slic3r/Domain/BedInstance.hpp"
 

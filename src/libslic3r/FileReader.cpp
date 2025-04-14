@@ -140,7 +140,6 @@ Domain::TriangleMesh load_mesh(const std::string& input_file)
 }
 
 using Domain::BoundingBox3d;
-using Biz::Algorithms::BoundingBox::overlap;
 
 // Shares some boundary.
 bool shares_boundary(const BoundingBox3d& a, const BoundingBox3d& b) {
@@ -172,7 +171,7 @@ static bool looks_like_multipart_object(const Model& model)
 
         if (!tbb.defined)
             tbb = tbb_this;
-        else if (overlap(tbb, tbb_this) || shares_boundary(tbb, tbb_this))
+        else if (tbb.overlap(tbb_this) || shares_boundary(tbb, tbb_this))
             // The volumes has intersects bounding boxes or share some boundary
             return true;
     }

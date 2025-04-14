@@ -42,9 +42,9 @@ using Biz::Algorithms::BoundingBox::merge;
 using Biz::Algorithms::BoundingBox::center;
 using Biz::Algorithms::BoundingBox::sizes;
 using Biz::Algorithms::BoundingBox::translated;
-using Biz::Algorithms::Geometry::Transformation;
+using Domain::Transformation;
 using Biz::Algorithms::Geometry::rotation_diff_z;
-using Biz::Algorithms::Geometry::extract_rotation;
+using Domain::extract_rotation;
 using Biz::Algorithms::TriangleSelector;
 using Domain::BoundingBox3d;
 using Domain::TriangleMesh;
@@ -126,22 +126,22 @@ void Model::update_links_bottom_up_recursive()
 	}
 }
 
-ModelWipeTower& Model::wipe_tower()
+Domain::ModelWipeTower& Model::wipe_tower()
 {
-    return const_cast<ModelWipeTower&>(const_cast<const Model*>(this)->wipe_tower());
+    return const_cast<Domain::ModelWipeTower&>(const_cast<const Model*>(this)->wipe_tower());
 }
 
-const ModelWipeTower& Model::wipe_tower() const
+const Domain::ModelWipeTower& Model::wipe_tower() const
 {
     return wipe_tower_vector[s_multiple_beds.get_active_bed()];
 }
 
-const ModelWipeTower& Model::wipe_tower(const int bed_index) const
+const Domain::ModelWipeTower& Model::wipe_tower(const int bed_index) const
 {
     return wipe_tower_vector[bed_index];
 }
 
-ModelWipeTower& Model::wipe_tower(const int bed_index)
+Domain::ModelWipeTower& Model::wipe_tower(const int bed_index)
 {
     return wipe_tower_vector[bed_index];
 }

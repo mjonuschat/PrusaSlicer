@@ -22,6 +22,8 @@ struct BoundingBox {
     VecType min;
     VecType max;
     bool defined{false};
+
+    [[nodiscard]] bool overlap(const BoundingBox& other) const;
 };
 
 using BoundingBox2crd = BoundingBox<coord_t, 2>;

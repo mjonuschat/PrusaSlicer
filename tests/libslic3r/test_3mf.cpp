@@ -7,7 +7,7 @@
 #include <boost/filesystem/operations.hpp>
 
 using namespace Slic3r;
-using Slic3r::Biz::Algorithms::Geometry::Transformation;
+using Domain::Transformation;
 
 SCENARIO("Reading 3mf file", "[3mf]") {
     GIVEN("umlauts in the path of the file") {

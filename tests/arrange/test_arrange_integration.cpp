@@ -22,7 +22,7 @@ using namespace Catch;
 using Slic3r::Biz::Algorithms::BoundingBox::center;
 using Slic3r::Biz::Algorithms::BoundingBox::contains;
 using Slic3r::Biz::Algorithms::BoundingBox::scaled;
-using Slic3r::Biz::Algorithms::Geometry::Transformation;
+using Slic3r::Domain::Transformation;
 using Slic3r::Domain::TriangleMesh;
 namespace triangle_mesh = Slic3r::Biz::Algorithms::TriangleMesh;
 
