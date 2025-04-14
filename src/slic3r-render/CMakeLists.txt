@@ -77,7 +77,7 @@ target_link_libraries(slic3r-render PUBLIC
         imgui
         imgui_backend_ogl3
         libslic3r # To get semver
-        slic3r-base
+        slic3r-domain
         NanoSVG::nanosvg
         NanoSVG::nanosvgrast
         Boost::filesystem
@@ -91,6 +91,9 @@ else()
 endif ()
 target_include_directories(slic3r-render PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
+if (NOT SLIC3R_OPENGL_ES AND NOT EMSCRIPTEN)
+    target_compile_definitions(slic3r-render PUBLIC SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED)
+endif ()
 
 # Doxygen
 add_target_to_doxygen(slic3r-render)

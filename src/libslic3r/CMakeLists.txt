@@ -12,8 +12,19 @@ include(PrecompiledHeader)
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/libslic3r_version.h.in ${CMAKE_CURRENT_BINARY_DIR}/libslic3r_version.h @ONLY)
 
-if (MINGW)
-    add_compile_options(-Wa,-mbig-obj)
+if(SLIC3R_STATIC)
+    set(OPENVDB_USE_STATIC_LIBS ON)
+    set(USE_BLOSC TRUE)
+endif ()
+
+find_package(OpenVDB 5.0 COMPONENTS openvdb)
+if(OpenVDB_FOUND)
+    slic3r_remap_configs(IlmBase::Half RelWithDebInfo Release)
+    slic3r_remap_configs(Blosc::blosc RelWithDebInfo Release)
+else ()
+    message(FATAL_ERROR "OpenVDB could not be found with the bundled find module. "
+                   "You can try to specify the find module location of your "
+                   "OpenVDB installation with the OPENVDB_FIND_MODULE_PATH cache variable.")
 endif ()
 
 set(OpenVDBUtils_SOURCES "")
@@ -584,8 +595,6 @@ if (MSVC AND "${CMAKE_SIZEOF_VOID_P}" STREQUAL "4") # 32 bit MSVC workaround
     target_compile_definitions(libslic3r_cgal PRIVATE CGAL_DO_NOT_USE_MPZF)
 endif ()
 
-encoding_check(libslic3r)
-
 target_compile_definitions(libslic3r PUBLIC -DUSE_TBB -DTBB_USE_CAPTURED_EXCEPTION=0)
 target_include_directories(libslic3r PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/.. ${CMAKE_CURRENT_BINARY_DIR})
 target_include_directories(libslic3r PUBLIC ${EXPAT_INCLUDE_DIRS})
@@ -623,7 +632,6 @@ else ()
 endif ()
 
 target_link_libraries(libslic3r PUBLIC
-    Eigen3::Eigen
     admesh
     localesutils
     LibBGCode::bgcode_convert

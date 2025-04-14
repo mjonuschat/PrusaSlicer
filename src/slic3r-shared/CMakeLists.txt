@@ -295,12 +295,9 @@ find_package(nlohmann_json 3.11 REQUIRED)
 
 slic3r_remap_configs("yoga::yogacore" RelWithDebInfo Release)
 
-
 add_library(slic3r-shared STATIC ${SLIC3R_SHARED_FILES})
 target_link_libraries(slic3r-shared PUBLIC
-        slic3r-base
         slic3r-platform
-        slic3r-render
         libslic3r
         libpgcode
         Boost::filesystem
@@ -312,7 +309,20 @@ target_link_libraries(slic3r-shared PUBLIC
 if (EMSCRIPTEN)
 #    target_link_libraries(slic3r-shared PUBLIC png-mt )
 else()
-    find_package(PNG REQUIRED)
+    find_package(CURL REQUIRED)
+
+    add_library(libcurl INTERFACE)
+    target_link_libraries(libcurl INTERFACE CURL::libcurl)
+
+    # Fixing curl's cmake config script bugs
+    if (NOT WIN32)
+        # Required by libcurl
+        find_package(ZLIB REQUIRED)
+        target_link_libraries(libcurl INTERFACE ZLIB::ZLIB)
+    else()
+        target_link_libraries(libcurl INTERFACE crypt32)
+    endif()
+
     target_link_libraries(slic3r-shared PUBLIC PNG::PNG libvgcode libcurl)
 endif ()
 target_include_directories(slic3r-shared PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
@@ -321,11 +331,15 @@ if (NOT WIN32)
     if (SLIC3R_FHS)
         # CMAKE_INSTALL_FULL_DATAROOTDIR: read-only architecture-independent data root (share)
         set(SLIC3R_FHS_RESOURCES "${CMAKE_INSTALL_FULL_DATAROOTDIR}/PrusaSlicer")
-        install(DIRECTORY ${SLIC3R_RESOURCES_NEXT_DIR}/ DESTINATION ${SLIC3R_FHS_RESOURCES})
+        install(DIRECTORY ${SLIC3R_RESOURCES_DIR}/ DESTINATION ${SLIC3R_FHS_RESOURCES})
         target_compile_definitions(slic3r-shared PUBLIC SLIC3R_FHS SLIC3R_FHS_RESOURCES="${SLIC3R_FHS_RESOURCES}")
     else ()
-        install(DIRECTORY "${SLIC3R_RESOURCES_NEXT_DIR}/" DESTINATION "${CMAKE_INSTALL_PREFIX}/resources")
+        install(DIRECTORY "${SLIC3R_RESOURCES_DIR}/" DESTINATION "${CMAKE_INSTALL_PREFIX}/resources")
     endif ()
+endif()
+
+if (SLIC3R_REPO_URL)
+    target_compile_definitions(slic3r-shared PRIVATE SLIC3R_REPO_URL="${SLIC3R_REPO_URL}")
 endif()
 
 add_target_to_doxygen(slic3r-shared)

@@ -1,83 +1,67 @@
-set(SLIC3R_APP_DESKTOP_FILES
-        src/Slic3r/App/Desktop/DesktopApp.cpp
-        src/Slic3r/App/Desktop/DesktopApp.hpp
-        src/Slic3r/App/Desktop/MainFrame.cpp
-        src/Slic3r/App/Desktop/MainFrame.hpp
-        src/Slic3r/App/Desktop/TopBar.cpp
-        src/Slic3r/App/Desktop/TopBar.hpp
-        src/Slic3r/App/Desktop/TopBarMenus.cpp
-        src/Slic3r/App/Desktop/TopBarMenus.hpp
-        src/Slic3r/App/Desktop/ModePaletteComboBox.cpp
-        src/Slic3r/App/Desktop/ModePaletteComboBox.hpp
-        src/Slic3r/App/Desktop/GUI_Descriptions.cpp
-        src/Slic3r/App/Desktop/GUI_Descriptions.hpp
-        src/Slic3r/App/Desktop/Config/Field.cpp
-        src/Slic3r/App/Desktop/Config/Field.hpp
-        src/Slic3r/App/Desktop/Config/OptionsGroup.cpp
-        src/Slic3r/App/Desktop/Config/OptionsGroup.hpp
-        src/Slic3r/App/Desktop/Config/OG_CustomCtrl.cpp
-        src/Slic3r/App/Desktop/Config/OG_CustomCtrl.hpp
+add_library(slic3r-app-desktop STATIC
+    include/Slic3r/App/Desktop/Run.hpp
 
-        src/Slic3r/App/Desktop/Preset/SubstitutionManager.cpp
-        src/Slic3r/App/Desktop/Preset/SubstitutionManager.hpp
-        src/Slic3r/App/Desktop/Preset/EditorPage.cpp
-        src/Slic3r/App/Desktop/Preset/EditorPage.hpp
-        src/Slic3r/App/Desktop/Preset/AbstractEditor.cpp
-        src/Slic3r/App/Desktop/Preset/AbstractEditor.hpp
-        src/Slic3r/App/Desktop/Preset/EditorPrint.cpp
-        src/Slic3r/App/Desktop/Preset/EditorPrint.hpp
-        src/Slic3r/App/Desktop/Preset/EditorFilament.cpp
-        src/Slic3r/App/Desktop/Preset/EditorFilament.hpp
-        src/Slic3r/App/Desktop/Preset/EditorSLAPrint.cpp
-        src/Slic3r/App/Desktop/Preset/EditorSLAPrint.hpp
-        src/Slic3r/App/Desktop/Preset/EditorSLAMaterial.cpp
-        src/Slic3r/App/Desktop/Preset/EditorSLAMaterial.hpp
-        src/Slic3r/App/Desktop/Preset/EditorPrinter.cpp
-        src/Slic3r/App/Desktop/Preset/EditorPrinter.hpp
-        src/Slic3r/App/Desktop/Preset/PresetNameGetter.cpp
-        src/Slic3r/App/Desktop/Preset/PresetNameGetter.hpp
-        src/Slic3r/App/Desktop/Preset/SavePresetDialog.cpp
-        src/Slic3r/App/Desktop/Preset/SavePresetDialog.hpp
-        src/Slic3r/App/Desktop/Preset/EditGCodeDialog.cpp
-        src/Slic3r/App/Desktop/Preset/EditGCodeDialog.hpp
-        src/Slic3r/App/Desktop/Preset/PresetComboBox.cpp
-        src/Slic3r/App/Desktop/Preset/PresetComboBox.hpp
-        src/Slic3r/App/Desktop/Preset/EditorPresetComboBox.cpp
-        src/Slic3r/App/Desktop/Preset/EditorPresetComboBox.hpp
-        src/Slic3r/App/Desktop/Preset/Manipulators.cpp
-        src/Slic3r/App/Desktop/Preset/Manipulators.hpp
+    src/Slic3r/App/Desktop/DesktopApp.cpp
+    src/Slic3r/App/Desktop/DesktopApp.hpp
+    src/Slic3r/App/Desktop/MainFrame.cpp
+    src/Slic3r/App/Desktop/MainFrame.hpp
+    src/Slic3r/App/Desktop/TopBar.cpp
+    src/Slic3r/App/Desktop/TopBar.hpp
+    src/Slic3r/App/Desktop/TopBarMenus.cpp
+    src/Slic3r/App/Desktop/TopBarMenus.hpp
+    src/Slic3r/App/Desktop/ModePaletteComboBox.cpp
+    src/Slic3r/App/Desktop/ModePaletteComboBox.hpp
+    src/Slic3r/App/Desktop/GUI_Descriptions.cpp
+    src/Slic3r/App/Desktop/GUI_Descriptions.hpp
+    src/Slic3r/App/Desktop/Config/Field.cpp
+    src/Slic3r/App/Desktop/Config/Field.hpp
+    src/Slic3r/App/Desktop/Config/OptionsGroup.cpp
+    src/Slic3r/App/Desktop/Config/OptionsGroup.hpp
+    src/Slic3r/App/Desktop/Config/OG_CustomCtrl.cpp
+    src/Slic3r/App/Desktop/Config/OG_CustomCtrl.hpp
+
+    src/Slic3r/App/Desktop/Preset/SubstitutionManager.cpp
+    src/Slic3r/App/Desktop/Preset/SubstitutionManager.hpp
+    src/Slic3r/App/Desktop/Preset/EditorPage.cpp
+    src/Slic3r/App/Desktop/Preset/EditorPage.hpp
+    src/Slic3r/App/Desktop/Preset/AbstractEditor.cpp
+    src/Slic3r/App/Desktop/Preset/AbstractEditor.hpp
+    src/Slic3r/App/Desktop/Preset/EditorPrint.cpp
+    src/Slic3r/App/Desktop/Preset/EditorPrint.hpp
+    src/Slic3r/App/Desktop/Preset/EditorFilament.cpp
+    src/Slic3r/App/Desktop/Preset/EditorFilament.hpp
+    src/Slic3r/App/Desktop/Preset/EditorSLAPrint.cpp
+    src/Slic3r/App/Desktop/Preset/EditorSLAPrint.hpp
+    src/Slic3r/App/Desktop/Preset/EditorSLAMaterial.cpp
+    src/Slic3r/App/Desktop/Preset/EditorSLAMaterial.hpp
+    src/Slic3r/App/Desktop/Preset/EditorPrinter.cpp
+    src/Slic3r/App/Desktop/Preset/EditorPrinter.hpp
+    src/Slic3r/App/Desktop/Preset/PresetNameGetter.cpp
+    src/Slic3r/App/Desktop/Preset/PresetNameGetter.hpp
+    src/Slic3r/App/Desktop/Preset/SavePresetDialog.cpp
+    src/Slic3r/App/Desktop/Preset/SavePresetDialog.hpp
+    src/Slic3r/App/Desktop/Preset/EditGCodeDialog.cpp
+    src/Slic3r/App/Desktop/Preset/EditGCodeDialog.hpp
+    src/Slic3r/App/Desktop/Preset/PresetComboBox.cpp
+    src/Slic3r/App/Desktop/Preset/PresetComboBox.hpp
+    src/Slic3r/App/Desktop/Preset/EditorPresetComboBox.cpp
+    src/Slic3r/App/Desktop/Preset/EditorPresetComboBox.hpp
+    src/Slic3r/App/Desktop/Preset/Manipulators.cpp
+    src/Slic3r/App/Desktop/Preset/Manipulators.hpp
 )
 
-# Create a slic3r-app-desktop executable
-# Process mainfests for various platforms.
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../platform/msw/slic3r-app-desktop.rc.in ${CMAKE_CURRENT_BINARY_DIR}/slic3r-app-desktop.rc @ONLY)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../platform/msw/PrusaSlicer.manifest.in ${CMAKE_CURRENT_BINARY_DIR}/slic3r-app-desktop.manifest @ONLY)
-
-add_executable(slic3r-app-desktop WIN32 ${SLIC3R_APP_DESKTOP_FILES} 
-                                        ${CMAKE_CURRENT_BINARY_DIR}/slic3r-app-desktop.rc)
+set_property(DIRECTORY ${CMAKE_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT slic3r-app-desktop)
 
 find_package(NanoSVG REQUIRED)
 
 target_link_libraries(slic3r-app-desktop PUBLIC
-        slic3r-base
-        slic3r-platform slic3r-platform-wx 
-        slic3r-shared slic3r-shared-wx
+    slic3r-shared-wx
 )
+
+target_include_directories(slic3r-app-desktop PUBLIC include)
 
 # See https://github.com/prusa3d/PrusaSlicer/issues/4584.
 if (UNIX AND NOT APPLE)
     find_package(GTK3 REQUIRED)
     target_link_libraries(slic3r-app-desktop PUBLIC GTK3::GTK3)
 endif ()
-
-if (MSVC)
-    # Manifest is provided through PrusaSlicer.rc, don't generate your own.
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /MANIFEST:NO")
-endif ()
-
-slic3r_link_resources(slic3r-app-desktop)
-if (WIN32)
-    prusaslicer_copy_dlls(slic3r-app-desktop)
-endif ()
-
-install(TARGETS slic3r-app-desktop RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")

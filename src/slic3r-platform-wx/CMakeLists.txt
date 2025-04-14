@@ -1,11 +1,9 @@
-set(SLIC3R_PLATFORM_WX_FILES
-        include/Slic3r/App/Platform/WX/WXRenderCanvas.hpp
-        src/Slic3r/App/Platform/WX/WXRenderCanvas.cpp
-        include/Slic3r/App/Platform/WX/WXMainThreadDispatcher.hpp
-        src/Slic3r/App/Platform/WX/WXMainThreadDispatcher.cpp
+add_library(slic3r-platform-wx STATIC
+    include/Slic3r/App/Platform/WX/WXRenderCanvas.hpp
+    src/Slic3r/App/Platform/WX/WXRenderCanvas.cpp
+    include/Slic3r/App/Platform/WX/WXMainThreadDispatcher.hpp
+    src/Slic3r/App/Platform/WX/WXMainThreadDispatcher.cpp
 )
-
-add_library(slic3r-platform-wx STATIC ${SLIC3R_PLATFORM_WX_FILES})
 
 if(WIN32)
     message(STATUS "WXWIN environment set to: $ENV{WXWIN}")
@@ -27,12 +25,11 @@ find_package(wxWidgets 3.2 CONFIG REQUIRED COMPONENTS base core adv html gl webv
 slic3r_remap_configs(wx::wxhtml wx::wxadv wx::wxgl wx::wxcore wx::wxbase RelWithDebInfo Release)
 
 target_link_libraries(slic3r-platform-wx PUBLIC
-        wxWidgets::wxWidgets
-        OpenGL::GL
-        GLEW::GLEW
-        imgui_backend_ogl3
-        slic3r-platform
-        slic3r-shared
+    wxWidgets::wxWidgets
+    OpenGL::GL
+    GLEW::GLEW
+    imgui_backend_ogl3
+    slic3r-shared
 )
 target_include_directories(slic3r-platform-wx PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 

@@ -6,7 +6,7 @@ on:
 
 jobs:
   build_flatpak:
-    uses: Prusa-Development/PrusaSlicer-Actions/.github/workflows/build_flatpak.yml@slic3r3_prototype
+    uses: Prusa-Development/PrusaSlicer-Actions/.github/workflows/build_flatpak.yml@ms_cmake_refactor
     secrets: inherit
     with:
-      actions_branch: slic3r3_prototype
+      actions_branch: ms_cmake_refactor
