@@ -20,8 +20,8 @@ enum class PixelFormat
     R32F,
     R32UI,
     RGBA32F,
+    DepthComponent,
 };
-
 
 enum class BufferTarget {
     VertexBuffer,
@@ -29,6 +29,26 @@ enum class BufferTarget {
 #ifdef SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
     TextureBuffer,
 #endif // SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
+};
+
+enum class FramebufferTarget {
+    Framebuffer,
+    DrawFramebuffer,
+    ReadFramebuffer,
+};
+
+enum class TextureTarget {
+    Texture1D,
+    Texture2D,
+    Texture3D,
+    Texture1DArray,
+    Texture2DArray,
+    TextureRectangle, 
+    TextureCubeMap,
+    TextureCubeMapArray,
+    TextureBuffer,
+    Texture2DMultisample,
+    Texture2DMultisampleArray
 };
 
 enum class BufferUsage {
@@ -58,6 +78,15 @@ enum class TextureMagFilter
 {
     Nearest,
     Linear,
+};
+
+enum class TextureWrap
+{
+    ClampToEdge,
+    ClampToBorder,
+    Repeat,
+    MirroredRepeat,
+    MirrorClampToEdge,
 };
 
 struct Rect
@@ -104,6 +133,13 @@ struct Blending
     BlendOp rgb;
     BlendOp alpha;
     BlendEquation equation{BlendEquation::Add};
+};
+
+enum class CullFaceMode
+{
+    Front,
+    Back,
+    FrontAndBack
 };
 
 enum class PrimitiveType
@@ -157,6 +193,12 @@ enum class IndexType
     UByte = 0,
     UShort,
     UInt
+};
+
+struct Shadows
+{
+    bool cast{ false };
+    bool receive{ false };
 };
 
 template <typename I> struct IndexTypeTraits {};

@@ -18,6 +18,8 @@ class TextureBuffer;
 #endif // SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
 class Shader;
 class CommandBuffer;
+class Framebuffer;
+struct FramebufferCreationData;
 
 class Device : public WithInternal
 {
@@ -38,12 +40,16 @@ public:
     std::unique_ptr<TextureBuffer> create_texture_buffer(PixelFormat format);
 #endif // SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
     std::unique_ptr<CommandBuffer> create_command_buffer();
+    std::unique_ptr<Framebuffer> create_framebuffer(const FramebufferCreationData& data);
 
     void bind_buffer(const Buffer& b);
     void unbind_buffer(const Buffer& b);
 
     void* map_buffer(const Buffer& b, BufferAccess access);
     void unmap_buffer(const Buffer& b);
+
+    void bind_framebuffer(const Framebuffer& b);
+    void unbind_framebuffer(const Framebuffer& b);
 
 private:
     Context& m_context;

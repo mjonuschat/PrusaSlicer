@@ -259,7 +259,7 @@ void AbstractCameraGizmo::render_scene(Render::CommandBuffer& cmd_buffer)
 {
     if (!m_dynamic_geometry.empty()) {
         cmd_buffer.set_depth_test_enabled(true);
-        m_dynamic_geometry.draw(cmd_buffer, Render::Material{}.set_shader(Render::Context::instance().shader_manager().get_shader("flat")));
+        m_dynamic_geometry.draw(cmd_buffer, Render::Material{}.set_shader(Render::Context::instance().shader_manager().shader("flat")));
     }
 }
 #endif

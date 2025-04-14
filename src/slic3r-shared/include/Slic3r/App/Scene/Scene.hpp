@@ -63,6 +63,12 @@ public:
 
 };
 
+enum class SceneRenderFlag : uint32_t
+{
+    None    = 0x0000,
+    Shadows = 0x0001,
+};
+
 /**
  * @brief Scenegraph entrypoint
  *
@@ -149,7 +155,8 @@ public:
      * @name Rendering
      * @{
      */
-    void render(Render::CommandBuffer& cmd_buffer, ISceneRenderCustomizer* customizer = &ms_default_customizer) const;
+    void render(Render::Device& device, Render::CommandBuffer& cmd_buffer, ISceneRenderCustomizer* customizer = &ms_default_customizer,
+        SceneRenderFlag flags = SceneRenderFlag::None) const;
     void render_imgui(const Render::ScreenInfo& screen_info) const;
     /** @} */
 
@@ -219,10 +226,36 @@ public:
 
     /** @} */
 
+    /**
+     * @name Shadows-related methods
+     * @{
+     */
+
+    bool shadows_enabled() const { return m_shadows.enabled; }
+    void set_shadows_enabled(bool enable) { m_shadows.enabled = enable; }
+
+    bool bed_model_cast_shadow() const { return m_shadows.bed_model_cast_shadow; }
+    void set_bed_model_cast_shadow(bool cast) { m_shadows.bed_model_cast_shadow = cast; }
+
+    int shadowsmap_size() const { return m_shadows.shadowsmap_size; }
+    void set_shadowsmap_size(int size) { m_shadows.pending_shadowsmap_size = size; }
+
+    void set_bed_aabb(const Eigen::AlignedBox3d& aabb) { m_shadows.bed_aabb = aabb; }
+
+    /** @} */
+
     void log_nodes() const;
 private:
     void register_node(Node* n);
     void unregister_node(Node* n);
+
+    using NodeMaterial = std::pair<const Node*, Render::Material>;
+    using NodeMaterials = std::vector<NodeMaterial>;
+    NodeMaterials collect_nodes_with_material(const Node::NodePredicate& predicate) const;
+
+    void render_shadowsmap_pass(Render::Device& device) const;
+    void render_shadows_receivers_pass(Render::Device& device, Render::CommandBuffer& cmd_buffer, ISceneRenderCustomizer* customizer) const;
+    void render_no_shadows_pass(Render::CommandBuffer& cmd_buffer, ISceneRenderCustomizer* customizer) const;
 
 private:
     using NodeIdLookUp = std::unordered_map<size_t, Node*>;
@@ -233,6 +266,23 @@ private:
     NodeIdLookUp m_nodes_by_id;
     Render::GeometryManager<std::string> m_geometry_manager;
     TriangleMeshManager<std::string> m_trimesh_manager;
+
+    struct Shadows
+    {
+        bool enabled{ true };
+        bool bed_model_cast_shadow{ true };
+        Eigen::AlignedBox3d bed_aabb;
+
+        mutable Render::Framebuffer* shadowsmap_framebuffer{ nullptr };
+        mutable int shadowsmap_size{ 0 };
+        mutable std::optional<int> pending_shadowsmap_size;
+        mutable Camera light_cam;
+
+        static constexpr int DEFAULT_SHADOWSMAP_SIZE = 2048;
+        static constexpr int SHADOWSMAP_TEXTURE_UNIT = 15;
+    };
+
+    Shadows m_shadows;
 
     static MinimalSceneRenderCustomizer ms_default_customizer;
 };

@@ -271,7 +271,7 @@ static void build_rotate_node(AxisType axis, Scene::NodeBuilder& builder, Render
 
     builder.child([&](Scene::NodeBuilder& bldr) {
         Render::Material material = Render::Material{}
-            .set_shader(device.context().shader_manager().get_shader("flat"))
+            .set_shader(device.context().shader_manager().shader("flat"))
             .set_uniform("uniform_color", color);
 
         bldr
@@ -285,7 +285,7 @@ static void build_rotate_node(AxisType axis, Scene::NodeBuilder& builder, Render
 
     builder.child([&](Scene::NodeBuilder& bldr) {
         Render::Material material = Render::Material{}
-            .set_shader(device.context().shader_manager().get_shader("flat"))
+            .set_shader(device.context().shader_manager().shader("flat"))
             .set_uniform("uniform_color", ColorRGBA::WHITE());
 
         bldr
@@ -305,7 +305,7 @@ static void build_rotate_node(AxisType axis, Scene::NodeBuilder& builder, Render
 
         bldr.child([&](Scene::NodeBuilder& child_bldr) {
             Render::Material material = Render::Material{}
-                .set_shader(device.context().shader_manager().get_shader("flat"))
+                .set_shader(device.context().shader_manager().shader("flat"))
                 .set_uniform("uniform_color", color);
 
             child_bldr
@@ -322,8 +322,9 @@ static void build_rotate_node(AxisType axis, Scene::NodeBuilder& builder, Render
             auto mesh = data_factory.triangle_mesh(Scene::GeometryDataId::Cube);
 
             Render::Material material = Render::Material{}
-                .set_shader(device.context().shader_manager().get_shader("gouraud_light"))
-                .set_uniform("uniform_color", color);
+                .set_shader(device.context().shader_manager().shader("gouraud_light"))
+                .set_uniform("uniform_color", color)
+                .set_uniform("emission_factor", 0.0f);
 
             child_bldr
                 .set_debug_name("cube")
@@ -342,8 +343,9 @@ static void build_rotate_node(AxisType axis, Scene::NodeBuilder& builder, Render
             auto mesh = data_factory.triangle_mesh(Scene::GeometryDataId::Cone);
 
             Render::Material material = Render::Material{}
-                .set_shader(device.context().shader_manager().get_shader("gouraud_light"))
-                .set_uniform("uniform_color", color);
+                .set_shader(device.context().shader_manager().shader("gouraud_light"))
+                .set_uniform("uniform_color", color)
+                .set_uniform("emission_factor", 0.0f);
 
             child_bldr
                 .set_debug_name("cone ccw")
@@ -363,8 +365,9 @@ static void build_rotate_node(AxisType axis, Scene::NodeBuilder& builder, Render
             auto mesh = data_factory.triangle_mesh(Scene::GeometryDataId::Cone);
 
             Render::Material material = Render::Material{}
-                .set_shader(device.context().shader_manager().get_shader("gouraud_light"))
-                .set_uniform("uniform_color", color);
+                .set_shader(device.context().shader_manager().shader("gouraud_light"))
+                .set_uniform("uniform_color", color)
+                .set_uniform("emission_factor", 0.0f);
 
             child_bldr
                 .set_debug_name("cone cw")
@@ -429,7 +432,7 @@ void RotationGizmo::on_activated()
     scene.add_child(main_node.release(), &selection_root);
 
     m_handles.clear();
-    scene.root().query([this](const Scene::Node* n)->bool {
+    scene.root().query([](const Scene::Node* n)->bool {
         const RotationGizmoNodeTag* tag = n->tag_of_type<RotationGizmoNodeTag>();
         return (tag != nullptr && tag->is_handle);
     }, m_handles);

@@ -140,7 +140,7 @@ static void build_axis_node(AxisType axis, Scene::NodeBuilder& builder, Render::
 
     builder.child([&](Scene::NodeBuilder& bldr) {
         Render::Material material = Render::Material{}
-            .set_shader(device.context().shader_manager().get_shader("flat"))
+            .set_shader(device.context().shader_manager().shader("flat"))
             .set_uniform("uniform_color", color);
 
         bldr
@@ -158,8 +158,9 @@ static void build_axis_node(AxisType axis, Scene::NodeBuilder& builder, Render::
         auto mesh = data_factory.triangle_mesh(Scene::GeometryDataId::Cone);
 
         Render::Material material = Render::Material{}
-            .set_shader(device.context().shader_manager().get_shader("gouraud_light"))
-            .set_uniform("uniform_color", color);
+            .set_shader(device.context().shader_manager().shader("gouraud_light"))
+            .set_uniform("uniform_color", color)
+            .set_uniform("emission_factor", 0.0f);
 
         bldr
             .set_debug_name("cone")

@@ -32,6 +32,7 @@
 #define ENABLED_DEBUG_BEDS 1
 #define ENABLED_DEBUG_LOAD_3MF 0
 #define ENABLED_DEBUG_CAMERA 0
+#define ENABLED_DEBUG_SHADOWS 0
 
 namespace Slic3r::App::Plater {
 
@@ -330,6 +331,7 @@ void PlaterRenderModule::init_scene()
 
 #endif
     m_scene_presenter->scene().log_nodes();
+    m_scene_presenter->update_objects_shadows_data();
 }
 
 void PlaterRenderModule::init_gizmos()
@@ -869,7 +871,78 @@ static void render_imgui_debug_camera(const Scene::Camera& camera, const Scene::
 }
 #endif // ENABLED_DEBUG_CAMERA
 
-void PlaterRenderModule::render_imgui(Render::CommandBuffer& cmd_buffer)
+#if ENABLED_DEBUG_SHADOWS
+static void render_imgui_debug_shadows(PlaterScenePresenter& scene_presenter)
+{
+    Scene::Scene& scene = scene_presenter.scene();
+
+    int shadowsmap_size = scene.shadowsmap_size();
+    if (shadowsmap_size == 0)
+        return;
+
+    ImGui::SetNextWindowCollapsed(true, ImGuiCond_Once);
+    if (ImGui::Begin("Shadows debug", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+
+        bool enabled = scene.shadows_enabled();
+        if (ImGui::Checkbox("Shadows enabled", &enabled))
+            scene.set_shadows_enabled(enabled);
+
+        bool bed_model_cast_shadow = scene.bed_model_cast_shadow();
+        if (ImGui::Checkbox("Bed model cast shadow", &bed_model_cast_shadow)) {
+            scene.set_bed_model_cast_shadow(bed_model_cast_shadow);
+            scene_presenter.update_beds_shadows_data();
+        }
+        if (ImGui::BeginTable("Shadows", 2, ImGuiTableFlags_Borders)) {
+
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::AlignTextToFramePadding();
+            ImGui::Text("Shadowsmap size");
+            ImGui::TableSetColumnIndex(1);
+
+            const std::vector<int> sizes = {
+                512,
+                1024,
+                2048,
+                4096,
+                8192
+            };
+
+            std::vector<std::string> sizes_str;
+            std::transform(sizes.begin(), sizes.end(), std::back_inserter(sizes_str), [](int size) {
+                return std::to_string(size) + "x" + std::to_string(size);
+            });
+
+            auto it = std::find(sizes.begin(), sizes.end(), shadowsmap_size);
+            DEBUG_ASSERT(it != sizes.end());
+            int sel_size = int(std::distance(sizes.begin(), it));
+
+            const char* preview_value = sizes_str[sel_size].c_str();
+
+            if (ImGui::BeginCombo("##Sizes", preview_value, ImGuiComboFlags_WidthFitPreview)) {
+                for (int i = 0; i < int(sizes_str.size()); i++) {
+                    const bool is_selected = (sel_size == i);
+                    if (ImGui::Selectable(sizes_str[i].c_str(), is_selected))
+                        sel_size = i;
+
+                    // Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
+                    if (is_selected)
+                        ImGui::SetItemDefaultFocus();
+                }
+                ImGui::EndCombo();
+            }
+
+            if (sel_size != shadowsmap_size)
+                scene.set_shadowsmap_size(sizes[sel_size]);
+
+            ImGui::EndTable();
+        }
+    }
+    ImGui::End();
+}
+#endif // ENABLED_DEBUG_SHADOWS
+
+void PlaterRenderModule::render_imgui(Render::CommandBuffer & cmd_buffer)
 {
     if (!m_scene_presenter->project_ready())
         return;
@@ -916,6 +989,9 @@ void PlaterRenderModule::render_imgui(Render::CommandBuffer& cmd_buffer)
 #if ENABLED_DEBUG_CAMERA
     render_imgui_debug_camera(m_scene_presenter->scene().camera(), m_scene_presenter->scene().camera_trackball());
 #endif // ENABLED_DEBUG_CAMERA
+#if ENABLED_DEBUG_SHADOWS
+    render_imgui_debug_shadows(*m_scene_presenter);
+#endif // ENABLED_DEBUG_SHADOWS
 }
 
 void PlaterRenderModule::render_object_hud(const Scene::Node& n, const Eigen::AlignedBox<float, 2>& screen_bounding_box)
@@ -932,7 +1008,6 @@ void PlaterRenderModule::render_object_hud(const Scene::Node& n, const Eigen::Al
     }
     ImGui::End();
 }
-
 
 void PlaterRenderModule::on_scene_mouse_event(
     const Platform::MouseEvent& e

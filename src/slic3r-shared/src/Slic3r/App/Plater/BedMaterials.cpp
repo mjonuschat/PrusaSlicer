@@ -14,8 +14,9 @@ Render::Material BedMaterials::plate_default_material(const Render::Device& devi
     ColorRGBA color = DEFAULT_BED_PLATE_COLOR;
     Render::Material ret;
     ret
-        .set_shader(device.context().shader_manager().get_shader("flat"))
+        .set_shader(device.context().shader_manager().shader("phong_light"))
         .set_uniform("uniform_color", color)
+        .set_uniform("emission_factor", 0.0f)
         .set_transparent(color.is_transparent());
     return ret;
 }
@@ -24,7 +25,7 @@ Render::Material BedMaterials::plate_textured_material(const Render::Device& dev
 {
     Render::Material ret;
     ret
-        .set_shader(device.context().shader_manager().get_shader("printbed"))
+        .set_shader(device.context().shader_manager().shader("printbed"))
         .set_texture(0, BedRenderHelper::texture(bed, device.context().texture_manager()))
         .set_uniform("transparent_background", false)
         .set_uniform("svg_source", boost::algorithm::iends_with(bed.texture_filename(), ".svg"));
@@ -36,7 +37,7 @@ Render::Material BedMaterials::grid_material(const Render::Device& device)
     ColorRGBA color = DEFAULT_BED_GRID_COLOR;
     Render::Material ret;
     ret
-        .set_shader(device.context().shader_manager().get_shader("flat"))
+        .set_shader(device.context().shader_manager().shader("flat"))
         .set_uniform("uniform_color", color)
         .set_transparent(color.is_transparent());
     return ret;
@@ -47,7 +48,7 @@ Render::Material BedMaterials::contour_material(const Render::Device& device)
     ColorRGBA color = DEFAULT_BED_CONTOUR_COLOR;
     Render::Material ret;
     ret
-        .set_shader(device.context().shader_manager().get_shader("flat"))
+        .set_shader(device.context().shader_manager().shader("flat"))
         .set_uniform("uniform_color", color)
         .set_transparent(color.is_transparent());
     return ret;
@@ -58,7 +59,7 @@ Render::Material BedMaterials::print_volume_material(const Render::Device& devic
     ColorRGBA color = DEFAULT_BED_CONTOUR_COLOR;
     Render::Material ret;
     ret
-        .set_shader(device.context().shader_manager().get_shader("flat"))
+        .set_shader(device.context().shader_manager().shader("flat"))
         .set_uniform("uniform_color", color)
         .set_transparent(color.is_transparent());
     return ret;
@@ -69,8 +70,9 @@ Render::Material BedMaterials::model_material(const Render::Device& device)
     ColorRGBA color = DEFAULT_BED_MODEL_COLOR;
     Render::Material ret;
     ret
-        .set_shader(device.context().shader_manager().get_shader("gouraud_light"))
+        .set_shader(device.context().shader_manager().shader("phong_light"))
         .set_uniform("uniform_color", color)
+        .set_uniform("emission_factor", 0.0f)
         .set_transparent(color.is_transparent());
     return ret;
 }
@@ -80,8 +82,9 @@ Render::Material BedMaterials::plate_default_override_material(const Render::Dev
     ColorRGBA color = DISABLED_BED_PLATE_COLOR;
     Render::Material ret;
     ret
-        .set_shader(device.context().shader_manager().get_shader("flat"))
+        .set_shader(device.context().shader_manager().shader("phong_light"))
         .set_uniform("uniform_color", color)
+        .set_uniform("emission_factor", 0.0f)
         .set_transparent(color.is_transparent());
     return ret;
 }
@@ -90,7 +93,7 @@ Render::Material BedMaterials::plate_textured_override_material(const Render::De
 {
     Render::Material ret;
     ret
-        .set_shader(device.context().shader_manager().get_shader("printbed"))
+        .set_shader(device.context().shader_manager().shader("printbed"))
         .set_texture(0, BedRenderHelper::texture(bed, device.context().texture_manager()))
         .set_uniform("transparent_background", true)
         .set_transparent(true)
@@ -103,7 +106,7 @@ Render::Material BedMaterials::grid_override_material(const Render::Device& devi
     ColorRGBA color = DISABLED_BED_GRID_COLOR;
     Render::Material ret;
     ret
-        .set_shader(device.context().shader_manager().get_shader("flat"))
+        .set_shader(device.context().shader_manager().shader("flat"))
         .set_uniform("uniform_color", color)
         .set_transparent(color.is_transparent());
     return ret;
@@ -114,7 +117,7 @@ Render::Material BedMaterials::contour_override_material(const Render::Device& d
     ColorRGBA color = DISABLED_BED_CONTOUR_COLOR;
     Render::Material ret;
     ret
-        .set_shader(device.context().shader_manager().get_shader("flat"))
+        .set_shader(device.context().shader_manager().shader("flat"))
         .set_uniform("uniform_color", color)
         .set_transparent(color.is_transparent());
     return ret;
@@ -125,7 +128,7 @@ Render::Material BedMaterials::print_volume_override_material(const Render::Devi
     ColorRGBA color = DISABLED_BED_CONTOUR_COLOR;
     Render::Material ret;
     ret
-        .set_shader(device.context().shader_manager().get_shader("flat"))
+        .set_shader(device.context().shader_manager().shader("flat"))
         .set_uniform("uniform_color", color)
         .set_transparent(color.is_transparent());
     return ret;
@@ -136,7 +139,7 @@ Render::Material BedMaterials::model_override_material(const Render::Device& dev
     ColorRGBA color = DISABLED_BED_MODEL_COLOR;
     Render::Material ret;
     ret
-        .set_shader(device.context().shader_manager().get_shader("gouraud_light"))
+        .set_shader(device.context().shader_manager().shader("gouraud_light"))
         .set_uniform("uniform_color", color)
         .set_transparent(color.is_transparent());
     return ret;

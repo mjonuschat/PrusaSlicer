@@ -54,11 +54,15 @@ public:
         size_t offset = 0
     );
 
+    void set_shadows(const Render::Shadows& shadows) override { m_shadows = shadows; }
+    bool cast_shadows() const override { return m_shadows.cast; }
+    bool receive_shadows() const override { return m_shadows.receive; }
 
 
 protected:
     const Render::Geometry* m_geometry{nullptr};
     Render::Material m_material;
+    Render::Shadows m_shadows;
     Render::PrimitiveType m_primitive_type{Render::PrimitiveType::Triangles};
     size_t m_vertex_offset{0};
     size_t m_vertex_count{0};

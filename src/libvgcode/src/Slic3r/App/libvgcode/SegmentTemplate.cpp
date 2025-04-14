@@ -46,7 +46,7 @@ void SegmentTemplate::init(Render::Device& device, Scene::NodeBuilder& builder)
     m_geometry->upload(VERTEX_DATA.data(), VERTEX_DATA.size(), { v_attr });
 
     Render::Material material = Render::Material{}
-        .set_shader(device.context().shader_manager().get_shader("segments"));
+        .set_shader(device.context().shader_manager().shader("segments"));
 
     Render::DrawCommands draw_commands;
     draw_commands.push_back({ Render::PrimitiveType::Triangles, 0, m_geometry->vertex_count(), material});

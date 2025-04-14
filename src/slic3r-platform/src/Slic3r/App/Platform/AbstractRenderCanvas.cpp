@@ -122,8 +122,7 @@ void AbstractRenderCanvas::begin_imgui_frame()
 {
     // Start the Dear ImGui frame
     m_imgui_render->new_frame();
-    ImGuiIO& io = ImGui::GetIO();
-    IM_ASSERT(io.Fonts->IsBuilt() && "Font atlas not built! It is generally built by the renderer backend. Missing call to renderer _NewFrame() function? e.g. ImGui_ImplOpenGL3_NewFrame().");
+    IM_ASSERT(ImGui::GetIO().Fonts->IsBuilt() && "Font atlas not built! It is generally built by the renderer backend. Missing call to renderer _NewFrame() function? e.g. ImGui_ImplOpenGL3_NewFrame().");
     begin_imgui_frame_platform();
     ImGui::NewFrame();
 }

@@ -2,6 +2,9 @@
 #include "Slic3r/App/Render/Device.hpp"
 #include "Slic3r/App/Render/Material.hpp"
 #include "Slic3r/App/Render/ScopedDebugGroup.hpp"
+#include "Slic3r/App/Render/MathUtils.hpp"
+#include "Slic3r/App/Render/Framebuffer.hpp"
+#include "Slic3r/App/Render/FramebufferManager.hpp"
 #include "Slic3r/App/Scene/MeshRenderNodeComponent.hpp"
 #include "Slic3r/App/Scene/NodeVisitor.hpp"
 
@@ -33,7 +36,7 @@ void MinimalSceneRenderCustomizer::on_transparent_pass_begin(
     cmd_buf.set_blending_enabled(true);
     Render::Blending blending { {Render::BlendFactor::SrcAlpha, Render::BlendFactor::OneMinusSrcAlpha}};
     cmd_buf.set_blending(blending);
-    cmd_buf.set_depth_write_enabled(false);
+//    cmd_buf.set_depth_write_enabled(false);
     cmd_buf.set_cull_face_enabled(false);
 }
 
@@ -145,25 +148,187 @@ Render::Material resolve_material(const Node& n)
     return mat;
 }
 
-void Scene::render(Render::CommandBuffer& cmd_buffer, ISceneRenderCustomizer* customizer) const
+Scene::NodeMaterials Scene::collect_nodes_with_material(const Node::NodePredicate& predicate) const
 {
-    Render::ScopedDebugGroup event_scene_render("Scene", cmd_buffer);
+    Scene::NodeMaterials ret;
     Node::ConstNodeList nodes;
-    m_root.query([](auto n){ return n->has_render_component();}, nodes);
+    m_root.query(predicate, nodes);
+    if (!nodes.empty()) {
+        ret.reserve(nodes.size());
+        for (const Node* node : nodes)
+            ret.emplace_back(node, resolve_material(*node));
+    }
+    return ret;
+}
 
-    using NodeMaterial = std::pair<const Node*, Render::Material>;
-    std::vector<NodeMaterial> nodes_with_materials;
-    nodes_with_materials.reserve(nodes.size());
-    for (const Node* node : nodes)
-        nodes_with_materials.emplace_back(node, resolve_material(*node));
+void Scene::render_shadowsmap_pass(Render::Device& device) const
+{
+    // WARNING
+    // assumes cull face mode == Render::CullFaceMode::Back
 
-    if (nodes_with_materials.empty())
+    if (m_shadows.shadowsmap_framebuffer == nullptr)
+        m_shadows.pending_shadowsmap_size = m_shadows.DEFAULT_SHADOWSMAP_SIZE;
+
+    if (m_shadows.pending_shadowsmap_size.has_value() && *m_shadows.pending_shadowsmap_size != m_shadows.shadowsmap_size) {
+        if (m_shadows.shadowsmap_framebuffer != nullptr)
+            device.context().framebuffer_manager().destroy(m_shadows.shadowsmap_framebuffer);
+        Render::FramebufferCreationData data;
+        data.width = *m_shadows.pending_shadowsmap_size;
+        data.height = *m_shadows.pending_shadowsmap_size;
+        m_shadows.shadowsmap_framebuffer = device.context().framebuffer_manager().create(data);
+        m_shadows.shadowsmap_size = *m_shadows.pending_shadowsmap_size;
+        m_shadows.pending_shadowsmap_size.reset();
+    }
+
+    auto cmd_buffer = device.create_command_buffer();
+    // set light viewport
+    cmd_buffer->set_viewport({ 0, 0, m_shadows.shadowsmap_size, m_shadows.shadowsmap_size });
+    cmd_buffer->set_depth_test_enabled(true);
+    cmd_buffer->set_cull_face_mode(Render::CullFaceMode::Front);
+    cmd_buffer->set_cull_face_enabled(true);
+    cmd_buffer->bind_framebuffer(*m_shadows.shadowsmap_framebuffer);
+    cmd_buffer->clear_buffers(false, true);
+
+    Eigen::AlignedBox3d world_aabb = m_shadows.bed_aabb;
+
+    Node::ConstNodeList nodes;
+    m_root.query([](auto n) {
+        return n->has_render_component() && n->render_component()->cast_shadows();
+    }, nodes);
+
+    if (!nodes.empty()) {
+        for (const Node* node : nodes) {
+            if (node->has_raycast_component())
+                world_aabb.extend(node->raycast_component()->world_bounding_box(node->world_transform()).cast<double>());
+        }
+
+        Vec3d center = world_aabb.center();
+
+        Vec3d eye_light_dir = { 0.4574957, -0.4574957, -0.7624929 }; // taken from shader
+        Vec4d world_light_dir_omo = m_camera.model() * Vec4d(eye_light_dir.x(), eye_light_dir.y(), eye_light_dir.z(), 0.0);
+        Vec3d world_light_dir = Vec3d(world_light_dir_omo.x(), world_light_dir_omo.y(), world_light_dir_omo.z());
+        Vec3d world_light_pos = center - 1.0f * world_light_dir;
+
+        m_shadows.light_cam.look_at(world_light_pos, center, Vec3d::UnitZ());
+        m_shadows.light_cam.switch_projection_type();
+
+        Eigen::AlignedBox3d light_aabb = world_aabb.transformed(Transform3d(m_shadows.light_cam.view()));
+
+        Vec3d eye_min = { DBL_MAX, DBL_MAX, DBL_MAX };
+        Vec3d eye_max = { -DBL_MAX, -DBL_MAX, -DBL_MAX };
+        Transform3d view = Transform3d(m_shadows.light_cam.view());
+        for (int i = 0; i < 8; ++i) {
+            Vec3d eye_c = light_aabb.corner(Eigen::AlignedBox3d::CornerType(i));
+            eye_min.x() = std::min(eye_min.x(), eye_c.x());
+            eye_min.y() = std::min(eye_min.y(), eye_c.y());
+            eye_min.z() = std::min(eye_min.z(), -eye_c.z());
+            eye_max.x() = std::max(eye_max.x(), eye_c.x());
+            eye_max.y() = std::max(eye_max.y(), eye_c.y());
+            eye_max.z() = std::max(eye_max.z(), -eye_c.z());
+        }
+
+        double delta_z = eye_min.z() - 10.0;
+        world_light_pos += delta_z * world_light_dir;
+        eye_min.z() -= delta_z;
+        eye_max.z() -= delta_z;
+
+        m_shadows.light_cam.look_at(world_light_pos, center, Vec3d::UnitZ());
+
+        double max_x = std::max(std::abs(eye_min.x()), std::abs(eye_max.x()));
+        double max_y = std::max(std::abs(eye_min.y()), std::abs(eye_max.y()));
+
+        m_shadows.light_cam.set_projection(
+            Render::ortho(-max_x, max_x, -max_y, max_y, eye_min.z(), eye_max.z()));
+
+        Render::Material material = Render::Material{}
+            .set_shader(device.context().shader_manager().shader("shadowsmap"));
+
+        for (const Node* node : nodes) {
+            node->render_component()->render(*node, m_shadows.light_cam, material, *cmd_buffer);
+        }
+    }
+
+    cmd_buffer->unbind_framebuffer(*m_shadows.shadowsmap_framebuffer);
+    cmd_buffer->set_cull_face_mode(Render::CullFaceMode::Back);
+    // restore camera viewport
+    cmd_buffer->set_viewport(m_camera.viewport());
+}
+
+void Scene::render_shadows_receivers_pass(Render::Device& device, Render::CommandBuffer& cmd_buffer, ISceneRenderCustomizer* customizer) const
+{
+    NodeMaterials nodes = collect_nodes_with_material([](auto n) {
+        return n->has_render_component() && n->render_component()->receive_shadows() && !resolve_material(*n).transparent();
+    });
+
+    if (nodes.empty())
         return;
 
-    std::stable_partition(nodes_with_materials.begin(), nodes_with_materials.end(), [](const auto& p) {
+    for (auto& [node, material] : nodes) {
+        Matrix4f light_matrix = (m_shadows.light_cam.projection() * m_shadows.light_cam.view() * node->world_transform()).cast<float>();
+        std::string name = device.context().shader_manager().shader_name(material.shader());
+        material
+            .set_shader(device.context().shader_manager().shader(name + "_shadows"))
+            .set_uniform("light_matrix", light_matrix)
+            .set_uniform("shadowsmap", m_shadows.SHADOWSMAP_TEXTURE_UNIT);
+    }
+
+    cmd_buffer.bind_texture(m_shadows.SHADOWSMAP_TEXTURE_UNIT, *m_shadows.shadowsmap_framebuffer->depth());
+
+    cmd_buffer.set_depth_test_enabled(true);
+
+    if (customizer)
+        customizer->on_render_begin(cmd_buffer);
+
+    constexpr int INITIAL_LAYER = std::numeric_limits<int>::min();
+    int current_layer = INITIAL_LAYER;
+    for (const auto& [n, mat]  : nodes) {
+        const bool first_iteration = current_layer == INITIAL_LAYER;
+
+        // did we start next layer
+        if (auto layer = n->render_component()->layer_index(); layer != current_layer) {
+            if (customizer) {
+                if (current_layer != INITIAL_LAYER)
+                    customizer->on_layer_end(cmd_buffer, current_layer);
+                customizer->on_layer_begin(cmd_buffer, layer);
+            }
+            current_layer = layer;
+        }
+
+        // did we switch between opaque/transparent passes
+        if (customizer) {
+            // end last pass
+            if (!first_iteration)
+                customizer->on_opaque_pass_end(cmd_buffer, current_layer);
+
+            // begin new pass
+            customizer->on_opaque_pass_begin(cmd_buffer, current_layer);
+        }
+
+        n->render_component()->render(*n, m_camera, mat, cmd_buffer);
+    }
+
+    if (customizer) {
+        customizer->on_opaque_pass_end(cmd_buffer, current_layer);
+        customizer->on_layer_end(cmd_buffer, current_layer);
+        customizer->on_render_end(cmd_buffer);
+    }
+
+    cmd_buffer.unbind_texture(m_shadows.SHADOWSMAP_TEXTURE_UNIT, *m_shadows.shadowsmap_framebuffer->depth());
+}
+
+void Scene::render_no_shadows_pass(Render::CommandBuffer& cmd_buffer, ISceneRenderCustomizer* customizer) const
+{
+    NodeMaterials nodes = collect_nodes_with_material([this](auto n) {
+        return n->has_render_component() && (!m_shadows.enabled || !n->render_component()->receive_shadows());
+    });
+
+    if (nodes.empty())
+        return;
+
+    std::stable_partition(nodes.begin(), nodes.end(), [](const auto& p) {
         return !p.second.transparent();
     });
-    std::stable_sort(nodes_with_materials.begin(), nodes_with_materials.end(), [](const auto& a, const auto& b) {
+    std::stable_sort(nodes.begin(), nodes.end(), [](const auto& a, const auto& b) {
         return a.first->render_component()->layer_index() < b.first->render_component()->layer_index();
     });
 
@@ -175,8 +340,8 @@ void Scene::render(Render::CommandBuffer& cmd_buffer, ISceneRenderCustomizer* cu
     constexpr int INITIAL_LAYER = std::numeric_limits<int>::min();
     int current_layer = INITIAL_LAYER;
     // set was_opaque as the opposite of the first element in list
-    bool was_opaque = nodes_with_materials.front().second.transparent();
-    for (const auto& [n, mat]  : nodes_with_materials) {
+    bool was_opaque = nodes.front().second.transparent();
+    for (const auto& [n, mat]  : nodes) {
         const bool first_iteration = current_layer == INITIAL_LAYER;
 
         // did we start next layer
@@ -224,7 +389,19 @@ void Scene::render(Render::CommandBuffer& cmd_buffer, ISceneRenderCustomizer* cu
         customizer->on_layer_end(cmd_buffer, current_layer);
         customizer->on_render_end(cmd_buffer);
     }
+}
 
+void Scene::render(Render::Device& device, Render::CommandBuffer& cmd_buffer, ISceneRenderCustomizer* customizer,
+    SceneRenderFlag flags) const
+{
+    Render::ScopedDebugGroup event_scene_render("Scene", cmd_buffer);
+
+    bool shadows = (uint32_t(flags) & uint32_t(SceneRenderFlag::Shadows)) != 0;
+    if (m_shadows.enabled && shadows) {
+        render_shadowsmap_pass(device);
+        render_shadows_receivers_pass(device, cmd_buffer, customizer);
+    }
+    render_no_shadows_pass(cmd_buffer, customizer);
 }
 
 Eigen::AlignedBox<float, 2> resolve_bounding_box(const Node& node, const Camera& cam)

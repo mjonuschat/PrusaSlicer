@@ -75,6 +75,50 @@ inline GLenum type(BufferTarget target)
     throw std::runtime_error{"Unreachable code!"};
 }
 
+inline GLenum type(FramebufferTarget target)
+{
+    switch (target)
+    {
+    case FramebufferTarget::Framebuffer:
+        return GL_FRAMEBUFFER;
+    case FramebufferTarget::DrawFramebuffer:
+        return GL_DRAW_FRAMEBUFFER;
+    case FramebufferTarget::ReadFramebuffer:
+        return GL_READ_FRAMEBUFFER;
+    }
+    throw std::runtime_error{"Unreachable code!"};
+}
+
+inline GLenum type(TextureTarget target)
+{
+    switch (target)
+    {
+    case TextureTarget::Texture1D:
+        return GL_TEXTURE_1D;
+    case TextureTarget::Texture2D:
+        return GL_TEXTURE_2D;
+    case TextureTarget::Texture3D:
+        return GL_TEXTURE_3D;
+    case TextureTarget::Texture1DArray:
+        return GL_TEXTURE_1D_ARRAY;
+    case TextureTarget::Texture2DArray:
+        return GL_TEXTURE_2D_ARRAY;
+    case TextureTarget::TextureRectangle:
+        return GL_TEXTURE_RECTANGLE;
+    case TextureTarget::TextureCubeMap:
+        return GL_TEXTURE_CUBE_MAP;
+    case TextureTarget::TextureCubeMapArray:
+        return GL_TEXTURE_CUBE_MAP_ARRAY;
+    case TextureTarget::TextureBuffer:
+        return GL_TEXTURE_BUFFER;
+    case TextureTarget::Texture2DMultisample:
+        return GL_TEXTURE_2D_MULTISAMPLE;
+    case TextureTarget::Texture2DMultisampleArray:
+        return GL_TEXTURE_2D_MULTISAMPLE_ARRAY;
+    }
+    throw std::runtime_error{"Unreachable code!"};
+}
+
 inline GLenum type(BufferUsage usage)
 {
     switch (usage) {
@@ -122,6 +166,29 @@ inline GLenum type(TextureMagFilter filter)
     throw std::runtime_error{"Unreachable code!"};
 }
 
+inline GLenum type(TextureWrap wrap)
+{
+    switch (wrap)
+    {
+    case TextureWrap::ClampToEdge:       return GL_CLAMP_TO_EDGE;
+    case TextureWrap::ClampToBorder:     return GL_CLAMP_TO_BORDER;
+    case TextureWrap::Repeat:            return GL_REPEAT;
+    case TextureWrap::MirroredRepeat:    return GL_MIRRORED_REPEAT;
+    case TextureWrap::MirrorClampToEdge: return GL_MIRROR_CLAMP_TO_EDGE;
+    }
+    throw std::runtime_error{"Unreachable code!"};
+}
+
+inline GLenum type(CullFaceMode mode)
+{
+    switch (mode)
+    {
+    case CullFaceMode::Front:         return GL_FRONT;
+    case CullFaceMode::Back:          return GL_BACK;
+    case CullFaceMode::FrontAndBack:  return GL_FRONT_AND_BACK;
+    }
+    throw std::runtime_error{"Unreachable code!"};
+}
 
 const char* shader_input_name(VertexAttribType vat);
 GLenum texture_internal_format(PixelFormat format);

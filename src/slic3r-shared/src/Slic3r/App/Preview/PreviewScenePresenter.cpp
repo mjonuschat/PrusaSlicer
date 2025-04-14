@@ -13,7 +13,7 @@ PreviewScenePresenter::PreviewScenePresenter(const Domain::Workbench& workbench,
 void PreviewScenePresenter::render_scene(Render::CommandBuffer& command_buffer)
 {
     if (!m_projects.empty())
-        project_context().scene().render(command_buffer, this);
+        project_context().scene().render(m_device, command_buffer, this);
 }
 
 void PreviewScenePresenter::render_imgui(const Render::ScreenInfo& screen_info)

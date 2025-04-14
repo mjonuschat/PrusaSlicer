@@ -1569,7 +1569,7 @@ void ViewerImpl::render_segments(const Vec3f& camera_position)
 
     Render::Material material{};
     material
-        .set_shader(m_device->context().shader_manager().get_shader("segments"));
+        .set_shader(m_device->context().shader_manager().shader("segments"));
     add_lights_to_material(material, m_lights);
 
 #if USE_TEXTURE_BUFFER
@@ -1626,7 +1626,7 @@ void ViewerImpl::render_options()
 
     Render::Material material;
     material
-        .set_shader(m_device->context().shader_manager().get_shader("options"));
+        .set_shader(m_device->context().shader_manager().shader("options"));
     add_lights_to_material(material, m_lights);
 
 #if USE_TEXTURE_BUFFER
@@ -1681,7 +1681,7 @@ void ViewerImpl::render_cog_marker()
 
     Render::Material material;
     material
-        .set_shader(m_device->context().shader_manager().get_shader("cog_marker"))
+        .set_shader(m_device->context().shader_manager().shader("cog_marker"))
         .set_uniform("world_origin", m_cog_marker.position())
         .set_uniform("scale_factor", m_cog_marker.scale_factor());
     add_lights_to_material(material, m_lights);
@@ -1706,7 +1706,7 @@ void ViewerImpl::render_tool_marker()
 
     Render::Material material;
     material
-        .set_shader(m_device->context().shader_manager().get_shader("tool_marker"))
+        .set_shader(m_device->context().shader_manager().shader("tool_marker"))
         .set_uniform("world_origin", origin)
         .set_uniform("scale_factor", m_tool_marker.scale_factor())
         .set_uniform("color_base", color)

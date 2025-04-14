@@ -20,7 +20,7 @@ namespace Slic3r::App::libvgcode {
 void CogMarker::init(Render::Device& device, Scene::NodeBuilder& builder, Scene::GeometryDataFactory& data_factory)
 {
     Render::Material material = Render::Material{}
-        .set_shader(device.context().shader_manager().get_shader("cog_marker"));
+        .set_shader(device.context().shader_manager().shader("cog_marker"));
 
     builder
       .set_debug_name("gcode_cog_marker")

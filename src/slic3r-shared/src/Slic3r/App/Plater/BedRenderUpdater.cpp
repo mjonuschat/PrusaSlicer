@@ -39,9 +39,37 @@ void BedRenderUpdater::update_materials()
     }, true);
 }
 
+void BedRenderUpdater::update_shadows(const Scene::Camera& cam)
+{
+    bool cam_pointing_upward = cam.pointing_upward();
+
+    Scene::visit(m_scene_provider.scene().root(), [&](Scene::Node& n) {
+        BedNodeTag* tag = n.tag_of_type<BedNodeTag>();
+        if (tag != nullptr) {
+            if (tag->type == BedElementType::Model ||
+                tag->type == BedElementType::PlateDefault ||
+                tag->type == BedElementType::PlateTextured) {
+
+                DEBUG_ASSERT(n.has_render_component());
+
+                Domain::ConfigContainer* cc = m_project->find_config_container(tag->config_container_id);
+                const Domain::BedInstance& inst = cc->find_bed_instance(tag->instance_id);
+                if (!cam_pointing_upward && inst.active()) {
+                    if (tag->type == BedElementType::Model && m_scene_provider.scene().bed_model_cast_shadow())
+                        n.render_component()->set_shadows(Render::Shadows{ true, true });
+                    else
+                        n.render_component()->set_shadows(Render::Shadows{ false, true });
+                }
+                else
+                    n.render_component()->set_shadows(Render::Shadows{ false, false });
+            }
+        }
+    }, true);
+}
+
 void BedRenderUpdater::update_positions()
 {
-    Scene::visit(m_scene_provider.scene().root(), [&](Scene::Node& n) {
+    Scene::visit(m_scene_provider.scene().root(), [this](Scene::Node& n) {
         BedNodeTag* tag = n.tag_of_type<BedNodeTag>();
         if (tag != nullptr) {
             if (tag->type == BedElementType::Undefined) {
@@ -76,8 +104,7 @@ void BedRenderUpdater::update_elements_state()
 
 void BedRenderUpdater::camera_updated(const Scene::Camera& cam)
 {
-    Scene::CameraProjectionType cam_type = cam.cam_projection().type();
-    bool show_bottom = (cam_type == Scene::CameraProjectionType::Perspective) ? cam.position().z() < 0.0 : cam.forward().z() >= 0.0;
+    bool cam_pointing_upward = cam.pointing_upward();
     auto& scene = m_scene_provider.scene();
     Scene::visit(scene.root(), [&](Scene::Node& n) {
         BedNodeTag* tag = n.tag_of_type<BedNodeTag>();
@@ -85,7 +112,7 @@ void BedRenderUpdater::camera_updated(const Scene::Camera& cam)
             // turn beds' plate and model visibility on/off in dependence of camera position/orientation
             if (tag->type == BedElementType::PlateDefault ||
                 tag->type == BedElementType::Model)
-                n.set_enabled(!show_bottom);
+                n.set_enabled(!cam_pointing_upward);
             else if (tag->type == BedElementType::PlateTextured) {
                 // change material in dependence of camera position/orientation
                 DEBUG_ASSERT(m_project != nullptr);
@@ -93,7 +120,7 @@ void BedRenderUpdater::camera_updated(const Scene::Camera& cam)
                 DEBUG_ASSERT(cc != nullptr);
                 const Domain::BedInstance& inst = cc->find_bed_instance(tag->instance_id);
                 if (inst.active()) {
-                    if (show_bottom)
+                    if (cam_pointing_upward)
                         n.set_material_override(BedMaterials::plate_textured_override_material(m_device, cc->bed()));
                     else
                         n.remove_material_override();
@@ -101,6 +128,8 @@ void BedRenderUpdater::camera_updated(const Scene::Camera& cam)
             }
         }
     }, true);
+
+    update_shadows(cam);
 }
 
 void BedRenderUpdater::on_selected_project_changed(size_t index)

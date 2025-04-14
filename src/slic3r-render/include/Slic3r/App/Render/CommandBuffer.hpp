@@ -14,6 +14,7 @@ class Texture;
 #ifdef SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
 class TextureBuffer;
 #endif // SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
+class Framebuffer;
 class Device;
 
 class CommandBuffer final : public WithInternal
@@ -38,6 +39,8 @@ public:
     void set_cull_face_enabled(bool enabled);
     void set_stencil_test_enabled(bool enabled);
 
+    void set_cull_face_mode(CullFaceMode mode);
+
     void bind_shader(const Shader& s);
     void bind_geometry(const Geometry& g, const Shader& s);
     void bind_texture(uint8_t unit, const Texture& t);
@@ -45,6 +48,8 @@ public:
 #ifdef SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
     void bind_texture_buffer(uint8_t unit, const TextureBuffer& tb);
 #endif // SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
+    void bind_framebuffer(const Framebuffer& fb);
+    void unbind_framebuffer(const Framebuffer& fb);
 
     void bind_material(const Material& material);
     void unbind_material(const Material& material);

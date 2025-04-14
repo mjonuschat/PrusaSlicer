@@ -4,9 +4,11 @@
 #include "Slic3r/App/Render/GL/commonGL.hpp"
 #include "Slic3r/App/Render/GL/GLDeviceInternal.hpp"
 #include "Slic3r/App/Render/GL/GLBufferInternal.hpp"
+#include "Slic3r/App/Render/GL/GLFramebufferInternal.hpp"
 
 #include "Slic3r/App/Render/Texture.hpp"
 #include "Slic3r/App/Render/Buffer.hpp"
+#include "Slic3r/App/Render/Framebuffer.hpp"
 
 namespace Slic3r::App::Render {
 
@@ -44,6 +46,11 @@ std::unique_ptr<CommandBuffer> Device::create_command_buffer()
     return std::make_unique<CommandBuffer>(*this);
 }
 
+std::unique_ptr<Framebuffer> Device::create_framebuffer(const FramebufferCreationData& data)
+{
+    return std::make_unique<Framebuffer>(*this, data);
+}
+
 void Device::bind_buffer(const Buffer& b)
 {
     get_internal_as<GL::GLDeviceInternal>().bind_buffer(b.target(), b.get_internal_as<GL::GLBufferInternal>().m_id);
@@ -64,4 +71,14 @@ void Device::unmap_buffer(const Buffer& b)
     get_internal_as<GL::GLDeviceInternal>().unmap_buffer(b.target());
 }
 
+void Device::bind_framebuffer(const Framebuffer& b)
+{
+    get_internal_as<GL::GLDeviceInternal>().bind_framebuffer(b);
 }
+
+void Device::unbind_framebuffer(const Framebuffer& b)
+{
+    get_internal_as<GL::GLDeviceInternal>().unbind_framebuffer(b);
+}
+
+} // namespace Slic3r::App::Render

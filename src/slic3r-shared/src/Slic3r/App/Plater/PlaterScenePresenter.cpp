@@ -11,6 +11,7 @@
 #include "Slic3r/App/Plater/BedRenderHelper.hpp"
 #include "Slic3r/App/Plater/BedMaterials.hpp"
 #include "Slic3r/Biz/Plater/BedGeometry.hpp"
+#include "Slic3r/App/Render/FramebufferManager.hpp"
 
 #include "libslic3r/Model.hpp"
 
@@ -47,8 +48,10 @@ PlaterScenePresenter::PlaterScenePresenter(
 
 void PlaterScenePresenter::render_scene(Render::CommandBuffer& command_buffer)
 {
-    if (!m_projects.empty())
-        project_context().scene().render(command_buffer, this);
+    if (!m_projects.empty()) {
+        Scene::SceneRenderFlag flags = Scene::SceneRenderFlag::Shadows;
+        project_context().scene().render(m_device, command_buffer, this, flags);
+    }
 }
 
 void PlaterScenePresenter::render_imgui(const Render::ScreenInfo& screen_info)
@@ -67,6 +70,34 @@ void PlaterScenePresenter::update_cameras(const std::function<void(Scene::Camera
     std::for_each(m_projects.begin(), m_projects.end(), [modifier](auto& p) {
         modifier(p.second.scene().camera());
     });
+}
+
+void PlaterScenePresenter::update_objects_shadows_data()
+{
+    const Domain::BedInstance& bed_inst = selected_bed_instance();
+    const Domain::ModelInstanceList& insts_on_bed = bed_inst.model_instances();
+    const Slic3r::Model* model = &m_project_interactor.selected_project().model();
+
+    auto& scene = m_projects[m_project_interactor.selected_project_id()].scene();
+    Scene::visit(scene.root(), [&](Scene::Node& n) {
+        const SceneNodeTag* tag = n.tag_of_type<SceneNodeTag>();
+        if (tag != nullptr && n.has_render_component()) {
+            const auto* obj = Domain::find_by_id<ModelObject>(model->objects, tag->object_id);
+            const auto* vol = Domain::find_by_id<ModelVolume>(obj->volumes, tag->volume_id);
+            if (vol->is_model_part()) {
+                const auto* inst = Domain::find_by_id<ModelInstance>(obj->instances, tag->instance_id);
+                bool shadows = std::find(insts_on_bed.begin(), insts_on_bed.end(), inst) != insts_on_bed.end();
+                n.render_component()->set_shadows(shadows ? Render::Shadows{ true, true } : Render::Shadows{ false, false });
+            }
+            else
+                n.render_component()->set_shadows(Render::Shadows{ false, false });
+        }
+    }, true);
+}
+
+void PlaterScenePresenter::update_beds_shadows_data()
+{
+    m_bed_render_updater.update_shadows(project_context().scene().camera());
 }
 
 void PlaterScenePresenter::on_selected_project_changed(size_t index)
@@ -107,7 +138,8 @@ void PlaterScenePresenter::on_scene_selection_changed(Domain::SelectionId projec
     }
 
     auto selection_mat = Render::Material{}
-        .set_uniform("uniform_color", ColorRGBA{1.0f, 1.0f, 1.0f, 1.0f})
+        .set_uniform("uniform_color", ColorRGBA::WHITE())
+        .set_uniform("emission_factor", 0.0f)
         .set_transparent(false);
     for (auto* n : found_nodes)
         selection_changes.change(*n)
@@ -154,7 +186,15 @@ void PlaterScenePresenter::on_scene_selection_transformed(Domain::SelectionId pr
 
 void PlaterScenePresenter::on_selected_bed_instance_changed(Domain::SelectionId project_id, Domain::SelectionId container_id, Domain::SelectionId bed_instance_id)
 {
-    m_bed_render_updater.update_all();
+    m_bed_render_updater.update_all(project_context().scene().camera());
+    const Domain::Bed& bed = selected_bed_instance().bed();
+    std::vector<Domain::Vec3f> print_volume = Biz::Plater::BedGeometry::print_volume(bed);
+    Eigen::AlignedBox3d bed_aabb;
+    for (const auto& v : print_volume) {
+        bed_aabb.extend(v.cast<double>());
+    }
+    scene().set_bed_aabb(bed_aabb);
+    update_objects_shadows_data();
 }
 
 void PlaterScenePresenter::build_volume_node(
@@ -181,17 +221,18 @@ void PlaterScenePresenter::build_volume_node(
     auto color_it = VOLUME_COLORS.find(vol->type());
     if (color_it != VOLUME_COLORS.end())
         color = color_it->second;
-    const bool transparent = color.a() < 1.0f;
 
     auto material = Render::Material{}
-        .set_shader(m_device.context().shader_manager().get_shader("gouraud_light"))
+        .set_shader(m_device.context().shader_manager().shader("phong_light"))
         .set_uniform("uniform_color", color)
-        .set_transparent(transparent);
+        .set_uniform("emission_factor", 0.0f)
+        .set_transparent(color.is_transparent());
     builder
         .set_debug_name(fmt::format("vol: {}", vol->id().id))
         .transform([vol](auto& xform) { xform = vol->get_matrix(); })
         .set_tag(SceneNodeTag{vol->get_object()->id().id, vol->id().id, inst->id().id, vol->type()})
         .set_mesh(geom, material, int(PlaterSceneLayer::DocumentObjects))
+        .set_shadows((vol->type() == ModelVolumeType::MODEL_PART) ? Render::Shadows{ true, true } : Render::Shadows{ false, false })
         .set_aabb(trimesh->aabb_mesh());
 }
 
@@ -229,6 +270,7 @@ void PlaterScenePresenter::build_bed_plate_node(Scene::NodeBuilder& builder, Dom
                 .set_debug_name(fmt::format("bed: {} plate", bed.id().id))
                 .set_tag(BedNodeTag{ tag.config_container_id, tag.instance_id, type })
                 .set_mesh(geom, material, int(PlaterSceneLayer::DocumentObjects))
+                .set_shadows(Render::Shadows{ false, true })
                 .set_aabb(trimesh->aabb_mesh());
         });
 }
@@ -338,8 +380,15 @@ void PlaterScenePresenter::build_bed_model_node(Scene::NodeBuilder& builder, Dom
                 .set_debug_name(fmt::format("bed: {} model", bed.id().id))
                 .set_tag(BedNodeTag{ tag.config_container_id, tag.instance_id, BedElementType::Model })
                 .set_mesh(geom, material, int(PlaterSceneLayer::DocumentObjects))
+                .set_shadows(Render::Shadows{ true, true })
                 .set_aabb(trimesh->aabb_mesh());
         });
+}
+
+const Domain::BedInstance& PlaterScenePresenter::selected_bed_instance() const
+{
+    return m_project_interactor.selected_config_container()
+        .find_bed_instance(m_project_interactor.scene_interactor().selected_bed_instance().instance_id);
 }
 
 void PlaterScenePresenter::on_instance_added(Domain::SelectionId project_id, const Domain::ElementRefs& instances)
@@ -380,16 +429,34 @@ void PlaterScenePresenter::on_instance_removed(Domain::SelectionId project_id, c
 
 void PlaterScenePresenter::on_instance_transformed(Domain::SelectionId project_id, const Domain::ElementRefs& elements)
 {
+    const Domain::BedInstance& bed_inst = selected_bed_instance();
+    const Domain::ModelInstanceList& insts_on_bed = bed_inst.model_instances();
+
     auto& scene = m_projects[m_selected_project_id].scene();
     const auto& proj = m_workbench.project(project_id);
     Scene::visit(scene.root(), [&](Scene::Node& n) {
         const SceneNodeTag* t = n.tag_of_type<SceneNodeTag>();
-        if (t == nullptr || t->volume_id != 0)
+        if (t == nullptr)
             return;
-        for (const auto& e : elements) {
-            if (t->instance_id == e.instance_id) {
-                const auto* inst = proj.find_instance_by_id(e.object_id, e.instance_id);
-                n.set_local_transform(inst->get_matrix().matrix());
+        if (t->volume_id == 0) {
+            for (const auto& e : elements) {
+                if (t->instance_id == e.instance_id) {
+                    const auto* inst = proj.find_instance_by_id(e.object_id, e.instance_id);
+                    n.set_local_transform(inst->get_matrix().matrix());
+                }
+            }
+        }
+        else {
+            if (std::find_if(elements.begin(), elements.end(),
+                [t](auto e) { return t->instance_id == e.instance_id; }) != elements.end()) {
+                const auto* vol = proj.find_volume_by_id(t->object_id, t->volume_id);
+                if (vol->is_model_part()) {
+                    bool shadows = std::find_if(insts_on_bed.begin(), insts_on_bed.end(),
+                        [t](auto i) { return i->id().id == t->instance_id; }) != insts_on_bed.end();
+                        n.render_component()->set_shadows(shadows ? Render::Shadows{ true, true } : Render::Shadows{ false, false });
+                }
+                else
+                    n.render_component()->set_shadows(Render::Shadows{ false, false });
             }
         }
     });
@@ -445,6 +512,9 @@ void PlaterScenePresenter::on_volume_removed(Domain::SelectionId project_id, con
 
 void PlaterScenePresenter::on_volume_transformed(Domain::SelectionId project_id, const Domain::ElementRefs& elements)
 {
+    const Domain::BedInstance& bed_inst = selected_bed_instance();
+    const Slic3r::Model* model = &m_project_interactor.selected_project().model();
+
     auto& scene = m_projects[m_selected_project_id].scene();
     const auto& proj = m_workbench.project(project_id);
     Scene::visit(scene.root(), [&](Scene::Node& n) {
@@ -455,6 +525,21 @@ void PlaterScenePresenter::on_volume_transformed(Domain::SelectionId project_id,
             if (t->volume_id == e.volume_id) {
                 const auto* vol = proj.find_volume_by_id(e.object_id, e.volume_id);
                 n.set_local_transform(vol->get_matrix().matrix());
+                if (vol->is_model_part()) {
+                    Scene::visit(scene.root(), [&](Scene::Node& n) {
+                        const SceneNodeTag* tag = n.tag_of_type<SceneNodeTag>();
+                        if (tag != nullptr && n.has_render_component()) {
+                            if (tag->object_id == t->object_id && tag->volume_id == t->volume_id) {
+                                const auto* obj = Domain::find_by_id<ModelObject>(model->objects, tag->object_id);
+                                const auto* inst = Domain::find_by_id<ModelInstance>(obj->instances, tag->instance_id);
+                                bool shadows = bed_inst.contains(Biz::Algorithms::BoundingBox::to_2d(transformed(vol->mesh().bounding_box(), inst->get_matrix() * vol->get_matrix())));
+                                n.render_component()->set_shadows(shadows ? Render::Shadows{ true, true } : Render::Shadows{ false, false });
+                            }
+                        }
+                    });
+                }
+                else
+                    n.render_component()->set_shadows(Render::Shadows{ false, false });
             }
         }
     });
@@ -496,7 +581,7 @@ void PlaterScenePresenter::on_bed_instance_added(Domain::SelectionId project_id,
         scn.add_child(builder.build().release());
     }
 
-    m_bed_render_updater.update_all();
+    m_bed_render_updater.update_all(scn.camera());
 }
 
 void PlaterScenePresenter::on_bed_instance_removed(Domain::SelectionId project_id, const Domain::BedRefs& instances)
@@ -514,7 +599,7 @@ void PlaterScenePresenter::on_bed_instance_removed(Domain::SelectionId project_i
         return false;
     });
   
-    m_bed_render_updater.update_all();
+    m_bed_render_updater.update_all(scene().camera());
 }
 
 void PlaterScenePresenter::on_bed_instance_transformed(Domain::SelectionId project_id, const Domain::BedRefs& instances)

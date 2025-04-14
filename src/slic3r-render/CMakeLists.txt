@@ -63,8 +63,11 @@ set(SLIC3R_RENDER_FILES
         include/Slic3r/App/Render/DynamicGeometry.hpp
         include/Slic3r/App/Render/ScopedDebugGroup.hpp
         src/Slic3r/App/Render/ScopedDebugGroup.cpp
-
-
+        include/Slic3r/App/Render/Framebuffer.hpp
+        src/Slic3r/App/Render/Framebuffer_gl.cpp
+        include/Slic3r/App/Render/GL/GLFramebufferInternal.hpp
+        src/Slic3r/App/Render/FramebufferManager.cpp
+        include/Slic3r/App/Render/FramebufferManager.hpp
 
         include/Slic3r/Memory.hpp
 )

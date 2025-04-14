@@ -52,7 +52,7 @@ void ImguiRender::new_frame()
 void ImguiRender::init()
 {
     m_geom = std::make_unique<Geometry>(m_device, BufferUsage::StreamDraw);
-    m_shader = m_device.context().shader_manager().get_shader("imgui");
+    m_shader = m_device.context().shader_manager().shader("imgui");
     ASSERT(m_shader != nullptr, "Cannot load imgui shader");
 }
 

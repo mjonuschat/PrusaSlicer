@@ -81,8 +81,8 @@ void TestRenderModule::init_render()
 
     SPDLOG_TRACE("TestRenderModule() 2");
     auto& ctx = Render::Context::instance();
-    m_shader = ctx.shader_manager().get_shader("flat");
-    m_shader2 = ctx.shader_manager().get_shader("flat_texture");
+    m_shader = ctx.shader_manager().shader("flat");
+    m_shader2 = ctx.shader_manager().shader("flat_texture");
     SPDLOG_TRACE("TestRenderModule() 3");
     Render::ImageLoadOptions opts;
     opts.gen_mipmaps = true;
@@ -121,7 +121,7 @@ void TestRenderModule::init_scene()
        return Render::geometry_from_triangle_mesh(device, cube_mesh->triangles());
     });
 
-    auto shader = device.context().shader_manager().get_shader("gouraud_light");
+    auto shader = device.context().shader_manager().shader("gouraud_light");
     constexpr float right_angle = float(PI) / 2.0f;
     
     node_builder
@@ -270,7 +270,7 @@ void TestRenderModule::render_scene_scene()
         cmd_buffer->clear_buffers(true, true);
         cmd_buffer->set_viewport(Render::Rect::from(0, 0, m_screen_info));
     }
-    m_scene->render(*cmd_buffer);
+    m_scene->render(*m_device, *cmd_buffer);
 }
 
 

@@ -53,6 +53,16 @@ NodeBuilder& NodeBuilder::set_material_override(const Render::Material& material
     return *this;
 }
 
+NodeBuilder& NodeBuilder::set_shadows(const Render::Shadows& shadows)
+{
+    ensure_current();
+
+    if (m_current->has_render_component())
+        m_current->render_component()->set_shadows(shadows);
+
+    return *this;
+}
+
 NodeBuilder& NodeBuilder::set_imgui_func(const FuncImguiRenderNodeComponent::RenderFunc& imgui_render_func)
 {
     ensure_current();

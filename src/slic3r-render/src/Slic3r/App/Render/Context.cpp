@@ -7,6 +7,7 @@
 #ifdef SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
 #include "Slic3r/App/Render/TextureBufferManager.hpp"
 #endif // SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
+#include "Slic3r/App/Render/FramebufferManager.hpp"
 
 #include <Slic3r/Log.hpp>
 
@@ -99,6 +100,7 @@ Context::Context()
 #ifdef SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
     m_texture_buffer_manager.reset(new TextureBufferManager(*m_device));
 #endif // SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
+    m_framebuffer_manager.reset(new FramebufferManager(*m_device));
 }
 
 Context::~Context()
@@ -138,6 +140,7 @@ void Context::release_resources()
 #ifdef SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
     if (m_texture_buffer_manager) m_texture_buffer_manager->shutdown();
 #endif // SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
+    if (m_framebuffer_manager) m_framebuffer_manager->shutdown();
 }
 
 Context& Context::instance()

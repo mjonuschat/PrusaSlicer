@@ -63,7 +63,7 @@ public:
         return project_context().selection_scene_changes();
     }
 
-    void update_beds() { m_bed_render_updater.update_all(); }
+    void update_beds() { m_bed_render_updater.update_all(scene().camera()); }
 
     Scene::Node& selection_root() override { return project_context().selection_root(); }
 
@@ -78,6 +78,9 @@ public:
     double screen_space_sized_modifier() const {
         return project_context().screen_space_sized_modifier();
     }
+
+    void update_objects_shadows_data();
+    void update_beds_shadows_data();
 
 private:
     void update_cameras(const std::function<void(Scene::Camera&)>& modifier);
@@ -115,6 +118,8 @@ private:
     void build_bed_contour_node(Scene::NodeBuilder& builder, Domain::SelectionId project_id, const Domain::Bed& bed, const BedNodeTag& tag);
     void build_bed_print_volume_node(Scene::NodeBuilder& builder, Domain::SelectionId project_id, const Domain::Bed& bed, const BedNodeTag& tag);
     void build_bed_model_node(Scene::NodeBuilder& builder, Domain::SelectionId project_id, const Domain::Bed& bed, const BedNodeTag& tag);
+
+    const Domain::BedInstance& selected_bed_instance() const;
 
 private:
     const Domain::Workbench& m_workbench;

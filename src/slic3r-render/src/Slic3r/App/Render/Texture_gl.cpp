@@ -59,6 +59,7 @@ void Texture::set_filtering(TextureMinFilter min_filter, TextureMagFilter mag_fi
     glCheck();
 }
 
+
 void Texture::set_object_name(const std::string &object_name)
 {
     // glObjectLabel is OpenGL 4.3, OpenGL version @ Mac is 4.1
@@ -69,4 +70,40 @@ void Texture::set_object_name(const std::string &object_name)
     glCheck();
 }
 
+void Texture::set_wrap_s(TextureWrap wrap)
+{
+    auto& device = m_device.get_internal_as<GL::GLDeviceInternal>();
+    device.bind_texture(0, *this);
+    GLenum gl_target = get_internal_as<GL::GLTextureInternal>().m_target;
+    glTexParameteri(gl_target, GL_TEXTURE_WRAP_S, GL::type(wrap));
+    glCheck();
 }
+
+void Texture::set_wrap_t(TextureWrap wrap)
+{
+    auto& device = m_device.get_internal_as<GL::GLDeviceInternal>();
+    device.bind_texture(0, *this);
+    GLenum gl_target = get_internal_as<GL::GLTextureInternal>().m_target;
+    glTexParameteri(gl_target, GL_TEXTURE_WRAP_T, GL::type(wrap));
+    glCheck();
+}
+
+void Texture::set_wrap_r(TextureWrap wrap)
+{
+    auto& device = m_device.get_internal_as<GL::GLDeviceInternal>();
+    device.bind_texture(0, *this);
+    GLenum gl_target = get_internal_as<GL::GLTextureInternal>().m_target;
+    glTexParameteri(gl_target, GL_TEXTURE_WRAP_R, GL::type(wrap));
+    glCheck();
+}
+
+void Texture::set_border_color(const std::array<float, 4>& color)
+{
+    auto& device = m_device.get_internal_as<GL::GLDeviceInternal>();
+    device.bind_texture(0, *this);
+    GLenum gl_target = get_internal_as<GL::GLTextureInternal>().m_target;
+    glTexParameterfv(gl_target, GL_TEXTURE_BORDER_COLOR, color.data());
+    glCheck();
+}
+
+} // namespace Slic3r::App::Render

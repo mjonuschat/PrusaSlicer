@@ -10,6 +10,7 @@
 #include "Slic3r/App/Render/GL/GLGeometryInternal.hpp"
 #include "Slic3r/App/Render/GL/GLShaderInternal.hpp"
 #include "Slic3r/App/Render/GL/GLTextureInternal.hpp"
+#include "Slic3r/App/Render/GL/GLFramebufferInternal.hpp"
 
 #include "Slic3r/Assert.hpp"
 #include "GL/glew.h"
@@ -106,6 +107,20 @@ void* GLDeviceInternal::map_buffer(BufferTarget target, BufferAccess access)
 void GLDeviceInternal::unmap_buffer(BufferTarget target)
 {
     glUnmapBuffer(type(target));
+    glCheck();
+}
+
+void GLDeviceInternal::bind_framebuffer(const Framebuffer& buffer)
+{
+    const auto& fb = buffer.get_internal_as<GLFramebufferInternal>();
+    glBindFramebuffer(fb.m_target, fb.m_id);
+    glCheck();
+}
+
+void GLDeviceInternal::unbind_framebuffer(const Framebuffer& buffer)
+{
+    const auto& fb = buffer.get_internal_as<GLFramebufferInternal>();
+    glBindFramebuffer(fb.m_target, 0);
     glCheck();
 }
 

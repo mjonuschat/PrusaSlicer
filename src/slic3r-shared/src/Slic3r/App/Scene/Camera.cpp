@@ -16,6 +16,12 @@ void Camera::set_model(const Transform& m)
     invoke_listeners<ICameraUpdateListener>([this](auto* l) { l->camera_updated(*this); });
 }
 
+void Camera::set_projection(const Transform& m)
+{
+    m_projection = m;
+    invoke_listeners<ICameraUpdateListener>([this](auto* l) { l->camera_updated(*this); });
+}
+
 void Camera::set_viewport(const Render::Rect& viewport)
 {
     m_viewport = viewport;

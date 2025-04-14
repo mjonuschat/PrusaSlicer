@@ -27,7 +27,7 @@ void RectangleSelection::update(const MousePosition& curr_mouse_pos)
     float bottom = -2.0f * ((rect.y + rect.height) / scr_h - 0.5f);
 
     Render::GeometryBuilder<Render::VertexP3> builder;
-    auto* shader = m_device.context().shader_manager().get_shader("flat");
+    auto* shader = m_device.context().shader_manager().shader("flat");
     DEBUG_ASSERT(shader != nullptr);
     builder
         .add_vertex({ {left,  bottom, 0.0f} })

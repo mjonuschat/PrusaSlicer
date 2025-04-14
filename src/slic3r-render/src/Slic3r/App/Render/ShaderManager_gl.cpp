@@ -96,6 +96,14 @@ std::pair<bool, std::string> ShaderManager::init()
     valid &= append_shader("cog_marker", { prefix + "cog_marker.vs", prefix + "cog_marker.fs" });
     // used to render gcode toolpaths tool marker
     valid &= append_shader("tool_marker", { prefix + "tool_marker.vs", prefix + "tool_marker.fs" });
+    // used to render bed axes and model, selection hints, gcode sequential view marker model, preview shells, options in gcode preview
+    valid &= append_shader("phong_light", { prefix + "phong_light.vs", prefix + "phong_light.fs" });
+    // used to render shadowsmap
+    valid &= append_shader("shadowsmap", { prefix + "shadowsmap.vs", prefix + "shadowsmap.fs" });
+    // used to render shadowed models
+    valid &= append_shader("phong_light_shadows", { prefix + "phong_light_shadows.vs", prefix + "phong_light_shadows.fs" });
+    // used to render shadowed printbed
+    valid &= append_shader("printbed_shadows", { prefix + "printbed_shadows.vs", prefix + "printbed_shadows.fs" });
 
     return { valid, error };
 }
@@ -105,10 +113,17 @@ void ShaderManager::shutdown()
     m_shaders.clear();
 }
 
-Shader* ShaderManager::get_shader(const std::string& shader_name)
+Shader* ShaderManager::shader(const std::string& shader_name)
 {
     auto it = std::find_if(m_shaders.begin(), m_shaders.end(), [&shader_name](std::unique_ptr<Shader>& p) { return p->get_name() == shader_name; });
     return (it != m_shaders.end()) ? it->get() : nullptr;
+}
+
+std::string ShaderManager::shader_name(const Shader* shader) const
+{
+    auto it = std::find_if(m_shaders.begin(), m_shaders.end(),
+        [&shader](auto& p) { return p.get() == shader; });
+    return (it != m_shaders.end()) ? (*it)->get_name() : std::string();
 }
 
 

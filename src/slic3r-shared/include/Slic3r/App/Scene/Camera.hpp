@@ -135,8 +135,8 @@ public:
 
     void look_at(const Vec3d& eye, const Vec3d& center, const Vec3d& up);
 
-    Transform& projection() { return m_projection; }
     const Transform& projection() const { return m_projection; }
+    void set_projection(const Transform& m);
 
     void switch_projection_type();
 
@@ -159,6 +159,10 @@ public:
     Vec3d unproject(const Vec3d& win_pos) const;
 
     const AbstractCameraProjection& cam_projection() const { return *m_projection_getter; }
+
+    bool pointing_upward() const {
+        return (m_projection_getter->type() == CameraProjectionType::Perspective) ? position().z() < 0.0 : forward().z() >= 0.0;
+    }
 
 private:
     void update_projection();

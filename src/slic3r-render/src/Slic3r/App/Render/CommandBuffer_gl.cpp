@@ -112,6 +112,11 @@ void CommandBuffer::set_depth_write_enabled(bool enabled)
     glCheck();
 }
 
+void CommandBuffer::set_cull_face_mode(CullFaceMode mode)
+{
+    glCullFace(GL::type(mode));
+    glCheck();
+}
 
 void CommandBuffer::bind_texture(uint8_t unit, const Texture& t)
 {
@@ -132,6 +137,18 @@ void CommandBuffer::bind_texture_buffer(uint8_t unit, const TextureBuffer& tb)
     device.bind_texture_buffer(unit, tb);
 }
 #endif // SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
+
+void CommandBuffer::bind_framebuffer(const Framebuffer& fb)
+{
+    auto& device = m_device.get_internal_as<GL::GLDeviceInternal>();
+    device.bind_framebuffer(fb);
+}
+
+void CommandBuffer::unbind_framebuffer(const Framebuffer& fb)
+{
+    auto& device = m_device.get_internal_as<GL::GLDeviceInternal>();
+    device.unbind_framebuffer(fb);
+}
 
 void CommandBuffer::bind_shader(const Shader& s)
 {

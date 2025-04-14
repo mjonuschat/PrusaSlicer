@@ -4,6 +4,7 @@
 #include "Slic3r/App/Scene/IRenderLayerObject.hpp"
 #include "Slic3r/App/Scene/Camera.hpp"
 #include "Slic3r/App/Render/Material.hpp"
+#include "Slic3r/App/Render/Types.hpp"
 
 namespace Slic3r::App::Scene {
 
@@ -33,7 +34,15 @@ public:
      * @return
      */
     virtual const Render::Material& material() const = 0;
+
+    /**
+     * @brief Set associated shadows data.
+     */
+    virtual void set_shadows(const Render::Shadows& shadows) = 0;
+
+    virtual bool cast_shadows() const = 0;
+    virtual bool receive_shadows() const = 0;
 };
 
-}
+} // namespace Slic3r::App::Scene
 

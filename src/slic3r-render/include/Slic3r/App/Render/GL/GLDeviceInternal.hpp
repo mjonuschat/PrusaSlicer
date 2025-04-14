@@ -38,6 +38,9 @@ public:
     void* map_buffer(BufferTarget target, BufferAccess access);
     void unmap_buffer(BufferTarget target);
 
+    void bind_framebuffer(const Framebuffer& buffer);
+    void unbind_framebuffer(const Framebuffer& buffer);
+
     void draw(PrimitiveType primitive, size_t offset, size_t count);
     void draw_instanced(PrimitiveType primitive, size_t offset, size_t count, size_t instances_count);
 

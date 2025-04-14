@@ -20,7 +20,10 @@ public:
     void shutdown();
 
     // returns nullptr if not found
-    Shader* get_shader(const std::string& shader_name);
+    Shader* shader(const std::string& shader_name);
+
+    // returns empty string if not found
+    std::string shader_name(const Shader* shader) const;
 
 private:
     Context& m_context;

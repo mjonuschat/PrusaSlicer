@@ -24,9 +24,10 @@ public:
     /**
      * @brief Performs all updates
      */
-    void update_all()
+    void update_all(const Scene::Camera& cam)
     {
         update_materials();
+        update_shadows(cam);
         update_positions();
         update_elements_state();
     }
@@ -35,6 +36,11 @@ public:
       * @brief Updates beds' materials in dependence of the scene status
       */
     void update_materials();
+
+    /**
+      * @brief Updates beds' shadows data in dependence of the scene status
+      */
+    void update_shadows(const Scene::Camera& cam);
 
     /**
       * @brief Updates beds' position in scene

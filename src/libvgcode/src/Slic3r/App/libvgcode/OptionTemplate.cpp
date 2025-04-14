@@ -24,7 +24,7 @@ namespace Slic3r::App::libvgcode {
 void OptionTemplate::init(Render::Device& device, Scene::NodeBuilder& builder, Scene::GeometryDataFactory& data_factory)
 {
     Render::Material material = Render::Material{}
-        .set_shader(device.context().shader_manager().get_shader("options"));
+        .set_shader(device.context().shader_manager().shader("options"));
 
     builder
         .set_debug_name("gcode_options")
