@@ -420,7 +420,7 @@ int Shader::get_attrib_location(const char* name) const
         return it->second;
 
     int id = glGetAttribLocation(self.m_id, name);
-    const_cast<Shader*>(this)->m_attrib_location_cache.emplace_back(name, id );
+    this->m_attrib_location_cache.emplace_back(name, id );
     return id;
 }
 
@@ -439,7 +439,7 @@ int Shader::get_uniform_location(const char* name) const
         return it->second;
 
     int id = glGetUniformLocation(self.m_id, name);
-    const_cast<Shader*>(this)->m_uniform_location_cache.emplace_back(name, id );
+    this->m_uniform_location_cache.emplace_back(name, id );
     return id;
 }
 

@@ -96,8 +96,8 @@ private:
     Device& m_device;
 
     std::string m_name;
-    std::vector<std::pair<std::string, int>> m_attrib_location_cache;
-    std::vector<std::pair<std::string, int>> m_uniform_location_cache;
+    mutable std::vector<std::pair<std::string, int>> m_attrib_location_cache;
+    mutable std::vector<std::pair<std::string, int>> m_uniform_location_cache;
 };
 
 

@@ -68,7 +68,7 @@ Domain::Preset::HwDefs& HwConfigLoader::load(const std::string & filename)
 {
     Yaml::parse_all_documents_in_file(filename.c_str(), [this](const auto& doc) {
         Yaml::parse_structs_by_discriminant(
-            fy_document_root(doc.get()),
+            doc.root(),
             "kind",
             std::make_tuple(
                 "printer",

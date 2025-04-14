@@ -42,6 +42,12 @@ TEST_CASE("Expression eval")
 
             v = eval("not_number =~ /\\d+/");
             REQUIRE(boost::get<bool>(v) == false);
+
+            v = eval("not_number !~ /\\d+/");
+            REQUIRE(boost::get<bool>(v) == true);
+
+            v = eval("number !~ /\\d+/");
+            REQUIRE(boost::get<bool>(v) == false);
         } catch (const std::exception& e) {
             std::cerr << e.what() << std::endl;
             FAIL(e.what());

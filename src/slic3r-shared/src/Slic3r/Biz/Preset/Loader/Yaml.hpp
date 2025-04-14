@@ -9,6 +9,7 @@
 #include <optional>
 #include <ranges>
 #include <utility>
+#include <string_view>
 
 #include <boost/preprocessor/variadic/to_seq.hpp>
 #include <boost/preprocessor/seq/for_each.hpp>
@@ -41,18 +42,34 @@ struct ParserDeleter
  * @name Low level parsing API
  * @{
  */
-using Document = std::unique_ptr<fy_document, Details::DocumentDeleter>;
+struct NodeRef
+{
+    fy_node* node;
+    std::string_view file;
+};
+
+using DocumentPtr = std::unique_ptr<fy_document, Details::DocumentDeleter>;
+struct Document
+{
+    DocumentPtr doc;
+    std::string file;
+
+    NodeRef root() const { return {fy_document_root(doc.get()), file}; }
+};
+
+
+
 using Parser = std::unique_ptr<fy_parser, Details::ParserDeleter>;
 
 Document parse_file(const char* file_name);
-Document parse_string(const char* yaml);
+Document parse_string(std::string_view yaml);
 
 void parse_all_documents_in_file(const char* file_name, const std::function<void(const Document&)>& parse_doc);
-void parse_all_documents_in_string(const char* yaml, const std::function<void(const Document&)>& parse_doc);
+void parse_all_documents_in_string(std::string_view yaml, const std::function<void(const Document&)>& parse_doc);
 
 struct ParseError : std::runtime_error
 {
-    ParseError(fy_node* node, const std::string& msg)
+    ParseError(const NodeRef& node, const std::string& msg)
         : std::runtime_error(describe(node) + ": " + msg)
     {}
 
@@ -71,13 +88,13 @@ private:
     explicit ParseError(const std::string& msg) : std::runtime_error(msg) {}
     explicit ParseError(const char* msg) : std::runtime_error(msg) {}
 
-    static std::string describe(fy_node* node)
+    static std::string describe(const NodeRef& node)
     {
-        if (node == nullptr)
-            return "(null)";
-        auto* token = fy_node_get_start_token(node);
+        if (node.node == nullptr)
+            return fmt::format("[file: {} (null)]", node.file);
+        auto* token = fy_node_get_start_token(node.node);
         auto* mark = fy_token_start_mark(token);
-        return fmt::format("[line: {} col: {} path: {}]", mark->line + 1, mark->column + 1, fy_node_get_path(node));
+        return fmt::format("[file: {} line: {} col: {} path: {}]", node.file, mark->line + 1, mark->column + 1, fy_node_get_path(node.node));
     }
 };
 
@@ -92,7 +109,7 @@ struct StructTraits{};
 }
 
 template <typename T>
-typename Details::StructTraits<T>::Type parse_struct(fy_node* node);
+typename Details::StructTraits<T>::Type parse_struct(const NodeRef& node);
 
 namespace Details {
 inline std::string fy_node_type_value(const fy_node_type type)
@@ -108,9 +125,9 @@ inline std::string fy_node_type_value(const fy_node_type type)
     return "unknown";
 }
 
-inline void ensure_node_type(fy_node* node, fy_node_type type)
+inline void ensure_node_type(const NodeRef& node, fy_node_type type)
 {
-    auto node_type = fy_node_get_type(node);
+    auto node_type = fy_node_get_type(node.node);
     if (node_type != type)
         throw ParseError(
             node,
@@ -119,11 +136,11 @@ inline void ensure_node_type(fy_node* node, fy_node_type type)
         );
 }
 
-inline std::string get_node_scalar(fy_node* node)
+inline std::string get_node_scalar(const NodeRef& node)
 {
     size_t len;
     ensure_node_type(node, FYNT_SCALAR);
-    const char* data = fy_node_get_scalar(node, &len);
+    const char* data = fy_node_get_scalar(node.node, &len);
     return {data, len};
 }
 
@@ -133,7 +150,7 @@ struct TypeTraits {};
 template <>
 struct TypeTraits<bool>
 {
-    static bool parse(fy_node* node)
+    static bool parse(const NodeRef& node)
     {
         auto value = get_node_scalar(node);
         if (value == "true")
@@ -146,7 +163,7 @@ struct TypeTraits<bool>
 };
 
 template <typename T, typename P>
-T parse_with_spirit(fy_node* node, P parser)
+T parse_with_spirit(const NodeRef& node, P parser)
 {
     auto value = get_node_scalar(node);
     T ret;
@@ -158,13 +175,13 @@ T parse_with_spirit(fy_node* node, P parser)
 
 
 #define TYPE_TRAITS_WITH_SPIRIT_PARSE(T, P)         \
-template <>                                     \
-struct TypeTraits<T>                            \
-{                                               \
-static T parse(fy_node* node)               \
-{                                           \
-return parse_with_spirit<T>(node, P);   \
-}                                           \
+template <>                                         \
+struct TypeTraits<T>                                \
+{                                                   \
+    static T parse(const NodeRef& node)             \
+    {                                               \
+        return parse_with_spirit<T>(node, P);       \
+    }                                               \
 };
 
 
@@ -182,7 +199,7 @@ TYPE_TRAITS_WITH_SPIRIT_PARSE(int32_t, boost::spirit::qi::int_);
 template <>
 struct TypeTraits<std::string>
 {
-    static std::string parse(fy_node* node)
+    static std::string parse(const NodeRef& node)
     {
         auto value = get_node_scalar(node);
         return value;
@@ -193,15 +210,15 @@ template <typename, typename = void>
 struct HasTypeTraits : std::false_type {};
 
 template <typename T>
-struct HasTypeTraits<T, std::void_t<decltype(TypeTraits<T>::parse((fy_node*)nullptr))>> : std::true_type {};
+struct HasTypeTraits<T, std::void_t<decltype(TypeTraits<T>::parse(std::declval<const NodeRef&>()))>> : std::true_type {};
 
 
 template <typename T>
 struct TypeTraits<std::optional<T>, std::enable_if_t<HasTypeTraits<T>::value>>
 {
-    static std::optional<T> parse(fy_node* node)
+    static std::optional<T> parse(const NodeRef& node)
     {
-        if (node != nullptr)
+        if (node.node != nullptr)
             return TypeTraits<T>::parse(node);
         return std::nullopt;
     }
@@ -210,14 +227,14 @@ struct TypeTraits<std::optional<T>, std::enable_if_t<HasTypeTraits<T>::value>>
 template <typename T>
 struct TypeTraits<std::vector<T>, std::enable_if_t<HasTypeTraits<T>::value>>
 {
-    static std::vector<T> parse(fy_node* node)
+    static std::vector<T> parse(const NodeRef& node)
     {
         ensure_node_type(node, FYNT_SEQUENCE);
-        const int n = fy_node_sequence_item_count(node);
+        const int n = fy_node_sequence_item_count(node.node);
         std::vector<T> ret;
         ret.reserve(n);
         for (int i = 0; i < n; ++i)
-            ret.push_back(TypeTraits<T>::parse(fy_node_sequence_get_by_index(node, i)));
+            ret.push_back(TypeTraits<T>::parse(NodeRef{fy_node_sequence_get_by_index(node.node, i), node.file}));
         return ret;
     }
 };
@@ -225,15 +242,15 @@ struct TypeTraits<std::vector<T>, std::enable_if_t<HasTypeTraits<T>::value>>
 template <typename K, typename V>
 struct TypeTraits<std::map<K, V>, std::enable_if_t<HasTypeTraits<K>::value && HasTypeTraits<V>::value>>
 {
-    static std::map<K, V> parse(fy_node* node)
+    static std::map<K, V> parse(const NodeRef& node)
     {
         ensure_node_type(node, FYNT_MAPPING);
-        const int n = fy_node_mapping_item_count(node);
+        const int n = fy_node_mapping_item_count(node.node);
         std::map<K, V> ret;
         for (int i = 0; i < n; ++i) {
-            auto* kv_pair = fy_node_mapping_get_by_index(node, i);
-            fy_node* key_node = fy_node_pair_key(kv_pair);
-            fy_node* value_node = fy_node_pair_value(kv_pair);
+            auto* kv_pair = fy_node_mapping_get_by_index(node.node, i);
+            auto key_node = NodeRef{fy_node_pair_key(kv_pair), node.file};
+            auto value_node = NodeRef{fy_node_pair_value(kv_pair), node.file};
             K key = TypeTraits<K>::parse(key_node);
             V value = TypeTraits<V>::parse(value_node);
             ret.emplace(std::move(key), std::move(value));
@@ -244,13 +261,13 @@ struct TypeTraits<std::map<K, V>, std::enable_if_t<HasTypeTraits<K>::value && Ha
 
 
 template <typename V, typename T>
-V parse_variant(fy_node* node)
+V parse_variant(const NodeRef& node)
 {
     return TypeTraits<T>::parse(node);
 }
 
 template <typename V, typename T, typename ...Ts, std::enable_if_t<(sizeof...(Ts) > 0), int> = 0>
-V parse_variant(fy_node* node)
+V parse_variant(const NodeRef& node)
 {
     try {
         return TypeTraits<T>::parse(node);
@@ -269,7 +286,7 @@ struct TypeTraits<
 >
 {
     using ValueType = std::variant<Ts...>;
-    static ValueType parse(fy_node* node)
+    static ValueType parse(const NodeRef& node)
     {
         return parse_variant<ValueType, Ts...>(node);
     }
@@ -303,15 +320,15 @@ struct TypeList {};
 
 
 template <typename Field, std::enable_if_t<!FieldHasImplicitValue<Field>::value, int> = 0>
-void parse_field(typename Field::Type& dest, fy_node* node)
+void parse_field(typename Field::Type& dest, const NodeRef& node)
 {
     dest = TypeTraits<typename Field::Type>::parse(node);
 }
 
 template <typename Field, std::enable_if_t<FieldHasImplicitValue<Field>::value, int> = 0>
-void parse_field(typename Field::Type& dest, fy_node* node)
+void parse_field(typename Field::Type& dest, const NodeRef& node)
 {
-    if (node == nullptr)
+    if (node.node == nullptr)
         dest = Field::implicit_value();
     else
         dest = TypeTraits<typename Field::Type>::parse(node);
@@ -329,7 +346,7 @@ void validate_field(const typename Field::Type& type)
 
 
 template <typename S, typename Field, typename = void>
-void parse_field(S& s, fy_node* node)
+void parse_field(S& s, const NodeRef& node)
 {
     using FT = typename Field::Type;
     auto* raw_storage = reinterpret_cast<char*>(&s) + Field::offset;
@@ -342,20 +359,20 @@ void parse_field(S& s, fy_node* node)
 template <typename Field, std::enable_if_t<
     !(FieldHasImplicitValue<Field>::value || FieldIsOptional<Field>::value),
 int> = 0>
-fy_node* get_mapping_node_with_key(fy_node* node, const char* key)
+NodeRef get_mapping_node_with_key(const NodeRef& node, const char* key)
 {
-    auto* value_node = fy_node_mapping_lookup_value_by_simple_key(node, key, strlen(key));
+    auto* value_node = fy_node_mapping_lookup_value_by_simple_key(node.node, key, strlen(key));
     if (value_node == nullptr)
         throw ParseError(node, fmt::format("Required field '{}' not found", key));
-    return value_node;
+    return {value_node, node.file};
 }
 
 template <typename Field, std::enable_if_t<
     FieldHasImplicitValue<Field>::value || FieldIsOptional<Field>::value,
 int> = 0>
-fy_node* get_mapping_node_with_key(fy_node* node, const char* key)
+NodeRef get_mapping_node_with_key(const NodeRef& node, const char* key)
 {
-    return fy_node_mapping_lookup_value_by_simple_key(node, key, strlen(key));
+    return {fy_node_mapping_lookup_value_by_simple_key(node.node, key, strlen(key)), node.file};
 }
 
 template <typename T, typename F>
@@ -364,14 +381,14 @@ struct ParseFieldTypeList;
 template <typename S, typename ... Fs>
 struct ParseFieldTypeList<S, TypeList<Fs...>>
 {
-    static void parse(S& s, fy_node* node)
+    static void parse(S& s, const NodeRef& node)
     {
         (parse_field<S, Fs>(s, get_mapping_node_with_key<Fs>(node, Fs::name)), ...);
     }
 };
 
 template <typename S>
-typename S::Type parse_struct_helper(fy_node* node)
+typename S::Type parse_struct_helper(const NodeRef& node)
 {
     typename S::Type ret;
 
@@ -384,7 +401,7 @@ typename S::Type parse_struct_helper(fy_node* node)
 }
 
 template <typename T>
-bool try_parse_discriminated_struct(fy_node* node, const std::string& value, std::tuple<const char*, std::function<void(T&&)>> loader)
+bool try_parse_discriminated_struct(const NodeRef& node, const std::string& value, std::tuple<const char*, std::function<void(T&&)>> loader)
 {
     if (value == std::get<0>(loader)) {
         T s = parse_struct<T>(node);
@@ -404,7 +421,7 @@ struct HasStructTraits<T, std::void_t<typename StructTraits<T>::Type>> : std::tr
 template <typename T>
 struct TypeTraits<T, std::enable_if_t<HasStructTraits<T>::value>>
 {
-    static T parse(fy_node* node)
+    static T parse(const NodeRef& node)
     {
         return parse_struct<T>(node);
     }
@@ -432,7 +449,7 @@ struct HasEnumTraits<T, std::void_t<typename EnumTraits<T>::Type>> : std::true_t
 template <typename T>
 struct TypeTraits<T, std::enable_if_t<std::is_enum_v<T> && !HasEnumTraits<T>::value>>
 {
-    static T parse(fy_node* node)
+    static T parse(const NodeRef& node)
     {
         auto value = get_node_scalar(node);
         auto ret = magic_enum::enum_cast<T>(value, magic_enum::case_insensitive);
@@ -452,7 +469,7 @@ struct TypeTraits<T, std::enable_if_t<std::is_enum_v<T> && !HasEnumTraits<T>::va
 template <typename T>
 struct TypeTraits<T, std::enable_if_t<HasEnumTraits<T>::value>>
 {
-    static T parse(fy_node* node)
+    static T parse(const NodeRef& node)
     {
         auto value = TypeTraits<std::string>::parse(node);
         const auto& values = EnumTraits<T>::values;
@@ -488,7 +505,7 @@ struct TypeTraits<T, std::enable_if_t<HasEnumTraits<T>::value>>
  * @return Loaded structure or ParseError exception is thrown.
  */
 template <typename T>
-typename Details::StructTraits<T>::Type parse_struct(fy_node* node)
+typename Details::StructTraits<T>::Type parse_struct(const NodeRef& node)
 {
     return Details::parse_struct_helper<Details::StructTraits<T>>(node);
 }
@@ -502,7 +519,7 @@ typename Details::StructTraits<T>::Type parse_struct(fy_node* node)
 template <typename T>
 typename Details::StructTraits<T>::Type parse_struct(const Document& doc)
 {
-    return parse_struct<T>(fy_document_root(doc.get()));
+    return parse_struct<T>(doc.root());
 }
 
 /**
@@ -515,11 +532,11 @@ typename Details::StructTraits<T>::Type parse_struct(const Document& doc)
  */
 template <typename ... Ts>
 void parse_structs_by_discriminant(
-    fy_node* node, const char* discriminator_field_name,
+    const NodeRef& node, const char* discriminator_field_name,
     const std::tuple<const char*, std::function<void(Ts&&)>>& ... loaders
 )
 {
-    auto* discr_node = fy_node_mapping_lookup_value_by_simple_key(node, discriminator_field_name, strlen(discriminator_field_name));
+    auto discr_node = NodeRef{fy_node_mapping_lookup_value_by_simple_key(node.node, discriminator_field_name, strlen(discriminator_field_name)), node.file};
     auto discr_value = Details::get_node_scalar(discr_node);
     if (!(Details::try_parse_discriminated_struct(node, discr_value, loaders) || ...)) {
         std::vector<const char*> discr_field_values;
@@ -547,7 +564,7 @@ void parse_structs_by_discriminant(
 )
 {
     parse_discriminated_structs(
-        fy_document_root(doc.get()),
+        doc.root(),
         discriminator_field_name,
         loaders...
     );

@@ -67,6 +67,12 @@ public:
         m_vars[name] = std::string(value);
     }
 
+    void set_vars(const ValueMap& vars)
+    {
+        for (const auto& [k, v]: vars)
+            m_vars[k] = v;
+    }
+
     template <typename Ref, typename ... Args>
     void reg_function(const char* name, const std::function<Ref(Args...)>& func)
     {

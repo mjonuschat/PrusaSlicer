@@ -1,6 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include "Slic3r/TestUtils/TestData.hpp"
 #include "Slic3r/Biz/Preset/Loader/Yaml.hpp"
+#include "Slic3r/Biz/Preset/Loader/YamlSlic3rTypes.hpp"
 
 #include <catch2/catch_approx.hpp>
 #include <catch2/matchers/catch_matchers.hpp>
@@ -32,12 +33,23 @@ struct MyData
     std::variant<float, int, std::string> param;
 };
 
+struct Condition
+{
+    Slic3r::Domain::Expr::ExprAst condition;
+};
+
+
 }
 
 STRUCT_DESC_SIMPLE(Tests::Ver, major, minor, patch);
 STRUCT_DESC_SIMPLE(Tests::Item, id);
 STRUCT_DESC_SIMPLE(Tests::MyData, version, a, b, items, opt_int, param);
 
+
+
+STRUCT_DESC_SIMPLE(Tests::Condition, condition);
+
+/*
 template <typename T>
 struct ExceptionSubstringMatcher : Catch::Matchers::MatcherBase<T>//Catch::Matchers::MatcherGenericBase
 {
@@ -66,7 +78,7 @@ ExceptionSubstringMatcher<T> exception_substring(const std::string& substring)
 {
     return ExceptionSubstringMatcher<T>(substring);
 }
-
+*/
 TEST_CASE("Load Yaml from file into MyData")
 {
 
@@ -123,3 +135,14 @@ patch: 321
 }
 
 
+TEST_CASE("ExprAst parsing")
+{
+    std::string yaml = R"(
+condition: 'tool.nozzle_diameter >= 0.2'
+)";
+
+    Yaml::Document doc = Yaml::parse_string(yaml.c_str());
+    Tests::Condition condition = Yaml::parse_struct<Tests::Condition>(doc);
+    REQUIRE(boost::get<Slic3r::Domain::Expr::Binary>(condition.condition).op == Slic3r::Domain::Expr::BinaryOp::GtEq);
+
+}

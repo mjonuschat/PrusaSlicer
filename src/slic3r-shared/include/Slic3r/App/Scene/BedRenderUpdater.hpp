@@ -64,7 +64,7 @@ private:
     ISceneProvider& m_scene_provider;
     const Domain::Workbench& m_workbench;
     Render::Device& m_device;
-    Domain::Project* m_project{ nullptr };
+    const Domain::Project* m_project{ nullptr };
 };
 
 } // namespace Slic3r::App::Scene

@@ -283,7 +283,13 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/Preset/Loader/HwConfigLoader.hpp
         src/Slic3r/Biz/Preset/Loader/HwConfigLoader.cpp
         src/Slic3r/Biz/Preset/Loader/Yaml.hpp
+		src/Slic3r/Biz/Preset/Loader/YamlSlic3rTypes.hpp
         src/Slic3r/Biz/Preset/Loader/Yaml.cpp
+
+		include/Slic3r/Biz/Preset/PresetEvaluator.hpp
+		src/Slic3r/Biz/Preset/PresetEvaluator.cpp
+		src/Slic3r/Biz/Preset/PresetCollectionEvaluator.hpp
+		src/Slic3r/Biz/Preset/PresetCollectionEvaluator.cpp
 
         include/Slic3r/Biz/Expr/Parser.hpp
         src/Slic3r/Biz/Expr/Parser.cpp
@@ -522,14 +528,16 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
         test/Slic3r/Biz/ProjectInteractorTests.cpp
         test/Slic3r/Biz/Scene/SceneInteractorTests.cpp
 
-        test/Slic3r/Biz/Preset/Loader/Yaml/YamlTests.cpp
-        test/Slic3r/Biz/Preset/Loader/HwConfigDefLoaderTests.cpp
-        test/Slic3r/Biz/Preset/Loader/PresetLoaderTests.cpp
-
         test/Slic3r/Biz/Expr/ParserTests.cpp
         test/Slic3r/Biz/Expr/EvalTests.cpp
 
-        test/Slic3r/Biz/Slicing/TestUtils.cpp
+		test/Slic3r/Biz/Preset/Loader/Yaml/YamlTests.cpp
+		test/Slic3r/Biz/Preset/Loader/HwConfigDefLoaderTests.cpp
+		test/Slic3r/Biz/Preset/Loader/PresetLoaderTests.cpp
+		test/Slic3r/Biz/Preset/PresetCollectionEvaluatorTests.cpp
+		test/Slic3r/Biz/Preset/PresetEvaluatorTests.cpp
+
+		test/Slic3r/Biz/Slicing/TestUtils.cpp
         test/Slic3r/Biz/Slicing/GCodeUtils.cpp
         test/Slic3r/Biz/Slicing/ActionsTests.cpp
         test/Slic3r/Biz/Slicing/ListenersTests.cpp

@@ -5,6 +5,8 @@
 #include <boost/spirit/include/qi.hpp>
 #include <boost/spirit/include/phoenix.hpp>
 #include <boost/fusion/include/adapt_struct.hpp>
+#include <boost/algorithm/string/replace.hpp>
+#include <fmt/format.h>
 
 namespace qi = boost::spirit::qi;
 namespace ascii = boost::spirit::ascii;
@@ -220,7 +222,16 @@ struct ExprParser : qi::grammar<Iterator, ExprAst(), ascii::space_type>
              | (string("=~") >> regex_constant) [qi::_val = phx::construct<Binary>(
                     BinaryOp::RegExMatch, qi::_val, phx::construct<RegEx>(qi::_2)
                 )]
-             );
+            | (string("!~") >> regex_constant) [qi::_val =
+                phx::construct<Unary>(
+                    UnaryOp::Not,
+                    phx::construct<Binary>(
+                        BinaryOp::RegExMatch,
+                        qi::_val,
+                        phx::construct<RegEx>(qi::_2)
+                    )
+                )]
+            );
 
         equality = relational [ qi::_val = qi::_1 ] >>
             *( (string("==") >> relational) [ qi::_val = phx::construct<Binary>(BinaryOp::Eq, qi::_val, qi::_2) ]
@@ -277,15 +288,58 @@ struct ExprParser : qi::grammar<Iterator, ExprAst(), ascii::space_type>
     qi::rule<Iterator, std::vector<char>()> raw_identifier;
 };
 
+struct SourceLocation
+{
+    size_t line{0};
+    size_t column{0};
+    std::string line_text;
+
+    std::string to_description() const
+    {
+        std::ostringstream os;
+        os << line_text << "\n";
+        for (size_t i = 1; i < column; ++i)
+            os << "~";
+        os << "^~\n";
+        return os.str();
+    }
+
+    static SourceLocation from_iterator(std::string_view source, const std::string_view::iterator& pos)
+    {
+        size_t line{1};
+        size_t column{1};
+        auto line_start = source.begin();
+        for (auto it = source.begin(); it != pos && it != source.end(); ++it) {
+            if (*it == '\n') {
+                line++;
+                column = 1;
+                line_start = it + 1;
+            }
+            else if (*it != '\r') {
+                column++;
+            }
+        }
+        auto line_end = std::find(pos, source.end(), '\n');
+
+        std::string line_text(line_start, line_end);
+        column += std::count(line_text.begin(), line_text.end(), '\t') * (4 - 1);
+        boost::replace_all(line_text, "\t", "    ");
+        return {line, column, std::move(line_text)};
+    }
+};
+
 } // namespace
 
 ExprAst Parser::parse(std::string_view source)
 {
     ExprParser<std::string_view::const_iterator> parser;
     ExprAst expr;
-    bool success = qi::phrase_parse(source.begin(), source.end(), parser, ascii::space, expr);
-    if (!success)
-        throw std::runtime_error("Failed to parse expression");
+    auto start = source.begin();
+    bool success = qi::phrase_parse(start, source.end(), parser, ascii::space, expr);
+    if (!success || start != source.end()) {
+        SourceLocation loc = SourceLocation::from_iterator(source, start);
+        throw ParseError(fmt::format("Failed to parse expression:\n{}", loc.to_description()));
+    }
     return  expr;
 }
 

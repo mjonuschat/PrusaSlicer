@@ -132,6 +132,17 @@ TEST_CASE("Parser tests")
             REQUIRE(boost::get<VarRef>(root.left).name == "name");
             REQUIRE(boost::get<RegEx>(root.right).source() == "a+\\.");
         }
+
+        expr = parser.parse(R"(name !~ /a+\./)");
+        {
+            auto root = boost::get<Unary>(expr);
+            REQUIRE(root.op == UnaryOp::Not);
+            auto child = boost::get<Binary>(root.expr);
+            REQUIRE(child.op == BinaryOp::RegExMatch);
+
+            REQUIRE(boost::get<VarRef>(child.left).name == "name");
+            REQUIRE(boost::get<RegEx>(child.right).source() == "a+\\.");
+        }
     }
 
     SECTION("complex expressions")
@@ -208,5 +219,19 @@ TEST_CASE("Parser tests")
                 REQUIRE(boost::get<VarRef>(node.right).name == "b");
             }
         }
+    }
+
+    SECTION("error reporting")
+    {
+        REQUIRE_THROWS_AS(expr = parser.parse("x >="), ParseError);
+        REQUIRE_THROWS_AS(expr = parser.parse("<= a"), ParseError);
+        REQUIRE_THROWS_AS(expr = parser.parse("a ==\""), ParseError);
+#if 0
+        try {
+            expr = parser.parse("\tx >=");
+        } catch (ParseError &e) {
+            std::cout << e.what() << std::endl;
+        }
+#endif
     }
 }
