@@ -34,7 +34,7 @@ void BedPlacement::layout(Domain::Project& project, const Vec2d& gap)
             if (j > 0)
                 pos.x() += size.x() + gap.x();
             Transform3d xform = Domain::translation_transform(to_3d(pos, 0.0));
-            instances[j]->set_transformation(Domain::Transformation(xform));
+            instances[j]->transformation = Domain::Transformation(xform);
         }
 
         offset_y += size.y() + gap.y();

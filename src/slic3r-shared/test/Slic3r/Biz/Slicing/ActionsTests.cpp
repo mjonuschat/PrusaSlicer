@@ -4,7 +4,6 @@
 #include <boost/filesystem/operations.hpp>
 
 #include "Slic3r/Biz/Slicing/SlicingInteractor.hpp"
-#include "Slic3r/Biz/Slicing/ModelUtils.hpp"
 #include "Slic3r/Biz/Slicing/TestUtils.hpp"
 #include "Slic3r/Log.hpp"
 #include "Slic3r/TestUtils/TestData.hpp"
@@ -67,14 +66,14 @@ TEST_CASE_METHOD(SlicingFixture, "Update respects instances on bed", "[slicing][
 
     ModelOnBed model_on_bed{get_cubes_model(10, 5)};
 
-    const ModelInstanceList all_instances{model_on_bed.bed_instance.model_instances()};
+    const ModelInstanceList all_instances{model_on_bed.bed_instance.model_instances};
     const ModelInstanceList instances_to_keep{
         all_instances[2],
         all_instances[4],
         all_instances[6],
         all_instances[7],
     };
-    model_on_bed.bed_instance.model_instances() = instances_to_keep;
+    model_on_bed.bed_instance.model_instances = instances_to_keep;
 
     const SelectionId bed_id{model_on_bed.bed_instance.id().id};
 

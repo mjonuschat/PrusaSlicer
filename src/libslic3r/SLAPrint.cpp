@@ -262,8 +262,13 @@ static t_config_option_keys print_config_diffs(const StaticPrintConfig     &curr
     return print_diff;
 }
 
-
-SLAPrint::ApplyStatus SLAPrint::apply(const Model &model, DynamicPrintConfig config, std::vector<std::string> *warnings)
+SLAPrint::ApplyStatus SLAPrint::apply(
+    const Model& model,
+    DynamicPrintConfig config,
+    const std::optional<Domain::ModelWipeTower>&,
+    const std::optional<Domain::CustomGCode::Info>&,
+    std::vector<std::string>* warnings
+)
 {
 #ifdef _DEBUG
     check_model_ids_validity(model);

@@ -1199,24 +1199,6 @@ public:
     // Objects are owned by a model. Each model may have multiple instances, each instance having its own transformation (shift, scale, rotation).
     ModelObjectPtrs     objects;
 
-    Domain::ModelWipeTower& wipe_tower();
-    const Domain::ModelWipeTower& wipe_tower() const;
-    const Domain::ModelWipeTower& wipe_tower(const int bed_index) const;
-    Domain::ModelWipeTower& wipe_tower(const int bed_index);
-    std::vector<Domain::ModelWipeTower>& get_wipe_tower_vector() { return wipe_tower_vector; }
-    const std::vector<Domain::ModelWipeTower>& get_wipe_tower_vector() const { return wipe_tower_vector; }
-
-    Domain::CustomGCode::Info& custom_gcode_per_print_z();
-    const Domain::CustomGCode::Info& custom_gcode_per_print_z() const;
-    std::vector<Domain::CustomGCode::Info>& get_custom_gcode_per_print_z_vector() { return custom_gcode_per_print_z_vector; }
-
-private:
-    // Wipe tower object.
-    std::vector<Domain::ModelWipeTower> wipe_tower_vector = std::vector<Domain::ModelWipeTower>(MAX_NUMBER_OF_BEDS);
-
-    // Extensions for color print
-    std::vector<Domain::CustomGCode::Info> custom_gcode_per_print_z_vector = std::vector<Domain::CustomGCode::Info>(MAX_NUMBER_OF_BEDS);
-
 public:
     // Default constructor assigns a new ID to the model.
     Model() { assert(this->id().valid()); }
@@ -1295,7 +1277,7 @@ private:
 	friend class cereal::access;
 	friend class UndoRedo::StackImpl;
 	template<class Archive> void serialize(Archive &ar) {
-		ar(materials, objects, wipe_tower_vector);
+		ar(materials, objects);
     }
 };
 

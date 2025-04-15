@@ -1,7 +1,7 @@
 #include <functional>
 #include <libslic3r/Model.hpp>
 
-#include "Slic3r/Biz/Slicing/ModelUtils.hpp"
+#include "libslic3r/ModelUtils.hpp"
 #include "libslic3r/Utils.hpp"
 
 namespace Slic3r::Biz::Slicing {

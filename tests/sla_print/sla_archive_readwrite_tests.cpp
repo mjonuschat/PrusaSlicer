@@ -32,7 +32,7 @@ TEST_CASE("Archive export test", "[sla_archives]") {
         cfg.apply(fullcfg);
 
         print.set_status_callback([](const PrintBase::SlicingStatus&) {});
-        print.apply(m, cfg);
+        print.apply(m, cfg, {}, {});
         print.process();
 
         ThumbnailsList thumbnails;

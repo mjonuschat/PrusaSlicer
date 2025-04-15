@@ -19,7 +19,7 @@ void BedRenderUpdater::update_materials()
             Domain::ConfigContainer* cc = m_project->find_config_container(tag->config_container_id);
             DEBUG_ASSERT(cc != nullptr);
             const Domain::BedInstance& inst = cc->find_bed_instance(tag->instance_id);
-            if (inst.active())
+            if (inst.active)
                 n.remove_material_override();
             else {
                 Render::Material material;
@@ -54,7 +54,7 @@ void BedRenderUpdater::update_shadows(const Scene::Camera& cam)
 
                 Domain::ConfigContainer* cc = m_project->find_config_container(tag->config_container_id);
                 const Domain::BedInstance& inst = cc->find_bed_instance(tag->instance_id);
-                if (!cam_pointing_upward && inst.active()) {
+                if (!cam_pointing_upward && inst.active) {
                     if (tag->type == BedElementType::Model && m_scene_provider.scene().bed_model_cast_shadow())
                         n.render_component()->set_shadows(Render::Shadows{ true, true });
                     else
@@ -94,9 +94,9 @@ void BedRenderUpdater::update_elements_state()
                 DEBUG_ASSERT(cc != nullptr);
                 const Domain::BedInstance& inst = cc->find_bed_instance(tag->instance_id);
                 if (tag->type == BedElementType::Contour)
-                    n.set_enabled(inst.contour_enabled());
+                    n.set_enabled(inst.contour_enabled);
                 else if (tag->type == BedElementType::PrintVolume)
-                    n.set_enabled(inst.print_volume_enabled());
+                    n.set_enabled(inst.print_volume_enabled);
             }
         }
     }, true);
@@ -119,7 +119,7 @@ void BedRenderUpdater::camera_updated(const Scene::Camera& cam)
                 Domain::ConfigContainer* cc = m_project->find_config_container(tag->config_container_id);
                 DEBUG_ASSERT(cc != nullptr);
                 const Domain::BedInstance& inst = cc->find_bed_instance(tag->instance_id);
-                if (inst.active()) {
+                if (inst.active) {
                     if (cam_pointing_upward)
                         n.set_material_override(BedMaterials::plate_textured_override_material(m_device, cc->bed()));
                     else

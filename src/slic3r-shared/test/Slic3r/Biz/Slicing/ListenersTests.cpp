@@ -122,9 +122,10 @@ TEST_CASE_METHOD(SlicingFixture, "Background process dispatches wipe_tower_geome
     WipeTowerGeometryListener wipe_tower_geometry_listener;
     slicing.add_listener<IWipeTowerGeometryListener>(&wipe_tower_geometry_listener);
 
-    auto [model, config]{Tests::load_3mf(Tests::get_datadir() / "wipe_tower.3mf")};
+    auto [model, config, wipe_towers]{Tests::load_3mf(Tests::get_datadir() / "wipe_tower.3mf")};
 
     ModelOnBed model_on_bed{std::move(model), std::move(config)};
+    model_on_bed.bed_instance.wipe_tower = wipe_towers.at(0);
     slicing.update_process(model_on_bed.model, model_on_bed.config, model_on_bed.bed_instance);
     slicing.slice_all();
 

@@ -2,6 +2,8 @@
 
 #include "Slic3r/Domain/Bed.hpp"
 #include "Slic3r/Assert.hpp"
+#include "Slic3r/Domain/CustomGCode.hpp"
+#include "Slic3r/Domain/Model.hpp"
 #include "Slic3r/Domain/ObjectID.hpp"
 #include "Slic3r/Domain/Transformation.hpp"
 
@@ -14,43 +16,26 @@ namespace Slic3r::Domain {
 using ModelInstanceList = std::vector<ModelInstance*>;
 
 class Bed;
-class BedInstance : public ObjectBase
+struct BedInstance : public ObjectBase
 {
-public:
+    explicit BedInstance(const Bed& bed) : bed(bed) {}
 
-    explicit BedInstance(const Bed& bed) : m_bed(bed) {}
-
-    const Transformation& transformation() const { return m_transformation; }
-    void set_transformation(const Transformation& transformation) { m_transformation = transformation; }
-    const Transform3d& matrix() const { return m_transformation.get_matrix(); }
-
-    bool active() const { return m_active; }
-    void set_active(bool value) { m_active = value; }
-
-    bool contour_enabled() const { return m_contour_enabled; }
-    void set_contour_enabled(bool value) { m_contour_enabled = value; }
-
-    bool print_volume_enabled() const { return m_print_volume_enabled; }
-    void set_print_volume_enabled(bool value) { m_print_volume_enabled = value; }
-
-    const Bed& bed() const { return m_bed; }
+    const Transform3d& matrix() const { return transformation.get_matrix(); }
 
     bool contains(const BoundingBox2d& bounds) const
     {
-        Vec3d pos = m_transformation.get_offset();
-        return m_bed.contains(Vec2d{pos.x(), pos.y()}, bounds);
+        Vec3d pos = transformation.get_offset();
+        return bed.contains(Vec2d{pos.x(), pos.y()}, bounds);
     }
 
-    const ModelInstanceList& model_instances() const { return m_model_instances; }
-    ModelInstanceList& model_instances() { return m_model_instances; }
-
-private:
-    const Bed& m_bed;
-    Transformation m_transformation;
-    ModelInstanceList m_model_instances;
-    bool m_active{ false };
-    bool m_contour_enabled{ false };
-    bool m_print_volume_enabled{ false };
+    const Bed& bed;
+    Transformation transformation;
+    ModelInstanceList model_instances;
+    bool active{ false };
+    bool contour_enabled{ false };
+    bool print_volume_enabled{ false };
+    std::optional<ModelWipeTower> wipe_tower;
+    std::optional<CustomGCode::Info> custom_gcode;
 };
 
 } // namespace Slic3r::Domain

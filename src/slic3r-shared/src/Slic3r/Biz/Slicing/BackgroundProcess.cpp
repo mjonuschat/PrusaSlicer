@@ -1,8 +1,7 @@
 #include <spdlog/spdlog.h>
 #include <fmt/ostream.h>
 #include <Slic3r/Biz/Slicing/BackgroundProcess.hpp>
-#include <Slic3r/Biz/Slicing/ModelUtils.hpp>
-#include <libassert/assert.hpp>
+#include <Slic3r/Assert.hpp>
 
 namespace {
 using namespace Slic3r;
@@ -96,7 +95,7 @@ BackgroundProcess::BackgroundProcess(
     IProcessCallbacks& callbacks,
     Model& model,
     DynamicPrintConfig&& config,
-    const Domain::ModelInstanceList& bed_instances,
+    const Domain::BedInstance& bed,
     const SlicingId id
 )
     : m_printer_technology{Slicing::get_printer_technology(config)}
@@ -105,7 +104,7 @@ BackgroundProcess::BackgroundProcess(
     , m_get_status{[call = std::reference_wrapper(callbacks), id]() { return call.get().get_status(id); }}
     , m_id{id}
 {
-    this->update(model, std::move(config), bed_instances);
+    this->update(model, std::move(config), bed);
 };
 
 BackgroundProcess::BackgroundProcess(
@@ -113,7 +112,7 @@ BackgroundProcess::BackgroundProcess(
     IProcessCallbacks& callbacks,
     Model& model,
     DynamicPrintConfig&& config,
-    const Domain::ModelInstanceList& bed_instances,
+    const Domain::BedInstance& bed,
     const SlicingId id
 )
     : m_printer_technology{Slicing::get_printer_technology(config)}
@@ -122,7 +121,7 @@ BackgroundProcess::BackgroundProcess(
     , m_get_status{[call = std::reference_wrapper(callbacks), id]() { return call.get().get_status(id); }}
     , m_id{id}
 {
-    this->update(model, std::move(config), bed_instances);
+    this->update(model, std::move(config), bed);
 };
 
 BackgroundProcess::~BackgroundProcess() {
@@ -136,7 +135,7 @@ BackgroundProcess::~BackgroundProcess() {
 void BackgroundProcess::update(
     Model& model,
     DynamicPrintConfig&& config,
-    const Domain::ModelInstanceList& bed_instances
+    const Domain::BedInstance& bed
 )
 {
     SPDLOG_INFO("{}: update", fmt::streamed(m_id));
@@ -159,9 +158,7 @@ void BackgroundProcess::update(
     }};
 
     this->m_on_status(Status::Updating);
-    with_limited_instances(model, bed_instances, [&](){
-        apply_status = this->m_print->update(model, std::move(config));
-    });
+    apply_status = this->m_print->update(model, std::move(config), bed);
 }
 
 void BackgroundProcess::slice()

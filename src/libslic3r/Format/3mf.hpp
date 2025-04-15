@@ -5,8 +5,11 @@
 #ifndef slic3r_Format_3mf_hpp_
 #define slic3r_Format_3mf_hpp_
 
+#include "Slic3r/Domain/CustomGCode.hpp"
+#include "Slic3r/Domain/Model.hpp"
 #include "Slic3r/Semver.hpp"
 #include <optional>
+#include <map>
 
 namespace Slic3r {
 
@@ -50,6 +53,9 @@ namespace Slic3r {
     // Returns true if the 3mf file with the given filename is a PrusaSlicer project file (i.e. if it contains a config).
     extern std::pair<bool, std::optional<Semver>> is_project_3mf(const std::string&);
 
+    using WipeTowersOnBeds = std::map<int, Domain::ModelWipeTower>;
+    using CustomGCodesOnBeds = std::map<int, Domain::CustomGCode::Info>;
+
     // Load the content of a 3mf file into the given model and preset bundle.
     extern bool load_3mf(
         const char* path,
@@ -57,12 +63,23 @@ namespace Slic3r {
         ConfigSubstitutionContext& config_substitutions,
         Model* model,
         bool check_version,
-        boost::optional<Semver> &prusaslicer_generator_version
+        boost::optional<Semver> &prusaslicer_generator_version,
+        WipeTowersOnBeds& wipe_towers,
+        CustomGCodesOnBeds& custom_gcodes
     );
 
     // Save the given model and the config data contained in the given Print into a 3mf file.
     // The model could be modified during the export process if meshes are not repaired or have no shared vertices
-    extern bool store_3mf(const char* path, Model* model, const DynamicPrintConfig* config, bool fullpath_sources, const ThumbnailData* thumbnail_data = nullptr, bool zip64 = true);
+    extern bool store_3mf(
+        const char* path,
+        Model* model,
+        const DynamicPrintConfig* config,
+        bool fullpath_sources,
+        const WipeTowersOnBeds& wipe_towers,
+        const CustomGCodesOnBeds& custom_gcodes,
+        const ThumbnailData* thumbnail_data = nullptr,
+        bool zip64 = true
+    );
 
 } // namespace Slic3r
 

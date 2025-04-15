@@ -99,7 +99,6 @@ public:
     }
     Vec2d   bed_gap() const;
 	Vec2crd get_bed_gap() const;
-	void   ensure_wipe_towers_on_beds(Model& model, const std::vector<std::unique_ptr<Print>>& prints);
 
 	void   start_autoslice(std::function<void(int,bool)>);
 	bool   stop_autoslice(bool restore_original);

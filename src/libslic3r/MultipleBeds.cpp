@@ -459,22 +459,6 @@ Vec2crd MultipleBeds::get_bed_gap() const {
     return scaled(Vec2d{bed_gap() / 2.0});
 };
 
-void MultipleBeds::ensure_wipe_towers_on_beds(Model& model, const std::vector<std::unique_ptr<Print>>& prints)
-{
-    for (size_t bed_idx = 0; bed_idx < get_number_of_beds(); ++bed_idx) {
-        Domain::ModelWipeTower& mwt = model.get_wipe_tower_vector()[bed_idx];
-        double depth = prints[bed_idx]->wipe_tower_data().depth;
-        double width = prints[bed_idx]->wipe_tower_data().width;
-        double brim  = prints[bed_idx]->wipe_tower_data().brim_width;
-
-        Polygon plg(Points{scaled(Vec2d(-brim,-brim)), scaled(Vec2d(brim+width, -brim)), scaled(Vec2d(brim+width, brim+depth)), scaled(Vec2d(-brim, brim+depth))});
-        plg.rotate(deg2rad(mwt.rotation));
-        plg.translate(scaled(mwt.position));
-        if (std::all_of(plg.points.begin(), plg.points.end(), [this](const Point& pt) { return !m_build_volume_bb.contains(unscale(pt)); }))
-            mwt.position = 2*brim*Vec2d(1.,1.);
-    }
-}
-
 #ifdef SLIC3R_GUI
 
 void MultipleBeds::start_autoslice(std::function<void(int, bool)> select_bed_fn)

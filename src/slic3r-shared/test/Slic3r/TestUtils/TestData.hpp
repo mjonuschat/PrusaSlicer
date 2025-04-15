@@ -16,17 +16,25 @@ namespace Tests {
         return fs::absolute(fs::canonical(fs::path{TEST_DATA_DIR}));
     }
 
-    inline std::pair<Slic3r::Model, Slic3r::DynamicPrintConfig> load_3mf(const boost::filesystem::path &path) {
+    struct Loaded3mf{
+        Slic3r::Model model;
+        Slic3r::DynamicPrintConfig config;
+        Slic3r::WipeTowersOnBeds wipe_towers;
+    };
+
+    inline Loaded3mf load_3mf(const boost::filesystem::path &path) {
         using namespace Slic3r;
         REQUIRE(boost::filesystem::exists(path));
 
         DynamicPrintConfig config;
         Model model;
+        WipeTowersOnBeds wipe_towers;
+        CustomGCodesOnBeds custom_gcodes;
 
         ConfigSubstitutionContext context{ForwardCompatibilitySubstitutionRule::Disable};
         boost::optional<Semver> version;
-        Slic3r::load_3mf(path.string().c_str(), config, context, &model, false, version);
+        Slic3r::load_3mf(path.string().c_str(), config, context, &model, false, version, wipe_towers, custom_gcodes);
 
-        return {std::move(model), std::move(config)};
+        return {model, std::move(config), std::move(wipe_towers)};
     }
 }

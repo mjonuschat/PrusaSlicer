@@ -342,7 +342,7 @@ void SceneInteractor::remove_bed_instance(const Domain::BedRef& instance)
     DEBUG_ASSERT(cc != nullptr);
     auto* bed_inst = Domain::find_by_id(cc->bed_instances(), instance.instance_id);
 
-    auto insts = bed_inst->model_instances();
+    auto insts = bed_inst->model_instances;
 
     cc->remove_bed_instance_by_id(instance.instance_id);
     m_bed_placement.layout(project, BED_GAP);
@@ -364,10 +364,10 @@ void SceneInteractor::transform_bed_instance(const Domain::BedRef& instance, con
     Domain::ConfigContainer* cc = proj.project
         .find_config_container(instance.config_container_id);
     Domain::BedInstance& inst = cc->find_bed_instance(instance.instance_id);
-    inst.set_transformation(Transformation{ Transform3d{xform} });
+    inst.transformation = Transformation{ Transform3d{xform} };
 
-    auto updated = inst.model_instances();
-    inst.model_instances().clear();
+    auto updated = inst.model_instances;
+    inst.model_instances.clear();
     auto changes = update_instances_bed_placement(proj.project, updated, false);
     for (const auto& bed_ref : changes.updated_beds)
         invoke_slicing_input_changed(bed_ref);
@@ -489,10 +489,10 @@ void SceneInteractor::select_bed_instance_internal(const Domain::BedRef& bed_ins
         return;
 
     Domain::Project::ConfigContainerList& ccs = m_projects.find(m_selected_project_id)->second.project.config_containers();
-    for (auto& cc : ccs) {        
+    for (auto& cc : ccs) {
         Domain::ConfigContainer::BedInstanceList& instances = cc->bed_instances();
         for (auto& inst : instances) {
-            inst->set_active(cc->id().id == bed_instance.config_container_id && inst->id().id == bed_instance.instance_id);
+            inst->active = cc->id().id == bed_instance.config_container_id && inst->id().id == bed_instance.instance_id;
         }
     }
 

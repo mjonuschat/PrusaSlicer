@@ -143,7 +143,7 @@ public:
 
 TEST_CASE_METHOD(CancelObjectFixture, "Single extruder", "[CancelObject]") {
     Print print;
-    print.apply(two_cubes, config);
+    print.apply(two_cubes, config, {}, {});
     print.validate();
     const std::string gcode{Test::gcode(print)};
 
@@ -175,7 +175,7 @@ TEST_CASE_METHOD(CancelObjectFixture, "Sequential print", "[CancelObject]") {
     config.set_deserialize_strict({{"complete_objects", 1} });
 
     Print print;
-    print.apply(two_cubes, config);
+    print.apply(two_cubes, config, {}, {});
     print.validate();
     const std::string gcode{Test::gcode(print)};
 
