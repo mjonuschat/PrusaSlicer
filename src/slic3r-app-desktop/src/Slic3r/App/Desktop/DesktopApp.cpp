@@ -11,6 +11,7 @@
 #include <libslic3r/Model.hpp>
 
 #include <Slic3r/Biz/Platform/PlatformServices.hpp>
+#include <Slic3r/Biz/Platform/Termination.hpp>
 
 
 #include <boost/log/trivial.hpp>
@@ -83,6 +84,26 @@ bool DesktopApp::OnInit()
  //   m_project_interactor->load_project("C:\\PS_3\\Test_ObjectList.3mf");
 
     return true;
+}
+
+bool DesktopApp::OnExceptionInMainLoop() {
+    try {
+        throw;
+    } catch (...){
+        // TODO: currently there is no handling!
+        throw;
+    }
+}
+
+void DesktopApp::OnUnhandledException() {
+    try {
+        throw;
+    } catch (const std::exception& e) {
+        SPDLOG_ERROR("closing after unrecoverable exception: '{}'", e.what());
+    } catch ( ... ) {
+        SPDLOG_ERROR("closing after unrecoverable unknown exception");
+    }
+    Biz::Platform::close();
 }
 
 void DesktopApp::init_translations()

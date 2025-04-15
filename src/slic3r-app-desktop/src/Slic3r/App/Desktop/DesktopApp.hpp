@@ -24,6 +24,11 @@ public:
     bool OnInit() override;
     void set_init_params(const InitParams& init_params) { m_init_params = init_params; }
 
+    // TODO: Any recoverable exception should be handled here.
+    bool OnExceptionInMainLoop() override;
+
+    void OnUnhandledException() override;
+
 private:
     void init_translations();
 
