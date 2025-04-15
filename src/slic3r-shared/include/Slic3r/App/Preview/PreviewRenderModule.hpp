@@ -7,6 +7,7 @@
 #include "Slic3r/App/Preview/PreviewRenderLayout.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/App/LibvgcodeWrapper/Wrapper.hpp"
+#include "Slic3r/App/SidebarActionButtons.hpp"
 
 #include <memory>
 
@@ -16,7 +17,10 @@ struct ExtrudersSequence;
 
 namespace Slic3r::App::Preview {
 
-class PreviewRenderModule final : public Platform::AbstractRenderModule, public Biz::IFDMResultCacheChangedListener
+class PreviewRenderModule final : public Platform::AbstractRenderModule,
+                                  public Biz::ISelectedBedInstanceChangedListener,
+                                  public Biz::IFDMResultCacheChangedListener,
+                                  public Biz::IStatusCacheChangedListener
 {
 public:
     PreviewRenderModule(const Domain::Workbench& workbench, Biz::ProjectInteractor& project_interactor)
@@ -31,9 +35,21 @@ public:
     void render_imgui(Render::CommandBuffer& cmd_buffer) override;
     void on_scene_mouse_event(const Platform::MouseEvent& e) override;
     void on_scene_keyboard_event(const Platform::KeyboardEvent& e) override;
+    void add_type_changed_listener(IRenderModuleChangedListener* l) override;
+    void remove_type_changed_listener(IRenderModuleChangedListener* l) override;
     /**@}*/
 
+    void on_selected_bed_instance_changed(
+        Domain::SelectionId project_id,
+        Domain::SelectionId container_id,
+        Domain::SelectionId bed_instance_id
+    ) override;
+
     void on_fdm_result_cache_changed(
+        const Biz::Slicing::SlicingId id
+    ) override;
+
+    void on_status_cache_changed(
         const Biz::Slicing::SlicingId id
     ) override;
 
@@ -42,7 +58,7 @@ protected:
      * @name Implementation of Platform::AbstractRenderModule protected interface
      * @{
      */
-    void on_init(Render::Device& device) override;
+    void on_init(Render::Device& device, Render::ImguiRender& imgui_render) override;
     void on_activated() override;
     void on_deactivated() override;
     void on_screen_resized() override;
@@ -62,9 +78,12 @@ private:
     // temporary variable to allow to switch yoga layout on/off
     bool m_use_yoga_layout{ true };
 
+    SidebarActionButtons m_sidebar_actions_panel;
+
 private:
     void init_gizmos();
     void init_viewer(Render::Device& device);
+    void send_active_bed_data_to_viewer(const Biz::Slicing::SlicingId id);
     void send_data_to_viewer(const Biz::Slicing::FDMResult& result);
     void init_scene_layout();
     void send_data_to_viewer_from_file(const std::string& filename);

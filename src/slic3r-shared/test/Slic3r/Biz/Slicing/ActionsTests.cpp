@@ -165,7 +165,7 @@ TEST_CASE_METHOD(
     slicing.remove_bed(id.bed_instance_id);
 
     REQUIRE(wait_for_status(dispatcher, status_listener, 3s, [](const StatusEvents &events){
-        return events.size() == 5;
+        return events.size() == 6;
     }));
 
     const StatusEvents expected_events{
@@ -174,6 +174,7 @@ TEST_CASE_METHOD(
         StatusEvent{Status::Running, id},
         StatusEvent{Status::Stopping, id},
         StatusEvent{Status::Modified, id},
+        StatusEvent{Status::Removed, id},
     };
 
     CHECK_THAT(status_listener.status_events, Equals(expected_events));

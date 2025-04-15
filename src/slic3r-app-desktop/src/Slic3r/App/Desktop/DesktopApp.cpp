@@ -65,11 +65,9 @@ bool DesktopApp::OnInit()
     Biz::Platform::PlatformServices::instance().set_render_request_handler(&canvas);
     m_main_frame->update_canvas_ui_settings();
 
-    // >>> replace m_plater_module with m_preview_module in the following line to test libvgcode wrapper
+    m_navigator.on_init(*m_plater_module, *m_preview_module, canvas);
+
     canvas.set_render_module(m_plater_module.get());
-    m_project_interactor->fdm_result_cache().add_listener<Biz::IFDMResultCacheChangedListener>(
-        m_preview_module.get()
-    );
 
     m_main_frame->Show();
 

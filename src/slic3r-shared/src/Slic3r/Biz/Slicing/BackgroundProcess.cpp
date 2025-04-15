@@ -75,6 +75,7 @@ std::ostream& operator<<(std::ostream& output, const Status& status) {
         case Status::Finished: return output << "Finished";
         case Status::Modified: return output << "Modified";
         case Status::Stopping: return output << "Stopping";
+        case Status::Removed: return output << "Removed";
         default: return output << "Unknown";
     }
 }
@@ -124,7 +125,13 @@ BackgroundProcess::BackgroundProcess(
     this->update(model, std::move(config), bed_instances);
 };
 
-BackgroundProcess::~BackgroundProcess() = default;
+BackgroundProcess::~BackgroundProcess() {
+    // Stop threads before sending status.
+    this->m_helper_thread = {};
+    this->m_thread = {};
+
+    m_on_status(Status::Removed);
+}
 
 void BackgroundProcess::update(
     Model& model,

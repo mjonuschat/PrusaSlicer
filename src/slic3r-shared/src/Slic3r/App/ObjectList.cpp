@@ -521,6 +521,11 @@ void ObjectList::update_selection_from_scene()
 
 bool ObjectList::render_tree(Domain::Vec2f size)
 {
+    // ysFIXME delete after new layout apply!!!
+    // Temporary fix for the assert in Debug mode
+    if (GImGui->CurrentWindow && std::string(GImGui->CurrentWindow->Name) == "Debug##Default")
+        return false;
+
     bool is_changed_selection = false;
     const float drop_area_height = 50.f;
     if (ImGui::BeginTable("##ObjectListTable", 4, table_flags, ImVec2(ImMax(100.f, size.x()), ImMax(100.f, size.y())))) {
@@ -1053,11 +1058,11 @@ void ObjectList::render_printable_icon(const Domain::ElementRef& sel_element, bo
 {
     if (hovered_current_row()) {
         if (icon_btn(ciPrintable, icon_str(is_printable ? ImGui::EyeOpen : ImGui::EyeClosed)))
-            propagate_printable(sel_element, !is_printable);
+            propagate_printable(!is_printable);
     }
     else if (!is_printable)
         if (icon_btn(ciPrintable, icon_str(ImGui::EyeClosed)))
-            propagate_printable(sel_element, !is_printable);
+            propagate_printable(!is_printable);
 }
 
 void ObjectList::render_overrides_icon(const Domain::ElementRef& sel_element, bool force_render)
@@ -1120,10 +1125,14 @@ void ObjectList::propagate_name_editing(const Domain::ElementRef& id, const std:
     m_scene_interactor->edit_name(id, new_name);
 }
 
-void ObjectList::propagate_printable(const Domain::ElementRef& sel_element, bool is_printable)
+void ObjectList::propagate_printable(bool is_printable)
 {
+    Biz::Scene::Selection sels;
+    sels.elements = std::vector<Domain::ElementRef>(selected_items.begin(), selected_items.end());
+    sels.normalize();
     // ask project interactor to change prinatble value for instance/object with id index
-    m_scene_interactor->set_printable(sel_element, is_printable);
+    for (const auto& sel_element : sels.elements)
+        m_scene_interactor->set_printable(sel_element, is_printable);
 }
 
 void ObjectList::ask_extract_selected_instances()

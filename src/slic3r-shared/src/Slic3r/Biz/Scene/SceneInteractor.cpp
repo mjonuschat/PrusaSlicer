@@ -235,6 +235,12 @@ void SceneInteractor::set_printable(const Domain::ElementRef& id, bool is_printa
         project.find_object_by_id(id.object_id)->printable = is_printable;
     else
         project.find_instance_by_id(id.object_id, id.instance_id)->printable = is_printable;
+
+    const Domain::ElementRefs updated{ id };
+    auto changes = update_instances_bed_placement(project, updated);
+
+    for (const auto& bed_ref : changes.updated_beds)
+        invoke_slicing_input_changed(bed_ref);
 }
 
 void SceneInteractor::extract_selected_instances()

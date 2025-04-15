@@ -16,12 +16,12 @@
 #include "Slic3r/Domain/Bed.hpp"
 #include "Slic3r/Domain/BedInstance.hpp"
 #include "Slic3r/App/Imgui/ImguiExtension.hpp"
+#include "Slic3r/App/IRenderModuleChangedListener.hpp"
 
 #include "Slic3r/App/Plater/History.hpp"
 #include "Slic3r/App/CubeView.hpp"
 #include "Slic3r/App/SidebarBed.hpp"
 #include "Slic3r/App/SidebarPrint.hpp"
-#include "Slic3r/App/Plater/SidebarSlice.hpp"
 
 #include <imgui/imgui.h>
 #include <Eigen/SVD>
@@ -38,9 +38,9 @@ namespace Slic3r::App::Plater {
 
 namespace TriMesh = Biz::Algorithms::TriangleMesh;
 
-void PlaterRenderModule::on_init(Render::Device& device)
+void PlaterRenderModule::on_init(Render::Device& device, Render::ImguiRender& imgui_render)
 {
-    AbstractRenderModule::on_init(device);
+    AbstractRenderModule::on_init(device, imgui_render);
     m_scene_presenter =
         std::make_unique<PlaterScenePresenter>(m_workbench, m_project_interactor, *m_device);
     m_project_interactor.add_listener<Biz::ISelectedProjectChangedListener>(m_scene_presenter.get());
@@ -87,9 +87,9 @@ void PlaterRenderModule::init_scene_layout()
     m_layout.set_history_render_fn([](Vec2f size, Vec2f pos) -> void
         { Plater::History::render(pos, size); });
 
-    m_sidebar_slice_panel.init(m_imgui_render, [this] {m_project_interactor.slicing_interactor().slice_all(); }, std::bind(&PlaterRenderModule::do_upload, this));
+    m_sidebar_actions_panel.on_init(&m_project_interactor, m_imgui_render, Render::ModuleType::Plater);
     m_layout.set_sidebar_slice_render_fn([this](Vec2f size, Vec2f pos) -> void
-        { m_sidebar_slice_panel.render(pos, size); });
+        { m_sidebar_actions_panel.render(pos, size); });
 
     // init toolbars
     static bool show_object_list{ true };
@@ -269,13 +269,14 @@ void PlaterRenderModule::init_scene()
 {
     auto& scene_interactor = m_project_interactor.scene_interactor();
 
-    const auto& bed = m_project_interactor.selected_project()
+    Domain::Project& project = m_project_interactor.selected_project();
+    const auto& bed = project
                           .config_containers()
                           .front()
                           ->bed();
 #if 1
     my_model_experinets(scene_interactor, bed);
-    ModelObjectPtrs& objects = m_project_interactor.selected_project().model().objects;
+    ModelObjectPtrs& objects = project.model().objects;
     override_config(objects[0]->config);
     override_config(objects[0]->volumes[0]->config);
     override_config(objects[0]->volumes[1]->config);
@@ -283,11 +284,13 @@ void PlaterRenderModule::init_scene()
     override_config(objects[2]->volumes[0]->config);
     override_config(objects[2]->volumes[1]->config);
 
- //   objects[1]->layer_config_ranges[{ 0., 1. }] = objects[0]->config;
+    ModelObject* obj = objects[1];
+//    obj->layer_config_ranges[{ 0., 1. }] = objects[0]->config;
 
-    objects[1]->instances[2]->printable = 
-    objects[1]->instances[4]->printable = 
-    objects[1]->instances[6]->printable = false;
+    scene_interactor.set_printable({ obj->id().id, obj->instances[2]->id().id, 0 }, false);
+    scene_interactor.set_printable({ obj->id().id, obj->instances[4]->id().id, 0 }, false);
+    scene_interactor.set_printable({ obj->id().id, obj->instances[6]->id().id, 0 }, false);
+
 #else
     const size_t x_size = 5;
     const size_t y_size = 5;
@@ -350,6 +353,11 @@ void PlaterRenderModule::init_gizmos()
     );
 }
 
+void PlaterRenderModule::on_status_cache_changed(const Biz::Slicing::SlicingId id)
+{
+    // request redraw
+    request_render();
+}
 
 void PlaterRenderModule::render_scene(Render::CommandBuffer& cmd_buffer)
 {
@@ -1023,6 +1031,16 @@ void PlaterRenderModule::on_scene_keyboard_event(
         Platform::AbstractRenderModule::on_scene_keyboard_event(e);
 }
 
+void PlaterRenderModule::add_type_changed_listener(IRenderModuleChangedListener* l)
+{
+    m_sidebar_actions_panel.add_listener<IRenderModuleChangedListener>(l);
+}
+
+void PlaterRenderModule::remove_type_changed_listener(IRenderModuleChangedListener* l)
+{
+    m_sidebar_actions_panel.remove_listener<IRenderModuleChangedListener>(l);
+}
+
 void PlaterRenderModule::on_activated()
 {
 
@@ -1040,21 +1058,6 @@ void PlaterRenderModule::on_screen_resized()
 
 void PlaterRenderModule::on_set_imgui_render()
 {
-}
-
-void PlaterRenderModule::on_fdm_cache_changed()
-{
-    // Show export / upload button that will trigger do_export()
-    m_sidebar_slice_panel.set_export_allowed(true);
-}
-
-void PlaterRenderModule::do_export()
-{
-    m_project_interactor.do_export(m_fdm_result_cache_changed_listener.get_last_id(), {});
-}
-void PlaterRenderModule::do_upload()
-{
-    m_project_interactor.do_upload(m_fdm_result_cache_changed_listener.get_last_id());
 }
 
 } // namespace Slic3r::App::Plater

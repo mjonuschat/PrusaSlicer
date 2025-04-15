@@ -138,16 +138,20 @@ void ProjectInteractor::remove_project(Domain::SelectionId project_id)
 
 void ProjectInteractor::do_export(const Slicing::SlicingId id, const boost::filesystem::path& dest_path)
 {
-    const Slicing::FDMResult& fdm_result = m_fdm_result_cache.get_result(id);
-    const std::string& gcode = fdm_result.gcode.str();
+    const std::optional<FDMResultRef> fdm_result{ m_fdm_result_cache.get_result(id) };
+    if (!fdm_result)
+        return;
+    const std::string& gcode = fdm_result.value().get().gcode.str();
     PrintHost::PrintHostConfig config{PrintHost::PrintHostType::Local,""};
     PrintHost::PrintHostJobData data{gcode, dest_path};
     m_print_host_interactor.export_gcode(std::move(config), std::move(data));
 }
 void ProjectInteractor::do_upload(const Slicing::SlicingId id)
 {
-    const Slicing::FDMResult& fdm_result = m_fdm_result_cache.get_result(id);
-    const std::string& gcode = fdm_result.gcode.str();
+    const std::optional<FDMResultRef> fdm_result{ m_fdm_result_cache.get_result(id) };
+    if (!fdm_result)
+        return;
+    const std::string& gcode = fdm_result.value().get().gcode.str();
     PrintHost::PrintHostConfig config{PrintHost::PrintHostType::OctoPrint,""};
     PrintHost::PrintHostJobData data{gcode, "filename.gcode"};
     m_print_host_interactor.upload_gcode(std::move(config), std::move(data));

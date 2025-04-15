@@ -27,6 +27,9 @@ namespace Slic3r::App::Platform {
 
 void AbstractRenderCanvas::set_render_module(AbstractRenderModule* render_module)
 {
+    if (m_render_module == render_module)
+        return;
+
     if (m_render_module)
         m_render_module->deactivate();
     m_render_module = render_module;
@@ -34,6 +37,17 @@ void AbstractRenderCanvas::set_render_module(AbstractRenderModule* render_module
         m_render_module->set_screen_size(m_screen_info);
         m_render_module->activate(this);
     }
+}
+
+void AbstractRenderCanvas::set_next_render_module(AbstractRenderModule* render_module)
+{
+    m_next_render_module = render_module;
+
+    /* Ensure the next render module is initialized here before the next rendering pass.
+     * Otherwise, for example, PreviewRenderModule::m_viewer wouldn't be initialized
+     * and couldn't correctly handle send_data_to_viewer().
+     * */
+    m_next_render_module->ensure_initialized(device(), imgui_render());
 }
 
 void AbstractRenderCanvas::set_screen_size(const Render::ScreenInfo& screen_info)
@@ -48,12 +62,7 @@ void AbstractRenderCanvas::render()
     if (m_render_module == nullptr)
         return;
 
-    if (!m_imgui_render) {
-        m_imgui_render = std::make_unique<Render::ImguiRender>(Render::Context::instance().device());
-        m_render_module->set_imgui_render(m_imgui_render.get());
-    }
-
-    m_render_module->ensure_initialized(device());
+    m_render_module->ensure_initialized(device(), imgui_render());
 
     if (m_pending_language.has_value() || m_pending_font_size.has_value() || m_pending_font_global_scale.has_value()) {
         m_imgui_render->set_font(m_pending_language, m_pending_font_size, m_pending_font_global_scale);
@@ -81,6 +90,18 @@ void AbstractRenderCanvas::render()
         assert_no_gl_error();
         end_frame(*cmd_buffer);
     }
+
+    if (m_next_render_module) {
+        set_render_module(m_next_render_module);
+        m_next_render_module = nullptr;
+    }
+}
+
+Render::ImguiRender& AbstractRenderCanvas::imgui_render()
+{
+    if (!m_imgui_render)
+        m_imgui_render = std::make_unique<Render::ImguiRender>(device());
+    return *m_imgui_render;
 }
 
 void AbstractRenderCanvas::set_font_size(float font_size)

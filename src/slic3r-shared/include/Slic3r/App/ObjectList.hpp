@@ -113,7 +113,7 @@ private:
 
     void propagate_selection();
     void propagate_name_editing(const Domain::ElementRef& id, const std::string& new_name);
-    void propagate_printable(const Domain::ElementRef& id, bool is_printable);
+    void propagate_printable(bool is_printable);
     void ask_extract_selected_instances();
     void show_overrides(const Domain::ElementRef& id);
     void extruder_clicked(const Domain::ElementRef& sel_element, bool is_bed);
