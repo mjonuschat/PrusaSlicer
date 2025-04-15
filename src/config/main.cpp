@@ -28,9 +28,12 @@ int main(int, char* [])
     using namespace Slic3r::Biz;
 
     PrinterSettings printer_s;
-    FilamentSettings fs;
-    PrintSettings ps;
-    ToolPrintSettings tps;
+    FilamentSettings fs1;
+    FilamentSettings fs2;
+    PrintSettings ps1;
+    PrintSettings ps2;
+    ToolPrintSettings tps1;
+    ToolPrintSettings tps2;
     ObjectSettings os;
     VolumeSettings vs;
 
@@ -42,15 +45,25 @@ int main(int, char* [])
 
     //load_from_legacy_file("test.ini", ps);
 
+    ps2.opt("gcode_comments").set(true);
 
-    FullConfigFDM fullc(printer_s, std::vector<FilamentSettings*>{&fs}, ps, std::vector<ToolPrintSettings*>{&tps});    
+
+    FullConfigFDM fullc1(printer_s, {fs1}, ps1, {tps1});
+    FullConfigFDM fullc2(printer_s, {fs2}, ps2, {tps2});
+
+    ConfigView cv(fullc1, os);
+    int a = cv.get<int>("perimeters");
+
+    std::vector<std::string> diff = fullc1.diff_keys(fullc2);
+
+    std::cout << std::endl;
     
-    std::cout << "PRINTER SETTINGS\n" << serialize(printer_s).dump(4) << std::endl << "=============================" << std::endl;
-    std::cout << "FILAMENT SETTINGS\n" << serialize(fs).dump(4) << std::endl << "=============================" << std::endl;
-    std::cout << "PRINT SETTINGS\n" << serialize(ps).dump(4) << std::endl << "=============================" << std::endl;
-    std::cout << "TOOL PRINT SETTINGS\n" << serialize(tps).dump(4) << std::endl << "=============================\n\n\n" << std::endl;
-    std::cout << "OBJECT SETTINGS\n" << serialize(os).dump(4) << std::endl << "=============================\n\n\n" << std::endl;
-    std::cout << "PHYSICAL PRINTER SETTINGS\n" << serialize(pps).dump(4) << std::endl << "=============================\n\n\n" << std::endl;
+    //std::cout << "PRINTER SETTINGS\n" << serialize(printer_s).dump(4) << std::endl << "=============================" << std::endl;
+    //std::cout << "FILAMENT SETTINGS\n" << serialize(fs).dump(4) << std::endl << "=============================" << std::endl;
+    //std::cout << "PRINT SETTINGS\n" << serialize(ps).dump(4) << std::endl << "=============================" << std::endl;
+    //std::cout << "TOOL PRINT SETTINGS\n" << serialize(tps).dump(4) << std::endl << "=============================\n\n\n" << std::endl;
+    //std::cout << "OBJECT SETTINGS\n" << serialize(os).dump(4) << std::endl << "=============================\n\n\n" << std::endl;
+    //std::cout << "PHYSICAL PRINTER SETTINGS\n" << serialize(pps).dump(4) << std::endl << "=============================\n\n\n" << std::endl;
 
     //for (const ConfigItemDef& def : s_defs_fdm.defs()) {
     //    bool tool_dependent = false;

@@ -131,6 +131,43 @@ ConfigItem& ConfigItem::operator=(const ConfigItem& other) {
 
 
 
+bool ConfigItem::operator==(const ConfigItem& other) const
+{
+    if (this->type() != other.type()
+     || this->m_is_nullable != other.m_is_nullable
+     || this->is_vector() != other.is_vector())
+        return false;
+    if (this->m_is_nullable && this->is_null() != other.is_null())
+        return false;
+    if (this->is_null())
+        return true;
+    if (this->type() == ConfigItemType::Enum && this->def().enum_type.type() != other.def().enum_type.type())
+        return false;
+    if (this->type() == ConfigItemType::FloatOrPercent) {
+        if (this->is_percent() != other.is_percent())
+            return false;
+        if (this->is_percent())
+            return get_percent() == other.get_percent();
+    }
+
+    switch (this->type()) {
+    case ConfigItemType::Bool    : return get<bool>() == other.get<bool>();
+    case ConfigItemType::Int     : return get<int>() == other.get<int>();
+    case ConfigItemType::String  : return get<std::string>() == other.get<std::string>();
+    case ConfigItemType::Enum    : return get_enum_as_int() == other.get_enum_as_int();
+    case ConfigItemType::Double  : [[fallthrough]];
+    case ConfigItemType::FloatOrPercent : [[fallthrough]];
+    case ConfigItemType::Percent : return get<double>() == other.get<double>();
+    case ConfigItemType::Bools   : return vec<bool>() == other.vec<bool>();
+    case ConfigItemType::Ints    : return vec<int>() == other.vec<int>();
+    case ConfigItemType::Doubles : return vec<double>() == other.vec<double>();
+    case ConfigItemType::Strings : return vec<std::string>() == other.vec<std::string>();
+    }
+    PANIC();
+}
+
+
+
 void ConfigItem::set_null(bool null)
 {
     ASSERT(m_is_nullable);
@@ -323,7 +360,6 @@ ConfigBox::ConfigBox(const ConfigDefinitions& defs, std::string_view type)
         if (belongs_here)
             m_items.emplace_back(ConfigItem(def, type));
     }
-    ASSERT(std::is_sorted(m_items.begin(), m_items.end()));
 }
 
 
@@ -331,7 +367,7 @@ ConfigBox::ConfigBox(const ConfigDefinitions& defs, std::string_view type)
 const ConfigItem& ConfigView::opt(const std::string_view key, int extruder_idx) const
 {
     for (auto rev_it = m_config_boxes.rbegin(); rev_it != m_config_boxes.rend(); ++rev_it) {
-        if (auto opt = (*rev_it)->has(key))
+        if (auto opt = rev_it->get().has(key))
             return **opt;
     }
     return m_full_config->opt(key, extruder_idx);
@@ -339,43 +375,47 @@ const ConfigItem& ConfigView::opt(const std::string_view key, int extruder_idx) 
 
 
 
-void FullConfig::add(const ConfigBox* box)
+void FullConfig::add(const ConfigBox& box)
 {
-    for (const ConfigItem& item : *box) {
+    for (const ConfigItem& item : box) {
         if (auto it_m = m_multi_items.find(item.name()); it_m != m_multi_items.end() && ! item.is_null())
-            it_m->second = std::vector<const ConfigItem*>(it_m->second.size(), &item);
+            it_m->second = std::vector<ConfigItem>(it_m->second.size(), item);
         else {
             auto it_s = m_single_items.find(item.name());
             if (it_s == m_single_items.end() || !item.is_null())
-                m_single_items[item.name()] = &item;
+                m_single_items.emplace(item.name(), item);
         }
     }
 }
 
 
 
-void FullConfig::add(const std::vector<const ConfigBox*> boxes)
+void FullConfig::add(const std::vector<std::reference_wrapper<const ConfigBox>>& boxes)
 {
     std::set<std::string> box_types;
 
     for (size_t box_id=0; box_id<boxes.size(); ++box_id) {
-        const ConfigBox& box = *boxes[box_id];
+        const ConfigBox& box = boxes[box_id];
         box_types.insert(std::string(box.type()));
 
         for (const ConfigItem& item : box) {
             if (auto it_s = m_single_items.find(item.name()); it_s != m_single_items.end()) {
                 ASSERT(m_multi_items.find(item.name()) == m_multi_items.end());
-                m_multi_items.emplace(item.name(), std::vector<const ConfigItem*>(box_id, it_s->second));
+                m_multi_items.emplace(item.name(), std::vector<ConfigItem>(boxes.size(), it_s->second));
                 m_single_items.erase(it_s);
             }
 
             auto it_m = m_multi_items.find(item.name());
             if (it_m == m_multi_items.end())
-                it_m = m_multi_items.emplace(item.name(), std::vector<const ConfigItem*>()).first;
+                it_m = m_multi_items.emplace(item.name(), std::vector<ConfigItem>()).first;
 
-            if (box_id >= it_m->second.size() || ! item.is_null()) {
-                it_m->second.resize(box_id + 1);
-                it_m->second[box_id] = &item;
+            if (box_id < it_m->second.size() && !item.is_null()) {
+                // The element is already there, we should override it.
+                it_m->second[box_id] = item;
+            }
+            if (box_id >= it_m->second.size()) {
+                // Element is not there. Insert it even if it is null.
+                it_m->second.emplace_back(item);
             }
         }
     }
@@ -384,16 +424,38 @@ void FullConfig::add(const std::vector<const ConfigBox*> boxes)
 
 
 
+std::vector<std::string> FullConfig::diff_keys(const FullConfig& other) const
+{
+    ASSERT(this->name() == other.name());
+    std::vector<std::string> out;
+
+    for (const auto& [key, item] : this->m_single_items) {
+        auto it = other.m_single_items.find(key);
+        if (it == other.m_single_items.end() || it->second != item)
+            out.emplace_back(key);
+    }
+    for (const auto& [key, items] : this->m_multi_items) {
+        auto it = other.m_multi_items.find(key);
+        if (it == other.m_multi_items.end() || items != it->second) {
+            out.emplace_back(key);
+            break;
+        }
+    }
+    return out;
+}
+
+
+
 const ConfigItem& FullConfig::opt(const std::string_view key, int extruder_idx) const {
     if (extruder_idx == -1) {
         auto it = m_single_items.find(std::string(key));
         ASSERT(it != m_single_items.end());
-        return *it->second;
+        return it->second;
     } else {
         auto it = m_multi_items.find(std::string(key));
         ASSERT(it != m_multi_items.end());
         ASSERT(extruder_idx < it->second.size());
-        return *(it->second[extruder_idx]);
+        return it->second[extruder_idx];
     }
 }
 

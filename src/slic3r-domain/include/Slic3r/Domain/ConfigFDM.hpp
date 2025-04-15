@@ -157,42 +157,22 @@ class FullConfigFDM : public FullConfig
 {
 public:
     FullConfigFDM(const PrinterSettings& printer_s,
-                  const std::vector<FilamentSettings*>& filament_s,
+                  const std::vector<std::reference_wrapper<const FilamentSettings>>& filament_s,
                   const PrintSettings& print_s,
-                  const std::vector<ToolPrintSettings*>& tool_print_s)
-    : m_printer_settings(printer_s), m_print_settings(print_s)
+                  const std::vector<std::reference_wrapper<const ToolPrintSettings>>& tool_print_s)
     {
-        
+        ASSERT(filament_s.size() == tool_print_s.size());
 
-        // Create copies of the boxes.
-        for (const FilamentSettings* fs : filament_s)
-            m_filament_settings.emplace_back(*fs);
-        for (const ToolPrintSettings* tps : tool_print_s)
-            m_tool_print_settings.emplace_back(*tps);
-
-        // Create vectors of pointers to the boxes.
-        std::vector<const ConfigBox*> filament_ptrs;
-        for (const FilamentSettings& fs : m_filament_settings)
-            filament_ptrs.push_back(&fs);
-        std::vector<const ConfigBox*> tool_print_ptrs;
-        for (const ToolPrintSettings& tps : m_tool_print_settings)
-            tool_print_ptrs.push_back(&tps);
-
-        ASSERT(filament_ptrs.size() == tool_print_ptrs.size());
-
-        // Finally pass this to the base class. It only gets pointers to ConfigBoxes
-        // and does not have to know which ones are there.
-        add(&m_printer_settings);
-        add(filament_ptrs);
-        add(&m_print_settings);
-        add(tool_print_ptrs);
+        // The base class only gets base pointers to base ConfigBoxes - it needs not to know what they are.
+        add(printer_s);
+        std::vector<std::reference_wrapper<const ConfigBox>> fil_s(filament_s.begin(), filament_s.end());
+        add(fil_s);
+        add(print_s);
+        std::vector<std::reference_wrapper<const ConfigBox>> tps_s(tool_print_s.begin(), tool_print_s.end());
+        add(tps_s);
     }
 
-private:
-    PrinterSettings m_printer_settings;
-    std::vector<FilamentSettings> m_filament_settings;
-    PrintSettings m_print_settings;
-    std::vector<ToolPrintSettings> m_tool_print_settings;
+    std::string_view name() const override { return "FDM"; }
 };
 
 } // namespace Slic3r::Domain

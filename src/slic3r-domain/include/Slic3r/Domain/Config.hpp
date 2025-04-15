@@ -174,7 +174,8 @@ public:
     ~ConfigItem();
     ConfigItem(const ConfigItem& other);
     ConfigItem& operator=(const ConfigItem& other);
-    bool operator<(const ConfigItem& other) const { return name() < other.name(); }
+    bool operator==(const ConfigItem& other) const;
+    bool operator!=(const ConfigItem& other) const { return ! (*this == other); }
 
     const ConfigItemDef& def() const { ASSERT(m_def); return *m_def; }
 
@@ -277,16 +278,23 @@ public:
         return opt(key, extruder_idx).get<T>();
     }
 
+    bool is_null(const std::string_view key, int extruder_idx = -1) const {
+        return opt(key, extruder_idx).is_null();
+    }
+
+    std::vector<std::string> diff_keys(const FullConfig& other) const;
+
+    virtual std::string_view name() const = 0;
     virtual ~FullConfig() = default;
 
 protected:
     FullConfig() = default;
-    void add(const ConfigBox* box);
-    void add(const std::vector<const ConfigBox*> boxes);
+    void add(const ConfigBox& box);
+    void add(const std::vector<std::reference_wrapper<const ConfigBox>>& boxes);
 
 private:
-    std::map<std::string, const ConfigItem*> m_single_items;
-    std::map<std::string, std::vector<const ConfigItem*>> m_multi_items;
+    std::map<std::string, ConfigItem> m_single_items;
+    std::map<std::string, std::vector<ConfigItem>> m_multi_items;
 
     friend class ConfigView; // Ugly, but we can probably live with that.
     const ConfigItem& opt(const std::string_view key, int extruder_idx) const;
@@ -313,8 +321,13 @@ public:
         return opt(key, extruder_idx).get<T>();
     }
 
+    bool is_null(const std::string_view key, int extruder_idx = -1) const {
+        return opt(key, extruder_idx).is_null();
+    }
+
+
 private:
-    std::vector<ConfigBox*> m_config_boxes;
+    std::vector<std::reference_wrapper<const ConfigBox>> m_config_boxes;
     const FullConfig* m_full_config;
 
     const ConfigItem& opt(const std::string_view key, int extruder_idx) const;
