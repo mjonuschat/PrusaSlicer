@@ -791,6 +791,9 @@ PRINT_CONFIG_CLASS_DEFINE(
     ((ConfigOptionBool,                 internal_perimeters_reverse))
 
     ((ConfigOptionFloat,                print_extrusion_multiplier))
+
+    ((ConfigOptionFloat,                small_perimeter_min_length))
+    ((ConfigOptionFloat,                small_perimeter_max_length))
 )
 
 PRINT_CONFIG_CLASS_DEFINE(
