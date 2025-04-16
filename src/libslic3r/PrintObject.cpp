@@ -958,6 +958,8 @@ bool PrintObject::invalidate_state_by_config_options(
             || opt_key == "bridge_speed"
             || opt_key == "external_perimeter_speed"
             || opt_key == "small_perimeter_speed"
+            || opt_key == "small_perimeter_min_length"
+            || opt_key == "small_perimeter_max_length"
             || opt_key == "solid_infill_speed"
             || opt_key == "first_layer_infill_speed"
             || opt_key == "top_solid_infill_speed") {
