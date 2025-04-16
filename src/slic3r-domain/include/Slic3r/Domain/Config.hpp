@@ -7,7 +7,6 @@
 #include <functional>
 #include <map>
 #include <optional>
-#include <set>
 #include <string>
 #include <string_view>
 #include <type_traits>
@@ -15,39 +14,67 @@
 
 #include "Slic3r/Assert.hpp"
 
-struct Percentage {
+
+namespace Slic3r::Domain {
+
+class Percentage {
 public:
+    Percentage() = default;
+    Percentage(const Percentage&) = default;
     Percentage(double v) : value{ v } {}
     explicit operator double() const { return value; }
+    bool operator==(const Percentage& other) const { return value == other.value; }
 private:
     double value = 0.;
 };
 
-namespace Slic3r::Domain {
 
-namespace detail {
-    class ConfigItemValue;
-}
+
+class FloatOrPercentage {
+public:
+    FloatOrPercentage() = default;
+    FloatOrPercentage(const FloatOrPercentage&) = default;
+    FloatOrPercentage(double value) : m_is_percentage{ false }, m_value { value } {}
+    FloatOrPercentage(Percentage percentage) : m_is_percentage{ true }, m_value { double(percentage) } {}
+    explicit operator double() const { ASSERT(! m_is_percentage); return m_value; }
+    explicit operator Percentage() const { ASSERT(m_is_percentage); return Percentage(m_value); }
+    bool operator==(const FloatOrPercentage& other) const { return m_value == other.m_value && m_is_percentage == other.m_is_percentage; }
+
+    bool is_percentage() const { return m_is_percentage; }
+
+
+private:
+    double m_value = 0.;
+    bool m_is_percentage = false;
+};
+
+
+
+enum class ConfigItemType
+{
+    None,           // Wraps around:
+    Bool,           // bool
+    Int,            // int
+    IntOptional,    // std::optional<int>
+    Double,         // double
+    String,         // std::string
+    Enum,           // int
+    FloatOrPercent, // FloatOrPercentage
+    Percent,        // Percentage
+    // Vector types follow, Bools MUST be first (see ConfigItem::is_vector)
+    Bools,          // std::vector<bool>
+    Ints,           // std::vector<int>
+    Doubles,        // std::vector<double>
+    Strings         // std::vector<std::string>
+};
+
+
 
 template<typename T>
 concept IsEnum = std::is_enum_v<T>;
 
-enum class ConfigItemType
-{
-    None,
-    Bool,
-    Int,
-    Double,
-    String,
-    Enum,
-    FloatOrPercent,
-    Percent,
-    Bools, // Vector types follow, Bools MUST be first (see ConfigItem::is_vector)
-    Ints,
-    Doubles,
-    Strings
-};
-
+template<typename T>
+concept IsNotEnum = ! std::is_enum_v<T>;
 
 struct EnumValueDef
 {
@@ -178,7 +205,6 @@ class ConfigItem
 public:
     ConfigItem(const ConfigItemDef& def, std::string_view box_type);
 
-    ~ConfigItem();
     ConfigItem(const ConfigItem& other);
     ConfigItem& operator=(const ConfigItem& other);
     bool operator==(const ConfigItem& other) const;
@@ -192,13 +218,9 @@ public:
     const std::string& name() const { return m_name; }
     ConfigItemType type() const { return m_type; }
 
-    // Getters and setters for single config values.
-    // Assert hard when the type does not match.
-    template<class T> T get() const;
-    template<class T> void set(T);
-
-    // Getters and setters for specific cases.
-    bool is_percent() const;
+    // Getters and setters. Assert hard when the type does not match.
+    template<IsNotEnum T> const T& get() const;
+    template<IsNotEnum T> void set(const T&);
 
     // Enums getters and setters have same signature as the general ones, but they are 
     // defined here so that they can be instantiated for types not known in Config.cpp.
@@ -216,13 +238,14 @@ public:
         ASSERT(typeid(T) == def().enum_type.type(), "Enum types mismatch.");
         return get_enum_as_int();
     }
+    // One helper to allow settings strings by string literals:
+    void set(const char* str) { set(std::string(str)); }
 
     // Getter and setter for enums for use with serialized values.
     void set_enum_from_string(std::string_view value);
     std::pair<std::string_view, std::string_view> get_enum_strings() const;
 
-    // Getters and setters for vector config options. They just
-    // expose the underlying vector for now.
+    // These methods expose the underlying vector to allow in-place modifications.
     template<class T> const std::vector<T>& vec() const { return const_cast<ConfigItem*>(this)->vec<T>(); }
     template<class T> std::vector<T>& vec();
 
@@ -230,9 +253,10 @@ public:
 private:
     std::string m_name{};
     ConfigItemType m_type{ ConfigItemType::None };
-    bool m_is_nullable{ false };
+    bool m_is_nullable{ false }; // This is an override of something.
+    bool m_is_null{ false };     // Whether it is currently overriding or not.
     const ConfigItemDef* m_def{ nullptr };
-    detail::ConfigItemValue* m_data{ nullptr };
+    std::any m_data;
 
     // Private setter/getter to avoid leaking implementation into header
     // through set_enum/get_enum templates.
@@ -256,6 +280,7 @@ public:
 
     std::string_view type() const { return m_type; }
     std::optional<const ConfigItem*> has(const std::string_view key) const;
+    // TODO: is_override_active
 
     std::vector<ConfigItem>::iterator begin() { return m_items.begin(); }
     std::vector<ConfigItem>::iterator end() { return m_items.end(); }

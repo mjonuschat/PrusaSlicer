@@ -192,7 +192,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
                      "Maximum layer height could be specified either as an absolute in millimeters value or as a percentage of nozzle diameter. "
                      "For printing with different nozzle diameters, it is recommended to use percentage value over absolute value.");
     def->mode = comAdvanced;
-    SET_DEFAULT(Percentage(100.));
+    SET_DEFAULT(FloatOrPercentage(Percentage(100.)));
 
     // Maximum extruder temperature, bumped to 1500 to support printing of glass.
     const int max_temp = 1500;
@@ -227,7 +227,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->min = 0;
     def->max_literal = 1000;
     def->mode = comExpert;
-    def->init_fn = [](ConfigItem& item) { item.set<double>(0.); };
+    SET_DEFAULT(FloatOrPercentage(0.));
 
     def = defs.add("bed_temperature", Int);
     def->belongs_to = { "filament_settings" };
@@ -407,7 +407,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->sidetext = L("mm/s or %");;
     def->min = 0;
     def->mode = comAdvanced;
-    def->init_fn = [](ConfigItem& item) { item.set<double>(0); };
+    SET_DEFAULT(FloatOrPercentage(0.));
 
     def             = defs.add("enable_dynamic_overhang_speeds", Bool);
     def->belongs_to = { "print_settings" };
@@ -432,7 +432,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->sidetext   = L("mm/s or %");
     def->min        = 0;
     def->mode       = comExpert;
-    def->init_fn = [](ConfigItem& item) { item.set<double>(15); };
+    SET_DEFAULT(FloatOrPercentage(15.));
 
     def             = defs.add("overhang_speed_1", FloatOrPercent);
     def->belongs_to = { "print_settings" };
@@ -442,7 +442,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->sidetext   = L("mm/s or %");
     def->min        = 0;
     def->mode       = comExpert;
-    def->init_fn = [](ConfigItem& item) { item.set<double>(15); };
+    SET_DEFAULT(FloatOrPercentage(15.));
 
     def             = defs.add("overhang_speed_2", FloatOrPercent);
     def->belongs_to = { "print_settings" };
@@ -452,7 +452,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->sidetext   = L("mm/s or %");
     def->min        = 0;
     def->mode       = comExpert;
-    def->init_fn = [](ConfigItem& item) { item.set<double>(20); };
+    SET_DEFAULT(FloatOrPercentage(20.));
 
     def             = defs.add("overhang_speed_3", FloatOrPercent);
     def->belongs_to = { "print_settings" };
@@ -462,7 +462,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->sidetext   = L("mm/s or %");
     def->min        = 0;
     def->mode       = comExpert;
-    def->init_fn = [](ConfigItem& item) { item.set<double>(25); };
+    SET_DEFAULT(FloatOrPercentage(25.));
 
     def          = defs.add("enable_dynamic_fan_speeds", Bool);
     def->belongs_to = { "filament_settings" };
@@ -627,6 +627,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("cooling_tube_length", Double);
     def->belongs_to = { "printer_settings" };
+    def->belongs_to_optional = { "filament_settings" };
     def->label = L("Cooling tube length");
     def->tooltip = L("Length of the cooling tube to limit space for cooling moves inside it.");
     def->sidetext = L("mm");
@@ -781,7 +782,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->min = 0;
     def->max_literal = 50;
     def->mode = comAdvanced;
-    def->init_fn = [](ConfigItem& item) { item.set<double>(0.); };
+    SET_DEFAULT(FloatOrPercentage(0.));
 
     def = defs.add("external_perimeter_speed", FloatOrPercent);
     def->belongs_to = { "print_settings" };
@@ -794,7 +795,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->ratio_over = "perimeter_speed";
     def->min = 0;
     def->mode = comAdvanced;
-    SET_DEFAULT(Percentage(50.));
+    SET_DEFAULT(FloatOrPercentage(Percentage(50.)));
 
     def = defs.add("external_perimeters_first", Bool);
     def->belongs_to = { "print_settings" };
@@ -906,7 +907,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->max = 1000;
     def->max_literal = 50;
     def->mode = comAdvanced;
-    SET_DEFAULT(0.);
+    SET_DEFAULT(FloatOrPercentage(0.));
 
     def = defs.add("fan_always_on", Bool);
     def->belongs_to = { "filament_settings" };
@@ -1374,7 +1375,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->min = 0;
     def->max_literal = 50;
     def->mode = comAdvanced;
-    SET_DEFAULT(Percentage(200.));
+    SET_DEFAULT(FloatOrPercentage(Percentage(200.)));
 
     def = defs.add("first_layer_height", FloatOrPercent);
     def->belongs_to = { "print_settings" };
@@ -1385,7 +1386,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->sidetext = L("mm");
     def->min = 0;
     def->ratio_over = "layer_height";
-    SET_DEFAULT(0.35);
+    SET_DEFAULT(FloatOrPercentage(0.35));
 
     def = defs.add("first_layer_speed", FloatOrPercent);
     def->belongs_to = { "print_settings" };
@@ -1397,7 +1398,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->min = 0;
     def->max_literal = 20;
     def->mode = comAdvanced;
-    SET_DEFAULT(30.);
+    SET_DEFAULT(FloatOrPercentage(30.));
 
     def = defs.add("first_layer_infill_speed", FloatOrPercent);
     def->belongs_to = { "print_settings" };
@@ -1410,7 +1411,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->sidetext = L("mm/s or %");
     def->min = 0;
     def->mode = comAdvanced;
-    SET_DEFAULT(0.);
+    SET_DEFAULT(FloatOrPercentage(0.));
 
     def = defs.add("first_layer_speed_over_raft", FloatOrPercent);
     def->belongs_to = { "print_settings" };
@@ -1421,7 +1422,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->sidetext = L("mm/s or %");
     def->min = 0;
     def->mode = comAdvanced;
-    SET_DEFAULT(30.);
+    SET_DEFAULT(FloatOrPercentage(30.));
 
     def = defs.add("first_layer_temperature", Int);
     def->belongs_to = { "filament_settings" };
@@ -1551,7 +1552,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->label = L("G-code substitutions");
     def->tooltip = L("Find / replace patterns in G-code lines and substitute them.");
     def->mode = comExpert;
-    def->init_fn = [](ConfigItem& item) { item.vec<std::string>() = {}; };
+    SET_DEFAULT(std::vector<std::string>{});
 
     def = defs.add("high_current_on_filament_swap", Bool);
     def->belongs_to = { "printer_settings" };
@@ -1646,7 +1647,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
         { 1000.,   L("1000 (unlimited)") }
     };
     def->mode = comAdvanced;
-    SET_DEFAULT(Percentage(600.));
+    SET_DEFAULT(FloatOrPercentage(Percentage(600.)));
     const ConfigItemDef* def_infill_anchor_min = def;
 
     def = defs.add("infill_anchor_max", FloatOrPercent);
@@ -1671,7 +1672,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
         { 1000.,   L("1000 (unlimited)") }
     };
     def->mode        = def_infill_anchor_min->mode;
-    SET_DEFAULT(50.);
+    SET_DEFAULT(FloatOrPercentage(50.));
 
     def = defs.add("infill_extruder", Int);
     def->belongs_to = { "print_settings" };
@@ -1694,7 +1695,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->min = 0;
     def->max_literal = 50;
     def->mode = comAdvanced;
-    SET_DEFAULT(0.);
+    SET_DEFAULT(FloatOrPercentage(0.));
 
     def = defs.add("infill_first", Bool);
     def->belongs_to = { "print_settings" };
@@ -1713,7 +1714,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->sidetext = L("mm or %");
     def->ratio_over = "perimeter_extrusion_width";
     def->mode = comExpert;
-    SET_DEFAULT(Percentage(25.));
+    SET_DEFAULT(FloatOrPercentage(Percentage(25.)));
 
     def = defs.add("infill_speed", Double);
     def->belongs_to = { "print_settings" };
@@ -2299,7 +2300,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->min = 0;
     def->max_literal = 50;
     def->mode = comAdvanced;
-    SET_DEFAULT(0.);
+    SET_DEFAULT(FloatOrPercentage(0.));
 
     def = defs.add("perimeter_speed", Double);
     def->belongs_to = { "print_settings" };
@@ -2630,7 +2631,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
                    "Set to zero to disable this feature.");
     def->sidetext = L("mm or %");
     def->mode = comAdvanced;
-    SET_DEFAULT(Percentage(15.));
+    SET_DEFAULT(FloatOrPercentage(Percentage(15.)))
 
     def = defs.add("seam_position", Enum);
     def->belongs_to = { "print_settings" };
@@ -2786,7 +2787,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->ratio_over = "perimeter_speed";
     def->min = 0;
     def->mode = comAdvanced;
-    SET_DEFAULT(15.);
+    SET_DEFAULT(FloatOrPercentage(15.));
 
     def = defs.add("solid_infill_below_area", Double);
     def->belongs_to = { "print_settings" };
@@ -2831,7 +2832,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->min = 0;
     def->max_literal = 50;
     def->mode = comAdvanced;
-    SET_DEFAULT(0.);
+    SET_DEFAULT(FloatOrPercentage(0.));
 
     def = defs.add("solid_infill_speed", FloatOrPercent);
     def->belongs_to = { "print_settings" };
@@ -2845,7 +2846,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->aliases = { "solid_infill_feed_rate" };
     def->min = 0;
     def->mode = comAdvanced;
-    SET_DEFAULT(20.);
+    SET_DEFAULT(FloatOrPercentage(20.));
 
     /* TODO : shortcut - maybe remove it?
     def = defs.add("solid_layers", Int);
@@ -3036,7 +3037,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->max_literal = 10;
     def->mode = comAdvanced;
     // Default is half the external perimeter width.
-    SET_DEFAULT(Percentage(50.));
+    SET_DEFAULT(FloatOrPercentage(Percentage(50.)));
 
     def = defs.add("support_material_angle", Double);
     def->belongs_to = { "print_settings" };
@@ -3124,7 +3125,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->min = 0;
     def->max_literal = 50;
     def->mode = comAdvanced;
-    SET_DEFAULT(0.);
+    SET_DEFAULT(FloatOrPercentage(0.));
 
     def = defs.add("support_material_interface_contact_loops", Bool);
     def->belongs_to = { "print_settings" };
@@ -3210,7 +3211,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->ratio_over = "support_material_speed";
     def->min = 0;
     def->mode = comAdvanced;
-    SET_DEFAULT(Percentage(100.));
+    SET_DEFAULT(FloatOrPercentage(Percentage(100.)));
 
     def = defs.add("support_material_pattern", Enum);
     def->belongs_to = { "print_settings" };
@@ -3470,7 +3471,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->min = 0;
     def->max_literal = 50;
     def->mode = comAdvanced;
-    SET_DEFAULT(0.);
+    SET_DEFAULT(FloatOrPercentage(0.));
 
     def = defs.add("top_solid_infill_speed", FloatOrPercent);
     def->belongs_to = { "print_settings" };
@@ -3485,7 +3486,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->ratio_over = "solid_infill_speed";
     def->min = 0;
     def->mode = comAdvanced;
-    SET_DEFAULT(15.);
+    SET_DEFAULT(FloatOrPercentage(15.));
 
     def = defs.add("top_solid_layers", Int);
     def->belongs_to = { "print_settings" };
@@ -3736,7 +3737,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->sidetext = L("mm or %");
     def->mode = comExpert;
     def->min = 0;
-    SET_DEFAULT(Percentage(100.));
+    SET_DEFAULT(FloatOrPercentage(Percentage(100.)));
 
     def = defs.add("wall_transition_filter_deviation", FloatOrPercent);
     def->belongs_to = { "print_settings" };
@@ -3752,7 +3753,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->sidetext = L("mm or %");
     def->mode = comExpert;
     def->min = 0;
-    SET_DEFAULT(Percentage(25.));
+    SET_DEFAULT(FloatOrPercentage(Percentage(25.)));
 
     def = defs.add("wall_transition_angle", Double);
     def->belongs_to = { "print_settings" };
@@ -3789,7 +3790,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->sidetext = L("mm or %");
     def->mode = comExpert;
     def->min = 0;
-    SET_DEFAULT(Percentage(25.));
+    SET_DEFAULT(FloatOrPercentage(Percentage(25.)));
 
     def = defs.add("min_bead_width", FloatOrPercent);
     def->belongs_to = { "print_settings" };
@@ -3802,7 +3803,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->sidetext = L("mm or %");
     def->mode = comExpert;
     def->min = 0;
-    SET_DEFAULT(Percentage(85.));
+    SET_DEFAULT(FloatOrPercentage(Percentage(85.)));
 
     // TODO: Check overrides at the very end of init_fff_params(). That needs to be done after
     // we migrate to toolprint_settings - so far, the retractions are vectors in printer settings,

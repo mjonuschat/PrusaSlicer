@@ -77,7 +77,6 @@ add_library(slic3r-domain
     include/Slic3r/Domain/ConfigFDM.hpp
     include/Slic3r/Domain/ConfigPhysical.hpp
 
-    src/Slic3r/Domain/ConfigItemValue.hpp
     src/Slic3r/Domain/Config.cpp
     src/Slic3r/Domain/ConfigFDM.cpp
     src/Slic3r/Domain/ConfigPhysical.cpp

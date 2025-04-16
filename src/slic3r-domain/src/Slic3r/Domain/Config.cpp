@@ -1,11 +1,8 @@
 #include "Slic3r/Domain/Config.hpp"
 #include "Slic3r/Assert.hpp"
 
-#include "ConfigItemValue.hpp"
-
 #include <algorithm>
-
-using namespace Slic3r::Domain::detail;
+#include <set>
 
 namespace Slic3r::Domain {
 
@@ -71,29 +68,30 @@ void ConfigDefinitions::check_valid() const
 
 ConfigItem::ConfigItem(const ConfigItemDef& def, std::string_view box_type)
     : m_def{ &def },
-        m_type{ def.type },
-        m_data{ nullptr },
+        m_type{ def.type  },
+        m_data{ std::any()},
         m_is_nullable{ false },
         m_name{ def.name } {
-        // Read the def and create the respective polymorphic object to store the payload.
+        // Read the def and create the respective object to store the payload.
         switch (def.type) {
-        case ConfigItemType::Bool    : m_data = new ConfigItemValueBool;    break;
-        case ConfigItemType::Int     : m_data = new ConfigItemValueInt;     break;
-        case ConfigItemType::Double  : m_data = new ConfigItemValueDouble;  break;
-        case ConfigItemType::String  : m_data = new ConfigItemValueString;  break;
-        case ConfigItemType::Enum    : m_data = new ConfigItemValueEnum;    break;
-        case ConfigItemType::Percent : m_data = new ConfigItemValuePercent; break;
-        case ConfigItemType::FloatOrPercent : m_data = new ConfigItemValueFloatOrPercent; break;
-        case ConfigItemType::Bools   : m_data = new ConfigItemValueBools;   break;
-        case ConfigItemType::Ints    : m_data = new ConfigItemValueInts;    break;
-        case ConfigItemType::Doubles : m_data = new ConfigItemValueDoubles; break;
-        case ConfigItemType::Strings : m_data = new ConfigItemValueStrings; break;
+        case ConfigItemType::Bool    :        m_data = bool();                     break;
+        case ConfigItemType::Int     :        m_data = int();                      break;
+        case ConfigItemType::IntOptional :    m_data = std::optional<int>();       break;
+        case ConfigItemType::Double  :        m_data = double();                   break;
+        case ConfigItemType::String  :        m_data = std::string();              break;
+        case ConfigItemType::Enum    :        m_data = int();                      break;
+        case ConfigItemType::Percent :        m_data = Percentage();               break;
+        case ConfigItemType::FloatOrPercent : m_data = FloatOrPercentage();        break;
+        case ConfigItemType::Bools   :        m_data = std::vector<bool>();        break;
+        case ConfigItemType::Ints    :        m_data = std::vector<int>();         break;
+        case ConfigItemType::Doubles :        m_data = std::vector<double>();      break;
+        case ConfigItemType::Strings :        m_data = std::vector<std::string>(); break;
         default : PANIC();
         }
         m_is_nullable = std::any_of(def.belongs_to_optional.begin(), def.belongs_to_optional.end(),
             [&box_type](const auto& t) { return box_type == t; });
         if (m_is_nullable)
-            set_null(true); // nullables are null by default.
+            set_null(true); // Overrides are null by default.
         if (def.init_fn)
             def.init_fn(*this);
         else
@@ -102,16 +100,11 @@ ConfigItem::ConfigItem(const ConfigItemDef& def, std::string_view box_type)
 
 
 
-ConfigItem::~ConfigItem() {
-    delete m_data;
-}
-
-
 ConfigItem::ConfigItem(const ConfigItem& other)
 : m_def(other.m_def),
     m_type(other.m_type),
     m_is_nullable(other.m_is_nullable),
-    m_data(other.m_data->clone()),
+    m_data(other.m_data),
     m_name(other.m_name)
 {}
 
@@ -120,8 +113,7 @@ ConfigItem::ConfigItem(const ConfigItem& other)
 ConfigItem& ConfigItem::operator=(const ConfigItem& other) {
     if (this == &other)
         return *this;  // Self-assignment check
-    delete m_data;
-    m_data = other.m_data->clone();
+    m_data = other.m_data;
     m_type = other.m_type;
     m_is_nullable = other.m_is_nullable;
     m_def = other.m_def;
@@ -134,33 +126,32 @@ ConfigItem& ConfigItem::operator=(const ConfigItem& other) {
 bool ConfigItem::operator==(const ConfigItem& other) const
 {
     if (this->type() != other.type()
-     || this->m_is_nullable != other.m_is_nullable
-     || this->is_vector() != other.is_vector())
+     || this->is_vector() != other.is_vector()
+     || this->name() != other.name())
         return false;
-    if (this->m_is_nullable && this->is_null() != other.is_null())
+    if (this->m_is_null != other.m_is_null)
         return false;
-    if (this->is_null())
-        return true;
     if (this->type() == ConfigItemType::Enum && this->def().enum_type.type() != other.def().enum_type.type())
         return false;
-    if (this->type() == ConfigItemType::FloatOrPercent) {
-        if (this->is_percent() != other.is_percent())
-            return false;
-    }
+    if (this->m_is_nullable && this->is_null())
+        return true; // Both are set to null.
 
     switch (this->type()) {
-    case ConfigItemType::Bool    : return get<bool>() == other.get<bool>();
-    case ConfigItemType::Int     : return get<int>() == other.get<int>();
-    case ConfigItemType::String  : return get<std::string>() == other.get<std::string>();
-    case ConfigItemType::Enum    : return get_enum_as_int() == other.get_enum_as_int();
-    case ConfigItemType::Double  : return get<double>() == other.get<double>();
-    case ConfigItemType::FloatOrPercent: return (this->is_percent() ? double(get<Percentage>()) == double(other.get<Percentage>()) : get<double>() == other.get<double>());
-    case ConfigItemType::Percent : return double(get<Percentage>()) == double(other.get<Percentage>());
-    case ConfigItemType::Bools   : return vec<bool>() == other.vec<bool>();
-    case ConfigItemType::Ints    : return vec<int>() == other.vec<int>();
-    case ConfigItemType::Doubles : return vec<double>() == other.vec<double>();
-    case ConfigItemType::Strings : return vec<std::string>() == other.vec<std::string>();
+    case ConfigItemType::Bool    :        return std::any_cast<bool>(m_data) == std::any_cast<bool>(other.m_data); break;
+    case ConfigItemType::Int     :        return std::any_cast<int>(m_data)  == std::any_cast<int>(other.m_data); break;
+    case ConfigItemType::IntOptional :    return std::any_cast<std::optional<int>>(m_data) == std::any_cast<std::optional<int>>(other.m_data); break;
+    case ConfigItemType::Double  :        return std::any_cast<double>(m_data) == std::any_cast<double>(other.m_data); break;
+    case ConfigItemType::String  :        return std::any_cast<std::string>(m_data) == std::any_cast<std::string>(other.m_data); break;
+    case ConfigItemType::Enum    :        return std::any_cast<int>(m_data) == std::any_cast<int>(other.m_data); break;
+    case ConfigItemType::Percent :        return std::any_cast<Percentage>(m_data) == std::any_cast<Percentage>(other.m_data); break;
+    case ConfigItemType::FloatOrPercent : return std::any_cast<FloatOrPercentage>(m_data) == std::any_cast<FloatOrPercentage>(other.m_data); break;
+    case ConfigItemType::Bools   :        return *std::any_cast<std::vector<bool>>(&m_data) == *std::any_cast<std::vector<bool>>(&other.m_data); break;
+    case ConfigItemType::Ints    :        return *std::any_cast<std::vector<int>>(&m_data) == *std::any_cast<std::vector<int>>(&other.m_data); break;
+    case ConfigItemType::Doubles :        return *std::any_cast<std::vector<double>>(&m_data) == *std::any_cast<std::vector<double>>(&other.m_data); break;
+    case ConfigItemType::Strings :        return *std::any_cast<std::vector<std::string>>(&m_data) == *std::any_cast<std::vector<std::string>>(&other.m_data); break;
+    default : PANIC();
     }
+
     PANIC();
 }
 
@@ -169,12 +160,12 @@ bool ConfigItem::operator==(const ConfigItem& other) const
 void ConfigItem::set_null(bool null)
 {
     ASSERT(m_is_nullable);
-    m_data->set_null(null);
+    m_is_null = null;
 }
 
 bool ConfigItem::is_null() const
 {
-    return m_data->get_null();
+    return m_is_null;
 }
 
 
@@ -187,101 +178,29 @@ struct is_optional<std::optional<T> > : std::true_type {};
 
 
 
-template <class T>
-T ConfigItem::get() const
+template <IsNotEnum T>
+const T& ConfigItem::get() const
 {
-    ASSERT(!is_optional<T>() || (m_def && m_def->belongs_to.empty()) || (!m_def && m_is_nullable));
-    if constexpr (is_optional<T>())
-        if (m_data->get_null())
-            return std::nullopt;
-
-    if constexpr (std::is_same_v<T, bool> || std::is_same_v<T, std::optional<bool>>) {
-        ASSERT(m_type == ConfigItemType::Bool);
-        return static_cast<ConfigItemValueBool*>(m_data)->get();
+    ASSERT(! m_is_null);
+    try {
+        const T* value = std::any_cast<T>(&m_data);
+        ASSERT(value);
+        return *value;
+    } catch (const std::bad_any_cast&) {
+        PANIC("Type does not match");
     }
-    if constexpr (std::is_same_v<T, int> || std::is_same_v<T, std::optional<int>>) {
-        ASSERT(m_type == ConfigItemType::Int);
-        return static_cast<ConfigItemValueInt*>(m_data)->get();
-    }
-    if constexpr (std::is_same_v<T, double> || std::is_same_v<T, std::optional<double>>) {
-        if (m_type == ConfigItemType::Double)
-            return static_cast<ConfigItemValueDouble*>(m_data)->get();
-        else if (m_type == ConfigItemType::FloatOrPercent) {
-            ASSERT(!static_cast<ConfigItemValueFloatOrPercent*>(m_data)->is_percent());
-            return static_cast<ConfigItemValueFloatOrPercent*>(m_data)->get();
-        }
-        else
-            PANIC();
-    }
-    if constexpr (std::is_same_v<T, Percentage> || std::is_same_v<T, std::optional<Percentage>>) {
-        if (m_type == ConfigItemType::Percent)
-            return static_cast<ConfigItemValuePercent*>(m_data)->get();
-        else if (m_type == ConfigItemType::FloatOrPercent) {
-            ASSERT(static_cast<ConfigItemValueFloatOrPercent*>(m_data)->is_percent());
-            return static_cast<ConfigItemValueFloatOrPercent*>(m_data)->get();
-        }
-        else
-            PANIC();
-    }
-    if constexpr (std::is_same_v<T, std::string> || std::is_same_v<T, std::optional<std::string>>) {
-        ASSERT(m_type == ConfigItemType::String);
-        return static_cast<ConfigItemValueString*>(m_data)->get();
-    }
-    PANIC();
-    throw std::exception(); // to silence a warning
+    throw std::exception(); // silence warning
 }
 
 
 
-template<class T>
-void ConfigItem::set(T value)
+template<IsNotEnum T>
+void ConfigItem::set(const T& value)
 {
-    if constexpr (std::is_same_v<T, bool>) {
-        ASSERT(m_type == ConfigItemType::Bool);
-        static_cast<ConfigItemValueBool*>(m_data)->set(value);
-    }
-    else if constexpr (std::is_same_v<T, int>) {
-        ASSERT(m_type == ConfigItemType::Int);
-        static_cast<ConfigItemValueInt*>(m_data)->set(value);
-    }
-    else if constexpr (std::is_same_v<T, double>) {
-        if (m_type == ConfigItemType::Double)
-            static_cast<ConfigItemValueDouble*>(m_data)->set(value);
-        else if (m_type == ConfigItemType::FloatOrPercent) {
-            static_cast<ConfigItemValueFloatOrPercent*>(m_data)->set(value);
-            static_cast<ConfigItemValueFloatOrPercent*>(m_data)->set_percent(false);
-        }
-        else
-            PANIC();
-    }
-    else if constexpr (std::is_same_v<T, Percentage>) {
-        if (m_type == ConfigItemType::Percent)
-            static_cast<ConfigItemValuePercent*>(m_data)->set(double(value));
-        else if (m_type == ConfigItemType::FloatOrPercent) {
-            static_cast<ConfigItemValueFloatOrPercent*>(m_data)->set(double(value));
-            static_cast<ConfigItemValueFloatOrPercent*>(m_data)->set_percent(true);
-        } else {
-            PANIC();
-        }
-    }
-    else if constexpr (std::is_same_v<T, std::string>) {
-        ASSERT(m_type == ConfigItemType::String);
-        static_cast<ConfigItemValueString*>(m_data)->set(value);
-    }
-    else if constexpr (std::is_same_v<T, const char*>) {
-        this->set(std::string(value));
-    }
-    else {
-        PANIC();
-        throw std::exception(); // silence warning
-    }
-}
-
-
-
-bool ConfigItem::is_percent() const {
-    ASSERT(m_type == ConfigItemType::FloatOrPercent);
-    return static_cast<ConfigItemValueFloatOrPercent*>(m_data)->is_percent();
+    if (m_data.type() == typeid(T))
+        m_data = std::make_any<T>(value);
+    else
+        PANIC("Type does not match.");
 }
 
 
@@ -290,7 +209,7 @@ void ConfigItem::set_enum_from_string(std::string_view value) {
     ASSERT(m_type == ConfigItemType::Enum);
     for (const EnumValueDef& evd : def().enum_values) {
         if (evd.str_serialized == value) {
-            static_cast<ConfigItemValueEnum*>(m_data)->set(int(evd.enum_value));
+            m_data = std::make_any<int>(int(evd.enum_value));
             return;
         }
     }
@@ -299,7 +218,7 @@ void ConfigItem::set_enum_from_string(std::string_view value) {
 
 std::pair<std::string_view, std::string_view> ConfigItem::get_enum_strings() const {
     for (const EnumValueDef& evd : def().enum_values)
-        if (evd.enum_value == static_cast<ConfigItemValueEnum*>(m_data)->get())
+        if (evd.enum_value == std::any_cast<int>(m_data))
             return std::make_pair(std::string_view(evd.str_serialized), std::string_view(evd.str_ui));
     PANIC();
     throw std::exception();
@@ -307,14 +226,16 @@ std::pair<std::string_view, std::string_view> ConfigItem::get_enum_strings() con
 
 void ConfigItem::set_enum_from_int(int value)
 {
+    // No check for type here, this is private method and the check is upstack.
     ASSERT(std::find_if(def().enum_values.begin(), def().enum_values.end(),
         [value](const EnumValueDef& evd) { return evd.enum_value == value; }) != def().enum_values.end());
-    static_cast<ConfigItemValueInt*>(m_data)->set(int(value));
+    m_data = std::make_any<int>(int(value));
 }
 
 int ConfigItem::get_enum_as_int() const
 {
-    return static_cast<int>(static_cast<ConfigItemValueInt*>(m_data)->get());
+    // No check here, this is private method and the check is upstack.
+    return std::any_cast<int>(m_data);
 }
 
 
@@ -322,24 +243,13 @@ int ConfigItem::get_enum_as_int() const
 template<class T>
 std::vector<T>& ConfigItem::vec()
 {
-    if constexpr (std::is_same_v<T, bool>) {
-        ASSERT(m_type == ConfigItemType::Bools);
-        return static_cast<ConfigItemValueBools*>(m_data)->get();
-    }
-    else if constexpr (std::is_same_v<T, int>) {
-        ASSERT(m_type == ConfigItemType::Ints);
-        return static_cast<ConfigItemValueInts*>(m_data)->get();
-    }
-    else if constexpr (std::is_same_v<T, double>) {
-        ASSERT(m_type == ConfigItemType::Doubles);
-        return static_cast<ConfigItemValueDoubles*>(m_data)->get();
-    }
-    else if constexpr (std::is_same_v<T, std::string>) {
-        ASSERT(m_type == ConfigItemType::Strings);
-        return static_cast<ConfigItemValueStrings*>(m_data)->get();
-    }
-    PANIC();
-    throw std::exception(); // silence warning
+    ASSERT(is_vector());
+    try {
+        std::vector<T>* vec_ptr = std::any_cast<std::vector<T>>(&m_data);
+        ASSERT(vec_ptr, "Type does not match.", vec_ptr, type());
+        return *vec_ptr;
+    } catch (const std::bad_any_cast&) {}
+    PANIC("Type does not match.", this->type());
 }
 
 
@@ -349,7 +259,7 @@ ConfigItem& ConfigBox::opt(const std::string_view key) {
         [](const ConfigItem& i, const auto& val) { return i.name() < val; });
     if (it != m_items.end() && it->name() == key)
         return *it;
-    PANIC();
+    PANIC("Option not found", key);
     throw std::exception(); // to silence a warning
 }
 
@@ -428,26 +338,43 @@ void FullConfig::add(const std::vector<std::reference_wrapper<const ConfigBox>>&
 
         for (const ConfigItem& item : box) {
             if (auto it_s = m_single_items.find(item.name()); it_s != m_single_items.end()) {
+                // This item is already in the single list. Apparently there are overrides at the extruder level.
+                // Move it to the multi list and copy the value for all extruders for now.
                 ASSERT(m_multi_items.find(item.name()) == m_multi_items.end());
                 m_multi_items.emplace(item.name(), std::vector<ConfigItem>(boxes.size(), it_s->second));
                 m_single_items.erase(it_s);
             }
 
             auto it_m = m_multi_items.find(item.name());
-            if (it_m == m_multi_items.end())
+            if (it_m == m_multi_items.end()) {
+                // The item is not in the multi list yet. Default construct an empty vector for it.
                 it_m = m_multi_items.emplace(item.name(), std::vector<ConfigItem>()).first;
-
-            if (box_id < it_m->second.size() && !item.is_null()) {
-                // The element is already there, we should override it.
-                it_m->second[box_id] = item;
             }
-            if (box_id >= it_m->second.size()) {
-                // Element is not there. Insert it even if it is null.
+
+            // Right now, the vector is there and pointed to by it_m.
+            // It may not have all the elements though.
+
+            if (box_id < it_m->second.size()) {
+                if (!item.is_null()) {
+                    // The element is already there, and we should override it.
+                    it_m->second[box_id] = item;
+                } else {
+                    // No action needed. This does not override.
+                }
+            } else {
+                // Element is not there. Insert it.
+                ASSERT(box_id == it_m->second.size()); // Previous element should be there by now.
+                ASSERT(! item.is_null()); // It should never be null in this case.
                 it_m->second.emplace_back(item);
             }
         }
     }
-    ASSERT(box_types.size() == 1);
+    ASSERT(box_types.size() == 1, "Only boxes of the same type can be added in a vector like this.");
+    ASSERT(std::all_of(m_multi_items.begin(), m_multi_items.end(),
+        [this](const auto& pair) {
+            return pair.second.size() == m_multi_items.begin()->second.size();
+        }
+    ), "All vectors in the multi list must have the same size.");
 }
 
 
@@ -477,7 +404,7 @@ std::vector<std::string> ConfigView::diff_keys(const ConfigView& other) const
             break;
         }
     }
-    // Now the extra boxes:
+    // Now the extra boxes. Right now, all the extra boxes must be of the same type.
     ASSERT(this->m_config_boxes.size() == other.m_config_boxes.size());
     for (size_t i = 0; i < m_config_boxes.size(); ++i) {
         std::vector<std::string> diff = m_config_boxes[i].get().diff_keys(other.m_config_boxes[i].get());
@@ -506,24 +433,30 @@ const ConfigItem& FullConfig::opt(const std::string_view key, int extruder_idx) 
 
 
 // Explicit instantiations for getters.
-template bool ConfigItem::get<bool>() const;
-template int ConfigItem::get<int>() const;
-template double ConfigItem::get<double>() const;
-template Percentage ConfigItem::get<Percentage>() const;
-template std::string ConfigItem::get<std::string>() const;
-template std::optional<bool> ConfigItem::get<std::optional<bool>>() const;
-template std::optional<int> ConfigItem::get<std::optional<int>>() const;
-template std::optional<double> ConfigItem::get<std::optional<double>>() const;
-template std::optional<Percentage> ConfigItem::get<std::optional<Percentage>>() const;
-template std::optional<std::string> ConfigItem::get<std::optional<std::string>>() const;
+template const bool& ConfigItem::get<bool>() const;
+template const int& ConfigItem::get<int>() const;
+template const double& ConfigItem::get<double>() const;
+template const Percentage& ConfigItem::get<Percentage>() const;
+template const FloatOrPercentage& ConfigItem::get<FloatOrPercentage>() const;
+template const std::string& ConfigItem::get<std::string>() const;
+template const std::optional<int>& ConfigItem::get<std::optional<int>>() const;
+template const std::vector<bool>& ConfigItem::get<std::vector<bool>>() const;
+template const std::vector<int>& ConfigItem::get<std::vector<int>>() const;
+template const std::vector<double>& ConfigItem::get<std::vector<double>>() const;
+template const std::vector<std::string>& ConfigItem::get<std::vector<std::string>>() const;
 
 // Explicit instantiations for setters.
-template void ConfigItem::set(bool);
-template void ConfigItem::set(int);
-template void ConfigItem::set(double);
-template void ConfigItem::set(Percentage);
-template void ConfigItem::set(std::string);
-template void ConfigItem::set(const char*);
+template void ConfigItem::set(const bool&);
+template void ConfigItem::set(const int&);
+template void ConfigItem::set(const double&);
+template void ConfigItem::set(const Percentage&);
+template void ConfigItem::set(const FloatOrPercentage&);
+template void ConfigItem::set(const std::string&);
+template void ConfigItem::set(const std::optional<int>&);
+template void ConfigItem::set(const std::vector<bool>&);
+template void ConfigItem::set(const std::vector<int>&);
+template void ConfigItem::set(const std::vector<double>&);
+template void ConfigItem::set(const std::vector<std::string>&);
 
 // And the respective explicit instantiations.
 template std::vector<bool>& ConfigItem::vec();

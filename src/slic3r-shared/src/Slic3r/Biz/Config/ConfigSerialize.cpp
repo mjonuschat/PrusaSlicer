@@ -7,14 +7,21 @@ namespace Slic3r::Biz {
 
 using ConfigItem = Domain::ConfigItem;
 using ConfigItemType = Domain::ConfigItemType;
+using FloatOrPercentage = Domain::FloatOrPercentage;
+using Percentage = Domain::Percentage;
 
 static nlohmann::json serialize_float_or_percent(const ConfigItem& item)
 {
-    ASSERT(item.type() == ConfigItemType::FloatOrPercent || item.type() == ConfigItemType::Percent);
     nlohmann::json j;
-    bool is_percent = item.type() == ConfigItemType::Percent || item.is_percent();
-    j["value"] = (is_percent && item.type() == ConfigItemType::FloatOrPercent) ? double(item.get<Percentage>()) : item.get<double>();
-    j["is_percent"] = is_percent;
+    if (item.type() == ConfigItemType::Percent) {
+        j["value"] = double(item.get<Percentage>());
+        j["is_percent"] = true;
+    } else if (item.type() == ConfigItemType::FloatOrPercent) {
+        FloatOrPercentage fop = item.get<FloatOrPercentage>();
+        j["value"] = fop.is_percentage() ? double(Percentage(fop)) : double(fop);
+        j["is_percent"] = fop.is_percentage();
+    } else
+        PANIC("This function cannot be used with this ConfigItemType.");
     return j;
 }
 
