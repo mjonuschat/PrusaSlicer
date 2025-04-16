@@ -180,6 +180,8 @@ namespace Slic3r {
 
 #define EXTRUDER_CONFIG(OPT) m_config.OPT.get_at(m_writer.extruder()->id())
 
+constexpr float SMALL_PERIMETER_SPEED_RATIO_OFFSET = (-10);
+
 void GCodeGenerator::PlaceholderParserIntegration::reset()
 {
     this->failed_templates.clear();
@@ -3173,8 +3175,20 @@ std::string GCodeGenerator::extrude_perimeters(
     for (const GCode::ExtrusionOrder::Perimeter &perimeter : perimeters) {
         double speed{-1};
         // Apply the small perimeter speed.
-        if (perimeter.extrusion_entity->length() <= SMALL_PERIMETER_LENGTH)
-            speed = m_config.small_perimeter_speed.get_abs_value(m_config.perimeter_speed);
+        if (perimeter.extrusion_entity->role().is_perimeter() && !perimeter.extrusion_entity->role().is_thin_wall()) {
+            double min_length = scale_d(m_config.small_perimeter_min_length.value);
+            double max_length = scale_d(m_config.small_perimeter_max_length.value);
+            if (perimeter.extrusion_entity->length() < max_length) {
+                float factor = float(-speed + SMALL_PERIMETER_SPEED_RATIO_OFFSET);
+
+                if (perimeter.extrusion_entity->length() <= min_length) {
+                    speed = SMALL_PERIMETER_SPEED_RATIO_OFFSET;
+                } else if (max_length > min_length) {
+                    //use a negative speed: it will be use as a ratio when computing the real speed
+                    speed = SMALL_PERIMETER_SPEED_RATIO_OFFSET - (perimeter.extrusion_entity->length() - min_length) / (max_length - min_length);
+                }
+            }
+        }
         gcode += this->extrude_smooth_path(perimeter.smooth_path, perimeter.extrusion_entity->is_loop(), comment_perimeter, speed, perimeter.wipe_offset);
         this->m_travel_obstacle_tracker.mark_extruded(
             perimeter.extrusion_entity, print_instance.object_layer_to_print_id, print_instance.instance_id
@@ -3481,7 +3495,13 @@ std::string GCodeGenerator::_extrude(
         e_per_mm = 0;
 
     // set speed
-    if (speed == -1) {
+    float factor = 1;
+    if (speed < 0) {
+        // If speed == -1, then it's means "choose yourself, but if it's < SMALL_PERIMETER_SPEED_RATIO_OFFSET, then it's a scaling from small_perimeter.
+        if (speed <= SMALL_PERIMETER_SPEED_RATIO_OFFSET) {
+            factor = float(-speed + SMALL_PERIMETER_SPEED_RATIO_OFFSET);
+        }
+
         if (path_attr.role == ExtrusionRole::Perimeter) {
             speed = m_config.get_abs_value("perimeter_speed");
         } else if (path_attr.role == ExtrusionRole::ExternalPerimeter) {
@@ -3513,6 +3533,15 @@ std::string GCodeGenerator::_extrude(
     }
     if (m_volumetric_speed != 0. && speed == 0)
         speed = m_volumetric_speed / path_attr.mm3_per_mm;
+
+    // Apply small perimeter modifier but don't adjust bridge speed
+    if (factor < 1 && !path_attr.role.is_bridge()) {
+        float small_speed = (float) m_config.small_perimeter_speed.get_abs_value(m_config.get_abs_value("perimeter_speed"));
+        if (small_speed > 0)
+            // Apply proportional factor between small speed and feature speed
+            speed = (speed * factor) + double((1.f - factor) * small_speed);
+    }
+
     if (this->on_first_layer()) {
         const double first_layer_infill_speed{m_config.get_abs_value("first_layer_infill_speed", speed)};
         if (path_attr.role == ExtrusionRole::SolidInfill && first_layer_infill_speed > 0) {

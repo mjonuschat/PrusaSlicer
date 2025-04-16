@@ -323,7 +323,8 @@ void ConfigManipulation::toggle_print_fff_options(DynamicPrintConfig* config)
     bool have_perimeters = config->opt_int("perimeters") > 0;
     for (auto el : { "extra_perimeters","extra_perimeters_on_overhangs", "thin_walls", "overhangs",
                     "seam_position","staggered_inner_seams", "external_perimeters_first", "external_perimeter_extrusion_width",
-                    "perimeter_speed", "small_perimeter_speed", "external_perimeter_speed", "enable_dynamic_overhang_speeds"})
+                    "perimeter_speed", "small_perimeter_speed", "external_perimeter_speed", "enable_dynamic_overhang_speeds",
+                    "small_perimeter_min_length", "small_perimeter_max_length"})
         toggle_field(el, have_perimeters);
 
     for (size_t i = 0; i < 4; i++) {
@@ -357,6 +358,9 @@ void ConfigManipulation::toggle_print_fff_options(DynamicPrintConfig* config)
     for (auto el : { "fill_angle", "bridge_angle", "infill_extrusion_width",
                     "infill_speed", "bridge_speed", "over_bridge_speed" })
         toggle_field(el, have_infill || has_solid_infill);
+
+    for (auto el : { "small_perimeter_min_length", "small_perimeter_max_length" })
+        toggle_field(el, config->option<ConfigOptionFloatOrPercent>("small_perimeter_speed")->value > 0);
 
     const bool has_ensure_vertical_shell_thickness = config->opt_enum<EnsureVerticalShellThickness>("ensure_vertical_shell_thickness") != EnsureVerticalShellThickness::Disabled;
     toggle_field("top_solid_min_thickness", !has_spiral_vase && has_top_solid_infill && has_ensure_vertical_shell_thickness);
