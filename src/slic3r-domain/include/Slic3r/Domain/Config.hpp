@@ -262,6 +262,8 @@ public:
     std::vector<ConfigItem>::const_iterator begin() const { return m_items.cbegin(); }
     std::vector<ConfigItem>::const_iterator end() const { return m_items.cend(); }
 
+    std::vector<std::string> diff_keys(const ConfigBox& other) const;
+
 
 protected:
     ConfigBox(const ConfigDefinitions& defs, std::string_view type);
@@ -319,7 +321,7 @@ class ConfigView
 public:
     template <typename... Args>
     ConfigView(const FullConfig& fc, Args... args)
-        : m_config_boxes{ args... }, m_full_config{&fc} {}
+        : m_config_boxes{ args... }, m_full_config{fc} {}
 
     template<class T>
     T get(const std::string_view key, int extruder_idx = -1) const {
@@ -330,10 +332,12 @@ public:
         return opt(key, extruder_idx).is_null();
     }
 
+    std::vector<std::string> diff_keys(const ConfigView& other) const;
+
 
 private:
     std::vector<std::reference_wrapper<const ConfigBox>> m_config_boxes;
-    const FullConfig* m_full_config;
+    const FullConfig& m_full_config;
 
     const ConfigItem& opt(const std::string_view key, int extruder_idx) const;
 };

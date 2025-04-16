@@ -365,6 +365,18 @@ std::optional<const ConfigItem*> ConfigBox::has(const std::string_view key) cons
 
 
 
+std::vector<std::string> ConfigBox::diff_keys(const ConfigBox& other) const
+{
+    ASSERT(this->type() == other.type());
+    std::vector<std::string> out;
+    for (size_t i = 0; i < m_items.size(); ++i)
+        if (m_items[i] != other.m_items[i])
+            out.emplace_back(m_items[i].name());
+    return out;
+}
+
+
+
 ConfigBox::ConfigBox(const ConfigDefinitions& defs, std::string_view type)
 : m_type{type}
 {
@@ -386,7 +398,7 @@ const ConfigItem& ConfigView::opt(const std::string_view key, int extruder_idx) 
         if (auto opt = rev_it->get().has(key))
             return **opt;
     }
-    return m_full_config->opt(key, extruder_idx);
+    return m_full_config.opt(key, extruder_idx);
 }
 
 
@@ -442,21 +454,37 @@ void FullConfig::add(const std::vector<std::reference_wrapper<const ConfigBox>>&
 
 std::vector<std::string> FullConfig::diff_keys(const FullConfig& other) const
 {
-    ASSERT(this->name() == other.name());
+    return ConfigView(*this).diff_keys(ConfigView(other));
+}
+
+
+
+std::vector<std::string> ConfigView::diff_keys(const ConfigView& other) const
+{
+    // Reminder: FullConfig is our friend class.
+    ASSERT(this->m_full_config.name() == other.m_full_config.name());
     std::vector<std::string> out;
 
-    for (const auto& [key, item] : this->m_single_items) {
-        auto it = other.m_single_items.find(key);
-        if (it == other.m_single_items.end() || it->second != item)
+    for (const auto& [key, item] : this->m_full_config.m_single_items) {
+        auto it = other.m_full_config.m_single_items.find(key);
+        if (it == other.m_full_config.m_single_items.end() || it->second != item)
             out.emplace_back(key);
     }
-    for (const auto& [key, items] : this->m_multi_items) {
-        auto it = other.m_multi_items.find(key);
-        if (it == other.m_multi_items.end() || items != it->second) {
+    for (const auto& [key, items] : this->m_full_config.m_multi_items) {
+        auto it = other.m_full_config.m_multi_items.find(key);
+        if (it == other.m_full_config.m_multi_items.end() || items != it->second) {
             out.emplace_back(key);
             break;
         }
     }
+    // Now the extra boxes:
+    ASSERT(this->m_config_boxes.size() == other.m_config_boxes.size());
+    for (size_t i = 0; i < m_config_boxes.size(); ++i) {
+        std::vector<std::string> diff = m_config_boxes[i].get().diff_keys(other.m_config_boxes[i].get());
+        out.insert(out.end(), diff.begin(), diff.end());
+    }
+    std::sort(out.begin(), out.end());
+    out.erase(std::unique(out.begin(), out.end()), out.end());
     return out;
 }
 
