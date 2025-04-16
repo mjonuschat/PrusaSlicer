@@ -469,6 +469,7 @@ SCENARIO("Infill density zero", "[Fill]")
             { "solid_infill_every_layers",      2 },
             { "perimeter_speed",                99 },
             { "external_perimeter_speed",       99 },
+            { "small_perimeter_speed",          99 },
             { "cooling",                        "0" },
             { "first_layer_speed",              "100%" }
         });
