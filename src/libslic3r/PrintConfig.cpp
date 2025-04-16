@@ -3522,6 +3522,28 @@ void PrintConfigDef::init_fff_params()
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloatOrPercent(15, false));
 
+    def = this->add("small_perimeter_min_length", coFloat);
+    def->label = L("Lower");
+    def->full_label = L("Lower small perimeter length threshold");
+    def->category = L("Speed");
+    def->tooltip = L("This sets the lower threshold for small perimeter length. Every loop with a length lower than this will be printed at small perimeter speed");
+    def->sidetext = L("mm");
+    def->min = 0;
+    def->max = 100;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(40.0));
+
+    def = this->add("small_perimeter_max_length", coFloat);
+    def->label = L("Upper");
+    def->full_label = L("Upper small perimeter length threshold");
+    def->category = L("Speed");
+    def->tooltip = L("This sets the upper threshold for small perimeter lengths. Loops with a length within the range between the lower and upper bounds will see a proportional speed increase from the initial small perimeter speed to the normal perimeter speed.");
+    def->sidetext = L("mm");
+    def->min = 0;
+    def->max = 500;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(125.0));
+
     def = this->add("solid_infill_below_area", coFloat);
     def->label = L("Solid infill threshold area");
     def->category = L("Infill");
