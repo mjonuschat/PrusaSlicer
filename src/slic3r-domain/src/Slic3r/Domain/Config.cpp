@@ -146,8 +146,6 @@ bool ConfigItem::operator==(const ConfigItem& other) const
     if (this->type() == ConfigItemType::FloatOrPercent) {
         if (this->is_percent() != other.is_percent())
             return false;
-        if (this->is_percent())
-            return get_percent() == other.get_percent();
     }
 
     switch (this->type()) {
@@ -155,9 +153,9 @@ bool ConfigItem::operator==(const ConfigItem& other) const
     case ConfigItemType::Int     : return get<int>() == other.get<int>();
     case ConfigItemType::String  : return get<std::string>() == other.get<std::string>();
     case ConfigItemType::Enum    : return get_enum_as_int() == other.get_enum_as_int();
-    case ConfigItemType::Double  : [[fallthrough]];
-    case ConfigItemType::FloatOrPercent : [[fallthrough]];
-    case ConfigItemType::Percent : return get<double>() == other.get<double>();
+    case ConfigItemType::Double  : return get<double>() == other.get<double>();
+    case ConfigItemType::FloatOrPercent: return (this->is_percent() ? double(get<Percentage>()) == double(other.get<Percentage>()) : get<double>() == other.get<double>());
+    case ConfigItemType::Percent : return double(get<Percentage>()) == double(other.get<Percentage>());
     case ConfigItemType::Bools   : return vec<bool>() == other.vec<bool>();
     case ConfigItemType::Ints    : return vec<int>() == other.vec<int>();
     case ConfigItemType::Doubles : return vec<double>() == other.vec<double>();
@@ -180,28 +178,52 @@ bool ConfigItem::is_null() const
 }
 
 
+
+template <typename T, typename Enable = void>
+struct is_optional : std::false_type {};
+
+template <typename T>
+struct is_optional<std::optional<T> > : std::true_type {};
+
+
+
 template <class T>
 T ConfigItem::get() const
 {
-    if constexpr (std::is_same_v<T, bool>) {
+    ASSERT(!is_optional<T>() || (m_def && m_def->belongs_to.empty()) || (!m_def && m_is_nullable));
+    if constexpr (is_optional<T>())
+        if (m_data->get_null())
+            return std::nullopt;
+
+    if constexpr (std::is_same_v<T, bool> || std::is_same_v<T, std::optional<bool>>) {
         ASSERT(m_type == ConfigItemType::Bool);
         return static_cast<ConfigItemValueBool*>(m_data)->get();
     }
-    if constexpr (std::is_same_v<T, int>) {
+    if constexpr (std::is_same_v<T, int> || std::is_same_v<T, std::optional<int>>) {
         ASSERT(m_type == ConfigItemType::Int);
         return static_cast<ConfigItemValueInt*>(m_data)->get();
     }
-    if constexpr (std::is_same_v<T, double>) {
+    if constexpr (std::is_same_v<T, double> || std::is_same_v<T, std::optional<double>>) {
         if (m_type == ConfigItemType::Double)
             return static_cast<ConfigItemValueDouble*>(m_data)->get();
-        else if (m_type == ConfigItemType::Percent)
-            return static_cast<ConfigItemValuePercent*>(m_data)->get();
         else if (m_type == ConfigItemType::FloatOrPercent) {
-            ASSERT(! static_cast<ConfigItemValueFloatOrPercent*>(m_data)->is_percent());
+            ASSERT(!static_cast<ConfigItemValueFloatOrPercent*>(m_data)->is_percent());
             return static_cast<ConfigItemValueFloatOrPercent*>(m_data)->get();
         }
+        else
+            PANIC();
     }
-    if constexpr (std::is_same_v<T, std::string>) {
+    if constexpr (std::is_same_v<T, Percentage> || std::is_same_v<T, std::optional<Percentage>>) {
+        if (m_type == ConfigItemType::Percent)
+            return static_cast<ConfigItemValuePercent*>(m_data)->get();
+        else if (m_type == ConfigItemType::FloatOrPercent) {
+            ASSERT(static_cast<ConfigItemValueFloatOrPercent*>(m_data)->is_percent());
+            return static_cast<ConfigItemValueFloatOrPercent*>(m_data)->get();
+        }
+        else
+            PANIC();
+    }
+    if constexpr (std::is_same_v<T, std::string> || std::is_same_v<T, std::optional<std::string>>) {
         ASSERT(m_type == ConfigItemType::String);
         return static_cast<ConfigItemValueString*>(m_data)->get();
     }
@@ -225,11 +247,19 @@ void ConfigItem::set(T value)
     else if constexpr (std::is_same_v<T, double>) {
         if (m_type == ConfigItemType::Double)
             static_cast<ConfigItemValueDouble*>(m_data)->set(value);
-        else if (m_type == ConfigItemType::Percent)
-            static_cast<ConfigItemValuePercent*>(m_data)->set(value);
         else if (m_type == ConfigItemType::FloatOrPercent) {
             static_cast<ConfigItemValueFloatOrPercent*>(m_data)->set(value);
             static_cast<ConfigItemValueFloatOrPercent*>(m_data)->set_percent(false);
+        }
+        else
+            PANIC();
+    }
+    else if constexpr (std::is_same_v<T, Percentage>) {
+        if (m_type == ConfigItemType::Percent)
+            static_cast<ConfigItemValuePercent*>(m_data)->set(double(value));
+        else if (m_type == ConfigItemType::FloatOrPercent) {
+            static_cast<ConfigItemValueFloatOrPercent*>(m_data)->set(double(value));
+            static_cast<ConfigItemValueFloatOrPercent*>(m_data)->set_percent(true);
         } else {
             PANIC();
         }
@@ -248,20 +278,6 @@ void ConfigItem::set(T value)
 }
 
 
-    
-void ConfigItem::set_percent(double value)
-{
-    ASSERT(m_type == ConfigItemType::FloatOrPercent);
-    static_cast<ConfigItemValueFloatOrPercent*>(m_data)->set(value);
-    static_cast<ConfigItemValueFloatOrPercent*>(m_data)->set_percent(true);
-}
-
-double ConfigItem::get_percent() const
-{
-    ASSERT(m_type == ConfigItemType::FloatOrPercent);
-    ASSERT(static_cast<ConfigItemValueFloatOrPercent*>(m_data)->is_percent());
-    return static_cast<ConfigItemValueFloatOrPercent*>(m_data)->get();
-}
 
 bool ConfigItem::is_percent() const {
     ASSERT(m_type == ConfigItemType::FloatOrPercent);
@@ -465,12 +481,19 @@ const ConfigItem& FullConfig::opt(const std::string_view key, int extruder_idx) 
 template bool ConfigItem::get<bool>() const;
 template int ConfigItem::get<int>() const;
 template double ConfigItem::get<double>() const;
+template Percentage ConfigItem::get<Percentage>() const;
 template std::string ConfigItem::get<std::string>() const;
+template std::optional<bool> ConfigItem::get<std::optional<bool>>() const;
+template std::optional<int> ConfigItem::get<std::optional<int>>() const;
+template std::optional<double> ConfigItem::get<std::optional<double>>() const;
+template std::optional<Percentage> ConfigItem::get<std::optional<Percentage>>() const;
+template std::optional<std::string> ConfigItem::get<std::optional<std::string>>() const;
 
 // Explicit instantiations for setters.
 template void ConfigItem::set(bool);
 template void ConfigItem::set(int);
 template void ConfigItem::set(double);
+template void ConfigItem::set(Percentage);
 template void ConfigItem::set(std::string);
 template void ConfigItem::set(const char*);
 

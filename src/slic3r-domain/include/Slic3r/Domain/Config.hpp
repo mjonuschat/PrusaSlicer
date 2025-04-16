@@ -15,6 +15,13 @@
 
 #include "Slic3r/Assert.hpp"
 
+struct Percentage {
+public:
+    Percentage(double v) : value{ v } {}
+    explicit operator double() const { return value; }
+private:
+    double value = 0.;
+};
 
 namespace Slic3r::Domain {
 
@@ -191,8 +198,6 @@ public:
     template<class T> void set(T);
 
     // Getters and setters for specific cases.
-    void set_percent(double value);
-    double get_percent() const;
     bool is_percent() const;
 
     // Enums getters and setters have same signature as the general ones, but they are 

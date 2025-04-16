@@ -56,7 +56,8 @@ int main(int, char* [])
 
     std::vector<std::string> diff = fullc1.diff_keys(fullc2);
 
-    std::cout << std::endl;
+    //ps1.opt("spiral_vase").
+    std::cout << ps1.opt("solid_infill_speed").is_percent() << std::endl << double(ps1.opt("solid_infill_speed").get<double>()) << std::endl;
     
     //std::cout << "PRINTER SETTINGS\n" << serialize(printer_s).dump(4) << std::endl << "=============================" << std::endl;
     //std::cout << "FILAMENT SETTINGS\n" << serialize(fs).dump(4) << std::endl << "=============================" << std::endl;

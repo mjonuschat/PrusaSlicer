@@ -192,7 +192,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
                      "Maximum layer height could be specified either as an absolute in millimeters value or as a percentage of nozzle diameter. "
                      "For printing with different nozzle diameters, it is recommended to use percentage value over absolute value.");
     def->mode = comAdvanced;
-    def->init_fn = [](ConfigItem& item) { item.set_percent(100.); };
+    SET_DEFAULT(Percentage(100.));
 
     // Maximum extruder temperature, bumped to 1500 to support printing of glass.
     const int max_temp = 1500;
@@ -794,7 +794,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->ratio_over = "perimeter_speed";
     def->min = 0;
     def->mode = comAdvanced;
-    def->init_fn = [](ConfigItem& item) { item.set_percent(50.); };
+    SET_DEFAULT(Percentage(50.));
 
     def = defs.add("external_perimeters_first", Bool);
     def->belongs_to = { "print_settings" };
@@ -1092,7 +1092,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->sidetext = L("%");
     def->min = 0;
     def->mode = comExpert;
-    SET_DEFAULT(100.);
+    SET_DEFAULT(Percentage(100.));
 
     def = defs.add("filament_load_time", Double);
     def->belongs_to = { "filament_settings" };
@@ -1249,7 +1249,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->mode = comAdvanced;
     def->min = -10.;
     def->max = 10.;
-    SET_DEFAULT(0.);
+    SET_DEFAULT(Percentage(0.));
 
     def = defs.add("filament_shrinkage_compensation_z", Percent);
     def->belongs_to = { "filament_settings" };
@@ -1261,7 +1261,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->mode = comAdvanced;
     def->min = -10.;
     def->max = 10.;
-    SET_DEFAULT(0.);
+    SET_DEFAULT(Percentage(0.));
 
     def = defs.add("fill_angle", Double);
     def->belongs_to = { "print_settings" };
@@ -1301,7 +1301,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
         { 90., "90%" },
         { 100., "100%" }
     };
-    SET_DEFAULT(20.);
+    SET_DEFAULT(Percentage(20.));
 
     def = defs.add("fill_pattern", Enum);
     def->belongs_to = { "print_settings" };
@@ -1374,7 +1374,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->min = 0;
     def->max_literal = 50;
     def->mode = comAdvanced;
-    def->init_fn = [](ConfigItem& item) { item.set_percent(200.); };
+    SET_DEFAULT(Percentage(200.));
 
     def = defs.add("first_layer_height", FloatOrPercent);
     def->belongs_to = { "print_settings" };
@@ -1646,7 +1646,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
         { 1000.,   L("1000 (unlimited)") }
     };
     def->mode = comAdvanced;
-    def->init_fn = [](ConfigItem& item) { item.set_percent(600.); };
+    SET_DEFAULT(Percentage(600.));
     const ConfigItemDef* def_infill_anchor_min = def;
 
     def = defs.add("infill_anchor_max", FloatOrPercent);
@@ -1713,7 +1713,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->sidetext = L("mm or %");
     def->ratio_over = "perimeter_extrusion_width";
     def->mode = comExpert;
-    def->init_fn = [](ConfigItem& item) { item.set_percent(25.); };
+    SET_DEFAULT(Percentage(25.));
 
     def = defs.add("infill_speed", Double);
     def->belongs_to = { "print_settings" };
@@ -1858,7 +1858,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->ratio_over = "layer_height";
     def->min = 0;
     def->mode = comExpert;
-    SET_DEFAULT(15.);
+    SET_DEFAULT(Percentage(15.));
 
     def = defs.add("ironing_spacing", Double);
     def->belongs_to = { "print_settings" };
@@ -2412,7 +2412,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->min = 10;
     def->max = 100;
     def->mode = comExpert;
-    SET_DEFAULT(90.);
+    SET_DEFAULT(Percentage(90.));
 
     def = defs.add("raft_first_layer_expansion", Double);
     def->belongs_to = { "print_settings" };
@@ -2630,7 +2630,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
                    "Set to zero to disable this feature.");
     def->sidetext = L("mm or %");
     def->mode = comAdvanced;
-    def->init_fn = [](ConfigItem& item) { item.set_percent(15.); };
+    SET_DEFAULT(Percentage(15.));
 
     def = defs.add("seam_position", Enum);
     def->belongs_to = { "print_settings" };
@@ -2685,7 +2685,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->min = 0;
     def->max = 100;
     def->mode = comAdvanced;
-    SET_DEFAULT(0.);
+    SET_DEFAULT(Percentage(0.));
 
     def = defs.add("scarf_seam_entire_loop", Bool);
     def->belongs_to = { "print_settings" };
@@ -2864,6 +2864,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("spiral_vase", Bool);
     def->belongs_to = { "print_settings" };
+    def->belongs_to_optional = { "print_settings" };
     def->label = L("Spiral vase");
     def->tooltip = L("This feature will raise Z gradually while printing a single-walled object "
                    "in order to remove any visible seam. This option requires a single perimeter, "
@@ -3035,7 +3036,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->max_literal = 10;
     def->mode = comAdvanced;
     // Default is half the external perimeter width.
-    def->init_fn = [](ConfigItem& item) { item.set_percent(50.); };
+    SET_DEFAULT(Percentage(50.));
 
     def = defs.add("support_material_angle", Double);
     def->belongs_to = { "print_settings" };
@@ -3209,7 +3210,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->ratio_over = "support_material_speed";
     def->min = 0;
     def->mode = comAdvanced;
-    def->init_fn = [](ConfigItem& item) { item.set_percent(100.); };
+    SET_DEFAULT(Percentage(100.));
 
     def = defs.add("support_material_pattern", Enum);
     def->belongs_to = { "print_settings" };
@@ -3413,7 +3414,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->min = 5;
     def->max_literal = 35;
     def->mode = comAdvanced;
-    SET_DEFAULT(15.);
+    SET_DEFAULT(Percentage(15.));
 
     def = defs.add("temperature", Int);
     def->belongs_to = { "filament_settings" };
@@ -3639,7 +3640,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->mode = comExpert;
     def->min = 100.;
     def->max = 300.;
-    SET_DEFAULT(100.);
+    SET_DEFAULT(Percentage(100.));
 
     def = defs.add("wipe_tower_extra_flow", Percent);
     def->belongs_to = { "print_settings" };
@@ -3650,7 +3651,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->mode = comExpert;
     def->min = 100.;
     def->max = 300.;
-    SET_DEFAULT(100.);
+    SET_DEFAULT(Percentage(100.));
 
     /* TODO: Where do these belong?
     def = defs.add("wipe_into_infill", Bool);
@@ -3735,7 +3736,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->sidetext = L("mm or %");
     def->mode = comExpert;
     def->min = 0;
-    def->init_fn = [](ConfigItem& item) { item.set_percent(100.); };
+    SET_DEFAULT(Percentage(100.));
 
     def = defs.add("wall_transition_filter_deviation", FloatOrPercent);
     def->belongs_to = { "print_settings" };
@@ -3751,7 +3752,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->sidetext = L("mm or %");
     def->mode = comExpert;
     def->min = 0;
-    def->init_fn = [](ConfigItem& item) { item.set_percent(25.); };
+    SET_DEFAULT(Percentage(25.));
 
     def = defs.add("wall_transition_angle", Double);
     def->belongs_to = { "print_settings" };
@@ -3788,7 +3789,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->sidetext = L("mm or %");
     def->mode = comExpert;
     def->min = 0;
-    def->init_fn = [](ConfigItem& item) { item.set_percent(25.); };
+    SET_DEFAULT(Percentage(25.));
 
     def = defs.add("min_bead_width", FloatOrPercent);
     def->belongs_to = { "print_settings" };
@@ -3801,7 +3802,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->sidetext = L("mm or %");
     def->mode = comExpert;
     def->min = 0;
-    def->init_fn = [](ConfigItem& item) { item.set_percent(85.); };
+    SET_DEFAULT(Percentage(85.));
 
     // TODO: Check overrides at the very end of init_fff_params(). That needs to be done after
     // we migrate to toolprint_settings - so far, the retractions are vectors in printer settings,
