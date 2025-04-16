@@ -1687,6 +1687,10 @@ void TabPrint::build()
         optgroup->append_single_option_line("first_layer_speed");
         optgroup->append_single_option_line("first_layer_infill_speed");
         optgroup->append_single_option_line("first_layer_speed_over_raft");
+        line = { L("Small perimeter thresholds"), "" };
+        line.append_option(optgroup->get_option("small_perimeter_min_length"));
+        line.append_option(optgroup->get_option("small_perimeter_max_length"));
+        optgroup->append_line(line);
 
         optgroup = page->new_optgroup(L("Acceleration/jerk control (advanced)"));
         line = { L("External perimeters"), "" };
