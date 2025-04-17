@@ -19,12 +19,10 @@ namespace Slic3r::Domain {
 
 class Percentage {
 public:
-    Percentage() = default;
-    Percentage(const Percentage&) = default;
-    Percentage(double v) : value{ v } {}
-    explicit operator double() const { return value; }
     bool operator==(const Percentage& other) const { return value == other.value; }
-private:
+    bool operator<(const Percentage& other) const { return value < other.value; }
+    double get_abs_value(double ratio_over) const { return (value / 100.) * ratio_over; }
+
     double value = 0.;
 };
 
@@ -35,12 +33,17 @@ public:
     FloatOrPercentage() = default;
     FloatOrPercentage(const FloatOrPercentage&) = default;
     FloatOrPercentage(double value) : m_is_percentage{ false }, m_value { value } {}
-    FloatOrPercentage(Percentage percentage) : m_is_percentage{ true }, m_value { double(percentage) } {}
-    explicit operator double() const { ASSERT(! m_is_percentage); return m_value; }
-    explicit operator Percentage() const { ASSERT(m_is_percentage); return Percentage(m_value); }
-    bool operator==(const FloatOrPercentage& other) const { return m_value == other.m_value && m_is_percentage == other.m_is_percentage; }
+    FloatOrPercentage(Percentage percentage) : m_is_percentage{ true }, m_value { percentage.value } {}
 
     bool is_percentage() const { return m_is_percentage; }
+    bool is_zero() const { return m_value == 0.; }
+
+    double float_value() const { ASSERT(! is_percentage()); return m_value; }
+    Percentage percentage() const { ASSERT(is_percentage()); return Percentage{ m_value }; }
+
+    double get_abs_value(double ratio_over) const { return (is_percentage() ? percentage().get_abs_value(ratio_over) : m_value); }
+
+    bool operator==(const FloatOrPercentage& other) const { return m_value == other.m_value && m_is_percentage == other.m_is_percentage; }
 
 
 private:
@@ -281,7 +284,6 @@ public:
 
     std::string_view type() const { return m_type; }
     std::optional<const ConfigItem*> contains(const std::string_view key) const;
-    std::optional<const ConfigItem*> get_override(const std::string_view key) const;
 
     std::vector<ConfigItem>::iterator begin() { return m_items.begin(); }
     std::vector<ConfigItem>::iterator end() { return m_items.end(); }

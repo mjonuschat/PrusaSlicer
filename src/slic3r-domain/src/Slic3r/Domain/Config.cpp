@@ -273,19 +273,6 @@ std::optional<const ConfigItem*> ConfigBox::contains(const std::string_view key)
 
 
 
-std::optional<const ConfigItem*> ConfigBox::get_override(const std::string_view key) const
-{
-    std::optional<const ConfigItem*> opt = contains(key);
-    ASSERT(opt.has_value(), "Calling get_override for a key that does not exist in this ConfigBox.");
-    ASSERT((*opt)->is_nullable(), "Calling get_override for a key that is mandatory in this ConfigBox.");
-    if ((*opt)->is_null())
-        return opt;
-    else
-        return std::nullopt;
-}
-
-
-
 std::vector<std::string> ConfigBox::diff_keys(const ConfigBox& other) const
 {
     ASSERT(this->type() == other.type());

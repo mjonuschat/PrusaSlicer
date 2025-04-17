@@ -14,11 +14,11 @@ static nlohmann::json serialize_float_or_percent(const ConfigItem& item)
 {
     nlohmann::json j;
     if (item.type() == ConfigItemType::Percent) {
-        j["value"] = double(item.get<Percentage>());
+        j["value"] = item.get<Percentage>().value;
         j["is_percent"] = true;
     } else if (item.type() == ConfigItemType::FloatOrPercent) {
         FloatOrPercentage fop = item.get<FloatOrPercentage>();
-        j["value"] = fop.is_percentage() ? double(Percentage(fop)) : double(fop);
+        j["value"] = fop.is_percentage() ? fop.percentage().value : fop.float_value();
         j["is_percent"] = fop.is_percentage();
     } else
         PANIC("This function cannot be used with this ConfigItemType.");
