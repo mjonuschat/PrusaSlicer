@@ -44,7 +44,7 @@ struct PerimeterExtrusion
 
 using PerimeterExtrusions = std::vector<PerimeterExtrusion>;
 
-PerimeterExtrusions ordered_perimeter_extrusions(const Perimeters &perimeters, bool external_perimeters_first);
+PerimeterExtrusions ordered_perimeter_extrusions(const Perimeters &perimeters, bool external_perimeters_first, bool external_perimeters_first_holes);
 
 } // namespace Slic3r::Arachne::PerimeterOrder
 
