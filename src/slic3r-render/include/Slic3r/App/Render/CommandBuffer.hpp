@@ -54,6 +54,8 @@ public:
     void bind_material(const Material& material);
     void unbind_material(const Material& material);
 
+    void blit_to_default_framebuffer(const Framebuffer& fb, int width, int height, BlitFramebufferMask mask, BlitFramebufferFilter filter);
+
     void draw(PrimitiveType primitive, size_t offset, size_t count);
     void draw(const DrawCommand& cmd);
     void draw(const DrawCommands::const_iterator first, const DrawCommands::const_iterator last);

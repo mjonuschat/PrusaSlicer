@@ -37,6 +37,8 @@ GLenum texture_internal_format(PixelFormat format)
     case PixelFormat::R32F:           return GL_R32F;
     case PixelFormat::R32UI:          return GL_R32UI;
     case PixelFormat::RGBA32F:        return GL_RGBA32F;
+    case PixelFormat::RGBA16F:        return GL_RGBA16F;
+    case PixelFormat::RGB32F:         return GL_RGB32F;
     case PixelFormat::DepthComponent: return GL_DEPTH_COMPONENT;
     default: {
         // Unsupported format
@@ -53,6 +55,8 @@ GLenum texture_format(PixelFormat format)
     case PixelFormat::R32F:           return GL_RED;
     case PixelFormat::R32UI:          return GL_RED_INTEGER;
     case PixelFormat::RGBA32F:        return GL_RGBA;
+    case PixelFormat::RGBA16F:        return GL_RGBA;
+    case PixelFormat::RGB32F:         return GL_RGB;
     case PixelFormat::DepthComponent: return GL_DEPTH_COMPONENT;
     default: {
         // Unsupported format
@@ -69,6 +73,8 @@ GLenum texture_format_type(PixelFormat format)
     case PixelFormat::R32F:           return GL_FLOAT;
     case PixelFormat::R32UI:          return GL_UNSIGNED_INT;
     case PixelFormat::RGBA32F:        return GL_FLOAT;
+    case PixelFormat::RGBA16F:        return GL_FLOAT;
+    case PixelFormat::RGB32F:         return GL_FLOAT;
     case PixelFormat::DepthComponent: return GL_FLOAT;
     default:
         // Unsupported format

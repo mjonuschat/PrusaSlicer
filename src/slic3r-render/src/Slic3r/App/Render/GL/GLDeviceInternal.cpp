@@ -345,6 +345,22 @@ void GLDeviceInternal::unbind_geometry()
 #endif
 }
 
+void GLDeviceInternal::blit_to_default_framebuffer(const Framebuffer& fb, int width, int height, BlitFramebufferMask mask,
+    BlitFramebufferFilter filter)
+{
+#if SLIC3R_OPENGL_ES || defined(__EMSCRIPTEN__)
+    PANIC("Not implemented yet");
+#else
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, fb.get_internal_as<GLFramebufferInternal>().m_id);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+
+    glBlitFramebuffer(0, 0, width, height,
+                      0, 0, width, height,
+                      type(mask), type(filter));
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+#endif // SLIC3R_OPENGL_ES || defined(__EMSCRIPTEN__)
+}
 
 void GLDeviceInternal::draw(PrimitiveType primitive, size_t offset, size_t count)
 {

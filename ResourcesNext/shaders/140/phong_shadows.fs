@@ -14,41 +14,17 @@ const vec3 LIGHT_FRONT_DIR = vec3(0.6985074, 0.1397015, 0.6985074);
 
 #define INTENSITY_AMBIENT    0.3
 
-const vec3 back_color_dark  = vec3(0.235, 0.235, 0.235);
-const vec3 back_color_light = vec3(0.365, 0.365, 0.365);
-
 uniform float shadows_intensity;
-uniform bool transparent_background;
-uniform bool svg_source;
 
-uniform sampler2D in_texture;
+uniform vec4 uniform_color;
+uniform float emission_factor;
 uniform sampler2D shadowsmap;
 
-in vec2 tex_coord;
 in vec3 eye_position;
 in vec3 eye_normal;
 in vec4 light_position;
 
 out vec4 out_color;
-
-vec4 svg_color()
-{
-    // takes foreground from texture
-    vec4 fore_color = texture(in_texture, tex_coord);
-
-    // calculates radial gradient
-    vec3 back_color = vec3(mix(back_color_light, back_color_dark, smoothstep(0.0, 0.5, length(abs(tex_coord.xy) - vec2(0.5)))));
-
-    // blends foreground with background
-    return vec4(mix(back_color, fore_color.rgb, fore_color.a), transparent_background ? fore_color.a : 1.0);
-}
-
-vec4 non_svg_color()
-{
-    // takes foreground from texture
-    vec4 color = texture(in_texture, tex_coord);
-    return vec4(color.rgb, transparent_background ? color.a * 0.25 : color.a);
-}
 
 float shadow_pcf(vec4 position, float NdotL)
 {
@@ -69,7 +45,7 @@ float shadow_pcf(vec4 position, float NdotL)
         }    
     }
     shadow /= 9.0;
-
+    
     // if outside the light frustum -> lit
     return (proj_coords.z - bias > 1.0) ? 1.0 : 1.0 - shadows_intensity * shadow;
 }
@@ -88,10 +64,9 @@ void main()
     intensity.x = INTENSITY_AMBIENT + shadow * NdotL * LIGHT_TOP_DIFFUSE;
     intensity.y = shadow * LIGHT_TOP_SPECULAR * pow(max(dot(-normalize(eye_position.xyz), reflect(-LIGHT_TOP_DIR, normal)), 0.0), LIGHT_TOP_SHININESS);
 
+    // Perform the same lighting calculation for the 2nd light source (no specular applied).
     NdotL = max(dot(normal, LIGHT_FRONT_DIR), 0.0);
     intensity.x += NdotL * LIGHT_FRONT_DIFFUSE;
 
-    vec4 color = svg_source ? svg_color() : non_svg_color();
-    color.a = transparent_background ? color.a * 0.5 : color.a;
-    out_color = vec4(vec3(intensity.y) + color.rgb * intensity.x, color.a);
+    out_color = vec4(vec3(intensity.y) + uniform_color.rgb * (intensity.x + emission_factor), uniform_color.a);
 }

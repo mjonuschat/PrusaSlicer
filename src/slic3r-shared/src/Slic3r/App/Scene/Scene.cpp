@@ -5,10 +5,14 @@
 #include "Slic3r/App/Render/MathUtils.hpp"
 #include "Slic3r/App/Render/Framebuffer.hpp"
 #include "Slic3r/App/Render/FramebufferManager.hpp"
+#include "Slic3r/App/Render/GeometryBuilder.hpp"
+#include "Slic3r/App/Render/TextureManager.hpp"
 #include "Slic3r/App/Scene/MeshRenderNodeComponent.hpp"
 #include "Slic3r/App/Scene/NodeVisitor.hpp"
 
 #include <imgui/imgui.h>
+
+#include <random>
 
 namespace Slic3r::App::Scene {
 
@@ -148,6 +152,81 @@ Render::Material resolve_material(const Node& n)
     return mat;
 }
 
+void Scene::init_screen_quad(Render::Device& device) const
+{
+    m_screen_quad = const_cast<Scene*>(this)->geometry_manager().get_or_create("screen_quad", [&device]() {
+        std::vector<std::pair<Vec2f, Vec2f>> sq_vertices = {
+            {{-1.0f,  1.0f}, {0.0f, 1.0f}},
+            {{-1.0f, -1.0f}, {0.0f, 0.0f}},
+            {{ 1.0f,  1.0f}, {1.0f, 1.0f}},
+            {{ 1.0f, -1.0f}, {1.0f, 0.0f}}
+        };
+
+        Render::GeometryBuilder<Render::VertexP2T2> builder;
+        builder.reserve(sq_vertices.size(), 0);
+        for (const auto& v : sq_vertices) {
+            builder.add_vertex({ v.first, v.second });
+        }
+        builder.add_draw_command({ Render::PrimitiveType::TriangleStrip, 0, sq_vertices.size(), Render::Material() });
+        return builder.build(device);
+    });
+}
+
+void Scene::generate_ao_kernel(Render::Device& device) const
+{
+    if (m_ao.kernel.empty())
+        m_ao.pending_kernel_size = m_ao.DEFAULT_KERNEL_SIZE;
+
+    if (m_ao.pending_kernel_size.has_value() && *m_ao.pending_kernel_size != m_ao.kernel.size()) {
+        std::uniform_real_distribution<float> random_floats(0.0f, 1.0f); // generates random floats between 0.0 and 1.0
+        std::default_random_engine generator;
+
+        m_ao.kernel.clear();
+        m_ao.kernel.reserve(*m_ao.pending_kernel_size);
+        for (size_t i = 0; i < *m_ao.pending_kernel_size; ++i) {
+            Vec3f sample(random_floats(generator) * 2.0f - 1.0f,
+                         random_floats(generator) * 2.0f - 1.0f,
+                         random_floats(generator));
+            sample.normalize();
+            sample *= random_floats(generator);
+            float scale = float(i) / float(*m_ao.pending_kernel_size);
+            // scale samples s.t. they're more aligned to center of kernel
+            scale = 0.1f + scale * scale * 0.9f;
+            sample *= scale;
+            m_ao.kernel.emplace_back(sample);
+        }
+
+        m_ao.pending_kernel_size.reset();
+    }
+}
+
+void Scene::generate_ao_noise(Render::Device& device) const
+{
+    if (m_ao.noise_size == 0)
+        m_ao.pending_noise_size = m_ao.DEFAULT_NOISE_SIZE;
+
+    if (m_ao.pending_noise_size.has_value() && *m_ao.pending_noise_size != m_ao.noise_size) {
+        m_ao.noise_size = *m_ao.pending_noise_size;
+
+        std::uniform_real_distribution<float> random_floats(0.0f, 1.0f); // generates random floats between 0.0 and 1.0
+        std::default_random_engine generator;
+
+        std::vector<Vec3f> noise_data;
+        noise_data.reserve(m_ao.noise_size * m_ao.noise_size);
+        for (size_t i = 0; i < m_ao.noise_size * m_ao.noise_size; ++i) {
+            Vec3f noise(random_floats(generator) * 2.0f - 1.0f,
+                        random_floats(generator) * 2.0f - 1.0f,
+                        0.0f); // rotate around z-axis (in tangent space)
+            noise_data.emplace_back(noise);
+        }
+
+        m_ao.noise = device.context().texture_manager().create_empty("ao_noise", Render::PixelFormat::RGB32F, m_ao.noise_size, m_ao.noise_size);
+        m_ao.noise->set_data(Render::PixelFormat::RGB32F, 0, m_ao.noise_size, m_ao.noise_size, (void*)noise_data.data());
+
+        m_ao.pending_noise_size.reset();
+    }
+}
+
 Scene::NodeMaterials Scene::collect_nodes_with_material(const Node::NodePredicate& predicate) const
 {
     Scene::NodeMaterials ret;
@@ -163,30 +242,26 @@ Scene::NodeMaterials Scene::collect_nodes_with_material(const Node::NodePredicat
 
 void Scene::render_shadowsmap_pass(Render::Device& device) const
 {
-    // WARNING
-    // assumes cull face mode == Render::CullFaceMode::Back
+    if (m_shadows.framebuffer == nullptr)
+        m_shadows.pending_framebuffer_size = m_shadows.DEFAULT_FRAMEBUFFER_SIZE;
 
-    if (m_shadows.shadowsmap_framebuffer == nullptr)
-        m_shadows.pending_shadowsmap_size = m_shadows.DEFAULT_SHADOWSMAP_SIZE;
-
-    if (m_shadows.pending_shadowsmap_size.has_value() && *m_shadows.pending_shadowsmap_size != m_shadows.shadowsmap_size) {
-        if (m_shadows.shadowsmap_framebuffer != nullptr)
-            device.context().framebuffer_manager().destroy(m_shadows.shadowsmap_framebuffer);
+    if (m_shadows.pending_framebuffer_size.has_value() && *m_shadows.pending_framebuffer_size != m_shadows.framebuffer_size) {
+        if (m_shadows.framebuffer != nullptr)
+            device.context().framebuffer_manager().destroy(m_shadows.framebuffer);
         Render::FramebufferCreationData data;
-        data.width = *m_shadows.pending_shadowsmap_size;
-        data.height = *m_shadows.pending_shadowsmap_size;
-        m_shadows.shadowsmap_framebuffer = device.context().framebuffer_manager().create(data);
-        m_shadows.shadowsmap_size = *m_shadows.pending_shadowsmap_size;
-        m_shadows.pending_shadowsmap_size.reset();
+        data.width = *m_shadows.pending_framebuffer_size;
+        data.height = *m_shadows.pending_framebuffer_size;
+        m_shadows.framebuffer = device.context().framebuffer_manager().create(data);
+        m_shadows.framebuffer_size = *m_shadows.pending_framebuffer_size;
+        m_shadows.pending_framebuffer_size.reset();
     }
 
     auto cmd_buffer = device.create_command_buffer();
     // set light viewport
-    cmd_buffer->set_viewport({ 0, 0, m_shadows.shadowsmap_size, m_shadows.shadowsmap_size });
+    cmd_buffer->bind_framebuffer(*m_shadows.framebuffer);
+    cmd_buffer->set_viewport({ 0, 0, m_shadows.framebuffer_size, m_shadows.framebuffer_size });
     cmd_buffer->set_depth_test_enabled(true);
-    cmd_buffer->set_cull_face_mode(Render::CullFaceMode::Front);
     cmd_buffer->set_cull_face_enabled(true);
-    cmd_buffer->bind_framebuffer(*m_shadows.shadowsmap_framebuffer);
     cmd_buffer->clear_buffers(false, true);
 
     Eigen::AlignedBox3d world_aabb = m_shadows.bed_aabb;
@@ -248,10 +323,9 @@ void Scene::render_shadowsmap_pass(Render::Device& device) const
         }
     }
 
-    cmd_buffer->unbind_framebuffer(*m_shadows.shadowsmap_framebuffer);
-    cmd_buffer->set_cull_face_mode(Render::CullFaceMode::Back);
     // restore camera viewport
     cmd_buffer->set_viewport(m_camera.viewport());
+    cmd_buffer->unbind_framebuffer(*m_shadows.framebuffer);
 }
 
 void Scene::render_shadows_receivers_pass(Render::Device& device, Render::CommandBuffer& cmd_buffer, ISceneRenderCustomizer* customizer) const
@@ -263,16 +337,17 @@ void Scene::render_shadows_receivers_pass(Render::Device& device, Render::Comman
     if (nodes.empty())
         return;
 
+    Transform light_cam_proj_view_matrix = m_shadows.light_cam.projection() * m_shadows.light_cam.view();
     for (auto& [node, material] : nodes) {
-        Matrix4f light_matrix = (m_shadows.light_cam.projection() * m_shadows.light_cam.view() * node->world_transform()).cast<float>();
-        std::string name = device.context().shader_manager().shader_name(material.shader());
+        Matrix4f light_cam_matrix = (light_cam_proj_view_matrix * node->world_transform()).cast<float>();
+        std::string shader_name = device.context().shader_manager().shader_name(material.shader());
         material
-            .set_shader(device.context().shader_manager().shader(name + "_shadows"))
-            .set_uniform("light_matrix", light_matrix)
-            .set_uniform("shadowsmap", m_shadows.SHADOWSMAP_TEXTURE_UNIT);
+            .set_shader(device.context().shader_manager().shader(shader_name + "_shadows"))
+            .set_uniform("light_matrix", light_cam_matrix)
+            .set_uniform("shadows_intensity", m_shadows.intensity)
+            .set_texture(m_shadows.SHADOWSMAP_TEX_UNIT, m_shadows.framebuffer->depth())
+            .set_uniform("shadowsmap", m_shadows.SHADOWSMAP_TEX_UNIT);
     }
-
-    cmd_buffer.bind_texture(m_shadows.SHADOWSMAP_TEXTURE_UNIT, *m_shadows.shadowsmap_framebuffer->depth());
 
     cmd_buffer.set_depth_test_enabled(true);
 
@@ -287,21 +362,14 @@ void Scene::render_shadows_receivers_pass(Render::Device& device, Render::Comman
         // did we start next layer
         if (auto layer = n->render_component()->layer_index(); layer != current_layer) {
             if (customizer) {
-                if (current_layer != INITIAL_LAYER)
+                if (current_layer != INITIAL_LAYER) {
+                    customizer->on_opaque_pass_end(cmd_buffer, current_layer);
                     customizer->on_layer_end(cmd_buffer, current_layer);
+                }
                 customizer->on_layer_begin(cmd_buffer, layer);
+                customizer->on_opaque_pass_begin(cmd_buffer, layer);
             }
             current_layer = layer;
-        }
-
-        // did we switch between opaque/transparent passes
-        if (customizer) {
-            // end last pass
-            if (!first_iteration)
-                customizer->on_opaque_pass_end(cmd_buffer, current_layer);
-
-            // begin new pass
-            customizer->on_opaque_pass_begin(cmd_buffer, current_layer);
         }
 
         n->render_component()->render(*n, m_camera, mat, cmd_buffer);
@@ -312,14 +380,12 @@ void Scene::render_shadows_receivers_pass(Render::Device& device, Render::Comman
         customizer->on_layer_end(cmd_buffer, current_layer);
         customizer->on_render_end(cmd_buffer);
     }
-
-    cmd_buffer.unbind_texture(m_shadows.SHADOWSMAP_TEXTURE_UNIT, *m_shadows.shadowsmap_framebuffer->depth());
 }
 
 void Scene::render_no_shadows_pass(Render::CommandBuffer& cmd_buffer, ISceneRenderCustomizer* customizer) const
 {
     NodeMaterials nodes = collect_nodes_with_material([this](auto n) {
-        return n->has_render_component() && (!m_shadows.enabled || !n->render_component()->receive_shadows());
+        return n->has_render_component() && ((!m_shadows.enabled && !m_ao.enabled)|| !n->render_component()->receive_shadows());
     });
 
     if (nodes.empty())
@@ -331,6 +397,17 @@ void Scene::render_no_shadows_pass(Render::CommandBuffer& cmd_buffer, ISceneRend
     std::stable_sort(nodes.begin(), nodes.end(), [](const auto& a, const auto& b) {
         return a.first->render_component()->layer_index() < b.first->render_component()->layer_index();
     });
+    // currently the only textured transparent object is the bed plate when the camera points upward
+    // sorts transparent objects so that the bed plate is rendered last to avoid its update of the depth buffer
+    // which would result in hiding the other transparent objects rendered after it
+    auto first_transparent_it = std::find_if(nodes.begin(), nodes.end(), [](const auto& p) {
+        return p.second.transparent();
+    });
+    if (first_transparent_it != nodes.end()) {
+        std::stable_sort(first_transparent_it, nodes.end(), [](const auto& a, const auto& b) {
+            return a.second.textures().size() < b.second.textures().size();
+        });
+    }
 
     cmd_buffer.set_depth_test_enabled(true);
 
@@ -391,16 +468,193 @@ void Scene::render_no_shadows_pass(Render::CommandBuffer& cmd_buffer, ISceneRend
     }
 }
 
+void Scene::render_ao_gbuffer_pass(Render::Device& device, const Domain::Index2& viewport_size) const
+{
+    if (m_ao.gbuffer_fb == nullptr || m_ao.framebuffer_size != viewport_size) {
+        if (m_ao.gbuffer_fb != nullptr)
+            device.context().framebuffer_manager().destroy(m_ao.gbuffer_fb);
+        Render::FramebufferCreationData data;
+        data.width = viewport_size[0];
+        data.height = viewport_size[1];
+        data.color_attachments.resize(4);
+        data.color_attachments[AmbientOcclusion::EYE_POS_CLR_ATTR].format = Render::PixelFormat::RGBA16F;
+        data.color_attachments[AmbientOcclusion::LIGHT_POS_CLR_ATTR].format = Render::PixelFormat::RGBA16F;
+        data.color_attachments[AmbientOcclusion::EYE_NORM_CLR_ATTR].format = Render::PixelFormat::RGBA16F;
+        data.color_attachments[AmbientOcclusion::COLOR_CLR_ATTR].format = Render::PixelFormat::RGBA8;
+        m_ao.gbuffer_fb = device.context().framebuffer_manager().create(data);
+    }
+
+    auto cmd_buffer = device.create_command_buffer();
+    cmd_buffer->bind_framebuffer(*m_ao.gbuffer_fb);
+    cmd_buffer->set_depth_test_enabled(true);
+    cmd_buffer->set_cull_face_enabled(true);
+    cmd_buffer->set_viewport(m_camera.viewport());
+    cmd_buffer->set_clear_values({ 0.0f, 0.0f, 0.0f, 0.0f });
+    cmd_buffer->clear_buffers(true, true);
+
+    NodeMaterials nodes = collect_nodes_with_material([](auto n) {
+        return n->has_render_component() && n->render_component()->receive_shadows() && !resolve_material(*n).transparent();
+    });
+
+    if (!nodes.empty()) {
+        Transform light_cam_proj_view_matrix = m_shadows.light_cam.projection() * m_shadows.light_cam.view();
+        for (auto& [node, material] : nodes) {
+            Matrix4f light_cam_matrix = (light_cam_proj_view_matrix * node->world_transform()).cast<float>();
+            std::string shader_name = device.context().shader_manager().shader_name(material.shader());
+            material
+                .set_shader(device.context().shader_manager().shader(shader_name + "_ao"))
+                .set_uniform("light_matrix", light_cam_matrix);
+            node->render_component()->render(*node, m_camera, material, *cmd_buffer);
+        }
+    }
+    cmd_buffer->unbind_framebuffer(*m_ao.gbuffer_fb);
+}
+
+void Scene::render_ao_texture_pass(Render::Device& device, const Domain::Index2& viewport_size) const
+{
+    if (m_ao.ao_tex_fb == nullptr || m_ao.framebuffer_size != viewport_size) {
+        if (m_ao.ao_tex_fb != nullptr)
+            device.context().framebuffer_manager().destroy(m_ao.ao_tex_fb);
+        Render::FramebufferCreationData data;
+        data.width = viewport_size[0];
+        data.height = viewport_size[1];
+        data.depth = false;
+        Render::FramebufferColorAttachment color;
+        color.format = Render::PixelFormat::R32F;
+        data.color_attachments.push_back(color);
+        m_ao.ao_tex_fb = device.context().framebuffer_manager().create(data);
+    }
+
+    auto cmd_buffer = device.create_command_buffer();
+    cmd_buffer->bind_framebuffer(*m_ao.ao_tex_fb);
+    cmd_buffer->set_viewport(m_camera.viewport());
+    cmd_buffer->set_clear_values({ 0.0f, 0.0f, 0.0f, 0.0f });
+    cmd_buffer->clear_buffers(true, false);
+
+    Vec2f v_size = { float(viewport_size[0]), float(viewport_size[1]) };
+    Matrix4f projection = m_camera.projection().cast<float>();
+
+    Render::Material material;
+    material
+        .set_shader(device.context().shader_manager().shader("ao_texture"))
+        .set_uniform("kernel_size", int(m_ao.kernel.size()))
+        .set_uniform("radius", m_ao.radius)
+        .set_uniform("bias", m_ao.bias)
+        .set_uniform("viewport_size", v_size)
+        .set_uniform("projection_matrix", projection)
+        .set_uniform("g_eye_position", AmbientOcclusion::EYE_POS_TEX_UNIT)
+        .set_uniform("g_eye_normal", AmbientOcclusion::EYE_NORM_TEX_UNIT)
+        .set_uniform("tex_noise", AmbientOcclusion::NOISE_TEX_UNIT)
+        .set_texture(AmbientOcclusion::EYE_POS_TEX_UNIT, m_ao.gbuffer_fb->color_attachment(AmbientOcclusion::EYE_POS_CLR_ATTR))
+        .set_texture(AmbientOcclusion::EYE_NORM_TEX_UNIT, m_ao.gbuffer_fb->color_attachment(AmbientOcclusion::EYE_NORM_CLR_ATTR))
+        .set_texture(AmbientOcclusion::NOISE_TEX_UNIT, m_ao.noise);
+
+
+    for (size_t i = 0; i < m_ao.kernel.size(); ++i) {
+        std::string name = "kernel[" + std::to_string(i) + "]";
+        material.set_uniform(name, m_ao.kernel[i]);
+    }
+
+    cmd_buffer->bind_and_draw(*m_screen_quad, material);
+
+    cmd_buffer->unbind_framebuffer(*m_ao.ao_tex_fb);
+}
+
+void Scene::render_ao_texture_blur_pass(Render::Device& device, const Domain::Index2& viewport_size) const
+{
+    if (m_ao.blur_fb == nullptr || m_ao.framebuffer_size != viewport_size) {
+        if (m_ao.blur_fb != nullptr)
+            device.context().framebuffer_manager().destroy(m_ao.blur_fb);
+        Render::FramebufferCreationData data;
+        data.width = viewport_size[0];
+        data.height = viewport_size[1];
+        data.depth = false;
+        Render::FramebufferColorAttachment color;
+        color.format = Render::PixelFormat::R32F;
+        data.color_attachments.push_back(color);
+        m_ao.blur_fb = device.context().framebuffer_manager().create(data);
+    }
+
+    auto cmd_buffer = device.create_command_buffer();
+    cmd_buffer->bind_framebuffer(*m_ao.blur_fb);
+    cmd_buffer->set_viewport(m_camera.viewport());
+    cmd_buffer->set_clear_values({ 0.0f, 0.0f, 0.0f, 0.0f });
+    cmd_buffer->clear_buffers(true, false);
+
+    Render::Material material;
+    material
+        .set_shader(device.context().shader_manager().shader("ao_blur"))
+        .set_uniform("in_tex", AmbientOcclusion::AO_TEX_UNIT)
+        .set_uniform("filter_size", int(m_ao.blur_filter_size))
+        .set_texture(AmbientOcclusion::AO_TEX_UNIT, m_ao.ao_tex_fb->color_attachment(0));
+
+    cmd_buffer->bind_and_draw(*m_screen_quad, material);
+
+    cmd_buffer->unbind_framebuffer(*m_ao.blur_fb);
+}
+
+void Scene::render_ao_lighting_pass(Render::CommandBuffer& cmd_buffer, Render::Device& device, bool shadows) const
+{
+    cmd_buffer.set_depth_test_enabled(false);
+    cmd_buffer.set_depth_write_enabled(false);
+    cmd_buffer.set_blending_enabled(true);
+    Render::Blending blending{ {Render::BlendFactor::SrcAlpha, Render::BlendFactor::OneMinusSrcAlpha} };
+    cmd_buffer.set_blending(blending);
+
+    Render::Material material;
+    material
+        .set_shader(device.context().shader_manager().shader("ao_lighting"))
+        .set_uniform("apply_shadows", shadows ? 1 : 0)
+        .set_uniform("shadows_intensity", shadows ? m_shadows.intensity : 0.0f)
+        .set_uniform("g_eye_position", AmbientOcclusion::EYE_POS_TEX_UNIT)
+        .set_uniform("g_light_position", AmbientOcclusion::LIGHT_POS_TEX_UNIT)
+        .set_uniform("g_eye_normal", AmbientOcclusion::EYE_NORM_TEX_UNIT)
+        .set_uniform("g_color", AmbientOcclusion::COLOR_TEX_UNIT)
+        .set_uniform("ssao", AmbientOcclusion::AO_TEX_UNIT)
+        .set_uniform("shadowsmap", Shadows::SHADOWSMAP_TEX_UNIT)
+        .set_texture(AmbientOcclusion::EYE_POS_TEX_UNIT, m_ao.gbuffer_fb->color_attachment(AmbientOcclusion::EYE_POS_CLR_ATTR))
+        .set_texture(AmbientOcclusion::LIGHT_POS_TEX_UNIT, m_ao.gbuffer_fb->color_attachment(AmbientOcclusion::LIGHT_POS_CLR_ATTR))
+        .set_texture(AmbientOcclusion::EYE_NORM_TEX_UNIT, m_ao.gbuffer_fb->color_attachment(AmbientOcclusion::EYE_NORM_CLR_ATTR))
+        .set_texture(AmbientOcclusion::COLOR_TEX_UNIT, m_ao.gbuffer_fb->color_attachment(AmbientOcclusion::COLOR_CLR_ATTR))
+        .set_texture(AmbientOcclusion::AO_TEX_UNIT, m_ao.blur_fb->color_attachment(0))
+        .set_texture(Shadows::SHADOWSMAP_TEX_UNIT, m_shadows.framebuffer->depth());
+
+    cmd_buffer.bind_and_draw(*m_screen_quad, material);
+
+    cmd_buffer.set_blending_enabled(false);
+    cmd_buffer.set_depth_write_enabled(true);
+    cmd_buffer.set_depth_test_enabled(true);
+}
+
 void Scene::render(Render::Device& device, Render::CommandBuffer& cmd_buffer, ISceneRenderCustomizer* customizer,
     SceneRenderFlag flags) const
 {
     Render::ScopedDebugGroup event_scene_render("Scene", cmd_buffer);
 
-    bool shadows = (uint32_t(flags) & uint32_t(SceneRenderFlag::Shadows)) != 0;
-    if (m_shadows.enabled && shadows) {
+    if (m_screen_quad == nullptr)
+        init_screen_quad(device);
+
+    bool shadows = m_shadows.enabled && (uint32_t(flags) & uint32_t(SceneRenderFlag::Shadows)) != 0;
+    if (shadows)
         render_shadowsmap_pass(device);
-        render_shadows_receivers_pass(device, cmd_buffer, customizer);
+
+    bool ao = m_ao.enabled && (uint32_t(flags) & uint32_t(SceneRenderFlag::AmbientOcclusion)) != 0;
+    if (ao) {
+        const Render::Rect& viewport = m_camera.viewport();
+        Domain::Index2 viewport_size = { viewport.width, viewport.height };
+        render_ao_gbuffer_pass(device, viewport_size);
+        generate_ao_kernel(device);
+        generate_ao_noise(device);
+        render_ao_texture_pass(device, viewport_size);
+        render_ao_texture_blur_pass(device, viewport_size);
+        render_ao_lighting_pass(cmd_buffer, device, shadows);
+        cmd_buffer.blit_to_default_framebuffer(*m_ao.gbuffer_fb, viewport.width, viewport.height,
+            Render::BlitFramebufferMask::DepthBufferBit, Render::BlitFramebufferFilter::Nearest);
+        m_ao.framebuffer_size = viewport_size;
     }
+    else if (shadows)
+        render_shadows_receivers_pass(device, cmd_buffer, customizer);
+
     render_no_shadows_pass(cmd_buffer, customizer);
 }
 

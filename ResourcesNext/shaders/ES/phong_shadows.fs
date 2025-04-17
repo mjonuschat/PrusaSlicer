@@ -14,6 +14,8 @@ const vec3 LIGHT_FRONT_DIR = vec3(0.6985074, 0.1397015, 0.6985074);
 
 #define INTENSITY_AMBIENT    0.3
 
+uniform float shadows_intensity;
+
 uniform vec4 uniform_color;
 uniform float emission_factor;
 uniform sampler2D shadowsmap;
@@ -22,26 +24,28 @@ varying vec3 eye_position;
 varying vec3 eye_normal;
 varying vec4 light_position;
 
-float shadow_factor(vec4 position)
+float shadow_pcf(vec4 position, float NdotL)
 {
     // perform perspective divide
     vec3 proj_coords = position.xyz / position.w;
     // transform to [0,1] range
     proj_coords = proj_coords * 0.5 + 0.5;
 
+    float bias = max(0.01 * (1.0 - NdotL), 0.001);
+
     // PCF
     float shadow = 0.0;
     vec2 texel_size = 1.0 / textureSize(shadowsmap, 0);
     for (int x = -1; x <= 1; ++x) {
         for (int y = -1; y <= 1; ++y) {
-            float pcf_depth = texture(shadowsmap, proj_coords.xy + vec2(x, y) * texel_size).r; 
-            shadow += proj_coords.z > pcf_depth ? 1.0 : 0.0;
+            float pcf_depth = texture(shadowsmap, proj_coords.xy + vec2(x, y) * texel_size).r;
+            shadow += proj_coords.z - bias > pcf_depth ? 1.0 : 0.0;
         }    
     }
     shadow /= 9.0;
     
     // if outside the light frustum -> lit
-    return (proj_coords.z > 1.0) ? 1.0 : 1.0 - shadow;
+    return (proj_coords.z - bias > 1.0) ? 1.0 : 1.0 - shadows_intensity * shadow;
 }
 
 void main()
@@ -52,7 +56,7 @@ void main()
     // Since these two are normalized the cosine is the dot product. We also need to clamp the result to the [0,1] range.
     float NdotL = max(dot(normal, LIGHT_TOP_DIR), 0.0);
 
-    float shadow = shadow_factor(light_position);
+    float shadow = shadow_pcf(light_position, NdotL);
     // x = tainted, y = specular;
     vec2 intensity;
     intensity.x = INTENSITY_AMBIENT + shadow * NdotL * LIGHT_TOP_DIFFUSE;

@@ -166,6 +166,13 @@ void CommandBuffer::bind_geometry(const Geometry& g, const Shader& s)
     m_needs_submit = true;
 }
 
+void CommandBuffer::blit_to_default_framebuffer(const Framebuffer& fb, int width, int height, BlitFramebufferMask mask,
+    BlitFramebufferFilter filter)
+{
+    auto& device = m_device.get_internal_as<GL::GLDeviceInternal>();
+    device.blit_to_default_framebuffer(fb, width, height, mask, filter);
+}
+
 void CommandBuffer::draw(PrimitiveType primitive, size_t offset, size_t count)
 {
     auto& device = m_device.get_internal_as<GL::GLDeviceInternal>();

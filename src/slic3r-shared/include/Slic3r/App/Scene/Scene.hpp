@@ -12,6 +12,8 @@
 #include "Slic3r/App/Render/Shader.hpp"
 #include "Slic3r/App/Render/ScreenInfo.hpp"
 
+#include "Slic3r/Domain/Types.hpp"
+
 #include "libslic3r/Color.hpp"
 #include "libslic3r/Geometry.hpp"
 #include "libslic3r/AABBMesh.hpp"
@@ -65,8 +67,9 @@ public:
 
 enum class SceneRenderFlag : uint32_t
 {
-    None    = 0x0000,
-    Shadows = 0x0001,
+    None             = 0x0000,
+    Shadows          = 0x0001,
+    AmbientOcclusion = 0x0002,
 };
 
 /**
@@ -237,10 +240,40 @@ public:
     bool bed_model_cast_shadow() const { return m_shadows.bed_model_cast_shadow; }
     void set_bed_model_cast_shadow(bool cast) { m_shadows.bed_model_cast_shadow = cast; }
 
-    int shadowsmap_size() const { return m_shadows.shadowsmap_size; }
-    void set_shadowsmap_size(int size) { m_shadows.pending_shadowsmap_size = size; }
+    int shadowsmap_size() const { return m_shadows.framebuffer_size; }
+    void set_shadowsmap_size(int size) { m_shadows.pending_framebuffer_size = size; }
+
+    float shadows_intensity() const { return m_shadows.intensity; }
+    void set_shadows_intensity(float intensity) { m_shadows.intensity = intensity; }
 
     void set_bed_aabb(const Eigen::AlignedBox3d& aabb) { m_shadows.bed_aabb = aabb; }
+
+    /** @} */
+
+    /**
+     * @name Ambient occlusion-related methods
+     * @{
+     */
+
+    bool ao_enabled() const { return m_ao.enabled; }
+    void set_ao_enabled(bool enable) { m_ao.enabled = enable; }
+
+    Domain::Index2 ao_framebuffer_size() const { return m_ao.framebuffer_size; }
+
+    size_t ao_kernel_size() const { return m_ao.kernel.size(); }
+    void set_ao_kernel_size(size_t size) { m_ao.pending_kernel_size = size; }
+
+    size_t ao_noise_size() const { return m_ao.noise_size; }
+    void set_ao_noise_size(size_t size) { m_ao.pending_noise_size = size; }
+
+    float ao_radius() const { return m_ao.radius; }
+    void set_ao_radius(float radius) { m_ao.radius = radius; }
+
+    float ao_bias() const { return m_ao.bias; }
+    void set_ao_bias(float bias) { m_ao.bias = bias; }
+
+    size_t ao_blur_filter_size() const { return m_ao.blur_filter_size; }
+    void set_ao_blur_filter_size(size_t size) { m_ao.blur_filter_size = size; }
 
     /** @} */
 
@@ -253,9 +286,17 @@ private:
     using NodeMaterials = std::vector<NodeMaterial>;
     NodeMaterials collect_nodes_with_material(const Node::NodePredicate& predicate) const;
 
+    void init_screen_quad(Render::Device& device) const;
+    void generate_ao_kernel(Render::Device& device) const;
+    void generate_ao_noise(Render::Device& device) const;
+
     void render_shadowsmap_pass(Render::Device& device) const;
     void render_shadows_receivers_pass(Render::Device& device, Render::CommandBuffer& cmd_buffer, ISceneRenderCustomizer* customizer) const;
     void render_no_shadows_pass(Render::CommandBuffer& cmd_buffer, ISceneRenderCustomizer* customizer) const;
+    void render_ao_gbuffer_pass(Render::Device& device, const Domain::Index2& viewport_size) const;
+    void render_ao_texture_pass(Render::Device& device, const Domain::Index2& viewport_size) const;
+    void render_ao_texture_blur_pass(Render::Device& device, const Domain::Index2& viewport_size) const;
+    void render_ao_lighting_pass(Render::CommandBuffer& cmd_buffer, Render::Device& device, bool shadows) const;
 
 private:
     using NodeIdLookUp = std::unordered_map<size_t, Node*>;
@@ -267,22 +308,68 @@ private:
     Render::GeometryManager<std::string> m_geometry_manager;
     TriangleMeshManager<std::string> m_trimesh_manager;
 
+    mutable Render::Geometry* m_screen_quad{ nullptr };
+
     struct Shadows
     {
         bool enabled{ true };
         bool bed_model_cast_shadow{ true };
         Eigen::AlignedBox3d bed_aabb;
 
-        mutable Render::Framebuffer* shadowsmap_framebuffer{ nullptr };
-        mutable int shadowsmap_size{ 0 };
-        mutable std::optional<int> pending_shadowsmap_size;
+        mutable float intensity{ DEFAULT_INTENSITY };
+
+        mutable int framebuffer_size{ 0 };
+        mutable std::optional<int> pending_framebuffer_size;
+        mutable Render::Framebuffer* framebuffer{ nullptr };
         mutable Camera light_cam;
 
-        static constexpr int DEFAULT_SHADOWSMAP_SIZE = 2048;
-        static constexpr int SHADOWSMAP_TEXTURE_UNIT = 15;
+        static constexpr int DEFAULT_FRAMEBUFFER_SIZE = 4096;
+        static constexpr float DEFAULT_INTENSITY = 0.75f;
+        static constexpr int SHADOWSMAP_TEX_UNIT = 15;
     };
 
     Shadows m_shadows;
+
+    struct AmbientOcclusion
+    {
+        bool enabled{ true };
+
+        mutable Domain::Index2 framebuffer_size{ 0, 0 };
+        mutable Render::Framebuffer* gbuffer_fb{ nullptr };
+        mutable Render::Framebuffer* ao_tex_fb{ nullptr };
+        mutable Render::Framebuffer* blur_fb{ nullptr };
+
+        mutable std::optional<size_t> pending_kernel_size;
+        mutable std::vector<Vec3f> kernel;
+
+        mutable size_t noise_size{ 0 };
+        mutable std::optional<size_t> pending_noise_size;
+        mutable Render::Texture* noise{ nullptr };
+
+        mutable float radius{ DEFAULT_RADIUS };
+        mutable float bias{ DEFAULT_BIAS };
+        mutable size_t blur_filter_size{ DEFAULT_BLUR_FILTER_SIZE };
+
+        static constexpr int EYE_POS_CLR_ATTR = 0;
+        static constexpr int LIGHT_POS_CLR_ATTR = 1;
+        static constexpr int EYE_NORM_CLR_ATTR = 2;
+        static constexpr int COLOR_CLR_ATTR = 3;
+
+        static constexpr int NOISE_TEX_UNIT = 9;
+        static constexpr int EYE_POS_TEX_UNIT = 10;
+        static constexpr int LIGHT_POS_TEX_UNIT = 11;
+        static constexpr int EYE_NORM_TEX_UNIT = 12;
+        static constexpr int COLOR_TEX_UNIT = 13;
+        static constexpr int AO_TEX_UNIT = 14;
+
+        static constexpr int DEFAULT_KERNEL_SIZE = 32;
+        static constexpr int DEFAULT_NOISE_SIZE = 4;
+        static constexpr float DEFAULT_RADIUS = 30.0f;
+        static constexpr float DEFAULT_BIAS = 1.5f;
+        static constexpr size_t DEFAULT_BLUR_FILTER_SIZE = 5;
+    };
+
+    AmbientOcclusion m_ao;
 
     static MinimalSceneRenderCustomizer ms_default_customizer;
 };

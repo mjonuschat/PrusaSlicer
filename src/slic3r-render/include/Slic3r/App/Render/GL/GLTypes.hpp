@@ -190,6 +190,27 @@ inline GLenum type(CullFaceMode mode)
     throw std::runtime_error{"Unreachable code!"};
 }
 
+inline GLenum type(BlitFramebufferMask mask)
+{
+    switch (mask)
+    {
+    case BlitFramebufferMask::ColorBufferBit:   return GL_COLOR_BUFFER_BIT;
+    case BlitFramebufferMask::DepthBufferBit:   return GL_DEPTH_BUFFER_BIT;
+    case BlitFramebufferMask::StencilBufferBit: return GL_STENCIL_BUFFER_BIT;
+    }
+    throw std::runtime_error{ "Unreachable code!" };
+}
+
+inline GLenum type(BlitFramebufferFilter filter)
+{
+    switch (filter)
+    {
+    case BlitFramebufferFilter::Nearest: return GL_NEAREST;
+    case BlitFramebufferFilter::Linear:  return GL_LINEAR;
+    }
+    throw std::runtime_error{ "Unreachable code!" };
+}
+
 const char* shader_input_name(VertexAttribType vat);
 GLenum texture_internal_format(PixelFormat format);
 GLenum texture_format(PixelFormat format);

@@ -41,6 +41,8 @@ public:
     void bind_framebuffer(const Framebuffer& buffer);
     void unbind_framebuffer(const Framebuffer& buffer);
 
+    void blit_to_default_framebuffer(const Framebuffer& fb, int width, int height, BlitFramebufferMask mask, BlitFramebufferFilter filter);
+
     void draw(PrimitiveType primitive, size_t offset, size_t count);
     void draw_instanced(PrimitiveType primitive, size_t offset, size_t count, size_t instances_count);
 

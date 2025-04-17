@@ -49,7 +49,10 @@ PlaterScenePresenter::PlaterScenePresenter(
 void PlaterScenePresenter::render_scene(Render::CommandBuffer& command_buffer)
 {
     if (!m_projects.empty()) {
-        Scene::SceneRenderFlag flags = Scene::SceneRenderFlag::Shadows;
+        Scene::SceneRenderFlag flags = Scene::SceneRenderFlag(
+            uint32_t(Scene::SceneRenderFlag::Shadows) |
+            uint32_t(Scene::SceneRenderFlag::AmbientOcclusion)
+        );
         project_context().scene().render(m_device, command_buffer, this, flags);
     }
 }
@@ -223,7 +226,7 @@ void PlaterScenePresenter::build_volume_node(
         color = color_it->second;
 
     auto material = Render::Material{}
-        .set_shader(m_device.context().shader_manager().shader("phong_light"))
+        .set_shader(m_device.context().shader_manager().shader("phong"))
         .set_uniform("uniform_color", color)
         .set_uniform("emission_factor", 0.0f)
         .set_transparent(color.is_transparent());

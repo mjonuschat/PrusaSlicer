@@ -41,9 +41,19 @@ struct VertexP3N3T2
     static const VertexAttribsDesc& format();
 };
 
+struct VertexP2T2
+{
+    Vec2f position;
+    Vec2f tex_coord;
+
+    static const VertexAttribsDesc& format();
+};
+
 static_assert(sizeof(VertexP3) == 3 * 4);
+static_assert(sizeof(VertexP3T2) == (3 + 2) * 4); 
 static_assert(sizeof(VertexP3N3) == (3 + 3) * 4);
 static_assert(sizeof(VertexP3N3T2) == (3 + 3 + 2) * 4);
+static_assert(sizeof(VertexP2T2) == (2 + 2) * 4);
 
 
 template <typename T>

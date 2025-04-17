@@ -96,14 +96,24 @@ std::pair<bool, std::string> ShaderManager::init()
     valid &= append_shader("cog_marker", { prefix + "cog_marker.vs", prefix + "cog_marker.fs" });
     // used to render gcode toolpaths tool marker
     valid &= append_shader("tool_marker", { prefix + "tool_marker.vs", prefix + "tool_marker.fs" });
-    // used to render bed axes and model, selection hints, gcode sequential view marker model, preview shells, options in gcode preview
-    valid &= append_shader("phong_light", { prefix + "phong_light.vs", prefix + "phong_light.fs" });
+    // used to render bed plate and model, models
+    valid &= append_shader("phong", { prefix + "phong.vs", prefix + "phong.fs" });
     // used to render shadowsmap
     valid &= append_shader("shadowsmap", { prefix + "shadowsmap.vs", prefix + "shadowsmap.fs" });
     // used to render shadowed models
-    valid &= append_shader("phong_light_shadows", { prefix + "phong_light_shadows.vs", prefix + "phong_light_shadows.fs" });
+    valid &= append_shader("phong_shadows", { prefix + "phong_shadows.vs", prefix + "phong_shadows.fs" });
     // used to render shadowed printbed
     valid &= append_shader("printbed_shadows", { prefix + "printbed_shadows.vs", prefix + "printbed_shadows.fs" });
+    // used to render ao g-buffer for models
+    valid &= append_shader("phong_ao", { prefix + "phong_ao.vs", prefix + "phong_ao.fs" });
+    // used to render ao g-buffer for printbed
+    valid &= append_shader("printbed_ao", { prefix + "printbed_ao.vs", prefix + "printbed_ao.fs" });
+    // used to render ao texture
+    valid &= append_shader("ao_texture", { prefix + "ao_texture.vs", prefix + "ao_texture.fs" });
+    // used to blur the ao texture
+    valid &= append_shader("ao_blur", { prefix + "ao_blur.vs", prefix + "ao_blur.fs" });
+    // used to render ao lighting
+    valid &= append_shader("ao_lighting", { prefix + "ao_lighting.vs", prefix + "ao_lighting.fs" });
 
     return { valid, error };
 }

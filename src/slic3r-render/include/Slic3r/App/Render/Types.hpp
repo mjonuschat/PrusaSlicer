@@ -20,6 +20,8 @@ enum class PixelFormat
     R32F,
     R32UI,
     RGBA32F,
+    RGBA16F,
+    RGB32F,
     DepthComponent,
 };
 
@@ -162,6 +164,19 @@ enum class ShaderType
     TessControl,
     Compute,
     Count
+};
+
+enum class BlitFramebufferMask
+{
+    ColorBufferBit,
+    DepthBufferBit,
+    StencilBufferBit
+};
+
+enum class BlitFramebufferFilter
+{
+    Nearest,
+    Linear
 };
 
 /**

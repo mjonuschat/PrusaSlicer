@@ -56,7 +56,7 @@ Framebuffer::Framebuffer(Device& device, const FramebufferCreationData& data)
     else {
         std::vector<GLenum> buffers(data.color_attachments.size());
         std::iota(buffers.begin(), buffers.end(), GL_COLOR_ATTACHMENT0);
-        glDrawBuffers(1, buffers.data());
+        glDrawBuffers(buffers.size(), buffers.data());
         glCheck();
     }
 

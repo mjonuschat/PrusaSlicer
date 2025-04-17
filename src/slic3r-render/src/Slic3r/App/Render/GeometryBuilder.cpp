@@ -42,6 +42,15 @@ const VertexAttribsDesc& VertexP3N3T2::format()
     return desc;
 }
 
+const VertexAttribsDesc& VertexP2T2::format()
+{
+    static const VertexAttribsDesc desc =  {
+        {VertexAttribType::Vertex, DataType::Float, 2, offsetof(VertexP2T2, position)},
+        {VertexAttribType::TexCoord0, DataType::Float, 2, offsetof(VertexP2T2, tex_coord)}
+    };
+    return desc;
+}
+
 std::unique_ptr<Geometry> geometry_from_triangle_mesh(
     Device& device, const indexed_triangle_set& triangle_mesh, const Material& material
 )
