@@ -5144,20 +5144,8 @@ void PrintConfigDef::handle_legacy_composite(DynamicPrintConfig &config)
 
 const PrintConfigDef print_config_def;
 
-DynamicPrintConfig DynamicPrintConfig::full_print_config()
-{
-	return DynamicPrintConfig((const PrintRegionConfig&)FullPrintConfig::defaults());
-}
-
 DynamicPrintConfig::DynamicPrintConfig(const StaticPrintConfig& rhs) : DynamicConfig(rhs, rhs.keys_ref())
 {
-}
-
-DynamicPrintConfig* DynamicPrintConfig::new_from_defaults_keys(const std::vector<std::string> &keys)
-{
-    auto *out = new DynamicPrintConfig();
-    out->apply_only(FullPrintConfig::defaults(), keys);
-    return out;
 }
 
 double min_object_distance(const ConfigBase &cfg)
@@ -5421,7 +5409,7 @@ void update_tilts_by_mode(DynamicPrintConfig& config, int tilt_mode, bool is_sl1
 
 void DynamicPrintConfig::set_num_extruders(unsigned int num_extruders)
 {
-    const auto &defaults = FullPrintConfig::defaults();
+    const auto &defaults = Domain::FullConfigFDM::defaults();
     for (const std::string &key : print_config_def.extruder_option_keys()) {
         if (key == "default_filament_profile")
             // Don't resize this field, as it is presented to the user at the "Dependencies" page of the Printer profile and we don't want to present
@@ -5443,9 +5431,9 @@ std::string DynamicPrintConfig::validate()
     switch (printer_technology) {
     case ptFFF:
     {
-        FullPrintConfig fpc;
+        Domain::FullConfigFDM fpc;
         fpc.apply(*this, true);
-        // Verify this print options through the FullPrintConfig.
+        // Verify this print options through the Domain::FullConfigFDM.
         return Slic3r::validate(fpc);
     }
     default:
@@ -5455,7 +5443,7 @@ std::string DynamicPrintConfig::validate()
 }
 
 //FIXME localize this function.
-std::string validate(const FullPrintConfig &cfg)
+std::string validate(const Domain::FullConfigFDM &cfg)
 {
     // --layer-height
     if (cfg.get_abs_value("layer_height") <= 0)
@@ -5669,8 +5657,8 @@ std::string validate(const FullPrintConfig &cfg)
         return ret; \
     }
 PRINT_CONFIG_CACHE_INITIALIZE((
-    PrintObjectConfig, PrintRegionConfig, MachineEnvelopeConfig, GCodeConfig, PrintConfig, FullPrintConfig, 
-    SLAMaterialConfig, SLAPrintConfig, SLAPrintObjectConfig, SLAPrinterConfig, SLAFullPrintConfig))
+    PrintObjectConfig, PrintRegionConfig, MachineEnvelopeConfig, GCodeConfig, PrintConfig, Domain::FullConfigFDM, 
+    SLAMaterialConfig, SLAPrintConfig, SLAPrintObjectConfig, SLAPrinterConfig, SLAFullConfig))
 static int print_config_static_initialized = print_config_static_initializer();
 
 CLIInputConfigDef::CLIInputConfigDef()

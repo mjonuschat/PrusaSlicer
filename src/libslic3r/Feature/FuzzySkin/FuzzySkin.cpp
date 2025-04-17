@@ -9,6 +9,7 @@
 #include "libslic3r/PrintConfig.hpp"
 
 #include "FuzzySkin.hpp"
+#include "libslic3r/ConfigViews.hpp"
 
 using namespace Slic3r;
 

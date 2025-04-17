@@ -19,6 +19,7 @@
 #include "libslic3r/ExtrusionEntity.hpp"
 #include "libslic3r/ExtrusionRole.hpp"
 #include "libslic3r/Point.hpp"
+#include "libslic3r/ConfigViews.hpp"
 
 namespace Slic3r {
 class ExtrusionEntityCollection;

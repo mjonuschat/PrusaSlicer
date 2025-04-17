@@ -25,6 +25,7 @@
 #include "libslic3r/Line.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/PrintConfig.hpp"
+#include "libslic3r/ConfigViews.hpp"
 
 //#define ARACHNE_STITCH_PATCH_DEBUG
 

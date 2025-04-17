@@ -281,7 +281,7 @@ ExtrusionEntityCollection calculate_and_split_overhanging_extrusions(
     const AABBTreeLines::LinesDistancer<CurledLine> &prev_layer_curled_lines);
 
 OverhangSpeeds calculate_overhang_speed(const ExtrusionAttributes  &attributes,
-                                        const FullPrintConfig      &config,
+                                        const Domain::FullConfigFDM      &config,
                                         size_t                      extruder_id,
                                         float                       external_perimeter_reference_speed,
                                         float                       default_speed,

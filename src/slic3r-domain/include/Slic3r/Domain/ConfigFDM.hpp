@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "Slic3r/Domain/Config.hpp"
+#include "Slic3r/Domain/GCodeFlavor.hpp"
 
 #include "Slic3r/Domain/GCodeFlavor.hpp"
 

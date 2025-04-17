@@ -17,7 +17,7 @@ class Bed;
 class ConfigContainer : public ObjectBase
 {
 public:
-    PrinterTechnology print_technology() const { return m_print_technology; }
+    Slic3r::PrinterTechnology print_technology() const { return m_print_technology; }
     const DynamicPrintConfig& print_config() const { return m_print_config; }
     void set_print_config(const DynamicPrintConfig& config)
     {
@@ -49,7 +49,7 @@ public:
     { return *DEBUG_ASSERT_VAL(find_by_id(m_bed_instances, id)); }
 
 private:
-    PrinterTechnology m_print_technology {ptFFF};
+    Slic3r::PrinterTechnology m_print_technology {ptFFF};
     /**
      * @brief Full config as loaded from 3MF.
      *

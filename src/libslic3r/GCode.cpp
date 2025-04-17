@@ -186,8 +186,6 @@ namespace Slic3r {
 
     const std::vector<std::string> ColorPrintColors::Colors = { "#C0392B", "#E67E22", "#F1C40F", "#27AE60", "#1ABC9C", "#2980B9", "#9B59B6" };
 
-#define EXTRUDER_CONFIG(OPT) m_config.OPT.get_at(m_writer.extruder()->id())
-
 void GCodeGenerator::PlaceholderParserIntegration::reset()
 {
     this->failed_templates.clear();
@@ -843,7 +841,7 @@ namespace DoExport {
     static std::string update_print_stats_and_format_filament_stats(
         const bool                   has_wipe_tower,
         const WipeTowerData          &wipe_tower_data,
-        const FullPrintConfig        &config,
+        const Domain::FullConfigFDM        &config,
         const std::vector<Extruder>  &extruders,
         unsigned int                 initial_extruder_id,
         int                          total_toolchanges,
@@ -2269,7 +2267,7 @@ GCode::Impl::Travels::ElevatedTravelParams get_ramping_layer_change_params(
     const Vec3d &from,
     const Vec3d &to,
     const Polyline &xy_path,
-    const FullPrintConfig &config,
+    const Domain::FullConfigFDM &config,
     const unsigned extruder_id,
     const GCode::TravelObstacleTracker &obstacle_tracker
 ) {
@@ -3042,7 +3040,7 @@ std::string GCodeGenerator::change_layer(
     );
 
     const Vec3d to{to_3d(unscaled(first_point), print_z)};
-    if (this->last_position && print_z > previous_layer_z && !EXTRUDER_CONFIG(retract_layer_change)) {
+    if (this->last_position && print_z > previous_layer_z && !m_config.retract_layer_change.get_at(m_current_extruder)) {
         const Vec3d from{to_3d(this->point_to_gcode(*this->last_position), previous_layer_z)};
         const Polyline xy_path{this->get_layer_change_xy_path(from, to)};
 
@@ -3203,7 +3201,7 @@ std::string GCodeGenerator::extrude_perimeters(
         ) {
             // Only wipe inside if the wipe along the perimeter is disabled.
             // Make a little move inwards before leaving loop.
-            if (std::optional<Point> pt = wipe_hide_seam(perimeter.smooth_path, perimeter.reversed, scale_(EXTRUDER_CONFIG(nozzle_diameter))); pt) {
+            if (std::optional<Point> pt = wipe_hide_seam(perimeter.smooth_path, perimeter.reversed, scale_(m_config.nozzle_diameter.get_at(m_current_extruder))); pt) {
                 // Generate the seam hiding travel move.
                 gcode += m_writer.travel_to_xy(this->point_to_gcode(*pt), "move inwards before travel");
                 this->last_position = *pt;
@@ -3283,24 +3281,24 @@ std::string GCodeGenerator::travel_to_first_position(const Vec3crd& point, const
 
     const Vec3d gcode_point = to_3d(this->point_to_gcode(point.head<2>()), unscaled(point.z()));
 
-    if (!EXTRUDER_CONFIG(travel_ramping_lift) && this->last_position) {
+    if (!m_config.travel_ramping_lift.get_at(m_current_extruder) && this->last_position) {
         const Vec3crd from{to_3d(*this->last_position, scaled(from_z))};
         gcode = this->travel_to(
             from, point, role, "travel to first layer point", insert_gcode, EnforceFirstZ::True
         );
     } else {
         double lift{
-            EXTRUDER_CONFIG(travel_ramping_lift) ? EXTRUDER_CONFIG(travel_max_lift) :
-                                                   EXTRUDER_CONFIG(retract_lift)};
-        const double upper_limit = EXTRUDER_CONFIG(retract_lift_below);
-        const double lower_limit = EXTRUDER_CONFIG(retract_lift_above);
+            m_config.travel_ramping_lift.get_at(m_current_extruder) ? m_config.travel_max_lift.get_at(m_current_extruder) :
+                                                   m_config.retract_lift.get_at(m_current_extruder)};
+        const double upper_limit = m_config.retract_lift_below.get_at(m_current_extruder);
+        const double lower_limit = m_config.retract_lift_above.get_at(m_current_extruder);
         if ((lower_limit > 0 && gcode_point.z() < lower_limit) ||
             (upper_limit > 0 && gcode_point.z() > upper_limit)) {
             lift = 0.0;
         }
 
-        if (EXTRUDER_CONFIG(retract_length) > 0 && !this->last_position) {
-            if (!this->last_position || EXTRUDER_CONFIG(retract_before_travel) < (this->point_to_gcode(*this->last_position) - gcode_point.head<2>()).norm()) {
+        if (m_config.retract_length.get_at(m_current_extruder) > 0 && !this->last_position) {
+            if (!this->last_position || m_config.retract_before_travel.get_at(m_current_extruder) < (this->point_to_gcode(*this->last_position) - gcode_point.head<2>()).norm()) {
                 gcode += this->writer().retract();
                 gcode += this->writer().travel_to_z_force(from_z + lift, "lift");
             }
@@ -3322,7 +3320,7 @@ std::string GCodeGenerator::travel_to_first_position(const Vec3crd& point, const
 }
 
 double cap_speed(
-    double speed, const FullPrintConfig &config, int extruder_id, const ExtrusionAttributes &path_attr
+    double speed, const Domain::FullConfigFDM &config, int extruder_id, const ExtrusionAttributes &path_attr
 ) {
     const double general_volumetric_cap{config.max_volumetric_speed.value};
     if (general_volumetric_cap > 0) {
@@ -3683,7 +3681,7 @@ std::string GCodeGenerator::generate_travel_gcode(
 
 bool GCodeGenerator::needs_retraction(const Polyline &travel, ExtrusionRole role)
 {
-    if (! m_writer.extruder() || travel.length() < scale_(EXTRUDER_CONFIG(retract_before_travel))) {
+    if (! m_writer.extruder() || travel.length() < scale_(m_config.retract_before_travel.get_at(m_current_extruder))) {
         // skip retraction if the move is shorter than the configured threshold
         return false;
     }
@@ -3845,7 +3843,7 @@ std::string GCodeGenerator::retract_and_wipe(bool toolchange, bool reset_e)
         return gcode;
 
     // wipe (if it's enabled for this extruder and we have a stored wipe path)
-    if (EXTRUDER_CONFIG(wipe) && m_wipe.has_path()) {
+    if (m_config.wipe.get_at(m_current_extruder) && m_wipe.has_path()) {
         gcode += toolchange ? m_writer.retract_for_toolchange(true) : m_writer.retract(true);
         gcode += m_wipe.wipe(*this, toolchange);
     }

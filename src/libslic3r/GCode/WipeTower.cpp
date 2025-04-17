@@ -30,6 +30,7 @@
 #include "libslic3r/Polyline.hpp"
 #include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/libslic3r.h"
+#include "libslic3r/ConfigViews.hpp"
 
 using namespace Slic3r::Biz;
 

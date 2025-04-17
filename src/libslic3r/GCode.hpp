@@ -43,6 +43,8 @@
 #include "libslic3r/GCode/Travels.hpp"
 #include "EdgeGrid.hpp"
 #include "tcbspan/span.hpp"
+#include "libslic3r/ConfigViews.hpp"
+#include "Slic3r/Domain/ConfigFDM.hpp"
 
 #include <memory>
 #include <map>
@@ -147,7 +149,7 @@ public:
         return { GCodeFormatter::quantize_xyzf(p.x()), GCodeFormatter::quantize_xyzf(p.y()) };
     }
     Point           gcode_to_point(const Vec2d &point) const;
-    const FullPrintConfig &config() const { return m_config; }
+    const Domain::FullConfigFDM &config() const { return m_config; }
     const Layer*    layer() const { return m_layer; }
     GCodeWriter&    writer() { return m_writer; }
     const GCodeWriter& writer() const { return m_writer; }
@@ -364,7 +366,7 @@ private:
        This affects the input arguments supplied to the extrude*() and travel_to()
        methods. */
     Vec2d                               m_origin;
-    FullPrintConfig                     m_config;
+    Domain::FullConfigFDM                     m_config;
     // scaled G-code resolution
     double                              m_scaled_resolution;
     GCodeWriter                         m_writer;

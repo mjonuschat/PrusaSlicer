@@ -10,6 +10,7 @@
 #include "WipeTower.hpp"
 #include "../PrintConfig.hpp"
 #include "libslic3r/Point.hpp"
+#include "libslic3r/ConfigViews.hpp"
 
 namespace Slic3r {
 

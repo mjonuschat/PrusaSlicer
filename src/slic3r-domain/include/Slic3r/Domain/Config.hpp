@@ -256,7 +256,7 @@ public:
     {
         ASSERT(m_type == ConfigItemType::Enum);
         ASSERT(typeid(T) == def().enum_type.type(), "Enum types mismatch.");
-        return get_enum_as_int();
+        return static_cast<T>(get_enum_as_int());
     }
     template <IsVectorOfEnums T>
     void set(T value)
@@ -369,8 +369,6 @@ public:
         return result;
     }
 
-    std::vector<std::string> diff_keys(const FullConfig& other) const;
-
     virtual std::string_view name() const = 0;
     virtual ~FullConfig() = default;
 
@@ -389,7 +387,9 @@ private:
     friend class ConfigView;
 };
 
-
+using ConfigBoxPtr = std::shared_ptr<const ConfigBox>;
+using ConfigBoxesPtrs = std::vector<ConfigBoxPtr>;
+using FullConfigPtr = std::shared_ptr<const FullConfig>;
 
 // To be used by backend to extract values for a given object while accounting
 // for possible per-object / per volume overrides. Keeps references to objects
@@ -399,26 +399,34 @@ private:
 class ConfigView
 {
 public:
-    template <typename... Args>
-    ConfigView(const FullConfig& fc, Args... args)
-        : m_config_boxes{ args... }, m_full_config{fc} {}
+    ConfigView(const FullConfigPtr& full_config, const ConfigBoxesPtrs& config_boxes)
+        : m_config_boxes{config_boxes}, m_full_config{full_config}
+    {
+        ASSERT(m_full_config);
+        for (const ConfigBoxPtr& ptr : m_config_boxes) {
+            ASSERT(ptr);
+        }
+    }
 
     template<class T>
     T get(const std::string_view key) const {
         for (auto rev_it = m_config_boxes.rbegin(); rev_it != m_config_boxes.rend(); ++rev_it) {
-            if (auto opt = rev_it->get().contains(key); opt.has_value() && ! (*opt)->is_null()) {
+            const ConfigBoxPtr& override{*rev_it};
+            if (auto opt = override->contains(key); opt.has_value() && ! (*opt)->is_null()) {
                 return (**opt).get<T>();
             }
         }
-        return m_full_config.get<T>(key);
+        return m_full_config->get<T>(key);
     }
 
     std::vector<std::string> diff_keys(const ConfigView& other) const;
 
 
 private:
-    std::vector<std::reference_wrapper<const ConfigBox>> m_config_boxes;
-    const FullConfig& m_full_config;
+    ConfigBoxesPtrs m_config_boxes;
+    FullConfigPtr m_full_config;
+
+    const ConfigItem& opt(const std::string_view key, int extruder_idx) const;
 };
 
 } // namespace Slic3r::Domain

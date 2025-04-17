@@ -70,8 +70,8 @@ private:
     // Highest of m_extruder_ids plus 1.
     unsigned int                m_num_extruders { 0 };
     const std::string           m_toolchange_prefix;
-    // Referencs GCodeGenerator::m_config, which is FullPrintConfig. While the PrintObjectConfig slice of FullPrintConfig is being modified,
-    // the PrintConfig slice of FullPrintConfig is constant, thus no thread synchronization is required.
+    // Referencs GCodeGenerator::m_config, which is Domain::FullConfigFDM. While the PrintObjectConfig slice of Domain::FullConfigFDM is being modified,
+    // the PrintConfig slice of Domain::FullConfigFDM is constant, thus no thread synchronization is required.
     const PrintConfig          &m_config;
     unsigned int                m_current_extruder;
 

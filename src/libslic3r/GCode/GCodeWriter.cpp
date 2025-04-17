@@ -20,6 +20,7 @@
 #include <cinttypes>
 
 #include "libslic3r/libslic3r.h"
+#include "libslic3r/ConfigViews.hpp"
 
 #ifdef __APPLE__
     #include <boost/spirit/include/karma.hpp>

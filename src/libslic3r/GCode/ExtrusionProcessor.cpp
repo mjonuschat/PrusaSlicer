@@ -11,6 +11,7 @@
 #include "Slic3r/Exception.hpp"
 #include "libslic3r/Line.hpp"
 #include "libslic3r/Polygon.hpp"
+#include "libslic3r/ConfigViews.hpp"
 
 namespace Slic3r::ExtrusionProcessor {
 
@@ -173,7 +174,7 @@ ExtrusionEntityCollection calculate_and_split_overhanging_extrusions(const Extru
 };
 
 static std::map<float, float> calc_print_speed_sections(const ExtrusionAttributes &attributes,
-                                                        const FullPrintConfig     &config,
+                                                        const Domain::FullConfigFDM     &config,
                                                         const float                external_perimeter_reference_speed,
                                                         const float                default_speed)
 {
@@ -209,7 +210,7 @@ static std::map<float, float> calc_print_speed_sections(const ExtrusionAttribute
 }
 
 static std::map<float, float> calc_fan_speed_sections(const ExtrusionAttributes &attributes,
-                                                      const FullPrintConfig     &config,
+                                                      const Domain::FullConfigFDM     &config,
                                                       const size_t               extruder_id)
 {
     struct OverhangWithFanSpeed
@@ -238,7 +239,7 @@ static std::map<float, float> calc_fan_speed_sections(const ExtrusionAttributes 
 }
 
 OverhangSpeeds calculate_overhang_speed(const ExtrusionAttributes  &attributes,
-                                        const FullPrintConfig      &config,
+                                        const Domain::FullConfigFDM      &config,
                                         const size_t                extruder_id,
                                         const float                 external_perimeter_reference_speed,
                                         const float                 default_speed,

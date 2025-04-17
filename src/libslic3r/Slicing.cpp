@@ -11,6 +11,7 @@
 #include "SlicingAdaptive.hpp"
 #include "PrintConfig.hpp"
 #include "libslic3r/Point.hpp"
+#include "libslic3r/ConfigViews.hpp"
 
 // #define SLIC3R_DEBUG
 

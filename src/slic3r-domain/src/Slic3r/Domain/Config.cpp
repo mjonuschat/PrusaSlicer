@@ -407,29 +407,20 @@ void FullConfig::add(const std::vector<std::reference_wrapper<const ConfigBox>>&
     ), "All vectors in the multi list must have the same size.");
 }
 
-
-
-std::vector<std::string> FullConfig::diff_keys(const FullConfig& other) const
-{
-    return ConfigView(*this).diff_keys(ConfigView(other));
-}
-
-
-
 std::vector<std::string> ConfigView::diff_keys(const ConfigView& other) const
 {
     // Reminder: FullConfig is our friend class.
-    ASSERT(this->m_full_config.name() == other.m_full_config.name());
+    ASSERT(this->m_full_config->name() == other.m_full_config->name());
     std::vector<std::string> out;
 
-    for (const auto& [key, item] : this->m_full_config.m_single_items) {
-        auto it = other.m_full_config.m_single_items.find(key);
-        if (it == other.m_full_config.m_single_items.end() || it->second != item)
+    for (const auto& [key, item] : this->m_full_config->m_single_items) {
+        auto it = other.m_full_config->m_single_items.find(key);
+        if (it == other.m_full_config->m_single_items.end() || it->second != item)
             out.emplace_back(key);
     }
-    for (const auto& [key, items] : this->m_full_config.m_multi_items) {
-        auto it = other.m_full_config.m_multi_items.find(key);
-        if (it == other.m_full_config.m_multi_items.end() || items != it->second) {
+    for (const auto& [key, items] : this->m_full_config->m_multi_items) {
+        auto it = other.m_full_config->m_multi_items.find(key);
+        if (it == other.m_full_config->m_multi_items.end() || items != it->second) {
             out.emplace_back(key);
             break;
         }
@@ -437,7 +428,7 @@ std::vector<std::string> ConfigView::diff_keys(const ConfigView& other) const
     // Now the extra boxes. Right now, all the extra boxes must be of the same type.
     ASSERT(this->m_config_boxes.size() == other.m_config_boxes.size());
     for (size_t i = 0; i < m_config_boxes.size(); ++i) {
-        std::vector<std::string> diff = m_config_boxes[i].get().diff_keys(other.m_config_boxes[i].get());
+        std::vector<std::string> diff = m_config_boxes[i]->diff_keys(*other.m_config_boxes[i]);
         out.insert(out.end(), diff.begin(), diff.end());
     }
     std::sort(out.begin(), out.end());

@@ -302,7 +302,7 @@ void Preset::normalize(DynamicPrintConfig &config)
         // This config contains single or multiple filament presets.
         // Ensure that the filament preset vector options contain the correct number of values.
         size_t n = (nozzle_diameter == nullptr) ? 1 : nozzle_diameter->values.size();
-        const auto &defaults = FullPrintConfig::defaults();
+        const auto &defaults = Domain::FullConfigFDM::defaults();
         for (const std::string &key : Preset::filament_options()) {
             if (key == "compatible_prints" || key == "compatible_printers")
                 continue;
@@ -312,7 +312,7 @@ void Preset::normalize(DynamicPrintConfig &config)
             if (opt != nullptr && opt->is_vector())
                 static_cast<ConfigOptionVectorBase*>(opt)->resize(n, defaults.option(key));
         }
-        // The following keys are mandatory for the UI, but they are not part of FullPrintConfig, therefore they are handled separately.
+        // The following keys are mandatory for the UI, but they are not part of Domain::FullConfigFDM, therefore they are handled separately.
         for (const std::string &key : { "filament_settings_id" }) {
             auto *opt = config.option(key, false);
             assert(opt == nullptr || opt->type() == coStrings);

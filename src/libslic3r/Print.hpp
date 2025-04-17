@@ -45,6 +45,7 @@
 #include <optional>
 #include <set>
 #include <tcbspan/span.hpp>
+#include "libslic3r/ConfigViews.hpp"
 
 namespace Slic3r {
 
@@ -144,9 +145,6 @@ public:
 public:
     void                        set_config(const PrintRegionConfig &config) { m_config = config; m_config_hash = m_config.hash(); }
     void                        set_config(PrintRegionConfig &&config) { m_config = std::move(config); m_config_hash = m_config.hash(); }
-    void                        config_apply_only(const ConfigBase &other, const t_config_option_keys &keys, bool ignore_nonexistent = false) 
-                                        { m_config.apply_only(other, keys, ignore_nonexistent); m_config_hash = m_config.hash(); }
-
     void set_print_region_id(const int id) {m_print_region_id = id;}
 
 private:

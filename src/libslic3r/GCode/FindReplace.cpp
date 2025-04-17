@@ -16,6 +16,7 @@
 
 #include "../Utils.hpp"
 #include "Slic3r/Exception.hpp"
+#include "libslic3r/ConfigViews.hpp"
 
 namespace Slic3r {
 

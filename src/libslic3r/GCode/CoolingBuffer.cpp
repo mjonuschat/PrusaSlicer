@@ -827,12 +827,11 @@ std::string CoolingBuffer::apply_layer_cooldown(
     bool bridge_fan_control = false;
     int  bridge_fan_speed   = 0;
     auto change_extruder_set_fan = [this, layer_id, layer_time, &new_gcode, &bridge_fan_control, &bridge_fan_speed](const int requested_fan_speed = -1) {
-#define EXTRUDER_CONFIG(OPT) m_config.OPT.get_at(m_current_extruder)
-        const int min_fan_speed            = EXTRUDER_CONFIG(min_fan_speed);
+        const int min_fan_speed            = m_config.min_fan_speed.get_at(m_current_extruder);
         // Is the fan speed ramp enabled?
-        const int full_fan_speed_layer     = EXTRUDER_CONFIG(full_fan_speed_layer);
-        int       disable_fan_first_layers = EXTRUDER_CONFIG(disable_fan_first_layers);
-        int       fan_speed_new            = EXTRUDER_CONFIG(fan_always_on) ? min_fan_speed : 0;
+        const int full_fan_speed_layer     = m_config.full_fan_speed_layer.get_at(m_current_extruder);
+        int       disable_fan_first_layers = m_config.disable_fan_first_layers.get_at(m_current_extruder);
+        int       fan_speed_new            = m_config.fan_always_on.get_at(m_current_extruder) ? min_fan_speed : 0;
 
         struct FanSpeedRange
         {
@@ -848,10 +847,10 @@ std::string CoolingBuffer::apply_layer_cooldown(
             disable_fan_first_layers = 1;
         }
         if (int(layer_id) >= disable_fan_first_layers) {
-            int   max_fan_speed             = EXTRUDER_CONFIG(max_fan_speed);
-            float slowdown_below_layer_time = float(EXTRUDER_CONFIG(slowdown_below_layer_time));
-            float fan_below_layer_time      = float(EXTRUDER_CONFIG(fan_below_layer_time));
-            if (EXTRUDER_CONFIG(cooling)) {
+            int   max_fan_speed             = m_config.max_fan_speed.get_at(m_current_extruder);
+            float slowdown_below_layer_time = float(m_config.slowdown_below_layer_time.get_at(m_current_extruder));
+            float fan_below_layer_time      = float(m_config.fan_below_layer_time.get_at(m_current_extruder));
+            if (m_config.cooling.get_at(m_current_extruder)) {
                 if (layer_time < slowdown_below_layer_time) {
                     // Layer time very short. Enable the fan to a full throttle.
                     fan_speed_new                        = max_fan_speed;
@@ -866,7 +865,7 @@ std::string CoolingBuffer::apply_layer_cooldown(
                 }
             }
 
-            bridge_fan_speed = EXTRUDER_CONFIG(bridge_fan_speed);
+            bridge_fan_speed = m_config.bridge_fan_speed.get_at(m_current_extruder);
             if (int(layer_id) >= disable_fan_first_layers && int(layer_id) + 1 < full_fan_speed_layer) {
                 // Ramp up the fan speed from disable_fan_first_layers to full_fan_speed_layer.
                 const float factor = float(int(layer_id + 1) - disable_fan_first_layers) / float(full_fan_speed_layer - disable_fan_first_layers);

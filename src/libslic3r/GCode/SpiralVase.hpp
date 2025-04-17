@@ -17,15 +17,17 @@
 #include "Slic3r/Biz/GCodeReader/GCodeReader.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/PrintConfig.hpp"
+#include "libslic3r/ConfigViews.hpp"
 
 namespace Slic3r {
 
-inline char get_extrusion_axis_char(const GCodeConfig &config)
+inline char get_extrusion_axis_char(const PrintConfig &config)
 {
-    std::string axis = get_extrusion_axis(config);
-    assert(axis.size() <= 1);
+    std::terminate(); // todo
+    //std::string axis = get_extrusion_axis(config);
+    //assert(axis.size() <= 1);
     // Return 0 for gcfNoExtrusion
-    return axis.empty() ? 0 : axis[0];
+    //return axis.empty() ? 0 : axis[0];
 }
 
 class SpiralVase
