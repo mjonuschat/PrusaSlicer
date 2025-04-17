@@ -85,10 +85,7 @@ nlohmann::json serialize(const Domain::ConfigBox& box)
 {
     nlohmann::json out;
     for (const ConfigItem& item : box) {
-        if (item.is_null() && std::find(item.def().belongs_to.begin(),
-            item.def().belongs_to.end(),
-            std::string(box.type()))
-            == item.def().belongs_to.end()) {
+        if (item.is_null() && item.def().location != box.type()) {
             // Null items are only serialized if they are mandatory for the box type.
             continue;
         }

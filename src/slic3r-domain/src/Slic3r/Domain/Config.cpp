@@ -31,7 +31,7 @@ void ConfigDefinitions::check_valid() const
 
     for (const ConfigItemDef& def : m_defs) {
         ASSERT(def.type != ConfigItemType::None);
-        ASSERT(! def.belongs_to.empty() || ! def.belongs_to_optional.empty());
+        ASSERT(! def.location.empty());
         ASSERT(int(bool(def.init_fn)) ^ int(bool(def.init_fn_ex)));
         ASSERT(def.type == ConfigItemType::Enum || def.enum_values.empty());
         ASSERT(def.type != ConfigItemType::Enum || ! def.enum_values.empty());
@@ -42,10 +42,8 @@ void ConfigDefinitions::check_valid() const
         [](const auto& a, const auto& b) { return a.enum_value == b.enum_value; }) == def.enum_values.end());
 
         // Check that all items are assigned to valid boxes.
-        ASSERT(std::all_of(def.belongs_to.begin(), def.belongs_to.end(), [this](const auto& box) {
-            return std::any_of(m_acceptable_boxes.begin(), m_acceptable_boxes.end(), [&box](const auto& b) { return box == b; });
-        })); 
-        ASSERT(std::all_of(def.belongs_to_optional.begin(), def.belongs_to_optional.end(), [this](const auto& box) {
+        ASSERT(std::any_of(m_acceptable_boxes.begin(), m_acceptable_boxes.end(), [&def](const auto& b) { return def.location == b; }));
+        ASSERT(std::all_of(def.overrides_in.begin(), def.overrides_in.end(), [this](const auto& box) {
             return std::any_of(m_acceptable_boxes.begin(), m_acceptable_boxes.end(), [&box](const auto& b) { return box == b; });
         }));
 
@@ -88,7 +86,7 @@ ConfigItem::ConfigItem(const ConfigItemDef& def, std::string_view box_type)
         case ConfigItemType::Strings :        m_data = std::vector<std::string>(); break;
         default : PANIC();
         }
-        m_is_nullable = std::any_of(def.belongs_to_optional.begin(), def.belongs_to_optional.end(),
+        m_is_nullable = std::any_of(def.overrides_in.begin(), def.overrides_in.end(),
             [&box_type](const auto& t) { return box_type == t; });
         if (m_is_nullable)
             set_null(true); // Overrides are null by default.
@@ -265,12 +263,25 @@ ConfigItem& ConfigBox::opt(const std::string_view key) {
 
 
 
-std::optional<const ConfigItem*> ConfigBox::has(const std::string_view key) const {
+std::optional<const ConfigItem*> ConfigBox::contains(const std::string_view key) const {
     auto it = std::lower_bound(m_items.begin(), m_items.end(), key,
         [](const ConfigItem& i, const auto& val) { return i.name() < val; });
     if (it == m_items.end() || it->name() != key)
         return std::nullopt;
     return std::make_optional(&(*it));
+}
+
+
+
+std::optional<const ConfigItem*> ConfigBox::get_override(const std::string_view key) const
+{
+    std::optional<const ConfigItem*> opt = contains(key);
+    ASSERT(opt.has_value(), "Calling get_override for a key that does not exist in this ConfigBox.");
+    ASSERT((*opt)->is_nullable(), "Calling get_override for a key that is mandatory in this ConfigBox.");
+    if ((*opt)->is_null())
+        return opt;
+    else
+        return std::nullopt;
 }
 
 
@@ -291,11 +302,7 @@ ConfigBox::ConfigBox(const ConfigDefinitions& defs, std::string_view type)
 : m_type{type}
 {
     for (const ConfigItemDef& def : defs.defs()) {
-        bool belongs_here = false;
-        for (const auto& list : { &def.belongs_to, &def.belongs_to_optional })
-            belongs_here |= std::any_of(list->begin(), list->end(),
-                [&type](const auto& t) { return type == t; });
-        if (belongs_here)
+        if (def.location == type)
             m_items.emplace_back(ConfigItem(def, type));
     }
 }
@@ -305,7 +312,7 @@ ConfigBox::ConfigBox(const ConfigDefinitions& defs, std::string_view type)
 const ConfigItem& ConfigView::opt(const std::string_view key, int extruder_idx) const
 {
     for (auto rev_it = m_config_boxes.rbegin(); rev_it != m_config_boxes.rend(); ++rev_it) {
-        if (auto opt = rev_it->get().has(key))
+        if (auto opt = rev_it->get().contains(key); opt.has_value() && ! (*opt)->is_null())
             return **opt;
     }
     return m_full_config.opt(key, extruder_idx);

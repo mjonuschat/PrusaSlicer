@@ -28,14 +28,14 @@ void load_from_legacy_file(const std::string& filename, Domain::ConfigBox& box)
     // TODO handle errors
 
     for (const auto& key : cfg.keys()) {
-        if (! box.has(key))
+        if (! box.contains(key))
             continue;
         ConfigOption* opt = cfg.option(key);
         Domain::ConfigItem& item = box.opt(key);
         
         if (opt->nullable()) {
             bool old_nil = opt->is_nil();
-            bool nullable_new = std::find(item.def().belongs_to_optional.begin(), item.def().belongs_to_optional.end(), box.type()) != item.def().belongs_to_optional.end();
+            bool nullable_new = std::find(item.def().overrides_in.begin(), item.def().overrides_in.end(), box.type()) != item.def().overrides_in.end();
             // TODO: We really should enumerate all nullables present in old slicer and handle them separately.
             // Otherwise, the new slicer will not know in which box shall the nullable item be set.
 

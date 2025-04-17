@@ -98,8 +98,8 @@ struct ConfigItemDef
     ConfigItemType type{ ConfigItemType::None };
     std::function<void(ConfigItem&)> init_fn;
     std::function<void(ConfigItem&, std::string_view box)> init_fn_ex;
-    std::vector<std::string> belongs_to{ }; // Which box it belongs to. Can be None, in which case the latter cannot be.
-    std::vector<std::string> belongs_to_optional{ }; // It is also here, but always nullable (overrides).
+    std::string location{ }; // Which box it belongs to. Must not be empty.
+    std::vector<std::string> overrides_in{ }; // Which boxes this can be overridden in.
     
     // Enum specific:
     std::any enum_type; // holds an object of the required enum type.
@@ -215,6 +215,7 @@ public:
     bool is_vector() const { return m_type >= ConfigItemType::Bools; }
     void set_null(bool null);
     bool is_null() const;
+    bool is_nullable() const { return m_is_nullable; }
     const std::string& name() const { return m_name; }
     ConfigItemType type() const { return m_type; }
 
@@ -279,8 +280,8 @@ public:
     ConfigItem& opt(const std::string_view key);
 
     std::string_view type() const { return m_type; }
-    std::optional<const ConfigItem*> has(const std::string_view key) const;
-    // TODO: is_override_active
+    std::optional<const ConfigItem*> contains(const std::string_view key) const;
+    std::optional<const ConfigItem*> get_override(const std::string_view key) const;
 
     std::vector<ConfigItem>::iterator begin() { return m_items.begin(); }
     std::vector<ConfigItem>::iterator end() { return m_items.end(); }

@@ -59,7 +59,7 @@ int main(int, char* [])
 
     //for (const ConfigItemDef& def : s_defs_fdm.defs()) {
     //    bool tool_dependent = false;
-    //    for (const auto& list : { &def.belongs_to, &def.belongs_to_optional })
+    //    for (const auto& list : { &def.belongs_to, &def.overrides_in })
     //        tool_dependent |= std::any_of(list->begin(), list->end(),
     //            [](const auto& t) { return t == "toolprint_settings" || t == "filament_settings"; });
 
