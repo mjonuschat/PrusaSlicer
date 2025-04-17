@@ -287,12 +287,39 @@ static ExtrusionEntityCollection traverse_loops_classic(const PerimeterGenerator
         variable_width_classic(thin_walls, ExtrusionRole::ExternalPerimeter, params.ext_perimeter_flow, 0, coll.entities);
         thin_walls.clear();
     }
-    
+
     // Traverse children and build the final collection.
 	Point zero_point(0, 0);
-	std::vector<std::pair<size_t, bool>> chain = chain_extrusion_entities(coll.entities, &zero_point);
+	std::vector<std::pair<size_t, bool>> extrusions = chain_extrusion_entities(coll.entities, &zero_point);
+    std::vector<std::pair<size_t, bool>> ordered_extrusions;
     ExtrusionEntityCollection out;
-    for (const std::pair<size_t, bool> &idx : chain) {
+
+    {
+        std::vector<std::pair<size_t, bool>> holes;
+        std::vector<std::pair<size_t, bool>> walls;
+        std::vector<std::pair<size_t, bool>> thin_walls;
+        for (const std::pair<size_t, bool> &idx : extrusions) {
+            if (idx.first < loops.size())
+                if (!loops[idx.first].is_external() ||
+                    (!loops[idx.first].is_contour && !loops[idx.first].children.empty()))
+                    holes.push_back(idx);
+                else
+                    walls.push_back(idx);
+            else
+                thin_walls.push_back(idx);
+        }
+        append(ordered_extrusions, std::move(holes));
+        append(ordered_extrusions, std::move(walls));
+        append(ordered_extrusions, std::move(thin_walls));
+    }
+    assert(ordered_extrusions.size() == extrusions.size());
+
+    // if brim will be printed, reverse the order of perimeters so that
+    // we continue inwards after having finished the brim
+    const bool reverse_contour = params.config.external_perimeters_first || (params.layer_id == 0 && params.object_config.brim_width.value > 0);
+    const bool reverse_hole = (params.config.external_perimeters_first && params.config.external_perimeters_first_holes) || (params.layer_id == 0 && params.object_config.brim_width.value > 0);
+
+    for (const std::pair<size_t, bool> &idx : ordered_extrusions) {
 		assert(coll.entities[idx.first] != nullptr);
         if (idx.first >= loops.size()) {
             // This is a thin wall.
@@ -308,7 +335,7 @@ static ExtrusionEntityCollection traverse_loops_classic(const PerimeterGenerator
             out.entities.reserve(out.entities.size() + children.entities.size() + 1);
             ExtrusionLoop *eloop = static_cast<ExtrusionLoop*>(coll.entities[idx.first]);
             coll.entities[idx.first] = nullptr;
-            if (loop.is_contour) {
+            if ((loop.is_contour && !reverse_contour) || (!loop.is_contour && reverse_hole)) {
                 if (eloop->is_clockwise())
                     eloop->reverse_loop();
                 out.append(std::move(children.entities));
@@ -1127,7 +1154,7 @@ void PerimeterGenerator::process_arachne(
         return true;
     }());
 
-    Arachne::PerimeterOrder::PerimeterExtrusions ordered_extrusions = Arachne::PerimeterOrder::ordered_perimeter_extrusions(perimeters, params.config.external_perimeters_first);
+    Arachne::PerimeterOrder::PerimeterExtrusions ordered_extrusions = Arachne::PerimeterOrder::ordered_perimeter_extrusions(perimeters, params.config.external_perimeters_first, params.config.external_perimeters_first_holes);
 
     if (ExtrusionEntityCollection extrusion_coll = traverse_extrusions(params, lower_slices_polygons_cache, ordered_extrusions); !extrusion_coll.empty())
         out_loops.append(extrusion_coll);
@@ -1460,12 +1487,6 @@ void PerimeterGenerator::process_classic(
         }
         // at this point, all loops should be in contours[0]
         ExtrusionEntityCollection entities = traverse_loops_classic(params, lower_slices_polygons_cache, contours.front(), thin_walls);
-        // if brim will be printed, reverse the order of perimeters so that
-        // we continue inwards after having finished the brim
-        // TODO: add test for perimeter order
-        if (params.config.external_perimeters_first || 
-            (params.layer_id == 0 && params.object_config.brim_width.value > 0))
-            entities.reverse();
         // append perimeters for this slice as a collection
         if (! entities.empty())
             out_loops.append(entities);
