@@ -215,7 +215,7 @@ static std::vector<size_t> order_of_grouped_perimeter_extrusions_to_minimize_dis
     return grouped_extrusions_order;
 }
 
-static PerimeterExtrusions extract_ordered_perimeter_extrusions(const PerimeterExtrusions &sorted_perimeter_extrusions, const bool external_perimeters_first) {
+static PerimeterExtrusions extract_ordered_perimeter_extrusions(const PerimeterExtrusions &sorted_perimeter_extrusions, const bool external_perimeters_first, const bool external_perimeters_first_holes) {
     // Extrusions are ordered inside each group.
     std::vector<GroupedPerimeterExtrusions> grouped_extrusions;
 
@@ -268,6 +268,13 @@ static PerimeterExtrusions extract_ordered_perimeter_extrusions(const PerimeterE
 
     PerimeterExtrusions ordered_extrusions;
     for (size_t order_idx : grouped_extrusion_order) {
+        const GroupedPerimeterExtrusions &perimeter_extrusion = grouped_extrusions[order_idx];
+        if (!perimeter_extrusion.external_perimeter_extrusion->is_contour() && external_perimeters_first && !external_perimeters_first_holes) {
+            std::reverse(
+                grouped_extrusions[order_idx].extrusions.begin(),
+                grouped_extrusions[order_idx].extrusions.end()
+            );
+        }
         for (const PerimeterExtrusion *perimeter_extrusion : grouped_extrusions[order_idx].extrusions)
             ordered_extrusions.emplace_back(*perimeter_extrusion);
     }
@@ -277,11 +284,11 @@ static PerimeterExtrusions extract_ordered_perimeter_extrusions(const PerimeterE
 
 // FIXME: From the point of better patch planning, it should be better to do ordering when we have generated all extrusions (for now, when G-Code is exported).
 // FIXME: It would be better to extract the adjacency graph of extrusions from the SkeletalTrapezoidation graph.
-PerimeterExtrusions ordered_perimeter_extrusions(const Perimeters &perimeters, const bool external_perimeters_first) {
+PerimeterExtrusions ordered_perimeter_extrusions(const Perimeters &perimeters, const bool external_perimeters_first, const bool external_perimeters_first_holes) {
     PerimeterExtrusions sorted_perimeter_extrusions = get_sorted_perimeter_extrusions_by_area(perimeters);
     construct_perimeter_extrusions_adjacency_graph(sorted_perimeter_extrusions);
     assign_nearest_external_perimeter(sorted_perimeter_extrusions);
-    return extract_ordered_perimeter_extrusions(sorted_perimeter_extrusions, external_perimeters_first);
+    return extract_ordered_perimeter_extrusions(sorted_perimeter_extrusions, external_perimeters_first, external_perimeters_first_holes);
 }
 
 } // namespace Slic3r::Arachne::PerimeterOrder
