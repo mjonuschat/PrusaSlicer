@@ -794,6 +794,9 @@ PRINT_CONFIG_CLASS_DEFINE(
 
     ((ConfigOptionFloat,                small_perimeter_min_length))
     ((ConfigOptionFloat,                small_perimeter_max_length))
+
+    // Disable external perimeters first for holes
+    ((ConfigOptionBool,                 external_perimeters_first_holes))
 )
 
 PRINT_CONFIG_CLASS_DEFINE(

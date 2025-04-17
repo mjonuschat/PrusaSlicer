@@ -324,7 +324,7 @@ void ConfigManipulation::toggle_print_fff_options(DynamicPrintConfig* config)
     for (auto el : { "extra_perimeters","extra_perimeters_on_overhangs", "thin_walls", "overhangs",
                     "seam_position","staggered_inner_seams", "external_perimeters_first", "external_perimeter_extrusion_width",
                     "perimeter_speed", "small_perimeter_speed", "external_perimeter_speed", "enable_dynamic_overhang_speeds",
-                    "small_perimeter_min_length", "small_perimeter_max_length"})
+                    "small_perimeter_min_length", "small_perimeter_max_length", "external_perimeters_first_holes"})
         toggle_field(el, have_perimeters);
 
     for (size_t i = 0; i < 4; i++) {
@@ -523,6 +523,8 @@ void ConfigManipulation::toggle_print_fff_options(DynamicPrintConfig* config)
     toggle_field("small_area_infill_flow_compensation_compensation_factor_7", have_small_area_infill_flow_compensation);
     toggle_field("small_area_infill_flow_compensation_compensation_factor_8", have_small_area_infill_flow_compensation);
     toggle_field("small_area_infill_flow_compensation_compensation_factor_9", have_small_area_infill_flow_compensation);
+
+    toggle_field("external_perimeters_first_holes", config->opt_bool("external_perimeters_first"));
 }
 
 void ConfigManipulation::toggle_print_sla_options(DynamicPrintConfig* config)
