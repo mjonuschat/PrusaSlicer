@@ -74,7 +74,7 @@ float shadow_pcf(vec4 position, float NdotL)
     return (proj_coords.z - bias > 1.0) ? 1.0 : 1.0 - shadows_intensity * shadow;
 }
 
-void main()
+vec4 lighting_phong()
 {
     vec3 normal = normalize(eye_normal);
 
@@ -83,15 +83,21 @@ void main()
     float NdotL = max(dot(normal, LIGHT_TOP_DIR), 0.0);
 
     float shadow = shadow_pcf(light_position, NdotL);
-    // x = tainted, y = specular;
-    vec2 intensity;
-    intensity.x = INTENSITY_AMBIENT + shadow * NdotL * LIGHT_TOP_DIFFUSE;
-    intensity.y = shadow * LIGHT_TOP_SPECULAR * pow(max(dot(-normalize(eye_position.xyz), reflect(-LIGHT_TOP_DIR, normal)), 0.0), LIGHT_TOP_SHININESS);
 
-    NdotL = max(dot(normal, LIGHT_FRONT_DIR), 0.0);
-    intensity.x += NdotL * LIGHT_FRONT_DIFFUSE;
+    // top light
+    float ambient = INTENSITY_AMBIENT;
+    float diffuse = shadow * LIGHT_TOP_DIFFUSE * NdotL;
+    float specular = shadow * LIGHT_TOP_SPECULAR * pow(max(dot(-normalize(eye_position.xyz), reflect(-LIGHT_TOP_DIR, normal)), 0.0), LIGHT_TOP_SHININESS);
+
+    // front light
+    ambient += LIGHT_FRONT_DIFFUSE * max(dot(normal, LIGHT_FRONT_DIR), 0.0);
 
     vec4 color = svg_source ? svg_color() : non_svg_color();
     color.a = transparent_background ? color.a * 0.5 : color.a;
-    out_color = vec4(vec3(intensity.y) + color.rgb * intensity.x, color.a);
+    return vec4(color.rgb * (ambient + diffuse + specular), color.a);
+}
+
+void main()
+{
+    out_color = lighting_phong();
 }

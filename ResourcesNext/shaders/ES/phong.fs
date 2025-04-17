@@ -20,7 +20,7 @@ uniform float emission_factor;
 varying vec3 eye_position;
 varying vec3 eye_normal;
 
-void main()
+vec4 lighting_phong()
 {
     vec3 normal = normalize(eye_normal);
 
@@ -28,14 +28,19 @@ void main()
     // Since these two are normalized the cosine is the dot product. We also need to clamp the result to the [0,1] range.
     float NdotL = max(dot(normal, LIGHT_TOP_DIR), 0.0);
 
-    // x = tainted, y = specular;
-    vec2 intensity;
-    intensity.x = INTENSITY_AMBIENT + NdotL * LIGHT_TOP_DIFFUSE;
-    intensity.y = LIGHT_TOP_SPECULAR * pow(max(dot(-normalize(eye_position.xyz), reflect(-LIGHT_TOP_DIR, normal)), 0.0), LIGHT_TOP_SHININESS);
+    // top light
+    float ambient = INTENSITY_AMBIENT;
+    float diffuse = LIGHT_TOP_DIFFUSE * NdotL;
+    float specular = LIGHT_TOP_SPECULAR * pow(max(dot(-normalize(eye_position.xyz), reflect(-LIGHT_TOP_DIR, normal)), 0.0), LIGHT_TOP_SHININESS);
+    float emission = emission_factor;
 
-    // Perform the same lighting calculation for the 2nd light source (no specular applied).
-    NdotL = max(dot(normal, LIGHT_FRONT_DIR), 0.0);
-    intensity.x += NdotL * LIGHT_FRONT_DIFFUSE;
+    // front light
+    ambient += LIGHT_FRONT_DIFFUSE * max(dot(normal, LIGHT_FRONT_DIR), 0.0);
 
-    gl_FragColor = vec4(vec3(intensity.y) + uniform_color.rgb * (intensity.x + emission_factor), uniform_color.a);
+    return vec4(uniform_color.rgb * (ambient + diffuse + specular + emission), uniform_color.a);
+}
+
+void main()
+{
+    gl_FragColor = lighting_phong();
 }

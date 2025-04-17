@@ -277,6 +277,28 @@ public:
 
     /** @} */
 
+    /**
+     * @name Physically based rendering-related methods
+     * @{
+     */
+
+    bool pbr_enabled() const { return m_pbr.enabled; }
+    void set_pbr_enabled(bool enable) { m_pbr.enabled = enable; }
+
+    float pbr_intensity() const { return m_pbr.intensity; }
+    void set_pbr_intensity(float intensity) { m_pbr.intensity = intensity; }
+
+    float pbr_roughness() const { return m_pbr.roughness; }
+    void set_pbr_roughness(float roughness) { m_pbr.roughness = roughness; }
+
+    float pbr_metal() const { return m_pbr.metal; }
+    void set_pbr_metal(float metal) { m_pbr.metal = metal; }
+
+    float pbr_ior() const { return m_pbr.ior; }
+    void set_pbr_ior(float ior) { m_pbr.ior = ior; }
+
+    /** @} */
+
     void log_nodes() const;
 private:
     void register_node(Node* n);
@@ -370,6 +392,20 @@ private:
     };
 
     AmbientOcclusion m_ao;
+
+    struct PBR
+    {
+        bool enabled{ true };
+        mutable float intensity{ DEFAULT_INTENSITY };
+
+        float metal{ 0.0f };
+        float roughness{ 0.25f };
+        float ior{ 1.5f };
+
+        static constexpr float DEFAULT_INTENSITY = 10.0f;
+    };
+
+    PBR m_pbr;
 
     static MinimalSceneRenderCustomizer ms_default_customizer;
 };

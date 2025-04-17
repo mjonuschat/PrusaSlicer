@@ -32,7 +32,7 @@ vec4 non_svg_color()
 
 void main()
 {
-	vec4 color = svg_source ? svg_color() : non_svg_color();
-	color.a = transparent_background ? color.a * 0.5 : color.a;
-	out_color = color;
+    vec4 color = svg_source ? svg_color() : non_svg_color();
+    color.a = transparent_background ? color.a * 0.5 : color.a;
+    out_color = color;
 }

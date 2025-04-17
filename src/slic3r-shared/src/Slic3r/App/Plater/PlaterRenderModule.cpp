@@ -888,6 +888,8 @@ static void render_imgui_debug_scene_shading(PlaterScenePresenter& scene_present
     if (shadowsmap_size == 0)
         return;
 
+    float items_width = 150.0f;
+
     std::string caption = "Scene shading debug";
     const ImGuiStyle& style = ImGui::GetStyle();
     float min_w = ImGui::CalcTextSize(caption.c_str()).x +
@@ -935,7 +937,8 @@ static void render_imgui_debug_scene_shading(PlaterScenePresenter& scene_present
 
                 const char* preview_value = sizes_str[sel_size].c_str();
 
-                if (ImGui::BeginCombo("##sizes", preview_value, ImGuiComboFlags_WidthFitPreview)) {
+                ImGui::SetNextItemWidth(items_width);
+                if (ImGui::BeginCombo("##sizes", preview_value)) {
                     for (int i = 0; i < int(sizes_str.size()); i++) {
                         bool is_selected = (sel_size == i);
                         if (ImGui::Selectable(sizes_str[i].c_str(), is_selected))
@@ -957,8 +960,8 @@ static void render_imgui_debug_scene_shading(PlaterScenePresenter& scene_present
                 ImGui::AlignTextToFramePadding();
                 ImGui::Text("Intensity");
                 ImGui::TableSetColumnIndex(1);
-                ImGui::SetNextItemWidth(200.0f);
-                if (ImGui::SliderFloat("##scale", &intensity, 0.2f, 1.0f, "%.2f", ImGuiSliderFlags_NoInput))
+                ImGui::SetNextItemWidth(items_width);
+                if (ImGui::SliderFloat("##intensity", &intensity, 0.2f, 1.0f, "%.2f", ImGuiSliderFlags_NoInput))
                     scene.set_shadows_intensity(intensity);
 
                 ImGui::EndTable();
@@ -1013,7 +1016,7 @@ static void render_imgui_debug_scene_shading(PlaterScenePresenter& scene_present
 
                         const char* k_preview_value = k_sizes_str[sel_k_size].c_str();
 
-                        ImGui::SetNextItemWidth(200.0f);
+                        ImGui::SetNextItemWidth(items_width);
                         if (ImGui::BeginCombo("##k_sizes", k_preview_value)) {
                             for (int i = 0; i < int(k_sizes_str.size()); i++) {
                                 bool is_selected = (sel_k_size == i);
@@ -1058,7 +1061,7 @@ static void render_imgui_debug_scene_shading(PlaterScenePresenter& scene_present
 
                         const char* n_preview_value = n_sizes_str[sel_n_size].c_str();
 
-                        ImGui::SetNextItemWidth(200.0f);
+                        ImGui::SetNextItemWidth(items_width);
                         if (ImGui::BeginCombo("##n_sizes", n_preview_value)) {
                             for (int i = 0; i < int(n_sizes_str.size()); i++) {
                                 bool is_selected = (sel_n_size == i);
@@ -1082,8 +1085,8 @@ static void render_imgui_debug_scene_shading(PlaterScenePresenter& scene_present
                     ImGui::AlignTextToFramePadding();
                     ImGui::Text("Radius");
                     ImGui::TableSetColumnIndex(1);
-                    ImGui::SetNextItemWidth(200.0f);
-                    if (ImGui::SliderFloat("##aradius", &radius, 0.1f, 50.0f, "%.1f", ImGuiSliderFlags_NoInput))
+                    ImGui::SetNextItemWidth(items_width);
+                    if (ImGui::SliderFloat("##ao_radius", &radius, 0.1f, 50.0f, "%.1f", ImGuiSliderFlags_NoInput))
                         scene.set_ao_radius(radius);
 
                     float bias = scene.ao_bias();
@@ -1092,7 +1095,7 @@ static void render_imgui_debug_scene_shading(PlaterScenePresenter& scene_present
                     ImGui::AlignTextToFramePadding();
                     ImGui::Text("Bias");
                     ImGui::TableSetColumnIndex(1);
-                    ImGui::SetNextItemWidth(200.0f);
+                    ImGui::SetNextItemWidth(items_width);
                     if (ImGui::SliderFloat("##ao_bias", &bias, 0.001f, 10.0f, "%.3f", ImGuiSliderFlags_NoInput))
                         scene.set_ao_bias(bias);
 
@@ -1120,7 +1123,7 @@ static void render_imgui_debug_scene_shading(PlaterScenePresenter& scene_present
 
                         const char* bf_preview_value = bf_sizes_str[sel_bf_size].c_str();
 
-                        ImGui::SetNextItemWidth(200.0f);
+                        ImGui::SetNextItemWidth(items_width);
                         if (ImGui::BeginCombo("##bf_sizes", bf_preview_value)) {
                             for (int i = 0; i < int(bf_sizes_str.size()); i++) {
                                 bool is_selected = (sel_bf_size == i);
@@ -1143,6 +1146,59 @@ static void render_imgui_debug_scene_shading(PlaterScenePresenter& scene_present
             }
         }
 
+        if (scene.ao_enabled()) {
+            if (ImGui::CollapsingHeader("Physically based rendering")) {
+                bool enabled = scene.pbr_enabled();
+                if (ImGui::Checkbox("Enabled##pbr", &enabled))
+                    scene.set_pbr_enabled(enabled);
+
+                if (ImGui::BeginTable("PBR", 2, ImGuiTableFlags_Borders)) {
+
+                    float intensity = scene.pbr_intensity();
+                    ImGui::TableNextRow();
+                    ImGui::TableSetColumnIndex(0);
+                    ImGui::AlignTextToFramePadding();
+                    ImGui::Text("Intensity");
+                    ImGui::TableSetColumnIndex(1);
+                    ImGui::SetNextItemWidth(items_width);
+                    if (ImGui::SliderFloat("##pbr_intensity", &intensity, 1.0f, 20.0f, "%.1f", ImGuiSliderFlags_NoInput))
+                        scene.set_pbr_intensity(intensity);
+
+                    float metal = scene.pbr_metal();
+                    ImGui::TableNextRow();
+                    ImGui::TableSetColumnIndex(0);
+                    ImGui::AlignTextToFramePadding();
+                    ImGui::Text("Metal");
+                    ImGui::TableSetColumnIndex(1);
+                    ImGui::SetNextItemWidth(items_width);
+                    if (ImGui::SliderFloat("##metal", &metal, 0.0f, 1.0f, "%.2f", ImGuiSliderFlags_NoInput))
+                        scene.set_pbr_metal(metal);
+
+                    float roughness = scene.pbr_roughness();
+                    ImGui::TableNextRow();
+                    ImGui::TableSetColumnIndex(0);
+                    ImGui::AlignTextToFramePadding();
+                    ImGui::Text("Roughness");
+                    ImGui::TableSetColumnIndex(1);
+                    ImGui::SetNextItemWidth(items_width);
+                    if (ImGui::SliderFloat("##roughness", &roughness, 0.0f, 1.0f, "%.2f", ImGuiSliderFlags_NoInput))
+                        scene.set_pbr_roughness(roughness);
+
+                    float ior = scene.pbr_ior();
+                    ImGui::TableNextRow();
+                    ImGui::TableSetColumnIndex(0);
+                    ImGui::AlignTextToFramePadding();
+                    ImGui::Text("IOR");
+                    ImGui::TableSetColumnIndex(1);
+                    ImGui::SetNextItemWidth(items_width);
+                    if (ImGui::SliderFloat("##ior", &ior, 1.0f, 2.5f, "%.3f", ImGuiSliderFlags_NoInput))
+                        scene.set_pbr_ior(ior);
+
+                    ImGui::EndTable();
+                }
+
+            }
+        }
     }
     ImGui::End();
 }

@@ -593,6 +593,13 @@ void Scene::render_ao_texture_blur_pass(Render::Device& device, const Domain::In
     cmd_buffer->unbind_framebuffer(*m_ao.blur_fb);
 }
 
+static float lambert_f0(float ior)
+{
+    float num = ior - 1.0f;
+    float denom = ior + 1.0f;
+    return num * num / (denom * denom);
+}
+
 void Scene::render_ao_lighting_pass(Render::CommandBuffer& cmd_buffer, Render::Device& device, bool shadows) const
 {
     cmd_buffer.set_depth_test_enabled(false);
@@ -601,10 +608,13 @@ void Scene::render_ao_lighting_pass(Render::CommandBuffer& cmd_buffer, Render::D
     Render::Blending blending{ {Render::BlendFactor::SrcAlpha, Render::BlendFactor::OneMinusSrcAlpha} };
     cmd_buffer.set_blending(blending);
 
+
     Render::Material material;
     material
         .set_shader(device.context().shader_manager().shader("ao_lighting"))
-        .set_uniform("apply_shadows", shadows ? 1 : 0)
+        .set_uniform("apply_pbr", m_pbr.enabled)
+        .set_uniform("pbr_intensity", m_pbr.enabled ? m_pbr.intensity : 1.0f)
+        .set_uniform("apply_shadows", shadows)
         .set_uniform("shadows_intensity", shadows ? m_shadows.intensity : 0.0f)
         .set_uniform("g_eye_position", AmbientOcclusion::EYE_POS_TEX_UNIT)
         .set_uniform("g_light_position", AmbientOcclusion::LIGHT_POS_TEX_UNIT)
@@ -617,7 +627,10 @@ void Scene::render_ao_lighting_pass(Render::CommandBuffer& cmd_buffer, Render::D
         .set_texture(AmbientOcclusion::EYE_NORM_TEX_UNIT, m_ao.gbuffer_fb->color_attachment(AmbientOcclusion::EYE_NORM_CLR_ATTR))
         .set_texture(AmbientOcclusion::COLOR_TEX_UNIT, m_ao.gbuffer_fb->color_attachment(AmbientOcclusion::COLOR_CLR_ATTR))
         .set_texture(AmbientOcclusion::AO_TEX_UNIT, m_ao.blur_fb->color_attachment(0))
-        .set_texture(Shadows::SHADOWSMAP_TEX_UNIT, m_shadows.framebuffer->depth());
+        .set_texture(Shadows::SHADOWSMAP_TEX_UNIT, m_shadows.framebuffer->depth())
+        .set_uniform("material.metal", m_pbr.metal)
+        .set_uniform("material.roughness", m_pbr.roughness)
+        .set_uniform("material.f0", lambert_f0(m_pbr.ior));
 
     cmd_buffer.bind_and_draw(*m_screen_quad, material);
 
