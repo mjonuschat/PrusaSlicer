@@ -1,4 +1,4 @@
-#include "Slic3r/App/LibvgcodeWrapper/Types.hpp"
+#include "Slic3r/App/Preview/Types.hpp"
 #include "Slic3r/Biz/Units.hpp"
 #include "Slic3r/App/I18N/I18N.hpp"
 
@@ -7,7 +7,7 @@ using namespace Slic3r::App::libvgcode;
 using namespace Slic3r::Biz;
 using namespace Slic3r::Domain;
 
-namespace Slic3r::App::LibvgcodeWrapper {
+namespace Slic3r::App::Preview {
 
 std::string to_string(MoveType type)
 {
@@ -174,4 +174,4 @@ std::string to_string(libvgcode::ViewType type, std::optional<Biz::libpgcode::Un
     }
 }
 
-} // namespace Slic3r::App::LibvgcodeWrapper
+} // namespace Slic3r::App::Preview

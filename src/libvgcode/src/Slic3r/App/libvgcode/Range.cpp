@@ -3,7 +3,7 @@
 ///|/
 ///|/ libvgcode library is released under the terms of the AGPLv3 or higher
 ///|/
-#include "Range.hpp"
+#include "Slic3r/App/libvgcode/Range.hpp"
 
 #include <algorithm>
 

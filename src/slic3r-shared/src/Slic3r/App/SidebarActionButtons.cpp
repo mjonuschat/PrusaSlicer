@@ -23,15 +23,9 @@ void SidebarActionButtons::on_init(Biz::ProjectInteractor* project_interactor, R
     m_navigate_to_type  = m_type == RMType::Plater ? RMType::Preview : RMType::Plater;
 }
 
-Biz::Slicing::SlicingId SidebarActionButtons::active_bed_slicing_id() const
-{
-    return { m_project_interactor->selected_project_id(),
-             m_project_interactor->scene_interactor().selected_bed_instance().instance_id };
-}
-
 bool SidebarActionButtons::slice_allowed() const
 {
-    const Biz::Slicing::SlicingId id = active_bed_slicing_id();
+    const Biz::Slicing::SlicingId id = m_project_interactor->selected_bed_slicing_id();
     const std::optional<Biz::Slicing::Status> status {
         m_project_interactor->status_cache().get_status(id) };
 
@@ -40,7 +34,7 @@ bool SidebarActionButtons::slice_allowed() const
 
 bool SidebarActionButtons::export_allowed() const
 {
-    const Biz::Slicing::SlicingId id = active_bed_slicing_id();
+    const Biz::Slicing::SlicingId id = m_project_interactor->selected_bed_slicing_id();
     const std::optional<Biz::Slicing::Status> status {
         m_project_interactor->status_cache().get_status(id) };
 
@@ -77,16 +71,16 @@ void SidebarActionButtons::render_export_buttons()
     ImGuiTableFlags table_flags = ImGuiTableFlags_Resizable | ImGuiTableFlags_NoBordersInBody | ImGuiTableFlags_NoPadInnerX;
     if (ImGui::BeginTable("##ObjectListTable", 4, table_flags)) {
         if (add_centered_icon_button(ImGui::SavePrint, "SavePrint", "Export")) {
-            m_project_interactor->do_export(active_bed_slicing_id(), {});
+            m_project_interactor->do_export(m_project_interactor->selected_bed_slicing_id(), {});
         }
         if (add_centered_icon_button(ImGui::SavePrintToFlash, "SavePrintToFlash", "Export to flash")) {
-            m_project_interactor->do_export(active_bed_slicing_id(), {});
+            m_project_interactor->do_export(m_project_interactor->selected_bed_slicing_id(), {});
         }
         if (add_centered_icon_button(ImGui::SavePrintToLocal, "SavePrintToLocal", "Export to local")) {
-            m_project_interactor->do_export(active_bed_slicing_id(), {});
+            m_project_interactor->do_export(m_project_interactor->selected_bed_slicing_id(), {});
         }
         if (add_centered_icon_button(ImGui::SavePrintAddBookmark, "SavePrintAddBookmark", "Upload")) {
-            m_project_interactor->do_upload(active_bed_slicing_id());
+            m_project_interactor->do_upload(m_project_interactor->selected_bed_slicing_id());
         }
 
         ImGui::EndTable();
@@ -118,7 +112,7 @@ void SidebarActionButtons::render_slice_button(Domain::Vec2f size)
 
     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.99f, 0.41f, 0.2f, 1.0f));
     if (ImGui::Button("Slice", ImVec2(slice_btn_width, btns_height))) {
-        m_project_interactor->slicing_interactor().slice_bed(active_bed_slicing_id().bed_instance_id);
+        m_project_interactor->slicing_interactor().slice_bed(m_project_interactor->selected_bed_slicing_id().bed_instance_id);
         navigate_to_other();
     }
     ImGui::PopStyleColor();

@@ -187,6 +187,7 @@ public:
 
     FDMResultCache& fdm_result_cache() { return m_fdm_result_cache; }
     StatusCache& status_cache() { return m_status_cache; }
+    Biz::Slicing::SlicingId selected_bed_slicing_id() const;
 
     /**
      * @name ISelectedBedInstanceChangedListener interface implementation

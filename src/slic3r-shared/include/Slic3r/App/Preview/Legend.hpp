@@ -1,10 +1,10 @@
 #pragma once
 
-#include "Slic3r/App/LibvgcodeWrapper/Types.hpp"
+#include "Types.hpp"
 #include "Slic3r/App/Imgui/DoubleSlider.hpp"
 
 namespace Slic3r::App::libvgcode {
-class Viewer;
+class FdmViewer;
 } // namespace Slic3r::App::libvgcode
 
 namespace Slic3r::Biz::libpgcode {
@@ -15,9 +15,9 @@ namespace Slic3r::App::Render {
 class ImguiRender;
 } // namespace Slic3r::App::Render
 
-namespace Slic3r::App::LibvgcodeWrapper {
+namespace Slic3r::App::Preview {
 
-class WrapperImpl;
+class FdmViewerWrapper;
 
 struct LegendCallbacks
 {
@@ -26,13 +26,13 @@ struct LegendCallbacks
     ExtrusionRoleVisibilityChangedCallback          cb_extrusion_role_visibility_changed{ nullptr };
 };
 
-void legend(libvgcode::Viewer& viewer, WrapperImpl& wrapper, bool settings_visible,
+void legend(libvgcode::FdmViewer& viewer, FdmViewerWrapper& wrapper, bool settings_visible,
     const Biz::libpgcode::PrintSettings& settings, const LegendCallbacks& cbs);
 
-void legend_coarse(libvgcode::Viewer& viewer, WrapperImpl& wrapper);
-void legend_detail(Render::ImguiRender& imgui_render, libvgcode::Viewer& viewer, WrapperImpl& wrapper, const LegendCallbacks& cbs);
+void legend_coarse(libvgcode::FdmViewer& viewer, FdmViewerWrapper& wrapper);
+void legend_detail(Render::ImguiRender& imgui_render, libvgcode::FdmViewer& viewer, FdmViewerWrapper& wrapper, const LegendCallbacks& cbs);
 
-void legend_view_type_selector(libvgcode::Viewer& viewer, const WrapperImpl& wrapper, GCodeViewTypeChangedCallback cb_view_type_changed,
+void legend_view_type_selector(libvgcode::FdmViewer& viewer, const FdmViewerWrapper& wrapper, GCodeViewTypeChangedCallback cb_view_type_changed,
     float width);
 
-} // namespace Slic3r::App::LibvgcodeWrapper
+} // namespace Slic3r::App::Preview

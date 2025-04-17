@@ -6,7 +6,7 @@
 #include <functional>
 #include <set>
 
-namespace Slic3r::App::LibvgcodeWrapper {
+namespace Slic3r::App::Preview {
 
 struct ExtrudersSequence;
 
@@ -41,4 +41,4 @@ std::string to_string(Domain::GCodeExtrusionRole role);
 std::string to_string(Biz::libpgcode::OptionType type);
 std::string to_string(libvgcode::ViewType type, std::optional<Biz::libpgcode::UnitsSystem> sys = std::nullopt);
 
-} // namespace Slic3r::App::LibvgcodeWrapper
+} // namespace Slic3r::App::Preview

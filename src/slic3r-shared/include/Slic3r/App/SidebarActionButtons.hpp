@@ -30,7 +30,6 @@ public:
     void render(Domain::Vec2f pos, Domain::Vec2f size);
 
 private:
-    Biz::Slicing::SlicingId active_bed_slicing_id() const;
     bool slice_allowed() const;
     bool export_allowed() const;
     void navigate_to_other();

@@ -1,4 +1,4 @@
-#include "Slic3r/App/LibvgcodeWrapper/TickCodeManager.hpp"
+#include "Slic3r/App/Preview/TickCodeManager.hpp"
 #include "Slic3r/App/I18N/I18N.hpp"
 
 #include <Slic3r/Biz/libpgcode/Utils.hpp>
@@ -10,7 +10,7 @@
 
 using namespace Slic3r;
 
-namespace Slic3r::App::LibvgcodeWrapper {
+namespace Slic3r::App::Preview {
 
 namespace CustomGCode = Domain::CustomGCode;
 
@@ -612,4 +612,4 @@ std::string TickCodeManager::new_color(const std::string& color)
     return std::string();
 }
 
-} // namespace Slic3r::App::LibvgcodeWrapper
+} // namespace Slic3r::App::Preview

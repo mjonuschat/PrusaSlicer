@@ -4,10 +4,10 @@
 ///|/ libvgcode library is released under the terms of the AGPLv3 or higher
 ///|/
 
-#include "ObjExport.hpp"
-#include "Utils.hpp"
+#include "Slic3r/App/libvgcode/ObjExport.hpp"
+#include "Slic3r/App/libvgcode/Utils.hpp"
 
-#include "ViewerImpl.hpp"
+#include "Slic3r/App/libvgcode/FdmViewer.hpp"
 
 using namespace Slic3r::Biz::libpgcode;
 
@@ -90,7 +90,7 @@ static CrossSection corner_cross_section(const Vec3f& v, const SegmentLocalAxes&
     return cross_section(v, (0.5f * (axes1.right + axes2.right)).normalized(), axes1.up, width, height);
 }
 
-static size_t color_id(size_t vertex_id, const ViewerImpl& viewer, std::vector<ColorRGB>& colors) {
+static size_t color_id(size_t vertex_id, const FdmViewer& viewer, std::vector<ColorRGB>& colors) {
     const MoveVertex& v = viewer.vertex_at(vertex_id);
     size_t top_layer_id = viewer.is_top_layer_only_view_range() ? viewer.layers_range()[1] : 0;
     bool color_top_layer_only = viewer.view_full_range()[1] != viewer.view_visible_range()[1];
@@ -121,7 +121,7 @@ static void export_material(FILE& f, size_t material_id)
     fprintf(&f, "\nusemtl material_%zu\n", material_id + 1);
 }
 
-static void export_segment(FILE& f, uint8_t flags, const ViewerImpl& viewer, const ObjExportParams& params, size_t v1_id,
+static void export_segment(FILE& f, uint8_t flags, const FdmViewer& viewer, const ObjExportParams& params, size_t v1_id,
     const MoveVertex& v1, const MoveVertex& v2, const MoveVertex& v3, size_t& vertices_count, Palette& colors) {
 
     auto vertex_id = [&vertices_count](int id) { return size_t(1 + int(vertices_count) + id); };
@@ -254,7 +254,7 @@ static void export_materials(FILE& f, const Palette& colors) {
     }
 }
 
-bool export_toolpaths_to_obj(FILE& obj_file, FILE& mtl_file, const ObjExportParams& params, const ViewerImpl& viewer)
+bool export_toolpaths_to_obj(FILE& obj_file, FILE& mtl_file, const ObjExportParams& params, const FdmViewer& viewer)
 {
     try {
         // write header to geometry file

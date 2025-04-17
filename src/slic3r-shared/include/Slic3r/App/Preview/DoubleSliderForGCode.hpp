@@ -2,7 +2,7 @@
 
 #include "Slic3r/App/Imgui/DoubleSlider.hpp"
 
-namespace Slic3r::App::LibvgcodeWrapper {
+namespace Slic3r::App::Preview {
 
 class DoubleSliderForGcode : public Imgui::DoubleSlider::Manager<unsigned int>
 {
@@ -32,4 +32,4 @@ private:
     bool m_render_as_disabled{ false };
 };
 
-} //namespace Slic3r::App::LibvgcodeWrapper
+} //namespace Slic3r::App::Preview

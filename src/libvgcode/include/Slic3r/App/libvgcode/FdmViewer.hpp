@@ -5,19 +5,17 @@
 ///|/
 #pragma once
 
+#include "AbstractViewer.hpp"
 #include "Settings.hpp"
 #include "SegmentTemplate.hpp"
 #include "OptionTemplate.hpp"
 #include "CogMarker.hpp"
 #include "ToolMarker.hpp"
 #include "Bitset.hpp"
-#include "ViewRange.hpp"
-#include "Layers.hpp"
 #include "ExtrusionRoles.hpp"
 #include "Extruders.hpp"
-#include "Slic3r/App/libvgcode/ColorRange.hpp"
-#include "Slic3r/App/libvgcode/ViewerInputData.hpp"
-#include "Slic3r/App/libvgcode/Viewer.hpp"
+#include "ColorRange.hpp"
+#include "FdmViewerInputData.hpp"
 
 #include <Slic3r/Biz/libpgcode/ProcessorResult.hpp>
 
@@ -29,15 +27,15 @@ namespace Slic3r::App::libvgcode {
 
 struct GCodeInputData;
 
-class ViewerImpl
+class FdmViewer : public AbstractViewer
 {
 public:
-    ViewerImpl();
-    ~ViewerImpl() = default;
-    ViewerImpl(const ViewerImpl&) = delete;
-    ViewerImpl(ViewerImpl&&) = delete;
-    ViewerImpl& operator = (const ViewerImpl&) = delete;
-    ViewerImpl& operator = (ViewerImpl&&) = delete;
+    FdmViewer();
+    ~FdmViewer() = default;
+    FdmViewer(const FdmViewer&) = delete;
+    FdmViewer(FdmViewer&&) = delete;
+    FdmViewer& operator = (const FdmViewer&) = delete;
+    FdmViewer& operator = (FdmViewer&&) = delete;
 
     /**
      * @brief Initialize rendering geometry
@@ -46,16 +44,16 @@ public:
      * @param scene The current scene.
      * @param data_factory The geometry factory.
      */
-    void init(Render::Device& device, Scene::Scene& scene, Scene::GeometryDataFactory& data_factory);
+    void init(Render::Device& device, Scene::Scene& scene, Scene::GeometryDataFactory& data_factory) override;
     //
     // Reset all caches and free gpu memory.
     //
-    void reset();
+    void reset() override;
     //
     // Setup all the variables used for visualization of the toolpaths
     // from the given gcode data.
     //
-    void load(ViewerInputData&& gcode_data);
+    void load(FdmViewerInputData&& gcode_data);
     //
     // Setup the viewer content from the given data (support for SLA printers).
     //
@@ -76,7 +74,7 @@ public:
     //
     // Render the toolpaths
     //
-    void render(const Vec3f& camera_position);
+    void render() override;
 
 #if ENABLE_RENDER_TO_TEXTURE 
     std::vector<uint8_t> render_to_texture(uint16_t width, uint16_t height, const Transform3f& view_matrix,
@@ -89,9 +87,7 @@ public:
     Biz::libpgcode::TimeMode time_mode() const { return m_settings.time_mode; }
     void set_time_mode(Biz::libpgcode::TimeMode mode);
 
-    const Interval& layers_range() const { return m_layers.view_range(); }
-    void set_layers_range(const Interval& range) { set_layers_range(range[0], range[1]); }
-    void set_layers_range(Interval::value_type min, Interval::value_type max);
+    void set_layers_range(Interval::value_type min, Interval::value_type max) override;
 
     bool is_top_layer_only_view_range() const { return m_settings.top_layer_only_view_range; }
     void toggle_top_layer_only_view_range();
@@ -99,12 +95,6 @@ public:
     bool is_spiral_vase_enabled() const { return m_settings.spiral_vase_enabled; }
 
     const Biz::libpgcode::TimeModes& time_modes() const { return m_time_modes; }
-
-    size_t layers_count() const { return m_layers.count(); }
-    float layer_z(size_t layer_id) const { return m_layers.layer_z(layer_id); }
-    std::vector<float> layers_zs() const { return m_layers.zs(); }
-
-    size_t layer_id_at(float z) const { return m_layers.layer_id_at(z); }
 
     uint8_t used_extruders_count() const { return m_used_extruders.extruders_count(); }
     std::vector<uint8_t> used_extruders_ids() const { return m_used_extruders.extruders_ids(); }
@@ -148,14 +138,7 @@ public:
     bool is_extrusion_role_visible(Domain::GCodeExtrusionRole role) const;
     void toggle_extrusion_role_visibility(Domain::GCodeExtrusionRole role);
 
-    const Interval& view_full_range() const { return m_view_range.full(); }
-    const Interval& view_enabled_range() const { return m_view_range.enabled(); }
-    const Interval& view_visible_range() const { return m_view_range.visible(); }
-    void set_view_visible_range(Interval::value_type min, Interval::value_type max);
-
-    const Lights& lights() const { return m_lights; }
-    void set_lights(const Lights& lights);
-    const Lights& default_lights() const;
+    void set_view_visible_range(Interval::value_type min, Interval::value_type max) override;
 
     size_t vertices_count() const { return m_vertices.size(); }
     const Biz::libpgcode::MoveVertices& vertices() const { return m_vertices; }
@@ -164,8 +147,8 @@ public:
     const Biz::libpgcode::MoveVertex& vertex_at(size_t id) const {
         return (id < m_vertices.size()) ? m_vertices[id] : Biz::libpgcode::DUMMY_MOVE_VERTEX;
     }
-    float estimated_time() const { return m_total_time[size_t(m_settings.time_mode)]; }
-    float estimated_time_at(size_t id) const;
+    float estimated_time() const override { return m_total_time[size_t(m_settings.time_mode)]; }
+    float estimated_time_at(size_t id) const override;
     ColorRGB vertex_color(const Biz::libpgcode::MoveVertex& vertex) const;
 
     size_t extrusion_roles_count() const { return m_extrusion_roles.roles_count(); }
@@ -188,7 +171,7 @@ public:
     Biz::libpgcode::OptionTypes visible_options() const;
     float option_estimated_time(Biz::libpgcode::OptionType type) const;
 
-    std::vector<float> layers_estimated_times() const { return m_layers.times(m_settings.time_mode); }
+    std::vector<float> layers_estimated_times() const override { return m_layers.times(m_settings.time_mode); }
 
     size_t gcode_events_count() const { return m_gcode_events.size(); }
     const GCodeEvents& gcode_events() const { return m_gcode_events; }
@@ -246,10 +229,6 @@ private:
     //
     Settings m_settings;
     //
-    // Detected layers
-    //
-    Layers m_layers;
-    //
     // Detected extrusion roles
     //
     ExtrusionRoles m_extrusion_roles;
@@ -265,10 +244,6 @@ private:
     // Detected used extruders
     //
     Extruders m_used_extruders;
-    //
-    // Vertices ranges for visualization
-    //
-    ViewRange m_view_range;
     //
     // Detected total moves times
     //
@@ -301,12 +276,6 @@ private:
     // Palette used to render options
     //
     std::array<ColorRGB, Biz::libpgcode::OPTION_TYPES_COUNT> m_options_colors;
-    //
-    // Lights used in rendering
-    //
-    Lights m_lights;
-
-    bool m_initialized{ false };
 
     //
     // The OpenGL element used to represent all toolpath segments
@@ -354,9 +323,6 @@ private:
     };
     Palette m_tool_colors;
     Palette m_color_print_colors;
-
-    Render::Device* m_device{ nullptr };
-    Scene::Scene* m_scene{ nullptr };
  
 #if USE_TEXTURE_BUFFER
     Render::TextureBuffer* m_positions_buffer{ nullptr };
@@ -420,7 +386,7 @@ private:
     size_t m_enabled_segments_count{ 0 };
     size_t m_enabled_options_count{ 0 };
 
-    void update_view_full_range();
+    void update_view_full_range() override;
     void update_color_ranges();
     void update_heights_widths();
     void render_segments(const Vec3f& camera_position);

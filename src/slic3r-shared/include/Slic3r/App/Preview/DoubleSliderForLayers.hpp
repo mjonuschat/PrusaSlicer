@@ -2,11 +2,11 @@
 
 #include "Slic3r/App/Imgui/DoubleSlider.hpp"
 #include "Slic3r/App/Imgui/RulerForDoubleSlider.hpp"
-#include "Slic3r/App/LibvgcodeWrapper/TickCodeManager.hpp"
-#include "Slic3r/App/LibvgcodeWrapper/Types.hpp"
+#include "TickCodeManager.hpp"
+#include "Types.hpp"
 #include "Slic3r/Biz/Units.hpp"
 
-namespace Slic3r::App::LibvgcodeWrapper {
+namespace Slic3r::App::Preview {
 
 enum class FocusedItem
 {
@@ -107,6 +107,8 @@ public:
      */
     void render(const ImVec2& pos, float scale_factor = 1.0f, float offset = 0.0f) override;
     /**@}*/
+
+    static int find_close_layer_idx(const std::vector<float>& zs, float z, float eps);
 
 private:
     bool is_wipe_tower_layer(int tick) const;
@@ -230,4 +232,4 @@ private:
     NotifyEmptyAutoColorChangeCallback m_cb_notify_empty_auto_color_change{ nullptr };
 };
 
-} // namespace Slic3r::App::LibvgcodeWrapper
+} // namespace Slic3r::App::Preview

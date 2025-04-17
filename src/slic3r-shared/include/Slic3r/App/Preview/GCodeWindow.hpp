@@ -8,7 +8,7 @@
 #include <optional>
 #include <cstdint>
 
-namespace Slic3r::App::LibvgcodeWrapper {
+namespace Slic3r::App::Preview {
 
 class GCodeWindowData
 {
@@ -60,4 +60,4 @@ private:
  */
 void gcode_window(const GCodeWindowData& data, uint32_t curr_line_id, bool clip_text = false);
 
-} // namespace Slic3r::App::LibvgcodeWrapper
+} // namespace Slic3r::App::Preview

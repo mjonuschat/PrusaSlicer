@@ -3,10 +3,10 @@
 ///|/
 ///|/ libvgcode library is released under the terms of the AGPLv3 or higher
 ///|/
-#include "ViewerImpl.hpp"
-#include "Utils.hpp"
-#include "ObjExport.hpp"
-#include "Slic3r/App/libvgcode/ViewerInputData.hpp"
+#include "Slic3r/App/libvgcode/FdmViewer.hpp"
+#include "Slic3r/App/libvgcode/Utils.hpp"
+#include "Slic3r/App/libvgcode/ObjExport.hpp"
+//#include "Slic3r/App/libvgcode/FdmViewerInputData.hpp"
 #include "Slic3r/App/libvgcode/GCodeNodeTag.hpp"
 
 #include <Slic3r/Biz/libpgcode/Utils.hpp>
@@ -125,7 +125,7 @@ static std::pair<size_t, size_t> width_height(size_t count, size_t max_texture_s
     return ret;
 }
 
-void ViewerImpl::TextureData::init(Render::Device* device, size_t vertices_count)
+void FdmViewer::TextureData::init(Render::Device* device, size_t vertices_count)
 {
     if (vertices_count == 0)
         return;
@@ -144,7 +144,7 @@ void ViewerImpl::TextureData::init(Render::Device* device, size_t vertices_count
     m_tex_ids = std::vector<Textures>(m_count);
 }
 
-void ViewerImpl::TextureData::set_positions(const std::vector<Vec4f>& positions)
+void FdmViewer::TextureData::set_positions(const std::vector<Vec4f>& positions)
 {
     if (m_count == 0)
         return;
@@ -180,7 +180,7 @@ void ViewerImpl::TextureData::set_positions(const std::vector<Vec4f>& positions)
     }
 }
 
-void ViewerImpl::TextureData::set_heights_widths_angles(const std::vector<Vec4f>& heights_widths_angles)
+void FdmViewer::TextureData::set_heights_widths_angles(const std::vector<Vec4f>& heights_widths_angles)
 {
     if (m_count == 0)
         return;
@@ -216,7 +216,7 @@ void ViewerImpl::TextureData::set_heights_widths_angles(const std::vector<Vec4f>
     }
 }
 
-void ViewerImpl::TextureData::set_colors(const std::vector<float>& colors)
+void FdmViewer::TextureData::set_colors(const std::vector<float>& colors)
 {
     if (m_count == 0)
         return;
@@ -252,7 +252,7 @@ void ViewerImpl::TextureData::set_colors(const std::vector<float>& colors)
     }
 }
 
-void ViewerImpl::TextureData::set_enabled_segments(const std::vector<uint32_t>& enabled_segments)
+void FdmViewer::TextureData::set_enabled_segments(const std::vector<uint32_t>& enabled_segments)
 {
     if (m_count == 0)
         return;
@@ -304,7 +304,7 @@ void ViewerImpl::TextureData::set_enabled_segments(const std::vector<uint32_t>& 
     }
 }
 
-void ViewerImpl::TextureData::set_enabled_options(const std::vector<uint32_t>& enabled_options)
+void FdmViewer::TextureData::set_enabled_options(const std::vector<uint32_t>& enabled_options)
 {
     if (m_count == 0)
         return;
@@ -356,7 +356,7 @@ void ViewerImpl::TextureData::set_enabled_options(const std::vector<uint32_t>& e
     }
 }
 
-void ViewerImpl::TextureData::reset()
+void FdmViewer::TextureData::reset()
 {
     m_tex_ids.clear();
 
@@ -365,50 +365,50 @@ void ViewerImpl::TextureData::reset()
     m_count = 0;
 }
 
-std::pair<Render::Texture*, size_t> ViewerImpl::TextureData::positions_tex(size_t id) const
+std::pair<Render::Texture*, size_t> FdmViewer::TextureData::positions_tex(size_t id) const
 {
     assert(id < m_tex_ids.size());
     return m_tex_ids[id].positions;
 }
 
-std::pair<Render::Texture*, size_t> ViewerImpl::TextureData::heights_widths_angles_tex(size_t id) const
+std::pair<Render::Texture*, size_t> FdmViewer::TextureData::heights_widths_angles_tex(size_t id) const
 {
     assert(id < m_tex_ids.size());
     return m_tex_ids[id].heights_widths_angles;
 }
 
-std::pair<Render::Texture*, size_t> ViewerImpl::TextureData::colors_tex(size_t id) const
+std::pair<Render::Texture*, size_t> FdmViewer::TextureData::colors_tex(size_t id) const
 {
     assert(id < m_tex_ids.size());
     return m_tex_ids[id].colors;
 }
 
-std::pair<Render::Texture*, size_t> ViewerImpl::TextureData::enabled_segments_tex(size_t id) const
+std::pair<Render::Texture*, size_t> FdmViewer::TextureData::enabled_segments_tex(size_t id) const
 {
     assert(id < m_tex_ids.size());
     return m_tex_ids[id].enabled_segments;
 }
 
-std::pair<Render::Texture*, size_t> ViewerImpl::TextureData::enabled_options_tex(size_t id) const
+std::pair<Render::Texture*, size_t> FdmViewer::TextureData::enabled_options_tex(size_t id) const
 {
     assert(id < m_tex_ids.size());
     return m_tex_ids[id].enabled_options;
 }
 #endif //!USE_TEXTURE_BUFFER
 
-ViewerImpl::ViewerImpl()
+FdmViewer::FdmViewer()
 {
     reset_default_extrusion_roles_colors();
     reset_default_options_colors();
 }
 
-void ViewerImpl::init(Render::Device& device, Scene::Scene& scene, Scene::GeometryDataFactory& data_factory)
+void FdmViewer::init(Render::Device& device, Scene::Scene& scene, Scene::GeometryDataFactory& data_factory)
 {
     if (m_initialized)
         return;
 
-    m_device = &device;
-    m_scene = &scene;
+    AbstractViewer::init(device, scene, data_factory);
+
     Scene::NodeBuilder builder{ *m_scene };
     builder.set_debug_name("gcode_main");
     builder.set_tag(GCodeNodeTag{ GCodeElementType::Undefined });
@@ -432,10 +432,9 @@ void ViewerImpl::init(Render::Device& device, Scene::Scene& scene, Scene::Geomet
     m_initialized = true;
 }
 
-void ViewerImpl::reset()
+void FdmViewer::reset()
 {
-    m_layers.reset();
-    m_view_range.reset();
+    AbstractViewer::reset();
     m_extrusion_roles.reset();
     m_options.clear();
     m_used_extruders.reset();
@@ -529,7 +528,7 @@ static void extract_pos_and_or_hwa(const MoveVertices& vertices, float travels_r
     }
 }
 
-void ViewerImpl::load(ViewerInputData&& gcode_data)
+void FdmViewer::load(FdmViewerInputData&& gcode_data)
 {
     if (!m_initialized)
         return;
@@ -655,7 +654,7 @@ void ViewerImpl::load(ViewerInputData&& gcode_data)
     update_colors();
 }
 
-void ViewerImpl::load_as_sla(const std::vector<float>& layers_zs, const std::vector<float>& layers_times)
+void FdmViewer::load_as_sla(const std::vector<float>& layers_zs, const std::vector<float>& layers_times)
 {
     if (!m_initialized)
         return;
@@ -675,7 +674,7 @@ void ViewerImpl::load_as_sla(const std::vector<float>& layers_zs, const std::vec
         m_layers.set_view_range(0, uint32_t(m_layers.count()) - 1);
 }
 
-void ViewerImpl::update_enabled_entities()
+void FdmViewer::update_enabled_entities()
 {
     if (m_vertices.empty())
         return;
@@ -768,7 +767,7 @@ static float encoded_color(const ColorRGB& color) {
     return float(i_color);
 }
 
-void ViewerImpl::update_colors_texture()
+void FdmViewer::update_colors_texture()
 {
 #if USE_TEXTURE_BUFFER
     if (m_colors_buffer == nullptr)
@@ -796,7 +795,7 @@ void ViewerImpl::update_colors_texture()
 #endif // USE_TEXTURE_BUFFER
 }
 
-void ViewerImpl::update_colors()
+void FdmViewer::update_colors()
 {
     if (m_used_extruders.extruders_count() > 0) {
         // ensure that the number of defined tool colors matches the max id of the used extruders
@@ -823,7 +822,7 @@ void ViewerImpl::update_colors()
     m_settings.update_colors = false;
 }
 
-void ViewerImpl::render()
+void FdmViewer::render()
 {
     render_tool_marker();
     render_cog_marker();
@@ -845,7 +844,7 @@ void ViewerImpl::render()
 }
 
 #if ENABLE_RENDER_TO_TEXTURE
-std::vector<uint8_t> ViewerImpl::render_to_texture(uint16_t width, uint16_t height, const Transform3f& view_matrix,
+std::vector<uint8_t> FdmViewer::render_to_texture(uint16_t width, uint16_t height, const Transform3f& view_matrix,
     const Transform3f& projection_matrix, const ColorRGBA& background_color)
 {
     std::vector<uint8_t> pixels;
@@ -955,32 +954,27 @@ std::vector<uint8_t> ViewerImpl::render_to_texture(uint16_t width, uint16_t heig
 }
 #endif // ENABLE_RENDER_TO_TEXTURE
 
-void ViewerImpl::set_view_type(ViewType type)
+void FdmViewer::set_view_type(ViewType type)
 {
     m_settings.view_type = type;
     m_settings.update_colors = true;
 }
 
-void ViewerImpl::set_time_mode(TimeMode mode)
+void FdmViewer::set_time_mode(TimeMode mode)
 {
     m_settings.time_mode = mode;
     m_settings.update_colors = true;
 }
 
-void ViewerImpl::set_layers_range(Interval::value_type min, Interval::value_type max)
+void FdmViewer::set_layers_range(Interval::value_type min, Interval::value_type max)
 {
-    min = std::clamp<Interval::value_type>(min, 0, m_layers.count() - 1);
-    max = std::clamp<Interval::value_type>(max, 0, m_layers.count() - 1);
-    m_layers.set_view_range(min, max);
-    // force immediate update of the full range
-    update_view_full_range();
-    m_view_range.set_visible(m_view_range.enabled());
+    AbstractViewer::set_layers_range(min, max);
     m_settings.update_enabled_entities = true;
     //m_settings.update_colors = true;
     update_colors_texture();
 }
 
-void ViewerImpl::toggle_top_layer_only_view_range()
+void FdmViewer::toggle_top_layer_only_view_range()
 {
     m_settings.top_layer_only_view_range = !m_settings.top_layer_only_view_range;
     update_view_full_range();
@@ -990,7 +984,7 @@ void ViewerImpl::toggle_top_layer_only_view_range()
     update_colors_texture();
 }
 
-BoundingBoxf3 ViewerImpl::bounding_box(const MoveTypes& types) const
+BoundingBoxf3 FdmViewer::bounding_box(const MoveTypes& types) const
 {
     BoundingBoxf3 ret;
     for (const MoveVertex& v : m_vertices) {
@@ -1000,7 +994,7 @@ BoundingBoxf3 ViewerImpl::bounding_box(const MoveTypes& types) const
     return ret;
 }
 
-BoundingBoxf3 ViewerImpl::extrusion_bounding_box(const GCodeExtrusionRoles& roles) const
+BoundingBoxf3 FdmViewer::extrusion_bounding_box(const GCodeExtrusionRoles& roles) const
 {
     BoundingBoxf3 ret;
     for (const MoveVertex& v : m_vertices) {
@@ -1010,12 +1004,12 @@ BoundingBoxf3 ViewerImpl::extrusion_bounding_box(const GCodeExtrusionRoles& role
     return ret;
 }
 
-bool ViewerImpl::is_option_visible(OptionType type) const
+bool FdmViewer::is_option_visible(OptionType type) const
 {
     return m_settings.options_visibility[size_t(type)];
 }
 
-void ViewerImpl::toggle_option_visibility(OptionType type)
+void FdmViewer::toggle_option_visibility(OptionType type)
 {
     if (type != OptionType::CenterOfGravity && type != OptionType::ToolMarker) {
         auto opt_it = std::find(m_options.begin(), m_options.end(), type);
@@ -1056,12 +1050,12 @@ void ViewerImpl::toggle_option_visibility(OptionType type)
     }
 }
 
-bool ViewerImpl::is_extrusion_role_visible(GCodeExtrusionRole role) const
+bool FdmViewer::is_extrusion_role_visible(GCodeExtrusionRole role) const
 {
     return m_settings.extrusion_roles_visibility[size_t(role)];
 }
 
-void ViewerImpl::toggle_extrusion_role_visibility(GCodeExtrusionRole role)
+void FdmViewer::toggle_extrusion_role_visibility(GCodeExtrusionRole role)
 {
     m_settings.extrusion_roles_visibility[size_t(role)] = ! m_settings.extrusion_roles_visibility[size_t(role)];
     Interval old_enabled_range = m_view_range.enabled();
@@ -1078,12 +1072,10 @@ void ViewerImpl::toggle_extrusion_role_visibility(GCodeExtrusionRole role)
     m_settings.update_colors = true;
 }
 
-void ViewerImpl::set_view_visible_range(Interval::value_type min, Interval::value_type max)
+void FdmViewer::set_view_visible_range(Interval::value_type min, Interval::value_type max)
 {
-    // force update of the full range, to avoid clamping the visible range with full old values
-    // when calling m_view_range.set_visible()
-    update_view_full_range();
-    m_view_range.set_visible(min, max);
+    AbstractViewer::set_view_visible_range(min, max);
+
     update_enabled_entities();
     //m_settings.update_colors = true;
     update_colors_texture();
@@ -1099,49 +1091,18 @@ void ViewerImpl::set_view_visible_range(Interval::value_type min, Interval::valu
     }
 }
 
-void ViewerImpl::set_lights(const Lights& lights)
-{
-    m_lights.clear();
-    size_t num_lights = std::min(lights.size(), MAX_NUM_LIGHTS);
-    m_lights.reserve(num_lights);
-    for (size_t i = 0; i < num_lights; ++i) {
-        Light light = lights[i];
-        light.direction = light.direction.normalized();
-        light.ambient = std::max(light.ambient, 0.0f);
-        light.diffuse = std::max(light.diffuse, 0.0f);
-        light.specular = std::max(light.specular, 0.0f);
-        light.shininess = std::max(light.shininess, 0.0f);
-
-        // specular and shininess cannot be both zero, see: https://registry.khronos.org/OpenGL-Refpages/gl4/html/pow.xhtml
-        if (light.specular == 0.0f && light.shininess == 0.0f)
-            light.shininess = 0.001f;
-
-        m_lights.emplace_back(light);
-    }
-}
-
-static const Lights DEFAULT_LIGHTS = {
-    { LightReferenceSystem::Eye, { -0.4574957f, 0.4574957f, 0.7624929f }, 0.45f, 0.48f, 0.075f, 20.0f },
-    { LightReferenceSystem::Eye, { 0.70014f, 0.140028f, 0.70014f }, 0.0f, 0.18f, 0.0f, 0.0f }
-};
-
-const Lights& ViewerImpl::default_lights() const
-{
-    return DEFAULT_LIGHTS;
-}
-
-float ViewerImpl::estimated_time_at(size_t id) const
+float FdmViewer::estimated_time_at(size_t id) const
 {
     return std::accumulate(m_vertices.begin(), m_vertices.begin() + id + 1, 0.0f,
         [this](float a, const MoveVertex& v) { return a + v.time[size_t(m_settings.time_mode)]; });
 }
 
-size_t ViewerImpl::visible_extrusion_roles_count() const
+size_t FdmViewer::visible_extrusion_roles_count() const
 {
     return visible_extrusion_roles().size();
 }
 
-GCodeExtrusionRoles ViewerImpl::visible_extrusion_roles() const
+GCodeExtrusionRoles FdmViewer::visible_extrusion_roles() const
 {
     GCodeExtrusionRoles ret;
     GCodeExtrusionRoles roles = extrusion_roles();
@@ -1152,12 +1113,12 @@ GCodeExtrusionRoles ViewerImpl::visible_extrusion_roles() const
     return ret;
 }
 
-size_t ViewerImpl::visible_options_count() const
+size_t FdmViewer::visible_options_count() const
 {
     return visible_options().size();
 }
 
-OptionTypes ViewerImpl::visible_options() const
+OptionTypes FdmViewer::visible_options() const
 {
     OptionTypes ret;
     for (OptionType option : options()) {
@@ -1167,7 +1128,7 @@ OptionTypes ViewerImpl::visible_options() const
     return ret;
 }
 
-float ViewerImpl::option_estimated_time(OptionType type) const
+float FdmViewer::option_estimated_time(OptionType type) const
 {
     auto it = std::find_if(m_options_times.begin(), m_options_times.end(),
       [type](const std::pair<OptionType, Times>& item) {
@@ -1176,7 +1137,7 @@ float ViewerImpl::option_estimated_time(OptionType type) const
     return (it == m_options_times.end()) ? 0.0f : it->second[size_t(m_settings.time_mode)];
 }
 
-ColorRGB ViewerImpl::vertex_color(const MoveVertex& v) const
+ColorRGB FdmViewer::vertex_color(const MoveVertex& v) const
 {
     if (v.type == MoveType::Noop)
         return DUMMY_COLOR;
@@ -1248,51 +1209,51 @@ ColorRGB ViewerImpl::vertex_color(const MoveVertex& v) const
     return DUMMY_COLOR;
 }
 
-void ViewerImpl::set_tool_colors(const Palette& colors)
+void FdmViewer::set_tool_colors(const Palette& colors)
 {
     m_tool_colors = colors;
     m_settings.update_colors = true;
 }
 
-void ViewerImpl::set_color_print_colors(const Palette& colors)
+void FdmViewer::set_color_print_colors(const Palette& colors)
 {
     m_color_print_colors = colors;
     m_settings.update_colors = true;
 }
 
-const ColorRGB& ViewerImpl::extrusion_role_color(GCodeExtrusionRole role) const
+const ColorRGB& FdmViewer::extrusion_role_color(GCodeExtrusionRole role) const
 {
     return m_extrusion_roles_colors[size_t(role)];
 }
 
-void ViewerImpl::set_extrusion_role_color(GCodeExtrusionRole role, const ColorRGB& color)
+void FdmViewer::set_extrusion_role_color(GCodeExtrusionRole role, const ColorRGB& color)
 {
     m_extrusion_roles_colors[size_t(role)] = color;
     m_settings.update_colors = true;
 }
 
-void ViewerImpl::reset_default_extrusion_roles_colors()
+void FdmViewer::reset_default_extrusion_roles_colors()
 {
     m_extrusion_roles_colors = DEFAULT_EXTRUSION_ROLES_COLORS;
 }
 
-const ColorRGB& ViewerImpl::option_color(OptionType type) const
+const ColorRGB& FdmViewer::option_color(OptionType type) const
 {
     return m_options_colors[size_t(type)];
 }
 
-void ViewerImpl::set_option_color(OptionType type, const ColorRGB& color)
+void FdmViewer::set_option_color(OptionType type, const ColorRGB& color)
 {
     m_options_colors[size_t(type)] = color;
     m_settings.update_colors = true;
 }
 
-void ViewerImpl::reset_default_options_colors()
+void FdmViewer::reset_default_options_colors()
 {
     m_options_colors = DEFAULT_OPTIONS_COLORS;
 }
 
-const ColorRange& ViewerImpl::color_range(ViewType type) const
+const ColorRange& FdmViewer::color_range(ViewType type) const
 {
     switch (type)
     {
@@ -1310,7 +1271,7 @@ const ColorRange& ViewerImpl::color_range(ViewType type) const
     }
 }
 
-void ViewerImpl::set_color_range_palette(ViewType type, const Palette& palette)
+void FdmViewer::set_color_range_palette(ViewType type, const Palette& palette)
 {
     switch (type)
     {
@@ -1329,13 +1290,13 @@ void ViewerImpl::set_color_range_palette(ViewType type, const Palette& palette)
     m_settings.update_colors = true;
 }
 
-void ViewerImpl::set_travels_radius(float radius)
+void FdmViewer::set_travels_radius(float radius)
 {
     m_travels_radius = std::clamp(radius, MIN_TRAVELS_RADIUS_MM, MAX_TRAVELS_RADIUS_MM);
     update_heights_widths();
 }
 
-void ViewerImpl::set_wipes_radius(float radius)
+void FdmViewer::set_wipes_radius(float radius)
 {
     m_wipes_radius = std::clamp(radius, MIN_WIPES_RADIUS_MM, MAX_WIPES_RADIUS_MM);
     update_heights_widths();
@@ -1356,7 +1317,7 @@ static bool is_visible(const MoveVertex& v, const Settings& settings)
     }
 }
 
-BoundingBoxf3 ViewerImpl::tool_marker_bounding_box() const
+BoundingBoxf3 FdmViewer::tool_marker_bounding_box() const
 {
     BoundingBoxf3 ret = m_tool_marker.bounding_box();
     const Vec3f& position = current_vertex().position;
@@ -1365,12 +1326,12 @@ BoundingBoxf3 ViewerImpl::tool_marker_bounding_box() const
     return ret;
 }
 
-bool ViewerImpl::export_toolpaths_to_obj(FILE& obj_file, FILE& mtl_file, const ObjExportParams& params) const
+bool FdmViewer::export_toolpaths_to_obj(FILE& obj_file, FILE& mtl_file, const ObjExportParams& params) const
 {
     return libvgcode::export_toolpaths_to_obj(obj_file, mtl_file, params, *this);
 }
 
-void ViewerImpl::update_view_full_range()
+void FdmViewer::update_view_full_range()
 {
     const Interval& layers_range = m_layers.view_range();
     bool travels_visible = m_settings.options_visibility[size_t(OptionType::Travels)];
@@ -1459,7 +1420,7 @@ void ViewerImpl::update_view_full_range()
     m_settings.update_view_full_range = false;
 }
 
-void ViewerImpl::update_color_ranges()
+void FdmViewer::update_color_ranges()
 {
     // Color ranges do not need to be recalculated that often. If the following settings are the same
     // as last time, the current ranges are still valid. The recalculation is quite expensive.
@@ -1509,7 +1470,7 @@ void ViewerImpl::update_color_ranges()
     m_ranges_settings = m_settings;
 }
 
-void ViewerImpl::update_heights_widths()
+void FdmViewer::update_heights_widths()
 {
 #if !USE_TEXTURE_BUFFER
     std::vector<Vec4f> heights_widths_angles;
@@ -1554,7 +1515,7 @@ static void add_lights_to_material(Render::Material& material, const Lights& lig
     }
 }
 
-void ViewerImpl::render_segments(const Vec3f& camera_position)
+void FdmViewer::render_segments(const Vec3f& camera_position)
 {
     Scene::Node* node = m_scene->root().query_first([](const Scene::Node* n)->bool {
         const GCodeNodeTag* tag = n->tag_of_type<GCodeNodeTag>();
@@ -1611,7 +1572,7 @@ void ViewerImpl::render_segments(const Vec3f& camera_position)
 #endif // USE_TEXTURE_BUFFER
 }
 
-void ViewerImpl::render_options()
+void FdmViewer::render_options()
 {
     Scene::Node* node = m_scene->root().query_first([](const Scene::Node* n)->bool {
         const GCodeNodeTag* tag = n->tag_of_type<GCodeNodeTag>();
@@ -1666,7 +1627,7 @@ void ViewerImpl::render_options()
 #endif // USE_TEXTURE_BUFFER
 }
 
-void ViewerImpl::render_cog_marker()
+void FdmViewer::render_cog_marker()
 {
     Scene::Node* node = m_scene->root().query_first([](const Scene::Node* n)->bool {
         const GCodeNodeTag* tag = n->tag_of_type<GCodeNodeTag>();
@@ -1688,7 +1649,7 @@ void ViewerImpl::render_cog_marker()
     node->set_material_override(material);
 }
 
-void ViewerImpl::render_tool_marker()
+void FdmViewer::render_tool_marker()
 {
     Scene::Node* node = m_scene->root().query_first([](const Scene::Node* n)->bool {
         const GCodeNodeTag* tag = n->tag_of_type<GCodeNodeTag>();

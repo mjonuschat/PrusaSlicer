@@ -1,11 +1,11 @@
-#include "Slic3r/App/LibvgcodeWrapper/Legend.hpp"
-#include "Slic3r/App/LibvgcodeWrapper/WrapperImpl.hpp"
+#include "Slic3r/App/Preview/Legend.hpp"
+#include "Slic3r/App/Preview/FdmViewerWrapper.hpp"
 #include "Slic3r/App/Imgui/ImguiExtension.hpp"
 #include "Slic3r/App/I18N/I18N.hpp"
 #include "Slic3r/App/Render/ImguiRender.hpp"
 
 #include <Slic3r/Biz/libpgcode/Utils.hpp>
-#include <Slic3r/App/libvgcode/Viewer.hpp>
+#include <Slic3r/App/libvgcode/FdmViewer.hpp>
 #include <Slic3r/App/libvgcode/ColorRange.hpp>
 
 #include <boost/nowide/convert.hpp>
@@ -15,9 +15,9 @@ using namespace Slic3r::Biz::libpgcode;
 using namespace Slic3r::Biz;
 using namespace Slic3r::Domain;
 
-namespace Slic3r::App::LibvgcodeWrapper {
+namespace Slic3r::App::Preview {
 
-void legend_view_type_selector(Viewer& viewer, const WrapperImpl& wrapper, GCodeViewTypeChangedCallback cb_view_type_changed,
+void legend_view_type_selector(FdmViewer& viewer, const FdmViewerWrapper& wrapper, GCodeViewTypeChangedCallback cb_view_type_changed,
     float width)
 {
     std::vector<float> layers_times = viewer.layers_estimated_times();
@@ -57,7 +57,7 @@ void legend_view_type_selector(Viewer& viewer, const WrapperImpl& wrapper, GCode
     }
 }
 
-static void draw_feature_type_items(Viewer& viewer, WrapperImpl& wrapper, const LegendCallbacks& cbs)
+static void draw_feature_type_items(FdmViewer& viewer, FdmViewerWrapper& wrapper, const LegendCallbacks& cbs)
 {
     static constexpr float max_percentage_rect_width = 30.0f;
     static bool show_time_estimate = true;
@@ -258,7 +258,7 @@ static void draw_feature_type_items(Viewer& viewer, WrapperImpl& wrapper, const 
     }
 }
 
-static void draw_color_range_items(const Viewer& viewer, const WrapperImpl& wrapper)
+static void draw_color_range_items(const FdmViewer& viewer, const FdmViewerWrapper& wrapper)
 {
     ViewType type = viewer.view_type();
     const ColorRange& range = viewer.color_range(type);
@@ -334,7 +334,7 @@ static void draw_color_range_items(const Viewer& viewer, const WrapperImpl& wrap
     }
 }
 
-static void draw_tool_items(const Viewer& viewer, const WrapperImpl& wrapper)
+static void draw_tool_items(const FdmViewer& viewer, const FdmViewerWrapper& wrapper)
 {
     const std::vector<uint8_t>& used_extruders_ids = viewer.used_extruders_ids();
     const Palette& tool_colors = viewer.tool_colors();
@@ -382,7 +382,7 @@ static void draw_tool_items(const Viewer& viewer, const WrapperImpl& wrapper)
     }
 }
 
-static bool has_gcode_events_to_show(const Viewer& viewer)
+static bool has_gcode_events_to_show(const FdmViewer& viewer)
 {
     if (viewer.used_extruders_count() > 1)
         return false;
@@ -401,7 +401,7 @@ static bool has_gcode_events_to_show(const Viewer& viewer)
     return false;
 }
 
-static void draw_color_print_items(const Viewer& viewer, const WrapperImpl& wrapper,
+static void draw_color_print_items(const FdmViewer& viewer, const FdmViewerWrapper& wrapper,
     Imgui::DoubleSlider::RequestExtraFramesCallback cb = nullptr)
 {
     static bool show_time_estimate = true;
@@ -415,7 +415,7 @@ static void draw_color_print_items(const Viewer& viewer, const WrapperImpl& wrap
     if (ImGui::BeginTable("ColorPrintItems", 2)) {
 
         for (uint8_t id : used_extruders_ids) {
-            const std::vector<ColorPrint>& extr_color_prints = viewer.extruder_color_prints(id);
+            const std::vector<ColorPrint>& extr_color_prints = viewer.used_extruder_color_prints(id);
             if (extr_color_prints.size() == 1) {
                 const ColorRGB& color = color_print_colors[id];
 
@@ -565,7 +565,7 @@ static void draw_color_print_items(const Viewer& viewer, const WrapperImpl& wrap
             std::vector<EventItem> event_items;
             uint8_t extruder_id = events.front().extruder_id;
             event_items.push_back({ EEventType::Print, extruder_id,
-                color_print_colors[viewer.extruder_color_prints(extruder_id)[last_color_id[extruder_id]].color_id] });
+                color_print_colors[viewer.used_extruder_color_prints(extruder_id)[last_color_id[extruder_id]].color_id] });
             for (size_t i = 0; i < events.size(); ++i) {
                 const auto& item = events[i];
                 switch (item.type)
@@ -578,7 +578,7 @@ static void draw_color_print_items(const Viewer& viewer, const WrapperImpl& wrap
                     extruder_id = item.extruder_id;
                     event_items.push_back({ EEventType::Pause, extruder_id, std::nullopt, std::nullopt });
                     event_items.push_back({ EEventType::Print, extruder_id,
-                        color_print_colors[viewer.extruder_color_prints(extruder_id)[last_color_id[extruder_id]].color_id] });
+                        color_print_colors[viewer.used_extruder_color_prints(extruder_id)[last_color_id[extruder_id]].color_id] });
                     break;
                 }
                 case CustomGCode::Type::ColorChange:
@@ -590,11 +590,11 @@ static void draw_color_print_items(const Viewer& viewer, const WrapperImpl& wrap
                     }
                     extruder_id = item.extruder_id;
                     event_items.push_back({ EEventType::ColorChange, extruder_id,
-                        color_print_colors[viewer.extruder_color_prints(extruder_id)[last_color_id[extruder_id]].color_id],
-                        color_print_colors[viewer.extruder_color_prints(extruder_id)[last_color_id[extruder_id] + 1].color_id] });
+                        color_print_colors[viewer.used_extruder_color_prints(extruder_id)[last_color_id[extruder_id]].color_id],
+                        color_print_colors[viewer.used_extruder_color_prints(extruder_id)[last_color_id[extruder_id] + 1].color_id] });
                     ++last_color_id[extruder_id];
                     event_items.push_back({ EEventType::Print, item.extruder_id,
-                        color_print_colors[viewer.extruder_color_prints(extruder_id)[last_color_id[extruder_id]].color_id] });
+                        color_print_colors[viewer.used_extruder_color_prints(extruder_id)[last_color_id[extruder_id]].color_id] });
                     break;
                 }
                 default: {
@@ -689,7 +689,7 @@ static void draw_color_print_items(const Viewer& viewer, const WrapperImpl& wrap
     }
 }
 
-static void draw_type_items(Viewer& viewer, WrapperImpl& wrapper, const LegendCallbacks& cbs)
+static void draw_type_items(FdmViewer& viewer, FdmViewerWrapper& wrapper, const LegendCallbacks& cbs)
 {
     ViewType type = viewer.view_type();
     switch (type)
@@ -745,7 +745,7 @@ static wchar_t icon_id(OptionType type)
     }
 }
 
-static void draw_options(Viewer& viewer, WrapperImpl& wrapper, Imgui::DoubleSlider::RequestExtraFramesCallback cb = nullptr)
+static void draw_options(FdmViewer& viewer, FdmViewerWrapper& wrapper, Imgui::DoubleSlider::RequestExtraFramesCallback cb = nullptr)
 {
     if (viewer.options_count() == 0)
         return;
@@ -757,7 +757,7 @@ static void draw_options(Viewer& viewer, WrapperImpl& wrapper, Imgui::DoubleSlid
     options.push_back(OptionType::ToolMarker);
 
     CustomOptions dummy_options;
-    CustomOptions& custom_options = (wrapper.mode() == WrapperMode::GCodeViewer) ? dummy_options : wrapper.custom_options();
+    CustomOptions& custom_options = (wrapper.mode() == FdmViewerWrapperMode::GCodeViewer) ? dummy_options : wrapper.custom_options();
 
     float icon_size = line_height;
 
@@ -851,7 +851,7 @@ static std::string trim_text_if_needed(const std::string& txt, float max_length 
     return txt;
 }
 
-static void draw_settings(Viewer& viewer, const PrintSettings& settings)
+static void draw_settings(FdmViewer& viewer, const PrintSettings& settings)
 {
     if (!settings.has_data())
         return;
@@ -905,7 +905,7 @@ static void draw_settings(Viewer& viewer, const PrintSettings& settings)
     }
 }
 
-static bool draw_estimated_times(Viewer& viewer, Imgui::DoubleSlider::RequestExtraFramesCallback cb = nullptr)
+static bool draw_estimated_times(FdmViewer& viewer, Imgui::DoubleSlider::RequestExtraFramesCallback cb = nullptr)
 {
     TimeModes time_modes = viewer.time_modes();
     std::vector<std::string> time_modes_str;
@@ -965,7 +965,7 @@ static bool draw_estimated_times(Viewer& viewer, Imgui::DoubleSlider::RequestExt
     return ret;
 }
 
-static void draw_popup_estimated_times(const char* popup_title, Viewer& viewer)
+static void draw_popup_estimated_times(const char* popup_title, FdmViewer& viewer)
 {
     assert(popup_title != nullptr);
 
@@ -1150,7 +1150,7 @@ static void draw_popup_estimated_times(const char* popup_title, Viewer& viewer)
     viewer.set_time_mode(curr_mode);
 }
 
-void legend(Viewer& viewer, WrapperImpl& wrapper, bool settings_visible, const PrintSettings& settings,
+void legend(FdmViewer& viewer, FdmViewerWrapper& wrapper, bool settings_visible, const PrintSettings& settings,
     const LegendCallbacks& cbs)
 {
     ImGuiWindow* window = ImGui::GetCurrentWindow();
@@ -1195,7 +1195,7 @@ struct CoarseItem
 
 using CoarseItems = std::vector<CoarseItem>;
 
-static CoarseItems collect_feature_type_coarse_items(Viewer& viewer)
+static CoarseItems collect_feature_type_coarse_items(FdmViewer& viewer)
 {
     GCodeExtrusionRoles roles = viewer.extrusion_roles();
     CoarseItems ret;
@@ -1206,7 +1206,7 @@ static CoarseItems collect_feature_type_coarse_items(Viewer& viewer)
     return ret;
 }
 
-static CoarseItems collect_color_range_coarse_items(Viewer& viewer, WrapperImpl& wrapper)
+static CoarseItems collect_color_range_coarse_items(FdmViewer& viewer, FdmViewerWrapper& wrapper)
 {
     ViewType type = viewer.view_type();
     const ColorRange& range = viewer.color_range(type);
@@ -1268,7 +1268,7 @@ static CoarseItems collect_color_range_coarse_items(Viewer& viewer, WrapperImpl&
     return ret;
 }
 
-static CoarseItems collect_tool_coarse_items(Viewer& viewer)
+static CoarseItems collect_tool_coarse_items(FdmViewer& viewer)
 {
     const std::vector<uint8_t>& used_extruders_ids = viewer.used_extruders_ids();
     const Palette& tool_colors = viewer.tool_colors();
@@ -1282,7 +1282,7 @@ static CoarseItems collect_tool_coarse_items(Viewer& viewer)
     return ret;
 }
 
-static CoarseItems collect_color_print_coarse_items(Viewer& viewer, WrapperImpl& wrapper)
+static CoarseItems collect_color_print_coarse_items(FdmViewer& viewer, FdmViewerWrapper& wrapper)
 {
     const Palette& color_print_colors = viewer.color_print_colors();
     std::vector<uint8_t> used_extruders_ids = viewer.used_extruders_ids();
@@ -1290,7 +1290,7 @@ static CoarseItems collect_color_print_coarse_items(Viewer& viewer, WrapperImpl&
 
     CoarseItems ret;
     for (uint8_t id : used_extruders_ids) {
-        const ColorPrints& extr_color_prints = viewer.extruder_color_prints(id);
+        const ColorPrints& extr_color_prints = viewer.used_extruder_color_prints(id);
         if (extr_color_prints.size() == 1) {
             std::string txt;
             if (extruders_count > 1)
@@ -1358,7 +1358,7 @@ static CoarseItems collect_color_print_coarse_items(Viewer& viewer, WrapperImpl&
     return ret;
 }
 
-static CoarseItems collect_coarse_items(Viewer& viewer, WrapperImpl& wrapper)
+static CoarseItems collect_coarse_items(FdmViewer& viewer, FdmViewerWrapper& wrapper)
 {
     ViewType type = viewer.view_type();
     switch (type)
@@ -1390,7 +1390,7 @@ static void draw_item_coarse(CoarseItem& item, const ImVec2& icon_size, float ce
     ImGui::Text("%s", item.text.c_str());
 }
 
-static void draw_items_coarse(Viewer& viewer, WrapperImpl& wrapper)
+static void draw_items_coarse(FdmViewer& viewer, FdmViewerWrapper& wrapper)
 {
     CoarseItems items = collect_coarse_items(viewer, wrapper);
     float line_height = ImGui::GetTextLineHeight();
@@ -1415,12 +1415,12 @@ static void draw_items_coarse(Viewer& viewer, WrapperImpl& wrapper)
     }
 }
 
-void legend_coarse(Viewer& viewer, WrapperImpl& wrapper)
+void legend_coarse(FdmViewer& viewer, FdmViewerWrapper& wrapper)
 {
     draw_items_coarse(viewer, wrapper);
 }
 
-static void draw_feature_type_items_detail(Render::ImguiRender& imgui_render, Viewer& viewer, WrapperImpl& wrapper, const LegendCallbacks& cbs)
+static void draw_feature_type_items_detail(Render::ImguiRender& imgui_render, FdmViewer& viewer, FdmViewerWrapper& wrapper, const LegendCallbacks& cbs)
 {
     static const ColorRGB PERCENTAGE_COLOR{ 0.56f, 0.56f, 0.56f };
     static constexpr float max_percentage_rect_width = 30.0f;
@@ -1625,7 +1625,7 @@ static void draw_feature_type_items_detail(Render::ImguiRender& imgui_render, Vi
     Imgui::toggle_button(_u8L("Used filament"), &show_time_estimate);
 }
 
-static void draw_color_range_items_detail(const Viewer& viewer, const WrapperImpl& wrapper)
+static void draw_color_range_items_detail(const FdmViewer& viewer, const FdmViewerWrapper& wrapper)
 {
     ViewType type = viewer.view_type();
     const ColorRange& range = viewer.color_range(type);
@@ -1706,7 +1706,7 @@ static void draw_color_range_items_detail(const Viewer& viewer, const WrapperImp
     ImGui::PopStyleVar();
 }
 
-static void draw_tool_items_details(Render::ImguiRender& imgui_render, const Viewer& viewer, const WrapperImpl& wrapper)
+static void draw_tool_items_details(Render::ImguiRender& imgui_render, const FdmViewer& viewer, const FdmViewerWrapper& wrapper)
 {
     const std::vector<uint8_t>& used_extruders_ids = viewer.used_extruders_ids();
     const Palette& tool_colors = viewer.tool_colors();
@@ -1763,7 +1763,7 @@ static void draw_tool_items_details(Render::ImguiRender& imgui_render, const Vie
     ImGui::PopStyleVar();
 }
 
-static void draw_color_print_items_detail(Render::ImguiRender& imgui_render, const Viewer& viewer, const WrapperImpl& wrapper,
+static void draw_color_print_items_detail(Render::ImguiRender& imgui_render, const FdmViewer& viewer, const FdmViewerWrapper& wrapper,
     Imgui::DoubleSlider::RequestExtraFramesCallback cb)
 {
     static bool show_time_estimate = true;
@@ -1780,7 +1780,7 @@ static void draw_color_print_items_detail(Render::ImguiRender& imgui_render, con
     if (ImGui::BeginTable("ColorPrintItems", 2, ImGuiTableFlags_SizingFixedFit)) {
 
         for (uint8_t id : used_extruders_ids) {
-            const std::vector<ColorPrint>& extr_color_prints = viewer.extruder_color_prints(id);
+            const std::vector<ColorPrint>& extr_color_prints = viewer.used_extruder_color_prints(id);
             if (extr_color_prints.size() == 1) {
                 const ColorRGB& color = color_print_colors[id];
 
@@ -1941,7 +1941,7 @@ static void draw_color_print_items_detail(Render::ImguiRender& imgui_render, con
             std::vector<EventItem> event_items;
             uint8_t extruder_id = events.front().extruder_id;
             event_items.push_back({ EEventType::Print, extruder_id,
-                color_print_colors[viewer.extruder_color_prints(extruder_id)[last_color_id[extruder_id]].color_id] });
+                color_print_colors[viewer.used_extruder_color_prints(extruder_id)[last_color_id[extruder_id]].color_id] });
             for (size_t i = 0; i < events.size(); ++i) {
                 const auto& item = events[i];
                 switch (item.type)
@@ -1954,7 +1954,7 @@ static void draw_color_print_items_detail(Render::ImguiRender& imgui_render, con
                     extruder_id = item.extruder_id;
                     event_items.push_back({ EEventType::Pause, extruder_id, std::nullopt, std::nullopt });
                     event_items.push_back({ EEventType::Print, extruder_id,
-                        color_print_colors[viewer.extruder_color_prints(extruder_id)[last_color_id[extruder_id]].color_id] });
+                        color_print_colors[viewer.used_extruder_color_prints(extruder_id)[last_color_id[extruder_id]].color_id] });
                     break;
                 }
                 case CustomGCode::Type::ColorChange:
@@ -1966,11 +1966,11 @@ static void draw_color_print_items_detail(Render::ImguiRender& imgui_render, con
                     }
                     extruder_id = item.extruder_id;
                     event_items.push_back({ EEventType::ColorChange, extruder_id,
-                        color_print_colors[viewer.extruder_color_prints(extruder_id)[last_color_id[extruder_id]].color_id],
-                        color_print_colors[viewer.extruder_color_prints(extruder_id)[last_color_id[extruder_id] + 1].color_id] });
+                        color_print_colors[viewer.used_extruder_color_prints(extruder_id)[last_color_id[extruder_id]].color_id],
+                        color_print_colors[viewer.used_extruder_color_prints(extruder_id)[last_color_id[extruder_id] + 1].color_id] });
                     ++last_color_id[extruder_id];
                     event_items.push_back({ EEventType::Print, item.extruder_id,
-                        color_print_colors[viewer.extruder_color_prints(extruder_id)[last_color_id[extruder_id]].color_id] });
+                        color_print_colors[viewer.used_extruder_color_prints(extruder_id)[last_color_id[extruder_id]].color_id] });
                     break;
                 }
                 default: {
@@ -2060,7 +2060,7 @@ static void draw_color_print_items_detail(Render::ImguiRender& imgui_render, con
     }
 }
 
-static void draw_items_detail(Render::ImguiRender& imgui_render, Viewer& viewer, WrapperImpl& wrapper, const LegendCallbacks& cbs)
+static void draw_items_detail(Render::ImguiRender& imgui_render, FdmViewer& viewer, FdmViewerWrapper& wrapper, const LegendCallbacks& cbs)
 {
     ViewType type = viewer.view_type();
     switch (type)
@@ -2083,9 +2083,9 @@ static void draw_items_detail(Render::ImguiRender& imgui_render, Viewer& viewer,
 }
 
 
-void legend_detail(Render::ImguiRender& imgui_render, libvgcode::Viewer& viewer, WrapperImpl& wrapper, const LegendCallbacks& cbs)
+void legend_detail(Render::ImguiRender& imgui_render, libvgcode::FdmViewer& viewer, FdmViewerWrapper& wrapper, const LegendCallbacks& cbs)
 {
     draw_items_detail(imgui_render, viewer, wrapper, cbs);
 }
 
-} // namespace Slic3r::App::LibvgcodeWrapper
+} // namespace Slic3r::App::Preview

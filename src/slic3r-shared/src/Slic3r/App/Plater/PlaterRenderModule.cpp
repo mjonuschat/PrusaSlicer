@@ -142,7 +142,7 @@ void PlaterRenderModule::init_scene_layout()
     });
 }
 
-void my_model_experinets(Biz::Scene::SceneInteractor& scene_interactor, const Domain::Bed& bed)
+static void my_model_experinets(Biz::Scene::SceneInteractor& scene_interactor, const Domain::Bed& bed, bool can_add_modifiers)
 {
     size_t x_size = 3;
     size_t y_size = 3;
@@ -162,9 +162,11 @@ void my_model_experinets(Biz::Scene::SceneInteractor& scene_interactor, const Do
         xform.translate(Vec3d{ 10, 10, 10});
         scene_interactor.add_volume_from_mesh(TriMesh::make_cube(10,10,10), ModelVolumeType::NEGATIVE_VOLUME, xform.matrix());
 
-        xform = Transform3d::Identity();
-        xform.translate(Vec3d{ 0, -10, 10});
-        scene_interactor.add_volume_from_mesh(TriMesh::make_cube(10,10,10), ModelVolumeType::PARAMETER_MODIFIER, xform.matrix());
+        if (can_add_modifiers) {
+            xform = Transform3d::Identity();
+            xform.translate(Vec3d{ 0, -10, 10 });
+            scene_interactor.add_volume_from_mesh(TriMesh::make_cube(10, 10, 10), ModelVolumeType::PARAMETER_MODIFIER, xform.matrix());
+        }
 
         xform = Transform3d::Identity();
         xform.translate(Vec3d{ 0, 5, 10});
@@ -200,9 +202,11 @@ void my_model_experinets(Biz::Scene::SceneInteractor& scene_interactor, const Do
         xform.translate(Vec3d{ 10, 10, 10});
         scene_interactor.add_volume_from_mesh(TriMesh::make_cube(10,10,10), ModelVolumeType::NEGATIVE_VOLUME, xform.matrix());
 
-        xform = Transform3d::Identity();
-        xform.translate(Vec3d{ 0, -10, 10});
-        scene_interactor.add_volume_from_mesh(TriMesh::make_cube(10,10,10), ModelVolumeType::PARAMETER_MODIFIER, xform.matrix());
+        if (can_add_modifiers) {
+            xform = Transform3d::Identity();
+            xform.translate(Vec3d{ 0, -10, 10 });
+            scene_interactor.add_volume_from_mesh(TriMesh::make_cube(10, 10, 10), ModelVolumeType::PARAMETER_MODIFIER, xform.matrix());
+        }
 
         xform = Transform3d::Identity();
         xform.translate(Vec3d{ 0, 5, 10});
@@ -242,10 +246,11 @@ void my_model_experinets(Biz::Scene::SceneInteractor& scene_interactor, const Do
         xform.translate(Vec3d{ 10, 10, 10});
         scene_interactor.add_volume_from_mesh(TriMesh::make_cube(10,10,10), ModelVolumeType::NEGATIVE_VOLUME, xform.matrix());
 
-        xform = Transform3d::Identity();
-        xform.translate(Vec3d{ 0, -10, 10});
-        scene_interactor.add_volume_from_mesh(TriMesh::make_cube(10,10,10), ModelVolumeType::PARAMETER_MODIFIER, xform.matrix());
-
+        if (can_add_modifiers) {
+            xform = Transform3d::Identity();
+            xform.translate(Vec3d{ 0, -10, 10 });
+            scene_interactor.add_volume_from_mesh(TriMesh::make_cube(10, 10, 10), ModelVolumeType::PARAMETER_MODIFIER, xform.matrix());
+        }
     }
 
     for (size_t x = 0; x < x_size; x++) {
@@ -275,7 +280,12 @@ void PlaterRenderModule::init_scene()
                           .front()
                           ->bed();
 #if 1
-    my_model_experinets(scene_interactor, bed);
+    Domain::SelectionId config_container_id = m_project_interactor.scene_interactor().selected_config_container_id();
+    const Domain::ConfigContainer* cc = m_project_interactor.selected_project().find_config_container(config_container_id);
+    DEBUG_ASSERT(cc != nullptr);
+    bool can_add_modifiers = cc->print_technology() != ptSLA;
+
+    my_model_experinets(scene_interactor, bed, can_add_modifiers);
     ModelObjectPtrs& objects = project.model().objects;
     override_config(objects[0]->config);
     override_config(objects[0]->volumes[0]->config);

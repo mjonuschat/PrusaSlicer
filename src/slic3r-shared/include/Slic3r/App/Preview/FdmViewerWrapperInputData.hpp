@@ -3,9 +3,9 @@
 #include "libslic3r/CustomGCode.hpp"
 #include <Slic3r/Biz/libpgcode/Types.hpp>
 
-namespace Slic3r::App::LibvgcodeWrapper {
+namespace Slic3r::App::Preview {
 
-struct WrapperInputData
+struct FdmViewerWrapperInputData
 {
     Biz::libpgcode::GCodeProducer producer{ Biz::libpgcode::GCodeProducer::Unknown };
     bool sequential_print{ false };
@@ -17,15 +17,4 @@ struct WrapperInputData
     Biz::libpgcode::PrintSettings print_settings;
 };
 
-struct WrapperSLAInputData
-{
-    struct Layers
-    {
-        std::vector<float> zs;
-        std::vector<float> times;
-    };
-
-    Layers layers;
-};
-
-} // namespace Slic3r::App::LibvgcodeWrapper
+} // namespace Slic3r::App::Preview

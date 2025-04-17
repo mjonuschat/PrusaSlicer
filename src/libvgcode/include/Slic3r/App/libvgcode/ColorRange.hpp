@@ -11,7 +11,7 @@
 
 namespace Slic3r::App::libvgcode {
 
-class ViewerImpl;
+class FdmViewer;
 
 //
 // Color range types
@@ -109,7 +109,7 @@ private:
     //
     void reset();
 
-    friend class ViewerImpl;
+    friend class FdmViewer;
 };
 
 } // namespace Slic3r::App::libvgcode

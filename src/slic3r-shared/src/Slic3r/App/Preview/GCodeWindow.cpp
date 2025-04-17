@@ -1,10 +1,10 @@
-#include "Slic3r/App/LibvgcodeWrapper/GCodeWindow.hpp"
+#include "Slic3r/App/Preview/GCodeWindow.hpp"
 #include "Slic3r/App/Imgui/ImguiExtension.hpp"
 #include "Slic3r/App/I18N/I18N.hpp"
 
 #include "Slic3r/Assert.hpp"
 
-namespace Slic3r::App::LibvgcodeWrapper {
+namespace Slic3r::App::Preview {
 
 static ImVec4 id_color() { return { 0.99f, 0.41f, 0.2f, 1.0f }; } // color from SidebarAfterSlice::render()
 static ImVec4 cmd_color() { return { 0.8f, 0.8f, 0.0f, 1.0f }; }
@@ -143,4 +143,4 @@ void gcode_window(const GCodeWindowData& data, uint32_t curr_line_id, bool clip_
     }
 }
 
-} // namespace Slic3r::App::LibvgcodeWrapper
+} // namespace Slic3r::App::Preview

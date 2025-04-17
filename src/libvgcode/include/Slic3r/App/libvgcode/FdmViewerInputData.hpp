@@ -23,7 +23,7 @@ struct GCodeEvent
 
 using GCodeEvents = std::vector<GCodeEvent>;
 
-struct ViewerInputData
+struct FdmViewerInputData
 {
     //
     // Whether or not the gcode was generated with spiral vase mode enabled.

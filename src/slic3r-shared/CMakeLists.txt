@@ -145,27 +145,30 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Imgui/ImguiExtension.cpp
         include/Slic3r/App/Imgui/ImguiExtension.hpp
 
-        src/Slic3r/App/LibvgcodeWrapper/Types.cpp
-        include/Slic3r/App/LibvgcodeWrapper/Types.hpp
-        src/Slic3r/App/LibvgcodeWrapper/Wrapper.cpp
-        include/Slic3r/App/LibvgcodeWrapper/Wrapper.hpp
-        src/Slic3r/App/LibvgcodeWrapper/WrapperImpl.cpp
-        include/Slic3r/App/LibvgcodeWrapper/WrapperImpl.hpp
-        include/Slic3r/App/LibvgcodeWrapper/WrapperInputData.hpp
-        src/Slic3r/App/LibvgcodeWrapper/DoubleSliderForLayers.cpp
-        include/Slic3r/App/LibvgcodeWrapper/DoubleSliderForLayers.hpp
-        src/Slic3r/App/LibvgcodeWrapper/DoubleSliderForGCode.cpp
-        include/Slic3r/App/LibvgcodeWrapper/DoubleSliderForGCode.hpp
-        src/Slic3r/App/LibvgcodeWrapper/ExtrudersSequence.cpp
-        include/Slic3r/App/LibvgcodeWrapper/ExtrudersSequence.hpp
-        src/Slic3r/App/LibvgcodeWrapper/TickCodeManager.cpp
-        include/Slic3r/App/LibvgcodeWrapper/TickCodeManager.hpp
-        src/Slic3r/App/LibvgcodeWrapper/ActualSpeedPlotter.cpp
-        include/Slic3r/App/LibvgcodeWrapper/ActualSpeedPlotter.hpp
-        src/Slic3r/App/LibvgcodeWrapper/GCodeWindow.cpp
-        include/Slic3r/App/LibvgcodeWrapper/GCodeWindow.hpp
-        src/Slic3r/App/LibvgcodeWrapper/Legend.cpp
-        include/Slic3r/App/LibvgcodeWrapper/Legend.hpp
+        src/Slic3r/App/Preview/Types.cpp
+        include/Slic3r/App/Preview/Types.hpp
+        src/Slic3r/App/Preview/FdmViewerWrapper.cpp
+        include/Slic3r/App/Preview/FdmViewerWrapper.hpp
+        include/Slic3r/App/Preview/FdmViewerWrapperInputData.hpp
+        src/Slic3r/App/Preview/SlaViewerWrapper.cpp
+        include/Slic3r/App/Preview/SlaViewerWrapper.hpp
+        include/Slic3r/App/Preview/SlaViewerWrapperInputData.hpp
+        src/Slic3r/App/Preview/DoubleSliderForLayers.cpp
+        include/Slic3r/App/Preview/DoubleSliderForLayers.hpp
+        src/Slic3r/App/Preview/DoubleSliderForGCode.cpp
+        include/Slic3r/App/Preview/DoubleSliderForGCode.hpp
+        src/Slic3r/App/Preview/ExtrudersSequence.cpp
+        include/Slic3r/App/Preview/ExtrudersSequence.hpp
+        src/Slic3r/App/Preview/TickCodeManager.cpp
+        include/Slic3r/App/Preview/TickCodeManager.hpp
+        src/Slic3r/App/Preview/ActualSpeedPlotter.cpp
+        include/Slic3r/App/Preview/ActualSpeedPlotter.hpp
+        src/Slic3r/App/Preview/GCodeWindow.cpp
+        include/Slic3r/App/Preview/GCodeWindow.hpp
+        src/Slic3r/App/Preview/Legend.cpp
+        include/Slic3r/App/Preview/Legend.hpp
+        src/Slic3r/App/Preview/AbstractViewerWrapper.cpp
+        include/Slic3r/App/Preview/AbstractViewerWrapper.hpp
 
         src/Slic3r/App/AbstractRenderLayout.cpp
         include/Slic3r/App/AbstractRenderLayout.hpp

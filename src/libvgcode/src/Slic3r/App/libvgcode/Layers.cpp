@@ -3,7 +3,7 @@
 ///|/
 ///|/ libvgcode library is released under the terms of the AGPLv3 or higher
 ///|/
-#include "Layers.hpp"
+#include "Slic3r/App/libvgcode/Layers.hpp"
 
 #include <assert.h>
 #include <algorithm>
