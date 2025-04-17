@@ -660,6 +660,7 @@ inline bool has_compatible_layer_regions(const PrintRegionConfig &config, const 
            config.opt_serialize("external_perimeter_extrusion_width")   == other_config.opt_serialize("external_perimeter_extrusion_width") &&
            config.thin_walls                                            == other_config.thin_walls &&
            config.external_perimeters_first                             == other_config.external_perimeters_first &&
+           config.external_perimeters_first_holes                       == other_config.external_perimeters_first_holes &&
            config.infill_overlap                                        == other_config.infill_overlap &&
            config.print_extrusion_multiplier                            == other_config.print_extrusion_multiplier &&
            has_compatible_dynamic_overhang_speed(config, other_config);
