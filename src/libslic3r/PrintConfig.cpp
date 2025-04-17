@@ -1213,12 +1213,22 @@ void PrintConfigDef::init_fff_params()
     def->set_default_value(new ConfigOptionFloatOrPercent(50, true));
 
     def = this->add("external_perimeters_first", coBool);
-    def->label = L("External perimeters first");
+    def->label = L("Contours");
+    def->full_label = L("External perimeters first for contours");
     def->category = L("Layers and Perimeters");
     def->tooltip = L("Print contour perimeters from the outermost one to the innermost one "
                    "instead of the default inverse order.");
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionBool(false));
+
+    def = this->add("external_perimeters_first_holes", coBool);
+    def->label = L("Holes");
+    def->full_label = L("External perimeters first for holes");
+    def->category = L("Layers and Perimeters");
+    def->tooltip = L("Print hole perimeters from the outermost one to the innermost one "
+                   "instead of the default inverse order.");
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionBool(true));
 
     def = this->add("extra_perimeters", coBool);
     def->label = L("Extra perimeters if needed");
