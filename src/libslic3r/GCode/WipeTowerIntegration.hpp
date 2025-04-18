@@ -28,16 +28,16 @@ public:
         const std::vector<std::vector<WipeTower::ToolChangeResult>> &tool_changes,
         const WipeTower::ToolChangeResult                           &final_purge) :
         m_left( 0.f),
-        m_right(float(print_config.wipe_tower_width.value)),
+        m_right(float(print_config.get<double>("wipe_tower_width"))),
         m_wipe_tower_pos(pos),
         m_wipe_tower_rotation(rotation),
-        m_extruder_offsets(print_config.extruder_offset.values),
+        m_extruder_offsets(print_config.get<std::vector<Point>>("extruder_offset")),
         m_priming(priming),
         m_tool_changes(tool_changes),
         m_final_purge(final_purge),
         m_layer_idx(-1),
         m_tool_change_idx(0),
-        m_last_wipe_tower_print_z(print_config.z_offset.value)
+        m_last_wipe_tower_print_z(print_config.get<double>("z_offset"))
     {}
 
     std::string prime(GCodeGenerator &gcodegen);

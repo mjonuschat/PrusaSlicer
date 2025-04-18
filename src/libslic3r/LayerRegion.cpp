@@ -60,16 +60,16 @@ Flow LayerRegion::bridging_flow(FlowRole role, bool force_thick_bridges) const
     const PrintRegion       &region         = this->region();
     const PrintRegionConfig &region_config  = region.config();
     const PrintObject       &print_object   = *this->layer()->object();
-    if (print_object.config().thick_bridges || force_thick_bridges) {
+    if (print_object.config().get<bool>("thick_bridges") || force_thick_bridges) {
         // The old Slic3r way (different from all other slicers): Use rounded extrusions.
         // Get the configured nozzle_diameter for the extruder associated to the flow role requested.
         // Here this->extruder(role) - 1 may underflow to MAX_INT, but then the get_at() will follback to zero'th element, so everything is all right.
-        auto nozzle_diameter = float(print_object.print()->config().nozzle_diameter.get_at(region.extruder(role) - 1));
+        auto nozzle_diameter = float(print_object.print()->config().get<std::vector<double>>("nozzle_diameter").at(region.extruder(role) - 1));
         // Applies default bridge spacing.
-        return Flow::bridging_flow(float(sqrt(region_config.bridge_flow_ratio)) * nozzle_diameter, nozzle_diameter);
+        return Flow::bridging_flow(float(sqrt(region_config.get<double>("bridge_flow_ratio"))) * nozzle_diameter, nozzle_diameter);
     } else {
         // The same way as other slicers: Use normal extrusions. Apply bridge_flow_ratio while maintaining the original spacing.
-        return this->flow(role).with_flow_ratio(region_config.bridge_flow_ratio);
+        return this->flow(role).with_flow_ratio(region_config.get<double>("bridge_flow_ratio"));
     }
 }
 
@@ -114,10 +114,10 @@ void LayerRegion::make_perimeters(
     const PrintConfig       &print_config  = this->layer()->object()->print()->config();
     const PrintRegionConfig &region_config = this->region().config();
     // This needs to be in sync with PrintObject::_slice() slicing_mode_normal_below_layer!
-    bool spiral_vase = print_config.spiral_vase &&
+    bool spiral_vase = print_config.get<bool>("spiral_vase") &&
         //FIXME account for raft layers.
-        (this->layer()->id() >= size_t(region_config.bottom_solid_layers.value) &&
-         this->layer()->print_z >= region_config.bottom_solid_min_thickness - EPSILON);
+        (this->layer()->id() >= size_t(region_config.get<int>("bottom_solid_layers")) &&
+         this->layer()->print_z >= region_config.get<double>("bottom_solid_min_thickness") - EPSILON);
 
     PerimeterGenerator::Parameters params(
         this->layer()->height,
@@ -143,7 +143,7 @@ void LayerRegion::make_perimeters(
         auto perimeters_begin      = uint32_t(m_perimeters.size());
         auto gap_fills_begin       = uint32_t(m_thin_fills.size());
         auto fill_expolygons_begin = uint32_t(fill_expolygons.size());
-        if (this->layer()->object()->config().perimeter_generator.value == PerimeterGeneratorType::Arachne && !spiral_vase)
+        if (this->layer()->object()->config().get<PerimeterGeneratorType>("perimeter_generator") == PerimeterGeneratorType::Arachne && !spiral_vase)
             PerimeterGenerator::process_arachne(
                 // input:
                 params,
@@ -474,7 +474,7 @@ void LayerRegion::process_external_surfaces(const Layer *lower_layer, const Poly
     // Width of the perimeters.
     float shell_width = 0;
     float expansion_min = 0;
-    if (int num_perimeters = this->region().config().perimeters; num_perimeters > 0) {
+    if (int num_perimeters = this->region().config().get<int>("perimeters"); num_perimeters > 0) {
         Flow external_perimeter_flow = this->flow(frExternalPerimeter);
         Flow perimeter_flow          = this->flow(frPerimeter);
         shell_width  = 0.5f * external_perimeter_flow.scaled_width() + external_perimeter_flow.scaled_spacing();
@@ -514,7 +514,7 @@ void LayerRegion::process_external_surfaces(const Layer *lower_layer, const Poly
     SurfaceCollection bridges;
     {
         BOOST_LOG_TRIVIAL(trace) << "Processing external surface, detecting bridges. layer" << this->layer()->print_z;
-        const double custom_angle = this->region().config().bridge_angle.value;
+        const double custom_angle = this->region().config().get<double>("bridge_angle");
         bridges.surfaces = custom_angle > 0 ?
             expand_merge_surfaces(m_fill_surfaces.surfaces, stBottomBridge, expansion_zones, closing_radius, deg2rad(custom_angle)) :
             expand_bridges_detect_orientations(m_fill_surfaces.surfaces, expansion_zones, closing_radius);
@@ -876,26 +876,26 @@ void LayerRegion::prepare_fill_surfaces()
         alter fill_surfaces boundaries on which our idempotency relies since that's
         the only meaningful information returned by psPerimeters. */
     
-    bool spiral_vase = this->layer()->object()->print()->config().spiral_vase;
+    bool spiral_vase = this->layer()->object()->print()->config().get<bool>("spiral_vase");
 
     // if no solid layers are requested, turn top/bottom surfaces to internal
     // For Lightning infill, infill_only_where_needed is ignored because both
     // do a similar thing, and their combination doesn't make much sense.
-    if (! spiral_vase && this->region().config().top_solid_layers == 0) {
+    if (! spiral_vase && this->region().config().get<int>("top_solid_layers") == 0) {
         for (Surface &surface : m_fill_surfaces)
             if (surface.is_top())
                 surface.surface_type = /*this->layer()->object()->config().infill_only_where_needed && this->region().config().fill_pattern != ipLightning ? stInternalVoid :*/ stInternal;
     }
-    if (this->region().config().bottom_solid_layers == 0) {
+    if (this->region().config().get<int>("bottom_solid_layers") == 0) {
         for (Surface &surface : m_fill_surfaces)
             if (surface.is_bottom()) // (surface.surface_type == stBottom)
                 surface.surface_type = stInternal;
     }
 
     // turn too small internal regions into solid regions according to the user setting
-    if (! spiral_vase && this->region().config().fill_density.value > 0) {
+    if (! spiral_vase && this->region().config().get<Domain::Percentage>("fill_density") > 0) {
         // scaling an area requires two calls!
-        double min_area = scale_(scale_(this->region().config().solid_infill_below_area.value));
+        double min_area = scale_(scale_(this->region().config().get<double>("solid_infill_below_area")));
         for (Surface &surface : m_fill_surfaces)
             if (surface.surface_type == stInternal && surface.area() <= min_area)
                 surface.surface_type = stInternalSolid;

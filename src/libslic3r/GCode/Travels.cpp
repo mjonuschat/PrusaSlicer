@@ -327,19 +327,19 @@ SmoothingParams get_smoothing_params(
     const double travel_length,
     const Domain::FullConfigFDM &config
 ) {
-    if (config.gcode_flavor != gcfMarlinFirmware)
+    if (config.get<GCodeFlavor>("gcode_flavor") != gcfMarlinFirmware)
         // Smoothing is supported only on Marlin.
         return {0, 1};
 
     const double slope = lift_height / slope_end;
-    const double max_machine_z_velocity = config.machine_max_feedrate_z.get_at(extruder_id);
+    const double max_machine_z_velocity = config.get<std::vector<double>>("machine_max_feedrate_z").at(extruder_id);
     const double max_xy_velocity =
         Vec2d{
-            config.machine_max_feedrate_x.get_at(extruder_id),
-            config.machine_max_feedrate_y.get_at(extruder_id)}
+            config.get<std::vector<double>>("machine_max_feedrate_x").at(extruder_id),
+            config.get<std::vector<double>>("machine_max_feedrate_y").at(extruder_id)}
             .norm();
 
-    const double xy_acceleration = config.machine_max_acceleration_travel.get_at(extruder_id);
+    const double xy_acceleration = config.get<std::vector<double>>("machine_max_acceleration_travel").at(extruder_id);
 
     const double xy_acceleration_time = max_xy_velocity / xy_acceleration;
     const double xy_acceleration_distance = 1.0 / 2.0 * xy_acceleration *
@@ -351,14 +351,14 @@ SmoothingParams get_smoothing_params(
 
     const double max_z_velocity = std::min(max_xy_velocity * slope, max_machine_z_velocity);
     const double deceleration_time = max_z_velocity /
-        config.machine_max_acceleration_z.get_at(extruder_id);
+        config.get<std::vector<double>>("machine_max_acceleration_z").at(extruder_id);
     const double deceleration_xy_distance = deceleration_time * max_xy_velocity;
 
     const double blend_width = slope_end > deceleration_xy_distance / 2.0 ? deceleration_xy_distance :
                                                                           slope_end * 2.0;
 
     const unsigned points_count = blend_width > 0 ?
-        std::ceil(max_z_velocity / config.machine_max_jerk_z.get_at(extruder_id)) :
+        std::ceil(max_z_velocity / config.get<std::vector<double>>("machine_max_jerk_z").at(extruder_id)) :
         1;
 
     if (blend_width <= 0     // When there is no blend with, there is no need for smoothing.
@@ -377,15 +377,15 @@ ElevatedTravelParams get_elevated_traval_params(
     const GCode::TravelObstacleTracker &obstacle_tracker
 ) {
     ElevatedTravelParams elevation_params{};
-    if (!config.travel_ramping_lift.get_at(extruder_id)) {
+    if (!config.get<std::vector<bool>>("travel_ramping_lift").at(extruder_id)) {
         elevation_params.slope_end = 0;
-        elevation_params.lift_height = config.retract_lift.get_at(extruder_id);
+        elevation_params.lift_height = config.get<std::vector<double>>("retract_lift").at(extruder_id);
         elevation_params.blend_width = 0;
         return elevation_params;
     }
-    elevation_params.lift_height = config.travel_max_lift.get_at(extruder_id);
+    elevation_params.lift_height = config.get<std::vector<double>>("travel_max_lift").at(extruder_id);
 
-    const double slope_deg = config.travel_slope.get_at(extruder_id);
+    const double slope_deg = config.get<std::vector<double>>("travel_slope").at(extruder_id);
 
     if (slope_deg >= 90 || slope_deg <= 0) {
         elevation_params.slope_end = 0;
@@ -434,8 +434,8 @@ Points3 generate_travel_to_extrusion(
     const GCode::TravelObstacleTracker &obstacle_tracker,
     const Point &xy_path_coord_origin
 ) {
-    const double upper_limit = config.retract_lift_below.get_at(extruder_id);
-    const double lower_limit = config.retract_lift_above.get_at(extruder_id);
+    const double upper_limit = config.get<std::vector<double>>("retract_lift_below").at(extruder_id);
+    const double lower_limit = config.get<std::vector<double>>("retract_lift_above").at(extruder_id);
     if ((lower_limit > 0 && initial_elevation < lower_limit) ||
         (upper_limit > 0 && initial_elevation > upper_limit)) {
         return generate_flat_travel(xy_path.points, initial_elevation);

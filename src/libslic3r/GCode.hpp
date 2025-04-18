@@ -134,7 +134,7 @@ public:
 
         if constexpr (Derived::SizeAtCompileTime == 2) {
             return Vec2d(unscaled<double>(point.x()), unscaled<double>(point.y())) + m_origin
-                - m_config.extruder_offset.get_at(m_writer.extruder()->id());
+                - m_config.get<std::vector<Point>>("extruder_offset").at(m_writer.extruder()->id());
         } else {
             const Vec2d gcode_point_xy{this->point_to_gcode(point.template head<2>())};
             return to_3d(gcode_point_xy, unscaled(point.z()));

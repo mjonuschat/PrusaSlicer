@@ -308,7 +308,7 @@ std::vector<int> get_skirt_print_zs(const Slic3r::Print& print, std::vector<int>
     if (print.has_infinite_skirt()) {
         return result;
     }
-    const std::size_t skirt_height{std::max<size_t>(print.config().skirt_height.value, 0)};
+    const std::size_t skirt_height{std::max<size_t>(print.config().get<int>("skirt_height"), 0)};
     result.resize(std::min(skirt_height, result.size()));
     return result;
 }
@@ -385,7 +385,7 @@ MoveVerticesPerLayer get_perimeters_preview(
                 return;
             const Slic3r::PrintRegionConfig& config{region.region().config()};
             const auto extruder_id{
-                static_cast<uint8_t>(std::max(config.perimeter_extruder.value - 1, 0))};
+                static_cast<uint8_t>(std::max(config.get<int>("perimeter_extruder") - 1, 0))};
 
             const libpgcode::MoveVertex vertex_template{
                 .type = libpgcode::MoveType::Extrude,
@@ -419,8 +419,8 @@ MoveVerticesPerLayer get_infill_preview(
                 const Slic3r::PrintRegionConfig& config{region.region().config()};
                 const bool is_solid_infill = fill.entities.front()->role().is_solid_infill();
                 const auto extruder_id = is_solid_infill ?
-                    static_cast<uint8_t>(std::max(config.solid_infill_extruder.value - 1, 0)) :
-                    static_cast<uint8_t>(std::max(config.infill_extruder.value - 1, 0));
+                    static_cast<uint8_t>(std::max(config.get<int>("solid_infill_extruder") - 1, 0)) :
+                    static_cast<uint8_t>(std::max(config.get<int>("infill_extruder") - 1, 0));
 
                 const libpgcode::MoveVertex vertex_template{
                     .type = libpgcode::MoveType::Extrude,
@@ -463,10 +463,10 @@ MoveVerticesPerLayer get_supports_preview(
                 const auto extruder_id{
                     is_support_material
                         ? static_cast<uint8_t>(
-                              std::max(config.support_material_extruder.value - 1, 0)
+                              std::max(config.get<int>("support_material_extruder") - 1, 0)
                           )
                         : static_cast<uint8_t>(
-                              std::max(config.support_material_interface_extruder.value - 1, 0)
+                              std::max(config.get<int>("support_material_interface_extruder") - 1, 0)
                           )};
 
                 const libpgcode::MoveVertex vertex_template{
@@ -514,11 +514,11 @@ libpgcode::ProcessorResult Preview::generate_result(const Slic3r::Print& print) 
     }
 
     result.producer = libpgcode::GCodeProducer::PrusaSlicer;
-    result.extruders_count = static_cast<uint8_t>(print.config().nozzle_diameter.size());
-    result.spiral_vase_enabled = print.config().spiral_vase;
-    result.z_offset = print.config().z_offset;
-    result.max_print_height = print.config().max_print_height;
-    result.bed_shape = double_to_float(print.config().bed_shape.values);
+    result.extruders_count = static_cast<uint8_t>(print.config().get<std::vector<double>>("nozzle_diameter").size());
+    result.spiral_vase_enabled = print.config().get<bool>("spiral_vase");
+    result.z_offset = print.config().get<double>("z_offset");
+    result.max_print_height = print.config().get<double>("max_print_height");
+    result.bed_shape = double_to_float(print.config().get<std::vector<Point>>("bed_shape"));
 
     for (std::size_t gcode_id{}; gcode_id < result.moves.size(); ++gcode_id) {
         result.moves[gcode_id].gcode_id = gcode_id;
@@ -549,7 +549,7 @@ libpgcode::ProcessorResult get_result_preview(const Slic3r::Print& print)
         preview.update(get_supports_preview(*object));
     }
 
-    const auto brim_height{static_cast<float>(print.config().first_layer_height.value)};
+    const auto brim_height{static_cast<float>(print.config().get<Domain::FloatOrPercentage>("first_layer_height"))};
     preview.update(get_brim_preview(print, brim_height));
     preview.update(get_wipe_tower_preview(print));
     preview.update(get_skirt_preview(print, preview.get_scaled_print_zs()));

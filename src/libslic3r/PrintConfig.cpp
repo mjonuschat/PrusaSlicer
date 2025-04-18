@@ -5452,86 +5452,86 @@ std::string validate(const Domain::FullConfigFDM &cfg)
         return "--layer-height must be a multiple of print resolution";
 
     // --first-layer-height
-    if (cfg.first_layer_height.value <= 0)
+    if (cfg.get<Domain::FloatOrPercentage>("first_layer_height") <= 0)
         return "Invalid value for --first-layer-height";
 
     // --filament-diameter
-    for (double fd : cfg.filament_diameter.values)
+    for (double fd : cfg.get<std::vector<double>>("filament_diameter"))
         if (fd < 1)
             return "Invalid value for --filament-diameter";
 
     // --nozzle-diameter
-    for (double nd : cfg.nozzle_diameter.values)
+    for (double nd : cfg.get<std::vector<double>>("nozzle_diameter"))
         if (nd < 0.005)
             return "Invalid value for --nozzle-diameter";
 
     // --perimeters
-    if (cfg.perimeters.value < 0)
+    if (cfg.get<int>("perimeters") < 0)
         return "Invalid value for --perimeters";
 
     // --solid-layers
-    if (cfg.top_solid_layers < 0)
+    if (cfg.get<int>("top_solid_layers") < 0)
         return "Invalid value for --top-solid-layers";
-    if (cfg.bottom_solid_layers < 0)
+    if (cfg.get<int>("bottom_solid_layers") < 0)
         return "Invalid value for --bottom-solid-layers";
 
-    if (cfg.use_firmware_retraction.value &&
-        cfg.gcode_flavor.value != gcfSmoothie &&
-        cfg.gcode_flavor.value != gcfRepRapSprinter &&
-        cfg.gcode_flavor.value != gcfRepRapFirmware &&
-        cfg.gcode_flavor.value != gcfMarlinLegacy &&
-        cfg.gcode_flavor.value != gcfMarlinFirmware &&
-        cfg.gcode_flavor.value != gcfMachinekit &&
-        cfg.gcode_flavor.value != gcfRepetier &&
-        cfg.gcode_flavor.value != gcfKlipper)
+    if (cfg.get<bool>("use_firmware_retraction") &&
+        cfg.get<GCodeFlavor>("gcode_flavor") != gcfSmoothie &&
+        cfg.get<GCodeFlavor>("gcode_flavor") != gcfRepRapSprinter &&
+        cfg.get<GCodeFlavor>("gcode_flavor") != gcfRepRapFirmware &&
+        cfg.get<GCodeFlavor>("gcode_flavor") != gcfMarlinLegacy &&
+        cfg.get<GCodeFlavor>("gcode_flavor") != gcfMarlinFirmware &&
+        cfg.get<GCodeFlavor>("gcode_flavor") != gcfMachinekit &&
+        cfg.get<GCodeFlavor>("gcode_flavor") != gcfRepetier &&
+        cfg.get<GCodeFlavor>("gcode_flavor") != gcfKlipper)
         return "--use-firmware-retraction is only supported by Marlin, Klipper, Smoothie, RepRapFirmware, Repetier and Machinekit firmware";
 
-    if (cfg.use_firmware_retraction.value)
-        for (unsigned char wipe : cfg.wipe.values)
+    if (cfg.get<bool>("use_firmware_retraction"))
+        for (unsigned char wipe : cfg.get<std::vector<bool>>("wipe"))
              if (wipe)
                 return "--use-firmware-retraction is not compatible with --wipe";
 
     // --gcode-flavor
-    if (! print_config_def.get("gcode_flavor")->has_enum_value(cfg.gcode_flavor.serialize()))
+    if (! print_config_def.get("gcode_flavor")->has_enum_value(cfg.get<GCodeFlavor>("gcode_flavor").serialize()))
         return "Invalid value for --gcode-flavor";
 
     // --fill-pattern
-    if (! print_config_def.get("fill_pattern")->has_enum_value(cfg.fill_pattern.serialize()))
+    if (! print_config_def.get("fill_pattern")->has_enum_value(cfg.get<InfillPattern>("fill_pattern").serialize()))
         return "Invalid value for --fill-pattern";
 
     // --top-fill-pattern
-    if (! print_config_def.get("top_fill_pattern")->has_enum_value(cfg.top_fill_pattern.serialize()))
+    if (! print_config_def.get("top_fill_pattern")->has_enum_value(cfg.get<InfillPattern>("top_fill_pattern").serialize()))
         return "Invalid value for --top-fill-pattern";
 
     // --bottom-fill-pattern
-    if (! print_config_def.get("bottom_fill_pattern")->has_enum_value(cfg.bottom_fill_pattern.serialize()))
+    if (! print_config_def.get("bottom_fill_pattern")->has_enum_value(cfg.get<InfillPattern>("bottom_fill_pattern").serialize()))
         return "Invalid value for --bottom-fill-pattern";
 
     // --fill-density
-    if (fabs(cfg.fill_density.value - 100.) < EPSILON &&
-        ! print_config_def.get("top_fill_pattern")->has_enum_value(cfg.fill_pattern.serialize()))
+    if (fabs(cfg.get<Domain::Percentage>("fill_density") - 100.) < EPSILON &&
+        ! print_config_def.get("top_fill_pattern")->has_enum_value(cfg.get<InfillPattern>("fill_pattern").serialize()))
         return "The selected fill pattern is not supposed to work at 100% density";
 
     // --infill-every-layers
-    if (cfg.infill_every_layers < 1)
+    if (cfg.get<int>("infill_every_layers") < 1)
         return "Invalid value for --infill-every-layers";
 
     // --skirt-height
-    if (cfg.skirt_height < 0)
+    if (cfg.get<int>("skirt_height") < 0)
         return "Invalid value for --skirt-height";
 
     // --bridge-flow-ratio
-    if (cfg.bridge_flow_ratio <= 0)
+    if (cfg.get<double>("bridge_flow_ratio") <= 0)
         return "Invalid value for --bridge-flow-ratio";
 
     // extruder clearance
-    if (cfg.extruder_clearance_radius <= 0)
+    if (cfg.get<double>("extruder_clearance_radius") <= 0)
         return "Invalid value for --extruder-clearance-radius";
-    if (cfg.extruder_clearance_height <= 0)
+    if (cfg.get<double>("extruder_clearance_height") <= 0)
         return "Invalid value for --extruder-clearance-height";
 
     // --extrusion-multiplier
-    for (double em : cfg.extrusion_multiplier.values)
+    for (double em : cfg.get<std::vector<double>>("extrusion_multiplier"))
         if (em <= 0)
             return "Invalid value for --extrusion-multiplier";
 
@@ -5547,25 +5547,25 @@ std::string validate(const Domain::FullConfigFDM &cfg)
     //    return "Invalid zero value for --default-acceleration when using other acceleration settings";
 
     // --spiral-vase
-    if (cfg.spiral_vase) {
+    if (cfg.get<bool>("spiral_vase")) {
         // Note that we might want to have more than one perimeter on the bottom
         // solid layers.
-        if (cfg.perimeters > 1)
+        if (cfg.get<int>("perimeters") > 1)
             return "Can't make more than one perimeter when spiral vase mode is enabled";
-        else if (cfg.perimeters < 1)
+        else if (cfg.get<int>("perimeters") < 1)
             return "Can't make less than one perimeter when spiral vase mode is enabled";
-        if (cfg.fill_density > 0)
+        if (cfg.get<Domain::Percentage>("fill_density") > 0)
             return "Spiral vase mode can only print hollow objects, so you need to set Fill density to 0";
-        if (cfg.top_solid_layers > 0)
+        if (cfg.get<int>("top_solid_layers") > 0)
             return "Spiral vase mode is not compatible with top solid layers";
-        if (cfg.support_material || cfg.support_material_enforce_layers > 0)
+        if (cfg.get<bool>("support_material") || cfg.get<int>("support_material_enforce_layers") > 0)
             return "Spiral vase mode is not compatible with support material";
     }
 
     // extrusion widths
     {
         double max_nozzle_diameter = 0.;
-        for (double dmr : cfg.nozzle_diameter.values)
+        for (double dmr : cfg.get<std::vector<double>>("nozzle_diameter"))
             max_nozzle_diameter = std::max(max_nozzle_diameter, dmr);
         const char *widths[] = { "external_perimeter", "perimeter", "infill", "solid_infill", "top_infill", "support_material", "first_layer" };
         for (size_t i = 0; i < sizeof(widths) / sizeof(widths[i]); ++ i) {

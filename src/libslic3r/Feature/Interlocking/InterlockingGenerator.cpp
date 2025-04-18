@@ -28,17 +28,17 @@ namespace Slic3r {
 void InterlockingGenerator::generate_interlocking_structure(PrintObject &print_object)
 {
     const PrintObjectConfig &config = print_object.config();
-    if (!config.interlocking_beam) {
+    if (!config.get<bool>("interlocking_beam")) {
         return;
     }
 
-    const std::vector<double> &nozzle_diameters    = print_object.print()->config().nozzle_diameter.values;
+    const std::vector<double> &nozzle_diameters    = print_object.print()->config().get<std::vector<double>>("nozzle_diameter");
     double                     min_nozzle_diameter = *std::min_element(nozzle_diameters.begin(), nozzle_diameters.end());
-    const float                rotation            = deg2rad(config.interlocking_orientation.value);
-    const coord_t              beam_layer_count    = config.interlocking_beam_layer_count;
-    const int                  interface_depth     = config.interlocking_depth;
-    const int                  boundary_avoidance  = config.interlocking_boundary_avoidance;
-    const coord_t              beam_width          = scaled<coord_t>(std::max(min_nozzle_diameter, config.interlocking_beam_width.value));
+    const float                rotation            = deg2rad(config.get<double>("interlocking_orientation"));
+    const coord_t              beam_layer_count    = config.get<int>("interlocking_beam_layer_count");
+    const int                  interface_depth     = config.get<int>("interlocking_depth");
+    const int                  boundary_avoidance  = config.get<int>("interlocking_boundary_avoidance");
+    const coord_t              beam_width          = scaled<coord_t>(std::max(min_nozzle_diameter, config.get<double>("interlocking_beam_width")));
 
     const DilationKernel interface_dilation(GridPoint3(interface_depth, interface_depth, interface_depth), DilationKernel::Type::PRISM);
 

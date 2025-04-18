@@ -503,7 +503,7 @@ static inline float get_default_perimeter_spacing(const PrintObject &print_objec
     assert(!printing_extruders.empty());
     float avg_extruder = 0;
     for(unsigned int extruder_id : printing_extruders)
-        avg_extruder += float(scale_(print_object.print()->config().nozzle_diameter.get_at(extruder_id)));
+        avg_extruder += float(scale_(print_object.print()->config().get<std::vector<double>>("nozzle_diameter").at(extruder_id)));
     avg_extruder /= printing_extruders.size();
     return avg_extruder;
 }
@@ -765,7 +765,7 @@ static bool need_wipe(const GCodeGenerator           &gcodegen,
                       const Polyline                 &result_travel,
                       const size_t                    intersection_count)
 {
-    bool z_lift_enabled = gcodegen.config().travel_max_lift.get_at(gcodegen.writer().extruder()->id()) > 0.;
+    bool z_lift_enabled = gcodegen.config().get<std::vector<double>>("travel_max_lift").at(gcodegen.writer().extruder()->id()) > 0.;
     bool wipe_needed    = false;
 
     // If the original unmodified path doesn't have any intersection with boundary, then it is entirely inside the object otherwise is entirely
@@ -1240,7 +1240,7 @@ Polyline AvoidCrossingPerimeters::travel_to(const GCodeGenerator &gcodegen, cons
         travel_intersection_count = 0;
     }
 
-    const ConfigOptionFloatOrPercent &opt_max_detour             = gcodegen.config().avoid_crossing_perimeters_max_detour;
+    const ConfigOptionFloatOrPercent &opt_max_detour             = gcodegen.config().get<Domain::FloatOrPercentage>("avoid_crossing_perimeters_max_detour");
     bool                              max_detour_length_exceeded = false;
     if (opt_max_detour.value > 0) {
         double direct_length     = travel.length();

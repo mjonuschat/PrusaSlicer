@@ -29,12 +29,12 @@ void Wipe::init(const PrintConfig &config, const std::vector<unsigned int> &extr
     double wipe_xy = 0;
     const bool multimaterial = extruders.size() > 1;
     for (auto id : extruders)
-        if (config.wipe.get_at(id)) {
+        if (config.get<std::vector<bool>>("wipe").at(id)) {
             // Wipe length to extrusion ratio.
             const double xy_to_e = this->calc_xy_to_e_ratio(config, id);
-            wipe_xy = std::max(wipe_xy, config.retract_length.get_at(id) / xy_to_e);
+            wipe_xy = std::max(wipe_xy, config.get<std::vector<double>>("retract_length").at(id) / xy_to_e);
             if (multimaterial)
-                wipe_xy = std::max(wipe_xy, config.retract_length_toolchange.get_at(id) / xy_to_e);
+                wipe_xy = std::max(wipe_xy, config.get<std::vector<double>>("retract_length_toolchange").at(id) / xy_to_e);
         }
 
     if (wipe_xy == 0)

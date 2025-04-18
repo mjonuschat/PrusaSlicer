@@ -78,9 +78,9 @@ std::string SpiralVase::process_layer(const std::string &gcode, bool last_layer)
     // For absolute extruder distances it will be switched off.
     // Tapering the absolute extruder distances requires to process every extrusion value after the first transition
     // layer.
-    const bool transition_in  = m_transition_layer && m_config.use_relative_e_distances.value;
-    const bool transition_out = last_layer && m_config.use_relative_e_distances.value;
-    const bool smooth_spiral  = m_smooth_spiral && m_config.use_relative_e_distances.value;
+    const bool transition_in  = m_transition_layer && m_config.get<bool>("use_relative_e_distances");
+    const bool transition_out = last_layer && m_config.get<bool>("use_relative_e_distances");
+    const bool smooth_spiral  = m_smooth_spiral && m_config.get<bool>("use_relative_e_distances");
 
     const AABBTreeLines::LinesDistancer previous_layer_distancer = get_layer_distancer(m_previous_layer);
     Vec2f                               last_point               = m_previous_layer.empty() ? Vec2f::Zero() : m_previous_layer.back();

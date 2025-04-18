@@ -37,11 +37,11 @@ public:
 
     explicit SpiralVase(const PrintConfig &config) : m_config(config)
     {
-        m_reader.z() = (float) m_config.z_offset;
+        m_reader.z() = (float) m_config.get<double>("z_offset");
         m_reader.set_extrusion_axis(get_extrusion_axis_char(config));
-        m_reader.set_use_relative_e_distances(config.use_relative_e_distances.value);
+        m_reader.set_use_relative_e_distances(config.get<bool>("use_relative_e_distances"));
 
-        const double max_nozzle_diameter = *std::max_element(config.nozzle_diameter.values.begin(), config.nozzle_diameter.values.end());
+        const double max_nozzle_diameter = *std::max_element(config.get<std::vector<double>>("nozzle_diameter").begin(), config.get<std::vector<double>>("nozzle_diameter").end());
         m_max_xy_smoothing               = float(2. * max_nozzle_diameter);
     };
 

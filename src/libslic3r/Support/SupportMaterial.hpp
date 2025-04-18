@@ -32,11 +32,11 @@ public:
 	// Is raft enabled?
 	bool 		has_raft() 					const { return m_slicing_params.has_raft(); }
 	// Has any support?
-	bool 		has_support()				const { return m_object_config->support_material.value || m_object_config->support_material_enforce_layers; }
-	bool 		build_plate_only() 			const { return this->has_support() && m_object_config->support_material_buildplate_only.value; }
+	bool 		has_support()				const { return m_object_config->get<bool>("support_material") || m_object_config->get<int>("support_material_enforce_layers"); }
+	bool 		build_plate_only() 			const { return this->has_support() && m_object_config->get<bool>("support_material_buildplate_only"); }
 
-	bool 		synchronize_layers()		const { return m_slicing_params.soluble_interface && m_object_config->support_material_synchronize_layers.value; }
-	bool 		has_contact_loops() 		const { return m_object_config->support_material_interface_contact_loops.value; }
+	bool 		synchronize_layers()		const { return m_slicing_params.soluble_interface && m_object_config->get<bool>("support_material_synchronize_layers"); }
+	bool 		has_contact_loops() 		const { return m_object_config->get<bool>("support_material_interface_contact_loops"); }
 
 	// Generate support material for the object.
 	// New support layers will be added to the object,

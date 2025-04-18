@@ -505,11 +505,11 @@ Polygons collect_slices_outer(const Layer &layer)
 
 struct SupportGridParams {
     SupportGridParams(const PrintObjectConfig &object_config, const Flow &support_material_flow) :
-        style(object_config.support_material_style.value),
-        grid_resolution(object_config.support_material_spacing.value + support_material_flow.spacing()),
-        support_angle(deg2rad(object_config.support_material_angle.value)),
+        style(object_config.get<SupportMaterialStyle>("support_material_style")),
+        grid_resolution(object_config.get<double>("support_material_spacing") + support_material_flow.spacing()),
+        support_angle(deg2rad(object_config.get<double>("support_material_angle"))),
         extrusion_width(support_material_flow.spacing()),
-        support_material_closing_radius(object_config.support_material_closing_radius.value),
+        support_material_closing_radius(object_config.get<double>("support_material_closing_radius")),
         expansion_to_slice(coord_t(support_material_flow.scaled_spacing() / 2 + 5)),
         expansion_to_propagate(-3) {}
 
@@ -1170,12 +1170,12 @@ static inline std::tuple<Polygons, Polygons, Polygons, float> detect_overhangs(
     // Enforcers projected to overhangs, trimmed
     Polygons enforcer_polygons;
 
-    const bool   support_auto    = object_config.support_material.value && object_config.support_material_auto.value;
+    const bool   support_auto    = object_config.get<bool>("support_material") && object_config.get<bool>("support_material_auto");
     const bool   buildplate_only = ! annotations.buildplate_covered.empty();
     // If user specified a custom angle threshold, convert it to radians.
     // Zero means automatic overhang detection.
-    const double threshold_rad   = (object_config.support_material_threshold.value > 0) ?
-        M_PI * double(object_config.support_material_threshold.value + 1) / 180. : // +1 makes the threshold inclusive
+    const double threshold_rad   = (object_config.get<int>("support_material_threshold") > 0) ?
+        M_PI * double(object_config.get<int>("support_material_threshold") + 1) / 180. : // +1 makes the threshold inclusive
         0.;
     float        no_interface_offset = 0.f;
 
@@ -1191,7 +1191,7 @@ static inline std::tuple<Polygons, Polygons, Polygons, float> detect_overhangs(
         overhang_polygons = Algorithms::ExPolygon::to_polygons(layer.lslices);
 #endif
         // Expand for better stability.
-        contact_polygons = object_config.raft_expansion.value > 0 ? expand(overhang_polygons, scaled<float>(object_config.raft_expansion.value)) : overhang_polygons;
+        contact_polygons = object_config.get<double>("raft_expansion") > 0 ? expand(overhang_polygons, scaled<float>(object_config.get<double>("raft_expansion"))) : overhang_polygons;
     }
     else if (! layer.regions().empty())
     {
@@ -1228,7 +1228,7 @@ static inline std::tuple<Polygons, Polygons, Polygons, float> detect_overhangs(
             // It is the maximum widh of the extrudate.
             float fw = float(layerm->flow(frExternalPerimeter).scaled_width());
             lower_layer_offset  = 
-                (layer_id < (size_t)object_config.support_material_enforce_layers.value) ? 
+                (layer_id < (size_t)object_config.get<int>("support_material_enforce_layers")) ? 
                     // Enforce a full possible support, ignore the overhang angle.
                     0.f :
                 (threshold_rad > 0. ? 
@@ -1307,7 +1307,7 @@ static inline std::tuple<Polygons, Polygons, Polygons, float> detect_overhangs(
             }
             #endif /* SLIC3R_DEBUG */
 
-            if (object_config.dont_support_bridges)
+            if (object_config.get<bool>("dont_support_bridges"))
                 //FIXME Expensive, potentially not precise enough. Misses gap fill extrusions, which bridge.
                 remove_bridges_from_contacts(print_config, lower_layer, *layerm, fw, diff_polygons);
 
@@ -1438,7 +1438,7 @@ static inline std::pair<SupportGeneratorLayer*, SupportGeneratorLayer*> new_cont
 
         // Contact layer will be printed with a normal flow, but
         // it will support layers printed with a bridging flow.
-        if (object_config.thick_bridges && SupportMaterialInternal::has_bridging_extrusions(layer)) {
+        if (object_config.get<bool>("thick_bridges") && SupportMaterialInternal::has_bridging_extrusions(layer)) {
             double bridging_height = 0.;
             for (const LayerRegion* region : layer.regions())
                 bridging_height += region->region().bridging_height_avg(print_config);
@@ -1514,7 +1514,7 @@ static inline void fill_contact_layer(
 #endif // SLIC3R_DEBUG
         ));
     // 2) infill polygons, expand them by half the extrusion width + a tiny bit of extra.
-    bool reduce_interfaces = object_config.support_material_style.value == smsGrid && layer_id > 0 && !slicing_params.soluble_interface;
+    bool reduce_interfaces = object_config.get<SupportMaterialStyle>("support_material_style") == smsGrid && layer_id > 0 && !slicing_params.soluble_interface;
     if (reduce_interfaces) {
         // Reduce the amount of dense interfaces: Do not generate dense interfaces below overhangs with 60% overhang of the extrusions.
         Polygons dense_interface_polygons = diff(overhang_polygons, lower_layer_polygons_for_dense_interface());
@@ -1819,7 +1819,7 @@ static inline SupportGeneratorLayer* detect_bottom_contacts(
         layer.print_z + layer_new.height + slicing_params.gap_object_support;
     layer_new.bottom_z = layer.print_z;
     layer_new.idx_object_layer_below = layer_id;
-    layer_new.bridging = !slicing_params.soluble_interface && object.config().thick_bridges;
+    layer_new.bridging = !slicing_params.soluble_interface && object.config().get<bool>("thick_bridges");
     //FIXME how much to inflate the bottom surface, as it is being extruded with a bridging flow? The following line uses a normal flow.
     layer_new.polygons = expand(touching, float(support_params.support_material_flow.scaled_width()), SUPPORT_SURFACES_OFFSET_PARAMETERS);
 
@@ -2532,7 +2532,7 @@ void PrintObjectSupportMaterial::trim_support_layers_by_object(
                         break;
                     Slic3r::append(polygons_trimming, offset(object_layer.lslices, gap_xy_scaled, SUPPORT_SURFACES_OFFSET_PARAMETERS));
                 }
-                if (! m_slicing_params.soluble_interface && m_object_config->thick_bridges) {
+                if (! m_slicing_params.soluble_interface && m_object_config->get<bool>("thick_bridges")) {
                     // Collect all bottom surfaces, which will be extruded with a bridging flow.
                     for (; i < object.layers().size(); ++ i) {
                         const Layer &object_layer = *object.layers()[i];
@@ -2544,7 +2544,7 @@ void PrintObjectSupportMaterial::trim_support_layers_by_object(
                             some_region_overlaps = true;
                             Slic3r::append(polygons_trimming,
                                 offset(region->fill_surfaces().filter_by_type(stBottomBridge), gap_xy_scaled, SUPPORT_SURFACES_OFFSET_PARAMETERS));
-                            if (region->region().config().overhangs.value)
+                            if (region->region().config().get<bool>("overhangs"))
                                 // Add bridging perimeters.
                                 SupportMaterialInternal::collect_bridging_perimeter_areas(region->perimeters(), gap_xy_scaled, polygons_trimming);
                         }

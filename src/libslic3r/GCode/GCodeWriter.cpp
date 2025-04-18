@@ -43,14 +43,14 @@ void GCodeWriter::apply_print_config(const PrintConfig &print_config)
 {
     this->config.apply(print_config, true);
     m_extrusion_axis = get_extrusion_axis(this->config);
-    m_single_extruder_multi_material = print_config.single_extruder_multi_material.value;
-    bool use_mach_limits = print_config.gcode_flavor.value == gcfMarlinLegacy
-                        || print_config.gcode_flavor.value == gcfMarlinFirmware
-                        || print_config.gcode_flavor.value == gcfRepRapFirmware;
-    m_max_acceleration = static_cast<unsigned int>(std::round((use_mach_limits && print_config.machine_limits_usage.value == MachineLimitsUsage::EmitToGCode) ?
-        print_config.machine_max_acceleration_extruding.values.front() : 0));
-    m_max_travel_acceleration = static_cast<unsigned int>(std::round((use_mach_limits && print_config.machine_limits_usage.value == MachineLimitsUsage::EmitToGCode && supports_separate_travel_acceleration(print_config.gcode_flavor.value)) ?
-        print_config.machine_max_acceleration_travel.values.front() : 0));
+    m_single_extruder_multi_material = print_config.get<bool>("single_extruder_multi_material");
+    bool use_mach_limits = print_config.get<GCodeFlavor>("gcode_flavor") == gcfMarlinLegacy
+                        || print_config.get<GCodeFlavor>("gcode_flavor") == gcfMarlinFirmware
+                        || print_config.get<GCodeFlavor>("gcode_flavor") == gcfRepRapFirmware;
+    m_max_acceleration = static_cast<unsigned int>(std::round((use_mach_limits && print_config.get<MachineLimitsUsage>("machine_limits_usage") == MachineLimitsUsage::EmitToGCode) ?
+        print_config.get<std::vector<double>>("machine_max_acceleration_extruding").front() : 0));
+    m_max_travel_acceleration = static_cast<unsigned int>(std::round((use_mach_limits && print_config.get<MachineLimitsUsage>("machine_limits_usage") == MachineLimitsUsage::EmitToGCode && supports_separate_travel_acceleration(print_config.get<GCodeFlavor>("gcode_flavor"))) ?
+        print_config.get<std::vector<double>>("machine_max_acceleration_travel").front() : 0));
 }
 
 void GCodeWriter::set_extruders(std::vector<unsigned int> extruder_ids)

@@ -185,11 +185,11 @@ static std::map<float, float> calc_print_speed_sections(const ExtrusionAttribute
     };
 
     std::vector<OverhangWithSpeed> overhangs_with_speeds = {{100, ConfigOptionFloatOrPercent{default_speed, false}}};
-    if (config.enable_dynamic_overhang_speeds) {
-        overhangs_with_speeds = {{  0, config.overhang_speed_0},
-                                 { 25, config.overhang_speed_1},
-                                 { 50, config.overhang_speed_2},
-                                 { 75, config.overhang_speed_3},
+    if (config.get<bool>("enable_dynamic_overhang_speeds")) {
+        overhangs_with_speeds = {{  0, config.get<Domain::FloatOrPercentage>("overhang_speed_0")},
+                                 { 25, config.get<Domain::FloatOrPercentage>("overhang_speed_1")},
+                                 { 50, config.get<Domain::FloatOrPercentage>("overhang_speed_2")},
+                                 { 75, config.get<Domain::FloatOrPercentage>("overhang_speed_3")},
                                  {100, ConfigOptionFloatOrPercent{default_speed, false}}};
     }
 
@@ -220,11 +220,11 @@ static std::map<float, float> calc_fan_speed_sections(const ExtrusionAttributes 
     };
 
     std::vector<OverhangWithFanSpeed> overhang_with_fan_speeds = {{100, ConfigOptionInts{0}}};
-    if (config.enable_dynamic_fan_speeds.get_at(extruder_id)) {
-        overhang_with_fan_speeds = {{  0, config.overhang_fan_speed_0},
-                                    { 25, config.overhang_fan_speed_1},
-                                    { 50, config.overhang_fan_speed_2},
-                                    { 75, config.overhang_fan_speed_3},
+    if (config.get<std::vector<bool>>("enable_dynamic_fan_speeds").at(extruder_id)) {
+        overhang_with_fan_speeds = {{  0, config.get<std::vector<int>>("overhang_fan_speed_0")},
+                                    { 25, config.get<std::vector<int>>("overhang_fan_speed_1")},
+                                    { 50, config.get<std::vector<int>>("overhang_fan_speed_2")},
+                                    { 75, config.get<std::vector<int>>("overhang_fan_speed_3")},
                                     {100, ConfigOptionInts{0}}};
     }
 
@@ -271,11 +271,11 @@ OverhangSpeeds calculate_overhang_speed(const ExtrusionAttributes  &attributes,
                                              interpolate_speed(fan_speed_sections, attributes.overhang_attributes->end_distance_from_prev_layer));
 
     OverhangSpeeds overhang_speeds = {std::min(curled_base_speed, extrusion_speed), fan_speed};
-    if (!config.enable_dynamic_overhang_speeds) {
+    if (!config.get<bool>("enable_dynamic_overhang_speeds")) {
         overhang_speeds.print_speed = -1;
     }
 
-    if (!config.enable_dynamic_fan_speeds.get_at(extruder_id)) {
+    if (!config.get<std::vector<bool>>("enable_dynamic_fan_speeds").at(extruder_id)) {
         overhang_speeds.fan_speed = -1;
     } else if (current_fan_speed.has_value() && (fan_speed < *current_fan_speed) && (*current_fan_speed - fan_speed) <= MIN_FAN_SPEED_NEGATIVE_CHANGE_TO_EMIT) {
         // Always allow the fan speed to be increased without any hysteresis, but the speed will be decreased only when it exceeds a limit for minimum change.

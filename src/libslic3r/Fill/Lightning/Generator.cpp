@@ -46,15 +46,15 @@ Generator::Generator(const PrintObject &print_object, const double fill_density,
     const PrintConfig         &print_config         = print_object.print()->config();
     const PrintObjectConfig   &object_config        = print_object.config();
     const PrintRegionConfig   &region_config        = print_object.shared_regions()->all_regions.front()->config();
-    const std::vector<double> &nozzle_diameters     = print_config.nozzle_diameter.values;
+    const std::vector<double> &nozzle_diameters     = print_config.get<std::vector<double>>("nozzle_diameter");
     double                     max_nozzle_diameter  = *std::max_element(nozzle_diameters.begin(), nozzle_diameters.end());
 //    const int                  infill_extruder      = region_config.infill_extruder.value;
     const double               default_infill_extrusion_width = Flow::auto_extrusion_width(FlowRole::frInfill, float(max_nozzle_diameter));
     // Note: There's not going to be a layer below the first one, so the 'initial layer height' doesn't have to be taken into account.
-    const double               layer_thickness      = scaled<double>(object_config.layer_height.value);
+    const double               layer_thickness      = scaled<double>(object_config.get<double>("layer_height"));
 
-    m_infill_extrusion_width = scaled<float>(region_config.infill_extrusion_width.percent ? default_infill_extrusion_width * 0.01 * region_config.infill_extrusion_width :
-                                             region_config.infill_extrusion_width != 0.   ? region_config.infill_extrusion_width :
+    m_infill_extrusion_width = scaled<float>(region_config.get<Domain::FloatOrPercentage>("infill_extrusion_width").is_percentage() ? default_infill_extrusion_width * 0.01 * region_config.get<Domain::FloatOrPercentage>("infill_extrusion_width") :
+                                             region_config.get<Domain::FloatOrPercentage>("infill_extrusion_width") != 0.   ? region_config.get<Domain::FloatOrPercentage>("infill_extrusion_width") :
                                                                                             default_infill_extrusion_width);
     m_supporting_radius      = coord_t(m_infill_extrusion_width * 100. / fill_density);
 

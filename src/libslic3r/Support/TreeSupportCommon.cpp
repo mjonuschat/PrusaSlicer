@@ -29,63 +29,63 @@ TreeSupportMeshGroupSettings::TreeSupportMeshGroupSettings(const PrintObject &pr
 //    const std::vector<unsigned int>  printing_extruders = print_object.object_extruders();
 
     // Support must be enabled and set to Tree style.
-    assert(config.support_material || config.support_material_enforce_layers > 0);
-    assert(config.support_material_style == smsTree || config.support_material_style == smsOrganic);
+    assert(config.get<bool>("support_material") || config.get<int>("support_material_enforce_layers") > 0);
+    assert(config.get<SupportMaterialStyle>("support_material_style") == smsTree || config.get<SupportMaterialStyle>("support_material_style") == smsOrganic);
 
     // Calculate maximum external perimeter width over all printing regions, taking into account the default layer height.
     double external_perimeter_width = 0.;
     for (size_t region_id = 0; region_id < print_object.num_printing_regions(); ++ region_id) {
         const PrintRegion &region = print_object.printing_region(region_id);
-        external_perimeter_width = std::max<double>(external_perimeter_width, region.flow(print_object, frExternalPerimeter, config.layer_height).width());
+        external_perimeter_width = std::max<double>(external_perimeter_width, region.flow(print_object, frExternalPerimeter, config.get<double>("layer_height")).width());
     }
 
-    this->layer_height              = scaled<coord_t>(config.layer_height.value);
-    this->resolution                = scaled<coord_t>(print_config.gcode_resolution.value);
+    this->layer_height              = scaled<coord_t>(config.get<double>("layer_height"));
+    this->resolution                = scaled<coord_t>(print_config.get<double>("gcode_resolution"));
     // Arache feature
-    this->min_feature_size          = scaled<coord_t>(config.min_feature_size.value);
+    this->min_feature_size          = scaled<coord_t>(config.get<Domain::FloatOrPercentage>("min_feature_size"));
     // +1 makes the threshold inclusive
-    this->support_angle             = 0.5 * M_PI - std::clamp<double>((config.support_material_threshold + 1) * M_PI / 180., 0., 0.5 * M_PI);
-    this->support_line_width        = support_material_flow(&print_object, config.layer_height).scaled_width();
-    this->support_roof_line_width   = support_material_interface_flow(&print_object, config.layer_height).scaled_width();
+    this->support_angle             = 0.5 * M_PI - std::clamp<double>((config.get<int>("support_material_threshold") + 1) * M_PI / 180., 0., 0.5 * M_PI);
+    this->support_line_width        = support_material_flow(&print_object, config.get<double>("layer_height")).scaled_width();
+    this->support_roof_line_width   = support_material_interface_flow(&print_object, config.get<double>("layer_height")).scaled_width();
     //FIXME add it to SlicingParameters and reuse in both tree and normal supports?
-    this->support_bottom_enable     = config.support_material_interface_layers.value > 0 && config.support_material_bottom_interface_layers.value != 0;
+    this->support_bottom_enable     = config.get<int>("support_material_interface_layers") > 0 && config.get<int>("support_material_bottom_interface_layers") != 0;
     this->support_bottom_height     = this->support_bottom_enable ?
-        (config.support_material_bottom_interface_layers.value > 0 ?
-            config.support_material_bottom_interface_layers.value :
-            config.support_material_interface_layers.value) * this->layer_height :
+        (config.get<int>("support_material_bottom_interface_layers") > 0 ?
+            config.get<int>("support_material_bottom_interface_layers") :
+            config.get<int>("support_material_interface_layers")) * this->layer_height :
         0;
-    this->support_material_buildplate_only = config.support_material_buildplate_only;
-    this->support_xy_distance       = scaled<coord_t>(config.support_material_xy_spacing.get_abs_value(external_perimeter_width));
+    this->support_material_buildplate_only = config.get<bool>("support_material_buildplate_only");
+    this->support_xy_distance       = scaled<coord_t>(config.get<Domain::FloatOrPercentage>("support_material_xy_spacing").get_abs_value(external_perimeter_width));
     // Separation of interfaces, it is likely smaller than support_xy_distance.
     this->support_xy_distance_overhang = std::min(this->support_xy_distance, scaled<coord_t>(0.5 * external_perimeter_width));
     this->support_top_distance      = scaled<coord_t>(slicing_params.gap_support_object);
     this->support_bottom_distance   = scaled<coord_t>(slicing_params.gap_object_support);
 //    this->support_interface_skip_height =
 //    this->support_infill_angles     = 
-    this->support_roof_enable       = config.support_material_interface_layers.value > 0;
-    this->support_roof_layers       = this->support_roof_enable ? config.support_material_interface_layers.value : 0;
-    this->support_floor_enable      = config.support_material_interface_layers.value > 0 && config.support_material_bottom_interface_layers.value > 0;
-    this->support_floor_layers      = this->support_floor_enable ? config.support_material_bottom_interface_layers.value : 0;
+    this->support_roof_enable       = config.get<int>("support_material_interface_layers") > 0;
+    this->support_roof_layers       = this->support_roof_enable ? config.get<int>("support_material_interface_layers") : 0;
+    this->support_floor_enable      = config.get<int>("support_material_interface_layers") > 0 && config.get<int>("support_material_bottom_interface_layers") > 0;
+    this->support_floor_layers      = this->support_floor_enable ? config.get<int>("support_material_bottom_interface_layers") : 0;
 //    this->minimum_roof_area         = 
 //    this->support_roof_angles       = 
-    this->support_roof_pattern      = config.support_material_interface_pattern;
-    this->support_pattern           = config.support_material_pattern;
-    this->support_line_spacing      = scaled<coord_t>(config.support_material_spacing.value);
+    this->support_roof_pattern      = config.get<SupportMaterialInterfacePattern>("support_material_interface_pattern");
+    this->support_pattern           = config.get<SupportMaterialPattern>("support_material_pattern");
+    this->support_line_spacing      = scaled<coord_t>(config.get<double>("support_material_spacing"));
 //    this->support_bottom_offset     = 
 //    this->support_wall_count        = config.support_material_with_sheath ? 1 : 0;
     this->support_wall_count        = 1;
-    this->support_roof_line_distance = scaled<coord_t>(config.support_material_interface_spacing.value) + this->support_roof_line_width;
+    this->support_roof_line_distance = scaled<coord_t>(config.get<double>("support_material_interface_spacing")) + this->support_roof_line_width;
 //    this->minimum_support_area      = 
 //    this->minimum_bottom_area       = 
 //    this->support_offset            = 
-    this->support_tree_branch_distance = scaled<coord_t>(config.support_tree_branch_distance.value);
-    this->support_tree_angle          = std::clamp<double>(config.support_tree_angle * M_PI / 180., 0., 0.5 * M_PI - EPSILON);
-    this->support_tree_angle_slow     = std::clamp<double>(config.support_tree_angle_slow * M_PI / 180., 0., this->support_tree_angle - EPSILON);
-    this->support_tree_branch_diameter = scaled<coord_t>(config.support_tree_branch_diameter.value);
-    this->support_tree_branch_diameter_angle = std::clamp<double>(config.support_tree_branch_diameter_angle * M_PI / 180., 0., 0.5 * M_PI - EPSILON);
-    this->support_tree_top_rate       = config.support_tree_top_rate.value; // percent
+    this->support_tree_branch_distance = scaled<coord_t>(config.get<double>("support_tree_branch_distance"));
+    this->support_tree_angle          = std::clamp<double>(config.get<double>("support_tree_angle") * M_PI / 180., 0., 0.5 * M_PI - EPSILON);
+    this->support_tree_angle_slow     = std::clamp<double>(config.get<double>("support_tree_angle_slow") * M_PI / 180., 0., this->support_tree_angle - EPSILON);
+    this->support_tree_branch_diameter = scaled<coord_t>(config.get<double>("support_tree_branch_diameter"));
+    this->support_tree_branch_diameter_angle = std::clamp<double>(config.get<double>("support_tree_branch_diameter_angle") * M_PI / 180., 0., 0.5 * M_PI - EPSILON);
+    this->support_tree_top_rate       = config.get<Domain::Percentage>("support_tree_top_rate"); // percent
 //    this->support_tree_tip_diameter = this->support_line_width;
-    this->support_tree_tip_diameter = std::clamp(scaled<coord_t>(config.support_tree_tip_diameter.value), 0, this->support_tree_branch_diameter);
+    this->support_tree_tip_diameter = std::clamp(scaled<coord_t>(config.get<double>("support_tree_tip_diameter")), 0, this->support_tree_branch_diameter);
 }
 
 TreeSupportSettings::TreeSupportSettings(const TreeSupportMeshGroupSettings &mesh_group_settings, const SlicingParameters &slicing_params)

@@ -317,8 +317,8 @@ public:
     const Point& 			     center_offset() const  { return m_center_offset; }
 
     bool                         has_brim() const       {
-        return this->config().brim_type != btNoBrim
-            && this->config().brim_width.value > 0.
+        return this->config().get<BrimType>("brim_type") != btNoBrim
+            && this->config().get<double>("brim_width") > 0.
             && ! this->has_raft();
     }
 
@@ -366,8 +366,8 @@ public:
     std::vector<std::reference_wrapper<const PrintRegion>> all_regions() const;
     const PrintObjectRegions*   shared_regions() const { return m_shared_regions.get(); }
 
-    bool                        has_support()           const { return m_config.support_material || m_config.support_material_enforce_layers > 0; }
-    bool                        has_raft()              const { return m_config.raft_layers > 0; }
+    bool                        has_support()           const { return m_config.get<bool>("support_material") || m_config.get<int>("support_material_enforce_layers") > 0; }
+    bool                        has_raft()              const { return m_config.get<int>("raft_layers") > 0; }
     bool                        has_support_material()  const { return this->has_support() || this->has_raft(); }
     // Checks if the model object is painted using the multi-material painting gizmo.
     bool                        is_mm_painted()         const { return this->model_object()->is_mm_painted(); }

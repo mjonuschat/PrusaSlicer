@@ -25,14 +25,14 @@ SupportParameters::SupportParameters(const PrintObject &object)
         // Zero z-gap between the overhangs and the support interface.
         slicing_params.soluble_interface &&
         // Interface extruder soluble.
-        object_config.support_material_interface_extruder.value > 0 && print_config.filament_soluble.get_at(object_config.support_material_interface_extruder.value - 1) &&
+        object_config.get<int>("support_material_interface_extruder") > 0 && print_config.get<std::vector<bool>>("filament_soluble").at(object_config.get<int>("support_material_interface_extruder") - 1) &&
         // Base extruder: Either "print with active extruder" not soluble.
-        (object_config.support_material_extruder.value == 0 || ! print_config.filament_soluble.get_at(object_config.support_material_extruder.value - 1));
+        (object_config.get<int>("support_material_extruder") == 0 || ! print_config.get<std::vector<bool>>("filament_soluble").at(object_config.get<int>("support_material_extruder") - 1));
 
     {
-        int num_top_interface_layers    = std::max(0, object_config.support_material_interface_layers.value);
-        int num_bottom_interface_layers = object_config.support_material_bottom_interface_layers < 0 ? 
-            num_top_interface_layers : object_config.support_material_bottom_interface_layers;
+        int num_top_interface_layers    = std::max(0, object_config.get<int>("support_material_interface_layers"));
+        int num_bottom_interface_layers = object_config.get<int>("support_material_bottom_interface_layers") < 0 ? 
+            num_top_interface_layers : object_config.get<int>("support_material_bottom_interface_layers");
         this->has_top_contacts              = num_top_interface_layers    > 0;
         this->has_bottom_contacts           = num_bottom_interface_layers > 0;
         this->num_top_interface_layers      = this->has_top_contacts ? size_t(num_top_interface_layers - 1) : 0;
@@ -54,12 +54,12 @@ SupportParameters::SupportParameters(const PrintObject &object)
 
     // Calculate a minimum support layer height as a minimum over all extruders, but not smaller than 10um.
     this->support_layer_height_min = scaled<coord_t>(0.01);
-    for (auto lh : print_config.min_layer_height.values)
+    for (auto lh : print_config.get<std::vector<double>>("min_layer_height"))
         this->support_layer_height_min = std::min(this->support_layer_height_min, std::max(0.01, lh));
     for (auto layer : object.layers())
         this->support_layer_height_min = std::min(this->support_layer_height_min, std::max(0.01, layer->height));
 
-    if (object_config.support_material_interface_layers.value == 0) {
+    if (object_config.get<int>("support_material_interface_layers") == 0) {
         // No interface layers allowed, print everything with the base support pattern.
         this->support_material_interface_flow = this->support_material_flow;
     }
@@ -71,51 +71,51 @@ SupportParameters::SupportParameters(const PrintObject &object)
     for (size_t region_id = 0; region_id < object.num_printing_regions(); ++ region_id) {
         const PrintRegion &region = object.printing_region(region_id);
         external_perimeter_width = std::max(external_perimeter_width, double(region.flow(object, frExternalPerimeter, slicing_params.layer_height).width()));
-        bridge_flow_ratio += region.config().bridge_flow_ratio;
+        bridge_flow_ratio += region.config().get<double>("bridge_flow_ratio");
     }
-    this->gap_xy = object_config.support_material_xy_spacing.get_abs_value(external_perimeter_width);
+    this->gap_xy = object_config.get<Domain::FloatOrPercentage>("support_material_xy_spacing").get_abs_value(external_perimeter_width);
     bridge_flow_ratio /= object.num_printing_regions();
 
-    this->support_material_bottom_interface_flow = slicing_params.soluble_interface || ! object_config.thick_bridges ?
+    this->support_material_bottom_interface_flow = slicing_params.soluble_interface || ! object_config.get<bool>("thick_bridges") ?
         this->support_material_interface_flow.with_flow_ratio(bridge_flow_ratio) :
         Flow::bridging_flow(bridge_flow_ratio * this->support_material_interface_flow.nozzle_diameter(), this->support_material_interface_flow.nozzle_diameter());
 
-    this->can_merge_support_regions = object_config.support_material_extruder.value == object_config.support_material_interface_extruder.value;
-    if (!this->can_merge_support_regions && (object_config.support_material_extruder.value == 0 || object_config.support_material_interface_extruder.value == 0)) {
+    this->can_merge_support_regions = object_config.get<int>("support_material_extruder") == object_config.get<int>("support_material_interface_extruder");
+    if (!this->can_merge_support_regions && (object_config.get<int>("support_material_extruder") == 0 || object_config.get<int>("support_material_interface_extruder") == 0)) {
         // One of the support extruders is of "don't care" type.
         auto object_extruders = object.object_extruders();
         if (object_extruders.size() == 1 &&
-            *object_extruders.begin() == std::max<unsigned int>(object_config.support_material_extruder.value, object_config.support_material_interface_extruder.value))
+            *object_extruders.begin() == std::max<unsigned int>(object_config.get<int>("support_material_extruder"), object_config.get<int>("support_material_interface_extruder")))
             // Object is printed with the same extruder as the support.
             this->can_merge_support_regions = true;
     }
 
-    double interface_spacing = object_config.support_material_interface_spacing.value + this->support_material_interface_flow.spacing();
+    double interface_spacing = object_config.get<double>("support_material_interface_spacing") + this->support_material_interface_flow.spacing();
     this->interface_density  = std::min(1., this->support_material_interface_flow.spacing() / interface_spacing);
-    double raft_interface_spacing = object_config.support_material_interface_spacing.value + this->raft_interface_flow.spacing();
+    double raft_interface_spacing = object_config.get<double>("support_material_interface_spacing") + this->raft_interface_flow.spacing();
     this->raft_interface_density = std::min(1., this->raft_interface_flow.spacing() / raft_interface_spacing);
-    double support_spacing   = object_config.support_material_spacing.value + this->support_material_flow.spacing();
+    double support_spacing   = object_config.get<double>("support_material_spacing") + this->support_material_flow.spacing();
     this->support_density    = std::min(1., this->support_material_flow.spacing() / support_spacing);
-    if (object_config.support_material_interface_layers.value == 0) {
+    if (object_config.get<int>("support_material_interface_layers") == 0) {
         // No interface layers allowed, print everything with the base support pattern.
         this->interface_density = this->support_density;
     }
 
-    SupportMaterialPattern  support_pattern = object_config.support_material_pattern;
-    this->with_sheath            = object_config.support_material_with_sheath;
+    SupportMaterialPattern  support_pattern = object_config.get<SupportMaterialPattern>("support_material_pattern");
+    this->with_sheath            = object_config.get<bool>("support_material_with_sheath");
     this->base_fill_pattern      = 
         support_pattern == smpHoneycomb ? ipHoneycomb :
         this->support_density > 0.95 || this->with_sheath ? ipRectilinear : ipSupportBase;
     this->interface_fill_pattern = (this->interface_density > 0.95 ? ipRectilinear : ipSupportBase);
     this->raft_interface_fill_pattern = this->raft_interface_density > 0.95 ? ipRectilinear : ipSupportBase;
     this->contact_fill_pattern   =
-        (object_config.support_material_interface_pattern == smipAuto && slicing_params.soluble_interface) ||
-        object_config.support_material_interface_pattern == smipConcentric ?
+        (object_config.get<SupportMaterialInterfacePattern>("support_material_interface_pattern") == smipAuto && slicing_params.soluble_interface) ||
+        object_config.get<SupportMaterialInterfacePattern>("support_material_interface_pattern") == smipConcentric ?
         ipConcentric :
         (this->interface_density > 0.95 ? ipRectilinear : ipSupportBase);
 
-    this->base_angle            = deg2rad(float(object_config.support_material_angle.value));
-    this->interface_angle       = deg2rad(float(object_config.support_material_angle.value + 90.));
+    this->base_angle            = deg2rad(float(object_config.get<double>("support_material_angle")));
+    this->interface_angle       = deg2rad(float(object_config.get<double>("support_material_angle") + 90.));
     this->raft_angle_1st_layer  = 0.f;
     this->raft_angle_base       = 0.f;
     this->raft_angle_interface  = 0.f;
@@ -147,9 +147,9 @@ SupportParameters::SupportParameters(const PrintObject &object)
         assert(slicing_params.raft_layers() == 0);
     }
 
-    this->tree_branch_diameter_double_wall_area_scaled = 0.25 * sqr(scaled<double>(object_config.support_tree_branch_diameter_double_wall.value)) * M_PI;
+    this->tree_branch_diameter_double_wall_area_scaled = 0.25 * sqr(scaled<double>(object_config.get<double>("support_tree_branch_diameter_double_wall"))) * M_PI;
 
-    this->prefer_clockwise_movements = print_config.prefer_clockwise_movements;
+    this->prefer_clockwise_movements = print_config.get<bool>("prefer_clockwise_movements");
 }
 
 } // namespace Slic3r

@@ -545,22 +545,22 @@ WipeTower::ToolChangeResult WipeTower::construct_tcr(WipeTowerWriter& writer,
 
 
 WipeTower::WipeTower(const Vec2f& pos, double rotation_deg, const PrintConfig& config, const PrintRegionConfig& default_region_config, const std::vector<std::vector<float>>& wiping_matrix, size_t initial_tool) :
-    m_semm(config.single_extruder_multi_material.value),
+    m_semm(config.get<bool>("single_extruder_multi_material")),
     m_wipe_tower_pos(pos),
-    m_wipe_tower_width(float(config.wipe_tower_width)),
-    m_wipe_tower_brim_width(float(config.wipe_tower_brim_width)),
-    m_wipe_tower_cone_angle(float(config.wipe_tower_cone_angle)),
-    m_extra_flow(float(config.wipe_tower_extra_flow/100.)),
-    m_extra_spacing_wipe(float(config.wipe_tower_extra_spacing/100. * config.wipe_tower_extra_flow/100.)),
-    m_extra_spacing_ramming(float(config.wipe_tower_extra_spacing/100.)),
+    m_wipe_tower_width(float(config.get<double>("wipe_tower_width"))),
+    m_wipe_tower_brim_width(float(config.get<double>("wipe_tower_brim_width"))),
+    m_wipe_tower_cone_angle(float(config.get<double>("wipe_tower_cone_angle"))),
+    m_extra_flow(float(config.get<Domain::Percentage>("wipe_tower_extra_flow")/100.)),
+    m_extra_spacing_wipe(float(config.get<Domain::Percentage>("wipe_tower_extra_spacing")/100. * config.get<Domain::Percentage>("wipe_tower_extra_flow")/100.)),
+    m_extra_spacing_ramming(float(config.get<Domain::Percentage>("wipe_tower_extra_spacing")/100.)),
     m_y_shift(0.f),
     m_z_pos(0.f),
-    m_bridging(float(config.wipe_tower_bridging)),
-    m_no_sparse_layers(config.wipe_tower_no_sparse_layers),
-    m_gcode_flavor(config.gcode_flavor),
-    m_travel_speed(config.travel_speed),
-    m_infill_speed(default_region_config.infill_speed),
-    m_perimeter_speed(default_region_config.perimeter_speed),
+    m_bridging(float(config.get<double>("wipe_tower_bridging"))),
+    m_no_sparse_layers(config.get<bool>("wipe_tower_no_sparse_layers")),
+    m_gcode_flavor(config.get<GCodeFlavor>("gcode_flavor")),
+    m_travel_speed(config.get<double>("travel_speed")),
+    m_infill_speed(default_region_config.get<double>("infill_speed")),
+    m_perimeter_speed(default_region_config.get<double>("perimeter_speed")),
     m_current_tool(initial_tool),
     wipe_volumes(wiping_matrix)
 {
@@ -582,21 +582,21 @@ WipeTower::WipeTower(const Vec2f& pos, double rotation_deg, const PrintConfig& c
     // If this is a single extruder MM printer, we will use all the SE-specific config values.
     // Otherwise, the defaults will be used to turn off the SE stuff.
     if (m_semm) {
-        m_cooling_tube_retraction = float(config.cooling_tube_retraction);
-        m_cooling_tube_length     = float(config.cooling_tube_length);
-        m_parking_pos_retraction  = float(config.parking_pos_retraction);
-        m_extra_loading_move      = float(config.extra_loading_move);
-        m_set_extruder_trimpot    = config.high_current_on_filament_swap;
+        m_cooling_tube_retraction = float(config.get<double>("cooling_tube_retraction"));
+        m_cooling_tube_length     = float(config.get<double>("cooling_tube_length"));
+        m_parking_pos_retraction  = float(config.get<double>("parking_pos_retraction"));
+        m_extra_loading_move      = float(config.get<double>("extra_loading_move"));
+        m_set_extruder_trimpot    = config.get<bool>("high_current_on_filament_swap");
     }
 
-    m_is_mk4mmu3 = boost::icontains(config.printer_notes.value, "RAMMING_EXTRA")
+    m_is_mk4mmu3 = boost::icontains(config.get<std::string>("printer_notes"), "RAMMING_EXTRA")
                 // Before 2.9.1, the condition was tied to different keywords. We need to keep that so we don't break existing projects:
-                || (boost::icontains(config.printer_notes.value, "PRINTER_MODEL_MK4") && boost::icontains(config.printer_notes.value, "MMU"));
+                || (boost::icontains(config.get<std::string>("printer_notes"), "PRINTER_MODEL_MK4") && boost::icontains(config.get<std::string>("printer_notes"), "MMU"));
 
     m_switch_filament_monitoring = m_is_mk4mmu3 || is_XL_printer(config);
 
     // Calculate where the priming lines should be - very naive test not detecting parallelograms etc.
-    const std::vector<Vec2d>& bed_points = config.bed_shape.values;
+    const std::vector<Vec2d>& bed_points = config.get<std::vector<Point>>("bed_shape");
     BoundingBoxf bb(bed_points);
     m_bed_width = float(bb.size().x());
     m_bed_shape = (bed_points.size() == 4 ? RectangularBed : CircularBed);
@@ -625,39 +625,39 @@ void WipeTower::set_extruder(size_t idx, const PrintConfig& config)
     //while (m_filpar.size() < idx+1)   // makes sure the required element is in the vector
     m_filpar.push_back(FilamentParameters());
 
-    m_filpar[idx].material = config.filament_type.get_at(idx);
-    m_filpar[idx].is_soluble = config.wipe_tower_extruder == 0 ? config.filament_soluble.get_at(idx) : (idx != size_t(config.wipe_tower_extruder - 1));
-    m_filpar[idx].temperature = config.temperature.get_at(idx);
-    m_filpar[idx].first_layer_temperature = config.first_layer_temperature.get_at(idx);
-    m_filpar[idx].filament_minimal_purge_on_wipe_tower = config.filament_minimal_purge_on_wipe_tower.get_at(idx);
+    m_filpar[idx].material = config.get<std::vector<std::string>>("filament_type").at(idx);
+    m_filpar[idx].is_soluble = config.get<int>("wipe_tower_extruder") == 0 ? config.get<std::vector<bool>>("filament_soluble").at(idx) : (idx != size_t(config.get<int>("wipe_tower_extruder") - 1));
+    m_filpar[idx].temperature = config.get<std::vector<int>>("temperature").at(idx);
+    m_filpar[idx].first_layer_temperature = config.get<std::vector<int>>("first_layer_temperature").at(idx);
+    m_filpar[idx].filament_minimal_purge_on_wipe_tower = config.get<std::vector<double>>("filament_minimal_purge_on_wipe_tower").at(idx);
 
     // If this is a single extruder MM printer, we will use all the SE-specific config values.
     // Otherwise, the defaults will be used to turn off the SE stuff.
     if (m_semm) {
-        m_filpar[idx].loading_speed           = float(config.filament_loading_speed.get_at(idx));
-        m_filpar[idx].loading_speed_start     = float(config.filament_loading_speed_start.get_at(idx));
-        m_filpar[idx].unloading_speed         = float(config.filament_unloading_speed.get_at(idx));
-        m_filpar[idx].unloading_speed_start   = float(config.filament_unloading_speed_start.get_at(idx));
-        m_filpar[idx].delay                   = float(config.filament_toolchange_delay.get_at(idx));
-        m_filpar[idx].cooling_moves           = config.filament_cooling_moves.get_at(idx);
-        m_filpar[idx].cooling_initial_speed   = float(config.filament_cooling_initial_speed.get_at(idx));
-        m_filpar[idx].cooling_final_speed     = float(config.filament_cooling_final_speed.get_at(idx));
-        m_filpar[idx].filament_stamping_loading_speed     = float(config.filament_stamping_loading_speed.get_at(idx));
-        m_filpar[idx].filament_stamping_distance          = float(config.filament_stamping_distance.get_at(idx));
+        m_filpar[idx].loading_speed           = float(config.get<std::vector<double>>("filament_loading_speed").at(idx));
+        m_filpar[idx].loading_speed_start     = float(config.get<std::vector<double>>("filament_loading_speed_start").at(idx));
+        m_filpar[idx].unloading_speed         = float(config.get<std::vector<double>>("filament_unloading_speed").at(idx));
+        m_filpar[idx].unloading_speed_start   = float(config.get<std::vector<double>>("filament_unloading_speed_start").at(idx));
+        m_filpar[idx].delay                   = float(config.get<std::vector<double>>("filament_toolchange_delay").at(idx));
+        m_filpar[idx].cooling_moves           = config.get<std::vector<int>>("filament_cooling_moves").at(idx);
+        m_filpar[idx].cooling_initial_speed   = float(config.get<std::vector<double>>("filament_cooling_initial_speed").at(idx));
+        m_filpar[idx].cooling_final_speed     = float(config.get<std::vector<double>>("filament_cooling_final_speed").at(idx));
+        m_filpar[idx].filament_stamping_loading_speed     = float(config.get<std::vector<double>>("filament_stamping_loading_speed").at(idx));
+        m_filpar[idx].filament_stamping_distance          = float(config.get<std::vector<double>>("filament_stamping_distance").at(idx));
     }
 
-    m_filpar[idx].filament_area = float((M_PI/4.f) * pow(config.filament_diameter.get_at(idx), 2)); // all extruders are assumed to have the same filament diameter at this point
-    float nozzle_diameter = float(config.nozzle_diameter.get_at(idx));
+    m_filpar[idx].filament_area = float((M_PI/4.f) * pow(config.get<std::vector<double>>("filament_diameter").at(idx), 2)); // all extruders are assumed to have the same filament diameter at this point
+    float nozzle_diameter = float(config.get<std::vector<double>>("nozzle_diameter").at(idx));
     m_filpar[idx].nozzle_diameter = nozzle_diameter; // to be used in future with (non-single) multiextruder MM
 
-    float max_vol_speed = float(config.filament_max_volumetric_speed.get_at(idx));
+    float max_vol_speed = float(config.get<std::vector<double>>("filament_max_volumetric_speed").at(idx));
     if (max_vol_speed!= 0.f)
         m_filpar[idx].max_e_speed = (max_vol_speed / filament_area());
 
     m_perimeter_width = nozzle_diameter * Width_To_Nozzle_Ratio; // all extruders are now assumed to have the same diameter
 
     if (m_semm) {
-        std::istringstream stream{config.filament_ramming_parameters.get_at(idx)};
+        std::istringstream stream{config.get<std::vector<std::string>>("filament_ramming_parameters").at(idx)};
         float speed = 0.f;
         stream >> m_filpar[idx].ramming_line_width_multiplicator >> m_filpar[idx].ramming_step_multiplicator;
         m_filpar[idx].ramming_line_width_multiplicator /= 100;
@@ -669,9 +669,9 @@ void WipeTower::set_extruder(size_t idx, const PrintConfig& config)
         // and the same time step has to be used when the ramming is performed.
     } else {
         // We will use the same variables internally, but the correspondence to the configuration options will be different.
-        float vol  = config.filament_multitool_ramming_volume.get_at(idx);
-        float flow = config.filament_multitool_ramming_flow.get_at(idx);
-        m_filpar[idx].multitool_ramming = config.filament_multitool_ramming.get_at(idx);
+        float vol  = config.get<std::vector<double>>("filament_multitool_ramming_volume").at(idx);
+        float flow = config.get<std::vector<double>>("filament_multitool_ramming_flow").at(idx);
+        m_filpar[idx].multitool_ramming = config.get<std::vector<bool>>("filament_multitool_ramming").at(idx);
         m_filpar[idx].ramming_line_width_multiplicator = 2.;
         m_filpar[idx].ramming_step_multiplicator = 1.;
 
@@ -1494,11 +1494,11 @@ std::pair<double, double> WipeTower::get_wipe_tower_cone_base(double width, doub
 std::vector<std::vector<float>> WipeTower::extract_wipe_volumes(const PrintConfig& config)
 {
     // Get wiping matrix to get number of extruders and convert vector<double> to vector<float>:
-    std::vector<float> wiping_matrix(cast<float>(config.wiping_volumes_matrix.values));
+    std::vector<float> wiping_matrix(cast<float>(config.get<std::vector<double>>("wiping_volumes_matrix")));
 
     // The values shall only be used when SEMM is enabled. The purging for other printers
     // is determined by filament_minimal_purge_on_wipe_tower.
-    if (! config.single_extruder_multi_material.value)
+    if (! config.get<bool>("single_extruder_multi_material"))
         std::fill(wiping_matrix.begin(), wiping_matrix.end(), 0.f);
 
     // Extract purging volumes for each extruder pair:
@@ -1509,11 +1509,11 @@ std::vector<std::vector<float>> WipeTower::extract_wipe_volumes(const PrintConfi
 
     // For SEMM printers, the project can be configured to use defaults from configuration,
     // in which case the custom matrix shall be ignored. We will overwrite the values.
-    if (config.single_extruder_multi_material && ! config.wiping_volumes_use_custom_matrix) {
+    if (config.get<bool>("single_extruder_multi_material") && ! config.get<bool>("wiping_volumes_use_custom_matrix")) {
         for (size_t i = 0; i < number_of_extruders; ++i) {
             for (size_t j = 0; j < number_of_extruders; ++j) {
                 if (i != j)
-                wipe_volumes[i][j] = (i == j ? 0.f : config.multimaterial_purging.value * config.filament_purge_multiplier.get_at(j) / 100.f);
+                wipe_volumes[i][j] = (i == j ? 0.f : config.get<double>("multimaterial_purging") * config.get<std::vector<Domain::Percentage>>("filament_purge_multiplier").at(j) / 100.f);
             }
         }
     }
@@ -1521,7 +1521,7 @@ std::vector<std::vector<float>> WipeTower::extract_wipe_volumes(const PrintConfi
     // Also include filament_minimal_purge_on_wipe_tower. This is needed for the preview.
     for (unsigned int i = 0; i<number_of_extruders; ++i)
         for (unsigned int j = 0; j<number_of_extruders; ++j)
-            wipe_volumes[i][j] = std::max<float>(wipe_volumes[i][j], config.filament_minimal_purge_on_wipe_tower.get_at(j));
+            wipe_volumes[i][j] = std::max<float>(wipe_volumes[i][j], config.get<std::vector<double>>("filament_minimal_purge_on_wipe_tower").at(j));
 
     return wipe_volumes;
 }

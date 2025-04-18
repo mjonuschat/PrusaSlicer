@@ -55,8 +55,8 @@ std::string WipeTowerIntegration::append_tcr(GCodeGenerator &gcodegen, const Wip
 
     const bool needs_toolchange = gcodegen.writer().need_toolchange(new_extruder_id);
     const bool will_go_down = ! is_approx(z, current_z);
-    const bool is_ramming = (gcodegen.config().single_extruder_multi_material)
-                         || (! gcodegen.config().single_extruder_multi_material && gcodegen.config().filament_multitool_ramming.get_at(tcr.initial_tool));
+    const bool is_ramming = (gcodegen.config().get<bool>("single_extruder_multi_material"))
+                         || (! gcodegen.config().get<bool>("single_extruder_multi_material") && gcodegen.config().get<std::vector<bool>>("filament_multitool_ramming").at(tcr.initial_tool));
     const bool should_travel_to_tower = ! tcr.priming
                                      && (tcr.force_travel        // wipe tower says so
                                          || ! needs_toolchange   // this is just finishing the tower with no toolchange
@@ -100,7 +100,7 @@ std::string WipeTowerIntegration::append_tcr(GCodeGenerator &gcodegen, const Wip
         if (is_ramming)
             gcodegen.m_wipe.reset_path(); // We don't want wiping on the ramming lines.
         toolchange_gcode_str = gcodegen.set_extruder(new_extruder_id, tcr.print_z); // TODO: toolchange_z vs print_z
-        if (gcodegen.config().wipe_tower) {
+        if (gcodegen.config().get<bool>("wipe_tower")) {
             deretraction_str += gcodegen.writer().travel_to_z_force(z, "restore layer Z");
             deretraction_str += gcodegen.unretract();
         }
@@ -114,10 +114,10 @@ std::string WipeTowerIntegration::append_tcr(GCodeGenerator &gcodegen, const Wip
     std::string tcr_gcode;
     unescape_string_cstyle(tcr_rotated_gcode, tcr_gcode);
 
-    if (gcodegen.config().default_acceleration > 0)
-        gcode += gcodegen.writer().set_print_acceleration(fast_round_up<unsigned int>(gcodegen.config().wipe_tower_acceleration.value));
+    if (gcodegen.config().get<double>("default_acceleration") > 0)
+        gcode += gcodegen.writer().set_print_acceleration(fast_round_up<unsigned int>(gcodegen.config().get<double>("wipe_tower_acceleration")));
     gcode += tcr_gcode;
-    gcode += gcodegen.writer().set_print_acceleration(fast_round_up<unsigned int>(gcodegen.config().default_acceleration.value));
+    gcode += gcodegen.writer().set_print_acceleration(fast_round_up<unsigned int>(gcodegen.config().get<double>("default_acceleration")));
 
     // A phony move to the end position at the wipe tower.
     gcodegen.writer().travel_to_xy(end_pos.cast<double>());
@@ -248,7 +248,7 @@ std::string WipeTowerIntegration::tool_change(GCodeGenerator &gcodegen, int extr
             // resulting in a wipe tower with sparse layers.
             double wipe_tower_z = -1;
             bool ignore_sparse = false;
-            if (gcodegen.config().wipe_tower_no_sparse_layers.value) {
+            if (gcodegen.config().get<bool>("wipe_tower_no_sparse_layers")) {
                 wipe_tower_z = m_last_wipe_tower_print_z;
                 ignore_sparse = (m_tool_changes[m_layer_idx].size() == 1 && m_tool_changes[m_layer_idx].front().initial_tool == m_tool_changes[m_layer_idx].front().new_tool && m_layer_idx != 0);
                 if (m_tool_change_idx == 0 && !ignore_sparse)
@@ -268,7 +268,7 @@ std::string WipeTowerIntegration::tool_change(GCodeGenerator &gcodegen, int extr
 std::string WipeTowerIntegration::finalize(GCodeGenerator &gcodegen)
 {
     std::string gcode;
-    const double purge_z{m_final_purge.print_z + gcodegen.config().z_offset.value};
+    const double purge_z{m_final_purge.print_z + gcodegen.config().get<double>("z_offset")};
     if (std::abs(gcodegen.writer().get_position().z() - purge_z) > EPSILON)
         gcode += gcodegen.generate_travel_gcode(
             {{gcodegen.last_position->x(), gcodegen.last_position->y(), scaled(purge_z)}},
