@@ -179,7 +179,7 @@ const T& ConfigItem::get() const
     ASSERT(! m_is_null);
     try {
         const T* value = std::any_cast<T>(&m_data);
-        ASSERT(value);
+        ASSERT(value, "Type does not match");
         return *value;
     } catch (const std::bad_any_cast&) {
         PANIC("Type does not match");
@@ -291,19 +291,6 @@ ConfigBox::ConfigBox(const ConfigDefinitions& defs, std::string_view type)
     }
 }
 
-
-
-const ConfigItem& ConfigView::opt(const std::string_view key, int extruder_idx) const
-{
-    for (auto rev_it = m_config_boxes.rbegin(); rev_it != m_config_boxes.rend(); ++rev_it) {
-        if (auto opt = rev_it->get().contains(key); opt.has_value() && ! (*opt)->is_null())
-            return **opt;
-    }
-    return m_full_config.opt(key, extruder_idx);
-}
-
-
-
 void FullConfig::add(const ConfigBox& box)
 {
     for (const ConfigItem& item : box) {
@@ -406,22 +393,17 @@ std::vector<std::string> ConfigView::diff_keys(const ConfigView& other) const
     return out;
 }
 
-
-
-const ConfigItem& FullConfig::opt(const std::string_view key, int extruder_idx) const {
-    if (extruder_idx == -1) {
+const ConfigItem& FullConfig::opt_single(const std::string_view key) const {
         auto it = m_single_items.find(std::string(key));
         ASSERT(it != m_single_items.end());
         return it->second;
-    } else {
-        auto it = m_multi_items.find(std::string(key));
-        ASSERT(it != m_multi_items.end());
-        ASSERT(extruder_idx < it->second.size());
-        return it->second[extruder_idx];
-    }
 }
 
-
+const std::vector<ConfigItem>& FullConfig::opt_multi(const std::string_view key) const {
+    const auto it{m_multi_items.find(std::string(key))};
+    ASSERT(it != m_multi_items.end());
+    return it->second;
+}
 
 // Explicit instantiations for getters.
 template const bool& ConfigItem::get<bool>() const;

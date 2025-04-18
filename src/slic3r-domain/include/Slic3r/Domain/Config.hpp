@@ -303,7 +303,12 @@ protected:
     std::string m_type{ };
 };
 
-
+template<typename T>
+concept StdVector = requires {
+    typename T::value_type;
+    typename T::allocator_type;
+    requires std::same_as<T, std::vector<typename T::value_type, typename T::allocator_type>>;
+};
 
 // Base class for a full config, which holds multiple config boxes and
 // has const getters to get a ConfigItem by key.
@@ -312,12 +317,23 @@ protected:
 class FullConfig {
 public:
     template<class T>
-    T get(const std::string_view key, int extruder_idx = -1) const {
-        return opt(key, extruder_idx).get<T>();
+    T get(const std::string_view key) const {
+        return opt_single(key).get<T>();
     }
 
-    bool is_null(const std::string_view key, int extruder_idx = -1) const {
-        return opt(key, extruder_idx).is_null();
+    template<StdVector T>
+    T get(const std::string_view key) const {
+        const auto single_item_it{m_single_items.find(std::string{key})};
+        if (single_item_it != m_single_items.end()) {
+            return single_item_it->second.get<T>();
+        }
+
+        T result;
+        const std::vector<ConfigItem>& items{this->opt_multi(key)};
+        std::transform(items.begin(), items.end(), std::back_inserter(result), [](const ConfigItem& item){
+            return item.get<typename T::value_type>();
+        });
+        return result;
     }
 
     std::vector<std::string> diff_keys(const FullConfig& other) const;
@@ -334,11 +350,11 @@ private:
     std::map<std::string, ConfigItem> m_single_items;
     std::map<std::string, std::vector<ConfigItem>> m_multi_items;
 
-    friend class ConfigView; // Ugly, but we can probably live with that.
-    const ConfigItem& opt(const std::string_view key, int extruder_idx) const;
+    const ConfigItem& opt_single(const std::string_view key) const;
+    const std::vector<ConfigItem>& opt_multi(const std::string_view key) const;
+
+    friend class ConfigView;
 };
-
-
 
 
 
@@ -355,12 +371,13 @@ public:
         : m_config_boxes{ args... }, m_full_config{fc} {}
 
     template<class T>
-    T get(const std::string_view key, int extruder_idx = -1) const {
-        return opt(key, extruder_idx).get<T>();
-    }
-
-    bool is_null(const std::string_view key, int extruder_idx = -1) const {
-        return opt(key, extruder_idx).is_null();
+    T get(const std::string_view key) const {
+        for (auto rev_it = m_config_boxes.rbegin(); rev_it != m_config_boxes.rend(); ++rev_it) {
+            if (auto opt = rev_it->get().contains(key); opt.has_value() && ! (*opt)->is_null()) {
+                return (**opt).get<T>();
+            }
+        }
+        return m_full_config.get<T>(key);
     }
 
     std::vector<std::string> diff_keys(const ConfigView& other) const;
@@ -369,8 +386,6 @@ public:
 private:
     std::vector<std::reference_wrapper<const ConfigBox>> m_config_boxes;
     const FullConfig& m_full_config;
-
-    const ConfigItem& opt(const std::string_view key, int extruder_idx) const;
 };
 
 } // namespace Slic3r::Domain
