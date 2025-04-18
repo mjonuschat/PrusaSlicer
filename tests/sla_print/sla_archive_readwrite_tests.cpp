@@ -42,7 +42,9 @@ TEST_CASE("Archive export test", "[sla_archives]") {
         cfg.apply(fullcfg);
 
         print.set_status_callback([](const PrintBase::SlicingStatus&) {});
-        print.apply(m, cfg, {}, {});
+        //TODO
+        //print.apply(m, cfg, {}, {});
+        throw std::runtime_error{"SLA print apply was commented out"};
         print.process();
 
         ThumbnailsList thumbnails;

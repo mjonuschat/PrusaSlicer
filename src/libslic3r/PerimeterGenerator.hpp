@@ -38,7 +38,7 @@ struct PerimeterRegion
 
     // If there is any incompatibility, we don't need to create separate LayerRegions.
     // Because it is enough to split perimeters by PerimeterRegions.
-    static bool has_compatible_perimeter_regions(const PrintRegionConfig &config, const PrintRegionConfig &other_config);
+    static bool has_compatible_perimeter_regions(const PrintRegionConfigView &config, const PrintRegionConfigView &other_config);
 
     static void merge_compatible_perimeter_regions(std::vector<PerimeterRegion> &perimeter_regions);
 };
@@ -57,9 +57,7 @@ struct Parameters {
         Flow                        ext_perimeter_flow,
         Flow                        overhang_flow,
         Flow                        solid_infill_flow,
-        const PrintRegionConfig    &config,
-        const PrintObjectConfig    &object_config,
-        const PrintConfig          &print_config,
+        const PrintRegionConfigView    &config,
         const PerimeterRegions     &perimeter_regions,
         const bool                  spiral_vase) :   
             layer_height(layer_height),
@@ -69,11 +67,9 @@ struct Parameters {
             overhang_flow(overhang_flow), 
             solid_infill_flow(solid_infill_flow),
             config(config), 
-            object_config(object_config), 
-            print_config(print_config),
             perimeter_regions(perimeter_regions),
             spiral_vase(spiral_vase),
-            scaled_resolution(scaled<double>(print_config.get<double>("gcode_resolution"))),
+            scaled_resolution(scaled<double>(config.get<double>("gcode_resolution"))),
             mm3_per_mm(perimeter_flow.mm3_per_mm()),
             ext_mm3_per_mm(ext_perimeter_flow.mm3_per_mm()), 
             mm3_per_mm_overhang(overhang_flow.mm3_per_mm())
@@ -87,9 +83,7 @@ struct Parameters {
     Flow                         ext_perimeter_flow;
     Flow                         overhang_flow;
     Flow                         solid_infill_flow;
-    const PrintRegionConfig     &config;
-    const PrintObjectConfig     &object_config;
-    const PrintConfig           &print_config;
+    const PrintRegionConfigView     &config;
     const PerimeterRegions      &perimeter_regions;
 
     // Derived parameters

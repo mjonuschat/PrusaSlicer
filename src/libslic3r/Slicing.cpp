@@ -33,7 +33,7 @@ static const double MIN_LAYER_HEIGHT = 0.01;
 static const double MIN_LAYER_HEIGHT_DEFAULT = 0.07;
 
 // Minimum layer height for the variable layer height algorithm.
-inline double min_layer_height_from_nozzle(const PrintConfig &print_config, int idx_nozzle)
+inline double min_layer_height_from_nozzle(const Domain::ConfigView &print_config, int idx_nozzle)
 {
     double min_layer_height = print_config.get<std::vector<double>>("min_layer_height").at(idx_nozzle - 1);
     return (min_layer_height == 0.) ? MIN_LAYER_HEIGHT_DEFAULT : std::max(MIN_LAYER_HEIGHT, min_layer_height);
@@ -41,7 +41,7 @@ inline double min_layer_height_from_nozzle(const PrintConfig &print_config, int 
 
 // Maximum layer height for the variable layer height algorithm, 3/4 of a nozzle diameter by default,
 // it should not be smaller than the minimum layer height.
-inline double max_layer_height_from_nozzle(const PrintConfig &print_config, int idx_nozzle)
+inline double max_layer_height_from_nozzle(const Domain::ConfigView &print_config, int idx_nozzle)
 {
     double min_layer_height = min_layer_height_from_nozzle(print_config, idx_nozzle);
     double max_layer_height = print_config.get<std::vector<double>>("max_layer_height").at(idx_nozzle - 1);
@@ -67,64 +67,64 @@ double Slicing::max_layer_height_from_nozzle(const DynamicPrintConfig &print_con
 }
 
 SlicingParameters SlicingParameters::create_from_config(
-	const PrintConfig 		        &print_config,
-	const PrintObjectConfig         &object_config,
+	const Domain::ConfigView     &config,
 	double				         object_height,
     const std::vector<unsigned int> &object_extruders,
     const Vec3d                     &object_shrinkage_compensation)
 {
-    assert(! print_config.get<Domain::FloatOrPercentage>("first_layer_height").is_percentage());
-    double first_layer_height                      = (print_config.get<Domain::FloatOrPercentage>("first_layer_height") <= 0) ? 
-        object_config.get<double>("layer_height") : print_config.get<Domain::FloatOrPercentage>("first_layer_height");
+    const double layer_height{config.get<double>("layer_height")};
+    assert(! config.get<Domain::FloatOrPercentage>("first_layer_height").is_percentage());
+    double first_layer_height = (config.get<Domain::FloatOrPercentage>("first_layer_height").is_zero()) ?
+        layer_height : config.get<Domain::FloatOrPercentage>("first_layer_height").get_abs_value(layer_height);
     // If object_config.support_material_extruder == 0 resp. object_config.support_material_interface_extruder == 0,
     // print_config.nozzle_diameter.get_at(size_t(-1)) returns the 0th nozzle diameter,
     // which is consistent with the requirement that if support_material_extruder == 0 resp. support_material_interface_extruder == 0,
     // support will not trigger tool change, but it will use the current nozzle instead.
     // In that case all the nozzles have to be of the same diameter.
-    double support_material_extruder_dmr           = print_config.get<std::vector<double>>("nozzle_diameter").at(object_config.get<int>("support_material_extruder") - 1);
-    double support_material_interface_extruder_dmr = print_config.get<std::vector<double>>("nozzle_diameter").at(object_config.get<int>("support_material_interface_extruder") - 1);
-    bool     soluble_interface                       = object_config.get<double>("support_material_contact_distance") == 0.;
+    double support_material_extruder_dmr           = config.get<std::vector<double>>("nozzle_diameter").at(config.get<int>("support_material_extruder") - 1);
+    double support_material_interface_extruder_dmr = config.get<std::vector<double>>("nozzle_diameter").at(config.get<int>("support_material_interface_extruder") - 1);
+    bool     soluble_interface                       = config.get<double>("support_material_contact_distance") == 0.;
 
     SlicingParameters params;
-    params.layer_height = object_config.get<double>("layer_height");
+    params.layer_height = config.get<double>("layer_height");
     params.first_print_layer_height = first_layer_height;
     params.first_object_layer_height = first_layer_height;
     params.object_print_z_min = 0.;
     params.object_print_z_max = object_height * object_shrinkage_compensation.z();
     params.object_print_z_uncompensated_max = object_height;
     params.object_shrinkage_compensation_z = object_shrinkage_compensation.z();
-    params.base_raft_layers = object_config.get<int>("raft_layers");
+    params.base_raft_layers = config.get<int>("raft_layers");
     params.soluble_interface = soluble_interface;
 
     // Miniumum/maximum of the minimum layer height over all extruders.
     params.min_layer_height = MIN_LAYER_HEIGHT;
     params.max_layer_height = std::numeric_limits<double>::max();
-    if (object_config.get<bool>("support_material") || params.base_raft_layers > 0 || object_config.get<int>("support_material_enforce_layers") > 0) {
+    if (config.get<bool>("support_material") || params.base_raft_layers > 0 || config.get<int>("support_material_enforce_layers") > 0) {
         // Has some form of support. Add the support layers to the minimum / maximum layer height limits.
         params.min_layer_height = std::max(
-            min_layer_height_from_nozzle(print_config, object_config.get<int>("support_material_extruder")), 
-            min_layer_height_from_nozzle(print_config, object_config.get<int>("support_material_interface_extruder")));
+            min_layer_height_from_nozzle(config, config.get<int>("support_material_extruder")), 
+            min_layer_height_from_nozzle(config, config.get<int>("support_material_interface_extruder")));
         params.max_layer_height = std::min(
-            max_layer_height_from_nozzle(print_config, object_config.get<int>("support_material_extruder")), 
-            max_layer_height_from_nozzle(print_config, object_config.get<int>("support_material_interface_extruder")));
+            max_layer_height_from_nozzle(config, config.get<int>("support_material_extruder")), 
+            max_layer_height_from_nozzle(config, config.get<int>("support_material_interface_extruder")));
         params.max_suport_layer_height = params.max_layer_height;
     }
     if (object_extruders.empty()) {
-        params.min_layer_height = std::max(params.min_layer_height, min_layer_height_from_nozzle(print_config, 1));
-        params.max_layer_height = std::min(params.max_layer_height, max_layer_height_from_nozzle(print_config, 1));
+        params.min_layer_height = std::max(params.min_layer_height, min_layer_height_from_nozzle(config, 1));
+        params.max_layer_height = std::min(params.max_layer_height, max_layer_height_from_nozzle(config, 1));
     } else {
         for (unsigned int extruder_id : object_extruders) {
-            params.min_layer_height = std::max(params.min_layer_height, min_layer_height_from_nozzle(print_config, extruder_id + 1));
-            params.max_layer_height = std::min(params.max_layer_height, max_layer_height_from_nozzle(print_config, extruder_id + 1));
+            params.min_layer_height = std::max(params.min_layer_height, min_layer_height_from_nozzle(config, extruder_id + 1));
+            params.max_layer_height = std::min(params.max_layer_height, max_layer_height_from_nozzle(config, extruder_id + 1));
         }
     }
     params.min_layer_height = std::min(params.min_layer_height, params.layer_height);
     params.max_layer_height = std::max(params.max_layer_height, params.layer_height);
 
     if (! soluble_interface) {
-        params.gap_raft_object    = object_config.get<double>("raft_contact_distance");
-        params.gap_object_support = object_config.get<double>("support_material_bottom_contact_distance");
-        params.gap_support_object = object_config.get<double>("support_material_contact_distance");
+        params.gap_raft_object    = config.get<double>("raft_contact_distance");
+        params.gap_object_support = config.get<double>("support_material_bottom_contact_distance");
+        params.gap_support_object = config.get<double>("support_material_contact_distance");
         if (params.gap_object_support <= 0)
             params.gap_object_support = params.gap_support_object;
     }

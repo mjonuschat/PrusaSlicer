@@ -1,6 +1,7 @@
 #include "Slic3r/Domain/Config.hpp"
 #include "Slic3r/Biz/Config/ConfigSerialize.hpp"
 
+#include "Slic3r/Domain/Types.hpp"
 #include "boost/algorithm/string.hpp"
 
 #include <set>

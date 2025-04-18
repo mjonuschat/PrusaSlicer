@@ -23,6 +23,7 @@
 #include "Slic3r/Biz/libpgcode/ProcessorResult.hpp"
 #include "libslic3r/ModelUtils.hpp"
 #include <libslic3r/SLA/SLAResult.hpp>
+#include "Slic3r/Domain/ConfigFDM.hpp"
 
 namespace Slic3r {
 
@@ -501,7 +502,7 @@ public:
 class PrintBase : public Domain::ObjectBase, public Biz::Print::IPrint
 {
 public:
-	PrintBase() : m_placeholder_parser(&m_full_print_config) { this->restart(); }
+	PrintBase() : m_placeholder_parser() { this->restart(); }
     inline virtual ~PrintBase() {}
 
     virtual PrinterTechnology technology() const noexcept = 0;
@@ -525,7 +526,7 @@ public:
     };
     virtual ApplyStatus apply(
         const Model& model,
-        DynamicPrintConfig config,
+        Domain::FullConfigFDM config,
         const std::optional<Domain::ModelWipeTower>& wipe_tower,
         const std::optional<Domain::CustomGCode::Info>& custom_gcode,
         std::vector<std::string>* warnings = nullptr
@@ -537,7 +538,7 @@ public:
     {
         Biz::Print::ApplyStatus result{Biz::Print::ApplyStatus::unchanged};
         Biz::Slicing::with_limited_instances(model, bed.model_instances, [&](){
-            const ApplyStatus status{this->apply(model, std::move(config), bed.wipe_tower, bed.custom_gcode)};
+            const ApplyStatus status{this->apply(model, Domain::FullConfigFDM::defaults(), bed.wipe_tower, bed.custom_gcode)};
             if (status == APPLY_STATUS_UNCHANGED) {
                 return;
             }
@@ -642,7 +643,6 @@ public:
     virtual bool               finished() const = 0;
 
     const PlaceholderParser&   placeholder_parser() const { return m_placeholder_parser; }
-    const DynamicPrintConfig&  full_print_config() const { return m_full_print_config; }
 
     virtual std::string        output_filename(const std::string &filename_base = std::string()) const = 0;
     // If the filename_base is set, it is used as the input for the template processing. In that case the path is expected to be the directory (may be empty).
@@ -681,7 +681,6 @@ protected:
     std::optional<Domain::ModelWipeTower>   m_wipe_tower;
     std::optional<Domain::CustomGCode::Info>m_custom_gcode;
 
-	DynamicPrintConfig						m_full_print_config;
     PlaceholderParser                       m_placeholder_parser;
 
     // Callback to be evoked regularly to update state of the UI thread.

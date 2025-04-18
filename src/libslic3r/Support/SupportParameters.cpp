@@ -16,8 +16,8 @@ namespace Slic3r::FFFSupport {
 
 SupportParameters::SupportParameters(const PrintObject &object)
 {
-    const PrintConfig       &print_config   = object.print()->config();
-    const PrintObjectConfig &object_config  = object.config();
+    const PrintConfigView &print_config   = object.print()->config();
+    const PrintObjectConfigView &object_config  = object.config();
     const SlicingParameters &slicing_params = object.slicing_parameters();
 
     this->soluble_interface = slicing_params.soluble_interface;
@@ -101,18 +101,18 @@ SupportParameters::SupportParameters(const PrintObject &object)
         this->interface_density = this->support_density;
     }
 
-    SupportMaterialPattern  support_pattern = object_config.get<SupportMaterialPattern>("support_material_pattern");
+    Domain::SupportMaterialPattern  support_pattern = object_config.get<Domain::SupportMaterialPattern>("support_material_pattern");
     this->with_sheath            = object_config.get<bool>("support_material_with_sheath");
     this->base_fill_pattern      = 
-        support_pattern == smpHoneycomb ? ipHoneycomb :
-        this->support_density > 0.95 || this->with_sheath ? ipRectilinear : ipSupportBase;
-    this->interface_fill_pattern = (this->interface_density > 0.95 ? ipRectilinear : ipSupportBase);
-    this->raft_interface_fill_pattern = this->raft_interface_density > 0.95 ? ipRectilinear : ipSupportBase;
+        support_pattern == Domain::SupportMaterialPattern::smpHoneycomb ? Domain::InfillPattern::ipHoneycomb :
+        this->support_density > 0.95 || this->with_sheath ? Domain::InfillPattern::ipRectilinear : Domain::InfillPattern::ipSupportBase;
+    this->interface_fill_pattern = (this->interface_density > 0.95 ? Domain::InfillPattern::ipRectilinear : Domain::InfillPattern::ipSupportBase);
+    this->raft_interface_fill_pattern = this->raft_interface_density > 0.95 ? Domain::InfillPattern::ipRectilinear : Domain::InfillPattern::ipSupportBase;
     this->contact_fill_pattern   =
-        (object_config.get<SupportMaterialInterfacePattern>("support_material_interface_pattern") == smipAuto && slicing_params.soluble_interface) ||
-        object_config.get<SupportMaterialInterfacePattern>("support_material_interface_pattern") == smipConcentric ?
-        ipConcentric :
-        (this->interface_density > 0.95 ? ipRectilinear : ipSupportBase);
+        (object_config.get<Domain::SupportMaterialInterfacePattern>("support_material_interface_pattern") == Domain::SupportMaterialInterfacePattern::smipAuto && slicing_params.soluble_interface) ||
+        object_config.get<Domain::SupportMaterialInterfacePattern>("support_material_interface_pattern") == Domain::SupportMaterialInterfacePattern::smipConcentric ?
+        Domain::InfillPattern::ipConcentric :
+        (this->interface_density > 0.95 ? Domain::InfillPattern::ipRectilinear : Domain::InfillPattern::ipSupportBase);
 
     this->base_angle            = deg2rad(float(object_config.get<double>("support_material_angle")));
     this->interface_angle       = deg2rad(float(object_config.get<double>("support_material_angle") + 90.));

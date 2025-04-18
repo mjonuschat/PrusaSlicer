@@ -150,8 +150,8 @@ static inline bool model_volume_needs_slicing(const ModelVolume &mv)
 // Apply positive XY compensation to ModelVolumeType::MODEL_PART and ModelVolumeType::PARAMETER_MODIFIER, not to ModelVolumeType::NEGATIVE_VOLUME.
 // Apply contour simplification.
 static std::vector<VolumeSlices> slice_volumes_inner(
-    const PrintConfig                                        &print_config,
-    const PrintObjectConfig                                  &print_object_config,
+    const PrintConfigView                                        &print_config,
+    const PrintObjectConfigView                                  &print_object_config,
     const Transform3d                                        &object_trafo,
     ModelVolumePtrs                                           model_volumes,
     const std::vector<PrintObjectRegions::LayerRangeRegions> &layer_ranges,
@@ -173,10 +173,10 @@ static std::vector<VolumeSlices> slice_volumes_inner(
     params_base.trafo          = object_trafo;
     params_base.resolution     = print_config.get<double>("resolution");
 
-    switch (print_object_config.get<SlicingMode>("slicing_mode")) {
-    case SlicingMode::Regular:    params_base.mode = MeshSlicingParams::SlicingMode::Regular; break;
-    case SlicingMode::EvenOdd:    params_base.mode = MeshSlicingParams::SlicingMode::EvenOdd; break;
-    case SlicingMode::CloseHoles: params_base.mode = MeshSlicingParams::SlicingMode::Positive; break;
+    switch (print_object_config.get<Domain::SlicingMode>("slicing_mode")) {
+    case Domain::SlicingMode::Regular:    params_base.mode = MeshSlicingParams::SlicingMode::Regular; break;
+    case Domain::SlicingMode::EvenOdd:    params_base.mode = MeshSlicingParams::SlicingMode::EvenOdd; break;
+    case Domain::SlicingMode::CloseHoles: params_base.mode = MeshSlicingParams::SlicingMode::Positive; break;
     }
 
     params_base.mode_below     = params_base.mode;
@@ -198,7 +198,7 @@ static std::vector<VolumeSlices> slice_volumes_inner(
                         params.mode = MeshSlicingParams::SlicingMode::PositiveLargestContour;
                         // Slice the bottom layers with SlicingMode::Regular.
                         // This needs to be in sync with LayerRegion::make_perimeters() spiral_vase!
-                        const PrintRegionConfig &region_config = it->region->config();
+                        const PrintRegionConfigView &region_config = it->region->config();
                         params.slicing_mode_normal_below_layer = size_t(region_config.get<int>("bottom_solid_layers"));
                         for (; params.slicing_mode_normal_below_layer < zs.size() && zs[params.slicing_mode_normal_below_layer] < region_config.get<double>("bottom_solid_min_thickness") - EPSILON;
                             ++ params.slicing_mode_normal_below_layer);

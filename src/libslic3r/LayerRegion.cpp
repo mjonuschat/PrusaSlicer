@@ -58,7 +58,7 @@ Flow LayerRegion::flow(FlowRole role, double layer_height) const
 Flow LayerRegion::bridging_flow(FlowRole role, bool force_thick_bridges) const
 {
     const PrintRegion       &region         = this->region();
-    const PrintRegionConfig &region_config  = region.config();
+    const PrintRegionConfigView &region_config  = region.config();
     const PrintObject       &print_object   = *this->layer()->object();
     if (print_object.config().get<bool>("thick_bridges") || force_thick_bridges) {
         // The old Slic3r way (different from all other slicers): Use rounded extrusions.
@@ -111,8 +111,8 @@ void LayerRegion::make_perimeters(
     fill_expolygons.reserve(fill_expolygons.size() + slices.size());
     fill_expolygons_ranges.reserve(fill_expolygons_ranges.size() + slices.size());
 
-    const PrintConfig       &print_config  = this->layer()->object()->print()->config();
-    const PrintRegionConfig &region_config = this->region().config();
+    const PrintConfigView &print_config  = this->layer()->object()->print()->config();
+    const PrintRegionConfigView &region_config = this->region().config();
     // This needs to be in sync with PrintObject::_slice() slicing_mode_normal_below_layer!
     bool spiral_vase = print_config.get<bool>("spiral_vase") &&
         //FIXME account for raft layers.
@@ -127,8 +127,6 @@ void LayerRegion::make_perimeters(
         this->bridging_flow(frPerimeter),
         this->flow(frSolidInfill),
         region_config,
-        this->layer()->object()->config(),
-        print_config,
         perimeter_regions,
         spiral_vase
     );
@@ -143,7 +141,7 @@ void LayerRegion::make_perimeters(
         auto perimeters_begin      = uint32_t(m_perimeters.size());
         auto gap_fills_begin       = uint32_t(m_thin_fills.size());
         auto fill_expolygons_begin = uint32_t(fill_expolygons.size());
-        if (this->layer()->object()->config().get<PerimeterGeneratorType>("perimeter_generator") == PerimeterGeneratorType::Arachne && !spiral_vase)
+        if (this->layer()->object()->config().get<Domain::PerimeterGeneratorType>("perimeter_generator") == Domain::PerimeterGeneratorType::Arachne && !spiral_vase)
             PerimeterGenerator::process_arachne(
                 // input:
                 params,
@@ -893,7 +891,7 @@ void LayerRegion::prepare_fill_surfaces()
     }
 
     // turn too small internal regions into solid regions according to the user setting
-    if (! spiral_vase && this->region().config().get<Domain::Percentage>("fill_density") > 0) {
+    if (! spiral_vase && this->region().config().get<Domain::Percentage>("fill_density") > Domain::Percentage{0}) {
         // scaling an area requires two calls!
         double min_area = scale_(scale_(this->region().config().get<double>("solid_infill_below_area")));
         for (Surface &surface : m_fill_surfaces)

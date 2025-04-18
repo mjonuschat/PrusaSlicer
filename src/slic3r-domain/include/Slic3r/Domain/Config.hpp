@@ -1,9 +1,9 @@
 #pragma once
 
 #include <any>
+#include <boost/container_hash/hash.hpp>
 #include <cfloat>
 #include <concepts>
-#include <exception>
 #include <functional>
 #include <map>
 #include <optional>
@@ -13,15 +13,13 @@
 #include <vector>
 
 #include "Slic3r/Assert.hpp"
-#include "Slic3r/Domain/Types.hpp"
 
 
 namespace Slic3r::Domain {
 
 class Percentage {
 public:
-    bool operator==(const Percentage& other) const { return value == other.value; }
-    bool operator<(const Percentage& other) const { return value < other.value; }
+    auto operator<=>(const Percentage& other) const = default;
     double get_abs_value(double ratio_over) const { return (value / 100.) * ratio_over; }
 
     double value = 0.;
@@ -227,7 +225,6 @@ public:
     ConfigItem(const ConfigItem& other);
     ConfigItem& operator=(const ConfigItem& other);
     bool operator==(const ConfigItem& other) const;
-    bool operator!=(const ConfigItem& other) const { return ! (*this == other); }
 
     const ConfigItemDef& def() const { ASSERT(m_def); return *m_def; }
 
@@ -255,14 +252,17 @@ public:
     T get() const
     {
         ASSERT(m_type == ConfigItemType::Enum);
-        ASSERT(typeid(T) == def().enum_type.type(), "Enum types mismatch.");
+        ASSERT(
+            typeid(T) == def().enum_type.type(),
+            std::string{"Enum types mismatch: "} + typeid(T).name() + " != " + def().enum_type.type().name()
+        );
         return static_cast<T>(get_enum_as_int());
     }
     template <IsVectorOfEnums T>
     void set(T value)
     {
         ASSERT(m_type == ConfigItemType::Enums);
-        ASSERT(typeid(T::value_type) == def().enum_type.type(), "Enum types mismatch.");
+        ASSERT(typeid(typename T::value_type) == def().enum_type.type(), "Enum types mismatch.");
         std::vector<int> as_ints;
         for (size_t i=0; i<value.size(); ++i)
             as_ints.emplace_back(int(value[i]));
@@ -272,7 +272,7 @@ public:
     T get() const
     {
         ASSERT(m_type == ConfigItemType::Enums);
-        ASSERT(typeid(T::value_type) == def().enum_type.type(), "Enum types mismatch.");
+        ASSERT(typeid(typename T::value_type) == def().enum_type.type(), "Enum types mismatch.");
         std::vector<int> values = get_enums_as_ints();
         T out;
         for (size_t i=0; i<values.size(); ++i)
@@ -292,7 +292,9 @@ public:
     template<class T> const std::vector<T>& vec() const { return const_cast<ConfigItem*>(this)->vec<T>(); }
     template<class T> std::vector<T>& vec();
 
-    
+    std::size_t hash() const;
+
+
 private:
     std::string m_name{};
     ConfigItemType m_type{ ConfigItemType::None };
@@ -332,7 +334,11 @@ public:
     std::vector<ConfigItem>::const_iterator end() const { return m_items.cend(); }
 
     std::vector<std::string> diff_keys(const ConfigBox& other) const;
+    std::size_t hash() const;
 
+    std::partial_ordering operator==(const ConfigBox& other) const;
+
+    virtual ~ConfigBox() = default;
 
 protected:
     ConfigBox(const ConfigDefinitions& defs, std::string_view type);
@@ -342,6 +348,18 @@ protected:
 };
 
 
+namespace Impl {
+template<typename T>
+struct is_vector : std::false_type {};
+
+template<typename T>
+struct is_vector<std::vector<T>> : std::true_type {};
+}
+
+using BoxRef = std::reference_wrapper<const ConfigBox>;
+using BoxRefs = std::vector<BoxRef>;
+using FullConfigInput = std::vector<std::variant<BoxRef, BoxRefs>>;
+
 
 // Base class for a full config, which holds multiple config boxes and
 // has const getters to get a ConfigItem by key.
@@ -349,37 +367,41 @@ protected:
 // It is the responsibility of the derived class to ensure that the ConfigBoxes stay alive.
 class FullConfig {
 public:
-    template<class T>
+    template<typename T>
     T get(const std::string_view key) const {
-        return opt_single(key).get<T>();
-    }
+        if constexpr (Impl::is_vector<T>::value) {
+            const auto single_item_it{m_single_items.find(std::string{key})};
+            if (single_item_it != m_single_items.end()) {
+                return single_item_it->second.get<T>();
+            }
 
-    template<StdVector T>
-    T get(const std::string_view key) const {
-        const auto single_item_it{m_single_items.find(std::string{key})};
-        if (single_item_it != m_single_items.end()) {
-            return single_item_it->second.get<T>();
+            T result;
+            const std::vector<ConfigItem>& items{this->opt_multi(key)};
+            std::transform(items.begin(), items.end(), std::back_inserter(result), [](const ConfigItem& item){
+                return item.get<typename T::value_type>();
+            });
+            return result;
+        } else {
+            return opt_single(key).get<T>();
         }
-
-        T result;
-        const std::vector<ConfigItem>& items{this->opt_multi(key)};
-        std::transform(items.begin(), items.end(), std::back_inserter(result), [](const ConfigItem& item){
-            return item.get<typename T::value_type>();
-        });
-        return result;
     }
+
+    std::size_t hash() const;
 
     virtual std::string_view name() const = 0;
     virtual ~FullConfig() = default;
 
 protected:
-    FullConfig() = default;
-    void add(const ConfigBox& box);
-    void add(const std::vector<std::reference_wrapper<const ConfigBox>>& boxes);
+    FullConfig(const FullConfigInput& boxes);
 
 private:
     std::map<std::string, ConfigItem> m_single_items;
     std::map<std::string, std::vector<ConfigItem>> m_multi_items;
+    std::vector<std::string> m_single_item_keys;
+    std::vector<std::string> m_multi_item_keys;
+
+    void add(const ConfigBox& box);
+    void add(const BoxRefs& boxes);
 
     const ConfigItem& opt_single(const std::string_view key) const;
     const std::vector<ConfigItem>& opt_multi(const std::string_view key) const;
@@ -421,12 +443,30 @@ public:
 
     std::vector<std::string> diff_keys(const ConfigView& other) const;
 
+    bool operator==(const ConfigView& other) const;
 
-private:
+    std::size_t hash() const;
+
+protected:
     ConfigBoxesPtrs m_config_boxes;
     FullConfigPtr m_full_config;
 
-    const ConfigItem& opt(const std::string_view key, int extruder_idx) const;
+private:
+
+    const ConfigItem& opt_single(std::string_view key) const {
+        for (auto rev_it = m_config_boxes.rbegin(); rev_it != m_config_boxes.rend(); ++rev_it) {
+            const ConfigBoxPtr& override{*rev_it};
+            if (auto opt = override->contains(key); opt.has_value() && ! (*opt)->is_null()) {
+                return (**opt);
+            }
+        }
+        return m_full_config->opt_single(key);
+    }
+
+    const std::vector<ConfigItem>& opt_multi(std::string_view key) const {
+        // Multi keys cannot be overriden.
+        return m_full_config->opt_multi(key);
+    }
 };
 
 } // namespace Slic3r::Domain

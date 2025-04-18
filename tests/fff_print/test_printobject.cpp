@@ -10,15 +10,19 @@
 using namespace Slic3r;
 using namespace Slic3r::Test;
 using namespace Catch;
+using Domain::FloatOrPercentage;
 
 SCENARIO("PrintObject: object layer heights", "[PrintObject]") {
     GIVEN("20mm cube and default initial config, initial layer height of 2mm") {
         WHEN("generate_object_layers() is called for 2mm layer heights and nozzle diameter of 3mm") {
             Slic3r::Print print;
+
+            TestConfig config;
+            config.print.opt("first_layer_height").set(FloatOrPercentage{2.0});
+            config.print.opt("layer_height").set(2.0);
+            config.tool.at(0).opt("nozzle_diameter").set(3.0);
+
             Slic3r::Test::init_and_process_print({TestMesh::cube_20x20x20}, print, {
-        		{ "first_layer_height", 2 },
-				{ "layer_height", 		2 },
-	            { "nozzle_diameter", 	3 }
 	        });
             SpanOfConstPtrs<Layer> layers = print.objects().front()->layers();
             THEN("The output vector has 10 entries") {
@@ -34,11 +38,13 @@ SCENARIO("PrintObject: object layer heights", "[PrintObject]") {
         }
         WHEN("generate_object_layers() is called for 10mm layer heights and nozzle diameter of 11mm") {
             Slic3r::Print print;
-            Slic3r::Test::init_and_process_print({TestMesh::cube_20x20x20}, print, {
-        		{ "first_layer_height", 2 },
-				{ "layer_height", 		10 },
-	            { "nozzle_diameter", 	11 }
-	        });
+
+            TestConfig config;
+            config.print.opt("first_layer_height").set(FloatOrPercentage{2.0});
+            config.print.opt("layer_height").set(10.0);
+            config.tool.at(0).opt("nozzle_diameter").set(11.0);
+            Slic3r::Test::init_and_process_print({TestMesh::cube_20x20x20}, print, config);
+
             SpanOfConstPtrs<Layer> layers = print.objects().front()->layers();
 			THEN("The output vector has 3 entries") {
                 REQUIRE(layers.size() == 3);
@@ -52,12 +58,15 @@ SCENARIO("PrintObject: object layer heights", "[PrintObject]") {
         }
         WHEN("generate_object_layers() is called for 15mm layer heights and nozzle diameter of 16mm") {
             Slic3r::Print print;
-            Slic3r::Test::init_and_process_print({TestMesh::cube_20x20x20}, print, {
-        		{ "first_layer_height", 2 },
-				{ "layer_height", 		15 },
-	            { "nozzle_diameter", 	16 }
-	        });
+
+            TestConfig config;
+            config.print.opt("first_layer_height").set(FloatOrPercentage{2.0});
+            config.print.opt("layer_height").set(15.0);
+            config.tool.at(0).opt("nozzle_diameter").set(16.0);
+
+            Slic3r::Test::init_and_process_print({TestMesh::cube_20x20x20}, print, config);
             SpanOfConstPtrs<Layer> layers = print.objects().front()->layers();
+
 			THEN("The output vector has 2 entries") {
                 REQUIRE(layers.size() == 2);
             }

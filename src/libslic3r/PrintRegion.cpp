@@ -35,11 +35,11 @@ unsigned int PrintRegion::extruder(FlowRole role) const
 
 Flow PrintRegion::flow(const PrintObject &object, FlowRole role, double layer_height, bool first_layer) const
 {
-    const PrintConfig          &print_config = object.print()->config();
-    ConfigOptionFloatOrPercent  config_width;
+    const PrintConfigView &print_config = object.print()->config();
+    Domain::FloatOrPercentage config_width;
     // Get extrusion width from configuration.
     // (might be an absolute value, or a percent value, or zero for auto)
-    if (first_layer && print_config.get<Domain::FloatOrPercentage>("first_layer_extrusion_width") > 0) {
+    if (first_layer && !print_config.get<Domain::FloatOrPercentage>("first_layer_extrusion_width").is_zero()) {
         config_width = print_config.get<Domain::FloatOrPercentage>("first_layer_extrusion_width");
     } else if (role == frExternalPerimeter) {
         config_width = m_config.get<Domain::FloatOrPercentage>("external_perimeter_extrusion_width");
@@ -55,7 +55,7 @@ Flow PrintRegion::flow(const PrintObject &object, FlowRole role, double layer_he
         throw Slic3r::InvalidArgument("Unknown role");
     }
 
-    if (config_width.value == 0)
+    if (config_width.is_zero())
         config_width = object.config().get<Domain::FloatOrPercentage>("extrusion_width");
     
     // Get the configured nozzle_diameter for the extruder associated to the flow role requested.
@@ -64,32 +64,32 @@ Flow PrintRegion::flow(const PrintObject &object, FlowRole role, double layer_he
     return Flow::new_from_config_width(role, config_width, nozzle_diameter, float(layer_height));
 }
 
-double PrintRegion::nozzle_dmr_avg(const PrintConfig &print_config) const
+double PrintRegion::nozzle_dmr_avg(const PrintConfigView &print_config) const
 {
     return (print_config.get<std::vector<double>>("nozzle_diameter").at(m_config.get<int>("perimeter_extruder")    - 1) + 
             print_config.get<std::vector<double>>("nozzle_diameter").at(m_config.get<int>("infill_extruder")       - 1) + 
             print_config.get<std::vector<double>>("nozzle_diameter").at(m_config.get<int>("solid_infill_extruder") - 1)) / 3.;
 }
 
-double PrintRegion::bridging_height_avg(const PrintConfig &print_config) const
+double PrintRegion::bridging_height_avg(const PrintConfigView &print_config) const
 {
     return this->nozzle_dmr_avg(print_config) * sqrt(m_config.get<double>("bridge_flow_ratio"));
 }
 
-void PrintRegion::collect_object_printing_extruders(const PrintConfig &print_config, const PrintRegionConfig &region_config, const bool has_brim, std::vector<unsigned int> &object_extruders)
+void PrintRegion::collect_object_printing_extruders(const Domain::ConfigView& config, const bool has_brim, std::vector<unsigned int> &object_extruders)
 {
     // These checks reflect the same logic used in the GUI for enabling/disabling extruder selection fields.
-    auto num_extruders = (int)print_config.get<std::vector<double>>("nozzle_diameter").size();
+    auto num_extruders = (int)config.get<std::vector<double>>("nozzle_diameter").size();
     auto emplace_extruder = [num_extruders, &object_extruders](int extruder_id) {
     	int i = std::max(0, extruder_id - 1);
         object_extruders.emplace_back((i >= num_extruders) ? 0 : i);
     };
-    if (region_config.get<int>("perimeters") > 0 || has_brim)
-    	emplace_extruder(region_config.get<int>("perimeter_extruder"));
-    if (region_config.get<Domain::Percentage>("fill_density") > 0)
-    	emplace_extruder(region_config.get<int>("infill_extruder"));
-    if (region_config.get<int>("top_solid_layers") > 0 || region_config.get<int>("bottom_solid_layers") > 0)
-    	emplace_extruder(region_config.get<int>("solid_infill_extruder"));
+    if (config.get<int>("perimeters") > 0 || has_brim)
+    	emplace_extruder(config.get<int>("perimeter_extruder"));
+    if (config.get<Domain::Percentage>("fill_density") > Domain::Percentage{0})
+    	emplace_extruder(config.get<int>("infill_extruder"));
+    if (config.get<int>("top_solid_layers") > 0 || config.get<int>("bottom_solid_layers") > 0)
+    	emplace_extruder(config.get<int>("solid_infill_extruder"));
 }
 
 void PrintRegion::collect_object_printing_extruders(const Print &print, std::vector<unsigned int> &object_extruders) const
@@ -102,7 +102,7 @@ void PrintRegion::collect_object_printing_extruders(const Print &print, std::vec
     assert(this->config().get<int>("infill_extruder")       <= num_extruders);
     assert(this->config().get<int>("solid_infill_extruder") <= num_extruders);
 #endif
-    collect_object_printing_extruders(print.config(), this->config(), print.has_brim(), object_extruders);
+    collect_object_printing_extruders(this->config(), print.has_brim(), object_extruders);
 }
 
 }

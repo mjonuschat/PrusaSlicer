@@ -231,9 +231,9 @@ static ExtrusionEntityCollection traverse_loops_classic(const PerimeterGenerator
         const Polygon polygon = apply_fuzzy_skin(loop.polygon, params.config, params.perimeter_regions, params.layer_id, loop.depth, loop.is_contour);
 
         ExtrusionPaths paths;
-        if (params.config.get<bool>("overhangs") && params.layer_id > params.object_config.get<int>("raft_layers") &&
-            !((params.object_config.get<bool>("support_material") || params.object_config.get<int>("support_material_enforce_layers") > 0) &&
-              params.object_config.get<double>("support_material_contact_distance") == 0)) {
+        if (params.config.get<bool>("overhangs") && params.layer_id > params.config.get<int>("raft_layers") &&
+            !((params.config.get<bool>("support_material") || params.config.get<int>("support_material_enforce_layers") > 0) &&
+              params.config.get<double>("support_material_contact_distance") == 0)) {
             // Detect overhanging/bridging perimeters.
             BoundingBox bbox(polygon.points);
             bbox.offset(SCALED_EPSILON);
@@ -438,9 +438,9 @@ static ExtrusionEntityCollection traverse_extrusions(const PerimeterGenerator::P
 
         ExtrusionPaths paths;
         // detect overhanging/bridging perimeters
-        if (params.config.get<bool>("overhangs") && params.layer_id > params.object_config.get<int>("raft_layers")
-            && ! ((params.object_config.get<bool>("support_material") || params.object_config.get<int>("support_material_enforce_layers") > 0) &&
-                 params.object_config.get<double>("support_material_contact_distance") == 0)) {
+        if (params.config.get<bool>("overhangs") && params.layer_id > params.config.get<int>("raft_layers")
+            && ! ((params.config.get<bool>("support_material") || params.config.get<int>("support_material_enforce_layers") > 0) &&
+                 params.config.get<double>("support_material_contact_distance") == 0)) {
 
             ClipperLib_Z::Path extrusion_path;
             extrusion_path.reserve(extrusion.size());
@@ -787,13 +787,14 @@ ExtrusionPaths sort_extra_perimeters(const ExtrusionPaths& extra_perims, int ind
 // #define EXTRA_PERIM_DEBUG_FILES
 // Function will generate extra perimeters clipped over nonbridgeable areas of the provided surface and returns both the new perimeters and
 // Polygons filled by those clipped perimeters
-std::tuple<std::vector<ExtrusionPaths>, Polygons> generate_extra_perimeters_over_overhangs(ExPolygons               infill_area,
-                                                                                           const Polygons          &lower_slices_polygons,
-                                                                                           int                      perimeter_count,
-                                                                                           const Flow              &overhang_flow,
-                                                                                           double                   scaled_resolution,
-                                                                                           const PrintObjectConfig &object_config,
-                                                                                           const PrintConfig       &print_config)
+std::tuple<std::vector<ExtrusionPaths>, Polygons> generate_extra_perimeters_over_overhangs(
+    ExPolygons infill_area,
+    const Polygons& lower_slices_polygons,
+    int perimeter_count,
+    const Flow& overhang_flow,
+    double scaled_resolution,
+    const PrintRegionConfigView& config
+)
 {
     coord_t anchors_size = std::min(coord_t(scale_(EXTERNAL_INFILL_MARGIN)), overhang_flow.scaled_spacing() * (perimeter_count + 1));
 
@@ -1018,7 +1019,7 @@ void PerimeterGenerator::process_arachne(
         // We consider overhang any part where the entire nozzle diameter is not supported by the
         // lower layer, so we take lower slices and offset them by half the nozzle diameter used
         // in the current layer
-        double nozzle_diameter = params.print_config.get<std::vector<double>>("nozzle_diameter").at(params.config.get<int>("perimeter_extruder")-1);
+        double nozzle_diameter = params.config.get<std::vector<double>>("nozzle_diameter").at(params.config.get<int>("perimeter_extruder")-1);
         lower_slices_polygons_cache = offset(*lower_slices, float(scale_(+nozzle_diameter/2)));
     }
 
@@ -1026,19 +1027,19 @@ void PerimeterGenerator::process_arachne(
     // extra perimeters for each one
     // detect how many perimeters must be generated for this island
     int loop_number = params.config.get<int>("perimeters") + surface.extra_perimeters - 1; // 0-indexed loops
-    if (loop_number > 0 && ((params.config.get<TopOnePerimeterType>("top_one_perimeter_type") == TopOnePerimeterType::TopmostOnly && upper_slices == nullptr) || (params.config.get<bool>("only_one_perimeter_first_layer") && params.layer_id == 0)))
+    if (loop_number > 0 && ((params.config.get<Domain::TopOnePerimeterType>("top_one_perimeter_type") == Domain::TopOnePerimeterType::TopmostOnly && upper_slices == nullptr) || (params.config.get<bool>("only_one_perimeter_first_layer") && params.layer_id == 0)))
         loop_number = 0;
 
     // Calculate how many inner loops remain when TopSurfaces is selected.
-    const int inner_loop_number = (params.config.get<TopOnePerimeterType>("top_one_perimeter_type") == TopOnePerimeterType::TopSurfaces && upper_slices != nullptr) ? loop_number - 1 : -1;
+    const int inner_loop_number = (params.config.get<Domain::TopOnePerimeterType>("top_one_perimeter_type") == Domain::TopOnePerimeterType::TopSurfaces && upper_slices != nullptr) ? loop_number - 1 : -1;
 
     // Set one perimeter when TopSurfaces is selected.
-    if (params.config.get<TopOnePerimeterType>("top_one_perimeter_type") == TopOnePerimeterType::TopSurfaces)
+    if (params.config.get<Domain::TopOnePerimeterType>("top_one_perimeter_type") == Domain::TopOnePerimeterType::TopSurfaces)
         loop_number = 0;
 
     ExPolygons last   = offset_ex(Algorithms::ExPolygon::simplify_to_polygons(surface.expolygon, params.scaled_resolution), - float(ext_perimeter_width / 2. - ext_perimeter_spacing / 2.));
     Polygons   last_p = Algorithms::ExPolygon::to_polygons(last);
-    Arachne::WallToolPaths wall_tool_paths(last_p, ext_perimeter_spacing, perimeter_spacing, coord_t(loop_number + 1), 0, params.layer_height, params.object_config, params.print_config);
+    Arachne::WallToolPaths wall_tool_paths(last_p, ext_perimeter_spacing, perimeter_spacing, coord_t(loop_number + 1), 0, params.layer_height, params.config);
     Arachne::Perimeters    perimeters     = wall_tool_paths.getToolPaths();
     ExPolygons             infill_contour = union_ex(wall_tool_paths.getInnerContour());
 
@@ -1076,7 +1077,7 @@ void PerimeterGenerator::process_arachne(
             top_expolygons = intersection_ex(top_expolygons, infill_contour);
 
             const Polygons not_top_polygons = Algorithms::ExPolygon::to_polygons(not_top_expolygons);
-            Arachne::WallToolPaths inner_wall_tool_paths(not_top_polygons, perimeter_spacing, perimeter_spacing, coord_t(inner_loop_number + 1), 0, params.layer_height, params.object_config, params.print_config);
+            Arachne::WallToolPaths inner_wall_tool_paths(not_top_polygons, perimeter_spacing, perimeter_spacing, coord_t(inner_loop_number + 1), 0, params.layer_height, params.config);
             Arachne::Perimeters inner_perimeters = inner_wall_tool_paths.getToolPaths();
 
             // Recalculate indexes of inner perimeters before merging them.
@@ -1095,7 +1096,7 @@ void PerimeterGenerator::process_arachne(
         } else {
             // There is no top surface ExPolygon, so we call Arachne again with parameters
             // like when the single perimeter feature is disabled.
-            Arachne::WallToolPaths no_single_perimeter_tool_paths(last_p, ext_perimeter_spacing, perimeter_spacing, coord_t(inner_loop_number + 2), 0, params.layer_height, params.object_config, params.print_config);
+            Arachne::WallToolPaths no_single_perimeter_tool_paths(last_p, ext_perimeter_spacing, perimeter_spacing, coord_t(inner_loop_number + 2), 0, params.layer_height, params.config);
             perimeters     = no_single_perimeter_tool_paths.getToolPaths();
             infill_contour = union_ex(no_single_perimeter_tool_paths.getInnerContour());
         }
@@ -1142,7 +1143,7 @@ void PerimeterGenerator::process_arachne(
             // two or more loops?
             perimeter_spacing;
 
-    inset = coord_t(scale_(params.config.get_abs_value("infill_overlap", unscale<double>(inset))));
+    inset = coord_t(scale_(params.config.get<Domain::FloatOrPercentage>("infill_overlap").get_abs_value(unscale<double>(inset))));
     Polygons pp;
     for (ExPolygon &ex : infill_contour) {
         Slic3r::append(pp, Algorithms::ExPolygon::simplify_to_polygons(ex, params.scaled_resolution));
@@ -1157,13 +1158,13 @@ void PerimeterGenerator::process_arachne(
             float(inset + min_perimeter_infill_spacing / 2.));
 
     if (lower_slices != nullptr && params.config.get<bool>("overhangs") && params.config.get<bool>("extra_perimeters_on_overhangs") &&
-        params.config.get<int>("perimeters") > 0 && params.layer_id > params.object_config.get<int>("raft_layers")) {
+        params.config.get<int>("perimeters") > 0 && params.layer_id > params.config.get<int>("raft_layers")) {
         // Generate extra perimeters on overhang areas, and cut them to these parts only, to save print time and material
         auto [extra_perimeters, filled_area] = generate_extra_perimeters_over_overhangs(infill_areas,
                                                                                         lower_slices_polygons_cache,
                                                                                         loop_number + 1,
                                                                                         params.overhang_flow, params.scaled_resolution,
-                                                                                        params.object_config, params.print_config);
+                                                                                        params.config);
         if (!extra_perimeters.empty()) {
             ExtrusionEntityCollection &this_islands_perimeters = static_cast<ExtrusionEntityCollection&>(*out_loops.entities.back());
             ExtrusionEntitiesPtr       old_entities;
@@ -1223,7 +1224,7 @@ void PerimeterGenerator::process_classic(
         // We consider overhang any part where the entire nozzle diameter is not supported by the
         // lower layer, so we take lower slices and offset them by half the nozzle diameter used 
         // in the current layer
-        double nozzle_diameter = params.print_config.get<std::vector<double>>("nozzle_diameter").at(params.config.get<int>("perimeter_extruder")-1);
+        double nozzle_diameter = params.config.get<std::vector<double>>("nozzle_diameter").at(params.config.get<int>("perimeter_extruder")-1);
         lower_slices_polygons_cache = offset(*lower_slices, float(scale_(+nozzle_diameter/2)));
     }
 
@@ -1233,7 +1234,7 @@ void PerimeterGenerator::process_classic(
     int        loop_number = params.config.get<int>("perimeters") + surface.extra_perimeters - 1;  // 0-indexed loops
 
     // Set the topmost layer to be one perimeter.
-    if (loop_number > 0 && ((params.config.get<TopOnePerimeterType>("top_one_perimeter_type") != TopOnePerimeterType::None && upper_slices == nullptr) || (params.config.get<bool>("only_one_perimeter_first_layer") && params.layer_id == 0)))
+    if (loop_number > 0 && ((params.config.get<Domain::TopOnePerimeterType>("top_one_perimeter_type") != Domain::TopOnePerimeterType::None && upper_slices == nullptr) || (params.config.get<bool>("only_one_perimeter_first_layer") && params.layer_id == 0)))
         loop_number = 0;
 
     ExPolygons last = union_ex(Algorithms::ExPolygon::simplify_to_polygons(surface.expolygon, params.scaled_resolution));
@@ -1330,7 +1331,7 @@ void PerimeterGenerator::process_classic(
             last = std::move(offsets);
 
             // Store surface for top infill if top_one_perimeter_type is set to TopSurfaces.
-            if (i == 0 && i != loop_number && params.config.get<TopOnePerimeterType>("top_one_perimeter_type") == TopOnePerimeterType::TopSurfaces && upper_slices != nullptr) {
+            if (i == 0 && i != loop_number && params.config.get<Domain::TopOnePerimeterType>("top_one_perimeter_type") == Domain::TopOnePerimeterType::TopSurfaces && upper_slices != nullptr) {
                 // Split the polygons with top/not_top.
 
                 // Get the offset from solid surface anchor.
@@ -1387,7 +1388,7 @@ void PerimeterGenerator::process_classic(
                 }
             }
 
-            if (i == loop_number && (! has_gap_fill || params.config.get<Domain::Percentage>("fill_density") == 0)) {
+            if (i == loop_number && (! has_gap_fill || params.config.get<Domain::Percentage>("fill_density") == Domain::Percentage{0})) {
             	// The last run of this loop is executed to collect gaps for gap fill.
             	// As the gap fill is either disabled or not 
             	break;
@@ -1454,7 +1455,7 @@ void PerimeterGenerator::process_classic(
         // we continue inwards after having finished the brim
         // TODO: add test for perimeter order
         if (params.config.get<bool>("external_perimeters_first") || 
-            (params.layer_id == 0 && params.object_config.get<double>("brim_width") > 0))
+            (params.layer_id == 0 && params.config.get<double>("brim_width") > 0))
             entities.reverse();
         // append perimeters for this slice as a collection
         if (! entities.empty())
@@ -1502,7 +1503,7 @@ void PerimeterGenerator::process_classic(
             perimeter_spacing / 2;
 
     // Only apply infill overlap if we actually have one perimeter.
-    const coord_t infill_perimeter_overlap = (inset > 0) ? coord_t(params.config.get_abs_value("infill_overlap", double(inset + solid_infill_spacing / 2.))) : 0;
+    const coord_t infill_perimeter_overlap = (inset > 0) ? coord_t(params.config.get<Domain::FloatOrPercentage>("infill_overlap").get_abs_value(double(inset + solid_infill_spacing / 2.))) : 0;
     inset -= infill_perimeter_overlap;
 
     // simplify infill contours according to resolution
@@ -1526,13 +1527,13 @@ void PerimeterGenerator::process_classic(
     }
 
     if (lower_slices != nullptr && params.config.get<bool>("overhangs") && params.config.get<bool>("extra_perimeters_on_overhangs") &&
-        params.config.get<int>("perimeters") > 0 && params.layer_id > params.object_config.get<int>("raft_layers")) {
+        params.config.get<int>("perimeters") > 0 && params.layer_id > params.config.get<int>("raft_layers")) {
         // Generate extra perimeters on overhang areas, and cut them to these parts only, to save print time and material
         auto [extra_perimeters, filled_area] = generate_extra_perimeters_over_overhangs(infill_areas,
                                                                                         lower_slices_polygons_cache,
                                                                                         loop_number + 1,
                                                                                         params.overhang_flow, params.scaled_resolution,
-                                                                                        params.object_config, params.print_config);
+                                                                                        params.config);
         if (!extra_perimeters.empty()) {
             ExtrusionEntityCollection &this_islands_perimeters = static_cast<ExtrusionEntityCollection&>(*out_loops.entities.back());
             ExtrusionEntitiesPtr       old_entities;
@@ -1553,9 +1554,9 @@ PerimeterRegion::PerimeterRegion(const LayerRegion &layer_region) : region(&laye
     this->bbox       = get_extents(this->expolygons);
 }
 
-bool PerimeterRegion::has_compatible_perimeter_regions(const PrintRegionConfig &config, const PrintRegionConfig &other_config)
+bool PerimeterRegion::has_compatible_perimeter_regions(const PrintRegionConfigView &config, const PrintRegionConfigView &other_config)
 {
-    return config.get<FuzzySkinType>("fuzzy_skin")            == other_config.get<FuzzySkinType>("fuzzy_skin") &&
+    return config.get<Domain::FuzzySkinType>("fuzzy_skin") == other_config.get<Domain::FuzzySkinType>("fuzzy_skin") &&
            config.get<double>("fuzzy_skin_thickness")  == other_config.get<double>("fuzzy_skin_thickness") &&
            config.get<double>("fuzzy_skin_point_dist") == other_config.get<double>("fuzzy_skin_point_dist");
 }

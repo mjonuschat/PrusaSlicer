@@ -504,8 +504,8 @@ Polygons collect_slices_outer(const Layer &layer)
 }
 
 struct SupportGridParams {
-    SupportGridParams(const PrintObjectConfig &object_config, const Flow &support_material_flow) :
-        style(object_config.get<SupportMaterialStyle>("support_material_style")),
+    SupportGridParams(const PrintObjectConfigView &object_config, const Flow &support_material_flow) :
+        style(object_config.get<Domain::SupportMaterialStyle>("support_material_style")),
         grid_resolution(object_config.get<double>("support_material_spacing") + support_material_flow.spacing()),
         support_angle(deg2rad(object_config.get<double>("support_material_angle"))),
         extrusion_width(support_material_flow.spacing()),
@@ -513,7 +513,7 @@ struct SupportGridParams {
         expansion_to_slice(coord_t(support_material_flow.scaled_spacing() / 2 + 5)),
         expansion_to_propagate(-3) {}
 
-    SupportMaterialStyle    style;
+    Domain::SupportMaterialStyle    style;
     double                  grid_resolution;
     double                  support_angle;
     double                  extrusion_width;
@@ -538,7 +538,7 @@ public:
         m_support_material_closing_radius(params.support_material_closing_radius)
     {
         switch (m_style) {
-        case smsGrid:
+            case Domain::SupportMaterialStyle::smsGrid:
         {
             // Prepare the grid data, it will be reused when extracting support structures.
             if (m_support_angle != 0.) {
@@ -611,7 +611,7 @@ public:
             break;
         }
 
-        case smsSnug:
+        case Domain::SupportMaterialStyle::smsSnug:
         default:
             // nothing to prepare
             break;
@@ -629,7 +629,7 @@ public:
         )
     {
         switch (m_style) {
-        case smsGrid:
+        case Domain::SupportMaterialStyle::smsGrid:
         {
     #ifdef SUPPORT_USE_AGG_RASTERIZER
             Polygons support_polygons_simplified = contours_simplified(m_grid_size, m_pixel_size, m_bbox.min, m_grid2, offset_in_grid, fill_holes);
@@ -721,11 +721,11 @@ public:
 
             return out;
         }
-        case smsTree:
-        case smsOrganic:
+        case Domain::SupportMaterialStyle::smsTree:
+        case Domain::SupportMaterialStyle::smsOrganic:
 //            assert(false);
             [[fallthrough]];
-        case smsSnug:
+        case Domain::SupportMaterialStyle::smsSnug:
             // Merge the support polygons by applying morphological closing and inwards smoothing.
             auto closing_distance   = scaled<float>(m_support_material_closing_radius);
             auto smoothing_distance = scaled<float>(m_extrusion_width);
@@ -977,7 +977,7 @@ private:
         return pts;
     } 
 
-    SupportMaterialStyle    m_style;
+    Domain::SupportMaterialStyle    m_style;
     const Polygons         *m_support_polygons;
     const Polygons         *m_trimming_polygons;
     Polygons                m_support_polygons_rotated;
@@ -1153,8 +1153,8 @@ static inline std::tuple<Polygons, Polygons, Polygons, float> detect_overhangs(
     const Layer             &layer,
     const size_t             layer_id,
     const Polygons          &lower_layer_polygons,
-    const PrintConfig       &print_config, 
-    const PrintObjectConfig &object_config,
+    const PrintConfigView       &print_config, 
+    const PrintObjectConfigView &object_config,
     SupportAnnotations      &annotations, 
     SlicesMarginCache       &slices_margin, 
     const double             gap_xy
@@ -1387,8 +1387,8 @@ static inline std::tuple<Polygons, Polygons, Polygons, float> detect_overhangs(
 // Allocate one, possibly two support contact layers.
 // For "thick" overhangs, one support layer will be generated to support normal extrusions, the other to support the "thick" extrusions.
 static inline std::pair<SupportGeneratorLayer*, SupportGeneratorLayer*> new_contact_layer(
-    const PrintConfig                                   &print_config, 
-    const PrintObjectConfig                             &object_config,
+    const PrintConfigView                                   &print_config, 
+    const PrintObjectConfigView                             &object_config,
     const SlicingParameters                             &slicing_params,
     const double                                       support_layer_height_min,
     const Layer                                         &layer, 
@@ -1480,7 +1480,7 @@ static inline void fill_contact_layer(
     SupportGeneratorLayer &new_layer,
     size_t                   layer_id,
     const SlicingParameters &slicing_params,
-    const PrintObjectConfig &object_config,
+    const PrintObjectConfigView &object_config,
     const SlicesMarginCache &slices_margin, 
     const Polygons          &overhang_polygons, 
     const Polygons          &contact_polygons, 
@@ -1514,7 +1514,7 @@ static inline void fill_contact_layer(
 #endif // SLIC3R_DEBUG
         ));
     // 2) infill polygons, expand them by half the extrusion width + a tiny bit of extra.
-    bool reduce_interfaces = object_config.get<SupportMaterialStyle>("support_material_style") == smsGrid && layer_id > 0 && !slicing_params.soluble_interface;
+    bool reduce_interfaces = object_config.get<Domain::SupportMaterialStyle>("support_material_style") == Domain::SupportMaterialStyle::smsGrid && layer_id > 0 && !slicing_params.soluble_interface;
     if (reduce_interfaces) {
         // Reduce the amount of dense interfaces: Do not generate dense interfaces below overhangs with 60% overhang of the extrusions.
         Polygons dense_interface_polygons = diff(overhang_polygons, lower_layer_polygons_for_dense_interface());

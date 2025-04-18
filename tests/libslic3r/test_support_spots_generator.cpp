@@ -172,7 +172,7 @@ TEST_CASE_METHOD(ObjectPartFixture, "Constructing ObjectPart using extrusion col
 
 TEST_CASE_METHOD(ObjectPartFixture, "Constructing ObjectPart with brim", "[SupportSpotsGenerator]") {
     float brim_width = 1;
-    Polygons brim = get_brim(ExPolygon{expected_polygon}, BrimType::btOuterOnly, brim_width);
+    Polygons brim = get_brim(ExPolygon{expected_polygon}, Domain::BrimType::OuterOnly, brim_width);
 
     ObjectPart part{
         extrusions,

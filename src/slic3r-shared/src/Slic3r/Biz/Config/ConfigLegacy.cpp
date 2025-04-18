@@ -1,5 +1,6 @@
 #include "Slic3r/Biz/Config/ConfigLegacy.hpp"
 #include "Slic3r/Domain/Config.hpp"
+#include "Slic3r/Domain/Types.hpp"
 
 #include "Legacy/PrintConfig.hpp"
 
@@ -237,11 +238,11 @@ static bool convert_old_to_new(const Slic3rLegacy::ConfigOption* opt, Domain::Co
     else if (opt->type() == coFloatOrPercent && item.type() == Domain::ConfigItemType::FloatOrPercent) {
         bool is_percent = static_cast<const Slic3rLegacy::ConfigOptionFloatOrPercent*>(opt)->percent;
         double value = static_cast<const Slic3rLegacy::ConfigOptionFloatOrPercent*>(opt)->value;
-        Domain::FloatOrPercentage fop = is_percent ? Domain::Percentage(value) : Domain::FloatOrPercentage(value);
+        Domain::FloatOrPercentage fop = is_percent ? Domain::Percentage{value} : Domain::FloatOrPercentage{value};
         item.set(fop);
-    }            
+    }
     else if (opt->type() == coPercent && item.type() == Domain::ConfigItemType::Percent)
-        item.set(Domain::Percentage(static_cast<const Slic3rLegacy::ConfigOptionPercent*>(opt)->value));
+        item.set(Domain::Percentage{static_cast<const Slic3rLegacy::ConfigOptionPercent*>(opt)->value});
     else if (opt->type() == coBools && item.type() == Domain::ConfigItemType::Bools) {
         std::vector<unsigned char> old_vec = static_cast<const Slic3rLegacy::ConfigOptionBools*>(opt)->values;
         std::vector<bool> vec(old_vec.begin(), old_vec.end());
@@ -279,11 +280,11 @@ static bool convert_old_to_new(const Slic3rLegacy::ConfigOption* opt, Domain::Co
         else if (opt->type() == coStrings && item.type() == Domain::ConfigItemType::String)
             item.set(static_cast<const Slic3rLegacy::ConfigOptionStrings*>(opt)->get_at(filament_id));
         else if (opt->type() == coPercents && item.type() == Domain::ConfigItemType::Percent)
-            item.set(Domain::Percentage(static_cast<const Slic3rLegacy::ConfigOptionPercents*>(opt)->get_at(filament_id)));
+            item.set(Domain::Percentage{static_cast<const Slic3rLegacy::ConfigOptionPercents*>(opt)->get_at(filament_id)});
         else if (opt->type() == coFloatsOrPercents && item.type() == Domain::ConfigItemType::FloatOrPercent) {
             bool is_percent = static_cast<const Slic3rLegacy::ConfigOptionFloatsOrPercents*>(opt)->get_at(filament_id).percent;
             double value = static_cast<const Slic3rLegacy::ConfigOptionFloatsOrPercents*>(opt)->get_at(filament_id).value;
-            Domain::FloatOrPercentage fop = is_percent ? Domain::Percentage(value) : Domain::FloatOrPercentage(value);
+            Domain::FloatOrPercentage fop = is_percent ? Domain::Percentage{value} : Domain::FloatOrPercentage{value};
             item.set(fop);
         }
         else if (opt->type() == coPoints && item.type() == Domain::ConfigItemType::Point) {

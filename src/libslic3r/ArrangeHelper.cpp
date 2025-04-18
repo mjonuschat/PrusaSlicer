@@ -3,7 +3,6 @@
 #include "libslic3r/Model.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "libslic3r/MultipleBeds.hpp"
-#include "libslic3r/PresetBundle.hpp"
 #include "libslic3r/BuildVolume.hpp"
 
 #include <string>
@@ -42,7 +41,7 @@ static bool can_arrange_selected_bed(const Model& model, int bed_idx)
 	return true;
 }
 
-static Sequential::PrinterGeometry get_printer_geometry(const ConfigBase& config)
+static Sequential::PrinterGeometry get_printer_geometry(const PrintConfigView& config)
 {
 	enum ShapeType {
 		BOX,
@@ -54,7 +53,7 @@ static Sequential::PrinterGeometry get_printer_geometry(const ConfigBase& config
 		std::vector<Polygon> polygons;
 	};
 
-	BuildVolume bv(config.opt<ConfigOptionPoints>("bed_shape")->values, 10.);
+	BuildVolume bv(config.get<std::vector<Vec2d>>("bed_shape"), 10.);
 	const BoundingBox& bb = bv.bounding_box();
 	Polygon bed_polygon;
 	if (bv.type() == BuildVolume::Type::Circle) {
@@ -68,7 +67,7 @@ static Sequential::PrinterGeometry get_printer_geometry(const ConfigBase& config
 	}
 
 	std::vector<ExtruderSlice> slices;
-	const std::string printer_notes = config.opt_string("printer_notes");
+	const std::string printer_notes = config.get<std::string>("printer_notes");
 	{
 		if (! printer_notes.empty()) {
 			try {
@@ -114,8 +113,8 @@ static Sequential::PrinterGeometry get_printer_geometry(const ConfigBase& config
 		}
 		if (slices.empty()) {
 			// Fallback to primitive model using radius and height.
-			coord_t r = scaled(std::max(0.1, config.opt_float("extruder_clearance_radius")));
-			coord_t h = scaled(std::max(0.1, config.opt_float("extruder_clearance_height")));
+			coord_t r = scaled(std::max(0.1, config.get<double>("extruder_clearance_radius")));
+			coord_t h = scaled(std::max(0.1, config.get<double>("extruder_clearance_height")));
 			double bed_x = bv.bounding_volume2d().size().x();
 			double bed_y = bv.bounding_volume2d().size().y();
 			slices.push_back(ExtruderSlice{ 0, CONVEX, { { {  -5000000,   -5000000 }, {   5000000,   -5000000 }, {   5000000,   5000000 }, {  -5000000,   5000000 } } } });
@@ -201,7 +200,7 @@ static std::vector<Sequential::ObjectToPrint> get_objects_to_print(const Model& 
 
 
 
-void arrange_model_sequential(Model& model, const ConfigBase& config, bool current_bed_only)
+void arrange_model_sequential(Model& model, const PrintConfigView& config, bool current_bed_only)
 {
 	SeqArrange seq_arrange(model, config, current_bed_only);
 	seq_arrange.process_seq_arrange([](int) {});
@@ -210,7 +209,7 @@ void arrange_model_sequential(Model& model, const ConfigBase& config, bool curre
 
 
 
-SeqArrange::SeqArrange(const Model& model, const ConfigBase& config, bool current_bed_only)
+SeqArrange::SeqArrange(const Model& model, const PrintConfigView& config, bool current_bed_only)
 {
 	m_selected_bed = current_bed_only ? s_multiple_beds.get_active_bed() : -1;
 	if (m_selected_bed != -1 && ! can_arrange_selected_bed(model, m_selected_bed))
@@ -340,7 +339,7 @@ void SeqArrange::apply_seq_arrange(Model& model) const
 
 
 
-std::optional<std::pair<std::string, std::string> > check_seq_conflict(const Model& model, const ConfigBase& config)
+std::optional<std::pair<std::string, std::string> > check_seq_conflict(const Model& model, const PrintConfigView& config)
 {
 	Sequential::PrinterGeometry printer_geometry = get_printer_geometry(config);
 	Sequential::SolverConfiguration solver_config = get_solver_config(printer_geometry);

@@ -83,7 +83,7 @@ enum class DraftShield {
     dsDisabled, dsLimited, dsEnabled
 };
 enum class SlicingMode
-{    
+{
     Regular, // Regular, applying ClipperLib::pftNonZero rule when creating ExPolygons.  
     EvenOdd, // Compatible with 3DLabPrint models, applying ClipperLib::pftEvenOdd rule when creating ExPolygons.
     CloseHoles, // Orienting all contours CCW, thus closing all holes.
@@ -143,29 +143,34 @@ public:
     ProjectSettings() : ConfigBox(s_defs_fdm, "project_settings") {}
 };
 
-
 class FullConfigFDM : public FullConfig
 {
 public:
-    FullConfigFDM(const PrinterSettings& printer_s,
-                  const std::vector<std::reference_wrapper<const FilamentSettings>>& filament_s,
-                  const PrintSettings& print_s,
-                  const std::vector<std::reference_wrapper<const ToolPrintSettings>>& tool_print_s,
-                  const ProjectSettings& project_s)
-    {
-        ASSERT(filament_s.size() == tool_print_s.size());
-
-        // The base class only gets base pointers to base ConfigBoxes - it needs not to know what they are.
-        add(printer_s);
-        add(print_s);
-        std::vector<std::reference_wrapper<const ConfigBox>> tps_s(tool_print_s.begin(), tool_print_s.end());
-        add(tps_s);
-        std::vector<std::reference_wrapper<const ConfigBox>> fil_s(filament_s.begin(), filament_s.end());
-        add(fil_s);
-        add(project_s);
-    }
+    FullConfigFDM(
+        const PrinterSettings& printer_s,
+        const std::vector<std::reference_wrapper<const ToolPrintSettings>>& tool_print_s,
+        const PrintSettings& print_s,
+        const std::vector<std::reference_wrapper<const FilamentSettings>>& filament_s,
+        const ProjectSettings& project_s
+    );
 
     std::string_view name() const override { return "FDM"; }
+
+    static FullConfigFDM defaults() {
+        FilamentSettings filament_settings{};
+        ToolPrintSettings tool_settings{};
+        return FullConfigFDM{
+            PrinterSettings{},
+            {tool_settings},
+            PrintSettings{},
+            {filament_settings},
+            ProjectSettings{}
+        };
+    }
 };
+
+using FullConfigFDMPtr = std::shared_ptr<const FullConfigFDM>;
+using ObjectSettingsPtr = std::shared_ptr<const ObjectSettings>;
+using VolumeSettingsPtr = std::shared_ptr<const VolumeSettings>;
 
 } // namespace Slic3r::Domain

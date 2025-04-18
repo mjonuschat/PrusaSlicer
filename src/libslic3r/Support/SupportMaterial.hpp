@@ -95,8 +95,8 @@ private:
 */
 
 	// Following objects are not owned by SupportMaterial class.
-	const PrintConfig 		*m_print_config;
-	const PrintObjectConfig *m_object_config;
+	const PrintConfigView *m_print_config;
+	const PrintObjectConfigView *m_object_config;
 	// Pre-calculated parameters shared between the object slicer and the support generator,
 	// carrying information on a raft, 1st layer height, 1st object layer height, gap between the raft and object etc.
 	SlicingParameters	     m_slicing_params;

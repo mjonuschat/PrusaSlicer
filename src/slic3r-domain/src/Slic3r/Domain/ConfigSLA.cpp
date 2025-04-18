@@ -8,6 +8,28 @@
 
 namespace Slic3r::Domain {
 
+namespace {
+inline FullConfigInput convert_to_full_config_input(
+    const SLAPrinterSettings& printer_s,
+    const SLAPrintSettings& print_s,
+    const SLAMaterialSettings& material_s
+) {
+    FullConfigInput result;
+    result.push_back(printer_s);
+    result.push_back(print_s);
+    result.push_back(material_s);
+    return result;
+}
+}
+
+FullConfigSLA::FullConfigSLA(
+    const SLAPrinterSettings& printer_s,
+    const SLAPrintSettings& print_s,
+    const SLAMaterialSettings& material_s
+)
+    : FullConfig{convert_to_full_config_input(printer_s, print_s, material_s)}
+{}
+
 // Implementation of SLA configs is done in this file.
 
 // Define our own marking functions, the regular ones are not accessible in Domain.
@@ -941,7 +963,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->min = 1;
         def->max = 100;
         def->mode = comExpert;
-        SET_DEFAULT(Percentage(50.));
+        SET_DEFAULT(Percentage{50.});
 
         def = defs.add(prefix + "support_max_bridges_on_pillar", Int);
         def->location = "sla_print_settings";

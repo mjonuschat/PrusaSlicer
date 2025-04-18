@@ -85,7 +85,7 @@ unsigned int LayerTools::extruder(const ExtrusionEntityCollection &extrusions, c
 	return (extruder == 0) ? 0 : extruder - 1;
 }
 
-static double calc_max_layer_height(const PrintConfig &config, double max_object_layer_height)
+static double calc_max_layer_height(const Domain::ConfigView &config, double max_object_layer_height)
 {
     double max_layer_height = std::numeric_limits<double>::max();
     for (size_t i = 0; i < config.get<std::vector<double>>("nozzle_diameter").size(); ++ i) {
@@ -220,7 +220,7 @@ void ToolOrdering::initialize_layers(std::vector<double> &zs)
 }
 
 // Decides whether this entity could be overridden
-[[nodiscard]] static bool is_overriddable(const ExtrusionEntityCollection& eec, const LayerTools& lt, const PrintConfig& print_config, const PrintObject& object, const PrintRegion& region)
+[[nodiscard]] static bool is_overriddable(const ExtrusionEntityCollection& eec, const LayerTools& lt, const PrintConfigView& print_config, const PrintObject& object, const PrintRegion& region)
 {
     if (print_config.get<std::vector<bool>>("filament_soluble").at(lt.extruder(eec, region)))
         return false;
@@ -393,9 +393,9 @@ void ToolOrdering::reorder_extruders(unsigned int last_extruder_id)
 
             // On first layer with wipe tower, prefer a soluble extruder
             // at the beginning, so it is not wiped on the first layer.
-            if (lt == m_layer_tools[0] && m_print_config_ptr && m_print_config_ptr->wipe_tower) {
+            if (lt == m_layer_tools[0] && m_print_config_ptr && m_print_config_ptr->get<bool>("wipe_tower")) {
                 for (size_t i = 0; i<lt.extruders.size(); ++i)
-                    if (m_print_config_ptr->filament_soluble.get_at(lt.extruders[i]-1)) { // 1-based...
+                    if (m_print_config_ptr->get<std::vector<bool>>("filament_soluble").at(lt.extruders[i]-1)) { // 1-based...
                         std::swap(lt.extruders[i], lt.extruders.front());
                         break;
                     }
@@ -417,7 +417,7 @@ void ToolOrdering::reorder_extruders(unsigned int last_extruder_id)
         }    
 }
 
-void ToolOrdering::fill_wipe_tower_partitions(const PrintConfig &config, double object_bottom_z, double max_layer_height)
+void ToolOrdering::fill_wipe_tower_partitions(const Domain::ConfigView &config, double object_bottom_z, double max_layer_height)
 {
     if (m_layer_tools.empty())
         return;
@@ -513,15 +513,15 @@ void ToolOrdering::fill_wipe_tower_partitions(const PrintConfig &config, double 
 
 bool ToolOrdering::insert_wipe_tower_extruder()
 {
-    if (!m_print_config_ptr->wipe_tower)
+    if (!m_print_config_ptr->get<bool>("wipe_tower"))
         return false;
 
     // In case that wipe_tower_extruder is set to non-zero, we must make sure that the extruder will be in the list.
     bool changed = false;
-    if (m_print_config_ptr->wipe_tower_extruder != 0) {
+    if (m_print_config_ptr->get<int>("wipe_tower_extruder") != 0) {
         for (LayerTools& lt : m_layer_tools) {
             if (lt.wipe_tower_partitions > 0) {
-                lt.extruders.emplace_back(m_print_config_ptr->wipe_tower_extruder - 1);
+                lt.extruders.emplace_back(m_print_config_ptr->get<int>("wipe_tower_extruder") - 1);
                 sort_remove_duplicates(lt.extruders);
                 changed = true;
             }
@@ -565,7 +565,7 @@ void ToolOrdering::collect_extruder_statistics(bool prime_multi_material)
 }
 
 // Layers are marked for infinite skirt aka draft shield. Not all the layers have to be printed.
-void ToolOrdering::mark_skirt_layers(const PrintConfig &config, double max_layer_height)
+void ToolOrdering::mark_skirt_layers(const Domain::ConfigView &config, double max_layer_height)
 {
     if (m_layer_tools.empty())
         return;
@@ -704,7 +704,7 @@ void WipingExtrusions::set_extruder_override(const ExtrusionEntity* entity, size
 }
 
 // Finds first non-soluble extruder on the layer
-[[nodiscard]] static int first_nonsoluble_extruder_on_layer(const PrintConfig& print_config, const LayerTools& layer_tools)
+[[nodiscard]] static int first_nonsoluble_extruder_on_layer(const PrintConfigView& print_config, const LayerTools& layer_tools)
 {
     for (auto extruders_it = layer_tools.extruders.begin(); extruders_it != layer_tools.extruders.end(); ++extruders_it)
         if (!print_config.get<std::vector<bool>>("filament_soluble").at(*extruders_it))
@@ -714,7 +714,7 @@ void WipingExtrusions::set_extruder_override(const ExtrusionEntity* entity, size
 }
 
 // Finds last non-soluble extruder on the layer
-[[nodiscard]] static int last_nonsoluble_extruder_on_layer(const PrintConfig& print_config, const LayerTools& layer_tools)
+[[nodiscard]] static int last_nonsoluble_extruder_on_layer(const PrintConfigView& print_config, const LayerTools& layer_tools)
 {
     for (auto extruders_it = layer_tools.extruders.rbegin(); extruders_it != layer_tools.extruders.rend(); ++extruders_it)
         if (!print_config.get<std::vector<bool>>("filament_soluble").at(*extruders_it))

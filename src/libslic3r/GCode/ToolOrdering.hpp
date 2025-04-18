@@ -184,9 +184,9 @@ private:
     void				initialize_layers(std::vector<double> &zs);
     void 				collect_extruders(const PrintObject &object, const std::vector<std::pair<double, unsigned int>> &per_layer_extruder_switches, const std::vector<std::pair<double, unsigned int>> &per_layer_color_changes);
     void				reorder_extruders(unsigned int last_extruder_id);
-    void 				fill_wipe_tower_partitions(const PrintConfig &config, double object_bottom_z, double max_layer_height);
+    void 				fill_wipe_tower_partitions(const Domain::ConfigView &config, double object_bottom_z, double max_layer_height);
     bool                insert_wipe_tower_extruder();
-    void                mark_skirt_layers(const PrintConfig &config, double max_layer_height);
+    void                mark_skirt_layers(const Domain::ConfigView &config, double max_layer_height);
     void 				collect_extruder_statistics(bool prime_multi_material);
 
     std::vector<LayerTools>    m_layer_tools;
@@ -197,7 +197,7 @@ private:
     // All extruders, which extrude some material over m_layer_tools.
     std::vector<unsigned int>  m_all_printing_extruders;
 
-    const PrintConfig*         m_print_config_ptr = nullptr;
+    const PrintConfigView*         m_print_config_ptr = nullptr;
 };
 
 } // namespace SLic3r

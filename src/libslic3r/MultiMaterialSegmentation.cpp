@@ -847,7 +847,7 @@ static inline std::vector<std::vector<ExPolygons>> segmentation_top_and_bottom_l
     int max_bottom_layers = 0;
     int granularity = 1;
     for (size_t i = 0; i < print_object.num_printing_regions(); ++ i) {
-        const PrintRegionConfig &config = print_object.printing_region(i).config();
+        const PrintRegionConfigView &config = print_object.printing_region(i).config();
         max_top_layers    = std::max(max_top_layers, config.get<int>("top_solid_layers"));
         max_bottom_layers = std::max(max_bottom_layers, config.get<int>("bottom_solid_layers"));
         granularity       = std::max(granularity, std::max(config.get<int>("top_solid_layers"), config.get<int>("bottom_solid_layers")) - 1);
@@ -991,7 +991,7 @@ static inline std::vector<std::vector<ExPolygons>> segmentation_top_and_bottom_l
         LayerColorStat out;
         const Layer &layer = *layers[layer_idx];
         for (const LayerRegion *region : layer.regions())
-            if (const PrintRegionConfig &config = region->region().config();
+            if (const PrintRegionConfigView &config = region->region().config();
                 // color_idx == 0 means "don't know" extruder aka the underlying extruder.
                 // As this region may split existing regions, we collect statistics over all regions for color_idx == 0.
                 color_idx == 0 || config.get<int>("perimeter_extruder") == int(color_idx)) {

@@ -17,13 +17,16 @@
 using namespace Slic3r;
 using namespace Test;
 using namespace Catch;
+using Domain::FloatOrPercentage;
+using Domain::Percentage;
 
 using Biz::GCodeReader::GCodeReader;
 
 constexpr bool debug_files = false;
 
 SCENARIO("Origin manipulation", "[GCode]") {
-	Slic3r::GCodeGenerator gcodegen;
+    Print print;
+	Slic3r::GCodeGenerator gcodegen{&print};
 	WHEN("set_origin to (10,0)") {
     	gcodegen.set_origin(Vec2d(10,0));
     	REQUIRE(gcodegen.origin() == Vec2d(10, 0));
@@ -39,11 +42,11 @@ SCENARIO("Origin manipulation", "[GCode]") {
 
 
 TEST_CASE("Wiping speeds", "[GCode]") {
-    DynamicPrintConfig config = Slic3r::DynamicPrintConfig::full_print_config();
-    config.set_deserialize_strict({
-	    { "wipe", "1" },
-        { "retract_layer_change", "0" },
-    });
+
+    TestConfig config;
+    config.tool.at(0).opt("wipe").set(true);
+    config.tool.at(0).opt("retract_layer_change").set(false);
+
     bool have_wipe = false;
     std::vector<double> retract_speeds;
     bool extruded_on_this_layer = false;
@@ -65,7 +68,7 @@ TEST_CASE("Wiping speeds", "[GCode]") {
         }
     });
     CHECK(have_wipe);
-    double expected_retract_speed = config.option<ConfigOptionFloats>("retract_speed")->get_at(0) * 60;
+    double expected_retract_speed = config.tool.at(0).opt("retract_speed").get<double>() * 60;
     for (const double retract_speed : retract_speeds) {
         INFO("Wipe moves don\'t retract faster than configured speed");
         CHECK(retract_speed < expected_retract_speed);
@@ -74,12 +77,12 @@ TEST_CASE("Wiping speeds", "[GCode]") {
     CHECK(!wiping_on_new_layer);
 }
 
-bool has_moves_below_z_offset(const DynamicPrintConfig& config) {
+bool has_moves_below_z_offset(const TestConfig& config) {
 	GCodeReader parser;
     std::string gcode = Slic3r::Test::slice({TestMesh::cube_20x20x20}, config);
 
     unsigned moves_below_z_offset{};
-    double configured_offset = config.opt_float("z_offset");
+    double configured_offset = config.printer.opt("z_offset").get<double>();
     parser.parse_buffer(gcode, [&] (GCodeReader &self, const GCodeReader::GCodeLine &line) {
         if (line.travel() && line.has_z() && line.z() < configured_offset) {
             moves_below_z_offset++;
@@ -89,20 +92,18 @@ bool has_moves_below_z_offset(const DynamicPrintConfig& config) {
 }
 
 TEST_CASE("Z moves with offset", "[GCode]") {
-    DynamicPrintConfig config = Slic3r::DynamicPrintConfig::full_print_config();
-    config.set_deserialize_strict({
-	    { "z_offset", 5 },
-        { "start_gcode", "" },
-    });
+    TestConfig config;
+    config.printer.opt("z_offset").set(5.0);
+    config.printer.opt("start_gcode").set("");
 
     INFO("No lift");
     CHECK(!has_moves_below_z_offset(config));
 
-    config.set_deserialize_strict({{ "retract_lift", "3" }});
+    config.tool.at(0).opt("retract_lift").set(3.0);
     INFO("Lift < z offset");
     CHECK(!has_moves_below_z_offset(config));
 
-    config.set_deserialize_strict({{ "retract_lift", "6" }});
+    config.tool.at(0).opt("retract_lift").set(6.0);
     INFO("Lift > z offset");
     CHECK(!has_moves_below_z_offset(config));
 }
@@ -125,18 +126,17 @@ std::optional<double> parse_axis(const std::string& line, const std::string& axi
 * - temperatures are set correctly
 */
 TEST_CASE("Extrusion, travels, temperatures", "[GCode]") {
-    DynamicPrintConfig config = Slic3r::DynamicPrintConfig::full_print_config();
-    config.set_deserialize_strict({
-        { "gcode_comments", 1 },
-        { "complete_objects", 1 },
-        { "extrusion_axis", "A" },
-        { "start_gcode", "" },  // prevent any default extra Z move
-        { "layer_height", 0.4 },
-        { "first_layer_height", 0.4 },
-        { "temperature", "200" },
-        { "first_layer_temperature", "210" },
-        { "retract_length", "0" }
-    });
+    TestConfig config;
+    config.print.opt("gcode_comments").set(true);
+    config.print.opt("complete_objects").set(true );
+    throw std::runtime_error{"TODO: cannot set axis"};
+    //config.print.opt("extrusion_axis").set("A");
+    config.print.opt("start_gcode").set("");
+    config.print.opt("layer_height").set(0.4);
+    config.print.opt("first_layer_height").set(FloatOrPercentage{0.4});
+    config.filament.at(0).opt("temperature").set(200);
+    config.filament.at(0).opt("first_layer_temperature").set(210);
+    config.tool.at(0).opt("retract_length").set(0.0);
 
     std::vector<double> z_moves;
     Points travel_moves;
@@ -202,23 +202,19 @@ TEST_CASE("Extrusion, travels, temperatures", "[GCode]") {
 
 
 TEST_CASE("Used filament", "[GCode]") {
-    DynamicPrintConfig config1 = Slic3r::DynamicPrintConfig::full_print_config();
-    config1.set_deserialize_strict({
-        { "retract_length", "0" },
-        { "use_relative_e_distances", 1 },
-        { "layer_gcode", "G92 E0\n" },
-    });
+    TestConfig config1;
+    config1.filament.at(0).opt("retract_length").set(0.0);
+    config1.printer.opt("use_relative_e_distances").set(true);
+    config1.printer.opt("layer_gcode").set("G92 E0\n");
     Print print1;
     Model model1;
     Test::init_print({TestMesh::cube_20x20x20}, print1, model1, config1);
     Test::gcode(print1);
 
-    DynamicPrintConfig config2 = Slic3r::DynamicPrintConfig::full_print_config();
-    config2.set_deserialize_strict({
-        { "retract_length", "999" },
-        { "use_relative_e_distances", 1 },
-        { "layer_gcode", "G92 E0\n" },
-    });
+    TestConfig config2;
+    config2.filament.at(0).opt("retract_length").set(999.0);
+    config2.printer.opt("use_relative_e_distances").set(true);
+    config2.printer.opt("layer_gcode").set("G92 E0\n");
     Print print2;
     Model model2;
     Test::init_print({TestMesh::cube_20x20x20}, print2, model2, config2);
@@ -259,13 +255,11 @@ void check_m73s(Print& print){
 
 
 TEST_CASE("M73s have correct percent values", "[GCode]") {
-    DynamicPrintConfig config = Slic3r::DynamicPrintConfig::full_print_config();
+    TestConfig config;
 
     SECTION("Single object") {
-        config.set_deserialize_strict({
-            {" gcode_flavor", "sailfish" },
-            {" raft_layers", 3 },
-        });
+        config.printer.opt("gcode_flavor").set(Domain::GCodeFlavor::gcfSailfish);
+        config.print.opt("raft_layers").set(3);
 
         Print print;
         Model model;
@@ -274,9 +268,7 @@ TEST_CASE("M73s have correct percent values", "[GCode]") {
     }
 
     SECTION("Two copies of single object") {
-        config.set_deserialize_strict({
-            {" gcode_flavor", "sailfish" },
-        });
+        config.printer.opt("gcode_flavor").set(Domain::GCodeFlavor::gcfSailfish);
         Print print;
         Model model;
 
@@ -290,9 +282,7 @@ TEST_CASE("M73s have correct percent values", "[GCode]") {
     }
 
     SECTION("Two objects") {
-        config.set_deserialize_strict({
-            {" gcode_flavor", "sailfish" },
-        });
+        config.printer.opt("gcode_flavor").set(Domain::GCodeFlavor::gcfSailfish);
         Print print;
         Model model;
         Test::init_print({TestMesh::cube_20x20x20, TestMesh::cube_20x20x20}, print, model, config);
@@ -300,13 +290,11 @@ TEST_CASE("M73s have correct percent values", "[GCode]") {
     }
 
     SECTION("One layer object") {
-        config.set_deserialize_strict({
-            {" gcode_flavor", "sailfish" },
-        });
+        config.printer.opt("gcode_flavor").set(Domain::GCodeFlavor::gcfSailfish);
         Print print;
         Model model;
         Domain::TriangleMesh test_mesh{mesh(TestMesh::cube_20x20x20)};
-        const auto layer_height = static_cast<float>(config.opt_float("layer_height"));
+        const auto layer_height = static_cast<float>(config.print.opt("layer_height").get<double>());
         test_mesh.scale(Vec3f{1.0F, 1.0F, layer_height/20.0F});
         Test::init_print({test_mesh}, print, model, config);
         check_m73s(print);
@@ -320,11 +308,9 @@ TEST_CASE("M73s have correct percent values", "[GCode]") {
 
 
 TEST_CASE("M201 for acceleation reset", "[GCode]") {
-    DynamicPrintConfig config = Slic3r::DynamicPrintConfig::full_print_config();
-    config.set_deserialize_strict({
-	    { "gcode_flavor", "repetier" },
-        { "default_acceleration", 1337 },
-    });
+    TestConfig config;
+    config.printer.opt("gcode_flavor").set(Domain::GCodeFlavor::gcfRepetier);
+    config.print.opt("default_acceleration").set(1337.0);
 
 	GCodeReader parser;
     std::string gcode = Slic3r::Test::slice({TestMesh::cube_with_hole}, config);

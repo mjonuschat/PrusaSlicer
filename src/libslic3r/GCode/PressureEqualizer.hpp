@@ -34,7 +34,7 @@ class PressureEqualizer
 {
 public:
     PressureEqualizer() = delete;
-    explicit PressureEqualizer(const Slic3r::GCodeConfig &config);
+    explicit PressureEqualizer(const PrintConfigView &config);
     ~PressureEqualizer() = default;
 
     // Process a next batch of G-code lines.

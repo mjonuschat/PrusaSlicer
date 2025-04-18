@@ -7,14 +7,18 @@
 
 using namespace Slic3r::Test;
 using namespace Slic3r;
+using Domain::FloatOrPercentage;
+using Domain::Percentage;
 
 TEST_CASE("SupportMaterial: Three raft layers created", "[SupportMaterial]")
 {
 	Slic3r::Print print;
-	Slic3r::Test::init_and_process_print({ TestMesh::cube_20x20x20 }, print, {
-		{ "support_material", 1 },
-		{ "raft_layers",      3 }
-		});
+
+    TestConfig config;
+    config.print.opt("support_material").set(true);
+    config.print.opt("raft_layers").set(3);
+
+	Slic3r::Test::init_and_process_print({ TestMesh::cube_20x20x20 }, print, config);
     REQUIRE(print.objects().front()->support_layers().size() == 3);
 }
 
@@ -29,14 +33,14 @@ SCENARIO("SupportMaterial: support_layers_z and contact_distance", "[SupportMate
 	{
         SpanOfConstPtrs<SupportLayer> support_layers = print.objects().front()->support_layers();
 
-		first_support_layer_height_ok = support_layers.front()->print_z == print.config().first_layer_height.value;
+		first_support_layer_height_ok = support_layers.front()->print_z == print.config().get<FloatOrPercentage>("first_layer_height").float_value();
 
 		layer_height_minimum_ok = true;
 		layer_height_maximum_ok = true;
-		double min_layer_height = print.config().min_layer_height.values.front();
-		double max_layer_height = print.config().nozzle_diameter.values.front();
-		if (print.config().max_layer_height.values.front() > EPSILON)
-			max_layer_height = std::min(max_layer_height, print.config().max_layer_height.values.front());
+		double min_layer_height = print.config().get<std::vector<double>>("min_layer_height").front();
+		double max_layer_height = print.config().get<std::vector<double>>("nozzle_diameter").front();
+		if (print.config().get<std::vector<double>>("max_layer_height").front() > EPSILON)
+			max_layer_height = std::min(max_layer_height, print.config().get<std::vector<double>>("max_layer_height").front());
 		for (size_t i = 1; i < support_layers.size(); ++ i) {
 			if (support_layers[i]->print_z - support_layers[i - 1]->print_z < min_layer_height - EPSILON)
 				layer_height_minimum_ok = false;
@@ -73,12 +77,14 @@ SCENARIO("SupportMaterial: support_layers_z and contact_distance", "[SupportMate
     GIVEN("A print object having one modelObject") {
         WHEN("First layer height = 0.4") {
 			Slic3r::Print print;
-			Slic3r::Test::init_and_process_print({ mesh }, print, {
-				{ "support_material",	1 },
-				{ "layer_height",		0.2 },
-				{ "first_layer_height", 0.4 },
-                { "dont_support_bridges", false },
-			});
+
+            TestConfig config;
+            config.print.opt("support_material").set(true);
+            config.print.opt("layer_height").set(0.2);
+            config.print.opt("first_layer_height").set(FloatOrPercentage{0.4});
+            config.print.opt("dont_support_bridges").set(false);
+
+			Slic3r::Test::init_and_process_print({ mesh }, print, config);
 			bool a, b, c, d;
             check(print, a, b, c, d);
             THEN("First layer height is honored")					{ REQUIRE(a == true); }
@@ -88,12 +94,14 @@ SCENARIO("SupportMaterial: support_layers_z and contact_distance", "[SupportMate
         }
         WHEN("Layer height = 0.2 and, first layer height = 0.3") {
 			Slic3r::Print print;
-			Slic3r::Test::init_and_process_print({ mesh }, print, {
-				{ "support_material",	1 },
-				{ "layer_height",		0.2 },
-				{ "first_layer_height", 0.3 },
-                { "dont_support_bridges", false },
-            });
+
+            TestConfig config;
+            config.print.opt("support_material").set(true);
+            config.print.opt("layer_height").set(0.2);
+            config.print.opt("first_layer_height").set(FloatOrPercentage{0.3});
+            config.print.opt("dont_support_bridges").set(false);
+
+			Slic3r::Test::init_and_process_print({ mesh }, print, config);
             bool a, b, c, d;
             check(print, a, b, c, d);
             THEN("First layer height is honored")					{ REQUIRE(a == true); }
@@ -103,12 +111,14 @@ SCENARIO("SupportMaterial: support_layers_z and contact_distance", "[SupportMate
         }
         WHEN("Layer height = nozzle_diameter[0]") {
 			Slic3r::Print print;
-			Slic3r::Test::init_and_process_print({ mesh }, print, {
-				{ "support_material",	1 },
-				{ "layer_height",		0.2 },
-				{ "first_layer_height", 0.3 },
-                { "dont_support_bridges", false },
-            });
+
+            TestConfig config;
+            config.print.opt("support_material").set(true);
+            config.print.opt("layer_height").set(0.2);
+            config.print.opt("first_layer_height").set(FloatOrPercentage{0.3});
+            config.print.opt("dont_support_bridges").set(false);
+
+			Slic3r::Test::init_and_process_print({ mesh }, print, config);
             bool a, b, c, d;
             check(print, a, b, c, d);
             THEN("First layer height is honored")					{ REQUIRE(a == true); }

@@ -10,7 +10,7 @@
 #include "libslic3r/Polyline.hpp"
 
 namespace Slic3r {
-class PrintRegionConfig;
+class PrintRegionConfigView;
 class Surface;
 
 ThickPolylines make_fill_polylines(
@@ -34,7 +34,7 @@ protected:
     bool no_sort() const override { return true; }
 
     // PrintRegionConfig is used for computing overlap between boundary contour and inner Rectilinear infill.
-    const PrintRegionConfig *print_region_config = nullptr;
+    PrintRegionConfigView print_region_config;
 
     friend class Layer;
 };

@@ -76,6 +76,8 @@ namespace CustomGCode = Slic3r::Domain::CustomGCode;
 // The code is left here for the ocasion boost guys improve.
 #define EXPORT_3MF_USE_SPIRIT_KARMA_FP 0
 
+namespace {
+
 // VERSION NUMBERS
 // 0 : .3mf, files saved by older slic3r or other applications. No version definition in them.
 // 1 : Introduction of 3mf versioning. No other change in data saved into 3mf files.
@@ -377,8 +379,11 @@ static void handle_legacy_project_loaded(
     }
 }
 
+}
 
-namespace Slic3r {
+
+namespace Slic3rLegacy {
+    using namespace Slic3r;
 
     // Base class with error messages management
     class _3MF_Base
@@ -4126,57 +4131,6 @@ std::pair<bool, std::optional<Semver>> is_project_3mf(const std::string& filenam
     return out;
 }
 
-bool load_3mf_legacy(
-    const char* path,
-    std::variant<Slic3r::Biz::FDMLegacyConfigPack, Slic3r::Biz::SLALegacyConfigPack>& config,
-    Model* model,
-    bool check_version,
-    boost::optional<Semver> &prusaslicer_generator_version,
-    WipeTowersOnBeds& wipe_towers,
-    CustomGCodesOnBeds& custom_gcodes
-)
-{
-    // This is set here for the legacy loading. It used to be an argument.
-    Slic3rLegacy::ConfigSubstitutionContext config_substitutions(Slic3rLegacy::ForwardCompatibilitySubstitutionRule::EnableSilent);
-
-    if (path == nullptr || model == nullptr)
-        return false;
-
-    // All import should use "C" locales for number formatting.
-    CNumericLocalesSetter locales_setter;
-    _3MF_Importer         importer;
-    bool res = importer.load_model_from_file(path, *model, config, config_substitutions, check_version, wipe_towers, custom_gcodes);
-    importer.log_errors();
-    prusaslicer_generator_version = importer.prusaslicer_generator_version();
-
-    return res;
-}
-
-bool store_3mf_legacy(
-    const char* path,
-    const Model* model,
-    const std::optional<std::variant<Slic3r::Biz::FDMLegacyConfigPack, Slic3r::Biz::SLALegacyConfigPack>>& config,
-    bool fullpath_sources,
-    const WipeTowersOnBeds& wipe_towers,
-    const CustomGCodesOnBeds& custom_gcodes,
-    const ThumbnailData* thumbnail_data,
-    bool zip64
-)
-{
-    // All export should use "C" locales for number formatting.
-    CNumericLocalesSetter locales_setter;
-
-    if (path == nullptr || model == nullptr)
-        return false;
-
-    _3MF_Exporter exporter;
-    bool res = exporter.save_model_to_file(path, *model, config, fullpath_sources, thumbnail_data, zip64, wipe_towers, custom_gcodes);
-    if (!res)
-        exporter.log_errors();
-
-    return res;
-}
-
 namespace{
 
 // Conversion with bidirectional map
@@ -4503,6 +4457,60 @@ std::optional<EmbossShape> read_emboss_shape(const char **attributes, unsigned i
 
     EmbossShape::SvgFile svg{file_path, file_path_3mf};
     return EmbossShape{std::move(shapes), std::move(final_shape), scale, std::move(projection), std::move(fix_tr_mat), std::move(svg)};
+}
+
+} // namespace Slic3r
+
+namespace Slic3r {
+bool load_3mf_legacy(
+    const char* path,
+    std::variant<Slic3r::Biz::FDMLegacyConfigPack, Slic3r::Biz::SLALegacyConfigPack>& config,
+    Model* model,
+    bool check_version,
+    boost::optional<Semver> &prusaslicer_generator_version,
+    WipeTowersOnBeds& wipe_towers,
+    CustomGCodesOnBeds& custom_gcodes
+)
+{
+    // This is set here for the legacy loading. It used to be an argument.
+    Slic3rLegacy::ConfigSubstitutionContext config_substitutions(Slic3rLegacy::ForwardCompatibilitySubstitutionRule::EnableSilent);
+
+    if (path == nullptr || model == nullptr)
+        return false;
+
+    // All import should use "C" locales for number formatting.
+    CNumericLocalesSetter locales_setter;
+    Slic3rLegacy::_3MF_Importer         importer;
+    bool res = importer.load_model_from_file(path, *model, config, config_substitutions, check_version, wipe_towers, custom_gcodes);
+    importer.log_errors();
+    prusaslicer_generator_version = importer.prusaslicer_generator_version();
+
+    return res;
+}
+
+bool store_3mf_legacy(
+    const char* path,
+    const Model* model,
+    const std::optional<std::variant<Slic3r::Biz::FDMLegacyConfigPack, Slic3r::Biz::SLALegacyConfigPack>>& config,
+    bool fullpath_sources,
+    const WipeTowersOnBeds& wipe_towers,
+    const CustomGCodesOnBeds& custom_gcodes,
+    const ThumbnailData* thumbnail_data,
+    bool zip64
+)
+{
+    // All export should use "C" locales for number formatting.
+    CNumericLocalesSetter locales_setter;
+
+    if (path == nullptr || model == nullptr)
+        return false;
+
+    Slic3rLegacy::_3MF_Exporter exporter;
+    bool res = exporter.save_model_to_file(path, *model, config, fullpath_sources, thumbnail_data, zip64, wipe_towers, custom_gcodes);
+    if (!res)
+        exporter.log_errors();
+
+    return res;
 }
 
 

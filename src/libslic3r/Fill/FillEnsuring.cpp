@@ -279,8 +279,6 @@ static std::vector<Lines> filter_vibrating_extrusions(const std::vector<Lines> &
 ThickPolylines make_fill_polylines(
     const Fill *fill, const Surface *surface, const FillParams &params, bool stop_vibrations, bool fill_gaps, bool connect_extrusions)
 {
-    assert(fill->print_config != nullptr && fill->print_object_config != nullptr);
-
     auto rotate_thick_polylines = [](ThickPolylines &tpolylines, double cos_angle, double sin_angle) {
         for (ThickPolyline &tp : tpolylines) {
             for (auto &p : tp.points) {
@@ -466,7 +464,7 @@ ThickPolylines make_fill_polylines(
             coord_t                loops_count = (std::max(ex_bb.size().x(), ex_bb.size().y()) + scaled_spacing - 1) / scaled_spacing;
             Polygons               polygons    = Algorithms::ExPolygon::to_polygons(ex_poly);
             Arachne::WallToolPaths wall_tool_paths(polygons, scaled_spacing, scaled_spacing, loops_count, 0, params.layer_height,
-                                                   *fill->print_object_config, *fill->print_config);
+                                                   fill->region_config);
             if (std::vector<Arachne::VariableWidthLines> loops = wall_tool_paths.getToolPaths(); !loops.empty()) {
                 std::vector<const Arachne::ExtrusionLine *> all_extrusions;
                 for (Arachne::VariableWidthLines &loop : loops) {

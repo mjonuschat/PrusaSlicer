@@ -332,13 +332,13 @@ std::vector<SliceExtrusions> get_slices_extrusions(
 unsigned translate_support_extruder(
     const int configured_extruder,
     const LayerTools &layer_tools,
-    const ConfigOptionBools &is_soluable
+    const std::vector<bool> &is_soluable
 ) {
     if (configured_extruder <= 0) {
         // Some support will be printed with "don't care" material, preferably non-soluble.
         // Is the current extruder assigned a soluble filament?
         auto it_nonsoluble = std::find_if(layer_tools.extruders.begin(), layer_tools.extruders.end(),
-            [&is_soluable](unsigned int extruder_id) { return ! is_soluable.get_at(extruder_id); });
+            [&is_soluable](unsigned int extruder_id) { return ! is_soluable.at(extruder_id); });
         // There should be a non-soluble extruder available.
         assert(it_nonsoluble != layer_tools.extruders.end());
         return it_nonsoluble == layer_tools.extruders.end() ? layer_tools.extruders.front() : *it_nonsoluble;

@@ -302,7 +302,7 @@ void Preset::normalize(DynamicPrintConfig &config)
         // This config contains single or multiple filament presets.
         // Ensure that the filament preset vector options contain the correct number of values.
         size_t n = (nozzle_diameter == nullptr) ? 1 : nozzle_diameter->values.size();
-        const auto &defaults = Domain::FullConfigFDM::defaults();
+        const auto &defaults = FullPrintConfig::defaults();
         for (const std::string &key : Preset::filament_options()) {
             if (key == "compatible_prints" || key == "compatible_printers")
                 continue;
@@ -312,7 +312,7 @@ void Preset::normalize(DynamicPrintConfig &config)
             if (opt != nullptr && opt->is_vector())
                 static_cast<ConfigOptionVectorBase*>(opt)->resize(n, defaults.option(key));
         }
-        // The following keys are mandatory for the UI, but they are not part of Domain::FullConfigFDM, therefore they are handled separately.
+        // The following keys are mandatory for the UI, but they are not part of FullPrintConfig, therefore they are handled separately.
         for (const std::string &key : { "filament_settings_id" }) {
             auto *opt = config.option(key, false);
             assert(opt == nullptr || opt->type() == coStrings);
@@ -1446,11 +1446,14 @@ inline t_config_option_keys deep_diff(const ConfigBase &config_this, const Confi
                 // "thumbnails" can not contain extensions in old config but they are valid and use PNG extension by default
                 // So, check if "thumbnails" is really changed
                 // We will compare full thumbnails instead of exactly config values
-                auto [thumbnails, er]         = GCodeThumbnails::make_and_check_thumbnail_list(config_this);
-                auto [thumbnails_new, er_new] = GCodeThumbnails::make_and_check_thumbnail_list(config_other);
-                if (thumbnails != thumbnails_new || er != er_new)
-                    // if those strings are actually the same, erase them from the list of dirty oprions
-                    diff.emplace_back(opt_key);
+
+
+                // TODO!! I commented this out to make this work for now!
+                //auto [thumbnails, er]         = GCodeThumbnails::make_and_check_thumbnail_list(config_this);
+                //auto [thumbnails_new, er_new] = GCodeThumbnails::make_and_check_thumbnail_list(config_other);
+                //if (thumbnails != thumbnails_new || er != er_new)
+                //    // if those strings are actually the same, erase them from the list of dirty oprions
+                //    diff.emplace_back(opt_key);
             } else {
                 switch (other_opt->type()) {
                 case coInts:    add_correct_opts_to_diff<ConfigOptionInts       >(opt_key, diff, config_other, config_this);  break;

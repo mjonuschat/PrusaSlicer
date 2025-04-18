@@ -1,5 +1,6 @@
 ﻿#include "ConfigCommon.hpp"
 #include "Slic3r/Domain/Config.hpp"
+#include "Slic3r/Domain/Types.hpp"
 
 namespace Slic3r::Domain {
 

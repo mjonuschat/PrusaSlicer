@@ -40,8 +40,8 @@ coord_t get_skirt_inset(const Print &fffprint)
         float skirtflow = fffprint.objects().empty()
                               ? 0
                               : fffprint.skirt_flow().width();
-        skirt_inset = fffprint.config().skirts.value * skirtflow
-                      + fffprint.config().skirt_distance.value;
+        skirt_inset = fffprint.config().get<int>("skirts") * skirtflow
+                      + fffprint.config().get<double>("skirt_distance");
     }
 
     return scaled(skirt_inset);
@@ -49,11 +49,11 @@ coord_t get_skirt_inset(const Print &fffprint)
 
 coord_t brim_offset(const PrintObject &po)
 {
-    const BrimType brim_type       = po.config().brim_type.value;
-    const float    brim_separation = po.config().brim_separation.getFloat();
-    const float    brim_width      = po.config().brim_width.getFloat();
-    const bool     has_outer_brim  = brim_type == BrimType::btOuterOnly ||
-                                brim_type == BrimType::btOuterAndInner;
+    const Domain::BrimType brim_type       = po.config().get<Domain::BrimType>("brim_type");
+    const float    brim_separation = po.config().get<double>("brim_separation");
+    const float    brim_width      = po.config().get<double>("brim_width");
+    const bool     has_outer_brim  = brim_type == Domain::BrimType::OuterOnly ||
+                                brim_type == Domain::BrimType::OuterAndInner;
 
     // How wide is the brim? (in scaled units)
     return has_outer_brim ? scaled(brim_width + brim_separation) : 0;

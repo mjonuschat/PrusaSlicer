@@ -1,56 +1,66 @@
 #pragma once
 
-#include <ranges>
-#include <string_view>
 #include "Slic3r/Domain/Config.hpp"
 #include "Slic3r/Domain/ConfigFDM.hpp"
 
 namespace Slic3r {
 
-namespace {
-    template <typename T, typename V>
-    std::vector<Domain::ConfigBoxPtr> append_and_copy(const std::vector<T>& vector, const V& value) {
-        std::vector<Domain::ConfigBoxPtr> result;
-        result.reserve(vector.size() + 1);
-        for (const auto& value : vector) {
-            result.push_back(value);
-        }
-        result.push_back(value);
-        return result;
-    }
+inline std::vector<Domain::ConfigBoxPtr> join(
+    const Domain::ObjectSettingsPtr& object_settings,
+    const std::vector<Domain::VolumeSettingsPtr>& volume_settings
+) {
+    std::vector<Domain::ConfigBoxPtr> result;
+    result.push_back(object_settings);
+    result.insert(result.end(), volume_settings.begin(), volume_settings.end());
+    return result;
 }
 
-class PrintRegionConfig : public Domain::ConfigView
+class PrintRegionConfigView : public Domain::ConfigView
 {
 public:
-    PrintRegionConfig(
+    PrintRegionConfigView(
         const Domain::FullConfigPtr& full_config,
-        const std::shared_ptr<Domain::ObjectSettings>& object_settings,
-        const std::vector<std::shared_ptr<Domain::VolumeSettings>>& volume_settings
+        const Domain::ObjectSettingsPtr& object_settings,
+        const std::vector<Domain::VolumeSettingsPtr>& volume_settings
     ):
-        ConfigView{full_config, append_and_copy(volume_settings, object_settings)}
+        ConfigView{full_config, join(object_settings, volume_settings)}
     {}
+
+    PrintRegionConfigView():
+        ConfigView{std::make_shared<const Domain::FullConfigFDM>(Domain::FullConfigFDM::defaults()), {}}
+    {}
+
+    void add_override(const Domain::VolumeSettingsPtr& override) {
+        m_config_boxes.push_back(override);
+    }
 };
 
-class PrintObjectConfig : public Domain::ConfigView
+class PrintObjectConfigView : public Domain::ConfigView
 {
 public:
-    PrintObjectConfig(
+    PrintObjectConfigView(
         const Domain::FullConfigPtr& full_config,
-        const std::shared_ptr<Domain::ObjectSettings>& object_settings
+        const Domain::ObjectSettingsPtr& object_settings
     ):
         ConfigView{full_config, {object_settings}}
     {}
+
+    Domain::ObjectSettingsPtr object_settings() const {
+        return std::dynamic_pointer_cast<const Domain::ObjectSettings>(m_config_boxes.front());
+    }
 };
 
-// TEMPORARY class to translate configs
-class PrintConfig : public Domain::ConfigView
+class PrintConfigView : public Domain::ConfigView
 {
 public:
-    PrintConfig(
+    PrintConfigView(
         const Domain::FullConfigPtr& full_config
     ):
         ConfigView{full_config, {}}
+    {}
+
+    PrintConfigView():
+        ConfigView{std::make_shared<const Domain::FullConfigFDM>(Domain::FullConfigFDM::defaults()), {}}
     {}
 };
 

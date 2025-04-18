@@ -84,7 +84,7 @@
 
 namespace Slic3r {
 
-PlaceholderParser::PlaceholderParser(const DynamicConfig *external_config) : m_external_config(external_config)
+PlaceholderParser::PlaceholderParser()
 {
     this->set("version", std::string(SLIC3R_VERSION));
     this->apply_env_variables();
@@ -2363,7 +2363,8 @@ static std::string process_macro(const std::string &templ, client::MyContext &co
 std::string PlaceholderParser::process(const std::string &templ, unsigned int current_extruder_id, const DynamicConfig *config_override, DynamicConfig *config_outputs, ContextData *context_data) const
 {
     client::MyContext context;
-    context.external_config 	= this->external_config();
+    // TODO!!
+    context.external_config 	= &this->config();
     context.config              = &this->config();
     context.config_override     = config_override;
     context.config_outputs      = config_outputs;

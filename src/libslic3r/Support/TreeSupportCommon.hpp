@@ -136,10 +136,10 @@ struct TreeSupportMeshGroupSettings {
     std::vector<double>             support_roof_angles                     {};
     // Support Roof Pattern (aka top interface)
     // The pattern with which the roofs of the support are printed.
-    SupportMaterialInterfacePattern support_roof_pattern                    { smipAuto };
+    Domain::SupportMaterialInterfacePattern support_roof_pattern                    { Domain::SupportMaterialInterfacePattern::smipAuto };
     // Support Pattern
     // The pattern of the support structures of the print. The different options available result in sturdy or easy to remove support.
-    SupportMaterialPattern          support_pattern                         { smpRectilinear };
+    Domain::SupportMaterialPattern          support_pattern                         { Domain::SupportMaterialPattern::smpRectilinear };
     // Support Line Distance
     // Distance between the printed support structure lines. This setting is calculated by the support density.
     coord_t                         support_line_spacing                    { scaled<coord_t>(2.66 - 0.4) };
@@ -334,11 +334,11 @@ public:
     /*!
      * \brief Pattern used in the support roof. May contain non relevant data if support roof is disabled.
      */
-    SupportMaterialInterfacePattern roof_pattern;
+    Domain::SupportMaterialInterfacePattern roof_pattern;
     /*!
      * \brief Pattern used in the support infill.
      */
-    SupportMaterialPattern support_pattern;
+    Domain::SupportMaterialPattern support_pattern;
     /*!
      * \brief Line width of the support roof.
      */

@@ -174,23 +174,23 @@ ExtrusionEntityCollection calculate_and_split_overhanging_extrusions(const Extru
 };
 
 static std::map<float, float> calc_print_speed_sections(const ExtrusionAttributes &attributes,
-                                                        const Domain::FullConfigFDM     &config,
+                                                        const Domain::ConfigView  &config,
                                                         const float                external_perimeter_reference_speed,
                                                         const float                default_speed)
 {
     struct OverhangWithSpeed
     {
         int                        percent;
-        ConfigOptionFloatOrPercent print_speed;
+        Domain::FloatOrPercentage print_speed;
     };
 
-    std::vector<OverhangWithSpeed> overhangs_with_speeds = {{100, ConfigOptionFloatOrPercent{default_speed, false}}};
+    std::vector<OverhangWithSpeed> overhangs_with_speeds = {{100, Domain::FloatOrPercentage{default_speed}}};
     if (config.get<bool>("enable_dynamic_overhang_speeds")) {
         overhangs_with_speeds = {{  0, config.get<Domain::FloatOrPercentage>("overhang_speed_0")},
                                  { 25, config.get<Domain::FloatOrPercentage>("overhang_speed_1")},
                                  { 50, config.get<Domain::FloatOrPercentage>("overhang_speed_2")},
                                  { 75, config.get<Domain::FloatOrPercentage>("overhang_speed_3")},
-                                 {100, ConfigOptionFloatOrPercent{default_speed, false}}};
+                                 {100, Domain::FloatOrPercentage{default_speed}}};
     }
 
     const float            speed_base = external_perimeter_reference_speed > 0 ? external_perimeter_reference_speed : default_speed;
@@ -210,40 +210,42 @@ static std::map<float, float> calc_print_speed_sections(const ExtrusionAttribute
 }
 
 static std::map<float, float> calc_fan_speed_sections(const ExtrusionAttributes &attributes,
-                                                      const Domain::FullConfigFDM     &config,
+                                                      const Domain::ConfigView  &config,
                                                       const size_t               extruder_id)
 {
     struct OverhangWithFanSpeed
     {
         int              percent;
-        ConfigOptionInts fan_speed;
+        std::vector<int> fan_speed;
     };
 
-    std::vector<OverhangWithFanSpeed> overhang_with_fan_speeds = {{100, ConfigOptionInts{0}}};
+    std::vector<OverhangWithFanSpeed> overhang_with_fan_speeds = {{100, std::vector<int>{0}}};
     if (config.get<std::vector<bool>>("enable_dynamic_fan_speeds").at(extruder_id)) {
         overhang_with_fan_speeds = {{  0, config.get<std::vector<int>>("overhang_fan_speed_0")},
                                     { 25, config.get<std::vector<int>>("overhang_fan_speed_1")},
                                     { 50, config.get<std::vector<int>>("overhang_fan_speed_2")},
                                     { 75, config.get<std::vector<int>>("overhang_fan_speed_3")},
-                                    {100, ConfigOptionInts{0}}};
+                                    {100, std::vector<int>{0}}};
     }
 
     std::map<float, float> fan_speed_sections;
     for (OverhangWithFanSpeed &overhang_with_fan_speed : overhang_with_fan_speeds) {
         float distance               = attributes.width * (1.f - (float(overhang_with_fan_speed.percent) / 100.f));
-        float fan_speed              = float(overhang_with_fan_speed.fan_speed.get_at(extruder_id));
+        float fan_speed              = float(overhang_with_fan_speed.fan_speed.at(extruder_id));
         fan_speed_sections[distance] = fan_speed;
     }
 
     return fan_speed_sections;
 }
 
-OverhangSpeeds calculate_overhang_speed(const ExtrusionAttributes  &attributes,
-                                        const Domain::FullConfigFDM      &config,
-                                        const size_t                extruder_id,
-                                        const float                 external_perimeter_reference_speed,
-                                        const float                 default_speed,
-                                        const std::optional<float> &current_fan_speed)
+OverhangSpeeds calculate_overhang_speed(
+    const ExtrusionAttributes& attributes,
+    const Domain::ConfigView& config,
+    const size_t extruder_id,
+    const float external_perimeter_reference_speed,
+    const float default_speed,
+    const std::optional<float>& current_fan_speed
+)
 {
     assert(attributes.overhang_attributes.has_value());
 

@@ -27,7 +27,7 @@ namespace Slic3r {
 
 void InterlockingGenerator::generate_interlocking_structure(PrintObject &print_object)
 {
-    const PrintObjectConfig &config = print_object.config();
+    const PrintObjectConfigView &config = print_object.config();
     if (!config.get<bool>("interlocking_beam")) {
         return;
     }

@@ -65,10 +65,7 @@ using SlicingSync::PrintObjectSteps;
 template class PrintState<PrintStep, psCount>;
 template class PrintState<PrintObjectStep, posCount>;
 
-PrintRegion::PrintRegion(const PrintRegionConfig &config) : PrintRegion(config, config.hash()) {}
-PrintRegion::PrintRegion(PrintRegionConfig &&config) : PrintRegion(std::move(config), config.hash()) {}
-
-Print::Print() 
+Print::Print()
     : m_on_fdm_result([](Biz::libpgcode::ProcessorResult&&) {})
     , m_on_wipe_tower_geometry([](Biz::Print::WipeTowerGeometry&&) {})
 {}
@@ -203,7 +200,7 @@ std::vector<Domain::ObjectID> Print::print_object_ids() const
 
 bool Print::has_infinite_skirt() const
 {
-    return (m_config.get<DraftShield>("draft_shield") == dsEnabled && m_config.get<int>("skirts") > 0)/* || (m_config.ooze_prevention && this->extruders().size() > 1)*/;
+    return (m_config.get<Domain::DraftShield>("draft_shield") == Domain::DraftShield::dsEnabled && m_config.get<int>("skirts") > 0)/* || (m_config.ooze_prevention && this->extruders().size() > 1)*/;
 }
 
 bool Print::has_skirt() const
@@ -269,7 +266,7 @@ std::string Print::validate(std::vector<std::string>* warnings) const
             return _u8L("The Spiral Vase option can only be used when printing single material objects.");
     }
 
-    if (m_config.get<MachineLimitsUsage>("machine_limits_usage") == MachineLimitsUsage::EmitToGCode && m_config.get<GCodeFlavor>("gcode_flavor") == gcfKlipper)
+    if (m_config.get<Domain::MachineLimitsUsage>("machine_limits_usage") == Domain::MachineLimitsUsage::EmitToGCode && m_config.get<GCodeFlavor>("gcode_flavor") == gcfKlipper)
         return L("Machine limits cannot be emitted to G-Code when Klipper firmware flavor is used. "
                  "Change the value of machine_limits_usage.");
 
@@ -318,7 +315,7 @@ std::string Print::validate(std::vector<std::string>* warnings) const
     // Custom layering is not allowed for tree supports as of now.
     for (size_t print_object_idx = 0; print_object_idx < m_objects.size(); ++ print_object_idx)
         if (const PrintObject &print_object = *m_objects[print_object_idx];
-            print_object.has_support_material() && print_object.config().get<SupportMaterialStyle>("support_material_style") == smsOrganic &&
+            print_object.has_support_material() && print_object.config().get<Domain::SupportMaterialStyle>("support_material_style") == Domain::SupportMaterialStyle::smsOrganic &&
             print_object.model_object()->has_custom_layering()) {
             if (const std::vector<double> &layers = layer_height_profile(print_object_idx); ! layers.empty())
                 if (! check_object_layers_fixed(print_object.slicing_parameters(), layers))
@@ -423,12 +420,12 @@ std::string Print::validate(std::vector<std::string>* warnings) const
                 return _u8L("One or more object were assigned an extruder that the printer does not have.");
 #endif
 
-        auto validate_extrusion_width = [/*min_nozzle_diameter,*/ max_nozzle_diameter](const ConfigBase &config, const char *opt_key, double layer_height, std::string &err_msg) -> bool {
+        auto validate_extrusion_width = [/*min_nozzle_diameter,*/ max_nozzle_diameter](const Domain::ConfigView &config, const char *opt_key, double layer_height, std::string &err_msg) -> bool {
             // This may change in the future, if we switch to "extrusion width wrt. nozzle diameter"
             // instead of currently used logic "extrusion width wrt. layer height", see GH issues #1923 #2829.
 //        	double extrusion_width_min = config.get_abs_value(opt_key, min_nozzle_diameter);
 //        	double extrusion_width_max = config.get_abs_value(opt_key, max_nozzle_diameter);
-            double extrusion_width_min = config.get_abs_value(opt_key, layer_height);
+            double extrusion_width_min = config.get<Domain::FloatOrPercentage>(opt_key).get_abs_value(layer_height);
             double extrusion_width_max = extrusion_width_min;
         	if (extrusion_width_min == 0) {
         		// Default "auto-generated" extrusion width is always valid.
@@ -449,7 +446,7 @@ std::string Print::validate(std::vector<std::string>* warnings) const
                     // Notify the user that printing supports with different nozzle diameters is experimental and requires caution.
                     warnings->emplace_back("_SUPPORT_NOZZLE_DIAMETER_DIFFER");
                 }
-                if (this->has_wipe_tower() && object->config().get<SupportMaterialStyle>("support_material_style") != smsOrganic) {
+                if (this->has_wipe_tower() && object->config().get<Domain::SupportMaterialStyle>("support_material_style") != Domain::SupportMaterialStyle::smsOrganic) {
     				if (object->config().get<double>("support_material_contact_distance") == 0) {
     					// Soluble interface
     					if (! object->config().get<bool>("support_material_synchronize_layers"))
@@ -461,7 +458,7 @@ std::string Print::validate(std::vector<std::string>* warnings) const
     							     "(both support_material_extruder and support_material_interface_extruder need to be set to 0).");
     				}
                 }
-                if (object->config().get<SupportMaterialStyle>("support_material_style") == smsOrganic) {
+                if (object->config().get<Domain::SupportMaterialStyle>("support_material_style") == Domain::SupportMaterialStyle::smsOrganic) {
                     float extrusion_width = std::min(
                         support_material_flow(object).width(),
                         support_material_interface_flow(object).width());
@@ -489,7 +486,8 @@ std::string Print::validate(std::vector<std::string>* warnings) const
 
             // validate first_layer_height
             assert(! m_config.get<Domain::FloatOrPercentage>("first_layer_height").is_percentage());
-            double first_layer_height = m_config.get<Domain::FloatOrPercentage>("first_layer_height");
+            double layer_height = m_config.get<double>("layer_height");
+            double first_layer_height = m_config.get<Domain::FloatOrPercentage>("first_layer_height").get_abs_value(layer_height);
             double first_layer_min_nozzle_diameter;
             if (object->has_raft()) {
                 // if we have raft layers, only support material extruder is used on first layer
@@ -507,7 +505,6 @@ std::string Print::validate(std::vector<std::string>* warnings) const
                 return _u8L("First layer height can't be greater than nozzle diameter");
             
             // validate layer_height
-            double layer_height = object->config().get<double>("layer_height");
             if (layer_height > min_nozzle_diameter)
                 return _u8L("Layer height can't be greater than nozzle diameter");
 
@@ -600,17 +597,19 @@ BoundingBox Print::total_bounding_box() const
 double Print::skirt_first_layer_height() const
 {
     assert(! m_config.get<Domain::FloatOrPercentage>("first_layer_height").is_percentage());
-    return m_config.get<Domain::FloatOrPercentage>("first_layer_height");
+
+    const auto layer_height{m_config.get<double>("layer_height")};
+    return m_config.get<Domain::FloatOrPercentage>("first_layer_height").get_abs_value(layer_height);
 }
 
 Flow Print::brim_flow() const
 {
-    ConfigOptionFloatOrPercent width = m_config.get<Domain::FloatOrPercentage>("first_layer_extrusion_width");
-    if (width.value == 0) 
+    Domain::FloatOrPercentage width = m_config.get<Domain::FloatOrPercentage>("first_layer_extrusion_width");
+    if (width.is_zero())
         width = m_print_regions.front()->config().get<Domain::FloatOrPercentage>("perimeter_extrusion_width");
-    if (width.value == 0) 
+    if (width.is_zero())
         width = m_objects.front()->config().get<Domain::FloatOrPercentage>("extrusion_width");
-    
+
     /* We currently use a random region's perimeter extruder.
        While this works for most cases, we should probably consider all of the perimeter
        extruders and take the one with, say, the smallest index.
@@ -625,10 +624,10 @@ Flow Print::brim_flow() const
 
 Flow Print::skirt_flow() const
 {
-    ConfigOptionFloatOrPercent width = m_config.get<Domain::FloatOrPercentage>("first_layer_extrusion_width");
-    if (width.value == 0) 
+    Domain::FloatOrPercentage width = m_config.get<Domain::FloatOrPercentage>("first_layer_extrusion_width");
+    if (width.is_zero())
         width = m_print_regions.front()->config().get<Domain::FloatOrPercentage>("perimeter_extrusion_width");
-    if (width.value == 0)
+    if (width.is_zero())
         width = m_objects.front()->config().get<Domain::FloatOrPercentage>("extrusion_width");
     
     /* We currently use a random object's support material extruder.
@@ -738,7 +737,7 @@ void Print::process()
         m_skirt.clear();
         m_skirt_convex_hull.clear();
         m_first_layer_convex_hull.points.clear();
-        const bool draft_shield = config().get<DraftShield>("draft_shield") != dsDisabled;
+        const bool draft_shield = config().get<Domain::DraftShield>("draft_shield") != Domain::DraftShield::dsDisabled;
 
         if (this->has_skirt() && draft_shield) {
             // In case that draft shield is active, generate skirt first so brim
@@ -860,7 +859,7 @@ void Print::_make_skirt()
     append(points, this->first_layer_wipe_tower_corners());
 
     // Unless draft shield is enabled, include all brims as well.
-    if (config().get<DraftShield>("draft_shield") == dsDisabled)
+    if (config().get<Domain::DraftShield>("draft_shield") == Domain::DraftShield::dsDisabled)
         append(points, m_first_layer_convex_hull.points);
 
     if (points.size() < 3)
@@ -1274,7 +1273,7 @@ void Print::_make_wipe_tower()
     this->throw_if_canceled();
 
     // Initialize the wipe tower.
-    WipeTower wipe_tower(this->wipe_tower()->position.cast<float>(), this->wipe_tower()->rotation, m_config, m_default_region_config, wipe_volumes, m_wipe_tower_data.tool_ordering.first_extruder());
+    WipeTower wipe_tower(this->wipe_tower()->position.cast<float>(), this->wipe_tower()->rotation, m_config, wipe_volumes, m_wipe_tower_data.tool_ordering.first_extruder());
 
     // Set the extruder & material properties at the wipe tower object.
     for (size_t i = 0; i < m_config.get<std::vector<double>>("nozzle_diameter").size(); ++ i)
@@ -1346,7 +1345,8 @@ void Print::_make_wipe_tower()
     m_wipe_tower_data.used_filament_until_layer = wipe_tower.get_used_filament_until_layer();
     m_wipe_tower_data.number_of_toolchanges = wipe_tower.get_number_of_toolchanges();
     m_wipe_tower_data.width = wipe_tower.width();
-    m_wipe_tower_data.first_layer_height = config().get<Domain::FloatOrPercentage>("first_layer_height");
+
+    m_wipe_tower_data.first_layer_height = config().get<Domain::FloatOrPercentage>("first_layer_height").get_abs_value(layer_height);
     m_wipe_tower_data.cone_angle = config().get<double>("wipe_tower_cone_angle");
 }
 
@@ -1377,8 +1377,8 @@ bool Print::has_same_shrinkage_compensations() const {
     if (extruders.empty())
         return false;
 
-    const double filament_shrinkage_compensation_xy = m_config.get<std::vector<Domain::Percentage>>("filament_shrinkage_compensation_xy").at(extruders.front());
-    const double filament_shrinkage_compensation_z  = m_config.get<std::vector<Domain::Percentage>>("filament_shrinkage_compensation_z").at(extruders.front());
+    const Domain::Percentage filament_shrinkage_compensation_xy = m_config.get<std::vector<Domain::Percentage>>("filament_shrinkage_compensation_xy").at(extruders.front());
+    const Domain::Percentage filament_shrinkage_compensation_z  = m_config.get<std::vector<Domain::Percentage>>("filament_shrinkage_compensation_z").at(extruders.front());
 
     for (unsigned int extruder : extruders) {
         if (filament_shrinkage_compensation_xy != m_config.get<std::vector<Domain::Percentage>>("filament_shrinkage_compensation_xy").at(extruder) ||
@@ -1397,8 +1397,8 @@ Vec3d Print::shrinkage_compensation() const
         return Vec3d::Ones();
 
     const unsigned int first_extruder          = this->extruders().front();
-    const double       xy_compensation_percent = std::clamp(m_config.get<std::vector<Domain::Percentage>>("filament_shrinkage_compensation_xy").at(first_extruder), -99., 99.);
-    const double       z_compensation_percent  = std::clamp(m_config.get<std::vector<Domain::Percentage>>("filament_shrinkage_compensation_z").at(first_extruder), -99., 99.);
+    const double       xy_compensation_percent = std::clamp(m_config.get<std::vector<Domain::Percentage>>("filament_shrinkage_compensation_xy").at(first_extruder).value, -99., 99.);
+    const double       z_compensation_percent  = std::clamp(m_config.get<std::vector<Domain::Percentage>>("filament_shrinkage_compensation_z").at(first_extruder).value, -99., 99.);
     const double       xy_compensation         = 100. / (100. - xy_compensation_percent);
     const double       z_compensation          = 100. / (100. - z_compensation_percent);
 

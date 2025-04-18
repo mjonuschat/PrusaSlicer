@@ -544,31 +544,31 @@ WipeTower::ToolChangeResult WipeTower::construct_tcr(WipeTowerWriter& writer,
 
 
 
-WipeTower::WipeTower(const Vec2f& pos, double rotation_deg, const PrintConfig& config, const PrintRegionConfig& default_region_config, const std::vector<std::vector<float>>& wiping_matrix, size_t initial_tool) :
+WipeTower::WipeTower(const Vec2f& pos, double rotation_deg, const PrintConfigView& config, const std::vector<std::vector<float>>& wiping_matrix, size_t initial_tool) :
     m_semm(config.get<bool>("single_extruder_multi_material")),
     m_wipe_tower_pos(pos),
     m_wipe_tower_width(float(config.get<double>("wipe_tower_width"))),
-    m_wipe_tower_brim_width(float(config.get<double>("wipe_tower_brim_width"))),
     m_wipe_tower_cone_angle(float(config.get<double>("wipe_tower_cone_angle"))),
-    m_extra_flow(float(config.get<Domain::Percentage>("wipe_tower_extra_flow")/100.)),
-    m_extra_spacing_wipe(float(config.get<Domain::Percentage>("wipe_tower_extra_spacing")/100. * config.get<Domain::Percentage>("wipe_tower_extra_flow")/100.)),
-    m_extra_spacing_ramming(float(config.get<Domain::Percentage>("wipe_tower_extra_spacing")/100.)),
+    m_wipe_tower_brim_width(float(config.get<double>("wipe_tower_brim_width"))),
     m_y_shift(0.f),
     m_z_pos(0.f),
+    m_travel_speed(config.get<double>("travel_speed")),
+    m_infill_speed(config.get<double>("infill_speed")),
+    m_perimeter_speed(config.get<double>("perimeter_speed")),
     m_bridging(float(config.get<double>("wipe_tower_bridging"))),
     m_no_sparse_layers(config.get<bool>("wipe_tower_no_sparse_layers")),
     m_gcode_flavor(config.get<GCodeFlavor>("gcode_flavor")),
-    m_travel_speed(config.get<double>("travel_speed")),
-    m_infill_speed(default_region_config.get<double>("infill_speed")),
-    m_perimeter_speed(default_region_config.get<double>("perimeter_speed")),
     m_current_tool(initial_tool),
-    wipe_volumes(wiping_matrix)
+    wipe_volumes(wiping_matrix),
+    m_extra_flow(float(config.get<Domain::Percentage>("wipe_tower_extra_flow").get_abs_value(1.0))),
+    m_extra_spacing_wipe(float(config.get<Domain::Percentage>("wipe_tower_extra_spacing").get_abs_value(1.0) * config.get<Domain::Percentage>("wipe_tower_extra_flow").get_abs_value(1.0))),
+    m_extra_spacing_ramming(float(config.get<Domain::Percentage>("wipe_tower_extra_spacing").get_abs_value(1.0)))
 {
     // Read absolute value of first layer speed, if given as percentage,
     // it is taken over following default. Speeds from config are not
     // easily accessible here.
     const float default_speed = 60.f;
-    m_first_layer_speed = config.get_abs_value("first_layer_speed", default_speed);
+    m_first_layer_speed = config.get<Domain::FloatOrPercentage>("first_layer_speed").get_abs_value(default_speed);
     if (m_first_layer_speed == 0.f) // just to make sure autospeed doesn't break it.
         m_first_layer_speed = default_speed / 2.f;
 
@@ -596,7 +596,7 @@ WipeTower::WipeTower(const Vec2f& pos, double rotation_deg, const PrintConfig& c
     m_switch_filament_monitoring = m_is_mk4mmu3 || is_XL_printer(config);
 
     // Calculate where the priming lines should be - very naive test not detecting parallelograms etc.
-    const std::vector<Vec2d>& bed_points = config.get<std::vector<Point>>("bed_shape");
+    const std::vector<Vec2d>& bed_points = config.get<std::vector<Vec2d>>("bed_shape");
     BoundingBoxf bb(bed_points);
     m_bed_width = float(bb.size().x());
     m_bed_shape = (bed_points.size() == 4 ? RectangularBed : CircularBed);
@@ -620,7 +620,7 @@ WipeTower::WipeTower(const Vec2f& pos, double rotation_deg, const PrintConfig& c
 
 
 
-void WipeTower::set_extruder(size_t idx, const PrintConfig& config)
+void WipeTower::set_extruder(size_t idx, const PrintConfigView& config)
 {
     //while (m_filpar.size() < idx+1)   // makes sure the required element is in the vector
     m_filpar.push_back(FilamentParameters());
@@ -1372,7 +1372,7 @@ WipeTower::ToolChangeResult WipeTower::finish_layer()
             infill_areas = diff_ex(wt_contour, wt_rectangle);
             if (infill_areas.size() == 2) {
                 ExPolygon& bottom_expoly = infill_areas.front().contour.points.front().y() < infill_areas.back().contour.points.front().y() ? infill_areas[0] : infill_areas[1];
-                std::unique_ptr<Fill> filler(Fill::new_from_type(ipMonotonicLines));
+                std::unique_ptr<Fill> filler(Fill::new_from_type(Domain::InfillPattern::ipMonotonicLines));
                 filler->angle = deg2rad(45.f);
                 filler->spacing = spacing;
                 FillParams params;
@@ -1491,7 +1491,7 @@ std::pair<double, double> WipeTower::get_wipe_tower_cone_base(double width, doub
 }
 
 // Static method to extract wipe_volumes[from][to] from the configuration.
-std::vector<std::vector<float>> WipeTower::extract_wipe_volumes(const PrintConfig& config)
+std::vector<std::vector<float>> WipeTower::extract_wipe_volumes(const PrintConfigView& config)
 {
     // Get wiping matrix to get number of extruders and convert vector<double> to vector<float>:
     std::vector<float> wiping_matrix(cast<float>(config.get<std::vector<double>>("wiping_volumes_matrix")));
@@ -1513,7 +1513,7 @@ std::vector<std::vector<float>> WipeTower::extract_wipe_volumes(const PrintConfi
         for (size_t i = 0; i < number_of_extruders; ++i) {
             for (size_t j = 0; j < number_of_extruders; ++j) {
                 if (i != j)
-                wipe_volumes[i][j] = (i == j ? 0.f : config.get<double>("multimaterial_purging") * config.get<std::vector<Domain::Percentage>>("filament_purge_multiplier").at(j) / 100.f);
+                wipe_volumes[i][j] = (i == j ? 0.f : config.get<std::vector<Domain::Percentage>>("filament_purge_multiplier").at(j).get_abs_value(config.get<double>("multimaterial_purging")));
             }
         }
     }

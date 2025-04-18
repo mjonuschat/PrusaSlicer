@@ -8,6 +8,45 @@
 
 namespace Slic3r::Domain {
 
+namespace {
+template<typename T>
+inline BoxRefs convert_to_box_refs(
+    const std::vector<std::reference_wrapper<T>>& settings
+)
+{
+    BoxRefs result;
+    result.insert(result.end(), settings.begin(), settings.end());
+    return result;
+}
+
+inline FullConfigInput convert_to_full_config_input(
+    const PrinterSettings& printer_s,
+    const std::vector<std::reference_wrapper<const ToolPrintSettings>>& tool_print_s,
+    const PrintSettings& print_s,
+    const std::vector<std::reference_wrapper<const FilamentSettings>>& filament_s,
+    const ProjectSettings& project_s
+) {
+    ASSERT(filament_s.size() == tool_print_s.size());
+    FullConfigInput result;
+    result.push_back(printer_s);
+    result.push_back(convert_to_box_refs(tool_print_s));
+    result.push_back(print_s);
+    result.push_back(convert_to_box_refs(filament_s));
+    result.push_back(project_s);
+    return result;
+}
+}
+
+FullConfigFDM::FullConfigFDM(
+    const PrinterSettings& printer_s,
+    const std::vector<std::reference_wrapper<const ToolPrintSettings>>& tool_print_s,
+    const PrintSettings& print_s,
+    const std::vector<std::reference_wrapper<const FilamentSettings>>& filament_s,
+    const ProjectSettings& project_s
+)
+    : FullConfig{convert_to_full_config_input(printer_s, tool_print_s, print_s, filament_s,  project_s)}
+{}
+
 // Implementation of FDM configs is done in this file.
 
 // Define our own marking functions, the regular ones are not accessible in Domain.
@@ -2469,7 +2508,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
                    "before doing the wipe movement.");
     def->sidetext = L("%");
     def->mode = comAdvanced;
-    SET_DEFAULT(Percentage(0.));
+    SET_DEFAULT(Percentage{0.});
 
     def = defs.add("retract_layer_change", Bool);
     def->location = "toolprint_settings";

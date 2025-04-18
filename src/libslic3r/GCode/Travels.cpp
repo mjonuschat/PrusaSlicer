@@ -325,7 +325,7 @@ SmoothingParams get_smoothing_params(
     const double slope_end,
     unsigned extruder_id,
     const double travel_length,
-    const Domain::FullConfigFDM &config
+    const Domain::ConfigView &config
 ) {
     if (config.get<GCodeFlavor>("gcode_flavor") != gcfMarlinFirmware)
         // Smoothing is supported only on Marlin.
@@ -372,7 +372,7 @@ SmoothingParams get_smoothing_params(
 
 ElevatedTravelParams get_elevated_traval_params(
     const Polyline& xy_path,
-    const Domain::FullConfigFDM &config,
+    const Domain::ConfigView &config,
     const unsigned extruder_id,
     const GCode::TravelObstacleTracker &obstacle_tracker
 ) {
@@ -428,7 +428,7 @@ std::vector<double> linspace(const double from, const double to, const unsigned 
 
 Points3 generate_travel_to_extrusion(
     const Polyline &xy_path,
-    const Domain::FullConfigFDM &config,
+    const Domain::ConfigView &config,
     const unsigned extruder_id,
     const double initial_elevation,
     const GCode::TravelObstacleTracker &obstacle_tracker,

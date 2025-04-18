@@ -26,7 +26,7 @@
 
 namespace Slic3r {
 
-class PrintRegionConfig;
+class PrintRegionConfigView;
 class Surface;
 
 class FillRectilinear : public Fill

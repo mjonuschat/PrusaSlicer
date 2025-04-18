@@ -28,7 +28,6 @@
 #include <boost/log/trivial.hpp>
 
 #include <LibBGCode/core/core.hpp>
-#include "libslic3r/ConfigViews.hpp"
 
 // Store the print/filament/printer presets into a "presets" subdirectory of the Slic3rPE config dir.
 // This breaks compatibility with the upstream Slic3r if the --datadir is used to switch between the two versions.
@@ -45,11 +44,11 @@ static std::vector<std::string> s_project_options {
 const char *PresetBundle::PRUSA_BUNDLE = "PrusaResearch";
 
 PresetBundle::PresetBundle() :
-    prints(Preset::TYPE_PRINT, Preset::print_options(), static_cast<const PrintRegionConfig&>(Domain::FullConfigFDM::defaults())),
-    filaments(Preset::TYPE_FILAMENT, Preset::filament_options(), static_cast<const PrintRegionConfig&>(Domain::FullConfigFDM::defaults())),
-    sla_materials(Preset::TYPE_SLA_MATERIAL, Preset::sla_material_options(), static_cast<const SLAMaterialConfig&>(SLAFullConfig::defaults())), 
-    sla_prints(Preset::TYPE_SLA_PRINT, Preset::sla_print_options(), static_cast<const SLAPrintObjectConfig&>(SLAFullConfig::defaults())),
-    printers(Preset::TYPE_PRINTER, Preset::printer_options(), static_cast<const PrintRegionConfig&>(Domain::FullConfigFDM::defaults()), "- default FFF -"),
+    prints(Preset::TYPE_PRINT, Preset::print_options(), static_cast<const PrintRegionConfig&>(FullPrintConfig::defaults())),
+    filaments(Preset::TYPE_FILAMENT, Preset::filament_options(), static_cast<const PrintRegionConfig&>(FullPrintConfig::defaults())),
+    sla_materials(Preset::TYPE_SLA_MATERIAL, Preset::sla_material_options(), static_cast<const SLAMaterialConfig&>(SLAFullPrintConfig::defaults())), 
+    sla_prints(Preset::TYPE_SLA_PRINT, Preset::sla_print_options(), static_cast<const SLAPrintObjectConfig&>(SLAFullPrintConfig::defaults())),
+    printers(Preset::TYPE_PRINTER, Preset::printer_options(), static_cast<const PrintRegionConfig&>(FullPrintConfig::defaults()), "- default FFF -"),
     physical_printers(PhysicalPrinter::printer_options(), this)
 {
     // The following keys are handled by the UI, they do not have a counterpart in any StaticPrintConfig derived classes,
@@ -82,7 +81,7 @@ PresetBundle::PresetBundle() :
     this->sla_prints.default_preset().compatible_printers_condition();
     this->sla_prints.default_preset().inherits();
 
-    this->printers.add_default_preset(Preset::sla_printer_options(), static_cast<const SLAMaterialConfig&>(SLAFullConfig::defaults()), "- default SLA -");
+    this->printers.add_default_preset(Preset::sla_printer_options(), static_cast<const SLAMaterialConfig&>(SLAFullPrintConfig::defaults()), "- default SLA -");
     this->printers.preset(1).printer_technology_ref() = ptSLA;
     for (size_t i = 0; i < 2; ++ i) {
 		// The following ugly switch is to avoid printers.preset(0) to return the edited instance, as the 0th default is the current one.
@@ -111,7 +110,7 @@ PresetBundle::PresetBundle() :
     this->sla_materials.select_preset(0);
     this->printers     .select_preset(0);
 
-    this->project_config.apply_only(Domain::FullConfigFDM::defaults(), s_project_options);
+    this->project_config.apply_only(FullPrintConfig::defaults(), s_project_options);
 }
 
 PresetBundle::PresetBundle(const PresetBundle &rhs)
@@ -772,7 +771,7 @@ DynamicPrintConfig PresetBundle::full_config_secure() const
 DynamicPrintConfig PresetBundle::full_fff_config() const
 {    
     DynamicPrintConfig out;
-    out.apply(Domain::FullConfigFDM::defaults());
+    out.apply(FullPrintConfig::defaults());
     out.apply(this->prints.get_edited_preset().config);
     // Add the default filament preset to have the "filament_preset_id" defined.
 	out.apply(this->filaments.default_preset().config);
@@ -881,7 +880,7 @@ DynamicPrintConfig PresetBundle::full_fff_config() const
 DynamicPrintConfig PresetBundle::full_sla_config() const
 {    
     DynamicPrintConfig out;
-    out.apply(SLAFullConfig::defaults());
+    out.apply(SLAFullPrintConfig::defaults());
     out.apply(this->sla_prints.get_edited_preset().config);
     out.apply(this->sla_materials.get_edited_preset().config);
     out.apply(this->printers.get_edited_preset().config);
@@ -945,7 +944,7 @@ ConfigSubstitutions PresetBundle::load_config_file(const std::string &path, Forw
         fclose(file);
 
         DynamicPrintConfig config;
-        config.apply(Domain::FullConfigFDM::defaults());
+        config.apply(FullPrintConfig::defaults());
         ConfigSubstitutions config_substitutions = is_binary ? config.load_from_binary_gcode_file(path, compatibility_rule) :
             config.load_from_gcode_file(path, compatibility_rule);
         Preset::normalize(config);
@@ -980,7 +979,7 @@ ConfigSubstitutions PresetBundle::load_config_file(const std::string &path, Forw
     	{
     		// Initialize a config from full defaults.
     		DynamicPrintConfig config;
-    		config.apply(Domain::FullConfigFDM::defaults());
+    		config.apply(FullPrintConfig::defaults());
             config_substitutions = config.load(tree, compatibility_rule);
     		Preset::normalize(config);
     		load_config_file_config(path, true, std::move(config));

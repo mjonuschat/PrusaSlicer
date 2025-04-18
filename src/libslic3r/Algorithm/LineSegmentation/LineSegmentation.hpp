@@ -6,7 +6,7 @@
 #include "libslic3r/Arachne/utils/ExtrusionLine.hpp"
 
 namespace Slic3r {
-class PrintRegionConfig;
+class PrintRegionConfigView;
 
 struct PerimeterRegion;
 
@@ -28,9 +28,9 @@ struct PolylineSegment
 struct PolylineRegionSegment
 {
     Polyline                 polyline;
-    const PrintRegionConfig &config;
+    const PrintRegionConfigView &config;
 
-    PolylineRegionSegment(const Polyline &polyline, const PrintRegionConfig &config) : polyline(polyline), config(config) {}
+    PolylineRegionSegment(const Polyline &polyline, const PrintRegionConfigView &config) : polyline(polyline), config(config) {}
 };
 
 struct ExtrusionSegment
@@ -42,9 +42,9 @@ struct ExtrusionSegment
 struct ExtrusionRegionSegment
 {
     Arachne::ExtrusionLine   extrusion;
-    const PrintRegionConfig &config;
+    const PrintRegionConfigView &config;
 
-    ExtrusionRegionSegment(const Arachne::ExtrusionLine &extrusion, const PrintRegionConfig &config) : extrusion(extrusion), config(config) {}
+    ExtrusionRegionSegment(const Arachne::ExtrusionLine &extrusion, const PrintRegionConfigView &config) : extrusion(extrusion), config(config) {}
 };
 
 using PolylineSegments        = std::vector<PolylineSegment>;
@@ -56,9 +56,9 @@ PolylineSegments polyline_segmentation(const Polyline &subject, const std::vecto
 PolylineSegments polygon_segmentation(const Polygon &subject, const std::vector<ExPolygons> &expolygons_clips, size_t default_clip_idx = 0);
 ExtrusionSegments extrusion_segmentation(const Arachne::ExtrusionLine &subject, const std::vector<ExPolygons> &expolygons_clips, size_t default_clip_idx = 0);
 
-PolylineRegionSegments polyline_segmentation(const Polyline &subject, const PrintRegionConfig &base_config, const PerimeterRegions &perimeter_regions_clips);
-PolylineRegionSegments polygon_segmentation(const Polygon &subject, const PrintRegionConfig &base_config, const PerimeterRegions &perimeter_regions_clips);
-ExtrusionRegionSegments extrusion_segmentation(const Arachne::ExtrusionLine &subject, const PrintRegionConfig &base_config, const PerimeterRegions &perimeter_regions_clips);
+PolylineRegionSegments polyline_segmentation(const Polyline &subject, const PrintRegionConfigView &base_config, const PerimeterRegions &perimeter_regions_clips);
+PolylineRegionSegments polygon_segmentation(const Polygon &subject, const PrintRegionConfigView &base_config, const PerimeterRegions &perimeter_regions_clips);
+ExtrusionRegionSegments extrusion_segmentation(const Arachne::ExtrusionLine &subject, const PrintRegionConfigView &base_config, const PerimeterRegions &perimeter_regions_clips);
 
 } // namespace Slic3r::Algorithm::LineSegmentation
 

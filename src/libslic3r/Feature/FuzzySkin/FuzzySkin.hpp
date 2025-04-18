@@ -15,11 +15,11 @@ void fuzzy_polygon(Polygon &polygon, double fuzzy_skin_thickness, double fuzzy_s
 
 void fuzzy_extrusion_line(Arachne::ExtrusionLine &ext_lines, double fuzzy_skin_thickness, double fuzzy_skin_point_dist);
 
-bool should_fuzzify(const PrintRegionConfig &config, size_t layer_idx, size_t perimeter_idx, bool is_contour);
+bool should_fuzzify(const PrintRegionConfigView &config, size_t layer_idx, size_t perimeter_idx, bool is_contour);
 
-Polygon apply_fuzzy_skin(const Polygon &polygon, const PrintRegionConfig &base_config, const PerimeterRegions &perimeter_regions, size_t layer_idx, size_t perimeter_idx, bool is_contour);
+Polygon apply_fuzzy_skin(const Polygon &polygon, const PrintRegionConfigView &base_config, const PerimeterRegions &perimeter_regions, size_t layer_idx, size_t perimeter_idx, bool is_contour);
 
-Arachne::ExtrusionLine apply_fuzzy_skin(const Arachne::ExtrusionLine &extrusion, const PrintRegionConfig &base_config, const PerimeterRegions &perimeter_regions, size_t layer_idx, size_t perimeter_idx, bool is_contour);
+Arachne::ExtrusionLine apply_fuzzy_skin(const Arachne::ExtrusionLine &extrusion, const PrintRegionConfigView &base_config, const PerimeterRegions &perimeter_regions, size_t layer_idx, size_t perimeter_idx, bool is_contour);
 
 } // namespace Slic3r::Feature::FuzzySkin
 

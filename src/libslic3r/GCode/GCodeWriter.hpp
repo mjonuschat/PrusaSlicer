@@ -24,26 +24,32 @@
 #include "libslic3r/Point.hpp"
 #include "libslic3r/PrintConfig.hpp"
 #include "CoolingBuffer.hpp"
+#include "Slic3r/Assert.hpp"
 
 namespace Slic3r {
 
 class GCodeWriter {
 public:
-    GCodeConfig config;
+    PrintConfigView config;
     bool multiple_extruders;
-    
-    GCodeWriter() : 
-        multiple_extruders(false), m_extrusion_axis("E"), m_extruder(nullptr),
-        m_single_extruder_multi_material(false),
-        m_last_acceleration(0), m_max_acceleration(0),
-        m_last_bed_temperature(0), m_last_bed_temperature_reached(true)
-        {}
-    Extruder*            extruder()             { return m_extruder; }
+
+    GCodeWriter(const PrintConfigView& config)
+        : config(config)
+        , multiple_extruders(false)
+        , m_extrusion_axis("E")
+        , m_single_extruder_multi_material(false)
+        , m_extruder(nullptr)
+        , m_last_acceleration(0)
+        , m_max_acceleration(0)
+        , m_last_bed_temperature(0)
+        , m_last_bed_temperature_reached(true)
+    { }
+    Extruder* extruder() { return m_extruder; }
     const Extruder*      extruder()     const   { return m_extruder; }
 
     // Returns empty string for gcfNoExtrusion.
     std::string          extrusion_axis() const { return m_extrusion_axis; }
-    void                 apply_print_config(const PrintConfig &print_config);
+    void                 apply_print_config(const Domain::FullConfigFDM &print_config);
     // Extruders are expected to be sorted in an increasing order.
     void                 set_extruders(std::vector<unsigned int> extruder_ids);
     const std::vector<Extruder>& extruders() const { return m_extruders; }

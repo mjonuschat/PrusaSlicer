@@ -383,7 +383,7 @@ MoveVerticesPerLayer get_perimeters_preview(
         [&](const Layer& layer, const PrintInstance& instance, const LayerRegion& region) {
             if (region.slices().empty())
                 return;
-            const Slic3r::PrintRegionConfig& config{region.region().config()};
+            const Slic3r::PrintRegionConfigView& config{region.region().config()};
             const auto extruder_id{
                 static_cast<uint8_t>(std::max(config.get<int>("perimeter_extruder") - 1, 0))};
 
@@ -416,7 +416,7 @@ MoveVerticesPerLayer get_infill_preview(
                     continue;
                 }
 
-                const Slic3r::PrintRegionConfig& config{region.region().config()};
+                const Slic3r::PrintRegionConfigView& config{region.region().config()};
                 const bool is_solid_infill = fill.entities.front()->role().is_solid_infill();
                 const auto extruder_id = is_solid_infill ?
                     static_cast<uint8_t>(std::max(config.get<int>("solid_infill_extruder") - 1, 0)) :
@@ -456,7 +456,7 @@ MoveVerticesPerLayer get_supports_preview(
                 return;
             }
 
-            const Slic3r::PrintObjectConfig& config{support_layer->object()->config()};
+            const Slic3r::PrintObjectConfigView& config{support_layer->object()->config()};
             for (const Slic3r::ExtrusionEntity* entity : support_layer->support_fills.entities) {
                 const bool is_support_material = entity->role() ==
                     Slic3r::ExtrusionRole::SupportMaterial;
@@ -518,7 +518,7 @@ libpgcode::ProcessorResult Preview::generate_result(const Slic3r::Print& print) 
     result.spiral_vase_enabled = print.config().get<bool>("spiral_vase");
     result.z_offset = print.config().get<double>("z_offset");
     result.max_print_height = print.config().get<double>("max_print_height");
-    result.bed_shape = double_to_float(print.config().get<std::vector<Point>>("bed_shape"));
+    result.bed_shape = double_to_float(print.config().get<std::vector<Vec2d>>("bed_shape"));
 
     for (std::size_t gcode_id{}; gcode_id < result.moves.size(); ++gcode_id) {
         result.moves[gcode_id].gcode_id = gcode_id;
@@ -549,7 +549,8 @@ libpgcode::ProcessorResult get_result_preview(const Slic3r::Print& print)
         preview.update(get_supports_preview(*object));
     }
 
-    const auto brim_height{static_cast<float>(print.config().get<Domain::FloatOrPercentage>("first_layer_height"))};
+    const auto layer_height{print.config().get<double>("layer_height")};
+    const auto brim_height{static_cast<float>(print.config().get<Domain::FloatOrPercentage>("first_layer_height").get_abs_value(layer_height))};
     preview.update(get_brim_preview(print, brim_height));
     preview.update(get_wipe_tower_preview(print));
     preview.update(get_skirt_preview(print, preview.get_scaled_print_zs()));

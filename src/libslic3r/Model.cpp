@@ -419,11 +419,14 @@ ModelObject& ModelObject::assign_copy(const ModelObject &rhs)
     this->input_file                  = rhs.input_file;
     // Copies the config's ID
     this->config                      = rhs.config;
+    this->object_settings             = rhs.object_settings;
+    this->object_settings_sla         = rhs.object_settings_sla;
     assert(this->config.id() == rhs.config.id());
     this->sla_support_points          = rhs.sla_support_points;
     this->sla_points_status           = rhs.sla_points_status;
     this->sla_drain_holes             = rhs.sla_drain_holes;
     this->layer_config_ranges         = rhs.layer_config_ranges;
+    this->layer_config_ranges_new     = rhs.layer_config_ranges_new;
     this->layer_height_profile        = rhs.layer_height_profile;
     this->printable                   = rhs.printable;
     this->origin_translation          = rhs.origin_translation;
@@ -456,11 +459,14 @@ ModelObject& ModelObject::assign_copy(ModelObject &&rhs)
     this->input_file                  = std::move(rhs.input_file);
     // Moves the config's ID
     this->config                      = std::move(rhs.config);
+    this->object_settings             = std::move(rhs.object_settings);
+    this->object_settings_sla         = std::move(rhs.object_settings_sla);
     assert(this->config.id() == rhs.config.id());
     this->sla_support_points          = std::move(rhs.sla_support_points);
     this->sla_points_status           = std::move(rhs.sla_points_status);
     this->sla_drain_holes             = std::move(rhs.sla_drain_holes);
     this->layer_config_ranges         = std::move(rhs.layer_config_ranges);
+    this->layer_config_ranges_new     = std::move(rhs.layer_config_ranges_new);
     this->layer_height_profile        = std::move(rhs.layer_height_profile);
     this->printable                   = std::move(rhs.printable);
     this->origin_translation          = std::move(rhs.origin_translation);

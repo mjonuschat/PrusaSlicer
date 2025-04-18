@@ -42,6 +42,7 @@
 #include "libslic3r/SLA/SupportTreeStrategies.hpp"
 #include "libslic3r/enum_bitmask.hpp"
 #include "libslic3r/libslic3r.h"
+#include "slic3r-domain/src/Slic3r/Domain/ConfigCommon.hpp"
 
 namespace Slic3r {
 
@@ -5144,8 +5145,20 @@ void PrintConfigDef::handle_legacy_composite(DynamicPrintConfig &config)
 
 const PrintConfigDef print_config_def;
 
+DynamicPrintConfig DynamicPrintConfig::full_print_config()
+{
+	return DynamicPrintConfig((const PrintRegionConfig&)FullPrintConfig::defaults());
+}
+
 DynamicPrintConfig::DynamicPrintConfig(const StaticPrintConfig& rhs) : DynamicConfig(rhs, rhs.keys_ref())
 {
+}
+
+DynamicPrintConfig* DynamicPrintConfig::new_from_defaults_keys(const std::vector<std::string> &keys)
+{
+    auto *out = new DynamicPrintConfig();
+    out->apply_only(FullPrintConfig::defaults(), keys);
+    return out;
 }
 
 double min_object_distance(const ConfigBase &cfg)
@@ -5169,6 +5182,26 @@ double min_object_distance(const ConfigBase &cfg)
             ret = (co_opt->value && ecr_opt->value > dd_opt->value) ?
                       ecr_opt->value : dd_opt->value;
         }
+    }
+
+    return ret;
+}
+
+double min_object_distance(const Domain::ConfigView &cfg)
+{
+    const Domain::PrinterTechnology printer_technology = cfg.get<Domain::PrinterTechnology>("printer_technology");
+
+    double ret = 0.;
+
+    if (printer_technology == Domain::PrinterTechnology::SLA)
+        ret = 6.;
+    else {
+        auto ecr_opt = cfg.get<double>("extruder_clearance_radius");
+        auto dd_opt  = 6.0; // TODO - what is this
+        auto co_opt  = cfg.get<bool>("complete_objects");
+
+        // min object distance is max(duplicate_distance, clearance_radius)
+        ret = (co_opt && ecr_opt > dd_opt) ? ecr_opt : dd_opt;
     }
 
     return ret;
@@ -5409,7 +5442,7 @@ void update_tilts_by_mode(DynamicPrintConfig& config, int tilt_mode, bool is_sl1
 
 void DynamicPrintConfig::set_num_extruders(unsigned int num_extruders)
 {
-    const auto &defaults = Domain::FullConfigFDM::defaults();
+    const auto &defaults = FullPrintConfig::defaults();
     for (const std::string &key : print_config_def.extruder_option_keys()) {
         if (key == "default_filament_profile")
             // Don't resize this field, as it is presented to the user at the "Dependencies" page of the Printer profile and we don't want to present
@@ -5431,9 +5464,9 @@ std::string DynamicPrintConfig::validate()
     switch (printer_technology) {
     case ptFFF:
     {
-        Domain::FullConfigFDM fpc;
+        FullPrintConfig fpc;
         fpc.apply(*this, true);
-        // Verify this print options through the Domain::FullConfigFDM.
+        // Verify this print options through the FullPrintConfig.
         return Slic3r::validate(fpc);
     }
     default:
@@ -5443,7 +5476,7 @@ std::string DynamicPrintConfig::validate()
 }
 
 //FIXME localize this function.
-std::string validate(const Domain::FullConfigFDM &cfg)
+std::string validate(const FullPrintConfig &cfg)
 {
     // --layer-height
     if (cfg.get_abs_value("layer_height") <= 0)
@@ -5452,86 +5485,86 @@ std::string validate(const Domain::FullConfigFDM &cfg)
         return "--layer-height must be a multiple of print resolution";
 
     // --first-layer-height
-    if (cfg.get<Domain::FloatOrPercentage>("first_layer_height") <= 0)
+    if (cfg.first_layer_height.value <= 0)
         return "Invalid value for --first-layer-height";
 
     // --filament-diameter
-    for (double fd : cfg.get<std::vector<double>>("filament_diameter"))
+    for (double fd : cfg.filament_diameter.values)
         if (fd < 1)
             return "Invalid value for --filament-diameter";
 
     // --nozzle-diameter
-    for (double nd : cfg.get<std::vector<double>>("nozzle_diameter"))
+    for (double nd : cfg.nozzle_diameter.values)
         if (nd < 0.005)
             return "Invalid value for --nozzle-diameter";
 
     // --perimeters
-    if (cfg.get<int>("perimeters") < 0)
+    if (cfg.perimeters.value < 0)
         return "Invalid value for --perimeters";
 
     // --solid-layers
-    if (cfg.get<int>("top_solid_layers") < 0)
+    if (cfg.top_solid_layers < 0)
         return "Invalid value for --top-solid-layers";
-    if (cfg.get<int>("bottom_solid_layers") < 0)
+    if (cfg.bottom_solid_layers < 0)
         return "Invalid value for --bottom-solid-layers";
 
-    if (cfg.get<bool>("use_firmware_retraction") &&
-        cfg.get<GCodeFlavor>("gcode_flavor") != gcfSmoothie &&
-        cfg.get<GCodeFlavor>("gcode_flavor") != gcfRepRapSprinter &&
-        cfg.get<GCodeFlavor>("gcode_flavor") != gcfRepRapFirmware &&
-        cfg.get<GCodeFlavor>("gcode_flavor") != gcfMarlinLegacy &&
-        cfg.get<GCodeFlavor>("gcode_flavor") != gcfMarlinFirmware &&
-        cfg.get<GCodeFlavor>("gcode_flavor") != gcfMachinekit &&
-        cfg.get<GCodeFlavor>("gcode_flavor") != gcfRepetier &&
-        cfg.get<GCodeFlavor>("gcode_flavor") != gcfKlipper)
+    if (cfg.use_firmware_retraction.value &&
+        cfg.gcode_flavor.value != gcfSmoothie &&
+        cfg.gcode_flavor.value != gcfRepRapSprinter &&
+        cfg.gcode_flavor.value != gcfRepRapFirmware &&
+        cfg.gcode_flavor.value != gcfMarlinLegacy &&
+        cfg.gcode_flavor.value != gcfMarlinFirmware &&
+        cfg.gcode_flavor.value != gcfMachinekit &&
+        cfg.gcode_flavor.value != gcfRepetier &&
+        cfg.gcode_flavor.value != gcfKlipper)
         return "--use-firmware-retraction is only supported by Marlin, Klipper, Smoothie, RepRapFirmware, Repetier and Machinekit firmware";
 
-    if (cfg.get<bool>("use_firmware_retraction"))
-        for (unsigned char wipe : cfg.get<std::vector<bool>>("wipe"))
+    if (cfg.use_firmware_retraction.value)
+        for (unsigned char wipe : cfg.wipe.values)
              if (wipe)
                 return "--use-firmware-retraction is not compatible with --wipe";
 
     // --gcode-flavor
-    if (! print_config_def.get("gcode_flavor")->has_enum_value(cfg.get<GCodeFlavor>("gcode_flavor").serialize()))
+    if (! print_config_def.get("gcode_flavor")->has_enum_value(cfg.gcode_flavor.serialize()))
         return "Invalid value for --gcode-flavor";
 
     // --fill-pattern
-    if (! print_config_def.get("fill_pattern")->has_enum_value(cfg.get<InfillPattern>("fill_pattern").serialize()))
+    if (! print_config_def.get("fill_pattern")->has_enum_value(cfg.fill_pattern.serialize()))
         return "Invalid value for --fill-pattern";
 
     // --top-fill-pattern
-    if (! print_config_def.get("top_fill_pattern")->has_enum_value(cfg.get<InfillPattern>("top_fill_pattern").serialize()))
+    if (! print_config_def.get("top_fill_pattern")->has_enum_value(cfg.top_fill_pattern.serialize()))
         return "Invalid value for --top-fill-pattern";
 
     // --bottom-fill-pattern
-    if (! print_config_def.get("bottom_fill_pattern")->has_enum_value(cfg.get<InfillPattern>("bottom_fill_pattern").serialize()))
+    if (! print_config_def.get("bottom_fill_pattern")->has_enum_value(cfg.bottom_fill_pattern.serialize()))
         return "Invalid value for --bottom-fill-pattern";
 
     // --fill-density
-    if (fabs(cfg.get<Domain::Percentage>("fill_density") - 100.) < EPSILON &&
-        ! print_config_def.get("top_fill_pattern")->has_enum_value(cfg.get<InfillPattern>("fill_pattern").serialize()))
+    if (fabs(cfg.fill_density.value - 100.) < EPSILON &&
+        ! print_config_def.get("top_fill_pattern")->has_enum_value(cfg.fill_pattern.serialize()))
         return "The selected fill pattern is not supposed to work at 100% density";
 
     // --infill-every-layers
-    if (cfg.get<int>("infill_every_layers") < 1)
+    if (cfg.infill_every_layers < 1)
         return "Invalid value for --infill-every-layers";
 
     // --skirt-height
-    if (cfg.get<int>("skirt_height") < 0)
+    if (cfg.skirt_height < 0)
         return "Invalid value for --skirt-height";
 
     // --bridge-flow-ratio
-    if (cfg.get<double>("bridge_flow_ratio") <= 0)
+    if (cfg.bridge_flow_ratio <= 0)
         return "Invalid value for --bridge-flow-ratio";
 
     // extruder clearance
-    if (cfg.get<double>("extruder_clearance_radius") <= 0)
+    if (cfg.extruder_clearance_radius <= 0)
         return "Invalid value for --extruder-clearance-radius";
-    if (cfg.get<double>("extruder_clearance_height") <= 0)
+    if (cfg.extruder_clearance_height <= 0)
         return "Invalid value for --extruder-clearance-height";
 
     // --extrusion-multiplier
-    for (double em : cfg.get<std::vector<double>>("extrusion_multiplier"))
+    for (double em : cfg.extrusion_multiplier.values)
         if (em <= 0)
             return "Invalid value for --extrusion-multiplier";
 
@@ -5547,25 +5580,25 @@ std::string validate(const Domain::FullConfigFDM &cfg)
     //    return "Invalid zero value for --default-acceleration when using other acceleration settings";
 
     // --spiral-vase
-    if (cfg.get<bool>("spiral_vase")) {
+    if (cfg.spiral_vase) {
         // Note that we might want to have more than one perimeter on the bottom
         // solid layers.
-        if (cfg.get<int>("perimeters") > 1)
+        if (cfg.perimeters > 1)
             return "Can't make more than one perimeter when spiral vase mode is enabled";
-        else if (cfg.get<int>("perimeters") < 1)
+        else if (cfg.perimeters < 1)
             return "Can't make less than one perimeter when spiral vase mode is enabled";
-        if (cfg.get<Domain::Percentage>("fill_density") > 0)
+        if (cfg.fill_density > 0)
             return "Spiral vase mode can only print hollow objects, so you need to set Fill density to 0";
-        if (cfg.get<int>("top_solid_layers") > 0)
+        if (cfg.top_solid_layers > 0)
             return "Spiral vase mode is not compatible with top solid layers";
-        if (cfg.get<bool>("support_material") || cfg.get<int>("support_material_enforce_layers") > 0)
+        if (cfg.support_material || cfg.support_material_enforce_layers > 0)
             return "Spiral vase mode is not compatible with support material";
     }
 
     // extrusion widths
     {
         double max_nozzle_diameter = 0.;
-        for (double dmr : cfg.get<std::vector<double>>("nozzle_diameter"))
+        for (double dmr : cfg.nozzle_diameter.values)
             max_nozzle_diameter = std::max(max_nozzle_diameter, dmr);
         const char *widths[] = { "external_perimeter", "perimeter", "infill", "solid_infill", "top_infill", "support_material", "first_layer" };
         for (size_t i = 0; i < sizeof(widths) / sizeof(widths[i]); ++ i) {
@@ -5657,8 +5690,8 @@ std::string validate(const Domain::FullConfigFDM &cfg)
         return ret; \
     }
 PRINT_CONFIG_CACHE_INITIALIZE((
-    PrintObjectConfig, PrintRegionConfig, MachineEnvelopeConfig, GCodeConfig, PrintConfig, Domain::FullConfigFDM, 
-    SLAMaterialConfig, SLAPrintConfig, SLAPrintObjectConfig, SLAPrinterConfig, SLAFullConfig))
+    PrintObjectConfig, PrintRegionConfig, MachineEnvelopeConfig, GCodeConfig, PrintConfig, FullPrintConfig, 
+    SLAMaterialConfig, SLAPrintConfig, SLAPrintObjectConfig, SLAPrinterConfig, SLAFullPrintConfig))
 static int print_config_static_initialized = print_config_static_initializer();
 
 CLIInputConfigDef::CLIInputConfigDef()
@@ -6304,6 +6337,10 @@ Points get_bed_shape(const PrintConfig &cfg)
     return to_points(cfg.bed_shape.values);
 }
 
+Points get_bed_shape(const PrintConfigView &cfg) {
+    return to_points(cfg.get<std::vector<Vec2d>>("bed_shape"));
+}
+
 Points get_bed_shape(const SLAPrinterConfig &cfg) { return to_points(cfg.bed_shape.values); }
 
 std::string get_sla_suptree_prefix(const DynamicPrintConfig &config)
@@ -6338,6 +6375,10 @@ bool is_XL_printer(const DynamicPrintConfig &cfg)
 bool is_XL_printer(const PrintConfig &cfg)
 {
     return is_XL_printer(cfg.printer_notes.value);
+}
+
+bool is_XL_printer(const PrintConfigView &cfg) {
+    return is_XL_printer(cfg.get<std::string>("printer_notes"));
 }
 
 } // namespace Slic3r

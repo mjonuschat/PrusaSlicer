@@ -153,7 +153,7 @@ static std::vector<std::pair<TreeSupportSettings, std::vector<size_t>>> group_me
     //FIXME this is ugly, it does not belong here.
     for (size_t object_id : print_object_ids) {
         const PrintObject       &print_object  = *print.get_object(object_id);
-        const PrintObjectConfig &object_config = print_object.config();
+        const PrintObjectConfigView &object_config = print_object.config();
         if (object_config.get<double>("support_material_contact_distance") < EPSILON)
             // || min_feature_size < scaled<coord_t>(0.1) that is the minimum line width
             TreeSupportSettings::soluble = true;
@@ -166,11 +166,11 @@ static std::vector<std::pair<TreeSupportSettings, std::vector<size_t>>> group_me
     for (size_t object_id : print_object_ids) {
         const PrintObject       &print_object  = *print.get_object(object_id);
 #ifndef NDEBUG
-        const PrintObjectConfig &object_config = print_object.config();
+        const PrintObjectConfigView &object_config = print_object.config();
 #endif // NDEBUG
         // Support must be enabled and set to Tree style.
         assert(object_config.get<bool>("support_material") || object_config.get<int>("support_material_enforce_layers") > 0);
-        assert(object_config.get<SupportMaterialStyle>("support_material_style") == smsTree || object_config.get<SupportMaterialStyle>("support_material_style") == smsOrganic);
+        assert(object_config.get<Domain::SupportMaterialStyle>("support_material_style") == Domain::SupportMaterialStyle::smsTree || object_config.get<Domain::SupportMaterialStyle>("support_material_style") == Domain::SupportMaterialStyle::smsOrganic);
 
         bool found_existing_group = false;
         TreeSupportSettings next_settings{ TreeSupportMeshGroupSettings{ print_object }, print_object.slicing_parameters() };
@@ -227,8 +227,8 @@ static std::vector<std::pair<TreeSupportSettings, std::vector<size_t>>> group_me
     const size_t num_layers        = num_object_layers + num_raft_layers;
     std::vector<Polygons> out(num_layers, Polygons{});
 
-    const PrintConfig       &print_config           = print_object.print()->config();
-    const PrintObjectConfig &config                 = print_object.config();
+    const PrintConfigView &print_config                 = print_object.print()->config();
+    const PrintObjectConfigView &config                 = print_object.config();
     const bool               support_auto           = config.get<bool>("support_material") && config.get<bool>("support_material_auto");
     const int                support_enforce_layers = config.get<int>("support_material_enforce_layers");
     std::vector<Polygons>    enforcers_layers{ print_object.slice_support_enforcers() };
@@ -3562,11 +3562,11 @@ static void generate_support_areas(Print &print, const BuildVolume &build_volume
 
             // ### draw these points as circles
             
-            if (print_object.config().get<SupportMaterialStyle>("support_material_style") == smsTree)
+            if (print_object.config().get<Domain::SupportMaterialStyle>("support_material_style") == Domain::SupportMaterialStyle::smsTree)
                 draw_areas(*print.get_object(processing.second.front()), volumes, config, overhangs, move_bounds, 
                     bottom_contacts, top_contacts, intermediate_layers, layer_storage, throw_on_cancel);
             else {
-                assert(print_object.config().get<SupportMaterialStyle>("support_material_style") == smsOrganic);
+                assert(print_object.config().get<Domain::SupportMaterialStyle>("support_material_style") == Domain::SupportMaterialStyle::smsOrganic);
                 organic_draw_branches(
                     *print.get_object(processing.second.front()), volumes, config, move_bounds, 
                     bottom_contacts, top_contacts, interface_placer, intermediate_layers, layer_storage, 

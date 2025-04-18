@@ -17,7 +17,7 @@ SCENARIO("Model construction", "[Model]") {
 		Slic3r::Model model;
         namespace triangle_mesh = Biz::Algorithms::TriangleMesh;
         Domain::TriangleMesh sample_mesh = triangle_mesh::make_cube(20,20,20);
-        Slic3r::DynamicPrintConfig config = Slic3r::DynamicPrintConfig::full_print_config();
+        TestConfig config;
         Slic3r::Print print;
 
         WHEN("Model object is added") {
@@ -44,15 +44,15 @@ SCENARIO("Model construction", "[Model]") {
             }
             model_object->add_instance();
             arrange_objects(model,
-                            arr2::to_arrange_bed(get_bed_shape(config), scaled(Vec2d(10, 10))),
+                            arr2::to_arrange_bed(get_bed_shape(config.get_view()), scaled(Vec2d(10, 10))),
                             arr2::ArrangeSettings{}.set_distance_from_objects(
-                                min_object_distance(config)));
+                                min_object_distance(config.get_view())));
 
             model_object->ensure_on_bed();
 			print.auto_assign_extruders(model_object);
 			THEN("Print works?") {
 				print.set_status_silent();
-				print.apply(model, config, {}, {});
+				print.apply(model, config.get_full_config(), {}, {});
 				print.process();
                 const Biz::libpgcode::ProcessorResult result{print.process_gcode(nullptr)};
                 CHECK(result.const_gcode()->str().size() > 0);

@@ -23,14 +23,14 @@ namespace Slic3r::FFFTreeSupport {
 
 TreeSupportMeshGroupSettings::TreeSupportMeshGroupSettings(const PrintObject &print_object)
 {
-    const PrintConfig       &print_config       = print_object.print()->config();
-    const PrintObjectConfig &config             = print_object.config();
+    const PrintConfigView &print_config       = print_object.print()->config();
+    const PrintObjectConfigView &config             = print_object.config();
     const SlicingParameters &slicing_params     = print_object.slicing_parameters();
 //    const std::vector<unsigned int>  printing_extruders = print_object.object_extruders();
 
     // Support must be enabled and set to Tree style.
     assert(config.get<bool>("support_material") || config.get<int>("support_material_enforce_layers") > 0);
-    assert(config.get<SupportMaterialStyle>("support_material_style") == smsTree || config.get<SupportMaterialStyle>("support_material_style") == smsOrganic);
+    assert(config.get<Domain::SupportMaterialStyle>("support_material_style") == Domain::SupportMaterialStyle::smsTree || config.get<Domain::SupportMaterialStyle>("support_material_style") == Domain::SupportMaterialStyle::smsOrganic);
 
     // Calculate maximum external perimeter width over all printing regions, taking into account the default layer height.
     double external_perimeter_width = 0.;
@@ -41,8 +41,10 @@ TreeSupportMeshGroupSettings::TreeSupportMeshGroupSettings(const PrintObject &pr
 
     this->layer_height              = scaled<coord_t>(config.get<double>("layer_height"));
     this->resolution                = scaled<coord_t>(print_config.get<double>("gcode_resolution"));
+
     // Arache feature
-    this->min_feature_size          = scaled<coord_t>(config.get<Domain::FloatOrPercentage>("min_feature_size"));
+    // TODO: It is broken and assumes that the value is not percent. Now it at least asserts.
+    this->min_feature_size          = scaled<coord_t>(config.get<Domain::FloatOrPercentage>("min_feature_size").float_value());
     // +1 makes the threshold inclusive
     this->support_angle             = 0.5 * M_PI - std::clamp<double>((config.get<int>("support_material_threshold") + 1) * M_PI / 180., 0., 0.5 * M_PI);
     this->support_line_width        = support_material_flow(&print_object, config.get<double>("layer_height")).scaled_width();
@@ -68,8 +70,8 @@ TreeSupportMeshGroupSettings::TreeSupportMeshGroupSettings(const PrintObject &pr
     this->support_floor_layers      = this->support_floor_enable ? config.get<int>("support_material_bottom_interface_layers") : 0;
 //    this->minimum_roof_area         = 
 //    this->support_roof_angles       = 
-    this->support_roof_pattern      = config.get<SupportMaterialInterfacePattern>("support_material_interface_pattern");
-    this->support_pattern           = config.get<SupportMaterialPattern>("support_material_pattern");
+    this->support_roof_pattern      = config.get<Domain::SupportMaterialInterfacePattern>("support_material_interface_pattern");
+    this->support_pattern           = config.get<Domain::SupportMaterialPattern>("support_material_pattern");
     this->support_line_spacing      = scaled<coord_t>(config.get<double>("support_material_spacing"));
 //    this->support_bottom_offset     = 
 //    this->support_wall_count        = config.support_material_with_sheath ? 1 : 0;
@@ -83,7 +85,7 @@ TreeSupportMeshGroupSettings::TreeSupportMeshGroupSettings(const PrintObject &pr
     this->support_tree_angle_slow     = std::clamp<double>(config.get<double>("support_tree_angle_slow") * M_PI / 180., 0., this->support_tree_angle - EPSILON);
     this->support_tree_branch_diameter = scaled<coord_t>(config.get<double>("support_tree_branch_diameter"));
     this->support_tree_branch_diameter_angle = std::clamp<double>(config.get<double>("support_tree_branch_diameter_angle") * M_PI / 180., 0., 0.5 * M_PI - EPSILON);
-    this->support_tree_top_rate       = config.get<Domain::Percentage>("support_tree_top_rate"); // percent
+    this->support_tree_top_rate       = config.get<Domain::Percentage>("support_tree_top_rate").value; // percent
 //    this->support_tree_tip_diameter = this->support_line_width;
     this->support_tree_tip_diameter = std::clamp(scaled<coord_t>(config.get<double>("support_tree_tip_diameter")), 0, this->support_tree_branch_diameter);
 }

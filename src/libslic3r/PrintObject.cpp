@@ -112,8 +112,9 @@ using Biz::Algorithms::BoundingBox::center;
 using Biz::Algorithms::BoundingBox::sizes;
 
 // Constructor is called from the main thread, therefore all Model / ModelObject / ModelIntance data are valid.
-PrintObject::PrintObject(Print* print, ModelObject* model_object, const Transform3d& trafo, PrintInstances&& instances) :
+PrintObject::PrintObject(Print* print, ModelObject* model_object, const PrintObjectConfigView& config, const Transform3d& trafo, PrintInstances&& instances) :
     PrintObjectBaseWithState(print, model_object),
+    m_config(config),
     m_trafo(trafo)
 {
     // Compute centering offet to be applied to our meshes so that we work with smaller coordinates
@@ -235,7 +236,7 @@ void PrintObject::make_perimeters()
     // hollow objects
     for (size_t region_id = 0; region_id < this->num_printing_regions(); ++ region_id) {
         const PrintRegion &region = this->printing_region(region_id);
-        if (! region.config().get<bool>("extra_perimeters") || region.config().get<int>("perimeters") == 0 || region.config().get<Domain::Percentage>("fill_density") == 0 || this->layer_count() < 2)
+        if (! region.config().get<bool>("extra_perimeters") || region.config().get<int>("perimeters") == 0 || region.config().get<Domain::Percentage>("fill_density") == Domain::Percentage{0} || this->layer_count() < 2)
             continue;
 
         BOOST_LOG_TRIVIAL(debug) << "Generating extra perimeters for region " << region_id << " in parallel - start";
@@ -456,7 +457,7 @@ void PrintObject::prepare_infill()
         surfaces.emplace_back();
         for (size_t region_id = 0; region_id < this->num_printing_regions(); ++ region_id) {
             LayerRegion *layerm = layer->m_regions[region_id];
-            if (!layerm->fill_surfaces().empty() && layerm->region().config().get<Domain::FloatOrPercentage>("over_bridge_speed") > 0) {
+            if (!layerm->fill_surfaces().empty() && !layerm->region().config().get<Domain::FloatOrPercentage>("over_bridge_speed").is_zero()) {
                 surfaces.back().push_back(std::ref(layerm->m_fill_surfaces));
             }
         }
@@ -534,7 +535,7 @@ void PrintObject::generate_support_spots()
             PrintTryCancel                cancel_func = m_print->make_try_cancel();
             SupportSpotsGenerator::Params params{this->print()->m_config.get<std::vector<std::string>>("filament_type"),
                                                  float(this->print()->m_config.get<double>("perimeter_acceleration")),
-                                                 this->config().get<int>("raft_layers"), this->config().get<BrimType>("brim_type"),
+                                                 this->config().get<int>("raft_layers"), this->config().get<Domain::BrimType>("brim_type"),
                                                  float(this->config().get<double>("brim_width"))};
             auto [supp_points, partial_objects] = SupportSpotsGenerator::full_search(this, cancel_func, params);
             Transform3d po_transform            = this->trafo_centered();
@@ -583,7 +584,7 @@ void PrintObject::estimate_curled_extrusions()
             float                         support_flow_width = support_material_flow(this, this->config().get<double>("layer_height")).width();
             SupportSpotsGenerator::Params params{this->print()->m_config.get<std::vector<std::string>>("filament_type"),
                                                  float(this->print()->m_config.get<double>("perimeter_acceleration")),
-                                                 this->config().get<int>("raft_layers"), this->config().get<BrimType>("brim_type"),
+                                                 this->config().get<int>("raft_layers"), this->config().get<Domain::BrimType>("brim_type"),
                                                  float(this->config().get<double>("brim_width"))};
             SupportSpotsGenerator::estimate_supports_malformations(this->support_layers(), support_flow_width, params);
             SupportSpotsGenerator::estimate_malformations(this->layers(), params);
@@ -699,9 +700,9 @@ FillLightning::GeneratorPtr PrintObject::prepare_lightning_infill_data()
     double lightning_density    = 0.;
     size_t   lightning_cnt        = 0;
     for (size_t region_id = 0; region_id < this->num_printing_regions(); ++region_id)
-        if (const PrintRegionConfig &config = this->printing_region(region_id).config(); config.get<Domain::Percentage>("fill_density") > 0 && config.get<InfillPattern>("fill_pattern") == ipLightning) {
+        if (const PrintRegionConfigView &config = this->printing_region(region_id).config(); config.get<Domain::Percentage>("fill_density") > Domain::Percentage{0} && config.get<InfillPattern>("fill_pattern") == ipLightning) {
             has_lightning_infill = true;
-            lightning_density   += config.get<Domain::Percentage>("fill_density");
+            lightning_density   += config.get<Domain::Percentage>("fill_density").value;
             ++lightning_cnt;
         }
 
@@ -1015,7 +1016,7 @@ void PrintObject::process_external_surfaces()
     // over voids, which are supported by the layer below.
     bool 				  has_voids = false;
 	for (size_t region_id = 0; region_id < this->num_printing_regions(); ++ region_id)
-		if (this->printing_region(region_id).config().get<Domain::Percentage>("fill_density") == 0) {
+		if (this->printing_region(region_id).config().get<Domain::Percentage>("fill_density") == Domain::Percentage{0}) {
 			has_voids = true;
 			break;
 		}
@@ -1054,7 +1055,7 @@ void PrintObject::process_external_surfaces()
 		                m_print->throw_if_canceled();
 		                Polygons voids;
 		                for (const LayerRegion *layerm : m_layers[layer_idx]->regions()) {
-		                	if (layerm->region().config().get<Domain::Percentage>("fill_density") == 0.)
+		                	if (layerm->region().config().get<Domain::Percentage>("fill_density") == Domain::Percentage{0.})
 		                		for (const Surface &surface : layerm->fill_surfaces())
 		                			// Shrink the holes, let the layer above expand slightly inside the unsupported areas.
 		                			Slic3r::append(voids, offset(surface.expolygon, unsupported_width));
@@ -1122,8 +1123,8 @@ void PrintObject::discover_vertical_shells()
         // Is the "ensure vertical wall thickness" applicable to any region?
         bool has_extra_layers = false;
         for (size_t region_id = 0; region_id < this->num_printing_regions(); ++region_id) {
-            const PrintRegionConfig &config = this->printing_region(region_id).config();
-            if (config.get<EnsureVerticalShellThickness>("ensure_vertical_shell_thickness") == EnsureVerticalShellThickness::Enabled || config.get<EnsureVerticalShellThickness>("ensure_vertical_shell_thickness") == EnsureVerticalShellThickness::Partial) {
+            const PrintRegionConfigView &config = this->printing_region(region_id).config();
+            if (config.get<Domain::EnsureVerticalShellThickness>("ensure_vertical_shell_thickness") == Domain::EnsureVerticalShellThickness::Enabled || config.get<EnsureVerticalShellThickness>("ensure_vertical_shell_thickness") == EnsureVerticalShellThickness::Partial) {
                 has_extra_layers = true;
                 break;
             }
@@ -1205,7 +1206,7 @@ void PrintObject::discover_vertical_shells()
 
     for (size_t region_id = 0; region_id < this->num_printing_regions(); ++region_id) {
         const PrintRegion &region = this->printing_region(region_id);
-        if (region.config().get<EnsureVerticalShellThickness>("ensure_vertical_shell_thickness") != EnsureVerticalShellThickness::Enabled && region.config().get<EnsureVerticalShellThickness>("ensure_vertical_shell_thickness") != EnsureVerticalShellThickness::Partial) {
+        if (region.config().get<Domain::EnsureVerticalShellThickness>("ensure_vertical_shell_thickness") != Domain::EnsureVerticalShellThickness::Enabled && region.config().get<EnsureVerticalShellThickness>("ensure_vertical_shell_thickness") != EnsureVerticalShellThickness::Partial) {
             // This region will be handled by discover_horizontal_shells().
             continue;
         }
@@ -1262,7 +1263,7 @@ void PrintObject::discover_vertical_shells()
 
                     Layer       	        *layer          = m_layers[idx_layer];
                     LayerRegion 	        *layerm         = layer->m_regions[region_id];
-                    const PrintRegionConfig &region_config  = layerm->region().config();
+                    const PrintRegionConfigView &region_config  = layerm->region().config();
 
 #ifdef SLIC3R_DEBUG_SLICE_PROCESSING
                     layerm->export_region_slices_to_svg_debug("3_discover_vertical_shells-initial");
@@ -1329,7 +1330,7 @@ void PrintObject::discover_vertical_shells()
 	                        ++ i) {
                             at_least_one_top_projected = true;
 	                        const DiscoverVerticalShellsCacheEntry &cache = cache_top_botom_regions[i];
-                            if (region_config.get<EnsureVerticalShellThickness>("ensure_vertical_shell_thickness") != EnsureVerticalShellThickness::Partial) {
+                            if (region_config.get<Domain::EnsureVerticalShellThickness>("ensure_vertical_shell_thickness") != Domain::EnsureVerticalShellThickness::Partial) {
                                 combine_holes(cache.holes);
                             }
 
@@ -1361,7 +1362,7 @@ void PrintObject::discover_vertical_shells()
 	                        -- i) {
                                 at_least_one_bottom_projected = true;
 	                        const DiscoverVerticalShellsCacheEntry &cache = cache_top_botom_regions[i];
-                            if (region_config.get<EnsureVerticalShellThickness>("ensure_vertical_shell_thickness") != EnsureVerticalShellThickness::Partial) {
+                            if (region_config.get<Domain::EnsureVerticalShellThickness>("ensure_vertical_shell_thickness") != Domain::EnsureVerticalShellThickness::Partial) {
                                 combine_holes(cache.holes);
                             }
 
@@ -1615,7 +1616,7 @@ void PrintObject::bridge_over_infill()
                     // initially consider the whole layer unsupported, but also gather solid layers to later cut off supported parts
                     unsupported_area.insert(unsupported_area.end(), fill_polys.begin(), fill_polys.end());
                     for (const Surface &surface : region->fill_surfaces()) {
-                        if (surface.surface_type != stInternal || region->region().config().get<Domain::Percentage>("fill_density") == 100) {
+                        if (surface.surface_type != stInternal || region->region().config().get<Domain::Percentage>("fill_density") == Domain::Percentage{100}) {
                             Polygons p = Algorithms::ExPolygon::to_polygons(surface.expolygon);
                             lower_layer_solids.insert(lower_layer_solids.end(), p.begin(), p.end());
                         }
@@ -1676,7 +1677,7 @@ void PrintObject::bridge_over_infill()
     // It requires modifying this instance of print object in a specific way, so that we do not invalidate the pointers in our surfaces_by_layer structure.
     bool has_lightning_infill = false;
     for (size_t i = 0; i < this->num_printing_regions(); i++) {
-        if (this->printing_region(i).config().get<InfillPattern>("fill_pattern") == ipLightning) {
+        if (this->printing_region(i).config().get<Domain::InfillPattern>("fill_pattern") == Domain::InfillPattern::ipLightning) {
             has_lightning_infill = true;
             break;
         }
@@ -1704,7 +1705,7 @@ void PrintObject::bridge_over_infill()
 
                 Polygons lightning_fill;
                 for (const LayerRegion *region : lower_layer->regions()) {
-                    if (region->region().config().get<InfillPattern>("fill_pattern") == ipLightning) {
+                    if (region->region().config().get<Domain::InfillPattern>("fill_pattern") == Domain::InfillPattern::ipLightning) {
                         Polygons lf = to_polygons(region->fill_surfaces().filter_by_type(stInternal));
                         lightning_fill.insert(lightning_fill.end(), lf.begin(), lf.end());
                     }
@@ -1869,7 +1870,7 @@ void PrintObject::bridge_over_infill()
                 break;
 
             for (const LayerRegion *region : layer->regions()) {
-                bool has_low_density = region->region().config().get<Domain::Percentage>("fill_density") < 100;
+                bool has_low_density = region->region().config().get<Domain::Percentage>("fill_density") < Domain::Percentage{100};
                 for (const Surface &surface : region->fill_surfaces()) {
                     if ((surface.surface_type == stInternal && has_low_density) || surface.surface_type == stInternalVoid ) {
                         layers_sparse_infill.push_back(surface.expolygon);
@@ -1887,7 +1888,7 @@ void PrintObject::bridge_over_infill()
     };
 
     // LAMBDA do determine optimal bridging angle
-    auto determine_bridging_angle = [](const Polygons &bridged_area, const Lines &anchors, InfillPattern dominant_pattern) {
+    auto determine_bridging_angle = [](const Polygons &bridged_area, const Lines &anchors, Domain::InfillPattern dominant_pattern) {
         AABBTreeLines::LinesDistancer<Line> lines_tree(anchors);
 
         std::map<double, int> counted_directions;
@@ -1956,8 +1957,8 @@ void PrintObject::bridge_over_infill()
             bridging_angle = 0.001;
         }
         switch (dominant_pattern) {
-        case ipHilbertCurve: bridging_angle += 0.25 * PI; break;
-        case ipOctagramSpiral: bridging_angle += (1.0 / 16.0) * PI; break;
+        case Domain::InfillPattern::ipHilbertCurve: bridging_angle += 0.25 * PI; break;
+        case Domain::InfillPattern::ipOctagramSpiral: bridging_angle += (1.0 / 16.0) * PI; break;
         default: break;
         }
 
@@ -2217,7 +2218,7 @@ void PrintObject::bridge_over_infill()
                     expansion_area.insert(expansion_area.end(), internal_polys.begin(), internal_polys.end());
                     Polygons fill_polys = Algorithms::ExPolygon::to_polygons(region->fill_expolygons());
                     total_fill_area.insert(total_fill_area.end(), fill_polys.begin(), fill_polys.end());
-                    if (region->region().config().get<InfillPattern>("fill_pattern") == ipLightning) {
+                    if (region->region().config().get<Domain::InfillPattern>("fill_pattern") == Domain::InfillPattern::ipLightning) {
                         Polygons l = to_polygons(region->fill_surfaces().filter_by_type(stInternal));
                         lightning_area.insert(lightning_area.end(), l.begin(), l.end());
                     }
@@ -2267,11 +2268,11 @@ void PrintObject::bridge_over_infill()
                     double bridging_angle = 0;
                     if (!anchors.empty()) {
                         bridging_angle = determine_bridging_angle(area_to_be_bridge, Algorithms::Polyline::to_lines(anchors),
-                                                                  candidate.region->region().config().get<InfillPattern>("fill_pattern"));
+                                                                  candidate.region->region().config().get<Domain::InfillPattern>("fill_pattern"));
                     } else {
                         // use expansion boundaries as anchors.
                         // Also, use Infill pattern that is neutral for angle determination, since there are no infill lines.
-                        bridging_angle = determine_bridging_angle(area_to_be_bridge, Algorithms::Polyline::to_lines(boundary_plines), InfillPattern::ipLine);
+                        bridging_angle = determine_bridging_angle(area_to_be_bridge, Algorithms::Polyline::to_lines(boundary_plines), Domain::InfillPattern::ipLine);
                     }
 
                     boundary_plines.insert(boundary_plines.end(), anchors.begin(), anchors.end());
@@ -2406,20 +2407,6 @@ static void clamp_exturder_to_default(ConfigOptionInt &opt, size_t num_extruders
         opt.value = 1;
 }
 
-PrintObjectConfig PrintObject::object_config_from_model_object(const PrintObjectConfig &default_object_config, const ModelConfigObject &config, size_t num_extruders)
-{
-    PrintObjectConfig result = default_object_config;
-    {
-        DynamicPrintConfig src_normalized(config.get());
-        src_normalized.normalize_fdm();
-        result.apply(src_normalized, true);
-    }
-    // Clamp invalid extruders to the default extruder (with index 1).
-    clamp_exturder_to_default(result.support_material_extruder,           num_extruders);
-    clamp_exturder_to_default(result.support_material_interface_extruder, num_extruders);
-    return result;
-}
-
 namespace {
 /**
  * Layer regions point to old_regions, update the pointers to new regions where possible.
@@ -2475,97 +2462,34 @@ void PrintObject::set_shared_regions(const std::shared_ptr<PrintObjectRegions>& 
 const std::string                                                    key_extruder { "extruder" };
 static constexpr const std::initializer_list<const std::string_view> keys_extruders { "infill_extruder"sv, "solid_infill_extruder"sv, "perimeter_extruder"sv };
 
-static void apply_to_print_region_config(PrintRegionConfig &out, const DynamicPrintConfig &in)
-{
-    // 1) Copy the "extruder key to infill_extruder and perimeter_extruder.
-    auto *opt_extruder = in.opt<ConfigOptionInt>(key_extruder);
-    if (opt_extruder)
-        if (int extruder = opt_extruder->value; extruder != 0) {
-            // Not a default extruder.
-            out.infill_extruder      .value = extruder;
-            out.solid_infill_extruder.value = extruder;
-            out.perimeter_extruder   .value = extruder;
-        }
-    // 2) Copy the rest of the values.
-    for (auto it = in.cbegin(); it != in.cend(); ++ it)
-        if (it->first != key_extruder)
-            if (ConfigOption* my_opt = out.option(it->first, false); my_opt != nullptr) {
-                if (one_of(it->first, keys_extruders)) {
-                    // Ignore "default" extruders.
-                    int extruder = static_cast<const ConfigOptionInt*>(it->second.get())->value;
-                    if (extruder > 0)
-                        my_opt->setInt(extruder);
-                } else
-                    my_opt->set(it->second.get());
-            }
-}
-
-PrintRegionConfig region_config_from_model_volume(const PrintRegionConfig &default_or_parent_region_config, const DynamicPrintConfig *layer_range_config, const ModelVolume &volume, size_t num_extruders)
-{
-    PrintRegionConfig config = default_or_parent_region_config;
-    if (volume.is_model_part()) {
-        // default_or_parent_region_config contains the Print's PrintRegionConfig.
-        // Override with ModelObject's PrintRegionConfig values.
-        apply_to_print_region_config(config, volume.get_object()->config.get());
-    } else {
-        // default_or_parent_region_config contains parent PrintRegion config, which already contains ModelVolume's config.
-    }
-    if (layer_range_config != nullptr) {
-        // Not applicable to modifiers.
-        assert(volume.is_model_part());
-    	apply_to_print_region_config(config, *layer_range_config);
-    }
-    apply_to_print_region_config(config, volume.config.get());
-    if (! volume.material_id().empty())
-        apply_to_print_region_config(config, volume.material()->config.get());
-    // Clamp invalid extruders to the default extruder (with index 1).
-    clamp_exturder_to_default(config.get<int>("infill_extruder"),       num_extruders);
-    clamp_exturder_to_default(config.get<int>("perimeter_extruder"),    num_extruders);
-    clamp_exturder_to_default(config.get<int>("solid_infill_extruder"), num_extruders);
-    if (config.get<Domain::Percentage>("fill_density") < 0.00011f)
-        // Switch of infill for very low infill rates, also avoid division by zero in infill generator for these very low rates.
-        // See GH issue #5910.
-        config.get<Domain::Percentage>("fill_density") = 0;
-    else 
-        config.get<Domain::Percentage>("fill_density") = std::min(config.get<Domain::Percentage>("fill_density"), 100.);
-    if (config.get<FuzzySkinType>("fuzzy_skin") != FuzzySkinType::None && (config.get<double>("fuzzy_skin_point_dist") < 0.01 || config.get<double>("fuzzy_skin_thickness") < 0.001))
-        config.get<FuzzySkinType>("fuzzy_skin") = FuzzySkinType::None;
-    return config;
-}
-
 void PrintObject::update_slicing_parameters() {
     if (!m_slicing_params.valid) {
-        m_slicing_params = SlicingParameters::create_from_config(this->print()->config(), m_config, this->model_object()->max_z(),
+        m_slicing_params = SlicingParameters::create_from_config(this->print()->config(), this->model_object()->max_z(),
                                                                  this->object_extruders(), this->print()->shrinkage_compensation());
     }
 }
 
-SlicingParameters PrintObject::slicing_parameters(const DynamicPrintConfig &full_config, const ModelObject &model_object, float object_max_z, const Vec3d &object_shrinkage_compensation) {
-	PrintConfig         print_config;
-	PrintObjectConfig   object_config;
-	PrintRegionConfig   default_region_config;
-	print_config.apply(full_config, true);
-	object_config.apply(full_config, true);
-	default_region_config.apply(full_config, true);
-	size_t              num_extruders = print_config.get<std::vector<double>>("nozzle_diameter").size();
-	object_config = object_config_from_model_object(object_config, model_object.config, num_extruders);
-
-	std::vector<unsigned int> object_extruders;
+SlicingParameters PrintObject::slicing_parameters(
+    const PrintObjectConfigView& object_config,
+    const ModelObject& model_object,
+    float object_max_z,
+    const Vec3d& object_shrinkage_compensation
+)
+{
+    std::vector<unsigned int> object_extruders;
 	for (const ModelVolume* model_volume : model_object.volumes)
 		if (model_volume->is_model_part()) {
 			PrintRegion::collect_object_printing_extruders(
-				print_config,
-				region_config_from_model_volume(default_region_config, nullptr, *model_volume, num_extruders),
-                object_config.get<BrimType>("brim_type") != btNoBrim && object_config.get<double>("brim_width") > 0.,
+				object_config,
+                object_config.get<Domain::BrimType>("brim_type") != Domain::BrimType::NoBrim && object_config.get<double>("brim_width") > 0.,
 				object_extruders);
 			for (const std::pair<const t_layer_height_range, ModelConfig> &range_and_config : model_object.layer_config_ranges)
 				if (range_and_config.second.has("perimeter_extruder") ||
 					range_and_config.second.has("infill_extruder") ||
 					range_and_config.second.has("solid_infill_extruder"))
 					PrintRegion::collect_object_printing_extruders(
-						print_config,
-						region_config_from_model_volume(default_region_config, &range_and_config.second.get(), *model_volume, num_extruders),
-                        object_config.get<BrimType>("brim_type") != btNoBrim && object_config.get<double>("brim_width") > 0.,
+						object_config,
+                        object_config.get<Domain::BrimType>("brim_type") != Domain::BrimType::NoBrim && object_config.get<double>("brim_width") > 0.,
 						object_extruders);
 		}
     sort_remove_duplicates(object_extruders);
@@ -2574,7 +2498,7 @@ SlicingParameters PrintObject::slicing_parameters(const DynamicPrintConfig &full
     if (object_max_z <= 0.f)
         object_max_z = (float)sizes(model_object.raw_bounding_box()).z();
 
-    return SlicingParameters::create_from_config(print_config, object_config, object_max_z, object_extruders, object_shrinkage_compensation);
+    return SlicingParameters::create_from_config(object_config, object_max_z, object_extruders, object_shrinkage_compensation);
 }
 
 // returns 0-based indices of extruders used to print the object (without brim, support and other helper extrusions)
@@ -2728,11 +2652,11 @@ void PrintObject::discover_horizontal_shells()
             m_print->throw_if_canceled();
             Layer                   *layer         = m_layers[i];
             LayerRegion             *layerm        = layer->regions()[region_id];
-            const PrintRegionConfig &region_config = layerm->region().config();
-            if (region_config.get<int>("solid_infill_every_layers") > 0 && region_config.get<Domain::Percentage>("fill_density") > 0 &&
+            const PrintRegionConfigView &region_config = layerm->region().config();
+            if (region_config.get<int>("solid_infill_every_layers") > 0 && region_config.get<Domain::Percentage>("fill_density") > Domain::Percentage{0} &&
                 (i % region_config.get<int>("solid_infill_every_layers")) == 0) {
                 // Insert a solid internal layer. Mark stInternal surfaces as stInternalSolid or stInternalBridge.
-                SurfaceType type = (region_config.get<Domain::Percentage>("fill_density") == 100 || region_config.get<int>("solid_infill_every_layers") == 1) ? stInternalSolid :
+                SurfaceType type = (region_config.get<Domain::Percentage>("fill_density") == Domain::Percentage{100} || region_config.get<int>("solid_infill_every_layers") == 1) ? stInternalSolid :
                                                                                                                          stInternalBridge;
                 for (Surface &surface : layerm->m_fill_surfaces.surfaces)
                     if (surface.surface_type == stInternal)
@@ -2740,10 +2664,10 @@ void PrintObject::discover_horizontal_shells()
             }
 
             // If ensure_vertical_shell_thickness, then the rest has already been performed by discover_vertical_shells().
-            if (region_config.get<EnsureVerticalShellThickness>("ensure_vertical_shell_thickness") != EnsureVerticalShellThickness::Disabled)
+            if (region_config.get<Domain::EnsureVerticalShellThickness>("ensure_vertical_shell_thickness") != Domain::EnsureVerticalShellThickness::Disabled)
                 continue;
 
-            assert(region_config.get<EnsureVerticalShellThickness>("ensure_vertical_shell_thickness") == EnsureVerticalShellThickness::Disabled);
+            assert(region_config.get<Domain::EnsureVerticalShellThickness>("ensure_vertical_shell_thickness") == Domain::EnsureVerticalShellThickness::Disabled);
 
             double print_z  = layer->print_z;
             double bottom_z = layer->bottom_z();
@@ -2811,7 +2735,10 @@ void PrintObject::discover_horizontal_shells()
                         // No internal solid needed on this layer. In order to decide whether to continue
                         // searching on the next neighbor (thus enforcing the configured number of solid
                         // layers, use different strategies according to configured infill density:
-                        if (region_config.get<Domain::Percentage>("fill_density") == 0 || region_config.get<EnsureVerticalShellThickness>("ensure_vertical_shell_thickness") == EnsureVerticalShellThickness::Disabled) {
+                        if (region_config.get<Domain::Percentage>("fill_density") == Domain::Percentage{0} ||
+                            region_config.get<Domain::EnsureVerticalShellThickness>(
+                                "ensure_vertical_shell_thickness"
+                            ) == Domain::EnsureVerticalShellThickness::Disabled) {
                             // If user expects the object to be void (for example a hollow sloping vase),
                             // don't continue the search. In this case, we only generate the external solid
                             // shell if the object would otherwise show a hole (gap between perimeters of
@@ -2824,7 +2751,7 @@ void PrintObject::discover_horizontal_shells()
                         }
                     }
 
-                    const float factor = (region_config.get<Domain::Percentage>("fill_density") == 0) ? 1.f : 0.5f;
+                    const float factor = (region_config.get<Domain::Percentage>("fill_density") == Domain::Percentage{0}) ? 1.f : 0.5f;
                     if (factor > 0.0f) {
                         // if we're printing a hollow object we discard any solid shell thinner
                         // than a perimeter width, since it's probably just crossing a sloping wall
@@ -2933,7 +2860,7 @@ void PrintObject::combine_infill()
         const bool         automatic_infill_combination  = region.config().get<bool>("automatic_infill_combination");
         const bool         enable_combine_infill         = automatic_infill_combination || combine_infill_every_n_layers >= 2;
 
-        if (!enable_combine_infill || region.config().get<Domain::Percentage>("fill_density") == 0.) {
+        if (!enable_combine_infill || region.config().get<Domain::Percentage>("fill_density") == Domain::Percentage{0.}) {
             continue;
         }
 
@@ -3010,11 +2937,11 @@ void PrintObject::combine_infill()
                 0.5f * layerms.back()->flow(frPerimeter).scaled_width() +
              // Because fill areas for rectilinear and honeycomb are grown 
              // later to overlap perimeters, we need to counteract that too.
-                ((region.config().get<InfillPattern>("fill_pattern") == ipRectilinear   ||
-                  region.config().get<InfillPattern>("fill_pattern") == ipMonotonic     ||
-                  region.config().get<InfillPattern>("fill_pattern") == ipGrid          ||
-                  region.config().get<InfillPattern>("fill_pattern") == ipLine          ||
-                  region.config().get<InfillPattern>("fill_pattern") == ipHoneycomb) ? 1.5f : 0.5f) * 
+                ((region.config().get<Domain::InfillPattern>("fill_pattern") == Domain::InfillPattern::ipRectilinear   ||
+                  region.config().get<Domain::InfillPattern>("fill_pattern") == Domain::InfillPattern::ipMonotonic     ||
+                  region.config().get<Domain::InfillPattern>("fill_pattern") == Domain::InfillPattern::ipGrid          ||
+                  region.config().get<Domain::InfillPattern>("fill_pattern") == Domain::InfillPattern::ipLine          ||
+                  region.config().get<Domain::InfillPattern>("fill_pattern") == Domain::InfillPattern::ipHoneycomb) ? 1.5f : 0.5f) * 
                     layerms.back()->flow(frSolidInfill).scaled_width();
             for (ExPolygon &expoly : intersection)
                 Slic3r::append(intersection_with_clearance, offset(expoly, clearance_offset));
@@ -3043,7 +2970,11 @@ void PrintObject::combine_infill()
 
 void PrintObject::_generate_support_material()
 {
-    if (this->has_support() && (m_config.get<SupportMaterialStyle>("support_material_style") == smsTree || m_config.get<SupportMaterialStyle>("support_material_style") == smsOrganic)) {
+    if (this->has_support() &&
+        (m_config.get<Domain::SupportMaterialStyle>("support_material_style"
+         ) == Domain::SupportMaterialStyle::smsTree ||
+         m_config.get<Domain::SupportMaterialStyle>("support_material_style"
+         ) == Domain::SupportMaterialStyle::smsOrganic)) {
         fff_tree_support_generate(*this, std::function<void()>([this](){ this->throw_if_canceled(); }));
     } else {
         // If support style is set to Organic however only raft will be built but no support,

@@ -88,13 +88,7 @@ class FullConfigSLA : public FullConfig
 public:
     FullConfigSLA(const SLAPrinterSettings& printer_s,
                   const SLAPrintSettings& print_s,
-                  const SLAMaterialSettings& material_s)                  
-    {
-        // The base class only gets base pointers to base ConfigBoxes - it needs not to know what they are.
-        add(printer_s);
-        add(print_s);
-        add(material_s);        
-    }
+                  const SLAMaterialSettings& material_s);
 
     std::string_view name() const override { return "SLA"; }
 };

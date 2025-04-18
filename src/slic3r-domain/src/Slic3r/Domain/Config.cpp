@@ -1,8 +1,42 @@
 #include "Slic3r/Domain/Config.hpp"
 #include "Slic3r/Assert.hpp"
+#include "Slic3r/Domain/Types.hpp"
 
 #include <algorithm>
 #include <set>
+
+namespace std {
+
+    template<> struct hash<Slic3r::Domain::Percentage> {
+        std::size_t operator()(const Slic3r::Domain::Percentage& v) const noexcept {
+            return std::hash<double>{}(v.value);
+        }
+    };
+
+    template<> struct hash<Slic3r::Domain::FloatOrPercentage> {
+        std::size_t operator()(const Slic3r::Domain::FloatOrPercentage& v) const noexcept {
+            const std::size_t seed{std::hash<double>{}(v.get_abs_value(1.0))};
+            return v.is_percentage() ? seed ^ 0x9e3779b9 : seed;
+        }
+    };
+
+    template<> struct hash<Slic3r::Domain::Vec2d> {
+        std::size_t operator()(const Slic3r::Domain::Vec2d& v) const noexcept {
+            std::size_t seed{std::hash<double>{}(v.x())};
+            boost::hash_combine(seed, std::hash<double>{}(v.y()));
+            return seed;
+        }
+    };
+
+    template<> struct hash<Slic3r::Domain::Vec3d> {
+        std::size_t operator()(const Slic3r::Domain::Vec3d& v) const noexcept {
+            std::size_t seed{std::hash<double>{}(v.x())};
+            boost::hash_combine(seed, std::hash<double>{}(v.y()));
+            boost::hash_combine(seed, std::hash<double>{}(v.z()));
+            return seed;
+        }
+    };
+}
 
 namespace Slic3r::Domain {
 
@@ -102,12 +136,12 @@ ConfigItem::ConfigItem(const ConfigItemDef& def, std::string_view box_type)
 
 
 ConfigItem::ConfigItem(const ConfigItem& other)
-: m_def(other.m_def),
+: m_name(other.m_name),
     m_type(other.m_type),
     m_is_nullable(other.m_is_nullable),
     m_is_null(other.m_is_null),
-    m_data(other.m_data),
-    m_name(other.m_name)
+    m_def(other.m_def),
+    m_data(other.m_data)
 {}
 
 
@@ -124,14 +158,13 @@ ConfigItem& ConfigItem::operator=(const ConfigItem& other) {
     return *this;
 }
 
-
-
 bool ConfigItem::operator==(const ConfigItem& other) const
 {
     if (this->type() != other.type()
      || this->is_vector() != other.is_vector()
      || this->name() != other.name())
         return false;
+
     if (this->m_is_null != other.m_is_null)
         return false;
     if (this->type() == ConfigItemType::Enum && this->def().enum_type.type() != other.def().enum_type.type())
@@ -139,29 +172,28 @@ bool ConfigItem::operator==(const ConfigItem& other) const
     if (this->m_is_nullable && this->is_null())
         return true; // Both are set to null.
 
+    using CIT = ConfigItemType;
     switch (this->type()) {
-    case ConfigItemType::Bool    :        return std::any_cast<bool>(m_data) == std::any_cast<bool>(other.m_data); break;
-    case ConfigItemType::Int     :        return std::any_cast<int>(m_data)  == std::any_cast<int>(other.m_data); break;
-    case ConfigItemType::IntOptional :    return std::any_cast<std::optional<int>>(m_data) == std::any_cast<std::optional<int>>(other.m_data); break;
-    case ConfigItemType::Double  :        return std::any_cast<double>(m_data) == std::any_cast<double>(other.m_data); break;
-    case ConfigItemType::String  :        return std::any_cast<std::string>(m_data) == std::any_cast<std::string>(other.m_data); break;
-    case ConfigItemType::Enum    :        return std::any_cast<int>(m_data) == std::any_cast<int>(other.m_data); break;
-    case ConfigItemType::Percent :        return std::any_cast<Percentage>(m_data) == std::any_cast<Percentage>(other.m_data); break;
-    case ConfigItemType::FloatOrPercent : return std::any_cast<FloatOrPercentage>(m_data) == std::any_cast<FloatOrPercentage>(other.m_data); break;
-    case ConfigItemType::Point   :        return std::any_cast<Vec2d>(m_data) == std::any_cast<Vec2d>(other.m_data); break;
-    case ConfigItemType::Bools   :        return *std::any_cast<std::vector<bool>>(&m_data) == *std::any_cast<std::vector<bool>>(&other.m_data); break;
-    case ConfigItemType::Enums   :        [[fallthrough]];
-    case ConfigItemType::Ints    :        return *std::any_cast<std::vector<int>>(&m_data) == *std::any_cast<std::vector<int>>(&other.m_data); break;
-    case ConfigItemType::Doubles :        return *std::any_cast<std::vector<double>>(&m_data) == *std::any_cast<std::vector<double>>(&other.m_data); break;
-    case ConfigItemType::Strings :        return *std::any_cast<std::vector<std::string>>(&m_data) == *std::any_cast<std::vector<std::string>>(&other.m_data); break;
-    case ConfigItemType::Points  :        return *std::any_cast<std::vector<Vec2d>>(&m_data) == *std::any_cast<std::vector<Vec2d>>(&other.m_data); break;
+    case CIT::Bool: return this->get<bool>() == other.get<bool>();
+    case CIT::Int: return get<int>() == get<int>();
+    case CIT::IntOptional: return get<std::optional<int>>() == get<std::optional<int>>();
+    case CIT::Double: return get<double>() == get<double>();
+    case CIT::String: return get<std::string>() == get<std::string>();
+    case CIT::Enum: return get_enum_as_int() == get_enum_as_int();
+    case CIT::Percent: return get<Percentage>() == get<Percentage>();
+    case CIT::FloatOrPercent: return get<FloatOrPercentage>() == get<FloatOrPercentage>();
+    case CIT::Point: return get<Vec2d>() == get<Vec2d>();
+    case CIT::Bools: return get<std::vector<bool>>() == get<std::vector<bool>>();
+    case CIT::Enums: [[fallthrough]];
+    case CIT::Ints: return get<std::vector<int>>() == get<std::vector<int>>();
+    case CIT::Doubles: return get<std::vector<double>>() == get<std::vector<double>>();
+    case CIT::Strings: return get<std::vector<std::string>>() == get<std::vector<std::string>>();
+    case CIT::Points: return get<std::vector<Vec2d>>() == get<std::vector<Vec2d>>();
     default : PANIC();
     }
 
     PANIC();
 }
-
-
 
 void ConfigItem::set_null(bool null)
 {
@@ -179,13 +211,13 @@ bool ConfigItem::is_null() const
 template <IsNotEnumOrVectorOfEnums T>
 const T& ConfigItem::get() const
 {
-    ASSERT(! m_is_null);
+    ASSERT(!m_is_null, "ConfigItem '" + std::string{m_name} + " 'is null");
     try {
         const T* value = std::any_cast<T>(&m_data);
-        ASSERT(value, "Type does not match");
+        ASSERT(value, "Type of '" + m_name + "' does not match");
         return *value;
     } catch (const std::bad_any_cast&) {
-        PANIC("Type does not match");
+        PANIC("Type of '" + m_name + "' does not match");
     }
     throw std::exception(); // silence warning
 }
@@ -198,7 +230,7 @@ void ConfigItem::set(const T& value)
     if (m_data.type() == typeid(T))
         m_data = std::make_any<T>(value);
     else
-        PANIC("Type does not match.");
+        PANIC("Type of '" + m_name + "' does not match");
 }
 
 
@@ -300,6 +332,48 @@ std::vector<T>& ConfigItem::vec()
 }
 
 
+namespace Impl {
+template<typename T>
+std::size_t hash(const T& value) {
+    if constexpr(std::ranges::range<T>) {
+        std::size_t seed = 0;
+        for (const auto& v : value) {
+            boost::hash_combine(seed, hash(v));
+        }
+        return seed;
+    } else {
+        return std::hash<T>{}(value);
+    }
+}
+}
+
+std::size_t ConfigItem::hash() const {
+    if (m_is_null) {
+        return 0;
+    }
+
+    using CIT = ConfigItemType;
+    using Impl::hash;
+    switch (m_def->type) {
+        case CIT::Bool: return hash(this->get<bool>());
+        case CIT::Int: return hash(this->get<int>());
+        case CIT::IntOptional: return hash(this->get<std::optional<int>>());
+        case CIT::Double: return hash(this->get<double>());
+        case CIT::String: return hash(this->get<std::string>());
+        case CIT::Enum: return hash(this->get_enum_as_int());
+        case CIT::Point: return hash(this->get<Vec2d>());
+        case CIT::FloatOrPercent: return hash(this->get<FloatOrPercentage>());
+        case CIT::Percent: return hash(this->get<Percentage>());
+        case CIT::Bools: return hash(this->get<std::vector<bool>>());
+        case CIT::Ints: return hash(this->get<std::vector<int>>());
+        case CIT::Doubles: return hash(this->get<std::vector<double>>());
+        case CIT::Strings: return hash(this->get<std::vector<std::string>>());
+        case CIT::Points: return hash(this->get<std::vector<Vec2d>>());
+        case CIT::Enums: return hash(this->get_enums_as_ints());
+        case CIT::None: PANIC("None ConfigItem can't be hashed!");
+    }
+}
+
 
 ConfigItem& ConfigBox::opt(const std::string_view key) {
     auto it = std::lower_bound(m_items.begin(), m_items.end(), key,
@@ -333,6 +407,14 @@ std::vector<std::string> ConfigBox::diff_keys(const ConfigBox& other) const
 }
 
 
+std::size_t ConfigBox::hash() const
+{
+    std::size_t seed{0};
+    for (const ConfigItem& item : m_items) {
+        boost::hash_combine(seed, item.hash());
+    }
+    return seed;
+}
 
 ConfigBox::ConfigBox(const ConfigDefinitions& defs, std::string_view type)
 : m_type{type}
@@ -340,6 +422,20 @@ ConfigBox::ConfigBox(const ConfigDefinitions& defs, std::string_view type)
     for (const ConfigItemDef& def : defs.defs()) {
         if (def.location == type || std::ranges::find(def.overrides_in, type) != def.overrides_in.end())
             m_items.emplace_back(ConfigItem(def, type));
+    }
+}
+
+FullConfig::FullConfig(const FullConfigInput& all_boxes) {
+    for (const auto& box_or_boxes : all_boxes) {
+        std::visit([this](auto&& box_or_boxes) { this->add(box_or_boxes); }, box_or_boxes);
+    }
+
+    for (const auto& [key, _] : m_single_items) {
+        m_single_item_keys.push_back(key);
+    }
+
+    for (const auto &[key, _] : m_multi_items) {
+        m_multi_item_keys.push_back(key);
     }
 }
 
@@ -358,7 +454,7 @@ void FullConfig::add(const ConfigBox& box)
 
 
 
-void FullConfig::add(const std::vector<std::reference_wrapper<const ConfigBox>>& boxes)
+void FullConfig::add(const BoxRefs& boxes)
 {
     std::set<std::string> box_types;
 
@@ -409,42 +505,57 @@ void FullConfig::add(const std::vector<std::reference_wrapper<const ConfigBox>>&
 
 std::vector<std::string> ConfigView::diff_keys(const ConfigView& other) const
 {
-    // Reminder: FullConfig is our friend class.
-    ASSERT(this->m_full_config->name() == other.m_full_config->name());
-    std::vector<std::string> out;
-
-    for (const auto& [key, item] : this->m_full_config->m_single_items) {
-        auto it = other.m_full_config->m_single_items.find(key);
-        if (it == other.m_full_config->m_single_items.end() || it->second != item)
-            out.emplace_back(key);
-    }
-    for (const auto& [key, items] : this->m_full_config->m_multi_items) {
-        auto it = other.m_full_config->m_multi_items.find(key);
-        if (it == other.m_full_config->m_multi_items.end() || items != it->second) {
-            out.emplace_back(key);
-            break;
+    std::vector<std::string> result;
+    for (const std::string& key : m_full_config->m_single_item_keys) {
+        if (opt_single(key) != other.opt_single(key)) {
+            result.push_back(key);
         }
     }
-    // Now the extra boxes. Right now, all the extra boxes must be of the same type.
-    ASSERT(this->m_config_boxes.size() == other.m_config_boxes.size());
-    for (size_t i = 0; i < m_config_boxes.size(); ++i) {
-        std::vector<std::string> diff = m_config_boxes[i]->diff_keys(*other.m_config_boxes[i]);
-        out.insert(out.end(), diff.begin(), diff.end());
+
+    for (const std::string& key : m_full_config->m_multi_item_keys) {
+        if (opt_multi(key) != other.opt_multi(key)) {
+            result.push_back(key);
+        }
     }
-    std::sort(out.begin(), out.end());
-    out.erase(std::unique(out.begin(), out.end()), out.end());
-    return out;
+
+    return result;
+}
+
+bool ConfigView::operator==(const ConfigView& other) const {
+    return diff_keys(other).empty();
+}
+
+std::size_t ConfigView::hash() const {
+    std::size_t seed{m_full_config->hash()};
+    for (const ConfigBoxPtr& box : m_config_boxes) {
+        boost::hash_combine(seed, box->hash());
+    }
+    return seed;
+}
+
+std::size_t FullConfig::hash() const {
+    std::size_t seed{std::hash<std::string>{}(std::string{this->name()})};
+
+    for (const auto& [_, item] : m_single_items) {
+        boost::hash_combine(seed, item.hash());
+    }
+    for (const auto& [_, items] : m_multi_items) {
+        for (const ConfigItem& item : items) {
+            boost::hash_combine(seed, item.hash());
+        }
+    }
+    return seed;
 }
 
 const ConfigItem& FullConfig::opt_single(const std::string_view key) const {
-        auto it = m_single_items.find(std::string(key));
-        ASSERT(it != m_single_items.end());
-        return it->second;
+    auto it = m_single_items.find(std::string(key));
+    ASSERT(it != m_single_items.end(), "Key '" + std::string{key} +"' does not exist!");
+    return it->second;
 }
 
 const std::vector<ConfigItem>& FullConfig::opt_multi(const std::string_view key) const {
     const auto it{m_multi_items.find(std::string(key))};
-    ASSERT(it != m_multi_items.end());
+    ASSERT(it != m_multi_items.end(), "Key '" + std::string{key} +"' does not exist!");
     return it->second;
 }
 
@@ -462,6 +573,9 @@ template const std::vector<int>& ConfigItem::get<std::vector<int>>() const;
 template const std::vector<double>& ConfigItem::get<std::vector<double>>() const;
 template const std::vector<std::string>& ConfigItem::get<std::vector<std::string>>() const;
 template const std::vector<Vec2d>& ConfigItem::get<std::vector<Vec2d>>() const;
+template const std::vector<Percentage>& ConfigItem::get<std::vector<Percentage>>() const;
+template const std::vector<FloatOrPercentage>& ConfigItem::get<std::vector<FloatOrPercentage>>() const;
+template const std::vector<std::optional<int>>& ConfigItem::get<std::vector<std::optional<int>>>() const;
 
 // Explicit instantiations for setters.
 template void ConfigItem::set(const bool&);

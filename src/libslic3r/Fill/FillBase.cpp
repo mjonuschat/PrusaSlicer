@@ -46,31 +46,31 @@ using namespace Slic3r::Biz;
 
 namespace Slic3r {
 
-Fill* Fill::new_from_type(const InfillPattern type)
+Fill* Fill::new_from_type(const Domain::InfillPattern type)
 {
     switch (type) {
-    case ipConcentric:          return new FillConcentric();
-    case ipHoneycomb:           return new FillHoneycomb();
-    case ip3DHoneycomb:         return new Fill3DHoneycomb();
-    case ipGyroid:              return new FillGyroid();
-    case ipRectilinear:         return new FillRectilinear();
-    case ipAlignedRectilinear:  return new FillAlignedRectilinear();
-    case ipMonotonic:           return new FillMonotonic();
-    case ipMonotonicLines:      return new FillMonotonicLines();
-    case ipLine:                return new FillLine();
-    case ipGrid:                return new FillGrid();
-    case ipTriangles:           return new FillTriangles();
-    case ipStars:               return new FillStars();
-    case ipCubic:               return new FillCubic();
-    case ipArchimedeanChords:   return new FillArchimedeanChords();
-    case ipHilbertCurve:        return new FillHilbertCurve();
-    case ipOctagramSpiral:      return new FillOctagramSpiral();
-    case ipAdaptiveCubic:       return new FillAdaptive::Filler();
-    case ipSupportCubic:        return new FillAdaptive::Filler();
-    case ipSupportBase:         return new FillSupportBase();
-    case ipLightning:           return new FillLightning::Filler();
-    case ipEnsuring:            return new FillEnsuring();
-    case ipZigZag:              return new FillZigZag();
+    case Domain::InfillPattern::ipConcentric:          return new FillConcentric();
+    case Domain::InfillPattern::ipHoneycomb:           return new FillHoneycomb();
+    case Domain::InfillPattern::ip3DHoneycomb:         return new Fill3DHoneycomb();
+    case Domain::InfillPattern::ipGyroid:              return new FillGyroid();
+    case Domain::InfillPattern::ipRectilinear:         return new FillRectilinear();
+    case Domain::InfillPattern::ipAlignedRectilinear:  return new FillAlignedRectilinear();
+    case Domain::InfillPattern::ipMonotonic:           return new FillMonotonic();
+    case Domain::InfillPattern::ipMonotonicLines:      return new FillMonotonicLines();
+    case Domain::InfillPattern::ipLine:                return new FillLine();
+    case Domain::InfillPattern::ipGrid:                return new FillGrid();
+    case Domain::InfillPattern::ipTriangles:           return new FillTriangles();
+    case Domain::InfillPattern::ipStars:               return new FillStars();
+    case Domain::InfillPattern::ipCubic:               return new FillCubic();
+    case Domain::InfillPattern::ipArchimedeanChords:   return new FillArchimedeanChords();
+    case Domain::InfillPattern::ipHilbertCurve:        return new FillHilbertCurve();
+    case Domain::InfillPattern::ipOctagramSpiral:      return new FillOctagramSpiral();
+    case Domain::InfillPattern::ipAdaptiveCubic:       return new FillAdaptive::Filler();
+    case Domain::InfillPattern::ipSupportCubic:        return new FillAdaptive::Filler();
+    case Domain::InfillPattern::ipSupportBase:         return new FillSupportBase();
+    case Domain::InfillPattern::ipLightning:           return new FillLightning::Filler();
+    case Domain::InfillPattern::ipEnsuring:            return new FillEnsuring();
+    case Domain::InfillPattern::ipZigZag:              return new FillZigZag();
     default: throw Slic3r::InvalidArgument("unknown type");
     }
 }
@@ -79,25 +79,25 @@ Fill* Fill::new_from_type(const std::string &type)
 {
     const t_config_enum_values &enum_keys_map = ConfigOptionEnum<InfillPattern>::get_enum_values();
     t_config_enum_values::const_iterator it = enum_keys_map.find(type);
-    return (it == enum_keys_map.end()) ? nullptr : new_from_type(InfillPattern(it->second));
+    return (it == enum_keys_map.end()) ? nullptr : new_from_type(Domain::InfillPattern(it->second));
 }
 
 // Force initialization of the Fill::use_bridge_flow() internal static map in a thread safe fashion even on compilers
 // not supporting thread safe non-static data member initializers.
-static bool use_bridge_flow_initializer = Fill::use_bridge_flow(ipGrid);
+static bool use_bridge_flow_initializer = Fill::use_bridge_flow(Domain::InfillPattern::ipGrid);
 
-bool Fill::use_bridge_flow(const InfillPattern type)
+bool Fill::use_bridge_flow(const Domain::InfillPattern type)
 {
 	static std::vector<unsigned char> cached;
 	if (cached.empty()) {
 		cached.assign(size_t(ipCount), 0);
 		for (size_t i = 0; i < cached.size(); ++ i) {
-			auto *fill = Fill::new_from_type((InfillPattern)i);
+			auto *fill = Fill::new_from_type((Domain::InfillPattern)i);
 			cached[i] = fill->use_bridge_flow();
 			delete fill;
 		}
 	}
-	return cached[type] != 0;
+	return cached[int(type)] != 0;
 }
 
 Polylines Fill::fill_surface(const Surface *surface, const FillParams &params)

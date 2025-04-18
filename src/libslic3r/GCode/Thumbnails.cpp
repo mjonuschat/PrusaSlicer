@@ -182,17 +182,15 @@ std::pair<GCodeThumbnailDefinitionsList, ThumbnailErrors> make_and_check_thumbna
     return std::make_pair(std::move(thumbnails_list), errors);
 }
 
-std::pair<GCodeThumbnailDefinitionsList, ThumbnailErrors> make_and_check_thumbnail_list(const ConfigBase& config)
+std::pair<GCodeThumbnailDefinitionsList, ThumbnailErrors> make_and_check_thumbnail_list(const Domain::ConfigView& config)
 {
     // ??? Unit tests or command line slicing may not define "thumbnails" or "thumbnails_format".
     // ??? If "thumbnails_format" is not defined, export to PNG.
 
     // generate thumbnails data to process it
 
-    if (const auto thumbnails_value = config.option<ConfigOptionString>("thumbnails"))
-        return make_and_check_thumbnail_list(thumbnails_value->value);
-
-    return {};
+    // TODO!!
+    return make_and_check_thumbnail_list(config.get<std::string>("thumbnails"));
 }
 
 std::string get_error_string(const ThumbnailErrors& errors)

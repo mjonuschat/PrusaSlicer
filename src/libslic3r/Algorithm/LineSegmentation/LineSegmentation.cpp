@@ -532,7 +532,7 @@ inline std::vector<ExPolygons> to_expolygons_clips(const PerimeterRegions &perim
     return expolygons_clips;
 }
 
-PolylineRegionSegments polyline_segmentation(const Polyline &subject, const PrintRegionConfig &base_config, const PerimeterRegions &perimeter_regions_clips)
+PolylineRegionSegments polyline_segmentation(const Polyline &subject, const PrintRegionConfigView &base_config, const PerimeterRegions &perimeter_regions_clips)
 {
     const LineRegionRanges line_region_ranges = subject_segmentation(subject_to_zpath(subject), to_expolygons_clips(perimeter_regions_clips));
     if (line_region_ranges.empty()) {
@@ -543,19 +543,19 @@ PolylineRegionSegments polyline_segmentation(const Polyline &subject, const Prin
 
     PolylineRegionSegments segments_out;
     for (PolylineSegment &segment : create_polyline_segments(line_region_ranges, subject)) {
-        const PrintRegionConfig &config = segment.clip_idx == 0 ? base_config : perimeter_regions_clips[segment.clip_idx - 1].region->config();
+        const PrintRegionConfigView &config = segment.clip_idx == 0 ? base_config : perimeter_regions_clips[segment.clip_idx - 1].region->config();
         segments_out.emplace_back(std::move(segment.polyline), config);
     }
 
     return segments_out;
 }
 
-PolylineRegionSegments polygon_segmentation(const Polygon &subject, const PrintRegionConfig &base_config, const PerimeterRegions &perimeter_regions_clips)
+PolylineRegionSegments polygon_segmentation(const Polygon &subject, const PrintRegionConfigView &base_config, const PerimeterRegions &perimeter_regions_clips)
 {
     return polyline_segmentation(Algorithms::Polygon::to_polyline(subject), base_config, perimeter_regions_clips);
 }
 
-ExtrusionRegionSegments extrusion_segmentation(const Arachne::ExtrusionLine &subject, const PrintRegionConfig &base_config, const PerimeterRegions &perimeter_regions_clips)
+ExtrusionRegionSegments extrusion_segmentation(const Arachne::ExtrusionLine &subject, const PrintRegionConfigView &base_config, const PerimeterRegions &perimeter_regions_clips)
 {
     const LineRegionRanges line_region_ranges = subject_segmentation(subject_to_zpath(subject), to_expolygons_clips(perimeter_regions_clips));
     if (line_region_ranges.empty()) {
@@ -566,7 +566,7 @@ ExtrusionRegionSegments extrusion_segmentation(const Arachne::ExtrusionLine &sub
 
     ExtrusionRegionSegments segments_out;
     for (ExtrusionSegment &segment : create_extrusion_segments(line_region_ranges, subject)) {
-        const PrintRegionConfig &config = segment.clip_idx == 0 ? base_config : perimeter_regions_clips[segment.clip_idx - 1].region->config();
+        const PrintRegionConfigView &config = segment.clip_idx == 0 ? base_config : perimeter_regions_clips[segment.clip_idx - 1].region->config();
         segments_out.emplace_back(std::move(segment.extrusion), config);
     }
 

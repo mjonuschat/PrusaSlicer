@@ -43,9 +43,9 @@ namespace Slic3r::FillLightning {
 
 Generator::Generator(const PrintObject &print_object, const double fill_density, const std::function<void()> &throw_on_cancel_callback)
 {
-    const PrintConfig         &print_config         = print_object.print()->config();
-    const PrintObjectConfig   &object_config        = print_object.config();
-    const PrintRegionConfig   &region_config        = print_object.shared_regions()->all_regions.front()->config();
+    const PrintConfigView         &print_config         = print_object.print()->config();
+    const PrintObjectConfigView   &object_config        = print_object.config();
+    const PrintRegionConfigView   &region_config        = print_object.shared_regions()->all_regions.front()->config();
     const std::vector<double> &nozzle_diameters     = print_config.get<std::vector<double>>("nozzle_diameter");
     double                     max_nozzle_diameter  = *std::max_element(nozzle_diameters.begin(), nozzle_diameters.end());
 //    const int                  infill_extruder      = region_config.infill_extruder.value;
@@ -53,9 +53,11 @@ Generator::Generator(const PrintObject &print_object, const double fill_density,
     // Note: There's not going to be a layer below the first one, so the 'initial layer height' doesn't have to be taken into account.
     const double               layer_thickness      = scaled<double>(object_config.get<double>("layer_height"));
 
-    m_infill_extrusion_width = scaled<float>(region_config.get<Domain::FloatOrPercentage>("infill_extrusion_width").is_percentage() ? default_infill_extrusion_width * 0.01 * region_config.get<Domain::FloatOrPercentage>("infill_extrusion_width") :
-                                             region_config.get<Domain::FloatOrPercentage>("infill_extrusion_width") != 0.   ? region_config.get<Domain::FloatOrPercentage>("infill_extrusion_width") :
-                                                                                            default_infill_extrusion_width);
+    const double input_extrusion_width{region_config
+        .get<Domain::FloatOrPercentage>("infill_extrusion_width")
+        .get_abs_value(default_infill_extrusion_width)
+    };
+    m_infill_extrusion_width = scaled<float>(input_extrusion_width != 0. ? input_extrusion_width : default_infill_extrusion_width);
     m_supporting_radius      = coord_t(m_infill_extrusion_width * 100. / fill_density);
 
     const double lightning_infill_overhang_angle      = M_PI / 4; // 45 degrees

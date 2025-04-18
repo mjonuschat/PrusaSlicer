@@ -863,99 +863,99 @@ ModelSyncResult sync_model(
 
 SLAPrint::ApplyStatus SLAPrint::apply(
     const Model& model,
-    DynamicPrintConfig config,
+    Domain::FullConfigFDM config,
     const std::optional<Domain::ModelWipeTower>&,
     const std::optional<Domain::CustomGCode::Info>&,
     std::vector<std::string>* warnings
 )
 {
-    this->call_cancel_callback();
-#ifdef _DEBUG
-    check_model_ids_validity(model);
-#endif /* _DEBUG */
-
-    // Normalize the config.
-    config.option("sla_print_settings_id",        true);
-    config.option("sla_material_settings_id",     true);
-    config.option("printer_settings_id",          true);
-    config.option("physical_printer_settings_id", true);
-    // Collect changes to print config.
-    DynamicPrintConfig mat_overrides;
-    t_config_option_keys print_diff    = m_print_config.diff(config);
-    t_config_option_keys printer_diff  = print_config_diffs(m_printer_config, config, mat_overrides);
-    t_config_option_keys material_diff = m_material_config.diff(config);
-    t_config_option_keys object_diff   = print_config_diffs(m_default_object_config, config, mat_overrides);
-
-    config.apply(mat_overrides, true);
-
-    // Grab the lock for the Print / PrintObject milestones.
-    std::scoped_lock<std::mutex> lock(this->state_mutex());
-
-    const InvalidatedSteps config_invalidated_steps{
-        merge(
-            std::vector<AllOrSome<PrintSteps>>{
-                get_steps_invalidated_by_config_options(print_diff),
-                get_steps_invalidated_by_config_options(printer_diff),
-                get_steps_invalidated_by_config_options(material_diff)
-            }
-        ),
-        {}
-    };
-
-    update_placeholder_parser(m_placeholder_parser, config);
-
-    // It is also safe to change m_config now after this->invalidate_state_by_config_options() call.
-    m_print_config.apply_only(config, print_diff, true);
-    m_printer_config.apply_only(config, printer_diff, true);
-    // Handle changes to material config.
-    m_material_config.apply_only(config, material_diff, true);
-    // Handle changes to object config defaults
-    m_default_object_config.apply_only(config, object_diff, true);
-
-    const bool all_invalidated{std::holds_alternative<AllSteps>(config_invalidated_steps.print)};
-
-    std::map<ObjectID, ModelObject*> reuse_candidates;
-    if (model.id() == m_model.id() && !all_invalidated) {
-        for (ModelObject* model_object: m_model.objects) {
-            reuse_candidates.insert({model_object->id(), model_object});
-        }
-    }
-
-    m_model.copy_id(model);
-
-    const ModelSyncResult model_sync_result{sync_model(
-        m_model,
-        model,
-        m_default_object_config,
-        m_objects,
-        reuse_candidates,
-        this->relative_correction(),
-        this
-    )};
-
-    const InvalidatedSteps invalidated_steps{merge({
-        config_invalidated_steps,
-        model_sync_result.invalidated_steps
-    })};
-
-    m_model.objects = model_sync_result.model_objects;
-    m_objects = model_sync_result.print_objects;
-
-    if(m_objects.empty()) {
-        m_printer_input = {};
-    }
-
-    m_full_print_config = std::move(config);
-
-    const bool changed{!invalidated_steps.empty()};
-    const bool invalidated{this->invalidate_object_steps(invalidated_steps)};
-
-    if (invalidated) {
-        return APPLY_STATUS_INVALIDATED;
-    }
-    if (changed) {
-        return APPLY_STATUS_CHANGED;
-    }
+//    this->call_cancel_callback();
+//#ifdef _DEBUG
+//    check_model_ids_validity(model);
+//#endif /* _DEBUG */
+//
+//    // Normalize the config.
+//    config.option("sla_print_settings_id",        true);
+//    config.option("sla_material_settings_id",     true);
+//    config.option("printer_settings_id",          true);
+//    config.option("physical_printer_settings_id", true);
+//    // Collect changes to print config.
+//    DynamicPrintConfig mat_overrides;
+//    t_config_option_keys print_diff    = m_print_config.diff(config);
+//    t_config_option_keys printer_diff  = print_config_diffs(m_printer_config, config, mat_overrides);
+//    t_config_option_keys material_diff = m_material_config.diff(config);
+//    t_config_option_keys object_diff   = print_config_diffs(m_default_object_config, config, mat_overrides);
+//
+//    config.apply(mat_overrides, true);
+//
+//    // Grab the lock for the Print / PrintObject milestones.
+//    std::scoped_lock<std::mutex> lock(this->state_mutex());
+//
+//    const InvalidatedSteps config_invalidated_steps{
+//        merge(
+//            std::vector<AllOrSome<PrintSteps>>{
+//                get_steps_invalidated_by_config_options(print_diff),
+//                get_steps_invalidated_by_config_options(printer_diff),
+//                get_steps_invalidated_by_config_options(material_diff)
+//            }
+//        ),
+//        {}
+//    };
+//
+//    update_placeholder_parser(m_placeholder_parser, config);
+//
+//    // It is also safe to change m_config now after this->invalidate_state_by_config_options() call.
+//    m_print_config.apply_only(config, print_diff, true);
+//    m_printer_config.apply_only(config, printer_diff, true);
+//    // Handle changes to material config.
+//    m_material_config.apply_only(config, material_diff, true);
+//    // Handle changes to object config defaults
+//    m_default_object_config.apply_only(config, object_diff, true);
+//
+//    const bool all_invalidated{std::holds_alternative<AllSteps>(config_invalidated_steps.print)};
+//
+//    std::map<ObjectID, ModelObject*> reuse_candidates;
+//    if (model.id() == m_model.id() && !all_invalidated) {
+//        for (ModelObject* model_object: m_model.objects) {
+//            reuse_candidates.insert({model_object->id(), model_object});
+//        }
+//    }
+//
+//    m_model.copy_id(model);
+//
+//    const ModelSyncResult model_sync_result{sync_model(
+//        m_model,
+//        model,
+//        m_default_object_config,
+//        m_objects,
+//        reuse_candidates,
+//        this->relative_correction(),
+//        this
+//    )};
+//
+//    const InvalidatedSteps invalidated_steps{merge({
+//        config_invalidated_steps,
+//        model_sync_result.invalidated_steps
+//    })};
+//
+//    m_model.objects = model_sync_result.model_objects;
+//    m_objects = model_sync_result.print_objects;
+//
+//    if(m_objects.empty()) {
+//        m_printer_input = {};
+//    }
+//
+//    m_full_print_config = std::move(config);
+//
+//    const bool changed{!invalidated_steps.empty()};
+//    const bool invalidated{this->invalidate_object_steps(invalidated_steps)};
+//
+//    if (invalidated) {
+//        return APPLY_STATUS_INVALIDATED;
+//    }
+//    if (changed) {
+//        return APPLY_STATUS_CHANGED;
+//    }
     return APPLY_STATUS_UNCHANGED;
 }
 
@@ -1004,83 +1004,83 @@ std::string SLAPrint::output_filename(const std::string &filename_base) const
 
 std::string SLAPrint::validate(std::vector<std::string>*) const
 {
-    for(SLAPrintObject * po : m_objects) {
-
-        const ModelObject *mo = po->model_object();
-        bool supports_en = po->config().supports_enable.getBool();
-
-        if(supports_en &&
-           mo->sla_points_status == PointsStatus::UserModified &&
-           mo->sla_support_points.empty())
-            return _u8L("Cannot proceed without support points! "
-                     "Add support points or disable support generation.");
-
-        sla::SupportTreeConfig cfg = make_support_cfg(po->config());
-
-        double elv = cfg.object_elevation_mm;
-        
-        sla::PadConfig padcfg = make_pad_cfg(po->config());
-        sla::PadConfig::EmbedObject &builtinpad = padcfg.embed_object;
-        
-        if(supports_en && !builtinpad.enabled && elv < cfg.head_fullwidth())
-            return _u8L(
-                "Elevation is too low for object. Use the \"Pad around "
-                "object\" feature to print the object without elevation.");
-        
-        if(supports_en && builtinpad.enabled &&
-           cfg.pillar_base_safety_distance_mm < builtinpad.object_gap_mm) {
-            return _u8L(
-                "The endings of the support pillars will be deployed on the "
-                "gap between the object and the pad. 'Support base safety "
-                "distance' has to be greater than the 'Pad object gap' "
-                "parameter to avoid this.");
-        }
-        
-        std::string pval = padcfg.validate();
-        if (!pval.empty()) return pval;
-    }
-
-    double expt_max = m_printer_config.max_exposure_time.getFloat();
-    double expt_min = m_printer_config.min_exposure_time.getFloat();
-    double expt_cur = m_material_config.exposure_time.getFloat();
-
-    if (expt_cur < expt_min || expt_cur > expt_max)
-        return _u8L("Exposition time is out of printer profile bounds.");
-
-    double iexpt_max = m_printer_config.max_initial_exposure_time.getFloat();
-    double iexpt_min = m_printer_config.min_initial_exposure_time.getFloat();
-    double iexpt_cur = m_material_config.initial_exposure_time.getFloat();
-
-    if (iexpt_cur < iexpt_min || iexpt_cur > iexpt_max)
-        return _u8L("Initial exposition time is out of printer profile bounds.");
-
-    for (const std::string& prefix : { "", "branching" }) {
-
-        double head_penetration = m_full_print_config.opt_float(prefix + "support_head_penetration");
-        double head_width       = m_full_print_config.opt_float(prefix + "support_head_width");
-
-        if (head_penetration > head_width) {
-            return _u8L("Invalid Head penetration\n"
-                        "Head penetration should not be greater than the Head width.\n"
-                        "Please check value of Head penetration in Print Settings or Material Overrides.");
-        }
-
-        double pinhead_d = m_full_print_config.opt_float(prefix + "support_head_front_diameter");
-        double pillar_d  = m_full_print_config.opt_float(prefix + "support_pillar_diameter");
-
-        if (pinhead_d > pillar_d) {
-            return _u8L("Invalid pinhead diameter\n"
-                        "Pinhead front diameter should be smaller than the Pillar diameter.\n"
-                        "Please check value of Pinhead front diameter in Print Settings or Material Overrides.");
-        }
-    }
-
-    if ((!m_material_config.use_tilt.get_at(0) && is_approx(m_material_config.tower_hop_height.get_at(0), 0.))
-        || (!m_material_config.use_tilt.get_at(1) && is_approx(m_material_config.tower_hop_height.get_at(1), 0.)))
-        return _u8L("Disabling the 'Use tilt' function causes the object to separate away from the film in the "
-                    "vertical direction only. Therefore, it is necessary to set the 'Tower hop height' parameter "
-                    "to reasonable value. The recommended value is 5 mm.");
-
+//    for(SLAPrintObject * po : m_objects) {
+//
+//        const ModelObject *mo = po->model_object();
+//        bool supports_en = po->config().supports_enable.getBool();
+//
+//        if(supports_en &&
+//           mo->sla_points_status == PointsStatus::UserModified &&
+//           mo->sla_support_points.empty())
+//            return _u8L("Cannot proceed without support points! "
+//                     "Add support points or disable support generation.");
+//
+//        sla::SupportTreeConfig cfg = make_support_cfg(po->config());
+//
+//        double elv = cfg.object_elevation_mm;
+//        
+//        sla::PadConfig padcfg = make_pad_cfg(po->config());
+//        sla::PadConfig::EmbedObject &builtinpad = padcfg.embed_object;
+//        
+//        if(supports_en && !builtinpad.enabled && elv < cfg.head_fullwidth())
+//            return _u8L(
+//                "Elevation is too low for object. Use the \"Pad around "
+//                "object\" feature to print the object without elevation.");
+//        
+//        if(supports_en && builtinpad.enabled &&
+//           cfg.pillar_base_safety_distance_mm < builtinpad.object_gap_mm) {
+//            return _u8L(
+//                "The endings of the support pillars will be deployed on the "
+//                "gap between the object and the pad. 'Support base safety "
+//                "distance' has to be greater than the 'Pad object gap' "
+//                "parameter to avoid this.");
+//        }
+//        
+//        std::string pval = padcfg.validate();
+//        if (!pval.empty()) return pval;
+//    }
+//
+//    double expt_max = m_printer_config.max_exposure_time.getFloat();
+//    double expt_min = m_printer_config.min_exposure_time.getFloat();
+//    double expt_cur = m_material_config.exposure_time.getFloat();
+//
+//    if (expt_cur < expt_min || expt_cur > expt_max)
+//        return _u8L("Exposition time is out of printer profile bounds.");
+//
+//    double iexpt_max = m_printer_config.max_initial_exposure_time.getFloat();
+//    double iexpt_min = m_printer_config.min_initial_exposure_time.getFloat();
+//    double iexpt_cur = m_material_config.initial_exposure_time.getFloat();
+//
+//    if (iexpt_cur < iexpt_min || iexpt_cur > iexpt_max)
+//        return _u8L("Initial exposition time is out of printer profile bounds.");
+//
+//    for (const std::string& prefix : { "", "branching" }) {
+//
+//        double head_penetration = m_full_print_config.opt_float(prefix + "support_head_penetration");
+//        double head_width       = m_full_print_config.opt_float(prefix + "support_head_width");
+//
+//        if (head_penetration > head_width) {
+//            return _u8L("Invalid Head penetration\n"
+//                        "Head penetration should not be greater than the Head width.\n"
+//                        "Please check value of Head penetration in Print Settings or Material Overrides.");
+//        }
+//
+//        double pinhead_d = m_full_print_config.opt_float(prefix + "support_head_front_diameter");
+//        double pillar_d  = m_full_print_config.opt_float(prefix + "support_pillar_diameter");
+//
+//        if (pinhead_d > pillar_d) {
+//            return _u8L("Invalid pinhead diameter\n"
+//                        "Pinhead front diameter should be smaller than the Pillar diameter.\n"
+//                        "Please check value of Pinhead front diameter in Print Settings or Material Overrides.");
+//        }
+//    }
+//
+//    if ((!m_material_config.use_tilt.get_at(0) && is_approx(m_material_config.tower_hop_height.get_at(0), 0.))
+//        || (!m_material_config.use_tilt.get_at(1) && is_approx(m_material_config.tower_hop_height.get_at(1), 0.)))
+//        return _u8L("Disabling the 'Use tilt' function causes the object to separate away from the film in the "
+//                    "vertical direction only. Therefore, it is necessary to set the 'Tower hop height' parameter "
+//                    "to reasonable value. The recommended value is 5 mm.");
+//
     return "";
 }
 
