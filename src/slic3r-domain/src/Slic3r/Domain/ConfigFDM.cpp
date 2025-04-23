@@ -46,10 +46,6 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     ConfigItemDef* def = nullptr;
 
-// TODO: Všechno definované v const std::vector<std::string> extruder_options = {...}
-//     je teď jako vektor s printer_settings. Totéž nozzle_diameter.
-//     toolprint_settings jsou zatím prázdné.
-
 // Defs from void PrintConfigDef::init_common_params() follow:
 
     def = defs.add("printer_technology", Enum);
@@ -833,16 +829,18 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
                    "This value overrides perimeter and infill extruders, but not the support extruders.");
     def->min = 0;  // 0 = inherit defaults
     def->set_enum_labels(ConfigOptionDef::GUIType::i_enum_open, 
-        { L("default"), "1", "2", "3", "4", "5" }); // override label for item 0
+        { L("default"), "1", "2", "3", "4", "5" }); // override label for item 0*/
         
-    def = defs.add("extruder_colour", Strings);
+    def = defs.add("extruder_colour", String);
+    def->location = "toolprint_settings";
     def->label = L("Extruder Color");
     def->tooltip = L("This is only used in the Slic3r interface as a visual help.");
-    def->gui_type = ConfigOptionDef::GUIType::color;
-    // Empty string means no color assigned yet.
-    SET_DEFAULT( new ConfigOptionStrings { "" });
+    def->gui_type = ConfigItemDef::GUIType::color;
+    SET_DEFAULT(""); // Empty string means no color assigned yet.
 
-    def = defs.add("extruder_offset", coPoints);
+    /* TODO: point...
+    def = defs.add("extruder_offset", coPoint);
+    def->location = "toolprint_settings";
     def->label = L("Extruder offset");
     def->tooltip = L("If your firmware doesn't handle the extruder displacement you need the G-code "
                    "to take it into account. This option lets you specify the displacement of each extruder "
@@ -850,7 +848,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
                    "from the XY coordinate).");
     def->sidetext = L("mm");
     def->mode = comAdvanced;
-    SET_DEFAULT( new ConfigOptionPoints { Vec2d(0,0) });*/
+    SET_DEFAULT(Vec2d(0,0));*/
 
     /* TODO: shouldn't we remove this crap?
     def = defs.add("extrusion_axis", String);
@@ -2077,8 +2075,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->mode = comExpert;
     SET_DEFAULT(100);
 
-    def = defs.add("max_layer_height", Doubles);
-    def->location = "printer_settings";
+    def = defs.add("max_layer_height", Double);
+    def->location = "toolprint_settings";
     def->label = L("Max");
     def->tooltip = L("This is the highest printable layer height for this extruder, used to cap "
                    "the variable layer height and support layer height. Maximum recommended layer height "
@@ -2087,7 +2085,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->sidetext = L("mm");
     def->min = 0;
     def->mode = comAdvanced;
-    def->init_fn = [](ConfigItem& item) { item.vec<double>() = { 0. }; };
+    SET_DEFAULT(0.);
 
     def = defs.add("max_print_speed", Double);
     def->location = "print_settings";
@@ -2146,15 +2144,15 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->mode = comExpert;
     SET_DEFAULT(35);
 
-    def = defs.add("min_layer_height", Doubles);
-    def->location = "printer_settings";
+    def = defs.add("min_layer_height", Double);
+    def->location = "toolprint_settings";
     def->label = L("Min");
     def->tooltip = L("This is the lowest printable layer height for this extruder and limits "
                    "the resolution for variable layer height. Typical values are between 0.05 mm and 0.1 mm.");
     def->sidetext = L("mm");
     def->min = 0;
     def->mode = comAdvanced;
-    def->init_fn = [](ConfigItem& item) { item.vec<double>() = { 0.07 }; };
+    SET_DEFAULT(0.07);
 
     def = defs.add("min_print_speed", Double);
     def->location = "filament_settings";
@@ -2187,12 +2185,12 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->mode = comAdvanced;
     SET_DEFAULT("");
 
-    def = defs.add("nozzle_diameter", Doubles);
-    def->location = "printer_settings";
+    def = defs.add("nozzle_diameter", Double);
+    def->location = "toolprint_settings";
     def->label = L("Nozzle diameter");
     def->tooltip = L("This is the diameter of your extruder nozzle (for example: 0.5, 0.35 etc.)");
     def->sidetext = L("mm");
-    def->init_fn = [](ConfigItem& item) { item.vec<double>() = { 0.4 }; };
+    SET_DEFAULT(0.4);
 
     def = defs.add("only_retract_when_crossing_perimeters", Bool);
     def->location = "print_settings";
@@ -2461,44 +2459,46 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->mode = comExpert;
     SET_DEFAULT(0.0125);
 
-    def = defs.add("retract_before_travel", Doubles);
-    def->location = "printer_settings";
+    def = defs.add("retract_before_travel", Double);
+    def->location = "toolprint_settings";
+    def->overrides_in = { "filament_settings" };
     def->label = L("Minimum travel after retraction");
     def->tooltip = L("Retraction is not triggered when travel moves are shorter than this length.");
     def->sidetext = L("mm");
     def->mode = comAdvanced;
-    def->init_fn = [](ConfigItem& item) { item.vec<double>() = { 2. }; };
+    SET_DEFAULT(2.);
 
-    // TODO: This was coPercents in the old slicer. I switched to Doubles because the new structure does not
-    // support vector percents. It should be switched back to Percent when it is moved into toolprint_settings,
-    // which will vectorize it implicitly.
-    def = defs.add("retract_before_wipe", Doubles);
-    def->location = "printer_settings";
+    def = defs.add("retract_before_wipe", Percent);
+    def->location = "toolprint_settings";
+    def->overrides_in = { "filament_settings" };
     def->label = L("Retract amount before wipe");
     def->tooltip = L("With bowden extruders, it may be wise to do some amount of quick retract "
                    "before doing the wipe movement.");
     def->sidetext = L("%");
     def->mode = comAdvanced;
-    def->init_fn = [](ConfigItem& item) { item.vec<double>() = { 0. }; };
+    SET_DEFAULT(Percentage(0.));
 
-    def = defs.add("retract_layer_change", Bools);
-    def->location = "printer_settings";
+    def = defs.add("retract_layer_change", Bool);
+    def->location = "toolprint_settings";
+    def->overrides_in = { "filament_settings" };
     def->label = L("Retract on layer change");
     def->tooltip = L("This flag enforces a retraction whenever a Z move is done.");
     def->mode = comAdvanced;
-    def->init_fn = [](ConfigItem& item) { item.vec<bool>() = { false }; };
+    SET_DEFAULT(false);
 
-    def = defs.add("retract_length", Doubles);
-    def->location = "printer_settings";
+    def = defs.add("retract_length", Double);
+    def->location = "toolprint_settings";
+    def->overrides_in = { "filament_settings" };
     def->label = L("Retraction length");
     def->full_label = L("Retraction Length");
     def->tooltip = L("When retraction is triggered, filament is pulled back by the specified amount "
                    "(the length is measured on raw filament, before it enters the extruder).");
     def->sidetext = L("mm (zero to disable)");
-    def->init_fn = [](ConfigItem& item) { item.vec<double>() = { 2. }; };
+    SET_DEFAULT(2.);
 
-    def = defs.add("retract_length_toolchange", Doubles);
-    def->location = "printer_settings";
+    def = defs.add("retract_length_toolchange", Double);
+    def->location = "toolprint_settings";
+    def->overrides_in = { "filament_settings" };
     def->label = L("Length");
     def->full_label = L("Retraction Length (Toolchange)");
     def->tooltip = L("When retraction is triggered before changing tool, filament is pulled back "
@@ -2506,29 +2506,32 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
                    "the extruder).");
     def->sidetext = L("mm (zero to disable)");
     def->mode = comExpert;
-    def->init_fn = [](ConfigItem& item) { item.vec<double>() = { 10. }; };
+    SET_DEFAULT(10.);
 
-    def = defs.add("travel_slope", Doubles);
-    def->location = "printer_settings";
+    def = defs.add("travel_slope", Double);
+    def->location = "toolprint_settings";
+    def->overrides_in = { "filament_settings" };
     def->label = L("Ramping slope angle");
     def->tooltip = L("Slope of the ramp in the initial phase of the travel.");
     def->sidetext = L("°");
     def->min = 0;
     def->max = 90;
     def->mode = comAdvanced;
-    def->init_fn = [](ConfigItem& item) { item.vec<double>() = { 0. }; };
+    SET_DEFAULT(0.);
 
-    def = defs.add("travel_ramping_lift", Bools);
-    def->location = "printer_settings";
+    def = defs.add("travel_ramping_lift", Bool);
+    def->location = "toolprint_settings";
+    def->overrides_in = { "filament_settings" };
     def->label = L("Use ramping lift");
     def->tooltip = L("Generates a ramping lift instead of lifting the extruder directly upwards. "
                      "The travel is split into two phases: the ramp and the standard horizontal travel. "
                      "This option helps reduce stringing.");
     def->mode = comAdvanced;
-    def->init_fn = [](ConfigItem& item) { item.vec<bool>() = { false }; };
+    SET_DEFAULT(false);
 
-    def = defs.add("travel_max_lift", Doubles);
-    def->location = "printer_settings";
+    def = defs.add("travel_max_lift", Double);
+    def->location = "toolprint_settings";
+    def->overrides_in = { "filament_settings" };
     def->label = L("Maximum ramping lift");
     def->tooltip = L("Maximum lift height of the ramping lift. It may not be reached if the next position "
                      "is close to the old one.");
@@ -2536,45 +2539,49 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->min = 0;
     def->max_literal = 1000;
     def->mode = comAdvanced;
-    def->init_fn = [](ConfigItem& item) { item.vec<double>() = { 0. }; };
+    SET_DEFAULT(0.);
 
-    def = defs.add("travel_lift_before_obstacle", Bools);
-    def->location = "printer_settings";
+    def = defs.add("travel_lift_before_obstacle", Bool);
+    def->location = "toolprint_settings";
+    def->overrides_in = { "filament_settings" };
     def->label = L("Steeper ramp before obstacles");
     def->tooltip = L("If enabled, PrusaSlicer detects obstacles along the travel path and makes the slope steeper "
                      "in case an obstacle might be hit during the initial phase of the travel.");
     def->mode = comExpert;
-    def->init_fn = [](ConfigItem& item) { item.vec<bool>() = { false }; };
+    SET_DEFAULT(false);
 
-    def = defs.add("nozzle_high_flow", Bools);
-    def->location = "printer_settings";
+    def = defs.add("nozzle_high_flow", Bool);
+    def->location = "toolprint_settings";
     def->label = L("High flow nozzle");
     def->tooltip = L("High flow nozzles allow higher print speeds.");
     def->mode = comExpert;
-    def->init_fn = [](ConfigItem& item) { item.vec<bool>() = { false }; };
+    SET_DEFAULT(false);
 
-    def = defs.add("retract_lift", Doubles);
-    def->location = "printer_settings";
+    def = defs.add("retract_lift", Double);
+    def->location = "toolprint_settings";
+    def->overrides_in = { "filament_settings" };
     def->label = L("Lift height");
     def->tooltip = L("Lift height applied before travel.");
     def->sidetext = L("mm");
     def->min = 0;
     def->max_literal = 1000;
     def->mode = comSimple;
-    def->init_fn = [](ConfigItem& item) { item.vec<double>() = { 0. }; };
+    SET_DEFAULT(0.);
 
-    def = defs.add("retract_lift_above", Doubles);
-    def->location = "printer_settings";
+    def = defs.add("retract_lift_above", Double);
+    def->location = "toolprint_settings";
+    def->overrides_in = { "filament_settings" };
     def->label = L("Above Z");
     def->full_label = L("Only lift Z above");
     def->tooltip = L("If you set this to a positive value, Z lift will only take place above the specified "
                    "absolute Z. You can tune this setting for skipping lift on the first layers.");
     def->sidetext = L("mm");
     def->mode = comAdvanced;
-    def->init_fn = [](ConfigItem& item) { item.vec<double>() = { 0. }; };
+    SET_DEFAULT(0.);
 
-    def = defs.add("retract_lift_below", Doubles);
-    def->location = "printer_settings";
+    def = defs.add("retract_lift_below", Double);
+    def->location = "toolprint_settings";
+    def->overrides_in = { "filament_settings" };
     def->label = L("Below Z");
     def->full_label = L("Only lift Z below");
     def->tooltip = L("If you set this to a positive value, Z lift will only take place below "
@@ -2582,47 +2589,52 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
                    "to the first layers.");
     def->sidetext = L("mm");
     def->mode = comAdvanced;
-    def->init_fn = [](ConfigItem& item) { item.vec<double>() = { 0. }; };
+    SET_DEFAULT(0.);
 
-    def = defs.add("retract_restart_extra", Doubles);
-    def->location = "printer_settings";
+    def = defs.add("retract_restart_extra", Double);
+    def->location = "toolprint_settings";
+    def->overrides_in = { "filament_settings" };
     def->label = L("Deretraction extra length");
     def->tooltip = L("When the retraction is compensated after the travel move, the extruder will push "
                    "this additional amount of filament. This setting is rarely needed.");
     def->sidetext = L("mm");
     def->mode = comAdvanced;
-    def->init_fn = [](ConfigItem& item) { item.vec<double>() = { 0. }; };
+    SET_DEFAULT(0.);
 
-    def = defs.add("retract_restart_extra_toolchange", Doubles);
-    def->location = "printer_settings";
+    def = defs.add("retract_restart_extra_toolchange", Double);
+    def->location = "toolprint_settings";
+    def->overrides_in = { "filament_settings" };
     def->label = L("Extra length on restart");
     def->tooltip = L("When the retraction is compensated after changing tool, the extruder will push "
                    "this additional amount of filament.");
     def->sidetext = L("mm");
     def->mode = comExpert;
-    def->init_fn = [](ConfigItem& item) { item.vec<double>() = { 0. }; };
+    SET_DEFAULT(0.);
 
-    def = defs.add("retract_speed", Doubles);
-    def->location = "printer_settings";
+    def = defs.add("retract_speed", Double);
+    def->location = "toolprint_settings";
+    def->overrides_in = { "filament_settings" };
     def->label = L("Retraction Speed");
     def->full_label = L("Retraction Speed");
     def->tooltip = L("The speed for retractions (it only applies to the extruder motor).");
     def->sidetext = L("mm/s");
     def->mode = comAdvanced;
-    def->init_fn = [](ConfigItem& item) { item.vec<double>() = { 40. }; };
+    SET_DEFAULT(40.);
 
-    def = defs.add("deretract_speed", Doubles);
-    def->location = "printer_settings";
+    def = defs.add("deretract_speed", Double);
+    def->location = "toolprint_settings";
+    def->overrides_in = { "filament_settings" };
     def->label = L("Deretraction Speed");
     def->full_label = L("Deretraction Speed");
     def->tooltip = L("The speed for loading of a filament into extruder after retraction "
                    "(it only applies to the extruder motor). If left to zero, the retraction speed is used.");
     def->sidetext = L("mm/s");
     def->mode = comAdvanced;
-    def->init_fn = [](ConfigItem& item) { item.vec<double>() = { 0. }; };
+    SET_DEFAULT(0.);
 
     def = defs.add("seam_gap_distance", FloatOrPercent);
     def->location = "print_settings";
+    def->overrides_in = { "filament_settings" };
     def->label = L("Seam gap distance");
     def->tooltip = L("The distance between the endpoints of a closed loop perimeter. "
                    "Positive values will shorten and interrupt the loop slightly to reduce the seam. "
@@ -3573,13 +3585,14 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->mode = comExpert;
     SET_DEFAULT(false);
 
-    def = defs.add("wipe", Bools);
-    def->location = "printer_settings";
+    def = defs.add("wipe", Bool);
+    def->location = "toolprint_settings";
+    def->overrides_in = { "filament_settings" };
     def->label = L("Wipe while retracting");
     def->tooltip = L("This flag will move the nozzle while retracting to minimize the possible blob "
                    "on leaky extruders.");
     def->mode = comAdvanced;
-    def->init_fn = [](ConfigItem& item) { item.vec<bool>() = { false }; };
+    SET_DEFAULT(false);
 
     def = defs.add("wipe_tower", Bool);
     def->location = "print_settings";
