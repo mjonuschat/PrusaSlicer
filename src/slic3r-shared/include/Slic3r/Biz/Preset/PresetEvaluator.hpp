@@ -24,7 +24,7 @@ public:
         build_named_presets();
     }
 
-    EvaluatedPrinterPreset evaluate(PresetKind kind, const HwPrinterConfig& hw_config) const;
+    EvaluatedPrinterPreset evaluate(const HwPrinterConfig& hw_config) const;
 
 private:
     friend class PresetCollectionEvaluator;
@@ -34,6 +34,7 @@ private:
     using NamedPresets = Domain::Preset::NamedPresets;
     using NamedPresetsCollection = Domain::Preset::NamedPresetsCollection;
     using EvaluatedPreset = Domain::Preset::EvaluatedPreset;
+    using SourceLocation = Domain::Preset::SourceLocation;
 
     struct EvalPresetContext
     {
@@ -41,6 +42,8 @@ private:
         std::string name;
         EvaluatedPreset::Expressions conditions;
         Domain::Preset::PresetValueMap values;
+        Domain::Preset::PresetValueMap features;
+        SourceLocation last_node_location;
     };
 
     using EvalPresetContexts = std::vector<EvalPresetContext>;
@@ -49,7 +52,7 @@ private:
     void collect_named_presets(PresetKind kind, const PresetNode& node, const PresetNodePath& node_path);
     const PresetNode* find_node(PresetKind kind, std::string_view name) const;
 
-    EvalPresetContexts eval_presets(PresetKind kind, const PresetNode& node, const Expr::ValueMap& vars) const;
+    static Domain::Preset::EvaluatedPreset preset_from_context(PresetKind kind, const PresetEvaluator::EvalPresetContext& context);
 
 private:
     const Domain::Preset::PresetCollection& m_presets;

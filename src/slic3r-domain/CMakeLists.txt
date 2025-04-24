@@ -25,6 +25,7 @@ add_library(slic3r-domain
     include/Slic3r/Domain/Expr/RegEx.hpp
 
     include/Slic3r/Domain/Preset/PresetTree.hpp
+    include/Slic3r/Domain/Preset/SourceLocatedExpr.hpp
     include/Slic3r/Domain/Preset/Types.hpp
     include/Slic3r/Domain/Preset/HwConfig.hpp
     include/Slic3r/Domain/Preset/EvaluatedPreset.hpp
@@ -88,6 +89,7 @@ target_link_libraries(slic3r-domain PUBLIC slic3r-base TBB::tbbmalloc)
 if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
     add_executable(slic3r-domain-tests
             test/Slic3r/Domain/Preset/PresetTreeTests.cpp
+            test/Slic3r/Domain/Preset/HwConfigTests.cpp
 
     )
     target_include_directories(slic3r-domain-tests PRIVATE test src)

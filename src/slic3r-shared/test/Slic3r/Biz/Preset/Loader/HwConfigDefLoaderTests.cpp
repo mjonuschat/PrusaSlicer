@@ -16,9 +16,12 @@ TEST_CASE("Load HW Config")
         FAIL_CHECK(e.what());
     }
     auto& result = loader.result();
-    auto& fff_hw_defs = result[PrinterTechnology::FFF];
+    auto& fff_hw_defs = result.defs[PrinterTechnology::FFF];
     REQUIRE(fff_hw_defs.technology == PrinterTechnology::FFF);
     REQUIRE(fff_hw_defs.printers.size() == 2);
     REQUIRE(fff_hw_defs.tools.size() == 2);
-    REQUIRE(fff_hw_defs.feeders.size() == 1);
+    REQUIRE(fff_hw_defs.feeders.size() == 2);
+    REQUIRE(result.printer_configs.size() == 4);
+    REQUIRE(result.printer_configs[1].feeders.size() == 1);
+    REQUIRE(result.printer_configs[1].feeders[0].address == std::vector<uint8_t>{0});
 }

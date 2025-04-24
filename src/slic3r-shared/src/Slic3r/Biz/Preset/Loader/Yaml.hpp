@@ -94,7 +94,7 @@ private:
             return fmt::format("[file: {} (null)]", node.file);
         auto* token = fy_node_get_start_token(node.node);
         auto* mark = fy_token_start_mark(token);
-        return fmt::format("[file: {} line: {} col: {} path: {}]", node.file, mark->line + 1, mark->column + 1, fy_node_get_path(node.node));
+        return fmt::format("[file: {}:{}:{}  path: {}]", node.file, mark->line + 1, mark->column + 1, fy_node_get_path(node.node));
     }
 };
 
@@ -383,7 +383,7 @@ struct ParseFieldTypeList<S, TypeList<Fs...>>
 {
     static void parse(S& s, const NodeRef& node)
     {
-        (parse_field<S, Fs>(s, get_mapping_node_with_key<Fs>(node, Fs::name)), ...);
+        (parse_field<S, Fs>(s, Fs::name == nullptr ? node : get_mapping_node_with_key<Fs>(node, Fs::name)), ...);
     }
 };
 
@@ -632,6 +632,7 @@ struct StructTraits<Struct> {                                                   
     )
 
 #define FIELD_DEFAULT
+#define FIELD_NAME_SELF nullptr
 #define FIELD_DESC(field, opt_field_name, opt_implicit_value, opt_validation) \
     (field, opt_field_name, opt_implicit_value, opt_validation)
 

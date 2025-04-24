@@ -38,6 +38,11 @@ struct Condition
     Slic3r::Domain::Expr::ExprAst condition;
 };
 
+struct VecData
+{
+    std::vector<uint8_t> data;
+};
+
 
 }
 
@@ -48,6 +53,7 @@ STRUCT_DESC_SIMPLE(Tests::MyData, version, a, b, items, opt_int, param);
 
 
 STRUCT_DESC_SIMPLE(Tests::Condition, condition);
+STRUCT_DESC_SIMPLE(Tests::VecData, data);
 
 /*
 template <typename T>
@@ -144,5 +150,17 @@ condition: 'tool.nozzle_diameter >= 0.2'
     Yaml::Document doc = Yaml::parse_string(yaml.c_str());
     Tests::Condition condition = Yaml::parse_struct<Tests::Condition>(doc);
     REQUIRE(boost::get<Slic3r::Domain::Expr::Binary>(condition.condition).op == Slic3r::Domain::Expr::BinaryOp::GtEq);
+
+}
+
+TEST_CASE("Vector parsing")
+{
+    std::string yaml = R"(
+data: [0]
+)";
+
+    Yaml::Document doc = Yaml::parse_string(yaml.c_str());
+    Tests::VecData vec = Yaml::parse_struct<Tests::VecData>(doc);
+    REQUIRE(vec.data.size() == 1);
 
 }

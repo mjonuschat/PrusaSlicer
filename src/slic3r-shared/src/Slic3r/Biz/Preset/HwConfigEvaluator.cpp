@@ -1,0 +1,89 @@
+#include "Slic3r/Biz/Preset/HwConfigEvaluator.hpp"
+#include "Slic3r/Biz/Preset/ValueMapBuilder.hpp"
+#include "libslic3r/Config.hpp"
+namespace Slic3r::Biz::Preset {
+
+
+template ConfigIterator<Domain::Preset::HwToolConfigDef> begin<Domain::Preset::HwToolConfigDef>(const ConfigIterator<Domain::Preset::HwToolConfigDef>&);
+template ConfigIterator<Domain::Preset::HwToolConfigDef> end<Domain::Preset::HwToolConfigDef>(const ConfigIterator<Domain::Preset::HwToolConfigDef>&);
+template ConfigIterator<Domain::Preset::HwFeederConfigDef> begin<Domain::Preset::HwFeederConfigDef>(const ConfigIterator<Domain::Preset::HwFeederConfigDef>&);
+template ConfigIterator<Domain::Preset::HwFeederConfigDef> end<Domain::Preset::HwFeederConfigDef>(const ConfigIterator<Domain::Preset::HwFeederConfigDef>&);
+
+
+HwToolConfigIterator HwConfigEvaluator::iterate_tools(const Domain::Preset::HwPrinterConfig& printer, const HwToolConfigIterator::Container& tools) const
+{
+    Expr::ValueMap values;
+    append_printer_values(values, printer);
+    return HwToolConfigIterator{tools, m_eval, std::move(values)};
+}
+
+HwFeederConfigIterator HwConfigEvaluator::iterate_feeders(const Domain::Preset::HwPrinterConfig& printer, const Domain::Preset::HwToolConfig& tool, const HwFeederConfigIterator::Container& feeders) const
+{
+    Expr::ValueMap values;
+    append_printer_values(values, printer);
+    append_tool_values(values, tool);
+    return HwFeederConfigIterator{feeders, m_eval, std::move(values)};
+}
+
+Domain::Preset::HwPrinterConfig HwConfigEvaluator::create_printer_config(
+    const Domain::Preset::HwPrinterConfigTemplate& templ,
+    const Domain::Preset::VendorData& vendor_data
+) const
+{
+    const auto* printer_def = vendor_data.find_printer_config_def_by_id(templ.printer);
+    ASSERT(printer_def != nullptr, "Printer config not found", templ.printer);
+
+    auto features = build_features(vendor_data.info.features.printer);
+    Domain::Preset::override_features(features, printer_def->features);
+    Domain::Preset::override_features(features, templ.features);
+
+    Domain::Preset::HwPrinterConfig printer_config{
+        .id = printer_def->id,
+        .vendor_id = vendor_data.info.id,
+        .technology = printer_def->technology,
+        .model = printer_def->model,
+        .tool_count = templ.tool_count.has_value() ? templ.tool_count.value() : printer_def->tool_count,
+        .features = features,
+    };
+
+    ASSERT(templ.tools.size() == templ.tool_count || templ.tools.size() == 1, templ.id);
+    for (const auto& tool_templ : templ.tools) {
+        const auto* tool_def = vendor_data.find_tool_config_def_by_id(tool_templ.id);
+        ASSERT(tool_def != nullptr, tool_templ.id);
+        ASSERT(tool_def->technology == printer_def->technology, tool_templ.id);
+
+        auto tool_features = build_features(vendor_data.info.features.tool);
+        Domain::Preset::override_features(tool_features, tool_def->features);
+        Domain::Preset::override_features(tool_features, tool_templ.features);
+        Domain::Preset::HwToolConfig tool_config {
+            .id = tool_def->id,
+            .features = tool_features,
+        };
+        printer_config.tools.emplace_back(std::move(tool_config));
+    }
+
+    // If only single tool provided, fill the rest slots with same tool-config
+    while (printer_config.tools.size() < printer_config.tool_count)
+        printer_config.tools.push_back(printer_config.tools.front());
+
+    for (const auto& feeder_templ : templ.feeders) {
+        const auto* feeder_def = vendor_data.find_feeder_config_def_by_id(feeder_templ.id);
+        ASSERT(feeder_def != nullptr, feeder_templ.id);
+        ASSERT(feeder_def->technology == printer_def->technology, feeder_templ.id);
+        auto feeder_features = build_features(vendor_data.info.features.feeder);
+        Domain::Preset::override_features(feeder_features, feeder_def->features);
+        Domain::Preset::override_features(feeder_features, feeder_templ.features);
+        Domain::Preset::HwFeederConfig feeder_config {
+            .id = feeder_def->id,
+            .type = feeder_def->type,
+            .model = feeder_def->model,
+            .slot_count = feeder_def->slot_count,
+            .features = feeder_features,
+        };
+        printer_config.feeders.emplace(std::make_pair(feeder_templ.address, std::move(feeder_config)));
+    }
+
+    return printer_config;
+}
+
+}

@@ -278,6 +278,9 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/Preset/PresetBundleRuntime.cpp
         include/Slic3r/Biz/Preset/PresetBundleRuntime.hpp
 
+		include/Slic3r/Biz/Preset/Bundle.hpp
+		src/Slic3r/Biz/Preset/Bundle.cpp
+
         include/Slic3r/Biz/Preset/Loader/PresetLoader.hpp
         src/Slic3r/Biz/Preset/Loader/PresetLoader.cpp
         include/Slic3r/Biz/Preset/Loader/HwConfigLoader.hpp
@@ -290,6 +293,10 @@ set(SLIC3R_SHARED_FILES
 		src/Slic3r/Biz/Preset/PresetEvaluator.cpp
 		src/Slic3r/Biz/Preset/PresetCollectionEvaluator.hpp
 		src/Slic3r/Biz/Preset/PresetCollectionEvaluator.cpp
+		include/Slic3r/Biz/Preset/HwConfigEvaluator.hpp
+		src/Slic3r/Biz/Preset/HwConfigEvaluator.cpp
+		src/Slic3r/Biz/Preset/ValueMapBuilder.hpp
+		src/Slic3r/Biz/Preset/ValueMapBuilder.cpp
 
         include/Slic3r/Biz/Expr/Parser.hpp
         src/Slic3r/Biz/Expr/Parser.cpp
@@ -536,6 +543,7 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
 		test/Slic3r/Biz/Preset/Loader/PresetLoaderTests.cpp
 		test/Slic3r/Biz/Preset/PresetCollectionEvaluatorTests.cpp
 		test/Slic3r/Biz/Preset/PresetEvaluatorTests.cpp
+		test/Slic3r/Biz/Preset/HwConfigEvaluatorTests.cpp
 
 		test/Slic3r/Biz/Slicing/TestUtils.cpp
         test/Slic3r/Biz/Slicing/GCodeUtils.cpp
