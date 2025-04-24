@@ -210,6 +210,15 @@ public:
     //
     void set_wipes_radius(float radius);
     //
+    // Get the scaling factor applied to option markers (seams, etc).
+    //
+    float get_options_marker_scale_factor() const;
+    //
+    // Set the scaling factor applied to option markers.
+    // Factor is clamped to [MIN_OPTIONS_MARKER_SCALE_FACTOR..MAX_OPTIONS_MARKER_SCALE_FACTOR]
+    //
+    void set_options_marker_scale_factor(float factor);
+    //
     // Return the count of detected layers.
     //
     size_t get_layers_count() const;

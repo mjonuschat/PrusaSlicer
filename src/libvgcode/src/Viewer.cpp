@@ -182,6 +182,16 @@ void Viewer::set_wipes_radius(float radius)
     m_impl->set_wipes_radius(radius);
 }
 
+float Viewer::get_options_marker_scale_factor() const
+{
+    return m_impl->get_options_marker_scale_factor();
+}
+
+void Viewer::set_options_marker_scale_factor(float factor)
+{
+    m_impl->set_options_marker_scale_factor(factor);
+}
+
 size_t Viewer::get_layers_count() const
 {
     return m_impl->get_layers_count();
