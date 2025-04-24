@@ -30,6 +30,13 @@ static constexpr float MIN_WIPES_RADIUS_MM = 0.05f;
 static constexpr float MAX_WIPES_RADIUS_MM = 1.0f;
 
 //
+// Predefined values for the scaling factor applied to option markers (seams, etc).
+//
+static constexpr float DEFAULT_OPTIONS_MARKER_SCALE_FACTOR = 1.5f;
+static constexpr float MIN_OPTIONS_MARKER_SCALE_FACTOR     = 0.1f;
+static constexpr float MAX_OPTIONS_MARKER_SCALE_FACTOR     = 5.0f;
+
+//
 // Vector in 3 dimensions
 // [0] -> x
 // [1] -> y
