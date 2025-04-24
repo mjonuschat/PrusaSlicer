@@ -160,4 +160,28 @@ nlohmann::json serialize_as_vector(const std::vector<std::reference_wrapper<cons
     return combined_json;
 }
 
+
+
+std::string serialize(
+    std::vector<
+        std::variant<
+            std::reference_wrapper<const Domain::ConfigBox>,
+            std::vector<std::reference_wrapper<const Domain::ConfigBox>>
+        >
+    > input,
+    int indent)
+{
+    nlohmann::ordered_json complete_json;
+    for (const auto& var : input) {
+        if (std::holds_alternative<std::reference_wrapper<const Domain::ConfigBox>>(var)) {
+            const auto& box = std::get<std::reference_wrapper<const Domain::ConfigBox>>(var).get();
+            complete_json[box.type()] = serialize(box);
+        } else {
+            const auto& boxes = std::get<std::vector<std::reference_wrapper<const Domain::ConfigBox>>>(var);
+            complete_json[boxes.front().get().type()] = serialize_as_vector(boxes);
+        }
+    }
+    return complete_json.dump(4);
+}
+
 } // namespace Slic3r::Biz

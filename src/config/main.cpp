@@ -72,7 +72,20 @@ int main(int, char* [])
     std::cout << "PHYSICAL PRINTER SETTINGS\n" << serialize(pps).dump(4) << std::endl << "=============================\n\n\n" << std::endl;
     */
 
-    std::cout << serialize_as_vector({fs1, fs2}).dump(4) << std::endl;
+    //std::cout << serialize_as_vector({fs1, fs2}).dump(4) << std::endl;
+
+    std::vector<
+		std::variant<
+		    std::reference_wrapper<const ConfigBox>,
+	        std::vector<std::reference_wrapper<const ConfigBox>>
+	    >
+	> list;
+    list.emplace_back(printer_s);
+    list.emplace_back(ps1);
+    list.emplace_back(std::vector<std::reference_wrapper<const ConfigBox>>{tps1, tps2});
+    list.emplace_back(std::vector<std::reference_wrapper<const ConfigBox>>{fs1, fs2});
+
+    std::cout << serialize(list);
 
     std::ofstream leg("test-roundtrip.gcode");
     leg << serialize_as_legacy_config(std::get<FDMLegacyConfigPack>(cfg)) << std::endl;
