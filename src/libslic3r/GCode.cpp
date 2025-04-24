@@ -3519,6 +3519,13 @@ std::string GCodeGenerator::_extrude(
     // calculate extrusion length per distance unit
     double e_per_mm = m_writer.extruder()->e_per_mm3() * path_attr.mm3_per_mm *
         m_config.print_extrusion_multiplier.value;
+
+    // Apply layer-specific flow ratio
+    if (this->on_first_layer())
+        e_per_mm *= m_config.first_layer_flow_ratio.value;
+    else if (path_attr.role == ExtrusionRole::TopSolidInfill)
+        e_per_mm *= m_config.top_layer_flow_ratio.value;
+
     if (m_writer.extrusion_axis().empty())
         // gcfNoExtrusion
         e_per_mm = 0;

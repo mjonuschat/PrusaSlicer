@@ -976,6 +976,18 @@ void GCodeViewer::init()
             m_viewer.toggle_option_visibility(libvgcode::convert(Preview::OptionType::Seams));
         }
 
+        // Apply option marker scale from preferences
+        {
+            static const std::map<std::string, float> marker_sizes = {
+                {"tiny", 0.5f}, {"small", 0.75f}, {"medium", 1.0f}, {"standard", 1.5f}, {"large", 2.0f}
+            };
+            std::string key = wxGetApp().app_config->get("gcode_viewer_option_marker_size");
+            if (auto it = marker_sizes.find(key); it != marker_sizes.end())
+                m_viewer.set_options_marker_scale_factor(it->second);
+            else
+                m_viewer.set_options_marker_scale_factor(marker_sizes.at("standard"));
+        }
+
         glcheck();
     }
     catch (const std::exception& e)
