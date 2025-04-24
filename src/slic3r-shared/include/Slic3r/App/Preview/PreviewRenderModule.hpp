@@ -6,16 +6,15 @@
 #include "Slic3r/Biz/Preset/PresetInteractor.hpp"
 #include "Slic3r/App/Preview/PreviewRenderLayout.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
-#include "Slic3r/App/LibvgcodeWrapper/Wrapper.hpp"
+#include "Slic3r/App/Preview/FdmViewerWrapper.hpp"
+#include "Slic3r/App/Preview/SlaViewerWrapper.hpp"
 #include "Slic3r/App/SidebarActionButtons.hpp"
 
 #include <memory>
 
-namespace Slic3r::App::LibvgcodeWrapper {
-struct ExtrudersSequence;
-} // namespace Slic3r::App::LibvgcodeWrapper
-
 namespace Slic3r::App::Preview {
+
+struct ExtrudersSequence;
 
 class PreviewRenderModule final : public Platform::AbstractRenderModule,
                                   public Biz::ISelectedBedInstanceChangedListener,
@@ -47,7 +46,12 @@ public:
 
     void on_fdm_result_cache_changed(
         const Biz::Slicing::SlicingId id
-    ) override;
+    ) override { update_fdm_viewer_data(id); }
+/*
+    void on_sla_result_cache_changed(
+        const Biz::Slicing::SlicingId id
+    ) override { update_sla_viewer_data(id); }
+*/
 
     void on_status_cache_changed(
         const Biz::Slicing::SlicingId id
@@ -71,7 +75,10 @@ private:
     std::unique_ptr<PreviewScenePresenter> m_scene_presenter;
     std::unique_ptr<Scene::GizmoManager> m_gizmo_manager;
 
-    LibvgcodeWrapper::Wrapper m_viewer;
+    FdmViewerWrapper m_fdm_viewer;
+    SlaViewerWrapper m_sla_viewer;
+
+    AbstractViewerWrapper* m_viewer;
 
     // main window layout
     PreviewRenderLayout m_layout;
@@ -82,11 +89,10 @@ private:
 
 private:
     void init_gizmos();
-    void init_viewer(Render::Device& device);
-    void send_active_bed_data_to_viewer(const Biz::Slicing::SlicingId id);
-    void send_data_to_viewer(const Biz::Slicing::FDMResult& result);
+    void init_viewers(Render::Device& device);
+    void update_fdm_viewer_data(const Biz::Slicing::SlicingId id);
+//    void update_sla_viewer_data(const Biz::Slicing::SlicingId id);
     void init_scene_layout();
-    void send_data_to_viewer_from_file(const std::string& filename);
 
     void on_invalidate_slice();
     void on_update_layers_slider(const Domain::CustomGCode::Info& info);
@@ -97,7 +103,7 @@ private:
     bool on_slider_layers_auto_color_change();
     void on_slider_layers_notify_empty_auto_color_change();
     void on_slider_layers_notify_empty_color_change_gcode();
-    bool on_slider_layers_get_extruders_sequence(LibvgcodeWrapper::ExtrudersSequence& sequence);
+    bool on_slider_layers_get_extruders_sequence(ExtrudersSequence& sequence);
     int on_slider_layers_show_info_msg(const std::string& message, int btns_flag);
     std::set<int> on_slider_layers_get_used_extruders_in_print(float print_z);
     void on_slider_layers_app_config_changed(const std::string& key, const std::string& val);

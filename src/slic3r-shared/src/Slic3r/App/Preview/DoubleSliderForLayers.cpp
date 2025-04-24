@@ -1,4 +1,4 @@
-#include "Slic3r/App/LibvgcodeWrapper/DoubleSliderForLayers.hpp"
+#include "Slic3r/App/Preview/DoubleSliderForLayers.hpp"
 #include "Slic3r/App/Imgui/ImguiExtension.hpp"
 #include "Slic3r/App/I18N/I18N.hpp"
 #include "Slic3r/Assert.hpp"
@@ -22,7 +22,7 @@ using namespace Slic3r::Biz::libpgcode;
 using namespace Slic3r::Biz;
 using namespace Slic3r::App::libvgcode;
 
-namespace Slic3r::App::LibvgcodeWrapper {
+namespace Slic3r::App::Preview {
 
 namespace CustomGCode = Domain::CustomGCode;
 
@@ -327,6 +327,33 @@ void DoubleSliderForLayers::render(const ImVec2& pos, float scale_factor, float 
         process_yes_no_cancel();
 
     m_size = viewport.Size - position;
+}
+
+int DoubleSliderForLayers::find_close_layer_idx(const std::vector<float>& zs, float z, float eps)
+{
+    if (zs.empty())
+        return -1;
+
+    auto it_h = std::lower_bound(zs.begin(), zs.end(), z);
+    if (it_h == zs.end()) {
+        auto it_l = it_h;
+        --it_l;
+        if (z - *it_l < eps)
+            return int(zs.size() - 1);
+    }
+    else if (it_h == zs.begin()) {
+        if (*it_h - z < eps)
+            return 0;
+    }
+    else {
+        auto it_l = it_h;
+        --it_l;
+        float dist_l = z - *it_l;
+        float dist_h = *it_h - z;
+        if (std::min(dist_l, dist_h) < eps)
+            return (dist_l < dist_h) ? int(it_l - zs.begin()) : int(it_h - zs.begin());
+    }
+    return -1;
 }
 
 bool DoubleSliderForLayers::is_wipe_tower_layer(int tick) const
@@ -1820,4 +1847,4 @@ void DoubleSliderForLayers::process_yes_no_cancel()
     ImGui::CloseCurrentPopup();
 }
 
-} // namespace Slic3r::App::LibvgcodeWrapper
+} // namespace Slic3r::App::Preview

@@ -3,8 +3,8 @@
 ///|/
 ///|/ libvgcode library is released under the terms of the AGPLv3 or higher
 ///|/
-#include "CogMarker.hpp"
-#include "Utils.hpp"
+#include "Slic3r/App/libvgcode/CogMarker.hpp"
+#include "Slic3r/App/libvgcode/Utils.hpp"
 
 #include "Slic3r/App/libvgcode/GCodeNodeTag.hpp"
 

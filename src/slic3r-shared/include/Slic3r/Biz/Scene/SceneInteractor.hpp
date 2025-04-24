@@ -95,6 +95,7 @@ public:
 
     const Domain::Project::ConfigContainerList&     selected_project_config_containers();
     const Domain::ModelInstanceList&                selected_project_unplaced_model_instances();
+    Domain::SelectionId                             selected_config_container_id() { return m_selected_config_container_id; }
 
     /**
      * @name Scene selection

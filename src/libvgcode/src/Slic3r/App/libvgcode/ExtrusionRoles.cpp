@@ -3,7 +3,7 @@
 ///|/
 ///|/ libvgcode library is released under the terms of the AGPLv3 or higher
 ///|/
-#include "ExtrusionRoles.hpp"
+#include "Slic3r/App/libvgcode/ExtrusionRoles.hpp"
 
 using namespace Slic3r::Biz::libpgcode;
 

@@ -3,8 +3,8 @@
 ///|/
 ///|/ libvgcode library is released under the terms of the AGPLv3 or higher
 ///|/
-#include "OptionTemplate.hpp"
-#include "Utils.hpp"
+#include "Slic3r/App/libvgcode/OptionTemplate.hpp"
+#include "Slic3r/App/libvgcode/Utils.hpp"
 
 #include <Slic3r/App/Render/Device.hpp>
 #include <Slic3r/App/Render/Context.hpp>

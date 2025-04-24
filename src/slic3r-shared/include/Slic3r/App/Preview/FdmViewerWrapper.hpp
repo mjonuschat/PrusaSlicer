@@ -1,46 +1,91 @@
 #pragma once
 
-#include "Slic3r/App/LibvgcodeWrapper/Wrapper.hpp"
-#include "Slic3r/App/LibvgcodeWrapper/WrapperInputData.hpp"
-#include "Slic3r/App/LibvgcodeWrapper/DoubleSliderForGCode.hpp"
-#include "Slic3r/App/LibvgcodeWrapper/DoubleSliderForLayers.hpp"
-#include "Slic3r/App/LibvgcodeWrapper/GCodeWindow.hpp"
-#include "Slic3r/App/LibvgcodeWrapper/ActualSpeedPlotter.hpp"
-#include "Slic3r/App/LibvgcodeWrapper/Legend.hpp"
+#include "AbstractViewerWrapper.hpp"
+#include "Types.hpp"
+#include "Slic3r/App/Imgui/DoubleSlider.hpp"
+#include "libslic3r/BoundingBox.hpp"
+
+#include <Slic3r/App/libvgcode/FdmViewerInputData.hpp>
+#include <Slic3r/App/libvgcode/FdmViewer.hpp>
+
+#include "FdmViewerWrapperInputData.hpp"
+#include "DoubleSliderForGCode.hpp"
+#include "DoubleSliderForLayers.hpp"
+#include "GCodeWindow.hpp"
+#include "ActualSpeedPlotter.hpp"
+#include "Legend.hpp"
 #include "Slic3r/Biz/Units.hpp"
 
-#include <Slic3r/App/libvgcode/Viewer.hpp>
+namespace Slic3r::Biz::libpgcode {
+struct ProcessorResult;
+}
 
-namespace Slic3r::App::LibvgcodeWrapper {
+namespace Slic3r::App::Preview {
 
-struct LegendParams
-{
-    bool visible{ true };
-    bool enabled{ true };
-    bool settings_visible{ false };
-    bool is_shown() const { return enabled && visible; }
+enum class FdmViewerWrapperMode{
+    EditorGCode,
+    GCodeViewer,
+    EditorPreGCode,
 };
 
-class WrapperImpl
+struct FdmViewerWrapperSettings : public ViewerWrapperBaseSettings
+{
+    FdmViewerWrapperMode mode{ FdmViewerWrapperMode::EditorGCode };
+    bool slider_layers_editable{ false };
+    bool slider_layers_use_default_colors{ false };
+    bool seq_top_layer_only{ false };
+    bool gcodewindow_visible{ true };
+
+    libvgcode::CustomOptions custom_options;
+
+    //
+    // wrapper callbacks
+    //
+    InvalidateSliceCallback                         cb_invalidate_slice{ nullptr };
+    Imgui::DoubleSlider::RequestExtraFramesCallback cb_request_extra_frames{ nullptr };
+    UpdateLayersSlider                              cb_update_layers_slider{ nullptr };
+    GCodeViewTypeChangedCallback                    cb_gcode_view_type_changed{ nullptr };
+
+    //
+    // layers slider callbacks
+    //
+    TicksChangedCallback                            cb_slider_layers_ticks_changed{ nullptr };
+    AutoColorChangeCallback                         cb_slider_layers_auto_color_change{ nullptr };
+    NotifyEmptyAutoColorChangeCallback              cb_slider_layers_notify_empty_auto_color_change{ nullptr };
+    NotifyEmptyColorChangeGCodeCallback             cb_slider_layers_notify_empty_color_change_gcode{ nullptr };
+    GetExtrudersSequenceCallback                    cb_slider_layers_get_extruders_sequence{ nullptr };
+    ShowInfoMsgCallback                             cb_slider_layers_show_info_msg{ nullptr };
+    GetUsedExtrudersInPrintCallback                 cb_slider_layers_get_used_extruders_in_print{ nullptr };
+    AppConfigChangedCallback                        cb_slider_layers_app_config_changed{ nullptr };
+    //
+    // gcode slider callbacks
+    //
+    Imgui::DoubleSlider::OnThumbMoveCallback        cb_slider_gcode_on_thumb_move{ nullptr };
+};
+
+class FdmViewerWrapper : public AbstractViewerWrapper
 {
 public:
-    WrapperImpl() = default;
-    WrapperImpl(WrapperImpl&&) = delete;
-    WrapperImpl(const WrapperImpl&) = delete;
-    WrapperImpl& operator=(WrapperImpl&&) = delete;
-    WrapperImpl& operator=(const WrapperImpl&) = delete;
-    ~WrapperImpl() = default;
+    FdmViewerWrapper() = default;
+    ~FdmViewerWrapper() override;
 
-    bool init(Render::Device& device, Scene::Scene& scene, Scene::GeometryDataFactory& data_factory,
-        const WrapperSettings& settings);
+    bool init(Render::Device& device, Scene::Scene& scene, Scene::GeometryDataFactory& data_factory) override;
+    bool set_settings(const FdmViewerWrapperSettings& settings);
+    void render_scene() override;
+    void render_imgui() override;
+    void reset() override;
 
-    WrapperMode mode() const { return m_settings.mode; }
-    void set_mode(WrapperMode mode);
+    const libvgcode::AbstractViewer& viewer() const override {
+        return *static_cast<const libvgcode::AbstractViewer*>(&m_viewer); }
 
-    void reset();
+    libvgcode::AbstractViewer& viewer() override {
+        return *static_cast<libvgcode::AbstractViewer*>(&m_viewer); }
 
-    void load(WrapperInputData&& wrapper_data, libvgcode::ViewerInputData&& data);
-    void load_as_sla(WrapperSLAInputData&& wrapper_sla_data);
+    FdmViewerWrapperMode mode() const { return m_settings.mode; }
+    void set_mode(FdmViewerWrapperMode mode);
+
+    void load(FdmViewerWrapperInputData&& wrapper_data, libvgcode::FdmViewerInputData&& data);
+    void load_from_result(const Biz::libpgcode::ProcessorResult& result);
 
     void set_extrusion_role_color(Domain::GCodeExtrusionRole role, const ColorRGB& color) { return m_viewer.set_extrusion_role_color(role, color); }
     
@@ -59,12 +104,11 @@ public:
         Biz::libpgcode::MoveType::Wipe,
         Biz::libpgcode::MoveType::Extrude }) const { return m_viewer.bounding_box(types); }
 
-    void render_toolpaths(const Vec3f& camera_position);
+    void render_toolpaths();
     void render_gui(const WrapperLayoutData& layout);
     void render_gcode_window();
-    void render_legend(Render::ImguiRender* imgui_render);
+    void render_legend(Render::ImguiRender* imgui_render) override;
     void render_gcode_slider();
-    void render_layers_slider();
 
     Biz::libpgcode::UnitsSystem units() const { return m_units; }
     void set_units(Biz::libpgcode::UnitsSystem sys);
@@ -74,12 +118,6 @@ public:
     const libvgcode::CustomOptions& custom_options() const { return m_settings.custom_options; }
     libvgcode::CustomOptions& custom_options() { return m_settings.custom_options; }
 
-    bool has_data() const { return m_viewer.layers_count() > 0; }
-
-    const libvgcode::Lights& lights() const { return m_viewer.lights(); }
-    void set_lights(const libvgcode::Lights& lights) { m_viewer.set_lights(lights); }
-    const libvgcode::Lights& default_lights() const { return m_viewer.default_lights(); }
-
     float cog_marker_scale_factor() const { return m_viewer.cog_marker_scale_factor(); }
     void set_cog_marker_scale_factor(float factor) { m_viewer.set_cog_marker_scale_factor(factor); }
 
@@ -87,10 +125,6 @@ public:
     void set_tool_marker_enabled(bool enabled) { m_viewer.set_tool_marker_enabled(enabled); }
     float tool_marker_scale_factor() const { return m_viewer.tool_marker_scale_factor(); }
     void set_tool_marker_scale_factor(float factor) { m_viewer.set_tool_marker_scale_factor(factor); }
-
-    void set_legend_visible(bool visible) { m_legend_params.visible = visible; }
-    void toggle_legend_visible() { set_legend_visible(!m_legend_params.visible); }
-    bool is_legend_visible() const { return m_legend_params.visible; }
 
     void set_gcodewindow_visible(bool visible) { m_gcode_window_data.set_visible(visible); }
     void toggle_gcodewindow_visible() { m_gcode_window_data.toggle_visible(); }
@@ -105,8 +139,6 @@ public:
     bool is_option_visible(Biz::libpgcode::OptionType type) { return m_viewer.is_option_visible(type); }
     void toggle_option_visibility(Biz::libpgcode::OptionType type) { m_viewer.toggle_option_visibility(type); }
     const Biz::libpgcode::OptionTypes& options() const { return m_viewer.options(); }
-
-    bool is_legend_shown() const { return m_legend_params.is_shown(); }
 
     const libvgcode::Interval& layers_range() const { return m_viewer.layers_range(); }
     void set_layers_range(libvgcode::Interval::value_type min, libvgcode::Interval::value_type max);
@@ -137,16 +169,15 @@ public:
     void set_scale_factor_popup_type(Biz::libpgcode::OptionType type);
 
 private:
-    WrapperSettings m_settings;
-    WrapperInputData m_data;
-    PrinterTechnology m_printer_technology{ PrinterTechnology::FFF };
+    FdmViewerWrapperSettings m_settings;
 
-    libvgcode::Viewer m_viewer;
+    FdmViewerWrapperInputData m_data;
+
+    libvgcode::FdmViewer m_viewer;
+
     DoubleSliderForGcode m_slider_gcode;
-    DoubleSliderForLayers m_slider_layers;
     GCodeWindowData m_gcode_window_data;
     ActualSpeedPlotData m_actual_speed_plot_data;
-    LegendParams m_legend_params;
     LegendCallbacks m_cb_legend;
 
     float m_legend_height{ 0.0f };
@@ -187,4 +218,4 @@ private:
     void render_customize_scale_factor_popup();
 };
 
-} // namespace Slic3r::App::LibvgcodeWrapper
+} // namespace Slic3r::App::Preview

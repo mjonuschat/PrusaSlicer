@@ -11,8 +11,8 @@
 
 namespace Slic3r::App::libvgcode {
 
-class ViewerImpl;
+class FdmViewer;
 
-bool export_toolpaths_to_obj(FILE& obj_file, FILE& mtl_file, const ObjExportParams& params, const ViewerImpl& viewer);
+bool export_toolpaths_to_obj(FILE& obj_file, FILE& mtl_file, const ObjExportParams& params, const FdmViewer& viewer);
 
 } // namespace Slic3r::App::libvgcode

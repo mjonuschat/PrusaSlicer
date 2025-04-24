@@ -63,7 +63,7 @@ public:
     //
     // Render the toolpaths according to the current settings
     //
-    void render(const Domain::Vec3f& camera_position);
+    void render();
 
 #if ENABLE_RENDER_TO_TEXTURE
     //

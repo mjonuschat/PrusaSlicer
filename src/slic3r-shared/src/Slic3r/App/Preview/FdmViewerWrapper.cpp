@@ -1,9 +1,8 @@
-#include "Slic3r/App/LibvgcodeWrapper/WrapperImpl.hpp"
+#include "Slic3r/App/Preview/FdmViewerWrapper.hpp"
 #include "Slic3r/App/I18N/I18N.hpp"
 #include "Slic3r/App/Imgui/ImguiExtension.hpp"
 
 #include <Slic3r/Biz/libpgcode/Utils.hpp>
-
 #include <Slic3r/App/libvgcode/ColorRange.hpp>
 
 using namespace Slic3r::Biz::libpgcode;
@@ -12,7 +11,7 @@ using namespace Slic3r::Biz;
 using Slic3r::Domain::GCodeExtrusionRole;
 namespace CustomGCode = Slic3r::Domain::CustomGCode;
 
-namespace Slic3r::App::LibvgcodeWrapper {
+namespace Slic3r::App::Preview {
 
 static const std::vector<Palette> PREDEFINED_PALETTES = {
     // palette 1  
@@ -29,45 +28,12 @@ static const std::vector<Palette> PREDEFINED_PALETTES = {
     DEFAULT_RANGES_COLORS
 };
 
-bool WrapperImpl::init(Render::Device& device, Scene::Scene& scene, Scene::GeometryDataFactory& data_factory,
-    const WrapperSettings& settings)
-{
-    m_settings = settings;
-    set_gcodewindow_visible(m_settings.gcodewindow_visible);
+FdmViewerWrapper::~FdmViewerWrapper() = default;
 
+bool FdmViewerWrapper::init(Render::Device& device, Scene::Scene& scene, Scene::GeometryDataFactory& data_factory)
+{
     try {
         m_viewer.init(device, scene, data_factory);
-
-        if (m_viewer.is_top_layer_only_view_range() != settings.seq_top_layer_only)
-            m_viewer.toggle_top_layer_only_view_range();
-
-        m_cb_legend.cb_extrusion_role_visibility_changed = std::bind(&WrapperImpl::on_extrusion_role_visibility_changed, this);
-        m_cb_legend.cb_request_extra_frame = m_settings.cb_request_extra_frames;
-        m_cb_legend.cb_view_type_changed = m_settings.cb_gcode_view_type_changed;
-
-        m_slider_layers.init(0, 0, 0, 100);
-        m_slider_layers.show_ruler(m_settings.slider_layers_show_ruler, m_settings.slider_layers_show_ruler_bg);
-        m_slider_layers.show_estimated_times(m_settings.slider_layers_show_estimated_times);
-        m_slider_layers.set_use_default_colors(m_settings.slider_layers_use_default_colors);
-        // set layers slider callbacks
-        m_slider_layers.set_request_extra_frames_callback(std::bind(&WrapperImpl::on_request_extra_frames, this, std::placeholders::_1));
-        m_slider_layers.set_on_thumb_move_callback(std::bind(&WrapperImpl::on_slider_layers_scroll_changed, this));
-        m_slider_layers.set_notify_empty_color_change_gcode_callback(m_settings.cb_slider_layers_notify_empty_color_change_gcode);
-        m_slider_layers.set_ticks_changed_callback(std::bind(&WrapperImpl::on_slider_layers_ticks_changed, this));
-        m_slider_layers.set_get_extruder_colors_callback(std::bind(&WrapperImpl::on_slider_layers_get_extruder_colors, this));
-        m_slider_layers.set_auto_color_change_callback(m_settings.cb_slider_layers_auto_color_change);
-        m_slider_layers.set_notify_empty_auto_color_change_callback(m_settings.cb_slider_layers_notify_empty_auto_color_change);
-        m_slider_layers.set_get_extruders_sequence_callback(m_settings.cb_slider_layers_get_extruders_sequence);
-        m_slider_layers.set_show_info_msg_callback(m_settings.cb_slider_layers_show_info_msg);
-        m_slider_layers.set_get_gcode_callback(std::bind(&WrapperImpl::on_slider_layers_get_gcode, this, std::placeholders::_1));
-        m_slider_layers.set_get_used_extruders_in_print_callback(m_settings.cb_slider_layers_get_used_extruders_in_print);
-        m_slider_layers.set_app_config_changed_callback(m_settings.cb_slider_layers_app_config_changed);
-
-        m_slider_gcode.init(0, 0, 0, 100);
-        // set gcode slider callbacks
-        m_slider_gcode.set_request_extra_frames_callback(std::bind(&WrapperImpl::on_request_extra_frames, this, std::placeholders::_1));
-        m_slider_gcode.set_on_thumb_move_callback(std::bind(&WrapperImpl::on_slider_gcode_scroll_changed, this));
-
         return true;
     }
     catch (const std::exception& e) {
@@ -76,7 +42,60 @@ bool WrapperImpl::init(Render::Device& device, Scene::Scene& scene, Scene::Geome
     }
 }
 
-static void set_pregcode_extrusion_role_colors(WrapperImpl& wrapper)
+void FdmViewerWrapper::render_scene()
+{
+    render_toolpaths();
+}
+
+void FdmViewerWrapper::render_imgui() 
+{
+}
+
+bool FdmViewerWrapper::set_settings(const FdmViewerWrapperSettings& settings)
+{
+    m_settings = settings;
+    set_gcodewindow_visible(m_settings.gcodewindow_visible);
+
+    try {
+
+        if (m_viewer.is_top_layer_only_view_range() != settings.seq_top_layer_only)
+            m_viewer.toggle_top_layer_only_view_range();
+
+        m_cb_legend.cb_extrusion_role_visibility_changed = std::bind(&FdmViewerWrapper::on_extrusion_role_visibility_changed, this);
+        m_cb_legend.cb_request_extra_frame = m_settings.cb_request_extra_frames;
+        m_cb_legend.cb_view_type_changed = m_settings.cb_gcode_view_type_changed;
+
+        m_slider_layers.init(0, 0, 0, 100);
+        m_slider_layers.show_ruler(m_settings.slider_layers_show_ruler, m_settings.slider_layers_show_ruler_bg);
+        m_slider_layers.show_estimated_times(m_settings.slider_layers_show_estimated_times);
+        m_slider_layers.set_use_default_colors(m_settings.slider_layers_use_default_colors);
+        // set layers slider callbacks
+        m_slider_layers.set_request_extra_frames_callback(std::bind(&FdmViewerWrapper::on_request_extra_frames, this, std::placeholders::_1));
+        m_slider_layers.set_on_thumb_move_callback(std::bind(&FdmViewerWrapper::on_slider_layers_scroll_changed, this));
+        m_slider_layers.set_notify_empty_color_change_gcode_callback(m_settings.cb_slider_layers_notify_empty_color_change_gcode);
+        m_slider_layers.set_ticks_changed_callback(std::bind(&FdmViewerWrapper::on_slider_layers_ticks_changed, this));
+        m_slider_layers.set_get_extruder_colors_callback(std::bind(&FdmViewerWrapper::on_slider_layers_get_extruder_colors, this));
+        m_slider_layers.set_auto_color_change_callback(m_settings.cb_slider_layers_auto_color_change);
+        m_slider_layers.set_notify_empty_auto_color_change_callback(m_settings.cb_slider_layers_notify_empty_auto_color_change);
+        m_slider_layers.set_get_extruders_sequence_callback(m_settings.cb_slider_layers_get_extruders_sequence);
+        m_slider_layers.set_show_info_msg_callback(m_settings.cb_slider_layers_show_info_msg);
+        m_slider_layers.set_get_gcode_callback(std::bind(&FdmViewerWrapper::on_slider_layers_get_gcode, this, std::placeholders::_1));
+        m_slider_layers.set_get_used_extruders_in_print_callback(m_settings.cb_slider_layers_get_used_extruders_in_print);
+        m_slider_layers.set_app_config_changed_callback(m_settings.cb_slider_layers_app_config_changed);
+
+        m_slider_gcode.init(0, 0, 0, 100);
+        // set gcode slider callbacks
+        m_slider_gcode.set_request_extra_frames_callback(std::bind(&FdmViewerWrapper::on_request_extra_frames, this, std::placeholders::_1));
+        m_slider_gcode.set_on_thumb_move_callback(std::bind(&FdmViewerWrapper::on_slider_gcode_scroll_changed, this));
+
+        return true;
+    }
+    catch (const std::exception& e) {
+        std::cout << e.what();
+        return false;
+    }
+}
+static void set_pregcode_extrusion_role_colors(FdmViewerWrapper& wrapper)
 {
     wrapper.set_extrusion_role_color(GCodeExtrusionRole::Skirt,                    ColorRGB(0.5f, 1.0f, 0.5f));
     wrapper.set_extrusion_role_color(GCodeExtrusionRole::ExternalPerimeter,        ColorRGB(1.0f, 1.0f, 0.0f));
@@ -87,36 +106,34 @@ static void set_pregcode_extrusion_role_colors(WrapperImpl& wrapper)
     wrapper.set_extrusion_role_color(GCodeExtrusionRole::WipeTower,                ColorRGB(0.5f, 1.0f, 0.5f));
 }
 
-void WrapperImpl::set_mode(WrapperMode mode)
+void FdmViewerWrapper::set_mode(FdmViewerWrapperMode mode)
 {
     m_settings.mode = mode;
-    m_slider_layers.enable_editing(m_settings.mode != WrapperMode::GCodeViewer);
-    m_legend_params.settings_visible = (m_settings.mode == WrapperMode::GCodeViewer);
-    m_legend_params.enabled = (m_settings.mode != WrapperMode::EditorPreGCode);
-    if (m_settings.mode == WrapperMode::EditorPreGCode)
+    m_slider_layers.enable_editing(m_settings.mode != FdmViewerWrapperMode::GCodeViewer);
+    m_legend_params.settings_visible = (m_settings.mode == FdmViewerWrapperMode::GCodeViewer);
+    m_legend_params.enabled = (m_settings.mode != FdmViewerWrapperMode::EditorPreGCode);
+    if (m_settings.mode == FdmViewerWrapperMode::EditorPreGCode)
         set_pregcode_extrusion_role_colors(*this);
     else
         reset_default_extrusion_roles_colors();
 }
 
-void WrapperImpl::reset()
+void FdmViewerWrapper::reset()
 {
     m_viewer.reset();
     m_gcode_window_data.reset();
 }
 
-void WrapperImpl::load(WrapperInputData&& wrapper_data, ViewerInputData&& data)
+void FdmViewerWrapper::load(FdmViewerWrapperInputData&& wrapper_data, FdmViewerInputData&& data)
 {
     m_loading = true;
 
-    m_printer_technology = PrinterTechnology::FFF;
-
     m_data = std::move(wrapper_data);
 
-    if (data.gcode.empty() && m_settings.mode == WrapperMode::EditorGCode)
-        set_mode(WrapperMode::EditorPreGCode);
-    else if (!data.gcode.empty() && m_settings.mode == WrapperMode::EditorPreGCode)
-        set_mode(WrapperMode::EditorGCode);
+    if (data.gcode.empty() && m_settings.mode == FdmViewerWrapperMode::EditorGCode)
+        set_mode(FdmViewerWrapperMode::EditorPreGCode);
+    else if (!data.gcode.empty() && m_settings.mode == FdmViewerWrapperMode::EditorPreGCode)
+        set_mode(FdmViewerWrapperMode::EditorGCode);
 
     m_gcode_window_data.set_gcode(std::move(data.gcode));
     m_viewer.load(std::move(data));
@@ -126,74 +143,150 @@ void WrapperImpl::load(WrapperInputData&& wrapper_data, ViewerInputData&& data)
     m_loading = false;
 }
 
-void WrapperImpl::load_as_sla(WrapperSLAInputData&& wrapper_sla_data)
+static FdmViewerInputData extract_viewer_input_data_from_result(const ProcessorResult& result)
 {
-    m_loading = true;
+    FdmViewerInputData ret;
 
-    m_printer_technology = PrinterTechnology::SLA;
-    m_data = {};
+    std::vector<std::string> str_tool_colors = result.extruder_str_colors;
+    std::vector<std::string> str_color_print_colors;
+    if (!result.custom_gcode_per_print_z.empty()) {
+        str_color_print_colors = result.extruder_str_colors;
+        for (const CustomGCode::Item& code : result.custom_gcode_per_print_z) {
+            if (code.type == CustomGCode::Type::ColorChange)
+                str_color_print_colors.emplace_back(code.color);
+        }
+        str_color_print_colors.push_back(DUMMY_STR_COLOR);
+    }
 
-    m_viewer.load_as_sla(wrapper_sla_data.layers.zs, wrapper_sla_data.layers.times);
+    ret.tools_colors.reserve(str_tool_colors.size());
+    for (const std::string& str_color : str_tool_colors) {
+        ColorRGB color;
+        decode_color(str_color, color);
+        ret.tools_colors.emplace_back(color);
+    }
 
-    int max_pos = wrapper_sla_data.layers.zs.empty() ? 0 : int(wrapper_sla_data.layers.zs.size() - 1);
-    m_slider_layers.set_slider_values(std::move(wrapper_sla_data.layers.zs));
-    m_slider_layers.set_layers_times(m_viewer.layers_estimated_times());
-    assert(m_slider_layers.min_pos() == 0);
-    m_slider_layers.set_max_pos(max_pos);
-    m_slider_layers.set_selection_span(0, m_slider_layers.max_pos());
-    m_slider_layers.set_draw_mode(true, false);
+    const std::vector<std::string>& str_colors = str_color_print_colors.empty() ? str_tool_colors : str_color_print_colors;
+    ret.color_print_colors.reserve(str_colors.size());
+    for (const std::string& str_color : str_colors) {
+        ColorRGB color;
+        decode_color(str_color, color);
+        ret.color_print_colors.emplace_back(color);
+    }
 
-    m_loading = false;
+    for (const auto& [role, values] : result.print_statistics.used_filaments_per_role) {
+        float length = values.first;
+        float mass   = values.second;
+        ret.used_filament_by_roles.insert({ role, { length, mass } });
+    }
+
+    for (const auto& [extruder_id, volume] : result.print_statistics.volumes_per_extruder) {
+        float v = 0.001f * volume;
+        float length = v / result.filament_geometry(extruder_id).area_cross_section;
+        float mass = v * result.filament_densities[extruder_id];
+        ret.used_filament_by_extruders.insert({ extruder_id, { length, mass } });
+    }
+
+    std::array<size_t, TIME_MODES_COUNT> shifts = {};
+    size_t color_changes_count = 0;
+    for (size_t i = 0; i < result.custom_gcode_per_print_z.size(); ++i) {
+        const auto& item = result.custom_gcode_per_print_z[i];
+        assert(item.extruder > 0);
+        std::array<float, TIME_MODES_COUNT> times = {};
+        std::array<float, 2> used_filament = { 0.0f, 0.0f };
+        for (size_t j = 0; j < TIME_MODES_COUNT; ++j) {
+            const Biz::libpgcode::PrintEstimatedStatistics::Mode& mode = result.print_statistics.modes[j];
+            auto it = std::find_if(mode.custom_gcode_times.begin() + shifts[j], mode.custom_gcode_times.end(),
+                [&item](const std::pair<CustomGCode::Type, std::pair<float, float>>& gc_item) { return gc_item.first == item.type; });
+            if (it != mode.custom_gcode_times.end()) {
+                shifts[j] = std::distance(mode.custom_gcode_times.begin(), it) + 1;
+                times[j] = it->second.first;
+            }
+        }
+        if (item.type == CustomGCode::Type::ColorChange) {
+            float volume = 0.001f * result.print_statistics.volumes_per_color_change[color_changes_count++];
+            used_filament = { volume / result.filament_geometry(uint8_t(item.extruder - 1)).area_cross_section,
+                              volume * result.filament_densities[item.extruder - 1] };
+        }
+        ret.gcode_events.push_back({ item.type, uint8_t(item.extruder - 1), times, used_filament });
+    }
+
+    ret.extruders_count = result.extruders_count;
+    // TODO: we should avoid the copy and refer instead to the data stored in FDMResultCache
+    ret.gcode = result.gcode;
+    ret.vertices = result.moves;
+
+    return ret;
 }
 
-void WrapperImpl::render_toolpaths(const Vec3f& camera_position)
+static FdmViewerWrapperInputData extract_wrapper_input_data_from_result(const ProcessorResult& result)
 {
-    if (m_printer_technology == PrinterTechnology::FFF)
-        m_viewer.render(camera_position);
+    FdmViewerWrapperInputData ret;
+
+    CustomGCode::Info ticks_info_from_model;
+    ticks_info_from_model.mode = CustomGCode::Mode::SingleExtruder;
+    ticks_info_from_model.gcodes = result.custom_gcode_per_print_z;
+    ret.producer = result.producer;
+    ret.custom_gcode_info = ticks_info_from_model;
+    ret.print_settings = result.print_settings;
+    ret.sequential_print = result.sequential_print;
+    ret.color_change_gcode = result.color_change_gcode;
+    ret.pause_print_gcode = result.pause_print_gcode;
+    ret.template_custom_gcode = result.template_custom_gcode;
+
+    return ret;
 }
 
-void WrapperImpl::render_gui(const WrapperLayoutData& layout)
+void FdmViewerWrapper::load_from_result(const ProcessorResult& result)
+{
+    FdmViewerInputData viewer_data = extract_viewer_input_data_from_result(result);
+    FdmViewerWrapperInputData wrapper_data = extract_wrapper_input_data_from_result(result);
+
+    load(std::move(wrapper_data), std::move(viewer_data));
+}
+
+void FdmViewerWrapper::render_toolpaths()
+{
+    m_viewer.render();
+}
+
+void FdmViewerWrapper::render_gui(const WrapperLayoutData& layout)
 {
     m_legend_height = 0.0f;
 
-    if (m_printer_technology == PrinterTechnology::FFF &&
-        m_settings.mode != WrapperMode::EditorPreGCode) {
+    if (m_settings.mode != FdmViewerWrapperMode::EditorPreGCode) {
         render_legend(layout);
         render_slider_gcode(layout);
     }
 
     render_slider_layers(layout);
 
-    if (m_printer_technology == PrinterTechnology::FFF) {
-        render_gcodewindow(layout);
+    render_gcodewindow(layout);
 
-        if (m_viewer.view_visible_range()[1] != m_viewer.view_enabled_range()[1])
-            render_vertex_properties(layout);
+    if (m_viewer.view_visible_range()[1] != m_viewer.view_enabled_range()[1])
+        render_vertex_properties(layout);
 
-        if (m_extrusion_roles_colors_popup_visible)
-            render_customize_extrusion_roles_colors_popup();
-        else if (m_options_colors_popup_visible)
-            render_customize_options_colors_popup();
-        else if (m_range_colors_popup_type != ViewType::COUNT)
-            render_customize_range_colors_popup();
-        else if (m_radius_popup_type != MoveType::COUNT)
-            render_customize_radius_popup();
-        else if (m_scale_factor_popup_type != OptionType::COUNT)
-            render_customize_scale_factor_popup();
-    }
+    if (m_extrusion_roles_colors_popup_visible)
+        render_customize_extrusion_roles_colors_popup();
+    else if (m_options_colors_popup_visible)
+        render_customize_options_colors_popup();
+    else if (m_range_colors_popup_type != ViewType::COUNT)
+        render_customize_range_colors_popup();
+    else if (m_radius_popup_type != MoveType::COUNT)
+        render_customize_radius_popup();
+    else if (m_scale_factor_popup_type != OptionType::COUNT)
+        render_customize_scale_factor_popup();
 }
 
-void WrapperImpl::render_gcode_window()
+void FdmViewerWrapper::render_gcode_window()
 {
     gcode_window(m_gcode_window_data, m_viewer.current_vertex().gcode_id);
 }
 
-void WrapperImpl::render_legend(Render::ImguiRender* imgui_render)
+void FdmViewerWrapper::render_legend(Render::ImguiRender* imgui_render)
 {
     static std::string msg = _u8L("No data available");
 
-    if (m_printer_technology != PrinterTechnology::FFF ||
-        m_settings.mode == WrapperMode::EditorPreGCode ||
+    if (m_settings.mode == FdmViewerWrapperMode::EditorPreGCode ||
         !has_data()) {
         ImVec2 msg_size = ImGui::CalcTextSize(msg.c_str());
         ImVec2 available_size = ImGui::GetContentRegionAvail();
@@ -219,50 +312,45 @@ void WrapperImpl::render_legend(Render::ImguiRender* imgui_render)
         render_customize_radius_popup();
 }
 
-void WrapperImpl::render_gcode_slider()
+void FdmViewerWrapper::render_gcode_slider()
 { 
     m_slider_gcode.render(ImGui::GetCurrentWindow()->DC.CursorPos, 1.0f, 0.0f);
 }
 
-void WrapperImpl::render_layers_slider()
-{
-    m_slider_layers.render(ImGui::GetCurrentWindow()->DC.CursorPos, 1.0f, 0.0f);
-}
-
-void WrapperImpl::set_units(UnitsSystem sys)
+void FdmViewerWrapper::set_units(UnitsSystem sys)
 {
     m_units = sys;
     m_slider_layers.set_units(sys);
 }
 
-void WrapperImpl::set_layers_range(Interval::value_type min, Interval::value_type max)
+void FdmViewerWrapper::set_layers_range(Interval::value_type min, Interval::value_type max)
 {
     m_viewer.set_layers_range(min, max);
     update_slider_gcode();
 }
 
-void WrapperImpl::set_range_colors_popup_type(ViewType type)
+void FdmViewerWrapper::set_range_colors_popup_type(ViewType type)
 {
     m_range_colors_popup_type = type;
     // force dimmed background without animation
     Imgui::disable_background_fadeout_animation();
 }
 
-void WrapperImpl::set_radius_popup_type(MoveType type)
+void FdmViewerWrapper::set_radius_popup_type(MoveType type)
 {
     m_radius_popup_type = type;
     // force dimmed background without animation
     Imgui::disable_background_fadeout_animation();
 }
 
-void WrapperImpl::set_scale_factor_popup_type(OptionType type)
+void FdmViewerWrapper::set_scale_factor_popup_type(OptionType type)
 {
     m_scale_factor_popup_type = type;
     // force dimmed background without animation
     Imgui::disable_background_fadeout_animation();
 }
 
-void WrapperImpl::update_slider_gcode(std::optional<size_t> visible_range_min, std::optional<size_t> visible_range_max)
+void FdmViewerWrapper::update_slider_gcode(std::optional<size_t> visible_range_min, std::optional<size_t> visible_range_max)
 {
     if (!has_data())
         return;
@@ -334,33 +422,6 @@ static void adjust_ticks_values(std::vector<CustomGCode::Item>& gcodes, const st
     }), gcodes.end());
 }
 
-static int find_close_layer_idx(const std::vector<float>& zs, float z, float eps)
-{
-    if (zs.empty())
-        return -1;
-
-    auto it_h = std::lower_bound(zs.begin(), zs.end(), z);
-    if (it_h == zs.end()) {
-        auto it_l = it_h;
-        --it_l;
-        if (z - *it_l < eps)
-            return int(zs.size() - 1);
-    }
-    else if (it_h == zs.begin()) {
-        if (*it_h - z < eps)
-            return 0;
-    }
-    else {
-        auto it_l = it_h;
-        --it_l;
-        float dist_l = z - *it_l;
-        float dist_h = *it_h - z;
-        if (std::min(dist_l, dist_h) < eps)
-            return (dist_l < dist_h) ? int(it_l - zs.begin()) : int(it_h - zs.begin());
-    }
-    return -1;
-}
-
 static std::vector<std::string> convert(const Palette& palette)
 {
     std::vector<std::string> ret;
@@ -371,7 +432,7 @@ static std::vector<std::string> convert(const Palette& palette)
     return ret;
 }
 
-void WrapperImpl::update_slider_layers()
+void FdmViewerWrapper::update_slider_layers()
 {
     // Save the initial slider span.
     float z_low = m_slider_layers.lower_value();
@@ -398,12 +459,12 @@ void WrapperImpl::update_slider_layers()
     int idx_high = max_pos;
     if (!layers_zs.empty()) {
         if (!snap_to_min) {
-            int idx_new = find_close_layer_idx(layers_zs, z_low, float(EPSILON));
+            int idx_new = DoubleSliderForLayers::find_close_layer_idx(layers_zs, z_low, float(EPSILON));
             if (idx_new != -1)
                 idx_low = idx_new;
         }
         if (!snap_to_max) {
-            int idx_new = find_close_layer_idx(layers_zs, z_high, float(EPSILON));
+            int idx_new = DoubleSliderForLayers::find_close_layer_idx(layers_zs, z_high, float(EPSILON));
             if (idx_new != -1)
                 idx_high = idx_new;
         }
@@ -431,7 +492,7 @@ void WrapperImpl::update_slider_layers()
         m_settings.cb_update_layers_slider(m_data.custom_gcode_info);
 }
 
-void WrapperImpl::update_view_visible_range(size_t first, size_t last)
+void FdmViewerWrapper::update_view_visible_range(size_t first, size_t last)
 {
     m_viewer.set_view_visible_range(first, last);
     const Interval& enabled_range = m_viewer.view_enabled_range();
@@ -483,7 +544,7 @@ void WrapperImpl::update_view_visible_range(size_t first, size_t last)
         m_settings.cb_request_extra_frames(1);
 }
 
-void WrapperImpl::on_slider_layers_scroll_changed()
+void FdmViewerWrapper::on_slider_layers_scroll_changed()
 {
     if (m_slider_layers.is_shown()) {
         set_layers_range(uint32_t(m_slider_layers.lower_pos()), uint32_t(m_slider_layers.higher_pos()));
@@ -492,7 +553,7 @@ void WrapperImpl::on_slider_layers_scroll_changed()
     }
 }
 
-void WrapperImpl::on_slider_gcode_scroll_changed()
+void FdmViewerWrapper::on_slider_gcode_scroll_changed()
 {
     if (m_slider_gcode.is_shown()) {
         update_view_visible_range(size_t(m_slider_gcode.lower_value() - 1), size_t(m_slider_gcode.higher_value() - 1));
@@ -501,19 +562,19 @@ void WrapperImpl::on_slider_gcode_scroll_changed()
     }
 }
 
-void WrapperImpl::on_extrusion_role_visibility_changed()
+void FdmViewerWrapper::on_extrusion_role_visibility_changed()
 {
     const Interval& range = m_viewer.view_visible_range();
     update_slider_gcode(range[0], range[1]);
 }
 
-void WrapperImpl::on_request_extra_frames(unsigned int count)
+void FdmViewerWrapper::on_request_extra_frames(unsigned int count)
 {
     if (m_settings.cb_request_extra_frames != nullptr)
         m_settings.cb_request_extra_frames(count);
 }
 
-void WrapperImpl::on_slider_layers_ticks_changed()
+void FdmViewerWrapper::on_slider_layers_ticks_changed()
 {
     if (!m_loading) {
         m_legend_params.enabled = false;
@@ -526,15 +587,15 @@ void WrapperImpl::on_slider_layers_ticks_changed()
         }
         set_view_type(view_type);
         set_pregcode_extrusion_role_colors(*this);
-        if (m_settings.mode == WrapperMode::EditorGCode)
-            set_mode(WrapperMode::EditorPreGCode);
+        if (m_settings.mode == FdmViewerWrapperMode::EditorGCode)
+            set_mode(FdmViewerWrapperMode::EditorPreGCode);
     }
 
     if (m_settings.cb_slider_layers_ticks_changed != nullptr)
         m_settings.cb_slider_layers_ticks_changed();
 }
 
-std::string WrapperImpl::on_slider_layers_get_gcode(CustomGCode::Type type)
+std::string FdmViewerWrapper::on_slider_layers_get_gcode(CustomGCode::Type type)
 {
     switch (type) {
     case CustomGCode::Type::ColorChange: { return m_data.color_change_gcode; }
@@ -544,12 +605,12 @@ std::string WrapperImpl::on_slider_layers_get_gcode(CustomGCode::Type type)
     }
 }
 
-Palette WrapperImpl::on_slider_layers_get_extruder_colors()
+Palette FdmViewerWrapper::on_slider_layers_get_extruder_colors()
 {
     return m_viewer.tool_colors();
 }
 
-void WrapperImpl::render_legend(const WrapperLayoutData& layout)
+void FdmViewerWrapper::render_legend(const WrapperLayoutData& layout)
 {
     if (is_legend_shown() && has_data()) {
         ImGui::SetNextWindowPos({ 0.0f, layout.menubar_height }, ImGuiCond_Always, { 0.0f, 0.0f });
@@ -569,20 +630,20 @@ void WrapperImpl::render_legend(const WrapperLayoutData& layout)
     }
 }
 
-void WrapperImpl::render_slider_gcode(const WrapperLayoutData& layout)
+void FdmViewerWrapper::render_slider_gcode(const WrapperLayoutData& layout)
 {
     const Interval& enabled_range = m_viewer.view_enabled_range();
     if (enabled_range[1] > enabled_range[0])
         m_slider_gcode.render({ -1.0f, -1.0f }, layout.scale_factor, std::max(layout.view_toolbar_size[0], m_slider_layers.size().x));
 }
 
-void WrapperImpl::render_slider_layers(const WrapperLayoutData& layout)
+void FdmViewerWrapper::render_slider_layers(const WrapperLayoutData& layout)
 {
     if (m_viewer.layers_count() > 0)
         m_slider_layers.render({ -1.0f, -1.0f }, layout.scale_factor, layout.collapse_toolbar_height);
 }
 
-void WrapperImpl::render_gcodewindow(const WrapperLayoutData& layout)
+void FdmViewerWrapper::render_gcodewindow(const WrapperLayoutData& layout)
 {
     if (!is_gcodewindow_visible())
         return;
@@ -615,7 +676,7 @@ void WrapperImpl::render_gcodewindow(const WrapperLayoutData& layout)
     unified_window_style.pop();
 }
 
-void WrapperImpl::render_vertex_properties(const WrapperLayoutData& layout)
+void FdmViewerWrapper::render_vertex_properties(const WrapperLayoutData& layout)
 {
     static bool docked = true;
     static bool actual_speed_graph_visible = false;
@@ -814,7 +875,7 @@ void WrapperImpl::render_vertex_properties(const WrapperLayoutData& layout)
     unified_window_style.pop();
 }
 
-void WrapperImpl::render_customize_extrusion_roles_colors_popup()
+void FdmViewerWrapper::render_customize_extrusion_roles_colors_popup()
 {
     bool open = true;
     std::string wnd_name = _u8L("Edit extrusion roles colors");
@@ -861,7 +922,7 @@ void WrapperImpl::render_customize_extrusion_roles_colors_popup()
         m_extrusion_roles_colors_popup_visible = false;
 }
 
-void WrapperImpl::render_customize_options_colors_popup()
+void FdmViewerWrapper::render_customize_options_colors_popup()
 {
     bool open = true;
     std::string wnd_name = _u8L("Edit options colors");
@@ -908,7 +969,7 @@ void WrapperImpl::render_customize_options_colors_popup()
         m_options_colors_popup_visible = false;
 }
 
-void WrapperImpl::render_customize_range_colors_popup()
+void FdmViewerWrapper::render_customize_range_colors_popup()
 {
     if (m_range_colors_popup_type == ViewType::COUNT)
         return;
@@ -1004,7 +1065,7 @@ void WrapperImpl::render_customize_range_colors_popup()
         m_range_colors_popup_type = ViewType::COUNT;
 }
 
-void WrapperImpl::render_customize_radius_popup()
+void FdmViewerWrapper::render_customize_radius_popup()
 {
     if (m_radius_popup_type == MoveType::COUNT)
         return;
@@ -1089,7 +1150,7 @@ void WrapperImpl::render_customize_radius_popup()
     }
 }
 
-void WrapperImpl::render_customize_scale_factor_popup()
+void FdmViewerWrapper::render_customize_scale_factor_popup()
 {
     if (m_scale_factor_popup_type == OptionType::COUNT)
         return;
@@ -1170,4 +1231,4 @@ void WrapperImpl::render_customize_scale_factor_popup()
     }
 }
 
-} // namespace Slic3r::App::LibvgcodeWrapper
+} // namespace Slic3r::App::Preview

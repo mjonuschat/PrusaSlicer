@@ -3,7 +3,7 @@
 ///|/
 ///|/ libvgcode library is released under the terms of the AGPLv3 or higher
 ///|/
-#include "SegmentTemplate.hpp"
+#include "Slic3r/App/libvgcode/SegmentTemplate.hpp"
 
 #include <Slic3r/App/Render/Device.hpp>
 #include <Slic3r/App/Render/Context.hpp>

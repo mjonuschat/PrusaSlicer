@@ -40,9 +40,9 @@ void Viewer::load_as_sla(const std::vector<float>& layers_zs, const std::vector<
     m_impl->load_as_sla(layers_zs, layers_times);
 }
 
-void Viewer::render(const Vec3f& camera_position)
+void Viewer::render()
 {
-    m_impl->render(camera_position);
+    m_impl->render();
 }
 
 #if ENABLE_RENDER_TO_TEXTURE

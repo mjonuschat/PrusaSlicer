@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Slic3r/App/LibvgcodeWrapper/ExtrudersSequence.hpp"
-#include "Slic3r/App/LibvgcodeWrapper/Types.hpp"
+#include "ExtrudersSequence.hpp"
+#include "Types.hpp"
 
 #include <libslic3r/CustomGCode.hpp>
 
@@ -9,7 +9,7 @@
 #include <functional>
 #include <array>
 
-namespace Slic3r::App::LibvgcodeWrapper {
+namespace Slic3r::App::Preview {
 
 struct TickCode
 {
@@ -119,4 +119,4 @@ private:
     GetExtrudersSequenceCallback m_cb_get_extruders_sequence{ nullptr };
 };
 
-} // namespace Slic3r::App::LibvgcodeWrapper
+} // namespace Slic3r::App::Preview
