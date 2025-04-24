@@ -166,6 +166,8 @@ public:
     void set_travels_radius(float radius);
     float get_wipes_radius() const { return m_wipes_radius; }
     void set_wipes_radius(float radius);
+    float get_options_marker_scale_factor() const { return m_options_marker_scale_factor; }
+    void set_options_marker_scale_factor(float factor);
 
     size_t get_used_cpu_memory() const;
     size_t get_used_gpu_memory() const;
@@ -232,6 +234,10 @@ private:
     // Radius of cylinders used to render wipe moves segments
     //
     float m_wipes_radius{ DEFAULT_WIPES_RADIUS_MM };
+    //
+    // Scaling factor applied to option markers
+    //
+    float m_options_marker_scale_factor{ DEFAULT_OPTIONS_MARKER_SCALE_FACTOR };
     //
     // Palette used to render extrusion roles
     //
@@ -320,6 +326,7 @@ private:
     int m_uni_options_height_width_angle_tex_id{ -1 };
     int m_uni_options_colors_tex_id{ -1 };
     int m_uni_options_segment_index_tex_id{ -1 };
+    int m_uni_options_scale_factor_id{ -1 };
 #if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
     //
     // Caches for OpenGL uniforms id for cog marker shader 

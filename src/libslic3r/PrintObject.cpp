@@ -729,8 +729,6 @@ bool PrintObject::invalidate_state_by_config_options(
             || opt_key == "extra_perimeters"
             || opt_key == "extra_perimeters_on_overhangs"
             || opt_key == "first_layer_extrusion_width"
-            || opt_key == "first_layer_flow_ratio"
-            || opt_key == "top_layer_flow_ratio"
             || opt_key == "print_extrusion_multiplier"
             || opt_key == "perimeter_extrusion_width"
             || opt_key == "infill_overlap"
@@ -852,9 +850,7 @@ bool PrintObject::invalidate_state_by_config_options(
             || opt_key == "raft_first_layer_expansion"
             || opt_key == "dont_support_bridges"
             || opt_key == "first_layer_extrusion_width"
-            || opt_key == "infill_reverse"
-            || opt_key == "first_layer_flow_ratio"
-            || opt_key == "top_layer_flow_ratio") {
+            || opt_key == "infill_reverse") {
             steps.emplace_back(posSupportMaterial);
         } else if (opt_key == "bottom_solid_layers") {
             steps.emplace_back(posPrepareInfill);
@@ -890,9 +886,7 @@ bool PrintObject::invalidate_state_by_config_options(
             || opt_key == "infill_anchor"
             || opt_key == "infill_anchor_max"
             || opt_key == "top_infill_extrusion_width"
-            || opt_key == "first_layer_extrusion_width"
-            || opt_key == "first_layer_flow_ratio"
-            || opt_key == "top_layer_flow_ratio") {
+            || opt_key == "first_layer_extrusion_width") {
             steps.emplace_back(posInfill);
         } else if (opt_key == "fill_pattern") {
             steps.emplace_back(posPrepareInfill);
@@ -3038,7 +3032,9 @@ void PrintObject::discover_horizontal_shells()
                         // No internal solid needed on this layer. In order to decide whether to continue
                         // searching on the next neighbor (thus enforcing the configured number of solid
                         // layers, use different strategies according to configured infill density:
-                        if (region_config.fill_density.value == 0 || region_config.ensure_vertical_shell_thickness.value == EnsureVerticalShellThickness::Disabled) {
+                        if (region_config.fill_density.value == 0
+                            || region_config.ensure_vertical_shell_thickness.value == EnsureVerticalShellThickness::Disabled
+                            || region_config.ensure_vertical_shell_thickness.value == EnsureVerticalShellThickness::Partial) {
                             // If user expects the object to be void (for example a hollow sloping vase),
                             // don't continue the search. In this case, we only generate the external solid
                             // shell if the object would otherwise show a hole (gap between perimeters of
@@ -3056,6 +3052,8 @@ void PrintObject::discover_horizontal_shells()
                         factor = 1.0f;
                     else if (region_config.ensure_vertical_shell_thickness.value == EnsureVerticalShellThickness::Disabled)
                         factor = 0.5f;
+                    else if (region_config.ensure_vertical_shell_thickness.value == EnsureVerticalShellThickness::Partial)
+                        factor = 0.2f;
                     if (factor > 0.0f) {
                         // if we're printing a hollow object we discard any solid shell thinner
                         // than a perimeter width, since it's probably just crossing a sloping wall

@@ -155,7 +155,7 @@ static const char* Options_Vertex_Shader =
 "const float light_front_diffuse = 0.6 * 0.3;\n"
 "const float ambient = 0.3;\n"
 "const float emission = 0.25;\n"
-"const float scaling_factor = 1.5;\n"
+"uniform float scaling_factor;\n"
 "uniform mat4 view_matrix;\n"
 "uniform mat4 projection_matrix;\n"
 "uniform samplerBuffer position_tex;\n"

@@ -781,13 +781,15 @@ void ViewerImpl::init(const std::string& opengl_context_version)
     m_uni_options_height_width_angle_tex_id = glGetUniformLocation(m_options_shader_id, "height_width_angle_tex");
     m_uni_options_colors_tex_id             = glGetUniformLocation(m_options_shader_id, "color_tex");
     m_uni_options_segment_index_tex_id      = glGetUniformLocation(m_options_shader_id, "segment_index_tex");
+    m_uni_options_scale_factor_id           = glGetUniformLocation(m_options_shader_id, "scaling_factor");
     glcheck();
     assert(m_uni_options_view_matrix_id != -1 &&
            m_uni_options_projection_matrix_id != -1 &&
            m_uni_options_positions_tex_id != -1 &&
            m_uni_options_height_width_angle_tex_id != -1 &&
            m_uni_options_colors_tex_id != -1 &&
-           m_uni_options_segment_index_tex_id != -1);
+           m_uni_options_segment_index_tex_id != -1 &&
+           m_uni_options_scale_factor_id != -1);
 
     m_option_template.init(16);
 
@@ -1603,6 +1605,11 @@ void ViewerImpl::set_wipes_radius(float radius)
     update_heights_widths();
 }
 
+void ViewerImpl::set_options_marker_scale_factor(float factor)
+{
+    m_options_marker_scale_factor = std::clamp(factor, MIN_OPTIONS_MARKER_SCALE_FACTOR, MAX_OPTIONS_MARKER_SCALE_FACTOR);
+}
+
 size_t ViewerImpl::get_used_cpu_memory() const
 {
     size_t ret = sizeof(*this);
@@ -1952,6 +1959,7 @@ void ViewerImpl::render_options(const Mat4x4& view_matrix, const Mat4x4& project
     glsafe(glUniform1i(m_uni_options_segment_index_tex_id, 3));
     glsafe(glUniformMatrix4fv(m_uni_options_view_matrix_id, 1, GL_FALSE, view_matrix.data()));
     glsafe(glUniformMatrix4fv(m_uni_options_projection_matrix_id, 1, GL_FALSE, projection_matrix.data()));
+    glsafe(glUniform1f(m_uni_options_scale_factor_id, m_options_marker_scale_factor));
 
     glsafe(glEnable(GL_CULL_FACE));
 

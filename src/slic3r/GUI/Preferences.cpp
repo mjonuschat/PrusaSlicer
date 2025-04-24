@@ -63,6 +63,16 @@ namespace Slic3r {
 
 	CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(NotifyReleaseMode)
 
+	static const t_config_enum_values s_keys_map_MarkerSizeMode = {
+		{"tiny",        MarkerSizeTiny},
+		{"small",       MarkerSizeSmall},
+		{"medium",      MarkerSizeMedium},
+		{"standard",    MarkerSizeStandard},
+		{"large",       MarkerSizeLarge},
+	};
+
+	CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(MarkerSizeMode)
+
 namespace GUI {
 
 PreferencesDialog::PreferencesDialog(wxWindow* parent) :
@@ -497,6 +507,22 @@ void PreferencesDialog::build()
 				}
 			}
 		}
+		if (opt_key == "gcode_viewer_option_marker_size") {
+			static const float marker_scale_values[] = { 0.5f, 0.75f, 1.0f, 1.5f, 2.0f };
+			int val_int = boost::any_cast<int>(value);
+			for (const auto& item : s_keys_map_MarkerSizeMode) {
+				if (item.second == val_int) {
+					m_values[opt_key] = item.first;
+					float scale = (val_int >= 0 && val_int < 5) ? marker_scale_values[val_int] : 1.5f;
+					get_app_config()->set("gcode_viewer_option_marker_size", item.first);
+					if (auto* canvas = wxGetApp().plater()->get_current_canvas3D()) {
+						canvas->get_gcode_viewer().set_option_marker_scale_factor(scale);
+						canvas->render();
+					}
+					return;
+				}
+			}
+		}
 		if (opt_key == "use_custom_toolbar_size") {
 			m_icon_size_sizer->ShowItems(boost::any_cast<bool>(value));
 			refresh_og(m_optgroup_gui);
@@ -557,6 +583,22 @@ void PreferencesDialog::build()
 			L("If enabled, related notification will be shown, when sliced object looks like a logo or a sign."),
 			app_config->get_bool("allow_auto_color_change"));
 
+		{
+			std::string marker_size_key = app_config->get("gcode_viewer_option_marker_size");
+			if (marker_size_key.empty() || s_keys_map_MarkerSizeMode.find(marker_size_key) == s_keys_map_MarkerSizeMode.end())
+				marker_size_key = "standard";
+			append_enum_option<MarkerSizeMode>(m_optgroup_gui, "gcode_viewer_option_marker_size",
+				L("G-code preview marker size"),
+				L("Size of option markers (seams, etc) in the G-code preview."),
+				new ConfigOptionEnum<MarkerSizeMode>(static_cast<MarkerSizeMode>(s_keys_map_MarkerSizeMode.at(marker_size_key))),
+				{ { "tiny",     L("Tiny") },
+				  { "small",    L("Small") },
+				  { "medium",   L("Medium") },
+				  { "standard", L("Standard") },
+				  { "large",    L("Large") }
+				});
+		}
+
 		m_optgroup_gui->append_separator();
 /*
 		append_bool_option(m_optgroup_gui, "suppress_round_corners",
@@ -594,6 +636,14 @@ void PreferencesDialog::build()
 		// set Field for notify_release to its value to activate the object
 		boost::any val = s_keys_map_NotifyReleaseMode.at(app_config->get("notify_release"));
 		m_optgroup_gui->get_field("notify_release")->set_value(val, false);
+
+		{
+			std::string marker_size_key = app_config->get("gcode_viewer_option_marker_size");
+			if (marker_size_key.empty() || s_keys_map_MarkerSizeMode.find(marker_size_key) == s_keys_map_MarkerSizeMode.end())
+				marker_size_key = "standard";
+			boost::any marker_val = s_keys_map_MarkerSizeMode.at(marker_size_key);
+			m_optgroup_gui->get_field("gcode_viewer_option_marker_size")->set_value(marker_val, false);
+		}
 
 		create_icon_size_slider();
 		m_icon_size_sizer->ShowItems(app_config->get_bool("use_custom_toolbar_size"));
