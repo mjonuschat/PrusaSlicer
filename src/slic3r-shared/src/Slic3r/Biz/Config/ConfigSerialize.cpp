@@ -108,17 +108,56 @@ std::variant<std::string, std::vector<std::string>> serialize_to_string(const Co
 
 
 
-nlohmann::json serialize(const Domain::ConfigBox& box)
+nlohmann::json serialize(const Domain::ConfigBox& box, bool omit_null_overrides /*true*/)
 {
     nlohmann::json out;
     for (const ConfigItem& item : box) {
-        if (item.is_null() && item.def().location != box.type()) {
-            // Null items are only serialized if they are mandatory for the box type.
+        if (omit_null_overrides && item.is_null() && item.def().location != box.type())
             continue;
-        }
         serialize_and_append(item, out);
     }
     return out;
+}
+
+
+
+nlohmann::json serialize_as_vector(const std::vector<std::reference_wrapper<const Domain::ConfigBox>> boxes)
+{
+    ASSERT(! boxes.empty());
+    ASSERT(std::all_of(boxes.begin(), boxes.end(), [&boxes](const auto& box_ref) {
+        return box_ref.get().type() == boxes.front().get().type();
+    }));
+
+    // Create a JSON object from each box individually.
+    std::vector<nlohmann::json> json_objects;
+    for (const auto& box : boxes)
+        json_objects.emplace_back(serialize(box.get(), false));
+
+    // Vectorization of the individual json objects. Assumes that the keys are the same.
+    nlohmann::json combined_json = nlohmann::json::object();
+    for (auto it = json_objects[0].items().begin(); it != json_objects[0].items().end(); ++it) {
+        const std::string& current_key = it.key();
+        nlohmann::json value_array = nlohmann::json::array();
+        for (const auto& obj : json_objects)
+            value_array.push_back(obj[current_key]);
+        combined_json[current_key] = std::move(value_array);
+    }
+
+    // Remove all vectors which are full of nulls - but only for overrides.
+    for (auto it = combined_json.begin(); it != combined_json.end(); ) {
+        if (boxes.front().get().opt(it.key()).def().location == boxes.front().get().type()) {
+            ++it;
+            continue; // Not an override, apparently an optional value.
+        }
+        ASSERT(it.value().is_array());
+        if (const auto& arr = it.value();
+            ! arr.empty() && std::all_of(arr.begin(), arr.end(), [](const auto& e) { return e.is_null(); }))
+            it = combined_json.erase(it);
+        else
+            ++it;
+    }
+
+    return combined_json;
 }
 
 } // namespace Slic3r::Biz

@@ -44,9 +44,11 @@ int main(int, char* [])
     if (std::holds_alternative<FDMLegacyConfigPack>(cfg)) {
         const auto& fdm = std::get<FDMLegacyConfigPack>(cfg);
         printer_s = fdm.printer_settings;
-        fs1 = fdm.filament_settings.front();
+        fs1 = fdm.filament_settings[0];
+        fs2 = fdm.filament_settings[1];
         ps1 = fdm.print_settings;
-        tps1 = fdm.toolprint_settings.front();
+        tps1 = fdm.toolprint_settings[0];
+        tps1 = fdm.toolprint_settings[1];
     } else {
         PANIC();
     }
@@ -62,12 +64,15 @@ int main(int, char* [])
     std::vector<std::string> diff = fullc1.diff_keys(fullc2);
 
     
-    std::cout << "PRINTER SETTINGS\n" << serialize(printer_s).dump(4) << std::endl << "=============================" << std::endl;
+/*    std::cout << "PRINTER SETTINGS\n" << serialize(printer_s).dump(4) << std::endl << "=============================" << std::endl;
     std::cout << "FILAMENT SETTINGS\n" << serialize(fs1).dump(4) << std::endl << "=============================" << std::endl;
     std::cout << "PRINT SETTINGS\n" << serialize(ps1).dump(4) << std::endl << "=============================" << std::endl;
     std::cout << "TOOL PRINT SETTINGS\n" << serialize(tps1).dump(4) << std::endl << "=============================\n\n\n" << std::endl;
     std::cout << "OBJECT SETTINGS\n" << serialize(os).dump(4) << std::endl << "=============================\n\n\n" << std::endl;
     std::cout << "PHYSICAL PRINTER SETTINGS\n" << serialize(pps).dump(4) << std::endl << "=============================\n\n\n" << std::endl;
+    */
+
+    std::cout << serialize_as_vector({fs1, fs2}).dump(4) << std::endl;
 
     std::ofstream leg("test-roundtrip.gcode");
     leg << serialize_as_legacy_config(std::get<FDMLegacyConfigPack>(cfg)) << std::endl;
