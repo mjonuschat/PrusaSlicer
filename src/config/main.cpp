@@ -3,6 +3,7 @@
 #include "Slic3r/Biz/Config/ConfigSerialize.hpp"
 #include "Slic3r/Biz/Config/ConfigLegacy.hpp"
 
+#include <fstream>
 #include <iostream>
 #include <vector>
 
@@ -39,7 +40,18 @@ int main(int, char* [])
 
     PhysicalPrinterSettings pps;
 
-    //load_from_legacy_file("test.ini", ps);
+    std::variant<FDMLegacyConfigPack, SLALegacyConfigPack> cfg = load_config_from_legacy_file("test.ini");
+    if (std::holds_alternative<FDMLegacyConfigPack>(cfg)) {
+        const auto& fdm = std::get<FDMLegacyConfigPack>(cfg);
+        printer_s = fdm.printer_settings;
+        fs1 = fdm.filament_settings.front();
+        ps1 = fdm.print_settings;
+        tps1 = fdm.toolprint_settings.front();
+    } else {
+        PANIC();
+    }
+
+
 
     ps1.opt("gcode_comments").set(true);
 
@@ -56,6 +68,10 @@ int main(int, char* [])
     std::cout << "TOOL PRINT SETTINGS\n" << serialize(tps1).dump(4) << std::endl << "=============================\n\n\n" << std::endl;
     std::cout << "OBJECT SETTINGS\n" << serialize(os).dump(4) << std::endl << "=============================\n\n\n" << std::endl;
     std::cout << "PHYSICAL PRINTER SETTINGS\n" << serialize(pps).dump(4) << std::endl << "=============================\n\n\n" << std::endl;
+
+    std::ofstream leg("test-roundtrip.gcode");
+    leg << serialize_as_legacy_config(std::get<FDMLegacyConfigPack>(cfg)) << std::endl;
+
 
     //for (const ConfigItemDef& def : s_defs_fdm.defs()) {
     //    bool tool_dependent = false;

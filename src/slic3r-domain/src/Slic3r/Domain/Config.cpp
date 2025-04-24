@@ -86,8 +86,7 @@ ConfigItem::ConfigItem(const ConfigItemDef& def, std::string_view box_type)
         case ConfigItemType::Strings :        m_data = std::vector<std::string>(); break;
         default : PANIC();
         }
-        m_is_nullable = std::any_of(def.overrides_in.begin(), def.overrides_in.end(),
-            [&box_type](const auto& t) { return box_type == t; });
+        m_is_nullable = (std::ranges::find(def.overrides_in, box_type) != def.overrides_in.end());
         if (m_is_nullable)
             set_null(true); // Overrides are null by default.
         if (def.init_fn)
@@ -102,6 +101,7 @@ ConfigItem::ConfigItem(const ConfigItem& other)
 : m_def(other.m_def),
     m_type(other.m_type),
     m_is_nullable(other.m_is_nullable),
+    m_is_null(other.m_is_null),
     m_data(other.m_data),
     m_name(other.m_name)
 {}
@@ -114,6 +114,7 @@ ConfigItem& ConfigItem::operator=(const ConfigItem& other) {
     m_data = other.m_data;
     m_type = other.m_type;
     m_is_nullable = other.m_is_nullable;
+    m_is_null = other.m_is_null;
     m_def = other.m_def;
     m_name = other.m_name;
     return *this;
@@ -165,14 +166,6 @@ bool ConfigItem::is_null() const
 {
     return m_is_null;
 }
-
-
-
-template <typename T, typename Enable = void>
-struct is_optional : std::false_type {};
-
-template <typename T>
-struct is_optional<std::optional<T> > : std::true_type {};
 
 
 
@@ -289,7 +282,7 @@ ConfigBox::ConfigBox(const ConfigDefinitions& defs, std::string_view type)
 : m_type{type}
 {
     for (const ConfigItemDef& def : defs.defs()) {
-        if (def.location == type)
+        if (def.location == type || std::ranges::find(def.overrides_in, type) != def.overrides_in.end())
             m_items.emplace_back(ConfigItem(def, type));
     }
 }
@@ -447,6 +440,7 @@ template void ConfigItem::set(const Percentage&);
 template void ConfigItem::set(const FloatOrPercentage&);
 template void ConfigItem::set(const std::string&);
 template void ConfigItem::set(const std::optional<int>&);
+template void ConfigItem::set(const std::nullopt_t&);
 template void ConfigItem::set(const std::vector<bool>&);
 template void ConfigItem::set(const std::vector<int>&);
 template void ConfigItem::set(const std::vector<double>&);

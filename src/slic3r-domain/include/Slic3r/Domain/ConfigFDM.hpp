@@ -165,11 +165,11 @@ public:
 
         // The base class only gets base pointers to base ConfigBoxes - it needs not to know what they are.
         add(printer_s);
-        std::vector<std::reference_wrapper<const ConfigBox>> fil_s(filament_s.begin(), filament_s.end());
-        add(fil_s);
         add(print_s);
         std::vector<std::reference_wrapper<const ConfigBox>> tps_s(tool_print_s.begin(), tool_print_s.end());
         add(tps_s);
+        std::vector<std::reference_wrapper<const ConfigBox>> fil_s(filament_s.begin(), filament_s.end());
+        add(fil_s);
     }
 
     std::string_view name() const override { return "FDM"; }

@@ -45,6 +45,14 @@ static void serialize_and_append(const ConfigItem& item, nlohmann::json& j)
         case ConfigItemType::Ints    : jval = item.vec<int>(); break;
         case ConfigItemType::Doubles : jval = item.vec<double>(); break;
         case ConfigItemType::Strings : jval = item.vec<std::string>(); break;
+
+        case ConfigItemType::IntOptional :
+            if (const auto& opt_int = item.get<std::optional<int>>(); opt_int)
+                jval = *opt_int;
+            else
+                jval = nullptr;
+            break;
+
         default : PANIC();
     }
     return;

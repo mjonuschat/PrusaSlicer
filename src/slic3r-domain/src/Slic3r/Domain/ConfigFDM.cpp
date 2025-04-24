@@ -34,6 +34,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 {
     using ConfigItemType::Bool;
     using ConfigItemType::Int;
+    using ConfigItemType::IntOptional;
     using ConfigItemType::Double;
     using ConfigItemType::String;
     using ConfigItemType::Enum;
@@ -3818,9 +3819,15 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->min = 0;
     SET_DEFAULT(FloatOrPercentage(Percentage(85.)));
 
-    // TODO: Check overrides at the very end of init_fff_params(). That needs to be done after
-    // we migrate to toolprint_settings - so far, the retractions are vectors in printer settings,
-    // and therefore cannot be overridden by a scalar.
+    def = defs.add("idle_temperature", IntOptional);
+    def->location = "filament_settings";
+    def->label = L("Idle temperature");
+    def->tooltip = L("Nozzle temperature when the tool is currently not used in multi-tool setups."
+                     "This is only used when 'Ooze prevention' is active in Print Settings.");
+    def->sidetext = L("°C");
+    def->min = 0;
+    def->max = max_temp;
+    SET_DEFAULT(std::optional<int>());
 
 }
 
