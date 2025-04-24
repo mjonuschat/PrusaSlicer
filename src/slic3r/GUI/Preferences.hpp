@@ -32,6 +32,14 @@ namespace Slic3r {
 		NotifyReleaseNone
 	};
 
+	enum MarkerSizeMode {
+		MarkerSizeTiny,
+		MarkerSizeSmall,
+		MarkerSizeMedium,
+		MarkerSizeStandard,
+		MarkerSizeLarge
+	};
+
 namespace GUI {
 
 class ConfigOptionsGroup;
