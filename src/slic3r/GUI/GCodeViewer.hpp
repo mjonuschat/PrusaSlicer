@@ -287,6 +287,7 @@ public:
 
     void reset();
     void render();
+    void set_option_marker_scale_factor(float factor) { m_viewer.set_options_marker_scale_factor(factor); }
 #if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
     void render_cog() {
         if (!m_loaded_as_preview && m_viewer.get_layers_count() > 0)
