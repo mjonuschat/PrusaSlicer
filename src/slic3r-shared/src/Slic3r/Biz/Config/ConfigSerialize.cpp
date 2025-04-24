@@ -3,6 +3,8 @@
 
 #include "boost/algorithm/string.hpp"
 
+#include <set>
+
 namespace Slic3r::Biz {
 
 using ConfigItem = Domain::ConfigItem;
@@ -169,19 +171,61 @@ std::string serialize(
             std::vector<std::reference_wrapper<const Domain::ConfigBox>>
         >
     > input,
-    int indent)
+    int indent,
+    bool prepend_semicolons)
 {
+    std::set<std::string> box_names;
+
     nlohmann::ordered_json complete_json;
     for (const auto& var : input) {
         if (std::holds_alternative<std::reference_wrapper<const Domain::ConfigBox>>(var)) {
             const auto& box = std::get<std::reference_wrapper<const Domain::ConfigBox>>(var).get();
+            box_names.emplace(box.type());
             complete_json[box.type()] = serialize(box);
         } else {
             const auto& boxes = std::get<std::vector<std::reference_wrapper<const Domain::ConfigBox>>>(var);
+            box_names.emplace(boxes.front().get().type());
             complete_json[boxes.front().get().type()] = serialize_as_vector(boxes);
         }
     }
-    return complete_json.dump(4);
+    std::string str = complete_json.dump(indent);
+
+    // Now a little minification to make the result a bit more readable.
+    // Only removes newlines and leading spaces, so the meaning stays the same.
+    auto count_indent = [](const std::string& s) -> int { int i=0; while (s[i] == ' ') ++i; return i; };
+    std::vector<std::string> lines;
+    boost::split(lines, str, boost::is_any_of("\n"));
+    for (auto& line : lines)
+        line += '\n';
+    std::string tmp;
+    for (const std::string& box_name : box_names) {
+        std::string line_start = std::string("\"") + box_name;
+        for (size_t line_id=0; line_id<lines.size(); ++line_id) {
+            if (lines[line_id].find(line_start) == indent) {
+                int box_indent = count_indent(lines[line_id]);
+                size_t i = line_id + 1;
+                while (true) {
+                    int ind = count_indent(lines[i]);
+                    if (ind <= box_indent)
+                        break;
+                    if (ind > box_indent + indent || (ind == box_indent + indent && lines[i][ind] != '\"')) {
+                        boost::trim_left(lines[i]);
+                        ASSERT(lines[i-1].back() == '\n');
+                        lines[i-1].pop_back();
+                    }
+                    ++i;
+                }
+            }
+        }
+    }
+    str = {};
+    for (const std::string& line : lines) {
+        if (prepend_semicolons)
+            str += "; ";
+        str += line;
+    }
+
+    return str;
 }
 
 } // namespace Slic3r::Biz

@@ -28,6 +28,7 @@ std::string serialize(
 	        std::vector<std::reference_wrapper<const Domain::ConfigBox>>
 	    >
 	> input,
-	int indent = 4);
+	int indent,
+	bool prepend_semicolons);
 
 } // namespace Slic3r::Biz

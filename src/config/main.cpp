@@ -51,28 +51,7 @@ int main(int, char* [])
         tps1 = fdm.toolprint_settings[1];
     } else {
         PANIC();
-    }
-
-
-
-    ps1.opt("gcode_comments").set(true);
-
-
-    FullConfigFDM fullc1(printer_s, {fs1}, ps1, {tps1});
-    FullConfigFDM fullc2(printer_s, {fs2}, ps2, {tps2});
-
-    std::vector<std::string> diff = fullc1.diff_keys(fullc2);
-
-    
-/*    std::cout << "PRINTER SETTINGS\n" << serialize(printer_s).dump(4) << std::endl << "=============================" << std::endl;
-    std::cout << "FILAMENT SETTINGS\n" << serialize(fs1).dump(4) << std::endl << "=============================" << std::endl;
-    std::cout << "PRINT SETTINGS\n" << serialize(ps1).dump(4) << std::endl << "=============================" << std::endl;
-    std::cout << "TOOL PRINT SETTINGS\n" << serialize(tps1).dump(4) << std::endl << "=============================\n\n\n" << std::endl;
-    std::cout << "OBJECT SETTINGS\n" << serialize(os).dump(4) << std::endl << "=============================\n\n\n" << std::endl;
-    std::cout << "PHYSICAL PRINTER SETTINGS\n" << serialize(pps).dump(4) << std::endl << "=============================\n\n\n" << std::endl;
-    */
-
-    //std::cout << serialize_as_vector({fs1, fs2}).dump(4) << std::endl;
+    }   
 
     std::vector<
 		std::variant<
@@ -85,25 +64,10 @@ int main(int, char* [])
     list.emplace_back(std::vector<std::reference_wrapper<const ConfigBox>>{tps1, tps2});
     list.emplace_back(std::vector<std::reference_wrapper<const ConfigBox>>{fs1, fs2});
 
-    std::cout << serialize(list);
+    std::cout << serialize(list, 2, false);
 
     std::ofstream leg("test-roundtrip.gcode");
     leg << serialize_as_legacy_config(std::get<FDMLegacyConfigPack>(cfg)) << std::endl;
-
-
-    //for (const ConfigItemDef& def : s_defs_fdm.defs()) {
-    //    bool tool_dependent = false;
-    //    for (const auto& list : { &def.belongs_to, &def.overrides_in })
-    //        tool_dependent |= std::any_of(list->begin(), list->end(),
-    //            [](const auto& t) { return t == "toolprint_settings" || t == "filament_settings"; });
-
-    //    std::cout << def.name << ": ";
-    //    //if (tool_dependent)
-    //    //    print(serialize_to_string(fullc.opt(def.name, 0)));
-    //    //else
-    //    //    print(serialize_to_string(fullc.opt(def.name)));
-    //}
-
 
 
     return 0;
