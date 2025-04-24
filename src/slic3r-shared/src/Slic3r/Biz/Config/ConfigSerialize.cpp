@@ -25,6 +25,13 @@ static nlohmann::json serialize_float_or_percent(const ConfigItem& item)
     return j;
 }
 
+static nlohmann::json serialize_point(const ConfigItem& item)
+{
+    ASSERT(item.type() == ConfigItemType::Point);
+    const auto& p = item.get<Domain::Vec2d>();
+    return nlohmann::json(std::vector<double>{{p.x()}, { p.y() }});
+}
+
 static void serialize_and_append(const ConfigItem& item, nlohmann::json& j)
 {
     j[item.name()] = nullptr;
@@ -40,6 +47,7 @@ static void serialize_and_append(const ConfigItem& item, nlohmann::json& j)
         case ConfigItemType::Enum   : jval = item.get_enum_strings().first; break;
         case ConfigItemType::Percent : [[fallthrough]];
         case ConfigItemType::FloatOrPercent : jval = serialize_float_or_percent(item); break;
+        case ConfigItemType::Point : jval = serialize_point(item); break;
         
         case ConfigItemType::Bools   : jval = item.vec<bool>(); break;
         case ConfigItemType::Ints    : jval = item.vec<int>(); break;

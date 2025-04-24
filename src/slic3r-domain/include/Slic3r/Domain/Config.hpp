@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "Slic3r/Assert.hpp"
+#include "Slic3r/Domain/Types.hpp"
 
 
 namespace Slic3r::Domain {
@@ -62,13 +63,15 @@ enum class ConfigItemType
     Double,         // double
     String,         // std::string
     Enum,           // int
+    Point,          // Vec2d
     FloatOrPercent, // FloatOrPercentage
     Percent,        // Percentage
     // Vector types follow, Bools MUST be first (see ConfigItem::is_vector)
     Bools,          // std::vector<bool>
     Ints,           // std::vector<int>
     Doubles,        // std::vector<double>
-    Strings         // std::vector<std::string>
+    Strings,        // std::vector<std::string>
+    Points          // std::vector<Vec2d>
 };
 
 

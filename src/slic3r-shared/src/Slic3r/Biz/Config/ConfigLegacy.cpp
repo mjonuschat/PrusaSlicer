@@ -199,6 +199,9 @@ static bool convert_old_to_new(const Slic3rLegacy::ConfigOption* opt, Domain::Co
             Domain::FloatOrPercentage fop = is_percent ? Domain::Percentage(value) : Domain::FloatOrPercentage(value);
             item.set(fop);
         }
+        else if (opt->type() == coPoints && item.type() == Domain::ConfigItemType::Point) {
+            item.set(Domain::Vec2d(static_cast<const ConfigOptionPoints*>(opt)->values[filament_id]));
+        }
         else {
             // Old and new types do not match.
             return false;
@@ -302,6 +305,10 @@ static bool convert_new_to_old(const Domain::ConfigItem& item, Slic3rLegacy::Con
                 static_cast<ConfigOptionFloatsOrPercents*>(opt)->values[filament_id] = fop;
             }
         }
+        else if (opt->type() == coPoints && item.type() == Domain::ConfigItemType::Point) {
+            static_cast<ConfigOptionPoints*>(opt)->values.resize(filament_id + 1);
+            static_cast<ConfigOptionPoints*>(opt)->values[filament_id] = Slic3rLegacy::Vec2d(item.get<Domain::Vec2d>());
+        }
         else {
             // Old and new types do not match.
             return false;
@@ -338,9 +345,6 @@ static void fill_config_box_from_legacy(const Slic3rLegacy::DynamicPrintConfig& 
 
         const ConfigOption* opt = cfg.option(old_key);
         Domain::ConfigItem& item = box.opt(new_key);
-
-        if (old_key == "idle_temperature")
-            printf("b");
 
         if (is_filament_override) {
             if (filament_id == -1

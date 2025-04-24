@@ -1,5 +1,7 @@
 ﻿#include "Slic3r/Domain/ConfigFDM.hpp"
 
+#include "Slic3r/Domain/Types.hpp"
+
 #include "boost/algorithm/string.hpp"
 #include "boost/format.hpp"
 
@@ -38,6 +40,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     using ConfigItemType::Double;
     using ConfigItemType::String;
     using ConfigItemType::Enum;
+    using ConfigItemType::Point;
     using ConfigItemType::Percent;
     using ConfigItemType::FloatOrPercent;
     using ConfigItemType::Bools;
@@ -839,8 +842,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->gui_type = ConfigItemDef::GUIType::color;
     SET_DEFAULT(""); // Empty string means no color assigned yet.
 
-    /* TODO: point...
-    def = defs.add("extruder_offset", coPoint);
+    def = defs.add("extruder_offset", Point);
     def->location = "toolprint_settings";
     def->label = L("Extruder offset");
     def->tooltip = L("If your firmware doesn't handle the extruder displacement you need the G-code "
@@ -849,7 +851,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
                    "from the XY coordinate).");
     def->sidetext = L("mm");
     def->mode = comAdvanced;
-    SET_DEFAULT(Vec2d(0,0));*/
+    SET_DEFAULT(Vec2d(0,0));
 
     /* TODO: shouldn't we remove this crap?
     def = defs.add("extrusion_axis", String);
