@@ -174,6 +174,11 @@ static bool convert_old_to_new(const Slic3rLegacy::ConfigOption* opt, Domain::Co
         item.set(static_cast<const ConfigOptionFloats*>(opt)->values);
     else if (opt->type() == coStrings && item.type() == Domain::ConfigItemType::Strings)
         item.set(static_cast<const ConfigOptionStrings*>(opt)->values);
+    else if (opt->type() == coPoints && item.type() == Domain::ConfigItemType::Points) {
+        const std::vector<Slic3rLegacy::Vec2d> old_vec = static_cast<const ConfigOptionPoints*>(opt)->values;
+        std::vector<Domain::Vec2d> vec(old_vec.begin(), old_vec.end());
+        item.set(vec);
+    }
     else if (opt->is_vector() && filament_id != -1) {
         // This vector actually contains scalar values to be assigned to
         // different print / toolprint settings.
@@ -257,6 +262,11 @@ static bool convert_new_to_old(const Domain::ConfigItem& item, Slic3rLegacy::Con
         static_cast<ConfigOptionFloats*>(opt)->values = item.get<std::vector<double>>();
     else if (opt->type() == coStrings && item.type() == Domain::ConfigItemType::Strings)
         static_cast<ConfigOptionStrings*>(opt)->values = item.get<std::vector<std::string>>();
+    else if (opt->type() == coPoints && item.type() == Domain::ConfigItemType::Points) {
+        const auto& new_vec = item.get<std::vector<Domain::Vec2d>>();
+        std::vector<Slic3rLegacy::Vec2d> old_vec(new_vec.begin(), new_vec.end());
+        static_cast<ConfigOptionPoints*>(opt)->values = old_vec;
+    }
     else if (opt->is_vector() && filament_id != -1) {
         if (opt->type() == coBools && item.type() == Domain::ConfigItemType::Bool) {
             static_cast<ConfigOptionBools*>(opt)->values.resize(filament_id + 1);

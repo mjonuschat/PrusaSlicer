@@ -47,6 +47,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     using ConfigItemType::Ints;
     using ConfigItemType::Doubles;
     using ConfigItemType::Strings;
+    using ConfigItemType::Points;
 
     ConfigItemDef* def = nullptr;
 
@@ -61,11 +62,11 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
                          { int(PrinterTechnology::SLA), "SLA", L("SLA") } };
     SET_DEFAULT(PrinterTechnology::FFF);
 
-    // TODO
-    //def = defs.add("bed_shape", coPoints);
-    //def->label = L("Bed shape");
-    //def->mode = comAdvanced;
-    //SET_DEFAULT( new ConfigOptionPoints{ Vec2d(0, 0), Vec2d(200, 0), Vec2d(200, 200), Vec2d(0, 200) });
+    def = defs.add("bed_shape", Points);
+    def->location = "printer_settings";
+    def->label = L("Bed shape");
+    def->mode = comAdvanced;
+    SET_DEFAULT((std::vector<Domain::Vec2d>{{0., 0.}, { 200., 0. }, { 200., 200. }, { 0., 200. }}));
 
     def = defs.add("bed_custom_texture", String);
     def->location = "printer_settings";
@@ -885,7 +886,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     SET_DEFAULT(20.);    
 
     def = defs.add("extrusion_multiplier", Double);
-    def->location = "print_settings";
+    def->location = "filament_settings";
     def->label = L("Extrusion multiplier");
     def->tooltip = L("This factor changes the amount of flow proportionally. You may need to tweak "
                    "this setting to get nice surface finish and correct single wall widths. "

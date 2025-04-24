@@ -85,6 +85,7 @@ ConfigItem::ConfigItem(const ConfigItemDef& def, std::string_view box_type)
         case ConfigItemType::Ints    :        m_data = std::vector<int>();         break;
         case ConfigItemType::Doubles :        m_data = std::vector<double>();      break;
         case ConfigItemType::Strings :        m_data = std::vector<std::string>(); break;
+        case ConfigItemType::Points  :        m_data = std::vector<Vec2d>();       break;
         default : PANIC();
         }
         m_is_nullable = (std::ranges::find(def.overrides_in, box_type) != def.overrides_in.end());
@@ -145,10 +146,12 @@ bool ConfigItem::operator==(const ConfigItem& other) const
     case ConfigItemType::Enum    :        return std::any_cast<int>(m_data) == std::any_cast<int>(other.m_data); break;
     case ConfigItemType::Percent :        return std::any_cast<Percentage>(m_data) == std::any_cast<Percentage>(other.m_data); break;
     case ConfigItemType::FloatOrPercent : return std::any_cast<FloatOrPercentage>(m_data) == std::any_cast<FloatOrPercentage>(other.m_data); break;
+    case ConfigItemType::Point   :        return std::any_cast<Vec2d>(m_data) == std::any_cast<Vec2d>(other.m_data); break;
     case ConfigItemType::Bools   :        return *std::any_cast<std::vector<bool>>(&m_data) == *std::any_cast<std::vector<bool>>(&other.m_data); break;
     case ConfigItemType::Ints    :        return *std::any_cast<std::vector<int>>(&m_data) == *std::any_cast<std::vector<int>>(&other.m_data); break;
     case ConfigItemType::Doubles :        return *std::any_cast<std::vector<double>>(&m_data) == *std::any_cast<std::vector<double>>(&other.m_data); break;
     case ConfigItemType::Strings :        return *std::any_cast<std::vector<std::string>>(&m_data) == *std::any_cast<std::vector<std::string>>(&other.m_data); break;
+    case ConfigItemType::Points  :        return *std::any_cast<std::vector<Vec2d>>(&m_data) == *std::any_cast<std::vector<Vec2d>>(&other.m_data); break;
     default : PANIC();
     }
 
@@ -433,6 +436,7 @@ template const std::vector<bool>& ConfigItem::get<std::vector<bool>>() const;
 template const std::vector<int>& ConfigItem::get<std::vector<int>>() const;
 template const std::vector<double>& ConfigItem::get<std::vector<double>>() const;
 template const std::vector<std::string>& ConfigItem::get<std::vector<std::string>>() const;
+template const std::vector<Vec2d>& ConfigItem::get<std::vector<Vec2d>>() const;
 
 // Explicit instantiations for setters.
 template void ConfigItem::set(const bool&);
@@ -448,6 +452,7 @@ template void ConfigItem::set(const std::vector<bool>&);
 template void ConfigItem::set(const std::vector<int>&);
 template void ConfigItem::set(const std::vector<double>&);
 template void ConfigItem::set(const std::vector<std::string>&);
+template void ConfigItem::set(const std::vector<Vec2d>&);
 
 // And the respective explicit instantiations.
 template std::vector<bool>& ConfigItem::vec();

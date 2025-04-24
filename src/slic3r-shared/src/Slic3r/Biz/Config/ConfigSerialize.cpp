@@ -32,6 +32,16 @@ static nlohmann::json serialize_point(const ConfigItem& item)
     return nlohmann::json(std::vector<double>{{p.x()}, { p.y() }});
 }
 
+static nlohmann::json serialize_points(const ConfigItem& item)
+{
+    ASSERT(item.type() == ConfigItemType::Points);
+    const auto& pts = item.get<std::vector<Domain::Vec2d>>();
+    std::vector<std::vector<double>> out;
+    for (const Domain::Vec2d& pt : pts)
+        out.emplace_back(std::vector<double>{pt.x(), pt.y()});
+    return nlohmann::json(out);
+}
+
 static void serialize_and_append(const ConfigItem& item, nlohmann::json& j)
 {
     j[item.name()] = nullptr;
@@ -53,6 +63,7 @@ static void serialize_and_append(const ConfigItem& item, nlohmann::json& j)
         case ConfigItemType::Ints    : jval = item.vec<int>(); break;
         case ConfigItemType::Doubles : jval = item.vec<double>(); break;
         case ConfigItemType::Strings : jval = item.vec<std::string>(); break;
+        case ConfigItemType::Points  : jval = serialize_points(item); break;
 
         case ConfigItemType::IntOptional :
             if (const auto& opt_int = item.get<std::optional<int>>(); opt_int)
