@@ -15,7 +15,7 @@ class ModelVolume;
 
 namespace Slic3r::Domain {
 struct ElementRef;
-class BedInstance;
+struct BedInstance;
 }
 
 namespace Slic3r::Biz {

@@ -294,7 +294,7 @@ void TestRenderModule::render_object_hud(const Scene::Node& n, const Eigen::Alig
         screen_bounding_box.max().x(),
         screen_bounding_box.min().y()
     });
-    std::string win_name = "obj##" + std::to_string(reinterpret_cast<long>(&n));
+    std::string win_name = "obj##" + std::to_string(reinterpret_cast<size_t>(&n));
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {0, 0});
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 5);
     if (ImGui::Begin(win_name.c_str(), nullptr, ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoDecoration)) {

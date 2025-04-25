@@ -3,9 +3,9 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include "Slic3r/Platform.hpp"
+#include "Slic3r/Log.hpp"
 
 #include <boost/log/trivial.hpp>
-#include <spdlog/spdlog.h>
 #include <boost/filesystem/operations.hpp>
 
 #if defined(__APPLE__)

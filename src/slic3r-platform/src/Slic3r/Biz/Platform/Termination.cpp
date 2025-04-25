@@ -1,6 +1,6 @@
 #include "Slic3r/Biz/Platform/Termination.hpp"
 #include "Slic3r/Biz/Platform/PlatformServices.hpp"
-#include "spdlog/spdlog.h"
+#include "Slic3r/Log.hpp"
 
 namespace Slic3r::Biz::Platform {
     void close() {

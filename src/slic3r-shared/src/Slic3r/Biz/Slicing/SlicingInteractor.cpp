@@ -3,8 +3,8 @@
 #include "Slic3r/Biz/Platform/Termination.hpp"
 #include <Slic3r/Biz/Slicing/SlicingInteractor.hpp>
 #include <Slic3r/Biz/Platform/PlatformServices.hpp>
+#include "Slic3r/Log.hpp"
 #include <libassert/assert.hpp>
-#include <spdlog/spdlog.h>
 #include <fmt/core.h>
 #include <fmt/ostream.h>
 

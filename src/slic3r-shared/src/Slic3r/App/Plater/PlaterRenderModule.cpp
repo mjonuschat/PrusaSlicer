@@ -1268,7 +1268,7 @@ void PlaterRenderModule::render_imgui(Render::CommandBuffer & cmd_buffer)
 
 void PlaterRenderModule::render_object_hud(const Scene::Node& n, const Eigen::AlignedBox<float, 2>& screen_bounding_box)
 {
-    std::string node_name = "##node_hud_" + std::to_string(reinterpret_cast<long>(&n));
+    std::string node_name = "##node_hud_" + std::to_string(reinterpret_cast<size_t>(&n));
 
     ImGui::SetNextWindowPos({
         screen_bounding_box.max().x(),

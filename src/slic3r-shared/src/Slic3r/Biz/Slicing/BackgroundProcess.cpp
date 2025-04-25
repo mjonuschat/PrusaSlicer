@@ -1,7 +1,7 @@
-#include <spdlog/spdlog.h>
 #include <fmt/ostream.h>
 #include <Slic3r/Biz/Slicing/BackgroundProcess.hpp>
 #include <Slic3r/Assert.hpp>
+#include "Slic3r/Log.hpp"
 
 namespace {
 using namespace Slic3r;

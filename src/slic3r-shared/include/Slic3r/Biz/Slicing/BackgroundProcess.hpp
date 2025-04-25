@@ -1,12 +1,12 @@
 #pragma once
 
 #include <fmt/core.h>
-#include <spdlog/spdlog.h>
 #include <mutex>
 
 #include <Slic3r/Domain/SelectionId.hpp>
 #include <Slic3r/Domain/ConfigContainer.hpp>
 #include <Slic3r/Biz/libpgcode/ProcessorResult.hpp>
+#include "Slic3r/Log.hpp"
 
 #include <libslic3r/Print.hpp>
 #include <libslic3r/GCode.hpp>

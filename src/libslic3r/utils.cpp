@@ -19,7 +19,7 @@
 #include "format.hpp"
 #include "libslic3r.h"
 
-#include <spdlog/spdlog.h>
+#include "Slic3r/Log.hpp"
 
 #ifdef WIN32
 	#include <windows.h>
