@@ -1,4 +1,5 @@
 ﻿#include "Slic3r/Domain/ConfigFDM.hpp"
+#include "Slic3r/Domain/ConfigSLA.hpp"
 #include "Slic3r/Domain/ConfigPhysical.hpp"
 #include "Slic3r/Biz/Config/ConfigSerialize.hpp"
 #include "Slic3r/Biz/Config/ConfigLegacy.hpp"
@@ -27,6 +28,26 @@ int main(int, char* [])
 {
     using namespace Slic3r::Domain;
     using namespace Slic3r::Biz;
+    {
+        SLAPrinterSettings printer_s;
+        SLAPrintSettings print_s;
+        SLAMaterialSettings material_s;
+
+        std::vector<
+		std::variant<
+		    std::reference_wrapper<const ConfigBox>,
+	        std::vector<std::reference_wrapper<const ConfigBox>>
+	    >
+	    > list;
+        list.emplace_back(printer_s);
+        list.emplace_back(print_s);
+        list.emplace_back(material_s);
+
+        std::cout << serialize(list, 2, false);
+    }
+
+
+    //return 0;
 
     PrinterSettings printer_s;
     FilamentSettings fs1;

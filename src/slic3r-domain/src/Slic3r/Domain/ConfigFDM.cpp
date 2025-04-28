@@ -1,4 +1,5 @@
 ﻿#include "Slic3r/Domain/ConfigFDM.hpp"
+#include "ConfigCommon.hpp"
 
 #include "Slic3r/Domain/Types.hpp"
 
@@ -51,85 +52,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     ConfigItemDef* def = nullptr;
 
-// Defs from void PrintConfigDef::init_common_params() follow:
-
-    def = defs.add("printer_technology", Enum);
-    def->location = "printer_settings";
-    def->label = L("Printer technology");
-    def->tooltip = L("Printer technology");
-    def->enum_type = PrinterTechnology::FFF;
-    def->enum_values = { { int(PrinterTechnology::FFF), "FFF", L("FFF") },
-                         { int(PrinterTechnology::SLA), "SLA", L("SLA") } };
-    SET_DEFAULT(PrinterTechnology::FFF);
-
-    def = defs.add("bed_shape", Points);
-    def->location = "printer_settings";
-    def->label = L("Bed shape");
-    def->mode = comAdvanced;
-    SET_DEFAULT((std::vector<Domain::Vec2d>{{0., 0.}, { 200., 0. }, { 200., 200. }, { 0., 200. }}));
-
-    def = defs.add("bed_custom_texture", String);
-    def->location = "printer_settings";
-    def->label = L("Bed custom texture");
-    def->mode = comAdvanced;
-    SET_DEFAULT("");
-
-    def = defs.add("bed_custom_model", String);
-    def->location = "printer_settings";
-    def->label = L("Bed custom model");
-    def->mode = comAdvanced;
-    SET_DEFAULT("");
-
-    def = defs.add("elefant_foot_compensation", Double);
-    def->location = "print_settings";
-    def->label = L("Elephant foot compensation");
-    def->category = L("Advanced");
-    def->tooltip = L("The first layer will be shrunk in the XY plane by the configured value "
-                     "to compensate for the 1st layer squish aka an Elephant Foot effect.");
-    def->sidetext = L("mm");
-    def->min = 0;
-    def->mode = comAdvanced;
-    SET_DEFAULT(0.);
-
-    def = defs.add("thumbnails", String);
-    def->location = "printer_settings";
-    def->label = L("G-code thumbnails");
-    def->tooltip = L("Picture sizes to be stored into a .gcode / .bgcode and .sl1 / .sl1s files, in the following format: \"XxY/EXT, XxY/EXT, ...\"\n"
-                     "Currently supported extensions are PNG, QOI and JPG.");
-    def->mode = comExpert;
-    def->gui_type = ConfigItemDef::GUIType::one_string;
-    SET_DEFAULT("");
-
-    def = defs.add("thumbnails_format", Enum);
-    def->location = "printer_settings";
-    def->label = L("Format of G-code thumbnails");
-    def->tooltip = L("Format of G-code thumbnails: PNG for best quality, JPG for smallest size, QOI for low memory firmware");
-    def->mode = comExpert;
-    def->enum_type = GCodeThumbnailsFormat::PNG;
-    def->enum_values = { { int(GCodeThumbnailsFormat::PNG), "PNG", "PNG" },
-                         { int(GCodeThumbnailsFormat::JPG), "JPG", "JPG" },
-                         { int(GCodeThumbnailsFormat::QOI), "QOI", "QOI" } };
-    SET_DEFAULT(GCodeThumbnailsFormat::PNG);
-
-    def = defs.add("layer_height", Double);
-    def->location = "print_settings";
-    def->label = L("Layer height");
-    def->category = L("Layers and Perimeters");
-    def->tooltip = L("This setting controls the height (and thus the total number) of the slices/layers. "
-                   "Thinner layers give better accuracy but take more time to print.");
-    def->sidetext = L("mm");
-    def->min = 0;
-    SET_DEFAULT(0.3);
-
-    def = defs.add("max_print_height", Double);
-    def->location = "print_settings";
-    def->label = L("Max print height");
-    def->tooltip = L("Set this to the maximum height that can be reached by your extruder while printing.");
-    def->sidetext = L("mm");
-    def->min = 0;
-    def->max = 1200;
-    def->mode = comAdvanced;
-    SET_DEFAULT(200.);
+    init_common_fdm_sla_config_items(defs, "FDM");
 
     /* TODO - where does this belong to ?
     def = defs.add("profile_vendor", String);

@@ -75,10 +75,14 @@ add_library(slic3r-domain
 
     include/Slic3r/Domain/Config.hpp
     include/Slic3r/Domain/ConfigFDM.hpp
+    include/Slic3r/Domain/ConfigSLA.hpp
     include/Slic3r/Domain/ConfigPhysical.hpp
 
     src/Slic3r/Domain/Config.cpp
+    src/Slic3r/Domain/ConfigCommon.hpp
+    src/Slic3r/Domain/ConfigCommon.cpp
     src/Slic3r/Domain/ConfigFDM.cpp
+    src/Slic3r/Domain/ConfigSLA.cpp
     src/Slic3r/Domain/ConfigPhysical.cpp
 )
 

@@ -14,14 +14,7 @@ extern ConfigDefinitions s_defs_fdm;
 
 
 // Next, define all enums that should be used in the config.
-enum class PrinterTechnology
-{
-    FFF,
-    SLA
-};
-enum class GCodeThumbnailsFormat {
-    PNG, JPG, QOI
-};
+
 enum class ArcFittingType {
     Disabled,
     EmitCenter

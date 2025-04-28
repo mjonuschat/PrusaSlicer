@@ -1,0 +1,76 @@
+﻿#pragma once
+
+#include "Slic3r/Domain/Config.hpp"
+
+
+namespace Slic3r::Domain {
+
+// First, define a static object of ConfigDefinitions. This object will hold all
+// the definitions of the config items.
+extern ConfigDefinitions s_defs_sla;
+
+
+
+// Next, define all enums that should be used in the config.
+enum class SLADisplayOrientation {
+    sladoLandscape,
+    sladoPortrait
+};
+
+enum SLAMaterialSpeed { slamsSlow, slamsFast, slamsHighViscosity };
+
+namespace sla {
+    enum class SupportTreeType { Default, Branching, Organic };
+    enum class PillarConnectionMode { zigzag, cross, dynamic };
+}
+
+
+
+
+// Then, define all types of ConfigBoxes that will be used. Provide our list
+// of definitions and the type of the box (which must match definitions).
+
+class SLAPrintSettings : public ConfigBox
+{
+public:
+    SLAPrintSettings() : ConfigBox(s_defs_sla, "sla_print_settings") {}
+};
+class SLAMaterialSettings : public ConfigBox
+{
+public:
+    SLAMaterialSettings() : ConfigBox(s_defs_sla, "sla_material_settings") {}
+};
+class SLAPrinterSettings : public ConfigBox
+{
+public:
+    SLAPrinterSettings() : ConfigBox(s_defs_sla, "sla_printer_settings") {}
+};
+class SLAObjectSettings : public ConfigBox
+{
+public:
+    SLAObjectSettings() : ConfigBox(s_defs_sla, "sla_object_settings") {}
+};
+class SLAVolumeSettings : public ConfigBox
+{
+public:
+    SLAVolumeSettings() : ConfigBox(s_defs_sla, "sla_volume_settings") {}
+};
+
+
+class FullConfigSLA : public FullConfig
+{
+public:
+    FullConfigSLA(const SLAPrinterSettings& printer_s,
+                  const SLAPrintSettings& print_s,
+                  const SLAMaterialSettings& material_s)                  
+    {
+        // The base class only gets base pointers to base ConfigBoxes - it needs not to know what they are.
+        add(printer_s);
+        add(print_s);
+        add(material_s);        
+    }
+
+    std::string_view name() const override { return "SLA"; }
+};
+
+} // namespace Slic3r::Domain
