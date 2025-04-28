@@ -49,6 +49,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     using ConfigItemType::Doubles;
     using ConfigItemType::Strings;
     using ConfigItemType::Points;
+    using ConfigItemType::Enums;
 
     ConfigItemDef* def = nullptr;
 
@@ -689,6 +690,200 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->min = 0.000001f;
     def->mode = comExpert;
     SET_DEFAULT(0.001);
+
+    def = defs.add("delay_before_exposure", Doubles);
+    def->location = "sla_material_settings";
+    def->full_label = L("Delay before exposure");
+    def->tooltip = L("Delay before exposure after previous layer separation.");
+    def->sidetext = L("s");
+    def->min = 0;
+    def->max = 30;
+    def->mode = comAdvanced;
+    SET_DEFAULT((std::vector<double>{ 3., 3.}));
+
+    def = defs.add("delay_after_exposure", Doubles);
+    def->location = "sla_material_settings";
+    def->full_label = L("Delay after exposure");
+    def->tooltip = L("Delay after exposure before layer separation.");
+    def->sidetext = L("s");
+    def->min = 0;
+    def->max = 30;
+    def->mode = comAdvanced;
+    SET_DEFAULT((std::vector<double>{ 0., 0.}));
+
+    def = defs.add("tower_hop_height", Doubles);
+    def->location = "sla_material_settings";
+    def->full_label = L("Tower hop height");
+    def->tooltip = L("The height of the tower raise.");
+    def->sidetext = L("mm");
+    def->min = 0;
+    def->max = 100;
+    def->mode = comExpert;
+    SET_DEFAULT((std::vector<double>{ 0., 0.}));
+
+    def = defs.add("tower_speed", Enums);
+    def->location = "sla_material_settings";
+    def->full_label = L("Tower speed");
+    def->tooltip = L("Tower speed used for tower raise.");
+    def->mode = comExpert;
+    def->sidetext = L("mm/s");
+    def->enum_type = TowerSpeeds::tsLayer1;
+    def->enum_values = {
+        { int(TowerSpeeds::tsLayer1),  "layer1",  "1"  },
+        { int(TowerSpeeds::tsLayer2),  "layer2",  "2"  },
+        { int(TowerSpeeds::tsLayer3),  "layer3",  "3"  },
+        { int(TowerSpeeds::tsLayer4),  "layer4",  "4"  },
+        { int(TowerSpeeds::tsLayer5),  "layer5",  "5"  },
+        { int(TowerSpeeds::tsLayer8),  "layer8",  "8"  },
+        { int(TowerSpeeds::tsLayer11), "layer11", "11" },
+        { int(TowerSpeeds::tsLayer14), "layer14", "14" },
+        { int(TowerSpeeds::tsLayer18), "layer18", "18" },
+        { int(TowerSpeeds::tsLayer22), "layer22", "22" },
+        { int(TowerSpeeds::tsLayer24), "layer24", "24" }
+    };
+    SET_DEFAULT((std::vector<TowerSpeeds>{ tsLayer22, tsLayer22 }));
+
+    const std::vector<EnumValueDef> tilt_speeds_il = {
+        { int(TiltSpeeds::tsMove120),   "move120",    "120"   },
+        { int(TiltSpeeds::tsLayer200),  "layer200",   "200"   },
+        { int(TiltSpeeds::tsMove300),   "move300",    "300"   },
+        { int(TiltSpeeds::tsLayer400),  "layer400",   "400"   },
+        { int(TiltSpeeds::tsLayer600),  "layer600",   "600"   },
+        { int(TiltSpeeds::tsLayer800),  "layer800",   "800"   },
+        { int(TiltSpeeds::tsLayer1000), "layer1000",  "1000"  },
+        { int(TiltSpeeds::tsLayer1250), "layer1250",  "1250"  },
+        { int(TiltSpeeds::tsLayer1500), "layer1500",  "1500"  },
+        { int(TiltSpeeds::tsLayer1750), "layer1750",  "1750"  },
+        { int(TiltSpeeds::tsLayer2000), "layer2000",  "2000"  },
+        { int(TiltSpeeds::tsLayer2250), "layer2250",  "2250"  },
+        { int(TiltSpeeds::tsMove5120),  "move5120",   "5120"  },
+        { int(TiltSpeeds::tsMove8000),  "move8000",   "8000"  },
+    };
+
+    def = defs.add("tilt_down_initial_speed", Enums);
+    def->location = "sla_material_settings";
+    def->full_label = L("Tilt down initial speed");
+    def->tooltip = L("Tilt speed used for an initial portion of tilt down move.");
+    def->mode = comExpert;
+    def->sidetext = L("μ-steps/s");
+    def->enum_type = TiltSpeeds::tsLayer1000;
+    def->enum_values = tilt_speeds_il;
+    SET_DEFAULT((std::vector<TiltSpeeds>{ tsLayer1750, tsLayer1750 }));
+
+    def = defs.add("tilt_down_finish_speed", Enums);
+    def->location = "sla_material_settings";
+    def->full_label = L("Tilt down finish speed");
+    def->tooltip = L("Tilt speed used for the rest of the tilt down move.");
+    def->mode = comExpert;
+    def->sidetext = L("μ-steps/s");
+    def->enum_type = TiltSpeeds::tsLayer1000;
+    def->enum_values = tilt_speeds_il;
+    SET_DEFAULT((std::vector<TiltSpeeds>{ tsLayer1750, tsLayer1750 }));
+
+    def = defs.add("tilt_up_initial_speed", Enums);
+    def->location = "sla_material_settings";
+    def->full_label = L("Tilt up initial speed");
+    def->tooltip = L("Tilt speed used for an initial portion of tilt up move.");
+    def->mode = comExpert;
+    def->sidetext = L("μ-steps/s");
+    def->enum_type = TiltSpeeds::tsLayer1000;
+    def->enum_values = tilt_speeds_il;
+    SET_DEFAULT((std::vector<TiltSpeeds>{ tsMove8000, tsMove8000 }));
+
+    def = defs.add("tilt_up_finish_speed", Enums);
+    def->location = "sla_material_settings";
+    def->full_label = L("Tilt up finish speed");
+    def->tooltip = L("Tilt speed used for the rest of the tilt-up.");
+    def->mode = comExpert;
+    def->sidetext = L("μ-steps/s");
+    def->enum_type = TiltSpeeds::tsLayer1000;
+    def->enum_values = tilt_speeds_il;
+    SET_DEFAULT((std::vector<TiltSpeeds>{ tsLayer1750, tsLayer1750 }));
+
+    def = defs.add("use_tilt", Bools);
+    def->location = "sla_material_settings";
+    def->full_label = L("Use tilt");
+    def->tooltip = L("If enabled, tilt is used for layer separation. Otherwise, all the parameters below are ignored.");
+    def->mode = comExpert;
+    SET_DEFAULT((std::vector<bool>{ true, true }));
+
+    def = defs.add("tilt_down_offset_steps", Ints);
+    def->location = "sla_material_settings";
+    def->full_label = L("Tilt down offset steps");
+    def->tooltip = L("Number of steps to move down from the calibrated (horizontal) position with 'tilt_down_initial_speed'.");
+    def->sidetext = L("μ-steps");
+    def->min = 0;
+    def->max = 10000;
+    def->mode = comExpert;
+    SET_DEFAULT((std::vector<int>{ 0, 0 }));
+
+    def = defs.add("tilt_down_offset_delay", Doubles);
+    def->location = "sla_material_settings";
+    def->full_label = L("Tilt down offset delay");
+    def->tooltip = L("Delay after the tilt reaches 'tilt_down_offset_steps' position.");
+    def->sidetext = L("s");
+    def->min = 0;
+    def->max = 20;
+    def->mode = comExpert;
+    SET_DEFAULT((std::vector<double>{ 0., 0. }));
+
+    def = defs.add("tilt_down_cycles", Ints);
+    def->location = "sla_material_settings";
+    def->full_label = L("Tilt down cycles");
+    def->tooltip = L("Number of cycles to split the rest of the tilt down move.");
+    def->min = 0;
+    def->max = 10;
+    def->mode = comExpert;
+    SET_DEFAULT((std::vector<int>{ 1, 1 }));
+
+    def = defs.add("tilt_down_delay", Doubles);
+    def->location = "sla_material_settings";
+    def->full_label = L("Tilt down delay");
+    def->tooltip = L("The delay between tilt-down cycles.");
+    def->sidetext = L("s");
+    def->min = 0;
+    def->max = 20;
+    def->mode = comExpert;
+    SET_DEFAULT((std::vector<double>{ 0., 0. }));
+
+    def = defs.add("tilt_up_offset_steps", Ints);
+    def->location = "sla_material_settings";
+    def->full_label = L("Tilt up offset steps");
+    def->tooltip = L("Move tilt up to calibrated (horizontal) position minus this offset.");
+    def->sidetext = L("μ-steps");
+    def->min = 0;
+    def->max = 10000;
+    def->mode = comExpert;
+    SET_DEFAULT((std::vector<int>{ 1200, 1200 }));
+
+    def = defs.add("tilt_up_offset_delay", Doubles);
+    def->location = "sla_material_settings";
+    def->full_label = L("Tilt up offset delay");
+    def->tooltip = L("Delay after the tilt reaches 'tilt_up_offset_steps' position.");
+    def->sidetext = L("s");
+    def->min = 0;
+    def->max = 20;
+    def->mode = comExpert;
+    SET_DEFAULT((std::vector<double>{ 0., 0. }));
+
+    def = defs.add("tilt_up_cycles", Ints);
+    def->location = "sla_material_settings";
+    def->full_label = L("Tilt up cycles");
+    def->tooltip = L("Number of cycles to split the rest of the tilt-up.");
+    def->min = 0;
+    def->max = 10;
+    def->mode = comExpert;
+    SET_DEFAULT((std::vector<int>{ 1, 1 }));
+
+    def = defs.add("tilt_up_delay", Doubles);
+    def->location = "sla_material_settings";
+    def->full_label = L("Tilt up delay");
+    def->tooltip = L("The delay between tilt-up cycles.");
+    def->sidetext = L("s");
+    def->min = 0;
+    def->max = 20;
+    def->mode = comExpert;
+    SET_DEFAULT((std::vector<double>{ 0., 0. }));
 
     for (const std::string& prefix : { "", "branching" }) {
         def = defs.add(prefix + "support_head_front_diameter", Double);

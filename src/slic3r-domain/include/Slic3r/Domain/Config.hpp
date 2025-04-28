@@ -71,7 +71,8 @@ enum class ConfigItemType
     Ints,           // std::vector<int>
     Doubles,        // std::vector<double>
     Strings,        // std::vector<std::string>
-    Points          // std::vector<Vec2d>
+    Points,         // std::vector<Vec2d>
+    Enums           // std::vector<int>
 };
 
 
@@ -80,13 +81,25 @@ template<typename T>
 concept IsEnum = std::is_enum_v<T>;
 
 template<typename T>
-concept IsNotEnum = ! std::is_enum_v<T>;
+concept StdVector = requires {
+    typename T::value_type;
+    typename T::allocator_type;
+    requires std::same_as<T, std::vector<typename T::value_type, typename T::allocator_type>>;
+};
+
+template<typename T>
+concept IsVectorOfEnums =
+    StdVector<std::remove_cvref_t<T>> &&
+    std::is_enum_v<typename std::remove_cvref_t<T>::value_type>;
+
+template<typename T>
+concept IsNotEnumOrVectorOfEnums = ! IsVectorOfEnums<T> && ! IsEnum<T>;
 
 struct EnumValueDef
 {
     int enum_value;
-    std::string str_serialized;
-    std::string str_ui;
+    std::string_view str_serialized;
+    std::string_view str_ui;
     bool operator<(const EnumValueDef& other) const { return enum_value < other.enum_value; }
 };
 
@@ -226,8 +239,8 @@ public:
     ConfigItemType type() const { return m_type; }
 
     // Getters and setters. Assert hard when the type does not match.
-    template<IsNotEnum T> const T& get() const;
-    template<IsNotEnum T> void set(const T&);
+    template<IsNotEnumOrVectorOfEnums T> const T& get() const;
+    template<IsNotEnumOrVectorOfEnums T> void set(const T&);
 
     // Enums getters and setters have same signature as the general ones, but they are 
     // defined here so that they can be instantiated for types not known in Config.cpp.
@@ -245,12 +258,35 @@ public:
         ASSERT(typeid(T) == def().enum_type.type(), "Enum types mismatch.");
         return get_enum_as_int();
     }
+    template <IsVectorOfEnums T>
+    void set(T value)
+    {
+        ASSERT(m_type == ConfigItemType::Enums);
+        ASSERT(typeid(T::value_type) == def().enum_type.type(), "Enum types mismatch.");
+        std::vector<int> as_ints;
+        for (size_t i=0; i<value.size(); ++i)
+            as_ints.emplace_back(int(value[i]));
+        set_enums_from_ints(as_ints);
+    }
+    template <IsVectorOfEnums T>
+    T get() const
+    {
+        ASSERT(m_type == ConfigItemType::Enums);
+        ASSERT(typeid(T::value_type) == def().enum_type.type(), "Enum types mismatch.");
+        std::vector<int> values = get_enums_as_ints();
+        T out;
+        for (size_t i=0; i<values.size(); ++i)
+            out.emplace_back(T::value_type(values[i]));
+        return out;
+    }
     // One helper to allow settings strings by string literals:
     void set(const char* str) { set(std::string(str)); }
 
     // Getter and setter for enums for use with serialized values.
     void set_enum_from_string(std::string_view value);
     std::pair<std::string_view, std::string_view> get_enum_strings() const;
+    void set_enums_from_strings(std::vector<std::string_view> values);
+    std::vector<std::pair<std::string_view, std::string_view>> get_enums_strings() const;
 
     // These methods expose the underlying vector to allow in-place modifications.
     template<class T> const std::vector<T>& vec() const { return const_cast<ConfigItem*>(this)->vec<T>(); }
@@ -269,6 +305,8 @@ private:
     // through set_enum/get_enum templates.
     void set_enum_from_int(int value);
     int get_enum_as_int() const;
+    void set_enums_from_ints(const std::vector<int>& values);
+    std::vector<int> get_enums_as_ints() const;
 };
 
 
@@ -303,12 +341,7 @@ protected:
     std::string m_type{ };
 };
 
-template<typename T>
-concept StdVector = requires {
-    typename T::value_type;
-    typename T::allocator_type;
-    requires std::same_as<T, std::vector<typename T::value_type, typename T::allocator_type>>;
-};
+
 
 // Base class for a full config, which holds multiple config boxes and
 // has const getters to get a ConfigItem by key.

@@ -24,6 +24,37 @@ namespace sla {
     enum class PillarConnectionMode { zigzag, cross, dynamic };
 }
 
+enum TowerSpeeds : int {
+    tsLayer1,
+    tsLayer2,
+    tsLayer3,
+    tsLayer4,
+    tsLayer5,
+    tsLayer8,
+    tsLayer11,
+    tsLayer14,
+    tsLayer18, 
+    tsLayer22,
+    tsLayer24,
+};
+
+enum TiltSpeeds : int {
+    tsMove120,
+    tsLayer200,
+    tsMove300,
+    tsLayer400,
+    tsLayer600,
+    tsLayer800,
+    tsLayer1000,
+    tsLayer1250,
+    tsLayer1500,
+    tsLayer1750,
+    tsLayer2000,
+    tsLayer2250,
+    tsMove5120,
+    tsMove8000,
+};
+
 
 
 

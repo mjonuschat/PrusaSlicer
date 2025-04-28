@@ -44,6 +44,16 @@ static nlohmann::json serialize_points(const ConfigItem& item)
     return nlohmann::json(out);
 }
 
+static nlohmann::json serialize_enums(const ConfigItem& item)
+{
+    ASSERT(item.type() == ConfigItemType::Enums);
+    const auto& strings = item.get_enums_strings();
+    std::vector<std::string> out;
+    for (const auto& [serialized, ui] : strings)
+        out.emplace_back(serialized);
+    return nlohmann::json(out);
+}
+
 static void serialize_and_append(const ConfigItem& item, nlohmann::json& j)
 {
     j[item.name()] = nullptr;
@@ -66,6 +76,7 @@ static void serialize_and_append(const ConfigItem& item, nlohmann::json& j)
         case ConfigItemType::Doubles : jval = item.vec<double>(); break;
         case ConfigItemType::Strings : jval = item.vec<std::string>(); break;
         case ConfigItemType::Points  : jval = serialize_points(item); break;
+        case ConfigItemType::Enums   : jval = serialize_enums(item); break;
 
         case ConfigItemType::IntOptional :
             if (const auto& opt_int = item.get<std::optional<int>>(); opt_int)

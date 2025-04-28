@@ -33,10 +33,10 @@ void ConfigDefinitions::check_valid() const
         ASSERT(def.type != ConfigItemType::None);
         ASSERT(! def.location.empty());
         ASSERT(int(bool(def.init_fn)) ^ int(bool(def.init_fn_ex)));
-        ASSERT(def.type == ConfigItemType::Enum || def.enum_values.empty());
-        ASSERT(def.type != ConfigItemType::Enum || ! def.enum_values.empty());
-        ASSERT(def.type == ConfigItemType::Enum || ! def.enum_type.has_value());
-        ASSERT(def.type != ConfigItemType::Enum || def.enum_type.has_value());
+        ASSERT(def.type == ConfigItemType::Enum || def.type == ConfigItemType::Enums || def.enum_values.empty());
+        ASSERT((def.type != ConfigItemType::Enum && def.type != ConfigItemType::Enums) || !def.enum_values.empty());
+        ASSERT(def.type == ConfigItemType::Enum || def.type == ConfigItemType::Enums || ! def.enum_type.has_value());
+        ASSERT((def.type != ConfigItemType::Enum && def.type != ConfigItemType::Enums) || def.enum_type.has_value());
         ASSERT(std::is_sorted(def.enum_values.begin(), def.enum_values.end()));
         ASSERT(std::adjacent_find(def.enum_values.begin(), def.enum_values.end(), // check for duplicates
         [](const auto& a, const auto& b) { return a.enum_value == b.enum_value; }) == def.enum_values.end());
@@ -82,6 +82,7 @@ ConfigItem::ConfigItem(const ConfigItemDef& def, std::string_view box_type)
         case ConfigItemType::Percent :        m_data = Percentage();               break;
         case ConfigItemType::FloatOrPercent : m_data = FloatOrPercentage();        break;
         case ConfigItemType::Bools   :        m_data = std::vector<bool>();        break;
+        case ConfigItemType::Enums   :        [[fallthrough]];
         case ConfigItemType::Ints    :        m_data = std::vector<int>();         break;
         case ConfigItemType::Doubles :        m_data = std::vector<double>();      break;
         case ConfigItemType::Strings :        m_data = std::vector<std::string>(); break;
@@ -148,6 +149,7 @@ bool ConfigItem::operator==(const ConfigItem& other) const
     case ConfigItemType::FloatOrPercent : return std::any_cast<FloatOrPercentage>(m_data) == std::any_cast<FloatOrPercentage>(other.m_data); break;
     case ConfigItemType::Point   :        return std::any_cast<Vec2d>(m_data) == std::any_cast<Vec2d>(other.m_data); break;
     case ConfigItemType::Bools   :        return *std::any_cast<std::vector<bool>>(&m_data) == *std::any_cast<std::vector<bool>>(&other.m_data); break;
+    case ConfigItemType::Enums   :        [[fallthrough]];
     case ConfigItemType::Ints    :        return *std::any_cast<std::vector<int>>(&m_data) == *std::any_cast<std::vector<int>>(&other.m_data); break;
     case ConfigItemType::Doubles :        return *std::any_cast<std::vector<double>>(&m_data) == *std::any_cast<std::vector<double>>(&other.m_data); break;
     case ConfigItemType::Strings :        return *std::any_cast<std::vector<std::string>>(&m_data) == *std::any_cast<std::vector<std::string>>(&other.m_data); break;
@@ -173,7 +175,7 @@ bool ConfigItem::is_null() const
 
 
 
-template <IsNotEnum T>
+template <IsNotEnumOrVectorOfEnums T>
 const T& ConfigItem::get() const
 {
     ASSERT(! m_is_null);
@@ -189,7 +191,7 @@ const T& ConfigItem::get() const
 
 
 
-template<IsNotEnum T>
+template<IsNotEnumOrVectorOfEnums T>
 void ConfigItem::set(const T& value)
 {
     if (m_data.type() == typeid(T))
@@ -219,6 +221,39 @@ std::pair<std::string_view, std::string_view> ConfigItem::get_enum_strings() con
     throw std::exception();
 }
 
+void ConfigItem::set_enums_from_strings(std::vector<std::string_view> values)
+{
+    ASSERT(m_type == ConfigItemType::Enums);
+    std::vector<int> payload(values.size());
+
+    size_t i = 0;
+    for (const std::string_view& value : values) {
+        for (const EnumValueDef& evd : def().enum_values) {
+            if (evd.str_serialized == value) {
+                payload[i] = evd.enum_value;
+                break;
+            }
+            PANIC();
+        }
+        ++i;
+    }
+    set_enums_from_ints(payload);
+}
+
+std::vector<std::pair<std::string_view, std::string_view>> ConfigItem::get_enums_strings() const
+{
+    ASSERT(m_type == ConfigItemType::Enums);
+    auto payload = get_enums_as_ints();
+    std::vector<std::pair<std::string_view, std::string_view>> out;
+    for (int value : payload) {
+        auto it = std::ranges::find_if(def().enum_values,
+            [value](const Domain::EnumValueDef& evd) { return evd.enum_value == value; });
+        ASSERT(it != def().enum_values.end());
+        out.emplace_back(std::make_pair(it->str_serialized, it->str_ui));
+    }
+    return out;
+}
+
 void ConfigItem::set_enum_from_int(int value)
 {
     // No check for type here, this is private method and the check is upstack.
@@ -233,6 +268,20 @@ int ConfigItem::get_enum_as_int() const
     return std::any_cast<int>(m_data);
 }
 
+void ConfigItem::set_enums_from_ints(const std::vector<int>& values)
+{
+    // No check for type here, this is private method and the check is upstack.
+    for (int value : values)
+        ASSERT(std::find_if(def().enum_values.begin(), def().enum_values.end(),
+            [value](const EnumValueDef& evd) { return evd.enum_value == value; }) != def().enum_values.end());
+    m_data = std::make_any<std::vector<int>>(values);
+}
+
+std::vector<int> ConfigItem::get_enums_as_ints() const
+{
+    // No check here, this is private method and the check is upstack.
+    return std::any_cast<std::vector<int>>(m_data);
+}
 
 
 template<class T>
