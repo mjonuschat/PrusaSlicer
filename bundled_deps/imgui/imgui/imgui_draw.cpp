@@ -4273,6 +4273,20 @@ void ImFont::RenderText(ImDrawList* draw_list, float size, const ImVec2& pos, Im
         if (glyph == NULL)
             continue;
 
+        //
+        // PrusaSlicer extension
+        //
+        // {
+        float y_shift = 0.f;
+        {
+            const float glyph_height = (glyph->Y1 - glyph->Y0) * scale;
+            if (glyph_height > line_height) {
+                y_shift = 0.5f * (glyph_height - line_height);
+                y -= y_shift;
+            }
+        }
+        //}
+
         float char_width = glyph->AdvanceX * scale;
         if (glyph->Visible)
         {
@@ -4337,6 +4351,14 @@ void ImFont::RenderText(ImDrawList* draw_list, float size, const ImVec2& pos, Im
             }
         }
         x += char_width;
+
+        //
+        // PrusaSlicer extension
+        //
+        // {
+        if (y_shift > 0.f)
+            y += y_shift;
+        // }
     }
 
     // Give back unused vertices (clipped ones, blanks) ~ this is essentially a PrimUnreserve() action.
