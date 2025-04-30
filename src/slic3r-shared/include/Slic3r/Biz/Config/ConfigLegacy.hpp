@@ -4,6 +4,7 @@
 
 #include "Slic3r/Domain/Config.hpp"
 #include "Slic3r/Domain/ConfigFDM.hpp"
+#include "Slic3r/Domain/ConfigSLA.hpp"
 
 namespace Slic3r::Biz {
 
@@ -15,7 +16,9 @@ struct FDMLegacyConfigPack {
 };
 
 struct SLALegacyConfigPack {
-	// TODO
+	Domain::SLAPrinterSettings sla_printer_settings;
+	Domain::SLAMaterialSettings sla_material_settings;
+	Domain::SLAPrintSettings sla_print_settings;
 };
 
 // Loads config from INI / GCODE / BGCODE produced by PrusaSlicer < 3.0.0 and converts
@@ -24,7 +27,7 @@ struct SLALegacyConfigPack {
 std::variant<FDMLegacyConfigPack, SLALegacyConfigPack> load_config_from_legacy_file(const std::string& filename);
 
 // Export the config in the old format.
-std::string serialize_as_legacy_config(const FDMLegacyConfigPack& cfg);
-
+std::string serialize_as_legacy_config(const FDMLegacyConfigPack&, bool prepend_semicolons = false);
+std::string serialize_as_legacy_config(const SLALegacyConfigPack&, bool prepend_semicolons = false);
 
 } // namespace Slic3r::Biz

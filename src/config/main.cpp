@@ -33,6 +33,16 @@ int main(int, char* [])
         SLAPrintSettings print_s;
         SLAMaterialSettings material_s;
 
+        std::variant<FDMLegacyConfigPack, SLALegacyConfigPack> cfg = load_config_from_legacy_file("test_sla.ini");
+        if (std::holds_alternative<SLALegacyConfigPack>(cfg)) {
+            const auto& sla = std::get<SLALegacyConfigPack>(cfg);
+            printer_s = sla.sla_printer_settings;
+            material_s = sla.sla_material_settings;
+            print_s = sla.sla_print_settings;            
+        } else {
+            PANIC();
+        }   
+
         std::vector<
 		std::variant<
 		    std::reference_wrapper<const ConfigBox>,
@@ -44,10 +54,12 @@ int main(int, char* [])
         list.emplace_back(material_s);
 
         std::cout << serialize(list, 2, false);
+        std::ofstream leg("test_sla-roundtrip.ini");
+        leg << serialize_as_legacy_config(std::get<SLALegacyConfigPack>(cfg)) << std::endl;
     }
 
 
-    //return 0;
+
 
     PrinterSettings printer_s;
     FilamentSettings fs1;
