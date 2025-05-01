@@ -221,20 +221,22 @@ std::pair<std::string_view, std::string_view> ConfigItem::get_enum_strings() con
     throw std::exception();
 }
 
-void ConfigItem::set_enums_from_strings(std::vector<std::string_view> values)
+void ConfigItem::set_enums_from_strings(std::vector<std::string> values)
 {
     ASSERT(m_type == ConfigItemType::Enums);
     std::vector<int> payload(values.size());
 
     size_t i = 0;
-    for (const std::string_view& value : values) {
+    bool ok = false;
+    for (const std::string& value : values) {
         for (const EnumValueDef& evd : def().enum_values) {
             if (evd.str_serialized == value) {
                 payload[i] = evd.enum_value;
+                ok = true;
                 break;
             }
-            PANIC();
         }
+        ASSERT(ok);
         ++i;
     }
     set_enums_from_ints(payload);

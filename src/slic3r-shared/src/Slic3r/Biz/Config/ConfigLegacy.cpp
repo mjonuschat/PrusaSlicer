@@ -3,6 +3,8 @@
 
 #include "Legacy/PrintConfig.hpp"
 
+#include "boost/algorithm/string.hpp"
+
 namespace Slic3r::Biz {
 
 namespace {
@@ -18,6 +20,9 @@ namespace {
 
         // Type of the box where the filament overrides should be put in the new structure
         std::string override_box_type;
+
+        // Whether this is FDM or SLA.
+        std::string printer_technology_str;
     };
 
 
@@ -127,7 +132,8 @@ namespace {
                 "filament_seam_gap_distance"
             },
             "filament_",
-            "filament_settings"
+            "filament_settings",
+            "FFF"
         };
         return out;
     }
@@ -170,7 +176,8 @@ namespace {
                 "material_ow_support_points_density_relative"
             },
             "material_ow_",
-            "sla_material_settings"
+            "sla_material_settings",
+            "SLA"
         };
         return out;
     }
@@ -181,11 +188,26 @@ namespace {
 
 static void convert_enum(const Slic3rLegacy::ConfigOption* co, Domain::ConfigItem& item)
 {
+    ASSERT(co->type() == Slic3rLegacy::coEnum && item.type() == Domain::ConfigItemType::Enum);
     const std::string old_str = co->serialize();
     for (const Domain::EnumValueDef& evd : item.def().enum_values)
         if (evd.str_serialized == old_str)
             item.set_enum_from_string(old_str);
 }
+
+static void convert_enums(const Slic3rLegacy::ConfigOption* co, Domain::ConfigItem& item)
+{
+    ASSERT(co->type() == Slic3rLegacy::coEnums && item.type() == Domain::ConfigItemType::Enums);
+    const std::string old_str = co->serialize();
+    std::vector<std::string> old_strs;
+    boost::split(old_strs, old_str, boost::is_any_of(","));
+    for (const std::string& str : old_strs)
+        if (std::none_of(item.def().enum_values.begin(), item.def().enum_values.end(),
+            [&str](const Domain::EnumValueDef& evd) { return str == evd.str_serialized; }))
+            return;
+    item.set_enums_from_strings(old_strs);
+}
+
 
 
 static Slic3rLegacy::DynamicPrintConfig load_legacy_config_from_legacy_file(const std::string& filename)
@@ -236,6 +258,9 @@ static bool convert_old_to_new(const Slic3rLegacy::ConfigOption* opt, Domain::Co
         const std::vector<Slic3rLegacy::Vec2d> old_vec = static_cast<const ConfigOptionPoints*>(opt)->values;
         std::vector<Domain::Vec2d> vec(old_vec.begin(), old_vec.end());
         item.set(vec);
+    }
+    else if (opt->type() == coEnums && item.type() == Domain::ConfigItemType::Enums) {
+        convert_enums(opt, item);
     }
     else if (opt->is_vector() && filament_id != -1) {
         // This vector actually contains scalar values to be assigned to
@@ -331,6 +356,15 @@ static bool convert_new_to_old(const Domain::ConfigItem& item, Slic3rLegacy::Con
         std::vector<Slic3rLegacy::Vec2d> old_vec(new_vec.begin(), new_vec.end());
         static_cast<ConfigOptionPoints*>(opt)->values = old_vec;
     }
+        else if (opt->type() == coEnums && item.type() == Domain::ConfigItemType::Enums) {
+        const auto& strs = item.get_enums_strings();
+        std::string serialized;
+        for (const auto& [str_serialized, str_ui] : strs)
+            serialized += std::string(str_serialized) + ",";
+        ASSERT(! serialized.empty());
+        serialized.pop_back();
+        static_cast<ConfigOptionPoints*>(opt)->deserialize(serialized);
+    }
     else if (opt->is_vector() && filament_id != -1) {
         if (opt->type() == coBools && item.type() == Domain::ConfigItemType::Bool) {
             static_cast<ConfigOptionBools*>(opt)->values.resize(filament_id + 1);
@@ -410,6 +444,9 @@ static void fill_config_box_from_legacy(const Slic3rLegacy::DynamicPrintConfig& 
         ASSERT(! is_filament_override || boost::starts_with(old_key, legacy.override_prefix));
         std::string new_key(old_key.begin() + (is_filament_override ? legacy.override_prefix.size() : 0), old_key.end()); // trim prefix
 
+        if (old_key == "material_ow_branchingsupport_head_penetration")
+            printf("a");
+
         if (! box.contains(new_key))
             continue;
 
@@ -417,12 +454,20 @@ static void fill_config_box_from_legacy(const Slic3rLegacy::DynamicPrintConfig& 
         Domain::ConfigItem& item = box.opt(new_key);
 
         if (is_filament_override) {
-            if (filament_id == -1
-                || std::ranges::find(item.def().overrides_in, legacy.override_box_type) == item.def().overrides_in.end()
-                || box.type() != legacy.override_box_type
-                || !opt->is_vector()
-                || static_cast<const Slic3rLegacy::ConfigOptionVectorBase*>(opt)->is_nil(filament_id))
+            if (box.type() != legacy.override_box_type
+             || std::ranges::find(item.def().overrides_in, legacy.override_box_type) == item.def().overrides_in.end())
                 continue;
+
+            if (legacy.printer_technology_str == "FFF")
+                if (filament_id == -1
+                    || !opt->is_vector()
+                    || static_cast<const Slic3rLegacy::ConfigOptionVectorBase*>(opt)->is_nil(filament_id))
+                    continue;
+            if (legacy.printer_technology_str == "SLA") {
+                ASSERT(filament_id == -1);
+                if (static_cast<const Slic3rLegacy::ConfigOption*>(opt)->is_nil())
+                    continue;
+            }
         }
 
         if (has_override && box.type() == legacy.override_box_type) {

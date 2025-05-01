@@ -285,7 +285,7 @@ public:
     // Getter and setter for enums for use with serialized values.
     void set_enum_from_string(std::string_view value);
     std::pair<std::string_view, std::string_view> get_enum_strings() const;
-    void set_enums_from_strings(std::vector<std::string_view> values);
+    void set_enums_from_strings(std::vector<std::string> values);
     std::vector<std::pair<std::string_view, std::string_view>> get_enums_strings() const;
 
     // These methods expose the underlying vector to allow in-place modifications.
