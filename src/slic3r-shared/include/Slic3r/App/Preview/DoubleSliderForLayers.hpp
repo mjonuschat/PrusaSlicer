@@ -37,6 +37,9 @@ enum class LabelType
 class DoubleSliderForLayers : public Imgui::DoubleSlider::Manager<float>
 {
 public:
+    explicit DoubleSliderForLayers(Slic3r::App::Yoga::Item* parent = nullptr)
+        : Slic3r::App::Imgui::DoubleSlider::Manager<float>(std::string("layers_slider"), parent) {}
+
     void init(int lowerValue,
               int higherValue,
               int minValue,
@@ -105,7 +108,7 @@ public:
      * @name Implementation of Imgui::DoubleSlider::Manager public interface
      * @{
      */
-    void render(const ImVec2& pos, float scale_factor = 1.0f, float offset = 0.0f) override;
+    void render_body(Yoga::Vec2f pos, Yoga::Vec2f size) override;
     /**@}*/
 
     static int find_close_layer_idx(const std::vector<float>& zs, float z, float eps);

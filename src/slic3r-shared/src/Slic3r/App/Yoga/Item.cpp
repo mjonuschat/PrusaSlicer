@@ -1,0 +1,604 @@
+#include "Slic3r/App/Yoga/Item.hpp"
+
+#include "Slic3r/Assert.hpp"
+#include "Slic3r/App/Render/ImguiRender.hpp"
+#include "Slic3r/Log.hpp"
+
+#include <imgui_internal.h>
+#include <string>
+
+namespace Slic3r::App::Yoga {
+
+static std::string yoga_position_to_string(YGPositionType position_type)
+{
+    std::string result = "'";
+
+    switch (position_type) {
+    case YGPositionTypeStatic:
+        result += "static";
+        break;
+    case YGPositionTypeAbsolute:
+        result += "absolute";
+        break;
+    case YGPositionTypeRelative:
+        result += "relative";
+        break;
+    }
+
+    result += "'";
+
+    return result;
+}
+
+static std::string yoga_flex_direction(YGFlexDirection flex_direction)
+{
+    std::string result = "'";
+
+    switch (flex_direction) {
+    case YGFlexDirectionColumn:
+        result += "column";
+        break;
+    case YGFlexDirectionColumnReverse:
+        result += "column-reverse";
+        break;
+    case YGFlexDirectionRow:
+        result += "row";
+        break;
+    case YGFlexDirectionRowReverse:
+        result += "row-reverse";
+        break;
+    }
+
+    result += "'";
+
+    return result;
+}
+
+static std::string yoga_align_to_string(YGAlign align)
+{
+    std::string result = "'";
+
+    switch (align) {
+    case YGAlignAuto:
+        result += "auto";
+        break;
+    case YGAlignCenter:
+        result += "center";
+        break;
+    case YGAlignFlexEnd:
+        result += "flex-end";
+        break;
+    case YGAlignFlexStart:
+        result += "flex-start";
+        break;
+    case YGAlignSpaceAround:
+        result += "space-around";
+        break;
+    case YGAlignSpaceBetween:
+        result += "space-between";
+        break;
+    case YGAlignSpaceEvenly:
+        result += "space-evenly";
+        break;
+    case YGAlignBaseline:
+        result += "baseline";
+        break;
+    case YGAlignStretch:
+        result += "stretch";
+        break;
+    }
+
+    result += "'";
+
+    return result;
+}
+
+static std::string yoga_justify_to_string(YGJustify justify)
+{
+    std::string result = "'";
+
+    switch (justify) {
+    case YGJustifyCenter:
+        result += "center";
+        break;
+    case YGJustifyFlexEnd:
+        result += "flex-end";
+        break;
+    case YGJustifyFlexStart:
+        result += "flex-start";
+        break;
+    case YGJustifySpaceAround:
+        result += "space-around";
+        break;
+    case YGJustifySpaceBetween:
+        result += "space-between";
+        break;
+    case YGJustifySpaceEvenly:
+        result += "space-evenly";
+        break;
+    }
+
+    result += "'";
+
+    return result;
+}
+
+Render::ImguiRender* Slic3r::App::Yoga::Item::m_imgui_render = nullptr;
+
+Item::Item(Item* parent)
+{
+    m_node = YGNodeNew();
+    set_parent(parent);
+}
+
+Item::~Item()
+{
+    if (!m_parent && m_node) {
+        YGNodeFreeRecursive(m_node);
+    }
+
+    // Delete children recursively like in a pyramid?
+    for (Item* child : std::as_const(m_children)) {
+        delete child;
+    }
+}
+
+void Item::render(Vec2f pos, Vec2f size)
+{
+    if (!m_parent && !size.isZero()) {
+        style_node();
+        resize(size);
+    }
+
+    render_internal(pos, size);
+}
+
+void Item::resize(Vec2f size)
+{
+    // Make sure we do yoda calculation only on root nodes
+    if (m_parent) {
+        m_parent->resize(size);
+    } else {
+        YGNodeCalculateLayout(m_node, size.x(), size.y(), YGDirectionLTR);
+    }
+}
+
+YGNodeRef Item::node() const { return m_node; }
+
+float Item::x() const { return YGNodeLayoutGetLeft(m_node); }
+
+float Item::y() const { return YGNodeLayoutGetTop(m_node); }
+
+float Item::width() const { return YGNodeLayoutGetWidth(m_node); }
+
+float Item::height() const { return YGNodeLayoutGetHeight(m_node); }
+
+bool Item::is_visible() const { return YGNodeStyleGetDisplay(m_node) == YGDisplayFlex; }
+
+bool Item::debug_border() const { return m_debug_border; }
+
+float Item::flex_grow() const { return m_flex_grow; }
+
+float Item::aspect_ratio() const { return m_aspect_ratio; }
+
+YGJustify Item::justify_content() const { return m_justify_content; }
+
+YGPositionType Item::position_type() const { return m_position_type; }
+
+YGAlign Item::align_items() const { return m_align_items; }
+
+YGAlign Item::align_content() const { return m_align_content; }
+
+bool Item::enabled()
+{
+    Item* item = this;
+    while (item) {
+        if (!item->m_enabled) {
+            return false;
+        }
+
+        item = item->m_parent;
+    }
+
+    return true;
+}
+
+void Item::set_enabled(bool enabled) { m_enabled = enabled; }
+
+void Item::set_parent(Item* parent, size_t index)
+{
+    if (m_parent == parent) {
+        return;
+    }
+
+    if (m_parent) {
+        m_parent->remove_child(this);
+    }
+
+    m_parent = parent;
+    if (m_parent) {
+        m_parent->add_child(
+            this, index == std::numeric_limits<size_t>::max() ? m_parent->get_node_count() : index
+        );
+    }
+}
+
+void Item::set_max_size(const Vec2f max_size)
+{
+    if (m_max_size != max_size) {
+        m_max_size = max_size;
+        set_style_dirty();
+    }
+}
+
+void Item::set_visible(bool visible)
+{
+    YGNodeStyleSetDisplay(m_node, visible ? YGDisplayFlex : YGDisplayNone);
+}
+
+void Item::set_debug_border(bool show_debug_border) { m_debug_border = show_debug_border; }
+
+std::string Item::debug_dump_tree() const
+{
+    std::string dump;
+
+    dump += "<Node style={{";
+
+    dump += "minWidth: " + std::to_string(YGNodeStyleGetMinWidth(m_node).value) + ", ";
+    dump += "minHeight: " + std::to_string(YGNodeStyleGetMinHeight(m_node).value) + ", ";
+    // if (m_max_size.x() != YGUndefined) {
+    //     dump += "maxWidth: " + std::to_string(YGNodeStyleGetMaxWidth(m_node).value) + ", ";
+    // }
+    // if (m_max_size.y() != YGUndefined) {
+    //     dump += "maxHeight: " + std::to_string(YGNodeStyleGetMaxHeight(m_node).value) + ", ";
+    // }
+    if (m_padding.left > 0)
+        dump += "paddingLeft: " + std::to_string(YGNodeStyleGetPadding(m_node, YGEdgeLeft).value) +
+            ", ";
+    if (m_padding.right > 0)
+        dump += "paddingRight: " +
+            std::to_string(YGNodeStyleGetPadding(m_node, YGEdgeRight).value) + ", ";
+    if (m_padding.left > 0)
+        dump += "paddingTop: " + std::to_string(YGNodeStyleGetPadding(m_node, YGEdgeTop).value) +
+            ", ";
+    if (m_padding.bottom > 0)
+        dump += "paddingBottom: " +
+            std::to_string(YGNodeStyleGetPadding(m_node, YGEdgeBottom).value) + ", ";
+    if (m_margin.left > 0)
+        dump += "marginLeft: " + std::to_string(YGNodeStyleGetMargin(m_node, YGEdgeLeft).value) +
+            ", ";
+    if (m_margin.right > 0)
+        dump += "marginRight: " + std::to_string(YGNodeStyleGetMargin(m_node, YGEdgeRight).value) +
+            ", ";
+    if (m_margin.top > 0)
+        dump += "marginTop: " + std::to_string(YGNodeStyleGetMargin(m_node, YGEdgeTop).value) + ", ";
+    if (m_margin.bottom > 0)
+        dump += "marginBottom: " +
+            std::to_string(YGNodeStyleGetMargin(m_node, YGEdgeBottom).value) + ", ";
+
+    dump += "flexGrow: " + std::to_string(YGNodeStyleGetFlexGrow(m_node)) + ", ";
+    // if (m_aspect_ratio != YGUndefined) {
+    //     dump += "aspectRatio: " + std::to_string(YGNodeStyleGetAspectRatio(m_node)) + ", ";
+    // }
+    dump += "alignSelf: " + yoga_align_to_string(m_self_align) + ", ";
+    dump += "flexDirection: " + yoga_flex_direction(m_flex_direction) + ", ";
+    dump += "gap: " + std::to_string(YGNodeStyleGetGap(m_node, YGGutterAll)) + ", ";
+    dump += "positionType: " + yoga_position_to_string(m_position_type) + ", ";
+    dump += "justifyContent: " + yoga_justify_to_string(m_justify_content) + ", ";
+    dump += "alignItems: " + yoga_align_to_string(m_align_items) + ", ";
+    dump += "alignContent: " + yoga_align_to_string(m_align_content) + ", ";
+
+    dump += "}}>\n";
+
+    for (Item* child : m_children) {
+        dump += child->debug_dump_tree();
+    }
+
+    dump += "</Node>\n";
+
+    return dump;
+}
+
+ImVec2 Item::to_im(const Vec2f& val) { return ImVec2(val.x(), val.y()); }
+
+Vec2f Item::from_im(const ImVec2& val) { return Vec2f(val.x, val.y); }
+
+bool Item::is_node_visible(YGNodeRef node)
+{
+    while (node) {
+        if (YGNodeStyleGetDisplay(node) == YGDisplayNone) {
+            return false;
+        }
+        node = YGNodeGetParent(node);
+    }
+    return true;
+}
+
+Vec2f Item::get_item_size()
+{
+    ImVec2 old_pos = ImGui::GetCursorPos();
+    ImGui::SetCursorPos({});
+
+    // render widget with 0 alpha and store thems size
+    ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0);
+    render({}, {});
+    ImGui::PopStyleVar();
+
+    // for non-single items (panels) we are interesting in height of content
+    ImVec2 cur_pos_prev = ImGui::GetCursorPos();
+    ImGui::SameLine();
+    ImVec2 cur_pos = ImGui::GetCursorPos();
+
+    // if we render literally nothing, set our size to nothing, otherwise use whatever ImGui gave us
+    ImVec2 size = cur_pos_prev.x == 0 && cur_pos_prev.y == 0
+        ? cur_pos_prev
+        : ImVec2{cur_pos.x, cur_pos_prev.y + GImGui->Style.ItemSpacing.y};
+
+    Vec2f result = Vec2f{ImMax(10.f, size.x), ImMax(10.f, size.y)};
+
+    // reset cursor pos
+    ImGui::SetCursorPos(old_pos);
+
+    return result;
+}
+
+void Item::set_imgui_render(Render::ImguiRender* imgui_render) { m_imgui_render = imgui_render; }
+
+void Item::add_child(Item* child, size_t index)
+{
+    ASSERT(child);
+    ASSERT(child->node());
+    YGNodeInsertChild(m_node, child->m_node, index);
+    m_children.insert(m_children.cbegin() + index, child);
+    set_style_dirty();
+}
+
+void Item::remove_child(Item* child)
+{
+    ASSERT(child);
+    ASSERT(child->node());
+    remove(child);
+    set_style_dirty();
+}
+
+void Item::set_self_align(YGAlign align)
+{
+    if (m_self_align != align) {
+        m_self_align = align;
+        set_style_dirty();
+    }
+}
+
+void Item::set_margin(const Margins& margin)
+{
+    if (m_margin != margin) {
+        m_margin = margin;
+        set_style_dirty();
+    }
+}
+
+void Item::set_padding(const Paddings& padding)
+{
+    if (m_padding != padding) {
+        m_padding = padding;
+        set_style_dirty();
+    }
+}
+
+void Item::set_min_size(const Vec2f min_size)
+{
+    if (m_min_size != min_size) {
+        m_min_size = min_size;
+        set_style_dirty();
+    }
+}
+
+void Item::set_flex_grow(float flex_grow)
+{
+    if (m_flex_grow != flex_grow) {
+        m_flex_grow = flex_grow;
+        set_style_dirty();
+    }
+}
+
+void Item::set_aspect_ratio(float aspect_ratio)
+{
+    if (m_aspect_ratio != aspect_ratio) {
+        m_aspect_ratio = aspect_ratio;
+        set_style_dirty();
+    }
+}
+
+void Item::set_justify_content(YGJustify justify_content)
+{
+    if (m_justify_content != justify_content) {
+        m_justify_content = justify_content;
+        set_style_dirty();
+    }
+}
+
+void Item::set_position_type(YGPositionType position_type)
+{
+    if (m_position_type != position_type) {
+        m_position_type = position_type;
+        set_style_dirty();
+    }
+}
+
+void Item::set_orientation(Orientation orientation)
+{
+    m_orientation = orientation;
+    m_flex_direction = orientation == Orientation::Horizontal
+        ? YGFlexDirectionRow
+        : YGFlexDirectionColumn;
+    set_style_dirty();
+}
+
+void Item::set_gap(float gap)
+{
+    if (m_gap != gap) {
+        m_gap = gap;
+        set_style_dirty();
+    }
+}
+
+void Item::set_align_items(YGAlign align_items)
+{
+    if (m_align_items != align_items) {
+        m_align_items = align_items;
+        set_style_dirty();
+    }
+}
+
+void Item::set_align_content(YGAlign align_content)
+{
+    if (m_align_content != align_content) {
+        m_align_content = align_content;
+        set_style_dirty();
+    }
+}
+
+const std::string& Item::item_name() const { return m_item_name; }
+
+void Item::set_item_name(const std::string& item_name) { m_item_name = item_name; }
+
+void Item::set_style_dirty() { m_style_dirty = true; }
+
+void Item::style_node()
+{
+    ASSERT(m_node);
+    if (m_style_dirty) {
+        m_style_dirty = false;
+
+        YGNodeStyleSetMinWidth(m_node, m_min_size.x());
+        YGNodeStyleSetMinHeight(m_node, m_min_size.y());
+        YGNodeStyleSetMaxWidth(m_node, m_max_size.x());
+        YGNodeStyleSetMaxHeight(m_node, m_max_size.y());
+        YGNodeStyleSetPadding(m_node, YGEdgeLeft, m_padding.left);
+        YGNodeStyleSetPadding(m_node, YGEdgeRight, m_padding.right);
+        YGNodeStyleSetPadding(m_node, YGEdgeTop, m_padding.top);
+        YGNodeStyleSetPadding(m_node, YGEdgeBottom, m_padding.bottom);
+        YGNodeStyleSetMargin(m_node, YGEdgeLeft, m_margin.left);
+        YGNodeStyleSetMargin(m_node, YGEdgeRight, m_margin.right);
+        YGNodeStyleSetMargin(m_node, YGEdgeTop, m_margin.top);
+        YGNodeStyleSetMargin(m_node, YGEdgeBottom, m_margin.bottom);
+        YGNodeStyleSetFlexGrow(m_node, m_flex_grow);
+        YGNodeStyleSetAspectRatio(m_node, m_aspect_ratio);
+        YGNodeStyleSetAlignSelf(m_node, m_self_align);
+        YGNodeStyleSetFlexDirection(m_node, m_flex_direction);
+        YGNodeStyleSetGap(m_node, YGGutter::YGGutterAll, m_gap);
+        YGNodeStyleSetPositionType(m_node, m_position_type);
+        YGNodeStyleSetJustifyContent(m_node, m_justify_content);
+        YGNodeStyleSetAlignItems(m_node, m_align_items);
+        YGNodeStyleSetAlignContent(m_node, m_align_content);
+    }
+
+    if (m_children.empty()) {
+        // If we are a leaf node, calculate our min size
+        if (!m_min_size_calculated) {
+            m_min_size_calculated = true;
+            Vec2f sz = get_item_size();
+            m_min_size = m_min_size.cwiseMax(sz);
+            YGNodeStyleSetMinWidth(m_node, m_min_size.x());
+            YGNodeStyleSetMinHeight(m_node, m_min_size.y());
+        }
+    } else {
+        // Otherwise style all our children
+        for (Item* item : std::as_const(m_children)) {
+            item->style_node();
+        }
+    }
+}
+
+YGNodeRef Item::get_node(size_t index)
+{
+    ASSERT(m_node);
+    return YGNodeGetChild(m_node, index);
+}
+
+size_t Item::get_node_count() const
+{
+    ASSERT(m_node);
+    return YGNodeGetChildCount(m_node);
+}
+
+ImVec2 Item::get_node_pos() const
+{
+    ASSERT(m_node);
+    return {YGNodeLayoutGetLeft(m_node), YGNodeLayoutGetTop(m_node)};
+}
+
+void Item::prepend(Item* child) { insert(child, 0); }
+
+void Item::append(Item* child) { insert(child, get_node_count()); }
+
+void Item::insert(Item* child, size_t index)
+{
+    ASSERT(child, "child has to be valid");
+    ASSERT(child->node(), "child yoga node has to be valid");
+
+    child->set_parent(this, index);
+}
+
+void Item::remove(Item* child)
+{
+    ASSERT(child, "child has to be valid");
+    ASSERT(child->node(), "child yoga node has to be valid");
+
+    std::vector<Item*>::const_iterator it =
+        std::find_if(m_children.cbegin(), m_children.cend(), [child](Item* child_item) {
+            return child_item == child;
+        });
+
+    if (it == m_children.cend()) {
+        return;
+    }
+
+    YGNodeRemoveChild(m_node, child->node());
+    m_children.erase(it);
+}
+
+void Item::render_internal(Vec2f pos, Vec2f size)
+{
+    render_debug(pos, size);
+
+    for (Item* child : std::as_const(m_children)) {
+        render_node(pos, child);
+    }
+}
+
+void Item::render_node(Vec2f pos, Item* child)
+{
+    YGNodeRef child_node = child->node();
+    if (!is_node_visible(child_node)) {
+        return;
+    }
+
+    Vec2f cell_pos = pos + Vec2f(YGNodeLayoutGetLeft(child_node), YGNodeLayoutGetTop(child_node));
+    Vec2f cell_size = Vec2f(YGNodeLayoutGetWidth(child_node), YGNodeLayoutGetHeight(child_node));
+
+    child->render(cell_pos, cell_size);
+}
+
+void Item::render_debug(Vec2f pos, Vec2f size)
+{
+    if (m_debug_border) {
+        ImDrawList* draw_list = ImGui::GetForegroundDrawList();
+        ImRect rect(to_im(pos), to_im(pos + size));
+        SPDLOG_INFO(
+            "debug {}:{} -> {}:{} pos {}:{} size {}:{}", rect.Min.x, rect.Min.y, rect.Max.x,
+            rect.Max.y, pos.x(), pos.y(), size.x(), size.y()
+        );
+        draw_list->AddRectFilled(rect.Min, rect.Max, IM_COL32(255, 0, 0, 128), false);
+        // ImGui::RenderFrame(to_im(pos), to_im(pos + size), IM_COL32(20, 220, 200, 25), false);
+    }
+}
+
+Item* Item::get_item(size_t index) const
+{
+    return index >= m_children.size() ? nullptr : m_children.at(index);
+}
+
+size_t Item::item_count() const { return m_children.size(); }
+
+} // namespace Slic3r::App::Yoga

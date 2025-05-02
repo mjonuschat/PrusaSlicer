@@ -1,0 +1,21 @@
+#pragma once
+
+#include "Slic3r/App/Yoga/Item.hpp"
+
+namespace Slic3r::App::Yoga {
+
+class Icon : public Item {
+public:
+
+    Icon(wchar_t icon, Item* parent = nullptr);
+
+    void render(Vec2f pos, Vec2f size) override;
+
+    wchar_t icon() const;
+    void set_icon(wchar_t icon);
+
+private:
+    wchar_t m_icon = '\0';
+};
+
+}

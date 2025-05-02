@@ -1,20 +1,12 @@
 #pragma once
-#include "Slic3r/Domain/Types.hpp"
+#include "Slic3r/App/Yoga/Window.hpp"
 
 namespace Slic3r::App {
 
-class SidebarPrint
+class SidebarPrint : public Yoga::Window
 {
 public:
-    SidebarPrint() {}
-    
-    void init() {}
-
-    static void render(Domain::Vec2f pos, Domain::Vec2f size);
-
-protected:
-
-private:
+    explicit SidebarPrint(Yoga::Item* parent = nullptr);
 };
 
 } // namespace Slic3r::App

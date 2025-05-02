@@ -7,7 +7,6 @@
 #include "Slic3r/App/Scene/GizmoManager.hpp"
 #include "Slic3r/App/Plater/PlaterScenePresenter.hpp"
 #include "Slic3r/App/Plater/PlaterRenderLayout.hpp"
-#include "Slic3r/App/SidebarActionButtons.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/App/Plater/PlaterIFDMResultCacheChangedListener.hpp"
 
@@ -17,18 +16,14 @@ class PlaterRenderModule final : public Platform::AbstractRenderModule,
                                  public Biz::IStatusCacheChangedListener
 {
 public:
-    PlaterRenderModule(const Domain::Workbench& workbench, Biz::ProjectInteractor& project_interactor)
-        : m_workbench(workbench)
-        , m_project_interactor(project_interactor)
-    {
-    }
+    PlaterRenderModule(const Domain::Workbench& workbench, Biz::ProjectInteractor& project_interactor);
 
     void render_scene(Render::CommandBuffer& cmd_buffer) override;
     void render_imgui(Render::CommandBuffer& cmd_buffer) override;
     void on_scene_mouse_event(const Platform::MouseEvent& e) override;
     void on_scene_keyboard_event(const Platform::KeyboardEvent& e) override;
-    void add_type_changed_listener(IRenderModuleChangedListener* l) override;
-    void remove_type_changed_listener(IRenderModuleChangedListener* l) override;
+    void add_type_changed_listener(IRenderModuleChangedListener *l) override;
+    void remove_type_changed_listener(IRenderModuleChangedListener *l) override;
 
     void on_status_cache_changed(
         const Biz::Slicing::SlicingId id
@@ -57,8 +52,16 @@ private:
     bool m_gui_win_open{true};
 
     // main window layout
-    PlaterRenderLayout m_layout;
-    SidebarActionButtons m_sidebar_actions_panel;
+    std::unique_ptr<PlaterRenderLayout> m_layout;
+    // Layout objects
+    ObjectList* m_object_list = nullptr;
+    CubeView* m_cube_view = nullptr;
+    SidebarBed* m_sidebar_bed = nullptr;
+    SidebarPrint* m_sidebar_print = nullptr;
+    SidebarPlaterActionButtons* m_sidebar_action_buttons = nullptr;
+    History* m_history = nullptr;
+
+    std::unordered_set<IRenderModuleChangedListener*> m_render_module_changed_listeners;
 };
 
 } // namespace Slic3r::App::Plater

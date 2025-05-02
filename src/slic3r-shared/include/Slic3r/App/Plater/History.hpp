@@ -1,20 +1,13 @@
 #pragma once
-#include "Slic3r/Domain/Types.hpp"
+
+#include "Slic3r/App/Yoga/Window.hpp"
 
 namespace Slic3r::App::Plater {
 
-class History
+class History : public Yoga::Window
 {
 public:
-    History() {}
-    
-    void init() {}
-
-    static void render(Domain::Vec2f pos, Domain::Vec2f size);
-
-protected:
-
-private:
+    explicit History(Item* parent = nullptr);
 };
 
 } // namespace Slic3r::App::Plater

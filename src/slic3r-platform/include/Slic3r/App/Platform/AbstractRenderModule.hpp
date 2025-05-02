@@ -8,16 +8,15 @@
 
 namespace Slic3r::App {
 class IRenderModuleChangedListener;
-}
+} // namespace Slic3r::App
 
 namespace Slic3r::App::Render {
 class Device;
 class CommandBuffer;
 class ImguiRender;
-}
+} // namespace Slic3r::App::Render
 
 namespace Slic3r::App::Platform {
-
 
 /**
  * Provides abstract interface for render module and common infrastructure for rendering
@@ -53,10 +52,7 @@ protected:
     /**
      * Initialize all Render objects here.
      */
-    virtual void on_init(Render::Device& device, Render::ImguiRender& imgui_render) { 
-        m_device = &device;
-        m_imgui_render = &imgui_render; 
-    }
+    virtual void on_init(Render::Device& device, Render::ImguiRender& imgui_render);
 
     virtual void on_activated();
     virtual void on_deactivated();
@@ -74,11 +70,10 @@ protected:
     CommandRegistry m_command_registry;
     Render::ImguiRender* m_imgui_render{nullptr};
 
-    Render::ScreenInfo m_screen_info {0, 0, 1};
+    Render::ScreenInfo m_screen_info{0, 0, 1};
     bool m_initialized{false};
 private:
     Biz::Platform::IRenderRequestHandler* m_render_request_handler{nullptr};
 };
-
 
 } // namespace Slic3r::App::Platform

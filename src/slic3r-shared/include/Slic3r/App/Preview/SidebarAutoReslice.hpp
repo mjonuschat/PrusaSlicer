@@ -1,20 +1,15 @@
 #pragma once
-#include "Slic3r/Domain/Types.hpp"
+
+#include "Slic3r/App/Yoga/Window.hpp"
 
 namespace Slic3r::App::Preview {
 
-class SidebarAutoReslice
+class SidebarAutoReslice : public Yoga::Window
 {
 public:
-    SidebarAutoReslice() {}
-    
-    void init() {}
+    explicit SidebarAutoReslice(Item* parent = nullptr);
 
-    static void render(Domain::Vec2f pos, Domain::Vec2f size);
-
-protected:
-
-private:
+    void render_body(Domain::Vec2f pos, Domain::Vec2f size) override;
 };
 
 } // namespace Slic3r::App::Preview

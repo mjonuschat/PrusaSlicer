@@ -48,5 +48,11 @@ void AbstractRenderModule::set_imgui_render(Render::ImguiRender* imgui_render)
     }
 }
 
+void AbstractRenderModule::on_init(Render::Device &device, Render::ImguiRender &imgui_render)
+{
+    m_device = &device;
+    m_imgui_render = &imgui_render;
+}
+
 } // namespace Slic3r::App::Platform
 

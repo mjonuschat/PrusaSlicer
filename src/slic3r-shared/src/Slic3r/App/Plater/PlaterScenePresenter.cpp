@@ -107,8 +107,7 @@ void PlaterScenePresenter::on_selected_project_changed(size_t index)
 {
     m_selected_project_id = index;
     if (m_projects.count(m_selected_project_id) == 0) {
-        ScenePresenterProjectContext context{};
-        m_projects.emplace(m_selected_project_id, std::move(context));
+        m_projects.try_emplace(m_selected_project_id);
         m_bed_render_updater.on_selected_project_changed(m_selected_project_id);
         // a new camera has been created, add the bed updater as listener
         project_context().scene().camera().add_listener<Scene::ICameraUpdateListener>(&m_bed_render_updater);

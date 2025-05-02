@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include <wx/dcclient.h>
+#include <wx/clipbrd.h>
 #include <imgui/imgui.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
 #include <cpptrace/from_current.hpp>
@@ -21,8 +22,7 @@ namespace Slic3r::App::Platform::WX {
 
 KeyCode get_key_code_from_event(const wxKeyEvent& event)
 {
-    switch (event.GetKeyCode())
-    {
+    switch (event.GetKeyCode()) {
     case WXK_NONE:
         return KeyCode::None;
 
@@ -250,15 +250,18 @@ static wxGLAttributes create_wxglattributes()
     //
 
     wxGLAttributes ret;
-    ret.PlatformDefaults().DoubleBuffer()
-        .RGBA().MinRGBA(8, 8, 8, 8)
+    ret.PlatformDefaults()
+        .DoubleBuffer()
+        .RGBA()
+        .MinRGBA(8, 8, 8, 8)
         .Depth(24)
-        .SampleBuffers(1).Samplers(4)
+        .SampleBuffers(1)
+        .Samplers(4)
 #ifdef __APPLE__
         // on MAC the method RGBA() has no effect
         .SetNeedsARB(true);
 #else
-    ;
+        ;
 #endif // __APPLE__
     ret.EndList();
 
@@ -275,7 +278,9 @@ struct ImGui_ImplWX_Data
 
 static ImGui_ImplWX_Data* ImGui_ImplWX_GetBackendData()
 {
-    return ImGui::GetCurrentContext() ? (ImGui_ImplWX_Data*)ImGui::GetIO().BackendPlatformUserData : nullptr;
+    return ImGui::GetCurrentContext()
+        ? (ImGui_ImplWX_Data*) ImGui::GetIO().BackendPlatformUserData
+        : nullptr;
 }
 
 static void ImGui_ImplWX_InitMouseCursor()
@@ -285,21 +290,22 @@ static void ImGui_ImplWX_InitMouseCursor()
     IM_ASSERT(io.BackendPlatformUserData == nullptr && "Already initialized a platform backend!");
 
     ImGui_ImplWX_Data* bd = IM_NEW(ImGui_ImplWX_Data)();
-    io.BackendPlatformUserData = (void*)bd;
+    io.BackendPlatformUserData = (void*) bd;
     io.BackendPlatformName = "imgui_impl_wx";
 
     io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors;
     io.MouseDrawCursor = false;
 
-    bd->MouseCursors[ImGuiMouseCursor_Arrow]        = wxCursor(wxCURSOR_ARROW);
-    bd->MouseCursors[ImGuiMouseCursor_TextInput]    = wxCursor(wxCURSOR_IBEAM);
-    bd->MouseCursors[ImGuiMouseCursor_ResizeAll]    = wxCursor(wxCURSOR_SIZENWSE); // Used for corner resizing, so need NWSE, not SIZING, which is moving
-    bd->MouseCursors[ImGuiMouseCursor_ResizeNS]     = wxCursor(wxCURSOR_SIZENS);
-    bd->MouseCursors[ImGuiMouseCursor_ResizeEW]     = wxCursor(wxCURSOR_SIZEWE);
-    bd->MouseCursors[ImGuiMouseCursor_ResizeNESW]   = wxCursor(wxCURSOR_SIZENESW);
-    bd->MouseCursors[ImGuiMouseCursor_ResizeNWSE]   = wxCursor(wxCURSOR_SIZENWSE);
-    bd->MouseCursors[ImGuiMouseCursor_Hand]         = wxCursor(wxCURSOR_HAND);
-    bd->MouseCursors[ImGuiMouseCursor_NotAllowed]   = wxCursor(wxCURSOR_NO_ENTRY);
+    bd->MouseCursors[ImGuiMouseCursor_Arrow] = wxCursor(wxCURSOR_ARROW);
+    bd->MouseCursors[ImGuiMouseCursor_TextInput] = wxCursor(wxCURSOR_IBEAM);
+    bd->MouseCursors[ImGuiMouseCursor_ResizeAll] = wxCursor(wxCURSOR_SIZENWSE
+    ); // Used for corner resizing, so need NWSE, not SIZING, which is moving
+    bd->MouseCursors[ImGuiMouseCursor_ResizeNS] = wxCursor(wxCURSOR_SIZENS);
+    bd->MouseCursors[ImGuiMouseCursor_ResizeEW] = wxCursor(wxCURSOR_SIZEWE);
+    bd->MouseCursors[ImGuiMouseCursor_ResizeNESW] = wxCursor(wxCURSOR_SIZENESW);
+    bd->MouseCursors[ImGuiMouseCursor_ResizeNWSE] = wxCursor(wxCURSOR_SIZENWSE);
+    bd->MouseCursors[ImGuiMouseCursor_Hand] = wxCursor(wxCURSOR_HAND);
+    bd->MouseCursors[ImGuiMouseCursor_NotAllowed] = wxCursor(wxCURSOR_NO_ENTRY);
 }
 
 static void ImGui_ImplWX_UpdateMouseCursor()
@@ -315,12 +321,10 @@ static void ImGui_ImplWX_UpdateMouseCursor()
         if (imgui_cursor == ImGuiMouseCursor_None || io.MouseDrawCursor) {
             // Hide OS mouse cursor if imgui is drawing it or if it wants no cursor
             wxSetCursor(wxCursor(wxCURSOR_NONE));
-        }
-        else if (imgui_cursor >= ImGuiMouseCursor_COUNT) {
+        } else if (imgui_cursor >= ImGuiMouseCursor_COUNT) {
             // Set by default arrow cursor
             wxSetCursor(wxCursor(wxCURSOR_ARROW));
-        }
-        else {
+        } else {
             // Show OS mouse cursor
             wxSetCursor(bd->MouseCursors[imgui_cursor]);
         }
@@ -340,15 +344,16 @@ static void ImGui_ImplWX_Shutdown()
 }
 
 /*
-* WxWidgests swallow exception backtraces. Wrap all wx event handlers in
-* this, to print the backtrace before letting wxWidgets handle the exception.
-*/
-template <typename Class, typename EventType>
-auto catching_handler(Class* instance, void (Class::*handler)(EventType&)) {
+ * WxWidgests swallow exception backtraces. Wrap all wx event handlers in
+ * this, to print the backtrace before letting wxWidgets handle the exception.
+ */
+template<typename Class, typename EventType>
+auto catching_handler(Class* instance, void (Class::*handler)(EventType&))
+{
     return [=](wxEvent& evt) {
-        CPPTRACE_TRY {
-            (instance->*handler)(static_cast<EventType&>(evt));
-        } CPPTRACE_CATCH(const std::exception& e) {
+        CPPTRACE_TRY { (instance->*handler)(static_cast<EventType&>(evt)); }
+        CPPTRACE_CATCH(const std::exception& e)
+        {
             SPDLOG_ERROR("unhandled exception: '{}'", e.what());
             cpptrace::from_current_exception().print();
             throw;
@@ -357,7 +362,10 @@ auto catching_handler(Class* instance, void (Class::*handler)(EventType&)) {
 }
 
 WXRenderCanvas::WXRenderCanvas(wxWindow* parent)
-: wxGLCanvas(parent, create_wxglattributes(), wxID_ANY, wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS), m_start_time(Clock::now())
+    : wxGLCanvas(
+          parent, create_wxglattributes(), wxID_ANY, wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS
+      )
+    , m_start_time(Clock::now())
 {
     wxGLContextAttrs attrs;
     attrs.PlatformDefaults().CoreProfile();
@@ -374,7 +382,7 @@ WXRenderCanvas::WXRenderCanvas(wxWindow* parent)
     attrs.EndList();
 
     m_gl_context = std::make_unique<wxGLContext>(this, nullptr, &attrs);
-    //SetCurrent(*m_gl_context);
+    // SetCurrent(*m_gl_context);
 
     Bind(wxEVT_ENTER_WINDOW, catching_handler(this, &WXRenderCanvas::on_mouse_enter));
     Bind(wxEVT_SIZE, catching_handler(this, &WXRenderCanvas::on_size));
@@ -400,7 +408,6 @@ WXRenderCanvas::~WXRenderCanvas()
     Render::shutdown_render();
 }
 
-
 void WXRenderCanvas::init()
 {
     const auto err = glewInit();
@@ -415,7 +422,7 @@ void WXRenderCanvas::init()
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
-    ImGuiIO &io = ImGui::GetIO();
+    ImGuiIO& io = ImGui::GetIO();
     (void) io;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
 
@@ -442,100 +449,171 @@ static ImGuiKey wx_to_imgui_key(int keycode)
     if (97 <= keycode && keycode <= 122)
         return ImGuiKey(ImGuiKey_A + keycode - 97);
 
-    switch (keycode)
-    {
-        case WXK_TAB:             return ImGuiKey_Tab;
-        case WXK_LEFT:            return ImGuiKey_LeftArrow;
-        case WXK_RIGHT:           return ImGuiKey_RightArrow;
-        case WXK_UP:              return ImGuiKey_UpArrow;
-        case WXK_DOWN:            return ImGuiKey_DownArrow;
-        case WXK_PAGEUP:          return ImGuiKey_PageUp;
-        case WXK_PAGEDOWN:        return ImGuiKey_PageDown;
-        case WXK_HOME:            return ImGuiKey_Home;
-        case WXK_END:             return ImGuiKey_End;
-        case WXK_INSERT:          return ImGuiKey_Insert;
-        case WXK_DELETE:          return ImGuiKey_Delete;
-        case WXK_BACK:            return ImGuiKey_Backspace;
-        case WXK_SPACE:           return ImGuiKey_Space;
-        case WXK_RETURN:          return ImGuiKey_Enter;
-        case WXK_ESCAPE:          return ImGuiKey_Escape;
+    switch (keycode) {
+    case WXK_TAB:
+        return ImGuiKey_Tab;
+    case WXK_LEFT:
+        return ImGuiKey_LeftArrow;
+    case WXK_RIGHT:
+        return ImGuiKey_RightArrow;
+    case WXK_UP:
+        return ImGuiKey_UpArrow;
+    case WXK_DOWN:
+        return ImGuiKey_DownArrow;
+    case WXK_PAGEUP:
+        return ImGuiKey_PageUp;
+    case WXK_PAGEDOWN:
+        return ImGuiKey_PageDown;
+    case WXK_HOME:
+        return ImGuiKey_Home;
+    case WXK_END:
+        return ImGuiKey_End;
+    case WXK_INSERT:
+        return ImGuiKey_Insert;
+    case WXK_DELETE:
+        return ImGuiKey_Delete;
+    case WXK_BACK:
+        return ImGuiKey_Backspace;
+    case WXK_SPACE:
+        return ImGuiKey_Space;
+    case WXK_RETURN:
+        return ImGuiKey_Enter;
+    case WXK_ESCAPE:
+        return ImGuiKey_Escape;
 
-        case '\'':                return ImGuiKey_Apostrophe;
-        case ',':                 return ImGuiKey_Comma;
-        case '-':                 return ImGuiKey_Minus;
-        case '.':                 return ImGuiKey_Period;
-        case '/':                 return ImGuiKey_Slash;
-        case ';':                 return ImGuiKey_Semicolon;
-        case '=':                 return ImGuiKey_Equal;
-        case '[':                 return ImGuiKey_LeftBracket;
-        case '\\':                return ImGuiKey_Backslash;
-        case ']':                 return ImGuiKey_RightBracket;
+    case '\'':
+        return ImGuiKey_Apostrophe;
+    case ',':
+        return ImGuiKey_Comma;
+    case '-':
+        return ImGuiKey_Minus;
+    case '.':
+        return ImGuiKey_Period;
+    case '/':
+        return ImGuiKey_Slash;
+    case ';':
+        return ImGuiKey_Semicolon;
+    case '=':
+        return ImGuiKey_Equal;
+    case '[':
+        return ImGuiKey_LeftBracket;
+    case '\\':
+        return ImGuiKey_Backslash;
+    case ']':
+        return ImGuiKey_RightBracket;
 
-        //case ?????: return ImGuiKey_GraveAccent;
+        // case ?????: return ImGuiKey_GraveAccent;
 
-        case WXK_CAPITAL:         return ImGuiKey_CapsLock;
+    case WXK_CAPITAL:
+        return ImGuiKey_CapsLock;
 
-        case WXK_SCROLL:          return ImGuiKey_ScrollLock;
-        case WXK_NUMLOCK:         return ImGuiKey_NumLock;
-        case WXK_PRINT:           return ImGuiKey_PrintScreen;
-        case WXK_PAUSE:           return ImGuiKey_Pause;
-        case WXK_NUMPAD0:         return ImGuiKey_Keypad0;
-        case WXK_NUMPAD1:         return ImGuiKey_Keypad1;
-        case WXK_NUMPAD2:         return ImGuiKey_Keypad2;
-        case WXK_NUMPAD3:         return ImGuiKey_Keypad3;
-        case WXK_NUMPAD4:         return ImGuiKey_Keypad4;
-        case WXK_NUMPAD5:         return ImGuiKey_Keypad5;
-        case WXK_NUMPAD6:         return ImGuiKey_Keypad6;
-        case WXK_NUMPAD7:         return ImGuiKey_Keypad7;
-        case WXK_NUMPAD8:         return ImGuiKey_Keypad8;
-        case WXK_NUMPAD9:         return ImGuiKey_Keypad9;
-        case WXK_NUMPAD_DELETE:   return ImGuiKey_KeypadDecimal;
-        case WXK_NUMPAD_DIVIDE:   return ImGuiKey_KeypadDivide;
-        case WXK_NUMPAD_MULTIPLY: return ImGuiKey_KeypadMultiply;
-        case WXK_NUMPAD_SUBTRACT: return ImGuiKey_KeypadSubtract;
-        case WXK_NUMPAD_ADD:      return ImGuiKey_KeypadAdd;
-        case WXK_NUMPAD_ENTER:    return ImGuiKey_KeypadEnter;
-        case WXK_NUMPAD_EQUAL:    return ImGuiKey_KeypadEqual;
+    case WXK_SCROLL:
+        return ImGuiKey_ScrollLock;
+    case WXK_NUMLOCK:
+        return ImGuiKey_NumLock;
+    case WXK_PRINT:
+        return ImGuiKey_PrintScreen;
+    case WXK_PAUSE:
+        return ImGuiKey_Pause;
+    case WXK_NUMPAD0:
+        return ImGuiKey_Keypad0;
+    case WXK_NUMPAD1:
+        return ImGuiKey_Keypad1;
+    case WXK_NUMPAD2:
+        return ImGuiKey_Keypad2;
+    case WXK_NUMPAD3:
+        return ImGuiKey_Keypad3;
+    case WXK_NUMPAD4:
+        return ImGuiKey_Keypad4;
+    case WXK_NUMPAD5:
+        return ImGuiKey_Keypad5;
+    case WXK_NUMPAD6:
+        return ImGuiKey_Keypad6;
+    case WXK_NUMPAD7:
+        return ImGuiKey_Keypad7;
+    case WXK_NUMPAD8:
+        return ImGuiKey_Keypad8;
+    case WXK_NUMPAD9:
+        return ImGuiKey_Keypad9;
+    case WXK_NUMPAD_DELETE:
+        return ImGuiKey_KeypadDecimal;
+    case WXK_NUMPAD_DIVIDE:
+        return ImGuiKey_KeypadDivide;
+    case WXK_NUMPAD_MULTIPLY:
+        return ImGuiKey_KeypadMultiply;
+    case WXK_NUMPAD_SUBTRACT:
+        return ImGuiKey_KeypadSubtract;
+    case WXK_NUMPAD_ADD:
+        return ImGuiKey_KeypadAdd;
+    case WXK_NUMPAD_ENTER:
+        return ImGuiKey_KeypadEnter;
+    case WXK_NUMPAD_EQUAL:
+        return ImGuiKey_KeypadEqual;
 
-        //case ?????: return ImGuiKey_LeftCtrl;
-        //case ?????: return ImGuiKey_LeftShift;
-        //case ?????: return ImGuiKey_LeftAlt;
-        //case ?????: return ImGuiKey_LeftSuper;
-        //case ?????: return ImGuiKey_RightCtrl;
-        //case ?????: return ImGuiKey_RightShift;
-        //case ?????: return ImGuiKey_RightAlt;
-        //case ?????: return ImGuiKey_RightSuper;
-        //case ?????: return ImGuiKey_Menu;
+        // case ?????: return ImGuiKey_LeftCtrl;
+        // case ?????: return ImGuiKey_LeftShift;
+        // case ?????: return ImGuiKey_LeftAlt;
+        // case ?????: return ImGuiKey_LeftSuper;
+        // case ?????: return ImGuiKey_RightCtrl;
+        // case ?????: return ImGuiKey_RightShift;
+        // case ?????: return ImGuiKey_RightAlt;
+        // case ?????: return ImGuiKey_RightSuper;
+        // case ?????: return ImGuiKey_Menu;
 
-        case WXK_F1:              return ImGuiKey_F1;
-        case WXK_F2:              return ImGuiKey_F2;
-        case WXK_F3:              return ImGuiKey_F3;
-        case WXK_F4:              return ImGuiKey_F4;
-        case WXK_F5:              return ImGuiKey_F5;
-        case WXK_F6:              return ImGuiKey_F6;
-        case WXK_F7:              return ImGuiKey_F7;
-        case WXK_F8:              return ImGuiKey_F8;
-        case WXK_F9:              return ImGuiKey_F9;
-        case WXK_F10:             return ImGuiKey_F10;
-        case WXK_F11:             return ImGuiKey_F11;
-        case WXK_F12:             return ImGuiKey_F12;
-        case WXK_F13:             return ImGuiKey_F13;
-        case WXK_F14:             return ImGuiKey_F14;
-        case WXK_F15:             return ImGuiKey_F15;
-        case WXK_F16:             return ImGuiKey_F16;
-        case WXK_F17:             return ImGuiKey_F17;
-        case WXK_F18:             return ImGuiKey_F18;
-        case WXK_F19:             return ImGuiKey_F19;
-        case WXK_F20:             return ImGuiKey_F20;
-        case WXK_F21:             return ImGuiKey_F21;
-        case WXK_F22:             return ImGuiKey_F22;
-        case WXK_F23:             return ImGuiKey_F23;
-        case WXK_F24:             return ImGuiKey_F24;
+    case WXK_F1:
+        return ImGuiKey_F1;
+    case WXK_F2:
+        return ImGuiKey_F2;
+    case WXK_F3:
+        return ImGuiKey_F3;
+    case WXK_F4:
+        return ImGuiKey_F4;
+    case WXK_F5:
+        return ImGuiKey_F5;
+    case WXK_F6:
+        return ImGuiKey_F6;
+    case WXK_F7:
+        return ImGuiKey_F7;
+    case WXK_F8:
+        return ImGuiKey_F8;
+    case WXK_F9:
+        return ImGuiKey_F9;
+    case WXK_F10:
+        return ImGuiKey_F10;
+    case WXK_F11:
+        return ImGuiKey_F11;
+    case WXK_F12:
+        return ImGuiKey_F12;
+    case WXK_F13:
+        return ImGuiKey_F13;
+    case WXK_F14:
+        return ImGuiKey_F14;
+    case WXK_F15:
+        return ImGuiKey_F15;
+    case WXK_F16:
+        return ImGuiKey_F16;
+    case WXK_F17:
+        return ImGuiKey_F17;
+    case WXK_F18:
+        return ImGuiKey_F18;
+    case WXK_F19:
+        return ImGuiKey_F19;
+    case WXK_F20:
+        return ImGuiKey_F20;
+    case WXK_F21:
+        return ImGuiKey_F21;
+    case WXK_F22:
+        return ImGuiKey_F22;
+    case WXK_F23:
+        return ImGuiKey_F23;
+    case WXK_F24:
+        return ImGuiKey_F24;
 
-        //case ?????: return ImGuiKey_AppBack;
-        //case ?????: return ImGuiKey_AppForward;
+        // case ?????: return ImGuiKey_AppBack;
+        // case ?????: return ImGuiKey_AppForward;
 
-        default:                break;
+    default:
+        break;
     }
     return ImGuiKey_None;
 }
@@ -548,6 +626,15 @@ void WXRenderCanvas::init_wx_imgui()
     io.ConfigMacOSXBehaviors = false;
 
     ImGui_ImplWX_InitMouseCursor();
+
+    // Set ImGui copy to clipboard function through WxWidgets
+    ImGuiPlatformIO& platform_io = ImGui::GetPlatformIO();
+    platform_io.Platform_SetClipboardTextFn = [](ImGuiContext*, const char* text) {
+        if (wxTheClipboard->Open()) {
+            wxTheClipboard->SetData(new wxTextDataObject(wxString::FromUTF8(text)));
+            wxTheClipboard->Close();
+        }
+    };
 }
 
 void WXRenderCanvas::render()
@@ -562,8 +649,6 @@ void WXRenderCanvas::render()
     AbstractRenderCanvas::render();
 }
 
-
-
 void WXRenderCanvas::on_paint(wxPaintEvent& event)
 {
     // This is a dummy, to avoid an endless succession of paint messages.
@@ -572,10 +657,9 @@ void WXRenderCanvas::on_paint(wxPaintEvent& event)
     render();
 }
 
-
 void WXRenderCanvas::on_size(wxSizeEvent& event)
 {
-//    render();
+    //    render();
 }
 
 KeyModifiers WXRenderCanvas::modifiers(const wxKeyboardState& event)
@@ -601,12 +685,12 @@ void WXRenderCanvas::on_keyboard(wxKeyEvent& evt)
 
     if (type == wxEVT_CHAR) {
         // Char event
-        const auto   key   = evt.GetUnicodeKey();
+        const auto key = evt.GetUnicodeKey();
 
         // Release BackSpace, Delete, ... when miss wxEVT_KEY_UP event
         // Already Fixed at begining of new frame
         // unsigned int key_u = static_cast<unsigned int>(key);
-        //if (key_u >= 0 && key_u < IM_ARRAYSIZE(io.KeysDown) && io.KeysDown[key_u]) {
+        // if (key_u >= 0 && key_u < IM_ARRAYSIZE(io.KeysDown) && io.KeysDown[key_u]) {
         //    io.KeysDown[key_u] = false;
         //}
 
@@ -616,36 +700,30 @@ void WXRenderCanvas::on_keyboard(wxKeyEvent& evt)
     } else if (type == wxEVT_KEY_DOWN || type == wxEVT_KEY_UP) {
         // Key up/down event
         int key = evt.GetKeyCode();
-        //wxCHECK_MSG(key >= 0 && key < IM_ARRAYSIZE(io.KeysDown), false, "Received invalid key code");
+        // wxCHECK_MSG(key >= 0 && key < IM_ARRAYSIZE(io.KeysDown), false, "Received invalid key code");
 
         ImGuiKey imgui_key = wx_to_imgui_key(key);
         if (imgui_key != ImGuiKey_None)
             io.AddKeyEvent(imgui_key, type == wxEVT_KEY_DOWN);
-        io.AddKeyEvent(ImGuiMod_Ctrl,  evt.ControlDown());
+        io.AddKeyEvent(ImGuiMod_Ctrl, evt.ControlDown());
         io.AddKeyEvent(ImGuiMod_Shift, evt.ShiftDown());
-        io.AddKeyEvent(ImGuiMod_Alt,   evt.AltDown());
+        io.AddKeyEvent(ImGuiMod_Alt, evt.AltDown());
         io.AddKeyEvent(ImGuiMod_Super, evt.MetaDown());
 
-        if (key != WXK_TAB
-            && key != WXK_LEFT
-            && key != WXK_UP
-            && key != WXK_RIGHT
-            && key != WXK_DOWN) {
-            evt.Skip();   // Needed to have EVT_CHAR generated as well
+        if (key != WXK_TAB && key != WXK_LEFT && key != WXK_UP && key != WXK_RIGHT &&
+            key != WXK_DOWN) {
+            evt.Skip(); // Needed to have EVT_CHAR generated as well
         }
 
         KeyCode key_code = get_key_code_from_event(evt);
         if (key_code != KeyCode::None) {
-
             KeyboardEvent::Type event_type = type == wxEVT_KEY_DOWN
                 ? KeyboardEvent::Type::KeyDown
                 : KeyboardEvent::Type::KeyUp;
 
             update_key_modifiers(event_type, key_code);
 
-            KeyboardEvent platform_event{
-                event_type, key_code, modifiers(evt)
-            };
+            KeyboardEvent platform_event{event_type, key_code, modifiers(evt)};
 
             enqueue_keyboard(platform_event);
         }
@@ -658,12 +736,8 @@ void WXRenderCanvas::on_mouse_enter(wxMouseEvent& event)
     int mouse_x = ToDIP(event.GetX());
     int mouse_y = ToDIP(event.GetY());
 
-    MouseEvent platform_event {
-        MouseEvent::Type::Enter,
-        MouseButton::NoButton,
-        mouse_x, mouse_y,
-        0, 0,
-        modifiers(event)
+    MouseEvent platform_event{
+        MouseEvent::Type::Enter, MouseButton::NoButton, mouse_x, mouse_y, 0, 0, modifiers(event)
     };
     enqueue_mouse(platform_event);
 }
@@ -673,16 +747,11 @@ void WXRenderCanvas::on_mouse_leave(wxMouseEvent& event)
     int mouse_x = ToDIP(event.GetX());
     int mouse_y = ToDIP(event.GetY());
 
-    MouseEvent platform_event {
-        MouseEvent::Type::Leave,
-        MouseButton::NoButton,
-        mouse_x, mouse_y,
-        0, 0,
-        modifiers(event)
+    MouseEvent platform_event{
+        MouseEvent::Type::Leave, MouseButton::NoButton, mouse_x, mouse_y, 0, 0, modifiers(event)
     };
     enqueue_mouse(platform_event);
 }
-
 
 void WXRenderCanvas::on_mouse(wxMouseEvent& evt)
 {
@@ -691,10 +760,10 @@ void WXRenderCanvas::on_mouse(wxMouseEvent& evt)
     int mouse_y = ToDIP(evt.GetY());
     m_mouse_x = mouse_x;
     m_mouse_y = mouse_y;
-    //int mouse_x = evt.GetX();
-    //int mouse_y = evt.GetY();
+    // int mouse_x = evt.GetX();
+    // int mouse_y = evt.GetY();
 
-    //SPDLOG_DEBUG("Mouse event {} {}", mouse_x, mouse_y);
+    // SPDLOG_DEBUG("Mouse event {} {}", mouse_x, mouse_y);
 
     io.MousePos = ImVec2((float) mouse_x, (float) mouse_y);
     io.MouseDown[0] = evt.LeftIsDown();
@@ -745,12 +814,8 @@ void WXRenderCanvas::on_mouse(wxMouseEvent& evt)
         break;
     }
 
-    MouseEvent platform_event{
-        platform_event_type, button,
-        mouse_x, mouse_y,
-        wheel_x, wheel_y,
-        modifiers(evt)
-    };
+    MouseEvent platform_event{platform_event_type, button, mouse_x, mouse_y, wheel_x, wheel_y,
+                              modifiers(evt)};
     enqueue_mouse(platform_event);
 
     render();
@@ -760,16 +825,12 @@ void WXRenderCanvas::on_idle(wxIdleEvent& event)
 {
     m_main_thread_dispatcher.dispatch_enqueued();
     bool render_requested = get_and_reset_render_requested();
-    //std::cout << "Idle: render requested: " << render_requested << "\n";
+    // std::cout << "Idle: render requested: " << render_requested << "\n";
     if (render_requested)
         render();
 }
 
-void WXRenderCanvas::on_render_requested()
-{
-    wxWakeUpIdle();
-}
-
+void WXRenderCanvas::on_render_requested() { wxWakeUpIdle(); }
 
 void WXRenderCanvas::begin_frame_platform()
 {
@@ -787,23 +848,19 @@ void WXRenderCanvas::begin_frame_platform()
     size_t display_w = ToPhys(w);
     size_t display_h = ToPhys(h);
 #endif
-    ImGuiIO &io = ImGui::GetIO();
-    io.DisplaySize = ImVec2((float)w, (float)h);
-    //SPDLOG_DEBUG("Setting screen resolution {} {} @ scale {} (phys {} {})", w, h, scale_factor, display_w, display_h);
+    ImGuiIO& io = ImGui::GetIO();
+    io.DisplaySize = ImVec2((float) w, (float) h);
+    // SPDLOG_DEBUG("Setting screen resolution {} {} @ scale {} (phys {} {})", w, h, scale_factor,
+    // display_w, display_h);
     set_screen_size({display_w, display_h, float(scale_factor)});
     io.DisplayFramebufferScale = ImVec2(float(scale_factor), float(scale_factor));
 
     ImGui_ImplWX_UpdateMouseCursor();
 }
 
-void WXRenderCanvas::begin_imgui_frame_platform()
-{
-}
+void WXRenderCanvas::begin_imgui_frame_platform() {}
 
-void WXRenderCanvas::end_imgui_frame_platform()
-{
-
-}
+void WXRenderCanvas::end_imgui_frame_platform() {}
 
 void WXRenderCanvas::end_frame_platform()
 {
@@ -817,11 +874,7 @@ double WXRenderCanvas::platform_time()
     return double(delta.count()) * 0.000001;
 }
 
-Render::Device& WXRenderCanvas::device()
-{
-    return Render::Context::instance().device();
-}
-
+Render::Device& WXRenderCanvas::device() { return Render::Context::instance().device(); }
 
 void WXRenderCanvas::dispatch_on_main_thread(Biz::Platform::IMainThreadDispatcher::Function func)
 {
@@ -829,5 +882,4 @@ void WXRenderCanvas::dispatch_on_main_thread(Biz::Platform::IMainThreadDispatche
     wxApp::GetInstance()->WakeUpIdle();
 }
 
-
-} //namespace Slic3r::App::Platform::WX
+} // namespace Slic3r::App::Platform::WX

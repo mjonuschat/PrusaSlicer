@@ -15,6 +15,11 @@
 namespace Slic3r::App::Preview {
 
 struct ExtrudersSequence;
+} // namespace Slic3r::App::LibvgcodeWrapper
+
+namespace Slic3r::App::Preview {
+
+class SidebarPreviewActionButtons;
 
 class PreviewRenderModule final : public Platform::AbstractRenderModule,
                                   public Biz::ISelectedBedInstanceChangedListener,
@@ -74,24 +79,34 @@ private:
     Biz::ProjectInteractor& m_project_interactor;
     std::unique_ptr<PreviewScenePresenter> m_scene_presenter;
     std::unique_ptr<Scene::GizmoManager> m_gizmo_manager;
+    bool m_use_yoga_layout = true;
 
     FdmViewerWrapper m_fdm_viewer;
     SlaViewerWrapper m_sla_viewer;
 
-    AbstractViewerWrapper* m_viewer;
+    AbstractViewerWrapper* m_viewer = nullptr;
 
     // main window layout
-    PreviewRenderLayout m_layout;
+    std::unique_ptr<PreviewRenderLayout> m_layout;
+    // Layout objects
+    ObjectList* m_object_list = nullptr;
+    CubeView* m_cube_view = nullptr;
+    SidebarBed* m_sidebar_bed = nullptr;
+    SidebarPrint* m_sidebar_print = nullptr;
+    SidebarPreviewActionButtons* m_sidebar_action_buttons = nullptr;
+    GCodeWindow* m_gcode_window = nullptr;
+    Legend* m_legend = nullptr;
+    DoubleSliderForGcode* m_slider_gcode = nullptr;
+    DoubleSliderForLayers* m_slider_layers = nullptr;
+    SidebarAutoReslice* m_sidebar_auto_reslice = nullptr;
     // temporary variable to allow to switch yoga layout on/off
-    bool m_use_yoga_layout{ true };
 
-    SidebarActionButtons m_sidebar_actions_panel;
+    std::unordered_set<IRenderModuleChangedListener*> m_render_module_changed_listeners;
 
 private:
     void init_gizmos();
     void init_viewers(Render::Device& device);
     void update_fdm_viewer_data(const Biz::Slicing::SlicingId id);
-//    void update_sla_viewer_data(const Biz::Slicing::SlicingId id);
     void init_scene_layout();
 
     void on_invalidate_slice();

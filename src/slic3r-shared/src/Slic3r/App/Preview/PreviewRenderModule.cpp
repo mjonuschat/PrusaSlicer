@@ -1,9 +1,7 @@
 #include "Slic3r/App/Preview/PreviewRenderModule.hpp"
+
 #include "Slic3r/App/Preview/PreviewCameraGizmo.hpp"
 #include "Slic3r/App/Preview/SidebarAutoReslice.hpp"
-#include "Slic3r/App/CubeView.hpp"
-#include "Slic3r/App/SidebarBed.hpp"
-#include "Slic3r/App/SidebarPrint.hpp"
 #include "Slic3r/App/Render/Device.hpp"
 #include "Slic3r/App/Render/CommandBuffer.hpp"
 #include "Slic3r/App/Render/ScopedDebugGroup.hpp"
@@ -12,11 +10,20 @@
 #include "Slic3r/App/Preview/Types.hpp"
 #include "Slic3r/App/Render/ImguiRender.hpp"
 #include "Slic3r/App/IRenderModuleChangedListener.hpp"
+#include "Slic3r/App/CubeView.hpp"
+#include "Slic3r/App/ObjectList.hpp"
+#include "Slic3r/App/SidebarBed.hpp"
+#include "Slic3r/App/SidebarPrint.hpp"
+#include "Slic3r/App/Preview/SidebarPreviewActionButtons.hpp"
 
 #include "Slic3r/Domain/TriangleMesh.hpp"
 
 #include <Slic3r/App/libvgcode/FdmViewerInputData.hpp>
 #include <Slic3r/Biz/libpgcode/Processor.hpp>
+#include <Slic3r/App/Preview/Legend.hpp>
+#include <Slic3r/App/Preview/GCodeWindow.hpp>
+#include <Slic3r/App/Preview/DoubleSliderForGCode.hpp>
+#include <Slic3r/App/Preview/DoubleSliderForLayers.hpp>
 
 #include <LibBGCode/core/core.hpp>
 #include <LibBGCode/convert/convert.hpp>
@@ -189,23 +196,18 @@ static void render_imgui_debug_viewer_mode(Wrapper& viewer)
 
 void PreviewRenderModule::render_imgui(Render::CommandBuffer& cmd_buffer)
 {
-    // ! This function will be processed just once, 
-    // but imgui_frame needs to be began before the toolbars initialization.
-    // So, call it here.
-    init_scene_layout();
-
     // temporary to allow to switch yoga layout on/off
     if (m_use_yoga_layout) {
         bool gcode_window_enabled = m_fdm_viewer.mode() != FdmViewerWrapperMode::EditorPreGCode && m_fdm_viewer.has_data() &&
             m_fdm_viewer.is_gcodewindow_visible();
 
-        if (m_layout.is_inited()) {
-            m_layout.show_left(1, m_viewer->has_data() && m_viewer->is_legend_shown());
-            m_layout.show_left(2, gcode_window_enabled);
-            m_layout.show_slider_sizer(m_viewer->has_data());
-            m_layout.show_gcode_sizer(gcode_window_enabled);
+        if (m_layout) {
+            //m_layout->show_left(1, m_viewer->has_data() && m_viewer.is_legend_shown());
+            m_gcode_window->set_visible(gcode_window_enabled);
+            m_slider_layers->set_visible(m_viewer->has_data());
+            m_slider_gcode->set_visible(m_viewer->has_data());
         }
-        m_layout.render({ m_screen_info.logical_width(), m_screen_info.logical_height() });
+        m_layout->render({ m_screen_info.logical_width(), m_screen_info.logical_height() });
         m_fdm_viewer.set_tool_marker_enabled(gcode_window_enabled);
     }
     else {
@@ -226,7 +228,7 @@ void PreviewRenderModule::render_imgui(Render::CommandBuffer& cmd_buffer)
     render_imgui_debug_load_data(m_fdm_viewer, m_project_interactor, [this](const std::string& filename) {
         m_fdm_viewer.reset();
         send_data_to_viewer_from_file(Slic3r::resources_dir() + "/test_data/" + filename);
-        m_layout.layout_toolbars_sizer();
+        m_layout->layout_toolbars_sizer();
     });
 #endif // ENABLED_DEBUG_LOAD_DATA
 #if ENABLED_DEBUG_VIEWER_MODE
@@ -247,17 +249,17 @@ void PreviewRenderModule::on_scene_keyboard_event(const Platform::KeyboardEvent&
 
 void PreviewRenderModule::add_type_changed_listener(IRenderModuleChangedListener* l)
 {
-    m_sidebar_actions_panel.add_listener<IRenderModuleChangedListener>(l);
+    m_render_module_changed_listeners.insert(l);
 }
 
 void PreviewRenderModule::remove_type_changed_listener(IRenderModuleChangedListener* l)
 {
-    m_sidebar_actions_panel.remove_listener<IRenderModuleChangedListener>(l);
+    m_render_module_changed_listeners.erase(l);
 }
 
 void PreviewRenderModule::on_selected_bed_instance_changed(
-    Domain::SelectionId project_id, 
-    Domain::SelectionId container_id, 
+    Domain::SelectionId project_id,
+    Domain::SelectionId container_id,
     Domain::SelectionId bed_instance_id)
 {
     DEBUG_ASSERT(m_project_interactor.selected_project_id() == project_id);
@@ -286,6 +288,7 @@ void PreviewRenderModule::on_init(Render::Device& device, Render::ImguiRender& i
 {
 
     AbstractRenderModule::on_init(device, imgui_render);
+    Yoga::Item::set_imgui_render(&imgui_render); // Todo: move this somewhere where it is invoked once
     m_scene_presenter =
         std::make_unique<PreviewScenePresenter>(m_workbench, m_project_interactor, *m_device);
 
@@ -294,6 +297,7 @@ void PreviewRenderModule::on_init(Render::Device& device, Render::ImguiRender& i
 
     init_gizmos();
     init_viewers(device);
+    init_scene_layout();
 
     // select active viewer with respect to the printer technology of selected config container
     Domain::SelectionId config_container_id = m_project_interactor.scene_interactor().selected_config_container_id();
@@ -436,7 +440,7 @@ void PreviewRenderModule::register_commands()
                 "slider-layers-decrease-medium",
                 [this]() { m_fdm_viewer.slider_layers_move_current_thumb(-5); },
                 nullptr,
-                Platform::KeyboardShortcut{ 
+                Platform::KeyboardShortcut{
                     Platform::KeyModifiers(Platform::KeyModifier::Shift), Platform::KeyCode::Down
                 }
             )
@@ -587,6 +591,11 @@ void PreviewRenderModule::init_viewers(Render::Device& device)
     if (m_fdm_viewer.init(device, m_scene_presenter->scene(), m_gizmo_manager->data_factory()) && m_fdm_viewer.set_settings(settings)) {
         m_fdm_viewer.set_lights(m_fdm_viewer.default_lights());
         m_fdm_viewer.set_gcodewindow_visible(false);
+
+        m_legend = m_fdm_viewer.legend();
+        m_gcode_window = m_fdm_viewer.gcode_window();
+        m_slider_gcode = m_fdm_viewer.double_slider_gcode();
+        m_slider_layers = m_fdm_viewer.double_slider_layers();
     }
     else {
         // log some error message
@@ -595,50 +604,34 @@ void PreviewRenderModule::init_viewers(Render::Device& device)
 
 void PreviewRenderModule::init_scene_layout()
 {
-    if (m_layout.is_inited()) {
-        // this function needs to be processed just once before first rendering
-        return;
+// >> This code is same for Plater/PreviewRenderModule
+    m_object_list = new ObjectList;
+    m_object_list->init(&m_project_interactor, m_scene_presenter->project_context().object_list_state());
+
+    m_cube_view = new CubeView;
+    m_sidebar_bed = new SidebarBed;
+    m_sidebar_print = new SidebarPrint;
+    m_sidebar_auto_reslice = new SidebarAutoReslice;
+
+    m_sidebar_action_buttons = new SidebarPreviewActionButtons;
+    m_sidebar_action_buttons->on_init(&m_project_interactor);
+    for (IRenderModuleChangedListener* listener : std::as_const(m_render_module_changed_listeners)) {
+        m_sidebar_action_buttons->add_listener<IRenderModuleChangedListener>(listener);
     }
 
-// >> This code is same for Plater/PreviewRenderModule
-    ObjectList* ol = m_scene_presenter->project_context().object_list();
-    DEBUG_ASSERT(m_imgui_render != nullptr);
-    ol->init(&m_project_interactor, m_imgui_render);
+    m_layout.reset(new PreviewRenderLayout(m_object_list,
+                                           m_cube_view,
+                                           m_sidebar_bed,
+                                           m_sidebar_print,
+                                           m_sidebar_action_buttons,
+                                           m_gcode_window,
+                                           m_legend,
+                                           m_slider_layers,
+                                           m_slider_gcode,
+                                           m_sidebar_auto_reslice));
+    m_layout->init();
 
-    m_layout.set_object_list_render_fn([ol](Vec2f size, Vec2f pos) -> void
-        { ol->render(pos, size); });
-
-    m_layout.set_cube_view_render_fn([](Vec2f size, Vec2f pos) -> void
-        { CubeView::render(pos, size); });
-
-    m_layout.set_sidebar_bed_render_fn([](Vec2f size, Vec2f pos) -> void
-        { SidebarBed::render(pos, size); });
-
-    m_layout.set_sidebar_print_render_fn([](Vec2f size, Vec2f pos) -> void
-        { SidebarPrint::render(pos, size); });
-// <<  
-    m_layout.set_sidebar_auto_reslice_render_fn([](Vec2f size, Vec2f pos) -> void
-        { Preview::SidebarAutoReslice::render(pos, size); });
-
-    m_sidebar_actions_panel.on_init(&m_project_interactor, m_imgui_render, Render::ModuleType::Preview);
-    m_layout.set_sidebar_after_slice_render_fn([this](Vec2f size, Vec2f pos) -> void
-        { m_sidebar_actions_panel.render(pos, size); });
-
-    m_layout.set_legend_render_fn([this](Vec2f size, Vec2f pos) {
-        ImGui::PushFont(m_imgui_render->font(Render::ImguiFontType::Bold));
-        ImGui::Text("%s", _u8L("Legend").c_str());
-        ImGui::PopFont();
-        m_viewer->render_legend(m_imgui_render);
-    });
-
-    m_layout.set_gcode_render_fn([this](Vec2f size, Vec2f pos) {
-        ImGui::PushFont(m_imgui_render->font(Render::ImguiFontType::Bold));
-        ImGui::Text("%s", _u8L("G-code viewer").c_str());
-        ImGui::PopFont();
-        m_fdm_viewer.render_gcode_window();
-    });
-
-    m_layout.add_toolbar_item(ToolbarID::Middle, ImGui::LegendTravel, to_string(OptionType::Travels), "", {
+    m_layout->add_toolbar_item(ToolbarID::Middle, ImGui::LegendTravel, to_string(OptionType::Travels), "", {
         .action     = [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::Travels); },
         .visibility = [this]() {
             const OptionTypes& options = m_fdm_viewer.options();
@@ -648,7 +641,7 @@ void PreviewRenderModule::init_scene_layout()
         .toggled    = [this]() { return m_fdm_viewer.is_option_visible(OptionType::Travels); }
     });
 
-    m_layout.add_toolbar_item(ToolbarID::Middle, ImGui::LegendWipe, to_string(OptionType::Wipes), "", {
+    m_layout->add_toolbar_item(ToolbarID::Middle, ImGui::LegendWipe, to_string(OptionType::Wipes), "", {
         .action     = [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::Wipes); },
         .visibility = [this]() {
             const OptionTypes& options = m_fdm_viewer.options();
@@ -658,7 +651,7 @@ void PreviewRenderModule::init_scene_layout()
         .toggled    = [this]() { return m_fdm_viewer.is_option_visible(OptionType::Wipes); }
     });
 
-    m_layout.add_toolbar_item(ToolbarID::Middle, ImGui::LegendRetract, to_string(OptionType::Retractions), "", {
+    m_layout->add_toolbar_item(ToolbarID::Middle, ImGui::LegendRetract, to_string(OptionType::Retractions), "", {
         .action     = [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::Retractions); },
         .visibility = [this]() {
             const OptionTypes& options = m_fdm_viewer.options();
@@ -668,7 +661,7 @@ void PreviewRenderModule::init_scene_layout()
         .toggled    = [this]() { return m_fdm_viewer.is_option_visible(OptionType::Retractions); }
     });
 
-    m_layout.add_toolbar_item(ToolbarID::Middle, ImGui::LegendDeretract, to_string(OptionType::Unretractions), "", {
+    m_layout->add_toolbar_item(ToolbarID::Middle, ImGui::LegendDeretract, to_string(OptionType::Unretractions), "", {
         .action     = [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::Unretractions); },
         .visibility = [this]() {
             const OptionTypes& options = m_fdm_viewer.options();
@@ -678,7 +671,7 @@ void PreviewRenderModule::init_scene_layout()
         .toggled    = [this]() { return m_fdm_viewer.is_option_visible(OptionType::Unretractions); }
     });
 
-    m_layout.add_toolbar_item(ToolbarID::Middle, ImGui::LegendSeams, to_string(OptionType::Seams), "", {
+    m_layout->add_toolbar_item(ToolbarID::Middle, ImGui::LegendSeams, to_string(OptionType::Seams), "", {
         .action     = [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::Seams); },
         .visibility = [this]() {
             const OptionTypes& options = m_fdm_viewer.options();
@@ -688,7 +681,7 @@ void PreviewRenderModule::init_scene_layout()
         .toggled    = [this]() { return m_fdm_viewer.is_option_visible(OptionType::Seams); }
     });
 
-    m_layout.add_toolbar_item(ToolbarID::Middle, ImGui::LegendToolChanges, to_string(OptionType::ToolChanges), "", {
+    m_layout->add_toolbar_item(ToolbarID::Middle, ImGui::LegendToolChanges, to_string(OptionType::ToolChanges), "", {
         .action     = [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::ToolChanges); },
         .visibility = [this]() {
             const OptionTypes& options = m_fdm_viewer.options();
@@ -698,7 +691,7 @@ void PreviewRenderModule::init_scene_layout()
         .toggled    = [this]() { return m_fdm_viewer.is_option_visible(OptionType::ToolChanges); }
     });
 
-    m_layout.add_toolbar_item(ToolbarID::Middle, ImGui::LegendColorChanges, to_string(OptionType::ColorChanges), "", {
+    m_layout->add_toolbar_item(ToolbarID::Middle, ImGui::LegendColorChanges, to_string(OptionType::ColorChanges), "", {
         .action     = [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::ColorChanges); },
         .visibility = [this]() {
             const OptionTypes& options = m_fdm_viewer.options();
@@ -708,7 +701,7 @@ void PreviewRenderModule::init_scene_layout()
         .toggled    = [this]() { return m_fdm_viewer.is_option_visible(OptionType::ColorChanges); }
     });
 
-    m_layout.add_toolbar_item(ToolbarID::Middle, ImGui::LegendPausePrints, to_string(OptionType::PausePrints), "", {
+    m_layout->add_toolbar_item(ToolbarID::Middle, ImGui::LegendPausePrints, to_string(OptionType::PausePrints), "", {
         .action     = [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::PausePrints); },
         .visibility = [this]() {
             const OptionTypes& options = m_fdm_viewer.options();
@@ -718,7 +711,7 @@ void PreviewRenderModule::init_scene_layout()
         .toggled    = [this]() { return m_fdm_viewer.is_option_visible(OptionType::PausePrints); }
     });
 
-    m_layout.add_toolbar_item(ToolbarID::Middle, ImGui::LegendCustomGCodes, to_string(OptionType::CustomGCodes), "", {
+    m_layout->add_toolbar_item(ToolbarID::Middle, ImGui::LegendCustomGCodes, to_string(OptionType::CustomGCodes), "", {
         .action     = [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::CustomGCodes); },
         .visibility = [this]() {
             const OptionTypes& options = m_fdm_viewer.options();
@@ -728,61 +721,59 @@ void PreviewRenderModule::init_scene_layout()
         .toggled    = [this]() { return m_fdm_viewer.is_option_visible(OptionType::CustomGCodes); }
     });
 
-    m_layout.add_toolbar_item(ToolbarID::Middle, ImGui::LegendCOG, to_string(OptionType::CenterOfGravity), "", {
+    m_layout->add_toolbar_item(ToolbarID::Middle, ImGui::LegendCOG, to_string(OptionType::CenterOfGravity), "", {
         .action     = [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::CenterOfGravity); },
         .visibility = [this]() { return m_fdm_viewer.has_data(); },
         .toggled    = [this]() { return m_fdm_viewer.is_option_visible(OptionType::CenterOfGravity); }
     });
 
-    m_layout.add_toolbar_item(ToolbarID::Middle, ImGui::LegendToolMarker, to_string(OptionType::ToolMarker), "", {
+    m_layout->add_toolbar_item(ToolbarID::Middle, ImGui::LegendToolMarker, to_string(OptionType::ToolMarker), "", {
         .action     = [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::ToolMarker); },
         .visibility = [this]() { return m_fdm_viewer.has_data(); },
         .toggled    = [this]() { return m_fdm_viewer.is_option_visible(OptionType::ToolMarker); }
     });
 
-    m_layout.add_toolbar_item(ToolbarID::Middle, ImGui::LegendShells, "Shells", "", {
+    m_layout->add_toolbar_item(ToolbarID::Middle, ImGui::LegendShells, "Shells", "", {
         .action     = [this]() { /* TODO */ },
         .visibility = [this]() { return m_viewer == &m_fdm_viewer && m_fdm_viewer.mode() != FdmViewerWrapperMode::GCodeViewer; },
         .enabled    = [this]() { return m_viewer == &m_fdm_viewer && m_fdm_viewer.mode() != FdmViewerWrapperMode::GCodeViewer; }
     });
 
-    m_layout.set_layer_slider_render_fn([this](Vec2f size, Vec2f pos) {
-        ImGui::PushFont(m_imgui_render->font(Render::ImguiFontType::Bold));
-        const std::string label = _u8L("Layers");
-        float offset = size.x() - ImGui::CalcTextSize(label.c_str()).x;
-        if (offset > 0.0f) {
-            ImGui::Dummy({ 0.5f * offset, ImGui::GetTextLineHeight() });
-            ImGui::SameLine(0.0f, 0.0f);
-        }
-        ImGui::Text("%s", label.c_str());
-        ImGui::PopFont();
-        m_viewer->render_layers_slider();
-    });
+    // m_layout->set_layer_slider_render_fn([this](Vec2f size, Vec2f pos) {
+    //     ImGui::PushFont(m_imgui_render->font(Render::ImguiFontType::Bold));
+    //     const std::string label = _u8L("Layers");
+    //     float offset = size.x() - ImGui::CalcTextSize(label.c_str()).x;
+    //     if (offset > 0.0f) {
+    //         ImGui::Dummy({ 0.5f * offset, ImGui::GetTextLineHeight() });
+    //         ImGui::SameLine(0.0f, 0.0f);
+    //     }
+    //     ImGui::Text("%s", label.c_str());
+    //     ImGui::PopFont();
+    //     m_viewer.render_layers_slider();
+    // });
 
-    m_layout.set_gcode_slider_render_fn([this](Vec2f size, Vec2f pos) {
-        ImGui::PushFont(m_imgui_render->font(Render::ImguiFontType::Bold));
-        ImGui::BeginGroup();
-        const std::string label = _u8L("Steps");
-        float offset = size.y() - ImGui::GetTextLineHeight();
-        if (offset > 0.0f)
-            ImGui::Dummy({ ImGui::CalcTextSize(label.c_str()).x, 0.5f * offset });
-        ImGui::Text("%s", label.c_str());
-        ImGui::PopFont();
-        ImGui::EndGroup();
-        ImGui::SameLine();
-        m_fdm_viewer.render_gcode_slider();
-    });
+    // m_layout->set_gcode_slider_render_fn([this](Vec2f size, Vec2f pos) {
+    //     ImGui::PushFont(m_imgui_render->font(Render::ImguiFontType::Bold));
+    //     ImGui::BeginGroup();
+    //     const std::string label = _u8L("Steps");
+    //     float offset = size.y() - ImGui::GetTextLineHeight();
+    //     if (offset > 0.0f)
+    //         ImGui::Dummy({ ImGui::CalcTextSize(label.c_str()).x, 0.5f * offset });
+    //     ImGui::Text("%s", label.c_str());
+    //     ImGui::PopFont();
+    //     ImGui::EndGroup();
+    //     ImGui::SameLine();
+    //     m_viewer.render_gcode_slider();
+    // });
 
     // init toolbars
 
-    static bool show_object_list    { true };
-
-    m_layout.add_toolbar_item(ToolbarID::Top, ImGui::ToolbarObjects, "Object List", "Ctrl + Alt + O", { 
-        .action  = [this]() { m_layout.show_left(0, show_object_list = !show_object_list); },
-        .toggled = []() { return show_object_list; }
+    m_layout->add_toolbar_item(ToolbarID::Top, ImGui::ToolbarObjects, "Object List", "Ctrl + Alt + O", {
+        .action  = [this]() { m_object_list->set_visible(!m_object_list->is_visible()); },
+        .toggled = [this]() { return m_object_list->is_visible(); }
     });
 
-    m_layout.add_toolbar_item(ToolbarID::Bottom, ImGui::ToolbarGraph, "Legend", "", {
+    m_layout->add_toolbar_item(ToolbarID::Bottom, ImGui::ToolbarGraph, "Legend", "", {
         .action = [this]() { m_viewer->toggle_legend_visible(); },
         .visibility = [this]() {
             bool is_visible = m_viewer->has_data();
@@ -793,12 +784,12 @@ void PreviewRenderModule::init_scene_layout()
         .toggled    = [this]() { return m_viewer->has_data() && m_viewer->is_legend_shown(); }
     });
 
-    m_layout.add_toolbar_item(ToolbarID::Bottom, ImGui::ToolbarGCode, "G-code", "", {
+    m_layout->add_toolbar_item(ToolbarID::Bottom, ImGui::ToolbarGCode, "G-code", "", {
         .action     = [this]() { m_fdm_viewer.toggle_gcodewindow_visible(); },
         .visibility = [this]() { return m_fdm_viewer.mode() != FdmViewerWrapperMode::EditorPreGCode && m_fdm_viewer.has_data(); },
         .toggled    = [this]() { return m_fdm_viewer.has_data() && !m_fdm_viewer.is_gcodewindow_visible(); }
     });
-    // << 
+    // <<
 }
 
 //
@@ -1036,7 +1027,7 @@ bool PreviewRenderModule::on_slider_layers_auto_color_change()
     // See:
     // master:                TickCodeManager::auto_color_change()
     // lm_processor_squashed: Preview::layers_slider_auto_color_changed_callback()
-    return true; 
+    return true;
 }
 
 void PreviewRenderModule::on_slider_layers_notify_empty_auto_color_change()

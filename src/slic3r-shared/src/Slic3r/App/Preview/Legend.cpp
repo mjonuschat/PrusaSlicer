@@ -1828,7 +1828,7 @@ static void draw_color_print_items_detail(Render::ImguiRender& imgui_render, con
                     else if (counter == extr_color_prints.size() - 1) {
                         if (extruders_count == 1) {
                             std::string txt = convert_and_format_units(viewer.layer_z(std::prev(it)->layer_id - 1),
-                                UnitsType::Millimeters, 
+                                UnitsType::Millimeters,
                                 (wrapper.units() == UnitsSystem::SI) ? UnitsType::Millimeters : UnitsType::Inches,
                                 2);
                             ImGui::Text("%s %s", _u8L("up to").c_str(), txt.c_str());
@@ -2087,5 +2087,47 @@ void legend_detail(Render::ImguiRender& imgui_render, libvgcode::FdmViewer& view
 {
     draw_items_detail(imgui_render, viewer, wrapper, cbs);
 }
+
+Legend::Legend(libvgcode::FdmViewer *viewer, FdmViewerWrapper *wrapper, Item *parent) :
+    Window("legend", parent), m_viewer(viewer), m_wrapper(wrapper)
+{}
+
+LegendCallbacks& Legend::callbacks()
+{
+    return m_callback;
+}
+
+void Legend::render_body(Yoga::Vec2f pos, Yoga::Vec2f size)
+{
+    static std::string msg = _u8L("No data available");
+
+    if (m_wrapper->mode() == FdmViewerWrapperMode::EditorPreGCode ||
+        !m_wrapper->has_data()) {
+        ImVec2 msg_size = ImGui::CalcTextSize(msg.c_str());
+        ImVec2 available_size = ImGui::GetContentRegionAvail();
+        if (msg_size.x < available_size.x && msg_size.y < available_size.y) {
+            ImVec2 pos = ImGui::GetCurrentWindow()->DC.CursorPos + (available_size - msg_size) * 0.5f;
+            ImGui::RenderText(pos, msg.c_str());
+        }
+    } else {
+        static bool detail = false;
+        ImGui::GetCurrentWindow()->DC.CursorPos.y += ImGui::GetTextLineHeight();
+        if (detail)
+            legend_detail(*m_imgui_render, *m_viewer, *m_wrapper, m_callback);
+        else
+            legend_coarse(*m_viewer, *m_wrapper);
+        ImVec2 available_size = ImGui::GetContentRegionAvail();
+        legend_view_type_selector(*m_viewer, *m_wrapper, m_callback.cb_view_type_changed, 0.666f * available_size.x);
+        ImGui::SameLine();
+        Imgui::toggle_button(_u8L("Detail view"), &detail, true);
+    }
+
+    // if (m_radius_popup_type != MoveType::COUNT)
+    //     render_customize_radius_popup();
+}
+
+bool Legend::settings_visible() const { return m_settings_visible; }
+
+void Legend::set_settings_visible(bool settings_visible) { m_settings_visible = settings_visible; }
 
 } // namespace Slic3r::App::Preview

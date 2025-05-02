@@ -104,6 +104,10 @@ Render::ImguiRender& AbstractRenderCanvas::imgui_render()
     return *m_imgui_render;
 }
 
+AbstractRenderCanvas::AbstractRenderCanvas()
+    : m_main_thread_dispatcher{Biz::Platform::PlatformServices::instance().main_thread_dispatcher()}
+{}
+
 void AbstractRenderCanvas::set_font_size(float font_size)
 {
     // Magic number 1.777777=16/9, where 

@@ -68,27 +68,26 @@ public:
     virtual bool has_data() const;
     virtual void reset() = 0;
 
-    virtual void render_legend(Render::ImguiRender* imgui_render) = 0;
     bool is_legend_shown() const { return m_legend_params.is_shown(); }
 
     void set_legend_visible(bool visible) { m_legend_params.visible = visible; }
     void toggle_legend_visible() { set_legend_visible(!m_legend_params.visible); }
     bool is_legend_visible() const { return m_legend_params.visible; }
 
-    void render_layers_slider();
-
     const libvgcode::Lights& lights() const;
     void set_lights(const libvgcode::Lights& lights);
     const libvgcode::Lights& default_lights() const;
 
-protected:
-
-    void slider_layers_move_current_thumb(int delta) { m_slider_layers.move_current_thumb(delta); }
-    void slider_layers_jump_to_value() { m_slider_layers.jump_to_value(); }
+    DoubleSliderForLayers* double_slider_layers() const;
 
 protected:
 
-    DoubleSliderForLayers   m_slider_layers;
+    void slider_layers_move_current_thumb(int delta) { m_slider_layers->move_current_thumb(delta); }
+    void slider_layers_jump_to_value() { m_slider_layers->jump_to_value(); }
+
+protected:
+
+    DoubleSliderForLayers*   m_slider_layers = nullptr;
     LegendParams            m_legend_params;
 };
 

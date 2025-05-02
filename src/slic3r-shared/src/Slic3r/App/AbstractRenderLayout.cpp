@@ -1,201 +1,159 @@
 #include "Slic3r/App/AbstractRenderLayout.hpp"
-#include "Slic3r/Log.hpp"
 
 #include <Yoga.h>
 #include <imgui_internal.h>
+
+#include "Slic3r/App/CubeView.hpp"
+#include "Slic3r/App/ObjectList.hpp"
+#include "Slic3r/App/SidebarBed.hpp"
+#include "Slic3r/App/SidebarPrint.hpp"
+#include "Slic3r/App/Yoga/Toolbar.hpp"
+#include "Slic3r/App/Yoga/IconButton.hpp"
+#include "Slic3r/Assert.hpp"
+#include "Slic3r/Log.hpp"
 
 namespace Slic3r::App {
 
 using Vec2f = Yoga::Vec2f;
 
-Vec2f AbstractRenderLayout::win_padding()
+Vec2f AbstractRenderLayout::win_padding() const
 {
     return Vec2f(GImGui->Style.WindowPadding.x, GImGui->Style.WindowPadding.y);
 }
 
-Vec2f AbstractRenderLayout::frame_padding()
+Vec2f AbstractRenderLayout::frame_padding() const
 {
     return Vec2f(GImGui->Style.FramePadding.x, GImGui->Style.FramePadding.y);
 }
 
-void AbstractRenderLayout::init_main_sizer()
+void AbstractRenderLayout::add_toolbar_item(
+    ToolbarID id,
+    wchar_t icon,
+    const std::string& tooltip,
+    const std::string& shortcut,
+    Yoga::AbstractButton::Callbacks callbacks
+)
 {
-#if MAIN_WITH_SPLITTERS
-    m_main_sizer.init(3);
-    m_main_sizer.set_splitter_padding(0.f);
-    m_main_sizer.set_splitter_sz(2.f);
-    m_main_sizer.show_splitter(false);
-#else
-    m_main_sizer.init(3, 1, Vec2f(0.f, 0.f), Yoga::Margins(win_padding() * 0.5f));
-#endif
-    m_main_sizer.set_grow_col(1);
-
-    init_view_cube_sizer();
-    init_left_sizer();
-    init_middle_sizer();
-    init_right_sizer();
-
-    m_main_sizer.add(left_sizer);
-    m_main_sizer.add(middle_sizer);
-    m_main_sizer.add(right_sizer);
-}
-
-void AbstractRenderLayout::add_panel(Yoga::FlexSizer& sizer, std::function<void(Vec2f, Vec2f)> render_item_fn, std::string win_name, Vec2f win_paddings /*= { -1.f, -1.f }*/)
-{
-    if (win_paddings.x() < 0.f || win_paddings.y() < 0.f)
-        win_paddings = frame_padding() * 4.f;
-
-    sizer.add(render_item_fn, false, { win_name, win_paddings });
-}
-
-const static float min_tt_size = 50.f;//**/ 30.f;
-const static float max_tt_size = 50.f;
-
-void AbstractRenderLayout::init_view_cube_sizer()
-{
-    view_cube_sizer_in.init(1, 1);
-    view_cube_sizer_in.set_bg_alpha(0.f);
-    view_cube_sizer_in.add(m_cb_cube_view_render, true, { "view_cube" });
-
-    view_cube_sizer.init(1, 1);
-    view_cube_sizer.set_grow_col(0);
-    view_cube_sizer.set_grow_row(0, 0.f);
-    view_cube_sizer.add(view_cube_sizer_in, {}, { Yoga::AlignH::Right, Yoga::AlignV::Top });
-}
-
-//#define SHOW_BG
-void AbstractRenderLayout::init_toolbars_sizer()
-{
-    // Just "sceleton" for the toolbars is created here
-    // All render functions are empty, because of no one item is added to the toolbar jet
-    // So, as a workaround, lets render button with max_tt_size and with 0 alpha
-    ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0);
-    ImGui::Button("win##workaround", ImVec2(min_tt_size, min_tt_size));
-    ImGui::PopStyleVar();
-
-    top_toolbar.init("top_toolbar", min_tt_size, max_tt_size, { Yoga::AlignH::Left, Yoga::AlignV::Top });
-
-    middle_toolbar.init("middle_toolbar", min_tt_size, max_tt_size, { Yoga::AlignH::Left, Yoga::AlignV::Center });
-    middle_toolbar.set_collapsible();
-    middle_toolbar.set_cb_on_visible_items_changed([this]() { layout_toolbars_sizer(); });
-
-    bottom_toolbar.init("bottom_toolbar", min_tt_size, max_tt_size, { Yoga::AlignH::Left, Yoga::AlignV::Bottom });
-
-    m_toolbars_sizer.init(1, 3);
-    m_toolbars_sizer.set_grow_col(0);
-
-#ifdef SHOW_BG
-    m_toolbars_sizer.set_bg_alpha(0.2f);
-
-    m_toolbars_sizer.add([this](Vec2f size, Vec2f pos) {
-        top_toolbar.render(size, pos);
-    }, true, {"top_toolbar"});
-    m_toolbars_sizer.add([this](Vec2f size, Vec2f pos) {
-        middle_toolbar.render(size, pos);
-    }, true, {"middle_toolbar"});
-    m_toolbars_sizer.add([this](Vec2f size, Vec2f pos) {
-        bottom_toolbar.render(size, pos);
-    }, true, {"bottom_toolbar"});
-#else
-    m_toolbars_sizer.add([this](Vec2f size, Vec2f pos) {
-        top_toolbar.render(size, pos);
-    }, true);
-    m_toolbars_sizer.add([this](Vec2f size, Vec2f pos) {
-        middle_toolbar.render(size, pos);
-    }, true);
-    m_toolbars_sizer.add([this](Vec2f size, Vec2f pos) {
-        bottom_toolbar.render(size, pos);
-    }, true);
-#endif
-}
-
-void AbstractRenderLayout::layout_toolbars_sizer()
-{
-    float tt_cnt = top_toolbar.get_flex_ration()    ;
-    float mt_cnt = middle_toolbar.get_flex_ration() ;
-    float bt_cnt = bottom_toolbar.get_flex_ration() ;
-
-    m_toolbars_sizer.set_grow_row(0, std::max(0.f, tt_cnt-1.f));
-    m_toolbars_sizer.set_grow_row(1, std::max(3.f, mt_cnt-1.f));
-    m_toolbars_sizer.set_grow_row(2, std::max(0.f, bt_cnt-1.f));
-
-    m_toolbars_sizer.show_row(0, tt_cnt > 0.f);
-    m_toolbars_sizer.show_row(1, mt_cnt > 0.f);
-    m_toolbars_sizer.show_row(2, bt_cnt > 0.f);
-
-//    SPDLOG_INFO("!!! layout_toolbars_sizer as {}:{}:{}\n", tt_cnt, mt_cnt, bt_cnt);
-    m_toolbars_sizer.layout();
-}
-
-void AbstractRenderLayout::add_middle_flex_sizer()
-{
-    middle_sizer.add(view_cube_sizer);
-}
-
-void AbstractRenderLayout::init_middle_sizer()
-{
-    if (!m_toolbars_sizer.is_inited())
-        init_toolbars_sizer();
-
-    middle_sizer.init(2, 1, Vec2f(0.f, 0.f), Yoga::Margins(win_padding() * 0.5f));
-    middle_sizer.set_grow_col(1);
-    middle_sizer.add(m_toolbars_sizer);
-    add_middle_flex_sizer();
-}
-
-void AbstractRenderLayout::add_toolbar_item(ToolbarID id, wchar_t icon, const std::string& tooltip, const std::string& shortcut, Yoga::Toolbar::Callbacks callbacks)
-{
-    if (!m_toolbars_sizer.is_inited())
-        init_toolbars_sizer();
-
-    FlexToolbar& toolbar = id == ToolbarID::Top     ? top_toolbar :
-                           id == ToolbarID::Middle  ? middle_toolbar : bottom_toolbar;
-
-    toolbar.add(icon, tooltip, shortcut, callbacks);
-    layout_toolbars_sizer();
-}
-
-void AbstractRenderLayout::add_toolbar_separator(ToolbarID id, float size)
-{
-    assert(m_toolbars_sizer.is_inited());
-
-    FlexToolbar& toolbar = id == ToolbarID::Top     ? top_toolbar :
-                           id == ToolbarID::Middle  ? middle_toolbar : bottom_toolbar;
-
-    toolbar.add_separator(size < 0.f ? win_padding().y() : size);
-    layout_toolbars_sizer();
-}
-
-void AbstractRenderLayout::show_left(int panel_id, bool show)
-{
-    left_sizer.show_row(panel_id, show);
-
-    bool is_any_visible{ false };
-    for (size_t id = 0; id < left_sizer.get_rows(); id++) {
-        if (left_sizer.is_shown_row(id)) {
-            is_any_visible = true;
-            break;
-        }
+    Yoga::Toolbar* toolbar = nullptr;
+    switch (id) {
+    case ToolbarID::Top:
+        toolbar = m_top_toolbar;
+        break;
+    case ToolbarID::Middle:
+        toolbar = m_middle_toolbar;
+        break;
+    case ToolbarID::Bottom:
+        toolbar = m_bottom_toolbar;
+        break;
     }
 
-    if (m_main_sizer.is_shown_col(0) != is_any_visible)
-        m_main_sizer.show_col(0, is_any_visible);
+    ASSERT(toolbar);
+
+    Yoga::IconButton* button = new Yoga::IconButton(icon, tooltip);
+    button->callbacks() = callbacks;
+    toolbar->append(button);
 }
 
-void AbstractRenderLayout::show_right(int panel_id, bool show)
+Yoga::Toolbar* AbstractRenderLayout::bottom_toolbar() const { return m_bottom_toolbar; }
+
+Yoga::Toolbar* AbstractRenderLayout::middle_toolbar() const { return m_middle_toolbar; }
+
+Yoga::Toolbar* AbstractRenderLayout::top_toolbar() const { return m_top_toolbar; }
+
+void AbstractRenderLayout::init()
 {
-    right_sizer.show_row(panel_id, show);
+    m_layout_main.set_gap(5);
+    m_layout_main.set_orientation(Yoga::Orientation::Horizontal);
+    m_layout_main.set_padding(Yoga::Paddings(frame_padding()));
+    m_layout_main.set_flex_grow(1.0);
 
-    bool is_any_visible{ false };
-    for (size_t id = 0; id < right_sizer.get_rows(); id++) {
-        if (right_sizer.is_shown_row(id)) {
-            is_any_visible = true;
-            break;
-        }
-    }
+    init_left_column();
 
-    if (m_main_sizer.is_shown_col(2) != is_any_visible)
-        m_main_sizer.show_col(2, is_any_visible);
+    init_middle_column();
+
+    init_right_column();
+}
+
+void AbstractRenderLayout::init_left_column()
+{
+    m_layout_left_column = new Yoga::Item;
+    m_layout_left_column->set_orientation(Yoga::Orientation::Vertical);
+    m_layout_left_column->set_gap(5);
+    m_layout_main.append(m_layout_left_column);
+
+    m_object_list->set_flex_grow(1.);
+    m_layout_left_column->append(m_object_list);
+}
+
+void AbstractRenderLayout::init_middle_column()
+{
+    m_layout_center_row = new Yoga::Item;
+    m_layout_center_row->set_orientation(Yoga::Orientation::Horizontal);
+    m_layout_center_row->set_gap(5);
+    m_layout_center_row->set_flex_grow(1.);
+
+    m_layout_main.append(m_layout_center_row);
+
+    init_toolbar_column();
+
+    m_layout_middle_column = new Yoga::Item;
+    m_layout_middle_column->set_orientation(Yoga::Orientation::Vertical);
+    m_layout_middle_column->set_gap(5);
+    m_layout_middle_column->set_flex_grow(1);
+    m_layout_center_row->append(m_layout_middle_column);
+
+    m_layout_middle_column->append(m_cube_view);
+    m_cube_view->set_self_align(YGAlignFlexEnd);
+}
+
+void AbstractRenderLayout::init_right_column()
+{
+    m_layout_right_column = new Yoga::Item;
+    m_layout_right_column->set_orientation(Yoga::Orientation::Vertical);
+    m_layout_right_column->set_gap(5);
+    m_layout_right_column->set_min_size({280.f, 0});
+
+    m_layout_right_column->append(m_sidebar_bed);
+
+    m_sidebar_print->set_flex_grow(1.0);
+    m_layout_right_column->append(m_sidebar_print);
+
+    m_layout_main.append(m_layout_right_column);
+}
+
+void AbstractRenderLayout::init_toolbar_column()
+{
+    constexpr float min_tt_size = 50.f; //**/ 30.f;
+    constexpr float max_tt_size = 50.f;
+
+    m_layout_left_toolbar_column = new Yoga::Item;
+    m_layout_left_toolbar_column->set_orientation(Yoga::Orientation::Vertical);
+    m_layout_left_toolbar_column->set_gap(5);
+    m_layout_left_toolbar_column->set_justify_content(YGJustify::YGJustifySpaceBetween);
+
+    m_layout_center_row->append(m_layout_left_toolbar_column);
+
+    m_top_toolbar = new Yoga::Toolbar("top_toolbar");
+    m_top_toolbar->set_button_min_size({min_tt_size, min_tt_size});
+    m_top_toolbar->set_button_max_size({max_tt_size, max_tt_size});
+    m_top_toolbar->set_self_align(YGAlign::YGAlignFlexStart);
+    m_top_toolbar->set_orientation(Yoga::Orientation::Vertical);
+    m_layout_left_toolbar_column->append(m_top_toolbar);
+
+    m_middle_toolbar = new Yoga::Toolbar("middle_toolbar");
+    m_middle_toolbar->set_button_min_size({min_tt_size, min_tt_size});
+    m_middle_toolbar->set_button_max_size({max_tt_size, max_tt_size});
+    m_middle_toolbar->set_self_align(YGAlign::YGAlignCenter);
+    m_middle_toolbar->set_orientation(Yoga::Orientation::Vertical);
+    m_layout_left_toolbar_column->append(m_middle_toolbar);
+    // TODO: set collapsible middle toolbar
+
+    m_bottom_toolbar = new Yoga::Toolbar("bottom_toolbar");
+    m_bottom_toolbar->set_button_min_size({min_tt_size, min_tt_size});
+    m_bottom_toolbar->set_button_max_size({max_tt_size, max_tt_size});
+    m_bottom_toolbar->set_self_align(YGAlign::YGAlignFlexEnd);
+    m_bottom_toolbar->set_orientation(Yoga::Orientation::Vertical);
+    m_layout_left_toolbar_column->append(m_bottom_toolbar);
 }
 
 static void SetOurStyleColors()
@@ -203,101 +161,120 @@ static void SetOurStyleColors()
     ImGuiStyle* style = &ImGui::GetStyle();
     ImVec4* colors = style->Colors;
 
-    colors[ImGuiCol_Text]                   = ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
-    colors[ImGuiCol_TextDisabled]           = ImVec4(0.50f, 0.50f, 0.50f, 1.00f);
-    colors[ImGuiCol_WindowBg]               = ImVec4(0.168f, 0.168f, 0.168f, 1.00f);
-    colors[ImGuiCol_ChildBg]                = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
-    colors[ImGuiCol_PopupBg]                = ImVec4(0.08f, 0.08f, 0.08f, 0.94f);
-    colors[ImGuiCol_Border]                 = ImVec4(0.43f, 0.43f, 0.50f, 0.50f);
-    colors[ImGuiCol_BorderShadow]           = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
-    colors[ImGuiCol_FrameBg]                = ImVec4(0.16f, 0.29f, 0.48f, 0.54f);
-    colors[ImGuiCol_FrameBgHovered]         = ImVec4(0.26f, 0.59f, 0.98f, 0.40f);
-    colors[ImGuiCol_FrameBgActive]          = ImVec4(0.26f, 0.59f, 0.98f, 0.67f);
-    colors[ImGuiCol_TitleBg]                = ImVec4(0.04f, 0.04f, 0.04f, 1.00f);
-    colors[ImGuiCol_TitleBgActive]          = ImVec4(0.16f, 0.29f, 0.48f, 1.00f);
-    colors[ImGuiCol_TitleBgCollapsed]       = ImVec4(0.00f, 0.00f, 0.00f, 0.51f);
-    colors[ImGuiCol_MenuBarBg]              = ImVec4(0.14f, 0.14f, 0.14f, 1.00f);
-    colors[ImGuiCol_ScrollbarBg]            = ImVec4(0.02f, 0.02f, 0.02f, 0.53f);
-    colors[ImGuiCol_ScrollbarGrab]          = ImVec4(0.31f, 0.31f, 0.31f, 1.00f);
-    colors[ImGuiCol_ScrollbarGrabHovered]   = ImVec4(0.41f, 0.41f, 0.41f, 1.00f);
-    colors[ImGuiCol_ScrollbarGrabActive]    = ImVec4(0.51f, 0.51f, 0.51f, 1.00f);
-    colors[ImGuiCol_CheckMark]              = ImVec4(0.26f, 0.59f, 0.98f, 1.00f);
-    colors[ImGuiCol_SliderGrab]             = ImVec4(0.24f, 0.52f, 0.88f, 1.00f);
-    colors[ImGuiCol_SliderGrabActive]       = ImVec4(0.26f, 0.59f, 0.98f, 1.00f);
-    colors[ImGuiCol_Button]                 = ImVec4(1.00f, 1.00f, 1.00f, 0.00f);
-    colors[ImGuiCol_ButtonHovered]          = ImVec4(1.00f, 1.00f, 1.00f, 0.10f);
-    colors[ImGuiCol_ButtonActive]           = ImVec4(0.21f, 0.29f, 0.46f, 1.00f);
-    colors[ImGuiCol_Header]                 = ImVec4(0.21f, 0.29f, 0.46f, 0.31f);
-    colors[ImGuiCol_HeaderHovered]          = ImVec4(1.00f, 1.00f, 1.00f, 0.10f);
-    colors[ImGuiCol_HeaderActive]           = ImVec4(0.21f, 0.29f, 0.46f, 1.00f);
-    colors[ImGuiCol_Separator]              = colors[ImGuiCol_Border];
-    colors[ImGuiCol_SeparatorHovered]       = ImVec4(0.10f, 0.40f, 0.75f, 0.78f);
-    colors[ImGuiCol_SeparatorActive]        = ImVec4(0.10f, 0.40f, 0.75f, 1.00f);
-    colors[ImGuiCol_ResizeGrip]             = ImVec4(0.26f, 0.59f, 0.98f, 0.20f);
-    colors[ImGuiCol_ResizeGripHovered]      = ImVec4(0.26f, 0.59f, 0.98f, 0.67f);
-    colors[ImGuiCol_ResizeGripActive]       = ImVec4(0.26f, 0.59f, 0.98f, 0.95f);
-    colors[ImGuiCol_TabHovered]             = colors[ImGuiCol_HeaderHovered];
-    colors[ImGuiCol_Tab]                    = ImLerp(colors[ImGuiCol_Header],       colors[ImGuiCol_TitleBgActive], 0.80f);
-    colors[ImGuiCol_TabSelected]            = ImLerp(colors[ImGuiCol_HeaderActive], colors[ImGuiCol_TitleBgActive], 0.60f);
-    colors[ImGuiCol_TabSelectedOverline]    = colors[ImGuiCol_HeaderActive];
-    colors[ImGuiCol_TabDimmed]              = ImLerp(colors[ImGuiCol_Tab],          colors[ImGuiCol_TitleBg], 0.80f);
-    colors[ImGuiCol_TabDimmedSelected]      = ImLerp(colors[ImGuiCol_TabSelected],  colors[ImGuiCol_TitleBg], 0.40f);
+    colors[ImGuiCol_Text] = ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
+    colors[ImGuiCol_TextDisabled] = ImVec4(0.50f, 0.50f, 0.50f, 1.00f);
+    colors[ImGuiCol_WindowBg] = ImVec4(0.168f, 0.168f, 0.168f, 1.00f);
+    colors[ImGuiCol_ChildBg] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
+    colors[ImGuiCol_PopupBg] = ImVec4(0.08f, 0.08f, 0.08f, 0.94f);
+    colors[ImGuiCol_Border] = ImVec4(0.43f, 0.43f, 0.50f, 0.50f);
+    colors[ImGuiCol_BorderShadow] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
+    colors[ImGuiCol_FrameBg] = ImVec4(0.16f, 0.29f, 0.48f, 0.54f);
+    colors[ImGuiCol_FrameBgHovered] = ImVec4(0.26f, 0.59f, 0.98f, 0.40f);
+    colors[ImGuiCol_FrameBgActive] = ImVec4(0.26f, 0.59f, 0.98f, 0.67f);
+    colors[ImGuiCol_TitleBg] = ImVec4(0.04f, 0.04f, 0.04f, 1.00f);
+    colors[ImGuiCol_TitleBgActive] = ImVec4(0.16f, 0.29f, 0.48f, 1.00f);
+    colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.00f, 0.00f, 0.00f, 0.51f);
+    colors[ImGuiCol_MenuBarBg] = ImVec4(0.14f, 0.14f, 0.14f, 1.00f);
+    colors[ImGuiCol_ScrollbarBg] = ImVec4(0.02f, 0.02f, 0.02f, 0.53f);
+    colors[ImGuiCol_ScrollbarGrab] = ImVec4(0.31f, 0.31f, 0.31f, 1.00f);
+    colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(0.41f, 0.41f, 0.41f, 1.00f);
+    colors[ImGuiCol_ScrollbarGrabActive] = ImVec4(0.51f, 0.51f, 0.51f, 1.00f);
+    colors[ImGuiCol_CheckMark] = ImVec4(0.26f, 0.59f, 0.98f, 1.00f);
+    colors[ImGuiCol_SliderGrab] = ImVec4(0.24f, 0.52f, 0.88f, 1.00f);
+    colors[ImGuiCol_SliderGrabActive] = ImVec4(0.26f, 0.59f, 0.98f, 1.00f);
+    colors[ImGuiCol_Button] = ImVec4(1.00f, 1.00f, 1.00f, 0.00f);
+    colors[ImGuiCol_ButtonHovered] = ImVec4(1.00f, 1.00f, 1.00f, 0.10f);
+    colors[ImGuiCol_ButtonActive] = ImVec4(0.21f, 0.29f, 0.46f, 1.00f);
+    colors[ImGuiCol_Header] = ImVec4(0.21f, 0.29f, 0.46f, 0.31f);
+    colors[ImGuiCol_HeaderHovered] = ImVec4(1.00f, 1.00f, 1.00f, 0.10f);
+    colors[ImGuiCol_HeaderActive] = ImVec4(0.21f, 0.29f, 0.46f, 1.00f);
+    colors[ImGuiCol_Separator] = colors[ImGuiCol_Border];
+    colors[ImGuiCol_SeparatorHovered] = ImVec4(0.10f, 0.40f, 0.75f, 0.78f);
+    colors[ImGuiCol_SeparatorActive] = ImVec4(0.10f, 0.40f, 0.75f, 1.00f);
+    colors[ImGuiCol_ResizeGrip] = ImVec4(0.26f, 0.59f, 0.98f, 0.20f);
+    colors[ImGuiCol_ResizeGripHovered] = ImVec4(0.26f, 0.59f, 0.98f, 0.67f);
+    colors[ImGuiCol_ResizeGripActive] = ImVec4(0.26f, 0.59f, 0.98f, 0.95f);
+    colors[ImGuiCol_TabHovered] = colors[ImGuiCol_HeaderHovered];
+    colors[ImGuiCol_Tab] = ImLerp(colors[ImGuiCol_Header], colors[ImGuiCol_TitleBgActive], 0.80f);
+    colors[ImGuiCol_TabSelected] =
+        ImLerp(colors[ImGuiCol_HeaderActive], colors[ImGuiCol_TitleBgActive], 0.60f);
+    colors[ImGuiCol_TabSelectedOverline] = colors[ImGuiCol_HeaderActive];
+    colors[ImGuiCol_TabDimmed] = ImLerp(colors[ImGuiCol_Tab], colors[ImGuiCol_TitleBg], 0.80f);
+    colors[ImGuiCol_TabDimmedSelected] =
+        ImLerp(colors[ImGuiCol_TabSelected], colors[ImGuiCol_TitleBg], 0.40f);
     colors[ImGuiCol_TabDimmedSelectedOverline] = ImVec4(0.50f, 0.50f, 0.50f, 0.00f);
-    colors[ImGuiCol_PlotLines]              = ImVec4(0.61f, 0.61f, 0.61f, 1.00f);
-    colors[ImGuiCol_PlotLinesHovered]       = ImVec4(1.00f, 0.43f, 0.35f, 1.00f);
-    colors[ImGuiCol_PlotHistogram]          = ImVec4(0.90f, 0.70f, 0.00f, 1.00f);
-    colors[ImGuiCol_PlotHistogramHovered]   = ImVec4(1.00f, 0.60f, 0.00f, 1.00f);
-    colors[ImGuiCol_TableHeaderBg]          = ImVec4(0.19f, 0.19f, 0.20f, 1.00f);
-    colors[ImGuiCol_TableBorderStrong]      = ImVec4(0.31f, 0.31f, 0.35f, 1.00f);   // Prefer using Alpha=1.0 here
-    colors[ImGuiCol_TableBorderLight]       = ImVec4(0.23f, 0.23f, 0.25f, 1.00f);   // Prefer using Alpha=1.0 here
-    colors[ImGuiCol_TableRowBg]             = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
-    colors[ImGuiCol_TableRowBgAlt]          = ImVec4(1.00f, 1.00f, 1.00f, 0.06f);
-    colors[ImGuiCol_TextLink]               = colors[ImGuiCol_HeaderActive];
-    colors[ImGuiCol_TextSelectedBg]         = ImVec4(0.26f, 0.59f, 0.98f, 0.35f);
-    colors[ImGuiCol_DragDropTarget]         = ImVec4(1.00f, 1.00f, 0.00f, 0.90f);
-    colors[ImGuiCol_NavCursor]              = ImVec4(0.26f, 0.59f, 0.98f, 1.00f);
-    colors[ImGuiCol_NavWindowingHighlight]  = ImVec4(1.00f, 1.00f, 1.00f, 0.70f);
-    colors[ImGuiCol_NavWindowingDimBg]      = ImVec4(0.80f, 0.80f, 0.80f, 0.20f);
-    colors[ImGuiCol_ModalWindowDimBg]       = ImVec4(0.80f, 0.80f, 0.80f, 0.35f);
+    colors[ImGuiCol_PlotLines] = ImVec4(0.61f, 0.61f, 0.61f, 1.00f);
+    colors[ImGuiCol_PlotLinesHovered] = ImVec4(1.00f, 0.43f, 0.35f, 1.00f);
+    colors[ImGuiCol_PlotHistogram] = ImVec4(0.90f, 0.70f, 0.00f, 1.00f);
+    colors[ImGuiCol_PlotHistogramHovered] = ImVec4(1.00f, 0.60f, 0.00f, 1.00f);
+    colors[ImGuiCol_TableHeaderBg] = ImVec4(0.19f, 0.19f, 0.20f, 1.00f);
+    colors[ImGuiCol_TableBorderStrong] =
+        ImVec4(0.31f, 0.31f, 0.35f, 1.00f); // Prefer using Alpha=1.0 here
+    colors[ImGuiCol_TableBorderLight] =
+        ImVec4(0.23f, 0.23f, 0.25f, 1.00f); // Prefer using Alpha=1.0 here
+    colors[ImGuiCol_TableRowBg] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
+    colors[ImGuiCol_TableRowBgAlt] = ImVec4(1.00f, 1.00f, 1.00f, 0.06f);
+    colors[ImGuiCol_TextLink] = colors[ImGuiCol_HeaderActive];
+    colors[ImGuiCol_TextSelectedBg] = ImVec4(0.26f, 0.59f, 0.98f, 0.35f);
+    colors[ImGuiCol_DragDropTarget] = ImVec4(1.00f, 1.00f, 0.00f, 0.90f);
+    colors[ImGuiCol_NavCursor] = ImVec4(0.26f, 0.59f, 0.98f, 1.00f);
+    colors[ImGuiCol_NavWindowingHighlight] = ImVec4(1.00f, 1.00f, 1.00f, 0.70f);
+    colors[ImGuiCol_NavWindowingDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.20f);
+    colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.35f);
 }
 
 struct SetOurStyleVars
 {
-    SetOurStyleVars() {
+    SetOurStyleVars()
+    {
         PushStyleVar(ImGuiStyleVar_WindowRounding, 5.f);
         PushStyleVar(ImGuiStyleVar_FrameRounding, 3.f);
         PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(6.f, 0.f));
         PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4.f, 6.f));
         PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(2.f, 0.f));
     }
-        
-    ~SetOurStyleVars() {
-        ImGui::PopStyleVar(m_vars_cnt);
-    }
+
+    ~SetOurStyleVars() { ImGui::PopStyleVar(m_vars_cnt); }
 
 private:
-    void PushStyleVar(ImGuiStyleVar idx, float val) {
+    void PushStyleVar(ImGuiStyleVar idx, float val)
+    {
         ImGui::PushStyleVar(idx, val);
         m_vars_cnt++;
     }
-    void PushStyleVar(ImGuiStyleVar idx, const ImVec2& val) {
+    void PushStyleVar(ImGuiStyleVar idx, const ImVec2& val)
+    {
         ImGui::PushStyleVar(idx, val);
         m_vars_cnt++;
     }
 
-    size_t m_vars_cnt{ 0 };
+    size_t m_vars_cnt{0};
 };
+
+AbstractRenderLayout::AbstractRenderLayout(
+    ObjectList* object_list,
+    CubeView* cube_view,
+    SidebarBed* sidebar_bed,
+    SidebarPrint* sidebar_print
+)
+    : m_object_list(object_list)
+    , m_cube_view(cube_view)
+    , m_sidebar_bed(sidebar_bed)
+    , m_sidebar_print(sidebar_print)
+{}
+
+AbstractRenderLayout::~AbstractRenderLayout() {}
 
 void AbstractRenderLayout::render(Vec2f size)
 {
-    if (!m_main_sizer.is_inited())
-        init_main_sizer();
-
     SetOurStyleColors();
     {
         SetOurStyleVars our_vars;
-        m_main_sizer.render(size, Vec2f(0.f, 0.f));
+        m_layout_main.render({}, size);
+        // ImGui::DebugStartItemPicker();
+        // std::string tree = m_layout_main.debug_dump_tree();
+        // ImGui::SetClipboardText(tree.c_str());
     }
 }
 
-}
+} // namespace Slic3r::App

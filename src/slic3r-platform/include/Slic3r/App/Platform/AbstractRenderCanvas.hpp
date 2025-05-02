@@ -30,9 +30,7 @@ namespace Slic3r::App::Platform {
 class AbstractRenderCanvas : public Biz::Platform::IRenderRequestHandler
 {
 public:
-    AbstractRenderCanvas()
-        : m_main_thread_dispatcher{Biz::Platform::PlatformServices::instance().main_thread_dispatcher()}
-    {}
+    AbstractRenderCanvas();
 
     ~AbstractRenderCanvas() override = default;
 

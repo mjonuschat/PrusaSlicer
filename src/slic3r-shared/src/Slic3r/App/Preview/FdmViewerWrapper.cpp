@@ -1,8 +1,10 @@
 #include "Slic3r/App/Preview/FdmViewerWrapper.hpp"
+
 #include "Slic3r/App/I18N/I18N.hpp"
 #include "Slic3r/App/Imgui/ImguiExtension.hpp"
 
 #include <Slic3r/Biz/libpgcode/Utils.hpp>
+
 #include <Slic3r/App/libvgcode/ColorRange.hpp>
 
 using namespace Slic3r::Biz::libpgcode;
@@ -28,12 +30,62 @@ static const std::vector<Palette> PREDEFINED_PALETTES = {
     DEFAULT_RANGES_COLORS
 };
 
-FdmViewerWrapper::~FdmViewerWrapper() = default;
-
 bool FdmViewerWrapper::init(Render::Device& device, Scene::Scene& scene, Scene::GeometryDataFactory& data_factory)
 {
     try {
         m_viewer.init(device, scene, data_factory);
+        return true;
+    }
+    catch (const std::exception& e) {
+        std::cout << e.what();
+        return false;
+    }
+}
+
+bool FdmViewerWrapper::set_settings(const FdmViewerWrapperSettings &settings)
+{
+    m_settings = settings;
+    set_gcodewindow_visible(m_settings.gcodewindow_visible);
+
+    try {
+        if (m_viewer.is_top_layer_only_view_range() != settings.seq_top_layer_only)
+            m_viewer.toggle_top_layer_only_view_range();
+
+        m_cb_legend.cb_extrusion_role_visibility_changed = std::bind(&FdmViewerWrapper::on_extrusion_role_visibility_changed, this);
+        m_cb_legend.cb_request_extra_frame = m_settings.cb_request_extra_frames;
+        m_cb_legend.cb_view_type_changed = m_settings.cb_gcode_view_type_changed;
+
+        m_slider_layers = new DoubleSliderForLayers;
+        m_slider_layers->init(0, 0, 0, 100);
+        m_slider_layers->show_ruler(m_settings.slider_layers_show_ruler, m_settings.slider_layers_show_ruler_bg);
+        m_slider_layers->show_estimated_times(m_settings.slider_layers_show_estimated_times);
+        m_slider_layers->set_use_default_colors(m_settings.slider_layers_use_default_colors);
+        // set layers slider callbacks
+        m_slider_layers->set_request_extra_frames_callback(std::bind(&FdmViewerWrapper::on_request_extra_frames, this, std::placeholders::_1));
+        m_slider_layers->set_on_thumb_move_callback(std::bind(&FdmViewerWrapper::on_slider_layers_scroll_changed, this));
+        m_slider_layers->set_notify_empty_color_change_gcode_callback(m_settings.cb_slider_layers_notify_empty_color_change_gcode);
+        m_slider_layers->set_ticks_changed_callback(std::bind(&FdmViewerWrapper::on_slider_layers_ticks_changed, this));
+        m_slider_layers->set_get_extruder_colors_callback(std::bind(&FdmViewerWrapper::on_slider_layers_get_extruder_colors, this));
+        m_slider_layers->set_auto_color_change_callback(m_settings.cb_slider_layers_auto_color_change);
+        m_slider_layers->set_notify_empty_auto_color_change_callback(m_settings.cb_slider_layers_notify_empty_auto_color_change);
+        m_slider_layers->set_get_extruders_sequence_callback(m_settings.cb_slider_layers_get_extruders_sequence);
+        m_slider_layers->set_show_info_msg_callback(m_settings.cb_slider_layers_show_info_msg);
+        m_slider_layers->set_get_gcode_callback(std::bind(&FdmViewerWrapper::on_slider_layers_get_gcode, this, std::placeholders::_1));
+        m_slider_layers->set_get_used_extruders_in_print_callback(m_settings.cb_slider_layers_get_used_extruders_in_print);
+        m_slider_layers->set_app_config_changed_callback(m_settings.cb_slider_layers_app_config_changed);
+
+        m_slider_gcode = new DoubleSliderForGcode;
+        m_slider_gcode->init(0, 0, 0, 100);
+        // set gcode slider callbacks
+        m_slider_gcode->set_request_extra_frames_callback(std::bind(&FdmViewerWrapper::on_request_extra_frames, this, std::placeholders::_1));
+        m_slider_gcode->set_on_thumb_move_callback(std::bind(&FdmViewerWrapper::on_slider_gcode_scroll_changed, this));
+
+        m_legend = new Legend(&m_viewer, this);
+        m_legend->callbacks() = m_cb_legend;
+
+        m_gcode_window = new GCodeWindow;
+        m_gcode_window->set_data(&m_gcode_window_data);
+
         return true;
     }
     catch (const std::exception& e) {
@@ -47,53 +99,9 @@ void FdmViewerWrapper::render_scene()
     render_toolpaths();
 }
 
-void FdmViewerWrapper::render_imgui() 
+void FdmViewerWrapper::render_imgui()
 {
-}
 
-bool FdmViewerWrapper::set_settings(const FdmViewerWrapperSettings& settings)
-{
-    m_settings = settings;
-    set_gcodewindow_visible(m_settings.gcodewindow_visible);
-
-    try {
-
-        if (m_viewer.is_top_layer_only_view_range() != settings.seq_top_layer_only)
-            m_viewer.toggle_top_layer_only_view_range();
-
-        m_cb_legend.cb_extrusion_role_visibility_changed = std::bind(&FdmViewerWrapper::on_extrusion_role_visibility_changed, this);
-        m_cb_legend.cb_request_extra_frame = m_settings.cb_request_extra_frames;
-        m_cb_legend.cb_view_type_changed = m_settings.cb_gcode_view_type_changed;
-
-        m_slider_layers.init(0, 0, 0, 100);
-        m_slider_layers.show_ruler(m_settings.slider_layers_show_ruler, m_settings.slider_layers_show_ruler_bg);
-        m_slider_layers.show_estimated_times(m_settings.slider_layers_show_estimated_times);
-        m_slider_layers.set_use_default_colors(m_settings.slider_layers_use_default_colors);
-        // set layers slider callbacks
-        m_slider_layers.set_request_extra_frames_callback(std::bind(&FdmViewerWrapper::on_request_extra_frames, this, std::placeholders::_1));
-        m_slider_layers.set_on_thumb_move_callback(std::bind(&FdmViewerWrapper::on_slider_layers_scroll_changed, this));
-        m_slider_layers.set_notify_empty_color_change_gcode_callback(m_settings.cb_slider_layers_notify_empty_color_change_gcode);
-        m_slider_layers.set_ticks_changed_callback(std::bind(&FdmViewerWrapper::on_slider_layers_ticks_changed, this));
-        m_slider_layers.set_get_extruder_colors_callback(std::bind(&FdmViewerWrapper::on_slider_layers_get_extruder_colors, this));
-        m_slider_layers.set_auto_color_change_callback(m_settings.cb_slider_layers_auto_color_change);
-        m_slider_layers.set_notify_empty_auto_color_change_callback(m_settings.cb_slider_layers_notify_empty_auto_color_change);
-        m_slider_layers.set_get_extruders_sequence_callback(m_settings.cb_slider_layers_get_extruders_sequence);
-        m_slider_layers.set_show_info_msg_callback(m_settings.cb_slider_layers_show_info_msg);
-        m_slider_layers.set_get_gcode_callback(std::bind(&FdmViewerWrapper::on_slider_layers_get_gcode, this, std::placeholders::_1));
-        m_slider_layers.set_get_used_extruders_in_print_callback(m_settings.cb_slider_layers_get_used_extruders_in_print);
-        m_slider_layers.set_app_config_changed_callback(m_settings.cb_slider_layers_app_config_changed);
-
-        m_slider_gcode.init(0, 0, 0, 100);
-        // set gcode slider callbacks
-        m_slider_gcode.set_request_extra_frames_callback(std::bind(&FdmViewerWrapper::on_request_extra_frames, this, std::placeholders::_1));
-        m_slider_gcode.set_on_thumb_move_callback(std::bind(&FdmViewerWrapper::on_slider_gcode_scroll_changed, this));
-
-        return true;
-    }
-    catch (const std::exception& e) {
-        std::cout << e.what();
-        return false;
-    }
 }
 static void set_pregcode_extrusion_role_colors(FdmViewerWrapper& wrapper)
 {
@@ -109,7 +117,7 @@ static void set_pregcode_extrusion_role_colors(FdmViewerWrapper& wrapper)
 void FdmViewerWrapper::set_mode(FdmViewerWrapperMode mode)
 {
     m_settings.mode = mode;
-    m_slider_layers.enable_editing(m_settings.mode != FdmViewerWrapperMode::GCodeViewer);
+    m_slider_layers->enable_editing(m_settings.mode != FdmViewerWrapperMode::GCodeViewer);
     m_legend_params.settings_visible = (m_settings.mode == FdmViewerWrapperMode::GCodeViewer);
     m_legend_params.enabled = (m_settings.mode != FdmViewerWrapperMode::EditorPreGCode);
     if (m_settings.mode == FdmViewerWrapperMode::EditorPreGCode)
@@ -254,13 +262,14 @@ void FdmViewerWrapper::render_gui(const WrapperLayoutData& layout)
     m_legend_height = 0.0f;
 
     if (m_settings.mode != FdmViewerWrapperMode::EditorPreGCode) {
-        render_legend(layout);
-        render_slider_gcode(layout);
+        // render_legend(layout);
+        // render_slider_gcode(layout);
     }
 
-    render_slider_layers(layout);
+    // render_slider_layers(layout);
 
-    render_gcodewindow(layout);
+
+    // render_gcodewindow(layout);
 
     if (m_viewer.view_visible_range()[1] != m_viewer.view_enabled_range()[1])
         render_vertex_properties(layout);
@@ -277,50 +286,56 @@ void FdmViewerWrapper::render_gui(const WrapperLayoutData& layout)
         render_customize_scale_factor_popup();
 }
 
-void FdmViewerWrapper::render_gcode_window()
+GCodeWindow* FdmViewerWrapper::gcode_window() const
 {
-    gcode_window(m_gcode_window_data, m_viewer.current_vertex().gcode_id);
+    return m_gcode_window;
 }
 
-void FdmViewerWrapper::render_legend(Render::ImguiRender* imgui_render)
+Legend* FdmViewerWrapper::legend() const
 {
-    static std::string msg = _u8L("No data available");
-
-    if (m_settings.mode == FdmViewerWrapperMode::EditorPreGCode ||
-        !has_data()) {
-        ImVec2 msg_size = ImGui::CalcTextSize(msg.c_str());
-        ImVec2 available_size = ImGui::GetContentRegionAvail();
-        if (msg_size.x < available_size.x && msg_size.y < available_size.y) {
-            ImVec2 pos = ImGui::GetCurrentWindow()->DC.CursorPos + (available_size - msg_size) * 0.5f;
-            ImGui::RenderText(pos, msg.c_str());
-        }
-    }
-    else {
-        static bool detail = false;
-        ImGui::GetCurrentWindow()->DC.CursorPos.y += ImGui::GetTextLineHeight();
-        if (detail)
-            legend_detail(*imgui_render, m_viewer, *this, m_cb_legend);
-        else
-            legend_coarse(m_viewer, *this);
-        ImVec2 available_size = ImGui::GetContentRegionAvail();
-        legend_view_type_selector(m_viewer, *this, m_cb_legend.cb_view_type_changed, 0.666f * available_size.x);
-        ImGui::SameLine();
-        Imgui::toggle_button(_u8L("Detail view"), &detail, true);
-    }
-
-    if (m_radius_popup_type != MoveType::COUNT)
-        render_customize_radius_popup();
+    return  m_legend;
 }
 
-void FdmViewerWrapper::render_gcode_slider()
-{ 
-    m_slider_gcode.render(ImGui::GetCurrentWindow()->DC.CursorPos, 1.0f, 0.0f);
+DoubleSliderForGcode* FdmViewerWrapper::double_slider_gcode() const
+{
+    return m_slider_gcode;
 }
+
+// void WrapperImpl::render_legend(Render::ImguiRender* imgui_render)
+// {
+//     static std::string msg = _u8L("No data available");
+
+//     if (m_printer_technology != PrinterTechnology::FFF ||
+//         m_settings.mode == WrapperMode::EditorPreGCode ||
+//         !has_data()) {
+//         ImVec2 msg_size = ImGui::CalcTextSize(msg.c_str());
+//         ImVec2 available_size = ImGui::GetContentRegionAvail();
+//         if (msg_size.x < available_size.x && msg_size.y < available_size.y) {
+//             ImVec2 pos = ImGui::GetCurrentWindow()->DC.CursorPos + (available_size - msg_size) * 0.5f;
+//             ImGui::RenderText(pos, msg.c_str());
+//         }
+//     }
+//     else {
+//         static bool detail = false;
+//         ImGui::GetCurrentWindow()->DC.CursorPos.y += ImGui::GetTextLineHeight();
+//         if (detail)
+//             legend_detail(*imgui_render, m_viewer, *this, m_cb_legend);
+//         else
+//             legend_coarse(m_viewer, *this);
+//         ImVec2 available_size = ImGui::GetContentRegionAvail();
+//         legend_view_type_selector(m_viewer, *this, m_cb_legend.cb_view_type_changed, 0.666f * available_size.x);
+//         ImGui::SameLine();
+//         Imgui::toggle_button(_u8L("Detail view"), &detail, true);
+//     }
+
+//     if (m_radius_popup_type != MoveType::COUNT)
+//         render_customize_radius_popup();
+// }
 
 void FdmViewerWrapper::set_units(UnitsSystem sys)
 {
     m_units = sys;
-    m_slider_layers.set_units(sys);
+    m_slider_layers->set_units(sys);
 }
 
 void FdmViewerWrapper::set_layers_range(Interval::value_type min, Interval::value_type max)
@@ -355,7 +370,7 @@ void FdmViewerWrapper::update_slider_gcode(std::optional<size_t> visible_range_m
     if (!has_data())
         return;
 
-    if (!m_slider_gcode.is_shown())
+    if (!m_slider_gcode->is_visible())
         return;
 
     const Interval& range = m_viewer.view_enabled_range();
@@ -403,13 +418,13 @@ void FdmViewerWrapper::update_slider_gcode(std::optional<size_t> visible_range_m
     int span_max_id = visible_range_max_id.has_value() ? *visible_range_max_id : int(values.size()) - 1;
 
     int max_pos = values.empty() ? 0 : int(values.size() - 1);
-    m_slider_gcode.set_slider_values(std::move(values));
-    m_slider_gcode.set_slider_alternate_values(std::move(alternate_values));
-    m_slider_gcode.freeze();
-    m_slider_gcode.set_max_pos(max_pos);
-    m_slider_gcode.set_selection_span(span_min_id, span_max_id);
-    m_slider_gcode.thaw();
-    m_slider_gcode.show_lower_thumb(!m_viewer.is_top_layer_only_view_range());
+    m_slider_gcode->set_slider_values(std::move(values));
+    m_slider_gcode->set_slider_alternate_values(std::move(alternate_values));
+    m_slider_gcode->freeze();
+    m_slider_gcode->set_max_pos(max_pos);
+    m_slider_gcode->set_selection_span(span_min_id, span_max_id);
+    m_slider_gcode->thaw();
+    m_slider_gcode->show_lower_thumb(!m_viewer.is_top_layer_only_view_range());
 }
 
 static void adjust_ticks_values(std::vector<CustomGCode::Item>& gcodes, const std::vector<float>& zs)
@@ -435,15 +450,15 @@ static std::vector<std::string> convert(const Palette& palette)
 void FdmViewerWrapper::update_slider_layers()
 {
     // Save the initial slider span.
-    float z_low = m_slider_layers.lower_value();
-    float z_high = m_slider_layers.higher_value();
-    bool was_empty = m_slider_layers.max_pos() == 0;
+    float z_low = m_slider_layers->lower_value();
+    float z_high = m_slider_layers->higher_value();
+    bool was_empty = m_slider_layers->max_pos() == 0;
 
     std::vector<float> layers_zs = m_viewer.layers_zs();
 
-    bool force_sliders_full_range = was_empty || layers_zs.empty() || std::abs(layers_zs.back() - m_slider_layers.max_value()) > EPSILON;
-    bool snap_to_min = force_sliders_full_range || m_slider_layers.is_lower_at_min();
-    bool snap_to_max = force_sliders_full_range || m_slider_layers.is_higher_at_max();
+    bool force_sliders_full_range = was_empty || layers_zs.empty() || std::abs(layers_zs.back() - m_slider_layers->max_value()) > EPSILON;
+    bool snap_to_min = force_sliders_full_range || m_slider_layers->is_lower_at_min();
+    bool snap_to_max = force_sliders_full_range || m_slider_layers->is_higher_at_max();
 
     int max_pos = layers_zs.empty() ? 0 : int(layers_zs.size()) - 1;
 
@@ -470,23 +485,23 @@ void FdmViewerWrapper::update_slider_layers()
         }
     }
 
-    m_slider_layers.set_extruder_colors(convert(m_viewer.tool_colors()));
+    m_slider_layers->set_extruder_colors(convert(m_viewer.tool_colors()));
     bool one_extruder_printed_model = m_viewer.used_extruders_count() == 1;
     int8_t only_extruder = (one_extruder_printed_model && m_viewer.extruders_count() > 1) ? m_viewer.used_extruders_ids().front() : -1;
-    m_slider_layers.set_mode_and_only_extruder(one_extruder_printed_model, only_extruder);
-    m_slider_layers.set_slider_values(std::move(layers_zs));
-    m_slider_layers.force_ruler_update();
-    assert(m_slider_layers.min_pos() == 0);
-    m_slider_layers.freeze();
-    m_slider_layers.set_max_pos(max_pos);
-    m_slider_layers.set_ticks_values(m_data.custom_gcode_info);
-    m_slider_layers.set_selection_span(idx_low, idx_high);
-    m_slider_layers.set_draw_mode(false, m_data.sequential_print);
+    m_slider_layers->set_mode_and_only_extruder(one_extruder_printed_model, only_extruder);
+    m_slider_layers->set_slider_values(std::move(layers_zs));
+    m_slider_layers->force_ruler_update();
+    assert(m_slider_layers->min_pos() == 0);
+    m_slider_layers->freeze();
+    m_slider_layers->set_max_pos(max_pos);
+    m_slider_layers->set_ticks_values(m_data.custom_gcode_info);
+    m_slider_layers->set_selection_span(idx_low, idx_high);
+    m_slider_layers->set_draw_mode(false, m_data.sequential_print);
 
     if (!m_data.keep_layers_times)
-        m_slider_layers.set_layers_times(m_viewer.layers_estimated_times(), m_viewer.estimated_time());
+        m_slider_layers->set_layers_times(m_viewer.layers_estimated_times(), m_viewer.estimated_time());
 
-    m_slider_layers.thaw();
+    m_slider_layers->thaw();
 
     if (m_settings.cb_update_layers_slider != nullptr)
         m_settings.cb_update_layers_slider(m_data.custom_gcode_info);
@@ -546,8 +561,8 @@ void FdmViewerWrapper::update_view_visible_range(size_t first, size_t last)
 
 void FdmViewerWrapper::on_slider_layers_scroll_changed()
 {
-    if (m_slider_layers.is_shown()) {
-        set_layers_range(uint32_t(m_slider_layers.lower_pos()), uint32_t(m_slider_layers.higher_pos()));
+    if (m_slider_layers->is_visible()) {
+        set_layers_range(uint32_t(m_slider_layers->lower_pos()), uint32_t(m_slider_layers->higher_pos()));
         if (m_settings.cb_slider_layers_on_thumb_move != nullptr)
             m_settings.cb_slider_layers_on_thumb_move();
     }
@@ -555,8 +570,8 @@ void FdmViewerWrapper::on_slider_layers_scroll_changed()
 
 void FdmViewerWrapper::on_slider_gcode_scroll_changed()
 {
-    if (m_slider_gcode.is_shown()) {
-        update_view_visible_range(size_t(m_slider_gcode.lower_value() - 1), size_t(m_slider_gcode.higher_value() - 1));
+    if (m_slider_gcode->is_visible()) {
+        update_view_visible_range(size_t(m_slider_gcode->lower_value() - 1), size_t(m_slider_gcode->higher_value() - 1));
         if (m_settings.cb_slider_gcode_on_thumb_move != nullptr)
             m_settings.cb_slider_gcode_on_thumb_move();
     }
@@ -610,71 +625,71 @@ Palette FdmViewerWrapper::on_slider_layers_get_extruder_colors()
     return m_viewer.tool_colors();
 }
 
-void FdmViewerWrapper::render_legend(const WrapperLayoutData& layout)
-{
-    if (is_legend_shown() && has_data()) {
-        ImGui::SetNextWindowPos({ 0.0f, layout.menubar_height }, ImGuiCond_Always, { 0.0f, 0.0f });
-        Imgui::UnifiedWindowStyle unified_window_style;
-        unified_window_style.push();
-        // the following is a hack which allows to properly resize the legend, in a single frame,
-        // when the user clicks on the [Time estimate/Used filament] button without triggering an
-        // imgui-induced 'self-animation'
-        ImGuiWindow* wnd = ImGui::FindWindowByName("Legend##wrapper");
-        if (wnd != nullptr && m_viewer.view_type() == ViewType::FeatureType)
-            wnd->DC.CursorMaxPos.x = wnd->DC.CursorStartPos.x;
-        ImGui::Begin("Legend##wrapper", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoFocusOnAppearing);
-        legend(m_viewer, *this, m_legend_params.settings_visible, m_data.print_settings, m_cb_legend);
-        m_legend_height = ImGui::GetWindowSize().y;
-        ImGui::End();
-        unified_window_style.pop();
-    }
-}
+// void WrapperImpl::render_legend(const WrapperLayoutData& layout)
+// {
+//     if (is_legend_shown() && has_data()) {
+//         ImGui::SetNextWindowPos({ 0.0f, layout.menubar_height }, ImGuiCond_Always, { 0.0f, 0.0f });
+//         Imgui::UnifiedWindowStyle unified_window_style;
+//         unified_window_style.push();
+//         // the following is a hack which allows to properly resize the legend, in a single frame,
+//         // when the user clicks on the [Time estimate/Used filament] button without triggering an
+//         // imgui-induced 'self-animation'
+//         ImGuiWindow* wnd = ImGui::FindWindowByName("Legend##wrapper");
+//         if (wnd != nullptr && m_viewer.view_type() == ViewType::FeatureType)
+//             wnd->DC.CursorMaxPos.x = wnd->DC.CursorStartPos.x;
+//         ImGui::Begin("Legend##wrapper", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoFocusOnAppearing);
+//         legend(m_viewer, *this, m_legend_params.settings_visible, m_data.print_settings, m_cb_legend);
+//         m_legend_height = ImGui::GetWindowSize().y;
+//         ImGui::End();
+//         unified_window_style.pop();
+//     }
+// }
 
-void FdmViewerWrapper::render_slider_gcode(const WrapperLayoutData& layout)
-{
-    const Interval& enabled_range = m_viewer.view_enabled_range();
-    if (enabled_range[1] > enabled_range[0])
-        m_slider_gcode.render({ -1.0f, -1.0f }, layout.scale_factor, std::max(layout.view_toolbar_size[0], m_slider_layers.size().x));
-}
+// void WrapperImpl::render_slider_gcode(const WrapperLayoutData& layout)
+// {
+//     const Interval& enabled_range = m_viewer.view_enabled_range();
+//     if (enabled_range[1] > enabled_range[0])
+//         m_slider_gcode.render({ -1.0f, -1.0f }, layout.scale_factor, std::max(layout.view_toolbar_size[0], m_slider_layers.size().x));
+// }
 
-void FdmViewerWrapper::render_slider_layers(const WrapperLayoutData& layout)
-{
-    if (m_viewer.layers_count() > 0)
-        m_slider_layers.render({ -1.0f, -1.0f }, layout.scale_factor, layout.collapse_toolbar_height);
-}
+// void WrapperImpl::render_slider_layers(const WrapperLayoutData& layout)
+// {
+//     if (m_viewer.layers_count() > 0)
+//         m_slider_layers.render({ -1.0f, -1.0f }, layout.scale_factor, layout.collapse_toolbar_height);
+// }
 
-void FdmViewerWrapper::render_gcodewindow(const WrapperLayoutData& layout)
-{
-    if (!is_gcodewindow_visible())
-        return;
+// void WrapperImpl::render_gcodewindow(const WrapperLayoutData& layout)
+// {
+//     if (!is_gcodewindow_visible())
+//         return;
 
-    if (m_viewer.view_enabled_range()[1] == m_viewer.view_visible_range()[1])
-        return;
+//     if (m_viewer.view_enabled_range()[1] == m_viewer.view_visible_range()[1])
+//         return;
   
-    float height = ImGui::GetMainViewport()->Size.y - (layout.menubar_height + m_legend_height + std::max(layout.view_toolbar_size[1], m_slider_gcode.height()));
-    if (height < ImGui::GetTextLineHeight())
-        return;
+//     float height = ImGui::GetMainViewport()->Size.y - (layout.menubar_height + m_legend_height + std::max(layout.view_toolbar_size[1], m_slider_gcode.height()));
+//     if (height < ImGui::GetTextLineHeight())
+//         return;
 
-    // the following is a hack which allows to properly resize the gcode window
-    ImGuiWindow* wnd = ImGui::FindWindowByName("G-Code##wrapper");
-    if (wnd != nullptr) {
-        ImGuiStyle& style = ImGui::GetStyle();
-        float min_height = 2.0f * (ImGui::GetTextLineHeight() + style.WindowPadding.y + style.FramePadding.y + style.CellPadding.y);
-        if (height < min_height)
-            return;
-        wnd->DC.CursorMaxPos.x = wnd->DC.CursorStartPos.x;
-    }
+//     // the following is a hack which allows to properly resize the gcode window
+//     ImGuiWindow* wnd = ImGui::FindWindowByName("G-Code##wrapper");
+//     if (wnd != nullptr) {
+//         ImGuiStyle& style = ImGui::GetStyle();
+//         float min_height = 2.0f * (ImGui::GetTextLineHeight() + style.WindowPadding.y + style.FramePadding.y + style.CellPadding.y);
+//         if (height < min_height)
+//             return;
+//         wnd->DC.CursorMaxPos.x = wnd->DC.CursorStartPos.x;
+//     }
 
-    ImGui::SetNextWindowPos({ 0.0f, layout.menubar_height + m_legend_height }, ImGuiCond_Always, { 0.0f, 0.0f });
-    ImGui::SetNextWindowSize({ 0.0f, height }, ImGuiCond_Always);
-    Imgui::UnifiedWindowStyle unified_window_style;
-    unified_window_style.push();
-    ImGui::Begin(_u8L("G-Code##wrapper").c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse |
-        ImGuiWindowFlags_NoFocusOnAppearing);
-    gcode_window(m_gcode_window_data, size_t(m_viewer.current_vertex().gcode_id), true);
-    ImGui::End();
-    unified_window_style.pop();
-}
+//     ImGui::SetNextWindowPos({ 0.0f, layout.menubar_height + m_legend_height }, ImGuiCond_Always, { 0.0f, 0.0f });
+//     ImGui::SetNextWindowSize({ 0.0f, height }, ImGuiCond_Always);
+//     Imgui::UnifiedWindowStyle unified_window_style;
+//     unified_window_style.push();
+//     ImGui::Begin(_u8L("G-Code##wrapper").c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse |
+//         ImGuiWindowFlags_NoFocusOnAppearing);
+//     gcode_window(m_gcode_window_data, size_t(m_viewer.current_vertex().gcode_id), true);
+//     ImGui::End();
+//     unified_window_style.pop();
+// }
 
 void FdmViewerWrapper::render_vertex_properties(const WrapperLayoutData& layout)
 {
@@ -686,9 +701,9 @@ void FdmViewerWrapper::render_vertex_properties(const WrapperLayoutData& layout)
 
     const ImGuiViewport& viewport = *ImGui::GetMainViewport();
     if (docked)
-        ImGui::SetNextWindowPos({ viewport.Size.x - m_slider_layers.size().x, layout.menubar_height }, ImGuiCond_Always, { 1.0f, 0.0f });
+        ImGui::SetNextWindowPos({ viewport.Size.x - m_slider_layers->size().x, layout.menubar_height }, ImGuiCond_Always, { 1.0f, 0.0f });
     else
-        ImGui::SetNextWindowPos({ viewport.Size.x - m_slider_layers.size().x, layout.menubar_height }, ImGuiCond_Once, { 1.0f, 0.0f });
+        ImGui::SetNextWindowPos({ viewport.Size.x - m_slider_layers->size().x, layout.menubar_height }, ImGuiCond_Once, { 1.0f, 0.0f });
 
     Imgui::UnifiedWindowStyle unified_window_style;
     unified_window_style.push();

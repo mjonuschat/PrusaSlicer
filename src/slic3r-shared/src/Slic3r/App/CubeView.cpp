@@ -3,10 +3,17 @@
 
 namespace Slic3r::App {
 
-void CubeView::render(Domain::Vec2f pos, Domain::Vec2f size)
+CubeView::CubeView(Item* parent) : Window("cube_view", parent) {
+    set_flags(flags() | ImGuiWindowFlags_NoBackground);
+    set_min_size({70.f, 70.f});
+    set_max_size({70.f, 70.f});
+    set_aspect_ratio(1.0);
+}
+
+void CubeView::render_body(Domain::Vec2f pos, Domain::Vec2f size)
 {
     // !!! temporary code. Needed tobe changed for real view cube
-    Imgui::icon_button(ImGui::CubeViewIcon, ImVec2(70.f, 70.f));
+    Imgui::icon_button(ImGui::CubeViewIcon, to_im(size));
 }
 
 }// Slic3r::App namespace

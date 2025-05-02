@@ -26,8 +26,8 @@ ImRect Control::DrawOptions::draggable_region(const ImRect& groove, bool is_hori
     ImRect draggable_region = is_horizontal ?
         ImRect(groove.Min.x, groove.GetCenter().y, groove.Max.x, groove.GetCenter().y) :
         ImRect(groove.GetCenter().x, groove.Min.y, groove.GetCenter().x, groove.Max.y);
-    draggable_region.Expand(is_horizontal ? 
-                            ImVec2(/*thumb_radius()*/0, draggable_region_sz().y) : 
+    draggable_region.Expand(is_horizontal ?
+                            ImVec2(/*thumb_radius()*/0, draggable_region_sz().y) :
                             ImVec2(draggable_region_sz().x, 0));
     return draggable_region;
 }
@@ -50,7 +50,7 @@ Control::Control(
     ImGuiSliderFlags flags,
     std::string name,
     bool use_lower_thumb
-) 
+)
     : m_selection(SelectedSlider::Undefined)
     , m_name(name)
     , m_lower_pos(lowerValue)
@@ -134,8 +134,8 @@ void Control::correct_higher_pos()
 }
 
 void Control::combine_thumbs(bool combine)
-{ 
-    m_combine_thumbs = combine; 
+{
+    m_combine_thumbs = combine;
     if (combine) {
         m_selection = SelectedSlider::Higher;
         correct_higher_pos();
@@ -241,7 +241,7 @@ void Control::draw_label(std::string label, const ImRect& thumb, bool is_mirrore
     ImVec2 text_content_size = ImGui::CalcTextSize(label.c_str());
     ImVec2 text_size = text_content_size + text_padding * 2;
     ImVec2 text_start = is_horizontal() ?
-        ImVec2(thumb.Max.x + triangle_offset.x, thumb_center.y - text_size.y) : 
+        ImVec2(thumb.Max.x + triangle_offset.x, thumb_center.y - text_size.y) :
         ImVec2(thumb.Min.x - text_size.x - triangle_offset.x, thumb_center.y - text_size.y) ;
 
     if (is_mirrored)
@@ -253,7 +253,7 @@ void Control::draw_label(std::string label, const ImRect& thumb, bool is_mirrore
 
     if (with_border) {
         float rounding_b = 0.75f * rounding;
-        
+
         ImRect text_rect_b(text_rect);
         text_rect_b.Expand(ImVec2(rounding_b, rounding_b));
 
@@ -350,7 +350,7 @@ void Control::check_and_correct_thumbs(int* higher_pos, int* lower_pos)
     float lower_thumb_center_pos = is_horizontal() ? lower_thumb_center.x  : lower_thumb_center.y;
 
     if (is_horizontal()) {
-        if (lower_thumb_center_pos + thumb_radius > higher_thumb_center_pos) { 
+        if (lower_thumb_center_pos + thumb_radius > higher_thumb_center_pos) {
             if (m_selection == SelectedSlider::Higher) {
                 m_regions.higher_thumb = m_regions.lower_thumb;
                 m_regions.higher_thumb.TranslateX(thumb_radius);
@@ -369,7 +369,7 @@ void Control::check_and_correct_thumbs(int* higher_pos, int* lower_pos)
                 m_regions.lower_thumb = m_regions.higher_thumb;
                 m_regions.lower_thumb.TranslateY(thumb_radius);
                 *lower_pos = *higher_pos;
-            }        
+            }
             else {
                 m_regions.higher_thumb = m_regions.lower_thumb;
                 m_regions.higher_thumb.TranslateY(-thumb_radius);
@@ -380,13 +380,13 @@ void Control::check_and_correct_thumbs(int* higher_pos, int* lower_pos)
 }
 
 static bool lclicked_on_thumb(ImGuiID id, const ImRect& region,
-                             const ImS32 v_min, const ImS32 v_max, 
+                             const ImS32 v_min, const ImS32 v_max,
                              const ImRect& thumb, ImGuiSliderFlags flags = 0)
 {
     ImGuiContext& context = *ImGui::GetCurrentContext();
     ImGuiIO& io = ImGui::GetIO();
 
-    if (context.ActiveId == id && context.ActiveIdSource == ImGuiInputSource_Mouse && 
+    if (context.ActiveId == id && context.ActiveIdSource == ImGuiInputSource_Mouse &&
         io.MouseReleased[0]) {
         ImGuiAxis axis = (flags & ImGuiSliderFlags_Vertical) ? ImGuiAxis_Y : ImGuiAxis_X;
 
@@ -522,7 +522,7 @@ bool Control::draw_slider(int* higher_pos, int* lower_pos, const std::string& hi
         //ImGui::FocusWindow(window);
         m_is_dragging = true;
     }
-    
+
     // set slideable regions and thumbs.
     apply_regions(*higher_pos, *lower_pos, draggable_region);
 
@@ -662,7 +662,7 @@ bool Control::render()
     int windows_flag = ImGuiWindowFlags_AlwaysAutoResize |
                        ImGuiWindowFlags_NoTitleBar |
                        ImGuiWindowFlags_NoCollapse |
-                       ImGuiWindowFlags_NoMove | 
+                       ImGuiWindowFlags_NoMove |
                        ImGuiWindowFlags_NoResize |
                        ImGuiWindowFlags_NoScrollbar |
                        ImGuiWindowFlags_NoNav |

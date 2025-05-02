@@ -5,7 +5,9 @@
 
 namespace Slic3r::App {
 
-static bool PrinterButton(wchar_t icon, float width, const std::string& model, const std::string& name, bool is_toggled)
+static bool PrinterButton(
+    wchar_t icon, float width, const std::string& model, const std::string& name, bool is_toggled
+)
 {
     ImVec2 pos = ImGui::GetCursorScreenPos();
     float rounding = GImGui->Style.WindowRounding;
@@ -18,8 +20,12 @@ static bool PrinterButton(wchar_t icon, float width, const std::string& model, c
     bool hovered = ImGui::IsMouseHoveringRect(button_bb.Min, button_bb.Max);
     bool pressed = hovered && ImGui::IsMouseClicked(0);
 
-    ImU32 col = ImGui::GetColorU32(hovered ? (is_toggled ? ImGuiCol_ButtonActive : ImGuiCol_ButtonHovered) : (is_toggled ? ImGuiCol_ButtonActive : ImGuiCol_Button));
-    draw_list->AddRectFilled(button_bb.Min, button_bb.Max, col, rounding, ImDrawFlags_RoundCornersAll);
+    ImU32 col = ImGui::GetColorU32(
+        hovered ? (is_toggled ? ImGuiCol_ButtonActive : ImGuiCol_ButtonHovered)
+                : (is_toggled ? ImGuiCol_ButtonActive : ImGuiCol_Button)
+    );
+    draw_list
+        ->AddRectFilled(button_bb.Min, button_bb.Max, col, rounding, ImDrawFlags_RoundCornersAll);
     button_bb.Expand(-10.f);
 
     // Render icon in the center of the button
@@ -27,7 +33,8 @@ static bool PrinterButton(wchar_t icon, float width, const std::string& model, c
     Imgui::icon_image(icon, ImVec2(40.f, 40.f));
 
     button_bb.Min.x += 50.f;
-    draw_list->AddText(button_bb.Min, ImGui::GetColorU32(ImGuiCol_Text), (model+ " / "+ name).c_str());
+    draw_list
+        ->AddText(button_bb.Min, ImGui::GetColorU32(ImGuiCol_Text), (model + " / " + name).c_str());
 
     if (hovered) {
         ImGui::SetCursorScreenPos(button_bb.Max - ImVec2(50.f, 34.f));
@@ -36,14 +43,18 @@ static bool PrinterButton(wchar_t icon, float width, const std::string& model, c
         ImGui::SetCursorScreenPos(button_bb.Max - ImVec2(20.f, 34.f));
         Imgui::icon_button(ImGui::PrintIconMarker, ImVec2(), "settings");
     }
-    
+
     return pressed;
 }
 
-void SidebarBed::render(Domain::Vec2f pos, Domain::Vec2f size)
-{
-    ImGui::Text("Bed");
-    PrinterButton(ImGui::PrinterNEXT, 240.f, "NEXT", "Elsa", false);
+SidebarBed::SidebarBed(Item* parent) : Window("sidebar_bed", parent) {
+    set_min_size({240, 60});
 }
 
-}// Slic3r::App namespace
+void SidebarBed::render_body(Domain::Vec2f pos, Domain::Vec2f size)
+{    
+    ImGui::Text("Bed");
+    PrinterButton(ImGui::PrinterNEXT, size.x(), "NEXT", "Elsa", false);
+}
+
+} // namespace Slic3r::App

@@ -33,6 +33,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Plater/PlaterRenderLayout.cpp
         include/Slic3r/App/Plater/History.hpp
         src/Slic3r/App/Plater/History.cpp
+        include/Slic3r/App/Plater/SidebarPlaterActionButtons.hpp
+        src/Slic3r/App/Plater/SidebarPlaterActionButtons.cpp
 		include/Slic3r/App/Plater/PlaterIFDMResultCacheChangedListener.hpp
 
         include/Slic3r/App/View/IPanelView.hpp
@@ -50,6 +52,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Preview/PreviewRenderLayout.cpp
         include/Slic3r/App/Preview/SidebarAutoReslice.hpp
         src/Slic3r/App/Preview/SidebarAutoReslice.cpp
+        include/Slic3r/App/Preview/SidebarPreviewActionButtons.hpp
+        src/Slic3r/App/Preview/SidebarPreviewActionButtons.cpp
 
         include/Slic3r/App/ObjectList.hpp
         src/Slic3r/App/ObjectList.cpp
@@ -127,16 +131,36 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Navigator.cpp
         include/Slic3r/App/Navigator.hpp
 
-        include/Slic3r/App/Yoga/Align.hpp
         src/Slic3r/App/Yoga/FlexSizer.cpp
         include/Slic3r/App/Yoga/FlexSizer.hpp
         src/Slic3r/App/Yoga/SplitterSizer.cpp
         include/Slic3r/App/Yoga/SplitterSizer.hpp
-        src/Slic3r/App/Yoga/Toolbar/Item.cpp
-        include/Slic3r/App/Yoga/Toolbar/Item.hpp
-        src/Slic3r/App/Yoga/Toolbar/Toolbar.cpp
-        include/Slic3r/App/Yoga/Toolbar/Toolbar.hpp
         include/Slic3r/App/Yoga/Toolbar.hpp
+        src/Slic3r/App/Yoga/Toolbar.cpp
+        include/Slic3r/App/Yoga/Namespace.hpp
+        include/Slic3r/App/Yoga/WindowParams.hpp
+        include/Slic3r/App/Yoga/Item.hpp
+        src/Slic3r/App/Yoga/Item.cpp
+        src/Slic3r/App/Yoga/Window.cpp
+        include/Slic3r/App/Yoga/Window.hpp
+	include/Slic3r/App/Yoga/LambdaItem.hpp
+	src/Slic3r/App/Yoga/LambdaItem.cpp
+        include/Slic3r/App/Yoga/LambdaWindow.hpp
+        src/Slic3r/App/Yoga/LambdaWindow.cpp
+        include/Slic3r/App/Yoga/AbstractButton.hpp
+        src/Slic3r/App/Yoga/AbstractButton.cpp
+        include/Slic3r/App/Yoga/IconButton.hpp
+        src/Slic3r/App/Yoga/IconButton.cpp
+        include/Slic3r/App/Yoga/LayoutButton.hpp
+        src/Slic3r/App/Yoga/LayoutButton.cpp
+        include/Slic3r/App/Yoga/Tooltip.hpp
+        src/Slic3r/App/Yoga/Tooltip.cpp
+        include/Slic3r/App/Yoga/Rectangle.hpp
+        src/Slic3r/App/Yoga/Rectangle.cpp
+        include/Slic3r/App/Yoga/Text.hpp
+        include/Slic3r/App/Yoga/Icon.hpp
+        src/Slic3r/App/Yoga/Icon.cpp
+        src/Slic3r/App/Yoga/Text.cpp
 
         src/Slic3r/App/Imgui/DoubleSlider.cpp
         include/Slic3r/App/Imgui/DoubleSlider.hpp
@@ -308,6 +332,8 @@ slic3r_remap_configs("yoga::yogacore" RelWithDebInfo Release)
 add_library(slic3r-shared STATIC ${SLIC3R_SHARED_FILES})
 target_link_libraries(slic3r-shared PUBLIC
         slic3r-platform
+        slic3r-render
+        libvgcode
         libslic3r
         libpgcode
         Boost::filesystem
@@ -360,6 +386,8 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
 
         test/Slic3r/App/Scene/Node.cpp
         test/Slic3r/App/Scene/Ray.cpp
+
+        test/Slic3r/App/Yoga/LayoutTests.cpp
         test/Slic3r/Biz/ProjectInteractorTests.cpp
         test/Slic3r/Biz/Scene/SceneInteractorTests.cpp
 

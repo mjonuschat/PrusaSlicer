@@ -1,6 +1,7 @@
 #pragma once
 #include "imgui/imgui.h"
-#include "Slic3r/Domain/Types.hpp"
+
+#include <Slic3r/App/Yoga/Window.hpp>
 
 #include <map>
 #include <set>
@@ -72,19 +73,21 @@ public:
     void clear_except(size_t id);
 };
 
-class ObjectList
+struct ObjectListState {
+    MultiSelections                 instances_ms;
+    MultiSelections                 volumes_ms;
+    size_t                          edited_node_id    { 0 };
+    bool                            show_details      { false };
+};
+
+class ObjectList : public Yoga::Window
 {
 public:
-    ObjectList() {}
-    
-    void init(Biz::ProjectInteractor* project_interactor, Render::ImguiRender* imgui_render) {
-        m_project_interactor = project_interactor;
-        m_imgui_render = imgui_render;
-    }
+    explicit ObjectList(Yoga::Item* parent = nullptr);
 
-    void render(Domain::Vec2f pos, Domain::Vec2f size);
+    void init(Biz::ProjectInteractor* project_interactor, ObjectListState* object_list_state);
 
-protected:
+    void render_body(Yoga::Vec2f pos, Yoga::Vec2f size) override;
 
 private:
 
@@ -124,13 +127,7 @@ private:
     Biz::ProjectInteractor*         m_project_interactor{ nullptr };
     Biz::Scene::SceneInteractor*    m_scene_interactor  { nullptr };
     const Slic3r::Model*            m_model             { nullptr };
-    Render::ImguiRender*            m_imgui_render      { nullptr };
-
-    MultiSelections                 m_instances_ms;
-    MultiSelections                 m_volumes_ms;
-
-    size_t                          m_edited_node_id    { 0 };
-    bool                            m_show_details      { false };
+    ObjectListState* m_object_list_state                { nullptr };
 };
 
 } // namespace Slic3r::App

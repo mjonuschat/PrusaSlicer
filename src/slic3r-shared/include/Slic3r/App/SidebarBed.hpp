@@ -1,20 +1,15 @@
 #pragma once
-#include "Slic3r/Domain/Types.hpp"
+
+#include "Slic3r/App/Yoga/Window.hpp"
 
 namespace Slic3r::App {
 
-class SidebarBed
+class SidebarBed : public Yoga::Window
 {
 public:
-    SidebarBed() {}
-    
-    void init() {}
+    explicit SidebarBed(Yoga::Item* parent = nullptr);
 
-    static void render(Domain::Vec2f pos, Domain::Vec2f size);
-
-protected:
-
-private:
+    void render_body(Domain::Vec2f pos, Domain::Vec2f size) override;
 };
 
 } // namespace Slic3r::App

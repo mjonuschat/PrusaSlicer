@@ -2,25 +2,34 @@
 
 #include "Slic3r/App/AbstractRenderLayout.hpp"
 
+namespace Slic3r::App {
+class SidebarActionButtons;
+}
+
 namespace Slic3r::App::Plater {
+
+class History;
+class SidebarPlaterActionButtons;
 
 class PlaterRenderLayout : public AbstractRenderLayout
 {
 public:
-    PlaterRenderLayout() {};
-
-    void set_history_render_fn(std::function<void(Vec2f, Vec2f)> render_fn) {
-        m_cb_history_render = render_fn; }
-
-    void set_sidebar_slice_render_fn(std::function<void(Vec2f, Vec2f)> render_fn) {
-        m_cb_sidebar_slice_render = render_fn; }
+    PlaterRenderLayout(
+        ObjectList* object_list,
+        CubeView* cube_view,
+        SidebarBed* sidebar_bed,
+        SidebarPrint* sidebar_print,
+        SidebarPlaterActionButtons* sidebar_action_buttons,
+        History* history
+    );
 
 private:
-    void init_left_sizer() override;
-    void init_right_sizer() override;
+    void init_left_column() override;
+    void init_right_column() override;
 
-    std::function<void(Vec2f, Vec2f)> m_cb_history_render;
-    std::function<void(Vec2f, Vec2f)> m_cb_sidebar_slice_render;
+private:
+    SidebarPlaterActionButtons* m_sidebar_action_buttons = nullptr;
+    History* m_history = nullptr;
 };
 
-} // namespace Slic3r::App::PlaterRenderLayout
+} // namespace Slic3r::App::Plater

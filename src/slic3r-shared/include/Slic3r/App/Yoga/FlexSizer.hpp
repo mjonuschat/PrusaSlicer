@@ -1,66 +1,33 @@
-///|/ Copyright (c) Prusa Research 2018 - 2023 Enrico Turri @enricoturri1966, Tomáš Mészáros @tamasmeszaros, Lukáš Matěna @lukasmatena, Oleksandra Iushchenko @YuSanka, Filip Sykala @Jony01, Vojtěch Bubník @bubnikv, Lukáš Hejl @hejllukas, David Kocík @kocikdav, Vojtěch Král @vojtechkral
-///|/ Copyright (c) BambuStudio 2023 manch1n @manch1n
+///|/ Copyright (c) Prusa Research 2018 - 2025 Oleksandra Iushchenko @YuSanka
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #pragma once
 
-#include "yoga/Yoga.h"
-#include "Slic3r/Domain/Types.hpp"
-#include "Slic3r/App/Yoga/Align.hpp"
+#include "Slic3r/App/Yoga/WindowParams.hpp"
+#include "Slic3r/App/Yoga/Namespace.hpp"
 
-#include<map>
-#include<string>
-#include<functional>
+#include "yoga/Yoga.h"
+
+#include <map>
 
 namespace Slic3r::App::Yoga {
 
-using Vec2f = Slic3r::Domain::Vec2f;
-
-// parameters for ImGui::Window
-struct WindowParams
-{
-    std::string name_prefix {};
-    Vec2f       paddings    { 0.f, 0.f };
-};
-
-struct NodeRendering {
-    std::function<void(Vec2f, Vec2f)>   render_fn               { nullptr };
-    WindowParams                        win                     {};
-    Vec2f                               inner_sizer_min_size    {0.f, 0.f};
-};
-
-struct Margins {
-    Margins(float horizontal = 0.f, float vertical = 0.f) {
-        left = right = horizontal;
-        top = bottom = vertical;
-    }
-
-    Margins(Vec2f margins) {
-        left = right = margins.x();
-        top = bottom = margins.y();
-    }
-
-    float left      { 0.f };
-    float right     { 0.f };
-    float top       { 0.f };
-    float bottom    { 0.f };
-};
-
 class FlexSizer
 {
+    friend class FlexSizerFixture;
 public:
-    FlexSizer() {}
+    FlexSizer();
     FlexSizer(int col, int row, Vec2f min_size = Vec2f(0.f, 0.f), Margins margins = Margins());
     virtual ~FlexSizer();
 
-    bool    is_inited();
+    bool    is_inited() const;
     void    init(int col, int row, Vec2f min_size = Vec2f(0.f, 0.f), Margins margins = Margins());
 
     // Note for add(): win_name_prefix is a prefix name for windows, which will be created for this sizer item.
     // Have to be empty, if this item is rendered inside the currect imgui window.
     // add some item as a control or line of controls.
-    void    add(std::function<void(Vec2f, Vec2f)> render_fn = nullptr, bool single_item = false, const WindowParams& win = {}, Align align = { Yoga::AlignH::Left, Yoga::AlignV::Top });
+    void    add(RenderPosFn render_fn = nullptr, bool single_item = false, const WindowParams& win = {}, Align align = { Yoga::AlignH::Left, Yoga::AlignV::Top });
     // add inner sizer
     void    add(FlexSizer& inner_sizer, const WindowParams& win = {}, Align align = {});
 
@@ -85,8 +52,8 @@ public:
     void    show_col(int col, bool show = true);
     void    show_row(int row, bool show = true);
 
-    bool    is_shown_col(int col);
-    bool    is_shown_row(int row);
+    bool    is_shown_col(int col) const;
+    bool    is_shown_row(int row) const;
 protected:
     void    render_node(YGNodeRef node, Vec2f win_pos);
     void    finalize();
@@ -108,6 +75,12 @@ protected:
     bool        m_show_node_shapes  { false };
 
 private:
+    struct NodeRendering {
+        RenderPosFn   render_fn               { nullptr };
+        WindowParams   win                     {};
+        Vec2f          inner_sizer_min_size    {0.f, 0.f};
+    };
+
     Margins     m_margins;
 
     int         m_next_col      { 0 };

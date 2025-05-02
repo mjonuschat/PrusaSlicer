@@ -67,7 +67,6 @@ class FdmViewerWrapper : public AbstractViewerWrapper
 {
 public:
     FdmViewerWrapper() = default;
-    ~FdmViewerWrapper() override;
 
     bool init(Render::Device& device, Scene::Scene& scene, Scene::GeometryDataFactory& data_factory) override;
     bool set_settings(const FdmViewerWrapperSettings& settings);
@@ -106,9 +105,10 @@ public:
 
     void render_toolpaths();
     void render_gui(const WrapperLayoutData& layout);
-    void render_gcode_window();
-    void render_legend(Render::ImguiRender* imgui_render) override;
-    void render_gcode_slider();
+
+    GCodeWindow* gcode_window() const;
+    Legend* legend() const;
+    DoubleSliderForGcode* double_slider_gcode() const;
 
     Biz::libpgcode::UnitsSystem units() const { return m_units; }
     void set_units(Biz::libpgcode::UnitsSystem sys);
@@ -126,6 +126,10 @@ public:
     float tool_marker_scale_factor() const { return m_viewer.tool_marker_scale_factor(); }
     void set_tool_marker_scale_factor(float factor) { m_viewer.set_tool_marker_scale_factor(factor); }
 
+    void set_legend_visible(bool visible) { m_legend_params.visible = visible; }
+    void toggle_legend_visible() { set_legend_visible(!m_legend_params.visible); }
+    bool is_legend_visible() const { return m_legend_params.visible; }
+
     void set_gcodewindow_visible(bool visible) { m_gcode_window_data.set_visible(visible); }
     void toggle_gcodewindow_visible() { m_gcode_window_data.toggle_visible(); }
     bool is_gcodewindow_visible() const { return m_gcode_window_data.is_visible(); }
@@ -140,6 +144,8 @@ public:
     void toggle_option_visibility(Biz::libpgcode::OptionType type) { m_viewer.toggle_option_visibility(type); }
     const Biz::libpgcode::OptionTypes& options() const { return m_viewer.options(); }
 
+    bool is_legend_shown() const { return m_legend_params.is_shown(); }
+
     const libvgcode::Interval& layers_range() const { return m_viewer.layers_range(); }
     void set_layers_range(libvgcode::Interval::value_type min, libvgcode::Interval::value_type max);
 
@@ -147,12 +153,12 @@ public:
     uint8_t used_extruders_count() const { return m_viewer.used_extruders_count(); }
     std::vector<uint8_t> used_extruders_ids() const { return m_viewer.used_extruders_ids(); }
 
-    void slider_gcode_move_current_thumb(int delta) { m_slider_gcode.move_current_thumb(delta); }
-    void slider_layers_move_current_thumb(int delta) { m_slider_layers.move_current_thumb(delta); }
-    void slider_layers_jump_to_value() { m_slider_layers.jump_to_value(); }
-    void slider_layers_add_current_tick() { m_slider_layers.add_current_tick(); }
-    void slider_layers_delete_current_tick() { m_slider_layers.delete_current_tick(); }
-    Domain::CustomGCode::Info slider_layers_ticks_values() { return m_slider_layers.ticks_values(); }
+    void slider_gcode_move_current_thumb(int delta) { m_slider_gcode->move_current_thumb(delta); }
+    void slider_layers_move_current_thumb(int delta) { m_slider_layers->move_current_thumb(delta); }
+    void slider_layers_jump_to_value() { m_slider_layers->jump_to_value(); }
+    void slider_layers_add_current_tick() { m_slider_layers->add_current_tick(); }
+    void slider_layers_delete_current_tick() { m_slider_layers->delete_current_tick(); }
+    Domain::CustomGCode::Info slider_layers_ticks_values() { return m_slider_layers->ticks_values(); }
 
     void reset_default_extrusion_roles_colors() { m_viewer.reset_default_extrusion_roles_colors(); }
 
@@ -170,14 +176,15 @@ public:
 
 private:
     FdmViewerWrapperSettings m_settings;
-
     FdmViewerWrapperInputData m_data;
 
     libvgcode::FdmViewer m_viewer;
-
-    DoubleSliderForGcode m_slider_gcode;
+    DoubleSliderForGcode* m_slider_gcode = nullptr;
+    Legend* m_legend = nullptr;
+    GCodeWindow* m_gcode_window = nullptr;
     GCodeWindowData m_gcode_window_data;
     ActualSpeedPlotData m_actual_speed_plot_data;
+    LegendParams m_legend_params;
     LegendCallbacks m_cb_legend;
 
     float m_legend_height{ 0.0f };
@@ -205,10 +212,10 @@ private:
     std::string on_slider_layers_get_gcode(Domain::CustomGCode::Type type);
     libvgcode::Palette on_slider_layers_get_extruder_colors();
 
-    void render_legend(const WrapperLayoutData& layout);
-    void render_slider_gcode(const WrapperLayoutData& layout);
-    void render_slider_layers(const WrapperLayoutData& layout);
-    void render_gcodewindow(const WrapperLayoutData& layout);
+    // void render_legend(const WrapperLayoutData& layout);
+    // void render_slider_gcode(const WrapperLayoutData& layout);
+    // void render_slider_layers(const WrapperLayoutData& layout);
+    // void render_gcodewindow(const WrapperLayoutData& layout);
     void render_vertex_properties(const WrapperLayoutData& layout);
 
     void render_customize_extrusion_roles_colors_popup();

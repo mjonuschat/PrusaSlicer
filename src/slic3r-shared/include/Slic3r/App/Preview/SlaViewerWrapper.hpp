@@ -30,8 +30,6 @@ public:
 
     void load(SlaViewerWrapperInputData&& wrapper_data, const std::vector<float>& layers_zs, const std::vector<float>& layers_times);
 
-    void render_legend(Render::ImguiRender* imgui_render) override;
-
     const libvgcode::Interval& view_visible_range() const { return m_viewer.view_visible_range(); }
     const libvgcode::Interval& view_enabled_range() const { return m_viewer.view_enabled_range(); }
 

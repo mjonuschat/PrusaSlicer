@@ -58,6 +58,10 @@ void toggle_button(const std::string& label, bool* on, bool right_align = false)
 ImU32 to_ImU32(const ColorRGBA& color);
 ImU32 to_ImU32(const ColorRGB& color, uint8_t alpha = 255);
 
+// Adjusts the brightness of an ImGui ImColor by the given factor (0 to 2)
+// factor < 1.0f darkens the color, factor > 1.0f brightens it
+ImColor adjust_brightness(ImColor color, float factor);
+
 // this code is borrowed from https://stackoverflow.com/questions/16605967/set-precision-of-stdto-string-when-converting-floating-point-values
 template <typename T>
 std::string to_string_with_precision(const T a_value, const uint8_t n = 2)

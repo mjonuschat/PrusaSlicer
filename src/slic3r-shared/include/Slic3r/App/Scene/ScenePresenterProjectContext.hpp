@@ -27,6 +27,7 @@ public:
     ScenePresenterProjectContext& operator=(const ScenePresenterProjectContext<T>&) = delete;
 
     ScenePresenterProjectContext(ScenePresenterProjectContext<T>&&) = default;
+    ScenePresenterProjectContext& operator=(ScenePresenterProjectContext<T>&&) = default;
 
     Scene& scene() { return *m_scene; }
     const Scene& scene() const { return *m_scene; }
@@ -50,8 +51,7 @@ public:
 
     double screen_space_sized_modifier() const { return 0.0075; }
 
-    ObjectList* object_list() { return &m_object_list; }
-    const ObjectList& object_list() const { return m_object_list; }
+    ObjectListState* object_list_state() { return &m_object_list; }
 
 private:
     void initialize_selection_root() {
@@ -70,7 +70,7 @@ private:
     ModelTriangleMeshManager m_model_triangle_mesh_manager;
     Node* m_selection_root{nullptr};
     Eigen::AlignedBox3f m_selection_bounding_box;
-    ObjectList m_object_list;
+    ObjectListState m_object_list;
 };
 
 } // namespace Slic3r::App::Scene

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Slic3r/App/Yoga/Window.hpp"
 #include "Slic3r/App/Imgui/ImguiExtension.hpp"
 
 #include <imgui/imgui.h>
@@ -65,8 +66,6 @@ public:
         m_draw_opts.has_ruler = has_ruler;
     }
 
-    void show(bool show) { m_is_shown = show; }
-    bool is_shown() const { return m_is_shown; }
     bool is_combine_thumbs() const { return m_combine_thumbs; }
     bool is_active_higher_thumb() const { return m_selection == SelectedSlider::Higher; }
     void move_active_thumb(int delta);
@@ -186,11 +185,10 @@ private:
 
 // VatType = a typ of values, related to the each position in slider
 template<typename ValType>
-class Manager
+class Manager : public Slic3r::App::Yoga::Window
 {
 public:
-    Manager() = default;
-    virtual ~Manager() = default;
+    Manager(const std::string& name, Yoga::Item* parent = nullptr) : Slic3r::App::Yoga::Window(name, parent) {}
 
     void init(int lowerPos,
               int higherPos,
@@ -199,6 +197,7 @@ public:
               const std::string& name,
               bool is_horizontal)
     {
+        set_min_size({is_horizontal ? 0 : 70, is_horizontal ? 70 : 0});
         m_ctrl = Control(lowerPos, higherPos,
                          minPos, maxPos,
                          is_horizontal ? 0 : ImGuiSliderFlags_Vertical,
@@ -251,14 +250,11 @@ public:
     bool is_lower_at_min() const { return m_ctrl.lower_pos() == m_ctrl.min_pos(); }
     bool is_higher_at_max() const { return m_ctrl.higher_pos() == m_ctrl.max_pos(); }
 
-    bool is_shown() const { return m_ctrl.is_shown(); }
-    void show(bool show = true) { m_ctrl.show(show); }
     void show_lower_thumb(bool show) { m_ctrl.show_lower_thumb(show); }
 
-    float width() const { return m_ctrl.is_shown() ? m_ctrl.ctrl_size().x : 0.0f; }
-    float height() const { return m_ctrl.is_shown() ? m_ctrl.ctrl_size().y : 0.0f; }
-
-    virtual void render(const ImVec2& pos, float scale_factor = 1.0f, float offset = 0.0f) = 0;
+    void set_scale(float scale) {
+        m_scale = scale;
+    }
 
     void set_on_thumb_move_callback(OnThumbMoveCallback cb) { m_cb_thumb_move = cb; };
     void set_request_extra_frames_callback(RequestExtraFramesCallback cb) { m_cb_request_extra_frames = cb; };

@@ -1,9 +1,8 @@
 #pragma once
 
 #include <Slic3r/Biz/libpgcode/LineView.hpp>
+#include "Slic3r/App/Yoga/Window.hpp"
 
-#include <string>
-#include <vector>
 #include <string_view>
 #include <optional>
 #include <cstdint>
@@ -52,12 +51,27 @@ private:
     Biz::libpgcode::LineView m_gcode;
 };
 
+
 /** @brief ImGui widget to show the gcode lines as list of strings.
  *
  * @param data The data to show
- * @param curr_line_id The current line id 
+ * @param curr_line_id The current line id
  * @param clip_text Whether or not to clip the text
  */
-void gcode_window(const GCodeWindowData& data, uint32_t curr_line_id, bool clip_text = false);
+class GCodeWindow : public Yoga::Window {
+public:
+    explicit GCodeWindow(Yoga::Item* parent = nullptr);
+
+    void render_body(Yoga::Vec2f pos, Yoga::Vec2f size) override;
+
+    void set_data(GCodeWindowData* data);
+    void set_curr_line_id(uint32_t curr_line_id);
+    void set_clip_text(bool clip_text);
+
+private:
+    GCodeWindowData* m_data = nullptr;
+    uint32_t m_curr_line_id = 0;
+    bool m_clip_text = false;
+};
 
 } // namespace Slic3r::App::Preview

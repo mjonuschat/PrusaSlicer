@@ -31,8 +31,7 @@ void PreviewScenePresenter::on_selected_project_changed(size_t index)
 {
     m_selected_project_id = index;
     if (m_projects.count(m_selected_project_id) == 0) {
-        ScenePresenterProjectContext context{};
-        m_projects.emplace(m_selected_project_id, std::move(context));
+        m_projects.try_emplace(index);
     }
 }
 

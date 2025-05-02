@@ -2,6 +2,8 @@
 
 #include "Slic3r/App/Yoga/FlexSizer.hpp"
 
+#include "Slic3r/Assert.hpp"
+
 #include <Yoga.h>
 #include <imgui_internal.h>
 #include <string.h>
@@ -58,6 +60,7 @@ static Vec2f get_item_size(std::function<void(Vec2f, Vec2f)> render_node_fn, boo
         render_node_fn(Vec2f(0.f, 0.f), Vec2f(0.f, 0.f));
     ImGui::PopStyleVar();
 
+    Vec2f result;
     if (single_item) {
         // just one control is rendering
         ImVec2 size = ImGui::GetItemRectSize();
@@ -71,16 +74,18 @@ static Vec2f get_item_size(std::function<void(Vec2f, Vec2f)> render_node_fn, boo
         // reset cursor pos
         ImGui::SetCursorScreenPos(old_pos);
 
-        return { real_size.x > size.x ? real_size.x : size.x, size.y };
+        result = Vec2f{ real_size.x > size.x ? real_size.x : size.x, size.y };
+    } else {
+        // for non-single items (panels) we are interesting in height of content
+        ImVec2 size = ImGui::GetCursorScreenPos() - old_pos - ImVec2(0.f, GImGui->Style.ItemSpacing.y);
+
+               // reset cursor pos
+        ImGui::SetCursorScreenPos(old_pos);
+
+        result = Vec2f{ ImMax(10.f, size.x), ImMax(10.f, size.y) };
     }
 
-    // for non-single items (panels) we are interesting in height of content
-    ImVec2 size = ImGui::GetCursorScreenPos() - old_pos - ImVec2(0.f, GImGui->Style.ItemSpacing.y);
-
-    // reset cursor pos
-    ImGui::SetCursorScreenPos(old_pos);
-
-    return { ImMax(10.f, size.x), ImMax(10.f, size.y) };
+    return result;
 }
 
 static Vec2f get_size(YGNodeRef node)
@@ -97,12 +102,14 @@ static Vec2f get_render_pos(YGNodeRef node)
                   YGNodeLayoutGetTop (col_node) + YGNodeLayoutGetTop (child) + YGNodeLayoutGetTop (node));
 }
 
+FlexSizer::FlexSizer() {}
+
 FlexSizer::FlexSizer(int col_cnt, int row_cnt, Vec2f min_size/* = Vec2f(0.f, 0.f)*/, Margins margins/* = Margins(0.f, 0.f)*/)
 {
     init(col_cnt, row_cnt, min_size, margins);
 }
 
-bool FlexSizer::is_inited()
+bool FlexSizer::is_inited() const
 {
     return m_root && YGNodeGetChildCount(m_root) > 0;
 }
@@ -123,7 +130,7 @@ void FlexSizer::init(int col_cnt, int row_cnt, Vec2f min_size/* = Vec2f(0.f, 0.f
     m_root = create_node(min_size.x(), min_size.y());
     YGNodeStyleSetFlexDirection(m_root, YGFlexDirectionRow);
 
-    for (int i =0; i < col_cnt; i++) {
+    for (int i = 0; i < col_cnt; i++) {
         // Create the column node
         YGNodeRef col_node = add_node(m_root);
         YGNodeStyleSetFlexDirection(col_node, YGFlexDirectionColumn);
@@ -151,9 +158,10 @@ void FlexSizer::init(int col_cnt, int row_cnt, Vec2f min_size/* = Vec2f(0.f, 0.f
 
 FlexSizer::~FlexSizer()
 {
-    if (m_root)
+    if (m_root) {
         // Clean up Yoga
         YGNodeFreeRecursive(m_root);
+    }
 }
 
 // get min size in respect to children
@@ -204,8 +212,10 @@ void FlexSizer::add(std::function<void(Vec2f, Vec2f)> render_fn /* = nullptr*/,
     int col = m_next_col;// current col, !!! get before get next node
 
     YGNodeRef node = get_next_node();
-    if (node == nullptr)
+    if (node == nullptr) {
+        ASSERT(!node, "FlexSizer::add was called on full FlexSizer");
         return; // all nodes are already initialized
+    }
 
     Vec2f sz = get_item_size(render_fn, is_single_item) + 2.f * win.paddings;
 
@@ -285,7 +295,6 @@ void FlexSizer::finalize()
     // Set best min size -> exactly minimal size of the sizer
     // it can be bigger, the users input in constructor
     auto best_min_size = get_min_size();
-
     if (m_min_size.x() < best_min_size.x())
         m_min_size.x() = best_min_size.x();
     if (m_min_size.y() < best_min_size.y())
@@ -460,7 +469,7 @@ void FlexSizer::render(Vec2f win_size, Vec2f win_pos)
     }
 }
 
-Vec2f  FlexSizer::get_best_size()
+Vec2f FlexSizer::get_best_size()
 {
     finalize();
 
@@ -553,7 +562,7 @@ void FlexSizer::show_col(int col, bool show /*= true*/)
     YGNodeCalculateLayout(m_root, YGUndefined, YGUndefined, YGDirectionLTR);
 }
 
-bool FlexSizer::is_shown_col(int col)
+bool FlexSizer::is_shown_col(int col) const
 {
     if (auto col_node = YGNodeGetChild(m_root, col))
         return YGNodeStyleGetDisplay(col_node) == YGDisplayFlex;
@@ -576,7 +585,7 @@ void FlexSizer::show_row(int row, bool show /*= true*/)
     YGNodeCalculateLayout(m_root, YGUndefined, YGUndefined, YGDirectionLTR);
 }
 
-bool FlexSizer::is_shown_row(int row)
+bool FlexSizer::is_shown_row(int row) const
 {
     bool is_shown{ false };
 

@@ -227,12 +227,10 @@ void DoubleSliderForLayers::perform_auto_color_change()
     process_ticks_changed();
 }
 
-void DoubleSliderForLayers::render(const ImVec2& pos, float scale_factor, float offset)
+void DoubleSliderForLayers::render_body(Yoga::Vec2f p, Yoga::Vec2f s)
 {
-    if (!m_ctrl.is_shown())
-        return;
-
-    m_scale = scale_factor;
+    ImVec2 pos = to_im(p);
+    // ImVec2 size = to_im(s);
     m_ruler.set_scale(m_scale);
     m_icon_screen_size = 1.25f * lround(16.0f * ImGui::GetTextLineHeight() / 15.0f);
 
@@ -240,8 +238,10 @@ void DoubleSliderForLayers::render(const ImVec2& pos, float scale_factor, float 
 
     float SLIDER_LAYERS_WIDTH = m_show_ruler ? 125.0f : 105.0f;
     float width = SLIDER_LAYERS_WIDTH * m_scale;
+
     ImVec2 position;
     ImVec2 size;
+    float offset = 0;
     if (pos.x == -1.0f && pos.y == -1.0f) {
         // temporary hack to allow to render the slider outside Yoga layout
         position.x = viewport.Size.x - width - m_icon_screen_size;
@@ -291,9 +291,9 @@ void DoubleSliderForLayers::render(const ImVec2& pos, float scale_factor, float 
     else
         btn_pos.x += 1.1f * m_icon_screen_size;
     bool is_one_layer = m_ctrl.is_combine_thumbs();
-    if (render_button(is_one_layer ? ImGui::Lock : ImGui::Unlock, 
-        is_one_layer ? ImGui::LockHovered : ImGui::UnlockHovered, 
-        "one_layer", btn_pos, FocusedItem::OneLayerIcon))
+    if (render_button(is_one_layer ? ImGui::Lock : ImGui::Unlock,
+                      is_one_layer ? ImGui::LockHovered : ImGui::UnlockHovered,
+                      "one_layer", btn_pos, FocusedItem::OneLayerIcon))
         change_one_layer_lock();
 
     if (pos.x == -1.0f && pos.y == -1.0f)
