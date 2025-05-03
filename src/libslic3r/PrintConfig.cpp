@@ -1232,6 +1232,14 @@ void PrintConfigDef::init_fff_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionBool(true));
 
+    def = this->add("external_perimeters_first_holes_min_size", coFloat);
+    def->label = L("Minimum hole size");
+    def->full_label = L("External perimeters first minimum hole size");
+    def->category = L("Layers and Perimeters");
+    def->tooltip = L("The minimum length of the hole perimeter needed to enable external perimiters first for holes.");
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloat(30.0));
+
     def = this->add("extra_perimeters", coBool);
     def->label = L("Extra perimeters if needed");
     def->category = L("Layers and Perimeters");
