@@ -736,6 +736,7 @@ bool PrintObject::invalidate_state_by_config_options(
             || opt_key == "infill_overlap"
             || opt_key == "external_perimeters_first"
             || opt_key == "external_perimeters_first_holes"
+            || opt_key == "external_perimeters_first_holes_min_size"
             || opt_key == "arc_fitting"
             || opt_key == "top_one_perimeter_type"
             || opt_key == "only_one_perimeter_first_layer"
