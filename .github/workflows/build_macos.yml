@@ -52,7 +52,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          brew install automake cmake git gettext libtool texinfo m4 zlib
+          brew install automake git gettext libtool texinfo m4 zlib
 
       - name: Downgrade automake
         run: |
