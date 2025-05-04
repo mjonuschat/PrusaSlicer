@@ -1,6 +1,6 @@
 app-id: io.github.mjonuschat.PrusaSlicer
 runtime: org.gnome.Platform
-runtime-version: "46"
+runtime-version: "48"
 sdk: org.gnome.Sdk
 command: entrypoint
 desktop-file-name-suffix: ""
@@ -142,7 +142,7 @@ modules:
   - type: file
     url: https://gitlab.com/libeigen/eigen/-/archive/3.3.7/eigen-3.3.7.zip
     dest: external-packages/Eigen
-    sha256: e09b89aae054e9778ee3f606192ee76d645eec82c402c01c648b1fe46b6b9857
+    sha256: 4815118c085ff1d5a21f62218a3b2ac62555e9b8d7bacd5093892398e7a92c4b
 
   # JPEG
   - type: file
@@ -152,9 +152,9 @@ modules:
 
   # ZLIB
   - type: file
-    url: https://github.com/madler/zlib/archive/refs/tags/v1.2.11.zip
+    url: https://github.com/madler/zlib/releases/download/v1.3.1/zlib131.zip
     dest: external-packages/ZLIB
-    sha256: f5cc4ab910db99b2bdbba39ebbdc225ffc2aa04b4057bc2817f1b94b6978cfc3
+    sha256: 72af66d44fcc14c22013b46b814d5d2514673dda3d115e64b690c1ad636e7b17
 
   # heatshrink
   - type: file
@@ -176,7 +176,7 @@ modules:
 
   # MPFR
   - type: file
-    url: https://www.mpfr.org/mpfr-current/mpfr-4.2.1.tar.bz2
+    url: https://www.mpfr.org/mpfr-4.2.1/mpfr-4.2.1.tar.bz2
     dest: external-packages/MPFR
     sha256: b9df93635b20e4089c29623b19420c4ac848a1b29df1cfd59f26cab0d2666aa0
 
@@ -200,9 +200,9 @@ modules:
 
   # CGAL
   - type: file
-    url: https://github.com/CGAL/cgal/archive/refs/tags/v5.4.zip
+    url: https://github.com/CGAL/cgal/archive/refs/tags/v5.6.2.zip
     dest: external-packages/CGAL
-    sha256: d7605e0a5a5ca17da7547592f6f6e4a59430a0bc861948974254d0de43eab4c0
+    sha256: 29acaeee5a76a95029fac23131bb1c3a4a75df9a0e7e43b465a1f32d0628f45d
 
   # GMP
   - type: file
@@ -228,6 +228,12 @@ modules:
     dest: external-packages/wxWidgets
     sha256: 3ebb971ddb45ceea6d9b965c3d0266f44edae71f2a7daa5d48db34bd95aa878b
 
+  # json
+  - type: file
+    url: https://github.com/nlohmann/json/archive/refs/tags/v3.12.0.zip
+    dest: external-packages/json
+    sha256: 34660b5e9a407195d55e8da705ed26cc6d175ce5a6b1fb957e701fb4d5b04022
+
   # OpenCSG
   - type: file
     url: https://github.com/floriankirsch/OpenCSG/archive/refs/tags/opencsg-1-4-2-release.zip
@@ -236,9 +242,9 @@ modules:
 
   # z3
   - type: file
-    url: https://github.com/Z3Prover/z3/archive/refs/tags/z3-4.13.0.zip
+    url: https://github.com/Z3Prover/z3/archive/refs/tags/z3-4.15.1.zip
     dest: external-packages/z3
-    sha256: 81543736dcbbbcb037a7df55d0be596245d509f3f69f56610df32728e48ee050
+    sha256: 5072309889a8fe73381303949114391ae2c976b7df64886f4cbdae349dd39cae
 
   # NanoSVG
   - type: file
@@ -248,9 +254,9 @@ modules:
 
   # OpenVDB
   - type: file
-    url: https://github.com/prusa3d/openvdb/archive/a68fd58d0e2b85f01adeb8b13d7555183ab10aa5.zip
+    url: https://github.com/prusa3d/openvdb/archive/339ee88230da33e3fefb133d8c1a9e16bef09144.zip
     dest: external-packages/OpenVDB
-    sha256: f353e7b99bd0cbfc27ac9082de51acf32a8bc0b3e21ff9661ecca6f205ec1d81
+    sha256: 098c67620a3884b7c09775e5819e88ff09e6c69b09c07695a4301f77f9382664
 
   # OpenSSL
   - type: file
