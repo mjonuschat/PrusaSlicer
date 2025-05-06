@@ -81,6 +81,9 @@ public:
     void notify_listener_on_objects(const std::vector<Slic3r::ModelObject*>& objects);
     void notify_listener_on_objects();
 
+    using RefMesh = std::pair<Domain::ElementRef, Domain::TriangleMesh>;
+    using RefMeshes = std::vector<RefMesh>;
+    void change_volume_meshes(RefMeshes&& meshes);
     void edit_name(const Domain::ElementRef& id, const std::string& new_name);
     void set_printable(const Domain::ElementRef& id, bool is_printable);
     void extract_selected_instances();

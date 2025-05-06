@@ -254,6 +254,62 @@ void SceneInteractor::notify_listener_on_objects()
     notify_listener_on_objects(project.model().objects);
 }
 
+void SceneInteractor::change_volume_meshes(RefMeshes&& meshes)
+{
+    Domain::Project& project = m_workbench.project(m_selected_project_id);
+    Domain::ElementRefs removed_ids; 
+    Domain::ElementRefs updated_ids;
+    removed_ids.reserve(meshes.size());
+    updated_ids.reserve(meshes.size());
+    std::vector<size_t> object_ids;
+    object_ids.reserve(meshes.size());
+    for (RefMesh& mesh : meshes) {
+        Domain::ElementRef& id = mesh.first;
+        Domain::TriangleMesh& triangle_mesh = mesh.second;
+        ModelVolume* volume_ptr = project.find_volume_by_id(id.object_id, id.volume_id);
+
+        assert(volume_ptr != nullptr);
+        if (volume_ptr == nullptr)
+            return;
+
+        ModelVolume& volume = *volume_ptr;
+        volume.set_mesh(std::move(triangle_mesh));
+        volume.calculate_convex_hull();
+        volume.set_new_unique_id();
+        
+        removed_ids.push_back(id);
+        id.volume_id = volume.id().id; // get new_unique_id
+        updated_ids.push_back(id);
+        object_ids.push_back(id.object_id);
+    }
+
+    std::sort(object_ids.begin(), object_ids.end());
+    object_ids.erase(std::unique(object_ids.begin(), object_ids.end()), object_ids.end());
+    for (size_t object_id : object_ids) {
+        ModelObject& object = *project.find_object_by_id(object_id);
+        object.invalidate_bounding_box();
+        object.ensure_on_bed(true); // disallow negative z
+    }    
+
+    // TODO: fix hollowing, sla support points, modifiers, ...
+    // int object_idx = selection.get_object_idx();
+    // plater->changed_mesh(object_idx); // PS 2.9.2
+    // TODO: Fix warning icon in object list
+    // wxGetApp().obj_list()->update_item_error_icon(object_idx, -1); // PS 2.9.2
+
+    // After removing custom supports, seams, and multimaterial painting, we have to update info
+    // about the object to remove information about custom supports, seams, and multimaterial
+    // painting in the right panel.
+    // wxGetApp().obj_list()->update_info_items(selection.get_object_idx());
+
+    invoke_listeners<ISceneChangedListener>(
+        [&removed_ids, &updated_ids, project_id = m_selected_project_id](auto* l) {
+        l->on_volume_removed(project_id, removed_ids);
+        l->on_volume_added(project_id, updated_ids);
+    });
+    set_selection({SelectionMode::Volume, updated_ids});
+}
+
 void SceneInteractor::edit_name(const Domain::ElementRef& id, const std::string& new_name)
 {
     Domain::Project& project = m_workbench.project(m_selected_project_id);

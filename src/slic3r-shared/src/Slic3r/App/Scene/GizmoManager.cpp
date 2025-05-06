@@ -129,14 +129,17 @@ void GizmoManager::render_scene(Render::CommandBuffer& cmd_buffer)
     //m_scene_provider.scene().log_nodes();
 }
 
-// void GizmoManager::render_imgui()
-// {
-//     for (auto* g : m_in_cycle_gizmos)
-//         g->render_imgui();
-// #if DEBUG_GIZMO_MANAGER
-//     render_gizmo_activation_debug();
-// #endif
-// }
+//void GizmoManager::render_imgui()
+//{
+//    for (auto* g : m_in_cycle_gizmos)
+//        g->render_imgui();
+//
+//    if (m_active_tool)
+//        m_active_tool->render_imgui();
+//#if DEBUG_GIZMO_MANAGER
+//    render_gizmo_activation_debug();
+//#endif
+//}
 
 void GizmoManager::activate_tool(ToolType tool, PrinterTechnology pt)
 {
