@@ -1077,6 +1077,11 @@ void PerimeterGenerator::process_arachne(
             const float top_surface_min_width = std::max<float>(float(ext_perimeter_spacing) / 4.f + scaled<float>(0.00001), float(perimeter_width) / 4.f);
             top_expolygons = offset2_ex(top_expolygons, -top_surface_min_width, top_surface_min_width + float(perimeter_width));
 
+            // Filter out thin gaps between top expolygons.
+            // Such thin gaps between infills are filtered out during surface merging, which could lead to overlapping extrusions.
+            const float top_surface_min_gap = static_cast<float>(ext_perimeter_width) / 4.f;
+            top_expolygons = closing_ex(top_expolygons, top_surface_min_gap);
+
             // Get the not-top ExPolygons (including bridges) from current slices and expanded real top ExPolygons (without bridges).
             const ExPolygons not_top_expolygons = diff_ex(infill_contour, top_expolygons);
 
