@@ -374,10 +374,10 @@ inline void build_pillars(SupportTreeBuilder &builder,
 
 void create_branching_tree(SupportTreeBuilder &builder, const SupportableMesh &sm)
 {
-    auto coordfn = [&sm](size_t id, size_t dim) { return sm.pts[id].pos(dim); };
-    KDTreeIndirect<3, float, decltype (coordfn)> tree{coordfn, sm.pts.size()};
+    auto coordfn = [&sm](size_t id, size_t dim) { return sm.pts->at(id).pos(dim); };
+    KDTreeIndirect<3, float, decltype (coordfn)> tree{coordfn, sm.pts->size()};
 
-    auto nondup_idx = non_duplicate_suppt_indices(tree, sm.pts, 0.1);
+    auto nondup_idx = non_duplicate_suppt_indices(tree, *sm.pts, 0.1);
     std::vector<std::optional<Head>> heads(nondup_idx.size());
     auto leafs = reserve_vector<branchingtree::Node>(nondup_idx.size());
 

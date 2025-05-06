@@ -62,7 +62,7 @@ TEST_CASE_METHOD(SlicingFixture, "Update respects instances on bed", "[slicing][
     using namespace std::chrono_literals;
 
     ResultListener listener;
-    slicing.add_listener<IFDMResultListener>(&listener);
+    slicing.set_listener<IFDMResultListener>(&listener);
 
     ModelOnBed model_on_bed{get_cubes_model(10, 5)};
 

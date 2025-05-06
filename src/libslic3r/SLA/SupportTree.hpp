@@ -123,22 +123,10 @@ enum class MeshType { Support, Pad };
 struct SupportableMesh
 {
     AABBMesh          emesh;
-    Domain::SLA::SupportPoints     pts;
+    std::shared_ptr<const Domain::SLA::SupportPoints> pts;
     SupportTreeConfig cfg;
     PadConfig         pad_cfg;
     double            zoffset = 0.;
-
-    explicit SupportableMesh(const indexed_triangle_set &trmsh,
-                             const Domain::SLA::SupportPoints &sp,
-                             const SupportTreeConfig    &c)
-        : emesh{trmsh}, pts{sp}, cfg{c}
-    {}
-
-//    explicit SupportableMesh(const AABBMesh          &em,
-//                             const SupportPoints     &sp,
-//                             const SupportTreeConfig &c)
-//        : emesh{em}, pts{sp}, cfg{c}
-//    {}
 };
 
 inline double ground_level(const SupportableMesh &sm)

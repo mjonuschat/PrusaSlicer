@@ -426,10 +426,10 @@ std::optional<Head> calculate_pinhead_placement(Ex                     policy,
                                                 const SupportableMesh &sm,
                                                 size_t suppt_idx)
 {
-    if (suppt_idx >= sm.pts.size())
+    if (suppt_idx >= sm.pts->size())
         return {};
 
-    const Domain::SLA::SupportPoint &sp = sm.pts[suppt_idx];
+    const Domain::SLA::SupportPoint &sp = sm.pts->at(suppt_idx);
     Head                head{
         sm.cfg.head_back_radius_mm,
         sp.head_front_radius,

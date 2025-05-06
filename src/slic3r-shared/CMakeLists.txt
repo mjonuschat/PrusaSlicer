@@ -292,6 +292,10 @@ set(SLIC3R_SHARED_FILES
 		src/Slic3r/Biz/Network/Bonjour.cpp
 		src/Slic3r/Biz/Network/TCPConsole.cpp
 		src/Slic3r/Biz/Network/ServiceConfig.cpp
+        include/Slic3r/Biz/SLAResultCache.hpp
+        src/Slic3r/Biz/SLAResultCache.cpp
+        include/Slic3r/Biz/SLAObjectCache.hpp
+        src/Slic3r/Biz/SLAObjectCache.cpp
 )
 
 find_package(NanoSVG REQUIRED)

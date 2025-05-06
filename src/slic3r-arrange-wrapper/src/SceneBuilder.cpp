@@ -801,7 +801,7 @@ ExPolygons ArrangeableSLAPrintObject::full_outline() const
         Transform3d trafo_instance = m_inst_trafo * m_po->trafo().inverse();
 
         if (omesh) {
-            Polygons ptmp = project_mesh(*omesh, trafo_instance, [] {});
+            Polygons ptmp = project_mesh(omesh->its, trafo_instance, [] {});
             std::move(ptmp.begin(), ptmp.end(), std::back_inserter(polys));
         }
 
@@ -854,7 +854,7 @@ Polygon ArrangeableSLAPrintObject::convex_outline() const
 
         if (omesh) {
             polys.emplace_back(
-                tm::its_convex_hull_2d_above(*omesh, trafo_instance, zlvl));
+                tm::its_convex_hull_2d_above(omesh->its, trafo_instance, zlvl));
         }
 
         polys.emplace_back(

@@ -149,8 +149,6 @@ set(SLIC3R_SOURCES
     Format/objparser.hpp
     Format/STL.cpp
     Format/STL.hpp
-    Format/SLAArchiveWriter.hpp
-    Format/SLAArchiveWriter.cpp
     Format/SLAArchiveReader.hpp
     Format/SLAArchiveReader.cpp
     Format/ZipperArchiveImport.hpp
@@ -159,8 +157,6 @@ set(SLIC3R_SOURCES
     Format/SL1.cpp
     Format/SL1_SVG.hpp
     Format/SL1_SVG.cpp
-    Format/AnycubicSLA.hpp
-    Format/AnycubicSLA.cpp
     Format/STEP.hpp
     Format/STEP.cpp
     Format/SVG.hpp
@@ -415,6 +411,7 @@ set(SLIC3R_SOURCES
     SLA/SupportTree.cpp
     SLA/SupportTreeStrategies.hpp
 #    SLA/SupportTreeIGL.cpp
+    SLA/SLAResult.hpp
     SLA/Rotfinder.hpp
     SLA/Rotfinder.cpp
     SLA/SpatIndex.hpp

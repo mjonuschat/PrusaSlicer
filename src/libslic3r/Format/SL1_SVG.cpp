@@ -1,7 +1,7 @@
-///|/ Copyright (c) Prusa Research 2022 Tomáš Mészáros @tamasmeszaros, Vojtěch Bubník @bubnikv
-///|/
-///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
-///|/
+/////|/ Copyright (c) Prusa Research 2022 Tomáš Mészáros @tamasmeszaros, Vojtěch Bubník @bubnikv
+/////|/
+/////|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
+/////|/
 #include "SL1_SVG.hpp"
 
 #include <LocalesUtils.hpp>
@@ -11,7 +11,6 @@
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/Format/ZipperArchiveImport.hpp"
-#include "libslic3r/Format/SL1.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/PrintConfig.hpp"
@@ -31,15 +30,11 @@
 
 #include "nanosvg/nanosvg.h"
 
+using namespace Slic3r;
+using namespace Slic3r::sla;
 using namespace Slic3r::Biz;
-
-namespace Slic3r {
-class SLAPrint;
-}  // namespace Slic3r
-
+using namespace Slic3r::Biz::Slicing;
 using namespace std::literals;
-
-namespace Slic3r {
 
 namespace {
 
@@ -132,8 +127,6 @@ void append_svg(std::string &buf, const Polygon &poly)
     buf += " />\n"sv;
 }
 
-} // namespace
-
 // A fake raster from SVG
 class SVGRaster : public sla::RasterBase {
     // Resolution here will be used for svg boundaries
@@ -216,127 +209,55 @@ public:
     }
 };
 
-std::unique_ptr<sla::RasterBase> SL1_SVGArchive::create_raster() const
+class Sl1SVGRasterizer : public ISlaRasterizer
 {
-    auto w = cfg().display_width.getFloat();
-    auto h = cfg().display_height.getFloat();
+    BoundingBox m_svgarea;
+    Resolution m_resolution;
+    RasterBase::Trafo m_tr;
 
-    float precision_nm = scaled<float>(cfg().sla_output_precision.getFloat());
-    auto res_x = size_t(std::round(scaled(w) / precision_nm));
-    auto res_y = size_t(std::round(scaled(h) / precision_nm));
-
-    std::array<bool, 2> mirror;
-
-    mirror[X] = cfg().display_mirror_x.getBool();
-    mirror[Y] = cfg().display_mirror_y.getBool();
-
-    auto ro = cfg().display_orientation.getInt();
-    sla::RasterBase::Orientation orientation =
-        ro == sla::RasterBase::roPortrait ? sla::RasterBase::roPortrait :
-                                            sla::RasterBase::roLandscape;
-
-    if (orientation == sla::RasterBase::roPortrait) {
-        std::swap(w, h);
-        std::swap(res_x, res_y);
-    }
-
-    BoundingBox svgarea{{0, 0}, {scaled(w), scaled(h)}};
-
-    sla::RasterBase::Trafo tr{orientation, mirror};
-
-    // Gamma does not really make sense in an svg, right?
-    // double gamma = cfg().gamma_correction.getFloat();
-    return std::make_unique<SVGRaster>(svgarea, sla::Resolution{res_x, res_y}, tr);
-}
-
-// SVG does not need additional binary encoding.
-sla::RasterEncoder SL1_SVGArchive::get_encoder() const
-{
-    return nullptr;
-}
-
-void SL1_SVGArchive::export_print(const std::string     fname,
-                                  const SLAPrint       &print,
-                                  const ThumbnailsList &thumbnails,
-                                  const std::string    &projectname)
-{
-    // Export code is completely identical to SL1, only the compression level
-    // is elevated, as the SL1 has already compressed PNGs with deflate,
-    // but the svg is just text.
-    Zipper zipper{fname, Zipper::TIGHT_COMPRESSION};
-
-    SL1Archive::export_print(zipper, print, thumbnails, projectname);
-}
-
-struct NanoSVGParser {
-    NSVGimage *image;
-    static constexpr const char *Units = "mm"; // Denotes user coordinate system
-    static constexpr float Dpi = 1.f;        // Not needed
-    explicit NanoSVGParser(char* input): image{nsvgParse(input, Units, Dpi)} {}
-    ~NanoSVGParser() {  nsvgDelete(image); }
-};
-
-ConfigSubstitutions SL1_SVGReader::read(std::vector<ExPolygons> &slices,
-                                        DynamicPrintConfig      &profile_out)
-{
-    std::vector<std::string> includes = { CONFIG_FNAME, PROFILE_FNAME, "svg"};
-    ZipperArchive arch = read_zipper_archive(m_fname, includes, {});
-    auto [profile_use, config_substitutions] = extract_profile(arch, profile_out);
-
-    RasterParams rstp = get_raster_params(profile_use);
-
-    struct Status
+public:
+    explicit Sl1SVGRasterizer(const SLAPrinterConfig& cfg)
     {
-        double                                 incr, val, prev;
-        bool                                   stop  = false;
-    } st{100. / arch.entries.size(), 0., 0.};
+        auto w = cfg.display_width.getFloat();
+        auto h = cfg.display_height.getFloat();
 
-    for (const EntryBuffer &entry : arch.entries) {
-        if (st.stop) break;
+        float precision_nm = scaled<float>(cfg.sla_output_precision.getFloat());
+        auto res_x = size_t(std::round(scaled(w) / precision_nm));
+        auto res_y = size_t(std::round(scaled(h) / precision_nm));
 
-        st.val += st.incr;
-        double curr = std::round(st.val);
-        if (curr > st.prev) {
-            st.prev = curr;
-            st.stop = !m_progr(int(curr));
+        std::array<bool, 2> mirror;
+
+        mirror[X] = cfg.display_mirror_x.getBool();
+        mirror[Y] = cfg.display_mirror_y.getBool();
+
+        auto ro = cfg.display_orientation.getInt();
+        sla::RasterBase::Orientation orientation = ro == sla::RasterBase::roPortrait
+            ? sla::RasterBase::roPortrait
+            : sla::RasterBase::roLandscape;
+
+        if (orientation == sla::RasterBase::roPortrait) {
+            std::swap(w, h);
+            std::swap(res_x, res_y);
         }
 
-        // Don't want to use dirty casts for the buffer to be usable in
-        // the NanoSVGParser until performance is not a bottleneck here.
-        auto svgtxt = reserve_vector<char>(entry.buf.size() + 1);
-        std::copy(entry.buf.begin(), entry.buf.end(), std::back_inserter(svgtxt));
-        svgtxt.emplace_back('\0');
-        NanoSVGParser svgp(svgtxt.data());
-
-        Polygons polys;
-        for (NSVGshape *shape = svgp.image->shapes; shape != nullptr; shape = shape->next) {
-            for (NSVGpath *path = shape->paths; path != nullptr; path = path->next) {
-                Polygon p;
-                for (int i = 0; i < path->npts; ++i) {
-                    size_t c = 2 * i;
-                    p.points.emplace_back(scaled(Vec2f(path->pts[c], path->pts[c + 1])));
-                }
-                polys.emplace_back(p);
-            }
-        }
-
-        // Create the slice from the read polygons. Here, the fill rule has to
-        // be the same as stated in the svg file which is `nonzero` when exported
-        // using SL1_SVGArchive. Would be better to parse it from the svg file,
-        // but if it's different, the file is probably corrupted anyways.
-        ExPolygons expolys = union_ex(polys, ClipperLib::pftNonZero);
-        invert_raster_trafo(expolys, rstp.trafo, rstp.width, rstp.height);
-        slices.emplace_back(expolys);
+        m_svgarea = BoundingBox{{0, 0}, {scaled(w), scaled(h)}};
+        m_resolution = Resolution{res_x, res_y};
+        m_tr = RasterBase::Trafo{orientation, mirror};
     }
 
-    // Compile error without the move
-    return std::move(config_substitutions);
-}
+    Sla::FileData create_file(const ExPolygons& slice) override
+    {
+        std::unique_ptr<sla::RasterBase> raster =
+            std::make_unique<SVGRaster>(m_svgarea, m_resolution, m_tr);
+        for (const ExPolygon& part : slice)
+            raster->draw(part);
 
-ConfigSubstitutions SL1_SVGReader::read(DynamicPrintConfig &out)
-{
-    ZipperArchive arch = read_zipper_archive(m_fname, {"prusaslicer.ini"}, {});
-    return out.load(arch.profile, ForwardCompatibilitySubstitutionRule::Enable);
-}
+        EncodedRaster encoded_raster = raster->encode(nullptr);
+        return std::move(encoded_raster.m_buffer);
+    }
+};
+} // namespace
 
-} // namespace Slic3r
+std::unique_ptr<ISlaRasterizer> Slic3r::create_sl1_svg_rasterizer(const SLAPrinterConfig& cfg) {
+    return std::make_unique<Sl1SVGRasterizer>(cfg);
+}

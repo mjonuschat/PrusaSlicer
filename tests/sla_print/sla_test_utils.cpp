@@ -127,7 +127,7 @@ void test_supports(const std::string          &obj_filename,
 
     // Create the special index-triangle mesh with spatial indexing which
     // is the input of the support point and support mesh generators
-    sla::SupportableMesh  sm{mesh.its, {}, supportcfg};
+    sla::SupportableMesh  sm{.emesh = AABBMesh(mesh.its), .cfg = supportcfg};
 
     #ifdef SLIC3R_HOLE_RAYCASTER
     if (hollowingcfg.enabled)
@@ -142,7 +142,8 @@ void test_supports(const std::string          &obj_filename,
     sla::LayerSupportPoints layer_support_points = sla::generate_support_points(gen_data, autogencfg);
     double allowed_move = (out.slicegrid[1] - out.slicegrid[0]) + std::numeric_limits<float>::epsilon();
     // Get the calculated support points.
-    sm.pts = sla::move_on_mesh_surface(layer_support_points, sm.emesh, allowed_move);
+    sm.pts = std::make_shared<const Domain::SLA::SupportPoints>(
+        sla::move_on_mesh_surface(layer_support_points, sm.emesh, allowed_move));
     out.model_slices = std::move(gen_data.slices); // return ownership
     
     int validityflags = ASSUME_NO_REPAIR;

@@ -5,66 +5,24 @@
 #ifndef SLAARCHIVE_HPP
 #define SLAARCHIVE_HPP
 
-#include <stddef.h>
-#include <vector>
-#include <memory>
 #include <string>
-#include <cstddef>
+#include "libslic3r/SLA/SLAResult.hpp"
 
-#include "libslic3r/SLA/RasterBase.hpp"
-#include "Slic3r/Biz/Algorithms/Execution/ExecutionTBB.hpp"
-#include "libslic3r/GCode/ThumbnailData.hpp"
-#include "Slic3r/Biz/Algorithms/Execution/Execution.hpp"
-
-namespace Slic3r {
-
-class SLAPrint;
-class SLAPrinterConfig;
-
-class SLAArchiveWriter {
-protected:
-    std::vector<sla::EncodedRaster> m_layers;
-
-    virtual std::unique_ptr<sla::RasterBase> create_raster() const = 0;
-    virtual sla::RasterEncoder get_encoder() const = 0;
-
+namespace Slic3r::sla {
+class ISlaStore
+{
 public:
-    virtual ~SLAArchiveWriter() = default;
-
-    // Fn have to be thread safe: void(sla::RasterBase& raster, size_t lyrid);
-    template<class Fn, class CancelFn, class EP = Slic3r::Biz::Algorithms::Execution::ExecutionTBB>
-    void draw_layers(
-        size_t     layer_num,
-        Fn &&      drawfn,
-        CancelFn cancelfn = []() { return false; },
-        const EP & ep       = {})
-    {
-        namespace execution = Slic3r::Biz::Algorithms::Execution;
-
-        m_layers.resize(layer_num);
-        execution::for_each(
-            ep, size_t(0), m_layers.size(),
-            [this, &drawfn, &cancelfn](size_t idx) {
-                if (cancelfn()) return;
-
-                sla::EncodedRaster &enc = m_layers[idx];
-                auto                rst = create_raster();
-                drawfn(*rst, idx);
-                enc = rst->encode(get_encoder());
-            },
-            execution::max_concurrency(ep));
-    }
-
-    // Export the print into an archive using the provided filename.
-    virtual void export_print(const std::string     fname,
-                              const SLAPrint       &print,
-                              const ThumbnailsList &thumbnails,
-                              const std::string    &projectname = "") = 0;
-
-    // Factory method to create an archiver instance
-    static std::unique_ptr<SLAArchiveWriter> create(
-        const std::string &archtype, const SLAPrinterConfig &);
+    virtual ~ISlaStore() = default;
+    /// <summary>
+    /// Store slicing result into sl1 file
+    /// Raster Image for each layer + slicing Configuration 
+    /// NOTE: Throw exception in case can't write to file_path
+    /// e.g. no space, no privilege, bad network, ...
+    /// </summary>
+    /// <param name="file_path">File path for store result</param>
+    /// <param name="data">Already rasterized and encoded files with configurations and thumbnails</param>
+    virtual void store(const std::string& file_path, const ::Slic3r::Biz::Slicing::SLAResult& data) = 0;
 };
+} // namespace Slic3r::sla
 
-} // namespace Slic3r
 #endif // SLAARCHIVE_HPP

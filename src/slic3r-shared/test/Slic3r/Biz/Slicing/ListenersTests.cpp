@@ -9,6 +9,7 @@
 #include "Slic3r/Biz/Slicing/TestUtils.hpp"
 #include "Slic3r/Biz/Slicing/GCodeUtils.hpp"
 #include "Slic3r/TestUtils/TestData.hpp"
+#include "Slic3r/Log.hpp"
 
 using namespace Catch;
 using Catch::Matchers::Equals;
@@ -31,14 +32,18 @@ using Slic3r::Tests::SlicingFixture;
 using Slic3r::Tests::StatusEvent;
 using Slic3r::Tests::StatusEvents;
 using Slic3r::Biz::Slicing::ISLAResultListener;
+using Slic3r::Biz::Slicing::ISLAObjectListener;
+using Slic3r::Biz::Slicing::SLAResult;
+using Slic3r::Biz::Slicing::Sla::ResultType;
+using Slic3r::Biz::Slicing::Sla::Object;
 using Slic3r::Tests::ResultListener;
 using Slic3r::Biz::Slicing::IFDMResultListener;
-
+using Slic3r::Domain::ObjectID;
 
 TEST_CASE_METHOD(SlicingFixture, "Slice N beds", "[slicing][slicing-interactor]")
 {
     ResultListener result_listener;
-    slicing.add_listener<IFDMResultListener>(&result_listener);
+    slicing.set_listener<IFDMResultListener>(&result_listener);
     using namespace std::chrono_literals;
 
     std::vector<Slic3r::Tests::ModelOnBed> bed_models;
@@ -150,11 +155,25 @@ TEST_CASE_METHOD(SlicingFixture, "Background process dispatches wipe_tower_geome
 }
 
 struct SLAResultListener : public ISLAResultListener {
-    void on_sla_result_changed(const SlicingId) override {
+    void on_sla_result_changed(const SlicingId& id, SLAResult && result) override{        
+        switch (result.type) {
+        case ResultType::Slices: this->result = std::move(result); break;
+        case ResultType::Files: this->result.files = std::move(result.files); break;}
         this->result_recieved = true;
-    };
-
+    }
+    void on_remove_bed(const SlicingId&) override {}
+    SLAResult result;
     bool result_recieved{false};
+};
+
+struct SLAObjectListener : public ISLAObjectListener{
+    void on_sla_object_changed(const SlicingId& id, Object && instance) override
+    {
+        this->object_recieved = true;
+    }
+    void on_remove_bed(const SlicingId&) override {}
+    void on_model_update(const SlicingId&, const std::vector<ObjectID>&) override{}
+    bool object_recieved{false};
 };
 
 TEST_CASE_METHOD(SlicingFixture, "Update reinitializes the process if printer technology differs", "[slicing][slicing-interactor]") {
@@ -163,10 +182,16 @@ TEST_CASE_METHOD(SlicingFixture, "Update reinitializes the process if printer te
     using Slic3r::ConfigOptionEnum;
     using Slic3r::PrinterTechnology;
 
+    // Allow logging to be enabled in the test
+    //Slic3r::set_logging_level(spdlog::level::trace);
+    //Slic3r::init_logging();
+
     ModelOnBed model_on_bed{get_cubes_model(1, 5)};
 
-    SLAResultListener listener;
-    slicing.add_listener<ISLAResultListener>(&listener);
+    SLAResultListener result_listener;
+    SLAObjectListener object_listener;
+    slicing.set_listener<ISLAResultListener>(&result_listener);
+    slicing.set_listener<ISLAObjectListener>(&object_listener);
     slicing.update_process(model_on_bed.model, model_on_bed.config, model_on_bed.bed_instance);
 
     model_on_bed.config.option<ConfigOptionEnum<PrinterTechnology>>("printer_technology")->value = Slic3r::ptSLA;
@@ -174,9 +199,10 @@ TEST_CASE_METHOD(SlicingFixture, "Update reinitializes the process if printer te
     slicing.update_process(model_on_bed.model, model_on_bed.config, model_on_bed.bed_instance);
     slicing.slice_all();
 
-    REQUIRE(wait_for_status(dispatcher, status_listener, 3s, [](const StatusEvents &events){
+    REQUIRE(wait_for_status(dispatcher, status_listener, 15s, [](const StatusEvents &events){
         return events.back().status == Status::Finished;
     }));
 
-    //CHECK(listener.result_recieved);
+    CHECK(result_listener.result_recieved);
+    CHECK(object_listener.object_recieved);
 }

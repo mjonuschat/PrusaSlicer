@@ -64,3 +64,28 @@ private:
         }
     }
 };
+
+// Same as WithListeners but allow register only one listener per type(interface IListener)
+template <typename ...Args>
+class WithListener {
+public:
+    template<typename L>
+    void set_listener(std::type_identity_t<L>* listener) {
+        std::get<L*>(m_listeners) = listener;
+    }
+    template<typename L>
+    bool unset_listener(std::type_identity_t<L>* listener = nullptr) {
+        if (std::get<L*>(m_listeners) == nullptr) return false; // already removed
+        std::get<L*>(m_listeners) = nullptr;
+        return true;
+    }
+protected:
+    template<typename L>
+    void invoke_listener(std::function<void(L*)>&& func) {
+        L* listener_ptr = std::get<L*>(m_listeners);
+        if (listener_ptr)
+            func(listener_ptr);
+    }
+private:
+    std::tuple<Args*...> m_listeners;
+};

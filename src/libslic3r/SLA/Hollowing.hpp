@@ -161,8 +161,7 @@ void remove_inside_triangles(Domain::TriangleMesh &mesh, const Interior &interio
 void remove_inside_triangles(indexed_triangle_set &mesh, const Interior &interior,
                              const std::vector<bool> &exclude_mask = {});
 
-Domain::SLA::DrainHoles transformed_drainhole_points(const ModelObject &mo,
-                                             const Transform3d &trafo);
+void transform_drainhole_points(Domain::SLA::DrainHoles& drain_holes, const Transform3d &trafo);
 
 void cut_drainholes(std::vector<ExPolygons> & obj_slices,
                     const std::vector<float> &slicegrid,

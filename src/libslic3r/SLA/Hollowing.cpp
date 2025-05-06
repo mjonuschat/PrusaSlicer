@@ -623,14 +623,12 @@ std::vector<bool> create_exclude_mask(const indexed_triangle_set   &its,
     return exclude_mask;
 }
 
-Domain::SLA::DrainHoles transformed_drainhole_points(const ModelObject &mo,
-                                        const Transform3d &trafo)
+void transform_drainhole_points(Domain::SLA::DrainHoles& drain_holes, const Transform3d &trafo)
 {
-    auto pts = mo.sla_drain_holes;
 //    const Transform3d& vol_trafo = mo.volumes.front()->get_transformation().get_matrix();
     const Geometry::Transformation trans(trafo /** vol_trafo*/);
     const Transform3d& tr = trans.get_matrix();
-    for (Domain::SLA::DrainHole &hl : pts) {
+    for (Domain::SLA::DrainHole& hl : drain_holes) {
         Vec3d pos = hl.pos.cast<double>();
         Vec3d nrm = hl.normal.cast<double>();
 
@@ -646,8 +644,6 @@ Domain::SLA::DrainHoles transformed_drainhole_points(const ModelObject &mo,
         hl.normal = nrm.cast<float>();
         hl.height += sla::HoleStickOutLength;
     }
-
-    return pts;
 }
 
 double get_voxel_scale(double mesh_volume, const HollowingConfig &hc)

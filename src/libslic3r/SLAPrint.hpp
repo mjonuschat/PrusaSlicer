@@ -27,8 +27,8 @@
 #include "PrintBase.hpp"
 #include "SLA/SupportTree.hpp"
 #include "SLA/SupportPointGenerator.hpp" // SupportPointGeneratorData
+#include "SLA/SLAResult.hpp"
 #include "Point.hpp"
-#include "Format/SLAArchiveWriter.hpp"
 #include "libslic3r/GCode/ThumbnailData.hpp"
 #include "libslic3r/CSGMesh/CSGMesh.hpp"
 #include "libslic3r/MeshBoolean.hpp"
@@ -123,7 +123,6 @@ private: // Prevents erroneous use by other classes.
     using CSGContainer = std::multiset<CSGPartForStep>;
 
 public:
-
     // I refuse to grantee copying (Tamas)
     SLAPrintObject(const SLAPrintObject&) = delete;
     SLAPrintObject& operator=(const SLAPrintObject&) = delete;
@@ -142,7 +141,7 @@ public:
         // Rotation along the Z axis, in radians.
         float 	rotation;
     };
-    const std::vector<Instance>& instances() const { return m_instances; }
+    using Instances = std::vector<Instance>;
 
     // Get a support mesh centered around origin in XY, and with zero rotation around Z applied.
     // Support mesh is only valid if this->is_step_done(slaposSupportTree) is true.
@@ -153,7 +152,7 @@ public:
 
     // Get the mesh that is going to be printed with all the modifications
     // like hollowing and drilled holes.
-    const std::shared_ptr<const indexed_triangle_set>& get_mesh_to_print() const;
+    std::shared_ptr<const Domain::TriangleMesh> get_mesh_to_print() const;
 
     std::vector<csg::CSGPart> get_parts_to_slice() const;
 
@@ -172,9 +171,6 @@ public:
     // status. If the supports are not ready, it is zero, if they are and the
     // pad is not, then without the pad, otherwise the full value is returned.
     double get_current_elevation() const;
-
-    // This method returns the support points of this SLAPrintObject.
-    const std::vector<Domain::SLA::SupportPoint>& get_support_points() const;
 
     // The public Slice record structure. It corresponds to one printable layer.
     class SliceRecord {
@@ -228,101 +224,9 @@ public:
     };
 
 private:
-    template<class T> inline static T level(const SliceRecord &sr)
-    {
-        static_assert(std::is_arithmetic<T>::value, "Arithmetic only!");
-        return std::is_integral<T>::value ? T(sr.print_level())
-                                          : T(sr.slice_level());
-    }
-
-    template<class T> inline static SliceRecord create_slice_record(T val)
-    {
-        static_assert(std::is_arithmetic<T>::value, "Arithmetic only!");
-        return std::is_integral<T>::value
-                   ? SliceRecord{coord_t(val), 0.f, 0.f}
-                   : SliceRecord{0, float(val), 0.f};
-    }
-
-    // This is a template method for searching the slice index either by
-    // an integer key: print_level or a floating point key: slice_level.
-    // The eps parameter gives the max deviation in + or - direction.
-    //
-    // This method can be used in const or non-const contexts as well.
-    template<class Container, class T>
-    static auto closest_slice_record(
-            Container& cont,
-            T lvl,
-            T eps = std::numeric_limits<T>::max()) -> decltype (cont.begin())
-    {
-        if(cont.empty()) return cont.end();
-        if(cont.size() == 1 && std::abs(level<T>(cont.front()) - lvl) > eps)
-            return cont.end();
-
-        SliceRecord query = create_slice_record(lvl);
-
-        auto it = std::lower_bound(cont.begin(), cont.end(), query,
-                                   [](const SliceRecord& r1,
-                                      const SliceRecord& r2)
-        {
-            return level<T>(r1) < level<T>(r2);
-        });
-        
-        if(it == cont.end()) return it;
-
-        T diff = std::abs(level<T>(*it) - lvl);
-
-        if(it != cont.begin()) {
-            auto it_prev = std::prev(it);
-            T diff_prev = std::abs(level<T>(*it_prev) - lvl);
-            if(diff_prev < diff) { diff = diff_prev; it = it_prev; }
-        }
-
-        if(diff > eps) it = cont.end();
-
-        return it;
-    }
 
     const std::vector<ExPolygons>& get_model_slices() const { return m_model_slices; }
     const std::vector<ExPolygons>& get_support_slices() const;
-
-public:
-
-    // /////////////////////////////////////////////////////////////////////////
-    //
-    // These methods should be callable on the client side (e.g. UI thread)
-    // when the appropriate steps slaposObjectSlice and slaposSliceSupports
-    // are ready. All the print objects are processed before slapsRasterize so
-    // it is safe to call them during and/or after slapsRasterize.
-    //
-    // /////////////////////////////////////////////////////////////////////////
-
-    // Retrieve the slice index.
-    const std::vector<SliceRecord>& get_slice_index() const {
-        return m_slice_index;
-    }
-
-    // Search slice index for the closest slice to given print_level.
-    // max_epsilon gives the allowable deviation of the returned slice record's
-    // level.
-    const SliceRecord& closest_slice_to_print_level(
-            coord_t print_level,
-            coord_t max_epsilon = std::numeric_limits<coord_t>::max()) const
-    {
-        auto it = closest_slice_record(m_slice_index, print_level, max_epsilon);
-        return it == m_slice_index.end() ? SliceRecord::EMPTY : *it;
-    }
-
-    // Search slice index for the closest slice to given slice_level.
-    // max_epsilon gives the allowable deviation of the returned slice record's
-    // level. Use SliceRecord::is_valid() to check the result.
-    const SliceRecord& closest_slice_to_slice_level(
-            float slice_level,
-            float max_epsilon = std::numeric_limits<float>::max()) const
-    {
-        auto it = closest_slice_record(m_slice_index, slice_level, max_epsilon);
-        return it == m_slice_index.end() ? SliceRecord::EMPTY : *it;
-    }
-
 protected:
     // to be called from SLAPrint only.
     friend class SLAPrint;
@@ -340,7 +244,7 @@ protected:
         m_left_handed = left_handed;
     }
 
-    template<class InstVec> inline void set_instances(InstVec&& instances) { m_instances = std::forward<InstVec>(instances); }
+    inline void set_instances(Instances&& instances) { m_instances = std::move(instances); }
 
     // Invalidates the step, and its depending steps in SLAPrintObject and SLAPrint.
     bool                    invalidate_step(SLAPrintObjectStep step);
@@ -357,7 +261,7 @@ private:
     // m_trafo is left handed -> 3x3 affine transformation has negative determinant.
     bool                                    m_left_handed = false;
 
-    std::vector<Instance> 					m_instances;
+    Instances            					m_instances;
 
     // Individual 2d slice polygons from lower z to higher z levels
     std::vector<ExPolygons>                 m_model_slices;
@@ -371,37 +275,13 @@ private:
     // Precalculated data needed for interactive automatic support placement.
     sla::SupportPointGeneratorData          m_support_point_generator_data;
 
-    struct SupportData
-    {
-        sla::SupportableMesh    input; // the input
-        std::vector<ExPolygons> support_slices;   // sliced supports
-        Domain::TriangleMesh tree_mesh, pad_mesh, full_mesh; // cached artifacts
-        
-        inline SupportData(const Domain::TriangleMesh &t)
-            : input{t.its, {}, {}}
-        {}
-
-        inline SupportData(const indexed_triangle_set &t)
-            : input{t, {}, {}}
-        {}
-        
-        void create_support_tree(const sla::JobController &ctl)
-        {
-            using Biz::Algorithms::TriangleMesh::construct;
-            tree_mesh = Domain::TriangleMesh{construct(sla::create_support_tree(input, ctl))};
-        }
-
-        void create_pad(const sla::JobController &ctl)
-        {
-            using Biz::Algorithms::TriangleMesh::construct;
-            pad_mesh = Domain::TriangleMesh{construct(sla::create_pad(input, tree_mesh.its, ctl))};
-        }
-    };
-
-    std::unique_ptr<SupportData>  m_supportdata;
+    std::optional<sla::SupportableMesh> m_supportable_mesh;
+    std::vector<ExPolygons> m_support_slices;
 
     // Holds CSG operations for the printed object, prioritized by print steps.
     CSGContainer                  m_mesh_to_slice;
+    // Data type for propagate instance progress into frontend
+    std::optional<Biz::Slicing::Sla::Object> m_preview;
 
     auto mesh_to_slice(SLAPrintObjectStep s) const
     {
@@ -412,60 +292,12 @@ private:
 
     auto mesh_to_slice() const { return range(m_mesh_to_slice); }
 
-    // Holds the preview of the object to be printed (as it will look like with
-    // all its holes and cavities, negatives and positive volumes unified.
-    // Essentially this should be a m_mesh_to_slice after the CSG operations
-    // or an approximation of that.
-    std::array<std::shared_ptr<const indexed_triangle_set>, SLAPrintObjectStep::slaposCount + 1> m_preview_meshes;
-
-    class HollowingData
-    {
-    public:
-
-        sla::InteriorPtr interior;
-    };
-    
-    std::unique_ptr<HollowingData> m_hollowing_data;
+    sla::InteriorPtr m_hollowing_data;
 };
 
 using PrintObjects = std::vector<SLAPrintObject*>;
 
 using SliceRecord  = SLAPrintObject::SliceRecord;
-
-struct SLAPrintStatistics
-{
-    SLAPrintStatistics() { clear(); }
-    double                          estimated_print_time;
-    double                          estimated_print_time_tolerance;
-    double                          objects_used_material;
-    double                          support_used_material;
-    size_t                          slow_layers_count;
-    size_t                          fast_layers_count;
-    double                          total_cost;
-    double                          total_weight;
-    std::vector<double>             layers_times_running_total;
-    std::vector<double>             layers_areas;
-
-    // Config with the filled in print statistics.
-    DynamicConfig           config() const;
-    // Config with the statistics keys populated with placeholder strings.
-    static DynamicConfig    placeholders();
-    // Replace the print statistics placeholders in the path.
-    std::string             finalize_output_path(const std::string &path_in) const;
-
-    void clear() {
-        estimated_print_time = 0.;
-        estimated_print_time_tolerance = 0.;
-        objects_used_material = 0.;
-        support_used_material = 0.;
-        slow_layers_count = 0;
-        fast_layers_count = 0;
-        total_cost = 0.;
-        total_weight = 0.;
-        layers_times_running_total.clear();
-        layers_areas.clear();
-    }
-};
 
 /**
  * @brief This class is the high level FSM for the SLA printing process.
@@ -478,15 +310,15 @@ struct SLAPrintStatistics
 class SLAPrint : public PrintBaseWithState<SLAPrintStep, slapsCount>
 {
 private: // Prevents erroneous use by other classes.
-    typedef PrintBaseWithState<SLAPrintStep, slapsCount> Inherited;
-    
+    using Inherited = PrintBaseWithState<SLAPrintStep, slapsCount>;    
     class Steps; // See SLAPrintSteps.cpp
     
 public:
+    using OnSlaResult = std::function<void(Biz::Slicing::SLAResult&&)>;
+    using OnSlaObject = std::function<void(const Biz::Slicing::Sla::Object&)>;
+    explicit SLAPrint(const OnSlaResult& on_sla_result, const OnSlaObject& on_sla_object);
 
-    SLAPrint() = default;
-
-    virtual ~SLAPrint() override { this->clear(); }
+    ~SLAPrint() override { this->clear(); }
 
     PrinterTechnology	technology() const noexcept override { return ptSLA; }
 
@@ -506,7 +338,7 @@ public:
 
     void                set_task(const TaskParams &params) override { PrintBaseWithState<SLAPrintStep, slapsCount>::set_task_impl(params, m_objects); }
     void                process() override;
-    void                finalize() override { PrintBaseWithState<SLAPrintStep, slapsCount>::finalize_impl(m_objects); }
+    void                finalize() override { Inherited::finalize_impl(m_objects); }
     void                cleanup() override {}
 
     void slice() override;
@@ -542,8 +374,6 @@ public:
     Transform3d sla_trafo(const ModelObject &model_object) const;
 
 	std::string                 output_filename(const std::string &filename_base = std::string()) const override;
-
-    const SLAPrintStatistics&   print_statistics() const { return m_print_statistics; }
 
     std::string validate(std::vector<std::string>* warnings = nullptr) const override;
 
@@ -584,20 +414,11 @@ public:
             return m_transformed_slices;
         }
     };
+    using PrintLayers = std::vector<PrintLayer>;
 
     // The aggregated and leveled print records from various objects.
     // TODO: use this structure for the preview in the future.
-    const std::vector<PrintLayer>& print_layers() const { return m_printer_input; }
-
-    void export_print(const std::string &fname, const std::string &projectname = "")
-    {
-        ThumbnailsList thumbnails; //empty thumbnail list
-        export_print(fname, thumbnails, projectname);
-    }
-
-    void export_print(const std::string    &fname,
-                      const ThumbnailsList &thumbnails,
-                      const std::string    &projectname = "");
+    const PrintLayers& print_layers() const { return m_printer_input; }
 
     static bool is_prusa_print(const std::string& printer_model);
     
@@ -609,22 +430,21 @@ private:
     // Invalidate steps based on a set of parameters changed.
     bool invalidate_state_by_config_options(const std::vector<t_config_option_key> &opt_keys, bool &invalidate_all_model_objects);
 
+    OnSlaResult                     m_on_sla_result;
+    OnSlaObject                     m_on_sla_object;
+
     SLAPrintConfig                  m_print_config;
     SLAPrinterConfig                m_printer_config;
     SLAMaterialConfig               m_material_config;
     SLAPrintObjectConfig            m_default_object_config;
 
+    ::Slic3r::Biz::Slicing::Sla::PrintStatistics m_print_statistics;
+
     PrintObjects                    m_objects;
 
     // Ready-made data for rasterization.
-    std::vector<PrintLayer>         m_printer_input;
-    
-    // The archive object which collects the raster images after slicing
-    std::unique_ptr<SLAArchiveWriter>     m_archiver;
-    
-    // Estimated print time, material consumed.
-    SLAPrintStatistics              m_print_statistics;
-    
+    PrintLayers m_printer_input;
+        
     class StatusReporter
     {
         double m_st = 0;
@@ -641,6 +461,22 @@ private:
 
 	friend SLAPrintObject;
 };
+
+/// <summary>
+/// Export result to file
+/// NOTE: move out of SLAPrint object
+/// </summary>
+/// <param name="fname">File name</param>
+/// <param name="data">Get it from SLAResultCache,
+/// till thumbnails are not generated on backend it must not be const</param>
+/// <param name="thumbnails">thumbnails files</param>
+/// <param name="projectname">project name</param>
+void export_print(
+    const std::string& fname,
+    Biz::Slicing::SLAResult& data,
+    const ThumbnailsList& thumbnails = {},
+    const std::string& projectname = ""
+);
 
 // Helper functions:
 

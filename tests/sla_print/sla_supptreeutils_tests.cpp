@@ -115,9 +115,7 @@ TEST_CASE("Pillar search dumb case", "[suptreeutils]") {
     auto j = sla::Junction{Vec3d::Zero(), FromR};
 
     SECTION("with empty mesh") {
-        sla::SupportableMesh sm{indexed_triangle_set{},
-                                SupportPoints{},
-                                sla::SupportTreeConfig{}};
+        sla::SupportableMesh sm{.emesh = AABBMesh(indexed_triangle_set{})};
 
         constexpr double EndR = 1.;
         sla::GroundConnection conn =
@@ -129,10 +127,8 @@ TEST_CASE("Pillar search dumb case", "[suptreeutils]") {
     }
 
     SECTION("with zero R source and destination") {
-        sla::SupportableMesh sm{indexed_triangle_set{},
-                                SupportPoints{},
-                                sla::SupportTreeConfig{}};
-
+        sla::SupportableMesh sm{.emesh = AABBMesh(indexed_triangle_set{})};
+        
         j.r = 0.;
         constexpr double EndR = 0.;
         sla::GroundConnection conn =
@@ -145,10 +141,8 @@ TEST_CASE("Pillar search dumb case", "[suptreeutils]") {
     }
 
     SECTION("with zero init direction") {
-        sla::SupportableMesh sm{indexed_triangle_set{},
-                                SupportPoints{},
-                                sla::SupportTreeConfig{}};
-
+        sla::SupportableMesh sm{.emesh = AABBMesh(indexed_triangle_set{})};
+        
         constexpr double EndR = 1.;
         Vec3d init_dir = Vec3d::Zero();
         sla::GroundConnection conn =
@@ -175,15 +169,13 @@ TEST_CASE("Avoid disk below junction", "[suptreeutils]")
     constexpr double CylRadius  = 4.;
     constexpr double CylHeight  = 1.;
 
-    sla::SupportTreeConfig cfg;
-
     indexed_triangle_set disk = triangle_mesh::its_make_cylinder(CylRadius, CylHeight);
 
     // 2.5 * CyRadius height should be enough to be able to insert a bridge
     // with 45 degree tilt above the disk.
     sla::Junction j{Vec3d{0., 0., 2.5 * CylRadius}, FromRadius};
 
-    sla::SupportableMesh sm{disk, SupportPoints{}, cfg};
+    sla::SupportableMesh sm{.emesh = AABBMesh(disk)};
 
     SECTION("with elevation") {
 
@@ -241,7 +233,7 @@ TEST_CASE("Avoid disk below junction with barrier on the side", "[suptreeutils]"
     // with 45 degree tilt above the disk.
     sla::Junction j{Vec3d{0., 0., JElevX * CylRadius}, FromRadius};
 
-    sla::SupportableMesh sm{disk, SupportPoints{}, cfg};
+    sla::SupportableMesh sm{.emesh = AABBMesh(disk)};
 
     SECTION("with elevation") {
         sla::GroundConnection conn =
@@ -281,8 +273,7 @@ TEST_CASE("Find ground route just above ground", "[suptreeutils]") {
 
     sla::Junction j{Vec3d{0., 0., 2. * cfg.head_back_radius_mm}, cfg.head_back_radius_mm};
 
-    sla::SupportableMesh sm{{}, SupportPoints{}, cfg};
-
+    sla::SupportableMesh sm{.emesh = AABBMesh(indexed_triangle_set{})};
     sla::GroundConnection conn =
         sla::deepsearch_ground_connection(ex_seq, sm, j, Geometry::spheric_to_dir(3 * PI/ 4, PI));
 

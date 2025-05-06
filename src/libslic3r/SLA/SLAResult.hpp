@@ -1,0 +1,141 @@
+#pragma once
+#include <memory>
+#include <vector>
+#include <optional>
+#include <libslic3r/ExPolygon.hpp>
+#include <libslic3r/GCode/ThumbnailData.hpp>
+#include <libslic3r/PrintConfig.hpp> // DynamicPrintConfig
+#include "Slic3r/Domain/TriangleMesh.hpp"
+#include "Slic3r/Domain/ObjectID.hpp"
+#include "Slic3r/Domain/SLA/SupportPoint.hpp"
+
+namespace Slic3r::Biz::Slicing {
+
+namespace Sla {
+/// <summary>
+/// Statistic data about slicing
+/// Estimated print time, material consumed, etc.
+/// </summary>
+struct PrintStatistics
+{
+    double estimated_print_time = 0.;
+    double estimated_print_time_tolerance = 0.;
+    double objects_used_material = 0.;
+    double support_used_material = 0.;
+    size_t slow_layers_count = 0;
+    size_t fast_layers_count = 0;
+    double total_cost = 0.;
+    double total_weight = 0.;
+    std::vector<double> layers_times_running_total;
+    std::vector<double> layers_areas;
+
+    int count_faded_layers = 0;
+    bool hollowing_enable = false; // exist object with enabled hollowing
+};
+
+using FileData = std::vector<uint8_t>;
+using FilesData = std::vector<FileData>;
+enum class FileDataType{sl1_png, sl1_svg, other};
+struct OutputFiles
+{
+    FilesData data; // files binary data,  count files data == slices.size()
+    FileDataType type = FileDataType::other; // define type of the file data content
+};
+
+// MUST be in order of creation backend
+enum class ResultType
+{
+    Slices,   // with configs
+    Files     // Last steps prepared files for store
+};
+
+/// <summary>
+/// Issue found on backend during slicing
+/// NOTE: originaly it was divided on CRITICAL and PrintStateBase::WarningLevel::NON_CRITICAL 
+/// now use function is_critical()
+/// </summary>
+enum class ObjectIssueType
+{ // issue are chronologicaly orderd and grouped by slice step - for clarity
+    BadCGALBooleans,     // CSG mesh is not egligible for proper CGAL booleans!
+    BadMashForHollowing, // Mesh to be hollowed is not suitable for hollowing (does not bound a volume).
+    BadHoles,            // Unable to drill the current configuration of holes into the model.
+    BadHolesDrilling,    // Drilling holes into the mesh failed. This is usually caused by broken model. Try to fix it first.
+    BadHolesFailed,      // Failed to drill some holes into the model
+    VoxelizedPreview,    // Some parts of the print will be previewed with approximated meshes. 
+                         // This does not affect the quality of slices or the physical print in any way.
+};
+using ObjectIssues = std::vector<ObjectIssueType>;
+inline bool is_critical(ObjectIssueType issue) { return false; }
+
+struct Object{
+    using TriangleMesh  = ::Slic3r::Domain::TriangleMesh;
+    using ObjectID      = ::Slic3r::Domain::ObjectID;
+    using SupportPoints = ::Slic3r::Domain::SLA::SupportPoints;
+
+    // Identify source object in the model
+    ObjectID object_id; // Model::Objects[N]::id
+
+    // Holds the preview of the object to be printed
+    // (holes, cavities, negatives and positive volumes unified)
+    // Essentially this should be a m_mesh_to_slice after the CSG operations
+    // or at least an approximation of that.
+    std::shared_ptr<const TriangleMesh> mesh;
+
+    // Mesh of the supporting structure
+    // Note: Support tree could be shared across build plate
+    std::shared_ptr<const TriangleMesh> support_structure;
+
+    // Volume under(or around) the object for better adhesion to the build plate
+    // Note: multiple objects and instances could share the same pad
+    std::shared_ptr<const TriangleMesh> pad;
+
+    // SupportPoints
+    std::shared_ptr<const SupportPoints> support_points;
+
+    // Issues found during slicing
+    ObjectIssues issues;
+};
+using Instances = std::vector<Object>;
+
+} // namespace Sla
+
+// Result of slicing steps
+// Input for exporting file for printer
+// + provide data during slicing process
+struct SLAResult
+{
+    // Written into the file for printer
+    // Not sure if it is neccessary to propagate it,
+    // but for check that Frontend has the same data
+    DynamicPrintConfig full_print_config;
+    // NOTE: SLAPrint::full_print_config();
+
+    SLAPrinterConfig printer_config;  
+    // NOTE: previously from constructor of the archive
+    
+    // It is filled after slicing
+    std::optional<Sla::PrintStatistics> print_statistics;
+    // NOTE: SLAPrint::print_statistics();
+         
+    // m_print->m_printer_input[idx].transformed_slices()
+    std::vector<ExPolygons> slices; // shape of merged models 
+    std::vector<float> heights; // heights of the slices
+
+    // at the moment also instances and support structure - want to change it
+
+    // file per layer
+    // It is generated as the last operation of the slicing
+    Sla::OutputFiles files; // count files == slices.size()
+
+    // At the moment it is generated at frontend but it is tendenco to change it
+    // So it could be emty
+    ThumbnailsList thumbnails;
+
+    // upload_job.upload_data.upload_path.filename()
+    std::string project_name;
+
+    // used for merge Result in Cache
+    // Define the state of the result data
+    Sla::ResultType type; // type of the result
+};
+} // namespace Slic3r::Biz::Slicing

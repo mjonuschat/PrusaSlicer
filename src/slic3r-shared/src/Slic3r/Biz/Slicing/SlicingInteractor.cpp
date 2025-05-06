@@ -41,6 +41,15 @@ void SlicingInteractor::create_process(
         )
     );
 }
+namespace {
+std::vector<Domain::ObjectID> get_object_ids(const Model& model) {
+    std::vector<Domain::ObjectID> object_ids;
+    object_ids.reserve(model.objects.size());
+    for (const ModelObject* object_ptr : model.objects)
+        object_ids.push_back(object_ptr->id());
+    return object_ids;
+}
+} // namespace
 
 void SlicingInteractor::update_process(
     Model& model, const DynamicPrintConfig& config, const Domain::BedInstance& bed
@@ -57,6 +66,10 @@ void SlicingInteractor::update_process(
         return;
     }
 
+    // Clear list of object instances
+    invoke_listener<ISLAObjectListener>([&id, &model](auto* listener) {
+        listener->on_model_update(id, get_object_ids(model)); 
+    });
     create_process(model, config, bed, id);
 }
 
@@ -71,8 +84,14 @@ void SlicingInteractor::remove_bed(const Domain::SelectionId bed_instance_id) {
     }
     process_slicing_queue();
 
-    invoke_listeners<IFDMResultListener>([&](auto* listener){
+    invoke_listener<IFDMResultListener>([&id](auto* listener){
         listener->on_fdm_result_changed({}, id);
+    });
+    invoke_listener<ISLAResultListener>([&id](auto* listener) {
+        listener->on_remove_bed(id);
+    });
+    invoke_listener<ISLAObjectListener>([&id](auto* listener) { 
+        listener->on_remove_bed(id);
     });
 }
 
@@ -161,8 +180,7 @@ void SlicingInteractor::on_fdm_result(FDMResult&& result, const SlicingId id) {
             _result = std::move(result)
         ]() mutable {
             bool already_called{false};
-            invoke_listeners<IFDMResultListener>([&](auto* listener){
-                ASSERT(!already_called, "Fdm result listener must not be called twice!");
+            invoke_listener<IFDMResultListener>([&](auto* listener){
                 listener->on_fdm_result_changed(std::move(_result), id);
                 already_called = true;
             });
@@ -172,17 +190,29 @@ void SlicingInteractor::on_fdm_result(FDMResult&& result, const SlicingId id) {
     }
 }
 
-void SlicingInteractor::on_sla_result(const SlicingId id) {
+void SlicingInteractor::on_sla_result(const SlicingId& id, SLAResult&& result) {
     SPDLOG_INFO("{}: SLAResult{{}}", fmt::streamed(id));
-
-    if(!m_dispatcher.dispatch_on_main_thread(
-        [=]() {
-            invoke_listeners<ISLAResultListener>([&](auto* listener){
-                listener->on_sla_result_changed(id);
-            });
-        }
-    )) {
+    auto changed = [id, this, _result = std::move(result)](auto* listener) mutable {
+        listener->on_sla_result_changed(id, std::move(_result));
+    };
+    auto invoke = [this, _changed = std::move(changed)]() mutable {
+        invoke_listener<ISLAResultListener>(std::move(_changed));
+    };
+    if (!m_dispatcher.dispatch_on_main_thread(std::move(invoke))) {
         SPDLOG_INFO("{}: sla result not dispatched", fmt::streamed(id));
+    }
+}
+
+void SlicingInteractor::on_sla_object(const SlicingId& id, Sla::Object&& instance) {
+    SPDLOG_INFO("{}: SLAInstance{{}}", fmt::streamed(id));
+    auto changed = [id, this, _instance = std::move(instance)](auto* listener) mutable {
+        listener->on_sla_object_changed(id, std::move(_instance));
+    };
+    auto invoke = [this, _changed = std::move(changed)]() mutable {
+        invoke_listener<ISLAObjectListener>(std::move(_changed));
+    };
+    if (!m_dispatcher.dispatch_on_main_thread(std::move(invoke))) {
+        SPDLOG_INFO("{}: sla instance not dispatched", fmt::streamed(id));
     }
 }
 

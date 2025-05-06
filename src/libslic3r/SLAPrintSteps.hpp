@@ -52,9 +52,8 @@ private:
     void initialize_printer_input();
 
     void apply_printer_corrections(SLAPrintObject &po, SliceOrigin o);
-
-    void generate_preview(SLAPrintObject &po, SLAPrintObjectStep step);
-    indexed_triangle_set generate_preview_vdb(SLAPrintObject &po, SLAPrintObjectStep step);
+    indexed_triangle_set generate_preview_vdb(const SLAPrintObject &po);
+    void generate_preview(SLAPrintObject& po, SLAPrintObjectStep step);
 
     void prepare_for_generate_supports(SLAPrintObject &po);
 

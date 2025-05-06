@@ -39,6 +39,8 @@
 #include <boost/filesystem/path.hpp>
 #include <boost/algorithm/string.hpp>
 
+using namespace Slic3r::Biz::Slicing;
+
 namespace Slic3r {
 
 namespace execution = Slic3r::Biz::Algorithms::Execution;
@@ -92,10 +94,8 @@ static std::string get_key(const std::string& opt_key)
 
 namespace pt = boost::property_tree;
 
-std::string to_json(const SLAPrint& print, const ConfMap &m)
+std::string to_json(const DynamicPrintConfig& cfg, const ConfMap& m)
 {
-    auto& cfg = print.full_print_config();
-
     pt::ptree below_node;
     pt::ptree above_node;
 
@@ -170,10 +170,8 @@ std::string get_cfg_value(const DynamicPrintConfig &cfg, const std::string &key)
     return ret;    
 }
 
-void fill_iniconf(ConfMap &m, const SLAPrint &print)
-{
+void fill_iniconf(ConfMap &m, const DynamicPrintConfig &cfg, const Sla::PrintStatistics &stats) {
     CNumericLocalesSetter locales_setter; // for to_string
-    auto &cfg = print.full_print_config();
     m["layerHeight"]    = get_cfg_value(cfg, "layer_height");
     m["expTime"]        = get_cfg_value(cfg, "exposure_time");
     m["expTimeFirst"]   = get_cfg_value(cfg, "initial_exposure_time");
@@ -187,32 +185,19 @@ void fill_iniconf(ConfMap &m, const SLAPrint &print)
     m["fileCreationTimestamp"] = Utils::utc_timestamp();
     m["prusaSlicerVersion"]    = SLIC3R_BUILD_ID;
     
-    SLAPrintStatistics stats = print.print_statistics();
-    // Set statistics values to the printer
-    
+    // Set statistics values to the printer    
     double used_material = (stats.objects_used_material +
-                            stats.support_used_material) / 1000;
-    
-    int num_fade = print.default_object_config().faded_layers.getInt();
-    num_fade = num_fade >= 0 ? num_fade : 0;
-    
+                            stats.support_used_material) / 1000;        
     m["usedMaterial"] = std::to_string(used_material);
-    m["numFade"]      = std::to_string(num_fade);
+    m["numFade"]      = std::to_string(stats.count_faded_layers);
     m["numSlow"]      = std::to_string(stats.slow_layers_count);
     m["numFast"]      = std::to_string(stats.fast_layers_count);
     m["printTime"]    = std::to_string(stats.estimated_print_time);
-
-    bool hollow_en = false;
-    auto it = print.objects().begin();
-    while (!hollow_en && it != print.objects().end())
-        hollow_en = (*it++)->config().hollowing_enable;
-
-    m["hollow"] = hollow_en ? "1" : "0";
-    
+    m["hollow"] = stats.hollowing_enable ? "1" : "0";
     m["action"] = "print";
 }
 
-void fill_slicerconf(ConfMap &m, const SLAPrint &print)
+void fill_slicerconf(ConfMap& m, const DynamicPrintConfig& cfg)
 {
     using namespace std::literals::string_view_literals;
     
@@ -236,7 +221,6 @@ void fill_slicerconf(ConfMap &m, const SLAPrint &print)
         return std::find(keys.begin(), keys.end(), key) != keys.end();
     };
     
-    auto &cfg = print.full_print_config();
     for (const std::string &key : cfg.keys())
         if (! is_banned(key) && !is_tilt_param(key) && ! cfg.option(key)->is_nil())
             m[key] = cfg.opt_serialize(key);
@@ -245,43 +229,6 @@ void fill_slicerconf(ConfMap &m, const SLAPrint &print)
 
 } // namespace
 
-std::unique_ptr<sla::RasterBase> SL1Archive::create_raster() const
-{
-    sla::Resolution res;
-    sla::PixelDim   pxdim;
-    std::array<bool, 2>         mirror;
-
-    double w  = m_cfg.display_width.getFloat();
-    double h  = m_cfg.display_height.getFloat();
-    auto   pw = size_t(m_cfg.display_pixels_x.getInt());
-    auto   ph = size_t(m_cfg.display_pixels_y.getInt());
-
-    mirror[X] = m_cfg.display_mirror_x.getBool();
-    mirror[Y] = m_cfg.display_mirror_y.getBool();
-    
-    auto ro = m_cfg.display_orientation.getInt();
-    sla::RasterBase::Orientation orientation =
-        ro == sla::RasterBase::roPortrait ? sla::RasterBase::roPortrait :
-                                            sla::RasterBase::roLandscape;
-    
-    if (orientation == sla::RasterBase::roPortrait) {
-        std::swap(w, h);
-        std::swap(pw, ph);
-    }
-
-    res   = sla::Resolution{pw, ph};
-    pxdim = sla::PixelDim{w / pw, h / ph};
-    sla::RasterBase::Trafo tr{orientation, mirror};
-
-    double gamma = m_cfg.gamma_correction.getFloat();
-
-    return sla::create_raster_grayscale_aa(res, pxdim, gamma, tr);
-}
-
-sla::RasterEncoder SL1Archive::get_encoder() const
-{
-    return sla::PNGRasterEncoder{};
-}
 
 static void write_thumbnail(Zipper &zipper, const ThumbnailData &data)
 {
@@ -300,23 +247,33 @@ static void write_thumbnail(Zipper &zipper, const ThumbnailData &data)
         mz_free(png_data);
     }
 }
+} // namespace Slic3r
 
-void SL1Archive::export_print(Zipper               &zipper,
-                              const SLAPrint       &print,
-                              const ThumbnailsList &thumbnails,
-                              const std::string    &prjname)
+using namespace Slic3r::Biz::Slicing;
+void Slic3r::store_sl1(const std::string& file_path, const SLAResult& data)
 {
-    std::string project =
-        prjname.empty() ?
-            boost::filesystem::path(zipper.get_filename()).stem().string() :
-            prjname;
+    std::string layer_extension = ".png";
+    Zipper::e_compression compression = Zipper::FAST_COMPRESSION;
+    if (data.files.type == Sla::FileDataType::sl1_svg){
+        layer_extension = ".svg";
+        compression = Zipper::TIGHT_COMPRESSION;
+    }
 
-    ConfMap iniconf, slicerconf;
-    fill_iniconf(iniconf, print);
+    Zipper zipper{file_path, compression};
+    std::string project = data.project_name.empty() ?
+        boost::filesystem::path(zipper.get_filename()).stem().string() :
+        data.project_name;
+
+    const DynamicPrintConfig& cfg = data.full_print_config;
+    const Sla::PrintStatistics& stats = *data.print_statistics;
+    
+    ConfMap iniconf;
+    fill_iniconf(iniconf, cfg, stats);
 
     iniconf["jobDir"] = project;
 
-    fill_slicerconf(slicerconf, print);
+    ConfMap slicerconf;
+    fill_slicerconf(slicerconf, cfg);
 
     try {
         zipper.add_entry("config.ini");
@@ -325,18 +282,15 @@ void SL1Archive::export_print(Zipper               &zipper,
         zipper << to_ini(slicerconf);
 
         zipper.add_entry("config.json");
-        zipper << to_json(print, iniconf);
+        zipper << to_json(cfg, iniconf);
 
         size_t i = 0;
-        for (const sla::EncodedRaster &rst : m_layers) {
-
-            std::string imgname = project + string_printf("%.5d", i++) + "." +
-                                  rst.extension();
-
+        for (const Sla::FileData& rst : data.files.data) {
+            std::string imgname = project + string_printf("%.5d", i++) + layer_extension;
             zipper.add_entry(imgname.c_str(), rst.data(), rst.size());
         }
 
-        for (const ThumbnailData& data : thumbnails)
+        for (const ThumbnailData& data : data.thumbnails)
             if (data.is_valid())
                 write_thumbnail(zipper, data);
 
@@ -348,17 +302,58 @@ void SL1Archive::export_print(Zipper               &zipper,
     }
 }
 
-void SL1Archive::export_print(const std::string     fname,
-                              const SLAPrint       &print,
-                              const ThumbnailsList &thumbnails,
-                              const std::string    &prjname)
+namespace{
+using namespace Slic3r;
+using namespace Slic3r::sla;
+class Sl1Rasterizer : public ISlaRasterizer
 {
-    Zipper zipper{fname, Zipper::FAST_COMPRESSION};
+    Resolution res;
+    PixelDim pxdim;
+    double gamma;
+    RasterBase::Trafo tr;
 
-    export_print(zipper, print, thumbnails, prjname);
+public:
+    explicit Sl1Rasterizer(const SLAPrinterConfig& cfg) {
+        double w = cfg.display_width.getFloat();
+        double h = cfg.display_height.getFloat();
+        auto pw = size_t(cfg.display_pixels_x.getInt());
+        auto ph = size_t(cfg.display_pixels_y.getInt());
+
+        std::array<bool, 2> mirror;
+        mirror[X] = cfg.display_mirror_x.getBool();
+        mirror[Y] = cfg.display_mirror_y.getBool();
+
+        auto ro = cfg.display_orientation.getInt();
+        RasterBase::Orientation orientation = ro == RasterBase::roPortrait
+            ? RasterBase::roPortrait
+            : RasterBase::roLandscape;
+
+        if (orientation == RasterBase::roPortrait) {
+            std::swap(w, h);
+            std::swap(pw, ph);
+        }
+
+        res = Resolution{pw, ph};
+        pxdim = PixelDim{w / pw, h / ph};
+        gamma = cfg.gamma_correction.getFloat();
+        tr = RasterBase::Trafo{orientation, mirror};
+    }
+
+    Sla::FileData create_file(const ExPolygons& slice) override {
+        std::unique_ptr<sla::RasterBase> raster = create_raster_grayscale_aa(res, pxdim, gamma, tr);
+        for (const ExPolygon& part : slice)
+            raster->draw(part);
+
+        sla::RasterEncoder encoder = sla::PNGRasterEncoder{};
+        EncodedRaster encoded_raster = raster->encode(encoder);
+        return std::move(encoded_raster.m_buffer);
+    }
+};
 }
 
-} // namespace Slic3r
+std::unique_ptr<Slic3r::ISlaRasterizer> Slic3r::create_sl1_rasterizer(const SLAPrinterConfig& cfg){
+    return std::make_unique<Sl1Rasterizer>(cfg);
+}
 
 // /////////////////////////////////////////////////////////////////////////////
 // Reader implementation

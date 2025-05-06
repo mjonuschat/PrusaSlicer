@@ -25,6 +25,11 @@
 #include "libslic3r/MultipleBeds.hpp"
 #include "libslic3r/Utils.hpp"
 
+#include <libslic3r/SLA/SLAResult.hpp>
+
+#include <libslic3r/Format/SL1.hpp>
+#include <boost/algorithm/string.hpp>
+
 // #define SLAPRINT_DO_BENCHMARK
 
 #ifdef SLAPRINT_DO_BENCHMARK
@@ -156,6 +161,11 @@ bool validate_pad(const indexed_triangle_set &pad, const sla::PadConfig &pcfg)
     // and the pad is not forced everywhere
     return !pad.empty() || (pcfg.embed_object.enabled && !pcfg.embed_object.everywhere);
 }
+
+SLAPrint::SLAPrint(const OnSlaResult& on_sla_result, const OnSlaObject& on_sla_object)
+    : m_on_sla_result(on_sla_result)
+    , m_on_sla_object(on_sla_object)
+{}
 
 void SLAPrint::clear()
 {
@@ -337,9 +347,6 @@ SLAPrint::ApplyStatus SLAPrint::apply(
     m_material_config.apply_only(config, material_diff, true);
     // Handle changes to object config defaults
     m_default_object_config.apply_only(config, object_diff, true);
-
-    if (!m_archiver || !printer_diff.empty())
-        m_archiver = SLAArchiveWriter::create(m_printer_config.sla_archive_format.value.c_str(), m_printer_config);
 
     struct ModelObjectStatus {
         enum Status {
@@ -553,16 +560,16 @@ SLAPrint::ApplyStatus SLAPrint::apply(
                 }
             }
         }
-
-        std::vector<SLAPrintObject::Instance> new_instances = sla_instances(model_object);
-        if (it_print_object_status != print_object_status.end() && it_print_object_status->status != PrintObjectStatus::Deleted) {
+                
+        if (SLAPrintObject::Instances new_instances = sla_instances(model_object);
+            it_print_object_status != print_object_status.end() && it_print_object_status->status != PrintObjectStatus::Deleted) {
             // The SLAPrintObject is already there.
             if (new_instances.empty()) {
                 const_cast<PrintObjectStatus&>(*it_print_object_status).status = PrintObjectStatus::Deleted;
             } else {
-                if (new_instances != it_print_object_status->print_object->instances()) {
+                if (new_instances != it_print_object_status->print_object->m_instances) {
                     // Instances changed.
-                    it_print_object_status->print_object->set_instances(new_instances);
+                    it_print_object_status->print_object->set_instances(std::move(new_instances));
                     update_apply_status(this->invalidate_step(slapsMergeSlicesAndEval));
                 }
                 print_objects_new.emplace_back(it_print_object_status->print_object);
@@ -600,7 +607,6 @@ SLAPrint::ApplyStatus SLAPrint::apply(
 
     if(m_objects.empty()) {
         m_printer_input = {};
-        m_print_statistics = {};
     }
 
 #ifdef _DEBUG
@@ -612,12 +618,37 @@ SLAPrint::ApplyStatus SLAPrint::apply(
     return static_cast<ApplyStatus>(apply_status);
 }
 
+namespace {
+using namespace Slic3r::Biz::Slicing; //Sla::PrintStatistics
+DynamicConfig to_config(const Sla::PrintStatistics& stats)
+{
+    DynamicConfig config;
+    const std::string print_time = Slic3r::short_time(get_time_dhms(float(stats.estimated_print_time)));
+    config.set_key_value("print_time", new ConfigOptionString(print_time));
+    config.set_key_value("objects_used_material", new ConfigOptionFloat(stats.objects_used_material));
+    config.set_key_value("support_used_material", new ConfigOptionFloat(stats.support_used_material));
+    config.set_key_value("total_cost", new ConfigOptionFloat(stats.total_cost));
+    config.set_key_value("total_weight", new ConfigOptionFloat(stats.total_weight));
+    return config;
+}
+
+DynamicConfig create_stats_placeholders()
+{
+    DynamicConfig config;
+    for (const char* key : {"print_time", "total_cost", "total_weight", 
+        "objects_used_material", "support_used_material"})
+        config.set_key_value(key, new ConfigOptionString(std::string("{") + key + "}"));
+    return config;
+}
+
+} // namespace
+
 // Generate a recommended output file name based on the format template, default extension, and template parameters
 // (timestamps, object placeholders derived from the model, current placeholder prameters and print statistics.
 // Use the final print statistics if available, or just keep the print statistics placeholders if not available yet (before the output is finalized).
 std::string SLAPrint::output_filename(const std::string &filename_base) const
 {
-    DynamicConfig config = this->finished() ? this->print_statistics().config() : this->print_statistics().placeholders();
+    DynamicConfig config = this->finished() ? to_config(m_print_statistics) : create_stats_placeholders();
     std::string default_ext = get_default_extension(m_printer_config.sla_archive_format.value.c_str());
     if (default_ext.empty())
         default_ext = "sl1";
@@ -710,15 +741,6 @@ std::string SLAPrint::validate(std::vector<std::string>*) const
                     "to reasonable value. The recommended value is 5 mm.");
 
     return "";
-}
-
-void SLAPrint::export_print(const std::string &fname, const ThumbnailsList &thumbnails, const std::string &projectname)
-{
-    if (m_archiver)
-        m_archiver->export_print(fname, *this, thumbnails, projectname);
-    else {
-        throw ExportError(format(_u8L("Unknown archive format: %s"), m_printer_config.sla_archive_format.value));
-    }
 }
 
 bool SLAPrint::is_prusa_print(const std::string& printer_model)
@@ -830,11 +852,6 @@ void SLAPrint::process()
         }
         
         st += printsteps.progressrange(currentstep);
-    }
-
-    if (this->on_sla_result) {
-        // TODO move to approprite spot and pass the result as arg
-        this->on_sla_result();
     }
 
     // If everything vent well
@@ -1195,16 +1212,10 @@ const std::vector<Domain::SLA::SupportPoint> EMPTY_SUPPORT_POINTS;
 
 const SliceRecord SliceRecord::EMPTY(0, std::nanf(""), 0.f);
 
-const std::vector<Domain::SLA::SupportPoint>& SLAPrintObject::get_support_points() const
-{
-    return m_supportdata? m_supportdata->input.pts : EMPTY_SUPPORT_POINTS;
-}
-
 const std::vector<ExPolygons> &SLAPrintObject::get_support_slices() const
 {
     // assert(is_step_done(slaposSliceSupports));
-    if (!m_supportdata) return EMPTY_SLICES;
-    return m_supportdata->support_slices;
+    return (!m_support_slices.empty()) ? m_support_slices : EMPTY_SLICES;
 }
 
 const ExPolygons &SliceRecord::get_slice(SliceOrigin o) const
@@ -1223,29 +1234,25 @@ const TriangleMesh& SLAPrintObject::support_mesh() const
 {
     if (m_config.supports_enable.getBool() &&
         is_step_done(slaposSupportTree) &&
-        m_supportdata)
-        return m_supportdata->tree_mesh;
-
+        m_preview.has_value() &&
+        m_preview->support_structure)
+        return *m_preview->support_structure;
     return EMPTY_MESH;
 }
 
 const TriangleMesh& SLAPrintObject::pad_mesh() const
 {
-    if(m_config.pad_enable.getBool() && is_step_done(slaposPad) && m_supportdata)
-        return m_supportdata->pad_mesh;
-
+    if (m_config.pad_enable.getBool() && is_step_done(slaposPad) && 
+        m_preview.has_value() && m_preview->pad)
+        return *m_preview->pad;
     return EMPTY_MESH;
 }
 
-const std::shared_ptr<const indexed_triangle_set> &
-SLAPrintObject::get_mesh_to_print() const
+std::shared_ptr<const Domain::TriangleMesh> SLAPrintObject::get_mesh_to_print() const
 {
-    int s = last_completed_step();
-
-    while (s > 0 && ! m_preview_meshes[s])
-        --s;
-
-    return m_preview_meshes[s];
+    if(!m_preview.has_value())
+        return nullptr;
+    return m_preview->mesh;
 }
 
 std::vector<csg::CSGPart> SLAPrintObject::get_parts_to_slice() const
@@ -1286,48 +1293,9 @@ Domain::SLA::SupportPoints SLAPrintObject::transformed_support_points() const
 Domain::SLA::DrainHoles SLAPrintObject::transformed_drainhole_points() const
 {
     assert(model_object());
-
-    return sla::transformed_drainhole_points(*model_object(), trafo());
-}
-
-DynamicConfig SLAPrintStatistics::config() const
-{
-    DynamicConfig config;
-    const std::string print_time = Slic3r::short_time(get_time_dhms(float(this->estimated_print_time)));
-    config.set_key_value("print_time", new ConfigOptionString(print_time));
-    config.set_key_value("objects_used_material", new ConfigOptionFloat(this->objects_used_material));
-    config.set_key_value("support_used_material", new ConfigOptionFloat(this->support_used_material));
-    config.set_key_value("total_cost", new ConfigOptionFloat(this->total_cost));
-    config.set_key_value("total_weight", new ConfigOptionFloat(this->total_weight));
-    return config;
-}
-
-DynamicConfig SLAPrintStatistics::placeholders()
-{
-    DynamicConfig config;
-    for (const char *key : {
-        "print_time", "total_cost", "total_weight",
-        "objects_used_material", "support_used_material" })
-        config.set_key_value(key, new ConfigOptionString(std::string("{") + key + "}"));
-
-    return config;
-}
-
-std::string SLAPrintStatistics::finalize_output_path(const std::string &path_in) const
-{
-    std::string final_path;
-    try {
-        boost::filesystem::path path(path_in);
-        DynamicConfig cfg = this->config();
-        PlaceholderParser pp;
-        std::string new_stem = pp.process(path.stem().string(), 0, &cfg);
-        final_path = (path.parent_path() / (new_stem + path.extension().string())).string();
-    }
-    catch (const std::exception &ex) {
-        BOOST_LOG_TRIVIAL(error) << "Failed to apply the print statistics to the export file name: " << ex.what();
-        final_path = path_in;
-    }
-    return final_path;
+    Domain::SLA::DrainHoles drainholes = drainholes; // Copy the drainholes
+    sla::transform_drainhole_points(drainholes, trafo());
+    return drainholes;
 }
 
 void SLAPrint::StatusReporter::operator()(SLAPrint &         p,
@@ -1358,3 +1326,28 @@ MeshBoolean::cgal::CGALMeshPtr get_cgalmesh(const CSGPartForStep &part)
 } // namespace csg
 
 } // namespace Slic3r
+
+// TODO: move function out of SLAPrint
+// SLAResult result; // TODO: get it from SLAResultCache
+using namespace Slic3r::Biz::Slicing;
+void Slic3r::export_print(
+    const std::string& fname,
+    SLAResult& data,
+    const ThumbnailsList& thumbnails,
+    const std::string& projectname
+)
+{
+    if (data.files.data.empty())
+        throw ExportError(_u8L("No layer to export yet."));
+
+    data.thumbnails = thumbnails;
+    data.project_name = projectname; // ?? No idea why it is used
+
+    // select format by
+    switch (data.files.type) {
+    case Sla::FileDataType::sl1_svg: [[fallthrough]];
+    case Sla::FileDataType::sl1_png: store_sl1(fname, data); break;
+    default:
+        throw ExportError(_u8L("Unknown output file format"));
+    }
+}

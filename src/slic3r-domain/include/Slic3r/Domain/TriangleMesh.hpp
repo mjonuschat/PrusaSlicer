@@ -103,8 +103,6 @@ struct TriangleMeshStats {
     bool repaired() const { return repaired_errors.repaired(); }
 };
 
-TriangleMeshStats calculate_stats(const indexed_triangle_set &its);
-
 class TriangleMesh
 {
 public:

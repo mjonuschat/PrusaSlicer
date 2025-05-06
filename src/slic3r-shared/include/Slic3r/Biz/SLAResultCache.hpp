@@ -1,0 +1,39 @@
+#pragma once
+
+#include <map>
+#include <functional>
+#include <optional>
+#include "Slic3r/Biz/Slicing/SlicingInteractor.hpp"
+#include "Slic3r/Biz/Platform/WithListeners.hpp"
+#include "libslic3r/SLA/SLAResult.hpp"
+
+namespace Slic3r::Biz {
+
+class ISLAResultCacheChangedListener
+{
+public:
+    virtual ~ISLAResultCacheChangedListener() = default;
+    virtual void on_sla_result_cache_changed(const Slicing::SlicingId& id) = 0;
+};
+
+using SLAResultRef = std::reference_wrapper<const Slicing::SLAResult>;
+using SLAResultOptRef = std::optional<SLAResultRef>;
+/// <summary>
+/// Cache data from SLA slicing backend for the frontend access
+/// Frontend is responsible for data lifetime (call remove())
+/// NOTE: Multiple bed could be sliced at the same time
+/// Data must survive for switch to another bed
+/// </summary>
+class SLAResultCache :
+    public Slicing::ISLAResultListener,
+    public WithListeners<ISLAResultCacheChangedListener>
+{
+public:    
+    SLAResultOptRef get_result(const Slicing::SlicingId& id) const;
+    void on_sla_result_changed(const Slicing::SlicingId& id, Slicing::SLAResult&& result) override;
+    void on_remove_bed(const Slicing::SlicingId&) override;
+    using Cache = std::map<Slicing::SlicingId, Slicing::SLAResult>;
+private:
+    Cache m_results;
+};
+} // namespace Slic2r::Biz

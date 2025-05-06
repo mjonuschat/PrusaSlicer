@@ -20,17 +20,31 @@
 
 #include "libslic3r/Point.hpp"
 #include "libslic3r/libslic3r.h"
-
+#include "libslic3r/SLA/SLAResult.hpp"
 namespace Slic3r {
 
-namespace sla {
+/// <summary>
+/// Covert slice defined by ExPolygons into raster image.
+/// </summary>
+class ISlaRasterizer {
+public:
+    virtual ~ISlaRasterizer() = default;
 
+    /// <summary>
+    /// Called for whole slice
+    /// </summary>
+    /// <param name="shape">Separable part from slice</param>
+    virtual Biz::Slicing::Sla::FileData create_file(const ExPolygons& slice) = 0;
+};
+} // namespace Slic3r
+
+namespace Slic3r::sla {
 // Raw byte buffer paired with its size. Suitable for compressed image data.
 class EncodedRaster {
 protected:
-    std::vector<uint8_t> m_buffer;
     std::string m_ext;
 public:
+    std::vector<uint8_t> m_buffer;
     EncodedRaster() = default;
     explicit EncodedRaster(std::vector<uint8_t> &&buf, std::string ext)
         : m_buffer(std::move(buf)), m_ext(std::move(ext))
@@ -124,6 +138,6 @@ std::unique_ptr<RasterBase> create_raster_grayscale_aa(
     double                   gamma = 1.0,
     const RasterBase::Trafo &tr    = {});
 
-}} // namespace Slic3r::sla
+} // namespace Slic3r::sla
 
 #endif // SLARASTERBASE_HPP

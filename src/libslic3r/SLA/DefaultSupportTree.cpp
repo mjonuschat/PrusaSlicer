@@ -41,16 +41,16 @@ namespace execution = Slic3r::Biz::Algorithms::Execution;
 DefaultSupportTree::DefaultSupportTree(SupportTreeBuilder &   builder,
                                      const SupportableMesh &sm)
     : m_sm(sm)
-    , m_support_nmls(sm.pts.size(), 3)
+    , m_support_nmls(sm.pts->size(), 3)
     , m_builder(builder)
-    , m_points(sm.pts.size(), 3)
+    , m_points(sm.pts->size(), 3)
     , m_thr(builder.ctl().cancelfn)
 {
     // Prepare the support points in Eigen/IGL format as well, we will use
     // it mostly in this form.
 
     long i = 0;
-    for (const Domain::SLA::SupportPoint &sp : m_sm.pts) {
+    for (const Domain::SLA::SupportPoint &sp : *m_sm.pts) {
         m_points.row(i).x() = double(sp.pos.x());
         m_points.row(i).y() = double(sp.pos.y());
         m_points.row(i).z() = double(sp.pos.z());
@@ -61,7 +61,7 @@ DefaultSupportTree::DefaultSupportTree(SupportTreeBuilder &   builder,
 bool DefaultSupportTree::execute(SupportTreeBuilder    &builder,
                                 const SupportableMesh &sm)
 {
-    if(sm.pts.empty()) return false;
+    if(sm.pts->empty()) return false;
 
     DefaultSupportTree alg(builder, sm);
 
@@ -411,8 +411,8 @@ void DefaultSupportTree::add_pinheads()
     // not be enough space for the pinhead. Filtering is applied for
     // these reasons.
 
-    auto heads = reserve_vector<Head>(m_sm.pts.size());
-    for (const Domain::SLA::SupportPoint &sp : m_sm.pts) {
+    auto heads = reserve_vector<Head>(m_sm.pts->size());
+    for (const Domain::SLA::SupportPoint &sp : *m_sm.pts) {
         m_thr();
         heads.emplace_back(
             NaNd,
@@ -458,7 +458,7 @@ void DefaultSupportTree::add_pinheads()
         double w = lmin + 2 * back_r + 2 * m_sm.cfg.head_front_radius_mm -
                    m_sm.cfg.head_penetration_mm;
 
-        double pin_r = double(m_sm.pts[fidx].head_front_radius);
+        double pin_r = double(m_sm.pts->at(fidx).head_front_radius);
 
         // Reassemble the now corrected normal
         auto nn = spheric_to_dir(polar, azimuth).normalized();

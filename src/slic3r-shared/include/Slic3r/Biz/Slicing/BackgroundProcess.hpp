@@ -8,6 +8,7 @@
 #include <Slic3r/Biz/libpgcode/ProcessorResult.hpp>
 #include "Slic3r/Log.hpp"
 
+#include <libslic3r/SLA/SLAResult.hpp>
 #include <libslic3r/Print.hpp>
 #include <libslic3r/GCode.hpp>
 #include <libslic3r/SLAPrint.hpp>
@@ -88,7 +89,8 @@ using FDMResult = libpgcode::ProcessorResult;
 class IProcessCallbacks {
 public:
     virtual void on_fdm_result(FDMResult &&, SlicingId) = 0;
-    virtual void on_sla_result(SlicingId) = 0;
+    virtual void on_sla_result(const SlicingId&, SLAResult&&) = 0;
+    virtual void on_sla_object(const SlicingId&, Sla::Object&&) = 0;
     virtual void on_status(const Status, SlicingId) = 0;
     virtual void on_wipe_tower_geometry(Print::WipeTowerGeometry&&, SlicingId) = 0;
     virtual Status get_status(const SlicingId) const = 0;

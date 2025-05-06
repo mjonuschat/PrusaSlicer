@@ -11,6 +11,7 @@
 #include <Slic3r/Biz/Platform/PlatformServices.hpp>
 #include <Slic3r/Domain/ConfigContainer.hpp>
 #include <Slic3r/Biz/Platform/WithListeners.hpp>
+#include <libslic3r/SLA/SLAResult.hpp> // + Sla::Object
 
 #include "BackgroundProcess.hpp"
 
@@ -29,10 +30,14 @@ public:
     ) = 0;
 };
 
-class ISLAResultListener : public ISlicingListener
-{
-public:
-    virtual void on_sla_result_changed(const SlicingId) = 0;
+class ISLAResultListener : public ISlicingListener { public: 
+    virtual void on_sla_result_changed(const SlicingId&, SLAResult&&) = 0;
+    virtual void on_remove_bed(const SlicingId&) = 0;
+};
+class ISLAObjectListener : public ISlicingListener { public: 
+    virtual void on_sla_object_changed(const SlicingId&, Sla::Object&&) = 0;
+    virtual void on_model_update(const SlicingId&, const std::vector<Domain::ObjectID>&) = 0;
+    virtual void on_remove_bed(const SlicingId&) = 0;
 };
 
 struct IStatusListener : ISlicingListener
@@ -55,11 +60,12 @@ class SlicingInteractor :
     public ISelectedProjectChangedListener,
     public IProcessCallbacks,
     public WithListeners<
-        IFDMResultListener,
-        ISLAResultListener,
         IStatusListener,
-        IWipeTowerGeometryListener
-    >
+        IWipeTowerGeometryListener>,
+    public WithListener<
+        IFDMResultListener,
+        ISLAResultListener, 
+        ISLAObjectListener>
 {
 public:
     SlicingInteractor(Platform::IMainThreadDispatcher& dispatcher);
@@ -82,7 +88,8 @@ public:
     void on_selected_project_changed(size_t index) override;
 
     void on_fdm_result(FDMResult &&, SlicingId) override;
-    void on_sla_result(SlicingId) override;
+    void on_sla_result(const SlicingId&, SLAResult&&) override;
+    void on_sla_object(const SlicingId&, Sla::Object&&) override;
     void on_status(const Status, SlicingId) override;
     void on_wipe_tower_geometry(
         Print::WipeTowerGeometry&& wipe_tower_geometry, const SlicingId id

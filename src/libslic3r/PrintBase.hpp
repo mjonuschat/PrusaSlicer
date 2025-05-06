@@ -22,6 +22,7 @@
 #include "PrintConfig.hpp"
 #include "Slic3r/Biz/libpgcode/ProcessorResult.hpp"
 #include "libslic3r/ModelUtils.hpp"
+#include <libslic3r/SLA/SLAResult.hpp>
 
 namespace Slic3r {
 
@@ -483,7 +484,6 @@ public:
     virtual ~IPrint() = default;
 
     JThread::StopToken stop_token;
-    std::function<void()> on_sla_result;
 };
 }
 

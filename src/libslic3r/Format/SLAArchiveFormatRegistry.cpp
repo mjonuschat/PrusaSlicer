@@ -7,7 +7,6 @@
 
 #include "SL1.hpp"
 #include "SL1_SVG.hpp"
-#include "AnycubicSLA.hpp"
 #include "libslic3r/I18N.hpp"
 #include "SLAArchiveFormatRegistry.hpp"
 #include "libslic3r/Format/SLAArchiveReader.hpp"
@@ -29,14 +28,11 @@ class Registry {
                 "sl1",                      // main extension
                 {"sl1s", "zip"},            // extension aliases
 
-                // Writer factory
-                [] (const auto &cfg) { return std::make_unique<SL1Archive>(cfg); },
-
                 // Reader factory
                 [] (const std::string &fname, SLAImportQuality quality, const ProgrFn &progr) {
                     return std::make_unique<SL1Reader>(fname, quality, progr);
                 }
-            },
+            }/*,
             {
                 "SL1SVG",
                 L("SL1 SVG archive"),
@@ -47,33 +43,6 @@ class Registry {
                     return std::make_unique<SL1_SVGReader>(fname, quality, progr);
                 }
             },
-            anycubic_sla_format("pwmo", "Photon Mono"),
-            anycubic_sla_format("pwmx", "Photon Mono X"),
-            anycubic_sla_format("pwms", "Photon Mono SE"),
-
-            /**
-                // Supports only ANYCUBIC_SLA_VERSION_1
-                anycubic_sla_format_versioned("pws", "Photon / Photon S", ANYCUBIC_SLA_VERSION_1),
-                anycubic_sla_format_versioned("pw0", "Photon Zero", ANYCUBIC_SLA_VERSION_1),
-                anycubic_sla_format_versioned("pwx", "Photon X", ANYCUBIC_SLA_VERSION_1),
-
-                // Supports ANYCUBIC_SLA_VERSION_1 and ANYCUBIC_SLA_VERSION_515
-                anycubic_sla_format_versioned("pwmo", "Photon Mono", ANYCUBIC_SLA_VERSION_1),
-                anycubic_sla_format_versioned("pwms", "Photon Mono SE", ANYCUBIC_SLA_VERSION_1),
-                anycubic_sla_format_versioned("dlp", "Photon Ultra", ANYCUBIC_SLA_VERSION_1),
-                anycubic_sla_format_versioned("pwmx", "Photon Mono X", ANYCUBIC_SLA_VERSION_1),
-                anycubic_sla_format_versioned("pmsq", "Photon Mono SQ", ANYCUBIC_SLA_VERSION_1),
-
-                // Supports ANYCUBIC_SLA_VERSION_515 and ANYCUBIC_SLA_VERSION_516
-                anycubic_sla_format_versioned("pwma", "Photon Mono 4K", ANYCUBIC_SLA_VERSION_515),
-                anycubic_sla_format_versioned("pm3",  "Photon M3", ANYCUBIC_SLA_VERSION_515),
-                anycubic_sla_format_versioned("pm3m", "Photon M3 Max", ANYCUBIC_SLA_VERSION_515),
-
-                // Supports NYCUBIC_SLA_VERSION_515 and ANYCUBIC_SLA_VERSION_516 and ANYCUBIC_SLA_VERSION_517
-                anycubic_sla_format_versioned("pwmb", "Photon Mono X 6K / Photon M3 Plus", ANYCUBIC_SLA_VERSION_515),
-                anycubic_sla_format_versioned("dl2p", "Photon Photon D2", ANYCUBIC_SLA_VERSION_515),
-                anycubic_sla_format_versioned("pmx2", "Photon Mono X2", ANYCUBIC_SLA_VERSION_515),
-                anycubic_sla_format_versioned("pm3r", "Photon M3 Premium", ANYCUBIC_SLA_VERSION_515),
             */
         };
     }
@@ -108,16 +77,6 @@ std::vector<std::string> get_extensions(const ArchiveEntry &entry)
     ret.emplace_back(entry.ext);
     for (const char *alias : entry.ext_aliases)
         ret.emplace_back(alias);
-
-    return ret;
-}
-
-ArchiveWriterFactory get_writer_factory(const char *formatid)
-{
-    ArchiveWriterFactory ret;
-    auto entry = Registry::get().find(ArchiveEntry{formatid});
-    if (entry != Registry::get().end())
-        ret = entry->wrfactoryfn;
 
     return ret;
 }

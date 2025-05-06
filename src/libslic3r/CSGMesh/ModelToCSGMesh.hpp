@@ -102,7 +102,8 @@ void model_to_csgmesh(const ModelObject &mo,
     }
 
     if (do_drillholes) {
-        Domain::SLA::DrainHoles drainholes = sla::transformed_drainhole_points(mo, trafo);
+        Domain::SLA::DrainHoles drainholes = mo.sla_drain_holes; // Copy the drainholes
+        sla::transform_drainhole_points(drainholes, trafo);
 
         for (const Domain::SLA::DrainHole &dhole : drainholes) {
             CSGPart part{std::make_unique<const indexed_triangle_set>(

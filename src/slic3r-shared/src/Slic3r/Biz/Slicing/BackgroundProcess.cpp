@@ -8,8 +8,11 @@ using namespace Slic3r;
 using Biz::Slicing::IProcessCallbacks;
 using Biz::Slicing::SlicingId;
 using Biz::Slicing::FDMResult;
+using Biz::Slicing::SLAResult;
+using Biz::Slicing::Sla::Object;
 using Biz::Print::IPrint;
 using Biz::Print::WipeTowerGeometry;
+
 std::unique_ptr<IPrint> init_print(
     const PrinterTechnology& printer_technology, 
     IProcessCallbacks& callbacks,
@@ -20,18 +23,21 @@ std::unique_ptr<IPrint> init_print(
     switch (printer_technology) {
     case ptFFF: {
         Print::OnFdmResult on_fdm_result = [callbacks_ref, id](FDMResult&& result) {
-            callbacks_ref.get().on_fdm_result(std::move(result), id);
-        };
+            callbacks_ref.get().on_fdm_result(std::move(result), id); };
         Print::OnWipeTowerGeometry on_wipe_tower_geometry = [callbacks_ref, id](WipeTowerGeometry&& geometry) {
             callbacks_ref.get().on_wipe_tower_geometry(std::move(geometry), id); };
         print = std::make_unique<Print>(on_fdm_result, on_wipe_tower_geometry);
         break;
     }
-    case ptSLA:
-        // TODO: Implement SLA callbacks
-        print = std::make_unique<SLAPrint>();
+    case ptSLA: {
+        SLAPrint::OnSlaResult on_sla_result = [callbacks_ref, id](SLAResult&& result) {
+            callbacks_ref.get().on_sla_result(id, std::move(result)); };
+        SLAPrint::OnSlaObject on_sla_object = [callbacks_ref, id](const Object& object) {
+            auto object_copy = object;
+            callbacks_ref.get().on_sla_object(id, std::move(object_copy)); };
+        print = std::make_unique<SLAPrint>(on_sla_result, on_sla_object);
         break;
-    // case ptSLA: print = std::make_unique<Slic3r::SLAPrint>(callbacks); break;
+    }
     default:
         UNREACHABLE("Only FFF and SLA are viable options!");
     }

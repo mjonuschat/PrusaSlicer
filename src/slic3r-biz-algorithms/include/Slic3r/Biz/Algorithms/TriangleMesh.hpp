@@ -40,6 +40,8 @@
 
 namespace Slic3r::Biz::Algorithms::TriangleMesh {
 
+Domain::TriangleMeshStats calculate_stats(const indexed_triangle_set& its);
+
 Domain::TriangleMesh construct(const std::vector<Domain::Vec3f> &vertices, const std::vector<Domain::Index3> &faces);
 Domain::TriangleMesh construct(std::vector<Domain::Vec3f> &&vertices, std::vector<Domain::Index3> &&faces);
 Domain::TriangleMesh construct(const indexed_triangle_set &its);

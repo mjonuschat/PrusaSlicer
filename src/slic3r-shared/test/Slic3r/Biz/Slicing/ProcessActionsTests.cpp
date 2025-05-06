@@ -17,6 +17,8 @@ using Slic3r::Biz::Print::ApplyStatus;
 using Slic3r::Biz::Print::WipeTowerGeometry;
 using Slic3r::Biz::Slicing::IProcessCallbacks;
 using Slic3r::Biz::Slicing::FDMResult;
+using Slic3r::Biz::Slicing::SLAResult;
+using Slic3r::Biz::Slicing::Sla::Object;
 using Slic3r::Tests::precise_sleep;
 using Slic3r::Tests::get_config;
 using Slic3r::Domain::ModelInstanceList;
@@ -42,7 +44,8 @@ struct StatusLog : IProcessCallbacks
     }
 
     void on_fdm_result(FDMResult&& fdm_result, const SlicingId) override {}
-    void on_sla_result(const SlicingId) override {}
+    void on_sla_result(const SlicingId&, SLAResult&&) override {}
+    void on_sla_object(const SlicingId&, Object&&) override {}
     void on_wipe_tower_geometry(WipeTowerGeometry&&, const SlicingId) override {}
 
     std::vector<std::pair<time_point, Status>> get_entries(const Status status) const

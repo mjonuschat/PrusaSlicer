@@ -13,18 +13,9 @@
 #include <string>
 #include <vector>
 
-#include "SLAArchiveWriter.hpp"
 #include "SLAArchiveReader.hpp"
 
 namespace Slic3r {
-class SLAPrinterConfig;
-
-// Factory function that returns an implementation of SLAArchiveWriter given
-// a printer configuration.
-using ArchiveWriterFactory = std::function<
-    std::unique_ptr<SLAArchiveWriter>(const SLAPrinterConfig &)
->;
-
 // Factory function that returns an implementation of SLAArchiveReader
 using ArchiveReaderFactory = std::function<
     std::unique_ptr<SLAArchiveReader>(const std::string       &fname,
@@ -43,7 +34,6 @@ struct ArchiveEntry {
     // Main extension of the format.
     const char *ext = "zip";
 
-    ArchiveWriterFactory wrfactoryfn;
     ArchiveReaderFactory rdfactoryfn;
 
     // Secondary, alias extensions
@@ -55,12 +45,10 @@ struct ArchiveEntry {
                  const char *description,
                  const char *extension,
                  std::initializer_list<const char *> extaliases,
-                 const ArchiveWriterFactory &wrfn,
                  const ArchiveReaderFactory &rdfn)
         : id{formatid}
         , desc{description}
         , ext{extension}
-        , wrfactoryfn{wrfn}
         , rdfactoryfn{rdfn}
         , ext_aliases{extaliases}
     {}
@@ -77,7 +65,6 @@ const std::set<ArchiveEntry>& registered_sla_archives();
 
 const ArchiveEntry * get_archive_entry(const char *formatid);
 const char * get_default_extension(const char *formatid);
-ArchiveWriterFactory get_writer_factory(const char *formatid);
 ArchiveReaderFactory get_reader_factory(const char *formatid);
 
 } // namespace Slic3r
