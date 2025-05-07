@@ -55,6 +55,8 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Preview/SidebarPreviewActionButtons.hpp
         src/Slic3r/App/Preview/SidebarPreviewActionButtons.cpp
 
+        include/Slic3r/App/MultiSelections.hpp
+        src/Slic3r/App/MultiSelections.cpp
         include/Slic3r/App/ObjectList.hpp
         src/Slic3r/App/ObjectList.cpp
         include/Slic3r/App/CubeView.hpp

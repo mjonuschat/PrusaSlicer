@@ -280,6 +280,13 @@ void PreviewRenderModule::on_selected_bed_instance_changed(
 
 void PreviewRenderModule::on_status_cache_changed(const Biz::Slicing::SlicingId id)
 {
+    if (m_project_interactor.selected_project_id() == id.project_id && m_viewer->has_data()) {
+        const std::optional<Biz::Slicing::Status> status {
+            m_project_interactor.status_cache().get_status(id) };
+        if (status && status == Biz::Slicing::Status::Modified)
+            m_viewer->reset();
+    }
+
     // request redraw
     request_render();
 }
@@ -294,6 +301,7 @@ void PreviewRenderModule::on_init(Render::Device& device, Render::ImguiRender& i
 
     m_project_interactor.scene_interactor().add_listener<Biz::ISelectedBedInstanceChangedListener>( this );
     m_project_interactor.fdm_result_cache().add_listener<Biz::IFDMResultCacheChangedListener>( this );
+    m_project_interactor.status_cache().add_listener<Biz::IStatusCacheChangedListener>( this );
 
     init_gizmos();
     init_viewers(device);
@@ -606,7 +614,7 @@ void PreviewRenderModule::init_scene_layout()
 {
 // >> This code is same for Plater/PreviewRenderModule
     m_object_list = new ObjectList;
-    m_object_list->init(&m_project_interactor, m_scene_presenter->project_context().object_list_state());
+    m_object_list->init(&m_project_interactor, ObjectList::Mode::Preview);
 
     m_cube_view = new CubeView;
     m_sidebar_bed = new SidebarBed;

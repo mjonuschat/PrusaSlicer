@@ -108,9 +108,10 @@ static const std::vector<std::pair<const wchar_t, std::string>> FONT_ICONS = {
     { ImGui::CloseArrow                   , "right_arrow"                    },
     { ImGui::ConfigContainer              , "config_container"               },
     { ImGui::InstancesIcon                , "instances_icon"                 },
-    { ImGui::ExtruderMarker               , "extruder_marker"                },
+    { ImGui::SceneMap                      , "map"                            },
     { ImGui::AddBedIcon                   , "add_bed"                        },
     { ImGui::OverridesMarker              , "overrides_marker"               },
+    { ImGui::AllBeds                      , "all_beds"                       },
 };
 
 static const std::vector<std::pair<const wchar_t, std::string>> FONT_ICONS_MEDIUM = {
@@ -194,6 +195,7 @@ static const std::vector<std::pair<const wchar_t, std::string>> FONT_ICONS_TOOLB
 static const std::vector<std::pair<const wchar_t, std::string>> FONT_ICONS_PRINTER = {
     // printer icons
     { ImGui::PrinterNEXT             , "printer_NEXT"                     },
+    { ImGui::BedThumbnail            , "bed_thumbnail"                    },
 };
  
 static const std::vector<std::pair<const wchar_t, std::string>> FONT_ICONS_EXTRA_LARGE = {
@@ -473,7 +475,10 @@ void ImguiFontHelper::create_font_texture()
     int width, height;
     io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);   // Load as RGBA 32-bits (75% of the memory is wasted, but default font is so small) because it is more likely to be compatible with user's existing shaders. If your ImTextureId represent a higher-level concept than just a GL texture id, consider calling GetTexDataAsAlpha8() instead to save on GPU memory.
 
-    load_icons_into_font_texture(*this, rect_id, width, pixels);
+    // Load icons for all fonts textures
+    for (auto& f : m_fonts) {
+        load_icons_into_font_texture(*this, rect_id, width, pixels);
+    }
 
     m_font_texture = m_device.context().texture_manager().create_empty("imgui_font", PixelFormat::RGBA8, width, height);
     m_font_texture->set_data(PixelFormat::RGBA8, 0, width, height, pixels);

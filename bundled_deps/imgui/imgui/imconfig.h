@@ -284,9 +284,9 @@ namespace ImGui
     const wchar_t ConfigContainer          = 0x283A;
     const wchar_t InstancesIcon            = 0x283B;
     const wchar_t OverridesMarker          = 0x283C;
-    const wchar_t ExtruderMarker           = 0x283D;
+    const wchar_t SceneMap                 = 0x283D;
     const wchar_t AddBedIcon               = 0x283E;
-    //const wchar_t       = 0x283F;
+    const wchar_t AllBeds                  = 0x283F;
 
     // icons for toolbar
     const wchar_t ToolbarObjects           = 0x2901;
@@ -302,6 +302,7 @@ namespace ImGui
     // printer icons (PNGs)
     const wchar_t PrinterNEXT             = 0x2A01;
     const wchar_t CubeViewIcon            = 0x2A02;
+    const wchar_t BedThumbnail            = 0x2A03;
 
     // sidebar icons
     const wchar_t SavePrint               = 0x2B01;
