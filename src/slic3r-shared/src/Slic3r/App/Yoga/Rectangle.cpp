@@ -14,14 +14,21 @@ void Rectangle::render(Vec2f pos, Vec2f size)
         resize(size);
     }
 
+    const bool is_enabled = enabled();
+
     ImRect rect(to_im(pos), to_im(pos + size));
 
-    bool hovered = ImGui::IsMouseHoveringRect(rect.Min, rect.Max);
+    bool hovered = ImGui::IsMouseHoveringRect(rect.Min, rect.Max) && is_enabled;
 
     ImDrawList* draw_list = ImGui::GetWindowDrawList();
     ASSERT(draw_list);
 
-    ImColor fill_color = hovered && m_hover_effect ? Imgui::adjust_brightness(m_fill, 1.2) : m_fill;
+    ImColor fill_color;
+    if (!is_enabled) {
+        fill_color = IM_COL32_DISABLE;
+    } else {
+        fill_color = hovered && m_hover_effect ? Imgui::adjust_brightness(m_fill, 1.2) : m_fill;
+    }
 
     draw_list->AddRectFilled(rect.Min, rect.Max, fill_color, m_rounding);
     if (m_border_width > 0) {

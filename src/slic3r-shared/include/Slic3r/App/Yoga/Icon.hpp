@@ -14,6 +14,9 @@ public:
     wchar_t icon() const;
     void set_icon(wchar_t icon);
 
+protected:
+    Vec2f get_item_size() override;
+
 private:
     wchar_t m_icon = '\0';
 };

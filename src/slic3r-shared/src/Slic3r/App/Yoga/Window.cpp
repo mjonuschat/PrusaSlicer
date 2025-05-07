@@ -16,6 +16,7 @@ Window::Window(const std::string& window_name, Item* parent) : Item(parent)
         m_window_name = window_name;
         window_names.insert({window_name, 1});
     }
+    set_padding(10);
 }
 
 Window::~Window() {}

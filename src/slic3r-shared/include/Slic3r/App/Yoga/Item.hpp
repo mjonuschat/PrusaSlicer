@@ -56,6 +56,8 @@ public:
     YGAlign align_items() const;
     YGAlign align_content() const;
     const std::string& item_name() const;
+    const Margins& margin() const;
+    const Paddings& padding() const;
 
     bool enabled();
     void set_enabled(bool enabled);
@@ -76,6 +78,10 @@ public:
     void set_justify_content(YGJustify justify_content);
     void set_align_content(YGAlign align_content);
     void set_item_name(const std::string& item_name);
+    void set_width(float width);
+    void set_height(float height);
+    void set_width_percent(float width_percent);
+    void set_height_percent(float height_percent);
 
     virtual void prepend(Item* child);
     virtual void append(Item* child);

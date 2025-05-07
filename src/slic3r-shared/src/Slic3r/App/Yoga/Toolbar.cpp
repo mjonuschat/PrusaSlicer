@@ -11,7 +11,9 @@
 
 namespace Slic3r::App::Yoga {
 
-Toolbar::Toolbar(const std::string& name, Item* parent) : Window(name, parent) {}
+Toolbar::Toolbar(const std::string& name, Item* parent) : Window(name, parent) {
+    set_padding(0);
+}
 
 void Toolbar::append(IconButton* button)
 {

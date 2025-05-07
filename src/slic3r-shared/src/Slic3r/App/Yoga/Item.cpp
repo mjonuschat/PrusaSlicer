@@ -189,6 +189,10 @@ YGAlign Item::align_items() const { return m_align_items; }
 
 YGAlign Item::align_content() const { return m_align_content; }
 
+const Margins& Item::margin() const { return m_margin; }
+
+const Paddings& Item::padding() const { return m_padding; }
+
 bool Item::enabled()
 {
     Item* item = this;
@@ -234,6 +238,20 @@ void Item::set_max_size(const Vec2f max_size)
 void Item::set_visible(bool visible)
 {
     YGNodeStyleSetDisplay(m_node, visible ? YGDisplayFlex : YGDisplayNone);
+}
+
+void Item::set_width(float width) { YGNodeStyleSetWidth(m_node, width); }
+
+void Item::set_height(float height) { YGNodeStyleSetHeight(m_node, height); }
+
+void Item::set_width_percent(float width_percent)
+{
+    YGNodeStyleSetWidthPercent(m_node, width_percent);
+}
+
+void Item::set_height_percent(float height_percent)
+{
+    YGNodeStyleSetHeightPercent(m_node, height_percent);
 }
 
 void Item::set_debug_border(bool show_debug_border) { m_debug_border = show_debug_border; }

@@ -2,6 +2,10 @@
 
 #include "Slic3r/App/SidebarActionButtons.hpp"
 
+namespace Slic3r::App::Yoga {
+class LayoutButton;
+}
+
 namespace Slic3r::App::Preview {
 
 class SidebarPreviewActionButtons : public SidebarActionButtons {
@@ -13,9 +17,16 @@ public:
 private:
     bool export_allowed() const;
 
-    void render_export_buttons();
-    void render_navigation_button();
-    void render_slice_button(Domain::Vec2f size);
+private:
+    Yoga::Item* m_layout_top = nullptr;
+    Yoga::Item* m_layout_bottom = nullptr;
+
+    Yoga::LayoutButton* m_button_print = nullptr;
+    Yoga::LayoutButton* m_button_navigation = nullptr;
+    Yoga::LayoutButton* m_button_save_print = nullptr;
+    Yoga::LayoutButton* m_button_save_print_to_flash = nullptr;
+    Yoga::LayoutButton* m_button_save_print_to_local = nullptr;
+    Yoga::LayoutButton* m_button_save_print_add_bookmark = nullptr;
 };
 
 }

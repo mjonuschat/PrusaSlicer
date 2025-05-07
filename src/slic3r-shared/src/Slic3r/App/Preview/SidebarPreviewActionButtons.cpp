@@ -1,45 +1,77 @@
 #include "Slic3r/App/Preview/SidebarPreviewActionButtons.hpp"
 
 #include "Slic3r/Biz/ProjectInteractor.hpp"
-#include "Slic3r/App/Render/ImguiRender.hpp"
-#include "Slic3r/App/Imgui/ImguiExtension.hpp"
+#include "Slic3r/App/Yoga/LayoutButton.hpp"
 
 namespace Slic3r::App::Preview {
 
-static bool add_centered_icon_button(
-    wchar_t icon, const std::string& id, const std::string& tooltip = std::string()
-)
-{
-    ImGui::TableNextColumn();
-
-    float h = 1.25f * ImGui::GetTextLineHeight();
-    ImVec2 btn_sz(h, h);
-    float offsetX = (ImGui::GetColumnWidth() - btn_sz.x) * 0.5 - GImGui->Style.FramePadding.x;
-    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + offsetX);
-
-    bool clicked = Imgui::icon_button(icon, btn_sz, id);
-    ImGui::SetItemTooltip("%s", tooltip.c_str());
-    return clicked;
-}
+constexpr float navig_btn_width = 40.f;
+constexpr float export_button_size = 25;
 
 SidebarPreviewActionButtons::SidebarPreviewActionButtons(Item* parent)
     : SidebarActionButtons("sidebar_preview_action_buttons", Render::ModuleType::Preview)
 {
-    set_min_size({220, 80});
+    set_min_size({220, 0});
+    set_orientation(Yoga::Orientation::Vertical);
+    set_gap(5);
+
+    m_layout_top = new Yoga::Item(this);
+    m_layout_top->set_orientation(Yoga::Orientation::Horizontal);
+    m_layout_top->set_justify_content(YGJustify::YGJustifySpaceAround);
+    m_layout_top->set_max_size({YGUndefined, export_button_size});
+
+    m_button_save_print = new Yoga::LayoutButton("", ImGui::SavePrint, "Export", m_layout_top);
+    m_button_save_print_to_flash =
+        new Yoga::LayoutButton("", ImGui::SavePrintToFlash, "Export to flash", m_layout_top);
+    m_button_save_print_to_local =
+        new Yoga::LayoutButton("", ImGui::SavePrintToLocal, "Export to local", m_layout_top);
+    m_button_save_print_add_bookmark =
+        new Yoga::LayoutButton("", ImGui::SavePrintAddBookmark, "Upload", m_layout_top);
+
+    m_button_save_print->set_background_color(IM_COL32_BLACK_TRANS);
+    m_button_save_print_to_flash->set_background_color(IM_COL32_BLACK_TRANS);
+    m_button_save_print_to_local->set_background_color(IM_COL32_BLACK_TRANS);
+    m_button_save_print_add_bookmark->set_background_color(IM_COL32_BLACK_TRANS);
+
+    m_button_save_print->callbacks().action = [this]() {
+        m_project_interactor->do_export(active_bed_slicing_id(), {});
+    };
+    m_button_save_print_to_flash->callbacks().action = [this]() {
+        m_project_interactor->do_export(active_bed_slicing_id(), {});
+    };
+    m_button_save_print_to_local->callbacks().action = [this]() {
+        m_project_interactor->do_export(active_bed_slicing_id(), {});
+    };
+    m_button_save_print_add_bookmark->callbacks().action = [this]() {
+        m_project_interactor->do_upload(active_bed_slicing_id());
+    };
+
+    m_layout_bottom = new Yoga::Item(this);
+    m_layout_bottom->set_orientation(Yoga::Orientation::Horizontal);
+    m_layout_bottom->set_gap(5);
+
+    m_button_navigation =
+        new Yoga::LayoutButton(m_navigator_name, '\0', m_navigator_tooltip, m_layout_bottom);
+    m_button_navigation->set_background_color(color_secondary);
+    m_button_navigation->set_label_font_type(Render::ImguiFontType::Bold);
+    m_button_navigation->set_min_size({navig_btn_width, button_height});
+
+    m_button_navigation->callbacks().action = [this]() {
+        navigate_to_other();
+    };
+
+    m_button_print = new Yoga::LayoutButton("Print", '\0', "Print results", m_layout_bottom);
+    m_button_print->set_label_font_type(Render::ImguiFontType::Bold);
+    m_button_print->set_background_color(color_primary);
+    m_button_print->set_min_size({0, button_height});
+    m_button_print->set_flex_grow(1);
 }
 
 void SidebarPreviewActionButtons::render_body(Yoga::Vec2f pos, Yoga::Vec2f size)
 {
-    render_export_buttons();
+    m_layout_top->set_enabled(export_allowed());
 
-    // ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 20.f);
-    ImGui::PushFont(m_imgui_render->font(Render::ImguiFontType::Bold));
-
-    render_navigation_button();
-    ImGui::SameLine();
-    render_slice_button(size);
-
-    ImGui::PopFont();
+    SidebarActionButtons::render_body(pos, size);
 }
 
 bool SidebarPreviewActionButtons::export_allowed() const
@@ -50,67 +82,6 @@ bool SidebarPreviewActionButtons::export_allowed() const
     };
 
     return status && status == Biz::Slicing::Status::Finished;
-}
-
-void SidebarPreviewActionButtons::render_export_buttons()
-{
-    const bool is_export_allowed = export_allowed();
-    if (!is_export_allowed)
-        ImGui::BeginDisabled();
-
-    ImGuiTableFlags table_flags = ImGuiTableFlags_Resizable | ImGuiTableFlags_NoBordersInBody |
-        ImGuiTableFlags_NoPadInnerX;
-    if (ImGui::BeginTable("##ObjectListTable", 4, table_flags)) {
-        if (add_centered_icon_button(ImGui::SavePrint, "SavePrint", "Export")) {
-            m_project_interactor->do_export(active_bed_slicing_id(), {});
-        }
-        if (add_centered_icon_button(ImGui::SavePrintToFlash, "SavePrintToFlash", "Export to flash")) {
-            m_project_interactor->do_export(active_bed_slicing_id(), {});
-        }
-        if (add_centered_icon_button(ImGui::SavePrintToLocal, "SavePrintToLocal", "Export to local")) {
-            m_project_interactor->do_export(active_bed_slicing_id(), {});
-        }
-        if (add_centered_icon_button(ImGui::SavePrintAddBookmark, "SavePrintAddBookmark", "Upload")) {
-            m_project_interactor->do_upload(active_bed_slicing_id());
-        }
-
-        ImGui::EndTable();
-    }
-
-    if (!is_export_allowed)
-        ImGui::EndDisabled();
-}
-
-const static float navig_btn_width = 40.f;
-const static float btns_height = 45.f;
-
-void SidebarPreviewActionButtons::render_navigation_button()
-{
-    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.32f, 0.48f, 0.84f, 1.0f));
-    if (ImGui::Button(m_navigator_name.c_str(), ImVec2(navig_btn_width, btns_height)))
-        navigate_to_other();
-    ImGui::SetItemTooltip("%s", m_navigator_tooltip.c_str());
-    ImGui::PopStyleColor();
-}
-
-void SidebarPreviewActionButtons::render_slice_button(Domain::Vec2f size)
-{
-    float slice_btn_width = size.x() - GImGui->Style.ItemSpacing.x - navig_btn_width;
-
-    const bool is_slice_allowed = slice_allowed();
-    if (!is_slice_allowed)
-        ImGui::BeginDisabled();
-
-    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.99f, 0.41f, 0.2f, 1.0f));
-    if (ImGui::Button("Slice", ImVec2(slice_btn_width, btns_height))) {
-        m_project_interactor->slicing_interactor().slice_bed(active_bed_slicing_id().bed_instance_id
-        );
-        navigate_to_other();
-    }
-    ImGui::PopStyleColor();
-
-    if (!is_slice_allowed)
-        ImGui::EndDisabled();
 }
 
 } // namespace Slic3r::App::Preview

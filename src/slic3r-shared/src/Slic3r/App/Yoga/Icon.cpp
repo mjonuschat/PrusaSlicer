@@ -15,6 +15,7 @@ void Icon::render(Vec2f pos, Vec2f size)
         resize(size);
     }
 
+    ImGui::SetCursorScreenPos(to_im(pos));
     Imgui::icon_image(m_icon, to_im(size), !enabled());
 
     render_internal(pos, size);
@@ -23,5 +24,10 @@ void Icon::render(Vec2f pos, Vec2f size)
 wchar_t Icon::icon() const { return m_icon; }
 
 void Icon::set_icon(wchar_t icon) { m_icon = icon; }
+
+Vec2f Icon::get_item_size()
+{
+    return {ImGui::GetTextLineHeight(), ImGui::GetTextLineHeight()};
+}
 
 } // namespace Slic3r::App::Yoga
