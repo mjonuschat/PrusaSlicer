@@ -444,9 +444,6 @@ static void fill_config_box_from_legacy(const Slic3rLegacy::DynamicPrintConfig& 
         ASSERT(! is_filament_override || boost::starts_with(old_key, legacy.override_prefix));
         std::string new_key(old_key.begin() + (is_filament_override ? legacy.override_prefix.size() : 0), old_key.end()); // trim prefix
 
-        if (old_key == "material_ow_branchingsupport_head_penetration")
-            printf("a");
-
         if (! box.contains(new_key))
             continue;
 

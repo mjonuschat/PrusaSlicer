@@ -2135,17 +2135,6 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->mode = comExpert;
     SET_DEFAULT(false);
 
-    def = defs.add("output_filename_format", String);
-    def->location = "print_settings";
-    def->label = L("Output filename format");
-    def->tooltip = L("You can use all configuration options as variables inside this template. "
-                   "For example: [layer_height], [fill_density] etc. You can also use [timestamp], "
-                   "[year], [month], [day], [hour], [minute], [second], [version], "
-                   "[input_filename_base], [default_output_extension].");
-    def->full_width = true;
-    def->mode = comExpert;
-    SET_DEFAULT("[input_filename_base].gcode");
-
     def = defs.add("overhangs", Bool);
     def->location = "print_settings";
     def->label = L("Detect bridging perimeters");
@@ -2924,17 +2913,6 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
                      "User is responsible for ensuring there is no collision with the print.");
     def->mode = comAdvanced;
     SET_DEFAULT(false);
-
-    def = defs.add("slice_closing_radius", Double);
-    def->location = "print_settings";
-    def->label = L("Slice gap closing radius");
-    def->category = L("Advanced");
-    def->tooltip = L("Cracks smaller than 2x gap closing radius are being filled during the triangle mesh slicing. "
-                     "The gap closing operation may reduce the final print resolution, therefore it is advisable to keep the value reasonably low.");
-    def->sidetext = L("mm");
-    def->min = 0;
-    def->mode = comAdvanced;
-    SET_DEFAULT(0.049);
 
     def = defs.add("slicing_mode", Enum);
     def->location = "print_settings";
