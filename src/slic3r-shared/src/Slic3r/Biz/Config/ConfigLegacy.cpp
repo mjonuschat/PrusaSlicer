@@ -499,6 +499,13 @@ std::variant<FDMLegacyConfigPack, SLALegacyConfigPack> load_config_from_legacy_f
             FDMLegacyConfigPack out;
             out.toolprint_settings.resize(extruder_num);
             out.filament_settings.resize(extruder_num);
+
+            if (cfg.has("filament_vendor")) {
+                // Filament_vendor was saved as a single string, not a vector. In order to place it into
+                // filament settings now, we need to pretend that it was a vector.
+                cfg.set_key_value("filament_vendor", new ConfigOptionStrings(extruder_num, cfg.opt_string("filament_vendor")));
+            }
+
             fill_config_box_from_legacy(cfg, out.printer_settings, legacy_data);
             fill_config_box_from_legacy(cfg, out.print_settings, legacy_data);
             for (int i = 0; i < extruder_num; ++i) {

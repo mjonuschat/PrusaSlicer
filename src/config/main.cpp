@@ -81,7 +81,7 @@ int main(int, char* [])
         fs2 = fdm.filament_settings[1];
         ps1 = fdm.print_settings;
         tps1 = fdm.toolprint_settings[0];
-        tps1 = fdm.toolprint_settings[1];
+        tps2 = fdm.toolprint_settings[1];
     } else {
         PANIC();
     }   
