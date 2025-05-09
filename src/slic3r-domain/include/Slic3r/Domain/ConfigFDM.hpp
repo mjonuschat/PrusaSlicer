@@ -2,6 +2,8 @@
 
 #include "Slic3r/Domain/Config.hpp"
 
+#include "Slic3r/Domain/GCodeFlavor.hpp"
+
 
 namespace Slic3r::Domain {
 
@@ -48,21 +50,11 @@ enum class FuzzySkinType {
     External,
     All,
 };
-enum class GCodeFlavor {
-    gcfRepRapSprinter,
-    gcfRepRapFirmware,
-    gcfRepetier,
-    gcfTeacup,
-    gcfMakerWare,
-    gcfMarlinLegacy,
-    gcfMarlinFirmware,
-    gcfKlipper,
-    gcfSailfish,
-    gcfMach3,
-    gcfMachinekit,
-    gcfSmoothie,
-    gcfNoExtrusion,
-};
+
+
+//This is defined in a separate file:
+// enum class GCodeFlavor
+
 enum class LabelObjectsStyle {
     Disabled, Octoprint, Firmware
 };

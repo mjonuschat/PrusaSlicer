@@ -550,7 +550,7 @@ namespace Slic3r {
         bool load_model_from_file(
             const std::string& filename,
             Model& model,
-            DynamicPrintConfig& config,
+            std::variant<Slic3r::Biz::FDMLegacyConfigPack, Slic3r::Biz::SLALegacyConfigPack>& config,
             ConfigSubstitutionContext& config_substitutions,
             bool check_version,
             WipeTowersOnBeds& wipe_towers,
@@ -575,7 +575,7 @@ namespace Slic3r {
         bool _load_model_from_file(
             const std::string& filename,
             Model& model,
-            DynamicPrintConfig& config,
+            std::variant<Slic3r::Biz::FDMLegacyConfigPack, Slic3r::Biz::SLALegacyConfigPack>& config,
             ConfigSubstitutionContext& config_substitutions,
             WipeTowersOnBeds& wipe_towers,
             CustomGCodesOnBeds& custom_gcodes
@@ -598,7 +598,7 @@ namespace Slic3r {
             ::mz_zip_archive& archive, const mz_zip_archive_file_stat& stat
         );
 
-        void _extract_print_config_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat, DynamicPrintConfig& config, ConfigSubstitutionContext& subs_context, const std::string& archive_filename);
+        void _extract_print_config_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat, std::variant<Slic3r::Biz::FDMLegacyConfigPack, Slic3r::Biz::SLALegacyConfigPack>& config, ConfigSubstitutionContext& subs_context, const std::string& archive_filename);
         bool _extract_model_config_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat, Model& model);
         void _extract_embossed_svg_shape_file(const std::string &filename, mz_zip_archive &archive, const mz_zip_archive_file_stat &stat);
 
@@ -710,7 +710,7 @@ namespace Slic3r {
     bool _3MF_Importer::load_model_from_file(
         const std::string& filename,
         Model& model,
-        DynamicPrintConfig& config,
+        std::variant<Slic3r::Biz::FDMLegacyConfigPack, Slic3r::Biz::SLALegacyConfigPack>& config,
         ConfigSubstitutionContext& config_substitutions,
         bool check_version,
         WipeTowersOnBeds& wipe_towers,
@@ -764,7 +764,7 @@ namespace Slic3r {
     bool _3MF_Importer::_load_model_from_file(
         const std::string& filename,
         Model& model,
-        DynamicPrintConfig& config,
+        std::variant<Slic3r::Biz::FDMLegacyConfigPack, Slic3r::Biz::SLALegacyConfigPack>& config,
         ConfigSubstitutionContext& config_substitutions,
         WipeTowersOnBeds& wipe_towers,
         CustomGCodesOnBeds& custom_gcodes
@@ -1270,7 +1270,7 @@ namespace Slic3r {
 
     void _3MF_Importer::_extract_print_config_from_archive(
         mz_zip_archive& archive, const mz_zip_archive_file_stat& stat, 
-        DynamicPrintConfig& config, ConfigSubstitutionContext& config_substitutions, 
+        std::variant<Slic3r::Biz::FDMLegacyConfigPack, Slic3r::Biz::SLALegacyConfigPack>& config, ConfigSubstitutionContext& config_substitutions, 
         const std::string& archive_filename)
     {
         if (stat.m_uncomp_size > 0) {
@@ -4116,8 +4116,7 @@ std::pair<bool, std::optional<Semver>> is_project_3mf(const std::string& filenam
 
 bool load_3mf(
     const char* path,
-    DynamicPrintConfig& config,
-    ConfigSubstitutionContext& config_substitutions,
+    std::variant<Slic3r::Biz::FDMLegacyConfigPack, Slic3r::Biz::SLALegacyConfigPack>& config,
     Model* model,
     bool check_version,
     boost::optional<Semver> &prusaslicer_generator_version,
@@ -4125,6 +4124,9 @@ bool load_3mf(
     CustomGCodesOnBeds& custom_gcodes
 )
 {
+    // This is set here for the legacy loading. It used to be an argument.
+    ConfigSubstitutionContext config_substitutions(ForwardCompatibilitySubstitutionRule::EnableSilent);
+
     if (path == nullptr || model == nullptr)
         return false;
 
@@ -4142,7 +4144,7 @@ bool load_3mf(
 bool store_3mf(
     const char* path,
     Model* model,
-    const DynamicPrintConfig* config,
+    const std::variant<Slic3r::Biz::FDMLegacyConfigPack, Slic3r::Biz::SLALegacyConfigPack>& config,
     bool fullpath_sources,
     const WipeTowersOnBeds& wipe_towers,
     const CustomGCodesOnBeds& custom_gcodes,
