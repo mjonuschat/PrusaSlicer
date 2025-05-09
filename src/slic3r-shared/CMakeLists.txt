@@ -523,6 +523,7 @@ target_link_libraries(slic3r-shared PUBLIC
         nlohmann_json::nlohmann_json
         ${YAML_LIB}
         magic_enum::magic_enum
+        fastfloat
 )
 target_compile_definitions(slic3r-shared PUBLIC ${SLIC3R_YAML_DEFINE})
 if (EMSCRIPTEN)

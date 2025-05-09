@@ -49,9 +49,7 @@ namespace pt = boost::property_tree;
 
 #include "libslic3r/NSVGUtils.hpp"
 
-#include "libslic3r/MultipleBeds.hpp"
-
-#include <fast_float.h>
+#include "fast_float.h"
 
 using Slic3r::Domain::TriangleMesh;
 using Slic3r::Domain::Index3;
