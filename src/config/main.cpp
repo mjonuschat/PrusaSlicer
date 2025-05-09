@@ -4,6 +4,7 @@
 #include "Slic3r/Biz/Config/ConfigSerialize.hpp"
 #include "Slic3r/Biz/Config/ConfigLegacy.hpp"
 
+
 #include <fstream>
 #include <iostream>
 #include <vector>
@@ -28,6 +29,17 @@ int main(int, char* [])
 {
     using namespace Slic3r::Domain;
     using namespace Slic3r::Biz;
+
+    {
+        
+
+        std::variant<FDMLegacyConfigPack, SLALegacyConfigPack> cfg = load_config_from_legacy_3mf("test.3mf");
+
+        return 0;
+    }
+
+
+
     {
         SLAPrinterSettings printer_s;
         SLAPrintSettings print_s;

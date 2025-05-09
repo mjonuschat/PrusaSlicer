@@ -2,8 +2,8 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#ifndef slic3r_GCodeThumbnails_hpp_
-#define slic3r_GCodeThumbnails_hpp_
+#ifndef slic3r_GCodeThumbnailslegacy_hpp_
+#define slic3r_GCodeThumbnailslegacy_hpp_
 
 #include <assert.h>
 #include <stdint.h>

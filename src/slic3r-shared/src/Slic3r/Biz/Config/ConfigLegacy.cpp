@@ -5,6 +5,9 @@
 
 #include "boost/algorithm/string.hpp"
 
+#include "Slic3r/Biz/Config/Legacy/3mf_legacy.hpp"
+#include "libslic3r/Model.hpp"
+
 namespace Slic3r::Biz {
 
 namespace {
@@ -212,9 +215,8 @@ static void convert_enums(const Slic3rLegacy::ConfigOption* co, Domain::ConfigIt
 
 static Slic3rLegacy::DynamicPrintConfig load_legacy_config_from_legacy_file(const std::string& filename)
 {
-    using namespace Slic3rLegacy;
-    DynamicPrintConfig cfg;
-    ForwardCompatibilitySubstitutionRule substitutions_ctxt = ForwardCompatibilitySubstitutionRule::EnableSilent;
+    Slic3rLegacy::DynamicPrintConfig cfg;
+    Slic3rLegacy::ForwardCompatibilitySubstitutionRule substitutions_ctxt = Slic3rLegacy::ForwardCompatibilitySubstitutionRule::EnableSilent;
     cfg.load(filename, substitutions_ctxt);
     return cfg;
 }
@@ -223,8 +225,6 @@ static Slic3rLegacy::DynamicPrintConfig load_legacy_config_from_legacy_file(cons
 
 static bool convert_old_to_new(const Slic3rLegacy::ConfigOption* opt, Domain::ConfigItem& item, int filament_id = -1)
 {
-    using namespace Slic3rLegacy;
-
     if (opt->type() == coBool && item.type() == Domain::ConfigItemType::Bool)
         item.set(opt->getBool());
     else if (opt->type() == coInt && item.type() == Domain::ConfigItemType::Int)
@@ -232,30 +232,30 @@ static bool convert_old_to_new(const Slic3rLegacy::ConfigOption* opt, Domain::Co
     else if (opt->type() == coFloat && item.type() == Domain::ConfigItemType::Double)
         item.set(opt->getFloat());
     else if (opt->type() == coString && item.type() == Domain::ConfigItemType::String)
-        item.set(static_cast<const ConfigOptionString*>(opt)->value);
+        item.set(static_cast<const Slic3rLegacy::ConfigOptionString*>(opt)->value);
     else if (opt->type() == coEnum && item.type() == Domain::ConfigItemType::Enum)
         convert_enum(opt, item);
     else if (opt->type() == coFloatOrPercent && item.type() == Domain::ConfigItemType::FloatOrPercent) {
-        bool is_percent = static_cast<const ConfigOptionFloatOrPercent*>(opt)->percent;
-        double value = static_cast<const ConfigOptionFloatOrPercent*>(opt)->value;
+        bool is_percent = static_cast<const Slic3rLegacy::ConfigOptionFloatOrPercent*>(opt)->percent;
+        double value = static_cast<const Slic3rLegacy::ConfigOptionFloatOrPercent*>(opt)->value;
         Domain::FloatOrPercentage fop = is_percent ? Domain::Percentage(value) : Domain::FloatOrPercentage(value);
         item.set(fop);
     }            
     else if (opt->type() == coPercent && item.type() == Domain::ConfigItemType::Percent)
-        item.set(Domain::Percentage(static_cast<const ConfigOptionPercent*>(opt)->value));
+        item.set(Domain::Percentage(static_cast<const Slic3rLegacy::ConfigOptionPercent*>(opt)->value));
     else if (opt->type() == coBools && item.type() == Domain::ConfigItemType::Bools) {
-        std::vector<unsigned char> old_vec = static_cast<const ConfigOptionBools*>(opt)->values;
+        std::vector<unsigned char> old_vec = static_cast<const Slic3rLegacy::ConfigOptionBools*>(opt)->values;
         std::vector<bool> vec(old_vec.begin(), old_vec.end());
         item.set(vec);
     }
     else if (opt->type() == coInts && item.type() == Domain::ConfigItemType::Ints)
-        item.set(static_cast<const ConfigOptionInts*>(opt)->values);
+        item.set(static_cast<const Slic3rLegacy::ConfigOptionInts*>(opt)->values);
     else if (opt->type() == coFloats && item.type() == Domain::ConfigItemType::Doubles)
-        item.set(static_cast<const ConfigOptionFloats*>(opt)->values);
+        item.set(static_cast<const Slic3rLegacy::ConfigOptionFloats*>(opt)->values);
     else if (opt->type() == coStrings && item.type() == Domain::ConfigItemType::Strings)
-        item.set(static_cast<const ConfigOptionStrings*>(opt)->values);
+        item.set(static_cast<const Slic3rLegacy::ConfigOptionStrings*>(opt)->values);
     else if (opt->type() == coPoints && item.type() == Domain::ConfigItemType::Points) {
-        const std::vector<Slic3rLegacy::Vec2d> old_vec = static_cast<const ConfigOptionPoints*>(opt)->values;
+        const std::vector<Slic3rLegacy::Vec2d> old_vec = static_cast<const Slic3rLegacy::ConfigOptionPoints*>(opt)->values;
         std::vector<Domain::Vec2d> vec(old_vec.begin(), old_vec.end());
         item.set(vec);
     }
@@ -266,29 +266,29 @@ static bool convert_old_to_new(const Slic3rLegacy::ConfigOption* opt, Domain::Co
         // This vector actually contains scalar values to be assigned to
         // different print / toolprint settings.
         if (opt->type() == coBools && item.type() == Domain::ConfigItemType::Bool)
-            item.set(static_cast<const ConfigOptionBools*>(opt)->get_at(filament_id));
+            item.set(static_cast<const Slic3rLegacy::ConfigOptionBools*>(opt)->get_at(filament_id));
         else if (opt->type() == coInts && item.type() == Domain::ConfigItemType::Int)
-            item.set(static_cast<const ConfigOptionInts*>(opt)->get_at(filament_id));
+            item.set(static_cast<const Slic3rLegacy::ConfigOptionInts*>(opt)->get_at(filament_id));
         else if (opt->type() == coInts && item.type() == Domain::ConfigItemType::IntOptional) {
-            if (static_cast<const ConfigOptionInts*>(opt)->is_nil(filament_id))
+            if (static_cast<const Slic3rLegacy::ConfigOptionInts*>(opt)->is_nil(filament_id))
                 item.set(std::optional<int>());
             else
-                item.set(std::optional<int>(static_cast<const ConfigOptionInts*>(opt)->get_at(filament_id)));
+                item.set(std::optional<int>(static_cast<const Slic3rLegacy::ConfigOptionInts*>(opt)->get_at(filament_id)));
         }
         else if (opt->type() == coFloats && item.type() == Domain::ConfigItemType::Double)
-            item.set(static_cast<const ConfigOptionFloats*>(opt)->get_at(filament_id));
+            item.set(static_cast<const Slic3rLegacy::ConfigOptionFloats*>(opt)->get_at(filament_id));
         else if (opt->type() == coStrings && item.type() == Domain::ConfigItemType::String)
-            item.set(static_cast<const ConfigOptionStrings*>(opt)->get_at(filament_id));
+            item.set(static_cast<const Slic3rLegacy::ConfigOptionStrings*>(opt)->get_at(filament_id));
         else if (opt->type() == coPercents && item.type() == Domain::ConfigItemType::Percent)
-            item.set(Domain::Percentage(static_cast<const ConfigOptionPercents*>(opt)->get_at(filament_id)));
+            item.set(Domain::Percentage(static_cast<const Slic3rLegacy::ConfigOptionPercents*>(opt)->get_at(filament_id)));
         else if (opt->type() == coFloatsOrPercents && item.type() == Domain::ConfigItemType::FloatOrPercent) {
-            bool is_percent = static_cast<const ConfigOptionFloatsOrPercents*>(opt)->get_at(filament_id).percent;
-            double value = static_cast<const ConfigOptionFloatsOrPercents*>(opt)->get_at(filament_id).value;
+            bool is_percent = static_cast<const Slic3rLegacy::ConfigOptionFloatsOrPercents*>(opt)->get_at(filament_id).percent;
+            double value = static_cast<const Slic3rLegacy::ConfigOptionFloatsOrPercents*>(opt)->get_at(filament_id).value;
             Domain::FloatOrPercentage fop = is_percent ? Domain::Percentage(value) : Domain::FloatOrPercentage(value);
             item.set(fop);
         }
         else if (opt->type() == coPoints && item.type() == Domain::ConfigItemType::Point) {
-            item.set(Domain::Vec2d(static_cast<const ConfigOptionPoints*>(opt)->values[filament_id]));
+            item.set(Domain::Vec2d(static_cast<const Slic3rLegacy::ConfigOptionPoints*>(opt)->values[filament_id]));
         }
         else {
             // Old and new types do not match.
@@ -309,19 +309,19 @@ static bool convert_new_to_old(const Domain::ConfigItem& item, Slic3rLegacy::Con
     using namespace Slic3rLegacy;
 
     if (opt->type() == coBool && item.type() == Domain::ConfigItemType::Bool)
-        static_cast<ConfigOptionBool*>(opt)->value = item.get<bool>();
+        static_cast<Slic3rLegacy::ConfigOptionBool*>(opt)->value = item.get<bool>();
     else if (opt->type() == coInt && item.type() == Domain::ConfigItemType::Int) {
-        static_cast<ConfigOptionInt*>(opt)->value = item.is_null()
-            ? static_cast<ConfigOptionInt*>(opt)->nil_value()
+        static_cast<Slic3rLegacy::ConfigOptionInt*>(opt)->value = item.is_null()
+            ? static_cast<Slic3rLegacy::ConfigOptionInt*>(opt)->nil_value()
             : item.get<int>();
     }
     else if (opt->type() == coFloat && item.type() == Domain::ConfigItemType::Double) {
-        static_cast<ConfigOptionFloat*>(opt)->value = item.is_null()
-            ? static_cast<ConfigOptionFloat*>(opt)->nil_value()
+        static_cast<Slic3rLegacy::ConfigOptionFloat*>(opt)->value = item.is_null()
+            ? static_cast<Slic3rLegacy::ConfigOptionFloat*>(opt)->nil_value()
             : item.get<double>();
     }
     else if (opt->type() == coString && item.type() == Domain::ConfigItemType::String)
-        static_cast<ConfigOptionString*>(opt)->value = item.get<std::string>();
+        static_cast<Slic3rLegacy::ConfigOptionString*>(opt)->value = item.get<std::string>();
     else if (opt->type() == coEnum && item.type() == Domain::ConfigItemType::Enum) {
         std::string new_ser = std::string(item.get_enum_strings().first);
         if (def_old.has_enum_value(new_ser))
@@ -333,28 +333,28 @@ static bool convert_new_to_old(const Domain::ConfigItem& item, Slic3rLegacy::Con
     }
     else if (opt->type() == coFloatOrPercent && item.type() == Domain::ConfigItemType::FloatOrPercent) {
         bool is_percent = item.get<Domain::FloatOrPercentage>().is_percentage();
-        static_cast<ConfigOptionFloatOrPercent*>(opt)->percent = is_percent;
-        static_cast<ConfigOptionFloatOrPercent*>(opt)->value = is_percent
+        static_cast<Slic3rLegacy::ConfigOptionFloatOrPercent*>(opt)->percent = is_percent;
+        static_cast<Slic3rLegacy::ConfigOptionFloatOrPercent*>(opt)->value = is_percent
             ? item.get<Domain::FloatOrPercentage>().percentage().value
             : item.get<Domain::FloatOrPercentage>().float_value();
     }            
     else if (opt->type() == coPercent && item.type() == Domain::ConfigItemType::Percent)
-        static_cast<ConfigOptionPercent*>(opt)->value = item.get<Domain::Percentage>().value;
+        static_cast<Slic3rLegacy::ConfigOptionPercent*>(opt)->value = item.get<Domain::Percentage>().value;
     else if (opt->type() == coBools && item.type() == Domain::ConfigItemType::Bools) {
         std::vector<bool> new_vec = item.get<std::vector<bool>>();
         std::vector<unsigned char> old_vec(new_vec.begin(), new_vec.end());
-        static_cast<ConfigOptionBools*>(opt)->values = old_vec;
+        static_cast<Slic3rLegacy::ConfigOptionBools*>(opt)->values = old_vec;
     }
     else if (opt->type() == coInts && item.type() == Domain::ConfigItemType::Ints)
-        static_cast<ConfigOptionInts*>(opt)->values = item.get<std::vector<int>>();
+        static_cast<Slic3rLegacy::ConfigOptionInts*>(opt)->values = item.get<std::vector<int>>();
     else if (opt->type() == coFloats && item.type() == Domain::ConfigItemType::Doubles)
-        static_cast<ConfigOptionFloats*>(opt)->values = item.get<std::vector<double>>();
+        static_cast<Slic3rLegacy::ConfigOptionFloats*>(opt)->values = item.get<std::vector<double>>();
     else if (opt->type() == coStrings && item.type() == Domain::ConfigItemType::Strings)
-        static_cast<ConfigOptionStrings*>(opt)->values = item.get<std::vector<std::string>>();
+        static_cast<Slic3rLegacy::ConfigOptionStrings*>(opt)->values = item.get<std::vector<std::string>>();
     else if (opt->type() == coPoints && item.type() == Domain::ConfigItemType::Points) {
         const auto& new_vec = item.get<std::vector<Domain::Vec2d>>();
         std::vector<Slic3rLegacy::Vec2d> old_vec(new_vec.begin(), new_vec.end());
-        static_cast<ConfigOptionPoints*>(opt)->values = old_vec;
+        static_cast<Slic3rLegacy::ConfigOptionPoints*>(opt)->values = old_vec;
     }
         else if (opt->type() == coEnums && item.type() == Domain::ConfigItemType::Enums) {
         const auto& strs = item.get_enums_strings();
@@ -363,46 +363,46 @@ static bool convert_new_to_old(const Domain::ConfigItem& item, Slic3rLegacy::Con
             serialized += std::string(str_serialized) + ",";
         ASSERT(! serialized.empty());
         serialized.pop_back();
-        static_cast<ConfigOptionPoints*>(opt)->deserialize(serialized);
+        static_cast<Slic3rLegacy::ConfigOptionPoints*>(opt)->deserialize(serialized);
     }
     else if (opt->is_vector() && filament_id != -1) {
         if (opt->type() == coBools && item.type() == Domain::ConfigItemType::Bool) {
-            static_cast<ConfigOptionBools*>(opt)->values.resize(filament_id + 1);
-            static_cast<ConfigOptionBools*>(opt)->values[filament_id] = item.is_null()
-                ? static_cast<ConfigOptionBools*>(opt)->nil_value()
+            static_cast<Slic3rLegacy::ConfigOptionBools*>(opt)->values.resize(filament_id + 1);
+            static_cast<Slic3rLegacy::ConfigOptionBools*>(opt)->values[filament_id] = item.is_null()
+                ? static_cast<Slic3rLegacy::ConfigOptionBools*>(opt)->nil_value()
                 : item.get<bool>();
         }
         else if (opt->type() == coInts && item.type() == Domain::ConfigItemType::Int) {
-            static_cast<ConfigOptionInts*>(opt)->values.resize(filament_id + 1);
-            static_cast<ConfigOptionInts*>(opt)->values[filament_id] = item.get<int>();
+            static_cast<Slic3rLegacy::ConfigOptionInts*>(opt)->values.resize(filament_id + 1);
+            static_cast<Slic3rLegacy::ConfigOptionInts*>(opt)->values[filament_id] = item.get<int>();
         }
         else if (opt->type() == coInts && item.type() == Domain::ConfigItemType::IntOptional) {
-            static_cast<ConfigOptionInts*>(opt)->values.resize(filament_id + 1);
+            static_cast<Slic3rLegacy::ConfigOptionInts*>(opt)->values.resize(filament_id + 1);
             const auto& idle = item.get<std::optional<int>>();
-            static_cast<ConfigOptionInts*>(opt)->values[filament_id] = idle
+            static_cast<Slic3rLegacy::ConfigOptionInts*>(opt)->values[filament_id] = idle
                 ? *idle
-                : static_cast<ConfigOptionInts*>(opt)->nil_value();
+                : static_cast<Slic3rLegacy::ConfigOptionInts*>(opt)->nil_value();
         }
         else if (opt->type() == coFloats && item.type() == Domain::ConfigItemType::Double) {
-            static_cast<ConfigOptionFloats*>(opt)->values.resize(filament_id + 1);
-            static_cast<ConfigOptionFloats*>(opt)->values[filament_id] = item.is_null()
-                ? static_cast<ConfigOptionFloats*>(opt)->nil_value()
+            static_cast<Slic3rLegacy::ConfigOptionFloats*>(opt)->values.resize(filament_id + 1);
+            static_cast<Slic3rLegacy::ConfigOptionFloats*>(opt)->values[filament_id] = item.is_null()
+                ? static_cast<Slic3rLegacy::ConfigOptionFloats*>(opt)->nil_value()
                 : item.get<double>();
         }
         else if (opt->type() == coStrings && item.type() == Domain::ConfigItemType::String) {
-            static_cast<ConfigOptionStrings*>(opt)->values.resize(filament_id + 1);
-            static_cast<ConfigOptionStrings*>(opt)->values[filament_id] = item.get<std::string>();
+            static_cast<Slic3rLegacy::ConfigOptionStrings*>(opt)->values.resize(filament_id + 1);
+            static_cast<Slic3rLegacy::ConfigOptionStrings*>(opt)->values[filament_id] = item.get<std::string>();
         }
         else if (opt->type() == coPercents && item.type() == Domain::ConfigItemType::Percent) {
-            static_cast<ConfigOptionPercents*>(opt)->values.resize(filament_id + 1);
-            static_cast<ConfigOptionPercents*>(opt)->values[filament_id] = item.is_null()
-                ? static_cast<ConfigOptionPercents*>(opt)->nil_value()
+            static_cast<Slic3rLegacy::ConfigOptionPercents*>(opt)->values.resize(filament_id + 1);
+            static_cast<Slic3rLegacy::ConfigOptionPercents*>(opt)->values[filament_id] = item.is_null()
+                ? static_cast<Slic3rLegacy::ConfigOptionPercents*>(opt)->nil_value()
                 : item.get<Domain::Percentage>().value;
         }
         else if (opt->type() == coFloatsOrPercents && item.type() == Domain::ConfigItemType::FloatOrPercent) {
-            static_cast<ConfigOptionFloatsOrPercents*>(opt)->values.resize(filament_id + 1);
+            static_cast<Slic3rLegacy::ConfigOptionFloatsOrPercents*>(opt)->values.resize(filament_id + 1);
             if (item.is_null()) {
-                static_cast<ConfigOptionFloatsOrPercents*>(opt)->values[filament_id] = static_cast<ConfigOptionFloatsOrPercents*>(opt)->nil_value();
+                static_cast<Slic3rLegacy::ConfigOptionFloatsOrPercents*>(opt)->values[filament_id] = static_cast<Slic3rLegacy::ConfigOptionFloatsOrPercents*>(opt)->nil_value();
             }
             else {
                 Slic3rLegacy::FloatOrPercent fop;
@@ -410,12 +410,12 @@ static bool convert_new_to_old(const Domain::ConfigItem& item, Slic3rLegacy::Con
                 fop.value = fop.percent
                     ? item.get<Domain::FloatOrPercentage>().percentage().value
                     : item.get<Domain::FloatOrPercentage>().float_value();
-                static_cast<ConfigOptionFloatsOrPercents*>(opt)->values[filament_id] = fop;
+                static_cast<Slic3rLegacy::ConfigOptionFloatsOrPercents*>(opt)->values[filament_id] = fop;
             }
         }
         else if (opt->type() == coPoints && item.type() == Domain::ConfigItemType::Point) {
-            static_cast<ConfigOptionPoints*>(opt)->values.resize(filament_id + 1);
-            static_cast<ConfigOptionPoints*>(opt)->values[filament_id] = Slic3rLegacy::Vec2d(item.get<Domain::Vec2d>());
+            static_cast<Slic3rLegacy::ConfigOptionPoints*>(opt)->values.resize(filament_id + 1);
+            static_cast<Slic3rLegacy::ConfigOptionPoints*>(opt)->values[filament_id] = Slic3rLegacy::Vec2d(item.get<Domain::Vec2d>());
         }
         else {
             // Old and new types do not match.
@@ -430,14 +430,12 @@ static bool convert_new_to_old(const Domain::ConfigItem& item, Slic3rLegacy::Con
 }
 
 
-
+                              
 static void fill_config_box_from_legacy(const Slic3rLegacy::DynamicPrintConfig& cfg,
                                         Domain::ConfigBox& box,
                                         const LegacyKeysAndOverrides& legacy,
                                         int filament_id = -1)
 {
-    using namespace Slic3rLegacy;
-
     for (const std::string& old_key : cfg.keys()) {
         bool has_override = std::ranges::find(legacy.overrides, legacy.override_prefix + old_key) != legacy.overrides.end();
         bool is_filament_override = std::ranges::find(legacy.overrides, old_key) != legacy.overrides.end();
@@ -447,7 +445,7 @@ static void fill_config_box_from_legacy(const Slic3rLegacy::DynamicPrintConfig& 
         if (! box.contains(new_key))
             continue;
 
-        const ConfigOption* opt = cfg.option(old_key);
+        const Slic3rLegacy::ConfigOption* opt = cfg.option(old_key);
         Domain::ConfigItem& item = box.opt(new_key);
 
         if (is_filament_override) {
@@ -487,14 +485,20 @@ static void fill_config_box_from_legacy(const Slic3rLegacy::DynamicPrintConfig& 
 
 
 
-std::variant<FDMLegacyConfigPack, SLALegacyConfigPack> load_config_from_legacy_file(const std::string& filename)
+void fill_config_box_from_legacy(const Slic3rLegacy::DynamicPrintConfig& cfg,
+    Domain::ConfigBox& box)
 {
-    using namespace Slic3rLegacy;
-    DynamicPrintConfig cfg = load_legacy_config_from_legacy_file(filename);
+    LegacyKeysAndOverrides legacy = {};
+    fill_config_box_from_legacy(cfg, box, legacy);
+}
 
+
+
+std::variant<FDMLegacyConfigPack, SLALegacyConfigPack> convert_dynamic_print_config_to_new(Slic3rLegacy::DynamicPrintConfig& cfg)
+{
     if (cfg.has("printer_technology")) {
         if (auto pt = cfg.opt_enum<PrinterTechnology>("printer_technology"); pt == ptFFF) {
-            int extruder_num = cfg.has("nozzle_diameter") ? int(cfg.option<ConfigOptionFloats>("nozzle_diameter")->size()) : 1;
+            int extruder_num = cfg.has("nozzle_diameter") ? int(cfg.option<Slic3rLegacy::ConfigOptionFloats>("nozzle_diameter")->size()) : 1;
             LegacyKeysAndOverrides legacy_data = legacy_fdm_data();
             FDMLegacyConfigPack out;
             out.toolprint_settings.resize(extruder_num);
@@ -503,7 +507,7 @@ std::variant<FDMLegacyConfigPack, SLALegacyConfigPack> load_config_from_legacy_f
             if (cfg.has("filament_vendor")) {
                 // Filament_vendor was saved as a single string, not a vector. In order to place it into
                 // filament settings now, we need to pretend that it was a vector.
-                cfg.set_key_value("filament_vendor", new ConfigOptionStrings(extruder_num, cfg.opt_string("filament_vendor")));
+                cfg.set_key_value("filament_vendor", new Slic3rLegacy::ConfigOptionStrings(extruder_num, cfg.opt_string("filament_vendor")));
             }
 
             fill_config_box_from_legacy(cfg, out.printer_settings, legacy_data);
@@ -527,11 +531,32 @@ std::variant<FDMLegacyConfigPack, SLALegacyConfigPack> load_config_from_legacy_f
 }
 
 
+std::variant<FDMLegacyConfigPack, SLALegacyConfigPack> load_config_from_legacy_file(const std::string& filename)
+{
+    Slic3rLegacy::DynamicPrintConfig cfg = load_legacy_config_from_legacy_file(filename);
+    return convert_dynamic_print_config_to_new(cfg);
+}
+
+
+
+std::variant<FDMLegacyConfigPack, SLALegacyConfigPack> load_config_from_legacy_3mf(const std::string& filename)
+{
+    Slic3r::Model model;
+    std::variant<FDMLegacyConfigPack, SLALegacyConfigPack> cfg;
+
+    boost::optional<Semver> prusaslicer_generator_version;
+    CustomGCodesOnBeds custom_gcodes;
+    WipeTowersOnBeds wipe_towers;
+    load_3mf_legacy(filename.c_str(), cfg, &model, false, prusaslicer_generator_version, wipe_towers, custom_gcodes);
+
+    store_3mf_legacy("out.3mf", &model, cfg, true, wipe_towers, custom_gcodes);
+    return cfg;
+}
+
+
 
 static std::string serialize_as_legacy_config(const std::variant<const FDMLegacyConfigPack*, const SLALegacyConfigPack*>& cfgvar, bool prepend_semicolons)
 {
-    using namespace Slic3rLegacy;
-
     std::vector<std::pair<const Domain::ConfigBox*, int>> boxes;
     LegacyKeysAndOverrides legacy_data;
 
@@ -554,9 +579,9 @@ static std::string serialize_as_legacy_config(const std::variant<const FDMLegacy
         boxes.emplace_back(&cfg.sla_print_settings, -1);
     }
 
-    std::unique_ptr<DynamicPrintConfig> cfg_old(DynamicPrintConfig::new_from_defaults_keys(legacy_data.keys));
+    std::unique_ptr<Slic3rLegacy::DynamicPrintConfig> cfg_old(Slic3rLegacy::DynamicPrintConfig::new_from_defaults_keys(legacy_data.keys));
     for (const std::string& key : cfg_old->keys()) {
-        ConfigOption* opt = cfg_old->option(key);
+        Slic3rLegacy::ConfigOption* opt = cfg_old->option(key);
 
         for (const auto& [box, filament_id] : boxes) {
             std::optional<const Domain::ConfigItem*> item = box->contains(key);

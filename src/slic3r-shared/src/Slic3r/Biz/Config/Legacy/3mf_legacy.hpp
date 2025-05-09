@@ -2,8 +2,8 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#ifndef slic3r_Format_3mf_hpp_
-#define slic3r_Format_3mf_hpp_
+#ifndef slic3r_Format_3mfLegacy_hpp_
+#define slic3r_Format_3mfLegacy_hpp_
 
 #include "Slic3r/Domain/CustomGCode.hpp"
 #include "Slic3r/Domain/Model.hpp"

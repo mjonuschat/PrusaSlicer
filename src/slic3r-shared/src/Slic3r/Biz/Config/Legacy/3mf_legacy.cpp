@@ -51,6 +51,10 @@ namespace pt = boost::property_tree;
 
 #include "fast_float.h"
 
+#include "Slic3r/Biz/Config/ConfigLegacy.hpp"
+#include "Slic3r/Biz/Config/Legacy/PrintConfig.hpp"
+
+
 using Slic3r::Domain::TriangleMesh;
 using Slic3r::Domain::Index3;
 using Slic3r::Domain::RepairedMeshErrors;
@@ -341,6 +345,39 @@ bool is_valid_object_type(const std::string& type)
     return false;
 }
 
+
+// Perform conversions based on the config values available.
+static void handle_legacy_project_loaded(
+    Slic3rLegacy::DynamicPrintConfig& config,
+    const boost::optional<Slic3r::Semver>& prusaslicer_generator_version
+) {
+    if (! config.has("brim_separation")) {
+        if (auto *opt_elephant_foot   = config.option<Slic3rLegacy::ConfigOptionFloat>("elefant_foot_compensation", false); opt_elephant_foot) {
+            // Conversion from older PrusaSlicer which applied brim separation equal to elephant foot compensation.
+            auto *opt_brim_separation = config.option<Slic3rLegacy::ConfigOptionFloat>("brim_separation", true);
+            opt_brim_separation->value = opt_elephant_foot->value;
+        }
+    }
+
+    // In PrusaSlicer 2.5.0-alpha2 and 2.5.0-alpha3, we introduce several parameters for Arachne that depend
+    // on nozzle size . Later we decided to make default values for those parameters computed automatically
+    // until the user changes them.
+    if (prusaslicer_generator_version && *prusaslicer_generator_version >= *Slic3r::Semver::parse("2.5.0-alpha2") && *prusaslicer_generator_version <= *Slic3r::Semver::parse("2.5.0-alpha3")) {
+        if (auto *opt_wall_transition_length = config.option<Slic3rLegacy::ConfigOptionFloatOrPercent>("wall_transition_length", false);
+            opt_wall_transition_length && !opt_wall_transition_length->percent && opt_wall_transition_length->value == 0.4) {
+            opt_wall_transition_length->percent = true;
+            opt_wall_transition_length->value   = 100;
+        }
+
+        if (auto *opt_min_feature_size = config.option<Slic3rLegacy::ConfigOptionFloatOrPercent>("min_feature_size", false);
+            opt_min_feature_size && !opt_min_feature_size->percent && opt_min_feature_size->value == 0.1) {
+            opt_min_feature_size->percent = true;
+            opt_min_feature_size->value   = 25;
+        }
+    }
+}
+
+
 namespace Slic3r {
 
     // Base class with error messages management
@@ -502,7 +539,7 @@ namespace Slic3r {
         typedef std::map<int, ObjectMetadata> IdToMetadataMap;
         typedef std::map<PathId, Geometry> IdToGeometryMap;
         typedef std::map<int, std::vector<double>> IdToLayerHeightsProfileMap;
-        typedef std::map<int, t_layer_config_ranges> IdToLayerConfigRangesMap;
+        typedef std::map<int, LayerConfigRangesNew> IdToLayerConfigRangesMap;
         typedef std::map<int, CutObjectInfo>         IdToCutObjectInfoMap;
         typedef std::map<int, std::vector<SupportPoint>> IdToSlaSupportPointsMap;
         typedef std::map<int, std::vector<Domain::SLA::DrainHole>> IdToSlaDrainHolesMap;
@@ -551,7 +588,7 @@ namespace Slic3r {
             const std::string& filename,
             Model& model,
             std::variant<Slic3r::Biz::FDMLegacyConfigPack, Slic3r::Biz::SLALegacyConfigPack>& config,
-            ConfigSubstitutionContext& config_substitutions,
+            Slic3rLegacy::ConfigSubstitutionContext& config_substitutions,
             bool check_version,
             WipeTowersOnBeds& wipe_towers,
             CustomGCodesOnBeds& custom_gcodes
@@ -576,16 +613,16 @@ namespace Slic3r {
             const std::string& filename,
             Model& model,
             std::variant<Slic3r::Biz::FDMLegacyConfigPack, Slic3r::Biz::SLALegacyConfigPack>& config,
-            ConfigSubstitutionContext& config_substitutions,
+            Slic3rLegacy::ConfigSubstitutionContext& config_substitutions,
             WipeTowersOnBeds& wipe_towers,
             CustomGCodesOnBeds& custom_gcodes
         );
         bool _extract_relationships_from_archive(mz_zip_archive &archive, const mz_zip_archive_file_stat &stat);
         bool _extract_model_from_archive(mz_zip_archive &archive, const mz_zip_archive_file_stat &stat);
         bool _is_svg_shape_file(const std::string &filename) const;
-        void _extract_cut_information_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat, ConfigSubstitutionContext& config_substitutions);
+        void _extract_cut_information_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat, Slic3rLegacy::ConfigSubstitutionContext& config_substitutions);
         void _extract_layer_heights_profile_config_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat);
-        void _extract_layer_config_ranges_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat, ConfigSubstitutionContext& config_substitutions);
+        void _extract_layer_config_ranges_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat, Slic3rLegacy::ConfigSubstitutionContext& config_substitutions);
         void _extract_sla_support_points_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat);
         void _extract_sla_drain_holes_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat);
 
@@ -598,7 +635,7 @@ namespace Slic3r {
             ::mz_zip_archive& archive, const mz_zip_archive_file_stat& stat
         );
 
-        void _extract_print_config_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat, std::variant<Slic3r::Biz::FDMLegacyConfigPack, Slic3r::Biz::SLALegacyConfigPack>& config, ConfigSubstitutionContext& subs_context, const std::string& archive_filename);
+        void _extract_print_config_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat, std::variant<Slic3r::Biz::FDMLegacyConfigPack, Slic3r::Biz::SLALegacyConfigPack>& config, Slic3rLegacy::ConfigSubstitutionContext& subs_context, const std::string& archive_filename);
         bool _extract_model_config_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat, Model& model);
         void _extract_embossed_svg_shape_file(const std::string &filename, mz_zip_archive &archive, const mz_zip_archive_file_stat &stat);
 
@@ -675,7 +712,7 @@ namespace Slic3r {
         bool _handle_start_config_metadata(const char** attributes, unsigned int num_attributes);
         bool _handle_end_config_metadata();
 
-        bool _generate_volumes(ModelObject& object, const Geometry& geometry, const ObjectMetadata::VolumeMetadataList& volumes, ConfigSubstitutionContext& config_substitutions);
+        bool _generate_volumes(ModelObject& object, const Geometry& geometry, const ObjectMetadata::VolumeMetadataList& volumes, Slic3rLegacy::ConfigSubstitutionContext& config_substitutions);
 
         // callbacks to parse the .rels file
         static void XMLCALL _handle_start_relationships_element(void *userData, const char *name, const char **attributes);
@@ -711,7 +748,7 @@ namespace Slic3r {
         const std::string& filename,
         Model& model,
         std::variant<Slic3r::Biz::FDMLegacyConfigPack, Slic3r::Biz::SLALegacyConfigPack>& config,
-        ConfigSubstitutionContext& config_substitutions,
+        Slic3rLegacy::ConfigSubstitutionContext& config_substitutions,
         bool check_version,
         WipeTowersOnBeds& wipe_towers,
         CustomGCodesOnBeds& custom_gcodes
@@ -765,7 +802,7 @@ namespace Slic3r {
         const std::string& filename,
         Model& model,
         std::variant<Slic3r::Biz::FDMLegacyConfigPack, Slic3r::Biz::SLALegacyConfigPack>& config,
-        ConfigSubstitutionContext& config_substitutions,
+        Slic3rLegacy::ConfigSubstitutionContext& config_substitutions,
         WipeTowersOnBeds& wipe_towers,
         CustomGCodesOnBeds& custom_gcodes
     )
@@ -990,7 +1027,7 @@ namespace Slic3r {
             // m_layer_config_ranges are indexed by a 1 based model object index.
             IdToLayerConfigRangesMap::iterator obj_layer_config_ranges = m_layer_config_ranges.find(object.second + 1);
             if (obj_layer_config_ranges != m_layer_config_ranges.end())
-                model_object->layer_config_ranges = std::move(obj_layer_config_ranges->second);
+                model_object->layer_config_ranges_new = std::move(obj_layer_config_ranges->second);
 
             // m_sla_support_points are indexed by a 1 based model object index.
             IdToSlaSupportPointsMap::iterator obj_sla_support_points = m_sla_support_points.find(object.second + 1);
@@ -1012,11 +1049,16 @@ namespace Slic3r {
                 // config data has been found, this model was saved using slic3r pe
 
                 // apply object's name and config data
+                Slic3rLegacy::DynamicPrintConfig dpc;
                 for (const Metadata& metadata : obj_metadata->second.metadata) {
                     if (metadata.key == "name")
                         model_object->name = metadata.value;
                     else
-                        model_object->config.set_deserialize(metadata.key, metadata.value, config_substitutions);
+                        dpc.set_deserialize(metadata.key, metadata.value, config_substitutions);
+                }
+                if (!dpc.empty()) {
+                    model_object->object_settings = {};
+                    Slic3r::Biz::fill_config_box_from_legacy(dpc, model_object->object_settings);
                 }
 
                 // select object's detected volumes
@@ -1209,7 +1251,7 @@ namespace Slic3r {
         return true;
     }
 
-    void _3MF_Importer::_extract_cut_information_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat, ConfigSubstitutionContext& config_substitutions)
+    void _3MF_Importer::_extract_cut_information_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat, Slic3rLegacy::ConfigSubstitutionContext& config_substitutions)
     {
         if (stat.m_uncomp_size > 0) {
             std::string buffer((size_t)stat.m_uncomp_size, 0);
@@ -1270,7 +1312,7 @@ namespace Slic3r {
 
     void _3MF_Importer::_extract_print_config_from_archive(
         mz_zip_archive& archive, const mz_zip_archive_file_stat& stat, 
-        std::variant<Slic3r::Biz::FDMLegacyConfigPack, Slic3r::Biz::SLALegacyConfigPack>& config, ConfigSubstitutionContext& config_substitutions, 
+        std::variant<Slic3r::Biz::FDMLegacyConfigPack, Slic3r::Biz::SLALegacyConfigPack>& config, Slic3rLegacy::ConfigSubstitutionContext& config_substitutions, 
         const std::string& archive_filename)
     {
         if (stat.m_uncomp_size > 0) {
@@ -1287,7 +1329,11 @@ namespace Slic3r {
             // parsing 3MFs from before PrusaSlicer 2.0.0 (which can have duplicated entries in the INI.
             // See https://github.com/prusa3d/PrusaSlicer/issues/7155. We'll revert it for now.
             //config_substitutions.substitutions = config.load_from_ini_string_commented(std::move(buffer), config_substitutions.rule);
-            ConfigBase::load_from_gcode_string_legacy(config, buffer.data(), config_substitutions);
+
+            Slic3rLegacy::DynamicPrintConfig dpc;
+            Slic3rLegacy::ConfigBase::load_from_gcode_string_legacy(dpc, buffer.data(), config_substitutions);
+            handle_legacy_project_loaded(dpc, this->prusaslicer_generator_version());
+            config = Slic3r::Biz::convert_dynamic_print_config_to_new(dpc);
         }
     }
 
@@ -1353,7 +1399,7 @@ namespace Slic3r {
         }
     }
 
-    void _3MF_Importer::_extract_layer_config_ranges_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat, ConfigSubstitutionContext& config_substitutions)
+    void _3MF_Importer::_extract_layer_config_ranges_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat, Slic3rLegacy::ConfigSubstitutionContext& config_substitutions)
     {
         if (stat.m_uncomp_size > 0) {
             std::string buffer((size_t)stat.m_uncomp_size, 0);
@@ -1381,7 +1427,7 @@ namespace Slic3r {
                     continue;
                 }
 
-                t_layer_config_ranges config_ranges;
+                std::map<LayerHeightRange, Slic3r::Domain::ObjectSettings> config_ranges;
 
                 for (const auto& range : object_tree) {
                     if (range.first != "range")
@@ -1391,7 +1437,7 @@ namespace Slic3r {
                     double max_z = range_tree.get<double>("<xmlattr>.max_z");
 
                     // get Z range information
-                    DynamicPrintConfig config;
+                    Slic3rLegacy::DynamicPrintConfig config;
 
                     for (const auto& option : range_tree) {
                         if (option.first != "option")
@@ -1400,8 +1446,10 @@ namespace Slic3r {
                         std::string value = option.second.data();
                         config.set_deserialize(opt_key, value, config_substitutions);
                     }
-
-                    config_ranges[{ min_z, max_z }].assign_config(std::move(config));
+                    
+                    Slic3r::Domain::ObjectSettings os;
+                    Slic3r::Biz::fill_config_box_from_legacy(config, os);
+                    config_ranges[{ min_z, max_z }] = os;
                 }
 
                 if (!config_ranges.empty())
@@ -2608,7 +2656,7 @@ namespace Slic3r {
         return true;
     }
 
-    bool _3MF_Importer::_generate_volumes(ModelObject& object, const Geometry& geometry, const ObjectMetadata::VolumeMetadataList& volumes, ConfigSubstitutionContext& config_substitutions)
+    bool _3MF_Importer::_generate_volumes(ModelObject& object, const Geometry& geometry, const ObjectMetadata::VolumeMetadataList& volumes, Slic3rLegacy::ConfigSubstitutionContext& config_substitutions)
     {
         if (!object.volumes.empty()) {
             add_error("Found invalid volumes count");
@@ -2719,6 +2767,8 @@ namespace Slic3r {
                 volume->emboss_shape = std::move(es);            
             if (auto &tc = volume_data.text_configuration; tc.has_value())
                 volume->text_configuration = std::move(tc);
+
+            Slic3rLegacy::DynamicPrintConfig vol_config;
             
             // apply the remaining volume's metadata
             for (const Metadata& metadata : volume_data.metadata) {
@@ -2747,8 +2797,9 @@ namespace Slic3r {
                 else if (metadata.key == SOURCE_IS_BUILTIN_VOLUME_KEY)
                     volume->source.is_from_builtin_objects = metadata.value == "1";
                 else
-                    volume->config.set_deserialize(metadata.key, metadata.value, config_substitutions);
+                    vol_config.set_deserialize(metadata.key, metadata.value, config_substitutions);
             }
+            Biz::fill_config_box_from_legacy(vol_config, volume->volume_settings);
 
             // this may happen for 3mf saved by 3rd part softwares
             if (volume->name.empty()) {
@@ -2850,7 +2901,7 @@ namespace Slic3r {
         bool save_model_to_file(
             const std::string& filename,
             Model& model,
-            const DynamicPrintConfig* config,
+            const std::variant<Slic3r::Biz::FDMLegacyConfigPack, Slic3r::Biz::SLALegacyConfigPack>& config,
             bool fullpath_sources,
             const ThumbnailData* thumbnail_data,
             bool zip64,
@@ -2863,7 +2914,7 @@ namespace Slic3r {
         bool _save_model_to_file(
             const std::string& filename,
             Model& model,
-            const DynamicPrintConfig* config,
+            const std::variant<Slic3r::Biz::FDMLegacyConfigPack, Slic3r::Biz::SLALegacyConfigPack>& config,
             const ThumbnailData* thumbnail_data,
             const WipeTowersOnBeds& wipe_towers,
             const CustomGCodesOnBeds& custom_gcodes
@@ -2880,16 +2931,16 @@ namespace Slic3r {
         bool _add_layer_config_ranges_file_to_archive(mz_zip_archive& archive, Model& model);
         bool _add_sla_support_points_file_to_archive(mz_zip_archive& archive, Model& model);
         bool _add_sla_drain_holes_file_to_archive(mz_zip_archive& archive, Model& model);
-        bool _add_print_config_file_to_archive(mz_zip_archive& archive, const DynamicPrintConfig &config, const Model& model, const WipeTowersOnBeds& wipe_towers);
+        bool _add_print_config_file_to_archive(mz_zip_archive& archive, const std::variant<Slic3r::Biz::FDMLegacyConfigPack, Slic3r::Biz::SLALegacyConfigPack>& config, const Model& model, const WipeTowersOnBeds& wipe_towers);
         bool _add_model_config_file_to_archive(mz_zip_archive& archive, const Model& model, const IdToObjectDataMap &objects_data);
-        bool _add_custom_gcode_per_print_z_file_to_archive(mz_zip_archive& archive, const CustomGCodesOnBeds& custom_gcodes, const DynamicPrintConfig* config);
+        bool _add_custom_gcode_per_print_z_file_to_archive(mz_zip_archive& archive, const CustomGCodesOnBeds& custom_gcodes); //, const DynamicPrintConfig* config);
         bool _add_wipe_tower_information_file_to_archive( mz_zip_archive& archive, const WipeTowersOnBeds& wipe_towers);
     };
 
     bool _3MF_Exporter::save_model_to_file(
         const std::string& filename,
         Model& model,
-        const DynamicPrintConfig* config,
+        const std::variant<Slic3r::Biz::FDMLegacyConfigPack, Slic3r::Biz::SLALegacyConfigPack>& config,
         bool fullpath_sources,
         const ThumbnailData* thumbnail_data,
         bool zip64,
@@ -2906,7 +2957,7 @@ namespace Slic3r {
     bool _3MF_Exporter::_save_model_to_file(
         const std::string& filename,
         Model& model,
-        const DynamicPrintConfig* config,
+        const std::variant<Slic3r::Biz::FDMLegacyConfigPack, Slic3r::Biz::SLALegacyConfigPack>& config,
         const ThumbnailData* thumbnail_data,
         const WipeTowersOnBeds& wipe_towers,
         const CustomGCodesOnBeds& custom_gcodes
@@ -3000,7 +3051,7 @@ namespace Slic3r {
 
         // Adds custom gcode per height file ("Metadata/Prusa_Slicer_custom_gcode_per_print_z.xml").
         // All custom gcode per height of whole Model are stored here
-        if (!_add_custom_gcode_per_print_z_file_to_archive(archive, custom_gcodes, config)) {
+        if (!_add_custom_gcode_per_print_z_file_to_archive(archive, custom_gcodes)) {
             close_zip_writer(&archive);
             boost::filesystem::remove(filename);
             return false;
@@ -3017,8 +3068,8 @@ namespace Slic3r {
 
         // Adds slic3r print config file ("Metadata/Slic3r_PE.config").
         // This file contains the content of FullPrintConfing / SLAFullPrintConfig.
-        if (config != nullptr) {
-            if (!_add_print_config_file_to_archive(archive, *config, model, wipe_towers)) {
+        if (/*config != nullptr*/ true) {
+            if (!_add_print_config_file_to_archive(archive, config, model, wipe_towers)) {
                 close_zip_writer(&archive);
                 boost::filesystem::remove(filename);
                 return false;
@@ -3738,42 +3789,31 @@ namespace Slic3r {
         return true;
     }
 
-    bool _3MF_Exporter::_add_print_config_file_to_archive(mz_zip_archive& archive, const DynamicPrintConfig &config, const Model& model, const WipeTowersOnBeds& wipe_towers)
+    bool _3MF_Exporter::_add_print_config_file_to_archive(mz_zip_archive& archive, const std::variant<Slic3r::Biz::FDMLegacyConfigPack, Slic3r::Biz::SLALegacyConfigPack>& config, const Model& model, const WipeTowersOnBeds& wipe_towers)
     {
         assert(is_decimal_separator_point());
         char buffer[1024];
         sprintf(buffer, "; %s\n\n", header_slic3r_generated().c_str());
         std::string out = buffer;
 
-        t_config_option_keys keys = config.keys();
+        std::string opts;
+        if (config.index() == 0)
+            opts += Slic3r::Biz::serialize_as_legacy_config(std::get<Biz::FDMLegacyConfigPack>(config), true);
+        else
+            opts += Slic3r::Biz::serialize_as_legacy_config(std::get<Biz::SLALegacyConfigPack>(config), true);
 
         // Wipe tower values were historically stored in the config, but they were moved into
         // Model in PS 2.9.0. Keep saving the old values to maintain forward compatibility.
-        for (const std::string s : {"wipe_tower_x", "wipe_tower_y", "wipe_tower_rotation_angle"})
-            if (! config.has(s))
-                keys.emplace_back(s);
-        sort_remove_duplicates(keys);
-
-        for (const std::string& key : keys) {
-            if (key == "compatible_printers")
-                continue;
-
-            std::string opt_serialized;
-
-            const Domain::ModelWipeTower wipe_tower{
+        std::vector<std::string> lines;
+        boost::split(lines, opts, boost::is_any_of("\n"));
+        const Domain::ModelWipeTower wipe_tower{
                 wipe_towers.contains(0) ? wipe_towers.at(0) : Domain::ModelWipeTower{}};
-
-            if (key == "wipe_tower_x")
-                opt_serialized = float_to_string_decimal_point(wipe_tower.position.x());
-            else if (key == "wipe_tower_y")
-                opt_serialized = float_to_string_decimal_point(wipe_tower.position.y());
-            else if (key == "wipe_tower_rotation_angle")
-                opt_serialized = float_to_string_decimal_point(wipe_tower.rotation);
-            else
-                opt_serialized = config.opt_serialize(key);
-
-            out += "; " + key + " = " + opt_serialized + "\n";
-        }
+        lines.emplace_back(std::string("; wipe_tower_x = ") + float_to_string_decimal_point(wipe_tower.position.x()));
+        lines.emplace_back(std::string("; wipe_tower_y = ") + float_to_string_decimal_point(wipe_tower.position.y()));
+        lines.emplace_back(std::string("; wipe_tower_rotation_angle = ") + float_to_string_decimal_point(wipe_tower.rotation));
+        std::ranges::sort(lines);
+        for (const std::string& line : lines)
+            out += line + "\n";
 
         if (!out.empty()) {
             if (!mz_zip_writer_add_mem(&archive, PRINT_CONFIG_FILE.c_str(), (const void*)out.data(), out.length(), MZ_DEFAULT_COMPRESSION)) {
@@ -3921,8 +3961,8 @@ namespace Slic3r {
 
     bool _3MF_Exporter::_add_custom_gcode_per_print_z_file_to_archive(
         mz_zip_archive& archive,
-        const CustomGCodesOnBeds& custom_gcodes,
-        const DynamicPrintConfig* config
+        const CustomGCodesOnBeds& custom_gcodes
+        //const DynamicPrintConfig* config
     )
     {
         std::string out = "";
@@ -3955,7 +3995,7 @@ namespace Slic3r {
                     code_tree.put("<xmlattr>.extra", code.extra);
 
                     // add gcode field data for the old version of the PrusaSlicer
-                    std::string gcode = code.type == CustomGCode::Type::ColorChange
+                    /*std::string gcode = code.type == CustomGCode::Type::ColorChange
                         ? config->opt_string("color_change_gcode")
                         : code.type == CustomGCode::Type::PausePrint
                         ? config->opt_string("pause_print_gcode")
@@ -3964,7 +4004,7 @@ namespace Slic3r {
                         : code.type == CustomGCode::Type::ToolChange
                         ? "tool_change"
                         : code.extra;
-                    code_tree.put("<xmlattr>.gcode", gcode);
+                    code_tree.put("<xmlattr>.gcode", gcode);*/
                 }
 
                 pt::ptree& mode_tree = main_tree.add("mode", "");
@@ -4035,37 +4075,6 @@ bool _3MF_Exporter::_add_wipe_tower_information_file_to_archive( mz_zip_archive&
     return true;
 }
 
-// Perform conversions based on the config values available.
-static void handle_legacy_project_loaded(
-    DynamicPrintConfig& config,
-    const boost::optional<Semver>& prusaslicer_generator_version
-) {
-    if (! config.has("brim_separation")) {
-        if (auto *opt_elephant_foot   = config.option<ConfigOptionFloat>("elefant_foot_compensation", false); opt_elephant_foot) {
-            // Conversion from older PrusaSlicer which applied brim separation equal to elephant foot compensation.
-            auto *opt_brim_separation = config.option<ConfigOptionFloat>("brim_separation", true);
-            opt_brim_separation->value = opt_elephant_foot->value;
-        }
-    }
-
-    // In PrusaSlicer 2.5.0-alpha2 and 2.5.0-alpha3, we introduce several parameters for Arachne that depend
-    // on nozzle size . Later we decided to make default values for those parameters computed automatically
-    // until the user changes them.
-    if (prusaslicer_generator_version && *prusaslicer_generator_version >= *Semver::parse("2.5.0-alpha2") && *prusaslicer_generator_version <= *Semver::parse("2.5.0-alpha3")) {
-        if (auto *opt_wall_transition_length = config.option<ConfigOptionFloatOrPercent>("wall_transition_length", false);
-            opt_wall_transition_length && !opt_wall_transition_length->percent && opt_wall_transition_length->value == 0.4) {
-            opt_wall_transition_length->percent = true;
-            opt_wall_transition_length->value   = 100;
-        }
-
-        if (auto *opt_min_feature_size = config.option<ConfigOptionFloatOrPercent>("min_feature_size", false);
-            opt_min_feature_size && !opt_min_feature_size->percent && opt_min_feature_size->value == 0.1) {
-            opt_min_feature_size->percent = true;
-            opt_min_feature_size->value   = 25;
-        }
-    }
-}
-
 // Project = either it contains our config OR it is stamped as being produced
 // by PrusaSlicer (in which case the version is passed out).
 std::pair<bool, std::optional<Semver>> is_project_3mf(const std::string& filename)
@@ -4114,7 +4123,7 @@ std::pair<bool, std::optional<Semver>> is_project_3mf(const std::string& filenam
     return out;
 }
 
-bool load_3mf(
+bool load_3mf_legacy(
     const char* path,
     std::variant<Slic3r::Biz::FDMLegacyConfigPack, Slic3r::Biz::SLALegacyConfigPack>& config,
     Model* model,
@@ -4125,7 +4134,7 @@ bool load_3mf(
 )
 {
     // This is set here for the legacy loading. It used to be an argument.
-    ConfigSubstitutionContext config_substitutions(ForwardCompatibilitySubstitutionRule::EnableSilent);
+    Slic3rLegacy::ConfigSubstitutionContext config_substitutions(Slic3rLegacy::ForwardCompatibilitySubstitutionRule::EnableSilent);
 
     if (path == nullptr || model == nullptr)
         return false;
@@ -4135,13 +4144,12 @@ bool load_3mf(
     _3MF_Importer         importer;
     bool res = importer.load_model_from_file(path, *model, config, config_substitutions, check_version, wipe_towers, custom_gcodes);
     importer.log_errors();
-    handle_legacy_project_loaded(config, importer.prusaslicer_generator_version());
     prusaslicer_generator_version = importer.prusaslicer_generator_version();
 
     return res;
 }
 
-bool store_3mf(
+bool store_3mf_legacy(
     const char* path,
     Model* model,
     const std::variant<Slic3r::Biz::FDMLegacyConfigPack, Slic3r::Biz::SLALegacyConfigPack>& config,

@@ -19,8 +19,8 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#ifndef slic3r_Config_hpp_
-#define slic3r_Config_hpp_
+#ifndef slic3r_ConfigLegacy_hpp_
+#define slic3r_ConfigLegacy_hpp_
 
 #include <assert.h>
 #include <float.h>

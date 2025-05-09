@@ -18,8 +18,8 @@
  * or copy at http://opensource.org/licenses/MIT)
  */
 
-#ifndef libslic3r_clonable_ptr_hpp_
-#define libslic3r_clonable_ptr_hpp_
+#ifndef libslic3r_clonable_ptrlegacy_hpp_
+#define libslic3r_clonable_ptrlegacy_hpp_
 
 #include "assert.h"
 

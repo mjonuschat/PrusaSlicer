@@ -30,8 +30,8 @@
 //        GCodeConfig
 //
 
-#ifndef slic3r_PrintConfig_hpp_
-#define slic3r_PrintConfig_hpp_
+#ifndef slic3r_PrintConfiglegacy_hpp_
+#define slic3r_PrintConfiglegacy_hpp_
 
 #include <boost/preprocessor/facilities/empty.hpp>
 #include <boost/preprocessor/punctuation/comma_if.hpp>

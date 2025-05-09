@@ -1,5 +1,5 @@
-#ifndef slic3r_enum_bitmask_hpp_
-#define slic3r_enum_bitmask_hpp_
+#ifndef slic3r_enum_bitmasklegacy_hpp_
+#define slic3r_enum_bitmasklegacy_hpp_
 
 // enum_bitmask for passing a set of attributes to a function in a type safe way.
 // Adapted from https://gpfault.net/posts/typesafe-bitmasks.txt.html

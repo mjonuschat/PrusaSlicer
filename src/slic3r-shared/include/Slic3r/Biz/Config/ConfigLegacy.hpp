@@ -6,6 +6,8 @@
 #include "Slic3r/Domain/ConfigFDM.hpp"
 #include "Slic3r/Domain/ConfigSLA.hpp"
 
+namespace Slic3rLegacy { class DynamicPrintConfig; }
+
 namespace Slic3r::Biz {
 
 struct FDMLegacyConfigPack {
@@ -25,6 +27,10 @@ struct SLALegacyConfigPack {
 // all matching keys into the provided ConfigBox.
 // May throw!
 std::variant<FDMLegacyConfigPack, SLALegacyConfigPack> load_config_from_legacy_file(const std::string& filename);
+std::variant<FDMLegacyConfigPack, SLALegacyConfigPack> load_config_from_legacy_3mf(const std::string& filename);
+
+std::variant<FDMLegacyConfigPack, SLALegacyConfigPack> convert_dynamic_print_config_to_new(Slic3rLegacy::DynamicPrintConfig& cfg);
+void fill_config_box_from_legacy(const Slic3rLegacy::DynamicPrintConfig& cfg, Domain::ConfigBox& box);
 
 // Export the config in the old format.
 std::string serialize_as_legacy_config(const FDMLegacyConfigPack&, bool prepend_semicolons = false);

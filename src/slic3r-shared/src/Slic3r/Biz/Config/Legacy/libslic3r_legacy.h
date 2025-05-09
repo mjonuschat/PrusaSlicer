@@ -5,6 +5,10 @@
 
 #pragma once
 
+
+
+namespace Slic3rLegacy {
+
 using coord_t = 
 #if 1
     int32_t;
@@ -15,15 +19,20 @@ using coord_t =
 using coordf_t = double;
 static constexpr double EPSILON = 1e-4;
 static constexpr double SCALING_FACTOR = 0.000001;
-#define scale_(val) ((val) / SCALING_FACTOR)
 
+#ifndef scale_
+#define scale_(val) ((val) / SCALING_FACTOR)
+#endif
+
+#ifndef SCALED_EPSILON
 #define SCALED_EPSILON scale_(EPSILON)
+#endif
 
 #ifndef UNUSED
 #define UNUSED(x) (void)(x)
 #endif /* UNUSED */
 
-namespace Slic3rLegacy {
+
 
 template<typename T>
 constexpr inline T sqr(T x)

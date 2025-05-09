@@ -480,6 +480,7 @@ find_package(NanoSVG REQUIRED)
 find_package(Boost REQUIRED COMPONENTS filesystem)
 find_package(yoga CONFIG REQUIRED)
 find_package(nlohmann_json 3.11 REQUIRED)
+find_package(EXPAT CONFIG REQUIRED)
 
 
 if ("${SLIC3R_YAML}" STREQUAL "libfyaml")
@@ -524,6 +525,7 @@ target_link_libraries(slic3r-shared PUBLIC
         ${YAML_LIB}
         magic_enum::magic_enum
         fastfloat
+        expat::expat
 )
 target_compile_definitions(slic3r-shared PUBLIC ${SLIC3R_YAML_DEFINE})
 if (EMSCRIPTEN)

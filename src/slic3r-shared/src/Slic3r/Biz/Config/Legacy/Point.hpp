@@ -9,8 +9,8 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#ifndef slic3r_Point_hpp_
-#define slic3r_Point_hpp_
+#ifndef slic3r_Pointlegacy_hpp_
+#define slic3r_Pointlegacy_hpp_
 
 #include <assert.h>
 #include <cstddef>
@@ -35,7 +35,6 @@
 
 // Following are LEGACY headers.
 #include "libslic3r_legacy.h"
-#include "Point.hpp"
 
 namespace Slic3rLegacy {
 
@@ -192,7 +191,7 @@ public:
     // This constructor has to be implicit (non-explicit) to allow implicit conversion from Eigen expressions.
     template<typename OtherDerived>
     Point(const Eigen::MatrixBase<OtherDerived> &other) : Vec2crd(other) {}
-    static Point new_scale(coordf_t x, coordf_t y) { return Point(coord_t(scale_(x)), coord_t(scale_(y))); }
+    static Point new_scale(float x, float y) { return Point(coord_t(scale_(x)), coord_t(scale_(y))); }
     template<typename OtherDerived>
     static Point new_scale(const Eigen::MatrixBase<OtherDerived> &v) { return Point(coord_t(scale_(v.x())), coord_t(scale_(v.y()))); }
 
@@ -444,7 +443,7 @@ public:
                 }
             }
         }
-        return (value_min != nullptr && dist_min < coordf_t(m_search_radius) * coordf_t(m_search_radius)) ? 
+        return (value_min != nullptr && dist_min < float(m_search_radius) * float(m_search_radius)) ? 
             std::make_pair(value_min, dist_min) : 
             std::make_pair(nullptr, std::numeric_limits<double>::max());
     }
@@ -605,7 +604,7 @@ namespace boost { namespace polygon {
    
     template <>
     struct point_traits<Slic3rLegacy::Point> {
-        using coordinate_type = coord_t;
+        using coordinate_type = Slic3rLegacy::coord_t;
     
         static inline coordinate_type get(const Slic3rLegacy::Point& point, orientation_2d orient) {
             return static_cast<coordinate_type>(point((orient == HORIZONTAL) ? 0 : 1));
@@ -614,11 +613,11 @@ namespace boost { namespace polygon {
     
     template <>
     struct point_mutable_traits<Slic3rLegacy::Point> {
-        using coordinate_type = coord_t;
-        static inline void set(Slic3rLegacy::Point& point, orientation_2d orient, coord_t value) {
+        using coordinate_type = Slic3rLegacy::coord_t;
+        static inline void set(Slic3rLegacy::Point& point, orientation_2d orient, Slic3rLegacy::coord_t value) {
             point((orient == HORIZONTAL) ? 0 : 1) = value;
         }
-        static inline Slic3rLegacy::Point construct(coord_t x_value, coord_t y_value) {
+        static inline Slic3rLegacy::Point construct(Slic3rLegacy::coord_t x_value, Slic3rLegacy::coord_t y_value) {
             return Slic3rLegacy::Point(x_value, y_value);
         }
     };
@@ -627,7 +626,7 @@ namespace boost { namespace polygon {
 
 
 // To be able to use Vec<> and Mat<> in range based for loops:
-namespace Eigen {
+/*namespace Eigen {
 template<class T, int N, int M>
 T* begin(Slic3rLegacy::Mat<N, M, T> &mat) { return mat.data(); }
 
@@ -639,6 +638,6 @@ const T* begin(const Slic3rLegacy::Mat<N, M, T> &mat) { return mat.data(); }
 
 template<class T, int N, int M>
 const T* end(const Slic3rLegacy::Mat<N, M, T> &mat) { return mat.data() + N * M; }
-} // namespace Eigen
+} // namespace Eigen*/
 
 #endif

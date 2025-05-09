@@ -27,6 +27,7 @@
 #include "Slic3r/Biz/Algorithms/TriangleSelector.hpp"
 #include "Slic3r/Domain/TriangleSelector.hpp"
 #include "Slic3r/Domain/Model.hpp"
+#include "Slic3r/Domain/ConfigFDM.hpp"
 
 #include <map>
 #include <memory>
@@ -371,6 +372,7 @@ enum class ModelVolumeType : int {
 
 using LayerHeightRange = std::pair<double,double>;
 using LayerConfigRanges = std::map<LayerHeightRange, ModelConfig>;
+using LayerConfigRangesNew = std::map<LayerHeightRange, Slic3r::Domain::ObjectSettings>;
 
 // A printable object, possibly having multiple print volumes (each with its own set of parameters and materials),
 // and possibly having multiple modifier volumes, each modifier volume with its set of parameters and materials.
@@ -389,8 +391,14 @@ public:
     ModelVolumePtrs         volumes;
     // Configuration parameters specific to a single ModelObject, overriding the global Slic3r settings.
     ModelConfigObject 		config;
+
+    Slic3r::Domain::ObjectSettings          object_settings;
+
     // Variation of a layer thickness for spans of Z coordinates + optional parameter overrides.
     LayerConfigRanges       layer_config_ranges;
+
+    LayerConfigRangesNew    layer_config_ranges_new;
+
     // Profile of increasing z to a layer height, to be linearly interpolated when calculating the layers.
     // The pairs of <z, layer_height> are packed into a 1D array.
     LayerHeightProfile      layer_height_profile;
@@ -781,6 +789,8 @@ public:
     // Configuration parameters specific to an object model geometry or a modifier volume, 
     // overriding the global Slic3r settings and the ModelObject settings.
     ModelConfigObject	config;
+
+    Domain::VolumeSettings volume_settings;
 
     // List of mesh facets to be supported/unsupported.
     Domain::FacetsAnnotation supported_facets;
