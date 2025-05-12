@@ -36,7 +36,9 @@ public:
     bool operator!=(const LineViewIterator& other) const;
 
     LineViewIterator operator+(size_t n) const;
+    std::size_t operator-(const LineViewIterator& other) const;
 
+    std::size_t line_index() const;
 private:
     const LineView* m_parent; // Reference to the parent LineView
     size_t m_index;           // Current line index
@@ -52,10 +54,12 @@ public:
 
     bool operator==(const LineViewReverseIterator& other) const;
     bool operator!=(const LineViewReverseIterator& other) const;
-            
+
     LineViewReverseIterator operator+(size_t n) const;
+    std::size_t operator-(const LineViewReverseIterator& other) const;
 
     LineViewIterator base() const;
+    std::size_t line_index() const;
 
 private:
     const LineView* m_parent; // Reference to the parent LineView
@@ -99,10 +103,6 @@ public:
     const_iterator end() const;
     const_reverse_iterator rbegin() const;
     const_reverse_iterator rend() const;
-
-    // This mimics std::distance for our iterators.
-    static size_t distance(const const_iterator& it1, const const_iterator& it2);
-    static size_t distance(const const_reverse_iterator& it1, const const_reverse_iterator& it2);
 
 private:
     struct LineShift

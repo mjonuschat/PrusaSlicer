@@ -770,7 +770,7 @@ private:
             // backtrace to find the place where to insert the line
             while (gcode_rev_it != m_result.gcode.rend() && (*times_rev_it)[size_t(TimeMode::Normal)] > time_threshold_i &&
                    curr_cmd != cmd && curr_cmd != "G28" && curr_cmd != "G29") {
-                const std::size_t line_id = LineView::distance(m_result.gcode.begin(), gcode_rev_it.base()) - 1;
+                const std::size_t line_id = gcode_rev_it.line_index();
                 line_replacer(line_id, std::string(*gcode_rev_it));
                 ++gcode_rev_it;
                 ++times_rev_it;
@@ -790,9 +790,9 @@ private:
                 time_diffs.push_back(m_times[size_t(TimeMode::Normal)] - last_time_insertion);
                 if (m_config.time_machines[size_t(TimeMode::Stealth)].enabled)
                     time_diffs.push_back(m_times[size_t(TimeMode::Stealth)] - (*times_rev_it)[size_t(TimeMode::Stealth)]);
-                const std::size_t line_id = LineView::distance(m_result.gcode.begin(), gcode_rev_it.base()) - 1;
+                const std::size_t line_id = gcode_rev_it.line_index();
                 line_inserter(line_id, time_diffs);
-                rev_it_dist = LineView::distance(base_gcode_rev_it, gcode_rev_it) + 1;
+                rev_it_dist = gcode_rev_it - base_gcode_rev_it + 1;
             }
         }
     }

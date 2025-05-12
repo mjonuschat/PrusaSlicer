@@ -30,11 +30,23 @@ bool LineViewIterator::operator!=(const LineViewIterator& other) const
     return !(*this == other);
 }
 
+std::size_t LineViewIterator::line_index() const {
+    return m_index;
+}
+
 LineViewIterator LineViewIterator::operator+(size_t n) const
 {
     if (m_index + n > m_parent->size())
         throw std::out_of_range("Iterator out of range");
     return LineViewIterator(m_parent, m_index + n);
+}
+
+std::size_t LineViewIterator::operator-(const LineViewIterator& other) const
+{
+    const int result{static_cast<int>(m_index) - static_cast<int>(other.m_index)};
+    if (result < 0)
+        throw std::out_of_range("Iterator out of range");
+    return result;
 }
 
 LineViewReverseIterator::LineViewReverseIterator(const LineView* parent, size_t index)
@@ -70,9 +82,21 @@ LineViewReverseIterator LineViewReverseIterator::operator+(size_t n) const
     return LineViewReverseIterator(m_parent, m_index - n);
 }
 
+std::size_t LineViewReverseIterator::operator-(const LineViewReverseIterator& other) const
+{
+    const int result{static_cast<int>(other.m_index) - static_cast<int>(m_index)};
+    if (result < 0)
+        throw std::out_of_range("Iterator out of range");
+    return result;
+}
+
 LineViewIterator LineViewReverseIterator::base() const
 {
     return LineViewIterator(m_parent, m_index + 1);
+}
+
+std::size_t LineViewReverseIterator::line_index() const {
+    return m_index;
 }
 
 LineView::LineShift::LineShift(size_t line_idx)
@@ -302,22 +326,6 @@ LineViewIterator LineView::begin() const { return const_iterator(this, 0); }
 LineViewIterator LineView::end() const { return const_iterator(this, m_line_indices.size()); }
 LineViewReverseIterator LineView::rbegin() const { return const_reverse_iterator(this, size() - 1); }
 LineViewReverseIterator LineView::rend() const { return const_reverse_iterator(this, size_t(-1)); }
-
-size_t LineView::distance(const LineViewIterator& it1, const LineViewIterator& it2)
-{
-    size_t out = 0;
-    while (it1 + out != it2)
-        ++out;
-    return out;
-}
-
-size_t LineView::distance(const LineViewReverseIterator& it1, const LineViewReverseIterator& it2)
-{
-    size_t out = 0;
-    while (it1 + out != it2)
-        ++out;
-    return out;
-}
 
 std::string_view LineView::operator[](size_t index) const
 {
