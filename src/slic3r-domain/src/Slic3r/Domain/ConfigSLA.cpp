@@ -19,7 +19,7 @@ void sla_config_init_fn(ConfigDefinitions& defs);
 // Define the static object holding all definitions. Provide list of acceptable
 // boxes and the init function.
 ConfigDefinitions s_defs_sla({"sla_printer_settings", "sla_print_settings", "sla_material_settings",
-    "sla_object_settings", "sla_volume_settings"}, sla_config_init_fn);
+    "sla_object_settings"}, sla_config_init_fn);
 
 
 // JUST TEMPORARY UNTIL WE DECIDE WHAT TO DO WITH MODES.

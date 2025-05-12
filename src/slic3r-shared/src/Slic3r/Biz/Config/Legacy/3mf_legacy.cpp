@@ -1059,6 +1059,8 @@ namespace Slic3r {
                 if (!dpc.empty()) {
                     model_object->object_settings = {};
                     Slic3r::Biz::fill_config_box_from_legacy(dpc, model_object->object_settings);
+                    model_object->object_settings_sla = {};
+                    Slic3r::Biz::fill_config_box_from_legacy(dpc, model_object->object_settings_sla);
                 }
 
                 // select object's detected volumes
@@ -1427,7 +1429,7 @@ namespace Slic3r {
                     continue;
                 }
 
-                std::map<LayerHeightRange, Slic3r::Domain::ObjectSettings> config_ranges;
+                std::map<LayerHeightRange, Slic3r::Domain::VolumeSettings> config_ranges;
 
                 for (const auto& range : object_tree) {
                     if (range.first != "range")
@@ -1447,13 +1449,13 @@ namespace Slic3r {
                         config.set_deserialize(opt_key, value, config_substitutions);
                     }
                     
-                    Slic3r::Domain::ObjectSettings os;
-                    Slic3r::Biz::fill_config_box_from_legacy(config, os);
-                    config_ranges[{ min_z, max_z }] = os;
+                    Slic3r::Domain::VolumeSettings vs;
+                    Slic3r::Biz::fill_config_box_from_legacy(config, vs);
+                    config_ranges[{ min_z, max_z }] = vs;
                 }
 
                 if (!config_ranges.empty())
-                    m_layer_config_ranges.insert({ obj_idx, std::move(config_ranges) });
+                    m_layer_config_ranges.insert({ obj_idx, std::move(config_ranges)});
             }
         }
     }

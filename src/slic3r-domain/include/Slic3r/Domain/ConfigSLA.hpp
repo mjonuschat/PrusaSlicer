@@ -81,11 +81,6 @@ class SLAObjectSettings : public ConfigBox
 public:
     SLAObjectSettings() : ConfigBox(s_defs_sla, "sla_object_settings") {}
 };
-class SLAVolumeSettings : public ConfigBox
-{
-public:
-    SLAVolumeSettings() : ConfigBox(s_defs_sla, "sla_volume_settings") {}
-};
 
 
 class FullConfigSLA : public FullConfig

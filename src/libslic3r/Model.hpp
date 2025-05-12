@@ -28,6 +28,7 @@
 #include "Slic3r/Domain/TriangleSelector.hpp"
 #include "Slic3r/Domain/Model.hpp"
 #include "Slic3r/Domain/ConfigFDM.hpp"
+#include "Slic3r/Domain/ConfigSLA.hpp"
 
 #include <map>
 #include <memory>
@@ -372,7 +373,7 @@ enum class ModelVolumeType : int {
 
 using LayerHeightRange = std::pair<double,double>;
 using LayerConfigRanges = std::map<LayerHeightRange, ModelConfig>;
-using LayerConfigRangesNew = std::map<LayerHeightRange, Slic3r::Domain::ObjectSettings>;
+using LayerConfigRangesNew = std::map<LayerHeightRange, Slic3r::Domain::VolumeSettings>;
 
 // A printable object, possibly having multiple print volumes (each with its own set of parameters and materials),
 // and possibly having multiple modifier volumes, each modifier volume with its set of parameters and materials.
@@ -393,11 +394,12 @@ public:
     ModelConfigObject 		config;
 
     Slic3r::Domain::ObjectSettings          object_settings;
+    Slic3r::Domain::SLAObjectSettings       object_settings_sla;
 
     // Variation of a layer thickness for spans of Z coordinates + optional parameter overrides.
     LayerConfigRanges       layer_config_ranges;
 
-    LayerConfigRangesNew    layer_config_ranges_new;
+    LayerConfigRangesNew layer_config_ranges_new;
 
     // Profile of increasing z to a layer height, to be linearly interpolated when calculating the layers.
     // The pairs of <z, layer_height> are packed into a 1D array.
