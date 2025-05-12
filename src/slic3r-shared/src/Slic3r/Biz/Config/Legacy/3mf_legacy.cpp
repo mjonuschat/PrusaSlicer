@@ -2902,8 +2902,8 @@ namespace Slic3r {
     public:
         bool save_model_to_file(
             const std::string& filename,
-            Model& model,
-            const std::variant<Slic3r::Biz::FDMLegacyConfigPack, Slic3r::Biz::SLALegacyConfigPack>& config,
+            const Model& model,
+            const std::optional<std::variant<Slic3r::Biz::FDMLegacyConfigPack, Slic3r::Biz::SLALegacyConfigPack>>& config,
             bool fullpath_sources,
             const ThumbnailData* thumbnail_data,
             bool zip64,
@@ -2915,8 +2915,8 @@ namespace Slic3r {
         void _publish(Model &model);
         bool _save_model_to_file(
             const std::string& filename,
-            Model& model,
-            const std::variant<Slic3r::Biz::FDMLegacyConfigPack, Slic3r::Biz::SLALegacyConfigPack>& config,
+            const Model& model,
+            const std::optional<std::variant<Slic3r::Biz::FDMLegacyConfigPack, Slic3r::Biz::SLALegacyConfigPack>>& config,
             const ThumbnailData* thumbnail_data,
             const WipeTowersOnBeds& wipe_towers,
             const CustomGCodesOnBeds& custom_gcodes
@@ -2928,11 +2928,11 @@ namespace Slic3r {
         bool _add_object_to_model_stream(mz_zip_writer_staged_context &context, unsigned int& object_id, ModelObject& object, BuildItemsList& build_items, VolumeToOffsetsMap& volumes_offsets);
         bool _add_mesh_to_object_stream(mz_zip_writer_staged_context &context, ModelObject& object, VolumeToOffsetsMap& volumes_offsets);        
         bool _add_build_to_model_stream(std::stringstream& stream, const BuildItemsList& build_items);
-        bool _add_cut_information_file_to_archive(mz_zip_archive& archive, Model& model);
-        bool _add_layer_height_profile_file_to_archive(mz_zip_archive& archive, Model& model);
-        bool _add_layer_config_ranges_file_to_archive(mz_zip_archive& archive, Model& model);
-        bool _add_sla_support_points_file_to_archive(mz_zip_archive& archive, Model& model);
-        bool _add_sla_drain_holes_file_to_archive(mz_zip_archive& archive, Model& model);
+        bool _add_cut_information_file_to_archive(mz_zip_archive& archive, const Model& model);
+        bool _add_layer_height_profile_file_to_archive(mz_zip_archive& archive, const Model& model);
+        bool _add_layer_config_ranges_file_to_archive(mz_zip_archive& archive, const Model& model);
+        bool _add_sla_support_points_file_to_archive(mz_zip_archive& archive, const Model& model);
+        bool _add_sla_drain_holes_file_to_archive(mz_zip_archive& archive, const Model& model);
         bool _add_print_config_file_to_archive(mz_zip_archive& archive, const std::variant<Slic3r::Biz::FDMLegacyConfigPack, Slic3r::Biz::SLALegacyConfigPack>& config, const Model& model, const WipeTowersOnBeds& wipe_towers);
         bool _add_model_config_file_to_archive(mz_zip_archive& archive, const Model& model, const IdToObjectDataMap &objects_data);
         bool _add_custom_gcode_per_print_z_file_to_archive(mz_zip_archive& archive, const CustomGCodesOnBeds& custom_gcodes); //, const DynamicPrintConfig* config);
@@ -2941,8 +2941,8 @@ namespace Slic3r {
 
     bool _3MF_Exporter::save_model_to_file(
         const std::string& filename,
-        Model& model,
-        const std::variant<Slic3r::Biz::FDMLegacyConfigPack, Slic3r::Biz::SLALegacyConfigPack>& config,
+        const Model& model,
+        const std::optional<std::variant<Slic3r::Biz::FDMLegacyConfigPack, Slic3r::Biz::SLALegacyConfigPack>>& config,
         bool fullpath_sources,
         const ThumbnailData* thumbnail_data,
         bool zip64,
@@ -2958,8 +2958,8 @@ namespace Slic3r {
 
     bool _3MF_Exporter::_save_model_to_file(
         const std::string& filename,
-        Model& model,
-        const std::variant<Slic3r::Biz::FDMLegacyConfigPack, Slic3r::Biz::SLALegacyConfigPack>& config,
+        const Model& model,
+        const std::optional<std::variant<Slic3r::Biz::FDMLegacyConfigPack, Slic3r::Biz::SLALegacyConfigPack>>& config,
         const ThumbnailData* thumbnail_data,
         const WipeTowersOnBeds& wipe_towers,
         const CustomGCodesOnBeds& custom_gcodes
@@ -3070,8 +3070,8 @@ namespace Slic3r {
 
         // Adds slic3r print config file ("Metadata/Slic3r_PE.config").
         // This file contains the content of FullPrintConfing / SLAFullPrintConfig.
-        if (/*config != nullptr*/ true) {
-            if (!_add_print_config_file_to_archive(archive, config, model, wipe_towers)) {
+        if (config.has_value()) {
+            if (!_add_print_config_file_to_archive(archive, *config, model, wipe_towers)) {
                 close_zip_writer(&archive);
                 boost::filesystem::remove(filename);
                 return false;
@@ -3538,7 +3538,7 @@ namespace Slic3r {
         return true;
     }
 
-    bool _3MF_Exporter::_add_cut_information_file_to_archive(mz_zip_archive& archive, Model& model)
+    bool _3MF_Exporter::_add_cut_information_file_to_archive(mz_zip_archive& archive, const Model& model)
     {
         std::string out = "";
         pt::ptree tree;
@@ -3601,7 +3601,7 @@ namespace Slic3r {
         return true;
     }
 
-    bool _3MF_Exporter::_add_layer_height_profile_file_to_archive(mz_zip_archive& archive, Model& model)
+    bool _3MF_Exporter::_add_layer_height_profile_file_to_archive(mz_zip_archive& archive, const Model& model)
     {
         assert(is_decimal_separator_point());
         std::string out = "";
@@ -3635,7 +3635,7 @@ namespace Slic3r {
         return true;
     }
 
-    bool _3MF_Exporter::_add_layer_config_ranges_file_to_archive(mz_zip_archive& archive, Model& model)
+    bool _3MF_Exporter::_add_layer_config_ranges_file_to_archive(mz_zip_archive& archive, const Model& model)
     {
         std::string out = "";
         pt::ptree tree;
@@ -3693,7 +3693,7 @@ namespace Slic3r {
         return true;
     }
 
-    bool _3MF_Exporter::_add_sla_support_points_file_to_archive(mz_zip_archive& archive, Model& model)
+    bool _3MF_Exporter::_add_sla_support_points_file_to_archive(mz_zip_archive& archive, const Model& model)
     {
         assert(is_decimal_separator_point());
         std::string out = "";
@@ -3740,7 +3740,7 @@ namespace Slic3r {
         return true;
     }
     
-    bool _3MF_Exporter::_add_sla_drain_holes_file_to_archive(mz_zip_archive& archive, Model& model)
+    bool _3MF_Exporter::_add_sla_drain_holes_file_to_archive(mz_zip_archive& archive, const Model& model)
     {
         assert(is_decimal_separator_point());
         const char *const fmt = "object_id=%d|";
@@ -4153,8 +4153,8 @@ bool load_3mf_legacy(
 
 bool store_3mf_legacy(
     const char* path,
-    Model* model,
-    const std::variant<Slic3r::Biz::FDMLegacyConfigPack, Slic3r::Biz::SLALegacyConfigPack>& config,
+    const Model* model,
+    const std::optional<std::variant<Slic3r::Biz::FDMLegacyConfigPack, Slic3r::Biz::SLALegacyConfigPack>>& config,
     bool fullpath_sources,
     const WipeTowersOnBeds& wipe_towers,
     const CustomGCodesOnBeds& custom_gcodes,

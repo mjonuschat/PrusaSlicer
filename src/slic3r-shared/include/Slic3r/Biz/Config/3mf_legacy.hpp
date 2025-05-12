@@ -73,8 +73,8 @@ namespace Slic3r {
     // The model could be modified during the export process if meshes are not repaired or have no shared vertices
     extern bool store_3mf_legacy(
         const char* path,
-        Model* model,
-        const std::variant<Slic3r::Biz::FDMLegacyConfigPack, Slic3r::Biz::SLALegacyConfigPack>& config,
+        const Model* model,
+        const std::optional<std::variant<Slic3r::Biz::FDMLegacyConfigPack, Slic3r::Biz::SLALegacyConfigPack>>& config,
         bool fullpath_sources,
         const WipeTowersOnBeds& wipe_towers,
         const CustomGCodesOnBeds& custom_gcodes,

@@ -5,7 +5,6 @@
 
 #include "boost/algorithm/string.hpp"
 
-#include "Slic3r/Biz/Config/Legacy/3mf_legacy.hpp"
 #include "libslic3r/Model.hpp"
 
 namespace Slic3r::Biz {
@@ -535,22 +534,6 @@ std::variant<FDMLegacyConfigPack, SLALegacyConfigPack> load_config_from_legacy_f
 {
     Slic3rLegacy::DynamicPrintConfig cfg = load_legacy_config_from_legacy_file(filename);
     return convert_dynamic_print_config_to_new(cfg);
-}
-
-
-
-std::variant<FDMLegacyConfigPack, SLALegacyConfigPack> load_config_from_legacy_3mf(const std::string& filename)
-{
-    Slic3r::Model model;
-    std::variant<FDMLegacyConfigPack, SLALegacyConfigPack> cfg;
-
-    boost::optional<Semver> prusaslicer_generator_version;
-    CustomGCodesOnBeds custom_gcodes;
-    WipeTowersOnBeds wipe_towers;
-    load_3mf_legacy(filename.c_str(), cfg, &model, false, prusaslicer_generator_version, wipe_towers, custom_gcodes);
-
-    store_3mf_legacy("out.3mf", &model, cfg, true, wipe_towers, custom_gcodes);
-    return cfg;
 }
 
 

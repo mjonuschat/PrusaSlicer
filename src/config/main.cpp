@@ -4,9 +4,14 @@
 #include "Slic3r/Biz/Config/ConfigSerialize.hpp"
 #include "Slic3r/Biz/Config/ConfigLegacy.hpp"
 
+#include "libslic3r/Model.hpp"
+#include "Slic3r/Biz/Config/3mf_legacy.hpp"
+
+
 
 #include <fstream>
 #include <iostream>
+#include <optional>
 #include <vector>
 
 
@@ -31,10 +36,14 @@ int main(int, char* [])
     using namespace Slic3r::Biz;
 
     {
-        
+        Slic3r::Model model;
+        std::variant<FDMLegacyConfigPack, SLALegacyConfigPack> cfg;
+        boost::optional<Slic3r::Semver> prusaslicer_generator_version;
+        Slic3r::WipeTowersOnBeds wipe_towers;
+        Slic3r::CustomGCodesOnBeds custom_gcodes;
+        Slic3r::load_3mf_legacy("test.3mf", cfg, &model, true, prusaslicer_generator_version, wipe_towers, custom_gcodes);
 
-        std::variant<FDMLegacyConfigPack, SLALegacyConfigPack> cfg = load_config_from_legacy_3mf("test.3mf");
-
+        Slic3r::store_3mf_legacy("out.3mf", &model, std::optional<std::variant<FDMLegacyConfigPack, SLALegacyConfigPack>>(cfg), false, wipe_towers, custom_gcodes);
         return 0;
     }
 
