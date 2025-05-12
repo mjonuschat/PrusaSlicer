@@ -1511,6 +1511,7 @@ void SLAPrint::Steps::merge_slices_and_eval_stats() {
     const PrintObjects& objects = m_print->objects();
     bool hollowing_enable = std::any_of(objects.begin(), objects.end(), 
         [](const SLAPrintObject *po) { return po->config().hollowing_enable; });
+
     print_statistics.hollowing_enable = hollowing_enable;
 
     report_status(-2, "", SlicingStatus::RELOAD_SLA_PREVIEW);

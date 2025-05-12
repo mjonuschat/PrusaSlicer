@@ -126,7 +126,7 @@ PrintObject::PrintObject(Print* print, ModelObject* model_object, const Transfor
     BoundingBox3d  bbox        = model_object->raw_bounding_box();
     Vec3d 		   bbox_center = center(bbox);
 	// We may need to rotate the bbox / bbox_center from the original instance to the current instance.
-    double z_diff = Geometry::rotation_diff_z(model_object->instances.front()->get_matrix(), instances.front().model_instance->get_matrix());
+    double z_diff = Geometry::rotation_diff_z(model_object->instances.front()->get_matrix(), instances.front().model_instance.get_matrix());
     if (std::abs(z_diff) > EPSILON) {
 		auto z_rot  = Eigen::AngleAxisd(z_diff, Vec3d::UnitZ());
 		bbox 		= transformed(bbox, Transform3d(z_rot));
@@ -158,10 +158,39 @@ PrintBase::ApplyStatus PrintObject::set_instances(PrintInstances &&instances)
             (! equal_length && m_print->invalidate_step(psWipeTower)))
             status = PrintBase::APPLY_STATUS_INVALIDATED;
         m_instances = std::move(instances);
-	    for (PrintInstance &i : m_instances)
-	    	i.print_object = this;
+        for (PrintInstance &i : m_instances)
+            i.print_object = this;
     }
+
     return status;
+}
+
+SlicingSync::PrintSteps PrintObject::set_instances_new(PrintInstances &&instances)
+{
+    using SlicingSync::PrintSteps;
+
+    for (PrintInstance &i : instances)
+    	// Add the center offset, which will be subtracted from the mesh when slicing.
+    	i.shift += m_center_offset;
+    // Invalidate and set copies.
+    bool equal_length = instances.size() == m_instances.size();
+    bool equal = equal_length && std::equal(instances.begin(), instances.end(), m_instances.begin(), 
+    	[](const PrintInstance& lhs, const PrintInstance& rhs) { return lhs.model_instance == rhs.model_instance && lhs.shift == rhs.shift; });
+
+    PrintSteps steps{};
+    if (!equal) {
+        steps.insert(psSkirtBrim);
+        steps.insert(psGCodeExport);
+    }
+    if(!equal_length) {
+        steps.insert(psWipeTower);
+    }
+
+    m_instances = std::move(instances);
+    for (PrintInstance &i : m_instances)
+        i.print_object = this;
+
+    return steps;
 }
 
 std::vector<std::reference_wrapper<const PrintRegion>> PrintObject::all_regions() const
@@ -711,259 +740,6 @@ SupportLayer* PrintObject::add_support_layer(int id, int interface_id, double he
 SupportLayerPtrs::iterator PrintObject::insert_support_layer(SupportLayerPtrs::iterator pos, size_t id, size_t interface_id, double height, double print_z, double slice_z)
 {
     return m_support_layers.insert(pos, new SupportLayer(id, interface_id, this, height, print_z, slice_z));
-}
-
-// Called by Print::apply().
-// This method only accepts PrintObjectConfig and PrintRegionConfig option keys.
-bool PrintObject::invalidate_state_by_config_options(
-    const ConfigOptionResolver &old_config, const ConfigOptionResolver &new_config, const std::vector<t_config_option_key> &opt_keys)
-{
-    if (opt_keys.empty())
-        return false;
-
-    std::vector<PrintObjectStep> steps;
-    bool invalidated = false;
-    for (const t_config_option_key &opt_key : opt_keys) {
-        if (   opt_key == "brim_width"
-            || opt_key == "brim_separation"
-            || opt_key == "brim_type") {
-            steps.emplace_back(posSupportSpotsSearch);
-            // Brim is printed below supports, support invalidates brim and skirt.
-            steps.emplace_back(posSupportMaterial);
-        } else if (
-               opt_key == "perimeters"
-            || opt_key == "extra_perimeters"
-            || opt_key == "extra_perimeters_on_overhangs"
-            || opt_key == "first_layer_extrusion_width"
-            || opt_key == "perimeter_extrusion_width"
-            || opt_key == "infill_overlap"
-            || opt_key == "external_perimeters_first"
-            || opt_key == "arc_fitting"
-            || opt_key == "top_one_perimeter_type"
-            || opt_key == "only_one_perimeter_first_layer") {
-            steps.emplace_back(posPerimeters);
-        } else if (
-               opt_key == "gap_fill_enabled"
-            || opt_key == "gap_fill_speed") {
-            // Return true if gap-fill speed has changed from zero value to non-zero or from non-zero value to zero.
-            auto is_gap_fill_changed_state_due_to_speed = [&opt_key, &old_config, &new_config]() -> bool {
-                if (opt_key == "gap_fill_speed") {
-                    const auto *old_gap_fill_speed = old_config.option<ConfigOptionFloat>(opt_key);
-                    const auto *new_gap_fill_speed = new_config.option<ConfigOptionFloat>(opt_key);
-                    assert(old_gap_fill_speed && new_gap_fill_speed);
-                    return (old_gap_fill_speed->value > 0.f && new_gap_fill_speed->value == 0.f) ||
-                           (old_gap_fill_speed->value == 0.f && new_gap_fill_speed->value > 0.f);
-                }
-                return false;
-            };
-
-            // Filtering of unprintable regions in multi-material segmentation depends on if gap-fill is enabled or not.
-            // So step posSlice is invalidated when gap-fill was enabled/disabled by option "gap_fill_enabled" or by
-            // changing "gap_fill_speed" to force recomputation of the multi-material segmentation.
-            if (this->is_mm_painted() && (opt_key == "gap_fill_enabled" || (opt_key == "gap_fill_speed" && is_gap_fill_changed_state_due_to_speed())))
-                steps.emplace_back(posSlice);
-            steps.emplace_back(posPerimeters);
-        } else if (
-               opt_key == "layer_height"
-            || opt_key == "mmu_segmented_region_max_width"
-            || opt_key == "mmu_segmented_region_interlocking_depth"
-            || opt_key == "raft_layers"
-            || opt_key == "raft_contact_distance"
-            || opt_key == "slice_closing_radius"
-            || opt_key == "slicing_mode"
-            || opt_key == "interlocking_beam"
-            || opt_key == "interlocking_orientation"
-            || opt_key == "interlocking_beam_layer_count"
-            || opt_key == "interlocking_depth"
-            || opt_key == "interlocking_boundary_avoidance"
-            || opt_key == "interlocking_beam_width") {
-            steps.emplace_back(posSlice);
-		} else if (
-               opt_key == "elefant_foot_compensation"
-            || opt_key == "support_material_contact_distance" 
-            || opt_key == "xy_size_compensation") {
-            steps.emplace_back(posSlice);
-        } else if (opt_key == "support_material") {
-            steps.emplace_back(posSupportMaterial);
-            if (m_config.support_material_contact_distance == 0.) {
-            	// Enabling / disabling supports while soluble support interface is enabled.
-            	// This changes the bridging logic (bridging enabled without supports, disabled with supports).
-            	// Reset everything.
-            	// See GH #1482 for details.
-	            steps.emplace_back(posSlice);
-	        }
-        } else if (
-        	   opt_key == "support_material_auto"
-            || opt_key == "support_material_angle"
-            || opt_key == "support_material_buildplate_only"
-            || opt_key == "support_material_enforce_layers"
-            || opt_key == "support_material_extruder"
-            || opt_key == "support_material_extrusion_width"
-            || opt_key == "support_material_bottom_contact_distance"
-            || opt_key == "support_material_interface_layers"
-            || opt_key == "support_material_bottom_interface_layers"
-            || opt_key == "support_material_interface_pattern"
-            || opt_key == "support_material_interface_contact_loops"
-            || opt_key == "support_material_interface_extruder"
-            || opt_key == "support_material_interface_spacing"
-            || opt_key == "support_material_pattern"
-            || opt_key == "support_material_style"
-            || opt_key == "support_material_xy_spacing"
-            || opt_key == "support_material_spacing"
-            || opt_key == "support_material_closing_radius"
-            || opt_key == "support_material_synchronize_layers"
-            || opt_key == "support_material_threshold"
-            || opt_key == "support_material_with_sheath"
-            || opt_key == "support_tree_angle"
-            || opt_key == "support_tree_angle_slow"
-            || opt_key == "support_tree_branch_diameter"
-            || opt_key == "support_tree_branch_diameter_angle"
-            || opt_key == "support_tree_branch_diameter_double_wall"
-            || opt_key == "support_tree_top_rate"
-            || opt_key == "support_tree_branch_distance"
-            || opt_key == "support_tree_tip_diameter"
-            || opt_key == "raft_expansion"
-            || opt_key == "raft_first_layer_density"
-            || opt_key == "raft_first_layer_expansion"
-            || opt_key == "dont_support_bridges"
-            || opt_key == "first_layer_extrusion_width") {
-            steps.emplace_back(posSupportMaterial);
-        } else if (opt_key == "bottom_solid_layers") {
-            steps.emplace_back(posPrepareInfill);
-            if (m_print->config().spiral_vase) {
-                // Changing the number of bottom layers when a spiral vase is enabled requires re-slicing the object again.
-                // Otherwise, holes in the bottom layers could be filled, as is reported in GH #5528.
-                steps.emplace_back(posSlice);
-            }
-        } else if (
-               opt_key == "interface_shells"
-            || opt_key == "infill_only_where_needed"
-            || opt_key == "infill_every_layers"
-            || opt_key == "automatic_infill_combination"
-            || opt_key == "automatic_infill_combination_max_layer_height"
-            || opt_key == "solid_infill_every_layers"
-            || opt_key == "ensure_vertical_shell_thickness"
-            || opt_key == "bottom_solid_min_thickness"
-            || opt_key == "top_solid_layers"
-            || opt_key == "top_solid_min_thickness"
-            || opt_key == "solid_infill_below_area"
-            || opt_key == "infill_extruder"
-            || opt_key == "solid_infill_extruder"
-            || opt_key == "infill_extrusion_width"
-            || opt_key == "bridge_angle") {
-            steps.emplace_back(posPrepareInfill);
-        } else if (
-               opt_key == "top_fill_pattern"
-            || opt_key == "bottom_fill_pattern"
-            || opt_key == "external_fill_link_max_length"
-            || opt_key == "fill_angle"
-            || opt_key == "infill_anchor"
-            || opt_key == "infill_anchor_max"
-            || opt_key == "top_infill_extrusion_width"
-            || opt_key == "first_layer_extrusion_width") {
-            steps.emplace_back(posInfill);
-        } else if (opt_key == "fill_pattern") {
-            steps.emplace_back(posPrepareInfill);
-        } else if (opt_key == "over_bridge_speed") {
-            const auto *old_speed = old_config.option<ConfigOptionFloat>(opt_key);
-            const auto *new_speed = new_config.option<ConfigOptionFloat>(opt_key);
-            if (
-                old_speed == nullptr
-                || new_speed == nullptr
-                || old_speed->value == 0
-                || new_speed->value == 0
-            ) {
-                steps.emplace_back(posPrepareInfill);
-            }
-            invalidated |= m_print->invalidate_step(psGCodeExport);
-        } else if (opt_key == "fill_density") {
-            // One likely wants to reslice only when switching between zero infill to simulate boolean difference (subtracting volumes),
-            // normal infill and 100% (solid) infill.
-            const auto *old_density = old_config.option<ConfigOptionPercent>(opt_key);
-            const auto *new_density = new_config.option<ConfigOptionPercent>(opt_key);
-            assert(old_density && new_density);
-            //FIXME Vojtech is not quite sure about the 100% here, maybe it is not needed.
-            if (is_approx(old_density->value, 0.) || is_approx(old_density->value, 100.) ||
-                is_approx(new_density->value, 0.) || is_approx(new_density->value, 100.))
-                steps.emplace_back(posPerimeters);
-            steps.emplace_back(posPrepareInfill);
-        } else if (opt_key == "solid_infill_extrusion_width") {
-            // This value is used for calculating perimeter - infill overlap, thus perimeters need to be recalculated.
-            steps.emplace_back(posPerimeters);
-            steps.emplace_back(posPrepareInfill);
-        } else if (
-               opt_key == "external_perimeter_extrusion_width"
-            || opt_key == "perimeter_extruder"
-            || opt_key == "fuzzy_skin"
-            || opt_key == "fuzzy_skin_thickness"
-            || opt_key == "fuzzy_skin_point_dist"
-            || opt_key == "overhangs"
-            || opt_key == "thin_walls"
-            || opt_key == "thick_bridges") {
-            steps.emplace_back(posPerimeters);
-            steps.emplace_back(posSupportMaterial);
-        } else if (opt_key == "bridge_flow_ratio") {
-            if (m_config.support_material_contact_distance > 0.) {
-            	// Only invalidate due to bridging if bridging is enabled.
-            	// If later "support_material_contact_distance" is modified, the complete PrintObject is invalidated anyway.
-            	steps.emplace_back(posPerimeters);
-            	steps.emplace_back(posInfill);
-	            steps.emplace_back(posSupportMaterial);
-	        }
-        } else if (
-            opt_key == "perimeter_generator"
-            || opt_key == "wall_transition_length"
-            || opt_key == "wall_transition_filter_deviation"
-            || opt_key == "wall_transition_angle"
-            || opt_key == "wall_distribution_count"
-            || opt_key == "min_feature_size"
-            || opt_key == "min_bead_width") {
-            steps.emplace_back(posSlice);
-        } else if (
-               opt_key == "seam_position"
-            || opt_key == "scarf_seam_placement"
-            || opt_key == "scarf_seam_only_on_smooth"
-            || opt_key == "scarf_seam_start_height"
-            || opt_key == "scarf_seam_entire_loop"
-            || opt_key == "scarf_seam_length"
-            || opt_key == "scarf_seam_max_segment_length"
-            || opt_key == "scarf_seam_on_inner_perimeters"
-            || opt_key == "seam_preferred_direction"
-            || opt_key == "seam_preferred_direction_jitter"
-            || opt_key == "support_material_speed"
-            || opt_key == "support_material_interface_speed"
-            || opt_key == "bridge_speed"
-            || opt_key == "external_perimeter_speed"
-            || opt_key == "small_perimeter_speed"
-            || opt_key == "solid_infill_speed"
-            || opt_key == "first_layer_infill_speed"
-            || opt_key == "top_solid_infill_speed") {
-            invalidated |= m_print->invalidate_step(psGCodeExport);
-        } else if (
-               opt_key == "wipe_into_infill"
-            || opt_key == "wipe_into_objects"
-            || opt_key == "infill_speed"
-            || opt_key == "perimeter_speed") {
-            invalidated |= m_print->invalidate_step(psWipeTower);
-            invalidated |= m_print->invalidate_step(psGCodeExport);
-        } else if (
-               opt_key == "enable_dynamic_overhang_speeds"
-            || opt_key == "overhang_speed_0"
-            || opt_key == "overhang_speed_1"
-            || opt_key == "overhang_speed_2"
-            || opt_key == "overhang_speed_3") {
-            steps.emplace_back(posPerimeters);
-        } else {
-            // for legacy, if we can't handle this option let's invalidate all steps
-            this->invalidate_all_steps();
-            invalidated = true;
-        }
-    }
-
-    sort_remove_duplicates(steps);
-    for (PrintObjectStep step : steps)
-        invalidated |= this->invalidate_step(step);
-    return invalidated;
 }
 
 bool PrintObject::invalidate_step(PrintObjectStep step)
@@ -2630,18 +2406,70 @@ static void clamp_exturder_to_default(ConfigOptionInt &opt, size_t num_extruders
         opt.value = 1;
 }
 
-PrintObjectConfig PrintObject::object_config_from_model_object(const PrintObjectConfig &default_object_config, const ModelObject &object, size_t num_extruders)
+PrintObjectConfig PrintObject::object_config_from_model_object(const PrintObjectConfig &default_object_config, const ModelConfigObject &config, size_t num_extruders)
 {
-    PrintObjectConfig config = default_object_config;
+    PrintObjectConfig result = default_object_config;
     {
-        DynamicPrintConfig src_normalized(object.config.get());
+        DynamicPrintConfig src_normalized(config.get());
         src_normalized.normalize_fdm();
-        config.apply(src_normalized, true);
+        result.apply(src_normalized, true);
     }
     // Clamp invalid extruders to the default extruder (with index 1).
-    clamp_exturder_to_default(config.support_material_extruder,           num_extruders);
-    clamp_exturder_to_default(config.support_material_interface_extruder, num_extruders);
-    return config;
+    clamp_exturder_to_default(result.support_material_extruder,           num_extruders);
+    clamp_exturder_to_default(result.support_material_interface_extruder, num_extruders);
+    return result;
+}
+
+namespace {
+/**
+ * Layer regions point to old_regions, update the pointers to new regions where possible.
+ */
+void update_pointers_to_print_regions(
+    const LayerPtrs& layers,
+    const PrintObjectRegions& old_regions,
+    const PrintObjectRegions& new_regions
+)
+{
+    for (Layer* layer : layers) {
+        for (LayerRegion* layer_region : layer->regions()) {
+            if (old_regions.all_regions.size() != new_regions.all_regions.size()) {
+                layer_region->set_region(nullptr);
+                continue;
+            }
+
+            const auto old_region_it{std::find_if(
+                old_regions.all_regions.begin(),
+                old_regions.all_regions.end(),
+                [&](const std::unique_ptr<PrintRegion>& region) {
+                    return &layer_region->region() == region.get();
+                }
+            )};
+
+            if (old_region_it == old_regions.all_regions.end()) {
+                layer_region->set_region(nullptr);
+                continue;
+            }
+
+            const auto index{std::distance(old_regions.all_regions.begin(), old_region_it)};
+            layer_region->set_region(new_regions.all_regions[index].get());
+        }
+    }
+}
+}
+
+void PrintObject::set_shared_regions(const std::shared_ptr<PrintObjectRegions>& regions) {
+    if (!regions) {
+        // TODO: Replace with PANIC
+        std::terminate();
+    }
+
+    if (!m_shared_regions) {
+        m_shared_regions = regions;
+        return;
+    }
+
+    update_pointers_to_print_regions(m_layers, *m_shared_regions, *regions);
+    m_shared_regions = regions;
 }
 
 const std::string                                                    key_extruder { "extruder" };
@@ -2720,7 +2548,7 @@ SlicingParameters PrintObject::slicing_parameters(const DynamicPrintConfig &full
 	object_config.apply(full_config, true);
 	default_region_config.apply(full_config, true);
 	size_t              num_extruders = print_config.nozzle_diameter.size();
-	object_config = object_config_from_model_object(object_config, model_object, num_extruders);
+	object_config = object_config_from_model_object(object_config, model_object.config, num_extruders);
 
 	std::vector<unsigned int> object_extruders;
 	for (const ModelVolume* model_volume : model_object.volumes)

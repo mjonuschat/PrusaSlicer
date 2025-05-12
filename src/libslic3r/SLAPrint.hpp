@@ -232,8 +232,8 @@ protected:
     friend class SLAPrint;
     friend class PrintBaseWithState<SLAPrintStep, slapsCount>;
 
+public:
 	SLAPrintObject(SLAPrint* print, ModelObject* model_object);
-    ~SLAPrintObject();
 
     void                    config_apply(const ConfigBase &other, bool ignore_nonexistent = false) { m_config.apply(other, ignore_nonexistent); }
     void                    config_apply_only(const ConfigBase &other, const t_config_option_keys &keys, bool ignore_nonexistent = false)
@@ -244,6 +244,7 @@ protected:
         m_left_handed = left_handed;
     }
 
+    const std::vector<Instance>& instances() const { return m_instances; }
     inline void set_instances(Instances&& instances) { m_instances = std::move(instances); }
 
     // Invalidates the step, and its depending steps in SLAPrintObject and SLAPrint.
@@ -299,6 +300,25 @@ using PrintObjects = std::vector<SLAPrintObject*>;
 
 using SliceRecord  = SLAPrintObject::SliceRecord;
 
+namespace SLASlicingSync {
+struct AllSteps
+{};
+
+template<typename T>
+using AllOrSome = std::variant<T, AllSteps>;
+using PrintSteps = std::set<SLAPrintStep>;
+using PrintObjectSteps = std::set<SLAPrintObjectStep>;
+using StepsPerPrintObject = std::map<SLAPrintObject*, AllOrSome<PrintObjectSteps>>;
+using PrintAndObjectSteps = std::pair<AllOrSome<PrintSteps>, AllOrSome<PrintObjectSteps>>;
+
+struct InvalidatedSteps
+{
+    AllOrSome<PrintSteps> print;
+    StepsPerPrintObject object;
+
+    bool empty() const;
+};
+}
 /**
  * @brief This class is the high level FSM for the SLA printing process.
  *
@@ -335,6 +355,10 @@ public:
         const std::optional<Domain::CustomGCode::Info>&,
         std::vector<std::string>* warnings = nullptr
     ) override;
+
+    bool invalidate_object_steps(
+        const SLASlicingSync::InvalidatedSteps& steps
+    );
 
     void                set_task(const TaskParams &params) override { PrintBaseWithState<SLAPrintStep, slapsCount>::set_task_impl(params, m_objects); }
     void                process() override;
@@ -422,7 +446,7 @@ public:
 
     static bool is_prusa_print(const std::string& printer_model);
     
-private:
+public:
     
     // Implement same logic as in SLAPrintObject
     bool invalidate_step(SLAPrintStep st);

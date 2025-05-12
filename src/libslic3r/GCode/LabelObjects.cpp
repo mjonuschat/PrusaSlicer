@@ -28,12 +28,12 @@ namespace {
 Polygon instance_outline(const PrintInstance* pi)
 {
     ExPolygons outline;
-    const ModelObject* mo = pi->model_instance->get_object();
-    const ModelInstance* mi = pi->model_instance;
+    const ModelObject* mo = pi->model_instance.get_object();
+    const ModelInstance& mi = pi->model_instance;
     for (const ModelVolume *v : mo->volumes) {
         Polygons vol_outline;
         vol_outline = project_mesh(v->mesh().its,
-                                    mi->get_matrix() * v->get_matrix(),
+                                    mi.get_matrix() * v->get_matrix(),
                                     [] {});
         switch (v->type()) {
         case ModelVolumeType::MODEL_PART: outline = union_ex(outline, vol_outline); break;
@@ -47,7 +47,7 @@ Polygon instance_outline(const PrintInstance* pi)
     if (outline.size() == 1u)
         return outline.front().contour;
     else
-        return pi->model_instance->get_object()->convex_hull_2d(pi->model_instance->get_matrix());
+        return pi->model_instance.get_object()->convex_hull_2d(pi->model_instance.get_matrix());
 }
 
 }; // anonymous namespace
@@ -67,7 +67,7 @@ void LabelObjects::init(const SpanOfConstPtrs<PrintObject>& objects, LabelObject
     // belong to the same ModelObject.
     for (const PrintObject* po : objects)
         for (const PrintInstance& pi : po->instances())
-            model_object_to_print_instances[pi.model_instance->get_object()].emplace_back(&pi);
+            model_object_to_print_instances[pi.model_instance.get_object()].emplace_back(&pi);
 
     // Now go through the map, assign a unique_id to each of the PrintInstances and get the indices of the
     // respective ModelObject and ModelInstance so we can use them in the tags. This will maintain
@@ -79,7 +79,7 @@ void LabelObjects::init(const SpanOfConstPtrs<PrintObject>& objects, LabelObject
         int object_id = int(std::find(model_objects.begin(), model_objects.end(), model_object) - model_objects.begin());
         for (const PrintInstance* const pi : print_instances) {
             bool object_has_more_instances = print_instances.size() > 1u;
-            int instance_id = int(std::find(model_object->instances.begin(), model_object->instances.end(), pi->model_instance) - model_object->instances.begin());
+            int instance_id = int(pi->model_instance_index);
 
             // Get object name and trim it so we do not run into https://github.com/prusa3d/PrusaSlicer/issues/13314.
             // The limit in FW is 96 chars, OctoPrint may add no more than 12 chars at the end (checksum).

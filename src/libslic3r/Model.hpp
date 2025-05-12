@@ -547,6 +547,7 @@ public:
     bool is_cut() const { return cut_id.valid(); }
     bool has_connectors() const;
 
+	~ModelObject();
 private:
     friend class Model;
     // This constructor assigns new ID to this ModelObject and its config.
@@ -562,7 +563,6 @@ private:
         assert(this->config.id().invalid());
         assert(this->layer_height_profile.id().invalid());
     }
-	~ModelObject();
 	void assign_new_unique_ids_recursive() override;
 
     // To be able to return an object from own copy / clone methods. Hopefully the compiler will do the "Copy elision"
@@ -631,7 +631,10 @@ private:
         this->layer_height_profile.set_new_unique_id();
     }
 
+public:
     OBJECTBASE_DERIVED_COPY_MOVE_CLONE(ModelObject)
+
+private:
 
     // Parent object, owning this ModelObject. Set to nullptr here, so the macros above will have it initialized.
     Model                *m_model { nullptr };
@@ -909,7 +912,6 @@ protected:
     friend class SLAPrint;
     friend class Model;
 	friend class ModelObject;
-    friend void model_volume_list_update_supports(ModelObject& model_object_dst, const ModelObject& model_object_new);
 
 	// Copies IDs of both the ModelVolume and its config.
 	explicit ModelVolume(const ModelVolume &rhs) = default;
@@ -1153,13 +1155,17 @@ public:
 
     void invalidate_object_bounding_box() { object->invalidate_bounding_box(); }
 
+    ModelInstance(const ModelInstance &rhs) = default;
+
+    bool operator==(const ModelInstance& rhs) const;
+
 protected:
     friend class Print;
     friend class SLAPrint;
     friend class Model;
     friend class ModelObject;
 
-    explicit ModelInstance(const ModelInstance &rhs) = default;
+public:
     void     set_model_object(ModelObject *model_object) { object = model_object; }
 
 private:
@@ -1198,6 +1204,10 @@ public:
     ModelMaterialMap    materials;
     // Objects are owned by a model. Each model may have multiple instances, each instance having its own transformation (shift, scale, rotation).
     ModelObjectPtrs     objects;
+
+    void copy_id(const Model& rhs) {
+        ObjectBase::copy_id(rhs);
+    }
 
 public:
     // Default constructor assigns a new ID to the model.
@@ -1286,7 +1296,7 @@ private:
 
 // Test whether the two models contain the same number of ModelObjects with the same set of IDs
 // ordered in the same order. In that case it is not necessary to kill the background processing.
-bool model_object_list_equal(const Model &model_old, const Model &model_new);
+bool model_object_list_equal(const ModelObjectPtrs &old_objects, const ModelObjectPtrs &new_objects);
 
 // Test whether the new model is just an extension of the old model (new objects were added
 // to the end of the original list. In that case it is not necessary to kill the background processing.

@@ -89,6 +89,26 @@ enum PrintObjectStep : unsigned int {
     posInfill, posIroning, posSupportSpotsSearch, posSupportMaterial, posEstimateCurledExtrusions, posCalculateOverhangingPerimeters, posCount,
 };
 
+namespace SlicingSync {
+struct AllSteps
+{};
+
+template<typename T>
+using AllOrSome = std::variant<T, AllSteps>;
+using PrintSteps = std::set<PrintStep>;
+using PrintObjectSteps = std::set<PrintObjectStep>;
+using StepsPerPrintObject = std::map<PrintObject*, AllOrSome<PrintObjectSteps>>;
+using PrintAndObjectSteps = std::pair<AllOrSome<PrintSteps>, AllOrSome<PrintObjectSteps>>;
+
+struct InvalidatedSteps
+{
+    AllOrSome<PrintSteps> print;
+    StepsPerPrintObject object;
+
+    bool empty() const;
+};
+} // namespace SlicingSync
+
 // A PrintRegion object represents a group of volumes to print
 // sharing the same config (including the same assigned extruder(s))
 class PrintRegion
@@ -126,6 +146,9 @@ public:
     void                        set_config(PrintRegionConfig &&config) { m_config = std::move(config); m_config_hash = m_config.hash(); }
     void                        config_apply_only(const ConfigBase &other, const t_config_option_keys &keys, bool ignore_nonexistent = false) 
                                         { m_config.apply_only(other, keys, ignore_nonexistent); m_config_hash = m_config.hash(); }
+
+    void set_print_region_id(const int id) {m_print_region_id = id;}
+
 private:
     friend Print;
     friend void print_region_ref_inc(PrintRegion&);
@@ -157,7 +180,8 @@ struct PrintInstance
     // Parent PrintObject
     PrintObject 		*print_object;
     // Source ModelInstance of a ModelObject, for which this print_object was created.
-	const ModelInstance *model_instance;
+	ModelInstance        model_instance;
+    std::size_t          model_instance_index;
 	// Shift of this instance's center into the world coordinates.
 	Point 				 shift;
 };
@@ -254,8 +278,6 @@ public:
 
     std::optional<GeneratedSupportPoints> generated_support_points;
 
-    void ref_cnt_inc() { ++ m_ref_cnt; }
-    void ref_cnt_dec() { if (-- m_ref_cnt == 0) delete this; }
     void clear() {
         all_regions.clear();
         layer_ranges.clear();
@@ -264,9 +286,6 @@ public:
 
 private:
     friend class PrintObject;
-    // Number of PrintObjects generated from the same ModelObject and sharing the regions.
-    // ref_cnt could only be modified by the main thread, thus it does not need to be atomic.
-    size_t                                      m_ref_cnt{ 0 };
 };
 
 class PrintObject : public PrintObjectBaseWithState<Print, PrintObjectStep, posCount>
@@ -347,7 +366,7 @@ public:
     const PrintRegion&          printing_region(size_t idx) const throw() { return *m_shared_regions->all_regions[idx].get(); }
     //FIXME returing all possible regions before slicing, thus some of the regions may not be slicing at the end.
     std::vector<std::reference_wrapper<const PrintRegion>> all_regions() const;
-    const PrintObjectRegions*   shared_regions() const throw() { return m_shared_regions; }
+    const PrintObjectRegions*   shared_regions() const { return m_shared_regions.get(); }
 
     bool                        has_support()           const { return m_config.support_material || m_config.support_material_enforce_layers > 0; }
     bool                        has_raft()              const { return m_config.raft_layers > 0; }
@@ -376,32 +395,33 @@ private:
     friend class Print;
     friend class PrintBaseWithState<PrintStep, psCount>;
 
+public:
 	PrintObject(Print* print, ModelObject* model_object, const Transform3d& trafo, PrintInstances&& instances);
+
     ~PrintObject() override {
-        if (m_shared_regions && --m_shared_regions->m_ref_cnt == 0)
-            delete m_shared_regions;
         clear_layers();
         clear_support_layers();
     }
 
+public:
     void                    config_apply(const ConfigBase &other, bool ignore_nonexistent = false) { m_config.apply(other, ignore_nonexistent); }
+
     void                    config_apply_only(const ConfigBase &other, const t_config_option_keys &keys, bool ignore_nonexistent = false) { m_config.apply_only(other, keys, ignore_nonexistent); }
     PrintBase::ApplyStatus  set_instances(PrintInstances &&instances);
+    SlicingSync::PrintSteps set_instances_new(PrintInstances &&instances);
     // Invalidates the step, and its depending steps in PrintObject and Print.
     bool                    invalidate_step(PrintObjectStep step);
     // Invalidates all PrintObject and Print steps.
     bool                    invalidate_all_steps();
-    // Invalidate steps based on a set of parameters changed.
-    // It may be called for both the PrintObjectConfig and PrintRegionConfig.
-    bool                    invalidate_state_by_config_options(
-        const ConfigOptionResolver &old_config, const ConfigOptionResolver &new_config, const std::vector<t_config_option_key> &opt_keys);
     // If ! m_slicing_params.valid, recalculate.
     void                    update_slicing_parameters();
 
     // Called on main thread with stopped or paused background processing to let PrintObject release data for its milestones that were invalidated or canceled.
     void                    cleanup();
 
-    static PrintObjectConfig object_config_from_model_object(const PrintObjectConfig &default_object_config, const ModelObject &object, size_t num_extruders);
+    static PrintObjectConfig object_config_from_model_object(const PrintObjectConfig &default_object_config, const ModelConfigObject &config, size_t num_extruders);
+
+    void set_shared_regions(const std::shared_ptr<PrintObjectRegions>& regions);
 
 private:
     void make_perimeters();
@@ -441,7 +461,7 @@ private:
 
     // Object split into layer ranges and regions with their associated configurations.
     // Shared among PrintObjects created for the same ModelObject.
-    PrintObjectRegions                     *m_shared_regions { nullptr };
+    std::shared_ptr<PrintObjectRegions>     m_shared_regions;
 
     SlicingParameters                       m_slicing_params;
     LayerPtrs                               m_layers;
@@ -521,6 +541,15 @@ using ConstPrintObjectPtrs     = std::vector<const PrintObject*>;
 
 using PrintRegionPtrs          = std::vector<PrintRegion*>;
 
+enum ModelObjectCreationStatus
+{
+    Unknown,
+    Old,
+    New,
+    Moved,
+    Deleted
+};
+
 // The complete print tray with possibly multiple objects.
 class Print : public PrintBaseWithState<PrintStep, psCount>
 {
@@ -555,6 +584,20 @@ public:
         const std::optional<Domain::CustomGCode::Info>& custom_gcode,
         std::vector<std::string>* warnings = nullptr
     ) override;
+
+    SlicingSync::PrintAndObjectSteps update_config(
+        DynamicPrintConfig&& new_full_config,
+        DynamicPrintConfig& filament_overrides
+    );
+
+    static ModelInstancePtrs deep_copy_instances(
+        const ModelInstancePtrs& instances,
+        ModelObject* model_object
+    );
+
+    bool invalidate_object_steps(
+        const SlicingSync::InvalidatedSteps& steps
+    );
 
     void                set_task(const TaskParams &params) override { PrintBaseWithState<PrintStep, psCount>::set_task_impl(params, m_objects); }
     void                process() override;
@@ -643,12 +686,8 @@ public:
     // Returns scaling for each axis representing shrinkage compensations in each axis.
     Vec3d shrinkage_compensation() const;
 
-protected:
     // Invalidates the step, and its depending steps in Print.
     bool                invalidate_step(PrintStep step);
-
-private:
-    bool                invalidate_state_by_config_options(const ConfigOptionResolver &new_config, const std::vector<t_config_option_key> &opt_keys);
 
     void                _make_skirt();
     void                _make_wipe_tower();

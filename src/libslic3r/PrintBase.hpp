@@ -419,7 +419,7 @@ public:
         return retval;
     }
 
-private:
+public:
     StateWithWarnings   m_state[COUNT];
     // Active class StepType or -1 if none is active.
     // If the background processing is canceled, m_step_active may not be resetted
@@ -851,7 +851,7 @@ protected:
         m_state.mark_canceled_unguarded();
     }
 
-private:
+public:
     PrintState<PrintStepEnum, COUNT>    m_state;
 };
 
@@ -935,7 +935,7 @@ protected:
     friend PrintType;
     PrintType                                *m_print;
 
-private:
+public:
     PrintState<PrintObjectStepEnum, COUNT>    m_state;
 };
 

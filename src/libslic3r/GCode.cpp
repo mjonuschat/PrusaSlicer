@@ -73,6 +73,7 @@
 #include "LocalesUtils.hpp"
 
 #include <tbb/parallel_for.h>
+#include <fstream>
 
 // Intel redesigned some TBB interface considerably when merging TBB with their oneAPI set of libraries, see GH #7332.
 // We are using quite an old TBB 2017 U7. Before we update our build servers, let's use the old API, which is deprecated in up to date TBB.
@@ -935,22 +936,16 @@ static inline std::vector<const PrintInstance*> sort_object_instances_by_max_z(c
 // Produce a vector of PrintObjects in the order of their respective ModelObjects in print.model().
 std::vector<const PrintInstance*> sort_object_instances_by_model_order(const Print& print)
 {
-    // Build up map from ModelInstance* to PrintInstance*
-    std::vector<std::pair<const ModelInstance*, const PrintInstance*>> model_instance_to_print_instance;
-    model_instance_to_print_instance.reserve(print.num_object_instances());
-    for (const PrintObject *print_object : print.objects())
-        for (const PrintInstance &print_instance : print_object->instances())
-            model_instance_to_print_instance.emplace_back(print_instance.model_instance, &print_instance);
-    std::sort(model_instance_to_print_instance.begin(), model_instance_to_print_instance.end(), [](auto &l, auto &r) { return l.first < r.first; });
-
     std::vector<const PrintInstance*> instances;
-    instances.reserve(model_instance_to_print_instance.size());
-    for (const ModelObject *model_object : print.model().objects)
-        for (const ModelInstance *model_instance : model_object->instances) {
-            auto it = std::lower_bound(model_instance_to_print_instance.begin(), model_instance_to_print_instance.end(), std::make_pair(model_instance, nullptr), [](auto &l, auto &r) { return l.first < r.first; });
-            if (it != model_instance_to_print_instance.end() && it->first == model_instance)
-                instances.emplace_back(it->second);
+    for (const PrintObject *print_object : print.objects()) {
+        for (const PrintInstance &print_instance : print_object->instances()) {
+            instances.emplace_back(&print_instance);
         }
+    }
+    std::sort(instances.begin(), instances.end(), [](const PrintInstance* a, const PrintInstance* b) {
+        return a->model_instance_index < b->model_instance_index;
+    });
+
     return instances;
 }
 

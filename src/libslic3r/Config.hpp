@@ -709,9 +709,14 @@ public:
     ConfigOptionType        type()      const override { return static_type(); }
     double                  getFloat()  const override { return this->value; }
     ConfigOption*           clone()     const override { return new ConfigOptionFloatTempl(*this); }
-    bool                    operator==(const ConfigOptionFloatTempl &rhs) const throw() { return this->value == rhs.value; }
+    bool                    operator==(const ConfigOptionFloatTempl &rhs) const throw() {
+        if (this->is_nil() && rhs.is_nil()) {
+            return true;
+        }
+        return this->value == rhs.value;
+    }
     bool                    operator< (const ConfigOptionFloatTempl &rhs) const throw() { return this->value <  rhs.value; }
-    
+
     std::string serialize() const override
     {
         std::ostringstream ss;

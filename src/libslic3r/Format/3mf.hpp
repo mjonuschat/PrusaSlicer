@@ -8,6 +8,7 @@
 #include "Slic3r/Domain/CustomGCode.hpp"
 #include "Slic3r/Domain/Model.hpp"
 #include "Slic3r/Semver.hpp"
+#include <boost/optional/optional.hpp>
 #include <optional>
 #include <map>
 

@@ -1517,14 +1517,31 @@ void ModelInstance::transform_polygon(Polygon* polygon) const
     polygon->scale(get_scaling_factor(X), get_scaling_factor(Y)); // scale around polygon origin
 }
 
+bool ModelInstance::operator==(const ModelInstance& rhs) const
+{
+    if (object != rhs.object) {
+        return false;
+    }
+    if (!m_transformation.get_matrix().isApprox(rhs.m_transformation.get_matrix())) {
+        return false;
+    }
+    if (print_volume_state != rhs.print_volume_state) {
+        return false;
+    }
+    if (printable != rhs.printable) {
+        return false;
+    }
+    return true;
+}
+
 // Test whether the two models contain the same number of ModelObjects with the same set of IDs
 // ordered in the same order. In that case it is not necessary to kill the background processing.
-bool model_object_list_equal(const Model &model_old, const Model &model_new)
+bool model_object_list_equal(const ModelObjectPtrs &old_objects, const ModelObjectPtrs &new_objects)
 {
-    if (model_old.objects.size() != model_new.objects.size())
+    if (old_objects.size() != new_objects.size())
         return false;
-    for (size_t i = 0; i < model_old.objects.size(); ++ i)
-        if (model_old.objects[i]->id() != model_new.objects[i]->id())
+    for (size_t i = 0; i < old_objects.size(); ++ i)
+        if (old_objects[i]->id() != new_objects[i]->id())
             return false;
     return true;
 }
