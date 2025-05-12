@@ -101,6 +101,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("automatic_infill_combination", Bool);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label = L("Automatic infill combination");
     def->category = L("Infill");
     def->tooltip = L("This feature automatically combines infill of several layers and speeds up your print by extruding thicker "
@@ -110,6 +111,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("automatic_infill_combination_max_layer_height", FloatOrPercent);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label = L("Automatic infill combination - Max layer height");
     def->category = L("Infill");
     def->tooltip = L("Maximum layer height for combining infill when automatic infill combining is enabled. "
@@ -226,6 +228,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("bottom_solid_layers", Int);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     //TRN Print Settings: "Bottom solid layers"
     def->label = L_CONTEXT("Bottom", "Layers");
     def->category = L("Layers and Perimeters");
@@ -236,6 +239,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("bottom_solid_min_thickness", Double);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label = L_CONTEXT("Bottom", "Layers");
     def->category = L("Layers and Perimeters");
     def->tooltip = L("The number of bottom solid layers is increased above bottom_solid_layers if necessary to satisfy "
@@ -257,6 +261,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("bridge_angle", Double);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label = L("Bridging angle");
     def->category = L("Infill");
     def->tooltip = L("Bridging angle override. If left to zero, the bridging angle will be calculated "
@@ -279,6 +284,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("bridge_flow_ratio", Double);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label = L("Bridge flow ratio");
     def->category = L("Advanced");
     def->tooltip = L("This factor affects the amount of plastic for bridging. "
@@ -292,6 +298,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("top_one_perimeter_type", Enum);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label = L("Single perimeter on top surfaces");
     def->category = L("Layers and Perimeters");
     def->tooltip = L("Use only one perimeter on flat top surface, to give more space to the top infill pattern. Could be applied on topmost surface or all top surfaces.");
@@ -304,6 +311,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("only_one_perimeter_first_layer", Bool);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label = L("Only one perimeter on first layer");
     def->category = L("Layers and Perimeters");
     def->tooltip = L("Use only one perimeter on the first layer.");
@@ -312,6 +320,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("bridge_speed", Double);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label = L("Bridges");
     def->category = L("Speed");
     def->tooltip = L("Speed for printing bridges.");
@@ -323,6 +332,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("over_bridge_speed", FloatOrPercent);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     // TRN: Label for speed used to print infill above bridges.
     def->label = L("Over bridges");
     def->category = L("Speed");
@@ -335,6 +345,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def             = defs.add("enable_dynamic_overhang_speeds", Bool);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label      = L("Enable dynamic overhang speeds");
     def->category   = L("Speed");
     def->tooltip    = L("This setting enables dynamic speed control on overhangs.");
@@ -350,6 +361,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def             = defs.add("overhang_speed_0", FloatOrPercent);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label      = L("speed for 0% overlap (bridge)");
     def->category   = L("Speed");
     def->tooltip    = overhang_speed_setting_description;
@@ -360,6 +372,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def             = defs.add("overhang_speed_1", FloatOrPercent);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label      = L("speed for 25% overlap");
     def->category   = L("Speed");
     def->tooltip    = overhang_speed_setting_description;
@@ -370,6 +383,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def             = defs.add("overhang_speed_2", FloatOrPercent);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label      = L("speed for 50% overlap");
     def->category   = L("Speed");
     def->tooltip    = overhang_speed_setting_description;
@@ -380,6 +394,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def             = defs.add("overhang_speed_3", FloatOrPercent);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label      = L("speed for 75% overlap");
     def->category   = L("Speed");
     def->tooltip    = overhang_speed_setting_description;
@@ -442,6 +457,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("brim_width", Double);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("Brim width");
     def->category = L("Skirt and brim");
     def->tooltip = L("The horizontal width of the brim that will be printed around each object on the first layer. "
@@ -454,6 +470,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("brim_type", Enum);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("Brim type");
     def->category = L("Skirt and brim");
     def->tooltip = L("The places where the brim will be printed around each object on the first layer.");
@@ -467,6 +484,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("brim_separation", Double);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("Brim separation gap");
     def->category = L("Skirt and brim");
     def->tooltip = L("Offset of brim from the printed object. The offset is applied after the elephant foot compensation.");
@@ -598,6 +616,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("dont_support_bridges", Bool);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("Don't support bridges");
     def->category = L("Support material");
     def->tooltip = L("Experimental option for preventing support material from being generated "
@@ -647,6 +666,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("ensure_vertical_shell_thickness", Enum);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label = L("Ensure vertical shell thickness");
     def->category = L("Layers and Perimeters");
     def->tooltip = L("Add solid infill near sloping surfaces to guarantee the vertical shell thickness "
@@ -660,6 +680,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     auto def_top_fill_pattern = def = defs.add("top_fill_pattern", Enum);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label = L("Top fill pattern");
     def->category = L("Infill");
     def->tooltip = L("Fill pattern for top infill. This only affects the top visible layer, and not its adjacent solid shells.");
@@ -679,6 +700,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("bottom_fill_pattern", Enum);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label = L("Bottom fill pattern");
     def->category = L("Infill");
     def->tooltip = L("Fill pattern for bottom infill. This only affects the bottom external visible layer, and not its adjacent solid shells.");
@@ -697,6 +719,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("external_perimeter_extrusion_width", FloatOrPercent);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label = L("External perimeters");
     def->category = L("Extrusion Width");
     def->tooltip = L("Set this to a non-zero value to set a manual extrusion width for external perimeters. "
@@ -710,6 +733,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("external_perimeter_speed", FloatOrPercent);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label = L("External perimeters");
     def->category = L("Speed");
     def->tooltip = L("This separate setting will affect the speed of external perimeters (the visible ones). "
@@ -723,6 +747,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("external_perimeters_first", Bool);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label = L("External perimeters first");
     def->category = L("Layers and Perimeters");
     def->tooltip = L("Print contour perimeters from the outermost one to the innermost one "
@@ -732,6 +757,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("extra_perimeters", Bool);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label = L("Extra perimeters if needed");
     def->category = L("Layers and Perimeters");
     def->tooltip = L("Add more perimeters when needed for avoiding gaps in sloping walls. "
@@ -742,6 +768,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("extra_perimeters_on_overhangs", Bool);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label = L("Extra perimeters on overhangs (Experimental)");
     def->category = L("Layers and Perimeters");
     def->tooltip = L("Detect overhang areas where bridges cannot be anchored, and fill them with "
@@ -749,15 +776,23 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->mode = comExpert;
     SET_DEFAULT(false);
 
-    /*TODO: WHERE DOES THIS LIVE?
     def = defs.add("extruder", Int);
+    def->location = "object_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label = L("Extruder");
     def->category = L("Extruders");
     def->tooltip = L("The extruder to use (unless more specific extruder settings are specified). "
                    "This value overrides perimeter and infill extruders, but not the support extruders.");
     def->min = 0;  // 0 = inherit defaults
-    def->set_enum_labels(ConfigOptionDef::GUIType::i_enum_open, 
-        { L("default"), "1", "2", "3", "4", "5" }); // override label for item 0*/
+    def->choices = {
+        { 0,  L("default") },
+        { 1,  "1" },
+        { 2,  "2" },
+        { 3,  "3" },
+        { 4,  "4" },
+        { 5,  "5" }
+    };
+    SET_DEFAULT(0);
         
     def = defs.add("extruder_colour", String);
     def->location = "toolprint_settings";
@@ -821,6 +856,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("extrusion_width", FloatOrPercent);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("Default extrusion width");
     def->category = L("Extrusion Width");
     def->tooltip = L("Set this to a non-zero value to allow a manual extrusion width. "
@@ -1191,6 +1227,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("fill_angle", Double);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label = L("Fill angle");
     def->category = L("Infill");
     def->tooltip = L("Default base angle for infill orientation. Cross-hatching will be applied to this. "
@@ -1204,6 +1241,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("fill_density", Percent);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->gui_flags = "show_value";
     def->label = L("Fill density");
     def->category = L("Infill");
@@ -1231,6 +1269,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("fill_pattern", Enum);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label = L("Fill pattern");
     def->category = L("Infill");
     def->tooltip = L("Fill pattern for general low-density infill.");
@@ -1268,6 +1307,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("first_layer_acceleration_over_raft", Double);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("First object layer over raft interface");
     def->tooltip = L("This is the acceleration your printer will use for first layer of object above raft interface. Set zero "
                    "to disable acceleration control for first layer of object above raft interface.");
@@ -1340,6 +1380,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("first_layer_speed_over_raft", FloatOrPercent);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("Speed of object first layer over raft interface");
     def->tooltip = L("If expressed as absolute value in mm/s, this speed will be applied to all the print moves "
                    "of the first object layer above raft interface, regardless of their type. If expressed as a percentage "
@@ -1374,6 +1415,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("fuzzy_skin", Enum);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label = L("Fuzzy Skin");
     def->category = L("Fuzzy Skin");
     def->tooltip = L("Fuzzy skin type.");
@@ -1386,6 +1428,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("fuzzy_skin_thickness", Double);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label = L("Fuzzy skin thickness");
     def->category = L("Fuzzy Skin");
     def->tooltip = L("The maximum distance that each skin point can be offset (both ways), "
@@ -1397,6 +1440,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("fuzzy_skin_point_dist", Double);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label = L("Fuzzy skin point distance");
     def->category = L("Fuzzy Skin");
     def->tooltip = L("Perimeters will be split into multiple segments by inserting Fuzzy skin points. "
@@ -1408,6 +1452,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("gap_fill_enabled", Bool);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label = L("Fill gaps");
     def->category = L("Layers and Perimeters");
     def->tooltip = L("Enables filling of gaps between perimeters and between the inner most perimeters and infill.");
@@ -1416,6 +1461,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("gap_fill_speed", Double);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label = L("Gap fill");
     def->category = L("Speed");
     def->tooltip = L("Speed for filling small gaps using short zigzag moves. Keep this reasonably low "
@@ -1540,6 +1586,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("infill_every_layers", Int);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label = L("Combine infill every");
     def->category = L("Infill");
     def->tooltip = L("This feature allows to combine infill and speed up your print by extruding thicker "
@@ -1552,6 +1599,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("infill_anchor", FloatOrPercent);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label = L("Length of the infill anchor");
     def->category = L("Advanced");
     def->tooltip = L("Connect an infill line to an internal perimeter with a short segment of an additional perimeter. "
@@ -1577,6 +1625,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("infill_anchor_max", FloatOrPercent);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label = L("Maximum length of the infill anchor");
     def->category    = def_infill_anchor_min->category;
     def->tooltip = L("Connect an infill line to an internal perimeter with a short segment of an additional perimeter. "
@@ -1601,6 +1650,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("infill_extruder", Int);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label = L("Infill extruder");
     def->category = L("Extruders");
     def->tooltip = L("The extruder to use when printing infill.");
@@ -1610,6 +1660,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("infill_extrusion_width", FloatOrPercent);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label = L("Infill");
     def->category = L("Extrusion Width");
     def->tooltip = L("Set this to a non-zero value to set a manual extrusion width for infill. "
@@ -1631,6 +1682,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("infill_overlap", FloatOrPercent);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label = L("Infill/perimeters overlap");
     def->category = L("Advanced");
     def->tooltip = L("This setting applies an additional overlap between infill and perimeters for better bonding. "
@@ -1643,6 +1695,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("infill_speed", Double);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label = L("Infill");
     def->category = L("Speed");
     def->tooltip = L("Speed for printing the internal fill. Set to zero for auto.");
@@ -1669,6 +1722,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("interface_shells", Bool);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("Interface shells");
     def->tooltip = L("Force the generation of solid shells between adjacent materials/volumes. "
                    "Useful for multi-extruder prints with translucent materials or manual soluble "
@@ -1679,6 +1733,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("mmu_segmented_region_max_width", Double);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("Maximum width of a segmented region");
     def->tooltip = L("Maximum width of a segmented region. Zero disables this feature.");
     def->sidetext = L("mm (zero to disable)");
@@ -1689,6 +1744,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("mmu_segmented_region_interlocking_depth", Double);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("Interlocking depth of a segmented region");
     def->tooltip = L("Interlocking depth of a segmented region. It will be ignored if "
                        "\"mmu_segmented_region_max_width\" is zero or if \"mmu_segmented_region_interlocking_depth\""
@@ -1701,6 +1757,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("ironing", Bool);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label = L("Enable ironing");
     def->tooltip = L("Enable ironing of the top layers with the hot print head for smooth surface");
     def->category = L("Ironing");
@@ -1709,6 +1766,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def           = defs.add("interlocking_beam", Bool);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label    = L("Use beam interlocking");
     def->tooltip  = L("Generate interlocking beam structure at the locations where different filaments touch. This improves the adhesion between filaments, especially models printed in different materials.");
     def->category = L("Advanced");
@@ -1717,6 +1775,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def           = defs.add("interlocking_beam_width", Double);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label    = L("Interlocking beam width");
     def->tooltip  = L("The width of the interlocking structure beams.");
     def->sidetext = L("mm");
@@ -1727,6 +1786,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def           = defs.add("interlocking_orientation", Double);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label    = L("Interlocking direction");
     def->tooltip  = L("Orientation of interlocking beams.");
     def->sidetext = L("°");
@@ -1738,6 +1798,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def           = defs.add("interlocking_beam_layer_count", Int);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label    = L("Interlocking beam layers");
     def->tooltip  = L("The height of the beams of the interlocking structure, measured in number of layers. Less layers is stronger, but more prone to defects.");
     def->min      = 1;
@@ -1747,6 +1808,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def           = defs.add("interlocking_depth", Int);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label    = L("Interlocking depth");
     def->tooltip  = L("The distance from the boundary between filaments to generate interlocking structure, measured in cells. Too few cells will result in poor adhesion.");
     def->min      = 1;
@@ -1756,6 +1818,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def           = defs.add("interlocking_boundary_avoidance", Int);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label    = L("Interlocking boundary avoidance");
     def->tooltip  = L("The distance from the outside of a model where interlocking structures will not be generated, measured in cells.");
     def->min      = 0;
@@ -1765,6 +1828,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("ironing_type", Enum);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label = L("Ironing Type");
     def->category = L("Ironing");
     def->tooltip = L("Ironing Type");
@@ -1777,6 +1841,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("ironing_flowrate", Percent);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label = L("Flow rate");
     def->category = L("Ironing");
     def->tooltip = L("Percent of a flow rate relative to object's normal layer height.");
@@ -1788,6 +1853,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("ironing_spacing", Double);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label = L("Spacing between ironing passes");
     def->category = L("Ironing");
     def->tooltip = L("Distance between ironing lines");
@@ -1798,6 +1864,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("ironing_speed", Double);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label = L("Ironing");
     def->category = L("Speed");
     def->tooltip = L("Ironing");
@@ -2137,6 +2204,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("overhangs", Bool);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label = L("Detect bridging perimeters");
     def->category = L("Layers and Perimeters");
     def->tooltip = L("Experimental option to adjust flow for overhangs (bridge flow will be used), "
@@ -2193,6 +2261,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("perimeter_extruder", Int);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label = L("Perimeter extruder");
     def->category = L("Extruders");
     def->tooltip = L("The extruder to use when printing perimeters and brim. First extruder is 1.");
@@ -2203,6 +2272,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("perimeter_extrusion_width", FloatOrPercent);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label = L("Perimeters");
     def->category = L("Extrusion Width");
     def->tooltip = L("Set this to a non-zero value to set a manual extrusion width for perimeters. "
@@ -2218,6 +2288,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("perimeter_speed", Double);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label = L("Perimeters");
     def->category = L("Speed");
     def->tooltip = L("Speed for perimeters (contours, aka vertical shells). Set to zero for auto.");
@@ -2229,6 +2300,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("perimeters", Int);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label = L("Perimeters");
     def->category = L("Layers and Perimeters");
     def->tooltip = L("This option sets the number of perimeters to generate for each layer. "
@@ -2300,6 +2372,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("raft_contact_distance", Double);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("Raft contact Z distance");
     def->category = L("Support material");
     def->tooltip = L("The vertical distance between object and raft. Ignored for soluble interface.");
@@ -2310,6 +2383,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("raft_expansion", Double);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("Raft expansion");
     def->category = L("Support material");
     def->tooltip = L("Expansion of the raft in XY plane for better stability.");
@@ -2320,6 +2394,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("raft_first_layer_density", Percent);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("First layer density");
     def->category = L("Support material");
     def->tooltip = L("Density of the first raft or support layer.");
@@ -2331,6 +2406,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("raft_first_layer_expansion", Double);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("First layer expansion");
     def->category = L("Support material");
     def->tooltip = L("Expansion of the first raft or support layer to improve adhesion to print bed.");
@@ -2341,6 +2417,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("raft_layers", Int);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("Raft layers");
     def->category = L("Support material");
     def->tooltip = L("The object will be raised by this number of layers, and support material "
@@ -2563,6 +2640,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("seam_position", Enum);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("Seam position");
     def->category = L("Layers and Perimeters");
     def->tooltip = L("Position of perimeters starting points.");
@@ -2576,6 +2654,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("staggered_inner_seams", Bool);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("Staggered inner seams");
     // TRN PrintSettings: "Staggered inner seams"
     def->tooltip = L("This option causes the inner seams to be shifted backwards based on their depth, forming a zigzag pattern.");
@@ -2584,6 +2663,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("scarf_seam_placement", Enum);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label = L("Scarf joint placement");
     def->category = L("Layers and Perimeters");
     def->tooltip = L("Where to place scarf joint seam.");
@@ -2599,6 +2679,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("scarf_seam_only_on_smooth", Bool);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label = L("Scarf joint only on smooth perimeters");
     def->category = L("Layers and Perimeters");
     def->tooltip = L("Only use the scarf joint when the perimeter is smooth.");
@@ -2607,6 +2688,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("scarf_seam_start_height", Percent);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label = L("Scarf start height");
     def->category = L("Layers and Perimeters");
     def->tooltip = L("Start height of the scarf joint specified as fraction of the current layer height.");
@@ -2618,6 +2700,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("scarf_seam_entire_loop", Bool);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label = L("Scarf joint around entire perimeter");
     def->category = L("Layers and Perimeters");
     def->tooltip = L("Extend the scarf around entire length of the perimeter.");
@@ -2626,6 +2709,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("scarf_seam_length", Double);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label = L("Scarf joint length");
     def->category = L("Layers and Perimeters");
     def->tooltip = L("Length of the scarf joint.");
@@ -2636,6 +2720,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("scarf_seam_max_segment_length", Double);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label = L("Max scarf joint segment length");
     def->category = L("Layers and Perimeters");
     def->tooltip = L("Maximum length of any scarf joint segment.");
@@ -2646,6 +2731,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("scarf_seam_on_inner_perimeters", Bool);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label = L("Scarf joint on inner perimeters");
     def->category = L("Layers and Perimeters");
     def->tooltip = L("Use scarf joint on inner perimeters.");
@@ -2706,6 +2792,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("small_perimeter_speed", FloatOrPercent);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label = L("Small perimeters");
     def->category = L("Speed");
     def->tooltip = L("This separate setting will affect the speed of perimeters having radius <= 6.5mm "
@@ -2719,6 +2806,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("solid_infill_below_area", Double);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label = L("Solid infill threshold area");
     def->category = L("Infill");
     def->tooltip = L("Force solid infill for regions having a smaller area than the specified threshold.");
@@ -2729,6 +2817,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("solid_infill_extruder", Int);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label = L("Solid infill extruder");
     def->category = L("Extruders");
     def->tooltip = L("The extruder to use when printing solid infill.");
@@ -2738,6 +2827,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("solid_infill_every_layers", Int);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label = L("Solid infill every");
     def->category = L("Infill");
     def->tooltip = L("This feature allows to force a solid layer every given number of layers. "
@@ -2751,6 +2841,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("solid_infill_extrusion_width", FloatOrPercent);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label = L("Solid infill");
     def->category = L("Extrusion Width");
     def->tooltip = L("Set this to a non-zero value to set a manual extrusion width for infill for solid surfaces. "
@@ -2764,6 +2855,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("solid_infill_speed", FloatOrPercent);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label = L("Solid infill");
     def->category = L("Speed");
     def->tooltip = L("Speed for printing solid regions (top/bottom/internal horizontal shells). "
@@ -2916,6 +3008,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("slicing_mode", Enum);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("Slicing Mode");
     def->category = L("Advanced");
     def->tooltip = L("Use \"Even-odd\" for 3DLabPrint airplane models. Use \"Close holes\" to close all holes in the model.");
@@ -2928,6 +3021,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("support_material", Bool);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("Generate support material");
     def->category = L("Support material");
     def->tooltip = L("Enable support material generation.");
@@ -2935,6 +3029,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("support_material_auto", Bool);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("Auto generated supports");
     def->category = L("Support material");
     def->tooltip = L("If checked, supports will be generated automatically based on the overhang threshold value."\
@@ -2944,6 +3039,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("support_material_xy_spacing", FloatOrPercent);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("XY separation between an object and its support");
     def->category = L("Support material");
     def->tooltip = L("XY separation between an object and its support. If expressed as percentage "
@@ -2958,6 +3054,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("support_material_angle", Double);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("Pattern angle");
     def->category = L("Support material");
     def->tooltip = L("Use this setting to rotate the support material pattern on the horizontal plane.");
@@ -2969,6 +3066,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("support_material_buildplate_only", Bool);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("Support on build plate only");
     def->category = L("Support material");
     def->tooltip = L("Only create support if it lies on a build plate. Don't create support on a print.");
@@ -2977,6 +3075,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("support_material_contact_distance", Double);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("Top contact Z distance");
     def->category = L("Support material");
     def->tooltip = L("The vertical distance between object and support material interface. "
@@ -2993,6 +3092,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("support_material_bottom_contact_distance", Double);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("Bottom contact Z distance");
     def->category = L("Support material");
     def->tooltip = L("The vertical distance between the object top surface and the support material interface. "
@@ -3009,6 +3109,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("support_material_enforce_layers", Int);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("Enforce support for the first");
     def->category = L("Support material");
     def->tooltip = L("Generate support material for the specified number of layers counting from bottom, "
@@ -3023,6 +3124,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("support_material_extruder", Int);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("Support material/raft/skirt extruder");
     def->category = L("Extruders");
     def->tooltip = L("The extruder to use when printing support material, raft and skirt "
@@ -3033,6 +3135,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("support_material_extrusion_width", FloatOrPercent);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("Support material");
     def->category = L("Extrusion Width");
     def->tooltip = L("Set this to a non-zero value to set a manual extrusion width for support material. "
@@ -3046,6 +3149,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("support_material_interface_contact_loops", Bool);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("Interface loops");
     def->category = L("Support material");
     def->tooltip = L("Cover the top contact layer of the supports with loops. Disabled by default.");
@@ -3054,6 +3158,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("support_material_interface_extruder", Int);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("Support material/raft interface extruder");
     def->category = L("Extruders");
     def->tooltip = L("The extruder to use when printing support material interface "
@@ -3064,6 +3169,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("support_material_interface_layers", Int);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("Top interface layers");
     def->category = L("Support material");
     def->tooltip = L("Number of interface layers to insert between the object(s) and support material.");
@@ -3080,6 +3186,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("support_material_bottom_interface_layers", Int);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("Bottom interface layers");
     def->category = L("Support material");
     def->tooltip = L("Number of interface layers to insert between the object(s) and support material. "
@@ -3099,6 +3206,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("support_material_closing_radius", Double);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("Closing radius");
     def->category = L("Support material");
     def->tooltip = L("For snug supports, the support regions will be merged using morphological closing operation."
@@ -3110,6 +3218,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("support_material_interface_spacing", Double);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("Interface pattern spacing");
     def->category = L("Support material");
     def->tooltip = L("Spacing between interface lines. Set zero to get a solid interface.");
@@ -3120,6 +3229,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("support_material_interface_speed", FloatOrPercent);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("Support material interface");
     def->category = L("Support material");
     def->tooltip = L("Speed for printing support material interface layers. If expressed as percentage "
@@ -3132,6 +3242,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("support_material_pattern", Enum);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("Pattern");
     def->category = L("Support material");
     def->tooltip = L("Pattern used to generate support material.");
@@ -3145,6 +3256,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("support_material_interface_pattern", Enum);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("Interface pattern");
     def->category = L("Support material");
     def->tooltip = L("Pattern used to generate support material interface. "
@@ -3160,6 +3272,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("support_material_spacing", Double);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("Pattern spacing");
     def->category = L("Support material");
     def->tooltip = L("Spacing between support material lines.");
@@ -3170,6 +3283,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("support_material_speed", Double);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("Support material");
     def->category = L("Support material");
     def->tooltip = L("Speed for printing support material.");
@@ -3180,6 +3294,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("support_material_style", Enum);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("Style");
     def->category = L("Support material");
     def->tooltip = L("Style and shape of the support towers. Projecting the supports into a regular grid "
@@ -3194,6 +3309,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("support_material_synchronize_layers", Bool);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("Synchronize with object layers");
     def->category = L("Support material");
     // TRN PrintSettings : "Synchronize with object layers"
@@ -3205,6 +3321,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("support_material_threshold", Int);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("Overhang threshold");
     def->category = L("Support material");
     def->tooltip = L("Support material will not be generated for overhangs whose slope angle "
@@ -3220,6 +3337,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("support_material_with_sheath", Bool);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("With sheath around the support");
     def->category = L("Support material");
     def->tooltip = L("Add a sheath (a single perimeter line) around the base support. This makes "
@@ -3229,6 +3347,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("support_tree_angle", Double);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("Maximum Branch Angle");
     def->category = L("Support material");
     // TRN PrintSettings: "Organic supports" > "Maximum Branch Angle"
@@ -3242,6 +3361,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("support_tree_angle_slow", Double);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("Preferred Branch Angle");
     def->category = L("Support material");
     // TRN PrintSettings: "Organic supports" > "Preferred Branch Angle"
@@ -3255,6 +3375,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("support_tree_tip_diameter", Double);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("Tip Diameter");
     def->category = L("Support material");
     // TRN PrintSettings: "Organic supports" > "Tip Diameter"
@@ -3267,6 +3388,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("support_tree_branch_diameter", Double);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("Branch Diameter");
     def->category = L("Support material");
     // TRN PrintSettings: "Organic supports" > "Branch Diameter"
@@ -3280,6 +3402,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("support_tree_branch_diameter_angle", Double);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("Branch Diameter Angle");
     def->category = L("Support material");
     // TRN PrintSettings: "Organic supports" > "Branch Diameter Angle"
@@ -3294,6 +3417,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("support_tree_branch_diameter_double_wall", Double);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("Branch Diameter with double walls");
     def->category = L("Support material");
     // TRN PrintSettings: "Organic supports" > "Branch Diameter"
@@ -3310,6 +3434,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     // the tree support to touch the model at more points, causing better overhang but making support harder to remove.
     def = defs.add("support_tree_branch_distance", Double);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("Branch Distance");
     def->category = L("Support material");
     // TRN PrintSettings: "Organic supports" > "Branch Distance"
@@ -3321,6 +3446,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("support_tree_top_rate", Percent);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("Branch Density");
     def->category = L("Support material");
     // TRN PrintSettings: "Organic supports" > "Branch Density"
@@ -3347,6 +3473,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("thick_bridges", Bool);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("Thick bridges");
     def->category = L("Layers and Perimeters");
     def->tooltip = L("If enabled, bridges are more reliable, can bridge longer distances, but may look worse. "
@@ -3356,6 +3483,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("thin_walls", Bool);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label = L("Detect thin walls");
     def->category = L("Layers and Perimeters");
     def->tooltip = L("Detect single-width walls (parts where two extrusions don't fit and we need "
@@ -3378,6 +3506,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("top_infill_extrusion_width", FloatOrPercent);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label = L("Top solid infill");
     def->category = L("Extrusion Width");
     def->tooltip = L("Set this to a non-zero value to set a manual extrusion width for infill for top surfaces. "
@@ -3392,6 +3521,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("top_solid_infill_speed", FloatOrPercent);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label = L("Top solid infill");
     def->category = L("Speed");
     def->tooltip = L("Speed for printing top solid layers (it only applies to the uppermost "
@@ -3407,6 +3537,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("top_solid_layers", Int);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     //TRN Print Settings: "Top solid layers"
     def->label = L_CONTEXT("Top", "Layers");
     def->category = L("Layers and Perimeters");
@@ -3417,6 +3548,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("top_solid_min_thickness", Double);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings", "volume_settings" };
     def->label = L_CONTEXT("Top", "Layers");
     def->category = L("Layers and Perimeters");
     def->tooltip = L("The number of top solid layers is increased above top_solid_layers if necessary to satisfy "
@@ -3572,9 +3704,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->max = 300.;
     SET_DEFAULT(Percentage{100.});
 
-    /* TODO: Where do these belong?
     def = defs.add("wipe_into_infill", Bool);
-    def->location = "print_settings";
+    def->location = "volume_settings";
     def->category = L("Wipe options");
     def->label = L("Wipe into this object's infill");
     def->tooltip = L("Purging after toolchange will be done inside this object's infills. "
@@ -3583,12 +3714,13 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     SET_DEFAULT(false);
 
     def = defs.add("wipe_into_objects", Bool);
+    def->location = "object_settings";
     def->category = L("Wipe options");
     def->label = L("Wipe into this object");
     def->tooltip = L("Object will be used to purge the nozzle after a toolchange to save material "
                      "that would otherwise end up in the wipe tower and decrease print time. "
                      "Colours of the objects will be mixed as a result.");
-    SET_DEFAULT(false);*/
+    SET_DEFAULT(false);
 
     def = defs.add("wipe_tower_bridging", Double);
     def->location = "print_settings";
@@ -3610,6 +3742,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("xy_size_compensation", Double);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("XY Size Compensation");
     def->category = L("Advanced");
     def->tooltip = L("The object will be grown/shrunk in the XY plane by the configured value "
@@ -3632,6 +3765,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("perimeter_generator", Enum);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("Perimeter generator");
     def->category = L("Layers and Perimeters");
     def->tooltip = L("Classic perimeter generator produces perimeters with constant extrusion width and for "
@@ -3647,6 +3781,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     
     def = defs.add("wall_transition_length", FloatOrPercent);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("Perimeter transition length");
     def->category = L("Advanced");
     def->tooltip  = L("When transitioning between different numbers of perimeters as the part becomes "
@@ -3659,6 +3794,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("wall_transition_filter_deviation", FloatOrPercent);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("Perimeter transitioning filter margin");
     def->category = L("Advanced");
     def->tooltip  = L("Prevent transitioning back and forth between one extra perimeter and one less. This "
@@ -3675,6 +3811,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("wall_transition_angle", Double);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("Perimeter transitioning threshold angle");
     def->category = L("Advanced");
     def->tooltip  = L("When to create transitions between even and odd numbers of perimeters. A wedge shape with"
@@ -3689,6 +3826,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("wall_distribution_count", Int);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("Perimeter distribution count");
     def->category = L("Advanced");
     def->tooltip  = L("The number of perimeters, counted from the center, over which the variation needs to be "
@@ -3699,6 +3837,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("min_feature_size", FloatOrPercent);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("Minimum feature size");
     def->category = L("Advanced");
     def->tooltip  = L("Minimum thickness of thin features. Model features that are thinner than this value will "
@@ -3712,6 +3851,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("min_bead_width", FloatOrPercent);
     def->location = "print_settings";
+    def->overrides_in = { "object_settings" };
     def->label = L("Minimum perimeter width");
     def->category = L("Advanced");
     def->tooltip  = L("Width of the perimeter that will replace thin features (according to the Minimum feature size) "

@@ -16,7 +16,7 @@
 
 #include "libslic3r/I18N.hpp"
 
-#include "3mf_legacy.hpp"
+#include "Slic3r/Biz/Config/3mf_legacy.hpp"
 
 #include <limits>
 #include <stdexcept>
@@ -3643,7 +3643,7 @@ namespace Slic3r {
         unsigned int object_cnt = 0;
         for (const ModelObject* object : model.objects) {
             object_cnt++;
-            const t_layer_config_ranges& ranges = object->layer_config_ranges;
+            const auto& ranges = object->layer_config_ranges_new;
             if (!ranges.empty())
             {
                 pt::ptree& obj_tree = tree.add("objects.object","");
@@ -3659,7 +3659,7 @@ namespace Slic3r {
                     range_tree.put("<xmlattr>.max_z", range.first.second);
 
                     // store range configuration
-                    const ModelConfig& config = range.second;
+                    Slic3rLegacy::DynamicPrintConfig config = Biz::convert_box_to_dynamic_print_config(range.second);
                     for (const std::string& opt_key : config.keys()) {
                         pt::ptree& opt_tree = range_tree.add("option", config.opt_serialize(opt_key));
                         opt_tree.put("<xmlattr>.opt_key", opt_key);
@@ -3864,7 +3864,7 @@ namespace Slic3r {
             if (!obj->name.empty())                    
                 add_metadata(stream, 2, MetadataType::object, "name", obj->name);
             // stores object's config data
-            const ModelConfigObject &config = obj->config;
+            const Slic3rLegacy::DynamicPrintConfig &config = Biz::convert_box_to_dynamic_print_config(obj->object_settings);
             for (const std::string& key : config.keys())
                 add_metadata(stream, 2, MetadataType::object, key, config.opt_serialize(key));
 
@@ -3922,8 +3922,9 @@ namespace Slic3r {
                     }
 
                     // stores volume's config data
-                    for (const std::string& key : volume->config.keys()) {
-                        stream << "   <" << METADATA_TAG << " " << TYPE_ATTR << "=\"" << VOLUME_TYPE << "\" " << KEY_ATTR << "=\"" << key << "\" " << VALUE_ATTR << "=\"" << volume->config.opt_serialize(key) << "\"/>\n";
+                    Slic3rLegacy::DynamicPrintConfig config = Biz::convert_box_to_dynamic_print_config(volume->volume_settings);
+                    for (const std::string& key : config.keys()) {
+                        stream << "   <" << METADATA_TAG << " " << TYPE_ATTR << "=\"" << VOLUME_TYPE << "\" " << KEY_ATTR << "=\"" << key << "\" " << VALUE_ATTR << "=\"" << config.opt_serialize(key) << "\"/>\n";
                     }
 
                     if (const std::optional<EmbossShape> &es = volume->emboss_shape;

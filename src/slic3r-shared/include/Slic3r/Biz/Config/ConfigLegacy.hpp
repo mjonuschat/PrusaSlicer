@@ -31,6 +31,9 @@ std::variant<FDMLegacyConfigPack, SLALegacyConfigPack> load_config_from_legacy_f
 std::variant<FDMLegacyConfigPack, SLALegacyConfigPack> convert_dynamic_print_config_to_new(Slic3rLegacy::DynamicPrintConfig& cfg);
 void fill_config_box_from_legacy(const Slic3rLegacy::DynamicPrintConfig& cfg, Domain::ConfigBox& box);
 
+// The following only works for volume and object settings.
+Slic3rLegacy::DynamicPrintConfig convert_box_to_dynamic_print_config(const Domain::ConfigBox& box);
+
 // Export the config in the old format.
 std::string serialize_as_legacy_config(const FDMLegacyConfigPack&, bool prepend_semicolons = false);
 std::string serialize_as_legacy_config(const SLALegacyConfigPack&, bool prepend_semicolons = false);

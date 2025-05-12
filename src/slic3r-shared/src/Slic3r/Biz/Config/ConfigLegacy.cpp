@@ -476,7 +476,7 @@ static void fill_config_box_from_legacy(const Slic3rLegacy::DynamicPrintConfig& 
             continue;
         }
         if (convert_old_to_new(opt, item, filament_id)) {
-            if (is_filament_override && ! opt->is_nil())
+            if (item.is_nullable() && ! opt->is_nil())
                 item.set_null(false);
         }
     }
@@ -603,6 +603,36 @@ std::string serialize_as_legacy_config(const SLALegacyConfigPack& cfg, bool prep
 {
     std::variant<const FDMLegacyConfigPack*, const SLALegacyConfigPack*> cfgvar = &cfg;
     return serialize_as_legacy_config(cfgvar, prepend_semicolons);
+}
+
+
+
+Slic3rLegacy::DynamicPrintConfig convert_box_to_dynamic_print_config(const Domain::ConfigBox& box)
+{
+    std::vector<std::string> acceptable_keys;
+    
+    if (box.type() == "volume_settings" || box.type() == "object_settings")
+        acceptable_keys = legacy_fdm_data().keys;
+    else if (box.type() == "sla_volume_settings" || box.type() == "sla_object_settings")
+        acceptable_keys = legacy_sla_data().keys;
+    else
+        PANIC();
+
+    std::vector<std::string> keys_to_convert;
+    
+    for (const Domain::ConfigItem& item : box) {
+        if (item.is_null() || std::ranges::find(acceptable_keys, item.name()) == acceptable_keys.end())
+            continue;
+        keys_to_convert.emplace_back(item.name());
+    }
+    std::unique_ptr<Slic3rLegacy::DynamicPrintConfig> cfg_old(Slic3rLegacy::DynamicPrintConfig::new_from_defaults_keys(keys_to_convert));
+
+    for (const std::string& key : cfg_old->keys()) {
+        Slic3rLegacy::ConfigOption* opt = cfg_old->option(key);
+        const Domain::ConfigItem& item = box.opt(key);
+        convert_new_to_old(item, opt, *cfg_old->def()->get(key));
+    }
+    return *cfg_old;
 }
     
 

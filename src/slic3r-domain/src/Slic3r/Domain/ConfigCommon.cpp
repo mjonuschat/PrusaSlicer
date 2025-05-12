@@ -67,7 +67,9 @@ void init_common_fdm_sla_config_items(ConfigDefinitions& defs, const std::string
     def = defs.add("elefant_foot_compensation", Double);
     def->location = technology == "FDM" ? "print_settings" : "sla_print_settings";
     if (technology == "SLA")
-        def->overrides_in = { "sla_material_settings" };
+        def->overrides_in = { "sla_material_settings", "sla_object_settings"};
+    if (technology == "FDM")
+        def->overrides_in = { "object_settings", "volume_settings"};
     def->label = L("Elephant foot compensation");
     def->category = L("Advanced");
     def->tooltip = L("The first layer will be shrunk in the XY plane by the configured value "
@@ -99,6 +101,8 @@ void init_common_fdm_sla_config_items(ConfigDefinitions& defs, const std::string
 
     def = defs.add("layer_height", Double);
     def->location = technology == "FDM" ? "print_settings" : "sla_print_settings";
+    if (technology == "FDM")
+        def->overrides_in = { "object_settings", "volume_settings" };
     def->label = L("Layer height");
     def->category = L("Layers and Perimeters");
     def->tooltip = L("This setting controls the height (and thus the total number) of the slices/layers. "
@@ -130,6 +134,8 @@ void init_common_fdm_sla_config_items(ConfigDefinitions& defs, const std::string
 
     def = defs.add("slice_closing_radius", Double);
     def->location = technology == "FDM" ? "print_settings" : "sla_print_settings";
+    if (technology == "FDM")
+        def->overrides_in = {"object_settings", "volume_settings" };
     def->label = L("Slice gap closing radius");
     def->category = L("Advanced");
     def->tooltip = L("Cracks smaller than 2x gap closing radius are being filled during the triangle mesh slicing. "
