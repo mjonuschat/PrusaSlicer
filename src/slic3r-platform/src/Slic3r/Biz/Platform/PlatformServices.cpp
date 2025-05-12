@@ -27,4 +27,15 @@ void PlatformServices::set_main_thread_dispatcher(std::unique_ptr<IMainThreadDis
     m_timer_queue = std::make_unique<TimerQueue>(*m_main_thread_dispatcher);
 }
 
+void PlatformServices::set_secret_store(std::unique_ptr<ISecretStore>&& secret_store)
+{
+    m_secret_store = std::move(secret_store);
+}
+
+void PlatformServices::set_single_instance_checker(std::unique_ptr<ISingleInstanceChecker>&& single_instance_checker)
+{
+    m_single_instance_checker = std::move(single_instance_checker);
+}
+
+
 } // namespace Slic3r::Biz::Platform

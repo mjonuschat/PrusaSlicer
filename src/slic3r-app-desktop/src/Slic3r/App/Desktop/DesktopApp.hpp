@@ -29,10 +29,13 @@ public:
 
     void OnUnhandledException() override;
 
-private:
-    void init_translations();
+    /**
+     * @brief On Windows, accepting message from other instance must be done in wxApp implementation. See register_win32_device_notification_event()
+     */
+    void handle_app_instance_message(const std::string& message);
 
 private:
+    void init_translations();
 
     MainFrame* m_main_frame{nullptr};
     std::unique_ptr<Plater::PlaterRenderModule> m_plater_module;

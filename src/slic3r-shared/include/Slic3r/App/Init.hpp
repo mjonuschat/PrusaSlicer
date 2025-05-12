@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 namespace Slic3r::App {
 
 extern void init_paths();
@@ -12,6 +14,7 @@ public:
     bool start_gui = true;
     int argc = 0;
     char** argv = nullptr;
+    std::optional<bool>	single_instance;
 };
 
 }

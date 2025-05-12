@@ -102,7 +102,8 @@ MainFrame::MainFrame(
     Domain::Workbench& workbench,
     Biz::Preset::PresetInteractor& preset_interactor
 )
-    : wxFrame(nullptr, wxID_ANY, {}), m_workbench(workbench), m_preset_interactor(preset_interactor)
+    // PrusaSlicer as a window title here is temporary. When being changed - mind that AppInstanceCheck on Windows expects "PrusaSlicer" in the title.
+    : wxFrame(nullptr, wxID_ANY, L"PrusaSlicer"), m_workbench(workbench), m_preset_interactor(preset_interactor)
 {
     localization().add_listener<ILanguageChangedListener>(this);
     auto em = w_config()->em_unit();
@@ -147,6 +148,14 @@ MainFrame::MainFrame(
 #endif
 
     Bind(wxEVT_CLOSE_WINDOW, &MainFrame::on_close, this);
+
+    Bind(wxEVT_SIZE, [this](wxSizeEvent& event) {
+#ifdef _WIN32
+        // TODO
+        //wxGetApp().other_instance_message_handler()->update_windows_properties(this);
+#endif //WIN32
+        event.Skip();
+    });
 }
 
 MainFrame::~MainFrame()

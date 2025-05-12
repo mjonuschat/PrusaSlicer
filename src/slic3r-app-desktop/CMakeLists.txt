@@ -1,5 +1,5 @@
-add_library(slic3r-app-desktop STATIC
-    include/Slic3r/App/Desktop/Run.hpp
+set(SLIC3R_APP_DESKTOP_FILES
+	include/Slic3r/App/Desktop/Run.hpp
 
     src/Slic3r/App/Desktop/DesktopApp.cpp
     src/Slic3r/App/Desktop/DesktopApp.hpp
@@ -13,6 +13,11 @@ add_library(slic3r-app-desktop STATIC
     src/Slic3r/App/Desktop/ModePaletteComboBox.hpp
     src/Slic3r/App/Desktop/GUI_Descriptions.cpp
     src/Slic3r/App/Desktop/GUI_Descriptions.hpp
+    src/Slic3r/App/Desktop/SingleInstanceCheckerFactory.hpp
+    src/Slic3r/App/Desktop/AppInstanceCheck.hpp
+    src/Slic3r/App/Desktop/AppInstanceCheck.cpp
+    src/Slic3r/App/Desktop/SecretStoreFactory.hpp
+
     src/Slic3r/App/Desktop/Config/Field.cpp
     src/Slic3r/App/Desktop/Config/Field.hpp
     src/Slic3r/App/Desktop/Config/OptionsGroup.cpp
@@ -48,7 +53,28 @@ add_library(slic3r-app-desktop STATIC
     src/Slic3r/App/Desktop/Preset/EditorPresetComboBox.hpp
     src/Slic3r/App/Desktop/Preset/Manipulators.cpp
     src/Slic3r/App/Desktop/Preset/Manipulators.hpp
+
+	
 )
+
+if(WIN32)
+    list(APPEND SLIC3R_APP_DESKTOP_FILES
+		src/Slic3r/App/Desktop/SingleInstanceCheckerFactoryWin32.cpp
+        src/Slic3r/App/Desktop/SecretStoreFactoryWX.cpp
+    )
+elseif(APPLE)
+     list(APPEND SLIC3R_APP_DESKTOP_FILES
+        src/Slic3r/App/Desktop/SingleInstanceCheckerFactoryLock.cpp
+        src/Slic3r/App/Desktop/SecretStoreFactoryWX.cpp
+    )
+elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
+     list(APPEND SLIC3R_APP_DESKTOP_FILES
+        src/Slic3r/App/Desktop/SingleInstanceCheckerFactoryLock.cpp
+        src/Slic3r/App/Desktop/SecretStoreFactoryLinux.cpp
+    )
+endif()
+
+add_library(slic3r-app-desktop STATIC ${SLIC3R_APP_DESKTOP_FILES})
 
 set_property(DIRECTORY ${CMAKE_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT slic3r-app-desktop)
 

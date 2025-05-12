@@ -1,4 +1,4 @@
-add_library(slic3r-platform STATIC
+set(SLIC3R_PLATFORM_FILES
     include/Slic3r/App/Platform/AbstractRenderModule.hpp
     src/Slic3r/App/Platform/AbstractRenderModule.cpp
     include/Slic3r/App/Platform/AbstractRenderCanvas.hpp
@@ -25,8 +25,18 @@ add_library(slic3r-platform STATIC
     src/Slic3r/Biz/Platform/Termination.cpp
     include/Slic3r/Biz/Platform/TimerQueue.hpp
     src/Slic3r/Biz/Platform/TimerQueue.cpp
+    include/Slic3r/Biz/Platform/ISecretStore.hpp
+    include/Slic3r/Biz/Platform/ISingleInstanceChecker.hpp
 )
 
+if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
+	list(APPEND SLIC3R_PLATFORM_FILES
+        include/Slic3r/Biz/Platform/SecretStoreLinux.hpp
+        src/Slic3r/Biz/Platform/SecretStoreLinux.cpp
+    )
+endif ()
+
+add_library(slic3r-platform STATIC ${SLIC3R_PLATFORM_FILES})
 
 target_include_directories(slic3r-platform PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_link_libraries(slic3r-platform PUBLIC slic3r-render)

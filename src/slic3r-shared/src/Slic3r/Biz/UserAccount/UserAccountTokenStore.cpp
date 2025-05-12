@@ -1,0 +1,63 @@
+#include "Slic3r/Biz/UserAccount/UserAccountTokenStore.hpp"
+
+#include "Slic3r/Biz/Platform/ISecretStore.hpp"
+#include "Slic3r/Biz/Platform/PlatformServices.hpp"
+#include "Slic3r/Log.hpp"
+
+#include <libassert/assert.hpp>
+#include <boost/algorithm/string.hpp>
+
+namespace Slic3r::Biz::UserAccount::TokenStore {
+
+bool save_tokens(const StoreData& secrets)
+{
+    std::string at = secrets.access_token;
+    if (!at.empty())
+        at = at.substr(0,5) + "..." + at.substr(at.size()-5);
+    SPDLOG_INFO( "{} access_token: {}", __FUNCTION__ , at);
+    std::string tokens;
+    tokens = secrets.access_token
+        + "|" + secrets.refresh_token
+        + "|" + secrets.shared_session_key
+        + "|" + secrets.next_timeout
+        + "|" + secrets.master_pid;
+
+   	if (!Platform::PlatformServices::instance().secret_store().save_secret("PrusaAccount", "tokens", tokens))
+    {
+         SPDLOG_ERROR("Failed to write tokens to the secret store.");
+         return false;
+    }
+    return true;
+}
+
+
+bool load_tokens(StoreData& result)
+{
+    std::string key0, tokens;
+    if (!Platform::PlatformServices::instance().secret_store().load_secret("PrusaAccount", key0, tokens))
+    {
+        SPDLOG_ERROR("Failed to read tokens from the secret store.");
+        return false;
+    }
+    if (key0.empty() || tokens.empty())
+    {
+        return false;
+    }
+    ASSERT(key0 == "tokens");
+    // read data
+    std::vector<std::string> token_list;
+    boost::split(token_list, tokens, boost::is_any_of("|"), boost::token_compress_off);
+    assert(token_list.empty() || token_list.size() == 5);
+    if (token_list.size() < 5) {
+        SPDLOG_ERROR("Size of read secrets is only: {} (expected 5). Data: {}", token_list.size(), tokens);
+    }
+    result.access_token =       token_list.size() > 0 ? token_list[0] : std::string();
+    result.refresh_token =      token_list.size() > 1 ? token_list[1] : std::string();
+    result.shared_session_key = token_list.size() > 2 ? token_list[2] : std::string();
+    result.next_timeout =       token_list.size() > 3 ? token_list[3] : std::string();
+    result.master_pid =         token_list.size() > 4 ? token_list[4] : std::string();
+
+    return true;
+}
+
+}

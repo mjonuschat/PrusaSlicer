@@ -3,6 +3,8 @@
 
 #include "Slic3r/App/Platform/StdMainThreadDispatcher.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
+#include "Slic3r/Biz/Platform/PlatformServices.hpp"
+#include "Slic3r/Biz/SecretStoreDummy.hpp"
 #include "Slic3r/TestUtils/TestData.hpp"
 #include "libslic3r/Model.hpp"
 
@@ -43,6 +45,8 @@ TEST_CASE("Project Interactor Listeners")
     using namespace Slic3r::Biz;
     using namespace trompeloeil;
 
+    std::unique_ptr<SecretStoreDummy> store_dummy = std::make_unique<SecretStoreDummy>();
+    Platform::PlatformServices::instance().set_secret_store(std::move(store_dummy));
 
     Slic3r::Domain::Workbench workbench;
     Slic3r::set_data_dir(Tests::get_datadir().string());

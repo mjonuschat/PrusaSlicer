@@ -11,6 +11,11 @@
 #include "Slic3r/Biz/Slicing/SlicingInteractor.hpp"
 #include "Slic3r/Biz/PrintHost/PrintHostInteractor.hpp"
 #include "Slic3r/Biz/FDMResultCache.hpp"
+#include "Slic3r/Biz/UserAccount/UserAccountInteractor.hpp"
+#include "Slic3r/Biz/UserAccount/IUserAccountListener.hpp"
+#include "Slic3r/Biz/AppInstance/AbstractAppInstanceMessageHandler.hpp"
+#include "Slic3r/Biz/AppInstance/AppInstanceMessageHandlerFactory.hpp"
+#include "Slic3r/Biz/AppInstance/IAppInstanceMessageContentListener.hpp"
 
 namespace Slic3r::Domain {
 class Project;
@@ -38,6 +43,8 @@ class IProjectsChangedListener;
 class ProjectInteractor final :
     public ISelectedBedInstanceChangedListener,
     public ISlicingInputChangedListener,
+    public UserAccount::IUserAccountListener,
+    public AppInstance::IAppInstanceMessageContentListener,
     public WithListeners<
         ISelectedProjectChangedListener,
         IProjectsChangedListener,
@@ -47,6 +54,7 @@ class ProjectInteractor final :
 public:
     explicit ProjectInteractor(Domain::Workbench& workbench, Platform::IMainThreadDispatcher& dispatcher)
         : m_workbench(workbench), m_preset_interactor(workbench), m_scene_interactor(workbench), m_slicing_interactor(dispatcher), m_print_host_interactor(dispatcher)
+        , m_user_account_interactor(dispatcher), m_app_instance_message_handler(AppInstance::create_app_instance_message_handler(dispatcher))
     {
         add_listener<ISelectedConfigContainerChangedListener>(&m_preset_interactor);
         add_listener<ISelectedConfigContainerChangedListener>(&m_scene_interactor);
@@ -57,6 +65,8 @@ public:
         m_preset_interactor.add_listener<ISlicingInputChangedListener>(this);
         m_slicing_interactor.set_listener<Slicing::IFDMResultListener>(&m_fdm_result_cache);
         m_slicing_interactor.add_listener<Slicing::IStatusListener>(&m_status_cache);
+        m_user_account_interactor.add_listener<UserAccount::IUserAccountListener>(this);
+        m_app_instance_message_handler->add_listener<AppInstance::IAppInstanceMessageContentListener>(this);
     }
 
     /**
@@ -210,6 +220,70 @@ public:
      */
     void do_upload(const Slicing::SlicingId id);
 
+    /**
+     * @brief Called after Mainframe is created to set window handle for AppInstanceMessageHandler.
+     */
+    void init_app_instance_message_handler(void* window_handle)
+    {
+        m_app_instance_message_handler->init(window_handle);
+    }
+
+     /**
+     * @brief Passes message to AppInstanceMessageHandler.
+     */
+    void handle_app_instance_message(const std::string& message)
+    {
+        m_app_instance_message_handler->handle_message(message);
+    }
+
+    /**
+     * @brief Called on every successful login to user account and token renewal.
+     * Notifies all other running apps to read token store.
+     */
+    void on_user_account_id_success() override
+    {
+        m_app_instance_message_handler->multicast_message("STORE_READ", {}, Biz::Platform::PlatformServices::instance().app_hash());
+    }
+
+    /**
+     * @brief Called on performed log out.
+     * Notifies all other running apps to read token store.
+     * This function should be called only when logout was NOT caused by accepted STORE_READ.
+     */
+    void  on_user_account_logged_out() override
+    {
+        m_app_instance_message_handler->multicast_message("STORE_READ", {}, Biz::Platform::PlatformServices::instance().app_hash());
+    }
+   
+
+    /**
+    * @brief Callback from AppInstanceMessageHandler.
+    */
+    void on_open_models(std::vector<boost::filesystem::path> message) override {}
+    
+    /**
+     * @brief Callback from AppInstanceMessageHandler.
+     */
+    void on_download_models(std::vector<std::string> message) override {}
+    
+    /**
+     * @brief Callback from AppInstanceMessageHandler.
+     */
+    void on_read_token_store_message() override 
+    {
+        m_user_account_interactor.on_read_token_store_message();
+    }
+
+    /**
+     * @brief Callback from AppInstanceMessageHandler.
+     */
+    void on_login_data(const std::string& message) override {}
+
+    /**
+     * @brief Callback from AppInstanceMessageHandler.
+     */
+    void on_app_go_front() override {}
+
 private:
     void on_slicing_input_changed(const Domain::BedRef& bed_instance) override;
     void on_slicing_input_removed(const Domain::BedRef& bed_instance) override;
@@ -237,6 +311,8 @@ private:
     FDMResultCache m_fdm_result_cache;
     StatusCache m_status_cache;
     PrintHost::PrintHostInteractor m_print_host_interactor;
+    UserAccount::UserAccountInteractor m_user_account_interactor;
+    std::unique_ptr<AppInstance::AbstractAppInstanceMessageHandler> m_app_instance_message_handler;
 };
 
 } // namespace Slic3r::Biz

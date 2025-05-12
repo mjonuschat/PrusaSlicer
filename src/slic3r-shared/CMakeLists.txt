@@ -310,17 +310,78 @@ set(SLIC3R_SHARED_FILES
 		include/Slic3r/Biz/Network/Bonjour.hpp
 		include/Slic3r/Biz/Network/TCPConsole.hpp
 		include/Slic3r/Biz/Network/ServiceConfig.hpp
+        include/Slic3r/Biz/Network/Jwt.hpp        
 		src/Slic3r/Biz/Network/IHttp.cpp
 		src/Slic3r/Biz/Network/HttpCurl.cpp
 		src/Slic3r/Biz/Network/HttpCurlFactory.cpp
 		src/Slic3r/Biz/Network/Bonjour.cpp
 		src/Slic3r/Biz/Network/TCPConsole.cpp
 		src/Slic3r/Biz/Network/ServiceConfig.cpp
+        src/Slic3r/Biz/Network/Jwt.cpp
         include/Slic3r/Biz/SLAResultCache.hpp
         src/Slic3r/Biz/SLAResultCache.cpp
         include/Slic3r/Biz/SLAObjectCache.hpp
         src/Slic3r/Biz/SLAObjectCache.cpp
+
+        include/Slic3r/Biz/UserAccount/IUserAccountListener.hpp
+		include/Slic3r/Biz/UserAccount/IUserAccountSessionListener.hpp
+		include/Slic3r/Biz/UserAccount/IUserAccountActionCallbacks.hpp
+        include/Slic3r/Biz/UserAccount/UserAccountInteractor.hpp
+        include/Slic3r/Biz/UserAccount/UserAccountCommunication.hpp
+        include/Slic3r/Biz/UserAccount/UserAccountSession.hpp
+		include/Slic3r/Biz/UserAccount/UserAccountSessionDispatchBase.hpp
+        include/Slic3r/Biz/UserAccount/UserAccountAction.hpp
+        include/Slic3r/Biz/UserAccount/UserAccountActionStore.hpp
+        include/Slic3r/Biz/UserAccount/UserAccountCommunicationTokenBase.hpp
+        include/Slic3r/Biz/UserAccount/UserAccountTokenStore.hpp
+		include/Slic3r/Biz/UserAccount/UserAccountCodeChallengeGenerator.hpp
+        include/Slic3r/Biz/UserAccount/ConnectMessageHandler.hpp
+        src/Slic3r/Biz/UserAccount/UserAccountInteractor.cpp
+        src/Slic3r/Biz/UserAccount/UserAccountCommunication.cpp
+        src/Slic3r/Biz/UserAccount/UserAccountSession.cpp
+		src/Slic3r/Biz/UserAccount/UserAccountSessionDispatchBase.cpp
+        src/Slic3r/Biz/UserAccount/UserAccountAction.cpp
+        src/Slic3r/Biz/UserAccount/UserAccountCommunicationTokenBase.cpp
+		src/Slic3r/Biz/UserAccount/UserAccountTokenStore.cpp
+		src/Slic3r/Biz/UserAccount/UserAccountCodeChallengeGenerator.cpp
+        src/Slic3r/Biz/UserAccount/ConnectMessageHandler.cpp
+
+		include/Slic3r/Biz/SHA256.hpp
+
+        include/Slic3r/Biz/AppInstance/AbstractAppInstanceMessageHandler.hpp
+        include/Slic3r/Biz/AppInstance/IAppInstanceMessageContentListener.hpp
+        include/Slic3r/Biz/AppInstance/AppInstanceMessageHandlerFactory.hpp
+        src/Slic3r/Biz/AppInstance/AbstractAppInstanceMessageHandler.cpp
 )
+
+if (WIN32)
+    list(APPEND SLIC3R_SHARED_FILES
+		src/Slic3r/Biz/SHA256Win32.cpp
+        src/Slic3r/Biz/AppInstance/AppInstanceMessageHandlerWin32.hpp
+        src/Slic3r/Biz/AppInstance/AppInstanceMessageHandlerWin32.cpp
+        src/Slic3r/Biz/AppInstance/AppInstanceMessageHandlerFactoryWin32.cpp
+
+    )
+elseif (APPLE)
+    list(APPEND SLIC3R_SHARED_FILES
+		src/Slic3r/Biz/SHA256Mac.cpp
+        src/Slic3r/Biz/AppInstance/AppInstanceMessageHandlerMac.hpp
+        include/Slic3r/Biz/AppInstance/AppInstanceMessageHandlerMacWrapper.h
+        src/Slic3r/Biz/AppInstance/AppInstanceMessageHandlerMac.mm
+        src/Slic3r/Biz/AppInstance/AppInstanceMessageHandlerFactoryMac.cpp
+        include/Slic3r/Biz/AppInstance/SingleInstanceCheckerLock.hpp
+        src/Slic3r/Biz/AppInstance/SingleInstanceCheckerLock.cpp
+    )
+elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    list(APPEND SLIC3R_SHARED_FILES
+		src/Slic3r/Biz/SHA256Linux.cpp
+        src/Slic3r/Biz/AppInstance/AppInstanceMessageHandlerLinux.hpp
+        src/Slic3r/Biz/AppInstance/AppInstanceMessageHandlerLinux.cpp
+        src/Slic3r/Biz/AppInstance/AppInstanceMessageHandlerFactoryLinux.cpp
+        include/Slic3r/Biz/AppInstance/SingleInstanceCheckerLock.hpp
+        src/Slic3r/Biz/AppInstance/SingleInstanceCheckerLock.cpp
+    )
+endif ()
 
 find_package(NanoSVG REQUIRED)
 find_package(Boost REQUIRED COMPONENTS filesystem)
@@ -362,6 +423,11 @@ else()
     target_link_libraries(slic3r-shared PUBLIC PNG::PNG libvgcode libcurl)
 endif ()
 target_include_directories(slic3r-shared PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+
+if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    find_package(DBus1 REQUIRED)
+    target_link_libraries(slic3r-shared PUBLIC dbus-1)
+endif()
 
 if (NOT WIN32)
     if (SLIC3R_FHS)

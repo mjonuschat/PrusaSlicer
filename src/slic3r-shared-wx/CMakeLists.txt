@@ -53,14 +53,24 @@ set(SLIC3R_SHARED_WX_FILES
         src/Slic3r/App/WX/Widgets/BitmapComboBox.cpp
         include/Slic3r/App/WX/Widgets/SwitchButton.hpp
         src/Slic3r/App/WX/Widgets/SwitchButton.cpp
+
+        
 )
 
-if (APPLE)
-    set(SLIC3R_SHARED_WX_FILES 
-        ${SLIC3R_SHARED_WX_FILES}
-        src/Slic3r/App/WX/MacUtils.mm
+if (WIN32)
+    list(APPEND SLIC3R_SHARED_WX_FILES
+        include/Slic3r/Biz/WX/SecretStore.hpp
+        src/Slic3r/Biz/WX/SecretStore.cpp
+        include/Slic3r/Biz/WX/SingleInstanceChecker.hpp
+        src/Slic3r/Biz/WX/SingleInstanceChecker.cpp
     )
-endif()
+elseif (APPLE)
+    list(APPEND SLIC3R_SHARED_WX_FILES
+        src/Slic3r/App/WX/MacUtils.mm
+        include/Slic3r/Biz/WX/SecretStore.hpp
+        src/Slic3r/Biz/WX/SecretStore.cpp
+    )
+endif ()
 
 add_library(slic3r-shared-wx STATIC ${SLIC3R_SHARED_WX_FILES})
 target_include_directories(slic3r-shared-wx PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)

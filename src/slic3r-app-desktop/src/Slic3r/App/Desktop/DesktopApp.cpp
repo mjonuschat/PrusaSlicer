@@ -1,11 +1,14 @@
 #include "DesktopApp.hpp"
 #include "MainFrame.hpp"
+#include "AppInstanceCheck.hpp"
+#include "SecretStoreFactory.hpp"
 #include "Slic3r/App/WX/StringConversions.hpp"
 
 #include <Slic3r/Log.hpp>
 #include <Slic3r/App/Platform/WX/WXMainThreadDispatcher.hpp>
 #include <Slic3r/App/WX/WidgetsConfig.hpp>
 #include <Slic3r/App/WX/format.hpp>
+#include "Slic3r/App/WX/StringConversions.hpp"
 #include <Slic3r/App/Init.hpp>
 #include <Slic3r/App/Localization.hpp>
 #include <libslic3r/Model.hpp>
@@ -13,15 +16,40 @@
 #include <Slic3r/Biz/Platform/PlatformServices.hpp>
 #include <Slic3r/Biz/Platform/Termination.hpp>
 
-
 #include <boost/log/trivial.hpp>
 
 wxIMPLEMENT_APP_NO_MAIN(Slic3r::App::Desktop::DesktopApp);
 
+
 namespace Slic3r::App::Desktop {
+
+namespace {
+#ifdef WIN32
+void register_win32_device_notification_event()
+{
+    wxWindow::MSWRegisterMessageHandler(WM_COPYDATA, [](wxWindow* win, WXUINT /* nMsg */, WXWPARAM wParam, WXLPARAM lParam) {
+        auto* app_instance = dynamic_cast<Slic3r::App::Desktop::DesktopApp*>(wxTheApp); 
+		COPYDATASTRUCT* copy_data_structure = { 0 };
+		copy_data_structure = (COPYDATASTRUCT*)lParam;
+		if (copy_data_structure->dwData == 1) {
+			LPCWSTR arguments = (LPCWSTR)copy_data_structure->lpData;
+            std::string args = WX::into_u8(arguments);
+            SPDLOG_INFO("MSG {}", args);
+            app_instance->handle_app_instance_message(args);
+		}
+		return true;
+	});
+}
+#endif // WIN32
+}
 
 int run(const Slic3r::App::InitParams& init_params)
 {
+    init_paths(); // instance_check needs data_dir()
+    bool single_instance_app_config = false; // TODO: read app config for this value
+    if (AppInstance::instance_check(init_params, single_instance_app_config)) { 
+        return 1;
+    }
     auto* app = new Slic3r::App::Desktop::DesktopApp();
     Slic3r::App::Desktop::DesktopApp::SetInstance(app);
     int argc = init_params.argc;
@@ -35,7 +63,7 @@ bool DesktopApp::OnInit()
     init_logging();
     set_log_level(4);
 
-    init_paths();
+    
     init_translations();
     m_workbench.load_configs();
 
@@ -45,6 +73,8 @@ bool DesktopApp::OnInit()
     PlatformServices::instance().set_main_thread_dispatcher(
         std::make_unique<WXMainThreadDispatcher>()
     );
+
+    PlatformServices::instance().set_secret_store(SecretStoreFactory::create_secret_store());
 
     m_project_interactor = std::make_unique<Biz::ProjectInteractor>(
         m_workbench,
@@ -62,6 +92,7 @@ bool DesktopApp::OnInit()
     m_project_interactor->new_project();
 
     m_main_frame = new MainFrame(m_workbench, m_project_interactor->preset_interactor());
+    m_project_interactor->init_app_instance_message_handler(m_main_frame->GetHandle());
     Platform::WX::WXRenderCanvas& canvas = m_main_frame->get_render_canvas();
     Biz::Platform::PlatformServices::instance().set_render_request_handler(&canvas);
     m_main_frame->update_canvas_ui_settings();
@@ -82,6 +113,10 @@ bool DesktopApp::OnInit()
 
     // temp solution because of ScenePresenter is created in canvas.render()
  //   m_project_interactor->load_project("C:\\PS_3\\Test_ObjectList.3mf");
+    
+#ifdef WIN32
+    register_win32_device_notification_event();
+#endif // WIN32
 
     return true;
 }
@@ -134,6 +169,11 @@ void DesktopApp::init_translations()
                                              "Application is started in system language %1%.", localization().active_language());
         wxMessageBox(message, WX::from_u8("PrusaSlicer - Switching language"), wxOK | wxICON_WARNING);
     }
+}
+
+void DesktopApp::handle_app_instance_message(const std::string& message)
+{
+    m_project_interactor->handle_app_instance_message(message);
 }
 
 }
