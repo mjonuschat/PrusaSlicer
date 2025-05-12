@@ -56,6 +56,7 @@ void PlaterRenderModule::on_init(Render::Device& device, Render::ImguiRender& im
     m_scene_presenter =
         std::make_unique<PlaterScenePresenter>(m_workbench, m_project_interactor, *m_device);
     m_project_interactor.add_listener<Biz::ISelectedProjectChangedListener>(m_scene_presenter.get());
+    m_project_interactor.status_cache().add_listener<Biz::IStatusCacheChangedListener>(this);
     m_project_interactor.scene_interactor().add_listener<Biz::Scene::ISceneChangedListener>(
         m_scene_presenter.get()
     );
@@ -88,7 +89,7 @@ void PlaterRenderModule::init_scene_layout()
 {
     // >> This code is same for Plater/PreviewRenderModule
     m_object_list = new ObjectList;
-    m_object_list->init(&m_project_interactor, m_scene_presenter->project_context().object_list_state());
+    m_object_list->init(&m_project_interactor, ObjectList::Mode::Plater);
 
     m_cube_view = new CubeView;
     m_sidebar_bed = new SidebarBed;
@@ -292,6 +293,7 @@ static void my_model_experinets(Biz::Scene::SceneInteractor& scene_interactor, c
 void override_config(ModelConfigObject& config)
 {
     config.set_key_value("fill_pattern", new ConfigOptionEnum<InfillPattern>(ipHoneycomb));
+    config.set_key_value("extruder", new ConfigOptionInt(3));
 }
 
 void PlaterRenderModule::init_scene()

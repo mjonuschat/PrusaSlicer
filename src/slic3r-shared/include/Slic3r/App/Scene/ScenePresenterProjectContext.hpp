@@ -51,8 +51,6 @@ public:
 
     double screen_space_sized_modifier() const { return 0.0075; }
 
-    ObjectListState* object_list_state() { return &m_object_list; }
-
 private:
     void initialize_selection_root() {
         NodeBuilder builder(*m_scene);
@@ -70,7 +68,6 @@ private:
     ModelTriangleMeshManager m_model_triangle_mesh_manager;
     Node* m_selection_root{nullptr};
     Eigen::AlignedBox3f m_selection_bounding_box;
-    ObjectListState m_object_list;
 };
 
 } // namespace Slic3r::App::Scene

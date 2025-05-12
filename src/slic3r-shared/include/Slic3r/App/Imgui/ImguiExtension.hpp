@@ -6,6 +6,7 @@
 #include <string>
 #include <sstream>
 #include <cstdint>
+#include <vector>
 
 namespace Slic3r {
 class ColorRGB;
@@ -15,6 +16,9 @@ class ColorRGBA;
 namespace Slic3r::App::Imgui {
 
 static constexpr float DEFAULT_WINDOW_BG_ALPHA = 0.8f;
+
+static constexpr ImVec4 ORANGE_BUTTON_COLOR { 0.99f, 0.41f, 0.2f , 1.0f };
+static constexpr ImVec4 BLUE_BUTTON_COLOR   { 0.32f, 0.48f, 0.84f, 1.0f };
 
 class UnifiedWindowStyle
 {
@@ -71,5 +75,18 @@ std::string to_string_with_precision(const T a_value, const uint8_t n = 2)
     out << std::fixed << a_value;
     return std::move(out).str();
 }
+
+// Aligned widgets
+// align_x: 0.0f = left, 0.5f = center, 1.0f = right.
+
+// Code from this function is partially borrowed from https://github.com/ocornut/imgui/commit/6a42d6b339e0c86cdf0bce866bf390496155df69
+// It will be removed after update of imgui library, when TextAligned() will be a part of it
+void text_aligned(float align_x, const std::string& label);
+
+void text_with_bg_aligned(float align_x, const std::string& label, ImVec4 color = {});
+bool button_aligned(float align_x, const std::string& label, const ImVec2& size_arg = ImVec2(0, 0), ImGuiButtonFlags flags= ImGuiButtonFlags_None);
+
+bool colored_circle_button_aligned(float align_x, const std::string& label_str, ImVec4 color, const ImVec2& size_arg = ImVec2(0, 0));
+void colored_circle_marker_aligned(float align_x, const std::string& label_str, const std::vector<ImVec4>& colors, const ImVec2& size_arg = ImVec2(0, 0));
 
 } // namespace Slic3r::App::Imgui

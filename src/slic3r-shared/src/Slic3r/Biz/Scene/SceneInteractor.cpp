@@ -230,13 +230,23 @@ void SceneInteractor::edit_name(const Domain::ElementRef& id, const std::string&
 void SceneInteractor::set_printable(const Domain::ElementRef& id, bool is_printable)
 {
     assert(id.volume_id == 0);
-    Domain::Project& project = m_workbench.project(m_selected_project_id);
-    if (id.instance_id == 0)
-        project.find_object_by_id(id.object_id)->printable = is_printable;
-    else
-        project.find_instance_by_id(id.object_id, id.instance_id)->printable = is_printable;
+    Domain::ElementRefs updated;
 
-    const Domain::ElementRefs updated{ id };
+    Domain::Project& project = m_workbench.project(m_selected_project_id);
+    if (id.instance_id == 0) {
+        auto obj = project.find_object_by_id(id.object_id);
+        obj->printable = is_printable;
+        updated.reserve(obj->instances.size());
+        for (auto& inst : obj->instances) {
+            inst->printable = is_printable;
+            updated.push_back({id.object_id, inst->id().id});
+        }
+    }
+    else {
+        project.find_instance_by_id(id.object_id, id.instance_id)->printable = is_printable;
+        updated = { id };
+    }
+
     auto changes = update_instances_bed_placement(project, updated);
 
     for (const auto& bed_ref : changes.updated_beds)
