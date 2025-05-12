@@ -149,7 +149,6 @@ inline bool equal_layering(const SlicingParameters &sp1, const SlicingParameters
 
 typedef std::pair<double,double> t_layer_height_range;
 typedef std::map<t_layer_height_range, ModelConfig> t_layer_config_ranges;
-typedef std::map<t_layer_height_range, ModelConfig> t_layer_config_ranges_new;
 
 std::vector<double> layer_height_profile_from_ranges(
     const SlicingParameters     &slicing_params,

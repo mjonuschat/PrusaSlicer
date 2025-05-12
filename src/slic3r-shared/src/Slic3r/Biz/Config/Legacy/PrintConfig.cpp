@@ -6311,7 +6311,7 @@ static Points to_points(const std::vector<Vec2d> &dpts)
 {
     Points pts; pts.reserve(dpts.size());
     for (auto &v : dpts)
-        pts.emplace_back( coord_t(scale_(v.x())), coord_t(scale_(v.y())) );
+        pts.emplace_back( coord_t(scale_legacy_(v.x())), coord_t(scale_legacy_(v.y())) );
     return pts;    
 }
 

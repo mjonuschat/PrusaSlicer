@@ -191,9 +191,9 @@ public:
     // This constructor has to be implicit (non-explicit) to allow implicit conversion from Eigen expressions.
     template<typename OtherDerived>
     Point(const Eigen::MatrixBase<OtherDerived> &other) : Vec2crd(other) {}
-    static Point new_scale(float x, float y) { return Point(coord_t(scale_(x)), coord_t(scale_(y))); }
+    static Point new_scale(float x, float y) { return Point(coord_t(scale_legacy_(x)), coord_t(scale_legacy_(y))); }
     template<typename OtherDerived>
-    static Point new_scale(const Eigen::MatrixBase<OtherDerived> &v) { return Point(coord_t(scale_(v.x())), coord_t(scale_(v.y()))); }
+    static Point new_scale(const Eigen::MatrixBase<OtherDerived> &v) { return Point(coord_t(scale_legacy_(v.x())), coord_t(scale_legacy_(v.y()))); }
 
     // This method allows you to assign Eigen expressions to MyVectorType
     template<typename OtherDerived>
@@ -232,7 +232,7 @@ inline Point operator* (const Point& l, const double &r)
     return {coord_t(l.x() * r), coord_t(l.y() * r)};
 }
 
-inline bool is_approx(const Point &p1, const Point &p2, coord_t epsilon = coord_t(SCALED_EPSILON))
+inline bool is_approx(const Point &p1, const Point &p2, coord_t epsilon = coord_t(scale_legacy_(EPSILON)))
 {
 	Point d = (p2 - p1).cwiseAbs();
 	return d.x() < epsilon && d.y() < epsilon;

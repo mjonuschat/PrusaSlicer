@@ -20,19 +20,9 @@ using coordf_t = double;
 static constexpr double EPSILON = 1e-4;
 static constexpr double SCALING_FACTOR = 0.000001;
 
-#ifndef scale_
-#define scale_(val) ((val) / SCALING_FACTOR)
+#ifndef scale_legacy_
+#define scale_legacy_(val) ((val) / SCALING_FACTOR)
 #endif
-
-#ifndef SCALED_EPSILON
-#define SCALED_EPSILON scale_(EPSILON)
-#endif
-
-#ifndef UNUSED
-#define UNUSED(x) (void)(x)
-#endif /* UNUSED */
-
-
 
 template<typename T>
 constexpr inline T sqr(T x)

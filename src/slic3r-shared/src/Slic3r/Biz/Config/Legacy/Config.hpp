@@ -62,6 +62,10 @@
 #include "clonable_ptr.hpp"
 #include "libslic3r_legacy.h"
 
+
+// The following macro is #undef-ed at the end of this file.
+#define UNUSED(x) (void)(x)
+
 namespace Slic3rLegacy {
     struct FloatOrPercent
     {
@@ -2830,5 +2834,7 @@ protected:
 };
 
 }
+
+#undef UNUSED
 
 #endif
