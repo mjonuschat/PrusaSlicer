@@ -151,8 +151,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Yoga/LambdaWindow.cpp
         include/Slic3r/App/Yoga/AbstractButton.hpp
         src/Slic3r/App/Yoga/AbstractButton.cpp
-        include/Slic3r/App/Yoga/IconButton.hpp
-        src/Slic3r/App/Yoga/IconButton.cpp
+        include/Slic3r/App/Yoga/ToolbarButton.hpp
+        src/Slic3r/App/Yoga/ToolbarButton.cpp
         include/Slic3r/App/Yoga/LayoutButton.hpp
         src/Slic3r/App/Yoga/LayoutButton.cpp
         include/Slic3r/App/Yoga/Tooltip.hpp
@@ -456,6 +456,7 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
         test/Slic3r/App/Scene/Ray.cpp
 
         test/Slic3r/App/Yoga/LayoutTests.cpp
+        test/Slic3r/App/Yoga/ItemTreeTests.cpp
         test/Slic3r/Biz/ProjectInteractorTests.cpp
         test/Slic3r/Biz/Scene/SceneInteractorTests.cpp
 

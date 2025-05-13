@@ -1,3 +1,7 @@
+///|/ Copyright (c) Prusa Research 2025 Nikita Vanku @Zaraka
+///|/
+///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
+///|/
 #include "Slic3r/App/Yoga/Text.hpp"
 
 #include "Slic3r/App/Render/ImguiRender.hpp"
@@ -8,10 +12,7 @@ Text::Text(const std::string& text, Item* parent) : Item(parent), m_text(text) {
 
 void Text::render(Vec2f pos, Vec2f size)
 {
-    if (!m_parent) {
-        style_node();
-        resize(size);
-    }
+    render_item_begin(pos, size);
 
     ImGui::SetCursorScreenPos(to_im(pos));
 
@@ -23,7 +24,7 @@ void Text::render(Vec2f pos, Vec2f size)
     ImGui::PopStyleColor();
     ImGui::PopFont();
 
-    render_internal(pos, size);
+    render_item_end(pos, size);
 }
 
 const std::string& Text::text() const { return m_text; }

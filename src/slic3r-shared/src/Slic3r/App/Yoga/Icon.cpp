@@ -1,3 +1,7 @@
+///|/ Copyright (c) Prusa Research 2025 Nikita Vanku @Zaraka
+///|/
+///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
+///|/
 #include "Slic3r/App/Yoga/Icon.hpp"
 
 #include "Slic3r/App/Imgui/ImguiExtension.hpp"
@@ -10,15 +14,12 @@ Icon::Icon(wchar_t icon, Item *parent) : Item(parent), m_icon(icon) {
 
 void Icon::render(Vec2f pos, Vec2f size)
 {
-    if (!m_parent) {
-        style_node();
-        resize(size);
-    }
+    render_item_begin(pos, size);
 
     ImGui::SetCursorScreenPos(to_im(pos));
     Imgui::icon_image(m_icon, to_im(size), !enabled());
 
-    render_internal(pos, size);
+    render_item_end(pos, size);
 }
 
 wchar_t Icon::icon() const { return m_icon; }

@@ -101,6 +101,22 @@ private:
     SidebarAutoReslice* m_sidebar_auto_reslice = nullptr;
     // temporary variable to allow to switch yoga layout on/off
 
+    Yoga::ToolbarButton* m_button_travels = nullptr;
+    Yoga::ToolbarButton* m_button_wipes = nullptr;
+    Yoga::ToolbarButton* m_button_retractions = nullptr;
+    Yoga::ToolbarButton* m_button_unretractions = nullptr;
+    Yoga::ToolbarButton* m_button_seams = nullptr;
+    Yoga::ToolbarButton* m_button_tool_changes = nullptr;
+    Yoga::ToolbarButton* m_button_color_changes = nullptr;
+    Yoga::ToolbarButton* m_button_pause_prints = nullptr;
+    Yoga::ToolbarButton* m_button_custom_gcodes = nullptr;
+    Yoga::ToolbarButton* m_button_center_of_gravity = nullptr;
+    Yoga::ToolbarButton* m_button_tool_marker = nullptr;
+    Yoga::ToolbarButton* m_button_shells = nullptr;
+    Yoga::ToolbarButton* m_button_object_list = nullptr;
+    Yoga::ToolbarButton* m_button_legend = nullptr;
+    Yoga::ToolbarButton* m_button_gcode = nullptr;
+
     std::unordered_set<IRenderModuleChangedListener*> m_render_module_changed_listeners;
 
 private:
@@ -108,6 +124,7 @@ private:
     void init_viewers(Render::Device& device);
     void update_fdm_viewer_data(const Biz::Slicing::SlicingId id);
     void init_scene_layout();
+    void update_toolbar_visibility();
 
     void on_invalidate_slice();
     void on_update_layers_slider(const Domain::CustomGCode::Info& info);

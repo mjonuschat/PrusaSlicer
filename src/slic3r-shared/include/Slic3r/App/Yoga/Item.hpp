@@ -1,3 +1,7 @@
+///|/ Copyright (c) Prusa Research 2018 - 2025 Oleksandra Iushchenko @YuSanka, Nikita Vanku @Zaraka
+///|/
+///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
+///|/
 #pragma once
 
 #include "yoga/Yoga.h"
@@ -15,20 +19,39 @@ namespace Slic3r::App::Yoga {
 
 class Item
 {
-public:
+public:    
     explicit Item(Item* parent = nullptr);
     virtual ~Item();
     Item(const Item& rhs) = delete;
     Item& operator=(Item& rhs) = delete;
 
+    /**
+     * @note Layout style cannot be changed inside render
+     * @note You have to call render() of your children as well
+     */
     virtual void render(Vec2f pos, Vec2f size);
 
+    /**
+     * @brief Layout aware & dynamic code should be put here
+     * @note You have to call style_node() of your children as well
+     */
     virtual void style_node();
 
+    /**
+     * @brief Yoga recalculate whole tree
+     * @note should be called only top-level item
+     */
     virtual void resize(Vec2f size);
+
+    /**
+     * @brief process_events processes input events and calls callbacks
+     * @note You have to call process_events() of your children as well
+     */
+    virtual void process_events(Vec2f pos, Vec2f size);
 
     YGNodeRef node() const;
 
+    Item* parent() const;
     /**
      * @return position that is relative to Item parent
      * @note resize has to be called for parent Item
@@ -47,6 +70,14 @@ public:
      * @note resize has to be called for parent Item
      */
     float height() const;
+    /**
+     * @note z layer only works between siblings
+     */
+    float z() const;
+    float left() const;
+    float right() const;
+    float top() const;
+    float bottom() const;
     bool is_visible() const;
     float flex_grow() const;
     float aspect_ratio() const;
@@ -58,6 +89,9 @@ public:
     const std::string& item_name() const;
     const Margins& margin() const;
     const Paddings& padding() const;
+    float gap() const;
+    Orientation orientation() const;
+    bool is_dirty() const;
 
     bool enabled();
     void set_enabled(bool enabled);
@@ -82,13 +116,23 @@ public:
     void set_height(float height);
     void set_width_percent(float width_percent);
     void set_height_percent(float height_percent);
+    void set_left(float left);
+    void set_right(float right);
+    void set_top(float top);
+    void set_bottom(float bottom);
+    /**
+     * @note z layer only works between siblings
+     */
+    void set_z(float z);
 
     virtual void prepend(Item* child);
     virtual void append(Item* child);
     virtual void insert(Item* child, size_t index);
     virtual void remove(Item* child);
+    const std::vector<Item*>& items() const;
     size_t item_count() const;
     Item* get_item(size_t index) const;
+    int index_of(Item* item) const;
 
     static void set_imgui_render(Render::ImguiRender* imgui_render);
 
@@ -104,15 +148,19 @@ protected:
 
     void add_child(Item* child, size_t index);
     void remove_child(Item* child);
+    void update_children_render_order();
 
     void set_style_dirty();
 
     YGNodeRef get_node(size_t index);
     size_t get_node_count() const;
     ImVec2 get_node_pos() const;
-    void render_internal(Vec2f pos, Vec2f size);
+
+    void render_item_begin(Vec2f pos, Vec2f size);
+    void render_item_end(Vec2f pos, Vec2f size);
     void render_node(Vec2f pos, Item* child);
     void render_debug(Vec2f pos, Vec2f size);
+    void process_events_node(Vec2f pos, Item* child);
 
 protected:
     // I will burn in hell for this
@@ -138,13 +186,15 @@ protected:
     float m_gap = 0;
     YGPositionType m_position_type = YGPositionType::YGPositionTypeRelative;
     bool m_debug_border = false;
-    float m_z = 0; // Todo: Resolve Z-Layer
+    float m_z = 0;
     bool m_enabled = true;
+    bool m_visible = true;
 
     Orientation m_orientation = Orientation::Horizontal;
     YGFlexDirection m_flex_direction = YGFlexDirectionRow;
 
     std::vector<Item*> m_children;
+    std::vector<Item*> m_children_render_order;
 };
 
 } // namespace Slic3r::App::Yoga

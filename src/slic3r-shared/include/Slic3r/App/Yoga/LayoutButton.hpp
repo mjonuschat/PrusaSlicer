@@ -1,3 +1,7 @@
+///|/ Copyright (c) Prusa Research 2025 Nikita Vanku @Zaraka
+///|/
+///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
+///|/
 #pragma once
 
 #include "Slic3r/App/Yoga/AbstractButton.hpp"
@@ -18,6 +22,8 @@ public:
         const std::string& label, wchar_t icon, const std::string& tooltip, Item* parent = nullptr
     );
 
+    void process_events(Vec2f pos, Vec2f size) override;
+
     const std::string& label() const;
     void set_label(const std::string& label);
 
@@ -34,6 +40,9 @@ private:
     Rectangle* m_background = nullptr;
     Icon* m_icon = nullptr;
     Text* m_text = nullptr;
+
+    ImColor m_background_color = IM_COL32_WHITE;
+    ImColor m_background_color_hover = IM_COL32_WHITE;
 };
 
 } // namespace Slic3r::App::Yoga

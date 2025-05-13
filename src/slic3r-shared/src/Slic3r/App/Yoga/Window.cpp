@@ -1,3 +1,7 @@
+///|/ Copyright (c) Prusa Research 2025 Nikita Vanku @Zaraka
+///|/
+///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
+///|/
 #include "Slic3r/App/Yoga/Window.hpp"
 
 #include <imgui_internal.h>
@@ -19,8 +23,6 @@ Window::Window(const std::string& window_name, Item* parent) : Item(parent)
     set_padding(10);
 }
 
-Window::~Window() {}
-
 const std::string& Window::window_name() const { return m_window_name; }
 
 void Window::set_window_name(const std::string& prefix) { m_window_name = prefix; }
@@ -35,10 +37,7 @@ void Window::set_flags(int flags) { m_flags = flags; }
 
 void Window::render(Vec2f pos, Vec2f size)
 {
-    if (!m_parent) {
-        style_node();
-        resize(size);
-    }
+    render_item_begin(pos, size);
 
     render_debug(pos, size);
 
@@ -50,7 +49,7 @@ void Window::render(Vec2f pos, Vec2f size)
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.f);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, m_rounding);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(10.f, 10.f));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(0.f, 0.f));
 
     ImGui::Begin(m_window_name.c_str(), nullptr, m_flags);
 
@@ -79,7 +78,7 @@ Vec2f Window::get_item_size()
 
     ImVec2 size = ImGui::GetCursorScreenPos();
 
-    Vec2f result = Vec2f{ImMax(10.f, size.x), ImMax(10.f, size.y)};
+    Vec2f result = Vec2f{ImMax(0.f, size.x), ImMax(0.f, size.y)};
 
     // reset cursor pos
     ImGui::SetCursorScreenPos(old_pos);

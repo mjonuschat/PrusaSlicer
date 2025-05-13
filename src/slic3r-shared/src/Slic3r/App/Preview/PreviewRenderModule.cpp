@@ -15,6 +15,7 @@
 #include "Slic3r/App/SidebarBed.hpp"
 #include "Slic3r/App/SidebarPrint.hpp"
 #include "Slic3r/App/Preview/SidebarPreviewActionButtons.hpp"
+#include "Slic3r/App/Yoga/ToolbarButton.hpp"
 
 #include "Slic3r/Domain/TriangleMesh.hpp"
 
@@ -639,111 +640,63 @@ void PreviewRenderModule::init_scene_layout()
                                            m_sidebar_auto_reslice));
     m_layout->init();
 
-    m_layout->add_toolbar_item(ToolbarID::Middle, ImGui::LegendTravel, to_string(OptionType::Travels), "", {
+    m_button_travels = m_layout->add_toolbar_item(ToolbarID::Middle, ImGui::LegendTravel, to_string(OptionType::Travels), "", {
         .action     = [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::Travels); },
-        .visibility = [this]() {
-            const OptionTypes& options = m_fdm_viewer.options();
-            return m_fdm_viewer.mode() != FdmViewerWrapperMode::EditorPreGCode &&
-                std::find(options.begin(), options.end(), OptionType::Travels) != options.end();
-        },
         .toggled    = [this]() { return m_fdm_viewer.is_option_visible(OptionType::Travels); }
     });
 
-    m_layout->add_toolbar_item(ToolbarID::Middle, ImGui::LegendWipe, to_string(OptionType::Wipes), "", {
+    m_button_wipes = m_layout->add_toolbar_item(ToolbarID::Middle, ImGui::LegendWipe, to_string(OptionType::Wipes), "", {
         .action     = [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::Wipes); },
-        .visibility = [this]() {
-            const OptionTypes& options = m_fdm_viewer.options();
-            return m_fdm_viewer.mode() != FdmViewerWrapperMode::EditorPreGCode &&
-                std::find(options.begin(), options.end(), OptionType::Wipes) != options.end();
-        },
         .toggled    = [this]() { return m_fdm_viewer.is_option_visible(OptionType::Wipes); }
     });
 
-    m_layout->add_toolbar_item(ToolbarID::Middle, ImGui::LegendRetract, to_string(OptionType::Retractions), "", {
+    m_button_retractions = m_layout->add_toolbar_item(ToolbarID::Middle, ImGui::LegendRetract, to_string(OptionType::Retractions), "", {
         .action     = [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::Retractions); },
-        .visibility = [this]() {
-            const OptionTypes& options = m_fdm_viewer.options();
-            return m_fdm_viewer.mode() != FdmViewerWrapperMode::EditorPreGCode &&
-                std::find(options.begin(), options.end(), OptionType::Retractions) != options.end();
-        },
         .toggled    = [this]() { return m_fdm_viewer.is_option_visible(OptionType::Retractions); }
     });
 
-    m_layout->add_toolbar_item(ToolbarID::Middle, ImGui::LegendDeretract, to_string(OptionType::Unretractions), "", {
+    m_button_unretractions = m_layout->add_toolbar_item(ToolbarID::Middle, ImGui::LegendDeretract, to_string(OptionType::Unretractions), "", {
         .action     = [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::Unretractions); },
-        .visibility = [this]() {
-            const OptionTypes& options = m_fdm_viewer.options();
-            return m_fdm_viewer.mode() != FdmViewerWrapperMode::EditorPreGCode &&
-                std::find(options.begin(), options.end(), OptionType::Unretractions) != options.end();
-        },
         .toggled    = [this]() { return m_fdm_viewer.is_option_visible(OptionType::Unretractions); }
     });
 
-    m_layout->add_toolbar_item(ToolbarID::Middle, ImGui::LegendSeams, to_string(OptionType::Seams), "", {
+    m_button_seams = m_layout->add_toolbar_item(ToolbarID::Middle, ImGui::LegendSeams, to_string(OptionType::Seams), "", {
         .action     = [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::Seams); },
-        .visibility = [this]() {
-            const OptionTypes& options = m_fdm_viewer.options();
-            return m_fdm_viewer.mode() != FdmViewerWrapperMode::EditorPreGCode && 
-                std::find(options.begin(), options.end(), OptionType::Seams) != options.end();
-        },
         .toggled    = [this]() { return m_fdm_viewer.is_option_visible(OptionType::Seams); }
     });
 
-    m_layout->add_toolbar_item(ToolbarID::Middle, ImGui::LegendToolChanges, to_string(OptionType::ToolChanges), "", {
+    m_button_tool_changes = m_layout->add_toolbar_item(ToolbarID::Middle, ImGui::LegendToolChanges, to_string(OptionType::ToolChanges), "", {
         .action     = [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::ToolChanges); },
-        .visibility = [this]() {
-            const OptionTypes& options = m_fdm_viewer.options();
-            return m_fdm_viewer.mode() != FdmViewerWrapperMode::EditorPreGCode && 
-                std::find(options.begin(), options.end(), OptionType::ToolChanges) != options.end();
-        },
         .toggled    = [this]() { return m_fdm_viewer.is_option_visible(OptionType::ToolChanges); }
     });
 
-    m_layout->add_toolbar_item(ToolbarID::Middle, ImGui::LegendColorChanges, to_string(OptionType::ColorChanges), "", {
+    m_button_color_changes = m_layout->add_toolbar_item(ToolbarID::Middle, ImGui::LegendColorChanges, to_string(OptionType::ColorChanges), "", {
         .action     = [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::ColorChanges); },
-        .visibility = [this]() {
-            const OptionTypes& options = m_fdm_viewer.options();
-            return m_fdm_viewer.mode() != FdmViewerWrapperMode::EditorPreGCode && 
-                std::find(options.begin(), options.end(), OptionType::ColorChanges) != options.end();
-        },
         .toggled    = [this]() { return m_fdm_viewer.is_option_visible(OptionType::ColorChanges); }
     });
 
-    m_layout->add_toolbar_item(ToolbarID::Middle, ImGui::LegendPausePrints, to_string(OptionType::PausePrints), "", {
+    m_button_pause_prints = m_layout->add_toolbar_item(ToolbarID::Middle, ImGui::LegendPausePrints, to_string(OptionType::PausePrints), "", {
         .action     = [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::PausePrints); },
-        .visibility = [this]() {
-            const OptionTypes& options = m_fdm_viewer.options();
-            return m_fdm_viewer.mode() != FdmViewerWrapperMode::EditorPreGCode && 
-                std::find(options.begin(), options.end(), OptionType::PausePrints) != options.end();
-        },
         .toggled    = [this]() { return m_fdm_viewer.is_option_visible(OptionType::PausePrints); }
     });
 
-    m_layout->add_toolbar_item(ToolbarID::Middle, ImGui::LegendCustomGCodes, to_string(OptionType::CustomGCodes), "", {
+    m_button_custom_gcodes = m_layout->add_toolbar_item(ToolbarID::Middle, ImGui::LegendCustomGCodes, to_string(OptionType::CustomGCodes), "", {
         .action     = [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::CustomGCodes); },
-        .visibility = [this]() {
-            const OptionTypes& options = m_fdm_viewer.options();
-            return m_fdm_viewer.mode() != FdmViewerWrapperMode::EditorPreGCode && 
-                std::find(options.begin(), options.end(), OptionType::CustomGCodes) != options.end();
-        },
         .toggled    = [this]() { return m_fdm_viewer.is_option_visible(OptionType::CustomGCodes); }
     });
 
-    m_layout->add_toolbar_item(ToolbarID::Middle, ImGui::LegendCOG, to_string(OptionType::CenterOfGravity), "", {
+    m_button_center_of_gravity = m_layout->add_toolbar_item(ToolbarID::Middle, ImGui::LegendCOG, to_string(OptionType::CenterOfGravity), "", {
         .action     = [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::CenterOfGravity); },
-        .visibility = [this]() { return m_fdm_viewer.has_data(); },
         .toggled    = [this]() { return m_fdm_viewer.is_option_visible(OptionType::CenterOfGravity); }
     });
 
-    m_layout->add_toolbar_item(ToolbarID::Middle, ImGui::LegendToolMarker, to_string(OptionType::ToolMarker), "", {
+    m_button_tool_marker = m_layout->add_toolbar_item(ToolbarID::Middle, ImGui::LegendToolMarker, to_string(OptionType::ToolMarker), "", {
         .action     = [this]() { m_fdm_viewer.toggle_option_visibility(OptionType::ToolMarker); },
-        .visibility = [this]() { return m_fdm_viewer.has_data(); },
         .toggled    = [this]() { return m_fdm_viewer.is_option_visible(OptionType::ToolMarker); }
     });
 
-    m_layout->add_toolbar_item(ToolbarID::Middle, ImGui::LegendShells, "Shells", "", {
+    m_button_shells = m_layout->add_toolbar_item(ToolbarID::Middle, ImGui::LegendShells, "Shells", "", {
         .action     = [this]() { /* TODO */ },
-        .visibility = [this]() { return m_viewer == &m_fdm_viewer && m_fdm_viewer.mode() != FdmViewerWrapperMode::GCodeViewer; },
         .enabled    = [this]() { return m_viewer == &m_fdm_viewer && m_fdm_viewer.mode() != FdmViewerWrapperMode::GCodeViewer; }
     });
 
@@ -776,27 +729,23 @@ void PreviewRenderModule::init_scene_layout()
 
     // init toolbars
 
-    m_layout->add_toolbar_item(ToolbarID::Top, ImGui::ToolbarObjects, "Object List", "Ctrl + Alt + O", {
+    m_button_object_list = m_layout->add_toolbar_item(ToolbarID::Top, ImGui::ToolbarObjects, "Object List", "Ctrl + Alt + O", {
         .action  = [this]() { m_object_list->set_visible(!m_object_list->is_visible()); },
         .toggled = [this]() { return m_object_list->is_visible(); }
     });
 
-    m_layout->add_toolbar_item(ToolbarID::Bottom, ImGui::ToolbarGraph, "Legend", "", {
+    m_button_legend = m_layout->add_toolbar_item(ToolbarID::Bottom, ImGui::ToolbarGraph, "Legend", "", {
         .action = [this]() { m_viewer->toggle_legend_visible(); },
-        .visibility = [this]() {
-            bool is_visible = m_viewer->has_data();
-            if (m_viewer == &m_fdm_viewer)
-                is_visible &= m_fdm_viewer.mode() == FdmViewerWrapperMode::EditorGCode;
-            return is_visible;
-        },
         .toggled    = [this]() { return m_viewer->has_data() && m_viewer->is_legend_shown(); }
     });
 
-    m_layout->add_toolbar_item(ToolbarID::Bottom, ImGui::ToolbarGCode, "G-code", "", {
+    m_button_gcode = m_layout->add_toolbar_item(ToolbarID::Bottom, ImGui::ToolbarGCode, "G-code", "", {
         .action     = [this]() { m_fdm_viewer.toggle_gcodewindow_visible(); },
-        .visibility = [this]() { return m_fdm_viewer.mode() != FdmViewerWrapperMode::EditorPreGCode && m_fdm_viewer.has_data(); },
         .toggled    = [this]() { return m_fdm_viewer.has_data() && !m_fdm_viewer.is_gcodewindow_visible(); }
     });
+
+    // Initialize toolbar buttons visibility
+    update_toolbar_visibility();
     // <<
 }
 
@@ -952,6 +901,32 @@ static ProcessorResult result_from_gcode_file(const std::string& filename)
     return processor.finalize();
 }
 
+void PreviewRenderModule::update_toolbar_visibility()
+{
+    const OptionTypes& options = m_fdm_viewer.options();
+    auto fdm_has_option = [&](OptionType type) {
+        return std::find(options.begin(), options.end(), type) != options.end();
+    };
+    const bool fdm_has_gcode = m_fdm_viewer.has_data() && m_fdm_viewer.mode() != FdmViewerWrapperMode::EditorPreGCode;
+
+    m_button_travels->set_visible(fdm_has_gcode && fdm_has_option(OptionType::Travels));
+    m_button_retractions->set_visible(fdm_has_gcode && fdm_has_option(OptionType::Retractions));
+    m_button_unretractions->set_visible(fdm_has_gcode && fdm_has_option(OptionType::Unretractions));
+    m_button_seams->set_visible(fdm_has_gcode && fdm_has_option(OptionType::Seams));
+    m_button_tool_changes->set_visible(fdm_has_gcode && fdm_has_option(OptionType::ToolChanges));
+    m_button_color_changes->set_visible(fdm_has_gcode && fdm_has_option(OptionType::ColorChanges));
+    m_button_pause_prints->set_visible(fdm_has_gcode && fdm_has_option(OptionType::PausePrints));
+    m_button_custom_gcodes->set_visible(fdm_has_gcode && fdm_has_option(OptionType::CustomGCodes));
+    m_button_center_of_gravity->set_visible(fdm_has_gcode);
+    m_button_tool_marker->set_visible(fdm_has_gcode);
+    m_button_shells->set_visible(m_fdm_viewer.mode() != FdmViewerWrapperMode::GCodeViewer);
+
+    m_button_legend->set_visible(m_fdm_viewer.has_data() && m_fdm_viewer.mode() == FdmViewerWrapperMode::EditorGCode);
+    m_button_gcode->set_visible(fdm_has_gcode);
+
+    m_layout->set_bottom_toolbar_visible(m_button_legend->is_visible() || m_button_gcode->is_visible());
+}
+
 void PreviewRenderModule::update_fdm_viewer_data(const Biz::Slicing::SlicingId id)
 {
     if (m_project_interactor.selected_bed_slicing_id() != id)
@@ -964,6 +939,8 @@ void PreviewRenderModule::update_fdm_viewer_data(const Biz::Slicing::SlicingId i
     }
 
     m_fdm_viewer.load_from_result(*fdm_result);
+
+    update_toolbar_visibility();
 
     // request redraw
     request_render();

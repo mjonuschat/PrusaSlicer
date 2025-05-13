@@ -1,3 +1,7 @@
+///|/ Copyright (c) Prusa Research 2025 Nikita Vanku @Zaraka
+///|/
+///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
+///|/
 #pragma once
 
 #include "Slic3r/App/Yoga/Item.hpp"
@@ -13,18 +17,14 @@ public:
     struct Callbacks
     {
         std::function<void()> action{nullptr};
-        std::function<bool()> visibility{[]() { return true; }};
+        std::function<void()> hovered_changed{nullptr};
         std::function<bool()> enabled{[]() { return true; }};
         std::function<bool()> toggled{[]() { return false; }};
-        std::function<void()> action_on_arrow{nullptr};
-        std::function<void()> action_on_arrow_hovering{nullptr};
-
-        bool is_empty() const { return !action && !action_on_arrow && !action_on_arrow_hovering; }
     };
 
     explicit AbstractButton(wchar_t icon, const std::string& tooltip = {}, Item* parent = nullptr);
 
-    void render(Vec2f pos, Vec2f size) override;
+    void process_events(Vec2f pos, Vec2f size) override;
 
     Callbacks& callbacks();
 
@@ -43,6 +43,8 @@ public:
     bool checked() const;
     void set_checked(bool checked);
 
+    bool hovered() const;
+
 protected:
     Tooltip* m_tooltip = nullptr;
 
@@ -50,6 +52,7 @@ protected:
     bool m_enabled = true;
     bool m_checkable = false;
     bool m_checked = false;
+    bool m_hovered = false;
     wchar_t m_icon = '\0';
 
     std::string m_shortcut;

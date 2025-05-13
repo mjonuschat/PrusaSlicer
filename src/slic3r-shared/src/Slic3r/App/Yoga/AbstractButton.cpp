@@ -1,3 +1,7 @@
+///|/ Copyright (c) Prusa Research 2025 Nikita Vanku @Zaraka
+///|/
+///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
+///|/
 #include "Slic3r/App/Yoga/AbstractButton.hpp"
 
 #include "Slic3r/App/Yoga/Tooltip.hpp"
@@ -13,18 +17,25 @@ AbstractButton::AbstractButton(wchar_t icon, const std::string& tooltip, Item* p
 {
     static size_t button_tooltip_number = 0;
 
-    m_tooltip = new Tooltip("button_tooltip_" + std::to_string(button_tooltip_number++), tooltip, "", this);
+    m_tooltip =
+        new Tooltip("button_tooltip_" + std::to_string(button_tooltip_number++), tooltip, "", this);
     m_tooltip->set_visible(false);
 }
 
-void AbstractButton::render(Vec2f pos, Vec2f size)
+void AbstractButton::process_events(Vec2f pos, Vec2f size)
 {
-    ImVec2 button_size = to_im(size);
-    ImRect button_bb(to_im(pos), to_im(pos) + button_size);
+    ImRect button_bb(to_im(pos), to_im(pos + size));
 
     // Check if the button is clicked or hovered
-    bool hovered = ImGui::IsMouseHoveringRect(button_bb.Min, button_bb.Max);
+    bool hovered = ImGui::IsMouseHoveringRect(button_bb.Min, button_bb.Max, false);
     bool pressed = m_enabled && hovered && ImGui::IsMouseClicked(0);
+
+    if (m_hovered != hovered) {
+        m_hovered = hovered;
+        if (m_callbacks.hovered_changed) {
+            m_callbacks.hovered_changed();
+        }
+    }
 
     if (pressed) {
         if (m_callbacks.action) {
@@ -32,7 +43,7 @@ void AbstractButton::render(Vec2f pos, Vec2f size)
         }
     }
 
-    Item::render(pos, size);
+    Item::process_events(pos, size);
 }
 
 const std::string& AbstractButton::shortcut() const { return m_shortcut; }
@@ -58,5 +69,7 @@ void AbstractButton::set_checkable(bool newCheckable) { m_checkable = newCheckab
 bool AbstractButton::checked() const { return m_checked; }
 
 void AbstractButton::set_checked(bool newChecked) { m_checked = newChecked; }
+
+bool AbstractButton::hovered() const { return m_hovered; }
 
 } // namespace Slic3r::App::Yoga

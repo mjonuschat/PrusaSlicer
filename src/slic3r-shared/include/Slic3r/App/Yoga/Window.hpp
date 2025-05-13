@@ -1,3 +1,7 @@
+///|/ Copyright (c) Prusa Research 2025 Nikita Vanku @Zaraka
+///|/
+///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
+///|/
 #pragma once
 
 #include "Slic3r/App/Yoga/Item.hpp"
@@ -10,7 +14,6 @@ class Window : public Item
 {
 public:
     Window(const std::string& name, Item* parent = nullptr);
-    virtual ~Window();
 
     const std::string& window_name() const;
     void set_window_name(const std::string& prefix);

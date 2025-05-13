@@ -8,7 +8,7 @@
 #include "Slic3r/App/SidebarBed.hpp"
 #include "Slic3r/App/SidebarPrint.hpp"
 #include "Slic3r/App/Yoga/Toolbar.hpp"
-#include "Slic3r/App/Yoga/IconButton.hpp"
+#include "Slic3r/App/Yoga/ToolbarButton.hpp"
 #include "Slic3r/Assert.hpp"
 #include "Slic3r/Log.hpp"
 
@@ -26,7 +26,7 @@ Vec2f AbstractRenderLayout::frame_padding() const
     return Vec2f(GImGui->Style.FramePadding.x, GImGui->Style.FramePadding.y);
 }
 
-void AbstractRenderLayout::add_toolbar_item(
+Yoga::ToolbarButton* AbstractRenderLayout::add_toolbar_item(
     ToolbarID id,
     wchar_t icon,
     const std::string& tooltip,
@@ -34,24 +34,45 @@ void AbstractRenderLayout::add_toolbar_item(
     Yoga::AbstractButton::Callbacks callbacks
 )
 {
-    Yoga::Toolbar* toolbar = nullptr;
-    switch (id) {
-    case ToolbarID::Top:
-        toolbar = m_top_toolbar;
-        break;
-    case ToolbarID::Middle:
-        toolbar = m_middle_toolbar;
-        break;
-    case ToolbarID::Bottom:
-        toolbar = m_bottom_toolbar;
-        break;
-    }
-
+    Yoga::Toolbar* toolbar = find_toolbar(id);
     ASSERT(toolbar);
 
-    Yoga::IconButton* button = new Yoga::IconButton(icon, tooltip);
+    Yoga::ToolbarButton* button = new Yoga::ToolbarButton(icon, tooltip, toolbar);
+    button->set_shortcut(shortcut);
     button->callbacks() = callbacks;
-    toolbar->append(button);
+
+    return button;
+}
+
+Yoga::Toolbar* AbstractRenderLayout::find_toolbar(ToolbarID id) const
+{
+    switch (id) {
+    case ToolbarID::Top:
+        return m_top_toolbar;
+    case ToolbarID::Middle:
+        return m_middle_toolbar;
+    case ToolbarID::Bottom:
+        return m_bottom_toolbar;
+    }
+    return nullptr;
+}
+
+void AbstractRenderLayout::update_toolbar_tooltip()
+{
+    // if any toolbar is hovered and also subtoolbar is now opened;
+    bool show_tooltips =
+        (m_top_toolbar->hovered() || m_middle_toolbar->hovered() || m_bottom_toolbar->hovered()) &&
+        !m_top_toolbar->any_subtoolbar_opened() && !m_middle_toolbar->any_subtoolbar_opened() &&
+        !m_bottom_toolbar->any_subtoolbar_opened();
+    m_top_toolbar->set_show_tooltips(show_tooltips);
+    m_middle_toolbar->set_show_tooltips(show_tooltips);
+    m_bottom_toolbar->set_show_tooltips(show_tooltips);
+}
+
+void AbstractRenderLayout::set_bottom_toolbar_visible(bool visible)
+{
+    m_bottom_toolbar->set_visible(visible);
+    m_bottom_dummy_toolbar->set_visible(!visible);
 }
 
 Yoga::Toolbar* AbstractRenderLayout::bottom_toolbar() const { return m_bottom_toolbar; }
@@ -130,6 +151,7 @@ void AbstractRenderLayout::init_toolbar_column()
     m_layout_left_toolbar_column->set_orientation(Yoga::Orientation::Vertical);
     m_layout_left_toolbar_column->set_gap(5);
     m_layout_left_toolbar_column->set_justify_content(YGJustify::YGJustifySpaceBetween);
+    m_layout_left_toolbar_column->set_z(1); // Increaze Z so toolbars can be on top of double sliders
 
     m_layout_center_row->append(m_layout_left_toolbar_column);
 
@@ -145,8 +167,8 @@ void AbstractRenderLayout::init_toolbar_column()
     m_middle_toolbar->set_button_max_size({max_tt_size, max_tt_size});
     m_middle_toolbar->set_self_align(YGAlign::YGAlignCenter);
     m_middle_toolbar->set_orientation(Yoga::Orientation::Vertical);
+    m_middle_toolbar->set_collapsible(true);
     m_layout_left_toolbar_column->append(m_middle_toolbar);
-    // TODO: set collapsible middle toolbar
 
     m_bottom_toolbar = new Yoga::Toolbar("bottom_toolbar");
     m_bottom_toolbar->set_button_min_size({min_tt_size, min_tt_size});
@@ -154,6 +176,16 @@ void AbstractRenderLayout::init_toolbar_column()
     m_bottom_toolbar->set_self_align(YGAlign::YGAlignFlexEnd);
     m_bottom_toolbar->set_orientation(Yoga::Orientation::Vertical);
     m_layout_left_toolbar_column->append(m_bottom_toolbar);
+
+    m_bottom_dummy_toolbar = new Yoga::Item(m_layout_left_toolbar_column);
+    m_bottom_dummy_toolbar->set_visible(false);
+
+    m_top_toolbar->callbacks().hovered_changed = [this]() { update_toolbar_tooltip(); };
+    m_middle_toolbar->callbacks().hovered_changed = [this]() { update_toolbar_tooltip(); };
+    m_bottom_toolbar->callbacks().hovered_changed = [this]() { update_toolbar_tooltip(); };
+    m_top_toolbar->callbacks().subtoolbar_opened = [this]() { update_toolbar_tooltip(); };
+    m_middle_toolbar->callbacks().subtoolbar_opened = [this]() { update_toolbar_tooltip(); };
+    m_bottom_toolbar->callbacks().subtoolbar_opened = [this]() { update_toolbar_tooltip(); };
 }
 
 static void SetOurStyleColors()
@@ -252,10 +284,7 @@ private:
 };
 
 AbstractRenderLayout::AbstractRenderLayout(
-    ObjectList* object_list,
-    CubeView* cube_view,
-    SidebarBed* sidebar_bed,
-    SidebarPrint* sidebar_print
+    ObjectList* object_list, CubeView* cube_view, SidebarBed* sidebar_bed, SidebarPrint* sidebar_print
 )
     : m_object_list(object_list)
     , m_cube_view(cube_view)
@@ -271,7 +300,7 @@ void AbstractRenderLayout::render(Vec2f size)
     {
         SetOurStyleVars our_vars;
         m_layout_main.render({}, size);
-        // ImGui::DebugStartItemPicker();
+        // ImGui::ShowMetricsWindow();
         // std::string tree = m_layout_main.debug_dump_tree();
         // ImGui::SetClipboardText(tree.c_str());
     }

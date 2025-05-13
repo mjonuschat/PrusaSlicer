@@ -9,6 +9,7 @@ namespace Slic3r::App {
 
 namespace Yoga {
 class Toolbar;
+class ToolbarButton;
 }
 
 class ObjectList;
@@ -45,7 +46,7 @@ public:
     Vec2f win_padding() const;
     Vec2f frame_padding() const;
 
-    void add_toolbar_item(
+    Yoga::ToolbarButton* add_toolbar_item(
         ToolbarID id,
         wchar_t icon,
         const std::string& tooltip,
@@ -57,10 +58,20 @@ public:
     Yoga::Toolbar* middle_toolbar() const;
     Yoga::Toolbar* bottom_toolbar() const;
 
+    /**
+     * @brief The reason this method exists is because toolbars are justified in "Space around" mode
+     * hiding one would break this design and therefore we need to juggle around dummy items so Layout
+     * will stay the same
+     * */
+    void set_bottom_toolbar_visible(bool visible);
+
 protected:
     virtual void init_left_column();
     virtual void init_middle_column();
     virtual void init_right_column();
+
+    Yoga::Toolbar* find_toolbar(ToolbarID id) const;
+    void update_toolbar_tooltip();
 
 private:
     void init_toolbar_column();
@@ -77,6 +88,7 @@ protected:
     Yoga::Toolbar* m_top_toolbar = nullptr;
     Yoga::Toolbar* m_middle_toolbar = nullptr;
     Yoga::Toolbar* m_bottom_toolbar = nullptr;
+    Yoga::Item* m_bottom_dummy_toolbar = nullptr;
 
     // Inserted from render module
     ObjectList* m_object_list = nullptr;
