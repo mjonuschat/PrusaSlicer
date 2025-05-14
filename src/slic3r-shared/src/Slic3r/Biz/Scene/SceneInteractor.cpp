@@ -6,8 +6,25 @@
 #include <libslic3r/Model.hpp>
 
 #include <Slic3r/Assert.hpp>
+#include <Slic3r/Log.hpp>
 #include <vector>
 #include <algorithm>
+
+namespace fmt {
+template <>
+struct formatter<Slic3r::Domain::ElementRef> {
+    // Parse format specifications (you can extend this if needed)
+    constexpr auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
+        return ctx.begin();
+    }
+
+    // Format the object
+    template <typename FormatContext>
+    auto format(const Slic3r::Domain::ElementRef& e, FormatContext& ctx) const -> decltype(ctx.out()){
+        return fmt::format_to(ctx.out(), "{{obj: {}, inst: {}, vol: {}}}", e.object_id, e.instance_id, e.volume_id);
+    }
+};
+}
 
 namespace Slic3r::Biz::Scene {
 
@@ -127,14 +144,17 @@ void SceneInteractor::new_object_from_mesh(TriangleMesh&& mesh)
     auto& obj = *project.model().add_object();
     auto& vol = *obj.add_volume(std::move(mesh));
     auto& inst = *obj.add_instance();
-    const Domain::ElementRefs updated {{obj.id().id, inst.id().id, 0}};
+    const Domain::ElementRefs updated {{obj.id().id, inst.id().id}};
+    const Domain::ElementRefs updated_vols{{obj.id().id, inst.id().id, vol.id().id}};
     auto changes = update_instances_bed_placement(project, updated);
 
     for (const auto& bed_ref : changes.updated_beds)
         invoke_slicing_input_changed(bed_ref);
     invoke_listeners<ISceneChangedListener>([&](auto* l) {
         l->on_instance_added(m_selected_project_id, updated);
+        l->on_volume_added(m_selected_project_id, updated_vols);
     });
+
 
     set_selection({SelectionMode::Instance, {updated}});
 }
@@ -173,7 +193,7 @@ void SceneInteractor::add_instance(const Transform& xform)
     auto& obj = *project.find_object_by_id(obj_id);
     auto& inst = *obj.add_instance();
     inst.set_transformation(Transformation{Transform3d{xform}});
-    updated.push_back({obj.id().id, inst.id().id, 0});
+    updated.emplace_back(obj.id().id, inst.id().id);
 
     auto changes = update_instances_bed_placement(project, updated);
     for (const auto& bed_ref : changes.updated_beds)
@@ -191,21 +211,24 @@ void SceneInteractor::notify_listener_on_objects(const Slic3r::ModelObjectPtrs& 
     auto& project = m_workbench.project(m_selected_project_id);
     for (const Slic3r::ModelObject* object : objects) {
         Domain::ElementRefs updated;
+        SPDLOG_DEBUG("Notify listner obj {}", object->id().id);
 
         for (const Slic3r::ModelInstance* inst : object->instances)
-            updated.push_back({ object->id().id, inst->id().id });
+            updated.emplace_back(object->id().id, inst->id().id, 0);
 
         auto changes = update_instances_bed_placement(project, updated);
         for (const auto& bed_ref : changes.updated_beds)
             invoke_slicing_input_changed(bed_ref);
 
+        SPDLOG_DEBUG("- on_instance_added: {}", fmt::join(updated, ", "));
         invoke_listeners<ISceneChangedListener>([&](auto* l) {
             l->on_instance_added(m_selected_project_id, updated);
         });
 
         Domain::ElementRefs updated_vols;
         for (const Slic3r::ModelVolume* vol : object->volumes)
-            updated_vols.push_back({ object->id().id, object->instances[0]->id().id, vol->id().id });
+            updated_vols.emplace_back(object->id().id, object->instances[0]->id().id, vol->id().id);
+        SPDLOG_DEBUG("- on_volume_added: {}", fmt::join(updated_vols, ", "));
         invoke_listeners<ISceneChangedListener>([&](auto* l) {
             l->on_volume_added(m_selected_project_id, updated_vols);
         });
@@ -239,7 +262,7 @@ void SceneInteractor::set_printable(const Domain::ElementRef& id, bool is_printa
         updated.reserve(obj->instances.size());
         for (auto& inst : obj->instances) {
             inst->printable = is_printable;
-            updated.push_back({id.object_id, inst->id().id});
+            updated.emplace_back(id.object_id, inst->id().id);
         }
     }
     else {
@@ -321,6 +344,11 @@ void SceneInteractor::extract_selected_instances()
     });
 }
 
+void SceneInteractor::prepare_loaded_project(Domain::Project& project)
+{
+    update_instances_bed_placement(project);
+}
+
 Domain::BedInstance& SceneInteractor::add_bed_instance(size_t config_container_id)
 {
     auto& project = m_projects.find(m_selected_project_id)->second.project;
@@ -398,12 +426,12 @@ void SceneInteractor::select_first_bed_instance()
     select_bed_instance_internal({ cc->id().id, cc->bed_instances().front()->id().id }, true);
 }
 
-const Domain::Project::ConfigContainerList& SceneInteractor::selected_project_config_containers()
+const Domain::Project::ConfigContainerList& SceneInteractor::selected_project_config_containers() const
 {
     return m_projects.find(m_selected_project_id)->second.project.config_containers();
 }
 
-const Domain::ModelInstanceList& SceneInteractor::selected_project_unplaced_model_instances()
+const Domain::ModelInstanceList& SceneInteractor::selected_project_unplaced_model_instances() const
 {
     return m_projects.find(m_selected_project_id)->second.project.unplaced_model_instances();
 }

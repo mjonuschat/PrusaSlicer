@@ -1,9 +1,9 @@
 #pragma once
 
 #ifndef _NDEBUG
-#define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_TRACE
+#define SPDLOG_ACTIVE_LEVEL 0//SPDLOG_LEVEL_TRACE
 #else
-#define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_INFO
+#define SPDLOG_ACTIVE_LEVEL 2//SPDLOG_LEVEL_INFO
 #endif
 #include <spdlog/spdlog.h>
 

@@ -32,18 +32,53 @@ PlaterScenePresenter::PlaterScenePresenter(
     : m_workbench(workbench), m_project_interactor(project_interactor), m_device(device)
     , m_bed_render_updater(*this, workbench, device)
 {
+    load_selected_project();
+
+    m_project_interactor.add_listener<ISelectedProjectChangedListener>(&m_bed_render_updater);
+    m_project_interactor.add_listener<ISelectedProjectChangedListener>(this);
+
+    auto& scene_interactor = m_project_interactor.scene_interactor();
+    scene_interactor.add_listener<ISceneChangedListener>(this);
+    scene_interactor.add_listener<ISceneSelectionChangedListener>(this);
+    scene_interactor.add_listener<ISelectedBedInstanceChangedListener>(this);
+}
+
+void PlaterScenePresenter::load_selected_project()
+{
     size_t project_id = m_project_interactor.selected_project_id();
     PlaterScenePresenter::on_selected_project_changed(project_id);
     const auto& p = m_workbench.project(project_id);
-    Domain::BedRefs updated;
+    Domain::BedRefs updated_beds;
+    Domain::ElementRefs updated_obj_instances;
     for (const auto& cc : p.config_containers()) {
-        for (const auto& bi : cc->bed_instances()){
-            updated.push_back(Domain::BedRef{ cc->id().id, bi->id().id });
+        for (const auto& bi : cc->bed_instances()) {
+            updated_beds.push_back(Domain::BedRef{cc->id().id, bi->id().id});
+            for (const auto& mi : bi->model_instances) {
+                updated_obj_instances.emplace_back(mi->get_object()->id().id, mi->id().id, 0);
+            }
+        }
+    }
+    for (const auto& mi : p.unplaced_model_instances()) {
+        updated_obj_instances.emplace_back(mi->get_object()->id().id, mi->id().id, 0);
+    }
+
+    Domain::ElementRefs updated_obj_volumes;
+    for (const auto* obj : p.model().objects) {
+        ASSERT(!obj->instances.empty());
+        auto obj_id = obj->id().id;
+        auto inst_id = obj->instances.front()->id().id;
+        for (const auto* vol : obj->volumes) {
+            updated_obj_volumes.emplace_back(obj_id, inst_id, vol->id().id);
         }
     }
 
-    PlaterScenePresenter::on_bed_instance_added(project_id, updated);
-    m_project_interactor.add_listener<Biz::ISelectedProjectChangedListener>(&m_bed_render_updater);
+    ASSERT(updated_obj_instances.empty() == updated_obj_volumes.empty());
+
+    PlaterScenePresenter::on_bed_instance_added(project_id, updated_beds);
+    if (!updated_obj_instances.empty()) {
+        on_instance_added(project_id, updated_obj_instances);
+        on_volume_added(project_id, updated_obj_volumes);
+    }
 }
 
 void PlaterScenePresenter::render_scene(Render::CommandBuffer& command_buffer)
@@ -65,6 +100,7 @@ void PlaterScenePresenter::render_imgui(const Render::ScreenInfo& screen_info)
 
 void PlaterScenePresenter::screen_resized(const Render::Rect& viewport)
 {
+    m_viewport = viewport;
     update_cameras([&viewport](auto& cam) { cam.set_viewport(viewport); });
 }
 
@@ -110,7 +146,9 @@ void PlaterScenePresenter::on_selected_project_changed(size_t index)
         m_projects.try_emplace(m_selected_project_id);
         m_bed_render_updater.on_selected_project_changed(m_selected_project_id);
         // a new camera has been created, add the bed updater as listener
-        project_context().scene().camera().add_listener<Scene::ICameraUpdateListener>(&m_bed_render_updater);
+        auto& camera = project_context().scene().camera();
+        camera.add_listener<Scene::ICameraUpdateListener>(&m_bed_render_updater);
+        camera.set_viewport(m_viewport);
     }
 }
 
@@ -205,6 +243,7 @@ void PlaterScenePresenter::build_volume_node(
     const ModelVolume* vol
 )
 {
+    SPDLOG_DEBUG("build_volume inst: {}  vol: {}", inst->id().id, vol->id().id);
     auto& ctx = m_projects[project_id];
     auto& geom_mgr = ctx.model_geometry_manager();
     auto& trimesh_mgr = ctx.model_triangle_mesh_manager();
@@ -416,9 +455,10 @@ void PlaterScenePresenter::on_instance_added(Domain::SelectionId project_id, con
             .set_debug_name(fmt::format("obj: {} inst: {}", obj->id().id, inst->id().id))
             .transform([inst](auto& t) { t = inst->get_matrix(); })
             .set_tag(SceneNodeTag{obj->id().id, 0, inst->id().id, ModelVolumeType::INVALID})
-            .child_for_each(obj->volumes, [&](Scene::NodeBuilder& builder, const ModelVolume* vol) {
-                build_volume_node(builder, project_id, inst, vol);
-            });
+            // .child_for_each(obj->volumes, [&](Scene::NodeBuilder& builder, const ModelVolume* vol) {
+            //     build_volume_node(builder, project_id, inst, vol);
+            // })
+            ;
         scn.add_child(builder.build().release());
     }
 }
@@ -479,21 +519,27 @@ void PlaterScenePresenter::on_volume_added(Domain::SelectionId project_id, const
 {
     // find all instances of given object id and insert the volume node as child
     DEBUG_ASSERT(volumes.size() > 0);
-    const auto obj_id = volumes.front().object_id;
-    DEBUG_ASSERT(std::all_of(volumes.begin(), volumes.end(), [=](const Domain::ElementRef& vol) {
-        return vol.object_id == obj_id;
-    }));
+
+    std::set<size_t> object_ids;
+    for (const auto& v : volumes)
+        object_ids.insert(v.object_id);
+    // const auto obj_id = volumes.front().object_id;
+    // DEBUG_ASSERT(std::all_of(volumes.begin(), volumes.end(), [=](const Domain::ElementRef& vol) {
+    //     return vol.object_id == obj_id;
+    // }));
     auto& scene = m_projects[project_id].scene();
-    const auto* obj = m_workbench.project(project_id).find_object_by_id(obj_id);;
+    // const auto* obj = m_workbench.project(project_id).find_object_by_id(obj_id);
 
     Scene::visit_conditional(scene.root(), [&](Scene::Node& n) {
         const SceneNodeTag* t = n.tag_of_type<SceneNodeTag>();
-        if (t != nullptr && t->volume_id == 0 && t->object_id == obj_id) {
+        if (t != nullptr && t->volume_id == 0 && object_ids.contains(t->object_id)) {
             // root of the instance
-
+            const auto* obj = m_workbench.project(project_id).find_object_by_id(t->object_id);
             const auto* inst = Domain::find_by_id<ModelInstance>(obj->instances, t->instance_id);
             Scene::NodeBuilder builder{scene};
             for (const auto& e : volumes) {
+                if (e.object_id != t->object_id)
+                    continue;
                 const auto* vol = Domain::find_by_id<ModelVolume>(obj->volumes, e.volume_id);
                 build_volume_node(builder, project_id, inst, vol);
                 scene.add_child(builder.build().release(), &n);

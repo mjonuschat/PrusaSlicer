@@ -85,6 +85,8 @@ public:
     void set_printable(const Domain::ElementRef& id, bool is_printable);
     void extract_selected_instances();
 
+    void prepare_loaded_project(Domain::Project& project);
+
     Domain::BedInstance& add_bed_instance(size_t config_container_id);
     void remove_bed_instance(const Domain::BedRef& instance);
     void transform_bed_instance(const Domain::BedRef& instance, const Transform& xform);
@@ -93,9 +95,10 @@ public:
     void select_first_bed_instance();
     const Domain::BedRef& selected_bed_instance() const { return m_selected_bed_instance; }
 
-    const Domain::Project::ConfigContainerList&     selected_project_config_containers();
-    const Domain::ModelInstanceList&                selected_project_unplaced_model_instances();
-    Domain::SelectionId                             selected_config_container_id() { return m_selected_config_container_id; }
+    const Domain::Project::ConfigContainerList& selected_project_config_containers() const;
+    const Domain::ModelInstanceList& selected_project_unplaced_model_instances() const;
+    Domain::SelectionId selected_config_container_id() const
+    { return m_selected_config_container_id; }
 
     /**
      * @name Scene selection

@@ -10,6 +10,12 @@
 
 namespace Slic3r::Biz::Preset {
 
+void PresetInteractor::prepare_config_container_preset(Domain::SelectionId project_id, Domain::SelectionId config_container_id)
+{
+    auto& ccc = get_or_create_config_container_context(project_id, config_container_id);
+
+}
+
 
 void PresetInteractor::on_selected_config_container_changed(Domain::SelectionId project_id, Domain::SelectionId container_id)
 {

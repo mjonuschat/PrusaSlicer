@@ -34,6 +34,7 @@ public:
     using GeometryManager = Render::GeometryManager<std::string>;
     using TriangleMeshManager = Scene::TriangleMeshManager<std::string>;
 
+    void load_selected_project();
     PlaterScenePresenter(
         const Domain::Workbench& m_workbench,
         Biz::ProjectInteractor& project_interactor,
@@ -125,6 +126,7 @@ private:
     const Domain::Workbench& m_workbench;
     Biz::ProjectInteractor& m_project_interactor;
     Render::Device& m_device;
+    Render::Rect m_viewport;
 
     Domain::SelectionId m_selected_project_id{Domain::INVALID_ID};
     ProjectContexts m_projects;

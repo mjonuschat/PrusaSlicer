@@ -13,6 +13,17 @@ struct ElementRef
     size_t instance_id{0};
     size_t volume_id{0};
 
+    ElementRef() = default;
+    ElementRef(const ElementRef&) = default;
+    ElementRef(ElementRef&&) = default;
+
+    ElementRef(size_t obj_id, size_t inst_id = 0, size_t vol_id = 0)
+        : object_id(obj_id), instance_id(inst_id), volume_id(vol_id)
+    {}
+
+    ElementRef& operator=(const ElementRef&) = default;
+    ElementRef& operator=(ElementRef&&) = default;
+
     bool operator==(const ElementRef& rhs) const { return as_tuple() == rhs.as_tuple(); }
 
     bool operator!=(const ElementRef& rhs) const { return as_tuple() != rhs.as_tuple(); }

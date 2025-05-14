@@ -22,7 +22,7 @@ Domain::SelectionId ProjectInteractor::new_project()
 Domain::SelectionId ProjectInteractor::load_project(const std::string& file_path)
 {
     Domain::Project project;
-    initialize_new_project_before_inserting(project);
+    //initialize_new_project_before_inserting(project);
     project.load(file_path);
     Domain::SelectionId project_id = add_project(std::move(project));
 
@@ -39,14 +39,16 @@ void ProjectInteractor::initialize_new_project_before_inserting(Domain::Project&
 void ProjectInteractor::initialize_inserted_project(size_t project_id)
 {
     auto& p = m_workbench.project(project_id);
-    const auto& cc_ptr = m_workbench.project(project_id).config_containers().front();
-    size_t cc_id = cc_ptr->id().id;
-    const auto& selected_printer_preset =
-        m_preset_interactor.config_container_context(project_id, cc_id).printer.edited_preset;
+    for (const auto& cc_ptr : m_workbench.project(project_id).config_containers()) {
+        size_t cc_id = cc_ptr->id().id;
+        const auto& selected_printer_preset =
+            m_preset_interactor.config_container_context(project_id, cc_id).printer.edited_preset;
 
-    Domain::Bed& bed = p.bed_container().add_bed(selected_printer_preset, m_workbench.preset_bundle());
-    cc_ptr->set_bed(bed);
-    m_scene_interactor.add_bed_instance(cc_id);
+        Domain::Bed& bed =
+            p.bed_container().add_bed(selected_printer_preset, m_workbench.preset_bundle());
+        cc_ptr->set_bed(bed);
+        m_scene_interactor.add_bed_instance(cc_id);
+    }
     m_scene_interactor.notify_listener_on_objects();
 }
 
@@ -111,12 +113,16 @@ Domain::SelectionId ProjectInteractor::add_project(Domain::Project&& p)
     const Domain::SelectionId first_container_id = config_container.id().id;
     Domain::SelectionId project_id = m_workbench.next_project_id();
     projects.emplace(project_id, std::move(p));
-    invoke_listeners<IProjectsChangedListener>([project_id](auto* l) { l->on_project_added(project_id); });
+    invoke_listeners<IProjectsChangedListener>([project_id](auto* l) {
+        l->on_project_added(project_id);
+    });
     do_select_project(project_id);
     do_select_config_container(first_container_id);
 
+    if (!config_container.bed_instances().empty()) {
+        m_preset_interactor.prepare_config_container_preset(project_id, config_container.id().id);
+    }
     initialize_inserted_project(project_id);
-
     const Domain::SelectionId first_bed_instance_id = config_container.bed_instances().front()->id().id;
     m_scene_interactor.select_bed_instance({ first_container_id, first_bed_instance_id });
 

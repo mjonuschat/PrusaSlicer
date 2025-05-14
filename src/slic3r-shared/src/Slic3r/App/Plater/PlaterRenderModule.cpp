@@ -56,20 +56,7 @@ void PlaterRenderModule::on_init(Render::Device& device, Render::ImguiRender& im
     ); // Todo: move this somewhere where it is invoked once
     m_scene_presenter =
         std::make_unique<PlaterScenePresenter>(m_workbench, m_project_interactor, *m_device);
-    m_project_interactor.add_listener<Biz::ISelectedProjectChangedListener>(m_scene_presenter.get());
     m_project_interactor.status_cache().add_listener<Biz::IStatusCacheChangedListener>(this);
-    m_project_interactor.scene_interactor().add_listener<Biz::Scene::ISceneChangedListener>(
-        m_scene_presenter.get()
-    );
-    m_project_interactor.scene_interactor().add_listener<Biz::Scene::ISceneSelectionChangedListener>(
-        m_scene_presenter.get()
-    );
-    m_project_interactor.scene_interactor().add_listener<Biz::ISelectedBedInstanceChangedListener>(
-        &m_project_interactor
-    );
-    m_project_interactor.scene_interactor().add_listener<Biz::ISelectedBedInstanceChangedListener>(
-        m_scene_presenter.get()
-    );
     init_gizmos();
     init_scene();
     init_scene_layout();
@@ -306,6 +293,7 @@ void PlaterRenderModule::init_scene()
 
     Domain::Project& project = m_project_interactor.selected_project();
     const auto& bed = project.config_containers().front()->bed();
+#if 0
 #if 1
     Domain::SelectionId config_container_id = m_project_interactor.scene_interactor().selected_config_container_id();
     const Domain::ConfigContainer* cc = m_project_interactor.selected_project().find_config_container(config_container_id);
@@ -376,6 +364,7 @@ void PlaterRenderModule::init_scene()
         }
     }
 
+#endif
 #endif
     m_scene_presenter->scene().log_nodes();
     m_scene_presenter->update_objects_shadows_data();
@@ -1005,7 +994,7 @@ void PlaterRenderModule::render_imgui(Render::CommandBuffer & cmd_buffer)
     if (ImGui::Begin("Load test", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
         if (ImGui::Button("Load project from test 3mf")) {
             // temp solution because of ScenePresenter is created in canvas.render()
-            m_project_interactor.load_project("C:\\PS_3\\Test_ObjectList.3mf");
+            m_project_interactor.load_project("/Users/jan.bartipan/Downloads/apply_test_object.3mf");
         }
     }
     ImGui::End();

@@ -1,8 +1,5 @@
 #include "Slic3r/Domain/Project.hpp"
 
-#include "libslic3r/NSVGUtils.hpp"
-
-#include <boost/geometry/index/detail/algorithms/bounds.hpp>
 #include <libslic3r/Model.hpp>
 #include <libslic3r/FileReader.hpp>
 
@@ -12,14 +9,34 @@ Project::Project() : m_model(new Model()) {}
 
 void Project::load(const std::string& file_path)
 {
-    m_model = std::make_unique<Model>(FileReader::load_model(file_path));
+    DynamicPrintConfig config;
+    WipeTowersOnBeds wipe_towers;
+    CustomGCodesOnBeds custom_gcodes;
+
+    ConfigSubstitutionContext context{ForwardCompatibilitySubstitutionRule::Disable};
+    boost::optional<Semver> version;
+
+    m_model = std::make_unique<Model>(
+        FileReader::load_model_with_config(
+            file_path,
+            &config,
+            &context,
+            wipe_towers,
+            custom_gcodes,
+            version,
+            {}
+        )
+    );
+
     set_file_name(file_path);
     // TODO: implement
-    /*
     m_config_containers.clear();
-    m_config_containers.emplace_back();
+    m_config_containers.emplace_back(std::make_unique<ConfigContainer>());
     auto& config_container = m_config_containers.back();
-    */
+    config_container->set_print_config(config);
+    //config_container->set_bed(m_bed_container.add_bed())
+    //ASSERT(config_container->bed_instances().size() == wipe_towers.size());
+
 }
 
 const ConfigContainer* Project::find_config_container(size_t id) const

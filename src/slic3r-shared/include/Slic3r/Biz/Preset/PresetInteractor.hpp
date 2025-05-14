@@ -69,6 +69,8 @@ public:
         return cccs.find(project_ctx.selected_config_container_id)->second;
     }
 
+    void prepare_config_container_preset(Domain::SelectionId project_id, Domain::SelectionId config_container_id);
+
     void set_preset_state_value(Slic3r::Preset::Type preset_type, size_t preset_index, const std::string& name, const boost::any& value, int opt_index = 0);
     void set_preset_state_config_num_extruders(Slic3r::Preset::Type preset_type, size_t preset_index, size_t num_extruders);
     void set_preset_state(Slic3r::Preset::Type preset_type, size_t preset_index, const DynamicPrintConfig& config);
