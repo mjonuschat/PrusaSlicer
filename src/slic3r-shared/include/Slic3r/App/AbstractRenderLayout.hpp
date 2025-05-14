@@ -65,6 +65,9 @@ public:
      * */
     void set_bottom_toolbar_visible(bool visible);
 
+    void hide_sidebars(bool hide);
+    void set_visible_left_column_item(Yoga::Item* item, bool is_visible);
+
 protected:
     virtual void init_left_column();
     virtual void init_middle_column();

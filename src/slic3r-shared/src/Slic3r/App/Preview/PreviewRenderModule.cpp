@@ -300,6 +300,13 @@ void PreviewRenderModule::on_status_cache_changed(const Biz::Slicing::SlicingId 
     request_render();
 }
 
+void PreviewRenderModule::hide_sidebars(bool hide)
+{
+    m_layout->hide_sidebars(hide);
+    // request redraw
+    request_render();
+}
+
 void PreviewRenderModule::on_init(Render::Device& device, Render::ImguiRender& imgui_render)
 {
 
@@ -743,17 +750,21 @@ void PreviewRenderModule::init_scene_layout()
     // init toolbars
 
     m_button_object_list = m_layout->add_toolbar_item(ToolbarID::Top, ImGui::ToolbarObjects, "Object List", "Ctrl + Alt + O", {
-        .action  = [this]() { m_object_list->set_visible(!m_object_list->is_visible()); },
+        .action  = [this]() { m_layout->set_visible_left_column_item(m_object_list, !m_object_list->is_visible()); },
         .toggled = [this]() { return m_object_list->is_visible(); }
     });
 
     m_button_legend = m_layout->add_toolbar_item(ToolbarID::Bottom, ImGui::ToolbarGraph, "Legend", "", {
-        .action = [this]() { m_viewer->toggle_legend_visible(); },
+        .action = [this]() { m_viewer->toggle_legend_visible();
+ // ToDo          m_layout->set_visible_left_column_item(m_viewer->legend(), !m_viewer->legend()->is_visible());
+        },
         .toggled    = [this]() { return m_viewer->has_data() && m_viewer->is_legend_shown(); }
     });
 
     m_button_gcode = m_layout->add_toolbar_item(ToolbarID::Bottom, ImGui::ToolbarGCode, "G-code", "", {
-        .action     = [this]() { m_fdm_viewer.toggle_gcodewindow_visible(); },
+        .action     = [this]() { m_fdm_viewer.toggle_gcodewindow_visible();
+ // ToDo          m_layout->set_visible_left_column_item(m_fdm_viewer.gcodewindow(), !m_fdm_viewer.gcodewindow()->is_visible());
+        },
         .toggled    = [this]() { return m_fdm_viewer.has_data() && !m_fdm_viewer.is_gcodewindow_visible(); }
     });
 

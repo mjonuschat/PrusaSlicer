@@ -43,6 +43,7 @@ public:
     virtual void render();
     void set_render_module(AbstractRenderModule* render_module);
     void set_next_render_module(AbstractRenderModule* render_module);
+    AbstractRenderModule* get_render_module() { return m_render_module; }
 
     // IRenderRequestHandler interface impl
     void request_render() override;

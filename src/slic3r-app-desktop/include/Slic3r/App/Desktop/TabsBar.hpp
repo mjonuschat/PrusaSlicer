@@ -1,154 +1,36 @@
-#ifndef slic3r_TopBar_hpp_
-#define slic3r_TopBar_hpp_
+#pragma once
+
+#include "TabsBarCtrl.hpp"
 
 #include <wx/bookctrl.h>
 #include <wx/panel.h>
 #include <wx/sizer.h>
 
-#include "Slic3r/App/WX/Widgets/TextInput.hpp"
-
-// custom message the TopBarItemsCtrl sends to its parent (TopBar) to notify a selection change:
-wxDECLARE_EVENT(wxCUSTOMEVT_TOPBAR_SEL_CHANGED, wxCommandEvent);
-
 namespace Slic3r::App::Desktop {
 
-class TopBarMenus;
+class TabsBarMenus;
 
-class TopBarItemsCtrl : public wxControl
-{
-    class Button : public wxPanel
-    {
-        bool        m_is_selected{ false };
-        wxColour    m_background_color;
-        wxColour    m_foreground_color;
-        wxBitmapBundle  m_bmp_bundle = wxBitmapBundle();
-
-        void        messure_min_size();
-
-    protected:
-        wxString    m_label;
-        std::string m_icon_name;
-        int         m_px_cnt            { 16 };
-        bool        m_has_down_arrow    { false };
-        wxBitmapBundle  m_dd_bmp_bundle = wxBitmapBundle();
-
-    public:
-        Button() {};
-        Button( wxWindow*           parent,
-                const wxString&     label,
-                const std::string&  icon_name = "",
-                const int           px_cnt = 16,
-                wxSize              size = wxDefaultSize);
-
-        ~Button() {}
-
-        void set_selected(bool selected);
-        void set_hovered (bool hovered);
-        void render();
-
-        void sys_color_changed();
-        void SetBitmapBundle(wxBitmapBundle bmp_bundle) { m_bmp_bundle = bmp_bundle; }
-
-        bool SetFont(const wxFont& font) override;
-    };
-
-    class ButtonWithPopup : public Button
-    {
-        int             m_fixed_width       { wxDefaultCoord };
-    public:
-        ButtonWithPopup() {};
-        ButtonWithPopup(wxWindow*           parent,
-                        const wxString&     label,
-                        const std::string&  icon_name = "",
-                        const int           px_cnt = 16,
-                        wxSize              size = wxDefaultSize);
-        ButtonWithPopup(wxWindow*           parent,
-                        const std::string&  icon_name,
-                        int                 icon_width = 20,
-                        int                 icon_height = 20);
-
-        ~ButtonWithPopup() {}
-
-        void SetLabel(const wxString& label) override;
-        wxPoint get_popup_pos();
-    };
-
-    TopBarMenus*    m_menus                 { nullptr };
-
-    WX::Widgets::TextInput*    m_search{ nullptr };
-
-    int             m_btns_width            { 0 };
-    bool            m_collapsed_btns        { false };
-
-    std::function<void()> m_cb_settings_btn { nullptr };
-
-    void            update_btns_width();
-
-public:
-    TopBarItemsCtrl(wxWindow* parent,
-                    TopBarMenus* menus = nullptr,
-                    std::function<void()> cb_settings_btn = nullptr);
-    ~TopBarItemsCtrl() {}
-
-    void SetSelection(int sel, bool force = false);
-    void UpdateMode();
-    void ShowUserAccount(bool show);
-    void Rescale();
-    void OnColorsChanged();
-    void UpdateModeMarkers();
-    void UpdateSelection();
-    bool InsertPage(size_t n, const wxString& text, bool bSelect = false, const std::string& bmp_name = "");
-    void RemovePage(size_t n);
-    void SetPageText(size_t n, const wxString& strText);
-    wxString GetPageText(size_t n) const;
-
-    void UpdateAccountButton(bool avatar = false);
-    void UnselectPopupButtons();
-
-    void CreateSearch();
-    void ShowFull();
-    void ShowJustMode();
-    void SetSettingsButtonTooltip(const wxString& tooltip);
-    void UpdateSearchSizeAndPosition();
-    void UpdateSearch(const wxString& search);
-
-//    wxWindow* GetSearchCtrl() { return m_search->GetTextCtrl(); */}
-
-private:
-    wxFlexGridSizer*                m_buttons_sizer {nullptr};
-    wxFlexGridSizer*                m_sizer         {nullptr};
-    ButtonWithPopup*                m_menu_btn      {nullptr};
-    ButtonWithPopup*                m_workspace_btn {nullptr};
-    ButtonWithPopup*                m_account_btn   {nullptr};
-    Button*                         m_settings_btn  {nullptr};
-    std::vector<Button*>            m_pageButtons;
-    int                             m_selection {-1};
-    int                             m_btn_margin;
-
-    void    update_margins();
-};
-
-class TopBar : public wxBookCtrlBase
+class TabsBar : public wxBookCtrlBase
 {
 public:
-    TopBar(wxWindow * parent,
-                 wxWindowID winid = wxID_ANY,
-                 const wxPoint & pos = wxDefaultPosition,
-                 const wxSize & size = wxDefaultSize,
-                 long style = 0)
+    TabsBar(wxWindow * parent,
+            wxWindowID winid = wxID_ANY,
+            const wxPoint & pos = wxDefaultPosition,
+            const wxSize & size = wxDefaultSize,
+            long style = 0)
     {
         Init();
         Create(parent, winid, pos, size, style);
     }
 
-    TopBar( wxWindow * parent,
-            TopBarMenus* menus,
-            std::function<void()> cb_settings_btn = nullptr)
+    TabsBar(wxWindow * parent,
+            TabsBarMenus* menus,
+            long style = 0)
     {
         Init();
         // wxNB_NOPAGETHEME: Disable Windows Vista theme for the Notebook background. The theme performance is terrible on Windows 10
         // with multiple high resolution displays connected.
-        Create(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxNB_TOP | wxTAB_TRAVERSAL | wxNB_NOPAGETHEME, menus, cb_settings_btn);
+        Create(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, style | wxTAB_TRAVERSAL | wxNB_NOPAGETHEME, menus);
     }
 
     bool Create(wxWindow * parent,
@@ -156,40 +38,38 @@ public:
                 const wxPoint & pos = wxDefaultPosition,
                 const wxSize & size = wxDefaultSize,
                 long style = 0,
-                TopBarMenus* menus = nullptr,
-                std::function<void()> cb_settings_btn = nullptr)
+                TabsBarMenus* menus = nullptr)
     {
-        if (!wxBookCtrlBase::Create(parent, winid, pos, size, style | wxBK_TOP))
+        if (!wxBookCtrlBase::Create(parent, winid, pos, size, style))
             return false;
-
-        m_bookctrl = new TopBarItemsCtrl(this, menus, cb_settings_btn);
 
         wxSizer* mainSizer = new wxBoxSizer(IsVertical() ? wxVERTICAL : wxHORIZONTAL);
 
         if (style & wxBK_RIGHT || style & wxBK_BOTTOM)
             mainSizer->Add(0, 0, 1, wxEXPAND, 0);
 
-        m_controlSizer = new wxBoxSizer(IsVertical() ? wxHORIZONTAL : wxVERTICAL);
-        m_controlSizer->Add(m_bookctrl, wxSizerFlags(1).Expand());
+        const int orient = IsVertical() ? wxHORIZONTAL : wxVERTICAL;
+        m_controlSizer = new wxBoxSizer(orient);
+
+        // Note, that in CreateBookCtrl() m_bookctrl will be created and added into m_controlSizer
+
         wxSizerFlags flags;
-        if (IsVertical())
-            flags.Expand();
-        else
-            flags.CentreVertical();
+        flags.Expand();
         mainSizer->Add(m_controlSizer, flags.Border(wxALL, m_controlMargin));
         SetSizer(mainSizer);
 
-        this->Bind(wxCUSTOMEVT_TOPBAR_SEL_CHANGED, [this](wxCommandEvent& evt)
+        this->Bind(wxCUSTOMEVT_TABS_BAR_SEL_CHANGED, [this](wxCommandEvent& evt)
         {                    
             if (int page_idx = evt.GetId(); page_idx >= 0)
                 SetSelection(page_idx);
         });
 
-        this->Bind(wxEVT_NAVIGATION_KEY, &TopBar::OnNavigationKey, this);
+        this->Bind(wxEVT_NAVIGATION_KEY, &TabsBar::OnNavigationKey, this);
 
         return true;
     }
 
+    virtual void CreateBookCtrl(TabsBarMenus* menus) = 0;
 
     // Methods specific to this class.
 
@@ -248,7 +128,7 @@ public:
         if (!wxBookCtrlBase::InsertPage(n, page, text, bSelect))
             return false;
 
-        GetTopBarItemsCtrl()->InsertPage(n, text, bSelect, bmp_name);
+        GetTabsBarCtrl()->InsertPage(n, text, bSelect, bmp_name);
 
         if (bSelect)
             SetSelection(n);
@@ -277,9 +157,9 @@ public:
         return InsertNewPage(n, page, text, "", bSelect);
     }
 
-    virtual int SetSelection(size_t n) override
+    int SetSelection(size_t n) override
     {
-        GetTopBarItemsCtrl()->SetSelection(n, true);
+        GetTabsBarCtrl()->SetSelection(n, true);
         int ret = DoSetSelection(n, SetSelection_SendEvent);
 
         // check that only the selected page is visible and others are hidden:
@@ -293,75 +173,60 @@ public:
         return ret;
     }
 
-    virtual int ChangeSelection(size_t n) override
+    int ChangeSelection(size_t n) override
     {
-        GetTopBarItemsCtrl()->SetSelection(n);
+        GetTabsBarCtrl()->SetSelection(n);
         return DoSetSelection(n);
     }
 
     // Neither labels nor images are supported but we still store the labels
     // just in case the user code attaches some importance to them.
-    virtual bool SetPageText(size_t n, const wxString & strText) override
+    bool SetPageText(size_t n, const wxString & strText) override
     {
         wxCHECK_MSG(n < GetPageCount(), false, wxS("Invalid page"));
 
-        GetTopBarItemsCtrl()->SetPageText(n, strText);
+        GetTabsBarCtrl()->SetPageText(n, strText);
 
         return true;
     }
 
-    virtual wxString GetPageText(size_t n) const override
+    wxString GetPageText(size_t n) const override
     {
         wxCHECK_MSG(n < GetPageCount(), wxString(), wxS("Invalid page"));
-        return GetTopBarItemsCtrl()->GetPageText(n);
+        return GetTabsBarCtrl()->GetPageText(n);
     }
 
-    virtual bool SetPageImage(size_t WXUNUSED(n), int WXUNUSED(imageId)) override
+    bool SetPageImage(size_t WXUNUSED(n), int WXUNUSED(imageId)) override
     {
         return false;
     }
 
-    virtual int GetPageImage(size_t WXUNUSED(n)) const override
+    int GetPageImage(size_t WXUNUSED(n)) const override
     {
         return NO_IMAGE;
     }
 
     // Override some wxWindow methods too.
-    virtual void SetFocus() override
+    void SetFocus() override
     {
         wxWindow* const page = GetCurrentPage();
         if (page)
             page->SetFocus();
     }
 
-    TopBarItemsCtrl* GetTopBarItemsCtrl() const { return static_cast<TopBarItemsCtrl*>(m_bookctrl); }
-
-    void UpdateMode()
-    {
-        GetTopBarItemsCtrl()->UpdateMode();
-    }
-
-    void ShowUserAccount(bool show)
-    {
-        GetTopBarItemsCtrl()->ShowUserAccount(show);
-    }
+    TabsBarCtrl* GetTabsBarCtrl() const { return static_cast<TabsBarCtrl*>(m_bookctrl); }
 
     void Rescale()
     {
-        GetTopBarItemsCtrl()->Rescale();
+        GetTabsBarCtrl()->Rescale();
     }
 
     void OnColorsChanged()
     {
-        GetTopBarItemsCtrl()->OnColorsChanged();
+        GetTabsBarCtrl()->OnColorsChanged();
     }
 
-    void UpdateModeMarkers()
-    {
-        GetTopBarItemsCtrl()->UpdateModeMarkers();
-    }
-
-    void OnNavigationKey(wxNavigationKeyEvent& event)
+    virtual void OnNavigationKey(wxNavigationKeyEvent& event)
     {
         if (event.IsWindowChange()) {
             // change pages
@@ -392,18 +257,7 @@ public:
             const bool isFromParent = event.GetEventObject() == (wxObject*)parent;
             const bool isFromSelf = event.GetEventObject() == (wxObject*)this;
             const bool isForward = event.GetDirection();
-/*
-            wxWindow* search_win = (dynamic_cast<TopBarItemsCtrl*>(m_bookctrl)->GetSearchCtrl());
-            const bool isFromSearch = event.GetEventObject() == (wxObject*)search_win;
-            if (isFromSearch)
-            {
-                // find the target window in the siblings list
-                wxWindowList& siblings = m_bookctrl->GetChildren();
-                wxWindowList::compatibility_iterator i = siblings.Find(search_win->GetParent());
-                i->GetNext()->GetData()->SetFocus();
-            }
-            else 
-*/
+
             if (isFromSelf && !isForward)
             {
                 // focus is currently on notebook tab and should leave
@@ -455,54 +309,30 @@ public:
         }
     }
 
-    // Methods for extensions of this class
-
-    void ShowFull() {
-        Show();
-        GetTopBarItemsCtrl()->ShowFull();
-    }
-
-    void ShowJustMode() {
-        Show();
-        GetTopBarItemsCtrl()->ShowJustMode();
-    }
-
-    void SetSettingsButtonTooltip(const wxString& tooltip) {
-        GetTopBarItemsCtrl()->SetSettingsButtonTooltip(tooltip);
-    }
-
-    void UpdateSearchSizeAndPosition() {
-        GetTopBarItemsCtrl()->UpdateSearchSizeAndPosition();
-    }
-
-    void UpdateSearch(const wxString& search) {
-        GetTopBarItemsCtrl()->UpdateSearch(search);
-    }
-
 protected:
-    virtual void UpdateSelectedPage(size_t WXUNUSED(newsel)) override
+    void UpdateSelectedPage(size_t WXUNUSED(newsel)) override
     {
         // Nothing to do here, but must be overridden to avoid the assert in
         // the base class version.
     }
 
-    virtual wxBookCtrlEvent * CreatePageChangingEvent() const override
+    wxBookCtrlEvent * CreatePageChangingEvent() const override
     {
         return new wxBookCtrlEvent(wxEVT_BOOKCTRL_PAGE_CHANGING,
                                    GetId());
     }
 
-    virtual void MakeChangedEvent(wxBookCtrlEvent & event) override
+    void MakeChangedEvent(wxBookCtrlEvent & event) override
     {
         event.SetEventType(wxEVT_BOOKCTRL_PAGE_CHANGED);
     }
 
-    virtual wxWindow * DoRemovePage(size_t page) override
+    wxWindow * DoRemovePage(size_t page) override
     {
         wxWindow* const win = wxBookCtrlBase::DoRemovePage(page);
         if (win)
         {
-            GetTopBarItemsCtrl()->RemovePage(page);
+            GetTabsBarCtrl()->RemovePage(page);
             // Don't setect any page after deletion some of them
             // DoSetSelectionAfterRemoval(page);
         }
@@ -510,14 +340,14 @@ protected:
         return win;
     }
 
-    virtual void DoSize() override
+    void DoSize() override
     {
         wxWindow* const page = GetCurrentPage();
         if (page)
             page->SetSize(GetPageRect());
     }
 
-    virtual void DoShowPage(wxWindow * page, bool show) override
+    void DoShowPage(wxWindow * page, bool show) override
     {
         if (show)
             page->ShowWithEffect(m_showEffect, m_showTimeout);
@@ -548,6 +378,4 @@ private:
 
 };
 
-}
-//#endif // _WIN32
-#endif // slic3r_TopBar_hpp_
+} // namespace Slic3r::App::Desktop

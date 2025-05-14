@@ -1,5 +1,4 @@
-#ifndef slic3r_TopBarMenus_hpp_
-#define slic3r_TopBarMenus_hpp_
+#pragma once
 
 #include <wx/menu.h>
 #include <boost/filesystem.hpp>
@@ -8,9 +7,9 @@ class wxString;
 
 namespace Slic3r::App::Desktop {
 
-class TopBarItemsCtrl;
+class TabsBarCtrl;
 
-class TopBarMenus
+class TabsBarMenus
 {
 public:
     struct UserAccountInfo {
@@ -25,7 +24,7 @@ private:
     wxMenuItem*             m_login_item        { nullptr };
     wxMenuItem*             m_hide_login_item   { nullptr };
 
-    TopBarItemsCtrl*        m_popup_ctrl        { nullptr };
+    TabsBarCtrl*            m_popup_ctrl        { nullptr };
 
     std::function<int()>            m_cb_get_mode                   { nullptr };
     std::function<void(int)>        m_cb_save_mode                  { nullptr };
@@ -40,8 +39,8 @@ public:
     wxMenu          workspaces;
     wxMenu          account;
 
-    TopBarMenus();
-    ~TopBarMenus() = default;
+    TabsBarMenus();
+    ~TabsBarMenus() = default;
 
     void AppendMenuItem(wxMenu* menu, const wxString& title);
     void AppendMenuSeparaorItem();
@@ -50,7 +49,7 @@ public:
     void UpdateAccountMenu();
     void RemoveHideLoginItem();
 
-    void Popup(TopBarItemsCtrl* popup_ctrl, wxMenu* menu, wxPoint pos);
+    void Popup(TabsBarCtrl* popup_ctrl, wxMenu* menu, wxPoint pos);
     void BindEvtClose();
 
     void        sys_color_changed();
@@ -82,5 +81,4 @@ public:
 
 };
 
-}
-#endif // slic3r_TopBarMenus_hpp_
+} // namespace Slic3r::App::Desktop

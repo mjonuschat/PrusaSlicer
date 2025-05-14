@@ -5,10 +5,17 @@ set(SLIC3R_APP_DESKTOP_FILES
     src/Slic3r/App/Desktop/DesktopApp.hpp
     src/Slic3r/App/Desktop/MainFrame.cpp
     src/Slic3r/App/Desktop/MainFrame.hpp
-    src/Slic3r/App/Desktop/TopBar.cpp
-    src/Slic3r/App/Desktop/TopBar.hpp
-    src/Slic3r/App/Desktop/TopBarMenus.cpp
-    src/Slic3r/App/Desktop/TopBarMenus.hpp
+    include/Slic3r/App/Desktop/TabsBar.hpp
+    src/Slic3r/App/Desktop/TabsBarCtrl.cpp
+    include/Slic3r/App/Desktop/TabsBarCtrl.hpp
+    src/Slic3r/App/Desktop/TabsBarMenus.cpp
+    include/Slic3r/App/Desktop/TabsBarMenus.hpp
+    include/Slic3r/App/Desktop/LeftBar.hpp
+    src/Slic3r/App/Desktop/LeftBarCtrl.cpp
+    include/Slic3r/App/Desktop/LeftBarCtrl.hpp
+    include/Slic3r/App/Desktop/TopBar.hpp
+    src/Slic3r/App/Desktop/TopBarCtrl.cpp
+    include/Slic3r/App/Desktop/TopBarCtrl.hpp
     src/Slic3r/App/Desktop/ModePaletteComboBox.cpp
     src/Slic3r/App/Desktop/ModePaletteComboBox.hpp
     src/Slic3r/App/Desktop/GUI_Descriptions.cpp

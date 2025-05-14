@@ -29,6 +29,8 @@ public:
         const Biz::Slicing::SlicingId id
     ) override;
 
+    void hide_sidebars(bool hide) override;
+
 protected:
     void on_init(Render::Device& device, Render::ImguiRender& imgui_render) override;
     void on_activated() override;

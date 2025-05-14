@@ -1,6 +1,5 @@
 #pragma once
 
-#include <memory>
 #include <map>
 
 #include <wx/wx.h>
@@ -10,7 +9,7 @@
 #include "Slic3r/Domain/Bed.hpp"
 #include "Slic3r/Biz/Preset/PresetInteractor.hpp"
 #include "Slic3r/Biz/Preset/PresetInteractorConfigContainerContext.hpp"
-#include "TopBarMenus.hpp"
+#include "Slic3r/App/Desktop/TabsBarMenus.hpp"
 
 namespace Slic3r::App::Desktop::Preset {
 class AbstractEditor;
@@ -19,6 +18,7 @@ class AbstractEditor;
 namespace Slic3r::App::Desktop {
 
 class TopBar;
+class LeftBar;
 
 class MainFrame : public wxFrame, public ILanguageChangedListener {
 public:
@@ -37,29 +37,43 @@ public:
     void    update_canvas_ui_settings();
 
 private:
-    Domain::Workbench& m_workbench;
-    Biz::Preset::PresetInteractor& m_preset_interactor;
-    std::unique_ptr<Platform::WX::WXRenderCanvas> m_canvas;
-
-    std::map<Slic3r::Preset::Type, Preset::AbstractEditor*>   m_preset_editors;
-
-    TopBarMenus         m_top_bar_menus;
-    TopBar*             m_top_bar{ nullptr };
-
     // Move to BasicAppConfig 
     /*ConfigOptionMode*/ int m_mode{ 1 /*comAdvanced*/ };
 
-    void init_top_bar();
+#ifdef OLD_CODE
     void init_plater();
     void init_preset_editors();
     void add_preset_editor(Preset::AbstractEditor* panel, const std::string& bmp_name /*= ""*/);
     void update_preset_editors();
+#endif
 
+    void init_left_bar();
+    void init_printer_page();
+    void init_projects_page();
+    void init_slicing_page();
+    void init_printables_page();
+    void complete_and_bind_left_bar();
+
+    void init_top_bar();
     void complete_and_bind_top_bar();
 
     void on_language_changed() override;
 
     void on_close(wxCloseEvent& event);
+
+private:
+    Domain::Workbench& m_workbench;
+    Biz::Preset::PresetInteractor& m_preset_interactor;
+    std::unique_ptr<Platform::WX::WXRenderCanvas> m_canvas;
+
+#ifdef OLD_CODE
+    std::map<Slic3r::Preset::Type, Preset::AbstractEditor*>   m_preset_editors;
+#endif
+
+    TabsBarMenus    m_tabs_bar_menus;
+    TopBar*         m_top_bar{ nullptr };
+    LeftBar*        m_left_bar{ nullptr };
+    wxPanel*        m_slicing_panel{ nullptr };
 };
 
 }

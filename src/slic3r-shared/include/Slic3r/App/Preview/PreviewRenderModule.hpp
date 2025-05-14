@@ -62,6 +62,8 @@ public:
         const Biz::Slicing::SlicingId id
     ) override;
 
+    void hide_sidebars(bool hide) override;
+
 protected:
     /**
      * @name Implementation of Platform::AbstractRenderModule protected interface

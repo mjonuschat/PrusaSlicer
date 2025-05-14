@@ -116,7 +116,8 @@ void WidgetsConfig::init_ui_colours()
     m_color_highlight_default       = is_dark_mode ? wxColour(78, 78, 78)    : wxSystemSettings::GetColour(wxSYS_COLOUR_3DLIGHT);
     m_color_hovered_btn_label       = is_dark_mode ? wxColour(253, 111, 40)  : wxColour(252, 77, 1);
     m_color_default_btn_label       = is_dark_mode ? wxColour(255, 181, 100) : wxColour(203, 61, 0);
-    m_color_selected_btn_bg         = is_dark_mode ? wxColour(95, 73, 62)    : wxColour(228, 220, 216);
+    m_color_hovered_btn_bg          = is_dark_mode ? wxColour(39, 47, 65)    : wxColour(228, 220, 216);
+    m_color_selected_btn_bg         = is_dark_mode ? wxColour(54, 73, 118)    : wxColour(228, 220, 216);
 
     m_color_window_default          = is_dark_mode ? wxColour(43, 43, 43)    : wxSystemSettings::GetColour(wxSYS_COLOUR_WINDOW);
 }
@@ -265,7 +266,11 @@ int WidgetsConfig::em_unit(wxWindow* win) const
     {
         wxTopLevelWindow* toplevel = w_config()->find_toplevel_parent(win);
         float sf = toplevel->GetDPIScaleFactor();
-        return int(sf * 10);
+
+        // On Retina displays we need to respect content scale factor too
+        float csf = toplevel->GetContentScaleFactor();
+
+        return int(sf / csf * 10.);
     }
     return m_em_unit;
 }

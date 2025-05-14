@@ -99,6 +99,7 @@ void PlaterRenderModule::init_scene_layout()
     m_sidebar_print = new SidebarPrint;
     m_history = new History;
     m_history->set_visible(false);
+    m_history->set_flex_grow(1.);
 
     m_sidebar_action_buttons = new SidebarPlaterActionButtons;
     m_sidebar_action_buttons->on_init(&m_project_interactor);
@@ -115,13 +116,13 @@ void PlaterRenderModule::init_scene_layout()
     // init toolbars
     m_layout->add_toolbar_item(
         ToolbarID::Top, ImGui::ToolbarObjects, "Object List", "Ctrl + Alt + O",
-        {.action = [this]() { m_object_list->set_visible(!m_object_list->is_visible()); },
+        {.action = [this]() { m_layout->set_visible_left_column_item(m_object_list, !m_object_list->is_visible()); },
          .toggled = [this]() { return m_object_list->is_visible(); }}
     );
 
     m_layout->add_toolbar_item(
         ToolbarID::Bottom, ImGui::ToolbarHistory, "Actions History", "Shift + Alt + H",
-        {.action = [this]() { m_history->set_visible(!m_history->is_visible()); },
+        {.action = [this]() { m_layout->set_visible_left_column_item(m_history, !m_history->is_visible()); },
          .toggled = [this]() { return m_history->is_visible(); }}
     );
 
@@ -407,6 +408,13 @@ void PlaterRenderModule::init_gizmos()
 
 void PlaterRenderModule::on_status_cache_changed(const Biz::Slicing::SlicingId id)
 {
+    // request redraw
+    request_render();
+}
+
+void PlaterRenderModule::hide_sidebars(bool hide)
+{
+    m_layout->hide_sidebars(hide);
     // request redraw
     request_render();
 }

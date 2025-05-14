@@ -40,6 +40,7 @@ class WidgetsConfig {
 	wxColour        m_color_hovered_btn_label;
 	wxColour        m_color_default_btn_label;
 	wxColour        m_color_highlight_default;
+	wxColour        m_color_hovered_btn_bg;
 	wxColour        m_color_selected_btn_bg;
 
 	wxFont		    m_small_font;
@@ -136,6 +137,7 @@ public:
     const wxColour& get_highlight_default_clr()     { return m_color_highlight_default; }
     const wxColour& get_color_hovered_btn_label()   { return m_color_hovered_btn_label; }
     const wxColour& get_color_selected_btn_bg()     { return m_color_selected_btn_bg; }
+    const wxColour& get_color_hovered_btn_bg()      { return m_color_hovered_btn_bg; }
 
     const wxFont&   small_font()                    { return m_small_font; }
     const wxFont&   bold_font()                     { return m_bold_font; }

@@ -81,6 +81,29 @@ Yoga::Toolbar* AbstractRenderLayout::middle_toolbar() const { return m_middle_to
 
 Yoga::Toolbar* AbstractRenderLayout::top_toolbar() const { return m_top_toolbar; }
 
+void AbstractRenderLayout::hide_sidebars(bool hide)
+{
+    bool is_visible = !hide;
+
+    m_layout_left_column->set_visible(is_visible);
+    /* The visibility state of left_column should be propagated to its children
+     * to enable displaying a child even when the entire parent is hidden.
+     */
+    for (Yoga::Item* child : m_layout_left_column->items()) {
+        child->set_visible(is_visible);
+    }
+
+    m_layout_right_column->set_visible(is_visible);
+}
+
+void AbstractRenderLayout::set_visible_left_column_item(Yoga::Item* item, bool is_visible)
+{
+    ASSERT(m_layout_left_column == item->parent());
+    item->set_visible(is_visible);
+    if (is_visible)
+        m_layout_left_column->set_visible(true);
+}
+
 void AbstractRenderLayout::init()
 {
     m_layout_main.set_gap(5);
@@ -195,7 +218,7 @@ static void SetOurStyleColors()
 
     colors[ImGuiCol_Text] = ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
     colors[ImGuiCol_TextDisabled] = ImVec4(0.50f, 0.50f, 0.50f, 1.00f);
-    colors[ImGuiCol_WindowBg] = ImVec4(0.168f, 0.168f, 0.168f, 1.00f);
+    colors[ImGuiCol_WindowBg] = ImVec4(0.106f, 0.106f, 0.106f, 1.00f);
     colors[ImGuiCol_ChildBg] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
     colors[ImGuiCol_PopupBg] = ImVec4(0.08f, 0.08f, 0.08f, 0.94f);
     colors[ImGuiCol_Border] = ImVec4(0.43f, 0.43f, 0.50f, 0.50f);

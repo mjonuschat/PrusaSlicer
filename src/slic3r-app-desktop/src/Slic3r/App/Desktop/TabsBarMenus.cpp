@@ -1,5 +1,5 @@
-#include "TopBarMenus.hpp"
-#include "TopBar.hpp"
+#include "Slic3r/App/Desktop/TabsBarMenus.hpp"
+#include "Slic3r/App/Desktop/TabsBarCtrl.hpp"
 
 #include "Slic3r/App/WX/MenuManaging.hpp"
 #include "Slic3r/App/WX/BitmapGetters.hpp"
@@ -16,7 +16,7 @@ namespace Slic3r::App::Desktop {
 
 using namespace Slic3r::App::WX;
 
-TopBarMenus::TopBarMenus()
+TabsBarMenus::TabsBarMenus()
 {
     CreateAccountMenu();
     UpdateAccountMenu();
@@ -24,17 +24,17 @@ TopBarMenus::TopBarMenus()
     BindEvtClose();
 }
 
-void TopBarMenus::AppendMenuItem(wxMenu* menu, const wxString& title)
+void TabsBarMenus::AppendMenuItem(wxMenu* menu, const wxString& title)
 {
     append_submenu(&main, menu, wxID_ANY, title, from_u8("cog"));
 }
 
-void TopBarMenus::AppendMenuSeparaorItem()
+void TabsBarMenus::AppendMenuSeparaorItem()
 {
     main.AppendSeparator();
 }
 
-wxString TopBarMenus::get_workspace_name(int mode/* = -1*/)
+wxString TabsBarMenus::get_workspace_name(int mode/* = -1*/)
 {
     if (mode < 0 && m_cb_get_mode)
         mode = m_cb_get_mode();
@@ -43,7 +43,7 @@ wxString TopBarMenus::get_workspace_name(int mode/* = -1*/)
             mode == Slic3r::ConfigOptionMode::comAdvanced ? _L("Normal mode")  : _L("Expert mode");
 }
 
-wxBitmapBundle* TopBarMenus::get_workspace_bitmap(int mode/* = -1*/)
+wxBitmapBundle* TabsBarMenus::get_workspace_bitmap(int mode/* = -1*/)
 {
     assert(m_cb_get_mode_btn_color);
     if (mode < 0 && m_cb_get_mode)
@@ -52,14 +52,14 @@ wxBitmapBundle* TopBarMenus::get_workspace_bitmap(int mode/* = -1*/)
     return get_bmp_bundle("mode", 16, -1, m_cb_get_mode_btn_color(mode));
 }
 
-TopBarMenus::UserAccountInfo TopBarMenus::get_user_account_info()
+TabsBarMenus::UserAccountInfo TabsBarMenus::get_user_account_info()
 {
     if (m_cb_get_user_account_info)
         return m_cb_get_user_account_info();
     return UserAccountInfo();
 }
 
-void TopBarMenus::sys_color_changed()
+void TabsBarMenus::sys_color_changed()
 {/*
     MenuFactory::sys_color_changed(&main);
     MenuFactory::sys_color_changed(&workspaces);
@@ -67,7 +67,7 @@ void TopBarMenus::sys_color_changed()
     */
 }
 
-void TopBarMenus::ApplyWorkspacesMenu()
+void TabsBarMenus::ApplyWorkspacesMenu()
 {
     wxMenuItemList& items = workspaces.GetMenuItems();
     if (!items.IsEmpty()) {
@@ -91,7 +91,7 @@ void TopBarMenus::ApplyWorkspacesMenu()
     }
 }
 
-void TopBarMenus::CreateAccountMenu()
+void TabsBarMenus::CreateAccountMenu()
 {
     m_login_item = append_menu_item(&account, wxID_ANY, from_u8("Login"), {},
         [this](wxCommandEvent&) { if (m_cb_act_with_user_account) m_cb_act_with_user_account(); }, "login");
@@ -100,7 +100,7 @@ void TopBarMenus::CreateAccountMenu()
         [this](wxCommandEvent&) { if (m_cb_hide_user_account) m_cb_hide_user_account(); });
 }
 
-void TopBarMenus::UpdateAccountMenu()
+void TabsBarMenus::UpdateAccountMenu()
 {
     bool is_logged{ false };
     if (m_cb_get_user_account_info)
@@ -113,19 +113,19 @@ void TopBarMenus::UpdateAccountMenu()
     }
 }
 
-void TopBarMenus::RemoveHideLoginItem()
+void TabsBarMenus::RemoveHideLoginItem()
 {
     if (m_hide_login_item)
         account.Remove(m_hide_login_item);
 }
 
-void TopBarMenus::Popup(TopBarItemsCtrl* popup_ctrl, wxMenu* menu, wxPoint pos)
+void TabsBarMenus::Popup(TabsBarCtrl* popup_ctrl, wxMenu* menu, wxPoint pos)
 {
     m_popup_ctrl = popup_ctrl;
     m_popup_ctrl->PopupMenu(menu, pos);
 }
 
-void TopBarMenus::BindEvtClose()
+void TabsBarMenus::BindEvtClose()
 {
     auto close_fn = [this]() {
         if (m_popup_ctrl)
