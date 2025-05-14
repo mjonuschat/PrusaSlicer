@@ -32,6 +32,7 @@ void ConfigDefinitions::check_valid() const
     for (const ConfigItemDef& def : m_defs) {
         ASSERT(def.type != ConfigItemType::None);
         ASSERT(! def.location.empty());
+        ASSERT(std::ranges::find(def.overrides_in, def.location) == def.overrides_in.end());
         ASSERT(int(bool(def.init_fn)) ^ int(bool(def.init_fn_ex)));
         ASSERT(def.type == ConfigItemType::Enum || def.type == ConfigItemType::Enums || def.enum_values.empty());
         ASSERT((def.type != ConfigItemType::Enum && def.type != ConfigItemType::Enums) || !def.enum_values.empty());

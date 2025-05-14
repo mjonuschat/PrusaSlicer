@@ -778,7 +778,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("extruder", Int);
     def->location = "object_settings";
-    def->overrides_in = { "object_settings", "volume_settings" };
+    def->overrides_in = { "volume_settings" };
     def->label = L("Extruder");
     def->category = L("Extruders");
     def->tooltip = L("The extruder to use (unless more specific extruder settings are specified). "
@@ -2885,7 +2885,6 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("spiral_vase", Bool);
     def->location = "print_settings";
-    def->overrides_in = { "print_settings" };
     def->label = L("Spiral vase");
     def->tooltip = L("This feature will raise Z gradually while printing a single-walled object "
                    "in order to remove any visible seam. This option requires a single perimeter, "
