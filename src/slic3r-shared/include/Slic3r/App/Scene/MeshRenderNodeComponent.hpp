@@ -40,6 +40,7 @@ public:
     void render(
         const Node& node,
         const Camera& camera,
+        const Lighting& lights,
         const Render::Material& resolved_material,
         Render::CommandBuffer& cmd_buffer
     ) const override;
@@ -58,11 +59,15 @@ public:
     bool cast_shadows() const override { return m_shadows.cast; }
     bool receive_shadows() const override { return m_shadows.receive; }
 
+    bool has_pbr() const override { return m_pbr.has_value(); }
+    void set_pbr(const PBRParams& pbr) override { m_pbr = pbr; }
+    const std::optional<PBRParams>& pbr() const override { return m_pbr; }
 
 protected:
     const Render::Geometry* m_geometry{nullptr};
     Render::Material m_material;
     Render::Shadows m_shadows;
+    std::optional<PBRParams> m_pbr;
     Render::PrimitiveType m_primitive_type{Render::PrimitiveType::Triangles};
     size_t m_vertex_offset{0};
     size_t m_vertex_count{0};

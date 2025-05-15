@@ -372,16 +372,19 @@ WXRenderCanvas::WXRenderCanvas(wxWindow* parent)
 
 #if defined(__APPLE__)
     // GL 3.2 Core + GLSL 150
-    m_glsl_version = "#version 150";
+//    m_glsl_version = "#version 150";
     attrs.MajorVersion(3).MinorVersion(2);
 #else
-    // GL 3.0 + GLSL 130
-    m_glsl_version = "#version 130";
-    attrs.MajorVersion(3).MinorVersion(0);
+    // GL 3.1 + GLSL 140
+//    m_glsl_version = "#version 140";
+    attrs.MajorVersion(3).MinorVersion(1);
 #endif
     attrs.EndList();
 
     m_gl_context = std::make_unique<wxGLContext>(this, nullptr, &attrs);
+    if (!m_gl_context->IsOK())
+        throw PlatformError("Unable to create a valid OpenGL context");
+
     // SetCurrent(*m_gl_context);
 
     Bind(wxEVT_ENTER_WINDOW, catching_handler(this, &WXRenderCanvas::on_mouse_enter));
@@ -419,6 +422,10 @@ void WXRenderCanvas::init()
 
     Render::initialize_render();
 
+    Slic3r::Semver gl_version = Render::Context::instance().gl_version();
+    if (gl_version.maj() < 3 || (gl_version.maj() == 3 && gl_version.min() < 1))
+        throw PlatformError("OpenGL version 3.1 or higher is required");
+
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -432,7 +439,9 @@ void WXRenderCanvas::init()
 
     // Setup Platform/Renderer backends
     init_wx_imgui();
-    ImGui_ImplOpenGL3_Init(m_glsl_version.c_str());
+    Slic3r::Semver glsl_version = Render::Context::instance().glsl_version();
+    std::string glsl_version_str = "#version " + std::to_string(glsl_version.maj()) + std::to_string(glsl_version.min());
+    ImGui_ImplOpenGL3_Init(glsl_version_str.c_str());
 }
 
 static ImGuiKey wx_to_imgui_key(int keycode)

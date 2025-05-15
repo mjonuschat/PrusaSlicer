@@ -26,7 +26,7 @@ void CogMarker::init(Render::Device& device, Scene::NodeBuilder& builder, Scene:
       .set_debug_name("gcode_cog_marker")
       .set_tag(GCodeNodeTag{ GCodeElementType::CogMarker })
       .set_enabled(false)
-      .set_mesh(data_factory.geometry(Scene::GeometryDataId::Sphere), material, int(Preview::PreviewSceneLayer::CogMarker));
+      .set_mesh(data_factory.geometry(Scene::GeometryDataId::SmoothSphere), material, int(Preview::PreviewSceneLayer::CogMarker));
 }
 
 void CogMarker::update(const Vec3f& position, float mass)

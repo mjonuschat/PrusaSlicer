@@ -1,25 +1,28 @@
 #version 100
 
-#define INTENSITY_CORRECTION 0.6
-
-// normalized values for (-0.6/1.31, 0.6/1.31, 1./1.31)
-const vec3 LIGHT_TOP_DIR = vec3(-0.4574957, 0.4574957, 0.7624929);
-#define LIGHT_TOP_DIFFUSE    (0.8 * INTENSITY_CORRECTION)
-#define LIGHT_TOP_SPECULAR   (0.125 * INTENSITY_CORRECTION)
-#define LIGHT_TOP_SHININESS  20.0
-
-// normalized values for (1./1.43, 0.2/1.43, 1./1.43)
-const vec3 LIGHT_FRONT_DIR = vec3(0.6985074, 0.1397015, 0.6985074);
-#define LIGHT_FRONT_DIFFUSE  (0.3 * INTENSITY_CORRECTION)
-
-#define INTENSITY_AMBIENT    0.3
+#define MAX_LIGHTS 4
+#define PI 3.1415926535897932384626433832795
 
 const vec3 back_color_dark  = vec3(0.235, 0.235, 0.235);
 const vec3 back_color_light = vec3(0.365, 0.365, 0.365);
 
+struct Light
+{
+    int system;
+    vec3 direction;
+    bool shadows;
+    float ambient;
+    float diffuse;
+    float specular;
+    float shininess;
+};
+
 uniform float shadows_intensity;
 uniform bool transparent_background;
 uniform bool svg_source;
+uniform int num_lights;
+uniform Light lights[MAX_LIGHTS];
+uniform mat4 view_matrix;
 
 uniform sampler2D in_texture;
 uniform sampler2D shadowsmap;
@@ -28,6 +31,12 @@ varying vec2 tex_coord;
 varying vec3 eye_position;
 varying vec3 eye_normal;
 varying vec4 light_position;
+
+vec3 light_direction(Light light)
+{
+    // return light direction in eye coordinates
+    return (light.system == 0) ? (view_matrix * vec4(-light.direction, 0.0)).xyz : -light.direction;
+}
 
 vec4 svg_color()
 {
@@ -76,20 +85,17 @@ vec4 lighting_phong()
 {
     vec3 normal = normalize(eye_normal);
 
-    // Compute the cos of the angle between the normal and lights direction. The light is directional so the direction is constant for every vertex.
-    // Since these two are normalized the cosine is the dot product. We also need to clamp the result to the [0,1] range.
-    float NdotL = max(dot(normal, LIGHT_TOP_DIR), 0.0);
-
-    float shadow = shadow_pcf(light_position, NdotL);
-
-    // top light
-    float ambient = INTENSITY_AMBIENT;
-    float diffuse = shadow * LIGHT_TOP_DIFFUSE * NdotL;
-    float specular = shadow * LIGHT_TOP_SPECULAR * pow(max(dot(-normalize(eye_position.xyz), reflect(-LIGHT_TOP_DIR, normal)), 0.0), LIGHT_TOP_SHININESS);
-
-    // front light
-    ambient += LIGHT_FRONT_DIFFUSE * max(dot(normal, LIGHT_FRONT_DIR), 0.0);
-
+    float ambient = 0.0;
+    float diffuse = 0.0;
+    float specular = 0.0;
+    for (int i = 0; i < num_lights; ++i) {
+        ambient += lights[i].ambient;
+        vec3 dir = light_direction(lights[i]);
+        float NdotL = max(dot(normal, dir), 0.0);
+        float shadow = lights[i].shadows ? shadow_pcf(light_position, NdotL) : 1.0;
+        diffuse += shadow * lights[i].diffuse * NdotL;
+        specular += shadow * lights[i].specular * pow(max(dot(-normalize(eye_position), reflect(-dir, normal)), 0.0), lights[i].shininess);
+    }
     vec4 color = svg_source ? svg_color() : non_svg_color();
     color.a = transparent_background ? color.a * 0.5 : color.a;
     return vec4(color.rgb * (ambient + diffuse + specular), color.a);

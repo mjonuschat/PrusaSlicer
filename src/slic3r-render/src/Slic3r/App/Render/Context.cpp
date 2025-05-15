@@ -112,6 +112,7 @@ void Context::log_gl_info() const
 {
     SPDLOG_INFO("OpenGL Vendor: {}", getGlString(GL_VENDOR));
     SPDLOG_INFO("OpenGL Version: {}", getGlString(GL_VERSION));
+    SPDLOG_INFO("Core profile: {}", is_core_profile() ? "Yes" : "No");
     SPDLOG_INFO("GLSL Version: {}", getGlString(GL_SHADING_LANGUAGE_VERSION));
     SPDLOG_INFO("OpenGL Renderer: {}", getGlString(GL_RENDERER));
 #ifdef EMSCRIPTEN

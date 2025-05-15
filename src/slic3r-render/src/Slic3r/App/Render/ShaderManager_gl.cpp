@@ -96,24 +96,34 @@ std::pair<bool, std::string> ShaderManager::init()
     valid &= append_shader("cog_marker", { prefix + "cog_marker.vs", prefix + "cog_marker.fs" });
     // used to render gcode toolpaths tool marker
     valid &= append_shader("tool_marker", { prefix + "tool_marker.vs", prefix + "tool_marker.fs" });
-    // used to render bed plate and model, models
-    valid &= append_shader("phong", { prefix + "phong.vs", prefix + "phong.fs" });
-    // used to render shadowsmap
+    // used to render models' shadowsmap
     valid &= append_shader("shadowsmap", { prefix + "shadowsmap.vs", prefix + "shadowsmap.fs" });
-    // used to render shadowed models
-    valid &= append_shader("phong_shadows", { prefix + "phong_shadows.vs", prefix + "phong_shadows.fs" });
-    // used to render shadowed printbed
-    valid &= append_shader("printbed_shadows", { prefix + "printbed_shadows.vs", prefix + "printbed_shadows.fs" });
-    // used to render ao g-buffer for models
-    valid &= append_shader("phong_ao", { prefix + "phong_ao.vs", prefix + "phong_ao.fs" });
-    // used to render ao g-buffer for printbed
-    valid &= append_shader("printbed_ao", { prefix + "printbed_ao.vs", prefix + "printbed_ao.fs" });
+    // used to render gcode options' shadowsmap
+    valid &= append_shader("options_shadowsmap", { prefix + "options_shadowsmap.vs", prefix + "shadowsmap.fs" });
+    // used to render gcode segments' shadowsmap
+    valid &= append_shader("segments_shadowsmap", { prefix + "segments_shadowsmap.vs", prefix + "shadowsmap.fs" });
     // used to render ao texture
     valid &= append_shader("ao_texture", { prefix + "ao_texture.vs", prefix + "ao_texture.fs" });
     // used to blur the ao texture
     valid &= append_shader("ao_blur", { prefix + "ao_blur.vs", prefix + "ao_blur.fs" });
     // used to render ao lighting
     valid &= append_shader("ao_lighting", { prefix + "ao_lighting.vs", prefix + "ao_lighting.fs" });
+    // used to render ao g-buffer for models
+    valid &= append_shader("gbuffer_ao", { prefix + "gbuffer_ao.vs", prefix + "gbuffer_ao.fs" });
+    // used to render ao g-buffer for printbed
+    valid &= append_shader("printbed_ao", { prefix + "printbed_ao.vs", prefix + "printbed_ao.fs" });
+    // used to render ao g-buffer for gcode options
+    valid &= append_shader("options_ao", { prefix + "options_ao.vs", prefix + "options_ao.fs" });
+    // used to render ao g-buffer for gcode segments
+    valid &= append_shader("segments_ao", { prefix + "segments_ao.vs", prefix + "segments_ao.fs" });
+    // used to render shadowed models with phong shading
+    valid &= append_shader("phong_shadows", { prefix + "phong_shadows.vs", prefix + "phong_shadows.fs" });
+    // used to render shadowed printbed with phong shading
+    valid &= append_shader("printbed_phong_shadows", { prefix + "printbed_phong_shadows.vs", prefix + "printbed_phong_shadows.fs" });
+    // used to render shadowed gcode options with phong shading
+    valid &= append_shader("options_phong_shadows", { prefix + "options_phong_shadows.vs", prefix + "options_phong_shadows.fs" });
+    // used to render shadowed gcode segments with phong shading
+    valid &= append_shader("segments_phong_shadows", { prefix + "segments_phong_shadows.vs", prefix + "segments_phong_shadows.fs" });
 
     return { valid, error };
 }

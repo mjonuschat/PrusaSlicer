@@ -5,10 +5,12 @@
 #include "Slic3r/App/Scene/MeshRenderNodeComponent.hpp"
 #include "Slic3r/App/Scene/Node.hpp"
 #include "Slic3r/App/Render/Geometry.hpp"
+#include "Slic3r/App/Scene/LightingHelper.hpp"
 
 namespace Slic3r::App::Scene {
 
 const std::string UNIFORM_VIEW_MODEL_MATRIX = "view_model_matrix";
+const std::string UNIFORM_VIEW_MATRIX = "view_matrix";
 const std::string UNIFORM_PROJECTION_MATRIX = "projection_matrix";
 const std::string UNIFORM_VIEW_NORMAL_MATRIX = "view_normal_matrix";
 const std::string UNIFORM_VOLUME_WORLD_MATRIX = "volume_world_matrix";
@@ -16,6 +18,7 @@ const std::string UNIFORM_VOLUME_WORLD_MATRIX = "volume_world_matrix";
 void MeshRenderNodeComponent::render(
     const Node& node,
     const Camera& camera,
+    const Lighting& lights,
     const Render::Material& resolved_material,
     Render::CommandBuffer& cmd_buffer
 ) const
@@ -28,6 +31,8 @@ void MeshRenderNodeComponent::render(
     const Transform& model = node.world_transform();
 
     // update per-node uniforms
+    Matrix4f view_m = view.cast<float>();
+    material.set_uniform(UNIFORM_VIEW_MATRIX, view_m);
     Matrix4f model_view = (view * model).cast<float>();
     material.set_uniform(UNIFORM_VIEW_MODEL_MATRIX, model_view);
     Matrix4f value = camera.projection().cast<float>();
@@ -37,6 +42,8 @@ void MeshRenderNodeComponent::render(
     material.set_uniform(UNIFORM_VIEW_NORMAL_MATRIX, normal);
     Matrix4f vol_world = node.world_transform().cast<float>();
     material.set_uniform(UNIFORM_VOLUME_WORLD_MATRIX, vol_world);
+
+    set_uniforms(lights, material);
 
     cmd_buffer.bind_and_draw(*m_geometry, material);
 }

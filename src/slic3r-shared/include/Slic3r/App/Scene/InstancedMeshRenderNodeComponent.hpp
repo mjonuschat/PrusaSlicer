@@ -26,6 +26,7 @@ public:
     void render(
         const Node& node,
         const Camera& camera,
+        const Lighting& lights,
         const Render::Material& resolved_material,
         Render::CommandBuffer& cmd_buffer
     ) const override;

@@ -10,6 +10,7 @@ namespace Slic3r::App::Preview {
     cmd_buf.set_blending_enabled(false);
     cmd_buf.set_depth_write_enabled(true);
     cmd_buf.set_depth_test_enabled(id != PreviewSceneLayer::CogMarker);
+    // FIXME: this is currently required because the segments_xxx vertex shaders produce triangles with inconsistent winding
     cmd_buf.set_cull_face_enabled(id != PreviewSceneLayer::Toolpaths);
   }
 
@@ -37,6 +38,7 @@ void PreviewSceneRenderCustomizer::on_layer_begin(Render::CommandBuffer& cmd_buf
 {
     PreviewSceneLayer id = PreviewSceneLayer(layer_idx);
     cmd_buf.set_depth_test_enabled(id != PreviewSceneLayer::CogMarker);
+    // FIXME: this is currently required because the segments_xxx vertex shaders produce triangles with inconsistent winding
     cmd_buf.set_cull_face_enabled(id != PreviewSceneLayer::Toolpaths);
 }
 

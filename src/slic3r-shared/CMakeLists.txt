@@ -67,6 +67,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/SidebarPrint.cpp
         include/Slic3r/App/SidebarActionButtons.hpp
         src/Slic3r/App/SidebarActionButtons.cpp
+        include/Slic3r/App/LightSetting.hpp
+        src/Slic3r/App/LightSetting.cpp
 
         src/Slic3r/App/Scene/Scene.cpp
         include/Slic3r/App/Scene/Scene.hpp
@@ -113,6 +115,10 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Scene/GeometryDataFactory.cpp
         include/Slic3r/App/Scene/ISceneProvider.hpp
         include/Slic3r/App/Scene/ScenePresenterProjectContext.hpp
+        src/Slic3r/App/Scene/Lights.cpp
+        include/Slic3r/App/Scene/Lights.hpp
+        include/Slic3r/App/Scene/LightingHelper.hpp
+        src/Slic3r/App/Scene/LightingHelper.cpp
 
         include/Slic3r/App/TestRenderModule.hpp
         src/Slic3r/App/TestRenderModule.cpp

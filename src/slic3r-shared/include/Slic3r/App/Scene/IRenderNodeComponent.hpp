@@ -5,6 +5,10 @@
 #include "Slic3r/App/Scene/Camera.hpp"
 #include "Slic3r/App/Render/Material.hpp"
 #include "Slic3r/App/Render/Types.hpp"
+#include "Slic3r/App/Scene/Lights.hpp"
+#include "Slic3r/App/Scene/LightingHelper.hpp"
+
+#include <optional>
 
 namespace Slic3r::App::Scene {
 
@@ -25,6 +29,7 @@ public:
     virtual void render(
         const Node& node,
         const Camera& camera,
+        const Lighting& lights,
         const Render::Material& material_override,
         Render::CommandBuffer& cmd_buffer
     ) const = 0;
@@ -42,6 +47,14 @@ public:
 
     virtual bool cast_shadows() const = 0;
     virtual bool receive_shadows() const = 0;
+
+    /**
+     * @brief Set associated pbr data.
+     */
+    virtual void set_pbr(const PBRParams& pbr) = 0;
+
+    virtual bool has_pbr() const = 0;
+    virtual const std::optional<PBRParams>& pbr() const = 0;
 };
 
 } // namespace Slic3r::App::Scene

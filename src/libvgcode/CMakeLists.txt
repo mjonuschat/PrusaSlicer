@@ -32,7 +32,6 @@ add_library(libvgcode
     src/Slic3r/App/libvgcode/Range.cpp
     src/Slic3r/App/libvgcode/SegmentTemplate.cpp
     src/Slic3r/App/libvgcode/ToolMarker.cpp
-    src/Slic3r/App/libvgcode/Types.cpp
     src/Slic3r/App/libvgcode/Utils.cpp
     src/Slic3r/App/libvgcode/AbstractViewer.cpp
     src/Slic3r/App/libvgcode/FdmViewer.cpp

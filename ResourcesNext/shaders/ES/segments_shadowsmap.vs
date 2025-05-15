@@ -1,0 +1,106 @@
+#version 300 es
+
+precision lowp usampler2D;
+
+const vec3 UP = vec3(0, 0, 1);
+
+uniform mat4 view_model_matrix;
+uniform mat4 projection_matrix;
+uniform vec3 light_position;
+
+uniform sampler2D position_tex;
+uniform sampler2D height_width_angle_tex;
+uniform usampler2D segment_index_tex;
+
+in int v_position;
+
+ivec2 tex_coord(sampler2D sampler, int id)
+{
+    ivec2 tex_size = textureSize(sampler, 0);
+    return (tex_size.y == 1) ? ivec2(id, 0) : ivec2(id % tex_size.x, id / tex_size.x);
+}
+
+ivec2 tex_coord_u(usampler2D sampler, int id)
+{
+    ivec2 tex_size = textureSize(sampler, 0);
+    return (tex_size.y == 1) ? ivec2(id, 0) : ivec2(id % tex_size.x, id / tex_size.x);
+}
+
+void main()
+{
+    int id_a = int(texelFetch(segment_index_tex, tex_coord_u(segment_index_tex, gl_InstanceID), 0).r);
+    int id_b = id_a + 1;
+    vec3 pos_a = texelFetch(position_tex, tex_coord(position_tex, id_a), 0).xyz;
+    vec3 pos_b = texelFetch(position_tex, tex_coord(position_tex, id_b), 0).xyz;
+    vec3 line = pos_b - pos_a;
+    // directions of the line box in world space
+    float line_len = length(line);
+    vec3 line_dir;
+    if (line_len < 1e-4)
+        line_dir = vec3(1.0, 0.0, 0.0);
+    else
+        line_dir = line / line_len;
+    vec3 line_right_dir;
+    if (abs(dot(line_dir, UP)) > 0.9) {
+        // For vertical lines, the width and height should be same, there is no concept of up and down.
+        // For simplicity, the code will expand width in the x axis, and height in the y axis
+        line_right_dir = normalize(cross(vec3(1, 0, 0), line_dir));
+    }
+    else
+        line_right_dir = normalize(cross(line_dir, UP));
+    vec3 line_up_dir = normalize(cross(line_right_dir, line_dir));
+    const vec2 horizontal_vertical_view_signs_array[16] = vec2[](
+        //horizontal view (from right)
+        vec2(1.0, 0.0),
+        vec2(0.0, 1.0),
+        vec2(0.0, 0.0),
+        vec2(0.0, -1.0),
+        vec2(0.0, -1.0),
+        vec2(1.0, 0.0),
+        vec2(0.0, 1.0),
+        vec2(0.0, 0.0),
+        // vertical view (from top)
+        vec2(0.0, 1.0),
+        vec2(-1.0, 0.0),
+        vec2(0.0, 0.0),
+        vec2(1.0, 0.0),
+        vec2(1.0, 0.0),
+        vec2(0.0, 1.0),
+        vec2(-1.0, 0.0),
+        vec2(0.0, 0.0)
+    );
+    int id = v_position < 4 ? id_a : id_b;
+    vec3 endpoint_pos = v_position < 4 ? pos_a : pos_b;
+    vec3 height_width_angle = texelFetch(height_width_angle_tex, tex_coord(height_width_angle_tex, id), 0).xyz;
+    int closer_id = (dot(light_position - pos_a, light_position - pos_a) < dot(light_position - pos_b, light_position - pos_b)) ? id_a : id_b;
+    vec3 closer_pos = (closer_id == id_a) ? pos_a : pos_b;
+    vec3 camera_view_dir = normalize(closer_pos - light_position);
+    vec3 closer_height_width_angle = texelFetch(height_width_angle_tex, tex_coord(height_width_angle_tex, closer_id), 0).xyz;
+    vec3 diagonal_dir_border = normalize(closer_height_width_angle.x * line_up_dir + closer_height_width_angle.y * line_right_dir);
+    bool is_vertical_view = abs(dot(camera_view_dir, line_up_dir)) / abs(dot(diagonal_dir_border, line_up_dir)) >
+        abs(dot(camera_view_dir, line_right_dir)) / abs(dot(diagonal_dir_border, line_right_dir));
+    vec2 signs = horizontal_vertical_view_signs_array[v_position + 8 * int(is_vertical_view)];
+    float view_right_sign = sign(dot(-camera_view_dir, line_right_dir));
+    float view_top_sign = sign(dot(-camera_view_dir, line_up_dir));
+    float half_height = 0.5 * height_width_angle.x;
+    float half_width = 0.5 * height_width_angle.y;
+    vec3 horizontal_dir = half_width * line_right_dir;
+    vec3 vertical_dir = half_height * line_up_dir;
+    float horizontal_sign = signs.x * view_right_sign;
+    float vertical_sign = signs.y * view_top_sign;
+    vec3 pos = endpoint_pos + horizontal_sign * horizontal_dir + vertical_sign * vertical_dir;
+    if (v_position == 2 || v_position == 7) {
+        float line_dir_sign = (v_position == 2) ? -1.0 : 1.0;
+        if (height_width_angle.z == 0) {
+            // There I add a cap to lines that do not have a following line
+            // (or they have one, but perfectly aligned, so the cap is hidden inside the next line).
+            pos += line_dir_sign * line_dir * half_width;
+        }
+        else {
+            pos += line_dir_sign * line_dir * half_width * sin(abs(height_width_angle.z) * 0.5);
+            pos += sign(height_width_angle.z) * horizontal_dir * cos(abs(height_width_angle.z) * 0.5);
+        }
+    }
+
+    gl_Position = projection_matrix * view_model_matrix * vec4(pos, 1.0);
+}

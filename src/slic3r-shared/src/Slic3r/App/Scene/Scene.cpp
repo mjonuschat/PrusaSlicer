@@ -9,12 +9,72 @@
 #include "Slic3r/App/Render/TextureManager.hpp"
 #include "Slic3r/App/Scene/MeshRenderNodeComponent.hpp"
 #include "Slic3r/App/Scene/NodeVisitor.hpp"
+#include "Slic3r/App/Scene/LightingHelper.hpp"
+#include "Slic3r/App/LightSetting.hpp"
 
 #include <imgui/imgui.h>
 
 #include <random>
 
 namespace Slic3r::App::Scene {
+
+enum class ShadingPass
+{
+    Shadowsmap,
+    ShadowsReceivers,
+    AOGBuffer,
+};
+
+std::vector<std::pair<std::string, std::string>> SHADOWSMAP_PASS_DICTIONARY = {
+    {"gouraud_light", "shadowsmap"},
+    {"printbed"     , "shadowsmap"},
+    {"options"      , "options_shadowsmap"},
+    {"segments"     , "segments_shadowsmap"},
+};
+
+std::vector<std::pair<std::string, std::string>> SHADOWS_RECEIVERS_PASS_DICTIONARY = {
+    {"gouraud_light", "phong_shadows"},
+    {"printbed"     , "printbed_phong_shadows"},
+    {"options"      , "options_phong_shadows"},
+    {"segments"     , "segments_phong_shadows"},
+};
+
+std::vector<std::pair<std::string, std::string>> AO_G_BUFFER_PASS_DICTIONARY = {
+    {"gouraud_light", "gbuffer_ao"},
+    {"printbed"     , "printbed_ao"},
+    {"options"      , "options_ao"},
+    {"segments"     , "segments_ao"},
+};
+
+static std::string shader_name_by_shading_pass(const std::string& shader_name, ShadingPass pass)
+{
+    switch (pass)
+    {
+    case ShadingPass::Shadowsmap:
+    {
+        auto it = std::find_if(SHADOWSMAP_PASS_DICTIONARY.begin(), SHADOWSMAP_PASS_DICTIONARY.end(),
+          [&shader_name](const auto& pair) { return pair.first == shader_name; });
+        return (it != SHADOWSMAP_PASS_DICTIONARY.end()) ? it->second : shader_name;
+    }
+    case ShadingPass::ShadowsReceivers:
+    {
+        auto it = std::find_if(SHADOWS_RECEIVERS_PASS_DICTIONARY.begin(), SHADOWS_RECEIVERS_PASS_DICTIONARY.end(),
+          [&shader_name](const auto& pair) { return pair.first == shader_name; });
+        return (it != SHADOWS_RECEIVERS_PASS_DICTIONARY.end()) ? it->second : shader_name;
+    }
+    case ShadingPass::AOGBuffer:
+    {
+        auto it = std::find_if(AO_G_BUFFER_PASS_DICTIONARY.begin(), AO_G_BUFFER_PASS_DICTIONARY.end(),
+          [&shader_name](const auto& pair) { return pair.first == shader_name; });
+        return (it != AO_G_BUFFER_PASS_DICTIONARY.end()) ? it->second : shader_name;
+    }
+    default:
+    {
+        // unsupported target
+        PANIC("Unsupported shading pass");
+    }
+    }
+}
 
 void MinimalSceneRenderCustomizer::on_render_begin(Render::CommandBuffer& cmd_buf)
 {
@@ -61,6 +121,13 @@ Scene::Scene() : m_camera_trackball(m_camera)
 {
     m_nodes_by_id[m_root.id()] = &m_root;
     m_root.set_debug_name("root");
+
+    if (m_pbr.enabled)
+        set_ao_enabled(true);
+    else if (m_ao.enabled)
+        set_shadows_enabled(true);
+    else
+        validate_lights(m_lighting.lights);
 }
 
 void Scene::add_child(Node* node, Node* parent)
@@ -240,7 +307,7 @@ Scene::NodeMaterials Scene::collect_nodes_with_material(const Node::NodePredicat
     return ret;
 }
 
-void Scene::render_shadowsmap_pass(Render::Device& device) const
+void Scene::render_shadowsmap_pass(Render::Device& device, ISceneRenderCustomizer* customizer) const
 {
     if (m_shadows.framebuffer == nullptr)
         m_shadows.pending_framebuffer_size = m_shadows.DEFAULT_FRAMEBUFFER_SIZE;
@@ -266,22 +333,28 @@ void Scene::render_shadowsmap_pass(Render::Device& device) const
 
     Eigen::AlignedBox3d world_aabb = m_shadows.bed_aabb;
 
-    Node::ConstNodeList nodes;
-    m_root.query([](auto n) {
-        return n->has_render_component() && n->render_component()->cast_shadows();
-    }, nodes);
+    NodeMaterials nodes = collect_nodes_with_material([](auto n) {
+        return n->has_render_component() && n->render_component()->cast_shadows() && !resolve_material(*n).transparent();
+    });
 
     if (!nodes.empty()) {
-        for (const Node* node : nodes) {
+        for (const auto& [node, material] : nodes) {
             if (node->has_raycast_component())
                 world_aabb.extend(node->raycast_component()->world_bounding_box(node->world_transform()).cast<double>());
         }
 
         Vec3d center = world_aabb.center();
 
-        Vec3d eye_light_dir = { 0.4574957, -0.4574957, -0.7624929 }; // taken from shader
-        Vec4d world_light_dir_omo = m_camera.model() * Vec4d(eye_light_dir.x(), eye_light_dir.y(), eye_light_dir.z(), 0.0);
-        Vec3d world_light_dir = Vec3d(world_light_dir_omo.x(), world_light_dir_omo.y(), world_light_dir_omo.z());
+        auto it = std::find_if(m_lighting.lights.begin(), m_lighting.lights.end(),
+            [](const Light& l) {
+                return l.shadows;
+            }
+        );
+        DEBUG_ASSERT(it != m_lighting.lights.end());
+
+        Vec3d world_light_dir = (it->system == LightReferenceSystem::Camera) ?
+            Vec3d(m_camera.model().block<3, 3>(0, 0) * it->direction.cast<double>()) :
+            it->direction.cast<double>();
         Vec3d world_light_pos = center - 1.0f * world_light_dir;
 
         m_shadows.light_cam.look_at(world_light_pos, center, Vec3d::UnitZ());
@@ -315,11 +388,39 @@ void Scene::render_shadowsmap_pass(Render::Device& device) const
         m_shadows.light_cam.set_projection(
             Render::ortho(-max_x, max_x, -max_y, max_y, eye_min.z(), eye_max.z()));
 
-        Render::Material material = Render::Material{}
-            .set_shader(device.context().shader_manager().shader("shadowsmap"));
+        if (customizer)
+            customizer->on_render_begin(*cmd_buffer);
 
-        for (const Node* node : nodes) {
-            node->render_component()->render(*node, m_shadows.light_cam, material, *cmd_buffer);
+        constexpr int INITIAL_LAYER = std::numeric_limits<int>::min();
+        int current_layer = INITIAL_LAYER;
+        for (auto& [n, mat]  : nodes) {
+            const bool first_iteration = current_layer == INITIAL_LAYER;
+
+            // did we start next layer
+            if (auto layer = n->render_component()->layer_index(); layer != current_layer) {
+                if (customizer) {
+                    if (current_layer != INITIAL_LAYER) {
+                        customizer->on_opaque_pass_end(*cmd_buffer, current_layer);
+                        customizer->on_layer_end(*cmd_buffer, current_layer);
+                    }
+                    customizer->on_layer_begin(*cmd_buffer, layer);
+                    customizer->on_opaque_pass_begin(*cmd_buffer, layer);
+                }
+                current_layer = layer;
+            }
+
+            std::string shader_name = device.context().shader_manager().shader_name(mat.shader());
+            shader_name = shader_name_by_shading_pass(shader_name, ShadingPass::Shadowsmap);
+            mat
+              .set_shader(device.context().shader_manager().shader(shader_name))
+              .set_uniform("light_position", (Vec3f)world_light_pos.cast<float>());
+            n->render_component()->render(*n, m_shadows.light_cam, m_lighting, mat, *cmd_buffer);
+        }
+
+        if (customizer) {
+            customizer->on_opaque_pass_end(*cmd_buffer, current_layer);
+            customizer->on_layer_end(*cmd_buffer, current_layer);
+            customizer->on_render_end(*cmd_buffer);
         }
     }
 
@@ -341,15 +442,19 @@ void Scene::render_shadows_receivers_pass(Render::Device& device, Render::Comman
     for (auto& [node, material] : nodes) {
         Matrix4f light_cam_matrix = (light_cam_proj_view_matrix * node->world_transform()).cast<float>();
         std::string shader_name = device.context().shader_manager().shader_name(material.shader());
+        shader_name = shader_name_by_shading_pass(shader_name, ShadingPass::ShadowsReceivers);
         material
-            .set_shader(device.context().shader_manager().shader(shader_name + "_shadows"))
+            .set_shader(device.context().shader_manager().shader(shader_name))
             .set_uniform("light_matrix", light_cam_matrix)
             .set_uniform("shadows_intensity", m_shadows.intensity)
             .set_texture(m_shadows.SHADOWSMAP_TEX_UNIT, m_shadows.framebuffer->depth())
             .set_uniform("shadowsmap", m_shadows.SHADOWSMAP_TEX_UNIT);
+
+        set_uniforms(m_lighting, material);
     }
 
     cmd_buffer.set_depth_test_enabled(true);
+    cmd_buffer.set_cull_face_enabled(true);
 
     if (customizer)
         customizer->on_render_begin(cmd_buffer);
@@ -372,7 +477,7 @@ void Scene::render_shadows_receivers_pass(Render::Device& device, Render::Comman
             current_layer = layer;
         }
 
-        n->render_component()->render(*n, m_camera, mat, cmd_buffer);
+        n->render_component()->render(*n, m_camera, m_lighting, mat, cmd_buffer);
     }
 
     if (customizer) {
@@ -410,6 +515,7 @@ void Scene::render_no_shadows_pass(Render::CommandBuffer& cmd_buffer, ISceneRend
     }
 
     cmd_buffer.set_depth_test_enabled(true);
+    cmd_buffer.set_cull_face_enabled(true);
 
     if (customizer)
         customizer->on_render_begin(cmd_buffer);
@@ -454,7 +560,7 @@ void Scene::render_no_shadows_pass(Render::CommandBuffer& cmd_buffer, ISceneRend
             }
         }
 
-        n->render_component()->render(*n, m_camera, mat, cmd_buffer);
+        n->render_component()->render(*n, m_camera, m_lighting, mat, cmd_buffer);
         was_opaque = is_opaque;
     }
 
@@ -468,7 +574,7 @@ void Scene::render_no_shadows_pass(Render::CommandBuffer& cmd_buffer, ISceneRend
     }
 }
 
-void Scene::render_ao_gbuffer_pass(Render::Device& device, const Domain::Index2& viewport_size) const
+void Scene::render_ao_gbuffer_pass(Render::Device& device, ISceneRenderCustomizer* customizer, const Domain::Index2& viewport_size) const
 {
     if (m_ao.gbuffer_fb == nullptr || m_ao.framebuffer_size != viewport_size) {
         if (m_ao.gbuffer_fb != nullptr)
@@ -476,11 +582,12 @@ void Scene::render_ao_gbuffer_pass(Render::Device& device, const Domain::Index2&
         Render::FramebufferCreationData data;
         data.width = viewport_size[0];
         data.height = viewport_size[1];
-        data.color_attachments.resize(4);
+        data.color_attachments.resize(5);
         data.color_attachments[AmbientOcclusion::EYE_POS_CLR_ATTR].format = Render::PixelFormat::RGBA16F;
         data.color_attachments[AmbientOcclusion::LIGHT_POS_CLR_ATTR].format = Render::PixelFormat::RGBA16F;
         data.color_attachments[AmbientOcclusion::EYE_NORM_CLR_ATTR].format = Render::PixelFormat::RGBA16F;
         data.color_attachments[AmbientOcclusion::COLOR_CLR_ATTR].format = Render::PixelFormat::RGBA8;
+        data.color_attachments[AmbientOcclusion::PBR_MATERIAL_ATTR].format = Render::PixelFormat::RGBA16F;
         m_ao.gbuffer_fb = device.context().framebuffer_manager().create(data);
     }
 
@@ -498,15 +605,48 @@ void Scene::render_ao_gbuffer_pass(Render::Device& device, const Domain::Index2&
 
     if (!nodes.empty()) {
         Transform light_cam_proj_view_matrix = m_shadows.light_cam.projection() * m_shadows.light_cam.view();
-        for (auto& [node, material] : nodes) {
-            Matrix4f light_cam_matrix = (light_cam_proj_view_matrix * node->world_transform()).cast<float>();
-            std::string shader_name = device.context().shader_manager().shader_name(material.shader());
-            material
-                .set_shader(device.context().shader_manager().shader(shader_name + "_ao"))
+
+        if (customizer)
+            customizer->on_render_begin(*cmd_buffer);
+
+        constexpr int INITIAL_LAYER = std::numeric_limits<int>::min();
+        int current_layer = INITIAL_LAYER;
+        for (auto& [n, mat]  : nodes) {
+            const bool first_iteration = current_layer == INITIAL_LAYER;
+
+            // did we start next layer
+            if (auto layer = n->render_component()->layer_index(); layer != current_layer) {
+                if (customizer) {
+                    if (current_layer != INITIAL_LAYER) {
+                        customizer->on_opaque_pass_end(*cmd_buffer, current_layer);
+                        customizer->on_layer_end(*cmd_buffer, current_layer);
+                    }
+                    customizer->on_layer_begin(*cmd_buffer, layer);
+                    customizer->on_opaque_pass_begin(*cmd_buffer, layer);
+                }
+                current_layer = layer;
+            }
+
+            Matrix4f light_cam_matrix = (light_cam_proj_view_matrix * n->world_transform()).cast<float>();
+            std::string shader_name = device.context().shader_manager().shader_name(mat.shader());
+            shader_name = shader_name_by_shading_pass(shader_name, ShadingPass::AOGBuffer);
+            mat
+                .set_shader(device.context().shader_manager().shader(shader_name))
                 .set_uniform("light_matrix", light_cam_matrix);
-            node->render_component()->render(*node, m_camera, material, *cmd_buffer);
+
+            if (m_pbr.enabled && n->render_component()->has_pbr())
+                set_uniforms(*n->render_component()->pbr(), mat);
+
+            n->render_component()->render(*n, m_camera, m_lighting, mat, *cmd_buffer);
+        }
+
+        if (customizer) {
+            customizer->on_opaque_pass_end(*cmd_buffer, current_layer);
+            customizer->on_layer_end(*cmd_buffer, current_layer);
+            customizer->on_render_end(*cmd_buffer);
         }
     }
+
     cmd_buffer->unbind_framebuffer(*m_ao.gbuffer_fb);
 }
 
@@ -593,13 +733,6 @@ void Scene::render_ao_texture_blur_pass(Render::Device& device, const Domain::In
     cmd_buffer->unbind_framebuffer(*m_ao.blur_fb);
 }
 
-static float lambert_f0(float ior)
-{
-    float num = ior - 1.0f;
-    float denom = ior + 1.0f;
-    return num * num / (denom * denom);
-}
-
 void Scene::render_ao_lighting_pass(Render::CommandBuffer& cmd_buffer, Render::Device& device, bool shadows) const
 {
     cmd_buffer.set_depth_test_enabled(false);
@@ -608,6 +741,7 @@ void Scene::render_ao_lighting_pass(Render::CommandBuffer& cmd_buffer, Render::D
     Render::Blending blending{ {Render::BlendFactor::SrcAlpha, Render::BlendFactor::OneMinusSrcAlpha} };
     cmd_buffer.set_blending(blending);
 
+    Matrix4f view = camera().view().cast<float>();
 
     Render::Material material;
     material
@@ -620,17 +754,19 @@ void Scene::render_ao_lighting_pass(Render::CommandBuffer& cmd_buffer, Render::D
         .set_uniform("g_light_position", AmbientOcclusion::LIGHT_POS_TEX_UNIT)
         .set_uniform("g_eye_normal", AmbientOcclusion::EYE_NORM_TEX_UNIT)
         .set_uniform("g_color", AmbientOcclusion::COLOR_TEX_UNIT)
+        .set_uniform("g_material", AmbientOcclusion::PBR_MATERIAL_TEX_UNIT)
         .set_uniform("ssao", AmbientOcclusion::AO_TEX_UNIT)
         .set_uniform("shadowsmap", Shadows::SHADOWSMAP_TEX_UNIT)
+        .set_uniform("view_matrix", view)
         .set_texture(AmbientOcclusion::EYE_POS_TEX_UNIT, m_ao.gbuffer_fb->color_attachment(AmbientOcclusion::EYE_POS_CLR_ATTR))
         .set_texture(AmbientOcclusion::LIGHT_POS_TEX_UNIT, m_ao.gbuffer_fb->color_attachment(AmbientOcclusion::LIGHT_POS_CLR_ATTR))
         .set_texture(AmbientOcclusion::EYE_NORM_TEX_UNIT, m_ao.gbuffer_fb->color_attachment(AmbientOcclusion::EYE_NORM_CLR_ATTR))
         .set_texture(AmbientOcclusion::COLOR_TEX_UNIT, m_ao.gbuffer_fb->color_attachment(AmbientOcclusion::COLOR_CLR_ATTR))
+        .set_texture(AmbientOcclusion::PBR_MATERIAL_TEX_UNIT, m_ao.gbuffer_fb->color_attachment(AmbientOcclusion::PBR_MATERIAL_ATTR))
         .set_texture(AmbientOcclusion::AO_TEX_UNIT, m_ao.blur_fb->color_attachment(0))
-        .set_texture(Shadows::SHADOWSMAP_TEX_UNIT, m_shadows.framebuffer->depth())
-        .set_uniform("material.metal", m_pbr.metal)
-        .set_uniform("material.roughness", m_pbr.roughness)
-        .set_uniform("material.f0", lambert_f0(m_pbr.ior));
+        .set_texture(Shadows::SHADOWSMAP_TEX_UNIT, m_shadows.framebuffer->depth());
+ 
+    set_uniforms(m_lighting, material);
 
     cmd_buffer.bind_and_draw(*m_screen_quad, material);
 
@@ -649,13 +785,13 @@ void Scene::render(Render::Device& device, Render::CommandBuffer& cmd_buffer, IS
 
     bool shadows = m_shadows.enabled && (uint32_t(flags) & uint32_t(SceneRenderFlag::Shadows)) != 0;
     if (shadows)
-        render_shadowsmap_pass(device);
+        render_shadowsmap_pass(device, customizer);
 
     bool ao = m_ao.enabled && (uint32_t(flags) & uint32_t(SceneRenderFlag::AmbientOcclusion)) != 0;
     if (ao) {
         const Render::Rect& viewport = m_camera.viewport();
         Domain::Index2 viewport_size = { viewport.width, viewport.height };
-        render_ao_gbuffer_pass(device, viewport_size);
+        render_ao_gbuffer_pass(device, customizer, viewport_size);
         generate_ao_kernel(device);
         generate_ao_noise(device);
         render_ao_texture_pass(device, viewport_size);
@@ -763,6 +899,67 @@ bool Scene::pick_at(float mouse_x, float mouse_y, NodePickResults& results, Ray*
     );
 
     return !ret.empty();
+}
+
+void Scene::validate_lights(Lights& lights)
+{
+    if (m_shadows.enabled) {
+        // ensure one light is set to cast shadows
+        int count = std::count_if(lights.begin(), lights.end(),
+            [](const Light& l) {
+                return l.shadows;
+            }
+        );
+        if (count == 0)
+            lights.front().shadows = true;
+        else if (count > 1) {
+            // keeps only the first light as casting shadows
+            bool found = false;
+            for (auto& l : lights) {
+                if (l.shadows) {
+                    found = true;
+                    continue;
+                }
+                if (found)
+                    l.shadows = false;
+            }
+        }
+    }
+    else
+        // ensure no light is set to cast shadows
+        std::for_each(lights.begin(), lights.end(), [](Light& l) { l.shadows = false; });
+
+    // avoid shininess == 0.0, see: https://registry.khronos.org/OpenGL-Refpages/gl4/html/pow.xhtml
+    std::for_each(lights.begin(), lights.end(),
+        [](Light& l) { if (l.shininess == 0.0f) l.shininess = 0.001f; });
+}
+
+void Scene::set_shadows_enabled(bool enable)
+{
+    m_shadows.enabled = enable;
+    if (!enable) {
+        m_ao.enabled = false;
+        m_pbr.enabled = false;
+    }
+    validate_lights(m_lighting.lights);
+}
+
+void Scene::set_ao_enabled(bool enable)
+{
+    m_ao.enabled = enable;
+    if (enable)
+        set_shadows_enabled(true);
+    else
+        m_pbr.enabled = false;
+}
+
+void Scene::set_pbr_enabled(bool enable)
+{
+    m_pbr.enabled = enable;
+    if (enable) {
+        m_ao.enabled = true;
+        set_shadows_enabled(true);
+    }
 }
 
 void Scene::log_nodes() const

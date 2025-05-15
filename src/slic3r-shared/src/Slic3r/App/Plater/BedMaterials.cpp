@@ -14,9 +14,8 @@ Render::Material BedMaterials::plate_default_material(const Render::Device& devi
     ColorRGBA color = DEFAULT_BED_PLATE_COLOR;
     Render::Material ret;
     ret
-        .set_shader(device.context().shader_manager().shader("phong"))
+        .set_shader(device.context().shader_manager().shader("gouraud_light"))
         .set_uniform("uniform_color", color)
-        .set_uniform("emission_factor", 0.0f)
         .set_transparent(color.is_transparent());
     return ret;
 }
@@ -70,9 +69,8 @@ Render::Material BedMaterials::model_material(const Render::Device& device)
     ColorRGBA color = DEFAULT_BED_MODEL_COLOR;
     Render::Material ret;
     ret
-        .set_shader(device.context().shader_manager().shader("phong"))
+        .set_shader(device.context().shader_manager().shader("gouraud_light"))
         .set_uniform("uniform_color", color)
-        .set_uniform("emission_factor", 0.0f)
         .set_transparent(color.is_transparent());
     return ret;
 }
@@ -82,9 +80,8 @@ Render::Material BedMaterials::plate_default_override_material(const Render::Dev
     ColorRGBA color = DISABLED_BED_PLATE_COLOR;
     Render::Material ret;
     ret
-        .set_shader(device.context().shader_manager().shader("phong"))
+        .set_shader(device.context().shader_manager().shader("gouraud_light"))
         .set_uniform("uniform_color", color)
-        .set_uniform("emission_factor", 0.0f)
         .set_transparent(color.is_transparent());
     return ret;
 }

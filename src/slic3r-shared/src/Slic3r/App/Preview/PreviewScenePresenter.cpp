@@ -12,8 +12,13 @@ PreviewScenePresenter::PreviewScenePresenter(const Domain::Workbench& workbench,
 
 void PreviewScenePresenter::render_scene(Render::CommandBuffer& command_buffer)
 {
-    if (!m_projects.empty())
-        project_context().scene().render(m_device, command_buffer, this);
+    if (!m_projects.empty()){
+        Scene::SceneRenderFlag flags = Scene::SceneRenderFlag(
+            uint32_t(Scene::SceneRenderFlag::Shadows) |
+            uint32_t(Scene::SceneRenderFlag::AmbientOcclusion)
+        );
+        project_context().scene().render(m_device, command_buffer, this, flags);
+    }
 }
 
 void PreviewScenePresenter::render_imgui(const Render::ScreenInfo& screen_info)

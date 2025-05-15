@@ -1,6 +1,6 @@
 #version 300 es
 
-const int MAX_LIGHTS=4;
+#define MAX_LIGHTS 4
 
 struct Light
 {
@@ -12,6 +12,7 @@ struct Light
     float shininess;
 };
 
+uniform mat4 view_matrix;
 uniform mat4 view_model_matrix;
 uniform mat4 projection_matrix;
 uniform mat3 view_normal_matrix;
@@ -22,23 +23,32 @@ uniform Light lights[MAX_LIGHTS];
 
 in vec3 v_position;
 in vec3 v_normal;
+
 out float intensity;
 out vec3 world_position;
 
-float lighting(vec3 eye_position, vec3 eye_normal) {
+vec3 light_direction(Light light)
+{
+    // return light direction in eye coordinates
+    return (light.system == 0) ? (view_matrix * vec4(-light.direction, 0.0)).xyz : -light.direction;
+}
+
+float lighting(vec3 eye_position, vec3 eye_normal)
+{
     float ambient = 0.0;
     float diffuse = 0.0;
     float specular = 0.0;
     for (int i = 0; i < num_lights; ++i) {
-        vec3 light_direction = (lights[i].system == 0) ? (view_model_matrix * -vec4(lights[i].direction, 0.0f)).xyz : lights[i].direction;
+        vec3 dir = light_direction(lights[i]);
         ambient += lights[i].ambient;
-        diffuse += lights[i].diffuse * max(dot(eye_normal, light_direction), 0.0);
-        specular += lights[i].specular * pow(max(dot(-normalize(eye_position), reflect(-light_direction, eye_normal)), 0.0), lights[i].shininess);
-    };
+        diffuse += lights[i].diffuse * max(dot(eye_normal, dir), 0.0);
+        specular += lights[i].specular * pow(max(dot(-normalize(eye_position), reflect(-dir, eye_normal)), 0.0), lights[i].shininess);
+    }
     return ambient + diffuse + specular;
 }
 
-void main() {
+void main()
+{
     world_position = scale_factor * v_position + world_origin;
     vec3 eye_position = (view_model_matrix * vec4(world_position, 1.0)).xyz;
     vec3 eye_normal = normalize(view_normal_matrix * v_normal);

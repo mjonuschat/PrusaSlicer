@@ -80,38 +80,6 @@ struct CustomOption
 
 using CustomOptions = std::vector<CustomOption>;
 
-enum class LightReferenceSystem
-{
-    World,
-    Eye,
-    COUNT
-};
-
-static constexpr size_t LIGHT_REFERENCE_SYSTEMS_COUNT = size_t(LightReferenceSystem::COUNT);
-
-std::string light_reference_system_to_string(LightReferenceSystem sys);
-
-static constexpr LightReferenceSystem DEFAULT_LIGHT_REFERENCE_SYSTEMS = LightReferenceSystem::World;
-static const Domain::Vec3f DEFAULT_LIGHT_DIRECTION = { 0.0f, 0.0f, -1.0f };
-static constexpr float DEFAULT_LIGHT_AMBIENT = 0.1f;
-static constexpr float DEFAULT_LIGHT_DIFFUSE = 0.1f;
-static constexpr float DEFAULT_LIGHT_SPECULAR = 0.1f;
-static constexpr float DEFAULT_LIGHT_SHININESS = 1.0f;
-
-struct Light
-{
-    LightReferenceSystem system{ DEFAULT_LIGHT_REFERENCE_SYSTEMS };
-    Domain::Vec3f direction{ DEFAULT_LIGHT_DIRECTION };
-    float ambient{ DEFAULT_LIGHT_AMBIENT };
-    float diffuse{ DEFAULT_LIGHT_DIFFUSE };
-    float specular{ DEFAULT_LIGHT_SPECULAR };
-    float shininess{ DEFAULT_LIGHT_SHININESS };
-};
-
-static constexpr size_t MAX_NUM_LIGHTS = 4;
-
-using Lights = std::vector<Light>;
-
 //
 // Parameters for export to obj file
 //

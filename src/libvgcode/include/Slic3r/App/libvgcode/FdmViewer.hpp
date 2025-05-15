@@ -20,6 +20,7 @@
 #include <Slic3r/Biz/libpgcode/ProcessorResult.hpp>
 
 #include <Slic3r/App/Render/Buffer.hpp>
+#include <Slic3r/App/Scene/AabbRaycastNodeComponent.hpp>
 
 #define USE_TEXTURE_BUFFER (1 && SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED)
 
@@ -385,6 +386,8 @@ private:
 
     size_t m_enabled_segments_count{ 0 };
     size_t m_enabled_options_count{ 0 };
+
+    std::pair<Domain::TriangleMesh, AABBMesh> m_aabb;
 
     void update_view_full_range() override;
     void update_color_ranges();

@@ -53,7 +53,6 @@ private:
     std::unique_ptr<wxGLContext> m_gl_context;
     std::chrono::time_point<Clock> m_start_time;
 
-    std::string m_glsl_version;
     bool m_initialized{false};
 };
 

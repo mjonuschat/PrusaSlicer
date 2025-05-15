@@ -4,6 +4,8 @@
 #include "ViewRange.hpp"
 #include "Layers.hpp"
 
+#include <Slic3r/App/Scene/Lights.hpp>
+
 namespace Slic3r::App::Render {
 class Device;
 } // namespace Slic3r::App::Render
@@ -62,9 +64,8 @@ public:
     const Interval& view_visible_range() const { return m_view_range.visible(); }
     virtual void set_view_visible_range(Interval::value_type min, Interval::value_type max);
 
-    const Lights& lights() const { return m_lights; }
-    void set_lights(const Lights& lights);
-    const Lights& default_lights() const;
+    const Scene::Lighting& lights() const { return m_lights; }
+    void set_lights(const Scene::Lighting& lights);
 
 protected:
     virtual void update_view_full_range() = 0;
@@ -73,7 +74,7 @@ protected:
     //
     // Lights used in rendering
     //
-    Lights m_lights;
+    Scene::Lighting m_lights;
     //
     // Detected layers
     //

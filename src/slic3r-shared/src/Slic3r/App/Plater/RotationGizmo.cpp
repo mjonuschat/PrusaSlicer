@@ -323,7 +323,6 @@ static void build_rotate_node(AxisType axis, Scene::NodeBuilder& builder, Render
 
             Render::Material material = Render::Material{}
                 .set_shader(device.context().shader_manager().shader("gouraud_light"))
-                .set_uniform("uniform_color", color)
                 .set_uniform("emission_factor", 0.0f);
 
             child_bldr
@@ -344,7 +343,6 @@ static void build_rotate_node(AxisType axis, Scene::NodeBuilder& builder, Render
 
             Render::Material material = Render::Material{}
                 .set_shader(device.context().shader_manager().shader("gouraud_light"))
-                .set_uniform("uniform_color", color)
                 .set_uniform("emission_factor", 0.0f);
 
             child_bldr
@@ -366,7 +364,6 @@ static void build_rotate_node(AxisType axis, Scene::NodeBuilder& builder, Render
 
             Render::Material material = Render::Material{}
                 .set_shader(device.context().shader_manager().shader("gouraud_light"))
-                .set_uniform("uniform_color", color)
                 .set_uniform("emission_factor", 0.0f);
 
             child_bldr

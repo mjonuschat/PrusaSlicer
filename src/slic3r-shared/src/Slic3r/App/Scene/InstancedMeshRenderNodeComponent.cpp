@@ -4,24 +4,26 @@
 
 #include "Slic3r/App/Scene/InstancedMeshRenderNodeComponent.hpp"
 #include "Slic3r/App/Scene/Node.hpp"
+#include "Slic3r/App/Scene/LightingHelper.hpp"
 #include "Slic3r/App/Render/Geometry.hpp"
 
 namespace Slic3r::App::Scene {
 
 const std::string UNIFORM_VIEW_MODEL_MATRIX = "view_model_matrix";
+const std::string UNIFORM_VIEW_MATRIX = "view_matrix";
 const std::string UNIFORM_PROJECTION_MATRIX = "projection_matrix";
 const std::string UNIFORM_VIEW_NORMAL_MATRIX = "view_normal_matrix";
 
 void InstancedMeshRenderNodeComponent::render(
     const Node& node,
     const Camera& camera,
+    const Lighting& lights,
     const Render::Material& resolved_material,
     Render::CommandBuffer& cmd_buffer
 ) const
 {
     if (m_instances_count == 0)
         return;
-
 
     const Render::Shader& shader = *resolved_material.shader();
     Render::Material material = resolved_material;
@@ -31,6 +33,8 @@ void InstancedMeshRenderNodeComponent::render(
     const Transform& model = node.world_transform();
 
     // update per-node uniforms
+    Matrix4f view_m = view.cast<float>();
+    material.set_uniform(UNIFORM_VIEW_MATRIX, view_m);
     Matrix4f model_view = (view * model).cast<float>();
     material.set_uniform(UNIFORM_VIEW_MODEL_MATRIX, model_view);
     Matrix4f value = camera.projection().cast<float>();
@@ -38,6 +42,8 @@ void InstancedMeshRenderNodeComponent::render(
     Matrix3f normal =
         (view.block<3, 3>(0, 0) * model.block<3, 3>(0, 0)).inverse().transpose().cast<float>();
     material.set_uniform(UNIFORM_VIEW_NORMAL_MATRIX, normal);
+
+    set_uniforms(lights, material);
 
     cmd_buffer.bind_and_draw_instanced(*m_geometry, material, m_instances_count);
 }

@@ -1,6 +1,7 @@
 #include "Slic3r/App/Plater/PlaterRenderModule.hpp"
 #include "Slic3r/App/Scene/NodeBuilder.hpp"
 #include "Slic3r/App/Scene/NodeVisitor.hpp"
+#include "Slic3r/App/Scene/LightingHelper.hpp"
 #include "Slic3r/App/Render/Device.hpp"
 #include "Slic3r/App/Render/ScopedDebugGroup.hpp"
 #include "Slic3r/App/Render/GeometryBuilder.hpp"
@@ -24,6 +25,7 @@
 #include "Slic3r/App/SidebarBed.hpp"
 #include "Slic3r/App/SidebarPrint.hpp"
 #include "Slic3r/App/SidebarActionButtons.hpp"
+#include "Slic3r/App/LightSetting.hpp"
 #include "Slic3r/App/Plater/History.hpp"
 #include "Slic3r/App/Plater/SidebarPlaterActionButtons.hpp"
 
@@ -36,7 +38,6 @@
 #define ENABLED_DEBUG_BEDS 1
 #define ENABLED_DEBUG_LOAD_3MF 0
 #define ENABLED_DEBUG_CAMERA 0
-#define ENABLED_DEBUG_SCENE_SHADING 0
 
 namespace Slic3r::App::Plater {
 
@@ -72,6 +73,8 @@ void PlaterRenderModule::on_init(Render::Device& device, Render::ImguiRender& im
     init_gizmos();
     init_scene();
     init_scene_layout();
+
+    m_scene_presenter->scene().set_lights(Slic3r::App::global_lighting());
 }
 
 void PlaterRenderModule::add_type_changed_listener(IRenderModuleChangedListener* l)
@@ -960,331 +963,6 @@ static void render_imgui_debug_camera(const Scene::Camera& camera, const Scene::
 }
 #endif // ENABLED_DEBUG_CAMERA
 
-#if ENABLED_DEBUG_SCENE_SHADING
-static void render_imgui_debug_scene_shading(PlaterScenePresenter& scene_presenter)
-{
-    Scene::Scene& scene = scene_presenter.scene();
-
-    int shadowsmap_size = scene.shadowsmap_size();
-    if (shadowsmap_size == 0)
-        return;
-
-    float items_width = 150.0f;
-
-    std::string caption = "Scene shading debug";
-    const ImGuiStyle& style = ImGui::GetStyle();
-    float min_w = ImGui::CalcTextSize(caption.c_str()).x +
-        2.0f * (style.WindowPadding.x + style.FramePadding.x + style.ItemSpacing.x);
-    ImGui::SetNextWindowSizeConstraints({ min_w, 0.0f }, { FLT_MAX, FLT_MAX });
-    ImGui::SetNextWindowCollapsed(true, ImGuiCond_Once);
-    if (ImGui::Begin(caption.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar)) {
-
-        if (ImGui::CollapsingHeader("Shadows")) {
-
-            bool enabled = scene.shadows_enabled();
-            if (ImGui::Checkbox("Enabled##Shadows", &enabled))
-                scene.set_shadows_enabled(enabled);
-
-            bool bed_model_cast_shadow = scene.bed_model_cast_shadow();
-            if (ImGui::Checkbox("Bed model cast shadow", &bed_model_cast_shadow)) {
-                scene.set_bed_model_cast_shadow(bed_model_cast_shadow);
-                scene_presenter.update_beds_shadows_data();
-            }
-
-            if (ImGui::BeginTable("Shadows", 2, ImGuiTableFlags_Borders)) {
-
-                ImGui::TableNextRow();
-                ImGui::TableSetColumnIndex(0);
-                ImGui::AlignTextToFramePadding();
-                ImGui::Text("Shadowsmap size");
-                ImGui::TableSetColumnIndex(1);
-
-                const std::vector<int> sizes = {
-                    512,
-                    1024,
-                    2048,
-                    4096,
-                    8192
-                };
-
-                std::vector<std::string> sizes_str;
-                std::transform(sizes.begin(), sizes.end(), std::back_inserter(sizes_str), [](int size) {
-                    return std::to_string(size) + "x" + std::to_string(size);
-                });
-
-                auto it = std::find(sizes.begin(), sizes.end(), shadowsmap_size);
-                DEBUG_ASSERT(it != sizes.end());
-                int sel_size = int(std::distance(sizes.begin(), it));
-
-                const char* preview_value = sizes_str[sel_size].c_str();
-
-                ImGui::SetNextItemWidth(items_width);
-                if (ImGui::BeginCombo("##sizes", preview_value)) {
-                    for (int i = 0; i < int(sizes_str.size()); i++) {
-                        bool is_selected = (sel_size == i);
-                        if (ImGui::Selectable(sizes_str[i].c_str(), is_selected))
-                            sel_size = i;
-
-                        // Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
-                        if (is_selected)
-                            ImGui::SetItemDefaultFocus();
-                    }
-                    ImGui::EndCombo();
-                }
-
-                if (sizes[sel_size] != shadowsmap_size)
-                    scene.set_shadowsmap_size(sizes[sel_size]);
-
-                float intensity = scene.shadows_intensity();
-                ImGui::TableNextRow();
-                ImGui::TableSetColumnIndex(0);
-                ImGui::AlignTextToFramePadding();
-                ImGui::Text("Intensity");
-                ImGui::TableSetColumnIndex(1);
-                ImGui::SetNextItemWidth(items_width);
-                if (ImGui::SliderFloat("##intensity", &intensity, 0.2f, 1.0f, "%.2f", ImGuiSliderFlags_NoInput))
-                    scene.set_shadows_intensity(intensity);
-
-                ImGui::EndTable();
-            }
-
-        }
-
-        if (ImGui::CollapsingHeader("Ambient occlusion")) {
-
-            bool enabled = scene.ao_enabled();
-            if (ImGui::Checkbox("Enabled##ao", &enabled))
-                scene.set_ao_enabled(enabled);
-
-            Domain::Index2 fb_size = scene.ao_framebuffer_size();
-            if (fb_size[0] > 0 && fb_size[1] > 0) {
-                if (ImGui::BeginTable("AO", 2, ImGuiTableFlags_Borders)) {
-
-                    ImGui::TableNextRow();
-                    ImGui::TableSetColumnIndex(0);
-                    ImGui::AlignTextToFramePadding();
-                    ImGui::Text("Framebuffer size");
-                    ImGui::TableSetColumnIndex(1);
-                    ImGui::Text("%dx%d", fb_size[0], fb_size[1]);
-
-                    size_t k_size = scene.ao_kernel_size();
-                    if (k_size > 0) {
-
-                        ImGui::TableNextRow();
-                        ImGui::TableSetColumnIndex(0);
-                        ImGui::AlignTextToFramePadding();
-                        ImGui::Text("Kernel size");
-                        ImGui::TableSetColumnIndex(1);
-
-                        const std::vector<int> k_sizes = {
-                            4,
-                            8,
-                            16,
-                            32,
-                            64,
-                            128,
-                            256,
-                        };
-
-                        std::vector<std::string> k_sizes_str;
-                        std::transform(k_sizes.begin(), k_sizes.end(), std::back_inserter(k_sizes_str), [](int size) {
-                            return std::to_string(size);
-                        });
-
-                        auto k_it = std::find(k_sizes.begin(), k_sizes.end(), k_size);
-                        DEBUG_ASSERT(k_it != k_sizes.end());
-                        int sel_k_size = int(std::distance(k_sizes.begin(), k_it));
-
-                        const char* k_preview_value = k_sizes_str[sel_k_size].c_str();
-
-                        ImGui::SetNextItemWidth(items_width);
-                        if (ImGui::BeginCombo("##k_sizes", k_preview_value)) {
-                            for (int i = 0; i < int(k_sizes_str.size()); i++) {
-                                bool is_selected = (sel_k_size == i);
-                                if (ImGui::Selectable(k_sizes_str[i].c_str(), is_selected))
-                                    sel_k_size = i;
-
-                                // Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
-                                if (is_selected)
-                                    ImGui::SetItemDefaultFocus();
-                            }
-                            ImGui::EndCombo();
-                        }
-
-                        if (k_sizes[sel_k_size] != k_size)
-                            scene.set_ao_kernel_size(k_sizes[sel_k_size]);
-                    }
-
-                    size_t n_size = scene.ao_noise_size();
-                    if (n_size > 0) {
-
-                        ImGui::TableNextRow();
-                        ImGui::TableSetColumnIndex(0);
-                        ImGui::AlignTextToFramePadding();
-                        ImGui::Text("Noise size");
-                        ImGui::TableSetColumnIndex(1);
-
-                        const std::vector<int> n_sizes = {
-                            4,
-                            8,
-                            16,
-                            32,
-                        };
-
-                        std::vector<std::string> n_sizes_str;
-                        std::transform(n_sizes.begin(), n_sizes.end(), std::back_inserter(n_sizes_str), [](int size) {
-                            return std::to_string(size) + "x" + std::to_string(size);
-                        });
-
-                        auto n_it = std::find(n_sizes.begin(), n_sizes.end(), n_size);
-                        DEBUG_ASSERT(n_it != n_sizes.end());
-                        int sel_n_size = int(std::distance(n_sizes.begin(), n_it));
-
-                        const char* n_preview_value = n_sizes_str[sel_n_size].c_str();
-
-                        ImGui::SetNextItemWidth(items_width);
-                        if (ImGui::BeginCombo("##n_sizes", n_preview_value)) {
-                            for (int i = 0; i < int(n_sizes_str.size()); i++) {
-                                bool is_selected = (sel_n_size == i);
-                                if (ImGui::Selectable(n_sizes_str[i].c_str(), is_selected))
-                                    sel_n_size = i;
-
-                                // Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
-                                if (is_selected)
-                                    ImGui::SetItemDefaultFocus();
-                            }
-                            ImGui::EndCombo();
-                        }
-
-                        if (n_sizes[sel_n_size] != n_size)
-                            scene.set_ao_noise_size(n_sizes[sel_n_size]);
-                    }
-
-                    float radius = scene.ao_radius();
-                    ImGui::TableNextRow();
-                    ImGui::TableSetColumnIndex(0);
-                    ImGui::AlignTextToFramePadding();
-                    ImGui::Text("Radius");
-                    ImGui::TableSetColumnIndex(1);
-                    ImGui::SetNextItemWidth(items_width);
-                    if (ImGui::SliderFloat("##ao_radius", &radius, 0.1f, 50.0f, "%.1f", ImGuiSliderFlags_NoInput))
-                        scene.set_ao_radius(radius);
-
-                    float bias = scene.ao_bias();
-                    ImGui::TableNextRow();
-                    ImGui::TableSetColumnIndex(0);
-                    ImGui::AlignTextToFramePadding();
-                    ImGui::Text("Bias");
-                    ImGui::TableSetColumnIndex(1);
-                    ImGui::SetNextItemWidth(items_width);
-                    if (ImGui::SliderFloat("##ao_bias", &bias, 0.001f, 10.0f, "%.3f", ImGuiSliderFlags_NoInput))
-                        scene.set_ao_bias(bias);
-
-                    size_t bf_size = scene.ao_blur_filter_size();
-                    if (bf_size > 0) {
-
-                        ImGui::TableNextRow();
-                        ImGui::TableSetColumnIndex(0);
-                        ImGui::AlignTextToFramePadding();
-                        ImGui::Text("Blur filter size");
-                        ImGui::TableSetColumnIndex(1);
-
-                        const std::vector<int> bf_sizes = {
-                            2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16
-                        };
-
-                        std::vector<std::string> bf_sizes_str;
-                        std::transform(bf_sizes.begin(), bf_sizes.end(), std::back_inserter(bf_sizes_str), [](int size) {
-                            return std::to_string(size) + "x" + std::to_string(size);
-                        });
-
-                        auto bf_it = std::find(bf_sizes.begin(), bf_sizes.end(), bf_size);
-                        DEBUG_ASSERT(bf_it != bf_sizes.end());
-                        int sel_bf_size = int(std::distance(bf_sizes.begin(), bf_it));
-
-                        const char* bf_preview_value = bf_sizes_str[sel_bf_size].c_str();
-
-                        ImGui::SetNextItemWidth(items_width);
-                        if (ImGui::BeginCombo("##bf_sizes", bf_preview_value)) {
-                            for (int i = 0; i < int(bf_sizes_str.size()); i++) {
-                                bool is_selected = (sel_bf_size == i);
-                                if (ImGui::Selectable(bf_sizes_str[i].c_str(), is_selected))
-                                    sel_bf_size = i;
-
-                                // Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
-                                if (is_selected)
-                                    ImGui::SetItemDefaultFocus();
-                            }
-                            ImGui::EndCombo();
-                        }
-
-                        if (bf_sizes[sel_bf_size] != bf_size)
-                            scene.set_ao_blur_filter_size(bf_sizes[sel_bf_size]);
-                    }
-
-                    ImGui::EndTable();
-                }
-            }
-        }
-
-        if (scene.ao_enabled()) {
-            if (ImGui::CollapsingHeader("Physically based rendering")) {
-                bool enabled = scene.pbr_enabled();
-                if (ImGui::Checkbox("Enabled##pbr", &enabled))
-                    scene.set_pbr_enabled(enabled);
-
-                if (ImGui::BeginTable("PBR", 2, ImGuiTableFlags_Borders)) {
-
-                    float intensity = scene.pbr_intensity();
-                    ImGui::TableNextRow();
-                    ImGui::TableSetColumnIndex(0);
-                    ImGui::AlignTextToFramePadding();
-                    ImGui::Text("Intensity");
-                    ImGui::TableSetColumnIndex(1);
-                    ImGui::SetNextItemWidth(items_width);
-                    if (ImGui::SliderFloat("##pbr_intensity", &intensity, 1.0f, 20.0f, "%.1f", ImGuiSliderFlags_NoInput))
-                        scene.set_pbr_intensity(intensity);
-
-                    float metal = scene.pbr_metal();
-                    ImGui::TableNextRow();
-                    ImGui::TableSetColumnIndex(0);
-                    ImGui::AlignTextToFramePadding();
-                    ImGui::Text("Metal");
-                    ImGui::TableSetColumnIndex(1);
-                    ImGui::SetNextItemWidth(items_width);
-                    if (ImGui::SliderFloat("##metal", &metal, 0.0f, 1.0f, "%.2f", ImGuiSliderFlags_NoInput))
-                        scene.set_pbr_metal(metal);
-
-                    float roughness = scene.pbr_roughness();
-                    ImGui::TableNextRow();
-                    ImGui::TableSetColumnIndex(0);
-                    ImGui::AlignTextToFramePadding();
-                    ImGui::Text("Roughness");
-                    ImGui::TableSetColumnIndex(1);
-                    ImGui::SetNextItemWidth(items_width);
-                    if (ImGui::SliderFloat("##roughness", &roughness, 0.0f, 1.0f, "%.2f", ImGuiSliderFlags_NoInput))
-                        scene.set_pbr_roughness(roughness);
-
-                    float ior = scene.pbr_ior();
-                    ImGui::TableNextRow();
-                    ImGui::TableSetColumnIndex(0);
-                    ImGui::AlignTextToFramePadding();
-                    ImGui::Text("IOR");
-                    ImGui::TableSetColumnIndex(1);
-                    ImGui::SetNextItemWidth(items_width);
-                    if (ImGui::SliderFloat("##ior", &ior, 1.0f, 2.5f, "%.3f", ImGuiSliderFlags_NoInput))
-                        scene.set_pbr_ior(ior);
-
-                    ImGui::EndTable();
-                }
-
-            }
-        }
-    }
-    ImGui::End();
-}
-#endif // ENABLED_DEBUG_SCENE_SHADING
-
 void PlaterRenderModule::render_imgui(Render::CommandBuffer & cmd_buffer)
 {
     if (!m_scene_presenter->project_ready())
@@ -1327,9 +1005,12 @@ void PlaterRenderModule::render_imgui(Render::CommandBuffer & cmd_buffer)
 #if ENABLED_DEBUG_CAMERA
     render_imgui_debug_camera(m_scene_presenter->scene().camera(), m_scene_presenter->scene().camera_trackball());
 #endif // ENABLED_DEBUG_CAMERA
-#if ENABLED_DEBUG_SCENE_SHADING
-    render_imgui_debug_scene_shading(*m_scene_presenter);
-#endif // ENABLED_DEBUG_SCENE_SHADING
+#if ENABLED_SCENE_SHADING_CUSTOMIZATION
+    render_imgui_scene_shading_customization(*m_scene_presenter, [this]() { m_scene_presenter->update_beds_shadows_data(); });
+#endif // ENABLED_SCENE_SHADING_CUSTOMIZATION
+#if ENABLED_LIGHTS_CUSTOMIZATION
+    render_imgui_lights_customization(*m_scene_presenter);
+#endif // ENABLED_LIGHTS_CUSTOMIZATION
 }
 
 void PlaterRenderModule::render_object_hud(const Scene::Node& n, const Eigen::AlignedBox<float, 2>& screen_bounding_box)
@@ -1357,8 +1038,17 @@ void PlaterRenderModule::on_scene_keyboard_event(const Platform::KeyboardEvent& 
         Platform::AbstractRenderModule::on_scene_keyboard_event(e);
 }
 
-void PlaterRenderModule::on_activated() {}
-void PlaterRenderModule::on_deactivated() {}
+void PlaterRenderModule::on_activated()
+{
+    if (m_scene_presenter != nullptr)
+        m_scene_presenter->scene().set_lights(Slic3r::App::global_lighting());
+}
+
+void PlaterRenderModule::on_deactivated()
+{
+    Slic3r::App::set_global_lighting(m_scene_presenter->scene().lights());
+}
+
 void PlaterRenderModule::on_screen_resized()
 {
     // m_scene->camera().set_viewport(Render::Rect::from(0, 0, m_screen_info));

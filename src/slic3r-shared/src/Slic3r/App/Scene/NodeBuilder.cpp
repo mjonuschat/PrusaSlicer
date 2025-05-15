@@ -63,6 +63,16 @@ NodeBuilder& NodeBuilder::set_shadows(const Render::Shadows& shadows)
     return *this;
 }
 
+NodeBuilder& NodeBuilder::set_pbr(const PBRParams& pbr)
+{
+    ensure_current();
+
+    if (m_current->has_render_component())
+        m_current->render_component()->set_pbr(pbr);
+
+    return *this;
+}
+
 NodeBuilder& NodeBuilder::set_imgui_func(const FuncImguiRenderNodeComponent::RenderFunc& imgui_render_func)
 {
     ensure_current();

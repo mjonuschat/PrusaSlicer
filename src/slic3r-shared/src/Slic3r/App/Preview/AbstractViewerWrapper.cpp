@@ -8,19 +8,14 @@ bool AbstractViewerWrapper::has_data() const
     return viewer().layers_count() > 0;
 }
 
-const libvgcode::Lights& AbstractViewerWrapper::lights() const
+const Scene::Lighting& AbstractViewerWrapper::lights() const
 {
     return viewer().lights();
 }
 
-void AbstractViewerWrapper::set_lights(const libvgcode::Lights& lights)
+void AbstractViewerWrapper::set_lights(const Scene::Lighting& lights)
 {
     viewer().set_lights(lights);
-}
-
-const libvgcode::Lights& AbstractViewerWrapper::default_lights() const
-{
-    return viewer().default_lights();
 }
 
 DoubleSliderForLayers *AbstractViewerWrapper::double_slider_layers() const
@@ -29,3 +24,4 @@ DoubleSliderForLayers *AbstractViewerWrapper::double_slider_layers() const
 }
 
 } // namespace Slic3r::App::Preview
+

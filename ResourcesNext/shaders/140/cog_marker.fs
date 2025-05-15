@@ -7,6 +7,7 @@ uniform vec3 world_origin;
 
 in float intensity;
 in vec3 world_position;
+
 out vec4 out_color;
 
 void main()

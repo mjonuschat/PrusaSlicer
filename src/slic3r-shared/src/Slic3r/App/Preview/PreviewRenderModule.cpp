@@ -16,6 +16,8 @@
 #include "Slic3r/App/SidebarPrint.hpp"
 #include "Slic3r/App/Preview/SidebarPreviewActionButtons.hpp"
 #include "Slic3r/App/Yoga/ToolbarButton.hpp"
+#include "Slic3r/App/Scene/LightingHelper.hpp"
+#include "Slic3r/App/LightSetting.hpp"
 
 #include "Slic3r/Domain/TriangleMesh.hpp"
 
@@ -235,6 +237,12 @@ void PreviewRenderModule::render_imgui(Render::CommandBuffer& cmd_buffer)
 #if ENABLED_DEBUG_VIEWER_MODE
     render_imgui_debug_viewer_mode(m_fdm_viewer);
 #endif // ENABLED_DEBUG_VIEWER_MODE
+#if ENABLED_SCENE_SHADING_CUSTOMIZATION
+    render_imgui_scene_shading_customization(*m_scene_presenter);
+#endif // ENABLED_SCENE_SHADING_CUSTOMIZATION
+#if ENABLED_LIGHTS_CUSTOMIZATION
+    render_imgui_lights_customization(*m_scene_presenter);
+#endif // ENABLED_LIGHTS_CUSTOMIZATION
 }
 
 void PreviewRenderModule::on_scene_mouse_event(const Platform::MouseEvent& e)
@@ -308,6 +316,8 @@ void PreviewRenderModule::on_init(Render::Device& device, Render::ImguiRender& i
     init_viewers(device);
     init_scene_layout();
 
+    m_scene_presenter->scene().set_lights(Slic3r::App::global_lighting());
+
     // select active viewer with respect to the printer technology of selected config container
     Domain::SelectionId config_container_id = m_project_interactor.scene_interactor().selected_config_container_id();
     const Domain::ConfigContainer* cc = m_project_interactor.selected_project().find_config_container(config_container_id);
@@ -320,10 +330,13 @@ void PreviewRenderModule::on_init(Render::Device& device, Render::ImguiRender& i
 
 void PreviewRenderModule::on_activated()
 {
+    if (m_scene_presenter != nullptr)
+        m_scene_presenter->scene().set_lights(Slic3r::App::global_lighting());
 }
 
 void PreviewRenderModule::on_deactivated()
 {
+    Slic3r::App::set_global_lighting(m_scene_presenter->scene().lights());
 }
 
 void PreviewRenderModule::on_screen_resized()
@@ -555,7 +568,7 @@ void PreviewRenderModule::init_viewers(Render::Device& device)
 
     if (m_sla_viewer.init(device, m_scene_presenter->scene(), m_gizmo_manager->data_factory()) && 
         m_sla_viewer.set_settings(base_settings)) {
-        m_sla_viewer.set_lights(m_sla_viewer.default_lights());
+        m_sla_viewer.set_lights(Slic3r::App::global_lighting());
     }
     else {
         // log some error message
@@ -598,7 +611,7 @@ void PreviewRenderModule::init_viewers(Render::Device& device)
     }
 
     if (m_fdm_viewer.init(device, m_scene_presenter->scene(), m_gizmo_manager->data_factory()) && m_fdm_viewer.set_settings(settings)) {
-        m_fdm_viewer.set_lights(m_fdm_viewer.default_lights());
+        m_fdm_viewer.set_lights(Slic3r::App::global_lighting());
         m_fdm_viewer.set_gcodewindow_visible(false);
 
         m_legend = m_fdm_viewer.legend();

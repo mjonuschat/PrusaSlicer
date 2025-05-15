@@ -18,7 +18,8 @@
 #include <Slic3r/App/Render/Material.hpp>
 #include <Slic3r/App/Scene/NodeBuilder.hpp>
 #include <Slic3r/App/Scene/Scene.hpp>
-#include "Slic3r/App/Scene/InstancedMeshRenderNodeComponent.hpp"
+#include <Slic3r/App/Scene/InstancedMeshRenderNodeComponent.hpp>
+#include <Slic3r/App/Scene/LightingHelper.hpp>
 
 #include <map>
 #include <assert.h>
@@ -397,6 +398,7 @@ std::pair<Render::Texture*, size_t> FdmViewer::TextureData::enabled_options_tex(
 #endif //!USE_TEXTURE_BUFFER
 
 FdmViewer::FdmViewer()
+    : m_aabb(Domain::TriangleMesh(), AABBMesh(Domain::TriangleMesh()))
 {
     reset_default_extrusion_roles_colors();
     reset_default_options_colors();
@@ -652,6 +654,20 @@ void FdmViewer::load(FdmViewerInputData&& gcode_data)
     m_view_range.set_visible(m_view_range.enabled());
     update_enabled_entities();
     update_colors();
+
+    BoundingBoxf3 bbox = bounding_box();
+    Vec3d bbox_size = bbox.size();
+    m_aabb.first = Biz::Algorithms::TriangleMesh::make_cube(bbox_size.x(), bbox_size.y(), bbox_size.z());
+    m_aabb.first.translate(bbox.min.cast<float>());
+    m_aabb.second = AABBMesh(m_aabb.first);
+
+    Scene::Node* node = m_scene->root().query_first([](const Scene::Node* n)->bool {
+        const GCodeNodeTag* tag = n->tag_of_type<GCodeNodeTag>();
+        return tag != nullptr && tag->type == GCodeElementType::Toolpaths;
+    }, true);
+
+    assert(node != nullptr);
+    node->set_raycast_component(new Scene::AabbRaycastNodeComponent(&m_aabb.second));
 }
 
 void FdmViewer::load_as_sla(const std::vector<float>& layers_zs, const std::vector<float>& layers_times)
@@ -1500,21 +1516,6 @@ void FdmViewer::update_heights_widths()
 #endif // !USE_TEXTURE_BUFFER
 }
 
-static void add_lights_to_material(Render::Material& material, const Lights& lights)
-{
-    material.set_uniform("num_lights", int(lights.size()));
-    for (size_t i = 0; i < lights.size(); ++i) {
-        const Light& l = lights[i];
-        material
-            .set_uniform(format("lights[%d].system", i), int(l.system))
-            .set_uniform(format("lights[%d].direction", i), l.direction)
-            .set_uniform(format("lights[%d].ambient", i), l.ambient)
-            .set_uniform(format("lights[%d].diffuse", i), l.diffuse)
-            .set_uniform(format("lights[%d].specular", i), l.specular)
-            .set_uniform(format("lights[%d].shininess", i), l.shininess);
-    }
-}
-
 void FdmViewer::render_segments(const Vec3f& camera_position)
 {
     Scene::Node* node = m_scene->root().query_first([](const Scene::Node* n)->bool {
@@ -1531,7 +1532,7 @@ void FdmViewer::render_segments(const Vec3f& camera_position)
     Render::Material material{};
     material
         .set_shader(m_device->context().shader_manager().shader("segments"));
-    add_lights_to_material(material, m_lights);
+    Scene::set_uniforms(m_lights, material);
 
 #if USE_TEXTURE_BUFFER
     material
@@ -1588,7 +1589,7 @@ void FdmViewer::render_options()
     Render::Material material;
     material
         .set_shader(m_device->context().shader_manager().shader("options"));
-    add_lights_to_material(material, m_lights);
+    Scene::set_uniforms(m_lights, material);
 
 #if USE_TEXTURE_BUFFER
     material
@@ -1645,7 +1646,7 @@ void FdmViewer::render_cog_marker()
         .set_shader(m_device->context().shader_manager().shader("cog_marker"))
         .set_uniform("world_origin", m_cog_marker.position())
         .set_uniform("scale_factor", m_cog_marker.scale_factor());
-    add_lights_to_material(material, m_lights);
+    Scene::set_uniforms(m_lights, material);
     node->set_material_override(material);
 }
 
@@ -1670,9 +1671,9 @@ void FdmViewer::render_tool_marker()
         .set_shader(m_device->context().shader_manager().shader("tool_marker"))
         .set_uniform("world_origin", origin)
         .set_uniform("scale_factor", m_tool_marker.scale_factor())
-        .set_uniform("color_base", color)
+        .set_uniform("uniform_color", color)
         .set_transparent(color.is_transparent());
-    add_lights_to_material(material, m_lights);
+    Scene::set_uniforms(m_lights, material);
     node->set_material_override(material);
 }
 

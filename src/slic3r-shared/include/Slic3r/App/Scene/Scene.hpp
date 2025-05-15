@@ -8,6 +8,7 @@
 #include "Slic3r/App/Scene/Camera.hpp"
 #include "Slic3r/App/Scene/CameraTrackballController.hpp"
 #include "Slic3r/App/Scene/TriangleMeshManager.hpp"
+#include "Slic3r/App/Scene/LightingHelper.hpp"
 #include "Slic3r/App/Render/GeometryManager.hpp"
 #include "Slic3r/App/Render/Shader.hpp"
 #include "Slic3r/App/Render/ScreenInfo.hpp"
@@ -230,12 +231,32 @@ public:
     /** @} */
 
     /**
+     * @name Lighing-related methods
+     * @{
+     */
+ 
+    const Lighting& lights() const { return m_lighting; }
+    void set_lights(const Lighting& lights) {
+        m_lighting = lights;
+        validate_lights(m_lighting.lights);
+    }
+    void set_default_lights() {
+        m_lighting.ambient_intensity = DEFAULT_LIGHT_AMBIENT;
+        m_lighting.lights = DEFAULT_LIGHTS;
+        validate_lights(m_lighting.lights);
+    }
+    void validate_lights(Lights& lights);
+
+    /** @} */
+
+    /**
      * @name Shadows-related methods
      * @{
      */
 
     bool shadows_enabled() const { return m_shadows.enabled; }
-    void set_shadows_enabled(bool enable) { m_shadows.enabled = enable; }
+    void set_shadows_enabled(bool enable);
+    void set_default_shadows_intensity() { m_shadows.intensity = Shadows::DEFAULT_INTENSITY; }
 
     bool bed_model_cast_shadow() const { return m_shadows.bed_model_cast_shadow; }
     void set_bed_model_cast_shadow(bool cast) { m_shadows.bed_model_cast_shadow = cast; }
@@ -256,24 +277,29 @@ public:
      */
 
     bool ao_enabled() const { return m_ao.enabled; }
-    void set_ao_enabled(bool enable) { m_ao.enabled = enable; }
+    void set_ao_enabled(bool enable);
 
     Domain::Index2 ao_framebuffer_size() const { return m_ao.framebuffer_size; }
 
     size_t ao_kernel_size() const { return m_ao.kernel.size(); }
     void set_ao_kernel_size(size_t size) { m_ao.pending_kernel_size = size; }
+    void set_default_ao_kernel_size() { m_ao.pending_kernel_size = AmbientOcclusion::DEFAULT_KERNEL_SIZE; }
 
     size_t ao_noise_size() const { return m_ao.noise_size; }
     void set_ao_noise_size(size_t size) { m_ao.pending_noise_size = size; }
+    void set_default_ao_noise_size() { m_ao.pending_noise_size = AmbientOcclusion::DEFAULT_NOISE_SIZE; }
 
     float ao_radius() const { return m_ao.radius; }
     void set_ao_radius(float radius) { m_ao.radius = radius; }
+    void set_default_ao_radius() { m_ao.radius = AmbientOcclusion::DEFAULT_RADIUS; }
 
     float ao_bias() const { return m_ao.bias; }
     void set_ao_bias(float bias) { m_ao.bias = bias; }
+    void set_default_ao_bias() { m_ao.bias = AmbientOcclusion::DEFAULT_BIAS; }
 
     size_t ao_blur_filter_size() const { return m_ao.blur_filter_size; }
     void set_ao_blur_filter_size(size_t size) { m_ao.blur_filter_size = size; }
+    void set_default_ao_blur_filter_size() { m_ao.blur_filter_size = AmbientOcclusion::DEFAULT_BLUR_FILTER_SIZE; }
 
     /** @} */
 
@@ -283,19 +309,11 @@ public:
      */
 
     bool pbr_enabled() const { return m_pbr.enabled; }
-    void set_pbr_enabled(bool enable) { m_pbr.enabled = enable; }
+    void set_pbr_enabled(bool enable);
 
     float pbr_intensity() const { return m_pbr.intensity; }
     void set_pbr_intensity(float intensity) { m_pbr.intensity = intensity; }
-
-    float pbr_roughness() const { return m_pbr.roughness; }
-    void set_pbr_roughness(float roughness) { m_pbr.roughness = roughness; }
-
-    float pbr_metal() const { return m_pbr.metal; }
-    void set_pbr_metal(float metal) { m_pbr.metal = metal; }
-
-    float pbr_ior() const { return m_pbr.ior; }
-    void set_pbr_ior(float ior) { m_pbr.ior = ior; }
+    void set_default_pbr_intensity() { m_pbr.intensity = PBR::DEFAULT_INTENSITY; }
 
     /** @} */
 
@@ -312,10 +330,10 @@ private:
     void generate_ao_kernel(Render::Device& device) const;
     void generate_ao_noise(Render::Device& device) const;
 
-    void render_shadowsmap_pass(Render::Device& device) const;
+    void render_shadowsmap_pass(Render::Device& device, ISceneRenderCustomizer* customizer) const;
     void render_shadows_receivers_pass(Render::Device& device, Render::CommandBuffer& cmd_buffer, ISceneRenderCustomizer* customizer) const;
     void render_no_shadows_pass(Render::CommandBuffer& cmd_buffer, ISceneRenderCustomizer* customizer) const;
-    void render_ao_gbuffer_pass(Render::Device& device, const Domain::Index2& viewport_size) const;
+    void render_ao_gbuffer_pass(Render::Device& device, ISceneRenderCustomizer* customizer, const Domain::Index2& viewport_size) const;
     void render_ao_texture_pass(Render::Device& device, const Domain::Index2& viewport_size) const;
     void render_ao_texture_blur_pass(Render::Device& device, const Domain::Index2& viewport_size) const;
     void render_ao_lighting_pass(Render::CommandBuffer& cmd_buffer, Render::Device& device, bool shadows) const;
@@ -329,6 +347,8 @@ private:
     NodeIdLookUp m_nodes_by_id;
     Render::GeometryManager<std::string> m_geometry_manager;
     TriangleMeshManager<std::string> m_trimesh_manager;
+
+    Lighting m_lighting;
 
     mutable Render::Geometry* m_screen_quad{ nullptr };
 
@@ -376,12 +396,14 @@ private:
         static constexpr int LIGHT_POS_CLR_ATTR = 1;
         static constexpr int EYE_NORM_CLR_ATTR = 2;
         static constexpr int COLOR_CLR_ATTR = 3;
+        static constexpr int PBR_MATERIAL_ATTR = 4;
 
-        static constexpr int NOISE_TEX_UNIT = 9;
-        static constexpr int EYE_POS_TEX_UNIT = 10;
-        static constexpr int LIGHT_POS_TEX_UNIT = 11;
-        static constexpr int EYE_NORM_TEX_UNIT = 12;
-        static constexpr int COLOR_TEX_UNIT = 13;
+        static constexpr int NOISE_TEX_UNIT = 8;
+        static constexpr int EYE_POS_TEX_UNIT = 9;
+        static constexpr int LIGHT_POS_TEX_UNIT = 10;
+        static constexpr int EYE_NORM_TEX_UNIT = 11;
+        static constexpr int COLOR_TEX_UNIT = 12;
+        static constexpr int PBR_MATERIAL_TEX_UNIT = 13;
         static constexpr int AO_TEX_UNIT = 14;
 
         static constexpr int DEFAULT_KERNEL_SIZE = 32;
@@ -398,11 +420,7 @@ private:
         bool enabled{ true };
         mutable float intensity{ DEFAULT_INTENSITY };
 
-        float metal{ 0.0f };
-        float roughness{ 0.25f };
-        float ior{ 1.5f };
-
-        static constexpr float DEFAULT_INTENSITY = 10.0f;
+        static constexpr float DEFAULT_INTENSITY = 20.0f;
     };
 
     PBR m_pbr;

@@ -45,7 +45,7 @@ Framebuffer::Framebuffer(Device& device, const FramebufferCreationData& data)
         m_textures[i]->set_data(info.format, 0, data.width, data.height, nullptr);
         m_textures[i]->set_filtering(info.min_filter, info.mag_filter);
         const auto& tex = m_textures[i]->get_internal_as<GL::GLTextureInternal>();
-        glFramebufferTexture(self.m_target, GL_COLOR_ATTACHMENT0 + i, tex.m_id, 0);
+        glFramebufferTexture2D(self.m_target, GL_COLOR_ATTACHMENT0 + i, tex.m_target, tex.m_id, 0);
         glCheck();
     }
 
@@ -71,7 +71,7 @@ Framebuffer::Framebuffer(Device& device, const FramebufferCreationData& data)
         m_textures.back()->set_wrap_s(TextureWrap::ClampToBorder);
         m_textures.back()->set_wrap_t(TextureWrap::ClampToBorder);
         const auto& tex = m_textures.back()->get_internal_as<GL::GLTextureInternal>();
-        glFramebufferTexture(self.m_target, GL_DEPTH_ATTACHMENT, tex.m_id, 0);
+        glFramebufferTexture2D(self.m_target, GL_DEPTH_ATTACHMENT, tex.m_target, tex.m_id, 0);
         glCheck();
     }
     else if (data.stencil) {

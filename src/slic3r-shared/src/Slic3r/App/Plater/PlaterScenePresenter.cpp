@@ -141,7 +141,6 @@ void PlaterScenePresenter::on_scene_selection_changed(Domain::SelectionId projec
 
     auto selection_mat = Render::Material{}
         .set_uniform("uniform_color", ColorRGBA::WHITE())
-        .set_uniform("emission_factor", 0.0f)
         .set_transparent(false);
     for (auto* n : found_nodes)
         selection_changes.change(*n)
@@ -225,17 +224,26 @@ void PlaterScenePresenter::build_volume_node(
         color = color_it->second;
 
     auto material = Render::Material{}
-        .set_shader(m_device.context().shader_manager().shader("phong"))
+        .set_shader(m_device.context().shader_manager().shader("gouraud_light"))
         .set_uniform("uniform_color", color)
-        .set_uniform("emission_factor", 0.0f)
         .set_transparent(color.is_transparent());
     builder
         .set_debug_name(fmt::format("vol: {}", vol->id().id))
         .transform([vol](auto& xform) { xform = vol->get_matrix(); })
         .set_tag(SceneNodeTag{vol->get_object()->id().id, vol->id().id, inst->id().id, vol->type()})
         .set_mesh(geom, material, int(PlaterSceneLayer::DocumentObjects))
-        .set_shadows((vol->type() == ModelVolumeType::MODEL_PART) ? Render::Shadows{ true, true } : Render::Shadows{ false, false })
         .set_aabb(trimesh->aabb_mesh());
+    if (vol->type() == ModelVolumeType::MODEL_PART) {
+        builder
+            .set_shadows(Render::Shadows{ true, true })
+            // FIXME: the pbr data should be set in dependence of the volume filament 
+            // see PrusaSlicer PrintConfigDef::init_fff_params() option 'filament_type' 
+            .set_pbr(Scene::DEFAULT_VOLUME_PBRPARAMS);
+    }
+    else {
+        builder
+            .set_shadows(Render::Shadows{ false, false });
+    }
 }
 
 void PlaterScenePresenter::build_bed_plate_node(Scene::NodeBuilder& builder, Domain::SelectionId project_id,
@@ -273,6 +281,7 @@ void PlaterScenePresenter::build_bed_plate_node(Scene::NodeBuilder& builder, Dom
                 .set_tag(BedNodeTag{ tag.config_container_id, tag.instance_id, type })
                 .set_mesh(geom, material, int(PlaterSceneLayer::DocumentObjects))
                 .set_shadows(Render::Shadows{ false, true })
+                .set_pbr(Scene::DEFAULT_BED_PLATE_PBRPARAMS)
                 .set_aabb(trimesh->aabb_mesh());
         });
 }
@@ -383,6 +392,7 @@ void PlaterScenePresenter::build_bed_model_node(Scene::NodeBuilder& builder, Dom
                 .set_tag(BedNodeTag{ tag.config_container_id, tag.instance_id, BedElementType::Model })
                 .set_mesh(geom, material, int(PlaterSceneLayer::DocumentObjects))
                 .set_shadows(Render::Shadows{ true, true })
+                .set_pbr(Scene::DEFAULT_BED_MODEL_PBRPARAMS)
                 .set_aabb(trimesh->aabb_mesh());
         });
 }

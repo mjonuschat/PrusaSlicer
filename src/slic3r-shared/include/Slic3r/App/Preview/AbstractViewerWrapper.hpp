@@ -2,6 +2,8 @@
 
 #include "DoubleSliderForLayers.hpp"
 
+#include <Slic3r/App/Scene/Lights.hpp>
+
 #include <functional>
 #include <array>
 
@@ -74,9 +76,8 @@ public:
     void toggle_legend_visible() { set_legend_visible(!m_legend_params.visible); }
     bool is_legend_visible() const { return m_legend_params.visible; }
 
-    const libvgcode::Lights& lights() const;
-    void set_lights(const libvgcode::Lights& lights);
-    const libvgcode::Lights& default_lights() const;
+    const Scene::Lighting& lights() const;
+    void set_lights(const Scene::Lighting& lights);
 
     DoubleSliderForLayers* double_slider_layers() const;
 

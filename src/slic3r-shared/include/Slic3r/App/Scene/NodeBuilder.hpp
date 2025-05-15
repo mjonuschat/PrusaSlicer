@@ -18,6 +18,7 @@ class AABBMesh;
 namespace Slic3r::App::Scene {
 
 class Scene;
+struct PBRParams;
 
 class NodeBuilder {
 public:
@@ -28,6 +29,7 @@ public:
         size_t instances_count, Render::PrimitiveType primitive_type = Render::PrimitiveType::Triangles, int layer_index = 0);
     NodeBuilder& set_material_override(const Render::Material& material);
     NodeBuilder& set_shadows(const Render::Shadows& shadows);
+    NodeBuilder& set_pbr(const PBRParams& pbr);
     NodeBuilder& set_imgui_func(const FuncImguiRenderNodeComponent::RenderFunc& imgui_render_func);
     NodeBuilder& set_enabled(bool enabled);
 

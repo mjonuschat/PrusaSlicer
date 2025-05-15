@@ -71,6 +71,12 @@ void GeometryDataFactory::create_data(GeometryDataId id)
         its = TriMesh::its_make_sphere(0.5, SPHERE_ANGLE_STEP);
         break;
 
+    case GeometryDataId::SmoothSphere:
+        // creates a sphere with smooth normals and diameter equal to 1
+        // the sphere center is (0,0,0)
+        create_smooth_sphere(0.5, SPHERE_ANGLE_STEP);
+        return;
+
     case GeometryDataId::Cylinder:
 //    case GizmoDataId::Cylinder: 
         // creates a cylinder contained into a 1x1x1 box 
@@ -146,6 +152,24 @@ void GeometryDataFactory::create_graded_circle()
     builder
         .add_draw_command({ Render::PrimitiveType::Lines, 0, builder.vertex_count(),  Render::Material{}});
     m_geometry_manager.set(GeometryDataId::GradedCircle, builder.build(m_device));
+}
+
+void GeometryDataFactory::create_smooth_sphere(double radius, double fa)
+{
+    Domain::TriangleMesh mesh = TriMesh::make_sphere(radius, fa);
+    Render::GeometryBuilder<Render::VertexP3N3> builder;
+    for (size_t i = 0; i < mesh.its.vertices.size(); ++i) {
+        const Vec3f& v = mesh.its.vertices[i];
+        builder.add_vertex({ v, v.normalized()});
+    }
+    for (size_t i = 0; i < mesh.its.indices.size(); ++i) {
+        builder.add_index(mesh.its.indices[i][0]);
+        builder.add_index(mesh.its.indices[i][1]);
+        builder.add_index(mesh.its.indices[i][2]);
+    }
+    builder
+        .add_draw_command({ Render::PrimitiveType::Triangles, 0, 3 * mesh.its.indices.size(),  Render::Material{} });
+    m_geometry_manager.set(GeometryDataId::SmoothSphere, builder.build(m_device));
 }
 
 void GeometryDataFactory::create_tool_marker()

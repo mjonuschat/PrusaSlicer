@@ -21,9 +21,10 @@ enum class GeometryDataId
     Circle = 3,
     GradedCircle = 4,
     Sphere = 5,
-    Cylinder = 6,
-    ToolMarker = 7,
-    CandyButton = 8,
+    SmoothSphere = 6,
+    Cylinder = 7,
+    ToolMarker = 8,
+    CandyButton = 9,
 };
 
 class GeometryDataFactory
@@ -76,6 +77,7 @@ private:
     void create_segment();
     void create_circle();
     void create_graded_circle();
+    void create_smooth_sphere(double radius, double fa);
     void create_tool_marker();
     void create_candy_button();
 
