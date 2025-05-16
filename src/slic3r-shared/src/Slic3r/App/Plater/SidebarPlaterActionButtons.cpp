@@ -3,12 +3,14 @@
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 
+using namespace Slic3r::App::Yoga;
+
 namespace Slic3r::App::Plater {
 
-SidebarPlaterActionButtons::SidebarPlaterActionButtons(Item* parent)
-    : SidebarActionButtons("sidebar_plater_action_buttons", Render::ModuleType::Plater, parent)
+SidebarPlaterActionButtons::SidebarPlaterActionButtons()
+    : SidebarActionButtons("sidebar_plater_action_buttons", Render::ModuleType::Plater)
 {
-    m_button_slice = new Yoga::LayoutButton("Slice", this);
+    m_button_slice = emplace_back<LayoutButton>("Slice");
     m_button_slice->set_flex_grow(1);
     m_button_slice->set_background_color(color_primary);
     m_button_slice->set_min_size({0, button_height});

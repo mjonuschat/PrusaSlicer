@@ -7,7 +7,7 @@ namespace Slic3r::App::Plater {
 class History : public Yoga::Window
 {
 public:
-    explicit History(Item* parent = nullptr);
+    explicit History();
 };
 
 } // namespace Slic3r::App::Plater

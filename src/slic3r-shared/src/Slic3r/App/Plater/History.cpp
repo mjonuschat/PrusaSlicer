@@ -4,10 +4,10 @@
 
 namespace Slic3r::App::Plater {
 
-History::History(Item* parent) : Window("history", parent)
+History::History() : Window("history")
 {
     set_min_size({330.f, 0.f});
-    new Yoga::Text("Action history", this);
+    new Yoga::Text("Action history");
 }
 
 } // namespace Slic3r::App::Plater

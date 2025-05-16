@@ -8,7 +8,7 @@
 
 namespace Slic3r::App::Yoga {
 
-Text::Text(const std::string& text, Item* parent) : Item(parent), m_text(text) {}
+Text::Text(const std::string& text) : Item(), m_text(text) {}
 
 void Text::render(Vec2f pos, Vec2f size)
 {

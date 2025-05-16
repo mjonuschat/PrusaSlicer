@@ -7,7 +7,7 @@ namespace Slic3r::App::Preview {
 class SidebarAutoReslice : public Yoga::Window
 {
 public:
-    explicit SidebarAutoReslice(Item* parent = nullptr);
+    SidebarAutoReslice();
 
     void render_body(Domain::Vec2f pos, Domain::Vec2f size) override;
 };

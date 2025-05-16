@@ -6,7 +6,7 @@
 
 namespace Slic3r::App::Yoga {
 
-LambdaItem::LambdaItem(RenderPosFn render_fn, Item* parent) : Item(parent), m_render_fn(render_fn) {}
+LambdaItem::LambdaItem(RenderPosFn render_fn) : Item(), m_render_fn(render_fn) {}
 
 void LambdaItem::render(Vec2f pos, Vec2f size) {
     render_item_begin(pos, size);

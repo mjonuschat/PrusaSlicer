@@ -7,7 +7,7 @@ namespace Slic3r::App {
 class CubeView : public Yoga::Window
 {
 public:
-    explicit CubeView(Yoga::Item* parent = nullptr);
+    CubeView();
 
     void render_body(Domain::Vec2f pos, Domain::Vec2f size) override;
 };

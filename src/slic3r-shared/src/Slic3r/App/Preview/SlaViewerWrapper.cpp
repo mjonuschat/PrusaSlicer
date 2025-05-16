@@ -38,7 +38,7 @@ bool SlaViewerWrapper::set_settings(const ViewerWrapperBaseSettings& settings)
     m_settings = settings;
 
     try {
-        m_slider_layers = new DoubleSliderForLayers;
+        m_slider_layers = Yoga::Passthrough(std::make_unique<DoubleSliderForLayers>());
         m_slider_layers->init(0, 0, 0, 100);
         m_slider_layers->show_ruler(m_settings.slider_layers_show_ruler, m_settings.slider_layers_show_ruler_bg);
         m_slider_layers->show_estimated_times(m_settings.slider_layers_show_estimated_times);

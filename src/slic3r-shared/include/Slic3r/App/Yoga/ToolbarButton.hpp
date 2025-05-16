@@ -9,19 +9,22 @@
 namespace Slic3r::App::Yoga {
 
 class Toolbar;
+class Dialog;
 
 class ToolbarButton : public AbstractButton
 {
 public:
-    explicit ToolbarButton(wchar_t icon, const std::string& tooltip = {}, Toolbar* parent = nullptr);
+    ToolbarButton(wchar_t icon, const std::string& tooltip = {});
 
     void render(Vec2f pos, Vec2f size) override;
 
     void style_node() override;
 
-    void set_subtoolbar_buttons(const std::vector<ToolbarButton*>& buttons);
+    void set_subtoolbar_buttons(std::vector<std::unique_ptr<ToolbarButton>> buttons);
 
-    Toolbar* subtoolbar() const;
+    Toolbar* get_subtoolbar() const;
+    Toolbar* get_or_create_subtoolbar();
+    Dialog* dialog() const;
 
 private:
     Toolbar* m_subtoolbar = nullptr;

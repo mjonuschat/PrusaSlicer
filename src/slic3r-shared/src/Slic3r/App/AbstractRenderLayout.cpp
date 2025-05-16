@@ -1,20 +1,17 @@
 #include "Slic3r/App/AbstractRenderLayout.hpp"
 
-#include <Yoga.h>
 #include <imgui_internal.h>
 
-#include "Slic3r/App/CubeView.hpp"
-#include "Slic3r/App/ObjectList.hpp"
-#include "Slic3r/App/SidebarBed.hpp"
-#include "Slic3r/App/SidebarPrint.hpp"
+#include "Slic3r/App/Yoga/Dialog.hpp"
+#include "Slic3r/App/Scene/IGizmo.hpp"
 #include "Slic3r/App/Yoga/Toolbar.hpp"
 #include "Slic3r/App/Yoga/ToolbarButton.hpp"
 #include "Slic3r/Assert.hpp"
 #include "Slic3r/Log.hpp"
 
-namespace Slic3r::App {
+using namespace Slic3r::App::Yoga;
 
-using Vec2f = Yoga::Vec2f;
+namespace Slic3r::App {
 
 Vec2f AbstractRenderLayout::win_padding() const
 {
@@ -26,25 +23,97 @@ Vec2f AbstractRenderLayout::frame_padding() const
     return Vec2f(GImGui->Style.FramePadding.x, GImGui->Style.FramePadding.y);
 }
 
-Yoga::ToolbarButton* AbstractRenderLayout::add_toolbar_item(
+ToolbarButton* AbstractRenderLayout::add_toolbar_item(
     ToolbarID id,
     wchar_t icon,
     const std::string& tooltip,
     const std::string& shortcut,
-    Yoga::AbstractButton::Callbacks callbacks
+    AbstractButton::Callbacks callbacks
 )
 {
-    Yoga::Toolbar* toolbar = find_toolbar(id);
+    Toolbar* toolbar = find_toolbar(id);
     ASSERT(toolbar);
 
-    Yoga::ToolbarButton* button = new Yoga::ToolbarButton(icon, tooltip, toolbar);
+    Passthrough<ToolbarButton> button = Passthrough(std::make_unique<ToolbarButton>(icon, tooltip));
+    toolbar->append(button.release());
     button->set_shortcut(shortcut);
     button->callbacks() = callbacks;
+
+    return button.get();
+}
+
+ToolbarButton* AbstractRenderLayout::add_toolbar_item_checkable(
+    ToolbarID id,
+    wchar_t icon,
+    const std::string& tooltip,
+    const std::string& shortcut,
+    AbstractButton::Callbacks callbacks,
+    bool checked
+)
+{
+    ToolbarButton* button = add_toolbar_item(id, icon, tooltip, shortcut, callbacks);
+    ASSERT(button);
+
+    button->set_checked(checked);
+    button->set_checkable(true);
 
     return button;
 }
 
-Yoga::Toolbar* AbstractRenderLayout::find_toolbar(ToolbarID id) const
+ToolbarButton* AbstractRenderLayout::add_toolbar_item_gizmo(
+    ToolbarID id,
+    wchar_t icon,
+    const std::string& tooltip,
+    const std::string& shortcut,
+    Yoga::AbstractButton::Callbacks callbacks,
+    Scene::IToolGizmo* tool
+)
+{
+    ToolbarButton* button = add_toolbar_item(id, icon, tooltip, shortcut, callbacks);
+    ASSERT(button);
+
+    std::unique_ptr<Dialog> dialog_uniq = tool->unlaod_ui_dialog();
+    Dialog* dialog = dialog_uniq.get();
+    if (dialog) {
+        button->append(std::move(dialog_uniq));
+        dialog->set_visible(false);
+        button->callbacks().checked_changed = [dialog](bool checked) {
+            dialog->set_visible(checked);
+        };
+    }
+
+    return button;
+}
+
+ToolbarButton* AbstractRenderLayout::add_toolbar_item_panel(
+    ToolbarID id,
+    wchar_t icon,
+    const std::string& tooltip,
+    const std::string& shortcut,
+    Yoga::AbstractButton::Callbacks callbacks,
+    Yoga::Item* panel
+)
+{
+    ASSERT(panel);
+
+    ToolbarButton* button =
+        add_toolbar_item(id, icon, tooltip, shortcut, callbacks);
+    ASSERT(button);
+
+    button->set_checked(panel->is_visible());
+
+    button->callbacks().action = [this, button] {
+        SidebarPanel& sidebar = m_sidebar_panels[button];
+        sidebar.visible = !sidebar.visible;
+        update_sidebar_visibility();
+    };
+
+    m_sidebar_panels[button] = {panel, panel->is_visible(), panel->is_visible()};
+
+    return button;
+}
+
+Toolbar* AbstractRenderLayout::find_toolbar(ToolbarID id) const
 {
     switch (id) {
     case ToolbarID::Top:
@@ -69,46 +138,55 @@ void AbstractRenderLayout::update_toolbar_tooltip()
     m_bottom_toolbar->set_show_tooltips(show_tooltips);
 }
 
+void AbstractRenderLayout::update_sidebar_visibility()
+{
+    m_layout_right_column->set_visible(m_sidebars_visible);
+
+    bool left_sidebar_visible = m_sidebars_visible;
+    for (auto& [button, panel] : m_sidebar_panels) {
+        button->set_checked(panel.visible);
+        panel.panel->set_visible(panel.visible);
+        left_sidebar_visible |= panel.visible;
+    }
+    m_layout_left_column->set_visible(left_sidebar_visible);
+}
+
 void AbstractRenderLayout::set_bottom_toolbar_visible(bool visible)
 {
     m_bottom_toolbar->set_visible(visible);
     m_bottom_dummy_toolbar->set_visible(!visible);
 }
 
-Yoga::Toolbar* AbstractRenderLayout::bottom_toolbar() const { return m_bottom_toolbar; }
+Toolbar* AbstractRenderLayout::bottom_toolbar() const { return m_bottom_toolbar; }
 
-Yoga::Toolbar* AbstractRenderLayout::middle_toolbar() const { return m_middle_toolbar; }
+Toolbar* AbstractRenderLayout::middle_toolbar() const { return m_middle_toolbar; }
 
-Yoga::Toolbar* AbstractRenderLayout::top_toolbar() const { return m_top_toolbar; }
+Toolbar* AbstractRenderLayout::top_toolbar() const { return m_top_toolbar; }
 
-void AbstractRenderLayout::hide_sidebars(bool hide)
+void AbstractRenderLayout::set_sidebars_visible(bool visible)
 {
-    bool is_visible = !hide;
+    if (m_sidebars_visible != visible) {
+        m_sidebars_visible = visible;
 
-    m_layout_left_column->set_visible(is_visible);
-    /* The visibility state of left_column should be propagated to its children
-     * to enable displaying a child even when the entire parent is hidden.
-     */
-    for (Yoga::Item* child : m_layout_left_column->items()) {
-        child->set_visible(is_visible);
+        if (m_sidebars_visible) {
+            for (auto& [button, panel] : m_sidebar_panels) {
+                panel.visible = panel.visible || panel.last_visible;
+            }
+        } else {
+            for (auto& [button, panel] : m_sidebar_panels) {
+                panel.last_visible = panel.panel->is_visible();
+                panel.visible = false;
+            }
+        }
+        update_sidebar_visibility();
     }
-
-    m_layout_right_column->set_visible(is_visible);
-}
-
-void AbstractRenderLayout::set_visible_left_column_item(Yoga::Item* item, bool is_visible)
-{
-    ASSERT(m_layout_left_column == item->parent());
-    item->set_visible(is_visible);
-    if (is_visible)
-        m_layout_left_column->set_visible(true);
 }
 
 void AbstractRenderLayout::init()
 {
     m_layout_main.set_gap(5);
-    m_layout_main.set_orientation(Yoga::Orientation::Horizontal);
-    m_layout_main.set_padding(Yoga::Paddings(frame_padding()));
+    m_layout_main.set_orientation(Orientation::Horizontal);
+    m_layout_main.set_padding(Paddings(frame_padding()));
     m_layout_main.set_flex_grow(1.0);
 
     init_left_column();
@@ -120,49 +198,43 @@ void AbstractRenderLayout::init()
 
 void AbstractRenderLayout::init_left_column()
 {
-    m_layout_left_column = new Yoga::Item;
-    m_layout_left_column->set_orientation(Yoga::Orientation::Vertical);
+    m_layout_left_column = m_layout_main.emplace_back<Item>();
+    m_layout_left_column->set_orientation(Orientation::Vertical);
     m_layout_left_column->set_gap(5);
-    m_layout_main.append(m_layout_left_column);
 
     m_object_list->set_flex_grow(1.);
-    m_layout_left_column->append(m_object_list);
+    m_layout_left_column->append(m_object_list.release());
 }
 
 void AbstractRenderLayout::init_middle_column()
 {
-    m_layout_center_row = new Yoga::Item;
-    m_layout_center_row->set_orientation(Yoga::Orientation::Horizontal);
+    m_layout_center_row = m_layout_main.emplace_back<Item>();
+    m_layout_center_row->set_orientation(Orientation::Horizontal);
     m_layout_center_row->set_gap(5);
     m_layout_center_row->set_flex_grow(1.);
 
-    m_layout_main.append(m_layout_center_row);
-
     init_toolbar_column();
 
-    m_layout_middle_column = new Yoga::Item;
-    m_layout_middle_column->set_orientation(Yoga::Orientation::Vertical);
+    m_layout_middle_column = m_layout_center_row->emplace_back<Item>();
+    m_layout_middle_column->set_orientation(Orientation::Vertical);
     m_layout_middle_column->set_gap(5);
     m_layout_middle_column->set_flex_grow(1);
-    m_layout_center_row->append(m_layout_middle_column);
 
-    m_layout_middle_column->append(m_cube_view);
+    m_layout_middle_column->append(m_cube_view.release());
     m_cube_view->set_self_align(YGAlignFlexEnd);
 }
 
 void AbstractRenderLayout::init_right_column()
 {
-    m_layout_right_column = new Yoga::Item;
-    m_layout_right_column->set_orientation(Yoga::Orientation::Vertical);
+    m_layout_right_column = m_layout_main.emplace_back<Item>();
+    m_layout_right_column->set_orientation(Orientation::Vertical);
     m_layout_right_column->set_gap(5);
     m_layout_right_column->set_min_size({280.f, 0});
 
-    m_layout_right_column->append(m_sidebar_bed);
+    m_layout_right_column->append(m_sidebar_bed.release());
 
     m_sidebar_print->set_flex_grow(1.0);
-    m_layout_right_column->append(m_sidebar_print);
-
-    m_layout_main.append(m_layout_right_column);
+    m_layout_right_column->append(m_sidebar_print.release());
 }
 
 void AbstractRenderLayout::init_toolbar_column()
@@ -170,37 +242,33 @@ void AbstractRenderLayout::init_toolbar_column()
     constexpr float min_tt_size = 50.f; //**/ 30.f;
     constexpr float max_tt_size = 50.f;
 
-    m_layout_left_toolbar_column = new Yoga::Item;
-    m_layout_left_toolbar_column->set_orientation(Yoga::Orientation::Vertical);
+    m_layout_left_toolbar_column = m_layout_center_row->emplace_back<Item>();
+    m_layout_left_toolbar_column->set_orientation(Orientation::Vertical);
     m_layout_left_toolbar_column->set_gap(5);
     m_layout_left_toolbar_column->set_justify_content(YGJustify::YGJustifySpaceBetween);
-    m_layout_left_toolbar_column->set_z(1); // Increaze Z so toolbars can be on top of double sliders
+    m_layout_left_toolbar_column->set_z(1
+    ); // Increaze Z so toolbars can be on top of double sliders
 
-    m_layout_center_row->append(m_layout_left_toolbar_column);
-
-    m_top_toolbar = new Yoga::Toolbar("top_toolbar");
+    m_top_toolbar = m_layout_left_toolbar_column->emplace_back<Toolbar>("top_toolbar");
     m_top_toolbar->set_button_min_size({min_tt_size, min_tt_size});
     m_top_toolbar->set_button_max_size({max_tt_size, max_tt_size});
     m_top_toolbar->set_self_align(YGAlign::YGAlignFlexStart);
-    m_top_toolbar->set_orientation(Yoga::Orientation::Vertical);
-    m_layout_left_toolbar_column->append(m_top_toolbar);
+    m_top_toolbar->set_orientation(Orientation::Vertical);
 
-    m_middle_toolbar = new Yoga::Toolbar("middle_toolbar");
+    m_middle_toolbar = m_layout_left_toolbar_column->emplace_back<Toolbar>("middle_toolbar");
     m_middle_toolbar->set_button_min_size({min_tt_size, min_tt_size});
     m_middle_toolbar->set_button_max_size({max_tt_size, max_tt_size});
     m_middle_toolbar->set_self_align(YGAlign::YGAlignCenter);
-    m_middle_toolbar->set_orientation(Yoga::Orientation::Vertical);
+    m_middle_toolbar->set_orientation(Orientation::Vertical);
     m_middle_toolbar->set_collapsible(true);
-    m_layout_left_toolbar_column->append(m_middle_toolbar);
 
-    m_bottom_toolbar = new Yoga::Toolbar("bottom_toolbar");
+    m_bottom_toolbar = m_layout_left_toolbar_column->emplace_back<Toolbar>("bottom_toolbar");
     m_bottom_toolbar->set_button_min_size({min_tt_size, min_tt_size});
     m_bottom_toolbar->set_button_max_size({max_tt_size, max_tt_size});
     m_bottom_toolbar->set_self_align(YGAlign::YGAlignFlexEnd);
-    m_bottom_toolbar->set_orientation(Yoga::Orientation::Vertical);
-    m_layout_left_toolbar_column->append(m_bottom_toolbar);
+    m_bottom_toolbar->set_orientation(Orientation::Vertical);
 
-    m_bottom_dummy_toolbar = new Yoga::Item(m_layout_left_toolbar_column);
+    m_bottom_dummy_toolbar = m_layout_left_toolbar_column->emplace_back<Item>();
     m_bottom_dummy_toolbar->set_visible(false);
 
     m_top_toolbar->callbacks().hovered_changed = [this]() { update_toolbar_tooltip(); };
@@ -307,12 +375,15 @@ private:
 };
 
 AbstractRenderLayout::AbstractRenderLayout(
-    ObjectList* object_list, CubeView* cube_view, SidebarBed* sidebar_bed, SidebarPrint* sidebar_print
+    std::unique_ptr<ObjectList> object_list,
+    std::unique_ptr<CubeView> cube_view,
+    std::unique_ptr<SidebarBed> sidebar_bed,
+    std::unique_ptr<SidebarPrint> sidebar_print
 )
-    : m_object_list(object_list)
-    , m_cube_view(cube_view)
-    , m_sidebar_bed(sidebar_bed)
-    , m_sidebar_print(sidebar_print)
+    : m_object_list(std::move(object_list))
+    , m_cube_view(std::move(cube_view))
+    , m_sidebar_bed(std::move(sidebar_bed))
+    , m_sidebar_print(std::move(sidebar_print))
 {}
 
 AbstractRenderLayout::~AbstractRenderLayout() {}

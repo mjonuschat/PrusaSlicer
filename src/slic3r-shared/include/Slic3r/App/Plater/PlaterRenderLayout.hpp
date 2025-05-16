@@ -2,9 +2,8 @@
 
 #include "Slic3r/App/AbstractRenderLayout.hpp"
 
-namespace Slic3r::App {
-class SidebarActionButtons;
-}
+#include "Slic3r/App/Plater/History.hpp"
+#include "Slic3r/App/Plater/SidebarPlaterActionButtons.hpp"
 
 namespace Slic3r::App::Plater {
 
@@ -15,12 +14,12 @@ class PlaterRenderLayout : public AbstractRenderLayout
 {
 public:
     PlaterRenderLayout(
-        ObjectList* object_list,
-        CubeView* cube_view,
-        SidebarBed* sidebar_bed,
-        SidebarPrint* sidebar_print,
-        SidebarPlaterActionButtons* sidebar_action_buttons,
-        History* history
+        std::unique_ptr<ObjectList> object_list,
+        std::unique_ptr<CubeView> cube_view,
+        std::unique_ptr<SidebarBed> sidebar_bed,
+        std::unique_ptr<SidebarPrint> sidebar_print,
+        std::unique_ptr<SidebarPlaterActionButtons> sidebar_action_buttons,
+        std::unique_ptr<History> history
     );
 
 private:
@@ -28,8 +27,8 @@ private:
     void init_right_column() override;
 
 private:
-    SidebarPlaterActionButtons* m_sidebar_action_buttons = nullptr;
-    History* m_history = nullptr;
+    Yoga::Passthrough<SidebarPlaterActionButtons> m_sidebar_action_buttons;
+    Yoga::Passthrough<History> m_history;
 };
 
 } // namespace Slic3r::App::Plater

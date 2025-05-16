@@ -3,7 +3,7 @@
 
 namespace Slic3r::App {
 
-CubeView::CubeView(Item* parent) : Window("cube_view", parent) {
+CubeView::CubeView() : Window("cube_view") {
     set_flags(flags() | ImGuiWindowFlags_NoBackground);
     set_min_size({70.f, 70.f});
     set_max_size({70.f, 70.f});

@@ -12,13 +12,12 @@ namespace Slic3r::App::Yoga {
 
 AbstractButton::Callbacks& AbstractButton::callbacks() { return m_callbacks; }
 
-AbstractButton::AbstractButton(wchar_t icon, const std::string& tooltip, Item* parent)
-    : Item(parent), m_icon(icon)
+AbstractButton::AbstractButton(wchar_t icon, const std::string& tooltip) : Item(), m_icon(icon)
 {
     static size_t button_tooltip_number = 0;
 
-    m_tooltip =
-        new Tooltip("button_tooltip_" + std::to_string(button_tooltip_number++), tooltip, "", this);
+    m_tooltip = emplace_back<
+        Tooltip>("button_tooltip_" + std::to_string(button_tooltip_number++), tooltip, "");
     m_tooltip->set_visible(false);
 }
 
@@ -33,13 +32,16 @@ void AbstractButton::process_events(Vec2f pos, Vec2f size)
     if (m_hovered != hovered) {
         m_hovered = hovered;
         if (m_callbacks.hovered_changed) {
-            m_callbacks.hovered_changed();
+            m_callbacks.hovered_changed(m_hovered);
         }
     }
 
     if (pressed) {
         if (m_callbacks.action) {
             m_callbacks.action();
+        }
+        if (m_checkable) {
+            set_checked(!m_checked);
         }
     }
 
@@ -60,15 +62,23 @@ void AbstractButton::set_has_arrow(bool has_arrow) { m_has_arrow = has_arrow; }
 
 bool AbstractButton::enabled() const { return m_enabled; }
 
-void AbstractButton::set_enabled(bool new_enabled) { m_enabled = new_enabled; }
+void AbstractButton::set_enabled(bool enabled) { m_enabled = enabled; }
 
 bool AbstractButton::checkable() const { return m_checkable; }
 
-void AbstractButton::set_checkable(bool newCheckable) { m_checkable = newCheckable; }
+void AbstractButton::set_checkable(bool checkable) { m_checkable = checkable; }
 
 bool AbstractButton::checked() const { return m_checked; }
 
-void AbstractButton::set_checked(bool newChecked) { m_checked = newChecked; }
+void AbstractButton::set_checked(bool checked)
+{
+    if (m_checked != checked) {
+        m_checked = checked;
+        if (m_callbacks.checked_changed) {
+            m_callbacks.checked_changed(m_checked);
+        }
+    }
+}
 
 bool AbstractButton::hovered() const { return m_hovered; }
 

@@ -7,8 +7,8 @@ namespace Slic3r::App::Preview {
 class DoubleSliderForGcode : public Imgui::DoubleSlider::Manager<unsigned int>
 {
 public:
-    explicit DoubleSliderForGcode(Slic3r::App::Yoga::Item* parent = nullptr)
-        : Imgui::DoubleSlider::Manager<unsigned int>(std::string("gcode_slider"), parent)
+    explicit DoubleSliderForGcode()
+        : Imgui::DoubleSlider::Manager<unsigned int>(std::string("gcode_slider"))
     {}
 
     void init(int lowerPos, int higherPos, int minPos, int maxPos)

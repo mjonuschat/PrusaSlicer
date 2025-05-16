@@ -25,6 +25,13 @@ enum class Direction
     RightToLeft
 };
 
+enum class Position {
+    Top,
+    Bottom,
+    Left,
+    Right
+};
+
 struct Sides
 {
     Sides(float size = 0.f) { left = right = top = bottom = size; }

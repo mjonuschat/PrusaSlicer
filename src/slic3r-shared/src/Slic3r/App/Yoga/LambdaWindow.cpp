@@ -8,10 +8,10 @@
 
 namespace Slic3r::App::Yoga {
 
-LambdaWindow::LambdaWindow(RenderPosFn render_fn, const std::string& prefix, Item* parent)
-    : Window(prefix, parent)
+LambdaWindow::LambdaWindow(RenderPosFn render_fn, const std::string& prefix)
+    : Window(prefix)
 {
-    m_lambda_item = new LambdaItem(render_fn, this);
+    m_lambda_item = emplace_back<LambdaItem>(render_fn);
 }
 
 LambdaWindow::~LambdaWindow() { delete m_lambda_item; }

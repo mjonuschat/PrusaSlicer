@@ -13,7 +13,7 @@ class LambdaItem;
 class LambdaWindow : public Window
 {
 public:
-    explicit LambdaWindow(RenderPosFn render_fn, const std::string& prefix, Item* parent);
+    explicit LambdaWindow(RenderPosFn render_fn, const std::string& prefix);
     ~LambdaWindow();
 
     void render_body(Vec2f pos, Vec2f size) override;

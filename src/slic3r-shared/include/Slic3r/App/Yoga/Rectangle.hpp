@@ -11,7 +11,7 @@ namespace Slic3r::App::Yoga {
 class Rectangle : public Yoga::Item
 {
 public:
-    explicit Rectangle(Yoga::Item* parent = nullptr);
+    explicit Rectangle();
 
     void render(Vec2f pos, Vec2f size) override;
 
@@ -24,6 +24,9 @@ public:
     void set_border_color(const ImColor& border_color);
     void set_border_width(float border_width);
     void set_rounding(float rounding);
+
+protected:
+    Vec2f get_item_size() override;
 
 private:
     ImColor m_fill = IM_COL32_WHITE;

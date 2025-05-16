@@ -47,7 +47,7 @@ public:
     }
 
     void set_imgui_render(Render::ImguiRender* imgui_render);
-    virtual void hide_sidebars(bool hide) {};
+    virtual void set_sidebars_visible(bool visible) {};
 
 protected:
     /**

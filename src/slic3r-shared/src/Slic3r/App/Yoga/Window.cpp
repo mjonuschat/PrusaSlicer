@@ -12,7 +12,7 @@ namespace Slic3r::App::Yoga {
 
 std::unordered_map<std::string, int> Window::window_names = {};
 
-Window::Window(const std::string& window_name, Item* parent) : Item(parent)
+Window::Window(const std::string& window_name) : Item()
 {
     if (window_names.contains(window_name)) {
         m_window_name = window_name + " " + std::to_string(++window_names[window_name]);
@@ -55,8 +55,8 @@ void Window::render(Vec2f pos, Vec2f size)
 
     render_body(pos, size);
 
-    for (Item* child : std::as_const(m_children)) {
-        render_node(pos, child);
+    for (const ItemPtr& child : std::as_const(m_children)) {
+        render_node(pos, child.get());
     }
 
     ImGui::End();

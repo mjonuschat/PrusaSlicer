@@ -60,7 +60,7 @@ static std::string_view reduce_string(const std::string_view src, size_t current
     return (current_length + src.length() > LENGTH_THRESHOLD) ? src.substr(0, LENGTH_THRESHOLD - current_length) : src;
 }
 
-GCodeWindow::GCodeWindow(Item *parent) : Yoga::Window("gcode_window", parent) {}
+GCodeWindow::GCodeWindow() : Yoga::Window("gcode_window") {}
 
 void GCodeWindow::render_body(Yoga::Vec2f pos, Yoga::Vec2f size)
 {

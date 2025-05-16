@@ -20,9 +20,7 @@ namespace Slic3r::App {
 class SidebarActionButtons : public Yoga::Window, public WithListeners<IRenderModuleChangedListener>
 {
 public:
-    explicit SidebarActionButtons(
-        const std::string& name, Render::ModuleType type, Yoga::Item* parent = nullptr
-    );
+    SidebarActionButtons(const std::string& name, Render::ModuleType type);
 
     void on_init(Biz::ProjectInteractor* project_interactor);
 

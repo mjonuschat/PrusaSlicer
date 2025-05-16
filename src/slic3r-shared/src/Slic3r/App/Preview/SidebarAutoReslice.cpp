@@ -2,7 +2,7 @@
 
 namespace Slic3r::App::Preview {
 
-SidebarAutoReslice::SidebarAutoReslice(Item* parent) : Window("sidebar_auto_reslice", parent)
+SidebarAutoReslice::SidebarAutoReslice() : Window("sidebar_auto_reslice")
 {
     set_min_size({220, 30});
 }

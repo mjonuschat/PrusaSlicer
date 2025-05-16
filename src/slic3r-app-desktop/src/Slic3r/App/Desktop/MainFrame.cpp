@@ -393,7 +393,7 @@ void MainFrame::init_top_bar()
 
         // Propagate sidebars visibility into active RenderModule
         // ???Is it a good idea to change render module from MainFrame
-        m_canvas->get_render_module()->hide_sidebars(hide);
+        m_canvas->get_render_module()->set_sidebars_visible(hide);
 
         // ysTODO: save hide value into app_config
     });

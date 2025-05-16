@@ -4,6 +4,10 @@
 #include "Slic3r/App/Platform/CommandRegistry.hpp"
 #include "libslic3r/Config.hpp"
 
+namespace Slic3r::App::Yoga {
+class Dialog;
+}
+
 namespace Slic3r::App::Scene {
 
 /**
@@ -56,7 +60,6 @@ enum class GizmoActivationState {
  *
  * There following methods provides interface to plug-in ad-hoc rendering if suitable:
  * - render_scene() for rendering 3D geometry (e.g. selection rectangle),
- * - render_imgui() for rendering ImGUI controls.
  * .
  */
 class IGizmo {
@@ -92,7 +95,6 @@ public:
      * @{
      */
     virtual void render_scene(Render::CommandBuffer& cmd_buffer) {}
-    virtual void render_imgui() {}
     /**@}*/
 };
 
@@ -107,13 +109,14 @@ enum class ToolType : uint8_t
     None = 0,
     Translation = 1,
     Rotation = 2,
+    PaintOnSupportsGizmo = 3,
     // add as needed, no printer type variants (use two distinct IToolGizmos with same type instead)
 };
 
 /**
  * @brief Tool gizmo with own toolbar button and activation/deactivation cycle.
  *
- * Unlike IGizmo the IToolGizmo represents a tool with own button in toolbar.
+ * Unlike IGizmo the IToolGizmo represents a tool with own button in toolbar and a optional dialog.
  * This provides clear activation/deactivation
  */
 class IToolGizmo : public IGizmo {
@@ -137,15 +140,17 @@ public:
      * @{
      */
     virtual ToolType type() const = 0;
-    virtual bool supports_printer(PrinterTechnology pt) const { return true; }
+    virtual bool supports_printer(PrinterTechnology pt) const;
     /**@}*/
 
     /**
      * @name Enabled state
      * @{
      */
-    virtual bool enabled() const { return true; }
+    virtual bool enabled() const;
     /**@}*/
+
+    virtual std::unique_ptr<Yoga::Dialog> unlaod_ui_dialog();
 };
 
 } // namespace Slic3r::App::Scene

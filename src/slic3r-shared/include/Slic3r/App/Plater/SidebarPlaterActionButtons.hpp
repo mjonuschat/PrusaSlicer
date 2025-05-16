@@ -11,7 +11,7 @@ namespace Slic3r::App::Plater {
 class SidebarPlaterActionButtons : public SidebarActionButtons
 {
 public:
-    explicit SidebarPlaterActionButtons(Yoga::Item* parent = nullptr);
+    SidebarPlaterActionButtons();
 
 private:
     Yoga::LayoutButton* m_button_slice = nullptr;

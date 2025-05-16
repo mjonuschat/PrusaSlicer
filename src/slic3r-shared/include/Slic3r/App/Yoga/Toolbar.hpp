@@ -21,21 +21,18 @@ public:
         std::function<void()> subtoolbar_opened{nullptr};
     };
 
-    explicit Toolbar(const std::string& name, Item* parent = nullptr);
-    virtual ~Toolbar();
+    explicit Toolbar(const std::string& name);
 
     void process_events(Vec2f pos, Vec2f size) override;
 
     Callbacks& callbacks();
 
-    void append(ToolbarButton* button);
-    void remove(ToolbarButton* button);
-    void clear();
-    void set(const std::vector<ToolbarButton*>& buttons);
+    void append(std::unique_ptr<ToolbarButton> button);
+    std::unique_ptr<ToolbarButton> remove(ToolbarButton* button);
 
     ToolbarButton* button_at(int index) const;
     int button_count() const;
-    int index_of(ToolbarButton* button) const;
+    std::optional<size_t> index_of(ToolbarButton* button) const;
     bool contains(ToolbarButton* button) const;
 
     const Vec2f& button_min_size() const;
@@ -63,9 +60,9 @@ public:
 
 private:
     // Hide these methods
-    void append(Item* child) override;
-    void insert(Item* child, size_t index) override;
-    void remove(Item* child) override;
+    void append(ItemPtr child) override;
+    void insert(ItemPtr child, size_t index) override;
+    ItemPtr remove(Item* child) override;
 
 private:
     Callbacks m_callbacks;

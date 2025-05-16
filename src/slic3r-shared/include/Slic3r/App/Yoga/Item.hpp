@@ -8,8 +8,10 @@
 #include "imgui.h"
 
 #include "Slic3r/App/Yoga/Namespace.hpp"
+#include "Slic3r/Assert.hpp"
 
-#include <limits>
+#include <memory>
+#include <optional>
 
 namespace Slic3r::App::Render {
 class ImguiRender;
@@ -17,10 +19,13 @@ class ImguiRender;
 
 namespace Slic3r::App::Yoga {
 
+class Item;
+using ItemPtr = std::unique_ptr<Item>;
+
 class Item
 {
-public:    
-    explicit Item(Item* parent = nullptr);
+public:
+    explicit Item();
     virtual ~Item();
     Item(const Item& rhs) = delete;
     Item& operator=(Item& rhs) = delete;
@@ -78,6 +83,8 @@ public:
     float right() const;
     float top() const;
     float bottom() const;
+    const Vec2f& min_size() const;
+    const Vec2f& max_size() const;
     bool is_visible() const;
     float flex_grow() const;
     float aspect_ratio() const;
@@ -96,7 +103,6 @@ public:
     bool enabled();
     void set_enabled(bool enabled);
 
-    void set_parent(Item* parent, size_t index = std::numeric_limits<size_t>::max());
     void set_self_align(YGAlign align);
     void set_margin(const Margins& margin);
     void set_padding(const Paddings& padding);
@@ -125,14 +131,24 @@ public:
      */
     void set_z(float z);
 
-    virtual void prepend(Item* child);
-    virtual void append(Item* child);
-    virtual void insert(Item* child, size_t index);
-    virtual void remove(Item* child);
-    const std::vector<Item*>& items() const;
+    virtual void prepend(ItemPtr child);
+    virtual void append(ItemPtr child);
+    virtual void insert(ItemPtr child, size_t index);
+
+    template<class T, class... Args>
+    T* emplace_back(Args&&... __args)
+    {
+        std::unique_ptr<T> item = std::make_unique<T>(std::forward<Args>(__args)...);
+        T* item_raw = item.get();
+        append(std::move(item));
+        return item_raw;
+    }
+
+    virtual ItemPtr remove(Item* child);
+    std::vector<Item*> items() const;
     size_t item_count() const;
     Item* get_item(size_t index) const;
-    int index_of(Item* item) const;
+    std::optional<size_t> index_of(Item* item) const;
 
     static void set_imgui_render(Render::ImguiRender* imgui_render);
 
@@ -146,8 +162,8 @@ protected:
 
     virtual Vec2f get_item_size();
 
-    void add_child(Item* child, size_t index);
-    void remove_child(Item* child);
+    void add_child(ItemPtr child, size_t index);
+    ItemPtr remove_child(Item* child);
     void update_children_render_order();
 
     void set_style_dirty();
@@ -193,8 +209,46 @@ protected:
     Orientation m_orientation = Orientation::Horizontal;
     YGFlexDirection m_flex_direction = YGFlexDirectionRow;
 
-    std::vector<Item*> m_children;
+    std::vector<ItemPtr> m_children;
     std::vector<Item*> m_children_render_order;
 };
+
+/**
+ * The Passthrough class is a handy container for "passing through"
+ * changing ownership of primarily of ItemPtr. It utilizes load and unload methods,
+ * unloanding still keeps set m_raw pointer so even though the ownership
+ * was already transfered a Passthrough instance still provides pointer
+ * to the once owned instance.
+ */
+template<class T>
+class Passthrough
+{
+public:
+    Passthrough() {}
+    Passthrough(std::unique_ptr<T>&& unique) { reset(std::move(unique)); }
+    T* operator->() const { return m_raw; }
+
+    void reset(std::unique_ptr<T> unique)
+    {
+        m_raw = unique.get();
+        m_unique = std::move(unique);
+    }
+    std::unique_ptr<T> release()
+    {
+        ASSERT(m_unique, "releasing empty unique_ptr");
+        return std::move(m_unique);
+    }
+    T* get() const { return m_raw; }
+
+private:
+    std::unique_ptr<T> m_unique;
+    T* m_raw = nullptr;
+};
+
+template<class T>
+std::unique_ptr<T> unique_dynamic_cast(ItemPtr item)
+{
+    return std::unique_ptr<T>(dynamic_cast<T*>(item.release()));
+}
 
 } // namespace Slic3r::App::Yoga

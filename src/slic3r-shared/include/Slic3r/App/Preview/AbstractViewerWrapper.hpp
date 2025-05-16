@@ -70,16 +70,10 @@ public:
     virtual bool has_data() const;
     virtual void reset() = 0;
 
-    bool is_legend_shown() const { return m_legend_params.is_shown(); }
-
-    void set_legend_visible(bool visible) { m_legend_params.visible = visible; }
-    void toggle_legend_visible() { set_legend_visible(!m_legend_params.visible); }
-    bool is_legend_visible() const { return m_legend_params.visible; }
-
     const Scene::Lighting& lights() const;
     void set_lights(const Scene::Lighting& lights);
 
-    DoubleSliderForLayers* double_slider_layers() const;
+    std::unique_ptr<DoubleSliderForLayers> unload_double_slider_layers();
 
 protected:
 
@@ -88,7 +82,7 @@ protected:
 
 protected:
 
-    DoubleSliderForLayers*   m_slider_layers = nullptr;
+    Yoga::Passthrough<DoubleSliderForLayers>   m_slider_layers;
     LegendParams            m_legend_params;
 };
 

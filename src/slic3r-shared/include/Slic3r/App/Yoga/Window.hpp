@@ -13,7 +13,7 @@ namespace Slic3r::App::Yoga {
 class Window : public Item
 {
 public:
-    Window(const std::string& name, Item* parent = nullptr);
+    Window(const std::string& name);
 
     const std::string& window_name() const;
     void set_window_name(const std::string& prefix);

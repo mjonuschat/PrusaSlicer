@@ -4,15 +4,17 @@
 
 #include <imgui/imgui.h>
 
+using namespace Slic3r::App::Yoga;
+
 namespace Slic3r::App {
 
-SidebarPrint::SidebarPrint(Item* parent) : Window("sidebar_print", parent) {
+SidebarPrint::SidebarPrint() : Window("sidebar_print") {
     set_orientation(Yoga::Orientation::Vertical);
     set_gap(3);
     set_padding(5);
 
-    new Yoga::LayoutButton("Balanced settings", this);
-    new Yoga::LayoutButton("Other button", this);
+    emplace_back<LayoutButton>("Balanced settings");
+    emplace_back<LayoutButton>("Other button");
 }
 
 } // namespace Slic3r::App

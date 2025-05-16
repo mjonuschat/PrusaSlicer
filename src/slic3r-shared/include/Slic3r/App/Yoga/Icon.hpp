@@ -11,7 +11,7 @@ namespace Slic3r::App::Yoga {
 class Icon : public Item {
 public:
 
-    Icon(wchar_t icon, Item* parent = nullptr);
+    Icon(wchar_t icon);
 
     void render(Vec2f pos, Vec2f size) override;
 

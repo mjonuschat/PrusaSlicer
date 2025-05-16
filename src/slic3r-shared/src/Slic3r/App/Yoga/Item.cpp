@@ -129,10 +129,10 @@ static std::string yoga_justify_to_string(YGJustify justify)
 
 Render::ImguiRender* Slic3r::App::Yoga::Item::m_imgui_render = nullptr;
 
-Item::Item(Item* parent)
+Item::Item()
 {
     m_node = YGNodeNew();
-    set_parent(parent);
+
     YGNodeStyleSetFlexDirection(m_node, m_flex_direction);
 }
 
@@ -140,11 +140,6 @@ Item::~Item()
 {
     if (!m_parent && m_node) {
         YGNodeFreeRecursive(m_node);
-    }
-
-    // Delete children recursively like in a pyramid
-    for (Item* child : std::as_const(m_children)) {
-        delete child;
     }
 }
 
@@ -167,8 +162,8 @@ void Item::resize(Vec2f size)
 
 void Item::process_events(Vec2f pos, Vec2f size)
 {
-    for (Item* child : std::as_const(m_children)) {
-        process_events_node(pos, child);
+    for (const ItemPtr& child : std::as_const(m_children)) {
+        process_events_node(pos, child.get());
     }
 }
 
@@ -193,6 +188,10 @@ float Item::right() const { return YGNodeLayoutGetRight(m_node); }
 float Item::top() const { return YGNodeLayoutGetTop(m_node); }
 
 float Item::bottom() const { return YGNodeLayoutGetBottom(m_node); }
+
+const Vec2f& Item::min_size() const { return m_min_size; }
+
+const Vec2f& Item::max_size() const { return m_max_size; }
 
 bool Item::is_visible() const { return YGNodeStyleGetDisplay(m_node) == YGDisplayFlex; }
 
@@ -236,24 +235,6 @@ bool Item::enabled()
 
 void Item::set_enabled(bool enabled) { m_enabled = enabled; }
 
-void Item::set_parent(Item* parent, size_t index)
-{
-    if (m_parent == parent) {
-        return;
-    }
-
-    if (m_parent) {
-        m_parent->remove_child(this);
-    }
-
-    m_parent = parent;
-    if (m_parent) {
-        m_parent->add_child(
-            this, index == std::numeric_limits<size_t>::max() ? m_parent->get_node_count() : index
-        );
-    }
-}
-
 void Item::set_max_size(const Vec2f max_size)
 {
     if (m_max_size != max_size) {
@@ -295,15 +276,28 @@ void Item::set_top(float top) { YGNodeStyleSetPosition(m_node, YGEdgeTop, top); 
 
 void Item::set_bottom(float bottom) { YGNodeStyleSetPosition(m_node, YGEdgeBottom, bottom); }
 
-const std::vector<Item*>& Item::items() const { return m_children; }
-
-int Item::index_of(Item* item) const
+std::vector<Item*> Item::items() const
 {
-    std::vector<Item*>::const_iterator it =
-        std::find_if(m_children.cbegin(), m_children.cend(), [item](Item* child) {
-            return item == child;
+    std::vector<Item*> result;
+    result.reserve(m_children.size());
+    std::transform(
+        m_children.cbegin(), m_children.cend(), std::back_inserter(result),
+        [](const ItemPtr& child) { return child.get(); }
+    );
+    return result;
+}
+
+std::optional<size_t> Item::index_of(Item* item) const
+{
+    std::vector<ItemPtr>::const_iterator it =
+        std::find_if(m_children.cbegin(), m_children.cend(), [item](const ItemPtr& child) {
+            return item == child.get();
         });
-    return it == m_children.cend() ? -1 : m_children.cbegin() - it;
+    std::optional<size_t> result;
+    if (it != m_children.cend()) {
+        result = std::distance(m_children.cbegin(), it);
+    }
+    return result;
 }
 
 void Item::set_debug_border(bool show_debug_border) { m_debug_border = show_debug_border; }
@@ -360,7 +354,7 @@ std::string Item::debug_dump_tree() const
 
     dump += "}}>\n";
 
-    for (Item* child : m_children) {
+    for (const ItemPtr& child : m_children) {
         dump += child->debug_dump_tree();
     }
 
@@ -414,41 +408,55 @@ Vec2f Item::get_item_size()
 
 void Item::set_imgui_render(Render::ImguiRender* imgui_render) { m_imgui_render = imgui_render; }
 
-void Item::add_child(Item* child, size_t index)
+void Item::add_child(ItemPtr child, size_t index)
 {
     ASSERT(child);
     ASSERT(child->node());
-    ASSERT(index_of(child) == -1, "Child is already parented to this item");
+    ASSERT(!index_of(child.get()).has_value(), "Child is already parented to this item");
+    ASSERT(index <= m_children.size(), "Invalid child index");
+
+    child->m_parent = this;
+
     YGNodeInsertChild(m_node, child->m_node, index);
-    m_children.insert(m_children.cbegin() + index, child);
+    m_children.insert(m_children.cbegin() + index, std::move(child));
     update_children_render_order();
     set_style_dirty();
 }
 
-void Item::remove_child(Item* child)
+ItemPtr Item::remove_child(Item* child)
 {
     ASSERT(child);
     ASSERT(child->node());
 
-    std::vector<Item*>::const_iterator it =
-        std::find_if(m_children.cbegin(), m_children.cend(), [child](Item* child_item) {
-            return child_item == child;
+    std::vector<ItemPtr>::iterator it =
+        std::find_if(m_children.begin(), m_children.end(), [child](const ItemPtr& child_item) {
+            return child_item.get() == child;
         });
 
-    ASSERT(it != m_children.cend(), "Trying to remove unmaintained child");
-    if (it == m_children.cend()) {
-        return;
+    ASSERT(it != m_children.end(), "Trying to remove unmaintained child");
+    if (it == m_children.end()) {
+        return nullptr;
     }
+
+    child->m_parent = nullptr;
+
+    ItemPtr result(std::move(*it));
 
     YGNodeRemoveChild(m_node, child->node());
     m_children.erase(it);
     update_children_render_order();
     set_style_dirty();
+
+    return result;
 }
 
 void Item::update_children_render_order()
 {
-    m_children_render_order = m_children;
+    m_children_render_order.clear();
+    std::transform(
+        m_children.cbegin(), m_children.cend(), std::back_inserter(m_children_render_order),
+        [](const ItemPtr& child) { return child.get(); }
+    );
     // sort children by Z layer, higher Z shall be rendered first
     std::sort(
         m_children_render_order.begin(), m_children_render_order.end(),
@@ -612,7 +620,7 @@ void Item::style_node()
         }
     } else {
         // Otherwise style all our children
-        for (Item* item : std::as_const(m_children)) {
+        for (const ItemPtr& item : std::as_const(m_children)) {
             item->style_node();
         }
     }
@@ -636,25 +644,13 @@ ImVec2 Item::get_node_pos() const
     return {YGNodeLayoutGetLeft(m_node), YGNodeLayoutGetTop(m_node)};
 }
 
-void Item::prepend(Item* child) { insert(child, 0); }
+void Item::prepend(ItemPtr child) { insert(std::move(child), 0); }
 
-void Item::append(Item* child) { insert(child, get_node_count()); }
+void Item::append(ItemPtr child) { insert(std::move(child), get_node_count()); }
 
-void Item::insert(Item* child, size_t index)
-{
-    ASSERT(child, "child has to be valid");
-    ASSERT(child->node(), "child yoga node has to be valid");
+void Item::insert(ItemPtr child, size_t index) { add_child(std::move(child), index); }
 
-    child->set_parent(this, index);
-}
-
-void Item::remove(Item* child)
-{
-    ASSERT(child, "child has to be valid");
-    ASSERT(child->node(), "child yoga node has to be valid");
-
-    child->set_parent(nullptr);
-}
+ItemPtr Item::remove(Item* child) { return remove_child(child); }
 
 void Item::render_item_begin(Vec2f pos, Vec2f size)
 {
@@ -721,7 +717,7 @@ void Item::process_events_node(Vec2f pos, Item* child)
 
 Item* Item::get_item(size_t index) const
 {
-    return index >= m_children.size() ? nullptr : m_children.at(index);
+    return index >= m_children.size() ? nullptr : m_children.at(index).get();
 }
 
 size_t Item::item_count() const { return m_children.size(); }

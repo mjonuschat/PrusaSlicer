@@ -34,9 +34,6 @@ public:
         void reset() { min = std::nullopt; max = std::nullopt; }
     };
 
-    bool is_visible() const { return m_visible; }
-    void set_visible(bool visible) { m_visible = visible; }
-    void toggle_visible() { m_visible = !m_visible; }
 
     void set_gcode(std::shared_ptr<const Biz::libpgcode::LineView>& gcode) { m_gcode = gcode; }
     bool has_data() const { return (m_gcode && !m_gcode->empty()); }
@@ -48,7 +45,6 @@ public:
     void resize_range(Range& range, uint32_t lines_count, uint32_t curr_line_id) const;
 
 private:
-    bool m_visible{ true };
     std::shared_ptr<const Biz::libpgcode::LineView> m_gcode;
 };
 
@@ -61,7 +57,7 @@ private:
  */
 class GCodeWindow : public Yoga::Window {
 public:
-    explicit GCodeWindow(Yoga::Item* parent = nullptr);
+    GCodeWindow();
 
     void render_body(Yoga::Vec2f pos, Yoga::Vec2f size) override;
 

@@ -12,7 +12,7 @@ namespace Slic3r::App::Yoga {
 class Text : public Item
 {
 public:
-    Text(const std::string& text, Item* parent = nullptr);
+    Text(const std::string& text);
 
     void render(Vec2f pos, Vec2f size) override;
 

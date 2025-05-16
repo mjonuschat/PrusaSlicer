@@ -45,7 +45,6 @@ bool FdmViewerWrapper::init(Render::Device& device, Scene::Scene& scene, Scene::
 bool FdmViewerWrapper::set_settings(const FdmViewerWrapperSettings &settings)
 {
     m_settings = settings;
-    set_gcodewindow_visible(m_settings.gcodewindow_visible);
 
     try {
         if (m_viewer.is_top_layer_only_view_range() != settings.seq_top_layer_only)
@@ -55,7 +54,7 @@ bool FdmViewerWrapper::set_settings(const FdmViewerWrapperSettings &settings)
         m_cb_legend.cb_request_extra_frame = m_settings.cb_request_extra_frames;
         m_cb_legend.cb_view_type_changed = m_settings.cb_gcode_view_type_changed;
 
-        m_slider_layers = new DoubleSliderForLayers;
+        m_slider_layers = Yoga::Passthrough<DoubleSliderForLayers>(std::make_unique<DoubleSliderForLayers>());
         m_slider_layers->init(0, 0, 0, 100);
         m_slider_layers->show_ruler(m_settings.slider_layers_show_ruler, m_settings.slider_layers_show_ruler_bg);
         m_slider_layers->show_estimated_times(m_settings.slider_layers_show_estimated_times);
@@ -74,16 +73,16 @@ bool FdmViewerWrapper::set_settings(const FdmViewerWrapperSettings &settings)
         m_slider_layers->set_get_used_extruders_in_print_callback(m_settings.cb_slider_layers_get_used_extruders_in_print);
         m_slider_layers->set_app_config_changed_callback(m_settings.cb_slider_layers_app_config_changed);
 
-        m_slider_gcode = new DoubleSliderForGcode;
+        m_slider_gcode = Yoga::Passthrough<DoubleSliderForGcode>{std::make_unique<DoubleSliderForGcode>()};
         m_slider_gcode->init(0, 0, 0, 100);
         // set gcode slider callbacks
         m_slider_gcode->set_request_extra_frames_callback(std::bind(&FdmViewerWrapper::on_request_extra_frames, this, std::placeholders::_1));
         m_slider_gcode->set_on_thumb_move_callback(std::bind(&FdmViewerWrapper::on_slider_gcode_scroll_changed, this));
 
-        m_legend = new Legend(&m_viewer, this);
+        m_legend = Yoga::Passthrough<Legend>(std::make_unique<Legend>(&m_viewer, this));
         m_legend->callbacks() = m_cb_legend;
 
-        m_gcode_window = new GCodeWindow;
+        m_gcode_window = Yoga::Passthrough<GCodeWindow>(std::make_unique<GCodeWindow>());
         m_gcode_window->set_data(&m_gcode_window_data);
 
         return true;
@@ -289,19 +288,19 @@ void FdmViewerWrapper::render_gui(const WrapperLayoutData& layout)
         render_customize_scale_factor_popup();
 }
 
-GCodeWindow* FdmViewerWrapper::gcode_window() const
+std::unique_ptr<GCodeWindow> FdmViewerWrapper::unload_gcode_window()
 {
-    return m_gcode_window;
+    return m_gcode_window.release();
 }
 
-Legend* FdmViewerWrapper::legend() const
+std::unique_ptr<Legend> FdmViewerWrapper::unload_legend()
 {
-    return  m_legend;
+    return  m_legend.release();
 }
 
-DoubleSliderForGcode* FdmViewerWrapper::double_slider_gcode() const
+std::unique_ptr<DoubleSliderForGcode> FdmViewerWrapper::unload_double_slider_gcode()
 {
-    return m_slider_gcode;
+    return m_slider_gcode.release();
 }
 
 // void WrapperImpl::render_legend(Render::ImguiRender* imgui_render)

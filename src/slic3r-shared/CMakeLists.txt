@@ -35,7 +35,11 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Plater/History.cpp
         include/Slic3r/App/Plater/SidebarPlaterActionButtons.hpp
         src/Slic3r/App/Plater/SidebarPlaterActionButtons.cpp
-		include/Slic3r/App/Plater/PlaterIFDMResultCacheChangedListener.hpp
+        include/Slic3r/App/Plater/PlaterIFDMResultCacheChangedListener.hpp
+        include/Slic3r/App/Plater/PaintOnSupportsGizmo.hpp
+        src/Slic3r/App/Plater/PaintOnSupportsGizmo.cpp
+        src/Slic3r/App/Plater/PaintOnSupportsDialog.hpp
+        src/Slic3r/App/Plater/PaintOnSupportsDialog.cpp
 
         include/Slic3r/App/View/IPanelView.hpp
 
@@ -109,6 +113,7 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Scene/Frustum.hpp
         src/Slic3r/App/Scene/Frustum.cpp
         include/Slic3r/App/Scene/IGizmo.hpp
+        src/Slic3r/App/Scene/IGizmo.cpp
         include/Slic3r/App/Scene/GizmoEventContext.hpp
         include/Slic3r/App/Scene/AbstractCameraGizmo.hpp
         src/Slic3r/App/Scene/AbstractCameraGizmo.cpp
@@ -172,6 +177,12 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Yoga/Icon.hpp
         src/Slic3r/App/Yoga/Icon.cpp
         src/Slic3r/App/Yoga/Text.cpp
+        include/Slic3r/App/Yoga/Dialog.hpp
+        src/Slic3r/App/Yoga/Dialog.cpp
+        include/Slic3r/App/Yoga/AttachedWindow.hpp
+        src/Slic3r/App/Yoga/AttachedWindow.cpp
+        src/Slic3r/App/Yoga/Separator.cpp
+        include/Slic3r/App/Yoga/Separator.hpp
 
         src/Slic3r/App/Imgui/DoubleSlider.cpp
         include/Slic3r/App/Imgui/DoubleSlider.hpp

@@ -10,7 +10,7 @@ namespace Slic3r::App::Yoga {
 
 class LambdaItem : public Item {
 public:
-    LambdaItem(RenderPosFn render_fn, Item* parent = nullptr);
+    LambdaItem(RenderPosFn render_fn);
 
     void render(Vec2f pos, Vec2f size) override;
 

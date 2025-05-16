@@ -188,7 +188,7 @@ template<typename ValType>
 class Manager : public Slic3r::App::Yoga::Window
 {
 public:
-    Manager(const std::string& name, Yoga::Item* parent = nullptr) : Slic3r::App::Yoga::Window(name, parent) {}
+    Manager(const std::string& name) : Slic3r::App::Yoga::Window(name) {}
 
     void init(int lowerPos,
               int higherPos,

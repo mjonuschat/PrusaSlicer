@@ -113,14 +113,14 @@ void GizmoManager::render_scene(Render::CommandBuffer& cmd_buffer)
     //m_scene_provider.scene().log_nodes();
 }
 
-void GizmoManager::render_imgui()
-{
-    for (auto* g : m_in_cycle_gizmos)
-        g->render_imgui();
-#if DEBUG_GIZMO_MANAGER
-    render_gizmo_activation_debug();
-#endif
-}
+// void GizmoManager::render_imgui()
+// {
+//     for (auto* g : m_in_cycle_gizmos)
+//         g->render_imgui();
+// #if DEBUG_GIZMO_MANAGER
+//     render_gizmo_activation_debug();
+// #endif
+// }
 
 void GizmoManager::activate_tool(ToolType tool, PrinterTechnology pt)
 {
@@ -128,8 +128,10 @@ void GizmoManager::activate_tool(ToolType tool, PrinterTechnology pt)
 
     m_active_tool = DEBUG_ASSERT_VAL(find_tool(tool, pt));
 
-    if (m_active_tool != nullptr)
+    if (m_active_tool != nullptr) {
         m_active_tool->on_activated();
+        invoke_listeners<IGizmoActiveToolListener>([this](auto* l) { l->active_tool_changed(m_active_tool); });
+    }
 }
 
 void GizmoManager::toggle_activate_tool(ToolType tool, PrinterTechnology pt)
@@ -141,6 +143,7 @@ void GizmoManager::toggle_activate_tool(ToolType tool, PrinterTechnology pt)
     if (next_tool != original_tool) {
         m_active_tool = next_tool;
         m_active_tool->on_activated();
+        invoke_listeners<IGizmoActiveToolListener>([this](auto* l) { l->active_tool_changed(m_active_tool); });
     }
 }
 
@@ -150,6 +153,7 @@ void GizmoManager::deactivate_current_tool()
         return;
     m_active_tool->on_deactivated();
     m_active_tool = nullptr;
+    invoke_listeners<IGizmoActiveToolListener>([this](auto* l) { l->active_tool_changed(m_active_tool); });
 
 }
 

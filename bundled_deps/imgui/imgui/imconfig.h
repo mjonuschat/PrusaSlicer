@@ -287,6 +287,10 @@ namespace ImGui
     const wchar_t SceneMap                 = 0x283D;
     const wchar_t AddBedIcon               = 0x283E;
     const wchar_t AllBeds                  = 0x283F;
+    // icon for help
+    const wchar_t MouseLeft                = 0x2850;
+    const wchar_t MouseRight               = 0x2851;
+    const wchar_t KeyShift                 = 0x2852;
 
     // icons for toolbar
     const wchar_t ToolbarObjects           = 0x2901;
@@ -298,6 +302,7 @@ namespace ImGui
     const wchar_t ToolbarMove              = 0x2907;
     const wchar_t ToolbarRotation          = 0x2908;
     const wchar_t ToolbarGCode             = 0x2909;
+    const wchar_t ToolbarPaintOnSupports   = 0x2910;
 
     // printer icons (PNGs)
     const wchar_t PrinterNEXT             = 0x2A01;

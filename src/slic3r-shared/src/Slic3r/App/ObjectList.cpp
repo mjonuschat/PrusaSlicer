@@ -396,7 +396,7 @@ void ObjectList::bold_text(const std::string& text)
     ImGui::Text(text.c_str());
 }
 
-ObjectList::ObjectList(Item* parent) : Window("object_list", parent) {
+ObjectList::ObjectList() : Window("object_list") {
     set_min_size({330.f, 0.f});
 }
 

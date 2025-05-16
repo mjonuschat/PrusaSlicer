@@ -9,7 +9,7 @@
 
 namespace Slic3r::App::Yoga {
 
-Rectangle::Rectangle(Item* parent) : Item(parent) {}
+Rectangle::Rectangle() : Item() {}
 
 void Rectangle::render(Vec2f pos, Vec2f size)
 {
@@ -52,5 +52,7 @@ void Rectangle::set_border_color(const ImColor& border_color) { m_border_color =
 void Rectangle::set_border_width(float border_width) { m_border_width = border_width; }
 
 void Rectangle::set_rounding(float rounding) { m_rounding = rounding; }
+
+Vec2f Rectangle::get_item_size() { return {0, 0}; }
 
 } // namespace Slic3r::App::Yoga

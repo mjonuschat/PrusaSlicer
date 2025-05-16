@@ -18,10 +18,9 @@ void AbstractViewerWrapper::set_lights(const Scene::Lighting& lights)
     viewer().set_lights(lights);
 }
 
-DoubleSliderForLayers *AbstractViewerWrapper::double_slider_layers() const
+std::unique_ptr<DoubleSliderForLayers> AbstractViewerWrapper::unload_double_slider_layers()
 {
-    return m_slider_layers;
+    return m_slider_layers.release();
 }
 
 } // namespace Slic3r::App::Preview
-

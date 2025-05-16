@@ -16,11 +16,9 @@ class Text;
 class LayoutButton : public AbstractButton
 {
 public:
-    LayoutButton(const std::string& label, Item* parent = nullptr);
-    LayoutButton(const std::string& label, wchar_t icon, Item* parent = nullptr);
-    LayoutButton(
-        const std::string& label, wchar_t icon, const std::string& tooltip, Item* parent = nullptr
-    );
+    LayoutButton(const std::string& label);
+    LayoutButton(const std::string& label, wchar_t icon);
+    LayoutButton(const std::string& label, wchar_t icon, const std::string& tooltip);
 
     void process_events(Vec2f pos, Vec2f size) override;
 

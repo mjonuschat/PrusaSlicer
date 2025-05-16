@@ -29,7 +29,7 @@ struct LegendCallbacks
 
 class Legend : public Yoga::Window {
 public:
-    explicit Legend(libvgcode::FdmViewer* viewer, FdmViewerWrapper* wrapper, Yoga::Item* parent = nullptr);
+    Legend(libvgcode::FdmViewer* viewer, FdmViewerWrapper* wrapper);
 
     LegendCallbacks& callbacks();
 

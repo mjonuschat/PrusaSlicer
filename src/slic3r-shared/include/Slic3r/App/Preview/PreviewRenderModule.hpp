@@ -8,7 +8,12 @@
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/App/Preview/FdmViewerWrapper.hpp"
 #include "Slic3r/App/Preview/SlaViewerWrapper.hpp"
-#include "Slic3r/App/SidebarActionButtons.hpp"
+#include "Slic3r/App/Preview/SidebarPreviewActionButtons.hpp"
+#include "Slic3r/App/Preview/SidebarAutoReslice.hpp"
+#include <Slic3r/App/Preview/Legend.hpp>
+#include <Slic3r/App/Preview/GCodeWindow.hpp>
+#include <Slic3r/App/Preview/DoubleSliderForGCode.hpp>
+#include <Slic3r/App/Preview/DoubleSliderForLayers.hpp>
 
 #include <memory>
 
@@ -62,7 +67,7 @@ public:
         const Biz::Slicing::SlicingId id
     ) override;
 
-    void hide_sidebars(bool hide) override;
+    void set_sidebars_visible(bool hide) override;
 
 protected:
     /**
@@ -91,16 +96,16 @@ private:
     // main window layout
     std::unique_ptr<PreviewRenderLayout> m_layout;
     // Layout objects
-    ObjectList* m_object_list = nullptr;
-    CubeView* m_cube_view = nullptr;
-    SidebarBed* m_sidebar_bed = nullptr;
-    SidebarPrint* m_sidebar_print = nullptr;
-    SidebarPreviewActionButtons* m_sidebar_action_buttons = nullptr;
-    GCodeWindow* m_gcode_window = nullptr;
-    Legend* m_legend = nullptr;
-    DoubleSliderForGcode* m_slider_gcode = nullptr;
-    DoubleSliderForLayers* m_slider_layers = nullptr;
-    SidebarAutoReslice* m_sidebar_auto_reslice = nullptr;
+    Yoga::Passthrough<ObjectList> m_object_list;
+    Yoga::Passthrough<CubeView> m_cube_view;
+    Yoga::Passthrough<SidebarBed> m_sidebar_bed;
+    Yoga::Passthrough<SidebarPrint> m_sidebar_print;
+    Yoga::Passthrough<SidebarPreviewActionButtons> m_sidebar_action_buttons;
+    Yoga::Passthrough<GCodeWindow> m_gcode_window;
+    Yoga::Passthrough<Legend> m_legend;
+    Yoga::Passthrough<DoubleSliderForGcode> m_slider_gcode;
+    Yoga::Passthrough<DoubleSliderForLayers> m_slider_layers;
+    Yoga::Passthrough<SidebarAutoReslice> m_sidebar_auto_reslice;
     // temporary variable to allow to switch yoga layout on/off
 
     Yoga::ToolbarButton* m_button_travels = nullptr;
@@ -115,7 +120,6 @@ private:
     Yoga::ToolbarButton* m_button_center_of_gravity = nullptr;
     Yoga::ToolbarButton* m_button_tool_marker = nullptr;
     Yoga::ToolbarButton* m_button_shells = nullptr;
-    Yoga::ToolbarButton* m_button_object_list = nullptr;
     Yoga::ToolbarButton* m_button_legend = nullptr;
     Yoga::ToolbarButton* m_button_gcode = nullptr;
 

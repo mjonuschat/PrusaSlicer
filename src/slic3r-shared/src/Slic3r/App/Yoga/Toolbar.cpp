@@ -14,19 +14,13 @@
 
 namespace Slic3r::App::Yoga {
 
-Toolbar::Toolbar(const std::string& name, Item* parent) : Window(name, parent)
+Toolbar::Toolbar(const std::string& name) : Window(name)
 {
     set_padding(0);
     // Button More is used for collapsible and should never be part of m_buttons
-    m_button_more = new ToolbarButton(ImGui::ToolbarEllipsis, "Show more");
+    m_button_more = emplace_back<ToolbarButton>(ImGui::ToolbarEllipsis, "Show more");
     m_button_more->set_item_name(name + "_show_more_button");
-}
-
-Toolbar::~Toolbar()
-{
-    if (!m_button_more->parent()) {
-        delete m_button_more;
-    }
+    m_button_more->set_visible(false);
 }
 
 void Toolbar::process_events(Vec2f pos, Vec2f size)
@@ -47,46 +41,26 @@ void Toolbar::process_events(Vec2f pos, Vec2f size)
 
 Toolbar::Callbacks& Toolbar::callbacks() { return m_callbacks; }
 
-void Toolbar::append(ToolbarButton* button)
+void Toolbar::append(std::unique_ptr<ToolbarButton> button)
 {
-    if (!contains(button)) {
+    if (!contains(button.get())) {
         button->set_min_size(m_button_min_size);
         button->set_max_size(m_button_max_size);
         button->set_aspect_ratio(m_button_aspect_ratio);
-        m_buttons.push_back(button);
-        Item::append(button);
+        m_buttons.push_back(button.get());
+        Item::insert(std::move(button), item_count() - 1);
     }
 }
 
-void Toolbar::remove(ToolbarButton* button)
+std::unique_ptr<ToolbarButton> Toolbar::remove(ToolbarButton* button)
 {
     if (contains(button)) {
-        int index = index_of(button);
-        ASSERT(index != -1);
-        m_buttons.erase(m_buttons.cbegin() + index);
-        Item::remove(button);
-    }
-}
-
-void Toolbar::clear()
-{
-    const std::vector<ToolbarButton*> buttons = m_buttons;
-    for (ToolbarButton* button : buttons) {
-        remove(button);
-    }
-    ASSERT(m_buttons.empty());
-}
-
-void Toolbar::set(const std::vector<ToolbarButton*>& buttons)
-{
-    if (m_buttons == buttons) {
-        return;
-    }
-
-    clear();
-
-    for (ToolbarButton* button : std::as_const(buttons)) {
-        append(button);
+        std::optional<size_t> index = index_of(button);
+        ASSERT(index.has_value());
+        m_buttons.erase(m_buttons.cbegin() + index.value());
+        return unique_dynamic_cast<ToolbarButton>(Item::remove(button));
+    } else {
+        return nullptr;
     }
 }
 
@@ -94,7 +68,7 @@ ToolbarButton* Toolbar::button_at(int index) const { return m_buttons.at(index);
 
 int Toolbar::button_count() const { return m_buttons.size(); }
 
-bool Toolbar::contains(ToolbarButton* button) const { return index_of(button) != -1; }
+bool Toolbar::contains(ToolbarButton* button) const { return index_of(button).has_value(); }
 
 const Vec2f& Toolbar::button_min_size() const { return m_button_min_size; }
 
@@ -135,11 +109,11 @@ void Toolbar::set_button_aspect_ratio(float button_aspect_ratio)
     }
 }
 
-void Toolbar::append(Item* child) { Item::append(child); }
+void Toolbar::append(ItemPtr child) { Item::append(std::move(child)); }
 
-void Toolbar::insert(Item* child, size_t index) { Item::insert(child, index); }
+void Toolbar::insert(ItemPtr child, size_t index) { Item::insert(std::move(child), index); }
 
-void Toolbar::remove(Item* child) { Item::remove(child); }
+ItemPtr Toolbar::remove(Item* child) { return Item::remove(child); }
 
 bool Toolbar::hovered() const { return m_hovered; }
 
@@ -149,9 +123,9 @@ void Toolbar::set_show_tooltips(bool show_tooltips) { m_show_tooltips = show_too
 
 bool Toolbar::any_subtoolbar_opened() const
 {
-    return (m_button_more->subtoolbar() && m_button_more->subtoolbar()->is_visible()) ||
+    return (m_button_more->get_subtoolbar() && m_button_more->get_subtoolbar()->is_visible()) ||
         std::any_of(m_buttons.cbegin(), m_buttons.cend(), [](ToolbarButton* button) {
-               return button->subtoolbar() && button->subtoolbar()->is_visible();
+               return button->get_subtoolbar() && button->get_subtoolbar()->is_visible();
            });
 }
 
@@ -165,6 +139,8 @@ void Toolbar::set_available_size(float available_size) { m_available_size = avai
 
 void Toolbar::style_node()
 {
+    // I absolutely understand this is hidous, I already spent > 0 hours debugging this,
+    // I will someday clean this up, but today is not the day
     if (m_collapsible && m_parent && !m_button_min_size.isZero() && width() > 0 && height() > 0) {
         // Compute available size
         float available_size = 0;
@@ -194,9 +170,11 @@ void Toolbar::style_node()
 
         std::vector<ToolbarButton*> included_buttons;
         std::vector<ToolbarButton*> collapsed_buttons;
-        // for (std::vector<ToolbarButton*>::const_reverse_iterator it = m_buttons.crbegin(); it != m_buttons.crend(); ++it) {
         for (ToolbarButton* button : std::as_const(m_buttons)) {
-            // ToolbarButton* button = *it;
+            if (button == m_button_more) {
+                continue;
+            }
+
             if (!button->is_visible()) {
                 included_buttons.push_back(button);
                 continue;
@@ -214,18 +192,28 @@ void Toolbar::style_node()
             }
         }
 
-        m_button_more->set_orientation(orientation());
-        m_button_more->set_subtoolbar_buttons(collapsed_buttons);
-        m_button_more->set_parent(collapsed_buttons.empty() ? nullptr : this);
-
-        size_t index = item_count();
-        if (m_button_more->parent()) {
-            index--;
+        if (!collapsed_buttons.empty()) {
+            // Put every collapsed button to ButtonMore subtoolbar
+            m_button_more->set_orientation(orientation());
+            Toolbar* subtoolbar = m_button_more->get_or_create_subtoolbar();
+            for (ToolbarButton* collapsed_button : std::as_const(collapsed_buttons)) {
+                if (collapsed_button->parent() != subtoolbar) {
+                    subtoolbar->append(
+                        unique_dynamic_cast<ToolbarButton>(Item::remove(collapsed_button))
+                    );
+                }
+            }
         }
-        for (ToolbarButton* button : std::as_const(included_buttons)) {
-            // check and reparent every included button
-            if (button->parent() != this) {
-                button->set_parent(this, index++);
+
+        m_button_more->set_visible(!collapsed_buttons.empty());
+
+        Toolbar* subtoolbar = m_button_more->get_subtoolbar();
+        if (subtoolbar) {
+            // Go through every included button and append it if they are missing
+            for (ToolbarButton* included_button : std::as_const(included_buttons)) {
+                if (included_button->parent() == subtoolbar) {
+                    Item::insert(subtoolbar->remove(included_button), item_count() - 1);
+                }
             }
         }
     }
@@ -233,14 +221,14 @@ void Toolbar::style_node()
     Item::style_node();
 }
 
-int Toolbar::index_of(ToolbarButton* button) const
+std::optional<size_t> Toolbar::index_of(ToolbarButton* button) const
 {
     std::vector<ToolbarButton*>::const_iterator it =
         std::find_if(m_buttons.cbegin(), m_buttons.cend(), [button](ToolbarButton* child_button) {
             return button == child_button;
         });
 
-    return it != m_buttons.cend() ? m_buttons.cbegin() - it : -1;
+    return it != m_buttons.cend() ? std::distance(m_buttons.cbegin(), it) : std::optional<size_t>();
 }
 
 } // namespace Slic3r::App::Yoga

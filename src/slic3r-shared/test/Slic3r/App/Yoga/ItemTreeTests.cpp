@@ -16,27 +16,16 @@ using Catch::Matchers::WithinRel;
 TEST_CASE("Item 1 child Item::add") {
     Item tree;
 
-    Item* child = new Item;
-    tree.append(child);
+    std::unique_ptr<Item> child = std::make_unique<Item>();
+    tree.append(std::move(child));
 
-    REQUIRE(child->parent() == &tree);
-    REQUIRE(tree.item_count() == 1);
-}
-
-TEST_CASE("Item 1 child set_parent") {
-    Item tree;
-
-    Item* child = new Item;
-    child->set_parent(&tree);
-
-    REQUIRE(child->parent() == &tree);
     REQUIRE(tree.item_count() == 1);
 }
 
 TEST_CASE("Item 1 child constructor parent") {
     Item tree;
 
-    Item* child = new Item(&tree);
+    Item* child = tree.emplace_back<Item>();
 
     REQUIRE(child->parent() == &tree);
     REQUIRE(tree.item_count() == 1);
@@ -45,7 +34,7 @@ TEST_CASE("Item 1 child constructor parent") {
 TEST_CASE("Item 1 child Item::remove") {
     Item tree;
 
-    Item* child = new Item(&tree);
+    Item* child = tree.emplace_back<Item>();
 
     tree.remove(child);
 

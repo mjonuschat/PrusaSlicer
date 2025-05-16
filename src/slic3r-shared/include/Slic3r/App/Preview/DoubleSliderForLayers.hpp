@@ -37,8 +37,8 @@ enum class LabelType
 class DoubleSliderForLayers : public Imgui::DoubleSlider::Manager<float>
 {
 public:
-    explicit DoubleSliderForLayers(Slic3r::App::Yoga::Item* parent = nullptr)
-        : Slic3r::App::Imgui::DoubleSlider::Manager<float>(std::string("layers_slider"), parent) {}
+    explicit DoubleSliderForLayers()
+        : Slic3r::App::Imgui::DoubleSlider::Manager<float>(std::string("layers_slider")) {}
 
     void init(int lowerValue,
               int higherValue,

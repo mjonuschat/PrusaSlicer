@@ -14,6 +14,8 @@
 #include "Slic3r/App/Plater/BedSelectGizmo.hpp"
 #include "Slic3r/App/Plater/TranslationGizmo.hpp"
 #include "Slic3r/App/Plater/RotationGizmo.hpp"
+#include "Slic3r/App/Plater/PaintOnSupportsGizmo.hpp"
+#include "Slic3r/App/Plater/PaintOnSupportsDialog.hpp"
 #include "Slic3r/Domain/Bed.hpp"
 #include "Slic3r/Domain/BedInstance.hpp"
 #include "Slic3r/App/Imgui/ImguiExtension.hpp"
@@ -28,6 +30,7 @@
 #include "Slic3r/App/LightSetting.hpp"
 #include "Slic3r/App/Plater/History.hpp"
 #include "Slic3r/App/Plater/SidebarPlaterActionButtons.hpp"
+#include "Slic3r/App/Yoga/ToolbarButton.hpp"
 
 #include <imgui/imgui.h>
 #include <Eigen/SVD>
@@ -39,6 +42,8 @@
 #define ENABLED_DEBUG_LOAD_3MF 0
 #define ENABLED_DEBUG_CAMERA 0
 
+using namespace Slic3r::App::Yoga;
+
 namespace Slic3r::App::Plater {
 
 namespace TriMesh = Biz::Algorithms::TriangleMesh;
@@ -48,6 +53,8 @@ PlaterRenderModule::PlaterRenderModule(
 )
     : m_workbench(workbench), m_project_interactor(project_interactor)
 {}
+
+PlaterRenderModule::~PlaterRenderModule() = default;
 
 void PlaterRenderModule::on_init(Render::Device& device, Render::ImguiRender& imgui_render)
 {
@@ -78,39 +85,34 @@ void PlaterRenderModule::remove_type_changed_listener(IRenderModuleChangedListen
 void PlaterRenderModule::init_scene_layout()
 {
     // >> This code is same for Plater/PreviewRenderModule
-    m_object_list = new ObjectList;
+    m_object_list = Passthrough(std::make_unique<ObjectList>());
     m_object_list->init(&m_project_interactor, ObjectList::Mode::Plater);
 
-    m_cube_view = new CubeView;
-    m_sidebar_bed = new SidebarBed;
-    m_sidebar_print = new SidebarPrint;
-    m_history = new History;
+    m_cube_view = Passthrough{std::make_unique<CubeView>()};
+    m_sidebar_bed = Passthrough(std::make_unique<SidebarBed>());
+    m_sidebar_print = Passthrough(std::make_unique<SidebarPrint>());
+    m_history = Passthrough(std::make_unique<History>());
     m_history->set_visible(false);
-    m_history->set_flex_grow(1.);
 
-    m_sidebar_action_buttons = new SidebarPlaterActionButtons;
+    m_sidebar_action_buttons = Passthrough{std::make_unique<SidebarPlaterActionButtons>()};
     m_sidebar_action_buttons->on_init(&m_project_interactor);
     for (IRenderModuleChangedListener* listener : std::as_const(m_render_module_changed_listeners)) {
         m_sidebar_action_buttons->add_listener<IRenderModuleChangedListener>(listener);
     }
 
     m_layout.reset(new PlaterRenderLayout(
-        m_object_list, m_cube_view, m_sidebar_bed, m_sidebar_print, m_sidebar_action_buttons,
-        m_history
+        m_object_list.release(), m_cube_view.release(), m_sidebar_bed.release(), m_sidebar_print.release(), m_sidebar_action_buttons.release(),
+        m_history.release()
     ));
     m_layout->init();
 
     // init toolbars
-    m_layout->add_toolbar_item(
-        ToolbarID::Top, ImGui::ToolbarObjects, "Object List", "Ctrl + Alt + O",
-        {.action = [this]() { m_layout->set_visible_left_column_item(m_object_list, !m_object_list->is_visible()); },
-         .toggled = [this]() { return m_object_list->is_visible(); }}
+    m_layout->add_toolbar_item_panel(
+        ToolbarID::Top, ImGui::ToolbarObjects, "Object List", "Ctrl + Alt + O", {}, m_object_list.get()
     );
 
-    m_layout->add_toolbar_item(
-        ToolbarID::Bottom, ImGui::ToolbarHistory, "Actions History", "Shift + Alt + H",
-        {.action = [this]() { m_layout->set_visible_left_column_item(m_history, !m_history->is_visible()); },
-         .toggled = [this]() { return m_history->is_visible(); }}
+    m_layout->add_toolbar_item_panel(
+        ToolbarID::Bottom, ImGui::ToolbarHistory, "Actions History", "Shift + Alt + H", {}, m_history.get()
     );
 
     m_layout->add_toolbar_item(
@@ -131,24 +133,32 @@ void PlaterRenderModule::init_scene_layout()
              }}
     );
     //    m_layout.add_toolbar_item(ToolbarID::Middle, ImGui::ToolbarArrange, "Arrange", "A", { []() {} });
-    m_layout->add_toolbar_item(
+    m_toolbar_move = m_layout->add_toolbar_item_gizmo(
         ToolbarID::Middle, ImGui::ToolbarMove, "Move", "M",
-        {.action = [this](
-                   ) { m_gizmo_manager->toggle_activate_tool(Scene::ToolType::Translation, ptFFF); },
-         .enabled = [this]() { return !m_project_interactor.scene_interactor().selection().empty(); },
-         .toggled =
-             [this]() {
-                 return m_gizmo_manager->current_tool_type() == Scene::ToolType::Translation;
-             }}
+        {.action = [this]() { toggle_activate_tool(Scene::ToolType::Translation); }},
+        m_translation_gizmo
     );
-    m_layout->add_toolbar_item(
+    m_toolbar_rotate = m_layout->add_toolbar_item_gizmo(
         ToolbarID::Middle, ImGui::ToolbarRotation, "Rotate", "R",
-        {.action =
-             [this]() { m_gizmo_manager->toggle_activate_tool(Scene::ToolType::Rotation, ptFFF); },
-         .enabled = [this]() { return !m_project_interactor.scene_interactor().selection().empty(); },
-         .toggled =
-             [this]() { return m_gizmo_manager->current_tool_type() == Scene::ToolType::Rotation; }}
+        {.action = [this]() { toggle_activate_tool(Scene::ToolType::Rotation); }},
+        m_rotation_gizmo
     );
+    m_toolbar_paint_on_supports = m_layout->add_toolbar_item_gizmo(
+        ToolbarID::Middle, ImGui::ToolbarPaintOnSupports, "Paint-on supports", "L",
+        {.action = [this]() { toggle_activate_tool(Scene::ToolType::PaintOnSupportsGizmo); }},
+        m_paint_on_supports_gizmo
+    );
+}
+
+void PlaterRenderModule::toggle_activate_tool(Scene::ToolType tool_type)
+{
+    m_gizmo_manager->toggle_activate_tool(tool_type, ptFFF);
+
+    Scene::ToolType current_tool_type = m_gizmo_manager->current_tool_type();
+
+    m_toolbar_move->set_checked(current_tool_type == Scene::ToolType::Translation);
+    m_toolbar_rotate->set_checked(current_tool_type == Scene::ToolType::Rotation);
+    m_toolbar_paint_on_supports->set_checked(current_tool_type == Scene::ToolType::PaintOnSupportsGizmo);
 }
 
 static void my_model_experinets(Biz::Scene::SceneInteractor& scene_interactor, const Domain::Bed& bed, bool can_add_modifiers)
@@ -385,14 +395,15 @@ void PlaterRenderModule::init_gizmos()
         ->add_base_gizmo<BedSelectGizmo>(m_project_interactor.scene_interactor(), *m_scene_presenter);
     m_gizmo_manager
         ->add_base_gizmo<QuickDragGizmo>(m_project_interactor.scene_interactor(), *m_scene_presenter);
-    m_gizmo_manager->add_tool_gizmo<TranslationGizmo>(
+    m_translation_gizmo = &m_gizmo_manager->add_tool_gizmo<TranslationGizmo>(
         *m_device, m_gizmo_manager->data_factory(), *m_scene_presenter,
         m_project_interactor.scene_interactor()
     );
-    m_gizmo_manager->add_tool_gizmo<RotationGizmo>(
+    m_rotation_gizmo = &m_gizmo_manager->add_tool_gizmo<RotationGizmo>(
         *m_device, m_gizmo_manager->data_factory(), *m_scene_presenter,
         m_project_interactor.scene_interactor()
     );
+    m_paint_on_supports_gizmo = &m_gizmo_manager->add_tool_gizmo<PaintOnSupportsGizmo>();
 }
 
 void PlaterRenderModule::on_status_cache_changed(const Biz::Slicing::SlicingId id)
@@ -401,9 +412,10 @@ void PlaterRenderModule::on_status_cache_changed(const Biz::Slicing::SlicingId i
     request_render();
 }
 
-void PlaterRenderModule::hide_sidebars(bool hide)
+void PlaterRenderModule::set_sidebars_visible(bool visible)
 {
-    m_layout->hide_sidebars(hide);
+    m_layout->set_sidebars_visible(visible);
+
     // request redraw
     request_render();
 }
@@ -969,8 +981,6 @@ void PlaterRenderModule::render_imgui(Render::CommandBuffer & cmd_buffer)
 
     m_scene_presenter->render_imgui(m_screen_info);
 
-    m_gizmo_manager->render_imgui();
-
 #if ENABLED_DEBUG_OUTLINE
     if (ImGui::Begin("Outline", nullptr)) {
         imgui_scenegraph_node_info(m_scene_presenter->scene().root());
@@ -1044,6 +1054,12 @@ void PlaterRenderModule::on_activated()
 void PlaterRenderModule::on_deactivated()
 {
     Slic3r::App::set_global_lighting(m_scene_presenter->scene().lights());
+}
+
+void PlaterRenderModule::on_scene_selection_changed(Domain::SelectionId project_id, const Biz::Scene::Selection &selection)
+{
+    m_toolbar_move->set_enabled(selection.empty());
+    m_toolbar_rotate->set_enabled(selection.empty());
 }
 
 void PlaterRenderModule::on_screen_resized()

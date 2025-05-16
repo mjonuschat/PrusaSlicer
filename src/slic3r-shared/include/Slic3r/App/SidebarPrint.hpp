@@ -6,7 +6,7 @@ namespace Slic3r::App {
 class SidebarPrint : public Yoga::Window
 {
 public:
-    explicit SidebarPrint(Yoga::Item* parent = nullptr);
+    SidebarPrint();
 };
 
 } // namespace Slic3r::App

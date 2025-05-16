@@ -72,7 +72,7 @@ TEST_CASE_METHOD(ImGuiFixture, "Yoga::Item max_size")
 {
     Item layout;
 
-    Item* child = new Item(&layout);
+    Item* child = layout.emplace_back<Item>();
     child->set_max_size({10, 15});
     child->set_flex_grow(1.);
 
@@ -86,10 +86,10 @@ TEST_CASE_METHOD(ImGuiFixture, "Yoga::Item flex_grow")
 {
     Item layout;
 
-    Item* child_left = new Item(&layout);
+    Item* child_left = layout.emplace_back<Item>();
     child_left->set_min_size({10, 0});
 
-    Item* child_right = new Item(&layout);
+    Item* child_right = layout.emplace_back<Item>();
     child_right->set_flex_grow(1);
 
     layout.render({}, {100, 50});
@@ -103,10 +103,10 @@ TEST_CASE_METHOD(ImGuiFixture, "Yoga::Item flex_grow double even")
     Item layout;
     layout.set_orientation(Orientation::Horizontal);
 
-    Item* child_left = new Item(&layout);
+    Item* child_left = layout.emplace_back<Item>();
     child_left->set_flex_grow(1);
 
-    Item* child_right = new Item(&layout);
+    Item* child_right = layout.emplace_back<Item>();
     child_right->set_flex_grow(1);
 
     layout.render({}, {100, 50});
@@ -120,13 +120,13 @@ TEST_CASE_METHOD(ImGuiFixture, "Yoga::Item flex_grow double even")
 //     Item layout;
 //     layout.set_orientation(Orientation::Horizontal);
 
-//     Item* child_left = new Item(&layout);
+//     Item* child_left = layout.emplace_back<Item>();
 //     child_left->set_flex_grow(.3f);
 
-//     Item* child_center = new Item(&layout);
+//     Item* child_center = layout.emplace_back<Item>();
 //     child_center->set_flex_grow(.2f);
 
-//     Item* child_right = new Item(&layout);
+//     Item* child_right = layout.emplace_back<Item>();
 //     child_right->set_flex_grow(.5f);
 
 //     layout.render({}, {100, 50});
@@ -141,10 +141,10 @@ TEST_CASE_METHOD(ImGuiFixture, "Yoga::Item gap")
     Item layout;
     layout.set_orientation(Orientation::Horizontal);
 
-    Item* child_left = new Item(&layout);
+    Item* child_left = layout.emplace_back<Item>();
     child_left->set_flex_grow(1);
 
-    Item* child_right = new Item(&layout);
+    Item* child_right = layout.emplace_back<Item>();
     child_right->set_flex_grow(1);
 
     layout.set_gap(10);
@@ -161,7 +161,7 @@ TEST_CASE_METHOD(ImGuiFixture, "Yoga::Item padding")
     Item layout;
     layout.set_orientation(Orientation::Horizontal);
 
-    Item* child = new Item(&layout);
+    Item* child = layout.emplace_back<Item>();
     child->set_flex_grow(1);
 
     layout.set_padding(10);
@@ -179,7 +179,7 @@ TEST_CASE_METHOD(ImGuiFixture, "Yoga::Item padding complex")
     Item layout;
     layout.set_orientation(Orientation::Horizontal);
 
-    Item* child = new Item(&layout);
+    Item* child = layout.emplace_back<Item>();
     child->set_flex_grow(1);
 
     layout.set_padding(Paddings(5, 10, 15, 20));
@@ -197,7 +197,7 @@ TEST_CASE_METHOD(ImGuiFixture, "Yoga::Item margin")
     Item layout;
     layout.set_orientation(Orientation::Horizontal);
 
-    Item* child = new Item(&layout);
+    Item* child = layout.emplace_back<Item>();
     child->set_flex_grow(1);
     child->set_margin(10);
 
@@ -214,7 +214,7 @@ TEST_CASE_METHOD(ImGuiFixture, "Yoga::Item margin complex")
     Item layout;
     layout.set_orientation(Orientation::Horizontal);
 
-    Item* child = new Item(&layout);
+    Item* child = layout.emplace_back<Item>();
     child->set_flex_grow(1);
     child->set_margin(Margins(5, 10, 15, 20));
 
@@ -231,7 +231,7 @@ TEST_CASE_METHOD(ImGuiFixture, "Yoga::Item aspect ratio")
     Item layout;
     layout.set_orientation(Orientation::Horizontal);
 
-    Item* child = new Item(&layout);
+    Item* child = layout.emplace_back<Item>();
     child->set_aspect_ratio(1);
     child->set_max_size({50, 100});
 
@@ -248,7 +248,7 @@ TEST_CASE_METHOD(ImGuiFixture, "Yoga::Item center child")
     layout.set_justify_content(YGJustify::YGJustifyCenter);
     layout.set_align_items(YGAlign::YGAlignCenter);
 
-    Item* child = new Item(&layout);
+    Item* child = layout.emplace_back<Item>();
     child->set_min_size({10, 10});
 
     layout.render({}, {100, 50});
@@ -264,11 +264,11 @@ TEST_CASE_METHOD(ImGuiFixture, "Yoga::Item invisible child")
     Item layout;
     layout.set_orientation(Orientation::Horizontal);
 
-    Item* child = new Item(&layout);
+    Item* child = layout.emplace_back<Item>();
     child->set_min_size({10, 10});
     child->set_visible(false);
 
-    Item* child_visible = new Item(&layout);
+    Item* child_visible = layout.emplace_back<Item>();
     child_visible->set_flex_grow(1);
 
     layout.render({}, {100, 50});

@@ -47,7 +47,7 @@ static bool PrinterButton(
     return pressed;
 }
 
-SidebarBed::SidebarBed(Item* parent) : Window("sidebar_bed", parent) {
+SidebarBed::SidebarBed() : Window("sidebar_bed") {
     set_min_size({240, 60});
 }
 

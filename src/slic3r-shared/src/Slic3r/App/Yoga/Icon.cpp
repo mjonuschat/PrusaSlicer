@@ -8,7 +8,7 @@
 
 namespace Slic3r::App::Yoga {
 
-Icon::Icon(wchar_t icon, Item *parent) : Item(parent), m_icon(icon) {
+Icon::Icon(wchar_t icon) : Item(), m_icon(icon) {
     set_aspect_ratio(1.);
 }
 

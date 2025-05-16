@@ -2088,8 +2088,8 @@ void legend_detail(Render::ImguiRender& imgui_render, libvgcode::FdmViewer& view
     draw_items_detail(imgui_render, viewer, wrapper, cbs);
 }
 
-Legend::Legend(libvgcode::FdmViewer *viewer, FdmViewerWrapper *wrapper, Item *parent) :
-    Window("legend", parent), m_viewer(viewer), m_wrapper(wrapper)
+Legend::Legend(libvgcode::FdmViewer *viewer, FdmViewerWrapper *wrapper) :
+    Window("legend"), m_viewer(viewer), m_wrapper(wrapper)
 {}
 
 LegendCallbacks& Legend::callbacks()

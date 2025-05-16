@@ -6,39 +6,49 @@
 #include "Slic3r/App/Preview/DoubleSliderForGCode.hpp"
 #include "Slic3r/App/Preview/SidebarAutoReslice.hpp"
 #include "Slic3r/App/Preview/SidebarPreviewActionButtons.hpp"
+#include "Slic3r/App/ObjectList.hpp"
+#include "Slic3r/App/SidebarBed.hpp"
+#include "Slic3r/App/SidebarPrint.hpp"
+#include "Slic3r/App/CubeView.hpp"
+
+using namespace Slic3r::App::Yoga;
 
 namespace Slic3r::App::Preview {
 
 PreviewRenderLayout::PreviewRenderLayout(
-    ObjectList* object_list,
-    CubeView* cube_view,
-    SidebarBed* sidebar_bed,
-    SidebarPrint* sidebar_print,
-    SidebarPreviewActionButtons* sidebar_action_buttons,
-    GCodeWindow* m_gcode_window,
-    Legend* legend,
-    DoubleSliderForLayers* double_slider_layers,
-    DoubleSliderForGcode* double_slider_gcode,
-    SidebarAutoReslice* sidebar_auto_reslice
+    std::unique_ptr<ObjectList> object_list,
+    std::unique_ptr<CubeView> cube_view,
+    std::unique_ptr<SidebarBed> sidebar_bed,
+    std::unique_ptr<SidebarPrint> sidebar_print,
+    std::unique_ptr<SidebarPreviewActionButtons> sidebar_action_buttons,
+    std::unique_ptr<GCodeWindow> m_gcode_window,
+    std::unique_ptr<Legend> legend,
+    std::unique_ptr<DoubleSliderForLayers> double_slider_layers,
+    std::unique_ptr<DoubleSliderForGcode> double_slider_gcode,
+    std::unique_ptr<SidebarAutoReslice> sidebar_auto_reslice
 )
-    : AbstractRenderLayout(object_list, cube_view, sidebar_bed, sidebar_print)
-    , m_gcode_window(m_gcode_window)
-    , m_legend(legend)
-    , m_double_slider_layers(double_slider_layers)
-    , m_double_slider_gcode(double_slider_gcode)
-    , m_sidebar_auto_reslice(sidebar_auto_reslice)
-    , m_sidebar_action_buttons(sidebar_action_buttons)
+    : AbstractRenderLayout(
+          std::move(object_list), std::move(cube_view), std::move(sidebar_bed), std::move(sidebar_print)
+      )
+    , m_gcode_window(std::move(m_gcode_window))
+    , m_legend(std::move(legend))
+    , m_double_slider_layers(std::move(double_slider_layers))
+    , m_double_slider_gcode(std::move(double_slider_gcode))
+    , m_sidebar_auto_reslice(std::move(sidebar_auto_reslice))
+    , m_sidebar_action_buttons(std::move(sidebar_action_buttons))
 {}
+
+PreviewRenderLayout::~PreviewRenderLayout() = default;
 
 void PreviewRenderLayout::init_left_column()
 {
     AbstractRenderLayout::init_left_column();
 
-    m_layout_left_column->append(m_legend);
+    m_layout_left_column->append(m_legend.release());
     m_legend->set_visible(false);
     m_legend->set_min_size({0, 100});
 
-    m_layout_left_column->append(m_gcode_window);
+    m_layout_left_column->append(m_gcode_window.release());
     m_gcode_window->set_visible(false);
     m_gcode_window->set_min_size({0, 100});
 }
@@ -48,21 +58,20 @@ void PreviewRenderLayout::init_middle_column()
     AbstractRenderLayout::init_middle_column();
 
     // flexbox doesnt support justify-self, spacer is needed
-    Yoga::Item* column_spacer = new Yoga::Item(m_layout_middle_column);
+    Yoga::Item* column_spacer = m_layout_middle_column->emplace_back<Yoga::Item>();
     column_spacer->set_flex_grow(1);
-    m_layout_middle_column->append(m_double_slider_gcode);
+    m_layout_middle_column->append(m_double_slider_gcode.release());
 
-    m_layout_center_row->append(m_double_slider_layers);
+    m_layout_center_row->append(m_double_slider_layers.release());
 }
 
 void PreviewRenderLayout::init_right_column()
 {
     AbstractRenderLayout::init_right_column();
 
-    m_sidebar_auto_reslice = new SidebarAutoReslice;
-    m_layout_right_column->append(m_sidebar_auto_reslice);
+    m_layout_right_column->append(m_sidebar_auto_reslice.release());
 
-    m_layout_right_column->append(m_sidebar_action_buttons);
+    m_layout_right_column->append(m_sidebar_action_buttons.release());
 }
 
 } // namespace Slic3r::App::Preview

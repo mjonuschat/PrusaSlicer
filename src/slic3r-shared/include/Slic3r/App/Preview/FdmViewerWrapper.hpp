@@ -34,7 +34,6 @@ struct FdmViewerWrapperSettings : public ViewerWrapperBaseSettings
     bool slider_layers_editable{ false };
     bool slider_layers_use_default_colors{ false };
     bool seq_top_layer_only{ false };
-    bool gcodewindow_visible{ true };
 
     libvgcode::CustomOptions custom_options;
 
@@ -106,9 +105,9 @@ public:
     void render_toolpaths();
     void render_gui(const WrapperLayoutData& layout);
 
-    GCodeWindow* gcode_window() const;
-    Legend* legend() const;
-    DoubleSliderForGcode* double_slider_gcode() const;
+    std::unique_ptr<GCodeWindow> unload_gcode_window();
+    std::unique_ptr<Legend> unload_legend();
+    std::unique_ptr<DoubleSliderForGcode> unload_double_slider_gcode();
 
     Biz::libpgcode::UnitsSystem units() const { return m_units; }
     void set_units(Biz::libpgcode::UnitsSystem sys);
@@ -125,14 +124,6 @@ public:
     void set_tool_marker_enabled(bool enabled) { m_viewer.set_tool_marker_enabled(enabled); }
     float tool_marker_scale_factor() const { return m_viewer.tool_marker_scale_factor(); }
     void set_tool_marker_scale_factor(float factor) { m_viewer.set_tool_marker_scale_factor(factor); }
-
-    void set_legend_visible(bool visible) { m_legend_params.visible = visible; }
-    void toggle_legend_visible() { set_legend_visible(!m_legend_params.visible); }
-    bool is_legend_visible() const { return m_legend_params.visible; }
-
-    void set_gcodewindow_visible(bool visible) { m_gcode_window_data.set_visible(visible); }
-    void toggle_gcodewindow_visible() { m_gcode_window_data.toggle_visible(); }
-    bool is_gcodewindow_visible() const { return m_gcode_window_data.is_visible(); }
 
     bool is_top_layer_only_view_range() const { return m_viewer.is_top_layer_only_view_range(); }
     void toggle_top_layer_only_view_range() { m_viewer.toggle_top_layer_only_view_range(); }
@@ -179,9 +170,9 @@ private:
     FdmViewerWrapperInputData m_data;
 
     libvgcode::FdmViewer m_viewer;
-    DoubleSliderForGcode* m_slider_gcode = nullptr;
-    Legend* m_legend = nullptr;
-    GCodeWindow* m_gcode_window = nullptr;
+    Yoga::Passthrough<DoubleSliderForGcode> m_slider_gcode;
+    Yoga::Passthrough<Legend> m_legend;
+    Yoga::Passthrough<GCodeWindow> m_gcode_window;
     GCodeWindowData m_gcode_window_data;
     ActualSpeedPlotData m_actual_speed_plot_data;
     LegendParams m_legend_params;

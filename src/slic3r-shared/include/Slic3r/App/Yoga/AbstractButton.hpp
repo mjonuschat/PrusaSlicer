@@ -17,12 +17,11 @@ public:
     struct Callbacks
     {
         std::function<void()> action{nullptr};
-        std::function<void()> hovered_changed{nullptr};
-        std::function<bool()> enabled{[]() { return true; }};
-        std::function<bool()> toggled{[]() { return false; }};
+        std::function<void(bool hovered)> hovered_changed{nullptr};
+        std::function<void(bool checked)> checked_changed{nullptr};
     };
 
-    explicit AbstractButton(wchar_t icon, const std::string& tooltip = {}, Item* parent = nullptr);
+    explicit AbstractButton(wchar_t icon, const std::string& tooltip = {});
 
     void process_events(Vec2f pos, Vec2f size) override;
 

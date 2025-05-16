@@ -2,20 +2,24 @@
 
 #include "Slic3r/App/Yoga/Item.hpp"
 #include "Slic3r/App/Yoga/AbstractButton.hpp"
+#include "Slic3r/App/ObjectList.hpp"
+#include "Slic3r/App/CubeView.hpp"
+#include "Slic3r/App/SidebarBed.hpp"
+#include "Slic3r/App/SidebarPrint.hpp"
 
 #define MAIN_WITH_SPLITTERS 1
 
 namespace Slic3r::App {
 
+namespace Scene {
+class IToolGizmo;
+}
+
 namespace Yoga {
 class Toolbar;
 class ToolbarButton;
-}
-
-class ObjectList;
-class CubeView;
-class SidebarPrint;
-class SidebarBed;
+class Dialog;
+} // namespace Yoga
 
 enum class ToolbarID
 {
@@ -30,10 +34,10 @@ public:
     using Vec2f = Yoga::Vec2f;
 
     AbstractRenderLayout(
-        ObjectList* object_list,
-        CubeView* cube_view,
-        SidebarBed* sidebar_bed,
-        SidebarPrint* sidebar_print
+        std::unique_ptr<ObjectList> object_list,
+        std::unique_ptr<CubeView> cube_view,
+        std::unique_ptr<SidebarBed> sidebar_bed,
+        std::unique_ptr<SidebarPrint> sidebar_print
     );
     virtual ~AbstractRenderLayout();
     AbstractRenderLayout(const AbstractRenderLayout& other) = delete;
@@ -53,6 +57,30 @@ public:
         const std::string& shortcut,
         Yoga::AbstractButton::Callbacks callbacks
     );
+    Yoga::ToolbarButton* add_toolbar_item_checkable(
+        ToolbarID id,
+        wchar_t icon,
+        const std::string& tooltip,
+        const std::string& shortcut,
+        Yoga::AbstractButton::Callbacks callbacks,
+        bool checked = false
+    );
+    Yoga::ToolbarButton* add_toolbar_item_gizmo(
+        ToolbarID id,
+        wchar_t icon,
+        const std::string& tooltip,
+        const std::string& shortcut,
+        Yoga::AbstractButton::Callbacks callbacks,
+        Scene::IToolGizmo* tool
+    );
+    Yoga::ToolbarButton* add_toolbar_item_panel(
+        ToolbarID id,
+        wchar_t icon,
+        const std::string& tooltip,
+        const std::string& shortcut,
+        Yoga::AbstractButton::Callbacks callbacks,
+        Yoga::Item* panel
+    );
 
     Yoga::Toolbar* top_toolbar() const;
     Yoga::Toolbar* middle_toolbar() const;
@@ -60,13 +88,12 @@ public:
 
     /**
      * @brief The reason this method exists is because toolbars are justified in "Space around" mode
-     * hiding one would break this design and therefore we need to juggle around dummy items so Layout
-     * will stay the same
+     * hiding one would break this design and therefore we need to juggle around dummy items so
+     * Layout will stay the same
      * */
     void set_bottom_toolbar_visible(bool visible);
 
-    void hide_sidebars(bool hide);
-    void set_visible_left_column_item(Yoga::Item* item, bool is_visible);
+    void set_sidebars_visible(bool visible);
 
 protected:
     virtual void init_left_column();
@@ -75,6 +102,7 @@ protected:
 
     Yoga::Toolbar* find_toolbar(ToolbarID id) const;
     void update_toolbar_tooltip();
+    void update_sidebar_visibility();
 
 private:
     void init_toolbar_column();
@@ -93,11 +121,19 @@ protected:
     Yoga::Toolbar* m_bottom_toolbar = nullptr;
     Yoga::Item* m_bottom_dummy_toolbar = nullptr;
 
+    struct SidebarPanel {
+        Yoga::Item* panel = nullptr;
+        bool last_visible = false;
+        bool visible = false;
+    };
+    std::map<Yoga::ToolbarButton*, SidebarPanel> m_sidebar_panels;
+    bool m_sidebars_visible = true;
+
     // Inserted from render module
-    ObjectList* m_object_list = nullptr;
-    CubeView* m_cube_view = nullptr;
-    SidebarBed* m_sidebar_bed = nullptr;
-    SidebarPrint* m_sidebar_print = nullptr;
+    Yoga::Passthrough<ObjectList> m_object_list;
+    Yoga::Passthrough<CubeView> m_cube_view;
+    Yoga::Passthrough<SidebarBed> m_sidebar_bed;
+    Yoga::Passthrough<SidebarPrint> m_sidebar_print;
 };
 
 } // namespace Slic3r::App

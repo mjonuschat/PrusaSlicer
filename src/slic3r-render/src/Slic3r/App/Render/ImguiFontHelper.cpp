@@ -177,6 +177,10 @@ static const std::vector<std::pair<const wchar_t, std::string>> FONT_ICONS_LARGE
     { ImGui::OpenHoverButton         , "notification_open_hover"          },
     { ImGui::SlaViewOriginal         , "sla_view_original"                },
     { ImGui::SlaViewProcessed        , "sla_view_processed"               },
+
+    { ImGui::MouseLeft                    , "mouse_left"                     },
+    { ImGui::MouseRight                   , "mouse_right"                    },
+    { ImGui::KeyShift                     , "key_shift"                      },
 };
  
 static const std::vector<std::pair<const wchar_t, std::string>> FONT_ICONS_TOOLBAR = {
@@ -190,6 +194,7 @@ static const std::vector<std::pair<const wchar_t, std::string>> FONT_ICONS_TOOLB
     { ImGui::ToolbarMove             , "toolbar_move"                     },
     { ImGui::ToolbarRotation         , "toolbar_rotation"                 },
     { ImGui::ToolbarGCode            , "toolbar_gcode"                    },
+    { ImGui::ToolbarPaintOnSupports  , "toolbar_paint_on_supports"        },
 };
  
 static const std::vector<std::pair<const wchar_t, std::string>> FONT_ICONS_PRINTER = {

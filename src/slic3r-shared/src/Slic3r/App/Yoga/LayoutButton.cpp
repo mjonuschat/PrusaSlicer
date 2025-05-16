@@ -11,36 +11,36 @@
 
 namespace Slic3r::App::Yoga {
 
-Slic3r::App::Yoga::LayoutButton::LayoutButton(const std::string& label, Item* parent)
-    : LayoutButton(label, '\0', parent)
+Slic3r::App::Yoga::LayoutButton::LayoutButton(const std::string& label)
+    : LayoutButton(label, '\0')
 {}
 
-LayoutButton::LayoutButton(const std::string& label, wchar_t icon, Item* parent)
-    : LayoutButton(label, icon, "", parent)
+LayoutButton::LayoutButton(const std::string& label, wchar_t icon)
+    : LayoutButton(label, icon, "")
 {}
 
 Slic3r::App::Yoga::LayoutButton::LayoutButton(
-    const std::string& label, wchar_t icon, const std::string& tooltip, Item* parent
+    const std::string& label, wchar_t icon, const std::string& tooltip
 )
-    : AbstractButton(icon, tooltip, parent)
+    : AbstractButton(icon, tooltip)
 {
     set_orientation(Orientation::Horizontal);
 
-    m_background = new Rectangle(this);
+    m_background = emplace_back<Rectangle>();
     m_background->set_padding(3);
     m_background->set_justify_content(YGJustifyCenter);
     m_background->set_align_items(YGAlignCenter);
     m_background->set_gap(5);
     m_background->set_flex_grow(1);
 
-    m_icon = new Icon(icon, m_background);
+    m_icon = m_background->emplace_back<Icon>(icon);
     m_icon->set_visible(icon != '\0');
-    m_icon->set_height_percent(100);
+    // m_icon->set_height_percent(100);
 
-    m_text = new Text(label, m_background);
+    m_text = m_background->emplace_back<Text>(label);
     m_text->set_visible(!label.empty());
 
-    set_background_color({65, 65, 65});
+    set_background_color({41, 41, 41});
 }
 
 void LayoutButton::process_events(Vec2f pos, Vec2f size)

@@ -1,8 +1,10 @@
 #pragma once
 
+#include "Slic3r/App/Yoga/Window.hpp"
 #include "MultiSelections.hpp"
 
-#include <Slic3r/App/Yoga/Window.hpp>
+#include <Slic3r/Domain/ElementRef.hpp>
+
 #include <set>
 #include <string>
 
@@ -14,7 +16,6 @@ class ModelVolume;
 }
 
 namespace Slic3r::Domain {
-struct ElementRef;
 struct BedInstance;
 }
 
@@ -42,7 +43,7 @@ public:
         Preview,
     };
 
-    explicit ObjectList(Yoga::Item* parent = nullptr);
+    ObjectList();
 
     void init(Biz::ProjectInteractor* project_interactor, Mode mode);
 

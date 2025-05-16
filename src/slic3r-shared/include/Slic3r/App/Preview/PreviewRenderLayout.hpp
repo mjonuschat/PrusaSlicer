@@ -2,7 +2,6 @@
 
 #include "Slic3r/App/AbstractRenderLayout.hpp"
 
-
 namespace Slic3r::App::Preview {
 
 class SidebarAutoReslice;
@@ -16,17 +15,18 @@ class PreviewRenderLayout : public AbstractRenderLayout
 {
 public:
     PreviewRenderLayout(
-        ObjectList* object_list,
-        CubeView* cube_view,
-        SidebarBed* sidebar_bed,
-        SidebarPrint* sidebar_print,
-        SidebarPreviewActionButtons* sidebar_action_buttons,
-        GCodeWindow* m_gcode_window,
-        Legend* legend,
-        DoubleSliderForLayers* double_slider_layers,
-        DoubleSliderForGcode* double_slider_gcode,
-        SidebarAutoReslice* sidebar_auto_reslice
+        std::unique_ptr<ObjectList> object_list,
+        std::unique_ptr<CubeView> cube_view,
+        std::unique_ptr<SidebarBed> sidebar_bed,
+        std::unique_ptr<SidebarPrint> sidebar_print,
+        std::unique_ptr<SidebarPreviewActionButtons> sidebar_action_buttons,
+        std::unique_ptr<GCodeWindow> m_gcode_window,
+        std::unique_ptr<Legend> legend,
+        std::unique_ptr<DoubleSliderForLayers> double_slider_layers,
+        std::unique_ptr<DoubleSliderForGcode> double_slider_gcode,
+        std::unique_ptr<SidebarAutoReslice> sidebar_auto_reslice
     );
+    ~PreviewRenderLayout();
 
 private:
     void init_left_column() override;
@@ -34,12 +34,13 @@ private:
     void init_right_column() override;
 
 private:
-    GCodeWindow* m_gcode_window = nullptr;
-    Legend* m_legend = nullptr;
-    DoubleSliderForLayers* m_double_slider_layers = nullptr;
-    DoubleSliderForGcode* m_double_slider_gcode = nullptr;
-    SidebarAutoReslice* m_sidebar_auto_reslice = nullptr;
-    SidebarPreviewActionButtons* m_sidebar_action_buttons = nullptr;
+    Yoga::Passthrough<GCodeWindow> m_gcode_window;
+    Yoga::Passthrough<Legend> m_legend;
+    Yoga::Passthrough<DoubleSliderForLayers> m_double_slider_layers;
+    Yoga::Passthrough<DoubleSliderForGcode> m_double_slider_gcode;
+
+    Yoga::Passthrough<SidebarAutoReslice> m_sidebar_auto_reslice;
+    Yoga::Passthrough<SidebarPreviewActionButtons> m_sidebar_action_buttons;
 };
 
 } // namespace Slic3r::App::Preview

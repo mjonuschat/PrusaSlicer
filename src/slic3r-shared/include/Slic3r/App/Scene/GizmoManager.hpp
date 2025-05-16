@@ -18,7 +18,14 @@
 
 namespace Slic3r::App::Scene {
 
-class GizmoManager {
+class IGizmoActiveToolListener {
+public:
+    virtual ~IGizmoActiveToolListener() = default;
+
+    virtual void active_tool_changed(IToolGizmo* active_tool) = 0;
+};
+
+class GizmoManager : public WithListeners<IGizmoActiveToolListener> {
 public:
     explicit GizmoManager(Render::Device& device, ISceneProvider& scene_provider)
         : m_scene_provider(scene_provider), m_data_factory(device)
@@ -45,7 +52,6 @@ public:
     }
 
     void render_scene(Render::CommandBuffer& cmd_buffer);
-    void render_imgui();
 
     void toggle_activate_tool(ToolType tool, PrinterTechnology pt);
     void activate_tool(ToolType tool, PrinterTechnology pt);

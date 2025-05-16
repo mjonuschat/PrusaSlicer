@@ -9,10 +9,8 @@ namespace Slic3r::App {
 
 using RMType = Render::ModuleType;
 
-SidebarActionButtons::SidebarActionButtons(
-    const std::string& name, Render::ModuleType type, Item* parent
-)
-    : Yoga::Window(name, parent), m_type(type)
+SidebarActionButtons::SidebarActionButtons(const std::string& name, Render::ModuleType type)
+    : Yoga::Window(name), m_type(type)
 {
     ASSERT(type != RMType::Undef);
 
@@ -39,8 +37,9 @@ Biz::Slicing::SlicingId SidebarActionButtons::active_bed_slicing_id() const
 bool SidebarActionButtons::slice_allowed() const
 {
     const Biz::Slicing::SlicingId id = m_project_interactor->selected_bed_slicing_id();
-    const std::optional<Biz::Slicing::Status> status {
-        m_project_interactor->status_cache().get_status(id) };
+    const std::optional<Biz::Slicing::Status> status{
+        m_project_interactor->status_cache().get_status(id)
+    };
 
     return status && status == Biz::Slicing::Status::Modified;
 }
