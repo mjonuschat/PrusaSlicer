@@ -136,6 +136,11 @@ class VolumeSettings : public ConfigBox
 public:
     VolumeSettings() : ConfigBox(s_defs_fdm, "volume_settings") {}
 };
+class ProjectSettings : public ConfigBox
+{
+public:
+    ProjectSettings() : ConfigBox(s_defs_fdm, "project_settings") {}
+};
 
 
 class FullConfigFDM : public FullConfig
@@ -144,7 +149,8 @@ public:
     FullConfigFDM(const PrinterSettings& printer_s,
                   const std::vector<std::reference_wrapper<const FilamentSettings>>& filament_s,
                   const PrintSettings& print_s,
-                  const std::vector<std::reference_wrapper<const ToolPrintSettings>>& tool_print_s)
+                  const std::vector<std::reference_wrapper<const ToolPrintSettings>>& tool_print_s,
+                  const ProjectSettings& project_s)
     {
         ASSERT(filament_s.size() == tool_print_s.size());
 
@@ -155,6 +161,7 @@ public:
         add(tps_s);
         std::vector<std::reference_wrapper<const ConfigBox>> fil_s(filament_s.begin(), filament_s.end());
         add(fil_s);
+        add(project_s);
     }
 
     std::string_view name() const override { return "FDM"; }

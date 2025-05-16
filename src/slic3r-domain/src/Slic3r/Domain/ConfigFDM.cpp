@@ -19,7 +19,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs);
 // Define the static object holding all definitions. Provide list of acceptable
 // boxes and the init function.
 ConfigDefinitions s_defs_fdm({"printer_settings", "filament_settings", "print_settings",
-    "toolprint_settings", "object_settings", "volume_settings"}, fdm_config_init_fn);
+    "toolprint_settings", "object_settings", "volume_settings", "project_settings"}, fdm_config_init_fn);
 
 
 // JUST TEMPORARY UNTIL WE DECIDE WHAT TO DO WITH MODES.
@@ -3638,21 +3638,23 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->mode = comAdvanced;
     SET_DEFAULT(false);
 
-    /* TODO: These are part of s_project_options...
     def = defs.add("wiping_volumes_matrix", Doubles);
+    def->location = "project_settings";
     def->label = L("Purging volumes - matrix");
     def->tooltip = L("This matrix describes volumes (in cubic milimetres) required to purge the"
                      " new filament on the wipe tower for any given pair of tools.");
-    SET_DEFAULT( new ConfigOptionFloats {   0., 140., 140., 140., 140.,
-                                                    140.,   0., 140., 140., 140.,
-                                                    140., 140.,   0., 140., 140.,
-                                                    140., 140., 140.,   0., 140.,
-                                                    140., 140., 140., 140.,   0. });
+    SET_DEFAULT((std::vector<double>
+                {   0., 140., 140., 140., 140.,
+                  140.,   0., 140., 140., 140.,
+                  140., 140.,   0., 140., 140.,
+                  140., 140., 140.,   0., 140.,
+                  140., 140., 140., 140.,   0. }));
 
     def = defs.add("wiping_volumes_use_custom_matrix", Bool);
+    def->location = "project_settings";
     def->label = "";
     def->tooltip = "";
-    SET_DEFAULT( new ConfigOptionBool{ false });*/
+    SET_DEFAULT(false);
 
     def = defs.add("wipe_tower_width", Double);
     def->location = "print_settings";

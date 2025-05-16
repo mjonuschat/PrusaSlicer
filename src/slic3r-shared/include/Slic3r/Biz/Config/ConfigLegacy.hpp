@@ -15,6 +15,7 @@ struct FDMLegacyConfigPack {
 	Domain::PrintSettings print_settings;
 	std::vector<Domain::ToolPrintSettings> toolprint_settings;
 	std::vector<Domain::FilamentSettings> filament_settings;
+	Domain::ProjectSettings project_settings;
 };
 
 struct SLALegacyConfigPack {

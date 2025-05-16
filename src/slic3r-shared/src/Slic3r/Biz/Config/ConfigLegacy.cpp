@@ -515,6 +515,7 @@ std::variant<FDMLegacyConfigPack, SLALegacyConfigPack> convert_dynamic_print_con
                 fill_config_box_from_legacy(cfg, out.toolprint_settings[i], legacy_data, i);
                 fill_config_box_from_legacy(cfg, out.filament_settings[i], legacy_data, i);
             }
+            fill_config_box_from_legacy(cfg, out.project_settings, legacy_data);
             return out;
         }
         else if (pt == ptSLA) {
@@ -553,6 +554,7 @@ static std::string serialize_as_legacy_config(const std::variant<const FDMLegacy
             boxes.emplace_back(&cfg.toolprint_settings[i], i);
         for (int i = 0; i < cfg.filament_settings.size(); ++i)
             boxes.emplace_back(&cfg.filament_settings[i], i);
+        boxes.emplace_back(&cfg.project_settings, -1);
     }
     else {
         legacy_data = legacy_sla_data();
