@@ -3,8 +3,9 @@
 #include <mutex>
 #include <functional>
 
-#include "Slic3r/App/Scene/IGizmo.hpp" // IToolGizmo
 #include "Slic3r/App/Plater/PlaterScenePresenter.hpp"
+#include "Slic3r/App/Render/Geometry.hpp"
+#include "Slic3r/App/Scene/IGizmo.hpp" // IToolGizmo
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Domain/ObjectID.hpp"
 
@@ -99,6 +100,13 @@ private:
     bool m_show_wireframe = false;
     size_t m_original_triangle_count = 0;
     size_t m_triangle_count = 0;
+
+    struct Phantom{
+        Domain::ObjectID volume_id;
+        std::unique_ptr<Render::Geometry> geometry;
+    };
+    using Phantoms = std::vector<Phantom>;
+    Phantoms m_phantoms; // keep phantom geometries
 };
 
 } // namespace Slic3r::App::Plater

@@ -23,6 +23,18 @@ NodeBuilder& NodeBuilder::transform(const std::function<void(Transform3d&)>& mod
     return *this;
 }
 
+NodeBuilder& NodeBuilder::set_transform(const Transform3d& tr) 
+{
+    m_current->set_local_transform(tr.matrix());
+    return *this;
+}
+
+NodeBuilder& NodeBuilder::set_transform(const Transform& tr) 
+{
+    m_current->set_local_transform(tr);
+    return *this;
+}
+
 NodeBuilder& NodeBuilder::set_mesh(const Render::Geometry* geometry, const Render::Material& material, int layer_index)
 {
     ensure_current();

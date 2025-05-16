@@ -1,9 +1,17 @@
 #include "Slic3r/App/Plater/SimplifyGizmo.hpp"
+
+#include <exception>
+#include <chrono>
+
 #include "Slic3r/App/Plater/PlaterSceneLayer.hpp"
+#include "Slic3r/App/Plater/GizmoNodeTag.hpp"
 #include "Slic3r/App/Plater/SceneNodeTag.hpp"
 #include "Slic3r/App/Render/Device.hpp"
+#include "Slic3r/App/Render/GeometryBuilder.hpp"
+#include "Slic3r/App/Scene/GeometryDataFactory.hpp"
 #include "Slic3r/Biz/Platform/PlatformServices.hpp" // main_thread_dispatcher
 
+#include "libslic3r/Model.hpp"
 #include "libslic3r/I18N.hpp" // translation
 #include "libslic3r/QuadricEdgeCollapse.hpp" // translation
 
@@ -13,10 +21,20 @@
 // 1. add Notification: there is volume with a lot of small triangles and suggest simplify
 // 2. Esc key down: cancel simplification
 
+using Slic3r::ModelVolume;
+using Slic3r::ModelObject;
+using Slic3r::App::Plater::SimplifyGizmo;
+using Slic3r::App::Plater::SceneNodeTag;
+using Slic3r::App::Plater::GizmoNodeTag;
+using Slic3r::App::Render::GeometryBuilder;
+using Slic3r::App::Render::Geometry;
 using Slic3r::App::Render::Device;
+using Slic3r::App::Scene::GeometryDataFactory;
 using Slic3r::App::Scene::GizmoActivationState;
 using Slic3r::App::Scene::GizmoEventContext;
 using Slic3r::App::Scene::Scene;
+using Slic3r::App::Scene::Node;
+using Slic3r::App::Scene::NodeBuilder;
 using Slic3r::Biz::Scene::SceneInteractor;
 using Slic3r::Biz::Scene::Selection;
 using Slic3r::Biz::ProjectInteractor;
@@ -25,10 +43,13 @@ using Slic3r::Biz::Platform::PlatformServices;
 using Slic3r::Domain::ElementRef;
 using Slic3r::Domain::Project;
 using Slic3r::Domain::ObjectID;
-using namespace Slic3r;
-using namespace Slic3r::App::Plater;
 
 namespace {
+
+struct SimplifyNodeTag {
+    ObjectID volume_id;
+    Node* disabled_volume_node;
+};
 
 // cancel exception
 class SimplifyCanceledException : public std::exception {
@@ -290,7 +311,34 @@ void SimplifyGizmo::draw_tool()
 }
 
 void SimplifyGizmo::on_activated() { m_activated = true; }
-void SimplifyGizmo::on_deactivated() { m_activated = false; }
+void SimplifyGizmo::on_deactivated() {
+    m_activated = false;
+
+    Scene::Scene& scene = m_scene_presenter.scene();
+    auto is_simplify_node = [](const Node* n) -> bool {
+        const SimplifyNodeTag* tag = n->tag_of_type<SimplifyNodeTag>();
+        return tag != nullptr;
+    };
+    Node::NodeList simplify_nodes;
+    scene.root().query(is_simplify_node, simplify_nodes);
+
+    // enable previusly disabled volume nodes
+    Node::NodeList enable_nodes;
+    for (Node* node : simplify_nodes)
+        enable_nodes.push_back(node->tag_of_type<SimplifyNodeTag>()->disabled_volume_node);
+    std::sort(enable_nodes.begin(), enable_nodes.end());
+    enable_nodes.erase(std::unique(enable_nodes.begin(), enable_nodes.end()),enable_nodes.end());
+    for (Node* node : enable_nodes) // TODO: iterate over existing and enable only when exist
+        node->set_enabled(true);    // make original volume visible again
+    
+    // remove all simplify nodes
+    for (Node* node : simplify_nodes)
+        scene.remove_children(is_simplify_node, node->parent());
+
+    // Free geometries
+    m_phantoms.clear();
+}
+
 void SimplifyGizmo::close(){ m_close_fn(); }
 void SimplifyGizmo::apply_simplify()
 {
@@ -467,81 +515,57 @@ void SimplifyGizmo::worker_finished()
     //}
 }
 
-#include "Slic3r/App/Plater/GizmoNodeTag.hpp"
-using Slic3r::App::Plater::GizmoNodeTag;
-#include "Slic3r/App/Scene/GeometryDataFactory.hpp"
-using Slic3r::App::Scene::GeometryDataFactory;
-
-struct SimplifyGizmoTag : public GizmoNodeTag
-{};
-
 void SimplifyGizmo::init_model(const std::set<ObjectID>& current_volume_ids)
 {    
     m_volume_ids = std::move(current_volume_ids);
-    Scene::Scene& scene = m_scene_presenter.scene();
-    
-    Scene::NodeBuilder builder{scene};
-    builder.set_debug_name("simplified");
-    SimplifyGizmoTag tag{GizmoNodeTag{AxisType::None}};
-    builder.set_tag(tag);
 
-    builder.child([&](Scene::NodeBuilder& bldr) {        
-        Render::Material material = Render::Material{}
-                .set_shader(m_device.context().shader_manager().shader("flat"))
-                .set_uniform("uniform_color", ColorRGB::ORANGE());
+    m_phantoms.clear();
+    m_phantoms.reserve(m_volume_ids.size());
 
-        GeometryDataFactory data_factory(m_device);
-        bldr.set_debug_name("circle").set_tag(tag).set_mesh(
-            data_factory.geometry(Scene::GeometryDataId::Sphere), material,
-            int(PlaterSceneLayer::GizmoHandles)
-        );
-    });
+    int layer_index = int(PlaterSceneLayer::GizmoHandles);
 
-    auto& selection_root = m_scene_presenter.selection_root();
-    auto main_node = builder.build();
-    scene.add_child(main_node.release(), &selection_root);
-
-    Scene::Node::NodeList handles;
-    scene.root().query(
-        [](const Scene::Node* n) -> bool {
-            const SimplifyGizmoTag* tag = n->tag_of_type<SimplifyGizmoTag>();
-            return tag != nullptr;
-        },
-        handles
-    );
-
-
-    // m_parent.toggle_model_objects_visibility(true); // selected volume may have changed
-
-    // m_glmodels.reserve(volume_ids.size());
     m_triangle_count = 0;
-    //for (const ObjectID& id : m_volume_ids) {
-    //    const GLVolume* selected_volume;
-    //    const ModelVolume* volume = nullptr;
-    //    for (auto volume_id : volume_ids) {
-    //        selected_volume = selection.get_volume(volume_id);
-    //        const GLVolume::CompositeID& cid = selected_volume->composite_id;
-    //        ModelObject* obj = model_objects[cid.object_id];
-    //        ModelVolume* act_volume = obj->volumes[cid.volume_id];
-    //        if (id == act_volume->id()) {
-    //            volume = act_volume;
-    //            break;
-    //        }
-    //    }
-    //    assert(volume != nullptr);
+    Scene::Scene& scene = m_scene_presenter.scene(); 
+    const Project& project = m_project_interactor.selected_project(); 
+    for (const ObjectID& volume_id : m_volume_ids) {
+        Node::NodeList volume_nodes;
+        scene.root().query([volume_id](const Node* n) -> bool {
+                const SceneNodeTag* tag = n->tag_of_type<SceneNodeTag>();
+                return tag != nullptr && 
+                    tag->volume_id == volume_id.id;
+            }, volume_nodes);
+        ASSERT(!volume_nodes.empty());
 
-    //    // set actual triangle count
-    //    m_triangle_count += volume->mesh().its.indices.size();
+        // generate clone of goemetry (copy Node)
+        const ModelVolume* volume_ptr = get_volume_by_id(volume_id, project);
+        const Transform3d volume_tr = volume_ptr->get_matrix(); 
+        const auto &its = volume_ptr->mesh().its;
+        m_triangle_count += its.indices.size();
+        Phantom phantom{
+            .volume_id = volume_id,
+            .geometry = Render::geometry_from_triangle_mesh(m_device, volume_ptr->mesh().its)
+        };
+        m_phantoms.emplace_back(std::move(phantom));
 
-    //    assert(m_glmodels.find(id) == m_glmodels.end());
-    //    GLModel& glmodel = m_glmodels[id]; // create new glmodel
-    //    glmodel.init_from(volume->mesh());
-    //    glmodel.set_color(selected_volume->color);
+        for (Node* volume_node : volume_nodes) {
+            Node * volume_parent = volume_node->parent();
+            volume_node->set_enabled(false); // make original volume invisible
 
-    //    m_parent.toggle_model_objects_visibility(
-    //        false, info->model_object(), info->get_active_instance(), volume
-    //    );
-    //}
+            SimplifyNodeTag tag{
+                .volume_id = volume_id,
+                .disabled_volume_node = volume_node};
+            Render::Material material = Render::Material{}
+                .set_shader(m_device.context().shader_manager().shader("flat"))
+                .set_uniform("uniform_color", ColorRGBA::ORANGE());
+            Scene::NodeBuilder builder{scene};
+            builder
+                .set_debug_name("Simplified volume")
+                .set_transform(volume_tr)
+                .set_tag(tag)
+                .set_mesh(m_phantoms.back().geometry.get(), material, layer_index);
+            scene.add_child(builder.build().release(), volume_parent);
+        }
+    }
 
     // triangle count is calculated in init model
     m_original_triangle_count = m_triangle_count;
