@@ -134,6 +134,7 @@ Item::Item()
     m_node = YGNodeNew();
 
     YGNodeStyleSetFlexDirection(m_node, m_flex_direction);
+    YGNodeStyleSetDirection(m_node, m_direction);
 }
 
 Item::~Item()
@@ -198,6 +199,8 @@ bool Item::is_visible() const { return YGNodeStyleGetDisplay(m_node) == YGDispla
 bool Item::debug_border() const { return m_debug_border; }
 
 float Item::flex_grow() const { return m_flex_grow; }
+
+YGDirection Item::direction() const { return m_direction; }
 
 float Item::aspect_ratio() const { return m_aspect_ratio; }
 
@@ -512,6 +515,15 @@ void Item::set_flex_grow(float flex_grow)
     if (m_flex_grow != flex_grow) {
         m_flex_grow = flex_grow;
         YGNodeStyleSetFlexGrow(m_node, m_flex_grow);
+        set_style_dirty();
+    }
+}
+
+void Item::set_direction(YGDirection direction)
+{
+    if (m_direction != direction) {
+        m_direction = direction;
+        YGNodeStyleSetDirection(m_node, m_direction);
         set_style_dirty();
     }
 }

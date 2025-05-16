@@ -87,6 +87,7 @@ public:
     const Vec2f& max_size() const;
     bool is_visible() const;
     float flex_grow() const;
+    YGDirection direction() const;
     float aspect_ratio() const;
     YGPositionType position_type() const;
     bool debug_border() const;
@@ -110,6 +111,7 @@ public:
     void set_max_size(const Vec2f max_size);
     void set_visible(bool visible);
     void set_flex_grow(float flex_grow);
+    void set_direction(YGDirection direction);
     void set_aspect_ratio(float aspect_ratio);
     void set_position_type(YGPositionType position_type);
     void set_align_items(YGAlign align_items);
@@ -208,6 +210,7 @@ protected:
 
     Orientation m_orientation = Orientation::Horizontal;
     YGFlexDirection m_flex_direction = YGFlexDirectionRow;
+    YGDirection m_direction = YGDirectionLTR;
 
     std::vector<ItemPtr> m_children;
     std::vector<Item*> m_children_render_order;
