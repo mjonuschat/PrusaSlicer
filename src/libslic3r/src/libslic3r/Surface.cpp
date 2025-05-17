@@ -9,10 +9,13 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include "Surface.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
+#include "Slic3r/Biz/Algorithms/ClipperUtils.hpp"
 #include "Slic3r/Biz/Algorithms/SVG.hpp"
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/libslic3r.h"
-#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
+
+using Slic3r::Biz::Algorithms::ClipperUtils::diff_ex;
 
 namespace Slic3r {
 
@@ -43,6 +46,18 @@ BoundingBox get_extents(const SurfacesPtr &surfaces)
             bbox = BB::merge(bbox, get_extents(*surfaces[i]));
     }
     return bbox;
+}
+
+Surfaces surfaces_diff(const Surfaces &surfaces, const Polygons &clip)
+{
+    Surfaces surfaces_out;
+    surfaces_out.reserve(surfaces.size());
+
+    for (const Surface &surface : surfaces) {
+        surfaces_append(surfaces_out, diff_ex(surface.expolygon, clip), surface.surface_type);
+    }
+
+    return surfaces_out;
 }
 
 const char* surface_type_to_color_name(const SurfaceType surface_type)

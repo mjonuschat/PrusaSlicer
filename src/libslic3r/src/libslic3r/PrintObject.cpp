@@ -807,8 +807,9 @@ void PrintObject::detect_surfaces_type()
                     // unless internal shells are requested
                     Layer       *upper_layer = (idx_layer + 1 < this->layer_count()) ? m_layers[idx_layer + 1] : nullptr;
                     Layer       *lower_layer = (idx_layer > 0) ? m_layers[idx_layer - 1] : nullptr;
+
                     // collapse very narrow parts (using the safety offset in the diff is not enough)
-                    float        offset = layerm->flow(frExternalPerimeter).scaled_width() / 10.f;
+                    const float filtering_offset = static_cast<float>(layerm->flow(frExternalPerimeter).scaled_width()) / 10.f;
 
                     // find top surfaces (difference between current surfaces
                     // of current layer and upper one)
@@ -817,7 +818,7 @@ void PrintObject::detect_surfaces_type()
                         ExPolygons upper_slices = interface_shells ? 
                             diff_ex(layerm->slices().surfaces, upper_layer->m_regions[region_id]->slices().surfaces, ApplySafetyOffset::Yes) :
                             diff_ex(layerm->slices().surfaces, upper_layer->lslices, ApplySafetyOffset::Yes);
-                        surfaces_append(top, opening_ex(upper_slices, offset), stTop);
+                        surfaces_append(top, opening_ex(upper_slices, filtering_offset), stTop);
                     } else {
                         // if no upper layer, all surfaces of this one are solid
                         // we clone surfaces because we're going to clear the slices collection
@@ -825,7 +826,7 @@ void PrintObject::detect_surfaces_type()
                         for (Surface &surface : top)
                             surface.surface_type = stTop;
                     }
-                    
+
                     // Find bottom surfaces (difference between current surfaces of current layer and lower one).
                     Surfaces bottom;
                     if (lower_layer) {
@@ -835,7 +836,7 @@ void PrintObject::detect_surfaces_type()
                             to_polygons(lower_layer->get_region(region_id)->slices.surfaces) : 
                             to_polygons(lower_layer->slices);
                         surfaces_append(bottom,
-                            opening_ex(diff(layerm->slices.surfaces, lower_slices, true), offset),
+                            opening_ex(diff(layerm->slices.surfaces, lower_slices, true), filtering_offset,
                             surface_type_bottom_other);
 #else
                         // Any surface lying on the void is a true bottom bridge (an overhang)
@@ -843,7 +844,7 @@ void PrintObject::detect_surfaces_type()
                             bottom,
                             opening_ex(
                                 diff_ex(layerm->slices().surfaces, lower_layer->lslices, ApplySafetyOffset::Yes),
-                                offset),
+                                filtering_offset),
                             surface_type_bottom_other);
                         // if user requested internal shells, we need to identify surfaces
                         // lying on other slices not belonging to this region
@@ -857,7 +858,7 @@ void PrintObject::detect_surfaces_type()
                                         intersection(layerm->slices().surfaces, lower_layer->lslices), // supported
                                         lower_layer->m_regions[region_id]->slices().surfaces,
                                         ApplySafetyOffset::Yes),
-                                    offset),
+                                    filtering_offset),
                                 stBottom);
                         }
 #endif
@@ -872,13 +873,26 @@ void PrintObject::detect_surfaces_type()
                     // now, if the object contained a thin membrane, we could have overlapping bottom
                     // and top surfaces; let's do an intersection to discover them and consider them
                     // as bottom surfaces (to allow for bridge detection)
-                    if (! top.empty() && ! bottom.empty()) {
-        //                Polygons overlapping = intersection(to_polygons(top), to_polygons(bottom));
-        //                Slic3r::debugf "  layer %d contains %d membrane(s)\n", $layerm->layer->id, scalar(@$overlapping)
-        //                    if $Slic3r::debug;
+                    if (!top.empty() && !bottom.empty()) {
+                        if (Polygons overlaps = intersection(to_polygons(top), to_polygons(bottom)); !overlaps.empty()) {
+                            // Collect very narrow overlaps.
+                            const float overlap_threshold = static_cast<float>(layerm->flow(frExternalPerimeter).scaled_width()) / 2.f;
+
+                            Polygons narrow_overlaps;
+                            narrow_overlaps.reserve(overlaps.size());
+                            for (Polygon &overlap : overlaps) {
+                                if (offset(overlap, -overlap_threshold).empty()) {
+                                    narrow_overlaps.emplace_back(std::move(overlap));
+                                }
+                            }
+
+                            // Leave narrow overlaps in the top surfaces and remove them from the bottom surfaces.
+                            bottom = surfaces_diff(bottom, narrow_overlaps);
+                        }
+
                         Polygons top_polygons = to_polygons(std::move(top));
                         top.clear();
-                        surfaces_append(top, diff_ex(top_polygons, bottom), stTop);
+                        surfaces_append(top, opening_ex(diff_ex(top_polygons, bottom), SCALED_EPSILON), stTop);
                     }
 
         #ifdef SLIC3R_DEBUG_SLICE_PROCESSING

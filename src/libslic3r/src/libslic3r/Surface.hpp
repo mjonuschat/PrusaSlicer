@@ -269,6 +269,8 @@ inline void surfaces_append(Surfaces &dst, ExPolygons &&src, const Surface &surf
     src.clear();
 }
 
+Surfaces surfaces_diff(const Surfaces &surfaces, const Polygons &clip);
+
 extern BoundingBox get_extents(const Surface &surface);
 extern BoundingBox get_extents(const Surfaces &surfaces);
 extern BoundingBox get_extents(const SurfacesPtr &surfaces);
