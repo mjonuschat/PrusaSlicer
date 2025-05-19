@@ -9,7 +9,7 @@ namespace Slic3r::Biz::PrintHost {
 class PrintHostDuet : public IPrintHost {
 
 public:
-    PrintHostDuet(PrintHostConfig config) : IPrintHost(std::move(config)) {}
+    PrintHostDuet(PrintHostConfig config, PrintHostJobData data) : IPrintHost(std::move(config), std::move(data)) {}
     
     PrintHostDuet(const PrintHostDuet&) = delete;
     PrintHostDuet& operator=(const PrintHostDuet&) = delete;
@@ -19,7 +19,7 @@ public:
     ~PrintHostDuet() override {}
 
     
-    bool perform(PrintHostJobData upload_data,  ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const override;
+    bool perform(ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const override;
 
     const char* get_name() const override { return "Duet"; }
     bool test(std::string& msg, RetryFn retry_fn) const override;

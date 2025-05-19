@@ -292,7 +292,8 @@ void LineView::reindex_insertions(std::vector<LineShift>& insertions, const std:
 
 void LineView::clear()
 {
-    m_content.clear(); m_line_indices.clear();
+    m_content.clear(); 
+    m_line_indices.clear();
 }
 
 void LineView::reserve(size_t n)

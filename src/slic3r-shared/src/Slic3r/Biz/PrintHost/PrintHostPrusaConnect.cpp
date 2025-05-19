@@ -96,7 +96,11 @@ bool PrintHostPrusaConnect::init_upload(const PrintHostJobData& upload_data, std
     // Register upload. Then upload must be performed immediately with returned "id" 
     bool res = true;
     boost::system::error_code ec;
-    boost::uintmax_t size = upload_data.raw_data.size();
+    boost::uintmax_t size = boost::filesystem::file_size(upload_data.source_path, ec);
+    if (ec) {
+        SPDLOG_ERROR("Failed to read file size of {}", upload_data.source_path.string());
+        return false;
+    }
     const std::string name = get_name();
     const std::string upload_filename = upload_data.dest_path.filename().string();
     std::string url = format("%1%/app/users/teams/%2%/uploads", m_print_host_config.host, m_print_host_config.team_id);
@@ -127,14 +131,14 @@ bool PrintHostPrusaConnect::init_upload(const PrintHostJobData& upload_data, std
     return res;
 }
 
-bool PrintHostPrusaConnect::perform(PrintHostJobData upload_data, ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const
+bool PrintHostPrusaConnect::perform(ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const
 {
-    std::string json = format(upload_data.request_body_json, "", "1");
+    std::string json = format(m_upload_data.request_body_json, "", "1");
     std::string printer_page_url = format("%1%/printer/%2%/dashboard", Network::ServiceConfig::instance().connect_url(), m_print_host_config.printer_uuid);
     info_fn("prusaconnect_printer_address", printer_page_url);
 
     std::string init_out;
-    if (!init_upload(upload_data, init_out, retry_fn))
+    if (!init_upload(m_upload_data, init_out, retry_fn))
     {
         error_fn(init_out);
         return false;
@@ -157,7 +161,7 @@ bool PrintHostPrusaConnect::perform(PrintHostJobData upload_data, ProgressFn pro
         return false;
     }
     const std::string name = get_name();
-    const std::string url = format(
+    std::string url = format(
         "%1%/app/teams/%2%/files/raw"
         "?upload_id=%3%"
         , Network::ServiceConfig::instance().connect_url(), m_print_host_config.team_id, upload_id);
@@ -167,12 +171,12 @@ bool PrintHostPrusaConnect::perform(PrintHostJobData upload_data, ProgressFn pro
     SPDLOG_INFO(format("%1%: Uploading file at %2%, filename: %3%, path: %4%, print: %5%"
         , name
         , url
-        , upload_data.dest_path.filename().string()
-        , upload_data.dest_path.parent_path().string()
-        , (upload_data.post_action == PrintHostAfterUploadAction::StartPrint ? "true" : "false")));
+        , m_upload_data.dest_path.filename().string()
+        , m_upload_data.dest_path.parent_path().string()
+        , (m_upload_data.post_action == PrintHostAfterUploadAction::StartPrint ? "true" : "false")));
      
     std::unique_ptr<Network::IHttp> http = Network::IHttp::create(Network::IHttp::RequestMethod::Put, std::move(url), retry_fn);
-    http->set_put_data(std::move(upload_data.raw_data), upload_data.dest_path)
+    http->set_put_body(m_upload_data.source_path)
         .header("Content-Type", "text/x.gcode")
         .header("Authorization", "Bearer " + m_print_host_config.access_token)
         .on_complete([&](std::string body, unsigned status) {

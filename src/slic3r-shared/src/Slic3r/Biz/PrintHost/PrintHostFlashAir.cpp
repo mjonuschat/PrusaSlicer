@@ -28,12 +28,12 @@ std::string timestamp_str()
 	return format("%1$#x", fattime);
 }
 }
-bool PrintHostFlashAir::perform(PrintHostJobData upload_data, ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const
+bool PrintHostFlashAir::perform(ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const
 {
     const char *name = get_name();
 
-	const auto upload_filename = upload_data.dest_path.filename();
-	const auto upload_parent_path = upload_data.dest_path.parent_path();
+	const auto upload_filename = m_upload_data.dest_path.filename();
+	const auto upload_parent_path = m_upload_data.dest_path.parent_path();
 	std::string test_msg;
 	if (!test(test_msg, retry_fn)) {
 		error_fn(std::move(test_msg));
@@ -101,7 +101,7 @@ bool PrintHostFlashAir::perform(PrintHostJobData upload_data, ProgressFn progres
     }
 
     std::unique_ptr<Network::IHttp> http = Network::IHttp::create(Network::IHttp::RequestMethod::Post, std::move(url_upload), retry_fn);
-	http->form_add_data("file", std::move(upload_data.raw_data), upload_filename)
+	http->form_add_file("file", m_upload_data.source_path.string(), upload_filename.string())
 		.on_complete([&](std::string body, unsigned status) {
 			SPDLOG_INFO(format("%1%: File uploaded: HTTP %2%: %3%", name , status , body));
 			res = boost::icontains(body, "SUCCESS");

@@ -10,7 +10,7 @@ namespace Slic3r::Biz::PrintHost {
 
 class PrintHostPrusaLinkStorage : public IPrintHost {
 public:
-    PrintHostPrusaLinkStorage(PrintHostConfig config);
+    PrintHostPrusaLinkStorage(PrintHostConfig config, PrintHostJobData data);
     
     PrintHostPrusaLinkStorage(const PrintHostPrusaLinkStorage&) = delete;
     PrintHostPrusaLinkStorage& operator=(const PrintHostPrusaLinkStorage&) = delete;
@@ -22,7 +22,7 @@ public:
     /**
      * Returns retrieved Storage via InfoFn. 
      */
-    bool perform(PrintHostJobData upload_data, ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const override;
+    bool perform(ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const override;
 
     const char* get_name() const override { return "PrusaLink"; }
     bool test(std::string& msg, RetryFn retry_fn) const override {return false; }

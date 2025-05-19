@@ -14,18 +14,18 @@ namespace fs = boost::filesystem;
 
 namespace Slic3r::Biz::PrintHost {
 
-bool PrintHostMKS::perform(PrintHostJobData upload_data, ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const
+bool PrintHostMKS::perform(ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const
 {
     bool res = true;
 
-	auto upload_cmd = get_upload_url(upload_data.dest_path.string());
+	auto upload_cmd = get_upload_url(m_upload_data.dest_path.string());
 	SPDLOG_INFO(format("MKS: Uploading file. filepath: %1%, print: %2%, command: %3%"
-		, upload_data.dest_path
-		, (upload_data.post_action == PrintHostAfterUploadAction::StartPrint)
+		, m_upload_data.dest_path
+		, (m_upload_data.post_action == PrintHostAfterUploadAction::StartPrint)
 		, upload_cmd));
 
     std::unique_ptr<Network::IHttp> http = Network::IHttp::create(Network::IHttp::RequestMethod::Post, std::move(upload_cmd), retry_fn);
-	http->set_post_body(std::move(upload_data.raw_data));
+	http->set_post_body(m_upload_data.source_path);
 	http->on_complete([&](std::string body, unsigned status) {
 		SPDLOG_INFO(format("MKS: File uploaded: HTTP %1%: %2%", status , body));
         int err_code;
@@ -41,9 +41,9 @@ bool PrintHostMKS::perform(PrintHostJobData upload_data, ProgressFn progress_fn,
 			SPDLOG_INFO(format("MKS: Request completed but error code was received: %1%", err_code));
 			error_fn(format_error(body, L("Unknown error occurred"), 0));
 			res = false;
-		} else if (upload_data.post_action == PrintHostAfterUploadAction::StartPrint) {
+		} else if (m_upload_data.post_action == PrintHostAfterUploadAction::StartPrint) {
 			std::string error_msg;
-			res = start_print(error_msg, upload_data.dest_path.string());
+			res = start_print(error_msg, m_upload_data.dest_path.string());
 			if (!res) {
 				error_fn(std::move(error_msg));
 			}

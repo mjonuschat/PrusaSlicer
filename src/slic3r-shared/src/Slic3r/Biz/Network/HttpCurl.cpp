@@ -1,12 +1,12 @@
 #include "Slic3r/Biz/Network/HttpCurl.hpp"
 
 #include "Slic3r/App/I18N/I18N.hpp"
-
+#include "Slic3r/Assert.hpp"
 #include "Slic3r/Exception.hpp"
+
 #include "libslic3r/Utils.hpp"
 #include "libslic3r/format.hpp"
 
-#include <libassert/assert.hpp>
 #include <boost/log/trivial.hpp>
 #include <boost/nowide/fstream.hpp>
 #include <random>

@@ -17,8 +17,8 @@ static ImVec4 no_highlight_bg_color() { return ImGui::GetStyleColorVec4(ImGuiCol
 GCodeWindowData::Line GCodeWindowData::line_at(uint32_t id) const
 {
     static const Line DUMMY_LINE = Line();
-    if (id < uint32_t(m_gcode.size())) {
-        std::string_view payload = m_gcode[id];
+    if (id < uint32_t(m_gcode->size())) {
+        std::string_view payload = (*m_gcode)[id];
 
         size_t pos = payload.find('\n');
         if (pos != payload.npos)
@@ -43,7 +43,7 @@ GCodeWindowData::Line GCodeWindowData::line_at(uint32_t id) const
 
 void GCodeWindowData::resize_range(Range& range, uint32_t lines_count, uint32_t curr_line_id) const
 {
-    uint32_t total_lines_count = uint32_t(m_gcode.size());
+    uint32_t total_lines_count = uint32_t(m_gcode->size());
     DEBUG_ASSERT(total_lines_count > 0);
     uint32_t half_lines_count = lines_count / 2;
     range.min = (curr_line_id > half_lines_count) ? curr_line_id - half_lines_count : 1;

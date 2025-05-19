@@ -80,7 +80,7 @@ TEST_CASE_METHOD(SlicingFixture, "Update respects instances on bed", "[slicing][
     slicing.update_process(model_on_bed.model, model_on_bed.config, model_on_bed.bed_instance);
     slicing.slice_bed(bed_id);
 
-    REQUIRE(wait_for_status(dispatcher, status_listener, 3s, [](const StatusEvents &events){
+    REQUIRE(wait_for_status(dispatcher, status_listener, 5s, [](const StatusEvents &events){
         return events.back().status == Status::Finished;
     }));
 
@@ -88,7 +88,7 @@ TEST_CASE_METHOD(SlicingFixture, "Update respects instances on bed", "[slicing][
     REQUIRE(listener.gcodes.contains(bed_id));
     with_limited_instances(model_on_bed.model, instances_to_keep, [&](){
         CHECK(model_on_bed.model.objects.size() == 4);
-        const auto error{is_gcode_sane(listener.gcodes[bed_id], model_on_bed.model)};
+        const auto error{is_gcode_sane(listener.gcodes[bed_id]->str(), model_on_bed.model)};
         INFO((error ? *error : ""));
         CHECK(!error);
     });

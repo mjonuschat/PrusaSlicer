@@ -1,7 +1,8 @@
 #include "Slic3r/App/I18N/Translation.hpp"
 #include "Slic3r/App/I18N/LanguageInfo.hpp"
 
-#include <libassert/assert.hpp>
+#include "Slic3r/Assert.hpp"
+
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 #include <clocale>

@@ -138,12 +138,12 @@ void FdmViewerWrapper::load(FdmViewerWrapperInputData&& wrapper_data, FdmViewerI
 
     m_data = std::move(wrapper_data);
 
-    if (data.gcode.empty() && m_settings.mode == FdmViewerWrapperMode::EditorGCode)
+    if (data.gcode->empty() && m_settings.mode == FdmViewerWrapperMode::EditorGCode)
         set_mode(FdmViewerWrapperMode::EditorPreGCode);
-    else if (!data.gcode.empty() && m_settings.mode == FdmViewerWrapperMode::EditorPreGCode)
+    else if (!data.gcode->empty() && m_settings.mode == FdmViewerWrapperMode::EditorPreGCode)
         set_mode(FdmViewerWrapperMode::EditorGCode);
 
-    m_gcode_window_data.set_gcode(std::move(data.gcode));
+    m_gcode_window_data.set_gcode(data.gcode);
     m_viewer.load(std::move(data));
 
     update_slider_layers();
@@ -220,7 +220,10 @@ static FdmViewerInputData extract_viewer_input_data_from_result(const ProcessorR
 
     ret.extruders_count = result.extruders_count;
     // TODO: we should avoid the copy and refer instead to the data stored in FDMResultCache
-    ret.gcode = result.gcode;
+     std::shared_ptr<const LineView> gcode_ptr = result.const_gcode();
+    if (gcode_ptr) {
+        ret.gcode = gcode_ptr;
+    }
     ret.vertices = result.moves;
 
     return ret;

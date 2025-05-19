@@ -13,12 +13,12 @@ namespace fs = boost::filesystem;
 
 namespace Slic3r::Biz::PrintHost {
 
-bool PrintHostAstroBox::perform(PrintHostJobData upload_data, ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const
+bool PrintHostAstroBox::perform(ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const
 {
     const char *name = get_name();
 
-    const auto upload_filename = upload_data.dest_path.filename();
-    const auto upload_parent_path = upload_data.dest_path.parent_path();
+    const auto upload_filename = m_upload_data.dest_path.filename();
+    const auto upload_parent_path = m_upload_data.dest_path.parent_path();
 
     std::string test_msg;
     if (! test(test_msg, retry_fn)) {
@@ -32,17 +32,17 @@ bool PrintHostAstroBox::perform(PrintHostJobData upload_data, ProgressFn progres
 
    SPDLOG_INFO(format("%1%: Uploading file %2% at %3%, filename: %4%, path: %5%, print: %6%"
         , name
-        , upload_data.dest_path.string()
+        , m_upload_data.dest_path.string()
         , url
         , upload_filename.string()
         , upload_parent_path.string()
-        , (upload_data.post_action == PrintHostAfterUploadAction::StartPrint ? "true" : "false")));
+        , (m_upload_data.post_action == PrintHostAfterUploadAction::StartPrint ? "true" : "false")));
 
     std::unique_ptr<Network::IHttp> http = Network::IHttp::create(Network::IHttp::RequestMethod::Post, std::move(url), retry_fn);
     set_auth(http.get());
-    http->form_add("print", upload_data.post_action == PrintHostAfterUploadAction::StartPrint ? "true" : "false")
+    http->form_add("print", m_upload_data.post_action == PrintHostAfterUploadAction::StartPrint ? "true" : "false")
         .form_add("path", upload_parent_path.string())      // XXX: slashes on windows ???
-        .form_add_data("file", std::move(upload_data.raw_data), upload_filename)
+        .form_add_file("file", m_upload_data.source_path, upload_filename.string())
         .on_complete([&](std::string body, unsigned status) {
             SPDLOG_INFO(format("%1%: File uploaded: HTTP %2%: %3%", name , status , body));
         })

@@ -4,9 +4,9 @@
 #include <Slic3r/Biz/PrintHost/IPrintHost.hpp>
 #include <Slic3r/Biz/PrintHost/IPrintHostJobCallbacks.hpp>
 #include <Slic3r/Biz/PrintHost/PrintHostConfig.hpp>
+#include "Slic3r/Assert.hpp"
 
 #include <jthread/JThread.hpp>
-#include <libassert/assert.hpp>
 #include <memory>
 #include <functional>
 #include <future>
@@ -49,7 +49,7 @@ private:
     JThread::JThread m_thread;
     
     std::unique_ptr<IPrintHost> m_print_host;
-    PrintHostJobData m_upload_data;
+    //PrintHostJobData m_upload_data;
     size_t m_id;
 
     /**

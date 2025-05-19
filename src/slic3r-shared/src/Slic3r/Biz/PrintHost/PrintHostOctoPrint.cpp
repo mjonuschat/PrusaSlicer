@@ -18,15 +18,15 @@ namespace fs = boost::filesystem;
 
 namespace Slic3r::Biz::PrintHost {
 
-PrintHostOctoPrint::PrintHostOctoPrint(PrintHostConfig config) 
-    : IPrintHost(std::move(config))
+PrintHostOctoPrint::PrintHostOctoPrint(PrintHostConfig config, PrintHostJobData data)
+    : IPrintHost(std::move(config), std::move(data))
 {
 }
 
-bool PrintHostOctoPrint::perform(PrintHostJobData upload_data, ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const
+bool PrintHostOctoPrint::perform(ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const
 {
 #ifndef WIN32
-    return upload_inner_with_host(std::move(upload_data), progress_fn, retry_fn, error_fn, info_fn);
+    return upload_inner_with_host(progress_fn, retry_fn, error_fn, info_fn);
 #else
     std::string host = Network::IHttp::extract_host_from_url(m_print_host_config.host);
 
@@ -54,19 +54,19 @@ bool PrintHostOctoPrint::perform(PrintHostJobData upload_data, ProgressFn progre
     if (resolved_addr.empty()) {
         // no resolved addresses - try system resolving
         SPDLOG_ERROR(format("Failed to resolve hostname %1% into the IP address. Starting upload with system resolving.", m_print_host_config.host));
-        return upload_inner_with_host(std::move(upload_data), progress_fn, retry_fn, error_fn, info_fn);
+        return upload_inner_with_host(progress_fn, retry_fn, error_fn, info_fn);
     } else if (resolved_addr.size() == 1) {
         // one address resolved - upload there
-        return upload_inner_with_resolved_ip(std::move(upload_data), progress_fn, retry_fn, error_fn, info_fn, resolved_addr.front());
+        return upload_inner_with_resolved_ip(progress_fn, retry_fn, error_fn, info_fn, resolved_addr.front());
     }  else if (resolved_addr.size() == 2 && resolved_addr[0].is_v4() != resolved_addr[1].is_v4()) {
         // there are just 2 addresses and 1 is ip_v4 and other is ip_v6
         // try sending to both. (Then if both fail, show both error msg after second try)
         std::string error_message;
-        if (!upload_inner_with_resolved_ip(std::move(upload_data), progress_fn, retry_fn
+        if (!upload_inner_with_resolved_ip(progress_fn, retry_fn
             , [&msg = error_message, resolved_addr](std::string error) { msg = format("%1%: %2%", resolved_addr.front(), error); }
             , info_fn, resolved_addr.front())
             &&
-            !upload_inner_with_resolved_ip(std::move(upload_data), progress_fn, retry_fn
+            !upload_inner_with_resolved_ip(progress_fn, retry_fn
             , [&msg = error_message, resolved_addr](std::string error) { msg += format("\n%1%: %2%", resolved_addr.back(), error); }
             , info_fn, resolved_addr.back())
             ) {
@@ -79,7 +79,7 @@ bool PrintHostOctoPrint::perform(PrintHostJobData upload_data, ProgressFn progre
         // There are multiple addresses - user needs to choose which to use. (Here used to be dialog (We are in worker thread!!))
         // Lets try all now until some works?
         for (size_t i = 0; i < resolved_addr.size(); i++) {
-            if (upload_inner_with_resolved_ip(std::move(upload_data), progress_fn, retry_fn, error_fn, info_fn, resolved_addr[i])) {
+            if (upload_inner_with_resolved_ip(progress_fn, retry_fn, error_fn, info_fn, resolved_addr[i])) {
                 return true;
             }
         }
@@ -199,12 +199,12 @@ bool PrintHostOctoPrint::test_with_resolved_ip(std::string& msg, RetryFn retry_f
 #endif //WIN32
 
 
-bool PrintHostOctoPrint::upload_inner_with_host(PrintHostJobData upload_data, ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const
+bool PrintHostOctoPrint::upload_inner_with_host(ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const
 {
     const char* name = get_name();
 
-    const auto upload_filename = upload_data.dest_path.filename();
-    const auto upload_parent_path = upload_data.dest_path.parent_path();
+    const auto upload_filename = m_upload_data.dest_path.filename();
+    const auto upload_parent_path = m_upload_data.dest_path.parent_path();
 
     // If test fails, test_msg contains the error message.
     // Otherwise on Windows it contains the resolved IP address of the host.
@@ -245,7 +245,7 @@ bool PrintHostOctoPrint::upload_inner_with_host(PrintHostJobData upload_data, Pr
         , url
         , upload_filename.string()
         , upload_parent_path.string()
-        , (upload_data.post_action == PrintHostAfterUploadAction::StartPrint ? "true" : "false")));
+        , (m_upload_data.post_action == PrintHostAfterUploadAction::StartPrint ? "true" : "false")));
 
     std::unique_ptr<Network::IHttp> http = Network::IHttp::create(Network::IHttp::RequestMethod::Post, std::move(url), retry_fn);
 #ifdef WIN32
@@ -259,9 +259,9 @@ bool PrintHostOctoPrint::upload_inner_with_host(PrintHostJobData upload_data, Pr
     http->header("Host", host);
 #endif // _WIN32
     set_auth(http.get());
-    http->form_add("print", upload_data.post_action == PrintHostAfterUploadAction::StartPrint ? "true" : "false")
+    http->form_add("print", m_upload_data.post_action == PrintHostAfterUploadAction::StartPrint ? "true" : "false")
         .form_add("path", upload_parent_path.string()) 
-        .form_add_data("file", std::move(upload_data.raw_data), upload_filename)
+        .form_add_file("file", m_upload_data.source_path, upload_filename.string())
         .on_complete([&](std::string body, unsigned status) {
             SPDLOG_INFO(format("%1%: File uploaded: HTTP %2%: %3%", name , status , body));
         })
@@ -287,7 +287,7 @@ bool PrintHostOctoPrint::upload_inner_with_host(PrintHostJobData upload_data, Pr
 }
 
 #ifdef _WIN32
-bool PrintHostOctoPrint::upload_inner_with_resolved_ip(PrintHostJobData upload_data, ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn, const boost::asio::ip::address& resolved_addr) const
+bool PrintHostOctoPrint::upload_inner_with_resolved_ip(ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn, const boost::asio::ip::address& resolved_addr) const
 {
     info_fn("resolve", resolved_addr.to_string());
 
@@ -301,8 +301,8 @@ bool PrintHostOctoPrint::upload_inner_with_resolved_ip(PrintHostJobData upload_d
     }
 
     const char* name = get_name();
-    const auto upload_filename = upload_data.dest_path.filename();
-    const auto upload_parent_path = upload_data.dest_path.parent_path();
+    const auto upload_filename = m_upload_data.dest_path.filename();
+    const auto upload_parent_path = m_upload_data.dest_path.parent_path();
     std::string url = Network::IHttp::substitute_host(make_url("api/files/local"), resolved_addr.to_string());
     bool result = true;
 
@@ -313,7 +313,7 @@ bool PrintHostOctoPrint::upload_inner_with_resolved_ip(PrintHostJobData upload_d
         , url
         , upload_filename.string()
         , upload_parent_path.string()
-        , (upload_data.post_action == PrintHostAfterUploadAction::StartPrint ? "true" : "false")));
+        , (m_upload_data.post_action == PrintHostAfterUploadAction::StartPrint ? "true" : "false")));
 
     std::unique_ptr<Network::IHttp> http = Network::IHttp::create(Network::IHttp::RequestMethod::Post, url, retry_fn);
     // "Host" header is necessary here. We have resolved IP address and subsituted it into "url" variable.
@@ -324,9 +324,9 @@ bool PrintHostOctoPrint::upload_inner_with_resolved_ip(PrintHostJobData upload_d
     std::string host = Network::IHttp::extract_host_from_url(m_print_host_config.host);
     http->header("Host", host);
     set_auth(http.get());
-    http->form_add("print", upload_data.post_action == PrintHostAfterUploadAction::StartPrint ? "true" : "false")
+    http->form_add("print", m_upload_data.post_action == PrintHostAfterUploadAction::StartPrint ? "true" : "false")
         .form_add("path", upload_parent_path.string())      // XXX: slashes on windows ???
-        .form_add_data("file", std::move(upload_data.raw_data), upload_data.dest_path)
+        .form_add_file("file", m_upload_data.source_path, upload_filename.string())
         .on_complete([&](std::string body, unsigned status) {
             SPDLOG_INFO(format("%1%: File uploaded: HTTP %2%: %3%", name , status , body));
         })

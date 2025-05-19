@@ -1,6 +1,6 @@
 #pragma once
 
-#include <libassert/assert.hpp>
+#include "Slic3r/Assert.hpp"
 
 #include "IRenderRequestHandler.hpp"
 #include "IMainThreadDispatcher.hpp"

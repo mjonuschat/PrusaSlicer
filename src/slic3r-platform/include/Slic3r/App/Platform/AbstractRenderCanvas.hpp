@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vector>
-#include <libassert/assert.hpp>
+#include "Slic3r/Assert.hpp"
 
 #include "Slic3r/App/Platform/AbstractRenderModule.hpp"
 #include "Slic3r/Biz/Platform/IRenderRequestHandler.hpp"

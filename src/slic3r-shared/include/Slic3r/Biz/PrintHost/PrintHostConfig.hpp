@@ -1,9 +1,17 @@
 #pragma once
 
+#include "Slic3r/Assert.hpp"
 #include <string>
 #include <boost/filesystem.hpp>
+#include <memory>
+#include <variant>
 
+namespace Slic3r::Biz::libpgcode {
+    class LineView;
+}
 namespace Slic3r::Biz::PrintHost {
+
+using DataPtrVariant = std::variant<std::shared_ptr<const libpgcode::LineView>>;
 
 enum class PrintHostType {
     Local,
@@ -152,9 +160,29 @@ struct PrintHostConfig
     PrintHostConfig& operator=(const PrintHostConfig& other) = delete;
 };
 
+enum class PrintHostExportFormat
+{
+    Undefined,
+    GCode,
+    BGCode,
+};
+
+
+inline PrintHostExportFormat get_export_format_from_extension(const std::string& extension)
+{
+    if (extension == ".gcode")
+        return PrintHostExportFormat::GCode;
+    if (extension == ".bgcode")
+        return PrintHostExportFormat::BGCode;
+    ASSERT(false, "Unknown data format. Add it to PrintHostResultFormat");
+    return PrintHostExportFormat::Undefined;
+}
+
 struct PrintHostJobData
 {
-    std::string raw_data;
+    DataPtrVariant data_ptr;
+    
+    boost::filesystem::path source_path;
     boost::filesystem::path dest_path;
 
     PrintHostAfterUploadAction post_action;
@@ -162,41 +190,51 @@ struct PrintHostJobData
     std::string group;
     std::string request_body_json;
 
+    PrintHostExportFormat result_format;
+
     PrintHostJobData() = delete;
 
-    PrintHostJobData(const std::string& data, 
+    PrintHostJobData(
+        DataPtrVariant data, 
         const boost::filesystem::path& dest,
+        PrintHostExportFormat result_format,
         PrintHostAfterUploadAction action = PrintHostAfterUploadAction::None,
         std::string storage = std::string(),
         std::string group = std::string(),
-        std::string request_body_json = std::string())
-        : raw_data(data)
+        std::string request_body_json = std::string()
+    )
+        : data_ptr(data)
         , dest_path(dest)
         , post_action(action)
         , storage(std::move(storage))
         , group(std::move(group))
         , request_body_json(std::move(request_body_json))
+        , result_format(result_format)
     {}
 
 
     PrintHostJobData(PrintHostJobData&& other) noexcept
-        : raw_data(std::move(other.raw_data))
+        : data_ptr(std::move(other.data_ptr))
+        , source_path(std::move(other.source_path))
         , dest_path(std::move(other.dest_path))
         , post_action(other.post_action)
         , storage(std::move(other.storage))
         , group(std::move(other.group))
         , request_body_json(std::move(other.request_body_json))
+        , result_format(other.result_format)
     {}
 
     PrintHostJobData& operator=(PrintHostJobData&& other) noexcept
     {
         if (this != &other) {
-            raw_data = std::move(other.raw_data);
+            data_ptr = std::move(other.data_ptr);
+            source_path = std::move(other.source_path);
             dest_path = std::move(other.dest_path);
             post_action = other.post_action;
             storage = std::move(other.storage);
             group = std::move(other.group);
             request_body_json = std::move(other.request_body_json);
+            result_format = other.result_format;
         }
         return *this;
     }

@@ -38,7 +38,7 @@ struct FdmViewerInputData
     //
     // gcode lines
     //
-    Biz::libpgcode::LineView gcode;
+    std::shared_ptr<const Biz::libpgcode::LineView> gcode;
     //
     // List of custom gcode events
     // See: GCodeEvent

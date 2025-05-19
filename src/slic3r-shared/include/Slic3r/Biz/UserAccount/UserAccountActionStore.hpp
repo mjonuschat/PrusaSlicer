@@ -2,8 +2,8 @@
 
 #include "Slic3r/Biz/UserAccount/UserAccountAction.hpp"
 #include "Slic3r/Biz/Network/ServiceConfig.hpp"
+#include "Slic3r/Assert.hpp"
 
-#include <libassert/assert.hpp>
 #include <map>
 
 namespace Slic3r::Biz::UserAccount {

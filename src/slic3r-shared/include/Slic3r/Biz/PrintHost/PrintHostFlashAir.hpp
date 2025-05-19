@@ -9,7 +9,7 @@ namespace Slic3r::Biz::PrintHost {
 class PrintHostFlashAir : public IPrintHost {
 
 public:
-    PrintHostFlashAir(PrintHostConfig config) : IPrintHost(std::move(config)) {}
+    PrintHostFlashAir(PrintHostConfig config, PrintHostJobData data) : IPrintHost(std::move(config), std::move(data)) {}
     
     PrintHostFlashAir(const PrintHostFlashAir&) = delete;
     PrintHostFlashAir& operator=(const PrintHostFlashAir&) = delete;
@@ -19,7 +19,7 @@ public:
     ~PrintHostFlashAir() override {}
 
     
-    bool perform(PrintHostJobData upload_data,  ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const override;
+    bool perform(ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const override;
 
     const char* get_name() const override { return "FlashAir"; }
     bool test(std::string& msg, RetryFn retry_fn) const override;

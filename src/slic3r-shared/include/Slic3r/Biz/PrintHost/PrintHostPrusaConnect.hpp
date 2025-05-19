@@ -9,8 +9,7 @@ namespace Slic3r::Biz::PrintHost {
 class PrintHostPrusaConnect : public IPrintHost {
 
 public:
-    PrintHostPrusaConnect(PrintHostConfig config) 
-        : IPrintHost(std::move(config))
+    PrintHostPrusaConnect(PrintHostConfig config, PrintHostJobData data) : IPrintHost(std::move(config), std::move(data))
     {}
 
     PrintHostPrusaConnect(const PrintHostPrusaConnect&) = delete;
@@ -21,7 +20,7 @@ public:
     ~PrintHostPrusaConnect() override {}
 
     
-    bool perform(PrintHostJobData upload_data,  ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const override;
+    bool perform(ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const override;
 
     const char* get_name() const override { return "PrusaConnect"; }
     bool test(std::string& msg, RetryFn retry_fn) const override;

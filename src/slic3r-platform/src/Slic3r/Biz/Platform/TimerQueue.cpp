@@ -1,6 +1,6 @@
 #include "Slic3r/Biz/Platform/TimerQueue.hpp"
 
-#include <libassert/assert.hpp>
+#include "Slic3r/Assert.hpp"
 
 #include <algorithm>
 

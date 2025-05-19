@@ -55,7 +55,7 @@ SCENARIO("Model construction", "[Model]") {
 				print.apply(model, config, {}, {});
 				print.process();
                 const Biz::libpgcode::ProcessorResult result{print.process_gcode(nullptr)};
-                CHECK(result.gcode.str().size() > 0);
+                CHECK(result.const_gcode()->str().size() > 0);
 			}
         }
     }

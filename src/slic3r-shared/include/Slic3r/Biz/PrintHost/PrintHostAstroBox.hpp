@@ -9,7 +9,7 @@ namespace Slic3r::Biz::PrintHost {
 class PrintHostAstroBox : public IPrintHost {
 
 public:
-    PrintHostAstroBox(PrintHostConfig config) : IPrintHost(std::move(config)) {}
+    PrintHostAstroBox(PrintHostConfig config, PrintHostJobData data) : IPrintHost(std::move(config), std::move(data)) {}
     
     PrintHostAstroBox(const PrintHostAstroBox&) = delete;
     PrintHostAstroBox& operator=(const PrintHostAstroBox&) = delete;
@@ -19,7 +19,7 @@ public:
     ~PrintHostAstroBox() override {}
 
     
-    bool perform(PrintHostJobData upload_data,  ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const override;
+    bool perform(ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const override;
 
     const char* get_name() const override { return "AstroBox"; }
     bool test(std::string& msg, RetryFn retry_fn) const override;

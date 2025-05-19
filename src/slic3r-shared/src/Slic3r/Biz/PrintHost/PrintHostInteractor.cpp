@@ -49,8 +49,10 @@ void get_storage_choices_from_json(const std::string& json_text, std::vector<Pri
 
 PrintHostInteractor::PrintHostInteractor(Platform::IMainThreadDispatcher& dispatcher)
     : m_print_host_job_manager(dispatcher)
+    , m_print_host_data_finalizer(dispatcher)
 { 
     m_print_host_job_manager.add_listener<PrintHost::IPrintHostListener>(this);
+    m_print_host_data_finalizer.add_listener<PrintHost::IPrintHostBinarizeListener>(this);
 }
 
 void PrintHostInteractor::on_print_host_progress(size_t id, int progress) 
@@ -81,12 +83,15 @@ void PrintHostInteractor::on_print_host_info(size_t id, const std::string& tag, 
 
 void PrintHostInteractor::export_gcode(PrintHostConfig config, PrintHostJobData data)
 {
-    SPDLOG_INFO("Export gcode to {}", data.dest_path.string());
-    size_t id = m_print_host_job_manager.emplace_job(std::move(config), std::move(data));
+    m_print_host_data_finalizer.finalize(std::move(config), std::move(data));
 }
 
-
 void PrintHostInteractor::upload_gcode(PrintHostConfig config, PrintHostJobData data)
+{
+    m_print_host_data_finalizer.finalize(std::move(config), std::move(data));
+}
+
+void PrintHostInteractor::proccess_gcode_inner(PrintHostConfig config, PrintHostJobData data)
 {
     if (config.type == PrintHostType::PrusaLink) {
         upload_gcode_with_storage_choice(std::move(config), std::move(data));
@@ -129,9 +134,19 @@ void PrintHostInteractor::upload_gcode_with_storage_choice(PrintHostConfig confi
 
     size_t id = m_print_host_job_manager.emplace_job(
         std::move(storage_config),
-        {std::string(), data_ptr->dest_path});
+        {nullptr, data_ptr->dest_path, PrintHostExportFormat::Undefined});
 
     m_storage_callbacks_map[id] = std::move(callback);
 }
 
+void PrintHostInteractor::on_print_host_binarize_success(PrintHostConfig config, PrintHostJobData data)
+{
+    proccess_gcode_inner(std::move(config), std::move(data));
+}
+
+void PrintHostInteractor::on_print_host_binarize_fail(const std::string& msg)
+{
+    SPDLOG_ERROR("PrintHostDataFinalizer has failed: {}", msg);
+}
+    
 } // namespace Slic3r::Biz::PrintHost

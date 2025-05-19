@@ -1,5 +1,5 @@
 #include "Slic3r/Domain/BoundingBox.hpp"
-#include <libassert/assert.hpp>
+#include "Slic3r/Assert.hpp"
 
 namespace Slic3r::Domain {
 

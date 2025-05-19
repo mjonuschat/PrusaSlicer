@@ -78,10 +78,12 @@ void ProcessorImpl::process_buffer(std::string&& buffer, std::function<void(floa
             progress.update(uint64_t(1 + line.raw().length()));
     });
 
-    if (m_result.gcode.empty())
-        m_result.gcode = LineView(std::move(buffer));
-    else
-        m_result.gcode.push_lines(buffer);
+    LineView& gcode_ref = m_result.gcode();
+    if (gcode_ref.empty()) {
+        m_result.set_gcode(std::move(buffer));
+    } else {
+        gcode_ref.push_lines(buffer);
+    }
 }
 
 ProcessorResult ProcessorImpl::finalize()
@@ -2484,6 +2486,7 @@ void ProcessorImpl::reset()
     m_feed_multiply.reset();
     m_config.reset();
     m_result.reset();
+    m_result.gcode().clear();
     m_result.moves.emplace_back(MoveVertex());
     m_time_processor.reset();
     m_used_filaments.reset();

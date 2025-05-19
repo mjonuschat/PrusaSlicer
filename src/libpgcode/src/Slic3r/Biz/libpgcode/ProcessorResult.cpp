@@ -68,7 +68,7 @@ void ProcessorResult::reset()
     filament_densities.clear();
     filament_costs.clear();
     bed_shape.clear();
-    gcode.clear();
+    m_gcode = std::make_shared<LineView>();
     extruder_str_colors.clear();
     moves.clear();
     custom_gcode_per_print_z.clear();

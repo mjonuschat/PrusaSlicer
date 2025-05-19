@@ -342,7 +342,7 @@ std::string gcode(Print & print)
     print.set_status_silent();
     print.process();
     const Biz::libpgcode::ProcessorResult result{print.process_gcode(nullptr)};
-	return result.gcode.str();
+	return result.const_gcode()->str();
 }
 
 Slic3r::Model model(const std::string &model_name, TriangleMesh &&_mesh)

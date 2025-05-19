@@ -5,6 +5,6 @@
 
 namespace Slic3r::Biz::PrintHost {  
 
-std::unique_ptr<IPrintHost> create_print_host(PrintHostConfig config);  
+std::unique_ptr<IPrintHost> create_print_host(PrintHostConfig config, PrintHostJobData data);  
 
 } // namespace Slic3r::Biz::PrintHost

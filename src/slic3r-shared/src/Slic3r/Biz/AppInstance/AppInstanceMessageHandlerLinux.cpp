@@ -2,11 +2,11 @@
 
 #include "Slic3r/Biz/Platform/PlatformServices.hpp"
 #include "Slic3r/Log.hpp"
+#include "Slic3r/Assert.hpp"
 
 #include "libslic3r/format.hpp"
 #include "libslic3r/Utils.hpp" // get_current_pid
 
-#include <libassert/assert.hpp>
 #include <boost/nowide/convert.hpp>
 #include <regex>
 #include <functional>

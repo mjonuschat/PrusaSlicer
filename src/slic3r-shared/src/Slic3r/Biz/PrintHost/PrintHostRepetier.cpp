@@ -27,12 +27,12 @@ bool validate_repetier(const boost::optional<std::string>& name, const boost::op
     }
 }
 }
-bool PrintHostRepetier::perform(PrintHostJobData upload_data, ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const
+bool PrintHostRepetier::perform(ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const
 {
      const char *name = get_name();
 
-    const auto upload_filename = upload_data.dest_path.filename();
-    const auto upload_parent_path = upload_data.dest_path.parent_path();
+    const auto upload_filename = m_upload_data.dest_path.filename();
+    const auto upload_parent_path = m_upload_data.dest_path.parent_path();
 
     std::string test_msg;
     if (! test(test_msg, retry_fn)) {
@@ -42,7 +42,7 @@ bool PrintHostRepetier::perform(PrintHostJobData upload_data, ProgressFn progres
 
     bool res = true;
 
-    auto url = upload_data.post_action == PrintHostAfterUploadAction::StartPrint
+    auto url = m_upload_data.post_action == PrintHostAfterUploadAction::StartPrint
         ? make_url(format("printer/job/%1%", m_print_host_config.port))
         : make_url(format("printer/model/%1%", m_print_host_config.port));
 
@@ -51,23 +51,23 @@ bool PrintHostRepetier::perform(PrintHostJobData upload_data, ProgressFn progres
         , url
         , upload_filename.string()
         , upload_parent_path.string()
-        , (upload_data.post_action == PrintHostAfterUploadAction::StartPrint ? "true" : "false")
-        , upload_data.group));
+        , (m_upload_data.post_action == PrintHostAfterUploadAction::StartPrint ? "true" : "false")
+        , m_upload_data.group));
 
     std::unique_ptr<Network::IHttp> http = Network::IHttp::create(Network::IHttp::RequestMethod::Post, std::move(url), retry_fn);
     set_auth(http.get());
 
-    if (!upload_data.group.empty() && upload_data.group != _u8L("Default")) {
-        http->form_add("group", upload_data.group);
+    if (!m_upload_data.group.empty() && m_upload_data.group != _u8L("Default")) {
+        http->form_add("group", m_upload_data.group);
     }
 
-    if(upload_data.post_action == PrintHostAfterUploadAction::StartPrint) {
+    if(m_upload_data.post_action == PrintHostAfterUploadAction::StartPrint) {
         http->form_add("name", upload_filename.string());
         http->form_add("autostart", "true"); // See https://github.com/prusa3d/PrusaSlicer/issues/7807#issuecomment-1235519371
     }
 
     http->form_add("a", "upload")
-        .form_add_data("filename", std::move(upload_data.raw_data), upload_filename)
+        .form_add_file("filename", m_upload_data.source_path, upload_filename.string())
         .on_complete([&](std::string body, unsigned status) {
             SPDLOG_INFO(format("%1%: File uploaded: HTTP %2%: %3%", name , status , body));
         })

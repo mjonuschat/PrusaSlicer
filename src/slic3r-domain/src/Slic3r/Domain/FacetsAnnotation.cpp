@@ -1,8 +1,8 @@
 #include "Slic3r/Domain/FacetsAnnotation.hpp"
 #include "Slic3r/Domain/TriangleSelector.hpp"
+#include "Slic3r/Assert.hpp"
 
 #include <cereal/types/base_class.hpp>
-#include <libassert/assert.hpp>
 
 namespace Slic3r::Domain {
 

@@ -2,10 +2,10 @@
 
 #include "Slic3r/Biz/Platform/PlatformServices.hpp"
 #include "Slic3r/Log.hpp"
+#include "Slic3r/Assert.hpp"
 
 #include "libslic3r/format.hpp"
 
-#include <libassert/assert.hpp>
 #include <boost/nowide/convert.hpp>
 
 #include <windows.h>

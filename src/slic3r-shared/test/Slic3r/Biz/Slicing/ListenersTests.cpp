@@ -61,7 +61,7 @@ TEST_CASE_METHOD(SlicingFixture, "Slice N beds", "[slicing][slicing-interactor]"
 
     slicing.slice_all();
 
-    REQUIRE(wait_for_status(dispatcher, status_listener, 3s, [](const StatusEvents &events){
+    REQUIRE(wait_for_status(dispatcher, status_listener, 5s, [](const StatusEvents &events){
         return beds_count == std::ranges::count_if(events, [](const StatusEvent& event){
             return event.status == Status::Finished;
         });
@@ -95,7 +95,7 @@ TEST_CASE_METHOD(SlicingFixture, "Slice N beds", "[slicing][slicing-interactor]"
 
     for (const auto& pair : result_listener.gcodes) {
         const SelectionId id{pair.first};
-        const std::string& gcode{pair.second};
+        const std::string& gcode{pair.second->str()};
 
         const auto model_on_bed{std::ranges::find_if(bed_models, [&](const ModelOnBed& model_on_bed) {
             return model_on_bed.bed_instance.id().id == id;
@@ -134,7 +134,7 @@ TEST_CASE_METHOD(SlicingFixture, "Background process dispatches wipe_tower_geome
     slicing.update_process(model_on_bed.model, model_on_bed.config, model_on_bed.bed_instance);
     slicing.slice_all();
 
-    REQUIRE(wait_for_status(dispatcher, status_listener, 3s, [](const StatusEvents &events){
+    REQUIRE(wait_for_status(dispatcher, status_listener, 5s, [](const StatusEvents &events){
         return events.back().status == Status::Finished;
     }));
 

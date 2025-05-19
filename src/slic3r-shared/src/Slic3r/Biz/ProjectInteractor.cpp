@@ -147,25 +147,36 @@ void ProjectInteractor::remove_project(Domain::SelectionId project_id)
     }
 }
 
-void ProjectInteractor::do_export(const Slicing::SlicingId id, const boost::filesystem::path& dest_path)
+void ProjectInteractor::do_export(const Slicing::SlicingId id, const boost::filesystem::path& dest_path, bool to_removable)
 {
     const std::optional<FDMResultRef> fdm_result{ m_fdm_result_cache.get_result(id) };
     if (!fdm_result)
         return;
-    const std::string& gcode = fdm_result.value().get().gcode.str();
+    m_last_export_path_storage.set_last_export_path(dest_path, to_removable);
     PrintHost::PrintHostConfig config{PrintHost::PrintHostType::Local,""};
-    PrintHost::PrintHostJobData data{gcode, dest_path};
+    PrintHost::PrintHostJobData data{fdm_result.value().get().const_gcode(), dest_path, PrintHost::get_export_format_from_extension(dest_path.extension().string())};
     m_print_host_interactor.export_gcode(std::move(config), std::move(data));
 }
-void ProjectInteractor::do_upload(const Slicing::SlicingId id)
+void ProjectInteractor::do_upload(const Slicing::SlicingId id, const std::string& filename)
 {
     const std::optional<FDMResultRef> fdm_result{ m_fdm_result_cache.get_result(id) };
     if (!fdm_result)
         return;
-    const std::string& gcode = fdm_result.value().get().gcode.str();
     PrintHost::PrintHostConfig config{PrintHost::PrintHostType::OctoPrint,""};
-    PrintHost::PrintHostJobData data{gcode, "filename.gcode"};
+    PrintHost::PrintHostJobData data{fdm_result.value().get().const_gcode(), filename, PrintHost::get_export_format_from_extension(boost::filesystem::path(filename).extension().string())};
     m_print_host_interactor.upload_gcode(std::move(config), std::move(data));
 }
+
+std::string ProjectInteractor::get_project_name(Domain::SelectionId project_id) const
+{
+    auto it = m_workbench.projects().find(project_id);
+    ASSERT(it != m_workbench.projects().end());
+    if (it != m_workbench.projects().end()) {
+        return it->second.file_name();
+    }
+    return "default_filename";
+
+}
+
 
 } // namespace Slic3r::Biz

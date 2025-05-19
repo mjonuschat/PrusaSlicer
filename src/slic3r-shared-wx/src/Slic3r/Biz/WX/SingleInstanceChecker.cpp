@@ -1,8 +1,7 @@
 #include "Slic3r/Biz/WX/SingleInstanceChecker.hpp"
 
-#include <Slic3r/App/WX/StringConversions.hpp>
-
-#include <libassert/assert.hpp>
+#include "Slic3r/App/WX/StringConversions.hpp"
+#include "Slic3r/Assert.hpp"
 
 namespace Slic3r::Biz::WX {
 SingleInstanceChecker::SingleInstanceChecker(const std::string& name, const std::string& path) 

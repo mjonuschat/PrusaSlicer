@@ -17,8 +17,8 @@ namespace fs = boost::filesystem;
 
 namespace Slic3r::Biz::PrintHost {
 
-PrintHostPrusaLink::PrintHostPrusaLink(PrintHostConfig config) 
-    : IPrintHost(std::move(config))
+PrintHostPrusaLink::PrintHostPrusaLink(PrintHostConfig config, PrintHostJobData data)
+    : IPrintHost(std::move(config), std::move(data))
 {
 }
 
@@ -59,10 +59,10 @@ std::string PrintHostPrusaLink::make_url(const std::string& path) const
     }
 
 }
-bool PrintHostPrusaLink::perform(PrintHostJobData upload_data, ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const
+bool PrintHostPrusaLink::perform(ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const
 {
 #ifndef WIN32
-    return upload_inner_with_host(std::move(upload_data), progress_fn, retry_fn, error_fn, info_fn);
+    return upload_inner_with_host(progress_fn, retry_fn, error_fn, info_fn);
 #else
     std::string host = Network::IHttp::extract_host_from_url(m_print_host_config.host);
 
@@ -90,19 +90,19 @@ bool PrintHostPrusaLink::perform(PrintHostJobData upload_data, ProgressFn progre
     if (resolved_addr.empty()) {
         // no resolved addresses - try system resolving
         SPDLOG_ERROR(format("Failed to resolve hostname %1% into the IP address. Starting upload with system resolving.", m_print_host_config.host));
-        return upload_inner_with_host(std::move(upload_data), progress_fn, retry_fn, error_fn, info_fn);
+        return upload_inner_with_host(progress_fn, retry_fn, error_fn, info_fn);
     } else if (resolved_addr.size() == 1) {
         // one address resolved - upload there
-        return upload_inner_with_resolved_ip(std::move(upload_data), progress_fn, retry_fn, error_fn, info_fn, resolved_addr.front());
+        return upload_inner_with_resolved_ip(progress_fn, retry_fn, error_fn, info_fn, resolved_addr.front());
     }  else if (resolved_addr.size() == 2 && resolved_addr[0].is_v4() != resolved_addr[1].is_v4()) {
         // there are just 2 addresses and 1 is ip_v4 and other is ip_v6
         // try sending to both. (Then if both fail, show both error msg after second try)
         std::string error_message;
-        if (!upload_inner_with_resolved_ip(std::move(upload_data), progress_fn, retry_fn
+        if (!upload_inner_with_resolved_ip(progress_fn, retry_fn
             , [&msg = error_message, resolved_addr](std::string error) { msg = format("%1%: %2%", resolved_addr.front(), error); }
             , info_fn, resolved_addr.front())
             &&
-            !upload_inner_with_resolved_ip(std::move(upload_data), progress_fn, retry_fn
+            !upload_inner_with_resolved_ip(progress_fn, retry_fn
             , [&msg = error_message, resolved_addr](std::string error) { msg += format("\n%1%: %2%", resolved_addr.back(), error); }
             , info_fn, resolved_addr.back())
             ) {
@@ -115,7 +115,7 @@ bool PrintHostPrusaLink::perform(PrintHostJobData upload_data, ProgressFn progre
         // There are multiple addresses - user needs to choose which to use. (Here used to be dialog (We are in worker thread!!))
         // Lets try all now until some works?
         for (size_t i = 0; i < resolved_addr.size(); i++) {
-            if (upload_inner_with_resolved_ip(std::move(upload_data), progress_fn, retry_fn, error_fn, info_fn, resolved_addr[i])) {
+            if (upload_inner_with_resolved_ip(progress_fn, retry_fn, error_fn, info_fn, resolved_addr[i])) {
                 return true;
             }
         }
@@ -307,7 +307,7 @@ bool PrintHostPrusaLink::test_with_resolved_ip_and_method_check(std::string& msg
     return res;
 }
 
-bool PrintHostPrusaLink::upload_inner_with_resolved_ip(PrintHostJobData upload_data, ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn, const boost::asio::ip::address& resolved_addr) const
+bool PrintHostPrusaLink::upload_inner_with_resolved_ip(ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn, const boost::asio::ip::address& resolved_addr) const
 {
      info_fn("resolve", (resolved_addr.to_string()));
 
@@ -322,36 +322,36 @@ bool PrintHostPrusaLink::upload_inner_with_resolved_ip(PrintHostJobData upload_d
     }
 
     const char* name = get_name();
-    const fs::path upload_filename = upload_data.dest_path.filename();
-    const fs::path upload_parent_path = upload_data.dest_path.parent_path();
+    const fs::path upload_filename = m_upload_data.dest_path.filename();
+    const fs::path upload_parent_path = m_upload_data.dest_path.parent_path();
     std::string storage_path = (use_put ? "api/v1/files" : "api/files");
-    storage_path += (upload_data.storage.empty() ? "/local" : upload_data.storage);
+    storage_path += (m_upload_data.storage.empty() ? "/local" : m_upload_data.storage);
     std::string url = Network::IHttp::substitute_host(make_url(storage_path), resolved_addr.to_string());
     bool result = true;
     info_fn("resolve", url);
 
     SPDLOG_INFO(format("%1%: Uploading file %2% at %3%, filename: %4%, path: %5%, print: %6%, method: %7%",
         name
-        ,upload_data.dest_path
-        ,url
+        , m_upload_data.dest_path
+        , url
         , upload_filename.string()
         , upload_parent_path.string()
-        , (upload_data.post_action == PrintHostAfterUploadAction::StartPrint ? "true" : "false")
+        , (m_upload_data.post_action == PrintHostAfterUploadAction::StartPrint ? "true" : "false")
         , (use_put ? "PUT" : "POST")));
 
     if (use_put)
-        return put_inner(std::move(upload_data), std::move(url), name, progress_fn, retry_fn, error_fn, info_fn);
-    return post_inner(std::move(upload_data), std::move(url), name, progress_fn, retry_fn, error_fn, info_fn);
+        return put_inner(std::move(url), name, progress_fn, retry_fn, error_fn, info_fn);
+    return post_inner(std::move(url), name, progress_fn, retry_fn, error_fn, info_fn);
 }
 
 #endif //WIN32
 
-bool PrintHostPrusaLink::upload_inner_with_host(PrintHostJobData upload_data, ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const
+bool PrintHostPrusaLink::upload_inner_with_host(ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const
 {
     const char* name = get_name();
 
-    const auto upload_filename = upload_data.dest_path.filename();
-    const auto upload_parent_path = upload_data.dest_path.parent_path();
+    const auto upload_filename = m_upload_data.dest_path.filename();
+    const auto upload_parent_path = m_upload_data.dest_path.parent_path();
 
     // If test fails, test_msg contains the error message.
     // Otherwise on Windows it contains the resolved IP address of the host.
@@ -364,7 +364,7 @@ bool PrintHostPrusaLink::upload_inner_with_host(PrintHostJobData upload_data, Pr
 
     std::string url;
     std::string storage_path = (use_put ? "api/v1/files" : "api/files");
-    storage_path += (upload_data.storage.empty() ? "/local" : upload_data.storage);
+    storage_path += (m_upload_data.storage.empty() ? "/local" : m_upload_data.storage);
 #ifdef WIN32
     // Workaround for Windows 10/11 mDNS resolve issue, where two mDNS resolves in succession fail.
     if (m_print_host_config.host.find("https://") == 0 || test_msg.empty())
@@ -389,25 +389,25 @@ bool PrintHostPrusaLink::upload_inner_with_host(PrintHostJobData upload_data, Pr
 #endif // _WIN32
     SPDLOG_INFO(format("%1%: Uploading file %2% at %3%, filename: %4%, path: %5%, print: %6%, method: %7%",
         name
-        ,upload_data.dest_path
-        ,url
+        , m_upload_data.dest_path
+        , url
         , upload_filename.string()
         , upload_parent_path.string()   
-        , (upload_data.post_action == PrintHostAfterUploadAction::StartPrint ? "true" : "false")
+        , (m_upload_data.post_action == PrintHostAfterUploadAction::StartPrint ? "true" : "false")
         , (use_put ? "PUT" : "POST")));
 
     if (use_put)
-        return put_inner(std::move(upload_data), std::move(url), name, progress_fn, retry_fn, error_fn, info_fn);
-    return post_inner(std::move(upload_data), std::move(url), name, progress_fn, retry_fn, error_fn, info_fn);
+        return put_inner(std::move(url), name, progress_fn, retry_fn, error_fn, info_fn);
+    return post_inner(std::move(url), name, progress_fn, retry_fn, error_fn, info_fn);
 }
 
-bool PrintHostPrusaLink::put_inner(PrintHostJobData upload_data, std::string url, const std::string& name, ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const
+bool PrintHostPrusaLink::put_inner(std::string url, const std::string& name, ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const
 {
     info_fn("set_complete_off", {});
 
     bool res = true;
     // Percent escape all filenames in on path and add it to the url. This is different from POST.
-    url += "/" + Network::IHttp::escape_path_by_element(upload_data.dest_path);
+    url += "/" + Network::IHttp::escape_path_by_element(m_upload_data.dest_path);
      
     std::unique_ptr<Network::IHttp> http = Network::IHttp::create(Network::IHttp::RequestMethod::Put, std::move(url), retry_fn);
 #ifdef WIN32
@@ -421,9 +421,9 @@ bool PrintHostPrusaLink::put_inner(PrintHostJobData upload_data, std::string url
 #endif // _WIN32
     set_auth(http.get());
     // There was an error at PrusaLink side that accepts any string at Print-After-Upload as true, thus False was also triggering print after upload.
-    if (upload_data.post_action == PrintHostAfterUploadAction::StartPrint)
+    if (m_upload_data.post_action == PrintHostAfterUploadAction::StartPrint)
         http->header("Print-After-Upload", "?1");
-    http->set_put_data(std::move(upload_data.raw_data), upload_data.dest_path)
+    http->set_put_body(m_upload_data.source_path)
         .header("Content-Type", "text/x.gcode")
         .header("Overwrite", "?1")
         .on_complete([&](std::string body, unsigned status) {
@@ -451,12 +451,12 @@ bool PrintHostPrusaLink::put_inner(PrintHostJobData upload_data, std::string url
     return res;
 }
 
-bool PrintHostPrusaLink::post_inner(PrintHostJobData upload_data, std::string url, const std::string& name, ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const
+bool PrintHostPrusaLink::post_inner(std::string url, const std::string& name, ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const
 {
     info_fn("set_complete_off", {});
     bool res = true;
-    const auto upload_filename = upload_data.dest_path.filename();
-    const auto upload_parent_path = upload_data.dest_path.parent_path();
+    const auto upload_filename = m_upload_data.dest_path.filename();
+    const auto upload_parent_path = m_upload_data.dest_path.parent_path();
 
     std::unique_ptr<Network::IHttp> http = Network::IHttp::create(Network::IHttp::RequestMethod::Post, std::move(url), retry_fn);
 #ifdef WIN32
@@ -469,9 +469,9 @@ bool PrintHostPrusaLink::post_inner(PrintHostJobData upload_data, std::string ur
     http->header("Host", host);
 #endif // _WIN32
     set_auth(http.get());
-    set_http_post_header_args(http.get(), upload_data.post_action);
+    set_http_post_header_args(http.get(), m_upload_data.post_action);
     http->form_add("path", upload_parent_path.string())      // XXX: slashes on windows ???
-        .form_add_data("file", std::move(upload_data.raw_data), upload_filename.string())
+        .form_add_file("file", m_upload_data.source_path, upload_filename.string())
         .on_complete([&](std::string body, unsigned status) {
             // PrusaConnect message
             SPDLOG_INFO(format("%1%: File uploaded: HTTP %2%: %3%", name, status, body));

@@ -21,8 +21,12 @@ namespace Slic3r {
 namespace GCode {
 
 typedef std::function<void(PrintStateBase::WarningLevel, const std::string&, int)> ActiveStepAddWarningCallback;
-extern Slic3r::Biz::libpgcode::ProcessorResult post_process(const Slic3r::Biz::libpgcode::PostProcessorConfig& config,
-		Slic3r::Biz::libpgcode::ProcessorResult&& result, ActiveStepAddWarningCallback active_step_add_warning_callback);
+
+extern Slic3r::Biz::libpgcode::ProcessorResult post_process(
+    const Slic3r::Biz::libpgcode::PostProcessorConfig& config,
+    Slic3r::Biz::libpgcode::ProcessorResult&& result, 
+    ActiveStepAddWarningCallback active_step_add_warning_callback
+);
 
 } // namespace GCode
 

@@ -13,7 +13,10 @@ namespace Slic3r::Biz::PrintHost {
 class IPrintHost
 {
 public:    
-    explicit IPrintHost(PrintHostConfig config) : m_print_host_config(std::move(config)) {}
+    explicit IPrintHost(PrintHostConfig config, PrintHostJobData data) 
+        : m_print_host_config(std::move(config)) 
+        , m_upload_data(std::move(data))
+    {}
     
     IPrintHost() = delete;
     IPrintHost(const IPrintHost&) = delete;
@@ -33,7 +36,7 @@ public:
     /**
      * Delivers data to given path on host specified in config.
      */
-    virtual bool perform(PrintHostJobData data, ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const = 0;
+    virtual bool perform(ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const = 0;
 
     virtual const char* get_name() const = 0;
     /**
@@ -43,6 +46,7 @@ public:
     
 protected:
     PrintHostConfig m_print_host_config;
+    PrintHostJobData m_upload_data;
 
     virtual std::string format_error(const std::string &body, const std::string &error, unsigned status) const
     {

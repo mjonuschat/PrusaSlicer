@@ -346,7 +346,7 @@ private:
 
     // collect changes to apply to gcode
     void process() {
-        m_gcode_times.resize(m_result.gcode.size(), {});
+        m_gcode_times.resize(m_result.gcode().size(), {});
 
         size_t g1_lines_counter = 0;
         // In case there are multiple sources of backtracing, keeps track of the longest backtrack time needed
@@ -355,8 +355,8 @@ private:
 
         // collects changes to be made to the gcode
         std::string line;
-        for (size_t i = 0; i < m_result.gcode.size(); ++i) {
-            line = m_result.gcode[i];
+        for (size_t i = 0; i < m_result.gcode().size(); ++i) {
+            line = m_result.gcode()[i];
             const size_t internal_g1_lines_counter = update(line, i + 1, g1_lines_counter);
 
             if (is_temporary_decoration(line)) {
@@ -448,7 +448,7 @@ private:
                 ++i;
         }
 
-        m_result.gcode.apply_edits(m_editing_items);
+        m_result.gcode().apply_edits(m_editing_items);
     }
 
     void synchronize_moves() {
@@ -754,8 +754,8 @@ private:
         std::function<void(size_t, const std::vector<float>&)> line_inserter,
         std::function<void(size_t, const std::string&)> line_replacer) {
         const float time_step = s_BACKTRACE_T.time_step();
-        const size_t base_rev_it_dist = m_result.gcode.size() - lines_counter; // distance from the current gcode line to the end of gcode
-        auto base_gcode_rev_it = m_result.gcode.rbegin() + base_rev_it_dist; // reverse iterator to the current gcode line
+        const size_t base_rev_it_dist = m_result.gcode().size() - lines_counter; // distance from the current gcode line to the end of gcode
+        auto base_gcode_rev_it = m_result.gcode().rbegin() + base_rev_it_dist; // reverse iterator to the current gcode line
         auto base_times_rev_it = m_gcode_times.rbegin() + base_rev_it_dist; // reverse iterator to the current gcode line times
 
         size_t rev_it_dist = 0; // distance from the current gcode line of the starting point of the backtrace
@@ -768,22 +768,22 @@ private:
             auto start_rev_it = gcode_rev_it;
             std::string curr_cmd = GCodeLine::extract_cmd(std::string{*gcode_rev_it});
             // backtrace to find the place where to insert the line
-            while (gcode_rev_it != m_result.gcode.rend() && (*times_rev_it)[size_t(TimeMode::Normal)] > time_threshold_i &&
+            while (gcode_rev_it != m_result.gcode().rend() && (*times_rev_it)[size_t(TimeMode::Normal)] > time_threshold_i &&
                    curr_cmd != cmd && curr_cmd != "G28" && curr_cmd != "G29") {
                 const std::size_t line_id = gcode_rev_it.line_index();
                 line_replacer(line_id, std::string(*gcode_rev_it));
                 ++gcode_rev_it;
                 ++times_rev_it;
-                if (gcode_rev_it != m_result.gcode.rend())
+                if (gcode_rev_it != m_result.gcode().rend())
                     curr_cmd = GCodeLine::extract_cmd(std::string{*gcode_rev_it});
             }
 
             // we met the previous evenience of cmd, or a G28/G29 command. stop inserting lines
-            if (gcode_rev_it != m_result.gcode.rend() && (curr_cmd == cmd || curr_cmd == "G28" || curr_cmd == "G29"))
+            if (gcode_rev_it != m_result.gcode().rend() && (curr_cmd == cmd || curr_cmd == "G28" || curr_cmd == "G29"))
                 break;
 
             // insert the line for the current step
-            if (gcode_rev_it != m_result.gcode.rend() && gcode_rev_it != start_rev_it &&
+            if (gcode_rev_it != m_result.gcode().rend() && gcode_rev_it != start_rev_it &&
                 (*times_rev_it)[size_t(TimeMode::Normal)] != last_time_insertion) {
                 last_time_insertion = (*times_rev_it)[size_t(TimeMode::Normal)];
                 std::vector<float> time_diffs;

@@ -12,7 +12,7 @@ namespace Slic3r::Biz::PrintHost {
 class PrintHostPrusaLink : public IPrintHost{
 
 public:
-    PrintHostPrusaLink(PrintHostConfig config);
+    PrintHostPrusaLink(PrintHostConfig config, PrintHostJobData data);
     
     PrintHostPrusaLink(const PrintHostPrusaLink&) = delete;
     PrintHostPrusaLink& operator=(const PrintHostPrusaLink&) = delete;
@@ -21,7 +21,7 @@ public:
    
     ~PrintHostPrusaLink() override = default;
 
-    bool perform(PrintHostJobData upload_data, ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const override;
+    bool perform(ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const override;
 
     const char* get_name() const override { return "PrusaLink"; }
     bool test(std::string& msg, RetryFn retry_fn) const override;
@@ -32,12 +32,12 @@ protected:
 
     void set_auth(Network::IHttp* http) const;
     std::string make_url(const std::string& path) const;
-    bool upload_inner_with_host(PrintHostJobData upload_data, ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const;
-    bool put_inner(PrintHostJobData upload_data, std::string url, const std::string& name, ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const;
-    bool post_inner(PrintHostJobData upload_data, std::string url, const std::string& name, ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const;
+    bool upload_inner_with_host(ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const;
+    bool put_inner(std::string url, const std::string& name, ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const;
+    bool post_inner(std::string url, const std::string& name, ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const;
     bool test_with_method_check(std::string& msg, bool& use_put, RetryFn retry_fn) const;
 #ifdef WIN32
-    bool upload_inner_with_resolved_ip(PrintHostJobData upload_data, ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn, const boost::asio::ip::address& resolved_addr) const;
+    bool upload_inner_with_resolved_ip(ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn, const boost::asio::ip::address& resolved_addr) const;
     bool test_with_resolved_ip_and_method_check(std::string& msg, bool& use_put, RetryFn retry_fn) const;
 #endif
 };

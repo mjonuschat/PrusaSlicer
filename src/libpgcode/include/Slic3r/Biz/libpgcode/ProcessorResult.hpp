@@ -7,6 +7,9 @@
 
 #include "Slic3r/Biz/libpgcode/LineView.hpp"
 #include "Slic3r/Biz/libpgcode/Types.hpp"
+#include "Slic3r/Assert.hpp"
+
+#include <memory>
 
 namespace Slic3r::Biz::libpgcode {
 
@@ -18,7 +21,9 @@ struct FilamentGeometry
 
 struct ProcessorResult
 {
-    ProcessorResult() = default;
+    ProcessorResult()
+        : m_gcode{ std::make_shared<LineView>() }
+    {}
     ProcessorResult(const ProcessorResult&) = delete;
     ProcessorResult(ProcessorResult&&) = default;
     ProcessorResult& operator=(const ProcessorResult&) = delete;
@@ -38,7 +43,7 @@ struct ProcessorResult
     std::vector<float> filament_costs;
     std::vector<Domain::Vec2f> bed_shape;
 
-    LineView gcode;
+   
 
     std::vector<std::string> extruder_str_colors;
     MoveVertices moves;
@@ -58,8 +63,32 @@ struct ProcessorResult
 
     void reset();
 
+    void set_gcode(std::string&& buffer)
+    {
+        m_gcode = std::make_shared<LineView>(std::move(buffer));
+    }
+
+    /**
+     * @brief Getter for modifiable gcode
+     */
+    LineView& gcode()
+    {
+        ASSERT(m_gcode);
+        return *m_gcode;  
+    }
+
+    /**
+     * @brief Getter for const gcode shared pointer. Should be used after processing / postprocessing is done.
+     */
+    std::shared_ptr<const LineView> const_gcode() const
+    {
+        ASSERT(m_gcode);
+        return m_gcode;  
+    }
+
 private:
     uint32_t m_id{ 0 };
+    std::shared_ptr<LineView> m_gcode;
 };
 
 } // namespace Slic3r::Biz::libpgcode

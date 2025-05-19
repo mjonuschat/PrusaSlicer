@@ -1,6 +1,6 @@
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 #include "Slic3r/Biz/Algorithms/Scaling.hpp"
-#include <libassert/assert.hpp>
+#include "Slic3r/Assert.hpp"
 
 namespace Slic3r::Biz::Algorithms::BoundingBox {
 

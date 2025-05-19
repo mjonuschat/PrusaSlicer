@@ -2,11 +2,12 @@
 
 #include "Slic3r/App/Platform/StdMainThreadDispatcher.hpp"
 #include "Slic3r/Biz/Slicing/SlicingInteractor.hpp"
+#include "Slic3r/Biz/libpgcode/LineView.hpp"
 #include "libslic3r/Model.hpp"
 #include <catch2/catch_test_macros.hpp>
 #include <chrono>
 #include "Slic3r/Domain/ConfigContainer.hpp"
-
+#include <memory>
 
 namespace Slic3r::Tests {
 void precise_sleep(const std::chrono::milliseconds duration);
@@ -55,7 +56,7 @@ struct StatusListener : public Biz::Slicing::IStatusListener {
     const std::function<bool(StatusEvents)>& condition
 );
 
-using GCodes = std::map<Domain::SelectionId, std::string>;
+using GCodes = std::map<Domain::SelectionId, std::shared_ptr<const Biz::libpgcode::LineView>>;
 struct ResultListener : public Biz::Slicing::IFDMResultListener
 {
     void on_fdm_result_changed(

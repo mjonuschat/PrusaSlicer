@@ -1,11 +1,11 @@
 #include "Slic3r/Biz/Platform/SecretStoreLinux.hpp"
 
 #include "Slic3r/Log.hpp"
+#include "Slic3r/Assert.hpp"
 
 #include "libslic3r/Utils.hpp" // data_dir(), ScopeGuard
 #include "libslic3r/format.hpp"
 
-#include <libassert/assert.hpp>
 #include <boost/filesystem.hpp> 
 #include <boost/nowide/fstream.hpp>
 #include <boost/algorithm/string.hpp>

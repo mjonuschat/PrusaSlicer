@@ -1,6 +1,6 @@
 #include "Slic3r/Domain/TriangleSelector.hpp"
 
-#include <libassert/assert.hpp>
+#include "Slic3r/Assert.hpp"
 
 namespace Slic3r::Domain::TriangleSelector {
 

@@ -2,7 +2,7 @@
 #include "Slic3r/Biz/UserAccount/UserAccountCodeChallengeGenerator.hpp"
 #include "Slic3r/Biz/Network/ServiceConfig.hpp"
 #include "Slic3r/Biz/Network/IHttp.hpp"
-#include "libassert/assert.hpp"
+#include "Slic3r/Log.hpp"
 
 #include "libslic3r/format.hpp"
 

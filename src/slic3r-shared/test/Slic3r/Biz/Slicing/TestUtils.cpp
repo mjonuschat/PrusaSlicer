@@ -106,7 +106,10 @@ void ResultListener::on_fdm_result_changed(
     FDMResult&& result, const SlicingId id
 )
 {
-    gcodes[id.bed_instance_id] = result.gcode.str();
+    std::shared_ptr<const Biz::libpgcode::LineView> gcode_ptr = result.const_gcode();
+    if (gcode_ptr) { 
+        gcodes[id.bed_instance_id] = std::move(gcode_ptr);
+    }
 }
 
 SlicingFixture::SlicingFixture() {

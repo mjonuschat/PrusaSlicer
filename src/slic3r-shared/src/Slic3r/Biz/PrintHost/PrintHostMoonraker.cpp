@@ -13,13 +13,13 @@ namespace fs = boost::filesystem;
 
 namespace Slic3r::Biz::PrintHost {
 
-bool PrintHostMoonraker::perform(PrintHostJobData upload_data, ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const
+bool PrintHostMoonraker::perform(ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const
 {
     // POST /server/files/upload
 
     const char* name = get_name();
-    const auto upload_filename = upload_data.dest_path.filename();
-    const auto upload_parent_path = upload_data.dest_path.parent_path();
+    const auto upload_filename = m_upload_data.dest_path.filename();
+    const auto upload_parent_path = m_upload_data.dest_path.parent_path();
 
     // If test fails, test_msg_or_host_ip contains the error message.
     std::string test_msg_or_host_ip;
@@ -59,7 +59,7 @@ bool PrintHostMoonraker::perform(PrintHostJobData upload_data, ProgressFn progre
         , url
         , upload_filename.string()
         , upload_parent_path.string()
-        , (upload_data.post_action == PrintHostAfterUploadAction::StartPrint ? "true" : "false")));
+        , (m_upload_data.post_action == PrintHostAfterUploadAction::StartPrint ? "true" : "false")));
     /*
     The file must be uploaded in the request's body multipart/form-data (ie: <input type="file">). The following arguments may also be added to the form-data:
     root: The root location in which to upload the file.Currently this may be gcodes or config.If not specified the default is gcodes.
@@ -74,10 +74,10 @@ bool PrintHostMoonraker::perform(PrintHostJobData upload_data, ProgressFn progre
     http->form_add("root", "gcodes");
     if (!upload_parent_path.empty())
         http->form_add("path", upload_parent_path.string());
-    if (upload_data.post_action == PrintHostAfterUploadAction::StartPrint)
+    if (m_upload_data.post_action == PrintHostAfterUploadAction::StartPrint)
         http->form_add("print", "true");
    
-    http->form_add_data("file", std::move(upload_data.raw_data), upload_filename)
+    http->form_add_file("file", m_upload_data.source_path, upload_filename.string())
         .on_complete([&](std::string body, unsigned status) {
             SPDLOG_INFO(format("%1%: File uploaded: HTTP %2%: %3%", name , status , body));
         })

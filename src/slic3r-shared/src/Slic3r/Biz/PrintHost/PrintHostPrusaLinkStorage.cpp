@@ -10,11 +10,11 @@ namespace fs = boost::filesystem;
 
 namespace Slic3r::Biz::PrintHost {
 
-PrintHostPrusaLinkStorage::PrintHostPrusaLinkStorage(PrintHostConfig config)
-    : IPrintHost(std::move(config))
+PrintHostPrusaLinkStorage::PrintHostPrusaLinkStorage(PrintHostConfig config, PrintHostJobData data) 
+    : IPrintHost(std::move(config), std::move(data))
 {}
 
-bool PrintHostPrusaLinkStorage::perform(PrintHostJobData upload_data, ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const
+bool PrintHostPrusaLinkStorage::perform(ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const
 {
     
     const char* name = get_name();

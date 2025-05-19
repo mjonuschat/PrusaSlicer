@@ -9,8 +9,7 @@ namespace Slic3r::Biz::PrintHost {
 PrintHostJob::PrintHostJob(IPrintHostJobCallbacks* owner, size_t id, PrintHostConfig config, PrintHostJobData data)
     : m_owner(owner)
     , m_id(id)
-    , m_print_host(create_print_host(std::move(config)))
-    , m_upload_data(std::move(data))
+    , m_print_host(create_print_host(std::move(config), std::move(data)))
     , m_host(m_print_host->get_host())
     , m_future(m_promise.get_future().share())
 {
@@ -40,7 +39,7 @@ void PrintHostJob::start()
         }
         m_owner->on_job_progress(m_id, 0); // Indicate the upload is starting
 
-        bool success = m_print_host->perform(std::move(m_upload_data),
+        bool success = m_print_host->perform(
             [this, stop_token](Network::IHttp::Progress progress, bool &cancel) 
             { 
                 this->on_progress_fn(std::move(progress), cancel); 

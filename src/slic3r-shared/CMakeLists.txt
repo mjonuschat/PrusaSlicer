@@ -69,6 +69,9 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/SidebarActionButtons.cpp
         include/Slic3r/App/LightSetting.hpp
         src/Slic3r/App/LightSetting.cpp
+        include/Slic3r/App/ExportPathSelect.hpp
+        src/Slic3r/App/ExportPathSelect.cpp
+        include/Slic3r/App/IDialogManager.hpp
 
         src/Slic3r/App/Scene/Scene.cpp
         include/Slic3r/App/Scene/Scene.hpp
@@ -247,6 +250,7 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/ISelectedProjectChangedListener.hpp
         src/Slic3r/Biz/ProjectInteractor.cpp
         include/Slic3r/Biz/ProjectInteractor.hpp
+        include/Slic3r/Biz/LastExportPathStorage.hpp
 
         include/Slic3r/StringUtils.hpp
 
@@ -295,6 +299,7 @@ set(SLIC3R_SHARED_FILES
 		include/Slic3r/Biz/PrintHost/PrintHostAstroBox.hpp
 		include/Slic3r/Biz/PrintHost/PrintHostRepetier.hpp
 		include/Slic3r/Biz/PrintHost/PrintHostMKS.hpp
+        include/Slic3r/Biz/PrintHost/PrintHostDataFinalizer.hpp
         src/Slic3r/Biz/PrintHost/PrintHostJobManager.cpp
 		src/Slic3r/Biz/PrintHost/PrintHostInteractor.cpp
 		src/Slic3r/Biz/PrintHost/PrintHostJob.cpp
@@ -311,6 +316,7 @@ set(SLIC3R_SHARED_FILES
 		src/Slic3r/Biz/PrintHost/PrintHostAstroBox.cpp
 		src/Slic3r/Biz/PrintHost/PrintHostRepetier.cpp
 		src/Slic3r/Biz/PrintHost/PrintHostMKS.cpp
+        src/Slic3r/Biz/PrintHost/PrintHostDataFinalizer.cpp
 
 		include/Slic3r/Biz/Network/IHttp.hpp
 		include/Slic3r/Biz/Network/HttpFactory.hpp

@@ -3,8 +3,8 @@
 #include "Slic3r/Biz/Platform/ISecretStore.hpp"
 #include "Slic3r/Biz/Platform/PlatformServices.hpp"
 #include "Slic3r/Log.hpp"
+#include "Slic3r/Assert.hpp"
 
-#include <libassert/assert.hpp>
 #include <boost/algorithm/string.hpp>
 
 namespace Slic3r::Biz::UserAccount::TokenStore {

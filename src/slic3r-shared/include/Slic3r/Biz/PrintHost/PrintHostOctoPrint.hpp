@@ -12,7 +12,7 @@ namespace Slic3r::Biz::PrintHost {
 class PrintHostOctoPrint : public IPrintHost {
 
 public:
-    PrintHostOctoPrint(PrintHostConfig config);
+    PrintHostOctoPrint(PrintHostConfig config, PrintHostJobData data);
     
     PrintHostOctoPrint(const PrintHostOctoPrint&) = delete;
     PrintHostOctoPrint& operator=(const PrintHostOctoPrint&) = delete;
@@ -22,15 +22,15 @@ public:
     ~PrintHostOctoPrint() override = default;
 
 
-    bool perform(PrintHostJobData upload_data, ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const override;
+    bool perform(ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const override;
 
     const char* get_name() const override { return "OctoPrint"; }
     bool test(std::string& msg, RetryFn retry_fn) const override;
 
 private:
-    bool upload_inner_with_host(PrintHostJobData upload_data, ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const;
+    bool upload_inner_with_host(ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const;
 #ifdef WIN32
-    bool upload_inner_with_resolved_ip(PrintHostJobData upload_data, ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn, const boost::asio::ip::address& resolved_addr) const;
+    bool upload_inner_with_resolved_ip(ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn, const boost::asio::ip::address& resolved_addr) const;
     bool test_with_resolved_ip(std::string& msg, RetryFn retry_fn) const;
 #endif
     std::string make_url(const std::string& path) const;

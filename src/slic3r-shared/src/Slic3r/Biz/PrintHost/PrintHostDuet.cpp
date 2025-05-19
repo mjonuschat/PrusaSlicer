@@ -13,7 +13,7 @@ namespace fs = boost::filesystem;
 
 namespace Slic3r::Biz::PrintHost {
 
-bool PrintHostDuet::perform(PrintHostJobData upload_data, ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const
+bool PrintHostDuet::perform(ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const
 {
     std::string connect_msg;
 	auto connectionType = connect(connect_msg, retry_fn);
@@ -25,21 +25,21 @@ bool PrintHostDuet::perform(PrintHostJobData upload_data, ProgressFn progress_fn
 	bool res = true;
 	bool dsf = (connectionType == ConnectionType::dsf);
 
-	auto upload_cmd = get_upload_url(upload_data.dest_path.string(), connectionType);
+	auto upload_cmd = get_upload_url(m_upload_data.dest_path.string(), connectionType);
 	SPDLOG_INFO(format("Duet: Uploading file. filepath: %1%, post_action: %2%, command: %3%"
-		, upload_data.dest_path
-		, int(upload_data.post_action)
+		, m_upload_data.dest_path
+		, int(m_upload_data.post_action)
 		, upload_cmd));
 
      std::unique_ptr<Network::IHttp> http = (dsf 
         ? Network::IHttp::create(Network::IHttp::RequestMethod::Put, std::move(upload_cmd), retry_fn)
         : Network::IHttp::create(Network::IHttp::RequestMethod::Post, std::move(upload_cmd), retry_fn));
 	if (dsf) {
-        http->set_put_data(std::move(upload_data.raw_data), upload_data.dest_path);
+        http->set_put_body(m_upload_data.source_path);
 		if (connect_msg.empty())
             http->header("X-Session-Key", connect_msg);
 	} else {
-		http->set_post_body(std::move(upload_data.raw_data));
+		http->set_post_body(m_upload_data.source_path);
 	}
 	http->on_complete([&](std::string body, unsigned status) {
 			SPDLOG_INFO(format("Duet: File uploaded: HTTP %1%: %2%", status , body));
@@ -49,15 +49,15 @@ bool PrintHostDuet::perform(PrintHostJobData upload_data, ProgressFn progress_fn
 				SPDLOG_INFO(format("Duet: Request completed but error code was received: %1%", err_code));
 				error_fn(format_error(body, L("Unknown error occured"), 0));
 				res = false;
-			} else if (upload_data.post_action == PrintHostAfterUploadAction::StartPrint) {
+			} else if (m_upload_data.post_action == PrintHostAfterUploadAction::StartPrint) {
 				std::string errormsg;
-				res = start_print(errormsg, upload_data.dest_path.string(), connectionType, false, retry_fn);
+				res = start_print(errormsg, m_upload_data.dest_path.string(), connectionType, false, retry_fn);
 				if (! res) {
 					error_fn(std::move(errormsg));
 				}
-			} else if (upload_data.post_action == PrintHostAfterUploadAction::StartSimulation) {
+			} else if (m_upload_data.post_action == PrintHostAfterUploadAction::StartSimulation) {
 				std::string errormsg;
-				res = start_print(errormsg, upload_data.dest_path.string(), connectionType, true, retry_fn);
+				res = start_print(errormsg, m_upload_data.dest_path.string(), connectionType, true, retry_fn);
 				if (! res) {
 					error_fn(std::move(errormsg));
 				}

@@ -6,6 +6,7 @@
 #include <string_view>
 #include <optional>
 #include <cstdint>
+#include <memory>
 
 namespace Slic3r::App::Preview {
 
@@ -37,10 +38,10 @@ public:
     void set_visible(bool visible) { m_visible = visible; }
     void toggle_visible() { m_visible = !m_visible; }
 
-    void set_gcode(Biz::libpgcode::LineView&& gcode) { m_gcode = std::move(gcode); }
-    bool has_data() const { return !m_gcode.empty(); }
+    void set_gcode(std::shared_ptr<const Biz::libpgcode::LineView>& gcode) { m_gcode = gcode; }
+    bool has_data() const { return (m_gcode && !m_gcode->empty()); }
 
-    void reset() { m_gcode.clear(); }
+    void reset() { m_gcode = nullptr; }
 
     Line line_at(uint32_t id) const;
 
@@ -48,7 +49,7 @@ public:
 
 private:
     bool m_visible{ true };
-    Biz::libpgcode::LineView m_gcode;
+    std::shared_ptr<const Biz::libpgcode::LineView> m_gcode;
 };
 
 

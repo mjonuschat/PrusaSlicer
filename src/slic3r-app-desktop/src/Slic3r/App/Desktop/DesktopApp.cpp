@@ -16,6 +16,8 @@
 #include <Slic3r/Biz/Platform/PlatformServices.hpp>
 #include <Slic3r/Biz/Platform/Termination.hpp>
 
+#include "Slic3r/App/WX/DialogManager.hpp"
+
 #include <boost/log/trivial.hpp>
 
 wxIMPLEMENT_APP_NO_MAIN(Slic3r::App::Desktop::DesktopApp);
@@ -84,6 +86,7 @@ bool DesktopApp::OnInit()
         std::make_unique<Plater::PlaterRenderModule>(m_workbench, *m_project_interactor);
     m_preview_module =
         std::make_unique<Preview::PreviewRenderModule>(m_workbench, *m_project_interactor);
+    DialogManagerSingleton::instance().set_dialog_manager_implementation(std::make_unique<WX::DialogManager>());
 
     const bool is_dark = true;
     const bool is_sys_menu = true;

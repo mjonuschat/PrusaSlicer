@@ -3,10 +3,10 @@
 #include <Slic3r/Biz/Platform/PlatformServices.hpp>
 #include "Slic3r/Biz/Platform/ISingleInstanceChecker.hpp"
 #include "Slic3r/Log.hpp"
+#include "Slic3r/Assert.hpp"
 
 #include "libslic3r/Config.hpp" // unescape_strings_cstyle
 
-#include <libassert/assert.hpp>
 #include <nlohmann/json.hpp>
 #include <boost/filesystem.hpp>
 #include <vector>

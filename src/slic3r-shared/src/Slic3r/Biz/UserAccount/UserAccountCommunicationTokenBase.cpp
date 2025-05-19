@@ -3,10 +3,9 @@
 #include "Slic3r/Biz/UserAccount/UserAccountTokenStore.hpp"
 #include "Slic3r/Biz/Platform/PlatformServices.hpp"
 #include "Slic3r/Log.hpp"
+#include "Slic3r/Assert.hpp"
 
 #include "libslic3r/Utils.hpp" // get_current_pid()
-
-#include <libassert/assert.hpp>
 
 namespace Slic3r::Biz::UserAccount {
 
