@@ -344,10 +344,7 @@ void SimplifyGizmo::apply_simplify()
             continue;
         
         size_t object_id = volume->get_object()->id().id;
-        ElementRef ref{
-            .object_id = object_id,
-            .instance_id = 0,
-            .volume_id = volume_id.id};
+        ElementRef ref(object_id, 0, volume_id.id);
         using Biz::Algorithms::TriangleMesh::construct;
         meshes.emplace_back(ref, construct(std::move(its)));
     }
@@ -571,9 +568,8 @@ void SimplifyGizmo::init_model(const std::set<ObjectID>& current_volume_ids)
     //    .set_uniform("uniform_color", ColorRGBA::ORANGE());
 
     m_material = Render::Material{}
-        .set_shader(m_device.context().shader_manager().shader("phong"))
+        .set_shader(m_device.context().shader_manager().shader("gouraud_light"))
         .set_uniform("uniform_color", ColorRGBA::ORANGE())
-        .set_uniform("emission_factor", 0.0f)
         .set_transparent(false);
 
     NodeInputs node_inputs;
@@ -589,8 +585,7 @@ void SimplifyGizmo::init_model(const std::set<ObjectID>& current_volume_ids)
         Node::NodeList volume_nodes;
         scene.root().query([volume_id](const Node* n) -> bool {
                 const SceneNodeTag* tag = n->tag_of_type<SceneNodeTag>();
-                return tag != nullptr && 
-                    tag->volume_id == volume_id.id;
+                return tag != nullptr && tag->volume_id == volume_id.id;
             }, volume_nodes);
         ASSERT(!volume_nodes.empty());
         for (Node* volume_node : volume_nodes) {
