@@ -89,8 +89,7 @@ bool DesktopApp::OnInit()
     const bool is_sys_menu = true;
     WX::WidgetsConfig* wdts_config = WX::WidgetsConfig::instance(is_dark, is_sys_menu);
 
-    //m_project_interactor->new_project();
-    m_project_interactor->load_project("/Users/jan.bartipan/Downloads/apply_test_object.3mf");
+    m_project_interactor->new_project();
 
     m_main_frame = new MainFrame(m_workbench, m_project_interactor->preset_interactor());
     m_project_interactor->init_app_instance_message_handler(m_main_frame->GetHandle());
