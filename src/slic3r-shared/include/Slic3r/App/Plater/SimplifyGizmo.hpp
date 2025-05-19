@@ -79,8 +79,14 @@ private:
     bool stop_worker_thread_request();
     void worker_finished();
 
-    void init_model(const std::set<Domain::ObjectID>&); // initialize gl Models from selectio
+    void create_mesh_name();
+    void init_model(const std::set<Domain::ObjectID>&); // initialize gl Models from selection
     void update_model(const State::Data& data);
+    struct NodeInput{
+        Domain::ObjectID volume_id = 0;
+        const indexed_triangle_set* its = nullptr; };
+    using NodeInputs = std::vector<NodeInput>;
+    void set_nodes(const NodeInputs& node_inputs);
 
     Render::Device& m_device;
     PlaterScenePresenter& m_scene_presenter;
@@ -100,6 +106,7 @@ private:
     bool m_show_wireframe = false;
     size_t m_original_triangle_count = 0;
     size_t m_triangle_count = 0;
+    std::string m_mesh_name; // name of the mesh we are working on
 
     struct Phantom{
         Domain::ObjectID volume_id;
@@ -107,6 +114,9 @@ private:
     };
     using Phantoms = std::vector<Phantom>;
     Phantoms m_phantoms; // keep phantom geometries
+    Render::Material m_material;
+
+    std::vector<Scene::Node*> m_to_enable;
 };
 
 } // namespace Slic3r::App::Plater

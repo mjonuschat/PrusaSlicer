@@ -4,7 +4,6 @@
 #include <chrono>
 
 #include "Slic3r/App/Plater/PlaterSceneLayer.hpp"
-#include "Slic3r/App/Plater/GizmoNodeTag.hpp"
 #include "Slic3r/App/Plater/SceneNodeTag.hpp"
 #include "Slic3r/App/Render/Device.hpp"
 #include "Slic3r/App/Render/GeometryBuilder.hpp"
@@ -25,7 +24,6 @@ using Slic3r::ModelVolume;
 using Slic3r::ModelObject;
 using Slic3r::App::Plater::SimplifyGizmo;
 using Slic3r::App::Plater::SceneNodeTag;
-using Slic3r::App::Plater::GizmoNodeTag;
 using Slic3r::App::Render::GeometryBuilder;
 using Slic3r::App::Render::Geometry;
 using Slic3r::App::Render::Device;
@@ -46,10 +44,11 @@ using Slic3r::Domain::ObjectID;
 
 namespace {
 
-struct SimplifyNodeTag {
-    ObjectID volume_id;
-    Node* disabled_volume_node;
-};
+struct SimplifyNodeTag {};
+bool is_simplify_node(const Node* n){
+    const SimplifyNodeTag* tag = n->tag_of_type<SimplifyNodeTag>();
+    return tag != nullptr;
+}
 
 // cancel exception
 class SimplifyCanceledException : public std::exception {
@@ -118,7 +117,6 @@ ModelVolume* get_volume_by_id(const ObjectID& volume_id, Project& project) {
     }
     return nullptr;
 }
-
 } // namespace
 
 SimplifyGizmo::SimplifyGizmo(
@@ -150,28 +148,36 @@ void SimplifyGizmo::on_cycle_prepare()
 
 void SimplifyGizmo::render_imgui() 
 {
-    //ASSERT(m_activated, "Draw only activated window");
-    int flag = ImGuiWindowFlags_AlwaysAutoResize | 
-               ImGuiWindowFlags_NoResize |
-               ImGuiWindowFlags_NoCollapse;
-    
-    ImGui::Begin("Simplify", NULL, flag);
-    draw_tool();
-    ImGui::End();
-}
-
-void SimplifyGizmo::draw_tool()
-{
     const SceneInteractor& scene_interactor = m_project_interactor.scene_interactor();
     const Selection& selection = scene_interactor.selection();
     if (selection.elements.empty())
         close(); // gizmo should not be open with empty selection
 
     const Project& project = m_project_interactor.selected_project();
-    SelectedVolumes volumes = get_selected_volumes(selection, project);
-    if (volumes.empty())
-        close();
+    std::set<ObjectID> act_volume_ids = get_volume_ids(selection, project);
+    // Check selection of new volume (or change)
+    // Do not reselect object when processing
+    if (m_volume_ids != act_volume_ids) {
+        init_model(act_volume_ids);
 
+        // Start processing. If we switched from another object, process will
+        // stop the background thread and it will restart itself later.
+        process();
+        return;
+    }
+
+    //ASSERT(m_activated, "Draw only activated window");
+    int flag = ImGuiWindowFlags_AlwaysAutoResize | 
+               ImGuiWindowFlags_NoResize |
+               ImGuiWindowFlags_NoCollapse;
+    
+    ImGui::Begin(_u8L("Simplify").c_str(), NULL, flag);
+    draw_tool();
+    ImGui::End();
+}
+
+void SimplifyGizmo::draw_tool()
+{
     bool is_cancelling = false;
     bool is_worker_running = false;
     bool is_result_ready = false;
@@ -184,39 +190,20 @@ void SimplifyGizmo::draw_tool()
         progress = m_state.progress;
     }
 
-    // Whether to trigger calculation after rendering is done.
-    bool start_process = false;
-
-    std::set<ObjectID> act_volume_ids = get_volume_ids(selection, project);
-    // Check selection of new volume (or change)
-    // Do not reselect object when processing
-    if (m_volume_ids != act_volume_ids) {
-        init_model(act_volume_ids);
-
-        // Start processing. If we switched from another object, process will
-        // stop the background thread and it will restart itself later.
-        start_process = true;
-    }
-
-    ImGui::Text("Selected %zu volumes: ", volumes.size());
-    for (const ModelVolume* volume : volumes) {
-        ImGui::SameLine();
-        ImGui::Text("%s,", (volume->get_object()->name + "-" + volume->name).c_str());
-    }
-    // TODO: solve not all instances selected !!
-
     bool is_multipart = (m_volume_ids.size() > 1);
 
     ImGui::Text("%s", (_u8L("mesh name") + ":").c_str());
     ImGui::SameLine();
-    ImGui::Text("MeshName");
+    ImGui::Text("%s", m_mesh_name.c_str());
 
     ImGui::Text("%s", (_u8L("triangles") + ":").c_str());
     ImGui::SameLine();
-    ImGui::Text("%zu",m_original_triangle_count);
+    ImGui::Text("%zu", m_original_triangle_count);
 
     ImGui::Separator();
-
+        
+    // Whether to trigger calculation after rendering is done.
+    bool start_process = false;
     if (ImGui::RadioButton("##use_error", !m_configuration.use_count) && !is_multipart) {
         m_configuration.use_count = !m_configuration.use_count;
         start_process = true;
@@ -314,22 +301,17 @@ void SimplifyGizmo::on_activated() { m_activated = true; }
 void SimplifyGizmo::on_deactivated() {
     m_activated = false;
 
+    stop_worker_thread_request();
+
+    // Enable previously disabled node
+    for (Node* node : m_to_enable) // TODO: iterate over existing and enable only when exist
+        node->set_enabled(true);    // make original volume visible again
+    m_to_enable.clear();
+
     Scene::Scene& scene = m_scene_presenter.scene();
-    auto is_simplify_node = [](const Node* n) -> bool {
-        const SimplifyNodeTag* tag = n->tag_of_type<SimplifyNodeTag>();
-        return tag != nullptr;
-    };
     Node::NodeList simplify_nodes;
     scene.root().query(is_simplify_node, simplify_nodes);
 
-    // enable previusly disabled volume nodes
-    Node::NodeList enable_nodes;
-    for (Node* node : simplify_nodes)
-        enable_nodes.push_back(node->tag_of_type<SimplifyNodeTag>()->disabled_volume_node);
-    std::sort(enable_nodes.begin(), enable_nodes.end());
-    enable_nodes.erase(std::unique(enable_nodes.begin(), enable_nodes.end()),enable_nodes.end());
-    for (Node* node : enable_nodes) // TODO: iterate over existing and enable only when exist
-        node->set_enabled(true);    // make original volume visible again
     
     // remove all simplify nodes
     for (Node* node : simplify_nodes)
@@ -337,6 +319,7 @@ void SimplifyGizmo::on_deactivated() {
 
     // Free geometries
     m_phantoms.clear();
+    m_volume_ids.clear();
 }
 
 void SimplifyGizmo::close(){ m_close_fn(); }
@@ -515,25 +498,41 @@ void SimplifyGizmo::worker_finished()
     //}
 }
 
-void SimplifyGizmo::init_model(const std::set<ObjectID>& current_volume_ids)
-{    
-    m_volume_ids = std::move(current_volume_ids);
+void SimplifyGizmo::create_mesh_name() {
+    // NOTE: Need m_volume_ids to be set before calling this function.
+    if (m_volume_ids.empty()) {
+        m_mesh_name = _u8L("Empty");
+        return;
+    }
 
+    const Project& project = m_project_interactor.selected_project();
+
+    // set mesh name
+    m_mesh_name = "Phantom[cnt" + std::to_string(m_phantoms.size()) + "]:";
+    for (const ObjectID& volume_id : m_volume_ids) {
+        const ModelVolume* volume_ptr = get_volume_by_id(volume_id, project);
+        m_mesh_name += volume_ptr->get_object()->name + "-" + volume_ptr->name + ",";
+    }
+}
+
+void SimplifyGizmo::set_nodes(const NodeInputs& node_inputs)
+{
     m_phantoms.clear();
-    m_phantoms.reserve(m_volume_ids.size());
+    m_phantoms.reserve(node_inputs.size());
 
     int layer_index = int(PlaterSceneLayer::GizmoHandles);
 
-    m_triangle_count = 0;
     Scene::Scene& scene = m_scene_presenter.scene(); 
-    const Project& project = m_project_interactor.selected_project(); 
-    for (const ObjectID& volume_id : m_volume_ids) {
+    const Project& project = m_project_interactor.selected_project();
+    bool enable_ignored = true;
+    for (const NodeInput& node_input: node_inputs) {
+        const ObjectID& volume_id = node_input.volume_id;
         Node::NodeList volume_nodes;
         scene.root().query([volume_id](const Node* n) -> bool {
                 const SceneNodeTag* tag = n->tag_of_type<SceneNodeTag>();
                 return tag != nullptr && 
                     tag->volume_id == volume_id.id;
-            }, volume_nodes);
+            }, volume_nodes, enable_ignored);
         ASSERT(!volume_nodes.empty());
 
         // generate clone of goemetry (copy Node)
@@ -543,29 +542,66 @@ void SimplifyGizmo::init_model(const std::set<ObjectID>& current_volume_ids)
         m_triangle_count += its.indices.size();
         Phantom phantom{
             .volume_id = volume_id,
-            .geometry = Render::geometry_from_triangle_mesh(m_device, volume_ptr->mesh().its)
+            .geometry = Render::geometry_from_triangle_mesh(m_device, *node_input.its)
         };
         m_phantoms.emplace_back(std::move(phantom));
 
         for (Node* volume_node : volume_nodes) {
             Node * volume_parent = volume_node->parent();
-            volume_node->set_enabled(false); // make original volume invisible
+            ASSERT(!volume_node->enabled()); // make original volume invisible
 
-            SimplifyNodeTag tag{
-                .volume_id = volume_id,
-                .disabled_volume_node = volume_node};
-            Render::Material material = Render::Material{}
-                .set_shader(m_device.context().shader_manager().shader("flat"))
-                .set_uniform("uniform_color", ColorRGBA::ORANGE());
+            SimplifyNodeTag tag{};
             Scene::NodeBuilder builder{scene};
             builder
                 .set_debug_name("Simplified volume")
                 .set_transform(volume_tr)
                 .set_tag(tag)
-                .set_mesh(m_phantoms.back().geometry.get(), material, layer_index);
+                .set_mesh(m_phantoms.back().geometry.get(), m_material, layer_index);
             scene.add_child(builder.build().release(), volume_parent);
         }
     }
+}
+
+void SimplifyGizmo::init_model(const std::set<ObjectID>& current_volume_ids)
+{    
+    m_volume_ids = std::move(current_volume_ids);
+
+    //m_material = Render::Material{}
+    //    .set_shader(m_device.context().shader_manager().shader("flat"))
+    //    .set_uniform("uniform_color", ColorRGBA::ORANGE());
+
+    m_material = Render::Material{}
+        .set_shader(m_device.context().shader_manager().shader("phong"))
+        .set_uniform("uniform_color", ColorRGBA::ORANGE())
+        .set_uniform("emission_factor", 0.0f)
+        .set_transparent(false);
+
+    NodeInputs node_inputs;
+    node_inputs.reserve(m_volume_ids.size());
+
+    m_triangle_count = 0;
+    Scene::Scene& scene = m_scene_presenter.scene(); 
+    const Project& project = m_project_interactor.selected_project(); 
+    for (const ObjectID& volume_id : m_volume_ids) {
+        // generate clone of goemetry (copy Node)
+        const ModelVolume* volume_ptr = get_volume_by_id(volume_id, project);
+        node_inputs.emplace_back(volume_id, &volume_ptr->mesh().its);
+        Node::NodeList volume_nodes;
+        scene.root().query([volume_id](const Node* n) -> bool {
+                const SceneNodeTag* tag = n->tag_of_type<SceneNodeTag>();
+                return tag != nullptr && 
+                    tag->volume_id == volume_id.id;
+            }, volume_nodes);
+        ASSERT(!volume_nodes.empty());
+        for (Node* volume_node : volume_nodes) {
+            ASSERT(volume_node->enabled());
+            volume_node->set_enabled(false); // make original volume invisible
+            m_to_enable.push_back(volume_node); // save for later enable
+        }
+    }
+
+    set_nodes(node_inputs);
+    create_mesh_name();
 
     // triangle count is calculated in init model
     m_original_triangle_count = m_triangle_count;
@@ -578,52 +614,32 @@ void SimplifyGizmo::init_model(const std::set<ObjectID>& current_volume_ids)
 
 void SimplifyGizmo::update_model(const State::Data& data)
 {
+    // check that model exist -> deactivation clear m_phantoms
+    ASSERT(!m_phantoms.empty());
+        
+    // remove all simplify nodes
+    Scene::Scene& scene = m_scene_presenter.scene();
+    Node::NodeList simplify_nodes;
+    scene.root().query(is_simplify_node, simplify_nodes);
+    for (Node* node : simplify_nodes)
+        scene.remove_children(is_simplify_node, node->parent());
 
-//    // check that model exist
-//    if (m_glmodels.empty())
-//        return;
-//
-//    m_triangle_count = 0;
-//    for (const auto& item : data) {
-//        const indexed_triangle_set& its = *item.second;
-//
-//        auto it = m_glmodels.find(item.first);
-//        assert(it != m_glmodels.end());
-//
-//        GLModel& glmodel = it->second;
-//        auto color = glmodel.get_color();
-//        // when not reset it keeps old shape
-//        glmodel.reset();
-//#if SLIC3R_OPENGL_ES
-//        GLModel::Geometry init_data;
-//        init_data.format =
-//            {GLModel::Geometry::EPrimitiveType::Triangles, GLModel::Geometry::EVertexLayout::P3N3E3};
-//        init_data.reserve_vertices(3 * its.indices.size());
-//        init_data.reserve_indices(3 * its.indices.size());
-//
-//        // vertices + indices
-//        std::array<Vec3f, 3> barycentric_coords = {Vec3f::UnitX(), Vec3f::UnitY(), Vec3f::UnitZ()};
-//        unsigned int vertices_counter = 0;
-//        for (uint32_t i = 0; i < its.indices.size(); ++i) {
-//            const stl_triangle_vertex_indices face = its.indices[i];
-//            const stl_vertex vertex[3] =
-//                {its.vertices[face[0]], its.vertices[face[1]], its.vertices[face[2]]};
-//            const stl_vertex n = face_normal_normalized(vertex);
-//            for (size_t j = 0; j < 3; ++j) {
-//                init_data.add_vertex(vertex[j], n, barycentric_coords[j]);
-//            }
-//            vertices_counter += 3;
-//            init_data.add_triangle(vertices_counter - 3, vertices_counter - 2, vertices_counter - 1);
-//        }
-//
-//        glmodel.init_from(std::move(init_data));
-//#else
-//        glmodel.init_from(its);
-//#endif // SLIC3R_OPENGL_ES
-//        glmodel.set_color(color);
-//
-//        m_triangle_count += its.indices.size();
-//    }
+    // calculate triangle count
+    m_triangle_count = 0;
+    for (const auto& item : data)
+        m_triangle_count += item.second->indices.size();
+
+    // convert Data to NodeInputs
+    NodeInputs node_inputs;
+    node_inputs.reserve(data.size());
+    for (const auto& item : data) {
+        const ObjectID& volume_id = item.first;
+        const indexed_triangle_set& its = *item.second;
+        node_inputs.emplace_back(volume_id, &its);
+    }    
+
+    // Recreate simplify nodes
+    set_nodes(node_inputs);
 }
 
 /////////////////
