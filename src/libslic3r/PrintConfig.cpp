@@ -42,7 +42,7 @@
 #include "libslic3r/SLA/SupportTreeStrategies.hpp"
 #include "libslic3r/enum_bitmask.hpp"
 #include "libslic3r/libslic3r.h"
-#include "slic3r-domain/src/Slic3r/Domain/ConfigCommon.hpp"
+#include "Slic3r/Domain/ConfigCommon.hpp"
 
 namespace Slic3r {
 

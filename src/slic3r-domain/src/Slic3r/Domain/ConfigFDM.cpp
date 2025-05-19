@@ -1,5 +1,4 @@
 ﻿#include "Slic3r/Domain/ConfigFDM.hpp"
-#include "ConfigCommon.hpp"
 
 #include "Slic3r/Domain/Types.hpp"
 
@@ -3049,19 +3048,6 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
                      "User is responsible for ensuring there is no collision with the print.");
     def->mode = comAdvanced;
     SET_DEFAULT(false);
-
-    def = defs.add("slicing_mode", Enum);
-    def->location = "print_settings";
-    def->overrides_in = { "object_settings" };
-    def->label = L("Slicing Mode");
-    def->category = L("Advanced");
-    def->tooltip = L("Use \"Even-odd\" for 3DLabPrint airplane models. Use \"Close holes\" to close all holes in the model.");
-    def->enum_type = SlicingMode::Regular;
-    def->enum_values = { { int(SlicingMode::Regular),    "regular",     L("Regular") },
-                         { int(SlicingMode::EvenOdd),    "even_odd",    L("Even-odd") },
-                         { int(SlicingMode::CloseHoles), "close_holes", L("Close holes") } };
-    def->mode = comAdvanced;
-    SET_DEFAULT(SlicingMode::Regular);
 
     def = defs.add("support_material", Bool);
     def->location = "print_settings";

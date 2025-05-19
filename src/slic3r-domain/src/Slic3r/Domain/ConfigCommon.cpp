@@ -1,4 +1,4 @@
-﻿#include "ConfigCommon.hpp"
+﻿#include "Slic3r/Domain/ConfigCommon.hpp"
 #include "Slic3r/Domain/Config.hpp"
 #include "Slic3r/Domain/Types.hpp"
 
@@ -137,6 +137,8 @@ void init_common_fdm_sla_config_items(ConfigDefinitions& defs, const std::string
     def->location = technology == "FDM" ? "print_settings" : "sla_print_settings";
     if (technology == "FDM")
         def->overrides_in = {"object_settings", "volume_settings" };
+    else
+        def->overrides_in = { "sla_object_settings" };
     def->label = L("Slice gap closing radius");
     def->category = L("Advanced");
     def->tooltip = L("Cracks smaller than 2x gap closing radius are being filled during the triangle mesh slicing. "
@@ -146,6 +148,23 @@ void init_common_fdm_sla_config_items(ConfigDefinitions& defs, const std::string
     def->mode = comAdvanced;
     SET_DEFAULT(0.049);
 
+    def = defs.add("slicing_mode", Enum);
+    if (technology == "FDM") {
+        def->location = "print_settings";
+        def->overrides_in = { "object_settings" };
+    } else {
+        def->location = "sla_print_settings";
+        def->overrides_in = { "sla_object_settings" };
+    }
+    def->label = L("Slicing Mode");
+    def->category = L("Advanced");
+    def->tooltip = L("Use \"Even-odd\" for 3DLabPrint airplane models. Use \"Close holes\" to close all holes in the model.");
+    def->enum_type = SlicingMode::Regular;
+    def->enum_values = { { int(SlicingMode::Regular),    "regular",     L("Regular") },
+                         { int(SlicingMode::EvenOdd),    "even_odd",    L("Even-odd") },
+                         { int(SlicingMode::CloseHoles), "close_holes", L("Close holes") } };
+    def->mode = comAdvanced;
+    SET_DEFAULT(SlicingMode::Regular);
 }
 
 }

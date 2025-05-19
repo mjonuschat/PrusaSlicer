@@ -3872,7 +3872,9 @@ namespace Slic3rLegacy {
             if (!obj->name.empty())                    
                 add_metadata(stream, 2, MetadataType::object, "name", obj->name);
             // stores object's config data
-            const Slic3rLegacy::DynamicPrintConfig &config = Biz::convert_box_to_dynamic_print_config(obj->object_settings);
+            Slic3rLegacy::DynamicPrintConfig config = Biz::convert_box_to_dynamic_print_config(obj->object_settings);
+            const Slic3rLegacy::DynamicPrintConfig &config_sla = Biz::convert_box_to_dynamic_print_config(obj->object_settings_sla);
+            config.apply(config_sla);
             for (const std::string& key : config.keys())
                 add_metadata(stream, 2, MetadataType::object, key, config.opt_serialize(key));
 

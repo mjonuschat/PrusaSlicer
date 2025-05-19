@@ -1,5 +1,4 @@
 ﻿#include "Slic3r/Domain/ConfigSLA.hpp"
-#include "ConfigCommon.hpp"
 
 #include "Slic3r/Domain/Types.hpp"
 
@@ -331,6 +330,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("faded_layers", Int);
     def->location = "sla_print_settings";
+    def->overrides_in = { "sla_object_settings" };
     def->label = L("Faded layers");
     def->tooltip = L("Number of the layers needed for the exposure time fade from initial exposure time to the exposure time");
     def->min = 3;
@@ -463,6 +463,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("supports_enable", Bool);
     def->location = "sla_print_settings";
+    def->overrides_in = { "sla_object_settings" };
     def->label = L("Generate supports");
     def->category = L("Supports");
     def->tooltip = L("Generate supports for the models");
@@ -471,6 +472,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("support_tree_type", Enum);
     def->location = "sla_print_settings";
+    def->overrides_in = { "sla_object_settings" };
     def->label = L("Support tree type");
     def->tooltip = L("Support tree building strategy");
     def->enum_type = sla::SupportTreeType::Default;
@@ -484,6 +486,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("support_enforcers_only", Bool);
     def->location = "sla_print_settings";
+    def->overrides_in = { "sla_object_settings" };
     def->label = L("Support only in enforced regions");
     def->category = L("Supports");
     def->tooltip = L("Only create support if it lies in a support enforcer.");
@@ -492,6 +495,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("support_points_density_relative", Int);
     def->location = "sla_material_settings";
+    def->overrides_in = { "sla_object_settings" };
     def->label = L("Support points density");
     def->category = L("Supports");
     def->tooltip = L("This is a relative measure of support points density.");
@@ -501,6 +505,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("pad_enable", Bool);
     def->location = "sla_print_settings";
+    def->overrides_in = { "sla_object_settings" };
     def->label = L("Use pad");
     def->category = L("Pad");
     def->tooltip = L("Add a pad underneath the supported model");
@@ -509,6 +514,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("pad_wall_thickness", Double);
     def->location = "sla_print_settings";
+    def->overrides_in = { "sla_object_settings" };
     def->label = L("Pad wall thickness");
     def->category = L("Pad");
      def->tooltip = L("The thickness of the pad and its optional cavity walls.");
@@ -520,6 +526,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("pad_wall_height", Double);
     def->location = "sla_print_settings";
+    def->overrides_in = { "sla_object_settings" };
     def->label = L("Pad wall height");
     def->tooltip = L("Defines the pad cavity depth. Set to zero to disable the cavity. "
                      "Be careful when enabling this feature, as some resins may "
@@ -535,6 +542,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     
     def = defs.add("pad_brim_size", Double);
     def->location = "sla_print_settings";
+    def->overrides_in = { "sla_object_settings" };
     def->label = L("Pad brim size");
     def->tooltip = L("How far should the pad extend around the contained geometry");
     def->category = L("Pad");
@@ -547,6 +555,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("pad_max_merge_distance", Double);
     def->location = "sla_print_settings";
+    def->overrides_in = { "sla_object_settings" };
     def->label = L("Max merge distance");
     def->category = L("Pad");
      def->tooltip = L("Some objects can get along with a few smaller pads "
@@ -570,6 +579,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("pad_wall_slope", Double);
     def->location = "sla_print_settings";
+    def->overrides_in = { "sla_object_settings" };
     def->label = L("Pad wall slope");
     def->category = L("Pad");
     def->tooltip = L("The slope of the pad wall relative to the bed plane. "
@@ -582,6 +592,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("pad_around_object", Bool);
     def->location = "sla_print_settings";
+    def->overrides_in = { "sla_object_settings" };
     def->label = L("Pad around object");
     def->category = L("Pad");
     def->tooltip = L("Create pad around object and ignore the support elevation");
@@ -590,6 +601,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     
     def = defs.add("pad_around_object_everywhere", Bool);
     def->location = "sla_print_settings";
+    def->overrides_in = { "sla_object_settings" };
     def->label = L("Pad around object everywhere");
     def->category = L("Pad");
     def->tooltip = L("Force pad around object everywhere");
@@ -598,6 +610,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("pad_object_gap", Double);
     def->location = "sla_print_settings";
+    def->overrides_in = { "sla_object_settings" };
     def->label = L("Pad object gap");
     def->category = L("Pad");
     def->tooltip  = L("The gap between the object bottom and the generated "
@@ -610,6 +623,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("pad_object_connector_stride", Double);
     def->location = "sla_print_settings";
+    def->overrides_in = { "sla_object_settings" };
     def->label = L("Pad object connector stride");
     def->category = L("Pad");
     def->tooltip = L("Distance between two connector sticks which connect the object and the generated pad.");
@@ -620,6 +634,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("pad_object_connector_width", Double);
     def->location = "sla_print_settings";
+    def->overrides_in = { "sla_object_settings" };
     def->label = L("Pad object connector width");
     def->category = L("Pad");
     def->tooltip  = L("Width of the connector sticks which connect the object and the generated pad.");
@@ -630,6 +645,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("pad_object_connector_penetration", Double);
     def->location = "sla_print_settings";
+    def->overrides_in = { "sla_object_settings" };
     def->label = L("Pad object connector penetration");
     def->category = L("Pad");
     def->tooltip  = L(
@@ -641,6 +657,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     
     def = defs.add("hollowing_enable", Bool);
     def->location = "sla_print_settings";
+    def->overrides_in = { "sla_object_settings" };
     def->label = L("Enable hollowing");
     def->category = L("Hollowing");
     def->tooltip = L("Hollow out a model to have an empty interior");
@@ -649,6 +666,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     
     def = defs.add("hollowing_min_thickness", Double);
     def->location = "sla_print_settings";
+    def->overrides_in = { "sla_object_settings" };
     def->label = L("Wall thickness");
     def->category = L("Hollowing");
     def->tooltip  = L("Minimum wall thickness of a hollowed model.");
@@ -660,6 +678,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     
     def = defs.add("hollowing_quality", Double);
     def->location = "sla_print_settings";
+    def->overrides_in = { "sla_object_settings" };
     def->label = L("Accuracy");
     def->category = L("Hollowing");
     def->tooltip  = L("Performance vs accuracy of calculation. Lower values may produce unwanted artifacts.");
@@ -670,6 +689,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     
     def = defs.add("hollowing_closing_distance", Double);
     def->location = "sla_print_settings";
+    def->overrides_in = { "sla_object_settings" };
     def->label = L("Closing distance");
     def->category = L("Hollowing");
     def->tooltip  = L(
@@ -909,7 +929,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     for (const std::string& prefix : { "", "branching" }) {
         def = defs.add(prefix + "support_head_front_diameter", Double);
         def->location = "sla_print_settings";
-        def->overrides_in = { "sla_material_settings" };
+        def->overrides_in = { "sla_material_settings", "sla_object_settings" };
         def->label = L("Pinhead front diameter");
         def->category = L("Supports");
         def->tooltip = L("Diameter of the pointing side of the head");
@@ -920,7 +940,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
 
         def = defs.add(prefix + "support_head_penetration", Double);
         def->location = "sla_print_settings";
-        def->overrides_in = { "sla_material_settings" };
+        def->overrides_in = { "sla_material_settings", "sla_object_settings" };
         def->label = L("Head penetration");
         def->category = L("Supports");
         def->tooltip = L("How much the pinhead has to penetrate the model surface");
@@ -931,7 +951,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
 
         def = defs.add(prefix + "support_head_width", Double);
         def->location = "sla_print_settings";
-        def->overrides_in = { "sla_material_settings" };
+        def->overrides_in = { "sla_material_settings", "sla_object_settings" };
         def->label = L("Pinhead width");
         def->category = L("Supports");
         def->tooltip = L("Width from the back sphere center to the front sphere center");
@@ -943,7 +963,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
 
         def = defs.add(prefix + "support_pillar_diameter", Double);
         def->location = "sla_print_settings";
-        def->overrides_in = { "sla_material_settings" };
+        def->overrides_in = { "sla_material_settings", "sla_object_settings" };
         def->label = L("Pillar diameter");
         def->category = L("Supports");
         def->tooltip = L("Diameter in mm of the support pillars");
@@ -955,6 +975,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
 
         def = defs.add(prefix + "support_small_pillar_diameter_percent", Percent);
         def->location = "sla_print_settings";
+        def->overrides_in = { "sla_object_settings" };
         def->label = L("Small pillar diameter percent");
         def->category = L("Supports");
         def->tooltip = L("The percentage of smaller pillars compared to the normal pillar diameter "
@@ -967,6 +988,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
 
         def = defs.add(prefix + "support_max_bridges_on_pillar", Int);
         def->location = "sla_print_settings";
+        def->overrides_in = { "sla_object_settings" };
         def->label = L("Max bridges on a pillar");
         def->tooltip = L(
             "Maximum number of bridges that can be placed on a pillar. Bridges "
@@ -981,6 +1003,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
 
         def = defs.add(prefix + "support_max_weight_on_model", Double);
         def->location = "sla_print_settings";
+        def->overrides_in = { "sla_object_settings" };
         def->label = L("Max weight on model");
         def->category = L("Supports");
         def->tooltip = L(
@@ -993,6 +1016,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
 
         def = defs.add(prefix + "support_pillar_connection_mode", Enum);
         def->location = "sla_print_settings";
+        def->overrides_in = { "sla_object_settings" };
         def->label = L("Pillar connection mode");
         def->tooltip = L("Controls the bridge type between two neighboring pillars."
             " Can be zig-zag, cross (double zig-zag) or dynamic which"
@@ -1009,6 +1033,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
 
         def = defs.add(prefix + "support_buildplate_only", Bool);
         def->location = "sla_print_settings";
+        def->overrides_in = { "sla_object_settings" };
         def->label = L("Support on build plate only");
         def->category = L("Supports");
         def->tooltip = L("Only create support if it lies on a build plate. Don't create support on a print.");
@@ -1017,6 +1042,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
 
         def = defs.add(prefix + "support_pillar_widening_factor", Double);
         def->location = "sla_print_settings";
+        def->overrides_in = { "sla_object_settings" };
         def->label = L("Pillar widening factor");
         def->category = L("Supports");
         def->tooltip =
@@ -1031,6 +1057,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
 
         def = defs.add(prefix + "support_base_diameter", Double);
         def->location = "sla_print_settings";
+        def->overrides_in = { "sla_object_settings" };
         def->label = L("Support base diameter");
         def->category = L("Supports");
         def->tooltip = L("Diameter in mm of the pillar base");
@@ -1042,6 +1069,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
 
         def = defs.add(prefix + "support_base_height", Double);
         def->location = "sla_print_settings";
+        def->overrides_in = { "sla_object_settings" };
         def->label = L("Support base height");
         def->category = L("Supports");
         def->tooltip = L("The height of the pillar base cone");
@@ -1052,6 +1080,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
 
         def = defs.add(prefix + "support_base_safety_distance", Double);
         def->location = "sla_print_settings";
+        def->overrides_in = { "sla_object_settings" };
         def->label = L("Support base safety distance");
         def->category = L("Supports");
         def->tooltip = L(
@@ -1066,6 +1095,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
 
         def = defs.add(prefix + "support_critical_angle", Double);
         def->location = "sla_print_settings";
+        def->overrides_in = { "sla_object_settings" };
         def->label = L("Critical angle");
         def->category = L("Supports");
         def->tooltip = L("The default angle for connecting support sticks and junctions.");
@@ -1077,6 +1107,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
 
         def = defs.add(prefix + "support_max_bridge_length", Double);
         def->location = "sla_print_settings";
+        def->overrides_in = { "sla_object_settings" };
         def->label = L("Max bridge length");
         def->category = L("Supports");
         def->tooltip = L("The max length of a bridge");
@@ -1090,6 +1121,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
 
         def = defs.add(prefix + "support_max_pillar_link_distance", Double);
         def->location = "sla_print_settings";
+        def->overrides_in = { "sla_object_settings" };
         def->label = L("Max pillar linking distance");
         def->category = L("Supports");
         def->tooltip = L("The max distance of two pillars to get linked with each other."
@@ -1101,6 +1133,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
 
         def = defs.add(prefix + "support_object_elevation", Double);
         def->location = "sla_print_settings";
+        def->overrides_in = { "sla_object_settings" };
         def->label = L("Object elevation");
         def->category = L("Supports");
         def->tooltip = L("How much the supports should lift up the supported object. "

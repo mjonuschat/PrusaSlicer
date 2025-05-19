@@ -371,6 +371,7 @@ std::size_t ConfigItem::hash() const {
         case CIT::Points: return hash(this->get<std::vector<Vec2d>>());
         case CIT::Enums: return hash(this->get_enums_as_ints());
         case CIT::None: PANIC("None ConfigItem can't be hashed!");
+        default: PANIC("Unhandled ConfigItem");
     }
 }
 

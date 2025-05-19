@@ -2,8 +2,7 @@
 
 #include "Slic3r/Domain/Config.hpp"
 #include "Slic3r/Domain/GCodeFlavor.hpp"
-
-#include "Slic3r/Domain/GCodeFlavor.hpp"
+#include "Slic3r/Domain/ConfigCommon.hpp"
 
 
 namespace Slic3r::Domain {
@@ -81,12 +80,6 @@ enum class ScarfSeamPlacement {
 };
 enum class DraftShield {
     dsDisabled, dsLimited, dsEnabled
-};
-enum class SlicingMode
-{
-    Regular, // Regular, applying ClipperLib::pftNonZero rule when creating ExPolygons.  
-    EvenOdd, // Compatible with 3DLabPrint models, applying ClipperLib::pftEvenOdd rule when creating ExPolygons.
-    CloseHoles, // Orienting all contours CCW, thus closing all holes.
 };
 enum class SupportMaterialPattern {
     smpRectilinear, smpRectilinearGrid, smpHoneycomb,
