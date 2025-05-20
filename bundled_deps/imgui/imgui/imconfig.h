@@ -287,6 +287,7 @@ namespace ImGui
     const wchar_t SceneMap                 = 0x283D;
     const wchar_t AddBedIcon               = 0x283E;
     const wchar_t AllBeds                  = 0x283F;
+    const wchar_t SettingsSet              = 0x2840;
     // icon for help
     const wchar_t MouseLeft                = 0x2850;
     const wchar_t MouseRight               = 0x2851;

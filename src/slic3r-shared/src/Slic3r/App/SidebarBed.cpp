@@ -1,60 +1,57 @@
 #include "Slic3r/App/SidebarBed.hpp"
+#include "Slic3r/App/Yoga/Text.hpp"
+#include "Slic3r/App/Yoga/PrinterSettingsButton.hpp"
+#include "Slic3r/App/Yoga/MaterialSettingsButton.hpp"
 #include "Slic3r/App/Imgui/ImguiExtension.hpp"
 
 #include <imgui/imgui_internal.h>
 
 namespace Slic3r::App {
 
-static bool PrinterButton(
-    wchar_t icon, float width, const std::string& model, const std::string& name, bool is_toggled
-)
+SidebarBed::SidebarBed() : Window("sidebar_bed")
 {
-    ImVec2 pos = ImGui::GetCursorScreenPos();
-    float rounding = GImGui->Style.WindowRounding;
-    ImVec2 button_size(width, 60.f);
-    ImRect button_bb(pos, pos + button_size);
+    set_min_size({ 240, 60 });
+    set_orientation(Yoga::Orientation::Vertical);
+    set_gap(10);
 
-    ImDrawList* draw_list = ImGui::GetWindowDrawList();
+    m_bed_name = emplace_back<Yoga::Text>("Bed 1");
+    m_bed_name->set_font_type(Render::ImguiFontType::Bold);
 
-    // Check if the button is clicked or hovered
-    bool hovered = ImGui::IsMouseHoveringRect(button_bb.Min, button_bb.Max);
-    bool pressed = hovered && ImGui::IsMouseClicked(0);
+    m_printer = emplace_back<Yoga::PrinterSettingsButton>("Printer Tooltip");
+    m_printer->set_icon(ImGui::PrinterNEXT);
+    m_printer->set_printer_name("NEXT/Elsa");
+    m_printer->set_preset_name("Prusa NEXT 1T");
+    m_printer->set_visible_cog(true);
 
-    ImU32 col = ImGui::GetColorU32(
-        hovered ? (is_toggled ? ImGuiCol_ButtonActive : ImGuiCol_ButtonHovered)
-                : (is_toggled ? ImGuiCol_ButtonActive : ImGuiCol_Button)
-    );
-    draw_list
-        ->AddRectFilled(button_bb.Min, button_bb.Max, col, rounding, ImDrawFlags_RoundCornersAll);
-    button_bb.Expand(-10.f);
+    m_printer->callbacks().action = []() {
+        // ToDo open first settings dialog
+    };
 
-    // Render icon in the center of the button
-    ImGui::SetCursorScreenPos(button_bb.Min);
-    Imgui::icon_image(icon, ImVec2(40.f, 40.f));
+    m_printer->on_cog() = []() {
+        // ToDo open some other settings dialog
+    };
 
-    button_bb.Min.x += 50.f;
-    draw_list
-        ->AddText(button_bb.Min, ImGui::GetColorU32(ImGuiCol_Text), (model + " / " + name).c_str());
+    Item* materials_wrapper = emplace_back<Yoga::Item>();
+    materials_wrapper->set_orientation(Yoga::Orientation::Vertical); 
+    materials_wrapper->set_gap(5);
 
-    if (hovered) {
-        ImGui::SetCursorScreenPos(button_bb.Max - ImVec2(50.f, 34.f));
-        Imgui::icon_button(ImGui::ConfigContainer, ImVec2(), "printer");
+    // just for test
+    for (auto [color, name, nozzle] : std::initializer_list<std::tuple<ImColor, std::string, float>>{
+        {{250, 100, 24 }, "Prusament PLA" , 0.6f},
+        {{189, 1,   60 }, "Filamentum PLA", 0.4f},
+        {{112, 193, 64 }, "Prusament PETG", 0.4f},
+        {{225, 249, 104}, "Filamentum PLA", 0.6f},
+    }) {
+        Yoga::MaterialSettingsButton* filament = materials_wrapper->emplace_back<Yoga::MaterialSettingsButton>(m_filaments.size()+1, "Filament 1 TT");
+        filament->set_color(color);
+        filament->set_material_name(name);
+        filament->set_nozzle(nozzle);
+        filament->callbacks().action = []() {
+            // ToDo open first settings dialog
+        };
 
-        ImGui::SetCursorScreenPos(button_bb.Max - ImVec2(20.f, 34.f));
-        Imgui::icon_button(ImGui::PrintIconMarker, ImVec2(), "settings");
+        m_filaments.push_back(filament);
     }
-
-    return pressed;
-}
-
-SidebarBed::SidebarBed() : Window("sidebar_bed") {
-    set_min_size({240, 60});
-}
-
-void SidebarBed::render_body(Domain::Vec2f pos, Domain::Vec2f size)
-{    
-    ImGui::Text("Bed");
-    PrinterButton(ImGui::PrinterNEXT, size.x(), "NEXT", "Elsa", false);
 }
 
 } // namespace Slic3r::App

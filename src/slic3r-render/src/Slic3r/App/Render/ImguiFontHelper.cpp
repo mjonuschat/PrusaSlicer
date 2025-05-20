@@ -112,6 +112,7 @@ static const std::vector<std::pair<const wchar_t, std::string>> FONT_ICONS = {
     { ImGui::AddBedIcon                   , "add_bed"                        },
     { ImGui::OverridesMarker              , "overrides_marker"               },
     { ImGui::AllBeds                      , "all_beds"                       },
+    { ImGui::SettingsSet                  , "settings_set"                   },
 };
 
 static const std::vector<std::pair<const wchar_t, std::string>> FONT_ICONS_MEDIUM = {

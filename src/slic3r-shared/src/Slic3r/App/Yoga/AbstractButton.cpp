@@ -31,17 +31,21 @@ void AbstractButton::process_events(Vec2f pos, Vec2f size)
 
     if (m_hovered != hovered) {
         m_hovered = hovered;
+        hovered_updated_internal();
         if (m_callbacks.hovered_changed) {
             m_callbacks.hovered_changed(m_hovered);
         }
+        if (!m_tooltip->text().empty())
+            m_tooltip->set_visible(m_hovered);
     }
 
     if (pressed) {
-        if (m_callbacks.action) {
-            m_callbacks.action();
-        }
         if (m_checkable) {
             set_checked(!m_checked);
+            checked_updated_internal();
+        }
+        if (m_callbacks.action) {
+            m_callbacks.action();
         }
     }
 

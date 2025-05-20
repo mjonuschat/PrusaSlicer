@@ -45,6 +45,10 @@ public:
     bool hovered() const;
 
 protected:
+    virtual void checked_updated_internal() {}
+    virtual void hovered_updated_internal() {}
+
+protected:
     Tooltip* m_tooltip = nullptr;
 
     bool m_has_arrow = false;

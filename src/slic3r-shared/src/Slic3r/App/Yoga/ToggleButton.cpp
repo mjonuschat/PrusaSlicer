@@ -30,7 +30,6 @@ ToggleButton::ToggleButton(const std::string& label, const std::string& tooltip/
 void ToggleButton::process_events(Vec2f pos, Vec2f size)
 {
     AbstractButton::process_events(pos, size);
-    m_tooltip->set_visible(m_hovered);
     m_toggler->set_checked(m_checked);
 }
 

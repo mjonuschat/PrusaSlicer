@@ -194,6 +194,10 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Yoga/Toggler.hpp
         src/Slic3r/App/Yoga/ToggleButton.cpp
         include/Slic3r/App/Yoga/ToggleButton.hpp
+        src/Slic3r/App/Yoga/PrinterSettingsButton.cpp
+        include/Slic3r/App/Yoga/PrinterSettingsButton.hpp
+        src/Slic3r/App/Yoga/MaterialSettingsButton.cpp
+        include/Slic3r/App/Yoga/MaterialSettingsButton.hpp
 
         src/Slic3r/App/Imgui/DoubleSlider.cpp
         include/Slic3r/App/Imgui/DoubleSlider.hpp
