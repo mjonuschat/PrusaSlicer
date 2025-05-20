@@ -14,6 +14,9 @@ const std::string UNIFORM_VIEW_MATRIX = "view_matrix";
 const std::string UNIFORM_PROJECTION_MATRIX = "projection_matrix";
 const std::string UNIFORM_VIEW_NORMAL_MATRIX = "view_normal_matrix";
 const std::string UNIFORM_VOLUME_WORLD_MATRIX = "volume_world_matrix";
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+const std::string UNIFORM_VIEWPORT_MATRIX = "viewport_matrix";
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 void MeshRenderNodeComponent::render(
     const Node& node,
@@ -42,6 +45,15 @@ void MeshRenderNodeComponent::render(
     material.set_uniform(UNIFORM_VIEW_NORMAL_MATRIX, normal);
     Matrix4f vol_world = node.world_transform().cast<float>();
     material.set_uniform(UNIFORM_VOLUME_WORLD_MATRIX, vol_world);
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    const Render::Rect& viewport = camera.viewport();
+    float half_w = 0.5f * float(viewport.width);
+    float half_h = 0.5f * float(viewport.height);
+    Matrix4f viewport_matrix;
+    viewport_matrix << half_w, 0.0f, 0.0f, half_w, 0.0f, half_h, 0.0f, half_h, 0.0f, 0.0f, 1.0f,
+        0.0f, 0.0f, 0.0f, 0.0f, 1.0f;
+    material.set_uniform(UNIFORM_VIEWPORT_MATRIX, viewport_matrix);
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
     set_uniforms(lights, material);
 
