@@ -45,6 +45,10 @@ public:
     TabsBarCtrl::Button* new_button() {
         return GetTopBarCtrl()->new_btn;
     }
+
+    TabsBarCtrl::Button* load_button() {
+        return GetTopBarCtrl()->load_btn;
+    }
     
     TabsBarCtrl::Button* save_button() {
         return GetTopBarCtrl()->save_btn;

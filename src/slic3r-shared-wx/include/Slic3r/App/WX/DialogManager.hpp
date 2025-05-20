@@ -8,7 +8,8 @@ class DialogManager : public IDialogManager{
 public:
     DialogManager() = default;
 
-    void show_save_file_dialog(
+    void show_file_dialog(
+        FileDialogType dialog_type,
         const std::string& dialog_title, 
         const boost::filesystem::path& default_folder,  
         const std::string& default_file_name, 

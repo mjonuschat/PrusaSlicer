@@ -7,7 +7,7 @@ bool Selection::is_valid() const
 {
     const bool require_zero_vol_id = mode == SelectionMode::Instance;
     return std::all_of(elements.begin(), elements.end(), [require_zero_vol_id](const auto& e) {
-        return require_zero_vol_id == (e.volume_id == 0);
+        return require_zero_vol_id == (e.volume_id == 0) && e.instance_id != 0;
     });
 }
 

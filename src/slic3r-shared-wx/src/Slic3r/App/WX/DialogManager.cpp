@@ -8,7 +8,8 @@
 
 namespace Slic3r::App::WX {
 
-void DialogManager::show_save_file_dialog(
+void DialogManager::show_file_dialog(
+        FileDialogType dialog_type,
         const std::string& dialog_title, 
         const boost::filesystem::path& default_folder,  
         const std::string& default_file_name, 
@@ -18,12 +19,24 @@ void DialogManager::show_save_file_dialog(
 {
     ASSERT(callback);
 
+    int flags = 0;
+
+    switch (dialog_type) {
+    case FileDialogType::Open:
+        flags |= wxFD_OPEN;
+        break;
+
+        case FileDialogType::Save:
+        flags |= wxFD_SAVE | wxFD_OVERWRITE_PROMPT;
+        break;
+    }
+
     wxFileDialog dlg(nullptr,
         from_u8(dialog_title),
         from_u8(default_folder.string()),
         from_u8(default_file_name),
         from_u8(wildcards),
-        wxFD_SAVE | wxFD_OVERWRITE_PROMPT
+        flags
     );
 
     if (dlg.ShowModal() != wxID_OK) {

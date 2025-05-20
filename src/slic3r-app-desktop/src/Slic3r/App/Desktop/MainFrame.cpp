@@ -10,6 +10,7 @@
 #include "Slic3r/App/Desktop/TopBar.hpp"
 
 #include <Slic3r/Biz/Platform/Termination.hpp>
+#include <Slic3r/App/IDialogManager.hpp>
 #include <Slic3r/App/WX/WidgetsConfig.hpp>
 #include <Slic3r/App/WX/StringConversions.hpp>
 #include <Slic3r/App/WX/format.hpp>
@@ -107,10 +108,14 @@ static void add_experimets_page(TabsBar* top_bar, MainFrame* main_frame)
 
 MainFrame::MainFrame(
     Domain::Workbench& workbench,
-    Biz::Preset::PresetInteractor& preset_interactor
+    Biz::ProjectInteractor& project_interactor
 )
-    // PrusaSlicer as a window title here is temporary. When being changed - mind that AppInstanceCheck on Windows expects "PrusaSlicer" in the title.
-    : wxFrame(nullptr, wxID_ANY, L"PrusaSlicer"), m_workbench(workbench), m_preset_interactor(preset_interactor)
+    // PrusaSlicer as a window title here is temporary. When being changed - mind that
+    // AppInstanceCheck on Windows expects "PrusaSlicer" in the title.
+    : wxFrame(nullptr, wxID_ANY, L"PrusaSlicer")
+    , m_workbench(workbench)
+    , m_project_interactor(project_interactor)
+    , m_preset_interactor(project_interactor.preset_interactor())
 {
     localization().add_listener<ILanguageChangedListener>(this);
     auto em = w_config()->em_unit();
@@ -327,7 +332,7 @@ void MainFrame::init_printer_page()
     m_left_bar->AddNewPage(printers_page, from_u8(L("Printers")), "lb_printers");
 }
 
-void Slic3r::App::Desktop::MainFrame::init_projects_page()
+void MainFrame::init_projects_page()
 {
     wxPanel* projects_page = tmp_panel(m_left_bar, from_u8("Here will be shown all projects"));
     m_left_bar->AddNewPage(projects_page, from_u8(L("Projects")), "lb_projects");
@@ -349,7 +354,7 @@ void MainFrame::init_slicing_page()
     complete_and_bind_top_bar();
 }
 
-void Slic3r::App::Desktop::MainFrame::init_printables_page()
+void MainFrame::init_printables_page()
 {
     wxPanel* printables_page = tmp_panel(m_left_bar, from_u8("Here will be shown Printables web page"));
     m_left_bar->AddNewPage(printables_page, from_u8(L("Printables")), "lb_printables");
@@ -376,6 +381,10 @@ void MainFrame::init_top_bar()
 
     m_top_bar->new_button()->Bind(wxEVT_BUTTON, [](wxCommandEvent&) {
         wxMessageBox(from_u8("\"New\" button is Clicked"), WX::from_u8("TEST"), wxICON_INFORMATION);
+    });
+
+    m_top_bar->load_button()->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) {
+        load_project();
     });
 
     m_top_bar->save_button()->Bind(wxEVT_BUTTON, [](wxCommandEvent&) {
@@ -481,5 +490,22 @@ void MainFrame::update_canvas_ui_settings()
     m_canvas->set_font_size(float(w_config()->normal_font().GetPointSize()) * this->GetDPIScaleFactor());
     m_canvas->set_font_global_scale(this->GetDPIScaleFactor());
 }
+
+void MainFrame::load_project()
+{
+    auto& dlg_manager = DialogManagerProvider::instance().get();
+
+
+    IDialogManager::FileCallback callback = [this](bool success, const boost::filesystem::path& file_path)
+    {
+        if (success)
+            m_project_interactor.load_project(file_path.string());
+    };
+
+    dlg_manager.show_file_dialog(FileDialogType::Open, "Open Project", "", "", "*.3mf", callback);
+
+
+}
+
 
 }

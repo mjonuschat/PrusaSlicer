@@ -86,7 +86,7 @@ bool DesktopApp::OnInit()
         std::make_unique<Plater::PlaterRenderModule>(m_workbench, *m_project_interactor);
     m_preview_module =
         std::make_unique<Preview::PreviewRenderModule>(m_workbench, *m_project_interactor);
-    DialogManagerSingleton::instance().set_dialog_manager_implementation(std::make_unique<WX::DialogManager>());
+    DialogManagerProvider::instance().set_dialog_manager_implementation(std::make_unique<WX::DialogManager>());
 
     const bool is_dark = true;
     const bool is_sys_menu = true;
@@ -94,7 +94,7 @@ bool DesktopApp::OnInit()
 
     m_project_interactor->new_project();
 
-    m_main_frame = new MainFrame(m_workbench, m_project_interactor->preset_interactor());
+    m_main_frame = new MainFrame(m_workbench, *m_project_interactor);
     m_project_interactor->init_app_instance_message_handler(m_main_frame->GetHandle());
     Platform::WX::WXRenderCanvas& canvas = m_main_frame->get_render_canvas();
     Biz::Platform::PlatformServices::instance().set_render_request_handler(&canvas);

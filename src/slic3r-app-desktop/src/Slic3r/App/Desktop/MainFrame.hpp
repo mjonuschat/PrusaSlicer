@@ -8,7 +8,7 @@
 #include "Slic3r/Domain/Workbench.hpp"
 #include "Slic3r/Domain/Bed.hpp"
 #include "Slic3r/Biz/Preset/PresetInteractor.hpp"
-#include "Slic3r/Biz/Preset/PresetInteractorConfigContainerContext.hpp"
+#include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/App/Desktop/TabsBarMenus.hpp"
 
 namespace Slic3r::App::Desktop::Preset {
@@ -24,7 +24,7 @@ class MainFrame : public wxFrame, public ILanguageChangedListener {
 public:
     MainFrame(
         Domain::Workbench& workbench,
-        Biz::Preset::PresetInteractor& preset_interactor
+        Biz::ProjectInteractor& project_interactor
     );
     ~MainFrame();
 
@@ -61,8 +61,11 @@ private:
 
     void on_close(wxCloseEvent& event);
 
+    void load_project();
+
 private:
     Domain::Workbench& m_workbench;
+    Biz::ProjectInteractor& m_project_interactor;
     Biz::Preset::PresetInteractor& m_preset_interactor;
     std::unique_ptr<Platform::WX::WXRenderCanvas> m_canvas;
 

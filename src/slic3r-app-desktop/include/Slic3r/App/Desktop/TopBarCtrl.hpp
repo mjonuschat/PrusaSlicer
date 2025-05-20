@@ -25,6 +25,7 @@ private:
 
 public:
     Button* new_btn             { nullptr };
+    Button* load_btn             { nullptr };
     Button* save_btn            { nullptr };
     Button* hide_sidebars_btn   { nullptr };
 

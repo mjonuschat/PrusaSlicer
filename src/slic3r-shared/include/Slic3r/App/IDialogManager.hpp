@@ -6,29 +6,39 @@
 
 namespace Slic3r::App {
 
+
+enum class FileDialogType
+{
+    Open,
+    Save
+};
+
 class IDialogManager {
 public:
+    using FileCallback = std::function<void(bool result, const boost::filesystem::path& file_path)>;
+
     IDialogManager() = default;
     virtual ~IDialogManager() = default;
 
-    virtual void show_save_file_dialog(
+    virtual void show_file_dialog(
+        FileDialogType dialog_type,
         const std::string& dialog_title, 
         const boost::filesystem::path& default_folder,  
         const std::string& default_file_name, 
         const std::string& wildcards,
-        const std::function<void(bool result, const boost::filesystem::path& file_path)>& callback
+        const FileCallback& callback
     ) = 0;
 };
 
 /**
   * Singleton class to manage the dialog manager implementation.
-  * Creation of any modal dialog from Slic3r::App should be done by calling DialogManagerSingleton.get() and implemented methods in IDialogManager.
+  * Creation of any modal dialog from Slic3r::App should be done by calling DialogManagerProvider.get() and implemented methods in IDialogManager.
   */
-class DialogManagerSingleton {
+class DialogManagerProvider {
 public:
-    static DialogManagerSingleton& instance()
+    static DialogManagerProvider& instance()
     {
-        static DialogManagerSingleton instance;
+        static DialogManagerProvider instance;
         return instance;
     }
 

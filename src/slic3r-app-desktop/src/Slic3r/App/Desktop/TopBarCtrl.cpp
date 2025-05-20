@@ -36,6 +36,10 @@ TopBarCtrl::TopBarCtrl(wxWindow* parent, int orient, TabsBarMenus* menus)
     new_btn->SetToolTip(_L("New Project"));
     add_btn(new_btn, btn_index++);
 
+    load_btn = new Button(this, { wxEmptyString, "tb_load", m_btn_icon_sz });
+    load_btn->SetToolTip(_L("Load Project"));
+    add_btn(load_btn, btn_index++);
+
     save_btn = new Button(this, { wxEmptyString, "tb_save", m_btn_icon_sz });
     save_btn->SetToolTip(_L("Save Project"));
     add_btn(save_btn, btn_index++);
@@ -68,6 +72,7 @@ void TopBarCtrl::OnColorsChanged()
     m_search->SysColorsChanged();
 
     new_btn->sys_color_changed();
+    load_btn->sys_color_changed();
     save_btn->sys_color_changed();
     hide_sidebars_btn->sys_color_changed();
 }
