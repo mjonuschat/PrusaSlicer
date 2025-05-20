@@ -147,6 +147,8 @@ private:
     void on_slider_layers_app_config_changed(const std::string& key, const std::string& val);
     void on_slider_gcode_on_thumb_move();
     void on_legend_shells_action(bool visible);
+
+    void center_camera_on_selected_bed();
 };
 
 } // namespace Slic3r::App::Preview

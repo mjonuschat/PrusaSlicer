@@ -13,6 +13,7 @@ public:
         const std::string& model_filename, const std::string& texture_filename);
 
     [[nodiscard]] const Vec2d& center() const { return m_center; }
+    [[nodiscard]] const Vec2d& offset() const { return m_offset; }
     [[nodiscard]] const Vec2ds& contour() const { return m_contour; }
     [[nodiscard]] const Vec2d& contour_aabb_extent() const { return m_contour_aabb_extent; }
     [[nodiscard]] float max_print_height() const { return m_max_print_height; }
@@ -24,6 +25,7 @@ public:
 
 private:
     Vec2d m_center{ Vec2d::Zero() };
+    Vec2d m_offset{ Vec2d::Zero() };
     Vec2ds m_contour;
     Vec2d m_contour_aabb_extent{ Vec2d::Zero() };
     float m_max_print_height{ 0.0f };

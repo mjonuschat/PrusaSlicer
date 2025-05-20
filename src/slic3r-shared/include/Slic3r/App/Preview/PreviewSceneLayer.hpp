@@ -16,6 +16,7 @@ enum class PreviewSceneLayer : int8_t
     Options,
     ToolMarker,
     CogMarker,
+    Bed,
 };
 
 } // Slic3r::App::Preview

@@ -8,7 +8,7 @@
 #include "Slic3r/App/Plater/PlaterCameraGizmo.hpp"
 #include "Slic3r/App/Plater/SceneNodeTag.hpp"
 #include "Slic3r/App/Plater/GizmoNodeTag.hpp"
-#include "Slic3r/App/Plater/BedNodeTag.hpp"
+#include "Slic3r/App/Scene/BedNodeTag.hpp"
 #include "Slic3r/App/Plater/QuickSelectGizmo.hpp"
 #include "Slic3r/App/Plater/QuickDragGizmo.hpp"
 #include "Slic3r/App/Plater/BedSelectGizmo.hpp"
@@ -28,6 +28,7 @@
 #include "Slic3r/App/SidebarPrint.hpp"
 #include "Slic3r/App/SidebarActionButtons.hpp"
 #include "Slic3r/App/LightSetting.hpp"
+#include "Slic3r/App/BedStore.hpp"
 #include "Slic3r/App/Plater/History.hpp"
 #include "Slic3r/App/Plater/SidebarPlaterActionButtons.hpp"
 #include "Slic3r/App/Yoga/ToolbarButton.hpp"
@@ -798,13 +799,13 @@ static void render_imgui_debug_bed(
             ImGui::TableHeadersRow();
 
             Scene::visit(scene_presenter.scene().root(), [&](Scene::Node& n) {
-                BedNodeTag* tag = n.tag_of_type<BedNodeTag>();
+                Scene::BedNodeTag* tag = n.tag_of_type<Scene::BedNodeTag>();
                 if (tag != nullptr) {
                     Domain::ConfigContainer* cc = proj.find_config_container(tag->config_container_id
                     );
                     DEBUG_ASSERT(cc != nullptr);
                     Domain::BedInstance& inst = cc->find_bed_instance(tag->instance_id);
-                    if (tag->type == BedElementType::Undefined) {
+                    if (tag->type == Scene::BedElementType::Undefined) {
 
                         bool active = active_tag.config_container_id == tag->config_container_id &&
                             active_tag.instance_id == tag->instance_id;
@@ -1054,6 +1055,16 @@ void PlaterRenderModule::on_activated()
 void PlaterRenderModule::on_deactivated()
 {
     Slic3r::App::set_global_lighting(m_scene_presenter->scene().lights());
+
+    App::BedStore store;
+    size_t project_id = m_project_interactor.selected_project_id();
+    const auto& project = m_workbench.project(project_id);
+    for (const auto& cc : project.config_containers()) {
+        for (const auto& bi : cc->bed_instances()) {
+            store.beds.push_back(Domain::BedRef{cc->id().id, bi->id().id});
+        }
+    }
+    Slic3r::App::set_bed_store(store);
 }
 
 void PlaterRenderModule::on_scene_selection_changed(Domain::SelectionId project_id, const Biz::Scene::Selection &selection)

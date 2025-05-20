@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace Slic3r::App::Plater {
+namespace Slic3r::App::Scene {
 
 /**
   * @brief Type of elements composing a bed
@@ -16,7 +16,9 @@ enum class BedElementType : int8_t
     Grid,
     PrintVolume,
     Model,
-    Axes
+    Axis,
+    AxesMain,
+    AxesScaler,
 };
 
 /**
@@ -29,4 +31,4 @@ struct BedNodeTag
     const BedElementType type{ BedElementType::Undefined };
 };
 
-} // namespace Slic3r::App::Plater
+} // namespace Slic3r::App::Scene

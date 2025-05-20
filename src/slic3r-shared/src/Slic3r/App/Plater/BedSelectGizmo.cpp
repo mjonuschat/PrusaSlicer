@@ -1,5 +1,5 @@
 #include "Slic3r/App/Plater/BedSelectGizmo.hpp"
-#include "Slic3r/App/Plater/BedNodeTag.hpp"
+#include "Slic3r/App/Scene/BedNodeTag.hpp"
 
 namespace Slic3r::App::Plater {
 
@@ -21,7 +21,7 @@ Scene::GizmoActivationState BedSelectGizmo::on_mouse(Scene::GizmoEventContext& c
         if (evt.button() != Platform::MouseButton::Left || ctx.pick_results().empty())
             return Scene::GizmoActivationState::Inactive;
 
-        BedNodeTag* tag = ctx.pick_results().front().node->tag_of_type<BedNodeTag>();
+        Scene::BedNodeTag* tag = ctx.pick_results().front().node->tag_of_type<Scene::BedNodeTag>();
         if (tag) {
             Domain::BedRef instance = { tag->config_container_id, tag->instance_id };
             if (m_scene_interactor.selected_bed_instance() != instance) {

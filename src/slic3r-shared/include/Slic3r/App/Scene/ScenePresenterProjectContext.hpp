@@ -6,14 +6,15 @@
 #include "Slic3r/App/Scene/TriangleMeshManager.hpp"
 #include "Slic3r/App/Scene/NodeBuilder.hpp"
 #include "Slic3r/App/ObjectList.hpp"
+#include "Slic3r/App/Scene/AuxiliaryElementId.hpp"
 
 namespace Slic3r::App::Scene {
 
-template <typename T>
-class ScenePresenterProjectContext {
+class ScenePresenterProjectContext
+{
 public:
-    using ModelGeometryManager = Render::GeometryManager<T>;
-    using ModelTriangleMeshManager = TriangleMeshManager<T>;
+    using ModelGeometryManager = Render::GeometryManager<AuxiliaryElementId>;
+    using ModelTriangleMeshManager = TriangleMeshManager<AuxiliaryElementId>;
 
     ScenePresenterProjectContext()
     : m_scene(new Scene())
@@ -23,11 +24,11 @@ public:
         m_scene->add_child(m_selection_root);
     }
 
-    ScenePresenterProjectContext(const ScenePresenterProjectContext<T>&) = delete;
-    ScenePresenterProjectContext& operator=(const ScenePresenterProjectContext<T>&) = delete;
+    ScenePresenterProjectContext(const ScenePresenterProjectContext&) = delete;
+    ScenePresenterProjectContext& operator=(const ScenePresenterProjectContext&) = delete;
 
-    ScenePresenterProjectContext(ScenePresenterProjectContext<T>&&) = default;
-    ScenePresenterProjectContext& operator=(ScenePresenterProjectContext<T>&&) = default;
+    ScenePresenterProjectContext(ScenePresenterProjectContext&&) = default;
+    ScenePresenterProjectContext& operator=(ScenePresenterProjectContext&&) = default;
 
     Scene& scene() { return *m_scene; }
     const Scene& scene() const { return *m_scene; }

@@ -14,7 +14,6 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Plater/QuickDragGizmo.cpp
         include/Slic3r/App/Plater/BedSelectGizmo.hpp
         src/Slic3r/App/Plater/BedSelectGizmo.cpp
-        include/Slic3r/App/Plater/AuxiliaryElementId.hpp
         include/Slic3r/App/Plater/SelectionHandler.hpp
         src/Slic3r/App/Plater/SelectionHandler.cpp
         include/Slic3r/App/Plater/TranslationGizmo.hpp
@@ -22,13 +21,6 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Plater/RotationGizmo.hpp
         src/Slic3r/App/Plater/RotationGizmo.cpp
         include/Slic3r/App/Plater/PlaterSceneLayer.hpp
-        include/Slic3r/App/Plater/BedNodeTag.hpp
-        include/Slic3r/App/Plater/BedRenderUpdater.hpp
-        src/Slic3r/App/Plater/BedRenderUpdater.cpp
-        include/Slic3r/App/Plater/BedRenderHelper.hpp
-        src/Slic3r/App/Plater/BedRenderHelper.cpp
-        include/Slic3r/App/Plater/BedMaterials.hpp
-        src/Slic3r/App/Plater/BedMaterials.cpp
         include/Slic3r/App/Plater/PlaterRenderLayout.hpp
         src/Slic3r/App/Plater/PlaterRenderLayout.cpp
         include/Slic3r/App/Plater/History.hpp
@@ -48,7 +40,6 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Preview/PreviewCameraGizmo.hpp
         include/Slic3r/App/Preview/PreviewScenePresenter.hpp
         src/Slic3r/App/Preview/PreviewScenePresenter.cpp
-        include/Slic3r/App/Preview/PreviewAuxiliaryElementId.hpp
         include/Slic3r/App/Preview/PreviewSceneLayer.hpp
         include/Slic3r/App/Preview/PreviewSceneRenderCustomizer.hpp
         src/Slic3r/App/Preview/PreviewSceneRenderCustomizer.cpp
@@ -76,6 +67,8 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/ExportPathSelect.hpp
         src/Slic3r/App/ExportPathSelect.cpp
         include/Slic3r/App/IDialogManager.hpp
+        src/Slic3r/App/BedStore.cpp
+        include/Slic3r/App/BedStore.hpp
 
         src/Slic3r/App/Scene/Scene.cpp
         include/Slic3r/App/Scene/Scene.hpp
@@ -127,6 +120,16 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Scene/Lights.hpp
         include/Slic3r/App/Scene/LightingHelper.hpp
         src/Slic3r/App/Scene/LightingHelper.cpp
+        include/Slic3r/App/Scene/BedNodeBuilder.hpp
+        src/Slic3r/App/Scene/BedNodeBuilder.cpp
+        include/Slic3r/App/Scene/BedNodeTag.hpp
+        include/Slic3r/App/Scene/BedMaterials.hpp
+        src/Slic3r/App/Scene/BedMaterials.cpp
+        include/Slic3r/App/Scene/BedRenderHelper.hpp
+        src/Slic3r/App/Scene/BedRenderHelper.cpp
+        include/Slic3r/App/Scene/BedRenderUpdater.hpp
+        src/Slic3r/App/Scene/BedRenderUpdater.cpp
+        include/Slic3r/App/Scene/AuxiliaryElementId.hpp
 
         include/Slic3r/App/TestRenderModule.hpp
         src/Slic3r/App/TestRenderModule.cpp
@@ -159,8 +162,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Yoga/Item.cpp
         src/Slic3r/App/Yoga/Window.cpp
         include/Slic3r/App/Yoga/Window.hpp
-	include/Slic3r/App/Yoga/LambdaItem.hpp
-	src/Slic3r/App/Yoga/LambdaItem.cpp
+        include/Slic3r/App/Yoga/LambdaItem.hpp
+        src/Slic3r/App/Yoga/LambdaItem.cpp
         include/Slic3r/App/Yoga/LambdaWindow.hpp
         src/Slic3r/App/Yoga/LambdaWindow.cpp
         include/Slic3r/App/Yoga/AbstractButton.hpp
@@ -224,8 +227,6 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/ObservableDynamicPrintConfig.hpp
         include/Slic3r/Biz/Observable.hpp
         include/Slic3r/Biz/Plater/ConfigViewModel.hpp
-        include/Slic3r/Biz/Plater/BedGeometry.hpp
-        src/Slic3r/Biz/Plater/BedGeometry.cpp
 
         include/Slic3r/Biz/Scene/SceneInteractor.hpp
         src/Slic3r/Biz/Scene/SceneInteractor.cpp
@@ -234,6 +235,8 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/Scene/SceneInteractorProjectContext.hpp
         include/Slic3r/Biz/Scene/BedPlacement.hpp
         src/Slic3r/Biz/Scene/BedPlacement.cpp
+        include/Slic3r/Biz/Scene/BedGeometry.hpp
+        src/Slic3r/Biz/Scene/BedGeometry.cpp
         src/Slic3r/Biz/Scene/BedTracking.hpp
         src/Slic3r/Biz/Scene/BedTracking.cpp
 
@@ -290,58 +293,58 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/StatusCache.hpp
         src/Slic3r/Biz/StatusCache.cpp
 
-		include/Slic3r/Biz/PrintHost/IPrintHost.hpp
-		include/Slic3r/Biz/PrintHost/IPrintHostListener.hpp
-		include/Slic3r/Biz/PrintHost/IPrintHostJobCallbacks.hpp
-		include/Slic3r/Biz/PrintHost/PrintHostJob.hpp
-		include/Slic3r/Biz/PrintHost/PrintHostJobManager.hpp
-		include/Slic3r/Biz/PrintHost/PrintHostInteractor.hpp
-		include/Slic3r/Biz/PrintHost/PrintHostConfig.hpp
-		include/Slic3r/Biz/PrintHost/PrintHostFactory.hpp
-		include/Slic3r/Biz/PrintHost/PrintHostLocal.hpp
-		include/Slic3r/Biz/PrintHost/PrintHostOctoPrint.hpp
-		include/Slic3r/Biz/PrintHost/PrintHostPrusaLink.hpp
+        include/Slic3r/Biz/PrintHost/IPrintHost.hpp
+        include/Slic3r/Biz/PrintHost/IPrintHostListener.hpp
+        include/Slic3r/Biz/PrintHost/IPrintHostJobCallbacks.hpp
+        include/Slic3r/Biz/PrintHost/PrintHostJob.hpp
+        include/Slic3r/Biz/PrintHost/PrintHostJobManager.hpp
+        include/Slic3r/Biz/PrintHost/PrintHostInteractor.hpp
+        include/Slic3r/Biz/PrintHost/PrintHostConfig.hpp
+        include/Slic3r/Biz/PrintHost/PrintHostFactory.hpp
+        include/Slic3r/Biz/PrintHost/PrintHostLocal.hpp
+        include/Slic3r/Biz/PrintHost/PrintHostOctoPrint.hpp
+        include/Slic3r/Biz/PrintHost/PrintHostPrusaLink.hpp
         include/Slic3r/Biz/PrintHost/PrintHostPrusaLinkStorage.hpp
-		include/Slic3r/Biz/PrintHost/PrintHostPrusaConnect.hpp
-		include/Slic3r/Biz/PrintHost/PrintHostSL1Host.hpp
-		include/Slic3r/Biz/PrintHost/PrintHostMoonraker.hpp
-		include/Slic3r/Biz/PrintHost/PrintHostDuet.hpp
-		include/Slic3r/Biz/PrintHost/PrintHostFlashAir.hpp
-		include/Slic3r/Biz/PrintHost/PrintHostAstroBox.hpp
-		include/Slic3r/Biz/PrintHost/PrintHostRepetier.hpp
-		include/Slic3r/Biz/PrintHost/PrintHostMKS.hpp
+        include/Slic3r/Biz/PrintHost/PrintHostPrusaConnect.hpp
+        include/Slic3r/Biz/PrintHost/PrintHostSL1Host.hpp
+        include/Slic3r/Biz/PrintHost/PrintHostMoonraker.hpp
+        include/Slic3r/Biz/PrintHost/PrintHostDuet.hpp
+        include/Slic3r/Biz/PrintHost/PrintHostFlashAir.hpp
+        include/Slic3r/Biz/PrintHost/PrintHostAstroBox.hpp
+        include/Slic3r/Biz/PrintHost/PrintHostRepetier.hpp
+        include/Slic3r/Biz/PrintHost/PrintHostMKS.hpp
         include/Slic3r/Biz/PrintHost/PrintHostDataFinalizer.hpp
         src/Slic3r/Biz/PrintHost/PrintHostJobManager.cpp
-		src/Slic3r/Biz/PrintHost/PrintHostInteractor.cpp
-		src/Slic3r/Biz/PrintHost/PrintHostJob.cpp
-		src/Slic3r/Biz/PrintHost/PrintHostFactory.cpp
-		src/Slic3r/Biz/PrintHost/PrintHostLocal.cpp
-		src/Slic3r/Biz/PrintHost/PrintHostOctoPrint.cpp
-		src/Slic3r/Biz/PrintHost/PrintHostPrusaLink.cpp
+        src/Slic3r/Biz/PrintHost/PrintHostInteractor.cpp
+        src/Slic3r/Biz/PrintHost/PrintHostJob.cpp
+        src/Slic3r/Biz/PrintHost/PrintHostFactory.cpp
+        src/Slic3r/Biz/PrintHost/PrintHostLocal.cpp
+        src/Slic3r/Biz/PrintHost/PrintHostOctoPrint.cpp
+        src/Slic3r/Biz/PrintHost/PrintHostPrusaLink.cpp
         src/Slic3r/Biz/PrintHost/PrintHostPrusaLinkStorage.cpp
-		src/Slic3r/Biz/PrintHost/PrintHostPrusaConnect.cpp
-		src/Slic3r/Biz/PrintHost/PrintHostSL1Host.cpp
-		src/Slic3r/Biz/PrintHost/PrintHostMoonraker.cpp
-		src/Slic3r/Biz/PrintHost/PrintHostDuet.cpp
-		src/Slic3r/Biz/PrintHost/PrintHostFlashAir.cpp
-		src/Slic3r/Biz/PrintHost/PrintHostAstroBox.cpp
-		src/Slic3r/Biz/PrintHost/PrintHostRepetier.cpp
-		src/Slic3r/Biz/PrintHost/PrintHostMKS.cpp
+        src/Slic3r/Biz/PrintHost/PrintHostPrusaConnect.cpp
+        src/Slic3r/Biz/PrintHost/PrintHostSL1Host.cpp
+        src/Slic3r/Biz/PrintHost/PrintHostMoonraker.cpp
+        src/Slic3r/Biz/PrintHost/PrintHostDuet.cpp
+        src/Slic3r/Biz/PrintHost/PrintHostFlashAir.cpp
+        src/Slic3r/Biz/PrintHost/PrintHostAstroBox.cpp
+        src/Slic3r/Biz/PrintHost/PrintHostRepetier.cpp
+        src/Slic3r/Biz/PrintHost/PrintHostMKS.cpp
         src/Slic3r/Biz/PrintHost/PrintHostDataFinalizer.cpp
 
-		include/Slic3r/Biz/Network/IHttp.hpp
-		include/Slic3r/Biz/Network/HttpFactory.hpp
-		include/Slic3r/Biz/Network/HttpCurl.hpp
-		include/Slic3r/Biz/Network/Bonjour.hpp
-		include/Slic3r/Biz/Network/TCPConsole.hpp
-		include/Slic3r/Biz/Network/ServiceConfig.hpp
+        include/Slic3r/Biz/Network/IHttp.hpp
+        include/Slic3r/Biz/Network/HttpFactory.hpp
+        include/Slic3r/Biz/Network/HttpCurl.hpp
+        include/Slic3r/Biz/Network/Bonjour.hpp
+        include/Slic3r/Biz/Network/TCPConsole.hpp
+        include/Slic3r/Biz/Network/ServiceConfig.hpp
         include/Slic3r/Biz/Network/Jwt.hpp        
-		src/Slic3r/Biz/Network/IHttp.cpp
-		src/Slic3r/Biz/Network/HttpCurl.cpp
-		src/Slic3r/Biz/Network/HttpCurlFactory.cpp
-		src/Slic3r/Biz/Network/Bonjour.cpp
-		src/Slic3r/Biz/Network/TCPConsole.cpp
-		src/Slic3r/Biz/Network/ServiceConfig.cpp
+        src/Slic3r/Biz/Network/IHttp.cpp
+        src/Slic3r/Biz/Network/HttpCurl.cpp
+        src/Slic3r/Biz/Network/HttpCurlFactory.cpp
+        src/Slic3r/Biz/Network/Bonjour.cpp
+        src/Slic3r/Biz/Network/TCPConsole.cpp
+        src/Slic3r/Biz/Network/ServiceConfig.cpp
         src/Slic3r/Biz/Network/Jwt.cpp
         include/Slic3r/Biz/SLAResultCache.hpp
         src/Slic3r/Biz/SLAResultCache.cpp
@@ -349,29 +352,29 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/SLAObjectCache.cpp
 
         include/Slic3r/Biz/UserAccount/IUserAccountListener.hpp
-		include/Slic3r/Biz/UserAccount/IUserAccountSessionListener.hpp
-		include/Slic3r/Biz/UserAccount/IUserAccountActionCallbacks.hpp
+        include/Slic3r/Biz/UserAccount/IUserAccountSessionListener.hpp
+        include/Slic3r/Biz/UserAccount/IUserAccountActionCallbacks.hpp
         include/Slic3r/Biz/UserAccount/UserAccountInteractor.hpp
         include/Slic3r/Biz/UserAccount/UserAccountCommunication.hpp
         include/Slic3r/Biz/UserAccount/UserAccountSession.hpp
-		include/Slic3r/Biz/UserAccount/UserAccountSessionDispatchBase.hpp
+        include/Slic3r/Biz/UserAccount/UserAccountSessionDispatchBase.hpp
         include/Slic3r/Biz/UserAccount/UserAccountAction.hpp
         include/Slic3r/Biz/UserAccount/UserAccountActionStore.hpp
         include/Slic3r/Biz/UserAccount/UserAccountCommunicationTokenBase.hpp
         include/Slic3r/Biz/UserAccount/UserAccountTokenStore.hpp
-		include/Slic3r/Biz/UserAccount/UserAccountCodeChallengeGenerator.hpp
+        include/Slic3r/Biz/UserAccount/UserAccountCodeChallengeGenerator.hpp
         include/Slic3r/Biz/UserAccount/ConnectMessageHandler.hpp
         src/Slic3r/Biz/UserAccount/UserAccountInteractor.cpp
         src/Slic3r/Biz/UserAccount/UserAccountCommunication.cpp
         src/Slic3r/Biz/UserAccount/UserAccountSession.cpp
-		src/Slic3r/Biz/UserAccount/UserAccountSessionDispatchBase.cpp
+        src/Slic3r/Biz/UserAccount/UserAccountSessionDispatchBase.cpp
         src/Slic3r/Biz/UserAccount/UserAccountAction.cpp
         src/Slic3r/Biz/UserAccount/UserAccountCommunicationTokenBase.cpp
-		src/Slic3r/Biz/UserAccount/UserAccountTokenStore.cpp
-		src/Slic3r/Biz/UserAccount/UserAccountCodeChallengeGenerator.cpp
+        src/Slic3r/Biz/UserAccount/UserAccountTokenStore.cpp
+        src/Slic3r/Biz/UserAccount/UserAccountCodeChallengeGenerator.cpp
         src/Slic3r/Biz/UserAccount/ConnectMessageHandler.cpp
 
-		include/Slic3r/Biz/SHA256.hpp
+        include/Slic3r/Biz/SHA256.hpp
 
         include/Slic3r/Biz/AppInstance/AbstractAppInstanceMessageHandler.hpp
         include/Slic3r/Biz/AppInstance/IAppInstanceMessageContentListener.hpp
@@ -381,7 +384,7 @@ set(SLIC3R_SHARED_FILES
 
 if (WIN32)
     list(APPEND SLIC3R_SHARED_FILES
-		src/Slic3r/Biz/SHA256Win32.cpp
+        src/Slic3r/Biz/SHA256Win32.cpp
         src/Slic3r/Biz/AppInstance/AppInstanceMessageHandlerWin32.hpp
         src/Slic3r/Biz/AppInstance/AppInstanceMessageHandlerWin32.cpp
         src/Slic3r/Biz/AppInstance/AppInstanceMessageHandlerFactoryWin32.cpp
@@ -389,7 +392,7 @@ if (WIN32)
     )
 elseif (APPLE)
     list(APPEND SLIC3R_SHARED_FILES
-		src/Slic3r/Biz/SHA256Mac.cpp
+        src/Slic3r/Biz/SHA256Mac.cpp
         src/Slic3r/Biz/AppInstance/AppInstanceMessageHandlerMac.hpp
         include/Slic3r/Biz/AppInstance/AppInstanceMessageHandlerMacWrapper.h
         src/Slic3r/Biz/AppInstance/AppInstanceMessageHandlerMac.mm
@@ -399,7 +402,7 @@ elseif (APPLE)
     )
 elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
     list(APPEND SLIC3R_SHARED_FILES
-		src/Slic3r/Biz/SHA256Linux.cpp
+        src/Slic3r/Biz/SHA256Linux.cpp
         src/Slic3r/Biz/AppInstance/AppInstanceMessageHandlerLinux.hpp
         src/Slic3r/Biz/AppInstance/AppInstanceMessageHandlerLinux.cpp
         src/Slic3r/Biz/AppInstance/AppInstanceMessageHandlerFactoryLinux.cpp

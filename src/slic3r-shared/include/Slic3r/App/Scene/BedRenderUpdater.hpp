@@ -9,22 +9,20 @@ class Project;
 class Workbench;
 } // namespace Slic3r::Domain
 
-namespace Slic3r::App::Plater {
+namespace Slic3r::App::Scene {
 
-class BedRenderUpdater : public Scene::ICameraUpdateListener,
+class BedRenderUpdater : public ICameraUpdateListener,
                          public Biz::ISelectedProjectChangedListener
 {
 public:
-    BedRenderUpdater(
-        Scene::ISceneProvider& scene_provider, const Domain::Workbench& workbench, Render::Device& device
-    )
+    BedRenderUpdater(ISceneProvider& scene_provider, const Domain::Workbench& workbench, Render::Device& device)
         : m_scene_provider(scene_provider), m_workbench(workbench), m_device(device)
     {}
 
     /**
      * @brief Performs all updates
      */
-    void update_all(const Scene::Camera& cam)
+    void update_all(const Camera& cam)
     {
         update_materials();
         update_shadows(cam);
@@ -40,7 +38,7 @@ public:
     /**
       * @brief Updates beds' shadows data in dependence of the scene status
       */
-    void update_shadows(const Scene::Camera& cam);
+    void update_shadows(const Camera& cam);
 
     /**
       * @brief Updates beds' position in scene
@@ -55,7 +53,7 @@ public:
     /**
       * @brief Implementation of Scene::ICameraUpdateListener interface
       */
-    void camera_updated(const Scene::Camera& cam) override;
+    void camera_updated(const Camera& cam) override;
 
     /**
       * @brief Implementation of Biz::ISelectedProjectChangedListener interface
@@ -63,10 +61,10 @@ public:
     void on_selected_project_changed(size_t index) override;
 
 private:
-    Scene::ISceneProvider& m_scene_provider;
+    ISceneProvider& m_scene_provider;
     const Domain::Workbench& m_workbench;
     Render::Device& m_device;
     Domain::Project* m_project{ nullptr };
 };
 
-} // namespace Slic3r::App::Plater
+} // namespace Slic3r::App::Scene

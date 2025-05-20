@@ -1,5 +1,5 @@
 #include "Slic3r/Biz/Scene/BedPlacement.hpp"
-#include "Slic3r/Biz/Plater/BedGeometry.hpp"
+#include "Slic3r/Biz/Scene/BedGeometry.hpp"
 #include "Slic3r/Domain/BedContainer.hpp"
 #include "Slic3r/Domain/Project.hpp"
 
@@ -25,7 +25,7 @@ void BedPlacement::layout(Domain::Project& project, const Vec2d& gap)
         const Domain::Bed& bed = cc->bed();
         Vec2d size = bed.contour_aabb_extent();
         Vec2d pos = offset_y * Vec2d::UnitY();
-        Domain::TriangleMesh model = Biz::Plater::BedGeometry::model(bed);
+        Domain::TriangleMesh model = BedGeometry::model(bed);
         if (!model.empty())
             size = max(size, to_2d(sizes(model.bounding_box())));
 

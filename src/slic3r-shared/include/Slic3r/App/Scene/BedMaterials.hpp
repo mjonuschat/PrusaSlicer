@@ -2,6 +2,8 @@
 
 #include <libslic3r/Color.hpp>
 
+#include <cstdint>
+
 namespace Slic3r::App::Render {
 class Material;
 class Device;
@@ -11,7 +13,7 @@ namespace Slic3r::Domain {
 class Bed;
 } // namespace Slic3r::Domain
 
-namespace Slic3r::App::Plater {
+namespace Slic3r::App::Scene {
 
 /**
 * @brief Bed colors
@@ -24,6 +26,9 @@ static const Slic3r::ColorRGBA DEFAULT_BED_GRID_COLOR  = { 0.75f, 0.75f, 0.75f, 
 static const Slic3r::ColorRGBA DISABLED_BED_GRID_COLOR = { 0.65f, 0.65f, 0.65f, 0.75f };
 static const Slic3r::ColorRGBA DEFAULT_BED_CONTOUR_COLOR  = { 0.9f, 0.9f, 0.9f, 1.0f };
 static const Slic3r::ColorRGBA DISABLED_BED_CONTOUR_COLOR = { 0.75f, 0.75f, 0.75f, 1.0f };
+static const Slic3r::ColorRGBA DEFAULT_BED_X_AXIS_COLOR = { 0.75f, 0.0f, 0.0f, 1.0f };
+static const Slic3r::ColorRGBA DEFAULT_BED_Y_AXIS_COLOR = { 0.0f, 0.75f, 0.0f, 1.0f };
+static const Slic3r::ColorRGBA DEFAULT_BED_Z_AXIS_COLOR = { 0.0f, 0.0f, 0.75f, 1.0f };
 
 struct BedMaterials
 {
@@ -33,6 +38,7 @@ struct BedMaterials
     static Render::Material contour_material(const Render::Device& device);
     static Render::Material print_volume_material(const Render::Device& device);
     static Render::Material model_material(const Render::Device& device);
+    static Render::Material axis_material(const Render::Device& device, uint8_t axis);
 
     static Render::Material plate_default_override_material(const Render::Device& device);
     static Render::Material plate_textured_override_material(const Render::Device& device, const Domain::Bed& bed);
@@ -42,4 +48,4 @@ struct BedMaterials
     static Render::Material model_override_material(const Render::Device& device);
 };
 
-} // namespace Slic3r::App::Plater
+} // namespace Slic3r::App::Scene

@@ -7,11 +7,12 @@
 #include "Slic3r/App/Render/Device.hpp"
 #include "Slic3r/Domain/Bed.hpp"
 #include "Slic3r/Domain/BedInstance.hpp"
-#include "Slic3r/App/Plater/BedNodeTag.hpp"
-#include "Slic3r/App/Plater/BedRenderHelper.hpp"
-#include "Slic3r/App/Plater/BedMaterials.hpp"
-#include "Slic3r/Biz/Plater/BedGeometry.hpp"
+#include "Slic3r/App/Scene/BedNodeTag.hpp"
+#include "Slic3r/App/Scene/BedRenderHelper.hpp"
+#include "Slic3r/App/Scene/BedMaterials.hpp"
+#include "Slic3r/Biz/Scene/BedGeometry.hpp"
 #include "Slic3r/App/Render/FramebufferManager.hpp"
+#include "Slic3r/App/Scene/BedNodeBuilder.hpp"
 
 #include "libslic3r/Model.hpp"
 
@@ -226,11 +227,13 @@ void PlaterScenePresenter::on_scene_selection_transformed(Domain::SelectionId pr
 void PlaterScenePresenter::on_selected_bed_instance_changed(Domain::SelectionId project_id, Domain::SelectionId container_id, Domain::SelectionId bed_instance_id)
 {
     m_bed_render_updater.update_all(project_context().scene().camera());
-    const Domain::Bed& bed = selected_bed_instance().bed;
-    std::vector<Domain::Vec3f> print_volume = Biz::Plater::BedGeometry::print_volume(bed);
+    const Domain::BedInstance& bed_inst = selected_bed_instance();
+    Domain::Vec3d bed_inst_offset = bed_inst.transformation.get_offset();
+    const Domain::Bed& bed = bed_inst.bed;
+    std::vector<Domain::Vec3f> print_volume = Biz::Scene::BedGeometry::print_volume(bed);
     Eigen::AlignedBox3d bed_aabb;
     for (const auto& v : print_volume) {
-        bed_aabb.extend(v.cast<double>());
+        bed_aabb.extend(bed_inst_offset + v.cast<double>());
     }
     scene().set_bed_aabb(bed_aabb);
     update_objects_shadows_data();
@@ -248,7 +251,7 @@ void PlaterScenePresenter::build_volume_node(
     auto& geom_mgr = ctx.model_geometry_manager();
     auto& trimesh_mgr = ctx.model_triangle_mesh_manager();
 
-    AuxiliaryElementId id{ AuxiliaryElementId::Type::Volume, vol->id().id};
+    Scene::AuxiliaryElementId id{Scene::AuxiliaryElementId::Type::Volume, vol->id().id};
     const auto& trimesh =
         trimesh_mgr.get_or_create(id, [&]() -> std::unique_ptr<Scene::TriangleMesh> {
             return std::make_unique<Scene::TriangleMesh>(vol->mesh_ptr());
@@ -283,157 +286,6 @@ void PlaterScenePresenter::build_volume_node(
         builder
             .set_shadows(Render::Shadows{ false, false });
     }
-}
-
-void PlaterScenePresenter::build_bed_plate_node(Scene::NodeBuilder& builder, Domain::SelectionId project_id,
-    const Domain::Bed& bed, const BedNodeTag& tag)
-{
-    auto& ctx = m_projects[project_id];
-    auto& geom_mgr = ctx.model_geometry_manager();
-    auto& trimesh_mgr = ctx.model_triangle_mesh_manager();
-
-    std::vector<std::pair<Vec3f, Vec2f>> triangles = Biz::Plater::BedGeometry::plate_triangles(bed);
-    DEBUG_ASSERT(!triangles.empty());
-
-    BedElementType type = bed.texture_filename().empty() ? BedElementType::PlateDefault : BedElementType::PlateTextured;
-    AuxiliaryElementId id{ AuxiliaryElementId::Type::Bed, tag.config_container_id * 100 + size_t(type) };
-    const auto* geom = geom_mgr.get_or_create(id, [&]() {
-        return Render::geometry_from_triangles(m_device, triangles);
-    });
-    const auto& trimesh =
-        trimesh_mgr.get_or_create(id, [&]() -> std::unique_ptr<Scene::TriangleMesh> {
-            Domain::TriangleMesh mesh = Biz::Plater::BedGeometry::plate_mesh(bed);
-            return std::make_unique<Scene::TriangleMesh>(std::move(mesh.its));
-        });
-
-    Render::Material material;
-    switch (type)
-    {
-    case BedElementType::PlateDefault:  { material = BedMaterials::plate_default_material(m_device); break; }
-    case BedElementType::PlateTextured: { material = BedMaterials::plate_textured_material(m_device, bed); break; }
-    }
-
-    builder
-        .child([&](Scene::NodeBuilder& bldr) {
-            bldr
-                .set_debug_name(fmt::format("bed: {} plate", bed.id().id))
-                .set_tag(BedNodeTag{ tag.config_container_id, tag.instance_id, type })
-                .set_mesh(geom, material, int(PlaterSceneLayer::DocumentObjects))
-                .set_shadows(Render::Shadows{ false, true })
-                .set_pbr(Scene::DEFAULT_BED_PLATE_PBRPARAMS)
-                .set_aabb(trimesh->aabb_mesh());
-        });
-}
-
-void PlaterScenePresenter::build_bed_grid_node(Scene::NodeBuilder& builder, Domain::SelectionId project_id,
-    const Domain::Bed& bed, const BedNodeTag& tag)
-{
-    auto& ctx = m_projects[project_id];
-    auto& geom_mgr = ctx.model_geometry_manager();
-
-    std::vector<Vec3f> lines = App::Plater::BedRenderHelper::plate_grid(bed);
-    DEBUG_ASSERT(!lines.empty());
-
-    AuxiliaryElementId id{ AuxiliaryElementId::Type::Bed, tag.config_container_id * 100 + size_t(BedElementType::Grid) };
-    const auto* geom = geom_mgr.get_or_create(id, [&]() {
-        return Render::geometry_from_lines(m_device, lines);
-    });
-
-    auto material = BedMaterials::grid_material(m_device);
-
-    builder
-        .child([&](Scene::NodeBuilder& bldr) {
-            bldr
-                .set_debug_name(fmt::format("bed: {} grid", bed.id().id))
-                .set_tag(BedNodeTag{ tag.config_container_id, tag.instance_id, BedElementType::Grid })
-                .set_mesh(geom, material, int(PlaterSceneLayer::DocumentObjects));
-        });
-}
-
-void PlaterScenePresenter::build_bed_contour_node(Scene::NodeBuilder& builder, Domain::SelectionId project_id,
-    const Domain::Bed& bed, const BedNodeTag& tag)
-{
-    auto& ctx = m_projects[project_id];
-    auto& geom_mgr = ctx.model_geometry_manager();
-
-    std::vector<Vec3f> lines = Biz::Plater::BedGeometry::plate_contour(bed);
-    DEBUG_ASSERT(!lines.empty());
-
-    AuxiliaryElementId id{ AuxiliaryElementId::Type::Bed, tag.config_container_id * 100 + size_t(BedElementType::Contour) };
-    const auto* geom = geom_mgr.get_or_create(id, [&]() {
-        return Render::geometry_from_lines(m_device, lines);
-    });
-
-    auto material = BedMaterials::contour_material(m_device);
-
-    builder
-        .child([&](Scene::NodeBuilder& bldr) {
-            bldr
-                .set_debug_name(fmt::format("bed: {} contour", bed.id().id))
-                .set_tag(BedNodeTag{ tag.config_container_id, tag.instance_id, BedElementType::Contour })
-                .set_mesh(geom, material, int(PlaterSceneLayer::DocumentObjects));
-        });
-}
-
-void PlaterScenePresenter::build_bed_print_volume_node(Scene::NodeBuilder& builder, Domain::SelectionId project_id,
-    const Domain::Bed& bed, const BedNodeTag& tag)
-{
-    auto& ctx = m_projects[project_id];
-    auto& geom_mgr = ctx.model_geometry_manager();
-
-    std::vector<Vec3f> lines = Biz::Plater::BedGeometry::print_volume(bed);
-    DEBUG_ASSERT(!lines.empty());
-
-    AuxiliaryElementId id{ AuxiliaryElementId::Type::Bed, tag.config_container_id * 100 + size_t(BedElementType::PrintVolume) };
-    const auto* geom = geom_mgr.get_or_create(id, [&]() {
-        return Render::geometry_from_lines(m_device, lines);
-    });
-
-    auto material = BedMaterials::print_volume_material(m_device);
-
-    builder
-        .child([&](Scene::NodeBuilder& bldr) {
-            bldr
-                .set_debug_name(fmt::format("bed: {} contour", bed.id().id))
-                .set_tag(BedNodeTag{ tag.config_container_id, tag.instance_id, BedElementType::PrintVolume })
-                .set_mesh(geom, material, int(PlaterSceneLayer::DocumentObjects));
-        });
-}
-
-void PlaterScenePresenter::build_bed_model_node(Scene::NodeBuilder& builder, Domain::SelectionId project_id,
-    const Domain::Bed& bed, const BedNodeTag& tag)
-{
-    Domain::TriangleMesh mesh = Biz::Plater::BedGeometry::model(bed);
-    if (mesh.empty()) {
-        SPDLOG_ERROR("Found empty mesh");
-        return;
-    }
-
-    auto& ctx = m_projects[project_id];
-    auto& geom_mgr = ctx.model_geometry_manager();
-    auto& trimesh_mgr = ctx.model_triangle_mesh_manager();
-
-    AuxiliaryElementId id{ AuxiliaryElementId::Type::Bed, tag.config_container_id * 100 + size_t(BedElementType::Model) };
-    const auto& trimesh =
-        trimesh_mgr.get_or_create(id, [&]() -> std::unique_ptr<Scene::TriangleMesh> {
-            return std::make_unique<Scene::TriangleMesh>(std::move(mesh.its));
-        });
-    const auto* geom = geom_mgr.get_or_create(id, [&]() {
-        return Render::geometry_from_triangle_mesh(m_device, trimesh->triangles());
-    });
-
-    auto material = BedMaterials::model_material(m_device);
-
-    builder
-        .child([&](Scene::NodeBuilder& bldr) {
-            bldr
-                .set_debug_name(fmt::format("bed: {} model", bed.id().id))
-                .set_tag(BedNodeTag{ tag.config_container_id, tag.instance_id, BedElementType::Model })
-                .set_mesh(geom, material, int(PlaterSceneLayer::DocumentObjects))
-                .set_shadows(Render::Shadows{ true, true })
-                .set_pbr(Scene::DEFAULT_BED_MODEL_PBRPARAMS)
-                .set_aabb(trimesh->aabb_mesh());
-        });
 }
 
 const Domain::BedInstance& PlaterScenePresenter::selected_bed_instance() const
@@ -620,21 +472,11 @@ void PlaterScenePresenter::on_bed_instance_added(Domain::SelectionId project_id,
         const Domain::BedInstance& inst = cc->find_bed_instance(instance.instance_id);
         const Domain::Bed& bed = cc->bed();
 
-        BedNodeTag tag = { instance.config_container_id, instance.instance_id };
+        Scene::BedNodeTag tag = {instance.config_container_id, instance.instance_id};
 
         Scene::NodeBuilder builder(scn);
-        builder
-            .set_debug_name(fmt::format("bed: {} inst: {}", instance.config_container_id, instance.instance_id))
-            .set_tag(tag)
-            .transform([inst](auto& t) { t = inst.matrix(); });
-
-        build_bed_plate_node(builder, project_id, bed, tag);
-        if (!bed.model_filename().empty())
-            build_bed_model_node(builder, project_id, bed, tag);
-        if (bed.texture_filename().empty())
-            build_bed_grid_node(builder, project_id, bed, tag);
-        build_bed_contour_node(builder, project_id, bed, tag);
-        build_bed_print_volume_node(builder, project_id, bed, tag);
+        Scene::BedNodeBuilder::bed_node(builder, bed, inst, tag, m_device, m_projects[project_id],
+            int(PlaterSceneLayer::DocumentObjects));
 
         scn.add_child(builder.build().release());
     }
@@ -645,7 +487,7 @@ void PlaterScenePresenter::on_bed_instance_added(Domain::SelectionId project_id,
 void PlaterScenePresenter::on_bed_instance_removed(Domain::SelectionId project_id, const Domain::BedRefs& instances)
 {
     scene().remove_children([&](const Scene::Node* n) {
-        const BedNodeTag* tag = n->tag_of_type<BedNodeTag>();
+        const Scene::BedNodeTag* tag = n->tag_of_type<Scene::BedNodeTag>();
         if (tag != nullptr) {
             auto it = std::find_if(instances.begin(), instances.end(),
                 [tag](const Domain::BedRef& br) {

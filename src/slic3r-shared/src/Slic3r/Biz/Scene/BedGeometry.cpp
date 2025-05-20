@@ -1,4 +1,4 @@
-#include "Slic3r/Biz/Plater/BedGeometry.hpp"
+#include "Slic3r/Biz/Scene/BedGeometry.hpp"
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "Slic3r/Domain/Bed.hpp"
 #include "Slic3r/Domain/BedInstance.hpp"
@@ -21,7 +21,7 @@ static constexpr double GROUND_Z = -0.005;
 
 using namespace Slic3r::Biz;
 
-namespace Slic3r::Biz::Plater {
+namespace Slic3r::Biz::Scene {
 
 using Domain::TriangleMesh;
 
@@ -155,4 +155,25 @@ std::vector<Vec3f> BedGeometry::print_volume(const Domain::Bed& bed)
     return ret;
 }
 
-} // namespace Slic3r::Biz::Plater
+TriangleMesh BedGeometry::axis(const Domain::Bed& bed)
+{
+    const Vec2d& aabb_extent = bed.contour_aabb_extent();
+    double height = double(bed.max_print_height());
+    static constexpr double SCALE_FACTOR = 0.1;
+    static constexpr double STEM_LENGTH_FACTOR = 0.8;
+    static constexpr double CONE_LENGTH_FACTOR = 1.0 - STEM_LENGTH_FACTOR;
+    static constexpr double STEM_RADIUS = 0.5;
+    static constexpr double CONE_RADIUS = 3.0 * STEM_RADIUS;
+    double length = SCALE_FACTOR * std::max({aabb_extent.x(), aabb_extent.y(), height});
+    double stem_length = STEM_LENGTH_FACTOR * length;
+    double cone_height = CONE_LENGTH_FACTOR * length;
+
+    namespace TriMesh = Biz::Algorithms::TriangleMesh;
+    TriangleMesh ret = TriMesh::make_cylinder(STEM_RADIUS, stem_length);
+    TriangleMesh cone_tip = TriMesh::make_cone(CONE_RADIUS, cone_height);
+    cone_tip.translate({0.0f, 0.0f, float(stem_length)});
+    ret.merge(cone_tip);
+    return ret;
+}
+
+} // namespace Slic3r::Biz::Scene

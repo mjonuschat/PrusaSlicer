@@ -14,6 +14,8 @@
 #include "Slic3r/App/Yoga/ToolbarButton.hpp"
 #include "Slic3r/App/Scene/LightingHelper.hpp"
 #include "Slic3r/App/LightSetting.hpp"
+#include "Slic3r/App/BedStore.hpp"
+#include "Slic3r/Biz/Scene/BedGeometry.hpp"
 
 #include "Slic3r/Domain/TriangleMesh.hpp"
 
@@ -277,6 +279,9 @@ void PreviewRenderModule::on_selected_bed_instance_changed(
         update_fdm_viewer_data({ project_id, bed_instance_id });
     }
 
+    m_scene_presenter->update_bed_instances();
+    center_camera_on_selected_bed();
+
     request_render();
 }
 
@@ -332,6 +337,14 @@ void PreviewRenderModule::on_activated()
 {
     if (m_scene_presenter != nullptr)
         m_scene_presenter->scene().set_lights(Slic3r::App::global_lighting());
+
+    m_scene_presenter->remove_all_bed_instances();
+    const App::BedStore& store = Slic3r::App::bed_store();
+    m_scene_presenter->add_bed_instances(store.beds);
+    m_scene_presenter->update_bed_instances();
+    Slic3r::App::clear_bed_store();
+
+    center_camera_on_selected_bed();
 }
 
 void PreviewRenderModule::on_deactivated()
@@ -951,9 +964,7 @@ void PreviewRenderModule::update_fdm_viewer_data(const Biz::Slicing::SlicingId i
     m_fdm_viewer.set_view_type(m_fdm_viewer.used_extruders_count() > 1 ? ViewType::Tool :
         gcode_events.empty() ? ViewType::FeatureType : ViewType::ColorPrint);
 
-    Scene::CameraTrackballController& trackball = m_scene_presenter->scene().camera_trackball();
-    trackball.set_target(m_fdm_viewer.bounding_box().center());
-    trackball.set_azimuth_and_zenith(Scene::DEFAULT_AZIMUTH, Scene::DEFAULT_ZENITH);
+    center_camera_on_selected_bed();
 }
 /*
 void PreviewRenderModule::update_sla_viewer_data(const Biz::Slicing::SlicingId id)
@@ -1071,6 +1082,29 @@ void PreviewRenderModule::on_slider_gcode_on_thumb_move()
 void PreviewRenderModule::on_legend_shells_action(bool visible)
 {
     // TODO
+}
+
+void PreviewRenderModule::center_camera_on_selected_bed()
+{
+    const Domain::BedInstance* bed_inst = Domain::find_by_id(
+        m_project_interactor.selected_config_container().bed_instances(),
+        m_project_interactor.scene_interactor().selected_bed_instance().instance_id
+    );
+    if (bed_inst == nullptr)
+        return;
+
+    Domain::Vec3d bed_inst_offset = bed_inst->transformation.get_offset();
+    const Domain::Bed& bed = bed_inst->bed;
+    std::vector<Domain::Vec3f> print_volume = Biz::Scene::BedGeometry::print_volume(bed);
+    Eigen::AlignedBox3d bed_aabb;
+    for (const auto& v : print_volume) {
+        bed_aabb.extend(bed_inst_offset + v.cast<double>());
+    }
+    m_scene_presenter->scene().set_bed_aabb(bed_aabb);
+    Scene::CameraTrackballController& trackball = m_scene_presenter->scene().camera_trackball();
+
+    trackball.set_target(bed_inst_offset + to_3d(bed.center(), 0.0));
+    trackball.synchronize_pivot_with_target();
 }
 
 } // namespace Slic3r::App::Preview

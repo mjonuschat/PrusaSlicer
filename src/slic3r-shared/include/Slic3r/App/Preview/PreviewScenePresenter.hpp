@@ -5,9 +5,9 @@
 #include "Slic3r/Biz/ISelectedProjectChangedListener.hpp"
 #include "Slic3r/App/Scene/ISceneProvider.hpp"
 #include "Slic3r/App/Scene/ScenePresenterProjectContext.hpp"
-#include "Slic3r/App/Preview/PreviewAuxiliaryElementId.hpp"
 #include "Slic3r/Domain/SelectionId.hpp"
 #include "Slic3r/App/Preview/PreviewSceneRenderCustomizer.hpp"
+#include "Slic3r/App/Scene/BedRenderUpdater.hpp"
 
 namespace Slic3r::App::Preview {
 
@@ -16,8 +16,7 @@ class PreviewScenePresenter : public Biz::ISelectedProjectChangedListener,
                               public Scene::ISceneProvider
 {
 public:
-    using ScenePresenterProjectContext = Scene::ScenePresenterProjectContext<PreviewAuxiliaryElementId>;
-    using ProjectContexts = std::unordered_map<Domain::SelectionId, ScenePresenterProjectContext>;
+    using ProjectContexts = std::unordered_map<Domain::SelectionId, Scene::ScenePresenterProjectContext>;
 
     PreviewScenePresenter(
         const Domain::Workbench& m_workbench,
@@ -34,12 +33,12 @@ public:
      * @name Implementation of Scene::ISceneProvider public interface
      * @{
      */
-    virtual Scene::Scene& scene() override { return project_context().scene(); }
-    virtual const Scene::Scene& scene() const override { return project_context().scene(); }
-    virtual Scene::SceneChangeSession& selection_scene_changes() override {
+    Scene::Scene& scene() override { return project_context().scene(); }
+    const Scene::Scene& scene() const override { return project_context().scene(); }
+    Scene::SceneChangeSession& selection_scene_changes() override {
         return project_context().selection_scene_changes();
     }
-    virtual Scene::Node& selection_root() override {
+    Scene::Node& selection_root() override {
         return project_context().selection_root();
     }
     /**@}*/
@@ -48,20 +47,24 @@ public:
      * @name Implementation of Biz::ISelectedProjectChangedListener public interface
      * @{
      */
-    virtual void on_selected_project_changed(size_t index) override;
+    void on_selected_project_changed(size_t index) override;
     /**@}*/
 
-    Scene::ScenePresenterProjectContext<PreviewAuxiliaryElementId>& project_context()
+    Scene::ScenePresenterProjectContext& project_context()
     {
         ASSERT(m_selected_project_id != Domain::INVALID_ID);
         return m_projects[m_selected_project_id];
     }
 
-    const Scene::ScenePresenterProjectContext<PreviewAuxiliaryElementId>& project_context() const
+    const Scene::ScenePresenterProjectContext& project_context() const
     {
         ASSERT(m_selected_project_id != Domain::INVALID_ID);
         return m_projects.find(m_selected_project_id)->second;
     }
+
+    void remove_all_bed_instances();
+    void add_bed_instances(const Domain::BedRefs& instances);
+    void update_bed_instances();
 
 private:
     void update_cameras(const std::function<void(Scene::Camera&)>& modifier);
@@ -73,7 +76,7 @@ private:
 
     Domain::SelectionId m_selected_project_id{ Domain::INVALID_ID };
     ProjectContexts m_projects;
-
+    Scene::BedRenderUpdater m_bed_render_updater;
 };
 
 } // namespace Slic3r::App::Preview

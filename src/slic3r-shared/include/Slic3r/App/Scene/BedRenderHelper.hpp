@@ -8,7 +8,7 @@ namespace Slic3r::Domain {
 class Bed;
 } // namespace Slic3r::Domain
 
-namespace Slic3r::App::Plater {
+namespace Slic3r::App::Scene {
 
 class BedRenderHelper
 {
@@ -38,4 +38,4 @@ public:
     [[nodiscard]] static std::vector<Vec3f> plate_grid(const Domain::Bed& bed);
 };
 
-} // namespace Slic3r::App::Plater
+} // namespace Slic3r::App::Scene

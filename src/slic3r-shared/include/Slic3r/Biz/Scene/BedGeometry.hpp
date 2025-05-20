@@ -6,7 +6,7 @@ namespace Slic3r::Domain {
 class Bed;
 } // namespace Slic3r::Domain
 
-namespace Slic3r::Biz::Plater {
+namespace Slic3r::Biz::Scene {
 
 class BedGeometry
 {
@@ -65,6 +65,17 @@ public:
      * @note The bed contour is specified into the bed, see Slic3r::Domain::Bed definition.
      */
     [[nodiscard]] static std::vector<Domain::Vec3f> print_volume(const Domain::Bed& bed);
+
+    /**
+     * @brief Return the geometry of the bed axis arrow.
+     * 
+     * @param bed The bed whose model is required.
+     *
+     * @return the geometry of the bed axis arrow as TriangleMesh.
+     * 
+     * @note The generated arrow is pointing in the positive Z axis direction.
+     */
+    [[nodiscard]] static Domain::TriangleMesh axis(const Domain::Bed& bed);
 };
 
-} // namespace Slic3r::Biz::Plater
+} // namespace Slic3r::Biz::Scene

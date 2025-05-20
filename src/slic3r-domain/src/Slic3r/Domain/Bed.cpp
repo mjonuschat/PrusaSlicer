@@ -61,6 +61,8 @@ Bed Bed::from(
 
     ret.m_contour_aabb_extent = max - min;
     ret.m_center = 0.5 * (min + max);
+    // TODO: calculate offset as done in libslic3r BuildVolume
+    // ret.m_offset = /*TODO*/;
     return ret;
 }
 

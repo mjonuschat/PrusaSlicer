@@ -1,4 +1,4 @@
-#include "Slic3r/App/Plater/BedRenderHelper.hpp"
+#include "Slic3r/App/Scene/BedRenderHelper.hpp"
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "Slic3r/Domain/Bed.hpp"
 #include "Slic3r/App/Render/Context.hpp"
@@ -18,7 +18,7 @@ static constexpr double GROUND_Z = -0.005;
 
 using namespace Slic3r::Biz;
 
-namespace Slic3r::App::Plater {
+namespace Slic3r::App::Scene {
 
 Render::Texture* BedRenderHelper::texture(const Domain::Bed& bed, Render::TextureManager& manager)
 {
@@ -70,4 +70,4 @@ std::vector<Vec3f> BedRenderHelper::plate_grid(const Domain::Bed& bed)
     return ret;
 }
 
-} // namespace Slic3r::App::Plater
+} // namespace Slic3r::App::Scene

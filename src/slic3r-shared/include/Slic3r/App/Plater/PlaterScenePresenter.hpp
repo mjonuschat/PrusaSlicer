@@ -12,14 +12,14 @@
 #include "Slic3r/App/Render/GeometryManager.hpp"
 #include "Slic3r/App/Scene/TriangleMeshManager.hpp"
 #include "Slic3r/App/Scene/ISceneProvider.hpp"
-#include "Slic3r/App/Plater/BedRenderUpdater.hpp"
-#include "Slic3r/App/Plater/AuxiliaryElementId.hpp"
+#include "Slic3r/App/Scene/BedRenderUpdater.hpp"
 
-namespace Slic3r::App::Scene { class NodeBuilder; }
+namespace Slic3r::App::Scene {
+class NodeBuilder;
+struct BedNodeTag;
+} // namespace Slic3r::App::Scene
 
 namespace Slic3r::App::Plater {
-
-struct BedNodeTag;
 
 class PlaterScenePresenter : public Biz::ISelectedProjectChangedListener,
                              public Biz::Scene::ISceneSelectionChangedListener,
@@ -29,8 +29,7 @@ class PlaterScenePresenter : public Biz::ISelectedProjectChangedListener,
                              public Scene::ISceneProvider
 {
 public:
-    using ScenePresenterProjectContext = Scene::ScenePresenterProjectContext<AuxiliaryElementId>;
-    using ProjectContexts = std::unordered_map<Domain::SelectionId, ScenePresenterProjectContext>;
+    using ProjectContexts = std::unordered_map<Domain::SelectionId, Scene::ScenePresenterProjectContext>;
     using GeometryManager = Render::GeometryManager<std::string>;
     using TriangleMeshManager = Scene::TriangleMeshManager<std::string>;
 
@@ -44,14 +43,13 @@ public:
 
     bool project_ready() const { return !m_projects.empty(); }
 
-
-    Scene::ScenePresenterProjectContext<AuxiliaryElementId>& project_context()
+    Scene::ScenePresenterProjectContext& project_context()
     {
         ASSERT(m_selected_project_id != Domain::INVALID_ID);
         return m_projects[m_selected_project_id];
     }
 
-    const Scene::ScenePresenterProjectContext<AuxiliaryElementId>& project_context() const
+    const Scene::ScenePresenterProjectContext& project_context() const
     {
         ASSERT(m_selected_project_id != Domain::INVALID_ID);
         return m_projects.find(m_selected_project_id)->second;
@@ -114,12 +112,6 @@ private:
 
     void build_volume_node(Scene::NodeBuilder& builder, Domain::SelectionId project_id, const ModelInstance* inst, const ModelVolume* vol);
 
-    void build_bed_plate_node(Scene::NodeBuilder& builder, Domain::SelectionId project_id, const Domain::Bed& bed, const BedNodeTag& tag);
-    void build_bed_grid_node(Scene::NodeBuilder& builder, Domain::SelectionId project_id, const Domain::Bed& bed, const BedNodeTag& tag);
-    void build_bed_contour_node(Scene::NodeBuilder& builder, Domain::SelectionId project_id, const Domain::Bed& bed, const BedNodeTag& tag);
-    void build_bed_print_volume_node(Scene::NodeBuilder& builder, Domain::SelectionId project_id, const Domain::Bed& bed, const BedNodeTag& tag);
-    void build_bed_model_node(Scene::NodeBuilder& builder, Domain::SelectionId project_id, const Domain::Bed& bed, const BedNodeTag& tag);
-
     const Domain::BedInstance& selected_bed_instance() const;
 
 private:
@@ -130,7 +122,7 @@ private:
 
     Domain::SelectionId m_selected_project_id{Domain::INVALID_ID};
     ProjectContexts m_projects;
-    BedRenderUpdater m_bed_render_updater;
+    Scene::BedRenderUpdater m_bed_render_updater;
 
     bool m_freeze_selection_center{ false };
 };

@@ -1,5 +1,5 @@
-#include "Slic3r/App/Plater/BedMaterials.hpp"
-#include "Slic3r/App/Plater/BedRenderHelper.hpp"
+#include "Slic3r/App/Scene/BedMaterials.hpp"
+#include "Slic3r/App/Scene/BedRenderHelper.hpp"
 #include "Slic3r/App/Render/Context.hpp"
 #include "Slic3r/App/Render/Material.hpp"
 #include "Slic3r/App/Render/Device.hpp"
@@ -7,7 +7,9 @@
 
 #include <boost/algorithm/string/predicate.hpp>
 
-namespace Slic3r::App::Plater {
+#include "Slic3r/Assert.hpp"
+
+namespace Slic3r::App::Scene {
 
 Render::Material BedMaterials::plate_default_material(const Render::Device& device)
 {
@@ -70,6 +72,26 @@ Render::Material BedMaterials::model_material(const Render::Device& device)
     Render::Material ret;
     ret
         .set_shader(device.context().shader_manager().shader("gouraud_light"))
+        .set_uniform("uniform_color", color)
+        .set_transparent(color.is_transparent());
+    return ret;
+}
+
+Render::Material BedMaterials::axis_material(const Render::Device& device, uint8_t axis)
+{
+    ColorRGBA color;
+    switch (axis)
+    {
+    case 0: { color = DEFAULT_BED_X_AXIS_COLOR; break; }
+    case 1: { color = DEFAULT_BED_Y_AXIS_COLOR; break; }
+    case 2: { color = DEFAULT_BED_Z_AXIS_COLOR; break; }
+    default: {
+        // unsupported axis
+        PANIC("Unsupported axis");
+    }
+    }
+    Render::Material ret;
+    ret.set_shader(device.context().shader_manager().shader("gouraud_light"))
         .set_uniform("uniform_color", color)
         .set_transparent(color.is_transparent());
     return ret;
@@ -142,4 +164,4 @@ Render::Material BedMaterials::model_override_material(const Render::Device& dev
     return ret;
 }
 
-} // namespace Slic3r::App::Plater
+} // namespace Slic3r::App::Scene

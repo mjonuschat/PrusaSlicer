@@ -4,7 +4,7 @@
 #include "Slic3r/App/Scene/Lights.hpp"
 #include "Slic3r/App/Render/Material.hpp"
 #include "Slic3r/App/Plater/SceneNodeTag.hpp"
-#include "Slic3r/App/Plater/BedNodeTag.hpp"
+#include "Slic3r/App/Scene/BedNodeTag.hpp"
 
 #include <Slic3r/App/libvgcode/GCodeNodeTag.hpp>
 
@@ -399,9 +399,9 @@ void render_imgui_scene_shading_customization(ISceneProvider& scene_provider, st
                                 found = true;
                             }
                             else {
-                                const Plater::BedNodeTag* bn_tag = n->tag_of_type<Plater::BedNodeTag>();
+                                const BedNodeTag* bn_tag = n->tag_of_type<BedNodeTag>();
                                 if (bn_tag != nullptr) {
-                                    pbr = (bn_tag->type == Plater::BedElementType::Model) ?
+                                    pbr = (bn_tag->type == BedElementType::Model) ?
                                         DEFAULT_BED_MODEL_PBRPARAMS : DEFAULT_BED_PLATE_PBRPARAMS;
                                     found = true;
                                 }
