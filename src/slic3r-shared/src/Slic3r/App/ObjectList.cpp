@@ -384,7 +384,7 @@ void ObjectList::force_select_whole_object(const Slic3r::ModelObject* object)
         m_selected_items.erase(sel_element);
         //  and push all instances instad
         for (const Slic3r::ModelInstance* instance : object->instances)
-            m_selected_items.insert({ object_id, instance->id().id });
+            m_selected_items.insert(Domain::ElementRef{ object_id, instance->id().id });
     }
 }
 
