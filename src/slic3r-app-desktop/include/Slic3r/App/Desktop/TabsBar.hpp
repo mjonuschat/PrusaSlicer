@@ -20,25 +20,16 @@ public:
             long style = 0)
     {
         Init();
-        Create(parent, winid, pos, size, style);
-    }
-
-    TabsBar(wxWindow * parent,
-            TabsBarMenus* menus,
-            long style = 0)
-    {
-        Init();
         // wxNB_NOPAGETHEME: Disable Windows Vista theme for the Notebook background. The theme performance is terrible on Windows 10
         // with multiple high resolution displays connected.
-        Create(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, style | wxTAB_TRAVERSAL | wxNB_NOPAGETHEME, menus);
+        Create(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, style | wxTAB_TRAVERSAL | wxNB_NOPAGETHEME);
     }
 
     bool Create(wxWindow * parent,
                 wxWindowID winid = wxID_ANY,
                 const wxPoint & pos = wxDefaultPosition,
                 const wxSize & size = wxDefaultSize,
-                long style = 0,
-                TabsBarMenus* menus = nullptr)
+                long style = 0)
     {
         if (!wxBookCtrlBase::Create(parent, winid, pos, size, style))
             return false;

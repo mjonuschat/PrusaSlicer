@@ -17,11 +17,6 @@ private:
         const wxSize& size = wxDefaultSize)
     : TabsBar(parent, winid, pos, size, wxBK_LEFT) {}
 
-    LeftBar(
-        wxWindow * parent,
-        TabsBarMenus* menus)
-    : TabsBar(parent, menus, wxBK_LEFT) {}
-
 public:
     static LeftBar* Create(
         wxWindow* parent,
@@ -38,8 +33,8 @@ public:
         wxWindow * parent,
         TabsBarMenus* menus)
     {
-        LeftBar* lb = new LeftBar(parent, menus);
-        lb->CreateBookCtrl();
+        LeftBar* lb = new LeftBar(parent);
+        lb->CreateBookCtrl(menus);
         return lb;
     }
 

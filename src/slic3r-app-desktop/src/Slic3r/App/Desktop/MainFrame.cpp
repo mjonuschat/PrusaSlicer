@@ -115,7 +115,9 @@ MainFrame::MainFrame(
     localization().add_listener<ILanguageChangedListener>(this);
     auto em = w_config()->em_unit();
 
-    this->SetMinSize(FromDIP(wxSize(80 * em, 40 * em)));
+    const wxSize min_size = FromDIP(wxSize(90 * em, 60 * em));
+    this->SetMinSize(min_size);
+    this->SetSize(min_size);
 
     wxFont font = w_config()->normal_font();
     w_config()->update_fonts(font, w_config()->em_unit());

@@ -17,11 +17,6 @@ private:
         const wxSize& size = wxDefaultSize)
     : TabsBar(parent, winid, pos, size, wxBK_TOP) {}
 
-    TopBar(
-        wxWindow * parent,
-        TabsBarMenus* menus)
-    : TabsBar(parent, menus, wxBK_TOP) {}
-
 public:
     static TopBar* Create(
         wxWindow* parent,
@@ -38,8 +33,8 @@ public:
         wxWindow * parent,
         TabsBarMenus* menus)
     {
-        TopBar* tb = new TopBar(parent, menus);
-        tb->CreateBookCtrl();
+        TopBar* tb = new TopBar(parent);
+        tb->CreateBookCtrl(menus);
         return tb;
     }
 
