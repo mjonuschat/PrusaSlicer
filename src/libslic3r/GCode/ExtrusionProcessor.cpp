@@ -219,13 +219,14 @@ static std::map<float, float> calc_fan_speed_sections(const ExtrusionAttributes 
         std::vector<int> fan_speed;
     };
 
-    std::vector<OverhangWithFanSpeed> overhang_with_fan_speeds = {{100, std::vector<int>{0}}};
+    const size_t                      num_extruders            = config.get<std::vector<double>>("nozzle_diameter").size();
+    std::vector<OverhangWithFanSpeed> overhang_with_fan_speeds = {{100, std::vector<int>(num_extruders, 0)}};
     if (config.get<std::vector<bool>>("enable_dynamic_fan_speeds").at(extruder_id)) {
         overhang_with_fan_speeds = {{  0, config.get<std::vector<int>>("overhang_fan_speed_0")},
                                     { 25, config.get<std::vector<int>>("overhang_fan_speed_1")},
                                     { 50, config.get<std::vector<int>>("overhang_fan_speed_2")},
                                     { 75, config.get<std::vector<int>>("overhang_fan_speed_3")},
-                                    {100, std::vector<int>{0}}};
+                                    {100, std::vector<int>(num_extruders, 0)}};
     }
 
     std::map<float, float> fan_speed_sections;
