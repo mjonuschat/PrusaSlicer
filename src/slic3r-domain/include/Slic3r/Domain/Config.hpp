@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <any>
 #include <boost/container_hash/hash.hpp>
 #include <cfloat>
