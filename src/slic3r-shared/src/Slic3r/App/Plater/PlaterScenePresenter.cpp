@@ -159,10 +159,7 @@ void PlaterScenePresenter::update_objects_shadows_data()
             if (vol->is_model_part()) {
                 const auto* inst = Domain::find_by_id<ModelInstance>(obj->instances, tag->instance_id);
                 bool shadows = std::find(insts_on_bed.begin(), insts_on_bed.end(), inst) != insts_on_bed.end();
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-                n.render_component()->set_shadows(Render::Shadows{ false, false });
-//                n.render_component()->set_shadows(shadows ? Render::Shadows{ true, true } : Render::Shadows{ false, false });
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+                n.render_component()->set_shadows(shadows ? Render::Shadows{ true, true } : Render::Shadows{ false, false });
             }
             else
                 n.render_component()->set_shadows(Render::Shadows{ false, false });
@@ -301,15 +298,8 @@ void PlaterScenePresenter::build_volume_node(
         color = color_it->second;
 
     auto material = Render::Material{}
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-        .set_shader(m_device.context().shader_manager().shader("gouraud_light_wireframe"))
-//        .set_shader(m_device.context().shader_manager().shader("gouraud_light"))
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        .set_shader(m_device.context().shader_manager().shader("gouraud_light"))
         .set_uniform("uniform_color", color)
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-        .set_uniform("wireframe_color", ColorRGBA{1.0f, 1.0f, 1.0f, 1.0f})
-        .set_uniform("wireframe_width", 0.5f)
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         .set_transparent(color.is_transparent());
     builder
         .set_debug_name(fmt::format("vol: {}", vol->id().id))
@@ -319,10 +309,7 @@ void PlaterScenePresenter::build_volume_node(
         .set_aabb(trimesh->aabb_mesh());
     if (vol->type() == ModelVolumeType::MODEL_PART) {
         builder
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-            .set_shadows(Render::Shadows{ false, false })
-//            .set_shadows(Render::Shadows{ true, true })
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+            .set_shadows(Render::Shadows{ true, true })
             // FIXME: the pbr data should be set in dependence of the volume filament 
             // see PrusaSlicer PrintConfigDef::init_fff_params() option 'filament_type' 
             .set_pbr(Scene::DEFAULT_VOLUME_PBRPARAMS);

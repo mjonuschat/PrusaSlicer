@@ -22,6 +22,7 @@
 
 using Slic3r::ModelVolume;
 using Slic3r::ModelObject;
+using Slic3r::ColorRGBA;
 using Slic3r::App::Plater::SimplifyGizmo;
 using Slic3r::App::Plater::SceneNodeTag;
 using Slic3r::App::Render::GeometryBuilder;
@@ -43,6 +44,9 @@ using Slic3r::Domain::Project;
 using Slic3r::Domain::ObjectID;
 
 namespace {
+// Static variables
+const float wireframe_width = 0.5f;
+const ColorRGBA wireframe_color = ColorRGBA::BLUE();
 
 struct SimplifyNodeTag {};
 bool is_simplify_node(const Node* n){
@@ -129,7 +133,9 @@ SimplifyGizmo::SimplifyGizmo(
     , m_scene_presenter(scene_presenter)
     , m_project_interactor(project_interactor)
     , m_close_fn(close_fn)
-{}
+{
+    init_material();
+}
 
 SimplifyGizmo::~SimplifyGizmo() {
     stop_worker_thread_request();
@@ -267,7 +273,10 @@ void SimplifyGizmo::draw_tool()
     ImGui::Text(_u8L("%d triangles").c_str(), m_configuration.wanted_count);
     //m_imgui->disabled_end(); // use_count
 
-    ImGui::Checkbox(_u8L("Show wireframe").c_str(), &m_show_wireframe);
+    if (ImGui::Checkbox(_u8L("Show wireframe").c_str(), &m_show_wireframe)) {
+        init_material();
+        update_model(m_state.result); // TODO: Not thread safe - Do not regenerate Geometry!!
+    }
 
     //m_imgui->disabled_begin(is_cancelling);
     if (ImGui::Button(_u8L("Close").c_str())) {
@@ -559,24 +568,41 @@ void SimplifyGizmo::set_nodes(const NodeInputs& node_inputs)
     }
 }
 
+void SimplifyGizmo::init_material(){
+    if (m_show_wireframe) {
+        Scene::Scene& scene = m_scene_presenter.scene();
+        const Render::Rect& viewport = scene.camera().viewport();
+        float half_w = 0.5f * float(viewport.width);
+        float half_h = 0.5f * float(viewport.height);
+        Matrix4f viewport_matrix;
+        viewport_matrix << 
+            half_w, 0.0f,   0.0f, half_w,
+            0.0f,   half_h, 0.0f, half_h, 
+            0.0f,   0.0f,   1.0f, 0.0f,
+            0.0f,   0.0f,   0.0f, 1.0f;
+        m_material = Render::Material{}
+            .set_shader(m_device.context().shader_manager().shader("gouraud_light_wireframe"))
+            .set_uniform("uniform_color", ColorRGBA::GREEN())
+            .set_uniform("wireframe_color", wireframe_color)
+            .set_uniform("wireframe_width", wireframe_width)
+            .set_uniform("viewport_matrix", viewport_matrix)
+            .set_transparent(false);
+    } else {
+        m_material = Render::Material{}
+            .set_shader(m_device.context().shader_manager().shader("gouraud_light"))
+            .set_uniform("uniform_color", ColorRGBA::GREEN())
+            .set_transparent(false);    
+    }
+}
+
 void SimplifyGizmo::init_model(const std::set<ObjectID>& current_volume_ids)
-{    
+{
     m_volume_ids = std::move(current_volume_ids);
-
-    //m_material = Render::Material{}
-    //    .set_shader(m_device.context().shader_manager().shader("flat"))
-    //    .set_uniform("uniform_color", ColorRGBA::ORANGE());
-
-    m_material = Render::Material{}
-        .set_shader(m_device.context().shader_manager().shader("gouraud_light"))
-        .set_uniform("uniform_color", ColorRGBA::ORANGE())
-        .set_transparent(false);
-
     NodeInputs node_inputs;
     node_inputs.reserve(m_volume_ids.size());
 
-    m_triangle_count = 0;
-    Scene::Scene& scene = m_scene_presenter.scene(); 
+    m_triangle_count = 0; 
+    Scene::Scene& scene = m_scene_presenter.scene();
     const Project& project = m_project_interactor.selected_project(); 
     for (const ObjectID& volume_id : m_volume_ids) {
         // generate clone of goemetry (copy Node)

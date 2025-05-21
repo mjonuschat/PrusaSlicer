@@ -80,6 +80,7 @@ private:
     void worker_finished();
 
     void create_mesh_name();
+    void init_material();
     void init_model(const std::set<Domain::ObjectID>&); // initialize gl Models from selection
     void update_model(const State::Data& data);
     struct NodeInput{
