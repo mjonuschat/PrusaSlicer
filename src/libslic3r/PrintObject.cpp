@@ -608,9 +608,10 @@ void PrintObject::calculate_overhanging_perimeters()
             }
             extruders.clear();
             pr->collect_object_printing_extruders(*this->print(), extruders);
-            auto cfg = this->print()->config();
+
+            const std::vector<bool> enable_dynamic_fan_speeds = this->print()->config().get<std::vector<bool>>("enable_dynamic_fan_speeds");
             if (std::any_of(extruders.begin(), extruders.end(),
-                            [&cfg](unsigned int extruder_id) { return cfg.get<std::vector<bool>>("enable_dynamic_fan_speeds").at(extruder_id); })) {
+                            [&enable_dynamic_fan_speeds](unsigned int extruder_id) { return enable_dynamic_fan_speeds.at(extruder_id); })) {
                 regions_with_dynamic_speeds.insert(pr);
             }
         }
