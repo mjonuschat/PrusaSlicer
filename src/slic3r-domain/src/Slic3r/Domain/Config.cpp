@@ -175,20 +175,20 @@ bool ConfigItem::operator==(const ConfigItem& other) const
     using CIT = ConfigItemType;
     switch (this->type()) {
     case CIT::Bool: return this->get<bool>() == other.get<bool>();
-    case CIT::Int: return get<int>() == get<int>();
-    case CIT::IntOptional: return get<std::optional<int>>() == get<std::optional<int>>();
-    case CIT::Double: return get<double>() == get<double>();
-    case CIT::String: return get<std::string>() == get<std::string>();
-    case CIT::Enum: return get_enum_as_int() == get_enum_as_int();
-    case CIT::Percent: return get<Percentage>() == get<Percentage>();
-    case CIT::FloatOrPercent: return get<FloatOrPercentage>() == get<FloatOrPercentage>();
-    case CIT::Point: return get<Vec2d>() == get<Vec2d>();
-    case CIT::Bools: return get<std::vector<bool>>() == get<std::vector<bool>>();
+    case CIT::Int: return this->get<int>() == other.get<int>();
+    case CIT::IntOptional: return this->get<std::optional<int>>() == other.get<std::optional<int>>();
+    case CIT::Double: return this->get<double>() == other.get<double>();
+    case CIT::String: return this->get<std::string>() == other.get<std::string>();
+    case CIT::Enum: return this->get_enum_as_int() == other.get_enum_as_int();
+    case CIT::Percent: return this->get<Percentage>() == other.get<Percentage>();
+    case CIT::FloatOrPercent: return this->get<FloatOrPercentage>() == other.get<FloatOrPercentage>();
+    case CIT::Point: return this->get<Vec2d>() == other.get<Vec2d>();
+    case CIT::Bools: return this->get<std::vector<bool>>() == other.get<std::vector<bool>>();
     case CIT::Enums: [[fallthrough]];
-    case CIT::Ints: return get<std::vector<int>>() == get<std::vector<int>>();
-    case CIT::Doubles: return get<std::vector<double>>() == get<std::vector<double>>();
-    case CIT::Strings: return get<std::vector<std::string>>() == get<std::vector<std::string>>();
-    case CIT::Points: return get<std::vector<Vec2d>>() == get<std::vector<Vec2d>>();
+    case CIT::Ints: return this->get<std::vector<int>>() == other.get<std::vector<int>>();
+    case CIT::Doubles: return this->get<std::vector<double>>() == other.get<std::vector<double>>();
+    case CIT::Strings: return this->get<std::vector<std::string>>() == other.get<std::vector<std::string>>();
+    case CIT::Points: return this->get<std::vector<Vec2d>>() == other.get<std::vector<Vec2d>>();
     default : PANIC();
     }
 
