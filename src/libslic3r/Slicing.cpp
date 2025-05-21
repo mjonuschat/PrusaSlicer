@@ -76,14 +76,17 @@ SlicingParameters SlicingParameters::create_from_config(
     assert(! config.get<Domain::FloatOrPercentage>("first_layer_height").is_percentage());
     double first_layer_height = (config.get<Domain::FloatOrPercentage>("first_layer_height").is_zero()) ?
         layer_height : config.get<Domain::FloatOrPercentage>("first_layer_height").get_abs_value(layer_height);
-    // If object_config.support_material_extruder == 0 resp. object_config.support_material_interface_extruder == 0,
-    // print_config.nozzle_diameter.get_at(size_t(-1)) returns the 0th nozzle diameter,
+
+    // If object_config.support_material_extruder == 0 resp. object_config.support_material_interface_extruder == 0, use the 0th nozzle diameter,
     // which is consistent with the requirement that if support_material_extruder == 0 resp. support_material_interface_extruder == 0,
     // support will not trigger tool change, but it will use the current nozzle instead.
     // In that case all the nozzles have to be of the same diameter.
-    double support_material_extruder_dmr           = config.get<std::vector<double>>("nozzle_diameter").at(config.get<int>("support_material_extruder") - 1);
-    double support_material_interface_extruder_dmr = config.get<std::vector<double>>("nozzle_diameter").at(config.get<int>("support_material_interface_extruder") - 1);
-    bool     soluble_interface                       = config.get<double>("support_material_contact_distance") == 0.;
+    const int support_material_extruder_idx           = std::max<int>(config.get<int>("support_material_extruder") - 1, 0);
+    const int support_material_interface_extruder_idx = std::max<int>(config.get<int>("support_material_interface_extruder") - 1, 0);
+
+    const double support_material_extruder_dmr           = config.get<std::vector<double>>("nozzle_diameter").at(support_material_extruder_idx);
+    const double support_material_interface_extruder_dmr = config.get<std::vector<double>>("nozzle_diameter").at(support_material_interface_extruder_idx);
+    const bool   soluble_interface                       = config.get<double>("support_material_contact_distance") == 0.;
 
     SlicingParameters params;
     params.layer_height = config.get<double>("layer_height");
