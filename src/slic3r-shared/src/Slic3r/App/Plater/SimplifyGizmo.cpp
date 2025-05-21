@@ -9,16 +9,18 @@
 #include "Slic3r/App/Render/GeometryBuilder.hpp"
 #include "Slic3r/App/Scene/GeometryDataFactory.hpp"
 #include "Slic3r/Biz/Platform/PlatformServices.hpp" // main_thread_dispatcher
+#include "Slic3r/Biz/Algorithms/QuadricEdgeCollapse.hpp"
 
 #include "libslic3r/Model.hpp"
 #include "libslic3r/I18N.hpp" // translation
-#include "libslic3r/QuadricEdgeCollapse.hpp" // translation
 
 #include "imgui/imgui.h"
 
 // TODO: 
 // 1. add Notification: there is volume with a lot of small triangles and suggest simplify
 // 2. Esc key down: cancel simplification
+// 3. add disable into ImguiWindow
+// 4. validate volume exchange(Scne::Node are correct but object list is invalid)
 
 using Slic3r::ModelVolume;
 using Slic3r::ModelObject;
@@ -42,6 +44,8 @@ using Slic3r::Biz::Platform::PlatformServices;
 using Slic3r::Domain::ElementRef;
 using Slic3r::Domain::Project;
 using Slic3r::Domain::ObjectID;
+
+using Slic3r::Biz::Algorithms::its_quadric_edge_collapse;
 
 namespace {
 // Static variables
@@ -275,7 +279,12 @@ void SimplifyGizmo::draw_tool()
 
     if (ImGui::Checkbox(_u8L("Show wireframe").c_str(), &m_show_wireframe)) {
         init_material();
-        update_model(m_state.result); // TODO: Not thread safe - Do not regenerate Geometry!!
+        
+        Scene::Scene& scene = m_scene_presenter.scene();
+        Node::NodeList simplify_nodes;
+        scene.root().query(is_simplify_node, simplify_nodes);
+        for (Node* node : simplify_nodes)
+            node->set_material_override(m_material);
     }
 
     //m_imgui->disabled_begin(is_cancelling);
@@ -582,7 +591,6 @@ void SimplifyGizmo::init_material(){
             0.0f,   0.0f,   0.0f, 1.0f;
         m_material = Render::Material{}
             .set_shader(m_device.context().shader_manager().shader("gouraud_light_wireframe"))
-            .set_uniform("uniform_color", ColorRGBA::GREEN())
             .set_uniform("wireframe_color", wireframe_color)
             .set_uniform("wireframe_width", wireframe_width)
             .set_uniform("viewport_matrix", viewport_matrix)
@@ -590,7 +598,6 @@ void SimplifyGizmo::init_material(){
     } else {
         m_material = Render::Material{}
             .set_shader(m_device.context().shader_manager().shader("gouraud_light"))
-            .set_uniform("uniform_color", ColorRGBA::GREEN())
             .set_transparent(false);    
     }
 }

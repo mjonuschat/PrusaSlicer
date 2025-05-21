@@ -9,15 +9,13 @@ struct indexed_triangle_set;
 // paper: https://people.eecs.berkeley.edu/~jrs/meshpapers/GarlandHeckbert2.pdf
 // sum up: https://users.csc.calpoly.edu/~zwood/teaching/csc570/final06/jseeba/
 // inspiration: https://github.com/sp4cerat/Fast-Quadric-Mesh-Simplification
-#ifndef PRUSASLICER_QUADRIC_EDGE_COLLAPSE_HPP
-#define PRUSASLICER_QUADRIC_EDGE_COLLAPSE_HPP
 
-#include <cstdint>
-#include <functional>
+#include <cstdint> // uint32_t
+#include <functional> 
 
-#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
+#include <admesh/stl.h> // indexed_triangle_set
 
-namespace Slic3r {
+namespace Slic3r::Biz::Algorithms {
 
 /// <summary>
 /// Simplify mesh by Quadric metric
@@ -30,13 +28,11 @@ namespace Slic3r {
 /// <param name="throw_on_cancel">Could stop process of calculation.</param>
 /// <param name="statusfn">Give a feed back to user about progress. Values 1 - 100</param>
 void its_quadric_edge_collapse(
-    indexed_triangle_set &    its,
+    indexed_triangle_set&     its,
     uint32_t                  triangle_count  = 0,
     float *                   max_error       = nullptr,
     std::function<void(void)> throw_on_cancel = nullptr,
     std::function<void(int)>  statusfn        = nullptr);
 
-} // namespace Slic3r
+} // namespace Slic3r::Biz::Algorithms
 #endif // slic3r_quadric_edge_collapse_hpp_
-
-#endif // PRUSASLICER_QUADRIC_EDGE_COLLAPSE_HPP

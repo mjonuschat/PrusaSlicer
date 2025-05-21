@@ -2,13 +2,14 @@
 #include <igl/qslim.h>
 #include <test_utils.hpp>
 
-#include <libslic3r/QuadricEdgeCollapse.hpp>
+#include "Slic3r/Biz/Algorithms/QuadricEdgeCollapse.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp" // its - indexed_triangle_set
 #include "libslic3r/AABBTreeIndirect.hpp" // is similar
 
 using namespace Slic3r;
 using Domain::Index3;
 using Domain::TriangleMesh;
+using Slic3r::Biz::Algorithms::its_quadric_edge_collapse;
 
 namespace Private {
 
