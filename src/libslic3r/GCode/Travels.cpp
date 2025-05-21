@@ -323,23 +323,27 @@ struct SmoothingParams
 SmoothingParams get_smoothing_params(
     const double lift_height,
     const double slope_end,
-    unsigned extruder_id,
+    const size_t machine_mode_idx,
     const double travel_length,
     const Domain::ConfigView &config
 ) {
+    // Currently, we don't generate different G-codes for normal and stealth modes,
+    // so machine_mode_idx should always be 0 (normal mode).
+    assert(machine_mode_idx == 0);
+
     if (config.get<GCodeFlavor>("gcode_flavor") != gcfMarlinFirmware)
         // Smoothing is supported only on Marlin.
         return {0, 1};
 
     const double slope = lift_height / slope_end;
-    const double max_machine_z_velocity = config.get<std::vector<double>>("machine_max_feedrate_z").at(extruder_id);
+    const double max_machine_z_velocity = config.get<std::vector<double>>("machine_max_feedrate_z").at(machine_mode_idx);
     const double max_xy_velocity =
         Vec2d{
-            config.get<std::vector<double>>("machine_max_feedrate_x").at(extruder_id),
-            config.get<std::vector<double>>("machine_max_feedrate_y").at(extruder_id)}
+            config.get<std::vector<double>>("machine_max_feedrate_x").at(machine_mode_idx),
+            config.get<std::vector<double>>("machine_max_feedrate_y").at(machine_mode_idx)}
             .norm();
 
-    const double xy_acceleration = config.get<std::vector<double>>("machine_max_acceleration_travel").at(extruder_id);
+    const double xy_acceleration = config.get<std::vector<double>>("machine_max_acceleration_travel").at(machine_mode_idx);
 
     const double xy_acceleration_time = max_xy_velocity / xy_acceleration;
     const double xy_acceleration_distance = 1.0 / 2.0 * xy_acceleration *
@@ -351,14 +355,14 @@ SmoothingParams get_smoothing_params(
 
     const double max_z_velocity = std::min(max_xy_velocity * slope, max_machine_z_velocity);
     const double deceleration_time = max_z_velocity /
-        config.get<std::vector<double>>("machine_max_acceleration_z").at(extruder_id);
+        config.get<std::vector<double>>("machine_max_acceleration_z").at(machine_mode_idx);
     const double deceleration_xy_distance = deceleration_time * max_xy_velocity;
 
     const double blend_width = slope_end > deceleration_xy_distance / 2.0 ? deceleration_xy_distance :
                                                                           slope_end * 2.0;
 
     const unsigned points_count = blend_width > 0 ?
-        std::ceil(max_z_velocity / config.get<std::vector<double>>("machine_max_jerk_z").at(extruder_id)) :
+        std::ceil(max_z_velocity / config.get<std::vector<double>>("machine_max_jerk_z").at(machine_mode_idx)) :
         1;
 
     if (blend_width <= 0     // When there is no blend with, there is no need for smoothing.
@@ -399,7 +403,7 @@ ElevatedTravelParams get_elevated_traval_params(
         elevation_params.slope_end = obstacle_adjusted_slope_end;
 
     SmoothingParams smoothing_params{get_smoothing_params(
-        elevation_params.lift_height, elevation_params.slope_end, extruder_id,
+        elevation_params.lift_height, elevation_params.slope_end, 0,
         unscaled(xy_path.length()), config
     )};
 
