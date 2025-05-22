@@ -851,7 +851,7 @@ void PlaterRenderModule::render_imgui(Render::CommandBuffer & cmd_buffer)
     m_layout->render(Vec2f(m_screen_info.logical_width(), m_screen_info.logical_height()));
 
     m_scene_presenter->render_imgui(m_screen_info);
-
+    m_gizmo_manager->render_imgui();
 #if ENABLED_DEBUG_OUTLINE
     if (ImGui::Begin("Outline", nullptr)) {
         imgui_scenegraph_node_info(m_scene_presenter->scene().root());

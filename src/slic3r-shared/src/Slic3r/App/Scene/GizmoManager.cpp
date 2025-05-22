@@ -1,6 +1,7 @@
 #include "Slic3r/App/Scene/GizmoManager.hpp"
 
 #include "Slic3r/App/Render/ScopedDebugGroup.hpp"
+#include "Slic3r/App/Plater/SimplifyGizmo.hpp"
 
 #if DEBUG_GIZMO_MANAGER
 #include "Slic3r/TypeInfo.hpp"
@@ -127,6 +128,14 @@ void GizmoManager::render_scene(Render::CommandBuffer& cmd_buffer)
     for (auto* g : p.in_cycle_gizmos)
         g->render_scene(cmd_buffer);
     //m_scene_provider.scene().log_nodes();
+}
+
+// TODO: remove this when gizmo rendering will be fully implemented
+void GizmoManager::render_imgui() {
+    if (current_tool_type() == ToolType::Simplify) {
+        auto simplify_gizmo = dynamic_cast<Slic3r::App::Plater::SimplifyGizmo*>(m_active_tool);
+        if (simplify_gizmo!=nullptr) simplify_gizmo->render_imgui();
+    }
 }
 
 //void GizmoManager::render_imgui()
