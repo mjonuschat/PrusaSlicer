@@ -4,6 +4,7 @@
 #include <functional>
 
 #include "Slic3r/App/Plater/PlaterScenePresenter.hpp"
+#include "Slic3r/App/Render/Device.hpp"
 #include "Slic3r/App/Render/Geometry.hpp"
 #include "Slic3r/App/Render/Material.hpp"
 #include "Slic3r/App/Scene/IGizmo.hpp" // IToolGizmo
@@ -12,7 +13,9 @@
 #include "Slic3r/Domain/ObjectID.hpp"
 
 namespace Slic3r::App::Plater {
-
+// Continue development for GLGizmoSimplify permanent link: 
+// https://github.com/prusa3d/PrusaSlicer/blob/6fd9846df131c671ac9f944c836536f04d354a53/src/slic3r/GUI/Gizmos/GLGizmoSimplify.hpp
+// https://github.com/prusa3d/PrusaSlicer/blob/6fd9846df131c671ac9f944c836536f04d354a53/src/slic3r/GUI/Gizmos/GLGizmoSimplify.cpp
 class SimplifyGizmo : public Scene::IToolGizmo
 {
 public:
@@ -95,8 +98,6 @@ private:
     PlaterScenePresenter& m_scene_presenter;
     Biz::ProjectInteractor& m_project_interactor;
     CloseFn m_close_fn; // call GizmoManager to close current gizmo
-
-    bool m_activated = false;
 
     std::thread m_worker;
     std::mutex m_state_mutex; // guards m_state

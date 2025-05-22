@@ -5,7 +5,6 @@
 
 #include "Slic3r/App/Plater/PlaterSceneLayer.hpp"
 #include "Slic3r/App/Plater/SceneNodeTag.hpp"
-#include "Slic3r/App/Render/Device.hpp"
 #include "Slic3r/App/Render/GeometryBuilder.hpp"
 #include "Slic3r/App/Scene/GeometryDataFactory.hpp"
 #include "Slic3r/Biz/Platform/PlatformServices.hpp" // main_thread_dispatcher
@@ -315,10 +314,8 @@ void SimplifyGizmo::draw_tool()
         process();
 }
 
-void SimplifyGizmo::on_activated() { m_activated = true; }
+void SimplifyGizmo::on_activated() { }
 void SimplifyGizmo::on_deactivated() {
-    m_activated = false;
-
     stop_worker_thread_request();
 
     // Enable previously disabled node

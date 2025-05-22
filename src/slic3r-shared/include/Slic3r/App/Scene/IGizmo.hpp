@@ -106,11 +106,12 @@ public:
  */
 enum class ToolType : uint8_t
 {
-    None = 0,
-    Translation = 1,
-    Rotation = 2,
-    Simplify = 3,
-    PaintOnSupportsGizmo = 3,
+    None,
+    Translation,
+    Rotation,
+    Simplify,
+    Text,
+    PaintOnSupportsGizmo,
     // add as needed, no printer type variants (use two distinct IToolGizmos with same type instead)
 };
 
