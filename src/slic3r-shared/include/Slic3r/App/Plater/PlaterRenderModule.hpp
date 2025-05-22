@@ -15,6 +15,7 @@ namespace Slic3r::App::Plater {
 class TranslationGizmo;
 class RotationGizmo;
 class PaintOnSupportsGizmo;
+class SimplifyGizmo;
 
 class PlaterRenderModule final : public Platform::AbstractRenderModule,
                                  public Biz::IStatusCacheChangedListener,
@@ -78,10 +79,12 @@ private:
 
     Yoga::ToolbarButton* m_toolbar_move = nullptr;
     Yoga::ToolbarButton* m_toolbar_rotate = nullptr;
+    Yoga::ToolbarButton* m_toolbar_simplify = nullptr;
     Yoga::ToolbarButton* m_toolbar_paint_on_supports = nullptr;
 
     TranslationGizmo* m_translation_gizmo = nullptr;
     RotationGizmo* m_rotation_gizmo = nullptr;
+    SimplifyGizmo* m_simplify_gizmo = nullptr;
     PaintOnSupportsGizmo* m_paint_on_supports_gizmo = nullptr;
 
     std::unordered_set<IRenderModuleChangedListener*> m_render_module_changed_listeners;

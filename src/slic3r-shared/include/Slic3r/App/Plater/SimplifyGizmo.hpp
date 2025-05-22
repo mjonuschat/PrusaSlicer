@@ -5,7 +5,9 @@
 
 #include "Slic3r/App/Plater/PlaterScenePresenter.hpp"
 #include "Slic3r/App/Render/Geometry.hpp"
+#include "Slic3r/App/Render/Material.hpp"
 #include "Slic3r/App/Scene/IGizmo.hpp" // IToolGizmo
+#include "Slic3r/App/Scene/Node.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Domain/ObjectID.hpp"
 
@@ -28,7 +30,7 @@ public:
      */
     Scene::GizmoActivationState on_mouse(Scene::GizmoEventContext& ctx, bool only_active) override;
     void on_cycle_prepare() override;
-    void render_imgui() override;
+    void render_imgui();// override;
     /**@}*/
 
     /**

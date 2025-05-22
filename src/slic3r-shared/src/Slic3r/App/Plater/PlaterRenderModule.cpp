@@ -156,17 +156,16 @@ void PlaterRenderModule::init_scene_layout()
         ToolbarID::Middle, Render::Icon::ToolbarRotation, "Rotate", "R",
         {.action = [this]() { toggle_activate_tool(Scene::ToolType::Rotation); }}, m_rotation_gizmo
     );
+    m_toolbar_simplify = m_layout->add_toolbar_item_gizmo(
+        ToolbarID::Middle, ImGui::ToolbarGraph, "Simplify", "B", 
+        {.action = [this]() { toggle_activate_tool(Scene::ToolType::Simplify); }},
+        m_simplify_gizmo
+    );
     m_toolbar_paint_on_supports = m_layout->add_toolbar_item_gizmo(
         ToolbarID::Middle, Render::Icon::ToolbarPaintOnSupports, "Paint-on supports", "L",
         {.action = [this]() { toggle_activate_tool(Scene::ToolType::PaintOnSupportsGizmo); }},
         m_paint_on_supports_gizmo
     );
-
-    m_layout->add_toolbar_item(ToolbarID::Middle, ImGui::ToolbarGraph, "Simplify", "B", {
-        .action = [this]() { m_gizmo_manager->toggle_activate_tool(Scene::ToolType::Simplify, ptFFF); },
-        .enabled = [this]() { return !m_project_interactor.scene_interactor().selection().empty(); },
-        .toggled = [this]() { return m_gizmo_manager->current_tool_type() == Scene::ToolType::Simplify; }
-        });
 }
 
 void PlaterRenderModule::update_toolbar_tool_selection(Scene::ToolType current_tool_type)
@@ -222,9 +221,9 @@ void PlaterRenderModule::init_gizmos()
         *m_device, m_gizmo_manager->data_factory(), *m_scene_presenter,
         m_project_interactor.scene_interactor()
     );
-
     SimplifyGizmo::CloseFn close_fn = [mng = m_gizmo_manager.get()]() { mng->deactivate_current_tool(); };
-    m_gizmo_manager->add_tool_gizmo<SimplifyGizmo>(*m_device, *m_scene_presenter, m_project_interactor, close_fn);
+    m_simplify_gizmo = &m_gizmo_manager->add_tool_gizmo<SimplifyGizmo>(
+        *m_device, *m_scene_presenter, m_project_interactor, close_fn);
     m_paint_on_supports_gizmo = &m_gizmo_manager->add_tool_gizmo<PaintOnSupportsGizmo>();
 }
 
