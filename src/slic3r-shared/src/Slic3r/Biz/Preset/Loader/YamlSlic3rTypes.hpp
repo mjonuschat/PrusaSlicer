@@ -14,7 +14,7 @@ struct TypeTraits<Slic3r::Domain::Expr::ExprAst>
 {
     using ExprAst = Slic3r::Domain::Expr::ExprAst;
     using Parser = Slic3r::Biz::Expr::Parser;
-    static ExprAst parse(const NodeRef& node)
+    static ExprAst parse(const YamlAdapter::NodeRef& node)
     {
         static Parser parser;
         try {
@@ -29,7 +29,7 @@ template <>
 struct TypeTraits<Slic3r::Domain::Preset::SourceLocation>
 {
     using SourceLocation = Slic3r::Domain::Preset::SourceLocation;
-    static SourceLocation parse(const NodeRef& node)
+    static SourceLocation parse(const YamlAdapter::NodeRef& node)
     {
         auto* token = fy_node_get_start_token(node.node);
         auto* mark = fy_token_start_mark(token);
@@ -45,7 +45,7 @@ struct TypeTraits<Slic3r::Domain::Preset::SourceLocated<T>>
     using SourceLocated = Slic3r::Domain::Preset::SourceLocated<T>;
     using SourceLocation = Slic3r::Domain::Preset::SourceLocation;
 
-    static SourceLocated parse(const NodeRef& node)
+    static SourceLocated parse(const YamlAdapter::NodeRef& node)
     {
         SourceLocated ret{TypeTraits<T>::parse(node), TypeTraits<SourceLocation>::parse(node)};
         return ret;

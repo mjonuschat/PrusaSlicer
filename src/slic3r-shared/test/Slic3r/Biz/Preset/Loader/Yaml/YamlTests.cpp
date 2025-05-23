@@ -92,7 +92,7 @@ TEST_CASE("Load Yaml from file into MyData")
     const std::string filename = Tests::get_datadir().string() + "/preset/test.yaml";
     Tests::MyData data;
     try {
-        Yaml::Document doc = Yaml::parse_file(filename.c_str());
+        Yaml::YamlAdapter::Document doc = Yaml::parse_file(filename.c_str());
         data  = Yaml::parse_struct<Tests::MyData>(doc);
         REQUIRE(data.a == 42);
         REQUIRE(data.b == "answer");
@@ -123,7 +123,7 @@ minor: 2
 patch: 321
 )";
 
-    Yaml::Document doc = Yaml::parse_string(yaml_ver_no_minor.c_str());
+    Yaml::YamlAdapter::Document doc = Yaml::parse_string(yaml_ver_no_minor.c_str());
 
     REQUIRE_THROWS_MATCHES(
         Yaml::parse_struct<Tests::Ver>(doc),
@@ -147,7 +147,7 @@ TEST_CASE("ExprAst parsing")
 condition: 'tool.nozzle_diameter >= 0.2'
 )";
 
-    Yaml::Document doc = Yaml::parse_string(yaml.c_str());
+    Yaml::YamlAdapter::Document doc = Yaml::parse_string(yaml.c_str());
     Tests::Condition condition = Yaml::parse_struct<Tests::Condition>(doc);
     REQUIRE(boost::get<Slic3r::Domain::Expr::Binary>(condition.condition).op == Slic3r::Domain::Expr::BinaryOp::GtEq);
 
@@ -159,7 +159,7 @@ TEST_CASE("Vector parsing")
 data: [0]
 )";
 
-    Yaml::Document doc = Yaml::parse_string(yaml.c_str());
+    Yaml::YamlAdapter::Document doc = Yaml::parse_string(yaml.c_str());
     Tests::VecData vec = Yaml::parse_struct<Tests::VecData>(doc);
     REQUIRE(vec.data.size() == 1);
 

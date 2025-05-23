@@ -21,55 +21,24 @@
 #include <boost/spirit/include/qi.hpp>
 #include <fmt/format.h>
 #include <fmt/ranges.h>
-#include <libfyaml.h>
 #include <magic_enum/magic_enum.hpp>
+
+#include "YamlAdapterLibfyaml.hpp"
 
 namespace Yaml {
 
-namespace Details {
-struct DocumentDeleter
-{
-    void operator()(fy_document* o) { fy_document_destroy(o); }
-};
-
-struct ParserDeleter
-{
-    void operator()(fy_parser* o) { fy_parser_destroy(o); }
-};
-} // namespace Details
-
-/**
- * @name Low level parsing API
- * @{
- */
-struct NodeRef
-{
-    fy_node* node;
-    std::string_view file;
-};
-
-using DocumentPtr = std::unique_ptr<fy_document, Details::DocumentDeleter>;
-struct Document
-{
-    DocumentPtr doc;
-    std::string file;
-
-    NodeRef root() const { return {fy_document_root(doc.get()), file}; }
-};
+using YamlAdapter = Libfyaml::YamlAdapterLibfyaml;
 
 
+YamlAdapter::Document parse_file(const char* file_name);
+YamlAdapter::Document parse_string(std::string_view yaml);
 
-using Parser = std::unique_ptr<fy_parser, Details::ParserDeleter>;
-
-Document parse_file(const char* file_name);
-Document parse_string(std::string_view yaml);
-
-void parse_all_documents_in_file(const char* file_name, const std::function<void(const Document&)>& parse_doc);
-void parse_all_documents_in_string(std::string_view yaml, const std::function<void(const Document&)>& parse_doc);
+void parse_all_documents_in_file(const char* file_name, const std::function<void(const YamlAdapter::Document&)>& parse_doc);
+void parse_all_documents_in_string(std::string_view yaml, const std::function<void(const YamlAdapter::Document&)>& parse_doc);
 
 struct ParseError : std::runtime_error
 {
-    ParseError(const NodeRef& node, const std::string& msg)
+    ParseError(const YamlAdapter::NodeRef& node, const std::string& msg)
         : std::runtime_error(describe(node) + ": " + msg)
     {}
 
@@ -88,13 +57,9 @@ private:
     explicit ParseError(const std::string& msg) : std::runtime_error(msg) {}
     explicit ParseError(const char* msg) : std::runtime_error(msg) {}
 
-    static std::string describe(const NodeRef& node)
+    static std::string describe(const YamlAdapter::NodeRef& node)
     {
-        if (node.node == nullptr)
-            return fmt::format("[file: {} (null)]", node.file);
-        auto* token = fy_node_get_start_token(node.node);
-        auto* mark = fy_token_start_mark(token);
-        return fmt::format("[file: {}:{}:{}  path: {}]", node.file, mark->line + 1, mark->column + 1, fy_node_get_path(node.node));
+        return YamlAdapter::describe(node);
     }
 };
 
@@ -109,39 +74,37 @@ struct StructTraits{};
 }
 
 template <typename T>
-typename Details::StructTraits<T>::Type parse_struct(const NodeRef& node);
+typename Details::StructTraits<T>::Type parse_struct(const YamlAdapter::NodeRef& node);
 
 namespace Details {
-inline std::string fy_node_type_value(const fy_node_type type)
+inline std::string node_type_value(const NodeType type)
 {
     switch (type) {
-    case FYNT_SCALAR:
+    case NodeType::Scalar:
         return "scalar";
-    case FYNT_SEQUENCE:
+    case NodeType::Sequence:
         return "sequence";
-    case FYNT_MAPPING:
+    case NodeType::Mapping:
         return "mapping";
     }
     return "unknown";
 }
 
-inline void ensure_node_type(const NodeRef& node, fy_node_type type)
+inline void ensure_node_type(const YamlAdapter::NodeRef& node, NodeType type)
 {
-    auto node_type = fy_node_get_type(node.node);
+    auto node_type = YamlAdapter::node_type(node);
     if (node_type != type)
         throw ParseError(
             node,
-            std::string("Node type mismatch, expecting '") + fy_node_type_value(type) +
-                "' but got '" + fy_node_type_value(node_type) + "'"
+            std::string("Node type mismatch, expecting '") + node_type_value(type) +
+                "' but got '" + node_type_value(node_type) + "'"
         );
 }
 
-inline std::string get_node_scalar(const NodeRef& node)
+inline std::string_view get_node_scalar(const YamlAdapter::NodeRef& node)
 {
-    size_t len;
-    ensure_node_type(node, FYNT_SCALAR);
-    const char* data = fy_node_get_scalar(node.node, &len);
-    return {data, len};
+    ensure_node_type(node, NodeType::Scalar);
+    return YamlAdapter::scalar_value(node);
 }
 
 template <typename T, typename Enabled = void>
@@ -150,7 +113,7 @@ struct TypeTraits {};
 template <>
 struct TypeTraits<bool>
 {
-    static bool parse(const NodeRef& node)
+    static bool parse(const YamlAdapter::NodeRef& node)
     {
         auto value = get_node_scalar(node);
         if (value == "true")
@@ -163,7 +126,7 @@ struct TypeTraits<bool>
 };
 
 template <typename T, typename P>
-T parse_with_spirit(const NodeRef& node, P parser)
+T parse_with_spirit(const YamlAdapter::NodeRef& node, P parser)
 {
     auto value = get_node_scalar(node);
     T ret;
@@ -178,7 +141,7 @@ T parse_with_spirit(const NodeRef& node, P parser)
 template <>                                         \
 struct TypeTraits<T>                                \
 {                                                   \
-    static T parse(const NodeRef& node)             \
+    static T parse(const YamlAdapter::NodeRef& node)             \
     {                                               \
         return parse_with_spirit<T>(node, P);       \
     }                                               \
@@ -199,10 +162,10 @@ TYPE_TRAITS_WITH_SPIRIT_PARSE(int32_t, boost::spirit::qi::int_);
 template <>
 struct TypeTraits<std::string>
 {
-    static std::string parse(const NodeRef& node)
+    static std::string parse(const YamlAdapter::NodeRef& node)
     {
         auto value = get_node_scalar(node);
-        return value;
+        return std::string{value};
     }
 };
 
@@ -210,13 +173,13 @@ template <typename, typename = void>
 struct HasTypeTraits : std::false_type {};
 
 template <typename T>
-struct HasTypeTraits<T, std::void_t<decltype(TypeTraits<T>::parse(std::declval<const NodeRef&>()))>> : std::true_type {};
+struct HasTypeTraits<T, std::void_t<decltype(TypeTraits<T>::parse(std::declval<const YamlAdapter::NodeRef&>()))>> : std::true_type {};
 
 
 template <typename T>
 struct TypeTraits<std::optional<T>, std::enable_if_t<HasTypeTraits<T>::value>>
 {
-    static std::optional<T> parse(const NodeRef& node)
+    static std::optional<T> parse(const YamlAdapter::NodeRef& node)
     {
         if (node.node != nullptr)
             return TypeTraits<T>::parse(node);
@@ -227,14 +190,14 @@ struct TypeTraits<std::optional<T>, std::enable_if_t<HasTypeTraits<T>::value>>
 template <typename T>
 struct TypeTraits<std::vector<T>, std::enable_if_t<HasTypeTraits<T>::value>>
 {
-    static std::vector<T> parse(const NodeRef& node)
+    static std::vector<T> parse(const YamlAdapter::NodeRef& node)
     {
-        ensure_node_type(node, FYNT_SEQUENCE);
-        const int n = fy_node_sequence_item_count(node.node);
+        ensure_node_type(node, NodeType::Sequence);
+        const size_t n = YamlAdapter::sequence_item_count(node);
         std::vector<T> ret;
         ret.reserve(n);
-        for (int i = 0; i < n; ++i)
-            ret.push_back(TypeTraits<T>::parse(NodeRef{fy_node_sequence_get_by_index(node.node, i), node.file}));
+        for (size_t i = 0; i < n; ++i)
+            ret.push_back(TypeTraits<T>::parse(YamlAdapter::sequence_item_at(node, i)));
         return ret;
     }
 };
@@ -242,15 +205,15 @@ struct TypeTraits<std::vector<T>, std::enable_if_t<HasTypeTraits<T>::value>>
 template <typename K, typename V>
 struct TypeTraits<std::map<K, V>, std::enable_if_t<HasTypeTraits<K>::value && HasTypeTraits<V>::value>>
 {
-    static std::map<K, V> parse(const NodeRef& node)
+    static std::map<K, V> parse(const YamlAdapter::NodeRef& node)
     {
-        ensure_node_type(node, FYNT_MAPPING);
-        const int n = fy_node_mapping_item_count(node.node);
+        ensure_node_type(node, NodeType::Mapping);
+        const size_t n = YamlAdapter::mapping_item_count(node);
         std::map<K, V> ret;
-        for (int i = 0; i < n; ++i) {
-            auto* kv_pair = fy_node_mapping_get_by_index(node.node, i);
-            auto key_node = NodeRef{fy_node_pair_key(kv_pair), node.file};
-            auto value_node = NodeRef{fy_node_pair_value(kv_pair), node.file};
+        for (size_t i = 0; i < n; ++i) {
+            auto* kv_pair = YamlAdapter::mapping_key_value_at(node, i);
+            auto key_node = YamlAdapter::key(kv_pair, node);
+            auto value_node = YamlAdapter::value(kv_pair, node);;
             K key = TypeTraits<K>::parse(key_node);
             V value = TypeTraits<V>::parse(value_node);
             ret.emplace(std::move(key), std::move(value));
@@ -261,13 +224,13 @@ struct TypeTraits<std::map<K, V>, std::enable_if_t<HasTypeTraits<K>::value && Ha
 
 
 template <typename V, typename T>
-V parse_variant(const NodeRef& node)
+V parse_variant(const YamlAdapter::NodeRef& node)
 {
     return TypeTraits<T>::parse(node);
 }
 
 template <typename V, typename T, typename ...Ts, std::enable_if_t<(sizeof...(Ts) > 0), int> = 0>
-V parse_variant(const NodeRef& node)
+V parse_variant(const YamlAdapter::NodeRef& node)
 {
     try {
         return TypeTraits<T>::parse(node);
@@ -286,7 +249,7 @@ struct TypeTraits<
 >
 {
     using ValueType = std::variant<Ts...>;
-    static ValueType parse(const NodeRef& node)
+    static ValueType parse(const YamlAdapter::NodeRef& node)
     {
         return parse_variant<ValueType, Ts...>(node);
     }
@@ -320,13 +283,13 @@ struct TypeList {};
 
 
 template <typename Field, std::enable_if_t<!FieldHasImplicitValue<Field>::value, int> = 0>
-void parse_field(typename Field::Type& dest, const NodeRef& node)
+void parse_field(typename Field::Type& dest, const YamlAdapter::NodeRef& node)
 {
     dest = TypeTraits<typename Field::Type>::parse(node);
 }
 
 template <typename Field, std::enable_if_t<FieldHasImplicitValue<Field>::value, int> = 0>
-void parse_field(typename Field::Type& dest, const NodeRef& node)
+void parse_field(typename Field::Type& dest, const YamlAdapter::NodeRef& node)
 {
     if (node.node == nullptr)
         dest = Field::implicit_value();
@@ -346,7 +309,7 @@ void validate_field(const typename Field::Type& type)
 
 
 template <typename S, typename Field, typename = void>
-void parse_field(S& s, const NodeRef& node)
+void parse_field(S& s, const YamlAdapter::NodeRef& node)
 {
     using FT = typename Field::Type;
     auto* raw_storage = reinterpret_cast<char*>(&s) + Field::offset;
@@ -359,20 +322,20 @@ void parse_field(S& s, const NodeRef& node)
 template <typename Field, std::enable_if_t<
     !(FieldHasImplicitValue<Field>::value || FieldIsOptional<Field>::value),
 int> = 0>
-NodeRef get_mapping_node_with_key(const NodeRef& node, const char* key)
+YamlAdapter::NodeRef get_mapping_node_with_key(const YamlAdapter::NodeRef& node, const char* key)
 {
-    auto* value_node = fy_node_mapping_lookup_value_by_simple_key(node.node, key, strlen(key));
-    if (value_node == nullptr)
+    auto value_node = YamlAdapter::mapping_value_at(node, key);
+    if (!value_node)
         throw ParseError(node, fmt::format("Required field '{}' not found", key));
-    return {value_node, node.file};
+    return value_node;
 }
 
 template <typename Field, std::enable_if_t<
     FieldHasImplicitValue<Field>::value || FieldIsOptional<Field>::value,
 int> = 0>
-NodeRef get_mapping_node_with_key(const NodeRef& node, const char* key)
+YamlAdapter::NodeRef get_mapping_node_with_key(const YamlAdapter::NodeRef& node, const char* key)
 {
-    return {fy_node_mapping_lookup_value_by_simple_key(node.node, key, strlen(key)), node.file};
+    return YamlAdapter::mapping_value_at(node, key);
 }
 
 template <typename T, typename F>
@@ -381,14 +344,14 @@ struct ParseFieldTypeList;
 template <typename S, typename ... Fs>
 struct ParseFieldTypeList<S, TypeList<Fs...>>
 {
-    static void parse(S& s, const NodeRef& node)
+    static void parse(S& s, const YamlAdapter::NodeRef& node)
     {
         (parse_field<S, Fs>(s, Fs::name == nullptr ? node : get_mapping_node_with_key<Fs>(node, Fs::name)), ...);
     }
 };
 
 template <typename S>
-typename S::Type parse_struct_helper(const NodeRef& node)
+typename S::Type parse_struct_helper(const YamlAdapter::NodeRef& node)
 {
     typename S::Type ret;
 
@@ -401,7 +364,7 @@ typename S::Type parse_struct_helper(const NodeRef& node)
 }
 
 template <typename T>
-bool try_parse_discriminated_struct(const NodeRef& node, const std::string& value, std::tuple<const char*, std::function<void(T&&)>> loader)
+bool try_parse_discriminated_struct(const YamlAdapter::NodeRef& node, std::string_view value, std::tuple<const char*, std::function<void(T&&)>> loader)
 {
     if (value == std::get<0>(loader)) {
         T s = parse_struct<T>(node);
@@ -421,7 +384,7 @@ struct HasStructTraits<T, std::void_t<typename StructTraits<T>::Type>> : std::tr
 template <typename T>
 struct TypeTraits<T, std::enable_if_t<HasStructTraits<T>::value>>
 {
-    static T parse(const NodeRef& node)
+    static T parse(const YamlAdapter::NodeRef& node)
     {
         return parse_struct<T>(node);
     }
@@ -449,7 +412,7 @@ struct HasEnumTraits<T, std::void_t<typename EnumTraits<T>::Type>> : std::true_t
 template <typename T>
 struct TypeTraits<T, std::enable_if_t<std::is_enum_v<T> && !HasEnumTraits<T>::value>>
 {
-    static T parse(const NodeRef& node)
+    static T parse(const YamlAdapter::NodeRef& node)
     {
         auto value = get_node_scalar(node);
         auto ret = magic_enum::enum_cast<T>(value, magic_enum::case_insensitive);
@@ -469,7 +432,7 @@ struct TypeTraits<T, std::enable_if_t<std::is_enum_v<T> && !HasEnumTraits<T>::va
 template <typename T>
 struct TypeTraits<T, std::enable_if_t<HasEnumTraits<T>::value>>
 {
-    static T parse(const NodeRef& node)
+    static T parse(const YamlAdapter::NodeRef& node)
     {
         auto value = TypeTraits<std::string>::parse(node);
         const auto& values = EnumTraits<T>::values;
@@ -505,7 +468,7 @@ struct TypeTraits<T, std::enable_if_t<HasEnumTraits<T>::value>>
  * @return Loaded structure or ParseError exception is thrown.
  */
 template <typename T>
-typename Details::StructTraits<T>::Type parse_struct(const NodeRef& node)
+typename Details::StructTraits<T>::Type parse_struct(const YamlAdapter::NodeRef& node)
 {
     return Details::parse_struct_helper<Details::StructTraits<T>>(node);
 }
@@ -513,11 +476,11 @@ typename Details::StructTraits<T>::Type parse_struct(const NodeRef& node)
 /**
  * @brief Parse structure from libfyaml node
  * @tparam T Type of structure. Note that this structure needs STRUCT_DESC(...) definition.
- * @param doc Yaml document containing the structure to load.
+ * @param doc Yaml YamlAdapter::Document containing the structure to load.
  * @return Loaded structure or ParseError exception is thrown.
  */
 template <typename T>
-typename Details::StructTraits<T>::Type parse_struct(const Document& doc)
+typename Details::StructTraits<T>::Type parse_struct(const YamlAdapter::Document& doc)
 {
     return parse_struct<T>(doc.root());
 }
@@ -532,11 +495,11 @@ typename Details::StructTraits<T>::Type parse_struct(const Document& doc)
  */
 template <typename ... Ts>
 void parse_structs_by_discriminant(
-    const NodeRef& node, const char* discriminator_field_name,
+    const YamlAdapter::NodeRef& node, const char* discriminator_field_name,
     const std::tuple<const char*, std::function<void(Ts&&)>>& ... loaders
 )
 {
-    auto discr_node = NodeRef{fy_node_mapping_lookup_value_by_simple_key(node.node, discriminator_field_name, strlen(discriminator_field_name)), node.file};
+    auto discr_node = YamlAdapter::mapping_value_at(node, discriminator_field_name);
     auto discr_value = Details::get_node_scalar(discr_node);
     if (!(Details::try_parse_discriminated_struct(node, discr_value, loaders) || ...)) {
         std::vector<const char*> discr_field_values;
@@ -552,14 +515,14 @@ void parse_structs_by_discriminant(
 /**
  * @brief Load struct from possible set of types distinguished by value in discriminator field.
  * @tparam Ts types of structs to load
- * @param doc Yaml document containing structure to load and the discriminator_field_name
+ * @param doc Yaml YamlAdapter::Document containing structure to load and the discriminator_field_name
  * @param discriminator_field_name A name of field the type of structure is distinguished by
  * @param loaders List (variadic args) of two element tuples containing `const char*` value of
  * discriminator and function that will be called with loaded struct of given type.
  */
 template <typename ... Ts>
 void parse_structs_by_discriminant(
-    const Document& doc, const char* discriminator_field_name,
+    const YamlAdapter::Document& doc, const char* discriminator_field_name,
     const std::tuple<const char*, std::function<void(Ts&&)>>& ... loaders
 )
 {

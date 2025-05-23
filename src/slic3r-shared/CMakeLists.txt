@@ -286,8 +286,11 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/Preset/Loader/HwConfigLoader.hpp
         src/Slic3r/Biz/Preset/Loader/HwConfigLoader.cpp
         src/Slic3r/Biz/Preset/Loader/Yaml.hpp
-		src/Slic3r/Biz/Preset/Loader/YamlSlic3rTypes.hpp
         src/Slic3r/Biz/Preset/Loader/Yaml.cpp
+        src/Slic3r/Biz/Preset/Loader/YamlAdapter.hpp
+        src/Slic3r/Biz/Preset/Loader/YamlAdapterLibfyaml.hpp
+        src/Slic3r/Biz/Preset/Loader/YamlAdapterLibfyaml.cpp
+        src/Slic3r/Biz/Preset/Loader/YamlSlic3rTypes.hpp
 
 		include/Slic3r/Biz/Preset/PresetEvaluator.hpp
 		src/Slic3r/Biz/Preset/PresetEvaluator.cpp

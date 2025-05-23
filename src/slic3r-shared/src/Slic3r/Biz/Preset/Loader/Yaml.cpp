@@ -2,54 +2,37 @@
 #include "Yaml.hpp"
 
 namespace Yaml {
-Parser create_parser()
-{
-    fy_parse_cfg cfg = {
-        .search_path = "",
-        .flags = FYPCF_QUIET,
-        .userdata = nullptr,
-        .diag = nullptr,
-    };
-    return Parser{fy_parser_create(&cfg)};
-}
 
-void parse_all_documents(const Parser& parser, const std::function<void(const Document&)>& parse_doc, const char* file)
+void parse_all_documents(const YamlAdapter::Parser& parser, const std::function<void(const YamlAdapter::Document&)>& parse_doc)
 {
-    while (true) {
-        Document doc{DocumentPtr{fy_parse_load_document(parser.get())}, file};
-        if (!doc.doc)
-            return;
+    while (YamlAdapter::Document doc = YamlAdapter::load(parser)) {
         parse_doc(doc);
     }
 }
 
-Document parse_file(const char* file_name)
+YamlAdapter::Document parse_file(const char* file_name)
 {
-    Parser parser{create_parser()};
-    fy_parser_set_input_file(parser.get(), file_name);
-    return Document{DocumentPtr{fy_parse_load_document(parser.get())}, file_name};
+    YamlAdapter::Parser parser{YamlAdapter::create_file_parser(file_name)};
+    return YamlAdapter::load(parser);
 }
 
-Document parse_string(std::string_view yaml)
+YamlAdapter::Document parse_string(std::string_view yaml)
 {
-    Parser parser{create_parser()};
-    fy_parser_set_string(parser.get(), yaml.data(), yaml.length());
-    return Document{DocumentPtr{fy_parse_load_document(parser.get())}, "<string>"};
+    YamlAdapter::Parser parser{YamlAdapter::create_string_parser(yaml)};
+    return YamlAdapter::load(parser);
 }
 
-void parse_all_documents_in_file(const char* file_name, const std::function<void(const Document&)>& parse_doc)
+void parse_all_documents_in_file(const char* file_name, const std::function<void(const YamlAdapter::Document&)>& parse_doc)
 {
 
-    Parser parser{create_parser()};
-    fy_parser_set_input_file(parser.get(), file_name);
-    parse_all_documents(parser, parse_doc, file_name);
+    YamlAdapter::Parser parser{YamlAdapter::create_file_parser(file_name)};
+    parse_all_documents(parser, parse_doc);
 }
 
-void parse_all_documents_in_string(std::string_view yaml, const std::function<void(const Document&)>& parse_doc)
+void parse_all_documents_in_string(std::string_view yaml, const std::function<void(const YamlAdapter::Document&)>& parse_doc)
 {
-    Parser parser{create_parser()};
-    fy_parser_set_string(parser.get(), yaml.data(), yaml.length());
-    parse_all_documents(parser, parse_doc, "<string>");
+    YamlAdapter::Parser parser{YamlAdapter::create_string_parser(yaml)};
+    parse_all_documents(parser, parse_doc);
 }
 
 } // namespace Yaml
