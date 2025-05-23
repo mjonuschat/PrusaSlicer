@@ -1066,6 +1066,21 @@ Slic3r::Domain::Polygons intersection(
         ClipperUtils::SinglePathProvider(clip.points), do_safety_offset
     );
 }
+
+Slic3r::Domain::Polygons intersection(
+    const Slic3r::Domain::Polygon& subject,
+    const Slic3r::Domain::Polygons& clip,
+    ApplySafetyOffset do_safety_offset
+)
+{
+    return _clipper(
+        ClipperLib::ctIntersection,
+        ClipperUtils::SinglePathProvider(subject.points),
+        ClipperUtils::PolygonsProvider(clip),
+        do_safety_offset
+    );
+}
+
 Slic3r::Domain::Polygons intersection(
     const Slic3r::Domain::Polygon& subject,
     const Slic3r::Domain::ExPolygon& clip,

@@ -372,6 +372,7 @@ inline Domain::Lines diff_ln(const Domain::Lines &subject, const Domain::Polygon
 
 // Safety offset is applied to the clipping polygons only.
 Domain::Polygons   intersection(const Domain::Polygon &subject, const Domain::Polygon &clip, ApplySafetyOffset do_safety_offset = ApplySafetyOffset::No);
+Domain::Polygons   intersection(const Domain::Polygon &subject, const Domain::Polygons &clip, ApplySafetyOffset do_safety_offset = ApplySafetyOffset::No);
 Domain::Polygons   intersection(const Domain::Polygon &subject, const Domain::ExPolygon &clip, ApplySafetyOffset do_safety_offset = ApplySafetyOffset::No);
 Domain::Polygons   intersection(const Domain::Polygons &subject, const Domain::ExPolygon &clip, ApplySafetyOffset do_safety_offset = ApplySafetyOffset::No);
 Domain::Polygons   intersection(const Domain::Polygons &subject, const Domain::Polygons &clip, ApplySafetyOffset do_safety_offset = ApplySafetyOffset::No);
