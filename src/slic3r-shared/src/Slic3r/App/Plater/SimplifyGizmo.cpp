@@ -611,7 +611,7 @@ void SimplifyGizmo::init_model(const std::set<ObjectID>& current_volume_ids)
     for (const ObjectID& volume_id : m_volume_ids) {
         // generate clone of goemetry (copy Node)
         const ModelVolume* volume_ptr = get_volume_by_id(volume_id, project);
-        node_inputs.emplace_back(volume_id, &volume_ptr->mesh().its);
+        node_inputs.push_back(NodeInput{volume_id, &volume_ptr->mesh().its});
         Node::NodeList volume_nodes;
         scene.root().query([volume_id](const Node* n) -> bool {
                 const SceneNodeTag* tag = n->tag_of_type<SceneNodeTag>();
@@ -660,7 +660,7 @@ void SimplifyGizmo::update_model(const State::Data& data)
     for (const auto& item : data) {
         const ObjectID& volume_id = item.first;
         const indexed_triangle_set& its = *item.second;
-        node_inputs.emplace_back(volume_id, &its);
+        node_inputs.push_back(NodeInput{volume_id, &its});
     }    
 
     // Recreate simplify nodes
