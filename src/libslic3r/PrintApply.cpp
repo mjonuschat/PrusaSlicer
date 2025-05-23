@@ -498,6 +498,44 @@ bool Print::invalidate_object_steps(
 
 namespace {
 
+PrintRegionConfigView create_mm_painted_region_config(const PrintRegionConfigView &parent_config, const int painted_extruder_id)
+{
+    Domain::VolumeSettings volume_settings;
+    Domain::ConfigItem& infill_extruder_item = volume_settings.opt("infill_extruder");
+    Domain::ConfigItem& perimeter_extruder_item = volume_settings.opt("perimeter_extruder");
+    Domain::ConfigItem& solid_infill_extruder_item = volume_settings.opt("solid_infill_extruder");
+
+    infill_extruder_item.set(painted_extruder_id);
+    perimeter_extruder_item.set(painted_extruder_id);
+    solid_infill_extruder_item.set(painted_extruder_id);
+
+    assert(perimeter_extruder_item.is_nullable() && solid_infill_extruder_item.is_nullable() && infill_extruder_item.is_nullable());
+    infill_extruder_item.set_null(false);
+    perimeter_extruder_item.set_null(false);
+    solid_infill_extruder_item.set_null(false);
+
+    PrintRegionConfigView painted_region_cfg = parent_config;
+    painted_region_cfg.add_override(std::make_shared<Domain::VolumeSettings>(volume_settings));
+
+    return painted_region_cfg;
+};
+
+PrintRegionConfigView create_fuzzy_skin_painted_region_config(const PrintRegionConfigView &parent_config)
+{
+    Domain::VolumeSettings volume_settings;
+    Domain::ConfigItem& fuzzy_skin_item = volume_settings.opt("fuzzy_skin");
+
+    fuzzy_skin_item.set(Domain::FuzzySkinType::All);
+
+    assert(fuzzy_skin_item.is_nullable());
+    fuzzy_skin_item.set_null(false);
+
+    PrintRegionConfigView painted_region_cfg = parent_config;
+    painted_region_cfg.add_override(std::make_shared<Domain::VolumeSettings>(volume_settings));
+
+    return painted_region_cfg;
+};
+
 // Generate PrintRegions from scratch.
 std::shared_ptr<PrintObjectRegions> generate_print_object_regions(
     std::shared_ptr<PrintObjectRegions>         print_object_regions_old,
@@ -602,18 +640,9 @@ std::shared_ptr<PrintObjectRegions> generate_print_object_regions(
     for (PrintObjectRegions::LayerRangeRegions &layer_range : layer_ranges_regions) {
         for (unsigned int painted_extruder_id : painting_extruders)
             for (int parent_region_id = 0; parent_region_id < int(layer_range.volume_regions.size()); ++ parent_region_id)
-                if (const PrintObjectRegions::VolumeRegion &parent_region = layer_range.volume_regions[parent_region_id];
-                    parent_region.model_volume->is_model_part() || parent_region.model_volume->is_modifier()) {
-                    PrintRegionConfigView cfg = parent_region.region->config();
-
-
-                    // TODO!!
-                    //cfg.perimeter_extruder.value    = painted_extruder_id;
-                    //cfg.solid_infill_extruder.value = painted_extruder_id;
-                    //cfg.infill_extruder.value       = painted_extruder_id;
-
-
-                    layer_range.painted_regions.push_back({ painted_extruder_id, parent_region_id, get_create_region(std::move(cfg))});
+                if (const PrintObjectRegions::VolumeRegion &parent_region = layer_range.volume_regions[parent_region_id]; parent_region.model_volume->is_model_part() || parent_region.model_volume->is_modifier()) {
+                    PrintRegionConfigView painted_region_cfg = create_mm_painted_region_config(parent_region.region->config(), static_cast<int>(painted_extruder_id));
+                    layer_range.painted_regions.push_back({painted_extruder_id, parent_region_id, get_create_region(painted_region_cfg)});
                 }
         // Sort the regions by parent region::print_object_region_id() and extruder_id to help the slicing algorithm when applying MM segmentation.
         std::sort(layer_range.painted_regions.begin(), layer_range.painted_regions.end(), [&layer_range](auto &l, auto &r) {
@@ -630,24 +659,15 @@ std::shared_ptr<PrintObjectRegions> generate_print_object_regions(
             // so FuzzySkinPaintedRegion has to point to both VolumeRegion and PaintedRegion.
             for (int parent_volume_region_id = 0; parent_volume_region_id < int(layer_range.volume_regions.size()); ++parent_volume_region_id) {
                 if (const PrintObjectRegions::VolumeRegion &parent_volume_region = layer_range.volume_regions[parent_volume_region_id]; parent_volume_region.model_volume->is_model_part() || parent_volume_region.model_volume->is_modifier()) {
-                    PrintRegionConfigView cfg = parent_volume_region.region->config();
-
-                    // TODO!!
-                    //cfg.fuzzy_skin.value  = FuzzySkinType::All;
-
-                    layer_range.fuzzy_skin_painted_regions.push_back({FuzzySkinParentType::VolumeRegion, parent_volume_region_id, get_create_region(std::move(cfg))});
+                    const PrintRegionConfigView painted_region_cfg = create_fuzzy_skin_painted_region_config(parent_volume_region.region->config());
+                    layer_range.fuzzy_skin_painted_regions.push_back({FuzzySkinParentType::VolumeRegion, parent_volume_region_id, get_create_region(painted_region_cfg)});
                 }
             }
 
             for (int parent_painted_regions_id = 0; parent_painted_regions_id < int(layer_range.painted_regions.size()); ++parent_painted_regions_id) {
                 const PrintObjectRegions::PaintedRegion &parent_painted_region = layer_range.painted_regions[parent_painted_regions_id];
-
-                PrintRegionConfigView cfg = parent_painted_region.region->config();
-
-                // TODO!!
-                //cfg.fuzzy_skin.value  = FuzzySkinType::All;
-
-                layer_range.fuzzy_skin_painted_regions.push_back({FuzzySkinParentType::PaintedRegion, parent_painted_regions_id, get_create_region(std::move(cfg))});
+                const PrintRegionConfigView painted_region_cfg = create_fuzzy_skin_painted_region_config(parent_painted_region.region->config());
+                layer_range.fuzzy_skin_painted_regions.push_back({FuzzySkinParentType::PaintedRegion, parent_painted_regions_id, get_create_region(painted_region_cfg)});
             }
 
             // Sort the regions by parent region::print_object_region_id() to help the slicing algorithm when applying fuzzy skin segmentation.
