@@ -61,6 +61,13 @@ template Scalar::Scalar(const FloatOrPercentage&, const std::string&);
 template Scalar::Scalar(const Vec2d&, const std::string&);
 template Scalar::Scalar(const bool&, const std::string&);
 
+Scalar Scalar::init_enum(const int value, const std::string& serialized_value) {
+    Scalar result{value};
+    result.m_type = Type::Enum;
+    result.m_serialized_value = serialized_value;
+    return result;
+}
+
 bool Scalar::operator==(const Scalar& rhs) const {
     if (m_type != rhs.m_type) {
         return false;

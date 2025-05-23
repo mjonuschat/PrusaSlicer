@@ -44,6 +44,8 @@ struct Scalar
         : m_value{static_cast<int>(value)}, m_type{Type::Enum}, m_serialized_value{serialized_value}
     {}
 
+    static Scalar init_enum(const int value, const std::string& serialized_value);
+
     bool operator==(const Scalar& rhs) const;
 
     Type type() const;

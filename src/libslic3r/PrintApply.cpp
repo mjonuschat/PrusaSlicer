@@ -758,16 +758,12 @@ PrintSteps get_custom_gcode_invalidated_steps(
     return {psGCodeExport};
 }
 
-ParserConfig convert_config(const PrintConfigView& config) {
-    PANIC("TODO");
-}
-
 PlaceholderParser init_placeholder_parser(
-    const PrintConfigView& new_config,
+    const ParserConfig& new_config,
     const std::optional<ModelWipeTower>& wipe_tower
 )
 {
-    PlaceholderParser parser{convert_config(new_config)};
+    PlaceholderParser parser{new_config};
     // Set the profile aliases for the PrintBase::output_filename()
     //parser.set("print_preset", new_config.get<std::string>("print_settings_id"));
     //parser.set("filament_preset", new_config.get<std::string>("filament_settings_id"));
@@ -1354,13 +1350,13 @@ bool InvalidatedSteps::empty() const {
 
 Print::ApplyStatus Print::apply(
     const Model& model,
-    FullConfigFDM new_full_config,
+    const Biz::Slicing::ConfigPackFDM& config_pack,
     const std::optional<Domain::ModelWipeTower>& wipe_tower,
     const std::optional<Domain::CustomGCode::Info>& custom_gcode,
     std::vector<std::string>* warnings
 )
 {
-    const auto new_full_config_ptr{std::make_shared<FullConfigFDM>(std::move(new_full_config))};
+    const auto new_full_config_ptr{std::make_shared<FullConfigFDM>(config_pack.get_full_config())};
     PrintConfigView new_print_config{new_full_config_ptr};
     // Check if the print config change will produce any warnings.
     validate_print_config_change(m_config, new_print_config, warnings);
@@ -1379,7 +1375,7 @@ Print::ApplyStatus Print::apply(
     };
 
     m_placeholder_parser = init_placeholder_parser(
-        new_print_config,
+        config_pack.get_parser_config(),
         wipe_tower
     );
 

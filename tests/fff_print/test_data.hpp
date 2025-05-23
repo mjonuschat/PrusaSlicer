@@ -2,6 +2,7 @@
 #define SLIC3R_TEST_DATA_HPP
 
 #include "libslic3r/Config.hpp"
+#include "libslic3r/ConfigPackFDM.hpp"
 #include "libslic3r/Format/3mf.hpp"
 #include "libslic3r/GCode/ModelVisibility.hpp"
 #include "libslic3r/GCode/SeamGeometry.hpp"
@@ -45,45 +46,7 @@ enum class TestMesh {
     two_hollow_squares
 };
 
-struct TestConfig {
-
-    explicit TestConfig(const int extruder_count)
-        : tool{std::vector<Domain::ToolPrintSettings>(extruder_count)}
-        , filament{std::vector<Domain::FilamentSettings>(extruder_count)}
-    {}
-    TestConfig(): TestConfig{1} {}
-
-    Domain::PrinterSettings printer;
-    std::vector<Domain::ToolPrintSettings> tool;
-    Domain::PrintSettings print{};
-    std::vector<Domain::FilamentSettings> filament;
-    Domain::ProjectSettings project;
-
-    PrintConfigView get_view() const {
-        return {std::make_shared<Domain::FullConfigFDM>(get_full_config())};
-    }
-
-    Domain::FullConfigFDM get_full_config() const {
-        return {
-            printer,
-            to_refs(tool),
-            print,
-            to_refs(filament),
-            project
-        };
-    }
-
-private:
-    template <typename T>
-    using Refs = std::vector<std::reference_wrapper<const T>>;
-
-    template<typename T>
-    static Refs<T> to_refs(const std::vector<T>& items) {
-        Refs<T> result;
-        result.insert(result.end(), items.begin(), items.end());
-        return result;
-    }
-};
+using TestConfig = Slic3r::Biz::Slicing::ConfigPackFDM;
 
 
 // Neccessary for <c++17

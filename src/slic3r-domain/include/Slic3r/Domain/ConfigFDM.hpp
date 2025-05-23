@@ -148,9 +148,15 @@ class FullConfigFDM : public FullConfig
 public:
     FullConfigFDM(
         const PrinterSettings& printer_s,
+
+        //TODO: This is stupid.
         const std::vector<std::reference_wrapper<const ToolPrintSettings>>& tool_print_s,
+
         const PrintSettings& print_s,
+
+        //TODO: This is stupid.
         const std::vector<std::reference_wrapper<const FilamentSettings>>& filament_s,
+
         const ProjectSettings& project_s
     );
 

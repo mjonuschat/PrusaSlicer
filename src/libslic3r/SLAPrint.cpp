@@ -864,7 +864,7 @@ ModelSyncResult sync_model(
 
 SLAPrint::ApplyStatus SLAPrint::apply(
     const Model& model,
-    Domain::FullConfigFDM config,
+    const Biz::Slicing::ConfigPackFDM& config_pack,
     const std::optional<Domain::ModelWipeTower>&,
     const std::optional<Domain::CustomGCode::Info>&,
     std::vector<std::string>* warnings

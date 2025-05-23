@@ -270,7 +270,7 @@ void init_print(std::vector<TriangleMesh> &&meshes, Slic3r::Print &print, Slic3r
 		print.auto_assign_extruders(mo);
     }
 
-	print.apply(model, config.get_full_config(), {}, {});
+	print.apply(model, config, {}, {});
     print.validate();
     print.set_status_silent();
 }

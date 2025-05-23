@@ -21,6 +21,7 @@
 #include "Model.hpp"
 #include "PrintConfig.hpp"
 #include "Slic3r/Biz/libpgcode/ProcessorResult.hpp"
+#include "libslic3r/ConfigPackFDM.hpp"
 #include "libslic3r/ModelUtils.hpp"
 #include <libslic3r/SLA/SLAResult.hpp>
 #include "Slic3r/Domain/ConfigFDM.hpp"
@@ -526,7 +527,7 @@ public:
     };
     virtual ApplyStatus apply(
         const Model& model,
-        Domain::FullConfigFDM config,
+        const Biz::Slicing::ConfigPackFDM& config_pack,
         const std::optional<Domain::ModelWipeTower>& wipe_tower,
         const std::optional<Domain::CustomGCode::Info>& custom_gcode,
         std::vector<std::string>* warnings = nullptr
@@ -534,18 +535,8 @@ public:
 
     virtual Biz::Print::ApplyStatus update(
         Model& model, DynamicPrintConfig config, const Domain::BedInstance& bed
-    ) override
-    {
-        Biz::Print::ApplyStatus result{Biz::Print::ApplyStatus::unchanged};
-        Biz::Slicing::with_limited_instances(model, bed.model_instances, [&](){
-            const ApplyStatus status{this->apply(model, Domain::FullConfigFDM::defaults(), bed.wipe_tower, bed.custom_gcode)};
-            if (status == APPLY_STATUS_UNCHANGED) {
-                return;
-            }
-            result = Biz::Print::ApplyStatus::changed;
-        });
-        return result;
-    }
+    ) override;
+
     const Model&            model() const { return m_model; }
     std::optional<Domain::ModelWipeTower> wipe_tower() const {
         return m_wipe_tower;
