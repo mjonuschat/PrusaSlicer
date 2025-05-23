@@ -119,7 +119,7 @@ milliseconds measure_execution_time(const std::function<void()>& func)
 class MockPrint : public IPrint
 {
 public:
-    ApplyStatus update(Slic3r::Model&, Slic3r::DynamicPrintConfig, const Slic3r::Domain::BedInstance&) override
+    ApplyStatus update(Slic3r::Model&, const Slic3r::Domain::ConfigPack&, const Slic3r::Domain::BedInstance&) override
     {
         precise_sleep(this->apply_time);
         return ApplyStatus::changed;

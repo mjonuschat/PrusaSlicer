@@ -350,7 +350,7 @@ public:
     // TODO remove wipe_tower and custom gcode once we get rid of the obsolete PrintBase.
     ApplyStatus apply(
         const Model& model,
-        const Biz::Slicing::ConfigPackFDM& config_pack,
+        const Domain::ConfigPackFDM& config_pack,
         const std::optional<Domain::ModelWipeTower>&,
         const std::optional<Domain::CustomGCode::Info>&,
         std::vector<std::string>* warnings = nullptr

@@ -34,6 +34,7 @@
 #include "libslic3r/Slicing.hpp"
 #include "libslic3r/libslic3r.h"
 #include "libslic3r/StepsInvalidation.hpp"
+#include "libslic3r/ConfigPackFDMUtils.hpp"
 
 namespace Slic3r {
 
@@ -1350,13 +1351,13 @@ bool InvalidatedSteps::empty() const {
 
 Print::ApplyStatus Print::apply(
     const Model& model,
-    const Biz::Slicing::ConfigPackFDM& config_pack,
+    const Domain::ConfigPackFDM& config_pack,
     const std::optional<Domain::ModelWipeTower>& wipe_tower,
     const std::optional<Domain::CustomGCode::Info>& custom_gcode,
     std::vector<std::string>* warnings
 )
 {
-    const auto new_full_config_ptr{std::make_shared<FullConfigFDM>(config_pack.get_full_config())};
+    const auto new_full_config_ptr{std::make_shared<FullConfigFDM>(Biz::Slicing::get_full_config(config_pack))};
     PrintConfigView new_print_config{new_full_config_ptr};
     // Check if the print config change will produce any warnings.
     validate_print_config_change(m_config, new_print_config, warnings);
@@ -1375,7 +1376,7 @@ Print::ApplyStatus Print::apply(
     };
 
     m_placeholder_parser = init_placeholder_parser(
-        config_pack.get_parser_config(),
+        Biz::Slicing::get_parser_config(config_pack),
         wipe_tower
     );
 

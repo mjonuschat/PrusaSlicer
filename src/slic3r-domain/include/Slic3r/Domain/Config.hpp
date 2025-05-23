@@ -337,8 +337,6 @@ public:
     std::vector<std::string> diff_keys(const ConfigBox& other) const;
     std::size_t hash() const;
 
-    std::partial_ordering operator==(const ConfigBox& other) const;
-
     virtual ~ConfigBox() = default;
 
 protected:

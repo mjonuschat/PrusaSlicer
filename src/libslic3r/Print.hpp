@@ -21,7 +21,7 @@
 #ifndef slic3r_Print_hpp_
 #define slic3r_Print_hpp_
 
-#include "libslic3r/ConfigPackFDM.hpp"
+#include "Slic3r/Domain/ConfigPack.hpp"
 #include "libslic3r/Fill/FillAdaptive.hpp"
 #include "libslic3r/Fill/FillLightning.hpp"
 #include "PrintBase.hpp"
@@ -580,7 +580,7 @@ public:
 
     ApplyStatus apply(
         const Model& model,
-        const Biz::Slicing::ConfigPackFDM& config_pack,
+        const Domain::ConfigPackFDM& config_pack,
         const std::optional<Domain::ModelWipeTower>& wipe_tower,
         const std::optional<Domain::CustomGCode::Info>& custom_gcode,
         std::vector<std::string>* warnings = nullptr

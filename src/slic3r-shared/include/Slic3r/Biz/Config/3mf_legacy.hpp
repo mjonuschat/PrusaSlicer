@@ -5,15 +5,21 @@
 #ifndef slic3r_Format_3mfLegacy_hpp_
 #define slic3r_Format_3mfLegacy_hpp_
 
+#include "Slic3r/Domain/ConfigPack.hpp"
 #include "Slic3r/Domain/CustomGCode.hpp"
 #include "Slic3r/Domain/Model.hpp"
 #include "Slic3r/Semver.hpp"
 #include <optional>
 #include <map>
 
-#include "Slic3r/Biz/Config/ConfigLegacy.hpp"
-
 namespace Slic3r {
+    class Model;
+    struct ConfigSubstitutionContext;
+    class DynamicPrintConfig;
+    struct ThumbnailData;
+}
+
+namespace Slic3rLegacy {
 
     /* The format for saving the SLA points was changing in the past. This enum holds the latest version that is being currently used.
      * Examples of the Slic3r_PE_sla_support_points.txt for historically used versions:
@@ -47,24 +53,20 @@ namespace Slic3r {
         drain_holes_format_version = 1
     };
 
-    class Model;
-    struct ConfigSubstitutionContext;
-    class DynamicPrintConfig;
-    struct ThumbnailData;
 
     // Returns true if the 3mf file with the given filename is a PrusaSlicer project file (i.e. if it contains a config).
-    extern std::pair<bool, std::optional<Semver>> is_project_3mf(const std::string&);
+    extern std::pair<bool, std::optional<Slic3r::Semver>> is_project_3mf(const std::string&);
 
-    using WipeTowersOnBeds = std::map<int, Domain::ModelWipeTower>;
-    using CustomGCodesOnBeds = std::map<int, Domain::CustomGCode::Info>;
+    using WipeTowersOnBeds = std::map<int, Slic3r::Domain::ModelWipeTower>;
+    using CustomGCodesOnBeds = std::map<int, Slic3r::Domain::CustomGCode::Info>;
 
     // Load the content of a 3mf file into the given model and preset bundle.
     extern bool load_3mf_legacy(
         const char* path,
-        std::variant<Slic3r::Biz::FDMLegacyConfigPack, Slic3r::Biz::SLALegacyConfigPack>& config,
-        Model* model,
+        Slic3r::Domain::ConfigPack& config,
+        Slic3r::Model* model,
         bool check_version,
-        boost::optional<Semver> &prusaslicer_generator_version,
+        boost::optional<Slic3r::Semver> &prusaslicer_generator_version,
         WipeTowersOnBeds& wipe_towers,
         CustomGCodesOnBeds& custom_gcodes
     );
@@ -73,12 +75,12 @@ namespace Slic3r {
     // The model could be modified during the export process if meshes are not repaired or have no shared vertices
     extern bool store_3mf_legacy(
         const char* path,
-        const Model* model,
-        const std::optional<std::variant<Slic3r::Biz::FDMLegacyConfigPack, Slic3r::Biz::SLALegacyConfigPack>>& config,
+        const Slic3r::Model* model,
+        const std::optional<Slic3r::Domain::ConfigPack>& config,
         bool fullpath_sources,
         const WipeTowersOnBeds& wipe_towers,
         const CustomGCodesOnBeds& custom_gcodes,
-        const ThumbnailData* thumbnail_data = nullptr,
+        const Slic3r::ThumbnailData* thumbnail_data = nullptr,
         bool zip64 = true
     );
 

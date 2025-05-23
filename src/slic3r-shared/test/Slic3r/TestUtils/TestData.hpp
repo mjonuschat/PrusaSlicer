@@ -6,9 +6,11 @@
 #include <boost/filesystem.hpp>
 #include <boost/optional.hpp>
 
+#include "Slic3r/Biz/Config/3mf_legacy.hpp"
 #include "libslic3r/Format/3mf.hpp"
 #include "libslic3r/Model.hpp"
 #include "libslic3r/Config.hpp"
+#include "Slic3r/Domain/ConfigPack.hpp"
 
 namespace Tests {
     inline boost::filesystem::path get_datadir() {
@@ -18,7 +20,7 @@ namespace Tests {
 
     struct Loaded3mf{
         Slic3r::Model model;
-        Slic3r::DynamicPrintConfig config;
+        Slic3r::Domain::ConfigPack config;
         Slic3r::WipeTowersOnBeds wipe_towers;
     };
 
@@ -26,14 +28,14 @@ namespace Tests {
         using namespace Slic3r;
         REQUIRE(boost::filesystem::exists(path));
 
-        DynamicPrintConfig config;
+        Domain::ConfigPack config;
         Model model;
         WipeTowersOnBeds wipe_towers;
         CustomGCodesOnBeds custom_gcodes;
 
         ConfigSubstitutionContext context{ForwardCompatibilitySubstitutionRule::Disable};
         boost::optional<Semver> version;
-        Slic3r::load_3mf(path.string().c_str(), config, context, &model, false, version, wipe_towers, custom_gcodes);
+        Slic3rLegacy::load_3mf_legacy(path.string().c_str(), config, &model, false, version, wipe_towers, custom_gcodes);
 
         return {model, std::move(config), std::move(wipe_towers)};
     }

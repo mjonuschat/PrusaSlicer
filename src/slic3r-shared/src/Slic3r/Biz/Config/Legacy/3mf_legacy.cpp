@@ -69,6 +69,9 @@ using Slic3r::Domain::HealedExPolygons;
 using Slic3r::Domain::ExPolygonsWithIds;
 using Slic3r::Domain::EmbossProjection;
 namespace CustomGCode = Slic3r::Domain::CustomGCode;
+using Slic3r::Domain::ConfigPack;
+using Slic3r::Domain::ConfigPackFDM;
+using Slic3r::Domain::ConfigPackSLA;
 
 // Slightly faster than sprintf("%.9g"), but there is an issue with the karma floating point formatter,
 // https://github.com/boostorg/spirit/pull/586
@@ -592,7 +595,7 @@ namespace Slic3rLegacy {
         bool load_model_from_file(
             const std::string& filename,
             Model& model,
-            std::variant<Slic3r::Biz::FDMLegacyConfigPack, Slic3r::Biz::SLALegacyConfigPack>& config,
+            ConfigPack& config,
             Slic3rLegacy::ConfigSubstitutionContext& config_substitutions,
             bool check_version,
             WipeTowersOnBeds& wipe_towers,
@@ -617,7 +620,7 @@ namespace Slic3rLegacy {
         bool _load_model_from_file(
             const std::string& filename,
             Model& model,
-            std::variant<Slic3r::Biz::FDMLegacyConfigPack, Slic3r::Biz::SLALegacyConfigPack>& config,
+            ConfigPack& config,
             Slic3rLegacy::ConfigSubstitutionContext& config_substitutions,
             WipeTowersOnBeds& wipe_towers,
             CustomGCodesOnBeds& custom_gcodes
@@ -640,7 +643,7 @@ namespace Slic3rLegacy {
             ::mz_zip_archive& archive, const mz_zip_archive_file_stat& stat
         );
 
-        void _extract_print_config_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat, std::variant<Slic3r::Biz::FDMLegacyConfigPack, Slic3r::Biz::SLALegacyConfigPack>& config, Slic3rLegacy::ConfigSubstitutionContext& subs_context, const std::string& archive_filename);
+        void _extract_print_config_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat, ConfigPack& config, Slic3rLegacy::ConfigSubstitutionContext& subs_context, const std::string& archive_filename);
         bool _extract_model_config_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat, Model& model);
         void _extract_embossed_svg_shape_file(const std::string &filename, mz_zip_archive &archive, const mz_zip_archive_file_stat &stat);
 
@@ -752,7 +755,7 @@ namespace Slic3rLegacy {
     bool _3MF_Importer::load_model_from_file(
         const std::string& filename,
         Model& model,
-        std::variant<Slic3r::Biz::FDMLegacyConfigPack, Slic3r::Biz::SLALegacyConfigPack>& config,
+        ConfigPack& config,
         Slic3rLegacy::ConfigSubstitutionContext& config_substitutions,
         bool check_version,
         WipeTowersOnBeds& wipe_towers,
@@ -806,7 +809,7 @@ namespace Slic3rLegacy {
     bool _3MF_Importer::_load_model_from_file(
         const std::string& filename,
         Model& model,
-        std::variant<Slic3r::Biz::FDMLegacyConfigPack, Slic3r::Biz::SLALegacyConfigPack>& config,
+        ConfigPack& config,
         Slic3rLegacy::ConfigSubstitutionContext& config_substitutions,
         WipeTowersOnBeds& wipe_towers,
         CustomGCodesOnBeds& custom_gcodes
@@ -1319,7 +1322,7 @@ namespace Slic3rLegacy {
 
     void _3MF_Importer::_extract_print_config_from_archive(
         mz_zip_archive& archive, const mz_zip_archive_file_stat& stat, 
-        std::variant<Slic3r::Biz::FDMLegacyConfigPack, Slic3r::Biz::SLALegacyConfigPack>& config, Slic3rLegacy::ConfigSubstitutionContext& config_substitutions, 
+        ConfigPack& config, Slic3rLegacy::ConfigSubstitutionContext& config_substitutions, 
         const std::string& archive_filename)
     {
         if (stat.m_uncomp_size > 0) {
@@ -2908,7 +2911,7 @@ namespace Slic3rLegacy {
         bool save_model_to_file(
             const std::string& filename,
             const Model& model,
-            const std::optional<std::variant<Slic3r::Biz::FDMLegacyConfigPack, Slic3r::Biz::SLALegacyConfigPack>>& config,
+            const std::optional<ConfigPack>& config,
             bool fullpath_sources,
             const ThumbnailData* thumbnail_data,
             bool zip64,
@@ -2921,7 +2924,7 @@ namespace Slic3rLegacy {
         bool _save_model_to_file(
             const std::string& filename,
             const Model& model,
-            const std::optional<std::variant<Slic3r::Biz::FDMLegacyConfigPack, Slic3r::Biz::SLALegacyConfigPack>>& config,
+            const std::optional<ConfigPack>& config,
             const ThumbnailData* thumbnail_data,
             const WipeTowersOnBeds& wipe_towers,
             const CustomGCodesOnBeds& custom_gcodes
@@ -2938,7 +2941,7 @@ namespace Slic3rLegacy {
         bool _add_layer_config_ranges_file_to_archive(mz_zip_archive& archive, const Model& model);
         bool _add_sla_support_points_file_to_archive(mz_zip_archive& archive, const Model& model);
         bool _add_sla_drain_holes_file_to_archive(mz_zip_archive& archive, const Model& model);
-        bool _add_print_config_file_to_archive(mz_zip_archive& archive, const std::variant<Slic3r::Biz::FDMLegacyConfigPack, Slic3r::Biz::SLALegacyConfigPack>& config, const Model& model, const WipeTowersOnBeds& wipe_towers);
+        bool _add_print_config_file_to_archive(mz_zip_archive& archive, const ConfigPack& config, const Model& model, const WipeTowersOnBeds& wipe_towers);
         bool _add_model_config_file_to_archive(mz_zip_archive& archive, const Model& model, const IdToObjectDataMap &objects_data);
         bool _add_custom_gcode_per_print_z_file_to_archive(mz_zip_archive& archive, const CustomGCodesOnBeds& custom_gcodes); //, const DynamicPrintConfig* config);
         bool _add_wipe_tower_information_file_to_archive( mz_zip_archive& archive, const WipeTowersOnBeds& wipe_towers);
@@ -2947,7 +2950,7 @@ namespace Slic3rLegacy {
     bool _3MF_Exporter::save_model_to_file(
         const std::string& filename,
         const Model& model,
-        const std::optional<std::variant<Slic3r::Biz::FDMLegacyConfigPack, Slic3r::Biz::SLALegacyConfigPack>>& config,
+        const std::optional<ConfigPack>& config,
         bool fullpath_sources,
         const ThumbnailData* thumbnail_data,
         bool zip64,
@@ -2964,7 +2967,7 @@ namespace Slic3rLegacy {
     bool _3MF_Exporter::_save_model_to_file(
         const std::string& filename,
         const Model& model,
-        const std::optional<std::variant<Slic3r::Biz::FDMLegacyConfigPack, Slic3r::Biz::SLALegacyConfigPack>>& config,
+        const std::optional<ConfigPack>& config,
         const ThumbnailData* thumbnail_data,
         const WipeTowersOnBeds& wipe_towers,
         const CustomGCodesOnBeds& custom_gcodes
@@ -3796,7 +3799,7 @@ namespace Slic3rLegacy {
         return true;
     }
 
-    bool _3MF_Exporter::_add_print_config_file_to_archive(mz_zip_archive& archive, const std::variant<Slic3r::Biz::FDMLegacyConfigPack, Slic3r::Biz::SLALegacyConfigPack>& config, const Model& model, const WipeTowersOnBeds& wipe_towers)
+    bool _3MF_Exporter::_add_print_config_file_to_archive(mz_zip_archive& archive, const ConfigPack& config, const Model& model, const WipeTowersOnBeds& wipe_towers)
     {
         assert(is_decimal_separator_point());
         char buffer[1024];
@@ -3805,9 +3808,9 @@ namespace Slic3rLegacy {
 
         std::string opts;
         if (config.index() == 0)
-            opts += Slic3r::Biz::serialize_as_legacy_config(std::get<Biz::FDMLegacyConfigPack>(config), true);
+            opts += Slic3r::Biz::serialize_as_legacy_config(std::get<ConfigPackFDM>(config), true);
         else
-            opts += Slic3r::Biz::serialize_as_legacy_config(std::get<Biz::SLALegacyConfigPack>(config), true);
+            opts += Slic3r::Biz::serialize_as_legacy_config(std::get<ConfigPackSLA>(config), true);
 
         // Wipe tower values were historically stored in the config, but they were moved into
         // Model in PS 2.9.0. Keep saving the old values to maintain forward compatibility.
@@ -4461,10 +4464,13 @@ std::optional<EmbossShape> read_emboss_shape(const char **attributes, unsigned i
 
 } // namespace Slic3r
 
-namespace Slic3r {
+namespace Slic3rLegacy {
+
+using namespace Slic3r;
+
 bool load_3mf_legacy(
     const char* path,
-    std::variant<Slic3r::Biz::FDMLegacyConfigPack, Slic3r::Biz::SLALegacyConfigPack>& config,
+    ConfigPack& config,
     Model* model,
     bool check_version,
     boost::optional<Semver> &prusaslicer_generator_version,
@@ -4491,7 +4497,7 @@ bool load_3mf_legacy(
 bool store_3mf_legacy(
     const char* path,
     const Model* model,
-    const std::optional<std::variant<Slic3r::Biz::FDMLegacyConfigPack, Slic3r::Biz::SLALegacyConfigPack>>& config,
+    const std::optional<ConfigPack>& config,
     bool fullpath_sources,
     const WipeTowersOnBeds& wipe_towers,
     const CustomGCodesOnBeds& custom_gcodes,

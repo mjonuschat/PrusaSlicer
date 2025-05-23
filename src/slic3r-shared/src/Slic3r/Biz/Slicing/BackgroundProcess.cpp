@@ -53,6 +53,9 @@ using Print::IPrint;
 using Print::ApplyStatus;
 using JThread::StopToken;
 using JThread::JThread;
+using Domain::ConfigPack;
+using Domain::ConfigPackFDM;
+using Domain::ConfigPackSLA;
 
 LoggingScopeLock::LoggingScopeLock(std::mutex& mutex, std::string id)
     : m_mutex{mutex}, m_id{std::move(id)}
@@ -91,16 +94,20 @@ bool is_thread_active(const Status status) {
         || status == Status::Updating;
 }
 
-Slic3r::PrinterTechnology get_printer_technology(const DynamicPrintConfig& config) {
-    const auto option = config.option<ConfigOptionEnum<PrinterTechnology>>("printer_technology");
-    ASSERT(option != nullptr);
-    return option->value;
+Slic3r::PrinterTechnology get_printer_technology(const ConfigPack& config) {
+    if (std::holds_alternative<ConfigPackFDM>(config)) {
+        return PrinterTechnology::ptFFF;
+    } else if (std::holds_alternative<ConfigPackSLA>(config)) {
+        return ptSLA;
+    } else {
+        PANIC("Unexpected config type!");
+    }
 }
 
 BackgroundProcess::BackgroundProcess(
     IProcessCallbacks& callbacks,
     Model& model,
-    DynamicPrintConfig&& config,
+    ConfigPack&& config,
     const Domain::BedInstance& bed,
     const SlicingId id
 )
@@ -117,7 +124,7 @@ BackgroundProcess::BackgroundProcess(
     std::unique_ptr<IPrint>&& print,
     IProcessCallbacks& callbacks,
     Model& model,
-    DynamicPrintConfig&& config,
+    ConfigPack&& config,
     const Domain::BedInstance& bed,
     const SlicingId id
 )
@@ -140,7 +147,7 @@ BackgroundProcess::~BackgroundProcess() {
 
 void BackgroundProcess::update(
     Model& model,
-    DynamicPrintConfig&& config,
+    const ConfigPack& config,
     const Domain::BedInstance& bed
 )
 {
@@ -164,7 +171,7 @@ void BackgroundProcess::update(
     }};
 
     this->m_on_status(Status::Updating);
-    apply_status = this->m_print->update(model, std::move(config), bed);
+    apply_status = this->m_print->update(model, config, bed);
 }
 
 void BackgroundProcess::slice()

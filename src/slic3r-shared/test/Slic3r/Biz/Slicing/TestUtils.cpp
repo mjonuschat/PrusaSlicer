@@ -1,9 +1,10 @@
 #include "TestUtils.hpp"
 
-#include <fstream>
 #include <boost/filesystem.hpp>
 
 namespace Slic3r::Tests {
+
+using Domain::ConfigPack;
 
 void precise_sleep(const std::chrono::milliseconds duration) {
     const auto start = std::chrono::high_resolution_clock::now();
@@ -38,14 +39,13 @@ double get_cubes_filament_used(const Slic3r::Model &model) {
     return model.objects.size() * 1483.0;
 }
 
-Slic3r::DynamicPrintConfig get_config() {
-    auto config{Slic3r::DynamicPrintConfig::full_print_config()};
-    config.set("skirts", 0);
-    config.option<ConfigOptionEnum<PrinterTechnology>>("printer_technology", true)->value = ptFFF;
+Domain::ConfigPack get_config() {
+    Domain::ConfigPackFDM config;
+    config.print.opt("skirts").set(0);
     return config;
 }
 
-ModelOnBed::ModelOnBed(Model&& model, DynamicPrintConfig&& config)
+ModelOnBed::ModelOnBed(Model&& model, ConfigPack&& config)
     : model{std::move(model)}, config{std::move(config)}, bed_instance{ModelOnBed::bed}
 {
     for (ModelObject* object : this->model.objects) {

@@ -78,7 +78,7 @@ void ProjectInteractor::on_slicing_input_changed(const Domain::BedRef& bed_insta
 
     m_slicing_interactor.update_process(
         selected_project().model(),
-        config_container->print_config(),
+        config_container->new_config(),
         *instance
     );
 }

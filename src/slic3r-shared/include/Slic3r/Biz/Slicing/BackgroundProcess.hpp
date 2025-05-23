@@ -82,7 +82,7 @@ std::ostream& operator<<(std::ostream& output, const Status& status);
 
 bool is_thread_active(const Status status);
 
-Slic3r::PrinterTechnology get_printer_technology(const DynamicPrintConfig& config);
+Slic3r::PrinterTechnology get_printer_technology(const Domain::ConfigPack& config);
 
 using FDMResult = libpgcode::ProcessorResult;
 
@@ -103,7 +103,7 @@ public:
     BackgroundProcess(
         IProcessCallbacks& callbacks,
         Model& model,
-        DynamicPrintConfig&& config,
+        Domain::ConfigPack&& config,
         const Domain::BedInstance& bed,
         const SlicingId id
     );
@@ -111,7 +111,7 @@ public:
         std::unique_ptr<Print::IPrint>&& print,
         IProcessCallbacks& callbacks,
         Model& model,
-        DynamicPrintConfig&& config,
+        Domain::ConfigPack&& config,
         const Domain::BedInstance& bed,
         const SlicingId id
     );
@@ -120,7 +120,7 @@ public:
     /* WARNING! It is up to the caller to ensure update is not called on a running thread! */
     void update(
         Model& model,
-        DynamicPrintConfig&& config,
+        const Domain::ConfigPack& config,
         const Domain::BedInstance& bed
     );
 

@@ -1,14 +1,12 @@
-#include "Slic3r/Biz/FDMResultCache.hpp"
-#include "Slic3r/Biz/Platform/FunctionUtils.hpp"
-#include "Slic3r/Biz/Platform/Termination.hpp"
 #include <Slic3r/Biz/Slicing/SlicingInteractor.hpp>
 #include <Slic3r/Biz/Platform/PlatformServices.hpp>
-#include "Slic3r/Log.hpp"
 #include "Slic3r/Assert.hpp"
 #include <fmt/core.h>
 #include <fmt/ostream.h>
 
 namespace Slic3r::Biz::Slicing {
+
+using Domain::ConfigPack;
 
 SlicingInteractor::SlicingInteractor(Platform::IMainThreadDispatcher& dispatcher)
     : m_dispatcher(dispatcher)
@@ -24,7 +22,7 @@ SlicingInteractor::~SlicingInteractor() {
 
 void SlicingInteractor::create_process(
     Model& model,
-    const DynamicPrintConfig& config,
+    const ConfigPack& config,
     const Domain::BedInstance& bed,
     const SlicingId id
 ) {
@@ -35,7 +33,7 @@ void SlicingInteractor::create_process(
         std::forward_as_tuple(
             *this,
             model,
-            DynamicPrintConfig{config},
+            ConfigPack{config},
             bed,
             id
         )
@@ -52,7 +50,7 @@ std::vector<Domain::ObjectID> get_object_ids(const Model& model) {
 } // namespace
 
 void SlicingInteractor::update_process(
-    Model& model, const DynamicPrintConfig& config, const Domain::BedInstance& bed
+    Model& model, const ConfigPack& config, const Domain::BedInstance& bed
 )
 {
     const Domain::SelectionId bed_instance_id{bed.id().id};
@@ -277,7 +275,7 @@ void SlicingInteractor::process_update_requests() {
             continue;
         }
 
-        const DynamicPrintConfig& config{request.config.get()};
+        const ConfigPack& config{request.config.get()};
         const Domain::BedInstance& bed{request.bed.get()};
         if (process.get_printer_technology() != get_printer_technology(config)) {
             m_processes.erase(id);
@@ -287,7 +285,7 @@ void SlicingInteractor::process_update_requests() {
 
         process.update(
             request.model.get(),
-            DynamicPrintConfig{config},
+            config,
             bed
         );
         to_remove.insert(id);

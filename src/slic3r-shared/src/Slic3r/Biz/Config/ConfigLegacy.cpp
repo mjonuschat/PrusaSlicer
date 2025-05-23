@@ -10,6 +10,10 @@
 
 namespace Slic3r::Biz {
 
+using Domain::ConfigPack;
+using Domain::ConfigPackFDM;
+using Domain::ConfigPackSLA;
+
 namespace {
     struct LegacyKeysAndOverrides {
         // Configs were exported flat in PrusaSlicer <= 2.9.2. This is the list of keys we should try to fill in.
@@ -494,15 +498,15 @@ void fill_config_box_from_legacy(const Slic3rLegacy::DynamicPrintConfig& cfg,
 
 
 
-std::variant<FDMLegacyConfigPack, SLALegacyConfigPack> convert_dynamic_print_config_to_new(Slic3rLegacy::DynamicPrintConfig& cfg)
+ConfigPack convert_dynamic_print_config_to_new(Slic3rLegacy::DynamicPrintConfig& cfg)
 {
     if (cfg.has("printer_technology")) {
         if (auto pt = cfg.opt_enum<PrinterTechnology>("printer_technology"); pt == ptFFF) {
             int extruder_num = cfg.has("nozzle_diameter") ? int(cfg.option<Slic3rLegacy::ConfigOptionFloats>("nozzle_diameter")->size()) : 1;
             LegacyKeysAndOverrides legacy_data = legacy_fdm_data();
-            FDMLegacyConfigPack out;
-            out.toolprint_settings.resize(extruder_num);
-            out.filament_settings.resize(extruder_num);
+            ConfigPackFDM out;
+            out.tool.resize(extruder_num);
+            out.filament.resize(extruder_num);
 
             if (cfg.has("filament_vendor")) {
                 // Filament_vendor was saved as a single string, not a vector. In order to place it into
@@ -510,18 +514,18 @@ std::variant<FDMLegacyConfigPack, SLALegacyConfigPack> convert_dynamic_print_con
                 cfg.set_key_value("filament_vendor", new Slic3rLegacy::ConfigOptionStrings(extruder_num, cfg.opt_string("filament_vendor")));
             }
 
-            fill_config_box_from_legacy(cfg, out.printer_settings, legacy_data);
-            fill_config_box_from_legacy(cfg, out.print_settings, legacy_data);
+            fill_config_box_from_legacy(cfg, out.printer, legacy_data);
+            fill_config_box_from_legacy(cfg, out.print, legacy_data);
             for (int i = 0; i < extruder_num; ++i) {
-                fill_config_box_from_legacy(cfg, out.toolprint_settings[i], legacy_data, i);
-                fill_config_box_from_legacy(cfg, out.filament_settings[i], legacy_data, i);
+                fill_config_box_from_legacy(cfg, out.tool[i], legacy_data, i);
+                fill_config_box_from_legacy(cfg, out.filament[i], legacy_data, i);
             }
-            fill_config_box_from_legacy(cfg, out.project_settings, legacy_data);
+            fill_config_box_from_legacy(cfg, out.project, legacy_data);
             return out;
         }
         else if (pt == ptSLA) {
             LegacyKeysAndOverrides legacy_data = legacy_sla_data();
-            SLALegacyConfigPack out;
+            ConfigPackSLA out;
             fill_config_box_from_legacy(cfg, out.sla_printer_settings, legacy_data);
             fill_config_box_from_legacy(cfg, out.sla_material_settings, legacy_data);
             fill_config_box_from_legacy(cfg, out.sla_print_settings, legacy_data);
@@ -532,7 +536,7 @@ std::variant<FDMLegacyConfigPack, SLALegacyConfigPack> convert_dynamic_print_con
 }
 
 
-std::variant<FDMLegacyConfigPack, SLALegacyConfigPack> load_config_from_legacy_file(const std::string& filename)
+ConfigPack load_config_from_legacy_file(const std::string& filename)
 {
     Slic3rLegacy::DynamicPrintConfig cfg = load_legacy_config_from_legacy_file(filename);
     return convert_dynamic_print_config_to_new(cfg);
@@ -540,26 +544,26 @@ std::variant<FDMLegacyConfigPack, SLALegacyConfigPack> load_config_from_legacy_f
 
 
 
-static std::string serialize_as_legacy_config(const std::variant<const FDMLegacyConfigPack*, const SLALegacyConfigPack*>& cfgvar, bool prepend_semicolons)
+static std::string serialize_as_legacy_config(const std::variant<const ConfigPackFDM*, const ConfigPackSLA*>& cfgvar, bool prepend_semicolons)
 {
     std::vector<std::pair<const Domain::ConfigBox*, int>> boxes;
     LegacyKeysAndOverrides legacy_data;
 
-    if (std::holds_alternative<const FDMLegacyConfigPack*>(cfgvar)) {
+    if (std::holds_alternative<const ConfigPackFDM*>(cfgvar)) {
         legacy_data = legacy_fdm_data();
-        const FDMLegacyConfigPack& cfg = *std::get<const FDMLegacyConfigPack*>(cfgvar);
-        ASSERT(cfg.filament_settings.size() == cfg.toolprint_settings.size());
-        boxes.emplace_back(&cfg.printer_settings, -1);
-        boxes.emplace_back(&cfg.print_settings, -1);
-        for (int i = 0; i < cfg.toolprint_settings.size(); ++i)
-            boxes.emplace_back(&cfg.toolprint_settings[i], i);
-        for (int i = 0; i < cfg.filament_settings.size(); ++i)
-            boxes.emplace_back(&cfg.filament_settings[i], i);
-        boxes.emplace_back(&cfg.project_settings, -1);
+        const ConfigPackFDM& cfg = *std::get<const ConfigPackFDM*>(cfgvar);
+        ASSERT(cfg.filament.size() == cfg.tool.size());
+        boxes.emplace_back(&cfg.printer, -1);
+        boxes.emplace_back(&cfg.print, -1);
+        for (int i = 0; i < cfg.tool.size(); ++i)
+            boxes.emplace_back(&cfg.tool[i], i);
+        for (int i = 0; i < cfg.filament.size(); ++i)
+            boxes.emplace_back(&cfg.filament[i], i);
+        boxes.emplace_back(&cfg.project, -1);
     }
     else {
         legacy_data = legacy_sla_data();
-        const SLALegacyConfigPack& cfg = *std::get<const SLALegacyConfigPack*>(cfgvar);
+        const ConfigPackSLA& cfg = *std::get<const ConfigPackSLA*>(cfgvar);
         boxes.emplace_back(&cfg.sla_printer_settings, -1);
         boxes.emplace_back(&cfg.sla_material_settings, -1);
         boxes.emplace_back(&cfg.sla_print_settings, -1);
@@ -596,15 +600,15 @@ static std::string serialize_as_legacy_config(const std::variant<const FDMLegacy
 
 
 
-std::string serialize_as_legacy_config(const FDMLegacyConfigPack& cfg, bool prepend_semicolons)
+std::string serialize_as_legacy_config(const ConfigPackFDM& cfg, bool prepend_semicolons)
 {
-    std::variant<const FDMLegacyConfigPack*, const SLALegacyConfigPack*> cfgvar = &cfg;
+    std::variant<const ConfigPackFDM*, const ConfigPackSLA*> cfgvar = &cfg;
     return serialize_as_legacy_config(cfgvar, prepend_semicolons);
 }
 
-std::string serialize_as_legacy_config(const SLALegacyConfigPack& cfg, bool prepend_semicolons)
+std::string serialize_as_legacy_config(const ConfigPackSLA& cfg, bool prepend_semicolons)
 {
-    std::variant<const FDMLegacyConfigPack*, const SLALegacyConfigPack*> cfgvar = &cfg;
+    std::variant<const ConfigPackFDM*, const ConfigPackSLA*> cfgvar = &cfg;
     return serialize_as_legacy_config(cfgvar, prepend_semicolons);
 }
 

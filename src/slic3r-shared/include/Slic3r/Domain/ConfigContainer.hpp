@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Slic3r/Domain/ConfigPack.hpp"
 #include "Slic3r/Domain/FindById.hpp"
 #include "Slic3r/Domain/ObjectID.hpp"
 #include "Slic3r/Domain/BedInstance.hpp"
@@ -19,6 +20,18 @@ class ConfigContainer : public ObjectBase
 public:
     Slic3r::PrinterTechnology print_technology() const { return m_print_technology; }
     const DynamicPrintConfig& print_config() const { return m_print_config; }
+    const ConfigPack& new_config() const { return m_new_config; }
+    void set_print_config_new(const Domain::ConfigPack& config)
+    {
+        m_new_config = config;
+        if (std::holds_alternative<ConfigPackFDM>(config)) {
+            m_print_technology = PrinterTechnology::ptFFF;
+        } else if (std::holds_alternative<ConfigPackSLA>(config)) {
+            m_print_technology = ptSLA;
+        } else {
+            PANIC("Unexpected config type!");
+        }
+    }
     void set_print_config(const DynamicPrintConfig& config)
     {
         m_print_config = config;
@@ -57,6 +70,7 @@ private:
      * Slic3r::Biz::Preset::PresetInteractorConfigContainerContext.
      */
     DynamicPrintConfig m_print_config;
+    Domain::ConfigPack m_new_config;
 
     const Bed* m_bed{ nullptr };
     BedInstanceList m_bed_instances;

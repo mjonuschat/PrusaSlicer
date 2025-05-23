@@ -303,11 +303,15 @@ void GCodeGenerator::PlaceholderParserIntegration::validate_output_vector_variab
     if (position.size() != 3)
         throw Slic3r::RuntimeError("\"position\" output variable must not be resized by the script.");
     if (this->num_extruders > 0) {
-        const auto e_position{get_vector<double>(output_config, "e_position")};
+        const auto e_position{
+            output_config.option("e_position")
+                ? std::optional{get_vector<double>(output_config, "e_position")}
+                : std::nullopt
+        };
         const auto e_retracted{get_vector<double>(output_config, "e_retracted")};
         const auto e_restart_extra{get_vector<double>(output_config, "e_restart_extra")};
 
-        if (e_position.size() != this->num_extruders)
+        if (e_position && e_position->size() != this->num_extruders)
             throw Slic3r::RuntimeError("\"e_position\" output variable must not be resized by the script.");
         if (e_retracted.size() != this->num_extruders)
             throw Slic3r::RuntimeError("\"e_retracted\" output variable must not be resized by the script.");
@@ -1737,7 +1741,12 @@ std::string GCodeGenerator::placeholder_parser_process(
             this->last_position = this->gcode_to_point({ pos[0], pos[1] });
         }
 
-        const auto output_e_position{get_vector<double>(ppi.output_config, "e_position")};
+        const bool user_relative_e{m_writer.config.get<bool>("use_relative_e_distances")};
+        const auto output_e_position{
+            !user_relative_e
+                ? std::optional{get_vector<double>(ppi.output_config, "e_position")}
+                : std::nullopt
+        };
         const auto output_e_retracted{get_vector<double>(ppi.output_config, "e_retracted")};
         const auto output_e_restart_extra{get_vector<double>(ppi.output_config, "e_restart_extra")};
 
@@ -1745,8 +1754,8 @@ std::string GCodeGenerator::placeholder_parser_process(
             unsigned int eid = e.id();
             assert(eid < ppi.num_extruders);
             if ( eid < ppi.num_extruders) {
-                if (! m_writer.config.get<bool>("use_relative_e_distances") && ! is_approx(ppi.e_position[eid], output_e_position[eid]))
-                    const_cast<Extruder&>(e).set_position(output_e_position[eid]);
+                if (! user_relative_e && ! is_approx(ppi.e_position[eid], output_e_position->at(eid)))
+                    const_cast<Extruder&>(e).set_position(output_e_position->at(eid));
                 if (! is_approx(ppi.e_retracted[eid], output_e_retracted[eid]) ||
                     ! is_approx(ppi.e_restart_extra[eid], output_e_restart_extra[eid]))
                     const_cast<Extruder&>(e).set_retracted(output_e_retracted[eid], output_e_restart_extra[eid]);

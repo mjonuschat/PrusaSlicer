@@ -1,4 +1,5 @@
 #include "Slic3r/Domain/Project.hpp"
+#include "Slic3r/Biz/Config/3mf_legacy.hpp"
 
 #include <libslic3r/Model.hpp>
 #include <libslic3r/FileReader.hpp>
@@ -9,31 +10,33 @@ Project::Project() : m_model(new Model()) {}
 
 void Project::load(const std::string& file_path)
 {
-    DynamicPrintConfig config;
+    Domain::ConfigPack config;
     WipeTowersOnBeds wipe_towers;
     CustomGCodesOnBeds custom_gcodes;
 
     ConfigSubstitutionContext context{ForwardCompatibilitySubstitutionRule::Disable};
     boost::optional<Semver> version;
 
-    m_model = std::make_unique<Model>(
-        FileReader::load_model_with_config(
-            file_path,
-            &config,
-            &context,
-            wipe_towers,
-            custom_gcodes,
-            version,
-            {}
-        )
-    );
+    ASSERT(Slic3rLegacy::load_3mf_legacy(
+        file_path.c_str(),
+        config,
+        m_model.get(),
+        false,
+        version,
+        wipe_towers,
+        custom_gcodes
+    ));
 
     set_file_name(file_path);
     // TODO: implement
     m_config_containers.clear();
     m_config_containers.emplace_back(std::make_unique<ConfigContainer>());
     auto& config_container = m_config_containers.back();
-    config_container->set_print_config(config);
+    config_container->set_print_config_new(config);
+    DynamicPrintConfig co;
+    auto full{FullPrintConfig::defaults()};
+    co.apply(full);
+    config_container->set_print_config(co);
     //config_container->set_bed(m_bed_container.add_bed())
     //ASSERT(config_container->bed_instances().size() == wipe_towers.size());
 

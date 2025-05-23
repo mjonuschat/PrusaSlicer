@@ -39,6 +39,7 @@ using Slic3r::Biz::Slicing::Sla::Object;
 using Slic3r::Tests::ResultListener;
 using Slic3r::Biz::Slicing::IFDMResultListener;
 using Slic3r::Domain::ObjectID;
+using Slic3r::Domain::ConfigPackSLA;
 
 TEST_CASE_METHOD(SlicingFixture, "Slice N beds", "[slicing][slicing-interactor]")
 {
@@ -194,7 +195,7 @@ TEST_CASE_METHOD(SlicingFixture, "Update reinitializes the process if printer te
     slicing.set_listener<ISLAObjectListener>(&object_listener);
     slicing.update_process(model_on_bed.model, model_on_bed.config, model_on_bed.bed_instance);
 
-    model_on_bed.config.option<ConfigOptionEnum<PrinterTechnology>>("printer_technology")->value = Slic3r::ptSLA;
+    model_on_bed.config = ConfigPackSLA{};
 
     slicing.update_process(model_on_bed.model, model_on_bed.config, model_on_bed.bed_instance);
     slicing.slice_all();

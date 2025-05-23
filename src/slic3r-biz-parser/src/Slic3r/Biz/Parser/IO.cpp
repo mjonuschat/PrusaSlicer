@@ -168,7 +168,6 @@ template<typename T>
 requires (!is_pair_v<T>)
 Vector::Vector(const std::vector<T>& values)
 {
-    m_values.clear();
     constexpr auto type{std::is_enum_v<T> ? Type::Enums : get_option_type_v<std::vector<T>>};
     static_assert(type != Type::None, "Unknown type passed to set");
     m_type = type;

@@ -2,7 +2,7 @@
 #define SLIC3R_TEST_DATA_HPP
 
 #include "libslic3r/Config.hpp"
-#include "libslic3r/ConfigPackFDM.hpp"
+#include "libslic3r/ConfigPackFDMUtils.hpp"
 #include "libslic3r/Format/3mf.hpp"
 #include "libslic3r/GCode/ModelVisibility.hpp"
 #include "libslic3r/GCode/SeamGeometry.hpp"
@@ -46,8 +46,14 @@ enum class TestMesh {
     two_hollow_squares
 };
 
-using TestConfig = Slic3r::Biz::Slicing::ConfigPackFDM;
+struct TestConfig : public Domain::ConfigPackFDM
+{
+    using ConfigPackFDM::ConfigPackFDM;
 
+    Biz::Parser::IO::Config get_parser_config() const { return Biz::Slicing::get_parser_config(*this); };
+    Domain::FullConfigFDM get_full_config() const { return Biz::Slicing::get_full_config(*this); };
+    PrintConfigView get_view() const { return Biz::Slicing::get_view(*this); };
+};
 
 // Neccessary for <c++17
 struct TestMeshHash

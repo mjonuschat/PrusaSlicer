@@ -14,6 +14,9 @@
 #include <optional>
 #include <vector>
 
+using Slic3r::Domain::ConfigPack;
+using Slic3r::Domain::ConfigPackFDM;
+using Slic3r::Domain::ConfigPackSLA;
 
 static void print(const std::variant<std::string, std::vector<std::string>>& in)
 {
@@ -37,13 +40,13 @@ int main(int, char* [])
 
     {
         Slic3r::Model model;
-        std::variant<FDMLegacyConfigPack, SLALegacyConfigPack> cfg;
+        ConfigPack cfg;
         boost::optional<Slic3r::Semver> prusaslicer_generator_version;
-        Slic3r::WipeTowersOnBeds wipe_towers;
-        Slic3r::CustomGCodesOnBeds custom_gcodes;
-        Slic3r::load_3mf_legacy("test.3mf", cfg, &model, true, prusaslicer_generator_version, wipe_towers, custom_gcodes);
+        Slic3rLegacy::WipeTowersOnBeds wipe_towers;
+        Slic3rLegacy::CustomGCodesOnBeds custom_gcodes;
+        Slic3rLegacy::load_3mf_legacy("test.3mf", cfg, &model, true, prusaslicer_generator_version, wipe_towers, custom_gcodes);
 
-        Slic3r::store_3mf_legacy("out.3mf", &model, std::optional<std::variant<FDMLegacyConfigPack, SLALegacyConfigPack>>(cfg), false, wipe_towers, custom_gcodes);
+        Slic3rLegacy::store_3mf_legacy("out.3mf", &model, std::optional<ConfigPack>(cfg), false, wipe_towers, custom_gcodes);
         return 0;
     }
 
@@ -54,9 +57,9 @@ int main(int, char* [])
         SLAPrintSettings print_s;
         SLAMaterialSettings material_s;
 
-        std::variant<FDMLegacyConfigPack, SLALegacyConfigPack> cfg = load_config_from_legacy_file("test_sla.ini");
-        if (std::holds_alternative<SLALegacyConfigPack>(cfg)) {
-            const auto& sla = std::get<SLALegacyConfigPack>(cfg);
+        ConfigPack cfg = load_config_from_legacy_file("test_sla.ini");
+        if (std::holds_alternative<ConfigPackSLA>(cfg)) {
+            const auto& sla = std::get<ConfigPackSLA>(cfg);
             printer_s = sla.sla_printer_settings;
             material_s = sla.sla_material_settings;
             print_s = sla.sla_print_settings;            
@@ -76,7 +79,7 @@ int main(int, char* [])
 
         std::cout << serialize(list, 2, false);
         std::ofstream leg("test_sla-roundtrip.ini");
-        leg << serialize_as_legacy_config(std::get<SLALegacyConfigPack>(cfg)) << std::endl;
+        leg << serialize_as_legacy_config(std::get<ConfigPackSLA>(cfg)) << std::endl;
     }
 
 
@@ -94,15 +97,15 @@ int main(int, char* [])
 
     PhysicalPrinterSettings pps;
 
-    std::variant<FDMLegacyConfigPack, SLALegacyConfigPack> cfg = load_config_from_legacy_file("test.ini");
-    if (std::holds_alternative<FDMLegacyConfigPack>(cfg)) {
-        const auto& fdm = std::get<FDMLegacyConfigPack>(cfg);
-        printer_s = fdm.printer_settings;
-        fs1 = fdm.filament_settings[0];
-        fs2 = fdm.filament_settings[1];
-        ps1 = fdm.print_settings;
-        tps1 = fdm.toolprint_settings[0];
-        tps2 = fdm.toolprint_settings[1];
+    ConfigPack cfg = load_config_from_legacy_file("test.ini");
+    if (std::holds_alternative<ConfigPackFDM>(cfg)) {
+        const auto& fdm = std::get<ConfigPackFDM>(cfg);
+        printer_s = fdm.printer;
+        fs1 = fdm.filament[0];
+        fs2 = fdm.filament[1];
+        ps1 = fdm.print;
+        tps1 = fdm.tool[0];
+        tps2 = fdm.tool[1];
     } else {
         PANIC();
     }   
@@ -121,7 +124,7 @@ int main(int, char* [])
     std::cout << serialize(list, 2, false);
 
     std::ofstream leg("test-roundtrip.gcode");
-    leg << serialize_as_legacy_config(std::get<FDMLegacyConfigPack>(cfg)) << std::endl;
+    leg << serialize_as_legacy_config(std::get<ConfigPackFDM>(cfg)) << std::endl;
 
 
     return 0;

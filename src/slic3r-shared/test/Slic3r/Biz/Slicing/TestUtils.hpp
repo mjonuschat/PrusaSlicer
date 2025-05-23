@@ -16,15 +16,15 @@ Slic3r::Model generate_cubes(const int count, const int row_size);
 
 double get_cubes_filament_used(const Slic3r::Model &model);
 
-Slic3r::DynamicPrintConfig get_config();
+Domain::ConfigPack get_config();
 
 struct ModelOnBed {
-    ModelOnBed(Model&& model, DynamicPrintConfig&& config);
+    ModelOnBed(Model&& model, Domain::ConfigPack&& config);
 
     static Domain::Bed bed;
 
     Model model;
-    DynamicPrintConfig config;
+    Domain::ConfigPack config;
     Domain::BedInstance bed_instance;
 };
 
