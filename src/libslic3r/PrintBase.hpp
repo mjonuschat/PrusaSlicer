@@ -5,6 +5,7 @@
 #ifndef slic3r_PrintBase_hpp_
 #define slic3r_PrintBase_hpp_
 
+#include "Slic3r/Biz/Parser/PlaceholderParser.hpp"
 #include "Slic3r/Domain/BedInstance.hpp"
 #include "libslic3r.h"
 #include <set>
@@ -18,7 +19,6 @@
 
 #include "Slic3r/Domain/ObjectID.hpp"
 #include "Model.hpp"
-#include "PlaceholderParser.hpp"
 #include "PrintConfig.hpp"
 #include "Slic3r/Biz/libpgcode/ProcessorResult.hpp"
 #include "libslic3r/ModelUtils.hpp"
@@ -49,9 +49,9 @@ struct PrintStatistics
     std::map<uint8_t, float>        filament_stats;
 
     // Config with the filled in print statistics.
-    DynamicConfig           config() const;
+    Biz::Parser::IO::Config config() const;
     // Config with the statistics keys populated with placeholder strings.
-    static DynamicConfig    placeholders();
+    static Biz::Parser::IO::Config placeholders();
     // Replace the print statistics placeholders in the path.
     std::string             finalize_output_path(const std::string &path_in) const;
 
@@ -502,7 +502,7 @@ public:
 class PrintBase : public Domain::ObjectBase, public Biz::Print::IPrint
 {
 public:
-	PrintBase() : m_placeholder_parser() { this->restart(); }
+	PrintBase() { this->restart(); }
     inline virtual ~PrintBase() {}
 
     virtual PrinterTechnology technology() const noexcept = 0;
@@ -642,7 +642,10 @@ public:
     // Returns true if the last step was finished with success.
     virtual bool               finished() const = 0;
 
-    const PlaceholderParser&   placeholder_parser() const { return m_placeholder_parser; }
+    const Biz::Parser::PlaceholderParser& placeholder_parser() const {
+        ASSERT(m_placeholder_parser, "Placeholder parser must be initialized before usage!");
+        return *m_placeholder_parser;
+    }
 
     virtual std::string        output_filename(const std::string &filename_base = std::string()) const = 0;
     // If the filename_base is set, it is used as the input for the template processing. In that case the path is expected to be the directory (may be empty).
@@ -673,15 +676,15 @@ protected:
     PrintTryCancel         make_try_cancel() const { return PrintTryCancel(this); }
 
     // To be called by this->output_filename() with the format string pulled from the configuration layer.
-    std::string            output_filename(const std::string &format, const std::string &default_ext, const std::string &filename_base, const DynamicConfig *config_override = nullptr) const;
+    std::string            output_filename(const std::string &format, const std::string &default_ext, const std::string &filename_base, const Biz::Parser::IO::Config *config_override = nullptr) const;
     // Update "scale", "input_filename", "input_filename_base" placeholders from the current printable ModelObjects.
-    void                   update_object_placeholders(DynamicConfig &config, const std::string &default_output_ext) const;
+    Biz::Parser::IO::Config get_object_placeholders() const;
 
 	Model                                   m_model;
     std::optional<Domain::ModelWipeTower>   m_wipe_tower;
     std::optional<Domain::CustomGCode::Info>m_custom_gcode;
 
-    PlaceholderParser                       m_placeholder_parser;
+    std::optional<Biz::Parser::PlaceholderParser>        m_placeholder_parser;
 
     // Callback to be evoked regularly to update state of the UI thread.
     status_callback_type                    m_status_callback;

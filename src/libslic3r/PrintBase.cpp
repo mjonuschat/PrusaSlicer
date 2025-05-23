@@ -13,6 +13,11 @@
 namespace Slic3r
 {
 
+using Slic3r::Biz::Parser::PlaceholderParser;
+using ParserConfig = Slic3r::Biz::Parser::IO::Config;
+using Value = Slic3r::Biz::Parser::IO::Value;
+using Scalar = Slic3r::Biz::Parser::IO::Scalar;
+
 void PrintTryCancel::operator()() const
 {
     m_print->throw_if_canceled();
@@ -21,8 +26,9 @@ void PrintTryCancel::operator()() const
 size_t PrintStateBase::g_last_timestamp = 0;
 
 // Update "scale", "input_filename", "input_filename_base" placeholders from the current m_objects.
-void PrintBase::update_object_placeholders(DynamicConfig &config, const std::string & /* default_output_ext */) const
+ParserConfig PrintBase::get_object_placeholders() const
 {
+    ParserConfig config;
     // get the first input file name
     std::string input_file;
     std::vector<std::string> v_scale;
@@ -45,37 +51,41 @@ void PrintBase::update_object_placeholders(DynamicConfig &config, const std::str
 	            input_file = model_object->name.empty() ? model_object->input_file : model_object->name;
 	    }
     }
-    
-    config.set_key_value("num_objects", new ConfigOptionInt(num_objects));
-    config.set_key_value("num_instances", new ConfigOptionInt(num_instances));
 
-    config.set_key_value("scale", new ConfigOptionStrings(v_scale));
+    config.set("num_objects", num_objects);
+    config.set("num_instances", num_instances);
+
+    config.set("scale", v_scale);
     if (! input_file.empty()) {
         // get basename with and without suffix
         const std::string input_filename = boost::filesystem::path(input_file).filename().string();
         const std::string input_filename_base = input_filename.substr(0, input_filename.find_last_of("."));
 //        config.set_key_value("input_filename", new ConfigOptionString(input_filename_base + default_output_ext));
-        config.set_key_value("input_filename_base", new ConfigOptionString(input_filename_base));
+        config.set("input_filename_base", input_filename_base);
     }
+
+    return config;
 }
 
 // Generate an output file name based on the format template, default extension, and template parameters
 // (timestamps, object placeholders derived from the model, current placeholder prameters, print statistics - config_override)
-std::string PrintBase::output_filename(const std::string &format, const std::string &default_ext, const std::string &filename_base, const DynamicConfig *config_override) const
+std::string PrintBase::output_filename(const std::string &format, const std::string &default_ext, const std::string &filename_base, const Biz::Parser::IO::Config *config_override) const
 {
-    DynamicConfig cfg;
+    ParserConfig cfg;
     if (config_override != nullptr)
     	cfg = *config_override;
-    cfg.set_key_value("version", new ConfigOptionString(std::string(SLIC3R_VERSION)));
+    cfg.set("version", std::string{SLIC3R_VERSION});
     PlaceholderParser::update_timestamp(cfg);
-    this->update_object_placeholders(cfg, default_ext);
+    cfg.apply(this->get_object_placeholders());
     if (! filename_base.empty()) {
 //		cfg.set_key_value("input_filename", new ConfigOptionString(filename_base + default_ext));
-		cfg.set_key_value("input_filename_base", new ConfigOptionString(filename_base));
+		cfg.set("input_filename_base", filename_base);
     }
     try {
+        const Value* option{cfg.option("input_filename_base")};
+        ASSERT(option != nullptr && is_scalar(*option));
 		boost::filesystem::path filename = format.empty() ?
-			cfg.opt_string("input_filename_base") + default_ext :
+			std::get<Scalar>(*option).get<std::string>() + default_ext :
 			this->placeholder_parser().process(format, 0, &cfg);
         if (filename.extension().empty())
             filename.replace_extension(default_ext);

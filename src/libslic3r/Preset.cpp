@@ -43,7 +43,6 @@
 
 #include "libslic3r.h"
 #include "Utils.hpp"
-#include "PlaceholderParser.hpp"
 #include "libslic3r/GCode/Thumbnails.hpp"
 
 #include "PresetBundle.hpp"
@@ -375,7 +374,8 @@ bool is_compatible_with_print(const PresetWithVendorProfile &preset, const Prese
     bool  has_compatible_prints = compatible_prints != nullptr && ! compatible_prints->values.empty();
     if (! has_compatible_prints && ! condition.empty()) {
         try {
-            return PlaceholderParser::evaluate_boolean_expression(condition, active_print.preset.config);
+            return true;
+            //return Biz::Parser::PlaceholderParser::evaluate_boolean_expression(condition, active_print.preset.config);
         } catch (const std::runtime_error &err) {
             //FIXME in case of an error, return "compatible with everything".
             printf("Preset::is_compatible_with_print - parsing error of compatible_prints_condition %s:\n%s\n", active_print.preset.name.c_str(), err.what());
@@ -400,8 +400,9 @@ bool is_compatible_with_printer(const PresetWithVendorProfile &preset, const Pre
     if (! has_compatible_printers && ! condition.empty()) {
         BOOST_LOG_TRIVIAL(debug) << " - no compatible_printers present, evaluating condition: " << condition << "\n";
         try {
-            bool ret = PlaceholderParser::evaluate_boolean_expression(condition, active_printer.preset.config, extra_config);
-            BOOST_LOG_TRIVIAL(debug) << " - result: " << ret << "\n";
+            // TODO!!
+            //bool ret = PlaceholderParser::evaluate_boolean_expression(condition, active_printer.preset.config, extra_config);
+            //BOOST_LOG_TRIVIAL(debug) << " - result: " << ret << "\n";
         } catch (const std::runtime_error &err) {
             BOOST_LOG_TRIVIAL(debug) << " - caught error: " << err.what() << "\n";
             //FIXME in case of an error, return "compatible with everything".

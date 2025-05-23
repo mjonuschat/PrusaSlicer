@@ -1,6 +1,16 @@
+if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
+    find_package(Catch2 3.8 REQUIRED)
+    slic3r_remap_configs("Catch2::Catch2" RelWithDebInfo Release)
+
+    set(CATCH_EXTRA_ARGS "" CACHE STRING "Extra arguments for Catch2 test suites.")
+    set(CATCH_ALL_ARGS "exclude:[NotWorking]" "exclude:[Slow]")
+    list(APPEND CATCH_ALL_ARGS ${CATCH_EXTRA_ARGS})
+endif()
+
 add_subdirectory(slic3r-base)
 add_subdirectory(slic3r-domain)
 add_subdirectory(slic3r-biz-algorithms)
+add_subdirectory(slic3r-biz-parser)
 add_subdirectory(slic3r-gcode-reader)
 add_subdirectory(libpgcode)
 

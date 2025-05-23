@@ -292,8 +292,6 @@ set(SLIC3R_SOURCES
     NSVGUtils.hpp
     PerimeterGenerator.cpp
     PerimeterGenerator.hpp
-    PlaceholderParser.cpp
-    PlaceholderParser.hpp
     Point.cpp
     Point.hpp
     Polygon.cpp
@@ -650,6 +648,7 @@ target_link_libraries(libslic3r PUBLIC
     libpgcode
     clipper
     clipper_z
+    slic3r-biz-parser
 )
 
 if (APPLE)

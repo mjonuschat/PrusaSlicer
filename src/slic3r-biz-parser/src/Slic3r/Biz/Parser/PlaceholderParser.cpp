@@ -6,7 +6,7 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include "PlaceholderParser.hpp"
+#include "Slic3r/Biz/Parser/PlaceholderParser.hpp"
 
 #include <cstring>
 #include <ctime>
@@ -17,17 +17,16 @@
 #include <iterator>
 #include <utility>
 #include <cassert>
-#include <cinttypes>
 #include <cstdio>
 #include <cstdlib>
 
+#include "LocalesUtils.hpp"
+#include "Slic3r/Domain/Config.hpp"
+#include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Exception.hpp"
-#include "Flow.hpp"
-#include "Utils.hpp"
-#include "libslic3r/Point.hpp"
-#include "libslic3r/PrintConfig.hpp"
-#include "libslic3r/libslic3r.h"
-#include "libslic3r_version.h"
+#include "Slic3r/Utils.hpp"
+#include "Slic3r/Domain/Constants.hpp"
+
 #ifdef _MSC_VER
     #include <stdlib.h>  // provides **_environ
 #else
@@ -58,6 +57,7 @@
 #include <boost/regex/v5/regex.hpp>
 #include <boost/spirit/repository/include/qi.hpp>
 #include <boost/throw_exception.hpp>
+#include <boost/format.hpp>
 
 // Spirit v2.5 allows you to suppress automatic generation
 // of predefined terminals to speed up complation. With
@@ -69,7 +69,7 @@
 #define BOOST_RESULT_OF_USE_DECLTYPE
 #define BOOST_SPIRIT_USE_PHOENIX_V3
 #include <boost/spirit/include/qi.hpp>
-#include <boost/phoenix/bind/bind_function.hpp>
+//#include <boost/phoenix/bind/bind_function.hpp>
 #include <iostream>
 #include <string>
 
@@ -82,21 +82,14 @@
     #define SLIC3R_REGEX_NAMESPACE boost
 #endif /* USE_CPP11_REGEX */
 
-namespace Slic3r {
+namespace Slic3r::Biz::Parser {
 
-PlaceholderParser::PlaceholderParser()
-{
-    this->set("version", std::string(SLIC3R_VERSION));
-    this->apply_env_variables();
-    this->update_timestamp();
-}
-
-void PlaceholderParser::update_timestamp(DynamicConfig &config)
+void PlaceholderParser::update_timestamp(IO::Config &config)
 {
     time_t rawtime;
     time(&rawtime);
     struct tm* timeinfo = localtime(&rawtime);
-    
+
     {
         std::ostringstream ss;
         ss << (1900 + timeinfo->tm_year);
@@ -106,31 +99,38 @@ void PlaceholderParser::update_timestamp(DynamicConfig &config)
         ss << std::setw(2) << std::setfill('0') << timeinfo->tm_hour;
         ss << std::setw(2) << std::setfill('0') << timeinfo->tm_min;
         ss << std::setw(2) << std::setfill('0') << timeinfo->tm_sec;
-        config.set_key_value("timestamp", new ConfigOptionString(ss.str()));
+        config.set("timestamp", ss.str());
     }
-    config.set_key_value("year",   new ConfigOptionInt(1900 + timeinfo->tm_year));
-    config.set_key_value("month",  new ConfigOptionInt(1 + timeinfo->tm_mon));
-    config.set_key_value("day",    new ConfigOptionInt(timeinfo->tm_mday));
-    config.set_key_value("hour",   new ConfigOptionInt(timeinfo->tm_hour));
-    config.set_key_value("minute", new ConfigOptionInt(timeinfo->tm_min));
-    config.set_key_value("second", new ConfigOptionInt(timeinfo->tm_sec));
+    config.set("year",   int(1900 + timeinfo->tm_year));
+    config.set("month",  int(1 + timeinfo->tm_mon));
+    config.set("day",    int(timeinfo->tm_mday));
+    config.set("hour",   int(timeinfo->tm_hour));
+    config.set("minute", int(timeinfo->tm_min));
+    config.set("second", int(timeinfo->tm_sec));
 }
 
-static inline bool opts_equal(const DynamicConfig &config_old, const DynamicConfig &config_new, const std::string &opt_key)
+void PlaceholderParser::update_timestamp() { PlaceholderParser::update_timestamp(m_config); }
+
+void apply_env_variables(IO::Config &config)
 {
-	const ConfigOption *opt_old = config_old.option(opt_key);
-	const ConfigOption *opt_new = config_new.option(opt_key);
-	assert(opt_new != nullptr);
-    return opt_old != nullptr && *opt_new == *opt_old;
+    for (char** env = environ; *env; ++ env) {
+        if (strncmp(*env, "SLIC3R_", 7) == 0) {
+            std::stringstream ss(*env);
+            std::string key, value;
+            std::getline(ss, key, '=');
+            ss >> value;
+            config.set(key, value);
+        }
+    }
 }
 
-std::vector<std::string> PlaceholderParser::config_diff(const DynamicPrintConfig &rhs)
+
+PlaceholderParser::PlaceholderParser(const IO::Config& external_config)
+    : m_external_config(external_config)
 {
-    std::vector<std::string> diff_keys;
-    for (const t_config_option_key &opt_key : rhs.keys())
-        if (! opts_equal(m_config, rhs, opt_key))
-            diff_keys.emplace_back(opt_key);
-    return diff_keys;
+    this->set("version", std::string(SLIC3R_VERSION));
+    apply_env_variables(m_config);
+    update_timestamp();
 }
 
 // Scalar configuration values are stored into m_single,
@@ -139,40 +139,9 @@ std::vector<std::string> PlaceholderParser::config_diff(const DynamicPrintConfig
 // are expected to be addressed by the extruder ID, therefore
 // if a vector configuration value is addressed without an index,
 // a current extruder ID is used.
-bool PlaceholderParser::apply_config(const DynamicPrintConfig &rhs)
+void PlaceholderParser::apply_config(const IO::Config &rhs)
 {
-    bool modified = false;
-    for (const t_config_option_key &opt_key : rhs.keys()) {
-        if (! opts_equal(m_config, rhs, opt_key)) {
-			this->set(opt_key, rhs.option(opt_key)->clone());
-            modified = true;
-        }
-    }
-    return modified;
-}
-
-void PlaceholderParser::apply_only(const DynamicPrintConfig &rhs, const std::vector<std::string> &keys)
-{
-    for (const t_config_option_key &opt_key : keys)
-        this->set(opt_key, rhs.option(opt_key)->clone());
-}
-
-void PlaceholderParser::apply_config(DynamicPrintConfig &&rhs)
-{
-	m_config += std::move(rhs);
-}
-
-void PlaceholderParser::apply_env_variables()
-{
-    for (char** env = environ; *env; ++ env) {
-        if (strncmp(*env, "SLIC3R_", 7) == 0) {
-            std::stringstream ss(*env);
-            std::string key, value;
-            std::getline(ss, key, '=');
-            ss >> value;
-            this->set(key, value);
-        }
-    }
+    m_config.apply(rhs);
 }
 
 namespace spirit = boost::spirit;
@@ -191,8 +160,8 @@ namespace client
 
     struct OptWithPos {
         OptWithPos() {}
-        OptWithPos(ConfigOptionConstPtr opt, IteratorRange it_range, bool writable = false) : opt(opt), it_range(it_range), writable(writable) {}
-        ConfigOptionConstPtr             opt { nullptr };
+        OptWithPos(const IO::Value* opt, IteratorRange it_range, bool writable = false) : opt(opt), writable(writable), it_range(it_range) {}
+        const IO::Value*             opt { nullptr };
         bool                             writable { false };
         // -1 means it is a scalar variable, or it is a vector variable and index was not assigned yet or the whole vector is considered.
         int                              index { -1 };
@@ -210,23 +179,47 @@ namespace client
 
     struct expr
     {
-                 expr() {}
-                 expr(const expr &rhs) : m_type(rhs.type()), it_range(rhs.it_range)
-                    { if (rhs.type() == TYPE_STRING) m_data.s = new std::string(*rhs.m_data.s); else m_data.set(rhs.m_data); }
-                 expr(expr &&rhs) : expr(std::move(rhs), rhs.it_range.begin(), rhs.it_range.end()) {}
+        expr() {}
+        expr(const expr& rhs) : it_range(rhs.it_range), m_type(rhs.type())
+        {
+            if (rhs.type() == TYPE_STRING)
+                m_data.s = new std::string(*rhs.m_data.s);
+            else
+                m_data.set(rhs.m_data);
+        }
+        expr(expr&& rhs) : expr(std::move(rhs), rhs.it_range.begin(), rhs.it_range.end()) {}
 
         explicit expr(bool b) : m_type(TYPE_BOOL) { m_data.b = b; }
-        explicit expr(bool b, const Iterator &it_begin, const Iterator &it_end) : m_type(TYPE_BOOL), it_range(it_begin, it_end) { m_data.b = b; }
+        explicit expr(bool b, const Iterator& it_begin, const Iterator& it_end)
+            : it_range(it_begin, it_end), m_type(TYPE_BOOL)
+        {
+            m_data.b = b;
+        }
         explicit expr(int i) : m_type(TYPE_INT) { m_data.i = i; }
-        explicit expr(int i, const Iterator &it_begin, const Iterator &it_end) : m_type(TYPE_INT), it_range(it_begin, it_end) { m_data.i = i; }
+        explicit expr(int i, const Iterator& it_begin, const Iterator& it_end)
+            : it_range(it_begin, it_end), m_type(TYPE_INT)
+        {
+            m_data.i = i;
+        }
         explicit expr(double d) : m_type(TYPE_DOUBLE) { m_data.d = d; }
-        explicit expr(double d, const Iterator &it_begin, const Iterator &it_end) : m_type(TYPE_DOUBLE), it_range(it_begin, it_end) { m_data.d = d; }
-        explicit expr(const char *s) : m_type(TYPE_STRING) { m_data.s = new std::string(s); }
-        explicit expr(const std::string &s) : m_type(TYPE_STRING) { m_data.s = new std::string(s); }
-        explicit expr(std::string &&s) : m_type(TYPE_STRING) { m_data.s = new std::string(std::move(s)); }
-        explicit expr(const std::string &s, const Iterator &it_begin, const Iterator &it_end) : 
-            m_type(TYPE_STRING), it_range(it_begin, it_end) { m_data.s = new std::string(s); }
-        explicit expr(expr &&rhs, const Iterator &it_begin, const Iterator &it_end) : m_type(rhs.type()), it_range{ it_begin, it_end }
+        explicit expr(double d, const Iterator& it_begin, const Iterator& it_end)
+            : it_range(it_begin, it_end), m_type(TYPE_DOUBLE)
+        {
+            m_data.d = d;
+        }
+        explicit expr(const char* s) : m_type(TYPE_STRING) { m_data.s = new std::string(s); }
+        explicit expr(const std::string& s) : m_type(TYPE_STRING) { m_data.s = new std::string(s); }
+        explicit expr(std::string&& s) : m_type(TYPE_STRING)
+        {
+            m_data.s = new std::string(std::move(s));
+        }
+        explicit expr(const std::string& s, const Iterator& it_begin, const Iterator& it_end)
+            : it_range(it_begin, it_end), m_type(TYPE_STRING)
+        {
+            m_data.s = new std::string(s);
+        }
+        explicit expr(expr&& rhs, const Iterator& it_begin, const Iterator& it_end)
+            : it_range{it_begin, it_end}, m_type(rhs.type())
         {
             m_data.set(rhs.m_data);
             rhs.m_type = TYPE_EMPTY;
@@ -792,18 +785,18 @@ namespace client
         return os;
     }
 
-    struct MyContext : public ConfigOptionResolver {
+    struct MyContext {
         // Config provided as a parameter to PlaceholderParser invocation, overriding PlaceholderParser stored config.
-    	const DynamicConfig     *external_config        = nullptr;
+    	const IO::Config       *external_config        = nullptr;
         // Config stored inside PlaceholderParser.
-        const DynamicConfig     *config                 = nullptr;
+        const IO::Config       *config                 = nullptr;
         // Config provided as a parameter to PlaceholderParser invocation, evaluated after the two configs above.
-        const DynamicConfig     *config_override        = nullptr;
+        const IO::Config       *config_override        = nullptr;
         // Config provided as a parameter to PlaceholderParser invocation, containing variables that will be read out 
         // and processed by the PlaceholderParser callee.
-        mutable DynamicConfig   *config_outputs         = nullptr;
+        mutable IO::Config   *config_outputs         = nullptr;
         // Local variables, read / write
-        mutable DynamicConfig    config_local;
+        mutable IO::Config    config_local;
         size_t                   current_extruder_id    = 0;
         // Random number generator and optionally global variables.
         PlaceholderParser::ContextData *context_data    = nullptr;
@@ -844,9 +837,9 @@ namespace client
         // Inside a block, which is conditionally suppressed?
         bool skipping() const { return m_depth_suppressed > 0; }
 
-        const ConfigOption* 	optptr(const t_config_option_key &opt_key) const override
+        const IO::Value* 	optptr(const std::string &opt_key) const
         {
-            const ConfigOption *opt = nullptr;
+            const IO::Value *opt = nullptr;
             if (config_override != nullptr)
                 opt = config_override->option(opt_key);
             if (opt == nullptr)
@@ -856,24 +849,26 @@ namespace client
             return opt;
         }
 
-        const ConfigOption*     resolve_symbol(const std::string &opt_key) const { return this->optptr(opt_key); }
-        ConfigOption*           resolve_output_symbol(const std::string &opt_key) const {
-            ConfigOption *out = nullptr;
+        const IO::Value*     resolve_symbol(const std::string &opt_key) const { return this->optptr(opt_key); }
+        IO::Value*           resolve_output_symbol(const std::string &opt_key) const {
+            IO::Value *out = nullptr;
             if (this->config_outputs)
-                out = this->config_outputs->optptr(opt_key, false);
+                out = this->config_outputs->optptr(opt_key);
             if (out == nullptr && this->context_data != nullptr && this->context_data->global_config)
                 out = this->context_data->global_config->optptr(opt_key);
             if (out == nullptr)
                 out = this->config_local.optptr(opt_key);
             return out;
         }
-        void                    store_new_variable(const std::string &opt_key, std::unique_ptr<ConfigOption> &&opt, bool global_variable) {
-            assert(opt);
+        IO::Value* store_new_variable(const std::string &opt_key, const IO::Value &opt, bool global_variable) {
             if (global_variable) {
                 assert(this->context_data != nullptr && this->context_data->global_config);
-                this->context_data->global_config->set_key_value(opt_key, opt.release());
-            } else
-                this->config_local.set_key_value(opt_key, opt.release());
+                this->context_data->global_config->set(opt_key, opt);
+                return this->context_data->global_config->optptr(opt_key);
+            } else {
+                this->config_local.set(opt_key, opt);
+                return this->config_local.optptr(opt_key);
+            }
         }
 
         static void legacy_variable_expansion(const MyContext *ctx, IteratorRange &opt_key, std::string &output)
@@ -882,7 +877,7 @@ namespace client
                 return;
 
             std::string         opt_key_str(opt_key.begin(), opt_key.end());
-            const ConfigOption *opt = ctx->resolve_symbol(opt_key_str);
+            const IO::Value *opt = ctx->resolve_symbol(opt_key_str);
             size_t              idx = ctx->current_extruder_id;
             if (opt == nullptr) {
                 // Check whether this is a legacy vector indexing.
@@ -890,7 +885,7 @@ namespace client
                 if (idx != std::string::npos) {
                     opt = ctx->resolve_symbol(opt_key_str.substr(0, idx));
                     if (opt != nullptr) {
-                        if (! opt->is_vector())
+                        if (! IO::is_vector(*opt))
                             ctx->throw_exception("Trying to index a scalar variable", opt_key);
                         char *endptr = nullptr;
                         idx = strtol(opt_key_str.c_str() + idx + 1, &endptr, 10);
@@ -901,19 +896,27 @@ namespace client
             }
             if (opt == nullptr)
                 ctx->throw_exception("Variable does not exist", opt_key);
-            if (opt->is_scalar()) {
-                if (opt->is_nil())
-                    ctx->throw_exception("Trying to reference an undefined (nil) optional variable", opt_key);
-                output = opt->serialize();
+            if (is_scalar(*opt)) {
+                const auto scalar{std::get<IO::Scalar>(*opt)};
+                if (scalar.type() == IO::Type::IntOptional) {
+                    const auto value{scalar.get<std::optional<int>>()};
+                    if (!value)
+                        ctx->throw_exception("Trying to reference an undefined (nil) optional variable", opt_key);
+                }
+                output = std::get<IO::Scalar>(*opt).serialize();
             } else {
-                const ConfigOptionVectorBase *vec = static_cast<const ConfigOptionVectorBase*>(opt);
-                if (vec->empty())
+                const auto& vec = std::get<IO::Vector>(*opt);
+                if (vec.empty())
                     ctx->throw_exception("Indexing an empty vector variable", opt_key);
-                if (idx >= vec->size())
+                if (idx >= vec.size())
                     idx = 0;
-                if (vec->is_nil(idx))
-                    ctx->throw_exception("Trying to reference an undefined (nil) element of vector of optional values", opt_key);
-                output = vec->vserialize()[idx];
+                if (vec.type() == IO::Type::IntOptionals) {
+                    const auto value{vec.get<std::optional<int>>()};
+                    if (!value.at(idx)) {
+                        ctx->throw_exception("Trying to reference an undefined (nil) element of vector of optional values", opt_key);
+                    }
+                }
+                output = vec.at(idx).serialize();
             }
         }
 
@@ -927,7 +930,7 @@ namespace client
                 return;
 
             std::string         opt_key_str(opt_key.begin(), opt_key.end());
-            const ConfigOption *opt = ctx->resolve_symbol(opt_key_str);
+            const IO::Value *opt = ctx->resolve_symbol(opt_key_str);
             if (opt == nullptr) {
                 // Check whether the opt_key ends with '_'.
                 if (opt_key_str.back() == '_') {
@@ -937,24 +940,28 @@ namespace client
                 if (opt == nullptr)
                     ctx->throw_exception("Variable does not exist", opt_key);
             }
-            if (! opt->is_vector())
+            if (! is_vector(*opt))
                 ctx->throw_exception("Trying to index a scalar variable", opt_key);
-            const ConfigOptionVectorBase *vec = static_cast<const ConfigOptionVectorBase*>(opt);
-            if (vec->empty())
+            const IO::Vector& vec = std::get<IO::Vector>(*opt);
+            if (vec.empty())
                 ctx->throw_exception("Indexing an empty vector variable", opt_key);
-            const ConfigOption *opt_index = ctx->resolve_symbol(std::string(opt_vector_index.begin(), opt_vector_index.end()));
+            const IO::Value *opt_index = ctx->resolve_symbol(std::string(opt_vector_index.begin(), opt_vector_index.end()));
             if (opt_index == nullptr)
                 ctx->throw_exception("Variable does not exist", opt_key);
-            if (opt_index->type() != coInt)
+            if (IO::type(*opt_index) != IO::Type::Int)
                 ctx->throw_exception("Indexing variable has to be integer", opt_key);
-			int idx = opt_index->getInt();
+			int idx = std::get<IO::Scalar>(*opt_index).get<int>();
 			if (idx < 0)
                 ctx->throw_exception("Negative vector index", opt_key);
-            if (idx >= (int)vec->size())
+            if (idx >= (int)vec.size())
                 idx = 0;
-            if (vec->is_nil(idx))
-                ctx->throw_exception("Trying to reference an undefined (nil) element of vector of optional values", opt_key);
-			output = vec->vserialize()[idx];
+            if (vec.type() == IO::Type::IntOptionals) {
+                const auto value{vec.get<std::optional<int>>()};
+                if (!value.at(idx)) {
+                    ctx->throw_exception("Trying to reference an undefined (nil) element of vector of optional values", opt_key);
+                }
+            }
+			output = vec.at(idx).serialize();
         }
 
         static void resolve_variable(
@@ -964,7 +971,7 @@ namespace client
         {
             if (! ctx->skipping()) {
                 const std::string key{ opt_key.begin(), opt_key.end() };
-                const ConfigOption *opt = ctx->resolve_symbol(key);
+                const IO::Value *opt = ctx->resolve_symbol(key);
                 if (opt == nullptr) {
                     opt = ctx->resolve_output_symbol(key);
                     if (opt == nullptr)
@@ -984,7 +991,7 @@ namespace client
            OptWithPos       &output)
         {
             if (! ctx->skipping()) {
-                if (! opt.opt->is_vector())
+                if (! is_vector(*opt.opt))
                     ctx->throw_exception("Cannot index a scalar variable", opt.it_range);
                 if (index < 0)
                     ctx->throw_exception("Referencing a vector variable with a negative index", opt.it_range);
@@ -1002,52 +1009,61 @@ namespace client
             if (ctx->skipping())
                 return;
 
-            assert(opt.opt->is_scalar());
+            assert(opt.opt != nullptr && !IO::is_scalar(*opt.opt));
 
-            if (opt.opt->is_nil())
-                ctx->throw_exception("Trying to reference an undefined (nil) optional variable", opt.it_range);
+            const IO::Scalar& scalar{std::get<IO::Scalar>(*opt.opt)};
 
-            switch (opt.opt->type()) {
-            case coFloat:   output.set_d(opt.opt->getFloat());   break;
-            case coInt:     output.set_i(opt.opt->getInt());     break;
-            case coString:  output.set_s(static_cast<const ConfigOptionString*>(opt.opt)->value); break;
-            case coPercent: output.set_d(opt.opt->getFloat());   break;
-            case coEnum:
-            case coPoint:   output.set_s(opt.opt->serialize());  break;
-            case coBool:    output.set_b(opt.opt->getBool());    break;
-            case coFloatOrPercent:
+            if (scalar.type() == IO::Type::IntOptional) {
+                const auto value{scalar.get<std::optional<int>>()};
+                if (!value) {
+                    ctx->throw_exception("Trying to reference an undefined (nil) optional variable", opt.it_range);
+                }
+            }
+
+            switch (scalar.type()) {
+            case IO::Type::Float:   output.set_d(scalar.get<double>());   break;
+            case IO::Type::Int:     output.set_i(scalar.get<int>());     break;
+            case IO::Type::IntOptional: output.set_i(*scalar.get<std::optional<int>>());     break;
+            case IO::Type::String:  output.set_s(scalar.get<std::string>());  break;
+            case IO::Type::Percent: output.set_d(scalar.get<double>());   break;
+            case IO::Type::Enum:
+            case IO::Type::Point:   output.set_s(scalar.serialize());  break;
+            case IO::Type::Bool:    output.set_b(scalar.get<bool>());    break;
+            case IO::Type::FloatOrPercent:
             {
                 std::string opt_key(opt.it_range.begin(), opt.it_range.end());
-                if (boost::ends_with(opt_key, "extrusion_width")) {
-                    // Extrusion width supports defaults and a complex graph of dependencies.
-                    output.set_d(Flow::extrusion_width(opt_key, *ctx, static_cast<unsigned int>(ctx->current_extruder_id)));
-                } else if (! static_cast<const ConfigOptionFloatOrPercent*>(opt.opt)->percent) {
+                const auto float_or_percent{scalar.get<Domain::FloatOrPercentage>()};
+                if (! float_or_percent.is_percentage()) {
                     // Not a percent, just return the value.
-                    output.set_d(opt.opt->getFloat());
+                    output.set_d(float_or_percent.float_value());
                 } else {
                     // Resolve dependencies using the "ratio_over" link to a parent value.
-    			    const ConfigOptionDef  *opt_def = print_config_def.get(opt_key);
-    			    assert(opt_def != nullptr);
-    			    double v = opt.opt->getFloat() * 0.01; // percent to ratio
+    			    double v = scalar.get<Domain::FloatOrPercentage>().get_abs_value(1.0); // percent to ratio
+                                                           //
+                    std::string parent_name{scalar.ratio_over()};
+    			    const IO::Value *opt_parent = parent_name.empty() ? nullptr : ctx->resolve_symbol(parent_name);
     			    for (;;) {
-    			        const ConfigOption *opt_parent = opt_def->ratio_over.empty() ? nullptr : ctx->resolve_symbol(opt_def->ratio_over);
     			        if (opt_parent == nullptr)
     			            ctx->throw_exception("FloatOrPercent variable failed to resolve the \"ratio_over\" dependencies", opt.it_range);
-    			        if (boost::ends_with(opt_def->ratio_over, "extrusion_width")) {
-                    		// Extrusion width supports defaults and a complex graph of dependencies.
-                            assert(opt_parent->type() == coFloatOrPercent);
-                        	v *= Flow::extrusion_width(opt_def->ratio_over, static_cast<const ConfigOptionFloatOrPercent*>(opt_parent), *ctx, static_cast<unsigned int>(ctx->current_extruder_id));
-                        	break;
-                        }
-                        if (opt_parent->type() == coFloat || opt_parent->type() == coFloatOrPercent) {
-    			        	v *= opt_parent->getFloat();
-    			        	if (opt_parent->type() == coFloat || ! static_cast<const ConfigOptionFloatOrPercent*>(opt_parent)->percent)
-    			        		break;
-    			        	v *= 0.01; // percent to ratio
+
+
+                        const auto parent_value = std::get<IO::Scalar>(*opt_parent);
+
+                        if (parent_value.type() == IO::Type::Float) {
+                            v *= parent_value.get<double>();
+                            break;
+                        } else if (parent_value.type() == IO::Type::FloatOrPercent) {
+                            const auto value{parent_value.get<Domain::FloatOrPercentage>()};
+                            if (!value.is_percentage()) {
+                                v *= value.float_value();
+                                break;
+                            }
+                            v *= value.get_abs_value(1.0);
     			        }
     		        	// Continue one level up in the "ratio_over" hierarchy.
-    				    opt_def = print_config_def.get(opt_def->ratio_over);
-    				    assert(opt_def != nullptr);
+                        parent_name = parent_value.ratio_over();
+    				    opt_parent = ctx->resolve_symbol(parent_name);
+    				    assert(opt_parent != nullptr);
     			    }
                     output.set_d(v);
     	        }
@@ -1058,6 +1074,12 @@ namespace client
             }
         }
 
+        static std::string to_string(const Domain::Vec2d& pt)
+        {
+            return std::string("[") + float_to_string_decimal_point(pt.x()) + ", " +
+                float_to_string_decimal_point(pt.y()) + "]";
+        }
+
         // Evaluating one element of a vector variable.
         // all possible ConfigOption types are supported.
         static void vector_element_to_expr(const MyContext *ctx, OptWithPos &opt, expr &output)
@@ -1065,22 +1087,28 @@ namespace client
             if (ctx->skipping())
                 return;
 
-            assert(opt.opt->is_vector());
+            assert(opt.opt != nullptr && is_vector(*opt.opt));
             if (! opt.has_index())
                 ctx->throw_exception("Referencing a vector variable when scalar is expected", opt.it_range);
-            const ConfigOptionVectorBase* vec = static_cast<const ConfigOptionVectorBase*>(opt.opt);
-            if (vec->empty())
+            const auto& vec = std::get<IO::Vector>(*opt.opt);
+            if (vec.empty())
                 ctx->throw_exception("Indexing an empty vector variable", opt.it_range);
-            size_t idx = (opt.index < 0) ? 0 : (opt.index >= int(vec->size())) ? 0 : size_t(opt.index);
-            if (vec->is_nil(idx))
-                ctx->throw_exception("Trying to reference an undefined (nil) element of vector of optional values", opt.it_range);
-            switch (opt.opt->type()) {
-            case coFloats:   output.set_d(static_cast<const ConfigOptionFloats*>(opt.opt)->values[idx]); break;
-            case coInts:     output.set_i(static_cast<const ConfigOptionInts*>(opt.opt)->values[idx]); break;
-            case coStrings:  output.set_s(static_cast<const ConfigOptionStrings*>(opt.opt)->values[idx]); break;
-            case coPercents: output.set_d(static_cast<const ConfigOptionPercents*>(opt.opt)->values[idx]); break;
-            case coPoints:   output.set_s(to_string(static_cast<const ConfigOptionPoints*>(opt.opt)->values[idx])); break;
-            case coBools:    output.set_b(static_cast<const ConfigOptionBools*>(opt.opt)->values[idx] != 0); break;
+            size_t idx = (opt.index < 0) ? 0 : (opt.index >= int(vec.size())) ? 0 : size_t(opt.index);
+
+            if (vec.type() == IO::Type::IntOptionals) {
+                const auto value{vec.get<std::optional<int>>()};
+                if (!value.at(idx))
+                    ctx->throw_exception("Trying to reference an undefined (nil) element of vector of optional values", opt.it_range);
+            }
+
+            switch (vec.type()) {
+            case IO::Type::Floats:   output.set_d(vec.get<double>()[idx]); break;
+            case IO::Type::Ints:     output.set_i(vec.get<int>()[idx]); break;
+            case IO::Type::IntOptionals: output.set_i(*vec.get<std::optional<int>>()[idx]); break;
+            case IO::Type::Strings:  output.set_s(vec.get<std::string>()[idx]); break;
+            case IO::Type::Percents: output.set_d(vec.get<Domain::Percentage>()[idx].get_abs_value(1.0)); break;
+            case IO::Type::Points:   output.set_s(to_string(vec.get<Domain::Vec2d>()[idx])); break;
+            case IO::Type::Bools:    output.set_b(vec.get<bool>()[idx] != 0); break;
                 //case coEnums:    output.set_s(opt.opt->vserialize()[idx]); break;
             default:
                 ctx->throw_exception("Unsupported vector variable type", opt.it_range);
@@ -1109,29 +1137,29 @@ namespace client
         static void scalar_variable_assign_scalar(const MyContext *ctx, OptWithPos &lhs, const expr &rhs)
         {
             assert(! ctx->skipping());
-            assert(lhs.opt->is_scalar());
+            assert(lhs.opt != nullptr && is_scalar(*lhs.opt));
             check_writable(ctx, lhs);
-            ConfigOption *wropt = const_cast<ConfigOption*>(lhs.opt);
-            switch (wropt->type()) {
-            case coFloat:
+            auto &wropt = const_cast<IO::Scalar&>(std::get<IO::Scalar>(*lhs.opt));
+            switch (wropt.type()) {
+            case IO::Type::Float:
                 check_numeric(rhs);
-                static_cast<ConfigOptionFloat*>(wropt)->value = rhs.as_d();
+                wropt = IO::Scalar{rhs.as_d()};
                 break;
-            case coInt:
+            case IO::Type::Int:
                 check_numeric(rhs);
-                static_cast<ConfigOptionInt*>(wropt)->value = rhs.as_i();
+                wropt = IO::Scalar{rhs.as_i()};
                 break;
-            case coString:
-                static_cast<ConfigOptionString*>(wropt)->value = rhs.to_string();
+            case IO::Type::String:
+                wropt = IO::Scalar{rhs.to_string()};
                 break;
-            case coPercent:
+            case IO::Type::Percent:
                 check_numeric(rhs);
-                static_cast<ConfigOptionPercent*>(wropt)->value = rhs.as_d();
+                wropt = IO::Scalar{rhs.as_d()};
                 break;
-            case coBool:
+            case IO::Type::Bool:
                 if (rhs.type() != expr::TYPE_BOOL)
                     ctx->throw_exception("Right side is not a boolean expression", rhs.it_range);
-                static_cast<ConfigOptionBool*>(wropt)->value = rhs.b();
+                wropt = IO::Scalar(rhs.b());
                 break;
             default:
                 ctx->throw_exception("Unsupported output scalar variable type", lhs.it_range);
@@ -1141,35 +1169,35 @@ namespace client
         static void vector_variable_element_assign_scalar(const MyContext *ctx, OptWithPos &lhs, const expr &rhs)
         {
             assert(! ctx->skipping());
-            assert(lhs.opt->is_vector());
+            assert(lhs.opt != nullptr && is_vector(*lhs.opt));
             check_writable(ctx, lhs);
             if (! lhs.has_index())
                 ctx->throw_exception("Referencing an output vector variable when scalar is expected", lhs.it_range);
-            ConfigOptionVectorBase *vec = const_cast<ConfigOptionVectorBase*>(static_cast<const ConfigOptionVectorBase*>(lhs.opt));
-            if (vec->empty())
+            auto& vec = const_cast<IO::Vector&>(std::get<IO::Vector>(*lhs.opt));
+            if (vec.empty())
                 ctx->throw_exception("Indexing an empty vector variable", lhs.it_range);
-            if (lhs.index >= int(vec->size()))
+            if (lhs.index >= int(vec.size()))
                 ctx->throw_exception("Index out of range", lhs.it_range);
-            switch (lhs.opt->type()) {
-            case coFloats:
+            switch (vec.type()) {
+            case IO::Type::Floats:
                 check_numeric(rhs);
-                static_cast<ConfigOptionFloats*>(vec)->values[lhs.index] = rhs.as_d();
+                vec.at(lhs.index) = IO::Scalar{rhs.as_d()};
                 break;
-            case coInts:
+            case IO::Type::Ints:
                 check_numeric(rhs);
-                static_cast<ConfigOptionInts*>(vec)->values[lhs.index] = rhs.as_i();
+                vec.at(lhs.index) = IO::Scalar{rhs.as_i()};
                 break;
-            case coStrings:
-                static_cast<ConfigOptionStrings*>(vec)->values[lhs.index] = rhs.to_string();
+            case IO::Type::Strings:
+                vec.at(lhs.index) = IO::Scalar{rhs.to_string()};
                 break;
-            case coPercents:
+            case IO::Type::Percents:
                 check_numeric(rhs);
-                static_cast<ConfigOptionPercents*>(vec)->values[lhs.index] = rhs.as_d();
+                vec.at(lhs.index) = IO::Scalar{Domain::Percentage{rhs.as_d()}};
                 break;
-            case coBools:
+            case IO::Type::Bools:
                 if (rhs.type() != expr::TYPE_BOOL)
                     ctx->throw_exception("Right side is not a boolean expression", rhs.it_range);
-                static_cast<ConfigOptionBools*>(vec)->values[lhs.index] = rhs.b();
+                vec.at(lhs.index) = IO::Scalar{rhs.b()};
                 break;
             default:
                 ctx->throw_exception("Unsupported output vector variable type", lhs.it_range);
@@ -1180,23 +1208,23 @@ namespace client
         {
             assert(! ctx->skipping());
             size_t count = evaluate_count(rhs_count);
-            auto *opt = const_cast<ConfigOption*>(lhs.opt);
-            switch (lhs.opt->type()) {
-            case coFloats:
+            auto &opt = const_cast<IO::Vector&>(std::get<IO::Vector>(*lhs.opt));
+            switch (opt.type()) {
+            case IO::Type::Floats:
                 check_numeric(rhs_value);
-                static_cast<ConfigOptionFloats*>(opt)->values.assign(count, rhs_value.as_d());
+                opt = IO::Vector{std::vector<double>(count, rhs_value.as_d())};
                 break;
-            case coInts:
+            case IO::Type::Ints:
                 check_numeric(rhs_value);
-                static_cast<ConfigOptionInts*>(opt)->values.assign(count, rhs_value.as_i());
+                opt = IO::Vector{std::vector<int>(count, rhs_value.as_i())};
                 break;
-            case coStrings:
-                static_cast<ConfigOptionStrings*>(opt)->values.assign(count, rhs_value.to_string());
+            case IO::Type::Strings:
+                opt = IO::Vector{std::vector<std::string>(count, rhs_value.to_string())};
                 break;
-            case coBools:
+            case IO::Type::Bools:
                 if (rhs_value.type() != expr::TYPE_BOOL)
                     rhs_value.throw_exception("Right side is not a boolean expression");
-                static_cast<ConfigOptionBools*>(opt)->values.assign(count, rhs_value.b());
+                opt = IO::Vector{std::vector<bool>(count, rhs_value.b())};
                 break;
             default: assert(false);
             }
@@ -1205,7 +1233,7 @@ namespace client
         static void variable_value(const MyContext *ctx, OptWithPos &opt, expr &output)
         {
             if (! ctx->skipping()) {
-                if (opt.opt->is_vector())
+                if (is_vector(*opt.opt))
                     vector_element_to_expr(ctx, opt, output);
                 else
                     scalar_variable_to_expr(ctx, opt, output);
@@ -1218,16 +1246,27 @@ namespace client
         static void is_nil_test(const MyContext *ctx, OptWithPos &opt, expr &output)
         {
             if (ctx->skipping()) {
-            } else if (opt.opt->is_vector()) {
+            } else if (is_vector(*opt.opt)) {
                 if (! opt.has_index())
                     ctx->throw_exception("Referencing a vector variable when scalar is expected", opt.it_range);
-                const ConfigOptionVectorBase *vec = static_cast<const ConfigOptionVectorBase*>(opt.opt);
-                if (vec->empty())
+                const IO::Vector& vec = std::get<IO::Vector>(*opt.opt);
+                if (vec.empty())
                     ctx->throw_exception("Indexing an empty vector variable", opt.it_range);
-                output.set_b(static_cast<const ConfigOptionVectorBase*>(opt.opt)->is_nil(opt.index >= int(vec->size()) ? 0 : size_t(opt.index)));
+                if (vec.type() == IO::Type::IntOptionals) {
+                    const std::size_t index{opt.index >= int(vec.size()) ? 0 : size_t(opt.index)};
+                    const auto values{vec.get<std::optional<int>>()};
+                    output.set_b(bool{!values.at(index)});
+                } else {
+                    output.set_b(false);
+                }
             } else {
-                assert(opt.opt->is_scalar());
-                output.set_b(opt.opt->is_nil());
+                assert(is_scalar(*opt.opt));
+                const auto scalar{std::get<IO::Scalar>(*opt.opt)};
+                if (scalar.type() == IO::Type::IntOptional) {
+                    output.set_b(!scalar.get<std::optional<int>>());
+                } else {
+                    output.set_b(false);
+                }
             }
             output.it_range = opt.it_range;
         }
@@ -1236,7 +1275,7 @@ namespace client
         struct NewOldVariable {
             std::string    name;
             IteratorRange  it_range;
-            ConfigOption  *opt{ nullptr };
+            IO::Value  *opt{ nullptr };
         };
         static void new_old_variable(
             const MyContext       *ctx,
@@ -1245,8 +1284,8 @@ namespace client
             NewOldVariable        &out)
         {
             if (! ctx->skipping()) {
-                t_config_option_key key(std::string(it_range.begin(), it_range.end()));
-                if (const ConfigOption* opt = ctx->resolve_symbol(key); opt)
+                std::string key(std::string(it_range.begin(), it_range.end()));
+                if (const IO::Value* opt = ctx->resolve_symbol(key); opt)
                     ctx->throw_exception("Symbol is already defined in read-only system dictionary", it_range);
                 if (ctx->config_outputs && ctx->config_outputs->optptr(key))
                     ctx->throw_exception("Symbol is already defined as system output variable", it_range);
@@ -1272,7 +1311,7 @@ namespace client
         {
             if (! ctx->skipping()) {
                 check_writable(ctx, opt);
-                if (opt.opt->is_vector())
+                if (is_vector(*opt.opt))
                     vector_variable_element_assign_scalar(ctx, opt, param);
                 else
                     scalar_variable_assign_scalar(ctx, opt, param);
@@ -1287,20 +1326,20 @@ namespace client
         {
             if (ctx->skipping()) {
             } else if (lhs.opt) {
-                if (lhs.opt->is_vector())
+                if (is_vector(*lhs.opt))
                     rhs.throw_exception("Cannot assign a scalar value to a vector variable.");
                 OptWithPos lhs_opt{ lhs.opt, lhs.it_range, true };
                 scalar_variable_assign_scalar(ctx, lhs_opt, rhs);
             } else {
-                std::unique_ptr<ConfigOption> opt_new;
+                std::optional<IO::Value> opt_new;
                 switch (rhs.type()) {
-                    case expr::TYPE_BOOL:     opt_new = std::make_unique<ConfigOptionBool>(rhs.b());   break;
-                    case expr::TYPE_INT:      opt_new = std::make_unique<ConfigOptionInt>(rhs.i());    break;
-                    case expr::TYPE_DOUBLE:   opt_new = std::make_unique<ConfigOptionFloat>(rhs.d());  break;
-                    case expr::TYPE_STRING:   opt_new = std::make_unique<ConfigOptionString>(rhs.s()); break;
-                    default: assert(false);
+                    case expr::TYPE_BOOL:     opt_new = IO::Scalar(rhs.b()); break;
+                    case expr::TYPE_INT:      opt_new = IO::Scalar(rhs.i()); break;
+                    case expr::TYPE_DOUBLE:   opt_new = IO::Scalar(rhs.d()); break;
+                    case expr::TYPE_STRING:   opt_new = IO::Scalar(rhs.s()); break;
+                    default: PANIC("Unexpected type");
                 }
-                const_cast<MyContext*>(ctx)->store_new_variable(lhs.name, std::move(opt_new), global_variable);
+                const_cast<MyContext*>(ctx)->store_new_variable(lhs.name, *opt_new, global_variable);
             }
         }
 
@@ -1313,21 +1352,21 @@ namespace client
         {
             if (ctx->skipping()) {
             } else if (lhs.opt) {
-                if (lhs.opt->is_scalar())
+                if (is_scalar(*lhs.opt))
                     rhs_value.throw_exception("Cannot assign a vector value to a scalar variable.");
                 OptWithPos lhs_opt{ lhs.opt, lhs.it_range, true };
                 vector_variable_assign_expr_with_count(ctx, lhs_opt, rhs_count, rhs_value);
             } else {
                 size_t count = evaluate_count(rhs_count);
-                std::unique_ptr<ConfigOption> opt_new;
+                IO::Vector opt_new;
                 switch (rhs_value.type()) {
-                    case expr::TYPE_BOOL:     opt_new = std::make_unique<ConfigOptionBools>(count, rhs_value.b());   break;
-                    case expr::TYPE_INT:      opt_new = std::make_unique<ConfigOptionInts>(count, rhs_value.i());    break;
-                    case expr::TYPE_DOUBLE:   opt_new = std::make_unique<ConfigOptionFloats>(count, rhs_value.d()); break;
-                    case expr::TYPE_STRING:   opt_new = std::make_unique<ConfigOptionStrings>(count, rhs_value.s()); break;
+                    case expr::TYPE_BOOL:     opt_new = IO::Vector{std::vector<bool>(count, rhs_value.b())};   break;
+                    case expr::TYPE_INT:      opt_new = IO::Vector{std::vector<int>(count, rhs_value.i())};    break;
+                    case expr::TYPE_DOUBLE:   opt_new = IO::Vector{std::vector<double>(count, rhs_value.d())}; break;
+                    case expr::TYPE_STRING:   opt_new = IO::Vector{std::vector<std::string>(count, rhs_value.s())}; break;
                     default: assert(false);
                 }
-                const_cast<MyContext*>(ctx)->store_new_variable(lhs.name, std::move(opt_new), global_variable);
+                const_cast<MyContext*>(ctx)->store_new_variable(lhs.name, opt_new, global_variable);
             }
         }
 
@@ -1339,19 +1378,20 @@ namespace client
         {
             if (! ctx->skipping()) {
                 check_writable(ctx, lhs);
-                if (lhs.opt->is_scalar())
+                if (is_scalar(*lhs.opt))
                     rhs_value.throw_exception("Cannot assign a vector value to a scalar variable.");
                 vector_variable_assign_expr_with_count(ctx, lhs, rhs_count, rhs_value);
             }
         }
 
-        template<typename ConfigOptionType, typename RightValueEvaluate>
-        static void fill_vector_from_initializer_list(ConfigOption *opt, const std::vector<expr> &il, RightValueEvaluate rv_eval) {
-            auto& out = static_cast<ConfigOptionType*>(opt)->values;
-            out.clear();
-            out.reserve(il.size());
-            for (const expr& i : il)
-                out.emplace_back(rv_eval(i));
+        template<typename ValueType, typename RightValueEvaluate>
+        static std::vector<ValueType> fill_vector_from_initializer_list(const std::vector<expr> &il, RightValueEvaluate rv_eval) {
+            std::vector<ValueType> result;
+            result.reserve(il.size());
+            for (const expr& i : il) {
+                result.emplace_back(rv_eval(i));
+            }
+            return result;
         }
 
         static void vector_variable_assign_initializer_list(const MyContext *ctx, OptWithPos &lhs, const std::vector<expr> &il)
@@ -1361,7 +1401,7 @@ namespace client
 
             check_writable(ctx, lhs);
 
-            if (lhs.opt->is_scalar()) {
+            if (is_scalar(*lhs.opt)) {
                 if (il.size() == 1)
                     // scalar_var = ( scalar )
                     scalar_variable_assign_scalar_expression(ctx, lhs, il.front());
@@ -1378,24 +1418,24 @@ namespace client
                         i.throw_exception("Right side is not a numeric expression");
             };
 
-            ConfigOption *opt = const_cast<ConfigOption*>(lhs.opt);
-            switch (lhs.opt->type()) {
-            case coFloats:
+            auto& opt = const_cast<IO::Vector&>(std::get<IO::Vector>(*lhs.opt));
+            switch (opt.type()) {
+            case IO::Type::Floats:
                 check_numeric_vector(il);
-                fill_vector_from_initializer_list<ConfigOptionFloats>(opt, il, [](auto &v){ return v.as_d(); });
+                opt = IO::Vector{fill_vector_from_initializer_list<double>(il, [](auto &v){ return v.as_d(); })};
                 break;
-            case coInts:
+            case IO::Type::Ints:
                 check_numeric_vector(il);
-                fill_vector_from_initializer_list<ConfigOptionInts>(opt, il, [](auto &v){ return v.as_i(); });
+                opt = IO::Vector{fill_vector_from_initializer_list<int>(il, [](auto &v){ return v.as_i(); })};
                 break;
-            case coStrings:
-                fill_vector_from_initializer_list<ConfigOptionStrings>(opt, il, [](auto &v){ return v.to_string(); });
+            case IO::Type::Strings:
+                opt = IO::Vector{fill_vector_from_initializer_list<std::string>(il, [](auto &v){ return v.to_string(); })};
                 break;
-            case coBools:
+            case IO::Type::Bools:
                 for (auto &i : il)
                     if (i.type() != expr::TYPE_BOOL)
                         i.throw_exception("Right side is not a boolean expression");
-                fill_vector_from_initializer_list<ConfigOptionBools>(opt, il, [](auto &v){ return v.b(); });
+                opt = IO::Vector{fill_vector_from_initializer_list<bool>(il, [](auto &v){ return v.b(); })};
                 break;
             default: assert(false);
             }
@@ -1431,34 +1471,36 @@ namespace client
                     case expr::TYPE_STRING:   ++ num_string;  break;
                     default: assert(false);
                     }
-                std::unique_ptr<ConfigOption> opt_new;
+                IO::Vector opt_new;
                 if (num_string > 0)
                     // Convert everything to strings.
-                    opt_new = std::make_unique<ConfigOptionStrings>();
+                    opt_new = IO::Vector{std::vector<std::string>{}};
                 else if (num_bool > 0) {
                     if (num_double + num_int > 0)
                         ctx->throw_exception("Right side is not valid: Mixing numeric and boolean types.", IteratorRange{ il.front().it_range.begin(), il.back().it_range.end() });
-                    opt_new = std::make_unique<ConfigOptionBools>();
+                    opt_new = IO::Vector{std::vector<bool>{}};
                 } else {
                     // Output is numeric.
                     if (num_double == 0)
-                        opt_new = std::make_unique<ConfigOptionInts>();
-                    else 
-                        opt_new = std::make_unique<ConfigOptionFloats>();
+                        opt_new = IO::Vector{std::vector<int>{}};
+                    else
+                        opt_new = IO::Vector{std::vector<double>{}};
                 }
-                OptWithPos lhs_opt{ opt_new.get(), lhs.it_range, true };
+
+                IO::Value* opt_new_ptr = const_cast<MyContext*>(ctx)->store_new_variable(lhs.name, std::move(opt_new), global_variable);
+
+                OptWithPos lhs_opt{ opt_new_ptr, lhs.it_range, true };
                 vector_variable_assign_initializer_list(ctx, lhs_opt, il);
-                const_cast<MyContext*>(ctx)->store_new_variable(lhs.name, std::move(opt_new), global_variable);
             }
         }
 
         static bool is_vector_variable_reference(const OptWithPos &var) {
-            return ! var.empty() && ! var.has_index() && var.opt->is_vector();
+            return ! var.empty() && ! var.has_index() && is_vector(*var.opt);
         }
 
         // Called when checking whether the NewOldVariable could be assigned a vectir right hand side.
         static bool could_be_vector_variable_reference(const NewOldVariable &var) {
-            return var.opt == nullptr || var.opt->is_vector();
+            return var.opt == nullptr || is_vector(*var.opt);
         }
 
         static void copy_vector_variable_to_vector_variable(const MyContext *ctx, OptWithPos &lhs, const OptWithPos &rhs)
@@ -1467,27 +1509,41 @@ namespace client
                 return;
 
             check_writable(ctx, lhs);
-            assert(lhs.opt->is_vector());
-            if (rhs.has_index() || ! rhs.opt->is_vector())
+            assert(is_vector(*lhs.opt));
+            if (rhs.has_index() || ! is_vector(*rhs.opt))
                 ctx->throw_exception("Cannot assign scalar to a vector", lhs.it_range);
-            if (rhs.opt->is_nil())
-                ctx->throw_exception("Some elements of the right hand side vector variable of optional values are undefined (nil)", rhs.it_range);
-            if (lhs.opt->type() != rhs.opt->type()) {
+
+            const auto rhs_vec = std::get<IO::Vector>(*rhs.opt);
+            const auto lhs_vec = std::get<IO::Vector>(*lhs.opt);
+            if (rhs_vec.type() == IO::Type::IntOptionals) {
+                const auto values{rhs_vec.get<std::optional<int>>()};
+                const auto is_nil{std::ranges::any_of(values, [](const auto& value){return !value;})};
+                if (is_nil) {
+                    ctx->throw_exception("Some elements of the right hand side vector variable of optional values are undefined (nil)", rhs.it_range);
+                }
+            }
+            if (lhs_vec.type() != rhs_vec.type()) {
                 // Vector types are not compatible.
-                switch (lhs.opt->type()) {
-                case coFloats:
+                switch (lhs_vec.type()) {
+                case IO::Type::Floats:
                     ctx->throw_exception("Left hand side is a float vector, while the right hand side is not.", lhs.it_range);
-                case coInts:
+                case IO::Type::Ints:
                     ctx->throw_exception("Left hand side is an int vector, while the right hand side is not.", lhs.it_range);
-                case coStrings:
+                case IO::Type::Strings:
                     ctx->throw_exception("Left hand side is a string vector, while the right hand side is not.", lhs.it_range);
-                case coBools:
+                case IO::Type::Bools:
                     ctx->throw_exception("Left hand side is a bool vector, while the right hand side is not.", lhs.it_range);
                 default:
                     ctx->throw_exception("Left hand side / right hand side vectors are not compatible.", lhs.it_range);
                 }
             }
-            const_cast<ConfigOption*>(lhs.opt)->set(rhs.opt);
+            *(const_cast<IO::Value*>(lhs.opt)) = *rhs.opt;
+        }
+
+        template<typename T>
+        static bool contains(const std::initializer_list<T>& il, const T& v)
+        {
+            return std::find(il.begin(), il.end(), v) != il.end();
         }
 
         static bool vector_variable_new_from_copy(
@@ -1501,24 +1557,28 @@ namespace client
                 return true;
 
             if (lhs.opt) {
-                assert(lhs.opt->is_vector());
+                assert(is_vector(*lhs.opt));
                 OptWithPos lhs_opt{ lhs.opt, lhs.it_range, true };
                 copy_vector_variable_to_vector_variable(ctx, lhs_opt, rhs);
             } else {
-                if (rhs.has_index() || ! rhs.opt->is_vector())
+                if (rhs.has_index() || ! is_vector(*rhs.opt))
                     // Stop parsing, let the other rules resolve this case.
                     return false;
-                if (rhs.opt->is_nil())
-                    ctx->throw_exception("Some elements of the right hand side vector variable of optional values are undefined (nil)", rhs.it_range);
+
+                const auto& rhs_vec = std::get<IO::Vector>(*rhs.opt);
+                if (rhs_vec.type() == IO::Type::IntOptionals) {
+                    const auto values{rhs_vec.get<std::optional<int>>()};
+                    const auto is_nil{std::ranges::any_of(values, [](const auto& value){return !value;})};
+                    if (is_nil) {
+                        ctx->throw_exception("Some elements of the right hand side vector variable of optional values are undefined (nil)", rhs.it_range);
+                    }
+                }
                 // Clone the vector variable.
-                std::unique_ptr<ConfigOption> opt_new;
-                if (one_of(rhs.opt->type(), { coFloats, coInts, coStrings, coBools }))
-                    opt_new = std::unique_ptr<ConfigOption>(rhs.opt->clone());
-                else if (rhs.opt->type() == coPercents)
-                    opt_new = std::make_unique<ConfigOptionFloats>(static_cast<const ConfigOptionPercents*>(rhs.opt)->values);
-                else
+                if (!contains({ IO::Type::Floats, IO::Type::Ints, IO::Type::IntOptionals, IO::Type::Strings, IO::Type::Bools, IO::Type::Percents }, rhs_vec.type()))
                     ctx->throw_exception("Duplicating this type of vector variable is not supported", rhs.it_range);
-                const_cast<MyContext*>(ctx)->store_new_variable(lhs.name, std::move(opt_new), global_variable);
+
+                const IO::Value opt_new{*rhs.opt};
+                const_cast<MyContext*>(ctx)->store_new_variable(lhs.name, opt_new, global_variable);
             }
             // Continue parsing.
             return true;
@@ -1534,9 +1594,10 @@ namespace client
         static void is_vector_empty(const MyContext *ctx, OptWithPos &opt, expr &out)
         {
             if (! ctx->skipping()) {
-                if (opt.has_index() || ! opt.opt->is_vector())
+                if (opt.has_index() || ! is_vector(*opt.opt))
                     ctx->throw_exception("parameter of empty() is not a vector variable", opt.it_range);
-                out.set_b(static_cast<const ConfigOptionVectorBase*>(opt.opt)->size() == 0);
+                const auto& vec = std::get<IO::Vector>(*opt.opt);
+                out.set_b(vec.size() == 0);
             }
             out.it_range = opt.it_range;
         }
@@ -1544,9 +1605,10 @@ namespace client
         static void vector_size(const MyContext *ctx, OptWithPos &opt, expr &out)
         {
             if (! ctx->skipping()) {
-                if (opt.has_index() || ! opt.opt->is_vector())
+                if (opt.has_index() || ! is_vector(*opt.opt))
                     ctx->throw_exception("parameter of size() is not a vector variable", opt.it_range);
-                out.set_i(int(static_cast<const ConfigOptionVectorBase*>(opt.opt)->size()));
+                const auto& vec = std::get<IO::Vector>(*opt.opt);
+                out.set_i(int(vec.size()));
             }
             out.it_range = opt.it_range;
         }
@@ -1676,18 +1738,18 @@ namespace client
                         out.set_d(y0);
                     else if (x == x1)
                         out.set_d(y1);
-                    else if (is_approx(x0, x1))
+                    else if (std::fabs(x0 - x1) < Domain::EPSILON)
                         out.set_d(0.5 * (y0 + y1));
                     else
-                        out.set_d(Slic3r::lerp(y0, y1, (x - x0) / (x1 - x0)));
+                        out.set_d(std::lerp(y0, y1, (x - x0) / (x1 - x0)));
                     evaluated = true;
                 }
             }
             if (! evaluated) {
                 // Clamp x into the table range with EPSILON.
-                if (double x0 = table.table.front().x; x > x0 - EPSILON && x < x0)
+                if (double x0 = table.table.front().x; x > x0 - Domain::EPSILON && x < x0)
                     out.set_d(table.table.front().y);
-                else if (double x1 = table.table.back().x; x > x1 && x < x1 + EPSILON)
+                else if (double x1 = table.table.back().x; x > x1 && x < x1 + Domain::EPSILON)
                     out.set_d(table.table.back().y);
                 else
                     // The value is really outside the table range.
@@ -2345,8 +2407,8 @@ namespace client
         qi::symbols<char> keywords;
     };
 }
-
 static const client::macro_processor g_macro_processor_instance;
+
 
 static std::string process_macro(const std::string &templ, client::MyContext &context)
 {
@@ -2360,12 +2422,11 @@ static std::string process_macro(const std::string &templ, client::MyContext &co
     return output;
 }
 
-std::string PlaceholderParser::process(const std::string &templ, unsigned int current_extruder_id, const DynamicConfig *config_override, DynamicConfig *config_outputs, ContextData *context_data) const
+std::string PlaceholderParser::process(const std::string &templ, unsigned int current_extruder_id, const IO::Config *config_override, IO::Config *config_outputs, ContextData *context_data) const
 {
     client::MyContext context;
-    // TODO!!
-    context.external_config 	= &this->config();
-    context.config              = &this->config();
+    context.external_config 	= &m_external_config;
+    context.config              = &m_config;
     context.config_override     = config_override;
     context.config_outputs      = config_outputs;
     context.current_extruder_id = current_extruder_id;
@@ -2375,7 +2436,7 @@ std::string PlaceholderParser::process(const std::string &templ, unsigned int cu
 
 // Evaluate a boolean expression using the full expressive power of the PlaceholderParser boolean expression syntax.
 // Throws Slic3r::RuntimeError on syntax or runtime error.
-bool PlaceholderParser::evaluate_boolean_expression(const std::string &templ, const DynamicConfig &config, const DynamicConfig *config_override)
+bool PlaceholderParser::evaluate_boolean_expression(const std::string &templ, const IO::Config &config, const IO::Config *config_override)
 {
     client::MyContext context;
     context.config              = &config;
@@ -2385,4 +2446,4 @@ bool PlaceholderParser::evaluate_boolean_expression(const std::string &templ, co
     return process_macro(templ, context) == "true";
 }
 
-}
+} // namespace Slic3r::Parser

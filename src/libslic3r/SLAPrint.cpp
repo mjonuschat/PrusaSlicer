@@ -29,6 +29,7 @@
 
 #include <libslic3r/Format/SL1.hpp>
 #include <boost/algorithm/string.hpp>
+#include "Slic3r/Biz/Parser/PlaceholderParser.hpp"
 
 // #define SLAPRINT_DO_BENCHMARK
 
@@ -53,6 +54,8 @@ using SLASlicingSync::StepsPerPrintObject;
 using SLASlicingSync::PrintAndObjectSteps;
 using SLASlicingSync::InvalidatedSteps;
 using Domain::ObjectID;
+using Biz::Parser::PlaceholderParser;
+using ParserConfig = Biz::Parser::IO::Config;
 
 
 bool is_zero_elevation(const SLAPrintObjectConfig &c)
@@ -296,20 +299,18 @@ static t_config_option_keys print_config_diffs(const StaticPrintConfig     &curr
 
 namespace {
 
-void update_placeholder_parser(PlaceholderParser& parser, const DynamicPrintConfig& config)
+void update_placeholder_parser(PlaceholderParser& parser, const ParserConfig& config)
 {
-    const std::vector<std::string> placeholder_parser_diff{parser.config_diff(config)};
+    PANIC("todo");
     // Apply variables to placeholder parser. The placeholder parser is currently used
     // only to generate the output file name.
-    if (!placeholder_parser_diff.empty()) {
-        // update_apply_status(this->invalidate_step(slapsRasterize));
-        parser.apply_config(config);
-        // Set the profile aliases for the PrintBase::output_filename()
-        parser.set("print_preset", config.option("sla_print_settings_id")->clone());
-        parser.set("material_preset", config.option("sla_material_settings_id")->clone());
-        parser.set("printer_preset", config.option("printer_settings_id")->clone());
-        parser.set("physical_printer_preset", config.option("physical_printer_settings_id")->clone());
-    }
+    // update_apply_status(this->invalidate_step(slapsRasterize));
+    parser.apply_config(config);
+    // Set the profile aliases for the PrintBase::output_filename()
+    //parser.set("print_preset", config.option("sla_print_settings_id")->clone());
+    //parser.set("material_preset", config.option("sla_material_settings_id")->clone());
+    //parser.set("printer_preset", config.option("printer_settings_id")->clone());
+    //parser.set("physical_printer_preset", config.option("physical_printer_settings_id")->clone());
 }
 
 using StepsPerModelObjectId = std::map<ObjectID, std::set<SLAPrintObjectStep>>;
@@ -961,24 +962,24 @@ SLAPrint::ApplyStatus SLAPrint::apply(
 
 namespace {
 using namespace Slic3r::Biz::Slicing; //Sla::PrintStatistics
-DynamicConfig to_config(const Sla::PrintStatistics& stats)
+ParserConfig to_config(const Sla::PrintStatistics& stats)
 {
-    DynamicConfig config;
+    ParserConfig config;
     const std::string print_time = Slic3r::short_time(get_time_dhms(float(stats.estimated_print_time)));
-    config.set_key_value("print_time", new ConfigOptionString(print_time));
-    config.set_key_value("objects_used_material", new ConfigOptionFloat(stats.objects_used_material));
-    config.set_key_value("support_used_material", new ConfigOptionFloat(stats.support_used_material));
-    config.set_key_value("total_cost", new ConfigOptionFloat(stats.total_cost));
-    config.set_key_value("total_weight", new ConfigOptionFloat(stats.total_weight));
+    config.set("print_time", print_time);
+    config.set("objects_used_material", stats.objects_used_material);
+    config.set("support_used_material", stats.support_used_material);
+    config.set("total_cost", stats.total_cost);
+    config.set("total_weight", stats.total_weight);
     return config;
 }
 
-DynamicConfig create_stats_placeholders()
+ParserConfig create_stats_placeholders()
 {
-    DynamicConfig config;
+    ParserConfig config;
     for (const char* key : {"print_time", "total_cost", "total_weight", 
         "objects_used_material", "support_used_material"})
-        config.set_key_value(key, new ConfigOptionString(std::string("{") + key + "}"));
+        config.set(key, std::string{"{"} + key + "}");
     return config;
 }
 
@@ -989,15 +990,14 @@ DynamicConfig create_stats_placeholders()
 // Use the final print statistics if available, or just keep the print statistics placeholders if not available yet (before the output is finalized).
 std::string SLAPrint::output_filename(const std::string &filename_base) const
 {
-    DynamicConfig config = this->finished() ? to_config(m_print_statistics) : create_stats_placeholders();
+    ParserConfig config = this->finished() ? to_config(m_print_statistics) : create_stats_placeholders();
     std::string default_ext = get_default_extension(m_printer_config.sla_archive_format.value.c_str());
     if (default_ext.empty())
         default_ext = "sl1";
 
     default_ext.insert(default_ext.begin(), '.');
 
-    config.set_key_value("default_output_extension",
-                         new ConfigOptionString(default_ext));
+    config.set("default_output_extension", default_ext);
 
     return this->PrintBase::output_filename(m_print_config.output_filename_format.value, default_ext, filename_base, &config);
 }

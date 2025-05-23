@@ -768,6 +768,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->min = 0;
     def->max_literal = 50;
     def->mode = comAdvanced;
+    def->ratio_over = "layer_height";
     SET_DEFAULT(FloatOrPercentage{0.});
 
     def = defs.add("external_perimeter_speed", FloatOrPercent);
@@ -907,6 +908,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->max = 1000;
     def->max_literal = 50;
     def->mode = comAdvanced;
+    def->ratio_over = "layer_height";
     SET_DEFAULT(FloatOrPercentage{0.});
 
     def = defs.add("fan_always_on", Bool);
@@ -1379,6 +1381,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->min = 0;
     def->max_literal = 50;
     def->mode = comAdvanced;
+    def->ratio_over = "first_layer_layer_height";
     SET_DEFAULT(FloatOrPercentage(Percentage{200.}));
 
     def = defs.add("first_layer_height", FloatOrPercent);
@@ -1710,6 +1713,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->min = 0;
     def->max_literal = 50;
     def->mode = comAdvanced;
+    def->ratio_over = "layer_height";
     SET_DEFAULT(FloatOrPercentage{0.});
 
     def = defs.add("infill_first", Bool);
@@ -2323,6 +2327,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->min = 0;
     def->max_literal = 50;
     def->mode = comAdvanced;
+    def->ratio_over = "layer_height";
     SET_DEFAULT(FloatOrPercentage{0.});
 
     def = defs.add("perimeter_speed", Double);
@@ -2890,6 +2895,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->min = 0;
     def->max_literal = 50;
     def->mode = comAdvanced;
+    def->ratio_over = "layer_height";
     SET_DEFAULT(FloatOrPercentage{0.});
 
     def = defs.add("solid_infill_speed", FloatOrPercent);
@@ -3183,6 +3189,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->min = 0;
     def->max_literal = 50;
     def->mode = comAdvanced;
+    def->ratio_over = "layer_height";
     SET_DEFAULT(FloatOrPercentage{0.});
 
     def = defs.add("support_material_interface_contact_loops", Bool);
@@ -3555,6 +3562,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->min = 0;
     def->max_literal = 50;
     def->mode = comAdvanced;
+    def->ratio_over = "layer_height";
     SET_DEFAULT(FloatOrPercentage{0.});
 
     def = defs.add("top_solid_infill_speed", FloatOrPercent);

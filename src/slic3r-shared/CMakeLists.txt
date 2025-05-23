@@ -601,18 +601,14 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
     )
     target_include_directories(slic3r-shared-tests PRIVATE test src)
 
-    find_package(Catch2 3.8 REQUIRED)
-    slic3r_remap_configs("Catch2::Catch2" RelWithDebInfo Release)
     target_link_libraries(slic3r-shared-tests PRIVATE slic3r-shared Catch2::Catch2)
 
     set(TEST_DATA_DIR ${CMAKE_CURRENT_SOURCE_DIR}/test/data)
     file(TO_NATIVE_PATH "${TEST_DATA_DIR}" TEST_DATA_DIR)
     target_compile_definitions(slic3r-shared-tests PRIVATE TEST_DATA_DIR=R"\(${TEST_DATA_DIR}\)")
 
-    set(_catch_args "exclude:[NotWorking] exclude:[Slow]")
-    list(APPEND _catch_args "${CATCH_EXTRA_ARGS}")
     add_test(NAME slic3r-shared-tests
-        COMMAND slic3r-shared-tests ${_catch_args}
+        COMMAND slic3r-shared-tests ${CATCH_ALL_ARGS}
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
 

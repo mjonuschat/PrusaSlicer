@@ -61,6 +61,8 @@ namespace Slic3r {
 using SlicingSync::PrintAndObjectSteps;
 using SlicingSync::PrintSteps;
 using SlicingSync::PrintObjectSteps;
+using ParserConfig = Biz::Parser::IO::Config;
+using Biz::Parser::PlaceholderParser;
 
 template class PrintState<PrintStep, psCount>;
 template class PrintState<PrintObjectStep, posCount>;
@@ -1357,9 +1359,9 @@ std::string Print::output_filename(const std::string &filename_base) const
 { 
     // Set the placeholders for the data know first after the G-code export is finished.
     // These values will be just propagated into the output file name.
-    DynamicConfig config = this->finished() ? this->print_statistics().config() : this->print_statistics().placeholders();
-    config.set_key_value("num_extruders", new ConfigOptionInt((int)m_config.get<std::vector<double>>("nozzle_diameter").size()));
-    config.set_key_value("default_output_extension", new ConfigOptionString(".gcode"));
+    ParserConfig config = this->finished() ? this->print_statistics().config() : this->print_statistics().placeholders();
+    config.set("num_extruders", (int)m_config.get<std::vector<double>>("nozzle_diameter").size());
+    config.set("default_output_extension", std::string{".gcode"});
 
     // Handle output_filename_format. There is a hack related to binary G-codes: gcode / bgcode substitution.
     std::string output_filename_format = m_config.get<std::string>("output_filename_format");
@@ -1430,40 +1432,40 @@ const std::string PrintStatistics::TotalFilamentUsedWipeTowerValueMask = "; tota
 
 
 
-DynamicConfig PrintStatistics::config() const
+ParserConfig PrintStatistics::config() const
 {
-    DynamicConfig config;
+    ParserConfig config;
     std::string normal_print_time = short_time(this->estimated_normal_print_time);
     std::string silent_print_time = short_time(this->estimated_silent_print_time);
-    config.set_key_value("print_time", new ConfigOptionString(normal_print_time));
-    config.set_key_value("normal_print_time", new ConfigOptionString(normal_print_time));
-    config.set_key_value("silent_print_time", new ConfigOptionString(silent_print_time));
-    config.set_key_value("used_filament",             new ConfigOptionFloat(this->total_used_filament / 1000.));
-    config.set_key_value("extruded_volume",           new ConfigOptionFloat(this->total_extruded_volume));
-    config.set_key_value("total_cost",                new ConfigOptionFloat(this->total_cost));
-    config.set_key_value("total_toolchanges",         new ConfigOptionInt(this->total_toolchanges));
-    config.set_key_value("total_weight",              new ConfigOptionFloat(this->total_weight));
-    config.set_key_value("total_wipe_tower_cost",     new ConfigOptionFloat(this->total_wipe_tower_cost));
-    config.set_key_value("total_wipe_tower_filament", new ConfigOptionFloat(this->total_wipe_tower_filament));
-    config.set_key_value("initial_tool",              new ConfigOptionInt(int(this->initial_extruder_id)));
-    config.set_key_value("initial_extruder",          new ConfigOptionInt(int(this->initial_extruder_id)));
-    config.set_key_value("initial_filament_type",     new ConfigOptionString(this->initial_filament_type));
-    config.set_key_value("printing_filament_types",   new ConfigOptionString(this->printing_filament_types));
-    config.set_key_value("num_printing_extruders",    new ConfigOptionInt(int(this->printing_extruders.size())));
+    config.set("print_time", normal_print_time);
+    config.set("normal_print_time", normal_print_time);
+    config.set("silent_print_time", silent_print_time);
+    config.set("used_filament",             this->total_used_filament / 1000.);
+    config.set("extruded_volume",           this->total_extruded_volume);
+    config.set("total_cost",                this->total_cost);
+    config.set("total_toolchanges",         this->total_toolchanges);
+    config.set("total_weight",              this->total_weight);
+    config.set("total_wipe_tower_cost",     this->total_wipe_tower_cost);
+    config.set("total_wipe_tower_filament", this->total_wipe_tower_filament);
+    config.set("initial_tool",              int(this->initial_extruder_id));
+    config.set("initial_extruder",          int(this->initial_extruder_id));
+    config.set("initial_filament_type",     this->initial_filament_type);
+    config.set("printing_filament_types",   this->printing_filament_types);
+    config.set("num_printing_extruders",    int(this->printing_extruders.size()));
 //    config.set_key_value("printing_extruders",        new ConfigOptionInts(std::vector<int>(this->printing_extruders.begin(), this->printing_extruders.end())));
     
     return config;
 }
 
-DynamicConfig PrintStatistics::placeholders()
+ParserConfig PrintStatistics::placeholders()
 {
-    DynamicConfig config;
-    for (const std::string &key : { 
-        "print_time", "normal_print_time", "silent_print_time", 
-        "used_filament", "extruded_volume", "total_cost", "total_weight", 
+    ParserConfig config;
+    for (const std::string &key : {
+        "print_time", "normal_print_time", "silent_print_time",
+        "used_filament", "extruded_volume", "total_cost", "total_weight",
         "total_toolchanges", "total_wipe_tower_cost", "total_wipe_tower_filament",
         "initial_tool", "initial_extruder", "initial_filament_type", "printing_filament_types", "num_printing_extruders" })
-        config.set_key_value(key, new ConfigOptionString(std::string("{") + key + "}"));
+        config.set(key, std::string("{") + key + "}");
     return config;
 }
 
@@ -1472,7 +1474,7 @@ std::string PrintStatistics::finalize_output_path(const std::string &path_in) co
     std::string final_path;
     try {
         boost::filesystem::path path(path_in);
-        DynamicConfig cfg = this->config();
+        ParserConfig cfg = this->config();
         PlaceholderParser pp;
         std::string new_stem = pp.process(path.stem().string(), 0, &cfg);
         final_path = (path.parent_path() / (new_stem + path.extension().string())).string();

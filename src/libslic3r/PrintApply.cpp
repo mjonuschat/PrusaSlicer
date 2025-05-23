@@ -27,7 +27,7 @@
 #include "libslic3r/CustomGCode.hpp"
 #include "libslic3r/Geometry.hpp"
 #include "Slic3r/Domain/ObjectID.hpp"
-#include "libslic3r/PlaceholderParser.hpp"
+#include "Slic3r/Biz/Parser/PlaceholderParser.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/PrintBase.hpp"
 #include "libslic3r/PrintConfig.hpp"
@@ -58,6 +58,8 @@ using Domain::ObjectSettings;
 using Domain::ObjectSettingsPtr;
 using Domain::VolumeSettings;
 using Domain::VolumeSettingsPtr;
+using Biz::Parser::PlaceholderParser;
+using ParserConfig = Biz::Parser::IO::Config;
 
 static inline bool transform3d_lower(const Transform3d &lhs, const Transform3d &rhs) 
 {
@@ -756,13 +758,16 @@ PrintSteps get_custom_gcode_invalidated_steps(
     return {psGCodeExport};
 }
 
-void update_placeholder_parser(
-    PlaceholderParser& parser,
+ParserConfig convert_config(const PrintConfigView& config) {
+    PANIC("TODO");
+}
+
+PlaceholderParser init_placeholder_parser(
     const PrintConfigView& new_config,
     const std::optional<ModelWipeTower>& wipe_tower
 )
 {
-    parser.clear_config();
+    PlaceholderParser parser{convert_config(new_config)};
     // Set the profile aliases for the PrintBase::output_filename()
     //parser.set("print_preset", new_config.get<std::string>("print_settings_id"));
     //parser.set("filament_preset", new_config.get<std::string>("filament_settings_id"));
@@ -777,6 +782,8 @@ void update_placeholder_parser(
         parser.set("wipe_tower_y", wipe_tower->position.y());
         parser.set("wipe_tower_rotation_angle", wipe_tower->rotation);
     }
+
+    return parser;
 }
 
 bool get_solid_or_modifier_differ(
@@ -1371,8 +1378,7 @@ Print::ApplyStatus Print::apply(
         update_config(new_print_config)
     };
 
-    update_placeholder_parser(
-        m_placeholder_parser,
+    m_placeholder_parser = init_placeholder_parser(
         new_print_config,
         wipe_tower
     );
