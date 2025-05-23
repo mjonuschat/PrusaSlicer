@@ -130,7 +130,7 @@ public:
 
 // Methods NOT modifying the PrintRegion's state:
 public:
-    PrintRegionConfigView       config() const throw() { return m_config; }
+    const PrintRegionConfigView& config() const throw() { return m_config; }
     size_t                      config_hash() const throw() { return m_config_hash; }
     // Identifier of this PrintRegion in the list of Print::m_print_regions.
     int                         print_region_id() const throw() { return m_print_region_id; }
