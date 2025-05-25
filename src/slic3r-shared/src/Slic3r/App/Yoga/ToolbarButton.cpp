@@ -13,46 +13,29 @@
 
 namespace Slic3r::App::Yoga {
 
-ToolbarButton::ToolbarButton(wchar_t icon, const std::string& tooltip)
-    : AbstractButton(icon, tooltip)
-{}
+ToolbarButton::ToolbarButton(Render::Icon icon, const std::string& tooltip)
+    : LayoutButton("", icon, tooltip)
+{
+    set_background_color(ImGui::GetColorU32(ImGuiCol_WindowBg));
+    set_background_color_checked(ImColor(60, 60, 60));
+}
 
 void ToolbarButton::render(Vec2f pos, Vec2f size)
 {
     render_item_begin(pos, size);
+    render_item_end(pos, size);
 
-    float rounding = GImGui->Style.WindowRounding; // { 4.f };
-    ImVec2 button_size = to_im(size);
-    ImRect button_bb(to_im(pos), to_im(pos) + button_size);
+    // render arrow on top of the children
+    if (has_arrow()) {
+        ImVec2 button_size = to_im(size);
 
-    ImDrawList* draw_list = ImGui::GetWindowDrawList();
-    const float arrow_h = draw_list->_Data->FontSize * 0.5f;
+        ImDrawList* draw_list = ImGui::GetWindowDrawList();
+        const float arrow_h = draw_list->_Data->FontSize * 0.35f;
 
-    ImVec2 arrow_size = ImVec2(1.f, 1.f) * 2.5f * arrow_h;
-    ImVec2 arrow_pos = to_im(pos) + button_size - arrow_size;
-    ImRect arrow_bb(arrow_pos, arrow_pos + arrow_size);
+        ImVec2 arrow_size(arrow_h, arrow_h);
+        ImVec2 arrow_pos = to_im(pos) + button_size - arrow_size;
+        ImRect arrow_bb(arrow_pos, arrow_pos + arrow_size);
 
-    // Draw button background with custom rounding corner(s)
-    draw_list->AddRectFilled(
-        button_bb.Min, button_bb.Max, ImGui::GetColorU32(ImGuiCol_WindowBg), rounding,
-        ImDrawFlags_RoundCornersAll
-        // TODO: resolve rounding rounding_corners
-    );
-    button_bb.Expand(-rounding);
-    if (m_enabled) {
-        ImU32 col = ImGui::GetColorU32(
-            m_hovered ? ImGuiCol_ButtonHovered
-                      : (m_checked ? ImGuiCol_ButtonActive : ImGuiCol_Button)
-        );
-        draw_list
-            ->AddRectFilled(button_bb.Min, button_bb.Max, col, rounding, ImDrawFlags_RoundCornersAll);
-    }
-
-    // Render icon in the center of the button
-    ImGui::SetCursorScreenPos(button_bb.Min);
-    Imgui::icon_image(m_icon, button_bb.GetSize(), !m_enabled);
-
-    if (m_has_arrow) {
         // Draw button background with custom rounding on only one corner
         ImU32 arrow_col = ImGui::GetColorU32(ImGuiCol_Text);
 
@@ -63,8 +46,6 @@ void ToolbarButton::render(Vec2f pos, Vec2f size)
             arrow_col
         );
     }
-
-    render_item_end(pos, size);
 }
 
 void ToolbarButton::style_node()
@@ -111,7 +92,7 @@ Toolbar* ToolbarButton::get_or_create_subtoolbar()
         m_subtoolbar->set_button_max_size(m_max_size);
         m_subtoolbar->set_visible(false);
 
-        m_callbacks.action = [this] {
+        callbacks().action = [this] {
             if (m_subtoolbar) {
                 m_subtoolbar->set_visible(!m_subtoolbar->is_visible());
 

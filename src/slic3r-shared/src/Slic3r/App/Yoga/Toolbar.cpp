@@ -16,9 +16,9 @@ namespace Slic3r::App::Yoga {
 
 Toolbar::Toolbar(const std::string& name) : Window(name)
 {
-    set_padding(0);
+    set_padding(4);
     // Button More is used for collapsible and should never be part of m_buttons
-    m_button_more = emplace_back<ToolbarButton>(ImGui::ToolbarEllipsis, "Show more");
+    m_button_more = emplace_back<ToolbarButton>(Render::Icon::ToolbarEllipsis, "Show more");
     m_button_more->set_item_name(name + "_show_more_button");
     m_button_more->set_visible(false);
 }

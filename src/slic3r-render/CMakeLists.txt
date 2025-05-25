@@ -42,8 +42,10 @@ set(SLIC3R_RENDER_FILES
         include/Slic3r/App/Render/ImguiRender.hpp
         src/Slic3r/App/Render/ImguiRender.cpp
         include/Slic3r/App/Render/ImguiTypes.hpp
-        src/Slic3r/App/Render/ImguiFontHelper.hpp
+        include/Slic3r/App/Render/ImguiFontHelper.hpp
         src/Slic3r/App/Render/ImguiFontHelper.cpp
+        include/Slic3r/App/Render/ImguiIconHelper.hpp
+        src/Slic3r/App/Render/ImguiIconHelper.cpp
         include/Slic3r/App/Render/WithInternal.hpp
         src/Slic3r/App/Render/GL/GLTypes.cpp
         include/Slic3r/App/Render/GL/GLTypes.hpp
@@ -68,13 +70,15 @@ set(SLIC3R_RENDER_FILES
         include/Slic3r/App/Render/GL/GLFramebufferInternal.hpp
         src/Slic3r/App/Render/FramebufferManager.cpp
         include/Slic3r/App/Render/FramebufferManager.hpp
+        include/Slic3r/App/Render/IResourceResolver.hpp
 
         include/Slic3r/Memory.hpp
 )
 
 find_package(NanoSVG REQUIRED)
 find_package(Boost REQUIRED COMPONENTS filesystem)
-add_library(slic3r-render STATIC ${SLIC3R_RENDER_FILES})
+add_library(slic3r-render STATIC ${SLIC3R_RENDER_FILES}
+    test/Slic3r/App/Render/SizeTests.cpp)
 target_link_libraries(slic3r-render PUBLIC
         PlatformGL
         imgui
@@ -102,13 +106,24 @@ endif ()
 add_target_to_doxygen(slic3r-render)
 
 # Tests
-#add_executable(slic3r-render-tests
-#        test/main.cpp
-#        test/Slic3r/App/Scene/Node.cpp
-#)
-#target_include_directories(slic3r-render-tests PRIVATE test)
-#
-#find_package(Catch2 2.9 REQUIRED)
-#target_link_libraries(slic3r-render-tests PRIVATE slic3r-render Catch2::Catch2 )
+if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
+    add_executable(slic3r-render-tests
+        test/Slic3r/App/Render/SizeTests.cpp
+    )
+    target_include_directories(slic3r-render-tests PRIVATE test)
+
+    find_package(Catch2 3.8 REQUIRED)
+    slic3r_remap_configs(Catch2::Catch2 RelWithDebInfo Release)
+    slic3r_remap_configs(Catch2::Catch2WithMain RelWithDebInfo Release)
+
+    target_link_libraries(slic3r-render-tests PRIVATE slic3r-render Catch2::Catch2WithMain TBB::tbb)
+
+    set(_catch_args "exclude:[NotWorking] exclude:[Slow]")
+    list(APPEND _catch_args "${CATCH_EXTRA_ARGS}")
+    add_test(NAME slic3r-render-tests
+        COMMAND slic3r-render-tests ${_catch_args}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+endif()
 
 

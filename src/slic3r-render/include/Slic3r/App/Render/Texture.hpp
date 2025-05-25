@@ -1,7 +1,10 @@
 #pragma once
 
-#include "Image.hpp"
+#include "Types.hpp"
 #include "WithInternal.hpp"
+
+#include <array>
+#include <string>
 
 namespace Slic3r::App::Render {
 
@@ -11,8 +14,8 @@ class Texture : public WithInternal {
 public:
     ~Texture() override;
 
-    void set_data(PixelFormat format, size_t level, size_t w, size_t h, const void* data);
-    void set_sub_data(PixelFormat format, size_t level, size_t offset_x, size_t offset_y, size_t w, size_t h, const void* data);
+    void set_data(PixelFormat format, int level, int w, int h, const void* data);
+    void set_sub_data(PixelFormat format, int level, int offset_x, int offset_y, int w, int h, const void* data);
     void set_filtering(TextureMinFilter min_filter, TextureMagFilter mag_filter);
 
     void set_object_name(const std::string& object_name);
@@ -21,11 +24,17 @@ public:
     void set_wrap_r(TextureWrap wrap);
     void set_border_color(const std::array<float, 4>& color);
 
+    int width() const;
+    int height() const;
+
 private:
     friend class Device;
     explicit Texture(Device& device);
 private:
     Device& m_device;
+
+    int m_width = 0;
+    int m_height = 0;
 };
 
 }

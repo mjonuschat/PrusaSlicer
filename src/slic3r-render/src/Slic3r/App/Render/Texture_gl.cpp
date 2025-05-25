@@ -7,6 +7,16 @@
 
 namespace Slic3r::App::Render {
 
+int Texture::width() const
+{
+    return m_width;
+}
+
+int Texture::height() const
+{
+    return m_height;
+}
+
 Texture::Texture(Device& device)
     : WithInternal::WithInternal(InternalType<GL::GLTextureInternal>()), m_device(device)
 {
@@ -20,7 +30,7 @@ Texture::~Texture()
     glCheck();
 }
 
-void Texture::set_data(PixelFormat format, size_t level, size_t w, size_t h, const void* data)
+void Texture::set_data(PixelFormat format, int level, int w, int h, const void* data)
 {
     auto& device = m_device.get_internal_as<GL::GLDeviceInternal>();
     device.bind_texture(0, *this);
@@ -35,9 +45,12 @@ void Texture::set_data(PixelFormat format, size_t level, size_t w, size_t h, con
     glCheck();
     glTexParameteri(gl_target, GL_TEXTURE_MAX_LEVEL, level);
     glCheck();
+
+    m_width = w;
+    m_height = h;
 }
 
-void Texture::set_sub_data(PixelFormat format, size_t level, size_t offset_x, size_t offset_y, size_t w, size_t h, const void* data)
+void Texture::set_sub_data(PixelFormat format, int level, int offset_x, int offset_y, int w, int h, const void* data)
 {
     auto& device = m_device.get_internal_as<GL::GLDeviceInternal>();
     device.bind_texture(0, *this);
@@ -46,6 +59,9 @@ void Texture::set_sub_data(PixelFormat format, size_t level, size_t offset_x, si
     GLenum gl_type = GL::texture_format_type(format);
     glTexSubImage2D(gl_target, 0, offset_x, offset_y, w, h, gl_format, gl_type, data);
     glCheck();
+
+    m_width = w;
+    m_height = h;
 }
 
 void Texture::set_filtering(TextureMinFilter min_filter, TextureMagFilter mag_filter)

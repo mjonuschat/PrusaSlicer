@@ -12,37 +12,36 @@
 namespace Slic3r::App::Yoga {
 
 Slic3r::App::Yoga::LayoutButton::LayoutButton(const std::string& label)
-    : LayoutButton(label, '\0')
+    : LayoutButton(label, Render::Icon::None)
 {}
 
-LayoutButton::LayoutButton(const std::string& label, wchar_t icon)
+LayoutButton::LayoutButton(const std::string& label, Render::Icon icon)
     : LayoutButton(label, icon, "")
 {}
 
 Slic3r::App::Yoga::LayoutButton::LayoutButton(
-    const std::string& label, wchar_t icon, const std::string& tooltip
+    const std::string& label, Render::Icon icon, const std::string& tooltip
 )
-    : AbstractButton(icon, tooltip)
+    : AbstractButton(tooltip)
 {
     set_orientation(Orientation::Horizontal);
 
     m_background = emplace_back<Rectangle>();
-    m_background->set_padding(3);
+    m_background->set_padding(4);
     m_background->set_justify_content(YGJustifyCenter);
-    m_background->set_align_items(YGAlignCenter);
     m_background->set_gap(5);
     m_background->set_flex_grow(1);
 
     m_icon = m_background->emplace_back<Icon>(icon);
-    m_icon->set_visible(icon != '\0');
-    // m_icon->set_height_percent(100);
+    m_icon->set_visible(icon != Render::Icon::None);
+    m_icon->set_aspect_ratio(1);
 
     m_text = m_background->emplace_back<Text>(label);
+    m_text->set_self_align(YGAlign::YGAlignCenter);
     m_text->set_visible(!label.empty());
 
-    set_background_color({41, 41, 41});
-    m_background_color_checked = ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive);
-    m_background_color_checked_hover = Imgui::adjust_brightness(m_background_color_checked, 1.2);
+    set_background_color(ImGui::GetStyleColorVec4(ImGuiCol_Button));
+    set_background_color_checked(ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
 
     update_fill();
 }
@@ -60,8 +59,13 @@ void LayoutButton::hovered_updated_internal() { update_fill(); }
 
 void LayoutButton::update_fill()
 {
-    m_background->set_fill(m_checked ? (m_hovered ? m_background_color_checked_hover : m_background_color_checked) :
-                                        m_hovered ? m_background_color_hover : m_background_color);
+    ImColor color = m_background_color;
+    if (checked()) {
+        color = hovered() ? m_background_color_checked_hover : m_background_color_checked;
+    } else {
+        color = hovered() ? m_background_color_hover : m_background_color;
+    }
+    m_background->set_fill(color);
 }
 
 const std::string& Slic3r::App::Yoga::LayoutButton::label() const { return m_text->text(); }
@@ -95,15 +99,13 @@ void LayoutButton::set_content_padding(const Paddings& padding)
     m_background->set_padding(padding);
 }
 
-void LayoutButton::set_icon(wchar_t icon)
-{
-    m_icon->set_icon(icon);
-    m_icon->set_visible(icon != '\0');
-}
+const ImColor& LayoutButton::background_color_checked() const { return m_background_color_checked; }
 
-void LayoutButton::set_icon_size(Vec2f size)
+void LayoutButton::set_background_color_checked(const ImColor& background_color_checked)
 {
-    m_icon->set_min_size(size);
+    m_background_color_checked = background_color_checked;
+    m_background_color_checked_hover = Imgui::adjust_brightness(m_background_color_checked, 1.25);
+    update_fill();
 }
 
 void LayoutButton::align_content(Align align)
@@ -126,6 +128,19 @@ void LayoutButton::align_content(Align align)
 void LayoutButton::expand_label(bool expand)
 {
     m_text->set_flex_grow(expand ? 1.f : 0.f);
+}
+
+Render::Icon LayoutButton::icon() const
+{
+    return m_icon->icon();
+}
+
+void LayoutButton::set_icon(Render::Icon icon)
+{
+    if (m_icon->icon() != icon) {
+        m_icon->set_icon(icon);
+        m_icon->set_visible(icon != Render::Icon::None);
+    }
 }
 
 } // namespace Slic3r::App::Yoga

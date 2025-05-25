@@ -387,7 +387,7 @@ private:
 
         mutable size_t noise_size{ 0 };
         mutable std::optional<size_t> pending_noise_size;
-        mutable Render::Texture* noise{ nullptr };
+        mutable std::shared_ptr<Render::Texture> noise{ nullptr };
 
         mutable float radius{ DEFAULT_RADIUS };
         mutable float bias{ DEFAULT_BIAS };

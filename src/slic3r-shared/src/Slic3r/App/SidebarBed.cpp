@@ -18,7 +18,7 @@ SidebarBed::SidebarBed() : Window("sidebar_bed")
     m_bed_name->set_font_type(Render::ImguiFontType::Bold);
 
     m_printer = emplace_back<Yoga::PrinterSettingsButton>("Printer Tooltip");
-    m_printer->set_icon(ImGui::PrinterNEXT);
+    m_printer->set_icon(Render::Icon::PrinterNEXT);
     m_printer->set_printer_name("NEXT/Elsa");
     m_printer->set_preset_name("Prusa NEXT 1T");
     m_printer->set_visible_cog(true);

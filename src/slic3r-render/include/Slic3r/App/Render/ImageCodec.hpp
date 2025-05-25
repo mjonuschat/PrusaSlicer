@@ -11,10 +11,12 @@ namespace Slic3r::App::Render {
 
 struct ImageLoadOptions
 {
-    size_t max_size_px {1024};
+    int max_size_px {1024};
     bool force_power_of_two {false};
     bool gen_mipmaps {false};
     bool flip_y{false};
+
+    Size resolve_to_size(const Size& source_size) const;
 };
 
 /**.
@@ -36,10 +38,11 @@ public:
      * Load image(s) from given input stream with optional loading options.
      * @param is Input stream with image data to read.
      * @param opts
+     * @param optional pointer to Size that will contain the size of the image
      * @return List of loaded image mipmaps (if its generation is enabled in loading options),
      * or a single image (if mipmaps disabled) or empty vector if error happened.
      */
-    virtual std::vector<Image> load(std::istream& is, const ImageLoadOptions& opts) = 0;
+    virtual std::vector<Image> load(std::istream& is, const ImageLoadOptions& opts, Size* image_size = nullptr) = 0;
 };
 
 

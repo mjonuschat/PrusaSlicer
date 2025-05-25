@@ -32,6 +32,7 @@ public:
         const std::optional<float>& font_global_scale = std::nullopt);
 
     ImFont* font(Render::ImguiFontType type);
+    TexturePtr icon_texture(Icon icon, int max_size);
 
     void new_frame();
     void render(CommandBuffer& buffer, const ImDrawData* draw_data);

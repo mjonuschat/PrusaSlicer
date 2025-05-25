@@ -4,7 +4,7 @@
 #include <Slic3r/Memory.hpp>
 
 #include <sstream>
-#include <boost/core/bit.hpp>
+#include <bit>
 #include <boost/algorithm/string/predicate.hpp>
 
 #include <png.h>
@@ -13,14 +13,6 @@
 #include <nanosvg/nanosvgrast.h>
 
 namespace Slic3r::App::Render {
-
-void adjust_size_to_opts(size_t& w, size_t& h, const ImageLoadOptions& opts)
-{
-    w = std::min<size_t>(w, opts.max_size_px);
-    h = std::min<size_t>(h, opts.max_size_px);
-    if (opts.force_power_of_two)
-        w = h = boost::core::bit_ceil(std::max(w, h));
-}
 
 void flip_pixels_in_y(Image::Data& pixels, size_t h, size_t row_stride)
 {
@@ -39,7 +31,7 @@ class PngReadCodec : public IImageLoadCodec
 public:
     ~PngReadCodec() override;
 
-    std::vector<Image> load(std::istream& is, const ImageLoadOptions& opts) override;
+    std::vector<Image> load(std::istream& is, const ImageLoadOptions& opts, Size* image_size = nullptr) override;
     bool matches(const std::string& filename) override;
 
 private:
@@ -56,7 +48,7 @@ class SvgReadCodec : public IImageLoadCodec
 {
 public:
     bool matches(const std::string& filename) override;
-    std::vector<Image> load(std::istream& is, const ImageLoadOptions& opts) override;
+    std::vector<Image> load(std::istream& is, const ImageLoadOptions& opts, Size* image_size = nullptr) override;
 
 private:
     static NSVGimage* load_svg(std::istream& input);
@@ -70,7 +62,7 @@ PngReadCodec::~PngReadCodec()
         png_destroy_read_struct(&png, nullptr, nullptr);
 }
 
-std::vector<Image> PngReadCodec::load(std::istream& is, const ImageLoadOptions& opts)
+std::vector<Image> PngReadCodec::load(std::istream& is, const ImageLoadOptions& opts, Size* image_size)
 {
     static const constexpr int PNG_SIG_BYTES = 8;
     std::vector<Image> ret;
@@ -102,8 +94,8 @@ std::vector<Image> PngReadCodec::load(std::istream& is, const ImageLoadOptions& 
 
     png_read_info(png, info);
 
-    size_t out_w = png_get_image_width(png, info);
-    size_t out_h = png_get_image_height(png, info);
+    int image_width = png_get_image_width(png, info);
+    int image_height = png_get_image_height(png, info);
     size_t color_type = png_get_color_type(png, info);
     size_t bit_depth = png_get_bit_depth(png, info);
     size_t channels = png_get_channels(png, info);
@@ -129,21 +121,25 @@ std::vector<Image> PngReadCodec::load(std::istream& is, const ImageLoadOptions& 
         return ret;
     }
 
-    Image::Data out_pixels(out_w * out_h * pixel_stride, 0);
-
-    auto readbuf = static_cast<png_bytep>(out_pixels.data());
-    for (size_t r = 0; r < out_h; ++r) {
-        size_t r_idx = opts.flip_y ? out_h - r - 1 : r;
-        png_read_row(png, readbuf + r_idx * out_w * pixel_stride, nullptr);
+    const Size out_size{image_width, image_height};
+    // Store PNG real size
+    if (image_size) {
+        *image_size = out_size;
     }
 
-    size_t new_w = out_w;
-    size_t new_h = out_h;
-    adjust_size_to_opts(new_w, new_h, opts);
+    Image::Data out_pixels(image_width * image_height * pixel_stride, 0);
 
-    Image img(out_format, out_w, out_h, std::move(out_pixels));
-    if (new_w != out_w || new_h != out_h) {
-        ret.emplace_back(img.rescaled_with_preserved_ratio(new_w, new_h));
+    auto readbuf = static_cast<png_bytep>(out_pixels.data());
+    for (size_t r = 0; r < image_height; ++r) {
+        size_t r_idx = opts.flip_y ? image_height - r - 1 : r;
+        png_read_row(png, readbuf + r_idx * image_width * pixel_stride, nullptr);
+    }
+
+    const Size resolved_size = opts.resolve_to_size(out_size);
+
+    Image img(out_format, image_width, image_height, std::move(out_pixels));
+    if (resolved_size != out_size) {
+        ret.emplace_back(img.rescaled_with_preserved_ratio(resolved_size));
     }
     else
         ret.emplace_back(std::move(img));
@@ -174,7 +170,7 @@ bool PngReadCodec::matches(const std::string& filename)
     return boost::algorithm::iends_with(filename, ".png");
 }
 
-std::vector<Image> SvgReadCodec::load(std::istream& is, const ImageLoadOptions& opts)
+std::vector<Image> SvgReadCodec::load(std::istream& is, const ImageLoadOptions& opts, Size* image_size)
 {
     std::vector<Image> ret;
     FuncDeleter<NSVGimage> d{nsvgDelete};
@@ -185,19 +181,10 @@ std::vector<Image> SvgReadCodec::load(std::istream& is, const ImageLoadOptions& 
         return ret;
     }
 
-    const float scale = opts.max_size_px / std::max<float>(image->width, image->height);
+    Size size = opts.resolve_to_size({static_cast<int>(image->width), static_cast<int>(image->height)});
 
-    size_t width = scale * image->width;
-    size_t height = scale * image->height;
-
-    float scale_w = (float) width / image->width;
-    float scale_h = (float) height / image->height;
-
-    PixelFormat format = PixelFormat::RGBA8;
-    width = size_t(scale * image->width);
-    height = size_t(scale * image->height);
-
-    adjust_size_to_opts(width, height, opts);
+    float scale_w = static_cast<float>(size.width) / image->width;
+    float scale_h = static_cast<float>(size.height) / image->height;
 
     NSVGrasterizer* rast = nsvgCreateRasterizer();
     if (!rast) {
@@ -205,32 +192,38 @@ std::vector<Image> SvgReadCodec::load(std::istream& is, const ImageLoadOptions& 
         return ret;
     }
 
+    // Store SVG size, not the scaled one
+    if (image_size) {
+        image_size->width = image->width;
+        image_size->height = image->height;
+    }
+
     do {
         // std::vector<unsigned char> data(n_pixels * 4, 0);
-        Image::Data pixels(width * height * 4, 0);
+        Image::Data pixels(size.space() * 4, 0);
         nsvgRasterizeXY(
-            rast, image.get(), 0, 0, scale_w, scale_h, pixels.data(), width, height, width * 4
+            rast, image.get(), 0, 0, scale_w, scale_h, pixels.data(), size.width, size.height, size.width * 4
         );
 
         if (opts.flip_y)
-            flip_pixels_in_y(pixels, height, width * 4);
+            flip_pixels_in_y(pixels, size.height, size.width * 4);
 
         if (std::any_of(pixels.begin(), pixels.end(), [](auto x){ return x!=0; })) {
-            SPDLOG_INFO("Non empty image with size {}x{} added", width, height);
+            SPDLOG_INFO("Non empty image with size {}x{} added", size.width, size.height);
         } else {
-            SPDLOG_INFO("Empty image with size {}x{} added", width, height);
+            SPDLOG_INFO("Empty image with size {}x{} added", size.width, size.height);
         }
-        ret.emplace_back(format, width, height, std::move(pixels));
+        ret.emplace_back(PixelFormat::RGBA8, size.width, size.height, std::move(pixels));
 
         if (opts.gen_mipmaps) {
-            if (width == 1 && height == 1)
+            if (size.width == 1 && size.height == 1)
                 break;
 
-            if (width > 1) width /= 2;
-            if (height > 1) height /= 2;
+            if (size.width > 1) size.width /= 2;
+            if (size.height > 1) size.height /= 2;
 
-            scale_w = (float) width / image->width;
-            scale_h = (float) height / image->height;
+            scale_w = (float) size.width / image->width;
+            scale_h = (float) size.height / image->height;
         }
     } while (opts.gen_mipmaps);
 
@@ -268,11 +261,26 @@ ImageCodecManager& ImageCodecManager::instance()
 
 IImageLoadCodec* ImageCodecManager::find_loader(const std::string& filename)
 {
-    for (const auto& reader : m_loaders)
-        if (reader->matches(filename))
+    for (const auto& reader : m_loaders) {
+        if (reader->matches(filename)) {
             return reader.get();
+        }
+    }
 
     return nullptr;
+}
+
+Size ImageLoadOptions::resolve_to_size(const Size &source_size) const
+{
+    Size resolved_size = source_size.scaled(Size{max_size_px, max_size_px}, Size::ScaleMode::KeepAspectRatio);
+
+    if (force_power_of_two) {
+        int size = std::bit_ceil(static_cast<uint32_t>(std::max(resolved_size.width, resolved_size.height)));
+        resolved_size.width = size;
+        resolved_size.height = size;
+    }
+
+    return resolved_size;
 }
 
 } // namespace Slic3r::App::Render

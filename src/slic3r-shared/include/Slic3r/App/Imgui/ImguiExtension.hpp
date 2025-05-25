@@ -2,6 +2,7 @@
 
 #include <imgui/imgui.h>
 #include <imgui/imgui_internal.h>
+#include <Slic3r/App/Render/ImguiTypes.hpp>
 
 #include <string>
 #include <sstream>
@@ -52,10 +53,10 @@ void item_tooltip(const std::string& label, float wrap_width = 0.0f);
 bool menu_item_with_icon(const char* label, const char* shortcut = nullptr, ImU32 icon_color = 0,
     bool selected = false, bool enabled = true);
 
-void icon_image(wchar_t icon, const ImVec2& size = { 0.0f, 0.0f }, bool disabled = false);
+void icon_image(Render::Icon icon, const ImVec2& size = { 0.0f, 0.0f }, bool disabled = false);
 
 /* Use id, when the window has more than one icon_button to avoid using of the same ID generated from default label ("##btn") */
-bool icon_button(wchar_t icon, const ImVec2& size = { 0.0f, 0.0f }, const std::string& id = std::string());
+bool icon_button(Render::Icon icon, const ImVec2& size = { 0.0f, 0.0f }, const std::string& id = std::string());
 
 void toggle_button(const std::string& label, bool* on, bool right_align = false);
 

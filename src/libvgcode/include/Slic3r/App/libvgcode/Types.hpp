@@ -7,8 +7,10 @@
 
 #include "libslic3r/Color.hpp"
 #include <Slic3r/Biz/libpgcode/Types.hpp>
+#include <Slic3r/App/Render/ImguiTypes.hpp>
 
 #include <libslic3r/format.hpp>
+#include <imgui.h>
 
 namespace Slic3r::App::libvgcode {
 
@@ -73,7 +75,7 @@ typedef std::function<void(bool)> CustomOptionActionCallback;
 struct CustomOption
 {
     std::string name;
-    wchar_t icon;
+    Render::Icon icon;
     bool visible{ false };
     CustomOptionActionCallback cb_action{ nullptr };
 };

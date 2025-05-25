@@ -4,17 +4,17 @@
 ///|/
 #pragma once
 
-#include "Slic3r/App/Yoga/AbstractButton.hpp"
+#include "Slic3r/App/Yoga/LayoutButton.hpp"
 
 namespace Slic3r::App::Yoga {
 
 class Toolbar;
 class Dialog;
 
-class ToolbarButton : public AbstractButton
+class ToolbarButton : public LayoutButton
 {
 public:
-    ToolbarButton(wchar_t icon, const std::string& tooltip = {});
+    ToolbarButton(Render::Icon icon, const std::string& tooltip = {});
 
     void render(Vec2f pos, Vec2f size) override;
 

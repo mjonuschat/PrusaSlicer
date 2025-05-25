@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Slic3r/App/Yoga/Window.hpp"
+#include "Slic3r/App/Render/ImguiTypes.hpp"
 #include "MultiSelections.hpp"
 
 #include <Slic3r/Domain/ElementRef.hpp>
@@ -75,7 +76,7 @@ private:
     void render_printable_icon(const Domain::ElementRef& sel_element, bool is_printable);
     void render_extruder_marker(size_t extruder_id, const std::vector<std::string>& colors);
     void render_slicing_state_marker(size_t bed_instance_id);
-    void render_infos_selectable(const std::set<wchar_t>& infos, const Slic3r::ModelObject* object, bool force_render);
+    void render_infos_selectable(const std::set<Render::Icon>& infos, const Slic3r::ModelObject* object, bool force_render);
 
     bool tree_node(const char* str_id, ImGuiTreeNodeFlags flags, const std::string& label, bool add_overrides_marker = false);
 
@@ -93,7 +94,7 @@ private:
     void ask_extract_selected_instances();
     void extruder_clicked(const Domain::ElementRef& sel_element, bool is_bed);
     void show_layer_ranges(const Domain::ElementRef& id);
-    void show_gizmo(const Domain::ElementRef& id, wchar_t gizmo_id);
+    void show_gizmo(const Domain::ElementRef& id, Render::Icon gizmo_id);
 
     void render_scene_map(Domain::Vec2f size);
     void render_sliced_info(float height);

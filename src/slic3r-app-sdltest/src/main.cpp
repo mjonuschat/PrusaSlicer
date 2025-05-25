@@ -12,6 +12,8 @@
 #include <libslic3r/Utils.hpp>
 #include "Slic3r/Platform.hpp"
 #include "Slic3r/App/TestRenderModule.hpp"
+#include <Slic3r/App/ResourceResolver.hpp>
+#include <Slic3r/App/Render/TextureManager.hpp>
 
 #ifdef WIN32
 #include "Windows.h"
@@ -91,6 +93,7 @@ void init_system()
     //}
 #endif
     App::init_paths();
+    Slic3r::App::Render::TextureManager::set_resource_resolver(std::make_unique<Slic3r::App::ResourceResolver>(resources_dir()));
 
 }
 

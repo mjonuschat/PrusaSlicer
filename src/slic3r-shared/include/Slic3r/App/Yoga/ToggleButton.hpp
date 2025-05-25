@@ -27,6 +27,9 @@ public:
 
     void align_text(bool right_align);
 
+protected:
+    void checked_updated_internal() override;
+
 private:
     Toggler*    m_toggler   { nullptr };
     Text*       m_label     { nullptr };

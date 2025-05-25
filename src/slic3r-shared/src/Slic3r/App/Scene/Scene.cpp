@@ -287,7 +287,7 @@ void Scene::generate_ao_noise(Render::Device& device) const
             noise_data.emplace_back(noise);
         }
 
-        m_ao.noise = device.context().texture_manager().create_empty("ao_noise", Render::PixelFormat::RGB32F, m_ao.noise_size, m_ao.noise_size);
+        m_ao.noise = device.context().texture_manager().get_or_create_dynamic("ao_noise", Render::PixelFormat::RGB32F, m_ao.noise_size, m_ao.noise_size);
         m_ao.noise->set_data(Render::PixelFormat::RGB32F, 0, m_ao.noise_size, m_ao.noise_size, (void*)noise_data.data());
 
         m_ao.pending_noise_size.reset();

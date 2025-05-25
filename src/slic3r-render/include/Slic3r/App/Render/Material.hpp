@@ -13,7 +13,7 @@
 
 namespace Slic3r::App::Render {
 
-using MaterialTextures = std::unordered_map<size_t, const Texture*>;
+using MaterialTextures = std::unordered_map<size_t, TexturePtr>;
 #ifdef SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
 using MaterialTextureBuffers = std::unordered_map<size_t, const TextureBuffer*>;
 #endif // SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
@@ -49,7 +49,7 @@ public:
         return *this;
     }
 
-    Material& set_texture(size_t slot, const Texture* texture)
+    Material& set_texture(size_t slot, TexturePtr texture)
     {
 #ifdef SLIC3R_RENDER_TEXTURE_BUFFER_SUPPORTED
         DEBUG_ASSERT(m_texture_buffers.find(slot) == m_texture_buffers.end());

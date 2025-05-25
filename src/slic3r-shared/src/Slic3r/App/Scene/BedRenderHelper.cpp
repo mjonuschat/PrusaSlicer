@@ -15,7 +15,7 @@ using namespace Slic3r::Biz;
 
 namespace Slic3r::App::Scene {
 
-Render::Texture* BedRenderHelper::texture(const Domain::Bed& bed, Render::TextureManager& manager)
+std::shared_ptr<Render::Texture> BedRenderHelper::texture(const Domain::Bed& bed, Render::TextureManager& manager)
 {
     const std::string& texture_filename = bed.texture_filename();
     if (texture_filename.empty())
@@ -26,7 +26,7 @@ Render::Texture* BedRenderHelper::texture(const Domain::Bed& bed, Render::Textur
     opts.flip_y = true;
     opts.gen_mipmaps = true;
 
-    Render::Texture* tex = manager.get(texture_filename, opts);
+    std::shared_ptr<Render::Texture> tex = manager.get_or_create_image(texture_filename, opts);
     tex->set_filtering(Render::TextureMinFilter::MipMapLinearLinear, Render::TextureMagFilter::Linear);
     return tex;
 }

@@ -130,7 +130,7 @@ private:
     void render_menu();
     void render_cog_menu();
     void render_edit_menu();
-    bool render_button(wchar_t icon, wchar_t icon_hovered, const std::string& label_id, const ImVec2& pos, FocusedItem focus, int tick = -1);
+    bool render_button(Render::Icon icon, Render::Icon icon_hovered, const std::string& label_id, const ImVec2& pos, FocusedItem focus, int tick = -1);
     void render_add_tick_menu();
     bool render_multi_extruders_menu(bool switch_current_code = false);
 

@@ -1,19 +1,16 @@
 #include "Slic3r/App/Yoga/PrinterSettingsButton.hpp"
+
 #include "Slic3r/App/Yoga/Text.hpp"
 
 namespace Slic3r::App::Yoga {
 
 PrinterSettingsButton::PrinterSettingsButton(const std::string& tooltip)
-    : LayoutButton("", '\0', tooltip)
+    : LayoutButton("", Render::Icon::None, tooltip)
 {
-    // invalidate max size to allow bigger icon
-    // this->set_min_size({ 40.f, 40.f });
-    this->set_checkable(true);
+    set_checkable(true);
 
-    set_icon_size({ 40.f, 40.f }); // !ToDo uncomment it, when this function will be in LayoutButton
-
-    size_t index = 1;// index of the hidden button default label
-    Item* texts_wrapper =insert_into_content(std::make_unique<Item>(), ++index);
+    size_t index = 1; // index of the hidden button default label
+    Item* texts_wrapper = insert_into_content(std::make_unique<Item>(), ++index);
     texts_wrapper->set_orientation(Orientation::Vertical);
     texts_wrapper->set_flex_grow(1.f);
     texts_wrapper->set_height_percent(80);
@@ -22,18 +19,28 @@ PrinterSettingsButton::PrinterSettingsButton(const std::string& tooltip)
     m_printer_name->set_font_type(Render::ImguiFontType::Bold);
     m_preset_name = texts_wrapper->emplace_back<Text>("");
 
-    Vec2f btn_sz{ 20.f, 20.f };
+    Vec2f btn_sz{20.f, 20.f};
 
-    m_printers_btn = static_cast<LayoutButton*>(insert_into_content(std::make_unique<LayoutButton>("", ImGui::ConfigContainer, "Show info about printer"), ++index));
+    m_printers_btn = static_cast<LayoutButton*>(insert_into_content(
+        std::make_unique<LayoutButton>("", Render::Icon::ConfigContainer, "Show info about printer"),
+        ++index
+    ));
+    m_printers_btn->set_self_align(YGAlignCenter);
     m_printers_btn->set_max_size(btn_sz);
 
-    m_cog_btn = static_cast<LayoutButton*>(insert_into_content(std::make_unique<LayoutButton>("", ImGui::PrintIconMarker, "Show extruder settings"), ++index));
+    m_cog_btn = static_cast<LayoutButton*>(insert_into_content(
+        std::make_unique<LayoutButton>("", Render::Icon::PrintIconMarker, "Show extruder settings"),
+        ++index
+    ));
+    m_cog_btn->set_self_align(YGAlignCenter);
     m_cog_btn->set_max_size(btn_sz);
 
     // Extra button is hidden by default.
     // It can be shown in the settings dialog under certain conditions.
     m_cog_btn->set_visible(false);
     m_printers_btn->set_visible(false);
+
+    set_background_color(ImColor(41, 41, 41));
 }
 
 void PrinterSettingsButton::set_printer_name(const std::string& printer_name)
@@ -69,10 +76,7 @@ void PrinterSettingsButton::set_visible_cog(bool is_visible)
     }
 }
 
-std::function<void()>& PrinterSettingsButton::on_cog()
-{
-    return m_cog_btn->callbacks().action;
-}
+std::function<void()>& PrinterSettingsButton::on_cog() { return m_cog_btn->callbacks().action; }
 
 std::function<void()>& PrinterSettingsButton::on_printer()
 {

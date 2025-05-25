@@ -26,22 +26,22 @@ PaintOnSupportsDialog::PaintOnSupportsDialog() : Dialog("Paint-on supports")
 
     std::unique_ptr<Item> tool_buttons = std::make_unique<Item>();
     tool_buttons->set_gap(gap_size);
-    LayoutButton* brush_button = tool_buttons->emplace_back<LayoutButton>("", ImGui::PrintIdle);
+    LayoutButton* brush_button = tool_buttons->emplace_back<LayoutButton>("", Render::Icon::PrintIdle);
     brush_button->set_min_size(button_size);
-    LayoutButton* magic_wand_button = tool_buttons->emplace_back<LayoutButton>("", ImGui::PrintIdle);
+    LayoutButton* magic_wand_button = tool_buttons->emplace_back<LayoutButton>("", Render::Icon::PrintIdle);
     magic_wand_button->set_min_size(button_size);
     add_new_row("Tool", std::move(tool_buttons));
 
     std::unique_ptr<Item> brush_shape_buttons = std::make_unique<Item>();
     brush_shape_buttons->set_gap(gap_size);
     LayoutButton* sphere_button =
-        brush_shape_buttons->emplace_back<LayoutButton>("", ImGui::PrintIdle);
+        brush_shape_buttons->emplace_back<LayoutButton>("", Render::Icon::PrintIdle);
     sphere_button->set_min_size(button_size);
     LayoutButton* circle_button =
-        brush_shape_buttons->emplace_back<LayoutButton>("", ImGui::PrintIdle);
+        brush_shape_buttons->emplace_back<LayoutButton>("", Render::Icon::PrintIdle);
     circle_button->set_min_size(button_size);
     LayoutButton* triangle_button =
-        brush_shape_buttons->emplace_back<LayoutButton>("", ImGui::PrintIdle);
+        brush_shape_buttons->emplace_back<LayoutButton>("", Render::Icon::PrintIdle);
     triangle_button->set_min_size(button_size);
     add_new_row("Brush shape", std::move(brush_shape_buttons));
 
@@ -83,9 +83,9 @@ PaintOnSupportsDialog::PaintOnSupportsDialog() : Dialog("Paint-on supports")
     help_row->set_align_content(YGAlign::YGAlignCenter);
     help_row->set_padding(5);
 
-    add_helper({ImGui::MouseLeft}, "Paint", help_row);
-    add_helper({ImGui::MouseRight}, "Block", help_row);
-    add_helper({ImGui::KeyShift, ImGui::MouseLeft}, "Remove", help_row);
+    add_helper({Render::Icon::MouseLeft}, "Paint", help_row);
+    add_helper({Render::Icon::MouseRight}, "Block", help_row);
+    add_helper({Render::Icon::KeyShift, Render::Icon::MouseLeft}, "Remove", help_row);
 }
 
 void PaintOnSupportsDialog::add_new_row(const std::string& title, std::unique_ptr<Item> controls)
@@ -102,7 +102,7 @@ void PaintOnSupportsDialog::add_new_row(const std::string& title, std::unique_pt
 }
 
 Item* PaintOnSupportsDialog::add_helper(
-    const std::vector<wchar_t> symbols, const std::string title, Item* help_row
+    const std::vector<Render::Icon> symbols, const std::string title, Item* help_row
 )
 {
     ImColor color = ImGui::GetColorU32(ImGuiCol_TextDisabled);
@@ -112,7 +112,7 @@ Item* PaintOnSupportsDialog::add_helper(
     help_group->set_gap(5);
 
     int index = 0;
-    for (const wchar_t symbol : symbols) {
+    for (const Render::Icon symbol : symbols) {
         Icon* icon = help_group->emplace_back<Icon>(symbol);
         icon->set_max_size(icon->min_size());
         if (++index < symbols.size()) {

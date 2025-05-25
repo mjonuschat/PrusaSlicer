@@ -726,22 +726,22 @@ static void draw_type_items(FdmViewer& viewer, FdmViewerWrapper& wrapper, const 
     }
 }
 
-static wchar_t icon_id(OptionType type)
+static Render::Icon icon_id(OptionType type)
 {
     switch (type)
     {
-    case OptionType::Travels:         { return ImGui::LegendTravel; }
-    case OptionType::Wipes:           { return ImGui::LegendWipe; }
-    case OptionType::Retractions:     { return ImGui::LegendRetract; }
-    case OptionType::Unretractions:   { return ImGui::LegendDeretract; }
-    case OptionType::Seams:           { return ImGui::LegendSeams; }
-    case OptionType::ToolChanges:     { return ImGui::LegendToolChanges; }
-    case OptionType::ColorChanges:    { return ImGui::LegendColorChanges; }
-    case OptionType::PausePrints:     { return ImGui::LegendPausePrints; }
-    case OptionType::CustomGCodes:    { return ImGui::LegendCustomGCodes; }
-    case OptionType::CenterOfGravity: { return ImGui::LegendCOG; }
-    case OptionType::ToolMarker:      { return ImGui::LegendToolMarker; }
-    default:                          { return L'\0'; }
+    case OptionType::Travels:         { return Render::Icon::LegendTravel; }
+    case OptionType::Wipes:           { return Render::Icon::LegendWipe; }
+    case OptionType::Retractions:     { return Render::Icon::LegendRetract; }
+    case OptionType::Unretractions:   { return Render::Icon::LegendDeretract; }
+    case OptionType::Seams:           { return Render::Icon::LegendSeams; }
+    case OptionType::ToolChanges:     { return Render::Icon::LegendToolChanges; }
+    case OptionType::ColorChanges:    { return Render::Icon::LegendColorChanges; }
+    case OptionType::PausePrints:     { return Render::Icon::LegendPausePrints; }
+    case OptionType::CustomGCodes:    { return Render::Icon::LegendCustomGCodes; }
+    case OptionType::CenterOfGravity: { return Render::Icon::LegendCOG; }
+    case OptionType::ToolMarker:      { return Render::Icon::LegendToolMarker; }
+    default:                          { return Render::Icon::None; }
     }
 }
 

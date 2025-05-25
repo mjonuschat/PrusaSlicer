@@ -343,11 +343,11 @@ private:
         void set_enabled_options(const std::vector<uint32_t>& enabled_options);
         void reset();
         size_t count() const { return m_count; }
-        std::pair<Render::Texture*, size_t> positions_tex(size_t id) const;
-        std::pair<Render::Texture*, size_t> heights_widths_angles_tex(size_t id) const;
-        std::pair<Render::Texture*, size_t> colors_tex(size_t id) const;
-        std::pair<Render::Texture*, size_t> enabled_segments_tex(size_t id) const;
-        std::pair<Render::Texture*, size_t> enabled_options_tex(size_t id) const;
+        std::pair<Render::TexturePtr, size_t> positions_tex(size_t id) const;
+        std::pair<Render::TexturePtr, size_t> heights_widths_angles_tex(size_t id) const;
+        std::pair<Render::TexturePtr, size_t> colors_tex(size_t id) const;
+        std::pair<Render::TexturePtr, size_t> enabled_segments_tex(size_t id) const;
+        std::pair<Render::TexturePtr, size_t> enabled_options_tex(size_t id) const;
 
         size_t max_texture_capacity() const { return m_width * m_height; }
 
@@ -371,11 +371,11 @@ private:
 
         struct Textures
         {
-            std::pair<Render::Texture*, size_t> positions{ nullptr, 0 };
-            std::pair<Render::Texture*, size_t> heights_widths_angles{ nullptr, 0 };
-            std::pair<Render::Texture*, size_t> colors{ nullptr, 0 };
-            std::pair<Render::Texture*, size_t> enabled_segments{ nullptr, 0 };
-            std::pair<Render::Texture*, size_t> enabled_options{ nullptr, 0 };
+            std::pair<Render::TexturePtr, size_t> positions{ nullptr, 0 };
+            std::pair<Render::TexturePtr, size_t> heights_widths_angles{ nullptr, 0 };
+            std::pair<Render::TexturePtr, size_t> colors{ nullptr, 0 };
+            std::pair<Render::TexturePtr, size_t> enabled_segments{ nullptr, 0 };
+            std::pair<Render::TexturePtr, size_t> enabled_options{ nullptr, 0 };
         };
 
         std::vector<Textures> m_tex_ids;

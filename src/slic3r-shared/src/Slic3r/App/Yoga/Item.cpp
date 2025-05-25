@@ -512,7 +512,7 @@ void Item::set_min_size(const Vec2f min_size)
 
 void Item::set_flex_grow(float flex_grow)
 {
-    if (m_flex_grow != flex_grow) {
+    if (!Domain::fuzzy_compare(m_flex_grow, flex_grow)) {
         m_flex_grow = flex_grow;
         YGNodeStyleSetFlexGrow(m_node, m_flex_grow);
         set_style_dirty();
@@ -530,7 +530,7 @@ void Item::set_direction(YGDirection direction)
 
 void Item::set_aspect_ratio(float aspect_ratio)
 {
-    if (m_aspect_ratio != aspect_ratio) {
+    if (!Domain::fuzzy_compare(m_aspect_ratio, aspect_ratio)) {
         m_aspect_ratio = aspect_ratio;
         YGNodeStyleSetAspectRatio(m_node, m_aspect_ratio);
         set_style_dirty();
@@ -596,7 +596,7 @@ void Item::set_align_content(YGAlign align_content)
 
 void Item::set_z(float z)
 {
-    if (m_z != z) {
+    if (!Domain::fuzzy_compare(m_z, z)) {
         m_z = z;
         if (m_parent) {
             m_parent->update_children_render_order();
@@ -705,10 +705,10 @@ void Item::render_debug(Vec2f pos, Vec2f size)
     if (m_debug_border) {
         ImDrawList* draw_list = ImGui::GetForegroundDrawList();
         ImRect rect(to_im(pos), to_im(pos + size));
-        SPDLOG_INFO(
-            "debug {}:{} -> {}:{} pos {}:{} size {}:{}", rect.Min.x, rect.Min.y, rect.Max.x,
-            rect.Max.y, pos.x(), pos.y(), size.x(), size.y()
-        );
+        // SPDLOG_INFO(
+        //     "debug {}:{} -> {}:{} pos {}:{} size {}:{}", rect.Min.x, rect.Min.y, rect.Max.x,
+        //     rect.Max.y, pos.x(), pos.y(), size.x(), size.y()
+        // );
         draw_list->AddRectFilled(rect.Min, rect.Max, IM_COL32(255, 0, 0, 128), false);
         // ImGui::RenderFrame(to_im(pos), to_im(pos + size), IM_COL32(20, 220, 200, 25), false);
     }

@@ -3,6 +3,8 @@
 #include "WithInternal.hpp"
 #include "Types.hpp"
 
+#include <vector>
+
 namespace Slic3r::App::Render {
 
 class Device;
@@ -32,14 +34,14 @@ public:
     ~Framebuffer() override;
 
     FramebufferTarget target() const { return m_target; }
-    const Texture* color_attachment(size_t id) const;
-    const Texture* depth() const;
-    const Texture* stencil() const;
+    const TexturePtr color_attachment(size_t id) const;
+    const TexturePtr depth() const;
+    const TexturePtr stencil() const;
 
 private:
     Device& m_device;
     FramebufferTarget m_target;
-    std::vector<std::unique_ptr<Texture>> m_textures;
+    std::vector<TexturePtr> m_textures;
 };
 
 } // namespace Slic3r::App::Render

@@ -24,7 +24,7 @@ public:
      * @note The filename of the texture is specified into the bed, see Slic3r::Domain::Bed definition.
      * @note The texture size is equal to half of the max texture size supported by the graphic card.
      */
-    [[nodiscard]] static Render::Texture* texture(const Domain::Bed& bed, Render::TextureManager& manager);
+    [[nodiscard]] static std::shared_ptr<Render::Texture> texture(const Domain::Bed& bed, Render::TextureManager& manager);
 
     /**
      * @brief Return the geometry of the bed grid.

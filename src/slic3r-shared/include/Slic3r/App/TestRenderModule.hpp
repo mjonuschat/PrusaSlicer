@@ -43,7 +43,7 @@ private:
     std::unique_ptr<Render::Geometry> m_geometry2;
     Render::Shader* m_shader{nullptr};
     Render::Shader* m_shader2{nullptr};
-    Render::Texture* m_tex{nullptr};
+    std::shared_ptr<Render::Texture> m_tex;
 
     static constexpr size_t BUF_SIZE = 256;
     char m_text_buffer[BUF_SIZE];

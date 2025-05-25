@@ -109,15 +109,15 @@ void PlaterRenderModule::init_scene_layout()
 
     // init toolbars
     m_layout->add_toolbar_item_panel(
-        ToolbarID::Top, ImGui::ToolbarObjects, "Object List", "Ctrl + Alt + O", {}, m_object_list.get()
+        ToolbarID::Top, Render::Icon::ToolbarObjects, "Object List", "Ctrl + Alt + O", {}, m_object_list.get()
     );
 
     m_layout->add_toolbar_item_panel(
-        ToolbarID::Bottom, ImGui::ToolbarHistory, "Actions History", "Shift + Alt + H", {}, m_history.get()
+        ToolbarID::Bottom, Render::Icon::ToolbarHistory, "Actions History", "Shift + Alt + H", {}, m_history.get()
     );
 
     m_layout->add_toolbar_item(
-        ToolbarID::Middle, ImGui::ToolbarAdd, "Add...", "Ctrl + I",
+        ToolbarID::Middle, Render::Icon::ToolbarAdd, "Add...", "Ctrl + I",
         {.action =
              [this]() {
                  auto& scene_interactor = m_project_interactor.scene_interactor();
@@ -135,17 +135,17 @@ void PlaterRenderModule::init_scene_layout()
     );
     //    m_layout.add_toolbar_item(ToolbarID::Middle, ImGui::ToolbarArrange, "Arrange", "A", { []() {} });
     m_toolbar_move = m_layout->add_toolbar_item_gizmo(
-        ToolbarID::Middle, ImGui::ToolbarMove, "Move", "M",
+        ToolbarID::Middle, Render::Icon::ToolbarMove, "Move", "M",
         {.action = [this]() { toggle_activate_tool(Scene::ToolType::Translation); }},
         m_translation_gizmo
     );
     m_toolbar_rotate = m_layout->add_toolbar_item_gizmo(
-        ToolbarID::Middle, ImGui::ToolbarRotation, "Rotate", "R",
+        ToolbarID::Middle, Render::Icon::ToolbarRotation, "Rotate", "R",
         {.action = [this]() { toggle_activate_tool(Scene::ToolType::Rotation); }},
         m_rotation_gizmo
     );
     m_toolbar_paint_on_supports = m_layout->add_toolbar_item_gizmo(
-        ToolbarID::Middle, ImGui::ToolbarPaintOnSupports, "Paint-on supports", "L",
+        ToolbarID::Middle, Render::Icon::ToolbarPaintOnSupports, "Paint-on supports", "L",
         {.action = [this]() { toggle_activate_tool(Scene::ToolType::PaintOnSupportsGizmo); }},
         m_paint_on_supports_gizmo
     );

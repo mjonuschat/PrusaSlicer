@@ -38,7 +38,7 @@ Dialog::Dialog(const std::string title)
     buttons_rect->set_width_percent(50);
     buttons_rect->set_rounding(0);
 
-    m_close_button = buttons_rect->emplace_back<LayoutButton>("", ImGui::PrintIdle);
+    m_close_button = buttons_rect->emplace_back<LayoutButton>("", Render::Icon::PrintIdle);
     m_close_button->set_min_size({20, 20});
     m_close_button->callbacks().action = [this] { set_visible(false); };
 

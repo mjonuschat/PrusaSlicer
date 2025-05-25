@@ -1,8 +1,10 @@
 #include "Slic3r/App/Render/ImguiFontHelper.hpp"
+
 #include "Slic3r/App/Render/TextureManager.hpp"
 #include "Slic3r/App/Render/Device.hpp"
 #include "Slic3r/Exception.hpp"
-#include <Slic3r/App/Render/Context.hpp>
+#include "Slic3r/App/Render/Context.hpp"
+#include "Slic3r/App/Render/ImguiIconHelper.hpp"
 
 #include <Slic3r/Assert.hpp>
 #include <Slic3r/Log.hpp>
@@ -53,163 +55,159 @@ static const ImWchar ranges_keyboard_shortcuts[] =
 };
 #endif // __APPLE__
 
-static const std::vector<std::pair<const wchar_t, std::string>> FONT_ICONS = {
-    { ImGui::PrintIconMarker              , "cog"                            },
-    { ImGui::PrinterIconMarker            , "printer"                        },
-    { ImGui::PrinterSlaIconMarker         , "sla_printer"                    },
-    { ImGui::FilamentIconMarker           , "spool"                          },
-    { ImGui::MaterialIconMarker           , "resin"                          },
-    { ImGui::MinimalizeButton             , "notification_minimalize"        },
-    { ImGui::MinimalizeHoverButton        , "notification_minimalize_hover"  },
-    { ImGui::RightArrowButton             , "notification_right"             },
-    { ImGui::RightArrowHoverButton        , "notification_right_hover"       },
-    { ImGui::PreferencesButton            , "notification_preferences"       },
-    { ImGui::PreferencesHoverButton       , "notification_preferences_hover" },
-    { ImGui::SliderFloatEditBtnIcon       , "edit_button"                    },
-    { ImGui::SliderFloatEditBtnPressedIcon, "edit_button_pressed"            },
-    { ImGui::ClipboardBtnIcon             , "copy_menu"                      },
-    { ImGui::ExpandBtn                    , "expand_btn"                     },
-    { ImGui::CollapseBtn                  , "collapse_btn"                   },
-    { ImGui::RevertButton                 , "undo"                           },
-    { ImGui::WarningMarkerSmall           , "notification_warning"           },
-    { ImGui::InfoMarkerSmall              , "notification_info"              },
-    { ImGui::PlugMarker                   , "plug"                           },
-    { ImGui::DowelMarker                  , "dowel"                          },
-    { ImGui::SnapMarker                   , "snap"                           },
-    { ImGui::HorizontalHide               , "horizontal_hide"                },
-    { ImGui::HorizontalShow               , "horizontal_show"                },
-    { ImGui::PrintIdle                    , "print_idle"                     },
-    { ImGui::PrintRunning                 , "print_running"                  },
-    { ImGui::PrintFinished                , "print_finished"                 },
-    { ImGui::EyeOpen                      , "dont_print"                     },
-    { ImGui::EyeClosed                    , "dont_print_active"              },
-    { ImGui::SolidPartVolume              , "union"                          },
-    { ImGui::NegativeVolume               , "subtract"                       },
-    { ImGui::ModifierVolume               , "exclude"                        },
-    { ImGui::SupportBlocker               , "support_blocker"                },
-    { ImGui::SupportModifier              , "support_enforcer"               },
-    { ImGui::TextSolidPartVolume          , "add_text_part"                  },
-    { ImGui::TextNegativeVolume           , "add_text_negative"              },
-    { ImGui::TextModifierVolume           , "add_text_modifier"              },
-    { ImGui::SvgSolidPartVolume           , "svg_part"                       },
-    { ImGui::SvgNegativeVolume            , "svg_negative"                   },
-    { ImGui::SvgModifierVolume            , "svg_modifier"                   },
-    { ImGui::ObjectIcon                   , "object_icon"                    },
-    { ImGui::HRModifier                   , "edit_layers_all"                },
-    { ImGui::CustomSupports               , "fdm_supports"                   },
-    { ImGui::CustomSeam                   , "seam_"                          },
-    { ImGui::CutConnectors                , "cut_connectors"                 },
-    { ImGui::MmSegmentation               , "mmu_segmentation_"              },
-    { ImGui::Sinking                      , "sinking"                        },
-    { ImGui::FuzzySkin                    , "fuzzy_skin_painting"            },
-    { ImGui::BedIcon                      , "bed_object_list"                },
-    { ImGui::Details                      , "details"                        },
-    { ImGui::OpenArrow                    , "down_arrow"                     },
-    { ImGui::CloseArrow                   , "right_arrow"                    },
-    { ImGui::ConfigContainer              , "config_container"               },
-    { ImGui::InstancesIcon                , "instances_icon"                 },
-    { ImGui::SceneMap                      , "map"                            },
-    { ImGui::AddBedIcon                   , "add_bed"                        },
-    { ImGui::OverridesMarker              , "overrides_marker"               },
-    { ImGui::AllBeds                      , "all_beds"                       },
-    { ImGui::SettingsSet                  , "settings_set"                   },
+static const std::unordered_set<Icon> FONT_ICONS = {
+    Icon::PrintIconMarker              ,
+    Icon::PrinterIconMarker            ,
+    Icon::PrinterSlaIconMarker         ,
+    Icon::FilamentIconMarker           ,
+    Icon::MaterialIconMarker           ,
+    Icon::MinimalizeButton             ,
+    Icon::MinimalizeHoverButton        ,
+    Icon::RightArrowButton             ,
+    Icon::RightArrowHoverButton        ,
+    Icon::PreferencesButton            ,
+    Icon::PreferencesHoverButton       ,
+    Icon::SliderFloatEditBtnIcon       ,
+    Icon::SliderFloatEditBtnPressedIcon,
+    Icon::ClipboardBtnIcon             ,
+    Icon::ExpandBtn                    ,
+    Icon::CollapseBtn                  ,
+    Icon::RevertButton                 ,
+    Icon::WarningMarkerSmall           ,
+    Icon::InfoMarkerSmall              ,
+    Icon::PlugMarker                   ,
+    Icon::DowelMarker                  ,
+    Icon::SnapMarker                   ,
+    Icon::HorizontalHide               ,
+    Icon::HorizontalShow               ,
+    Icon::PrintIdle                    ,
+    Icon::PrintRunning                 ,
+    Icon::PrintFinished                ,
+    Icon::EyeOpen                      ,
+    Icon::EyeClosed                    ,
+    Icon::SolidPartVolume              ,
+    Icon::NegativeVolume               ,
+    Icon::ModifierVolume               ,
+    Icon::SupportBlocker               ,
+    Icon::SupportModifier              ,
+    Icon::TextSolidPartVolume          ,
+    Icon::TextNegativeVolume           ,
+    Icon::TextModifierVolume           ,
+    Icon::SvgSolidPartVolume           ,
+    Icon::SvgNegativeVolume            ,
+    Icon::SvgModifierVolume            ,
+    Icon::ObjectIcon                   ,
+    Icon::HRModifier                   ,
+    Icon::CustomSupports               ,
+    Icon::CustomSeam                   ,
+    Icon::CutConnectors                ,
+    Icon::MmSegmentation               ,
+    Icon::Sinking                      ,
+    Icon::FuzzySkin                    ,
+    Icon::BedIcon                      ,
+    Icon::Details                      ,
+    Icon::OpenArrow                    ,
+    Icon::CloseArrow                   ,
+    Icon::ConfigContainer              ,
+    Icon::InstancesIcon                ,
+    Icon::SceneMap                      ,
+    Icon::AddBedIcon                   ,
+    Icon::OverridesMarker              ,
+    Icon::AllBeds                      ,
+    Icon::SettingsSet                  ,
 };
 
-static const std::vector<std::pair<const wchar_t, std::string>> FONT_ICONS_MEDIUM = {
+static const std::unordered_set<Icon> FONT_ICONS_MEDIUM = {
     // double slider icons
-    { ImGui::Lock             , "lock_closed"       },
-    { ImGui::LockHovered      , "lock_closed_f"     },
-    { ImGui::Unlock           , "lock_open"         },
-    { ImGui::UnlockHovered    , "lock_open_f"       },
-    { ImGui::DSRevert         , "undo_r"            },
-    { ImGui::DSRevertHovered  , "undo_f"            },
-    { ImGui::DSRevertDisabled , "undo_disabled"     },
-    { ImGui::DSSettings       , "cog_"              },
-    { ImGui::DSSettingsHovered, "cog_f"             },
-    { ImGui::ErrorTick        , "error_tick"        },
-    { ImGui::ErrorTickHovered , "error_tick_f"      },
-    { ImGui::PausePrint       , "pause_print"       },
-    { ImGui::PausePrintHovered, "pause_print_f"     },
-    { ImGui::EditGCode        , "edit_gcode"        },
-    { ImGui::EditGCodeHovered , "edit_gcode_f"      },
-    { ImGui::RemoveTick       , "colorchange_del"   },
-    { ImGui::RemoveTickHovered, "colorchange_del_f" },
+    Icon::Lock             ,
+    Icon::LockHovered      ,
+    Icon::Unlock           ,
+    Icon::UnlockHovered    ,
+    Icon::DSRevert         ,
+    Icon::DSRevertHovered  ,
+    Icon::DSRevertDisabled ,
+    Icon::DSSettings       ,
+    Icon::DSSettingsHovered,
+    Icon::ErrorTick        ,
+    Icon::ErrorTickHovered ,
+    Icon::PausePrint       ,
+    Icon::PausePrintHovered,
+    Icon::EditGCode        ,
+    Icon::EditGCodeHovered ,
+    Icon::RemoveTick       ,
+    Icon::RemoveTickHovered,
     // sidebar icons
-    { ImGui::SavePrint           , "save_print"                 },
-    { ImGui::SavePrintToFlash    , "save_print_to_flash"        },
-    { ImGui::SavePrintToLocal    , "save_print_to_local"        },
-    { ImGui::SavePrintAddBookmark, "save_print_add_bookmark"    },
+    Icon::SavePrint           ,
+    Icon::SavePrintToFlash    ,
+    Icon::SavePrintToLocal    ,
+    Icon::SavePrintAddBookmark,
 };
 
-static const std::vector<std::pair<const wchar_t, std::string>> FONT_ICONS_LARGE = {
-    { ImGui::LegendTravel            , "legend_travel"                    },
-    { ImGui::LegendWipe              , "legend_wipe"                      },
-    { ImGui::LegendRetract           , "legend_retract"                   },
-    { ImGui::LegendDeretract         , "legend_deretract"                 },
-    { ImGui::LegendSeams             , "legend_seams"                     },
-    { ImGui::LegendToolChanges       , "legend_toolchanges"               },
-    { ImGui::LegendColorChanges      , "legend_colorchanges"              },
-    { ImGui::LegendPausePrints       , "legend_pauseprints"               },
-    { ImGui::LegendCustomGCodes      , "legend_customgcodes"              },
-    { ImGui::LegendCOG               , "legend_cog"                       },
-    { ImGui::LegendShells            , "legend_shells"                    },
-    { ImGui::LegendToolMarker        , "legend_toolmarker"                },
-    { ImGui::CloseNotifButton        , "notification_close"               },
-    { ImGui::CloseNotifHoverButton   , "notification_close_hover"         },
-    { ImGui::EjectButton             , "notification_eject_sd"            },
-    { ImGui::EjectHoverButton        , "notification_eject_sd_hover"      },
-    { ImGui::WarningMarker           , "notification_warning"             },
-    { ImGui::ErrorMarker             , "notification_error"               },
-    { ImGui::CancelButton            , "notification_cancel"              },
-    { ImGui::CancelHoverButton       , "notification_cancel_hover"        },
-//    { ImGui::SinkingObjectMarker     , "move"                             },
-//    { ImGui::CustomSupportsMarker    , "fdm_supports"                     },
-//    { ImGui::CustomSeamMarker        , "seam"                             },
-//    { ImGui::MmuSegmentationMarker   , "mmu_segmentation"                 },
-//    { ImGui::VarLayerHeightMarker    , "layers"                           },
-    { ImGui::DocumentationButton     , "notification_documentation"       },
-    { ImGui::DocumentationHoverButton, "notification_documentation_hover" },
-    { ImGui::InfoMarker              , "notification_info"                },
-    { ImGui::PlayButton              , "notification_play"                },
-    { ImGui::PlayHoverButton         , "notification_play_hover"          },
-    { ImGui::PauseButton             , "notification_pause"               },
-    { ImGui::PauseHoverButton        , "notification_pause_hover"         },
-    { ImGui::OpenButton              , "notification_open"                },
-    { ImGui::OpenHoverButton         , "notification_open_hover"          },
-    { ImGui::SlaViewOriginal         , "sla_view_original"                },
-    { ImGui::SlaViewProcessed        , "sla_view_processed"               },
-
-    { ImGui::MouseLeft                    , "mouse_left"                     },
-    { ImGui::MouseRight                   , "mouse_right"                    },
-    { ImGui::KeyShift                     , "key_shift"                      },
+static const std::unordered_set<Icon> FONT_ICONS_LARGE = {
+    Icon::LegendTravel            ,
+    Icon::LegendWipe              ,
+    Icon::LegendRetract           ,
+    Icon::LegendDeretract         ,
+    Icon::LegendSeams             ,
+    Icon::LegendToolChanges       ,
+    Icon::LegendColorChanges      ,
+    Icon::LegendPausePrints       ,
+    Icon::LegendCustomGCodes      ,
+    Icon::LegendCOG               ,
+    Icon::LegendShells            ,
+    Icon::LegendToolMarker        ,
+    Icon::CloseNotifButton        ,
+    Icon::CloseNotifHoverButton   ,
+    Icon::EjectButton             ,
+    Icon::EjectHoverButton        ,
+    Icon::WarningMarker           ,
+    Icon::ErrorMarker             ,
+    Icon::CancelButton            ,
+    Icon::CancelHoverButton       ,
+//    Icon::SinkingObjectMarker     ,
+//    Icon::CustomSupportsMarker    ,
+//    Icon::CustomSeamMarker        ,
+//    Icon::MmuSegmentationMarker   ,
+//    Icon::VarLayerHeightMarker    ,
+    Icon::DocumentationButton     ,
+    Icon::DocumentationHoverButton,
+    Icon::InfoMarker              ,
+    Icon::PlayButton              ,
+    Icon::PlayHoverButton         ,
+    Icon::PauseButton             ,
+    Icon::PauseHoverButton        ,
+    Icon::OpenButton              ,
+    Icon::OpenHoverButton         ,
+    Icon::SlaViewOriginal         ,
+    Icon::SlaViewProcessed        ,
 };
- 
-static const std::vector<std::pair<const wchar_t, std::string>> FONT_ICONS_TOOLBAR = {
+
+static const std::unordered_set<Icon> FONT_ICONS_TOOLBAR = {
     // toolbar icons
-    { ImGui::ToolbarObjects          , "toolbar_objects"                  },
-    { ImGui::ToolbarAdd              , "toolbar_add"                      },
-    { ImGui::ToolbarArrange          , "toolbar_arrange"                  },
-    { ImGui::ToolbarHistory          , "toolbar_history"                  },
-    { ImGui::ToolbarEllipsis         , "toolbar_ellipsis"                 },
-    { ImGui::ToolbarGraph            , "toolbar_graph"                    },
-    { ImGui::ToolbarMove             , "toolbar_move"                     },
-    { ImGui::ToolbarRotation         , "toolbar_rotation"                 },
-    { ImGui::ToolbarGCode            , "toolbar_gcode"                    },
-    { ImGui::ToolbarPaintOnSupports  , "toolbar_paint_on_supports"        },
+    Icon::ToolbarObjects          ,
+    Icon::ToolbarAdd              ,
+    Icon::ToolbarArrange          ,
+    Icon::ToolbarHistory          ,
+    Icon::ToolbarEllipsis         ,
+    Icon::ToolbarGraph            ,
+    Icon::ToolbarMove             ,
+    Icon::ToolbarRotation         ,
+    Icon::ToolbarGCode            ,
+    Icon::ToolbarPaintOnSupports  ,
 };
  
-static const std::vector<std::pair<const wchar_t, std::string>> FONT_ICONS_PRINTER = {
+static const std::unordered_set<Icon> FONT_ICONS_PRINTER = {
     // printer icons
-    { ImGui::PrinterNEXT             , "printer_NEXT"                     },
-    { ImGui::BedThumbnail            , "bed_thumbnail"                    },
+    Icon::PrinterNEXT             ,
+    Icon::BedThumbnail            ,
 };
  
-static const std::vector<std::pair<const wchar_t, std::string>> FONT_ICONS_EXTRA_LARGE = {
-    { ImGui::ClippyMarker         , "notification_clippy"       },
-    { ImGui::SliceAllBtnIcon      , "slice_all"                 },
-    { ImGui::WarningMarkerDisabled, "notification_warning_grey" },
-    { ImGui::PrusaSlicerIcon      , "PrusaSlicer"               },
-    { ImGui::CubeViewIcon         , "view_cube_test"            },// !tmp, remove after view cube implementation
+static const std::unordered_set<Icon> FONT_ICONS_EXTRA_LARGE = {
+    Icon::ClippyMarker         ,
+    Icon::SliceAllBtnIcon      ,
+    Icon::WarningMarkerDisabled,
+    Icon::PrusaSlicerIcon      ,
+    Icon::CubeViewIcon
 };
 
 ImguiFontHelper::ImguiFontHelper(Device& device)
@@ -266,63 +264,30 @@ static void add_icons_rect_to_font_texture(const ImguiFontHelper& helper, ImguiL
     ImGuiIO& io = ImGui::GetIO();
 
     float advance = helper.icon_advance();
+
+    auto add_icons = [font, &language_data, &io, advance](const int px, const std::unordered_set<Icon>& icons) {
+        for (const Icon icon : icons) {
+            wchar_t icon_char = static_cast<wchar_t>(icon);
+            language_data.custom_glyph_rects_ids[icon_char] =
+                io.Fonts->AddCustomRectFontGlyph(font, icon_char, px, px, advance + px);
+        }
+    };
  
     // add rectangles for the icons to the font atlas
-    int px = helper.icon_size();
-    for (auto& icon : FONT_ICONS) {
-        language_data.custom_glyph_rects_ids[icon.first] =
-            io.Fonts->AddCustomRectFontGlyph(font, icon.first, px, px, advance + px);
-    }
-
-    px = helper.icon_medium_size();
-    for (auto& icon : FONT_ICONS_MEDIUM) {
-        language_data.custom_glyph_rects_ids[icon.first] =
-            io.Fonts->AddCustomRectFontGlyph(font, icon.first, px, px, advance + px);
-    }
-
-    px = helper.icon_large_size();
-    for (auto& icon : FONT_ICONS_LARGE) {
-        language_data.custom_glyph_rects_ids[icon.first] =
-            io.Fonts->AddCustomRectFontGlyph(font, icon.first, px, px, advance + px);
-    }
-
-    px = helper.icon_extra_large_size();
-    for (auto& icon : FONT_ICONS_EXTRA_LARGE) {
-        language_data.custom_glyph_rects_ids[icon.first] =
-            io.Fonts->AddCustomRectFontGlyph(font, icon.first, px, px, advance + px);
-    }
-
-    px = helper.icon_toolbar_size();
-    for (auto& icon : FONT_ICONS_TOOLBAR) {
-        language_data.custom_glyph_rects_ids[icon.first] =
-            io.Fonts->AddCustomRectFontGlyph(font, icon.first, px, px, advance + px);
-    }
-
-    px = helper.icon_toolbar_size();
-    for (auto& icon : FONT_ICONS_PRINTER) {
-        language_data.custom_glyph_rects_ids[icon.first] =
-            io.Fonts->AddCustomRectFontGlyph(font, icon.first, px, px, advance + px);
-    }
+    add_icons(helper.icon_size(), FONT_ICONS);
+    add_icons(helper.icon_medium_size(), FONT_ICONS_MEDIUM);
+    add_icons(helper.icon_large_size(), FONT_ICONS_LARGE);
+    add_icons(helper.icon_extra_large_size(), FONT_ICONS_EXTRA_LARGE);
+    add_icons(helper.icon_toolbar_size(), FONT_ICONS_TOOLBAR);
+    add_icons(helper.icon_toolbar_size(), FONT_ICONS_PRINTER);
 }
 
-enum class IconFile
-{
-    SVG = 0,
-    PNG,
-};
-
-static void load_icon_from_file(const std::pair<const wchar_t, std::string>& icon, int icon_sz, int rect_id, int tex_width,
-    unsigned char* pixels, IconFile ext = IconFile::SVG) {
+static void load_icon_from_file(const std::string& icon_name, int icon_sz, int rect_id, int tex_width,
+    unsigned char* pixels) {
     ImGuiIO& io = ImGui::GetIO();
     if (const ImFontAtlasCustomRect* rect = io.Fonts->GetCustomRectByIndex(rect_id)) {
         DEBUG_ASSERT(rect->Width == icon_sz);
         DEBUG_ASSERT(rect->Height == icon_sz);
-
-        std::string icon_name = icon.second;
-        if (ext == IconFile::SVG)
-            icon_name += ".svg";
-        else if (ext == IconFile::PNG)
-            icon_name += ".png";
 
         std::string filename = Slic3r::var(icon_name);
         auto* codec = ImageCodecManager::instance().find_loader(filename);
@@ -358,47 +323,21 @@ static void load_icon_from_file(const std::pair<const wchar_t, std::string>& ico
     }
 }
 
-static void load_icon_from_svg(const std::pair<const wchar_t, std::string>& icon, int icon_sz, int rect_id, int tex_width,
-    unsigned char* pixels) {
-    load_icon_from_file(icon, icon_sz, rect_id, tex_width, pixels, IconFile::SVG);
-}
-
-static void load_icon_from_png(const std::pair<const wchar_t, std::string>& icon, int icon_sz, int rect_id, int tex_width,
-    unsigned char* pixels) {
-    load_icon_from_file(icon, icon_sz, rect_id, tex_width, pixels, IconFile::PNG);
-}
-
 static void load_icons_into_font_texture(const ImguiFontHelper& helper, int& rect_id, int tex_width, unsigned char* pixels)
 {
+    auto load_icons = [&](const int px, const std::unordered_set<Icon>& icons) {
+        for (const Icon icon : icons) {
+            load_icon_from_file(ImguiIconHelper::icon_path(icon), px, rect_id++, tex_width, pixels);
+        }
+    };
+
     // Fill rectangles from the SVG-icons
-    int px = helper.icon_size();
-    for (auto icon : FONT_ICONS) {
-        load_icon_from_svg(icon, px, rect_id++, tex_width, pixels);
-    }
-
-    px = helper.icon_medium_size();
-    for (auto icon : FONT_ICONS_MEDIUM) {
-        load_icon_from_svg(icon, px, rect_id++, tex_width, pixels);
-    }
-
-    px = helper.icon_large_size();
-    for (auto icon : FONT_ICONS_LARGE) {
-        load_icon_from_svg(icon, px, rect_id++, tex_width, pixels);
-    }
-
-    px = helper.icon_extra_large_size();
-    for (auto icon : FONT_ICONS_EXTRA_LARGE) {
-        load_icon_from_svg(icon, px, rect_id++, tex_width, pixels);
-    }
-
-    px = helper.icon_toolbar_size();
-    for (auto icon : FONT_ICONS_TOOLBAR) {
-        load_icon_from_svg(icon, px, rect_id++, tex_width, pixels);
-    }
-
-    for (auto icon : FONT_ICONS_PRINTER) {
-        load_icon_from_png(icon, px, rect_id++, tex_width, pixels);
-    }
+    load_icons(helper.icon_size(), FONT_ICONS);
+    load_icons(helper.icon_medium_size(), FONT_ICONS_MEDIUM);
+    load_icons(helper.icon_large_size(), FONT_ICONS_LARGE);
+    load_icons(helper.icon_extra_large_size(), FONT_ICONS_EXTRA_LARGE);
+    load_icons(helper.icon_toolbar_size(), FONT_ICONS_TOOLBAR);
+    load_icons(helper.icon_toolbar_size(), FONT_ICONS_PRINTER);
 }
 
 static ImFont* load_font(const std::string& filename, const std::string& filename_cjk, const ImguiLanguageData& language_data, const ImVector<ImWchar>& ranges,
@@ -486,10 +425,10 @@ void ImguiFontHelper::create_font_texture()
         load_icons_into_font_texture(*this, rect_id, width, pixels);
     }
 
-    m_font_texture = m_device.context().texture_manager().create_empty("imgui_font", PixelFormat::RGBA8, width, height);
+    m_font_texture = m_device.context().texture_manager().get_or_create_dynamic("imgui_font", PixelFormat::RGBA8, width, height);
     m_font_texture->set_data(PixelFormat::RGBA8, 0, width, height, pixels);
 //    m_textures[TextureType::Font]->set_filtering(Texture::MinFilter::Linear, Texture::MagFilter::Linear);
-    io.Fonts->SetTexID((ImTextureID)(intptr_t)m_font_texture);
+    io.Fonts->SetTexID((ImTextureID)(intptr_t)m_font_texture.get());
 }
 
 } // namespace Slic3r::App::Render

@@ -21,7 +21,7 @@ public:
         std::function<void(bool checked)> checked_changed{nullptr};
     };
 
-    explicit AbstractButton(wchar_t icon, const std::string& tooltip = {});
+    explicit AbstractButton(const std::string& tooltip = {});
 
     void process_events(Vec2f pos, Vec2f size) override;
 
@@ -51,12 +51,14 @@ protected:
 protected:
     Tooltip* m_tooltip = nullptr;
 
+private:
+    void set_hovered(bool hovered);
+
+private:
     bool m_has_arrow = false;
-    bool m_enabled = true;
     bool m_checkable = false;
     bool m_checked = false;
     bool m_hovered = false;
-    wchar_t m_icon = '\0';
 
     std::string m_shortcut;
     Callbacks m_callbacks;

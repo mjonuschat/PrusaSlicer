@@ -13,7 +13,7 @@ CubeView::CubeView() : Window("cube_view") {
 void CubeView::render_body(Domain::Vec2f pos, Domain::Vec2f size)
 {
     // !!! temporary code. Needed tobe changed for real view cube
-    Imgui::icon_button(ImGui::CubeViewIcon, to_im(size));
+    Imgui::icon_button(Render::Icon::CubeViewIcon, to_im(size));
 }
 
 }// Slic3r::App namespace

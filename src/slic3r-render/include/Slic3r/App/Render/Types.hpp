@@ -1,10 +1,12 @@
 #pragma once
 
-#include <vector>
+#include <memory>
 
 namespace Slic3r::App::Render {
 
 class ScreenInfo;
+class Texture;
+using TexturePtr = std::shared_ptr<Texture>;
 
 struct RgbaF {
     float r;
@@ -227,5 +229,29 @@ template <> struct IndexTypeTraits<unsigned int> {
     static constexpr IndexType index_type = IndexType::UInt;
 };
 
+struct Size
+{
+    enum class ScaleMode {
+        IgnoreAspectRatio,
+        KeepAspectRatio, // Fit Inside
+    };
+
+    Size() = default;
+    Size(int width, int height);
+    Size(const Size& size);
+    Size& operator=(const Size& size);
+
+
+    int width = 0;
+    int height = 0;
+
+    bool operator==(const Size& other) const;
+    bool operator!=(const Size& other) const;
+
+    void scale(const Size& scale_to, ScaleMode mode = ScaleMode::KeepAspectRatio);
+    Size scaled(const Size& scale_to, ScaleMode mode = ScaleMode::KeepAspectRatio) const;
+    //! \return space taken by this size (width * height)
+    int space() const;
+};
 
 }

@@ -121,4 +121,16 @@ concept UnscaledVector = (
     std::is_same_v<typename T::Scalar, float> || std::is_same_v<typename T::Scalar, double>
 );
 
+/**
+ * @brief fuzzy_compare two numbers using relative comparison
+ * @return true if two numbers are assumed same, false otherwise
+ * @note is not the same as is_approx which only does absolute comparison
+ */
+template<typename T>
+requires std::floating_point<T>
+bool fuzzy_compare(T a, T b, T epsilon = std::numeric_limits<T>::epsilon() * 100)
+{
+    return std::fabs(a - b) <= epsilon * std::fmax(std::fabs(a), std::fabs(b));
 }
+
+} // Slic3r::Domain

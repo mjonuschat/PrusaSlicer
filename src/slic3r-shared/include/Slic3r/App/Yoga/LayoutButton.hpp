@@ -12,6 +12,7 @@ namespace Slic3r::App::Yoga {
 class Rectangle;
 class Icon;
 class Text;
+class Icon;
 
 class LayoutButton : public AbstractButton
 {
@@ -23,8 +24,8 @@ public:
     };
 
     LayoutButton(const std::string& label);
-    LayoutButton(const std::string& label, wchar_t icon);
-    LayoutButton(const std::string& label, wchar_t icon, const std::string& tooltip);
+    LayoutButton(const std::string& label, Render::Icon icon);
+    LayoutButton(const std::string& label, Render::Icon icon, const std::string& tooltip);
 
     const std::string& label() const;
     void set_label(const std::string& label);
@@ -32,16 +33,20 @@ public:
     const ImColor& background_color() const;
     void set_background_color(const ImColor& color);
 
+    const ImColor& background_color_checked() const;
+    void set_background_color_checked(const ImColor& background_color_checked);
+
     Render::ImguiFontType label_font_type() const;
     void set_label_font_type(Render::ImguiFontType label_font_type);
 
     const Paddings& content_padding();
     void set_content_padding(const Paddings& padding);
 
-    void set_icon(wchar_t icon);
-    void set_icon_size(Vec2f size); // for discussion
     void align_content(Align align);
     void expand_label(bool expand);
+
+    Render::Icon icon() const;
+    void set_icon(Render::Icon icon);
 
 protected:
     Item* insert_into_content(std::unique_ptr<Item> item, std::optional<size_t> index = {});

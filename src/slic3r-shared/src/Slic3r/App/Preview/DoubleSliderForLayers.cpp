@@ -281,18 +281,18 @@ void DoubleSliderForLayers::render_body(Yoga::Vec2f p, Yoga::Vec2f s)
         btn_pos = { position.x + 0.5f * size.x - 1.65f * m_icon_screen_size, position.y + size.y + 0.25f * m_icon_screen_size };
 
     if (!m_ticks.empty() && can_edit() &&
-        render_button(ImGui::DSRevert, ImGui::DSRevertHovered, "revert", btn_pos, FocusedItem::RevertIcon))
+        render_button(Render::Icon::DSRevert, Render::Icon::DSRevertHovered, "revert", btn_pos, FocusedItem::RevertIcon))
         discard_all_ticks();
     else if (m_ticks.empty() && can_edit() && (pos.x != -1.0f || pos.y != -1.0f))
-        render_button(ImGui::DSRevertDisabled, ImGui::DSRevertDisabled, "revert", btn_pos, FocusedItem::None);
+        render_button(Render::Icon::DSRevertDisabled, Render::Icon::DSRevertDisabled, "revert", btn_pos, FocusedItem::None);
 
     if (pos.x == -1.0f && pos.y == -1.0f)
         btn_pos.y += 0.5f * m_icon_screen_size + size.y;
     else
         btn_pos.x += 1.1f * m_icon_screen_size;
     bool is_one_layer = m_ctrl.is_combine_thumbs();
-    if (render_button(is_one_layer ? ImGui::Lock : ImGui::Unlock,
-                      is_one_layer ? ImGui::LockHovered : ImGui::UnlockHovered,
+    if (render_button(is_one_layer ? Render::Icon::Lock : Render::Icon::Unlock,
+                      is_one_layer ? Render::Icon::LockHovered : Render::Icon::UnlockHovered,
                       "one_layer", btn_pos, FocusedItem::OneLayerIcon))
         change_one_layer_lock();
 
@@ -300,7 +300,7 @@ void DoubleSliderForLayers::render_body(Yoga::Vec2f p, Yoga::Vec2f s)
         btn_pos.y += 1.2f * m_icon_screen_size;
     else
         btn_pos.x += 1.1f * m_icon_screen_size;
-    if (render_button(ImGui::DSSettings, ImGui::DSSettingsHovered, "settings", btn_pos, FocusedItem::CogIcon))
+    if (render_button(Render::Icon::DSSettings, Render::Icon::DSSettingsHovered, "settings", btn_pos, FocusedItem::CogIcon))
         m_show_cog_menu = true;
 
     if (m_draw_mode == DrawMode::SequentialFffPrint && m_ctrl.is_rclick_on_thumb()) {
@@ -721,25 +721,25 @@ void DoubleSliderForLayers::draw_ticks(const ImRect& slideable_region)
         bool activate_this_tick = false;
         if (tick_it == active_tick_it && m_allow_editing) {
             // delete tick
-            if (render_button(ImGui::RemoveTick, ImGui::RemoveTickHovered, btn_label, icon_pos, FocusedItem::ActionIcon, tick_it->tick)) {
+            if (render_button(Render::Icon::RemoveTick, Render::Icon::RemoveTickHovered, btn_label, icon_pos, FocusedItem::ActionIcon, tick_it->tick)) {
                 m_ticks.ticks.erase(tick_it);
                 process_ticks_changed();
                 break;
             }
         }        
         else if (m_draw_mode != DrawMode::Regular)// if we have non-regular draw mode, all ticks should be marked with error icon
-            activate_this_tick = render_button(ImGui::ErrorTick, ImGui::ErrorTickHovered, btn_label,
+            activate_this_tick = render_button(Render::Icon::ErrorTick, Render::Icon::ErrorTickHovered, btn_label,
                 icon_pos, FocusedItem::Tick, tick_it->tick);
         else if (tick_it->type == CustomGCode::Type::ColorChange || tick_it->type == CustomGCode::Type::ToolChange) {
             if (m_ticks.is_conflict_tick(*tick_it, m_mode, m_values[tick_it->tick]) != ConflictType::None)
-                activate_this_tick = render_button(ImGui::ErrorTick, ImGui::ErrorTickHovered, btn_label,
+                activate_this_tick = render_button(Render::Icon::ErrorTick, Render::Icon::ErrorTickHovered, btn_label,
                     icon_pos, FocusedItem::Tick, tick_it->tick);
         }
         else if (tick_it->type == CustomGCode::Type::PausePrint)
-            activate_this_tick = render_button(ImGui::PausePrint, ImGui::PausePrintHovered, btn_label,
+            activate_this_tick = render_button(Render::Icon::PausePrint, Render::Icon::PausePrintHovered, btn_label,
                 icon_pos, FocusedItem::Tick, tick_it->tick);
         else
-            activate_this_tick = render_button(ImGui::EditGCode, ImGui::EditGCodeHovered, btn_label,
+            activate_this_tick = render_button(Render::Icon::EditGCode, Render::Icon::EditGCodeHovered, btn_label,
                 icon_pos, FocusedItem::Tick, tick_it->tick);
 
         if (activate_this_tick) {
@@ -1089,7 +1089,7 @@ void DoubleSliderForLayers::render_edit_menu()
     }
 }
 
-bool DoubleSliderForLayers::render_button(wchar_t icon, wchar_t icon_hovered, const std::string& label_id, const ImVec2& pos,
+bool DoubleSliderForLayers::render_button(Render::Icon icon, Render::Icon icon_hovered, const std::string& label_id, const ImVec2& pos,
     FocusedItem focus, int tick)
 {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding,   0.0f);
@@ -1114,7 +1114,7 @@ bool DoubleSliderForLayers::render_button(wchar_t icon, wchar_t icon_hovered, co
     m_focus = focus;
 
     bool ret = false;
-    wchar_t icon_id = ImGui::IsWindowHovered() ? icon_hovered : icon;
+    Render::Icon icon_id = ImGui::IsWindowHovered() ? icon_hovered : icon;
     ImGui::SetCursorPos({ 0.0f, 0.0f });
     ImGui::PushStyleColor(ImGuiCol_Button, { 0.0f, 0.0f, 0.0f, 0.0f });
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, { 0.0f, 0.0f, 0.0f, 0.0f });
@@ -1555,7 +1555,7 @@ bool DoubleSliderForLayers::render_yes_no_cancel_popup(const ImVec2& pos)
     if (ImGui::BeginPopupModal(m_yes_no_cancel_popup.caption.c_str(), &m_yes_no_cancel_popup.show, windows_flag)) {
 
         ImGui::BeginGroup();
-        Imgui::icon_image(ImGui::PrusaSlicerIcon, { 64.0f, 64.0f });
+        Imgui::icon_image(Render::Icon::PrusaSlicerIcon, { 64.0f, 64.0f });
         ImGui::EndGroup();
 
         ImGui::SameLine();

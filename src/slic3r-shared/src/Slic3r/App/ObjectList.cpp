@@ -138,36 +138,37 @@ struct NewRowWithSelectable
     }
 };
 
-static std::string icon_str(const wchar_t icon)
+static std::string icon_str(const Render::Icon icon)
 {
-    return Slic3r::format(" %1%  ", boost::nowide::narrow(std::wstring(&icon, 1)));
+    wchar_t icon_char = static_cast<wchar_t>(icon);
+    return Slic3r::format(" %1%  ", boost::nowide::narrow(std::wstring(&icon_char, 1)));
 }
 
 static std::string icon_str(const Slic3r::ModelVolume* volume)
 {
     if (volume->is_text()) {
         switch (volume->type()) {
-        case Slic3r::ModelVolumeType::MODEL_PART        : return icon_str(ImGui::TextSolidPartVolume);
-        case Slic3r::ModelVolumeType::NEGATIVE_VOLUME   : return icon_str(ImGui::TextNegativeVolume);
-        case Slic3r::ModelVolumeType::PARAMETER_MODIFIER: return icon_str(ImGui::TextModifierVolume);
+        case Slic3r::ModelVolumeType::MODEL_PART        : return icon_str(Render::Icon::TextSolidPartVolume);
+        case Slic3r::ModelVolumeType::NEGATIVE_VOLUME   : return icon_str(Render::Icon::TextNegativeVolume);
+        case Slic3r::ModelVolumeType::PARAMETER_MODIFIER: return icon_str(Render::Icon::TextModifierVolume);
         }
         return "";
     }
     if (volume->is_svg()) {
         switch (volume->type()) {
-        case Slic3r::ModelVolumeType::MODEL_PART        : return icon_str(ImGui::SvgSolidPartVolume);
-        case Slic3r::ModelVolumeType::NEGATIVE_VOLUME   : return icon_str(ImGui::SvgNegativeVolume);
-        case Slic3r::ModelVolumeType::PARAMETER_MODIFIER: return icon_str(ImGui::SvgModifierVolume);
+        case Slic3r::ModelVolumeType::MODEL_PART        : return icon_str(Render::Icon::SvgSolidPartVolume);
+        case Slic3r::ModelVolumeType::NEGATIVE_VOLUME   : return icon_str(Render::Icon::SvgNegativeVolume);
+        case Slic3r::ModelVolumeType::PARAMETER_MODIFIER: return icon_str(Render::Icon::SvgModifierVolume);
         }
         return "";
     }
 
     switch (volume->type()) {
-    case Slic3r::ModelVolumeType::MODEL_PART        : return icon_str(ImGui::SolidPartVolume);
-    case Slic3r::ModelVolumeType::NEGATIVE_VOLUME   : return icon_str(ImGui::NegativeVolume );
-    case Slic3r::ModelVolumeType::PARAMETER_MODIFIER: return icon_str(ImGui::ModifierVolume );
-    case Slic3r::ModelVolumeType::SUPPORT_BLOCKER   : return icon_str(ImGui::SupportBlocker );
-    case Slic3r::ModelVolumeType::SUPPORT_ENFORCER  : return icon_str(ImGui::SupportModifier);
+    case Slic3r::ModelVolumeType::MODEL_PART        : return icon_str(Render::Icon::SolidPartVolume);
+    case Slic3r::ModelVolumeType::NEGATIVE_VOLUME   : return icon_str(Render::Icon::NegativeVolume );
+    case Slic3r::ModelVolumeType::PARAMETER_MODIFIER: return icon_str(Render::Icon::ModifierVolume );
+    case Slic3r::ModelVolumeType::SUPPORT_BLOCKER   : return icon_str(Render::Icon::SupportBlocker );
+    case Slic3r::ModelVolumeType::SUPPORT_ENFORCER  : return icon_str(Render::Icon::SupportModifier);
     default:
         return "";
     }
@@ -188,10 +189,10 @@ static std::string volume_icon_tooltip(const Slic3r::ModelVolume* volume)
 
 static std::string get_cc_name(const Slic3r::DynamicPrintConfig& print_config)
 {
-    return icon_str(ImGui::ConfigContainer) + print_config.opt_string("printer_model");
+    return icon_str(Render::Icon::ConfigContainer) + print_config.opt_string("printer_model");
 
     return icon_str(Slic3r::Preset::printer_technology(print_config) == ptSLA ?
-                    ImGui::PrinterSlaIconMarker : ImGui::PrinterIconMarker)
+                    Render::Icon::PrinterSlaIconMarker : Render::Icon::PrinterIconMarker)
            + print_config.opt_string("printer_model");
 }
 
@@ -253,22 +254,22 @@ static size_t visible_volumes_count(const ModelObject* object)
     return object->volumes.size();
 }
 
-static std::set<wchar_t> get_infos(const Slic3r::ModelObject* object, bool is_sla_config)
+static std::set<Render::Icon> get_infos(const Slic3r::ModelObject* object, bool is_sla_config)
 {
-    std::set<wchar_t> infos;
+    std::set<Render::Icon> infos;
     if (!is_sla_config) {
         for (const ModelVolume* mv : object->volumes) {
             if (!mv->supported_facets.empty())
-                infos.insert(ImGui::CustomSupports);
+                infos.insert(Render::Icon::CustomSupports);
             if (!mv->seam_facets.empty())
-                infos.insert(ImGui::CustomSeam);
+                infos.insert(Render::Icon::CustomSeam);
             if (!mv->fuzzy_skin_facets.empty())
-                infos.insert(ImGui::FuzzySkin);
+                infos.insert(Render::Icon::FuzzySkin);
             if (!mv->mm_segmentation_facets.empty())
-                infos.insert(ImGui::MmSegmentation);
+                infos.insert(Render::Icon::MmSegmentation);
         }
         if (!object->layer_config_ranges.empty())
-            infos.insert(ImGui::HRModifier);
+            infos.insert(Render::Icon::HRModifier);
         //if (wxGetApp().plater()->canvas3D()->is_object_sinking(obj_idx))
         //    infos.insert(ImGui::Sinking);
     }
@@ -290,7 +291,7 @@ static bool hovered_current_row()
     ImVec2 row_end = ImGui::GetCursorScreenPos();
     row_begin.y = row_end.y; // update row_begin.y
     // get RightBottom for the row
-    row_end += ImGui::CalcTextSize(icon_str(ImGui::PrintIconMarker).c_str());
+    row_end += ImGui::CalcTextSize(icon_str(Render::Icon::PrintIconMarker).c_str());
 
     return ImGui::IsMouseHoveringRect(row_begin, row_end, false);
 }
@@ -308,7 +309,7 @@ static bool icon_btn(ColumIndex ci, const std::string& icon)
     return pressed;
 }
 
-static void toggle_icon_btn(const wchar_t icon, bool* is_toggled, const std::string id, ColumIndex ci = ColumIndex::ciCount/*undef*/)
+static void toggle_icon_btn(const Render::Icon icon, bool* is_toggled, const std::string id, ColumIndex ci = ColumIndex::ciCount/*undef*/)
 {
     ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetColorU32((*is_toggled) ? ImGuiCol_ButtonActive : ImGuiCol_Button));
     if (Imgui::icon_button(icon, ImVec2(), id))
@@ -533,19 +534,19 @@ void ObjectList::render_header(Domain::Vec2f pos, Domain::Vec2f size)
     ImGui::SameLine(btn_pos);
 
     if (m_mode == Mode::Plater) {
-        toggle_icon_btn(ImGui::Details, &m_show_details, "details");
+        toggle_icon_btn(Render::Icon::Details, &m_show_details, "details");
         Imgui::item_tooltip("Show object details");
 
         btn_pos -= pos.x() + btn_width;
         ImGui::SameLine(btn_pos);
-        if (Imgui::icon_button(ImGui::AddBedIcon, ImVec2(), "add_bed")) {
+        if (Imgui::icon_button(Render::Icon::AddBedIcon, ImVec2(), "add_bed")) {
             // add bed
             m_scene_interactor->add_bed_instance(m_project_interactor->selected_config_container().id().id);
         }
         Imgui::item_tooltip("Add bed");
     }
     else {
-        toggle_icon_btn(ImGui::SceneMap, &m_scene_map, "scene_map");
+        toggle_icon_btn(Render::Icon::SceneMap, &m_scene_map, "scene_map");
         Imgui::item_tooltip("Show scene map");
     }
 }
@@ -600,10 +601,10 @@ bool ObjectList::tree_node(const char* str_id, ImGuiTreeNodeFlags flags, const s
         draw_list->AddRectFilled(pos, pos_end, ImGui::GetColorU32(ImGuiCol_Header));
 
     // render open-close new arrow
-    draw_list->AddText(pos, ImGui::GetColorU32(ImGuiCol_Text), boost::nowide::narrow(std::wstring(&(is_open ? ImGui::OpenArrow : ImGui::CloseArrow), 1)).c_str());
+    draw_list->AddText(pos, ImGui::GetColorU32(ImGuiCol_Text), icon_str(is_open ? Render::Icon::OpenArrow : Render::Icon::CloseArrow).c_str());
 
     if (add_overrides_marker)
-        draw_list->AddText(text_pos, ImGui::GetColorU32(ImGuiCol_Text), icon_str(ImGui::OverridesMarker).c_str());
+        draw_list->AddText(text_pos, ImGui::GetColorU32(ImGuiCol_Text), icon_str(Render::Icon::OverridesMarker).c_str());
 
     // revert cursore position
     ImGui::SetCursorScreenPos(pos_new);
@@ -621,7 +622,7 @@ static bool selectable(const char* label, bool selected = false, ImGuiSelectable
 
     if (add_overrides_marker) {
         ImGui::SameLine(init_pos.x - style.ItemSpacing.x - style.CellPadding.x);
-        ImGui::Text(icon_str(ImGui::OverridesMarker).c_str());
+        ImGui::Text(icon_str(Render::Icon::OverridesMarker).c_str());
         ImGui::SameLine();
     }
 
@@ -696,7 +697,7 @@ void ObjectList::render_all_beds_node()
         ImGui::TableSetupColumn("##progress", ImGuiTableColumnFlags_WidthStretch, 0.35f);
 
         ImGui::TableNextColumn();
-        render_group_name(icon_str(ImGui::AllBeds) + " All");
+        render_group_name(icon_str(Render::Icon::AllBeds) + " All");
 
         ImGui::TableNextColumn();
         ImGui::Dummy(ImVec2(ImGui::GetContentRegionAvail().x, 0.25f * m_inner_padding.y()));
@@ -761,7 +762,8 @@ bool ObjectList::render_bed_node(const Domain::BedInstance* bed, size_t config_c
     const std::string name = "Bed " + std::to_string(bed_id);
     const std::string name_id = "##bed_id" + std::to_string(bed_id);
 
-    const std::string name_with_icon = Slic3r::format("%1%%2%", boost::nowide::narrow(std::wstring(&ImGui::BedThumbnail, 1)), name);
+    wchar_t bed_thumb = static_cast<wchar_t>(Render::Icon::BedThumbnail);
+    const std::string name_with_icon = Slic3r::format("%1%%2%", boost::nowide::narrow(std::wstring(&bed_thumb, 1)), name);
 
     const ImVec2 icon_size = ImVec2(40.f, 40.f);
     const ImVec2 text_size = ImGui::CalcTextSize(name.c_str());
@@ -820,11 +822,11 @@ bool ObjectList::render_object_node(const Slic3r::ModelObject* object, const Dom
 
     bool isOpen = false;
     if (m_edited_node_id == object_id && is_selected) {
-        isOpen = tree_node(name_id.c_str(), flags | ImGuiTreeNodeFlags_AllowOverlap, icon_str(ImGui::ObjectIcon), has_overrides(object, is_sla_config));
+        isOpen = tree_node(name_id.c_str(), flags | ImGuiTreeNodeFlags_AllowOverlap, icon_str(Render::Icon::ObjectIcon), has_overrides(object, is_sla_config));
         render_edited(name.c_str(), { object_id });
     }
     else
-        isOpen = tree_node(name_id.c_str(), flags | ImGuiTreeNodeFlags_AllowOverlap, (icon_str(ImGui::ObjectIcon) + name), has_overrides(object, is_sla_config));
+        isOpen = tree_node(name_id.c_str(), flags | ImGuiTreeNodeFlags_AllowOverlap, (icon_str(Render::Icon::ObjectIcon) + name), has_overrides(object, is_sla_config));
 
     bool is_changed_selection = handle_selection(sel_element);
     if (is_changed_selection) {
@@ -868,7 +870,7 @@ bool ObjectList::render_connectors_node(const Slic3r::ModelObject* object, size_
 
     new_row();
     ImGui::Unindent(ImGui::GetTreeNodeToLabelSpacing());
-    if (tree_node(name_id.c_str(), m_node_flags | ImGuiTreeNodeFlags_Leaf, icon_str(ImGui::CutConnectors) + "Connectors"))
+    if (tree_node(name_id.c_str(), m_node_flags | ImGuiTreeNodeFlags_Leaf, icon_str(Render::Icon::CutConnectors) + "Connectors"))
         ImGui::TreePop();
     ImGui::Indent(ImGui::GetTreeNodeToLabelSpacing());
 
@@ -1001,7 +1003,7 @@ bool ObjectList::render_instances_node(const Slic3r::ModelObject* object, const 
     const std::string name_id = "Instances##obj_id" + std::to_string(object_id);
 
     new_row();
-    bool isOpen = tree_node(name_id.c_str(), m_node_flags | ImGuiTreeNodeFlags_DefaultOpen, icon_str(ImGui::InstancesIcon) + "Instances");
+    bool isOpen = tree_node(name_id.c_str(), m_node_flags | ImGuiTreeNodeFlags_DefaultOpen, icon_str(Render::Icon::InstancesIcon) + "Instances");
 
     bool is_changed_selection = handle_selection(sel_element);
     if (is_changed_selection) {
@@ -1079,7 +1081,7 @@ void ObjectList::render_instance_node(const Slic3r::ModelObject* object, size_t 
     size_t id = instance->id().id;
     Domain::ElementRef sel_element{ object->id().id, id, 0 };
 
-    const std::string name = icon_str(ImGui::ObjectIcon) + "Instance " + std::to_string(id);
+    const std::string name = icon_str(Render::Icon::ObjectIcon) + "Instance " + std::to_string(id);
 
     NewRowWithSelectable row;
     ImGui::SetNextItemSelectionUserData(inst_id);
@@ -1092,7 +1094,7 @@ void ObjectList::render_instance_node(const Slic3r::ModelObject* object, size_t 
 
 void ObjectList::render_infos_node(const Slic3r::ModelObject* object, bool is_sla_config)
 {
-    std::set<wchar_t> infos = get_infos(object, is_sla_config);
+    const std::set<Render::Icon> infos = get_infos(object, is_sla_config);
     if (infos.empty())
         return;
 
@@ -1130,12 +1132,12 @@ void ObjectList::render_edited(const char* init_name, const Domain::ElementRef& 
 
 void ObjectList::render_printable_icon(const Domain::ElementRef& sel_id, bool is_printable)
 {
-    wchar_t icon{ L'\0' };
+    Render::Icon icon = Render::Icon::None;
     if (hovered_current_row()) {
-        icon = is_printable ? ImGui::EyeOpen : ImGui::EyeClosed;
+        icon = is_printable ? Render::Icon::EyeOpen : Render::Icon::EyeClosed;
     }
     else if (!is_printable) {
-        icon = ImGui::EyeClosed;
+        icon = Render::Icon::EyeClosed;
     }
     else
         return;
@@ -1145,7 +1147,7 @@ void ObjectList::render_printable_icon(const Domain::ElementRef& sel_id, bool is
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2());
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImGui::GetColorU32(ImGuiCol_Button));
     ImGui::PushID(Slic3r::format("##print_%1%_%2%_%3%", sel_id.object_id, sel_id.instance_id, sel_id.volume_id).c_str());  // Ensure unique ID
-    if (button_aligned(1.f, boost::nowide::narrow(std::wstring(&icon, 1)), ImVec2(), ImGuiButtonFlags_AlignTextBaseLine))
+    if (button_aligned(1.f, icon_str(icon), ImVec2(), ImGuiButtonFlags_AlignTextBaseLine))
         propagate_printable(sel_id, !is_printable);
     ImGui::PopID();
 
@@ -1206,22 +1208,22 @@ void ObjectList::render_slicing_state_marker(size_t bed_instance_id)
 }
 
 
-static std::map<wchar_t, std::string> info_descriptions = {
-    { ImGui::CustomSupports, "CustomSupports"} ,
-    { ImGui::CustomSeam    , "Seam" },
-    { ImGui::MmSegmentation, "MM Painting" },
-    { ImGui::Sinking       , "Sinking" },
-    { ImGui::FuzzySkin     , "Fuzzy Skin" },
-    { ImGui::HRModifier    , "Height range Modifier" },
+static std::map<Render::Icon, std::string> info_descriptions = {
+    { Render::Icon::CustomSupports, "CustomSupports"} ,
+    { Render::Icon::CustomSeam    , "Seam" },
+    { Render::Icon::MmSegmentation, "MM Painting" },
+    { Render::Icon::Sinking       , "Sinking" },
+    { Render::Icon::FuzzySkin     , "Fuzzy Skin" },
+    { Render::Icon::HRModifier    , "Height range Modifier" },
 };
 
-void ObjectList::render_infos_selectable(const std::set<wchar_t>& infos, const Slic3r::ModelObject* object, bool force_render)
+void ObjectList::render_infos_selectable(const std::set<Render::Icon>& infos, const Slic3r::ModelObject* object, bool force_render)
 {
-    for (wchar_t info : infos) {
+    for (Render::Icon info : infos) {
         NewRowWithSelectable row;
         std::string line = icon_str(info) + info_descriptions[info];
         if (selectable(line.c_str())) {
-            if (info == ImGui::Sinking || info == ImGui::HRModifier) {
+            if (info == Render::Icon::Sinking || info == Render::Icon::HRModifier) {
                 force_select_whole_object(object);
                 clear_all_ms();
             }
@@ -1282,7 +1284,7 @@ void ObjectList::show_layer_ranges(const Domain::ElementRef& sel_element)
     // ToDo
 }
 
-void ObjectList::show_gizmo(const Domain::ElementRef& sel_element, wchar_t gizmo_id)
+void ObjectList::show_gizmo(const Domain::ElementRef& sel_element, Render::Icon gizmo_id)
 {
     // ToDo
 }

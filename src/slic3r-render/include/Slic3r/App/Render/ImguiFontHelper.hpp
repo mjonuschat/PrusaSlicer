@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Slic3r/App/Render/ImguiTypes.hpp"
+#include "Slic3r/App/Render/Types.hpp"
 
 #include <imgui/imgui.h>
 
@@ -58,7 +59,7 @@ private:
 private:
     Device& m_device;
     ImguiLanguageData m_language_data;
-    Texture* m_font_texture{ nullptr };
+    TexturePtr m_font_texture;
     ImguiFonts m_fonts;
 };
 

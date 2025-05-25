@@ -233,6 +233,8 @@ set(SLIC3R_SHARED_FILES
 
         src/Slic3r/App/AbstractRenderLayout.cpp
         include/Slic3r/App/AbstractRenderLayout.hpp
+        include/Slic3r/App/ResourceResolver.hpp
+        src/Slic3r/App/ResourceResolver.cpp
 
         include/Slic3r/Biz/PrintConfigInteractor.hpp
         src/Slic3r/Biz/PrintConfigInteractor.cpp

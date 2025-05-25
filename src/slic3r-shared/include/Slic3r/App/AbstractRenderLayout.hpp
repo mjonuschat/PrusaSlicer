@@ -52,14 +52,14 @@ public:
 
     Yoga::ToolbarButton* add_toolbar_item(
         ToolbarID id,
-        wchar_t icon,
+        Render::Icon icon,
         const std::string& tooltip,
         const std::string& shortcut,
         Yoga::AbstractButton::Callbacks callbacks
     );
     Yoga::ToolbarButton* add_toolbar_item_checkable(
         ToolbarID id,
-        wchar_t icon,
+        Render::Icon icon,
         const std::string& tooltip,
         const std::string& shortcut,
         Yoga::AbstractButton::Callbacks callbacks,
@@ -67,7 +67,7 @@ public:
     );
     Yoga::ToolbarButton* add_toolbar_item_gizmo(
         ToolbarID id,
-        wchar_t icon,
+        Render::Icon icon,
         const std::string& tooltip,
         const std::string& shortcut,
         Yoga::AbstractButton::Callbacks callbacks,
@@ -75,7 +75,7 @@ public:
     );
     Yoga::ToolbarButton* add_toolbar_item_panel(
         ToolbarID id,
-        wchar_t icon,
+        Render::Icon icon,
         const std::string& tooltip,
         const std::string& shortcut,
         Yoga::AbstractButton::Callbacks callbacks,

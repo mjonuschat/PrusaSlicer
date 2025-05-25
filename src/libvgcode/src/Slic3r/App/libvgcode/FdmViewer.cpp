@@ -160,9 +160,9 @@ void FdmViewer::TextureData::set_positions(const std::vector<Vec4f>& positions)
         size_t offset = i * tex_capacity;
 
         assert(m_device != nullptr);
-        Render::Texture* tex =
+        Render::TexturePtr tex =
             m_device->context().texture_manager()
-                .create_empty(format("libvgcode_positions_%d", i), Render::PixelFormat::RGBA32F, w, h);
+                .get_or_create_dynamic(format("libvgcode_positions_%d", i), Render::PixelFormat::RGBA32F, w, h);
 
         tex->set_filtering(Render::TextureMinFilter::Nearest, Render::TextureMagFilter::Nearest);
         if (remaining >= tex_capacity){
@@ -196,9 +196,9 @@ void FdmViewer::TextureData::set_heights_widths_angles(const std::vector<Vec4f>&
         size_t offset = i * tex_capacity;
 
         assert(m_device != nullptr);
-        Render::Texture* tex =
+        Render::TexturePtr tex =
             m_device->context().texture_manager()
-                .create_empty(format("libvgcode_hwas_%d", i), Render::PixelFormat::RGBA32F, w, h);
+                .get_or_create_dynamic(format("libvgcode_hwas_%d", i), Render::PixelFormat::RGBA32F, w, h);
 
         tex->set_filtering(Render::TextureMinFilter::Nearest, Render::TextureMagFilter::Nearest);
         if (remaining >= tex_capacity){
@@ -232,9 +232,9 @@ void FdmViewer::TextureData::set_colors(const std::vector<float>& colors)
         size_t offset = i * tex_capacity;
 
         assert(m_device != nullptr);
-        Render::Texture* tex =
+        Render::TexturePtr tex =
             m_device->context().texture_manager()
-                .create_empty(format("libvgcode_colors_%d", i), Render::PixelFormat::R32F, w, h);
+                .get_or_create_dynamic(format("libvgcode_colors_%d", i), Render::PixelFormat::R32F, w, h);
 
         tex->set_filtering(Render::TextureMinFilter::Nearest, Render::TextureMagFilter::Nearest);
         if (remaining >= tex_capacity){
@@ -273,9 +273,9 @@ void FdmViewer::TextureData::set_enabled_segments(const std::vector<uint32_t>& e
             auto [w, h] = width_height(curr_segments.size(), m_max_texture_size);
 
             assert(m_device != nullptr);
-            Render::Texture* tex =
+            Render::TexturePtr tex =
                 m_device->context().texture_manager()
-                    .create_empty(format("libvgcode_segments_%d", i), Render::PixelFormat::R32UI, w, h);
+                    .get_or_create_dynamic(format("libvgcode_segments_%d", i), Render::PixelFormat::R32UI, w, h);
 
             tex->set_filtering(Render::TextureMinFilter::Nearest, Render::TextureMagFilter::Nearest);
             if (curr_segments.size() >= tex_capacity) {
@@ -325,9 +325,9 @@ void FdmViewer::TextureData::set_enabled_options(const std::vector<uint32_t>& en
             auto [w, h] = width_height(curr_options.size(), m_max_texture_size);
 
             assert(m_device != nullptr);
-            Render::Texture* tex =
+            Render::TexturePtr tex =
                 m_device->context().texture_manager()
-                    .create_empty(format("libvgcode_options_%d", i), Render::PixelFormat::R32UI, w, h);
+                    .get_or_create_dynamic(format("libvgcode_options_%d", i), Render::PixelFormat::R32UI, w, h);
 
             tex->set_filtering(Render::TextureMinFilter::Nearest, Render::TextureMagFilter::Nearest);
             if (curr_options.size() >= tex_capacity){
@@ -366,31 +366,31 @@ void FdmViewer::TextureData::reset()
     m_count = 0;
 }
 
-std::pair<Render::Texture*, size_t> FdmViewer::TextureData::positions_tex(size_t id) const
+std::pair<Render::TexturePtr, size_t> FdmViewer::TextureData::positions_tex(size_t id) const
 {
     assert(id < m_tex_ids.size());
     return m_tex_ids[id].positions;
 }
 
-std::pair<Render::Texture*, size_t> FdmViewer::TextureData::heights_widths_angles_tex(size_t id) const
+std::pair<Render::TexturePtr, size_t> FdmViewer::TextureData::heights_widths_angles_tex(size_t id) const
 {
     assert(id < m_tex_ids.size());
     return m_tex_ids[id].heights_widths_angles;
 }
 
-std::pair<Render::Texture*, size_t> FdmViewer::TextureData::colors_tex(size_t id) const
+std::pair<Render::TexturePtr, size_t> FdmViewer::TextureData::colors_tex(size_t id) const
 {
     assert(id < m_tex_ids.size());
     return m_tex_ids[id].colors;
 }
 
-std::pair<Render::Texture*, size_t> FdmViewer::TextureData::enabled_segments_tex(size_t id) const
+std::pair<Render::TexturePtr, size_t> FdmViewer::TextureData::enabled_segments_tex(size_t id) const
 {
     assert(id < m_tex_ids.size());
     return m_tex_ids[id].enabled_segments;
 }
 
-std::pair<Render::Texture*, size_t> FdmViewer::TextureData::enabled_options_tex(size_t id) const
+std::pair<Render::TexturePtr, size_t> FdmViewer::TextureData::enabled_options_tex(size_t id) const
 {
     assert(id < m_tex_ids.size());
     return m_tex_ids[id].enabled_options;

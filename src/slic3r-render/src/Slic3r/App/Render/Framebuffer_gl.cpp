@@ -90,21 +90,21 @@ Framebuffer::~Framebuffer()
     glCheck();
 }
 
-const Texture* Framebuffer::color_attachment(size_t id) const
+const TexturePtr Framebuffer::color_attachment(size_t id) const
 {
-    return (id < m_textures.size()) ? m_textures[id].get() : nullptr;
+    return (id < m_textures.size()) ? m_textures[id] : nullptr;
 }
 
-const Texture* Framebuffer::depth() const
+const TexturePtr Framebuffer::depth() const
 {
     auto& self = get_internal_as<GL::GLFramebufferInternal>();
-    return self.depth ? m_textures[self.color_attachments_count].get() : nullptr;
+    return self.depth ? m_textures[self.color_attachments_count] : nullptr;
 }
 
-const Texture* Framebuffer::stencil() const
+const TexturePtr Framebuffer::stencil() const
 {
     auto& self = get_internal_as<GL::GLFramebufferInternal>();
-    return self.depth ? m_textures[self.color_attachments_count].get() : nullptr;
+    return self.depth ? m_textures[self.color_attachments_count] : nullptr;
 }
 
 } // namespace Slic3r::App::Render

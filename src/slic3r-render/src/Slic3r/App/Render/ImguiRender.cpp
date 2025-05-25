@@ -1,10 +1,13 @@
 #include "Slic3r/App/Render/ImguiRender.hpp"
+
 #include "Slic3r/App/Render/CommandBuffer.hpp"
 #include "Slic3r/App/Render/Geometry.hpp"
 #include "Slic3r/App/Render/Device.hpp"
 #include "Slic3r/App/Render/Context.hpp"
 #include "Slic3r/App/Render/MathUtils.hpp"
 #include "Slic3r/App/Render/ImguiFontHelper.hpp"
+#include "Slic3r/App/Render/ImguiIconHelper.hpp"
+#include "Slic3r/App/Render/TextureManager.hpp"
 
 #include <Slic3r/Assert.hpp>
 
@@ -41,6 +44,11 @@ void ImguiRender::set_font(const std::optional<std::string>& language, const std
 ImFont* ImguiRender::font(Render::ImguiFontType type)
 {
     return m_font_helper->font(type);
+}
+
+TexturePtr ImguiRender::icon_texture(Icon icon, int max_size)
+{
+    return m_device.context().texture_manager().get_or_create_image(ImguiIconHelper::icon_path(icon), {max_size});
 }
 
 void ImguiRender::new_frame()

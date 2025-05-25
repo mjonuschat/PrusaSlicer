@@ -230,7 +230,7 @@ bool menu_item_with_icon(
     return pressed;
 }
 
-void icon_image(wchar_t icon, const ImVec2& size, bool disabled)
+void icon_image(Render::Icon icon, const ImVec2& size, bool disabled)
 {
     ImFont* font = ImGui::GetFont();
     float h = ImGui::GetTextLineHeight();
@@ -239,7 +239,7 @@ void icon_image(wchar_t icon, const ImVec2& size, bool disabled)
         rect.x = h;
     if (rect.y == 0.0f)
         rect.y = h;
-    const ImFontGlyph* glyph = font->FindGlyph(icon);
+    const ImFontGlyph* glyph = font->FindGlyph(static_cast<wchar_t>(icon));
     if (glyph != nullptr)
         ImGui::Image(
             font->ContainerAtlas->TexID, rect, {glyph->U0, glyph->V0}, {glyph->U1, glyph->V1},
@@ -247,7 +247,7 @@ void icon_image(wchar_t icon, const ImVec2& size, bool disabled)
         );
 }
 
-bool icon_button(wchar_t icon, const ImVec2& size, const std::string& id)
+bool icon_button(Render::Icon icon, const ImVec2& size, const std::string& id)
 {
     ImFont* font = ImGui::GetFont();
     float h = ImGui::GetTextLineHeight();
@@ -256,7 +256,7 @@ bool icon_button(wchar_t icon, const ImVec2& size, const std::string& id)
         rect.x = h;
     if (rect.y == 0.0f)
         rect.y = h;
-    const ImFontGlyph* glyph = font->FindGlyph(icon);
+    const ImFontGlyph* glyph = font->FindGlyph(static_cast<wchar_t>(icon));
     return (glyph != nullptr)
         ? ImGui::ImageButton(
               ("##btn" + id).c_str(), font->ContainerAtlas->TexID, rect, {glyph->U0, glyph->V0},

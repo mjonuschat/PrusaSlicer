@@ -1,46 +1,76 @@
 #include "Slic3r/App/Render/TextureManager.hpp"
+
 #include "Slic3r/App/Render/Device.hpp"
-#include "libslic3r/Utils.hpp"
+#include "Slic3r/App/Render/IResourceResolver.hpp"
+
 #include <Slic3r/Log.hpp>
 
-#include <boost/filesystem/path.hpp>
-#include <boost/filesystem/operations.hpp>
 #include <boost/nowide/fstream.hpp>
+#include <boost/functional/hash.hpp>
 
 namespace Slic3r::App::Render {
 
-
-Texture* TextureManager::get(const std::string& name, const ImageLoadOptions& opts)
+bool TextureKey::operator==(const TextureKey& rhs) const
 {
-    TextureMap::const_iterator it = m_textures.find(name);
-    if (it != m_textures.end())
-        return it->second.get();
+    return key_name == rhs.key_name && width == rhs.width && height == rhs.height &&
+        pixel_format == rhs.pixel_format;
+}
+
+bool TextureKey::operator!=(const TextureKey& rhs) const { return !(*this == rhs); }
+
+std::unique_ptr<IResourceResolver> TextureManager::m_resource_resolver = nullptr;
+
+TextureManager::TextureManager(Device& device) : m_device(device) {}
+
+TexturePtr TextureManager::get_or_create_image(
+    const std::string& filename, const ImageLoadOptions& opts
+)
+{
+    ASSERT(!filename.empty(), "name cannot be empty");
+
+    ImageSizeMap::const_iterator size_it = m_image_sizes.find(filename);
+    if (size_it != m_image_sizes.cend()) {
+        // we have loaded this file before
+        // compute what loaded scale we would use
+        Size scaled_size = opts.resolve_to_size(size_it->second);
+        const TextureKey key{filename, scaled_size.width, scaled_size.height};
+        TextureMap::const_iterator it = m_image_textures.find(key);
+        if (it != m_image_textures.end()) {
+            // we have same texture in the same size, return it
+            return it->second.lock();
+        }
+    }
+
+    // Texture was not yet loaded, or scaled size doesn't match
+    // Create a new one
 
     // Load bitmap
-    auto* codec = ImageCodecManager::instance().find_loader(name);
+    auto* codec = ImageCodecManager::instance().find_loader(filename);
     if (codec == nullptr) {
-        SPDLOG_ERROR("Cannot find Image Reader Codec for file {}", name);
+        SPDLOG_ERROR("Cannot find Image Reader Codec for file {}", filename);
         return nullptr;
     }
 
-    std::vector<Image>  images;
+    Size size;
+    std::vector<Image> images;
     {
-        boost::filesystem::path path = boost::filesystem::exists(name) ? name : boost::filesystem::path(resources_dir()) / name;
+        const std::string path = m_resource_resolver->resolve(filename);
+
         boost::nowide::ifstream is(path, std::ios::binary | std::ios::in);
         if (!is.good()) {
-            SPDLOG_ERROR("Cannot open file {}", name);
+            SPDLOG_ERROR("Cannot open file {}", filename);
             return nullptr;
         }
 
-        images = codec->load(is, opts);
+        images = codec->load(is, opts, &size);
     }
 
     if (images.empty()) {
-        SPDLOG_ERROR("Cannot load image {}", name);
+        SPDLOG_ERROR("Cannot load image {}", filename);
         return nullptr;
     }
 
-    auto tex = m_device.create_texture();
+    std::unique_ptr<Texture> tex = m_device.create_texture();
     for (size_t level = 0; level < images.size(); level++) {
         const auto& img = images[level];
         tex->set_data(img.format(), level, img.width(), img.height(), img.data());
@@ -48,25 +78,66 @@ Texture* TextureManager::get(const std::string& name, const ImageLoadOptions& op
 
     // TODO: (Optional) Compress bitmap
 
-    m_textures[name] = std::move(tex);
-    return m_textures[name].get();
+    m_image_sizes[filename] = size;
+
+    TextureKey key{filename, size.width, size.height, PixelFormat::RGBA8};
+    tex->set_object_name(key.key_name);
+    TexturePtr shared_tex(tex.release(), [this, key](Texture* texture) {
+        delete texture;
+        m_image_textures.erase(key);
+    });
+    m_image_textures[key] = shared_tex;
+    return shared_tex;
 }
 
-Texture* TextureManager::create_empty(const std::string& name, PixelFormat pf, size_t w, size_t h)
+TexturePtr TextureManager::get_or_create_dynamic(
+    const std::string& name, PixelFormat pf, size_t w, size_t h
+)
 {
-    TextureMap::const_iterator it = m_textures.find(name);
-    if (it != m_textures.end())
-        return it->second.get();
+    ASSERT(!name.empty(), "TextureManager: name cannot be empty");
 
-    auto tex = m_device.create_texture();
+    DynamicTextureMap::const_iterator it = m_dynamic_textures.find(name);
+    if (it != m_dynamic_textures.end()) {
+        return it->second.lock();
+    }
+
+    std::unique_ptr<Texture> tex = m_device.create_texture();
     {
         std::vector<uint8_t> data;
         data.resize(w * h * pixel_format_bytes_per_pixel(pf), 0x7f);
         tex->set_data(pf, 0, w, h, data.data());
     }
+
     tex->set_object_name(name);
-    m_textures[name] = std::move(tex);
-    return m_textures[name].get();
+
+    TexturePtr shared_tex(tex.release(), [this, name](Texture* texture) {
+        delete texture;
+        m_dynamic_textures.erase(name);
+    });
+    m_dynamic_textures[name] = shared_tex;
+    return shared_tex;
 }
 
+void TextureManager::set_resource_resolver(std::unique_ptr<IResourceResolver> resource_resolver)
+{
+    TextureManager::m_resource_resolver = std::move(resource_resolver);
+}
+
+void TextureManager::shutdown()
+{
+    m_image_textures.clear();
+    m_dynamic_textures.clear();
+}
+
+} // namespace Slic3r::App::Render
+
+uint64_t std::hash<Slic3r::App::Render::TextureKey>::operator()(
+    const Slic3r::App::Render::TextureKey& val
+) const
+{
+    size_t ret = boost::hash_value(val.key_name);
+    boost::hash_combine(ret, val.width);
+    boost::hash_combine(ret, val.height);
+    boost::hash_combine(ret, val.pixel_format);
+    return ret;
 }

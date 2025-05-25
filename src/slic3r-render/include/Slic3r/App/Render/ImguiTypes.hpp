@@ -1,12 +1,171 @@
 #pragma once
 
-
 namespace Slic3r::App::Render {
 
 enum class ImguiFontType
 {
     Regular,
     Bold
+};
+
+enum class Icon : wchar_t
+{
+    None = 0x0,
+    // Our icons start at 0x2600
+    PrintIconMarker = 0x2600,
+    PrinterIconMarker,
+    PrinterSlaIconMarker,
+    FilamentIconMarker,
+    MaterialIconMarker,
+    CloseNotifButton,
+    CloseNotifHoverButton,
+    MinimalizeButton,
+    MinimalizeHoverButton,
+    WarningMarker,
+    ErrorMarker,
+    EjectButton,
+    EjectHoverButton,
+    CancelButton,
+    CancelHoverButton,
+    //    VarLayerHeightMarker     ,
+    RevertButton,
+
+    RightArrowButton,
+    RightArrowHoverButton,
+    PreferencesButton,
+    PreferencesHoverButton,
+    //    SinkingObjectMarker      ,
+    //    CustomSupportsMarker     ,
+    //    CustomSeamMarker         ,
+    //    MmuSegmentationMarker    ,
+    PlugMarker,
+    DowelMarker,
+    SnapMarker,
+    HorizontalHide,
+    HorizontalShow,
+    // Do not forget use following letters only in wstring
+    DocumentationButton,
+    DocumentationHoverButton,
+    ClippyMarker,
+    InfoMarker,
+    SliderFloatEditBtnIcon,
+    SliderFloatEditBtnPressedIcon,
+    ClipboardBtnIcon,
+    PlayButton,
+    PlayHoverButton,
+    PauseButton,
+    PauseHoverButton,
+    OpenButton,
+    OpenHoverButton,
+    SlaViewOriginal,
+    SlaViewProcessed,
+
+    LegendTravel,
+    LegendWipe,
+    LegendRetract,
+    LegendDeretract,
+    LegendSeams,
+    LegendToolChanges,
+    LegendColorChanges,
+    LegendPausePrints,
+    LegendCustomGCodes,
+    LegendCOG,
+    LegendShells,
+    LegendToolMarker,
+    WarningMarkerSmall,
+    ExpandBtn,
+    CollapseBtn,
+    InfoMarkerSmall,
+    PrusaSlicerIcon,
+
+    // icons for double slider (middle size icons)
+    Lock,
+    LockHovered,
+    Unlock,
+    UnlockHovered,
+    DSRevert,
+    DSRevertHovered,
+    DSSettings,
+    DSSettingsHovered,
+    // icons for double slider (small size icons)
+    ErrorTick,
+    ErrorTickHovered,
+    PausePrint,
+    PausePrintHovered,
+    EditGCode,
+    EditGCodeHovered,
+    RemoveTick,
+    RemoveTickHovered,
+    DSRevertDisabled,
+
+    // icon for multiple beds
+    SliceAllBtnIcon,
+    PrintIdle,
+    PrintRunning,
+    PrintFinished,
+    WarningMarkerDisabled,
+    // icon for object list
+    EyeOpen,
+    EyeClosed,
+    SolidPartVolume,
+    NegativeVolume,
+    ModifierVolume,
+    SupportBlocker,
+    SupportModifier,
+    TextSolidPartVolume,
+    TextNegativeVolume,
+    TextModifierVolume,
+    SvgSolidPartVolume,
+    SvgNegativeVolume,
+    SvgModifierVolume,
+    ObjectIcon,
+    HRModifier,
+    CustomSupports,
+    CustomSeam,
+    CutConnectors,
+    MmSegmentation,
+    Sinking,
+    VariableLayerHeight,
+    FuzzySkin,
+    BedIcon,
+    Details,
+    OpenArrow,
+    CloseArrow,
+    ConfigContainer,
+    InstancesIcon,
+    OverridesMarker,
+    SceneMap,
+    AddBedIcon,
+    AllBeds,
+    // icon for help
+    MouseLeft,
+    MouseRight,
+    KeyShift,
+
+    // icons for toolbar
+    ToolbarObjects,
+    ToolbarAdd,
+    ToolbarArrange,
+    ToolbarHistory,
+    ToolbarEllipsis,
+    ToolbarGraph,
+    ToolbarMove,
+    ToolbarRotation,
+    ToolbarGCode,
+    ToolbarPaintOnSupports,
+
+    // printer icons (PNGs)
+    PrinterNEXT,
+    CubeViewIcon,
+    BedThumbnail,
+
+    // sidebar icons
+    SavePrint,
+    SavePrintToFlash,
+    SavePrintToLocal,
+    SavePrintAddBookmark,
+
+    SettingsSet
 };
 
 } // namespace Slic3r::App::Render

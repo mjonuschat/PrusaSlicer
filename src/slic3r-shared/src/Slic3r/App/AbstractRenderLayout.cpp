@@ -25,7 +25,7 @@ Vec2f AbstractRenderLayout::frame_padding() const
 
 ToolbarButton* AbstractRenderLayout::add_toolbar_item(
     ToolbarID id,
-    wchar_t icon,
+    Render::Icon icon,
     const std::string& tooltip,
     const std::string& shortcut,
     AbstractButton::Callbacks callbacks
@@ -44,7 +44,7 @@ ToolbarButton* AbstractRenderLayout::add_toolbar_item(
 
 ToolbarButton* AbstractRenderLayout::add_toolbar_item_checkable(
     ToolbarID id,
-    wchar_t icon,
+    Render::Icon icon,
     const std::string& tooltip,
     const std::string& shortcut,
     AbstractButton::Callbacks callbacks,
@@ -62,7 +62,7 @@ ToolbarButton* AbstractRenderLayout::add_toolbar_item_checkable(
 
 ToolbarButton* AbstractRenderLayout::add_toolbar_item_gizmo(
     ToolbarID id,
-    wchar_t icon,
+    Render::Icon icon,
     const std::string& tooltip,
     const std::string& shortcut,
     Yoga::AbstractButton::Callbacks callbacks,
@@ -87,7 +87,7 @@ ToolbarButton* AbstractRenderLayout::add_toolbar_item_gizmo(
 
 ToolbarButton* AbstractRenderLayout::add_toolbar_item_panel(
     ToolbarID id,
-    wchar_t icon,
+    Render::Icon icon,
     const std::string& tooltip,
     const std::string& shortcut,
     Yoga::AbstractButton::Callbacks callbacks,
@@ -239,8 +239,8 @@ void AbstractRenderLayout::init_right_column()
 
 void AbstractRenderLayout::init_toolbar_column()
 {
-    constexpr float min_tt_size = 50.f; //**/ 30.f;
-    constexpr float max_tt_size = 50.f;
+    constexpr float min_tt_size = 46.f; //**/ 30.f;
+    constexpr float max_tt_size = 46.f;
 
     m_layout_left_toolbar_column = m_layout_center_row->emplace_back<Item>();
     m_layout_left_toolbar_column->set_orientation(Orientation::Vertical);
