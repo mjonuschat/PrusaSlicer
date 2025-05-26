@@ -18,16 +18,16 @@ class Bed;
 class ConfigContainer : public ObjectBase
 {
 public:
-    Slic3r::PrinterTechnology print_technology() const { return m_print_technology; }
+    Domain::PrinterTechnology print_technology() const { return m_print_technology; }
     const DynamicPrintConfig& print_config() const { return m_print_config; }
     const ConfigPack& new_config() const { return m_new_config; }
     void set_print_config_new(const Domain::ConfigPack& config)
     {
         m_new_config = config;
         if (std::holds_alternative<ConfigPackFDM>(config)) {
-            m_print_technology = PrinterTechnology::ptFFF;
+            m_print_technology = PrinterTechnology::FFF;
         } else if (std::holds_alternative<ConfigPackSLA>(config)) {
-            m_print_technology = ptSLA;
+            m_print_technology = PrinterTechnology::SLA;
         } else {
             PANIC("Unexpected config type!");
         }
@@ -35,7 +35,15 @@ public:
     void set_print_config(const DynamicPrintConfig& config)
     {
         m_print_config = config;
-        m_print_technology = Preset::printer_technology(m_print_config);
+
+        // The following is temporary until we get rid od old configs completely.
+        Slic3r::PrinterTechnology tech_old = Preset::printer_technology(m_print_config);
+        if (tech_old == ptFFF)
+            m_print_technology = PrinterTechnology::FFF;
+        else if (tech_old == ptSLA)
+            m_print_technology = PrinterTechnology::SLA;
+        else
+            PANIC();
     }
 
     void set_bed(const Bed& bed) { m_bed = &bed; }
@@ -62,7 +70,7 @@ public:
     { return *DEBUG_ASSERT_VAL(find_by_id(m_bed_instances, id)); }
 
 private:
-    Slic3r::PrinterTechnology m_print_technology {ptFFF};
+    Slic3r::Domain::PrinterTechnology m_print_technology {PrinterTechnology::FFF};
     /**
      * @brief Full config as loaded from 3MF.
      *

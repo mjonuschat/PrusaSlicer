@@ -1,16 +1,15 @@
 ﻿#pragma once
 
 #include <string>
+#include "Slic3r/Domain/PrinterTechnology.hpp"
 
 namespace Slic3r::Domain {
 
 class ConfigDefinitions;
 
-enum class PrinterTechnology
-{
-    FFF,
-    SLA
-};
+// Defined in PrinterTechnology.hpp:
+//enum class PrinterTechnology : uint8_t
+
 enum class GCodeThumbnailsFormat {
     PNG, JPG, QOI
 };

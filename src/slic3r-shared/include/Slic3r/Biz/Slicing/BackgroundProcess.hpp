@@ -82,7 +82,7 @@ std::ostream& operator<<(std::ostream& output, const Status& status);
 
 bool is_thread_active(const Status status);
 
-Slic3r::PrinterTechnology get_printer_technology(const Domain::ConfigPack& config);
+Domain::PrinterTechnology get_printer_technology(const Domain::ConfigPack& config);
 
 using FDMResult = libpgcode::ProcessorResult;
 
@@ -127,10 +127,10 @@ public:
     void slice();
     void stop();
 
-    Slic3r::PrinterTechnology get_printer_technology() const;
+    Domain::PrinterTechnology get_printer_technology() const;
 
 private:
-    Slic3r::PrinterTechnology m_printer_technology;
+    Domain::PrinterTechnology m_printer_technology;
     std::unique_ptr<Print::IPrint> m_print;
     std::function<void(Status)> m_on_status;
     std::function<Status()> m_get_status;
