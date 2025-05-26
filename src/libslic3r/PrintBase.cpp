@@ -18,26 +18,9 @@ using Slic3r::Biz::Parser::PlaceholderParser;
 using ParserConfig = Slic3r::Biz::Parser::IO::Config;
 using Value = Slic3r::Biz::Parser::IO::Value;
 using Scalar = Slic3r::Biz::Parser::IO::Scalar;
-using ParserValue = Slic3r::Biz::Parser::IO::Value;
-using ParserScalar = Slic3r::Biz::Parser::IO::Scalar;
 using Domain::ConfigPack;
 using Domain::ConfigPackFDM;
 
-
-Biz::Print::ApplyStatus PrintBase::update(
-    Model& model, const ConfigPack& config, const Domain::BedInstance& bed
-)
-{
-    Biz::Print::ApplyStatus result{Biz::Print::ApplyStatus::unchanged};
-    Biz::Slicing::with_limited_instances(model, bed.model_instances, [&](){
-        const ApplyStatus status{this->apply(model, std::get<ConfigPackFDM>(config), bed.wipe_tower, bed.custom_gcode)};
-        if (status == APPLY_STATUS_UNCHANGED) {
-            return;
-        }
-        result = Biz::Print::ApplyStatus::changed;
-    });
-    return result;
-}
 
 void PrintTryCancel::operator()() const
 {

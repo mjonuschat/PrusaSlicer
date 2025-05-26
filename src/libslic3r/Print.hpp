@@ -578,13 +578,17 @@ public:
     // List of existing PrintObject IDs, to remove notifications for non-existent IDs.
     std::vector<Domain::ObjectID> print_object_ids() const override;
 
+    virtual Biz::Print::ApplyStatus update(
+        Model& model, const Domain::ConfigPack& config, const Domain::BedInstance& bed
+    ) override;
+
     ApplyStatus apply(
         const Model& model,
         const Domain::ConfigPackFDM& config_pack,
         const std::optional<Domain::ModelWipeTower>& wipe_tower,
         const std::optional<Domain::CustomGCode::Info>& custom_gcode,
         std::vector<std::string>* warnings = nullptr
-    ) override;
+    );
 
     SlicingSync::PrintAndObjectSteps update_config(
         const PrintConfigView& new_full_config

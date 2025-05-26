@@ -56,6 +56,8 @@ using SLASlicingSync::InvalidatedSteps;
 using Domain::ObjectID;
 using Biz::Parser::PlaceholderParser;
 using ParserConfig = Biz::Parser::IO::Config;
+using Domain::ConfigPack;
+using Domain::ConfigPackSLA;
 
 
 bool is_zero_elevation(const SLAPrintObjectConfig &c)
@@ -862,11 +864,24 @@ ModelSyncResult sync_model(
     };
 }
 
+Biz::Print::ApplyStatus SLAPrint::update(
+    Model& model, const ConfigPack& config, const Domain::BedInstance& bed
+)
+{
+    Biz::Print::ApplyStatus result{Biz::Print::ApplyStatus::unchanged};
+    Biz::Slicing::with_limited_instances(model, bed.model_instances, [&](){
+        const ApplyStatus status{this->apply(model, std::get<ConfigPackSLA>(config))};
+        if (status == APPLY_STATUS_UNCHANGED) {
+            return;
+        }
+        result = Biz::Print::ApplyStatus::changed;
+    });
+    return result;
+}
+
 SLAPrint::ApplyStatus SLAPrint::apply(
     const Model& model,
-    const Domain::ConfigPackFDM& config_pack,
-    const std::optional<Domain::ModelWipeTower>&,
-    const std::optional<Domain::CustomGCode::Info>&,
+    const Domain::ConfigPackSLA& config_pack,
     std::vector<std::string>* warnings
 )
 {

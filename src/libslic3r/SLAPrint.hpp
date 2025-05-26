@@ -347,14 +347,16 @@ public:
     // List of existing PrintObject IDs, to remove notifications for non-existent IDs.
     std::vector<Domain::ObjectID> print_object_ids() const override;
 
-    // TODO remove wipe_tower and custom gcode once we get rid of the obsolete PrintBase.
+
+    Biz::Print::ApplyStatus update(
+        Model& model, const Domain::ConfigPack& config, const Domain::BedInstance& bed
+    ) override;
+
     ApplyStatus apply(
         const Model& model,
-        const Domain::ConfigPackFDM& config_pack,
-        const std::optional<Domain::ModelWipeTower>&,
-        const std::optional<Domain::CustomGCode::Info>&,
+        const Domain::ConfigPackSLA& config_pack,
         std::vector<std::string>* warnings = nullptr
-    ) override;
+    );
 
     bool invalidate_object_steps(
         const SLASlicingSync::InvalidatedSteps& steps

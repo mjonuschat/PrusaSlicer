@@ -525,17 +525,6 @@ public:
         // Some data was changed, which in turn invalidated already calculated steps.
         APPLY_STATUS_INVALIDATED,
     };
-    virtual ApplyStatus apply(
-        const Model& model,
-        const Domain::ConfigPackFDM& config_pack,
-        const std::optional<Domain::ModelWipeTower>& wipe_tower,
-        const std::optional<Domain::CustomGCode::Info>& custom_gcode,
-        std::vector<std::string>* warnings = nullptr
-    ) = 0;
-
-    virtual Biz::Print::ApplyStatus update(
-        Model& model, const Domain::ConfigPack& config, const Domain::BedInstance& bed
-    ) override;
 
     const Model&            model() const { return m_model; }
     std::optional<Domain::ModelWipeTower> wipe_tower() const {

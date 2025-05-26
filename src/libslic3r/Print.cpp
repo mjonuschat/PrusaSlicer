@@ -63,6 +63,8 @@ using SlicingSync::PrintSteps;
 using SlicingSync::PrintObjectSteps;
 using ParserConfig = Biz::Parser::IO::Config;
 using Biz::Parser::PlaceholderParser;
+using Domain::ConfigPack;
+using Domain::ConfigPackFDM;
 
 template class PrintState<PrintStep, psCount>;
 template class PrintState<PrintObjectStep, posCount>;
@@ -86,6 +88,21 @@ void Print::clear()
 	m_objects.clear();
     m_print_regions.clear();
     m_model.clear_objects();
+}
+
+Biz::Print::ApplyStatus Print::update(
+    Model& model, const ConfigPack& config, const Domain::BedInstance& bed
+)
+{
+    Biz::Print::ApplyStatus result{Biz::Print::ApplyStatus::unchanged};
+    Biz::Slicing::with_limited_instances(model, bed.model_instances, [&](){
+        const ApplyStatus status{this->apply(model, std::get<ConfigPackFDM>(config), bed.wipe_tower, bed.custom_gcode)};
+        if (status == APPLY_STATUS_UNCHANGED) {
+            return;
+        }
+        result = Biz::Print::ApplyStatus::changed;
+    });
+    return result;
 }
 
 bool Print::invalidate_step(PrintStep step)
