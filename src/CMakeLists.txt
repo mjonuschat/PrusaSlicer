@@ -14,8 +14,6 @@ add_subdirectory(slic3r-biz-parser)
 add_subdirectory(slic3r-gcode-reader)
 add_subdirectory(libpgcode)
 
-add_subdirectory(config)
-
 add_subdirectory(slic3r-jthread)
 add_subdirectory(libslic3r)
 add_subdirectory(libvgcode)
