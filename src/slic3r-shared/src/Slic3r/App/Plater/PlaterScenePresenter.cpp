@@ -470,12 +470,11 @@ void PlaterScenePresenter::on_bed_instance_added(Domain::SelectionId project_id,
         const Domain::ConfigContainer* cc = proj.find_config_container(instance.config_container_id);
         DEBUG_ASSERT(cc != nullptr);
         const Domain::BedInstance& inst = cc->find_bed_instance(instance.instance_id);
-        const Domain::Bed& bed = cc->bed();
 
         Scene::BedNodeTag tag = {instance.config_container_id, instance.instance_id};
 
         Scene::NodeBuilder builder(scn);
-        Scene::BedNodeBuilder::bed_node(builder, bed, inst, tag, m_device, m_projects[project_id],
+        Scene::BedNodeBuilder::bed_node(builder, inst, tag, m_device, m_projects[project_id],
             int(PlaterSceneLayer::DocumentObjects));
 
         scn.add_child(builder.build().release());

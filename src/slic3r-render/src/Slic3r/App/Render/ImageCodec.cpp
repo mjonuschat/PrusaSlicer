@@ -149,8 +149,7 @@ std::vector<Image> PngReadCodec::load(std::istream& is, const ImageLoadOptions& 
         ret.emplace_back(std::move(img));
 
     if (opts.gen_mipmaps) {
-        // generate mipmaps
-        while (ret.back().width() > 1) {
+        while (ret.back().width() > 1 || ret.back().height() > 1) {
             ret.emplace_back(ret.back().half_sampled());
         }
     }

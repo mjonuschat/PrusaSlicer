@@ -62,36 +62,15 @@ Image Image::half_sampled() const
 {
     Image::Data half_pixels;
 
-    const size_t half_w = m_width / 2;
-    const size_t half_h = m_height / 2;
+    const size_t half_w = std::max<size_t>(1, m_width / 2);
+    const size_t half_h = std::max<size_t>(1, m_height / 2);
     const size_t channels = channel_count();
-    half_pixels.reserve(half_w * half_h * channels);
-
     ASSERT(channels == pixel_size()); // only byte per channel allowed at the  moment
 
-    const size_t pixel_stride = channels;
-    const size_t row_stride = m_width * channels;
-
-    for (size_t y = 0; y < m_height; y += 2) {
-        for (size_t x = 0; x < m_width; x += 2) {
-            const size_t base_idx = y * row_stride + x * channels;
-            for (size_t ch = 0; ch < channels; ch++) {
-                uint32_t val = 0;
-                // TODO: unroll loops manually as MSVC do not recognize following pragma
-#pragma unroll
-                for (size_t j = 0; j < 2; j++) {
-#pragma unroll
-                    for (size_t i = 0; i < 2; i++) {
-                        val += m_pixels[base_idx + i * pixel_stride + j * row_stride + ch];
-                    }
-                }
-                half_pixels.push_back(val >> 2);
-            }
-        }
-    }
-
-    return {m_pixel_format, half_w, half_h, std::move(half_pixels)};
-    
+    half_pixels.resize(half_w * half_h * channels);
+    stbir_resize_uint8_linear(m_pixels.data(), m_width, m_height, m_width * channels,
+        half_pixels.data(), half_w, half_h, half_w * channels, STBIR_RGBA);
+    return {m_pixel_format, half_w, half_h, std::move(half_pixels)};    
 }
 
 /*

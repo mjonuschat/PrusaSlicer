@@ -14,11 +14,6 @@
 
 #include <cfloat>
 
-/**
-  * @brief Z offset to prevent z-fighting
-  */
-static constexpr double GROUND_Z = -0.005;
-
 using namespace Slic3r::Biz;
 
 namespace Slic3r::Biz::Scene {
@@ -37,7 +32,7 @@ TriangleMesh BedGeometry::model(const Domain::Bed& bed)
         return TriangleMesh{};
     }
 
-    mesh->translate(to_3d(bed.center(), 3.0 * GROUND_Z).cast<float>());
+    mesh->translate(to_3d(bed.center(), 0.0).cast<float>());
     return *mesh;
 }
 
@@ -73,7 +68,7 @@ std::vector<std::pair<Vec3f, Vec2f>> BedGeometry::plate_triangles(const Domain::
     ret.reserve(triangles.size());
     std::transform(triangles.begin(), triangles.end(), std::back_inserter(ret),
         [&min, &size](const Vec2f& v) {
-            return std::make_pair(to_3d(v, 2.0f * float(GROUND_Z)),
+            return std::make_pair(to_3d(v, 0.0f),
                 Vec2f((v.x() - min.x()) / size.x(), (v.y() - min.y()) / size.y()));
     });
 
@@ -123,8 +118,8 @@ std::vector<Vec3f> BedGeometry::plate_contour(const Domain::Bed& bed)
     Lines lines = Algorithms::ExPolygon::to_lines(contour);
     ret.reserve(2 * lines.size());
     for (const Slic3r::Line& l : lines) {
-        ret.emplace_back(to_3d(unscale(l.a), GROUND_Z).cast<float>());
-        ret.emplace_back(to_3d(unscale(l.b), GROUND_Z).cast<float>());
+        ret.emplace_back(to_3d(unscale(l.a), 0.0).cast<float>());
+        ret.emplace_back(to_3d(unscale(l.b), 0.0).cast<float>());
     }
     return ret;
 }
@@ -145,11 +140,11 @@ std::vector<Vec3f> BedGeometry::print_volume(const Domain::Bed& bed)
     Lines lines = Algorithms::ExPolygon::to_lines(contour);
     ret.reserve(6 * lines.size());
     for (const Slic3r::Line& l : lines) {
-        ret.emplace_back(to_3d(unscale(l.a), GROUND_Z).cast<float>());
-        ret.emplace_back(to_3d(unscale(l.b), GROUND_Z).cast<float>());
+        ret.emplace_back(to_3d(unscale(l.a), 0.0).cast<float>());
+        ret.emplace_back(to_3d(unscale(l.b), 0.0).cast<float>());
         ret.emplace_back(to_3d(unscale(l.a), max_print_height).cast<float>());
         ret.emplace_back(to_3d(unscale(l.b), max_print_height).cast<float>());
-        ret.emplace_back(to_3d(unscale(l.a), GROUND_Z).cast<float>());
+        ret.emplace_back(to_3d(unscale(l.a), 0.0).cast<float>());
         ret.emplace_back(to_3d(unscale(l.a), max_print_height).cast<float>());
     }
     return ret;

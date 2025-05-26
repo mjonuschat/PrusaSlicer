@@ -307,6 +307,25 @@ Scene::NodeMaterials Scene::collect_nodes_with_material(const Node::NodePredicat
     return ret;
 }
 
+void Scene::render_background(Render::CommandBuffer& cmd_buffer, Render::Device& device, bool use_error_color) const
+{
+    static const Slic3r::ColorRGBA DEFAULT_BG_DARK_COLOR = {0.478f, 0.478f, 0.478f, 1.0f};
+    static const Slic3r::ColorRGBA DEFAULT_BG_LIGHT_COLOR = {0.753f, 0.753f, 0.753f, 1.0f};
+    static const Slic3r::ColorRGBA ERROR_BG_DARK_COLOR = {0.478f, 0.192f, 0.039f, 1.0f};
+    static const Slic3r::ColorRGBA ERROR_BG_LIGHT_COLOR = {0.753f, 0.192f, 0.039f, 1.0f};
+
+    const ColorRGBA top_color = use_error_color ? ERROR_BG_LIGHT_COLOR : DEFAULT_BG_LIGHT_COLOR;
+    const ColorRGBA bottom_color = use_error_color ? ERROR_BG_DARK_COLOR : DEFAULT_BG_DARK_COLOR;
+
+    Render::Material material;
+    material
+        .set_shader(device.context().shader_manager().shader("background"))
+        .set_uniform("top_color", top_color)
+        .set_uniform("bottom_color", bottom_color);
+
+    cmd_buffer.bind_and_draw(*m_screen_quad, material);
+}
+
 void Scene::render_shadowsmap_pass(Render::Device& device, ISceneRenderCustomizer* customizer) const
 {
     if (m_shadows.framebuffer == nullptr)
@@ -782,6 +801,8 @@ void Scene::render(Render::Device& device, Render::CommandBuffer& cmd_buffer, IS
 
     if (m_screen_quad == nullptr)
         init_screen_quad(device);
+
+    render_background(cmd_buffer, device, false);
 
     bool shadows = m_shadows.enabled && (uint32_t(flags) & uint32_t(SceneRenderFlag::Shadows)) != 0;
     if (shadows)

@@ -330,6 +330,7 @@ private:
     void generate_ao_kernel(Render::Device& device) const;
     void generate_ao_noise(Render::Device& device) const;
 
+    void render_background(Render::CommandBuffer& cmd_buffer, Render::Device& device, bool use_error_color) const;
     void render_shadowsmap_pass(Render::Device& device, ISceneRenderCustomizer* customizer) const;
     void render_shadows_receivers_pass(Render::Device& device, Render::CommandBuffer& cmd_buffer, ISceneRenderCustomizer* customizer) const;
     void render_no_shadows_pass(Render::CommandBuffer& cmd_buffer, ISceneRenderCustomizer* customizer) const;

@@ -9,6 +9,19 @@
 
 namespace Slic3r::App::Scene {
 
+/**
+  * @brief Z offset to prevent z-fighting
+  * 
+  * Z LEVELS
+  *
+  * 1 - id label
+  * 2 - grid / contour / print volume
+  * 3 - plate
+  * 4 - model
+  * 
+  */
+static constexpr double Z_OFFSET = -0.005;
+
 static void plate_node(Render::Device& device, ScenePresenterProjectContext& ctx, NodeBuilder& builder, const Domain::Bed& bed,
     const BedNodeTag& tag, int layer_id)
 {
@@ -39,9 +52,10 @@ static void plate_node(Render::Device& device, ScenePresenterProjectContext& ctx
     builder
         .child([&](NodeBuilder& bldr) {
             bldr
-                .set_debug_name(fmt::format("bed: {} plate", bed.id().id))
+                .set_debug_name(fmt::format("bed {} plate", tag.instance_id))
                 .set_tag(BedNodeTag{ tag.config_container_id, tag.instance_id, type })
                 .set_mesh(geom, material, layer_id)
+                .transform([](Transform3d& xform) { xform.translate(3.0 * Z_OFFSET * Vec3d::UnitZ()); })
                 .set_shadows(Render::Shadows{ false, true })
                 .set_pbr(DEFAULT_BED_PLATE_PBRPARAMS)
                 .set_aabb(trimesh->aabb_mesh());
@@ -66,9 +80,10 @@ static void grid_node(Render::Device& device, ScenePresenterProjectContext& ctx,
     builder
         .child([&](NodeBuilder& bldr) {
             bldr
-                .set_debug_name(fmt::format("bed: {} grid", bed.id().id))
+                .set_debug_name(fmt::format("bed {} grid", tag.instance_id))
                 .set_tag(BedNodeTag{ tag.config_container_id, tag.instance_id, BedElementType::Grid })
-                .set_mesh(geom, material, layer_id);
+                .set_mesh(geom, material, layer_id)
+                .transform([](Transform3d& xform) { xform.translate(2.0 * Z_OFFSET * Vec3d::UnitZ()); });
         });
 }
 
@@ -90,9 +105,10 @@ static void contour_node(Render::Device& device, ScenePresenterProjectContext& c
     builder
         .child([&](NodeBuilder& bldr) {
             bldr
-                .set_debug_name(fmt::format("bed: {} contour", bed.id().id))
+                .set_debug_name(fmt::format("bed {} contour", tag.instance_id))
                 .set_tag(BedNodeTag{ tag.config_container_id, tag.instance_id, BedElementType::Contour })
-                .set_mesh(geom, material, layer_id);
+                .set_mesh(geom, material, layer_id)
+                .transform([](Transform3d& xform) { xform.translate(2.0 * Z_OFFSET * Vec3d::UnitZ()); });
         });
 }
 
@@ -114,9 +130,10 @@ static void print_volume_node(Render::Device& device, ScenePresenterProjectConte
     builder
         .child([&](NodeBuilder& bldr) {
             bldr
-                .set_debug_name(fmt::format("bed: {} contour", bed.id().id))
+                .set_debug_name(fmt::format("bed {} contour", tag.instance_id))
                 .set_tag(BedNodeTag{ tag.config_container_id, tag.instance_id, BedElementType::PrintVolume })
-                .set_mesh(geom, material, layer_id);
+                .set_mesh(geom, material, layer_id)
+                .transform([](Transform3d& xform) { xform.translate(2.0 * Z_OFFSET * Vec3d::UnitZ()); });
         });
 }
 
@@ -146,9 +163,10 @@ static void model_node(Render::Device& device, ScenePresenterProjectContext& ctx
     builder
         .child([&](NodeBuilder& bldr) {
             bldr
-                .set_debug_name(fmt::format("bed: {} model", bed.id().id))
+                .set_debug_name(fmt::format("bed {} model", tag.instance_id))
                 .set_tag(BedNodeTag{ tag.config_container_id, tag.instance_id, BedElementType::Model })
                 .set_mesh(geom, material, layer_id)
+                .transform([](Transform3d& xform) { xform.translate(4.0 * Z_OFFSET * Vec3d::UnitZ()); })
                 .set_shadows(Render::Shadows{ true, true })
                 .set_pbr(DEFAULT_BED_MODEL_PBRPARAMS)
                 .set_aabb(trimesh->aabb_mesh());
@@ -174,7 +192,8 @@ static void axis_node(uint8_t axis_id, Render::Device& device, ScenePresenterPro
     builder.child([&](NodeBuilder& bldr) {
         Render::Material material = BedMaterials::axis_material(device, axis_id);
 
-        bldr.set_debug_name(fmt::format("bed axis {}", axis_id))
+        bldr
+            .set_debug_name(fmt::format("bed {} axis {}", tag.instance_id, axis_id))
             .set_tag(BedNodeTag{tag.config_container_id, tag.instance_id, BedElementType::Axis})
             .set_mesh(geom, material, layer_id)
             .transform([axis_id](Transform3d& xform) {
@@ -193,12 +212,14 @@ static void axes_node(Render::Device& device, ScenePresenterProjectContext& ctx,
     const BedNodeTag& tag, int layer_id)
 {
     builder.child([&](NodeBuilder& bldr) {
-        bldr.set_debug_name("bed axes main")
+        bldr
+            .set_debug_name(fmt::format("bed {} axes main", tag.instance_id))
             .set_tag(BedNodeTag{tag.config_container_id, tag.instance_id, BedElementType::AxesMain})
             .transform([&bed](Transform3d& xform) { xform.translate(to_3d(bed.offset(), 0.0)); });
 
         bldr.child([&](NodeBuilder& in_bldr) {
-            in_bldr.set_debug_name("bed axes scaler")
+            in_bldr
+                .set_debug_name(fmt::format("bed {} axes scaler", tag.instance_id))
                 .set_tag(BedNodeTag{tag.config_container_id, tag.instance_id, BedElementType::AxesScaler});
             for (uint8_t i = 0; i < 3; ++i) {
                 axis_node(i, device, ctx, in_bldr, bed, tag, layer_id);
@@ -207,13 +228,15 @@ static void axes_node(Render::Device& device, ScenePresenterProjectContext& ctx,
     });
 }
 
-void BedNodeBuilder::bed_node(NodeBuilder& builder, const Domain::Bed& bed, const Domain::BedInstance& instance,
+void BedNodeBuilder::bed_node(NodeBuilder& builder, const Domain::BedInstance& instance,
     const BedNodeTag& tag, Render::Device& device, ScenePresenterProjectContext& ctx, int layer_id)
 {
     builder
-        .set_debug_name(fmt::format("bed: {} inst: {}", tag.config_container_id, tag.instance_id))
+        .set_debug_name(fmt::format("bed {}", tag.instance_id))
         .set_tag(tag)
         .transform([&instance](auto& t) { t = instance.matrix(); });
+
+    const Domain::Bed& bed = instance.bed;
 
     plate_node(device, ctx, builder, bed, tag, layer_id);
     if (!bed.model_filename().empty())

@@ -15,8 +15,8 @@ struct BedNodeTag;
 class BedNodeBuilder
 {
 public:
-    static void bed_node(NodeBuilder& builder, const Domain::Bed& bed, const Domain::BedInstance& instance,
-        const BedNodeTag& tag, Render::Device& device, ScenePresenterProjectContext& ctx, int layer_id);
+    static void bed_node(NodeBuilder& builder, const Domain::BedInstance& instance, const BedNodeTag& tag, Render::Device& device,
+        ScenePresenterProjectContext& ctx, int layer_id);
 };
 
 } // namespace Slic3r::App::Scene

@@ -63,12 +63,11 @@ void PreviewScenePresenter::add_bed_instances(const Domain::BedRefs& instances)
         const Domain::ConfigContainer* cc =
             proj.find_config_container(instance.config_container_id); DEBUG_ASSERT(cc != nullptr);
         const Domain::BedInstance& inst = cc->find_bed_instance(instance.instance_id);
-        const Domain::Bed& bed = cc->bed();
 
         Scene::BedNodeTag tag = { instance.config_container_id, instance.instance_id };
 
         Scene::NodeBuilder builder(scn);
-        Scene::BedNodeBuilder::bed_node(builder, bed, inst, tag, m_device,
+        Scene::BedNodeBuilder::bed_node(builder, inst, tag, m_device,
             m_projects[m_selected_project_id], int(PreviewSceneLayer::Bed));
 
         scn.add_child(builder.build().release());
