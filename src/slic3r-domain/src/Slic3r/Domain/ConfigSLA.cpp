@@ -494,8 +494,8 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     SET_DEFAULT(false);
 
     def = defs.add("support_points_density_relative", Int);
-    def->location = "sla_material_settings";
-    def->overrides_in = { "sla_object_settings" };
+    def->location = "sla_print_settings";
+    def->overrides_in = { "sla_material_settings", "sla_object_settings"};
     def->label = L("Support points density");
     def->category = L("Supports");
     def->tooltip = L("This is a relative measure of support points density.");
