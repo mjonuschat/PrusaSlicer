@@ -269,19 +269,19 @@ void GCodeGenerator::PlaceholderParserIntegration::update_from_gcodewriter(const
             total_weight += w;
         }
 
-        this->parser.set("extruded_volume", extruded_volume);
-        this->parser.set("extruded_weight", extruded_weight);
+        this->output_config.set("extruded_volume", extruded_volume);
+        this->output_config.set("extruded_weight", extruded_weight);
 
-        this->parser.set("extruded_volume_total", total_volume);
-        this->parser.set("extruded_weight_total", total_weight);
+        this->output_config.set("extruded_volume_total", total_volume);
+        this->output_config.set("extruded_weight_total", total_weight);
 
-        this->parser.set("e_retracted", this->e_retracted);
-        this->parser.set("e_restart_extra", this->e_restart_extra);
+        this->output_config.set("e_retracted", this->e_retracted);
+        this->output_config.set("e_restart_extra", this->e_restart_extra);
         if (! writer.config.get<bool>("use_relative_e_distances")) {
             this->e_position.assign(num_extruders, 0);
             for (const Extruder &e : extruders)
                 this->e_position[e.id()] = e.position();
-            this->parser.set("e_position", this->e_position);
+            this->output_config.set("e_position", this->e_position);
         }
     }
 }

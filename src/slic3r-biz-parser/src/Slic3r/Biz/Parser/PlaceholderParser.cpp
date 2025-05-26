@@ -1009,7 +1009,7 @@ namespace client
             if (ctx->skipping())
                 return;
 
-            assert(opt.opt != nullptr && !IO::is_scalar(*opt.opt));
+            assert(opt.opt != nullptr && IO::is_scalar(*opt.opt));
 
             const IO::Scalar& scalar{std::get<IO::Scalar>(*opt.opt)};
 

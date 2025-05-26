@@ -88,30 +88,6 @@ bool Scalar::operator==(const Scalar& rhs) const {
 
 Type Scalar::type() const { return m_type; }
 
-// Escape \n, \r and backslash
-std::string escape_string_cstyle(const std::string &str)
-{
-    // Allocate a buffer twice the input string length,
-    // so the output will fit even if all input characters get escaped.
-    std::vector<char> out(str.size() * 2, 0);
-    char *outptr = out.data();
-    for (size_t i = 0; i < str.size(); ++ i) {
-        char c = str[i];
-        if (c == '\r') {
-            (*outptr ++) = '\\';
-            (*outptr ++) = 'r';
-        } else if (c == '\n') {
-            (*outptr ++) = '\\';
-            (*outptr ++) = 'n';
-        } else if (c == '\\') {
-            (*outptr ++) = '\\';
-            (*outptr ++) = '\\';
-        } else
-            (*outptr ++) = c;
-    }
-    return std::string(out.data(), outptr - out.data());
-}
-
 std::string Scalar::serialize() const {
     switch(m_type){
     case Type::Float: return float_to_string_decimal_point(get<double>());
@@ -120,7 +96,7 @@ std::string Scalar::serialize() const {
         const auto result{get<std::optional<int>>()};
         return result ? std::to_string(*result) : "nil";
     }
-    case Type::String: return escape_string_cstyle(get<std::string>());
+    case Type::String: return get<std::string>();
     case Type::Percent: {
         const auto result{get<Percentage>()};
         return float_to_string_decimal_point(result.value) + "%";

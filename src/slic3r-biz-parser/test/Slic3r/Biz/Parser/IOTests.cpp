@@ -67,7 +67,7 @@ TEST_CASE("Scalar can be serialized to string", "[ParserIO]") {
     CHECK(Scalar{42}.serialize() == "42");
     CHECK(Scalar{std::optional<int>{22}}.serialize() == "22");
     CHECK(Scalar{std::optional<int>{}}.serialize() == "nil");
-    CHECK(Scalar{std::string{"hello\r\n\\"}}.serialize() == "hello\\r\\n\\\\");
+    CHECK(Scalar{std::string{"hello\r\n\\"}}.serialize() == "hello\r\n\\");
     CHECK(Scalar{Percentage{10}}.serialize() == "10%");
     CHECK(Scalar{FloatOrPercentage{Percentage{30}}}.serialize() == "30%");
     CHECK(Scalar{FloatOrPercentage{3.3}}.serialize() == "3.3");
