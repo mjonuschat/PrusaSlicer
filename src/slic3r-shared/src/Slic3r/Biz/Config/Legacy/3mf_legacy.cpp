@@ -598,8 +598,8 @@ namespace Slic3rLegacy {
             ConfigPack& config,
             Slic3rLegacy::ConfigSubstitutionContext& config_substitutions,
             bool check_version,
-            WipeTowersOnBeds& wipe_towers,
-            CustomGCodesOnBeds& custom_gcodes
+            Slic3r::Domain::WipeTowersOnBeds& wipe_towers,
+            Slic3r::Domain::CustomGCodesOnBeds& custom_gcodes
         );
         unsigned int version() const { return m_version; }
         boost::optional<Semver> prusaslicer_generator_version() const { return m_prusaslicer_generator_version; }
@@ -622,8 +622,8 @@ namespace Slic3rLegacy {
             Model& model,
             ConfigPack& config,
             Slic3rLegacy::ConfigSubstitutionContext& config_substitutions,
-            WipeTowersOnBeds& wipe_towers,
-            CustomGCodesOnBeds& custom_gcodes
+            Slic3r::Domain::WipeTowersOnBeds& wipe_towers,
+            Slic3r::Domain::CustomGCodesOnBeds& custom_gcodes
         );
         bool _extract_relationships_from_archive(mz_zip_archive &archive, const mz_zip_archive_file_stat &stat);
         bool _extract_model_from_archive(mz_zip_archive &archive, const mz_zip_archive_file_stat &stat);
@@ -634,9 +634,9 @@ namespace Slic3rLegacy {
         void _extract_sla_support_points_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat);
         void _extract_sla_drain_holes_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat);
 
-        CustomGCodesOnBeds _extract_custom_gcode_per_print_z_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat);
+        Slic3r::Domain::CustomGCodesOnBeds _extract_custom_gcode_per_print_z_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat);
 
-        WipeTowersOnBeds _extract_wipe_tower_information_from_archive(
+        Slic3r::Domain::WipeTowersOnBeds _extract_wipe_tower_information_from_archive(
             ::mz_zip_archive& archive, const mz_zip_archive_file_stat& stat
         );
         Domain::ModelWipeTower _extract_wipe_tower_information_from_archive_legacy(
@@ -758,8 +758,8 @@ namespace Slic3rLegacy {
         ConfigPack& config,
         Slic3rLegacy::ConfigSubstitutionContext& config_substitutions,
         bool check_version,
-        WipeTowersOnBeds& wipe_towers,
-        CustomGCodesOnBeds& custom_gcodes
+        Slic3r::Domain::WipeTowersOnBeds& wipe_towers,
+        Slic3r::Domain::CustomGCodesOnBeds& custom_gcodes
     )
     {
         m_version = 0;
@@ -811,8 +811,8 @@ namespace Slic3rLegacy {
         Model& model,
         ConfigPack& config,
         Slic3rLegacy::ConfigSubstitutionContext& config_substitutions,
-        WipeTowersOnBeds& wipe_towers,
-        CustomGCodesOnBeds& custom_gcodes
+        Slic3r::Domain::WipeTowersOnBeds& wipe_towers,
+        Slic3r::Domain::CustomGCodesOnBeds& custom_gcodes
     )
     {
         mz_zip_archive archive;
@@ -1716,7 +1716,7 @@ namespace Slic3rLegacy {
         return true;
     }
 
-    CustomGCodesOnBeds _3MF_Importer::_extract_custom_gcode_per_print_z_from_archive(::mz_zip_archive &archive, const mz_zip_archive_file_stat &stat)
+    Slic3r::Domain::CustomGCodesOnBeds _3MF_Importer::_extract_custom_gcode_per_print_z_from_archive(::mz_zip_archive &archive, const mz_zip_archive_file_stat &stat)
     {
         if (stat.m_uncomp_size <= 0) {
             return {};
@@ -1735,7 +1735,7 @@ namespace Slic3rLegacy {
         if (main_tree.front().first != "custom_gcodes_per_print_z")
             return {};
 
-        CustomGCodesOnBeds result;
+        Slic3r::Domain::CustomGCodesOnBeds result;
 
         for (const auto& bed_block : main_tree) {
             if (bed_block.first != "custom_gcodes_per_print_z")
@@ -1792,11 +1792,11 @@ namespace Slic3rLegacy {
         return result;
     }
 
-    WipeTowersOnBeds _3MF_Importer::_extract_wipe_tower_information_from_archive(
+    Slic3r::Domain::WipeTowersOnBeds _3MF_Importer::_extract_wipe_tower_information_from_archive(
         ::mz_zip_archive& archive, const mz_zip_archive_file_stat& stat
     )
     {
-        WipeTowersOnBeds result;
+        Slic3r::Domain::WipeTowersOnBeds result;
 
         if (stat.m_uncomp_size <= 0) {
             return {};
@@ -2915,8 +2915,8 @@ namespace Slic3rLegacy {
             bool fullpath_sources,
             const ThumbnailData* thumbnail_data,
             bool zip64,
-            const WipeTowersOnBeds& wipe_towers,
-            const CustomGCodesOnBeds& custom_gcodes
+            const Slic3r::Domain::WipeTowersOnBeds& wipe_towers,
+            const Slic3r::Domain::CustomGCodesOnBeds& custom_gcodes
         );
         static void add_transformation(std::stringstream &stream, const Transform3d &tr);
     private:
@@ -2926,8 +2926,8 @@ namespace Slic3rLegacy {
             const Model& model,
             const std::optional<ConfigPack>& config,
             const ThumbnailData* thumbnail_data,
-            const WipeTowersOnBeds& wipe_towers,
-            const CustomGCodesOnBeds& custom_gcodes
+            const Slic3r::Domain::WipeTowersOnBeds& wipe_towers,
+            const Slic3r::Domain::CustomGCodesOnBeds& custom_gcodes
         );
         bool _add_content_types_file_to_archive(mz_zip_archive& archive);
         bool _add_thumbnail_file_to_archive(mz_zip_archive& archive, const ThumbnailData& thumbnail_data);
@@ -2941,10 +2941,10 @@ namespace Slic3rLegacy {
         bool _add_layer_config_ranges_file_to_archive(mz_zip_archive& archive, const Model& model);
         bool _add_sla_support_points_file_to_archive(mz_zip_archive& archive, const Model& model);
         bool _add_sla_drain_holes_file_to_archive(mz_zip_archive& archive, const Model& model);
-        bool _add_print_config_file_to_archive(mz_zip_archive& archive, const ConfigPack& config, const Model& model, const WipeTowersOnBeds& wipe_towers);
+        bool _add_print_config_file_to_archive(mz_zip_archive& archive, const ConfigPack& config, const Model& model, const Slic3r::Domain::WipeTowersOnBeds& wipe_towers);
         bool _add_model_config_file_to_archive(mz_zip_archive& archive, const Model& model, const IdToObjectDataMap &objects_data);
-        bool _add_custom_gcode_per_print_z_file_to_archive(mz_zip_archive& archive, const CustomGCodesOnBeds& custom_gcodes); //, const DynamicPrintConfig* config);
-        bool _add_wipe_tower_information_file_to_archive( mz_zip_archive& archive, const WipeTowersOnBeds& wipe_towers);
+        bool _add_custom_gcode_per_print_z_file_to_archive(mz_zip_archive& archive, const Slic3r::Domain::CustomGCodesOnBeds& custom_gcodes); //, const DynamicPrintConfig* config);
+        bool _add_wipe_tower_information_file_to_archive( mz_zip_archive& archive, const Slic3r::Domain::WipeTowersOnBeds& wipe_towers);
     };
 
     bool _3MF_Exporter::save_model_to_file(
@@ -2954,8 +2954,8 @@ namespace Slic3rLegacy {
         bool fullpath_sources,
         const ThumbnailData* thumbnail_data,
         bool zip64,
-        const WipeTowersOnBeds& wipe_towers,
-        const CustomGCodesOnBeds& custom_gcodes
+        const Slic3r::Domain::WipeTowersOnBeds& wipe_towers,
+        const Slic3r::Domain::CustomGCodesOnBeds& custom_gcodes
     )
     {
         clear_errors();
@@ -2969,8 +2969,8 @@ namespace Slic3rLegacy {
         const Model& model,
         const std::optional<ConfigPack>& config,
         const ThumbnailData* thumbnail_data,
-        const WipeTowersOnBeds& wipe_towers,
-        const CustomGCodesOnBeds& custom_gcodes
+        const Slic3r::Domain::WipeTowersOnBeds& wipe_towers,
+        const Slic3r::Domain::CustomGCodesOnBeds& custom_gcodes
     )
     {
         mz_zip_archive archive;
@@ -3799,7 +3799,7 @@ namespace Slic3rLegacy {
         return true;
     }
 
-    bool _3MF_Exporter::_add_print_config_file_to_archive(mz_zip_archive& archive, const ConfigPack& config, const Model& model, const WipeTowersOnBeds& wipe_towers)
+    bool _3MF_Exporter::_add_print_config_file_to_archive(mz_zip_archive& archive, const ConfigPack& config, const Model& model, const Slic3r::Domain::WipeTowersOnBeds& wipe_towers)
     {
         assert(is_decimal_separator_point());
         char buffer[1024];
@@ -3974,7 +3974,7 @@ namespace Slic3rLegacy {
 
     bool _3MF_Exporter::_add_custom_gcode_per_print_z_file_to_archive(
         mz_zip_archive& archive,
-        const CustomGCodesOnBeds& custom_gcodes
+        const Slic3r::Domain::CustomGCodesOnBeds& custom_gcodes
         //const DynamicPrintConfig* config
     )
     {
@@ -4055,7 +4055,7 @@ namespace Slic3rLegacy {
         return true;
 }
 
-bool _3MF_Exporter::_add_wipe_tower_information_file_to_archive( mz_zip_archive& archive, const WipeTowersOnBeds& wipe_towers)
+bool _3MF_Exporter::_add_wipe_tower_information_file_to_archive( mz_zip_archive& archive, const Slic3r::Domain::WipeTowersOnBeds& wipe_towers)
 {
     std::string out = "";
 
@@ -4468,7 +4468,6 @@ std::optional<EmbossShape> read_emboss_shape(const char **attributes, unsigned i
 
 namespace Slic3rLegacy {
 
-using namespace Slic3r;
 
 bool load_3mf_legacy(
     const char* path,
@@ -4476,8 +4475,8 @@ bool load_3mf_legacy(
     Model* model,
     bool check_version,
     boost::optional<Semver> &prusaslicer_generator_version,
-    WipeTowersOnBeds& wipe_towers,
-    CustomGCodesOnBeds& custom_gcodes
+    Slic3r::Domain::WipeTowersOnBeds& wipe_towers,
+    Slic3r::Domain::CustomGCodesOnBeds& custom_gcodes
 )
 {
     // This is set here for the legacy loading. It used to be an argument.
@@ -4501,8 +4500,8 @@ bool store_3mf_legacy(
     const Model* model,
     const std::optional<ConfigPack>& config,
     bool fullpath_sources,
-    const WipeTowersOnBeds& wipe_towers,
-    const CustomGCodesOnBeds& custom_gcodes,
+    const Slic3r::Domain::WipeTowersOnBeds& wipe_towers,
+    const Slic3r::Domain::CustomGCodesOnBeds& custom_gcodes,
     const ThumbnailData* thumbnail_data,
     bool zip64
 )

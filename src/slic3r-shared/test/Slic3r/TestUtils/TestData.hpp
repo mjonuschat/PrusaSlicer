@@ -11,6 +11,7 @@
 #include "libslic3r/Model.hpp"
 #include "libslic3r/Config.hpp"
 #include "Slic3r/Domain/ConfigPack.hpp"
+#include "Slic3r/Domain/OnBeds.hpp"
 
 namespace Tests {
     inline boost::filesystem::path get_datadir() {
@@ -21,7 +22,7 @@ namespace Tests {
     struct Loaded3mf{
         Slic3r::Model model;
         Slic3r::Domain::ConfigPack config;
-        Slic3r::WipeTowersOnBeds wipe_towers;
+        Slic3r::Domain::WipeTowersOnBeds wipe_towers;
     };
 
     inline Loaded3mf load_3mf(const boost::filesystem::path &path) {
@@ -30,8 +31,8 @@ namespace Tests {
 
         Domain::ConfigPack config;
         Model model;
-        WipeTowersOnBeds wipe_towers;
-        CustomGCodesOnBeds custom_gcodes;
+        Slic3r::Domain::WipeTowersOnBeds wipe_towers;
+        Slic3r::Domain::CustomGCodesOnBeds custom_gcodes;
 
         ConfigSubstitutionContext context{ForwardCompatibilitySubstitutionRule::Disable};
         boost::optional<Semver> version;

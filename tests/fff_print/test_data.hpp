@@ -15,6 +15,7 @@
 #include "libslic3r/GCode/SeamPlacer.hpp"
 #include "libslic3r/GCode/SeamAligned.hpp"
 #include "slic3r-shared/include/Slic3r/Biz/Config/3mf_legacy.hpp"
+#include "Slic3r/Domain/OnBeds.hpp"
 
 #include <boost/filesystem.hpp>
 #include <unordered_map>
@@ -137,8 +138,8 @@ inline std::unique_ptr<Print> process_3mf(const boost::filesystem::path &path) {
     Model model;
 
     boost::optional<Semver> version;
-    WipeTowersOnBeds wipe_towers;
-    CustomGCodesOnBeds custom_gcodes;
+    Domain::WipeTowersOnBeds wipe_towers;
+    Domain::CustomGCodesOnBeds custom_gcodes;
     Slic3rLegacy::load_3mf_legacy(path.string().c_str(), config, &model, false, version, wipe_towers, custom_gcodes);
 
     const auto fdm_config{std::get<Domain::ConfigPackFDM>(config)};

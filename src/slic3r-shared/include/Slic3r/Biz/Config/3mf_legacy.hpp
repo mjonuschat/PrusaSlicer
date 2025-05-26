@@ -8,6 +8,7 @@
 #include "Slic3r/Domain/ConfigPack.hpp"
 #include "Slic3r/Domain/CustomGCode.hpp"
 #include "Slic3r/Domain/Model.hpp"
+#include "Slic3r/Domain/OnBeds.hpp"
 #include "Slic3r/Semver.hpp"
 #include <optional>
 #include <map>
@@ -57,9 +58,6 @@ namespace Slic3rLegacy {
     // Returns true if the 3mf file with the given filename is a PrusaSlicer project file (i.e. if it contains a config).
     extern std::pair<bool, std::optional<Slic3r::Semver>> is_project_3mf(const std::string&);
 
-    using WipeTowersOnBeds = std::map<int, Slic3r::Domain::ModelWipeTower>;
-    using CustomGCodesOnBeds = std::map<int, Slic3r::Domain::CustomGCode::Info>;
-
     // Load the content of a 3mf file into the given model and preset bundle.
     extern bool load_3mf_legacy(
         const char* path,
@@ -67,8 +65,8 @@ namespace Slic3rLegacy {
         Slic3r::Model* model,
         bool check_version,
         boost::optional<Slic3r::Semver> &prusaslicer_generator_version,
-        WipeTowersOnBeds& wipe_towers,
-        CustomGCodesOnBeds& custom_gcodes
+        Slic3r::Domain::WipeTowersOnBeds& wipe_towers,
+        Slic3r::Domain::CustomGCodesOnBeds& custom_gcodes
     );
 
     // Save the given model and the config data contained in the given Print into a 3mf file.
@@ -78,8 +76,8 @@ namespace Slic3rLegacy {
         const Slic3r::Model* model,
         const std::optional<Slic3r::Domain::ConfigPack>& config,
         bool fullpath_sources,
-        const WipeTowersOnBeds& wipe_towers,
-        const CustomGCodesOnBeds& custom_gcodes,
+        const Slic3r::Domain::WipeTowersOnBeds& wipe_towers,
+        const Slic3r::Domain::CustomGCodesOnBeds& custom_gcodes,
         const Slic3r::ThumbnailData* thumbnail_data = nullptr,
         bool zip64 = true
     );

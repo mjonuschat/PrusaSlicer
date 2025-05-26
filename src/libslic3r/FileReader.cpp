@@ -16,6 +16,7 @@
 #include "ModelProcessing.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
+#include "Slic3r/Domain/OnBeds.hpp"
 #include "libslic3r/CustomGCode.hpp"
 
 #include "Format/AMF.hpp"
@@ -48,7 +49,7 @@ static Model read_model_from_file(const std::string& input_file, LoadAttributes 
     DynamicPrintConfig temp_config;
     ConfigSubstitutionContext temp_config_substitutions_context(ForwardCompatibilitySubstitutionRule::EnableSilent);
 
-    CustomGCodesOnBeds custom_gcodes;
+    Domain::CustomGCodesOnBeds custom_gcodes;
     bool result = false;
     if (boost::algorithm::iends_with(input_file, ".stl"))
         result = load_stl(input_file.c_str(), &model);
@@ -64,7 +65,7 @@ static Model read_model_from_file(const std::string& input_file, LoadAttributes 
     else if (boost::algorithm::iends_with(input_file, ".3mf") || boost::algorithm::iends_with(input_file, ".zip")) {
         //FIXME options & LoadAttribute::CheckVersion ? 
         boost::optional<Semver> prusaslicer_generator_version;
-        WipeTowersOnBeds wipe_towers;
+        Domain::WipeTowersOnBeds wipe_towers;
         result = load_3mf(input_file.c_str(), temp_config, temp_config_substitutions_context, &model, false, prusaslicer_generator_version, wipe_towers, custom_gcodes);
     } else if (boost::algorithm::iends_with(input_file, ".svg"))
         result = load_svg(input_file, model);
@@ -95,8 +96,8 @@ static Model read_all_from_file(
     const std::string& input_file,
     DynamicPrintConfig* config,
     ConfigSubstitutionContext* config_substitutions,
-    WipeTowersOnBeds& wipe_towers,
-    CustomGCodesOnBeds& custom_gcodes,
+    Domain::WipeTowersOnBeds& wipe_towers,
+    Domain::CustomGCodesOnBeds& custom_gcodes,
     boost::optional<Semver>& prusaslicer_generator_version,
     LoadAttributes options
 )
@@ -266,8 +267,8 @@ Model load_model_with_config(
     const std::string& input_file,
     DynamicPrintConfig* config,
     ConfigSubstitutionContext* config_substitutions,
-    WipeTowersOnBeds& wipe_towers,
-    CustomGCodesOnBeds& custom_gcodes,
+    Domain::WipeTowersOnBeds& wipe_towers,
+    Domain::CustomGCodesOnBeds& custom_gcodes,
     boost::optional<Semver>& prusaslicer_generator_version,
     LoadAttributes options,
     LoadStats* stats
