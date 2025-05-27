@@ -203,17 +203,17 @@ TEST_CASE("Fill: Pattern Path Length", "[Fill]") {
     }
 }
 
-SCENARIO("Infill does not exceed perimeters", "[Fill]") 
+TEST_CASE("Infill does not exceed perimeters", "[Fill]") 
 {
-    auto test = [](const Domain::InfillPattern pattern) {
+    auto test = [](const Domain::InfillPattern pattern, const Domain::InfillPattern top_bottom_pattern) {
         TestConfig config{4};
         for (auto& tool_settings : config.tool) {
             tool_settings.opt("nozzle_diameter").set(0.4);
         }
 
         config.print.opt("fill_pattern").set(pattern);
-        config.print.opt("top_fill_pattern").set(pattern);
-        config.print.opt("bottom_fill_pattern").set(pattern);
+        config.print.opt("top_fill_pattern").set(top_bottom_pattern);
+        config.print.opt("bottom_fill_pattern").set(top_bottom_pattern);
         config.print.opt("perimeters").set(1 );
         config.print.opt("skirts").set(0);
         config.print.opt("fill_density").set(Percentage{20.0});
@@ -255,11 +255,10 @@ SCENARIO("Infill does not exceed perimeters", "[Fill]")
         }
     };
 
-    GIVEN("Rectilinear") { test(Domain::InfillPattern::ipRectilinear); }
-    throw std::runtime_error{"TODO: Honeycomb is not possible top_infill_pattern."};
-    GIVEN("Honeycomb") { test(Domain::InfillPattern::ipHoneycomb); }
-    GIVEN("HilbertCurve") { test(Domain::InfillPattern::ipHilbertCurve); }
-    GIVEN("Concentric") { test(Domain::InfillPattern::ipConcentric); }
+    GIVEN("Rectilinear") { test(Domain::InfillPattern::ipRectilinear, Domain::InfillPattern::ipRectilinear); }
+    GIVEN("Honeycomb") { test(Domain::InfillPattern::ipHoneycomb, Domain::InfillPattern::ipRectilinear); }
+    GIVEN("HilbertCurve") { test(Domain::InfillPattern::ipHilbertCurve, Domain::InfillPattern::ipHilbertCurve); }
+    GIVEN("Concentric") { test(Domain::InfillPattern::ipConcentric, Domain::InfillPattern::ipConcentric); }
 }
 
 // SCENARIO("Infill only where needed", "[Fill]")
