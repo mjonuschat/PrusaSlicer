@@ -176,7 +176,7 @@ SCENARIO("Ported from Perl", "[Print]") {
         }
 
         WHEN("extruder is assigned") {
-            // TODO this will fail!
+            throw std::runtime_error{"TODO: this will fail becouse of extruder!"};
             model2.objects.front()->object_settings.opt("extruder").set(3);
             model2.objects.front()->object_settings.opt("perimeter_extruder").set(2);
             print.apply(model2, config, {}, {});

@@ -18,7 +18,7 @@ using namespace Slic3r;
 using Biz::GCodeReader::GCodeReader;
 using Test::TestConfig;
 
-SCENARIO("Output file format", "[CustomGCode]")
+TEST_CASE("Output file format", "[CustomGCode]")
 {
     WHEN("output_file_format set") {
         TestConfig config;
@@ -26,9 +26,7 @@ SCENARIO("Output file format", "[CustomGCode]")
         config.print.opt("travel_speed").set(130.0);
         config.print.opt("layer_height").set(0.4);
 
-        throw std::runtime_error{"output filename format TODO"};
-
-        //config.print.opt("output_filename_format").set("ts_[travel_speed]_lh_[layer_height].gcode");
+        config.print.opt("output_filename_format").set("ts_[travel_speed]_lh_[layer_height].gcode");
         config.printer.opt("start_gcode").set("TRAVEL:[travel_speed] HEIGHT:[layer_height]\n" );
 
         Print print;
@@ -42,7 +40,7 @@ SCENARIO("Output file format", "[CustomGCode]")
     }
 }
 
-SCENARIO("Custom G-code", "[CustomGCode]")
+TEST_CASE("Custom G-code", "[CustomGCode]")
 {
     WHEN("start_gcode and layer_gcode set") {
 

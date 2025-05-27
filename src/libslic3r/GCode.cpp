@@ -244,8 +244,8 @@ void GCodeGenerator::PlaceholderParserIntegration::update_from_gcodewriter(const
         double total_volume = 0.;
         double total_weight = 0.;
 
-        std::vector<double> extruded_volume(extruders.size());
-        std::vector<double> extruded_weight(extruders.size());
+        std::vector<double> extruded_volume(num_extruders);
+        std::vector<double> extruded_weight(num_extruders);
         for (const Extruder &e : extruders) {
             this->e_retracted[e.id()]     = e.retracted();
             this->e_restart_extra[e.id()] = e.restart_extra();
@@ -263,8 +263,8 @@ void GCodeGenerator::PlaceholderParserIntegration::update_from_gcodewriter(const
 
             double v = e.extruded_volume() + wt_vol;
             double w = v * e.filament_density() * 0.001;
-            extruded_volume[e.id()] = v;
-            extruded_weight[e.id()] = w;
+            extruded_volume.at(e.id()) = v;
+            extruded_weight.at(e.id()) = w;
             total_volume += v;
             total_weight += w;
         }
