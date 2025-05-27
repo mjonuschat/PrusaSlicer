@@ -130,7 +130,7 @@ SCENARIO("Print: Brim generation", "[Print]") {
     }
 }
 
-SCENARIO("Ported from Perl", "[Print]") {
+TEST_CASE("Ported from Perl", "[Print]") {
     GIVEN("20mm cube") {
         WHEN("Print center is set to 100x100 (test framework default)")  {
             std::string gcode = Slic3r::Test::slice({ TestMesh::cube_20x20x20 }, TestConfig{});
@@ -160,10 +160,11 @@ SCENARIO("Ported from Perl", "[Print]") {
         // User sets a per-region option, also testing a deep copy of Model.
         Model model2(model);
         model2.objects.front()->object_settings.opt("fill_density").set(Percentage{100});
+        model2.objects.front()->object_settings.opt("fill_density").set_null(false);
         WHEN("fill_density overridden") {
             print.apply(model2, config, {}, {});
             THEN("region config inherits model object config") {
-                REQUIRE(print.get_print_region(0).config().get<Percentage>("fill_density") == Percentage{100});
+                REQUIRE(print.get_print_region(0).config().get<Percentage>("fill_density").value == Percentage{100}.value);
             }
         }
 
@@ -183,9 +184,8 @@ SCENARIO("Ported from Perl", "[Print]") {
                 REQUIRE(print.get_print_region(0).config().get<int>("infill_extruder") == 3);
             }
 
-            // TODO - now it does override it
-            THEN("extruder setting does not override explicitely specified extruders") {
-                REQUIRE(print.get_print_region(0).config().get<int>("perimeter_extruder") == 2);
+            THEN("extruder setting *does* override explicitely specified extruders") {
+                REQUIRE(print.get_print_region(0).config().get<int>("perimeter_extruder") == 3);
             }
         }
     }
