@@ -197,6 +197,7 @@ std::pair<AllOrSome<PrintSteps>, AllOrSome<PrintObjectSteps>> diff_to_invalidate
             || opt_key == "top_solid_layers"
             || opt_key == "top_solid_min_thickness"
             || opt_key == "solid_infill_below_area"
+            || opt_key == "extruder"
             || opt_key == "infill_extruder"
             || opt_key == "solid_infill_extruder"
             || opt_key == "infill_extrusion_width"
@@ -237,6 +238,7 @@ std::pair<AllOrSome<PrintSteps>, AllOrSome<PrintObjectSteps>> diff_to_invalidate
             object_steps.insert(posPrepareInfill);
         } else if (
                opt_key == "external_perimeter_extrusion_width"
+            || opt_key == "extruder"
             || opt_key == "perimeter_extruder"
             || opt_key == "fuzzy_skin"
             || opt_key == "fuzzy_skin_thickness"

@@ -176,13 +176,14 @@ SCENARIO("Ported from Perl", "[Print]") {
         }
 
         WHEN("extruder is assigned") {
-            throw std::runtime_error{"TODO: this will fail becouse of extruder!"};
             model2.objects.front()->object_settings.opt("extruder").set(3);
             model2.objects.front()->object_settings.opt("perimeter_extruder").set(2);
             print.apply(model2, config, {}, {});
             THEN("extruder setting is correctly expanded") {
                 REQUIRE(print.get_print_region(0).config().get<int>("infill_extruder") == 3);
             }
+
+            // TODO - now it does override it
             THEN("extruder setting does not override explicitely specified extruders") {
                 REQUIRE(print.get_print_region(0).config().get<int>("perimeter_extruder") == 2);
             }
