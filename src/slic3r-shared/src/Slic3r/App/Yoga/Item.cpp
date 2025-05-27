@@ -236,7 +236,13 @@ bool Item::enabled()
     return true;
 }
 
-void Item::set_enabled(bool enabled) { m_enabled = enabled; }
+void Item::set_enabled(bool enabled)
+{
+    if (m_enabled != enabled) {
+        m_enabled = enabled;
+        enabled_updated_internal();
+    }
+}
 
 void Item::set_max_size(const Vec2f max_size)
 {
@@ -717,7 +723,7 @@ void Item::render_debug(Vec2f pos, Vec2f size)
 void Item::process_events_node(Vec2f pos, Item* child)
 {
     YGNodeRef child_node = child->node();
-    if (!is_node_visible(child_node)) {
+    if (!is_node_visible(child_node) || !child->enabled()) {
         return;
     }
 

@@ -55,7 +55,6 @@ bool FdmViewerWrapper::set_settings(const FdmViewerWrapperSettings &settings)
         m_cb_legend.cb_view_type_changed = m_settings.cb_gcode_view_type_changed;
 
         m_slider_layers = Yoga::Passthrough<DoubleSliderForLayers>(std::make_unique<DoubleSliderForLayers>());
-        m_slider_layers->init(0, 0, 0, 100);
         m_slider_layers->show_ruler(m_settings.slider_layers_show_ruler, m_settings.slider_layers_show_ruler_bg);
         m_slider_layers->show_estimated_times(m_settings.slider_layers_show_estimated_times);
         m_slider_layers->set_use_default_colors(m_settings.slider_layers_use_default_colors);
@@ -74,7 +73,6 @@ bool FdmViewerWrapper::set_settings(const FdmViewerWrapperSettings &settings)
         m_slider_layers->set_app_config_changed_callback(m_settings.cb_slider_layers_app_config_changed);
 
         m_slider_gcode = Yoga::Passthrough<DoubleSliderForGcode>{std::make_unique<DoubleSliderForGcode>()};
-        m_slider_gcode->init(0, 0, 0, 100);
         // set gcode slider callbacks
         m_slider_gcode->set_request_extra_frames_callback(std::bind(&FdmViewerWrapper::on_request_extra_frames, this, std::placeholders::_1));
         m_slider_gcode->set_on_thumb_move_callback(std::bind(&FdmViewerWrapper::on_slider_gcode_scroll_changed, this));

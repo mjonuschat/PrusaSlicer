@@ -9,7 +9,7 @@
 namespace Slic3r::App::Yoga {
 
 MaterialSettingsButton::MaterialSettingsButton(size_t id, const std::string& tooltip)
-    : LayoutButton(tooltip)
+    : RectangleButton(tooltip)
 {
     set_checkable(true);
     set_max_size({ YGUndefined, 40.f });
@@ -17,31 +17,25 @@ MaterialSettingsButton::MaterialSettingsButton(size_t id, const std::string& too
     // invalidate vertical padding to use whole button height for separators
     set_content_padding({ 5.f, 0.f });
 
-    size_t index = 0; // it's hidden icon index
-    Item* text_index = insert_into_content(std::make_unique<Text>(std::to_string(id)), ++index);
+    Item* text_index = emplace_back<Text>(std::to_string(id));
     text_index->set_self_align(YGAlignCenter);
 
-    insert_separator(++index);
+    emplace_back<Separator>(Orientation::Vertical)->set_fill(ImGui::GetStyleColorVec4(ImGuiCol_WindowBg));
 
-    m_color_marker = static_cast<Circle*>(insert_into_content(std::make_unique<Circle>(), ++index));
+    m_color_marker = emplace_back<Circle>();
     m_color_marker->set_height_percent(65);
     m_color_marker->set_self_align(YGAlignCenter);
 
-    ++index;// it's button text index
-    expand_label(true);
+    m_material_name = emplace_back<Text>("");
+    m_material_name->set_flex_grow(1.f);
+    m_material_name->set_self_align(YGAlignCenter);
 
-    insert_separator(++index);
+    emplace_back<Separator>(Orientation::Vertical)->set_fill(ImGui::GetStyleColorVec4(ImGuiCol_WindowBg));
 
-    m_nozzle = static_cast<Text*>(insert_into_content(std::make_unique<Text>(""), ++index));
+    m_nozzle = emplace_back<Text>("");
     m_nozzle->set_self_align(YGAlignCenter);
 
     set_background_color(ImColor(41, 41, 41));
-}
-
-void MaterialSettingsButton::insert_separator(size_t index)
-{
-    Separator* separator = static_cast<Separator*>(insert_into_content(std::make_unique<Separator>(Orientation::Vertical), index));
-    separator->set_fill(ImGui::GetStyleColorVec4(ImGuiCol_WindowBg));
 }
 
 void MaterialSettingsButton::set_color(const ImColor& color)
@@ -56,7 +50,7 @@ void MaterialSettingsButton::set_nozzle(float nozzle)
 
 void MaterialSettingsButton::set_material_name(const std::string& name)
 {
-    set_label(name);
+    m_material_name->set_text(name);
 }
 
 } // namespace Slic3r::App::Yoga

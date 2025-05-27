@@ -179,6 +179,7 @@ protected:
     void render_node(Vec2f pos, Item* child);
     void render_debug(Vec2f pos, Vec2f size);
     void process_events_node(Vec2f pos, Item* child);
+    virtual void enabled_updated_internal() {}
 
 protected:
     // I will burn in hell for this

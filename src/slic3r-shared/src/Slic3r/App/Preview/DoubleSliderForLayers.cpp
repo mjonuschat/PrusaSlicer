@@ -3,6 +3,10 @@
 #include "Slic3r/App/I18N/I18N.hpp"
 #include "Slic3r/Assert.hpp"
 
+#include "Slic3r/App/Yoga/LayoutButton.hpp"
+#include "Slic3r/App/Yoga/Menu.hpp"
+#include "Slic3r/App/Yoga/MenuItem.hpp"
+
 #include <libslic3r/format.hpp>
 #include <libslic3r/Color.hpp>
 #include <libslic3r/GCode.hpp>
@@ -28,29 +32,119 @@ namespace CustomGCode = Domain::CustomGCode;
 
 static constexpr float EPSILON = 0.0011f;
 
-void DoubleSliderForLayers::init(
-    int lowerValue,
-    int higherValue,
-    int minValue,
-    int maxValue)
+DoubleSliderForLayers::DoubleSliderForLayers()
+: Slic3r::App::Imgui::DoubleSlider::Manager<float>(std::string("layers_slider"), L("Layers"), Yoga::Orientation::Vertical)
 {
-#ifdef __WXOSX__ 
-    m_is_osx = true;
-#endif //__WXOSX__
-    Manager<float>::init(lowerValue, higherValue, minValue, maxValue, "layers_slider", false);
-    m_ctrl.show_label_on_mouse_move(true);
+    Yoga::Item* btns = emplace_back<Yoga::Item>();
+    btns->set_gap(5);
+    btns->set_justify_content(YGJustifyCenter);
 
-    m_ctrl.set_get_label_on_move_cb([this](int pos) {
+    m_revert_btn = btns->emplace_back<Yoga::LayoutButton>("", Render::Icon::DSRevert, _u8L("Discard all custom changes"));
+    m_revert_btn->set_visible(can_edit());
+    m_revert_btn->set_enabled(!m_ticks.empty());
+    m_revert_btn->callbacks().action = [this]() { discard_all_ticks(); };
+
+    m_lock_btn = btns->emplace_back<Yoga::LayoutButton>("", Render::Icon::Unlock, _u8L("One layer mode"));
+    m_lock_btn->set_checkable(true);
+    m_lock_btn->callbacks().action = [this]() { 
+        m_lock_btn->set_icon(m_lock_btn->checked() ? Render::Icon::Lock : Render::Icon::Unlock);
+        change_one_layer_lock();
+    };
+
+    m_cog_btn = btns->emplace_back<Yoga::LayoutButton>("", Render::Icon::DSSettings);
+    m_cog_btn->callbacks().action = [this]() { m_cog_menu->set_visible(true); };
+    create_cog_menu();
+
+    Vec2f btns_size = { 22.f, 22.f };
+    for (Yoga::LayoutButton* btn : std::initializer_list<Yoga::LayoutButton*>{ m_revert_btn, m_lock_btn, m_cog_btn }) {
+        btn->set_min_size(btns_size);
+        btn->set_max_size(btns_size);
+    }
+
+    m_ctrl->show_label_on_mouse_move(true);
+
+    m_ctrl->set_get_label_on_move_cb([this](int pos) {
         m_pos_on_move = pos; 
         return m_show_estimated_times ? label(pos, LabelType::EstimatedTime) : "";
     });
-    m_ctrl.set_extra_draw_cb([this](const ImRect& draw_rc) { return draw_ticks(draw_rc); });
+    m_ctrl->set_extra_draw_cb([this](const ImRect& draw_rc) { return draw_ticks(draw_rc); });
+
+    m_ctrl->callbacks().value_changed = [this]() { process_thumb_move(); };
+
+    m_ctrl->callbacks().extra_render = [this]() { extra_render(); };
+
     m_ticks.set_values(&m_values);
+}
+
+void DoubleSliderForLayers::create_cog_menu()
+{
+    m_cog_menu = m_cog_btn->emplace_back<Yoga::Menu>("cog_menu", Yoga::Position::Top);
+
+    Yoga::MenuItem* jump_to_value_item = m_cog_menu->append_item(_u8L("Jump to height"), nullptr, Render::Icon::None, "Shift + G");
+    jump_to_value_item->callbacks().action = [this]() { jump_to_value(); };
+
+    Yoga::MenuItem* show_estimated_times_item = m_cog_menu->append_item(_u8L("Show estimated print time on hover"), &m_show_estimated_times);
+    show_estimated_times_item->callbacks().action = [this, show_estimated_times_item]() {
+        m_show_estimated_times = show_estimated_times_item->checked();
+        if (m_cb_app_config_changed)
+            m_cb_app_config_changed("show_estimated_times_in_dbl_slider", m_show_estimated_times ? "1" : "0"); 
+    };
+
+    Yoga::MenuItem* ruler_submenu = m_cog_menu->append_item_as_menu(_u8L("Ruler"));
+
+    Yoga::MenuItem* show_ruler_item = ruler_submenu->append_sub_menu_item(_u8L("Show"), &m_show_ruler);
+    show_ruler_item->callbacks().action = [this, show_ruler_item]() {
+        m_show_ruler = show_ruler_item->checked();
+        m_ctrl->update_draw_options(m_scale, m_show_ruler);
+        m_ctrl->set_min_size({ m_show_ruler ? 115: 95, 0 });
+        if (m_cb_app_config_changed != nullptr)
+            m_cb_app_config_changed("show_ruler_in_dbl_slider", m_show_ruler ? "1" : "0");
+    };
+
+    Yoga::MenuItem* show_ruler_background_item = ruler_submenu->append_sub_menu_item(_u8L("Show background"), &m_show_ruler_bg);
+    show_ruler_background_item->callbacks().action = [this, show_ruler_background_item]() {
+        m_show_ruler_bg = show_ruler_background_item->checked();
+        // ToDo set transparent window BG, if m_show_ruler_bg == false
+        if (m_cb_app_config_changed != nullptr)
+            m_cb_app_config_changed("show_ruler_bg_in_dbl_slider", m_show_ruler_bg ? "1" : "0");
+    };
+
+    m_cog_menu->append_separator();
+
+    m_edit_extruder_sequence_menu_item = m_cog_menu->append_item(_u8L("Set extruder sequence for the entire print"));
+    m_edit_extruder_sequence_menu_item->callbacks().action = [this]() {
+        if (m_ticks.edit_extruder_sequence(m_ctrl->max_pos(), m_mode))
+            process_ticks_changed();
+    };
+
+    Yoga::MenuItem* seq_top_layer_only_item = m_cog_menu->append_item(_u8L("Sequential slider applied only to top layer"), &m_seq_top_layer_only);
+    seq_top_layer_only_item->callbacks().action = [this, seq_top_layer_only_item]() {
+        m_seq_top_layer_only = !m_seq_top_layer_only;
+        if (m_cb_app_config_changed)
+            m_cb_app_config_changed("seq_top_layer_only", m_seq_top_layer_only ? "1" : "0");
+    };
+
+    m_cog_menu->append_separator();
+
+    bool use_default_colors = m_ticks.use_default_colors();
+    m_use_default_colors_menu_item = m_cog_menu->append_item(_u8L("Use default colors").c_str(), &use_default_colors);
+    m_edit_extruder_sequence_menu_item->callbacks().action = [this]() {
+        set_use_default_colors(!m_ticks.use_default_colors()); };
+
+    m_auto_color_change_menu_item = m_cog_menu->append_item(_u8L("Set auto color changes"));
+    m_auto_color_change_menu_item->callbacks().action = [this]() { auto_color_change(); };
+}
+
+void DoubleSliderForLayers::update_visibility_cog_menu_items()
+{
+    m_edit_extruder_sequence_menu_item->set_visible(m_mode == CustomGCode::Mode::MultiAsSingle && m_draw_mode == DrawMode::Regular);
+    m_use_default_colors_menu_item->set_visible(can_edit());
+    m_auto_color_change_menu_item->set_visible(can_edit() && m_mode != CustomGCode::Mode::MultiExtruder && m_draw_mode == DrawMode::Regular);
 }
 
 void DoubleSliderForLayers::change_one_layer_lock()
 {
-    m_ctrl.combine_thumbs(!m_ctrl.is_combine_thumbs()); 
+    m_ctrl->combine_thumbs(!m_ctrl->is_combine_thumbs()); 
     process_thumb_move();
 }
 
@@ -81,10 +175,13 @@ void DoubleSliderForLayers::set_ticks_values(const CustomGCode::Info& custom_gco
     bool was_empty = m_ticks.empty();
 
     m_ticks.set_ticks(custom_gcode_per_print_z);
+    m_revert_btn->set_enabled(!m_ticks.empty());
     
     if (!was_empty && m_ticks.empty())
         // Switch to the "Feature type"/"Tool" from the very beginning of a new object slicing after deleting of the old one
         process_ticks_changed();
+    else
+        m_revert_btn->set_enabled(!m_ticks.empty());
 
     update_draw_scroll_line_cb();
 }
@@ -128,6 +225,9 @@ void DoubleSliderForLayers::set_draw_mode(bool is_sla_print, bool is_sequential_
                   is_sequential_print ? DrawMode::SequentialFffPrint : DrawMode::Regular;
 
     update_draw_scroll_line_cb();
+
+    m_use_default_colors_menu_item->set_visible(can_edit());
+    m_auto_color_change_menu_item->set_visible(can_edit());
 }
 
 void DoubleSliderForLayers::set_mode_and_only_extruder(const bool is_one_extruder_printed_model, const int only_extruder)
@@ -143,13 +243,22 @@ void DoubleSliderForLayers::set_mode_and_only_extruder(const bool is_one_extrude
 
     if (m_mode != CustomGCode::Mode::SingleExtruder)
         set_use_default_colors(false);
+
+    update_visibility_cog_menu_items();
+    m_cog_btn->set_tooltip(m_mode == CustomGCode::Mode::MultiAsSingle ?
+        format(_u8L("Jump to height %s\n"
+                    "Set ruler mode\n"
+                    "or Set extruder sequence for the entire print"), "(Shift + G)") :
+        format(_u8L("Jump to height %s\n"
+                    "or Set ruler mode"), "(Shift + G)")
+    );
 }
 
 void DoubleSliderForLayers::jump_to_value()
 {
     //Init "jump to value";
     m_show_get_jump_value_popup = true;
-    m_jump_to_value = m_values[m_ctrl.active_pos()];
+    m_jump_to_value = m_values[m_ctrl->active_pos()];
     // force dimmed background for jump to value modal popup dialog without animation
     Imgui::disable_background_fadeout_animation();
     process_request_extra_frames();
@@ -169,7 +278,7 @@ void DoubleSliderForLayers::add_current_tick()
     if (!can_edit())
         return;
 
-    int tick = m_ctrl.active_pos();
+    int tick = m_ctrl->active_pos();
     auto it = m_ticks.ticks.find(TickCode{ tick });
 
     if (it != m_ticks.ticks.end()) // this tick is already exist
@@ -190,7 +299,7 @@ void DoubleSliderForLayers::add_current_tick()
 
 void DoubleSliderForLayers::delete_current_tick()
 {
-    auto it = m_ticks.ticks.find(TickCode{ m_ctrl.active_pos()});
+    auto it = m_ticks.ticks.find(TickCode{ m_ctrl->active_pos()});
     if (it == m_ticks.ticks.end())    // this tick doesn't exist
         return;
 
@@ -227,89 +336,28 @@ void DoubleSliderForLayers::perform_auto_color_change()
     process_ticks_changed();
 }
 
-void DoubleSliderForLayers::render_body(Yoga::Vec2f p, Yoga::Vec2f s)
+void DoubleSliderForLayers::process_ticks_changed()
 {
-    ImVec2 pos = to_im(p);
-    // ImVec2 size = to_im(s);
-    m_ruler.set_scale(m_scale);
-    m_icon_screen_size = 1.25f * lround(16.0f * ImGui::GetTextLineHeight() / 15.0f);
+    if (m_cb_ticks_changed)
+        m_cb_ticks_changed();
+    m_revert_btn->set_enabled(!m_ticks.empty());
+}
 
-    const ImGuiViewport& viewport = *ImGui::GetMainViewport();
-
-    float SLIDER_LAYERS_WIDTH = m_show_ruler ? 125.0f : 105.0f;
-    float width = SLIDER_LAYERS_WIDTH * m_scale;
-
-    ImVec2 position;
-    ImVec2 size;
-    float offset = 0;
-    if (pos.x == -1.0f && pos.y == -1.0f) {
-        // temporary hack to allow to render the slider outside Yoga layout
-        position.x = viewport.Size.x - width - m_icon_screen_size;
-        position.y = 1.5f * m_icon_screen_size + offset;
-        if (m_allow_editing)
-            position.y += 2.0f;
-
-        size = { width, viewport.Size.y - 4.0f * m_icon_screen_size - offset };
-    }
-    else {
-        ImVec2 av = ImGui::GetContentRegionAvail();
-        ImVec2 cp = ImGui::GetCursorScreenPos();
-        position = cp;
-        size.x = av.x;
-        size.y = av.y - 1.25f * m_icon_screen_size;
-    }
-
-    m_ctrl.init(position, size, m_scale, m_show_ruler);
-    if (m_ctrl.render()) {
-        // request one more frame if value was changes with mouse wheel
-        if (ImGui::GetIO().MouseWheel != 0.0f)
-            process_request_extra_frames();
-        process_thumb_move();
-    }
-    else if (m_ctrl.is_lclick_on_thumb() && can_edit() &&
-             !m_ticks.has_tick(m_ctrl.active_pos()))
-        add_code_as_tick(CustomGCode::Type::ColorChange);
-
-    // draw action buttons
-
-    ImVec2 btn_pos;
-    if (pos.x == -1.0f && pos.y == -1.0f){
-        float groove_center_x = m_ctrl.groove_rect().GetCenter().x;
-        btn_pos = { groove_center_x - 0.5f * m_icon_screen_size, position.y - 0.75f * m_icon_screen_size };
-    }
-    else
-        btn_pos = { position.x + 0.5f * size.x - 1.65f * m_icon_screen_size, position.y + size.y + 0.25f * m_icon_screen_size };
-
-    if (!m_ticks.empty() && can_edit() &&
-        render_button(Render::Icon::DSRevert, Render::Icon::DSRevertHovered, "revert", btn_pos, FocusedItem::RevertIcon))
-        discard_all_ticks();
-    else if (m_ticks.empty() && can_edit() && (pos.x != -1.0f || pos.y != -1.0f))
-        render_button(Render::Icon::DSRevertDisabled, Render::Icon::DSRevertDisabled, "revert", btn_pos, FocusedItem::None);
-
-    if (pos.x == -1.0f && pos.y == -1.0f)
-        btn_pos.y += 0.5f * m_icon_screen_size + size.y;
-    else
-        btn_pos.x += 1.1f * m_icon_screen_size;
-    bool is_one_layer = m_ctrl.is_combine_thumbs();
-    if (render_button(is_one_layer ? Render::Icon::Lock : Render::Icon::Unlock,
-                      is_one_layer ? Render::Icon::LockHovered : Render::Icon::UnlockHovered,
-                      "one_layer", btn_pos, FocusedItem::OneLayerIcon))
-        change_one_layer_lock();
-
-    if (pos.x == -1.0f && pos.y == -1.0f)
-        btn_pos.y += 1.2f * m_icon_screen_size;
-    else
-        btn_pos.x += 1.1f * m_icon_screen_size;
-    if (render_button(Render::Icon::DSSettings, Render::Icon::DSSettingsHovered, "settings", btn_pos, FocusedItem::CogIcon))
-        m_show_cog_menu = true;
-
-    if (m_draw_mode == DrawMode::SequentialFffPrint && m_ctrl.is_rclick_on_thumb()) {
+void DoubleSliderForLayers::extra_render()
+{
+    if (m_draw_mode == DrawMode::SequentialFffPrint && m_ctrl->is_rclick_on_thumb()) {
         std::string tip = _u8L("The sequential print is on.\n"
                                "It's impossible to apply any custom G-code for objects printing sequentually.");
         Imgui::tooltip(tip);
     }
     else
-        render_menu();
+        render_active_ctrl_menu();
+
+    if (m_ctrl->is_lclick_on_thumb() && can_edit() &&
+        !m_ticks.has_tick(m_ctrl->active_pos()))
+        add_code_as_tick(CustomGCode::Type::ColorChange);
+
+    const ImGuiViewport& viewport = *ImGui::GetMainViewport();
 
     if (m_show_get_jump_value_popup && render_get_jump_to_value_popup(viewport.GetCenter()))
         process_jump_to_value();
@@ -325,8 +373,6 @@ void DoubleSliderForLayers::render_body(Yoga::Vec2f p, Yoga::Vec2f s)
 
     if (m_yes_no_cancel_popup.show && render_yes_no_cancel_popup(viewport.GetCenter()))
         process_yes_no_cancel();
-
-    m_size = viewport.Size - position;
 }
 
 int DoubleSliderForLayers::find_close_layer_idx(const std::vector<float>& zs, float z, float eps)
@@ -433,18 +479,6 @@ std::string DoubleSliderForLayers::tooltip(int tick/*=-1*/) const
 {
     if (m_focus == FocusedItem::None)
         return "";
-    if (m_focus == FocusedItem::OneLayerIcon)
-        return _u8L("One layer mode");
-    if (m_focus == FocusedItem::RevertIcon)
-        return _u8L("Discard all custom changes");
-    if (m_focus == FocusedItem::CogIcon) {
-        return m_mode == CustomGCode::Mode::MultiAsSingle ?
-        (boost::format(_u8L("Jump to height %s\n"
-                           "Set ruler mode\n"
-                           "or Set extruder sequence for the entire print")) % "(Shift + G)").str() :
-        (boost::format(_u8L("Jump to height %s\n"
-                           "or Set ruler mode")) % "(Shift + G)").str();
-    }
     if (m_focus == FocusedItem::ColorBand)
         return m_mode != CustomGCode::Mode::SingleExtruder || !can_edit() ? "" :
             _u8L("Edit current color - Right click the colored slider segment");
@@ -561,9 +595,9 @@ std::string DoubleSliderForLayers::tooltip(int tick/*=-1*/) const
 void DoubleSliderForLayers::update_draw_scroll_line_cb()
 {
     if (m_ticks.empty() || m_draw_mode == DrawMode::SequentialFffPrint || m_draw_mode == DrawMode::SlaPrint)
-        m_ctrl.set_draw_scroll_line_cb(nullptr);
+        m_ctrl->set_draw_scroll_line_cb(nullptr);
     else
-        m_ctrl.set_draw_scroll_line_cb([this](const ImRect& scroll_line, const ImRect& slideable_region) {
+        m_ctrl->set_draw_scroll_line_cb([this](const ImRect& scroll_line, const ImRect& slideable_region) {
             draw_colored_band(scroll_line, slideable_region);
         });
 }
@@ -573,7 +607,7 @@ void DoubleSliderForLayers::draw_colored_band(const ImRect& groove, const ImRect
     if (m_ticks.empty() || m_draw_mode == DrawMode::SequentialFffPrint)
         return;
 
-    ImVec2 blank_padding = ImVec2(0.5f * m_ctrl.groove_rect().GetWidth(), 2.0f * m_scale);
+    ImVec2 blank_padding = ImVec2(0.5f * m_ctrl->groove_rect().GetWidth(), 2.0f * m_scale);
     float  blank_width = 1.0f * m_scale;
 
     ImRect blank_rect = ImRect(groove.GetCenter().x - blank_width, groove.Min.y, groove.GetCenter().x + blank_width, groove.Max.y);
@@ -609,7 +643,7 @@ void DoubleSliderForLayers::draw_colored_band(const ImRect& groove, const ImRect
     int rclicked_tick = -1;
     while (tick_it != m_ticks.ticks.end()) {
         //get position from tick
-        tick_pos = m_ctrl.position_in_rect(tick_it->tick, slideable_region);
+        tick_pos = m_ctrl->position_in_rect(tick_it->tick, slideable_region);
 
         ImRect band_rect = ImRect(ImVec2(main_band.Min.x, std::min(tick_pos, main_band.Min.y)), 
                                   ImVec2(main_band.Max.x, std::min(tick_pos, main_band.Max.y)));
@@ -633,7 +667,7 @@ void DoubleSliderForLayers::draw_colored_band(const ImRect& groove, const ImRect
                         draw_band(band_clr, band_rect);
 
                         if (ImGui::IsMouseHoveringRect(band_rect.Min, band_rect.Max) && 
-                            ImGui::GetIO().MouseClicked[1] && !m_ctrl.is_rclick_on_thumb()) {
+                            ImGui::GetIO().MouseClicked[1] && !m_ctrl->is_rclick_on_thumb()) {
                             rclicked_tick = tick_it->tick;
                         }
                     }
@@ -673,7 +707,7 @@ void DoubleSliderForLayers::draw_ticks(const ImRect& slideable_region)
     ImU32 tick_hovered_clr = m_show_ruler ? ImGui::GetColorU32(ImGuiCol_Tab) : ImGui::GetColorU32(ImGuiCol_WindowBg);
 
     auto get_tick_pos = [this, slideable_region](int tick) {
-        return m_ctrl.position_in_rect(tick, slideable_region);
+        return m_ctrl->position_in_rect(tick, slideable_region);
     };
 
     std::set<TickCode>::const_iterator tick_it = m_ticks.ticks.begin();
@@ -692,17 +726,17 @@ void DoubleSliderForLayers::draw_ticks(const ImRect& slideable_region)
                 Imgui::tooltip(tooltip(tick_it->tick), ImGui::GetFontSize() * 20.f);
             }
             is_hovered_tick = true;
-            m_ctrl.set_hovered_region(tick_hover_box);
-            if (m_ctrl.is_lclick_on_hovered_pos())
-                m_ctrl.is_active_higher_thumb() ? set_higher_pos(tick_it->tick) : set_lower_pos(tick_it->tick);
+            m_ctrl->set_hovered_region(tick_hover_box);
+            if (m_ctrl->is_lclick_on_hovered_pos())
+                m_ctrl->is_active_higher_thumb() ? set_higher_pos(tick_it->tick) : set_lower_pos(tick_it->tick);
             break;
         }
         ++tick_it;
     }
     if (!is_hovered_tick)
-        m_ctrl.invalidate_hovered_region();
+        m_ctrl->invalidate_hovered_region();
 
-    auto active_tick_it = m_ticks.ticks.find(TickCode{ m_ctrl.active_pos() });
+    auto active_tick_it = m_ticks.ticks.find(TickCode{ m_ctrl->active_pos() });
 
     tick_it = m_ticks.ticks.begin();
     while (tick_it != m_ticks.ticks.end()) {
@@ -714,7 +748,7 @@ void DoubleSliderForLayers::draw_ticks(const ImRect& slideable_region)
         ImGui::RenderFrame(tick_left.Min, tick_left.Max, tick_clr, false);
         ImGui::RenderFrame(tick_right.Min, tick_right.Max, tick_clr, false);
 
-        ImVec2 icon_pos(m_ctrl.ctrl_pos().x + width(), tick_pos - icon_offset);
+        ImVec2 icon_pos(m_ctrl->ctrl_pos().x + m_ctrl->width() - 0.5f * m_icon_screen_size, tick_pos - icon_offset);
         std::string btn_label = "tick " + std::to_string(tick_it->tick);
 
         //draw tick icon-buttons
@@ -743,7 +777,7 @@ void DoubleSliderForLayers::draw_ticks(const ImRect& slideable_region)
                 icon_pos, FocusedItem::Tick, tick_it->tick);
 
         if (activate_this_tick) {
-            m_ctrl.is_active_higher_thumb() ? set_higher_pos(tick_it->tick) : set_lower_pos(tick_it->tick);
+            m_ctrl->is_active_higher_thumb() ? set_higher_pos(tick_it->tick) : set_lower_pos(tick_it->tick);
             break;
         }
 
@@ -756,7 +790,7 @@ void DoubleSliderForLayers::draw_ruler(const ImRect& slideable_region)
     if (m_values.empty())
         return;
 
-    float step = slideable_region.GetHeight() / float(m_ctrl.max_pos() - m_ctrl.min_pos());
+    float step = slideable_region.GetHeight() / float(m_ctrl->max_pos() - m_ctrl->min_pos());
 
     if (!m_ruler.valid())
         m_ruler.init(m_values, step);
@@ -781,15 +815,15 @@ void DoubleSliderForLayers::draw_ruler(const ImRect& slideable_region)
         ImRect bg_rect = slideable_region;
         bg_rect.Expand(ImVec2(0.f, long_outer_x));
         bg_rect.Min.x -= tick_width;
-        bg_rect.Max.x = m_ctrl.ctrl_pos().x + width();
-        bg_rect.Min.y = m_ctrl.ctrl_pos().y + label_height;
-        bg_rect.Max.y = m_ctrl.ctrl_pos().y + height() - label_height;
-        ImU32 bg_color = ImGui::ColorConvertFloat4ToU32(ImVec4(0.13f, 0.13f, 0.13f, 0.5f));
-        ImGui::RenderFrame(bg_rect.Min, bg_rect.Max, bg_color, false, 2.f * m_ctrl.rounding());
+        bg_rect.Max.x = m_ctrl->ctrl_pos().x + m_ctrl->width();
+        bg_rect.Min.y = m_ctrl->ctrl_pos().y + label_height;
+        bg_rect.Max.y = m_ctrl->ctrl_pos().y + m_ctrl->height() - label_height;
+        ImU32 bg_color = ImGui::ColorConvertFloat4ToU32(ImVec4(0.13f, 0.31f, 0.13f, 0.5f));
+        ImGui::RenderFrame(bg_rect.Min, bg_rect.Max, bg_color, false, 2.f * m_ctrl->rounding());
     }
 
     auto get_tick_pos = [this, slideable_region](int tick) -> float {
-        return m_ctrl.position_in_rect(tick, slideable_region);
+        return m_ctrl->position_in_rect(tick, slideable_region);
     };
 
     auto draw_text = [max_val, x_center, label_height,  long_outer_x, this](const int tick, const float tick_pos)
@@ -813,7 +847,7 @@ void DoubleSliderForLayers::draw_ruler(const ImRect& slideable_region)
             float pos = get_tick_pos(lround(current_tick));
             draw_tick(pos, short_outer_x);
             current_tick += m_ruler.short_step;
-            if (current_tick > m_ctrl.max_pos())
+            if (current_tick > m_ctrl->max_pos())
                 break;
         }
     };
@@ -830,8 +864,8 @@ void DoubleSliderForLayers::draw_ruler(const ImRect& slideable_region)
     if (m_ruler.long_step < 0) {
         // sequential print when long_step wasn't detected because of a lot of printed objects 
         if (m_ruler.max_values.size() > 1) {
-            float last_pos = get_tick_pos(m_ctrl.max_pos());
-            while (tick <= m_ctrl.max_pos() && sequence < m_ruler.count()) {
+            float last_pos = get_tick_pos(m_ctrl->max_pos());
+            while (tick <= m_ctrl->max_pos() && sequence < m_ruler.count()) {
                 // draw just ticks with max value
                 value = m_ruler.max_values[sequence];
                 short_tick = float(tick);
@@ -845,7 +879,7 @@ void DoubleSliderForLayers::draw_ruler(const ImRect& slideable_region)
                         break;
                     }
                 }
-                if (tick > m_ctrl.max_pos())
+                if (tick > m_ctrl->max_pos())
                     break;
 
                 float pos = get_tick_pos(tick);
@@ -874,7 +908,7 @@ void DoubleSliderForLayers::draw_ruler(const ImRect& slideable_region)
     else {
         std::vector<int> last_positions; 
         if (m_ruler.count() == 1)
-            last_positions.emplace_back(m_ctrl.max_pos());
+            last_positions.emplace_back(m_ctrl->max_pos());
         else {
             // fill last positions for each object in sequential print
             last_positions.reserve(m_ruler.count());
@@ -883,7 +917,7 @@ void DoubleSliderForLayers::draw_ruler(const ImRect& slideable_region)
             float value = 0.0f;
             size_t sequence = 0;
 
-            while (tick <= m_ctrl.max_pos()) {
+            while (tick <= m_ctrl->max_pos()) {
                 value += m_ruler.long_step;
 
                 if (sequence < m_ruler.count() && value > m_ruler.max_values[sequence])
@@ -898,7 +932,7 @@ void DoubleSliderForLayers::draw_ruler(const ImRect& slideable_region)
                         break;
                     }
                 }
-                if (tick > m_ctrl.max_pos())
+                if (tick > m_ctrl->max_pos())
                     break;
 
                 if (sequence < m_ruler.count() && value == m_ruler.max_values[sequence]) {
@@ -912,7 +946,7 @@ void DoubleSliderForLayers::draw_ruler(const ImRect& slideable_region)
 
         float last_pos = get_tick_pos(last_positions[sequence]);
 
-        while (tick <= m_ctrl.max_pos()) {
+        while (tick <= m_ctrl->max_pos()) {
             value += m_ruler.long_step;
 
             if (sequence < m_ruler.count() && value > m_ruler.max_values[sequence])
@@ -929,7 +963,7 @@ void DoubleSliderForLayers::draw_ruler(const ImRect& slideable_region)
                     break;
                 }
             }
-            if (tick > m_ctrl.max_pos())
+            if (tick > m_ctrl->max_pos())
                 break;
 
             float pos = get_tick_pos(tick);
@@ -951,7 +985,7 @@ void DoubleSliderForLayers::draw_ruler(const ImRect& slideable_region)
             }
         }
         // short ticks from the last tick to the end 
-        draw_short_ticks(short_tick, m_ctrl.max_pos());
+        draw_short_ticks(short_tick, m_ctrl->max_pos());
     }
 
     // draw mose move line
@@ -964,85 +998,29 @@ void DoubleSliderForLayers::draw_ruler(const ImRect& slideable_region)
     }
 }
 
-void DoubleSliderForLayers::render_menu()
+void DoubleSliderForLayers::render_active_ctrl_menu()
 {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10.0f, 10.0f) * m_scale);
     ImGui::PushStyleVar(ImGuiStyleVar_PopupRounding, 4.0f * m_scale);
     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, { 1.0f, ImGui::GetStyle().ItemSpacing.y });
     ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 4.0f * m_scale);
 
-    if (m_ctrl.is_rclick_on_thumb())
+    if (m_ctrl->is_rclick_on_thumb())
         ImGui::OpenPopup("slider_full_menu_popup");
     else if (m_show_just_color_change_menu)
         ImGui::OpenPopup("slider_add_tick_menu_popup");
-    else if (m_show_cog_menu)
-        ImGui::OpenPopup("cog_menu_popup");
     else if (m_show_edit_menu)
         ImGui::OpenPopup("edit_menu_popup");
 
     if (can_edit())
         render_add_tick_menu();
-    render_cog_menu();
     render_edit_menu();
 
     ImGui::PopStyleVar(4);
 
     if (ImGui::GetIO().MouseReleased[0]) {
         m_show_just_color_change_menu = false;
-        m_show_cog_menu = false;
         m_show_edit_menu = false;
-    }
-}
-
-void DoubleSliderForLayers::render_cog_menu()
-{
-    if (ImGui::BeginPopup("cog_menu_popup")) {
-        if (ImGui::MenuItem(_u8L("Jump to height").c_str(), "Shift+G")) {
-            jump_to_value();
-        }
-        if (ImGui::MenuItem(_u8L("Show estimated print time on hover").c_str(), nullptr, m_show_estimated_times)) {
-            m_show_estimated_times = !m_show_estimated_times;
-            if (m_cb_app_config_changed != nullptr)
-                m_cb_app_config_changed("show_estimated_times_in_dbl_slider", m_show_estimated_times ? "1" : "0");
-        }
-        if (ImGui::MenuItem(_u8L("Sequential slider applied only to top layer").c_str(), nullptr, m_seq_top_layer_only)) {
-            m_seq_top_layer_only = !m_seq_top_layer_only;
-            if (m_cb_app_config_changed)
-                m_cb_app_config_changed("seq_top_layer_only", m_seq_top_layer_only ? "1" : "0");
-        }
-        if (m_mode == CustomGCode::Mode::MultiAsSingle && m_draw_mode == DrawMode::Regular &&
-            ImGui::MenuItem(_u8L("Set extruder sequence for the entire print").c_str())) {
-            if (m_ticks.edit_extruder_sequence(m_ctrl.max_pos(), m_mode))
-                process_ticks_changed();
-        }
-        if (ImGui::BeginMenu(_u8L("Ruler").c_str())) {
-            if (ImGui::MenuItem(_u8L("Show").c_str(), nullptr, m_show_ruler)) {
-                m_show_ruler = !m_show_ruler;
-                if (m_show_ruler)
-                    process_request_extra_frames();
-                if (m_cb_app_config_changed != nullptr)
-                   m_cb_app_config_changed("show_ruler_in_dbl_slider", m_show_ruler ? "1" : "0");
-            }
-
-            if (ImGui::MenuItem(_u8L("Show background").c_str(), nullptr, m_show_ruler_bg)) {
-                m_show_ruler_bg = !m_show_ruler_bg;
-                if (m_cb_app_config_changed != nullptr)
-                    m_cb_app_config_changed("show_ruler_bg_in_dbl_slider", m_show_ruler_bg ? "1" : "0");
-            }
-
-            ImGui::EndMenu();
-        }
-        if (can_edit()) {
-            if (ImGui::MenuItem(_u8L("Use default colors").c_str(), nullptr, m_ticks.use_default_colors()))
-                set_use_default_colors(!m_ticks.use_default_colors());
-
-            if (m_mode != CustomGCode::Mode::MultiExtruder && m_draw_mode == DrawMode::Regular &&
-                ImGui::MenuItem(_u8L("Set auto color changes").c_str())) {
-                auto_color_change();
-            }
-        }
-
-        ImGui::EndPopup();
     }
 }
 
@@ -1051,8 +1029,8 @@ void DoubleSliderForLayers::render_edit_menu()
     if (!m_show_edit_menu)
         return;
 
-    if (m_ticks.has_tick(m_ctrl.active_pos()) && ImGui::BeginPopup("edit_menu_popup")) {
-        std::set<TickCode>::iterator it = m_ticks.ticks.find(TickCode{ m_ctrl.active_pos()});
+    if (m_ticks.has_tick(m_ctrl->active_pos()) && ImGui::BeginPopup("edit_menu_popup")) {
+        std::set<TickCode>::iterator it = m_ticks.ticks.find(TickCode{ m_ctrl->active_pos()});
 
         if (it->type == CustomGCode::Type::ToolChange) {
             if (render_multi_extruders_menu(true)) {
@@ -1122,7 +1100,7 @@ bool DoubleSliderForLayers::render_button(Render::Icon icon, Render::Icon icon_h
     ImVec2 size(m_icon_screen_size, m_icon_screen_size);
     ret = Imgui::icon_button(icon_id, size);
     ImGui::PopStyleColor(3);
-    if (tick > 0 && tick == m_ctrl.active_pos() && ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
+    if (tick > 0 && tick == m_ctrl->active_pos() && ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
         m_show_edit_menu = true;
 
     std::string tip = m_allow_editing ? tooltip(tick) : "";
@@ -1159,7 +1137,7 @@ void DoubleSliderForLayers::render_add_tick_menu()
     std::string longest_menu_name = format(_u8L("Add color change (%1%) for:"), gcode(CustomGCode::Type::ColorChange));
 
     float label_width = ImGui::CalcTextSize(longest_menu_name.c_str(), nullptr, true).x;
-    ImRect active_thumb_rect = m_ctrl.active_thumb_rect();
+    ImRect active_thumb_rect = m_ctrl->active_thumb_rect();
     ImVec2 pos = active_thumb_rect.GetCenter();
 
     ImGui::SetNextWindowPos(ImVec2(pos.x - label_width - active_thumb_rect.GetWidth(), pos.y));
@@ -1181,7 +1159,7 @@ bool DoubleSliderForLayers::render_multi_extruders_menu(bool switch_current_code
     int extruders_cnt = int(colors.size());
 
     if (extruders_cnt > 1) {
-        int tick = m_ctrl.active_pos();
+        int tick = m_ctrl->active_pos();
 
         if (m_mode == CustomGCode::Mode::MultiAsSingle) {
             std::string menu_name = switch_current_code ? _u8L("Switch code to Change extruder") : _u8L("Change extruder");
@@ -1276,9 +1254,9 @@ bool DoubleSliderForLayers::render_get_jump_to_value_popup(const ImVec2& pos)
             UnitsType::Millimeters : UnitsType::Inches, UnitsType::Millimeters);
 
         // convert to inches if needed
-        float min_pos = convert(m_values[m_ctrl.min_pos()], UnitsType::Millimeters,
+        float min_pos = convert(m_values[m_ctrl->min_pos()], UnitsType::Millimeters,
             (m_units == UnitsSystem::SI) ? UnitsType::Millimeters : UnitsType::Inches);
-        float max_pos = convert(m_values[m_ctrl.max_pos()], UnitsType::Millimeters,
+        float max_pos = convert(m_values[m_ctrl->max_pos()], UnitsType::Millimeters,
             (m_units == UnitsSystem::SI) ? UnitsType::Millimeters : UnitsType::Inches);
         // check out of range
         bool disable_ok = value < min_pos || value > max_pos;
@@ -1603,7 +1581,7 @@ bool DoubleSliderForLayers::render_yes_no_cancel_popup(const ImVec2& pos)
 
 void DoubleSliderForLayers::add_code_as_tick(CustomGCode::Type type, int selected_extruder/* = -1*/)
 {
-    int tick = m_ctrl.active_pos();
+    int tick = m_ctrl->active_pos();
 
     if (!m_ticks.check_ticks_changed_event(type, m_mode)) {
         process_ticks_changed();
@@ -1620,7 +1598,7 @@ void DoubleSliderForLayers::add_code_as_tick(CustomGCode::Type type, int selecte
             m_pause_print_popup.data = "";
             m_pause_print_popup.cache = "";
             m_pause_print_popup.tick = -1;
-            m_pause_print_popup.z = m_values[m_ctrl.active_pos()];
+            m_pause_print_popup.z = m_values[m_ctrl->active_pos()];
             m_pause_print_popup.editing = false;
             m_pause_print_popup.show = true;
             // force dimmed background for pause print modal popup dialog without animation
@@ -1639,7 +1617,7 @@ void DoubleSliderForLayers::add_code_as_tick(CustomGCode::Type type, int selecte
                 m_color_picker_popup.data = "#FFFFFF";
                 m_color_picker_popup.cache = "#FFFFFF";
                 m_color_picker_popup.tick = -1;
-                m_color_picker_popup.z = m_values[m_ctrl.active_pos()];
+                m_color_picker_popup.z = m_values[m_ctrl->active_pos()];
                 m_color_picker_popup.editing = false;
                 m_color_picker_popup.show = true;
                 // force dimmed background for color picker modal popup dialog without animation
@@ -1650,7 +1628,7 @@ void DoubleSliderForLayers::add_code_as_tick(CustomGCode::Type type, int selecte
             m_custom_gcode_popup.data = "";
             m_custom_gcode_popup.cache = "";
             m_custom_gcode_popup.tick = -1;
-            m_custom_gcode_popup.z = m_values[m_ctrl.active_pos()];
+            m_custom_gcode_popup.z = m_values[m_ctrl->active_pos()];
             m_custom_gcode_popup.editing = false;
             m_custom_gcode_popup.show = true;
             // force dimmed background for color picker modal popup dialog without animation
@@ -1682,7 +1660,7 @@ void DoubleSliderForLayers::add_code_as_tick(CustomGCode::Type type, int selecte
 void DoubleSliderForLayers::edit_tick(int tick/* = -1*/)
 {
     if (tick < 0)
-        tick = m_ctrl.active_pos();
+        tick = m_ctrl->active_pos();
     std::set<TickCode>::iterator it = m_ticks.ticks.find(TickCode{ tick });
 
     if (it == m_ticks.ticks.end())    // this tick doesn't exist
@@ -1729,7 +1707,7 @@ void DoubleSliderForLayers::edit_tick(int tick/* = -1*/)
 void DoubleSliderForLayers::discard_all_ticks()
 {
     clear_ticks();
-    m_ctrl.reset_positions();
+    m_ctrl->reset_positions();
     update_draw_scroll_line_cb();
     process_ticks_changed();
 }
@@ -1740,7 +1718,7 @@ void DoubleSliderForLayers::process_jump_to_value()
         m_show_get_jump_value_popup = false;
         ImGui::CloseCurrentPopup();
 
-        if (m_ctrl.is_active_higher_thumb())
+        if (m_ctrl->is_active_higher_thumb())
             set_higher_pos(tick_value);
         else
             set_lower_pos(tick_value);
@@ -1761,7 +1739,7 @@ void DoubleSliderForLayers::process_pause_print()
     else {
         bool was_ticks = m_ticks.empty();
 
-        int tick = m_ctrl.active_pos();
+        int tick = m_ctrl->active_pos();
         m_ticks.add_pause_print_tick(tick, m_pause_print_popup.data, -1, m_values[tick]);
 
         if (was_ticks != m_ticks.empty())
@@ -1789,7 +1767,7 @@ void DoubleSliderForLayers::process_color_picker()
     else {
         bool was_ticks = m_ticks.empty();
 
-        int tick = m_ctrl.active_pos();
+        int tick = m_ctrl->active_pos();
         m_ticks.add_color_change_tick(tick, m_color_picker_popup.data, -1, m_values[tick]);
 
         if (was_ticks != m_ticks.empty())
@@ -1817,7 +1795,7 @@ void DoubleSliderForLayers::process_custom_gcode()
     else {
         bool was_ticks = m_ticks.empty();
 
-        int tick = m_ctrl.active_pos();
+        int tick = m_ctrl->active_pos();
         m_ticks.add_custom_gcode_tick(tick, m_custom_gcode_popup.data, -1, m_values[tick]);
 
         if (was_ticks != m_ticks.empty())

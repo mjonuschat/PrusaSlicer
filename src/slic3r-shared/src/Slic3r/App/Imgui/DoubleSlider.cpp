@@ -4,18 +4,18 @@
 
 namespace Slic3r::App::Imgui::DoubleSlider {
 
-static ImVec4 fg_color() { return { 0.99f, 0.41f, 0.2f, 1.0f }; } // color from SidebarAfterSlice::render()
-static ImVec4 bg_color() { return { 0.5f, 0.5f, 0.5f, 1.0f }; }
-static ImVec4 border_color() { return { 0.168f, 0.168f, 0.168f, 1.0f }; } // color from SetOurStyleColors() - ImGuiCol_WindowBg
-static ImU32 tooltip_bg_color() { return ImGui::GetColorU32(ImGuiCol_WindowBg); }
+static ImU32 fg_color()         { return ImGui::GetColorU32({ 0.99f, 0.41f, 0.2f, 1.0f }); } // color from SidebarAfterSlice::render()
+static ImU32 bg_color()         { return ImGui::GetColorU32({ 0.5f, 0.5f, 0.5f, 1.0f }); }
+static ImU32 border_color()     { return ImGui::GetColorU32({ 0.168f, 0.168f, 0.168f, 1.0f }); } // color from set_our_style_colors() - ImGuiCol_WindowBg
+static ImU32 tooltip_bg_color() { return ImColor({ 40, 40, 40 }); }
 
 ImRect Control::DrawOptions::groove(const ImVec2& pos, const ImVec2& size, bool is_horizontal) const
 {
     ImVec2 groove_start = is_horizontal ?
-        ImVec2(pos.x + thumb_dummy_sz().x + text_size.x, pos.y + size.y - groove_sz().y - dummy_sz().y) :
+        ImVec2(pos.x + text_size.x, pos.y + size.y - groove_sz().y - dummy_sz().y) :
         ImVec2(pos.x + size.x - groove_sz().x - dummy_sz().x, pos.y + text_size.y);
     ImVec2 groove_size = is_horizontal ?
-        ImVec2(size.x - 2 * (thumb_dummy_sz().x + text_size.x), groove_sz().y) :
+        ImVec2(size.x - 2 * (text_size.x), groove_sz().y) :
         ImVec2(groove_sz().x, size.y - 2 * text_size.y);
 
     return ImRect(groove_start, groove_start + groove_size);
@@ -43,23 +43,55 @@ ImRect Control::DrawOptions::slider_line(const ImRect& draggable_region, const I
 }
 
 Control::Control(
-    int lowerValue,
-    int higherValue,
-    int minValue,
-    int maxValue,
     ImGuiSliderFlags flags,
-    std::string name,
     bool use_lower_thumb
-)
-    : m_selection(SelectedSlider::Undefined)
-    , m_name(name)
-    , m_lower_pos(lowerValue)
-    , m_higher_pos(higherValue)
-    , m_min_pos(minValue)
-    , m_max_pos(maxValue)
+) : Item()
+    , m_selection(SelectedSlider::Undefined)
     , m_flags(flags)
     , m_draw_lower_thumb(use_lower_thumb)
 {
+}
+
+void Control::render(Domain::Vec2f pos, Domain::Vec2f size)
+{
+    m_pos = to_im(pos);
+    m_size = to_im(size);
+
+    render_item_begin(pos, size);
+
+    int higher_pos = m_higher_pos;
+    int lower_pos = m_lower_pos;
+    std::string higher_label = label(m_higher_pos);
+    std::string lower_label = label(m_lower_pos);
+    int temp_higher_pos = m_higher_pos;
+    int temp_lower_pos = m_lower_pos;
+
+    m_draw_opts.text_size = m_draw_opts.calc_text_size(label(m_max_pos));
+
+    if (draw_slider(&higher_pos, &lower_pos, higher_label, lower_label, m_pos, m_size)) {
+        if (temp_higher_pos != higher_pos) {
+            m_higher_pos = higher_pos;
+            if (m_combine_thumbs)
+                m_lower_pos = m_higher_pos;
+        }
+        if (temp_lower_pos != lower_pos)
+            m_lower_pos = lower_pos;
+        m_value_changed = true;
+    }
+
+    if (callbacks().extra_render)
+        callbacks().extra_render();
+
+    render_item_end(pos, size);
+}
+
+void Control::process_events(Domain::Vec2f pos, Domain::Vec2f size)
+{
+    if (m_value_changed) {
+        if (m_callbacks.value_changed)
+            m_callbacks.value_changed();
+        m_value_changed = false;
+    }
 }
 
 int Control::active_pos() const
@@ -209,11 +241,13 @@ void Control::draw_scroll_line(const ImRect& scroll_line, const ImRect& slideabl
     if (m_cb_draw_scroll_line)
         m_cb_draw_scroll_line(scroll_line, slideable_region);
     else
-        ImGui::RenderFrame(scroll_line.Min, scroll_line.Max, ImGui::GetColorU32(fg_color()), false, m_draw_opts.rounding());
+        ImGui::RenderFrame(scroll_line.Min, scroll_line.Max, fg_color(), false, m_draw_opts.rounding());
 }
 
 void Control::draw_background(const ImRect& slideable_region)
 {
+    if (slideable_region.Max.x < slideable_region.Min.x || slideable_region.Max.y < slideable_region.Min.y)
+        return;
     ImVec2 groove_sz = m_draw_opts.groove_sz() * 0.55f;
     auto groove_center = slideable_region.GetCenter();
     ImRect groove = is_horizontal() ?
@@ -225,7 +259,7 @@ void Control::draw_background(const ImRect& slideable_region)
     bg_rect.Expand(groove_padding);
 
     // draw bg of scroll
-    ImGui::RenderFrame(groove.Min, groove.Max, ImGui::GetColorU32(bg_color()), false, 0.5f * groove.GetWidth());
+    ImGui::RenderFrame(groove.Min, groove.Max, bg_color(), false, 0.5f * groove.GetWidth());
 }
 
 void Control::draw_label(std::string label, const ImRect& thumb, bool is_mirrored /*= false*/, bool with_border /*= false*/)
@@ -274,8 +308,8 @@ void Control::draw_label(std::string label, const ImRect& thumb, bool is_mirrore
             pos_3 = is_horizontal() ? pos_1 - ImVec2(0.f, triangle_offset_y_b) : pos_1 + ImVec2(triangle_offset_x_b, 0.f);
         }
 
-        ImGui::RenderFrame(text_rect_b.Min, text_rect_b.Max, ImGui::GetColorU32(bg_color()), true, rounding);
-        ImGui::GetCurrentWindow()->DrawList->AddTriangleFilled(pos_1, pos_2, pos_3, ImGui::GetColorU32(bg_color()));
+        ImGui::RenderFrame(text_rect_b.Min, text_rect_b.Max, bg_color(), true, rounding);
+        ImGui::GetCurrentWindow()->DrawList->AddTriangleFilled(pos_1, pos_2, pos_3, bg_color());
     }
 
     ImVec2 pos_1 = is_horizontal() ?
@@ -305,11 +339,11 @@ void Control::draw_thumb(const ImVec2& center, bool mark/* = false*/)
 
     float hexagon_angle = is_horizontal() ? 0.f : IM_PI * 0.5f;
 
-    ImGui::GetCurrentWindow()->DrawList->AddCircleFilled(center, radius, ImGui::GetColorU32(border_color()), 16);
-    ImGui::GetCurrentWindow()->DrawList->AddCircleFilled(center, 0.5f * radius, ImGui::GetColorU32(fg_color()), 16);
+    ImGui::GetCurrentWindow()->DrawList->AddCircleFilled(center, radius, border_color(), 16);
+    ImGui::GetCurrentWindow()->DrawList->AddCircleFilled(center, 0.5f * radius, fg_color(), 16);
 
     if (mark)
-      ImGui::GetCurrentWindow()->DrawList->AddCircleFilled(center, 0.25f * radius, ImGui::GetColorU32(border_color()), 16);
+      ImGui::GetCurrentWindow()->DrawList->AddCircleFilled(center, 0.25f * radius, border_color(), 16);
 }
 
 void Control::apply_regions(int higher_pos, int lower_pos, const ImRect& draggable_region)
@@ -646,56 +680,6 @@ bool Control::draw_slider(int* higher_pos, int* lower_pos, const std::string& hi
     }
 
     return pos_changed;
-}
-
-bool Control::render()
-{
-    bool result = false;
-
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, { 0.0f, 0.0f });
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 0.0f, 0.0f });
-
-    ImGui::SetNextWindowBgAlpha(0.0f);
-
-    int windows_flag = ImGuiWindowFlags_AlwaysAutoResize |
-                       ImGuiWindowFlags_NoTitleBar |
-                       ImGuiWindowFlags_NoCollapse |
-                       ImGuiWindowFlags_NoMove |
-                       ImGuiWindowFlags_NoResize |
-                       ImGuiWindowFlags_NoScrollbar |
-                       ImGuiWindowFlags_NoNav |
-                       ImGuiWindowFlags_NoScrollWithMouse;
-
-    ImGui::SetNextWindowPos(m_pos, ImGuiCond_Always);
-    ImGui::Begin(m_name.c_str(), nullptr, windows_flag);
-
-    int higher_pos = m_higher_pos;
-    int lower_pos = m_lower_pos;
-    std::string higher_label = label(m_higher_pos);
-    std::string lower_label = label(m_lower_pos);
-    int temp_higher_pos = m_higher_pos;
-    int temp_lower_pos = m_lower_pos;
-
-    m_draw_opts.text_size = m_draw_opts.calc_text_size(label(m_max_pos));
-
-    if (draw_slider(&higher_pos, &lower_pos, higher_label, lower_label, m_pos, m_size)) {
-        if (temp_higher_pos != higher_pos) {
-            m_higher_pos = higher_pos;
-            if (m_combine_thumbs)
-                m_lower_pos = m_higher_pos;
-        }
-        if (temp_lower_pos != lower_pos)
-            m_lower_pos = lower_pos;
-        result = true;
-    }
-
-    ImGui::End();
-
-    ImGui::PopStyleVar(4);
-
-    return result;
 }
 
 } // namespace Slic3r::App::Imgui::DoubleSlider

@@ -6,14 +6,17 @@
 #include "Types.hpp"
 #include "Slic3r/Biz/Units.hpp"
 
+namespace Slic3r::App::Yoga {
+class LayoutButton;
+class Menu;
+class MenuItem;
+}
+
 namespace Slic3r::App::Preview {
 
 enum class FocusedItem
 {
     None,
-    RevertIcon,
-    OneLayerIcon,
-    CogIcon,
     ColorBand,
     ActionIcon,
     SmartWipeTower,
@@ -37,13 +40,7 @@ enum class LabelType
 class DoubleSliderForLayers : public Imgui::DoubleSlider::Manager<float>
 {
 public:
-    explicit DoubleSliderForLayers()
-        : Slic3r::App::Imgui::DoubleSlider::Manager<float>(std::string("layers_slider")) {}
-
-    void init(int lowerValue,
-              int higherValue,
-              int minValue,
-              int maxValue);
+    explicit DoubleSliderForLayers();
 
     void change_one_layer_lock();
 
@@ -104,13 +101,6 @@ public:
 
     void set_units(Biz::libpgcode::UnitsSystem units) { m_units = units; }
 
-    /**
-     * @name Implementation of Imgui::DoubleSlider::Manager public interface
-     * @{
-     */
-    void render_body(Yoga::Vec2f pos, Yoga::Vec2f size) override;
-    /**@}*/
-
     static int find_close_layer_idx(const std::vector<float>& zs, float z, float eps);
 
 private:
@@ -124,11 +114,16 @@ private:
 
     // functions for extend rendering of m_ctrl
 
+    void extra_render();
+
+    void create_cog_menu();
+
+    void update_visibility_cog_menu_items();
+
     void draw_colored_band(const ImRect& groove, const ImRect& slideable_region);
     void draw_ticks(const ImRect& slideable_region);
     void draw_ruler(const ImRect& slideable_region);
-    void render_menu();
-    void render_cog_menu();
+    void render_active_ctrl_menu();
     void render_edit_menu();
     bool render_button(Render::Icon icon, Render::Icon icon_hovered, const std::string& label_id, const ImVec2& pos, FocusedItem focus, int tick = -1);
     void render_add_tick_menu();
@@ -162,7 +157,7 @@ private:
     std::string label(int pos) const override { return label(pos, LabelType::HeightWithLayer); }
     /**@}*/
 
-    void process_ticks_changed() { if (m_cb_ticks_changed != nullptr) m_cb_ticks_changed(); }
+    void process_ticks_changed();
 
 private:
     Biz::libpgcode::UnitsSystem m_units{ Biz::libpgcode::UnitsSystem::SI };
@@ -172,7 +167,6 @@ private:
     bool m_show_estimated_times{ true };
     bool m_show_ruler{ false };
     bool m_show_ruler_bg{ true };
-    bool m_show_cog_menu{ false };
     bool m_show_edit_menu{ false };
     bool m_seq_top_layer_only{ false };
     int m_pos_on_move{ -1 };
@@ -190,6 +184,16 @@ private:
     std::vector<float> m_layers_values;
 
     float m_jump_to_value{ 0.0f };
+
+    Yoga::LayoutButton* m_revert_btn{ nullptr };
+    Yoga::LayoutButton* m_lock_btn{ nullptr };
+    Yoga::LayoutButton* m_cog_btn{ nullptr };
+
+    Yoga::Menu* m_cog_menu{ nullptr };
+
+    Yoga::MenuItem* m_edit_extruder_sequence_menu_item{ nullptr };
+    Yoga::MenuItem* m_use_default_colors_menu_item{ nullptr };
+    Yoga::MenuItem* m_auto_color_change_menu_item{ nullptr };
 
     struct TickPopup
     {

@@ -1,37 +1,36 @@
 #include "Slic3r/App/Yoga/PrinterSettingsButton.hpp"
 
+#include "Slic3r/App/Yoga/LayoutButton.hpp"
 #include "Slic3r/App/Yoga/Text.hpp"
+#include "Slic3r/App/Yoga/Icon.hpp"
 
 namespace Slic3r::App::Yoga {
 
 PrinterSettingsButton::PrinterSettingsButton(const std::string& tooltip)
-    : LayoutButton("", Render::Icon::None, tooltip)
+    : RectangleButton(tooltip)
 {
     set_checkable(true);
 
-    size_t index = 1; // index of the hidden button default label
-    Item* texts_wrapper = insert_into_content(std::make_unique<Item>(), ++index);
+    m_icon = emplace_back<Icon>(Render::Icon::None);
+    m_icon->set_aspect_ratio(1);
+
+    Item* texts_wrapper = emplace_back<Item>();
     texts_wrapper->set_orientation(Orientation::Vertical);
     texts_wrapper->set_flex_grow(1.f);
     texts_wrapper->set_height_percent(80);
     texts_wrapper->set_justify_content(YGJustifySpaceBetween);
+
     m_printer_name = texts_wrapper->emplace_back<Text>("");
     m_printer_name->set_font_type(Render::ImguiFontType::Bold);
     m_preset_name = texts_wrapper->emplace_back<Text>("");
 
     Vec2f btn_sz{20.f, 20.f};
 
-    m_printers_btn = static_cast<LayoutButton*>(insert_into_content(
-        std::make_unique<LayoutButton>("", Render::Icon::ConfigContainer, "Show info about printer"),
-        ++index
-    ));
+    m_printers_btn = emplace_back<LayoutButton>("", Render::Icon::ConfigContainer, "Show info about printer");
     m_printers_btn->set_self_align(YGAlignCenter);
     m_printers_btn->set_max_size(btn_sz);
 
-    m_cog_btn = static_cast<LayoutButton*>(insert_into_content(
-        std::make_unique<LayoutButton>("", Render::Icon::PrintIconMarker, "Show extruder settings"),
-        ++index
-    ));
+    m_cog_btn = emplace_back<LayoutButton>("", Render::Icon::PrintIconMarker, "Show extruder settings");
     m_cog_btn->set_self_align(YGAlignCenter);
     m_cog_btn->set_max_size(btn_sz);
 
@@ -41,6 +40,11 @@ PrinterSettingsButton::PrinterSettingsButton(const std::string& tooltip)
     m_printers_btn->set_visible(false);
 
     set_background_color(ImColor(41, 41, 41));
+}
+
+void PrinterSettingsButton::set_icon(Render::Icon icon)
+{
+    m_icon->set_icon(icon);
 }
 
 void PrinterSettingsButton::set_printer_name(const std::string& printer_name)
@@ -86,7 +90,7 @@ std::function<void()>& PrinterSettingsButton::on_printer()
 void PrinterSettingsButton::checked_updated_internal()
 {
     update_btns_visibility();
-    LayoutButton::checked_updated_internal();
+    RectangleButton::checked_updated_internal();
 
     if (!checked()) {
         m_cog_btn->set_background_color(background_color());
@@ -97,7 +101,7 @@ void PrinterSettingsButton::checked_updated_internal()
 void PrinterSettingsButton::hovered_updated_internal()
 {
     update_btns_visibility();
-    LayoutButton::hovered_updated_internal();
+    RectangleButton::hovered_updated_internal();
 }
 
 void PrinterSettingsButton::update_btns_visibility()

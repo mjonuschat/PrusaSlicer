@@ -1,15 +1,14 @@
 #include "Slic3r/App/Preview/DoubleSliderForGCode.hpp"
+#include "Slic3r/App/I18N/I18N.hpp"
 
 namespace Slic3r::App::Preview {
 
 static constexpr float SLIDER_GCODE_HEIGHT = 40.0f;
 
-void DoubleSliderForGcode::render_body(Yoga::Vec2f pos, Yoga::Vec2f size)
+DoubleSliderForGcode::DoubleSliderForGcode()
+: Imgui::DoubleSlider::Manager<unsigned int>(std::string("gcode_slider"), L("Steps"), Yoga::Orientation::Horizontal)
 {
-    m_ctrl.init(to_im(pos), to_im(size), m_scale);
-    if (m_ctrl.render()) {
-        process_thumb_move();
-    }
+    m_ctrl->callbacks().value_changed = [this]() { process_thumb_move(); };
 }
 
 } // namespace Slic3r::App::Preview

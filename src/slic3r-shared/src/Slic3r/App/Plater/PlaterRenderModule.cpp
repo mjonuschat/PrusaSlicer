@@ -85,6 +85,8 @@ void PlaterRenderModule::remove_type_changed_listener(IRenderModuleChangedListen
 
 void PlaterRenderModule::init_scene_layout()
 {
+    AbstractRenderLayout::set_our_style_colors();
+
     // >> This code is same for Plater/PreviewRenderModule
     m_object_list = Passthrough(std::make_unique<ObjectList>());
     m_object_list->init(&m_project_interactor, ObjectList::Mode::Plater);

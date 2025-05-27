@@ -1,0 +1,22 @@
+#pragma once
+#include "Slic3r/App/Yoga/AttachedWindow.hpp"
+#include "Slic3r/App/Render/ImguiTypes.hpp"
+
+namespace Slic3r::App::Yoga {
+
+class MenuItem;
+
+class Menu :public AttachedWindow {
+public:
+    Menu(const std::string& name, Position position);
+
+    MenuItem* append_item(const std::string& label, bool* init_checkable_value = nullptr, Render::Icon icon = Render::Icon::None, const std::string& shortcut = "");
+    MenuItem* append_item_as_menu(const std::string& label, Render::Icon icon = Render::Icon::None, const std::string& shortcut = "");
+    void append_separator();
+
+private:
+    std::vector<MenuItem*> items;
+
+};
+
+} //namespace Slic3r::App::Yoga 

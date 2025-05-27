@@ -38,6 +38,7 @@ void AbstractButton::process_events(Vec2f pos, Vec2f size)
         if (m_callbacks.action) {
             m_callbacks.action();
         }
+        pressed_updated_internal();
     }
 
     Item::process_events(pos, size);
@@ -51,13 +52,14 @@ void AbstractButton::set_shortcut(const std::string& shortcut)
     m_tooltip->set_shortcut(m_shortcut);
 }
 
+void AbstractButton::set_tooltip(const std::string& tooltip)
+{
+    m_tooltip->set_text(tooltip);
+}
+
 bool AbstractButton::has_arrow() const { return m_has_arrow; }
 
 void AbstractButton::set_has_arrow(bool has_arrow) { m_has_arrow = has_arrow; }
-
-bool AbstractButton::enabled() const { return m_enabled; }
-
-void AbstractButton::set_enabled(bool enabled) { m_enabled = enabled; }
 
 bool AbstractButton::checkable() const { return m_checkable; }
 
@@ -89,6 +91,12 @@ void AbstractButton::set_hovered(bool hovered)
         if (!m_tooltip->text().empty())
             m_tooltip->set_visible(m_hovered);
     }
+}
+
+void AbstractButton::enabled_updated_internal()
+{
+    if (!m_enabled)
+        m_tooltip->set_visible(false);
 }
 
 } // namespace Slic3r::App::Yoga

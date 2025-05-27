@@ -1,0 +1,104 @@
+///|/ Copyright (c) Prusa Research 2025 Nikita Vanku @Zaraka
+///|/
+///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
+///|/
+#include "Slic3r/App/Yoga/RectangleButton.hpp"
+
+#include "Slic3r/App/Imgui/ImguiExtension.hpp"
+#include "Slic3r/App/Yoga/Rectangle.hpp"
+
+namespace Slic3r::App::Yoga {
+
+RectangleButton::RectangleButton(const std::string& tooltip) : AbstractButton(tooltip)
+{
+    std::unique_ptr<Rectangle> rect = std::make_unique<Rectangle>();
+    m_background = rect.get();
+    AbstractButton::insert(std::move(rect), 0);
+    m_background->set_padding(4);
+    m_background->set_justify_content(YGJustifyCenter);
+    m_background->set_gap(5);
+    m_background->set_flex_grow(1);
+
+    set_background_color_checked(ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+    update_fill();
+}
+
+void RectangleButton::append(ItemPtr child)
+{
+    m_background->append(std::move(child));
+}
+
+void RectangleButton::insert(ItemPtr child, size_t index)
+{
+    m_background->insert(std::move(child), index);
+}
+
+ItemPtr RectangleButton::remove(Item* child)
+{
+    return m_background->remove(child);
+}
+
+const ImColor& RectangleButton::background_color() const { return m_background->fill(); }
+
+void RectangleButton::set_background_color(const ImColor& color)
+{
+    m_background_color = color;
+    if (color.Value.w == 0.f)
+        m_background_color_hover = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
+    else
+        m_background_color_hover = Imgui::adjust_brightness(m_background_color, 1.2);
+    update_fill();
+}
+
+const Paddings& RectangleButton::content_padding() { return m_background->padding(); }
+
+void RectangleButton::set_content_padding(const Paddings& padding)
+{
+    m_background->set_padding(padding);
+}
+
+const ImColor& RectangleButton::background_color_checked() const { return m_background_color_checked; }
+
+void RectangleButton::set_background_color_checked(const ImColor& background_color_checked)
+{
+    m_background_color_checked = background_color_checked;
+    m_background_color_checked_hover = Imgui::adjust_brightness(m_background_color_checked, 1.25);
+    update_fill();
+}
+
+void RectangleButton::align_content(Align align)
+{
+    switch (align) {
+    case Align::Left:
+        m_background->set_justify_content(YGJustifyFlexStart);
+        break;
+    case Align::Center:
+        m_background->set_justify_content(YGJustifyCenter);
+        break;
+    case Align::Right:
+        m_background->set_justify_content(YGJustifyFlexEnd);
+        break;
+    default:
+        break;
+    }
+}
+
+void RectangleButton::checked_updated_internal() { update_fill(); }
+
+void RectangleButton::hovered_updated_internal() { update_fill(); }
+
+void RectangleButton::update_fill()
+{
+    ImColor color = m_background_color;
+    if (checked()) {
+        color = hovered() ? m_background_color_checked_hover : m_background_color_checked;
+    }
+    else {
+        color = hovered() ? m_background_color_hover : m_background_color;
+    }
+    m_background->set_fill(color);
+}
+
+
+
+} //namespace Slic3r::App::Yoga 

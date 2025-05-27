@@ -1,14 +1,19 @@
 #pragma once
 
-#include "Slic3r/App/Yoga/LayoutButton.hpp"
+#include "Slic3r/App/Yoga/RectangleButton.hpp"
 
 namespace Slic3r::App::Yoga {
 
-class PrinterSettingsButton : public LayoutButton
+class Icon;
+class Text;
+class LayoutButton;
+
+class PrinterSettingsButton : public RectangleButton
 {
 public:
     explicit PrinterSettingsButton(const std::string& tooltip = {});
 
+    void set_icon(Render::Icon icon);
     void set_printer_name(const std::string& printer_name);
     void set_preset_name(const std::string& preset_name);
     void set_printing_state(int state);
@@ -25,6 +30,7 @@ protected:
     void update_btns_visibility();
 
 private:
+    Icon*           m_icon{nullptr};
     Text*           m_printer_name{nullptr};
     Text*           m_preset_name{nullptr};
     LayoutButton*   m_cog_btn{nullptr};

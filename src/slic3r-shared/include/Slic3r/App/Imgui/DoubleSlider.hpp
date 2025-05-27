@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Slic3r/App/Yoga/Window.hpp"
+#include "Slic3r/App/Yoga/Text.hpp"
 #include "Slic3r/App/Imgui/ImguiExtension.hpp"
 
 #include <imgui/imgui.h>
@@ -25,18 +26,24 @@ enum class SelectedSlider
     Higher
 };
 
-class Control
+class Control : public Yoga::Item
 {
 public:
-    Control(int lowerValue,
-            int higherValue,
-            int minValue,
-            int maxValue,
-            ImGuiSliderFlags flags = ImGuiSliderFlags_None,
-            std::string name = "d_slider",
+    // parameters for action functions is a bounding box of item
+    struct Callbacks
+    {
+        std::function<void()> value_changed{ nullptr };
+        std::function<void()> extra_render{ nullptr };
+    };
+
+    Control(ImGuiSliderFlags flags = ImGuiSliderFlags_None,
             bool use_lower_thumb = true);
-    Control() = default;
     ~Control() = default;
+
+    void render(Domain::Vec2f pos, Domain::Vec2f size) override final;
+    void process_events(Domain::Vec2f pos, Domain::Vec2f size) override;
+
+    Callbacks& callbacks() { return m_callbacks; }
 
     int min_pos() const { return m_min_pos; }
     int max_pos() const { return m_max_pos; }
@@ -53,15 +60,11 @@ public:
     void combine_thumbs(bool combine);
     void reset_positions();
 
-    void set_ctrl_pos(ImVec2 pos) { m_pos = pos; }
-    void set_ctrl_size(ImVec2 size) { m_size = size; }
     void set_ctrl_scale(float scale) { m_draw_opts.scale = scale; }
     ImVec2 ctrl_size() const { return m_size; }
     ImVec2 ctrl_pos() const { return m_pos; }
 
-    void init(const ImVec2& pos, const ImVec2& size, float scale, bool has_ruler = false) {
-        m_pos = pos;
-        m_size = size;
+    void update_draw_options(float scale, bool has_ruler = false) {
         m_draw_opts.scale = scale;
         m_draw_opts.has_ruler = has_ruler;
     }
@@ -82,7 +85,6 @@ public:
     bool is_lclick_on_hovered_pos();
 
     bool is_horizontal() const { return !(m_flags & ImGuiSliderFlags_Vertical); }
-    bool render();
 
     std::string label(int pos) const;
     float rounding() const { return m_draw_opts.rounding(); }
@@ -118,11 +120,10 @@ private:
         ImVec2 text_size{ 0.0f, 0.0f };
         bool has_ruler{ false };
 
-        ImVec2 dummy_sz() const { return ImVec2(has_ruler ? 48.0f : 24.0f, 16.0f) * scale; }
-        ImVec2 thumb_dummy_sz() const { return ImVec2(17.0f, 17.0f) * scale; }
+        ImVec2 dummy_sz() const { return ImVec2(has_ruler ? 54.0f : 40.0f, 16.0f) * scale; }
         ImVec2 groove_sz() const { return ImVec2(4.0f, 4.0f) * scale; }
         ImVec2 draggable_region_sz() const { return ImVec2(20.0f, 19.0f) * scale; }
-        ImVec2 text_dummy_sz() const { return ImVec2(60.0f, 34.0f) * scale; }
+        ImVec2 text_dummy_sz() const { return ImVec2(40.0f, 34.0f) * scale; }
         ImVec2 text_padding() const { return ImVec2(5.0f, 2.0f) * scale; }
         ImVec2 triangle_offset() const { return ImVec2(9.0f, 8.0f) * scale; }
 
@@ -136,7 +137,7 @@ private:
             bool is_horizontal) const;
 
         ImVec2 calc_text_size(const std::string& txt) const {
-            return ImGui::CalcTextSize(txt.c_str()) * scale + text_padding() * 2.0f + triangle_offset();
+            return ImGui::CalcTextSize(txt.c_str()) * scale + text_padding() * 2.0f + ImVec2({9.f, 0});
         }
     };
 
@@ -181,6 +182,9 @@ private:
     GetLabelCallback m_cb_get_label_on_move{ nullptr };
     DrawScrollLineCallback m_cb_draw_scroll_line { nullptr };
     ExtraDrawCallback m_cb_extra_draw{ nullptr };
+
+    bool m_value_changed{ false };
+    Callbacks m_callbacks;
 };
 
 // VatType = a typ of values, related to the each position in slider
@@ -188,28 +192,25 @@ template<typename ValType>
 class Manager : public Slic3r::App::Yoga::Window
 {
 public:
-    Manager(const std::string& name) : Slic3r::App::Yoga::Window(name) {}
+    Manager(const std::string& name, const std::string& header_text, Yoga::Orientation orientation) : Slic3r::App::Yoga::Window(name) {
+        set_orientation(orientation);
 
-    void init(int lowerPos,
-              int higherPos,
-              int minPos,
-              int maxPos,
-              const std::string& name,
-              bool is_horizontal)
-    {
-        set_min_size({is_horizontal ? 0 : 70, is_horizontal ? 70 : 0});
-        m_ctrl = Control(lowerPos, higherPos,
-                         minPos, maxPos,
-                         is_horizontal ? 0 : ImGuiSliderFlags_Vertical,
-                         name, !is_horizontal);
+        Yoga::Text* text = emplace_back<Yoga::Text>(header_text);
+        text->set_font_type(Render::ImguiFontType::Bold);
+        text->set_self_align(YGAlignCenter);
 
-        m_ctrl.set_get_label_cb([this](int pos) { return label(pos); });
+        const bool is_horizontal = orientation == Yoga::Orientation::Horizontal;
+
+        m_ctrl = emplace_back<Control>(is_horizontal ? 0 : ImGuiSliderFlags_Vertical, !is_horizontal);
+        m_ctrl->set_min_size({ is_horizontal ? 0 : 95, is_horizontal ? 50 : 0});
+        m_ctrl->set_get_label_cb([this](int pos) { return label(pos); });
+        m_ctrl->set_flex_grow(1.);
     }
 
-    int min_pos() const { return m_ctrl.min_pos(); }
-    int max_pos() const { return m_ctrl.max_pos(); }
-    int lower_pos() const { return m_ctrl.lower_pos(); }
-    int higher_pos() const { return m_ctrl.higher_pos(); }
+    int min_pos() const { return m_ctrl->min_pos(); }
+    int max_pos() const { return m_ctrl->max_pos(); }
+    int lower_pos() const { return m_ctrl->lower_pos(); }
+    int higher_pos() const { return m_ctrl->higher_pos(); }
 
     ValType min_value() const { return m_values.empty() ? static_cast<ValType>(0) : m_values[min_pos()]; }
     ValType max_value() const { return m_values.empty() ? static_cast<ValType>(0) : m_values[max_pos()]; }
@@ -218,22 +219,22 @@ public:
 
     // Set low and high slider position. If the span is non-empty, disable the "one layer" mode.
     void set_lower_pos(const int lower_pos) {
-        m_ctrl.set_lower_pos(lower_pos);
+        m_ctrl->set_lower_pos(lower_pos);
         process_thumb_move();
     }
 
     void set_higher_pos(const int higher_pos) {
-        m_ctrl.set_higher_pos(higher_pos);
+        m_ctrl->set_higher_pos(higher_pos);
         process_thumb_move();
     }
 
     void set_selection_span(const int lower_pos, const int higher_pos) {
-        m_ctrl.set_selection_span(lower_pos, higher_pos);
+        m_ctrl->set_selection_span(lower_pos, higher_pos);
         process_thumb_move();
     }
 
     void set_max_pos(const int max_pos) {
-        m_ctrl.set_max_pos(max_pos);
+        m_ctrl->set_max_pos(max_pos);
         process_thumb_move();
     }
 
@@ -247,10 +248,10 @@ public:
     // values used to show thumb labels
     void set_slider_alternate_values(std::vector<ValType>&& values) { m_alternate_values = std::move(values); }
 
-    bool is_lower_at_min() const { return m_ctrl.lower_pos() == m_ctrl.min_pos(); }
-    bool is_higher_at_max() const { return m_ctrl.higher_pos() == m_ctrl.max_pos(); }
+    bool is_lower_at_min() const { return m_ctrl->lower_pos() == m_ctrl->min_pos(); }
+    bool is_higher_at_max() const { return m_ctrl->higher_pos() == m_ctrl->max_pos(); }
 
-    void show_lower_thumb(bool show) { m_ctrl.show_lower_thumb(show); }
+    void show_lower_thumb(bool show) { m_ctrl->show_lower_thumb(show); }
 
     void set_scale(float scale) {
         m_scale = scale;
@@ -260,7 +261,7 @@ public:
     void set_request_extra_frames_callback(RequestExtraFramesCallback cb) { m_cb_request_extra_frames = cb; };
 
     void move_current_thumb(const int delta) {
-        m_ctrl.move_active_thumb(delta);
+        m_ctrl->move_active_thumb(delta);
         process_thumb_move();
     }
 
@@ -286,7 +287,7 @@ protected:
 protected:
     std::vector<ValType> m_values;
     std::vector<ValType> m_alternate_values;
-    Control m_ctrl;
+    Control* m_ctrl;
     float m_scale{ 1.0f };
 
 private:

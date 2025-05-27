@@ -279,7 +279,7 @@ void AbstractRenderLayout::init_toolbar_column()
     m_bottom_toolbar->callbacks().subtoolbar_opened = [this]() { update_toolbar_tooltip(); };
 }
 
-static void SetOurStyleColors()
+void AbstractRenderLayout::set_our_style_colors()
 {
     ImGuiStyle* style = &ImGui::GetStyle();
     ImVec4* colors = style->Colors;
@@ -289,7 +289,7 @@ static void SetOurStyleColors()
     colors[ImGuiCol_WindowBg] = ImVec4(0.106f, 0.106f, 0.106f, 1.00f);
     colors[ImGuiCol_ChildBg] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
     colors[ImGuiCol_PopupBg] = ImVec4(0.08f, 0.08f, 0.08f, 0.94f);
-    colors[ImGuiCol_Border] = ImVec4(0.43f, 0.43f, 0.50f, 0.50f);
+    colors[ImGuiCol_Border] = colors[ImGuiCol_WindowBg];// ImVec4(0.43f, 0.43f, 0.50f, 0.50f);
     colors[ImGuiCol_BorderShadow] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
     colors[ImGuiCol_FrameBg] = ImVec4(0.16f, 0.29f, 0.48f, 0.54f);
     colors[ImGuiCol_FrameBgHovered] = ImVec4(0.26f, 0.59f, 0.98f, 0.40f);
@@ -390,14 +390,8 @@ AbstractRenderLayout::~AbstractRenderLayout() {}
 
 void AbstractRenderLayout::render(Vec2f size)
 {
-    SetOurStyleColors();
-    {
-        SetOurStyleVars our_vars;
-        m_layout_main.render({}, size);
-        // ImGui::ShowMetricsWindow();
-        // std::string tree = m_layout_main.debug_dump_tree();
-        // ImGui::SetClipboardText(tree.c_str());
-    }
+    SetOurStyleVars our_vars;
+    m_layout_main.render({}, size);
 }
 
 } // namespace Slic3r::App

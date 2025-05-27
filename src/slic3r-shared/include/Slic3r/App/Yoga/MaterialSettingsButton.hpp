@@ -1,13 +1,13 @@
 #pragma once
 
-#include "Slic3r/App/Yoga/LayoutButton.hpp"
+#include "Slic3r/App/Yoga/RectangleButton.hpp"
 
 namespace Slic3r::App::Yoga {
 
 class Text;
 class Circle;
 
-class MaterialSettingsButton : public LayoutButton
+class MaterialSettingsButton : public RectangleButton
 {
 public:
     explicit MaterialSettingsButton(size_t id, const std::string& tooltip = {});
@@ -17,10 +17,8 @@ public:
     void set_nozzle(float nozzle);
 
 private:
-    void insert_separator(size_t index);
-
-private:
     Circle* m_color_marker{ nullptr };
+    Text* m_material_name{ nullptr };
     Text* m_nozzle{nullptr};
 };
 

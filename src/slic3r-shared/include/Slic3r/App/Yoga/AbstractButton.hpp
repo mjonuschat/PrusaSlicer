@@ -30,11 +30,10 @@ public:
     const std::string& shortcut() const;
     void set_shortcut(const std::string& shortcut);
 
+    void set_tooltip(const std::string& tooltip);
+
     bool has_arrow() const;
     void set_has_arrow(bool has_arrow);
-
-    bool enabled() const;
-    void set_enabled(bool new_enabled);
 
     bool checkable() const;
     void set_checkable(bool checkable);
@@ -47,6 +46,8 @@ public:
 protected:
     virtual void checked_updated_internal() {}
     virtual void hovered_updated_internal() {}
+    virtual void pressed_updated_internal() {}
+    void enabled_updated_internal() override;
 
 protected:
     Tooltip* m_tooltip = nullptr;

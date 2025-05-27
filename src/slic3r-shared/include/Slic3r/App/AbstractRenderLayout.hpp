@@ -33,6 +33,8 @@ class AbstractRenderLayout
 public:
     using Vec2f = Yoga::Vec2f;
 
+    static void set_our_style_colors();
+
     AbstractRenderLayout(
         std::unique_ptr<ObjectList> object_list,
         std::unique_ptr<CubeView> cube_view,

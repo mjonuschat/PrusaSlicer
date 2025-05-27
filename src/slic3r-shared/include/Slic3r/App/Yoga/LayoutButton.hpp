@@ -4,17 +4,16 @@
 ///|/
 #pragma once
 
-#include "Slic3r/App/Yoga/AbstractButton.hpp"
+#include "Slic3r/App/Yoga/RectangleButton.hpp"
 #include "Slic3r/App/Render/ImguiTypes.hpp"
 
 namespace Slic3r::App::Yoga {
 
-class Rectangle;
 class Icon;
 class Text;
 class Icon;
 
-class LayoutButton : public AbstractButton
+class LayoutButton : public RectangleButton
 {
 public:
     enum class Align {
@@ -30,41 +29,16 @@ public:
     const std::string& label() const;
     void set_label(const std::string& label);
 
-    const ImColor& background_color() const;
-    void set_background_color(const ImColor& color);
-
-    const ImColor& background_color_checked() const;
-    void set_background_color_checked(const ImColor& background_color_checked);
-
     Render::ImguiFontType label_font_type() const;
     void set_label_font_type(Render::ImguiFontType label_font_type);
-
-    const Paddings& content_padding();
-    void set_content_padding(const Paddings& padding);
-
-    void align_content(Align align);
     void expand_label(bool expand);
 
     Render::Icon icon() const;
     void set_icon(Render::Icon icon);
 
-protected:
-    Item* insert_into_content(std::unique_ptr<Item> item, std::optional<size_t> index = {});
-    void checked_updated_internal() override;
-    void hovered_updated_internal() override;
-
 private:
-    void update_fill();
-
-private:
-    Rectangle* m_background = nullptr;
     Icon* m_icon = nullptr;
     Text* m_text = nullptr;
-
-    ImColor m_background_color = IM_COL32_WHITE;
-    ImColor m_background_color_hover = IM_COL32_WHITE;
-    ImColor m_background_color_checked = IM_COL32_WHITE;
-    ImColor m_background_color_checked_hover = IM_COL32_WHITE;
 };
 
 } // namespace Slic3r::App::Yoga

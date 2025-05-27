@@ -1,5 +1,6 @@
 #include "Slic3r/App/SidebarPrint.hpp"
 
+#include "Slic3r/App/Yoga/RectangleButton.hpp"
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
 
 #include <imgui/imgui.h>
@@ -15,7 +16,7 @@ SidebarPrint::SidebarPrint() : Window("sidebar_print")
 
     m_settings_set_btn =
         emplace_back<LayoutButton>("Balanced settings", Render::Icon::SettingsSet, "Tooltip text");
-    m_settings_set_btn->align_content(LayoutButton::Align::Left);
+    m_settings_set_btn->align_content(RectangleButton::Align::Left);
     m_settings_set_btn->set_checkable(true);
     m_settings_set_btn->set_background_color(ImColor(41, 41, 41));
     m_settings_set_btn->callbacks().action = []() {
