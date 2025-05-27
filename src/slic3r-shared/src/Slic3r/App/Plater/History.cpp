@@ -7,7 +7,7 @@ namespace Slic3r::App::Plater {
 History::History() : Window("history")
 {
     set_min_size({330.f, 0.f});
-    new Yoga::Text("Action history");
+    emplace_back<Yoga::Text>("Action history");
 }
 
 } // namespace Slic3r::App::Plater

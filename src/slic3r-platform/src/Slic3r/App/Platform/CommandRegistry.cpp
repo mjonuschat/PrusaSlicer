@@ -3,13 +3,12 @@
 
 namespace Slic3r::App::Platform {
 
-CommandRegistry& CommandRegistry::register_command(ICommand* command, bool takes_over_ownership)
+CommandRegistry& CommandRegistry::register_command(std::unique_ptr<ICommand> command)
 {
     ASSERT(command);
     const char* name = ASSERT_VAL(command->name());
     ASSERT(m_commands_by_id.count(name) == 0, "Command with same name already registered");
-    m_commands.emplace_back(command, takes_over_ownership);
-    m_commands_by_id[name] = command;
+    m_commands_by_id[name] = std::move(command);
     return *this;
 }
 
@@ -18,12 +17,13 @@ bool CommandRegistry::process_keyboard_event(const KeyboardEvent& e)
     if (e.type() != KeyboardEvent::Type::KeyDown)
         return false;
 
-    for (auto& cmd : m_commands) {
-        const auto* shortcut = cmd.command->keyboard_shortcut();
-        if (shortcut == nullptr || !cmd.command->enabled())
+    for (const auto& cmd : std::as_const(m_commands_by_id)) {
+        const auto* shortcut = cmd.second->keyboard_shortcut();
+        if (shortcut == nullptr || !cmd.second->enabled()) {
             continue;
+        }
         if (e.key_modifiers() == shortcut->modifiers && e.code() == shortcut->key) {
-            cmd.command->execute();
+            cmd.second->execute();
             return true;
         }
     }

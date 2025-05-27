@@ -363,36 +363,33 @@ void PreviewRenderModule::register_commands()
 {
     m_command_registry
         .register_command(
-            new Platform::FuncCommand(
+            std::make_unique<Platform::FuncCommand>(
                 "toggle-legend-visibility",
                 [this]() { m_button_legend->callbacks().action(); },
                 nullptr,
                 Platform::KeyboardShortcut{0, Platform::KeyCode::L}
-                ),
-            true
+                )
             )
         .register_command(
-            new Platform::FuncCommand(
+            std::make_unique<Platform::FuncCommand>(
                 "toggle-gcodewindow-visibility",
                 [this]() { m_button_gcode->callbacks().action(); },
                 nullptr,
                 Platform::KeyboardShortcut{0, Platform::KeyCode::G}
-                ),
-            true
+                )
             );
 
     m_command_registry
         .register_command(
-            new Platform::FuncCommand(
+            std::make_unique<Platform::FuncCommand>(
                 "slider-gcode-increase-slow",
                 [this]() { m_fdm_viewer.slider_gcode_move_current_thumb(1); },
                 nullptr,
                 Platform::KeyboardShortcut{0, Platform::KeyCode::Right}
-            ),
-            true
+            )
         )
         .register_command(
-            new Platform::FuncCommand(
+            std::make_unique<Platform::FuncCommand>(
                 "slider-gcode-decrease-slow",
                 [this]() { m_fdm_viewer.slider_gcode_move_current_thumb(-1); },
                 nullptr,
@@ -400,18 +397,17 @@ void PreviewRenderModule::register_commands()
             )
         )
         .register_command(
-            new Platform::FuncCommand(
+            std::make_unique<Platform::FuncCommand>(
                 "slider-gcode-increase-medium",
                 [this]() { m_fdm_viewer.slider_gcode_move_current_thumb(5); },
                 nullptr,
                 Platform::KeyboardShortcut{
                     Platform::KeyModifiers(Platform::KeyModifier::Shift), Platform::KeyCode::Right
                 }
-            ),
-            true
+            )
         )
         .register_command(
-            new Platform::FuncCommand(
+            std::make_unique<Platform::FuncCommand>(
                 "slider-gcode-decrease-medium",
                 [this]() { m_fdm_viewer.slider_gcode_move_current_thumb(-5); },
                 nullptr,
@@ -421,18 +417,17 @@ void PreviewRenderModule::register_commands()
             )
         )
         .register_command(
-            new Platform::FuncCommand(
+            std::make_unique<Platform::FuncCommand>(
                 "slider-gcode-increase-fast",
                 [this]() { m_fdm_viewer.slider_gcode_move_current_thumb(10); },
                 nullptr,
                 Platform::KeyboardShortcut{
                     Platform::KeyModifiers(Platform::KeyModifier::Ctrl), Platform::KeyCode::Right
                 }
-            ),
-            true
+            )
         )
         .register_command(
-            new Platform::FuncCommand(
+            std::make_unique<Platform::FuncCommand>(
                 "slider-gcode-decrease-fast",
                 [this]() { m_fdm_viewer.slider_gcode_move_current_thumb(-10); },
                 nullptr,
@@ -442,16 +437,15 @@ void PreviewRenderModule::register_commands()
             )
         )
         .register_command(
-            new Platform::FuncCommand(
+            std::make_unique<Platform::FuncCommand>(
                 "slider-layers-increase-slow",
                 [this]() { m_fdm_viewer.slider_layers_move_current_thumb(1); },
                 nullptr,
                 Platform::KeyboardShortcut{0, Platform::KeyCode::Up}
-            ),
-            true
+            )
         )
         .register_command(
-            new Platform::FuncCommand(
+            std::make_unique<Platform::FuncCommand>(
                 "slider-layers-decrease-slow",
                 [this]() { m_fdm_viewer.slider_layers_move_current_thumb(-1); },
                 nullptr,
@@ -459,18 +453,17 @@ void PreviewRenderModule::register_commands()
             )
         )
         .register_command(
-            new Platform::FuncCommand(
+            std::make_unique<Platform::FuncCommand>(
                 "slider-layers-increase-medium",
                 [this]() { m_fdm_viewer.slider_layers_move_current_thumb(5); },
                 nullptr,
                 Platform::KeyboardShortcut{
                     Platform::KeyModifiers(Platform::KeyModifier::Shift), Platform::KeyCode::Up
                 }
-            ),
-            true
+            )
         )
         .register_command(
-            new Platform::FuncCommand(
+            std::make_unique<Platform::FuncCommand>(
                 "slider-layers-decrease-medium",
                 [this]() { m_fdm_viewer.slider_layers_move_current_thumb(-5); },
                 nullptr,
@@ -480,18 +473,17 @@ void PreviewRenderModule::register_commands()
             )
         )
         .register_command(
-            new Platform::FuncCommand(
+            std::make_unique<Platform::FuncCommand>(
                 "slider-layers-increase-fast",
                 [this]() { m_fdm_viewer.slider_layers_move_current_thumb(10); },
                 nullptr,
                 Platform::KeyboardShortcut{
                     Platform::KeyModifiers(Platform::KeyModifier::Ctrl), Platform::KeyCode::Up
                 }
-            ),
-            true
+            )
         )
         .register_command(
-            new Platform::FuncCommand(
+            std::make_unique<Platform::FuncCommand>(
                 "slider-layers-decrease-fast",
                 [this]() { m_fdm_viewer.slider_layers_move_current_thumb(-10); },
                 nullptr,
@@ -501,7 +493,7 @@ void PreviewRenderModule::register_commands()
             )
         )
         .register_command(
-            new Platform::FuncCommand(
+            std::make_unique<Platform::FuncCommand>(
                 "slider-layers-jump-to_value",
                 [this]() { m_fdm_viewer.slider_layers_jump_to_value(); },
                 nullptr,
@@ -511,7 +503,7 @@ void PreviewRenderModule::register_commands()
             )
         )
         .register_command(
-            new Platform::FuncCommand(
+            std::make_unique<Platform::FuncCommand>(
                 "slider-layers-add-current-tick",
                 [this]() { m_fdm_viewer.slider_layers_add_current_tick(); },
                 nullptr,
@@ -519,7 +511,7 @@ void PreviewRenderModule::register_commands()
             )
         )
         .register_command(
-            new Platform::FuncCommand(
+            std::make_unique<Platform::FuncCommand>(
                 "slider-layers-add-current-tick-kp",
                 [this]() { m_fdm_viewer.slider_layers_add_current_tick(); },
                 nullptr,
@@ -527,7 +519,7 @@ void PreviewRenderModule::register_commands()
             )
         )
         .register_command(
-            new Platform::FuncCommand(
+            std::make_unique<Platform::FuncCommand>(
                 "slider-layers-delete-current-tick",
                 [this]() { m_fdm_viewer.slider_layers_delete_current_tick(); },
                 nullptr,
@@ -535,7 +527,7 @@ void PreviewRenderModule::register_commands()
             )
         )
         .register_command(
-            new Platform::FuncCommand(
+            std::make_unique<Platform::FuncCommand>(
                 "slider-layers-delete-current-tick-kp",
                 [this]() { m_fdm_viewer.slider_layers_delete_current_tick(); },
                 nullptr,
@@ -544,7 +536,7 @@ void PreviewRenderModule::register_commands()
         )
         // temporary to allow to switch yoga layout on/off
         .register_command(
-            new Platform::FuncCommand(
+            std::make_unique<Platform::FuncCommand>(
                 "use-yoga-layout",
                 [this]() { m_use_yoga_layout = !m_use_yoga_layout; },
                 nullptr,

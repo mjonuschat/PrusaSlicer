@@ -13,7 +13,7 @@ namespace Slic3r::App {
 class ResourceResolver : public Render::IResourceResolver
 {
 public:
-    ResourceResolver(const std::string& resource_path);
+    explicit ResourceResolver(const std::string& resource_path);
 
     std::string resolve(const std::string& relative_filepath) override;
 

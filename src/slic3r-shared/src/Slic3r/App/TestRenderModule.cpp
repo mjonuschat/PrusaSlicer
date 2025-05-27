@@ -431,31 +431,28 @@ void TestRenderModule::register_commands()
 {
     m_command_registry
         .register_command(
-            new Platform::FuncCommand(
+            std::make_unique<Platform::FuncCommand>(
                 "zoom-in",
                 [&]() { m_scene->camera_trackball().update_zoom(1.); },
                 nullptr,
                 Platform::KeyboardShortcut{0, Platform::KeyCode::I}
-            ),
-            true
+            )
         )
         .register_command(
-            new Platform::FuncCommand(
+            std::make_unique<Platform::FuncCommand>(
                 "switch-camera-type",
                 [&]() { m_scene->camera_trackball().switch_projection_type(); },
                 nullptr,
                 Platform::KeyboardShortcut{0, Platform::KeyCode::K}
-            ),
-            true
+            )
         )
         .register_command(
-            new Platform::FuncCommand(
+            std::make_unique<Platform::FuncCommand>(
                 "zoom-out",
                 [&]() { m_scene->camera_trackball().update_zoom(-1.); },
                 nullptr,
                 Platform::KeyboardShortcut{0, Platform::KeyCode::O}
-            ),
-            true
+            )
         )
     ;
 }
