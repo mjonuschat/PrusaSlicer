@@ -539,6 +539,41 @@ PrintRegionConfigView create_fuzzy_skin_painted_region_config(const PrintRegionC
     return painted_region_cfg;
 };
 
+// Fill the infill, perimeter, and solid infill extruders based on the "extruder" config.
+template <typename T>
+T preprocess_config_box(const T& config_box)
+{
+    T config_box_out = config_box;
+    if (const Domain::ConfigItem& extruder_item = config_box_out.opt("extruder"); !extruder_item.is_null()) {
+        if (const int extruder = extruder_item.get<int>(); extruder > 0) {
+            Domain::ConfigItem& infill_extruder_item = config_box_out.opt("infill_extruder");
+            Domain::ConfigItem& perimeter_extruder_item = config_box_out.opt("perimeter_extruder");
+            Domain::ConfigItem& solid_infill_extruder_item = config_box_out.opt("solid_infill_extruder");
+
+            infill_extruder_item.set(extruder);
+            perimeter_extruder_item.set(extruder);
+            solid_infill_extruder_item.set(extruder);
+
+            assert(perimeter_extruder_item.is_nullable() && solid_infill_extruder_item.is_nullable() && infill_extruder_item.is_nullable());
+            infill_extruder_item.set_null(false);
+            perimeter_extruder_item.set_null(false);
+            solid_infill_extruder_item.set_null(false);
+        }
+    }
+
+    return config_box_out;
+}
+
+Domain::VolumeSettings preprocess_volume_settings(const Domain::VolumeSettings& volume_settings)
+{
+    return preprocess_config_box<Domain::VolumeSettings>(volume_settings);
+}
+
+Domain::ObjectSettings preprocess_object_settings(const Domain::ObjectSettings& object_settings)
+{
+    return preprocess_config_box<Domain::ObjectSettings>(object_settings);
+}
+
 // Generate PrintRegions from scratch.
 std::shared_ptr<PrintObjectRegions> generate_print_object_regions(
     std::shared_ptr<PrintObjectRegions>         print_object_regions_old,
@@ -589,16 +624,15 @@ std::shared_ptr<PrintObjectRegions> generate_print_object_regions(
             for (PrintObjectRegions::LayerRangeRegions &layer_range : layer_ranges_regions)
                 if (const PrintObjectRegions::BoundingBox *bbox = find_volume_extents(layer_range, volume); bbox) {
                     if (volume.is_model_part()) {
-
                         std::vector<VolumeSettingsPtr> new_volume_settings;
                         if (layer_range.config) {
-                            new_volume_settings.push_back(layer_range.config);
+                            new_volume_settings.push_back(std::make_shared<Domain::VolumeSettings>(preprocess_volume_settings(*layer_range.config)));
                         }
-                        new_volume_settings.push_back(std::make_shared<Domain::VolumeSettings>(volume.volume_settings));
+                        new_volume_settings.push_back(std::make_shared<Domain::VolumeSettings>(preprocess_volume_settings(volume.volume_settings)));
 
                         const PrintRegionConfigView new_config{
                             new_full_config,
-                            new_object_settings,
+                            std::make_shared<Domain::ObjectSettings>(preprocess_object_settings(*new_object_settings)),
                             new_volume_settings
                         };
                         // Add a model volume, assign an existing region or generate a new one.
@@ -621,7 +655,7 @@ std::shared_ptr<PrintObjectRegions> generate_print_object_regions(
                             if (parent_volume.is_model_part() || parent_volume.is_modifier())
                                 if (PrintObjectRegions::BoundingBox parent_bbox = find_modifier_volume_extents(layer_range, parent_region_id); parent_bbox.intersects(*bbox)) {
                                     PrintRegionConfigView new_config{parent_region.region->config()};
-                                    new_config.add_override(std::make_shared<Domain::VolumeSettings>(volume.volume_settings));
+                                    new_config.add_override(std::make_shared<Domain::VolumeSettings>(preprocess_volume_settings(volume.volume_settings)));
                                     // Only create new region for a modifier, which actually modifies config of it's parent.
                                     if (new_config != parent_region.region->config()) {
                                         added = true;
