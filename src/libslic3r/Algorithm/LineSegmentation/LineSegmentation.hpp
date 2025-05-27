@@ -4,10 +4,9 @@
 #include <vector>
 
 #include "libslic3r/Arachne/utils/ExtrusionLine.hpp"
+#include "libslic3r/ConfigViews.hpp"
 
 namespace Slic3r {
-class PrintRegionConfigView;
-
 struct PerimeterRegion;
 
 using PerimeterRegions = std::vector<PerimeterRegion>;
@@ -27,8 +26,8 @@ struct PolylineSegment
 
 struct PolylineRegionSegment
 {
-    Polyline                 polyline;
-    const PrintRegionConfigView &config;
+    Polyline                    polyline;
+    const PrintRegionConfigView config;
 
     PolylineRegionSegment(const Polyline &polyline, const PrintRegionConfigView &config) : polyline(polyline), config(config) {}
 };
@@ -41,8 +40,8 @@ struct ExtrusionSegment
 
 struct ExtrusionRegionSegment
 {
-    Arachne::ExtrusionLine   extrusion;
-    const PrintRegionConfigView &config;
+    Arachne::ExtrusionLine      extrusion;
+    const PrintRegionConfigView config;
 
     ExtrusionRegionSegment(const Arachne::ExtrusionLine &extrusion, const PrintRegionConfigView &config) : extrusion(extrusion), config(config) {}
 };
