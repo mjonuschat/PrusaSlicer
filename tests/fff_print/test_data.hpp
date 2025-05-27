@@ -14,6 +14,7 @@
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "libslic3r/GCode/SeamPlacer.hpp"
 #include "libslic3r/GCode/SeamAligned.hpp"
+#include "slic3r-shared/include/Slic3r/Biz/Config/3mf_legacy.hpp"
 
 #include <boost/filesystem.hpp>
 #include <unordered_map>
@@ -131,19 +132,24 @@ bool contains(const std::string &data, const std::string &pattern);
 bool contains_regex(const std::string &data, const std::string &pattern);
 
 inline std::unique_ptr<Print> process_3mf(const boost::filesystem::path &path) {
-    DynamicPrintConfig config;
+    Domain::ConfigPack config;
     auto print{std::make_unique<Print>()};
     Model model;
 
-    ConfigSubstitutionContext context{ForwardCompatibilitySubstitutionRule::Disable};
     boost::optional<Semver> version;
     WipeTowersOnBeds wipe_towers;
     CustomGCodesOnBeds custom_gcodes;
-    load_3mf(path.string().c_str(), config, context, &model, false, version, wipe_towers, custom_gcodes);
+    Slic3rLegacy::load_3mf_legacy(path.string().c_str(), config, &model, false, version, wipe_towers, custom_gcodes);
 
-    throw std::runtime_error("TODO: we must load the new config to construct TestConfig in the next call");
+    const auto fdm_config{std::get<Domain::ConfigPackFDM>(config)};
+    TestConfig test_config;
+    test_config.print = fdm_config.print;
+    test_config.tool = fdm_config.tool;
+    test_config.printer = fdm_config.printer;
+    test_config.project = fdm_config.project;
+    test_config.filament = fdm_config.filament;
 
-    Slic3r::Test::init_print(std::vector<Domain::TriangleMesh>{}, *print, model, TestConfig{});
+    Slic3r::Test::init_print(std::vector<Domain::TriangleMesh>{}, *print, model, test_config);
     print->process();
 
     return print;

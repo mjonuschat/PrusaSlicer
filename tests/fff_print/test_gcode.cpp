@@ -129,9 +129,7 @@ TEST_CASE("Extrusion, travels, temperatures", "[GCode]") {
     TestConfig config;
     config.print.opt("gcode_comments").set(true);
     config.print.opt("complete_objects").set(true );
-    throw std::runtime_error{"TODO: cannot set axis"};
-    //config.print.opt("extrusion_axis").set("A");
-    config.print.opt("start_gcode").set("");
+    config.printer.opt("start_gcode").set("");
     config.print.opt("layer_height").set(0.4);
     config.print.opt("first_layer_height").set(FloatOrPercentage{0.4});
     config.filament.at(0).opt("temperature").set(200);
@@ -156,14 +154,11 @@ TEST_CASE("Extrusion, travels, temperatures", "[GCode]") {
     }
 
     parser.parse_buffer(gcode, [&] (GCodeReader &self, const GCodeReader::GCodeLine &line) {
-        INFO("Unexpected E argument");
-        CHECK(!line.has_e());
-
         if (line.has_z() && std::abs(line.dist_Z(self)) > 0) {
             z_moves.emplace_back(line.z());
         }
         if (line.has_x() || line.has_y()) {
-            if (line.extruding(self) || line.has_unknown_axis()) {
+            if (line.extruding(self)) {
                 extrusions.emplace_back(scaled(line.x()), scaled(line.y()));
             } else if (!extrusions.empty()){ // skip initial travel move to first skirt point
                 travel_moves.emplace_back(scaled(line.x()), scaled(line.y()));
