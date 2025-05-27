@@ -654,10 +654,12 @@ Flow Print::skirt_flow() const
        extruders and take the one with, say, the smallest index;
        The same logic should be applied to the code that selects the extruder during G-code
        generation as well. */
+    // If support_material_extruder == 0 use the 0th nozzle diameter.
+    const int support_material_extruder_idx = std::max<int>(m_objects.front()->config().get<int>("support_material_extruder") - 1, 0);
     return Flow::new_from_config_width(
         frPerimeter,
 		width,
-		(float)m_config.get<std::vector<double>>("nozzle_diameter").at(m_objects.front()->config().get<int>("support_material_extruder")-1),
+		(float)m_config.get<std::vector<double>>("nozzle_diameter").at(support_material_extruder_idx),
 		(float)this->skirt_first_layer_height());
 }
 
