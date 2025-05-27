@@ -22,8 +22,7 @@ SCENARIO("PrintObject: object layer heights", "[PrintObject]") {
             config.print.opt("layer_height").set(2.0);
             config.tool.at(0).opt("nozzle_diameter").set(3.0);
 
-            Slic3r::Test::init_and_process_print({TestMesh::cube_20x20x20}, print, {
-	        });
+            Slic3r::Test::init_and_process_print({TestMesh::cube_20x20x20}, print, config);
             SpanOfConstPtrs<Layer> layers = print.objects().front()->layers();
             THEN("The output vector has 10 entries") {
                 REQUIRE(layers.size() == 10);
