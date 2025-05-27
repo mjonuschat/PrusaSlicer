@@ -8,50 +8,46 @@
 
 namespace Slic3r::Biz {
 
-using ConfigItem = Domain::ConfigItem;
-using ConfigItemType = Domain::ConfigItemType;
-using FloatOrPercentage = Domain::FloatOrPercentage;
-using Percentage = Domain::Percentage;
+using Domain::ConfigItem;
+using Domain::FloatOrPercentage;
+using Domain::Percentage;
+using Domain::EnumWrapper;
+using Domain::EnumVectorWrapper;
+using Domain::Vec2d;
 
-static nlohmann::json serialize_float_or_percent(const ConfigItem& item)
+static nlohmann::json serialize_float_or_percent(const FloatOrPercentage& fop)
 {
     nlohmann::json j;
-    if (item.type() == ConfigItemType::Percent) {
-        j["value"] = item.get<Percentage>().value;
-        j["is_percent"] = true;
-    } else if (item.type() == ConfigItemType::FloatOrPercent) {
-        FloatOrPercentage fop = item.get<FloatOrPercentage>();
-        j["value"] = fop.is_percentage() ? fop.percentage().value : fop.float_value();
-        j["is_percent"] = fop.is_percentage();
-    } else
-        PANIC("This function cannot be used with this ConfigItemType.");
+    j["value"] = fop.is_percentage() ? fop.percentage().value : fop.float_value();
+    j["is_percent"] = fop.is_percentage();
     return j;
 }
 
-static nlohmann::json serialize_point(const ConfigItem& item)
+static nlohmann::json serialize_percent(const Percentage& percentage)
 {
-    ASSERT(item.type() == ConfigItemType::Point);
-    const auto& p = item.get<Domain::Vec2d>();
-    return nlohmann::json(std::vector<double>{{p.x()}, { p.y() }});
+    nlohmann::json j;
+    j["value"] = percentage.value;
+    j["is_percent"] = true;
+    return j;
 }
 
-static nlohmann::json serialize_points(const ConfigItem& item)
+static nlohmann::json serialize_point(const Vec2d& p)
 {
-    ASSERT(item.type() == ConfigItemType::Points);
-    const auto& pts = item.get<std::vector<Domain::Vec2d>>();
+    return nlohmann::json(std::vector<double>{p.x(), p.y()});
+}
+
+static nlohmann::json serialize_points(const std::vector<Vec2d>& pts)
+{
     std::vector<std::vector<double>> out;
     for (const Domain::Vec2d& pt : pts)
         out.emplace_back(std::vector<double>{pt.x(), pt.y()});
     return nlohmann::json(out);
 }
 
-static nlohmann::json serialize_enums(const ConfigItem& item)
+static nlohmann::json serialize_enums(const std::vector<std::string_view>& strings)
 {
-    ASSERT(item.type() == ConfigItemType::Enums);
-    const auto& strings = item.get_enums_strings();
     std::vector<std::string> out;
-    for (const auto& [serialized, ui] : strings)
-        out.emplace_back(serialized);
+    out.insert(out.end(), strings.begin(), strings.end());
     return nlohmann::json(out);
 }
 
@@ -62,33 +58,39 @@ static void serialize_and_append(const ConfigItem& item, nlohmann::json& j)
     if (item.is_null())
         return;
 
-    switch (item.def().type) {
-        case ConfigItemType::Bool   : jval = item.get<bool>(); break;
-        case ConfigItemType::Int    : jval = item.get<int>(); break;
-        case ConfigItemType::Double : jval = item.get<double>(); break;
-        case ConfigItemType::String : jval = item.get<std::string>(); break;
-        case ConfigItemType::Enum   : jval = item.get_enum_strings().first; break;
-        case ConfigItemType::Percent : [[fallthrough]];
-        case ConfigItemType::FloatOrPercent : jval = serialize_float_or_percent(item); break;
-        case ConfigItemType::Point : jval = serialize_point(item); break;
-        
-        case ConfigItemType::Bools   : jval = item.vec<bool>(); break;
-        case ConfigItemType::Ints    : jval = item.vec<int>(); break;
-        case ConfigItemType::Doubles : jval = item.vec<double>(); break;
-        case ConfigItemType::Strings : jval = item.vec<std::string>(); break;
-        case ConfigItemType::Points  : jval = serialize_points(item); break;
-        case ConfigItemType::Enums   : jval = serialize_enums(item); break;
-
-        case ConfigItemType::IntOptional :
-            if (const auto& opt_int = item.get<std::optional<int>>(); opt_int)
-                jval = *opt_int;
+    item.visit([&](auto&& item_value){
+        using ValueType = std::remove_cvref_t<decltype(item_value)>;
+        if constexpr (std::is_same_v<ValueType, EnumWrapper>) {
+            jval = item_value.get_string();
+        } else if constexpr (std::is_same_v<ValueType, EnumVectorWrapper>) {
+            jval = serialize_enums(item_value.get_strings());
+        } else if constexpr (std::is_same_v<ValueType, Vec2d>) {
+            jval = serialize_point(item_value);
+        } else if constexpr (std::is_same_v<ValueType, std::vector<Vec2d>>) {
+            jval = serialize_points(item_value);
+        } else if constexpr (
+            std::is_same_v<ValueType, Percentage>
+            ||std::is_same_v<ValueType, FloatOrPercentage>
+        ) {
+            jval = serialize_float_or_percent(item_value);
+        } else if constexpr (std::is_same_v<ValueType, std::optional<int>>) {
+            if (item_value)
+                jval = *item_value;
             else
                 jval = nullptr;
-            break;
-
-        default : PANIC();
-    }
-    return;
+        } else if constexpr (
+            std::is_same_v<ValueType, int>
+            || std::is_same_v<ValueType, double>
+            || std::is_same_v<ValueType, std::string>
+            || std::is_same_v<ValueType, std::vector<int>>
+            || std::is_same_v<ValueType, std::vector<double>>
+            || std::is_same_v<ValueType, std::vector<std::string>>
+        ) {
+            jval = item.get<ValueType>();
+        } else {
+            PANIC("Cannot serialize value!");
+        }
+    });
 }
 
 

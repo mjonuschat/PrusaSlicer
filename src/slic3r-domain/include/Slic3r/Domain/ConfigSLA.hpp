@@ -11,7 +11,6 @@ namespace Slic3r::Domain {
 extern ConfigDefinitions s_defs_sla;
 
 
-
 // Next, define all enums that should be used in the config.
 enum class SLADisplayOrientation {
     sladoLandscape,

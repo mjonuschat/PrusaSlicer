@@ -201,17 +201,6 @@ Type type(const Value& value)
     return std::visit([](auto&& value) { return value.type(); }, value);
 };
 
-template<typename T>
-struct is_std_vector : std::false_type
-{};
-
-template<typename T, typename Alloc>
-struct is_std_vector<std::vector<T, Alloc>> : std::true_type
-{};
-
-template<typename T>
-constexpr bool is_std_vector_v = is_std_vector<T>::value;
-
 const Value* Config::option(const std::string& key) const
 {
     const auto value_it{m_values.find(key)};
@@ -230,7 +219,7 @@ void Config::set(const std::string& key, const T& value)
     if constexpr (std::is_same_v<InputType, Value>) {
         m_values.insert_or_assign(key, value);
     } else {
-        if constexpr (is_std_vector_v<T>) {
+        if constexpr (Domain::is_std_vector_v<T>) {
             m_values.insert_or_assign(key, Vector{value});
         } else {
             m_values.insert_or_assign(key, Scalar{value});

@@ -11,8 +11,6 @@ namespace Slic3r::Domain {
 // the definitions of the config items.
 extern ConfigDefinitions s_defs_physical;
 
-
-
 // Next, define all enums that should be used in the config.
 enum class PrintHostAuthType {
     None,

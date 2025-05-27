@@ -1220,11 +1220,11 @@ struct ExposureProfile {
         tilt_up_offset_steps        = config.get<std::vector<int>>("tilt_up_offset_steps").at(opt_id);
         tilt_up_cycles              = config.get<std::vector<int>>("tilt_up_cycles").at(opt_id);
         use_tilt                    = config.get<std::vector<bool>>("use_tilt").at(opt_id);
-        tower_speed                 = tower_speeds.at(static_cast<Domain::TowerSpeeds>(config.get<std::vector<int>>("tower_speed").at(opt_id)));
-        tilt_down_initial_speed     = tilt_speeds.at(static_cast<Domain::TiltSpeeds>(config.get<std::vector<int>>("tilt_down_initial_speed").at(opt_id)));
-        tilt_down_finish_speed      = tilt_speeds.at(static_cast<Domain::TiltSpeeds>(config.get<std::vector<int>>("tilt_down_finish_speed").at(opt_id)));
-        tilt_up_initial_speed       = tilt_speeds.at(static_cast<Domain::TiltSpeeds>(config.get<std::vector<int>>("tilt_up_initial_speed").at(opt_id)));
-        tilt_up_finish_speed        = tilt_speeds.at(static_cast<Domain::TiltSpeeds>(config.get<std::vector<int>>("tilt_up_finish_speed").at(opt_id)));
+        tower_speed                 = tower_speeds.at(config.get<std::vector<Domain::TowerSpeeds>>("tower_speed").at(opt_id));
+        tilt_down_initial_speed     = tilt_speeds.at(config.get<std::vector<Domain::TiltSpeeds>>("tilt_down_initial_speed").at(opt_id));
+        tilt_down_finish_speed      = tilt_speeds.at(config.get<std::vector<Domain::TiltSpeeds>>("tilt_down_finish_speed").at(opt_id));
+        tilt_up_initial_speed       = tilt_speeds.at(config.get<std::vector<Domain::TiltSpeeds>>("tilt_up_initial_speed").at(opt_id));
+        tilt_up_finish_speed        = tilt_speeds.at(config.get<std::vector<Domain::TiltSpeeds>>("tilt_up_finish_speed").at(opt_id));
     }
 };
 

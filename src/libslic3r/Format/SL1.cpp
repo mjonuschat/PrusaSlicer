@@ -322,8 +322,8 @@ public:
         mirror[X] = cfg.get<bool>("display_mirror_x");
         mirror[Y] = cfg.get<bool>("display_mirror_y");
 
-        auto ro = cfg.get<int>("display_orientation");
-        RasterBase::Orientation orientation = ro == RasterBase::roPortrait
+        auto ro = cfg.get<Domain::SLADisplayOrientation>("display_orientation");
+        RasterBase::Orientation orientation = ro == Domain::SLADisplayOrientation::sladoPortrait
             ? RasterBase::roPortrait
             : RasterBase::roLandscape;
 

@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include <string>
+#include "Slic3r/Domain/ConfigValue.hpp"
 #include "Slic3r/Domain/PrinterTechnology.hpp"
 
 namespace Slic3r::Domain {
