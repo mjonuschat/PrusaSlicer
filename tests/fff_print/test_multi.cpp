@@ -30,8 +30,8 @@ SCENARIO("Basic tests", "[Multi]")
             tool_settings.opt("nozzle_diameter").set(0.6);
         }
 
-        throw std::runtime_error{"TODO: extruder does not exist anymore"};
-        config.print.opt("extruder").set(2);
+        config.print.opt("perimeter_extruder").set(2);
+        config.print.opt("solid_infill_extruder").set(2);
         config.print.opt("infill_extruder").set(4);
         config.print.opt("support_material_extruder").set(0);
         std::string gcode = Slic3r::Test::slice({ Slic3r::Test::TestMesh::cube_20x20x20 }, config);
@@ -49,9 +49,8 @@ SCENARIO("Basic tests", "[Multi]")
             tool_settings.opt("nozzle_diameter").set(0.6);
         }
 
-        throw std::runtime_error{"TODO: extruder does not exist anymore"};
-        config.print.opt("extruder").set(2);
         config.print.opt("perimeter_extruder").set(2);
+        config.print.opt("solid_infill_extruder").set(2);
         config.print.opt("infill_extruder").set(4);
         config.print.opt("support_material_extruder").set(0);
         config.print.opt("support_material_interface_extruder").set(2);
@@ -201,17 +200,21 @@ SCENARIO("Stacked cubes", "[Multi]")
 {
     VolumeSettings lower_config;
 
-    throw std::runtime_error{"TODO: extruder does not exist anymore"};
     lower_config.opt("extruder").set(1);
+    lower_config.opt("extruder").set_null(false);
     lower_config.opt("bottom_solid_layers").set(0);
+    lower_config.opt("bottom_solid_layers").set_null(false);
     lower_config.opt("top_solid_layers").set(1);
+    lower_config.opt("top_solid_layers").set_null(false);
 
     VolumeSettings upper_config;
 
-    throw std::runtime_error{"TODO: extruder does not exist anymore"};
     upper_config.opt("extruder").set(2);
+    upper_config.opt("extruder").set_null(false);
     upper_config.opt("bottom_solid_layers").set(1);
+    upper_config.opt("bottom_solid_layers").set_null(false);
     upper_config.opt("top_solid_layers").set(0);
+    upper_config.opt("top_solid_layers").set_null(false);
 
     static constexpr const double solid_infill_speed = 99;
     TestConfig config{4};
@@ -258,7 +261,7 @@ SCENARIO("Stacked cubes", "[Multi]")
         }
     }
     WHEN("Interface shells enabled") {
-        config.print.opt("interface_shells").set(1);
+        config.print.opt("interface_shells").set(true);
         std::string gcode = slice_stacked_cubes(config, lower_config, upper_config);
         auto [t0, t1] = test_shells(gcode);
         THEN("top interface shells") {

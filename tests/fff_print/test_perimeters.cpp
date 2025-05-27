@@ -389,8 +389,7 @@ SCENARIO("Perimeters", "[Perimeters]")
             config.print.opt("external_perimeter_speed").set(FloatOrPercentage{99.0});
             config.print.opt("small_perimeter_speed").set(FloatOrPercentage{99.0});
 
-            throw std::runtime_error{"TODO: Thin walls are not in config!"};
-            //config.print.opt("thin_walls").set(false);
+            config.print.opt("thin_walls").set(false);
 
             std::string gcode = Slic3r::Test::slice({ Slic3r::Test::TestMesh::ipadstand }, config);
             // z => number of loops
