@@ -2797,7 +2797,7 @@ LayerResult GCodeGenerator::process_layer(
             }
 
             const double writer_z{m_writer.get_position().z()};
-            const double previous_z{writer_z <= std::numeric_limits<double>::epsilon() ? print_z : writer_z};
+            const double previous_z{writer_z - print.config().get<double>("z_offset") <= 10 * std::numeric_limits<double>::epsilon() ? print_z : writer_z};
 
             gcode += this->travel_to_first_position(first_point - to_3d(shift, 0), previous_z, ExtrusionRole::Mixed, [this]() {
                 if (m_writer.multiple_extruders) {
