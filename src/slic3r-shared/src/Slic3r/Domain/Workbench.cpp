@@ -8,19 +8,15 @@ namespace Slic3r::Domain {
 
 
 Workbench::Workbench() : m_project_id_generator(0) {}
-Workbench::Workbench(Workbench&& other) : m_project_id_generator(std::move(other.m_project_id_generator))
-{
-
-}
 
 
-void Workbench::load_configs()
+void Workbench::load_legacy_configs()
 {
     m_app_config = std::make_unique<AppConfig>(Slic3r::AppConfig::EAppMode::Editor);
     m_app_config->load();
-    m_preset_bundle = std::make_unique<Slic3r::PresetBundle>();
-    m_preset_bundle->setup_directories();
-    m_preset_bundle->load_presets(*m_app_config, ForwardCompatibilitySubstitutionRule::EnableSystemSilent);
+    m_preset_bundle_legacy = std::make_unique<Slic3r::PresetBundle>();
+    m_preset_bundle_legacy->setup_directories();
+    m_preset_bundle_legacy->load_presets(*m_app_config, ForwardCompatibilitySubstitutionRule::EnableSystemSilent);
 }
 
 void Workbench::load_project(const std::string& file_path)

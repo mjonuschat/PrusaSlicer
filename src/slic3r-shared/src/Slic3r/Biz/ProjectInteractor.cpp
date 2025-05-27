@@ -33,7 +33,7 @@ void ProjectInteractor::initialize_new_project_before_inserting(Domain::Project&
 {
     auto& cc_ptr = p.config_containers().emplace_back(std::make_unique<Domain::ConfigContainer>());
     // upload config from selected preset
-    cc_ptr->set_print_config(m_workbench.preset_bundle().full_config());
+    cc_ptr->set_print_config(m_workbench.preset_bundle_legacy().full_config());
 }
 
 void ProjectInteractor::initialize_inserted_project(size_t project_id)
@@ -45,7 +45,7 @@ void ProjectInteractor::initialize_inserted_project(size_t project_id)
             m_preset_interactor.config_container_context(project_id, cc_id).printer.edited_preset;
 
         Domain::Bed& bed =
-            p.bed_container().add_bed(selected_printer_preset, m_workbench.preset_bundle());
+            p.bed_container().add_bed(selected_printer_preset, m_workbench.preset_bundle_legacy());
         cc_ptr->set_bed(bed);
         m_scene_interactor.add_bed_instance(cc_id);
     }

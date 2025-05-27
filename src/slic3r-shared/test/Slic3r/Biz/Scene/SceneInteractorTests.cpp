@@ -37,7 +37,7 @@ TEST_CASE("Scene Interactor Bed Tracking")
     SlicingInputChangedListener slicing_input_changed_listener;
     Domain::Workbench workbench;
     set_data_dir(Tests::get_datadir().string());
-    workbench.load_configs();
+    workbench.load_legacy_configs();
 
     App::Platform::StdMainThreadDispatcher dispatcher;
     ProjectInteractor project_interactor{workbench, dispatcher};

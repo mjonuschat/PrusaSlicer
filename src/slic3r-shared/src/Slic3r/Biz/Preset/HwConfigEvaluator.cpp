@@ -4,12 +4,6 @@
 namespace Slic3r::Biz::Preset {
 
 
-template ConfigIterator<Domain::Preset::HwToolConfigDef> begin<Domain::Preset::HwToolConfigDef>(const ConfigIterator<Domain::Preset::HwToolConfigDef>&);
-template ConfigIterator<Domain::Preset::HwToolConfigDef> end<Domain::Preset::HwToolConfigDef>(const ConfigIterator<Domain::Preset::HwToolConfigDef>&);
-template ConfigIterator<Domain::Preset::HwFeederConfigDef> begin<Domain::Preset::HwFeederConfigDef>(const ConfigIterator<Domain::Preset::HwFeederConfigDef>&);
-template ConfigIterator<Domain::Preset::HwFeederConfigDef> end<Domain::Preset::HwFeederConfigDef>(const ConfigIterator<Domain::Preset::HwFeederConfigDef>&);
-
-
 HwToolConfigIterator HwConfigEvaluator::iterate_tools(const Domain::Preset::HwPrinterConfig& printer, const HwToolConfigIterator::Container& tools) const
 {
     Expr::ValueMap values;
@@ -38,7 +32,8 @@ Domain::Preset::HwPrinterConfig HwConfigEvaluator::create_printer_config(
     Domain::Preset::override_features(features, templ.features);
 
     Domain::Preset::HwPrinterConfig printer_config{
-        .id = printer_def->id,
+        .id = Domain::Preset::generate_id(),
+        .printer_id = printer_def->id,
         .vendor_id = vendor_data.info.id,
         .technology = printer_def->technology,
         .model = printer_def->model,

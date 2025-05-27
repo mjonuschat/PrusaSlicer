@@ -21,10 +21,14 @@
 
 #include "Slic3r/App/WX/DialogManager.hpp"
 
+// TODO: replace with spdlog
 #include <boost/log/trivial.hpp>
+
+#include <boost/filesystem/path.hpp>
 
 wxIMPLEMENT_APP_NO_MAIN(Slic3r::App::Desktop::DesktopApp);
 
+namespace fs = boost::filesystem;
 
 namespace Slic3r::App::Desktop {
 
@@ -71,7 +75,7 @@ bool DesktopApp::OnInit()
 
     
     init_translations();
-    m_workbench.load_configs();
+    m_workbench.load_legacy_configs();
 
     using Platform::WX::WXMainThreadDispatcher;
     using Biz::Platform::PlatformServices;
@@ -86,6 +90,14 @@ bool DesktopApp::OnInit()
         m_workbench,
         PlatformServices::instance().main_thread_dispatcher()
     );
+
+    auto& preset_interactor = m_project_interactor->preset_interactor();
+
+    // load new presets
+    fs::path preset_bundle_dir = fs::path{resources_dir()} / "presets";
+    fs::path config_dir = fs::path{data_dir()} / "configs";
+    preset_interactor.load_preset_bundle(preset_bundle_dir.string(), config_dir.string());
+
     m_plater_module =
         std::make_unique<Plater::PlaterRenderModule>(m_workbench, *m_project_interactor);
     m_preview_module =

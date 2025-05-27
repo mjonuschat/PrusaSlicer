@@ -15,7 +15,7 @@ struct PresetNode
     std::vector<std::string> unconditional_inherits;
     std::optional<SourceLocatedExpr> condition;
     PresetValueMap values;
-    PresetValueMap features;
+    FeatureValueMap features;
     std::vector<PresetNode> variants;
     SourceLocation source_location;
 };

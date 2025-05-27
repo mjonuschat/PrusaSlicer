@@ -71,7 +71,7 @@ PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
     }
 
     Domain::Preset::PresetValueMap unconditional_inherited_values;
-    Domain::Preset::PresetValueMap unconditional_inherited_features;
+    Domain::Preset::FeatureValueMap unconditional_inherited_features;
     for (const auto& unc_inh : node.unconditional_inherits) {
         const auto& node_path = named_preset(unc_inh);
 

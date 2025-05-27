@@ -1,7 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include "Slic3r/Biz/Preset/HwConfigEvaluator.hpp"
-#include "Slic3r/Biz/Preset/Loader/HwConfigLoader.hpp"
-#include "Slic3r/Biz/Preset/Loader/Yaml.hpp"
+#include "Slic3r/Biz/Preset/IO/HwConfigLoader.hpp"
+#include "Slic3r/Biz/Preset/IO/Yaml.hpp"
 #include "Slic3r/TestUtils/TestData.hpp"
 
 using namespace Slic3r::Biz::Preset;
@@ -9,7 +9,7 @@ using namespace Slic3r::Biz::Preset;
 TEST_CASE("HwConfigEvaluator")
 {
     const std::string filename = Tests::get_datadir().string() + "/preset/hw-config.yaml";
-    Loader::HwConfigLoader loader;
+    IO::HwConfigLoader loader;
     try {
         loader.load(filename);
     } catch (const std::runtime_error& e) {
@@ -70,7 +70,8 @@ TEST_CASE("HwConfigEvaluator")
     SECTION("Evaluate printer_config templates")
     {
         auto printer_config = cfg_eval.create_printer_config(*vendor_data.find_printer_config_template_by_id("MK4S MMU3S"), vendor_data);
-        REQUIRE(printer_config.id == "MK4S");
+        REQUIRE(printer_config.id.empty() == false);
+        REQUIRE(printer_config.printer_id == "MK4S");
         REQUIRE(printer_config.tools.size() == 1);
         REQUIRE(printer_config.tools[0].id == "0.4");
         REQUIRE(std::get<float>(printer_config.tools[0].features["nozzle_diameter"]) == 0.4f);

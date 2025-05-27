@@ -7,11 +7,27 @@
 
 namespace Slic3r::Biz::Preset {
 
-void append_value(Expr::ValueMap& values, const std::string& name, const Domain::Preset::PresetValue& v);
+template <typename ...Ts>
+void append_value(Expr::ValueMap& values, const std::string& name, const std::variant<Ts...>& v)
+{
+    Expr::Value val;
+    if (std::holds_alternative<std::string>(v)) {
+        val = std::get<std::string>(v);
+    } else if (std::holds_alternative<float>(v)) {
+        val = std::get<float>(v);
+    } else if (std::holds_alternative<bool>(v)) {
+        val = std::get<bool>(v);
+    } else {
+        PANIC("unsupported type");
+    }
+    values[name] = val;
+
+}
+
 
 void append_value(Expr::ValueMap& values, const char* prefix, const Domain::Preset::HwModel& v);
 
-void append_values(Expr::ValueMap& values, const char* prefix, const Domain::Preset::PresetValueMap& features);
+void append_values(Expr::ValueMap& values, const char* prefix, const Domain::Preset::FeatureValueMap& features);
 
 void append_printer_values(Expr::ValueMap& values, const Domain::Preset::HwPrinterConfig& printer);
 

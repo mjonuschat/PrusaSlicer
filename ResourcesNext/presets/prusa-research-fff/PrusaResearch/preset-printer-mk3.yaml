@@ -1,0 +1,90 @@
+kind: printer
+inherits:
+  - '*MK3_nozzle_variant*'
+variants:
+  - condition: 'printer.base_model == "MK3"'
+    values:
+      bed_shape: [0x0,250x0,250x210,0x210]
+      before_layer_gcode: ";BEFORE_LAYER_CHANGE\nG92 E0.0\n;[layer_z]\n\n"
+      binary_gcode: 0
+      end_gcode: "{if layer_z < max_print_height}G1 Z{z_offset+min(max_layer_z+1, max_print_height)} F720 ; Move print head up{endif}\nG1 X0 Y200 F3600 ; park\n{if layer_z < max_print_height}G1 Z{z_offset+min(max_layer_z+49, max_print_height)} F720 ; Move print head further up{endif}\nG4 ; wait\nM221 S100 ; reset flow\nM900 K0 ; reset LA\n{if print_settings_id=~/.*(DETAIL @MK3|QUALITY @MK3|@0.25 nozzle MK3).*/}M907 E538 ; reset extruder motor current{endif}\nM104 S0 ; turn off temperature\nM140 S0 ; turn off heatbed\nM107 ; turn off fan\nM84 ; disable motors\n; max_layer_z = [max_layer_z]"
+      extruder_offset: 0x0
+      gcode_flavor: marlin
+      high_current_on_filament_swap: 0
+      layer_gcode: ";AFTER_LAYER_CHANGE\n;[layer_z]"
+      machine_limits_usage: emit_to_gcode
+      machine_max_acceleration_e: '5000,5000'
+      machine_max_acceleration_extruding: '1250,1250'
+      machine_max_acceleration_retracting: '1250,1250'
+      machine_max_acceleration_travel: '1500,1250'
+      machine_max_acceleration_x: '1000,960'
+      machine_max_acceleration_y: '1000,960'
+      machine_max_acceleration_z: '200,200'
+      machine_max_feedrate_e: '120,120'
+      machine_max_feedrate_x: '200,100'
+      machine_max_feedrate_y: '200,100'
+      machine_max_feedrate_z: '12,12'
+      machine_max_jerk_e: '4.5,4.5'
+      machine_max_jerk_x: '8,8'
+      machine_max_jerk_y: '8,8'
+      machine_max_jerk_z: '0.4,0.4'
+      machine_min_extruding_rate: '0,0'
+      machine_min_travel_rate: '0,0'
+      max_print_height: 210
+      printer_technology: FFF
+      remaining_times: 1
+      retract_before_travel: 1
+      serial_speed: 250000
+      silent_mode: 1
+      single_extruder_multi_material: 0
+      thumbnails: ['160x120/PNG']
+      travel_max_lift: 0
+      use_firmware_retraction: 0
+      use_relative_e_distances: 1
+      use_volumetric_e: 0
+      variable_layer_height: 1
+      z_offset: 0
+      cooling_tube_retraction: '40'
+      cooling_tube_length: '20'
+      parking_pos_retraction: '85'
+      extra_loading_move: '-25'
+      multimaterial_purging: '140'
+    variants:
+      - condition: 'printer.model == "MK3S"'
+        name: Original Prusa i3 MK3S & MK3S+
+        variants:
+        - condition: 'feeder.base_model == "MMU"'
+          values:
+            single_extruder_multi_material: 1
+            start_gcode: "M862.3 P \"[printer_model]\" ; printer model check\nM862.1 P[nozzle_diameter] ; nozzle diameter check\nM115 U3.14.1 ; tell printer latest fw version\nG90 ; use absolute coordinates\nM83 ; extruder relative mode\nM104 S[first_layer_temperature] ; set extruder temp\nM140 S[first_layer_bed_temperature] ; set bed temp\nM190 S[first_layer_bed_temperature] ; wait for bed temp\nM109 S[first_layer_temperature] ; wait for extruder temp\nG28 W ; home all without mesh bed level\nG80 X{first_layer_print_min[0]} Y{first_layer_print_min[1]} W{(first_layer_print_max[0]) - (first_layer_print_min[0])} H{(first_layer_print_max[1]) - (first_layer_print_min[1])} ; mesh bed levelling\n\n; Send the filament type to the MMU unit.\n; E stands for extruder number, F stands for filament type (0: default; 1:flex; 2: PVA)\nM403 E0 F{\"\" + ((filament_type[0]==\"FLEX\") ? 1 : ((filament_type[0]==\"PVA\") ? 2 : 0))}\nM403 E1 F{\"\" + ((filament_type[1]==\"FLEX\") ? 1 : ((filament_type[1]==\"PVA\") ? 2 : 0))}\nM403 E2 F{\"\" + ((filament_type[2]==\"FLEX\") ? 1 : ((filament_type[2]==\"PVA\") ? 2 : 0))}\nM403 E3 F{\"\" + ((filament_type[3]==\"FLEX\") ? 1 : ((filament_type[3]==\"PVA\") ? 2 : 0))}\nM403 E4 F{\"\" + ((filament_type[4]==\"FLEX\") ? 1 : ((filament_type[4]==\"PVA\") ? 2 : 0))}\n\n{if not has_single_extruder_multi_material_priming}\n;go outside print area\nG1 Y-3 F1000\nG1 Z0.4 F1000\n; select extruder\nT[initial_tool]\n; initial load\nG1 X55 E29 F1073\nG1 X5 E29 F1800\nG1 X55 E8 F2000\nG1 Z0.3 F1000\nG92 E0\nG1 X240 E25 F2200\nG1 Y-2 F1000\nG1 X55 E25 F1400\nG1 Z0.2 F1000\nG1 X5 E4 F1000\nG92 E0\n{endif}\n\nM221 S{if layer_height<0.075}100{else}95{endif}\nG92 E0\n\n; Don't change E values below. Excessive value can damage the printer.\n{if print_settings_id=~/.*(DETAIL @MK3|QUALITY @MK3|SOLUBLE).*/}M907 E430 ; set extruder motor current{endif}\n{if print_settings_id=~/.*(SPEED @MK3|DRAFT @MK3).*/}M907 E538 ; set extruder motor current{endif}"
+            end_gcode: "{if layer_z < max_print_height}G1 Z{z_offset+min(max_layer_z+1, max_print_height)} F720 ; Move print head up{endif}\nM104 S0 ; turn off temperature\nM140 S0 ; turn off heatbed\nM107 ; turn off fan\nG1 X241 Y170 F3600 ; park\n{if layer_z < max_print_height}G1 Z{z_offset+min(max_layer_z+23, max_print_height)} F300 ; Move print head up{endif}\nM702 ; unload the current filament\nG4 ; wait\nM572 S0 ; reset PA\nM593 X T2 F0 ; disable IS\nM593 Y T2 F0 ; disable IS\nM84 X Y E ; disable motors\n; max_layer_z = [max_layer_z]"
+      - condition: 'printer.model == "MK3"'
+        name: Original Prusa i3 MK3
+---
+kind: printer
+id: '*MK3_nozzle_variant*'
+variants:
+  - condition: 'printer.base_model == "MK3"'
+    values:
+      start_gcode: "M862.3 P \"[printer_model]\" ; printer model check\nM862.1 P[nozzle_diameter] ; nozzle diameter check\nM115 U3.14.1 ; tell printer latest fw version\nG90 ; use absolute coordinates\nM83 ; extruder relative mode\nM104 S[first_layer_temperature] ; set extruder temp\nM140 S[first_layer_bed_temperature] ; set bed temp\nM190 S[first_layer_bed_temperature] ; wait for bed temp\nM109 S[first_layer_temperature] ; wait for extruder temp\nG28 W ; home all without mesh bed level\nG80 X{first_layer_print_min[0]} Y{first_layer_print_min[1]} W{(first_layer_print_max[0]) - (first_layer_print_min[0])} H{(first_layer_print_max[1]) - (first_layer_print_min[1])} ; mesh bed levelling\n{if filament_settings_id[initial_tool]=~/.*Prusament PA11.*/}\nG1 Z0.3 F720\nG1 Y-3 F1000 ; go outside print area\nG92 E0\nG1 X60 E9 F1000 ; intro line\nG1 X100 E9 F1000 ; intro line\n{else}\nG1 Z0.2 F720\nG1 Y-3 F1000 ; go outside print area\nG92 E0\nG1 X60 E9 F1000 ; intro line\nG1 X100 E12.5 F1000 ; intro line\n{endif}\nG92 E0\nM221 S{if layer_height<0.075}100{else}95{endif}"
+    variants:
+# 0.25 nozzle
+      - condition: 'tool.nozzle_diameter == 0.25'
+        values:
+          start_gcode: "M862.3 P \"[printer_model]\" ; printer model check\nM862.1 P[nozzle_diameter] ; nozzle diameter check\nM115 U3.14.1 ; tell printer latest fw version\nG90 ; use absolute coordinates\nM83 ; extruder relative mode\nM104 S[first_layer_temperature] ; set extruder temp\nM140 S[first_layer_bed_temperature] ; set bed temp\nM190 S[first_layer_bed_temperature] ; wait for bed temp\nM109 S[first_layer_temperature] ; wait for extruder temp\nG28 W ; home all without mesh bed level\nG80 X{first_layer_print_min[0]} Y{first_layer_print_min[1]} W{(first_layer_print_max[0]) - (first_layer_print_min[0])} H{(first_layer_print_max[1]) - (first_layer_print_min[1])} ; mesh bed levelling\nG1 Z0.2 F720\nG1 Y-3 F1000 ; go outside print area\nG92 E0\nG1 X60 E8 F700 ; intro line\nG1 X100 E12.5 F700 ; intro line\nG92 E0\nM221 S{if layer_height<0.075}100{else}95{endif}\n\n; Don't change E value below. Excessive value can damage the printer.\n{if print_settings_id=~/.*@0.25 nozzle MK3.*/}M907 E430 ; set extruder motor current{endif}"
+          color_change_gcode: "M600\nG1 E0.3 F1500 ; prime after color change"
+# 0.4 nozzle
+      - condition: 'tool.nozzle_diameter == 0.4'
+        values:
+          start_gcode: "M862.3 P \"[printer_model]\" ; printer model check\nM862.1 P[nozzle_diameter] ; nozzle diameter check\nM115 U3.14.1 ; tell printer latest fw version\nG90 ; use absolute coordinates\nM83 ; extruder relative mode\nM104 S[first_layer_temperature] ; set extruder temp\nM140 S[first_layer_bed_temperature] ; set bed temp\nM190 S[first_layer_bed_temperature] ; wait for bed temp\nM109 S[first_layer_temperature] ; wait for extruder temp\nG28 W ; home all without mesh bed level\nG80 X{first_layer_print_min[0]} Y{first_layer_print_min[1]} W{(first_layer_print_max[0]) - (first_layer_print_min[0])} H{(first_layer_print_max[1]) - (first_layer_print_min[1])} ; mesh bed levelling\n{if filament_settings_id[initial_tool]=~/.*Prusament PA11.*/}\nG1 Z0.3 F720\nG1 Y-3 F1000 ; go outside print area\nG92 E0\nG1 X60 E9 F1000 ; intro line\nG1 X100 E9 F1000 ; intro line\n{else}\nG1 Z0.2 F720\nG1 Y-3 F1000 ; go outside print area\nG92 E0\nG1 X60 E9 F1000 ; intro line\nG1 X100 E12.5 F1000 ; intro line\n{endif}\nG92 E0\nM221 S{if layer_height<0.075}100{else}95{endif}\n\n; Don't change E values below. Excessive value can damage the printer.\n{if print_settings_id=~/.*(DETAIL @MK3|QUALITY @MK3).*/}M907 E430 ; set extruder motor current{endif}\n{if print_settings_id=~/.*(SPEED @MK3|DRAFT @MK3).*/}M907 E538 ; set extruder motor current{endif}"
+          color_change_gcode: "M600\nG1 E0.3 F1500 ; prime after color change"
+# 0.6 nozzle
+      - condition: 'tool.nozzle_diameter == 0.6'
+        values:
+          color_change_gcode: "M600\nG1 E0.4 F1500 ; prime after color change"
+# 0.8 nozzle
+      - condition: 'tool.nozzle_diameter == 0.8'
+        values:
+          color_change_gcode: "M600\nG1 E0.5 F1500 ; prime after color change"
+        
+        

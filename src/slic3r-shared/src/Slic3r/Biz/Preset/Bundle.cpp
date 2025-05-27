@@ -21,7 +21,7 @@ void Bundle::load_bundles(const std::string& base_dir)
             continue;
 
         VendorBundle bundle;
-        Loader::HwConfigLoader config_loader;
+        IO::HwConfigLoader config_loader;
         config_loader.load(vendor_path.string());
 
     }

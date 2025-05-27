@@ -42,7 +42,7 @@ private:
         std::string name;
         EvaluatedPreset::Expressions conditions;
         Domain::Preset::PresetValueMap values;
-        Domain::Preset::PresetValueMap features;
+        Domain::Preset::FeatureValueMap features;
         SourceLocation last_node_location;
     };
 

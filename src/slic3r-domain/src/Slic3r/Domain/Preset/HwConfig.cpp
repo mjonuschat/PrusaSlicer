@@ -1,28 +1,52 @@
 #include <functional>
+#include <sstream>
+#include <boost/uuid/uuid_generators.hpp>
+#include <boost/uuid/uuid_io.hpp>
 #include "Slic3r/Domain/Preset/HwConfig.hpp"
 #include "Slic3r/Assert.hpp"
 
 namespace Slic3r::Domain::Preset {
 
-PresetValueMap build_features(const FeatureDefs& feature_defs)
+FeatureValueMap build_features(const FeatureDefs& feature_defs)
 {
-    PresetValueMap result;
+    FeatureValueMap result;
     for (const auto& [name, def] : feature_defs)
         result[name] = def.default_value;
     return result;
 }
 
-void override_features(PresetValueMap& dest, const FeatureDefs& overrides)
+void override_features(FeatureValueMap& dest, const FeatureDefs& overrides)
 {
     for (const auto& [k, v] : overrides)
         dest[k] = v.default_value;
 }
 
-void override_features(PresetValueMap& dest, const PresetValueMap& overrides)
+void override_features(FeatureValueMap& dest, const FeatureValueMap& overrides)
 {
     for (const auto& [k, v] : overrides)
         dest[k] = v;
 }
+
+void fill_missing_features_with_default(FeatureValueMap& dest, const FeatureDefs& def)
+{
+    for (const auto& [k, v] : def) {
+        if (dest.contains(k))
+            continue;
+        dest[k] = v.default_value;
+    }
+}
+
+void remove_features_with_default(FeatureValueMap& features, const FeatureDefs& def_features)
+{
+    for (auto it = features.begin(); it != features.end();) {
+        auto def_it = def_features.find(it->first);
+        if (def_it->second.default_value == it->second)
+            it = features.erase(it);
+        else
+            ++it;
+    }
+}
+
 
 namespace {
 template <typename T>
@@ -137,5 +161,56 @@ size_t MaterialIterator::current_slot_count() const
 }
 
 
+void fill_missing_features_with_default(HwPrinterConfig& printer_config, const VendorData& vendor_data)
+{
+    const auto* def = vendor_data.find_printer_config_def_by_id(printer_config.printer_id);
+    ASSERT(def != nullptr, printer_config.printer_id);
+    fill_missing_features_with_default(printer_config.features, def->features);
+
+    for (auto& tool_config : printer_config.tools) {
+        const auto* tool_def = vendor_data.find_tool_config_def_by_id(tool_config.id);
+        ASSERT(tool_def != nullptr, tool_config.id);
+        fill_missing_features_with_default(tool_config.features, tool_def->features);
+    }
+
+    for (auto& [slot, feeder_config] : printer_config.feeders) {
+        const auto* feeder_def = vendor_data.find_feeder_config_def_by_id(feeder_config.id);
+        ASSERT(feeder_def != nullptr, feeder_config.id);
+        fill_missing_features_with_default(feeder_config.features, feeder_def->features);
+    }
+}
+
+HwPrinterConfig remove_features_with_default(
+    const HwPrinterConfig& printer_config, const VendorData& vendor_data
+)
+{
+    HwPrinterConfig ret = printer_config;
+
+    const auto* def = vendor_data.find_printer_config_def_by_id(printer_config.printer_id);
+    ASSERT(def != nullptr, printer_config.printer_id);
+    remove_features_with_default(ret.features, def->features);
+
+    for (auto& tool_config : ret.tools) {
+        const auto* tool_def = vendor_data.find_tool_config_def_by_id(tool_config.id);
+        ASSERT(tool_def != nullptr, tool_config.id);
+        remove_features_with_default(tool_config.features, tool_def->features);
+    }
+
+    for (auto& [slot, feeder_config] : ret.feeders) {
+        const auto* feeder_def = vendor_data.find_feeder_config_def_by_id(feeder_config.id);
+        ASSERT(feeder_def != nullptr, feeder_config.id);
+        remove_features_with_default(feeder_config.features, feeder_def->features);
+    }
+
+    return ret;
+}
+
+std::string generate_id()
+{
+    boost::uuids::random_generator gen;
+    std::ostringstream out;
+    out << gen();
+    return out.str();
+}
 
 }

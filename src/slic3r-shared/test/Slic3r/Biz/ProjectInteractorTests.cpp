@@ -50,7 +50,7 @@ TEST_CASE("Project Interactor Listeners")
 
     Slic3r::Domain::Workbench workbench;
     Slic3r::set_data_dir(Tests::get_datadir().string());
-    workbench.load_configs();
+    workbench.load_legacy_configs();
 
     Slic3r::App::Platform::StdMainThreadDispatcher dispatcher;
     ProjectInteractor project_interactor{workbench, dispatcher};

@@ -1,0 +1,10 @@
+kind: filament
+id: Prusament ASA
+inherits:
+- '*ASA*'
+---
+kind: filament
+name: Prusament ASA
+values:
+  filament_cost: '45.10'
+  filament_vendor: Prusa Polymers

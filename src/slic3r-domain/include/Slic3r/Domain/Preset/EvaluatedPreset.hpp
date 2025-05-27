@@ -15,7 +15,7 @@ struct EvaluatedPreset
     std::string id;
     std::string name;
     PresetValueMap values;
-    PresetValueMap features;
+    FeatureValueMap features;
     Expressions conditions;
     SourceLocation last_node_location;
 };

@@ -51,7 +51,7 @@ enum class ToolType : uint8_t
 struct HwToolConfig
 {
     std::string id;
-    PresetValueMap features;
+    FeatureValueMap features;
 };
 
 /**
@@ -69,12 +69,12 @@ struct HwFeederConfig
     FeederType type;
     HwModel model;
     uint32_t slot_count{0};
-    PresetValueMap features;
+    FeatureValueMap features;
 };
 
 struct MaterialConfig
 {
-    PresetValueMap features;
+    FeatureValueMap features;
 };
 
 using HwToolConfigs = std::vector<HwToolConfig>;
@@ -85,30 +85,36 @@ using HwMaterialConfigs = std::map<Address, MaterialConfig>;
 struct HwPrinterConfig
 {
     std::string id;
+    std::string printer_id;
     std::string vendor_id;
     std::string name;
     PrinterTechnology technology;
     HwModel model;
     uint8_t tool_count;
-    PresetValueMap features;
+    FeatureValueMap features;
 
     HwToolConfigs tools;
     HwFeederConfigs feeders;
     HwMaterialConfigs materials;
 };
+using HwPrinterConfigs = std::vector<HwPrinterConfig>;
 
 struct FeatureDef
 {
-    PresetValue default_value;
-    std::vector<PresetValue> allowed_values;
+    FeatureValue default_value;
+    std::vector<FeatureValue> allowed_values;
     bool user_editable{true};
 };
 
 using FeatureDefs = std::map<std::string, FeatureDef>;
 
-PresetValueMap build_features(const FeatureDefs& feature_defs);
-void override_features(PresetValueMap& dest, const FeatureDefs& overrides);
-void override_features(PresetValueMap& dest, const PresetValueMap& overrides);
+FeatureValueMap build_features(const FeatureDefs& feature_defs);
+
+void override_features(FeatureValueMap& dest, const FeatureDefs& overrides);
+void override_features(FeatureValueMap& dest, const FeatureValueMap& overrides);
+
+void fill_missing_features_with_default(FeatureValueMap& dest, const FeatureDefs& def);
+void remove_features_with_default(FeatureValueMap& features, const FeatureDefs& def_features);
 
 struct HwPrinterConfigDef
 {
@@ -164,7 +170,7 @@ using HwDefs = std::map<PrinterTechnology, HwPrinterTechnologyDefs>;
 struct HwToolConfigTemplate
 {
     std::string id;
-    PresetValueMap features;
+    FeatureValueMap features;
 };
 
 using HwToolConfigTemplates = std::vector<HwToolConfigTemplate>;
@@ -173,7 +179,7 @@ struct HwFeederConfigTemplate
 {
     std::string id;
     Address address;
-    PresetValueMap features;
+    FeatureValueMap features;
 };
 
 using HwFeederConfigTemplates = std::vector<HwFeederConfigTemplate>;
@@ -186,7 +192,7 @@ struct HwPrinterConfigTemplate
     std::string printer;
     std::optional<std::string> sheet;
     std::optional<uint8_t> tool_count;
-    PresetValueMap features;
+    FeatureValueMap features;
     HwToolConfigTemplates tools;
     HwFeederConfigTemplates feeders;
 };
@@ -294,5 +300,9 @@ private:
 inline MaterialIterator begin(const MaterialIterator& it) { return it; }
 inline MaterialIterator end(const MaterialIterator& it) { return it.invalid(); }
 
+void fill_missing_features_with_default(HwPrinterConfig& printer_config, const VendorData& vendor_data);
+HwPrinterConfig remove_features_with_default(const HwPrinterConfig& printer_config, const VendorData& vendor_data);
+
+std::string generate_id();
 
 } // namespace Slic3r::Domain::Presets

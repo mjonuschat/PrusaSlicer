@@ -2,22 +2,6 @@
 
 namespace Slic3r::Biz::Preset {
 
-void append_value(Expr::ValueMap& values, const std::string& name, const Domain::Preset::PresetValue& v)
-{
-    Expr::Value val;
-    if (std::holds_alternative<std::string>(v)) {
-        val = std::get<std::string>(v);
-    } else if (std::holds_alternative<float>(v)) {
-        val = std::get<float>(v);
-    } else if (std::holds_alternative<bool>(v)) {
-        val = std::get<bool>(v);
-    } else {
-        PANIC("unsupported type");
-    }
-    values[name] = val;
-
-}
-
 void append_value(Expr::ValueMap& values, const char* prefix, const Domain::Preset::HwModel& v)
 {
     values[prefix + std::string("model")] = v.model;
@@ -25,7 +9,7 @@ void append_value(Expr::ValueMap& values, const char* prefix, const Domain::Pres
 
 }
 
-void append_values(Expr::ValueMap& values, const char* prefix, const Domain::Preset::PresetValueMap& features)
+void append_values(Expr::ValueMap& values, const char* prefix, const Domain::Preset::FeatureValueMap& features)
 {
     for (const auto& [k, v] : features)
         append_value(values, prefix + k, v);

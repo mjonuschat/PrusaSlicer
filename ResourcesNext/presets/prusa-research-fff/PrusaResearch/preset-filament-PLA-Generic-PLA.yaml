@@ -1,0 +1,8 @@
+kind: filament
+id: Generic PLA
+inherits:
+- '*PLA*'
+name: Generic PLA
+values:
+  filament_cost: '19.99'
+  filament_vendor: Generic

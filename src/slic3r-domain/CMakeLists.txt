@@ -29,6 +29,7 @@ add_library(slic3r-domain
     include/Slic3r/Domain/Preset/Types.hpp
     include/Slic3r/Domain/Preset/HwConfig.hpp
     include/Slic3r/Domain/Preset/EvaluatedPreset.hpp
+    include/Slic3r/Domain/Preset/Bundle.hpp
     src/Slic3r/Domain/Preset/HwConfig.cpp
     src/Slic3r/Domain/Preset/PresetTree.cpp
     src/Slic3r/Domain/Preset/EvaluatedPreset.cpp

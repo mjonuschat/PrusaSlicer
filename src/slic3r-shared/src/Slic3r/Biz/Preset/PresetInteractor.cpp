@@ -3,12 +3,19 @@
 #include "Slic3r/Biz/Preset/IBedPresetSwitchedListener.hpp"
 #include "Slic3r/Domain/ConfigContainer.hpp"
 #include "Slic3r/Assert.hpp"
+#include "Slic3r/Biz/Preset/IO/BundleLoader.hpp"
 
 #include <vector>
 #include <string>
 #include <boost/algorithm/string.hpp>
 
 namespace Slic3r::Biz::Preset {
+
+void PresetInteractor::load_preset_bundle(const std::string& preset_bundle_path, const std::string& config_path)
+{
+    auto preset_bundle = IO::load_bundle(preset_bundle_path, config_path);
+    m_workbench.set_preset_bundle(std::move(preset_bundle));
+}
 
 void PresetInteractor::prepare_config_container_preset(Domain::SelectionId project_id, Domain::SelectionId config_container_id)
 {
@@ -25,8 +32,8 @@ void PresetInteractor::on_selected_config_container_changed(Domain::SelectionId 
     // update selected config
     auto& ccc = get_or_create_config_container_context(m_selected_project_id, container_id);
 
-    ccc.preset_bundle_runtime.update_compatible_prints(m_workbench.preset_bundle(), *ccc.printer.selected_preset);
-    ccc.preset_bundle_runtime.update_compatible_materials(m_workbench.preset_bundle(), *ccc.printer.selected_preset, *ccc.print.selected_preset);
+    ccc.preset_bundle_runtime.update_compatible_prints(m_workbench.preset_bundle_legacy(), *ccc.printer.selected_preset);
+    ccc.preset_bundle_runtime.update_compatible_materials(m_workbench.preset_bundle_legacy(), *ccc.printer.selected_preset, *ccc.print.selected_preset);
 
     // notify listeners on changes
     m_bed_preset_value_changed_listeners.invoke([&ccc](auto* l) {
@@ -113,7 +120,7 @@ void PresetInteractor::modify_preset_state(
 void PresetInteractor::select_printer_preset(size_t preset_idx) 
 {
     auto& ccc = mutable_selected_config_container_context();
-    PresetBundle& preset_bundle = m_workbench.preset_bundle();
+    PresetBundle& preset_bundle = m_workbench.preset_bundle_legacy();
     preset_bundle.printers.select_preset(preset_idx);
     ccc.printer = create_preset_state(preset_bundle.printers);
 
@@ -130,7 +137,7 @@ void PresetInteractor::select_printer_preset(size_t preset_idx)
 void PresetInteractor::select_print_preset(size_t preset_idx) 
 {
     auto& ccc = mutable_selected_config_container_context();
-    PresetBundle& preset_bundle = m_workbench.preset_bundle();
+    PresetBundle& preset_bundle = m_workbench.preset_bundle_legacy();
     bool is_sla = ccc.printer_technology() == ptSLA;
     PresetCollection& collection = is_sla ? preset_bundle.sla_prints : preset_bundle.prints;
     collection.select_preset(preset_idx);
@@ -152,7 +159,7 @@ void PresetInteractor::select_material_preset(size_t extruder_idx, size_t preset
 {
     // TODO: update PresetBundleRuntime
     auto& ccc = mutable_selected_config_container_context();
-    PresetBundle& preset_bundle = m_workbench.preset_bundle();
+    PresetBundle& preset_bundle = m_workbench.preset_bundle_legacy();
     bool is_sla = ccc.printer_technology() == ptSLA;
     PresetCollection& collection = is_sla ? preset_bundle.sla_materials : preset_bundle.filaments;
     collection.select_preset(preset_idx);
@@ -314,7 +321,7 @@ PresetInteractorConfigContainerContext& PresetInteractor::get_or_create_config_c
     Domain::ConfigContainer& cc = *ASSERT_VAL(project.find_config_container(config_container_id));
 
     // fill ccc presets from cc.print_config
-    PresetBundle& preset_bundle = m_workbench.preset_bundle();
+    PresetBundle& preset_bundle = m_workbench.preset_bundle_legacy();
     auto pt = preset_bundle.printers.get_selected_preset().printer_technology();
     preset_bundle.load_config_model(project.file_name(), cc.print_config());
     ccc.printer = create_preset_state(preset_bundle.printers);
@@ -330,7 +337,7 @@ PresetInteractorConfigContainerContext& PresetInteractor::get_or_create_config_c
 
 PresetState PresetInteractor::create_preset_state(Slic3r::Preset* selected_preset)
 {
-    auto& collection = m_workbench.preset_bundle().get_presets(selected_preset->type);
+    auto& collection = m_workbench.preset_bundle_legacy().get_presets(selected_preset->type);
     return {selected_preset, collection.get_preset_parent(*selected_preset)};
 }
 

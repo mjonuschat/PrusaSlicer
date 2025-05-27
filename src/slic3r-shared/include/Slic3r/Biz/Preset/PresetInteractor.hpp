@@ -55,6 +55,8 @@ public:
 
     PresetInteractor(PresetInteractor&&) = default;
 
+    void load_preset_bundle(const std::string& preset_bundle_path, const std::string& config_path);
+
     const PresetInteractorConfigContainerContext& config_container_context(Domain::SelectionId project_id, Domain::SelectionId config_container_id) const
     {
         const auto& project_ctx = get_project_context(project_id)->second;
@@ -78,13 +80,13 @@ public:
 
     const PresetCollection& preset_collection(Slic3r::Preset::Type preset_type) const
     {
-        const auto& pb = m_workbench.preset_bundle();
+        const auto& pb = m_workbench.preset_bundle_legacy();
         return pb.get_presets(preset_type);
     }
     
-    const PresetBundle& preset_bundle() const
+    const PresetBundle& preset_bundle_legacy() const
     {
-        return m_workbench.preset_bundle();
+        return m_workbench.preset_bundle_legacy();
     }
     
     void select_preset(Slic3r::Preset::Type preset_type, size_t preset_index, size_t collection_index)
@@ -130,7 +132,7 @@ private:
 
     PresetCollection& preset_collection(Slic3r::Preset::Type preset_type)
     {
-        auto& pb = m_workbench.preset_bundle();
+        auto& pb = m_workbench.preset_bundle_legacy();
         return pb.get_presets(preset_type);
     }
 

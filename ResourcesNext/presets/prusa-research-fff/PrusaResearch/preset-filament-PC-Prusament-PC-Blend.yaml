@@ -1,0 +1,10 @@
+kind: filament
+id: Prusament PC Blend
+inherits:
+- '*PC*'
+---
+kind: filament
+name: Prusament PC Blend
+values:
+  filament_cost: '51.53'
+  filament_vendor: Prusa Polymers

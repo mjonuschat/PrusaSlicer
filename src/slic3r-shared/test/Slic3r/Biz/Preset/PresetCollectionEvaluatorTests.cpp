@@ -1,8 +1,8 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "Slic3r/Biz/Preset/PresetCollectionEvaluator.hpp"
-#include "Slic3r/Biz/Preset/Loader/PresetLoader.hpp"
-#include "Slic3r/Biz/Preset/Loader/Yaml.hpp"
+#include "Slic3r/Biz/Preset/IO/PresetLoader.hpp"
+#include "Slic3r/Biz/Preset/IO/Yaml.hpp"
 
 using namespace Slic3r::Domain::Preset;
 using namespace Slic3r::Biz::Preset;
@@ -22,7 +22,7 @@ void collect_named_presets(NamedPresets& named_presets, PresetNodePath path) {
     }
 }
 
-PresetCollectionEvaluator create_evaluator(const Loader::PresetLoader& loader, PresetKind kind)
+PresetCollectionEvaluator create_evaluator(const IO::PresetLoader& loader, PresetKind kind)
 {
     static NamedPresets named_presets;
 
@@ -51,7 +51,7 @@ features:
   f1: 321
 )";
 
-        Loader::PresetLoader loader;
+        IO::PresetLoader loader;
         loader.load_from_string(yaml);
         auto eval = create_evaluator(loader, PresetKind::FdmPrinter);
 
@@ -91,7 +91,7 @@ variants:
       f2: 2
 )";
 
-        Loader::PresetLoader loader;
+        IO::PresetLoader loader;
         loader.load_from_string(yaml);
         auto eval = create_evaluator(loader, PresetKind::FdmPrinter);
 
@@ -135,7 +135,7 @@ variants:
       d: 2
 )";
 
-        Loader::PresetLoader loader;
+        IO::PresetLoader loader;
         loader.load_from_string(yaml);
         auto eval = create_evaluator(loader, PresetKind::FdmPrinter);
 
@@ -184,7 +184,7 @@ features:
   f2: 2
 )";
 
-        Loader::PresetLoader loader;
+        IO::PresetLoader loader;
         try {
             loader.load_from_string(yaml);
         }
@@ -252,7 +252,7 @@ variants:
       f2: 2
 )";
 
-        Loader::PresetLoader loader;
+        IO::PresetLoader loader;
         try {
             loader.load_from_string(yaml);
         }
@@ -325,7 +325,7 @@ values:
   e: 42
 )";
 
-        Loader::PresetLoader loader;
+        IO::PresetLoader loader;
         try {
             loader.load_from_string(yaml);
         }
@@ -408,7 +408,7 @@ features:
   f3: 2
 )";
 
-        Loader::PresetLoader loader;
+        IO::PresetLoader loader;
         try {
             loader.load_from_string(yaml);
         }

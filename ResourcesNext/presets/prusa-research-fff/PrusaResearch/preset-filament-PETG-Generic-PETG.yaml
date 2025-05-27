@@ -1,0 +1,168 @@
+kind: filament
+id: Generic PETG
+inherits:
+- '*PET*'
+---
+kind: filament
+name: Generic PETG
+values:
+  filament_cost: '19.99'
+  filament_vendor: Generic
+## C1
+variants:
+- condition: printer.base_model == "COREONE"
+  variants:
+  # C1 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    values:
+      filament_max_volumetric_speed: 12
+    variants:
+    # C1 HF0.4
+    - condition: tool.nozzle_high_flow    
+      values:
+        filament_max_volumetric_speed: 22
+  # C1 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    values:
+      filament_max_volumetric_speed: 14
+    variants:
+    # C1 HF0.5
+    - condition: tool.nozzle_high_flow    
+      values:
+        filament_max_volumetric_speed: 25
+  # C1 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    values:
+      filament_max_volumetric_speed: 16
+    variants:
+    # C1 HF0.6
+    - condition: tool.nozzle_high_flow    
+      values:
+        filament_max_volumetric_speed: 29
+  # C1 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    values:
+      filament_max_volumetric_speed: 20
+    variants:
+    # C1 HF0.8
+    - condition: tool.nozzle_high_flow    
+      values:
+        filament_max_volumetric_speed: 35
+## XL
+- condition: printer.base_model == "XL"
+  variants:
+  # XL 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    values:
+      filament_max_volumetric_speed: 12
+    variants:
+    # XL HF0.4
+    - condition: tool.nozzle_high_flow    
+      values:
+        filament_max_volumetric_speed: 22
+  # XL 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    values:
+      filament_max_volumetric_speed: 14
+    variants:
+    # XL HF0.5
+    - condition: tool.nozzle_high_flow    
+      values:
+        filament_max_volumetric_speed: 25
+  # XL 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    values:
+      filament_max_volumetric_speed: 17
+    variants:
+    # XL HF0.6
+    - condition: tool.nozzle_high_flow    
+      values:
+        filament_max_volumetric_speed: 29
+  # XL 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    values:
+      filament_max_volumetric_speed: 20
+    variants:
+    # XL HF0.8
+    - condition: tool.nozzle_high_flow    
+      values:
+        filament_max_volumetric_speed: 35
+## MK4
+- condition: printer.model == "MK4"
+  variants:
+  # MK4 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    values:
+      filament_max_volumetric_speed: 12
+    variants:
+    # MK4 HF0.4
+    - condition: tool.nozzle_high_flow    
+      values:
+        filament_max_volumetric_speed: 22
+  # MK4 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    values:
+      filament_max_volumetric_speed: 14
+    variants:
+    # MK4 HF0.5
+    - condition: tool.nozzle_high_flow    
+      values:
+        filament_max_volumetric_speed: 25
+  # MK4 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    values:
+      filament_max_volumetric_speed: 17
+    variants:
+    # MK4 HF0.6
+    - condition: tool.nozzle_high_flow    
+      name: '*PET* @MK4 HF0.6'
+      values:
+        filament_max_volumetric_speed: 29        
+  # MK4 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    values:
+      filament_max_volumetric_speed: 20
+    variants:
+    # MK4 HF0.8
+    - condition: tool.nozzle_high_flow    
+      values:
+        filament_max_volumetric_speed: 35
+## MK4S
+- condition: printer.model == "MK4S"
+  variants:
+  # MK4S 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    values:
+      filament_max_volumetric_speed: 12
+    variants:
+    # MK4S HF0.4
+    - condition: tool.nozzle_high_flow    
+      values:
+        filament_max_volumetric_speed: 22
+  # MK4S 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    values:
+      filament_max_volumetric_speed: 14
+    variants:
+    # MK4S HF0.5
+    - condition: tool.nozzle_high_flow    
+      values:
+        filament_max_volumetric_speed: 25
+  # MK4S 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    values:
+      filament_max_volumetric_speed: 17
+    variants:
+    # MK4S HF0.6
+    - condition: tool.nozzle_high_flow    
+      values:
+        filament_max_volumetric_speed: 29
+  # MK4S 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    values:
+      filament_max_volumetric_speed: 20
+    variants:
+    # MK4S HF0.8
+    - condition: tool.nozzle_high_flow    
+      values:
+        filament_max_volumetric_speed: 35

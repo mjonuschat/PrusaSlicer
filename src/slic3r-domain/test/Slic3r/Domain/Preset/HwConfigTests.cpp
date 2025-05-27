@@ -11,7 +11,7 @@ HwPrinterConfig build_fff_printer_config(uint8_t tool_count, HwFeederConfigs fee
 {
     HwToolConfigs tools{tool_count, HwToolConfig{}};
     HwPrinterConfig printer_config = {
-        .id = "printer",
+        .printer_id = "printer",
         .technology = PrinterTechnology::FFF,
         .tool_count = tool_count,
         .tools = std::move(tools),

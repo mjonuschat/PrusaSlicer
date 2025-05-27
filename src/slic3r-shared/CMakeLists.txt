@@ -278,19 +278,19 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/Preset/PresetBundleRuntime.cpp
         include/Slic3r/Biz/Preset/PresetBundleRuntime.hpp
 
-		include/Slic3r/Biz/Preset/Bundle.hpp
-		src/Slic3r/Biz/Preset/Bundle.cpp
+#		include/Slic3r/Biz/Preset/Bundle.hpp
+#		src/Slic3r/Biz/Preset/Bundle.cpp
 
-        include/Slic3r/Biz/Preset/Loader/PresetLoader.hpp
-        src/Slic3r/Biz/Preset/Loader/PresetLoader.cpp
-        include/Slic3r/Biz/Preset/Loader/HwConfigLoader.hpp
-        src/Slic3r/Biz/Preset/Loader/HwConfigLoader.cpp
-        src/Slic3r/Biz/Preset/Loader/Yaml.hpp
-        src/Slic3r/Biz/Preset/Loader/Yaml.cpp
-        src/Slic3r/Biz/Preset/Loader/YamlAdapter.hpp
-        src/Slic3r/Biz/Preset/Loader/YamlAdapterLibfyaml.hpp
-        src/Slic3r/Biz/Preset/Loader/YamlAdapterLibfyaml.cpp
-        src/Slic3r/Biz/Preset/Loader/YamlSlic3rTypes.hpp
+        include/Slic3r/Biz/Preset/IO/PresetLoader.hpp
+        src/Slic3r/Biz/Preset/IO/PresetLoader.cpp
+        include/Slic3r/Biz/Preset/IO/HwConfigLoader.hpp
+        src/Slic3r/Biz/Preset/IO/HwConfigLoader.cpp
+        include/Slic3r/Biz/Preset/IO/BundleLoader.hpp
+        src/Slic3r/Biz/Preset/IO/BundleLoader.cpp
+        src/Slic3r/Biz/Preset/IO/Yaml.hpp
+        src/Slic3r/Biz/Preset/IO/Yaml.cpp
+        src/Slic3r/Biz/Preset/IO/YamlAdapter.hpp
+        src/Slic3r/Biz/Preset/IO/YamlSlic3rTypes.hpp
 
 		include/Slic3r/Biz/Preset/PresetEvaluator.hpp
 		src/Slic3r/Biz/Preset/PresetEvaluator.cpp
@@ -463,7 +463,31 @@ find_package(NanoSVG REQUIRED)
 find_package(Boost REQUIRED COMPONENTS filesystem)
 find_package(yoga CONFIG REQUIRED)
 find_package(nlohmann_json 3.11 REQUIRED)
-find_package(fyaml REQUIRED)
+
+
+if ("${SLIC3R_YAML}" STREQUAL "libfyaml")
+    find_package(fyaml REQUIRED)
+    set(YAML_LIB fyaml::fyaml)
+    set(SLIC3R_SHARED_FILES
+            ${SLIC3R_SHARED_FILES}
+            src/Slic3r/Biz/Preset/IO/YamlAdapterLibfyaml.hpp
+            src/Slic3r/Biz/Preset/IO/YamlAdapterLibfyaml.cpp
+    )
+    set(SLIC3R_YAML_DEFINE "-DSLIC3R_YAML_LIBFYAML")
+elseif ("${SLIC3R_YAML}" STREQUAL "yaml-cpp")
+    find_package(yaml-cpp REQUIRED)
+    set(YAML_LIB yaml-cpp::yaml-cpp)
+    set(SLIC3R_SHARED_FILES
+            ${SLIC3R_SHARED_FILES}
+            src/Slic3r/Biz/Preset/IO/YamlAdapterYamlCpp.hpp
+            src/Slic3r/Biz/Preset/IO/YamlAdapterYamlCpp.cpp
+    )
+    set(SLIC3R_YAML_DEFINE "-DSLIC3R_YAML_YAMLCPP")
+else ()
+    message(FATAL_ERROR "No YAML library selected, allowed values are \"libfyaml\", \"yaml-cpp\", passed \"${SLIC}\"")
+endif ()
+
+
 find_package(magic_enum REQUIRED)
 
 slic3r_remap_configs("yoga::yogacore" RelWithDebInfo Release)
@@ -480,9 +504,10 @@ target_link_libraries(slic3r-shared PUBLIC
         yoga::yogacore
         slic3r-biz-algorithms
         nlohmann_json::nlohmann_json
-        fyaml::fyaml
+        ${YAML_LIB}
         magic_enum::magic_enum
 )
+target_compile_definitions(slic3r-shared PUBLIC ${SLIC3R_YAML_DEFINE})
 if (EMSCRIPTEN)
 #    target_link_libraries(slic3r-shared PUBLIC png-mt )
 else()
@@ -541,9 +566,9 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
         test/Slic3r/Biz/Expr/ParserTests.cpp
         test/Slic3r/Biz/Expr/EvalTests.cpp
 
-		test/Slic3r/Biz/Preset/Loader/Yaml/YamlTests.cpp
-		test/Slic3r/Biz/Preset/Loader/HwConfigDefLoaderTests.cpp
-		test/Slic3r/Biz/Preset/Loader/PresetLoaderTests.cpp
+        test/Slic3r/Biz/Preset/IO/Yaml/YamlTests.cpp
+        test/Slic3r/Biz/Preset/IO/HwConfigDefLoaderTests.cpp
+        test/Slic3r/Biz/Preset/IO/PresetLoaderTests.cpp
 		test/Slic3r/Biz/Preset/PresetCollectionEvaluatorTests.cpp
 		test/Slic3r/Biz/Preset/PresetEvaluatorTests.cpp
 		test/Slic3r/Biz/Preset/HwConfigEvaluatorTests.cpp
