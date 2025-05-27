@@ -607,7 +607,6 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("cooling_tube_length", Double);
     def->location = "printer_settings";
-    def->overrides_in = { "filament_settings" };
     def->label = L("Cooling tube length");
     def->tooltip = L("Length of the cooling tube to limit space for cooling moves inside it.");
     def->sidetext = L("mm");
