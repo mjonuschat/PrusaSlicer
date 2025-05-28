@@ -23,6 +23,8 @@ public:
     void render() override;
     void dispatch_on_main_thread(Biz::Platform::IMainThreadDispatcher::Function  func);
 
+    std::unique_ptr<wxGLContext> release_context();
+
 protected:
     void on_render_requested() override;
 
@@ -49,9 +51,11 @@ private:
     void init_wx_imgui();
 
 private:
-    using Clock = std::chrono::high_resolution_clock;
-    std::unique_ptr<wxGLContext> m_gl_context;
+    using Clock = std::chrono::high_resolution_clock;    
     std::chrono::time_point<Clock> m_start_time;
+
+    std::unique_ptr<wxGLContext> m_gl_context_uniq; ///< Will get released
+    wxGLContext* m_gl_context{nullptr}; ///< For subsequent rendering
 
     bool m_initialized{false};
 };

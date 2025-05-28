@@ -113,6 +113,7 @@ bool DesktopApp::OnInit()
     m_main_frame = new MainFrame(m_workbench, *m_project_interactor);
     m_project_interactor->init_app_instance_message_handler(m_main_frame->GetHandle());
     Platform::WX::WXRenderCanvas& canvas = m_main_frame->get_render_canvas();
+    m_gl_context = canvas.release_context();
     Biz::Platform::PlatformServices::instance().set_render_request_handler(&canvas);
     m_main_frame->update_canvas_ui_settings();
 

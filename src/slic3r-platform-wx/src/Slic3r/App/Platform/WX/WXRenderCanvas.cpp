@@ -381,9 +381,11 @@ WXRenderCanvas::WXRenderCanvas(wxWindow* parent)
 #endif
     attrs.EndList();
 
-    m_gl_context = std::make_unique<wxGLContext>(this, nullptr, &attrs);
-    if (!m_gl_context->IsOK())
+    m_gl_context_uniq = std::make_unique<wxGLContext>(this, nullptr, &attrs);
+    if (!m_gl_context_uniq->IsOK()) {
         throw PlatformError("Unable to create a valid OpenGL context");
+    }
+    m_gl_context = m_gl_context_uniq.get();
 
     // SetCurrent(*m_gl_context);
 
@@ -889,6 +891,11 @@ void WXRenderCanvas::dispatch_on_main_thread(Biz::Platform::IMainThreadDispatche
 {
     m_main_thread_dispatcher.dispatch_on_main_thread(std::move(func));
     wxApp::GetInstance()->WakeUpIdle();
+}
+
+std::unique_ptr<wxGLContext> WXRenderCanvas::release_context()
+{
+    return std::move(m_gl_context_uniq);
 }
 
 } // namespace Slic3r::App::Platform::WX

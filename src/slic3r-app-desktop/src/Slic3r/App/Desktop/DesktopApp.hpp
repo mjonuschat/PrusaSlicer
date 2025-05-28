@@ -37,6 +37,8 @@ public:
 private:
     void init_translations();
 
+    std::unique_ptr<wxGLContext> m_gl_context; // do NOT change order of this attribute
+
     MainFrame* m_main_frame{nullptr};
     std::unique_ptr<Plater::PlaterRenderModule> m_plater_module;
     std::unique_ptr<Preview::PreviewRenderModule> m_preview_module;
