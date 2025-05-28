@@ -37,14 +37,15 @@ namespace Slic3r::App::Yoga {
 class Icon : public Item
 {
 public:
-
-    enum class PreferredSize : int {
+    enum class PreferredSize : int
+    {
         S = 32,
         M = 64,
         L = 128,
     };
 
-    enum class FillMode {
+    enum class FillMode
+    {
         PreservedAspect,
         Stretch
     };
@@ -67,6 +68,9 @@ public:
     FillMode fill_mode() const;
     void set_fill_mode(FillMode fill_mode);
 
+    ImColor tint() const;
+    void set_tint(const ImColor& tint);
+
 private:
     void update_draw_sizes();
     void update_texture();
@@ -79,6 +83,7 @@ private:
     Render::Icon m_icon;
     Vec2f m_source_size{0, 0};
     FillMode m_fill_mode = FillMode::PreservedAspect;
+    ImVec4 m_tint{1, 1, 1, 1};
 
     // Computed
     Vec2f m_cached_size;

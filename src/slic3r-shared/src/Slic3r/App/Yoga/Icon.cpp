@@ -42,7 +42,10 @@ void Icon::render(Vec2f pos, Vec2f size)
 
     ImGui::SetCursorScreenPos(to_im(pos));
     if (m_texture) {
-        ImGui::Image((ImTextureID) (intptr_t) m_texture.get(), m_draw_size);
+        constexpr ImVec2 uv0{0, 0};
+        constexpr ImVec2 uv1{1, 1};
+
+        ImGui::Image((ImTextureID) (intptr_t) m_texture.get(), m_draw_size, uv0, uv1, m_tint);
     }
 
     render_item_end(pos, size);
@@ -75,6 +78,16 @@ void Icon::set_fill_mode(FillMode fill_mode)
             update_draw_sizes();
         }
     }
+}
+
+ImColor Icon::tint() const
+{
+    return {m_tint};
+}
+
+void Icon::set_tint(const ImColor &tint)
+{
+    m_tint = tint;
 }
 
 void Icon::update_draw_sizes()
