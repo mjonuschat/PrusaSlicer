@@ -335,7 +335,11 @@ std::vector<T>& ConfigItem::vec()
 namespace Impl {
 template<typename T>
 std::size_t hash(const T& value) {
-    if constexpr(std::ranges::range<T>) {
+    if constexpr(! std::is_same_v<T, std::string> && ! std::is_same_v<T, std::vector<bool>>
+                 && std::ranges::range<T>) {
+        // Both std::string and std::vector<bool> have default hash functions. The latter
+        // is even impossible to hash element-wise as it is an abomination which returns
+        // some unhashable proxy type.
         std::size_t seed = 0;
         for (const auto& v : value) {
             boost::hash_combine(seed, hash(v));
