@@ -27,23 +27,32 @@ PaintOnSupportsDialog::PaintOnSupportsDialog() : Dialog("Paint-on supports")
     std::unique_ptr<Item> tool_buttons = std::make_unique<Item>();
     tool_buttons->set_gap(gap_size);
     LayoutButton* brush_button = tool_buttons->emplace_back<LayoutButton>("", Render::Icon::PrintIdle);
+    brush_button->set_checkable(true);
+    brush_button->set_checked(true);
     brush_button->set_min_size(button_size);
     LayoutButton* magic_wand_button = tool_buttons->emplace_back<LayoutButton>("", Render::Icon::PrintIdle);
+    magic_wand_button->set_checkable(true);
     magic_wand_button->set_min_size(button_size);
     add_new_row("Tool", std::move(tool_buttons));
+    m_group_tool.set_buttons({brush_button, magic_wand_button});
 
     std::unique_ptr<Item> brush_shape_buttons = std::make_unique<Item>();
     brush_shape_buttons->set_gap(gap_size);
     LayoutButton* sphere_button =
         brush_shape_buttons->emplace_back<LayoutButton>("", Render::Icon::PrintIdle);
+    sphere_button->set_checkable(true);
+    sphere_button->set_checked(true);
     sphere_button->set_min_size(button_size);
     LayoutButton* circle_button =
         brush_shape_buttons->emplace_back<LayoutButton>("", Render::Icon::PrintIdle);
+    circle_button->set_checkable(true);
     circle_button->set_min_size(button_size);
     LayoutButton* triangle_button =
         brush_shape_buttons->emplace_back<LayoutButton>("", Render::Icon::PrintIdle);
+    triangle_button->set_checkable(true);
     triangle_button->set_min_size(button_size);
     add_new_row("Brush shape", std::move(brush_shape_buttons));
+    m_group_shape.set_buttons({sphere_button, circle_button, triangle_button});
 
     constexpr float slider_text_size = 20;
 

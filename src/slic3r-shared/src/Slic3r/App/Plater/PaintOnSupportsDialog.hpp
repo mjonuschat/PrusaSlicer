@@ -6,6 +6,7 @@
 
 #include "Slic3r/App/Yoga/Dialog.hpp"
 #include "Slic3r/App/Render/ImguiTypes.hpp"
+#include "Slic3r/App/Yoga/ButtonGroup.hpp"
 
 #include <memory>
 
@@ -19,6 +20,10 @@ public:
 private:
     void add_new_row(const std::string& title, std::unique_ptr<Item> controls);
     Item* add_helper(const std::vector<Render::Icon> symbols, const std::string title, Item* help_row);
+
+private:
+    Yoga::ButtonGroup m_group_tool;
+    Yoga::ButtonGroup m_group_shape;
 };
 
 } // namespace Slic3r::App::Plater

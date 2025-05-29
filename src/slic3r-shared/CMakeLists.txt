@@ -204,6 +204,8 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Yoga/PrinterSettingsButton.hpp
         src/Slic3r/App/Yoga/MaterialSettingsButton.cpp
         include/Slic3r/App/Yoga/MaterialSettingsButton.hpp
+        include/Slic3r/App/Yoga/ButtonGroup.hpp
+        src/Slic3r/App/Yoga/ButtonGroup.cpp
 
         src/Slic3r/App/Imgui/DoubleSlider.cpp
         include/Slic3r/App/Imgui/DoubleSlider.hpp
@@ -581,6 +583,9 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
 
         test/Slic3r/App/Yoga/LayoutTests.cpp
         test/Slic3r/App/Yoga/ItemTreeTests.cpp
+        test/Slic3r/App/Yoga/ImGuiFixture.hpp
+        test/Slic3r/App/Yoga/ButtonGroupTests.cpp
+
         test/Slic3r/Biz/ProjectInteractorTests.cpp
         test/Slic3r/Biz/Scene/SceneInteractorTests.cpp
 

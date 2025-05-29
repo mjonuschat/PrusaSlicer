@@ -1,0 +1,67 @@
+///|/ Copyright (c) Prusa Research 2025 Nikita Vanku @Zaraka
+///|/
+///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
+///|/
+#pragma once
+
+#include <set>
+#include <functional>
+#include <initializer_list>
+
+namespace Slic3r::App::Yoga {
+
+class AbstractButton;
+
+/**
+ * @brief The ButtonGroup class - for grouping button and creating radio button like
+ * behavior. If buttons inserted into ButtonGroup are checkable, they will become
+ * mutually exclusive.
+ * Several internal callbacks will be available, pointer to event origin will also
+ * be passed in those callbacks.
+ */
+class ButtonGroup
+{
+public:
+    struct Callbacks
+    {
+        std::function<void(AbstractButton*)> action{nullptr};
+        std::function<void(AbstractButton* current_checked, AbstractButton* last_checked)>
+            checked_changed{nullptr};
+    };
+
+    /**
+     * @warning action and checked_changed callbacks will be overwritten
+     */
+    ButtonGroup(std::initializer_list<AbstractButton*> initializer_list = {});
+
+    Callbacks& callbacks();
+
+    /**
+     * @warning action and checked_changed callbacks will be overwritten
+     */
+    void set_buttons(std::initializer_list<AbstractButton*> initializer_list);
+
+    AbstractButton* checked_button() const;
+
+    void insert_button(AbstractButton* button);
+    bool remove_button(AbstractButton* button);
+    size_t button_count() const;
+
+private:
+    void on_button_action(AbstractButton* button);
+    void on_button_checked(AbstractButton* button);
+
+    void set_button_callbacks(AbstractButton* button);
+    void unset_button_callbacks(AbstractButton* button);
+
+private:
+    Callbacks m_callbacks;
+
+    using Buttons = std::set<AbstractButton*>;
+
+    Buttons m_buttons;
+    AbstractButton* m_checked_button = nullptr;
+    bool m_checked_blocker = false;
+};
+
+} // namespace Slic3r::App::Yoga
