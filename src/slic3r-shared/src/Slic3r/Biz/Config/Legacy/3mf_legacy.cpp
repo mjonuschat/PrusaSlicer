@@ -2943,7 +2943,7 @@ namespace Slic3rLegacy {
         bool _add_sla_drain_holes_file_to_archive(mz_zip_archive& archive, const Model& model);
         bool _add_print_config_file_to_archive(mz_zip_archive& archive, const ConfigPack& config, const Model& model, const Slic3r::Domain::WipeTowersOnBeds& wipe_towers);
         bool _add_model_config_file_to_archive(mz_zip_archive& archive, const Model& model, const IdToObjectDataMap &objects_data);
-        bool _add_custom_gcode_per_print_z_file_to_archive(mz_zip_archive& archive, const Slic3r::Domain::CustomGCodesOnBeds& custom_gcodes); //, const DynamicPrintConfig* config);
+        bool _add_custom_gcode_per_print_z_file_to_archive(mz_zip_archive& archive, const Slic3r::Domain::CustomGCodesOnBeds& custom_gcodes, const std::optional<ConfigPack>& config);
         bool _add_wipe_tower_information_file_to_archive( mz_zip_archive& archive, const Slic3r::Domain::WipeTowersOnBeds& wipe_towers);
     };
 
@@ -3061,7 +3061,7 @@ namespace Slic3rLegacy {
 
         // Adds custom gcode per height file ("Metadata/Prusa_Slicer_custom_gcode_per_print_z.xml").
         // All custom gcode per height of whole Model are stored here
-        if (!_add_custom_gcode_per_print_z_file_to_archive(archive, custom_gcodes)) {
+        if (!_add_custom_gcode_per_print_z_file_to_archive(archive, custom_gcodes, config)) {
             close_zip_writer(&archive);
             boost::filesystem::remove(filename);
             return false;
@@ -3869,7 +3869,7 @@ namespace Slic3rLegacy {
             stream << " <" << OBJECT_TAG << " " << ID_ATTR << "=\"" << obj_metadata.first << "\" " << INSTANCESCOUNT_ATTR << "=\"" << obj->instances.size() << "\">\n";
 
             // stores object's name
-            if (!obj->name.empty())                    
+            if (!obj->name.empty())
                 add_metadata(stream, 2, MetadataType::object, "name", obj->name);
             // stores object's config data
             Slic3rLegacy::DynamicPrintConfig config = Biz::convert_box_to_dynamic_print_config(obj->object_settings);
@@ -3940,7 +3940,7 @@ namespace Slic3rLegacy {
                     if (const std::optional<EmbossShape> &es = volume->emboss_shape;
                         es.has_value())
                         to_xml(stream, *es, *volume, archive);
-                    
+
                     if (const std::optional<TextConfiguration> &tc = volume->text_configuration;
                         tc.has_value())
                         TextConfigurationSerialization::to_xml(stream, *tc);
@@ -3974,8 +3974,8 @@ namespace Slic3rLegacy {
 
     bool _3MF_Exporter::_add_custom_gcode_per_print_z_file_to_archive(
         mz_zip_archive& archive,
-        const Slic3r::Domain::CustomGCodesOnBeds& custom_gcodes
-        //const DynamicPrintConfig* config
+        const Slic3r::Domain::CustomGCodesOnBeds& custom_gcodes,
+        const std::optional<ConfigPack>& config
     )
     {
         std::string out = "";
@@ -4007,17 +4007,21 @@ namespace Slic3rLegacy {
                     code_tree.put("<xmlattr>.color", code.color);
                     code_tree.put("<xmlattr>.extra", code.extra);
 
-                    // add gcode field data for the old version of the PrusaSlicer
-                    /*std::string gcode = code.type == CustomGCode::Type::ColorChange
-                        ? config->opt_string("color_change_gcode")
-                        : code.type == CustomGCode::Type::PausePrint
-                        ? config->opt_string("pause_print_gcode")
-                        : code.type == CustomGCode::Type::Template
-                        ? config->opt_string("template_custom_gcode")
-                        : code.type == CustomGCode::Type::ToolChange
-                        ? "tool_change"
-                        : code.extra;
-                    code_tree.put("<xmlattr>.gcode", gcode);*/
+                    if (config) {
+                        ASSERT(std::holds_alternative<ConfigPackFDM>(*config));
+                        const auto& config_pack{std::get<ConfigPackFDM>(*config)};
+                        // add gcode field data for the old version of the PrusaSlicer
+                        std::string gcode = code.type == CustomGCode::Type::ColorChange
+                            ? config_pack.printer.items.opt("color_change_gcode").get<std::string>()
+                            : code.type == CustomGCode::Type::PausePrint
+                            ? config_pack.printer.items.opt("pause_print_gcode").get<std::string>()
+                            : code.type == CustomGCode::Type::Template
+                            ? config_pack.printer.items.opt("template_custom_gcode").get<std::string>()
+                            : code.type == CustomGCode::Type::ToolChange
+                            ? "tool_change"
+                            : code.extra;
+                        code_tree.put("<xmlattr>.gcode", gcode);
+                    }
                 }
 
                 pt::ptree& mode_tree = main_tree.add("mode", "");

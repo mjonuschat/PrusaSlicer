@@ -8,7 +8,7 @@
  */
 #ifndef __EMSCRIPTEN__
 
-#include <libassert/assert.hpp>
+#include "libassert/assert.hpp"
 
 #else // #ifndef __EMSCRIPTEN__
 

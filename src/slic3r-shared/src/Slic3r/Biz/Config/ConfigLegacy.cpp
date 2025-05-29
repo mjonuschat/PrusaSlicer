@@ -651,6 +651,8 @@ Slic3rLegacy::DynamicPrintConfig convert_box_to_dynamic_print_config(const Domai
     else
         PANIC();
 
+    acceptable_keys.push_back("extruder");
+
     std::vector<std::string> override_keys_to_convert;
 
     for (const auto& item_ref : box.overrides.overriden_items()) {

@@ -702,6 +702,9 @@ ConfigSubstitutions ConfigBase::load_from_ini(const std::string &file, ForwardCo
     try {
         boost::property_tree::ptree tree;
         boost::nowide::ifstream ifs(file);
+        if (!ifs.is_open()) {
+            throw ConfigurationError("Failed to open the file!");
+        }
         boost::property_tree::read_ini(ifs, tree);
         return this->load(tree, compatibility_rule);
     } catch (const ConfigurationError &e) {
