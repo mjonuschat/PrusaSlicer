@@ -2,7 +2,7 @@
 
 #include "Slic3r/Biz/Preset/PresetEvaluator.hpp"
 #include "Slic3r/Biz/Preset/IO/PresetLoader.hpp"
-#include "Slic3r/Biz/Preset/IO/Yaml.hpp"
+#include "Slic3r/Biz/Yaml/Yaml.hpp"
 #include "Slic3r/TestUtils/TestData.hpp"
 
 
@@ -11,7 +11,7 @@ TEST_CASE("Preset Evaluator")
     using namespace Slic3r::Domain::Preset;
     using namespace Slic3r::Biz::Preset;
     using namespace Slic3r::Biz::Preset::IO;
-
+    namespace Yaml = Slic3r::Biz::Yaml;
 
     PresetLoader loader;
     try {

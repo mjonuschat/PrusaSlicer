@@ -1,6 +1,6 @@
 kind: filament
 id: '*_PLA_*'
-values:      
+values:
   bed_temperature: 60
   bridge_fan_speed: 100
   cooling: 1
@@ -48,14 +48,14 @@ values:
   min_print_speed: 15
   slowdown_below_layer_time: 12
   pressure_advance: 0.036
-  temperature: 215  
+  temperature: 215
 variants:
 # STANDARD sheets
 - condition: sheet.type != "cold"
   ## C1
   variants:
   - condition: printer.base_model == "COREONE"
-    id: 'C1 base'
+    id: C1 base
     values:
       chamber_minimal_temperature: 0
       chamber_temperature: 20
@@ -76,7 +76,7 @@ variants:
     variants:
     # C1 0.25
     - condition: tool.nozzle_diameter == 0.25
-      id: 'C1 0.25'
+      id: C1 0.25
       name: '*_PLA_* @COREONE 0.25'
       values:
         filament_max_volumetric_speed: 15
@@ -86,7 +86,7 @@ variants:
         temperature: 220
     # C1 0.3
     - condition: tool.nozzle_diameter == 0.3
-      id: 'C1 0.3'
+      id: C1 0.3
       name: '*_PLA_* @COREONE 0.3'
       values:
         filament_max_volumetric_speed: 15
@@ -96,7 +96,7 @@ variants:
         temperature: 220
     # C1 0.4
     - condition: tool.nozzle_diameter == 0.4
-      id: 'C1 0.4'
+      id: C1 0.4
       name: '*_PLA_* @COREONE 0.4'
       values:
         filament_max_volumetric_speed: 15
@@ -106,7 +106,7 @@ variants:
       variants:
       # C1 HF0.4
       - condition: tool.nozzle_high_flow
-        id: 'C1 HF0.4'      
+        id: C1 HF0.4
         name: '*_PLA_* @COREONE HF0.4'
         values:
           filament_max_volumetric_speed: 24
@@ -116,7 +116,7 @@ variants:
           temperature: 230
     # C1 0.5
     - condition: tool.nozzle_diameter == 0.5
-      id: 'C1 0.5'
+      id: C1 0.5
       name: '*_PLA_* @COREONE 0.5'
       values:
         filament_max_volumetric_speed: 15
@@ -126,7 +126,7 @@ variants:
       variants:
       # C1 HF0.5
       - condition: tool.nozzle_high_flow
-        id: 'C1 HF0.5'      
+        id: C1 HF0.5
         name: '*_PLA_* @COREONE HF0.5'
         values:
           filament_max_volumetric_speed: 27
@@ -135,7 +135,7 @@ variants:
           temperature: 230
     # C1 0.6
     - condition: tool.nozzle_diameter == 0.6
-      id: 'C1 0.6'
+      id: C1 0.6
       name: '*_PLA_* @COREONE 0.6'
       values:
         filament_max_volumetric_speed: 15.5
@@ -145,7 +145,7 @@ variants:
       variants:
       # C1 HF0.6
       - condition: tool.nozzle_high_flow
-        id: 'C1 HF0.6'
+        id: C1 HF0.6
         name: '*_PLA_* @COREONE HF0.6'
         values:
           filament_max_volumetric_speed: 30
@@ -155,7 +155,7 @@ variants:
           temperature: 230
     # C1 0.8
     - condition: tool.nozzle_diameter == 0.8
-      id: 'C1 0.8'
+      id: C1 0.8
       name: '*_PLA_* @COREONE 0.8'
       values:
         filament_max_volumetric_speed: 19
@@ -166,7 +166,7 @@ variants:
       variants:
       # C1 HF0.8
       - condition: tool.nozzle_high_flow
-        id: 'C1 HF0.8'
+        id: C1 HF0.8
         name: '*_PLA_* @COREONE HF0.8'
         values:
           filament_max_volumetric_speed: 37
@@ -175,7 +175,7 @@ variants:
           pressure_advance: 0.015
   ## XL
   - condition: printer.base_model == "XL"
-    id: 'XL base'
+    id: XL base
     values:
       fan_below_layer_time: 100
       filament_max_volumetric_speed: 15
@@ -192,7 +192,7 @@ variants:
     variants:
     # XL 0.25
     - condition: tool.nozzle_diameter == 0.25
-      id: 'XL 0.25'
+      id: XL 0.25
       name: '*_PLA_* @XL 0.25'
       values:
         filament_max_volumetric_speed: 15
@@ -202,7 +202,7 @@ variants:
         temperature: 220
     # XL 0.3
     - condition: tool.nozzle_diameter == 0.3
-      id: 'XL 0.3'
+      id: XL 0.3
       name: '*_PLA_* @XL 0.3'
       values:
         filament_max_volumetric_speed: 15
@@ -212,7 +212,7 @@ variants:
         temperature: 220
     # XL 0.4
     - condition: tool.nozzle_diameter == 0.4
-      id: 'XL 0.4'
+      id: XL 0.4
       name: '*_PLA_* @XL 0.4'
       values:
         filament_max_volumetric_speed: 15
@@ -221,8 +221,8 @@ variants:
         pressure_advance: 0.036
       variants:
       # XL HF0.4
-      - condition: tool.nozzle_high_flow    
-        id: 'XL HF0.4'
+      - condition: tool.nozzle_high_flow
+        id: XL HF0.4
         name: '*_PLA_* @XL HF0.4'
         values:
           filament_max_volumetric_speed: 22
@@ -231,7 +231,7 @@ variants:
           temperature: 230
     # XL 0.5
     - condition: tool.nozzle_diameter == 0.5
-      id: 'XL 0.5'
+      id: XL 0.5
       name: '*_PLA_* @XL 0.5'
       values:
         filament_max_volumetric_speed: 15
@@ -240,8 +240,8 @@ variants:
         pressure_advance: 0.026
       variants:
       # XL HF0.5
-      - condition: tool.nozzle_high_flow    
-        id: 'XL HF0.5'
+      - condition: tool.nozzle_high_flow
+        id: XL HF0.5
         name: '*_PLA_* @XL HF0.5'
         values:
           filament_max_volumetric_speed: 25
@@ -250,7 +250,7 @@ variants:
           temperature: 230
     # XL 0.6
     - condition: tool.nozzle_diameter == 0.6
-      id: 'XL 0.6'
+      id: XL 0.6
       name: '*_PLA_* @XL 0.6'
       values:
         filament_max_volumetric_speed: 15
@@ -261,8 +261,8 @@ variants:
         filament_notes: XL 0.6
       variants:
       # XL HF0.6
-      - condition: tool.nozzle_high_flow    
-        id: 'XL HF0.6'
+      - condition: tool.nozzle_high_flow
+        id: XL HF0.6
         name: '*_PLA_* @XL HF0.6'
         values:
           filament_max_volumetric_speed: 30
@@ -272,7 +272,7 @@ variants:
           filament_notes: XL HF0.6
     # XL 0.8
     - condition: tool.nozzle_diameter == 0.8
-      id: 'XL 0.8'
+      id: XL 0.8
       name: '*_PLA_* @XL 0.8'
       values:
         filament_max_volumetric_speed: 19
@@ -282,8 +282,8 @@ variants:
         temperature: 220
       variants:
       # XL HF0.8
-      - condition: tool.nozzle_high_flow    
-        id: 'XL HF0.8'
+      - condition: tool.nozzle_high_flow
+        id: XL HF0.8
         name: '*_PLA_* @XL HF0.8'
         values:
           filament_max_volumetric_speed: 37
@@ -292,7 +292,7 @@ variants:
           temperature: 230
   ## MK4
   - condition: printer.model == "MK4"
-    id: 'MK4 base'
+    id: MK4 base
     values:
       first_layer_temperature: 230
       min_print_speed: 20
@@ -303,7 +303,7 @@ variants:
     variants:
     # MK4 0.25
     - condition: tool.nozzle_diameter == 0.25
-      id: 'MK4 0.25'
+      id: MK4 0.25
       name: '*_PLA_* @MK4 0.25'
       values:
         filament_max_volumetric_speed: 15
@@ -313,7 +313,7 @@ variants:
         temperature: 220
     # MK4 0.3
     - condition: tool.nozzle_diameter == 0.3
-      id: 'MK4 0.3'
+      id: MK4 0.3
       name: '*_PLA_* @MK4 0.3'
       values:
         filament_max_volumetric_speed: 15
@@ -323,7 +323,7 @@ variants:
         temperature: 220
     # MK4 0.4
     - condition: tool.nozzle_diameter == 0.4
-      id: 'MK4 0.4'
+      id: MK4 0.4
       name: '*_PLA_* @MK4 0.4'
       values:
         filament_max_volumetric_speed: 15
@@ -332,8 +332,8 @@ variants:
         pressure_advance: 0.036
       variants:
       # MK4 HF0.4
-      - condition: tool.nozzle_high_flow    
-        id: 'MK4 HF0.4'
+      - condition: tool.nozzle_high_flow
+        id: MK4 HF0.4
         name: '*_PLA_* @MK4 HF0.4'
         values:
           filament_max_volumetric_speed: 24
@@ -343,7 +343,7 @@ variants:
           temperature: 230
     # MK4 0.5
     - condition: tool.nozzle_diameter == 0.5
-      id: 'MK4 0.5'
+      id: MK4 0.5
       name: '*_PLA_* @MK4 0.5'
       values:
         filament_max_volumetric_speed: 15
@@ -352,8 +352,8 @@ variants:
         pressure_advance: 0.026
       variants:
       # MK4 HF0.5
-      - condition: tool.nozzle_high_flow    
-        id: 'MK4 HF0.5'
+      - condition: tool.nozzle_high_flow
+        id: MK4 HF0.5
         name: '*_PLA_* @MK4 HF0.5'
         values:
           filament_max_volumetric_speed: 27
@@ -363,7 +363,7 @@ variants:
           temperature: 230
     # MK4 0.6
     - condition: tool.nozzle_diameter == 0.6
-      id: 'MK4 0.6'
+      id: MK4 0.6
       name: '*_PLA_* @MK4 0.6'
       values:
         filament_max_volumetric_speed: 15.5
@@ -372,8 +372,8 @@ variants:
         pressure_advance: 0.022
       variants:
       # MK4 HF0.6
-      - condition: tool.nozzle_high_flow    
-        id: 'MK4 HF0.6'
+      - condition: tool.nozzle_high_flow
+        id: MK4 HF0.6
         name: '*_PLA_* @MK4 HF0.6'
         values:
           filament_max_volumetric_speed: 30
@@ -383,7 +383,7 @@ variants:
           temperature: 230
     # MK4 0.8
     - condition: tool.nozzle_diameter == 0.8
-      id: 'MK4 0.8'
+      id: MK4 0.8
       name: '*_PLA_* @MK4 0.8'
       values:
         filament_max_volumetric_speed: 19
@@ -393,8 +393,8 @@ variants:
         temperature: 230
       variants:
       # MK4 HF0.8
-      - condition: tool.nozzle_high_flow    
-        id: 'MK4 HF0.8'
+      - condition: tool.nozzle_high_flow
+        id: MK4 HF0.8
         name: '*_PLA_* @MK4 HF0.8'
         values:
           filament_max_volumetric_speed: 37
@@ -402,7 +402,7 @@ variants:
           start_filament_gcode: M572 S0.015 ; Filament gcode\n\nM142 S36 ; set heatbreak target temp
   ## MK4S
   - condition: printer.model == "MK4S"
-    id: 'MK4S base'
+    id: MK4S base
     values:
       enable_dynamic_fan_speeds: 1
       first_layer_temperature: 230
@@ -421,7 +421,7 @@ variants:
     variants:
     # MK4S 0.25
     - condition: tool.nozzle_diameter == 0.25
-      id: 'MK4S 0.25'
+      id: MK4S 0.25
       name: '*_PLA_* @MK4S 0.25'
       values:
         filament_max_volumetric_speed: 15
@@ -431,7 +431,7 @@ variants:
         temperature: 220
     # MK4S 0.3
     - condition: tool.nozzle_diameter == 0.3
-      id: 'MK4S 0.3'
+      id: MK4S 0.3
       name: '*_PLA_* @MK4S 0.3'
       values:
         filament_max_volumetric_speed: 15
@@ -441,7 +441,7 @@ variants:
         temperature: 220
     # MK4S 0.4
     - condition: tool.nozzle_diameter == 0.4
-      id: 'MK4S 0.4'
+      id: MK4S 0.4
       name: '*_PLA_* @MK4S 0.4'
       values:
         filament_max_volumetric_speed: 15
@@ -450,8 +450,8 @@ variants:
         pressure_advance: 0.036
       variants:
       # MK4S HF0.4
-      - condition: tool.nozzle_high_flow    
-        id: 'MK4S HF0.4'
+      - condition: tool.nozzle_high_flow
+        id: MK4S HF0.4
         name: '*_PLA_* @MK4S HF0.4'
         values:
           filament_max_volumetric_speed: 24
@@ -461,7 +461,7 @@ variants:
           temperature: 230
     # MK4S 0.5
     - condition: tool.nozzle_diameter == 0.5
-      id: 'MK4S 0.5'
+      id: MK4S 0.5
       name: '*_PLA_* @MK4S 0.5'
       values:
         filament_max_volumetric_speed: 15
@@ -470,8 +470,8 @@ variants:
         pressure_advance: 0.026
       variants:
       # MK4S HF0.5
-      - condition: tool.nozzle_high_flow    
-        id: 'MK4S HF0.5'
+      - condition: tool.nozzle_high_flow
+        id: MK4S HF0.5
         name: '*_PLA_* @MK4S HF0.5'
         values:
           filament_max_volumetric_speed: 27
@@ -481,7 +481,7 @@ variants:
           temperature: 230
     # MK4S 0.6
     - condition: tool.nozzle_diameter == 0.6
-      id: 'MK4S 0.6'
+      id: MK4S 0.6
       name: '*_PLA_* @MK4S 0.6'
       values:
         filament_max_volumetric_speed: 15.5
@@ -491,8 +491,8 @@ variants:
         pressure_advance: 0.022
       variants:
       # MK4S HF0.6
-      - condition: tool.nozzle_high_flow    
-        id: 'MK4S HF0.6'
+      - condition: tool.nozzle_high_flow
+        id: MK4S HF0.6
         name: '*_PLA_* @MK4S HF0.6'
         values:
           filament_max_volumetric_speed: 30
@@ -502,7 +502,7 @@ variants:
           temperature: 230
     # MK4S 0.8
     - condition: tool.nozzle_diameter == 0.8
-      id: 'MK4S 0.8'
+      id: MK4S 0.8
       name: '*_PLA_* @MK4S 0.8'
       values:
         filament_max_volumetric_speed: 19
@@ -513,8 +513,8 @@ variants:
         temperature: 230
       variants:
       # C1 HF0.8
-      - condition: tool.nozzle_high_flow    
-        id: 'MK4S HF0.8'
+      - condition: tool.nozzle_high_flow
+        id: MK4S HF0.8
         name: '*_PLA_* @MK4S HF0.8'
         values:
           filament_max_volumetric_speed: 37
@@ -523,7 +523,7 @@ variants:
           pressure_advance: 0.015
   ## MK3.5
   - condition: printer.base_model == "MK3.5"
-    id: 'MK3.5 base'
+    id: MK3.5 base
     values:
       first_layer_temperature: 230
       temperature: 225
@@ -540,12 +540,12 @@ variants:
       filament_unload_time: 12
       filament_unloading_speed: 20
       filament_unloading_speed_start: 100
-      idle_temperature: null
+      idle_temperature:
       filament_purge_multiplier: 100%
     variants:
     # MK3.5 0.25
     - condition: tool.nozzle_diameter == 0.25
-      id: 'MK3.5 0.25'
+      id: MK3.5 0.25
       name: '*_PLA_* @MK3.5 0.25'
       values:
         filament_max_volumetric_speed: 15
@@ -554,8 +554,8 @@ variants:
         temperature: 220
       variants:
       # MK3.5 0.25 MMU
-      - condition: 'feeder.base_model == "MMU"'
-        id: 'MK3.5 0.25 MMU'
+      - condition: feeder.base_model == "MMU"
+        id: MK3.5 0.25 MMU
         name: '*_PLA_* @MK3.5 0.25 MMU'
         values:
           temperature: 205
@@ -563,7 +563,7 @@ variants:
           filament_ramming_parameters: 200 120 2.70968 2.93548 3.29032 3.80645 4.58065 5.54839 6.54839 7.3871 7.93548 8.19355 8.16129 8.03226| 0.05 2.66451 0.45 3.05805 0.95 4.05807 1.45 5.97742 1.95 7.69999 2.45 8.1936 2.95 7.98716 3.45 11.4065 3.95 7.6 4.45 7.6 4.95 7.6
     # MK3.5 0.3
     - condition: tool.nozzle_diameter == 0.3
-      id: 'MK3.5 0.3'
+      id: MK3.5 0.3
       name: '*_PLA_* @MK3.5 0.3'
       values:
         filament_max_volumetric_speed: 15
@@ -572,7 +572,7 @@ variants:
         temperature: 220
     # MK3.5 0.4
     - condition: tool.nozzle_diameter == 0.4
-      id: 'MK3.5 0.4'
+      id: MK3.5 0.4
       name: '*_PLA_* @MK3.5 0.4'
       values:
         filament_max_volumetric_speed: 15
@@ -580,15 +580,15 @@ variants:
         pressure_advance: 0.035
       variants:
       # MK3.5 0.4 MMU
-      - condition: 'feeder.base_model == "MMU"'
-        id: 'MK3.5 0.4 MMU'
+      - condition: feeder.base_model == "MMU"
+        id: MK3.5 0.4 MMU
         name: '*_PLA_* @MK3.5 0.4 MMU'
         values:
           temperature: 205
           filament_max_volumetric_speed: 10
     # MK3.5 0.5
     - condition: tool.nozzle_diameter == 0.5
-      id: 'MK3.5 0.5'
+      id: MK3.5 0.5
       name: '*_PLA_* @MK3.5 0.5'
       values:
         filament_max_volumetric_speed: 15
@@ -596,7 +596,7 @@ variants:
         pressure_advance: 0.025
     # MK3.5 0.6
     - condition: tool.nozzle_diameter == 0.6
-      id: 'MK3.5 0.6'
+      id: MK3.5 0.6
       name: '*_PLA_* @MK3.5 0.6'
       values:
         filament_max_volumetric_speed: 15
@@ -604,15 +604,15 @@ variants:
         pressure_advance: 0.02
       variants:
       # MK3.5 0.6 MMU
-      - condition: 'feeder.base_model == "MMU"'
-        id: 'MK3.5 0.6 MMU'
+      - condition: feeder.base_model == "MMU"
+        id: MK3.5 0.6 MMU
         name: '*_PLA_* @MK3.5 0.6 MMU'
         values:
           temperature: 205
           filament_max_volumetric_speed: 10
     # MK3.5 0.8
     - condition: tool.nozzle_diameter == 0.8
-      id: 'MK3.5 0.8'
+      id: MK3.5 0.8
       name: '*_PLA_* @MK3.5 0.8'
       values:
         filament_max_volumetric_speed: 15
@@ -621,15 +621,15 @@ variants:
         temperature: 225
   ## MINI
   - condition: printer.base_model == "MINI"
-    id: 'MINI base'
+    id: MINI base
     values:
       first_layer_temperature: 230
       temperature: 225
-      idle_temperature: null
+      idle_temperature:
     variants:
     # MINI 0.25
     - condition: tool.nozzle_diameter == 0.25
-      id: 'MINI 0.25'
+      id: MINI 0.25
       name: '*_PLA_* @MINI 0.25'
       values:
         filament_max_volumetric_speed: 15
@@ -638,7 +638,7 @@ variants:
         temperature: 215
     # MINI 0.4
     - condition: tool.nozzle_diameter == 0.4
-      id: 'MINI 0.4'
+      id: MINI 0.4
       name: '*_PLA_* @MINI 0.4'
       values:
         filament_max_volumetric_speed: 15
@@ -646,7 +646,7 @@ variants:
         pressure_advance: 0.27
     # MINI 0.6
     - condition: tool.nozzle_diameter == 0.6
-      id: 'MINI 0.6'
+      id: MINI 0.6
       name: '*_PLA_* @MINI 0.6'
       values:
         filament_max_volumetric_speed: 15
@@ -654,16 +654,16 @@ variants:
         pressure_advance: 0.17
     # MINI 0.8
     - condition: tool.nozzle_diameter == 0.8
-      id: 'MINI 0.8'
+      id: MINI 0.8
       name: '*_PLA_* @MINI 0.8'
       values:
         filament_max_volumetric_speed: 15
         slowdown_below_layer_time: 20
         pressure_advance: 0.12
-        temperature: 225      
+        temperature: 225
   ## MK3, MK3S and MK2.5, MK2.5S
   - condition: printer.base_model == "MK3"
-    id: 'MK3 base'
+    id: MK3 base
     values:
       first_layer_temperature: 215
       temperature: 215
@@ -680,12 +680,12 @@ variants:
       filament_unload_time: 12
       filament_unloading_speed: 20
       filament_unloading_speed_start: 100
-      idle_temperature: null
+      idle_temperature:
       filament_purge_multiplier: 100%
     variants:
     # MK3 0.25
     - condition: tool.nozzle_diameter == 0.25
-      id: 'MK3 0.25'
+      id: MK3 0.25
       name: '*_PLA_* @MK3 0.25'
       values:
         filament_max_volumetric_speed: 15
@@ -694,8 +694,8 @@ variants:
         temperature: 210
       variants:
       # MK3 0.25 MMU
-      - condition: 'feeder.base_model == "MMU"'
-        id: 'MK3 0.25 MMU'
+      - condition: feeder.base_model == "MMU"
+        id: MK3 0.25 MMU
         name: '*_PLA_* @MK3 0.25 MMU'
         values:
           temperature: 205
@@ -703,7 +703,7 @@ variants:
           filament_ramming_parameters: 200 120 2.70968 2.93548 3.29032 3.80645 4.58065 5.54839 6.54839 7.3871 7.93548 8.19355 8.16129 8.03226| 0.05 2.66451 0.45 3.05805 0.95 4.05807 1.45 5.97742 1.95 7.69999 2.45 8.1936 2.95 7.98716 3.45 11.4065 3.95 7.6 4.45 7.6 4.95 7.6
     # MK3 0.4
     - condition: tool.nozzle_diameter == 0.4
-      id: 'MK3 0.4'
+      id: MK3 0.4
       name: '*_PLA_* @MK3 0.4'
       values:
         filament_max_volumetric_speed: 15
@@ -711,15 +711,15 @@ variants:
         pressure_advance: 0.05
       variants:
       # MK3 0.4 MMU
-      - condition: 'feeder.base_model == "MMU"'
-        id: 'MK3 0.4 MMU'
+      - condition: feeder.base_model == "MMU"
+        id: MK3 0.4 MMU
         name: '*_PLA_* @MK3 0.4 MMU'
         values:
           temperature: 205
           filament_max_volumetric_speed: 10
     # MK3 0.6
     - condition: tool.nozzle_diameter == 0.6
-      id: 'MK3 0.6'
+      id: MK3 0.6
       name: '*_PLA_* @MK3 0.6'
       values:
         filament_max_volumetric_speed: 15.5
@@ -727,15 +727,15 @@ variants:
         pressure_advance: 0.03
       variants:
       # MK3 0.6 MMU
-      - condition: 'feeder.base_model == "MMU"'
-        id: 'MK3 0.6 MMU'
+      - condition: feeder.base_model == "MMU"
+        id: MK3 0.6 MMU
         name: '*_PLA_* @MK3 0.6 MMU'
         values:
           temperature: 205
           filament_max_volumetric_speed: 10
     # MK3 0.8
     - condition: tool.nozzle_diameter == 0.8
-      id: 'MK3 0.8'
+      id: MK3 0.8
       name: '*_PLA_* @MK3 0.8'
       values:
         filament_max_volumetric_speed: 15
@@ -744,7 +744,7 @@ variants:
         temperature: 225
   ## MK2S
   - condition: printer.model == "MK2S"
-    id: 'MK2S'
+    id: MK2S
     values:
       first_layer_temperature: 215
       temperature: 215
@@ -761,11 +761,11 @@ variants:
       filament_unload_time: 0
       filament_unloading_speed: 90
       filament_unloading_speed_start: 100
-      idle_temperature: null
+      idle_temperature:
     variants:
     # MK2 0.25
     - condition: tool.nozzle_diameter == 0.25
-      id: 'MK2 0.25'
+      id: MK2 0.25
       name: '*_PLA_* @MK2 0.25'
       values:
         filament_max_volumetric_speed: 10
@@ -774,7 +774,7 @@ variants:
         temperature: 210
     # MK2 0.4
     - condition: tool.nozzle_diameter == 0.4
-      id: 'MK2 0.4'
+      id: MK2 0.4
       name: '*_PLA_* @MK2 0.4'
       values:
         filament_max_volumetric_speed: 10
@@ -782,7 +782,7 @@ variants:
         pressure_advance: 30
     # MK2 0.6
     - condition: tool.nozzle_diameter == 0.6
-      id: 'MK2 0.6'
+      id: MK2 0.6
       name: '*_PLA_* @MK2 0.6'
       values:
         filament_max_volumetric_speed: 13
@@ -790,7 +790,7 @@ variants:
         pressure_advance: 18
   ## MK2S MMU1
   - condition: printer.model == "MK2SMM"
-    id: 'MK2SMM base'
+    id: MK2SMM base
     values:
       first_layer_temperature: 215
       temperature: 215
@@ -807,11 +807,11 @@ variants:
       filament_unload_time: 0
       filament_unloading_speed: 90
       filament_unloading_speed_start: 100
-      idle_temperature: null
+      idle_temperature:
     variants:
     # MK2SMM 0.25
     - condition: tool.nozzle_diameter == 0.25
-      id: 'MK2SMM 0.25'
+      id: MK2SMM 0.25
       name: '*_PLA_* @MK2MMU1 0.25'
       values:
         filament_max_volumetric_speed: 10
@@ -820,7 +820,7 @@ variants:
         temperature: 210
     # MK2SMM 0.4
     - condition: tool.nozzle_diameter == 0.4
-      id: 'MK2SMM 0.4'
+      id: MK2SMM 0.4
       name: '*_PLA_* @MK2MMU1 0.4'
       values:
         filament_max_volumetric_speed: 10
@@ -828,7 +828,7 @@ variants:
         pressure_advance: 200
     # MK2SMM 0.6
     - condition: tool.nozzle_diameter == 0.6
-      id: 'MK2SMM 0.6'
+      id: MK2SMM 0.6
       name: '*_PLA_* @MK2MMU1 0.6'
       values:
         filament_max_volumetric_speed: 13
@@ -841,397 +841,397 @@ variants:
   ## C1
   variants:
   - condition: printer.base_model == "COREONE"
-    unconditional_inherits: 
-      - 'C1 base'
+    unconditional_inherits:
+    - C1 base
     variants:
     # C1 0.25
     - condition: tool.nozzle_diameter == 0.25
       name: '*_PLA_* @COREONE 0.25'
-      unconditional_inherits: 
-        - 'C1 0.25'
+      unconditional_inherits:
+      - C1 0.25
     # C1 0.3
     - condition: tool.nozzle_diameter == 0.3
       name: '*_PLA_* @COREONE 0.3'
-      unconditional_inherits: 
-        - 'C1 0.3'
+      unconditional_inherits:
+      - C1 0.3
     # C1 0.4
     - condition: tool.nozzle_diameter == 0.4
       name: '*_PLA_* @COREONE 0.4'
-      unconditional_inherits: 
-        - 'C1 0.4'
+      unconditional_inherits:
+      - C1 0.4
       variants:
       # C1 HF0.4
-      - condition: tool.nozzle_high_flow    
+      - condition: tool.nozzle_high_flow
         name: '*_PLA_* @COREONE HF0.4'
-        unconditional_inherits: 
-          - 'C1 HF0.4'
+        unconditional_inherits:
+        - C1 HF0.4
     # C1 0.5
     - condition: tool.nozzle_diameter == 0.5
       name: '*_PLA_* @COREONE 0.5'
-      unconditional_inherits: 
-        - 'C1 HF0.5'
+      unconditional_inherits:
+      - C1 HF0.5
       variants:
       # C1 HF0.5
-      - condition: tool.nozzle_high_flow    
+      - condition: tool.nozzle_high_flow
         name: '*_PLA_* @COREONE HF0.5'
-        unconditional_inherits: 
-          - 'C1 HF0.5'
+        unconditional_inherits:
+        - C1 HF0.5
     # C1 0.6
     - condition: tool.nozzle_diameter == 0.6
       name: '*_PLA_* @COREONE 0.6'
-      unconditional_inherits: 
-        - 'C1 0.6'
+      unconditional_inherits:
+      - C1 0.6
       variants:
       # C1 HF0.6
-      - condition: tool.nozzle_high_flow    
+      - condition: tool.nozzle_high_flow
         name: '*_PLA_* @COREONE HF0.6'
-        unconditional_inherits: 
-          - 'C1 HF0.6'
+        unconditional_inherits:
+        - C1 HF0.6
     # C1 0.8
     - condition: tool.nozzle_diameter == 0.8
       name: '*_PLA_* @COREONE 0.8'
-      unconditional_inherits: 
-        - 'C1 0.8'
+      unconditional_inherits:
+      - C1 0.8
       variants:
       # C1 HF0.8
-      - condition: tool.nozzle_high_flow    
+      - condition: tool.nozzle_high_flow
         name: '*_PLA_* @COREONE HF0.8'
-        unconditional_inherits: 
-          - 'C1 HF0.8'
+        unconditional_inherits:
+        - C1 HF0.8
   ## XL
   - condition: printer.base_model == "XL"
-    unconditional_inherits: 
-      - 'XL base'
+    unconditional_inherits:
+    - XL base
     variants:
     # XL 0.25
     - condition: tool.nozzle_diameter == 0.25
       name: '*_PLA_* @XL 0.25'
-      unconditional_inherits: 
-        - 'XL 0.25'
+      unconditional_inherits:
+      - XL 0.25
     # XL 0.3
     - condition: tool.nozzle_diameter == 0.3
       name: '*_PLA_* @XL 0.3'
-      unconditional_inherits: 
-        - 'XL 0.3'
+      unconditional_inherits:
+      - XL 0.3
     # XL 0.4
     - condition: tool.nozzle_diameter == 0.4
       name: '*_PLA_* @XL 0.4'
-      unconditional_inherits: 
-        - 'XL 0.4'
+      unconditional_inherits:
+      - XL 0.4
       variants:
       # XL HF0.4
-      - condition: tool.nozzle_high_flow    
+      - condition: tool.nozzle_high_flow
         name: '*_PLA_* @XL HF0.4'
-        unconditional_inherits: 
-          - 'XL HF0.4'
+        unconditional_inherits:
+        - XL HF0.4
     # XL 0.5
     - condition: tool.nozzle_diameter == 0.5
       name: '*_PLA_* @XL 0.5'
-      unconditional_inherits: 
-        - 'XL 0.5'
+      unconditional_inherits:
+      - XL 0.5
       variants:
       # XL HF0.5
-      - condition: tool.nozzle_high_flow    
+      - condition: tool.nozzle_high_flow
         name: '*_PLA_* @XL HF0.5'
-        unconditional_inherits: 
-          - 'XL HF0.5'
+        unconditional_inherits:
+        - XL HF0.5
     # XL 0.6
     - condition: tool.nozzle_diameter == 0.6
       name: '*_PLA_* @XL 0.6'
-      unconditional_inherits: 
-        - 'XL 0.6'
+      unconditional_inherits:
+      - XL 0.6
       variants:
       # XL HF0.6
-      - condition: tool.nozzle_high_flow    
+      - condition: tool.nozzle_high_flow
         name: '*_PLA_* @XL HF0.6'
-        unconditional_inherits: 
-          - 'XL HF0.6'
+        unconditional_inherits:
+        - XL HF0.6
     # XL 0.8
     - condition: tool.nozzle_diameter == 0.8
       name: '*_PLA_* @XL 0.8'
-      unconditional_inherits: 
-        - 'XL 0.8'
+      unconditional_inherits:
+      - XL 0.8
       variants:
       # XL HF0.8
-      - condition: tool.nozzle_high_flow    
+      - condition: tool.nozzle_high_flow
         name: '*_PLA_* @XL HF0.8'
-        unconditional_inherits: 
-          - 'XL HF0.8'
+        unconditional_inherits:
+        - XL HF0.8
   ## MK4
   - condition: printer.model == "MK4"
-    unconditional_inherits: 
-      - 'MK4 base'
+    unconditional_inherits:
+    - MK4 base
     variants:
     # MK4 0.25
     - condition: tool.nozzle_diameter == 0.25
       name: '*_PLA_* @MK4 0.25'
-      unconditional_inherits: 
-        - 'MK4 0.25'
+      unconditional_inherits:
+      - MK4 0.25
     # MK4 0.3
     - condition: tool.nozzle_diameter == 0.3
       name: '*_PLA_* @MK4 0.3'
-      unconditional_inherits: 
-        - 'MK4 0.3'
+      unconditional_inherits:
+      - MK4 0.3
     # MK4 0.4
     - condition: tool.nozzle_diameter == 0.4
       name: '*_PLA_* @MK4 0.4'
-      unconditional_inherits: 
-        - 'MK4 0.4'
+      unconditional_inherits:
+      - MK4 0.4
       variants:
       # MK4 HF0.4
-      - condition: tool.nozzle_high_flow    
+      - condition: tool.nozzle_high_flow
         name: '*_PLA_* @MK4 HF0.4'
-        unconditional_inherits: 
-          - 'MK4 HF0.4'
+        unconditional_inherits:
+        - MK4 HF0.4
     # MK4 0.5
     - condition: tool.nozzle_diameter == 0.5
       name: '*_PLA_* @MK4 0.5'
-      unconditional_inherits: 
-        - 'MK4 0.5'
+      unconditional_inherits:
+      - MK4 0.5
       variants:
       # MK4 HF0.5
-      - condition: tool.nozzle_high_flow    
+      - condition: tool.nozzle_high_flow
         name: '*_PLA_* @MK4 HF0.5'
-        unconditional_inherits: 
-        - 'MK4 HF0.5'
+        unconditional_inherits:
+        - MK4 HF0.5
     # MK4 0.6
     - condition: tool.nozzle_diameter == 0.6
       name: '*_PLA_* @MK4 0.6'
-      unconditional_inherits: 
-        - 'MK4 0.6'
+      unconditional_inherits:
+      - MK4 0.6
       variants:
       # MK4 HF0.6
-      - condition: tool.nozzle_high_flow    
+      - condition: tool.nozzle_high_flow
         name: '*_PLA_* @MK4 HF0.6'
-        unconditional_inherits: 
-          - 'MK4 HF0.6'
+        unconditional_inherits:
+        - MK4 HF0.6
     # MK4 0.8
     - condition: tool.nozzle_diameter == 0.8
       name: '*_PLA_* @MK4 0.8'
-      unconditional_inherits: 
-        - 'MK4 0.8'
+      unconditional_inherits:
+      - MK4 0.8
       variants:
       # MK4 HF0.8
-      - condition: tool.nozzle_high_flow    
+      - condition: tool.nozzle_high_flow
         name: '*_PLA_* @MK4 HF0.8'
-        unconditional_inherits: 
-          - 'MK4 HF0.8'
+        unconditional_inherits:
+        - MK4 HF0.8
   ## MK4S
   - condition: printer.model == "MK4S"
-    unconditional_inherits: 
-      - 'MK4S base'
+    unconditional_inherits:
+    - MK4S base
     variants:
     # MK4S 0.25
     - condition: tool.nozzle_diameter == 0.25
       name: '*_PLA_* @MK4S 0.25'
-      unconditional_inherits: 
-        - 'MK4S 0.25'
+      unconditional_inherits:
+      - MK4S 0.25
     # MK4S 0.3
     - condition: tool.nozzle_diameter == 0.3
       name: '*_PLA_* @MK4S 0.3'
-      unconditional_inherits: 
-        - 'MK4S 0.3'
+      unconditional_inherits:
+      - MK4S 0.3
     # MK4S 0.4
     - condition: tool.nozzle_diameter == 0.4
       name: '*_PLA_* @MK4S 0.4'
-      unconditional_inherits: 
-        - 'MK4S 0.4'
+      unconditional_inherits:
+      - MK4S 0.4
       variants:
       # MK4S HF0.4
-      - condition: tool.nozzle_high_flow    
+      - condition: tool.nozzle_high_flow
         name: '*_PLA_* @MK4S HF0.4'
-        unconditional_inherits: 
-          - 'MK4S HF0.4'
+        unconditional_inherits:
+        - MK4S HF0.4
     # MK4S 0.5
     - condition: tool.nozzle_diameter == 0.5
       name: '*_PLA_* @MK4S 0.5'
-      unconditional_inherits: 
-        - 'MK4S 0.5'
+      unconditional_inherits:
+      - MK4S 0.5
       variants:
       # MK4S HF0.5
-      - condition: tool.nozzle_high_flow    
+      - condition: tool.nozzle_high_flow
         name: '*_PLA_* @MK4S HF0.5'
-        unconditional_inherits: 
-          - 'MK4S HF0.5'
+        unconditional_inherits:
+        - MK4S HF0.5
     # MK4S 0.6
     - condition: tool.nozzle_diameter == 0.6
       name: '*_PLA_* @MK4S 0.6'
-      unconditional_inherits: 
-        - 'MK4S 0.6'
+      unconditional_inherits:
+      - MK4S 0.6
       variants:
       # MK4S HF0.6
-      - condition: tool.nozzle_high_flow    
+      - condition: tool.nozzle_high_flow
         name: '*_PLA_* @MK4S HF0.6'
-        unconditional_inherits: 
-          - 'MK4S HF0.6'
+        unconditional_inherits:
+        - MK4S HF0.6
     # MK4S 0.8
     - condition: tool.nozzle_diameter == 0.8
       name: '*_PLA_* @MK4S 0.8'
-      unconditional_inherits: 
-        - 'MK4S 0.8'
+      unconditional_inherits:
+      - MK4S 0.8
       variants:
       # C1 HF0.8
-      - condition: tool.nozzle_high_flow    
+      - condition: tool.nozzle_high_flow
         name: '*_PLA_* @MK4S HF0.8'
-        unconditional_inherits: 
-          - 'MK4S HF0.8'
+        unconditional_inherits:
+        - MK4S HF0.8
   ## MK3.5
   - condition: printer.base_model == "MK3.5"
-    unconditional_inherits: 
-      - 'MK3.5 base'
+    unconditional_inherits:
+    - MK3.5 base
     variants:
     # MK3.5 0.25
     - condition: tool.nozzle_diameter == 0.25
       name: '*_PLA_* @MK3.5 0.25'
-      unconditional_inherits: 
-        - 'MK3.5 0.25'
+      unconditional_inherits:
+      - MK3.5 0.25
       variants:
       # MK3.5 0.25 MMU
-      - condition: 'feeder.base_model == "MMU"'
+      - condition: feeder.base_model == "MMU"
         name: '*_PLA_* @MK3.5 0.25 MMU'
-        unconditional_inherits: 
-          - 'MK3.5 0.25 MMU'
+        unconditional_inherits:
+        - MK3.5 0.25 MMU
     # MK3.5 0.3
     - condition: tool.nozzle_diameter == 0.3
       name: '*_PLA_* @MK3.5 0.3'
-      unconditional_inherits: 
-        - 'MK3.5 0.3'
+      unconditional_inherits:
+      - MK3.5 0.3
     # MK3.5 0.4
     - condition: tool.nozzle_diameter == 0.4
       name: '*_PLA_* @MK3.5 0.4'
-      unconditional_inherits: 
-        - 'MK3.5 0.4'
+      unconditional_inherits:
+      - MK3.5 0.4
       variants:
       # MK3.5 0.4 MMU
-      - condition: 'feeder.base_model == "MMU"'
+      - condition: feeder.base_model == "MMU"
         name: '*_PLA_* @MK3.5 0.4 MMU'
-        unconditional_inherits: 
-          - 'MK3.5 0.4 MMU'
+        unconditional_inherits:
+        - MK3.5 0.4 MMU
     # MK3.5 0.5
     - condition: tool.nozzle_diameter == 0.5
       name: '*_PLA_* @MK3.5 0.5'
-      unconditional_inherits: 
-        - 'MK3.5 0.5'
+      unconditional_inherits:
+      - MK3.5 0.5
     # MK3.5 0.6
     - condition: tool.nozzle_diameter == 0.6
       name: '*_PLA_* @MK3.5 0.6'
-      unconditional_inherits: 
-        - 'MK3.5 0.6'
+      unconditional_inherits:
+      - MK3.5 0.6
       variants:
       # MK3.5 0.6 MMU
-      - condition: 'feeder.base_model == "MMU"'
+      - condition: feeder.base_model == "MMU"
         name: '*_PLA_* @MK3.5 0.6 MMU'
-        unconditional_inherits: 
-          - 'MK3.5 0.6 MMU'
+        unconditional_inherits:
+        - MK3.5 0.6 MMU
     # MK3.5 0.8
     - condition: tool.nozzle_diameter == 0.8
       name: '*_PLA_* @MK3.5 0.8'
-      unconditional_inherits: 
-        - 'MK3.5 0.8'
+      unconditional_inherits:
+      - MK3.5 0.8
   ## MINI
   - condition: printer.base_model == "MINI"
-    unconditional_inherits: 
-      - 'MINI base'
+    unconditional_inherits:
+    - MINI base
     variants:
     # MINI 0.25
     - condition: tool.nozzle_diameter == 0.25
       name: '*_PLA_* @MINI 0.25'
-      unconditional_inherits: 
-        - 'MINI 0.25'
+      unconditional_inherits:
+      - MINI 0.25
     # MINI 0.4
     - condition: tool.nozzle_diameter == 0.4
       name: '*_PLA_* @MINI 0.4'
-      unconditional_inherits: 
-        - 'MINI 0.4'
+      unconditional_inherits:
+      - MINI 0.4
     # MINI 0.6
     - condition: tool.nozzle_diameter == 0.6
       name: '*_PLA_* @MINI 0.6'
-      unconditional_inherits: 
-        - 'MINI 0.6'
+      unconditional_inherits:
+      - MINI 0.6
     # MINI 0.8
     - condition: tool.nozzle_diameter == 0.8
       name: '*_PLA_* @MINI 0.8'
-      unconditional_inherits: 
-        - 'MINI 0.8'    
+      unconditional_inherits:
+      - MINI 0.8
   ## MK3, MK3S and MK2.5, MK2.5S
   - condition: printer.base_model == "MK3"
-    unconditional_inherits: 
-      - 'MK3 base'
+    unconditional_inherits:
+    - MK3 base
     variants:
     # MK3 0.25
     - condition: tool.nozzle_diameter == 0.25
       name: '*_PLA_* @MK3 0.25'
-      unconditional_inherits: 
-        - 'MK3 0.25'
+      unconditional_inherits:
+      - MK3 0.25
       variants:
       # MK3 0.25 MMU
-      - condition: 'feeder.base_model == "MMU"'
+      - condition: feeder.base_model == "MMU"
         name: '*_PLA_* @MK3 0.25 MMU'
-        unconditional_inherits: 
-          - 'MK3 0.25 MMU'
+        unconditional_inherits:
+        - MK3 0.25 MMU
     # MK3 0.4
     - condition: tool.nozzle_diameter == 0.4
       name: '*_PLA_* @MK3 0.4'
-      unconditional_inherits: 
-        - 'MK3 0.4'
+      unconditional_inherits:
+      - MK3 0.4
       variants:
       # MK3 0.4 MMU
-      - condition: 'feeder.base_model == "MMU"'
+      - condition: feeder.base_model == "MMU"
         name: '*_PLA_* @MK3 0.4 MMU'
-        unconditional_inherits: 
-          - 'MK3 0.4 MMU'
+        unconditional_inherits:
+        - MK3 0.4 MMU
     # MK3 0.6
     - condition: tool.nozzle_diameter == 0.6
       name: '*_PLA_* @MK3 0.6'
-      unconditional_inherits: 
-        - 'MK3 0.6'
+      unconditional_inherits:
+      - MK3 0.6
       variants:
       # MK3 0.6 MMU
-      - condition: 'feeder.base_model == "MMU"'
+      - condition: feeder.base_model == "MMU"
         name: '*_PLA_* @MK3 0.6 MMU'
-        unconditional_inherits: 
-          - 'MK3 0.6 MMU'
+        unconditional_inherits:
+        - MK3 0.6 MMU
     # MK3 0.8
     - condition: tool.nozzle_diameter == 0.8
-      unconditional_inherits: 
-        - 'MK3 0.8'
+      unconditional_inherits:
+      - MK3 0.8
   ## MK2S
   - condition: printer.model == "MK2S"
-    unconditional_inherits: 
-      - 'MK2S base'
+    unconditional_inherits:
+    - MK2S base
     variants:
     # MK2 0.25
     - condition: tool.nozzle_diameter == 0.25
       name: '*_PLA_* @MK2 0.25'
-      unconditional_inherits: 
-        - 'MK2S 0.25'
+      unconditional_inherits:
+      - MK2S 0.25
     # MK2 0.4
     - condition: tool.nozzle_diameter == 0.4
       name: '*_PLA_* @MK2 0.4'
-      unconditional_inherits: 
-        - 'MK2S 0.4'
+      unconditional_inherits:
+      - MK2S 0.4
     # MK2 0.6
     - condition: tool.nozzle_diameter == 0.6
       name: '*_PLA_* @MK2 0.6'
-      unconditional_inherits: 
-        - 'MK2S 0.6'
+      unconditional_inherits:
+      - MK2S 0.6
   ## MK2S MMU1
   - condition: printer.model == "MK2SMM"
-    unconditional_inherits: 
-      - 'MK2SMM base'
+    unconditional_inherits:
+    - MK2SMM base
     variants:
     # MK2SMM 0.25
     - condition: tool.nozzle_diameter == 0.25
       name: '*_PLA_* @MK2SMM 0.25'
-      unconditional_inherits: 
-        - 'MK2SMM  0.25'
+      unconditional_inherits:
+      - MK2SMM  0.25
     # MK2SMM 0.4
     - condition: tool.nozzle_diameter == 0.4
       name: '*_PLA_* @MK2SMM 0.4'
-      unconditional_inherits: 
-        - 'MK2SMM  0.4'
+      unconditional_inherits:
+      - MK2SMM  0.4
     # MK2SMM 0.6
     - condition: tool.nozzle_diameter == 0.6
       name: '*_PLA_* @MK2SMM 0.6'
-      unconditional_inherits: 
-        - 'MK2SMM  0.6'
+      unconditional_inherits:
+      - MK2SMM  0.6

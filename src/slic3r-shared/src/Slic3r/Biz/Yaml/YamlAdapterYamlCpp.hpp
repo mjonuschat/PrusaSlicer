@@ -1,10 +1,12 @@
 #pragma once
 #include <string>
 #include <optional>
-#include "YamlAdapter.hpp"
-#include "yaml-cpp/yaml.h"
+#include <yaml-cpp/yaml.h>
 
-namespace Yaml::YamlCpp {
+#include "Slic3r/Biz/Yaml/YamlAdapter.hpp"
+
+
+namespace Slic3r::Biz::Yaml::YamlCpp {
 namespace Details {
 struct NodeRef
 {

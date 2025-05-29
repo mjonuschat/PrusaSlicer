@@ -2,8 +2,6 @@ kind: filament
 id: Generic ABS
 inherits:
 - '*ASA*'
----
-kind: filament
 name: Generic ABS
 values:
   filament_cost: '45.10'

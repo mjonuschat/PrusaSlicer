@@ -95,7 +95,7 @@ variants:
       start_filament_gcode: M572 S0.036 ; Filament gcode\n\nM142 S36 ; set heatbreak target temp
     variants:
     # C1 HF0.4
-    - condition: tool.nozzle_high_flow    
+    - condition: tool.nozzle_high_flow
       name: '*PLA* @COREONE HF0.4'
       values:
         filament_max_volumetric_speed: 24
@@ -111,7 +111,7 @@ variants:
       start_filament_gcode: M572 S0.026 ; Filament gcode\n\nM142 S36 ; set heatbreak target temp
     variants:
     # C1 HF0.5
-    - condition: tool.nozzle_high_flow    
+    - condition: tool.nozzle_high_flow
       name: '*PLA* @COREONE HF0.5'
       values:
         filament_max_volumetric_speed: 27
@@ -127,7 +127,7 @@ variants:
       start_filament_gcode: M572 S0.022 ; Filament gcode\n\nM142 S36 ; set heatbreak target temp
     variants:
     # C1 HF0.6
-    - condition: tool.nozzle_high_flow    
+    - condition: tool.nozzle_high_flow
       name: '*PLA* @COREONE HF0.6'
       values:
         filament_max_volumetric_speed: 30
@@ -144,7 +144,7 @@ variants:
       temperature: 230
     variants:
     # C1 HF0.8
-    - condition: tool.nozzle_high_flow    
+    - condition: tool.nozzle_high_flow
       name: '*PLA* @COREONE HF0.8'
       values:
         filament_max_volumetric_speed: 37
@@ -195,7 +195,7 @@ variants:
       filament_notes: XL 0.4
     variants:
     # XL HF0.4
-    - condition: tool.nozzle_high_flow    
+    - condition: tool.nozzle_high_flow
       name: '*PLA* @XL HF0.4'
       values:
         filament_max_volumetric_speed: 22
@@ -212,7 +212,7 @@ variants:
       filament_notes: XL 0.5
     variants:
     # XL HF0.5
-    - condition: tool.nozzle_high_flow    
+    - condition: tool.nozzle_high_flow
       name: '*PLA* @XL HF0.5'
       values:
         filament_max_volumetric_speed: 25
@@ -230,7 +230,7 @@ variants:
       filament_notes: XL 0.6
     variants:
     # XL HF0.6
-    - condition: tool.nozzle_high_flow    
+    - condition: tool.nozzle_high_flow
       name: '*PLA* @XL HF0.6'
       values:
         filament_max_volumetric_speed: 30
@@ -248,7 +248,7 @@ variants:
       filament_notes: XL 0.8
     variants:
     # XL HF0.8
-    - condition: tool.nozzle_high_flow    
+    - condition: tool.nozzle_high_flow
       name: '*PLA* @XL HF0.8'
       values:
         filament_max_volumetric_speed: 37
@@ -290,7 +290,7 @@ variants:
       start_filament_gcode: M572 S0.036 ; Filament gcode\n\nM142 S36 ; set heatbreak target temp
     variants:
     # MK4 HF0.4
-    - condition: tool.nozzle_high_flow    
+    - condition: tool.nozzle_high_flow
       name: '*PLA* @MK4 HF0.4'
       values:
         filament_max_volumetric_speed: 24
@@ -306,7 +306,7 @@ variants:
       start_filament_gcode: M572 S0.026 ; Filament gcode\n\nM142 S36 ; set heatbreak target temp
     variants:
     # MK4 HF0.5
-    - condition: tool.nozzle_high_flow    
+    - condition: tool.nozzle_high_flow
       name: '*PLA* @MK4 HF0.5'
       values:
         filament_max_volumetric_speed: 27
@@ -322,7 +322,7 @@ variants:
       start_filament_gcode: M572 S0.022 ; Filament gcode\n\nM142 S36 ; set heatbreak target temp
     variants:
     # MK4 HF0.6
-    - condition: tool.nozzle_high_flow    
+    - condition: tool.nozzle_high_flow
       name: '*PLA* @MK4 HF0.6'
       values:
         filament_max_volumetric_speed: 30
@@ -339,7 +339,7 @@ variants:
       temperature: 230
     variants:
     # MK4 HF0.8
-    - condition: tool.nozzle_high_flow    
+    - condition: tool.nozzle_high_flow
       name: '*PLA* @MK4 HF0.8'
       values:
         filament_max_volumetric_speed: 37
@@ -388,7 +388,7 @@ variants:
       start_filament_gcode: M572 S0.036 ; Filament gcode\n\nM142 S36 ; set heatbreak target temp
     variants:
     # MK4S HF0.4
-    - condition: tool.nozzle_high_flow    
+    - condition: tool.nozzle_high_flow
       name: '*PLA* @MK4S HF0.4'
       values:
         filament_max_volumetric_speed: 24
@@ -404,7 +404,7 @@ variants:
       start_filament_gcode: M572 S0.026 ; Filament gcode\n\nM142 S36 ; set heatbreak target temp
     variants:
     # MK4S HF0.5
-    - condition: tool.nozzle_high_flow    
+    - condition: tool.nozzle_high_flow
       name: '*PLA* @MK4S HF0.5'
       values:
         filament_max_volumetric_speed: 27
@@ -421,7 +421,7 @@ variants:
       start_filament_gcode: M572 S0.022 ; Filament gcode\n\nM142 S36 ; set heatbreak target temp
     variants:
     # MK4S HF0.6
-    - condition: tool.nozzle_high_flow    
+    - condition: tool.nozzle_high_flow
       name: '*PLA* @MK4S HF0.6'
       values:
         filament_max_volumetric_speed: 30
@@ -439,7 +439,7 @@ variants:
       temperature: 230
     variants:
     # C1 HF0.8
-    - condition: tool.nozzle_high_flow    
+    - condition: tool.nozzle_high_flow
       name: '*PLA* @MK4S HF0.8'
       values:
         filament_max_volumetric_speed: 37
@@ -463,7 +463,7 @@ variants:
     filament_unload_time: 12
     filament_unloading_speed: 20
     filament_unloading_speed_start: 100
-    idle_temperature: null
+    idle_temperature:
     filament_purge_multiplier: 100%
   variants:
   # MK3.5 0.25
@@ -476,7 +476,7 @@ variants:
       temperature: 220
     variants:
     # MK3.5 0.25 MMU
-    - condition: 'feeder.base_model == "MMU"'
+    - condition: feeder.base_model == "MMU"
       name: '*PLA* @MK3.5 0.25 MMU'
       values:
         temperature: 205
@@ -499,7 +499,7 @@ variants:
       start_filament_gcode: M572 S0.035 ; Filament gcode
     variants:
     # MK3.5 0.4 MMU
-    - condition: 'feeder.base_model == "MMU"'
+    - condition: feeder.base_model == "MMU"
       name: '*PLA* @MK3.5 0.4 MMU'
       values:
         temperature: 205
@@ -520,7 +520,7 @@ variants:
       start_filament_gcode: M572 S0.02 ; Filament gcode
     variants:
     # MK3.5 0.6 MMU
-    - condition: 'feeder.base_model == "MMU"'
+    - condition: feeder.base_model == "MMU"
       name: '*PLA* @MK3.5 0.6 MMU'
       values:
         temperature: 205
@@ -538,7 +538,7 @@ variants:
   values:
     first_layer_temperature: 230
     temperature: 225
-    idle_temperature: null
+    idle_temperature:
   variants:
   # MINI 0.25
   - condition: tool.nozzle_diameter == 0.25
@@ -569,7 +569,7 @@ variants:
       filament_max_volumetric_speed: 15
       slowdown_below_layer_time: 20
       start_filament_gcode: M572 S0.12 ; Filament gcode
-      temperature: 225      
+      temperature: 225
 ## MK3, MK3S and MK2.5, MK2.5S
 - condition: printer.base_model == "MK3"
   values:
@@ -588,7 +588,7 @@ variants:
     filament_unload_time: 12
     filament_unloading_speed: 20
     filament_unloading_speed_start: 100
-    idle_temperature: null
+    idle_temperature:
     filament_purge_multiplier: 100%
   variants:
   # MK3 0.25
@@ -601,7 +601,7 @@ variants:
       temperature: 210
     variants:
     # MK3 0.25 MMU
-    - condition: 'feeder.base_model == "MMU"'
+    - condition: feeder.base_model == "MMU"
       name: '*PLA* @MK3 0.25 MMU'
       values:
         temperature: 205
@@ -616,7 +616,7 @@ variants:
       start_filament_gcode: M900 K0.05 ; Filament gcode
     variants:
     # MK3 0.4 MMU
-    - condition: 'feeder.base_model == "MMU"'
+    - condition: feeder.base_model == "MMU"
       name: '*PLA* @MK3 0.4 MMU'
       values:
         temperature: 205
@@ -630,7 +630,7 @@ variants:
       start_filament_gcode: M900 K0.03 ; Filament gcode
     variants:
     # MK3 0.6 MMU
-    - condition: 'feeder.base_model == "MMU"'
+    - condition: feeder.base_model == "MMU"
       name: '*PLA* @MK3 0.6 MMU'
       values:
         temperature: 205
@@ -661,7 +661,7 @@ variants:
     filament_unload_time: 0
     filament_unloading_speed: 90
     filament_unloading_speed_start: 100
-    idle_temperature: null
+    idle_temperature:
   variants:
   # MK2 0.25
   - condition: tool.nozzle_diameter == 0.25
@@ -703,7 +703,7 @@ variants:
     filament_unload_time: 0
     filament_unloading_speed: 90
     filament_unloading_speed_start: 100
-    idle_temperature: null
+    idle_temperature:
   variants:
   # MK2 0.25
   - condition: tool.nozzle_diameter == 0.25

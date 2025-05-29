@@ -1,7 +1,7 @@
 
-#include "Yaml.hpp"
+#include "Slic3r/Biz/Yaml/Yaml.hpp"
 
-namespace Yaml {
+namespace Slic3r::Biz::Yaml {
 
 void parse_all_documents(const YamlAdapter::Parser& parser, const std::function<void(const YamlAdapter::Document&)>& parse_doc)
 {
@@ -35,4 +35,4 @@ void parse_all_documents_in_string(std::string_view yaml, const std::function<vo
     parse_all_documents(parser, parse_doc);
 }
 
-} // namespace Yaml
+} // namespace Slic3r::Biz::Yaml

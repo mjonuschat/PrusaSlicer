@@ -1,7 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include "Slic3r/Biz/Preset/HwConfigEvaluator.hpp"
 #include "Slic3r/Biz/Preset/IO/HwConfigLoader.hpp"
-#include "Slic3r/Biz/Preset/IO/Yaml.hpp"
+#include "Slic3r/Biz/Yaml/Yaml.hpp"
 #include "Slic3r/TestUtils/TestData.hpp"
 
 using namespace Slic3r::Biz::Preset;

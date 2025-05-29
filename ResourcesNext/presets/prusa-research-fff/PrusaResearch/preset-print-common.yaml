@@ -26,7 +26,7 @@ values:
   support_material_enforce_layers: 0
   support_material_interface_contact_loops: 0
   support_material_pattern: rectilinear
-  support_tree_top_rate: '30%'
+  support_tree_top_rate: 30%
   thin_walls: 0
   travel_speed: 350
   wipe_tower: 1

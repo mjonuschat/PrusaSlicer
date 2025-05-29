@@ -3,9 +3,9 @@
 #include "Slic3r/Domain/Expr/ExprAst.hpp"
 #include "Slic3r/Domain/Preset/PresetTree.hpp"
 #include "Slic3r/Biz/Expr/Parser.hpp"
-#include "Slic3r/Biz/Preset/IO/Yaml.hpp"
+#include "Slic3r/Biz/Yaml/Yaml.hpp"
 
-namespace Yaml::Details {
+namespace Slic3r::Biz::Yaml::Details {
 
 template <>
 struct TypeTraits<Slic3r::Domain::Expr::ExprAst>
@@ -57,17 +57,31 @@ struct TypeTraits<Slic3r::Domain::Vec2d>
     {
         namespace qi = boost::spirit::qi;
 
-        auto value = get_node_scalar(node);
-        auto pos = value.find('x');
-        if (pos == std::string::npos)
-            throw ParseError(node, fmt::format("Invalid Vec2d '{}'", value));
-
         Vec2d ret;
-        if (!qi::parse(std::cbegin(value), std::cbegin(value) + pos, qi::double_, ret.x()))
-            throw ParseError(node, fmt::format("Invalid Vec2d value: '{}'", value));
-        if (!qi::parse(std::cbegin(value) + pos + 1, std::cend(value), qi::double_, ret.y()))
-            throw ParseError(node, fmt::format("Invalid Vec2d value: '{}'", value));
 
+        // if (YamlAdapter::node_type(node) == NodeType::Sequence) {
+        //     if (auto n = YamlAdapter::sequence_item_count(node); n != 2)
+        //         throw ParseError(
+        //             node,
+        //             fmt::format(
+        //                 "Invalid Vec2d value: Expecting seqeunce with two items, but have sequence "
+        //                 "with {} items",
+        //                 n
+        //             )
+        //         );
+        //     ret.x() = TypeTraits<double>::parse(YamlAdapter::sequence_item_at(node, 0));
+        //     ret.y() = TypeTraits<double>::parse(YamlAdapter::sequence_item_at(node, 1));
+        // } else {
+            auto value = get_node_scalar(node);
+            auto pos = value.find('x');
+            if (pos == std::string::npos)
+                throw ParseError(node, fmt::format("Invalid Vec2d '{}'", value));
+
+            if (!qi::parse(std::cbegin(value), std::cbegin(value) + pos, qi::double_, ret.x()))
+                throw ParseError(node, fmt::format("Invalid Vec2d value: '{}'", value));
+            if (!qi::parse(std::cbegin(value) + pos + 1, std::cend(value), qi::double_, ret.y()))
+                throw ParseError(node, fmt::format("Invalid Vec2d value: '{}'", value));
+        // }
         return ret;
     }
 

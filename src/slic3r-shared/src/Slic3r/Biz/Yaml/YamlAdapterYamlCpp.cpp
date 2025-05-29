@@ -1,7 +1,7 @@
 #include <boost/iostreams/stream.hpp>
-#include "YamlAdapterYamlCpp.hpp"
+#include "Slic3r/Biz/Yaml/YamlAdapterYamlCpp.hpp"
 
-namespace Yaml::YamlCpp {
+namespace Slic3r::Biz::Yaml::YamlCpp {
 
 YamlAdapterYamlCpp::Parser YamlAdapterYamlCpp::create_file_parser(const char* file_name)
 {

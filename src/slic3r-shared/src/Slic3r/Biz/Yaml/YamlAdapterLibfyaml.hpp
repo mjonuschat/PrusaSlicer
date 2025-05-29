@@ -1,6 +1,6 @@
 #pragma once
 
-#include "YamlAdapter.hpp"
+#include "Slic3r/Biz/Yaml/YamlAdapter.hpp"
 
 #include <string>
 #include <string_view>
@@ -8,7 +8,7 @@
 
 #include <libfyaml.h>
 
-namespace Yaml::Libfyaml {
+namespace Slic3r::Biz::Yaml::Libfyaml {
 
 namespace Details {
 struct DocumentDeleter

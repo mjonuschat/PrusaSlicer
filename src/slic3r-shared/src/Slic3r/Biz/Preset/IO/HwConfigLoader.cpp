@@ -1,12 +1,12 @@
 #include "Slic3r/Biz/Preset/IO/HwConfigLoader.hpp"
-#include "Slic3r/Biz/Preset/IO/YamlSlic3rTypes.hpp"
+#include "Slic3r/Biz/Yaml/YamlSlic3rTypes.hpp"
 #include "Slic3r/Log.hpp"
 
 #include <fstream>
 #include <ranges>
 #include <set>
 
-#include "Yaml.hpp"
+#include "Slic3r/Biz/Yaml/Yaml.hpp"
 #include "libslic3r/Utils/DirectoriesUtils.hpp"
 
 #include <charconv>

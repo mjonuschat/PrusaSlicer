@@ -1,12 +1,14 @@
 #include <catch2/catch_test_macros.hpp>
 #include "Slic3r/TestUtils/TestData.hpp"
 #include "Slic3r/Biz/Preset/IO/HwConfigLoader.hpp"
-#include "Slic3r/Biz/Preset/IO/Yaml.hpp"
+#include "Slic3r/Biz/Yaml/Yaml.hpp"
 
 TEST_CASE("Load HW Config")
 {
     using namespace Slic3r::Domain;
     using namespace Slic3r::Biz::Preset;
+    namespace Yaml = Slic3r::Biz::Yaml;
+
     const std::string filename = Tests::get_datadir().string() + "/preset/hw-config.yaml";
     IO::HwConfigLoader loader;
     try {

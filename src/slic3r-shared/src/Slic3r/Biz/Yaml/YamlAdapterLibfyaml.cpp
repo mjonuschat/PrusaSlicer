@@ -1,9 +1,9 @@
-#include "YamlAdapterLibfyaml.hpp"
+#include "Slic3r/Biz/Yaml/YamlAdapterLibfyaml.hpp"
 
 #include "Slic3r/Assert.hpp"
 #include <fmt/format.h>
 
-namespace Yaml::Libfyaml {
+namespace Slic3r::Biz::Yaml::Libfyaml {
 
 static Details::ParserPtr create_parser()
 {

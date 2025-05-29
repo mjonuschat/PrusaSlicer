@@ -2,8 +2,6 @@ kind: filament
 id: Buddy3D PETG
 inherits:
 - Prusament PETG
----
-kind: filament
 name: Buddy3D PETG
 values:
   filament_cost: '19.99'

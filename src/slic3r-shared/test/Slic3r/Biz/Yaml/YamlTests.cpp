@@ -1,7 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include "Slic3r/TestUtils/TestData.hpp"
-#include "Slic3r/Biz/Preset/IO/Yaml.hpp"
-#include "Slic3r/Biz/Preset/IO/YamlSlic3rTypes.hpp"
+#include "Slic3r/Biz/Yaml/Yaml.hpp"
+#include "Slic3r/Biz/Yaml/YamlSlic3rTypes.hpp"
 
 #include <catch2/catch_approx.hpp>
 #include <catch2/matchers/catch_matchers.hpp>
@@ -66,6 +66,8 @@ STRUCT_DESC_SIMPLE(Tests::Condition, condition);
 STRUCT_DESC_SIMPLE(Tests::VecData, data);
 STRUCT_DESC_SIMPLE(Tests::ValueData, presets, features);
 STRUCT_DESC_SIMPLE(Tests::SourceLocatedData, name);
+
+namespace Yaml = Slic3r::Biz::Yaml;
 
 TEST_CASE("Load Yaml from file into MyData", "[yaml]")
 {

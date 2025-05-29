@@ -2,7 +2,7 @@
 
 #include "Slic3r/Biz/Preset/PresetCollectionEvaluator.hpp"
 #include "Slic3r/Biz/Preset/IO/PresetLoader.hpp"
-#include "Slic3r/Biz/Preset/IO/Yaml.hpp"
+#include "Slic3r/Biz/Yaml/Yaml.hpp"
 
 using namespace Slic3r::Domain::Preset;
 using namespace Slic3r::Biz::Preset;

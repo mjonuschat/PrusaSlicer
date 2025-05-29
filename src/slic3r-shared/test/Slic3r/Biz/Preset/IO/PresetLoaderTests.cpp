@@ -1,13 +1,13 @@
 #include <catch2/catch_test_macros.hpp>
 #include "Slic3r/Biz/Preset/IO/PresetLoader.hpp"
-#include "Slic3r/Biz/Preset/IO/Yaml.hpp"
+#include "Slic3r/Biz/Yaml/Yaml.hpp"
 #include "Slic3r/TestUtils/TestData.hpp"
 
 TEST_CASE("PresetLoader preset-filament-common.yaml")
 {
     using namespace Slic3r::Biz::Preset::IO;
     using namespace Slic3r::Domain::Preset;
-
+    namespace Yaml = Slic3r::Biz::Yaml;
 
     PresetLoader loader;
     try {

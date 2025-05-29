@@ -1,6 +1,6 @@
 #include "Slic3r/Biz/Preset/IO/BundleLoader.hpp"
 
-#include "Yaml.hpp"
+#include "Slic3r/Biz/Yaml/Yaml.hpp"
 #include "Slic3r/Biz/Preset/IO/PresetLoader.hpp"
 #include "Slic3r/Biz/Preset/IO/HwConfigLoader.hpp"
 #include "spdlog/spdlog.h"

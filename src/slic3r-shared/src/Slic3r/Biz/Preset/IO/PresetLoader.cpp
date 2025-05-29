@@ -1,6 +1,6 @@
 #include "Slic3r/Biz/Preset/IO/PresetLoader.hpp"
-#include "Slic3r/Biz/Preset/IO/Yaml.hpp"
-#include "Slic3r/Biz/Preset/IO/YamlSlic3rTypes.hpp"
+#include "Slic3r/Biz/Yaml/Yaml.hpp"
+#include "Slic3r/Biz/Yaml/YamlSlic3rTypes.hpp"
 
 #include <boost/filesystem/directory.hpp>
 

@@ -31,7 +31,7 @@
 #error "No YAML library selected
 #endif
 
-namespace Yaml {
+namespace Slic3r::Biz::Yaml {
 
 #if defined(SLIC3R_YAML_LIBFYAML)
 using YamlAdapter = Libfyaml::YamlAdapterLibfyaml;
@@ -570,7 +570,7 @@ void parse_structs_by_discriminant(
     );
 }
 
-} // namespace Yaml
+} // namespace Slic3r::Biz::Yaml
 
 
 
@@ -600,11 +600,11 @@ struct BOOST_PP_CAT(Field_, BOOST_PP_TUPLE_ELEM(0, elem)) {                     
 // Struct - type
 // __VA_ARGS__ - field description tuple (field, opt_name, opt_impl_value, opt_validation)
 #define STRUCT_DESC(Struct, ...)                                                                   \
-namespace Yaml::Details {                                                                          \
+namespace Slic3r::Biz::Yaml::Details {                                                             \
 template <>                                                                                        \
 struct StructTraits<Struct> {                                                                      \
     BOOST_PP_SEQ_FOR_EACH(DETAILS_STRUCT_DESC_FIELD, Struct, BOOST_PP_VARIADIC_TO_SEQ(__VA_ARGS__))\
-    using Fields = ::Yaml::Details::TypeList<                                                      \
+    using Fields = ::Slic3r::Biz::Yaml::Details::TypeList<                                         \
         BOOST_PP_SEQ_ENUM(                                                                         \
             BOOST_PP_SEQ_TRANSFORM(                                                                \
                 DETAILS_STRUCT_DESC_FIELD_NAME_OP,                                                 \
@@ -646,7 +646,7 @@ struct StructTraits<Struct> {                                                   
 
 
 #define ENUM_DESC(Enum, ...)                                                                    \
-namespace Yaml::Details {                                                                       \
+namespace Slic3r::Biz::Yaml::Details {                                                          \
 template <>                                                                                     \
 struct EnumTraits<Enum>                                                                         \
 {                                                                                               \
@@ -671,6 +671,6 @@ struct EnumTraits<Enum>                                                         
         )                                                                                       \
     };                                                                                          \
 };                                                                                              \
-} //namespace Yaml::Details
+} //namespace Slic3r::Biz::Yaml::Details
 
 

@@ -287,10 +287,10 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/Preset/IO/HwConfigLoader.cpp
         include/Slic3r/Biz/Preset/IO/BundleLoader.hpp
         src/Slic3r/Biz/Preset/IO/BundleLoader.cpp
-        src/Slic3r/Biz/Preset/IO/Yaml.hpp
-        src/Slic3r/Biz/Preset/IO/Yaml.cpp
-        src/Slic3r/Biz/Preset/IO/YamlAdapter.hpp
-        src/Slic3r/Biz/Preset/IO/YamlSlic3rTypes.hpp
+        src/Slic3r/Biz/Yaml/Yaml.hpp
+        src/Slic3r/Biz/Yaml/Yaml.cpp
+        src/Slic3r/Biz/Yaml/YamlAdapter.hpp
+        src/Slic3r/Biz/Yaml/YamlSlic3rTypes.hpp
 
 		include/Slic3r/Biz/Preset/PresetEvaluator.hpp
 		src/Slic3r/Biz/Preset/PresetEvaluator.cpp
@@ -470,8 +470,8 @@ if ("${SLIC3R_YAML}" STREQUAL "libfyaml")
     set(YAML_LIB fyaml::fyaml)
     set(SLIC3R_SHARED_FILES
             ${SLIC3R_SHARED_FILES}
-            src/Slic3r/Biz/Preset/IO/YamlAdapterLibfyaml.hpp
-            src/Slic3r/Biz/Preset/IO/YamlAdapterLibfyaml.cpp
+            src/Slic3r/Yaml/YamlAdapterLibfyaml.hpp
+            src/Slic3r/Yaml/YamlAdapterLibfyaml.cpp
     )
     set(SLIC3R_YAML_DEFINE "-DSLIC3R_YAML_LIBFYAML")
 elseif ("${SLIC3R_YAML}" STREQUAL "yaml-cpp")
@@ -479,8 +479,8 @@ elseif ("${SLIC3R_YAML}" STREQUAL "yaml-cpp")
     set(YAML_LIB yaml-cpp::yaml-cpp)
     set(SLIC3R_SHARED_FILES
             ${SLIC3R_SHARED_FILES}
-            src/Slic3r/Biz/Preset/IO/YamlAdapterYamlCpp.hpp
-            src/Slic3r/Biz/Preset/IO/YamlAdapterYamlCpp.cpp
+            src/Slic3r/Biz/Yaml/YamlAdapterYamlCpp.hpp
+            src/Slic3r/Biz/Yaml/YamlAdapterYamlCpp.cpp
     )
     set(SLIC3R_YAML_DEFINE "-DSLIC3R_YAML_YAMLCPP")
 else ()
@@ -566,7 +566,7 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
         test/Slic3r/Biz/Expr/ParserTests.cpp
         test/Slic3r/Biz/Expr/EvalTests.cpp
 
-        test/Slic3r/Biz/Preset/IO/Yaml/YamlTests.cpp
+        test/Slic3r/Biz/Yaml/YamlTests.cpp
         test/Slic3r/Biz/Preset/IO/HwConfigDefLoaderTests.cpp
         test/Slic3r/Biz/Preset/IO/PresetLoaderTests.cpp
 		test/Slic3r/Biz/Preset/PresetCollectionEvaluatorTests.cpp

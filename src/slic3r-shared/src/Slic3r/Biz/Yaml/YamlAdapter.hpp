@@ -5,7 +5,7 @@
 #include <string>
 #include <string_view>
 
-namespace Yaml::Details {
+namespace Slic3r::Biz::Yaml::Details {
 enum class NodeType
 {
     Scalar, Sequence, Mapping

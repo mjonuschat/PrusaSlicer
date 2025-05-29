@@ -101,7 +101,7 @@ variants:
       filament_infill_max_crossing_speed: 140
     variants:
     # C1 HF0.4
-    - condition: tool.nozzle_high_flow    
+    - condition: tool.nozzle_high_flow
       name: '*ABS* @COREONE HF0.4'
       values:
         filament_max_volumetric_speed: 25
@@ -120,7 +120,7 @@ variants:
       filament_infill_max_crossing_speed: 140
     variants:
     # C1 HF0.5
-    - condition: tool.nozzle_high_flow    
+    - condition: tool.nozzle_high_flow
       name: '*ABS* @COREONE HF0.5'
       values:
         filament_max_volumetric_speed: 27
@@ -140,7 +140,7 @@ variants:
       filament_infill_max_crossing_speed: 0
     variants:
     # C1 HF0.6
-    - condition: tool.nozzle_high_flow    
+    - condition: tool.nozzle_high_flow
       name: '*ABS* @COREONE HF0.6'
       values:
         filament_max_volumetric_speed: 34
@@ -157,7 +157,7 @@ variants:
       pressure_advance: 0.01
     variants:
     # C1 HF0.8
-    - condition: tool.nozzle_high_flow    
+    - condition: tool.nozzle_high_flow
       name: '*ABS* @COREONE HF0.8'
       values:
         filament_max_volumetric_speed: 36
@@ -209,7 +209,7 @@ variants:
       filament_infill_max_crossing_speed: 140
     variants:
     # XL HF0.4
-    - condition: tool.nozzle_high_flow    
+    - condition: tool.nozzle_high_flow
       name: '*ABS* @XL HF0.4'
       values:
         filament_max_volumetric_speed: 26
@@ -227,7 +227,7 @@ variants:
       filament_infill_max_crossing_speed: 140
     variants:
     # XL HF0.5
-    - condition: tool.nozzle_high_flow    
+    - condition: tool.nozzle_high_flow
       name: '*ABS* @XL HF0.5'
       values:
         filament_max_volumetric_speed: 27
@@ -245,7 +245,7 @@ variants:
       filament_infill_max_crossing_speed: 140
     variants:
     # XL HF0.6
-    - condition: tool.nozzle_high_flow    
+    - condition: tool.nozzle_high_flow
       name: '*ABS* @XL HF0.6'
       values:
         filament_max_volumetric_speed: 34
@@ -261,7 +261,7 @@ variants:
       filament_infill_max_crossing_speed: 140
     variants:
     # XL HF0.8
-    - condition: tool.nozzle_high_flow    
+    - condition: tool.nozzle_high_flow
       name: '*ABS* @XL HF0.8'
       values:
         filament_max_volumetric_speed: 36
@@ -310,12 +310,12 @@ variants:
       filament_infill_max_crossing_speed: 140
     variants:
     # MK4 HF0.4
-    - condition: tool.nozzle_high_flow    
+    - condition: tool.nozzle_high_flow
       name: '*ABS* @MK4 HF0.4'
       values:
         filament_max_volumetric_speed: 26
         filament_ramming_parameters: 250 100 42.4194 42.4194| 0.05 42.4387 0.45 42.4387 0.95 42.4387 1.45 42.4387 1.95 42.4387 2.45 42.4387 2.95 42.4387 3.45 42.4387 3.95 42.4387 4.45 42.4387 4.95 42.4387
-        start_filament_gcode: M572 S0.02 ; Filament gcode\n\nM142 S40 ; set heatbreak target temp
+        start_filament_gcode: M142 S40 ; set heatbreak target temp
         pressure_advance: 0.02
         filament_infill_max_crossing_speed: 200
   # MK4 0.5
@@ -329,7 +329,7 @@ variants:
       filament_infill_max_crossing_speed: 140
     variants:
     # MK4 HF0.5
-    - condition: tool.nozzle_high_flow    
+    - condition: tool.nozzle_high_flow
       name: '*ABS* @MK4 HF0.5'
       values:
         filament_max_volumetric_speed: 27
@@ -349,7 +349,7 @@ variants:
       filament_infill_max_crossing_speed: 0
     variants:
     # MK4 HF0.6
-    - condition: tool.nozzle_high_flow    
+    - condition: tool.nozzle_high_flow
       name: '*ABS* @MK4 HF0.6'
       values:
         filament_max_volumetric_speed: 34
@@ -368,7 +368,7 @@ variants:
       pressure_advance: 0.01
     variants:
     # MK4 HF0.8
-    - condition: tool.nozzle_high_flow    
+    - condition: tool.nozzle_high_flow
       name: '*ABS* @MK4 HF0.8'
       values:
         filament_max_volumetric_speed: 36
@@ -421,7 +421,7 @@ variants:
       filament_infill_max_crossing_speed: 140
     variants:
     # MK4S HF0.4
-    - condition: tool.nozzle_high_flow    
+    - condition: tool.nozzle_high_flow
       name: '*ABS* @MK4S HF0.4'
       values:
         filament_max_volumetric_speed: 26
@@ -440,7 +440,7 @@ variants:
       filament_infill_max_crossing_speed: 140
     variants:
     # MK4S HF0.5
-    - condition: tool.nozzle_high_flow    
+    - condition: tool.nozzle_high_flow
       name: '*ABS* @MK4S HF0.5'
       values:
         filament_max_volumetric_speed: 27
@@ -460,7 +460,7 @@ variants:
       filament_infill_max_crossing_speed: 0
     variants:
     # MK4S HF0.6
-    - condition: tool.nozzle_high_flow    
+    - condition: tool.nozzle_high_flow
       name: '*ABS* @MK4S HF0.6'
       values:
         filament_max_volumetric_speed: 34
@@ -480,7 +480,7 @@ variants:
       pressure_advance: 0.01
     variants:
     # MK4S HF0.8
-    - condition: tool.nozzle_high_flow    
+    - condition: tool.nozzle_high_flow
       name: '*ABS* @MK4S HF0.8'
       values:
         filament_max_volumetric_speed: 36
@@ -505,10 +505,10 @@ variants:
     filament_unload_time: 12
     filament_unloading_speed: 20
     filament_unloading_speed_start: 120
-    idle_temperature: null
+    idle_temperature:
     filament_purge_multiplier: 100%
     filament_max_volumetric_speed: 8
-    filament_retract_lift: 0.2 
+    filament_retract_lift: 0.2
     filament_travel_max_lift: 1.5
     filament_travel_ramping_lift: 0
     filament_travel_slope: 1
@@ -521,7 +521,7 @@ variants:
       pressure_advance: 0.09
     variants:
     # MK3.5 0.25 MMU
-    - condition: 'feeder.base_model == "MMU"'
+    - condition: feeder.base_model == "MMU"
       name: '*ABS* @MK3.5 0.25 MMU'
       values:
         filament_max_volumetric_speed: 2
@@ -542,7 +542,7 @@ variants:
       filament_infill_max_crossing_speed: 0
     variants:
     # MK3.5 0.4 MMU
-    - condition: 'feeder.base_model == "MMU"'
+    - condition: feeder.base_model == "MMU"
       name: '*ABS* @MK3.5 0.4 MMU'
       values:
         filament_max_volumetric_speed: 11
@@ -562,7 +562,7 @@ variants:
       pressure_advance: 0.012
     variants:
     # MK3.5 0.6 MMU
-    - condition: 'feeder.base_model == "MMU"'
+    - condition: feeder.base_model == "MMU"
       name: '*ABS* @MK3.5 0.6 MMU'
       values:
         temperature: 260
@@ -578,15 +578,15 @@ variants:
   values:
     first_layer_bed_temperature: 100
     bed_temperature: 100
-    idle_temperature: null
-    filament_retract_lift: null
+    idle_temperature:
+    filament_retract_lift:
     filament_travel_max_lift: 1.5
     filament_travel_ramping_lift: 0
     filament_travel_slope: 1
     filament_max_volumetric_speed: 10
     # filament_retract_speed: 45
     # filament_deretract_speed: 25
-    filament_retract_before_travel: 2   
+    filament_retract_before_travel: 2
   variants:
   # MINI 0.25
   - condition: tool.nozzle_diameter == 0.25
@@ -633,7 +633,7 @@ variants:
     filament_unload_time: 12
     filament_unloading_speed: 20
     filament_unloading_speed_start: 100
-    idle_temperature: null
+    idle_temperature:
     filament_purge_multiplier: 100%
     filament_max_volumetric_speed: 11
     filament_retract_lift: 0.2
@@ -648,7 +648,7 @@ variants:
       pressure_advance: 0.08
     variants:
     # MK3 0.25 MMU
-    - condition: 'feeder.base_model == "MMU"'
+    - condition: feeder.base_model == "MMU"
       name: '*ABS* @MK3 0.25 MMU'
       values:
         filament_max_volumetric_speed: 2
@@ -661,7 +661,7 @@ variants:
       pressure_advance: 0.04
     variants:
     # MK3 0.4 MMU
-    - condition: 'feeder.base_model == "MMU"'
+    - condition: feeder.base_model == "MMU"
       name: '*ABS* @MK3 0.4 MMU'
       values:
         filament_max_volumetric_speed: 11
@@ -674,7 +674,7 @@ variants:
       pressure_advance: 0.04
     variants:
     # MK3 0.6 MMU
-    - condition: 'feeder.base_model == "MMU"'
+    - condition: feeder.base_model == "MMU"
       name: '*ABS* @MK3 0.6 MMU'
       values:
         filament_max_volumetric_speed: 12
@@ -705,7 +705,7 @@ variants:
     filament_unload_time: 0
     filament_unloading_speed: 90
     filament_unloading_speed_start: 100
-    idle_temperature: null
+    idle_temperature:
     filament_max_volumetric_speed: 11
     filament_retract_lift: 0.2
     filament_travel_ramping_lift: 0
@@ -745,7 +745,7 @@ variants:
     filament_unload_time: 0
     filament_unloading_speed: 90
     filament_unloading_speed_start: 100
-    idle_temperature: null
+    idle_temperature:
     filament_retract_lift: 0.2
     filament_travel_ramping_lift: 0
     filament_max_volumetric_speed: 11
