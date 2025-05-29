@@ -30,7 +30,7 @@ void store_sl1(const std::string& file_path, const Biz::Slicing::SLAResult& data
 /// </summary>
 /// <param name="cfg">Printer configuration like resolution, dimension etc</param>
 /// <returns>Copyable(for each layer) rasterizer</returns>
-std::unique_ptr<ISlaRasterizer> create_sl1_rasterizer(const SLAPrinterConfig& cfg);
+std::unique_ptr<ISlaRasterizer> create_sl1_rasterizer(const SLAPrintConfigView& cfg);
 
 class SL1Reader: public SLAArchiveReader {
     SLAImportQuality m_quality = SLAImportQuality::Balanced;

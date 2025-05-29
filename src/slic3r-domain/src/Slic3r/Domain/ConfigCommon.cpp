@@ -165,6 +165,13 @@ void init_common_fdm_sla_config_items(ConfigDefinitions& defs, const std::string
                          { int(SlicingMode::CloseHoles), "close_holes", L("Close holes") } };
     def->mode = comAdvanced;
     SET_DEFAULT(SlicingMode::Regular);
+
+    def = defs.add("printer_model", String);
+    def->location = technology == "FDM" ? "printer_settings" : "sla_printer_settings";
+    def->label = L("Printer type");
+    def->tooltip = L("Type of the printer.");
+    SET_DEFAULT("");
+
 }
 
 }

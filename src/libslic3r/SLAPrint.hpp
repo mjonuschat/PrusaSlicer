@@ -127,7 +127,7 @@ public:
     SLAPrintObject(const SLAPrintObject&) = delete;
     SLAPrintObject& operator=(const SLAPrintObject&) = delete;
 
-    const SLAPrintObjectConfig& config() const { return m_config; }
+    const SLAPrintObjectConfigView& config() const { return m_config; }
     const Transform3d&          trafo()  const { return m_trafo; }
     bool                        is_left_handed() const { return m_left_handed; }
 
@@ -233,11 +233,7 @@ protected:
     friend class PrintBaseWithState<SLAPrintStep, slapsCount>;
 
 public:
-	SLAPrintObject(SLAPrint* print, ModelObject* model_object);
-
-    void                    config_apply(const ConfigBase &other, bool ignore_nonexistent = false) { m_config.apply(other, ignore_nonexistent); }
-    void                    config_apply_only(const ConfigBase &other, const t_config_option_keys &keys, bool ignore_nonexistent = false)
-        { m_config.apply_only(other, keys, ignore_nonexistent); }
+	SLAPrintObject(SLAPrint* print, ModelObject* model_object, const SLAPrintObjectConfigView& config);
 
     void                    set_trafo(const Transform3d& trafo, bool left_handed) {
         m_trafo = trafo;
@@ -253,9 +249,11 @@ public:
     // Invalidate steps based on a set of parameters changed.
     bool                    invalidate_state_by_config_options(const std::vector<t_config_option_key> &opt_keys);
 
+    void set_config(const SLAPrintObjectConfigView& config) { m_config = config; }
+
 private:
     // Object specific configuration, pulled from the configuration layer.
-    SLAPrintObjectConfig                    m_config;
+    SLAPrintObjectConfigView                m_config;
 
     // Translation in Z + Rotation by Y and Z + Scaling / Mirroring.
     Transform3d                             m_trafo = Transform3d::Identity();
@@ -388,10 +386,7 @@ public:
         return (it == m_objects.end()) ? nullptr : *it;
     }
 
-    const SLAPrintConfig&       print_config() const { return m_print_config; }
-    const SLAPrinterConfig&     printer_config() const { return m_printer_config; }
-    const SLAMaterialConfig&    material_config() const { return m_material_config; }
-    const SLAPrintObjectConfig& default_object_config() const { return m_default_object_config; }
+    const SLAPrintConfigView& print_config() const { return m_print_config; }
 
     // Extracted value from the configuration objects
     Vec3d                       relative_correction() const;
@@ -459,10 +454,7 @@ public:
     OnSlaResult                     m_on_sla_result;
     OnSlaObject                     m_on_sla_object;
 
-    SLAPrintConfig                  m_print_config;
-    SLAPrinterConfig                m_printer_config;
-    SLAMaterialConfig               m_material_config;
-    SLAPrintObjectConfig            m_default_object_config;
+    SLAPrintConfigView              m_print_config;
 
     ::Slic3r::Biz::Slicing::Sla::PrintStatistics m_print_statistics;
 
@@ -506,13 +498,13 @@ void export_print(
 
 // Helper functions:
 
-bool is_zero_elevation(const SLAPrintObjectConfig &c);
+bool is_zero_elevation(const SLAPrintObjectConfigView &c);
 
-sla::SupportTreeConfig make_support_cfg(const SLAPrintObjectConfig& c);
+sla::SupportTreeConfig make_support_cfg(const SLAPrintObjectConfigView& c);
 
-sla::PadConfig::EmbedObject builtin_pad_cfg(const SLAPrintObjectConfig& c);
+sla::PadConfig::EmbedObject builtin_pad_cfg(const  SLAPrintObjectConfigView& c);
 
-sla::PadConfig make_pad_cfg(const SLAPrintObjectConfig& c);
+sla::PadConfig make_pad_cfg(const SLAPrintObjectConfigView& c);
 
 bool validate_pad(const indexed_triangle_set &pad, const sla::PadConfig &pcfg);
 

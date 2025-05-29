@@ -2,6 +2,7 @@
 
 #include "Slic3r/Domain/Config.hpp"
 #include "Slic3r/Domain/ConfigFDM.hpp"
+#include "Slic3r/Domain/ConfigSLA.hpp"
 
 namespace Slic3r {
 
@@ -19,7 +20,7 @@ class PrintRegionConfigView : public Domain::ConfigView
 {
 public:
     PrintRegionConfigView(
-        const Domain::FullConfigPtr& full_config,
+        const Domain::FullConfigFDMPtr& full_config,
         const Domain::ObjectSettingsPtr& object_settings,
         const std::vector<Domain::VolumeSettingsPtr>& volume_settings
     ):
@@ -39,7 +40,7 @@ class PrintObjectConfigView : public Domain::ConfigView
 {
 public:
     PrintObjectConfigView(
-        const Domain::FullConfigPtr& full_config,
+        const Domain::FullConfigFDMPtr& full_config,
         const Domain::ObjectSettingsPtr& object_settings
     ):
         ConfigView{full_config, {object_settings}}
@@ -54,13 +55,38 @@ class PrintConfigView : public Domain::ConfigView
 {
 public:
     PrintConfigView(
-        const Domain::FullConfigPtr& full_config
+        const Domain::FullConfigFDMPtr& full_config
     ):
         ConfigView{full_config, {}}
     {}
 
     PrintConfigView():
         ConfigView{std::make_shared<const Domain::FullConfigFDM>(Domain::FullConfigFDM::defaults()), {}}
+    {}
+};
+
+class SLAPrintConfigView : public Domain::ConfigView
+{
+public:
+    SLAPrintConfigView(
+        const Domain::FullConfigSLAPtr& full_config
+    ):
+        ConfigView{full_config, {}}
+    {}
+
+    SLAPrintConfigView():
+        ConfigView{std::make_shared<const Domain::FullConfigSLA>(Domain::FullConfigSLA::defaults()), {}}
+    {}
+};
+
+class SLAPrintObjectConfigView : public Domain::ConfigView
+{
+public:
+    SLAPrintObjectConfigView(
+        const Domain::FullConfigSLAPtr& full_config,
+        const Domain::SLAObjectSettingsPtr& object_settings
+    ):
+        ConfigView{full_config, {object_settings}}
     {}
 };
 

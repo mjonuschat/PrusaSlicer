@@ -71,6 +71,8 @@ set(SLIC3R_SOURCES
     Config.hpp
     ConfigPackFDMUtils.hpp
     ConfigPackFDMUtils.cpp
+    ConfigPackSLAUtils.hpp
+    ConfigPackSLAUtils.cpp
     CSGMesh/CSGMesh.hpp
     CSGMesh/SliceCSGMesh.hpp
     CSGMesh/ModelToCSGMesh.hpp

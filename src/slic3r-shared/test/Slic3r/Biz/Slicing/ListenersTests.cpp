@@ -177,8 +177,7 @@ struct SLAObjectListener : public ISLAObjectListener{
     bool object_recieved{false};
 };
 
-// TODO: Fix this once SLAPrint::apply() is implemented!
-TEST_CASE_METHOD(SlicingFixture, "Update reinitializes the process if printer technology differs", "[slicing][slicing-interactor][!shouldfail]") {
+TEST_CASE_METHOD(SlicingFixture, "Update reinitializes the process if printer technology differs", "[slicing][slicing-interactor]") {
     using namespace std::chrono_literals;
 
     using Slic3r::ConfigOptionEnum;

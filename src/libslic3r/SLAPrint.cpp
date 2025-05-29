@@ -22,6 +22,7 @@
 #include <boost/filesystem/path.hpp>
 #include <boost/log/trivial.hpp>
 
+#include "libslic3r/ConfigPackSLAUtils.hpp"
 #include "libslic3r/MultipleBeds.hpp"
 #include "libslic3r/Utils.hpp"
 
@@ -58,113 +59,116 @@ using Biz::Parser::PlaceholderParser;
 using ParserConfig = Biz::Parser::IO::Config;
 using Domain::ConfigPack;
 using Domain::ConfigPackSLA;
+using Domain::FullConfigSLA;
+using Domain::FullConfigSLAPtr;
+using Domain::SLAObjectSettings;
+using Domain::Percentage;
 
 
-bool is_zero_elevation(const SLAPrintObjectConfig &c)
+bool is_zero_elevation(const SLAPrintObjectConfigView &c)
 {
-    return c.pad_enable.getBool() && c.pad_around_object.getBool();
+    return c.get<bool>("pad_enable") && c.get<bool>("pad_around_object");
 }
 
 // Compile the argument for support creation from the static print config.
-sla::SupportTreeConfig make_support_cfg(const SLAPrintObjectConfig& c)
+sla::SupportTreeConfig make_support_cfg(const SLAPrintObjectConfigView& c)
 {
     sla::SupportTreeConfig scfg;
 
-    scfg.enabled = c.supports_enable.getBool();
-    scfg.tree_type = c.support_tree_type.value;
+    scfg.enabled = c.get<bool>("supports_enable");
+    scfg.tree_type = c.get<Domain::sla::SupportTreeType>("support_tree_type");
 
     switch(scfg.tree_type) {
-    case sla::SupportTreeType::Default: {
-        scfg.head_front_radius_mm = 0.5*c.support_head_front_diameter.getFloat();
-        double pillar_r = 0.5 * c.support_pillar_diameter.getFloat();
+    case Domain::sla::SupportTreeType::Default: {
+        scfg.head_front_radius_mm = 0.5*c.get<double>("support_head_front_diameter");
+        double pillar_r = 0.5 * c.get<double>("support_pillar_diameter");
         scfg.head_back_radius_mm = pillar_r;
         scfg.head_fallback_radius_mm =
-            0.01 * c.support_small_pillar_diameter_percent.getFloat() * pillar_r;
-        scfg.head_penetration_mm = c.support_head_penetration.getFloat();
-        scfg.head_width_mm = c.support_head_width.getFloat();
+            c.get<Percentage>("support_small_pillar_diameter_percent").get_abs_value(1.0) * pillar_r;
+        scfg.head_penetration_mm = c.get<double>("support_head_penetration");
+        scfg.head_width_mm = c.get<double>("support_head_width");
         scfg.object_elevation_mm = is_zero_elevation(c) ?
-                                       0. : c.support_object_elevation.getFloat();
-        scfg.bridge_slope = c.support_critical_angle.getFloat() * PI / 180.0 ;
-        scfg.max_bridge_length_mm = c.support_max_bridge_length.getFloat();
-        scfg.max_pillar_link_distance_mm = c.support_max_pillar_link_distance.getFloat();
-        scfg.pillar_connection_mode = c.support_pillar_connection_mode.value;
-        scfg.ground_facing_only = c.support_buildplate_only.getBool();
-        scfg.pillar_widening_factor = c.support_pillar_widening_factor.getFloat();
-        scfg.base_radius_mm = 0.5*c.support_base_diameter.getFloat();
-        scfg.base_height_mm = c.support_base_height.getFloat();
+                                       0. : c.get<double>("support_object_elevation");
+        scfg.bridge_slope = c.get<double>("support_critical_angle") * PI / 180.0 ;
+        scfg.max_bridge_length_mm = c.get<double>("support_max_bridge_length");
+        scfg.max_pillar_link_distance_mm = c.get<double>("support_max_pillar_link_distance");
+        scfg.pillar_connection_mode = c.get<Domain::sla::PillarConnectionMode>("support_pillar_connection_mode");
+        scfg.ground_facing_only = c.get<bool>("support_buildplate_only");
+        scfg.pillar_widening_factor = c.get<double>("support_pillar_widening_factor");
+        scfg.base_radius_mm = 0.5*c.get<double>("support_base_diameter");
+        scfg.base_height_mm = c.get<double>("support_base_height");
         scfg.pillar_base_safety_distance_mm =
-            c.support_base_safety_distance.getFloat() < EPSILON ?
-                scfg.safety_distance_mm : c.support_base_safety_distance.getFloat();
+            c.get<double>("support_base_safety_distance") < EPSILON ?
+                scfg.safety_distance_mm : c.get<double>("support_base_safety_distance");
 
-        scfg.max_bridges_on_pillar = unsigned(c.support_max_bridges_on_pillar.getInt());
-        scfg.max_weight_on_model_support = c.support_max_weight_on_model.getFloat();
+        scfg.max_bridges_on_pillar = unsigned(c.get<int>("support_max_bridges_on_pillar"));
+        scfg.max_weight_on_model_support = c.get<double>("support_max_weight_on_model");
         break;
     }
-    case sla::SupportTreeType::Branching:
+    case Domain::sla::SupportTreeType::Branching:
         [[fallthrough]];
-    case sla::SupportTreeType::Organic:{
-        scfg.head_front_radius_mm = 0.5*c.branchingsupport_head_front_diameter.getFloat();
-        double pillar_r = 0.5 * c.branchingsupport_pillar_diameter.getFloat();
+    case Domain::sla::SupportTreeType::Organic:{
+        scfg.head_front_radius_mm = 0.5*c.get<double>("branchingsupport_head_front_diameter");
+        double pillar_r = 0.5 * c.get<double>("branchingsupport_pillar_diameter");
         scfg.head_back_radius_mm = pillar_r;
         scfg.head_fallback_radius_mm =
-            0.01 * c.branchingsupport_small_pillar_diameter_percent.getFloat() * pillar_r;
-        scfg.head_penetration_mm = c.branchingsupport_head_penetration.getFloat();
-        scfg.head_width_mm = c.branchingsupport_head_width.getFloat();
+            0.01 * c.get<double>("branchingsupport_small_pillar_diameter_percent") * pillar_r;
+        scfg.head_penetration_mm = c.get<double>("branchingsupport_head_penetration");
+        scfg.head_width_mm = c.get<double>("branchingsupport_head_width");
         scfg.object_elevation_mm = is_zero_elevation(c) ?
-                                       0. : c.branchingsupport_object_elevation.getFloat();
-        scfg.bridge_slope = c.branchingsupport_critical_angle.getFloat() * PI / 180.0 ;
-        scfg.max_bridge_length_mm = c.branchingsupport_max_bridge_length.getFloat();
-        scfg.max_pillar_link_distance_mm = c.branchingsupport_max_pillar_link_distance.getFloat();
-        scfg.pillar_connection_mode = c.branchingsupport_pillar_connection_mode.value;
-        scfg.ground_facing_only = c.branchingsupport_buildplate_only.getBool();
-        scfg.pillar_widening_factor = c.branchingsupport_pillar_widening_factor.getFloat();
-        scfg.base_radius_mm = 0.5*c.branchingsupport_base_diameter.getFloat();
-        scfg.base_height_mm = c.branchingsupport_base_height.getFloat();
+                                       0. : c.get<double>("branchingsupport_object_elevation");
+        scfg.bridge_slope = c.get<double>("branchingsupport_critical_angle") * PI / 180.0 ;
+        scfg.max_bridge_length_mm = c.get<double>("branchingsupport_max_bridge_length");
+        scfg.max_pillar_link_distance_mm = c.get<double>("branchingsupport_max_pillar_link_distance");
+        scfg.pillar_connection_mode = c.get<Domain::sla::PillarConnectionMode>("branchingsupport_pillar_connection_mode");
+        scfg.ground_facing_only = c.get<bool>("branchingsupport_buildplate_only");
+        scfg.pillar_widening_factor = c.get<double>("branchingsupport_pillar_widening_factor");
+        scfg.base_radius_mm = 0.5*c.get<double>("branchingsupport_base_diameter");
+        scfg.base_height_mm = c.get<double>("branchingsupport_base_height");
         scfg.pillar_base_safety_distance_mm =
-            c.branchingsupport_base_safety_distance.getFloat() < EPSILON ?
-                scfg.safety_distance_mm : c.branchingsupport_base_safety_distance.getFloat();
+            c.get<double>("branchingsupport_base_safety_distance") < EPSILON ?
+                scfg.safety_distance_mm : c.get<double>("branchingsupport_base_safety_distance");
 
-        scfg.max_bridges_on_pillar = unsigned(c.branchingsupport_max_bridges_on_pillar.getInt());
-        scfg.max_weight_on_model_support = c.branchingsupport_max_weight_on_model.getFloat();
+        scfg.max_bridges_on_pillar = unsigned(c.get<int>("branchingsupport_max_bridges_on_pillar"));
+        scfg.max_weight_on_model_support = c.get<double>("branchingsupport_max_weight_on_model");
         break;
     }
     }
-    
+
     return scfg;
 }
 
-sla::PadConfig::EmbedObject builtin_pad_cfg(const SLAPrintObjectConfig& c)
+sla::PadConfig::EmbedObject builtin_pad_cfg(const SLAPrintObjectConfigView& c)
 {
     sla::PadConfig::EmbedObject ret;
-    
+
     ret.enabled = is_zero_elevation(c);
-    
+
     if(ret.enabled) {
-        ret.everywhere           = c.pad_around_object_everywhere.getBool();
-        ret.object_gap_mm        = c.pad_object_gap.getFloat();
-        ret.stick_width_mm       = c.pad_object_connector_width.getFloat();
-        ret.stick_stride_mm      = c.pad_object_connector_stride.getFloat();
-        ret.stick_penetration_mm = c.pad_object_connector_penetration
-                                       .getFloat();
+        ret.everywhere           = c.get<bool>("pad_around_object_everywhere");
+        ret.object_gap_mm        = c.get<double>("pad_object_gap");
+        ret.stick_width_mm       = c.get<double>("pad_object_connector_width");
+        ret.stick_stride_mm      = c.get<double>("pad_object_connector_stride");
+        ret.stick_penetration_mm = c.get<double>("pad_object_connector_penetration");
     }
-    
+
     return ret;
 }
 
-sla::PadConfig make_pad_cfg(const SLAPrintObjectConfig& c)
+sla::PadConfig make_pad_cfg(const SLAPrintObjectConfigView& c)
 {
     sla::PadConfig pcfg;
-    
-    pcfg.wall_thickness_mm = c.pad_wall_thickness.getFloat();
-    pcfg.wall_slope = c.pad_wall_slope.getFloat() * PI / 180.0;
-    
-    pcfg.max_merge_dist_mm = c.pad_max_merge_distance.getFloat();
-    pcfg.wall_height_mm = c.pad_wall_height.getFloat();
-    pcfg.brim_size_mm = c.pad_brim_size.getFloat();
-    
+
+    pcfg.wall_thickness_mm = c.get<double>("pad_wall_thickness");
+    pcfg.wall_slope = c.get<double>("pad_wall_slope") * PI / 180.0;
+
+    pcfg.max_merge_dist_mm = c.get<double>("pad_max_merge_distance");
+    pcfg.wall_height_mm = c.get<double>("pad_wall_height");
+    pcfg.brim_size_mm = c.get<double>("pad_brim_size");
+
     // set builtin pad implicitly ON
     pcfg.embed_object = builtin_pad_cfg(c);
-    
+
     return pcfg;
 }
 
@@ -300,20 +304,6 @@ static t_config_option_keys print_config_diffs(const StaticPrintConfig     &curr
 }
 
 namespace {
-
-void update_placeholder_parser(PlaceholderParser& parser, const ParserConfig& config)
-{
-    PANIC("todo");
-    // Apply variables to placeholder parser. The placeholder parser is currently used
-    // only to generate the output file name.
-    // update_apply_status(this->invalidate_step(slapsRasterize));
-    parser.apply_config(config);
-    // Set the profile aliases for the PrintBase::output_filename()
-    //parser.set("print_preset", config.option("sla_print_settings_id")->clone());
-    //parser.set("material_preset", config.option("sla_material_settings_id")->clone());
-    //parser.set("printer_preset", config.option("printer_settings_id")->clone());
-    //parser.set("physical_printer_preset", config.option("physical_printer_settings_id")->clone());
-}
 
 using StepsPerModelObjectId = std::map<ObjectID, std::set<SLAPrintObjectStep>>;
 
@@ -690,7 +680,7 @@ struct PrintObjectsSyncResult {
 PrintObjectsSyncResult sync_print_objects(
     const ModelObjectPtrs& model_objects,
     const std::map<ObjectID, SLAPrintObject*>& reuse_candidates,
-    const SLAPrintObjectConfig& default_config,
+    const FullConfigSLAPtr& new_full_config,
     const Vec3d relative_correction,
     SLAPrint* print
 )
@@ -705,17 +695,18 @@ PrintObjectsSyncResult sync_print_objects(
 
         const auto it{reuse_candidates.find(model_object->id())};
 
+        const SLAPrintObjectConfigView new_config{
+            new_full_config,
+            std::make_shared<SLAObjectSettings>(model_object->object_settings_sla)
+        };
+
         if (it == reuse_candidates.end()) {
-            auto print_object = new SLAPrintObject(print, model_object);
+            auto print_object = new SLAPrintObject(print, model_object, new_config);
 
             // FIXME: this invalidates the transformed mesh in SLAPrintObject
             // which is expensive to calculate (especially the raw_mesh() call)
             print_object->set_trafo(sla_trafo(*model_object, relative_correction), model_object->instances.front()->is_left_handed());
-
             print_object->set_instances(std::move(new_instances));
-
-            print_object->config_apply(default_config, true);
-            print_object->config_apply(model_object->config.get(), true);
             result.objects.emplace_back(print_object);
             continue;
         }
@@ -723,9 +714,7 @@ PrintObjectsSyncResult sync_print_objects(
         SLAPrintObject* reused_print_object{it->second};
 
         // Synchronize Object's config.
-        SLAPrintObjectConfig new_config = default_config;
-        new_config.apply(model_object->config.get(), true);
-        t_config_option_keys diff = reused_print_object->config().diff(new_config);
+        std::vector<std::string> diff = reused_print_object->config().diff_keys(new_config);
         if (! diff.empty()) {
             AllOrSome<PrintObjectSteps>& steps{
                 result.invalidated_steps.object[reused_print_object]
@@ -734,7 +723,7 @@ PrintObjectsSyncResult sync_print_objects(
                 auto& object_steps{std::get<PrintObjectSteps>(steps)};
                 object_steps.merge(get_object_steps_invalidated_by_config_options(diff));
             }
-            reused_print_object->config_apply_only(new_config, diff, true);
+            reused_print_object->set_config(new_config);
         }
 
         if (new_instances != reused_print_object->instances()) {
@@ -818,7 +807,7 @@ struct ModelSyncResult {
 ModelSyncResult sync_model(
     const Model& old_model,
     const Model& new_model,
-    const SLAPrintObjectConfig& default_object_config,
+    const FullConfigSLAPtr& new_full_config,
     const PrintObjects& old_objects,
     const std::map<ObjectID, ModelObject*>& reuse_candidates,
     const Vec3d& relative_correction,
@@ -838,7 +827,7 @@ ModelSyncResult sync_model(
         sync_print_objects(
             model_objects_sync_result.objects,
             model_objects_sync_result.reuse_candidates,
-            default_object_config,
+            new_full_config,
             relative_correction,
             print
         )
@@ -885,93 +874,76 @@ SLAPrint::ApplyStatus SLAPrint::apply(
     std::vector<std::string>* warnings
 )
 {
-//    this->call_cancel_callback();
-//#ifdef _DEBUG
-//    check_model_ids_validity(model);
-//#endif /* _DEBUG */
-//
-//    // Normalize the config.
-//    config.option("sla_print_settings_id",        true);
-//    config.option("sla_material_settings_id",     true);
-//    config.option("printer_settings_id",          true);
-//    config.option("physical_printer_settings_id", true);
-//    // Collect changes to print config.
-//    DynamicPrintConfig mat_overrides;
-//    t_config_option_keys print_diff    = m_print_config.diff(config);
-//    t_config_option_keys printer_diff  = print_config_diffs(m_printer_config, config, mat_overrides);
-//    t_config_option_keys material_diff = m_material_config.diff(config);
-//    t_config_option_keys object_diff   = print_config_diffs(m_default_object_config, config, mat_overrides);
-//
-//    config.apply(mat_overrides, true);
-//
-//    // Grab the lock for the Print / PrintObject milestones.
-//    std::scoped_lock<std::mutex> lock(this->state_mutex());
-//
-//    const InvalidatedSteps config_invalidated_steps{
-//        merge(
-//            std::vector<AllOrSome<PrintSteps>>{
-//                get_steps_invalidated_by_config_options(print_diff),
-//                get_steps_invalidated_by_config_options(printer_diff),
-//                get_steps_invalidated_by_config_options(material_diff)
-//            }
-//        ),
-//        {}
-//    };
-//
-//    update_placeholder_parser(m_placeholder_parser, config);
-//
-//    // It is also safe to change m_config now after this->invalidate_state_by_config_options() call.
-//    m_print_config.apply_only(config, print_diff, true);
-//    m_printer_config.apply_only(config, printer_diff, true);
-//    // Handle changes to material config.
-//    m_material_config.apply_only(config, material_diff, true);
-//    // Handle changes to object config defaults
-//    m_default_object_config.apply_only(config, object_diff, true);
-//
-//    const bool all_invalidated{std::holds_alternative<AllSteps>(config_invalidated_steps.print)};
-//
-//    std::map<ObjectID, ModelObject*> reuse_candidates;
-//    if (model.id() == m_model.id() && !all_invalidated) {
-//        for (ModelObject* model_object: m_model.objects) {
-//            reuse_candidates.insert({model_object->id(), model_object});
-//        }
-//    }
-//
-//    m_model.copy_id(model);
-//
-//    const ModelSyncResult model_sync_result{sync_model(
-//        m_model,
-//        model,
-//        m_default_object_config,
-//        m_objects,
-//        reuse_candidates,
-//        this->relative_correction(),
-//        this
-//    )};
-//
-//    const InvalidatedSteps invalidated_steps{merge({
-//        config_invalidated_steps,
-//        model_sync_result.invalidated_steps
-//    })};
-//
-//    m_model.objects = model_sync_result.model_objects;
-//    m_objects = model_sync_result.print_objects;
-//
-//    if(m_objects.empty()) {
-//        m_printer_input = {};
-//    }
-//
-//    m_full_print_config = std::move(config);
-//
-//    const bool changed{!invalidated_steps.empty()};
-//    const bool invalidated{this->invalidate_object_steps(invalidated_steps)};
-//
-//    if (invalidated) {
-//        return APPLY_STATUS_INVALIDATED;
-//    }
-//    if (changed) {
-//        return APPLY_STATUS_CHANGED;
-//    }
+    this->call_cancel_callback();
+#ifdef _DEBUG
+    check_model_ids_validity(model);
+#endif /* _DEBUG */
+
+    const auto new_full_config_ptr{std::make_shared<FullConfigSLA>(Biz::Slicing::get_full_config(config_pack))};
+    const SLAPrintConfigView new_print_config{new_full_config_ptr};
+
+    // Collect changes to print config.
+    const std::vector<std::string> config_diff{new_print_config.diff_keys(m_print_config)};
+
+    // Grab the lock for the Print / PrintObject milestones.
+    std::scoped_lock<std::mutex> lock(this->state_mutex());
+
+    const InvalidatedSteps config_invalidated_steps{
+        merge(
+            std::vector<AllOrSome<PrintSteps>>{
+                get_steps_invalidated_by_config_options(config_diff),
+            }
+        ),
+        {}
+    };
+
+    m_placeholder_parser = PlaceholderParser{Biz::Slicing::get_parser_config(config_pack)};
+
+    // It is also safe to change m_config now after this->invalidate_state_by_config_options() call.
+    m_print_config = new_print_config;
+
+    const bool all_invalidated{std::holds_alternative<AllSteps>(config_invalidated_steps.print)};
+
+    std::map<ObjectID, ModelObject*> reuse_candidates;
+    if (model.id() == m_model.id() && !all_invalidated) {
+        for (ModelObject* model_object: m_model.objects) {
+            reuse_candidates.insert({model_object->id(), model_object});
+        }
+    }
+
+    m_model.copy_id(model);
+
+    const ModelSyncResult model_sync_result{sync_model(
+        m_model,
+        model,
+        new_full_config_ptr,
+        m_objects,
+        reuse_candidates,
+        this->relative_correction(),
+        this
+    )};
+
+    const InvalidatedSteps invalidated_steps{merge({
+        config_invalidated_steps,
+        model_sync_result.invalidated_steps
+    })};
+
+    m_model.objects = model_sync_result.model_objects;
+    m_objects = model_sync_result.print_objects;
+
+    if(m_objects.empty()) {
+        m_printer_input = {};
+    }
+
+    const bool changed{!invalidated_steps.empty()};
+    const bool invalidated{this->invalidate_object_steps(invalidated_steps)};
+
+    if (invalidated) {
+        return APPLY_STATUS_INVALIDATED;
+    }
+    if (changed) {
+        return APPLY_STATUS_CHANGED;
+    }
     return APPLY_STATUS_UNCHANGED;
 }
 
@@ -1006,7 +978,7 @@ ParserConfig create_stats_placeholders()
 std::string SLAPrint::output_filename(const std::string &filename_base) const
 {
     ParserConfig config = this->finished() ? to_config(m_print_statistics) : create_stats_placeholders();
-    std::string default_ext = get_default_extension(m_printer_config.sla_archive_format.value.c_str());
+    std::string default_ext = get_default_extension(m_print_config.get<std::string>("sla_archive_format").c_str());
     if (default_ext.empty())
         default_ext = "sl1";
 
@@ -1014,7 +986,7 @@ std::string SLAPrint::output_filename(const std::string &filename_base) const
 
     config.set("default_output_extension", default_ext);
 
-    return this->PrintBase::output_filename(m_print_config.output_filename_format.value, default_ext, filename_base, &config);
+    return this->PrintBase::output_filename(m_print_config.get<std::string>("output_filename_format"), default_ext, filename_base, &config);
 }
 
 std::string SLAPrint::validate(std::vector<std::string>*) const
@@ -1368,8 +1340,11 @@ bool SLAPrint::is_step_done(SLAPrintObjectStep step) const
     return true;
 }
 
-SLAPrintObject::SLAPrintObject(SLAPrint *print, ModelObject *model_object)
-    : Inherited(print, model_object)
+SLAPrintObject::SLAPrintObject(
+    SLAPrint* print, ModelObject* model_object, const SLAPrintObjectConfigView& config
+)
+    : Inherited(print, model_object),
+    m_config(config)
 {}
 
 bool SLAPrintObject::invalidate_step(SLAPrintObjectStep step)
@@ -1410,11 +1385,11 @@ bool SLAPrintObject::invalidate_all_steps()
 double SLAPrintObject::get_elevation() const {
     if (is_zero_elevation(m_config)) return 0.;
 
-    bool en = m_config.supports_enable.getBool();
+    bool en = m_config.get<bool>("supports_enable");
 
-    double ret = en ? m_config.support_object_elevation.getFloat() : 0.;
+    double ret = en ? m_config.get<double>("support_object_elevation") : 0.;
 
-    if(m_config.pad_enable.getBool()) {
+    if(m_config.get<bool>("pad_enable")) {
         // Normally the elevation for the pad itself would be the thickness of
         // its walls but currently it is half of its thickness. Whatever it
         // will be in the future, we provide the config to the get_pad_elevation
@@ -1436,7 +1411,7 @@ double SLAPrintObject::get_current_elevation() const
     if(!has_supports && !has_pad)
         return 0;
     else if(has_supports && !has_pad) {
-        return m_config.support_object_elevation.getFloat();
+        return m_config.get<double>("support_object_elevation");
     }
 
     return get_elevation();
@@ -1446,16 +1421,16 @@ Vec3d SLAPrint::relative_correction() const
 {
     Vec3d corr(1., 1., 1.);
 
-    if(printer_config().relative_correction.values.size() >= 2) {
-        corr.x() = printer_config().relative_correction_x.value;
-        corr.y() = printer_config().relative_correction_y.value;
-        corr.z() = printer_config().relative_correction_z.value;
+    if(print_config().get<std::vector<double>>("relative_correction").size() >= 2) {
+        corr.x() = print_config().get<double>("relative_correction_x");
+        corr.y() = print_config().get<double>("relative_correction_y");
+        corr.z() = print_config().get<double>("relative_correction_z");
     }
 
-    if(material_config().material_correction.values.size() >= 2) {
-        corr.x() *= material_config().material_correction_x.value;
-        corr.y() *= material_config().material_correction_y.value;
-        corr.z() *= material_config().material_correction_z.value;
+    if(print_config().get<std::vector<double>>("material_correction").size() >= 2) {
+        corr.x() *= print_config().get<double>("material_correction_x");
+        corr.y() *= print_config().get<double>("material_correction_y");
+        corr.z() *= print_config().get<double>("material_correction_z");
     }
 
     return corr;
@@ -1493,7 +1468,7 @@ const ExPolygons &SliceRecord::get_slice(SliceOrigin o) const
 
 const TriangleMesh& SLAPrintObject::support_mesh() const
 {
-    if (m_config.supports_enable.getBool() &&
+    if (m_config.get<bool>("supports_enable") &&
         is_step_done(slaposSupportTree) &&
         m_preview.has_value() &&
         m_preview->support_structure)
@@ -1503,7 +1478,7 @@ const TriangleMesh& SLAPrintObject::support_mesh() const
 
 const TriangleMesh& SLAPrintObject::pad_mesh() const
 {
-    if (m_config.pad_enable.getBool() && is_step_done(slaposPad) && 
+    if (m_config.get<bool>("pad_enable") && is_step_done(slaposPad) && 
         m_preview.has_value() && m_preview->pad)
         return *m_preview->pad;
     return EMPTY_MESH;

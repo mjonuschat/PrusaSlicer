@@ -16,7 +16,7 @@ namespace Slic3r {
 /// </summary>
 /// <param name="cfg">Printer configuration like resolution, dimension etc</param>
 /// <returns>Copyable(for each layer) rasterizer</returns>
-std::unique_ptr<ISlaRasterizer> create_sl1_svg_rasterizer(const SLAPrinterConfig& cfg);
+std::unique_ptr<ISlaRasterizer> create_sl1_svg_rasterizer(const SLAPrintConfigView& cfg);
 
 } // namespace Slic3r
 

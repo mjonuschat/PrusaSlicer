@@ -2369,12 +2369,6 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->mode = comExpert;
     def->init_fn = [](ConfigItem& item) { item.vec<std::string>() = {}; };
 
-    def = defs.add("printer_model", String);
-    def->location = "printer_settings";
-    def->label = L("Printer type");
-    def->tooltip = L("Type of the printer.");
-    SET_DEFAULT("");
-
     def = defs.add("printer_notes", String);
     def->location = "printer_settings";
     def->label = L("Printer notes");

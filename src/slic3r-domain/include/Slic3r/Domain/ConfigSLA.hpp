@@ -92,6 +92,17 @@ public:
                   const SLAMaterialSettings& material_s);
 
     std::string_view name() const override { return "SLA"; }
+
+    static FullConfigSLA defaults() {
+        return FullConfigSLA{
+            SLAPrinterSettings{},
+            SLAPrintSettings{},
+            SLAMaterialSettings{}
+        };
+    }
 };
+
+using FullConfigSLAPtr = std::shared_ptr<const FullConfigSLA>;
+using SLAObjectSettingsPtr = std::shared_ptr<const SLAObjectSettings>;
 
 } // namespace Slic3r::Domain
