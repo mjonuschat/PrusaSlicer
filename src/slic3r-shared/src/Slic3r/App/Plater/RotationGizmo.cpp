@@ -323,7 +323,7 @@ static void build_rotate_node(AxisType axis, Scene::NodeBuilder& builder, Render
 
             Render::Material material = Render::Material{}
                 .set_shader(device.context().shader_manager().shader("gouraud_light"))
-                .set_uniform("emission_factor", 0.0f);
+                .set_uniform("uniform_color", color);
 
             child_bldr
                 .set_debug_name("cube")
@@ -343,7 +343,7 @@ static void build_rotate_node(AxisType axis, Scene::NodeBuilder& builder, Render
 
             Render::Material material = Render::Material{}
                 .set_shader(device.context().shader_manager().shader("gouraud_light"))
-                .set_uniform("emission_factor", 0.0f);
+                .set_uniform("uniform_color", color);
 
             child_bldr
                 .set_debug_name("cone ccw")
@@ -364,7 +364,7 @@ static void build_rotate_node(AxisType axis, Scene::NodeBuilder& builder, Render
 
             Render::Material material = Render::Material{}
                 .set_shader(device.context().shader_manager().shader("gouraud_light"))
-                .set_uniform("emission_factor", 0.0f);
+                .set_uniform("uniform_color", color);
 
             child_bldr
                 .set_debug_name("cone cw")
