@@ -156,19 +156,6 @@ static bool custom_per_printz_gcodes_tool_changes_differ(
 	return false;
 }
 
-// Prepare for storing of the full print config into new_full_config to be exported into the G-code and to be used by the PlaceholderParser.
-static t_config_option_keys full_print_config_diffs(const DynamicPrintConfig &current_full_config, const DynamicPrintConfig &new_full_config)
-{
-    t_config_option_keys full_config_diff;
-    for (const t_config_option_key &opt_key : new_full_config.keys()) {
-        const ConfigOption *opt_old = current_full_config.option(opt_key);
-        const ConfigOption *opt_new = new_full_config.option(opt_key);
-        if (opt_old == nullptr || *opt_new != *opt_old)
-            full_config_diff.emplace_back(opt_key);
-    }
-    return full_config_diff;
-}
-
 // Repository for solving partial overlaps of ModelObject::layer_config_ranges.
 // Here the const DynamicPrintConfig* point to the config in ModelObject::layer_config_ranges.
 class LayerRanges

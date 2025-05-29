@@ -249,60 +249,6 @@ std::vector<Domain::ObjectID> SLAPrint::print_object_ids() const
     return out;
 }
 
-static t_config_option_keys print_config_diffs(const StaticPrintConfig     &current_config,
-                                               const DynamicPrintConfig &new_full_config,
-                                               DynamicPrintConfig       &material_overrides)
-{
-    using namespace std::string_view_literals;
-
-    static const constexpr StaticSet overriden_keys = {
-        "support_head_front_diameter"sv,
-        "support_head_penetration"sv,
-        "support_head_width"sv,
-        "support_pillar_diameter"sv,
-        "branchingsupport_head_front_diameter"sv,
-        "branchingsupport_head_penetration"sv,
-        "branchingsupport_head_width"sv,
-        "branchingsupport_pillar_diameter"sv,
-        "support_points_density_relative"sv,
-        "elefant_foot_compensation"sv,
-        "absolute_correction"sv,
-    };
-
-    static constexpr auto material_ow_prefix = "material_ow_";
-
-    t_config_option_keys           print_diff;
-    for (const t_config_option_key &opt_key : current_config.keys()) {
-        const ConfigOption *opt_old = current_config.option(opt_key);
-        assert(opt_old != nullptr);
-        const ConfigOption *opt_new = new_full_config.option(opt_key);
-        // assert(opt_new != nullptr);
-        if (opt_new == nullptr)
-            //FIXME This may happen when executing some test cases.
-            continue;
-        const ConfigOption *opt_new_override = std::binary_search(overriden_keys.begin(), overriden_keys.end(), opt_key) ? new_full_config.option(material_ow_prefix + opt_key) : nullptr;
-        if (opt_new_override != nullptr && ! opt_new_override->is_nil()) {
-            // An override is available at some of the material presets.
-            bool overriden = opt_new->overriden_by(opt_new_override);
-            if (overriden || *opt_old != *opt_new) {
-                auto opt_copy = opt_new->clone();
-                opt_copy->apply_override(opt_new_override);
-                bool changed = *opt_old != *opt_copy;
-                if (changed)
-                    print_diff.emplace_back(opt_key);
-                if (changed || overriden) {
-                    // overrides will be applied to the placeholder parser, which layers these parameters over full_print_config.
-                    material_overrides.set_key_value(opt_key, opt_copy);
-                } else
-                    delete opt_copy;
-            }
-        } else if (*opt_new != *opt_old)
-            print_diff.emplace_back(opt_key);
-    }
-
-    return print_diff;
-}
-
 namespace {
 
 using StepsPerModelObjectId = std::map<ObjectID, std::set<SLAPrintObjectStep>>;
