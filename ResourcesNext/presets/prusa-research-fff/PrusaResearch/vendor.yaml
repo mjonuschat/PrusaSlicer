@@ -1,0 +1,361 @@
+kind: vendor
+id: prusa-fff
+name: Prusa Research FFF
+version: 1.0.0
+features:
+  printer:
+    supports_high_flow_nozzle:
+      default: true
+      user_editable: false
+    input_shaper:
+      default: false
+      user_editable: false
+    planetary_gearbox:
+      default: true
+      user_editable: false
+  tool:
+    nozzle_high_flow:
+      default: false
+      user_editable: false
+    nozzle_diameter:
+      default: 0.4
+      user_editable: false
+  sheet:
+    cold:
+      default: false
+      user_editable: false
+    # Not used now, we take info about filament being abrasive
+    #nozzle_hardened:
+    #  default: false
+---
+kind: printer
+technology: FFF
+id: xl
+name: XL
+model:
+  base_model: XL
+  model: XL
+tool_count: 1
+features:
+  input_shaper:
+    default: true
+---
+#kind: printer
+#technology: FFF
+#id: 'xl-1t'
+#name: 'XL 1T'
+#base_model: 'XL'
+#model: 'XL 1T'
+#tool_count: 1
+#features:
+#  input_shaper:
+#    default: true
+#---
+#kind: printer
+#technology: FFF
+#id: 'xl-2t'
+#name: 'XL 2T'
+#base_model: 'XL'
+#model: 'XL 2T'
+#tool_count: 2
+#features:
+#  input_shaper:
+#    default: true
+#---
+#kind: printer
+#technology: FFF
+#id: 'xl-5t'
+#name: 'XL 5T'
+#base_model: 'XL'
+#model: 'XL 5T'
+#tool_count: 5
+#features:
+#  input_shaper:
+#    default: true
+#---
+kind: printer
+technology: FFF
+id: COREONE
+name: CORE One
+model:
+  base_model: COREONE
+  model: COREONE
+tool_count: 1
+features:
+  input_shaper:
+    default: true
+---
+kind: printer
+technology: FFF
+id: MK4
+name: Prusa MK4
+model:
+  base_model: MK4
+  model: MK4
+tool_count: 1
+features:
+  input_shaper:
+    default: true
+---
+kind: printer
+technology: FFF
+id: MK4S
+name: Prusa MK4S
+model:
+  base_model: MK4
+  model: MK4S
+tool_count: 1
+features:
+  input_shaper:
+    default: true
+---
+kind: printer
+technology: FFF
+id: MK3
+name: MK3
+model:
+  base_model: MK3
+  model: MK3
+tool_count: 1
+features:
+  supports_high_flow_nozzle:
+    default: true
+    user_editable: false
+  input_shaper:
+    default: false
+---
+kind: printer
+technology: FFF
+id: MK3S
+name: MK3S
+model:
+  base_model: MK3
+  model: MK3S
+tool_count: 1
+features:
+  input_shaper:
+    default: false
+---
+kind: printer
+technology: FFF
+id: MINI
+name: Prusa MINI
+model:
+  base_model: MINI
+  model: MINI
+tool_count: 1
+features:
+  input_shaper:
+    default: true
+  planetary_gearbox:
+    default: false
+---
+kind: tool
+technology: FFF
+id: '0.4'
+name: '0.4'
+features:
+  nozzle_diameter:
+    default: 0.4
+---
+kind: tool
+technology: FFF
+id: '0.25'
+name: '0.25'
+features:
+  nozzle_diameter:
+    default: 0.25
+---
+kind: tool
+technology: FFF
+id: '0.3'
+name: '0.3'
+features:
+  nozzle_diameter:
+    default: 0.3
+---
+kind: tool
+technology: FFF
+id: '0.5'
+name: '0.5'
+features:
+  nozzle_diameter:
+    default: 0.5
+---
+kind: tool
+technology: FFF
+id: '0.6'
+name: '0.6'
+features:
+  nozzle_diameter:
+    default: 0.6
+---
+kind: tool
+technology: FFF
+id: '0.8'
+name: '0.8'
+features:
+  nozzle_diameter:
+    default: 0.8
+---
+kind: tool
+technology: FFF
+id: 0.4HF
+name: 0.4 HF
+condition: printer.supports_high_flow_nozzle
+features:
+  nozzle_high_flow:
+    default: true
+  nozzle_diameter:
+    default: 0.4
+---
+kind: tool
+technology: FFF
+id: 0.5HF
+name: 0.5 HF
+condition: printer.supports_high_flow_nozzle
+features:
+  nozzle_high_flow:
+    default: true
+  nozzle_diameter:
+    default: 0.5
+---
+kind: tool
+technology: FFF
+id: 0.6HF
+name: 0.6 HF
+condition: printer.supports_high_flow_nozzle
+features:
+  nozzle_high_flow:
+    default: true
+  nozzle_diameter:
+    default: 0.6
+---
+kind: tool
+technology: FFF
+id: 0.8HF
+name: 0.8 HF
+condition: printer.supports_high_flow_nozzle
+features:
+  nozzle_high_flow:
+    default: true
+  nozzle_diameter:
+    default: 0.8
+---
+kind: feeder
+technology: FFF
+id: mmu
+name: MMU
+feeder_type: mmu
+model:
+  base_model: MMU
+  model: MMU3S
+slot_count: 5
+---
+#sheet.type == "pei_smooth"
+#sheet.type == "pei_grained"
+#sheet.type == "satin"
+#sheet.type == "pa_nylon"
+#sheet.type == "pp"
+#sheet.cold (true/false)
+kind: sheet
+id: pei_smooth
+name: PEI Smooth
+type: pei_smooth
+---
+kind: sheet
+name: PEI Grained
+id: pei_grained
+type: pei_grained
+---
+kind: sheet
+name: Satin
+id: satin
+type: satin
+---
+kind: sheet
+id: pa_nylon
+name: PA Nylon
+type: pa_nylon
+---
+kind: sheet
+name: PP
+id: pp
+type: pp
+---
+kind: sheet
+id: cold
+name: Cold
+type: cold
+features:
+  cold:
+    default: true
+---
+kind: printer_config
+id: xl-1t
+name: XL 1T
+printer: xl
+tool_count: 1
+tools:
+- tool: 0.4HF
+sheet: satin
+---
+kind: printer_config
+id: xl-2t
+name: XL 2T
+printer: xl
+tool_count: 2
+tools:
+- tool: 0.4HF
+sheet: satin
+---
+kind: printer_config
+id: xl-5t
+name: XL 5T
+printer: xl
+tool_count: 5
+tools:
+- tool: 0.4HF
+sheet: satin
+---
+kind: printer_config
+id: c1
+name: CORE One
+printer: COREONE
+tools:
+- tool: 0.4HF
+sheet: satin
+---
+kind: printer_config
+id: mk4
+name: MK4
+printer: MK4
+tools:
+- tool: 0.4HF
+sheet: satin
+---
+kind: printer_config
+id: mk4s
+name: MK4S
+printer: MK4S
+tools:
+- tool: 0.4HF
+sheet: satin
+---
+kind: printer_config
+id: mk3s
+name: MK3S
+printer: MK3S
+tools:
+- tool: '0.4'
+sheet: satin
+---
+kind: printer_config
+id: mini
+name: MINI
+printer: MINI
+tools:
+- tool: 0.4HF
+sheet: satin
+
+

@@ -277,7 +277,7 @@ void Manipulators::save_preset(std::string name /*= ""*/, bool detach)
 
     if (name.empty()) {
         const std::string suffix = detach ? _u8L("Detached") : "";
-        SavePresetDialog dlg(m_parent, { selected_preset }, &m_preset_interactor->preset_bundle(), suffix, from_template, m_ph_printer_name);
+        SavePresetDialog dlg(m_parent, { selected_preset }, &m_preset_interactor->preset_bundle_legacy(), suffix, from_template, m_ph_printer_name);
         if (dlg.ShowModal() != wxID_OK)
             return;
         name = dlg.get_name();
@@ -370,7 +370,7 @@ void Manipulators::rename_preset()
     if (!m_ph_printer_name.empty()) //is_selected_physical_printer
         return;
 
-    const auto& pb = m_preset_interactor->preset_bundle();
+    const auto& pb = m_preset_interactor->preset_bundle_legacy();
     SavePresetDialog dlg(m_parent, m_preset_state->selected_preset, &pb);
 
     bool is_selected_ph_priter = false;

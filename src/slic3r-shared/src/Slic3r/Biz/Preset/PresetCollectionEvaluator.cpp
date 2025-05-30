@@ -1,0 +1,184 @@
+#include "Slic3r/Biz/Preset/PresetCollectionEvaluator.hpp"
+
+// Xcode 15 has not finished ranges support we need here
+#include <version>
+#if !defined(__cpp_lib_ranges) || __cpp_lib_ranges < 201911L || (__clang_major__ < 16 && defined(__apple_build_version__))
+    #define HAS_RANGES_VIEWS 0
+#else
+    #define HAS_RANGES_VIEWS 1
+    #include <ranges>
+#endif
+
+#include <fmt/format.h>
+
+namespace Slic3r::Biz::Preset {
+
+PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(const ValueMaps& overrides, bool only_public, ExprCombine expr_combine) const
+{
+#if !HAS_RANGES_VIEWS
+    PresetEvaluator::EvalPresetContexts ret;
+    for (const auto& preset : m_presets) {
+        auto eval_presets = eval_preset(preset, {{}}, overrides);
+        auto it = only_public ? std::remove_if(
+            eval_presets.begin(),
+            eval_presets.end(),
+            [](const auto& ep) {
+                return !Domain::Preset::is_public_name(ep.name);
+            }
+        ) : eval_presets.end();
+
+        ret.insert(ret.end(), std::make_move_iterator(eval_presets.begin()), std::make_move_iterator(it));
+    }
+    return ret;
+#else
+    auto joined_view = m_presets
+        | std::views::transform([&](const auto& preset) {
+              return eval_preset(preset, {{}}, overrides.empty() ? ValueMaps{{}} : overrides)
+                  | std::views::filter([only_public](const auto& ep) {
+                        return !only_public || Domain::Preset::is_public_name(ep.name);
+                    });
+          })
+        | std::views::join;
+
+    PresetEvaluator::EvalPresetContexts ret;
+    for (auto&& ep : joined_view)
+        ret.push_back(std::move(ep));
+    return ret;
+#endif
+}
+
+PresetEvaluator::EvalPresetContexts PresetCollectionEvaluator::eval_preset(
+    const Domain::Preset::PresetNode& node,
+    const PresetEvaluator::EvalPresetContexts& parent_contexts,
+    const ValueMaps& overrides,
+    ExprCombine expr_combine,
+    bool skip_condition_eval
+) const
+{
+    ASSERT(!parent_contexts.empty());
+
+    if (!skip_condition_eval && node.condition.has_value() && !eval_condition(overrides, expr_combine, node.condition.value()))
+        return {};
+
+    PresetEvaluator::EvalPresetContexts ret = parent_contexts;
+
+    if (!node.inherits.empty()) {
+        for (const auto& inh : node.inherits) {
+            const auto& node_path = named_preset(inh);
+            ASSERT(node_path.size() == 1);
+            ret = eval_preset(*node_path.front(), ret, overrides, expr_combine, skip_condition_eval);
+        }
+    }
+
+    Domain::Preset::PresetValueMap unconditional_inherited_values;
+    Domain::Preset::FeatureValueMap unconditional_inherited_features;
+    for (const auto& unc_inh : node.unconditional_inherits) {
+        const auto& node_path = named_preset(unc_inh);
+
+        for (const auto& n : node_path) {
+            Domain::Preset::override_values(unconditional_inherited_values, n->values);
+            Domain::Preset::override_values(unconditional_inherited_features, n->features);
+        }
+
+    }
+
+    for (auto& context : ret) {
+        if (!node.id.empty())
+            context.id = Domain::Preset::derive_name(node.id, context.id);
+        if (node.name.has_value())
+            context.name = Domain::Preset::derive_name(node.name.value(), context.name);
+        if (node.condition.has_value())
+            context.conditions.push_back(*node.condition.value());
+        context.last_node_location = node.source_location;
+        Domain::Preset::override_values(context.values, unconditional_inherited_values);
+        Domain::Preset::override_values(context.values, node.values);
+        Domain::Preset::override_values(context.features, unconditional_inherited_features);
+        Domain::Preset::override_values(context.features, node.features);
+    }
+
+
+    size_t conditional_variants = 0;
+    size_t unconditional_variants = 0;
+
+    PresetEvaluator::EvalPresetContexts var_contexts;
+
+    for (const auto& var : node.variants) {
+        const bool conditional = var.condition.has_value();
+        (conditional ? conditional_variants : unconditional_variants)++;
+        if (conditional) {
+            // There no unconditional variants allowed prior condition
+            ASSERT(unconditional_variants == 0);
+
+            // Condition is not met, continue with next variant
+            if (!eval_condition(overrides, expr_combine, var.condition.value()))
+                continue;
+        } else if (conditional_variants > 0) {
+            // if there was at least one condition case met before
+            // only one unconditional variant is valid
+            ASSERT(unconditional_variants == 1);
+        }
+
+        auto var_ctx = eval_preset(var, {{}}, overrides, expr_combine, true);
+        var_contexts.insert(
+            var_contexts.end(),
+            std::make_move_iterator(var_ctx.begin()),
+            std::make_move_iterator(var_ctx.end())
+        );
+
+        // first successful condition met, break (switch-like statement behavior)
+        if (conditional)
+            break;
+    }
+
+    if (var_contexts.empty())
+        return ret;
+
+    // resolve variants
+    PresetEvaluator::EvalPresetContexts product;
+    for (const auto& ctx : ret) {
+        for (const auto& var_ctx : var_contexts) {
+            PresetEvaluator::EvalPresetContext context = ctx;
+            context.id = Domain::Preset::derive_name(var_ctx.id, context.id);
+            context.name = Domain::Preset::derive_name(var_ctx.name, context.name);
+            context.conditions.insert(context.conditions.end(), var_ctx.conditions.begin(), var_ctx.conditions.end());
+            context.last_node_location = var_ctx.last_node_location;
+            Domain::Preset::override_values(context.values, var_ctx.values);
+            Domain::Preset::override_values(context.features, var_ctx.features);
+
+            product.emplace_back(std::move(context));
+        }
+    }
+
+    return product;
+}
+
+bool PresetCollectionEvaluator::eval_condition(const Expr::ValueMap& overrides, const Domain::Preset::SourceLocatedExpr& expr) const
+{
+    try {
+        auto result = m_eval.eval(*expr, overrides);
+        return result.type() == typeid(bool) && boost::get<bool>(result);
+    } catch (Expr::EvalError& e) {
+        throw Expr::EvalError(fmt::format("[{}] {}", expr.source_location.to_string(), e.what()));
+    }
+}
+
+bool PresetCollectionEvaluator::eval_condition(const ValueMaps& overrides, ExprCombine expr_combine, const Domain::Preset::SourceLocatedExpr& expr) const
+{
+    for (const auto& var : overrides) {
+        const bool val = eval_condition(var, expr);
+        if (val && expr_combine == ExprCombine::Or)
+            return true;
+        if (!val && expr_combine == ExprCombine::And)
+            return false;
+    }
+    return expr_combine == ExprCombine::And;
+}
+
+const PresetEvaluator::PresetNodePath& PresetCollectionEvaluator::named_preset(const std::string& id) const
+{
+    auto it = m_named_presets.find(id);
+    ASSERT(it != m_named_presets.end());
+    return it->second;
+}
+
+}

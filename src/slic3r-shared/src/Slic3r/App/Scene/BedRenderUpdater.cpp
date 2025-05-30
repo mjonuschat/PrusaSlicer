@@ -18,7 +18,7 @@ void BedRenderUpdater::update_materials()
         BedNodeTag* tag = n.tag_of_type<BedNodeTag>();
         if (tag != nullptr && tag->type != BedElementType::Undefined) {
             DEBUG_ASSERT(m_project != nullptr);
-            Domain::ConfigContainer* cc = m_project->find_config_container(tag->config_container_id);
+            const Domain::ConfigContainer* cc = m_project->find_config_container(tag->config_container_id);
             DEBUG_ASSERT(cc != nullptr);
             const Domain::BedInstance* inst = Domain::find_by_id(cc->bed_instances(), tag->instance_id);
             if (inst == nullptr)
@@ -57,7 +57,7 @@ void BedRenderUpdater::update_shadows(const Camera& cam)
 
                 DEBUG_ASSERT(n.has_render_component());
 
-                Domain::ConfigContainer* cc = m_project->find_config_container(tag->config_container_id);
+                const Domain::ConfigContainer* cc = m_project->find_config_container(tag->config_container_id);
                 const Domain::BedInstance* inst = Domain::find_by_id(cc->bed_instances(), tag->instance_id);
                 if (inst == nullptr)
                     return;
@@ -81,7 +81,7 @@ void BedRenderUpdater::update_positions()
         if (tag != nullptr) {
             if (tag->type == BedElementType::Undefined) {
                 DEBUG_ASSERT(m_project != nullptr);
-                Domain::ConfigContainer* cc = m_project->find_config_container(tag->config_container_id);
+                const Domain::ConfigContainer* cc = m_project->find_config_container(tag->config_container_id);
                 DEBUG_ASSERT(cc != nullptr);
                 const Domain::BedInstance* inst = Domain::find_by_id(cc->bed_instances(), tag->instance_id);
                 if (inst == nullptr)
@@ -102,7 +102,7 @@ void BedRenderUpdater::update_elements_state()
                 tag->type == BedElementType::PrintVolume ||
                 tag->type == BedElementType::AxesMain) {
                 DEBUG_ASSERT(m_project != nullptr);
-                Domain::ConfigContainer* cc = m_project->find_config_container(tag->config_container_id);
+                const Domain::ConfigContainer* cc = m_project->find_config_container(tag->config_container_id);
                 DEBUG_ASSERT(cc != nullptr);
                 const Domain::BedInstance* inst = Domain::find_by_id(cc->bed_instances(), tag->instance_id);
                 if (inst == nullptr)
@@ -132,7 +132,7 @@ void BedRenderUpdater::camera_updated(const Camera& cam)
             else if (tag->type == BedElementType::PlateTextured) {
                 // change material in dependence of camera position/orientation
                 DEBUG_ASSERT(m_project != nullptr);
-                Domain::ConfigContainer* cc = m_project->find_config_container(tag->config_container_id);
+                const Domain::ConfigContainer* cc = m_project->find_config_container(tag->config_container_id);
                 DEBUG_ASSERT(cc != nullptr);
                 const Domain::BedInstance* inst = Domain::find_by_id(cc->bed_instances(), tag->instance_id);
                 if (inst == nullptr)
@@ -147,7 +147,7 @@ void BedRenderUpdater::camera_updated(const Camera& cam)
             else if (tag->type == BedElementType::AxesScaler) {
                 // change axes scale in dependence of camera zoom
                 DEBUG_ASSERT(m_project != nullptr);
-                Domain::ConfigContainer* cc = m_project->find_config_container(tag->config_container_id);
+                const Domain::ConfigContainer* cc = m_project->find_config_container(tag->config_container_id);
                 DEBUG_ASSERT(cc != nullptr);
                 const Domain::BedInstance* inst = Domain::find_by_id(cc->bed_instances(), tag->instance_id);
                 if (inst == nullptr)
@@ -166,7 +166,7 @@ void BedRenderUpdater::camera_updated(const Camera& cam)
 
 void BedRenderUpdater::on_selected_project_changed(size_t index)
 {
-    m_project = const_cast<Domain::Project*>(&m_workbench.project(index));
+    m_project = &m_workbench.project(index);
 }
 
 } // namespace Slic3r::App::Scene

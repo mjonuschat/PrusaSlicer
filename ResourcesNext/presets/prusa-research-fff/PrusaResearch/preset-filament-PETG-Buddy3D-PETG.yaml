@@ -1,0 +1,8 @@
+kind: filament
+id: Buddy3D PETG
+inherits:
+- Prusament PETG
+name: Buddy3D PETG
+values:
+  filament_cost: '19.99'
+  filament_vendor: Buddy3D

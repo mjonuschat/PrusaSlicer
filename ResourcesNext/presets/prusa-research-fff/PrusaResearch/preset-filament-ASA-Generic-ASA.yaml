@@ -1,0 +1,8 @@
+kind: filament
+id: Generic ASA
+inherits:
+- '*ASA*'
+name: Generic ASA
+values:
+  filament_cost: '45.10'
+  filament_vendor: Generic

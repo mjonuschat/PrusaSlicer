@@ -162,7 +162,7 @@ void AbstractEditor::init(Biz::Preset::PresetInteractor* preset_interactor)
 #endif //__WXOSX__
 
     // preset chooser
-    m_presets_choice = new EditorPresetComboBox(panel, m_type, &preset_interactor->preset_bundle());
+    m_presets_choice = new EditorPresetComboBox(panel, m_type, &preset_interactor->preset_bundle_legacy());
 
     // set of buttons for maniplation(save/rename/delete...) with presets
     m_manipulators = new Manipulators(panel, preset_interactor, m_type);

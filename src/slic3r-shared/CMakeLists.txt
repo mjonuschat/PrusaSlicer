@@ -278,6 +278,34 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/Preset/PresetBundleRuntime.cpp
         include/Slic3r/Biz/Preset/PresetBundleRuntime.hpp
 
+#		include/Slic3r/Biz/Preset/Bundle.hpp
+#		src/Slic3r/Biz/Preset/Bundle.cpp
+
+        include/Slic3r/Biz/Preset/IO/PresetLoader.hpp
+        src/Slic3r/Biz/Preset/IO/PresetLoader.cpp
+        include/Slic3r/Biz/Preset/IO/HwConfigLoader.hpp
+        src/Slic3r/Biz/Preset/IO/HwConfigLoader.cpp
+        include/Slic3r/Biz/Preset/IO/BundleLoader.hpp
+        src/Slic3r/Biz/Preset/IO/BundleLoader.cpp
+        src/Slic3r/Biz/Yaml/Yaml.hpp
+        src/Slic3r/Biz/Yaml/Yaml.cpp
+        src/Slic3r/Biz/Yaml/YamlAdapter.hpp
+        src/Slic3r/Biz/Yaml/YamlSlic3rTypes.hpp
+
+		include/Slic3r/Biz/Preset/PresetEvaluator.hpp
+		src/Slic3r/Biz/Preset/PresetEvaluator.cpp
+		src/Slic3r/Biz/Preset/PresetCollectionEvaluator.hpp
+		src/Slic3r/Biz/Preset/PresetCollectionEvaluator.cpp
+		include/Slic3r/Biz/Preset/HwConfigEvaluator.hpp
+		src/Slic3r/Biz/Preset/HwConfigEvaluator.cpp
+		src/Slic3r/Biz/Preset/ValueMapBuilder.hpp
+		src/Slic3r/Biz/Preset/ValueMapBuilder.cpp
+
+        include/Slic3r/Biz/Expr/Parser.hpp
+        src/Slic3r/Biz/Expr/Parser.cpp
+        include/Slic3r/Biz/Expr/Eval.hpp
+        src/Slic3r/Biz/Expr/Eval.cpp
+
         include/Slic3r/Biz/IProjectsChangedListener.hpp
         include/Slic3r/Biz/ISelectedBedInstanceChangedListener.hpp
         include/Slic3r/Biz/ISelectedConfigContainerChangedListener.hpp
@@ -436,6 +464,32 @@ find_package(Boost REQUIRED COMPONENTS filesystem)
 find_package(yoga CONFIG REQUIRED)
 find_package(nlohmann_json 3.11 REQUIRED)
 
+
+if ("${SLIC3R_YAML}" STREQUAL "libfyaml")
+    find_package(fyaml REQUIRED)
+    set(YAML_LIB fyaml::fyaml)
+    set(SLIC3R_SHARED_FILES
+            ${SLIC3R_SHARED_FILES}
+            src/Slic3r/Yaml/YamlAdapterLibfyaml.hpp
+            src/Slic3r/Yaml/YamlAdapterLibfyaml.cpp
+    )
+    set(SLIC3R_YAML_DEFINE "-DSLIC3R_YAML_LIBFYAML")
+elseif ("${SLIC3R_YAML}" STREQUAL "yaml-cpp")
+    find_package(yaml-cpp REQUIRED)
+    set(YAML_LIB yaml-cpp::yaml-cpp)
+    set(SLIC3R_SHARED_FILES
+            ${SLIC3R_SHARED_FILES}
+            src/Slic3r/Biz/Yaml/YamlAdapterYamlCpp.hpp
+            src/Slic3r/Biz/Yaml/YamlAdapterYamlCpp.cpp
+    )
+    set(SLIC3R_YAML_DEFINE "-DSLIC3R_YAML_YAMLCPP")
+else ()
+    message(FATAL_ERROR "No YAML library selected, allowed values are \"libfyaml\", \"yaml-cpp\", passed \"${SLIC}\"")
+endif ()
+
+
+find_package(magic_enum REQUIRED)
+
 slic3r_remap_configs("yoga::yogacore" RelWithDebInfo Release)
 
 add_library(slic3r-shared STATIC ${SLIC3R_SHARED_FILES})
@@ -450,7 +504,10 @@ target_link_libraries(slic3r-shared PUBLIC
         yoga::yogacore
         slic3r-biz-algorithms
         nlohmann_json::nlohmann_json
+        ${YAML_LIB}
+        magic_enum::magic_enum
 )
+target_compile_definitions(slic3r-shared PUBLIC ${SLIC3R_YAML_DEFINE})
 if (EMSCRIPTEN)
 #    target_link_libraries(slic3r-shared PUBLIC png-mt )
 else()
@@ -506,13 +563,23 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
         test/Slic3r/Biz/ProjectInteractorTests.cpp
         test/Slic3r/Biz/Scene/SceneInteractorTests.cpp
 
-        test/Slic3r/Biz/Slicing/TestUtils.cpp
+        test/Slic3r/Biz/Expr/ParserTests.cpp
+        test/Slic3r/Biz/Expr/EvalTests.cpp
+
+        test/Slic3r/Biz/Yaml/YamlTests.cpp
+        test/Slic3r/Biz/Preset/IO/HwConfigDefLoaderTests.cpp
+        test/Slic3r/Biz/Preset/IO/PresetLoaderTests.cpp
+		test/Slic3r/Biz/Preset/PresetCollectionEvaluatorTests.cpp
+		test/Slic3r/Biz/Preset/PresetEvaluatorTests.cpp
+		test/Slic3r/Biz/Preset/HwConfigEvaluatorTests.cpp
+
+		test/Slic3r/Biz/Slicing/TestUtils.cpp
         test/Slic3r/Biz/Slicing/GCodeUtils.cpp
         test/Slic3r/Biz/Slicing/ActionsTests.cpp
         test/Slic3r/Biz/Slicing/ListenersTests.cpp
         test/Slic3r/Biz/Slicing/ProcessActionsTests.cpp
     )
-    target_include_directories(slic3r-shared-tests PRIVATE test)
+    target_include_directories(slic3r-shared-tests PRIVATE test src)
 
     find_package(Catch2 3.8 REQUIRED)
     slic3r_remap_configs("Catch2::Catch2" RelWithDebInfo Release)

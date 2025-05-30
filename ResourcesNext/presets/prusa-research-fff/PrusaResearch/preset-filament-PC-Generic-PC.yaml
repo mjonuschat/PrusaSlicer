@@ -1,0 +1,8 @@
+kind: filament
+id: Generic PC
+inherits:
+- '*PC*'
+name: Generic PC
+values:
+  filament_cost: '45.10'
+  filament_vendor: Generic

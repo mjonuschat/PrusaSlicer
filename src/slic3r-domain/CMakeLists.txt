@@ -19,6 +19,20 @@ add_library(slic3r-domain
 
     include/Slic3r/Domain/ExPolygon.hpp
     src/Slic3r/Domain/ExPolygon.cpp
+    include/Slic3r/Domain/PrinterTechnology.hpp
+
+    include/Slic3r/Domain/Expr/ExprAst.hpp
+    include/Slic3r/Domain/Expr/RegEx.hpp
+
+    include/Slic3r/Domain/Preset/PresetTree.hpp
+    include/Slic3r/Domain/Preset/SourceLocatedExpr.hpp
+    include/Slic3r/Domain/Preset/Types.hpp
+    include/Slic3r/Domain/Preset/HwConfig.hpp
+    include/Slic3r/Domain/Preset/EvaluatedPreset.hpp
+    include/Slic3r/Domain/Preset/Bundle.hpp
+    src/Slic3r/Domain/Preset/HwConfig.cpp
+    src/Slic3r/Domain/Preset/PresetTree.cpp
+    src/Slic3r/Domain/Preset/EvaluatedPreset.cpp
 
     include/Slic3r/Domain/FacetsAnnotation.hpp
     src/Slic3r/Domain/FacetsAnnotation.cpp
@@ -71,3 +85,35 @@ target_link_libraries(slic3r-domain PUBLIC
 )
 
 target_link_libraries(slic3r-domain PUBLIC slic3r-base TBB::tbbmalloc)
+
+
+if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
+    add_executable(slic3r-domain-tests
+            test/Slic3r/Domain/Preset/PresetTreeTests.cpp
+            test/Slic3r/Domain/Preset/HwConfigTests.cpp
+
+    )
+    target_include_directories(slic3r-domain-tests PRIVATE test src)
+
+    find_package(Catch2 3.8 REQUIRED)
+    slic3r_remap_configs("Catch2::Catch2" RelWithDebInfo Release)
+    target_link_libraries(slic3r-domain-tests PRIVATE slic3r-domain Catch2::Catch2WithMain)
+
+    set(TEST_DATA_DIR ${CMAKE_CURRENT_SOURCE_DIR}/test/data)
+    file(TO_NATIVE_PATH "${TEST_DATA_DIR}" TEST_DATA_DIR)
+    target_compile_definitions(slic3r-domain-tests PRIVATE TEST_DATA_DIR=R"\(${TEST_DATA_DIR}\)")
+
+    set(_catch_args "exclude:[NotWorking] exclude:[Slow]")
+    list(APPEND _catch_args "${CATCH_EXTRA_ARGS}")
+    add_test(NAME slic3r-domain-tests
+            COMMAND slic3r-domain-tests ${_catch_args}
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+
+    if (WIN32)
+        prusaslicer_copy_dlls(slic3r-domain-tests)
+    endif ()
+endif()
+
+
+
