@@ -508,7 +508,7 @@ endif ()
 
 find_package(magic_enum REQUIRED)
 
-slic3r_remap_configs("yoga::yogacore" RelWithDebInfo Release)
+slic3r_remap_configs("yoga::yogacore;${YAML_LIB}" RelWithDebInfo Release)
 
 add_library(slic3r-shared STATIC ${SLIC3R_SHARED_FILES})
 target_link_libraries(slic3r-shared PUBLIC
