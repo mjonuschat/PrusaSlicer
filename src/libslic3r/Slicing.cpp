@@ -103,13 +103,18 @@ SlicingParameters SlicingParameters::create_from_config(
     params.min_layer_height = MIN_LAYER_HEIGHT;
     params.max_layer_height = std::numeric_limits<double>::max();
     if (config.get<bool>("support_material") || params.base_raft_layers > 0 || config.get<int>("support_material_enforce_layers") > 0) {
+        // Extruder indices in config are 1-based, but zero has special meaning (don't care).
+        // Assume that first extruder will be used if zero is selected.
+        const int support_material_extruder = std::max(1, config.get<int>("support_material_extruder"));
+        const int support_material_interface_extruder = std::max(1, config.get<int>("support_material_interface_extruder"));
+
         // Has some form of support. Add the support layers to the minimum / maximum layer height limits.
         params.min_layer_height = std::max(
-            min_layer_height_from_nozzle(config, config.get<int>("support_material_extruder")), 
-            min_layer_height_from_nozzle(config, config.get<int>("support_material_interface_extruder")));
+            min_layer_height_from_nozzle(config, support_material_extruder),
+            min_layer_height_from_nozzle(config, support_material_interface_extruder));
         params.max_layer_height = std::min(
-            max_layer_height_from_nozzle(config, config.get<int>("support_material_extruder")), 
-            max_layer_height_from_nozzle(config, config.get<int>("support_material_interface_extruder")));
+            max_layer_height_from_nozzle(config, support_material_extruder),
+            max_layer_height_from_nozzle(config, support_material_interface_extruder));
         params.max_suport_layer_height = params.max_layer_height;
     }
     if (object_extruders.empty()) {
