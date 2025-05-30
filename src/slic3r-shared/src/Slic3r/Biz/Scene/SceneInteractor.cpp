@@ -264,7 +264,7 @@ void SceneInteractor::change_volume_meshes(RefMeshes&& meshes)
     std::vector<size_t> object_ids;
     object_ids.reserve(meshes.size());
     for (RefMesh& mesh : meshes) {
-        Domain::ElementRef& id = mesh.first;
+        const Domain::ElementRef& id = mesh.first;
         Domain::TriangleMesh& triangle_mesh = mesh.second;
         ModelVolume* volume_ptr = project.find_volume_by_id(id.object_id, id.volume_id);
 
@@ -277,10 +277,11 @@ void SceneInteractor::change_volume_meshes(RefMeshes&& meshes)
         volume.calculate_convex_hull();
         volume.set_new_unique_id();
         
-        removed_ids.push_back(id);
-        id.volume_id = volume.id().id; // get new_unique_id
-        updated_ids.push_back(id);
         object_ids.push_back(id.object_id);
+        for (const ModelInstance* mi : volume.get_object()->instances) {
+            removed_ids.emplace_back(id.object_id, mi->id().id, id.volume_id);
+            updated_ids.emplace_back(id.object_id, mi->id().id, volume.id().id);
+        }
     }
 
     std::sort(object_ids.begin(), object_ids.end());
