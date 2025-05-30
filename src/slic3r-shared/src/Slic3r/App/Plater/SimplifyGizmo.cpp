@@ -6,7 +6,6 @@
 #include "Slic3r/App/Plater/PlaterSceneLayer.hpp"
 #include "Slic3r/App/Plater/SceneNodeTag.hpp"
 #include "Slic3r/App/Render/GeometryBuilder.hpp"
-#include "Slic3r/App/Scene/GeometryDataFactory.hpp"
 #include "Slic3r/Biz/Platform/PlatformServices.hpp" // main_thread_dispatcher
 #include "Slic3r/Biz/Algorithms/QuadricEdgeCollapse.hpp"
 
@@ -20,19 +19,13 @@
 // 2. Esc key down: cancel simplification
 // 3. add disable into ImguiWindow
 // 4. validate volume exchange(Scne::Node are correct but object list is invalid)
+namespace Slic3r::App::Plater {
 
-using Slic3r::ModelVolume;
-using Slic3r::ModelObject;
-using Slic3r::ColorRGBA;
-using Slic3r::App::Plater::SimplifyGizmo;
-using Slic3r::App::Plater::SceneNodeTag;
 using Slic3r::App::Render::GeometryBuilder;
 using Slic3r::App::Render::Geometry;
 using Slic3r::App::Render::Device;
-using Slic3r::App::Scene::GeometryDataFactory;
 using Slic3r::App::Scene::GizmoActivationState;
 using Slic3r::App::Scene::GizmoEventContext;
-using Slic3r::App::Scene::Scene;
 using Slic3r::App::Scene::Node;
 using Slic3r::App::Scene::NodeBuilder;
 using Slic3r::Biz::Scene::SceneInteractor;
@@ -695,3 +688,5 @@ bool SimplifyGizmo::Configuration::operator==(const Configuration& rhs)
 bool SimplifyGizmo::Configuration::operator!=(const Configuration& rhs) {
     return !(*this == rhs);
 }
+
+} // namespace Slic3r::App::Plater
