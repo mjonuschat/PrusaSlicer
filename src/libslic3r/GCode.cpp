@@ -234,7 +234,7 @@ void GCodeGenerator::PlaceholderParserIntegration::init(const GCodeWriter &write
 void GCodeGenerator::PlaceholderParserIntegration::update_from_gcodewriter(const GCodeWriter &writer, const WipeTowerData& wipe_tower_data)
 {
     memcpy(this->position.data(), writer.get_position().data(), sizeof(double) * 3);
-    this->parser.set("position", this->position);
+    this->output_config.set("position", this->position);
 
     if (this->num_extruders > 0) {
         const std::vector<Extruder> &extruders = writer.extruders();
