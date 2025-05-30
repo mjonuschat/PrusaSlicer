@@ -62,7 +62,7 @@ struct TriangleSplittingData {
     // Bit stream containing splitting information.
     std::vector<bool>                     bitstream;
     // Array indicating which triangle state types are used (encoded inside bitstream).
-    std::vector<bool>                     used_states { std::vector<bool>(static_cast<size_t>(TriangleStateType::Count), false) };
+    std::vector<bool>                     used_states { std::vector<bool>(static_cast<std::size_t>(TriangleStateType::Count), false) };
 
     TriangleSplittingData() = default;
 
@@ -77,7 +77,7 @@ struct TriangleSplittingData {
     /**
      * Update used states based on the bitstream. It just iterated over the bitstream from the bitstream_start_idx till the end.
      */
-    void update_used_states(size_t bitstream_start_idx);
+    void update_used_states(std::size_t bitstream_start_idx);
 
 private:
     template<class Archive>
