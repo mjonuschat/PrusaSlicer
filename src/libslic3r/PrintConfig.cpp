@@ -42,6 +42,7 @@
 #include "libslic3r/SLA/SupportTreeStrategies.hpp"
 #include "libslic3r/enum_bitmask.hpp"
 #include "libslic3r/libslic3r.h"
+#include "Slic3r/Domain/ConfigCommon.hpp"
 
 namespace Slic3r {
 
@@ -5186,6 +5187,26 @@ double min_object_distance(const ConfigBase &cfg)
     return ret;
 }
 
+double min_object_distance(const Domain::ConfigView &cfg)
+{
+    const Domain::PrinterTechnology printer_technology = cfg.get<Domain::PrinterTechnology>("printer_technology");
+
+    double ret = 0.;
+
+    if (printer_technology == Domain::PrinterTechnology::SLA)
+        ret = 6.;
+    else {
+        auto ecr_opt = cfg.get<double>("extruder_clearance_radius");
+        auto dd_opt  = 6.0; // TODO - what is this
+        auto co_opt  = cfg.get<bool>("complete_objects");
+
+        // min object distance is max(duplicate_distance, clearance_radius)
+        ret = (co_opt && ecr_opt > dd_opt) ? ecr_opt : dd_opt;
+    }
+
+    return ret;
+}
+
 void DynamicPrintConfig::normalize_fdm()
 {
     if (this->has("extruder")) {
@@ -6316,6 +6337,10 @@ Points get_bed_shape(const PrintConfig &cfg)
     return to_points(cfg.bed_shape.values);
 }
 
+Points get_bed_shape(const PrintConfigView &cfg) {
+    return to_points(cfg.get<std::vector<Vec2d>>("bed_shape"));
+}
+
 Points get_bed_shape(const SLAPrinterConfig &cfg) { return to_points(cfg.bed_shape.values); }
 
 std::string get_sla_suptree_prefix(const DynamicPrintConfig &config)
@@ -6350,6 +6375,10 @@ bool is_XL_printer(const DynamicPrintConfig &cfg)
 bool is_XL_printer(const PrintConfig &cfg)
 {
     return is_XL_printer(cfg.printer_notes.value);
+}
+
+bool is_XL_printer(const PrintConfigView &cfg) {
+    return is_XL_printer(cfg.get<std::string>("printer_notes"));
 }
 
 } // namespace Slic3r

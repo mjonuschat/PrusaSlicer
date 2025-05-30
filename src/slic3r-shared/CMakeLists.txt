@@ -394,6 +394,7 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/Network/TCPConsole.cpp
         src/Slic3r/Biz/Network/ServiceConfig.cpp
         src/Slic3r/Biz/Network/Jwt.cpp
+
         include/Slic3r/Biz/SLAResultCache.hpp
         src/Slic3r/Biz/SLAResultCache.cpp
         include/Slic3r/Biz/SLAObjectCache.hpp
@@ -428,6 +429,22 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/AppInstance/IAppInstanceMessageContentListener.hpp
         include/Slic3r/Biz/AppInstance/AppInstanceMessageHandlerFactory.hpp
         src/Slic3r/Biz/AppInstance/AbstractAppInstanceMessageHandler.cpp
+        include/Slic3r/Biz/Config/ConfigSerialize.hpp
+        include/Slic3r/Biz/Config/ConfigLegacy.hpp
+        src/Slic3r/Biz/Config/ConfigSerialize.cpp
+        src/Slic3r/Biz/Config/Legacy/Config.hpp
+        src/Slic3r/Biz/Config/Legacy/Config.cpp
+        src/Slic3r/Biz/Config/Legacy/PrintConfig.hpp
+        src/Slic3r/Biz/Config/Legacy/PrintConfig.cpp
+        src/Slic3r/Biz/Config/Legacy/Point.hpp
+        src/Slic3r/Biz/Config/Legacy/Point.cpp
+        src/Slic3r/Biz/Config/Legacy/clonable_ptr.hpp
+        src/Slic3r/Biz/Config/Legacy/Thumbnails.hpp
+        src/Slic3r/Biz/Config/Legacy/Thumbnails.cpp
+        src/Slic3r/Biz/Config/Legacy/enum_bitmask.hpp
+        src/Slic3r/Biz/Config/ConfigLegacy.cpp
+        src/Slic3r/Biz/Config/Legacy/3mf_legacy.cpp
+        include/Slic3r/Biz/Config/3mf_legacy.hpp
 )
 
 if (WIN32)
@@ -463,6 +480,7 @@ find_package(NanoSVG REQUIRED)
 find_package(Boost REQUIRED COMPONENTS filesystem)
 find_package(yoga CONFIG REQUIRED)
 find_package(nlohmann_json 3.11 REQUIRED)
+find_package(EXPAT CONFIG REQUIRED)
 
 
 if ("${SLIC3R_YAML}" STREQUAL "libfyaml")
@@ -506,6 +524,8 @@ target_link_libraries(slic3r-shared PUBLIC
         nlohmann_json::nlohmann_json
         ${YAML_LIB}
         magic_enum::magic_enum
+        fastfloat
+        expat::expat
 )
 target_compile_definitions(slic3r-shared PUBLIC ${SLIC3R_YAML_DEFINE})
 if (EMSCRIPTEN)
@@ -581,18 +601,14 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
     )
     target_include_directories(slic3r-shared-tests PRIVATE test src)
 
-    find_package(Catch2 3.8 REQUIRED)
-    slic3r_remap_configs("Catch2::Catch2" RelWithDebInfo Release)
     target_link_libraries(slic3r-shared-tests PRIVATE slic3r-shared Catch2::Catch2)
 
     set(TEST_DATA_DIR ${CMAKE_CURRENT_SOURCE_DIR}/test/data)
     file(TO_NATIVE_PATH "${TEST_DATA_DIR}" TEST_DATA_DIR)
     target_compile_definitions(slic3r-shared-tests PRIVATE TEST_DATA_DIR=R"\(${TEST_DATA_DIR}\)")
 
-    set(_catch_args "exclude:[NotWorking] exclude:[Slow]")
-    list(APPEND _catch_args "${CATCH_EXTRA_ARGS}")
     add_test(NAME slic3r-shared-tests
-        COMMAND slic3r-shared-tests ${_catch_args}
+        COMMAND slic3r-shared-tests ${CATCH_ALL_ARGS}
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
 

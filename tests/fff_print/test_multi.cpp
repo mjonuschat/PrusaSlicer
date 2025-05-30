@@ -16,17 +16,25 @@
 using namespace Slic3r;
 using namespace std::literals;
 using Biz::GCodeReader::GCodeReader;
+using Test::TestConfig;
+using Domain::VolumeSettings;
+using Domain::FloatOrPercentage;
+using Domain::Percentage;
 
 SCENARIO("Basic tests", "[Multi]")
 {
     WHEN("Slicing multi-material print with non-consecutive extruders") {
-        std::string gcode = Slic3r::Test::slice({ Slic3r::Test::TestMesh::cube_20x20x20 }, 
-            {
-                { "nozzle_diameter",                "0.6, 0.6, 0.6, 0.6" },
-                { "extruder",                       2 },
-                { "infill_extruder",                4 },
-                { "support_material_extruder",      0 }
-            });
+
+        Test::TestConfig config{4};
+        for (auto& tool_settings : config.tool) {
+            tool_settings.opt("nozzle_diameter").set(0.6);
+        }
+
+        config.print.opt("perimeter_extruder").set(2);
+        config.print.opt("solid_infill_extruder").set(2);
+        config.print.opt("infill_extruder").set(4);
+        config.print.opt("support_material_extruder").set(0);
+        std::string gcode = Slic3r::Test::slice({ Slic3r::Test::TestMesh::cube_20x20x20 }, config);
         THEN("Sliced successfully") {
             REQUIRE(! gcode.empty());
         }
@@ -36,14 +44,18 @@ SCENARIO("Basic tests", "[Multi]")
         }
     }
     WHEN("Slicing with multiple skirts with a single, non-zero extruder") {
-        std::string gcode = Slic3r::Test::slice({ Slic3r::Test::TestMesh::cube_20x20x20 }, 
-            {
-                { "nozzle_diameter",                        "0.6, 0.6, 0.6, 0.6" },
-                { "perimeter_extruder",                     2 },
-                { "infill_extruder",                        2 },
-                { "support_material_extruder",              2 },
-                { "support_material_interface_extruder",    2 },
-            });
+        Test::TestConfig config{4};
+        for (auto& tool_settings : config.tool) {
+            tool_settings.opt("nozzle_diameter").set(0.6);
+        }
+
+        config.print.opt("perimeter_extruder").set(2);
+        config.print.opt("solid_infill_extruder").set(2);
+        config.print.opt("infill_extruder").set(4);
+        config.print.opt("support_material_extruder").set(0);
+        config.print.opt("support_material_interface_extruder").set(2);
+
+        std::string gcode = Slic3r::Test::slice({ Slic3r::Test::TestMesh::cube_20x20x20 }, config);
         THEN("Sliced successfully") {
             REQUIRE(! gcode.empty());
         }
@@ -52,25 +64,35 @@ SCENARIO("Basic tests", "[Multi]")
 
 SCENARIO("Ooze prevention", "[Multi]")
 {
-    DynamicPrintConfig config = Slic3r::DynamicPrintConfig::full_print_config_with({
-        { "nozzle_diameter",                "0.6, 0.6, 0.6, 0.6" },
-        { "raft_layers",                    2 },
-        { "infill_extruder",                2 },
-        { "solid_infill_extruder",          3 },
-        { "support_material_extruder",      4 },
-        { "ooze_prevention",                1 },
-        { "extruder_offset",                "0x0, 20x0, 0x20, 20x20" },
-        { "temperature",                    "200, 180, 170, 160" },
-        { "first_layer_temperature",        "206, 186, 166, 156" },
-        // test that it doesn't crash when this is supplied
-        { "toolchange_gcode",               "T[next_extruder] ;toolchange" }
-    });
-    FullPrintConfig print_config;
-    print_config.apply(config);
+    TestConfig config{4};
+
+    for (auto& tool_settings : config.tool) {
+        tool_settings.opt("nozzle_diameter").set(0.6);
+    }
+    config.print.opt("raft_layers").set(2);
+    config.print.opt("infill_extruder").set(2);
+    config.print.opt("solid_infill_extruder").set(3);
+    config.print.opt("support_material_extruder").set(4);
+    config.print.opt("ooze_prevention").set(true);
+
+    config.tool.at(0).opt("extruder_offset").set(Vec2d{0, 0});
+    config.tool.at(1).opt("extruder_offset").set(Vec2d{20, 0});
+    config.tool.at(2).opt("extruder_offset").set(Vec2d{0, 20});
+    config.tool.at(3).opt("extruder_offset").set(Vec2d{20, 20});
+    config.filament.at(0).opt("temperature").set(200);
+    config.filament.at(1).opt("temperature").set(180);
+    config.filament.at(2).opt("temperature").set(170);
+    config.filament.at(3).opt("temperature").set(160);
+    config.filament.at(0).opt("first_layer_temperature").set(206);
+    config.filament.at(1).opt("first_layer_temperature").set(186);
+    config.filament.at(2).opt("first_layer_temperature").set(166);
+    config.filament.at(3).opt("first_layer_temperature").set(156);
+    // test that it doesn't crash when this is supplied
+    config.printer.opt("toolchange_gcode").set("T[next_extruder] ;toolchange" );
 
     // Since July 2019, PrusaSlicer only emits automatic Tn command in case that the toolchange_gcode is empty
     // The "T[next_extruder]" is therefore needed in this test.
-    
+
     std::string gcode = Slic3r::Test::slice({ Slic3r::Test::TestMesh::cube_20x20x20 }, config);
 
     GCodeReader parser;
@@ -78,17 +100,17 @@ SCENARIO("Ooze prevention", "[Multi]")
     int         tool_temp[] = { 0, 0, 0, 0};
     Points      toolchange_points;
     Points      extrusion_points;
-    parser.parse_buffer(gcode, [&tool, &tool_temp, &toolchange_points, &extrusion_points, &print_config]
+    parser.parse_buffer(gcode, [&tool, &tool_temp, &toolchange_points, &extrusion_points, &config]
         (GCodeReader &self, const GCodeReader::GCodeLine &line)
     {
         // if the command is a T command, set the the current tool
         if (boost::starts_with(line.cmd(), "T")) {
             // Ignore initial toolchange.
             if (tool != -1) {
-                int expected_temp = is_approx<double>(self.z(), print_config.get_abs_value("first_layer_height") + print_config.z_offset) ?
-                    print_config.first_layer_temperature.get_at(tool) :
-                    print_config.temperature.get_at(tool);
-                if (tool_temp[tool] != expected_temp + print_config.standby_temperature_delta)
+                int expected_temp = is_approx<double>(self.z(), config.print.opt("first_layer_height").get<FloatOrPercentage>().get_abs_value(1.0) + config.printer.opt("z_offset").get<double>()) ?
+                    config.filament.at(tool).opt("first_layer_temperature").get<int>() :
+                    config.filament.at(tool).opt("temperature").get<int>();
+                if (tool_temp[tool] != expected_temp + config.print.opt("standby_temperature_delta").get<int>())
                     throw std::runtime_error("Standby temperature was not set before toolchange.");
                 toolchange_points.emplace_back(self.xy_scaled());
             }
@@ -108,7 +130,7 @@ SCENARIO("Ooze prevention", "[Multi]")
 
             tool_temp[t] = s;
         } else if (line.cmd_is("G1") && line.extruding(self) && line.dist_XY(self) > 0) {
-            extrusion_points.emplace_back(line.new_XY_scaled(self) + scaled<coord_t>(print_config.extruder_offset.get_at(tool)));
+            extrusion_points.emplace_back(line.new_XY_scaled(self) + scaled<coord_t>(config.tool.at(tool).opt("extruder_offset").get<Vec2d>()));
         }
     });
 
@@ -147,18 +169,18 @@ SCENARIO("Ooze prevention", "[Multi]")
     }
 }
 
-std::string slice_stacked_cubes(const DynamicPrintConfig &config, const DynamicPrintConfig &volume1config, const DynamicPrintConfig &volume2config)
+std::string slice_stacked_cubes(const TestConfig &config, const VolumeSettings &volume1config, const VolumeSettings &volume2config)
 {
     Model        model;
     ModelObject *object = model.add_object();
     object->name = "object.stl";
     ModelVolume *v1 = object->add_volume(Test::mesh(Test::TestMesh::cube_20x20x20));
     v1->set_material_id("lower_material");
-    v1->config.assign_config(volume1config);
+    v1->volume_settings = volume1config;
     ModelVolume *v2 = object->add_volume(Test::mesh(Test::TestMesh::cube_20x20x20));
     v2->set_material_id("upper_material");
     v2->translate(0., 0., 20.);
-    v2->config.assign_config(volume2config);
+    v2->volume_settings = volume2config;
     object->add_instance();
     object->ensure_on_bed();
     Print print;
@@ -176,31 +198,41 @@ std::string slice_stacked_cubes(const DynamicPrintConfig &config, const DynamicP
 
 SCENARIO("Stacked cubes", "[Multi]")
 {
-    DynamicPrintConfig lower_config;
-    lower_config.set_deserialize_strict({
-        { "extruder",               1 },
-        { "bottom_solid_layers",    0 },
-        { "top_solid_layers",       1 },
-    });
+    VolumeSettings lower_config;
 
-    DynamicPrintConfig upper_config;
-    upper_config.set_deserialize_strict({
-        { "extruder",               2 },
-        { "bottom_solid_layers",    1 },
-        { "top_solid_layers",       0 }
-    });
+    lower_config.opt("extruder").set(1);
+    lower_config.opt("extruder").set_null(false);
+    lower_config.opt("bottom_solid_layers").set(0);
+    lower_config.opt("bottom_solid_layers").set_null(false);
+    lower_config.opt("top_solid_layers").set(1);
+    lower_config.opt("top_solid_layers").set_null(false);
+
+    VolumeSettings upper_config;
+
+    upper_config.opt("extruder").set(2);
+    upper_config.opt("extruder").set_null(false);
+    upper_config.opt("bottom_solid_layers").set(1);
+    upper_config.opt("bottom_solid_layers").set_null(false);
+    upper_config.opt("top_solid_layers").set(0);
+    upper_config.opt("top_solid_layers").set_null(false);
 
     static constexpr const double solid_infill_speed = 99;
-    auto config = Slic3r::DynamicPrintConfig::full_print_config_with({
-        { "nozzle_diameter",        "0.6, 0.6, 0.6, 0.6" },
-        { "fill_density",           0 },
-        { "solid_infill_speed",     solid_infill_speed },
-        { "top_solid_infill_speed", solid_infill_speed },
-        // for preventing speeds from being altered
-        { "cooling",                "0, 0, 0, 0" },
-        // for preventing speeds from being altered
-        { "first_layer_speed",      "100%" }
-    });
+    TestConfig config{4};
+
+    for (auto& tool_settings : config.tool) {
+        tool_settings.opt("nozzle_diameter").set(0.6);
+    }
+    config.print.opt("fill_density").set(Percentage{0});
+    config.print.opt("solid_infill_speed").set(FloatOrPercentage{solid_infill_speed});
+    config.print.opt("top_solid_infill_speed").set(FloatOrPercentage{solid_infill_speed});
+
+    // for preventing speeds from being altered
+    for (auto& filament_settings : config.filament) {
+        filament_settings.opt("cooling").set(false);
+    }
+
+    // for preventing speeds from being altered
+    config.print.opt("first_layer_speed").set(FloatOrPercentage{Percentage{100}});
 
     auto test_shells = [](const std::string &gcode) {
         GCodeReader       parser;
@@ -219,7 +251,7 @@ SCENARIO("Stacked cubes", "[Multi]")
         });
         return std::make_pair(T0_shells, T1_shells);
     };
-    
+
     WHEN("Interface shells disabled") {
         std::string gcode = slice_stacked_cubes(config, lower_config, upper_config);
         auto [t0, t1] = test_shells(gcode);
@@ -229,24 +261,25 @@ SCENARIO("Stacked cubes", "[Multi]")
         }
     }
     WHEN("Interface shells enabled") {
-        config.set_deserialize_strict("interface_shells", "1");
+        config.print.opt("interface_shells").set(true);
         std::string gcode = slice_stacked_cubes(config, lower_config, upper_config);
         auto [t0, t1] = test_shells(gcode);
         THEN("top interface shells") {
-            REQUIRE(t0.size() == lower_config.opt_int("top_solid_layers"));
+            REQUIRE(t0.size() == lower_config.opt("top_solid_layers").get<int>());
         }
         THEN("bottom interface shells") {
-            REQUIRE(t1.size() == upper_config.opt_int("bottom_solid_layers"));
+            REQUIRE(t1.size() == upper_config.opt("bottom_solid_layers").get<int>());
         }
     }
     WHEN("Slicing with auto-assigned extruders") {
-        auto config = Slic3r::DynamicPrintConfig::full_print_config_with({
-            { "nozzle_diameter",        "0.6,0.6,0.6,0.6" },
-            { "layer_height",           0.4 },
-            { "first_layer_height",     0.4 },
-            { "skirts",                 0 }
-        });
-        std::string gcode = slice_stacked_cubes(config, DynamicPrintConfig{}, DynamicPrintConfig{});
+        TestConfig config{4};
+        for (auto& tool_settings : config.tool) {
+            tool_settings.opt("nozzle_diameter").set(0.6);
+        }
+        config.print.opt("layer_height").set(0.4);
+        config.print.opt("first_layer_height").set(FloatOrPercentage{0.4});
+        config.print.opt("skirts").set(0);
+        std::string gcode = slice_stacked_cubes(config, VolumeSettings{}, VolumeSettings{});
         GCodeReader       parser;
         int               tool = -1;
         // Scaled Z heights.

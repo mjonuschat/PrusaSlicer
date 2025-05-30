@@ -10,14 +10,13 @@
 #include <cmath>
 #include <cstddef>
 
+#include "Slic3r/Domain/ConfigFDM.hpp"
 #include "libslic3r/libslic3r.h"
 #include "libslic3r/Flow.hpp"
 
 namespace Slic3r {
 
 class PrintObject;
-
-enum InfillPattern : int;
 
 namespace FFFSupport {
 
@@ -78,13 +77,13 @@ struct SupportParameters {
     double 				support_density;
 
     // Pattern of the sparse infill including sparse raft layers.
-    InfillPattern           base_fill_pattern;
+    Domain::InfillPattern           base_fill_pattern;
     // Pattern of the top / bottom interface and contact layers.
-    InfillPattern           interface_fill_pattern;
+    Domain::InfillPattern           interface_fill_pattern;
     // Pattern of the raft interface and contact layers.
-    InfillPattern           raft_interface_fill_pattern;
+    Domain::InfillPattern           raft_interface_fill_pattern;
     // Pattern of the contact layers.
-    InfillPattern 			contact_fill_pattern;
+    Domain::InfillPattern 			contact_fill_pattern;
     // Shall the sparse (base) layers be printed with a single perimeter line (sheath) for robustness?
     bool                    with_sheath;
     // Branches of organic supports with area larger than this threshold will be extruded with double lines.

@@ -36,7 +36,7 @@ namespace SupportSpotsGenerator {
 struct Params
 {
     Params(
-        const std::vector<std::string> &filament_types, float max_acceleration, int raft_layers_count, BrimType brim_type, float brim_width)
+        const std::vector<std::string> &filament_types, float max_acceleration, int raft_layers_count, Domain::BrimType brim_type, float brim_width)
         : max_acceleration(max_acceleration), raft_layers_count(raft_layers_count), brim_type(brim_type), brim_width(brim_width)
     {
         if (filament_types.size() > 1) {
@@ -59,7 +59,7 @@ struct Params
     const int raft_layers_count;
     std::string filament_type;
 
-    BrimType brim_type;
+    Domain::BrimType brim_type;
     const float brim_width;
 
     const std::pair<float,float> malformation_distance_factors = std::pair<float, float> { 0.2, 1.1 };
@@ -228,7 +228,7 @@ struct SliceConnection
     void print_info(const std::string &tag) const;
 };
 
-Polygons get_brim(const ExPolygon& slice_polygon, const BrimType brim_type, const float brim_width);
+Polygons get_brim(const ExPolygon& slice_polygon, const Domain::BrimType brim_type, const float brim_width);
 
 class ObjectPart
 {

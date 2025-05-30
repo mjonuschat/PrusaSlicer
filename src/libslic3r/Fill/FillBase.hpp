@@ -38,10 +38,8 @@
 namespace Slic3r {
 
 class Surface;
-class PrintConfig;
-class PrintObjectConfig;
-
-enum InfillPattern : int;
+class PrintConfigView;
+class PrintObjectConfigView;
 
 namespace FillAdaptive {
     struct Octree;
@@ -117,16 +115,15 @@ public:
     FillAdaptive::Octree* adapt_fill_octree = nullptr;
 
     // PrintConfig and PrintObjectConfig are used by infills that use Arachne (Concentric and FillEnsuring).
-    const PrintConfig       *print_config        = nullptr;
-    const PrintObjectConfig *print_object_config = nullptr;
+    PrintRegionConfigView region_config;
 
 public:
     virtual ~Fill() {}
     virtual Fill* clone() const = 0;
 
-    static Fill* new_from_type(const InfillPattern type);
+    static Fill* new_from_type(const Domain::InfillPattern type);
     static Fill* new_from_type(const std::string &type);
-    static bool  use_bridge_flow(const InfillPattern type);
+    static bool  use_bridge_flow(const Domain::InfillPattern type);
 
     void         set_bounding_box(const Slic3r::BoundingBox &bbox) { bounding_box = bbox; }
 

@@ -22,7 +22,6 @@
 #include "Slic3r/Biz/Preset/PresetInteractorConfigContainerContext.hpp"
 #include "Slic3r/Biz/Preset/PresetInteractor.hpp"
 
-#include "libslic3r/PlaceholderParser.hpp"
 #include "libslic3r/Preset.hpp"
 #include "libslic3r/PresetBundle.hpp" // IWYU pragma: keep
 #include "libslic3r/Print.hpp"

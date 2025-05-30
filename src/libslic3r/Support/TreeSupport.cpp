@@ -153,8 +153,8 @@ static std::vector<std::pair<TreeSupportSettings, std::vector<size_t>>> group_me
     //FIXME this is ugly, it does not belong here.
     for (size_t object_id : print_object_ids) {
         const PrintObject       &print_object  = *print.get_object(object_id);
-        const PrintObjectConfig &object_config = print_object.config();
-        if (object_config.support_material_contact_distance < EPSILON)
+        const PrintObjectConfigView &object_config = print_object.config();
+        if (object_config.get<double>("support_material_contact_distance") < EPSILON)
             // || min_feature_size < scaled<coord_t>(0.1) that is the minimum line width
             TreeSupportSettings::soluble = true;
     }
@@ -166,11 +166,11 @@ static std::vector<std::pair<TreeSupportSettings, std::vector<size_t>>> group_me
     for (size_t object_id : print_object_ids) {
         const PrintObject       &print_object  = *print.get_object(object_id);
 #ifndef NDEBUG
-        const PrintObjectConfig &object_config = print_object.config();
+        const PrintObjectConfigView &object_config = print_object.config();
 #endif // NDEBUG
         // Support must be enabled and set to Tree style.
-        assert(object_config.support_material || object_config.support_material_enforce_layers > 0);
-        assert(object_config.support_material_style == smsTree || object_config.support_material_style == smsOrganic);
+        assert(object_config.get<bool>("support_material") || object_config.get<int>("support_material_enforce_layers") > 0);
+        assert(object_config.get<Domain::SupportMaterialStyle>("support_material_style") == Domain::SupportMaterialStyle::smsTree || object_config.get<Domain::SupportMaterialStyle>("support_material_style") == Domain::SupportMaterialStyle::smsOrganic);
 
         bool found_existing_group = false;
         TreeSupportSettings next_settings{ TreeSupportMeshGroupSettings{ print_object }, print_object.slicing_parameters() };
@@ -227,20 +227,20 @@ static std::vector<std::pair<TreeSupportSettings, std::vector<size_t>>> group_me
     const size_t num_layers        = num_object_layers + num_raft_layers;
     std::vector<Polygons> out(num_layers, Polygons{});
 
-    const PrintConfig       &print_config           = print_object.print()->config();
-    const PrintObjectConfig &config                 = print_object.config();
-    const bool               support_auto           = config.support_material.value && config.support_material_auto.value;
-    const int                support_enforce_layers = config.support_material_enforce_layers.value;
+    const PrintConfigView &print_config                 = print_object.print()->config();
+    const PrintObjectConfigView &config                 = print_object.config();
+    const bool               support_auto           = config.get<bool>("support_material") && config.get<bool>("support_material_auto");
+    const int                support_enforce_layers = config.get<int>("support_material_enforce_layers");
     std::vector<Polygons>    enforcers_layers{ print_object.slice_support_enforcers() };
     std::vector<Polygons>    blockers_layers{ print_object.slice_support_blockers() };
     print_object.project_and_append_custom_facets(false, Domain::TriangleSelector::TriangleStateType::ENFORCER, enforcers_layers);
     print_object.project_and_append_custom_facets(false, Domain::TriangleSelector::TriangleStateType::BLOCKER, blockers_layers);
-    const int                support_threshold      = config.support_material_threshold.value;
+    const int                support_threshold      = config.get<int>("support_material_threshold");
     const bool               support_threshold_auto = support_threshold == 0;
     // +1 makes the threshold inclusive
     double                   tan_threshold          = support_threshold_auto ? 0. : tan(M_PI * double(support_threshold + 1) / 180.);
     //FIXME this is a fudge constant!
-    auto                     enforcer_overhang_offset = scaled<double>(config.support_tree_tip_diameter.value);
+    auto                     enforcer_overhang_offset = scaled<double>(config.get<double>("support_tree_tip_diameter"));
 
     size_t num_overhang_layers = support_auto ? num_object_layers : std::min(num_object_layers, std::max(size_t(support_enforce_layers), enforcers_layers.size()));
     tbb::parallel_for(tbb::blocked_range<LayerIndex>(1, num_overhang_layers),
@@ -278,7 +278,7 @@ static std::vector<std::pair<TreeSupportSettings, std::vector<size_t>>> group_me
                 }
                 if (! (enforced_layer || blockers_layers.empty() || blockers_layers[layer_id].empty()))
                     overhangs = diff(overhangs, blockers_layers[layer_id], ApplySafetyOffset::Yes);
-                if (config.dont_support_bridges) {
+                if (config.get<bool>("dont_support_bridges")) {
                     for (const LayerRegion *layerm : current_layer.regions())
                         remove_bridges_from_contacts(print_config, lower_layer, *layerm, 
                             float(layerm->flow(frExternalPerimeter).scaled_width()), overhangs);
@@ -1022,7 +1022,7 @@ int generate_raft_contact(
             -- raft_contact_layer_idx;
         // Create the raft contact layer.
         const ExPolygons &lslices   = print_object.get_layer(0)->lslices;
-        double            expansion = print_object.config().raft_expansion.value;
+        double            expansion = print_object.config().get<double>("raft_expansion");
         interface_placer.add_roof_unguarded(expansion > 0 ? expand(lslices, scaled<float>(expansion)) : Algorithms::ExPolygon::to_polygons(lslices), raft_contact_layer_idx, 0);
     }
     return raft_contact_layer_idx;
@@ -1042,13 +1042,13 @@ void finalize_raft_contact(
             top_contacts[i] = nullptr;
             move_bounds[i].clear();
         }
-        if (raft_contact_layer_idx >= 0 && print_object.config().raft_expansion.value > 0) {
+        if (raft_contact_layer_idx >= 0 && print_object.config().get<double>("raft_expansion") > 0) {
             // If any tips at first_tree_layer now are completely inside the expanded raft layer, remove them as well before they are propagated to the ground.
             Polygons &raft_polygons = top_contacts[raft_contact_layer_idx]->polygons;
             EdgeGrid::Grid grid(get_extents(raft_polygons).inflated(SCALED_EPSILON));
             grid.create(raft_polygons, Polylines{}, coord_t(scale_(10.)));
             SupportElements &first_layer_move_bounds = move_bounds[first_tree_layer];
-            double threshold = scaled<double>(print_object.config().raft_expansion.value) * 2.;
+            double threshold = scaled<double>(print_object.config().get<double>("raft_expansion")) * 2.;
             first_layer_move_bounds.erase(std::remove_if(first_layer_move_bounds.begin(), first_layer_move_bounds.end(),
                 [&grid, threshold](const SupportElement &el) {
                     double dist;
@@ -3562,11 +3562,11 @@ static void generate_support_areas(Print &print, const BuildVolume &build_volume
 
             // ### draw these points as circles
             
-            if (print_object.config().support_material_style == smsTree)
+            if (print_object.config().get<Domain::SupportMaterialStyle>("support_material_style") == Domain::SupportMaterialStyle::smsTree)
                 draw_areas(*print.get_object(processing.second.front()), volumes, config, overhangs, move_bounds, 
                     bottom_contacts, top_contacts, intermediate_layers, layer_storage, throw_on_cancel);
             else {
-                assert(print_object.config().support_material_style == smsOrganic);
+                assert(print_object.config().get<Domain::SupportMaterialStyle>("support_material_style") == Domain::SupportMaterialStyle::smsOrganic);
                 organic_draw_branches(
                     *print.get_object(processing.second.front()), volumes, config, move_bounds, 
                     bottom_contacts, top_contacts, interface_placer, intermediate_layers, layer_storage, 

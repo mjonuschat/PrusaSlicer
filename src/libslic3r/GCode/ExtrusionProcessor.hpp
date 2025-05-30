@@ -280,12 +280,14 @@ ExtrusionEntityCollection calculate_and_split_overhanging_extrusions(
     const AABBTreeLines::LinesDistancer<Linef>      &unscaled_prev_layer,
     const AABBTreeLines::LinesDistancer<CurledLine> &prev_layer_curled_lines);
 
-OverhangSpeeds calculate_overhang_speed(const ExtrusionAttributes  &attributes,
-                                        const FullPrintConfig      &config,
-                                        size_t                      extruder_id,
-                                        float                       external_perimeter_reference_speed,
-                                        float                       default_speed,
-                                        const std::optional<float> &current_fan_speed);
+OverhangSpeeds calculate_overhang_speed(
+    const ExtrusionAttributes& attributes,
+    const Domain::ConfigView& config,
+    size_t extruder_id,
+    float external_perimeter_reference_speed,
+    float default_speed,
+    const std::optional<float>& current_fan_speed
+);
 
 } // namespace Slic3r::ExtrusionProcessor
 

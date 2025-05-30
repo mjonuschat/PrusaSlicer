@@ -23,7 +23,7 @@
 #include "ExPolygon.hpp"
 #include "Layer.hpp"
 #include "Point.hpp"
-#include "PlaceholderParser.hpp"
+#include "Slic3r/Biz/Parser/PlaceholderParser.hpp"
 #include "PrintConfig.hpp"
 #include "Geometry/ArcWelder.hpp"
 #include "libslic3r/GCode/AvoidCrossingPerimeters.hpp"
@@ -43,6 +43,8 @@
 #include "libslic3r/GCode/Travels.hpp"
 #include "EdgeGrid.hpp"
 #include "tcbspan/span.hpp"
+#include "libslic3r/ConfigViews.hpp"
+#include "Slic3r/Domain/ConfigFDM.hpp"
 
 #include <memory>
 #include <map>
@@ -64,11 +66,11 @@ public:
     bool enable;
     
     OozePrevention() : enable(false) {}
-    std::string pre_toolchange(GCodeGenerator &gcodegen);
-    std::string post_toolchange(GCodeGenerator &gcodegen);
+    std::string pre_toolchange(GCodeGenerator &gcodegen, const Domain::ConfigView& config);
+    std::string post_toolchange(GCodeGenerator &gcodegen, const Domain::ConfigView& config);
     
 private:
-    int _get_temp(const GCodeGenerator &gcodegen) const;
+    int _get_temp(const GCodeGenerator &gcodegen, const Domain::ConfigView& config) const;
 };
 
 class ColorPrintColors
@@ -107,7 +109,7 @@ struct PrintObjectInstance
 class GCodeGenerator {
 
 public:
-    GCodeGenerator(const Print* print = nullptr); // The default value is only used in unit tests.
+    GCodeGenerator(const Print* print);
     ~GCodeGenerator() = default;
 
     // throws std::runtime_exception on error,
@@ -132,7 +134,7 @@ public:
 
         if constexpr (Derived::SizeAtCompileTime == 2) {
             return Vec2d(unscaled<double>(point.x()), unscaled<double>(point.y())) + m_origin
-                - m_config.extruder_offset.get_at(m_writer.extruder()->id());
+                - m_extruder_offset.at(m_writer.extruder()->id());
         } else {
             const Vec2d gcode_point_xy{this->point_to_gcode(point.template head<2>())};
             return to_3d(gcode_point_xy, unscaled(point.z()));
@@ -147,19 +149,24 @@ public:
         return { GCodeFormatter::quantize_xyzf(p.x()), GCodeFormatter::quantize_xyzf(p.y()) };
     }
     Point           gcode_to_point(const Vec2d &point) const;
-    const FullPrintConfig &config() const { return m_config; }
     const Layer*    layer() const { return m_layer; }
     GCodeWriter&    writer() { return m_writer; }
     const GCodeWriter& writer() const { return m_writer; }
-    PlaceholderParser& placeholder_parser() { return m_placeholder_parser_integration.parser; }
-    const PlaceholderParser& placeholder_parser() const { return m_placeholder_parser_integration.parser; }
+    Biz::Parser::PlaceholderParser& placeholder_parser() { return m_placeholder_parser_integration.parser; }
+    const Biz::Parser::PlaceholderParser& placeholder_parser() const { return m_placeholder_parser_integration.parser; }
+
     // Process a template through the placeholder parser, collect error messages to be reported
     // inside the generated string and after the G-code export finishes.
-    std::string     placeholder_parser_process(const std::string &name, const std::string &templ, unsigned int current_extruder_id, const DynamicConfig *config_override = nullptr);
+    std::string placeholder_parser_process(
+        const std::string& name,
+        const std::string& templ,
+        unsigned int current_extruder_id,
+        const Biz::Parser::IO::Config* config_override = nullptr
+    );
+
     bool            enable_cooling_markers() const { return m_enable_cooling_markers; }
 
     void            set_layer_count(unsigned int value) { m_layer_count = value; }
-    void            apply_print_config(const PrintConfig &print_config);
 
     // append full config to the given string
     static void append_full_config(const Print& print, std::string& str);
@@ -213,9 +220,11 @@ private:
     static ObjectsLayerToPrint         		                     collect_layers_to_print(const PrintObject &object);
     static std::vector<std::pair<double, ObjectsLayerToPrint>> collect_layers_to_print(const Print &print);
 
-    Polyline get_layer_change_xy_path(const Vec3d &from, const Vec3d &to);
+    Polyline get_layer_change_xy_path(const Vec3d &from, const Vec3d &to, const Domain::ConfigView& object_config);
 
-    std::string get_ramping_layer_change_gcode(const Vec3d &from, const Vec3d &to, const unsigned extruder_id);
+    std::string get_ramping_layer_change_gcode(
+        const Vec3d& from, const Vec3d& to, const unsigned extruder_id, const Domain::ConfigView& config
+    );
 
     /** @brief Generates ramping travel gcode for layer change. */
     std::string generate_ramping_layer_change_gcode(
@@ -267,24 +276,28 @@ private:
         const GCode::SmoothPathCache            &smooth_path_cache_global,
         GCodeOutputStream                       &output_stream);
 
-    void            set_extruders(const std::vector<unsigned int> &extruder_ids);
-    std::string     preamble();
+    void            set_extruders(const std::vector<unsigned int> &extruder_ids, const PrintConfigView& config);
+    std::string     preamble(const double z_offset);
     std::string change_layer(
         double previous_layer_z,
         double print_z,
         bool vase_mode,
         const Point &first_point,
-        const bool first_layer
+        const bool first_layer,
+        const PrintObjectConfigView& object_config
     );
     std::string extrude_smooth_path(
         const GCode::SmoothPath &smooth_path,
         const bool is_loop,
         const std::string_view description,
         const double speed,
+        const Domain::ConfigView& config,
         const std::size_t wipe_offset = 0
     );
     std::string extrude_skirt(
-        GCode::SmoothPath smooth_path, const ExtrusionFlow &extrusion_flow_override
+        GCode::SmoothPath smooth_path,
+        const ExtrusionFlow& extrusion_flow_override,
+        const Domain::ConfigView& config
     );
 
     std::vector<InstanceToPrint> sort_print_object_instances(
@@ -319,7 +332,8 @@ private:
     );
 
     std::string extrude_support(
-        const std::vector<GCode::ExtrusionOrder::SupportPath> &support_extrusions
+        const std::vector<GCode::ExtrusionOrder::SupportPath>& support_extrusions,
+        const Domain::ConfigView& config
     );
 
     enum class EnforceFirstZ {
@@ -331,12 +345,14 @@ private:
         const Points3& travel,
         const std::string& comment,
         const std::function<std::string()>& insert_gcode,
+        const Domain::ConfigView& config,
         const EnforceFirstZ enforce_first_z = EnforceFirstZ::False
     );
     Polyline generate_travel_xy_path(
         const Point& start,
         const Point& end,
         const bool needs_retraction,
+        const Domain::ConfigView& config,
         bool& could_be_wipe_disabled
     );
 
@@ -346,17 +362,31 @@ private:
         ExtrusionRole role,
         const std::string &comment,
         const std::function<std::string()>& insert_gcode,
+        const Domain::ConfigView& config,
         const EnforceFirstZ enforce_first_z = EnforceFirstZ::False
     );
 
-    std::string travel_to_first_position(const Vec3crd& point, const double from_z, const ExtrusionRole role, const std::function<std::string()>& insert_gcode);
+    std::string travel_to_first_position(
+        const Vec3crd& point,
+        const double from_z,
+        const ExtrusionRole role,
+        const std::function<std::string()>& insert_gcode,
+        const Domain::ConfigView& config
+    );
 
-    bool            needs_retraction(const Polyline &travel, ExtrusionRole role = ExtrusionRole::None);
+    bool needs_retraction(
+        const Polyline& travel,
+        const Domain::ConfigView& config,
+        ExtrusionRole role = ExtrusionRole::None
+    );
 
-    std::string     retract_and_wipe(bool toolchange = false, bool reset_e = true);
+    std::string     retract_and_wipe(const Domain::ConfigView& config, bool toolchange = false, bool reset_e = true);
     std::string     unretract() { return m_writer.unretract(); }
-    std::string     set_extruder(unsigned int extruder_id, double print_z);
-    bool line_distancer_is_required(const std::vector<unsigned int>& extruder_ids);
+    std::string set_extruder(unsigned int extruder_id, double print_z, const Domain::ConfigView& config);
+    bool line_distancer_is_required(
+        const std::vector<unsigned int>& extruder_ids,
+        const std::vector<InstanceToPrint>& instances_to_print
+    );
 
     Seams::Placer                       m_seam_placer;
 
@@ -364,7 +394,8 @@ private:
        This affects the input arguments supplied to the extrude*() and travel_to()
        methods. */
     Vec2d                               m_origin;
-    FullPrintConfig                     m_config;
+    std::vector<Vec2d> m_extruder_offset;
+    std::vector<bool> m_wipe_enabled;
     // scaled G-code resolution
     double                              m_scaled_resolution;
     GCodeWriter                         m_writer;
@@ -375,22 +406,13 @@ private:
         void update_from_gcodewriter(const GCodeWriter &writer, const WipeTowerData& wipe_tower_data);
         void validate_output_vector_variables();
 
-        PlaceholderParser                   parser;
+        Biz::Parser::PlaceholderParser parser;
         // For random number generator etc.
-        PlaceholderParser::ContextData      context;
+        Biz::Parser::PlaceholderParser::ContextData context;
         // Collection of templates, on which the placeholder substitution failed.
         std::map<std::string, std::string>  failed_templates;
         // Input/output from/to custom G-code block, for returning position, retraction etc.
-        DynamicConfig                       output_config;
-        ConfigOptionFloats                 *opt_position { nullptr };
-        ConfigOptionFloats                 *opt_e_position { nullptr };
-        ConfigOptionFloat                  *opt_zhop { nullptr };
-        ConfigOptionFloats                 *opt_e_retracted { nullptr };
-        ConfigOptionFloats                 *opt_e_restart_extra { nullptr };
-        ConfigOptionFloats                 *opt_extruded_volume { nullptr };
-        ConfigOptionFloats                 *opt_extruded_weight { nullptr };
-        ConfigOptionFloat                  *opt_extruded_volume_total { nullptr };
-        ConfigOptionFloat                  *opt_extruded_weight_total { nullptr };
+        Biz::Parser::IO::Config             output_config;
         // Caches of the data passed to the script.
         size_t                              num_extruders;
         std::vector<double>                 position;
@@ -477,7 +499,14 @@ private:
         bool emit_bridge_fan_end   = true;
     };
 
-    std::string                         _extrude(const ExtrusionAttributes &attribs, const Geometry::ArcWelder::Path &path, std::string_view description, double speed, const EmitModifiers &emit_modifiers = EmitModifiers());
+    std::string _extrude(
+        const ExtrusionAttributes& attribs,
+        const Geometry::ArcWelder::Path& path,
+        std::string_view description,
+        double speed,
+        const Domain::ConfigView& config,
+        const EmitModifiers& emit_modifiers = EmitModifiers()
+    );
 
     void                                print_machine_envelope(GCodeOutputStream &file, const Print &print);
     std::string                         _process_start_gcode(const Print &print, unsigned int current_extruder_id);

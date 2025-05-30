@@ -14,14 +14,14 @@ using Biz::Print::IPrint;
 using Biz::Print::WipeTowerGeometry;
 
 std::unique_ptr<IPrint> init_print(
-    const PrinterTechnology& printer_technology, 
+    const Domain::PrinterTechnology& printer_technology, 
     IProcessCallbacks& callbacks,
     const SlicingId id)
 {
     std::unique_ptr<PrintBase> print;
     std::reference_wrapper<IProcessCallbacks> callbacks_ref{callbacks};
     switch (printer_technology) {
-    case ptFFF: {
+    case Domain::PrinterTechnology::FFF: {
         Print::OnFdmResult on_fdm_result = [callbacks_ref, id](FDMResult&& result) {
             callbacks_ref.get().on_fdm_result(std::move(result), id); };
         Print::OnWipeTowerGeometry on_wipe_tower_geometry = [callbacks_ref, id](WipeTowerGeometry&& geometry) {
@@ -29,7 +29,7 @@ std::unique_ptr<IPrint> init_print(
         print = std::make_unique<Print>(on_fdm_result, on_wipe_tower_geometry);
         break;
     }
-    case ptSLA: {
+    case Domain::PrinterTechnology::SLA: {
         SLAPrint::OnSlaResult on_sla_result = [callbacks_ref, id](SLAResult&& result) {
             callbacks_ref.get().on_sla_result(id, std::move(result)); };
         SLAPrint::OnSlaObject on_sla_object = [callbacks_ref, id](const Object& object) {
@@ -53,6 +53,9 @@ using Print::IPrint;
 using Print::ApplyStatus;
 using JThread::StopToken;
 using JThread::JThread;
+using Domain::ConfigPack;
+using Domain::ConfigPackFDM;
+using Domain::ConfigPackSLA;
 
 LoggingScopeLock::LoggingScopeLock(std::mutex& mutex, std::string id)
     : m_mutex{mutex}, m_id{std::move(id)}
@@ -91,16 +94,20 @@ bool is_thread_active(const Status status) {
         || status == Status::Updating;
 }
 
-Slic3r::PrinterTechnology get_printer_technology(const DynamicPrintConfig& config) {
-    const auto option = config.option<ConfigOptionEnum<PrinterTechnology>>("printer_technology");
-    ASSERT(option != nullptr);
-    return option->value;
+Domain::PrinterTechnology get_printer_technology(const ConfigPack& config) {
+    if (std::holds_alternative<ConfigPackFDM>(config)) {
+        return Domain::PrinterTechnology::FFF;
+    } else if (std::holds_alternative<ConfigPackSLA>(config)) {
+        return Domain::PrinterTechnology::SLA;
+    } else {
+        PANIC("Unexpected config type!");
+    }
 }
 
 BackgroundProcess::BackgroundProcess(
     IProcessCallbacks& callbacks,
     Model& model,
-    DynamicPrintConfig&& config,
+    ConfigPack&& config,
     const Domain::BedInstance& bed,
     const SlicingId id
 )
@@ -117,7 +124,7 @@ BackgroundProcess::BackgroundProcess(
     std::unique_ptr<IPrint>&& print,
     IProcessCallbacks& callbacks,
     Model& model,
-    DynamicPrintConfig&& config,
+    ConfigPack&& config,
     const Domain::BedInstance& bed,
     const SlicingId id
 )
@@ -140,12 +147,12 @@ BackgroundProcess::~BackgroundProcess() {
 
 void BackgroundProcess::update(
     Model& model,
-    DynamicPrintConfig&& config,
+    const ConfigPack& config,
     const Domain::BedInstance& bed
 )
 {
     SPDLOG_INFO("{}: update", fmt::streamed(m_id));
-    const PrinterTechnology printer_technology{Slicing::get_printer_technology(config)};
+    const Domain::PrinterTechnology printer_technology{Slicing::get_printer_technology(config)};
     ASSERT(printer_technology == m_printer_technology);
 
     const LoggingScopeLock lock{m_mutex, "background process"};
@@ -164,7 +171,7 @@ void BackgroundProcess::update(
     }};
 
     this->m_on_status(Status::Updating);
-    apply_status = this->m_print->update(model, std::move(config), bed);
+    apply_status = this->m_print->update(model, config, bed);
 }
 
 void BackgroundProcess::slice()
@@ -217,7 +224,7 @@ void BackgroundProcess::stop()
     });
 }
 
-Slic3r::PrinterTechnology BackgroundProcess::get_printer_technology() const {
+Domain::PrinterTechnology BackgroundProcess::get_printer_technology() const {
     return m_printer_technology;
 }
 

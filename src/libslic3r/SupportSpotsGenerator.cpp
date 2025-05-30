@@ -787,17 +787,17 @@ bool has_brim(const Layer* layer, const Params& params){
     return
         int(layer->id()) == params.raft_layers_count
         && params.raft_layers_count == 0
-        && params.brim_type != BrimType::btNoBrim
+        && params.brim_type != Domain::BrimType::NoBrim
         && params.brim_width > 0.0;
 }
 
 
-Polygons get_brim(const ExPolygon& slice_polygon, const BrimType brim_type, const float brim_width) {
+Polygons get_brim(const ExPolygon& slice_polygon, const Domain::BrimType brim_type, const float brim_width) {
     // TODO: The algorithm here should take into account that multiple slices may
     // have coliding Brim areas and the final brim area is smaller,
     // thus has lower adhesion. For now this effect will be neglected.
     ExPolygons brim;
-    if (brim_type == BrimType::btOuterAndInner || brim_type == BrimType::btOuterOnly) {
+    if (brim_type == Domain::BrimType::OuterAndInner || brim_type == Domain::BrimType::OuterOnly) {
         Polygon brim_hole = slice_polygon.contour;
         brim_hole.reverse();
         Polygons c = expand(slice_polygon.contour, scale_(brim_width)); // For very small polygons, the expand may result in empty vector, even thought the input is correct.
@@ -805,7 +805,7 @@ Polygons get_brim(const ExPolygon& slice_polygon, const BrimType brim_type, cons
             brim.push_back(ExPolygon{c.front(), brim_hole});
         }
     }
-    if (brim_type == BrimType::btOuterAndInner || brim_type == BrimType::btInnerOnly) {
+    if (brim_type == Domain::BrimType::OuterAndInner || brim_type == Domain::BrimType::InnerOnly) {
         Polygons brim_contours = slice_polygon.holes;
         Algorithms::Polygon::reverse(brim_contours);
         for (const Polygon &brim_contour : brim_contours) {

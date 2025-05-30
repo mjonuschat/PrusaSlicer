@@ -7,6 +7,9 @@
 
 namespace Slic3r::SlicingSync {
 
+using Domain::ConfigView;
+using Domain::Percentage;
+
 template <typename Set>
 AllOrSome<Set> merge (const AllOrSome<Set>& a, const AllOrSome<Set>& b) {
     if (std::holds_alternative<AllSteps>(a) || std::holds_alternative<AllSteps>(b)) {
@@ -48,8 +51,8 @@ InvalidatedSteps merge(const std::vector<InvalidatedSteps>& invalidated_steps) {
 }
 
 std::pair<AllOrSome<PrintSteps>, AllOrSome<PrintObjectSteps>> diff_to_invalidated_steps(
-    const StaticPrintConfig& old_config,
-    const StaticPrintConfig& new_config,
+    const ConfigView& old_config,
+    const ConfigView& new_config,
     const std::vector<std::string>& diff
 )
 {
@@ -84,11 +87,11 @@ std::pair<AllOrSome<PrintSteps>, AllOrSome<PrintObjectSteps>> diff_to_invalidate
             // Return true if gap-fill speed has changed from zero value to non-zero or from non-zero value to zero.
             auto is_gap_fill_changed_state_due_to_speed = [&opt_key, &old_config, &new_config]() -> bool {
                 if (opt_key == "gap_fill_speed") {
-                    const auto *old_gap_fill_speed = old_config.option<ConfigOptionFloat>(opt_key);
-                    const auto *new_gap_fill_speed = new_config.option<ConfigOptionFloat>(opt_key);
+                    const auto old_gap_fill_speed = old_config.get<double>(opt_key);
+                    const auto new_gap_fill_speed = new_config.get<double>(opt_key);
                     assert(old_gap_fill_speed && new_gap_fill_speed);
-                    return (old_gap_fill_speed->value > 0.f && new_gap_fill_speed->value == 0.f) ||
-                           (old_gap_fill_speed->value == 0.f && new_gap_fill_speed->value > 0.f);
+                    return (old_gap_fill_speed > 0.f && new_gap_fill_speed == 0.f) ||
+                           (old_gap_fill_speed == 0.f && new_gap_fill_speed > 0.f);
                 }
                 return false;
             };
@@ -194,6 +197,7 @@ std::pair<AllOrSome<PrintSteps>, AllOrSome<PrintObjectSteps>> diff_to_invalidate
             || opt_key == "top_solid_layers"
             || opt_key == "top_solid_min_thickness"
             || opt_key == "solid_infill_below_area"
+            || opt_key == "extruder"
             || opt_key == "infill_extruder"
             || opt_key == "solid_infill_extruder"
             || opt_key == "infill_extrusion_width"
@@ -212,26 +216,20 @@ std::pair<AllOrSome<PrintSteps>, AllOrSome<PrintObjectSteps>> diff_to_invalidate
         } else if (opt_key == "fill_pattern") {
             object_steps.insert(posPrepareInfill);
         } else if (opt_key == "over_bridge_speed") {
-            const auto *old_speed = old_config.option<ConfigOptionFloat>(opt_key);
-            const auto *new_speed = new_config.option<ConfigOptionFloat>(opt_key);
-            if (
-                old_speed == nullptr
-                || new_speed == nullptr
-                || old_speed->value == 0
-                || new_speed->value == 0
-            ) {
+            const auto old_speed = old_config.get<double>(opt_key);
+            const auto new_speed = new_config.get<double>(opt_key);
+            if ( old_speed == 0 || new_speed == 0) {
                 object_steps.insert(posPrepareInfill);
             }
             print_steps.insert(psGCodeExport);
         } else if (opt_key == "fill_density") {
             // One likely wants to reslice only when switching between zero infill to simulate boolean difference (subtracting volumes),
             // normal infill and 100% (solid) infill.
-            const auto *old_density = old_config.option<ConfigOptionPercent>(opt_key);
-            const auto *new_density = new_config.option<ConfigOptionPercent>(opt_key);
-            assert(old_density && new_density);
+            const auto old_density = old_config.get<Percentage>(opt_key);
+            const auto new_density = new_config.get<Percentage>(opt_key);
             //FIXME Vojtech is not quite sure about the 100% here, maybe it is not needed.
-            if (is_approx(old_density->value, 0.) || is_approx(old_density->value, 100.) ||
-                is_approx(new_density->value, 0.) || is_approx(new_density->value, 100.))
+            if (is_approx(old_density.value, 0.) || is_approx(old_density.value, 100.) ||
+                is_approx(new_density.value, 0.) || is_approx(new_density.value, 100.))
                 object_steps.insert(posPerimeters);
             object_steps.insert(posPrepareInfill);
         } else if (opt_key == "solid_infill_extrusion_width") {
@@ -240,6 +238,7 @@ std::pair<AllOrSome<PrintSteps>, AllOrSome<PrintObjectSteps>> diff_to_invalidate
             object_steps.insert(posPrepareInfill);
         } else if (
                opt_key == "external_perimeter_extrusion_width"
+            || opt_key == "extruder"
             || opt_key == "perimeter_extruder"
             || opt_key == "fuzzy_skin"
             || opt_key == "fuzzy_skin_thickness"
@@ -305,8 +304,7 @@ std::pair<AllOrSome<PrintSteps>, AllOrSome<PrintObjectSteps>> diff_to_invalidate
             || opt_key == "overhang_speed_3") {
             object_steps.insert(posPerimeters);
         } else {
-            // for legacy, if we can't handle this option let's invalidate all steps
-            return {AllSteps{}, AllSteps{}};
+            PANIC("Unknown diff option: " + opt_key);
         }
     }
 
@@ -539,11 +537,9 @@ PrintAndObjectSteps diff_to_print_invalidated_steps(const std::vector<std::strin
 
 PrintAndObjectSteps get_invalidated_steps(const PrintRegion& current, const PrintRegion& next)
 {
-    if (current.config_hash() == next.config_hash()) {
-        return {PrintSteps{}, PrintObjectSteps{}};
-    }
-
-    const std::vector<std::string> diff{current.config().diff(next.config())};
+    const std::vector<std::string> diff{
+        current.config().diff_keys(next.config())
+    };
     return diff_to_invalidated_steps(current.config(), next.config(), diff);
 }
 

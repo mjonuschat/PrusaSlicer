@@ -8,7 +8,6 @@
 
 namespace Slic3r {
 
-enum class LabelObjectsStyle;
 struct PrintInstance;
 class Print;
 class GCodeWriter;
@@ -18,7 +17,7 @@ namespace GCode {
 class LabelObjects
 {
 public:
-    void init(const SpanOfConstPtrs<PrintObject>& objects, LabelObjectsStyle label_object_style, GCodeFlavor gcode_flavor);
+    void init(const SpanOfConstPtrs<PrintObject>& objects, Domain::LabelObjectsStyle label_object_style, GCodeFlavor gcode_flavor);
     std::string all_objects_header() const;
     std::string all_objects_header_singleline_json() const;
 
@@ -53,7 +52,7 @@ private:
     const PrintInstance* current_instance{nullptr};
     const PrintInstance* last_operation_instance{nullptr};
 
-    LabelObjectsStyle m_label_objects_style;
+    Domain::LabelObjectsStyle m_label_objects_style;
     GCodeFlavor       m_flavor;
     std::vector<LabelData> m_label_data;
 };

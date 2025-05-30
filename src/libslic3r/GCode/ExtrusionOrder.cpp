@@ -127,7 +127,7 @@ std::vector<Perimeter> extract_perimeter_extrusions(
                 bool reverse_loop{false};
                 if (auto loop = dynamic_cast<const ExtrusionLoop *>(ee)) {
                     const bool is_hole = loop->is_clockwise();
-                    reverse_loop = print.config().prefer_clockwise_movements ? !is_hole : is_hole;
+                    reverse_loop = print.config().get<bool>("prefer_clockwise_movements") ? !is_hole : is_hole;
                 }
                 auto [path, wipe_offset]{smooth_path(&layer, &region, ExtrusionEntityReference{*ee, reverse_loop}, extruder_id, last_position)};
                 previous_position = get_gcode_point(last_position, offset);
@@ -248,9 +248,9 @@ std::vector<IslandExtrusions> extract_island_extrusions(
 
         result.push_back(IslandExtrusions{&region});
         IslandExtrusions &island_extrusions{result.back()};
-        island_extrusions.infill_first = print.config().infill_first;
+        island_extrusions.infill_first = print.config().get<bool>("infill_first");
 
-        if (print.config().infill_first) {
+        if (print.config().get<bool>("infill_first")) {
             island_extrusions.infill_ranges = extract_infill_ranges(
                 print, layer, island, offset, previous_position, should_pick_infill, smooth_path, extruder_id
             );
@@ -332,13 +332,13 @@ std::vector<SliceExtrusions> get_slices_extrusions(
 unsigned translate_support_extruder(
     const int configured_extruder,
     const LayerTools &layer_tools,
-    const ConfigOptionBools &is_soluable
+    const std::vector<bool> &is_soluable
 ) {
     if (configured_extruder <= 0) {
         // Some support will be printed with "don't care" material, preferably non-soluble.
         // Is the current extruder assigned a soluble filament?
         auto it_nonsoluble = std::find_if(layer_tools.extruders.begin(), layer_tools.extruders.end(),
-            [&is_soluable](unsigned int extruder_id) { return ! is_soluable.get_at(extruder_id); });
+            [&is_soluable](unsigned int extruder_id) { return ! is_soluable.at(extruder_id); });
         // There should be a non-soluble extruder available.
         assert(it_nonsoluble != layer_tools.extruders.end());
         return it_nonsoluble == layer_tools.extruders.end() ? layer_tools.extruders.front() : *it_nonsoluble;
@@ -467,8 +467,8 @@ std::vector<NormalExtrusions> get_normal_extrusions(
             result.back().support_extrusions = get_support_extrusions(
                 extruder_id,
                 layers[instance.object_layer_to_print_id],
-                translate_support_extruder(instance.print_object.config().support_material_extruder.value, layer_tools, print.config().filament_soluble),
-                translate_support_extruder(instance.print_object.config().support_material_interface_extruder.value, layer_tools, print.config().filament_soluble),
+                translate_support_extruder(instance.print_object.config().get<int>("support_material_extruder"), layer_tools, print.config().get<std::vector<bool>>("filament_soluble")),
+                translate_support_extruder(instance.print_object.config().get<int>("support_material_interface_extruder"), layer_tools, print.config().get<std::vector<bool>>("filament_soluble")),
                 smooth_path,
                 previous_position
             );
@@ -555,7 +555,7 @@ std::vector<ExtruderExtrusions> get_extrusions(
         if (layer_tools.has_wipe_tower && wipe_tower != nullptr) {
             const bool finish_wipe_tower{extruder_id == layer_tools.extruders.back()};
             if (finish_wipe_tower || is_toolchange_required(is_first_layer, layer_tools.extruders.back(), extruder_id, current_extruder_id)) {
-                const bool ignore_sparse{print.config().wipe_tower_no_sparse_layers.value};
+                const bool ignore_sparse{print.config().get<bool>("wipe_tower_no_sparse_layers")};
                 if (const auto tool_change{wipe_tower->get_toolchange(toolchange_number, ignore_sparse)}) {
                     toolchange_number++;
                     previous_position = scaled(wipe_tower->transform_wt_pt(tool_change->end_pos));
@@ -572,7 +572,7 @@ std::vector<ExtruderExtrusions> get_extrusions(
                 bool reverse{false};
                 if (auto loop = dynamic_cast<const ExtrusionLoop *>(print.skirt().entities[i])) {
                     const bool is_hole = loop->is_clockwise();
-                    reverse = print.config().prefer_clockwise_movements ? !is_hole : is_hole;
+                    reverse = print.config().get<bool>("prefer_clockwise_movements") ? !is_hole : is_hole;
                 }
                 const ExtrusionEntityReference entity{*print.skirt().entities[i], reverse};
                 std::optional<InstancePoint> last_position{get_instance_point(previous_position, {0, 0})};
@@ -590,7 +590,7 @@ std::vector<ExtruderExtrusions> get_extrusions(
                 if (auto loop = dynamic_cast<const ExtrusionLoop *>(entity)) {
                     const bool is_hole = loop->is_clockwise();
                     is_loop = true;
-                    reverse = print.config().prefer_clockwise_movements ? !is_hole : is_hole;
+                    reverse = print.config().get<bool>("prefer_clockwise_movements") ? !is_hole : is_hole;
                 }
                 const ExtrusionEntityReference entity_reference{*entity, reverse};
 

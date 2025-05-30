@@ -124,7 +124,7 @@ TEST_CASE("BranchingSupports::ElevatedSupportsDoNotPierceModel", "[SLASupportGen
 
     sla::SupportTreeConfig supportcfg;
     supportcfg.object_elevation_mm = 10.;
-    supportcfg.tree_type = sla::SupportTreeType::Branching;
+    supportcfg.tree_type = Domain::sla::SupportTreeType::Branching;
 
     for (auto fname : SUPPORT_TEST_MODELS)
         test_support_model_collision(fname, supportcfg);
@@ -134,7 +134,7 @@ TEST_CASE("BranchingSupports::FloorSupportsDoNotPierceModel", "[SLASupportGenera
 
     sla::SupportTreeConfig supportcfg;
     supportcfg.object_elevation_mm = 0;
-    supportcfg.tree_type = sla::SupportTreeType::Branching;
+    supportcfg.tree_type = Domain::sla::SupportTreeType::Branching;
 
     for (auto fname : SUPPORT_TEST_MODELS)
         test_support_model_collision(fname, supportcfg);

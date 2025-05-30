@@ -847,10 +847,10 @@ static inline std::vector<std::vector<ExPolygons>> segmentation_top_and_bottom_l
     int max_bottom_layers = 0;
     int granularity = 1;
     for (size_t i = 0; i < print_object.num_printing_regions(); ++ i) {
-        const PrintRegionConfig &config = print_object.printing_region(i).config();
-        max_top_layers    = std::max(max_top_layers, config.top_solid_layers.value);
-        max_bottom_layers = std::max(max_bottom_layers, config.bottom_solid_layers.value);
-        granularity       = std::max(granularity, std::max(config.top_solid_layers.value, config.bottom_solid_layers.value) - 1);
+        const PrintRegionConfigView &config = print_object.printing_region(i).config();
+        max_top_layers    = std::max(max_top_layers, config.get<int>("top_solid_layers"));
+        max_bottom_layers = std::max(max_bottom_layers, config.get<int>("bottom_solid_layers"));
+        granularity       = std::max(granularity, std::max(config.get<int>("top_solid_layers"), config.get<int>("bottom_solid_layers")) - 1);
     }
 
     // Project upwards pointing painted triangles over top surfaces,
@@ -991,15 +991,15 @@ static inline std::vector<std::vector<ExPolygons>> segmentation_top_and_bottom_l
         LayerColorStat out;
         const Layer &layer = *layers[layer_idx];
         for (const LayerRegion *region : layer.regions())
-            if (const PrintRegionConfig &config = region->region().config();
+            if (const PrintRegionConfigView &config = region->region().config();
                 // color_idx == 0 means "don't know" extruder aka the underlying extruder.
                 // As this region may split existing regions, we collect statistics over all regions for color_idx == 0.
-                color_idx == 0 || config.perimeter_extruder == int(color_idx)) {
+                color_idx == 0 || config.get<int>("perimeter_extruder") == int(color_idx)) {
                 const Flow perimeter_flow = region->flow(FlowRole::frPerimeter);
                 out.extrusion_width     = std::max<float>(out.extrusion_width, perimeter_flow.width());
-                out.top_solid_layers    = std::max<int>(out.top_solid_layers, config.top_solid_layers);
-                out.bottom_solid_layers = std::max<int>(out.bottom_solid_layers, config.bottom_solid_layers);
-                out.small_region_threshold = config.gap_fill_enabled.value && config.gap_fill_speed.value > 0 ?
+                out.top_solid_layers    = std::max<int>(out.top_solid_layers, config.get<int>("top_solid_layers"));
+                out.bottom_solid_layers = std::max<int>(out.bottom_solid_layers, config.get<int>("bottom_solid_layers"));
+                out.small_region_threshold = config.get<bool>("gap_fill_enabled") && config.get<double>("gap_fill_speed") > 0 ?
                                              // Gap fill enabled. Enable a single line of 1/2 extrusion width.
                                              0.5f * perimeter_flow.width() :
                                              // Gap fill disabled. Enable two lines slightly overlapping.
@@ -2271,10 +2271,10 @@ std::vector<std::vector<ExPolygons>> segmentation_by_painting(const PrintObject 
 
 // Returns multi-material segmentation based on painting in multi-material segmentation gizmo
 std::vector<std::vector<ExPolygons>> multi_material_segmentation_by_painting(const PrintObject &print_object, const std::function<void()> &throw_on_cancel_callback) {
-    const size_t num_facets_states  = print_object.print()->config().nozzle_diameter.size() + 1;
-    const float  max_width          = float(print_object.config().mmu_segmented_region_max_width.value);
-    const float  interlocking_depth = float(print_object.config().mmu_segmented_region_interlocking_depth.value);
-    const bool   interlocking_beam  = print_object.config().interlocking_beam.value;
+    const size_t num_facets_states  = print_object.print()->config().get<std::vector<double>>("nozzle_diameter").size() + 1;
+    const float  max_width          = float(print_object.config().get<double>("mmu_segmented_region_max_width"));
+    const float  interlocking_depth = float(print_object.config().get<double>("mmu_segmented_region_interlocking_depth"));
+    const bool   interlocking_beam  = print_object.config().get<bool>("interlocking_beam");
 
     const auto extract_facets_info = [](const ModelVolume &mv) -> ModelVolumeFacetsInfo {
         return {mv.mm_segmentation_facets, mv.is_mm_painted(), false};
@@ -2296,7 +2296,7 @@ std::vector<std::vector<ExPolygons>> fuzzy_skin_segmentation_by_painting(const P
     float max_external_perimeter_width = 0.;
     for (size_t region_idx = 0; region_idx < print_object.num_printing_regions(); ++region_idx) {
         const PrintRegion &region = print_object.printing_region(region_idx);
-        max_external_perimeter_width = std::max<float>(max_external_perimeter_width, region.flow(print_object, frExternalPerimeter, print_object.config().layer_height).width());
+        max_external_perimeter_width = std::max<float>(max_external_perimeter_width, region.flow(print_object, frExternalPerimeter, print_object.config().get<double>("layer_height")).width());
     }
 
     return segmentation_by_painting(print_object, extract_facets_info, num_facets_states, max_external_perimeter_width, 0.f, false, IncludeTopAndBottomLayers::No, throw_on_cancel_callback);

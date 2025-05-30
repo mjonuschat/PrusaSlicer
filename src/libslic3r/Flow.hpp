@@ -18,6 +18,7 @@
 #include "Config.hpp"
 #include "Slic3r/Exception.hpp"
 #include "ExtrusionRole.hpp"
+#include "Slic3r/Domain/Config.hpp"
 
 namespace Slic3r {
 
@@ -111,7 +112,7 @@ public:
 
     static Flow bridging_flow(float dmr, float nozzle_diameter) { return Flow { dmr, dmr, bridge_extrusion_spacing(dmr), nozzle_diameter, true }; }
 
-    static Flow new_from_config_width(FlowRole role, const ConfigOptionFloatOrPercent &width, float nozzle_diameter, float height);
+    static Flow new_from_config_width(FlowRole role, const Domain::FloatOrPercentage &width, float nozzle_diameter, float height);
 
     // Spacing of extrusions with rounded extrusion model.
     static float rounded_rectangle_extrusion_spacing(float width, float height);
@@ -123,12 +124,6 @@ public:
     // Sane extrusion width defautl based on nozzle diameter.
     // The defaults were derived from manual Prusa MK3 profiles.
     static float auto_extrusion_width(FlowRole role, float nozzle_diameter);
-
-    // Extrusion width from full config, taking into account the defaults (when set to zero) and ratios (percentages).
-    // Precise value depends on layer index (1st layer vs. other layers vs. variable layer height),
-    // on active extruder etc. Therefore the value calculated by this function shall be used as a hint only.
-	static double extrusion_width(const std::string &opt_key, const ConfigOptionFloatOrPercent *opt, const ConfigOptionResolver &config, const unsigned int first_printing_extruder = 0);
-	static double extrusion_width(const std::string &opt_key, const ConfigOptionResolver &config, const unsigned int first_printing_extruder = 0);
 
 private:
     Flow(float width, float height, float spacing, float nozzle_diameter, bool bridge) : 

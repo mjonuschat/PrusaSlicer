@@ -68,7 +68,7 @@ static float max_brim_width(const SpanOfConstPtrs<PrintObject> &objects)
     assert(!objects.empty());
     return float(std::accumulate(objects.begin(), objects.end(), 0.,
                                  [](double partial_result, const PrintObject *object) {
-                                     return std::max(partial_result, object->config().brim_type == btNoBrim ? 0. : object->config().brim_width.value);
+                                     return std::max(partial_result, object->config().get<Domain::BrimType>("brim_type") == Domain::BrimType::NoBrim ? 0. : object->config().get<double>("brim_width"));
                                  }));
 }
 
@@ -161,7 +161,7 @@ static Polygons top_level_outer_brim_islands(const ConstPrintObjectPtrs &top_lev
             continue;
 
         //FIXME how about the brim type?
-        auto     brim_separation = float(scale_(object->config().brim_separation.value));
+        auto     brim_separation = float(scale_(object->config().get<double>("brim_separation")));
         Polygons islands_object;
         for (const ExPolygon &ex_poly : get_print_object_bottom_layer_expolygons(*object)) {
             Polygons contour_offset = offset(ex_poly.contour, brim_separation, ClipperLib::jtSquare);
@@ -192,27 +192,27 @@ static ExPolygons top_level_outer_brim_area(const Print                   &print
     ExPolygons no_brim_area;
     for(size_t print_object_idx = 0; print_object_idx < print.objects().size(); ++print_object_idx) {
         const PrintObject *object            = print.objects()[print_object_idx];
-        const BrimType     brim_type         = object->config().brim_type.value;
-        const float        brim_separation   = scale_(object->config().brim_separation.value);
-        const float        brim_width        = scale_(object->config().brim_width.value);
+        const Domain::BrimType brim_type     = object->config().get<Domain::BrimType>("brim_type");
+        const float        brim_separation   = scale_(object->config().get<double>("brim_separation"));
+        const float        brim_width        = scale_(object->config().get<double>("brim_width"));
         const bool         is_top_outer_brim = top_level_objects_idx.find(object->id().id) != top_level_objects_idx.end();
 
         ExPolygons brim_area_object;
         ExPolygons no_brim_area_object;
         for (const ExPolygon &ex_poly : bottom_layers_expolygons[print_object_idx]) {
-            if ((brim_type == BrimType::btOuterOnly || brim_type == BrimType::btOuterAndInner) && is_top_outer_brim)
+            if ((brim_type == Domain::BrimType::OuterOnly || brim_type == Domain::BrimType::OuterAndInner) && is_top_outer_brim)
                 append(brim_area_object, diff_ex(offset(ex_poly.contour, brim_width + brim_separation, ClipperLib::jtSquare), offset(ex_poly.contour, brim_separation, ClipperLib::jtSquare)));
 
             // After 7ff76d07684858fd937ef2f5d863f105a10f798e offset and shrink don't work with CW polygons (holes), so let's make it CCW.
             Polygons ex_poly_holes_reversed = ex_poly.holes;
             Algorithms::Polygon::reverse(ex_poly_holes_reversed);
-            if (brim_type == BrimType::btOuterOnly || brim_type == BrimType::btNoBrim)
+            if (brim_type == Domain::BrimType::OuterOnly || brim_type == Domain::BrimType::NoBrim)
                 append(no_brim_area_object, shrink_ex(ex_poly_holes_reversed, no_brim_offset, ClipperLib::jtSquare));
 
-            if (brim_type == BrimType::btInnerOnly || brim_type == BrimType::btNoBrim)
+            if (brim_type == Domain::BrimType::InnerOnly || brim_type == Domain::BrimType::NoBrim)
                 append(no_brim_area_object, diff_ex(offset(ex_poly.contour, no_brim_offset, ClipperLib::jtSquare), ex_poly_holes_reversed));
 
-            if (brim_type != BrimType::btNoBrim)
+            if (brim_type != Domain::BrimType::NoBrim)
                 append(no_brim_area_object, offset_ex(ExPolygon(ex_poly.contour), brim_separation, ClipperLib::jtSquare));
 
             no_brim_area_object.emplace_back(ex_poly.contour);
@@ -317,9 +317,9 @@ static std::vector<InnerBrimExPolygons> inner_brim_area(const Print             
     size_t polygon_idx = 0;
     for(size_t print_object_idx = 0; print_object_idx < print.objects().size(); ++print_object_idx) {
         const PrintObject *object          = print.objects()[print_object_idx];
-        const BrimType     brim_type       = object->config().brim_type.value;
-        const float        brim_separation = scale_(object->config().brim_separation.value);
-        const float        brim_width      = scale_(object->config().brim_width.value);
+        const Domain::BrimType brim_type   = object->config().get<Domain::BrimType>("brim_type");
+        const float        brim_separation = scale_(object->config().get<double>("brim_separation"));
+        const float        brim_width      = scale_(object->config().get<double>("brim_width"));
         const bool         top_outer_brim  = top_level_objects_idx.find(object->id().id) != top_level_objects_idx.end();
 
         ExPolygons brim_area_innermost_object;
@@ -327,7 +327,7 @@ static std::vector<InnerBrimExPolygons> inner_brim_area(const Print             
         ExPolygons no_brim_area_object;
         Polygons   holes_reversed_object;
         for (const ExPolygon &ex_poly : bottom_layers_expolygons[print_object_idx]) {
-            if (brim_type == BrimType::btOuterOnly || brim_type == BrimType::btOuterAndInner) {
+            if (brim_type == Domain::BrimType::OuterOnly || brim_type == Domain::BrimType::OuterAndInner) {
                 if (top_outer_brim)
                     no_brim_area_object.emplace_back(ex_poly);
                 else
@@ -340,7 +340,7 @@ static std::vector<InnerBrimExPolygons> inner_brim_area(const Print             
             for ([[maybe_unused]] const PrintInstance &instance : object->instances()) {
                 ++polygon_idx; // Increase idx because of the contour of the ExPolygon.
 
-                if (brim_type == BrimType::btInnerOnly || brim_type == BrimType::btOuterAndInner)
+                if (brim_type == Domain::BrimType::InnerOnly || brim_type == Domain::BrimType::OuterAndInner)
                     for(const Polygon &hole : ex_poly_holes_reversed) {
                         size_t hole_idx = &hole - &ex_poly_holes_reversed.front();
                         if (has_nothing_inside[polygon_idx + hole_idx])
@@ -352,10 +352,10 @@ static std::vector<InnerBrimExPolygons> inner_brim_area(const Print             
                 polygon_idx += ex_poly.holes.size(); // Increase idx for every hole of the ExPolygon.
             }
 
-            if (brim_type == BrimType::btInnerOnly || brim_type == BrimType::btNoBrim)
+            if (brim_type == Domain::BrimType::InnerOnly || brim_type == Domain::BrimType::NoBrim)
                 append(no_brim_area_object, diff_ex(offset(ex_poly.contour, no_brim_offset, ClipperLib::jtSquare), ex_poly_holes_reversed));
 
-            if (brim_type == BrimType::btOuterOnly || brim_type == BrimType::btNoBrim)
+            if (brim_type == Domain::BrimType::OuterOnly || brim_type == Domain::BrimType::NoBrim)
                 append(no_brim_area_object, diff_ex(ex_poly.contour, shrink_ex(ex_poly_holes_reversed, no_brim_offset, ClipperLib::jtSquare)));
 
             append(holes_reversed_object, ex_poly_holes_reversed);
@@ -375,7 +375,7 @@ static std::vector<InnerBrimExPolygons> inner_brim_area(const Print             
     // Append all innermost brim areas.
     std::vector<InnerBrimExPolygons> brim_area_out;
     for (size_t print_object_idx = 0; print_object_idx < print.objects().size(); ++print_object_idx)
-        if (const double brim_width = print.objects()[print_object_idx]->config().brim_width.value; !brim_area_innermost[print_object_idx].empty()) {
+        if (const double brim_width = print.objects()[print_object_idx]->config().get<double>("brim_width"); !brim_area_innermost[print_object_idx].empty()) {
             append(brim_area_innermost_merged, brim_area_innermost[print_object_idx]);
             brim_area_out.push_back({std::move(brim_area_innermost[print_object_idx]), InnerBrimType::INNERMOST, brim_width});
         }
@@ -489,7 +489,7 @@ static void make_inner_brim(const Print                   &print,
                             ExtrusionEntityCollection     &brim)
 {
     assert(print.objects().size() == bottom_layers_expolygons.size());
-    const auto                       scaled_resolution = scaled<double>(print.config().gcode_resolution.value);
+    const auto                       scaled_resolution = scaled<double>(print.config().get<double>("gcode_resolution"));
     Flow                             flow              = print.brim_flow();
     std::vector<InnerBrimExPolygons> inner_brims_ex    = inner_brim_area(print, top_level_objects_with_brim, bottom_layers_expolygons, float(flow.scaled_spacing()));
     Polygons                         loops;
@@ -524,7 +524,7 @@ static void make_inner_brim(const Print                   &print,
 // Collect islands_area to be merged into the final 1st layer convex hull.
 ExtrusionEntityCollection make_brim(const Print &print, PrintTryCancel try_cancel, Polygons &islands_area)
 {
-    const auto              scaled_resolution           = scaled<double>(print.config().gcode_resolution.value);
+    const auto              scaled_resolution           = scaled<double>(print.config().get<double>("gcode_resolution"));
     Flow                    flow                        = print.brim_flow();
     std::vector<ExPolygons> bottom_layers_expolygons    = get_print_bottom_layers_expolygons(print);
     ConstPrintObjectPtrs    top_level_objects_with_brim = get_top_level_objects_with_brim(print, bottom_layers_expolygons);
@@ -591,11 +591,11 @@ ExtrusionEntityCollection make_brim(const Print &print, PrintTryCancel try_cance
 #endif // BRIM_DEBUG_TO_SVG
 
     const bool could_brim_intersects_skirt = std::any_of(print.objects().begin(), print.objects().end(), [&print](const PrintObject *object) {
-        const BrimType &bt = object->config().brim_type;
-        return (bt == btOuterOnly || bt == btOuterAndInner) && print.config().skirt_distance.value < object->config().brim_width;
+        const Domain::BrimType &bt = object->config().get<Domain::BrimType>("brim_type");
+        return (bt == Domain::BrimType::OuterOnly || bt == Domain::BrimType::OuterAndInner) && print.config().get<double>("skirt_distance") < object->config().get<double>("brim_width");
     });
 
-    const bool draft_shield = print.config().draft_shield != dsDisabled;
+    const bool draft_shield = print.config().get<Domain::DraftShield>("draft_shield") != Domain::DraftShield::dsDisabled;
 
 
     // If there is a possibility that brim intersects skirt, go through loops and split those extrusions

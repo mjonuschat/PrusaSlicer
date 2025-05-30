@@ -21,6 +21,7 @@
 #ifndef slic3r_Print_hpp_
 #define slic3r_Print_hpp_
 
+#include "Slic3r/Domain/ConfigPack.hpp"
 #include "libslic3r/Fill/FillAdaptive.hpp"
 #include "libslic3r/Fill/FillLightning.hpp"
 #include "PrintBase.hpp"
@@ -45,6 +46,8 @@
 #include <optional>
 #include <set>
 #include <tcbspan/span.hpp>
+#include "libslic3r/ConfigViews.hpp"
+#include "Slic3r/Domain/ConfigFDM.hpp"
 
 namespace Slic3r {
 
@@ -114,16 +117,21 @@ struct InvalidatedSteps
 class PrintRegion
 {
 public:
-    PrintRegion() = default;
-    PrintRegion(const PrintRegionConfig &config);
-    PrintRegion(const PrintRegionConfig &config, const size_t config_hash, int print_object_region_id = -1) : m_config(config), m_config_hash(config_hash), m_print_object_region_id(print_object_region_id) {}
-    PrintRegion(PrintRegionConfig &&config);
-    PrintRegion(PrintRegionConfig &&config, const size_t config_hash, int print_object_region_id = -1) : m_config(std::move(config)), m_config_hash(config_hash), m_print_object_region_id(print_object_region_id) {}
+    PrintRegion(const PrintRegionConfigView& config, const std::size_t hash, int print_object_region_id = -1)
+        : m_config(config)
+        , m_config_hash(hash)
+        , m_print_object_region_id(print_object_region_id)
+    {}
+    PrintRegion(PrintRegionConfigView&& config, const std::size_t hash, int print_object_region_id = -1)
+        : m_config(std::move(config))
+        , m_config_hash(hash)
+        , m_print_object_region_id(print_object_region_id)
+    {}
     ~PrintRegion() = default;
 
 // Methods NOT modifying the PrintRegion's state:
 public:
-    const PrintRegionConfig&    config() const throw() { return m_config; }
+    const PrintRegionConfigView& config() const throw() { return m_config; }
     size_t                      config_hash() const throw() { return m_config_hash; }
     // Identifier of this PrintRegion in the list of Print::m_print_regions.
     int                         print_region_id() const throw() { return m_print_region_id; }
@@ -132,20 +140,13 @@ public:
 	unsigned int 				extruder(FlowRole role) const;
     Flow                        flow(const PrintObject &object, FlowRole role, double layer_height, bool first_layer = false) const;
     // Average diameter of nozzles participating on extruding this region.
-    double                    nozzle_dmr_avg(const PrintConfig &print_config) const;
+    double                    nozzle_dmr_avg(const PrintConfigView &print_config) const;
     // Average diameter of nozzles participating on extruding this region.
-    double                    bridging_height_avg(const PrintConfig &print_config) const;
+    double                    bridging_height_avg(const PrintConfigView &print_config) const;
 
     // Collect 0-based extruder indices used to print this region's object.
 	void                        collect_object_printing_extruders(const Print &print, std::vector<unsigned int> &object_extruders) const;
-	static void                 collect_object_printing_extruders(const PrintConfig &print_config, const PrintRegionConfig &region_config, const bool has_brim, std::vector<unsigned int> &object_extruders);
-
-// Methods modifying the PrintRegion's state:
-public:
-    void                        set_config(const PrintRegionConfig &config) { m_config = config; m_config_hash = m_config.hash(); }
-    void                        set_config(PrintRegionConfig &&config) { m_config = std::move(config); m_config_hash = m_config.hash(); }
-    void                        config_apply_only(const ConfigBase &other, const t_config_option_keys &keys, bool ignore_nonexistent = false) 
-                                        { m_config.apply_only(other, keys, ignore_nonexistent); m_config_hash = m_config.hash(); }
+	static void                 collect_object_printing_extruders(const Domain::ConfigView& config, const bool has_brim, std::vector<unsigned int> &object_extruders);
 
     void set_print_region_id(const int id) {m_print_region_id = id;}
 
@@ -155,14 +156,14 @@ private:
     friend void print_region_ref_reset(PrintRegion&);
     friend int  print_region_ref_cnt(const PrintRegion&);
 
-    PrintRegionConfig  m_config;
+    PrintRegionConfigView  m_config;
     size_t             m_config_hash;
     int                m_print_region_id { -1 };
     int                m_print_object_region_id { -1 };
     int                m_ref_cnt { 0 };
 };
 
-inline bool operator==(const PrintRegion &lhs, const PrintRegion &rhs) { return lhs.config_hash() == rhs.config_hash() && lhs.config() == rhs.config(); }
+inline bool operator==(const PrintRegion &lhs, const PrintRegion &rhs) { return lhs.config() == rhs.config(); }
 inline bool operator!=(const PrintRegion &lhs, const PrintRegion &rhs) { return ! (lhs == rhs); }
 
 // For const correctness: Wrapping a vector of non-const pointers as a span of const pointers.
@@ -248,7 +249,7 @@ public:
         t_layer_height_range        layer_height_range;
         // Config of the layer range, null if there is just a single range with no config override.
         // Config is owned by the associated ModelObject.
-        const DynamicPrintConfig*   config { nullptr };
+        Domain::VolumeSettingsPtr config;
         // Volumes sorted by ModelVolume::id().
         std::vector<VolumeExtents>  volumes;
 
@@ -296,7 +297,8 @@ private: // Prevents erroneous use by other classes.
 public:
     // Size of an object: XYZ in scaled coordinates. The size might not be quite snug in XY plane.
     const Vec3crd&               size() const			{ return m_size; }
-    const PrintObjectConfig&     config() const         { return m_config; }    
+    const PrintObjectConfigView&     config() const         { return m_config; }
+    void                         set_config(const PrintObjectConfigView& config) { m_config = config; }
     auto                         layers() const         { return SpanOfConstPtrs<Layer>(const_cast<const Layer* const* const>(m_layers.data()), m_layers.size()); }
     auto                         support_layers() const { return SpanOfConstPtrs<SupportLayer>(const_cast<const SupportLayer* const* const>(m_support_layers.data()), m_support_layers.size()); }
     const Transform3d&           trafo() const          { return m_trafo; }
@@ -319,8 +321,8 @@ public:
     const Point& 			     center_offset() const  { return m_center_offset; }
 
     bool                         has_brim() const       {
-        return this->config().brim_type != btNoBrim
-            && this->config().brim_width.value > 0.
+        return this->config().get<Domain::BrimType>("brim_type") != Domain::BrimType::NoBrim
+            && this->config().get<double>("brim_width") > 0.
             && ! this->has_raft();
     }
 
@@ -360,7 +362,12 @@ public:
     // The slicing parameters are dependent on various configuration values
     // (layer height, first layer height, raft settings, print nozzle diameter etc).
     const SlicingParameters&    slicing_parameters() const { return m_slicing_params; }
-    static SlicingParameters    slicing_parameters(const DynamicPrintConfig &full_config, const ModelObject &model_object, float object_max_z, const Vec3d &object_shrinkage_compensation);
+    static SlicingParameters slicing_parameters(
+        const PrintObjectConfigView& full_config,
+        const ModelObject& model_object,
+        float object_max_z,
+        const Vec3d& object_shrinkage_compensation
+    );
 
     size_t                      num_printing_regions() const throw() { return m_shared_regions->all_regions.size(); }
     const PrintRegion&          printing_region(size_t idx) const throw() { return *m_shared_regions->all_regions[idx].get(); }
@@ -368,8 +375,8 @@ public:
     std::vector<std::reference_wrapper<const PrintRegion>> all_regions() const;
     const PrintObjectRegions*   shared_regions() const { return m_shared_regions.get(); }
 
-    bool                        has_support()           const { return m_config.support_material || m_config.support_material_enforce_layers > 0; }
-    bool                        has_raft()              const { return m_config.raft_layers > 0; }
+    bool                        has_support()           const { return m_config.get<bool>("support_material") || m_config.get<int>("support_material_enforce_layers") > 0; }
+    bool                        has_raft()              const { return m_config.get<int>("raft_layers") > 0; }
     bool                        has_support_material()  const { return this->has_support() || this->has_raft(); }
     // Checks if the model object is painted using the multi-material painting gizmo.
     bool                        is_mm_painted()         const { return this->model_object()->is_mm_painted(); }
@@ -396,17 +403,13 @@ private:
     friend class PrintBaseWithState<PrintStep, psCount>;
 
 public:
-	PrintObject(Print* print, ModelObject* model_object, const Transform3d& trafo, PrintInstances&& instances);
+	PrintObject(Print* print, ModelObject* model_object, const PrintObjectConfigView& config, const Transform3d& trafo, PrintInstances&& instances);
 
     ~PrintObject() override {
         clear_layers();
         clear_support_layers();
     }
 
-public:
-    void                    config_apply(const ConfigBase &other, bool ignore_nonexistent = false) { m_config.apply(other, ignore_nonexistent); }
-
-    void                    config_apply_only(const ConfigBase &other, const t_config_option_keys &keys, bool ignore_nonexistent = false) { m_config.apply_only(other, keys, ignore_nonexistent); }
     PrintBase::ApplyStatus  set_instances(PrintInstances &&instances);
     SlicingSync::PrintSteps set_instances_new(PrintInstances &&instances);
     // Invalidates the step, and its depending steps in PrintObject and Print.
@@ -418,8 +421,6 @@ public:
 
     // Called on main thread with stopped or paused background processing to let PrintObject release data for its milestones that were invalidated or canceled.
     void                    cleanup();
-
-    static PrintObjectConfig object_config_from_model_object(const PrintObjectConfig &default_object_config, const ModelConfigObject &config, size_t num_extruders);
 
     void set_shared_regions(const std::shared_ptr<PrintObjectRegions>& regions);
 
@@ -450,7 +451,7 @@ private:
 
     // XYZ in scaled coordinates
     Vec3crd									m_size;
-    PrintObjectConfig                       m_config;
+    PrintObjectConfigView                       m_config;
     // Translation in Z + Rotation + Scaling / Mirroring.
     Transform3d                             m_trafo = Transform3d::Identity();
     // Slic3r::Point objects in scaled G-code coordinates
@@ -577,17 +578,20 @@ public:
     // List of existing PrintObject IDs, to remove notifications for non-existent IDs.
     std::vector<Domain::ObjectID> print_object_ids() const override;
 
+    virtual Biz::Print::ApplyStatus update(
+        Model& model, const Domain::ConfigPack& config, const Domain::BedInstance& bed
+    ) override;
+
     ApplyStatus apply(
         const Model& model,
-        DynamicPrintConfig config,
+        const Domain::ConfigPackFDM& config_pack,
         const std::optional<Domain::ModelWipeTower>& wipe_tower,
         const std::optional<Domain::CustomGCode::Info>& custom_gcode,
         std::vector<std::string>* warnings = nullptr
-    ) override;
+    );
 
     SlicingSync::PrintAndObjectSteps update_config(
-        DynamicPrintConfig&& new_full_config,
-        DynamicPrintConfig& filament_overrides
+        const PrintConfigView& new_full_config
     );
 
     static ModelInstancePtrs deep_copy_instances(
@@ -635,9 +639,8 @@ public:
     // Make sure the background processing has no access to this model_object during this call!
     void                auto_assign_extruders(ModelObject* model_object) const;
 
-    const PrintConfig&          config() const { return m_config; }
-    const PrintObjectConfig&    default_object_config() const { return m_default_object_config; }
-    const PrintRegionConfig&    default_region_config() const { return m_default_region_config; }
+    const PrintConfigView& config() const { return m_config; }
+    void set_config(const PrintConfigView& config) { m_config = config; }
     SpanOfConstPtrs<PrintObject> objects() const { return SpanOfConstPtrs<PrintObject>(const_cast<const PrintObject* const* const>(m_objects.data()), m_objects.size()); }
     PrintObject*                get_object(size_t idx) { return const_cast<PrintObject*>(m_objects[idx]); }
     const PrintObject*          get_object(size_t idx) const { return m_objects[idx]; }
@@ -708,11 +711,9 @@ public:
     OnFdmResult         m_on_fdm_result;
     OnWipeTowerGeometry m_on_wipe_tower_geometry;
 
-    PrintConfig                             m_config;
-    PrintObjectConfig                       m_default_object_config;
-    PrintRegionConfig                       m_default_region_config;
-    PrintObjectPtrs                         m_objects;
-    PrintRegionPtrs                         m_print_regions;
+    PrintConfigView m_config;
+    PrintObjectPtrs m_objects;
+    PrintRegionPtrs m_print_regions;
 
     // Ordered collections of extrusion paths to build skirt loops and brim.
     ExtrusionEntityCollection               m_skirt;

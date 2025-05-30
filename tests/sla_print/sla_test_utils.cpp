@@ -164,12 +164,12 @@ void test_supports(const std::string          &obj_filename,
     sla::SupportTreeBuilder treebuilder;
 
     switch (sm.cfg.tree_type) {
-    case sla::SupportTreeType::Default: {
+    case Domain::sla::SupportTreeType::Default: {
         sla::DefaultSupportTree::execute(treebuilder, sm);
         check_support_tree_integrity(treebuilder, supportcfg, sla::ground_level(sm));
         break;
     }
-    case sla::SupportTreeType::Branching: {
+    case Domain::sla::SupportTreeType::Branching: {
         create_branching_tree(treebuilder, sm);
         // TODO: check_support_tree_integrity(treebuilder, supportcfg);
         break;

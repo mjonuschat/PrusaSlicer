@@ -270,7 +270,7 @@ void PreviewRenderModule::on_selected_bed_instance_changed(
 
     const Domain::ConfigContainer* cc = m_project_interactor.selected_project().find_config_container(container_id);
     DEBUG_ASSERT(cc != nullptr);
-    if (cc->print_technology() == ptSLA) {
+    if (cc->print_technology() == Domain::PrinterTechnology::SLA) {
         m_viewer = &m_sla_viewer;
  //       update_sla_viewer_data({ project_id, bed_instance_id });
     }
@@ -327,7 +327,7 @@ void PreviewRenderModule::on_init(Render::Device& device, Render::ImguiRender& i
     Domain::SelectionId config_container_id = m_project_interactor.scene_interactor().selected_config_container_id();
     const Domain::ConfigContainer* cc = m_project_interactor.selected_project().find_config_container(config_container_id);
     DEBUG_ASSERT(cc != nullptr);
-    if (cc->print_technology() == ptSLA)
+    if (cc->print_technology() == Domain::PrinterTechnology::SLA)
         m_viewer = &m_sla_viewer;
     else
         m_viewer = &m_fdm_viewer;

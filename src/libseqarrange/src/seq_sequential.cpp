@@ -6643,7 +6643,7 @@ std::optional<std::pair<int, int> > check_PointsOutsidePolygons(const std::vecto
 								const std::vector<Slic3r::Polygon>               &polygons,
 								const std::vector<std::vector<Slic3r::Polygon> > &unreachable_polygons)
 {
-    #ifdef DEBUG
+    #if 0 // TODO: Martin: This segfaults.
     {
 	printf("Levels U %zu,%zu\n", unreachable_polygons[0].size(), unreachable_polygons[1].size());
 	

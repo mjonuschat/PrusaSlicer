@@ -570,7 +570,7 @@ void Layer::build_up_down_graph(Layer& below, Layer& above)
 
 static inline bool layer_needs_raw_backup(const Layer *layer)
 {
-    return ! (layer->regions().size() == 1 && (layer->id() > 0 || layer->object()->config().elefant_foot_compensation.value == 0));
+    return ! (layer->regions().size() == 1 && (layer->id() > 0 || layer->object()->config().get<double>("elefant_foot_compensation") == 0));
 }
 
 void Layer::backup_untyped_slices()
@@ -603,7 +603,7 @@ void Layer::restore_untyped_slices_no_extra_perimeters()
 {
     if (layer_needs_raw_backup(this)) {
         for (LayerRegion *layerm : m_regions)
-        	if (! layerm->region().config().extra_perimeters.value)
+        	if (! layerm->region().config().get<bool>("extra_perimeters"))
             	layerm->m_slices.set(layerm->m_raw_slices, stInternal);
     } else {
     	assert(m_regions.size() == 1);
@@ -625,9 +625,9 @@ ExPolygons Layer::merged(float offset_scaled) const
     }
     Polygons polygons;
 	for (LayerRegion *layerm : m_regions) {
-		const PrintRegionConfig &config = layerm->region().config();
+		const PrintRegionConfigView &config = layerm->region().config();
 		// Our users learned to bend Slic3r to produce empty volumes to act as subtracters. Only add the region if it is non-empty.
-		if (config.bottom_solid_layers > 0 || config.top_solid_layers > 0 || config.fill_density > 0. || config.perimeters > 0)
+		if (config.get<int>("bottom_solid_layers") > 0 || config.get<int>("top_solid_layers") > 0 || config.get<Domain::Percentage>("fill_density") > Domain::Percentage{0} || config.get<int>("perimeters") > 0)
 			append(polygons, offset(layerm->slices().surfaces, offset_scaled));
 	}
     ExPolygons out = union_ex(polygons);
@@ -637,32 +637,32 @@ ExPolygons Layer::merged(float offset_scaled) const
 }
 
 // If there is any incompatibility, separate LayerRegions have to be created.
-inline bool has_compatible_dynamic_overhang_speed(const PrintRegionConfig &config, const PrintRegionConfig &other_config)
+inline bool has_compatible_dynamic_overhang_speed(const PrintRegionConfigView &config, const PrintRegionConfigView &other_config)
 {
-    bool dynamic_overhang_speed_compatibility = config.enable_dynamic_overhang_speeds == other_config.enable_dynamic_overhang_speeds;
-    if (dynamic_overhang_speed_compatibility && config.enable_dynamic_overhang_speeds) {
-        dynamic_overhang_speed_compatibility = config.overhang_speed_0 == other_config.overhang_speed_0 &&
-                                               config.overhang_speed_1 == other_config.overhang_speed_1 &&
-                                               config.overhang_speed_2 == other_config.overhang_speed_2 &&
-                                               config.overhang_speed_3 == other_config.overhang_speed_3;
+    bool dynamic_overhang_speed_compatibility = config.get<bool>("enable_dynamic_overhang_speeds") == other_config.get<bool>("enable_dynamic_overhang_speeds");
+    if (dynamic_overhang_speed_compatibility && config.get<bool>("enable_dynamic_overhang_speeds")) {
+        dynamic_overhang_speed_compatibility = config.get<Domain::FloatOrPercentage>("overhang_speed_0") == other_config.get<Domain::FloatOrPercentage>("overhang_speed_0") &&
+                                               config.get<Domain::FloatOrPercentage>("overhang_speed_1") == other_config.get<Domain::FloatOrPercentage>("overhang_speed_1") &&
+                                               config.get<Domain::FloatOrPercentage>("overhang_speed_2") == other_config.get<Domain::FloatOrPercentage>("overhang_speed_2") &&
+                                               config.get<Domain::FloatOrPercentage>("overhang_speed_3") == other_config.get<Domain::FloatOrPercentage>("overhang_speed_3");
     }
 
     return dynamic_overhang_speed_compatibility;
 }
 
 // If there is any incompatibility, separate LayerRegions have to be created.
-inline bool has_compatible_layer_regions(const PrintRegionConfig &config, const PrintRegionConfig &other_config)
+inline bool has_compatible_layer_regions(const PrintRegionConfigView &config, const PrintRegionConfigView &other_config)
 {
-    return config.perimeter_extruder                                    == other_config.perimeter_extruder &&
-           config.perimeters                                            == other_config.perimeters &&
-           config.perimeter_speed                                       == other_config.perimeter_speed &&
-           config.external_perimeter_speed                              == other_config.external_perimeter_speed &&
-           (config.gap_fill_enabled ? config.gap_fill_speed.value : 0.) == (other_config.gap_fill_enabled ? other_config.gap_fill_speed.value : 0.) &&
-           config.overhangs                                             == other_config.overhangs &&
-           config.opt_serialize("perimeter_extrusion_width")     == other_config.opt_serialize("perimeter_extrusion_width") &&
-           config.thin_walls                                            == other_config.thin_walls &&
-           config.external_perimeters_first                             == other_config.external_perimeters_first &&
-           config.infill_overlap                                        == other_config.infill_overlap &&
+    return config.get<int>("perimeter_extruder")                                    == other_config.get<int>("perimeter_extruder") &&
+           config.get<int>("perimeters")                                            == other_config.get<int>("perimeters") &&
+           config.get<double>("perimeter_speed")                                       == other_config.get<double>("perimeter_speed") &&
+           config.get<Domain::FloatOrPercentage>("external_perimeter_speed")                              == other_config.get<Domain::FloatOrPercentage>("external_perimeter_speed") &&
+           (config.get<bool>("gap_fill_enabled") ? config.get<double>("gap_fill_speed") : 0.) == (other_config.get<bool>("gap_fill_enabled") ? other_config.get<double>("gap_fill_speed") : 0.) &&
+           config.get<bool>("overhangs")                                             == other_config.get<bool>("overhangs") &&
+           std::abs(config.get<Domain::FloatOrPercentage>("perimeter_extrusion_width").get_abs_value(1.0) - other_config.get<Domain::FloatOrPercentage>("perimeter_extrusion_width").get_abs_value(1.0)) < 1e6 &&
+           config.get<bool>("thin_walls")                                            == other_config.get<bool>("thin_walls") &&
+           config.get<bool>("external_perimeters_first")                             == other_config.get<bool>("external_perimeters_first") &&
+           config.get<Domain::FloatOrPercentage>("infill_overlap")                                        == other_config.get<Domain::FloatOrPercentage>("infill_overlap") &&
            has_compatible_dynamic_overhang_speed(config, other_config);
 }
 
@@ -710,7 +710,7 @@ void Layer::make_perimeters()
 
         BOOST_LOG_TRIVIAL(trace) << "Generating perimeters for layer " << this->id() << ", region " << curr_region_id;
         done[curr_region_id]                 = true;
-        const PrintRegionConfig &curr_config = curr_region.region().config();
+        const PrintRegionConfigView &curr_config = curr_region.region().config();
 
         perimeter_and_gapfill_ranges.clear();
         fill_expolygons.clear();
@@ -725,7 +725,7 @@ void Layer::make_perimeters()
         for (auto it_next_region = std::next(it_curr_region); it_next_region != m_regions.cend(); ++it_next_region) {
             const size_t             next_region_id = std::distance(m_regions.cbegin(), it_next_region);
             LayerRegion             &next_region    = **it_next_region;
-            const PrintRegionConfig &next_config    = next_region.region().config();
+            const PrintRegionConfigView &next_config    = next_region.region().config();
             if (next_region.slices().empty()) {
                 continue;
             }
@@ -759,7 +759,7 @@ void Layer::make_perimeters()
                     LayerRegion &layerm = *m_regions[region_id];
                     for (const Surface &surface : layerm.slices())
                         surfaces_to_merge.emplace_back(&surface);
-                    if (layerm.region().config().fill_density > layerm_config->region().config().fill_density) {
+                    if (layerm.region().config().get<Domain::Percentage>("fill_density") > layerm_config->region().config().get<Domain::Percentage>("fill_density")) {
                         region_id_config = region_id;
                         layerm_config    = &layerm;
                     }
@@ -1085,13 +1085,13 @@ void Layer::sort_perimeters_into_islands(
         // This should be a rare event especially if the sample point was taken from infill or inner perimeter,
         // however we may land here for external perimeter only islands with fuzzy skin applied.
         // Check whether fuzzy skin was enabled and adjust the bounding box accordingly.
-        const PrintConfig       &print_config  = this->object()->print()->config();
-        const PrintRegionConfig &region_config = this_layer_region.region().config();
+        const PrintConfigView &print_config  = this->object()->print()->config();
+        const PrintRegionConfigView &region_config = this_layer_region.region().config();
         const auto               bbox_eps      = scaled<coord_t>(
-            EPSILON + print_config.gcode_resolution.value +
-            (region_config.fuzzy_skin.value == FuzzySkinType::None ? 0. : region_config.fuzzy_skin_thickness.value 
+            EPSILON + print_config.get<double>("gcode_resolution") +
+            (region_config.get<Domain::FuzzySkinType>("fuzzy_skin") == Domain::FuzzySkinType::None ? 0. : region_config.get<double>("fuzzy_skin_thickness") 
                 //FIXME it looks as if Arachne could extend open lines by fuzzy_skin_point_dist, which does not seem right.
-                + region_config.fuzzy_skin_point_dist.value));
+                + region_config.get<double>("fuzzy_skin_point_dist")));
         auto point_inside_surface_dist2 =
             [&lslices = this->lslices, &lslices_ex = this->lslices_ex, bbox_eps]
             (const size_t lslice_idx, const Point &point) {

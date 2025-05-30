@@ -64,7 +64,7 @@ struct SurfaceFillParams
 	// Zero based extruder ID.
     unsigned int 	extruder = 0;
 	// Infill pattern, adjusted for the density etc.
-    InfillPattern  	pattern = InfillPattern(0);
+    Domain::InfillPattern  	pattern = Domain::InfillPattern(0);
 
     // FillBase
     // in unscaled coordinates
@@ -150,9 +150,9 @@ struct SurfaceFill {
 	SurfaceFillParams	params;
 };
 
-static inline bool fill_type_monotonic(InfillPattern pattern)
+static inline bool fill_type_monotonic(Domain::InfillPattern pattern)
 {
-	return pattern == ipMonotonic || pattern == ipMonotonicLines;
+	return pattern == Domain::InfillPattern::ipMonotonic || pattern == Domain::InfillPattern::ipMonotonicLines;
 }
 
 std::vector<SurfaceFill> group_fills(const Layer &layer)
@@ -171,19 +171,19 @@ std::vector<SurfaceFill> group_fills(const Layer &layer)
 	        if (surface.surface_type == stInternalVoid)
 	        	has_internal_voids = true;
 	        else {
-		        const PrintRegionConfig &region_config = layerm.region().config();
+		        const PrintRegionConfigView &region_config = layerm.region().config();
 		        FlowRole extrusion_role = surface.is_top() ? frTopSolidInfill : (surface.is_solid() ? frSolidInfill : frInfill);
 		        bool     is_bridge 	    = layer.id() > 0 && surface.is_bridge();
 		        params.extruder 	 = layerm.region().extruder(extrusion_role);
-		        params.pattern 		 = region_config.fill_pattern.value;
-		        params.density       = float(region_config.fill_density);
+		        params.pattern 		 = region_config.get<Domain::InfillPattern>("fill_pattern");
+		        params.density       = float(region_config.get<Domain::Percentage>("fill_density").value);
 
 		        if (surface.is_solid()) {
 		            params.density = 100.f;
 					//FIXME for non-thick bridges, shall we allow a bottom surface pattern?
 		            params.pattern = (surface.is_external() && ! is_bridge) ? 
-						(surface.is_top() ? region_config.top_fill_pattern.value : region_config.bottom_fill_pattern.value) :
-		                fill_type_monotonic(region_config.top_fill_pattern) ? ipMonotonic : ipRectilinear;
+						(surface.is_top() ? region_config.get<Domain::InfillPattern>("top_fill_pattern") : region_config.get<Domain::InfillPattern>("bottom_fill_pattern")) :
+		                fill_type_monotonic(region_config.get<Domain::InfillPattern>("top_fill_pattern")) ? Domain::InfillPattern::ipMonotonic : Domain::InfillPattern::ipRectilinear;
 		        } else if (params.density <= 0)
 		            continue;
 
@@ -203,7 +203,7 @@ std::vector<SurfaceFill> group_fills(const Layer &layer)
                     }
                 }
 		        params.bridge_angle = float(surface.bridge_angle);
-		        params.angle 		= float(deg2rad(region_config.fill_angle.value));
+		        params.angle 		= float(deg2rad(region_config.get<double>("fill_angle")));
 
 		        // Calculate the actual flow we'll be using for this infill.
 		        params.bridge = is_bridge || Fill::use_bridge_flow(params.pattern);
@@ -221,14 +221,10 @@ std::vector<SurfaceFill> group_fills(const Layer &layer)
 		        } else {
 					// Internal infill. Calculating infill line spacing independent of the current layer height and 1st layer status,
 					// so that internall infill will be aligned over all layers of the current region.
-		            params.spacing = layerm.region().flow(*layer.object(), frInfill, layer.object()->config().layer_height, false).spacing();
+		            params.spacing = layerm.region().flow(*layer.object(), frInfill, layer.object()->config().get<double>("layer_height"), false).spacing();
 		            // Anchor a sparse infill to inner perimeters with the following anchor length:
-			        params.anchor_length = float(region_config.infill_anchor);
-					if (region_config.infill_anchor.percent)
-						params.anchor_length = float(params.anchor_length * 0.01 * params.spacing);
-					params.anchor_length_max = float(region_config.infill_anchor_max);
-					if (region_config.infill_anchor_max.percent)
-						params.anchor_length_max = float(params.anchor_length_max * 0.01 * params.spacing);
+			        params.anchor_length = float(region_config.get<Domain::FloatOrPercentage>("infill_anchor").get_abs_value(params.spacing));
+					params.anchor_length_max = float(region_config.get<Domain::FloatOrPercentage>("infill_anchor_max").get_abs_value(params.spacing));
 					params.anchor_length = std::min(params.anchor_length, params.anchor_length_max);
 				}
 
@@ -334,10 +330,10 @@ std::vector<SurfaceFill> group_fills(const Layer &layer)
 	        if (internal_solid_fill == nullptr) {
 	        	// Produce another solid fill.
 		        params.extruder 	 = layerm.region().extruder(frSolidInfill);
-	            params.pattern 		 = fill_type_monotonic(layerm.region().config().top_fill_pattern) ? ipMonotonic : ipRectilinear;
+	            params.pattern 		 = fill_type_monotonic(layerm.region().config().get<Domain::InfillPattern>("top_fill_pattern")) ? Domain::InfillPattern::ipMonotonic : Domain::InfillPattern::ipRectilinear;
 	            params.density 		 = 100.f;
 		        params.extrusion_role = ExtrusionRole::InternalInfill;
-		        params.angle 		= float(deg2rad(layerm.region().config().fill_angle.value));
+		        params.angle 		= float(deg2rad(layerm.region().config().get<double>("fill_angle")));
 		        // calculate the actual flow we'll be using for this infill
 				params.flow = layerm.flow(frSolidInfill);
 		        params.spacing = params.flow.spacing();	        
@@ -352,13 +348,13 @@ std::vector<SurfaceFill> group_fills(const Layer &layer)
 		}
     }
 
-    // Use ipEnsuring pattern for all internal Solids.
+    // Use Domain::InfillPattern::ipEnsuring pattern for all internal Solids.
     {
         for (size_t surface_fill_id = 0; surface_fill_id < surface_fills.size(); ++surface_fill_id)
             if (SurfaceFill &fill = surface_fills[surface_fill_id];
                     fill.surface.surface_type == stInternalSolid
                     || fill.surface.surface_type == stSolidOverBridge) {
-                fill.params.pattern = ipEnsuring;
+                fill.params.pattern = Domain::InfillPattern::ipEnsuring;
             }
     }
 
@@ -487,8 +483,8 @@ void Layer::make_fills(FillAdaptive::Octree* adaptive_fill_octree, FillAdaptive:
 
     std::vector<SurfaceFill>  surface_fills       = group_fills(*this);
     const Slic3r::BoundingBox bbox                = this->object()->bounding_box();
-    const auto                resolution          = this->object()->print()->config().gcode_resolution.value;
-    const auto                perimeter_generator = this->object()->config().perimeter_generator;
+    const auto                resolution          = this->object()->print()->config().get<double>("gcode_resolution");
+    const auto                perimeter_generator = this->object()->config().get<Domain::PerimeterGeneratorType>("perimeter_generator");
 
 #ifdef SLIC3R_DEBUG_SLICE_PROCESSING
 	{
@@ -499,6 +495,8 @@ void Layer::make_fills(FillAdaptive::Octree* adaptive_fill_octree, FillAdaptive:
 
 	size_t first_object_layer_id = this->object()->get_layer(0)->id();
     for (SurfaceFill &surface_fill : surface_fills) {
+        LayerRegion &layerm = *m_regions[surface_fill.region_id];
+
         // Create the filler object.
         std::unique_ptr<Fill> f = std::unique_ptr<Fill>(Fill::new_from_type(surface_fill.params.pattern));
         f->set_bounding_box(bbox);
@@ -508,17 +506,16 @@ void Layer::make_fills(FillAdaptive::Octree* adaptive_fill_octree, FillAdaptive:
         f->layer_id = this->id() - first_object_layer_id;
         f->z 		= this->print_z;
         f->angle 	= surface_fill.params.angle;
-        f->adapt_fill_octree   = (surface_fill.params.pattern == ipSupportCubic) ? support_fill_octree : adaptive_fill_octree;
-        f->print_config        = &this->object()->print()->config();
-        f->print_object_config = &this->object()->config();
+        f->adapt_fill_octree   = (surface_fill.params.pattern == Domain::InfillPattern::ipSupportCubic) ? support_fill_octree : adaptive_fill_octree;
+        f->region_config = layerm.region().config();
 
-        if (surface_fill.params.pattern == ipLightning)
+        if (surface_fill.params.pattern == Domain::InfillPattern::ipLightning)
             dynamic_cast<FillLightning::Filler*>(f.get())->generator = lightning_generator;
 
-        if (surface_fill.params.pattern == ipEnsuring) {
+        if (surface_fill.params.pattern == Domain::InfillPattern::ipEnsuring) {
             auto *fill_ensuring = dynamic_cast<FillEnsuring *>(f.get());
             assert(fill_ensuring != nullptr);
-            fill_ensuring->print_region_config = &m_regions[surface_fill.region_id]->region().config();
+            fill_ensuring->print_region_config = m_regions[surface_fill.region_id]->region().config();
         }
 
         // calculate flow spacing for infill pattern generation
@@ -539,8 +536,6 @@ void Layer::make_fills(FillAdaptive::Octree* adaptive_fill_octree, FillAdaptive:
         // Used by the concentric infill pattern to clip the loops to create extrusion paths.
         f->loop_clipping = coord_t(scale_(surface_fill.params.flow.nozzle_diameter()) * LOOP_CLIPPING_LENGTH_OVER_NOZZLE_DIAMETER);
 
-        LayerRegion &layerm = *m_regions[surface_fill.region_id];
-
         // apply half spacing using this flow's own spacing and generate infill
         FillParams params;
         params.density                    = float(0.01 * surface_fill.params.density);
@@ -548,9 +543,9 @@ void Layer::make_fills(FillAdaptive::Octree* adaptive_fill_octree, FillAdaptive:
         params.anchor_length              = surface_fill.params.anchor_length;
         params.anchor_length_max          = surface_fill.params.anchor_length_max;
         params.resolution                 = resolution;
-        params.use_arachne                = (perimeter_generator == PerimeterGeneratorType::Arachne && surface_fill.params.pattern == ipConcentric) || surface_fill.params.pattern == ipEnsuring;
+        params.use_arachne                = (perimeter_generator == Domain::PerimeterGeneratorType::Arachne && surface_fill.params.pattern == Domain::InfillPattern::ipConcentric) || surface_fill.params.pattern == Domain::InfillPattern::ipEnsuring;
         params.layer_height               = layerm.layer()->height;
-        params.prefer_clockwise_movements = this->object()->print()->config().prefer_clockwise_movements;
+        params.prefer_clockwise_movements = this->object()->print()->config().get<bool>("prefer_clockwise_movements");
 
         for (ExPolygon &expoly : surface_fill.expolygons) {
 			// Spacing is modified by the filler to indicate adjustments. Reset it for each expolygon.
@@ -663,7 +658,7 @@ Polylines Layer::generate_sparse_infill_polylines_for_anchoring(FillAdaptive::Oc
 {
     std::vector<SurfaceFill>  surface_fills = group_fills(*this);
     const Slic3r::BoundingBox bbox          = this->object()->bounding_box();
-    const auto                resolution    = this->object()->print()->config().gcode_resolution.value;
+    const auto                resolution    = this->object()->print()->config().get<double>("gcode_resolution");
 
     Polylines sparse_infill_polylines{};
 
@@ -673,30 +668,33 @@ Polylines Layer::generate_sparse_infill_polylines_for_anchoring(FillAdaptive::Oc
 		}
 
         switch (surface_fill.params.pattern) {
-        case ipCount: continue; break;
-        case ipSupportBase: continue; break;
-        case ipEnsuring: continue; break;
-        case ipLightning:
-		case ipAdaptiveCubic:
-        case ipSupportCubic:
-        case ipRectilinear:
-        case ipMonotonic:
-        case ipMonotonicLines:
-        case ipAlignedRectilinear:
-        case ipGrid:
-        case ipTriangles:
-        case ipStars:
-        case ipCubic:
-        case ipLine:
-        case ipConcentric:
-        case ipHoneycomb:
-        case ip3DHoneycomb:
-        case ipGyroid:
-        case ipHilbertCurve:
-        case ipArchimedeanChords:
-        case ipOctagramSpiral:
-        case ipZigZag: break;
+        case Domain::InfillPattern::ipCount: continue; break;
+        case Domain::InfillPattern::ipSupportBase: continue; break;
+        case Domain::InfillPattern::ipEnsuring: continue; break;
+        case Domain::InfillPattern::ipLightning:
+		case Domain::InfillPattern::ipAdaptiveCubic:
+        case Domain::InfillPattern::ipSupportCubic:
+        case Domain::InfillPattern::ipRectilinear:
+        case Domain::InfillPattern::ipMonotonic:
+        case Domain::InfillPattern::ipMonotonicLines:
+        case Domain::InfillPattern::ipAlignedRectilinear:
+        case Domain::InfillPattern::ipGrid:
+        case Domain::InfillPattern::ipTriangles:
+        case Domain::InfillPattern::ipStars:
+        case Domain::InfillPattern::ipCubic:
+        case Domain::InfillPattern::ipLine:
+        case Domain::InfillPattern::ipConcentric:
+        case Domain::InfillPattern::ipHoneycomb:
+        case Domain::InfillPattern::ip3DHoneycomb:
+        case Domain::InfillPattern::ipGyroid:
+        case Domain::InfillPattern::ipHilbertCurve:
+        case Domain::InfillPattern::ipArchimedeanChords:
+        case Domain::InfillPattern::ipOctagramSpiral:
+        case Domain::InfillPattern::ipZigZag: break;
         }
+
+
+        LayerRegion &layerm = *m_regions[surface_fill.region_id];
 
         // Create the filler object.
         std::unique_ptr<Fill> f = std::unique_ptr<Fill>(Fill::new_from_type(surface_fill.params.pattern));
@@ -704,11 +702,10 @@ Polylines Layer::generate_sparse_infill_polylines_for_anchoring(FillAdaptive::Oc
         f->layer_id = this->id() - this->object()->get_layer(0)->id(); // We need to subtract raft layers.
         f->z        = this->print_z;
         f->angle    = surface_fill.params.angle;
-        f->adapt_fill_octree   = (surface_fill.params.pattern == ipSupportCubic) ? support_fill_octree : adaptive_fill_octree;
-        f->print_config        = &this->object()->print()->config();
-        f->print_object_config = &this->object()->config();
+        f->adapt_fill_octree   = (surface_fill.params.pattern == Domain::InfillPattern::ipSupportCubic) ? support_fill_octree : adaptive_fill_octree;
+        f->region_config = layerm.region().config();
 
-        if (surface_fill.params.pattern == ipLightning)
+        if (surface_fill.params.pattern == Domain::InfillPattern::ipLightning)
             dynamic_cast<FillLightning::Filler *>(f.get())->generator = lightning_generator;
 
         // calculate flow spacing for infill pattern generation
@@ -727,8 +724,6 @@ Polylines Layer::generate_sparse_infill_polylines_for_anchoring(FillAdaptive::Oc
         f->link_max_length = (coord_t) scale_(link_max_length);
         // Used by the concentric infill pattern to clip the loops to create extrusion paths.
         f->loop_clipping = coord_t(scale_(surface_fill.params.flow.nozzle_diameter()) * LOOP_CLIPPING_LENGTH_OVER_NOZZLE_DIAMETER);
-
-        LayerRegion &layerm = *m_regions[surface_fill.region_id];
 
         // apply half spacing using this flow's own spacing and generate infill
         FillParams params;
@@ -825,32 +820,32 @@ void Layer::make_ironing()
 	};
 
 	std::vector<IroningParams> by_extruder;
-    double default_layer_height = this->object()->config().layer_height;
+    double default_layer_height = this->object()->config().get<double>("layer_height");
 
 	for (uint32_t region_id = 0; region_id < uint32_t(this->regions().size()); ++region_id)
 		if (LayerRegion *layerm = this->get_region(region_id); ! layerm->slices().empty()) {
 			IroningParams ironing_params;
-			const PrintRegionConfig &config = layerm->region().config();
-			if (config.ironing && 
-				(config.ironing_type == IroningType::AllSolid ||
-				 	(config.top_solid_layers > 0 && 
-						(config.ironing_type == IroningType::TopSurfaces ||
-					 	(config.ironing_type == IroningType::TopmostOnly && layerm->layer()->upper_layer == nullptr))))) {
-				if (config.perimeter_extruder == config.solid_infill_extruder || config.perimeters == 0) {
+			const PrintRegionConfigView &config = layerm->region().config();
+			if (config.get<bool>("ironing") && 
+				(config.get<Domain::IroningType>("ironing_type") == Domain::IroningType::AllSolid ||
+				 	(config.get<int>("top_solid_layers") > 0 && 
+						(config.get<Domain::IroningType>("ironing_type") == Domain::IroningType::TopSurfaces ||
+					 	(config.get<Domain::IroningType>("ironing_type") == Domain::IroningType::TopmostOnly && layerm->layer()->upper_layer == nullptr))))) {
+				if (config.get<int>("perimeter_extruder") == config.get<int>("solid_infill_extruder") || config.get<int>("perimeters") == 0) {
 					// Iron the whole face.
-					ironing_params.extruder = config.solid_infill_extruder;
+					ironing_params.extruder = config.get<int>("solid_infill_extruder");
 				} else {
 					// Iron just the infill.
-					ironing_params.extruder = config.solid_infill_extruder;
+					ironing_params.extruder = config.get<int>("solid_infill_extruder");
 				}
 			}
 			if (ironing_params.extruder != -1) {
 				//TODO just_infill is currently not used.
 				ironing_params.just_infill 	= false;
-				ironing_params.line_spacing = config.ironing_spacing;
-				ironing_params.height 		= default_layer_height * 0.01 * config.ironing_flowrate;
-				ironing_params.speed 		= config.ironing_speed;
-				ironing_params.angle 		= config.fill_angle * M_PI / 180.;
+				ironing_params.line_spacing = config.get<double>("ironing_spacing");
+				ironing_params.height 		= config.get<Domain::Percentage>("ironing_flowrate").get_abs_value(default_layer_height);
+				ironing_params.speed 		= config.get<double>("ironing_speed");
+				ironing_params.angle 		= config.get<double>("fill_angle") * M_PI / 180.;
 				ironing_params.layerm 		= layerm;
 				ironing_params.region_id    = region_id;
 				by_extruder.emplace_back(ironing_params);
@@ -879,7 +874,7 @@ void Layer::make_ironing()
 
 		// Create the ironing extrusions for regions <i, j)
 		ExPolygons ironing_areas;
-		double nozzle_dmr = this->object()->print()->config().nozzle_diameter.values[ironing_params.extruder - 1];
+		double nozzle_dmr = this->object()->print()->config().get<std::vector<double>>("nozzle_diameter")[ironing_params.extruder - 1];
 		if (ironing_params.just_infill) {
 			//TODO just_infill is currently not used.
 			// Just infill.
@@ -890,12 +885,12 @@ void Layer::make_ironing()
 			Polygons infills;
 			for (size_t k = i; k < j; ++ k) {
 				const IroningParams		 &ironing_params  = by_extruder[k];
-				const PrintRegionConfig  &region_config   = ironing_params.layerm->region().config();
-				bool					  iron_everything = region_config.ironing_type == IroningType::AllSolid;
+				const PrintRegionConfigView  &region_config   = ironing_params.layerm->region().config();
+				bool					  iron_everything = region_config.get<Domain::IroningType>("ironing_type") == Domain::IroningType::AllSolid;
 				bool					  iron_completely = iron_everything;
 				if (iron_everything) {
 					// Check whether there is any non-solid hole in the regions.
-					bool internal_infill_solid = region_config.fill_density.value > 95.;
+					bool internal_infill_solid = region_config.get<Domain::Percentage>("fill_density") > Domain::Percentage{95.};
 					for (const Surface &surface : ironing_params.layerm->fill_surfaces())
 						if ((! internal_infill_solid && surface.surface_type == stInternal) || surface.surface_type == stInternalBridge || surface.surface_type == stInternalVoid) {
 							// Some fill region is not quite solid. Don't iron over the whole surface.
@@ -925,7 +920,7 @@ void Layer::make_ironing()
 			if (! infills.empty() || j > i + 1) {
 				// Ironing over more than a single region or over solid internal infill.
 				if (! infills.empty())
-					// For IroningType::AllSolid only:
+					// For Domain::IroningType::AllSolid only:
 					// Add solid infill areas for layers, that contain some non-ironable infil (sparse infill, bridge infill).
 					append(polys, std::move(infills));
 				polys = union_safety_offset(polys);

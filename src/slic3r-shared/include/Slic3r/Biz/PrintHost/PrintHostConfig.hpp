@@ -6,27 +6,14 @@
 #include <memory>
 #include <variant>
 
+#include "Slic3r/Domain/ConfigPhysical.hpp"
+
 namespace Slic3r::Biz::libpgcode {
     class LineView;
 }
 namespace Slic3r::Biz::PrintHost {
 
 using DataPtrVariant = std::variant<std::shared_ptr<const libpgcode::LineView>>;
-
-enum class PrintHostType {
-    Local,
-    PrusaLink,
-    PrusaLinkStorage,
-    PrusaConnect,
-    SL1Host,
-    OctoPrint,
-    Moonraker,
-    Duet,
-    FlashAir,
-    AstroBox,
-    Repetier,
-    MKS,
-};
 
 enum class PrintHostAfterUploadAction {
     None,
@@ -35,23 +22,16 @@ enum class PrintHostAfterUploadAction {
     QueuePrint
 };
 
-enum class PrintHostAuthType {
-    None,
-    ApiKey,
-    Digest
-};
-
-
 struct PrintHostConfig
 {
-    PrintHostType type;
+    Domain::PrintHostType type;
     std::string host;
     std::string api_key;
     std::string username;
     std::string password;
     std::string ca_file;
     bool ssl_revoke_best_effort;
-    PrintHostAuthType auth_type;
+    Domain::PrintHostAuthType auth_type;
     std::string port;
     std::string team_id;
     std::string printer_uuid;
@@ -59,7 +39,7 @@ struct PrintHostConfig
 
     PrintHostConfig() = delete;
 
-    PrintHostConfig(PrintHostType type, 
+    PrintHostConfig(Domain::PrintHostType type,
         std::string host, 
         std::string ca_file = std::string(), 
         bool ssl_revoke_best_effort = false,  
@@ -71,14 +51,14 @@ struct PrintHostConfig
         , host(std::move(host))
         , ca_file(std::move(ca_file))
         , ssl_revoke_best_effort(ssl_revoke_best_effort)
-        , auth_type(PrintHostAuthType::None)
+        , auth_type(Domain::PrintHostAuthType::None)
         , port(std::move(port))
         , team_id(std::move(team_id))
         , printer_uuid(std::move(printer_uuid))
         , access_token(std::move(access_token))
     {}
 
-    PrintHostConfig(PrintHostType type, 
+    PrintHostConfig(Domain::PrintHostType type,
         std::string host, 
         std::string api_key, 
         std::string ca_file = std::string(), 
@@ -92,14 +72,14 @@ struct PrintHostConfig
         , api_key(std::move(api_key))
         , ca_file(std::move(ca_file))
         , ssl_revoke_best_effort(ssl_revoke_best_effort)
-        , auth_type(PrintHostAuthType::ApiKey)
+        , auth_type(Domain::PrintHostAuthType::ApiKey)
         , port(std::move(port))
         , team_id(std::move(team_id))
         , printer_uuid(std::move(printer_uuid))
         , access_token(std::move(access_token))
     {}
     
-    PrintHostConfig(PrintHostType type, 
+    PrintHostConfig(Domain::PrintHostType type,
         std::string host, 
         std::string username, 
         std::string password, 
@@ -115,7 +95,7 @@ struct PrintHostConfig
         , password(std::move(password))
         , ca_file(std::move(ca_file))
         , ssl_revoke_best_effort(ssl_revoke_best_effort)
-        , auth_type(PrintHostAuthType::Digest)
+        , auth_type(Domain::PrintHostAuthType::Digest)
         , port(std::move(port))
         , team_id(std::move(team_id))
         , printer_uuid(std::move(printer_uuid))
@@ -181,7 +161,7 @@ inline PrintHostExportFormat get_export_format_from_extension(const std::string&
 struct PrintHostJobData
 {
     DataPtrVariant data_ptr;
-    
+
     boost::filesystem::path source_path;
     boost::filesystem::path dest_path;
 
@@ -195,7 +175,7 @@ struct PrintHostJobData
     PrintHostJobData() = delete;
 
     PrintHostJobData(
-        DataPtrVariant data, 
+        DataPtrVariant data,
         const boost::filesystem::path& dest,
         PrintHostExportFormat result_format,
         PrintHostAfterUploadAction action = PrintHostAfterUploadAction::None,

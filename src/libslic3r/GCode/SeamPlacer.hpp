@@ -46,7 +46,7 @@ std::ostream& operator<<(std::ostream& os, const Params& params);
 class Placer
 {
 public:
-    static Params get_params(const DynamicPrintConfig &config);
+    static Params get_params(const Domain::ConfigView &config);
 
     void init(
         SpanOfConstPtrs<PrintObject> objects,

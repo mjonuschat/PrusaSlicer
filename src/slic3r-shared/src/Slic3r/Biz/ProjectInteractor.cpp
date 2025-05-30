@@ -78,7 +78,7 @@ void ProjectInteractor::on_slicing_input_changed(const Domain::BedRef& bed_insta
 
     m_slicing_interactor.update_process(
         selected_project().model(),
-        config_container->print_config(),
+        config_container->new_config(),
         *instance
     );
 }
@@ -153,7 +153,7 @@ void ProjectInteractor::do_export(const Slicing::SlicingId id, const boost::file
     if (!fdm_result)
         return;
     m_last_export_path_storage.set_last_export_path(dest_path, to_removable);
-    PrintHost::PrintHostConfig config{PrintHost::PrintHostType::Local,""};
+    PrintHost::PrintHostConfig config{Domain::PrintHostType::Local,""};
     PrintHost::PrintHostJobData data{fdm_result.value().get().const_gcode(), dest_path, PrintHost::get_export_format_from_extension(dest_path.extension().string())};
     m_print_host_interactor.export_gcode(std::move(config), std::move(data));
 }
@@ -162,7 +162,7 @@ void ProjectInteractor::do_upload(const Slicing::SlicingId id, const std::string
     const std::optional<FDMResultRef> fdm_result{ m_fdm_result_cache.get_result(id) };
     if (!fdm_result)
         return;
-    PrintHost::PrintHostConfig config{PrintHost::PrintHostType::OctoPrint,""};
+    PrintHost::PrintHostConfig config{Domain::PrintHostType::OctoPrint,""};
     PrintHost::PrintHostJobData data{fdm_result.value().get().const_gcode(), filename, PrintHost::get_export_format_from_extension(boost::filesystem::path(filename).extension().string())};
     m_print_host_interactor.upload_gcode(std::move(config), std::move(data));
 }

@@ -43,7 +43,6 @@
 
 #include "libslic3r.h"
 #include "Utils.hpp"
-#include "PlaceholderParser.hpp"
 #include "libslic3r/GCode/Thumbnails.hpp"
 
 #include "PresetBundle.hpp"
@@ -375,7 +374,8 @@ bool is_compatible_with_print(const PresetWithVendorProfile &preset, const Prese
     bool  has_compatible_prints = compatible_prints != nullptr && ! compatible_prints->values.empty();
     if (! has_compatible_prints && ! condition.empty()) {
         try {
-            return PlaceholderParser::evaluate_boolean_expression(condition, active_print.preset.config);
+            return true;
+            //return Biz::Parser::PlaceholderParser::evaluate_boolean_expression(condition, active_print.preset.config);
         } catch (const std::runtime_error &err) {
             //FIXME in case of an error, return "compatible with everything".
             printf("Preset::is_compatible_with_print - parsing error of compatible_prints_condition %s:\n%s\n", active_print.preset.name.c_str(), err.what());
@@ -400,8 +400,9 @@ bool is_compatible_with_printer(const PresetWithVendorProfile &preset, const Pre
     if (! has_compatible_printers && ! condition.empty()) {
         BOOST_LOG_TRIVIAL(debug) << " - no compatible_printers present, evaluating condition: " << condition << "\n";
         try {
-            bool ret = PlaceholderParser::evaluate_boolean_expression(condition, active_printer.preset.config, extra_config);
-            BOOST_LOG_TRIVIAL(debug) << " - result: " << ret << "\n";
+            // TODO!!
+            //bool ret = PlaceholderParser::evaluate_boolean_expression(condition, active_printer.preset.config, extra_config);
+            //BOOST_LOG_TRIVIAL(debug) << " - result: " << ret << "\n";
         } catch (const std::runtime_error &err) {
             BOOST_LOG_TRIVIAL(debug) << " - caught error: " << err.what() << "\n";
             //FIXME in case of an error, return "compatible with everything".
@@ -1446,11 +1447,14 @@ inline t_config_option_keys deep_diff(const ConfigBase &config_this, const Confi
                 // "thumbnails" can not contain extensions in old config but they are valid and use PNG extension by default
                 // So, check if "thumbnails" is really changed
                 // We will compare full thumbnails instead of exactly config values
-                auto [thumbnails, er]         = GCodeThumbnails::make_and_check_thumbnail_list(config_this);
-                auto [thumbnails_new, er_new] = GCodeThumbnails::make_and_check_thumbnail_list(config_other);
-                if (thumbnails != thumbnails_new || er != er_new)
-                    // if those strings are actually the same, erase them from the list of dirty oprions
-                    diff.emplace_back(opt_key);
+
+
+                // TODO!! I commented this out to make this work for now!
+                //auto [thumbnails, er]         = GCodeThumbnails::make_and_check_thumbnail_list(config_this);
+                //auto [thumbnails_new, er_new] = GCodeThumbnails::make_and_check_thumbnail_list(config_other);
+                //if (thumbnails != thumbnails_new || er != er_new)
+                //    // if those strings are actually the same, erase them from the list of dirty oprions
+                //    diff.emplace_back(opt_key);
             } else {
                 switch (other_opt->type()) {
                 case coInts:    add_correct_opts_to_diff<ConfigOptionInts       >(opt_key, diff, config_other, config_this);  break;

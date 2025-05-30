@@ -17,10 +17,11 @@
 #include "Slic3r/Biz/GCodeReader/GCodeReader.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/PrintConfig.hpp"
+#include "libslic3r/ConfigViews.hpp"
 
 namespace Slic3r {
 
-inline char get_extrusion_axis_char(const GCodeConfig &config)
+inline char get_extrusion_axis_char(const PrintConfigView &config)
 {
     std::string axis = get_extrusion_axis(config);
     assert(axis.size() <= 1);
@@ -33,13 +34,14 @@ class SpiralVase
 public:
     SpiralVase() = delete;
 
-    explicit SpiralVase(const PrintConfig &config) : m_config(config)
+    explicit SpiralVase(const PrintConfigView &config) : m_config(config)
     {
-        m_reader.z() = (float) m_config.z_offset;
+        m_reader.z() = (float) m_config.get<double>("z_offset");
         m_reader.set_extrusion_axis(get_extrusion_axis_char(config));
-        m_reader.set_use_relative_e_distances(config.use_relative_e_distances.value);
+        m_reader.set_use_relative_e_distances(config.get<bool>("use_relative_e_distances"));
 
-        const double max_nozzle_diameter = *std::max_element(config.nozzle_diameter.values.begin(), config.nozzle_diameter.values.end());
+        const auto nozzle_diameter{config.get<std::vector<double>>("nozzle_diameter")};
+        const double max_nozzle_diameter = *std::max_element(nozzle_diameter.begin(), nozzle_diameter.end());
         m_max_xy_smoothing               = float(2. * max_nozzle_diameter);
     };
 
@@ -52,7 +54,7 @@ public:
     std::string process_layer(const std::string &gcode, bool last_layer);
 
 private:
-    const PrintConfig  &m_config;
+    const PrintConfigView &m_config;
     Biz::GCodeReader::GCodeReader m_reader;
     float               m_max_xy_smoothing = 0.f;
 

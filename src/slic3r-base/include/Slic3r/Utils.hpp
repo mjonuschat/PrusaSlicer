@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 #include <vector>
 
 namespace Slic3r {
@@ -155,5 +156,10 @@ inline bool is_in_range(const T& value, const T& low, const T& high)
 {
     return low <= value && value <= high;
 }
+
+// Returns next utf8 sequence length. =number of bytes in string, that creates together one utf-8 character. 
+// Starting at pos. ASCII characters returns 1. Works also if pos is in the middle of the sequence.
+size_t get_utf8_sequence_length(const std::string& text, size_t pos = 0);
+size_t get_utf8_sequence_length(const char *seq, size_t size);
 
 } // namespace Slic3r

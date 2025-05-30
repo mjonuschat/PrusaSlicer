@@ -15,6 +15,7 @@
 #include <vector>
 #include <cstddef>
 
+#include "Slic3r/Domain/ConfigFDM.hpp"
 #include "Slic3r/Domain/GCodeFlavor.hpp"
 #include "libslic3r/Point.hpp"
 
@@ -22,15 +23,15 @@ namespace Slic3r
 {
 
 class WipeTowerWriter;
-class PrintConfig;
-class PrintRegionConfig;
+class PrintConfigView;
+class PrintRegionConfigView;
 
 class WipeTower
 {
 public:
     static const std::string never_skip_tag() { return "_GCODE_WIPE_TOWER_NEVER_SKIP_TAG"; }
 	static std::pair<double, double> get_wipe_tower_cone_base(double width, double height, double depth, double angle_deg);
-	static std::vector<std::vector<float>> extract_wipe_volumes(const PrintConfig& config);
+	static std::vector<std::vector<float>> extract_wipe_volumes(const PrintConfigView& config);
 
     struct Extrusion
     {
@@ -138,14 +139,13 @@ public:
 	// wipe_area	-- space available for one toolchange in mm
     WipeTower(const Vec2f& position,
 		      double rotation_deg,
-		      const PrintConfig& config,
-	          const PrintRegionConfig& default_region_config,
+		      const PrintConfigView& config,
 			  const std::vector<std::vector<float>>& wiping_matrix,
 			  size_t initial_tool);
 
 
 	// Set the extruder properties.
-    void set_extruder(size_t idx, const PrintConfig& config);
+    void set_extruder(size_t idx, const PrintConfigView& config);
 
 	// Appends into internal structure m_plan containing info about the future wipe tower
 	// to be used before building begins. The entries must be added ordered in z.

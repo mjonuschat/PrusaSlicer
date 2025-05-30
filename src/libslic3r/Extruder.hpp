@@ -12,8 +12,10 @@
 
 #include <utility>
 
+#include "Slic3r/Domain/ConfigFDM.hpp"
 #include "libslic3r.h"
 #include "Point.hpp"
+#include "libslic3r/ConfigViews.hpp"
 
 namespace Slic3r {
 
@@ -22,7 +24,7 @@ class GCodeConfig;
 class Extruder
 {
 public:
-    Extruder(unsigned int id, GCodeConfig *config);
+    Extruder(unsigned int id, const PrintConfigView *config);
     ~Extruder() = default;
 
     unsigned int id() const { return m_id; }
@@ -80,7 +82,7 @@ private:
     Extruder(unsigned int id) : m_id(id) {}
 
     // Reference to GCodeWriter instance owned by GCodeWriter.
-    GCodeConfig *m_config;
+    const PrintConfigView *m_config;
     // Print-wide global ID of this extruder.
     unsigned int m_id;
     // Current state of the extruder axis.

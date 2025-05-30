@@ -38,15 +38,15 @@ indexed_triangle_set create_support_tree(const SupportableMesh &sm,
         auto start{high_resolution_clock::now()};
 
         switch (sm.cfg.tree_type) {
-        case SupportTreeType::Default: {
+        case Domain::sla::SupportTreeType::Default: {
             create_default_tree(*builder, sm);
             break;
         }
-        case SupportTreeType::Branching: {
+        case Domain::sla::SupportTreeType::Branching: {
             create_branching_tree(*builder, sm);
             break;
         }
-        case SupportTreeType::Organic: {
+        case Domain::sla::SupportTreeType::Organic: {
             // TODO
         }
         default:;

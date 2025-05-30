@@ -76,8 +76,8 @@ ObjectSeams precalculate_seams(
     ObjectSeams result;
 
     for (auto &[print_object, layer_perimeters] : seam_data) {
-        switch (print_object->config().seam_position.value) {
-        case spAligned: {
+        switch (print_object->config().get<Domain::SeamPosition>("seam_position")) {
+            case Domain::SeamPosition::spAligned: {
             const Transform3d transformation{print_object->trafo_centered()};
             const ModelVolumePtrs &volumes{print_object->model_object()->volumes};
 
@@ -94,15 +94,15 @@ ObjectSeams precalculate_seams(
             );
             break;
         }
-        case spRear: {
+        case Domain::SeamPosition::spRear: {
             result[print_object] = Rear::get_object_seams(std::move(layer_perimeters), params.rear_tolerance, params.rear_y_offset);
             break;
         }
-        case spRandom: {
+        case Domain::SeamPosition::spRandom: {
             result[print_object] = Random::get_object_seams(std::move(layer_perimeters), params.random_seed);
             break;
         }
-        case spNearest: {
+        case Domain::SeamPosition::spNearest: {
             // Do not precalculate anything.
             break;
         }
@@ -112,11 +112,11 @@ ObjectSeams precalculate_seams(
     return result;
 }
 
-Params Placer::get_params(const DynamicPrintConfig &config) {
+Params Placer::get_params(const Domain::ConfigView &config) {
     Params params{};
 
-    params.perimeter.elephant_foot_compensation = config.opt_float("elefant_foot_compensation");
-    if (config.opt_int("raft_layers") > 0) {
+    params.perimeter.elephant_foot_compensation = config.get<double>("elefant_foot_compensation");
+    if (config.get<int>("raft_layers") > 0) {
         params.perimeter.elephant_foot_compensation = 0.0;
     }
     params.random_seed = 1653710332u;
@@ -129,7 +129,7 @@ Params Placer::get_params(const DynamicPrintConfig &config) {
     params.perimeter.convex_threshold = Slic3r::deg2rad(10.0);
     params.perimeter.concave_threshold = Slic3r::deg2rad(15.0);
 
-    params.staggered_inner_seams = config.opt_bool("staggered_inner_seams");
+    params.staggered_inner_seams = config.get<bool>("staggered_inner_seams");
 
     params.max_nearest_detour = 1.0;
     params.rear_tolerance = 1.0;
@@ -168,7 +168,7 @@ void Placer::init(
     ObjectLayerPerimeters perimeters_for_precalculation;
 
     for (auto &[print_object, layer_perimeters] : perimeters) {
-        if (print_object->config().seam_position.value == spNearest) {
+        if (print_object->config().get<Domain::SeamPosition>("seam_position") == Domain::SeamPosition::spNearest) {
             this->perimeters_per_layer[print_object] = std::move(layer_perimeters);
         } else {
             perimeters_for_precalculation[print_object] = std::move(layer_perimeters);
@@ -335,8 +335,8 @@ boost::variant<Point, Scarf::Scarf> finalize_seam_position(
     }
 
     bool place_scarf_seam {
-        region->config().scarf_seam_placement == ScarfSeamPlacement::everywhere
-        || (region->config().scarf_seam_placement == ScarfSeamPlacement::countours && !perimeter.is_hole)
+        region->config().get<Domain::ScarfSeamPlacement>("scarf_seam_placement") == Domain::ScarfSeamPlacement::everywhere
+        || (region->config().get<Domain::ScarfSeamPlacement>("scarf_seam_placement") == Domain::ScarfSeamPlacement::countours && !perimeter.is_hole)
     };
     const bool is_smooth{
         seam_choice.previous_index != seam_choice.next_index ||
@@ -347,11 +347,11 @@ boost::variant<Point, Scarf::Scarf> finalize_seam_position(
         place_scarf_seam = false;
     }
 
-    if (region->config().scarf_seam_only_on_smooth && !is_smooth) {
+    if (region->config().get<bool>("scarf_seam_only_on_smooth") && !is_smooth) {
         place_scarf_seam = false;
     }
 
-    if (region->config().scarf_seam_length.value <= std::numeric_limits<double>::epsilon()) {
+    if (region->config().get<double>("scarf_seam_length") <= std::numeric_limits<double>::epsilon()) {
         place_scarf_seam = false;
     }
 
@@ -366,11 +366,11 @@ boost::variant<Point, Scarf::Scarf> finalize_seam_position(
 
     if (place_scarf_seam) {
         Scarf::Scarf scarf{};
-        scarf.entire_loop = region->config().scarf_seam_entire_loop;
-        scarf.max_segment_length = region->config().scarf_seam_max_segment_length;
-        scarf.start_height = std::min(region->config().scarf_seam_start_height.get_abs_value(1.0), 1.0);
+        scarf.entire_loop = region->config().get<bool>("scarf_seam_entire_loop");
+        scarf.max_segment_length = region->config().get<double>("scarf_seam_max_segment_length");
+        scarf.start_height = std::min(region->config().get<Domain::Percentage>("scarf_seam_start_height").get_abs_value(1.0), 1.0);
 
-        const double offset{scarf.entire_loop ? 0.0 : region->config().scarf_seam_length.value};
+        const double offset{scarf.entire_loop ? 0.0 : region->config().get<double>("scarf_seam_length")};
         const std::optional<PointOnPerimeter> outter_scarf_start_point{offset_along_perimeter(
             seam_choice,
             perimeter,
@@ -400,7 +400,7 @@ boost::variant<Point, Scarf::Scarf> finalize_seam_position(
                 *outter_scarf_start_point
             };
 
-            if (region->config().external_perimeters_first.value) {
+            if (region->config().get<bool>("external_perimeters_first")) {
                 const auto external_first_offset_direction{
                     offset_direction == Geometry::Direction1D::forward ?
                     Geometry::Direction1D::backward :
@@ -419,7 +419,7 @@ boost::variant<Point, Scarf::Scarf> finalize_seam_position(
                 }
             }
 
-            if (!region->config().scarf_seam_on_inner_perimeters) {
+            if (!region->config().get<bool>("scarf_seam_on_inner_perimeters")) {
                 return scaled(inner_scarf_end_point.position);
             }
 
@@ -545,9 +545,9 @@ boost::variant<Point, Scarf::Scarf> Placer::place_seam(
     assert(layer->id() >= po->slicing_parameters().raft_layers());
     const size_t layer_index = layer->id() - po->slicing_parameters().raft_layers();
 
-    const bool thick_bridges{po->config().thick_bridges.value};
+    const bool thick_bridges{po->config().get<bool>("thick_bridges")};
 
-    if (po->config().seam_position.value == spNearest) {
+    if (po->config().get<Domain::SeamPosition>("seam_position") == Domain::SeamPosition::spNearest) {
         const std::vector<Perimeters::BoundedPerimeter> &perimeters{
             this->perimeters_per_layer.at(po)[layer_index]};
         const auto [seam_choice, perimeter_index] =

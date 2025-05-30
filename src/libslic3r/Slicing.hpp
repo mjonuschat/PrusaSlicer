@@ -24,8 +24,8 @@
 namespace Slic3r
 {
 
-class PrintConfig;
-class PrintObjectConfig;
+class PrintConfigView;
+class PrintObjectConfigView;
 class ModelConfig;
 class ModelObject;
 class DynamicPrintConfig;
@@ -38,8 +38,7 @@ struct SlicingParameters
 	SlicingParameters() = default;
 
     static SlicingParameters create_from_config(
-        const PrintConfig               &print_config,
-        const PrintObjectConfig         &object_config,
+        const Domain::ConfigView        &config,
         double                         object_height,
         const std::vector<unsigned int> &object_extruders,
         const Vec3d                     &object_shrinkage_compensation);

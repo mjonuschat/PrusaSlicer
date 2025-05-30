@@ -13,6 +13,7 @@
 #ifndef slic3r_Model_hpp_
 #define slic3r_Model_hpp_
 
+#include "Slic3r/Domain/ConfigFDM.hpp"
 #include "Slic3r/Domain/FacetsAnnotation.hpp"
 #include "Slic3r/Domain/SLA/DrainHole.hpp"
 #include "Slic3r/Domain/ObjectID.hpp"
@@ -27,6 +28,8 @@
 #include "Slic3r/Biz/Algorithms/TriangleSelector.hpp"
 #include "Slic3r/Domain/TriangleSelector.hpp"
 #include "Slic3r/Domain/Model.hpp"
+#include "Slic3r/Domain/ConfigFDM.hpp"
+#include "Slic3r/Domain/ConfigSLA.hpp"
 
 #include <map>
 #include <memory>
@@ -371,6 +374,7 @@ enum class ModelVolumeType : int {
 
 using LayerHeightRange = std::pair<double,double>;
 using LayerConfigRanges = std::map<LayerHeightRange, ModelConfig>;
+using LayerConfigRangesNew = std::map<LayerHeightRange, Slic3r::Domain::VolumeSettings>;
 
 // A printable object, possibly having multiple print volumes (each with its own set of parameters and materials),
 // and possibly having multiple modifier volumes, each modifier volume with its set of parameters and materials.
@@ -389,8 +393,15 @@ public:
     ModelVolumePtrs         volumes;
     // Configuration parameters specific to a single ModelObject, overriding the global Slic3r settings.
     ModelConfigObject 		config;
+
+    Slic3r::Domain::ObjectSettings          object_settings;
+    Slic3r::Domain::SLAObjectSettings       object_settings_sla;
+
     // Variation of a layer thickness for spans of Z coordinates + optional parameter overrides.
     LayerConfigRanges       layer_config_ranges;
+
+    LayerConfigRangesNew layer_config_ranges_new;
+
     // Profile of increasing z to a layer height, to be linearly interpolated when calculating the layers.
     // The pairs of <z, layer_height> are packed into a 1D array.
     LayerHeightProfile      layer_height_profile;
@@ -782,6 +793,8 @@ public:
     // overriding the global Slic3r settings and the ModelObject settings.
     ModelConfigObject	config;
 
+    Domain::VolumeSettings volume_settings;
+
     // List of mesh facets to be supported/unsupported.
     Domain::FacetsAnnotation supported_facets;
 
@@ -973,7 +986,7 @@ private:
     ModelVolume(ModelObject *object, const ModelVolume &other) :
         ObjectBase(other),
         name(other.name), source(other.source), m_mesh(other.m_mesh), m_convex_hull(other.m_convex_hull),
-        config(other.config), m_type(other.m_type), object(object), m_transformation(other.m_transformation),
+        config(other.config), volume_settings(other.volume_settings), m_type(other.m_type), object(object), m_transformation(other.m_transformation),
         supported_facets(other.supported_facets), seam_facets(other.seam_facets), mm_segmentation_facets(other.mm_segmentation_facets),
         fuzzy_skin_facets(other.fuzzy_skin_facets), cut_info(other.cut_info), text_configuration(other.text_configuration), emboss_shape(other.emboss_shape)
     {
@@ -997,7 +1010,7 @@ private:
     }
     // Providing a new mesh, therefore this volume will get a new unique ID assigned.
     ModelVolume(ModelObject *object, const ModelVolume &other, Domain::TriangleMesh &&mesh) :
-        name(other.name), source(other.source), config(other.config), object(object), m_mesh(new Domain::TriangleMesh(std::move(mesh))), m_type(other.m_type), m_transformation(other.m_transformation),
+        name(other.name), source(other.source), config(other.config), volume_settings(other.volume_settings), object(object), m_mesh(new Domain::TriangleMesh(std::move(mesh))), m_type(other.m_type), m_transformation(other.m_transformation),
         cut_info(other.cut_info), text_configuration(other.text_configuration), emboss_shape(other.emboss_shape)
     {
 		assert(this->id().valid()); 

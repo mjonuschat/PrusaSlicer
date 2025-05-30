@@ -7,6 +7,8 @@
 #include <boost/filesystem/operations.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
+#include "Slic3r/Domain/OnBeds.hpp"
+
 using namespace Slic3r;
 using Domain::Transformation;
 
@@ -18,8 +20,8 @@ SCENARIO("Reading 3mf file", "[3mf]") {
         	DynamicPrintConfig config;
             ConfigSubstitutionContext ctxt{ ForwardCompatibilitySubstitutionRule::Disable };
             boost::optional<Semver> version;
-            WipeTowersOnBeds wipe_towers;
-            CustomGCodesOnBeds custom_gcodes;
+            Domain::WipeTowersOnBeds wipe_towers;
+            Domain::CustomGCodesOnBeds custom_gcodes;
             bool ret = load_3mf(path.c_str(), config, ctxt, &model, false, version, wipe_towers, custom_gcodes);
             THEN("load should succeed") {
                 REQUIRE(ret);
@@ -57,11 +59,11 @@ SCENARIO("Export+Import geometry to/from 3mf file cycle", "[3mf]") {
         WHEN("model is saved+loaded to/from 3mf file") {
             // save the model to 3mf file
             std::string test_file = std::string(TEST_DATA_DIR) + "/test_3mf/prusa.3mf";
-            const WipeTowersOnBeds src_wipe_towers{
+            const Domain::WipeTowersOnBeds src_wipe_towers{
                 {0, Domain::ModelWipeTower{Domain::Vec2d{30, 30}, 0.3}}
             };
 
-            const CustomGCodesOnBeds src_custom_gcodes{
+            const Domain::CustomGCodesOnBeds src_custom_gcodes{
                 {0, Domain::CustomGCode::Info{
                     .mode = Domain::CustomGCode::Mode::MultiExtruder,
                     .gcodes = {Domain::CustomGCode::Item{
@@ -81,8 +83,8 @@ SCENARIO("Export+Import geometry to/from 3mf file cycle", "[3mf]") {
             // load back the model from the 3mf file
             Model dst_model;
             DynamicPrintConfig dst_config;
-            WipeTowersOnBeds dst_wipe_towers;
-            CustomGCodesOnBeds dst_custom_gcodes;
+            Domain::WipeTowersOnBeds dst_wipe_towers;
+            Domain::CustomGCodesOnBeds dst_custom_gcodes;
             {
                 ConfigSubstitutionContext ctxt{ ForwardCompatibilitySubstitutionRule::Disable };
                 boost::optional<Semver> version;

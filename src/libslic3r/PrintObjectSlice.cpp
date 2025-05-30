@@ -30,6 +30,7 @@
 #include "libslic3r/LayerRegion.hpp"
 #include "libslic3r/Model.hpp"
 #include "Slic3r/Domain/ObjectID.hpp"
+#include "Slic3r/Domain/ConfigFDM.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/PrintBase.hpp"
@@ -150,8 +151,8 @@ static inline bool model_volume_needs_slicing(const ModelVolume &mv)
 // Apply positive XY compensation to ModelVolumeType::MODEL_PART and ModelVolumeType::PARAMETER_MODIFIER, not to ModelVolumeType::NEGATIVE_VOLUME.
 // Apply contour simplification.
 static std::vector<VolumeSlices> slice_volumes_inner(
-    const PrintConfig                                        &print_config,
-    const PrintObjectConfig                                  &print_object_config,
+    const PrintConfigView                                        &print_config,
+    const PrintObjectConfigView                                  &print_object_config,
     const Transform3d                                        &object_trafo,
     ModelVolumePtrs                                           model_volumes,
     const std::vector<PrintObjectRegions::LayerRangeRegions> &layer_ranges,
@@ -168,22 +169,22 @@ static std::vector<VolumeSlices> slice_volumes_inner(
         slicing_ranges.reserve(layer_ranges.size());
 
     MeshSlicingParamsEx params_base;
-    params_base.closing_radius = print_object_config.slice_closing_radius.value;
+    params_base.closing_radius = print_object_config.get<double>("slice_closing_radius");
     params_base.extra_offset   = 0;
     params_base.trafo          = object_trafo;
-    params_base.resolution     = print_config.resolution.value;
+    params_base.resolution     = print_config.get<double>("resolution");
 
-    switch (print_object_config.slicing_mode.value) {
-    case SlicingMode::Regular:    params_base.mode = MeshSlicingParams::SlicingMode::Regular; break;
-    case SlicingMode::EvenOdd:    params_base.mode = MeshSlicingParams::SlicingMode::EvenOdd; break;
-    case SlicingMode::CloseHoles: params_base.mode = MeshSlicingParams::SlicingMode::Positive; break;
+    switch (print_object_config.get<Domain::SlicingMode>("slicing_mode")) {
+    case Domain::SlicingMode::Regular:    params_base.mode = MeshSlicingParams::SlicingMode::Regular; break;
+    case Domain::SlicingMode::EvenOdd:    params_base.mode = MeshSlicingParams::SlicingMode::EvenOdd; break;
+    case Domain::SlicingMode::CloseHoles: params_base.mode = MeshSlicingParams::SlicingMode::Positive; break;
     }
 
     params_base.mode_below     = params_base.mode;
 
-    const size_t num_extruders = print_config.nozzle_diameter.size();
+    const size_t num_extruders = print_config.get<std::vector<double>>("nozzle_diameter").size();
     const bool   is_mm_painted = num_extruders > 1 && std::any_of(model_volumes.cbegin(), model_volumes.cend(), [](const ModelVolume *mv) { return mv->is_mm_painted(); });
-    const auto   extra_offset  = is_mm_painted ? 0.f : std::max(0.f, float(print_object_config.xy_size_compensation.value));
+    const auto   extra_offset  = is_mm_painted ? 0.f : std::max(0.f, float(print_object_config.get<double>("xy_size_compensation")));
 
     for (const ModelVolume *model_volume : model_volumes)
         if (model_volume_needs_slicing(*model_volume)) {
@@ -192,15 +193,15 @@ static std::vector<VolumeSlices> slice_volumes_inner(
                 params.extra_offset = extra_offset;
             if (layer_ranges.size() == 1) {
                 if (const PrintObjectRegions::LayerRangeRegions &layer_range = layer_ranges.front(); layer_range.has_volume(model_volume->id())) {
-                    if (model_volume->is_model_part() && print_config.spiral_vase) {
+                    if (model_volume->is_model_part() && print_config.get<bool>("spiral_vase")) {
                         auto it = std::find_if(layer_range.volume_regions.begin(), layer_range.volume_regions.end(), 
                             [model_volume](const auto &slice){ return model_volume == slice.model_volume; });
                         params.mode = MeshSlicingParams::SlicingMode::PositiveLargestContour;
                         // Slice the bottom layers with SlicingMode::Regular.
                         // This needs to be in sync with LayerRegion::make_perimeters() spiral_vase!
-                        const PrintRegionConfig &region_config = it->region->config();
-                        params.slicing_mode_normal_below_layer = size_t(region_config.bottom_solid_layers.value);
-                        for (; params.slicing_mode_normal_below_layer < zs.size() && zs[params.slicing_mode_normal_below_layer] < region_config.bottom_solid_min_thickness - EPSILON;
+                        const PrintRegionConfigView &region_config = it->region->config();
+                        params.slicing_mode_normal_below_layer = size_t(region_config.get<int>("bottom_solid_layers"));
+                        for (; params.slicing_mode_normal_below_layer < zs.size() && zs[params.slicing_mode_normal_below_layer] < region_config.get<double>("bottom_solid_min_thickness") - EPSILON;
                             ++ params.slicing_mode_normal_below_layer);
                     }
                     out.push_back({
@@ -209,7 +210,7 @@ static std::vector<VolumeSlices> slice_volumes_inner(
                     });
                 }
             } else {
-                assert(! print_config.spiral_vase);
+                assert(! print_config.get<bool>("spiral_vase"));
                 slicing_ranges.clear();
                 for (const PrintObjectRegions::LayerRangeRegions &layer_range : layer_ranges)
                     if (layer_range.has_volume(model_volume->id()))
@@ -590,7 +591,7 @@ void apply_mm_segmentation(PrintObject &print_object, ThrowOnCancel throw_on_can
             const auto  &layer_ranges   = print_object.shared_regions()->layer_ranges;
             double       z              = print_object.get_layer(int(range.begin()))->slice_z;
             auto         it_layer_range = layer_range_first(layer_ranges, z);
-            const size_t num_extruders = print_object.print()->config().nozzle_diameter.size();
+            const size_t num_extruders = print_object.print()->config().get<std::vector<double>>("nozzle_diameter").size();
 
             struct ByExtruder {
                 ExPolygons  expolygons;
@@ -894,10 +895,10 @@ void PrintObject::slice_volumes()
     m_print->throw_if_canceled();
 
     // Is any ModelVolume multi-material painted?
-    if (m_print->config().nozzle_diameter.size() > 1 && this->model_object()->is_mm_painted()) {
+    if (m_print->config().get<std::vector<double>>("nozzle_diameter").size() > 1 && this->model_object()->is_mm_painted()) {
         // If XY Size compensation is also enabled, notify the user that XY Size compensation
         // would not be used because the object is multi-material painted.
-        if (m_config.xy_size_compensation.value != 0.f) {
+        if (m_config.get<double>("xy_size_compensation") != 0.f) {
             this->active_step_add_warning(
                 PrintStateBase::WarningLevel::CRITICAL,
                 _u8L("An object has enabled XY Size compensation which will not be used because it is also multi-material painted.\nXY Size "
@@ -913,7 +914,7 @@ void PrintObject::slice_volumes()
     if (this->model_object()->is_fuzzy_skin_painted()) {
         // If XY Size compensation is also enabled, notify the user that XY Size compensation
         // would not be used because the object has custom fuzzy skin painted.
-        if (m_config.xy_size_compensation.value != 0.f) {
+        if (m_config.get<double>("xy_size_compensation") != 0.f) {
             this->active_step_add_warning(
                 PrintStateBase::WarningLevel::CRITICAL,
                 _u8L("An object has enabled XY Size compensation which will not be used because it is also fuzzy skin painted.\nXY Size "
@@ -925,7 +926,7 @@ void PrintObject::slice_volumes()
         apply_fuzzy_skin_segmentation(*this, [print]() { print->throw_if_canceled(); });
     }
 
-    if (m_config.interlocking_beam) {
+    if (m_config.get<bool>("interlocking_beam")) {
         BOOST_LOG_TRIVIAL(debug) << "Slicing volumes - Applying multi-material interlocking";
         InterlockingGenerator::generate_interlocking_structure(*this);
         m_print->throw_if_canceled();
@@ -934,11 +935,11 @@ void PrintObject::slice_volumes()
     BOOST_LOG_TRIVIAL(debug) << "Slicing volumes - make_slices in parallel - begin";
     {
         // Compensation value, scaled. Only applying the negative scaling here, as the positive scaling has already been applied during slicing.
-        const size_t num_extruders = print->config().nozzle_diameter.size();
-        const auto   xy_compensation_scaled            = (num_extruders > 1 && this->is_mm_painted()) ? scaled<float>(0.f) : scaled<float>(std::min(m_config.xy_size_compensation.value, 0.));
-        const float  elephant_foot_compensation_scaled = (m_config.raft_layers == 0) ?
+        const size_t num_extruders = print->config().get<std::vector<double>>("nozzle_diameter").size();
+        const auto   xy_compensation_scaled            = (num_extruders > 1 && this->is_mm_painted()) ? scaled<float>(0.f) : scaled<float>(std::min(m_config.get<double>("xy_size_compensation"), 0.));
+        const float  elephant_foot_compensation_scaled = (m_config.get<int>("raft_layers") == 0) ?
         	// Only enable Elephant foot compensation if printing directly on the print bed.
-            float(scale_(m_config.elefant_foot_compensation.value)) :
+            float(scale_(m_config.get<double>("elefant_foot_compensation"))) :
         	0.f;
         // Uncompensated slices for the first layer in case the Elephant foot compensation is applied.
 	    ExPolygons  lslices_1st_layer;
@@ -981,7 +982,7 @@ void PrintObject::slice_volumes()
 	                    if (xy_compensation_scaled < 0.f || elfoot > 0.f) {
 	                        // Apply the negative XY compensation.
 	                        Polygons trimming;
-	                        static const float eps = float(scale_(m_config.slice_closing_radius.value) * 1.5);
+	                        static const float eps = float(scale_(m_config.get<double>("slice_closing_radius")) * 1.5);
 	                        if (elfoot > 0.f) {
 	                        	lslices_1st_layer = offset_ex(layer->merged(eps), std::min(xy_compensation_scaled, 0.f) - eps);
 								trimming = Algorithms::ExPolygon::to_polygons(Slic3r::elephant_foot_compensation(lslices_1st_layer,

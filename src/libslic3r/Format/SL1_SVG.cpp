@@ -216,21 +216,21 @@ class Sl1SVGRasterizer : public ISlaRasterizer
     RasterBase::Trafo m_tr;
 
 public:
-    explicit Sl1SVGRasterizer(const SLAPrinterConfig& cfg)
+    explicit Sl1SVGRasterizer(const SLAPrintConfigView& cfg)
     {
-        auto w = cfg.display_width.getFloat();
-        auto h = cfg.display_height.getFloat();
+        auto w = cfg.get<double>("display_width");
+        auto h = cfg.get<double>("display_height");
 
-        float precision_nm = scaled<float>(cfg.sla_output_precision.getFloat());
+        float precision_nm = scaled<float>(cfg.get<double>("sla_output_precision"));
         auto res_x = size_t(std::round(scaled(w) / precision_nm));
         auto res_y = size_t(std::round(scaled(h) / precision_nm));
 
         std::array<bool, 2> mirror;
 
-        mirror[X] = cfg.display_mirror_x.getBool();
-        mirror[Y] = cfg.display_mirror_y.getBool();
+        mirror[X] = cfg.get<bool>("display_mirror_x");
+        mirror[Y] = cfg.get<bool>("display_mirror_y");
 
-        auto ro = cfg.display_orientation.getInt();
+        auto ro = cfg.get<int>("display_orientation");
         sla::RasterBase::Orientation orientation = ro == sla::RasterBase::roPortrait
             ? sla::RasterBase::roPortrait
             : sla::RasterBase::roLandscape;
@@ -258,6 +258,6 @@ public:
 };
 } // namespace
 
-std::unique_ptr<ISlaRasterizer> Slic3r::create_sl1_svg_rasterizer(const SLAPrinterConfig& cfg) {
+std::unique_ptr<ISlaRasterizer> Slic3r::create_sl1_svg_rasterizer(const SLAPrintConfigView& cfg) {
     return std::make_unique<Sl1SVGRasterizer>(cfg);
 }

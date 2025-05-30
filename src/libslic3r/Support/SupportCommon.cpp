@@ -69,7 +69,7 @@ namespace Slic3r::FFFSupport {
 #define SUPPORT_SURFACES_OFFSET_PARAMETERS ClipperLib::jtSquare, 0.
 
 void remove_bridges_from_contacts(
-    const PrintConfig   &print_config, 
+    const PrintConfigView &print_config, 
     const Layer         &lower_layer,
     const LayerRegion   &layerm,
     float                fw, 
@@ -81,7 +81,7 @@ void remove_bridges_from_contacts(
         // Surface supporting this layer, expanded by 0.5 * nozzle_diameter, as we consider this kind of overhang to be sufficiently supported.
         Polygons lower_grown_slices = expand(lower_layer.lslices,
             //FIXME to mimic the decision in the perimeter generator, we should use half the external perimeter width.
-            0.5f * float(scale_(print_config.nozzle_diameter.get_at(layerm.region().config().perimeter_extruder-1))),
+            0.5f * float(scale_(print_config.get<std::vector<double>>("nozzle_diameter").at(layerm.region().config().get<int>("perimeter_extruder")-1))),
             SUPPORT_SURFACES_OFFSET_PARAMETERS);
         // Collect perimeters of this layer.
         //FIXME split_at_first_point() could split a bridge mid-way
@@ -150,7 +150,7 @@ void remove_bridges_from_contacts(
 
 // Convert some of the intermediate layers into top/bottom interface layers as well as base interface layers.
 std::pair<SupportGeneratorLayersPtr, SupportGeneratorLayersPtr> generate_interface_layers(
-    const PrintObjectConfig           &config,
+    const PrintObjectConfigView           &config,
     const SupportParameters           &support_params,
     const SupportGeneratorLayersPtr   &bottom_contacts,
     const SupportGeneratorLayersPtr   &top_contacts,
@@ -166,8 +166,8 @@ std::pair<SupportGeneratorLayersPtr, SupportGeneratorLayersPtr> generate_interfa
     if (! intermediate_layers.empty() && support_params.has_interfaces()) {
         // For all intermediate layers, collect top contact surfaces, which are not further than support_material_interface_layers.
         BOOST_LOG_TRIVIAL(debug) << "PrintObjectSupportMaterial::generate_interface_layers() in parallel - start";
-        const bool snug_supports   = config.support_material_style.value == smsSnug;
-        const bool smooth_supports = config.support_material_style.value != smsGrid;
+        const bool snug_supports   = config.get<Domain::SupportMaterialStyle>("support_material_style") == Domain::SupportMaterialStyle::smsSnug;
+        const bool smooth_supports = config.get<Domain::SupportMaterialStyle>("support_material_style") != Domain::SupportMaterialStyle::smsGrid;
         SupportGeneratorLayersPtr &interface_layers       = base_and_interface_layers.first;
         SupportGeneratorLayersPtr &base_interface_layers  = base_and_interface_layers.second;
         interface_layers.assign(intermediate_layers.size(), nullptr);
@@ -352,10 +352,10 @@ SupportGeneratorLayersPtr generate_raft_base(
     if (object.has_brim()) {
         // The object does not have a raft.
         // Calculate the area covered by the brim.
-        const BrimType brim_type       = object.config().brim_type;
-        const bool     brim_outer      = brim_type == btOuterOnly || brim_type == btOuterAndInner;
-        const bool     brim_inner      = brim_type == btInnerOnly || brim_type == btOuterAndInner;
-        const auto     brim_separation = scaled<float>(object.config().brim_separation.value + object.config().brim_width.value);
+        const Domain::BrimType brim_type = object.config().get<Domain::BrimType>("brim_type");
+        const bool     brim_outer      = brim_type == Domain::BrimType::OuterOnly || brim_type == Domain::BrimType::OuterAndInner;
+        const bool     brim_inner      = brim_type == Domain::BrimType::InnerOnly || brim_type == Domain::BrimType::OuterAndInner;
+        const auto     brim_separation = scaled<float>(object.config().get<double>("brim_separation") + object.config().get<double>("brim_width"));
         for (const ExPolygon &ex : object.layers().front()->lslices) {
             if (brim_outer && brim_inner)
                 Slic3r::append(brim, offset(ex, brim_separation));
@@ -379,7 +379,7 @@ SupportGeneratorLayersPtr generate_raft_base(
 
     // How much to inflate the support columns to be stable. This also applies to the 1st layer, if no raft layers are to be printed.
     const float inflate_factor_fine      = float(scale_((slicing_params.raft_layers() > 1) ? 0.5 : EPSILON));
-    const float inflate_factor_1st_layer = std::max(0.f, float(scale_(object.config().raft_first_layer_expansion)) - inflate_factor_fine);
+    const float inflate_factor_1st_layer = std::max(0.f, float(scale_(object.config().get<double>("raft_first_layer_expansion"))) - inflate_factor_fine);
     SupportGeneratorLayer       *contacts         = top_contacts         .empty() ? nullptr : top_contacts         .front();
     SupportGeneratorLayer       *interfaces       = interface_layers     .empty() ? nullptr : interface_layers     .front();
     SupportGeneratorLayer       *base_interfaces  = base_interface_layers.empty() ? nullptr : base_interface_layers.front();
@@ -1488,7 +1488,7 @@ SupportGeneratorLayersPtr generate_support_layers(
 
 void generate_support_toolpaths(
     SupportLayerPtrs                    &support_layers,
-    const PrintObjectConfig             &config,
+    const PrintObjectConfigView             &config,
     const SupportParameters             &support_params,
     const SlicingParameters             &slicing_params,
     const SupportGeneratorLayersPtr     &raft_layers,
@@ -1500,10 +1500,10 @@ void generate_support_toolpaths(
 {
     // loop_interface_processor with a given circle radius.
     LoopInterfaceProcessor loop_interface_processor(1.5 * support_params.support_material_interface_flow.scaled_width());
-    loop_interface_processor.n_contact_loops = config.support_material_interface_contact_loops ? 1 : 0;
+    loop_interface_processor.n_contact_loops = config.get<bool>("support_material_interface_contact_loops") ? 1 : 0;
 
     std::vector<float>      angles { support_params.base_angle };
-    if (config.support_material_pattern == smpRectilinearGrid)
+    if (config.get<Domain::SupportMaterialPattern>("support_material_pattern") == Domain::SupportMaterialPattern::smpRectilinearGrid)
         angles.push_back(support_params.interface_angle);
 
     BoundingBox bbox_object(scaled(Vec2d(-1.0, -1.0)), scaled(Vec2d(1.0, 1.0)));
@@ -1573,7 +1573,7 @@ void generate_support_toolpaths(
                 // Base flange.
                 filler->angle = support_params.raft_angle_1st_layer;
                 filler->spacing = support_params.first_layer_flow.spacing();
-                density       = float(config.raft_first_layer_density.value * 0.01);
+                density       = float(config.get<Domain::Percentage>("raft_first_layer_density").get_abs_value(1.0));
             } else if (support_layer_id >= slicing_params.base_raft_layers) {
                 filler->angle = support_params.raft_interface_angle(support_layer.interface_id());
                 // We don't use $base_flow->spacing because we need a constant spacing
@@ -1632,20 +1632,20 @@ void generate_support_toolpaths(
         size_t idx_layer_intermediate     = size_t(-1);
         size_t idx_layer_interface        = size_t(-1);
         size_t idx_layer_base_interface   = size_t(-1);
-        const auto fill_type_first_layer  = ipRectilinear;
+        const auto fill_type_first_layer  = Domain::InfillPattern::ipRectilinear;
         auto filler_interface       = std::unique_ptr<Fill>(Fill::new_from_type(support_params.contact_fill_pattern));
         // Filler for the 1st layer interface, if different from filler_interface.
         auto filler_first_layer_ptr = std::unique_ptr<Fill>(range.begin() == 0 && support_params.contact_fill_pattern != fill_type_first_layer ? Fill::new_from_type(fill_type_first_layer) : nullptr);
         // Pointer to the 1st layer interface filler.
         auto filler_first_layer     = filler_first_layer_ptr ? filler_first_layer_ptr.get() : filler_interface.get();
         // Filler for the 1st layer interface, if different from filler_interface.
-        auto filler_raft_contact_ptr = std::unique_ptr<Fill>(range.begin() == n_raft_layers && config.support_material_interface_layers.value == 0 ? 
+        auto filler_raft_contact_ptr = std::unique_ptr<Fill>(range.begin() == n_raft_layers && config.get<int>("support_material_interface_layers") == 0 ? 
             Fill::new_from_type(support_params.raft_interface_fill_pattern) : nullptr);
         // Pointer to the 1st layer interface filler.
         auto filler_raft_contact     = filler_raft_contact_ptr ? filler_raft_contact_ptr.get() : filler_interface.get();
         // Filler for the base interface (to be used for soluble interface / non soluble base, to produce non soluble interface layer below soluble interface layer).
         auto filler_base_interface  = std::unique_ptr<Fill>(base_interface_layers.empty() ? nullptr : 
-            Fill::new_from_type(support_params.interface_density > 0.95 || support_params.with_sheath ? ipRectilinear : ipSupportBase));
+            Fill::new_from_type(support_params.interface_density > 0.95 || support_params.with_sheath ? Domain::InfillPattern::ipRectilinear : Domain::InfillPattern::ipSupportBase));
         auto filler_support         = std::unique_ptr<Fill>(Fill::new_from_type(support_params.base_fill_pattern));
         filler_interface->set_bounding_box(bbox_object);
         if (filler_first_layer_ptr)
@@ -1659,7 +1659,7 @@ void generate_support_toolpaths(
         {
             SupportLayer &support_layer = *support_layers[support_layer_id];
             LayerCache   &layer_cache   = layer_caches[support_layer_id];
-            const float   support_interface_angle = config.support_material_style.value == smsGrid ?
+            const float   support_interface_angle = config.get<Domain::SupportMaterialStyle>("support_material_style") == Domain::SupportMaterialStyle::smsGrid ?
                 support_params.interface_angle : support_params.raft_interface_angle(support_layer.interface_id());
 
             // Find polygons with the same print_z.
@@ -1691,7 +1691,7 @@ void generate_support_toolpaths(
 
             // This layer is a raft contact layer. Any contact polygons at this layer are raft contacts.
             bool raft_layer = slicing_params.interface_raft_layers && top_contact_layer.layer && is_approx(top_contact_layer.layer->print_z, slicing_params.raft_contact_top_z);
-            if (config.support_material_interface_layers == 0) {
+            if (config.get<int>("support_material_interface_layers") == 0) {
                 // If no top interface layers were requested, we treat the contact layer exactly as a generic base layer.
                 // Don't merge the raft contact layer though.
                 if (support_params.can_merge_support_regions && ! raft_layer) {
@@ -1708,7 +1708,7 @@ void generate_support_toolpaths(
                 if (top_contact_layer.could_merge(interface_layer) && ! raft_layer)
                     top_contact_layer.merge(std::move(interface_layer));
             } 
-            if ((config.support_material_interface_layers == 0 || config.support_material_bottom_interface_layers == 0) && support_params.can_merge_support_regions) {
+            if ((config.get<int>("support_material_interface_layers") == 0 || config.get<int>("support_material_bottom_interface_layers") == 0) && support_params.can_merge_support_regions) {
                 if (base_layer.could_merge(bottom_contact_layer))
                     base_layer.merge(std::move(bottom_contact_layer));
                 else if (base_layer.empty() && ! bottom_contact_layer.empty() && ! bottom_contact_layer.layer->bridging)
@@ -1767,8 +1767,8 @@ void generate_support_toolpaths(
                         interface_flow);
                 }
             };
-            const bool top_interfaces = config.support_material_interface_layers.value != 0;
-            const bool bottom_interfaces = top_interfaces && config.support_material_bottom_interface_layers != 0;
+            const bool top_interfaces = config.get<int>("support_material_interface_layers") != 0;
+            const bool bottom_interfaces = top_interfaces && config.get<int>("support_material_bottom_interface_layers") != 0;
             extrude_interface(top_contact_layer,    raft_layer ? InterfaceLayerType::RaftContact : top_interfaces ? InterfaceLayerType::TopContact : InterfaceLayerType::InterfaceAsBase);
             extrude_interface(bottom_contact_layer, bottom_interfaces ? InterfaceLayerType::BottomContact : InterfaceLayerType::InterfaceAsBase);
             extrude_interface(interface_layer,      top_interfaces ? InterfaceLayerType::Interface : InterfaceLayerType::InterfaceAsBase);
@@ -1812,8 +1812,8 @@ void generate_support_toolpaths(
                 if (base_layer.layer->bottom_z < EPSILON) {
                     // Base flange (the 1st layer).
                     filler = filler_first_layer;
-                    filler->angle = deg2rad(float(config.support_material_angle.value + 90.));
-                    density = float(config.raft_first_layer_density.value * 0.01);
+                    filler->angle = deg2rad(float(config.get<double>("support_material_angle") + 90.));
+                    density = float(config.get<Domain::Percentage>("raft_first_layer_density").get_abs_value(1.0));
                     flow = support_params.first_layer_flow;
                     // use the proper spacing for first layer as we don't need to align
                     // its pattern to the other layers
@@ -1822,7 +1822,7 @@ void generate_support_toolpaths(
                     filler->link_max_length = coord_t(scale_(filler->spacing * link_max_length_factor / density));
                     sheath  = true;
                     no_sort = true;
-                } else if (config.support_material_style == SupportMaterialStyle::smsOrganic) {
+                } else if (config.get<Domain::SupportMaterialStyle>("support_material_style") == Domain::SupportMaterialStyle::smsOrganic) {
                     tree_supports_generate_paths(base_layer.extrusions, base_layer.polygons_to_extrude(), flow, support_params);
                     done = true;
                 }

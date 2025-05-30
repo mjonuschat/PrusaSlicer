@@ -18,6 +18,7 @@
 #include <vector>
 #include <cstddef>
 
+#include "Slic3r/Domain/ConfigFDM.hpp"
 #include "libslic3r/libslic3r.h"
 #include "libslic3r/Point.hpp"
 
@@ -26,7 +27,7 @@ namespace Slic3r {
 class GCodeGenerator;
 class Layer;
 struct PerExtruderAdjustments;
-class PrintConfig;
+class PrintConfigView;
 
 // A standalone G-code filter, to control cooling of the print.
 // The G-code is processed per layer. Once a layer is collected, fan start / stop commands are edited
@@ -39,7 +40,7 @@ class PrintConfig;
 //
 class CoolingBuffer {
 public:
-    CoolingBuffer(GCodeGenerator &gcodegen);
+    CoolingBuffer(GCodeGenerator &gcodegen, const PrintConfigView& config);
     void        reset(const Vec3d &position);
     void        set_current_extruder(unsigned int extruder_id) { m_current_extruder = extruder_id; }
     std::string process_layer(std::string &&gcode, size_t layer_id, bool flush);
@@ -70,9 +71,9 @@ private:
     // Highest of m_extruder_ids plus 1.
     unsigned int                m_num_extruders { 0 };
     const std::string           m_toolchange_prefix;
-    // Referencs GCodeGenerator::m_config, which is FullPrintConfig. While the PrintObjectConfig slice of FullPrintConfig is being modified,
-    // the PrintConfig slice of FullPrintConfig is constant, thus no thread synchronization is required.
-    const PrintConfig          &m_config;
+    // Referencs GCodeGenerator::m_config, which is Domain::FullConfigFDM. While the PrintObjectConfig slice of Domain::FullConfigFDM is being modified,
+    // the PrintConfig slice of Domain::FullConfigFDM is constant, thus no thread synchronization is required.
+    const PrintConfigView &m_config;
     unsigned int                m_current_extruder;
 
     // Old logic: proportional.

@@ -2,6 +2,7 @@
 #define SLIC3R_TEST_DATA_HPP
 
 #include "libslic3r/Config.hpp"
+#include "libslic3r/ConfigPackFDMUtils.hpp"
 #include "libslic3r/Format/3mf.hpp"
 #include "libslic3r/GCode/ModelVisibility.hpp"
 #include "libslic3r/GCode/SeamGeometry.hpp"
@@ -13,6 +14,8 @@
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "libslic3r/GCode/SeamPlacer.hpp"
 #include "libslic3r/GCode/SeamAligned.hpp"
+#include "slic3r-shared/include/Slic3r/Biz/Config/3mf_legacy.hpp"
+#include "Slic3r/Domain/OnBeds.hpp"
 
 #include <boost/filesystem.hpp>
 #include <unordered_map>
@@ -45,6 +48,15 @@ enum class TestMesh {
     two_hollow_squares
 };
 
+struct TestConfig : public Domain::ConfigPackFDM
+{
+    using ConfigPackFDM::ConfigPackFDM;
+
+    Biz::Parser::IO::Config get_parser_config() const { return Biz::Slicing::get_parser_config(*this); };
+    Domain::FullConfigFDM get_full_config() const { return Biz::Slicing::get_full_config(*this); };
+    PrintConfigView get_view() const { return Biz::Slicing::get_view(*this); };
+};
+
 // Neccessary for <c++17
 struct TestMeshHash
 {
@@ -73,7 +85,7 @@ void init_print(
     std::vector<Domain::TriangleMesh> &&meshes,
     Slic3r::Print &print,
     Slic3r::Model &model,
-    const DynamicPrintConfig &config_in,
+    const TestConfig &config_in,
     bool comments = false,
     unsigned duplicate_count = 1
 );
@@ -81,7 +93,7 @@ void init_print(
     std::initializer_list<TestMesh> meshes,
     Slic3r::Print &print,
     Slic3r::Model &model,
-    const Slic3r::DynamicPrintConfig &config_in = Slic3r::DynamicPrintConfig::full_print_config(),
+    const TestConfig &config_in = {},
     bool comments = false,
     unsigned duplicate_count = 1
 );
@@ -89,70 +101,31 @@ void init_print(
     std::initializer_list<Domain::TriangleMesh> meshes,
     Slic3r::Print &print,
     Slic3r::Model &model,
-    const Slic3r::DynamicPrintConfig &config_in = Slic3r::DynamicPrintConfig::full_print_config(),
+    const TestConfig &config_in = {},
     bool comments = false,
     unsigned duplicate = 1
 );
-void init_print(
-    std::initializer_list<TestMesh> meshes,
-    Slic3r::Print &print,
-    Slic3r::Model &model,
-    std::initializer_list<Slic3r::ConfigBase::SetDeserializeItem> config_items,
-    bool comments = false,
-    unsigned duplicate = 1
-);
-void init_print(
-    std::initializer_list<Domain::TriangleMesh> meshes,
-    Slic3r::Print &print,
-    Slic3r::Model &model,
-    std::initializer_list<Slic3r::ConfigBase::SetDeserializeItem> config_items,
-    bool comments = false,
-    unsigned duplicate = 1
-);
-
 void init_and_process_print(
     std::initializer_list<TestMesh> meshes,
     Slic3r::Print &print,
-    const DynamicPrintConfig &config,
+    const TestConfig &config,
     bool comments = false
 );
 void init_and_process_print(
     std::initializer_list<Domain::TriangleMesh> meshes,
     Slic3r::Print &print,
-    const DynamicPrintConfig &config,
-    bool comments = false
-);
-void init_and_process_print(
-    std::initializer_list<TestMesh> meshes,
-    Slic3r::Print &print,
-    std::initializer_list<Slic3r::ConfigBase::SetDeserializeItem> config_items,
-    bool comments = false
-);
-void init_and_process_print(
-    std::initializer_list<Domain::TriangleMesh> meshes,
-    Slic3r::Print &print,
-    std::initializer_list<Slic3r::ConfigBase::SetDeserializeItem> config_items,
+    const TestConfig &config,
     bool comments = false
 );
 
 std::string gcode(Print &print);
 
 std::string slice(
-    std::initializer_list<TestMesh> meshes, const DynamicPrintConfig &config, bool comments = false
+    std::initializer_list<TestMesh> meshes, const TestConfig &config, bool comments = false
 );
 std::string slice(
     std::initializer_list<Domain::TriangleMesh> meshes,
-    const DynamicPrintConfig &config,
-    bool comments = false
-);
-std::string slice(
-    std::initializer_list<TestMesh> meshes,
-    std::initializer_list<Slic3r::ConfigBase::SetDeserializeItem> config_items,
-    bool comments = false
-);
-std::string slice(
-    std::initializer_list<Domain::TriangleMesh> meshes,
-    std::initializer_list<Slic3r::ConfigBase::SetDeserializeItem> config_items,
+    const TestConfig &config,
     bool comments = false
 );
 
@@ -160,17 +133,24 @@ bool contains(const std::string &data, const std::string &pattern);
 bool contains_regex(const std::string &data, const std::string &pattern);
 
 inline std::unique_ptr<Print> process_3mf(const boost::filesystem::path &path) {
-    DynamicPrintConfig config;
+    Domain::ConfigPack config;
     auto print{std::make_unique<Print>()};
     Model model;
 
-    ConfigSubstitutionContext context{ForwardCompatibilitySubstitutionRule::Disable};
     boost::optional<Semver> version;
-    WipeTowersOnBeds wipe_towers;
-    CustomGCodesOnBeds custom_gcodes;
-    load_3mf(path.string().c_str(), config, context, &model, false, version, wipe_towers, custom_gcodes);
+    Domain::WipeTowersOnBeds wipe_towers;
+    Domain::CustomGCodesOnBeds custom_gcodes;
+    Slic3rLegacy::load_3mf_legacy(path.string().c_str(), config, &model, false, version, wipe_towers, custom_gcodes);
 
-    Slic3r::Test::init_print(std::vector<Domain::TriangleMesh>{}, *print, model, config);
+    const auto fdm_config{std::get<Domain::ConfigPackFDM>(config)};
+    TestConfig test_config;
+    test_config.print = fdm_config.print;
+    test_config.tool = fdm_config.tool;
+    test_config.printer = fdm_config.printer;
+    test_config.project = fdm_config.project;
+    test_config.filament = fdm_config.filament;
+
+    Slic3r::Test::init_print(std::vector<Domain::TriangleMesh>{}, *print, model, test_config);
     print->process();
 
     return print;
@@ -211,7 +191,7 @@ struct SeamsFixture
     const Print *print{Test::get_print(file_3mf)};
     const PrintObject *print_object{print->objects()[0]};
 
-    Seams::Params params{Seams::Placer::get_params(print->full_print_config())};
+    Seams::Params params{Seams::Placer::get_params(print->config())};
 
     const Transform3d transformation{print_object->trafo_centered()};
     const ModelVolumePtrs &volumes{print_object->model_object()->volumes};
@@ -229,6 +209,7 @@ struct SeamsFixture
     Seams::Aligned::VisibilityCalculator
         visibility_calculator{visibility, params.convex_visibility_modifier, params.concave_visibility_modifier};
 };
+
 
 }} // namespace Slic3r::Test
 

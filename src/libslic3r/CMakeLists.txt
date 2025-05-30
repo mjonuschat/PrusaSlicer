@@ -69,6 +69,10 @@ set(SLIC3R_SOURCES
     Color.hpp
     Config.cpp
     Config.hpp
+    ConfigPackFDMUtils.hpp
+    ConfigPackFDMUtils.cpp
+    ConfigPackSLAUtils.hpp
+    ConfigPackSLAUtils.cpp
     CSGMesh/CSGMesh.hpp
     CSGMesh/SliceCSGMesh.hpp
     CSGMesh/ModelToCSGMesh.hpp
@@ -292,8 +296,6 @@ set(SLIC3R_SOURCES
     NSVGUtils.hpp
     PerimeterGenerator.cpp
     PerimeterGenerator.hpp
-    PlaceholderParser.cpp
-    PlaceholderParser.hpp
     Point.cpp
     Point.hpp
     Polygon.cpp
@@ -650,6 +652,7 @@ target_link_libraries(libslic3r PUBLIC
     libpgcode
     clipper
     clipper_z
+    slic3r-biz-parser
 )
 
 if (APPLE)

@@ -73,6 +73,12 @@ static const ConfigOptionFloatOrPercent& first_positive(const ConfigOptionFloatO
     return (v1 != nullptr && v1->value > 0) ? *v1 : ((v2.value > 0) ? v2 : v3);
 }
 
+namespace {
+Domain::FloatOrPercentage convert(const ConfigOptionFloatOrPercent& value) {
+    return value.percent ? Domain::Percentage{value.value} : Domain::FloatOrPercentage{value.value};
+}
+}
+
 std::string PresetHints::maximum_volumetric_flow_description(const Preset::PresetInteractorConfigContainerContext& ccc, int idx_extruder/* = 0*/)
 {
     // Find out, to which nozzle index is the current filament profile assigned.
@@ -157,7 +163,7 @@ std::string PresetHints::maximum_volumetric_flow_description(const Preset::Prese
             [first_layer_extrusion_width_ptr, extrusion_width, nozzle_diameter, lh, bridging, bridge_speed, bridge_flow_ratio, limit_by_first_layer_speed, max_print_speed, &max_flow, &max_flow_extrusion_type]
             (FlowRole flow_role, const ConfigOptionFloatOrPercent &this_extrusion_width, double speed, const std::string& err_msg) {
             Flow flow = bridging ?
-                Flow::new_from_config_width(flow_role, first_positive(first_layer_extrusion_width_ptr, this_extrusion_width, extrusion_width), nozzle_diameter, lh) :
+                Flow::new_from_config_width(flow_role, convert(first_positive(first_layer_extrusion_width_ptr, this_extrusion_width, extrusion_width)), nozzle_diameter, lh) :
                 Flow::bridging_flow(nozzle_diameter * bridge_flow_ratio, nozzle_diameter);
             double volumetric_flow = flow.mm3_per_mm() * (bridging ? bridge_speed : limit_by_first_layer_speed(speed, max_print_speed));
             if (max_flow < volumetric_flow) {
@@ -220,12 +226,12 @@ std::string PresetHints::recommended_thin_wall_thickness(const Preset::PresetInt
         // Start with the width of two closely spaced 
         try {
             Flow external_perimeter_flow = Flow::new_from_config_width(
-                frExternalPerimeter, 
-                *print_config.opt<ConfigOptionFloatOrPercent>("external_perimeter_extrusion_width"), 
+                frExternalPerimeter,
+                convert(*print_config.opt<ConfigOptionFloatOrPercent>("external_perimeter_extrusion_width")),
                 nozzle_diameter, layer_height);
             Flow perimeter_flow          = Flow::new_from_config_width(
-                frPerimeter, 
-                *print_config.opt<ConfigOptionFloatOrPercent>("perimeter_extrusion_width"), 
+                frPerimeter,
+                convert(*print_config.opt<ConfigOptionFloatOrPercent>("perimeter_extrusion_width")),
                 nozzle_diameter, layer_height);
 	        double width = external_perimeter_flow.width() + external_perimeter_flow.spacing();
 	        for (int i = 2; i <= num_lines; thin_walls ? ++ i : i += 2) {

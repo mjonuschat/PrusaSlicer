@@ -10,11 +10,11 @@
 #include <stdlib.h>
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/log/trivial.hpp>
+#include <boost/format.hpp>
 #include <string>
 #include <cstdint>
 
 #include "libslic3r/miniz_extension.hpp" // IWYU pragma: keep
-#include "../format.hpp"
 #include "libslic3r/Config.hpp"
 #include "libslic3r/GCode/ThumbnailData.hpp"
 #include "libslic3r/Point.hpp"
@@ -182,17 +182,15 @@ std::pair<GCodeThumbnailDefinitionsList, ThumbnailErrors> make_and_check_thumbna
     return std::make_pair(std::move(thumbnails_list), errors);
 }
 
-std::pair<GCodeThumbnailDefinitionsList, ThumbnailErrors> make_and_check_thumbnail_list(const ConfigBase& config)
+std::pair<GCodeThumbnailDefinitionsList, ThumbnailErrors> make_and_check_thumbnail_list(const Domain::ConfigView& config)
 {
     // ??? Unit tests or command line slicing may not define "thumbnails" or "thumbnails_format".
     // ??? If "thumbnails_format" is not defined, export to PNG.
 
     // generate thumbnails data to process it
 
-    if (const auto thumbnails_value = config.option<ConfigOptionString>("thumbnails"))
-        return make_and_check_thumbnail_list(thumbnails_value->value);
-
-    return {};
+    // TODO!!
+    return make_and_check_thumbnail_list(config.get<std::string>("thumbnails"));
 }
 
 std::string get_error_string(const ThumbnailErrors& errors)
@@ -200,7 +198,7 @@ std::string get_error_string(const ThumbnailErrors& errors)
     std::string error_str;
 
     if (errors.has(ThumbnailError::InvalidVal))
-        error_str += "\n - " + format("Invalid input format. Expected vector of dimensions in the following format: \"%1%\"", "XxY/EXT, XxY/EXT, ...");
+        error_str += "\n - " + (boost::format("Invalid input format. Expected vector of dimensions in the following format: \"%1%\"") % "XxY/EXT, XxY/EXT, ...").str();
     if (errors.has(ThumbnailError::OutOfRange))
         error_str += "\n - Input value is out of range";
     if (errors.has(ThumbnailError::InvalidExt))

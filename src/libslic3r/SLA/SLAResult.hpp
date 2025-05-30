@@ -104,19 +104,13 @@ using Instances = std::vector<Object>;
 // + provide data during slicing process
 struct SLAResult
 {
-    // Written into the file for printer
-    // Not sure if it is neccessary to propagate it,
-    // but for check that Frontend has the same data
-    DynamicPrintConfig full_print_config;
-    // NOTE: SLAPrint::full_print_config();
-
-    SLAPrinterConfig printer_config;  
+    SLAPrintConfigView printer_config;
     // NOTE: previously from constructor of the archive
-    
+
     // It is filled after slicing
     std::optional<Sla::PrintStatistics> print_statistics;
     // NOTE: SLAPrint::print_statistics();
-         
+
     // m_print->m_printer_input[idx].transformed_slices()
     std::vector<ExPolygons> slices; // shape of merged models 
     std::vector<float> heights; // heights of the slices

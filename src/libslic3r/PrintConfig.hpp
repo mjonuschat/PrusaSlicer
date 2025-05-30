@@ -57,6 +57,7 @@
 #include "SLA/SupportTreeStrategies.hpp"
 #include "libslic3r/Point.hpp"
 #include "Slic3r/Domain/GCodeFlavor.hpp"
+#include "libslic3r/ConfigViews.hpp"
 
 namespace Slic3r {
 class FullPrintConfig;
@@ -322,6 +323,7 @@ class StaticPrintConfig;
 
 // Minimum object distance for arrangement, based on printer technology.
 double min_object_distance(const ConfigBase &cfg);
+double min_object_distance(const Domain::ConfigView &cfg);
 
 // Slic3r dynamic configuration, used to override the configuration
 // per object, per modification volume or per printing material.
@@ -918,6 +920,14 @@ static inline std::string get_extrusion_axis(const GCodeConfig &cfg)
         (cfg.gcode_flavor.value == gcfNoExtrusion) ? "" : cfg.extrusion_axis.value;
 }
 
+
+inline std::string get_extrusion_axis(const PrintConfigView &cfg)
+{
+    return
+        ((cfg.get<GCodeFlavor>("gcode_flavor") == gcfMach3) || (cfg.get<GCodeFlavor>("gcode_flavor") == gcfMachinekit)) ? "A" :
+        (cfg.get<GCodeFlavor>("gcode_flavor") == gcfNoExtrusion) ? "" : "E";
+}
+
 PRINT_CONFIG_CLASS_DERIVED_DEFINE(
     PrintConfig, 
     (MachineEnvelopeConfig, GCodeConfig),
@@ -1443,9 +1453,11 @@ extern const CLIInputConfigDef  cli_input_config_def;
 
 bool is_XL_printer(const DynamicPrintConfig &cfg);
 bool is_XL_printer(const PrintConfig &cfg);
+bool is_XL_printer(const PrintConfigView &cfg);
 
 Points get_bed_shape(const DynamicPrintConfig &cfg);
 Points get_bed_shape(const PrintConfig &cfg);
+Points get_bed_shape(const PrintConfigView &cfg);
 Points get_bed_shape(const SLAPrinterConfig &cfg);
 
 std::string get_sla_suptree_prefix(const DynamicPrintConfig &config);

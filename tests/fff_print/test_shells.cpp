@@ -7,15 +7,17 @@
 using namespace Slic3r::Test;
 using namespace Slic3r;
 using Biz::GCodeReader::GCodeReader;
+using Domain::FloatOrPercentage;
+using Domain::Percentage;
 
 SCENARIO("Shells", "[Shells]") {
     GIVEN("20mm box") {
-        auto test = [](const DynamicPrintConfig &config){            
+        auto test = [](const TestConfig &config){
             std::vector<coord_t> zs;
             std::set<coord_t> layers_with_solid_infill;
             std::set<coord_t> layers_with_bridge_infill;
-            const double solid_infill_speed = config.opt_float("solid_infill_speed") * 60;
-            const double bridge_speed       = config.opt_float("bridge_speed") * 60;
+            const double solid_infill_speed = config.print.opt("solid_infill_speed").get<FloatOrPercentage>().float_value() * 60;
+            const double bridge_speed       = config.print.opt("bridge_speed").get<double>() * 60;
             GCodeReader parser;
             parser.parse_buffer(Slic3r::Test::slice({ Slic3r::Test::TestMesh::cube_20x20x20 }, config),
                 [&zs, &layers_with_solid_infill, &layers_with_bridge_infill, solid_infill_speed, bridge_speed]
@@ -40,8 +42,8 @@ SCENARIO("Shells", "[Shells]") {
             auto has_solid_infill  = [&layers_with_solid_infill](coord_t z) { return layers_with_solid_infill.find(z) != layers_with_solid_infill.end(); };
             auto has_bridge_infill = [&layers_with_bridge_infill](coord_t z) { return layers_with_bridge_infill.find(z) != layers_with_bridge_infill.end(); };
             auto has_shells        = [&has_solid_infill, &has_bridge_infill, &zs](int layer_idx) { coord_t z = zs[layer_idx]; return has_solid_infill(z) || has_bridge_infill(z); };
-            const int bottom_solid_layers = config.opt_int("bottom_solid_layers");
-            const int top_solid_layers    = config.opt_int("top_solid_layers");
+            const int bottom_solid_layers = config.print.opt("bottom_solid_layers").get<int>();
+            const int top_solid_layers    = config.print.opt("top_solid_layers").get<int>();
             THEN("correct number of bottom solid layers") {
                 for (int i = 0; i < bottom_solid_layers; ++ i)
                     REQUIRE(has_shells(i));
@@ -72,41 +74,34 @@ SCENARIO("Shells", "[Shells]") {
             }
         };
 
-        auto config = Slic3r::DynamicPrintConfig::full_print_config_with({
-                { "skirts",                 0 },
-                { "perimeters",             0 },
-                { "solid_infill_speed",     99 },
-                { "top_solid_infill_speed", 99 },
-                { "bridge_speed",           72 },
-                { "first_layer_speed",      "100%" },
-                { "cooling",                "0" }
-            });
+        TestConfig config;
+        config.print.opt("skirts").set(0);
+        config.print.opt("perimeters").set(0);
+        config.print.opt("solid_infill_speed").set(FloatOrPercentage{99});
+        config.print.opt("top_solid_infill_speed").set(FloatOrPercentage{99});
+        config.print.opt("bridge_speed").set(72.0);
+        config.print.opt("first_layer_speed").set(FloatOrPercentage{Percentage{100}});
+        config.filament.at(0).opt("cooling").set(false);
 
         WHEN("three top and bottom layers") {
             // proper number of shells is applied
-            config.set_deserialize_strict({
-                { "top_solid_layers",       3 },
-                { "bottom_solid_layers",    3 }
-            });
+            config.print.opt("top_solid_layers").set(3);
+            config.print.opt("bottom_solid_layers").set(3);
             test(config);
         }
 
         WHEN("zero top and bottom layers") {
             // no shells are applied when both top and bottom are set to zero
-            config.set_deserialize_strict({
-                { "top_solid_layers",       0 },
-                { "bottom_solid_layers",    0 }
-            });
+            config.print.opt("top_solid_layers").set(0);
+            config.print.opt("bottom_solid_layers").set(0);
             test(config);
         }
 
         WHEN("three top and bottom layers, zero infill") {
             // proper number of shells is applied even when fill density is none
-            config.set_deserialize_strict({
-                { "perimeters",             1 },
-                { "top_solid_layers",       3 },
-                { "bottom_solid_layers",    3 }
-            });
+            config.print.opt("perimeters").set(1);
+            config.print.opt("top_solid_layers").set(3);
+            config.print.opt("bottom_solid_layers").set(3);
             test(config);
         }
     }
@@ -125,23 +120,23 @@ static std::set<double> layers_with_speed(const std::string &gcode, int speed)
 
 SCENARIO("Shells (from Perl)", "[Shells]") {
     GIVEN("V shape, Slic3r GH #1161") {
-        int solid_speed = 99;
-        auto config = Slic3r::DynamicPrintConfig::full_print_config_with({
-            { "layer_height",           0.3 },
-            { "first_layer_height",     0.3 },
-            { "bottom_solid_layers",    0 },
-            { "top_solid_layers",       3 },
-            // to prevent speeds from being altered
-            { "cooling",                "0" },
-            { "bridge_speed",           solid_speed },
-            { "solid_infill_speed",     solid_speed },
-            { "top_solid_infill_speed", solid_speed },
-            // to prevent speeds from being altered
-            { "first_layer_speed",      "100%" },
-            // prevent speed alteration
-            { "enable_dynamic_overhang_speeds", 0 }
-        });
-        
+        double solid_speed = 99.0;
+
+        TestConfig config;
+        config.print.opt("layer_height").set(0.3);
+        config.print.opt("first_layer_height").set(FloatOrPercentage{0.3});
+        config.print.opt("bottom_solid_layers").set(0);
+        config.print.opt("top_solid_layers").set(3);
+        // to prevent speeds from being altered
+        config.filament.at(0).opt("cooling").set(false);
+        config.print.opt("bridge_speed").set(solid_speed);
+        config.print.opt("solid_infill_speed").set(FloatOrPercentage{solid_speed});
+        config.print.opt("top_solid_infill_speed").set(FloatOrPercentage{solid_speed});
+        // to prevent speeds from being altered
+        config.print.opt("first_layer_speed").set(FloatOrPercentage{Percentage{100}});
+        // prevent speed alteration
+        config.print.opt("enable_dynamic_overhang_speeds").set(false);
+
         THEN("correct number of top solid shells is generated in V-shaped object") {
             size_t n = 0;
             for (auto z : layers_with_speed(Slic3r::Test::slice({TestMesh::V}, config), solid_speed))
@@ -211,25 +206,24 @@ SCENARIO("Shells (from Perl)", "[Shells]") {
     // }
     GIVEN("20mm_cube, spiral vase") {
         double layer_height = 0.3;
-        auto config = Slic3r::DynamicPrintConfig::full_print_config_with({
-            { "perimeters",             1 },
-            { "fill_density",           0 },
-            { "layer_height",           layer_height },
-            { "first_layer_height",     layer_height },
-            { "top_solid_layers",       0 },
-            { "spiral_vase",            1 },
-            { "bottom_solid_layers",    0 },
-            { "skirts",                 0 },
-            { "start_gcode",            "" },
-            { "temperature",            200 },
-            { "first_layer_temperature", 205}
-        });
-        
+        TestConfig config;
+        config.print.opt("perimeters").set(1);
+        config.print.opt("fill_density").set(Percentage{0});
+        config.print.opt("layer_height").set(layer_height);
+        config.print.opt("first_layer_height").set(FloatOrPercentage{layer_height});
+        config.print.opt("top_solid_layers").set(0 );
+        config.print.opt("spiral_vase").set(true);
+        config.print.opt("bottom_solid_layers").set(0 );
+        config.print.opt("skirts").set(0 );
+        config.printer.opt("start_gcode").set("" );
+        config.filament.at(0).opt("temperature").set(200);
+        config.filament.at(0).opt("first_layer_temperature").set(205);
+
         // TODO: this needs to be tested with a model with sloping edges, where starting
         // points of each layer are not aligned - in that case we would test that no
         // travel moves are left to move to the new starting point - in a cube, end
         // points coincide with next layer starting points (provided there's no clipping)
-        auto test = [layer_height](const DynamicPrintConfig &config) {
+        auto test = [layer_height](const TestConfig &config) {
             size_t              travel_moves_after_first_extrusion  = 0;
             bool                started_extruding                   = false;
             bool                first_layer_temperature_set         = false;
@@ -278,7 +272,7 @@ SCENARIO("Shells (from Perl)", "[Shells]") {
             test(config);
         }
         WHEN("solid model with negative z-offset") {
-            config.set_deserialize_strict("z_offset", "-10");
+            config.printer.opt("z_offset").set(-10.0);
             test(config);
         }
         // Disabled because the current unreliable medial axis code doesn't always produce valid loops.
@@ -286,21 +280,20 @@ SCENARIO("Shells (from Perl)", "[Shells]") {
     }
     GIVEN("20mm_cube, spiral vase") {
         double layer_height = 0.4;
-        auto config = Slic3r::DynamicPrintConfig::full_print_config_with({
-            { "spiral_vase",            1 },
-            { "perimeters",             1 },
-            { "fill_density",           0 },
-            { "top_solid_layers",       0 },
-            { "bottom_solid_layers",    0 },
-            { "retract_layer_change",   0 },
-            { "skirts",                 0 },
-            { "layer_height",           layer_height },
-            { "first_layer_height",     layer_height },
-            { "start_gcode",            "" },
+
+        TestConfig config;
+        config.print.opt("spiral_vase").set(true);
+        config.print.opt("perimeters").set(1);
+        config.print.opt("fill_density").set(Percentage{0});
+        config.print.opt("top_solid_layers").set(0);
+        config.print.opt("bottom_solid_layers").set(0);
+        config.tool.at(0).opt("retract_layer_change").set(false);
+        config.print.opt("skirts").set(0);
+        config.print.opt("layer_height").set(layer_height);
+        config.print.opt("first_layer_height").set(FloatOrPercentage{layer_height});
+        config.printer.opt("start_gcode").set("" );
             // { "use_relative_e_distances", 1}
-        });
-        config.validate();
-        
+
         std::vector<std::pair<double, double>> this_layer; // [ dist_Z, dist_XY ], ...
         int  z_moves                                    = 0;
         bool bottom_layer_not_flat                      = false;

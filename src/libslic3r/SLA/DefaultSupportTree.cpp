@@ -243,8 +243,8 @@ bool DefaultSupportTree::interconnect(const Pillar &pillar,
 
     auto pcm = m_sm.cfg.pillar_connection_mode;
     bool docrosses =
-        pcm == PillarConnectionMode::cross ||
-        (pcm == PillarConnectionMode::dynamic &&
+        pcm == Domain::sla::PillarConnectionMode::cross ||
+        (pcm == Domain::sla::PillarConnectionMode::dynamic &&
          pillar_dist > 2*m_sm.cfg.base_radius_mm);
 
        // 'sj' means starting junction, 'ej' is the end junction of a bridge.

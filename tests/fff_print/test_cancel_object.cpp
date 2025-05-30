@@ -112,14 +112,12 @@ class CancelObjectFixture
 {
 public:
     CancelObjectFixture() {
-        config.set_deserialize_strict({
-            {"gcode_flavor", "marlin2"},
-            {"gcode_label_objects", "firmware"},
-            {"gcode_comments", "1"},
-            {"use_relative_e_distances", "1"},
-            {"wipe", "0"},
-            {"skirts", "0"},
-        });
+        config.printer.opt("gcode_flavor").set(Domain::GCodeFlavor::gcfMarlinFirmware);
+        config.print.opt("gcode_label_objects").set(Domain::LabelObjectsStyle::Firmware);
+        config.print.opt("gcode_comments").set(true);
+        config.printer.opt("use_relative_e_distances").set(true);
+        config.tool.at(0).opt("wipe").set(false);
+        config.print.opt("skirts").set(0);
 
         add_object(two_cubes, "no_offset_cube", 0);
         add_object(two_cubes, "offset_cube", 0, {30.0, 0.0, 0.0});
@@ -127,12 +125,12 @@ public:
         add_object(multimaterial_cubes, "no_offset_cube", 1);
         add_object(multimaterial_cubes, "offset_cube", 2, {30.0, 0.0, 0.0});
 
-        retract_length = config.option<ConfigOptionFloats>("retract_length")->get_at(0);
-        retract_length_toolchange = config.option<ConfigOptionFloats>("retract_length_toolchange")
-                                        ->get_at(0);
+        retract_length = config.tool.at(0).opt("retract_length").get<double>();
+        retract_length_toolchange =
+            config.tool.at(0).opt("retract_length_toolchange").get<double>();
     }
 
-    DynamicPrintConfig config{Slic3r::DynamicPrintConfig::full_print_config()};
+    TestConfig config;
 
     Model two_cubes;
     Model multimaterial_cubes;
@@ -172,8 +170,7 @@ TEST_CASE_METHOD(CancelObjectFixture, "Single extruder", "[CancelObject]") {
 }
 
 TEST_CASE_METHOD(CancelObjectFixture, "Sequential print", "[CancelObject]") {
-    config.set_deserialize_strict({{"complete_objects", 1} });
-
+    config.print.opt("complete_objects").set(true);
     Print print;
     print.apply(two_cubes, config, {}, {});
     print.validate();

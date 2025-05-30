@@ -53,12 +53,12 @@ Polygon instance_outline(const PrintInstance* pi)
 }; // anonymous namespace
 
 
-void LabelObjects::init(const SpanOfConstPtrs<PrintObject>& objects, LabelObjectsStyle label_object_style, GCodeFlavor gcode_flavor)
+void LabelObjects::init(const SpanOfConstPtrs<PrintObject>& objects, Domain::LabelObjectsStyle label_object_style, GCodeFlavor gcode_flavor)
 {
     m_label_objects_style = label_object_style;
     m_flavor = gcode_flavor;
 
-    if (m_label_objects_style == LabelObjectsStyle::Disabled)
+    if (m_label_objects_style == Domain::LabelObjectsStyle::Disabled)
         return;
 
     std::map<const ModelObject*, std::vector<const PrintInstance*>> model_object_to_print_instances;
@@ -102,11 +102,11 @@ void LabelObjects::init(const SpanOfConstPtrs<PrintObject>& objects, LabelObject
             }
 
             // Now compose the name of the object and define whether indexing is 0 or 1-based.
-            if (m_label_objects_style == LabelObjectsStyle::Octoprint) {
+            if (m_label_objects_style == Domain::LabelObjectsStyle::Octoprint) {
                 // use zero-based indexing for objects and instances, as we always have done
                 name += " id:" + std::to_string(object_id) + " copy " + std::to_string(instance_id); 
             }
-            else if (m_label_objects_style == LabelObjectsStyle::Firmware) {
+            else if (m_label_objects_style == Domain::LabelObjectsStyle::Firmware) {
                 // use one-based indexing for objects and instances so indices match what we see in PrusaSlicer.
                 ++object_id;
                 ++instance_id;
@@ -186,14 +186,14 @@ bool LabelObjects::has_active_instance() {
 
 std::string LabelObjects::all_objects_header() const
 {
-    if (m_label_objects_style == LabelObjectsStyle::Disabled)
+    if (m_label_objects_style == Domain::LabelObjectsStyle::Disabled)
         return std::string();
 
     std::string out;   
 
     out += "\n";
     for (const LabelData& label : m_label_data) {
-        if (m_label_objects_style == LabelObjectsStyle::Firmware && m_flavor == gcfKlipper)
+        if (m_label_objects_style == Domain::LabelObjectsStyle::Firmware && m_flavor == gcfKlipper)
             out += "EXCLUDE_OBJECT_DEFINE NAME='" + label.name + "' CENTER=" + label.center + " POLYGON=" + label.polygon + "\n";
         else {
             out += start_object(*label.pi, IncludeName::Yes);
@@ -223,15 +223,15 @@ std::string LabelObjects::all_objects_header_singleline_json() const
 
 std::string LabelObjects::start_object(const PrintInstance& print_instance, IncludeName include_name) const
 {
-    if (m_label_objects_style == LabelObjectsStyle::Disabled)
+    if (m_label_objects_style == Domain::LabelObjectsStyle::Disabled)
         return std::string();
 
     const LabelData& label = *std::find_if(m_label_data.begin(), m_label_data.end(), [&print_instance](const LabelData& ld) { return ld.pi == &print_instance; });
 
     std::string out;
-    if (m_label_objects_style == LabelObjectsStyle::Octoprint)
+    if (m_label_objects_style == Domain::LabelObjectsStyle::Octoprint)
         out += std::string("; printing object ") + label.name + "\n";
-    else if (m_label_objects_style == LabelObjectsStyle::Firmware) {
+    else if (m_label_objects_style == Domain::LabelObjectsStyle::Firmware) {
         if (m_flavor == GCodeFlavor::gcfMarlinFirmware || m_flavor == GCodeFlavor::gcfMarlinLegacy || m_flavor == GCodeFlavor::gcfRepRapFirmware) {
             out += std::string("M486 S") + std::to_string(label.unique_id);
             if (include_name == IncludeName::Yes) {
@@ -252,15 +252,15 @@ std::string LabelObjects::start_object(const PrintInstance& print_instance, Incl
 
 std::string LabelObjects::stop_object(const PrintInstance& print_instance) const
 {
-    if (m_label_objects_style == LabelObjectsStyle::Disabled)
+    if (m_label_objects_style == Domain::LabelObjectsStyle::Disabled)
         return std::string();
 
     const LabelData& label = *std::find_if(m_label_data.begin(), m_label_data.end(), [&print_instance](const LabelData& ld) { return ld.pi == &print_instance; });
 
     std::string out;
-    if (m_label_objects_style == LabelObjectsStyle::Octoprint)
+    if (m_label_objects_style == Domain::LabelObjectsStyle::Octoprint)
         out += std::string("; stop printing object ") + label.name + "\n";
-    else if (m_label_objects_style == LabelObjectsStyle::Firmware) {
+    else if (m_label_objects_style == Domain::LabelObjectsStyle::Firmware) {
         if (m_flavor == GCodeFlavor::gcfMarlinFirmware || m_flavor == GCodeFlavor::gcfMarlinLegacy || m_flavor == GCodeFlavor::gcfRepRapFirmware)
             out += std::string("M486 S-1\n");
         else if (m_flavor ==gcfKlipper)

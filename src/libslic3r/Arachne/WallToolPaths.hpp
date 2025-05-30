@@ -17,6 +17,7 @@
 #include "../PrintConfig.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/libslic3r.h"
+#include "libslic3r/ConfigViews.hpp"
 
 namespace boost {
 template <class T> struct hash;
@@ -41,7 +42,15 @@ public:
      * \param inset_count The maximum number of parallel extrusion lines that make up the wall
      * \param wall_0_inset How far to inset the outer wall, to make it adhere better to other walls.
      */
-    WallToolPaths(const Polygons& outline, coord_t bead_width_0, coord_t bead_width_x, size_t inset_count, coord_t wall_0_inset, double layer_height, const PrintObjectConfig &print_object_config, const PrintConfig &print_config);
+    WallToolPaths(
+        const Polygons& outline,
+        coord_t bead_width_0,
+        coord_t bead_width_x,
+        size_t inset_count,
+        coord_t wall_0_inset,
+        double layer_height,
+        const PrintRegionConfigView& print_region_config
+    );
 
     /*!
      * Generates the Toolpaths
@@ -123,7 +132,7 @@ private:
     bool toolpaths_generated; //<! Are the toolpaths generated
     std::vector<VariableWidthLines> toolpaths; //<! The generated toolpaths
     Polygons inner_contour;  //<! The inner contour of the generated toolpaths
-    const PrintObjectConfig &print_object_config;
+    PrintRegionConfigView print_region_config;
 };
 
 } // namespace Slic3r::Arachne

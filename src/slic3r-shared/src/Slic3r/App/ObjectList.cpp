@@ -757,7 +757,7 @@ void ObjectList::render_drop_target_area()
 bool ObjectList::render_bed_node(const Domain::BedInstance* bed, size_t config_container_id)
 {
     size_t bed_id = bed->id().id;
-    bool is_sla_config = m_project_interactor->selected_project().find_config_container(config_container_id)->print_technology() == ptSLA;
+    bool is_sla_config = m_project_interactor->selected_project().find_config_container(config_container_id)->print_technology() == Domain::PrinterTechnology::SLA;
 
     const std::string name = "Bed " + std::to_string(bed_id);
     const std::string name_id = "##bed_id" + std::to_string(bed_id);

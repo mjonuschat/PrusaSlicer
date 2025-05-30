@@ -323,23 +323,27 @@ struct SmoothingParams
 SmoothingParams get_smoothing_params(
     const double lift_height,
     const double slope_end,
-    unsigned extruder_id,
+    const size_t machine_mode_idx,
     const double travel_length,
-    const FullPrintConfig &config
+    const Domain::ConfigView &config
 ) {
-    if (config.gcode_flavor != gcfMarlinFirmware)
+    // Currently, we don't generate different G-codes for normal and stealth modes,
+    // so machine_mode_idx should always be 0 (normal mode).
+    assert(machine_mode_idx == 0);
+
+    if (config.get<GCodeFlavor>("gcode_flavor") != gcfMarlinFirmware)
         // Smoothing is supported only on Marlin.
         return {0, 1};
 
     const double slope = lift_height / slope_end;
-    const double max_machine_z_velocity = config.machine_max_feedrate_z.get_at(extruder_id);
+    const double max_machine_z_velocity = config.get<std::vector<double>>("machine_max_feedrate_z").at(machine_mode_idx);
     const double max_xy_velocity =
         Vec2d{
-            config.machine_max_feedrate_x.get_at(extruder_id),
-            config.machine_max_feedrate_y.get_at(extruder_id)}
+            config.get<std::vector<double>>("machine_max_feedrate_x").at(machine_mode_idx),
+            config.get<std::vector<double>>("machine_max_feedrate_y").at(machine_mode_idx)}
             .norm();
 
-    const double xy_acceleration = config.machine_max_acceleration_travel.get_at(extruder_id);
+    const double xy_acceleration = config.get<std::vector<double>>("machine_max_acceleration_travel").at(machine_mode_idx);
 
     const double xy_acceleration_time = max_xy_velocity / xy_acceleration;
     const double xy_acceleration_distance = 1.0 / 2.0 * xy_acceleration *
@@ -351,14 +355,14 @@ SmoothingParams get_smoothing_params(
 
     const double max_z_velocity = std::min(max_xy_velocity * slope, max_machine_z_velocity);
     const double deceleration_time = max_z_velocity /
-        config.machine_max_acceleration_z.get_at(extruder_id);
+        config.get<std::vector<double>>("machine_max_acceleration_z").at(machine_mode_idx);
     const double deceleration_xy_distance = deceleration_time * max_xy_velocity;
 
     const double blend_width = slope_end > deceleration_xy_distance / 2.0 ? deceleration_xy_distance :
                                                                           slope_end * 2.0;
 
     const unsigned points_count = blend_width > 0 ?
-        std::ceil(max_z_velocity / config.machine_max_jerk_z.get_at(extruder_id)) :
+        std::ceil(max_z_velocity / config.get<std::vector<double>>("machine_max_jerk_z").at(machine_mode_idx)) :
         1;
 
     if (blend_width <= 0     // When there is no blend with, there is no need for smoothing.
@@ -372,20 +376,20 @@ SmoothingParams get_smoothing_params(
 
 ElevatedTravelParams get_elevated_traval_params(
     const Polyline& xy_path,
-    const FullPrintConfig &config,
+    const Domain::ConfigView &config,
     const unsigned extruder_id,
     const GCode::TravelObstacleTracker &obstacle_tracker
 ) {
     ElevatedTravelParams elevation_params{};
-    if (!config.travel_ramping_lift.get_at(extruder_id)) {
+    if (!config.get<std::vector<bool>>("travel_ramping_lift").at(extruder_id)) {
         elevation_params.slope_end = 0;
-        elevation_params.lift_height = config.retract_lift.get_at(extruder_id);
+        elevation_params.lift_height = config.get<std::vector<double>>("retract_lift").at(extruder_id);
         elevation_params.blend_width = 0;
         return elevation_params;
     }
-    elevation_params.lift_height = config.travel_max_lift.get_at(extruder_id);
+    elevation_params.lift_height = config.get<std::vector<double>>("travel_max_lift").at(extruder_id);
 
-    const double slope_deg = config.travel_slope.get_at(extruder_id);
+    const double slope_deg = config.get<std::vector<double>>("travel_slope").at(extruder_id);
 
     if (slope_deg >= 90 || slope_deg <= 0) {
         elevation_params.slope_end = 0;
@@ -399,7 +403,7 @@ ElevatedTravelParams get_elevated_traval_params(
         elevation_params.slope_end = obstacle_adjusted_slope_end;
 
     SmoothingParams smoothing_params{get_smoothing_params(
-        elevation_params.lift_height, elevation_params.slope_end, extruder_id,
+        elevation_params.lift_height, elevation_params.slope_end, 0,
         unscaled(xy_path.length()), config
     )};
 
@@ -428,14 +432,14 @@ std::vector<double> linspace(const double from, const double to, const unsigned 
 
 Points3 generate_travel_to_extrusion(
     const Polyline &xy_path,
-    const FullPrintConfig &config,
+    const Domain::ConfigView &config,
     const unsigned extruder_id,
     const double initial_elevation,
     const GCode::TravelObstacleTracker &obstacle_tracker,
     const Point &xy_path_coord_origin
 ) {
-    const double upper_limit = config.retract_lift_below.get_at(extruder_id);
-    const double lower_limit = config.retract_lift_above.get_at(extruder_id);
+    const double upper_limit = config.get<std::vector<double>>("retract_lift_below").at(extruder_id);
+    const double lower_limit = config.get<std::vector<double>>("retract_lift_above").at(extruder_id);
     if ((lower_limit > 0 && initial_elevation < lower_limit) ||
         (upper_limit > 0 && initial_elevation > upper_limit)) {
         return generate_flat_travel(xy_path.points, initial_elevation);

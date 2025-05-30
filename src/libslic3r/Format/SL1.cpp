@@ -264,25 +264,24 @@ void Slic3r::store_sl1(const std::string& file_path, const SLAResult& data)
         boost::filesystem::path(zipper.get_filename()).stem().string() :
         data.project_name;
 
-    const DynamicPrintConfig& cfg = data.full_print_config;
     const Sla::PrintStatistics& stats = *data.print_statistics;
-    
-    ConfMap iniconf;
-    fill_iniconf(iniconf, cfg, stats);
 
-    iniconf["jobDir"] = project;
+    //ConfMap iniconf;
+    //fill_iniconf(iniconf, cfg, stats);
 
-    ConfMap slicerconf;
-    fill_slicerconf(slicerconf, cfg);
+    //iniconf["jobDir"] = project;
+
+    //ConfMap slicerconf;
+    //fill_slicerconf(slicerconf, cfg);
 
     try {
-        zipper.add_entry("config.ini");
-        zipper << to_ini(iniconf);
-        zipper.add_entry("prusaslicer.ini");
-        zipper << to_ini(slicerconf);
+        //zipper.add_entry("config.ini");
+        //zipper << to_ini(iniconf);
+        //zipper.add_entry("prusaslicer.ini");
+        //zipper << to_ini(slicerconf);
 
-        zipper.add_entry("config.json");
-        zipper << to_json(cfg, iniconf);
+        //zipper.add_entry("config.json");
+        //zipper << to_json(cfg, iniconf);
 
         size_t i = 0;
         for (const Sla::FileData& rst : data.files.data) {
@@ -313,18 +312,18 @@ class Sl1Rasterizer : public ISlaRasterizer
     RasterBase::Trafo tr;
 
 public:
-    explicit Sl1Rasterizer(const SLAPrinterConfig& cfg) {
-        double w = cfg.display_width.getFloat();
-        double h = cfg.display_height.getFloat();
-        auto pw = size_t(cfg.display_pixels_x.getInt());
-        auto ph = size_t(cfg.display_pixels_y.getInt());
+    explicit Sl1Rasterizer(const SLAPrintConfigView& cfg) {
+        double w = cfg.get<double>("display_width");
+        double h = cfg.get<double>("display_height");
+        auto pw = size_t(cfg.get<int>("display_pixels_x"));
+        auto ph = size_t(cfg.get<int>("display_pixels_y"));
 
         std::array<bool, 2> mirror;
-        mirror[X] = cfg.display_mirror_x.getBool();
-        mirror[Y] = cfg.display_mirror_y.getBool();
+        mirror[X] = cfg.get<bool>("display_mirror_x");
+        mirror[Y] = cfg.get<bool>("display_mirror_y");
 
-        auto ro = cfg.display_orientation.getInt();
-        RasterBase::Orientation orientation = ro == RasterBase::roPortrait
+        auto ro = cfg.get<Domain::SLADisplayOrientation>("display_orientation");
+        RasterBase::Orientation orientation = ro == Domain::SLADisplayOrientation::sladoPortrait
             ? RasterBase::roPortrait
             : RasterBase::roLandscape;
 
@@ -335,7 +334,7 @@ public:
 
         res = Resolution{pw, ph};
         pxdim = PixelDim{w / pw, h / ph};
-        gamma = cfg.gamma_correction.getFloat();
+        gamma = cfg.get<double>("gamma_correction");
         tr = RasterBase::Trafo{orientation, mirror};
     }
 
@@ -351,7 +350,7 @@ public:
 };
 }
 
-std::unique_ptr<Slic3r::ISlaRasterizer> Slic3r::create_sl1_rasterizer(const SLAPrinterConfig& cfg){
+std::unique_ptr<Slic3r::ISlaRasterizer> Slic3r::create_sl1_rasterizer(const SLAPrintConfigView& cfg){
     return std::make_unique<Sl1Rasterizer>(cfg);
 }
 

@@ -29,7 +29,7 @@ namespace FFFSupport {
 // Remove bridges from support contact areas.
 // To be called if PrintObjectConfig::dont_support_bridges.
 void remove_bridges_from_contacts(
-    const PrintConfig   &print_config, 
+    const PrintConfigView &print_config,
     const Layer         &lower_layer,
     const LayerRegion   &layerm,
     float                fw, 
@@ -41,7 +41,7 @@ void remove_bridges_from_contacts(
 // For Organic supports, merge top_interface_layers & top_base_interface_layers with the interfaces
 // produced by this function.
 std::pair<SupportGeneratorLayersPtr, SupportGeneratorLayersPtr> generate_interface_layers(
-    const PrintObjectConfig           &config,
+    const PrintObjectConfigView           &config,
     const SupportParameters           &support_params,
     const SupportGeneratorLayersPtr   &bottom_contacts,
     const SupportGeneratorLayersPtr   &top_contacts,
@@ -78,7 +78,7 @@ SupportGeneratorLayersPtr generate_support_layers(
 // Used by both classic and tree supports.
 void generate_support_toolpaths(
 	SupportLayerPtrs    				&support_layers,
-	const PrintObjectConfig 			&config,
+	const PrintObjectConfigView 			&config,
 	const SupportParameters 			&support_params,
 	const SlicingParameters 			&slicing_params,
     const SupportGeneratorLayersPtr 	&raft_layers,

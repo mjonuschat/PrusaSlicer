@@ -326,7 +326,7 @@ auto closest_slice_record(
 SLAPrint::Steps::Steps(SLAPrint *print)
     : m_print{print}
     , objcount{m_print->m_objects.size()}
-    , ilhd{m_print->m_material_config.initial_layer_height.getFloat()}
+    , ilhd{m_print->print_config().get<double>("initial_layer_height")}
     , ilh{float(ilhd)}
     , ilhs{scaled(ilhd)}
     , objectstep_scale{(max_objstatus - min_objstatus) / (objcount * 100.0)}
@@ -336,11 +336,11 @@ void SLAPrint::Steps::apply_printer_corrections(SLAPrintObject &po, SliceOrigin 
 {
     if (o == soSupport && !po.m_supportable_mesh->emesh.vertices().empty()) return;
 
-    auto faded_lyrs = size_t(po.m_config.faded_layers.getInt());
-    double min_w = m_print->m_printer_config.elefant_foot_min_width.getFloat() / 2.;
-    double start_efc = m_print->m_printer_config.elefant_foot_compensation.getFloat();
+    auto faded_lyrs = size_t(po.m_config.get<int>("faded_layers"));
+    double min_w = m_print->print_config().get<double>("elefant_foot_min_width") / 2.;
+    double start_efc = m_print->print_config().get<double>("elefant_foot_compensation");
 
-    double doffs = m_print->m_printer_config.absolute_correction.getFloat();
+    double doffs = m_print->print_config().get<double>("absolute_correction");
     coord_t clpr_offs = scaled(doffs);
 
     faded_lyrs = std::min(po.m_slice_index.size(), faded_lyrs);
@@ -367,8 +367,7 @@ void SLAPrint::Steps::apply_printer_corrections(SLAPrintObject &po, SliceOrigin 
     }
 
     if (o == soModel) { // Z correction applies only to the model slices
-        slices = sla::apply_zcorrection(slices,
-                                        m_print->m_material_config.zcorrection_layers.getInt());
+        slices = sla::apply_zcorrection(slices, m_print->print_config().get<int>("zcorrection_layers"));
     }
 }
 
@@ -379,7 +378,7 @@ indexed_triangle_set SLAPrint::Steps::generate_preview_vdb(const SLAPrintObject 
 
     // update preview mesh
     double vscale = std::min(MaxPreviewVoxelScale,
-                             1. / po.m_config.layer_height.getFloat());
+                             1. / po.m_config.get<double>("layer_height"));
 
     auto   voxparams = csg::VoxelizeParams{}
                          .voxel_scale(vscale)
@@ -524,16 +523,16 @@ void SLAPrint::Steps::hollow_model(SLAPrintObject &po)
     clear_csg(po.m_mesh_to_slice, slaposDrillHoles);
     clear_csg(po.m_mesh_to_slice, slaposHollowing);
 
-    if (! po.m_config.hollowing_enable.getBool()) {
+    if (!po.m_config.get<bool>("hollowing_enable")) {
         BOOST_LOG_TRIVIAL(info) << "Skipping hollowing step!";
         return;
     }
 
     BOOST_LOG_TRIVIAL(info) << "Performing hollowing step!";
 
-    double thickness = po.m_config.hollowing_min_thickness.getFloat();
-    double quality  = po.m_config.hollowing_quality.getFloat();
-    double closing_d = po.m_config.hollowing_closing_distance.getFloat();
+    double thickness = po.m_config.get<double>("hollowing_min_thickness");
+    double quality  = po.m_config.get<double>("hollowing_quality");
+    double closing_d = po.m_config.get<double>("hollowing_closing_distance");
     sla::HollowingConfig hlwcfg{thickness, quality, closing_d};
     sla::JobController ctl;
     ctl.stopcondition = [this]() { return canceled(); };
@@ -647,7 +646,7 @@ void SLAPrint::Steps::slice_model(SLAPrintObject &po)
 
     // We need to prepare the slice index...
 
-    double  lhd  = m_print->m_objects.front()->m_config.layer_height.getFloat();
+    double  lhd  = m_print->m_objects.front()->m_config.get<double>("layer_height");
     float   lh   = float(lhd);
     coord_t lhs  = scaled(lhd);
     double  minZ = bb3d.min(Z) - po.get_elevation();
@@ -682,11 +681,11 @@ void SLAPrint::Steps::slice_model(SLAPrintObject &po)
 
     po.m_model_slices.clear();
     MeshSlicingParamsEx params;
-    params.closing_radius = float(po.config().slice_closing_radius.value);
-    switch (po.config().slicing_mode.value) {
-    case SlicingMode::Regular:    params.mode = MeshSlicingParams::SlicingMode::Regular; break;
-    case SlicingMode::EvenOdd:    params.mode = MeshSlicingParams::SlicingMode::EvenOdd; break;
-    case SlicingMode::CloseHoles: params.mode = MeshSlicingParams::SlicingMode::Positive; break;
+    params.closing_radius = float(po.config().get<double>("slice_closing_radius"));
+    switch (po.config().get<Domain::SlicingMode>("slicing_mode")) {
+    case Domain::SlicingMode::Regular:    params.mode = MeshSlicingParams::SlicingMode::Regular; break;
+    case Domain::SlicingMode::EvenOdd:    params.mode = MeshSlicingParams::SlicingMode::EvenOdd; break;
+    case Domain::SlicingMode::CloseHoles: params.mode = MeshSlicingParams::SlicingMode::Positive; break;
     }
     auto  thr        = [this]() { m_print->throw_if_canceled(); };
     auto &slice_grid = po.m_model_height_levels;
@@ -704,7 +703,7 @@ void SLAPrint::Steps::slice_model(SLAPrintObject &po)
     apply_printer_corrections(po, soModel);
 
     // Prepare data for the support point generator only when supports are enabled
-    if (po.m_config.supports_enable.getBool())
+    if (po.m_config.get<bool>("supports_enable"))
         // We need to prepare data in previous step to create interactive support point generation
         prepare_for_generate_supports(po);
 }
@@ -784,11 +783,11 @@ void SLAPrint::Steps::support_points(SLAPrintObject &po)
     }
 
     // If supports are disabled, we can skip the model scan.
-    if (!po.m_config.supports_enable.getBool()) {
+    if (!po.m_config.get<bool>("supports_enable")) {
         bool exist = po.m_preview->support_points != nullptr;
         po.m_preview->support_points = nullptr;
         if (exist)
-            m_print->m_on_sla_object(*po.m_preview);        
+            m_print->m_on_sla_object(*po.m_preview);
         po.m_supportable_mesh->pts.reset();
         return; // support points are unwanted
     }
@@ -801,19 +800,19 @@ void SLAPrint::Steps::support_points(SLAPrintObject &po)
     // if (mo.sla_points_status != PointsStatus::UserModified) 
 
     throw_if_canceled();
-    const SLAPrintObjectConfig& cfg = po.config();
+    const SLAPrintObjectConfigView& cfg = po.config();
 
     // the density config value is in percents:
     SupportPointGeneratorConfig config;
-    config.density_relative = float(cfg.support_points_density_relative / 100.f);
-        
-    switch (cfg.support_tree_type) {
-    case SupportTreeType::Default:
-    case SupportTreeType::Organic:
-        config.head_diameter = float(cfg.support_head_front_diameter);
+    config.density_relative = float(cfg.get<int>("support_points_density_relative") / 100.f);
+
+    switch (cfg.get<Domain::sla::SupportTreeType>("support_tree_type")) {
+    case Domain::sla::SupportTreeType::Default:
+    case Domain::sla::SupportTreeType::Organic:
+        config.head_diameter = float(cfg.get<double>("support_head_front_diameter"));
         break;
-    case SupportTreeType::Branching:
-        config.head_diameter = float(cfg.branchingsupport_head_front_diameter);
+    case Domain::sla::SupportTreeType::Branching:
+        config.head_diameter = float(cfg.get<double>("branchingsupport_head_front_diameter"));
         break;
     }
     
@@ -870,7 +869,7 @@ void SLAPrint::Steps::support_points(SLAPrintObject &po)
     throw_if_canceled();
 
     MeshSlicingParamsEx params;
-    params.closing_radius = float(po.config().slice_closing_radius.value);
+    params.closing_radius = float(po.config().get<double>("slice_closing_radius"));
     std::vector<ExPolygons> blockers =
         slice_volumes(po.model_object()->volumes,
                         po.m_model_height_levels, po.trafo(), params,
@@ -893,7 +892,7 @@ void SLAPrint::Steps::support_points(SLAPrintObject &po)
         std::erase_if(support_points, [lvl](const SupportPoint& sp) { return sp.pos.z() <= lvl; });
     }
 
-    SuppPtMask mask{blockers, enforcers, po.config().support_enforcers_only.getBool()};
+    SuppPtMask mask{blockers, enforcers, po.config().get<bool>("support_enforcers_only")};
     filter_support_points_by_modifiers(support_points, mask, po.m_model_height_levels);
     
     BOOST_LOG_TRIVIAL(debug) << "Automatic support points: " << support_points.size();
@@ -909,7 +908,7 @@ void SLAPrint::Steps::support_tree(SLAPrintObject &po)
     if (!po.m_supportable_mesh.has_value())
         return;
 
-    if (!po.m_config.supports_enable.getBool()){
+    if (!po.m_config.get<bool>("supports_enable")){
         bool exist = po.m_preview->support_structure != nullptr;
         po.m_preview->support_structure = nullptr;
         if (exist)
@@ -952,7 +951,7 @@ void SLAPrint::Steps::generate_pad(SLAPrintObject& po)
     // and before the supports had been sliced. (or the slicing has to be
     // repeated)
     using Slic3r::Biz::Slicing::Sla::Object;
-    if (!po.m_config.pad_enable.getBool()) {
+    if (!po.m_config.get<bool>("pad_enable")) {
         bool exist = po.m_preview->pad != nullptr;
         po.m_preview->pad = nullptr;
         if (exist)
@@ -989,8 +988,8 @@ void SLAPrint::Steps::generate_pad(SLAPrintObject& po)
 // be part of the slices)
 void SLAPrint::Steps::slice_supports(SLAPrintObject &po) {
     // Don't bother if no supports and no pad is present.
-    if (!po.m_config.supports_enable.getBool() && 
-        !po.m_config.pad_enable.getBool())
+    if (!po.m_config.get<bool>("supports_enable") &&
+        !po.m_config.get<bool>("pad_enable"))
         return;
 
     auto heights = reserve_vector<float>(po.m_slice_index.size());
@@ -1002,7 +1001,7 @@ void SLAPrint::Steps::slice_supports(SLAPrintObject &po) {
 
     const indexed_triangle_set& tree_its = po.m_preview->support_structure->its;
     const indexed_triangle_set& pad_its = po.m_preview->pad ? po.m_preview->pad->its : indexed_triangle_set{};
-    float closing_radius = float(po.config().slice_closing_radius.value);
+    float closing_radius = float(po.config().get<double>("slice_closing_radius"));
     po.m_support_slices = sla::slice(tree_its, pad_its, heights, closing_radius, ctl);
     
     for (size_t i = 0; i < po.m_support_slices.size() && i < po.m_slice_index.size(); ++i)
@@ -1154,37 +1153,37 @@ struct ExposureProfile {
 
     // map of internal TowerSpeeds to maximum_steprates (usteps/s)
     // this values was provided in default_tower_moving_profiles.json by SLA-team
-    std::map<TowerSpeeds, int> tower_speeds = {
-        { tsLayer1 , 800   },
-        { tsLayer2 , 1600  },
-        { tsLayer3 , 2400  },
-        { tsLayer4 , 3200  },
-        { tsLayer5 , 4000  },
-        { tsLayer8 , 6400  },
-        { tsLayer11, 8800  },
-        { tsLayer14, 11200 },
-        { tsLayer18, 14400 },
-        { tsLayer22, 17600 },
-        { tsLayer24, 19200 },
+    std::map<Domain::TowerSpeeds, int> tower_speeds = {
+        { Domain::TowerSpeeds::tsLayer1 , 800   },
+        { Domain::TowerSpeeds::tsLayer2 , 1600  },
+        { Domain::TowerSpeeds::tsLayer3 , 2400  },
+        { Domain::TowerSpeeds::tsLayer4 , 3200  },
+        { Domain::TowerSpeeds::tsLayer5 , 4000  },
+        { Domain::TowerSpeeds::tsLayer8 , 6400  },
+        { Domain::TowerSpeeds::tsLayer11, 8800  },
+        { Domain::TowerSpeeds::tsLayer14, 11200 },
+        { Domain::TowerSpeeds::tsLayer18, 14400 },
+        { Domain::TowerSpeeds::tsLayer22, 17600 },
+        { Domain::TowerSpeeds::tsLayer24, 19200 },
     };
 
     // map of internal TiltSpeeds to maximum_steprates (usteps/s)
     // this values was provided in default_tilt_moving_profiles.json by SLA-team
-    std::map<TiltSpeeds, int> tilt_speeds = {
-        { tsMove120  , 120   },
-        { tsLayer200 , 200   },
-        { tsMove300  , 300   },
-        { tsLayer400 , 400   },
-        { tsLayer600 , 600   },
-        { tsLayer800 , 800   },
-        { tsLayer1000, 1000  },
-        { tsLayer1250, 1250  },
-        { tsLayer1500, 1500  },
-        { tsLayer1750, 1750  },
-        { tsLayer2000, 2000  },
-        { tsLayer2250, 2250  },
-        { tsMove5120 , 5120  },
-        { tsMove8000 , 8000  },
+    std::map<Domain::TiltSpeeds, int> tilt_speeds = {
+        { Domain::TiltSpeeds::tsMove120  , 120   },
+        { Domain::TiltSpeeds::tsLayer200 , 200   },
+        { Domain::TiltSpeeds::tsMove300  , 300   },
+        { Domain::TiltSpeeds::tsLayer400 , 400   },
+        { Domain::TiltSpeeds::tsLayer600 , 600   },
+        { Domain::TiltSpeeds::tsLayer800 , 800   },
+        { Domain::TiltSpeeds::tsLayer1000, 1000  },
+        { Domain::TiltSpeeds::tsLayer1250, 1250  },
+        { Domain::TiltSpeeds::tsLayer1500, 1500  },
+        { Domain::TiltSpeeds::tsLayer1750, 1750  },
+        { Domain::TiltSpeeds::tsLayer2000, 2000  },
+        { Domain::TiltSpeeds::tsLayer2250, 2250  },
+        { Domain::TiltSpeeds::tsMove5120 , 5120  },
+        { Domain::TiltSpeeds::tsMove8000 , 8000  },
     };
 
     int     delay_before_exposure_ms    { 0 };
@@ -1207,25 +1206,25 @@ struct ExposureProfile {
 
     ExposureProfile() {}
 
-    ExposureProfile(const SLAMaterialConfig& config, int opt_id)
+    ExposureProfile(const SLAPrintConfigView& config, int opt_id)
     {
-        delay_before_exposure_ms    = int(1000 * config.delay_before_exposure.get_at(opt_id));
-        delay_after_exposure_ms     = int(1000 * config.delay_after_exposure.get_at(opt_id));
-        tilt_down_offset_delay_ms   = int(1000 * config.tilt_down_offset_delay.get_at(opt_id));
-        tilt_down_delay_ms          = int(1000 * config.tilt_down_delay.get_at(opt_id));
-        tilt_up_offset_delay_ms     = int(1000 * config.tilt_up_offset_delay.get_at(opt_id));
-        tilt_up_delay_ms            = int(1000 * config.tilt_up_delay.get_at(opt_id));
-        tower_hop_height_nm         = int(config.tower_hop_height.get_at(opt_id) * 1000000);
-        tilt_down_offset_steps      = config.tilt_down_offset_steps.get_at(opt_id);
-        tilt_down_cycles            = config.tilt_down_cycles.get_at(opt_id);
-        tilt_up_offset_steps        = config.tilt_up_offset_steps.get_at(opt_id);
-        tilt_up_cycles              = config.tilt_up_cycles.get_at(opt_id);
-        use_tilt                    = config.use_tilt.get_at(opt_id);
-        tower_speed                 = tower_speeds.at(static_cast<TowerSpeeds>(config.tower_speed.getInts()[opt_id]));
-        tilt_down_initial_speed     = tilt_speeds.at(static_cast<TiltSpeeds>(config.tilt_down_initial_speed.getInts()[opt_id]));
-        tilt_down_finish_speed      = tilt_speeds.at(static_cast<TiltSpeeds>(config.tilt_down_finish_speed.getInts()[opt_id]));
-        tilt_up_initial_speed       = tilt_speeds.at(static_cast<TiltSpeeds>(config.tilt_up_initial_speed.getInts()[opt_id]));
-        tilt_up_finish_speed        = tilt_speeds.at(static_cast<TiltSpeeds>(config.tilt_up_finish_speed.getInts()[opt_id]));
+        delay_before_exposure_ms    = int(1000 * config.get<std::vector<double>>("delay_before_exposure").at(opt_id));
+        delay_after_exposure_ms     = int(1000 * config.get<std::vector<double>>("delay_after_exposure").at(opt_id));
+        tilt_down_offset_delay_ms   = int(1000 * config.get<std::vector<double>>("tilt_down_offset_delay").at(opt_id));
+        tilt_down_delay_ms          = int(1000 * config.get<std::vector<double>>("tilt_down_delay").at(opt_id));
+        tilt_up_offset_delay_ms     = int(1000 * config.get<std::vector<double>>("tilt_up_offset_delay").at(opt_id));
+        tilt_up_delay_ms            = int(1000 * config.get<std::vector<double>>("tilt_up_delay").at(opt_id));
+        tower_hop_height_nm         = int(config.get<std::vector<double>>("tower_hop_height").at(opt_id) * 1000000);
+        tilt_down_offset_steps      = config.get<std::vector<int>>("tilt_down_offset_steps").at(opt_id);
+        tilt_down_cycles            = config.get<std::vector<int>>("tilt_down_cycles").at(opt_id);
+        tilt_up_offset_steps        = config.get<std::vector<int>>("tilt_up_offset_steps").at(opt_id);
+        tilt_up_cycles              = config.get<std::vector<int>>("tilt_up_cycles").at(opt_id);
+        use_tilt                    = config.get<std::vector<bool>>("use_tilt").at(opt_id);
+        tower_speed                 = tower_speeds.at(config.get<std::vector<Domain::TowerSpeeds>>("tower_speed").at(opt_id));
+        tilt_down_initial_speed     = tilt_speeds.at(config.get<std::vector<Domain::TiltSpeeds>>("tilt_down_initial_speed").at(opt_id));
+        tilt_down_finish_speed      = tilt_speeds.at(config.get<std::vector<Domain::TiltSpeeds>>("tilt_down_finish_speed").at(opt_id));
+        tilt_up_initial_speed       = tilt_speeds.at(config.get<std::vector<Domain::TiltSpeeds>>("tilt_up_initial_speed").at(opt_id));
+        tilt_up_finish_speed        = tilt_speeds.at(config.get<std::vector<Domain::TiltSpeeds>>("tilt_up_finish_speed").at(opt_id));
     }
 };
 
@@ -1336,29 +1335,27 @@ Sla::PrintStatistics create_stats(const LayersInfo& infos, bool is_prusa_print)
 void SLAPrint::Steps::merge_slices_and_eval_stats() {
 
     initialize_printer_input();
-
-    const auto &printer_config   = m_print->m_printer_config;
-    const auto &material_config  = m_print->m_material_config;
     const auto &printer_input    = m_print->m_printer_input;
 
-    const double area_fill = material_config.area_fill.getFloat()*0.01;// 0.5 (50%);
-    const double fast_tilt = printer_config.fast_tilt_time.getFloat();// 5.0;
-    const double slow_tilt = printer_config.slow_tilt_time.getFloat();// 8.0;
-    const double hv_tilt   = printer_config.high_viscosity_tilt_time.getFloat();// 10.0;
+    const SLAPrintConfigView& config{m_print->print_config()};
+    const double area_fill = config.get<double>("area_fill")*0.01;// 0.5 (50%);
+    const double fast_tilt = config.get<double>("fast_tilt_time");// 5.0;
+    const double slow_tilt = config.get<double>("slow_tilt_time");// 8.0;
+    const double hv_tilt   = config.get<double>("high_viscosity_tilt_time");// 10.0;
 
-    const double init_exp_time = material_config.initial_exposure_time.getFloat();
-    const double exp_time      = material_config.exposure_time.getFloat();
+    const double init_exp_time = config.get<double>("initial_exposure_time");
+    const double exp_time      = config.get<double>("exposure_time");
 
-    const int fade_layers_cnt = m_print->m_default_object_config.faded_layers.getInt();// 10 // [3;20]
+    const int fade_layers_cnt = config.get<int>("faded_layers");// 10 // [3;20]
 
-    ExposureProfile below(material_config, 0);
-    ExposureProfile above(material_config, 1);
+    ExposureProfile below(config, 0);
+    ExposureProfile above(config, 1);
 
     const int           first_slow_layers   = fade_layers_cnt + first_extra_slow_layers;
-    const bool          is_prusa_print = SLAPrint::is_prusa_print(printer_config.printer_model);
+    const bool          is_prusa_print = SLAPrint::is_prusa_print(config.get<std::string>("printer_model"));
 
-    const auto width          = scaled<double>(printer_config.display_width.getFloat());
-    const auto height         = scaled<double>(printer_config.display_height.getFloat());
+    const auto width          = scaled<double>(config.get<double>("display_width"));
+    const auto height         = scaled<double>(config.get<double>("display_height"));
     const double display_area = width*height;
 
     LayersInfo layers_info(printer_input.size());
@@ -1368,7 +1365,7 @@ void SLAPrint::Steps::merge_slices_and_eval_stats() {
     auto printlayerfn = [
             // functions and read only vars
             area_fill, display_area, exp_time, init_exp_time, fast_tilt, slow_tilt, hv_tilt,
-            &material_config, delta_fade_time, is_prusa_print, first_slow_layers, below, above,
+            &config, delta_fade_time, is_prusa_print, first_slow_layers, below, above,
             // write vars
             &layers = m_print->m_printer_input,
             &layers_info](size_t sliced_layer_cnt)
@@ -1463,8 +1460,8 @@ void SLAPrint::Steps::merge_slices_and_eval_stats() {
         }
         else {
             is_fast_layer = layer_area <= display_area*area_fill;
-            const double tilt_time = material_config.material_print_speed == slamsSlow              ? slow_tilt :
-                                     material_config.material_print_speed == slamsHighViscosity     ? hv_tilt   :
+            const double tilt_time = config.get<Domain::SLAMaterialSpeed>("material_print_speed") == Domain::SLAMaterialSpeed::slamsSlow              ? slow_tilt :
+                                     config.get<Domain::SLAMaterialSpeed>("material_print_speed") == Domain::SLAMaterialSpeed::slamsHighViscosity     ? hv_tilt   :
                                      is_fast_layer ? fast_tilt : slow_tilt;
 
             layer_times += tilt_time;
@@ -1474,9 +1471,9 @@ void SLAPrint::Steps::merge_slices_and_eval_stats() {
             static double exposure_high_viscosity_delay_before{ 3.5 };
             static double exposure_slow_move_delay_before{ 1.0 };
 
-            if (material_config.material_print_speed == slamsSlow)
+            if (config.get<Domain::SLAMaterialSpeed>("material_print_speed") == Domain::SLAMaterialSpeed::slamsSlow)
                 layer_times += exposure_safe_delay_before;
-            else if (material_config.material_print_speed == slamsHighViscosity)
+            else if (config.get<Domain::SLAMaterialSpeed>("material_print_speed") == Domain::SLAMaterialSpeed::slamsHighViscosity)
                 layer_times += exposure_high_viscosity_delay_before;
             else if (!is_fast_layer)
                 layer_times += exposure_slow_move_delay_before;
@@ -1504,13 +1501,13 @@ void SLAPrint::Steps::merge_slices_and_eval_stats() {
     print_statistics = create_stats(layers_info, is_prusa_print);
     if (printer_input.empty()) // set as invalid
         print_statistics.estimated_print_time = NaNd;
-    int count_faded_layers = m_print->default_object_config().faded_layers.getInt();
+    int count_faded_layers = config.get<int>("faded_layers");
     if (count_faded_layers < 0)
         count_faded_layers = 0;
     print_statistics.count_faded_layers = count_faded_layers;
     const PrintObjects& objects = m_print->objects();
-    bool hollowing_enable = std::any_of(objects.begin(), objects.end(), 
-        [](const SLAPrintObject *po) { return po->config().hollowing_enable; });
+    bool hollowing_enable = std::any_of(objects.begin(), objects.end(),
+        [](const SLAPrintObject *po) { return po->config().get<bool>("hollowing_enable"); });
 
     print_statistics.hollowing_enable = hollowing_enable;
 
@@ -1526,10 +1523,9 @@ void SLAPrint::Steps::merge_slices_and_eval_stats() {
         float level_f = unscale<float>(level);
         heights.push_back(level_f);
     }
-     
+
     m_print->m_on_sla_result(Biz::Slicing::SLAResult{
-        .full_print_config = m_print->m_full_print_config,
-        .printer_config = printer_config,
+        .printer_config = config,
         .print_statistics = print_statistics,
         .slices = std::move(slices),
         .heights = std::move(heights),
@@ -1538,10 +1534,10 @@ void SLAPrint::Steps::merge_slices_and_eval_stats() {
 }
 
 namespace{
-Sla::FileDataType get_output_type(const SLAPrinterConfig& cfg)
+Sla::FileDataType get_output_type(const SLAPrintConfigView& cfg)
 {
     // create the archiver
-    std::string archive_format = cfg.sla_archive_format.value; // TODO: Change format to enum
+    std::string archive_format = cfg.get<std::string>("sla_archive_format"); // TODO: Change format to enum
     if (archive_format.empty())
         throw ExportError(_u8L("Missing archive format specification."));
     boost::algorithm::to_lower(archive_format); // lowercase the format string
@@ -1566,7 +1562,7 @@ Sla::FileDataType get_output_type(const SLAPrinterConfig& cfg)
 void SLAPrint::Steps::rasterize()
 {
     const PrintLayers& layers = m_print->m_printer_input;
-    const SLAPrinterConfig& printer_config = m_print->m_printer_config;
+    const SLAPrintConfigView& printer_config = m_print->print_config();
 
     // coefficient to map the rasterization state (0-99) to the allocated
     // portion (slot) of the process state

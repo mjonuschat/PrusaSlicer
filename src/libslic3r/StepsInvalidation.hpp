@@ -1,6 +1,7 @@
 #pragma once
 
 #include "libslic3r/Print.hpp"
+#include "Slic3r/Domain/Config.hpp"
 
 namespace Slic3r::SlicingSync {
 
@@ -17,8 +18,8 @@ PrintAndObjectSteps get_invalidated_steps(
 );
 
 PrintAndObjectSteps diff_to_invalidated_steps(
-    const StaticPrintConfig& old_config,
-    const StaticPrintConfig& new_config,
+    const Domain::ConfigView& old_config,
+    const Domain::ConfigView& new_config,
     const std::vector<std::string>& diff
 );
 

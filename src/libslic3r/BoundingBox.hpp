@@ -70,6 +70,8 @@ public:
         : BoundingBoxBase(points.begin(), points.end())
     {}
 
+    virtual ~BoundingBoxBase() = default;
+
     [[deprecated("Use Domain::BoundingBox box = {} instead")]]
     void reset() { this->defined = false; this->min = PointType::Zero(); this->max = PointType::Zero(); }
 

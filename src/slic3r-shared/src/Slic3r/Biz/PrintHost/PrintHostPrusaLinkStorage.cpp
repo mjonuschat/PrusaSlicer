@@ -87,10 +87,10 @@ std::string PrintHostPrusaLinkStorage::make_url(const std::string& path) const
 void PrintHostPrusaLinkStorage::set_auth(Network::IHttp* http) const
 {
     switch (m_print_host_config.auth_type) {
-    case PrintHostAuthType::ApiKey:
+    case Domain::PrintHostAuthType::ApiKey:
         http->header("X-Api-Key", m_print_host_config.api_key);
         break;
-    case PrintHostAuthType::Digest:
+    case Domain::PrintHostAuthType::Digest:
         http->auth_digest(m_print_host_config.username, m_print_host_config.password);
         break;
     default:

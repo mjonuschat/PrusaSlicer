@@ -19,6 +19,7 @@
 #include <cmath>
 
 #include "Slic3r/Domain/SLA/SupportPoint.hpp"
+#include "Slic3r/Domain/ConfigSLA.hpp"
 
 #include "admesh/stl.h"
 
@@ -32,7 +33,7 @@ struct SupportTreeConfig
     bool   enabled = true;
 
     // Type of the support tree, for
-    SupportTreeType tree_type = SupportTreeType::Default;
+    Domain::sla::SupportTreeType tree_type = Domain::sla::SupportTreeType::Default;
 
     // Radius in mm of the pointing side of the head.
     double head_front_radius_mm = 0.2;
@@ -49,7 +50,7 @@ struct SupportTreeConfig
     double head_width_mm = 1.0;
 
     // How to connect pillars
-    PillarConnectionMode pillar_connection_mode = PillarConnectionMode::dynamic;
+    Domain::sla::PillarConnectionMode pillar_connection_mode = Domain::sla::PillarConnectionMode::dynamic;
 
     // Only generate pillars that can be routed to ground
     bool ground_facing_only = false;

@@ -11,8 +11,10 @@ using namespace Slic3r;
 using namespace Slic3r::Test;
 using namespace Catch;
 using Biz::GCodeReader::GCodeReader;
+using Domain::FloatOrPercentage;
+using Domain::Percentage;
 
-void check_layers(const DynamicPrintConfig& config) {
+void check_layers(const TestConfig& config) {
 	GCodeReader parser;
     std::string gcode = Slic3r::Test::slice({TestMesh::cube_20x20x20}, config);
 
@@ -26,9 +28,9 @@ void check_layers(const DynamicPrintConfig& config) {
         }
     });
 
-    const double first_layer_height = config.opt_float("first_layer_height");
-    const double z_offset = config.opt_float("z_offset");
-    const double layer_height = config.opt_float("layer_height");
+    const double first_layer_height = config.print.opt("first_layer_height").get<Domain::FloatOrPercentage>().float_value();
+    const double z_offset = config.printer.opt("z_offset").get<double>();
+    const double layer_height = config.print.opt("layer_height").get<double>();
     INFO("Correct first layer height.");
     CHECK(z.at(0) == Approx(first_layer_height + z_offset));
     INFO("Correct second layer height");
@@ -41,50 +43,36 @@ void check_layers(const DynamicPrintConfig& config) {
 }
 
 TEST_CASE("Layer heights are correct", "[Layers]") {
-    DynamicPrintConfig config = Slic3r::DynamicPrintConfig::full_print_config();
-    config.set_deserialize_strict({
-        { "start_gcode", "" },
-        { "layer_height", 0.3 },
-        { "first_layer_height", 0.2 },
-        { "retract_length", "0" }
-    });
+    TestConfig config;
+    config.printer.opt("start_gcode").set("" );
+    config.print.opt("layer_height").set(0.3);
+    config.print.opt("first_layer_height").set(FloatOrPercentage{0.2});
+    config.tool.at(0).opt("retract_length").set(0.0);
 
     SECTION("Absolute first layer height") {
         check_layers(config);
     }
 
     SECTION("Relative layer height") {
-        const double layer_height = config.opt_float("layer_height");
-        config.set_deserialize_strict({
-            { "first_layer_height", 0.6 * layer_height },
-        });
-
+        const double layer_height = config.print.opt("layer_height").get<double>();
+        config.print.opt("first_layer_height").set(FloatOrPercentage{0.6 * layer_height});
         check_layers(config);
     }
 
     SECTION("Positive z offset") {
-        config.set_deserialize_strict({
-            { "z_offset", 0.9 },
-        });
-
+        config.printer.opt("z_offset").set(0.9);
         check_layers(config);
     }
 
     SECTION("Negative z offset") {
-        config.set_deserialize_strict({
-            { "z_offset", -0.8 },
-        });
-
+        config.printer.opt("z_offset").set(-0.8);
         check_layers(config);
     }
 }
 
 TEST_CASE("GCode has reasonable height", "[Layers]") {
-    DynamicPrintConfig config = Slic3r::DynamicPrintConfig::full_print_config();
-    config.set_deserialize_strict({
-        { "fill_density", 0 },
-        { "gcode_binary", 0 },
-    });
+    TestConfig config;
+    config.print.opt("fill_density").set(Percentage{0});
 
     Print print;
     Model model;
