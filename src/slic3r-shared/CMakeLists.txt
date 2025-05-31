@@ -312,6 +312,7 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/ISelectedProjectChangedListener.hpp
         src/Slic3r/Biz/ProjectInteractor.cpp
         include/Slic3r/Biz/ProjectInteractor.hpp
+        include/Slic3r/Biz/ProjectScoped.hpp
         include/Slic3r/Biz/LastExportPathStorage.hpp
 
         include/Slic3r/StringUtils.hpp

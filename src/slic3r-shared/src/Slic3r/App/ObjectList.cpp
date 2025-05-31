@@ -349,17 +349,18 @@ static bool is_imgui_item_just_selected()
 // hendle selection from the tree nodes
 bool ObjectList::handle_selection(const Domain::ElementRef& id)
 {
+    auto& ctx = selected_project_context();
     // handle selection only when we are NOT dragging and on MouseRelease or PressEnter
-    if (!m_is_dragging && is_imgui_item_just_selected()) {
+    if (!ctx.is_dragging && is_imgui_item_just_selected()) {
         if (ImGui::GetIO().KeyCtrl) {
-            if (m_selected_items.count(id))
-                m_selected_items.erase(id);  // Toggle deselect
+            if (ctx.selected_items.count(id))
+                ctx.selected_items.erase(id);  // Toggle deselect
             else
-                m_selected_items.insert(id); // Multi-select
+                ctx.selected_items.insert(id); // Multi-select
         }
         else {
-            m_selected_items.clear();
-            m_selected_items.insert(id);     // Single-select
+            ctx.selected_items.clear();
+            ctx.selected_items.insert(id);     // Single-select
         }
         return true;
     }
@@ -368,24 +369,26 @@ bool ObjectList::handle_selection(const Domain::ElementRef& id)
 
 void ObjectList::handle_dragging(const Domain::ElementRef& id)
 {
-    if (m_scene_map)
+    auto& ctx = selected_project_context();
+    if (ctx.scene_map)
         return;
 
     // Detect dragging on any selected node
-    if (m_selected_items.count(id) && ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left))
-        m_is_dragging = true;
+    if (ctx.selected_items.count(id) && ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left))
+        ctx.is_dragging = true;
 }
 
 void ObjectList::force_select_whole_object(const Slic3r::ModelObject* object)
 {
+    auto& ctx = selected_project_context();
     size_t object_id = object->id().id;
     Domain::ElementRef sel_element{ object_id };
-    if (m_selected_items.count(sel_element)) {
+    if (ctx.selected_items.count(sel_element)) {
         // remove object element
-        m_selected_items.erase(sel_element);
+        ctx.selected_items.erase(sel_element);
         //  and push all instances instad
         for (const Slic3r::ModelInstance* instance : object->instances)
-            m_selected_items.insert(Domain::ElementRef{ object_id, instance->id().id });
+            ctx.selected_items.insert(Domain::ElementRef{ object_id, instance->id().id });
     }
 }
 
@@ -405,13 +408,15 @@ void ObjectList::init(Biz::ProjectInteractor *project_interactor, Mode mode)
 {
     m_project_interactor = project_interactor;
     m_mode = mode;
+    m_project_contexts = std::make_unique<ProjectContexts>(*project_interactor);
 }
 
 void ObjectList::render_body(Yoga::Vec2f pos, Yoga::Vec2f size)
 {
+    auto& ctx = selected_project_context();
     m_scene_interactor = &m_project_interactor->scene_interactor();
-    m_model            = &m_project_interactor->selected_project().model();
-    assert(m_model && m_scene_interactor);
+    ctx.model            = &m_project_interactor->selected_project().model();
+    ASSERT(ctx.model && m_scene_interactor);
 
     invalidate_bed_selection();
     update_selection_from_scene();
@@ -425,7 +430,7 @@ void ObjectList::render_body(Yoga::Vec2f pos, Yoga::Vec2f size)
     size.y() -= (ImGui::GetCursorScreenPos().y - pos.y()) + 
                 (m_mode == Mode::Preview ? slised_info_height : GImGui->Style.WindowRounding);
 
-    if (m_scene_map) {
+    if (ctx.scene_map) {
         render_scene_map(size);
     }
     else {
@@ -454,17 +459,17 @@ void ObjectList::setup_ui_state()
     m_table_flags = ImGuiTableFlags_NoBordersInBody |
              //       ImGuiTableFlags_Borders | 
                     ImGuiTableFlags_NoPadInnerX;
-
-    m_is_dragging = false;
+    selected_project_context().is_dragging = false;
 }
 
 void ObjectList::process_dragging_start()
 {
+    const auto& ctx = selected_project_context();
     // Start drag operation when any selected node is being dragged
-    if (m_is_dragging && ImGui::BeginDragDropSource(/*ImGuiDragDropFlags_SourceNoHoldToOpenOthers | */ImGuiDragDropFlags_SourceExtern)) {
-        int size = (int)m_selected_items.size();
+    if (ctx.is_dragging && ImGui::BeginDragDropSource(/*ImGuiDragDropFlags_SourceNoHoldToOpenOthers | */ImGuiDragDropFlags_SourceExtern)) {
+        int size = (int)ctx.selected_items.size();
         assert(size > 0);
-        if (m_selected_items.begin()->has_volume()) {
+        if (ctx.selected_items.begin()->has_volume()) {
             ImGui::Text("Mixing volume(s)");
             ImGui::SetDragDropPayload("MULTI_VOLUMES", &size, sizeof(int));
         }
@@ -478,30 +483,31 @@ void ObjectList::process_dragging_start()
 
 void ObjectList::update_selection_from_scene()
 {
-    const Slic3r::Biz::Scene::Selection& scene_selection = m_scene_interactor->selection();
-    for (const Slic3r::ModelObject* object : m_model->objects) {
+    auto& ctx = selected_project_context();
+    const Biz::Scene::Selection& scene_selection = m_scene_interactor->selection();
+    for (const ModelObject* object : ctx.model->objects) {
         size_t object_id = object->id().id;
 
-        MultiSelectionStorage& inst_ms = m_instances_ms.get_ms<Slic3r::ModelInstancePtrs>(object_id);
+        MultiSelectionStorage& inst_ms = ctx.instances_ms.get_ms<Slic3r::ModelInstancePtrs>(object_id);
         inst_ms.UserData = (void*)&object->instances;
 
-        MultiSelectionStorage& vol_ms = m_volumes_ms.get_ms<Slic3r::ModelVolumePtrs>(object_id);
+        MultiSelectionStorage& vol_ms = ctx.volumes_ms.get_ms<Slic3r::ModelVolumePtrs>(object_id);
         vol_ms.UserData = (void*)&object->volumes;
     }
 
-    std::set<Domain::ElementRef> selectedItems_tmp = std::set<Domain::ElementRef>(scene_selection.elements.begin(), scene_selection.elements.end());
-    if (selectedItems_tmp != m_selected_items) {
+    std::set<Domain::ElementRef> selected_items_tmp = std::set<Domain::ElementRef>(scene_selection.elements.begin(), scene_selection.elements.end());
+    if (selected_items_tmp != ctx.selected_items) {
         clear_all_ms();
         if (scene_selection.mode == Biz::Scene::SelectionMode::Volume) {
             for (const auto& el : scene_selection.elements)
-                m_volumes_ms.at(el.object_id).SetItemSelected(el.volume_id, true);
+                ctx.volumes_ms.at(el.object_id).SetItemSelected(el.volume_id, true);
         }
         else if (scene_selection.mode == Biz::Scene::SelectionMode::Instance) {
             for (const auto& el : scene_selection.elements) {
-                m_instances_ms.at(el.object_id).SetItemSelected(el.instance_id, true);
+                ctx.instances_ms.at(el.object_id).SetItemSelected(el.instance_id, true);
             }
         }
-        m_selected_items = selectedItems_tmp;
+        ctx.selected_items = selected_items_tmp;
     }
 }
 
@@ -526,15 +532,16 @@ bool ObjectList::render_list(Domain::Vec2f size)
 
 void ObjectList::render_header(Domain::Vec2f pos, Domain::Vec2f size)
 {
+    auto& ctx = selected_project_context();
     ImGui::SetCursorPos(ImGui::GetCursorPos() + ImVec2(m_inner_padding.x(), m_inner_padding.y()));
-    bold_text(m_scene_map ? L("Scene map") : L("Objects"));
+    bold_text(ctx.scene_map ? L("Scene map") : L("Objects"));
 
     float btn_width = 2 * ImGui::GetFontSize();
     float btn_pos = size.x() - pos.x() - btn_width;
     ImGui::SameLine(btn_pos);
 
     if (m_mode == Mode::Plater) {
-        toggle_icon_btn(Render::Icon::Details, &m_show_details, "details");
+        toggle_icon_btn(Render::Icon::Details, &ctx.show_details, "details");
         Imgui::item_tooltip("Show object details");
 
         btn_pos -= pos.x() + btn_width;
@@ -546,7 +553,7 @@ void ObjectList::render_header(Domain::Vec2f pos, Domain::Vec2f size)
         Imgui::item_tooltip("Add bed");
     }
     else {
-        toggle_icon_btn(Render::Icon::SceneMap, &m_scene_map, "scene_map");
+        toggle_icon_btn(Render::Icon::SceneMap, &ctx.scene_map, "scene_map");
         Imgui::item_tooltip("Show scene map");
     }
 }
@@ -606,7 +613,7 @@ bool ObjectList::tree_node(const char* str_id, ImGuiTreeNodeFlags flags, const s
     if (add_overrides_marker)
         draw_list->AddText(text_pos, ImGui::GetColorU32(ImGuiCol_Text), icon_str(Render::Icon::OverridesMarker).c_str());
 
-    // revert cursore position
+    // revert cursor position
     ImGui::SetCursorScreenPos(pos_new);
     return is_open;
 }
@@ -631,6 +638,7 @@ static bool selectable(const char* label, bool selected = false, ImGuiSelectable
 
 bool ObjectList::render_config_containers()
 {
+    auto& ctx = selected_project_context();
     bool is_changed_selection = false;
 
     size_t beds_cnt{ 0 };
@@ -648,8 +656,8 @@ bool ObjectList::render_config_containers()
             }
 
             // check bed selection
-            if (m_selected_bed_instance_id != 0) {
-                m_selected_container_id = cc->id().id;
+            if (ctx.selected_bed_instance_id != 0) {
+                ctx.selected_container_id = cc->id().id;
             }
         }        
     }
@@ -691,7 +699,6 @@ void ObjectList::render_all_beds_node()
     DEBUG_ASSERT(total_beds_cnt != 0);
 
     ImVec2 progress_bar_sz(75.f, ImGui::GetFontSize() + 4.f);
-
     if (ImGui::BeginTable("##AllBeds", 2, m_table_flags)) {
         ImGui::TableSetupColumn("##label", ImGuiTableColumnFlags_WidthStretch);
         ImGui::TableSetupColumn("##progress", ImGuiTableColumnFlags_WidthStretch, 0.35f);
@@ -716,6 +723,7 @@ void ObjectList::render_all_beds_node()
 
 bool ObjectList::render_out_of_beds()
 {
+    const auto& ctx = selected_project_context();
     if (m_mode == Mode::Preview ||
         m_scene_interactor->selected_project_unplaced_model_instances().empty())
         return false;
@@ -727,7 +735,7 @@ bool ObjectList::render_out_of_beds()
     BedsTable table;
     if (table.begin(size_t(-1), m_table_flags)) {
         IndentGuard ig(m_inner_padding.x());
-        for (const Slic3r::ModelObject* object : m_model->objects) {
+        for (const ModelObject* object : ctx.model->objects) {
             if (bed_has_object(m_scene_interactor->selected_project_unplaced_model_instances(), object))
                 is_changed_selection |= render_object_node(object);
         }
@@ -738,6 +746,7 @@ bool ObjectList::render_out_of_beds()
 
 void ObjectList::render_drop_target_area()
 {
+    auto& ctx = selected_project_context();
     if (m_mode != Mode::Plater)
         return;
 
@@ -748,7 +757,7 @@ void ObjectList::render_drop_target_area()
         if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("MULTI_INSTANCES")) {
             IM_ASSERT(payload->DataSize == sizeof(int));
             ask_extract_selected_instances();
-            m_selected_items.clear();  // Clear selection after drop
+            ctx.selected_items.clear();  // Clear selection after drop
         }
         ImGui::EndDragDropTarget();
     }
@@ -756,6 +765,7 @@ void ObjectList::render_drop_target_area()
 
 bool ObjectList::render_bed_node(const Domain::BedInstance* bed, size_t config_container_id)
 {
+    auto& ctx = selected_project_context();
     size_t bed_id = bed->id().id;
     bool is_sla_config = m_project_interactor->selected_project().find_config_container(config_container_id)->print_technology() == Domain::PrinterTechnology::SLA;
 
@@ -769,7 +779,7 @@ bool ObjectList::render_bed_node(const Domain::BedInstance* bed, size_t config_c
     const ImVec2 text_size = ImGui::CalcTextSize(name.c_str());
     const ImVec2 padding(5.f, 5.f);
 
-    RowBackground bg(bed->active && m_selected_items.empty());
+    RowBackground bg(bed->active && ctx.selected_items.empty());
     new_row(icon_size.y + 2.f*padding.y);
 
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(padding.y, 0.5f * (icon_size.y - text_size.y) + padding.y));
@@ -778,8 +788,8 @@ bool ObjectList::render_bed_node(const Domain::BedInstance* bed, size_t config_c
 
     bool is_changed_selection = false;
     // check bed selection
-    if (!m_is_dragging && is_imgui_item_just_selected()) {
-        m_selected_bed_instance_id = bed->id().id;
+    if (!ctx.is_dragging && is_imgui_item_just_selected()) {
+        ctx.selected_bed_instance_id = bed->id().id;
         is_changed_selection = true;
     }
 
@@ -789,7 +799,7 @@ bool ObjectList::render_bed_node(const Domain::BedInstance* bed, size_t config_c
 
     if (is_open) {
         bg.set_next();
-        for (const Slic3r::ModelObject* object : m_model->objects) {
+        for (const Slic3r::ModelObject* object : ctx.model->objects) {
             if (bed_has_object(bed->model_instances, object))
                 is_changed_selection |= render_object_node(object, bed, is_sla_config);
         }
@@ -801,12 +811,13 @@ bool ObjectList::render_bed_node(const Domain::BedInstance* bed, size_t config_c
 
 bool ObjectList::render_object_node(const Slic3r::ModelObject* object, const Domain::BedInstance* bed /*= nullptr*/, bool is_sla_config /*= false*/)
 {
+    auto& ctx = selected_project_context();
     size_t object_id = object->id().id;
     Domain::ElementRef sel_element{ object_id };
 
     bool is_selected = is_whole_object_selected(object, m_scene_interactor->selection());
-    if (m_edited_node_id == object_id && !is_selected)
-        m_edited_node_id = 0;  // Exit edit mode
+    if (ctx.edited_node_id == object_id && !is_selected)
+        ctx.edited_node_id = 0;  // Exit edit mode
 
     ImGuiTreeNodeFlags flags = m_node_flags;
     if (is_selected)
@@ -821,7 +832,7 @@ bool ObjectList::render_object_node(const Slic3r::ModelObject* object, const Dom
     new_row();
 
     bool isOpen = false;
-    if (m_edited_node_id == object_id && is_selected) {
+    if (ctx.edited_node_id == object_id && is_selected) {
         isOpen = tree_node(name_id.c_str(), flags | ImGuiTreeNodeFlags_AllowOverlap, icon_str(Render::Icon::ObjectIcon), has_overrides(object, is_sla_config));
         render_edited(name.c_str(), { object_id });
     }
@@ -831,12 +842,12 @@ bool ObjectList::render_object_node(const Slic3r::ModelObject* object, const Dom
     bool is_changed_selection = handle_selection(sel_element);
     if (is_changed_selection) {
         force_select_whole_object(object);
-        m_volumes_ms.clear_all();
+        ctx.volumes_ms.clear_all();
         if (ImGui::GetIO().KeyCtrl)
-            m_instances_ms.at(object_id).Clear();
+            ctx.instances_ms.at(object_id).Clear();
         else
-            m_instances_ms.clear_all();
-        m_edited_node_id = object_id;
+            ctx.instances_ms.clear_all();
+        ctx.edited_node_id = object_id;
     }
 
     handle_dragging(sel_element);
@@ -850,7 +861,7 @@ bool ObjectList::render_object_node(const Slic3r::ModelObject* object, const Dom
         is_changed_selection |= render_connectors_node(object, bed ? bed->id().id : 0);
         is_changed_selection |= render_volumes(object, bed ? bed->id().id : 0, is_sla_config);
         is_changed_selection |= render_instances_node(object, bed);
-        if (m_show_details)
+        if (ctx.show_details)
             render_infos_node(object, is_sla_config);
 
         ImGui::TreePop();
@@ -864,6 +875,7 @@ bool ObjectList::render_connectors_node(const Slic3r::ModelObject* object, size_
     if (!object->is_cut() || object->volumes.size() == 1)
         return false;
 
+    auto& ctx = selected_project_context();
     size_t object_id = object->id().id;
     size_t instance_id = object->instances[0]->id().id;
     const std::string name_id = "##connectors_id" + std::to_string(bed_id) + std::to_string(object_id);
@@ -877,13 +889,13 @@ bool ObjectList::render_connectors_node(const Slic3r::ModelObject* object, size_
     if (handle_selection({ object_id, instance_id })) {
         clear_all_ms();
 
-        std::set<Domain::ElementRef> selectedItems_tmp;
+        std::set<Domain::ElementRef> selected_items_tmp;
         for (const Slic3r::ModelVolume* volume : object->volumes) {
             if (volume->is_cut_connector())
-                selectedItems_tmp.insert({ object_id, instance_id, volume->id().id });
+                selected_items_tmp.insert(Domain::ElementRef{ object_id, instance_id, volume->id().id });
         }
-        if (m_selected_items != selectedItems_tmp) {
-            m_selected_items = selectedItems_tmp;
+        if (ctx.selected_items != selected_items_tmp) {
+            ctx.selected_items = selected_items_tmp;
             return true;
         }
     }
@@ -893,6 +905,7 @@ bool ObjectList::render_connectors_node(const Slic3r::ModelObject* object, size_
 
 bool ObjectList::render_volumes(const Slic3r::ModelObject* object, size_t bed_id, bool is_sla_config)
 {
+    auto& ctx = selected_project_context();
     if (visible_volumes_count(object) < 2)
         return false;
 
@@ -905,7 +918,7 @@ bool ObjectList::render_volumes(const Slic3r::ModelObject* object, size_t bed_id
     bool is_open = tree_node(name_id.c_str(), m_node_flags, "Volumes");
 
     const Slic3r::ModelVolumePtrs& volumes = object->volumes;
-    MultiSelectionStorage& ms = m_volumes_ms.at(object_id);
+    MultiSelectionStorage& ms = ctx.volumes_ms.at(object_id);
 
     if (is_open) {
         ImGui::PushID(&ms);  // Ensure unique ID
@@ -929,18 +942,18 @@ bool ObjectList::render_volumes(const Slic3r::ModelObject* object, size_t bed_id
     }
     // update selection
     if (ms.is_changed) {
-        m_instances_ms.clear_all();
-        m_volumes_ms.clear_except(object_id);
+        ctx.instances_ms.clear_all();
+        ctx.volumes_ms.clear_except(object_id);
 
-        std::set<Domain::ElementRef> selectedItems_tmp;
+        std::set<Domain::ElementRef> selected_items_tmp;
         for (const Slic3r::ModelVolume* volume : volumes) {
             size_t volume_id = volume->id().id;
             if (ms.Contains((ImGuiID)volume_id))
-                selectedItems_tmp.insert({ object_id, instance_id, volume_id });
+                selected_items_tmp.insert(Domain::ElementRef{ object_id, instance_id, volume_id });
         }
 
-        if (m_selected_items != selectedItems_tmp) {
-            m_selected_items = selectedItems_tmp;
+        if (ctx.selected_items != selected_items_tmp) {
+            ctx.selected_items = selected_items_tmp;
             return true;
         }
     }
@@ -951,20 +964,21 @@ bool ObjectList::render_volumes(const Slic3r::ModelObject* object, size_t bed_id
 // render edited item as an input text and propagate new name to scene_interactor
 void ObjectList::render_volume_node(const Slic3r::ModelVolume* volume, const Domain::ElementRef& sel_element, bool is_selected, bool is_sla_config)
 {
+    auto& ctx = selected_project_context();
     std::string volume_name = (volume->name.empty() ? "Volume " + std::to_string(volume->id().id) : volume->name);
     size_t volume_id = volume->id().id;
 
-    if (m_edited_node_id == volume_id && !is_selected)
-        m_edited_node_id = 0;  // Exit edit mode
+    if (ctx.edited_node_id == volume_id && !is_selected)
+        ctx.edited_node_id = 0;  // Exit edit mode
 
     NewRowWithSelectable row;
     ImVec2 pos = ImGui::GetCursorScreenPos();
     bool has_config_overrides = !volume->config.empty();
     bool has_extruder_overrides = !is_sla_config && has_config_overrides && volume->config.has("extruder");
 
-    if (m_edited_node_id == volume_id) {
+    if (ctx.edited_node_id == volume_id) {
         if (selectable(icon_str(volume).c_str(), is_selected, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowItemOverlap, has_config_overrides)) {
-            m_edited_node_id = 0;// Discard edit mode on selection
+            ctx.edited_node_id = 0;// Discard edit mode on selection
         }
         render_edited(volume_name.c_str(), sel_element);
 
@@ -976,7 +990,7 @@ void ObjectList::render_volume_node(const Slic3r::ModelVolume* volume, const Dom
     else {
         // Display as a selectable label
         if (selectable((icon_str(volume) + volume_name).c_str(), is_selected, ImGuiSelectableFlags_SpanAllColumns, has_config_overrides))
-            m_edited_node_id = volume_id;  // Start edit mode on selection
+            ctx.edited_node_id = volume_id;  // Start edit mode on selection
     }
 
     const ImVec2 size = ImGui::CalcTextSize(icon_str(volume).c_str());
@@ -995,10 +1009,11 @@ bool ObjectList::render_instances_node(const Slic3r::ModelObject* object, const 
     if (instances_on_bed.empty())
         return false;
 
+    auto& ctx = selected_project_context();
     size_t object_id = object->id().id;
     Domain::ElementRef sel_element{ object_id };
 
-    MultiSelectionStorage& ms = m_instances_ms.at(object_id);
+    MultiSelectionStorage& ms = ctx.instances_ms.at(object_id);
 
     const std::string name_id = "Instances##obj_id" + std::to_string(object_id);
 
@@ -1008,11 +1023,11 @@ bool ObjectList::render_instances_node(const Slic3r::ModelObject* object, const 
     bool is_changed_selection = handle_selection(sel_element);
     if (is_changed_selection) {
         force_select_whole_object(object);
-        m_volumes_ms.clear_all();
+        ctx.volumes_ms.clear_all();
         if (ImGui::GetIO().KeyCtrl)
             ms.Clear();
         else
-            m_instances_ms.clear_all();
+            ctx.instances_ms.clear_all();
     }
 
     handle_dragging(sel_element);
@@ -1027,10 +1042,11 @@ bool ObjectList::render_instances_node(const Slic3r::ModelObject* object, const 
 
 bool ObjectList::render_instances(const Slic3r::ModelObject* object, const std::set<size_t>& instances_on_bed)
 {
-    const Slic3r::ModelInstancePtrs& instances = object->instances;
+    auto& ctx = selected_project_context();
+    const ModelInstancePtrs& instances = object->instances;
     size_t object_id = object->id().id;
 
-    MultiSelectionStorage& ms = m_instances_ms.at(object_id);
+    MultiSelectionStorage& ms = ctx.instances_ms.at(object_id);
     ImGui::PushID(&ms);
     ImGuiMultiSelectIO* ms_inst_io = ImGui::BeginMultiSelect(m_multi_selection_flags, ms.Size, instances_on_bed.size());
     ms.ApplyRequests(ms_inst_io);
@@ -1048,11 +1064,11 @@ bool ObjectList::render_instances(const Slic3r::ModelObject* object, const std::
     // update selection
     bool is_changed_selection = false;
     if (ms.is_changed) {
-        m_volumes_ms.clear_all();
+        ctx.volumes_ms.clear_all();
 
         if (!ImGui::GetIO().KeyCtrl) {
-            m_instances_ms.clear_except(object_id);
-            m_selected_items.clear();
+            ctx.instances_ms.clear_except(object_id);
+            ctx.selected_items.clear();
         }
 
         for (const Slic3r::ModelInstance* instance : instances) {
@@ -1060,13 +1076,13 @@ bool ObjectList::render_instances(const Slic3r::ModelObject* object, const std::
             if (instances_on_bed.count(instance_id)) {
                 Domain::ElementRef sel_element{ object_id, instance->id().id };
 
-                if (ms.Contains((ImGuiID)instance_id) && !m_selected_items.count(sel_element)) {
+                if (ms.Contains((ImGuiID)instance_id) && !ctx.selected_items.count(sel_element)) {
                     is_changed_selection = true;
-                    m_selected_items.insert(sel_element);
+                    ctx.selected_items.insert(sel_element);
                 }
-                else if (!ms.Contains((ImGuiID)instance_id) && m_selected_items.count(sel_element)) {
+                else if (!ms.Contains((ImGuiID)instance_id) && ctx.selected_items.count(sel_element)) {
                     is_changed_selection = true;
-                    m_selected_items.erase(sel_element);
+                    ctx.selected_items.erase(sel_element);
                 }
             }
         }
@@ -1122,7 +1138,8 @@ void ObjectList::render_edited(const char* init_name, const Domain::ElementRef& 
     // Editable text box
     if (ImGui::InputText("##edit", buffer, sizeof(buffer), ImGuiInputTextFlags_EnterReturnsTrue)) {
         propagate_name_editing(sel_element, buffer);  // Save edited name
-        m_edited_node_id = 0;  // Exit edit mode
+        auto& ctx = selected_project_context();
+        ctx.edited_node_id = 0;  // Exit edit mode
     }
     //save hovered state for InputText => will be used in tree_node rendering
     m_is_edit_name_input_hovered = ImGui::IsItemHovered();
@@ -1180,7 +1197,7 @@ void ObjectList::render_extruder_marker(size_t extruder_id, const std::vector<st
 
 void ObjectList::render_slicing_state_marker(size_t bed_instance_id)
 {
-    const std::optional<Biz::Slicing::Status> status{ 
+    const std::optional<Biz::Slicing::Status> status{
         m_project_interactor->status_cache().get_status({ m_project_interactor->selected_project_id(), bed_instance_id }) };
     if (!status || status == Biz::Slicing::Status::Empty)
         return;
@@ -1235,25 +1252,28 @@ void ObjectList::render_infos_selectable(const std::set<Render::Icon>& infos, co
 
 void ObjectList::clear_all_ms()
 {
-    m_instances_ms.clear_all();
-    m_volumes_ms.clear_all();
+    auto& ctx = selected_project_context();
+    ctx.instances_ms.clear_all();
+    ctx.volumes_ms.clear_all();
 }
 
 void ObjectList::invalidate_bed_selection()
 {
-    m_selected_container_id = 0;
-    m_selected_bed_instance_id = 0;
+    auto& ctx = selected_project_context();
+    ctx.selected_container_id = 0;
+    ctx.selected_bed_instance_id = 0;
 }
 
 void ObjectList::propagate_selection()
 {
-    if (m_selected_bed_instance_id != 0) {
-        m_scene_interactor->select_bed_instance({ m_selected_container_id, m_selected_bed_instance_id });
+    const auto& ctx = selected_project_context();
+    if (ctx.selected_bed_instance_id != 0) {
+        m_scene_interactor->select_bed_instance({ ctx.selected_container_id, ctx.selected_bed_instance_id });
         return;
     }
 
     Biz::Scene::Selection sels;
-    sels.elements = std::vector<Domain::ElementRef>(m_selected_items.begin(), m_selected_items.end());
+    sels.elements = std::vector<Domain::ElementRef>(ctx.selected_items.begin(), ctx.selected_items.end());
     sels.normalize();
     m_scene_interactor->set_selection(sels);
 }
@@ -1341,5 +1361,16 @@ void ObjectList::render_sliced_info(float height)
 
     ImGui::EndChild();
 }
+
+ObjectList::ProjectContext& ObjectList::selected_project_context()
+{
+    return m_project_contexts->selected();
+}
+
+const ObjectList::ProjectContext& ObjectList::selected_project_context() const
+{
+    return m_project_contexts->selected();
+}
+
 
 }// Slic3r::App namespace

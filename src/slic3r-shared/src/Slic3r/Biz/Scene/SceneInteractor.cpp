@@ -118,10 +118,23 @@ void SceneInteractor::set_selection(const Selection& selection)
 {
     const auto it = m_projects.find(m_selected_project_id);
     ASSERT(it != m_projects.end());
-    DEBUG_ASSERT(selection.is_valid());
-    it->second.selection = selection;
+    auto& project_context = it->second;
+    Selection sel{.mode = selection.mode};
+    for (const auto& e : selection.elements) {
+        if (e.has_instance()) {
+            sel.elements.push_back(e);
+            continue;
+        }
+        const auto* obj = project_context.project.find_object_by_id(e.object_id);
+        ASSERT(obj != nullptr);
+        for (const auto& inst : obj->instances)
+            sel.elements.push_back({e.object_id, inst->id().id});
+    }
+
+    DEBUG_ASSERT(sel.is_valid());
+    project_context.selection = sel;
     invoke_listeners<ISceneSelectionChangedListener>([&](auto* l){
-        l->on_scene_selection_changed(m_selected_project_id, selection);
+        l->on_scene_selection_changed(m_selected_project_id, sel);
     });
 }
 

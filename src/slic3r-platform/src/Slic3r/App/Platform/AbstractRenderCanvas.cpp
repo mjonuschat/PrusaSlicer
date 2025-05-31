@@ -238,7 +238,7 @@ void AbstractRenderCanvas::emit_enqueued_events()
 
 void AbstractRenderCanvas::request_render()
 {
-    m_render_request_count += 2;
+    m_render_request_count = std::max<size_t>(m_render_request_count, 2);
     on_render_requested();
 }
 

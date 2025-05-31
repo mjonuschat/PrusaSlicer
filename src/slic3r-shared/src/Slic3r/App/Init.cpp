@@ -1,6 +1,7 @@
 #include "Slic3r/App/Init.hpp"
 
 #include <boost/filesystem/path.hpp>
+#include <boost/nowide/filesystem.hpp>
 #include <boost/dll/runtime_symbol_info.hpp>
 #include <libslic3r/Utils.hpp>
 #include <libslic3r/Utils/DirectoriesUtils.hpp>
@@ -12,6 +13,8 @@ void init_paths()
 #ifdef __EMSCRIPTEN__
     boost::filesystem::path path_resources = "/resources";
 #else
+    boost::nowide::nowide_filesystem();
+
     // See Invoking prusa-slicer from $PATH environment variable crashes #5542
     // boost::filesystem::path path_to_binary = boost::filesystem::system_complete(argv[0]);
     boost::filesystem::path path_to_binary = boost::dll::program_location();

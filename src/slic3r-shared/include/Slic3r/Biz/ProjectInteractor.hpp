@@ -70,6 +70,8 @@ public:
         m_app_instance_message_handler->add_listener<AppInstance::IAppInstanceMessageContentListener>(this);
     }
 
+    const Domain::Workbench& workbench() const { return m_workbench; }
+
     /**
      * @name Project manipulation
      * @{

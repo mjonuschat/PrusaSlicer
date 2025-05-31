@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Slic3r/Biz/ProjectScoped.hpp"
 #include "Slic3r/App/Yoga/Window.hpp"
 #include "Slic3r/App/Render/ImguiTypes.hpp"
 #include "MultiSelections.hpp"
@@ -99,22 +100,34 @@ private:
     void render_scene_map(Domain::Vec2f size);
     void render_sliced_info(float height);
 
+    struct ProjectContext;
+    ProjectContext& selected_project_context();
+    const ProjectContext& selected_project_context() const;
+
 private:
-    Mode                            m_mode              { Mode::Plater };
+    struct ProjectContext
+    {
+        const Model*                    model             { nullptr };
+        MultiSelections                 instances_ms;
+        MultiSelections                 volumes_ms;
+        size_t                          edited_node_id              { 0 };
+        bool                            show_details                { false };
+        bool                            scene_map                   { false };
+
+        bool                            is_dragging                 { false };
+        std::set<Domain::ElementRef>    selected_items;  // Track selected item IDs
+        size_t                          selected_container_id       { 0 };
+        size_t                          selected_bed_instance_id    { 0 };
+
+    };
+    using ProjectContexts = Biz::ProjectScoped<ProjectContext>;
+    using ProjectContextsPtr = std::unique_ptr<ProjectContexts>;
+
     Biz::ProjectInteractor*         m_project_interactor{ nullptr };
     Biz::Scene::SceneInteractor*    m_scene_interactor  { nullptr };
-    const Slic3r::Model*            m_model             { nullptr };
+    Mode                            m_mode              { Mode::Plater };
+    ProjectContextsPtr              m_project_contexts;
 
-    MultiSelections                 m_instances_ms;
-    MultiSelections                 m_volumes_ms;
-    size_t                          m_edited_node_id              { 0 };
-    bool                            m_show_details                { false };
-    bool                            m_scene_map                   { false };
-
-    bool                            m_is_dragging                 { false };
-    std::set<Domain::ElementRef>    m_selected_items;  // Track selected item IDs
-    size_t                          m_selected_container_id       { 0 };
-    size_t                          m_selected_bed_instance_id    { 0 };
     bool                            m_is_edit_name_input_hovered  { false };
 
     Domain::Vec2f                   m_inner_padding;
