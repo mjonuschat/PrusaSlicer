@@ -2,7 +2,6 @@
 #include "Slic3r/App/Yoga/Text.hpp"
 #include "Slic3r/App/Yoga/PrinterSettingsButton.hpp"
 #include "Slic3r/App/Yoga/MaterialSettingsButton.hpp"
-#include "Slic3r/App/Imgui/ImguiExtension.hpp"
 
 #include <imgui/imgui_internal.h>
 
@@ -10,7 +9,7 @@ namespace Slic3r::App {
 
 SidebarBed::SidebarBed() : Window("sidebar_bed")
 {
-    set_min_size({ 240, 60 });
+    set_min_size({240, 60});
     set_orientation(Yoga::Orientation::Vertical);
     set_gap(10);
 
@@ -31,27 +30,16 @@ SidebarBed::SidebarBed() : Window("sidebar_bed")
         // ToDo open some other settings dialog
     };
 
-    Item* materials_wrapper = emplace_back<Yoga::Item>();
-    materials_wrapper->set_orientation(Yoga::Orientation::Vertical); 
-    materials_wrapper->set_gap(5);
-
-    // just for test
-    for (auto [color, name, nozzle] : std::initializer_list<std::tuple<ImColor, std::string, float>>{
-        {{250, 100, 24 }, "Prusament PLA" , 0.6f},
-        {{189, 1,   60 }, "Filamentum PLA", 0.4f},
-        {{112, 193, 64 }, "Prusament PETG", 0.4f},
-        {{225, 249, 104}, "Filamentum PLA", 0.6f},
-    }) {
-        Yoga::MaterialSettingsButton* filament = materials_wrapper->emplace_back<Yoga::MaterialSettingsButton>(m_filaments.size()+1, "Filament 1 TT");
-        filament->set_color(color);
-        filament->set_material_name(name);
-        filament->set_nozzle(nozzle);
-        filament->callbacks().action = []() {
-            // ToDo open first settings dialog
-        };
-
-        m_filaments.push_back(filament);
-    }
+    m_observable_list.reset(
+        {{ImColor{250, 100, 24}, "Prusament PLA", 0.6f},
+         {ImColor{189, 1, 60}, "Filamentum PLA", 0.4f},
+         {ImColor{112, 193, 64}, "Prusament PETG", 0.4f},
+         {ImColor{225, 249, 104}, "Filamentum PLA", 0.6f}}
+    );
+    m_list_view = emplace_back<MaterialListView>();
+    m_list_view->set_source_list(&m_observable_list);
+    m_list_view->set_orientation(Yoga::Orientation::Vertical);
+    m_list_view->set_gap(5);
 }
 
 } // namespace Slic3r::App

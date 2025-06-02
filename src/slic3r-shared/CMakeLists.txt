@@ -69,6 +69,7 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/IDialogManager.hpp
         src/Slic3r/App/BedStore.cpp
         include/Slic3r/App/BedStore.hpp
+        include/Slic3r/App/MaterialState.hpp
 
         src/Slic3r/App/Scene/Scene.cpp
         include/Slic3r/App/Scene/Scene.hpp
@@ -206,6 +207,7 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Yoga/MaterialSettingsButton.hpp
         include/Slic3r/App/Yoga/ButtonGroup.hpp
         src/Slic3r/App/Yoga/ButtonGroup.cpp
+	include/Slic3r/App/Yoga/ListView.hpp
 
         src/Slic3r/App/Imgui/DoubleSlider.cpp
         include/Slic3r/App/Imgui/DoubleSlider.hpp
@@ -249,6 +251,10 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/ObservableDynamicPrintConfig.hpp
         include/Slic3r/Biz/Observable.hpp
         include/Slic3r/Biz/Plater/ConfigViewModel.hpp
+        include/Slic3r/Biz/IObservableList.hpp
+        include/Slic3r/Biz/ObservableList.hpp
+        include/Slic3r/Biz/IListObserver.hpp
+        include/Slic3r/Biz/DataObserver.hpp
 
         include/Slic3r/Biz/Scene/SceneInteractor.hpp
         src/Slic3r/Biz/Scene/SceneInteractor.cpp
@@ -581,6 +587,7 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
         test/Slic3r/App/Scene/Node.cpp
         test/Slic3r/App/Scene/Ray.cpp
 
+        test/Slic3r/App/Yoga/ListViewTests.cpp
         test/Slic3r/App/Yoga/LayoutTests.cpp
         test/Slic3r/App/Yoga/ItemTreeTests.cpp
         test/Slic3r/App/Yoga/ImGuiFixture.hpp
