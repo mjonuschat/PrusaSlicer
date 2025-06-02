@@ -497,10 +497,10 @@ void SimplifyGizmo::worker_finished()
     if (!result.empty())
         update_model(result);
 
-    //if (m_state.config != m_configuration || m_state.volume_ids != m_volume_ids) {
-    //    // Settings were changed, restart the worker immediately.
-    //    process();
-    //}
+    if (m_state.config != m_configuration || m_state.volume_ids != m_volume_ids) {
+        // Settings were changed, restart the worker immediately.
+        process();
+    }
 }
 
 void SimplifyGizmo::create_mesh_name() {
