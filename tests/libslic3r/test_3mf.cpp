@@ -1,13 +1,14 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "libslic3r/Model.hpp"
-#include "libslic3r/Format/3mf.hpp"
 #include "libslic3r/Format/STL.hpp"
 
 #include <boost/filesystem/operations.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
 #include "Slic3r/Domain/OnBeds.hpp"
+#include "Slic3r/Biz/Config/3mf_legacy.hpp"
+#include "Slic3r/Domain/ConfigPack.hpp"
 
 using namespace Slic3r;
 using Domain::Transformation;
@@ -17,12 +18,12 @@ SCENARIO("Reading 3mf file", "[3mf]") {
         Model model;
         WHEN("3mf model is read") {
         	std::string path = std::string(TEST_DATA_DIR) + "/test_3mf/Geräte/Büchse.3mf";
-        	DynamicPrintConfig config;
+        	Domain::ConfigPack config;
             ConfigSubstitutionContext ctxt{ ForwardCompatibilitySubstitutionRule::Disable };
             boost::optional<Semver> version;
             Domain::WipeTowersOnBeds wipe_towers;
             Domain::CustomGCodesOnBeds custom_gcodes;
-            bool ret = load_3mf(path.c_str(), config, ctxt, &model, false, version, wipe_towers, custom_gcodes);
+            bool ret = Slic3rLegacy::load_3mf_legacy(path.c_str(), config, &model, false, version, wipe_towers, custom_gcodes);
             THEN("load should succeed") {
                 REQUIRE(ret);
             }
@@ -76,19 +77,18 @@ SCENARIO("Export+Import geometry to/from 3mf file cycle", "[3mf]") {
                 }}
             };
 
-            DynamicPrintConfig config;
-            config.set("color_change_gcode", "ROUNDTRIP", true);
-            store_3mf(test_file.c_str(), &src_model, &config, false, src_wipe_towers, src_custom_gcodes);
+            Domain::ConfigPack config;
+            Slic3rLegacy::store_3mf_legacy(test_file.c_str(), &src_model, config, false, src_wipe_towers, src_custom_gcodes);
 
             // load back the model from the 3mf file
             Model dst_model;
-            DynamicPrintConfig dst_config;
+            Domain::ConfigPack dst_config;
             Domain::WipeTowersOnBeds dst_wipe_towers;
             Domain::CustomGCodesOnBeds dst_custom_gcodes;
             {
                 ConfigSubstitutionContext ctxt{ ForwardCompatibilitySubstitutionRule::Disable };
                 boost::optional<Semver> version;
-                load_3mf(test_file.c_str(), dst_config, ctxt, &dst_model, false, version, dst_wipe_towers, dst_custom_gcodes);
+                Slic3rLegacy::load_3mf_legacy(test_file.c_str(), dst_config, &dst_model, false, version, dst_wipe_towers, dst_custom_gcodes);
             }
             boost::filesystem::remove(test_file);
 

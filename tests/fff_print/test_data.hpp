@@ -3,7 +3,6 @@
 
 #include "libslic3r/Config.hpp"
 #include "libslic3r/ConfigPackFDMUtils.hpp"
-#include "libslic3r/Format/3mf.hpp"
 #include "libslic3r/GCode/ModelVisibility.hpp"
 #include "libslic3r/GCode/SeamGeometry.hpp"
 #include "libslic3r/GCode/SeamPerimeters.hpp"

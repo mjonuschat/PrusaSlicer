@@ -258,7 +258,12 @@ void init_print(std::vector<TriangleMesh> &&meshes, Slic3r::Print &print, Slic3r
     double distance = min_object_distance(config.get_view());
     arr2::ArrangeSettings arrange_settings{};
     arrange_settings.set_distance_from_objects(distance);
-    arr2::ArrangeBed bed{arr2::to_arrange_bed(get_bed_shape(config.get_view()), Vec2crd{0, 0})};
+
+    auto pts = config.get_view().get<std::vector<Vec2d>>("bed_shape");
+    Points pts_scaled(pts.size());
+    std::transform(pts.cbegin(), pts.cend(), pts_scaled.begin(), [](const Vec2d& pt) { return scaled(pt); });
+
+    arr2::ArrangeBed bed{arr2::to_arrange_bed(pts_scaled, Vec2crd{0, 0})};
     if (duplicate_count > 1) {
         duplicate(model, duplicate_count, bed, arrange_settings);
     }

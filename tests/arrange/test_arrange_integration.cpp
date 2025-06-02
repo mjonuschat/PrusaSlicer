@@ -16,7 +16,9 @@
 
 #include "libslic3r/Model.hpp"
 #include "libslic3r/Geometry/ConvexHull.hpp"
-#include "libslic3r/Format/3mf.hpp"
+#include "Slic3r/Biz/Config/3mf_legacy.hpp"
+#include "Slic3r/Biz/Config/ConfigLegacy.hpp"
+
 
 using namespace Catch;
 using Slic3r::Biz::Algorithms::BoundingBox::center;
@@ -108,6 +110,16 @@ static Slic3r::Model get_example_model_with_arranged_primitives()
 
     return model;
 }
+
+static Slic3r::Points configpack_to_bed_points(const Slic3r::Domain::ConfigPackFDM& pack)
+{
+    using namespace Slic3r::Domain;
+    auto pts = pack.printer.opt("bed_shape").get<std::vector<Vec2d>>();
+    Points pts_scaled(pts.size());
+    std::transform(pts.cbegin(), pts.cend(), pts_scaled.begin(), [](const Vec2d& pt) { return Slic3r::scaled(pt); });
+    return pts_scaled;
+}
+
 
 
 class RandomArrangeSettings: public Slic3r::arr2::ArrangeSettingsView {
@@ -634,12 +646,8 @@ TEMPLATE_TEST_CASE("Bed needs to be completely filled with 1cm cubes",
 
     std::string basepath = TEST_DATA_DIR PATH_SEPARATOR;
 
-    DynamicPrintConfig cfg;
-    cfg.load_from_ini(basepath + "default_fff.ini",
-                      ForwardCompatibilitySubstitutionRule::Enable);
-    cfg.set_key_value("bed_shape",
-                      new ConfigOptionPoints(
-                          {{0., 0.}, {100., 0.}, {100., 100.}, {0, 100.}}));
+    auto cfg = std::get<Domain::ConfigPackFDM>(Biz::load_config_from_legacy_file(basepath + "default_fff.ini"));
+    cfg.printer.opt("bed_shape").set<std::vector<Vec2d>>({{0., 0.}, {100., 0.}, {100., 100.}, {0, 100.}});
 
     Model m;
 
@@ -650,7 +658,7 @@ TEMPLATE_TEST_CASE("Bed needs to be completely filled with 1cm cubes",
     ModelVolume* new_volume = new_object->add_volume(mesh);
     new_volume->name = new_object->name;
 
-    store_3mf("fillbed_10mm.3mf", &m, &cfg, false, {}, {});
+    Slic3rLegacy::store_3mf_legacy("fillbed_10mm.3mf", &m, cfg, false, {}, {});
 
     arr2::ArrangeSettings settings;
     settings.values().d_obj = 0.;
@@ -666,16 +674,14 @@ TEMPLATE_TEST_CASE("Bed needs to be completely filled with 1cm cubes",
                                  .set_arrange_settings(settings)
                                  .set_selection(&sel)
                                  .set_bed_constraints(std::move(constraints))
-                                 .set_bed(cfg, scaled(Vec2d(10, 10)))};
+                                 .set_bed(configpack_to_bed_points(cfg), scaled(Vec2d(10, 10)))};
 
     auto task = arr2::FillBedTask<ArrItem>::create(scene);
     auto result = task->process_native(arr2::DummyCtl{});
     result->apply_on(scene.model());
 
-    store_3mf("fillbed_10mm_result.3mf", &m, &cfg, false, {}, {});
-
-    Points bedpts = get_bed_shape(cfg);
-    arr2::ArrangeBed bed = arr2::to_arrange_bed(bedpts, scaled(Vec2d(10, 10)));
+    Slic3rLegacy::store_3mf_legacy("fillbed_10mm_result.3mf", &m, cfg, false, {}, {});
+    arr2::ArrangeBed bed = arr2::to_arrange_bed(configpack_to_bed_points(cfg), scaled(Vec2d(10, 10)));
 
     REQUIRE(bed.which() == 1); // Rectangle bed
 
@@ -817,10 +823,8 @@ TEST_CASE("Testing arrangement involving virtual beds", "[arrange2][integration]
     using namespace Slic3r;
 
     Model model = get_example_model_with_arranged_primitives();
-    DynamicPrintConfig cfg;
-    cfg.load_from_ini(std::string(TEST_DATA_DIR PATH_SEPARATOR) + "default_fff.ini",
-                      ForwardCompatibilitySubstitutionRule::Enable);
-    auto bed = arr2::to_arrange_bed(get_bed_shape(cfg), scaled(Vec2d(10, 10)));
+    auto cfg = std::get<Domain::ConfigPackFDM>(Biz::load_config_from_legacy_file(std::string(TEST_DATA_DIR PATH_SEPARATOR) + "default_fff.ini"));
+    auto bed = arr2::to_arrange_bed(configpack_to_bed_points(cfg), scaled(Vec2d(10, 10)));
     auto bedbb = bounding_box(bed);
     auto bedsz = unscaled(bedbb.size());
 
@@ -836,7 +840,7 @@ TEST_CASE("Testing arrangement involving virtual beds", "[arrange2][integration]
     arr2::Scene scene{arr2::SceneBuilder{}
                           .set_model(model)
                           .set_arrange_settings(settings)
-                          .set_bed(cfg, scaled(Vec2d(10, 10)))};
+                          .set_bed(configpack_to_bed_points(cfg), scaled(Vec2d(10, 10)))};
 
     auto itm_conv = arr2::ArrangeableToItemConverter<arr2::ArrangeItem>::create(scene);
 
@@ -876,7 +880,7 @@ TEST_CASE("Testing arrangement involving virtual beds", "[arrange2][integration]
 
     bool applied = result->apply_on(scene.model());
     REQUIRE(applied);
-    store_3mf("vbed_test_result.3mf", &model, &cfg, false, {}, {});
+    Slic3rLegacy::store_3mf_legacy("vbed_test_result.3mf", &model, std::nullopt, false, {}, {});
 
     REQUIRE(std::all_of(task->printable.selected.begin(), task->printable.selected.end(),
                         [&bed](auto &item) { return bounding_box(bed).contains(arr2::envelope_bounding_box(item)); }));
@@ -993,15 +997,13 @@ TEST_CASE("Test SceneBuilder", "[arrange2][integration]")
     {
         std::string basepath = TEST_DATA_DIR PATH_SEPARATOR;
 
-        DynamicPrintConfig cfg;
-        cfg.load_from_ini(basepath + "default_fff.ini",
-                          ForwardCompatibilitySubstitutionRule::Enable);
+        auto cfg = std::get<Domain::ConfigPackFDM>(Biz::load_config_from_legacy_file(basepath + "default_fff.ini"));
 
         WHEN("a scene is built with a bed initialized from this DynamicPrintConfig")
         {
-            arr2::Scene scene(arr2::SceneBuilder{}.set_bed(cfg, scaled(Vec2d(10, 10))));
+            arr2::Scene scene(arr2::SceneBuilder{}.set_bed(configpack_to_bed_points(cfg), scaled(Vec2d(10, 10))));
 
-            auto bedbb = bounding_box(get_bed_shape(cfg));
+            auto bedbb = bounding_box(configpack_to_bed_points(cfg));
 
             THEN("the bed should be a rectangular bed with the same dimensions as the bed points")
             {
@@ -1061,7 +1063,7 @@ TEST_CASE("Testing duplicate function to really duplicate the whole Model",
 
     Model model = get_example_model_with_arranged_primitives();
 
-    store_3mf("dupl_example.3mf", &model, nullptr, false, {}, {});
+    Slic3rLegacy::store_3mf_legacy("dupl_example.3mf", &model, std::nullopt, false, {}, {});
 
     size_t instcnt = arr2::model_instance_count(model);
 
@@ -1084,7 +1086,7 @@ TEST_CASE("Testing duplicate function to really duplicate the whole Model",
     bool applied = result->apply_on(scene.model());
     if (applied) {
         dup_model.apply_duplicates();
-        store_3mf("dupl_example_result.3mf", &model, nullptr, false, {}, {});
+        Slic3rLegacy::store_3mf_legacy("dupl_example_result.3mf", &model, std::nullopt, false, {}, {});
         REQUIRE(applied);
     }
 

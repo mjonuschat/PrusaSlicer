@@ -7,7 +7,6 @@
 #include <boost/optional.hpp>
 
 #include "Slic3r/Biz/Config/3mf_legacy.hpp"
-#include "libslic3r/Format/3mf.hpp"
 #include "libslic3r/Model.hpp"
 #include "libslic3r/Config.hpp"
 #include "Slic3r/Domain/ConfigPack.hpp"

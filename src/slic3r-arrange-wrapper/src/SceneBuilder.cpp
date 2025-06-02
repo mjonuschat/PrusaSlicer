@@ -198,7 +198,10 @@ void SceneBuilder::build_scene(Scene &sc) &&
 
     if (m_fff_print && !m_sla_print) {
         if (is_infinite_bed(m_bed)) {
-            set_bed(*m_fff_print, Vec2crd::Zero());
+            const auto pts = m_fff_print->config().get<std::vector<Vec2d>>("bed_shape");
+            Points pts_scaled(pts.size());
+            std::transform(pts.cbegin(), pts.cend(), pts_scaled.begin(), [](const Vec2d& pt) -> Point { return scaled(pt);});
+            set_bed(pts_scaled, is_XL_printer(m_fff_print->config()), Vec2crd::Zero());
         } else {
             set_brim_and_skirt();
         }
@@ -464,24 +467,10 @@ SceneBuilder &&SceneBuilder::set_sla_print(AnyPtr<const SLAPrint> mdl_print)
     return std::move(*this);
 }
 
-SceneBuilder &&SceneBuilder::set_bed(const DynamicPrintConfig &cfg, const Vec2crd &gap)
+SceneBuilder &&SceneBuilder::set_bed(const Points& bedpts, bool is_xl_printer, const Vec2crd &gap)
 {
-    Points bedpts = get_bed_shape(cfg);
-
-    if (is_XL_printer(cfg)) {
-        m_xl_printer = true;
-    }
-
-    m_bed = arr2::to_arrange_bed(bedpts, gap);
-
-    return std::move(*this);
-}
-
-SceneBuilder &&SceneBuilder::set_bed(const Print &print, const Vec2crd &gap)
-{
-    Points bedpts = get_bed_shape(print.config());
-
-    if (is_XL_printer(print.config())) {
+    m_xl_printer = is_xl_printer;
+    if (m_xl_printer) {
         m_bed = XLBed{get_extents(bedpts), gap};
     } else {
         m_bed = arr2::to_arrange_bed(bedpts, gap);

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Slic3r/Domain/Model.hpp"
+#include "Slic3r/Domain/CustomGCode.hpp"
 
 // Temporary header (hopefully) before we find a better place to put this.
 

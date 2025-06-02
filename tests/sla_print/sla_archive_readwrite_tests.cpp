@@ -5,7 +5,8 @@
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "libslic3r/Format/SLAArchiveReader.hpp"
 #include "libslic3r/Format/SL1.hpp"
-#include "libslic3r/FileReader.hpp"
+
+#include "Slic3r/Domain/ConfigPack.hpp"
 
 #include <boost/filesystem.hpp>
 
@@ -31,10 +32,10 @@ TEST_CASE("Archive export test", "[sla_archives][!shouldfail]") {
         INFO("Testing archive type: SL1 -- writing...");
         SLAPrint print(on_sla_result, on_sla_object);
 
+        Model m;
+        ASSERT(load_obj((TEST_DATA_DIR PATH_SEPARATOR + std::string(pname) + ".obj").c_str(), &m));
+
         Domain::ConfigPackSLA cfg;
-
-        auto m = FileReader::load_model(TEST_DATA_DIR PATH_SEPARATOR + std::string(pname) + ".obj");
-
         cfg.sla_printer_settings.opt("printer_technology").set(Domain::PrinterTechnology::SLA); // FIXME this should be ensured
         cfg.sla_printer_settings.opt("sla_archive_format").set("SL1");
         cfg.sla_print_settings.opt("supports_enable").set(false);

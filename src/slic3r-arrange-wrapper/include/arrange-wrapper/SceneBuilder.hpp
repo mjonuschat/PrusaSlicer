@@ -275,8 +275,7 @@ public:
 
     using SceneBuilderBase<SceneBuilder>::set_bed;
 
-    SceneBuilder &&set_bed(const DynamicPrintConfig &cfg, const Vec2crd &gap);
-    SceneBuilder &&set_bed(const Print &print, const Vec2crd &gap);
+    SceneBuilder &&set_bed(const Points& bedpts, bool is_xl_printer, const Vec2crd &gap);
 
     SceneBuilder && set_wipe_tower_handlers(std::vector<AnyPtr<WipeTowerHandler>> &&handlers)
     {

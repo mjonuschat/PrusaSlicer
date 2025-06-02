@@ -1068,7 +1068,10 @@ void GCodeGenerator::_do_export(Print& print, GCodeOutputStream &file, Thumbnail
     m_enable_extrusion_role_markers = (bool)m_pressure_equalizer;
 
     if (print.config().get<bool>("avoid_crossing_curled_overhangs")){
-        this->m_avoid_crossing_curled_overhangs.init_bed_shape(get_bed_shape(print.config()));
+        const auto pts = print.config().get<std::vector<Vec2d>>("bed_shape");
+        Points pts_scaled(pts.size());
+        std::transform(pts.cbegin(), pts.cend(), pts_scaled.begin(), [](const Vec2d& pt) -> Point { return scaled(pt);});
+        this->m_avoid_crossing_curled_overhangs.init_bed_shape(pts_scaled);
     }
 
     // Write information on the generator.

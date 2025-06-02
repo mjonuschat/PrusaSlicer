@@ -42,9 +42,14 @@ SCENARIO("Model construction", "[Model]") {
 					REQUIRE((p2 - p1).norm() < EPSILON);
 				}
             }
+
+            auto pts = config.get_view().get<std::vector<Vec2d>>("bed_shape");
+            Points pts_scaled(pts.size());
+            std::transform(pts.cbegin(), pts.cend(), pts_scaled.begin(), [](const Vec2d& pt) { return Slic3r::scaled(pt); });
+
             model_object->add_instance();
             arrange_objects(model,
-                            arr2::to_arrange_bed(get_bed_shape(config.get_view()), scaled(Vec2d(10, 10))),
+                            arr2::to_arrange_bed(pts_scaled, scaled(Vec2d(10, 10))),
                             arr2::ArrangeSettings{}.set_distance_from_objects(
                                 min_object_distance(config.get_view())));
 

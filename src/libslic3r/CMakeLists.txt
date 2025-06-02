@@ -143,8 +143,6 @@ set(SLIC3R_SOURCES
     Flow.cpp
     Flow.hpp
     format.hpp
-    Format/3mf.cpp
-    Format/3mf.hpp
     Format/AMF.cpp
     Format/AMF.hpp
     Format/OBJ.cpp
@@ -276,8 +274,6 @@ set(SLIC3R_SOURCES
     ModelUtils.cpp
     ModelProcessing.cpp
     ModelProcessing.hpp
-    FileReader.cpp
-    FileReader.hpp
     MultiMaterialSegmentation.cpp
     MultiMaterialSegmentation.hpp
     MeshNormals.hpp

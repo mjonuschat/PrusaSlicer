@@ -2,7 +2,6 @@
 #include "Slic3r/Biz/Config/3mf_legacy.hpp"
 
 #include <libslic3r/Model.hpp>
-#include <libslic3r/FileReader.hpp>
 
 namespace Slic3r::Domain {
 
