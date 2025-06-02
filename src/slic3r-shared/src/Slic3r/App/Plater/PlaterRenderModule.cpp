@@ -157,7 +157,7 @@ void PlaterRenderModule::init_scene_layout()
         {.action = [this]() { toggle_activate_tool(Scene::ToolType::Rotation); }}, m_rotation_gizmo
     );
     m_toolbar_simplify = m_layout->add_toolbar_item_gizmo(
-        ToolbarID::Middle, ImGui::ToolbarGraph, "Simplify", "B", 
+        ToolbarID::Middle, Render::Icon::ToolbarGraph, "Simplify", "B", 
         {.action = [this]() { toggle_activate_tool(Scene::ToolType::Simplify); }},
         m_simplify_gizmo
     );
