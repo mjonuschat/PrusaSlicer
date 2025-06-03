@@ -38,12 +38,12 @@ private:
     void init_translations();
 
     std::unique_ptr<wxGLContext> m_gl_context; // do NOT change order of this attribute
+    std::unique_ptr<Biz::ProjectInteractor> m_project_interactor;
 
     MainFrame* m_main_frame{nullptr};
     std::unique_ptr<Plater::PlaterRenderModule> m_plater_module;
     std::unique_ptr<Preview::PreviewRenderModule> m_preview_module;
     Domain::Workbench m_workbench;
-    std::unique_ptr<Biz::ProjectInteractor> m_project_interactor;
     InitParams m_init_params;
     Navigator m_navigator;
 };
