@@ -41,7 +41,7 @@ struct BedMaterials
     static Render::Material axis_material(const Render::Device& device, uint8_t axis);
 
     static Render::Material plate_default_override_material(const Render::Device& device);
-    static Render::Material plate_textured_override_material(const Render::Device& device, const Domain::Bed& bed);
+    static Render::Material plate_textured_override_material(const Render::Material& primary_material);
     static Render::Material grid_override_material(const Render::Device& device);
     static Render::Material contour_override_material(const Render::Device& device);
     static Render::Material print_volume_override_material(const Render::Device& device);

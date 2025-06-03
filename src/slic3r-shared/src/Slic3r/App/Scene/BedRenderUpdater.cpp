@@ -31,7 +31,7 @@ void BedRenderUpdater::update_materials()
                 switch (tag->type)
                 {
                 case BedElementType::PlateDefault:  { material = BedMaterials::plate_default_override_material(m_device); break; }
-                case BedElementType::PlateTextured: { material = BedMaterials::plate_textured_override_material(m_device, cc->bed()); break; }
+                case BedElementType::PlateTextured: { material = BedMaterials::plate_textured_override_material(n.render_component()->material()); break; }
                 case BedElementType::Contour:       { material = BedMaterials::contour_override_material(m_device); break; }
                 case BedElementType::Grid:          { material = BedMaterials::grid_override_material(m_device); break; }
                 case BedElementType::PrintVolume:   { material = BedMaterials::print_volume_override_material(m_device); break; }
@@ -139,7 +139,7 @@ void BedRenderUpdater::camera_updated(const Camera& cam)
                     return;
                 if (inst->active) {
                     if (cam_pointing_upward)
-                        n.set_material_override(BedMaterials::plate_textured_override_material(m_device, cc->bed()));
+                        n.set_material_override(BedMaterials::plate_textured_override_material(n.render_component()->material()));
                     else
                         n.remove_material_override();
                 }

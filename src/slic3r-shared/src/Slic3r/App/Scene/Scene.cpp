@@ -518,11 +518,8 @@ void Scene::render_no_shadows_pass(Render::CommandBuffer& cmd_buffer, ISceneRend
     std::stable_partition(nodes.begin(), nodes.end(), [](const auto& p) {
         return !p.second.transparent();
     });
-    std::stable_sort(nodes.begin(), nodes.end(), [](const auto& a, const auto& b) {
-        return a.first->render_component()->layer_index() < b.first->render_component()->layer_index();
-    });
-    // currently the only textured transparent object is the bed plate when the camera points upward
-    // sorts transparent objects so that the bed plate is rendered last to avoid its update of the depth buffer
+    // Currently the only textured transparent object is the bed plate when the camera points upward or the bed is disabled.
+    // Sorts transparent objects so that the bed plate is rendered last to avoid its update of the depth buffer
     // which would result in hiding the other transparent objects rendered after it
     auto first_transparent_it = std::find_if(nodes.begin(), nodes.end(), [](const auto& p) {
         return p.second.transparent();
@@ -532,6 +529,10 @@ void Scene::render_no_shadows_pass(Render::CommandBuffer& cmd_buffer, ISceneRend
             return a.second.textures().size() < b.second.textures().size();
         });
     }
+    // ensure that gizmo nodes are rendered last, as they require a cleanup of the depth buffer
+    std::stable_sort(nodes.begin(), nodes.end(), [](const auto& a, const auto& b) {
+        return a.first->render_component()->layer_index() < b.first->render_component()->layer_index();
+    });    
 
     cmd_buffer.set_depth_test_enabled(true);
     cmd_buffer.set_cull_face_enabled(true);

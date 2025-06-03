@@ -15,6 +15,8 @@ using namespace Slic3r::Biz;
 
 namespace Slic3r::App::Scene {
 
+size_t BedRenderHelper::s_texture_size = 2048;
+
 std::shared_ptr<Render::Texture> BedRenderHelper::texture(const Domain::Bed& bed, Render::TextureManager& manager)
 {
     const std::string& texture_filename = bed.texture_filename();
@@ -22,7 +24,7 @@ std::shared_ptr<Render::Texture> BedRenderHelper::texture(const Domain::Bed& bed
         return nullptr;
 
     Render::ImageLoadOptions opts;
-    opts.max_size_px = Render::Context::instance().max_texture_size() / 2;
+    opts.max_size_px = s_texture_size;
     opts.flip_y = true;
     opts.gen_mipmaps = true;
 

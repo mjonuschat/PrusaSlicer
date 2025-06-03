@@ -41,6 +41,11 @@ public:
     virtual const Render::Material& material() const = 0;
 
     /**
+     * @brief replace the associated material with the given one.
+     */
+    virtual void replace_material(const Render::Material& material) = 0;
+
+    /**
      * @brief Set associated shadows data.
      */
     virtual void set_shadows(const Render::Shadows& shadows) = 0;

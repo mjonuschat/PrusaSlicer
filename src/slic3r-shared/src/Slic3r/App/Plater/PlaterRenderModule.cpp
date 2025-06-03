@@ -9,6 +9,8 @@
 #include "Slic3r/App/Plater/SceneNodeTag.hpp"
 #include "Slic3r/App/Plater/GizmoNodeTag.hpp"
 #include "Slic3r/App/Scene/BedNodeTag.hpp"
+#include "Slic3r/App/Scene/BedMaterials.hpp"
+#include "Slic3r/App/Scene/BedRenderHelper.hpp"
 #include "Slic3r/App/Plater/QuickSelectGizmo.hpp"
 #include "Slic3r/App/Plater/QuickDragGizmo.hpp"
 #include "Slic3r/App/Plater/BedSelectGizmo.hpp"
@@ -772,9 +774,7 @@ static void render_imgui_debug_icons()
 #endif // ENABLED_DEBUG_IMGUI_ICONS
 
 #if ENABLED_DEBUG_BEDS
-static void render_imgui_debug_bed(
-    Biz::ProjectInteractor& project_interactor, PlaterScenePresenter& scene_presenter
-)
+static void render_imgui_debug_bed(Biz::ProjectInteractor& project_interactor, PlaterScenePresenter& scene_presenter, Render::Device& device)
 {
     ImGui::SetNextWindowCollapsed(true, ImGuiCond_Once);
     if (ImGui::Begin("Bed test/debug", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
@@ -803,8 +803,7 @@ static void render_imgui_debug_bed(
             Scene::visit(scene_presenter.scene().root(), [&](Scene::Node& n) {
                 Scene::BedNodeTag* tag = n.tag_of_type<Scene::BedNodeTag>();
                 if (tag != nullptr) {
-                    Domain::ConfigContainer* cc = proj.find_config_container(tag->config_container_id
-                    );
+                    Domain::ConfigContainer* cc = proj.find_config_container(tag->config_container_id);
                     DEBUG_ASSERT(cc != nullptr);
                     Domain::BedInstance& inst = cc->find_bed_instance(tag->instance_id);
                     if (tag->type == Scene::BedElementType::Undefined) {
@@ -814,9 +813,7 @@ static void render_imgui_debug_bed(
 
                         ImGui::TableNextRow();
                         if (active)
-                            ImGui::TableSetBgColor(
-                                ImGuiTableBgTarget_RowBg0, ImGui::GetColorU32(ImGuiCol_TableHeaderBg)
-                            );
+                            ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, ImGui::GetColorU32(ImGuiCol_TableHeaderBg));
 
                         ImGui::TableSetColumnIndex(0);
                         ImGui::AlignTextToFramePadding();
@@ -830,36 +827,23 @@ static void render_imgui_debug_bed(
 
                         ImGui::TableSetColumnIndex(3);
                         bool contour = inst.contour_enabled;
-                        if (ImGui::Checkbox(
-                                fmt::format("##contour{}/{}", tag->config_container_id, tag->instance_id)
-                                    .c_str(),
-                                &contour
-                            )) {
+                        if (ImGui::Checkbox(fmt::format("##contour{}/{}", tag->config_container_id, tag->instance_id).c_str(),
+                                &contour)) {
                             inst.contour_enabled = contour;
                             scene_presenter.update_beds();
                         }
 
                         ImGui::TableSetColumnIndex(4);
                         bool print_volume = inst.print_volume_enabled;
-                        if (ImGui::Checkbox(
-                                fmt::format(
-                                    "##print_volume{}/{}", tag->config_container_id, tag->instance_id
-                                )
-                                    .c_str(),
-                                &print_volume
-                            )) {
+                        if (ImGui::Checkbox(fmt::format("##print_volume{}/{}", tag->config_container_id, tag->instance_id).c_str(),
+                                &print_volume)) {
                             inst.print_volume_enabled = print_volume;
                             scene_presenter.update_beds();
                         }
 
                         if (total_instances_count > 1) {
                             ImGui::TableSetColumnIndex(5);
-                            if (ImGui::Button(
-                                    fmt::format(
-                                        "Remove##{}/{}", tag->config_container_id, tag->instance_id
-                                    )
-                                        .c_str()
-                                ))
+                            if (ImGui::Button(fmt::format("Remove##{}/{}", tag->config_container_id, tag->instance_id).c_str()))
                                 remove_tag = {tag->config_container_id, tag->instance_id};
                         }
                     }
@@ -880,6 +864,61 @@ static void render_imgui_debug_bed(
         if (total_instances_count < 9) {
             if (ImGui::Button("Add instance"))
                 scene_interactor.add_bed_instance(project_interactor.selected_config_container().id().id);
+        }
+
+        ImGui::Separator();
+
+        size_t texture_size = Scene::BedRenderHelper::texture_size();
+        if (texture_size > 0) {
+            ImGui::AlignTextToFramePadding();
+            ImGui::Text("Texture size");
+            ImGui::SameLine();
+
+            std::vector<size_t> sizes;
+            for (size_t i = 512; i <= Render::Context::instance().max_texture_size(); i *= 2){
+                sizes.push_back(i);
+            }
+            
+            std::vector<std::string> sizes_str;
+            std::transform(sizes.begin(), sizes.end(), std::back_inserter(sizes_str), [](size_t size) {
+                return std::to_string(size) + "x" + std::to_string(size);
+            });
+
+            auto it = std::find(sizes.begin(), sizes.end(), texture_size);
+            DEBUG_ASSERT(it != sizes.end());
+            int sel_size = int(std::distance(sizes.begin(), it));
+
+            const char* preview_value = sizes_str[sel_size].c_str();
+
+            if (ImGui::BeginCombo("##texture_sizes", preview_value)) {
+                for (int i = 0; i < int(sizes_str.size()); i++) {
+                    bool is_selected = (sel_size == i);
+                    if (ImGui::Selectable(sizes_str[i].c_str(), is_selected))
+                        sel_size = i;
+
+                    // Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
+                    if (is_selected)
+                        ImGui::SetItemDefaultFocus();
+                }
+                ImGui::EndCombo();
+            }
+
+            // force bed textures reload with the new size
+            if (sizes[sel_size] != texture_size) {
+                Scene::BedRenderHelper::set_texture_size(sizes[sel_size]);
+                Scene::visit(scene_presenter.scene().root(), [&](Scene::Node& n) {
+                    Scene::BedNodeTag* tag = n.tag_of_type<Scene::BedNodeTag>();
+                    if (tag != nullptr) {
+                        if (tag->type == Scene::BedElementType::PlateTextured) {
+                            Domain::ConfigContainer* cc = proj.find_config_container(tag->config_container_id);
+                            Domain::BedInstance& inst = cc->find_bed_instance(tag->instance_id);
+                            n.render_component()->replace_material(Scene::BedMaterials::plate_textured_material(device, inst.bed));
+                            if (n.has_material_override())
+                                n.set_material_override(Scene::BedMaterials::plate_textured_override_material(n.render_component()->material()));
+                        }
+                    }
+                });
+            }
         }
     }
     ImGui::End();
@@ -999,7 +1038,7 @@ void PlaterRenderModule::render_imgui(Render::CommandBuffer & cmd_buffer)
 
 #if ENABLED_DEBUG_BEDS
     //ImGui::SetNextWindowPos(ImVec2(ImGui::GetMainViewport()->GetCenter().x, 50.f), ImGuiCond_Always);
-    render_imgui_debug_bed(m_project_interactor, *m_scene_presenter);
+    render_imgui_debug_bed(m_project_interactor, *m_scene_presenter, *m_device);
 #endif // ENABLED_DEBUG_BEDS
 
 #if ENABLED_DEBUG_LOAD_3MF

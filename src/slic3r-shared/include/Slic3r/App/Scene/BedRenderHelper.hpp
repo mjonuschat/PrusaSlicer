@@ -13,6 +13,9 @@ namespace Slic3r::App::Scene {
 class BedRenderHelper
 {
 public:
+    static size_t texture_size() { return s_texture_size; }
+    static void set_texture_size(size_t size) { s_texture_size = size; }
+
     /**
      * @brief Load the bed texture and return it.
      *
@@ -36,6 +39,12 @@ public:
      * @note The bed contour is specified into the bed, see Slic3r::Domain::Bed definition.
      */
     [[nodiscard]] static std::vector<Vec3f> plate_grid(const Domain::Bed& bed);
+
+private:
+    /**
+     * @brief Size of the bed texture in pixels.
+     */
+    static size_t s_texture_size;
 };
 
 } // namespace Slic3r::App::Scene

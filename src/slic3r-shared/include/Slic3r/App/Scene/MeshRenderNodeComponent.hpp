@@ -36,6 +36,7 @@ public:
     MeshRenderNodeComponent& operator=(MeshRenderNodeComponent&&) = default;
 
     const Render::Material& material() const override { return m_material; }
+    void replace_material(const Render::Material& material) override { m_material = material; }
 
     void render(
         const Node& node,

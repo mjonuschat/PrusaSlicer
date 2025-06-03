@@ -108,15 +108,12 @@ Render::Material BedMaterials::plate_default_override_material(const Render::Dev
     return ret;
 }
 
-Render::Material BedMaterials::plate_textured_override_material(const Render::Device& device, const Domain::Bed& bed)
+Render::Material BedMaterials::plate_textured_override_material(const Render::Material& primary_material)
 {
-    Render::Material ret;
+    Render::Material ret = primary_material;
     ret
-        .set_shader(device.context().shader_manager().shader("printbed"))
-        .set_texture(0, BedRenderHelper::texture(bed, device.context().texture_manager()))
         .set_uniform("transparent_background", true)
-        .set_transparent(true)
-        .set_uniform("svg_source", boost::algorithm::iends_with(bed.texture_filename(), ".svg"));
+        .set_transparent(true);
     return ret;
 }
 
