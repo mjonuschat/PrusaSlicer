@@ -138,6 +138,16 @@ void Scene::add_child(Node* node, Node* parent)
     parent->add_child(node);
 }
 
+bool Scene::remove_child(Node* node)
+{
+    auto* parent = node->parent();
+    if (parent == nullptr)
+        return false;
+    return remove_children([node](const Node* child) {
+        return child == node;
+    }, parent);
+}
+
 bool Scene::remove_children(const Node::NodePredicate& predicate, Node* parent)
 {
     if (parent == nullptr)

@@ -27,6 +27,38 @@ static const std::unordered_map<ModelVolumeType, ColorRGBA> VOLUME_COLORS = {
     {ModelVolumeType::INVALID, {1, 0.2f, 0.2f, 0.5f}},
 };
 
+namespace {
+template <typename TagT, typename  RefT>
+void remove_children(
+    Scene::Scene& scn,
+    const std::vector<RefT>& elements,
+    const std::function<bool(const TagT&, const RefT&)>& predicate
+)
+{
+    // find all instances of given object id and remove the volume node there
+    Scene::Node::NodeList nodes;
+    scn.root().query([&](const Scene::Node* n) {
+        const auto* tag = n->tag_of_type<TagT>();
+        if (tag != nullptr) {
+            auto it = std::find_if(elements.begin(), elements.end(),
+                [tag, predicate](const RefT& el) {
+                    return predicate(*tag, el);
+                });
+            if (it != elements.end())
+                return true;
+        }
+        return false;
+
+    }, nodes, true);
+    for (auto* n : nodes)
+        scn.remove_child(n);
+
+}
+
+} // namespace (anonymous)
+
+
+
 PlaterScenePresenter::PlaterScenePresenter(
     const Domain::Workbench& workbench, Biz::ProjectInteractor& project_interactor, Render::Device& device
 )
@@ -317,18 +349,13 @@ void PlaterScenePresenter::on_instance_added(Domain::SelectionId project_id, con
 
 void PlaterScenePresenter::on_instance_removed(Domain::SelectionId project_id, const Domain::ElementRefs& instances)
 {
-    scene().remove_children([&](const Scene::Node* n) {
-        const SceneNodeTag* tag = n->tag_of_type<SceneNodeTag>();
-        if (tag != nullptr) {
-            auto it = std::find_if(instances.begin(), instances.end(),
-                [tag](const Domain::ElementRef& el) {
-                    return tag->object_id == el.object_id && tag->instance_id == el.instance_id;
-                });
-            if (it != instances.end())
-                return true;
+    remove_children<SceneNodeTag, Domain::ElementRef>(
+        scene(),
+        instances,
+        [](const auto& tag, const auto& el) {
+            return tag.object_id == el.object_id && tag.instance_id == el.instance_id;
         }
-        return false;
-    });
+    );
 }
 
 void PlaterScenePresenter::on_instance_transformed(Domain::SelectionId project_id, const Domain::ElementRefs& elements)
@@ -403,21 +430,17 @@ void PlaterScenePresenter::on_volume_added(Domain::SelectionId project_id, const
     });
 }
 
-void PlaterScenePresenter::on_volume_removed(Domain::SelectionId project_id, const Domain::ElementRefs& volumes)
+void PlaterScenePresenter::on_volume_removed(
+    Domain::SelectionId project_id, const Domain::ElementRefs& volumes
+)
 {
-    // find all instances of given object id and remove the volume node there
-    scene().remove_children([&](const Scene::Node* n) {
-        const SceneNodeTag* tag = n->tag_of_type<SceneNodeTag>();
-        if (tag != nullptr) {
-            auto it = std::find_if(volumes.begin(), volumes.end(),
-                [tag](const Domain::ElementRef& el) {
-                    return tag->object_id == el.object_id && tag->volume_id == el.volume_id;
-                });
-            if (it != volumes.end())
-                return true;
+    remove_children<SceneNodeTag, Domain::ElementRef>(
+        scene(),
+        volumes,
+        [](const SceneNodeTag& tag, const Domain::ElementRef& el) {
+            return tag.object_id == el.object_id && tag.volume_id == el.volume_id;
         }
-        return false;
-    });
+    );
 }
 
 void PlaterScenePresenter::on_volume_transformed(Domain::SelectionId project_id, const Domain::ElementRefs& elements)
@@ -485,19 +508,14 @@ void PlaterScenePresenter::on_bed_instance_added(Domain::SelectionId project_id,
 
 void PlaterScenePresenter::on_bed_instance_removed(Domain::SelectionId project_id, const Domain::BedRefs& instances)
 {
-    scene().remove_children([&](const Scene::Node* n) {
-        const Scene::BedNodeTag* tag = n->tag_of_type<Scene::BedNodeTag>();
-        if (tag != nullptr) {
-            auto it = std::find_if(instances.begin(), instances.end(),
-                [tag](const Domain::BedRef& br) {
-                    return tag->config_container_id == br.config_container_id && tag->instance_id == br.instance_id;
-                });
-            if (it != instances.end())
-                return true;
+    remove_children<Scene::BedNodeTag, Domain::BedRef>(
+        scene(),
+        instances,
+        [](const Scene::BedNodeTag& tag, const Domain::BedRef& br) {
+            return tag.config_container_id == br.config_container_id && tag.instance_id == br.instance_id;
         }
-        return false;
-    });
-  
+    );
+
     m_bed_render_updater.update_all(scene().camera());
 }
 
