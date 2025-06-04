@@ -662,6 +662,7 @@ inline bool has_compatible_layer_regions(const PrintRegionConfig &config, const 
            config.external_perimeters_first                             == other_config.external_perimeters_first &&
            config.external_perimeters_first_holes                       == other_config.external_perimeters_first_holes &&
            config.external_perimeters_first_holes_min_size              == other_config.external_perimeters_first_holes_min_size &&
+           config.external_perimeters_first_disabled_first_layers       == other_config.external_perimeters_first_disabled_first_layers &&
            config.infill_overlap                                        == other_config.infill_overlap &&
            config.print_extrusion_multiplier                            == other_config.print_extrusion_multiplier &&
            has_compatible_dynamic_overhang_speed(config, other_config);

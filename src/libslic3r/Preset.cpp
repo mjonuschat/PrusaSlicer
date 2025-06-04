@@ -588,6 +588,7 @@ static std::vector<std::string> s_Preset_print_options {
 
     "external_perimeters_first_holes",
     "external_perimeters_first_holes_min_size",
+    "external_perimeters_first_disabled_first_layers",
 };
 
 static std::vector<std::string> s_Preset_filament_options {
