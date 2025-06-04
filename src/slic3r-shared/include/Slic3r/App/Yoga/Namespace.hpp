@@ -25,7 +25,8 @@ enum class Direction
     RightToLeft
 };
 
-enum class Position {
+enum class Position
+{
     Top,
     Bottom,
     Left,
@@ -52,11 +53,15 @@ struct Sides
         top = bottom = margins.y();
     }
 
-    bool operator==(const Sides& rhs) const
+    inline float horizontal() const { return left + right; }
+
+    inline float vertical() const { return top + bottom; }
+
+    inline bool operator==(const Sides& rhs) const
     {
         return left == rhs.left && right == rhs.right && top == rhs.top && bottom == rhs.bottom;
     }
-    bool operator!=(const Sides& rhs) const { return !(*this == rhs); }
+    inline bool operator!=(const Sides& rhs) const { return !(*this == rhs); }
 
     float left{0.f};
     float right{0.f};

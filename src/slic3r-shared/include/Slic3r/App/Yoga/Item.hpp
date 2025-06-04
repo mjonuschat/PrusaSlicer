@@ -87,6 +87,7 @@ public:
     const Vec2f& max_size() const;
     bool is_visible() const;
     float flex_grow() const;
+    float flex_shrink() const;
     YGDirection direction() const;
     float aspect_ratio() const;
     YGPositionType position_type() const;
@@ -111,6 +112,7 @@ public:
     void set_max_size(const Vec2f max_size);
     void set_visible(bool visible);
     void set_flex_grow(float flex_grow);
+    void set_flex_shrink(float flex_shrink);
     void set_direction(YGDirection direction);
     void set_aspect_ratio(float aspect_ratio);
     void set_position_type(YGPositionType position_type);
@@ -201,6 +203,7 @@ protected:
     Margins m_margin;
     Paddings m_padding;
     float m_flex_grow = 0;
+    float m_flex_shrink = 0;
     float m_aspect_ratio = YGUndefined;
     float m_gap = 0;
     YGPositionType m_position_type = YGPositionType::YGPositionTypeRelative;

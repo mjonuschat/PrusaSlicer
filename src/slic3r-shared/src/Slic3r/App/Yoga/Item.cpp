@@ -135,6 +135,7 @@ Item::Item()
 
     YGNodeStyleSetFlexDirection(m_node, m_flex_direction);
     YGNodeStyleSetDirection(m_node, m_direction);
+    YGNodeStyleSetFlexShrink(m_node, m_flex_shrink);
 }
 
 Item::~Item()
@@ -199,6 +200,8 @@ bool Item::is_visible() const { return YGNodeStyleGetDisplay(m_node) == YGDispla
 bool Item::debug_border() const { return m_debug_border; }
 
 float Item::flex_grow() const { return m_flex_grow; }
+
+float Item::flex_shrink() const { return m_flex_shrink; }
 
 YGDirection Item::direction() const { return m_direction; }
 
@@ -521,6 +524,15 @@ void Item::set_flex_grow(float flex_grow)
     if (!Domain::fuzzy_compare(m_flex_grow, flex_grow)) {
         m_flex_grow = flex_grow;
         YGNodeStyleSetFlexGrow(m_node, m_flex_grow);
+        set_style_dirty();
+    }
+}
+
+void Item::set_flex_shrink(float flex_shrink)
+{
+    if (!Domain::fuzzy_compare(m_flex_shrink, flex_shrink)) {
+        m_flex_shrink = flex_shrink;
+        YGNodeStyleSetFlexShrink(m_node, m_flex_shrink);
         set_style_dirty();
     }
 }

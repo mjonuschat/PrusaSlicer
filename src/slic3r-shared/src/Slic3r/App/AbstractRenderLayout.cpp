@@ -233,7 +233,6 @@ void AbstractRenderLayout::init_right_column()
 
     m_layout_right_column->append(m_sidebar_bed.release());
 
-    m_sidebar_print->set_flex_grow(1.0);
     m_layout_right_column->append(m_sidebar_print.release());
 }
 

@@ -208,6 +208,8 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Yoga/ButtonGroup.hpp
         src/Slic3r/App/Yoga/ButtonGroup.cpp
 	include/Slic3r/App/Yoga/ListView.hpp
+	include/Slic3r/App/Yoga/ScrollArea.hpp
+        src/Slic3r/App/Yoga/ScrollArea.cpp
 
         src/Slic3r/App/Imgui/DoubleSlider.cpp
         include/Slic3r/App/Imgui/DoubleSlider.hpp
@@ -300,14 +302,14 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/Yaml/YamlAdapter.hpp
         src/Slic3r/Biz/Yaml/YamlSlic3rTypes.hpp
 
-		include/Slic3r/Biz/Preset/PresetEvaluator.hpp
-		src/Slic3r/Biz/Preset/PresetEvaluator.cpp
-		src/Slic3r/Biz/Preset/PresetCollectionEvaluator.hpp
-		src/Slic3r/Biz/Preset/PresetCollectionEvaluator.cpp
-		include/Slic3r/Biz/Preset/HwConfigEvaluator.hpp
-		src/Slic3r/Biz/Preset/HwConfigEvaluator.cpp
-		src/Slic3r/Biz/Preset/ValueMapBuilder.hpp
-		src/Slic3r/Biz/Preset/ValueMapBuilder.cpp
+        include/Slic3r/Biz/Preset/PresetEvaluator.hpp
+        src/Slic3r/Biz/Preset/PresetEvaluator.cpp
+        src/Slic3r/Biz/Preset/PresetCollectionEvaluator.hpp
+        src/Slic3r/Biz/Preset/PresetCollectionEvaluator.cpp
+        include/Slic3r/Biz/Preset/HwConfigEvaluator.hpp
+        src/Slic3r/Biz/Preset/HwConfigEvaluator.cpp
+        src/Slic3r/Biz/Preset/ValueMapBuilder.hpp
+        src/Slic3r/Biz/Preset/ValueMapBuilder.cpp
 
         include/Slic3r/Biz/Expr/Parser.hpp
         src/Slic3r/Biz/Expr/Parser.cpp
@@ -602,11 +604,11 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
         test/Slic3r/Biz/Yaml/YamlTests.cpp
         test/Slic3r/Biz/Preset/IO/HwConfigDefLoaderTests.cpp
         test/Slic3r/Biz/Preset/IO/PresetLoaderTests.cpp
-		test/Slic3r/Biz/Preset/PresetCollectionEvaluatorTests.cpp
-		test/Slic3r/Biz/Preset/PresetEvaluatorTests.cpp
-		test/Slic3r/Biz/Preset/HwConfigEvaluatorTests.cpp
+        test/Slic3r/Biz/Preset/PresetCollectionEvaluatorTests.cpp
+        test/Slic3r/Biz/Preset/PresetEvaluatorTests.cpp
+        test/Slic3r/Biz/Preset/HwConfigEvaluatorTests.cpp
 
-		test/Slic3r/Biz/Slicing/TestUtils.cpp
+        test/Slic3r/Biz/Slicing/TestUtils.cpp
         test/Slic3r/Biz/Slicing/GCodeUtils.cpp
         test/Slic3r/Biz/Slicing/ActionsTests.cpp
         test/Slic3r/Biz/Slicing/ListenersTests.cpp
