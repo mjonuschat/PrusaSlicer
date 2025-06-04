@@ -1238,6 +1238,17 @@ void PrintConfigDef::init_fff_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloat(30.0));
 
+    def = this->add("external_perimeters_first_disabled_first_layers", coInt);
+    def->label = L("External perimeters first disabled for first");
+    def->category = L("Layers and Perimeters");
+    def->tooltip = L("You can set this to a positive value to disable external perimeters first for "
+                     "the first layers, so that it does not affect fillets/chamfers.");
+    def->sidetext = L("layers");
+    def->min = 0;
+    def->max = 1000;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionInt(0));
+
     def = this->add("extra_perimeters", coBool);
     def->label = L("Extra perimeters if needed");
     def->category = L("Layers and Perimeters");
