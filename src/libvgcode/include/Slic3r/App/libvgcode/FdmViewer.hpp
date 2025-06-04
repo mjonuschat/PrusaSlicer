@@ -141,12 +141,12 @@ public:
 
     void set_view_visible_range(Interval::value_type min, Interval::value_type max) override;
 
-    size_t vertices_count() const { return m_vertices.size(); }
-    const Biz::libpgcode::MoveVertices& vertices() const { return m_vertices; }
+    size_t vertices_count() const { return m_vertices->size(); }
+    const Biz::libpgcode::MoveVertices& vertices() const { return *m_vertices; }
     const Biz::libpgcode::MoveVertex& current_vertex() const { return vertex_at(current_vertex_id()); }
     size_t current_vertex_id() const { return size_t(m_view_range.visible()[1]); }
     const Biz::libpgcode::MoveVertex& vertex_at(size_t id) const {
-        return (id < m_vertices.size()) ? m_vertices[id] : Biz::libpgcode::DUMMY_MOVE_VERTEX;
+        return (id < m_vertices->size()) ? (*m_vertices)[id] : Biz::libpgcode::DUMMY_MOVE_VERTEX;
     }
     float estimated_time() const override { return m_total_time[size_t(m_settings.time_mode)]; }
     float estimated_time_at(size_t id) const override;
@@ -297,7 +297,7 @@ private:
     //
     // cpu buffer to store vertices
     //
-    Biz::libpgcode::MoveVertices m_vertices;
+    std::shared_ptr<const Biz::libpgcode::MoveVertices> m_vertices;
 
     // Cache for the colors to reduce the need to recalculate colors of all the vertices.
     std::vector<float> m_vertices_colors;

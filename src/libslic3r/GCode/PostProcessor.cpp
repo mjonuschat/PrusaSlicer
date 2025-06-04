@@ -463,8 +463,8 @@ private:
             if (edit.type == EditingType::Insertion || edit.type == EditingType::Replacement)
                 shift_lines += edit.lines.size();
             // Now shift all the references until the next edit (or end of the moves vector).
-            while (move_idx != m_result.moves.size() && (edit_idx == m_editing_items.size() - 1 || m_result.moves[move_idx].gcode_id < m_editing_items[edit_idx + 1].gcode_line_id)) {
-                m_result.moves[move_idx].gcode_id += shift_lines;
+            while (move_idx != m_result.moves().size() && (edit_idx == m_editing_items.size() - 1 || m_result.moves()[move_idx].gcode_id < m_editing_items[edit_idx + 1].gcode_line_id)) {
+                m_result.moves()[move_idx].gcode_id += shift_lines;
                 ++move_idx;
             }
         }

@@ -46,7 +46,6 @@ struct ProcessorResult
    
 
     std::vector<std::string> extruder_str_colors;
-    MoveVertices moves;
     std::vector<Domain::CustomGCode::Item> custom_gcode_per_print_z;
     PrintEstimatedStatistics print_statistics;
     PrintSettings print_settings;
@@ -86,9 +85,28 @@ struct ProcessorResult
         return m_gcode;  
     }
 
+     /**
+     * @brief Getter for modifiable vertices
+     */
+    MoveVertices& moves()
+    {
+        ASSERT(m_moves);
+        return *m_moves;  
+    }
+
+    /**
+     * @brief Getter for const vertices shared pointer. Should be used after processing / postprocessing is done.
+     */
+    std::shared_ptr<const MoveVertices> const_moves() const
+    {
+        ASSERT(m_moves);
+        return m_moves;  
+    }
+
 private:
     uint32_t m_id{ 0 };
     std::shared_ptr<LineView> m_gcode;
+    std::shared_ptr<MoveVertices> m_moves = std::make_shared<MoveVertices>();
 };
 
 } // namespace Slic3r::Biz::libpgcode

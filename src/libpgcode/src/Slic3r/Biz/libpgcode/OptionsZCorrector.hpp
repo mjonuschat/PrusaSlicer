@@ -17,7 +17,7 @@ public:
     explicit OptionsZCorrector(ProcessorResult& result) : m_result(result) {}
 
     void set() {
-        m_move_id = m_result.moves.size() - 1;
+        m_move_id = m_result.const_moves()->size() - 1;
         m_custom_gcode_per_print_z_id = m_result.custom_gcode_per_print_z.size() - 1;
     }
 

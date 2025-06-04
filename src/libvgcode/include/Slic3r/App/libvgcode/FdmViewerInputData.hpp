@@ -34,7 +34,7 @@ struct FdmViewerInputData
     // List of path vertices (gcode moves)
     // See: Biz::libpgcode::MoveVertex
     //
-    Biz::libpgcode::MoveVertices vertices;
+    std::shared_ptr<const Biz::libpgcode::MoveVertices> vertices;
     //
     // gcode lines
     //

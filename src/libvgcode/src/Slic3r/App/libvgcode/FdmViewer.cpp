@@ -444,7 +444,7 @@ void FdmViewer::reset()
     m_time_modes.clear();
     m_options_times.clear();
     m_gcode_events.clear();
-    m_vertices.clear();
+    m_vertices = std::make_shared<MoveVertices>();
     m_vertices_colors.clear();
     m_valid_lines_bitset.clear();
     m_cog_marker.reset();
@@ -535,16 +535,18 @@ void FdmViewer::load(FdmViewerInputData&& gcode_data)
     if (!m_initialized)
         return;
 
-    if (gcode_data.vertices.empty())
+    if (! gcode_data.vertices || gcode_data.vertices->empty())
         return;
 
     reset();
 
-    m_vertices = std::move(gcode_data.vertices);
+    m_vertices = gcode_data.vertices;
+    gcode_data.vertices.reset();
+
     m_tool_colors = std::move(gcode_data.tools_colors);
     m_color_print_colors = std::move(gcode_data.color_print_colors);
     m_gcode_events = std::move(gcode_data.gcode_events);
-    m_vertices_colors.resize(m_vertices.size());
+    m_vertices_colors.resize(m_vertices->size());
     m_settings.spiral_vase_enabled = gcode_data.spiral_vase_enabled;
     m_extruders_count = gcode_data.extruders_count;
 
@@ -556,8 +558,8 @@ void FdmViewer::load(FdmViewerInputData&& gcode_data)
         m_used_extruders.add(role, values);
     }
 
-    for (size_t i = 0; i < m_vertices.size(); ++i) {
-        const MoveVertex& v = m_vertices[i];
+    for (size_t i = 0; i < m_vertices->size(); ++i) {
+        const MoveVertex& v = (*m_vertices)[i];
         OptionType option_type = move_type_to_option(v.type);
 
         m_layers.update(v, uint32_t(i));
@@ -591,7 +593,7 @@ void FdmViewer::load(FdmViewerInputData&& gcode_data)
                 v.extrusion_role != GCodeExtrusionRole::SupportMaterialInterface &&
                 v.extrusion_role != GCodeExtrusionRole::WipeTower &&
                 v.extrusion_role != GCodeExtrusionRole::Custom) {
-                m_cog_marker.update(0.5f * (v.position + m_vertices[i - 1].position), v.mass);
+                m_cog_marker.update(0.5f * (v.position + (*m_vertices)[i - 1].position), v.mass);
             }
         }
     }
@@ -609,7 +611,7 @@ void FdmViewer::load(FdmViewerInputData&& gcode_data)
     m_options.shrink_to_fit();
 
     // reset segments visibility bitset
-    m_valid_lines_bitset = BitSet<>(m_vertices.size());
+    m_valid_lines_bitset = BitSet<>(m_vertices->size());
     m_valid_lines_bitset.setAll();
 
     if (m_settings.time_mode != TimeMode::Normal && m_total_time[size_t(m_settings.time_mode)] == 0.0f)
@@ -619,9 +621,9 @@ void FdmViewer::load(FdmViewerInputData&& gcode_data)
     // the last component is a dummy float to comply with GL_RGBA32F format
     std::vector<Vec4f> positions;
     std::vector<Vec4f> heights_widths_angles;
-    positions.reserve(m_vertices.size());
-    heights_widths_angles.reserve(m_vertices.size());
-    extract_pos_and_or_hwa(m_vertices, m_travels_radius, m_wipes_radius, m_valid_lines_bitset, &positions, &heights_widths_angles, true);
+    positions.reserve(m_vertices->size());
+    heights_widths_angles.reserve(m_vertices->size());
+    extract_pos_and_or_hwa(*m_vertices, m_travels_radius, m_wipes_radius, m_valid_lines_bitset, &positions, &heights_widths_angles, true);
 
     if (!positions.empty()) {
 #if USE_TEXTURE_BUFFER
@@ -692,7 +694,7 @@ void FdmViewer::load_as_sla(const std::vector<float>& layers_zs, const std::vect
 
 void FdmViewer::update_enabled_entities()
 {
-    if (m_vertices.empty())
+    if (m_vertices->empty())
         return;
 
     std::vector<uint32_t> enabled_segments;
@@ -706,7 +708,7 @@ void FdmViewer::update_enabled_entities()
         range[0] = m_view_range.full()[0];
 
     // to show the options at the current tool marker position we need to extend the range by one extra step
-    if (m_vertices[range[1]].is_option() && range[1] < uint32_t(m_vertices.size()) - 1)
+    if ((*m_vertices)[range[1]].is_option() && range[1] < uint32_t(m_vertices->size()) - 1)
         ++range[1];
 
     if (m_settings.spiral_vase_enabled) {
@@ -717,7 +719,7 @@ void FdmViewer::update_enabled_entities()
     }
 
     for (size_t i = range[0]; i < range[1]; ++i) {
-        const MoveVertex& v = m_vertices[i];
+        const MoveVertex& v = (*m_vertices)[i];
 
         if (!m_valid_lines_bitset[i] && !v.is_option())
             continue;
@@ -796,9 +798,9 @@ void FdmViewer::update_colors_texture()
     // Based on current settings and slider position, we might want to render some
     // vertices as dark grey. Use either that or the normal color (from the cache).
     std::vector<float> colors(m_vertices_colors.size());
-    assert(colors.size() == m_vertices.size() && m_vertices_colors.size() == m_vertices.size());
-    for (size_t i = 0; i < m_vertices.size(); ++i) {
-        colors[i] = (color_top_layer_only && m_vertices[i].layer_id < top_layer_id &&
+    assert(colors.size() == m_vertices->size() && m_vertices_colors.size() == m_vertices->size());
+    for (size_t i = 0; i < m_vertices->size(); ++i) {
+        colors[i] = (color_top_layer_only && (*m_vertices)[i].layer_id < top_layer_id &&
             (!m_settings.spiral_vase_enabled || i != m_view_range.enabled()[0])) ?
             encoded_color(DUMMY_COLOR) : m_vertices_colors[i];
     }
@@ -830,8 +832,8 @@ void FdmViewer::update_colors()
     // If some part of the preview should be rendered in dark grey, it is taken
     // care of in update_colors_texture. That is to avoid the need to recalculate
     // the "normal" color on every slider move.
-    for (size_t i = 0; i < m_vertices.size(); ++i){
-        m_vertices_colors[i] = encoded_color(vertex_color(m_vertices[i]));
+    for (size_t i = 0; i < m_vertices->size(); ++i){
+        m_vertices_colors[i] = encoded_color(vertex_color((*m_vertices)[i]));
     }
 
     update_colors_texture();
@@ -1003,7 +1005,7 @@ void FdmViewer::toggle_top_layer_only_view_range()
 BoundingBoxf3 FdmViewer::bounding_box(const MoveTypes& types) const
 {
     BoundingBoxf3 ret;
-    for (const MoveVertex& v : m_vertices) {
+    for (const MoveVertex& v : *m_vertices) {
         if (std::find(types.begin(), types.end(), v.type) != types.end())
             ret.merge(v.position.cast<double>());
     }
@@ -1013,7 +1015,7 @@ BoundingBoxf3 FdmViewer::bounding_box(const MoveTypes& types) const
 BoundingBoxf3 FdmViewer::extrusion_bounding_box(const GCodeExtrusionRoles& roles) const
 {
     BoundingBoxf3 ret;
-    for (const MoveVertex& v : m_vertices) {
+    for (const MoveVertex& v : *m_vertices) {
         if (v.is_extrusion() && std::find(roles.begin(), roles.end(), v.extrusion_role) != roles.end())
             ret.merge(v.position.cast<double>());
     }
@@ -1109,7 +1111,7 @@ void FdmViewer::set_view_visible_range(Interval::value_type min, Interval::value
 
 float FdmViewer::estimated_time_at(size_t id) const
 {
-    return std::accumulate(m_vertices.begin(), m_vertices.begin() + id + 1, 0.0f,
+    return std::accumulate(m_vertices->begin(), m_vertices->begin() + id + 1, 0.0f,
         [this](float a, const MoveVertex& v) { return a + v.time[size_t(m_settings.time_mode)]; });
 }
 
@@ -1353,22 +1355,22 @@ void FdmViewer::update_view_full_range()
     bool travels_visible = m_settings.options_visibility[size_t(OptionType::Travels)];
     bool wipes_visible   = m_settings.options_visibility[size_t(OptionType::Wipes)];
 
-    auto first_it = m_vertices.begin();
-    while (first_it != m_vertices.end() &&
+    auto first_it = m_vertices->begin();
+    while (first_it != m_vertices->end() &&
            (first_it->layer_id < layers_range[0] || !is_visible(*first_it, m_settings))) {
         ++first_it;
     }
 
     // If the first vertex is an extrusion, add an extra step to properly detect the first segment
-    if (first_it != m_vertices.begin() && first_it != m_vertices.end() && first_it->type == MoveType::Extrude)
+    if (first_it != m_vertices->begin() && first_it != m_vertices->end() && first_it->type == MoveType::Extrude)
         --first_it;
 
-    if (first_it == m_vertices.end())
+    if (first_it == m_vertices->end())
         m_view_range.set_full(Range());
     else {
         if (travels_visible || wipes_visible) {
             // if the global range starts with a travel/wipe move, extend it to the travel/wipe start
-            while (first_it != m_vertices.begin() &&
+            while (first_it != m_vertices->begin() &&
                    ((travels_visible && first_it->is_travel()) ||
                     (wipes_visible && first_it->is_wipe()))) {
                 --first_it;
@@ -1376,7 +1378,7 @@ void FdmViewer::update_view_full_range()
         }
 
         auto last_it = first_it;
-        while (last_it != m_vertices.end() && last_it->layer_id <= layers_range[1]) {
+        while (last_it != m_vertices->end() && last_it->layer_id <= layers_range[1]) {
             ++last_it;
         }
         if (last_it != first_it)
@@ -1384,10 +1386,10 @@ void FdmViewer::update_view_full_range()
 
         // remove disabled trailing options, if any 
         auto rev_first_it = std::make_reverse_iterator(first_it);
-        if (rev_first_it != m_vertices.rbegin())
+        if (rev_first_it != m_vertices->rbegin())
             --rev_first_it;
         auto rev_last_it = std::make_reverse_iterator(last_it);
-        if (rev_last_it != m_vertices.rbegin())
+        if (rev_last_it != m_vertices->rbegin())
             --rev_last_it;
 
         bool reduced = false;
@@ -1396,12 +1398,12 @@ void FdmViewer::update_view_full_range()
             reduced = true;
         }
 
-        if (reduced && rev_last_it != m_vertices.rend())
+        if (reduced && rev_last_it != m_vertices->rend())
             last_it = rev_last_it.base() - 1;
 
         if (travels_visible || wipes_visible) {
             // if the global range ends with a travel/wipe move, extend it to the travel/wipe end
-            while (last_it != m_vertices.end() && last_it + 1 != m_vertices.end() &&
+            while (last_it != m_vertices->end() && last_it + 1 != m_vertices->end() &&
                    ((travels_visible && last_it->is_travel() && (last_it + 1)->is_travel()) ||
                     (wipes_visible && last_it->is_wipe() && (last_it + 1)->is_wipe()))) {
                   ++last_it;
@@ -1409,15 +1411,15 @@ void FdmViewer::update_view_full_range()
         }
 
         if (first_it != last_it)
-            m_view_range.set_full(std::distance(m_vertices.begin(), first_it), std::distance(m_vertices.begin(), last_it));
+            m_view_range.set_full(std::distance(m_vertices->begin(), first_it), std::distance(m_vertices->begin(), last_it));
         else
             m_view_range.set_full(Range());
 
         if (m_settings.top_layer_only_view_range) {
             const Interval& full_range = m_view_range.full();
-            auto top_first_it = m_vertices.begin() + full_range[0];
+            auto top_first_it = m_vertices->begin() + full_range[0];
             bool shortened = false;
-            while (top_first_it != m_vertices.end() && (top_first_it->layer_id < layers_range[1] || !is_visible(*top_first_it, m_settings))) {
+            while (top_first_it != m_vertices->end() && (top_first_it->layer_id < layers_range[1] || !is_visible(*top_first_it, m_settings))) {
                 ++top_first_it;
                 shortened = true;
             }
@@ -1427,7 +1429,7 @@ void FdmViewer::update_view_full_range()
             // when spiral vase mode is enabled and only one layer is shown, extend the range by one step
             if (m_settings.spiral_vase_enabled && layers_range[0] > 0 && layers_range[0] == layers_range[1])
                 --top_first_it;
-            m_view_range.set_enabled(std::distance(m_vertices.begin(), top_first_it), full_range[1]);
+            m_view_range.set_enabled(std::distance(m_vertices->begin(), top_first_it), full_range[1]);
         }
         else
             m_view_range.set_enabled(m_view_range.full());
@@ -1456,8 +1458,8 @@ void FdmViewer::update_color_ranges()
     m_layer_time_range[0].reset(); // ColorRange::EType::Linear
     m_layer_time_range[1].reset(); // ColorRange::EType::Logarithmic
 
-    for (size_t i = 0; i < m_vertices.size(); i++) {
-        const MoveVertex& v = m_vertices[i];
+    for (size_t i = 0; i < m_vertices->size(); i++) {
+        const MoveVertex& v = (*m_vertices)[i];
         if (v.is_extrusion()) {
             m_height_range.update(round_to_bin(v.height));
             if (!v.is_custom_gcode() || m_settings.extrusion_roles_visibility[size_t(GCodeExtrusionRole::Custom)]) {
@@ -1500,8 +1502,8 @@ void FdmViewer::update_heights_widths()
     m_device->bind_buffer(*m_heights_widths_angles_buffer);
     Vec4f* buffer = (Vec4f*)m_device->map_buffer(*m_heights_widths_angles_buffer, Render::BufferAccess::WriteOnly);
 
-    for (size_t i = 0; i < m_vertices.size(); ++i) {
-        const MoveVertex& v = m_vertices[i];
+    for (size_t i = 0; i < m_vertices->size(); ++i) {
+        const MoveVertex& v = (*m_vertices)[i];
         if (v.is_travel()) {
             buffer[i][0] = m_travels_radius;
             buffer[i][1] = m_travels_radius;

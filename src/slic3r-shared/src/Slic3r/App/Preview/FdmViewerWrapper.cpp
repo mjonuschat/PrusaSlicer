@@ -216,12 +216,8 @@ static FdmViewerInputData extract_viewer_input_data_from_result(const ProcessorR
     }
 
     ret.extruders_count = result.extruders_count;
-    // TODO: we should avoid the copy and refer instead to the data stored in FDMResultCache
-     std::shared_ptr<const LineView> gcode_ptr = result.const_gcode();
-    if (gcode_ptr) {
-        ret.gcode = gcode_ptr;
-    }
-    ret.vertices = result.moves;
+    ret.gcode = result.const_gcode();
+    ret.vertices = result.const_moves();
 
     return ret;
 }

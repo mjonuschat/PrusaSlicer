@@ -152,18 +152,18 @@ void TimeMachine::calculate_time(ProcessorResult& result, TimeMode mode, size_t 
             block_time += additional_time;
 
         time += double(block_time);
-        result.moves[block.move_id].time[size_t(mode)] = block_time;
+        result.moves()[block.move_id].time[size_t(mode)] = block_time;
         gcode_time.cache += block_time;
         if (block.layer_id == 1)
             first_layer_time += block_time;
 
         // detect actual speed moves required to render toolpaths using actual speed
         if (mode == TimeMode::Normal) {
-            MoveVertex& curr_move = result.moves[block.move_id];
+            MoveVertex& curr_move = result.moves()[block.move_id];
             if (curr_move.type == MoveType::Extrude ||
                 curr_move.type == MoveType::Travel ||
                 curr_move.type == MoveType::Wipe) {
-                MoveVertex& prev_move = result.moves[block.move_id - 1];
+                MoveVertex& prev_move = result.moves()[block.move_id - 1];
                 const bool interpolate = (prev_move.type == curr_move.type);
                 if (!interpolate &&
                     prev_move.type != MoveType::Extrude &&

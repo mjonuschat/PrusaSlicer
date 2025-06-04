@@ -394,6 +394,8 @@ bool BuildVolume::all_paths_inside(const Biz::libpgcode::ProcessorResult& paths,
     };
     static constexpr const double epsilon = BedEpsilon;
 
+    const Biz::libpgcode::MoveVertices& moves = *paths.const_moves();
+
     switch (m_type) {
     case Type::Rectangle:
     {
@@ -410,18 +412,18 @@ bool BuildVolume::all_paths_inside(const Biz::libpgcode::ProcessorResult& paths,
         const float r = unscaled<double>(m_circle.radius) + epsilon;
         const float r2 = sqr(r);
         return m_max_print_height == 0.0 ?
-            std::all_of(paths.moves.begin(), paths.moves.end(), [move_valid, c, r2](const Biz::libpgcode::MoveVertex &move)
+            std::all_of(moves.begin(), moves.end(), [move_valid, c, r2](const Biz::libpgcode::MoveVertex &move)
                 { return ! move_valid(move) || (to_2d(move.position) - c).squaredNorm() <= r2; }) :
-            std::all_of(paths.moves.begin(), paths.moves.end(), [move_valid, c, r2, z = m_max_print_height + epsilon](const Biz::libpgcode::MoveVertex& move)
+            std::all_of(moves.begin(), moves.end(), [move_valid, c, r2, z = m_max_print_height + epsilon](const Biz::libpgcode::MoveVertex& move)
                 { return ! move_valid(move) || ((to_2d(move.position) - c).squaredNorm() <= r2 && move.position.z() <= z); });
     }
     case Type::Convex:
     //FIXME doing test on convex hull until we learn to do test on non-convex polygons efficiently.
     case Type::Custom:
         return m_max_print_height == 0.0 ?
-            std::all_of(paths.moves.begin(), paths.moves.end(), [move_valid, this](const Biz::libpgcode::MoveVertex &move) 
+            std::all_of(moves.begin(), moves.end(), [move_valid, this](const Biz::libpgcode::MoveVertex &move) 
                 { return ! move_valid(move) || Geometry::inside_convex_polygon(m_top_bottom_convex_hull_decomposition_bed, to_2d(move.position).cast<double>()); }) :
-            std::all_of(paths.moves.begin(), paths.moves.end(), [move_valid, this, z = m_max_print_height + epsilon](const Biz::libpgcode::MoveVertex &move)
+            std::all_of(moves.begin(), moves.end(), [move_valid, this, z = m_max_print_height + epsilon](const Biz::libpgcode::MoveVertex &move)
                 { return ! move_valid(move) || (Geometry::inside_convex_polygon(m_top_bottom_convex_hull_decomposition_bed, to_2d(move.position).cast<double>()) && move.position.z() <= z); });
     default:
         return true;

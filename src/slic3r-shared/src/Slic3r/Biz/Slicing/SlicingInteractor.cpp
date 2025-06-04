@@ -167,7 +167,7 @@ void SlicingInteractor::on_status(const Status status, const SlicingId id) {
 }
 
 void SlicingInteractor::on_fdm_result(FDMResult&& result, const SlicingId id) {
-    SPDLOG_INFO("{}: FDMResult{{moves_count: {}}}", fmt::streamed(id), result.moves.size());
+    SPDLOG_INFO("{}: FDMResult{{moves_count: {}}}", fmt::streamed(id), result.const_moves()->size());
 
     using Platform::MoveOnlyFunction;
 
@@ -184,7 +184,7 @@ void SlicingInteractor::on_fdm_result(FDMResult&& result, const SlicingId id) {
             });
         }
     )) {
-        SPDLOG_INFO("{}: fdm result not dispatched", fmt::streamed(id), result.moves.size());
+        SPDLOG_INFO("{}: fdm result not dispatched", fmt::streamed(id), result.const_moves()->size());
     }
 }
 

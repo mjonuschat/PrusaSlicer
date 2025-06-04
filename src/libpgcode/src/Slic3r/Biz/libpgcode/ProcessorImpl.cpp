@@ -69,7 +69,7 @@ void ProcessorImpl::process_buffer(std::string&& buffer, std::function<void(floa
     if (buffer.empty())
         return;
 
-    assert(!m_result.moves.empty());
+    assert(!m_result.moves().empty());
     Progress progress(progress_callback, uint64_t(buffer.length()));
 
     m_parser.parse_buffer(buffer, [this, &progress, progress_callback](GCodeReader&, const GCodeReader::GCodeLine& line) {
@@ -88,8 +88,9 @@ void ProcessorImpl::process_buffer(std::string&& buffer, std::function<void(floa
 
 ProcessorResult ProcessorImpl::finalize()
 {
+    MoveVertices& moves = m_result.moves();
     // update width/height of wipe moves
-    for (MoveVertex& move : m_result.moves) {
+    for (MoveVertex& move : moves) {
         if (move.type == MoveType::Wipe) {
             move.width  = DEFAULT_WIPE_WIDTH;
             move.height = DEFAULT_WIPE_HEIGHT;
@@ -107,11 +108,11 @@ ProcessorResult ProcessorImpl::finalize()
         // that should be preceded by its copy. Then resize the vector and put everything in place.
     
         std::vector<uint32_t> mod_moves; // Stores indices into moves - elements that need to be preceded by the copy.
-        mod_moves.reserve(m_result.moves.size());
+        mod_moves.reserve(moves.size());
 
-        for (size_t i = 1; i < m_result.moves.size(); ++i) {
-            MoveVertex& curr = m_result.moves[i];
-            const MoveVertex& prev = m_result.moves[i - 1];
+        for (size_t i = 1; i < moves.size(); ++i) {
+            MoveVertex& curr = moves[i];
+            const MoveVertex& prev = moves[i - 1];
             curr.mass = m_result.filament_densities[m_extruder_id] * curr.mm3_per_mm * (curr.position - prev.position).norm();
             OptionType option_type = move_type_to_option(curr.type);
             if (option_type == OptionType::COUNT || option_type == OptionType::Travels || option_type == OptionType::Wipes) {
@@ -122,17 +123,17 @@ ProcessorResult ProcessorImpl::finalize()
             }
         }
         // Now move all the vertices into place:
-        int orig_idx = m_result.moves.size() - 1;
-        m_result.moves.resize(m_result.moves.size() + mod_moves.size());
-        for (int i = int(m_result.moves.size()) - 1; i >= 0; --i) {
-            m_result.moves[i] = m_result.moves[orig_idx];
+        int orig_idx = moves.size() - 1;
+        moves.resize(moves.size() + mod_moves.size());
+        for (int i = int(moves.size()) - 1; i >= 0; --i) {
+            moves[i] = moves[orig_idx];
             if (! mod_moves.empty() && mod_moves.back() == orig_idx) {
                 // What we just copied should be preceded by its copy (except for some fields).
-                m_result.moves[i-1] = m_result.moves[i];
-                MoveVertex& v = m_result.moves[i-1];
-                v.actual_feedrate = m_result.moves[orig_idx-1].actual_feedrate;
+                moves[i-1] = moves[i];
+                MoveVertex& v = moves[i-1];
+                v.actual_feedrate = moves[orig_idx-1].actual_feedrate;
                 v.mass            = 0.0f;
-                v.position        = m_result.moves[orig_idx-1].position;
+                v.position        = moves[orig_idx-1].position;
                 v.time            = {};
                 --i;
                 mod_moves.pop_back();
@@ -661,7 +662,7 @@ void ProcessorImpl::process_G1(const std::array<std::optional<float>, 4>& axes, 
         block.role = m_extrusion_role;
         block.distance = distance;
         block.g1_line_id = m_g1_line_id;
-        block.move_id = uint32_t(m_result.moves.size());
+        block.move_id = uint32_t(m_result.const_moves()->size());
         block.remaining_internal_g1_lines = remaining_internal_g1_lines.has_value() ? *remaining_internal_g1_lines : 0;
         block.layer_id = std::max<uint32_t>(1, m_layer_id);
 
@@ -810,7 +811,7 @@ void ProcessorImpl::process_G1(const std::array<std::optional<float>, 4>& axes, 
         };
 
         Vec3f curr_pos = get_position_xyz(m_end_position);
-        Vec3f new_pos = m_result.moves.back().position - m_config.extruders.offsets[m_extruder_id];
+        Vec3f new_pos = m_result.const_moves()->back().position - m_config.extruders.offsets[m_extruder_id];
         set_end_position_xyz(new_pos + m_config.z_offset * Vec3f::UnitZ());
         store_move(MoveType::Seam);
         set_end_position_xyz(curr_pos);
@@ -2487,7 +2488,7 @@ void ProcessorImpl::reset()
     m_config.reset();
     m_result.reset();
     m_result.gcode().clear();
-    m_result.moves.emplace_back(MoveVertex());
+    m_result.moves().emplace_back(MoveVertex());
     m_time_processor.reset();
     m_used_filaments.reset();
     m_extruder_color.reset();
@@ -2530,7 +2531,7 @@ void ProcessorImpl::store_move(MoveType type, bool internal_only)
                              m_end_position[Z] + extruder_offset[Z] - m_config.z_offset };
     move.time            = {};
 
-    m_result.moves.emplace_back(move);
+    m_result.moves().emplace_back(move);
 
     // stores stop time placeholders for later use
     if (type == MoveType::ColorChange || type == MoveType::PausePrint) {
@@ -2544,6 +2545,8 @@ void ProcessorImpl::store_move(MoveType type, bool internal_only)
 
 void ProcessorImpl::calculate_time(size_t keep_last_n_blocks, float additional_time)
 {
+    MoveVertices& moves = m_result.moves();
+
     // calculate times
     ActualSpeedMoves actual_speed_moves;
     for (size_t i = 0; i < TIME_MODES_COUNT; ++i) {
@@ -2568,7 +2571,7 @@ void ProcessorImpl::calculate_time(size_t keep_last_n_blocks, float additional_t
         if (it->position.has_value()) {
             // insert actual speed move into the move list
             // clone from existing move
-            MoveVertex new_move = m_result.moves[base_id_old];
+            MoveVertex new_move = moves[base_id_old];
             // override modified parameters
             new_move.actual_feedrate = it->actual_feedrate;
             new_move.position        = *it->position;
@@ -2588,11 +2591,11 @@ void ProcessorImpl::calculate_time(size_t keep_last_n_blocks, float additional_t
             id_map.emplace_back(base_id_old, base_id_old + inserted_count); // Remember where the old element will end up.
             inserted_count += uint32_t(moves_to_insert.back().second.size());      // Increase the number of moves that are already planned to be added.
 
-            m_result.moves[base_id_old].actual_feedrate = it->actual_feedrate; // update move actual speed
+            moves[base_id_old].actual_feedrate = it->actual_feedrate; // update move actual speed
             
             // synchronize seams actual speed
-            if (size_t(base_id_old) + 1 < m_result.moves.size()) {
-                MoveVertex& move = m_result.moves[base_id_old + 1];
+            if (size_t(base_id_old) + 1 < moves.size()) {
+                MoveVertex& move = moves[base_id_old + 1];
                 if (move.type == MoveType::Seam)
                     move.actual_feedrate = it->actual_feedrate;
             }
@@ -2602,17 +2605,17 @@ void ProcessorImpl::calculate_time(size_t keep_last_n_blocks, float additional_t
 
     // Now actually do the insertion of the ranges into the destination vector.
     size_t offset = inserted_count;    
-    m_result.moves.resize(m_result.moves.size() + offset); // grow the vector to its final size   
-    size_t last_pos = m_result.moves.size() - 1;  // index of the last element that still needs to be moved
+    moves.resize(moves.size() + offset); // grow the vector to its final size   
+    size_t last_pos = moves.size() - 1;  // index of the last element that still needs to be moved
     for (auto it = moves_to_insert.rbegin(); it != moves_to_insert.rend(); ++it) {
         const auto& [new_pos, new_moves] = *it;
         if (new_moves.empty())
             continue;
         for (size_t i = last_pos; i >= new_pos + new_moves.size(); --i) {
             // Move the elements to their final place.
-            m_result.moves[i] = m_result.moves[i - offset];
+            moves[i] = moves[i - offset];
         }
-        std::copy(new_moves.begin(), new_moves.end(), m_result.moves.begin() + new_pos);
+        std::copy(new_moves.begin(), new_moves.end(), moves.begin() + new_pos);
         last_pos = new_pos - 1;
         offset -= new_moves.size();
     }

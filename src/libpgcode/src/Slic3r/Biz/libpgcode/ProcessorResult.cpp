@@ -34,13 +34,13 @@ FilamentGeometry ProcessorResult::filament_geometry(uint8_t extruder_id) const
 
 uint32_t ProcessorResult::layer_id_at(uint32_t gcode_id) const
 {
-    if (moves.empty())
+    if (m_moves->empty())
         return 0;
 
-    auto it = std::lower_bound(moves.begin(), moves.end(), gcode_id,
+    auto it = std::lower_bound(m_moves->begin(), m_moves->end(), gcode_id,
         [](const MoveVertex& m, uint32_t id) { return m.gcode_id < id; });
 
-    return (it == moves.end()) ? moves.back().layer_id : it->layer_id;
+    return (it == m_moves->end()) ? m_moves->back().layer_id : it->layer_id;
 }
 
 std::vector<std::string> ProcessorResult::color_strings_for_color_print() const
@@ -69,8 +69,8 @@ void ProcessorResult::reset()
     filament_costs.clear();
     bed_shape.clear();
     m_gcode = std::make_shared<LineView>();
+    m_moves = std::make_shared<MoveVertices>();
     extruder_str_colors.clear();
-    moves.clear();
     custom_gcode_per_print_z.clear();
     print_statistics.reset();
     print_settings.reset();

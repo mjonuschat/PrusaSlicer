@@ -507,8 +507,8 @@ libpgcode::ProcessorResult Preview::generate_result(const Slic3r::Print& print) 
     std::size_t layer_id{0};
     for (const auto& [_, moves] : m_moves_per_layer) {
         for (const libpgcode::MoveVertex& move : moves) {
-            result.moves.push_back(move);
-            result.moves.back().layer_id = layer_id;
+            result.moves().push_back(move);
+            result.moves().back().layer_id = layer_id;
         }
         layer_id++;
     }
@@ -520,8 +520,8 @@ libpgcode::ProcessorResult Preview::generate_result(const Slic3r::Print& print) 
     result.max_print_height = print.config().get<double>("max_print_height");
     result.bed_shape = double_to_float(print.config().get<std::vector<Vec2d>>("bed_shape"));
 
-    for (std::size_t gcode_id{}; gcode_id < result.moves.size(); ++gcode_id) {
-        result.moves[gcode_id].gcode_id = gcode_id;
+    for (std::size_t gcode_id{}; gcode_id < result.moves().size(); ++gcode_id) {
+        result.moves()[gcode_id].gcode_id = gcode_id;
     }
     return result;
 }

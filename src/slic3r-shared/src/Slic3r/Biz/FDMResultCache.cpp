@@ -21,7 +21,7 @@ void FDMResultCache::on_fdm_result_changed(
         listener->on_fdm_result_cache_changed(id);
     });
 
-    if (m_results[id].moves.empty()) {
+    if (m_results[id].const_moves()->empty()) {
         m_results.erase(id);
         SPDLOG_INFO("{}: cleared", fmt::streamed(id));
     } else {
