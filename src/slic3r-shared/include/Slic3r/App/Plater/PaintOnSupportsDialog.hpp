@@ -19,7 +19,11 @@ public:
 
 private:
     void add_new_row(const std::string& title, std::unique_ptr<Item> controls);
-    Item* add_helper(const std::vector<Render::Icon> symbols, const std::string title, Item* help_row);
+    Item* add_helper(
+        const std::vector<std::pair<Render::Icon, bool>> symbols,
+        const std::string title,
+        Item* help_row
+    );
 
 private:
     Yoga::ButtonGroup m_group_tool;

@@ -171,6 +171,13 @@ enum class Icon : wchar_t
     TobBarShowUI,
     TobBarPlus,
     TopBarCross,
+
+    // Gizmo Paint-on-Supports
+    Triangle,
+    Circle,
+    Sphere,
+    WandMagicSparkles,
+    PaintBrush,
 };
 
 } // namespace Slic3r::App::Render

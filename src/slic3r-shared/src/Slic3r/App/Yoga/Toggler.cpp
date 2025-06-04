@@ -1,29 +1,27 @@
 #include "Slic3r/App/Yoga/Toggler.hpp"
+
 #include "Slic3r/App/Yoga/Circle.hpp"
 #include "Slic3r/App/Yoga/AbstractButton.hpp"
 #include "Slic3r/Assert.hpp"
 
 namespace Slic3r::App::Yoga {
 
+static constexpr float round_up_to_even(float value)
+{
+    int int_value = value;
+    return int_value % 2 == 0 ? int_value : ++int_value;
+}
+
 Toggler::Toggler()
 {
     set_align_items(YGAlignCenter);
 
-    float text_height = 0.9f * ImGui::GetTextLineHeight();
-    if (int(text_height) % 2 != 0) {
-        // If it's odd, choose the nearest even number
-        if (text_height > int(text_height)) {
-            text_height++;
-        }
-        else {
-            text_height--;
-        }
-    }
+    float text_height = round_up_to_even(0.9f * std::max(ImGui::GetTextLineHeight(), 12.f));
 
-    Vec2f size = { 1.5f * text_height, text_height };
+    Vec2f size = { round_up_to_even(1.5f * text_height), text_height };
 
-    set_min_size(size);
-    set_max_size(size);
+    set_width(size.x());
+    set_height(size.y());
     set_padding(0.2f * size.y());
 
     m_knob = this->emplace_back<Circle>();

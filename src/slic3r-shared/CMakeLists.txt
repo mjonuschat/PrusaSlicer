@@ -30,7 +30,7 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Plater/PlaterIFDMResultCacheChangedListener.hpp
         include/Slic3r/App/Plater/PaintOnSupportsGizmo.hpp
         src/Slic3r/App/Plater/PaintOnSupportsGizmo.cpp
-        src/Slic3r/App/Plater/PaintOnSupportsDialog.hpp
+        include/Slic3r/App/Plater/PaintOnSupportsDialog.hpp
         src/Slic3r/App/Plater/PaintOnSupportsDialog.cpp
 
         include/Slic3r/App/View/IPanelView.hpp

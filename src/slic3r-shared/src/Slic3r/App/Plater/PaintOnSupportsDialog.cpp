@@ -9,6 +9,7 @@
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
 #include "Slic3r/App/Yoga/Rectangle.hpp"
 #include "Slic3r/App/Yoga/Icon.hpp"
+#include "Slic3r/App/Yoga/ToggleButton.hpp"
 
 using namespace Slic3r::App::Yoga;
 
@@ -26,31 +27,38 @@ PaintOnSupportsDialog::PaintOnSupportsDialog() : Dialog("Paint-on supports")
 
     std::unique_ptr<Item> tool_buttons = std::make_unique<Item>();
     tool_buttons->set_gap(gap_size);
-    LayoutButton* brush_button = tool_buttons->emplace_back<LayoutButton>("", Render::Icon::PrintIdle);
+    LayoutButton* brush_button =
+        tool_buttons->emplace_back<LayoutButton>("", Render::Icon::PaintBrush);
     brush_button->set_checkable(true);
     brush_button->set_checked(true);
     brush_button->set_min_size(button_size);
-    LayoutButton* magic_wand_button = tool_buttons->emplace_back<LayoutButton>("", Render::Icon::PrintIdle);
+    brush_button->set_content_padding(15);
+    LayoutButton* magic_wand_button =
+        tool_buttons->emplace_back<LayoutButton>("", Render::Icon::WandMagicSparkles);
     magic_wand_button->set_checkable(true);
     magic_wand_button->set_min_size(button_size);
+    magic_wand_button->set_content_padding(15);
     add_new_row("Tool", std::move(tool_buttons));
     m_group_tool.set_buttons({brush_button, magic_wand_button});
 
     std::unique_ptr<Item> brush_shape_buttons = std::make_unique<Item>();
     brush_shape_buttons->set_gap(gap_size);
     LayoutButton* sphere_button =
-        brush_shape_buttons->emplace_back<LayoutButton>("", Render::Icon::PrintIdle);
+        brush_shape_buttons->emplace_back<LayoutButton>("", Render::Icon::Sphere);
     sphere_button->set_checkable(true);
     sphere_button->set_checked(true);
     sphere_button->set_min_size(button_size);
+    sphere_button->set_content_padding(15);
     LayoutButton* circle_button =
-        brush_shape_buttons->emplace_back<LayoutButton>("", Render::Icon::PrintIdle);
+        brush_shape_buttons->emplace_back<LayoutButton>("", Render::Icon::Circle);
     circle_button->set_checkable(true);
     circle_button->set_min_size(button_size);
+    circle_button->set_content_padding(15);
     LayoutButton* triangle_button =
-        brush_shape_buttons->emplace_back<LayoutButton>("", Render::Icon::PrintIdle);
+        brush_shape_buttons->emplace_back<LayoutButton>("", Render::Icon::Triangle);
     triangle_button->set_checkable(true);
     triangle_button->set_min_size(button_size);
+    triangle_button->set_content_padding(15);
     add_new_row("Brush shape", std::move(brush_shape_buttons));
     m_group_shape.set_buttons({sphere_button, circle_button, triangle_button});
 
@@ -81,8 +89,8 @@ PaintOnSupportsDialog::PaintOnSupportsDialog() : Dialog("Paint-on supports")
 
     add_separator();
 
-    Item* future_switches = content()->emplace_back<Item>();
-    future_switches->set_min_size({0, 50});
+    content()->emplace_back<ToggleButton>("Paint on overhangs only");
+    content()->emplace_back<ToggleButton>("Split triangles");
 
     add_separator();
 
@@ -92,16 +100,18 @@ PaintOnSupportsDialog::PaintOnSupportsDialog() : Dialog("Paint-on supports")
     help_row->set_align_content(YGAlign::YGAlignCenter);
     help_row->set_padding(5);
 
-    add_helper({Render::Icon::MouseLeft}, "Paint", help_row);
-    add_helper({Render::Icon::MouseRight}, "Block", help_row);
-    add_helper({Render::Icon::KeyShift, Render::Icon::MouseLeft}, "Remove", help_row);
+    add_helper({{Render::Icon::MouseLeft, false}}, "Paint", help_row);
+    add_helper({{Render::Icon::MouseRight, false}}, "Block", help_row);
+    add_helper(
+        {{Render::Icon::KeyShift, true}, {Render::Icon::MouseLeft, false}}, "Remove", help_row
+    );
 }
 
 void PaintOnSupportsDialog::add_new_row(const std::string& title, std::unique_ptr<Item> controls)
 {
     Item* row = content()->emplace_back<Item>();
     row->set_gap(gap_size);
-    row->set_padding({10,0});
+    row->set_padding({10, 0});
     Text* text = row->emplace_back<Text>(title);
     text->set_self_align(YGAlignCenter);
     text->set_width_percent(35);
@@ -111,7 +121,7 @@ void PaintOnSupportsDialog::add_new_row(const std::string& title, std::unique_pt
 }
 
 Item* PaintOnSupportsDialog::add_helper(
-    const std::vector<Render::Icon> symbols, const std::string title, Item* help_row
+    const std::vector<std::pair<Render::Icon, bool>> symbols, const std::string title, Item* help_row
 )
 {
     ImColor color = ImGui::GetColorU32(ImGuiCol_TextDisabled);
@@ -121,9 +131,10 @@ Item* PaintOnSupportsDialog::add_helper(
     help_group->set_gap(5);
 
     int index = 0;
-    for (const Render::Icon symbol : symbols) {
-        Icon* icon = help_group->emplace_back<Icon>(symbol);
-        icon->set_max_size(icon->min_size());
+    for (const std::pair<Render::Icon, bool> symbol : std::as_const(symbols)) {
+        Icon* icon = help_group->emplace_back<Icon>(symbol.first);
+        icon->set_min_size(symbol.second ? Vec2f{35, 35} : Vec2f{25, 25});
+        icon->set_fill_mode(Icon::FillMode::PreservedAspectCentered);
         if (++index < symbols.size()) {
             Text* text = help_group->emplace_back<Text>("+");
             text->set_text_color(color);

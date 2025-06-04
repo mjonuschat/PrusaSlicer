@@ -3,6 +3,7 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include "Slic3r/App/Yoga/ToggleButton.hpp"
+
 #include "Slic3r/App/Yoga/Tooltip.hpp"
 #include "Slic3r/App/Yoga/Toggler.hpp"
 #include "Slic3r/App/Yoga/Text.hpp"

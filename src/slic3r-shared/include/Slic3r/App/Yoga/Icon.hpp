@@ -46,6 +46,7 @@ public:
 
     enum class FillMode
     {
+        PreservedAspectCentered,
         PreservedAspect,
         Stretch
     };
@@ -88,6 +89,7 @@ private:
     // Computed
     Vec2f m_cached_size;
     ImVec2 m_draw_size;
+    ImVec2 m_offset;
 };
 
 } // namespace Slic3r::App::Yoga

@@ -155,6 +155,13 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
     { Icon::TobBarShowUI            , "tb_show_ui"                      },
     { Icon::TobBarPlus              , "plus_new"                        },
     { Icon::TopBarCross             , "cross_new"                       },
+
+    // Gizmo Paint-On-Supports
+    { Icon::Circle                , "circle"                            },
+    { Icon::Triangle              , "triangle"                          },
+    { Icon::Sphere                , "sphere"                            },
+    { Icon::PaintBrush            , "paintbrush"                        },
+    { Icon::WandMagicSparkles     , "wand-magic-sparkles"               },
 };
 
 static const std::unordered_set<Icon> ICON_PNG = {

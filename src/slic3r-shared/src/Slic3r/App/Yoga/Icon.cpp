@@ -45,6 +45,7 @@ void Icon::render(Vec2f pos, Vec2f size)
         constexpr ImVec2 uv0{0, 0};
         constexpr ImVec2 uv1{1, 1};
 
+        ImGui::SetCursorScreenPos(to_im(pos) + m_offset);
         ImGui::Image((ImTextureID) (intptr_t) m_texture.get(), m_draw_size, uv0, uv1, m_tint);
     }
 
@@ -80,15 +81,9 @@ void Icon::set_fill_mode(FillMode fill_mode)
     }
 }
 
-ImColor Icon::tint() const
-{
-    return {m_tint};
-}
+ImColor Icon::tint() const { return {m_tint}; }
 
-void Icon::set_tint(const ImColor &tint)
-{
-    m_tint = tint;
-}
+void Icon::set_tint(const ImColor& tint) { m_tint = tint; }
 
 void Icon::update_draw_sizes()
 {
@@ -100,11 +95,18 @@ void Icon::update_draw_sizes()
 
     if (m_fill_mode == FillMode::Stretch) {
         m_draw_size = component_size;
-    } else if (m_fill_mode == FillMode::PreservedAspect) {
+    } else {
         Render::Size size(m_texture->width(), m_texture->height());
         size.scale(Render::Size(component_size.x, component_size.y));
         m_draw_size.x = size.width;
         m_draw_size.y = size.height;
+        if (m_fill_mode == FillMode::PreservedAspectCentered) {
+            m_offset.x = (component_size.x - size.width) * 0.5;
+            m_offset.y = (component_size.y - size.height) * 0.5;
+        } else { // FillMode::PreservedAspect
+            m_offset.x = 0;
+            m_offset.y = 0;
+        }
     }
 }
 
