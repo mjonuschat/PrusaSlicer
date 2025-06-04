@@ -1494,6 +1494,7 @@ void TabPrint::build()
         line.append_option(optgroup->get_option("external_perimeters_first_holes"));
         line.append_option(optgroup->get_option("external_perimeters_first_holes_min_size"));
         optgroup->append_line(line);
+        optgroup->append_single_option_line("external_perimeters_first_disabled_first_layers");
         optgroup->append_single_option_line("gap_fill_enabled", category_path + "fill-gaps");
         optgroup->append_single_option_line("perimeter_generator");
 
