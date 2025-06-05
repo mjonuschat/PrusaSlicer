@@ -44,7 +44,7 @@ namespace Slic3r::Biz::Preset::IO {
 void PresetLoader::load(const std::string& file_name, std::mutex& mutex)
 {
     Yaml::parse_all_documents_in_file(file_name.c_str(), [this, &mutex](const auto& doc) {
-        auto preset = Yaml::parse_struct<RootPresetNode>(doc);
+        auto preset = Yaml::parse_struct_unwrap<RootPresetNode>(doc);
         std::lock_guard guard(mutex);
         m_presets[preset.kind].emplace_back(std::move(preset));
     });
@@ -53,7 +53,7 @@ void PresetLoader::load(const std::string& file_name, std::mutex& mutex)
 void PresetLoader::load_from_string(std::string_view source)
 {
     Yaml::parse_all_documents_in_string(source, [this](const auto& doc) {
-        auto preset = Yaml::parse_struct<RootPresetNode>(doc);
+        auto preset = Yaml::parse_struct_unwrap<RootPresetNode>(doc);
         m_presets[preset.kind].emplace_back(std::move(preset));
     });
 }
