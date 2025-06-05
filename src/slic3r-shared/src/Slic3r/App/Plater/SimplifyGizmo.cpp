@@ -549,7 +549,6 @@ void SimplifyGizmo::set_nodes(const NodeInputs& node_inputs)
         const ModelVolume* volume_ptr = get_volume_by_id(volume_id, project);
         const Transform3d volume_tr = volume_ptr->get_matrix(); 
         const auto &its = volume_ptr->mesh().its;
-        m_triangle_count += its.indices.size();
         Phantom phantom{
             .volume_id = volume_id,
             .geometry = Render::geometry_from_triangle_mesh(m_device, *node_input.its)
@@ -570,6 +569,11 @@ void SimplifyGizmo::set_nodes(const NodeInputs& node_inputs)
             scene.add_child(builder.build().release(), volume_parent);
         }
     }
+
+    // calculate triangle count
+    m_triangle_count = 0;
+    for (const NodeInput& node_input : node_inputs)
+        m_triangle_count += node_input.its->indices.size();
 }
 
 void SimplifyGizmo::init_material(){
@@ -603,7 +607,6 @@ void SimplifyGizmo::init_model(const std::set<ObjectID>& current_volume_ids)
     NodeInputs node_inputs;
     node_inputs.reserve(m_volume_ids.size());
 
-    m_triangle_count = 0; 
     Scene::Scene& scene = m_scene_presenter.scene();
     const Project& project = m_project_interactor.selected_project(); 
     for (const ObjectID& volume_id : m_volume_ids) {
@@ -626,12 +629,11 @@ void SimplifyGizmo::init_model(const std::set<ObjectID>& current_volume_ids)
     set_nodes(node_inputs);
     create_mesh_name();
 
-    // triangle count is calculated in init model
+    // triangle count is calculated in set_nodes
     m_original_triangle_count = m_triangle_count;
 
     // Default value of configuration
     m_configuration.decimate_ratio = 50.; // default value
-    m_configuration.max_error = 0.1f;
     m_configuration.fix_count_by_ratio(m_original_triangle_count);
     m_configuration.use_count = false;    
     m_configuration.wanted_count = static_cast<uint32_t>(m_triangle_count);
@@ -651,11 +653,6 @@ void SimplifyGizmo::update_model(const State::Data& data)
     scene.root().query(is_simplify_node, simplify_nodes);
     for (Node* node : simplify_nodes)
         scene.remove_children(is_simplify_node, node->parent());
-
-    // calculate triangle count
-    m_triangle_count = 0;
-    for (const auto& item : data)
-        m_triangle_count += item.second->indices.size();
 
     // convert Data to NodeInputs
     NodeInputs node_inputs;
