@@ -278,10 +278,8 @@ void SceneInteractor::change_volume_meshes(RefMeshes&& meshes)
         volume.set_new_unique_id();
         
         object_ids.push_back(id.object_id);
-        for (const ModelInstance* mi : volume.get_object()->instances) {
-            removed_ids.emplace_back(id.object_id, mi->id().id, id.volume_id);
-            updated_ids.emplace_back(id.object_id, mi->id().id, volume.id().id);
-        }
+        removed_ids.emplace_back(id.object_id, 0, id.volume_id);
+        updated_ids.emplace_back(id.object_id, 0, volume.id().id);
     }
 
     std::sort(object_ids.begin(), object_ids.end());
@@ -290,25 +288,21 @@ void SceneInteractor::change_volume_meshes(RefMeshes&& meshes)
         ModelObject& object = *project.find_object_by_id(object_id);
         object.invalidate_bounding_box();
         object.ensure_on_bed(true); // disallow negative z
-    }    
-
-    // TODO: fix hollowing, sla support points, modifiers, ...
-    // int object_idx = selection.get_object_idx();
-    // plater->changed_mesh(object_idx); // PS 2.9.2
-    // TODO: Fix warning icon in object list
-    // wxGetApp().obj_list()->update_item_error_icon(object_idx, -1); // PS 2.9.2
-
-    // After removing custom supports, seams, and multimaterial painting, we have to update info
-    // about the object to remove information about custom supports, seams, and multimaterial
-    // painting in the right panel.
-    // wxGetApp().obj_list()->update_info_items(selection.get_object_idx());
+    }
 
     invoke_listeners<ISceneChangedListener>(
         [&removed_ids, &updated_ids, project_id = m_selected_project_id](auto* l) {
         l->on_volume_removed(project_id, removed_ids);
         l->on_volume_added(project_id, updated_ids);
     });
-    set_selection({SelectionMode::Volume, updated_ids});
+    
+    Domain::ElementRefs selection_ids;
+    for (const auto& update_id: updated_ids) {
+        ModelObject& object = *project.find_object_by_id(update_id.object_id);
+        for (const auto& inst : object.instances)
+            selection_ids.emplace_back(update_id.object_id, inst->id().id, update_id.volume_id);
+    }
+    set_selection({SelectionMode::Volume, selection_ids});
 }
 
 void SceneInteractor::edit_name(const Domain::ElementRef& id, const std::string& new_name)
