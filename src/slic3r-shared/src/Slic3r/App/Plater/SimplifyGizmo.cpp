@@ -6,7 +6,7 @@
 #include "Slic3r/App/Plater/PlaterSceneLayer.hpp"
 #include "Slic3r/App/Plater/SceneNodeTag.hpp"
 #include "Slic3r/App/Render/GeometryBuilder.hpp"
-#include "Slic3r/Biz/Platform/PlatformServices.hpp" // main_thread_dispatcher
+#include "Slic3r/Biz/Platform/PlatformServices.hpp" // main_thread_dispatcher + render_request_handler
 #include "Slic3r/Biz/Algorithms/QuadricEdgeCollapse.hpp"
 
 #include "libslic3r/Model.hpp"
@@ -426,6 +426,8 @@ void SimplifyGizmo::process()
         std::function<void(int)> statusfn = [this](int percent) {
             std::lock_guard lk(m_state_mutex);
             m_state.progress = percent;
+            // Redraw the UI to show progress bar.
+            PlatformServices::instance().render_request_handler().request_render();
         };
 
         // Initialize.
@@ -496,6 +498,9 @@ void SimplifyGizmo::worker_finished()
     const auto& result = m_state.result;
     if (!result.empty())
         update_model(result);
+
+    // rerender the UI to show result.
+    PlatformServices::instance().render_request_handler().request_render();
 
     if (m_state.config != m_configuration || m_state.volume_ids != m_volume_ids) {
         // Settings were changed, restart the worker immediately.
@@ -626,8 +631,13 @@ void SimplifyGizmo::init_model(const std::set<ObjectID>& current_volume_ids)
 
     // Default value of configuration
     m_configuration.decimate_ratio = 50.; // default value
+    m_configuration.max_error = 0.1f;
     m_configuration.fix_count_by_ratio(m_original_triangle_count);
-    m_configuration.use_count = false;
+    m_configuration.use_count = false;    
+    m_configuration.wanted_count = static_cast<uint32_t>(m_triangle_count);
+    m_configuration.decimate_ratio =
+            (1.0f - (m_configuration.wanted_count / (float) m_original_triangle_count)) * 100.f;
+    
 }
 
 void SimplifyGizmo::update_model(const State::Data& data)
