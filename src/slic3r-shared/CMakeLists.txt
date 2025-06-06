@@ -207,7 +207,13 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Yoga/MaterialSettingsButton.hpp
         include/Slic3r/App/Yoga/ButtonGroup.hpp
         src/Slic3r/App/Yoga/ButtonGroup.cpp
-	include/Slic3r/App/Yoga/ListView.hpp
+        include/Slic3r/App/Yoga/ListView.hpp
+        src/Slic3r/App/Yoga/ProjectButton.cpp
+        include/Slic3r/App/Yoga/ProjectButton.hpp
+        src/Slic3r/App/Yoga/ProjectButtonBackground.cpp
+        include/Slic3r/App/Yoga/ProjectButtonBackground.hpp
+        src/Slic3r/App/TopBar.cpp
+        include/Slic3r/App/TopBar.hpp
 	include/Slic3r/App/Yoga/ScrollArea.hpp
         src/Slic3r/App/Yoga/ScrollArea.cpp
 

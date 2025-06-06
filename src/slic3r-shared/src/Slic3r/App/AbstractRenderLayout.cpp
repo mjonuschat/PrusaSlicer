@@ -182,12 +182,24 @@ void AbstractRenderLayout::set_sidebars_visible(bool visible)
     }
 }
 
+void AbstractRenderLayout::synchronize_topbar()
+{
+    m_top_bar->synchronize();
+}
+
 void AbstractRenderLayout::init()
 {
-    m_layout_main.set_gap(5);
-    m_layout_main.set_orientation(Orientation::Horizontal);
-    m_layout_main.set_padding(Paddings(frame_padding()));
-    m_layout_main.set_flex_grow(1.0);
+    m_layout_main.set_padding(0);
+    m_layout_main.set_gap(0);
+    m_layout_main.set_orientation(Orientation::Vertical);
+
+    m_layout_main.append(m_top_bar.release());
+
+    m_layout_main_bottom = m_layout_main.emplace_back<Item>();
+    m_layout_main_bottom->set_gap(5);
+    m_layout_main_bottom->set_orientation(Orientation::Horizontal);
+    m_layout_main_bottom->set_padding(Paddings(frame_padding()));
+    m_layout_main_bottom->set_flex_grow(1.0);
 
     init_left_column();
 
@@ -198,7 +210,7 @@ void AbstractRenderLayout::init()
 
 void AbstractRenderLayout::init_left_column()
 {
-    m_layout_left_column = m_layout_main.emplace_back<Item>();
+    m_layout_left_column = m_layout_main_bottom->emplace_back<Item>();
     m_layout_left_column->set_orientation(Orientation::Vertical);
     m_layout_left_column->set_gap(5);
 
@@ -208,7 +220,7 @@ void AbstractRenderLayout::init_left_column()
 
 void AbstractRenderLayout::init_middle_column()
 {
-    m_layout_center_row = m_layout_main.emplace_back<Item>();
+    m_layout_center_row = m_layout_main_bottom->emplace_back<Item>();
     m_layout_center_row->set_orientation(Orientation::Horizontal);
     m_layout_center_row->set_gap(5);
     m_layout_center_row->set_flex_grow(1.);
@@ -226,7 +238,7 @@ void AbstractRenderLayout::init_middle_column()
 
 void AbstractRenderLayout::init_right_column()
 {
-    m_layout_right_column = m_layout_main.emplace_back<Item>();
+    m_layout_right_column = m_layout_main_bottom->emplace_back<Item>();
     m_layout_right_column->set_orientation(Orientation::Vertical);
     m_layout_right_column->set_gap(5);
     m_layout_right_column->set_min_size({280.f, 0});
@@ -374,12 +386,14 @@ private:
 };
 
 AbstractRenderLayout::AbstractRenderLayout(
+    std::unique_ptr<TopBar> top_bar,
     std::unique_ptr<ObjectList> object_list,
     std::unique_ptr<CubeView> cube_view,
     std::unique_ptr<SidebarBed> sidebar_bed,
     std::unique_ptr<SidebarPrint> sidebar_print
 )
-    : m_object_list(std::move(object_list))
+    : m_top_bar(std::move(top_bar))
+    , m_object_list(std::move(object_list))
     , m_cube_view(std::move(cube_view))
     , m_sidebar_bed(std::move(sidebar_bed))
     , m_sidebar_print(std::move(sidebar_print))

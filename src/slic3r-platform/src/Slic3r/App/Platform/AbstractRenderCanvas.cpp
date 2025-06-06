@@ -48,6 +48,7 @@ void AbstractRenderCanvas::set_next_render_module(AbstractRenderModule* render_m
      * and couldn't correctly handle send_data_to_viewer().
      * */
     m_next_render_module->ensure_initialized(device(), imgui_render());
+    m_next_render_module->synchronize_topbar();
 }
 
 void AbstractRenderCanvas::set_screen_size(const Render::ScreenInfo& screen_info)

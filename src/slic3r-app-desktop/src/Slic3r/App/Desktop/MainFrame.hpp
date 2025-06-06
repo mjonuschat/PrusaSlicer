@@ -17,7 +17,6 @@ class AbstractEditor;
 
 namespace Slic3r::App::Desktop {
 
-class TopBar;
 class LeftBar;
 
 class MainFrame : public wxFrame, public ILanguageChangedListener {
@@ -74,9 +73,7 @@ private:
 #endif
 
     TabsBarMenus    m_tabs_bar_menus;
-    TopBar*         m_top_bar{ nullptr };
     LeftBar*        m_left_bar{ nullptr };
-    wxPanel*        m_slicing_panel{ nullptr };
 };
 
 }

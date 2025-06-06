@@ -7,7 +7,6 @@
 #include "Preset/EditorPrinter.hpp"
 
 #include "Slic3r/App/Desktop/LeftBar.hpp"
-#include "Slic3r/App/Desktop/TopBar.hpp"
 
 #include <Slic3r/Biz/Platform/Termination.hpp>
 #include <Slic3r/App/IDialogManager.hpp>
@@ -156,7 +155,6 @@ MainFrame::MainFrame(
     this->Bind(wxEVT_SYS_COLOUR_CHANGED, [this](wxSysColourChangedEvent& event)
     {
         event.Skip();
-        m_top_bar->OnColorsChanged();
         m_left_bar->OnColorsChanged();
     });
 
@@ -165,7 +163,6 @@ MainFrame::MainFrame(
     {
         event.Skip();
         m_left_bar->Rescale();
-        m_top_bar->Rescale();
         update_canvas_ui_settings();
     });
 #endif
@@ -301,6 +298,9 @@ void MainFrame::init_left_bar()
     init_slicing_page();
     init_printables_page();
 
+    //! experiments just for UI testing
+    add_experimets_page(m_left_bar, this);
+
     m_left_bar->message_button()->Bind(wxEVT_BUTTON, [](wxCommandEvent&) {
         wxMessageBox(from_u8("Message Clicked"), WX::from_u8("TEST"), wxICON_INFORMATION);
     });
@@ -340,18 +340,8 @@ void MainFrame::init_projects_page()
 
 void MainFrame::init_slicing_page()
 {
-    m_slicing_panel = new wxPanel(m_left_bar);
-    w_config()->UpdateDarkUI(m_slicing_panel);
-
-    init_top_bar();
-
-    wxBoxSizer* main_sizer = new wxBoxSizer(wxVERTICAL);
-    main_sizer->Add(m_top_bar, 1, wxEXPAND);
-    m_slicing_panel->SetSizer(main_sizer);
-
-    m_left_bar->AddNewPage(m_slicing_panel, from_u8(L("Slicing")), "lb_slicing");
-
-    complete_and_bind_top_bar();
+    m_canvas = std::make_unique<Platform::WX::WXRenderCanvas>(m_left_bar);
+    m_left_bar->AddNewPage(m_canvas.get(), from_u8(L("Slicing")), "lb_slicing");
 }
 
 void MainFrame::init_printables_page()
@@ -362,60 +352,10 @@ void MainFrame::init_printables_page()
 
 void MainFrame::complete_and_bind_left_bar()
 {
-    int slicing_page_id = m_left_bar->FindPage(m_slicing_panel);
+    int slicing_page_id = m_left_bar->FindPage(m_canvas.get());
     m_left_bar->SetSelection(slicing_page_id);
 
     m_left_bar->Bind(wxEVT_BOOKCTRL_PAGE_CHANGED, [this](wxBookCtrlEvent& e) {
-        });
-}
-
-void MainFrame::init_top_bar()
-{
-    m_top_bar = TopBar::Create(m_slicing_panel);
-
-    m_canvas = std::make_unique<Platform::WX::WXRenderCanvas>(m_top_bar);
-    m_top_bar->AddPage(m_canvas.get(), from_u8(L("New Project")));
-
-    //! experiments just for UI testing
-    add_experimets_page(m_top_bar, this);
-
-    m_top_bar->new_button()->Bind(wxEVT_BUTTON, [](wxCommandEvent&) {
-        wxMessageBox(from_u8("\"New\" button is Clicked"), WX::from_u8("TEST"), wxICON_INFORMATION);
-    });
-
-    m_top_bar->load_button()->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) {
-        load_project();
-    });
-
-    m_top_bar->save_button()->Bind(wxEVT_BUTTON, [](wxCommandEvent&) {
-        wxMessageBox(from_u8("\"Save\" button is Clicked"), WX::from_u8("TEST"), wxICON_INFORMATION);
-    });
-
-    auto update_hide_sidebars_button = [this](bool hide) -> void {
-        m_top_bar->hide_sidebars_button()->set_selected(hide);
-        m_top_bar->hide_sidebars_button()->SetToolTip(hide ? _L("Show sidebars") : _L("Hide sidebars")); 
-    };
-
-    m_top_bar->hide_sidebars_button()->Bind(wxEVT_BUTTON, [update_hide_sidebars_button, this](wxCommandEvent&) {
-        bool hide = !m_top_bar->hide_sidebars_button()->is_selected();
-        update_hide_sidebars_button(hide);
-
-        // Propagate sidebars visibility into active RenderModule
-        // ???Is it a good idea to change render module from MainFrame
-        m_canvas->get_render_module()->set_sidebars_visible(hide);
-
-        // ysTODO: save hide value into app_config
-    });
-
-    bool hide_sidebars{ false };// ysTODO: get value from app_config
-    update_hide_sidebars_button(hide_sidebars);
-}
-
-void MainFrame::complete_and_bind_top_bar()
-{
-    int canvas_page_id = m_top_bar->FindPage(m_canvas.get());
-    m_top_bar->SetSelection(canvas_page_id);
-    m_top_bar->Bind(wxEVT_BOOKCTRL_PAGE_CHANGED, [this](wxBookCtrlEvent& e) {
         });
 }
 
@@ -425,7 +365,6 @@ void MainFrame::sys_color_changed()
     w_config()->force_colors_update(!w_config()->dark_mode(), { this });
 #endif
 
-    m_top_bar->OnColorsChanged();
     m_left_bar->OnColorsChanged();
 }
 

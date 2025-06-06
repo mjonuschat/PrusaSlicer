@@ -54,7 +54,7 @@ class WidgetsConfig {
     int             m_em_unit{ 10 };    // width of a "m"-symbol in pixels for current system font
 	                                    // Note: for 100% Scale m_em_unit = 10 -> it's a good enough coefficient for a size setting of controls
 
-    bool            m_is_dark{ false };
+    bool            m_is_dark{ true };
 
 
     WidgetsConfig(bool is_dark, bool is_sys_menu);

@@ -165,7 +165,12 @@ enum class Icon : wchar_t
     SavePrintToLocal,
     SavePrintAddBookmark,
 
-    SettingsSet
+    SettingsSet,
+    TobBarLoad,
+    TobBarSave,
+    TobBarShowUI,
+    TobBarPlus,
+    TopBarCross,
 };
 
 } // namespace Slic3r::App::Render

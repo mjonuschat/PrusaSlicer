@@ -98,11 +98,19 @@ TEST_CASE("Project Interactor Listeners")
             auto capStr = std::string("selected_project: ") + std::to_string(_1);
             UNSCOPED_INFO(capStr);
         );
-        // REQUIRE_CALL(selected_config_container_listener, on_selected_config_container_changed(1, gt(0)))
-        // .SIDE_EFFECT(
-        //     auto capStr = std::string("selected_config_container( cc: ") + std::to_string(_2) + " )";
-        //     UNSCOPED_INFO(capStr);
-        // );
+        REQUIRE_CALL(selected_config_container_listener, on_selected_config_container_changed(0, gt(0)))
+        .SIDE_EFFECT(
+            auto capStr = std::string("selected_config_container( cc: ") + std::to_string(_2) + " )";
+            UNSCOPED_INFO(capStr);
+        );
+        REQUIRE_CALL(
+            selected_bed_instance_changed_listener,
+            on_selected_bed_instance_changed(0, gt(0), gt(0))
+        )
+        .SIDE_EFFECT(
+            auto capStr = std::string("selected_bed_instance( cc: ") + std::to_string(_2) + " )";
+            UNSCOPED_INFO(capStr);
+        );
         project_interactor.select_project(0);
     }
 
