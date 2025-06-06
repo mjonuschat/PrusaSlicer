@@ -21,9 +21,23 @@ const char* ACTIVATION_STATE_NAMES[] = {
 
 #endif
 
+GizmoManager::GizmoManager(Render::Device& device, ISceneProvider& scene_provider, Biz::ProjectInteractor& project_interactor)
+    : m_projects(project_interactor), m_scene_provider(scene_provider), m_project_interactor(project_interactor), m_data_factory(device)
+{
+    m_project_interactor.add_listener<Biz::ISelectedProjectChangedListener>(this);
+    GizmoManager::on_selected_project_changed(m_project_interactor.selected_project_id());
+}
+
+GizmoManager::~GizmoManager()
+{
+    m_project_interactor.remove_listener<Biz::ISelectedProjectChangedListener>(this);
+}
+
+
 void GizmoManager::on_scene_mouse_event(const Platform::MouseEvent& e, const Slic3r::App::Render::ScreenInfo& screen_info)
 {
-    if (!m_in_cycle) {
+    auto& p = current_context();
+    if (!p.in_cycle) {
         if (e.is_imgui_captured())
             return;
         prepare_cycle();
@@ -41,14 +55,14 @@ void GizmoManager::on_scene_mouse_event(const Platform::MouseEvent& e, const Sli
     );
 
     GizmoEventContext ctx{e, pick_ray, pick_results, screen_info};
-    const bool single_active = m_in_cycle_gizmos.size() == 1;
+    const bool single_active = p.in_cycle_gizmos.size() == 1;
 #if DEBUG_GIZMO_MANAGER
-    SPDLOG_INFO("process event {} ---in-cycle: {}", int(e.type()), m_in_cycle);
+    SPDLOG_INFO("process event {} ---in-cycle: {}", int(e.type()), p.in_cycle);
     update_gizmo_activation_debug_frame_begin();
 #endif
 
-    auto it = m_in_cycle_gizmos.begin();
-    while (it != m_in_cycle_gizmos.end()) {
+    auto it = p.in_cycle_gizmos.begin();
+    while (it != p.in_cycle_gizmos.end()) {
         auto g = *it;
 
         auto ret = g->on_mouse(ctx, single_active);
@@ -58,21 +72,21 @@ void GizmoManager::on_scene_mouse_event(const Platform::MouseEvent& e, const Sli
 #endif
 
         if (ret == GizmoActivationState::Inactive) {
-            it = m_in_cycle_gizmos.erase(it);
+            it = p.in_cycle_gizmos.erase(it);
             continue;
         } else if (ret == GizmoActivationState::Done) {
-            m_in_cycle_gizmos.clear();
+            p.in_cycle_gizmos.clear();
             break;
         } else if (ret == GizmoActivationState::Active) {
-            m_in_cycle_gizmos.clear();
-            m_in_cycle_gizmos.push_back(g);
+            p.in_cycle_gizmos.clear();
+            p.in_cycle_gizmos.push_back(g);
             break;
         }
         ++it;
     }
 
-    if (m_in_cycle && m_in_cycle_gizmos.empty())
-        m_in_cycle = false;
+    if (p.in_cycle && p.in_cycle_gizmos.empty())
+        p.in_cycle = false;
 
     // process transient events
     for (auto& g : m_base_gizmos)
@@ -88,27 +102,29 @@ bool GizmoManager::on_scene_keyboard_event(const Platform::KeyboardEvent& e)
 
 void GizmoManager::prepare_cycle()
 {
-    m_in_cycle = true;
-    m_in_cycle_gizmos.reserve(m_base_gizmos.size() + (m_active_tool != nullptr ? 1 : 0));
+    auto& p = current_context();
+    p.in_cycle = true;
+    p.in_cycle_gizmos.reserve(m_base_gizmos.size() + (p.active_tool != nullptr ? 1 : 0));
     for (const auto& g : m_base_gizmos) {
         g->on_cycle_prepare();
-        m_in_cycle_gizmos.push_back(g.get());
+        p.in_cycle_gizmos.push_back(g.get());
     }
-    if (m_active_tool)
-        m_in_cycle_gizmos.push_back(m_active_tool);
+    if (p.active_tool)
+        p.in_cycle_gizmos.push_back(p.active_tool);
 #if DEBUG_GIZMO_MANAGER
     SPDLOG_INFO("New cycle, active gizmos:");
-    for (const auto& g : m_in_cycle_gizmos)
+    for (const auto& g : p.in_cycle_gizmos)
         SPDLOG_INFO("- {}", type_name(*g));
 #endif
 }
 
 void GizmoManager::render_scene(Render::CommandBuffer& cmd_buffer)
 {
+    const auto& p = current_context();
     Render::ScopedDebugGroup event_gizmo_manager("Gizmo Manager", cmd_buffer);
     // Most gizmos will render on top of scene, so disable depth test here so gizmos shouldn't care
     cmd_buffer.set_depth_test_enabled(false);
-    for (auto* g : m_in_cycle_gizmos)
+    for (auto* g : p.in_cycle_gizmos)
         g->render_scene(cmd_buffer);
     //m_scene_provider.scene().log_nodes();
 }
@@ -124,37 +140,45 @@ void GizmoManager::render_scene(Render::CommandBuffer& cmd_buffer)
 
 void GizmoManager::activate_tool(ToolType tool, PrinterTechnology pt)
 {
+    auto& p = current_context();
     deactivate_current_tool();
 
-    m_active_tool = DEBUG_ASSERT_VAL(find_tool(tool, pt));
+    p.active_tool = DEBUG_ASSERT_VAL(find_tool(tool, pt));
 
-    if (m_active_tool != nullptr) {
-        m_active_tool->on_activated();
-        invoke_listeners<IGizmoActiveToolListener>([this](auto* l) { l->active_tool_changed(m_active_tool); });
+    if (p.active_tool != nullptr) {
+        p.active_tool->on_activated();
+        invoke_listeners<IGizmoActiveToolListener>([p](auto* l) { l->active_tool_changed(p.active_tool); });
     }
 }
 
 void GizmoManager::toggle_activate_tool(ToolType tool, PrinterTechnology pt)
 {
-    IToolGizmo* original_tool = m_active_tool;
+    auto& p = current_context();
+    IToolGizmo* original_tool = p.active_tool;
     deactivate_current_tool();
 
     IToolGizmo* next_tool = DEBUG_ASSERT_VAL(find_tool(tool, pt));
     if (next_tool != original_tool) {
-        m_active_tool = next_tool;
-        m_active_tool->on_activated();
-        invoke_listeners<IGizmoActiveToolListener>([this](auto* l) { l->active_tool_changed(m_active_tool); });
+        p.active_tool = next_tool;
+        p.active_tool->on_activated();
+        invoke_listeners<IGizmoActiveToolListener>([p](auto* l) { l->active_tool_changed(p.active_tool); });
     }
 }
 
 void GizmoManager::deactivate_current_tool()
 {
-    if (m_active_tool == nullptr)
+    auto& p = current_context();
+    if (p.active_tool == nullptr)
         return;
-    m_active_tool->on_deactivated();
-    m_active_tool = nullptr;
-    invoke_listeners<IGizmoActiveToolListener>([this](auto* l) { l->active_tool_changed(m_active_tool); });
+    p.active_tool->on_deactivated();
+    p.active_tool = nullptr;
+    invoke_listeners<IGizmoActiveToolListener>([p](auto* l) { l->active_tool_changed(p.active_tool); });
+}
 
+ToolType GizmoManager::current_tool_type() const
+{
+    const auto& ctx = current_context();
+    return (ctx.active_tool != nullptr) ? ctx.active_tool->type() : ToolType::None;
 }
 
 IToolGizmo* GizmoManager::find_tool(ToolType tool, PrinterTechnology pt)
@@ -166,6 +190,24 @@ IToolGizmo* GizmoManager::find_tool(ToolType tool, PrinterTechnology pt)
     return it == m_tool_gizmos.end() ? nullptr : it->get();
 }
 
+
+void GizmoManager::on_selected_project_changed(size_t index)
+{
+    if (m_last_project_id != Domain::INVALID_ID) {
+        auto& last_p = m_projects.project(m_last_project_id);
+        if (last_p.active_tool)
+            last_p.active_tool->on_project_deactivated(m_last_project_id);
+    }
+    m_last_project_id = index;
+    auto& p = current_context();
+    if (p.active_tool)
+        p.active_tool->on_project_activated(index);
+    invoke_listeners<IGizmoActiveToolListener>(
+        [active_tool = p.active_tool](IGizmoActiveToolListener* l) {
+            l->active_tool_changed(active_tool);
+        }
+    );
+}
 
 #if DEBUG_GIZMO_MANAGER
 void GizmoManager::update_gizmo_activation_debug_data(const IGizmo* g, GizmoActivationState state)

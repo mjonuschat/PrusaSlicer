@@ -10,9 +10,10 @@ PreviewScenePresenter::PreviewScenePresenter(const Domain::Workbench& workbench,
     : m_workbench(workbench), m_project_interactor(project_interactor), m_device(device)
     , m_bed_render_updater(*this, workbench, device)
 {
+    m_project_interactor.add_listener<Biz::ISelectedProjectChangedListener>(this);
+    m_project_interactor.add_listener<Biz::ISelectedProjectChangedListener>(&m_bed_render_updater);
     size_t project_id = m_project_interactor.selected_project_id();
     on_selected_project_changed(project_id);
-    m_project_interactor.add_listener<Biz::ISelectedProjectChangedListener>(&m_bed_render_updater);
 }
 
 void PreviewScenePresenter::render_scene(Render::CommandBuffer& command_buffer)
@@ -34,6 +35,7 @@ void PreviewScenePresenter::render_imgui(const Render::ScreenInfo& screen_info)
 
 void PreviewScenePresenter::screen_resized(const Render::Rect& viewport)
 {
+    m_viewport = viewport;
     update_cameras([&viewport](auto& cam) { cam.set_viewport(viewport); });
 }
 
@@ -43,7 +45,10 @@ void PreviewScenePresenter::on_selected_project_changed(size_t index)
     if (m_projects.count(m_selected_project_id) == 0) {
         m_projects.try_emplace(index);
         m_bed_render_updater.on_selected_project_changed(m_selected_project_id);
-        project_context().scene().camera().add_listener<Scene::ICameraUpdateListener>(&m_bed_render_updater);
+        // a new camera has been created, add the bed updater as listener
+        auto& camera = project_context().scene().camera();
+        camera.add_listener<Scene::ICameraUpdateListener>(&m_bed_render_updater);
+        camera.set_viewport(m_viewport);
     }
 }
 

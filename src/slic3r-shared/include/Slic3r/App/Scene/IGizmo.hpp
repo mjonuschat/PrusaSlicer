@@ -136,6 +136,18 @@ public:
     /**@}*/
 
     /**
+     * @name Project activation and deactivation
+     * @note Project deactivation of a tool gizmo happens when a project with active tool gizmo gets
+     * switched from (i.e. project will disappear). And analogically project activation of a tool
+     * gizmo happens when a project where the tool gizmo was active gets switched to (i.e. project
+     * will appear).
+     * @{
+     */
+    virtual void on_project_activated(size_t new_project_id) {}
+    virtual void on_project_deactivated(size_t old_project_id) {}
+    /**@}*/
+
+    /**
      * @name Identification and capabilities
      * @{
      */
@@ -150,7 +162,7 @@ public:
     virtual bool enabled() const;
     /**@}*/
 
-    virtual std::unique_ptr<Yoga::Dialog> unlaod_ui_dialog();
+    virtual std::unique_ptr<Yoga::Dialog> unload_ui_dialog();
 };
 
 } // namespace Slic3r::App::Scene

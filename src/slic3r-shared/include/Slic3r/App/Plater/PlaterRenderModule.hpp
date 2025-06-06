@@ -18,7 +18,8 @@ class PaintOnSupportsGizmo;
 
 class PlaterRenderModule final : public Platform::AbstractRenderModule,
                                  public Biz::IStatusCacheChangedListener,
-                                 public Biz::Scene::ISceneSelectionChangedListener
+                                 public Biz::Scene::ISceneSelectionChangedListener,
+                                 private Scene::IGizmoActiveToolListener
 {
 public:
     PlaterRenderModule(const Domain::Workbench& workbench, Biz::ProjectInteractor& project_interactor);
@@ -49,8 +50,10 @@ protected:
 private:
     void init_scene();
     void init_scene_layout();
+    void update_toolbar_tool_selection(Scene::ToolType current_tool_type);
     void render_object_hud(const Scene::Node& n, const Eigen::AlignedBox<float, 2>& screen_bounding_box);
     void toggle_activate_tool(Scene::ToolType tool_type);
+    void active_tool_changed(Scene::IToolGizmo* active_tool) override;
 
     void init_gizmos();
 

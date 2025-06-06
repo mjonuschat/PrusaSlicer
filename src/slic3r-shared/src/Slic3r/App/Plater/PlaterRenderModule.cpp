@@ -57,7 +57,11 @@ PlaterRenderModule::PlaterRenderModule(
     : m_workbench(workbench), m_project_interactor(project_interactor)
 {}
 
-PlaterRenderModule::~PlaterRenderModule() = default;
+PlaterRenderModule::~PlaterRenderModule()
+{
+    if (m_gizmo_manager)
+        m_gizmo_manager->remove_listener<IGizmoActiveToolListener>(this);
+}
 
 void PlaterRenderModule::on_init(Render::Device& device, Render::ImguiRender& imgui_render)
 {
@@ -108,19 +112,20 @@ void PlaterRenderModule::init_scene_layout()
     }
 
     m_layout.reset(new PlaterRenderLayout(
-        m_top_bar.release(),
-        m_object_list.release(), m_cube_view.release(), m_sidebar_bed.release(), m_sidebar_print.release(), m_sidebar_action_buttons.release(),
-        m_history.release()
+        m_top_bar.release(), m_object_list.release(), m_cube_view.release(), m_sidebar_bed.release(),
+        m_sidebar_print.release(), m_sidebar_action_buttons.release(), m_history.release()
     ));
     m_layout->init();
 
     // init toolbars
     m_layout->add_toolbar_item_panel(
-        ToolbarID::Top, Render::Icon::ToolbarObjects, "Object List", "Ctrl + Alt + O", {}, m_object_list.get()
+        ToolbarID::Top, Render::Icon::ToolbarObjects, "Object List", "Ctrl + Alt + O", {},
+        m_object_list.get()
     );
 
     m_layout->add_toolbar_item_panel(
-        ToolbarID::Bottom, Render::Icon::ToolbarHistory, "Actions History", "Shift + Alt + H", {}, m_history.get()
+        ToolbarID::Bottom, Render::Icon::ToolbarHistory, "Actions History", "Shift + Alt + H", {},
+        m_history.get()
     );
 
     m_layout->add_toolbar_item(
@@ -148,8 +153,7 @@ void PlaterRenderModule::init_scene_layout()
     );
     m_toolbar_rotate = m_layout->add_toolbar_item_gizmo(
         ToolbarID::Middle, Render::Icon::ToolbarRotation, "Rotate", "R",
-        {.action = [this]() { toggle_activate_tool(Scene::ToolType::Rotation); }},
-        m_rotation_gizmo
+        {.action = [this]() { toggle_activate_tool(Scene::ToolType::Rotation); }}, m_rotation_gizmo
     );
     m_toolbar_paint_on_supports = m_layout->add_toolbar_item_gizmo(
         ToolbarID::Middle, Render::Icon::ToolbarPaintOnSupports, "Paint-on supports", "L",
@@ -158,145 +162,21 @@ void PlaterRenderModule::init_scene_layout()
     );
 }
 
+void PlaterRenderModule::update_toolbar_tool_selection(Scene::ToolType current_tool_type)
+{
+    m_toolbar_move->set_checked(current_tool_type == Scene::ToolType::Translation);
+    m_toolbar_rotate->set_checked(current_tool_type == Scene::ToolType::Rotation);
+    m_toolbar_paint_on_supports->set_checked(
+        current_tool_type == Scene::ToolType::PaintOnSupportsGizmo
+    );
+}
+
 void PlaterRenderModule::toggle_activate_tool(Scene::ToolType tool_type)
 {
     m_gizmo_manager->toggle_activate_tool(tool_type, ptFFF);
 
     Scene::ToolType current_tool_type = m_gizmo_manager->current_tool_type();
-
-    m_toolbar_move->set_checked(current_tool_type == Scene::ToolType::Translation);
-    m_toolbar_rotate->set_checked(current_tool_type == Scene::ToolType::Rotation);
-    m_toolbar_paint_on_supports->set_checked(current_tool_type == Scene::ToolType::PaintOnSupportsGizmo);
-}
-
-static void my_model_experinets(Biz::Scene::SceneInteractor& scene_interactor, const Domain::Bed& bed, bool can_add_modifiers)
-{
-    size_t x_size = 3;
-    size_t y_size = 3;
-    double span = 20;
-    double x_off = -((x_size - 1) * span) / 2 + bed.center().x();
-    double y_off = -((y_size - 1) * span) / 2 + bed.center().y();
-
-    {
-        scene_interactor.new_object_from_mesh(TriMesh::make_cube(10, 10, 10));
-
-        Biz::Scene::TransformMemento xform_memento;
-        Transform3d xform = Transform3d::Identity();
-        xform.translate(Vec3d{0 * span + x_off, 0 * span + y_off, 0});
-        scene_interactor.transform_selection(xform.matrix(), xform_memento);
-
-        xform = Transform3d::Identity();
-        xform.translate(Vec3d{10, 10, 10});
-        scene_interactor.add_volume_from_mesh(
-            TriMesh::make_cube(10, 10, 10), ModelVolumeType::NEGATIVE_VOLUME, xform.matrix()
-        );
-
-        if (can_add_modifiers) {
-            xform = Transform3d::Identity();
-            xform.translate(Vec3d{ 0, -10, 10 });
-            scene_interactor.add_volume_from_mesh(TriMesh::make_cube(10, 10, 10), ModelVolumeType::PARAMETER_MODIFIER, xform.matrix());
-        }
-
-        xform = Transform3d::Identity();
-        xform.translate(Vec3d{0, 5, 10});
-        scene_interactor.add_volume_from_mesh(
-            TriMesh::make_sphere(10, 12), ModelVolumeType::SUPPORT_ENFORCER, xform.matrix()
-        );
-    }
-
-    for (size_t x = 0; x < x_size; x++) {
-        for (size_t y = 0; y < y_size; y++) {
-            if (x == 0 && y == 0)
-                continue;
-
-            Transform3d xform = Transform3d::Identity();
-            xform.translate(Vec3d{x * span + x_off, y * span + y_off, 0});
-            scene_interactor.add_instance(xform.matrix());
-        }
-    }
-
-    x_size = 2;
-    y_size = 4;
-    span = 30;
-    x_off = -((x_size - 1) * span) / 2 + bed.center().x() + 65;
-    y_off = -((y_size - 1) * span) / 2 + bed.center().y() + 25;
-    {
-        scene_interactor.new_object_from_mesh(TriMesh::make_cube(10, 10, 10));
-
-        Biz::Scene::TransformMemento xform_memento;
-        Transform3d xform = Transform3d::Identity();
-        xform.translate(Vec3d{0 * span + x_off, 0 * span + y_off, 0});
-        scene_interactor.transform_selection(xform.matrix(), xform_memento);
-
-        xform = Transform3d::Identity();
-        xform.translate(Vec3d{10, 10, 10});
-        scene_interactor.add_volume_from_mesh(
-            TriMesh::make_cube(10, 10, 10), ModelVolumeType::NEGATIVE_VOLUME, xform.matrix()
-        );
-
-        if (can_add_modifiers) {
-            xform = Transform3d::Identity();
-            xform.translate(Vec3d{ 0, -10, 10 });
-            scene_interactor.add_volume_from_mesh(TriMesh::make_cube(10, 10, 10), ModelVolumeType::PARAMETER_MODIFIER, xform.matrix());
-        }
-
-        xform = Transform3d::Identity();
-        xform.translate(Vec3d{ 0, 5, 10});
-        scene_interactor.add_volume_from_mesh(TriMesh::make_sphere(10, 12), ModelVolumeType::SUPPORT_ENFORCER, xform.matrix());
-
-        xform = Transform3d::Identity();
-        xform.translate(Vec3d{ 0, 5, 10});
-        scene_interactor.add_volume_from_mesh(TriMesh::make_sphere(10, 12), ModelVolumeType::SUPPORT_BLOCKER, xform.matrix());
-
-    }
-
-    for (size_t x = 0; x < x_size; x++) {
-        for (size_t y = 0; y < y_size; y++) {
-            if (x == 0 && y == 0)
-                continue;
-
-            Transform3d xform = Transform3d::Identity();
-            xform.translate(Vec3d{x * span + x_off, y * span + y_off, 0});
-            scene_interactor.add_instance(xform.matrix());
-        }
-    }
-
-    x_size = 3;
-    y_size = 3;
-    span = 15;
-    x_off = -((x_size - 1) * span) / 2 + bed.center().x() - 70;
-    y_off = -((y_size - 1) * span) / 2 + bed.center().y() - 50;
-    {
-        scene_interactor.new_object_from_mesh(TriMesh::make_cube(10, 10, 10));
-
-        Biz::Scene::TransformMemento xform_memento;
-        Transform3d xform = Transform3d::Identity();
-        xform.translate(Vec3d{0 * span + x_off, 0 * span + y_off, 0});
-        scene_interactor.transform_selection(xform.matrix(), xform_memento);
-
-        xform = Transform3d::Identity();
-        xform.translate(Vec3d{10, 10, 10});
-        scene_interactor.add_volume_from_mesh(
-            TriMesh::make_cube(10, 10, 10), ModelVolumeType::NEGATIVE_VOLUME, xform.matrix()
-        );
-
-        if (can_add_modifiers) {
-            xform = Transform3d::Identity();
-            xform.translate(Vec3d{ 0, -10, 10 });
-            scene_interactor.add_volume_from_mesh(TriMesh::make_cube(10, 10, 10), ModelVolumeType::PARAMETER_MODIFIER, xform.matrix());
-        }
-    }
-
-    for (size_t x = 0; x < x_size; x++) {
-        for (size_t y = 0; y < y_size; y++) {
-            if (x == 0 && y == 0)
-                continue;
-
-            Transform3d xform = Transform3d::Identity();
-            xform.translate(Vec3d{x * span + x_off, y * span + y_off, 0});
-            scene_interactor.add_instance(xform.matrix());
-        }
-    }
+    update_toolbar_tool_selection(current_tool_type);
 }
 
 void override_config(ModelConfigObject& config)
@@ -307,90 +187,14 @@ void override_config(ModelConfigObject& config)
 
 void PlaterRenderModule::init_scene()
 {
-    auto& scene_interactor = m_project_interactor.scene_interactor();
-
-    Domain::Project& project = m_project_interactor.selected_project();
-    const auto& bed = project.config_containers().front()->bed();
-#if 0
-#if 1
-    Domain::SelectionId config_container_id = m_project_interactor.scene_interactor().selected_config_container_id();
-    const Domain::ConfigContainer* cc = m_project_interactor.selected_project().find_config_container(config_container_id);
-    DEBUG_ASSERT(cc != nullptr);
-    bool can_add_modifiers = cc->print_technology() != ptSLA;
-
-    my_model_experinets(scene_interactor, bed, can_add_modifiers);
-    ModelObjectPtrs& objects = project.model().objects;
-    override_config(objects[0]->config);
-    override_config(objects[0]->volumes[0]->config);
-    override_config(objects[0]->volumes[1]->config);
-//    override_config(objects[1]->config);
-    override_config(objects[2]->volumes[0]->config);
-    override_config(objects[2]->volumes[1]->config);
-
-    ModelObject* obj = objects[1];
-//    obj->layer_config_ranges[{ 0., 1. }] = objects[0]->config;
-
-    scene_interactor.set_printable({obj->id().id, obj->instances[2]->id().id, 0}, false);
-    scene_interactor.set_printable({obj->id().id, obj->instances[4]->id().id, 0}, false);
-    scene_interactor.set_printable({obj->id().id, obj->instances[6]->id().id, 0}, false);
-
-#else
-    const size_t x_size = 5;
-    const size_t y_size = 5;
-    const double span = 20;
-    const double x_off = -((x_size - 1) * span) / 2 + bed.center().x();
-    const double y_off = -((y_size - 1) * span) / 2 + bed.center().y();
-
-    {
-        scene_interactor.new_object_from_mesh(TriangleMesh{TriMesh::its_make_cube(10, 10, 10)});
-
-        Biz::Scene::TransformMemento xform_memento;
-        Transform3d xform = Transform3d::Identity();
-        xform.translate(Vec3d{0 * span + x_off, 0 * span + y_off, 0});
-        scene_interactor.transform_selection(xform.matrix(), xform_memento);
-
-        xform = Transform3d::Identity();
-        xform.translate(Vec3d{10, 10, 10});
-        scene_interactor.add_volume_from_mesh(
-            TriangleMesh{TriMesh::its_make_cube(10, 10, 10)}, ModelVolumeType::NEGATIVE_VOLUME,
-            xform.matrix()
-        );
-
-        xform = Transform3d::Identity();
-        xform.translate(Vec3d{0, -10, 10});
-        scene_interactor.add_volume_from_mesh(
-            TriangleMesh{TriMesh::its_make_cube(10, 10, 10)}, ModelVolumeType::PARAMETER_MODIFIER,
-            xform.matrix()
-        );
-
-        xform = Transform3d::Identity();
-        xform.translate(Vec3d{0, 5, 10});
-        scene_interactor.add_volume_from_mesh(
-            TriangleMesh{TriMesh::its_make_sphere(10, 12)}, ModelVolumeType::SUPPORT_ENFORCER,
-            xform.matrix()
-        );
-    }
-
-    for (size_t x = 0; x < x_size; x++) {
-        for (size_t y = 0; y < y_size; y++) {
-            if (x == 0 && y == 0)
-                continue;
-
-            Transform3d xform = Transform3d::Identity();
-            xform.translate(Vec3d{x * span + x_off, y * span + y_off, 0});
-            scene_interactor.add_instance(xform.matrix());
-        }
-    }
-
-#endif
-#endif
     m_scene_presenter->scene().log_nodes();
     m_scene_presenter->update_objects_shadows_data();
 }
 
 void PlaterRenderModule::init_gizmos()
 {
-    m_gizmo_manager = std::make_unique<Scene::GizmoManager>(*m_device, *m_scene_presenter);
+    m_gizmo_manager = std::make_unique<Scene::GizmoManager>(*m_device, *m_scene_presenter, m_project_interactor);
+    m_gizmo_manager->add_listener<IGizmoActiveToolListener>(this);
     PlaterCameraGizmo* camera_gizmo =
         &m_gizmo_manager->add_base_gizmo<PlaterCameraGizmo>(m_workbench, *m_scene_presenter);
     m_project_interactor.scene_interactor().add_listener<Biz::ISelectedBedInstanceChangedListener>(
@@ -413,6 +217,12 @@ void PlaterRenderModule::init_gizmos()
     );
     m_paint_on_supports_gizmo = &m_gizmo_manager->add_tool_gizmo<PaintOnSupportsGizmo>();
 }
+
+void PlaterRenderModule::active_tool_changed(Scene::IToolGizmo* active_tool)
+{
+    update_toolbar_tool_selection(active_tool ? active_tool->type() : Scene::ToolType::None);
+}
+
 
 void PlaterRenderModule::on_status_cache_changed(const Biz::Slicing::SlicingId id)
 {

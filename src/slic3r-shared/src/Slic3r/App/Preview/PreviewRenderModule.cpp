@@ -555,7 +555,7 @@ void PreviewRenderModule::register_commands()
 
 void PreviewRenderModule::init_gizmos()
 {
-    m_gizmo_manager = std::make_unique<Scene::GizmoManager>(*m_device, *m_scene_presenter);
+    m_gizmo_manager = std::make_unique<Scene::GizmoManager>(*m_device, *m_scene_presenter, m_project_interactor);
     m_gizmo_manager->add_base_gizmo<PreviewCameraGizmo>(m_workbench, *m_scene_presenter);
 }
 

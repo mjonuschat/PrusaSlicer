@@ -12,6 +12,6 @@ bool IToolGizmo::supports_printer(PrinterTechnology pt) const { return true; }
 
 bool IToolGizmo::enabled() const { return true; }
 
-std::unique_ptr<Yoga::Dialog> IToolGizmo::unlaod_ui_dialog() { return nullptr; }
+std::unique_ptr<Yoga::Dialog> IToolGizmo::unload_ui_dialog() { return nullptr; }
 
 } // namespace Slic3r::App::Scene
