@@ -19,7 +19,7 @@
 #include <cmath>
 
 #include "Slic3r/Domain/SLA/SupportPoint.hpp"
-#include "Slic3r/Domain/ConfigSLA.hpp"
+#include "Slic3r/Domain/ConfigBoxesSLA.hpp"
 
 #include "admesh/stl.h"
 

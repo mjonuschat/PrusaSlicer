@@ -18,7 +18,7 @@ SCENARIO("PrintObject: Perimeter generation", "[PrintObject]") {
         WHEN("make_perimeters() is called")  {
             Slic3r::Print print;
             TestConfig config;
-            config.print.opt("fill_density").set(Percentage{0});
+            config.print.items.opt("fill_density").set(Percentage{0});
             Slic3r::Test::init_and_process_print({TestMesh::cube_20x20x20}, print, config);
 			const PrintObject &object = *print.objects().front();
 			THEN("67 layers exist in the model") {
@@ -41,9 +41,9 @@ SCENARIO("Print: Skirt generation", "[Print]") {
         WHEN("Skirts is set to 2 loops")  {
             Slic3r::Print print;
             TestConfig config;
-            config.print.opt("skirt_height").set(1 );
-            config.print.opt("skirt_distance").set(1.0);
-            config.print.opt("skirts").set(2 );
+            config.print.items.opt("skirt_height").set(1 );
+            config.print.items.opt("skirt_distance").set(1.0);
+            config.print.items.opt("skirts").set(2 );
             Slic3r::Test::init_and_process_print({TestMesh::cube_20x20x20}, print, config);
             THEN("Skirt Extrusion collection has 2 loops in it") {
                 REQUIRE(print.skirt().items_count() == 2);
@@ -56,10 +56,10 @@ SCENARIO("Print: Skirt generation", "[Print]") {
 SCENARIO("Print: Changing number of solid surfaces does not cause all surfaces to become internal.", "[Print]") {
     GIVEN("sliced 20mm cube and config with top_solid_surfaces = 2 and bottom_solid_surfaces = 1") {
         TestConfig config;
-        config.print.opt("top_solid_layers").set(2);
-        config.print.opt("bottom_solid_layers").set(1);
-        config.print.opt("layer_height").set(0.25);
-        config.print.opt("first_layer_height").set(FloatOrPercentage{0.25});
+        config.print.items.opt("top_solid_layers").set(2);
+        config.print.items.opt("bottom_solid_layers").set(1);
+        config.print.items.opt("layer_height").set(0.25);
+        config.print.items.opt("first_layer_height").set(FloatOrPercentage{0.25});
         Slic3r::Print print;
         Slic3r::Model model;
         Slic3r::Test::init_print({TestMesh::cube_20x20x20}, print, model, config);
@@ -79,7 +79,7 @@ SCENARIO("Print: Changing number of solid surfaces does not cause all surfaces t
         test_is_solid_infill(0, 79); // should be solid
         test_is_solid_infill(0, 78); // should be solid
         WHEN("Model is re-sliced with top_solid_layers == 3") {
-			config.print.opt("top_solid_layers").set(3);
+			config.print.items.opt("top_solid_layers").set(3);
 			print.apply(model, config, {}, {});
             print.process();
             THEN("Print object does not have 0 solid bottom layers.") {
@@ -99,8 +99,8 @@ SCENARIO("Print: Brim generation", "[Print]") {
         WHEN("Brim is set to 3mm")  {
 	        Slic3r::Print print;
             TestConfig config;
-            config.print.opt("first_layer_extrusion_width").set(FloatOrPercentage{1.0});
-            config.print.opt("brim_width").set(3.0);
+            config.print.items.opt("first_layer_extrusion_width").set(FloatOrPercentage{1.0});
+            config.print.items.opt("brim_width").set(3.0);
 	        Slic3r::Test::init_and_process_print({TestMesh::cube_20x20x20}, print, config);
             THEN("Brim Extrusion collection has 3 loops in it") {
                 REQUIRE(print.brim().items_count() == 3);
@@ -109,8 +109,8 @@ SCENARIO("Print: Brim generation", "[Print]") {
         WHEN("Brim is set to 6mm")  {
 	        Slic3r::Print print;
             TestConfig config;
-            config.print.opt("first_layer_extrusion_width").set(FloatOrPercentage{1.0});
-            config.print.opt("brim_width").set(6.0);
+            config.print.items.opt("first_layer_extrusion_width").set(FloatOrPercentage{1.0});
+            config.print.items.opt("brim_width").set(6.0);
 	        Slic3r::Test::init_and_process_print({TestMesh::cube_20x20x20}, print, config);
             THEN("Brim Extrusion collection has 6 loops in it") {
                 REQUIRE(print.brim().items_count() == 6);
@@ -119,8 +119,8 @@ SCENARIO("Print: Brim generation", "[Print]") {
         WHEN("Brim is set to 6mm, extrusion width 0.5mm")  {
 	        Slic3r::Print print;
             TestConfig config;
-            config.print.opt("first_layer_extrusion_width").set(FloatOrPercentage{0.5});
-            config.print.opt("brim_width").set(6.0);
+            config.print.items.opt("first_layer_extrusion_width").set(FloatOrPercentage{0.5});
+            config.print.items.opt("brim_width").set(6.0);
 	        Slic3r::Test::init_and_process_print({TestMesh::cube_20x20x20}, print, config);
 			print.process();
             THEN("Brim Extrusion collection has 12 loops in it") {
@@ -151,7 +151,7 @@ TEST_CASE("Ported from Perl", "[Print]") {
     GIVEN("Model with multiple objects") {
         TestConfig config{4};
         for (auto& tool_settings : config.tool) {
-            tool_settings.opt("nozzle_diameter").set(0.4);
+            tool_settings.items.opt("nozzle_diameter").set(0.4);
         }
         Print print;
         Model model;
@@ -159,8 +159,7 @@ TEST_CASE("Ported from Perl", "[Print]") {
 
         // User sets a per-region option, also testing a deep copy of Model.
         Model model2(model);
-        model2.objects.front()->object_settings.opt("fill_density").set(Percentage{100});
-        model2.objects.front()->object_settings.opt("fill_density").set_null(false);
+        model2.objects.front()->object_settings.overrides.set("fill_density", Percentage{100});
         WHEN("fill_density overridden") {
             print.apply(model2, config, {}, {});
             THEN("region config inherits model object config") {
@@ -168,7 +167,7 @@ TEST_CASE("Ported from Perl", "[Print]") {
             }
         }
 
-        model2.objects.front()->object_settings.opt("fill_density").set_null(true);
+        model2.objects.front()->object_settings.overrides.disable("fill_density");
         WHEN("fill_density resetted") {
             print.apply(model2, config, {}, {});
             THEN("region config is resetted") {
@@ -177,8 +176,8 @@ TEST_CASE("Ported from Perl", "[Print]") {
         }
 
         WHEN("extruder is assigned") {
-            model2.objects.front()->object_settings.opt("extruder").set(3);
-            model2.objects.front()->object_settings.opt("perimeter_extruder").set(2);
+            model2.objects.front()->object_settings.items.opt("extruder").set(3);
+            model2.objects.front()->object_settings.overrides.set("perimeter_extruder", 2);
             print.apply(model2, config, {}, {});
             THEN("extruder setting is correctly expanded") {
                 REQUIRE(print.get_print_region(0).config().get<int>("infill_extruder") == 3);

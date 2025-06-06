@@ -1,4 +1,4 @@
-﻿#include "Slic3r/Domain/ConfigSLA.hpp"
+﻿#include "Slic3r/Domain/ConfigBoxesSLA.hpp"
 #include "ConfigDefUtils.hpp"
 
 #include "Slic3r/Domain/Types.hpp"
@@ -8,28 +8,6 @@
 
 namespace Slic3r::Domain {
 
-namespace {
-inline FullConfigInput convert_to_full_config_input(
-    const SLAPrinterSettings& printer_s,
-    const SLAPrintSettings& print_s,
-    const SLAMaterialSettings& material_s
-) {
-    FullConfigInput result;
-    result.push_back(printer_s);
-    result.push_back(print_s);
-    result.push_back(material_s);
-    return result;
-}
-}
-
-FullConfigSLA::FullConfigSLA(
-    const SLAPrinterSettings& printer_s,
-    const SLAPrintSettings& print_s,
-    const SLAMaterialSettings& material_s
-)
-    : FullConfig{convert_to_full_config_input(printer_s, print_s, material_s)}
-{}
-
 // Implementation of SLA configs is done in this file.
 
 // Define our own marking functions, the regular ones are not accessible in Domain.
@@ -38,21 +16,26 @@ static const std::string& L_CONTEXT(const std::string& s, const std::string& ctx
 
 void sla_config_init_fn(ConfigDefinitions& defs);
 
+using SLAConfigLocation::Printer;
+using SLAConfigLocation::Material;
+using SLAConfigLocation::Print;
+using SLAConfigLocation::Object;
+
 // Define the static object holding all definitions. Provide list of acceptable
 // boxes and the init function.
-ConfigDefinitions s_defs_sla({"sla_printer_settings", "sla_print_settings", "sla_material_settings",
-    "sla_object_settings"}, sla_config_init_fn);
-
+ConfigDefinitions s_defs_sla({Printer, Print, Material, Object}, sla_config_init_fn);
 
 // JUST TEMPORARY UNTIL WE DECIDE WHAT TO DO WITH MODES.
 // Right now, let's just define the constants so the defs compile.
 enum { comSimple, comAdvanced, comExpert };
 
 
+
 // Now define the init function. This function will be called by ConfigDefinitions
 // constructor and will fill the definitions with all the necessary data.
 void sla_config_init_fn(ConfigDefinitions& defs)
 {
+    using Locations = std::set<ConfigLocation>;
     ConfigItemDef* def = nullptr;
 
     /* TODO: These were common for FDM and SLA. Do we want to 
@@ -68,25 +51,25 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def = defs.add("layer_height", typeid(double));
     def = defs.add("max_print_height", typeid(double));*/
 
-    init_common_fdm_sla_config_items(defs, "SLA");
+    init_common_fdm_sla_config_items(defs, PrinterTechnology::SLA);
 
 
     def = defs.add("display_width", typeid(double));
-    def->location = "sla_printer_settings";
+    def->location = Printer;
     def->label = L("Display width");
     def->tooltip = L("Width of the display");
     def->min = 1;
     def->init_fn = init_with(120.);
 
     def = defs.add("display_height", typeid(double));
-    def->location = "sla_printer_settings";
+    def->location = Printer;
     def->label = L("Display height");
     def->tooltip = L("Height of the display");
     def->min = 1;
     def->init_fn = init_with(68.);
 
     def = defs.add("display_pixels_x", typeid(int));
-    def->location = "sla_printer_settings";
+    def->location = Printer;
     def->full_label = L("Number of pixels in");
     def->label = ("X");
     def->tooltip = L("Number of pixels in X");
@@ -94,14 +77,14 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(2560);
 
     def = defs.add("display_pixels_y", typeid(int));
-    def->location = "sla_printer_settings";
+    def->location = Printer;
     def->label = ("Y");
     def->tooltip = L("Number of pixels in Y");
     def->min = 100;
     def->init_fn = init_with(1440);
 
     def = defs.add("display_mirror_x", typeid(bool));
-    def->location = "sla_printer_settings";
+    def->location = Printer;
     def->full_label = L("Display horizontal mirroring");
     def->label = L("Mirror horizontally");
     def->tooltip = L("Enable horizontal mirroring of output images");
@@ -109,7 +92,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(true);
 
     def = defs.add("display_mirror_y", typeid(bool));
-    def->location = "sla_printer_settings";
+    def->location = Printer;
     def->full_label = L("Display vertical mirroring");
     def->label = L("Mirror vertically");
     def->tooltip = L("Enable vertical mirroring of output images");
@@ -117,7 +100,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(false);
 
     def = defs.add("display_orientation", typeid(EnumWrapper));
-    def->location = "sla_printer_settings";
+    def->location = Printer;
     def->label = L("Display orientation");
     def->tooltip = L("Set the actual LCD display orientation inside the SLA printer."
                      " Portrait mode will flip the meaning of display width and height parameters"
@@ -130,7 +113,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     );
 
     def = defs.add("fast_tilt_time", typeid(double));
-    def->location = "sla_printer_settings";
+    def->location = Printer;
     def->label = L("Fast");
     def->full_label = L("Fast tilt");
     def->tooltip = L("Time of the fast tilt");
@@ -140,7 +123,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(5.);
 
     def = defs.add("slow_tilt_time", typeid(double));
-    def->location = "sla_printer_settings";
+    def->location = Printer;
     def->label = L("Slow");
     def->full_label = L("Slow tilt");
     def->tooltip = L("Time of the slow tilt");
@@ -150,7 +133,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(8.);
 
     def = defs.add("high_viscosity_tilt_time", typeid(double));
-    def->location = "sla_printer_settings";
+    def->location = Printer;
     def->label = L("High viscosity");
     def->full_label = L("Tilt for high viscosity resin");
     def->tooltip = L("Time of the super slow tilt");
@@ -160,7 +143,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(10.);
 
     def = defs.add("area_fill", typeid(double));
-    def->location = "sla_material_settings";
+    def->location = Material;
     def->label = L("Area fill threshold");
     def->tooltip = L("The value is expressed as a percentage of the bed area. If the area of a particular layer "
                      "is smaller than 'area_fill', then 'Below area fill threshold' parameters are used to determine the "
@@ -171,7 +154,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(35.);
 
     def = defs.add("relative_correction", typeid(std::vector<double>));
-    def->location = "sla_printer_settings";
+    def->location = Printer;
     def->label = L("Printer scaling correction");
     def->full_label = L("Printer scaling correction");
     def->tooltip  = L("Printer scaling correction");
@@ -180,7 +163,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with((std::vector<double>{1.,1.}));
 
     def = defs.add("relative_correction_x", typeid(double));
-    def->location = "sla_printer_settings";
+    def->location = Printer;
     def->label = L("Printer scaling correction in X axis");
     def->full_label = L("Printer scaling X axis correction");
     def->tooltip  = L("Printer scaling correction in X axis");
@@ -189,7 +172,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(1.);
 
     def = defs.add("relative_correction_y", typeid(double));
-    def->location = "sla_printer_settings";
+    def->location = Printer;
     def->label = L("Printer scaling correction in Y axis");
     def->full_label = L("Printer scaling Y axis correction");
     def->tooltip  = L("Printer scaling correction in Y axis");
@@ -198,7 +181,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(1.);
 
     def = defs.add("relative_correction_z", typeid(double));
-    def->location = "sla_printer_settings";
+    def->location = Printer;
     def->label = L("Printer scaling correction in Z axis");
     def->full_label = L("Printer scaling Z axis correction");
     def->tooltip  = L("Printer scaling correction in Z axis");
@@ -207,8 +190,8 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(1.);
 
     def = defs.add("absolute_correction", typeid(double));
-    def->location = "sla_printer_settings";
-    def->overrides_in = { "sla_material_settings" };
+    def->location = Printer;
+    def->overrides_in = Locations{ Material };
     def->label = L("Printer absolute correction");
     def->full_label = L("Printer absolute correction");
     def->tooltip  = L("Will inflate or deflate the sliced 2D polygons according "
@@ -218,7 +201,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(0.);
     
     def = defs.add("elefant_foot_min_width", typeid(double));
-    def->location = "sla_printer_settings";
+    def->location = Printer;
     def->label = L("Elephant foot minimum width");
     def->category = L("Advanced");
     def->tooltip = L("Minimum width of features to maintain when doing elephant foot compensation.");
@@ -228,7 +211,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(0.2);
 
     def = defs.add("zcorrection_layers", typeid(int));
-    def->location = "sla_material_settings";
+    def->location = Material;
     def->label = L("Z compensation");
     def->category = L("Advanced");
     def->tooltip = L("Number of layers to Z correct to avoid cross layer bleed");
@@ -237,7 +220,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(0);
 
     def = defs.add("gamma_correction", typeid(double));
-    def->location = "sla_printer_settings";
+    def->location = Printer;
     def->label = L("Printer gamma correction");
     def->full_label = L("Printer gamma correction");
     def->tooltip  = L("This will apply a gamma correction to the rasterized 2D "
@@ -251,14 +234,14 @@ void sla_config_init_fn(ConfigDefinitions& defs)
 
 
     def = defs.add("material_colour", typeid(std::string));
-    def->location = "sla_material_settings";
+    def->location = Material;
     def->label = L("Color");
     def->tooltip = L("This is only used in the Slic3r interface as a visual help.");
     def->gui_type = ConfigItemDef::GUIType::color;
     def->init_fn = init_with("#29B2B2");
 
     def = defs.add("material_type", typeid(std::string));
-    def->location = "sla_material_settings";
+    def->location = Material;
     def->label = L("SLA material type");
     def->tooltip = L("SLA material type");
     def->gui_flags = "show_value";
@@ -271,7 +254,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with("Tough");
 
     def = defs.add("initial_layer_height", typeid(double));
-    def->location = "sla_material_settings";
+    def->location = Material;
     def->label = L("Initial layer height");
     def->tooltip = L("Initial layer height");
     def->sidetext = L("mm");
@@ -279,7 +262,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(0.3);
 
     def = defs.add("bottle_volume", typeid(double));
-    def->location = "sla_material_settings";
+    def->location = Material;
     def->label = L("Bottle volume");
     def->tooltip = L("Bottle volume");
     def->sidetext = L("ml");
@@ -287,7 +270,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(1000.);
 
     def = defs.add("bottle_weight", typeid(double));
-    def->location = "sla_material_settings";
+    def->location = Material;
     def->label = L("Bottle weight");
     def->tooltip = L("Bottle weight");
     def->sidetext = L("kg");
@@ -295,7 +278,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(1.);
 
     def = defs.add("material_density", typeid(double));
-    def->location = "sla_material_settings";
+    def->location = Material;
     def->label = L("Density");
     def->tooltip = L("Density");
     def->sidetext = L("g/ml");
@@ -303,7 +286,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(1.);
 
     def = defs.add("bottle_cost", typeid(double));
-    def->location = "sla_material_settings";
+    def->location = Material;
     def->label = L("Cost");
     def->tooltip = L("Cost");
     def->sidetext = L("money/bottle");
@@ -311,8 +294,8 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(0.);
 
     def = defs.add("faded_layers", typeid(int));
-    def->location = "sla_print_settings";
-    def->overrides_in = { "sla_object_settings" };
+    def->location = Print;
+    def->overrides_in = Locations{ Object };
     def->label = L("Faded layers");
     def->tooltip = L("Number of the layers needed for the exposure time fade from initial exposure time to the exposure time");
     def->min = 3;
@@ -321,7 +304,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(10);
 
     def = defs.add("min_exposure_time", typeid(double));
-    def->location = "sla_printer_settings";
+    def->location = Printer;
     def->label = L("Minimum exposure time");
     def->tooltip = L("Minimum exposure time");
     def->sidetext = L("s");
@@ -330,7 +313,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(0.);
 
     def = defs.add("max_exposure_time", typeid(double));
-    def->location = "sla_printer_settings";
+    def->location = Printer;
     def->label = L("Maximum exposure time");
     def->tooltip = L("Maximum exposure time");
     def->sidetext = L("s");
@@ -339,7 +322,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(100.);
 
     def = defs.add("exposure_time", typeid(double));
-    def->location = "sla_material_settings";
+    def->location = Material;
     def->label = L("Exposure time");
     def->tooltip = L("Exposure time");
     def->sidetext = L("s");
@@ -347,7 +330,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(10.);
 
     def = defs.add("min_initial_exposure_time", typeid(double));
-    def->location = "sla_printer_settings";
+    def->location = Printer;
     def->label = L("Minimum initial exposure time");
     def->tooltip = L("Minimum initial exposure time");
     def->sidetext = L("s");
@@ -356,7 +339,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(0.);
 
     def = defs.add("max_initial_exposure_time", typeid(double));
-    def->location = "sla_printer_settings";
+    def->location = Printer;
     def->label = L("Maximum initial exposure time");
     def->tooltip = L("Maximum initial exposure time");
     def->sidetext = L("s");
@@ -365,7 +348,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(150.);
 
     def = defs.add("initial_exposure_time", typeid(double));
-    def->location = "sla_material_settings";
+    def->location = Material;
     def->label = L("Initial exposure time");
     def->tooltip = L("Initial exposure time");
     def->sidetext = L("s");
@@ -373,7 +356,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(15.);
 
     def = defs.add("material_correction", typeid(std::vector<double>));
-    def->location = "sla_material_settings";
+    def->location = Material;
     def->full_label = L("Correction for expansion");
     def->tooltip  = L("Correction for expansion");
     def->min = 0;
@@ -381,7 +364,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with((std::vector<double>{ 1., 1., 1. }));
 
     def = defs.add("material_correction_x", typeid(double));
-    def->location = "sla_material_settings";
+    def->location = Material;
     def->full_label = L("Correction for expansion in X axis");
     def->tooltip  = L("Correction for expansion in X axis");
     def->min = 0;
@@ -389,7 +372,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(1.);
 
     def = defs.add("material_correction_y", typeid(double));
-    def->location = "sla_material_settings";
+    def->location = Material;
     def->full_label = L("Correction for expansion in Y axis");
     def->tooltip  = L("Correction for expansion in Y axis");
     def->min = 0;
@@ -397,7 +380,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(1.);
 
     def = defs.add("material_correction_z", typeid(double));
-    def->location = "sla_material_settings";
+    def->location = Material;
     def->full_label = L("Correction for expansion in Z axis");
     def->tooltip  = L("Correction for expansion in Z axis");
     def->min = 0;
@@ -405,7 +388,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(1.);
 
     def = defs.add("material_notes", typeid(std::string));
-    def->location = "sla_material_settings";
+    def->location = Material;
     def->label = L("SLA print material notes");
     def->tooltip = L("You can put your notes regarding the SLA print material here.");
     def->multiline = true;
@@ -444,8 +427,8 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->cli = ConfigOptionDef::nocli;*/
 
     def = defs.add("supports_enable", typeid(bool));
-    def->location = "sla_print_settings";
-    def->overrides_in = { "sla_object_settings" };
+    def->location = Print;
+    def->overrides_in = Locations{ Object };
     def->label = L("Generate supports");
     def->category = L("Supports");
     def->tooltip = L("Generate supports for the models");
@@ -453,8 +436,8 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(true);
 
     def = defs.add("support_tree_type", typeid(EnumWrapper));
-    def->location = "sla_print_settings";
-    def->overrides_in = { "sla_object_settings" };
+    def->location = Print;
+    def->overrides_in = Locations{ Object };
     def->label = L("Support tree type");
     def->tooltip = L("Support tree building strategy");
     def->mode = comSimple;
@@ -469,8 +452,8 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     );
 
     def = defs.add("support_enforcers_only", typeid(bool));
-    def->location = "sla_print_settings";
-    def->overrides_in = { "sla_object_settings" };
+    def->location = Print;
+    def->overrides_in = Locations{ Object };
     def->label = L("Support only in enforced regions");
     def->category = L("Supports");
     def->tooltip = L("Only create support if it lies in a support enforcer.");
@@ -478,8 +461,8 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(false);
 
     def = defs.add("support_points_density_relative", typeid(int));
-    def->location = "sla_print_settings";
-    def->overrides_in = { "sla_material_settings", "sla_object_settings"};
+    def->location = Print;
+    def->overrides_in = Locations{ Material, Object};
     def->label = L("Support points density");
     def->category = L("Supports");
     def->tooltip = L("This is a relative measure of support points density.");
@@ -488,8 +471,8 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(100);
 
     def = defs.add("pad_enable", typeid(bool));
-    def->location = "sla_print_settings";
-    def->overrides_in = { "sla_object_settings" };
+    def->location = Print;
+    def->overrides_in = Locations{ Object };
     def->label = L("Use pad");
     def->category = L("Pad");
     def->tooltip = L("Add a pad underneath the supported model");
@@ -497,8 +480,8 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(true);
 
     def = defs.add("pad_wall_thickness", typeid(double));
-    def->location = "sla_print_settings";
-    def->overrides_in = { "sla_object_settings" };
+    def->location = Print;
+    def->overrides_in = Locations{ Object };
     def->label = L("Pad wall thickness");
     def->category = L("Pad");
      def->tooltip = L("The thickness of the pad and its optional cavity walls.");
@@ -509,8 +492,8 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(2.);
 
     def = defs.add("pad_wall_height", typeid(double));
-    def->location = "sla_print_settings";
-    def->overrides_in = { "sla_object_settings" };
+    def->location = Print;
+    def->overrides_in = Locations{ Object };
     def->label = L("Pad wall height");
     def->tooltip = L("Defines the pad cavity depth. Set to zero to disable the cavity. "
                      "Be careful when enabling this feature, as some resins may "
@@ -525,8 +508,8 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(0.);
     
     def = defs.add("pad_brim_size", typeid(double));
-    def->location = "sla_print_settings";
-    def->overrides_in = { "sla_object_settings" };
+    def->location = Print;
+    def->overrides_in = Locations{ Object };
     def->label = L("Pad brim size");
     def->tooltip = L("How far should the pad extend around the contained geometry");
     def->category = L("Pad");
@@ -538,8 +521,8 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(1.6);
 
     def = defs.add("pad_max_merge_distance", typeid(double));
-    def->location = "sla_print_settings";
-    def->overrides_in = { "sla_object_settings" };
+    def->location = Print;
+    def->overrides_in = Locations{ Object };
     def->label = L("Max merge distance");
     def->category = L("Pad");
      def->tooltip = L("Some objects can get along with a few smaller pads "
@@ -562,8 +545,8 @@ void sla_config_init_fn(ConfigDefinitions& defs)
 //    def->init_fn = init_with(1.0));
 
     def = defs.add("pad_wall_slope", typeid(double));
-    def->location = "sla_print_settings";
-    def->overrides_in = { "sla_object_settings" };
+    def->location = Print;
+    def->overrides_in = Locations{ Object };
     def->label = L("Pad wall slope");
     def->category = L("Pad");
     def->tooltip = L("The slope of the pad wall relative to the bed plane. "
@@ -575,8 +558,8 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(90.);
 
     def = defs.add("pad_around_object", typeid(bool));
-    def->location = "sla_print_settings";
-    def->overrides_in = { "sla_object_settings" };
+    def->location = Print;
+    def->overrides_in = Locations{ Object };
     def->label = L("Pad around object");
     def->category = L("Pad");
     def->tooltip = L("Create pad around object and ignore the support elevation");
@@ -584,8 +567,8 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(false);
     
     def = defs.add("pad_around_object_everywhere", typeid(bool));
-    def->location = "sla_print_settings";
-    def->overrides_in = { "sla_object_settings" };
+    def->location = Print;
+    def->overrides_in = Locations{ Object };
     def->label = L("Pad around object everywhere");
     def->category = L("Pad");
     def->tooltip = L("Force pad around object everywhere");
@@ -593,8 +576,8 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(false);
 
     def = defs.add("pad_object_gap", typeid(double));
-    def->location = "sla_print_settings";
-    def->overrides_in = { "sla_object_settings" };
+    def->location = Print;
+    def->overrides_in = Locations{ Object };
     def->label = L("Pad object gap");
     def->category = L("Pad");
     def->tooltip  = L("The gap between the object bottom and the generated "
@@ -606,8 +589,8 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(1.);
 
     def = defs.add("pad_object_connector_stride", typeid(double));
-    def->location = "sla_print_settings";
-    def->overrides_in = { "sla_object_settings" };
+    def->location = Print;
+    def->overrides_in = Locations{ Object };
     def->label = L("Pad object connector stride");
     def->category = L("Pad");
     def->tooltip = L("Distance between two connector sticks which connect the object and the generated pad.");
@@ -617,8 +600,8 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(10.);
 
     def = defs.add("pad_object_connector_width", typeid(double));
-    def->location = "sla_print_settings";
-    def->overrides_in = { "sla_object_settings" };
+    def->location = Print;
+    def->overrides_in = Locations{ Object };
     def->label = L("Pad object connector width");
     def->category = L("Pad");
     def->tooltip  = L("Width of the connector sticks which connect the object and the generated pad.");
@@ -628,8 +611,8 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(0.5);
 
     def = defs.add("pad_object_connector_penetration", typeid(double));
-    def->location = "sla_print_settings";
-    def->overrides_in = { "sla_object_settings" };
+    def->location = Print;
+    def->overrides_in = Locations{ Object };
     def->label = L("Pad object connector penetration");
     def->category = L("Pad");
     def->tooltip  = L(
@@ -640,8 +623,8 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(0.3);
     
     def = defs.add("hollowing_enable", typeid(bool));
-    def->location = "sla_print_settings";
-    def->overrides_in = { "sla_object_settings" };
+    def->location = Print;
+    def->overrides_in = Locations{ Object };
     def->label = L("Enable hollowing");
     def->category = L("Hollowing");
     def->tooltip = L("Hollow out a model to have an empty interior");
@@ -649,8 +632,8 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(false);
     
     def = defs.add("hollowing_min_thickness", typeid(double));
-    def->location = "sla_print_settings";
-    def->overrides_in = { "sla_object_settings" };
+    def->location = Print;
+    def->overrides_in = Locations{ Object };
     def->label = L("Wall thickness");
     def->category = L("Hollowing");
     def->tooltip  = L("Minimum wall thickness of a hollowed model.");
@@ -661,8 +644,8 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(3.);
     
     def = defs.add("hollowing_quality", typeid(double));
-    def->location = "sla_print_settings";
-    def->overrides_in = { "sla_object_settings" };
+    def->location = Print;
+    def->overrides_in = Locations{ Object };
     def->label = L("Accuracy");
     def->category = L("Hollowing");
     def->tooltip  = L("Performance vs accuracy of calculation. Lower values may produce unwanted artifacts.");
@@ -672,8 +655,8 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(0.5);
     
     def = defs.add("hollowing_closing_distance", typeid(double));
-    def->location = "sla_print_settings";
-    def->overrides_in = { "sla_object_settings" };
+    def->location = Print;
+    def->overrides_in = Locations{ Object };
     def->label = L("Closing distance");
     def->category = L("Hollowing");
     def->tooltip  = L(
@@ -689,7 +672,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(2.);
 
     def = defs.add("material_print_speed", typeid(EnumWrapper));
-    def->location = "sla_material_settings";
+    def->location = Material;
     def->label = L("Print speed");
     def->tooltip = L(
         "A slower printing profile might be necessary when using materials with higher viscosity "
@@ -703,13 +686,13 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     );
 
     def = defs.add("sla_archive_format", typeid(std::string));
-    def->location = "sla_printer_settings";
+    def->location = Printer;
     def->label = L("Format of the output SLA archive");
     def->mode = comAdvanced;
     def->init_fn = init_with("SL1");
 
     def = defs.add("sla_output_precision", typeid(double));
-    def->location = "sla_printer_settings";
+    def->location = Printer;
     def->label = L("SLA output precision");
     def->tooltip = L("Minimum resolution in nanometers");
     def->sidetext = L("mm");
@@ -718,7 +701,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(0.001);
 
     def = defs.add("delay_before_exposure", typeid(std::vector<double>));
-    def->location = "sla_material_settings";
+    def->location = Material;
     def->full_label = L("Delay before exposure");
     def->tooltip = L("Delay before exposure after previous layer separation.");
     def->sidetext = L("s");
@@ -728,7 +711,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with((std::vector<double>{ 3., 3.}));
 
     def = defs.add("delay_after_exposure", typeid(std::vector<double>));
-    def->location = "sla_material_settings";
+    def->location = Material;
     def->full_label = L("Delay after exposure");
     def->tooltip = L("Delay after exposure before layer separation.");
     def->sidetext = L("s");
@@ -738,7 +721,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with((std::vector<double>{ 0., 0.}));
 
     def = defs.add("tower_hop_height", typeid(std::vector<double>));
-    def->location = "sla_material_settings";
+    def->location = Material;
     def->full_label = L("Tower hop height");
     def->tooltip = L("The height of the tower raise.");
     def->sidetext = L("mm");
@@ -748,7 +731,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with((std::vector<double>{ 0., 0.}));
 
     def = defs.add("tower_speed", typeid(EnumVectorWrapper));
-    def->location = "sla_material_settings";
+    def->location = Material;
     def->full_label = L("Tower speed");
     def->tooltip = L("Tower speed used for tower raise.");
     def->mode = comExpert;
@@ -789,7 +772,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     const EnumValueDefs* tilt_speeds_enum_def{s_enum_defs.back().get()};
 
     def = defs.add("tilt_down_initial_speed", typeid(EnumVectorWrapper));
-    def->location = "sla_material_settings";
+    def->location = Material;
     def->full_label = L("Tilt down initial speed");
     def->tooltip = L("Tilt speed used for an initial portion of tilt down move.");
     def->mode = comExpert;
@@ -797,7 +780,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(std::vector<TiltSpeeds>{ tsLayer1750, tsLayer1750 }, tilt_speeds_enum_def);
 
     def = defs.add("tilt_down_finish_speed", typeid(EnumVectorWrapper));
-    def->location = "sla_material_settings";
+    def->location = Material;
     def->full_label = L("Tilt down finish speed");
     def->tooltip = L("Tilt speed used for the rest of the tilt down move.");
     def->mode = comExpert;
@@ -805,7 +788,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(std::vector<TiltSpeeds>{ tsLayer1750, tsLayer1750 }, tilt_speeds_enum_def);
 
     def = defs.add("tilt_up_initial_speed", typeid(EnumVectorWrapper));
-    def->location = "sla_material_settings";
+    def->location = Material;
     def->full_label = L("Tilt up initial speed");
     def->tooltip = L("Tilt speed used for an initial portion of tilt up move.");
     def->mode = comExpert;
@@ -813,7 +796,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(std::vector<TiltSpeeds>{ tsMove8000, tsMove8000 }, tilt_speeds_enum_def);
 
     def = defs.add("tilt_up_finish_speed", typeid(EnumVectorWrapper));
-    def->location = "sla_material_settings";
+    def->location = Material;
     def->full_label = L("Tilt up finish speed");
     def->tooltip = L("Tilt speed used for the rest of the tilt-up.");
     def->mode = comExpert;
@@ -821,14 +804,14 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with((std::vector<TiltSpeeds>{ tsLayer1750, tsLayer1750 }), tilt_speeds_enum_def);
 
     def = defs.add("use_tilt", typeid(std::vector<bool>));
-    def->location = "sla_material_settings";
+    def->location = Material;
     def->full_label = L("Use tilt");
     def->tooltip = L("If enabled, tilt is used for layer separation. Otherwise, all the parameters below are ignored.");
     def->mode = comExpert;
     def->init_fn = init_with((std::vector<bool>{ true, true }));
 
     def = defs.add("tilt_down_offset_steps", typeid(std::vector<int>));
-    def->location = "sla_material_settings";
+    def->location = Material;
     def->full_label = L("Tilt down offset steps");
     def->tooltip = L("Number of steps to move down from the calibrated (horizontal) position with 'tilt_down_initial_speed'.");
     def->sidetext = L("μ-steps");
@@ -838,7 +821,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with((std::vector<int>{ 0, 0 }));
 
     def = defs.add("tilt_down_offset_delay", typeid(std::vector<double>));
-    def->location = "sla_material_settings";
+    def->location = Material;
     def->full_label = L("Tilt down offset delay");
     def->tooltip = L("Delay after the tilt reaches 'tilt_down_offset_steps' position.");
     def->sidetext = L("s");
@@ -848,7 +831,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with((std::vector<double>{ 0., 0. }));
 
     def = defs.add("tilt_down_cycles", typeid(std::vector<int>));
-    def->location = "sla_material_settings";
+    def->location = Material;
     def->full_label = L("Tilt down cycles");
     def->tooltip = L("Number of cycles to split the rest of the tilt down move.");
     def->min = 0;
@@ -857,7 +840,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with((std::vector<int>{ 1, 1 }));
 
     def = defs.add("tilt_down_delay", typeid(std::vector<double>));
-    def->location = "sla_material_settings";
+    def->location = Material;
     def->full_label = L("Tilt down delay");
     def->tooltip = L("The delay between tilt-down cycles.");
     def->sidetext = L("s");
@@ -867,7 +850,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with((std::vector<double>{ 0., 0. }));
 
     def = defs.add("tilt_up_offset_steps", typeid(std::vector<int>));
-    def->location = "sla_material_settings";
+    def->location = Material;
     def->full_label = L("Tilt up offset steps");
     def->tooltip = L("Move tilt up to calibrated (horizontal) position minus this offset.");
     def->sidetext = L("μ-steps");
@@ -877,7 +860,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with((std::vector<int>{ 1200, 1200 }));
 
     def = defs.add("tilt_up_offset_delay", typeid(std::vector<double>));
-    def->location = "sla_material_settings";
+    def->location = Material;
     def->full_label = L("Tilt up offset delay");
     def->tooltip = L("Delay after the tilt reaches 'tilt_up_offset_steps' position.");
     def->sidetext = L("s");
@@ -887,7 +870,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with((std::vector<double>{ 0., 0. }));
 
     def = defs.add("tilt_up_cycles", typeid(std::vector<int>));
-    def->location = "sla_material_settings";
+    def->location = Material;
     def->full_label = L("Tilt up cycles");
     def->tooltip = L("Number of cycles to split the rest of the tilt-up.");
     def->min = 0;
@@ -896,7 +879,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with((std::vector<int>{ 1, 1 }));
 
     def = defs.add("tilt_up_delay", typeid(std::vector<double>));
-    def->location = "sla_material_settings";
+    def->location = Material;
     def->full_label = L("Tilt up delay");
     def->tooltip = L("The delay between tilt-up cycles.");
     def->sidetext = L("s");
@@ -907,8 +890,8 @@ void sla_config_init_fn(ConfigDefinitions& defs)
 
     for (const std::string& prefix : { "", "branching" }) {
         def = defs.add(prefix + "support_head_front_diameter", typeid(double));
-        def->location = "sla_print_settings";
-        def->overrides_in = { "sla_material_settings", "sla_object_settings" };
+        def->location = Print;
+        def->overrides_in = Locations{ Material, Object };
         def->label = L("Pinhead front diameter");
         def->category = L("Supports");
         def->tooltip = L("Diameter of the pointing side of the head");
@@ -918,8 +901,8 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->init_fn = init_with(0.4);
 
         def = defs.add(prefix + "support_head_penetration", typeid(double));
-        def->location = "sla_print_settings";
-        def->overrides_in = { "sla_material_settings", "sla_object_settings" };
+        def->location = Print;
+        def->overrides_in = Locations{ Material, Object };
         def->label = L("Head penetration");
         def->category = L("Supports");
         def->tooltip = L("How much the pinhead has to penetrate the model surface");
@@ -929,8 +912,8 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->init_fn = init_with(0.2);
 
         def = defs.add(prefix + "support_head_width", typeid(double));
-        def->location = "sla_print_settings";
-        def->overrides_in = { "sla_material_settings", "sla_object_settings" };
+        def->location = Print;
+        def->overrides_in = Locations{ Material, Object };
         def->label = L("Pinhead width");
         def->category = L("Supports");
         def->tooltip = L("Width from the back sphere center to the front sphere center");
@@ -941,8 +924,8 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->init_fn = init_with(1.);
 
         def = defs.add(prefix + "support_pillar_diameter", typeid(double));
-        def->location = "sla_print_settings";
-        def->overrides_in = { "sla_material_settings", "sla_object_settings" };
+        def->location = Print;
+        def->overrides_in = Locations{ Material, Object };
         def->label = L("Pillar diameter");
         def->category = L("Supports");
         def->tooltip = L("Diameter in mm of the support pillars");
@@ -953,8 +936,8 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->init_fn = init_with(1.);
 
         def = defs.add(prefix + "support_small_pillar_diameter_percent", typeid(Percentage));
-        def->location = "sla_print_settings";
-        def->overrides_in = { "sla_object_settings" };
+        def->location = Print;
+        def->overrides_in = Locations{ Object };
         def->label = L("Small pillar diameter percent");
         def->category = L("Supports");
         def->tooltip = L("The percentage of smaller pillars compared to the normal pillar diameter "
@@ -966,8 +949,8 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->init_fn = init_with(Percentage{50.});
 
         def = defs.add(prefix + "support_max_bridges_on_pillar", typeid(int));
-        def->location = "sla_print_settings";
-        def->overrides_in = { "sla_object_settings" };
+        def->location = Print;
+        def->overrides_in = Locations{ Object };
         def->label = L("Max bridges on a pillar");
         def->tooltip = L(
             "Maximum number of bridges that can be placed on a pillar. Bridges "
@@ -981,8 +964,8 @@ void sla_config_init_fn(ConfigDefinitions& defs)
             def->init_fn = init_with(3);
 
         def = defs.add(prefix + "support_max_weight_on_model", typeid(double));
-        def->location = "sla_print_settings";
-        def->overrides_in = { "sla_object_settings" };
+        def->location = Print;
+        def->overrides_in = Locations{ Object };
         def->label = L("Max weight on model");
         def->category = L("Supports");
         def->tooltip = L(
@@ -994,8 +977,8 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->init_fn = init_with(10.);
 
         def = defs.add(prefix + "support_pillar_connection_mode", typeid(EnumWrapper));
-        def->location = "sla_print_settings";
-        def->overrides_in = { "sla_object_settings" };
+        def->location = Print;
+        def->overrides_in = Locations{ Object };
         def->label = L("Pillar connection mode");
         def->tooltip = L("Controls the bridge type between two neighboring pillars."
             " Can be zig-zag, cross (double zig-zag) or dynamic which"
@@ -1010,8 +993,8 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         );
 
         def = defs.add(prefix + "support_buildplate_only", typeid(bool));
-        def->location = "sla_print_settings";
-        def->overrides_in = { "sla_object_settings" };
+        def->location = Print;
+        def->overrides_in = Locations{ Object };
         def->label = L("Support on build plate only");
         def->category = L("Supports");
         def->tooltip = L("Only create support if it lies on a build plate. Don't create support on a print.");
@@ -1019,8 +1002,8 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->init_fn = init_with(false);
 
         def = defs.add(prefix + "support_pillar_widening_factor", typeid(double));
-        def->location = "sla_print_settings";
-        def->overrides_in = { "sla_object_settings" };
+        def->location = Print;
+        def->overrides_in = Locations{ Object };
         def->label = L("Pillar widening factor");
         def->category = L("Supports");
         def->tooltip =
@@ -1034,8 +1017,8 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->init_fn = init_with(0.5);
 
         def = defs.add(prefix + "support_base_diameter", typeid(double));
-        def->location = "sla_print_settings";
-        def->overrides_in = { "sla_object_settings" };
+        def->location = Print;
+        def->overrides_in = Locations{ Object };
         def->label = L("Support base diameter");
         def->category = L("Supports");
         def->tooltip = L("Diameter in mm of the pillar base");
@@ -1046,8 +1029,8 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->init_fn = init_with(4.);
 
         def = defs.add(prefix + "support_base_height", typeid(double));
-        def->location = "sla_print_settings";
-        def->overrides_in = { "sla_object_settings" };
+        def->location = Print;
+        def->overrides_in = Locations{ Object };
         def->label = L("Support base height");
         def->category = L("Supports");
         def->tooltip = L("The height of the pillar base cone");
@@ -1057,8 +1040,8 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->init_fn = init_with(1.);
 
         def = defs.add(prefix + "support_base_safety_distance", typeid(double));
-        def->location = "sla_print_settings";
-        def->overrides_in = { "sla_object_settings" };
+        def->location = Print;
+        def->overrides_in = Locations{ Object };
         def->label = L("Support base safety distance");
         def->category = L("Supports");
         def->tooltip = L(
@@ -1072,8 +1055,8 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->init_fn = init_with(1.);
 
         def = defs.add(prefix + "support_critical_angle", typeid(double));
-        def->location = "sla_print_settings";
-        def->overrides_in = { "sla_object_settings" };
+        def->location = Print;
+        def->overrides_in = Locations{ Object };
         def->label = L("Critical angle");
         def->category = L("Supports");
         def->tooltip = L("The default angle for connecting support sticks and junctions.");
@@ -1084,8 +1067,8 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->init_fn = init_with(45.);
 
         def = defs.add(prefix + "support_max_bridge_length", typeid(double));
-        def->location = "sla_print_settings";
-        def->overrides_in = { "sla_object_settings" };
+        def->location = Print;
+        def->overrides_in = Locations{ Object };
         def->label = L("Max bridge length");
         def->category = L("Supports");
         def->tooltip = L("The max length of a bridge");
@@ -1098,8 +1081,8 @@ void sla_config_init_fn(ConfigDefinitions& defs)
             def->init_fn = init_with(15.0);
 
         def = defs.add(prefix + "support_max_pillar_link_distance", typeid(double));
-        def->location = "sla_print_settings";
-        def->overrides_in = { "sla_object_settings" };
+        def->location = Print;
+        def->overrides_in = Locations{ Object };
         def->label = L("Max pillar linking distance");
         def->category = L("Supports");
         def->tooltip = L("The max distance of two pillars to get linked with each other."
@@ -1110,8 +1093,8 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->init_fn = init_with(10.);
 
         def = defs.add(prefix + "support_object_elevation", typeid(double));
-        def->location = "sla_print_settings";
-        def->overrides_in = { "sla_object_settings" };
+        def->location = Print;
+        def->overrides_in = Locations{ Object };
         def->label = L("Object elevation");
         def->category = L("Supports");
         def->tooltip = L("How much the supports should lift up the supported object. "

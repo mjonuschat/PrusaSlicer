@@ -12,7 +12,6 @@
 
 #include <utility>
 
-#include "Slic3r/Domain/ConfigFDM.hpp"
 #include "libslic3r.h"
 #include "Point.hpp"
 #include "libslic3r/ConfigViews.hpp"

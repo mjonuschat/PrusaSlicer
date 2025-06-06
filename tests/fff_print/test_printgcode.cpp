@@ -28,11 +28,11 @@ TEST_CASE( "PrintGCode basic functionality", "[PrintGCode][!shouldfail]") {
             Slic3r::Model model;
 
             TestConfig config;
-            config.print.opt("layer_height").set(0.2);
-            config.print.opt("first_layer_height").set(FloatOrPercentage{0.2});
-            config.print.opt("first_layer_extrusion_width").set(FloatOrPercentage{0});
-            config.print.opt("gcode_comments").set(true);
-            config.printer.opt("start_gcode").set("");
+            config.print.items.opt("layer_height").set(0.2);
+            config.print.items.opt("first_layer_height").set(FloatOrPercentage{0.2});
+            config.print.items.opt("first_layer_extrusion_width").set(FloatOrPercentage{0});
+            config.print.items.opt("gcode_comments").set(true);
+            config.printer.items.opt("start_gcode").set("");
 
             Slic3r::Test::init_print({TestMesh::cube_20x20x20}, print, model, config);
             std::string gcode = Slic3r::Test::gcode(print);
@@ -98,14 +98,14 @@ TEST_CASE( "PrintGCode basic functionality", "[PrintGCode][!shouldfail]") {
             Slic3r::Model model;
 
             TestConfig config;
-            config.print.opt("first_layer_extrusion_width").set(FloatOrPercentage{0});
-            config.print.opt("first_layer_height").set(FloatOrPercentage{0.3});
-            config.print.opt("layer_height").set(0.2);
-            config.print.opt("support_material").set(false);
-            config.print.opt("raft_layers").set(0);
-            config.print.opt("complete_objects").set(true);
-            config.print.opt("gcode_comments").set(true);
-            config.printer.opt("between_objects_gcode").set("; between-object-gcode");
+            config.print.items.opt("first_layer_extrusion_width").set(FloatOrPercentage{0});
+            config.print.items.opt("first_layer_height").set(FloatOrPercentage{0.3});
+            config.print.items.opt("layer_height").set(0.2);
+            config.print.items.opt("support_material").set(false);
+            config.print.items.opt("raft_layers").set(0);
+            config.print.items.opt("complete_objects").set(true);
+            config.print.items.opt("gcode_comments").set(true);
+            config.printer.items.opt("between_objects_gcode").set("; between-object-gcode");
 
             Slic3r::Test::init_print({TestMesh::cube_20x20x20,TestMesh::cube_20x20x20}, print, model, config);
             std::string gcode = Slic3r::Test::gcode(print);
@@ -173,10 +173,10 @@ TEST_CASE( "PrintGCode basic functionality", "[PrintGCode][!shouldfail]") {
         }
         WHEN("the output is executed with support material") {
             TestConfig config;
-            config.print.opt("first_layer_extrusion_width").set(FloatOrPercentage{0});
-            config.print.opt("support_material").set(true);
-            config.print.opt("raft_layers").set(3);
-            config.print.opt("gcode_comments").set(true);
+            config.print.items.opt("first_layer_extrusion_width").set(FloatOrPercentage{0});
+            config.print.items.opt("support_material").set(true);
+            config.print.items.opt("raft_layers").set(3);
+            config.print.items.opt("gcode_comments").set(true);
 
             std::string gcode = ::Test::slice({TestMesh::cube_20x20x20}, config);
             THEN("Some text output is generated.") {
@@ -197,7 +197,7 @@ TEST_CASE( "PrintGCode basic functionality", "[PrintGCode][!shouldfail]") {
         }
         WHEN("the output is executed with a separate first layer extrusion width") {
             TestConfig config;
-            config.print.opt("first_layer_extrusion_width").set(FloatOrPercentage{0.5});
+            config.print.items.opt("first_layer_extrusion_width").set(FloatOrPercentage{0.5});
 			std::string gcode = ::Test::slice({ TestMesh::cube_20x20x20 }, config);
             THEN("Some text output is generated.") {
                 REQUIRE(gcode.size() > 0);
@@ -215,8 +215,8 @@ TEST_CASE( "PrintGCode basic functionality", "[PrintGCode][!shouldfail]") {
         WHEN("Cooling is enabled and the fan is disabled.") {
 
             TestConfig config;
-            config.filament.at(0).opt("cooling").set(true);
-            config.filament.at(0).opt("disable_fan_first_layers").set(5);
+            config.filament.at(0).items.opt("cooling").set(true);
+            config.filament.at(0).items.opt("disable_fan_first_layers").set(5);
 			std::string gcode = ::Test::slice({ TestMesh::cube_20x20x20 }, config);
             THEN("GCode to disable fan is emitted."){
                 REQUIRE(gcode.find("M107") != std::string::npos);
@@ -225,9 +225,9 @@ TEST_CASE( "PrintGCode basic functionality", "[PrintGCode][!shouldfail]") {
         WHEN("end_gcode exists with layer_num and layer_z") {
 
             TestConfig config;
-            config.printer.opt("end_gcode").set("; Layer_num [layer_num]\n; Layer_z [layer_z]");
-            config.print.opt("layer_height").set(0.1);
-            config.print.opt("first_layer_height").set(FloatOrPercentage{0.1});
+            config.printer.items.opt("end_gcode").set("; Layer_num [layer_num]\n; Layer_z [layer_z]");
+            config.print.items.opt("layer_height").set(0.1);
+            config.print.items.opt("first_layer_height").set(FloatOrPercentage{0.1});
 
 			std::string gcode = ::Test::slice({ TestMesh::cube_20x20x20 }, config);
             THEN("layer_num and layer_z are processed in the end gcode") {
@@ -238,7 +238,7 @@ TEST_CASE( "PrintGCode basic functionality", "[PrintGCode][!shouldfail]") {
         WHEN("current_extruder exists in start_gcode") {
             {
                 TestConfig config;
-                config.printer.opt("start_gcode").set("; Extruder [current_extruder]");
+                config.printer.items.opt("start_gcode").set("; Extruder [current_extruder]");
 				std::string gcode = ::Test::slice({ TestMesh::cube_20x20x20 }, config);
                 THEN("current_extruder is processed in the start gcode and set for first extruder") {
                     REQUIRE(gcode.find("; Extruder 0") != std::string::npos);
@@ -246,12 +246,12 @@ TEST_CASE( "PrintGCode basic functionality", "[PrintGCode][!shouldfail]") {
             }
 			{
                 TestConfig config{4};
-                config.printer.opt("start_gcode").set("; Extruder [current_extruder]");
-                config.print.opt("infill_extruder").set(2);
-                config.print.opt("solid_infill_extruder").set(2);
-                config.print.opt("perimeter_extruder").set(2);
-                config.print.opt("support_material_extruder").set(2);
-                config.print.opt("support_material_interface_extruder").set(2);
+                config.printer.items.opt("start_gcode").set("; Extruder [current_extruder]");
+                config.print.items.opt("infill_extruder").set(2);
+                config.print.items.opt("solid_infill_extruder").set(2);
+                config.print.items.opt("perimeter_extruder").set(2);
+                config.print.items.opt("support_material_extruder").set(2);
+                config.print.items.opt("support_material_interface_extruder").set(2);
 
                 std::string gcode = Slic3r::Test::slice({TestMesh::cube_20x20x20}, config);
                 THEN("current_extruder is processed in the start gcode and set for second extruder") {
@@ -263,11 +263,11 @@ TEST_CASE( "PrintGCode basic functionality", "[PrintGCode][!shouldfail]") {
         WHEN("layer_num represents the layer's index from z=0") {
 
             TestConfig config;
-            config.print.opt("complete_objects").set(true );
-            config.print.opt("gcode_comments").set(true );
-            config.printer.opt("layer_gcode").set(";Layer:[layer_num] ([layer_z] mm)");
-            config.print.opt("layer_height").set(0.1);
-            config.print.opt("first_layer_height").set(FloatOrPercentage{0.1});
+            config.print.items.opt("complete_objects").set(true );
+            config.print.items.opt("gcode_comments").set(true );
+            config.printer.items.opt("layer_gcode").set(";Layer:[layer_num] ([layer_z] mm)");
+            config.print.items.opt("layer_height").set(0.1);
+            config.print.items.opt("first_layer_height").set(FloatOrPercentage{0.1});
 
 			std::string gcode = ::Test::slice({ TestMesh::cube_20x20x20, TestMesh::cube_20x20x20 }, config);
 			// End of the 1st object.

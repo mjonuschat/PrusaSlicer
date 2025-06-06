@@ -22,7 +22,7 @@
 #include <boost/filesystem/path.hpp>
 #include <boost/log/trivial.hpp>
 
-#include "libslic3r/ConfigPackSLAUtils.hpp"
+#include "libslic3r/ConfigPackUtils.hpp"
 #include "libslic3r/MultipleBeds.hpp"
 #include "libslic3r/Utils.hpp"
 
@@ -63,6 +63,7 @@ using Domain::FullConfigSLA;
 using Domain::FullConfigSLAPtr;
 using Domain::SLAObjectSettings;
 using Domain::Percentage;
+using Domain::PartialObjectConfigSLA;
 
 
 bool is_zero_elevation(const SLAPrintObjectConfigView &c)
@@ -641,9 +642,12 @@ PrintObjectsSyncResult sync_print_objects(
 
         const auto it{reuse_candidates.find(model_object->id())};
 
+        const auto object_settings_ptr{std::make_shared<PartialObjectConfigSLA>(
+            model_object->object_settings_sla
+        )};
         const SLAPrintObjectConfigView new_config{
             new_full_config,
-            std::make_shared<SLAObjectSettings>(model_object->object_settings_sla)
+            object_settings_ptr
         };
 
         if (it == reuse_candidates.end()) {
@@ -660,7 +664,7 @@ PrintObjectsSyncResult sync_print_objects(
         SLAPrintObject* reused_print_object{it->second};
 
         // Synchronize Object's config.
-        std::vector<std::string> diff = reused_print_object->config().diff_keys(new_config);
+        std::vector<std::string> diff = reused_print_object->config().object_settings().diff_keys(new_config.object_settings());
         if (! diff.empty()) {
             AllOrSome<PrintObjectSteps>& steps{
                 result.invalidated_steps.object[reused_print_object]
@@ -825,11 +829,11 @@ SLAPrint::ApplyStatus SLAPrint::apply(
     check_model_ids_validity(model);
 #endif /* _DEBUG */
 
-    const auto new_full_config_ptr{std::make_shared<FullConfigSLA>(Biz::Slicing::get_full_config(config_pack))};
+    const auto new_full_config_ptr{std::make_shared<FullConfigSLA>(config_pack)};
     const SLAPrintConfigView new_print_config{new_full_config_ptr};
 
     // Collect changes to print config.
-    const std::vector<std::string> config_diff{new_print_config.diff_keys(m_print_config)};
+    const std::vector<std::string> config_diff{new_print_config.full_config().diff_keys(m_print_config.full_config())};
 
     // Grab the lock for the Print / PrintObject milestones.
     std::scoped_lock<std::mutex> lock(this->state_mutex());

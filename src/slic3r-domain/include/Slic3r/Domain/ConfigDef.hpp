@@ -3,13 +3,43 @@
 #include <boost/container_hash/hash.hpp>
 #include <cfloat>
 #include <functional>
+#include <set>
 #include <string>
 #include <string_view>
 #include <vector>
 
 #include "Slic3r/Domain/ConfigValue.hpp"
+#include "Slic3r/Domain/PrinterTechnology.hpp"
 
 namespace Slic3r::Domain {
+
+enum class FDMConfigLocation {
+    None,
+    Printer,
+    Tool,
+    Print,
+    Filament,
+    Project,
+    Object,
+    Volume,
+};
+
+enum class SLAConfigLocation {
+    None,
+    Printer,
+    Material,
+    Print,
+    Object,
+};
+
+struct PhysicalPrinterLocation {
+    bool operator==(const PhysicalPrinterLocation&) const = default;
+    bool operator<(const PhysicalPrinterLocation&) const {
+        return false;
+    }
+};
+
+using ConfigLocation = std::variant<FDMConfigLocation, SLAConfigLocation, PhysicalPrinterLocation>;
 
 // Static definition of a single config item. Contains all info about what the item is,
 // as well as rules for diplaying it in the UI. All information about the item is here,
@@ -21,9 +51,9 @@ struct ConfigItemDef
     std::string name{};
     const std::type_info* type{ nullptr };
     std::function<ConfigValue()> init_fn;
-    std::function<ConfigValue(std::string_view box)> init_fn_ex;
-    std::string location{ }; // Which box it belongs to. Must not be empty.
-    std::vector<std::string> overrides_in{ }; // Which boxes this can be overridden in.
+    std::function<ConfigValue(const ConfigLocation& config_location)> init_fn_ex;
+    ConfigLocation location; // Which box it belongs to. Must not be empty.
+    std::set<ConfigLocation> overrides_in; // Which boxes this can be overridden in.
 
     // Non-translated Label of the GUI input field. In case the GUI input fields are grouped in some views,
     // the label defines a short label of a grouped value, while full_label contains a label of a stand-alone field.
@@ -92,7 +122,7 @@ struct ConfigItemDef
 class ConfigDefinitions
 {
 public:
-    ConfigDefinitions(const std::vector<std::string>& acceptable_boxes, std::function<void(ConfigDefinitions&)> init_fn);
+    ConfigDefinitions(const std::set<ConfigLocation>& acceptable_boxes, std::function<void(ConfigDefinitions&)> init_fn);
     const std::vector<ConfigItemDef>& defs() const { return m_defs; }
 
     // Add a config definition. Calling this after ctr finishes is an error.
@@ -101,7 +131,7 @@ public:
 private:
     void check_valid() const;
     std::vector<ConfigItemDef> m_defs;
-    std::vector<std::string> m_acceptable_boxes;
     bool m_finalized{ false };
+    std::set<ConfigLocation> m_acceptable_boxes;
 };
 }

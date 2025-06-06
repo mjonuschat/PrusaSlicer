@@ -101,73 +101,37 @@ enum class PerimeterGeneratorType
 class PrintSettings : public ConfigBox
 {
 public:
-    PrintSettings() : ConfigBox(s_defs_fdm, "print_settings") {}
+    PrintSettings() : ConfigBox(s_defs_fdm, FDMConfigLocation::Print) {}
 };
 class FilamentSettings : public ConfigBox
 {
 public:
-    FilamentSettings() : ConfigBox(s_defs_fdm, "filament_settings") {}
+    FilamentSettings() : ConfigBox(s_defs_fdm, FDMConfigLocation::Filament) {}
 };
 class PrinterSettings : public ConfigBox
 {
 public:
-    PrinterSettings() : ConfigBox(s_defs_fdm, "printer_settings") {}
+    PrinterSettings() : ConfigBox(s_defs_fdm, FDMConfigLocation::Printer) {}
 };
 class ToolPrintSettings : public ConfigBox
 {
 public:
-    ToolPrintSettings() : ConfigBox(s_defs_fdm, "toolprint_settings") {}
+    ToolPrintSettings() : ConfigBox(s_defs_fdm, FDMConfigLocation::Tool) {}
 };
 class ObjectSettings : public ConfigBox
 {
 public:
-    ObjectSettings() : ConfigBox(s_defs_fdm, "object_settings") {}
+    ObjectSettings() : ConfigBox(s_defs_fdm, FDMConfigLocation::Object) {}
 };
 class VolumeSettings : public ConfigBox
 {
 public:
-    VolumeSettings() : ConfigBox(s_defs_fdm, "volume_settings") {}
+    VolumeSettings() : ConfigBox(s_defs_fdm, FDMConfigLocation::Volume) {}
 };
 class ProjectSettings : public ConfigBox
 {
 public:
-    ProjectSettings() : ConfigBox(s_defs_fdm, "project_settings") {}
+    ProjectSettings() : ConfigBox(s_defs_fdm, FDMConfigLocation::Project) {}
 };
-
-class FullConfigFDM : public FullConfig
-{
-public:
-    FullConfigFDM(
-        const PrinterSettings& printer_s,
-
-        //TODO: This is stupid.
-        const std::vector<std::reference_wrapper<const ToolPrintSettings>>& tool_print_s,
-
-        const PrintSettings& print_s,
-
-        //TODO: This is stupid.
-        const std::vector<std::reference_wrapper<const FilamentSettings>>& filament_s,
-
-        const ProjectSettings& project_s
-    );
-
-    std::string_view name() const override { return "FDM"; }
-
-    static FullConfigFDM defaults() {
-        FilamentSettings filament_settings{};
-        ToolPrintSettings tool_settings{};
-        return FullConfigFDM{
-            PrinterSettings{},
-            {tool_settings},
-            PrintSettings{},
-            {filament_settings},
-            ProjectSettings{}
-        };
-    }
-};
-
-using FullConfigFDMPtr = std::shared_ptr<const FullConfigFDM>;
-using ObjectSettingsPtr = std::shared_ptr<const ObjectSettings>;
-using VolumeSettingsPtr = std::shared_ptr<const VolumeSettings>;
 
 } // namespace Slic3r::Domain

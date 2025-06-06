@@ -35,10 +35,10 @@ enum PrintHostType {
 // Then, define all types of ConfigBoxes that will be used. Provide our list
 // of definitions and the type of the box (which must match definitions).
 
-class PhysicalPrinterSettings : public ConfigBox
+class PhysicalPrinterSettings : public ConfigItems
 {
 public:
-    PhysicalPrinterSettings() : ConfigBox(s_defs_physical, "physical_printer_settings") {}
+    PhysicalPrinterSettings() : ConfigItems(s_defs_physical, PhysicalPrinterLocation{}) {}
 };
 
 } // namespace Slic3r::Domain

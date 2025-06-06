@@ -15,7 +15,7 @@
 #include <vector>
 #include <cstddef>
 
-#include "Slic3r/Domain/ConfigFDM.hpp"
+#include "Slic3r/Domain/FullConfigFDM.hpp"
 #include "Slic3r/Domain/GCodeFlavor.hpp"
 #include "libslic3r/Point.hpp"
 

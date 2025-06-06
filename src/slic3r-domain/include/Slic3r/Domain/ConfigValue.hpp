@@ -52,10 +52,14 @@ struct EnumVectorWrapper
     EnumVectorWrapper() = delete;
 
     template<typename T>
-    explicit EnumVectorWrapper(const T& values, const EnumValueDefs* def)
+    EnumVectorWrapper(const T& values, const EnumValueDefs* def)
         : m_values{to_ints(values)}
         , m_type{&typeid(typename T::value_type)}
         , m_def{check_enum_def(def)}
+    {}
+
+    EnumVectorWrapper(std::vector<int> values, const std::type_info* type, const EnumValueDefs& def)
+        : m_values{values}, m_type{type}, m_def{&def}
     {}
 
     template<typename T>

@@ -18,7 +18,6 @@
 #include "libslic3r/GCode/Wipe.hpp"
 #include "libslic3r/GCode/WipeTower.hpp"
 #include "libslic3r/Geometry/ArcWelder.hpp"
-#include "Slic3r/Domain/ConfigFDM.hpp"
 
 namespace Slic3r::GCode {
 

@@ -18,9 +18,9 @@ SCENARIO("PrintObject: object layer heights", "[PrintObject]") {
             Slic3r::Print print;
 
             TestConfig config;
-            config.print.opt("first_layer_height").set(FloatOrPercentage{2.0});
-            config.print.opt("layer_height").set(2.0);
-            config.tool.at(0).opt("nozzle_diameter").set(3.0);
+            config.print.items.opt("first_layer_height").set(FloatOrPercentage{2.0});
+            config.print.items.opt("layer_height").set(2.0);
+            config.tool.at(0).items.opt("nozzle_diameter").set(3.0);
 
             Slic3r::Test::init_and_process_print({TestMesh::cube_20x20x20}, print, config);
             SpanOfConstPtrs<Layer> layers = print.objects().front()->layers();
@@ -39,9 +39,9 @@ SCENARIO("PrintObject: object layer heights", "[PrintObject]") {
             Slic3r::Print print;
 
             TestConfig config;
-            config.print.opt("first_layer_height").set(FloatOrPercentage{2.0});
-            config.print.opt("layer_height").set(10.0);
-            config.tool.at(0).opt("nozzle_diameter").set(11.0);
+            config.print.items.opt("first_layer_height").set(FloatOrPercentage{2.0});
+            config.print.items.opt("layer_height").set(10.0);
+            config.tool.at(0).items.opt("nozzle_diameter").set(11.0);
             Slic3r::Test::init_and_process_print({TestMesh::cube_20x20x20}, print, config);
 
             SpanOfConstPtrs<Layer> layers = print.objects().front()->layers();
@@ -59,9 +59,9 @@ SCENARIO("PrintObject: object layer heights", "[PrintObject]") {
             Slic3r::Print print;
 
             TestConfig config;
-            config.print.opt("first_layer_height").set(FloatOrPercentage{2.0});
-            config.print.opt("layer_height").set(15.0);
-            config.tool.at(0).opt("nozzle_diameter").set(16.0);
+            config.print.items.opt("first_layer_height").set(FloatOrPercentage{2.0});
+            config.print.items.opt("layer_height").set(15.0);
+            config.tool.at(0).items.opt("nozzle_diameter").set(16.0);
 
             Slic3r::Test::init_and_process_print({TestMesh::cube_20x20x20}, print, config);
             SpanOfConstPtrs<Layer> layers = print.objects().front()->layers();

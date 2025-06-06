@@ -44,7 +44,6 @@
 #include "EdgeGrid.hpp"
 #include "tcbspan/span.hpp"
 #include "libslic3r/ConfigViews.hpp"
-#include "Slic3r/Domain/ConfigFDM.hpp"
 
 #include <memory>
 #include <map>

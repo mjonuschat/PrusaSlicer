@@ -15,12 +15,34 @@ enum { comSimple, comAdvanced, comExpert };
 static const std::string& L(const std::string& s) { return s; }
 static const std::string& L_CONTEXT(const std::string& s, const std::string& ctx) { return s; }
 
-void init_common_fdm_sla_config_items(ConfigDefinitions& defs, const std::string& technology)
+using PrinterTechnology::FFF;
+using PrinterTechnology::SLA;
+
+void init_common_fdm_sla_config_items(ConfigDefinitions& defs, const PrinterTechnology technology)
 {
-	ConfigItemDef* def = nullptr;
+    using Locations = std::set<ConfigLocation>;
+
+    constexpr auto sla_object{SLAConfigLocation::Object};
+    constexpr auto sla_material{SLAConfigLocation::Material};
+    constexpr auto fdm_object{FDMConfigLocation::Object};
+    constexpr auto fdm_volume{FDMConfigLocation::Volume};
+
+    const ConfigLocation printer{
+        technology == FFF
+            ? ConfigLocation{FDMConfigLocation::Printer}
+            : ConfigLocation{SLAConfigLocation::Printer}
+    };
+
+    const ConfigLocation print{
+        technology == FFF
+            ? ConfigLocation{FDMConfigLocation::Print}
+            : ConfigLocation{SLAConfigLocation::Print}
+    };
+
+    ConfigItemDef* def = nullptr;
 
     def = defs.add("printer_technology", typeid(EnumWrapper));
-    def->location = technology == "FDM" ? "printer_settings" : "sla_printer_settings";
+    def->location = printer;
     def->label = L("Printer technology");
     def->tooltip = L("Printer technology");
     s_enum_defs.push_back(std::make_unique<EnumValueDefs>(
@@ -29,35 +51,35 @@ void init_common_fdm_sla_config_items(ConfigDefinitions& defs, const std::string
             {int(PrinterTechnology::SLA), "SLA", L("SLA")}
         }
     ));
-    if (technology == "SLA")
+    if (technology == SLA)
         def->init_fn = init_with(PrinterTechnology::SLA, s_enum_defs.back().get());
     else
         def->init_fn = init_with(PrinterTechnology::FFF, s_enum_defs.back().get());
 
     def = defs.add("bed_shape", typeid(std::vector<Vec2d>));
-    def->location = technology == "FDM" ? "printer_settings" : "sla_printer_settings";
+    def->location = printer;
     def->label = L("Bed shape");
     def->mode = comAdvanced;
     def->init_fn = init_with((std::vector<Domain::Vec2d>{{0., 0.}, { 200., 0. }, { 200., 200. }, { 0., 200. }}));
 
     def = defs.add("bed_custom_texture", typeid(std::string));
-    def->location = technology == "FDM" ? "printer_settings" : "sla_printer_settings";
+    def->location = printer;
     def->label = L("Bed custom texture");
     def->mode = comAdvanced;
     def->init_fn = init_with("");
 
     def = defs.add("bed_custom_model", typeid(std::string));
-    def->location = technology == "FDM" ? "printer_settings" : "sla_printer_settings";
+    def->location = printer;
     def->label = L("Bed custom model");
     def->mode = comAdvanced;
     def->init_fn = init_with("");
 
     def = defs.add("elefant_foot_compensation", typeid(double));
-    def->location = technology == "FDM" ? "print_settings" : "sla_print_settings";
-    if (technology == "SLA")
-        def->overrides_in = { "sla_material_settings", "sla_object_settings"};
-    if (technology == "FDM")
-        def->overrides_in = { "object_settings", "volume_settings"};
+    def->location = print;
+    if (technology == SLA)
+        def->overrides_in = Locations{ sla_material, sla_object};
+    if (technology == FFF)
+        def->overrides_in = Locations{ fdm_object, fdm_volume };
     def->label = L("Elephant foot compensation");
     def->category = L("Advanced");
     def->tooltip = L("The first layer will be shrunk in the XY plane by the configured value "
@@ -68,7 +90,7 @@ void init_common_fdm_sla_config_items(ConfigDefinitions& defs, const std::string
     def->init_fn = init_with(0.);
 
     def = defs.add("thumbnails", typeid(std::string));
-    def->location = technology == "FDM" ? "printer_settings" : "sla_printer_settings";
+    def->location = printer;
     def->label = L("G-code thumbnails");
     def->tooltip = L("Picture sizes to be stored into a .gcode / .bgcode and .sl1 / .sl1s files, in the following format: \"XxY/EXT, XxY/EXT, ...\"\n"
                      "Currently supported extensions are PNG, QOI and JPG.");
@@ -77,7 +99,7 @@ void init_common_fdm_sla_config_items(ConfigDefinitions& defs, const std::string
     def->init_fn = init_with("");
 
     def = defs.add("thumbnails_format", typeid(EnumWrapper));
-    def->location = technology == "FDM" ? "printer_settings" : "sla_printer_settings";
+    def->location = printer;
     def->label = L("Format of G-code thumbnails");
     def->tooltip = L("Format of G-code thumbnails: PNG for best quality, JPG for smallest size, QOI for low memory firmware");
     def->mode = comExpert;
@@ -89,9 +111,9 @@ void init_common_fdm_sla_config_items(ConfigDefinitions& defs, const std::string
     );
 
     def = defs.add("layer_height", typeid(double));
-    def->location = technology == "FDM" ? "print_settings" : "sla_print_settings";
-    if (technology == "FDM")
-        def->overrides_in = { "object_settings", "volume_settings" };
+    def->location = print;
+    if (technology == FFF)
+        def->overrides_in = Locations{ fdm_object, fdm_volume };
     def->label = L("Layer height");
     def->category = L("Layers and Perimeters");
     def->tooltip = L("This setting controls the height (and thus the total number) of the slices/layers. "
@@ -101,7 +123,7 @@ void init_common_fdm_sla_config_items(ConfigDefinitions& defs, const std::string
     def->init_fn = init_with(0.3);
 
     def = defs.add("max_print_height", typeid(double));
-    def->location = technology == "FDM" ? "print_settings" : "sla_print_settings";
+    def->location = print;
     def->label = L("Max print height");
     def->tooltip = L("Set this to the maximum height that can be reached by your extruder while printing.");
     def->sidetext = L("mm");
@@ -111,7 +133,7 @@ void init_common_fdm_sla_config_items(ConfigDefinitions& defs, const std::string
     def->init_fn = init_with(200.);
 
     def = defs.add("output_filename_format", typeid(std::string));
-    def->location = technology == "FDM" ? "print_settings" : "sla_print_settings";
+    def->location = print;
     def->label = L("Output filename format");
     def->tooltip = L("You can use all configuration options as variables inside this template. "
                    "For example: [layer_height], [fill_density] etc. You can also use [timestamp], "
@@ -122,11 +144,11 @@ void init_common_fdm_sla_config_items(ConfigDefinitions& defs, const std::string
     def->init_fn = init_with("[input_filename_base].gcode");
 
     def = defs.add("slice_closing_radius", typeid(double));
-    def->location = technology == "FDM" ? "print_settings" : "sla_print_settings";
-    if (technology == "FDM")
-        def->overrides_in = {"object_settings", "volume_settings" };
+    def->location = print;
+    if (technology == FFF)
+        def->overrides_in = Locations{fdm_object, fdm_volume };
     else
-        def->overrides_in = { "sla_object_settings" };
+        def->overrides_in = Locations{ sla_object };
     def->label = L("Slice gap closing radius");
     def->category = L("Advanced");
     def->tooltip = L("Cracks smaller than 2x gap closing radius are being filled during the triangle mesh slicing. "
@@ -137,12 +159,11 @@ void init_common_fdm_sla_config_items(ConfigDefinitions& defs, const std::string
     def->init_fn = init_with(0.049);
 
     def = defs.add("slicing_mode", typeid(EnumWrapper));
-    if (technology == "FDM") {
-        def->location = "print_settings";
-        def->overrides_in = { "object_settings" };
+    def->location = print;
+    if (technology == FFF) {
+        def->overrides_in = Locations{ fdm_object };
     } else {
-        def->location = "sla_print_settings";
-        def->overrides_in = { "sla_object_settings" };
+        def->overrides_in = Locations{ sla_object };
     }
     def->label = L("Slicing Mode");
     def->category = L("Advanced");
@@ -156,7 +177,7 @@ void init_common_fdm_sla_config_items(ConfigDefinitions& defs, const std::string
     );
 
     def = defs.add("printer_model", typeid(std::string));
-    def->location = technology == "FDM" ? "printer_settings" : "sla_printer_settings";
+    def->location = printer;
     def->label = L("Printer type");
     def->tooltip = L("Type of the printer.");
     def->init_fn = init_with("");

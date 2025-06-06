@@ -2,10 +2,10 @@
 
 namespace Slic3r::Domain {
 ConfigDefinitions::ConfigDefinitions(
-    const std::vector<std::string>& acceptable_boxes, std::function<void(ConfigDefinitions&)> init_fn
-)
+    const std::set<ConfigLocation>& acceptable_boxes,
+    std::function<void(ConfigDefinitions&)> init_fn
+): m_acceptable_boxes{acceptable_boxes}
 {
-    m_acceptable_boxes = acceptable_boxes;
     init_fn(*this);
     std::sort(m_defs.begin(), m_defs.end());
     this->check_valid();
@@ -30,18 +30,20 @@ void ConfigDefinitions::check_valid() const
 
     for (const ConfigItemDef& def : m_defs) {
         ASSERT(def.type != nullptr);
-        ASSERT(!def.location.empty());
-        ASSERT(std::ranges::find(def.overrides_in, def.location) == def.overrides_in.end());
+
+        std::visit(overloaded{
+            [](const FDMConfigLocation location) {ASSERT(location != FDMConfigLocation::None);},
+            [](const SLAConfigLocation location) {ASSERT(location != SLAConfigLocation::None);},
+            [](const PhysicalPrinterLocation location) {}
+        }, def.location);
+
+        ASSERT(!def.overrides_in.contains(def.location));
 
         // Check that all items are assigned to valid boxes.
-        ASSERT(std::any_of(m_acceptable_boxes.begin(), m_acceptable_boxes.end(), [&def](const auto& b) {
-            return def.location == b;
-        }));
+        ASSERT(m_acceptable_boxes.contains(def.location));
+
         ASSERT(std::all_of(def.overrides_in.begin(), def.overrides_in.end(), [this](const auto& box) {
-            return std::any_of(
-                m_acceptable_boxes.begin(), m_acceptable_boxes.end(),
-                [&box](const auto& b) { return box == b; }
-            );
+            return m_acceptable_boxes.contains(box);
         }));
 
         if (def.init_fn) {
@@ -51,7 +53,7 @@ void ConfigDefinitions::check_valid() const
             const ConfigValue value{def.init_fn_ex(def.location)};
             value.visit([&](auto&& value) { ASSERT(typeid(decltype(value)) == *def.type); });
 
-            for (const std::string& override_location : def.overrides_in) {
+            for (const ConfigLocation& override_location : def.overrides_in) {
                 const ConfigValue value{def.init_fn_ex(override_location)};
                 value.visit([&](auto&& value) { ASSERT(typeid(decltype(value)) == *def.type); });
             }

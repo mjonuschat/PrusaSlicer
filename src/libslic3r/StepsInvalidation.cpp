@@ -538,7 +538,7 @@ PrintAndObjectSteps diff_to_print_invalidated_steps(const std::vector<std::strin
 PrintAndObjectSteps get_invalidated_steps(const PrintRegion& current, const PrintRegion& next)
 {
     const std::vector<std::string> diff{
-        current.config().diff_keys(next.config())
+        current.config().volume_settings().diff_keys(next.config().volume_settings())
     };
     return diff_to_invalidated_steps(current.config(), next.config(), diff);
 }

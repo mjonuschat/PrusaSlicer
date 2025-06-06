@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Slic3r/Domain/ConfigFDM.hpp"
-#include "Slic3r/Domain/ConfigSLA.hpp"
+#include "Slic3r/Domain/ConfigBoxesFDM.hpp"
+#include "Slic3r/Domain/ConfigBoxesSLA.hpp"
 
 namespace Slic3r::Domain {
 
@@ -28,5 +28,4 @@ struct ConfigPackSLA
 };
 
 using ConfigPack = std::variant<ConfigPackFDM, ConfigPackSLA>;
-
 } // namespace Slic3r::Domain

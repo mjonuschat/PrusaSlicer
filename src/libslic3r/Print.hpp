@@ -47,7 +47,6 @@
 #include <set>
 #include <tcbspan/span.hpp>
 #include "libslic3r/ConfigViews.hpp"
-#include "Slic3r/Domain/ConfigFDM.hpp"
 
 namespace Slic3r {
 
@@ -249,7 +248,7 @@ public:
         t_layer_height_range        layer_height_range;
         // Config of the layer range, null if there is just a single range with no config override.
         // Config is owned by the associated ModelObject.
-        Domain::VolumeSettingsPtr config;
+        Domain::PartialVolumeConfigFDMPtr config;
         // Volumes sorted by ModelVolume::id().
         std::vector<VolumeExtents>  volumes;
 

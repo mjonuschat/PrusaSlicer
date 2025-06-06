@@ -34,7 +34,7 @@
 #include "libslic3r/Slicing.hpp"
 #include "libslic3r/libslic3r.h"
 #include "libslic3r/StepsInvalidation.hpp"
-#include "libslic3r/ConfigPackFDMUtils.hpp"
+#include "libslic3r/ConfigPackUtils.hpp"
 
 namespace Slic3r {
 
@@ -54,11 +54,14 @@ using Domain::ModelWipeTower;
 using Biz::Algorithms::TriangleStateType;
 using Domain::ObjectID;
 using Domain::FullConfigFDM;
+using Domain::PartialConfig;
 using Domain::FullConfigFDMPtr;
 using Domain::ObjectSettings;
-using Domain::ObjectSettingsPtr;
+using Domain::PartialObjectConfigFDM;
+using Domain::PartialObjectConfigFDMPtr;
 using Domain::VolumeSettings;
-using Domain::VolumeSettingsPtr;
+using Domain::PartialVolumeConfigFDM;
+using Domain::PartialVolumeConfigFDMPtr;
 using Biz::Parser::PlaceholderParser;
 using ParserConfig = Biz::Parser::IO::Config;
 
@@ -164,16 +167,28 @@ public:
     struct LayerRange {
         t_layer_height_range        layer_height_range;
         // Config is owned by the associated ModelObject.
-        const VolumeSettingsPtr config;
+        PartialVolumeConfigFDMPtr config;
 
         bool operator<(const LayerRange &rhs) const throw() { return this->layer_height_range < rhs.layer_height_range; }
     };
 
     LayerRanges() = default;
-    LayerRanges(const LayerConfigRangesNew &in) { this->assign(in); }
+    LayerRanges(
+        const LayerConfigRangesNew& in,
+        const std::size_t tools_count,
+        const std::size_t filaments_count
+    )
+    {
+        this->assign(in, tools_count, filaments_count);
+    }
 
     // Convert input config ranges into continuous non-overlapping sorted vector of intervals and their configs.
-    void assign(const LayerConfigRangesNew &in) {
+    void assign(
+        const LayerConfigRangesNew& in,
+        const std::size_t tools_count,
+        const std::size_t filaments_count
+    )
+    {
         m_ranges.clear();
         m_ranges.reserve(in.size());
         // Input ranges are sorted lexicographically. First range trims the other ranges.
@@ -186,7 +201,8 @@ public:
                     last_z = min_z;
                 }
                 if (range.first.second > last_z + EPSILON) {
-                    const VolumeSettingsPtr cfg{std::make_shared<const VolumeSettings>(range.second)};
+                    const PartialVolumeConfigFDMPtr cfg{std::make_shared<
+                        const PartialVolumeConfigFDM>(range.second, tools_count, filaments_count)};
                     m_ranges.push_back({ t_layer_height_range(last_z, range.first.second), cfg });
                     last_z = range.first.second;
                 }
@@ -199,7 +215,7 @@ public:
             m_ranges.push_back({ t_layer_height_range(m_ranges.back().layer_height_range.second, DBL_MAX) });
     }
 
-    VolumeSettingsPtr config(const t_layer_height_range &range) const {
+    PartialVolumeConfigFDMPtr config(const t_layer_height_range &range) const {
         auto it = std::lower_bound(m_ranges.begin(), m_ranges.end(), LayerRange{ { range.first - EPSILON, range.second - EPSILON } });
         // #ys_FIXME_COLOR
         // assert(it != m_ranges.end());
@@ -419,7 +435,7 @@ void update_volume_bboxes(
 }
 
 PrintAndObjectSteps Print::update_config(const PrintConfigView& new_full_config) {
-    const std::vector<std::string> diff_keys{new_full_config.diff_keys(m_config)};
+    const std::vector<std::string> diff_keys{new_full_config.full_config().diff_keys(m_config.full_config())};
 
     PrintAndObjectSteps invalidated_steps{diff_to_print_invalidated_steps(diff_keys)};
 
@@ -491,21 +507,15 @@ namespace {
 PrintRegionConfigView create_mm_painted_region_config(const PrintRegionConfigView &parent_config, const int painted_extruder_id)
 {
     Domain::VolumeSettings volume_settings;
-    Domain::ConfigItem& infill_extruder_item = volume_settings.opt("infill_extruder");
-    Domain::ConfigItem& perimeter_extruder_item = volume_settings.opt("perimeter_extruder");
-    Domain::ConfigItem& solid_infill_extruder_item = volume_settings.opt("solid_infill_extruder");
-
-    infill_extruder_item.set(painted_extruder_id);
-    perimeter_extruder_item.set(painted_extruder_id);
-    solid_infill_extruder_item.set(painted_extruder_id);
-
-    assert(perimeter_extruder_item.is_nullable() && solid_infill_extruder_item.is_nullable() && infill_extruder_item.is_nullable());
-    infill_extruder_item.set_null(false);
-    perimeter_extruder_item.set_null(false);
-    solid_infill_extruder_item.set_null(false);
+    volume_settings.overrides.set("infill_extruder", painted_extruder_id);
+    volume_settings.overrides.set("perimeter_extruder", painted_extruder_id);
+    volume_settings.overrides.set("solid_infill_extruder", painted_extruder_id);
 
     PrintRegionConfigView painted_region_cfg = parent_config;
-    painted_region_cfg.add_override(std::make_shared<Domain::VolumeSettings>(volume_settings));
+    const PartialVolumeConfigFDM squashed_volume_config{
+        volume_settings, parent_config.tools_count(), parent_config.filaments_count()
+    };
+    painted_region_cfg.add_override(std::make_shared<PartialVolumeConfigFDM>(squashed_volume_config));
 
     return painted_region_cfg;
 };
@@ -513,66 +523,42 @@ PrintRegionConfigView create_mm_painted_region_config(const PrintRegionConfigVie
 PrintRegionConfigView create_fuzzy_skin_painted_region_config(const PrintRegionConfigView &parent_config)
 {
     Domain::VolumeSettings volume_settings;
-    Domain::ConfigItem& fuzzy_skin_item = volume_settings.opt("fuzzy_skin");
-
-    fuzzy_skin_item.set(Domain::FuzzySkinType::All);
-
-    assert(fuzzy_skin_item.is_nullable());
-    fuzzy_skin_item.set_null(false);
+    volume_settings.overrides.set("fuzzy_skin", Domain::FuzzySkinType::All);
 
     PrintRegionConfigView painted_region_cfg = parent_config;
-    painted_region_cfg.add_override(std::make_shared<Domain::VolumeSettings>(volume_settings));
+    const PartialVolumeConfigFDM squashed_volume_config{
+        volume_settings, parent_config.tools_count(), parent_config.filaments_count()
+    };
+    painted_region_cfg.add_override(std::make_shared<PartialVolumeConfigFDM>(squashed_volume_config));
 
     return painted_region_cfg;
 };
 
 // Fill the infill, perimeter, and solid infill extruders based on the "extruder" config.
-template <typename T>
-T preprocess_config_box(const T& config_box)
+template<typename T>
+T preprocess_config(const T& partial_config)
 {
-    T config_box_out = config_box;
-    if (const Domain::ConfigItem& extruder_item = config_box_out.opt("extruder"); !extruder_item.is_null()) {
-        if (const int extruder = extruder_item.get<int>(); extruder > 0) {
-            Domain::ConfigItem& infill_extruder_item = config_box_out.opt("infill_extruder");
-            Domain::ConfigItem& perimeter_extruder_item = config_box_out.opt("perimeter_extruder");
-            Domain::ConfigItem& solid_infill_extruder_item = config_box_out.opt("solid_infill_extruder");
-
-            infill_extruder_item.set(extruder);
-            perimeter_extruder_item.set(extruder);
-            solid_infill_extruder_item.set(extruder);
-
-            assert(perimeter_extruder_item.is_nullable() && solid_infill_extruder_item.is_nullable() && infill_extruder_item.is_nullable());
-            infill_extruder_item.set_null(false);
-            perimeter_extruder_item.set_null(false);
-            solid_infill_extruder_item.set_null(false);
-        }
+    T result{partial_config};
+    if (const auto extruder{partial_config.template get<int>("extruder")}; extruder > 0) {
+        result.set("infill_extruder", *extruder);
+        result.set("perimeter_extruder", *extruder);
+        result.set("solid_infill_extruder", *extruder);
     }
-
-    return config_box_out;
-}
-
-Domain::VolumeSettings preprocess_volume_settings(const Domain::VolumeSettings& volume_settings)
-{
-    return preprocess_config_box<Domain::VolumeSettings>(volume_settings);
-}
-
-Domain::ObjectSettings preprocess_object_settings(const Domain::ObjectSettings& object_settings)
-{
-    return preprocess_config_box<Domain::ObjectSettings>(object_settings);
+    return result;
 }
 
 // Generate PrintRegions from scratch.
 std::shared_ptr<PrintObjectRegions> generate_print_object_regions(
-    std::shared_ptr<PrintObjectRegions>         print_object_regions_old,
-    const ModelVolumePtrs                       &model_volumes,
-    const LayerRanges                           &model_layer_ranges,
-    const ObjectSettingsPtr&                    new_object_settings,
-    const FullConfigFDMPtr&                     new_full_config,
-    const Transform3d                           &trafo,
-    size_t                                       num_extruders,
-    const float                                  xy_size_compensation,
-    const std::vector<unsigned int>             &painting_extruders,
-    const bool                                   has_painted_fuzzy_skin
+    std::shared_ptr<PrintObjectRegions> print_object_regions_old,
+    const ModelVolumePtrs& model_volumes,
+    const LayerRanges& model_layer_ranges,
+    const PrintObjectConfigView& new_object_settings,
+    const FullConfigFDMPtr& new_full_config,
+    const Transform3d& trafo,
+    size_t num_extruders,
+    const float xy_size_compensation,
+    const std::vector<unsigned int>& painting_extruders,
+    const bool has_painted_fuzzy_skin
 )
 {
     // Reuse the old object or generate a new one.
@@ -611,15 +597,19 @@ std::shared_ptr<PrintObjectRegions> generate_print_object_regions(
             for (PrintObjectRegions::LayerRangeRegions &layer_range : layer_ranges_regions)
                 if (const PrintObjectRegions::BoundingBox *bbox = find_volume_extents(layer_range, volume); bbox) {
                     if (volume.is_model_part()) {
-                        std::vector<VolumeSettingsPtr> new_volume_settings;
+                        std::vector<PartialVolumeConfigFDMPtr> new_volume_settings;
                         if (layer_range.config) {
-                            new_volume_settings.push_back(std::make_shared<Domain::VolumeSettings>(preprocess_volume_settings(*layer_range.config)));
+                            new_volume_settings.push_back(std::make_shared<const PartialVolumeConfigFDM>(preprocess_config(*layer_range.config)));
                         }
-                        new_volume_settings.push_back(std::make_shared<Domain::VolumeSettings>(preprocess_volume_settings(volume.volume_settings)));
+                        const PartialVolumeConfigFDM squashed_settings{
+                            volume.volume_settings, new_full_config->tools_count(),
+                            new_full_config->filaments_count()
+                        };
+                        new_volume_settings.push_back(std::make_shared<const PartialVolumeConfigFDM>(preprocess_config(squashed_settings)));
 
                         const PrintRegionConfigView new_config{
                             new_full_config,
-                            std::make_shared<Domain::ObjectSettings>(preprocess_object_settings(*new_object_settings)),
+                            std::make_shared<const Domain::PartialObjectConfigFDM>(preprocess_config(new_object_settings.object_settings())),
                             new_volume_settings
                         };
                         // Add a model volume, assign an existing region or generate a new one.
@@ -642,7 +632,12 @@ std::shared_ptr<PrintObjectRegions> generate_print_object_regions(
                             if (parent_volume.is_model_part() || parent_volume.is_modifier())
                                 if (PrintObjectRegions::BoundingBox parent_bbox = find_modifier_volume_extents(layer_range, parent_region_id); parent_bbox.intersects(*bbox)) {
                                     PrintRegionConfigView new_config{parent_region.region->config()};
-                                    new_config.add_override(std::make_shared<Domain::VolumeSettings>(preprocess_volume_settings(volume.volume_settings)));
+
+                                    const PartialVolumeConfigFDM squashed_settings{
+                                        volume.volume_settings, new_full_config->tools_count(),
+                                        new_full_config->filaments_count()
+                                    };
+                                    new_config.add_override(std::make_shared<const PartialVolumeConfigFDM>(preprocess_config(squashed_settings)));
                                     // Only create new region for a modifier, which actually modifies config of it's parent.
                                     if (new_config != parent_region.region->config()) {
                                         added = true;
@@ -1083,7 +1078,10 @@ PrintObjectsSyncResult sync_print_objects(
             shrinkage_compensation
         );
 
-        const auto object_settings_ptr{std::make_shared<ObjectSettings>(model_object->object_settings)};
+        const auto object_settings_ptr{std::make_shared<PartialObjectConfigFDM>(
+            model_object->object_settings, new_full_config->tools_count(),
+            new_full_config->filaments_count()
+        )};
         const PrintObjectConfigView new_config{new_full_config, object_settings_ptr};
 
         for (PrintObjectTrafoAndInstances& new_instances : print_instances) {
@@ -1095,7 +1093,7 @@ PrintObjectsSyncResult sync_print_objects(
                 PrintObject* print_object{current_instace_it->second};
 
                 const std::vector<std::string> diff{
-                    print_object->config().object_settings()->diff_keys(model_object->object_settings)
+                    print_object->config().object_settings().diff_keys(new_config.object_settings())
                 };
                 print_object->set_config(new_config);
                 PrintAndObjectSteps invalidated_steps{
@@ -1161,8 +1159,8 @@ RegionsSyncResult sync_regions(
         const std::shared_ptr<PrintObjectRegions> new_regions{generate_print_object_regions(
             nullptr,
             print_object.model_object()->volumes,
-            LayerRanges(print_object.model_object()->layer_config_ranges_new),
-            print_object.config().object_settings(),
+            LayerRanges(print_object.model_object()->layer_config_ranges_new, new_full_config->tools_count(), new_full_config->filaments_count()),
+            print_object.config(),
             new_full_config,
             print_object.trafo(),
             num_extruders,
@@ -1378,7 +1376,7 @@ Print::ApplyStatus Print::apply(
     std::vector<std::string>* warnings
 )
 {
-    const auto new_full_config_ptr{std::make_shared<FullConfigFDM>(Biz::Slicing::get_full_config(config_pack))};
+    const auto new_full_config_ptr{std::make_shared<FullConfigFDM>(config_pack)};
     PrintConfigView new_print_config{new_full_config_ptr};
     // Check if the print config change will produce any warnings.
     validate_print_config_change(m_config, new_print_config, warnings);

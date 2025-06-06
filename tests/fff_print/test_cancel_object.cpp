@@ -112,12 +112,12 @@ class CancelObjectFixture
 {
 public:
     CancelObjectFixture() {
-        config.printer.opt("gcode_flavor").set(Domain::GCodeFlavor::gcfMarlinFirmware);
-        config.print.opt("gcode_label_objects").set(Domain::LabelObjectsStyle::Firmware);
-        config.print.opt("gcode_comments").set(true);
-        config.printer.opt("use_relative_e_distances").set(true);
-        config.tool.at(0).opt("wipe").set(false);
-        config.print.opt("skirts").set(0);
+        config.printer.items.opt("gcode_flavor").set(Domain::GCodeFlavor::gcfMarlinFirmware);
+        config.print.items.opt("gcode_label_objects").set(Domain::LabelObjectsStyle::Firmware);
+        config.print.items.opt("gcode_comments").set(true);
+        config.printer.items.opt("use_relative_e_distances").set(true);
+        config.tool.at(0).items.opt("wipe").set(false);
+        config.print.items.opt("skirts").set(0);
 
         add_object(two_cubes, "no_offset_cube", 0);
         add_object(two_cubes, "offset_cube", 0, {30.0, 0.0, 0.0});
@@ -125,9 +125,9 @@ public:
         add_object(multimaterial_cubes, "no_offset_cube", 1);
         add_object(multimaterial_cubes, "offset_cube", 2, {30.0, 0.0, 0.0});
 
-        retract_length = config.tool.at(0).opt("retract_length").get<double>();
+        retract_length = config.tool.at(0).items.opt("retract_length").get<double>();
         retract_length_toolchange =
-            config.tool.at(0).opt("retract_length_toolchange").get<double>();
+            config.tool.at(0).items.opt("retract_length_toolchange").get<double>();
     }
 
     TestConfig config;
@@ -170,7 +170,7 @@ TEST_CASE_METHOD(CancelObjectFixture, "Single extruder", "[CancelObject]") {
 }
 
 TEST_CASE_METHOD(CancelObjectFixture, "Sequential print", "[CancelObject]") {
-    config.print.opt("complete_objects").set(true);
+    config.print.items.opt("complete_objects").set(true);
     Print print;
     print.apply(two_cubes, config, {}, {});
     print.validate();

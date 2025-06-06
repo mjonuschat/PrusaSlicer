@@ -7,7 +7,7 @@ using namespace Slic3r;
 SCENARIO("Avoid crossing perimeters", "[AvoidCrossingPerimeters]") {
 	WHEN("Two 20mm cubes sliced") {
         Test::TestConfig config;
-        config.print.opt("avoid_crossing_perimeters").set(true);
+        config.print.items.opt("avoid_crossing_perimeters").set(true);
         std::string gcode = Slic3r::Test::slice(
     	    { Slic3r::Test::TestMesh::cube_20x20x20, Slic3r::Test::TestMesh::cube_20x20x20 },
             config

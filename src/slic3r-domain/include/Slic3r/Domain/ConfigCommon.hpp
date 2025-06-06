@@ -21,6 +21,6 @@ enum class SlicingMode
     CloseHoles, // Orienting all contours CCW, thus closing all holes.
 };
 
-void init_common_fdm_sla_config_items(ConfigDefinitions& defs, const std::string& technology);
+void init_common_fdm_sla_config_items(ConfigDefinitions& defs, const PrinterTechnology technology);
 	
 }

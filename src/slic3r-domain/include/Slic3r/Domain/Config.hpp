@@ -10,7 +10,6 @@
 #include <string_view>
 #include <vector>
 
-#include "Slic3r/Assert.hpp"
 #include "Slic3r/Domain/ConfigValue.hpp"
 #include "Slic3r/Domain/ConfigDef.hpp"
 
@@ -20,197 +19,241 @@ namespace Slic3r::Domain {
 class ConfigItem
 {
 public:
-    ConfigItem(const ConfigItemDef& def, std::string_view box_type);
+    ConfigItem(const ConfigItemDef& def, const ConfigLocation locaiton);
 
-    bool operator==(const ConfigItem& other) const = default;
+    bool operator==(const ConfigItem&) const = default;
 
-    const ConfigItemDef& def() const { ASSERT(m_def); return *m_def; }
-
-    void set_null(bool null);
-    bool is_null() const;
-    bool is_nullable() const;
-    const std::string& name() const;
+    const ConfigItemDef& def() const {
+        return *m_def;
+    }
 
     template <typename T>
     T get() const
     {
-        return m_data.get<T>();
+        return m_value.get<T>();
     }
 
     template <typename T>
     void set(const T& value)
     {
-        m_data.set(value);
+        m_value.set(value);
     }
-
-    std::size_t hash() const;
 
     template <typename Visitor>
     auto visit(Visitor&& visitor) const {
-        return m_data.visit(std::forward<Visitor>(visitor));
+        return m_value.visit(std::forward<Visitor>(visitor));
+    }
+
+    ConfigValue value() const {
+        return m_value;
     }
 
     template <typename T>
     bool holds_alternative() const {
-        return m_data.holds_alternative<T>();
+        return m_value.holds_alternative<T>();
+    }
+
+    const std::string& name() const {
+        return m_def->name;
     }
 
 private:
-    std::string m_name{};
-    bool m_is_nullable{ false }; // This is an override of something.
-    bool m_is_null{ false };     // Whether it is currently overriding or not.
-    const ConfigItemDef* m_def{ nullptr };
-    ConfigValue m_data;
+    ConfigValue m_value;
+
+    // Comparision operator, compares the defintion pointers.
+    // It cannot be nullptr.
+    const ConfigItemDef* m_def;
 };
 
-
-// A container storing some subset of config options. The constructor iterates through ConfigDefinititions and
-// creates keys that are tagged as belonging in this ConfigBox type. No items can be removed or added later.
-// This is a base class not designed to be used as it is (protected ctr).
-class ConfigBox
+class ConfigItems
 {
 public:
-    const ConfigItem& opt(const std::string_view key) const { return const_cast<ConfigBox*>(this)->opt(key); }
+    ConfigItems(const ConfigDefinitions& defs, const ConfigLocation& location);
+
+    const ConfigItem& opt(const std::string_view key) const;
     ConfigItem& opt(const std::string_view key);
 
-    std::string_view type() const { return m_type; }
-    std::optional<const ConfigItem*> contains(const std::string_view key) const;
+    ConfigItem* contains(const std::string& key);
+    const ConfigItem* contains(const std::string& key) const;
 
-    std::vector<ConfigItem>::iterator begin() { return m_items.begin(); }
-    std::vector<ConfigItem>::iterator end() { return m_items.end(); }
-    std::vector<ConfigItem>::const_iterator begin() const { return m_items.cbegin(); }
-    std::vector<ConfigItem>::const_iterator end() const { return m_items.cend(); }
+    std::vector<ConfigItem>::iterator begin();
+    std::vector<ConfigItem>::iterator end();
+    std::vector<ConfigItem>::const_iterator begin() const;
+    std::vector<ConfigItem>::const_iterator end() const;
 
-    std::vector<std::string> diff_keys(const ConfigBox& other) const;
-    std::size_t hash() const;
+    virtual ~ConfigItems() = default;
 
-    virtual ~ConfigBox() = default;
+private:
+    std::vector<ConfigItem> m_items;
+};
+
+class ConfigOverrides {
+public:
+    ConfigOverrides(const ConfigDefinitions& defs, const ConfigLocation location);
+
+    template <typename T>
+    void set(const std::string& key, const T& value) {
+        const auto item_index{find(key)};
+        m_items.at(item_index).set(value);
+        m_used_overrides.insert({key, item_index});
+    }
+
+    void disable(const std::string& key);
+
+    void enable(const std::string& key);
+
+    std::size_t size() const;
+
+    const bool empty() const;
+
+    std::optional<ConfigItem> get(const std::string& key) const;
+
+    ConfigItem* contains(const std::string& key);
+    const ConfigItem* contains(const std::string& key) const;
+
+    std::vector<std::reference_wrapper<const ConfigItem>> overriden_items() const;
+
+private:
+    std::size_t find(const std::string& key);
+
+    std::map<std::string, std::size_t> m_used_overrides;
+    std::vector<ConfigItem> m_items;
+};
+
+struct ContainsResult {
+    ConfigItem* item{nullptr};
+    bool is_override{};
+};
+
+struct ConstContainsResult {
+    const ConfigItem* item{nullptr};
+    bool is_override{};
+};
+
+struct ConfigBox
+{
+    ConfigItems items;
+    ConfigOverrides overrides;
+    ConfigLocation location;
+
+    ContainsResult contains(const std::string& key) {
+        if (auto* item{overrides.contains(key)}) {
+            return {item, true};
+        }
+        return {items.contains(key), false};
+    }
+
+    ConstContainsResult contains(const std::string& key) const {
+        if (auto* item{overrides.contains(key)}) {
+            return {item, true};
+        }
+        return {items.contains(key), false};
+    }
 
 protected:
-    ConfigBox(const ConfigDefinitions& defs, std::string_view type);
-
-    std::vector<ConfigItem> m_items;
-    std::string m_type{ };
+    ConfigBox(const ConfigDefinitions& defs, const ConfigLocation& location)
+        : items{defs, location}, overrides{defs, location}, location{location}
+    {}
 };
 
 using BoxRef = std::reference_wrapper<const ConfigBox>;
 using BoxRefs = std::vector<BoxRef>;
-using FullConfigInput = std::vector<std::variant<BoxRef, BoxRefs>>;
+using BoxOtBoxesVector = std::vector<std::variant<BoxRef, BoxRefs>>;
 
+using LocationSize = std::optional<std::size_t>;
+using ConfigLocationSizes = std::map<ConfigLocation, LocationSize>;
 
-// Base class for a full config, which holds multiple config boxes and
-// has const getters to get a ConfigItem by key.
-// WARNING: This base class keeps pointers to ConfigBoxes passed to it in the constructor.
-// It is the responsibility of the derived class to ensure that the ConfigBoxes stay alive.
-class FullConfig {
+class SquashedConfig {
 public:
-    template<typename T>
-    T get(const std::string_view key) const {
-        if constexpr (Domain::is_std_vector_v<T>) {
-            const auto single_item_it{m_single_items.find(std::string{key})};
-            if (single_item_it != m_single_items.end()) {
-                return single_item_it->second.get<T>();
-            }
-            return get_multi<typename T::value_type>(key);
-        } else {
-            return opt_single(key).get<T>();
-        }
-    }
+    SquashedConfig(const BoxOtBoxesVector& boxes, const ConfigLocationSizes& sizes);
 
-    std::size_t hash() const;
+    std::vector<std::string> diff_keys(const SquashedConfig& other) const;
 
-    virtual std::string_view name() const = 0;
-    virtual ~FullConfig() = default;
+    bool operator==(const SquashedConfig& other) const;
+
+    const std::map<std::string, ConfigValue>& values() const;
 
 protected:
-    FullConfig(const FullConfigInput& boxes);
+    std::size_t hash() const;
+    std::map<std::string, ConfigValue> m_values;
 
 private:
-    std::map<std::string, ConfigItem> m_single_items;
-    std::map<std::string, std::vector<ConfigItem>> m_multi_items;
-    std::vector<std::string> m_single_item_keys;
-    std::vector<std::string> m_multi_item_keys;
-
-    void add(const ConfigBox& box);
-    void add(const BoxRefs& boxes);
-
-    template <typename T>
-    std::vector<T> get_multi(const std::string_view key) const {
-        std::vector<T> result;
-        const std::vector<ConfigItem>& items{this->opt_multi(key)};
-        std::transform(items.begin(), items.end(), std::back_inserter(result), [](const ConfigItem& item){
-            return item.get<T>();
-        });
-        return result;
-    }
-
-    const ConfigItem& opt_single(const std::string_view key) const;
-    const std::vector<ConfigItem>& opt_multi(const std::string_view key) const;
-
-    friend class ConfigView;
+    void add(const ConfigBox& box, const ConfigLocationSizes& location_sizes);
+    void add(const BoxRefs& boxes, const ConfigLocationSizes& location_sizes);
 };
 
-using ConfigBoxPtr = std::shared_ptr<const ConfigBox>;
-using ConfigBoxesPtrs = std::vector<ConfigBoxPtr>;
-using FullConfigPtr = std::shared_ptr<const FullConfig>;
+class FullConfig : public SquashedConfig {
+public:
+    template<typename T>
+    T get(const std::string& key) const {
+        return get_value(key).get<T>();
+    }
 
-// To be used by backend to extract values for a given object while accounting
-// for possible per-object / per volume overrides. Keeps references to objects
-// used during its construction!
-//
-// IT DOES NOT SUPPORT E.G. MULTIPLE ObjectSettings PER EXTRUDER. DO WE NEED THAT?
+    std::vector<std::string> keys() const;
+
+    virtual ~FullConfig() = default;
+protected:
+    FullConfig(const BoxOtBoxesVector& input, const ConfigLocationSizes& location_sizes);
+
+private:
+    friend class ConfigView;
+    ConfigValue get_value(const std::string& key) const;
+
+    std::vector<std::string> m_keys;
+};
+
+class PartialConfig : public SquashedConfig{
+public:
+    template<typename T>
+    std::optional<T> get(const std::string& key) const {
+        if (const auto value{get_value(key)}) {
+            return value->get<T>();
+        }
+        return std::nullopt;
+    }
+
+    // TODO: Remove this once possible!!! it allows changing the slicing input!
+    template<typename T>
+    void set(const std::string& key, const T& value) {
+        // extremelly dangerous, anything can be set...
+        m_values.insert_or_assign(key, ConfigValue{value});
+    }
+
+    virtual ~PartialConfig() = default;
+
+
+protected:
+    PartialConfig(const BoxOtBoxesVector& input, const ConfigLocationSizes& location_sizes);
+
+private:
+    friend class ConfigView;
+    std::optional<ConfigValue> get_value(const std::string& key) const;
+};
+
+
+using FullConfigPtr = std::shared_ptr<const FullConfig>;
+using PartialConfigPtr = std::shared_ptr<const PartialConfig>;
+
 class ConfigView
 {
 public:
-    ConfigView(const FullConfigPtr& full_config, const ConfigBoxesPtrs& config_boxes)
-        : m_config_boxes{config_boxes}, m_full_config{full_config}
-    {
-        ASSERT(m_full_config);
-        for (const ConfigBoxPtr& ptr : m_config_boxes) {
-            ASSERT(ptr);
-        }
-    }
+    ConfigView(FullConfigPtr full_config, const std::vector<PartialConfigPtr>& partial_configs);
 
     template<class T>
-    T get(const std::string_view key) const {
-        // TODO, this is horrible!
-        if constexpr (!Domain::is_std_vector_v<T>) {
-            for (auto rev_it = m_config_boxes.rbegin(); rev_it != m_config_boxes.rend(); ++rev_it) {
-                const ConfigBoxPtr& override{*rev_it};
-                if (auto opt = override->contains(key); opt.has_value() && ! (*opt)->is_null()) {
-                    return (**opt).get<T>();
-                }
-            }
-        }
-        return m_full_config->get<T>(key);
+    T get(const std::string& key) const {
+        return get_value(key).get<T>();
     }
-
-    std::vector<std::string> diff_keys(const ConfigView& other) const;
 
     bool operator==(const ConfigView& other) const;
 
     std::size_t hash() const;
 
 protected:
-    ConfigBoxesPtrs m_config_boxes;
     FullConfigPtr m_full_config;
+    std::vector<PartialConfigPtr> m_partial_configs;
 
 private:
-
-    const ConfigItem& opt_single(std::string_view key) const {
-        for (auto rev_it = m_config_boxes.rbegin(); rev_it != m_config_boxes.rend(); ++rev_it) {
-            const ConfigBoxPtr& override{*rev_it};
-            if (auto opt = override->contains(key); opt.has_value() && ! (*opt)->is_null()) {
-                return (**opt);
-            }
-        }
-        return m_full_config->opt_single(key);
-    }
-
-    const std::vector<ConfigItem>& opt_multi(std::string_view key) const {
-        // Multi keys cannot be overriden.
-        return m_full_config->opt_multi(key);
-    }
+    ConfigValue get_value(const std::string& key) const;
 };
 
 } // namespace Slic3r::Domain

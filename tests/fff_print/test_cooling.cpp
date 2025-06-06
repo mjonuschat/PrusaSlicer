@@ -46,26 +46,26 @@ SCENARIO("Cooling unit tests", "[Cooling]") {
     TestConfig config;
 
     // Default cooling settings.
-    config.filament[0].opt("bridge_fan_speed").set(100);
-    config.filament[0].opt("cooling").set(true);
-    config.filament[0].opt("fan_always_on").set(false);
-    config.filament[0].opt("fan_below_layer_time").set(60);
-    config.filament[0].opt("max_fan_speed").set(100);
-    config.filament[0].opt("min_print_speed").set(10.0);
-    config.filament[0].opt("slowdown_below_layer_time").set(5);
+    config.filament[0].items.opt("bridge_fan_speed").set(100);
+    config.filament[0].items.opt("cooling").set(true);
+    config.filament[0].items.opt("fan_always_on").set(false);
+    config.filament[0].items.opt("fan_below_layer_time").set(60);
+    config.filament[0].items.opt("max_fan_speed").set(100);
+    config.filament[0].items.opt("min_print_speed").set(10.0);
+    config.filament[0].items.opt("slowdown_below_layer_time").set(5);
     // Default print speeds.
-    config.print.opt("bridge_speed").set(60.0);
-    config.print.opt("external_perimeter_speed").set(FloatOrPercentage{Percentage{50}});
-    config.print.opt("first_layer_speed").set(FloatOrPercentage{30.0});
-    config.print.opt("gap_fill_speed").set(20.0);
-    config.print.opt("infill_speed").set(80.0);
-    config.print.opt("perimeter_speed").set(60.0);
-    config.print.opt("small_perimeter_speed").set(FloatOrPercentage{15.0});
-    config.print.opt("solid_infill_speed").set(FloatOrPercentage{20.0});
-    config.print.opt("top_solid_infill_speed").set(FloatOrPercentage{15.0});
-    config.print.opt("max_print_speed").set(80.0);
+    config.print.items.opt("bridge_speed").set(60.0);
+    config.print.items.opt("external_perimeter_speed").set(FloatOrPercentage{Percentage{50}});
+    config.print.items.opt("first_layer_speed").set(FloatOrPercentage{30.0});
+    config.print.items.opt("gap_fill_speed").set(20.0);
+    config.print.items.opt("infill_speed").set(80.0);
+    config.print.items.opt("perimeter_speed").set(60.0);
+    config.print.items.opt("small_perimeter_speed").set(FloatOrPercentage{15.0});
+    config.print.items.opt("solid_infill_speed").set(FloatOrPercentage{20.0});
+    config.print.items.opt("top_solid_infill_speed").set(FloatOrPercentage{15.0});
+    config.print.items.opt("max_print_speed").set(80.0);
     // Override for tests.
-    config.filament[0].opt("disable_fan_first_layers").set(0);
+    config.filament[0].items.opt("disable_fan_first_layers").set(0);
 
     Print print;
     WHEN("G-code block 3") {
@@ -73,7 +73,7 @@ SCENARIO("Cooling unit tests", "[Cooling]") {
             // Print time of gcode.
             const double print_time = 100. / (3000. / 60.);
             //FIXME slowdown_below_layer_time is rounded down significantly from 1.8s to 1s.
-            config.filament[0].opt("slowdown_below_layer_time").set(int(print_time * 0.999));
+            config.filament[0].items.opt("slowdown_below_layer_time").set(int(print_time * 0.999));
 
             const auto config_view{config.get_view()};
             print.set_config(config_view);
@@ -94,7 +94,7 @@ SCENARIO("Cooling unit tests", "[Cooling]") {
             "G1 E4 F400";
         // Print time of gcode.
         const double print_time = 50. / (2500. / 60.) + 100. / (3000. / 60.) + 4. / (400. / 60.);
-        config.filament[0].opt("slowdown_below_layer_time").set(int(print_time * 1.001));
+        config.filament[0].items.opt("slowdown_below_layer_time").set(int(print_time * 1.001));
 
         const auto config_view{config.get_view()};
         print.set_config(config_view);
@@ -117,8 +117,8 @@ SCENARIO("Cooling unit tests", "[Cooling]") {
 
     WHEN("G-code block 1") {
         THEN("fan is not activated when elapsed time is greater than fan threshold") {
-            config.filament[0].opt("fan_below_layer_time").set(int(print_time1 * 0.88));
-            config.filament[0].opt("slowdown_below_layer_time").set(int(print_time1 * 0.99));
+            config.filament[0].items.opt("fan_below_layer_time").set(int(print_time1 * 0.88));
+            config.filament[0].items.opt("slowdown_below_layer_time").set(int(print_time1 * 0.99));
             const auto config_view{config.get_view()};
             print.set_config(config_view);
             GCodeGenerator gcodegen{&print};
@@ -131,12 +131,12 @@ SCENARIO("Cooling unit tests", "[Cooling]") {
     WHEN("G-code block 1 with two extruders") {
         config.filament.emplace_back();
         config.tool.emplace_back();
-        config.filament[0].opt("cooling").set(true);
-        config.filament[1].opt("cooling").set(false);
-        config.filament[0].opt("fan_below_layer_time").set(int(print_time2 + 1.));
-        config.filament[1].opt("fan_below_layer_time").set(int(print_time2 + 1.));
-        config.filament[0].opt("slowdown_below_layer_time").set(int(print_time2 + 2.));
-        config.filament[1].opt("slowdown_below_layer_time").set(int(print_time2 + 2.));
+        config.filament[0].items.opt("cooling").set(true);
+        config.filament[1].items.opt("cooling").set(false);
+        config.filament[0].items.opt("fan_below_layer_time").set(int(print_time2 + 1.));
+        config.filament[1].items.opt("fan_below_layer_time").set(int(print_time2 + 1.));
+        config.filament[0].items.opt("slowdown_below_layer_time").set(int(print_time2 + 2.));
+        config.filament[1].items.opt("slowdown_below_layer_time").set(int(print_time2 + 2.));
 
         const auto config_view{config.get_view()};
         print.set_config(config_view);
@@ -154,7 +154,7 @@ SCENARIO("Cooling unit tests", "[Cooling]") {
     }
     WHEN("G-code block 2") {
         THEN("slowdown is computed on all objects printing at the same Z") {
-            config.filament[0].opt("slowdown_below_layer_time").set(int(print_time2 * 0.99));
+            config.filament[0].items.opt("slowdown_below_layer_time").set(int(print_time2 * 0.99));
             const auto config_view{config.get_view()};
             print.set_config(config_view);
             GCodeGenerator gcodegen{&print};
@@ -164,8 +164,8 @@ SCENARIO("Cooling unit tests", "[Cooling]") {
             REQUIRE(ok);
         }
         THEN("fan is not activated on all objects printing at different Z") {
-            config.filament[0].opt("fan_below_layer_time").set(int(print_time2 * 0.65));
-            config.filament[0].opt("slowdown_below_layer_time").set(int(print_time2 * 0.7));
+            config.filament[0].items.opt("fan_below_layer_time").set(int(print_time2 * 0.65));
+            config.filament[0].items.opt("slowdown_below_layer_time").set(int(print_time2 * 0.7));
             const auto config_view{config.get_view()};
             print.set_config(config_view);
             GCodeGenerator gcodegen{&print};
@@ -177,8 +177,8 @@ SCENARIO("Cooling unit tests", "[Cooling]") {
         }
         THEN("fan is activated on all objects printing at different Z") {
             // use an elapsed time which is < the threshold even when summed twice
-            config.filament[0].opt("fan_below_layer_time").set(int(print_time2 + 1));
-            config.filament[0].opt("slowdown_below_layer_time").set(int(print_time2 + 1));
+            config.filament[0].items.opt("fan_below_layer_time").set(int(print_time2 + 1));
+            config.filament[0].items.opt("slowdown_below_layer_time").set(int(print_time2 + 1));
             const auto config_view{config.get_view()};
             print.set_config(config_view);
             GCodeGenerator gcodegen{&print};
@@ -194,21 +194,21 @@ SCENARIO("Cooling unit tests", "[Cooling]") {
 SCENARIO("Cooling integration tests", "[Cooling]") {
     GIVEN("overhang") {
         TestConfig config;
-        config.filament[0].opt("cooling").set(true);
-        config.filament[0].opt("bridge_fan_speed").set(100);
-        config.filament[0].opt("fan_below_layer_time").set(0);
-        config.filament[0].opt("slowdown_below_layer_time").set(0);
-        config.print.opt("bridge_speed").set(99.0);
-        config.print.opt("enable_dynamic_overhang_speeds").set(false);
+        config.filament[0].items.opt("cooling").set(true);
+        config.filament[0].items.opt("bridge_fan_speed").set(100);
+        config.filament[0].items.opt("fan_below_layer_time").set(0);
+        config.filament[0].items.opt("slowdown_below_layer_time").set(0);
+        config.print.items.opt("bridge_speed").set(99.0);
+        config.print.items.opt("enable_dynamic_overhang_speeds").set(false);
         // internal bridges use solid_infil speed
-        config.print.opt("bottom_solid_layers").set(1);
+        config.print.items.opt("bottom_solid_layers").set(1);
 
         GCodeReader parser;
         int fan = 0;
         int fan_with_incorrect_speeds = 0;
         int fan_with_incorrect_print_speeds = 0;
         int bridge_with_no_fan = 0;
-        const double bridge_speed = config.print.opt("bridge_speed").get<double>() * 60;
+        const double bridge_speed = config.print.items.opt("bridge_speed").get<double>() * 60;
         parser.parse_buffer(
             Slic3r::Test::slice({ Slic3r::Test::TestMesh::overhang }, config),
             [&fan, &fan_with_incorrect_speeds, &fan_with_incorrect_print_speeds, &bridge_with_no_fan, bridge_speed]
@@ -243,17 +243,17 @@ SCENARIO("Cooling integration tests", "[Cooling]") {
     GIVEN("20mm cube") {
 
         TestConfig config;
-        config.filament[0].opt("cooling").set(true);
-        config.filament[0].opt("fan_below_layer_time").set(0);
-        config.filament[0].opt("slowdown_below_layer_time").set(10);
-        config.filament[0].opt("min_print_speed").set(0.0);
-        config.printer.opt("start_gcode").set(std::string{""});
-        config.print.opt("first_layer_speed").set(FloatOrPercentage{Percentage{100}});
+        config.filament[0].items.opt("cooling").set(true);
+        config.filament[0].items.opt("fan_below_layer_time").set(0);
+        config.filament[0].items.opt("slowdown_below_layer_time").set(10);
+        config.filament[0].items.opt("min_print_speed").set(0.0);
+        config.printer.items.opt("start_gcode").set(std::string{""});
+        config.print.items.opt("first_layer_speed").set(FloatOrPercentage{Percentage{100}});
         // internal bridges use solid_infil speed
-        config.print.opt("external_perimeter_speed").set(FloatOrPercentage{99.0});
+        config.print.items.opt("external_perimeter_speed").set(FloatOrPercentage{99.0});
 
         GCodeReader parser;
-        const double external_perimeter_speed = config.print.opt("external_perimeter_speed").get<FloatOrPercentage>().float_value() * 60;
+        const double external_perimeter_speed = config.print.items.opt("external_perimeter_speed").get<FloatOrPercentage>().float_value() * 60;
         std::vector<double> layer_times;
         // z => 1
         std::map<coord_t, int> layer_external;
@@ -283,7 +283,7 @@ SCENARIO("Cooling integration tests", "[Cooling]") {
         });            
         THEN("slowdown_below_layer_time is honored") {
             // Account for some inaccuracies.
-            const double slowdown_below_layer_time = config.filament[0].opt("slowdown_below_layer_time").get<int>() - 0.5;
+            const double slowdown_below_layer_time = config.filament[0].items.opt("slowdown_below_layer_time").get<int>() - 0.5;
             size_t minimum_time_honored = std::count_if(layer_times.begin(), layer_times.end(), 
                 [slowdown_below_layer_time](double t){ return t > slowdown_below_layer_time; });
             REQUIRE(minimum_time_honored == layer_times.size());

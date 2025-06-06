@@ -64,44 +64,22 @@ enum TiltSpeeds : int {
 class SLAPrintSettings : public ConfigBox
 {
 public:
-    SLAPrintSettings() : ConfigBox(s_defs_sla, "sla_print_settings") {}
+    SLAPrintSettings() : ConfigBox(s_defs_sla, SLAConfigLocation::Print) {}
 };
 class SLAMaterialSettings : public ConfigBox
 {
 public:
-    SLAMaterialSettings() : ConfigBox(s_defs_sla, "sla_material_settings") {}
+    SLAMaterialSettings() : ConfigBox(s_defs_sla, SLAConfigLocation::Material) {}
 };
 class SLAPrinterSettings : public ConfigBox
 {
 public:
-    SLAPrinterSettings() : ConfigBox(s_defs_sla, "sla_printer_settings") {}
+    SLAPrinterSettings() : ConfigBox(s_defs_sla, SLAConfigLocation::Printer) {}
 };
 class SLAObjectSettings : public ConfigBox
 {
 public:
-    SLAObjectSettings() : ConfigBox(s_defs_sla, "sla_object_settings") {}
+    SLAObjectSettings() : ConfigBox(s_defs_sla, SLAConfigLocation::Object) {}
 };
-
-
-class FullConfigSLA : public FullConfig
-{
-public:
-    FullConfigSLA(const SLAPrinterSettings& printer_s,
-                  const SLAPrintSettings& print_s,
-                  const SLAMaterialSettings& material_s);
-
-    std::string_view name() const override { return "SLA"; }
-
-    static FullConfigSLA defaults() {
-        return FullConfigSLA{
-            SLAPrinterSettings{},
-            SLAPrintSettings{},
-            SLAMaterialSettings{}
-        };
-    }
-};
-
-using FullConfigSLAPtr = std::shared_ptr<const FullConfigSLA>;
-using SLAObjectSettingsPtr = std::shared_ptr<const SLAObjectSettings>;
 
 } // namespace Slic3r::Domain

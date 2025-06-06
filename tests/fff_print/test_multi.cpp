@@ -27,13 +27,13 @@ SCENARIO("Basic tests", "[Multi]")
 
         Test::TestConfig config{4};
         for (auto& tool_settings : config.tool) {
-            tool_settings.opt("nozzle_diameter").set(0.6);
+            tool_settings.items.opt("nozzle_diameter").set(0.6);
         }
 
-        config.print.opt("perimeter_extruder").set(2);
-        config.print.opt("solid_infill_extruder").set(2);
-        config.print.opt("infill_extruder").set(4);
-        config.print.opt("support_material_extruder").set(0);
+        config.print.items.opt("perimeter_extruder").set(2);
+        config.print.items.opt("solid_infill_extruder").set(2);
+        config.print.items.opt("infill_extruder").set(4);
+        config.print.items.opt("support_material_extruder").set(0);
         std::string gcode = Slic3r::Test::slice({ Slic3r::Test::TestMesh::cube_20x20x20 }, config);
         THEN("Sliced successfully") {
             REQUIRE(! gcode.empty());
@@ -46,14 +46,14 @@ SCENARIO("Basic tests", "[Multi]")
     WHEN("Slicing with multiple skirts with a single, non-zero extruder") {
         Test::TestConfig config{4};
         for (auto& tool_settings : config.tool) {
-            tool_settings.opt("nozzle_diameter").set(0.6);
+            tool_settings.items.opt("nozzle_diameter").set(0.6);
         }
 
-        config.print.opt("perimeter_extruder").set(2);
-        config.print.opt("solid_infill_extruder").set(2);
-        config.print.opt("infill_extruder").set(4);
-        config.print.opt("support_material_extruder").set(0);
-        config.print.opt("support_material_interface_extruder").set(2);
+        config.print.items.opt("perimeter_extruder").set(2);
+        config.print.items.opt("solid_infill_extruder").set(2);
+        config.print.items.opt("infill_extruder").set(4);
+        config.print.items.opt("support_material_extruder").set(0);
+        config.print.items.opt("support_material_interface_extruder").set(2);
 
         std::string gcode = Slic3r::Test::slice({ Slic3r::Test::TestMesh::cube_20x20x20 }, config);
         THEN("Sliced successfully") {
@@ -67,28 +67,28 @@ SCENARIO("Ooze prevention", "[Multi]")
     TestConfig config{4};
 
     for (auto& tool_settings : config.tool) {
-        tool_settings.opt("nozzle_diameter").set(0.6);
+        tool_settings.items.opt("nozzle_diameter").set(0.6);
     }
-    config.print.opt("raft_layers").set(2);
-    config.print.opt("infill_extruder").set(2);
-    config.print.opt("solid_infill_extruder").set(3);
-    config.print.opt("support_material_extruder").set(4);
-    config.print.opt("ooze_prevention").set(true);
+    config.print.items.opt("raft_layers").set(2);
+    config.print.items.opt("infill_extruder").set(2);
+    config.print.items.opt("solid_infill_extruder").set(3);
+    config.print.items.opt("support_material_extruder").set(4);
+    config.print.items.opt("ooze_prevention").set(true);
 
-    config.tool.at(0).opt("extruder_offset").set(Vec2d{0, 0});
-    config.tool.at(1).opt("extruder_offset").set(Vec2d{20, 0});
-    config.tool.at(2).opt("extruder_offset").set(Vec2d{0, 20});
-    config.tool.at(3).opt("extruder_offset").set(Vec2d{20, 20});
-    config.filament.at(0).opt("temperature").set(200);
-    config.filament.at(1).opt("temperature").set(180);
-    config.filament.at(2).opt("temperature").set(170);
-    config.filament.at(3).opt("temperature").set(160);
-    config.filament.at(0).opt("first_layer_temperature").set(206);
-    config.filament.at(1).opt("first_layer_temperature").set(186);
-    config.filament.at(2).opt("first_layer_temperature").set(166);
-    config.filament.at(3).opt("first_layer_temperature").set(156);
+    config.tool.at(0).items.opt("extruder_offset").set(Vec2d{0, 0});
+    config.tool.at(1).items.opt("extruder_offset").set(Vec2d{20, 0});
+    config.tool.at(2).items.opt("extruder_offset").set(Vec2d{0, 20});
+    config.tool.at(3).items.opt("extruder_offset").set(Vec2d{20, 20});
+    config.filament.at(0).items.opt("temperature").set(200);
+    config.filament.at(1).items.opt("temperature").set(180);
+    config.filament.at(2).items.opt("temperature").set(170);
+    config.filament.at(3).items.opt("temperature").set(160);
+    config.filament.at(0).items.opt("first_layer_temperature").set(206);
+    config.filament.at(1).items.opt("first_layer_temperature").set(186);
+    config.filament.at(2).items.opt("first_layer_temperature").set(166);
+    config.filament.at(3).items.opt("first_layer_temperature").set(156);
     // test that it doesn't crash when this is supplied
-    config.printer.opt("toolchange_gcode").set("T[next_extruder] ;toolchange" );
+    config.printer.items.opt("toolchange_gcode").set("T[next_extruder] ;toolchange" );
 
     // Since July 2019, PrusaSlicer only emits automatic Tn command in case that the toolchange_gcode is empty
     // The "T[next_extruder]" is therefore needed in this test.
@@ -107,10 +107,10 @@ SCENARIO("Ooze prevention", "[Multi]")
         if (boost::starts_with(line.cmd(), "T")) {
             // Ignore initial toolchange.
             if (tool != -1) {
-                int expected_temp = is_approx<double>(self.z(), config.print.opt("first_layer_height").get<FloatOrPercentage>().get_abs_value(1.0) + config.printer.opt("z_offset").get<double>()) ?
-                    config.filament.at(tool).opt("first_layer_temperature").get<int>() :
-                    config.filament.at(tool).opt("temperature").get<int>();
-                if (tool_temp[tool] != expected_temp + config.print.opt("standby_temperature_delta").get<int>())
+                int expected_temp = is_approx<double>(self.z(), config.print.items.opt("first_layer_height").get<FloatOrPercentage>().get_abs_value(1.0) + config.printer.items.opt("z_offset").get<double>()) ?
+                    config.filament.at(tool).items.opt("first_layer_temperature").get<int>() :
+                    config.filament.at(tool).items.opt("temperature").get<int>();
+                if (tool_temp[tool] != expected_temp + config.print.items.opt("standby_temperature_delta").get<int>())
                     throw std::runtime_error("Standby temperature was not set before toolchange.");
                 toolchange_points.emplace_back(self.xy_scaled());
             }
@@ -130,7 +130,7 @@ SCENARIO("Ooze prevention", "[Multi]")
 
             tool_temp[t] = s;
         } else if (line.cmd_is("G1") && line.extruding(self) && line.dist_XY(self) > 0) {
-            extrusion_points.emplace_back(line.new_XY_scaled(self) + scaled<coord_t>(config.tool.at(tool).opt("extruder_offset").get<Vec2d>()));
+            extrusion_points.emplace_back(line.new_XY_scaled(self) + scaled<coord_t>(config.tool.at(tool).items.opt("extruder_offset").get<Vec2d>()));
         }
     });
 
@@ -200,39 +200,33 @@ SCENARIO("Stacked cubes", "[Multi]")
 {
     VolumeSettings lower_config;
 
-    lower_config.opt("extruder").set(1);
-    lower_config.opt("extruder").set_null(false);
-    lower_config.opt("bottom_solid_layers").set(0);
-    lower_config.opt("bottom_solid_layers").set_null(false);
-    lower_config.opt("top_solid_layers").set(1);
-    lower_config.opt("top_solid_layers").set_null(false);
+    lower_config.overrides.set("extruder", 1);
+    lower_config.overrides.set("bottom_solid_layers", 0);
+    lower_config.overrides.set("top_solid_layers", 1);
 
     VolumeSettings upper_config;
 
-    upper_config.opt("extruder").set(2);
-    upper_config.opt("extruder").set_null(false);
-    upper_config.opt("bottom_solid_layers").set(1);
-    upper_config.opt("bottom_solid_layers").set_null(false);
-    upper_config.opt("top_solid_layers").set(0);
-    upper_config.opt("top_solid_layers").set_null(false);
+    upper_config.overrides.set("extruder", 2);
+    upper_config.overrides.set("bottom_solid_layers", 1);
+    upper_config.overrides.set("top_solid_layers", 0);
 
     static constexpr const double solid_infill_speed = 99;
     TestConfig config{4};
 
     for (auto& tool_settings : config.tool) {
-        tool_settings.opt("nozzle_diameter").set(0.6);
+        tool_settings.items.opt("nozzle_diameter").set(0.6);
     }
-    config.print.opt("fill_density").set(Percentage{0});
-    config.print.opt("solid_infill_speed").set(FloatOrPercentage{solid_infill_speed});
-    config.print.opt("top_solid_infill_speed").set(FloatOrPercentage{solid_infill_speed});
+    config.print.items.opt("fill_density").set(Percentage{0});
+    config.print.items.opt("solid_infill_speed").set(FloatOrPercentage{solid_infill_speed});
+    config.print.items.opt("top_solid_infill_speed").set(FloatOrPercentage{solid_infill_speed});
 
     // for preventing speeds from being altered
     for (auto& filament_settings : config.filament) {
-        filament_settings.opt("cooling").set(false);
+        filament_settings.items.opt("cooling").set(false);
     }
 
     // for preventing speeds from being altered
-    config.print.opt("first_layer_speed").set(FloatOrPercentage{Percentage{100}});
+    config.print.items.opt("first_layer_speed").set(FloatOrPercentage{Percentage{100}});
 
     auto test_shells = [](const std::string &gcode) {
         GCodeReader       parser;
@@ -261,24 +255,24 @@ SCENARIO("Stacked cubes", "[Multi]")
         }
     }
     WHEN("Interface shells enabled") {
-        config.print.opt("interface_shells").set(true);
+        config.print.items.opt("interface_shells").set(true);
         std::string gcode = slice_stacked_cubes(config, lower_config, upper_config);
         auto [t0, t1] = test_shells(gcode);
         THEN("top interface shells") {
-            REQUIRE(t0.size() == lower_config.opt("top_solid_layers").get<int>());
+            REQUIRE(t0.size() == lower_config.overrides.get("top_solid_layers")->get<int>());
         }
         THEN("bottom interface shells") {
-            REQUIRE(t1.size() == upper_config.opt("bottom_solid_layers").get<int>());
+            REQUIRE(t1.size() == upper_config.overrides.get("bottom_solid_layers")->get<int>());
         }
     }
     WHEN("Slicing with auto-assigned extruders") {
         TestConfig config{4};
         for (auto& tool_settings : config.tool) {
-            tool_settings.opt("nozzle_diameter").set(0.6);
+            tool_settings.items.opt("nozzle_diameter").set(0.6);
         }
-        config.print.opt("layer_height").set(0.4);
-        config.print.opt("first_layer_height").set(FloatOrPercentage{0.4});
-        config.print.opt("skirts").set(0);
+        config.print.items.opt("layer_height").set(0.4);
+        config.print.items.opt("first_layer_height").set(FloatOrPercentage{0.4});
+        config.print.items.opt("skirts").set(0);
         std::string gcode = slice_stacked_cubes(config, VolumeSettings{}, VolumeSettings{});
         GCodeReader       parser;
         int               tool = -1;

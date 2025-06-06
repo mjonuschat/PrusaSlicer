@@ -13,7 +13,6 @@
 #ifndef slic3r_Model_hpp_
 #define slic3r_Model_hpp_
 
-#include "Slic3r/Domain/ConfigFDM.hpp"
 #include "Slic3r/Domain/FacetsAnnotation.hpp"
 #include "Slic3r/Domain/SLA/DrainHole.hpp"
 #include "Slic3r/Domain/ObjectID.hpp"
@@ -28,8 +27,8 @@
 #include "Slic3r/Biz/Algorithms/TriangleSelector.hpp"
 #include "Slic3r/Domain/TriangleSelector.hpp"
 #include "Slic3r/Domain/Model.hpp"
-#include "Slic3r/Domain/ConfigFDM.hpp"
-#include "Slic3r/Domain/ConfigSLA.hpp"
+#include "Slic3r/Domain/FullConfigFDM.hpp"
+#include "Slic3r/Domain/FullConfigSLA.hpp"
 
 #include <map>
 #include <memory>

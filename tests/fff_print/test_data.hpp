@@ -2,7 +2,7 @@
 #define SLIC3R_TEST_DATA_HPP
 
 #include "libslic3r/Config.hpp"
-#include "libslic3r/ConfigPackFDMUtils.hpp"
+#include "libslic3r/ConfigPackUtils.hpp"
 #include "libslic3r/GCode/ModelVisibility.hpp"
 #include "libslic3r/GCode/SeamGeometry.hpp"
 #include "libslic3r/GCode/SeamPerimeters.hpp"
@@ -52,7 +52,7 @@ struct TestConfig : public Domain::ConfigPackFDM
     using ConfigPackFDM::ConfigPackFDM;
 
     Biz::Parser::IO::Config get_parser_config() const { return Biz::Slicing::get_parser_config(*this); };
-    Domain::FullConfigFDM get_full_config() const { return Biz::Slicing::get_full_config(*this); };
+    Domain::FullConfigFDM get_full_config() const { return Domain::FullConfigFDM{*this}; };
     PrintConfigView get_view() const { return Biz::Slicing::get_view(*this); };
 };
 

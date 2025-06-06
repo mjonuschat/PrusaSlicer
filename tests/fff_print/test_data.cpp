@@ -246,7 +246,7 @@ void init_print(std::vector<TriangleMesh> &&meshes, Slic3r::Print &print, Slic3r
 {
     TestConfig config{config_in};
     if (verbose_gcode())
-        config.print.opt("gcode_comments").set(true);
+        config.print.items.opt("gcode_comments").set(true);
 
     for (const TriangleMesh &t : meshes) {
 		ModelObject *object = model.add_object();

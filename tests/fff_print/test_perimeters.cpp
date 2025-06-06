@@ -50,11 +50,13 @@ SCENARIO("Perimeter nesting", "[Perimeters]")
     TestConfig config;
 
     auto test = [](const TestData &data, const TestConfig& config) {
-
+        const auto full_config{std::make_shared<const FullConfigFDM>(config.get_full_config())};
+        Domain::PartialObjectConfigFDM object_config{ObjectSettings{}, full_config->tools_count(), full_config->filaments_count()};
+        Domain::PartialVolumeConfigFDM volume_config{VolumeSettings{}, full_config->tools_count(), full_config->filaments_count()};
         const PrintRegionConfigView region_config_view{
-            std::make_shared<const FullConfigFDM>(config.get_full_config()),
-            std::make_shared<const ObjectSettings>(),
-            {}
+            full_config,
+            std::make_shared<const Domain::PartialObjectConfigFDM>(std::move(object_config)),
+            {std::make_shared<const Domain::PartialVolumeConfigFDM>(std::move(volume_config))}
         };
 
         SurfaceCollection slices;
@@ -133,7 +135,7 @@ SCENARIO("Perimeter nesting", "[Perimeters]")
     };
 
     WHEN("Rectangle") {
-        config.print.opt("perimeters").set(3);
+        config.print.items.opt("perimeters").set(3);
         TestData data;
         data.expolygons  = { 
             ExPolygon{ Algorithms::Polygon::scaled({ {0,0}, {100,0}, {100,100}, {0,100} }) }
@@ -148,7 +150,7 @@ SCENARIO("Perimeter nesting", "[Perimeters]")
         test(data, config);
     }
     WHEN("Rectangle with hole") {
-        config.print.opt("perimeters").set(3);
+        config.print.items.opt("perimeters").set(3);
         TestData data;
         data.expolygons  = { 
             ExPolygon{ Algorithms::Polygon::scaled({ {0,0}, {100,0}, {100,100}, {0,100} }),
@@ -164,7 +166,7 @@ SCENARIO("Perimeter nesting", "[Perimeters]")
         test(data, config);
     }
     WHEN("Nested rectangles with holes") {
-        config.print.opt("perimeters").set(3);
+        config.print.items.opt("perimeters").set(3);
         TestData data;
         data.expolygons  = {
             ExPolygon{ Algorithms::Polygon::scaled({ {0,0}, {200,0}, {200,200}, {0,200} }),
@@ -181,7 +183,7 @@ SCENARIO("Perimeter nesting", "[Perimeters]")
         test(data, config);
     }
     WHEN("Rectangle with multiple holes") {
-        config.print.opt("perimeters").set(2);
+        config.print.items.opt("perimeters").set(2);
         TestData data;
         ExPolygon expoly{ Algorithms::Polygon::scaled({ {0,0}, {50,0}, {50,50}, {0,50} }) };
         expoly.holes.emplace_back(Algorithms::Polygon::scaled({ {7.5,7.5},  {7.5,12.5},  {12.5,12.5}, {12.5,7.5}  }));
@@ -204,15 +206,15 @@ SCENARIO("Perimeter nesting", "[Perimeters]")
 SCENARIO("Perimeters", "[Perimeters]")
 {
     TestConfig config;
-    config.print.opt("skirts").set(0);
-    config.print.opt("fill_density").set(Percentage{0.0});
-    config.print.opt("perimeters").set(3);
-    config.print.opt("top_solid_layers").set(0);
-    config.print.opt("bottom_solid_layers").set(0);
+    config.print.items.opt("skirts").set(0);
+    config.print.items.opt("fill_density").set(Percentage{0.0});
+    config.print.items.opt("perimeters").set(3);
+    config.print.items.opt("top_solid_layers").set(0);
+    config.print.items.opt("bottom_solid_layers").set(0);
     // to prevent speeds from being altered
-    config.filament.at(0).opt("cooling").set(false);
+    config.filament.at(0).items.opt("cooling").set(false);
     // to prevent speeds from being altered
-    config.print.opt("first_layer_speed").set(FloatOrPercentage{Percentage{100}});
+    config.print.items.opt("first_layer_speed").set(FloatOrPercentage{Percentage{100}});
 
     WHEN("Bridging perimeters disabled") {
         std::string gcode = Slic3r::Test::slice({ Slic3r::Test::TestMesh::overhang }, config);
@@ -248,7 +250,7 @@ SCENARIO("Perimeters", "[Perimeters]")
         // print_z => count of external loops
         std::map<coord_t, int> external_loops;
         Polygon     current_loop;
-        const double external_perimeter_speed = config.print.opt("external_perimeter_speed").get<FloatOrPercentage>().float_value() * 60.;
+        const double external_perimeter_speed = config.print.items.opt("external_perimeter_speed").get<FloatOrPercentage>().float_value() * 60.;
         parser.parse_buffer(gcode, [&has_cw_loops, &has_outwards_move, &starts_on_convex_point, &external_loops, &current_loop, external_perimeter_speed, model]
             (GCodeReader &self, const GCodeReader::GCodeLine &line)
         {
@@ -296,7 +298,7 @@ SCENARIO("Perimeters", "[Perimeters]")
         }
 
         // FIXME Lukas H.: Arachne is printing external loops before hole loops in this test case.
-        if (config.print.opt("perimeter_generator").get<Domain::PerimeterGeneratorType>() == Domain::PerimeterGeneratorType::Arachne) {
+        if (config.print.items.opt("perimeter_generator").get<Domain::PerimeterGeneratorType>() == Domain::PerimeterGeneratorType::Arachne) {
             THEN("move outwards after completing external loop") {
 //                REQUIRE(! has_outwards_move);
             }
@@ -315,24 +317,24 @@ SCENARIO("Perimeters", "[Perimeters]")
 
     };
     // Reusing the config above.
-    config.print.opt("external_perimeter_speed").set(FloatOrPercentage{68.0});
+    config.print.items.opt("external_perimeter_speed").set(FloatOrPercentage{68.0});
     GIVEN("Cube with hole") { test(Test::TestMesh::cube_with_hole); }
     GIVEN("Cube with concave hole") { test(Test::TestMesh::cube_with_concave_hole); }
 
     WHEN("Bridging perimeters enabled") {
         // Reusing the config above.
-        config.print.opt("perimeters").set(1);
-        config.print.opt("perimeter_speed").set(77.0);
-        config.print.opt("external_perimeter_speed").set(FloatOrPercentage{66});
-        config.print.opt("enable_dynamic_overhang_speeds").set(false);
-        config.print.opt("bridge_speed").set(99.0);
-        config.filament.at(0).opt("cooling").set(true);
-        config.filament.at(0).opt("fan_below_layer_time").set(0);
-        config.filament.at(0).opt("slowdown_below_layer_time").set(0);
-        config.filament.at(0).opt("bridge_fan_speed").set(100);
+        config.print.items.opt("perimeters").set(1);
+        config.print.items.opt("perimeter_speed").set(77.0);
+        config.print.items.opt("external_perimeter_speed").set(FloatOrPercentage{66});
+        config.print.items.opt("enable_dynamic_overhang_speeds").set(false);
+        config.print.items.opt("bridge_speed").set(99.0);
+        config.filament.at(0).items.opt("cooling").set(true);
+        config.filament.at(0).items.opt("fan_below_layer_time").set(0);
+        config.filament.at(0).items.opt("slowdown_below_layer_time").set(0);
+        config.filament.at(0).items.opt("bridge_fan_speed").set(100);
         // arbitrary value
-        config.print.opt("bridge_flow_ratio").set(33.0);
-        config.print.opt("overhangs").set(true);
+        config.print.items.opt("bridge_flow_ratio").set(33.0);
+        config.print.items.opt("overhangs").set(true);
 
         std::string gcode = Slic3r::Test::slice({ mesh(Slic3r::Test::TestMesh::overhang) }, config);
 
@@ -341,12 +343,12 @@ SCENARIO("Perimeters", "[Perimeters]")
             // print Z => speeds
             std::map<coord_t, std::set<double>> layer_speeds;
             int          fan_speed = 0;
-            const double perimeter_speed            = config.print.opt("perimeter_speed").get<double>() * 60.;
-            const double external_perimeter_speed   = config.print.opt("external_perimeter_speed").get<FloatOrPercentage>().float_value() * 60.;
-            const double bridge_speed               = config.print.opt("bridge_speed").get<double>() * 60.;
-            const double nozzle_dmr                 = config.tool.at(0).opt("nozzle_diameter").get<double>();
-            const double filament_dmr               = config.filament.at(0).opt("filament_diameter").get<double>();
-            const double bridge_mm_per_mm           = sqr(nozzle_dmr / filament_dmr) * config.print.opt("bridge_flow_ratio").get<double>();
+            const double perimeter_speed            = config.print.items.opt("perimeter_speed").get<double>() * 60.;
+            const double external_perimeter_speed   = config.print.items.opt("external_perimeter_speed").get<FloatOrPercentage>().float_value() * 60.;
+            const double bridge_speed               = config.print.items.opt("bridge_speed").get<double>() * 60.;
+            const double nozzle_dmr                 = config.tool.at(0).items.opt("nozzle_diameter").get<double>();
+            const double filament_dmr               = config.filament.at(0).items.opt("filament_diameter").get<double>();
+            const double bridge_mm_per_mm           = sqr(nozzle_dmr / filament_dmr) * config.print.items.opt("bridge_flow_ratio").get<double>();
             parser.parse_buffer(gcode, [&layer_speeds, &fan_speed, perimeter_speed, external_perimeter_speed, bridge_speed, nozzle_dmr, filament_dmr, bridge_mm_per_mm]
                 (GCodeReader &self, const GCodeReader::GCodeLine &line)
             {
@@ -376,26 +378,26 @@ SCENARIO("Perimeters", "[Perimeters]")
     GIVEN("iPad stand") {
         WHEN("Extra perimeters enabled") {
             TestConfig config;
-            config.print.opt("skirts").set(0);
-            config.print.opt("perimeters").set(3);
-            config.print.opt("layer_height").set(0.4);
-            config.print.opt("first_layer_height").set(FloatOrPercentage{0.35});
-            config.print.opt("extra_perimeters").set(true);
+            config.print.items.opt("skirts").set(0);
+            config.print.items.opt("perimeters").set(3);
+            config.print.items.opt("layer_height").set(0.4);
+            config.print.items.opt("first_layer_height").set(FloatOrPercentage{0.35});
+            config.print.items.opt("extra_perimeters").set(true);
             // to prevent speeds from being altered
-            config.filament.at(0).opt("cooling").set(false);
+            config.filament.at(0).items.opt("cooling").set(false);
             // to prevent speeds from being altered
-            config.print.opt("first_layer_speed").set(FloatOrPercentage{Percentage{100}});
-            config.print.opt("perimeter_speed").set(99.0);
-            config.print.opt("external_perimeter_speed").set(FloatOrPercentage{99.0});
-            config.print.opt("small_perimeter_speed").set(FloatOrPercentage{99.0});
+            config.print.items.opt("first_layer_speed").set(FloatOrPercentage{Percentage{100}});
+            config.print.items.opt("perimeter_speed").set(99.0);
+            config.print.items.opt("external_perimeter_speed").set(FloatOrPercentage{99.0});
+            config.print.items.opt("small_perimeter_speed").set(FloatOrPercentage{99.0});
 
-            config.print.opt("thin_walls").set(false);
+            config.print.items.opt("thin_walls").set(false);
 
             std::string gcode = Slic3r::Test::slice({ Slic3r::Test::TestMesh::ipadstand }, config);
             // z => number of loops
             std::map<coord_t, int> perimeters;
             bool                   in_loop         = false;
-            const double           perimeter_speed = config.print.opt("perimeter_speed").get<double>() * 60.;
+            const double           perimeter_speed = config.print.items.opt("perimeter_speed").get<double>() * 60.;
             GCodeReader            parser;
             parser.parse_buffer(gcode, [&perimeters, &in_loop, perimeter_speed](GCodeReader &self, const GCodeReader::GCodeLine &line)
             {
@@ -414,7 +416,7 @@ SCENARIO("Perimeters", "[Perimeters]")
                 }
             });
             THEN("no superfluous extra perimeters") {
-                const auto num_perimeters = config.print.opt("perimeters").get<int>();
+                const auto num_perimeters = config.print.items.opt("perimeters").get<int>();
                 size_t extra_perimeters = std::count_if(perimeters.begin(), perimeters.end(), [num_perimeters](const std::pair<const coord_t, int> &v){ return (v.second % num_perimeters) > 0; });
                 REQUIRE(extra_perimeters == 0);
             }
@@ -425,12 +427,12 @@ SCENARIO("Perimeters", "[Perimeters]")
 SCENARIO("Some weird coverage test", "[Perimeters]")
 {
     TestConfig config;
-    config.tool.at(0).opt("nozzle_diameter").set(0.4);
-    config.print.opt("perimeters").set(2);
-    config.print.opt("perimeter_extrusion_width").set(FloatOrPercentage{0.4});
-    config.print.opt("external_perimeter_extrusion_width").set(FloatOrPercentage{0.4});
-    config.print.opt("infill_extrusion_width").set(FloatOrPercentage{0.53});
-    config.print.opt("solid_infill_extrusion_width").set(FloatOrPercentage{0.53});
+    config.tool.at(0).items.opt("nozzle_diameter").set(0.4);
+    config.print.items.opt("perimeters").set(2);
+    config.print.items.opt("perimeter_extrusion_width").set(FloatOrPercentage{0.4});
+    config.print.items.opt("external_perimeter_extrusion_width").set(FloatOrPercentage{0.4});
+    config.print.items.opt("infill_extrusion_width").set(FloatOrPercentage{0.53});
+    config.print.items.opt("solid_infill_extrusion_width").set(FloatOrPercentage{0.53});
 
     // we just need a pre-filled Print object
     Print print;
@@ -540,24 +542,24 @@ SCENARIO("Some weird coverage test", "[Perimeters]")
 SCENARIO("Perimeters3", "[Perimeters]")
 {
     TestConfig config;
-    config.print.opt("skirts").set(0);
-    config.print.opt("perimeters").set(3);
-    config.print.opt("layer_height").set(0.15);
-    config.print.opt("bridge_speed").set(99.0);
-    config.print.opt("enable_dynamic_overhang_speeds").set(false);
+    config.print.items.opt("skirts").set(0);
+    config.print.items.opt("perimeters").set(3);
+    config.print.items.opt("layer_height").set(0.15);
+    config.print.items.opt("bridge_speed").set(99.0);
+    config.print.items.opt("enable_dynamic_overhang_speeds").set(false);
             // to prevent bridging over sparse infill
-    config.print.opt("fill_density").set(Percentage{0.0});
-    config.print.opt("overhangs").set(true);
+    config.print.items.opt("fill_density").set(Percentage{0.0});
+    config.print.items.opt("overhangs").set(true);
             // to prevent speeds from being altered
-    config.filament.at(0).opt("cooling").set(false);
+    config.filament.at(0).items.opt("cooling").set(false);
             // to prevent speeds from being altered
-    config.print.opt("first_layer_speed").set(FloatOrPercentage{Percentage{100}});
+    config.print.items.opt("first_layer_speed").set(FloatOrPercentage{Percentage{100}});
 
     auto test = [&config](const Vec3d &scale) {
         std::string         gcode = Slic3r::Test::slice({ mesh(Slic3r::Test::TestMesh::V, Vec3d::Zero(), scale) }, config);
         GCodeReader         parser;
         std::set<coord_t>   z_with_bridges;
-        const double        bridge_speed = config.print.opt("bridge_speed").get<double>() * 60.;
+        const double        bridge_speed = config.print.items.opt("bridge_speed").get<double>() * 60.;
         parser.parse_buffer(gcode, [&z_with_bridges, bridge_speed](GCodeReader &self, const GCodeReader::GCodeLine &line)
         {
             if (line.extruding(self) && line.dist_XY(self) > 0 && is_approx<double>(line.new_F(self), bridge_speed))
@@ -585,7 +587,7 @@ SCENARIO("Perimeters3", "[Perimeters]")
 SCENARIO("Perimeters4", "[Perimeters]")
 {
     TestConfig config;
-    config.print.opt("seam_position").set(Domain::SeamPosition::spRandom);
+    config.print.items.opt("seam_position").set(Domain::SeamPosition::spRandom);
     std::string gcode = Slic3r::Test::slice({ Slic3r::Test::TestMesh::cube_20x20x20 }, config);
     THEN("successful generation of G-code with seam_position = random") {
         REQUIRE(! gcode.empty());
@@ -596,13 +598,13 @@ SCENARIO("Seam alignment", "[Perimeters]")
 {
     auto test = [](Test::TestMesh model) {
         TestConfig config;
-        config.print.opt("seam_position").set(Domain::SeamPosition::spAligned);
-        config.print.opt("skirts").set(0);
-        config.print.opt("perimeters").set(1);
-        config.print.opt("fill_density").set(Percentage{0.0});
-        config.print.opt("top_solid_layers").set(0);
-        config.print.opt("bottom_solid_layers").set(0);
-        config.filament.at(0).opt("retract_layer_change").set(false);
+        config.print.items.opt("seam_position").set(Domain::SeamPosition::spAligned);
+        config.print.items.opt("skirts").set(0);
+        config.print.items.opt("perimeters").set(1);
+        config.print.items.opt("fill_density").set(Percentage{0.0});
+        config.print.items.opt("top_solid_layers").set(0);
+        config.print.items.opt("bottom_solid_layers").set(0);
+        config.tool.at(0).items.opt("retract_layer_change").set(false);
 
         std::string gcode = Slic3r::Test::slice({ model }, config);
         bool        was_extruding = false;

@@ -17,6 +17,10 @@ using Domain::EnumVectorWrapper;
 using Domain::EnumWrapper;
 using Domain::FloatOrPercentage;
 using Domain::Percentage;
+using Domain::ConfigLocation;
+using Domain::FDMConfigLocation;
+using Domain::SLAConfigLocation;
+using Domain::ConfigItem;
 
 namespace {
     struct LegacyKeysAndOverrides {
@@ -30,7 +34,7 @@ namespace {
         std::string override_prefix;
 
         // Type of the box where the filament overrides should be put in the new structure
-        std::string override_box_type;
+        ConfigLocation override_box_type;
 
         // Whether this is FDM or SLA.
         std::string printer_technology_str;
@@ -143,7 +147,7 @@ namespace {
                 "filament_seam_gap_distance"
             },
             "filament_",
-            "filament_settings",
+            FDMConfigLocation::Filament,
             "FFF"
         };
         return out;
@@ -187,7 +191,7 @@ namespace {
                 "material_ow_support_points_density_relative"
             },
             "material_ow_",
-            "sla_material_settings",
+            SLAConfigLocation::Material,
             "SLA"
         };
         return out;
@@ -323,19 +327,19 @@ static bool convert_old_to_new(const Slic3rLegacy::ConfigOption* opt, Domain::Co
 
 
 
-static bool convert_new_to_old(const Domain::ConfigItem& item, Slic3rLegacy::ConfigOption* opt, const Slic3rLegacy::ConfigOptionDef& def_old, int filament_id = -1)
+static bool convert_new_to_old(const Domain::ConfigItem& item, Slic3rLegacy::ConfigOption* opt, const Slic3rLegacy::ConfigOptionDef& def_old, int filament_id = -1, bool is_nil = false)
 {
     using namespace Slic3rLegacy;
 
     if (opt->type() == coBool && item.holds_alternative<bool>())
         static_cast<Slic3rLegacy::ConfigOptionBool*>(opt)->value = item.get<bool>();
     else if (opt->type() == coInt && item.holds_alternative<int>()) {
-        static_cast<Slic3rLegacy::ConfigOptionInt*>(opt)->value = item.is_null()
+        static_cast<Slic3rLegacy::ConfigOptionInt*>(opt)->value = is_nil
             ? static_cast<Slic3rLegacy::ConfigOptionInt*>(opt)->nil_value()
             : item.get<int>();
     }
     else if (opt->type() == coFloat && item.holds_alternative<double>()) {
-        static_cast<Slic3rLegacy::ConfigOptionFloat*>(opt)->value = item.is_null()
+        static_cast<Slic3rLegacy::ConfigOptionFloat*>(opt)->value = is_nil
             ? static_cast<Slic3rLegacy::ConfigOptionFloat*>(opt)->nil_value()
             : item.get<double>();
     }
@@ -387,7 +391,7 @@ static bool convert_new_to_old(const Domain::ConfigItem& item, Slic3rLegacy::Con
     else if (opt->is_vector() && filament_id != -1) {
         if (opt->type() == coBools && item.holds_alternative<bool>()) {
             static_cast<Slic3rLegacy::ConfigOptionBools*>(opt)->values.resize(filament_id + 1);
-            static_cast<Slic3rLegacy::ConfigOptionBools*>(opt)->values[filament_id] = item.is_null()
+            static_cast<Slic3rLegacy::ConfigOptionBools*>(opt)->values[filament_id] = is_nil
                 ? static_cast<Slic3rLegacy::ConfigOptionBools*>(opt)->nil_value()
                 : item.get<bool>();
         }
@@ -404,7 +408,7 @@ static bool convert_new_to_old(const Domain::ConfigItem& item, Slic3rLegacy::Con
         }
         else if (opt->type() == coFloats && item.holds_alternative<double>()) {
             static_cast<Slic3rLegacy::ConfigOptionFloats*>(opt)->values.resize(filament_id + 1);
-            static_cast<Slic3rLegacy::ConfigOptionFloats*>(opt)->values[filament_id] = item.is_null()
+            static_cast<Slic3rLegacy::ConfigOptionFloats*>(opt)->values[filament_id] = is_nil
                 ? static_cast<Slic3rLegacy::ConfigOptionFloats*>(opt)->nil_value()
                 : item.get<double>();
         }
@@ -414,13 +418,13 @@ static bool convert_new_to_old(const Domain::ConfigItem& item, Slic3rLegacy::Con
         }
         else if (opt->type() == coPercents && item.holds_alternative<Percentage>()) {
             static_cast<Slic3rLegacy::ConfigOptionPercents*>(opt)->values.resize(filament_id + 1);
-            static_cast<Slic3rLegacy::ConfigOptionPercents*>(opt)->values[filament_id] = item.is_null()
+            static_cast<Slic3rLegacy::ConfigOptionPercents*>(opt)->values[filament_id] = is_nil
                 ? static_cast<Slic3rLegacy::ConfigOptionPercents*>(opt)->nil_value()
                 : item.get<Domain::Percentage>().value;
         }
         else if (opt->type() == coFloatsOrPercents && item.holds_alternative<FloatOrPercentage>()) {
             static_cast<Slic3rLegacy::ConfigOptionFloatsOrPercents*>(opt)->values.resize(filament_id + 1);
-            if (item.is_null()) {
+            if (is_nil) {
                 static_cast<Slic3rLegacy::ConfigOptionFloatsOrPercents*>(opt)->values[filament_id] = static_cast<Slic3rLegacy::ConfigOptionFloatsOrPercents*>(opt)->nil_value();
             }
             else {
@@ -460,14 +464,15 @@ static void fill_config_box_from_legacy(const Slic3rLegacy::DynamicPrintConfig& 
         ASSERT(! is_filament_override || boost::starts_with(old_key, legacy.override_prefix));
         std::string new_key(old_key.begin() + (is_filament_override ? legacy.override_prefix.size() : 0), old_key.end()); // trim prefix
 
-        if (! box.contains(new_key))
+        const auto [item_ptr, new_is_override]{box.contains(new_key)};
+        if (!item_ptr)
             continue;
 
         const Slic3rLegacy::ConfigOption* opt = cfg.option(old_key);
-        Domain::ConfigItem& item = box.opt(new_key);
+        ConfigItem& item{*item_ptr};
 
         if (is_filament_override) {
-            if (box.type() != legacy.override_box_type
+            if (box.location != legacy.override_box_type
              || std::ranges::find(item.def().overrides_in, legacy.override_box_type) == item.def().overrides_in.end())
                 continue;
 
@@ -483,7 +488,7 @@ static void fill_config_box_from_legacy(const Slic3rLegacy::DynamicPrintConfig& 
             }
         }
 
-        if (has_override && box.type() == legacy.override_box_type) {
+        if (has_override && box.location == legacy.override_box_type) {
             // This config option has override in filament settings. Only continue
             // if current box is NOT filament settings, otherwise we may overwrite
             // what we already loaded as an override.
@@ -495,8 +500,9 @@ static void fill_config_box_from_legacy(const Slic3rLegacy::DynamicPrintConfig& 
             continue;
         }
         if (convert_old_to_new(opt, item, filament_id)) {
-            if (item.is_nullable() && ! opt->is_nil())
-                item.set_null(false);
+            if (!opt->is_nil() && new_is_override) {
+                box.overrides.enable(new_key);
+            }
         }
     }
 }
@@ -588,18 +594,21 @@ static std::string serialize_as_legacy_config(const std::variant<const ConfigPac
         Slic3rLegacy::ConfigOption* opt = cfg_old->option(key);
 
         for (const auto& [box, filament_id] : boxes) {
-            std::optional<const Domain::ConfigItem*> item = box->contains(key);
-            if (item.has_value() && ! (*item)->is_nullable()) {
-                convert_new_to_old(**item, opt, *cfg_old->def()->get(key), filament_id);
+            const auto [item, is_override]{box->contains(key)};
+            if (item && !is_override) {
+                convert_new_to_old(*item, opt, *cfg_old->def()->get(key), filament_id);
             }
-            if (!item.has_value() && box->type() == legacy_data.override_box_type
+            if (!item && box->location == legacy_data.override_box_type
              && std::ranges::find(legacy_data.overrides, key) != legacy_data.overrides.end()) {
                 // This old item is not present in any of the boxes, but it is an override of something.
                 // PrusaSlicer 2.9.2 had all overrides at filament/material level. Find the current override.
                 ASSERT(boost::starts_with(key, legacy_data.override_prefix));
                 std::string new_key(key.begin() + legacy_data.override_prefix.size(), key.end());
-                const Domain::ConfigItem& over = box->opt(new_key);
-                convert_new_to_old(over, opt, *cfg_old->def()->get(new_key), filament_id);
+
+                const auto [over, must_be_override]{box->contains(new_key)};
+                ASSERT(over && must_be_override);
+                const bool is_nil{!box->overrides.get(new_key)};
+                convert_new_to_old(*over, opt, *cfg_old->def()->get(new_key), filament_id, is_nil);
             }
         }
     }
@@ -631,31 +640,53 @@ std::string serialize_as_legacy_config(const ConfigPackSLA& cfg, bool prepend_se
 Slic3rLegacy::DynamicPrintConfig convert_box_to_dynamic_print_config(const Domain::ConfigBox& box)
 {
     std::vector<std::string> acceptable_keys;
-    
-    if (box.type() == "volume_settings" || box.type() == "object_settings")
+    const ConfigLocation fdm_volume{FDMConfigLocation::Volume};
+    const ConfigLocation fdm_object{FDMConfigLocation::Object};
+    const ConfigLocation sla_object{SLAConfigLocation::Object};
+
+    if (box.location == fdm_volume || box.location == fdm_object)
         acceptable_keys = legacy_fdm_data().keys;
-    else if (box.type() == "sla_volume_settings" || box.type() == "sla_object_settings")
+    else if (box.location == sla_object)
         acceptable_keys = legacy_sla_data().keys;
     else
         PANIC();
 
-    std::vector<std::string> keys_to_convert;
-    
-    for (const Domain::ConfigItem& item : box) {
-        if (item.is_null() || std::ranges::find(acceptable_keys, item.name()) == acceptable_keys.end())
+    std::vector<std::string> override_keys_to_convert;
+
+    for (const auto& item_ref : box.overrides.overriden_items()) {
+        const Domain::ConfigItem& item{item_ref.get()};
+        const std::string& name{item.def().name};
+        if (std::ranges::find(acceptable_keys, name) == acceptable_keys.end())
             continue;
-        keys_to_convert.emplace_back(item.name());
+        override_keys_to_convert.emplace_back(name);
     }
+
+    std::vector<std::string> items_keys_to_convert;
+    for (const Domain::ConfigItem& item : box.items) {
+        const std::string& name{item.def().name};
+        if (std::ranges::find(acceptable_keys, name) == acceptable_keys.end())
+            continue;
+        items_keys_to_convert.emplace_back(name);
+    }
+
+    std::vector<std::string> keys_to_convert{override_keys_to_convert};
+    keys_to_convert.insert(keys_to_convert.end(), items_keys_to_convert.begin(), items_keys_to_convert.end());
     std::unique_ptr<Slic3rLegacy::DynamicPrintConfig> cfg_old(Slic3rLegacy::DynamicPrintConfig::new_from_defaults_keys(keys_to_convert));
 
-    for (const std::string& key : cfg_old->keys()) {
+    for (const std::string& key : override_keys_to_convert) {
         Slic3rLegacy::ConfigOption* opt = cfg_old->option(key);
-        const Domain::ConfigItem& item = box.opt(key);
+        const Domain::ConfigItem item = *ASSERT_VAL(box.overrides.get(key));
+        convert_new_to_old(item, opt, *cfg_old->def()->get(key));
+    }
+
+    for (const std::string& key : items_keys_to_convert) {
+        Slic3rLegacy::ConfigOption* opt = cfg_old->option(key);
+        const Domain::ConfigItem& item = box.items.opt(key);
         convert_new_to_old(item, opt, *cfg_old->def()->get(key));
     }
     return *cfg_old;
 }
-    
+
 
 
 // TODO: New slicer changed enums PrintHostType and AuthorizationType (=PrintHostAuthType).

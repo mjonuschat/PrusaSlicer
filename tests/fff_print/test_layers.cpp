@@ -28,9 +28,9 @@ void check_layers(const TestConfig& config) {
         }
     });
 
-    const double first_layer_height = config.print.opt("first_layer_height").get<Domain::FloatOrPercentage>().float_value();
-    const double z_offset = config.printer.opt("z_offset").get<double>();
-    const double layer_height = config.print.opt("layer_height").get<double>();
+    const double first_layer_height = config.print.items.opt("first_layer_height").get<Domain::FloatOrPercentage>().float_value();
+    const double z_offset = config.printer.items.opt("z_offset").get<double>();
+    const double layer_height = config.print.items.opt("layer_height").get<double>();
     INFO("Correct first layer height.");
     CHECK(z.at(0) == Approx(first_layer_height + z_offset));
     INFO("Correct second layer height");
@@ -44,35 +44,35 @@ void check_layers(const TestConfig& config) {
 
 TEST_CASE("Layer heights are correct", "[Layers]") {
     TestConfig config;
-    config.printer.opt("start_gcode").set("" );
-    config.print.opt("layer_height").set(0.3);
-    config.print.opt("first_layer_height").set(FloatOrPercentage{0.2});
-    config.tool.at(0).opt("retract_length").set(0.0);
+    config.printer.items.opt("start_gcode").set("" );
+    config.print.items.opt("layer_height").set(0.3);
+    config.print.items.opt("first_layer_height").set(FloatOrPercentage{0.2});
+    config.tool.at(0).items.opt("retract_length").set(0.0);
 
     SECTION("Absolute first layer height") {
         check_layers(config);
     }
 
     SECTION("Relative layer height") {
-        const double layer_height = config.print.opt("layer_height").get<double>();
-        config.print.opt("first_layer_height").set(FloatOrPercentage{0.6 * layer_height});
+        const double layer_height = config.print.items.opt("layer_height").get<double>();
+        config.print.items.opt("first_layer_height").set(FloatOrPercentage{0.6 * layer_height});
         check_layers(config);
     }
 
     SECTION("Positive z offset") {
-        config.printer.opt("z_offset").set(0.9);
+        config.printer.items.opt("z_offset").set(0.9);
         check_layers(config);
     }
 
     SECTION("Negative z offset") {
-        config.printer.opt("z_offset").set(-0.8);
+        config.printer.items.opt("z_offset").set(-0.8);
         check_layers(config);
     }
 }
 
 TEST_CASE("GCode has reasonable height", "[Layers]") {
     TestConfig config;
-    config.print.opt("fill_density").set(Percentage{0});
+    config.print.items.opt("fill_density").set(Percentage{0});
 
     Print print;
     Model model;

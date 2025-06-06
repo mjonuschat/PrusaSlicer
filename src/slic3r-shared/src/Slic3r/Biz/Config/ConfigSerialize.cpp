@@ -14,6 +14,14 @@ using Domain::Percentage;
 using Domain::EnumWrapper;
 using Domain::EnumVectorWrapper;
 using Domain::Vec2d;
+using Domain::BoxOtBoxesVector;
+using Domain::BoxRefs;
+using Domain::BoxRef;
+using Domain::overloaded;
+using Domain::ConfigLocation;
+using Domain::FDMConfigLocation;
+using Domain::SLAConfigLocation;
+using Domain::PhysicalPrinterLocation;
 
 static nlohmann::json serialize_float_or_percent(const FloatOrPercentage& fop)
 {
@@ -55,8 +63,6 @@ static void serialize_and_append(const ConfigItem& item, nlohmann::json& j)
 {
     j[item.name()] = nullptr;
     auto& jval = j.back();
-    if (item.is_null())
-        return;
 
     item.visit([&](auto&& item_value){
         using ValueType = std::remove_cvref_t<decltype(item_value)>;
@@ -124,30 +130,39 @@ std::variant<std::string, std::vector<std::string>> serialize_to_string(const Co
 
 
 
-nlohmann::json serialize(const Domain::ConfigBox& box, bool omit_null_overrides /*true*/)
+nlohmann::json serialize(const Domain::ConfigBox& box)
 {
     nlohmann::json out;
-    for (const ConfigItem& item : box) {
-        if (omit_null_overrides && item.is_null() && item.def().location != box.type())
+
+    for (const auto& item_ref : box.overrides.overriden_items()) {
+        const ConfigItem& item{item_ref.get()};
+        if (item.def().location != box.location)
             continue;
         serialize_and_append(item, out);
     }
+
+    for (const ConfigItem& item : box.items) {
+        if (item.def().location != box.location)
+            continue;
+        serialize_and_append(item, out);
+    }
+
     return out;
 }
 
 
 
-nlohmann::json serialize_as_vector(const std::vector<std::reference_wrapper<const Domain::ConfigBox>> boxes)
+nlohmann::json serialize_as_vector(const BoxRefs& boxes)
 {
     ASSERT(! boxes.empty());
     ASSERT(std::all_of(boxes.begin(), boxes.end(), [&boxes](const auto& box_ref) {
-        return box_ref.get().type() == boxes.front().get().type();
+        return box_ref.get().location == boxes.front().get().location;
     }));
 
     // Create a JSON object from each box individually.
     std::vector<nlohmann::json> json_objects;
     for (const auto& box : boxes)
-        json_objects.emplace_back(serialize(box.get(), false));
+        json_objects.emplace_back(serialize(box.get()));
 
     // Vectorization of the individual json objects. Assumes that the keys are the same.
     nlohmann::json combined_json = nlohmann::json::object();
@@ -161,7 +176,7 @@ nlohmann::json serialize_as_vector(const std::vector<std::reference_wrapper<cons
 
     // Remove all vectors which are full of nulls - but only for overrides.
     for (auto it = combined_json.begin(); it != combined_json.end(); ) {
-        if (boxes.front().get().opt(it.key()).def().location == boxes.front().get().type()) {
+        if (!boxes.front().get().overrides.contains(it.key())) {
             ++it;
             continue; // Not an override, apparently an optional value.
         }
@@ -176,15 +191,39 @@ nlohmann::json serialize_as_vector(const std::vector<std::reference_wrapper<cons
     return combined_json;
 }
 
-
+namespace {
+const std::string get_location_name(const ConfigLocation& location) {
+    return std::visit(overloaded{
+        [](const FDMConfigLocation location) {
+            switch(location) {
+                case FDMConfigLocation::Printer: return "printer_settings";
+                case FDMConfigLocation::Tool: return "toolprint_settings";
+                case FDMConfigLocation::Print: return "print_settings";
+                case FDMConfigLocation::Filament: return "filament_settings";
+                case FDMConfigLocation::Project: return "project_settings";
+                case FDMConfigLocation::Object: return "object_settings";
+                case FDMConfigLocation::Volume: return "volume_settings";
+                default: PANIC("Unknown location");
+            }
+        },
+        [](const SLAConfigLocation location) {
+            switch(location) {
+                case SLAConfigLocation::Printer: return "sla_printer_settings";
+                case SLAConfigLocation::Print: return "sla_print_settings";
+                case SLAConfigLocation::Material: return "sla_material_settings";
+                case SLAConfigLocation::Object: return "sla_object_settings";
+                default: PANIC("Unknown location");
+            }
+        },
+        [](const PhysicalPrinterLocation location) {
+            return "physical_printer_settings";
+        },
+    }, location);
+}
+}
 
 std::string serialize(
-    std::vector<
-        std::variant<
-            std::reference_wrapper<const Domain::ConfigBox>,
-            std::vector<std::reference_wrapper<const Domain::ConfigBox>>
-        >
-    > input,
+    const BoxOtBoxesVector& input,
     int indent,
     bool prepend_semicolons)
 {
@@ -192,14 +231,16 @@ std::string serialize(
 
     nlohmann::ordered_json complete_json;
     for (const auto& var : input) {
-        if (std::holds_alternative<std::reference_wrapper<const Domain::ConfigBox>>(var)) {
-            const auto& box = std::get<std::reference_wrapper<const Domain::ConfigBox>>(var).get();
-            box_names.emplace(box.type());
-            complete_json[box.type()] = serialize(box);
+        if (std::holds_alternative<BoxRef>(var)) {
+            const auto& box = std::get<BoxRef>(var).get();
+            const std::string location_name{get_location_name(box.location)};
+            box_names.emplace(location_name);
+            complete_json[location_name] = serialize(box);
         } else {
-            const auto& boxes = std::get<std::vector<std::reference_wrapper<const Domain::ConfigBox>>>(var);
-            box_names.emplace(boxes.front().get().type());
-            complete_json[boxes.front().get().type()] = serialize_as_vector(boxes);
+            const auto& boxes = std::get<BoxRefs>(var);
+            const std::string location_name{get_location_name(boxes.front().get().location)};
+            box_names.emplace(location_name);
+            complete_json[location_name] = serialize_as_vector(boxes);
         }
     }
     std::string str = complete_json.dump(indent);

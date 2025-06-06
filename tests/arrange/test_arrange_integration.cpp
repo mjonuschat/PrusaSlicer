@@ -114,7 +114,7 @@ static Slic3r::Model get_example_model_with_arranged_primitives()
 static Slic3r::Points configpack_to_bed_points(const Slic3r::Domain::ConfigPackFDM& pack)
 {
     using namespace Slic3r::Domain;
-    auto pts = pack.printer.opt("bed_shape").get<std::vector<Vec2d>>();
+    auto pts = pack.printer.items.opt("bed_shape").get<std::vector<Vec2d>>();
     Points pts_scaled(pts.size());
     std::transform(pts.cbegin(), pts.cend(), pts_scaled.begin(), [](const Vec2d& pt) { return Slic3r::scaled(pt); });
     return pts_scaled;
@@ -647,7 +647,7 @@ TEMPLATE_TEST_CASE("Bed needs to be completely filled with 1cm cubes",
     std::string basepath = TEST_DATA_DIR PATH_SEPARATOR;
 
     auto cfg = std::get<Domain::ConfigPackFDM>(Biz::load_config_from_legacy_file(basepath + "default_fff.ini"));
-    cfg.printer.opt("bed_shape").set<std::vector<Vec2d>>({{0., 0.}, {100., 0.}, {100., 100.}, {0, 100.}});
+    cfg.printer.items.opt("bed_shape").set<std::vector<Vec2d>>({{0., 0.}, {100., 0.}, {100., 100.}, {0, 100.}});
 
     Model m;
 

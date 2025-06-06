@@ -31,7 +31,7 @@ SCENARIO("Reading 3mf file", "[3mf]") {
     }
 }
 
-SCENARIO("Export+Import geometry to/from 3mf file cycle", "[3mf]") {
+TEST_CASE("Export+Import geometry to/from 3mf file cycle", "[3mf]") {
     GIVEN("world vertices coordinates before save") {
         // load a model from stl file
         Model src_model;

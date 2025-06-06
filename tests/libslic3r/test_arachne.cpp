@@ -39,10 +39,13 @@ namespace {
 PrintRegionConfigView get_region_config_view(const ObjectSettings& object_settings)
 {
     const auto full_config{std::make_shared<const FullConfigFDM>(FullConfigFDM::defaults())};
+    Domain::PartialObjectConfigFDM object_config{object_settings, 1, 1};
+    Domain::PartialVolumeConfigFDM volume_config{VolumeSettings{}, 1, 1};
+
     return {
         full_config,
-        std::make_shared<const ObjectSettings>(object_settings),
-        {std::make_shared<const Domain::VolumeSettings>()}
+        std::make_shared<const Domain::PartialObjectConfigFDM>(std::move(object_config)),
+        {std::make_shared<const Domain::PartialVolumeConfigFDM>(std::move(volume_config))}
     };
 }
 }
@@ -94,7 +97,7 @@ TEST_CASE("Arachne - Missing perimeter - #8472", "[ArachneMissingPerimeter8472]"
     coord_t  inset_count = 3;
 
     ObjectSettings object_settings;
-    object_settings.opt("wall_distribution_count").set(3);
+    object_settings.overrides.set("wall_distribution_count", 3);
 
     Arachne::WallToolPaths wallToolPaths(polygons, spacing, spacing, inset_count, 0, 0.2, get_region_config_view(object_settings));
     wallToolPaths.generate();
@@ -125,9 +128,9 @@ TEST_CASE("Arachne - #8593 - Missing a part of the extrusion", "[ArachneMissingP
     coord_t  inset_count = 3;
 
     ObjectSettings object_settings;
-    object_settings.opt("min_bead_width").set(FloatOrPercentage{0.315});
-    object_settings.opt("wall_transition_angle").set(40.0);
-    object_settings.opt("wall_transition_length").set(Domain::FloatOrPercentage{1.0});
+    object_settings.overrides.set("min_bead_width", FloatOrPercentage{0.315});
+    object_settings.overrides.set("wall_transition_angle", 40.0);
+    object_settings.overrides.set("wall_transition_length", Domain::FloatOrPercentage{1.0});
 
     // This behavior seems to be related to the rotation of the input polygon.
     // There are specific angles in which this behavior is always triggered.
@@ -252,10 +255,10 @@ TEST_CASE("Arachne - #8528 - A hole when number of perimeters is changing", "[Ar
 
 
     ObjectSettings object_settings;
-    object_settings.opt("min_bead_width").set(FloatOrPercentage{0.68});
+    object_settings.overrides.set("min_bead_width", FloatOrPercentage{0.68});
 
     // Changing min_bead_width to 0.66 seems that resolve this issue, at least in this case.
-    object_settings.opt("min_bead_width").set(FloatOrPercentage{0.66});
+    object_settings.overrides.set("min_bead_width", FloatOrPercentage{0.66});
 
     Arachne::WallToolPaths wallToolPaths(polygons, spacing, spacing, inset_count, 0, 0.4, get_region_config_view(object_settings));
     wallToolPaths.generate();
@@ -378,9 +381,9 @@ TEST_CASE("Arachne - #8633 - Shorter open perimeter", "[ArachneShorterOpenPerime
     coord_t  inset_count = 1;
 
     ObjectSettings object_settings;
-    object_settings.opt("min_bead_width").set(FloatOrPercentage{0.51});
-    object_settings.opt("min_feature_size").set(FloatOrPercentage{0.15});
-    object_settings.opt("wall_transition_length").set(Domain::FloatOrPercentage{0.6});
+    object_settings.overrides.set("min_bead_width", FloatOrPercentage{0.51});
+    object_settings.overrides.set("min_feature_size", FloatOrPercentage{0.15});
+    object_settings.overrides.set("wall_transition_length", Domain::FloatOrPercentage{0.6});
 
     for (size_t poly_idx = 0; poly_idx < polygons.size(); ++poly_idx) {
         Polygons input_polygons{polygons[poly_idx]};
@@ -896,7 +899,7 @@ TEST_CASE("Arachne - SPE-2496 - Negative extrusion width", "[Arachne_Negative_Ex
     coord_t  inset_count           = 3;
 
     ObjectSettings object_settings;
-    object_settings.opt("min_bead_width").set(FloatOrPercentage{0.1});
+    object_settings.overrides.set("min_bead_width", FloatOrPercentage{0.1});
 
     Arachne::WallToolPaths wall_tool_paths(polygons, ext_perimeter_spacing, perimeter_spacing, inset_count, 0, 0.2, get_region_config_view(object_settings));
     wall_tool_paths.generate();

@@ -24,7 +24,6 @@
 #include "libslic3r/ModelUtils.hpp"
 #include <libslic3r/SLA/SLAResult.hpp>
 #include "Slic3r/Domain/ConfigPack.hpp"
-#include "Slic3r/Domain/ConfigFDM.hpp"
 
 namespace Slic3r {
 

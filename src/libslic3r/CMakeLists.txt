@@ -69,10 +69,8 @@ set(SLIC3R_SOURCES
     Color.hpp
     Config.cpp
     Config.hpp
-    ConfigPackFDMUtils.hpp
-    ConfigPackFDMUtils.cpp
-    ConfigPackSLAUtils.hpp
-    ConfigPackSLAUtils.cpp
+    ConfigPackUtils.hpp
+    ConfigPackUtils.cpp
     CSGMesh/CSGMesh.hpp
     CSGMesh/SliceCSGMesh.hpp
     CSGMesh/ModelToCSGMesh.hpp

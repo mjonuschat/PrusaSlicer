@@ -23,11 +23,11 @@ TEST_CASE("Output file format", "[CustomGCode]")
     WHEN("output_file_format set") {
         TestConfig config;
 
-        config.print.opt("travel_speed").set(130.0);
-        config.print.opt("layer_height").set(0.4);
+        config.print.items.opt("travel_speed").set(130.0);
+        config.print.items.opt("layer_height").set(0.4);
 
-        config.print.opt("output_filename_format").set("ts_[travel_speed]_lh_[layer_height].gcode");
-        config.printer.opt("start_gcode").set("TRAVEL:[travel_speed] HEIGHT:[layer_height]\n" );
+        config.print.items.opt("output_filename_format").set("ts_[travel_speed]_lh_[layer_height].gcode");
+        config.printer.items.opt("start_gcode").set("TRAVEL:[travel_speed] HEIGHT:[layer_height]\n" );
 
         Print print;
         Model model;
@@ -45,8 +45,8 @@ TEST_CASE("Custom G-code", "[CustomGCode]")
     WHEN("start_gcode and layer_gcode set") {
 
         TestConfig config;
-        config.printer.opt("start_gcode").set("_MY_CUSTOM_START_GCODE_" );
-        config.printer.opt("layer_gcode").set("_MY_CUSTOM_LAYER_GCODE_" );
+        config.printer.items.opt("start_gcode").set("_MY_CUSTOM_START_GCODE_" );
+        config.printer.items.opt("layer_gcode").set("_MY_CUSTOM_LAYER_GCODE_" );
 
         GCodeReader parser;
         bool        last_move_was_z_change = false;
@@ -73,13 +73,13 @@ TEST_CASE("Custom G-code", "[CustomGCode]")
 
     Test::TestConfig config{4};
     for (auto& tool_settings : config.tool) {
-        tool_settings.opt("nozzle_diameter").set(0.6);
+        tool_settings.items.opt("nozzle_diameter").set(0.6);
     }
 
-    config.print.opt("infill_extruder").set(2);
-    config.print.opt("perimeter_extruder").set(2);
-    config.filament[0].opt("first_layer_temperature").set(200);
-    config.filament[1].opt("first_layer_temperature").set(205);
+    config.print.items.opt("infill_extruder").set(2);
+    config.print.items.opt("perimeter_extruder").set(2);
+    config.filament[0].items.opt("first_layer_temperature").set(200);
+    config.filament[1].items.opt("first_layer_temperature").set(205);
 
     WHEN("Printing with single but non-zero extruder") {
         std::string gcode = Slic3r::Test::slice({ Slic3r::Test::TestMesh::cube_20x20x20 }, config);
@@ -91,7 +91,7 @@ TEST_CASE("Custom G-code", "[CustomGCode]")
         }
     }
     WHEN("Printing with two extruders") {
-        config.print.opt("infill_extruder").set(1);
+        config.print.items.opt("infill_extruder").set(1);
         std::string gcode = Slic3r::Test::slice({ Slic3r::Test::TestMesh::cube_20x20x20 }, config);
         THEN("temperature set correctly for first extruder") {
             REQUIRE(Slic3r::Test::contains(gcode, "\nM104 S200 T0 ;"));
@@ -105,7 +105,7 @@ TEST_CASE("Custom G-code", "[CustomGCode]")
         // we use the [infill_extruder] placeholder to make sure this test doesn't
         // catch a false positive caused by the unparsed start G-code option itself
         // being embedded in the G-code
-        config.print.opt("infill_extruder").set(1);
+        config.print.items.opt("infill_extruder").set(1);
 
         std::string gcode = Slic3r::Test::slice({ Slic3r::Test::TestMesh::cube_20x20x20 }, config);
         THEN("temperature placeholder for first extruder correctly populated") {
@@ -119,22 +119,22 @@ TEST_CASE("Custom G-code", "[CustomGCode]")
         }
     };
     WHEN("legacy syntax") {
-        config.printer.opt("start_gcode").set(
+        config.printer.items.opt("start_gcode").set(
             ";__temp0:[first_layer_temperature_0]__\n"
             ";__temp1:[first_layer_temperature_1]__\n"
             ";__temp2:[first_layer_temperature_2]__\n");
         test(config);
     }
     WHEN("new syntax") {
-        config.printer.opt("start_gcode").set(
+        config.printer.items.opt("start_gcode").set(
             ";__temp0:{first_layer_temperature[0]}__\n"
             ";__temp1:{first_layer_temperature[1]}__\n"
             ";__temp2:{first_layer_temperature[2]}__\n");
         test(config);
     }
     WHEN("Vojtech's syntax") {
-        config.print.opt("infill_extruder").set(1 );
-        config.printer.opt("start_gcode").set(
+        config.print.items.opt("infill_extruder").set(1 );
+        config.printer.items.opt("start_gcode").set(
                 ";substitution:{if infill_extruder==1}extruder1"
                 "{elsif infill_extruder==2}extruder2"
                 "{else}extruder3{endif}"
@@ -147,10 +147,10 @@ TEST_CASE("Custom G-code", "[CustomGCode]")
     GIVEN("Layer change G-codes")
     {
         TestConfig config;
-        config.printer.opt("before_layer_gcode").set(";BEFORE [layer_num]" );
-        config.printer.opt("layer_gcode").set(";CHANGE [layer_num]" );
-        config.print.opt("support_material").set(true);
-        config.print.opt("layer_height").set(0.2);
+        config.printer.items.opt("before_layer_gcode").set(";BEFORE [layer_num]" );
+        config.printer.items.opt("layer_gcode").set(";CHANGE [layer_num]" );
+        config.print.items.opt("support_material").set(true);
+        config.print.items.opt("layer_height").set(0.2);
         WHEN("before and after layer change G-codes set") {
             std::string gcode = Slic3r::Test::slice({ Slic3r::Test::TestMesh::overhang }, config);
             GCodeReader parser;
@@ -184,10 +184,10 @@ TEST_CASE("Custom G-code", "[CustomGCode]")
 
         Test::TestConfig config{5};
         for (auto& tool_settings : config.tool) {
-            tool_settings.opt("nozzle_diameter").set(0.6);
+            tool_settings.items.opt("nozzle_diameter").set(0.6);
         }
 
-        config.printer.opt("start_gcode").set(
+        config.printer.items.opt("start_gcode").set(
                 ";substitution:{if infill_extruder==1}if block"
                 "{elsif infill_extruder==2}elsif block 1"
                 "{elsif infill_extruder==3}elsif block 2"
@@ -198,7 +198,7 @@ TEST_CASE("Custom G-code", "[CustomGCode]")
 
         std::string returned[] = { "" /* indexed by one based extruder ID */, "if block", "elsif block 1", "elsif block 2", "elsif block 3", "endif block" };
         auto test = [&config, &returned](int i) {
-            config.print.opt("infill_extruder").set(i);
+            config.print.items.opt("infill_extruder").set(i);
             std::string gcode = Slic3r::Test::slice({ Slic3r::Test::TestMesh::cube_20x20x20 }, config);
             int found_error = 0;
             for (int j = 1; j <= 5; ++ j)
@@ -221,20 +221,20 @@ TEST_CASE("Custom G-code", "[CustomGCode]")
     GIVEN("nested if / if / else / endif") {
         Test::TestConfig config{5};
         for (auto& tool_settings : config.tool) {
-            tool_settings.opt("nozzle_diameter").set(0.6);
+            tool_settings.items.opt("nozzle_diameter").set(0.6);
         }
 
-        config.printer.opt("start_gcode").set(
+        config.printer.items.opt("start_gcode").set(
             ";substitution:{if infill_extruder==1}{if perimeter_extruder==1}block11{else}block12{endif}"
             "{elsif infill_extruder==2}{if perimeter_extruder==1}block21{else}block22{endif}"
             "{else}{if perimeter_extruder==1}block31{else}block32{endif}{endif}:end"
         );
 
         auto test = [&config](int i) {
-            config.print.opt("infill_extruder").set(i);
+            config.print.items.opt("infill_extruder").set(i);
             int failed = 0;
             for (int j = 1; j <= 2; ++ j) {
-                config.print.opt("perimeter_extruder").set(j);
+                config.print.items.opt("perimeter_extruder").set(j);
                 std::string gcode = Slic3r::Test::slice({ Slic3r::Test::TestMesh::cube_20x20x20 }, config);
                 if (! Slic3r::Test::contains(gcode, std::string("substitution:block") + std::to_string(i) + std::to_string(j) + ":end"))
                     ++ failed;
@@ -248,11 +248,11 @@ TEST_CASE("Custom G-code", "[CustomGCode]")
         WHEN("infill_extruder == 3") { test(3); }
     }
     GIVEN("printer type in notes") {
-        config.printer.opt("start_gcode").set(
+        config.printer.items.opt("start_gcode").set(
               ";substitution:{if notes==\"MK2\"}MK2{elsif notes==\"MK3\"}MK3{else}MK1{endif}:end"
         );
         auto test = [&config](const std::string &printer_name) {
-            config.print.opt("notes").set(printer_name);
+            config.print.items.opt("notes").set(printer_name);
             std::string gcode = Slic3r::Test::slice({ Slic3r::Test::TestMesh::cube_20x20x20 }, config);
             THEN(std::string("printer name ") + printer_name + " matched") {
                 REQUIRE(Slic3r::Test::contains(gcode, std::string("substitution:") + printer_name + ":end"));
@@ -264,8 +264,8 @@ TEST_CASE("Custom G-code", "[CustomGCode]")
     }
     GIVEN("sequential print with between_objects_gcode") {
         TestConfig config;
-        config.print.opt("complete_objects").set(true);
-        config.printer.opt("between_objects_gcode").set("_MY_CUSTOM_GCODE_");
+        config.print.items.opt("complete_objects").set(true);
+        config.printer.items.opt("between_objects_gcode").set("_MY_CUSTOM_GCODE_");
         std::string gcode = Slic3r::Test::slice(
             // 3x 20mm box
             { Slic3r::Test::TestMesh::cube_20x20x20, Slic3r::Test::TestMesh::cube_20x20x20, Slic3r::Test::TestMesh::cube_20x20x20 },
@@ -279,8 +279,8 @@ TEST_CASE("Custom G-code", "[CustomGCode]")
     }
     GIVEN("before_layer_gcode increments global variable") {
         TestConfig config;
-        config.printer.opt("start_gcode").set("{global counter=0}");
-        config.printer.opt("before_layer_gcode").set(";Counter{counter=counter+1;counter}\n");
+        config.printer.items.opt("start_gcode").set("{global counter=0}");
+        config.printer.items.opt("before_layer_gcode").set(";Counter{counter=counter+1;counter}\n");
         std::string gcode = Slic3r::Test::slice({ Slic3r::Test::TestMesh::cube_20x20x20 }, config);
         THEN("The counter is emitted multiple times before layer change.") {
             REQUIRE(Slic3r::Test::contains(gcode, ";Counter1\n"));

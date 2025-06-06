@@ -18,7 +18,6 @@
 #include <vector>
 #include <cstddef>
 
-#include "Slic3r/Domain/ConfigFDM.hpp"
 #include "libslic3r/libslic3r.h"
 #include "libslic3r/Point.hpp"
 

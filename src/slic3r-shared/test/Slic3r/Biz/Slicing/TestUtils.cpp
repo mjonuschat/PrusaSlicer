@@ -41,7 +41,7 @@ double get_cubes_filament_used(const Slic3r::Model &model) {
 
 Domain::ConfigPack get_config() {
     Domain::ConfigPackFDM config;
-    config.print.opt("skirts").set(0);
+    config.print.items.opt("skirts").set(0);
     return config;
 }
 

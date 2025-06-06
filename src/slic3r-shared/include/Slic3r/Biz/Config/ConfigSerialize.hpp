@@ -13,21 +13,16 @@ namespace Slic3r::Biz {
 std::variant<std::string, std::vector<std::string>> serialize_to_string(const Domain::ConfigItem& item);
 
 // Serializes a given ConfigBox.
-nlohmann::json serialize(const Domain::ConfigBox& box, bool omit_null_overrides = true);
+nlohmann::json serialize(const Domain::ConfigBox& box);
 
 // Given list of boxes of the same type, serializes the content such that each key
 // appears once and items from individual boxes end up as vector elements.
 // Vector which belong to overrides and which are full of nulls are omitted.
-nlohmann::json serialize_as_vector(const std::vector<std::reference_wrapper<const Domain::ConfigBox>> boxes);
+nlohmann::json serialize_as_vector(const Domain::BoxRefs& boxes);
 
 // Given list of ConfigBoxes and vectors of ConfigBoxes, serializes all of that into a single string.
 std::string serialize(
-	std::vector<
-		std::variant<
-		    std::reference_wrapper<const Domain::ConfigBox>,
-	        std::vector<std::reference_wrapper<const Domain::ConfigBox>>
-	    >
-	> input,
+	const Domain::BoxOtBoxesVector& input,
 	int indent,
 	bool prepend_semicolons);
 

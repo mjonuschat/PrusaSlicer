@@ -82,11 +82,17 @@ add_library(slic3r-domain
     include/Slic3r/Domain/Config.hpp
     src/Slic3r/Domain/Config.cpp
 
-    include/Slic3r/Domain/ConfigFDM.hpp
-    src/Slic3r/Domain/ConfigFDM.cpp
+    include/Slic3r/Domain/ConfigBoxesFDM.hpp
+    src/Slic3r/Domain/ConfigBoxesFDM.cpp
 
-    include/Slic3r/Domain/ConfigSLA.hpp
-    src/Slic3r/Domain/ConfigSLA.cpp
+    include/Slic3r/Domain/FullConfigFDM.hpp
+    src/Slic3r/Domain/FullConfigFDM.cpp
+
+    include/Slic3r/Domain/ConfigBoxesSLA.hpp
+    src/Slic3r/Domain/ConfigBoxesSLA.cpp
+
+    include/Slic3r/Domain/FullConfigSLA.hpp
+    src/Slic3r/Domain/FullConfigSLA.cpp
 
     include/Slic3r/Domain/ConfigPhysical.hpp
     src/Slic3r/Domain/ConfigPhysical.cpp
@@ -111,6 +117,7 @@ target_link_libraries(slic3r-domain PUBLIC slic3r-base TBB::tbbmalloc)
 if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
     add_executable(slic3r-domain-tests
         test/Slic3r/Domain/ConfigValueTests.cpp
+        test/Slic3r/Domain/ConfigTests.cpp
         test/Slic3r/Domain/Preset/PresetTreeTests.cpp
         test/Slic3r/Domain/Preset/HwConfigTests.cpp
     )

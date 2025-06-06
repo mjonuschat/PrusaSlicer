@@ -36,10 +36,11 @@ TEST_CASE("Archive export test", "[sla_archives][!shouldfail]") {
         ASSERT(load_obj((TEST_DATA_DIR PATH_SEPARATOR + std::string(pname) + ".obj").c_str(), &m));
 
         Domain::ConfigPackSLA cfg;
-        cfg.sla_printer_settings.opt("printer_technology").set(Domain::PrinterTechnology::SLA); // FIXME this should be ensured
-        cfg.sla_printer_settings.opt("sla_archive_format").set("SL1");
-        cfg.sla_print_settings.opt("supports_enable").set(false);
-        cfg.sla_print_settings.opt("pad_enable").set(false);
+
+        cfg.sla_printer_settings.items.opt("printer_technology").set(Domain::PrinterTechnology::SLA); // FIXME this should be ensured
+        cfg.sla_printer_settings.items.opt("sla_archive_format").set("SL1");
+        cfg.sla_print_settings.items.opt("supports_enable").set(false);
+        cfg.sla_print_settings.items.opt("pad_enable").set(false);
 
 
         print.set_status_callback([](const PrintBase::SlicingStatus&) {});
