@@ -6,16 +6,13 @@
 #include "Slic3r/App/Preview/DoubleSliderForGCode.hpp"
 #include "Slic3r/App/Preview/SidebarAutoReslice.hpp"
 #include "Slic3r/App/Preview/SidebarPreviewActionButtons.hpp"
-#include "Slic3r/App/ObjectList.hpp"
-#include "Slic3r/App/SidebarBed.hpp"
-#include "Slic3r/App/SidebarPrint.hpp"
-#include "Slic3r/App/CubeView.hpp"
 
 using namespace Slic3r::App::Yoga;
 
 namespace Slic3r::App::Preview {
 
 PreviewRenderLayout::PreviewRenderLayout(
+    std::unique_ptr<TopBar> top_bar,
     std::unique_ptr<ObjectList> object_list,
     std::unique_ptr<CubeView> cube_view,
     std::unique_ptr<SidebarBed> sidebar_bed,
@@ -28,7 +25,7 @@ PreviewRenderLayout::PreviewRenderLayout(
     std::unique_ptr<SidebarAutoReslice> sidebar_auto_reslice
 )
     : AbstractRenderLayout(
-          std::move(object_list), std::move(cube_view), std::move(sidebar_bed), std::move(sidebar_print)
+          std::move(top_bar), std::move(object_list), std::move(cube_view), std::move(sidebar_bed), std::move(sidebar_print)
       )
     , m_gcode_window(std::move(m_gcode_window))
     , m_legend(std::move(legend))

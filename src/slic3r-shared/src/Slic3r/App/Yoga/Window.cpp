@@ -13,6 +13,7 @@ namespace Slic3r::App::Yoga {
 std::unordered_map<std::string, int> Window::window_names = {};
 
 Window::Window(const std::string& window_name) : Item()
+, m_alpha(GImGui->Style.Alpha)
 {
     if (window_names.contains(window_name)) {
         m_window_name = window_name + " " + std::to_string(++window_names[window_name]);
@@ -35,6 +36,16 @@ int Window::flags() const { return m_flags; }
 
 void Window::set_flags(int flags) { m_flags = flags; }
 
+float Window::alpha() const
+{
+    return m_alpha;
+}
+
+void Window::set_alpha(float alpha)
+{
+    m_alpha = alpha;
+}
+
 void Window::render(Vec2f pos, Vec2f size)
 {
     render_item_begin(pos, size);
@@ -43,7 +54,7 @@ void Window::render(Vec2f pos, Vec2f size)
 
     ImGui::SetNextWindowPos(to_im(pos));
     ImGui::SetNextWindowSize(to_im(size));
-    ImGui::SetNextWindowBgAlpha(GImGui->Style.Alpha);
+    ImGui::SetNextWindowBgAlpha(m_alpha);
 
     // Discard current paddings and spacing of the window to corect apply of sizer's margins
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.f);

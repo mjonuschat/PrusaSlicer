@@ -54,8 +54,17 @@ void ProjectInteractor::initialize_inserted_project(size_t project_id)
 
 void ProjectInteractor::select_project(Domain::SelectionId project_id)
 {
-    if (project_id != m_selection.project_id)
+    if (project_id != m_selection.project_id) {
         do_select_project(project_id);
+
+        auto& projects = m_workbench.projects();
+        const auto& config_container = projects.at(project_id).config_containers().front();
+        const Domain::SelectionId first_container_id = config_container->id().id;
+        do_select_config_container(first_container_id);
+
+        const Domain::SelectionId first_bed_instance_id = config_container->bed_instances().front()->id().id;
+        m_scene_interactor.select_bed_instance({ first_container_id, first_bed_instance_id });
+    }
 }
 
 Biz::Slicing::SlicingId ProjectInteractor::selected_bed_slicing_id() const

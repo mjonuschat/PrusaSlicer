@@ -5,6 +5,7 @@
 namespace Slic3r::App::Plater {
 
 PlaterRenderLayout::PlaterRenderLayout(
+    std::unique_ptr<TopBar> top_bar,
     std::unique_ptr<ObjectList> object_list,
     std::unique_ptr<CubeView> cube_view,
     std::unique_ptr<SidebarBed> sidebar_bed,
@@ -12,7 +13,7 @@ PlaterRenderLayout::PlaterRenderLayout(
     std::unique_ptr<SidebarPlaterActionButtons> sidebar_action_buttons,
     std::unique_ptr<History> history
 )
-    : AbstractRenderLayout(std::move(object_list), std::move(cube_view), std::move(sidebar_bed), std::move(sidebar_print))
+    : AbstractRenderLayout(std::move(top_bar), std::move(object_list), std::move(cube_view), std::move(sidebar_bed), std::move(sidebar_print))
     , m_sidebar_action_buttons(std::move(sidebar_action_buttons))
     , m_history(std::move(history))
 {}

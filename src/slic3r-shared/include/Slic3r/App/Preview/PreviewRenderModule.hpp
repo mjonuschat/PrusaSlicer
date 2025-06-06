@@ -68,6 +68,7 @@ public:
     ) override;
 
     void set_sidebars_visible(bool hide) override;
+    void synchronize_topbar() override;
 
 protected:
     /**
@@ -96,6 +97,7 @@ private:
     // main window layout
     std::unique_ptr<PreviewRenderLayout> m_layout;
     // Layout objects
+    Yoga::Passthrough<TopBar> m_top_bar;
     Yoga::Passthrough<ObjectList> m_object_list;
     Yoga::Passthrough<CubeView> m_cube_view;
     Yoga::Passthrough<SidebarBed> m_sidebar_bed;

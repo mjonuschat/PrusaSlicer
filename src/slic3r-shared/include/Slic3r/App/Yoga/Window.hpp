@@ -24,6 +24,9 @@ public:
     int flags() const;
     void set_flags(int flags);
 
+    float alpha() const;
+    void set_alpha(float alpha);
+
     void render(Vec2f pos, Vec2f size) override final;
     /**
      * @brief render_body by default will render all Window children
@@ -42,6 +45,8 @@ private:
     int m_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove |
         ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoFocusOnAppearing;
     float m_rounding = 5;
+
+    float m_alpha = 1.f;
 
 };
 

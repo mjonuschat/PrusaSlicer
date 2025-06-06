@@ -305,6 +305,13 @@ void PreviewRenderModule::set_sidebars_visible(bool hide)
     request_render();
 }
 
+void PreviewRenderModule::synchronize_topbar()
+{
+    m_layout->synchronize_topbar();
+    // request redraw
+    request_render();
+}
+
 void PreviewRenderModule::on_init(Render::Device& device, Render::ImguiRender& imgui_render)
 {
 
@@ -630,6 +637,8 @@ void PreviewRenderModule::init_viewers(Render::Device& device)
 void PreviewRenderModule::init_scene_layout()
 {
 // >> This code is same for Plater/PreviewRenderModule
+    m_top_bar = std::make_unique<TopBar>(&m_project_interactor, this);
+
     m_object_list = std::make_unique<ObjectList>();
     m_object_list->init(&m_project_interactor, ObjectList::Mode::Preview);
 
@@ -644,7 +653,8 @@ void PreviewRenderModule::init_scene_layout()
         m_sidebar_action_buttons->add_listener<IRenderModuleChangedListener>(listener);
     }
 
-    m_layout.reset(new PreviewRenderLayout(m_object_list.release(),
+    m_layout.reset(new PreviewRenderLayout(m_top_bar.release(),
+                                           m_object_list.release(),
                                            m_cube_view.release(),
                                            m_sidebar_bed.release(),
                                            m_sidebar_print.release(),

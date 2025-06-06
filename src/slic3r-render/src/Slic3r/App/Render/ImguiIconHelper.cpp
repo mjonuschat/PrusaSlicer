@@ -150,6 +150,11 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
     { Icon::BedThumbnail            , "bed_thumbnail"                    },
 
     { Icon::SettingsSet             , "settings_set"                    },
+    { Icon::TobBarLoad              , "tb_load"                         },
+    { Icon::TobBarSave              , "tb_save"                         },
+    { Icon::TobBarShowUI            , "tb_show_ui"                      },
+    { Icon::TobBarPlus              , "plus_new"                        },
+    { Icon::TopBarCross             , "cross_new"                       },
 };
 
 static const std::unordered_set<Icon> ICON_PNG = {

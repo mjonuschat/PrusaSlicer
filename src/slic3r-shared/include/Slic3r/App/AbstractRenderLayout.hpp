@@ -2,6 +2,7 @@
 
 #include "Slic3r/App/Yoga/Item.hpp"
 #include "Slic3r/App/Yoga/AbstractButton.hpp"
+#include "Slic3r/App/TopBar.hpp"
 #include "Slic3r/App/ObjectList.hpp"
 #include "Slic3r/App/CubeView.hpp"
 #include "Slic3r/App/SidebarBed.hpp"
@@ -36,6 +37,7 @@ public:
     static void set_our_style_colors();
 
     AbstractRenderLayout(
+        std::unique_ptr<TopBar> top_bar,
         std::unique_ptr<ObjectList> object_list,
         std::unique_ptr<CubeView> cube_view,
         std::unique_ptr<SidebarBed> sidebar_bed,
@@ -96,6 +98,7 @@ public:
     void set_bottom_toolbar_visible(bool visible);
 
     void set_sidebars_visible(bool visible);
+    void synchronize_topbar();
 
 protected:
     virtual void init_left_column();
@@ -111,6 +114,7 @@ private:
 
 protected:
     Yoga::Item m_layout_main;
+    Yoga::Item* m_layout_main_bottom = nullptr;
     Yoga::Item* m_layout_left_column = nullptr;
     Yoga::Item* m_layout_center_row = nullptr;
     Yoga::Item* m_layout_right_column = nullptr;
@@ -132,6 +136,7 @@ protected:
     bool m_sidebars_visible = true;
 
     // Inserted from render module
+    Yoga::Passthrough<TopBar> m_top_bar;
     Yoga::Passthrough<ObjectList> m_object_list;
     Yoga::Passthrough<CubeView> m_cube_view;
     Yoga::Passthrough<SidebarBed> m_sidebar_bed;

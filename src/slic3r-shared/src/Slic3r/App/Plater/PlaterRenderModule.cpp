@@ -90,6 +90,8 @@ void PlaterRenderModule::init_scene_layout()
     AbstractRenderLayout::set_our_style_colors();
 
     // >> This code is same for Plater/PreviewRenderModule
+    m_top_bar = std::make_unique<TopBar>(&m_project_interactor, this);
+
     m_object_list = Passthrough(std::make_unique<ObjectList>());
     m_object_list->init(&m_project_interactor, ObjectList::Mode::Plater);
 
@@ -106,6 +108,7 @@ void PlaterRenderModule::init_scene_layout()
     }
 
     m_layout.reset(new PlaterRenderLayout(
+        m_top_bar.release(),
         m_object_list.release(), m_cube_view.release(), m_sidebar_bed.release(), m_sidebar_print.release(), m_sidebar_action_buttons.release(),
         m_history.release()
     ));
@@ -421,6 +424,13 @@ void PlaterRenderModule::set_sidebars_visible(bool visible)
 {
     m_layout->set_sidebars_visible(visible);
 
+    // request redraw
+    request_render();
+}
+
+void PlaterRenderModule::synchronize_topbar()
+{
+    m_layout->synchronize_topbar();
     // request redraw
     request_render();
 }

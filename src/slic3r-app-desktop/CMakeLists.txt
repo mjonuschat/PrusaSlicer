@@ -13,9 +13,6 @@ set(SLIC3R_APP_DESKTOP_FILES
     include/Slic3r/App/Desktop/LeftBar.hpp
     src/Slic3r/App/Desktop/LeftBarCtrl.cpp
     include/Slic3r/App/Desktop/LeftBarCtrl.hpp
-    include/Slic3r/App/Desktop/TopBar.hpp
-    src/Slic3r/App/Desktop/TopBarCtrl.cpp
-    include/Slic3r/App/Desktop/TopBarCtrl.hpp
     src/Slic3r/App/Desktop/ModePaletteComboBox.cpp
     src/Slic3r/App/Desktop/ModePaletteComboBox.hpp
     src/Slic3r/App/Desktop/GUI_Descriptions.cpp

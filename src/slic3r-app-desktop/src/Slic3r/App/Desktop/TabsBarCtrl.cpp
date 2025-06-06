@@ -21,7 +21,7 @@ TabsBarCtrl::Button::Button(
     wxSize size_def)
 :wxPanel(parent, wxID_ANY, wxDefaultPosition, size_def, wxBORDER_NONE | wxTAB_TRAVERSAL)
 ,m_parent(parent)
-#ifdef _WIN32
+#if 1//def _WIN32
 ,m_background_color(m_parent->GetBackgroundColour())
 #else
 ,m_background_color(wxTransparentColor)
@@ -99,7 +99,7 @@ void TabsBarCtrl::Button::set_selected(bool selected)
     m_is_selected = selected;
 
     m_background_color = m_is_selected ? w_config()->get_color_selected_btn_bg() :
-#ifdef _WIN32
+#if 1//def _WIN32
                                          m_parent->GetBackgroundColour();
 #else
                                          wxTransparentColor;
@@ -117,7 +117,7 @@ void TabsBarCtrl::Button::set_hovered(bool hovered)
     m_background_color =    m_is_selected ? w_config()->get_color_selected_btn_bg():
                             hovered       ? w_config()->get_color_hovered_btn_bg() :
              
-#ifdef _WIN32
+#if 1//def _WIN32
                                             m_parent->GetBackgroundColour();
 #else
                                             wxTransparentColor;
