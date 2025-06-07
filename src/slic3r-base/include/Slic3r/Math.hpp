@@ -63,4 +63,10 @@ T angle_to_0_2PI(T angle)
     return angle;
 }
 
+template <typename T>
+T sign(T val) {
+    return T((T(0) < val) - (val < T(0)));
+}
+
+
 } // namespace Slic3r

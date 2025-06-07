@@ -6,23 +6,13 @@
 
 namespace Slic3r::App::Yoga {
 
-static constexpr float round_up_to_even(float value)
-{
-    int int_value = value;
-    return int_value % 2 == 0 ? int_value : ++int_value;
-}
-
 Toggler::Toggler()
 {
     set_align_items(YGAlignCenter);
 
-    float text_height = round_up_to_even(0.9f * std::max(ImGui::GetTextLineHeight(), 12.f));
-
-    Vec2f size = { round_up_to_even(1.5f * text_height), text_height };
-
-    set_width(size.x());
-    set_height(size.y());
-    set_padding(0.2f * size.y());
+    set_width(20);
+    set_height(14);
+    set_padding(3);
 
     m_knob = this->emplace_back<Circle>();
     m_knob->set_height_percent(100);

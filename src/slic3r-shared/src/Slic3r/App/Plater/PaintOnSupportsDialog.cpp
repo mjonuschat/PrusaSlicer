@@ -10,6 +10,7 @@
 #include "Slic3r/App/Yoga/Rectangle.hpp"
 #include "Slic3r/App/Yoga/Icon.hpp"
 #include "Slic3r/App/Yoga/ToggleButton.hpp"
+#include "Slic3r/App/Yoga/SliderWithInput.hpp"
 
 using namespace Slic3r::App::Yoga;
 
@@ -62,29 +63,20 @@ PaintOnSupportsDialog::PaintOnSupportsDialog() : Dialog("Paint-on supports")
     add_new_row("Brush shape", std::move(brush_shape_buttons));
     m_group_shape.set_buttons({sphere_button, circle_button, triangle_button});
 
-    constexpr float slider_text_size = 20;
+    constexpr float slider_text_size = 50;
 
-    std::unique_ptr<Item> brush_size_controls = std::make_unique<Item>();
-    brush_size_controls->set_gap(gap_size);
-    brush_size_controls->emplace_back<Text>("2.00")->set_width_percent(slider_text_size);
-    Rectangle* brush_size_slider = brush_size_controls->emplace_back<Rectangle>();
-    brush_size_slider->set_flex_grow(1);
-    add_new_row("Brush size", std::move(brush_size_controls));
+    std::unique_ptr<SliderWithInput> brush_size = std::make_unique<SliderWithInput>(7.5f, 2.5f, 0.5f);
+    brush_size->set_input_width(slider_text_size);
+    add_new_row("Brush size", std::move(brush_size));
 
     add_separator();
 
-    std::unique_ptr<Item> clipping_of_view = std::make_unique<Item>();
-    clipping_of_view->set_gap(gap_size);
-    clipping_of_view->emplace_back<Text>("0.00")->set_width_percent(slider_text_size);
-    Rectangle* clipping_of_view_slider = clipping_of_view->emplace_back<Rectangle>();
-    clipping_of_view_slider->set_flex_grow(1);
+    std::unique_ptr<SliderWithInput> clipping_of_view = std::make_unique<SliderWithInput>(2.5f, 7.5f, 0.25f);
+    clipping_of_view->set_input_width(slider_text_size);
     add_new_row("Clipping of view", std::move(clipping_of_view));
 
-    std::unique_ptr<Item> show_overhangs = std::make_unique<Item>();
-    show_overhangs->set_gap(gap_size);
-    show_overhangs->emplace_back<Text>("0")->set_width_percent(slider_text_size);
-    Rectangle* show_overhangs_slider = show_overhangs->emplace_back<Rectangle>();
-    show_overhangs_slider->set_flex_grow(1);
+    std::unique_ptr<SliderWithInput> show_overhangs = std::make_unique<SliderWithInput>(0.f, 3.f);
+    show_overhangs->set_input_width(slider_text_size);
     add_new_row("Show overhangs", std::move(show_overhangs));
 
     add_separator();

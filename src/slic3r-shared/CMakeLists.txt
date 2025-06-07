@@ -219,6 +219,10 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Yoga/Toggler.hpp
         src/Slic3r/App/Yoga/ToggleButton.cpp
         include/Slic3r/App/Yoga/ToggleButton.hpp
+        src/Slic3r/App/Yoga/Slider.cpp
+        include/Slic3r/App/Yoga/Slider.hpp
+        src/Slic3r/App/Yoga/SliderWithInput.cpp
+        include/Slic3r/App/Yoga/SliderWithInput.hpp
         src/Slic3r/App/Yoga/MenuItem.cpp
         include/Slic3r/App/Yoga/MenuItem.hpp
         src/Slic3r/App/Yoga/Menu.cpp

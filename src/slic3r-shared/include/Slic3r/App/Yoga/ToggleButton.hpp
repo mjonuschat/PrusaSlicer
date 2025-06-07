@@ -14,6 +14,10 @@ namespace Slic3r::App::Yoga {
 class Toggler;
 class Text;
 
+/**
+ * @brief The ToggleButton class is a composite button combining a toggler and a text.
+ * Use set_direction(YGDirectionLTR) to change the alignment of the internal controls.
+ */
 class ToggleButton : public AbstractButton
 {
 public:
@@ -24,8 +28,6 @@ public:
     void set_label(const std::string& label);
     std::string get_label();
     void set_font_type(Render::ImguiFontType font_type);
-
-    void align_text(bool right_align);
 
 protected:
     void checked_updated_internal() override;

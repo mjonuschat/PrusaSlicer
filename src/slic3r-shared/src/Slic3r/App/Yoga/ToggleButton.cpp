@@ -50,11 +50,6 @@ void ToggleButton::set_font_type(Render::ImguiFontType font_type)
         m_label->set_font_type(font_type);
 }
 
-void ToggleButton::align_text(bool right_align)
-{
-    set_direction(right_align ? YGDirectionLTR : YGDirectionRTL);
-}
-
 void ToggleButton::checked_updated_internal()
 {
     AbstractButton::checked_updated_internal();
