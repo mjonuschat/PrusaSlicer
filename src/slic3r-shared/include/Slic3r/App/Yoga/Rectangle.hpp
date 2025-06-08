@@ -24,6 +24,7 @@ public:
     void set_border_color(const ImColor& border_color);
     void set_border_width(float border_width);
     void set_rounding(float rounding);
+    void set_flags(ImDrawFlags flags);
 
 protected:
     Vec2f get_item_size() override;
@@ -33,6 +34,7 @@ private:
     ImColor m_border_color = IM_COL32_WHITE;
     float m_border_width = 0;
     float m_rounding = 5.f;
+    ImDrawFlags m_flags = ImDrawFlags_RoundCornersAll;
 };
 
 } // namespace Slic3r::App::Yoga

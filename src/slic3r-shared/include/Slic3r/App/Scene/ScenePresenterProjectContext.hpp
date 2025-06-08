@@ -5,7 +5,6 @@
 #include "Slic3r/App/Render/GeometryManager.hpp"
 #include "Slic3r/App/Scene/TriangleMeshManager.hpp"
 #include "Slic3r/App/Scene/NodeBuilder.hpp"
-#include "Slic3r/App/ObjectList.hpp"
 #include "Slic3r/App/Scene/AuxiliaryElementId.hpp"
 
 namespace Slic3r::App::Scene {

@@ -293,6 +293,7 @@ void PreviewRenderModule::on_status_cache_changed(const Biz::Slicing::SlicingId 
         if (status && status == Biz::Slicing::Status::Modified)
             m_viewer->reset();
     }
+    m_object_list->update_sliced_info();
 
     // request redraw
     request_render();
@@ -639,8 +640,7 @@ void PreviewRenderModule::init_scene_layout()
 // >> This code is same for Plater/PreviewRenderModule
     m_top_bar = std::make_unique<TopBar>(&m_project_interactor, this);
 
-    m_object_list = std::make_unique<ObjectList>();
-    m_object_list->init(&m_project_interactor, ObjectList::Mode::Preview);
+    m_object_list = Passthrough(std::make_unique<ObjectListWindow>(&m_project_interactor, false));
 
     m_cube_view = std::make_unique<CubeView>();
     m_sidebar_bed = std::make_unique<SidebarBed>();

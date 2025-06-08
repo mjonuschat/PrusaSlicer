@@ -3,10 +3,13 @@
 #include "Slic3r/App/Yoga/Item.hpp"
 #include "Slic3r/App/Yoga/AbstractButton.hpp"
 #include "Slic3r/App/TopBar.hpp"
-#include "Slic3r/App/ObjectList.hpp"
+#include "Slic3r/App/ObjectListWindow.hpp"
 #include "Slic3r/App/CubeView.hpp"
 #include "Slic3r/App/SidebarBed.hpp"
 #include "Slic3r/App/SidebarPrint.hpp"
+#include "Slic3r/App/Render/ImguiTypes.hpp"
+
+#include <map>
 
 #define MAIN_WITH_SPLITTERS 1
 
@@ -38,7 +41,7 @@ public:
 
     AbstractRenderLayout(
         std::unique_ptr<TopBar> top_bar,
-        std::unique_ptr<ObjectList> object_list,
+        std::unique_ptr<ObjectListWindow> object_list,
         std::unique_ptr<CubeView> cube_view,
         std::unique_ptr<SidebarBed> sidebar_bed,
         std::unique_ptr<SidebarPrint> sidebar_print
@@ -137,7 +140,7 @@ protected:
 
     // Inserted from render module
     Yoga::Passthrough<TopBar> m_top_bar;
-    Yoga::Passthrough<ObjectList> m_object_list;
+    Yoga::Passthrough<ObjectListWindow> m_object_list;
     Yoga::Passthrough<CubeView> m_cube_view;
     Yoga::Passthrough<SidebarBed> m_sidebar_bed;
     Yoga::Passthrough<SidebarPrint> m_sidebar_print;

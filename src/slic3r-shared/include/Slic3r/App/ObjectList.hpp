@@ -1,7 +1,7 @@
 #pragma once
 
+#include "Slic3r/App/Yoga/Item.hpp"
 #include "Slic3r/Biz/ProjectScoped.hpp"
-#include "Slic3r/App/Yoga/Window.hpp"
 #include "Slic3r/App/Render/ImguiTypes.hpp"
 #include "MultiSelections.hpp"
 
@@ -35,8 +35,9 @@ class ImguiRender;
 } // namespace Slic3r::App::Render
 
 namespace Slic3r::App {
+class ObjectListWindow;
 
-class ObjectList : public Yoga::Window
+class ObjectList : public Yoga::Item
 {
 public:
     enum class Mode
@@ -45,19 +46,15 @@ public:
         Preview,
     };
 
-    ObjectList();
-
+    ObjectList(Biz::ProjectInteractor* project_interactor, ObjectList::Mode mode);
     void init(Biz::ProjectInteractor* project_interactor, Mode mode);
 
-    void render_body(Yoga::Vec2f pos, Yoga::Vec2f size) override;
-
 private:
+    void render(Yoga::Vec2f pos, Yoga::Vec2f size) override;
 
-    void setup_ui_state();
     void process_dragging_start();
     void update_selection_from_scene();
     bool render_list(Domain::Vec2f size);
-    void render_header(Domain::Vec2f pos, Domain::Vec2f size);
     bool render_config_containers();
     void render_group_name(const std::string& name);
     void render_all_beds_node();
@@ -87,7 +84,6 @@ private:
     bool handle_selection(const Domain::ElementRef& id);
     void handle_dragging(const Domain::ElementRef& id);
     void force_select_whole_object(const Slic3r::ModelObject* object);
-    void bold_text(const std::string& text);
 
     void propagate_selection();
     void propagate_name_editing(const Domain::ElementRef& id, const std::string& new_name);
@@ -96,9 +92,6 @@ private:
     void extruder_clicked(const Domain::ElementRef& sel_element, bool is_bed);
     void show_layer_ranges(const Domain::ElementRef& id);
     void show_gizmo(const Domain::ElementRef& id, Render::Icon gizmo_id);
-
-    void render_scene_map(Domain::Vec2f size);
-    void render_sliced_info(float height);
 
     struct ProjectContext;
     ProjectContext& selected_project_context();
@@ -134,6 +127,8 @@ private:
     ImGuiMultiSelectFlags           m_multi_selection_flags;
     ImGuiTreeNodeFlags              m_node_flags;
     ImGuiTableFlags                 m_table_flags;
+
+    friend class ObjectListWindow;
 };
 
 } // namespace Slic3r::App

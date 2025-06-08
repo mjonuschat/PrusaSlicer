@@ -162,6 +162,8 @@ static const std::unordered_map<Icon, const char*> ICON_FILENAMES = {
     { Icon::Sphere                , "sphere"                            },
     { Icon::PaintBrush            , "paintbrush"                        },
     { Icon::WandMagicSparkles     , "wand-magic-sparkles"               },
+
+    { Icon::Calculator              , "calculator"                      },
 };
 
 static const std::unordered_set<Icon> ICON_PNG = {

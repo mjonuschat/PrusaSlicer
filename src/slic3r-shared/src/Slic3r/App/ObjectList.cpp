@@ -296,27 +296,6 @@ static bool hovered_current_row()
     return ImGui::IsMouseHoveringRect(row_begin, row_end, false);
 }
 
-static bool icon_btn(ColumIndex ci, const std::string& icon)
-{
-    ImGui::TableSetColumnIndex(ci);
-    ImVec2 pos = ImGui::GetCursorScreenPos();
-    const float size = ImGui::GetFontSize();
-    ImRect hovered_rc(pos, pos + ImVec2(size, size));
-
-    ImGui::Text(icon.c_str());
-
-    bool pressed = ImGui::IsMouseHoveringRect(hovered_rc.Min, hovered_rc.Max) && ImGui::IsMouseClicked(0);
-    return pressed;
-}
-
-static void toggle_icon_btn(const Render::Icon icon, bool* is_toggled, const std::string id, ColumIndex ci = ColumIndex::ciCount/*undef*/)
-{
-    ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetColorU32((*is_toggled) ? ImGuiCol_ButtonActive : ImGuiCol_Button));
-    if (Imgui::icon_button(icon, ImVec2(), id))
-        *is_toggled = !*is_toggled; // Toggle state
-    ImGui::PopStyleColor();
-}
-
 // object is simple: has just one instance, one volume and no aditional information
 static bool has_overrides(const Slic3r::ModelObject* object, bool is_sla_config)
 {
@@ -344,6 +323,37 @@ static bool is_imgui_item_just_selected()
     // handle selection only on MouseRelease or PressEnter
     return ImGui::IsItemHovered(ImGuiHoveredFlags_None) &&
         (ImGui::IsMouseReleased(ImGuiMouseButton_Left) || ImGui::IsKeyPressed(ImGuiKey_Enter));
+}
+
+ObjectList::ObjectList(Biz::ProjectInteractor* project_interactor, ObjectList::Mode mode) : Item()
+{
+    init(project_interactor, mode);
+}
+
+void ObjectList::render(Yoga::Vec2f pos, Yoga::Vec2f size)
+{
+    auto& ctx = selected_project_context();
+    m_scene_interactor = &m_project_interactor->scene_interactor();
+    ctx.model = &m_project_interactor->selected_project().model();
+    ASSERT(ctx.model && m_scene_interactor);
+
+    render_item_begin(pos, size);
+    ImGui::SetCursorScreenPos(to_im(pos));
+
+    invalidate_bed_selection();
+    update_selection_from_scene();
+
+    selected_project_context().is_dragging = false;
+
+    m_inner_padding = Vec2f(GImGui->FontSize, 1.25f * GImGui->FontSize);
+
+    if (render_list(size)) {
+        // update selection on the scene
+        propagate_selection();
+    }
+    process_dragging_start();
+
+    render_item_end(pos, size);
 }
 
 // hendle selection from the tree nodes
@@ -394,72 +404,24 @@ void ObjectList::force_select_whole_object(const Slic3r::ModelObject* object)
 
 using namespace Imgui;
 
-void ObjectList::bold_text(const std::string& text)
-{
-    BoldFontGuard bfg(m_imgui_render);
-    ImGui::Text(text.c_str());
-}
-
-ObjectList::ObjectList() : Window("object_list") {
-    set_min_size({330.f, 0.f});
-}
-
 void ObjectList::init(Biz::ProjectInteractor *project_interactor, Mode mode)
 {
     m_project_interactor = project_interactor;
     m_mode = mode;
     m_project_contexts = std::make_unique<ProjectContexts>(*project_interactor);
-}
 
-void ObjectList::render_body(Yoga::Vec2f pos, Yoga::Vec2f size)
-{
-    auto& ctx = selected_project_context();
-    m_scene_interactor = &m_project_interactor->scene_interactor();
-    ctx.model            = &m_project_interactor->selected_project().model();
-    ASSERT(ctx.model && m_scene_interactor);
+    m_multi_selection_flags = ImGuiMultiSelectFlags_ScopeRect |
+        ImGuiMultiSelectFlags_ClearOnEscape |
+        ImGuiMultiSelectFlags_BoxSelect1d |
+        ImGuiMultiSelectFlags_SelectOnClick;
 
-    invalidate_bed_selection();
-    update_selection_from_scene();
-
-    setup_ui_state();
-    render_header(pos, size);
-
-    const float slised_info_height{ 120.f };
-
-    // Define a region for the tree/scene_map control
-    size.y() -= (ImGui::GetCursorScreenPos().y - pos.y()) + 
-                (m_mode == Mode::Preview ? slised_info_height : GImGui->Style.WindowRounding);
-
-    if (ctx.scene_map) {
-        render_scene_map(size);
-    }
-    else {
-        if (render_list(size)) {
-            // update selection on the scene
-            propagate_selection();
-        }
-        process_dragging_start();
-    }
-
-    render_sliced_info(slised_info_height);
-}
-
-void ObjectList::setup_ui_state()
-{
-    m_inner_padding = Vec2f(GImGui->FontSize, 1.25f * GImGui->FontSize);
-    m_multi_selection_flags =   ImGuiMultiSelectFlags_ScopeRect |
-                                ImGuiMultiSelectFlags_ClearOnEscape |
-                                ImGuiMultiSelectFlags_BoxSelect1d |
-                                ImGuiMultiSelectFlags_SelectOnClick;
-
-    m_node_flags =  ImGuiTreeNodeFlags_OpenOnArrow |
-                    ImGuiTreeNodeFlags_FramePadding |
-                    ImGuiTreeNodeFlags_SpanAllColumns;
+    m_node_flags = ImGuiTreeNodeFlags_OpenOnArrow |
+        ImGuiTreeNodeFlags_FramePadding |
+        ImGuiTreeNodeFlags_SpanAllColumns;
 
     m_table_flags = ImGuiTableFlags_NoBordersInBody |
-             //       ImGuiTableFlags_Borders | 
-                    ImGuiTableFlags_NoPadInnerX;
-    selected_project_context().is_dragging = false;
+//       ImGuiTableFlags_Borders | 
+        ImGuiTableFlags_NoPadInnerX;
 }
 
 void ObjectList::process_dragging_start()
@@ -528,34 +490,6 @@ bool ObjectList::render_list(Domain::Vec2f size)
     ImGui::EndChild();
 
     return is_changed_selection;
-}
-
-void ObjectList::render_header(Domain::Vec2f pos, Domain::Vec2f size)
-{
-    auto& ctx = selected_project_context();
-    ImGui::SetCursorPos(ImGui::GetCursorPos() + ImVec2(m_inner_padding.x(), m_inner_padding.y()));
-    bold_text(ctx.scene_map ? L("Scene map") : L("Objects"));
-
-    float btn_width = 2 * ImGui::GetFontSize();
-    float btn_pos = size.x() - pos.x() - btn_width;
-    ImGui::SameLine(btn_pos);
-
-    if (m_mode == Mode::Plater) {
-        toggle_icon_btn(Render::Icon::Details, &ctx.show_details, "details");
-        Imgui::item_tooltip("Show object details");
-
-        btn_pos -= pos.x() + btn_width;
-        ImGui::SameLine(btn_pos);
-        if (Imgui::icon_button(Render::Icon::AddBedIcon, ImVec2(), "add_bed")) {
-            // add bed
-            m_scene_interactor->add_bed_instance(m_project_interactor->selected_config_container().id().id);
-        }
-        Imgui::item_tooltip("Add bed");
-    }
-    else {
-        toggle_icon_btn(Render::Icon::SceneMap, &ctx.scene_map, "scene_map");
-        Imgui::item_tooltip("Show scene map");
-    }
 }
 
 bool ObjectList::tree_node(const char* str_id, ImGuiTreeNodeFlags flags, const std::string& label, bool add_overrides_marker/* = false*/)
@@ -1307,59 +1241,6 @@ void ObjectList::show_layer_ranges(const Domain::ElementRef& sel_element)
 void ObjectList::show_gizmo(const Domain::ElementRef& sel_element, Render::Icon gizmo_id)
 {
     // ToDo
-}
-
-void ObjectList::render_scene_map(Domain::Vec2f size)
-{
-    ImGui::BeginChild("SceneMap", { size.x(), size.y() }, ImGuiChildFlags_FrameStyle);
-
-    static bool isometric_view{ true };
-    toggle_button(L("Isometric view"), &isometric_view);
-
-    ImGui::EndChild();
-}
-
-void ObjectList::render_sliced_info(float height)
-{
-    if (m_mode != Mode::Preview)
-        return;
-
-    ImGui::PushStyleColor(ImGuiCol_FrameBg, ImGui::GetColorU32(ImGuiCol_ButtonHovered));
-    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(m_inner_padding.x(), m_inner_padding.y()));
-
-    ImGui::BeginChild("SlicedInfo", ImVec2(-FLT_MIN, height), ImGuiChildFlags_FrameStyle);
-
-    bold_text(L("Sliced Info"));
-
-    // ysFIXME delete after new layout apply!!!
-    // Temporary fix for the assert in Debug mode
-    if (GImGui->CurrentWindow && std::string(GImGui->CurrentWindow->Name) == "Debug##Default")
-        return;
-
-    ImGui::Dummy(ImVec2(0, 0.5f * m_inner_padding.y()));
-
-    ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(0.f, 5.f));
-    if (ImGui::BeginTable("##SlicedInfoTable", 2, m_table_flags, ImVec2())) {
-        ImGui::TableSetupColumn("##desriprion", ImGuiTableColumnFlags_WidthStretch, 0.45f);
-        ImGui::TableSetupColumn("##value", ImGuiTableColumnFlags_WidthStretch);
-
-        new_row();
-        bold_text(L("Used material"));
-        ImGui::TableNextColumn();
-        ImGui::Text(L("data in g, m, mm3").c_str());
-
-        new_row();
-        bold_text(L("Printing time"));
-        ImGui::TableNextColumn();
-        ImGui::Text(L("data").c_str());
-
-        ImGui::EndTable();
-    }
-
-    ImGui::PopStyleVar(2);
-    ImGui::PopStyleColor();
-
-    ImGui::EndChild();
 }
 
 ObjectList::ProjectContext& ObjectList::selected_project_context()

@@ -70,7 +70,7 @@ private:
     std::unique_ptr<PlaterRenderLayout> m_layout;
     // Layout objects
     Yoga::Passthrough<TopBar> m_top_bar;
-    Yoga::Passthrough<ObjectList> m_object_list;
+    Yoga::Passthrough<ObjectListWindow> m_object_list;
     Yoga::Passthrough<CubeView> m_cube_view;
     Yoga::Passthrough<SidebarBed> m_sidebar_bed;
     Yoga::Passthrough<SidebarPrint> m_sidebar_print;

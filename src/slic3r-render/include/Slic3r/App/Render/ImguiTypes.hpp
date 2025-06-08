@@ -141,6 +141,7 @@ enum class Icon : wchar_t
     MouseLeft,
     MouseRight,
     KeyShift,
+    Calculator,
 
     // icons for toolbar
     ToolbarObjects,

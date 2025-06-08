@@ -29,9 +29,9 @@ void Rectangle::render(Vec2f pos, Vec2f size)
         fill_color = m_fill;
     }
 
-    draw_list->AddRectFilled(rect.Min, rect.Max, fill_color, m_rounding);
+    draw_list->AddRectFilled(rect.Min, rect.Max, fill_color, m_rounding, m_flags);
     if (m_border_width > 0) {
-        draw_list->AddRect(rect.Min, rect.Max, m_border_color, m_rounding, 0, m_border_width);
+        draw_list->AddRect(rect.Min, rect.Max, m_border_color, m_rounding, m_flags, m_border_width);
     }
 
     render_item_end(pos, size);
@@ -52,6 +52,8 @@ void Rectangle::set_border_color(const ImColor& border_color) { m_border_color =
 void Rectangle::set_border_width(float border_width) { m_border_width = border_width; }
 
 void Rectangle::set_rounding(float rounding) { m_rounding = rounding; }
+
+void Rectangle::set_flags(ImDrawFlags flags) { m_flags = flags; }
 
 Vec2f Rectangle::get_item_size() { return {0, 0}; }
 

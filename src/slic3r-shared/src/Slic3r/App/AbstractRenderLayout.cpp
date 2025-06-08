@@ -198,7 +198,7 @@ void AbstractRenderLayout::init()
     m_layout_main_bottom = m_layout_main.emplace_back<Item>();
     m_layout_main_bottom->set_gap(5);
     m_layout_main_bottom->set_orientation(Orientation::Horizontal);
-    m_layout_main_bottom->set_padding(Paddings(frame_padding()));
+    m_layout_main_bottom->set_padding(Paddings(5.f, 5.f));
     m_layout_main_bottom->set_flex_grow(1.0);
 
     init_left_column();
@@ -387,7 +387,7 @@ private:
 
 AbstractRenderLayout::AbstractRenderLayout(
     std::unique_ptr<TopBar> top_bar,
-    std::unique_ptr<ObjectList> object_list,
+    std::unique_ptr<ObjectListWindow> object_list,
     std::unique_ptr<CubeView> cube_view,
     std::unique_ptr<SidebarBed> sidebar_bed,
     std::unique_ptr<SidebarPrint> sidebar_print

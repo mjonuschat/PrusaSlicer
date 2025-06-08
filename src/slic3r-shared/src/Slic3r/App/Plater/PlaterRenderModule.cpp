@@ -26,7 +26,6 @@
 
 #include "Slic3r/App/Plater/History.hpp"
 #include "Slic3r/App/CubeView.hpp"
-#include "Slic3r/App/ObjectList.hpp"
 #include "Slic3r/App/SidebarBed.hpp"
 #include "Slic3r/App/SidebarPrint.hpp"
 #include "Slic3r/App/SidebarActionButtons.hpp"
@@ -97,8 +96,7 @@ void PlaterRenderModule::init_scene_layout()
     // >> This code is same for Plater/PreviewRenderModule
     m_top_bar = std::make_unique<TopBar>(&m_project_interactor, this);
 
-    m_object_list = Passthrough(std::make_unique<ObjectList>());
-    m_object_list->init(&m_project_interactor, ObjectList::Mode::Plater);
+    m_object_list = Passthrough(std::make_unique<ObjectListWindow>(&m_project_interactor, true));
 
     m_cube_view = Passthrough{std::make_unique<CubeView>()};
     m_sidebar_bed = Passthrough(std::make_unique<SidebarBed>());
