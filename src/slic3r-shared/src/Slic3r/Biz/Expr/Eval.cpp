@@ -25,7 +25,7 @@ struct ValuePrinter : boost::static_visitor<std::ostream&>
         return os;
     }
 
-    std::ostream& operator()(float val)
+    std::ostream& operator()(double val)
     {
         os << val;
         return os;
@@ -77,7 +77,7 @@ struct Evaluator : boost::static_visitor<Value>
 
     Value operator()(const std::string& v) const { return v; }
     Value operator()(const RegEx& v) const { return v; }
-    Value operator()(float v) const { return v; }
+    Value operator()(double v) const { return v; }
     Value operator()(bool v) const { return v; }
     Value operator()(const Binary& v) const
     {
@@ -93,13 +93,13 @@ struct Evaluator : boost::static_visitor<Value>
         switch (v.op)
         {
         case BinaryOp::Add:
-            return safe_get<float>(lhs, "+") + safe_get<float>(eval_rhs(), "+");
+            return safe_get<double>(lhs, "+") + safe_get<double>(eval_rhs(), "+");
         case BinaryOp::Subtract:
-            return safe_get<float>(lhs, "-") - safe_get<float>(eval_rhs(), "-");
+            return safe_get<double>(lhs, "-") - safe_get<double>(eval_rhs(), "-");
         case BinaryOp::Multiply:
-            return safe_get<float>(lhs, "*") * safe_get<float>(eval_rhs(), "*");
+            return safe_get<double>(lhs, "*") * safe_get<double>(eval_rhs(), "*");
         case BinaryOp::Divide:
-            return safe_get<float>(lhs, "/") / safe_get<float>(eval_rhs(), "/");
+            return safe_get<double>(lhs, "/") / safe_get<double>(eval_rhs(), "/");
 
         case BinaryOp::Eq:
             return lhs == eval_rhs();
@@ -135,7 +135,7 @@ struct Evaluator : boost::static_visitor<Value>
         case UnaryOp::Plus:
             return expr;
         case UnaryOp::Minus:
-            return -safe_get<float>(expr, "unary -");
+            return -safe_get<double>(expr, "unary -");
         }
 
         UNREACHABLE("Unknown unary op");

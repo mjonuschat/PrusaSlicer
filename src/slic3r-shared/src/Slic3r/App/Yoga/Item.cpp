@@ -129,6 +129,8 @@ static std::string yoga_justify_to_string(YGJustify justify)
 
 Render::ImguiRender* Slic3r::App::Yoga::Item::m_imgui_render = nullptr;
 
+std::unordered_map<std::string, int> Item::m_item_names = {};
+
 Item::Item()
 {
     m_node = YGNodeNew();
@@ -287,6 +289,8 @@ void Item::set_right(float right) { YGNodeStyleSetPosition(m_node, YGEdgeRight, 
 void Item::set_top(float top) { YGNodeStyleSetPosition(m_node, YGEdgeTop, top); }
 
 void Item::set_bottom(float bottom) { YGNodeStyleSetPosition(m_node, YGEdgeBottom, bottom); }
+
+void Item::set_flex(float flex) { YGNodeStyleSetFlex(m_node, flex); }
 
 std::vector<Item*> Item::items() const
 {
@@ -625,7 +629,29 @@ void Item::set_z(float z)
 
 const std::string& Item::item_name() const { return m_item_name; }
 
-void Item::set_item_name(const std::string& item_name) { m_item_name = item_name; }
+void Item::set_item_name(const std::string& item_name)
+{
+    ASSERT(item_name.find('_'), "Yoga::Item name cannot contain underscore '_'");
+
+    // Get item name without increment
+    std::string old_name = m_item_name.substr(0, m_item_name.find('_'));
+    if (item_name == old_name) {
+        return;
+    }
+
+    // decrement old name map
+    if (!old_name.empty()) {
+        DEBUG_ASSERT(m_item_names.contains(old_name) && m_item_names.at(old_name) > 0);
+        m_item_names[old_name]--;
+    }
+
+    if (m_item_names.contains(item_name)) {
+        m_item_name = item_name + "_" + std::to_string(++m_item_names[item_name]);
+    } else {
+        m_item_name = item_name;
+        m_item_names.insert({item_name, 1});
+    }
+}
 
 void Item::set_style_dirty()
 {

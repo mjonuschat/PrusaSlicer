@@ -45,7 +45,7 @@ TEST_CASE("PresetLoader preset-filament-common.yaml")
 
     auto fcfs_it = pla_v0.values.find("filament_cooling_final_speed");
     REQUIRE((fcfs_it != pla_v0.values.end()));
-    REQUIRE(std::holds_alternative<float>(fcfs_it->second));
+    REQUIRE(std::holds_alternative<double>(fcfs_it->second));
 
     auto sfg_it = pla_v0.values.find("start_filament_gcode");
     REQUIRE(sfg_it != pla_v0.values.end());

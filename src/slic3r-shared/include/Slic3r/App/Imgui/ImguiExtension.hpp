@@ -21,6 +21,17 @@ static constexpr float DEFAULT_WINDOW_BG_ALPHA = 0.8f;
 static constexpr ImVec4 ORANGE_BUTTON_COLOR { 0.99f, 0.41f, 0.2f , 1.0f };
 static constexpr ImVec4 BLUE_BUTTON_COLOR   { 0.32f, 0.48f, 0.84f, 1.0f };
 
+class ScopedStyleColors {
+public:
+    ScopedStyleColors(std::initializer_list<std::pair<ImGuiCol, ImColor>> initializer_list);
+    ~ScopedStyleColors();
+    ScopedStyleColors(const ScopedStyleColors& rhs) = delete;
+    ScopedStyleColors& operator=(const ScopedStyleColors& rhs) = delete;
+
+private:
+    int m_count = 0;
+};
+
 class UnifiedWindowStyle
 {
 public:

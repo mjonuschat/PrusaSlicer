@@ -241,7 +241,7 @@ void AbstractRenderLayout::init_right_column()
     m_layout_right_column = m_layout_main_bottom->emplace_back<Item>();
     m_layout_right_column->set_orientation(Orientation::Vertical);
     m_layout_right_column->set_gap(5);
-    m_layout_right_column->set_min_size({280.f, 0});
+    m_layout_right_column->set_width(280);
 
     m_layout_right_column->append(m_sidebar_bed.release());
 

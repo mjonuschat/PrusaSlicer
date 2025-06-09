@@ -10,23 +10,12 @@
 
 namespace Slic3r::App::Yoga {
 
-std::unordered_map<std::string, int> Window::window_names = {};
-
 Window::Window(const std::string& window_name) : Item()
 , m_alpha(GImGui->Style.Alpha)
 {
-    if (window_names.contains(window_name)) {
-        m_window_name = window_name + " " + std::to_string(++window_names[window_name]);
-    } else {
-        m_window_name = window_name;
-        window_names.insert({window_name, 1});
-    }
+    set_item_name(window_name);
     set_padding(10);
 }
-
-const std::string& Window::window_name() const { return m_window_name; }
-
-void Window::set_window_name(const std::string& prefix) { m_window_name = prefix; }
 
 float Window::rounding() const { return m_rounding; }
 
@@ -62,7 +51,7 @@ void Window::render(Vec2f pos, Vec2f size)
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, m_rounding);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(0.f, 0.f));
 
-    ImGui::Begin(m_window_name.c_str(), nullptr, m_flags);
+    ImGui::Begin(m_item_name.c_str(), nullptr, m_flags);
 
     render_body(pos, size);
 

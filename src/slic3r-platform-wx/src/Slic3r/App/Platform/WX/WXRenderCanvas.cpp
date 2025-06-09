@@ -783,6 +783,9 @@ void WXRenderCanvas::on_mouse_leave(wxMouseEvent& event)
 
 void WXRenderCanvas::on_mouse(wxMouseEvent& evt)
 {
+    // Dirty hack, which will shift focus onto ImGui and let it pass keyboard events
+    SetFocus();
+
     ImGuiIO& io = ImGui::GetIO();
     int mouse_x = ToDIP(evt.GetX());
     int mouse_y = ToDIP(evt.GetY());

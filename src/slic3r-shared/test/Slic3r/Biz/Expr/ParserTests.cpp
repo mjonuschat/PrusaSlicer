@@ -14,7 +14,7 @@ TEST_CASE("Parser tests")
     SECTION("constants")
     {
         expr = parser.parse("3.0");
-        REQUIRE(boost::get<float>(expr) == 3.0f);
+        REQUIRE(boost::get<double>(expr) == 3.0f);
         expr = parser.parse("\"3.0\"");
         REQUIRE(boost::get<std::string>(expr) == "3.0");
         expr = parser.parse(R"("\"hello\"")");
@@ -39,22 +39,22 @@ TEST_CASE("Parser tests")
         {
             const Binary root = boost::get<Binary>(expr);
             REQUIRE(root.op == BinaryOp::Add);
-            REQUIRE(boost::get<float>(root.left) == 2);
+            REQUIRE(boost::get<double>(root.left) == 2);
             const Binary node = boost::get<Binary>(root.right);
             REQUIRE(node.op == BinaryOp::Multiply);
-            REQUIRE(boost::get<float>(node.left) == 3);
-            REQUIRE(boost::get<float>(node.right) == 4);
+            REQUIRE(boost::get<double>(node.left) == 3);
+            REQUIRE(boost::get<double>(node.right) == 4);
         }
 
         expr = parser.parse("2 / 3 - 4");
         {
             const Binary root = boost::get<Binary>(expr);
             REQUIRE(root.op == BinaryOp::Subtract);
-            REQUIRE(boost::get<float>(root.right) == 4);
+            REQUIRE(boost::get<double>(root.right) == 4);
             const Binary node = boost::get<Binary>(root.left);
             REQUIRE(node.op == BinaryOp::Divide);
-            REQUIRE(boost::get<float>(node.left) == 2);
-            REQUIRE(boost::get<float>(node.right) == 3);
+            REQUIRE(boost::get<double>(node.left) == 2);
+            REQUIRE(boost::get<double>(node.right) == 3);
         }
     }
 
@@ -65,7 +65,7 @@ TEST_CASE("Parser tests")
             const FuncCall root = boost::get<FuncCall>(expr);
             REQUIRE(root.name == "func");
             REQUIRE(root.args.size() == 3);
-            REQUIRE(boost::get<float>(root.args[0]) == 1.0f);
+            REQUIRE(boost::get<double>(root.args[0]) == 1.0f);
             REQUIRE(boost::get<std::string>(root.args[1]) == "a");
             REQUIRE(boost::get<bool>(root.args[2]) == false);
         }
@@ -77,7 +77,7 @@ TEST_CASE("Parser tests")
         {
             const Unary root = boost::get<Unary>(expr);
             REQUIRE(root.op == UnaryOp::Plus);
-            REQUIRE(boost::get<float>(root.expr) == 3);
+            REQUIRE(boost::get<double>(root.expr) == 3);
         }
 
         for (std::string_view source : {"not true", "!true"}) {
@@ -163,12 +163,12 @@ TEST_CASE("Parser tests")
                 REQUIRE(boost::get<VarRef>(root.left).name == "val");
                 const auto node1 = boost::get<Binary>(root.right);
                 REQUIRE(node1.op == BinaryOp::Add);
-                REQUIRE(boost::get<float>(node1.left) == 3);
+                REQUIRE(boost::get<double>(node1.left) == 3);
                 const auto node2 = boost::get<FuncCall>(node1.right);
                 REQUIRE(node2.name == "sum");
                 REQUIRE(node2.args.size() == 2);
                 REQUIRE(boost::get<VarRef>(node2.args[0]).name == "x");
-                REQUIRE(boost::get<float>(node2.args[1]) == 4);
+                REQUIRE(boost::get<double>(node2.args[1]) == 4);
             }
         }
 
@@ -183,7 +183,7 @@ TEST_CASE("Parser tests")
             const auto node_left_left = boost::get<Binary>(node_left.left);
             REQUIRE(node_left_left.op == BinaryOp::Add);
             REQUIRE(boost::get<VarRef>(node_left_left.left).name == "a");
-            REQUIRE(boost::get<float>(node_left_left.right) == 3);
+            REQUIRE(boost::get<double>(node_left_left.right) == 3);
 
             REQUIRE(boost::get<VarRef>(node_left.right).name == "val");
 
@@ -193,7 +193,7 @@ TEST_CASE("Parser tests")
             const auto node_right_right = boost::get<Binary>(node_right.right);
             REQUIRE(node_right_right.op == BinaryOp::Multiply);
             REQUIRE(boost::get<VarRef>(node_right_right.left).name == "b");
-            REQUIRE(boost::get<float>(node_right_right.right) == 6);
+            REQUIRE(boost::get<double>(node_right_right.right) == 6);
         }
 
         for (std::string_view source : {"not a or b", "! a || b"}) {

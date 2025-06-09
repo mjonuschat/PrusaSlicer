@@ -61,10 +61,10 @@ features:
         REQUIRE(p.id == "*common*");
         REQUIRE(p.conditions.empty() == true);
         REQUIRE(p.values.size() == 3);
-        REQUIRE(std::get<float>(p.values.find("a")->second) == 1);
+        REQUIRE(std::get<double>(p.values.find("a")->second) == 1);
         REQUIRE(std::get<std::string>(p.values.find("b")->second) == "x");
         REQUIRE(std::get<bool>(p.values.find("c")->second) == true);
-        REQUIRE(std::get<float>(p.features.find("f1")->second) == 321);
+        REQUIRE(std::get<double>(p.features.find("f1")->second) == 321);
     }
 
     SECTION("simple variants")
@@ -107,12 +107,12 @@ variants:
             const auto& p = evals.front();
             REQUIRE(p.id == "*common*");
             REQUIRE(p.conditions.size() == expected_condition_count);
-            REQUIRE(std::get<float>(p.values.find("a")->second) == 1);
+            REQUIRE(std::get<double>(p.values.find("a")->second) == 1);
             REQUIRE(std::get<std::string>(p.values.find("b")->second) == "x");
             REQUIRE(std::get<bool>(p.values.find("c")->second) == expected_c_value);
-            REQUIRE(std::get<float>(p.values.find("d")->second) == expected_d_value);
-            REQUIRE(std::get<float>(p.features.find("f1")->second) == 1);
-            REQUIRE(std::get<float>(p.features.find("f2")->second) == expected_d_value);
+            REQUIRE(std::get<double>(p.values.find("d")->second) == expected_d_value);
+            REQUIRE(std::get<double>(p.features.find("f1")->second) == 1);
+            REQUIRE(std::get<double>(p.features.find("f2")->second) == expected_d_value);
         }
     }
 
@@ -152,10 +152,10 @@ variants:
             REQUIRE(p.id == "*common*");
             REQUIRE(p.name == expected_name);
             REQUIRE(p.conditions.empty() == true);
-            REQUIRE(std::get<float>(p.values.find("a")->second) == 1);
+            REQUIRE(std::get<double>(p.values.find("a")->second) == 1);
             REQUIRE(std::get<std::string>(p.values.find("b")->second) == "x");
             REQUIRE(std::get<bool>(p.values.find("c")->second) == expected_c_value);
-            REQUIRE(std::get<float>(p.values.find("d")->second) == expected_d_value);
+            REQUIRE(std::get<double>(p.values.find("d")->second) == expected_d_value);
         }
     }
 
@@ -202,12 +202,12 @@ features:
         REQUIRE(p.id == "Printer");
         REQUIRE(p.conditions.empty() == true);
         REQUIRE(p.values.size() == 4);
-        REQUIRE(std::get<float>(p.values.find("a")->second) == 1);
+        REQUIRE(std::get<double>(p.values.find("a")->second) == 1);
         REQUIRE(std::get<std::string>(p.values.find("b")->second) == "x");
         REQUIRE(std::get<bool>(p.values.find("c")->second) == false);
         REQUIRE(std::get<std::string>(p.values.find("d")->second) == "y");
-        REQUIRE(std::get<float>(p.features.find("f1")->second) == 1);
-        REQUIRE(std::get<float>(p.features.find("f2")->second) == 2);
+        REQUIRE(std::get<double>(p.features.find("f1")->second) == 1);
+        REQUIRE(std::get<double>(p.features.find("f2")->second) == 2);
     }
 
     SECTION("simple inherits product")
@@ -276,15 +276,15 @@ variants:
             REQUIRE(p.id == "Printer");
             REQUIRE(p.conditions.empty() == true);
             REQUIRE(p.values.size() == 6);
-            REQUIRE(std::get<float>(p.values.find("a")->second) == 1);
+            REQUIRE(std::get<double>(p.values.find("a")->second) == 1);
             REQUIRE(std::get<std::string>(p.values.find("b")->second) == "x");
             REQUIRE(std::get<bool>(p.values.find("c")->second) == false);
-            REQUIRE(std::get<float>(p.values.find("d")->second) == expected_d);
-            REQUIRE(std::get<float>(p.values.find("e")->second) == 42);
-            REQUIRE(std::get<float>(p.values.find("f")->second) == expected_f);
+            REQUIRE(std::get<double>(p.values.find("d")->second) == expected_d);
+            REQUIRE(std::get<double>(p.values.find("e")->second) == 42);
+            REQUIRE(std::get<double>(p.values.find("f")->second) == expected_f);
 
-            REQUIRE(std::get<float>(p.features.find("f1")->second) == expected_d);
-            REQUIRE(std::get<float>(p.features.find("f2")->second) == expected_f);
+            REQUIRE(std::get<double>(p.features.find("f1")->second) == expected_d);
+            REQUIRE(std::get<double>(p.features.find("f2")->second) == expected_f);
         }
     }
 
@@ -346,14 +346,14 @@ values:
             REQUIRE(p.id == "Printer");
             REQUIRE(p.conditions.size() == 0);
             REQUIRE(p.values.size() == 5);
-            REQUIRE(std::get<float>(p.values.find("a")->second) == 1);
+            REQUIRE(std::get<double>(p.values.find("a")->second) == 1);
             REQUIRE(std::get<std::string>(p.values.find("b")->second) == "x");
             REQUIRE(std::get<bool>(p.values.find("c")->second) == false);
-            REQUIRE(std::get<float>(p.values.find("d")->second) == expected_d);
-            REQUIRE(std::get<float>(p.values.find("e")->second) == 42);
+            REQUIRE(std::get<double>(p.values.find("d")->second) == expected_d);
+            REQUIRE(std::get<double>(p.values.find("e")->second) == 42);
 
-            REQUIRE(std::get<float>(p.features.find("f1")->second) == 1);
-            REQUIRE(std::get<float>(p.features.find("f2")->second) == expected_d);
+            REQUIRE(std::get<double>(p.features.find("f1")->second) == 1);
+            REQUIRE(std::get<double>(p.features.find("f2")->second) == expected_d);
         }
     }
     SECTION("product inherits")
@@ -433,16 +433,16 @@ features:
             REQUIRE(p.id == name);
             REQUIRE(p.conditions.size() == 0);
             REQUIRE(p.values.size() == 6);
-            REQUIRE(std::get<float>(p.values.find("a")->second) == 2);
+            REQUIRE(std::get<double>(p.values.find("a")->second) == 2);
             REQUIRE(std::get<std::string>(p.values.find("b")->second) == "x");
             REQUIRE(std::get<bool>(p.values.find("c")->second) == false);
-            REQUIRE(std::get<float>(p.values.find("d")->second) == expected_d);
-            REQUIRE(std::get<float>(p.values.find("e")->second) == 42);
-            REQUIRE(std::get<float>(p.values.find("f")->second) == expected_f);
+            REQUIRE(std::get<double>(p.values.find("d")->second) == expected_d);
+            REQUIRE(std::get<double>(p.values.find("e")->second) == 42);
+            REQUIRE(std::get<double>(p.values.find("f")->second) == expected_f);
 
-            REQUIRE(std::get<float>(p.features.find("f1")->second) == expected_d);
-            REQUIRE(std::get<float>(p.features.find("f2")->second) == expected_f);
-            REQUIRE(std::get<float>(p.features.find("f3")->second) == 2);
+            REQUIRE(std::get<double>(p.features.find("f1")->second) == expected_d);
+            REQUIRE(std::get<double>(p.features.find("f2")->second) == expected_f);
+            REQUIRE(std::get<double>(p.features.find("f3")->second) == 2);
         }
     }
 }

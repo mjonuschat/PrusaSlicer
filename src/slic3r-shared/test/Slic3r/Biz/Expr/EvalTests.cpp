@@ -24,9 +24,9 @@ TEST_CASE("Expression eval")
     SECTION("Arithmetic ops")
     {
         v = eval("2 + 3 * 4");
-        REQUIRE(boost::get<float>(v) == 14);
+        REQUIRE(boost::get<double>(v) == 14);
         v = eval("2 - 3 / 4");
-        REQUIRE(boost::get<float>(v) == 1.25f);
+        REQUIRE(boost::get<double>(v) == 1.25f);
     }
 
     e.set_var("number", "321321890");
@@ -92,13 +92,13 @@ TEST_CASE("Expression eval")
         REQUIRE(boost::get<bool>(v) == false);
     }
 
-    std::function min = [](float x, float y) -> float { return std::min(x, y); };
+    std::function min = [](double x, double y) -> double { return std::min(x, y); };
     e.reg_function("min", min);
 
     SECTION("Function call")
     {
         v = eval("min(42, 10)");
-        REQUIRE(boost::get<float>(v) == 10);
+        REQUIRE(boost::get<double>(v) == 10);
         v = eval("min(42, 10) == 10");
         REQUIRE(boost::get<bool>(v) == true);
     }

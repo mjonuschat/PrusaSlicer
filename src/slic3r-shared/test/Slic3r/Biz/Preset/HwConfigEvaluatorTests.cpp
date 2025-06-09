@@ -74,7 +74,7 @@ TEST_CASE("HwConfigEvaluator")
         REQUIRE(printer_config.printer_id == "MK4S");
         REQUIRE(printer_config.tools.size() == 1);
         REQUIRE(printer_config.tools[0].id == "0.4");
-        REQUIRE(std::get<float>(printer_config.tools[0].features["nozzle_diameter"]) == 0.4f);
+        REQUIRE(std::get<double>(printer_config.tools[0].features["nozzle_diameter"]) == 0.4);
         REQUIRE(std::get<bool>(printer_config.tools[0].features["nozzle_high_flow"]) == false);
         REQUIRE(printer_config.feeders.size() == 1);
         REQUIRE(printer_config.feeders[Slic3r::Domain::Preset::Address{0}].id == "MMU3S @ MK4");

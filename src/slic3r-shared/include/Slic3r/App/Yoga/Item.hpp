@@ -130,6 +130,7 @@ public:
     void set_right(float right);
     void set_top(float top);
     void set_bottom(float bottom);
+    void set_flex(float flex);
     /**
      * @note z layer only works between siblings
      */
@@ -187,6 +188,8 @@ protected:
     // I will burn in hell for this
     static Render::ImguiRender* m_imgui_render;
 
+    static std::unordered_map<std::string, int> m_item_names;
+
     Vec2f m_min_size = {};
     Vec2f m_max_size = {YGUndefined, YGUndefined};
     Item* m_parent = nullptr;
@@ -203,7 +206,7 @@ protected:
     Margins m_margin;
     Paddings m_padding;
     float m_flex_grow = 0;
-    float m_flex_shrink = 0;
+    float m_flex_shrink = 1;
     float m_aspect_ratio = YGUndefined;
     float m_gap = 0;
     YGPositionType m_position_type = YGPositionType::YGPositionTypeRelative;

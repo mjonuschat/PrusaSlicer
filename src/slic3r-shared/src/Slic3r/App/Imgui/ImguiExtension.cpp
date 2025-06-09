@@ -591,4 +591,17 @@ void colored_circle_marker_aligned(float align_x, const std::string& label_str, 
     IMGUI_TEST_ENGINE_ITEM_INFO(id, label, g.LastItemData.StatusFlags);
 }
 
+ScopedStyleColors::ScopedStyleColors(std::initializer_list<std::pair<ImGuiCol, ImColor> > initializer_list)
+{
+    for(const std::pair<ImGuiCol, ImColor>& color_pair : initializer_list ) {
+        ImGui::PushStyleColor(color_pair.first, color_pair.second.Value);
+    }
+    m_count = initializer_list.size();
+}
+
+ScopedStyleColors::~ScopedStyleColors()
+{
+    ImGui::PopStyleColor(m_count);
+}
+
 } // namespace Slic3r::App::Imgui

@@ -79,8 +79,8 @@ TEST_CASE("MaterialIterator")
 
             REQUIRE(it.address() == Address{0,  i});
             REQUIRE(it.feeder_count() == 1);
-            REQUIRE(std::get<float>(it.tool_config().features.find("x")->second) == 1.0f);
-            REQUIRE(std::get<float>(it.feeder_config(0).features.find("x")->second) == 2.0f);
+            REQUIRE(std::get<double>(it.tool_config().features.find("x")->second) == 1.0f);
+            REQUIRE(std::get<double>(it.feeder_config(0).features.find("x")->second) == 2.0f);
 
             ++it;
         }

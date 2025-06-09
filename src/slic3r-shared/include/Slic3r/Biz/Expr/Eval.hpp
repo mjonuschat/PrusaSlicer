@@ -12,7 +12,7 @@
 
 namespace Slic3r::Biz::Expr {
 
-using Value = boost::variant<bool, float, std::string, Domain::Expr::RegEx>;
+using Value = boost::variant<bool, double, std::string, Domain::Expr::RegEx>;
 using ValueList = std::vector<Value>;
 using Func = std::function<Value(const ValueList&)>;
 using ValueMap = std::map<std::string, Value>;

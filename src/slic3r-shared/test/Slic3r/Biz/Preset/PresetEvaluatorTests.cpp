@@ -43,7 +43,7 @@ TEST_CASE("Preset Evaluator")
 
     auto printer_preset = eval.evaluate(hw_config);
     REQUIRE(printer_preset.preset.values.empty() == false);
-    REQUIRE(std::get<float>(printer_preset.preset.values["single_extruder_multi_material"]) == 0);
+    REQUIRE(std::get<double>(printer_preset.preset.values["single_extruder_multi_material"]) == 0);
 
     REQUIRE(printer_preset.prints.empty() == false);
 

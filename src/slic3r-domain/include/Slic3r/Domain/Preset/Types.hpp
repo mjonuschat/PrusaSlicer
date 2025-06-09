@@ -35,17 +35,17 @@ inline PresetKind tool_print_kind(PrinterTechnology technology)
 inline PresetKind material_kind(PrinterTechnology technology)
 { return technology == PrinterTechnology::FFF ? PresetKind::FdmMaterial : PresetKind::SlaMaterial; }
 
-using FeatureValue = std::variant<bool, float, std::string>;
+using FeatureValue = std::variant<bool, double, std::string>;
 using FeatureValueMap = std::map<std::string, FeatureValue>;
 
 using Bools = std::vector<bool>;
 using Strings = std::vector<std::string>;
-using Floats = std::vector<float>;
+using Floats = std::vector<double>;
 
 using PresetValue = std::variant<
     std::monostate,
     Bools, Floats, Vec2ds, Strings,
-    bool, float, Vec2d, std::string
+    bool, double, Vec2d, std::string
 >;
 using PresetValueMap = std::map<std::string, PresetValue>;
 

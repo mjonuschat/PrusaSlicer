@@ -6,17 +6,12 @@
 
 #include "Slic3r/App/Yoga/Item.hpp"
 
-#include <unordered_map>
-
 namespace Slic3r::App::Yoga {
 
 class Window : public Item
 {
 public:
-    Window(const std::string& name);
-
-    const std::string& window_name() const;
-    void set_window_name(const std::string& prefix);
+    explicit Window(const std::string& name);
 
     float rounding() const;
     void set_rounding(float rounding);
@@ -38,9 +33,6 @@ protected:
     Vec2f get_item_size() override;
 
 private:
-    std::string m_window_name;
-
-    static std::unordered_map<std::string, int> window_names;
 
     int m_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove |
         ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoFocusOnAppearing;

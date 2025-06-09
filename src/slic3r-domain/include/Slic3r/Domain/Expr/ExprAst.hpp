@@ -21,7 +21,7 @@ struct VarRef;
 
 using ExprAst = boost::variant<
     bool,
-    float,
+    double,
     std::string,
     RegEx,
     boost::recursive_wrapper<Binary>,
