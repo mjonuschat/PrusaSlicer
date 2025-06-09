@@ -33,6 +33,7 @@
 #include "Slic3r/App/Plater/PlaceOnFaceGizmo.hpp"
 #include "Slic3r/App/Plater/SimplifyGizmo.hpp"
 #include "Slic3r/App/Plater/SimplifyNotification.hpp"
+#include "Slic3r/App/Plater/TextGizmo.hpp"
 #include "Slic3r/App/Plater/PaintOnSupportsGizmo.hpp"
 #include "Slic3r/App/Plater/PaintOnSupportsDialog.hpp"
 #include "Slic3r/App/Plater/PaintOnSeamsGizmo.hpp"
@@ -561,6 +562,11 @@ void PlaterRenderModule::init_scene_layout()
         m_simplify_gizmo
     );
 
+    m_toolbar_text = m_layout->add_toolbar_item_gizmo(
+        ToolbarID::Middle, Render::Icon::ToolbarEllipsis, "Text", "T",
+        {.action = [this]() { toggle_activate_tool(Scene::ToolType::Text); }}, 
+        m_text_gizmo
+    );
     m_toolbar_paint_on_supports = m_layout->add_toolbar_item_gizmo(
         ToolbarID::Middle,
         Render::Icon::PaintSupports,

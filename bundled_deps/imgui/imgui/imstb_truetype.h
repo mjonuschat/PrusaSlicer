@@ -943,6 +943,18 @@ STBTT_DEF void stbtt_Rasterize(stbtt__bitmap *result,        // 1-channel bitmap
                                int invert,                   // if non-zero, vertically flip shape
                                void *userdata);              // context for to STBTT_MALLOC
 
+// add to be public function because of Text Emboss
+typedef struct{
+    float x, y;
+} stbtt__point;
+STBTT_DEF stbtt__point* stbtt_FlattenCurves(
+    stbtt_vertex* vertices,
+    int num_verts,
+    float objspace_flatness,
+    int** contour_lengths,
+    int* num_contours,
+    void* userdata);
+
 //////////////////////////////////////////////////////////////////////////////
 //
 // Signed Distance Function (or Field) rendering
@@ -3496,11 +3508,6 @@ static void stbtt__sort_edges(stbtt__edge *p, int n)
    stbtt__sort_edges_ins_sort(p, n);
 }
 
-typedef struct
-{
-   float x,y;
-} stbtt__point;
-
 static void stbtt__rasterize(stbtt__bitmap *result, stbtt__point *pts, int *wcount, int windings, float scale_x, float scale_y, float shift_x, float shift_y, int off_x, int off_y, int invert, void *userdata)
 {
    float y_scale_inv = invert ? -scale_y : scale_y;
@@ -3629,7 +3636,7 @@ static void stbtt__tesselate_cubic(stbtt__point *points, int *num_points, float 
 }
 
 // returns number of contours
-static stbtt__point *stbtt_FlattenCurves(stbtt_vertex *vertices, int num_verts, float objspace_flatness, int **contour_lengths, int *num_contours, void *userdata)
+STBTT_DEF stbtt__point *stbtt_FlattenCurves(stbtt_vertex *vertices, int num_verts, float objspace_flatness, int **contour_lengths, int *num_contours, void *userdata)
 {
    stbtt__point *points=0;
    int num_points=0;

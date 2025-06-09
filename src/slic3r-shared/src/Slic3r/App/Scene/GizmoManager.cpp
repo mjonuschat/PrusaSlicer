@@ -1,6 +1,7 @@
 #include "Slic3r/App/Scene/GizmoManager.hpp"
 
 #include "Slic3r/App/Render/ScopedDebugGroup.hpp"
+#include "Slic3r/App/Plater/TextGizmo.hpp"
 #include "Slic3r/App/Plater/SimplifyGizmo.hpp"
 #include "Slic3r/App/Scene/BedNodeTag.hpp"
 #include "Slic3r/App/Scene/SceneNodeTag.hpp"
@@ -228,11 +229,21 @@ void GizmoManager::render_scene(Render::CommandBuffer& cmd_buffer)
     //m_scene_provider.scene().log_nodes();
 }
 
+// TODO: remove this when gizmo rendering will be fully implemented
 void GizmoManager::render_imgui() {
+    if (current_tool_type() == ToolType::Simplify) {        
+        if (auto simplify_gizmo = dynamic_cast<Plater::SimplifyGizmo*>(current_context().active_tool);
+            simplify_gizmo!=nullptr) 
+            simplify_gizmo->render_imgui();
+    } else if (current_tool_type() == ToolType::Text) {
+        if (auto* text_gizmo = dynamic_cast<Plater::TextGizmo*>(current_context().active_tool);
+            text_gizmo != nullptr)
+            text_gizmo->render_imgui();
+    }
 #if MEASURE_GIZMO_DEBUG
     if (current_tool_type() == ToolType::MeasureGizmo) {
         auto measure_gizmo = dynamic_cast<Slic3r::App::Plater::MeasureGizmo*>(current_context().active_tool);
-        if (measure_gizmo!=nullptr)
+        if (measure_gizmo != nullptr)
             measure_gizmo->render_imgui();
     }
 #endif // MEASURE_GIZMO_DEBUG

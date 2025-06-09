@@ -9,11 +9,58 @@
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 
 using namespace Slic3r::App::Yoga;
+#include <boost/nowide/convert.hpp>
+
+#include <Slic3r/Domain/TriangleMesh.hpp>
+#include <Slic3r/Biz/Algorithms/TriangleMesh.hpp>
+#include <Slic3r/Biz/Emboss/Emboss.hpp> // also copy in libslic3r for SurfaceCut
+
+namespace {
+using namespace Slic3r;
+using namespace Slic3r::Biz::Emboss;
+
+Domain::TriangleMesh create_mesh() {
+
+    std::string font_path = Slic3r::resources_dir() + "/fonts/NotoSans-Regular.ttf";
+    std::unique_ptr<FontFile> font_ptr = create_font_file(font_path.c_str());
+    FontFileWithCache font_with_cache(std::move(font_ptr));
+    std::wstring text = boost::nowide::widen("Emboss text");
+    const Domain::FontProp font_prop; // default font properties
+    Domain::EmbossShape emboss_shape {
+        .shapes_with_ids = text2vshapes(font_with_cache, text, font_prop)};
+
+    auto projectZ = std::make_unique<ProjectZ>(409600);
+    Transform3d tr = Eigen::Translation<double, 3>(0., 0., 1.) * Eigen::Scaling(4.8828125e-06);
+    ProjectTransform project(std::move(projectZ), tr);
+    ExPolygons text_shape = union_with_delta(emboss_shape, UNION_DELTA, UNION_MAX_ITERATIN);
+    indexed_triangle_set its = polygons2model(text_shape, project);
+    return Biz::Algorithms::TriangleMesh::construct(its);
+}
+
+void create_object(Biz::ProjectInteractor& project_interactor)
+{
+    auto& scene_interactor = project_interactor.scene_interactor();
+    const auto& bed = project_interactor.selected_project().config_containers().front()->bed();
+    scene_interactor.new_object_from_mesh(create_mesh());
+
+    Transform3d xform = Transform3d::Identity();
+    xform.translate(Vec3d{bed.center().x(), bed.center().y(), 0});
+    scene_interactor.transform_selection(xform.matrix());
+}
+
+} // namespace
 
 namespace Slic3r::App::Plater {
-
-TextGizmo::TextGizmo(Biz::ProjectInteractor& project_interactor) :
-    m_project_interactor{project_interactor}
+TextGizmo::TextGizmo(
+    Render::Device& device,
+    PlaterScenePresenter& scene_presenter,
+    Biz::ProjectInteractor& project_interactor,
+    CloseFn close_fn
+)
+    : m_device(device)
+    , m_scene_presenter(scene_presenter)
+    , m_project_interactor(project_interactor)
+    , m_close_fn(close_fn)
 {
     m_dialog = std::make_unique<TextDialog>();
 
@@ -24,7 +71,7 @@ TextGizmo::TextGizmo(Biz::ProjectInteractor& project_interactor) :
     m_dialog->callbacks().save_preset_as = [this]() {
         m_dialog->set_enable_line_gap(true); // test
         m_dialog->update_units(false); // test
-    };
+        };
     m_dialog->callbacks().save_preset = [this]() {
         m_dialog->set_warning("There is something wrong!!!\ndfghjkl"); // test
     };
@@ -38,20 +85,50 @@ TextGizmo::TextGizmo(Biz::ProjectInteractor& project_interactor) :
         m_dialog->show_revert_buttons(false); // test
     };
 
-    m_dialog->callbacks().preset_selection_changed = [](int id) {
-    };
-    m_dialog->callbacks().font_selection_changed = [](int id) {
-    };
-    m_dialog->callbacks().style_selection_changed = [](int id) {
-    };
-    m_dialog->callbacks().operation_selection_changed = [](int id) {
-    };
+    m_dialog->callbacks().preset_selection_changed = [this](int id) {
+        };
+    m_dialog->callbacks().font_selection_changed = [this](int id) {
+        };
+    m_dialog->callbacks().style_selection_changed = [this](int id) {
+        };
+    m_dialog->callbacks().operation_selection_changed = [this](int id) {
+        };
+}
+
+bool TextGizmo::enabled() const { return true; };
+Scene::ToolType TextGizmo::type() const { return Scene::ToolType::TextGizmo; }
+
+Yoga::GizmoWindowPtr TextGizmo::release_ui_window()
+{
+    return m_dialog.release();
+}
+
+void TextGizmo::update_layout(bool show_for_part)
+{
+    m_dialog->show_part_specific_panel(show_for_part);
+}
+Scene::GizmoActivationState TextGizmo::on_mouse(Scene::GizmoEventContext& ctx, bool only_active){
+    return Scene::GizmoActivationState::Inactive;
+}
+
+void TextGizmo::render_imgui() const
+{
+    if (ImGui::Begin("Text Gizmo")) {
+        ImGui::Text("Emboss text");
+        if (ImGui::Button("Add Object")) {
+            create_object(m_project_interactor);
+        }
+        if (ImGui::Button("Close")) {
+            m_close_fn();
+        }
+    }
+    ImGui::End();
 }
 
 void TextGizmo::on_activated()
 {
-    std::vector<std::string> presets = {"NORMAL", "SMALL", "ITALIC", "SWISS"};
-    int selected_preset_id           = 2;
+    std::vector<std::string> presets = { "NORMAL", "SMALL", "ITALIC", "SWISS" };
+    int selected_preset_id = 2;
     m_dialog->set_presets(presets, selected_preset_id);
 
     // load current font_preset
@@ -63,107 +140,5 @@ void TextGizmo::on_activated()
 }
 
 void TextGizmo::on_deactivated() {}
-
-Scene::ToolType TextGizmo::type() const
-{
-    return Scene::ToolType::TextGizmo;
-}
-
-bool TextGizmo::enabled() const
-{
-    const Biz::Scene::ObjectSelection& selection{
-        m_project_interactor.scene_interactor().object_selection()
-    };
-    return !selection.empty() && !selection.contains_wipe_tower();
-}
-
-Yoga::GizmoWindowPtr TextGizmo::release_ui_window()
-{
-    return m_dialog.release();
-}
-
-Scene::GizmoActivationState TextGizmo::on_mouse(Scene::GizmoEventContext& ctx, bool only_active)
-{
-    return Scene::GizmoActivationState::Inactive;
-}
-
-void TextGizmo::update_layout(bool show_for_part)
-{
-    m_dialog->show_part_specific_panel(show_for_part);
-}
-
-void TextGizmo::update_presets_list() {}
-
-void TextGizmo::activate_preset(/*preset*/)
-{
-    // Propadate data to the dialog
-
-    std::vector<std::string> fonts = {"Arial", "Calibri", "Cambria"};
-    int selected_font_id           = 1;
-    int default_font_id            = 2;
-    m_dialog->set_fonts(fonts, selected_font_id, default_font_id);
-
-    std::vector<std::string> styles = {"Regular", "Bold", "Italic", "ItalicBold"};
-    int selected_style_id           = 0;
-    int default_style_id            = 0;
-    m_dialog->set_styles(styles, selected_style_id, default_style_id);
-
-    double height_from      = 0.1;
-    double height_to        = 100.;
-    double height_step      = 0.1;
-    double height_step_fast = 1;
-    double height           = 10.;
-    double height_default   = 8.;
-    m_dialog->set_height(height_from, height_to, height_step, height_step_fast, height, height_default);
-
-    double depth_from      = 0.1;
-    double depth_to        = 100.;
-    double depth_step      = 0.1;
-    double depth_step_fast = 1;
-    double depth           = 8.;
-    double depth_default   = 8.;
-    m_dialog->set_depth(depth_from, depth_to, depth_step, depth_step_fast, depth, depth_default);
-
-    bool use_surface         = true;
-    bool use_surface_default = false;
-    m_dialog->set_use_surface(use_surface, use_surface_default);
-
-    bool per_glyph         = true;
-    bool per_glyph_default = false;
-    m_dialog->set_per_glyph(per_glyph, per_glyph_default);
-
-    Domain::TextAlign align = {Domain::HorizontalAlign::left, Domain::VerticalAlign::bottom};
-    m_dialog->set_align(align);
-
-    double char_gap_max  = 3.62;
-    double char_gap_step = 0.01;
-    double char_gap      = 0.25;
-    m_dialog->set_char_gap(char_gap_max, char_gap_step, char_gap);
-
-    double line_gap_max  = 3.62;
-    double line_gap_step = 0.01;
-    double line_gap      = 0.25;
-    m_dialog->set_line_gap(line_gap_max, line_gap_step, line_gap);
-
-    double boldness_max  = 0.8;
-    double boldness_step = 0.1;
-    double boldness      = 0.34;
-    m_dialog->set_boldness(boldness_max, boldness_step, boldness);
-
-    double skew_ratio_max  = 1.;
-    double skew_ratio_step = 0.01;
-    double skew_ratio      = -0.72;
-    m_dialog->set_skew_ratio(skew_ratio_max, skew_ratio_step, skew_ratio);
-
-    double surface_distance_max  = 2.;
-    double surface_distance_step = 0.01;
-    double surface_distance      = 0.;
-    m_dialog->set_surface_distance(surface_distance_max, surface_distance_step, surface_distance, 0.);
-
-    double rotation_max  = 180.;
-    double rotation_step = 0.1;
-    double rotation      = 92.;
-    m_dialog->set_rotation(rotation_max, rotation_step, rotation);
-}
 
 } // namespace Slic3r::App::Plater

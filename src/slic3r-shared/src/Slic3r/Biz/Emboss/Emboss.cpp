@@ -2,6 +2,8 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
+#include "Slic3r/Biz/Emboss/Emboss.hpp"
+
 #include <boost/nowide/convert.hpp>
 #include <boost/nowide/cstdio.hpp>
 #include <boost/log/trivial.hpp>
@@ -15,33 +17,29 @@
 #include <iterator>
 #include <limits>
 
-#include "Emboss.hpp"
+#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "Slic3r/Biz/Algorithms/IntersectionPoints.hpp"
+#include "Slic3r/Biz/Algorithms/Expolygon.hpp"
 #include "admesh/stl.h"
 #include "Slic3r/Biz/Algorithms/AABBTreeIndirect.hpp"
+#include "Slic3r/Domain/Line.hpp"
 #include "Slic3r/Domain/EmbossShape.hpp"
-#include "libslic3r/ExPolygon.hpp"
-#include "Slic3r/Exception.hpp"
-#include "libslic3r/Polygon.hpp"
 #include "Slic3r/Domain/TextConfiguration.hpp"
+#include "Slic3r/Exception.hpp"
 
-#define STB_TRUETYPE_IMPLEMENTATION // force following include to generate implementation
 
 #include "Slic3r/Biz/CGAL/Algorithms/Triangulation.hpp" // CGAL project
 
+// In project slic3r-shared we use stb_truetype.h from imgui
+//#define STB_TRUETYPE_IMPLEMENTATION // force following include to generate implementation
 // Explicit horror include (used to be implicit) - libslic3r "officialy" does not depend on imgui.
 #include "../../bundled_deps/imgui/imgui/imstb_truetype.h" // stbtt_fontinfo
-#include "Slic3r/Utils.hpp" // ScopeGuard
-#include "libslic3r.h"
 // to heal shape
 #include "libslic3r/ClipperUtils.hpp" // union_ex + for boldness(polygon extend(offset))
 #include "Slic3r/Biz/Algorithms/ExPolygonsIndex.hpp"
 #include "Slic3r/Biz/Algorithms/AABBTreeLines.hpp" // search structure for found close points
 #include "libslic3r/Line.hpp"
-#include "libslic3r/Point.hpp"
-#include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
-#include "Slic3r/Biz/Algorithms/Projection.hpp"
 
 using namespace Slic3r::Biz;
 
@@ -67,13 +65,8 @@ using Domain::EmbossShape;
 using Domain::HealedExPolygons;
 using Domain::ExPolygonsWithId;
 using Domain::ExPolygonsWithIds;
-using Slic3r::Biz::Algorithms::ExPolygonsIndices;
-using Slic3r::Biz::Algorithms::ExPolygonsIndex;
-using Slic3r::Biz::Algorithms::IntersectionLines;
-using Slic3r::Biz::Algorithms::IntersectionsLines;
-using Slic3r::Biz::Algorithms::get_intersections;
-using Slic3r::Biz::Algorithms::IProjection;
-using Slic3r::Biz::CGAL::Algorithms::Triangulation;
+using Domain::ExPolygons;
+using Domain::BoundingBox2crd;
 
 namespace BB = Biz::Algorithms::BoundingBox;
 namespace AABBTreeLines = Biz::Algorithms::AABBTreeLines;
@@ -103,7 +96,7 @@ static std::string visualize_heal_svg_filepath = "C:/data/temp/heal.svg";
 void               visualize_heal(const std::string &svg_filepath, const ExPolygons &expolygons)
 {
     Points      pts = to_points(expolygons);
-    BoundingBox bb(pts);
+    BoundingBox2crd bb(pts);
     // double svg_scale = SHAPE_SCALE / unscale<double>(1.);
     //  bb.scale(svg_scale);
     Biz::Algorithms::SVG::SVG svg(svg_filepath, bb);
@@ -291,9 +284,10 @@ void remove_spikes_in_duplicates(ExPolygons &expolygons, const Points &duplicate
 
     bool exist_remove = false;
     for (ExPolygon &expolygon : expolygons) {
-        BoundingBox bb(BB::construct(Algorithms::Polygon::to_points(expolygon.contour)));
+        BoundingBox2crd bb = Algorithms::BoundingBox::construct(
+            Algorithms::Polygon::to_points(expolygon.contour));
         for (const Point &d : duplicates) {
-            if (!bb.contains(d))
+            if (!Algorithms::BoundingBox::contains(bb, d))
                 continue;
             exist_remove |= check(expolygon.contour, d);
             for (Polygon &hole : expolygon.holes)
@@ -348,7 +342,8 @@ void remove_bad(ExPolygons &expolygons) {
 }
 } // end namespace
 
-bool Emboss::divide_segments_for_close_point(ExPolygons &expolygons, double distance)
+namespace Slic3r::Biz::Emboss {
+bool divide_segments_for_close_point(ExPolygons &expolygons, double distance)
 {
     if (expolygons.empty()) return false;
     if (distance < 0.) return false;
@@ -451,7 +446,7 @@ bool Emboss::divide_segments_for_close_point(ExPolygons &expolygons, double dist
     return true;
 }
 
-HealedExPolygons Emboss::heal_polygons(const Polygons &shape, bool is_non_zero, unsigned int max_iteration)
+HealedExPolygons heal_polygons(const Polygons &shape, bool is_non_zero, unsigned int max_iteration)
 {
     const double clean_distance = 1.415; // little grater than sqrt(2)
     ClipperLib::PolyFillType fill_type = is_non_zero ? 
@@ -486,10 +481,11 @@ HealedExPolygons Emboss::heal_polygons(const Polygons &shape, bool is_non_zero, 
 }
 
 
-bool Emboss::heal_expolygons(ExPolygons &shape, unsigned max_iteration)
+bool heal_expolygons(ExPolygons &shape, unsigned max_iteration)
 {
     return ::heal_dupl_inter(shape, max_iteration);
 }
+} // namespace Slic3r::Biz::Emboss
 
 namespace {
 
@@ -690,8 +686,8 @@ bool heal_dupl_inter(ExPolygons &shape, unsigned max_iteration)
 }
 
 ExPolygon create_bounding_rect(const ExPolygons &shape) {
-    BoundingBox bb   = get_extents(shape);
-    Point       size = BB::sizes(bb);
+    BoundingBox2crd bb = get_extents(shape);
+    Point size = Algorithms::BoundingBox::sizes(bb);
     if (size.x() < 10)
         bb.max.x() += 10;
     if (size.y() < 10)
@@ -703,7 +699,7 @@ ExPolygon create_bounding_rect(const ExPolygons &shape) {
         bb.max,
         {bb.min.x(), bb.max.y()}});
 
-    Point   offset = BB::sizes(bb) * 0.1;
+    Point   offset = Algorithms::BoundingBox::sizes(bb) * 0.1;
     Polygon hole({// CW
         bb.min + offset,
         {bb.min.x() + offset.x(), bb.max.y() - offset.y()},
@@ -885,21 +881,25 @@ EmbossStyle create_style(const std::wstring& name, const std::wstring& path) {
 }
 } // namespace
 
+namespace Slic3r::Biz::Emboss {
 // Get system font file path
-std::optional<std::wstring> Emboss::get_font_path(const std::wstring &font_face_name)
+std::optional<std::wstring> get_font_path(const std::wstring& font_face_name)
 {
-//    static const LPWSTR fontRegistryPath = L"Software\\Microsoft\\Windows NT\\CurrentVersion\\Fonts";
-    static const LPCWSTR fontRegistryPath = L"Software\\Microsoft\\Windows NT\\CurrentVersion\\Fonts";
+    //    static const LPWSTR fontRegistryPath = L"Software\\Microsoft\\Windows NT\\CurrentVersion\\Fonts";
+    static const LPCWSTR fontRegistryPath =
+        L"Software\\Microsoft\\Windows NT\\CurrentVersion\\Fonts";
     HKEY hKey;
     LONG result;
 
     // Open Windows font registry key
     result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, fontRegistryPath, 0, KEY_READ, &hKey);
-    if (result != ERROR_SUCCESS) return {};    
+    if (result != ERROR_SUCCESS)
+        return {};
 
     DWORD maxValueNameSize, maxValueDataSize;
     result = RegQueryInfoKey(hKey, 0, 0, 0, 0, 0, 0, 0, &maxValueNameSize, &maxValueDataSize, 0, 0);
-    if (result != ERROR_SUCCESS) return {};
+    if (result != ERROR_SUCCESS)
+        return {};
 
     DWORD valueIndex = 0;
     LPWSTR valueName = new WCHAR[maxValueNameSize];
@@ -913,7 +913,9 @@ std::optional<std::wstring> Emboss::get_font_path(const std::wstring &font_face_
         valueDataSize = maxValueDataSize;
         valueNameSize = maxValueNameSize;
 
-        result = RegEnumValue(hKey, valueIndex, valueName, &valueNameSize, 0, &valueType, valueData, &valueDataSize);
+        result = RegEnumValue(
+            hKey, valueIndex, valueName, &valueNameSize, 0, &valueType, valueData, &valueDataSize
+        );
 
         valueIndex++;
         if (result != ERROR_SUCCESS || valueType != REG_SZ) {
@@ -924,19 +926,19 @@ std::optional<std::wstring> Emboss::get_font_path(const std::wstring &font_face_
 
         // Found a match
         if (_wcsnicmp(font_face_name.c_str(), wsValueName.c_str(), font_face_name.length()) == 0) {
-
-            wsFontFile.assign((LPWSTR)valueData, valueDataSize);
+            wsFontFile.assign((LPWSTR) valueData, valueDataSize);
             break;
         }
-    }while (result != ERROR_NO_MORE_ITEMS);
+    } while (result != ERROR_NO_MORE_ITEMS);
 
     delete[] valueName;
     delete[] valueData;
 
     RegCloseKey(hKey);
 
-    if (wsFontFile.empty()) return {};
-    
+    if (wsFontFile.empty())
+        return {};
+
     // Build full font file path
     WCHAR winDir[MAX_PATH];
     GetWindowsDirectory(winDir, MAX_PATH);
@@ -948,17 +950,19 @@ std::optional<std::wstring> Emboss::get_font_path(const std::wstring &font_face_
     return wsFontFile;
 }
 
-EmbossStyles Emboss::get_font_list()
+EmbossStyles get_font_list()
 {
-    //EmbossStyles list1 = get_font_list_by_enumeration();
-    //EmbossStyles list2 = get_font_list_by_register();
-    //EmbossStyles list3 = get_font_list_by_folder();
+    // EmbossStyles list1 = get_font_list_by_enumeration();
+    // EmbossStyles list2 = get_font_list_by_register();
+    // EmbossStyles list3 = get_font_list_by_folder();
     return get_font_list_by_register();
 }
 
-EmbossStyles Emboss::get_font_list_by_register() {
-//    static const LPWSTR fontRegistryPath = L"Software\\Microsoft\\Windows NT\\CurrentVersion\\Fonts";
-    static const LPCWSTR fontRegistryPath = L"Software\\Microsoft\\Windows NT\\CurrentVersion\\Fonts";
+EmbossStyles get_font_list_by_register()
+{
+    //    static const LPWSTR fontRegistryPath = L"Software\\Microsoft\\Windows NT\\CurrentVersion\\Fonts";
+    static const LPCWSTR fontRegistryPath =
+        L"Software\\Microsoft\\Windows NT\\CurrentVersion\\Fonts";
     HKEY hKey;
     LONG result;
 
@@ -966,18 +970,17 @@ EmbossStyles Emboss::get_font_list_by_register() {
     result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, fontRegistryPath, 0, KEY_READ, &hKey);
     if (result != ERROR_SUCCESS) {
         assert(false);
-        //std::wcerr << L"Can not Open register key (" << fontRegistryPath << ")" 
-        //    << L", function 'RegOpenKeyEx' return code: " << result <<  std::endl;
-        return {}; 
+        // std::wcerr << L"Can not Open register key (" << fontRegistryPath << ")"
+        //     << L", function 'RegOpenKeyEx' return code: " << result <<  std::endl;
+        return {};
     }
 
     DWORD maxValueNameSize, maxValueDataSize;
-    result = RegQueryInfoKey(hKey, 0, 0, 0, 0, 0, 0, 0, &maxValueNameSize,
-                             &maxValueDataSize, 0, 0);
+    result = RegQueryInfoKey(hKey, 0, 0, 0, 0, 0, 0, 0, &maxValueNameSize, &maxValueDataSize, 0, 0);
     if (result != ERROR_SUCCESS) {
         assert(false);
         // Can not earn query key, function 'RegQueryInfoKey' return code: result
-        return {}; 
+        return {};
     }
 
     // Build full font file path
@@ -986,26 +989,30 @@ EmbossStyles Emboss::get_font_list_by_register() {
     std::wstring font_path = std::wstring(winDir) + L"\\Fonts\\";
 
     EmbossStyles font_list;
-    DWORD    valueIndex = 0;
+    DWORD valueIndex = 0;
     // Look for a matching font name
     LPWSTR font_name = new WCHAR[maxValueNameSize];
     LPBYTE fileTTF_name = new BYTE[maxValueDataSize];
-    DWORD  font_name_size, fileTTF_name_size, valueType;
+    DWORD font_name_size, fileTTF_name_size, valueType;
     do {
         fileTTF_name_size = maxValueDataSize;
         font_name_size = maxValueNameSize;
 
-        result = RegEnumValue(hKey, valueIndex, font_name, &font_name_size, 0,
-                              &valueType, fileTTF_name, &fileTTF_name_size);
+        result = RegEnumValue(
+            hKey, valueIndex, font_name, &font_name_size, 0, &valueType, fileTTF_name,
+            &fileTTF_name_size
+        );
         valueIndex++;
-        if (result != ERROR_SUCCESS || valueType != REG_SZ) continue;
+        if (result != ERROR_SUCCESS || valueType != REG_SZ)
+            continue;
         std::wstring font_name_w(font_name, font_name_size);
         std::wstring file_name_w((LPWSTR) fileTTF_name, fileTTF_name_size);
         std::wstring path_w = font_path + file_name_w;
 
         // filtrate .fon from lists
         size_t pos = font_name_w.rfind(L" (TrueType)");
-        if (pos >= font_name_w.size()) continue;
+        if (pos >= font_name_w.size())
+            continue;
         // remove TrueType text from name
         font_name_w = std::wstring(font_name_w, 0, pos);
         font_list.emplace_back(create_style(font_name_w, path_w));
@@ -1016,8 +1023,9 @@ EmbossStyles Emboss::get_font_list_by_register() {
     RegCloseKey(hKey);
     return font_list;
 }
+} // namespace Slic3r::Biz::Emboss
 
-// TODO: Fix global function
+namespace {
 bool CALLBACK EnumFamCallBack(LPLOGFONT       lplf,
                               LPNEWTEXTMETRIC lpntm,
                               DWORD           FontType,
@@ -1033,36 +1041,40 @@ bool CALLBACK EnumFamCallBack(LPLOGFONT       lplf,
     // UNREFERENCED_PARAMETER(lplf);
     UNREFERENCED_PARAMETER(lpntm);
 }
+} // namespace
 
-EmbossStyles Emboss::get_font_list_by_enumeration() {   
-
-    HDC                       hDC = GetDC(NULL);
+namespace Slic3r::Biz::Emboss {
+EmbossStyles get_font_list_by_enumeration()
+{
+    HDC hDC = GetDC(NULL);
     std::vector<std::wstring> font_names;
-    EnumFontFamilies(hDC, (LPCTSTR) NULL, (FONTENUMPROC) EnumFamCallBack,
-                     (LPARAM) &font_names);
+    EnumFontFamilies(hDC, (LPCTSTR) NULL, (FONTENUMPROC) EnumFamCallBack, (LPARAM) &font_names);
 
     EmbossStyles font_list;
-    for (const std::wstring &font_name : font_names) {
+    for (const std::wstring& font_name : font_names) {
         font_list.emplace_back(create_style(font_name, L""));
-    }    
+    }
     return font_list;
 }
 
-EmbossStyles Emboss::get_font_list_by_folder() {
+EmbossStyles get_font_list_by_folder()
+{
     EmbossStyles result;
     WCHAR winDir[MAX_PATH];
     UINT winDir_size = GetWindowsDirectory(winDir, MAX_PATH);
     std::wstring search_dir = std::wstring(winDir, winDir_size) + L"\\Fonts\\";
     WIN32_FIND_DATA fd;
-    HANDLE          hFind;
+    HANDLE hFind;
     // By https://en.wikipedia.org/wiki/TrueType has also suffix .tte
     std::vector<std::wstring> suffixes = {L"*.ttf", L"*.ttc", L"*.tte"};
-    for (const std::wstring &suffix : suffixes) {
+    for (const std::wstring& suffix : suffixes) {
         hFind = ::FindFirstFile((search_dir + suffix).c_str(), &fd);
-        if (hFind == INVALID_HANDLE_VALUE) continue;
+        if (hFind == INVALID_HANDLE_VALUE)
+            continue;
         do {
             // skip folder . and ..
-            if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) continue;
+            if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+                continue;
             std::wstring file_name(fd.cFileName);
             // TODO: find font name instead of filename
             result.emplace_back(create_style(file_name, search_dir + file_name));
@@ -1073,19 +1085,20 @@ EmbossStyles Emboss::get_font_list_by_folder() {
 }
 
 #else
-EmbossStyles Emboss::get_font_list() { 
+EmbossStyles get_font_list()
+{
     // not implemented
-    return {}; 
+    return {};
 }
 
-std::optional<std::wstring> Emboss::get_font_path(const std::wstring &font_face_name){
+std::optional<std::wstring> get_font_path(const std::wstring& font_face_name)
+{
     // not implemented
     return {};
 }
 #endif
 
-std::unique_ptr<FontFile> Emboss::create_font_file(
-    std::unique_ptr<std::vector<unsigned char>> data)
+std::unique_ptr<FontFile> create_font_file(std::unique_ptr<std::vector<unsigned char>> data)
 {
     int collection_size = stbtt_GetNumberOfFonts(data->data());
     // at least one font must be inside collection
@@ -1100,24 +1113,25 @@ std::unique_ptr<FontFile> Emboss::create_font_file(
     infos.reserve(c_size);
     for (unsigned int i = 0; i < c_size; ++i) {
         auto font_info = load_font_info(data->data(), i);
-        if (!font_info.has_value()) return nullptr;
+        if (!font_info.has_value())
+            return nullptr;
 
-        const stbtt_fontinfo *info = &(*font_info);
+        const stbtt_fontinfo* info = &(*font_info);
         // load information about line gap
         int ascent, descent, linegap;
         stbtt_GetFontVMetrics(info, &ascent, &descent, &linegap);
 
-        float pixels      = 1000.; // value is irelevant
-        float em_pixels   = stbtt_ScaleForMappingEmToPixels(info, pixels);
-        int   unit_per_em = static_cast<int>(std::round(pixels / em_pixels));
+        float pixels = 1000.; // value is irelevant
+        float em_pixels = stbtt_ScaleForMappingEmToPixels(info, pixels);
+        int unit_per_em = static_cast<int>(std::round(pixels / em_pixels));
         infos.emplace_back(FontFile::Info{ascent, descent, linegap, unit_per_em});
     }
     return std::make_unique<FontFile>(std::move(data), std::move(infos));
 }
 
-std::unique_ptr<FontFile> Emboss::create_font_file(const char *file_path)
+std::unique_ptr<FontFile> create_font_file(const char* file_path)
 {
-    FILE *file = boost::nowide::fopen(file_path, "rb");
+    FILE* file = boost::nowide::fopen(file_path, "rb");
     if (file == nullptr) {
         assert(false);
         BOOST_LOG_TRIVIAL(error) << "Couldn't open " << file_path << " for reading.";
@@ -1135,11 +1149,11 @@ std::unique_ptr<FontFile> Emboss::create_font_file(const char *file_path)
     if (size == 0) {
         assert(false);
         BOOST_LOG_TRIVIAL(error) << "Size of font file is zero. Can't read.";
-        return nullptr;    
+        return nullptr;
     }
     rewind(file);
     auto buffer = std::make_unique<std::vector<unsigned char>>(size);
-    size_t count_loaded_bytes = fread((void *) &buffer->front(), 1, size, file);
+    size_t count_loaded_bytes = fread((void*) &buffer->front(), 1, size, file);
     if (count_loaded_bytes != size) {
         assert(false);
         BOOST_LOG_TRIVIAL(error) << "Different loaded(from file) data size.";
@@ -1147,10 +1161,11 @@ std::unique_ptr<FontFile> Emboss::create_font_file(const char *file_path)
     }
     return create_font_file(std::move(buffer));
 }
-
+} // namespace Slic3r::Biz::Emboss
 
 #ifdef _WIN32
-static bool load_hfont(void* hfont, DWORD &dwTable, DWORD &dwOffset, size_t& size, HDC hdc = nullptr){
+namespace {
+bool load_hfont(void* hfont, DWORD &dwTable, DWORD &dwOffset, size_t& size, HDC hdc = nullptr){
     bool del_hdc = false;
     if (hdc == nullptr) { 
         del_hdc = true;
@@ -1177,16 +1192,19 @@ static bool load_hfont(void* hfont, DWORD &dwTable, DWORD &dwOffset, size_t& siz
     }
     return true;
 }
+} // namespace
 
-void *Emboss::can_load(void *hfont)
+namespace Slic3r::Biz::Emboss {
+void* can_load(void* hfont)
 {
-    DWORD dwTable=0, dwOffset=0;
+    DWORD dwTable = 0, dwOffset = 0;
     size_t size = 0;
-    if (!load_hfont(hfont, dwTable, dwOffset, size)) return nullptr;
+    if (!load_hfont(hfont, dwTable, dwOffset, size))
+        return nullptr;
     return hfont;
 }
 
-std::unique_ptr<FontFile> Emboss::create_font_file(void *hfont)
+std::unique_ptr<FontFile> create_font_file(void* hfont)
 {
     HDC hdc = ::CreateCompatibleDC(NULL);
     if (hdc == NULL) {
@@ -1195,7 +1213,7 @@ std::unique_ptr<FontFile> Emboss::create_font_file(void *hfont)
         return nullptr;
     }
 
-    DWORD dwTable=0,dwOffset = 0;
+    DWORD dwTable = 0, dwOffset = 0;
     size_t size;
     if (!load_hfont(hfont, dwTable, dwOffset, size, hdc)) {
         ::DeleteDC(hdc);
@@ -1207,13 +1225,15 @@ std::unique_ptr<FontFile> Emboss::create_font_file(void *hfont)
     if (size != loaded_size) {
         assert(false);
         BOOST_LOG_TRIVIAL(error) << "Different loaded(from HFONT) data size.";
-        return nullptr;    
+        return nullptr;
     }
     return create_font_file(std::move(buffer));
 }
+} // namespace Slic3r::Biz::Emboss
 #endif // _WIN32
 
-std::optional<Glyph> Emboss::letter2glyph(const FontFile &font,
+namespace Slic3r::Biz::Emboss {
+std::optional<Glyph> letter2glyph(const FontFile &font,
                                                   unsigned int    font_index,
                                                   int             letter,
                                                   float           flatness)
@@ -1224,19 +1244,20 @@ std::optional<Glyph> Emboss::letter2glyph(const FontFile &font,
     return get_glyph(*font_info_opt, letter, flatness);
 }
 
-const FontFile::Info &Emboss::get_font_info(const FontFile &font, const FontProp &prop)
+const FontFile::Info &get_font_info(const FontFile &font, const FontProp &prop)
 {
     unsigned int font_index = prop.collection_number.value_or(0);
     assert(is_valid(font, font_index));
     return font.infos[font_index];
 }
 
-int Emboss::get_line_height(const FontFile &font, const FontProp &prop) {
+int get_line_height(const FontFile &font, const FontProp &prop) {
     const FontFile::Info &info = get_font_info(font, prop);
     int line_height = info.ascent - info.descent + info.linegap;
     line_height += prop.line_gap.value_or(0);
     return static_cast<int>(line_height / SHAPE_SCALE);
 }
+} // namespace Slic3r::Biz::Emboss
 
 namespace {
 ExPolygons letter2shapes(
@@ -1286,9 +1307,7 @@ ExPolygons letter2shapes(
 // Lower number - too much checks(slows down)
 // Higher number - slows down response on cancelation
 const int CANCEL_CHECK = 10;
-} // namespace
 
-namespace {
 HealedExPolygons union_with_delta(const ExPolygonsWithIds &shapes, float delta, unsigned max_heal_iteration)
 {
     // unify to one expolygons
@@ -1305,39 +1324,41 @@ HealedExPolygons union_with_delta(const ExPolygonsWithIds &shapes, float delta, 
 }
 } // namespace
 
-ExPolygons Slic3r::union_with_delta(EmbossShape &shape, float delta, unsigned max_heal_iteration) 
+namespace Slic3r::Biz::Emboss {
+ExPolygons union_with_delta(EmbossShape& shape, float delta, unsigned max_heal_iteration)
 {
     if (!shape.final_shape.expolygons.empty())
         return shape.final_shape;
 
     shape.final_shape = ::union_with_delta(shape.shapes_with_ids, delta, max_heal_iteration);
-    for (const ExPolygonsWithId &e : shape.shapes_with_ids)
+    for (const ExPolygonsWithId& e : shape.shapes_with_ids)
         if (!e.is_healed)
             shape.final_shape.is_healed = false;
     return shape.final_shape.expolygons;
 }
 
-void Slic3r::translate(ExPolygonsWithIds &expolygons_with_ids, const Point &p)
+void translate(ExPolygonsWithIds& expolygons_with_ids, const Point& p)
 {
-    for (ExPolygonsWithId &expolygons_with_id : expolygons_with_ids)
+    for (ExPolygonsWithId& expolygons_with_id : expolygons_with_ids)
         Algorithms::ExPolygon::translate(expolygons_with_id.expoly, p);
 }
 
-BoundingBox Slic3r::get_extents(const ExPolygonsWithIds &expolygons_with_ids)
+BoundingBox2crd get_extents(const ExPolygonsWithIds& expolygons_with_ids)
 {
-    BoundingBox bb;
-    for (const ExPolygonsWithId &expolygons_with_id : expolygons_with_ids)        
-        bb = BB::merge(bb, get_extents(expolygons_with_id.expoly));
+    BoundingBox2crd bb;
+    for (const ExPolygonsWithId& expolygons_with_id : expolygons_with_ids)
+        bb = Algorithms::BoundingBox::merge(bb, 
+            Algorithms::ExPolygon::get_extents(expolygons_with_id.expoly));
     return bb;
 }
 
-void Slic3r::center(ExPolygonsWithIds &e)
+void center(ExPolygonsWithIds& e)
 {
-    BoundingBox bb = get_extents(e);
-    translate(e, -BB::center(bb));
+    BoundingBox2crd bb = get_extents(e);
+    translate(e, -Algorithms::BoundingBox::center(bb));
 }
 
-HealedExPolygons Emboss::text2shapes(FontFileWithCache &font_with_cache, const char *text, const FontProp &font_prop, const std::function<bool()>& was_canceled)
+HealedExPolygons text2shapes(FontFileWithCache &font_with_cache, const char *text, const FontProp &font_prop, const std::function<bool()>& was_canceled)
 {
     std::wstring text_w = boost::nowide::widen(text);
     ExPolygonsWithIds vshapes = text2vshapes(font_with_cache, text_w, font_prop, was_canceled);
@@ -1345,6 +1366,7 @@ HealedExPolygons Emboss::text2shapes(FontFileWithCache &font_with_cache, const c
     float delta = static_cast<float>(1. / SHAPE_SCALE);
     return ::union_with_delta(vshapes, delta, MAX_HEAL_ITERATION_OF_TEXT);
 }
+} // namespace Slic3r::Biz::Emboss
 
 namespace {
 /// <summary>
@@ -1358,7 +1380,8 @@ namespace {
 void align_shape(ExPolygonsWithIds &shapes, const std::wstring &text, const FontProp &prop, const FontFile &font);
 }
 
-ExPolygonsWithIds Emboss::text2vshapes(FontFileWithCache &font_with_cache, const std::wstring& text, const FontProp &font_prop, const std::function<bool()>& was_canceled){
+namespace Slic3r::Biz::Emboss {
+ExPolygonsWithIds text2vshapes(FontFileWithCache &font_with_cache, const std::wstring& text, const FontProp &font_prop, const std::function<bool()>& was_canceled){
     assert(font_with_cache.has_value());
     if (!font_with_cache.has_value())
         return {};
@@ -1389,7 +1412,7 @@ ExPolygonsWithIds Emboss::text2vshapes(FontFileWithCache &font_with_cache, const
     return result;
 }
 
-unsigned Emboss::get_count_lines(const std::wstring& ws)
+unsigned get_count_lines(const std::wstring& ws)
 {
     if (ws.empty())
         return 0;
@@ -1416,13 +1439,13 @@ unsigned Emboss::get_count_lines(const std::wstring& ws)
     //return count - prev_count - post_count;
 }
 
-unsigned Emboss::get_count_lines(const std::string &text)
+unsigned get_count_lines(const std::string &text)
 {
     std::wstring ws = boost::nowide::widen(text.c_str());
     return get_count_lines(ws);
 }
 
-unsigned Emboss::get_count_lines(const ExPolygonsWithIds &shapes) {
+unsigned get_count_lines(const ExPolygonsWithIds &shapes) {
     if (shapes.empty())
         return 0; // no glyphs
     unsigned result = 1; // one line is minimum
@@ -1432,7 +1455,7 @@ unsigned Emboss::get_count_lines(const ExPolygonsWithIds &shapes) {
     return result;
 }
 
-void Emboss::apply_transformation(const std::optional<float>& angle, const std::optional<float>& distance, Transform3d &transformation) {
+void apply_transformation(const std::optional<float>& angle, const std::optional<float>& distance, Transform3d &transformation) {
     if (angle.has_value()) {
         double angle_z = *angle;
         transformation *= Eigen::AngleAxisd(angle_z, Vec3d::UnitZ());
@@ -1443,7 +1466,7 @@ void Emboss::apply_transformation(const std::optional<float>& angle, const std::
     }
 }
 
-bool Emboss::is_italic(const FontFile &font, unsigned int font_index)
+bool is_italic(const FontFile &font, unsigned int font_index)
 {
     if (font_index >= font.infos.size()) return false;
     fontinfo_opt font_info_opt = load_font_info(font.data->data(), font_index);
@@ -1481,7 +1504,7 @@ bool Emboss::is_italic(const FontFile &font, unsigned int font_index)
     return false; 
 }
 
-std::string Emboss::create_range_text(const std::string &text,
+std::string create_range_text(const std::string &text,
                                       const FontFile    &font,
                                       unsigned int       font_index,
                                       bool              *exist_unknown)
@@ -1522,13 +1545,14 @@ std::string Emboss::create_range_text(const std::string &text,
     return boost::nowide::narrow(ws);
 }
 
-double Emboss::get_text_shape_scale(const FontProp &fp, const FontFile &ff)
+double get_text_shape_scale(const FontProp &fp, const FontFile &ff)
 {
     const FontFile::Info &info = get_font_info(ff, fp);
     double scale  = fp.size_in_mm / (double) info.unit_per_em;
     // Shape is scaled for store point coordinate as integer
     return scale * SHAPE_SCALE;
 }
+} // namespace Slic3r::Biz::Emboss
 
 namespace {
 
@@ -1686,7 +1710,8 @@ indexed_triangle_set polygons2model_duplicit(
 }
 } // namespace
 
-indexed_triangle_set Emboss::polygons2model(const ExPolygons &shape2d,
+namespace Slic3r::Biz::Emboss {
+indexed_triangle_set polygons2model(const ExPolygons &shape2d,
                                             const IProjection &projection)
 {
     Points points = Algorithms::ExPolygon::to_points(shape2d);
@@ -1696,25 +1721,25 @@ indexed_triangle_set Emboss::polygons2model(const ExPolygons &shape2d,
         polygons2model_duplicit(shape2d, projection, points, duplicits);
 }
 
-std::pair<Vec3d, Vec3d> Emboss::ProjectZ::create_front_back(const Point &p) const
+std::pair<Vec3d, Vec3d> ProjectZ::create_front_back(const Point &p) const
 {
     Vec3d front(p.x(), p.y(), 0.);
     return std::make_pair(front, project(front));
 }
 
-Vec3d Emboss::ProjectZ::project(const Vec3d &point) const 
+Vec3d ProjectZ::project(const Vec3d &point) const 
 {
     Vec3d res = point; // copy
     res.z() = m_depth;
     return res;
 }
 
-std::optional<Vec2d> Emboss::ProjectZ::unproject(const Vec3d &p, double *depth) const {
+std::optional<Vec2d> ProjectZ::unproject(const Vec3d &p, double *depth) const {
     return Vec2d(p.x(), p.y());
 }
 
 
-Vec3d Emboss::suggest_up(const Vec3d normal, double up_limit) 
+Vec3d suggest_up(const Vec3d normal, double up_limit) 
 {
     // Normal must be 1
     assert(is_approx(normal.squaredNorm(), 1.));
@@ -1733,7 +1758,7 @@ Vec3d Emboss::suggest_up(const Vec3d normal, double up_limit)
     return wanted_up_dir;
 }
 
-std::optional<float> Emboss::calc_up(const Transform3d &tr, double up_limit)
+std::optional<float> calc_up(const Transform3d &tr, double up_limit)
 {
     auto tr_linear = tr.linear();
     // z base of transformation ( tr * UnitZ )
@@ -1757,7 +1782,7 @@ std::optional<float> Emboss::calc_up(const Transform3d &tr, double up_limit)
     return res;
 }
 
-Transform3d Emboss::create_transformation_onto_surface(const Vec3d &position,
+Transform3d create_transformation_onto_surface(const Vec3d &position,
                                                        const Vec3d &normal,
                                                        double       up_limit)
 {
@@ -1808,27 +1833,28 @@ Transform3d Emboss::create_transformation_onto_surface(const Vec3d &position,
 
 // OrthoProject
 
-std::pair<Vec3d, Vec3d> Emboss::OrthoProject::create_front_back(const Point &p) const {
+std::pair<Vec3d, Vec3d> OrthoProject::create_front_back(const Point &p) const {
     Vec3d front(p.x(), p.y(), 0.);
     Vec3d front_tr = m_matrix * front;
     return std::make_pair(front_tr, project(front_tr));
 }
 
-Vec3d Emboss::OrthoProject::project(const Vec3d &point) const
+Vec3d OrthoProject::project(const Vec3d &point) const
 {
     return point + m_direction;
 }
 
-std::optional<Vec2d> Emboss::OrthoProject::unproject(const Vec3d &p, double *depth) const
+std::optional<Vec2d> OrthoProject::unproject(const Vec3d &p, double *depth) const
 {
     Vec3d pp = m_matrix_inv * p;
     if (depth != nullptr) *depth = pp.z();
     return Vec2d(pp.x(), pp.y());
 }
+} // namespace Slic3r::Biz::Emboss
 
 // sample slice
 namespace {
-
+using Slic3r::Biz::Emboss::PolygonPoint;
 // using coor2 = int64_t;
 using Coord2 = double;
 using P2     = Eigen::Matrix<Coord2, 2, 1, Eigen::DontAlign>;
@@ -1927,8 +1953,9 @@ void point_in_reverse_distance(int32_t distance, PolygonPoint &p, const Slic3r::
 }
 } // namespace
 
+namespace Slic3r::Biz::Emboss {
 // calculate rotation, need copy of polygon point
-double Emboss::calculate_angle(int32_t distance, PolygonPoint polygon_point, const Polygon &polygon)
+double calculate_angle(int32_t distance, PolygonPoint polygon_point, const Polygon &polygon)
 {
     PolygonPoint polygon_point2 = polygon_point; // copy
     point_in_distance(distance, polygon_point, polygon);
@@ -1941,7 +1968,7 @@ double Emboss::calculate_angle(int32_t distance, PolygonPoint polygon_point, con
     return std::atan2(norm_d.y(), norm_d.x());
 }
 
-std::vector<double> Emboss::calculate_angles(const BoundingBoxes &glyph_sizes, const PolygonPoints& polygon_points, const Polygon &polygon)
+std::vector<double> calculate_angles(const BoundingBoxes2crd &glyph_sizes, const PolygonPoints& polygon_points, const Polygon &polygon)
 {
     const int32_t default_distance = static_cast<int32_t>(std::round(scale_(5.)));
     const int32_t min_distance = static_cast<int32_t>(std::round(scale_(.1)));
@@ -1957,7 +1984,7 @@ std::vector<double> Emboss::calculate_angles(const BoundingBoxes &glyph_sizes, c
     }
 
     for (size_t i = 0; i < polygon_points.size(); i++) {
-        int32_t distance = BB::sizes(glyph_sizes[i]).x() / 2;
+        int32_t distance = Algorithms::BoundingBox::sizes(glyph_sizes[i]).x() / 2;
         if (distance < min_distance) // too small could lead to false angle
             distance = default_distance;
         result.emplace_back(calculate_angle(distance, polygon_points[i], polygon));
@@ -1965,11 +1992,11 @@ std::vector<double> Emboss::calculate_angles(const BoundingBoxes &glyph_sizes, c
     return result;
 }
 
-PolygonPoints Emboss::sample_slice(const TextLine &slice, const BoundingBoxes &bbs, double scale)
+PolygonPoints sample_slice(const TextLine& slice, const BoundingBoxes2crd& bbs, double scale)
 {
     // find BB in center of line
     size_t first_right_index = 0;
-    for (const BoundingBox &bb : bbs)
+    for (const BoundingBox2crd &bb : bbs)
         if (!bb.defined) // white char do not have bb
             continue;
         else if (bb.min.x() < 0)
@@ -1983,10 +2010,10 @@ PolygonPoints Emboss::sample_slice(const TextLine &slice, const BoundingBoxes &b
     PolygonPoint cursor = slice.start; //copy
 
     auto create_sample = [&] //polygon_cursor, &polygon_line_index, &line_bbs, &shapes_x_cursor, &shape_scale, &em_2_polygon, &line, &offsets]
-    (const BoundingBox &bb, bool is_reverse) {
+    (const BoundingBox2crd &bb, bool is_reverse) {
         if (!bb.defined)
             return cursor;
-        Point   letter_center  = BB::center(bb);
+        Point   letter_center  = Algorithms::BoundingBox::center(bb);
         int32_t shape_distance = shapes_x_cursor - letter_center.x();
         shapes_x_cursor        = letter_center.x();
         double  distance_mm    = shape_distance * scale;
@@ -2005,7 +2032,7 @@ PolygonPoints Emboss::sample_slice(const TextLine &slice, const BoundingBoxes &b
 
     // calc transformation for letters on the Left side from center
     if (first_right_index < bbs.size()) {
-        shapes_x_cursor = BB::center(bbs[first_right_index]).x();
+        shapes_x_cursor = Algorithms::BoundingBox::center(bbs[first_right_index]).x();
         cursor          = samples[first_right_index];
     }else{
         // only left side exists
@@ -2019,6 +2046,7 @@ PolygonPoints Emboss::sample_slice(const TextLine &slice, const BoundingBoxes &b
     }
     return samples;
 }
+} // namespace Slic3r::Biz::Emboss
 
 namespace {
 float get_align_y_offset(FontProp::VerticalAlign align, unsigned count_lines, const FontFile &ff, const FontProp &fp)
@@ -2039,11 +2067,13 @@ float get_align_y_offset(FontProp::VerticalAlign align, unsigned count_lines, co
     }
 }
 
-int32_t get_align_x_offset(FontProp::HorizontalAlign align, const BoundingBox &shape_bb, const BoundingBox &line_bb)
+int32_t get_align_x_offset(FontProp::HorizontalAlign align, const BoundingBox2crd &shape_bb, const BoundingBox2crd &line_bb)
 {
+    using Algorithms::BoundingBox::sizes;
+    using Algorithms::BoundingBox::center;
     switch (align) {
-        case FontProp::HorizontalAlign::right: return -shape_bb.max.x() + (BB::sizes(shape_bb).x() - BB::sizes(line_bb).x());
-        case FontProp::HorizontalAlign::center: return -BB::center(shape_bb).x() + (BB::sizes(shape_bb).x() - BB::sizes(line_bb).x()) / 2;
+    case FontProp::HorizontalAlign::right: return -shape_bb.max.x() + (sizes(shape_bb).x() - sizes(line_bb).x());
+    case FontProp::HorizontalAlign::center: return -center(shape_bb).x() + (sizes(shape_bb).x() - sizes(line_bb).x()) / 2;
     case FontProp::HorizontalAlign::left: // no change
     default: break;
     }
@@ -2067,14 +2097,12 @@ void align_shape(ExPolygonsWithIds &shapes, const std::wstring &text, const Font
         return;
     }
 
-    BoundingBox shape_bb;
-    for (const ExPolygonsWithId& shape: shapes)
-        shape_bb = BB::merge(shape_bb, get_extents(shape.expoly));
-
+    BoundingBox2crd shape_bb = get_extents(shapes);
     auto get_line_bb = [&](size_t j) {
-        BoundingBox line_bb;
+        BoundingBox2crd line_bb;
         for (; j < text.length() && text[j] != '\n'; ++j)
-            line_bb = BB::merge(line_bb, get_extents(shapes[j].expoly));
+            line_bb = Algorithms::BoundingBox::merge(line_bb, 
+                Algorithms::ExPolygon::get_extents(shapes[j].expoly));
         return line_bb;
     };
 
@@ -2095,7 +2123,8 @@ void align_shape(ExPolygonsWithIds &shapes, const std::wstring &text, const Font
 }
 } // namespace
 
-double Emboss::get_align_y_offset_in_mm(FontProp::VerticalAlign align, unsigned count_lines, const FontFile &ff, const FontProp &fp){
+namespace Slic3r::Biz::Emboss {
+double get_align_y_offset_in_mm(FontProp::VerticalAlign align, unsigned count_lines, const FontFile &ff, const FontProp &fp){
     float offset_in_font_point = get_align_y_offset(align, count_lines, ff, fp);
     double scale = get_text_shape_scale(fp, ff);
     return scale * offset_in_font_point;
@@ -2258,3 +2287,5 @@ void remove_spikes(ExPolygons &expolygons, const SpikeDesc &spike_desc)
 }
 
 #endif // REMOVE_SPIKES
+
+} // namespace Slic3r::Biz::Emboss
