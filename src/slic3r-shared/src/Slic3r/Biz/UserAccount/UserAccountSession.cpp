@@ -4,6 +4,7 @@
 #include "Slic3r/Biz/Network/Jwt.hpp"
 #include "Slic3r/Log.hpp"
 
+#include "fmt/format.h"
 #include <nlohmann/json.hpp>
 
 #include "libslic3r/format.hpp"
@@ -267,7 +268,7 @@ void UserAccountSession::token_success_callback(const std::string& body)
     int expires_in = Network::Jwt::get_exp_seconds(access_token);
     if (access_token.empty() || refresh_token.empty() || shared_session_key.empty() || expires_in <= 0) {
         // just debug msg, no need to translate
-        std::string msg = format("Failed read tokens after POST.\nAccess token: %1%\nRefresh token: %2%\nShared session token: %3%\nbody: %4%", access_token, refresh_token, shared_session_key, body);
+        std::string msg = fmt::format("Failed read tokens after POST.\nAccess token: {}\nRefresh token: {}\nShared session token: {}\nbody: {}", access_token, refresh_token, shared_session_key, body);
         {
             std::lock_guard<std::mutex> lock(m_credentials_mutex);
             m_access_token = std::string();

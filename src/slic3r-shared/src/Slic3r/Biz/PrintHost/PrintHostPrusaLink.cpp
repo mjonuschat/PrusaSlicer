@@ -5,8 +5,7 @@
 
 #include "Slic3r/Log.hpp"
 
-#include "libslic3r/format.hpp"
-
+#include "fmt/format.h"
 #include <boost/filesystem.hpp>
 #include <boost/system/error_code.hpp>
 #include <boost/algorithm/string.hpp>
@@ -50,12 +49,12 @@ std::string PrintHostPrusaLink::make_url(const std::string& path) const
 {
     if (m_print_host_config.host.find("http://") == 0 || m_print_host_config.host.find("https://") == 0) {
         if (m_print_host_config.host.back() == '/') {
-            return format("%1%%2%", m_print_host_config.host, path);
+            return fmt::format("{}{}", m_print_host_config.host, path);
         } else {
-            return format("%1%/%2%", m_print_host_config.host, path);
+            return fmt::format("{}/{}", m_print_host_config.host, path);
         }
     } else {
-        return format("http://%1%/%2%", m_print_host_config.host, path);
+        return fmt::format("http://{}/{}", m_print_host_config.host, path);
     }
 
 }
@@ -81,7 +80,7 @@ bool PrintHostPrusaLink::perform(ProgressFn progress_fn, RetryFn retry_fn, Error
                 for (const auto & rpl : replies) {
                     boost::asio::ip::address ip(rpl.ip);
                     ra.emplace_back(ip);
-                    SPDLOG_INFO(format("Resolved IP address: %1%", rpl.ip));
+                    SPDLOG_INFO("Resolved IP address: {}", rpl.ip.to_string());
                 }
             })
             .resolve_sync();
@@ -89,7 +88,7 @@ bool PrintHostPrusaLink::perform(ProgressFn progress_fn, RetryFn retry_fn, Error
 
     if (resolved_addr.empty()) {
         // no resolved addresses - try system resolving
-        SPDLOG_ERROR(format("Failed to resolve hostname %1% into the IP address. Starting upload with system resolving.", m_print_host_config.host));
+        SPDLOG_ERROR("Failed to resolve hostname {} into the IP address. Starting upload with system resolving.", m_print_host_config.host);
         return upload_inner_with_host(progress_fn, retry_fn, error_fn, info_fn);
     } else if (resolved_addr.size() == 1) {
         // one address resolved - upload there
@@ -99,11 +98,11 @@ bool PrintHostPrusaLink::perform(ProgressFn progress_fn, RetryFn retry_fn, Error
         // try sending to both. (Then if both fail, show both error msg after second try)
         std::string error_message;
         if (!upload_inner_with_resolved_ip(progress_fn, retry_fn
-            , [&msg = error_message, resolved_addr](std::string error) { msg = format("%1%: %2%", resolved_addr.front(), error); }
+            , [&msg = error_message, resolved_addr](std::string error) { msg = fmt::format("{}: {}", resolved_addr.front().to_string(), error); }
             , info_fn, resolved_addr.front())
             &&
             !upload_inner_with_resolved_ip(progress_fn, retry_fn
-            , [&msg = error_message, resolved_addr](std::string error) { msg += format("\n%1%: %2%", resolved_addr.back(), error); }
+            , [&msg = error_message, resolved_addr](std::string error) { msg += fmt::format("\n{}: {}", resolved_addr.back().to_string(), error); }
             , info_fn, resolved_addr.back())
             ) {
 
@@ -133,17 +132,17 @@ bool PrintHostPrusaLink::test(std::string& msg, RetryFn retry_fn) const
     bool res = true;
     auto url = make_url("api/version");
 
-    SPDLOG_INFO(format("%1%: Get version at: %2%", name , url));
+    SPDLOG_INFO("{}: Get version at: {}", name , url);
 
     std::unique_ptr<Network::IHttp> http = Network::IHttp::create(Network::IHttp::RequestMethod::Get, std::move(url), retry_fn);
     set_auth(http.get());
     http->on_error([&](std::string body, std::string error, unsigned status) {
-        SPDLOG_ERROR(format("%1%: Error getting version: %2%, HTTP %3%, body: `%4%`", name , error , status , body));
+        SPDLOG_ERROR("{}: Error getting version: {}, HTTP {}, body: `{}`", name , error , status , body);
         res = false;
         msg = format_error(body, error, status);
         })
         .on_complete([&, this](std::string body, unsigned) {
-            SPDLOG_INFO(format("%1%: Got version: %2%", name , body));
+            SPDLOG_INFO("{}: Got version: {}", name , body);
 
             try {
                 nlohmann::json json = nlohmann::json::parse(body);
@@ -157,7 +156,7 @@ bool PrintHostPrusaLink::test(std::string& msg, RetryFn retry_fn) const
                 }
                 res = validate_version_text(text);
                 if (! res) {
-                    msg = format(_u8L("Mismatched type of print host: %s"), (text ? *text : name));
+                    msg = fmt::format("{} {}", _u8L("Mismatched type of print host:"), (text ? *text : name));
                 }
             }
             catch (const std::exception&) {
@@ -188,17 +187,17 @@ bool PrintHostPrusaLink::test_with_method_check(std::string& msg, bool& use_put,
     bool res = true;
     auto url = make_url("api/version");
 
-    SPDLOG_INFO(format("%1%: Get version at: %2%", name, url));
+    SPDLOG_INFO("{}: Get version at: {}", name, url);
     // Here we do not have to add custom "Host" header - the url contains host filled by user and libCurl will set the header by itself.
     std::unique_ptr<Network::IHttp> http = Network::IHttp::create(Network::IHttp::RequestMethod::Get, std::move(url), retry_fn);
     set_auth(http.get());
     http->on_error([&](std::string body, std::string error, unsigned status) {
-        SPDLOG_ERROR(format("%1%: Error getting version: %2%, HTTP %3%, body: `%4%`", name, error, status, body));
+        SPDLOG_ERROR("{}: Error getting version: {}, HTTP {}, body: `{}`", name, error, status, body);
         res = false;
         msg = format_error(body, error, status);
     })
     .on_complete([&, this](std::string body, unsigned) {
-        SPDLOG_INFO(format("%1%: Got version: %2%", name, body));
+        SPDLOG_INFO("{}: Got version: {}", name, body);
 
         try {
             nlohmann::json json = nlohmann::json::parse(body);
@@ -212,7 +211,7 @@ bool PrintHostPrusaLink::test_with_method_check(std::string& msg, bool& use_put,
             }
             res = validate_version_text(text);
             if (! res) {
-                 msg =format(_u8L("Mismatched type of print host: %s"), (text ? *text : "OctoPrint"));
+                 msg =fmt::format("{} {}", _u8L("Mismatched type of print host:"), (text ? *text : "OctoPrint"));
                 use_put = false;
                 return;
             }
@@ -252,7 +251,7 @@ bool PrintHostPrusaLink::test_with_resolved_ip_and_method_check(std::string& msg
     std::string url = Network::IHttp::substitute_host(make_url("api/version"), msg);
     msg.clear();
 
-    SPDLOG_INFO(format("%1%: Get version at: %2%", name, url));
+    SPDLOG_INFO("{}: Get version at: {}", name, url);
 
     std::string host = Network::IHttp::extract_host_from_url(m_print_host_config.host);
     std::unique_ptr<Network::IHttp> http = Network::IHttp::create(Network::IHttp::RequestMethod::Get, url, retry_fn);
@@ -265,12 +264,12 @@ bool PrintHostPrusaLink::test_with_resolved_ip_and_method_check(std::string& msg
     http->header("Host", host);
     set_auth(http.get());
     http->on_error([&](std::string body, std::string error, unsigned status) {
-        SPDLOG_ERROR(format("%1%: Error getting version at %2% : %3%, HTTP %4%, body: `%5%`", name, url, error, status, body));
+        SPDLOG_ERROR("{}: Error getting version at {} : {}, HTTP {}, body: `{}`", name, url, error, status, body);
         res = false;
         msg = format_error(body, error, status);
             })
         .on_complete([&, this](std::string body, unsigned) {
-            SPDLOG_INFO(format("%1%: Got version: %2%", name, body));
+            SPDLOG_INFO("{}: Got version: {}", name, body);
 
             try {
                 nlohmann::json json = nlohmann::json::parse(body);
@@ -284,7 +283,7 @@ bool PrintHostPrusaLink::test_with_resolved_ip_and_method_check(std::string& msg
                 }
                 res = validate_version_text(text);
                 if (! res) {
-                     msg =format(_u8L("Mismatched type of print host: %s"), (text ? *text : "OctoPrint"));
+                     msg =fmt::format("{} {}", _u8L("Mismatched type of print host:"), (text ? *text : "OctoPrint"));
                     use_put = false;
                     return;
                 }
@@ -330,14 +329,14 @@ bool PrintHostPrusaLink::upload_inner_with_resolved_ip(ProgressFn progress_fn, R
     bool result = true;
     info_fn("resolve", url);
 
-    SPDLOG_INFO(format("%1%: Uploading file %2% at %3%, filename: %4%, path: %5%, print: %6%, method: %7%",
+    SPDLOG_INFO("{}: Uploading file {} at {}, filename: {}, path: {}, print: {}, method: {}",
         name
-        , m_upload_data.dest_path
+        , m_upload_data.dest_path.string()
         , url
         , upload_filename.string()
         , upload_parent_path.string()
         , (m_upload_data.post_action == PrintHostAfterUploadAction::StartPrint ? "true" : "false")
-        , (use_put ? "PUT" : "POST")));
+        , (use_put ? "PUT" : "POST"));
 
     if (use_put)
         return put_inner(std::move(url), name, progress_fn, retry_fn, error_fn, info_fn);
@@ -384,17 +383,17 @@ bool PrintHostPrusaLink::upload_inner_with_host(ProgressFn progress_fn, RetryFn 
         // in original address (m_host) replace host for resolved ip 
         info_fn("resolve", test_msg);
         url = Network::IHttp::substitute_host(make_url(storage_path), test_msg);
-        SPDLOG_INFO(format("Upload address after ip resolve: %1%", url));
+        SPDLOG_INFO("Upload address after ip resolve: {}", url);
     }
 #endif // _WIN32
-    SPDLOG_INFO(format("%1%: Uploading file %2% at %3%, filename: %4%, path: %5%, print: %6%, method: %7%",
+    SPDLOG_INFO("{}: Uploading file {} at {}, filename: {}, path: {}, print: {}, method: {}",
         name
-        , m_upload_data.dest_path
+        , m_upload_data.dest_path.string()
         , url
         , upload_filename.string()
         , upload_parent_path.string()   
         , (m_upload_data.post_action == PrintHostAfterUploadAction::StartPrint ? "true" : "false")
-        , (use_put ? "PUT" : "POST")));
+        , (use_put ? "PUT" : "POST"));
 
     if (use_put)
         return put_inner(std::move(url), name, progress_fn, retry_fn, error_fn, info_fn);
@@ -427,11 +426,11 @@ bool PrintHostPrusaLink::put_inner(std::string url, const std::string& name, Pro
         .header("Content-Type", "text/x.gcode")
         .header("Overwrite", "?1")
         .on_complete([&](std::string body, unsigned status) {
-            SPDLOG_INFO(format("%1%: File uploaded: HTTP %2%: %3%", name, status, body));
+            SPDLOG_INFO("{}: File uploaded: HTTP {}: {}", name, status, body);
             info_fn("complete", body);
         })
         .on_error([&](std::string body, std::string error, unsigned status) {
-            SPDLOG_ERROR(format("%1%: Error uploading file: %2%, HTTP %3%, body: `%4%`", name, error, status, body));
+            SPDLOG_ERROR("{}: Error uploading file: , HTTP {}, body: `{}`", name, error, status, body);
             error_fn(format_error(body, error, status));
             res = false;
         })
@@ -474,14 +473,14 @@ bool PrintHostPrusaLink::post_inner(std::string url, const std::string& name, Pr
         .form_add_file("file", m_upload_data.source_path, upload_filename.string())
         .on_complete([&](std::string body, unsigned status) {
             // PrusaConnect message
-            SPDLOG_INFO(format("%1%: File uploaded: HTTP %2%: %3%", name, status, body));
+            SPDLOG_INFO("{}: File uploaded: HTTP {}: {}", name, status, body);
             if (status == 202)
                 info_fn("complete_with_warning", body);
             else 
                 info_fn("complete", body);
         })
         .on_error([&](std::string body, std::string error, unsigned status) {
-            SPDLOG_ERROR(format("%1%: Error uploading file: %2%, HTTP %3%, body: `%4%`", name, error, status, body));
+            SPDLOG_ERROR("{}: Error uploading file: {}, HTTP {}, body: `{}`", name, error, status, body);
             error_fn(format_error(body, error, status));
             res = false;
         })

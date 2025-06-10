@@ -3,8 +3,7 @@
 #include "Slic3r/Log.hpp"
 #include "Slic3r/App/I18N/I18N.hpp"
 
-#include "libslic3r/format.hpp"
-
+#include "fmt/format.h"
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
 #include <nlohmann/json.hpp>
@@ -30,13 +29,13 @@ bool PrintHostAstroBox::perform(ProgressFn progress_fn, RetryFn retry_fn, ErrorF
 
     auto url = make_url("api/files/local");
 
-   SPDLOG_INFO(format("%1%: Uploading file %2% at %3%, filename: %4%, path: %5%, print: %6%"
+   SPDLOG_INFO("{}: Uploading file {} at {}, filename: {}, path: {}, print: {}"
         , name
         , m_upload_data.dest_path.string()
         , url
         , upload_filename.string()
         , upload_parent_path.string()
-        , (m_upload_data.post_action == PrintHostAfterUploadAction::StartPrint ? "true" : "false")));
+        , (m_upload_data.post_action == PrintHostAfterUploadAction::StartPrint ? "true" : "false"));
 
     std::unique_ptr<Network::IHttp> http = Network::IHttp::create(Network::IHttp::RequestMethod::Post, std::move(url), retry_fn);
     set_auth(http.get());
@@ -44,10 +43,10 @@ bool PrintHostAstroBox::perform(ProgressFn progress_fn, RetryFn retry_fn, ErrorF
         .form_add("path", upload_parent_path.string())      // XXX: slashes on windows ???
         .form_add_file("file", m_upload_data.source_path, upload_filename.string())
         .on_complete([&](std::string body, unsigned status) {
-            SPDLOG_INFO(format("%1%: File uploaded: HTTP %2%: %3%", name , status , body));
+            SPDLOG_INFO("{}: File uploaded: HTTP {}: {}", name , status , body);
         })
         .on_error([&](std::string body, std::string error, unsigned status) {
-            SPDLOG_ERROR(format("%1%: Error uploading file: %2%, HTTP %3%, body: `%4%`" , name , error , status , body));
+            SPDLOG_ERROR("{}: Error uploading file: {}, HTTP {}, body: `{}`" , name , error , status , body);
             error_fn(format_error(body, error, status));
             res = false;
         })
@@ -74,17 +73,17 @@ bool PrintHostAstroBox::test(std::string& msg, RetryFn retry_fn) const
     bool res = true;
     auto url = make_url("api/version");
 
-    SPDLOG_INFO(format("%1%: Get version at: %2%", name , url));
+    SPDLOG_INFO("{}: Get version at: {}", name , url);
 
     std::unique_ptr<Network::IHttp> http = Network::IHttp::create(Network::IHttp::RequestMethod::Get, std::move(url), retry_fn);
     set_auth(http.get());
     http->on_error([&](std::string body, std::string error, unsigned status) {
-           SPDLOG_ERROR(format("%1%: Error getting version: %2%, HTTP %3%, body: `%4%`", name , error , status , body));
+           SPDLOG_ERROR("{}: Error getting version: {}, HTTP {}, body: `{}`", name , error , status , body);
             res = false;
             msg = format_error(body, error, status);
         })
         .on_complete([&, this](std::string body, unsigned) {
-            SPDLOG_INFO(format("%1%: Got version: %2%", name , body));
+            SPDLOG_INFO("{}: Got version: {}", name , body);
             try {
                 nlohmann::json json = nlohmann::json::parse(body);
                 if (!json.contains("api") || !json["api"].is_string()) {
@@ -97,7 +96,7 @@ bool PrintHostAstroBox::test(std::string& msg, RetryFn retry_fn) const
                 }
                 res = validate_version_text(text);
                 if (! res) {
-                    msg = format(_u8L("Mismatched type of print host: %1%"), (text ? *text : "AstroBox"));
+                    msg = fmt::format("{} {}",_u8L("Mismatched type of print host:"), (text ? *text : "AstroBox"));
                 }
             }
             catch (const std::exception &) {
@@ -114,12 +113,12 @@ std::string PrintHostAstroBox::make_url(const std::string &path) const
 {
     if (m_print_host_config.host.find("http://") == 0 || m_print_host_config.host.find("https://") == 0) {
         if (m_print_host_config.host.back() == '/') {
-            return format("%1%%2%", m_print_host_config.host, path);
+            return fmt::format("{}{}", m_print_host_config.host, path);
         } else {
-            return format("%1%/%2%", m_print_host_config.host , path);
+            return fmt::format("{}/{}", m_print_host_config.host , path);
         }
     } else {
-        return format("http://%1%/%2%", m_print_host_config.host , path);
+        return fmt::format("http://{}/{}", m_print_host_config.host , path);
     }
 }
 

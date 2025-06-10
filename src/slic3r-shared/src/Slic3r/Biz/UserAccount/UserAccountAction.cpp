@@ -3,7 +3,7 @@
 #include "Slic3r/Biz/Network/IHttp.hpp"
 #include "Slic3r/Log.hpp"
 
-#include "libslic3r/format.hpp"
+#include "fmt/format.h"
 
 namespace Slic3r::Biz::UserAccount {
 
@@ -79,7 +79,7 @@ void UserAccountActionGetWithEvent::perform(IUserAccountActionCallbacks* callbac
         //SPDLOG_INFO("UserActionGetWithEvent::perform on_error");
         if (fail_callback)
             fail_callback(body);
-        std::string message = format("%1% action failed (%2%): %3%", action_name, std::to_string(status), body);
+        std::string message = fmt::format("{} action failed ({}): {}", *action_name, std::to_string(status), body);
         if (fail_type != ActionFailType::None) {
             callbacks->on_action_fail(fail_type, std::move(message));
         }

@@ -3,8 +3,7 @@
 #include "Slic3r/Log.hpp"
 #include "Slic3r/App/I18N/I18N.hpp"
 
-#include "libslic3r/format.hpp"
-
+#include "fmt/format.h"
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
 #include <nlohmann/json.hpp>
@@ -26,10 +25,10 @@ bool PrintHostDuet::perform(ProgressFn progress_fn, RetryFn retry_fn, ErrorFn er
 	bool dsf = (connectionType == ConnectionType::dsf);
 
 	auto upload_cmd = get_upload_url(m_upload_data.dest_path.string(), connectionType);
-	SPDLOG_INFO(format("Duet: Uploading file. filepath: %1%, post_action: %2%, command: %3%"
-		, m_upload_data.dest_path
+	SPDLOG_INFO("Duet: Uploading file. filepath: {}, post_action: {}, command: {}"
+		, m_upload_data.dest_path.string()
 		, int(m_upload_data.post_action)
-		, upload_cmd));
+		, upload_cmd);
 
      std::unique_ptr<Network::IHttp> http = (dsf 
         ? Network::IHttp::create(Network::IHttp::RequestMethod::Put, std::move(upload_cmd), retry_fn)
@@ -42,11 +41,11 @@ bool PrintHostDuet::perform(ProgressFn progress_fn, RetryFn retry_fn, ErrorFn er
 		http->set_post_body(m_upload_data.source_path);
 	}
 	http->on_complete([&](std::string body, unsigned status) {
-			SPDLOG_INFO(format("Duet: File uploaded: HTTP %1%: %2%", status , body));
+			SPDLOG_INFO("Duet: File uploaded: HTTP {}: {}", status , body);
 
 			int err_code = dsf ? (status == 201 ? 0 : 1) : get_err_code_from_body(body);
 			if (err_code != 0) {
-				SPDLOG_INFO(format("Duet: Request completed but error code was received: %1%", err_code));
+				SPDLOG_INFO("Duet: Request completed but error code was received: {}", err_code);
 				error_fn(format_error(body, L("Unknown error occured"), 0));
 				res = false;
 			} else if (m_upload_data.post_action == PrintHostAfterUploadAction::StartPrint) {
@@ -64,7 +63,7 @@ bool PrintHostDuet::perform(ProgressFn progress_fn, RetryFn retry_fn, ErrorFn er
 			}
 		})
 		.on_error([&](std::string body, std::string error, unsigned status) {
-			SPDLOG_ERROR(format("Duet: Error uploading file: %1%, HTTP %2%, body: `%3%`", error , status , body));
+			SPDLOG_ERROR("Duet: Error uploading file: {}, HTTP {}, body: `{}`", error , status , body);
 			error_fn(format_error(body, error, status));
 			res = false;
 		})
@@ -100,7 +99,7 @@ PrintHostDuet::ConnectionType PrintHostDuet::connect(std::string &msg, RetryFn r
 			auto dsfUrl = get_connect_url(true);
             std::unique_ptr<Network::IHttp> dsfHttp = Network::IHttp::create(Network::IHttp::RequestMethod::Get, std::move(dsfUrl), retry_fn);
 			dsfHttp->on_error([&](std::string body, std::string error, unsigned status) {
-					SPDLOG_ERROR(format("Duet: Error connecting: %1%, HTTP %2%, body: `%3%`", error , status , body));
+					SPDLOG_ERROR("Duet: Error connecting: {}, HTTP {}, body: `{}`", error , status , body);
 					msg = format_error(body, error, status);
 				})
 				.on_complete([&](std::string body, unsigned) {
@@ -113,7 +112,7 @@ PrintHostDuet::ConnectionType PrintHostDuet::connect(std::string &msg, RetryFn r
                         res = ConnectionType::dsf;
 					}
 					catch (const std::exception&) {
-						SPDLOG_ERROR(format("Failed to parse serverKey from Duet reply to Connect request: ", body));
+						SPDLOG_ERROR("Failed to parse serverKey from Duet reply to Connect request: {}", body);
 						msg = format_error(body, L("Failed to parse a Connect reply"), 0);
 						res = ConnectionType::error;
 					}
@@ -121,7 +120,7 @@ PrintHostDuet::ConnectionType PrintHostDuet::connect(std::string &msg, RetryFn r
 				.perform_sync();
 		})
 		.on_complete([&](std::string body, unsigned) {
-			SPDLOG_INFO(format("Duet: Got: %1%", body));
+			SPDLOG_INFO("Duet: Got: {}", body);
 
 			int err_code = get_err_code_from_body(body);
 			switch (err_code) {
@@ -151,13 +150,12 @@ void PrintHostDuet::disconnect(PrintHostDuet::ConnectionType connectionType, Ret
 	if (connectionType != ConnectionType::rrf) {
 		return;
 	}
-	auto url =  (boost::format("%1%rr_disconnect")
-			% get_base_url()).str();
+	auto url =  fmt::format("{}rr_disconnect", get_base_url());
 
 	std::unique_ptr<Network::IHttp> http = Network::IHttp::create(Network::IHttp::RequestMethod::Get, std::move(url), retry_fn);
 	http->on_error([&](std::string body, std::string error, unsigned status) {
 		// we don't care about it, if disconnect is not working Duet will disconnect automatically after some time
-		SPDLOG_ERROR(format("Duet: Error disconnecting: %1%, HTTP %2%, body: `%3%`", error , status , body));
+		SPDLOG_ERROR("Duet: Error disconnecting: {}, HTTP {}, body: `{}`", error , status , body);
 	})
 	.perform_sync();
 }
@@ -167,11 +165,11 @@ std::string PrintHostDuet::get_upload_url(const std::string &filename, PrintHost
     assert(connectionType != ConnectionType::error);
 
 	if (connectionType == ConnectionType::dsf) {
-		return format("%1%machine/file/gcodes/%2%"
+		return fmt::format("{}machine/file/gcodes/{}"
 				, get_base_url()
 				, Network::IHttp::escape_string(filename));
 	} else {
-		return format("%1%rr_upload?name=0:/gcodes/%2%&%3%"
+		return fmt::format("%1%rr_upload?name=0:/gcodes/{}&{}"
 				, get_base_url()
 				, Network::IHttp::escape_string(filename)
 				, timestamp_str());
@@ -181,11 +179,11 @@ std::string PrintHostDuet::get_upload_url(const std::string &filename, PrintHost
 std::string PrintHostDuet::get_connect_url(const bool dsfUrl) const
 {
 	if (dsfUrl)	{
-		return format("%1%machine/connect?password=%2%"
+		return fmt::format("{}machine/connect?password={}"
 			, get_base_url()
 			, (password.empty() ? "reprap" : Network::IHttp::escape_string(password)));
 	} else {
-		return format("%1%rr_connect?password=%2%&%3%"
+		return fmt::format("{}rr_connect?password={}&{}"
 				, get_base_url()
 				, (password.empty() ? "reprap" : Network::IHttp::escape_string(password))
 				, timestamp_str());
@@ -198,10 +196,10 @@ std::string PrintHostDuet::get_base_url() const
 		if (host.back() == '/') {
 			return host;
 		} else {
-			return format("%1%/", host);
+			return fmt::format("{}/", host);
 		}
 	} else {
-		return format("http://%1%/", host);
+		return fmt::format("http://{}/", host);
 	}
 }
 
@@ -226,30 +224,27 @@ bool PrintHostDuet::start_print(std::string &msg, const std::string &filename, P
 	bool dsf = (connectionType == ConnectionType::dsf);
 
 	auto url = dsf
-		? format("%1%machine/code", get_base_url())
-		: format(simulationMode
-				? "%1%rr_gcode?gcode=M37%%20P\"0:/gcodes/%2%\""
-				: "%1%rr_gcode?gcode=M32%%20\"0:/gcodes/%2%\""
-			, get_base_url()
-			, Network::IHttp::escape_string(filename));
+		? fmt::format("{}machine/code", get_base_url())
+		: simulationMode
+				? fmt::format("{}rr_gcode?gcode=M37%%20P\"0:/gcodes/{}\"", get_base_url(), Network::IHttp::escape_string(filename))
+				: fmt::format("{}rr_gcode?gcode=M32%%20\"0:/gcodes/{}\"", get_base_url(), Network::IHttp::escape_string(filename));
     
     std::unique_ptr<Network::IHttp> http = (dsf 
         ? Network::IHttp::create(Network::IHttp::RequestMethod::Post, std::move(url), retry_fn)
         : Network::IHttp::create(Network::IHttp::RequestMethod::Get, std::move(url), retry_fn));
 	if (dsf) {
 		http->set_post_body(
-				(format(simulationMode
-						? "M37 P\"0:/gcodes/%1%\""
-						: "M32 \"0:/gcodes/%1%\""
-					, filename))
+				(simulationMode
+						? fmt::format("M37 P\"0:/gcodes/{}\"", filename)
+						: fmt::format("M32 \"0:/gcodes/{}\"", filename))
 				);
 	}
 	http->on_error([&](std::string body, std::string error, unsigned status) {
-			SPDLOG_ERROR(format("Duet: Error starting print: %1%, HTTP %2%, body: `%3%`", error , status , body));
+			SPDLOG_ERROR("Duet: Error starting print: {}, HTTP {}, body: `{}`", error , status , body);
 			msg = format_error(body, error, status);
 		})
 		.on_complete([&](std::string body, unsigned) {
-			SPDLOG_INFO(format("Duet: Got: %1%", body));
+			SPDLOG_INFO("Duet: Got: {}", body);
 			res = true;
 		})
 		.perform_sync();
@@ -262,7 +257,7 @@ int PrintHostDuet::get_err_code_from_body(const std::string& body) const {
         nlohmann::json json = nlohmann::json::parse(body);
         return json.value("err", 0);
     } catch (const std::exception& e) {
-        SPDLOG_ERROR(format("JSON parsing error: %1%", e.what()));
+        SPDLOG_ERROR("JSON parsing error: {}", e.what());
         return 0;
     }
 }

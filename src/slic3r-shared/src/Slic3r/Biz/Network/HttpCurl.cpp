@@ -5,9 +5,8 @@
 #include "Slic3r/Exception.hpp"
 
 #include "libslic3r/Utils.hpp"
-#include "libslic3r/format.hpp"
-#include "libslic3r/libslic3r_version.h"
 
+#include "fmt/format.h"
 #include <boost/log/trivial.hpp>
 #include <boost/nowide/fstream.hpp>
 #include <random>
@@ -64,13 +63,13 @@ struct CurlGlobalInit
                                "PrusaSlicer will be unable to establish secure "
                                "network connections.");
             else
-                message = format(
-					_u8L("PrusaSlicer detected system SSL certificate store in: %1%"),
+                message = fmt::format(
+					_u8L("PrusaSlicer detected system SSL certificate store in: {}"),
                     bundle);
 
-            message += "\n" + format(
+            message += "\n" + fmt::format(
 				_u8L("To specify the system certificate store manually, please "
-                   "set the %1% environment variable to the correct CA bundle "
+                   "set the {} environment variable to the correct CA bundle "
                    "and restart the application."),
                 SSL_CA_FILE);
         }
@@ -239,15 +238,15 @@ void HttpCurl::form_add_file_inner(const char* name, const fs::path& path, const
 
 std::string HttpCurl::curl_error(CURLcode curlcode)
 {
-	return format("%1%:\n%2%\n[Error %3%]"
+	return fmt::format("{}:\n{}\n[Error {}]"
 		, ::curl_easy_strerror(curlcode)
 		, m_error_buffer.c_str()
-		, curlcode);
+		, std::to_string(curlcode));
 }
 
 std::string HttpCurl::body_size_error()
 {
-	return format("HTTP body data size exceeded m_limit (%1% bytes)", m_limit);
+	return fmt::format("HTTP body data size exceeded m_limit ({} bytes)", m_limit);
 }
 
 namespace {

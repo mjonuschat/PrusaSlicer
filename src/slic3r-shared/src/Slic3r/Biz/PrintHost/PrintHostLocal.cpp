@@ -2,8 +2,7 @@
 
 #include "Slic3r/App/I18N/I18N.hpp"
 
-#include "libslic3r/format.hpp"
-
+#include "fmt/format.h"
 #include <boost/filesystem.hpp>
 #include <boost/system/error_code.hpp>
 #include <boost/log/trivial.hpp>
@@ -18,7 +17,7 @@ bool PrintHostLocal::perform(ProgressFn progress_fn, RetryFn retry_fn, ErrorFn e
    std::string error;
    bool res =  move_file(m_upload_data.source_path, m_upload_data.dest_path, error);
    if (!res) {
-       error_fn(format(_u8L("Failed to export file to %1%. %2%"), m_upload_data.dest_path.string(), error));
+       error_fn(fmt::format("{}{}. {}", _u8L("Failed to export file to"), m_upload_data.dest_path.string(), error));
    }
    return res; 
 }
@@ -34,14 +33,14 @@ bool PrintHostLocal::move_file(const boost::filesystem::path& source, const boos
     ec.clear();
     
     if (!fs::exists(dest.parent_path(), ec) || ec || !fs::is_directory(dest.parent_path(), ec) || ec) {
-        msg = format("Path does not exists: %1%", dest.parent_path().string());
+        msg = fmt::format("Path does not exists: {}", dest.parent_path().string());
         return false;
     }
     
     ec.clear();
     fs::rename(source, dest, ec); 
     if (ec) {
-        msg = format("Failed to move %1% to %2%", source.string(), dest.string());
+        msg = fmt::format("Failed to move {} to {}", source.string(), dest.string());
         return false;
     }
 	return true;

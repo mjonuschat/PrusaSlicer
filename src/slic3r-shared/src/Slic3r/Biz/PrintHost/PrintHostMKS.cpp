@@ -4,8 +4,7 @@
 #include "Slic3r/App/I18N/I18N.hpp"
 #include "Slic3r/Biz/Network/TCPConsole.hpp"
 
-#include "libslic3r/format.hpp"
-
+#include "fmt/format.h"
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
 #include <nlohmann/json.hpp>
@@ -19,26 +18,26 @@ bool PrintHostMKS::perform(ProgressFn progress_fn, RetryFn retry_fn, ErrorFn err
     bool res = true;
 
 	auto upload_cmd = get_upload_url(m_upload_data.dest_path.string());
-	SPDLOG_INFO(format("MKS: Uploading file. filepath: %1%, print: %2%, command: %3%"
-		, m_upload_data.dest_path
+	SPDLOG_INFO("MKS: Uploading file. filepath: {}, print: {}, command: {}"
+		, m_upload_data.dest_path.string()
 		, (m_upload_data.post_action == PrintHostAfterUploadAction::StartPrint)
-		, upload_cmd));
+		, upload_cmd);
 
     std::unique_ptr<Network::IHttp> http = Network::IHttp::create(Network::IHttp::RequestMethod::Post, std::move(upload_cmd), retry_fn);
 	http->set_post_body(m_upload_data.source_path);
 	http->on_complete([&](std::string body, unsigned status) {
-		SPDLOG_INFO(format("MKS: File uploaded: HTTP %1%: %2%", status , body));
+		SPDLOG_INFO("MKS: File uploaded: HTTP {}: {}", status , body);
         int err_code;
         try {
             nlohmann::json json = nlohmann::json::parse(body);
             err_code = json.value("err", 0);
 		}
 		catch (const std::exception&) {
-			SPDLOG_INFO(format("Failed to parse MKS on_complete msg json: ", body));
+			SPDLOG_INFO(("Failed to parse MKS on_complete msg json: ", body));
 		}
 
 		if (err_code != 0) {
-			SPDLOG_INFO(format("MKS: Request completed but error code was received: %1%", err_code));
+			SPDLOG_INFO("MKS: Request completed but error code was received: {}", err_code);
 			error_fn(format_error(body, L("Unknown error occurred"), 0));
 			res = false;
 		} else if (m_upload_data.post_action == PrintHostAfterUploadAction::StartPrint) {
@@ -50,7 +49,7 @@ bool PrintHostMKS::perform(ProgressFn progress_fn, RetryFn retry_fn, ErrorFn err
 		}
 		})
 		.on_error([&](std::string body, std::string error, unsigned status) {
-			SPDLOG_ERROR(format("MKS: Error uploading file: %1%, HTTP %2%, body: `%3%`", error , status , body));
+			SPDLOG_ERROR("MKS: Error uploading file: {}, HTTP {}, body: `{}`", error , status , body);
 			error_fn(format_error(body, error, status));
 			res = false;
 		})
@@ -82,7 +81,7 @@ bool PrintHostMKS::test(std::string& msg, RetryFn retry_fn) const
 
 std::string PrintHostMKS::get_upload_url(const std::string& filename) const
 {
-	return format("http://%1%/upload?X-Filename=%2%"
+	return fmt::format("http://{}/upload?X-Filename={}"
 		, m_print_host_config.host
 		, Network::IHttp::escape_string(filename));
 }

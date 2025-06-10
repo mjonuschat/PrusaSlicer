@@ -3,8 +3,7 @@
 #include "Slic3r/Log.hpp"
 #include "Slic3r/App/I18N/I18N.hpp"
 
-#include "libslic3r/format.hpp"
-
+#include "fmt/format.h"
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
 
@@ -25,7 +24,7 @@ std::string timestamp_str()
 							(tm.tm_min << 5) |
 							(tm.tm_sec >> 1);
 
-	return format("%1$#x", fattime);
+	return fmt::format("%{:#x}", fattime);
 }
 }
 bool PrintHostFlashAir::perform(ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const
@@ -52,24 +51,24 @@ bool PrintHostFlashAir::perform(ProgressFn progress_fn, RetryFn retry_fn, ErrorF
     auto url_set_dir = make_url("upload.cgi","UPDIR",strDest);
 	auto url_upload = make_url("upload.cgi");
 
-	SPDLOG_INFO(format("%1%: Uploading file at %2% / %3%, filename: %4%"
+	SPDLOG_INFO("{}: Uploading file at %2% / %3%, filename: %4%"
 		, name
 		, url_prepare
 		, url_upload
-		, upload_filename.string()));
+		, upload_filename.string());
 
 	// set filetime for upload and make card write protect to prevent filesystem damage
     std::unique_ptr<Network::IHttp> http_prepare = Network::IHttp::create(Network::IHttp::RequestMethod::Get, std::move(url_prepare), retry_fn);
 	http_prepare->on_error([&](std::string body, std::string error, unsigned status) {
-            SPDLOG_ERROR(format("%1%: Error preparing upload: %2%, HTTP %3%, body: `%4%`", name , error , status , body));
+            SPDLOG_ERROR("{}: Error preparing upload: {}, HTTP {}, body: `{}`", name , error , status , body);
 			error_fn(format_error(body, error, status));
 			res = false;
 		})
 		.on_complete([&, this](std::string body, unsigned) {
-			SPDLOG_INFO(format("%1%: Got prepare result: %2%", name , body));
+			SPDLOG_INFO("{}: Got prepare result: {}", name , body);
 			res = boost::icontains(body, "SUCCESS");
 			if (! res) {
-				SPDLOG_INFO(format("%1%: Request completed but no SUCCESS message was received.", name));
+				SPDLOG_INFO("{}: Request completed but no SUCCESS message was received.", name);
 				error_fn(format_error(body, L("Unknown error occurred"), 0));
 			}
 		})
@@ -82,15 +81,15 @@ bool PrintHostFlashAir::perform(ProgressFn progress_fn, RetryFn retry_fn, ErrorF
 	// start file upload
     std::unique_ptr<Network::IHttp> http_dir = Network::IHttp::create(Network::IHttp::RequestMethod::Get, std::move(url_set_dir), retry_fn);
     http_dir->on_error([&](std::string body, std::string error, unsigned status) {
-            SPDLOG_ERROR(format("%1%: Error setting upload dir: %2%, HTTP %3%, body: `%4%`", name , error , status , body));
+            SPDLOG_ERROR("{}: Error setting upload dir: {}, HTTP {}, body: `{}`", name , error , status , body);
             error_fn(format_error(body, error, status));
             res = false;
         })
         .on_complete([&, this](std::string body, unsigned) {
-            SPDLOG_INFO(format("%1%: Got dir select result: %2%", name , body));
+            SPDLOG_INFO("{}: Got dir select result: {}", name , body);
             res = boost::icontains(body, "SUCCESS");
             if (! res) {
-                SPDLOG_INFO(format("%1%: Request completed but no SUCCESS message was received.", name));
+                SPDLOG_INFO("{}: Request completed but no SUCCESS message was received.", name);
                 error_fn(format_error(body, L("Unknown error occurred"), 0));
             }
         })
@@ -103,15 +102,15 @@ bool PrintHostFlashAir::perform(ProgressFn progress_fn, RetryFn retry_fn, ErrorF
     std::unique_ptr<Network::IHttp> http = Network::IHttp::create(Network::IHttp::RequestMethod::Post, std::move(url_upload), retry_fn);
 	http->form_add_file("file", m_upload_data.source_path.string(), upload_filename.string())
 		.on_complete([&](std::string body, unsigned status) {
-			SPDLOG_INFO(format("%1%: File uploaded: HTTP %2%: %3%", name , status , body));
+			SPDLOG_INFO("{}: File uploaded: HTTP {}: {}", name , status , body);
 			res = boost::icontains(body, "SUCCESS");
 			if (! res) {
-				SPDLOG_INFO(format("%1%: Request completed but no SUCCESS message was received.", name));
+				SPDLOG_INFO("{}: Request completed but no SUCCESS message was received.", name);
 				error_fn(format_error(body, L("Unknown error occurred"), 0));
 			}
 		})
 		.on_error([&](std::string body, std::string error, unsigned status) {
-			SPDLOG_ERROR(format("%1%: Error uploading file: %2%, HTTP %3%, body: `%4%`", name , error , status , body));
+			SPDLOG_ERROR("{}: Error uploading file: {}, HTTP {}, body: `{}`", name , error , status , body);
 			error_fn(format_error(body, error, status));
 			res = false;
 		})
@@ -119,7 +118,7 @@ bool PrintHostFlashAir::perform(ProgressFn progress_fn, RetryFn retry_fn, ErrorF
 			progress_fn(std::move(progress), cancel);
 			if (cancel) {
 				// Upload was canceled
-				SPDLOG_INFO(format("%1%: Upload canceled", name));
+				SPDLOG_INFO("{}: Upload canceled", name);
 				res = false;
 			}
 		})
@@ -138,16 +137,16 @@ bool PrintHostFlashAir::test(std::string& msg, RetryFn retry_fn) const
 	bool res = false;
 	auto url = make_url("command.cgi", "op", "118");
 
-	SPDLOG_INFO(format("%1%: Get upload enabled at: %2%", name , url));
+	SPDLOG_INFO("{}: Get upload enabled at: {}", name , url);
 
     std::unique_ptr<Network::IHttp> http = Network::IHttp::create(Network::IHttp::RequestMethod::Get, std::move(url), retry_fn);
 	http->on_error([&](std::string body, std::string error, unsigned status) {
-			SPDLOG_ERROR(format("%1%: Error getting upload enabled: %2%, HTTP %3%, body: `%4%`", name , error , status , body));
+			SPDLOG_ERROR("{}: Error getting upload enabled: {}, HTTP {}, body: `{}`", name , error , status , body);
 			res = false;
 			msg = format_error(body, error, status);
 		})
         .on_complete([&](std::string body, unsigned) {
-			SPDLOG_INFO(format("%1%: Got upload enabled: %2%", name , body));
+			SPDLOG_INFO("{}: Got upload enabled: {}", name , body);
 
 			res = boost::starts_with(body, "1");
 			if (! res) {
@@ -163,15 +162,15 @@ std::string PrintHostFlashAir::make_url(const std::string& path) const
 {
 	if (m_print_host_config.host.find("http://") == 0 || m_print_host_config.host.find("https://") == 0) {
 		if (m_print_host_config.host.back() == '/') {
-			return format("%1%%2%", m_print_host_config.host , path);
+			return fmt::format("{}{}", m_print_host_config.host , path);
 		} else {
-			return format("%1%/%2%", m_print_host_config.host , path);
+			return fmt::format("{}/{}", m_print_host_config.host , path);
 		}
 	} else {
 		if (m_print_host_config.host.back() == '/') {
-			return format("http://%1%%2%", m_print_host_config.host , path);
+			return fmt::format("http://{}{}", m_print_host_config.host , path);
 		} else {
-			return format("http://%1%/%2%", m_print_host_config.host , path);
+			return fmt::format("http://{}/{}", m_print_host_config.host , path);
 		}
 	}
 }
@@ -180,15 +179,15 @@ std::string PrintHostFlashAir::make_url(const std::string& path, const std::stri
 {
 	if (m_print_host_config.host.find("http://") == 0 || m_print_host_config.host.find("https://") == 0) {
 		if (m_print_host_config.host.back() == '/') {
-			return format("%1%%2%?%3%=%4%", m_print_host_config.host , path , arg , val);
+			return fmt::format("{}{}?{}={}", m_print_host_config.host , path , arg , val);
 		} else {
-			return format("%1%/%2%?%3%=%4%", m_print_host_config.host , path , arg , val);
+			return fmt::format("{}/{}?{}={}", m_print_host_config.host , path , arg , val);
 		}
 	} else {
 		if (m_print_host_config.host.back() == '/') {
-			return format("http://%1%%2%?%3%=%4%", m_print_host_config.host , path , arg , val);
+			return fmt::format("http://{}{}?{}={}", m_print_host_config.host , path , arg , val);
 		} else {
-			return format("http://%1%/%2%?%3%=%4%", m_print_host_config.host , path , arg , val);
+			return fmt::format("http://{}/{}?{}={}", m_print_host_config.host , path , arg , val);
 		}
 	}
 }

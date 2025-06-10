@@ -4,8 +4,7 @@
 #include "Slic3r/Log.hpp"
 #include "Slic3r/Assert.hpp"
 
-#include "libslic3r/format.hpp"
-
+#include "fmt/format.h"
 #include <boost/nowide/convert.hpp>
 
 #include <windows.h>
@@ -35,7 +34,7 @@ void update_windows_properties(HWND window_handle, bool maximized)
 
 std::string compose_message_json(const std::string& type, const std::string& data)
 {
-    return format("{ \"type\" : \"%1%\" , \"data\" : \"%2%\"}", type, data);
+    return fmt::format("{{ \"type\" : \"{}\" , \"data\" : \"{}\"}}", type, data);
 }
 
 } // namespace

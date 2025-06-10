@@ -5,8 +5,7 @@
 #include "Slic3r/Biz/Platform/PlatformServices.hpp"
 #include "Slic3r/Log.hpp"
 
-#include "libslic3r/format.hpp"
-#include "libslic3r/Utils.hpp"
+#include "fmt/format.h"
 
 #include <boost/filesystem/operations.hpp>
 #include <boost/nowide/cstdio.hpp>
@@ -60,12 +59,11 @@ std::string UserAccountCommunication::on_log_in_request(const std::string& lang_
         language = language.substr(0,2);
     }
     
-    std::string params = format("embed=1&client_id=%1%&response_type=code&code_challenge=%2%&code_challenge_method=S256&scope=basic_info&redirect_uri=%3%&language=%4%", CLIENT_ID, code_challenge, REDIRECT_URI, language);
-    //params = Network::IHttp::escape_string(params);
+    std::string params = fmt::format("embed=1&client_id={}&response_type=code&code_challenge={}&code_challenge_method=S256&scope=basic_info&redirect_uri={}&language={}", CLIENT_ID, code_challenge, REDIRECT_URI, language);
     if (service.empty()){
-        result_url = format("%1%/o/authorize/?%2%&choose_account=1", AUTH_HOST, params);
+        result_url = fmt::format("{}/o/authorize/?{}&choose_account=1", AUTH_HOST, params);
     } else {
-        result_url = format("%1%/login/%2%?next=/o/authorize/?%3%", AUTH_HOST, service, params);
+        result_url = fmt::format("{}/login/{}?next=/o/authorize/?{}", AUTH_HOST, service, params);
     }
     
     return result_url;
