@@ -1,4 +1,5 @@
 #include "Slic3r/App/Preview/FdmViewerWrapper.hpp"
+#include "Slic3r/App/Preview/LegendWindow.hpp"
 
 #include "Slic3r/App/I18N/I18N.hpp"
 #include "Slic3r/App/Imgui/ImguiExtension.hpp"
@@ -50,10 +51,6 @@ bool FdmViewerWrapper::set_settings(const FdmViewerWrapperSettings &settings)
         if (m_viewer.is_top_layer_only_view_range() != settings.seq_top_layer_only)
             m_viewer.toggle_top_layer_only_view_range();
 
-        m_cb_legend.cb_extrusion_role_visibility_changed = std::bind(&FdmViewerWrapper::on_extrusion_role_visibility_changed, this);
-        m_cb_legend.cb_request_extra_frame = m_settings.cb_request_extra_frames;
-        m_cb_legend.cb_view_type_changed = m_settings.cb_gcode_view_type_changed;
-
         m_slider_layers = Yoga::Passthrough<DoubleSliderForLayers>(std::make_unique<DoubleSliderForLayers>());
         m_slider_layers->show_ruler(m_settings.slider_layers_show_ruler, m_settings.slider_layers_show_ruler_bg);
         m_slider_layers->show_estimated_times(m_settings.slider_layers_show_estimated_times);
@@ -77,11 +74,11 @@ bool FdmViewerWrapper::set_settings(const FdmViewerWrapperSettings &settings)
         m_slider_gcode->set_request_extra_frames_callback(std::bind(&FdmViewerWrapper::on_request_extra_frames, this, std::placeholders::_1));
         m_slider_gcode->set_on_thumb_move_callback(std::bind(&FdmViewerWrapper::on_slider_gcode_scroll_changed, this));
 
-        m_legend = Yoga::Passthrough<Legend>(std::make_unique<Legend>(&m_viewer, this));
-        m_legend->callbacks() = m_cb_legend;
+        m_legend = Yoga::Passthrough<LegendWindow>(std::make_unique<LegendWindow>(&m_viewer, this));
+        m_legend->callbacks().cb_extrusion_role_visibility_changed = std::bind(&FdmViewerWrapper::on_extrusion_role_visibility_changed, this);
+        m_legend->callbacks().cb_view_type_changed = m_settings.cb_gcode_view_type_changed;
 
-        m_gcode_window = Yoga::Passthrough<GCodeWindow>(std::make_unique<GCodeWindow>());
-        m_gcode_window->set_data(&m_gcode_window_data);
+        m_gcode_window = Yoga::Passthrough<GCodeWindow>(std::make_unique<GCodeWindow>(&m_viewer, &m_gcode_window_data));
 
         return true;
     }
@@ -143,6 +140,7 @@ void FdmViewerWrapper::load(FdmViewerWrapperInputData&& wrapper_data, FdmViewerI
     m_gcode_window_data.set_gcode(data.gcode);
     m_viewer.load(std::move(data));
 
+    update_legend_type_selector();
     update_slider_layers();
 
     m_loading = false;
@@ -287,7 +285,7 @@ std::unique_ptr<GCodeWindow> FdmViewerWrapper::unload_gcode_window()
     return m_gcode_window.release();
 }
 
-std::unique_ptr<Legend> FdmViewerWrapper::unload_legend()
+std::unique_ptr<LegendWindow> FdmViewerWrapper::unload_legend()
 {
     return  m_legend.release();
 }
@@ -296,37 +294,6 @@ std::unique_ptr<DoubleSliderForGcode> FdmViewerWrapper::unload_double_slider_gco
 {
     return m_slider_gcode.release();
 }
-
-// void WrapperImpl::render_legend(Render::ImguiRender* imgui_render)
-// {
-//     static std::string msg = _u8L("No data available");
-
-//     if (m_printer_technology != PrinterTechnology::FFF ||
-//         m_settings.mode == WrapperMode::EditorPreGCode ||
-//         !has_data()) {
-//         ImVec2 msg_size = ImGui::CalcTextSize(msg.c_str());
-//         ImVec2 available_size = ImGui::GetContentRegionAvail();
-//         if (msg_size.x < available_size.x && msg_size.y < available_size.y) {
-//             ImVec2 pos = ImGui::GetCurrentWindow()->DC.CursorPos + (available_size - msg_size) * 0.5f;
-//             ImGui::RenderText(pos, msg.c_str());
-//         }
-//     }
-//     else {
-//         static bool detail = false;
-//         ImGui::GetCurrentWindow()->DC.CursorPos.y += ImGui::GetTextLineHeight();
-//         if (detail)
-//             legend_detail(*imgui_render, m_viewer, *this, m_cb_legend);
-//         else
-//             legend_coarse(m_viewer, *this);
-//         ImVec2 available_size = ImGui::GetContentRegionAvail();
-//         legend_view_type_selector(m_viewer, *this, m_cb_legend.cb_view_type_changed, 0.666f * available_size.x);
-//         ImGui::SameLine();
-//         Imgui::toggle_button(_u8L("Detail view"), &detail, true);
-//     }
-
-//     if (m_radius_popup_type != MoveType::COUNT)
-//         render_customize_radius_popup();
-// }
 
 void FdmViewerWrapper::set_units(UnitsSystem sys)
 {
@@ -421,6 +388,36 @@ void FdmViewerWrapper::update_slider_gcode(std::optional<size_t> visible_range_m
     m_slider_gcode->set_selection_span(span_min_id, span_max_id);
     m_slider_gcode->thaw();
     m_slider_gcode->show_lower_thumb(!m_viewer.is_top_layer_only_view_range());
+}
+
+void FdmViewerWrapper::update_legend_type_selector()
+{
+    std::vector<float> layers_times = m_viewer.layers_estimated_times();
+    bool has_layers_times = !layers_times.empty() && layers_times.size() == m_viewer.layers_count();
+    std::vector<int> layer_times_ids = { int(ViewType::LayerTimeLinear), int(ViewType::LayerTimeLogarithmic) };
+
+    std::vector<int> options_id;
+    options_id.reserve(VIEW_TYPES_COUNT);
+    for (int i = 0; i < int(VIEW_TYPES_COUNT); ++i) {
+        if (has_layers_times ||
+            std::find(layer_times_ids.begin(), layer_times_ids.end(), i) == layer_times_ids.end())
+            options_id.emplace_back(i);
+    }
+
+    int selection = int(m_viewer.view_type());
+    int old_selection = selection;
+    if (!has_layers_times &&
+        std::find(layer_times_ids.begin(), layer_times_ids.end(), selection) != layer_times_ids.end())
+        selection = int(ViewType::FeatureType);
+    int selection_id = int(std::distance(options_id.begin(), std::find(options_id.begin(), options_id.end(), selection)));
+
+    std::vector<std::string> types;
+    types.reserve(options_id.size());
+    for (int i = 0; i < int(options_id.size()); ++i) {
+        types.emplace_back(to_string(ViewType(options_id[i])));
+    }
+
+    m_legend->update_type_selector(types, selection_id);
 }
 
 static void adjust_ticks_values(std::vector<CustomGCode::Item>& gcodes, const std::vector<float>& zs)
@@ -620,72 +617,6 @@ Palette FdmViewerWrapper::on_slider_layers_get_extruder_colors()
 {
     return m_viewer.tool_colors();
 }
-
-// void WrapperImpl::render_legend(const WrapperLayoutData& layout)
-// {
-//     if (is_legend_shown() && has_data()) {
-//         ImGui::SetNextWindowPos({ 0.0f, layout.menubar_height }, ImGuiCond_Always, { 0.0f, 0.0f });
-//         Imgui::UnifiedWindowStyle unified_window_style;
-//         unified_window_style.push();
-//         // the following is a hack which allows to properly resize the legend, in a single frame,
-//         // when the user clicks on the [Time estimate/Used filament] button without triggering an
-//         // imgui-induced 'self-animation'
-//         ImGuiWindow* wnd = ImGui::FindWindowByName("Legend##wrapper");
-//         if (wnd != nullptr && m_viewer.view_type() == ViewType::FeatureType)
-//             wnd->DC.CursorMaxPos.x = wnd->DC.CursorStartPos.x;
-//         ImGui::Begin("Legend##wrapper", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoFocusOnAppearing);
-//         legend(m_viewer, *this, m_legend_params.settings_visible, m_data.print_settings, m_cb_legend);
-//         m_legend_height = ImGui::GetWindowSize().y;
-//         ImGui::End();
-//         unified_window_style.pop();
-//     }
-// }
-
-// void WrapperImpl::render_slider_gcode(const WrapperLayoutData& layout)
-// {
-//     const Interval& enabled_range = m_viewer.view_enabled_range();
-//     if (enabled_range[1] > enabled_range[0])
-//         m_slider_gcode.render({ -1.0f, -1.0f }, layout.scale_factor, std::max(layout.view_toolbar_size[0], m_slider_layers.size().x));
-// }
-
-// void WrapperImpl::render_slider_layers(const WrapperLayoutData& layout)
-// {
-//     if (m_viewer.layers_count() > 0)
-//         m_slider_layers.render({ -1.0f, -1.0f }, layout.scale_factor, layout.collapse_toolbar_height);
-// }
-
-// void WrapperImpl::render_gcodewindow(const WrapperLayoutData& layout)
-// {
-//     if (!is_gcodewindow_visible())
-//         return;
-
-//     if (m_viewer.view_enabled_range()[1] == m_viewer.view_visible_range()[1])
-//         return;
-  
-//     float height = ImGui::GetMainViewport()->Size.y - (layout.menubar_height + m_legend_height + std::max(layout.view_toolbar_size[1], m_slider_gcode.height()));
-//     if (height < ImGui::GetTextLineHeight())
-//         return;
-
-//     // the following is a hack which allows to properly resize the gcode window
-//     ImGuiWindow* wnd = ImGui::FindWindowByName("G-Code##wrapper");
-//     if (wnd != nullptr) {
-//         ImGuiStyle& style = ImGui::GetStyle();
-//         float min_height = 2.0f * (ImGui::GetTextLineHeight() + style.WindowPadding.y + style.FramePadding.y + style.CellPadding.y);
-//         if (height < min_height)
-//             return;
-//         wnd->DC.CursorMaxPos.x = wnd->DC.CursorStartPos.x;
-//     }
-
-//     ImGui::SetNextWindowPos({ 0.0f, layout.menubar_height + m_legend_height }, ImGuiCond_Always, { 0.0f, 0.0f });
-//     ImGui::SetNextWindowSize({ 0.0f, height }, ImGuiCond_Always);
-//     Imgui::UnifiedWindowStyle unified_window_style;
-//     unified_window_style.push();
-//     ImGui::Begin(_u8L("G-Code##wrapper").c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse |
-//         ImGuiWindowFlags_NoFocusOnAppearing);
-//     gcode_window(m_gcode_window_data, size_t(m_viewer.current_vertex().gcode_id), true);
-//     ImGui::End();
-//     unified_window_style.pop();
-// }
 
 void FdmViewerWrapper::render_vertex_properties(const WrapperLayoutData& layout)
 {

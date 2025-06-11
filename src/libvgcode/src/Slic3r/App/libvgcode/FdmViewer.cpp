@@ -1679,4 +1679,24 @@ void FdmViewer::render_tool_marker()
     node->set_material_override(material);
 }
 
+bool FdmViewer::has_gcode_events_to_show() const
+{
+    if (used_extruders_count() > 1)
+        return false;
+
+    const std::vector<GCodeEvent>& events = gcode_events();
+    if (events.empty())
+        return false;
+    for (const auto& item : events) {
+        switch (item.type)
+        {
+        case Domain::CustomGCode::Type::PausePrint:
+        case Domain::CustomGCode::Type::ColorChange: { return true; }
+        default: { break; }
+        }
+    }
+    return false;
+}
+
+
 } // namespace Slic3r::App::libvgcode

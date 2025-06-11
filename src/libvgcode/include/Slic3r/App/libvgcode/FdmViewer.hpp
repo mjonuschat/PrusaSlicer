@@ -219,6 +219,7 @@ public:
     BoundingBoxf3 tool_marker_bounding_box() const;
 
     bool export_toolpaths_to_obj(FILE& obj_file, FILE& mtl_file, const ObjExportParams& params) const;
+    bool has_gcode_events_to_show() const;
 
 private:
     const Biz::libpgcode::MoveVertex& get_current_vertex() const { return vertex_at(get_current_vertex_id()); }

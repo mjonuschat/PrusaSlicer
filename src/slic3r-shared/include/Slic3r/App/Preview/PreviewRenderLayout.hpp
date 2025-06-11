@@ -7,7 +7,7 @@ namespace Slic3r::App::Preview {
 class SidebarAutoReslice;
 class SidebarPreviewActionButtons;
 class GCodeWindow;
-class Legend;
+class LegendWindow;
 class DoubleSliderForLayers;
 class DoubleSliderForGcode;
 
@@ -22,7 +22,7 @@ public:
         std::unique_ptr<SidebarPrint> sidebar_print,
         std::unique_ptr<SidebarPreviewActionButtons> sidebar_action_buttons,
         std::unique_ptr<GCodeWindow> m_gcode_window,
-        std::unique_ptr<Legend> legend,
+        std::unique_ptr<LegendWindow> legend,
         std::unique_ptr<DoubleSliderForLayers> double_slider_layers,
         std::unique_ptr<DoubleSliderForGcode> double_slider_gcode,
         std::unique_ptr<SidebarAutoReslice> sidebar_auto_reslice
@@ -36,7 +36,7 @@ private:
 
 private:
     Yoga::Passthrough<GCodeWindow> m_gcode_window;
-    Yoga::Passthrough<Legend> m_legend;
+    Yoga::Passthrough<LegendWindow> m_legend;
     Yoga::Passthrough<DoubleSliderForLayers> m_double_slider_layers;
     Yoga::Passthrough<DoubleSliderForGcode> m_double_slider_gcode;
 

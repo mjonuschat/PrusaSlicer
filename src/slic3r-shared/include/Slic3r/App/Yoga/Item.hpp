@@ -184,6 +184,14 @@ protected:
     void process_events_node(Vec2f pos, Item* child);
     virtual void enabled_updated_internal() {}
 
+    /**
+     * Invalidates the initial calculation of the minimal item size, forcing it to be recalculated.
+     *
+     * @warning Use this function carefully and only when you're sure it's necessary.
+     * It should be called only when the content has changed in a way that might affect the item's size.
+     */
+    void invalidate_min_size_calculation();
+
 protected:
     // I will burn in hell for this
     static Render::ImguiRender* m_imgui_render;

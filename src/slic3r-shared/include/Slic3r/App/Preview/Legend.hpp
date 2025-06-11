@@ -1,20 +1,11 @@
 #pragma once
 
 #include "Types.hpp"
-#include "Slic3r/App/Yoga/Window.hpp"
-#include "Slic3r/App/Imgui/DoubleSlider.hpp"
+#include "Slic3r/App/Yoga/Item.hpp"
 
 namespace Slic3r::App::libvgcode {
 class FdmViewer;
 } // namespace Slic3r::App::libvgcode
-
-namespace Slic3r::Biz::libpgcode {
-struct PrintSettings;
-} // namespace Slic3r::Biz::libpgcode
-
-namespace Slic3r::App::Render {
-class ImguiRender;
-} // namespace Slic3r::App::Render
 
 namespace Slic3r::App::Preview {
 
@@ -22,37 +13,33 @@ class FdmViewerWrapper;
 
 struct LegendCallbacks
 {
-    Imgui::DoubleSlider::RequestExtraFramesCallback cb_request_extra_frame{ nullptr };
     GCodeViewTypeChangedCallback                    cb_view_type_changed{ nullptr };
     ExtrusionRoleVisibilityChangedCallback          cb_extrusion_role_visibility_changed{ nullptr };
 };
 
-class Legend : public Yoga::Window {
+class Legend : public Yoga::Item {
 public:
-    Legend(libvgcode::FdmViewer* viewer, FdmViewerWrapper* wrapper);
-
     LegendCallbacks& callbacks();
 
-    void render_body(Yoga::Vec2f pos, Yoga::Vec2f size) override;
+    Legend(libvgcode::FdmViewer* viewer, FdmViewerWrapper* wrapper);
 
-    bool settings_visible() const;
-    void set_settings_visible(bool settings_visible);
+    void render(Yoga::Vec2f pos, Yoga::Vec2f size) override;
+
+    void set_detail_view(bool detail);
+    void set_show_time_estimate(bool show);
+
+private:
+    Yoga::Vec2f get_item_size() override;
 
 private:
     libvgcode::FdmViewer* m_viewer = nullptr;
     FdmViewerWrapper* m_wrapper = nullptr;
-    bool m_settings_visible = false;
+
+    bool m_detail_view = false;
+    bool m_show_time_estimate = true;
+    Yoga::Vec2f m_size = { 0, 150 };
 
     LegendCallbacks m_callback;
 };
-
-void legend(libvgcode::FdmViewer& viewer, FdmViewerWrapper& wrapper, bool settings_visible,
-    const Biz::libpgcode::PrintSettings& settings, const LegendCallbacks& cbs);
-
-void legend_coarse(libvgcode::FdmViewer& viewer, FdmViewerWrapper& wrapper);
-void legend_detail(Render::ImguiRender& imgui_render, libvgcode::FdmViewer& viewer, FdmViewerWrapper& wrapper, const LegendCallbacks& cbs);
-
-void legend_view_type_selector(libvgcode::FdmViewer& viewer, const FdmViewerWrapper& wrapper, GCodeViewTypeChangedCallback cb_view_type_changed,
-    float width);
 
 } // namespace Slic3r::App::Preview

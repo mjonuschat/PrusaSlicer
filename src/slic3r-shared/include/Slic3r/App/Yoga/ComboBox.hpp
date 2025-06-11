@@ -20,6 +20,7 @@ public:
          * it's focus) This is due to optional validator which is invoked just before this callback
          */
         std::function<void()> text_edited{nullptr};
+        std::function<void(int index)> selection_changed{nullptr};
     };
 
     explicit ComboBox(const std::string& name = "ComboBox");
@@ -39,6 +40,8 @@ public:
     }
 
     void render(Vec2f pos, Vec2f size) override;
+
+    Callbacks& callbacks();
 
     const std::vector<std::string>& items() const;
     void set_items(const std::vector<std::string>& items);

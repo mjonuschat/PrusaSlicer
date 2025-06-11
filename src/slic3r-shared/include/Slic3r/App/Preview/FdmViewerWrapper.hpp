@@ -13,7 +13,6 @@
 #include "DoubleSliderForLayers.hpp"
 #include "GCodeWindow.hpp"
 #include "ActualSpeedPlotter.hpp"
-#include "Legend.hpp"
 #include "Slic3r/Biz/Units.hpp"
 
 namespace Slic3r::Biz::libpgcode {
@@ -21,6 +20,8 @@ struct ProcessorResult;
 }
 
 namespace Slic3r::App::Preview {
+
+class LegendWindow;
 
 enum class FdmViewerWrapperMode{
     EditorGCode,
@@ -106,7 +107,7 @@ public:
     void render_gui(const WrapperLayoutData& layout);
 
     std::unique_ptr<GCodeWindow> unload_gcode_window();
-    std::unique_ptr<Legend> unload_legend();
+    std::unique_ptr<LegendWindow> unload_legend();
     std::unique_ptr<DoubleSliderForGcode> unload_double_slider_gcode();
 
     Biz::libpgcode::UnitsSystem units() const { return m_units; }
@@ -162,8 +163,11 @@ public:
     bool is_options_colors_popup_visible() const { return m_options_colors_popup_visible; }
 
     void set_range_colors_popup_type(libvgcode::ViewType type);
-    void set_radius_popup_type(Biz::libpgcode::MoveType type);
     void set_scale_factor_popup_type(Biz::libpgcode::OptionType type);
+
+    void set_radius_popup_type(Biz::libpgcode::MoveType type);
+    Biz::libpgcode::MoveType radius_popup_type() { return m_radius_popup_type; }
+    void render_customize_radius_popup();
 
 private:
     FdmViewerWrapperSettings m_settings;
@@ -171,12 +175,11 @@ private:
 
     libvgcode::FdmViewer m_viewer;
     Yoga::Passthrough<DoubleSliderForGcode> m_slider_gcode;
-    Yoga::Passthrough<Legend> m_legend;
+    Yoga::Passthrough<LegendWindow> m_legend;
     Yoga::Passthrough<GCodeWindow> m_gcode_window;
     GCodeWindowData m_gcode_window_data;
     ActualSpeedPlotData m_actual_speed_plot_data;
     LegendParams m_legend_params;
-    LegendCallbacks m_cb_legend;
 
     float m_legend_height{ 0.0f };
     Biz::libpgcode::UnitsSystem m_units{ Biz::libpgcode::UnitsSystem::SI };
@@ -192,6 +195,7 @@ private:
 private:
     void update_slider_gcode(std::optional<size_t> visible_range_min = std::nullopt,
                              std::optional<size_t> visible_range_max = std::nullopt);
+    void update_legend_type_selector();
     void update_slider_layers();
     void update_view_visible_range(size_t first, size_t last);
 
@@ -203,16 +207,11 @@ private:
     std::string on_slider_layers_get_gcode(Domain::CustomGCode::Type type);
     libvgcode::Palette on_slider_layers_get_extruder_colors();
 
-    // void render_legend(const WrapperLayoutData& layout);
-    // void render_slider_gcode(const WrapperLayoutData& layout);
-    // void render_slider_layers(const WrapperLayoutData& layout);
-    // void render_gcodewindow(const WrapperLayoutData& layout);
     void render_vertex_properties(const WrapperLayoutData& layout);
 
     void render_customize_extrusion_roles_colors_popup();
     void render_customize_options_colors_popup();
     void render_customize_range_colors_popup();
-    void render_customize_radius_popup();
     void render_customize_scale_factor_popup();
 };
 

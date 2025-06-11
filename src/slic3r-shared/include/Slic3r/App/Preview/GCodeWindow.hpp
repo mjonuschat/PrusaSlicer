@@ -7,8 +7,12 @@
 #include <optional>
 #include <cstdint>
 #include <memory>
+namespace Slic3r::App::libvgcode {
+class FdmViewer;
+} // namespace Slic3r::App::libvgcode
 
 namespace Slic3r::App::Preview {
+class GCodeDisplay;
 
 class GCodeWindowData
 {
@@ -48,27 +52,13 @@ private:
     std::shared_ptr<const Biz::libpgcode::LineView> m_gcode;
 };
 
-
-/** @brief ImGui widget to show the gcode lines as list of strings.
- *
- * @param data The data to show
- * @param curr_line_id The current line id
- * @param clip_text Whether or not to clip the text
- */
 class GCodeWindow : public Yoga::Window {
 public:
-    GCodeWindow();
+    GCodeWindow(libvgcode::FdmViewer* viewer, GCodeWindowData* data);
 
-    void render_body(Yoga::Vec2f pos, Yoga::Vec2f size) override;
-
-    void set_data(GCodeWindowData* data);
-    void set_curr_line_id(uint32_t curr_line_id);
     void set_clip_text(bool clip_text);
-
 private:
-    GCodeWindowData* m_data = nullptr;
-    uint32_t m_curr_line_id = 0;
-    bool m_clip_text = false;
+    GCodeDisplay* m_gcode{ nullptr };
 };
 
 } // namespace Slic3r::App::Preview

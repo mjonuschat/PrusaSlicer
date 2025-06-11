@@ -198,7 +198,9 @@ void ComboBox::render(Vec2f pos, Vec2f size)
             int index = 0;
             for (const std::string& item : std::as_const(m_items)) {
                 if (ImGui::Selectable(item.c_str(), index == m_current_index)) {
-                    set_current_index(m_current_index);
+                    set_current_index(index);
+                    if (m_callbacks.selection_changed)
+                        m_callbacks.selection_changed(index);
                 }
                 index++;
             }
@@ -207,6 +209,11 @@ void ComboBox::render(Vec2f pos, Vec2f size)
         }
     }
     render_item_end(pos, size);
+}
+
+ComboBox::Callbacks& ComboBox::callbacks()
+{
+    return m_callbacks;
 }
 
 const std::vector<std::string>& ComboBox::items() const { return m_items; }
@@ -253,7 +260,7 @@ void ComboBox::set_current_index(int current_index)
         m_current_label = "";
         std::fill(m_buffer.begin(), m_buffer.end(), 0);
     } else {
-        m_current_index = std::clamp(m_current_index, 0, static_cast<int>(m_items.size()) - 1);
+        m_current_index = std::clamp(current_index, 0, static_cast<int>(m_items.size()) - 1);
         m_current_label = m_items.at(m_current_index);
         strcpy(m_buffer.data(), m_current_label.c_str());
     }

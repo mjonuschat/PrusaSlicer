@@ -379,6 +379,12 @@ std::string Item::debug_dump_tree() const
     return dump;
 }
 
+void Item::invalidate_min_size_calculation()
+{
+    m_min_size_calculated = false;
+    m_min_size = Vec2f();
+}
+
 ImVec2 Item::to_im(const Vec2f& val) { return ImVec2(val.x(), val.y()); }
 
 Vec2f Item::from_im(const ImVec2& val) { return Vec2f(val.x, val.y); }

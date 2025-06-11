@@ -1,7 +1,7 @@
 #include "Slic3r/App/Preview/PreviewRenderLayout.hpp"
 
 #include "Slic3r/App/Preview/GCodeWindow.hpp"
-#include "Slic3r/App/Preview/Legend.hpp"
+#include "Slic3r/App/Preview/LegendWindow.hpp"
 #include "Slic3r/App/Preview/DoubleSliderForLayers.hpp"
 #include "Slic3r/App/Preview/DoubleSliderForGCode.hpp"
 #include "Slic3r/App/Preview/SidebarAutoReslice.hpp"
@@ -19,7 +19,7 @@ PreviewRenderLayout::PreviewRenderLayout(
     std::unique_ptr<SidebarPrint> sidebar_print,
     std::unique_ptr<SidebarPreviewActionButtons> sidebar_action_buttons,
     std::unique_ptr<GCodeWindow> m_gcode_window,
-    std::unique_ptr<Legend> legend,
+    std::unique_ptr<LegendWindow> legend,
     std::unique_ptr<DoubleSliderForLayers> double_slider_layers,
     std::unique_ptr<DoubleSliderForGcode> double_slider_gcode,
     std::unique_ptr<SidebarAutoReslice> sidebar_auto_reslice
@@ -43,11 +43,10 @@ void PreviewRenderLayout::init_left_column()
 
     m_layout_left_column->append(m_legend.release());
     m_legend->set_visible(false);
-    m_legend->set_min_size({0, 100});
 
     m_layout_left_column->append(m_gcode_window.release());
     m_gcode_window->set_visible(false);
-    m_gcode_window->set_min_size({0, 100});
+    m_gcode_window->set_flex_grow(1);
 }
 
 void PreviewRenderLayout::init_middle_column()

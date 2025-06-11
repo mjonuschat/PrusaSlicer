@@ -278,10 +278,14 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Preview/TickCodeManager.hpp
         src/Slic3r/App/Preview/ActualSpeedPlotter.cpp
         include/Slic3r/App/Preview/ActualSpeedPlotter.hpp
+        src/Slic3r/App/Preview/GCodeDisplay.cpp
+        include/Slic3r/App/Preview/GCodeDisplay.hpp
         src/Slic3r/App/Preview/GCodeWindow.cpp
         include/Slic3r/App/Preview/GCodeWindow.hpp
         src/Slic3r/App/Preview/Legend.cpp
         include/Slic3r/App/Preview/Legend.hpp
+        src/Slic3r/App/Preview/LegendWindow.cpp
+        include/Slic3r/App/Preview/LegendWindow.hpp
         src/Slic3r/App/Preview/AbstractViewerWrapper.cpp
         include/Slic3r/App/Preview/AbstractViewerWrapper.hpp
 
