@@ -23,6 +23,7 @@
 #include "Slic3r/Biz/Algorithms/Execution/Execution.hpp"
 #include "Slic3r/Biz/Algorithms/Execution/ExecutionTBB.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
+#include "Slic3r/Biz/Algorithms/QuadricEdgeCollapse.hpp"
 #include "Slic3r/Domain/TriangleMesh.hpp"
 #include <libslic3r/SLAPrintSteps.hpp>
 #include <libslic3r/MeshBoolean.hpp>
@@ -37,7 +38,6 @@
 #include <libslic3r/CSGMesh/VoxelizeCSGMesh.hpp>
 #include <libslic3r/CSGMesh/PerformCSGMeshBooleans.hpp>
 #include <libslic3r/OpenVDBUtils.hpp>
-#include <libslic3r/QuadricEdgeCollapse.hpp>
 #include <libslic3r/ClipperUtils.hpp>
 #include <libslic3r/KDTreeIndirect.hpp>
 //#include <libslic3r/ShortEdgeCollapse.hpp>
@@ -68,6 +68,8 @@
 using namespace Slic3r::Biz;
 using namespace Slic3r::Biz::Slicing;
 using namespace Slic3r::Biz::Slicing::Sla;
+
+using Slic3r::Biz::Algorithms::its_quadric_edge_collapse;
 
 namespace Slic3r {
 

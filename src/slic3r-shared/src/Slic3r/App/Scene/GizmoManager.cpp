@@ -1,6 +1,7 @@
 #include "Slic3r/App/Scene/GizmoManager.hpp"
 
 #include "Slic3r/App/Render/ScopedDebugGroup.hpp"
+#include "Slic3r/App/Plater/SimplifyGizmo.hpp"
 
 #if DEBUG_GIZMO_MANAGER
 #include "Slic3r/TypeInfo.hpp"
@@ -129,14 +130,25 @@ void GizmoManager::render_scene(Render::CommandBuffer& cmd_buffer)
     //m_scene_provider.scene().log_nodes();
 }
 
-// void GizmoManager::render_imgui()
-// {
-//     for (auto* g : m_in_cycle_gizmos)
-//         g->render_imgui();
-// #if DEBUG_GIZMO_MANAGER
-//     render_gizmo_activation_debug();
-// #endif
-// }
+// TODO: remove this when gizmo rendering will be fully implemented
+void GizmoManager::render_imgui() {
+    if (current_tool_type() == ToolType::Simplify) {
+        auto simplify_gizmo = dynamic_cast<Slic3r::App::Plater::SimplifyGizmo*>(current_context().active_tool);
+        if (simplify_gizmo!=nullptr) simplify_gizmo->render_imgui();
+    }
+}
+
+//void GizmoManager::render_imgui()
+//{
+//    for (auto* g : m_in_cycle_gizmos)
+//        g->render_imgui();
+//
+//    if (m_active_tool)
+//        m_active_tool->render_imgui();
+//#if DEBUG_GIZMO_MANAGER
+//    render_gizmo_activation_debug();
+//#endif
+//}
 
 void GizmoManager::activate_tool(ToolType tool, PrinterTechnology pt)
 {

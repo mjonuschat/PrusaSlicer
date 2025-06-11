@@ -254,6 +254,57 @@ void SceneInteractor::notify_listener_on_objects()
     notify_listener_on_objects(project.model().objects);
 }
 
+void SceneInteractor::change_volume_meshes(RefMeshes&& meshes)
+{
+    Domain::Project& project = m_workbench.project(m_selected_project_id);
+    Domain::ElementRefs removed_ids; 
+    Domain::ElementRefs updated_ids;
+    removed_ids.reserve(meshes.size());
+    updated_ids.reserve(meshes.size());
+    std::vector<size_t> object_ids;
+    object_ids.reserve(meshes.size());
+    for (RefMesh& mesh : meshes) {
+        const Domain::ElementRef& id = mesh.first;
+        Domain::TriangleMesh& triangle_mesh = mesh.second;
+        ModelVolume* volume_ptr = project.find_volume_by_id(id.object_id, id.volume_id);
+
+        assert(volume_ptr != nullptr);
+        if (volume_ptr == nullptr)
+            return;
+
+        ModelVolume& volume = *volume_ptr;
+        volume.set_mesh(std::move(triangle_mesh));
+        volume.calculate_convex_hull();
+        volume.set_new_unique_id();
+        
+        object_ids.push_back(id.object_id);
+        removed_ids.emplace_back(id.object_id, 0, id.volume_id);
+        updated_ids.emplace_back(id.object_id, 0, volume.id().id);
+    }
+
+    std::sort(object_ids.begin(), object_ids.end());
+    object_ids.erase(std::unique(object_ids.begin(), object_ids.end()), object_ids.end());
+    for (size_t object_id : object_ids) {
+        ModelObject& object = *project.find_object_by_id(object_id);
+        object.invalidate_bounding_box();
+        object.ensure_on_bed(true); // disallow negative z
+    }
+
+    invoke_listeners<ISceneChangedListener>(
+        [&removed_ids, &updated_ids, project_id = m_selected_project_id](auto* l) {
+        l->on_volume_removed(project_id, removed_ids);
+        l->on_volume_added(project_id, updated_ids);
+    });
+    
+    Domain::ElementRefs selection_ids;
+    for (const auto& update_id: updated_ids) {
+        ModelObject& object = *project.find_object_by_id(update_id.object_id);
+        for (const auto& inst : object.instances)
+            selection_ids.emplace_back(update_id.object_id, inst->id().id, update_id.volume_id);
+    }
+    set_selection({SelectionMode::Volume, selection_ids});
+}
+
 void SceneInteractor::edit_name(const Domain::ElementRef& id, const std::string& new_name)
 {
     Domain::Project& project = m_workbench.project(m_selected_project_id);

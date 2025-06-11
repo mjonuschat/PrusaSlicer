@@ -61,6 +61,8 @@ public:
 
     GeometryDataFactory& data_factory() { return m_data_factory; }
 
+    void render_imgui();
+
 private:
     void on_selected_project_changed(size_t index) override;
 

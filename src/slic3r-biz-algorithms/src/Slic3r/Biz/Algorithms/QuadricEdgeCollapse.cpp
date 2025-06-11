@@ -2,7 +2,8 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include "QuadricEdgeCollapse.hpp"
+/// 
+#include "Slic3r/Biz/Algorithms/QuadricEdgeCollapse.hpp"
 
 #include <oneapi/tbb/blocked_range.h>
 #include <oneapi/tbb/parallel_for.h>
@@ -18,7 +19,7 @@
 #include <cassert>
 #include <cstddef>
 
-#include "MutablePriorityQueue.hpp"
+#include "Slic3r/Biz/Algorithms/MutablePriorityQueue.hpp"
 #include "admesh/stl.h"
 #include "Slic3r/Exception.hpp"
 #include "libslic3r/Point.hpp"
@@ -26,6 +27,8 @@
 
 using namespace Slic3r;
 using Slic3r::Domain::Index3;
+using Slic3r::Biz::Algorithms::MutablePriorityQueue::make_miniheap_mutable_priority_queue;
+
 
 // only private namespace not neccessary be in .hpp
 namespace QuadricEdgeCollapse {
@@ -170,11 +173,11 @@ namespace QuadricEdgeCollapse {
     const int status_set_offsets = 10;
     const int status_calc_errors = 30;
     const int status_create_refs = 10;
-    } // namespace QuadricEdgeCollapse
+} // namespace QuadricEdgeCollapse
 
 using namespace QuadricEdgeCollapse;
 
-void Slic3r::its_quadric_edge_collapse(
+void Slic3r::Biz::Algorithms::its_quadric_edge_collapse(
     indexed_triangle_set &    its,
     uint32_t                  triangle_count,
     float *                   max_error,

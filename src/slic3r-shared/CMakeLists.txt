@@ -20,6 +20,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Plater/TranslationGizmo.cpp
         include/Slic3r/App/Plater/RotationGizmo.hpp
         src/Slic3r/App/Plater/RotationGizmo.cpp
+        include/Slic3r/App/Plater/SimplifyGizmo.hpp
+        src/Slic3r/App/Plater/SimplifyGizmo.cpp
         include/Slic3r/App/Plater/PlaterSceneLayer.hpp
         include/Slic3r/App/Plater/PlaterRenderLayout.hpp
         src/Slic3r/App/Plater/PlaterRenderLayout.cpp

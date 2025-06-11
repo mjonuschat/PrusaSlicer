@@ -107,7 +107,7 @@ TEST_CASE("Split two watertight meshes", "[its_split][its]") {
     debug_write_obj(res, "parts_watertight");
 }
 
-#include <libslic3r/QuadricEdgeCollapse.hpp>
+#include "Slic3r/Biz/Algorithms/QuadricEdgeCollapse.hpp"
 static float triangle_area(const Vec3f &v0, const Vec3f &v1, const Vec3f &v2)
 {
     Vec3f ab = v1 - v0;
@@ -229,7 +229,7 @@ TEST_CASE("Simplify mesh by Quadric edge collapse to 5%", "[its]")
     REQUIRE_FALSE(mesh.empty());
     indexed_triangle_set its = mesh.its; // copy
     float max_error = std::numeric_limits<float>::max();
-    its_quadric_edge_collapse(its, wanted_count, &max_error);
+    Slic3r::Biz::Algorithms::its_quadric_edge_collapse(its, wanted_count, &max_error);
     //its_write_obj(its, "frog_legs_qec.obj");
     CHECK(its.indices.size() <= wanted_count);
     double volume = Domain::its_volume(its);

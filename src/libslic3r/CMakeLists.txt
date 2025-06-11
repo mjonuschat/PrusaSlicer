@@ -321,8 +321,6 @@ set(SLIC3R_SOURCES
     PointGrid.hpp
     PNGReadWrite.hpp
     PNGReadWrite.cpp
-    QuadricEdgeCollapse.cpp
-    QuadricEdgeCollapse.hpp
     ShortEdgeCollapse.cpp
     ShortEdgeCollapse.hpp
     ShortestPath.cpp

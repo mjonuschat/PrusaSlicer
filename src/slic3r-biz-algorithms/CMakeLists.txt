@@ -43,6 +43,8 @@ add_library(slic3r-biz-algorithms
     include/Slic3r/Biz/Algorithms/TriangleMesh.hpp
     src/Slic3r/Biz/Algorithms/TriangleSelector.cpp
     include/Slic3r/Biz/Algorithms/TriangleSelector.hpp
+    src/Slic3r/Biz/Algorithms/QuadricEdgeCollapse.cpp
+    include/Slic3r/Biz/Algorithms/QuadricEdgeCollapse.hpp
 )
 target_include_directories(slic3r-biz-algorithms PUBLIC include)
 target_include_directories(slic3r-biz-algorithms PRIVATE src)

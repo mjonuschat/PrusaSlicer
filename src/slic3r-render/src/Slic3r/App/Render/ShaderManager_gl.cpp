@@ -124,6 +124,8 @@ std::pair<bool, std::string> ShaderManager::init()
     valid &= append_shader("options_phong_shadows", { prefix + "options_phong_shadows.vs", prefix + "options_phong_shadows.fs" });
     // used to render shadowed gcode segments with phong shading
     valid &= append_shader("segments_phong_shadows", { prefix + "segments_phong_shadows.vs", prefix + "segments_phong_shadows.fs" });
+    // similar to gouraud_light with added wireframe rendering
+    valid &= append_shader("gouraud_light_wireframe", { prefix + "gouraud_light_wireframe.vs", prefix + "gouraud_light_wireframe.fs", prefix + "gouraud_light_wireframe.gs" });
 
     return { valid, error };
 }
