@@ -154,7 +154,7 @@ std::size_t ConfigOverrides::find(const std::string& key) {
 }
 
 SquashedConfig::SquashedConfig(
-    const BoxOtBoxesVector& all_boxes, const ConfigLocationSizes& location_sizes
+    const BoxOrBoxesVector& all_boxes, const ConfigLocationSizes& location_sizes
 )
 {
     for (const auto& box_or_boxes : all_boxes) {
@@ -369,7 +369,7 @@ std::vector<std::string> FullConfig::keys() const {
     return m_keys;
 }
 
-FullConfig::FullConfig(const BoxOtBoxesVector& input, const ConfigLocationSizes& location_sizes): SquashedConfig{input, location_sizes} {
+FullConfig::FullConfig(const BoxOrBoxesVector& input, const ConfigLocationSizes& location_sizes): SquashedConfig{input, location_sizes} {
     std::ranges::transform(m_values, std::back_inserter(m_keys), [](const auto& pair) {
         return pair.first;
     });
@@ -381,7 +381,7 @@ ConfigValue FullConfig::get_value(const std::string& key) const {
     return it->second;
 }
 
-PartialConfig::PartialConfig(const BoxOtBoxesVector& input, const ConfigLocationSizes& location_sizes)
+PartialConfig::PartialConfig(const BoxOrBoxesVector& input, const ConfigLocationSizes& location_sizes)
     : SquashedConfig{input, location_sizes}
 {}
 

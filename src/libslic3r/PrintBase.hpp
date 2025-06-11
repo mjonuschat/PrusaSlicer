@@ -477,9 +477,19 @@ struct ZDepth{
 
 using WipeTowerGeometry = std::vector<ZDepth>;
 
+struct SerializedConfig {
+    std::string json;
+    std::string ini;
+};
+
 class IPrint {
 public:
-    virtual ApplyStatus update(Model &model, const Domain::ConfigPack& config, const Domain::BedInstance& bed) = 0;
+    virtual ApplyStatus update(
+        Model& model,
+        const Domain::ConfigPack& config,
+        const Domain::BedInstance& bed,
+        const SerializedConfig& serialized_config
+    ) = 0;
     virtual void slice() = 0;
     virtual bool empty() const = 0;
     virtual ~IPrint() = default;

@@ -1371,6 +1371,7 @@ bool InvalidatedSteps::empty() const {
 Print::ApplyStatus Print::apply(
     const Model& model,
     const Domain::ConfigPackFDM& config_pack,
+    const Biz::Print::SerializedConfig& serialized_config,
     const std::optional<Domain::ModelWipeTower>& wipe_tower,
     const std::optional<Domain::CustomGCode::Info>& custom_gcode,
     std::vector<std::string>* warnings
@@ -1378,6 +1379,8 @@ Print::ApplyStatus Print::apply(
 {
     const auto new_full_config_ptr{std::make_shared<FullConfigFDM>(config_pack)};
     PrintConfigView new_print_config{new_full_config_ptr};
+    m_serialized_config = serialized_config;
+
     // Check if the print config change will produce any warnings.
     validate_print_config_change(m_config, new_print_config, warnings);
 

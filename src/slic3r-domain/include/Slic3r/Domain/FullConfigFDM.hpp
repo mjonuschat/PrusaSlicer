@@ -6,6 +6,8 @@
 namespace Slic3r::Domain {
 
 
+BoxOrBoxesVector as_boxes(const ConfigPackFDM& config_pack);
+
 class FullConfigFDM : public FullConfig
 {
 public:

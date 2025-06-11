@@ -12,10 +12,11 @@ BoxRefs convert_to_box_refs(
     result.insert(result.end(), settings.cbegin(), settings.cend());
     return result;
 }
+}
 
-BoxOtBoxesVector convert_to_full_config_input(const ConfigPackFDM& config_pack) {
+BoxOrBoxesVector as_boxes(const ConfigPackFDM& config_pack) {
     ASSERT(config_pack.filament.size() == config_pack.tool.size());
-    BoxOtBoxesVector result;
+    BoxOrBoxesVector result;
     result.push_back(config_pack.printer);
     result.push_back(convert_to_box_refs(config_pack.tool));
     result.push_back(config_pack.print);
@@ -24,6 +25,7 @@ BoxOtBoxesVector convert_to_full_config_input(const ConfigPackFDM& config_pack) 
     return result;
 }
 
+namespace {
 ConfigLocationSizes get_fdm_location_sizes(const std::size_t tools_count, const std::size_t filaments_count) {
     return {
         {FDMConfigLocation::Printer, std::nullopt},
@@ -39,7 +41,7 @@ ConfigLocationSizes get_fdm_location_sizes(const std::size_t tools_count, const 
 
 FullConfigFDM::FullConfigFDM(const ConfigPackFDM& config_pack):
     FullConfig{
-        convert_to_full_config_input(config_pack),
+        as_boxes(config_pack),
         get_fdm_location_sizes(config_pack.tool.size(), config_pack.filament.size())
     },
     m_tools_count{config_pack.tool.size()},

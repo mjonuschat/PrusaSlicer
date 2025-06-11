@@ -2,15 +2,15 @@
 
 namespace Slic3r::Domain {
 
-namespace {
-BoxOtBoxesVector convert_to_full_config_input(const ConfigPackSLA& config_pack) {
-    BoxOtBoxesVector result;
+BoxOrBoxesVector as_boxes(const ConfigPackSLA& config_pack) {
+    BoxOrBoxesVector result;
     result.push_back(config_pack.sla_printer_settings);
     result.push_back(config_pack.sla_print_settings);
     result.push_back(config_pack.sla_material_settings);
     return result;
 }
 
+namespace {
 ConfigLocationSizes get_sla_location_sizes() {
     return {
         {SLAConfigLocation::Printer, std::nullopt},
@@ -22,7 +22,7 @@ ConfigLocationSizes get_sla_location_sizes() {
 }
 
 FullConfigSLA::FullConfigSLA(const ConfigPackSLA& config_pack)
-    : FullConfig{convert_to_full_config_input(config_pack), get_sla_location_sizes()}
+    : FullConfig{as_boxes(config_pack), get_sla_location_sizes()}
 {}
 
 PartialObjectConfigSLA::PartialObjectConfigSLA(

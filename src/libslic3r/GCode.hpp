@@ -112,7 +112,11 @@ public:
 
     // throws std::runtime_exception on error,
     // throws CanceledException through print->throw_if_canceled().
-    Biz::libpgcode::ProcessorResult do_export(Print* print, ThumbnailsGeneratorCallback thumbnail_cb = nullptr);
+    Biz::libpgcode::ProcessorResult do_export(
+        Print* print,
+        const Biz::Print::SerializedConfig& serialized_config,
+        ThumbnailsGeneratorCallback thumbnail_cb = nullptr
+    );
 
     // Exported for the helper classes (OozePrevention, Wipe) and for the Perl binding for unit tests.
     const Vec2d&    origin() const { return m_origin; }
@@ -166,11 +170,6 @@ public:
 
     void            set_layer_count(unsigned int value) { m_layer_count = value; }
 
-    // append full config to the given string
-    static void append_full_config(const Print& print, std::string& str);
-    // translate full config into a list of <key, value> items
-    static void encode_full_config(const Print& print, std::vector<std::pair<std::string, std::string>>& config);
-
     using ObjectLayerToPrint  = GCode::ObjectLayerToPrint;
     using ObjectsLayerToPrint = GCode::ObjectsLayerToPrint;
 
@@ -213,7 +212,12 @@ private:
         Biz::libpgcode::Processor& m_processor;
     };
 
-    void _do_export(Print& print, GCodeOutputStream& file, ThumbnailsGeneratorCallback thumbnail_cb);
+    void _do_export(
+        Print& print,
+        GCodeOutputStream& file,
+        const Biz::Print::SerializedConfig& serialized_config,
+        ThumbnailsGeneratorCallback thumbnail_cb
+    );
 
     static ObjectsLayerToPrint         		                     collect_layers_to_print(const PrintObject &object);
     static std::vector<std::pair<double, ObjectsLayerToPrint>> collect_layers_to_print(const Print &print);

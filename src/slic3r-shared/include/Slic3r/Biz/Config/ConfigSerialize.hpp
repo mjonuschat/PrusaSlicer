@@ -22,7 +22,7 @@ nlohmann::json serialize_as_vector(const Domain::BoxRefs& boxes);
 
 // Given list of ConfigBoxes and vectors of ConfigBoxes, serializes all of that into a single string.
 std::string serialize(
-	const Domain::BoxOtBoxesVector& input,
+	const Domain::BoxOrBoxesVector& input,
 	int indent,
 	bool prepend_semicolons);
 

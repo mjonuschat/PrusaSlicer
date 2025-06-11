@@ -158,14 +158,14 @@ protected:
 
 using BoxRef = std::reference_wrapper<const ConfigBox>;
 using BoxRefs = std::vector<BoxRef>;
-using BoxOtBoxesVector = std::vector<std::variant<BoxRef, BoxRefs>>;
+using BoxOrBoxesVector = std::vector<std::variant<BoxRef, BoxRefs>>;
 
 using LocationSize = std::optional<std::size_t>;
 using ConfigLocationSizes = std::map<ConfigLocation, LocationSize>;
 
 class SquashedConfig {
 public:
-    SquashedConfig(const BoxOtBoxesVector& boxes, const ConfigLocationSizes& sizes);
+    SquashedConfig(const BoxOrBoxesVector& boxes, const ConfigLocationSizes& sizes);
 
     std::vector<std::string> diff_keys(const SquashedConfig& other) const;
 
@@ -193,7 +193,7 @@ public:
 
     virtual ~FullConfig() = default;
 protected:
-    FullConfig(const BoxOtBoxesVector& input, const ConfigLocationSizes& location_sizes);
+    FullConfig(const BoxOrBoxesVector& input, const ConfigLocationSizes& location_sizes);
 
 private:
     friend class ConfigView;
@@ -223,7 +223,7 @@ public:
 
 
 protected:
-    PartialConfig(const BoxOtBoxesVector& input, const ConfigLocationSizes& location_sizes);
+    PartialConfig(const BoxOrBoxesVector& input, const ConfigLocationSizes& location_sizes);
 
 private:
     friend class ConfigView;

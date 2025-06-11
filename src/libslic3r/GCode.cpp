@@ -717,7 +717,11 @@ GCodeGenerator::GCodeGenerator(const Print* print) :
 {
 }
 
-Biz::libpgcode::ProcessorResult GCodeGenerator::do_export(Print* print, ThumbnailsGeneratorCallback thumbnail_cb)
+Biz::libpgcode::ProcessorResult GCodeGenerator::do_export(
+    Print* print,
+    const Biz::Print::SerializedConfig& serialized_config,
+    ThumbnailsGeneratorCallback thumbnail_cb
+)
 {
     using namespace Biz::libpgcode;
     CNumericLocalesSetter locales_setter;
@@ -745,7 +749,7 @@ Biz::libpgcode::ProcessorResult GCodeGenerator::do_export(Print* print, Thumbnai
     Processor processor(std::move(processor_config));
     GCodeOutputStream file(processor);
 
-    this->_do_export(*print, file, thumbnail_cb);
+    this->_do_export(*print, file, serialized_config, thumbnail_cb);
 
     if (! m_placeholder_parser_integration.failed_templates.empty()) {
         // G-code export proceeded, but some of the PlaceholderParser substitutions failed.
@@ -1009,7 +1013,12 @@ static inline std::optional<std::string> find_M84(const std::string &gcode) {
     return std::nullopt;
 }
 
-void GCodeGenerator::_do_export(Print& print, GCodeOutputStream &file, ThumbnailsGeneratorCallback thumbnail_cb)
+void GCodeGenerator::_do_export(
+    Print& print,
+    GCodeOutputStream& file,
+    const Biz::Print::SerializedConfig& serialized_config,
+    ThumbnailsGeneratorCallback thumbnail_cb
+)
 {
     std::string prepared_by_info;
     if (const char* extras = boost::nowide::getenv("SLIC3R_PREPARED_BY_INFO"); extras) {
@@ -1501,11 +1510,11 @@ void GCodeGenerator::_do_export(Print& print, GCodeOutputStream &file, Thumbnail
     // The delimiters are structured as configuration key / value pairs to be parsable by older versions of PrusaSlicer G-code viewer.
     {
         file.write("\n; prusaslicer_config = begin\n");
-        std::string full_config;
-        append_full_config(*m_print, full_config);
-        if (!full_config.empty())
-            file.write(full_config);
-        file.write("; prusaslicer_config = end\n");
+        file.write(serialized_config.ini);
+        file.write("; prusaslicer_config = end\n\n");
+        file.write("; prusaslicer_json_config = begin\n");
+        file.write(serialized_config.json);
+        file.write("; prusaslicer_json_config = end\n");
     }
 
     if (std::optional<std::string> line_M84 = find_M84(print.config().get<std::string>("end_gcode"));
@@ -2958,41 +2967,6 @@ std::string GCodeGenerator::extrude_slices(
     }
 
     return gcode;
-}
-
-void GCodeGenerator::append_full_config(const Print& print, std::string &str)
-{
-    std::vector<std::pair<std::string, std::string>> config;
-    encode_full_config(print, config);
-    for (const auto& [key, value] : config) {
-        str += "; " + key + " = " + value + "\n";
-    }
-}
-
-void GCodeGenerator::encode_full_config(const Print& print, std::vector<std::pair<std::string, std::string>>& config)
-{
-    /*
-    const DynamicPrintConfig& cfg = print.full_print_config();
-    // Sorted list of config keys, which shall not be stored into the G-code. Initializer list.
-    static constexpr auto banned_keys = {
-        "compatible_printers"sv,
-        "compatible_prints"sv,
-        //FIXME The print host keys should not be exported to full_print_config anymore. The following keys may likely be removed.
-        "print_host"sv,
-        "printhost_apikey"sv,
-        "printhost_cafile"sv
-    };
-    assert(std::is_sorted(banned_keys.begin(), banned_keys.end()));
-    auto is_banned = [](const std::string& key) {
-        return std::binary_search(banned_keys.begin(), banned_keys.end(), key);
-    };
-    config.reserve(config.size() + cfg.keys().size());
-    for (const std::string& key : cfg.keys()) {
-        if (!is_banned(key))
-            config.emplace_back(key, cfg.opt_serialize(key));
-    }
-    config.shrink_to_fit();
-    */
 }
 
 void GCodeGenerator::set_extruders(const std::vector<unsigned int> &extruder_ids, const PrintConfigView& config)

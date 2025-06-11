@@ -804,7 +804,10 @@ ModelSyncResult sync_model(
 }
 
 Biz::Print::ApplyStatus SLAPrint::update(
-    Model& model, const ConfigPack& config, const Domain::BedInstance& bed
+    Model& model,
+    const ConfigPack& config,
+    const Domain::BedInstance& bed,
+    const Biz::Print::SerializedConfig& serialized_config
 )
 {
     Biz::Print::ApplyStatus result{Biz::Print::ApplyStatus::unchanged};

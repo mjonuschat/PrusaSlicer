@@ -7,6 +7,8 @@
 
 namespace Slic3r::Domain {
 
+BoxOrBoxesVector as_boxes(const ConfigPackSLA& config_pack);
+
 class FullConfigSLA : public FullConfig
 {
 public:

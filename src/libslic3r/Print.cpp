@@ -91,12 +91,21 @@ void Print::clear()
 }
 
 Biz::Print::ApplyStatus Print::update(
-    Model& model, const ConfigPack& config, const Domain::BedInstance& bed
+    Model& model,
+    const ConfigPack& config,
+    const Domain::BedInstance& bed,
+    const Biz::Print::SerializedConfig& serialized_config
 )
 {
     Biz::Print::ApplyStatus result{Biz::Print::ApplyStatus::unchanged};
-    Biz::Slicing::with_limited_instances(model, bed.model_instances, [&](){
-        const ApplyStatus status{this->apply(model, std::get<ConfigPackFDM>(config), bed.wipe_tower, bed.custom_gcode)};
+    Biz::Slicing::with_limited_instances(model, bed.model_instances, [&]() {
+        const ApplyStatus status{this->apply(
+            model,
+            std::get<ConfigPackFDM>(config),
+            serialized_config,
+            bed.wipe_tower,
+            bed.custom_gcode
+        )};
         if (status == APPLY_STATUS_UNCHANGED) {
             return;
         }
@@ -819,7 +828,7 @@ Biz::libpgcode::ProcessorResult Print::process_gcode(ThumbnailsGeneratorCallback
 
     // Create GCode on heap, it has quite a lot of data.
     std::unique_ptr<GCodeGenerator> gcode(new GCodeGenerator(const_cast<const Print*>(this)));
-    Biz::libpgcode::ProcessorResult result{gcode->do_export(this, thumbnail_cb)};
+    Biz::libpgcode::ProcessorResult result{gcode->do_export(this, m_serialized_config, thumbnail_cb)};
 
     if (m_conflict_result.has_value())
         result.conflict_result = *m_conflict_result;

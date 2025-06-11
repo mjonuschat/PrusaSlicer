@@ -14,7 +14,7 @@ using Domain::Percentage;
 using Domain::EnumWrapper;
 using Domain::EnumVectorWrapper;
 using Domain::Vec2d;
-using Domain::BoxOtBoxesVector;
+using Domain::BoxOrBoxesVector;
 using Domain::BoxRefs;
 using Domain::BoxRef;
 using Domain::overloaded;
@@ -28,14 +28,6 @@ static nlohmann::json serialize_float_or_percent(const FloatOrPercentage& fop)
     nlohmann::json j;
     j["value"] = fop.is_percentage() ? fop.percentage().value : fop.float_value();
     j["is_percent"] = fop.is_percentage();
-    return j;
-}
-
-static nlohmann::json serialize_percent(const Percentage& percentage)
-{
-    nlohmann::json j;
-    j["value"] = percentage.value;
-    j["is_percent"] = true;
     return j;
 }
 
@@ -76,7 +68,7 @@ static void serialize_and_append(const ConfigItem& item, nlohmann::json& j)
             jval = serialize_points(item_value);
         } else if constexpr (
             std::is_same_v<ValueType, Percentage>
-            ||std::is_same_v<ValueType, FloatOrPercentage>
+            || std::is_same_v<ValueType, FloatOrPercentage>
         ) {
             jval = serialize_float_or_percent(item_value);
         } else if constexpr (std::is_same_v<ValueType, std::optional<int>>) {
@@ -86,9 +78,11 @@ static void serialize_and_append(const ConfigItem& item, nlohmann::json& j)
                 jval = nullptr;
         } else if constexpr (
             std::is_same_v<ValueType, int>
+            || std::is_same_v<ValueType, bool>
             || std::is_same_v<ValueType, double>
             || std::is_same_v<ValueType, std::string>
             || std::is_same_v<ValueType, std::vector<int>>
+            || std::is_same_v<ValueType, std::vector<bool>>
             || std::is_same_v<ValueType, std::vector<double>>
             || std::is_same_v<ValueType, std::vector<std::string>>
         ) {
@@ -223,7 +217,7 @@ const std::string get_location_name(const ConfigLocation& location) {
 }
 
 std::string serialize(
-    const BoxOtBoxesVector& input,
+    const BoxOrBoxesVector& input,
     int indent,
     bool prepend_semicolons)
 {
@@ -273,8 +267,23 @@ std::string serialize(
             }
         }
     }
+
+    ASSERT(!lines.empty());
+    std::vector<std::string> aggregated_lines{lines.front()};
+    for (std::size_t i{1}; i < lines.size(); ++i) {
+        const std::string& previous_line{lines[i-1]};
+        const std::string& line{lines[i]};
+        if (previous_line.back() == ',') {
+            aggregated_lines.back() += " " + line;
+        } else if (previous_line.back() != '\n') {
+            aggregated_lines.back() += line;
+        } else {
+            aggregated_lines.push_back(line);
+        }
+    }
+
     str = {};
-    for (const std::string& line : lines) {
+    for (const std::string& line : aggregated_lines) {
         if (prepend_semicolons)
             str += "; ";
         str += line;

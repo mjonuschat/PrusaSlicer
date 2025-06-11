@@ -1,6 +1,8 @@
 #include <fmt/ostream.h>
 #include <Slic3r/Biz/Slicing/BackgroundProcess.hpp>
 #include <Slic3r/Assert.hpp>
+#include "Slic3r/Biz/Config/ConfigLegacy.hpp"
+#include "Slic3r/Biz/Config/ConfigSerialize.hpp"
 #include "Slic3r/Log.hpp"
 
 namespace {
@@ -171,7 +173,15 @@ void BackgroundProcess::update(
     }};
 
     this->m_on_status(Status::Updating);
-    apply_status = this->m_print->update(model, config, bed);
+
+    const Print::SerializedConfig serialized_config{std::visit([](auto&& config){
+        return Print::SerializedConfig{
+            .json = serialize(Domain::as_boxes(config), 2, true),
+            .ini = Biz::serialize_as_legacy_config(config, true)
+        };
+    }, config)};
+
+    apply_status = this->m_print->update(model, config, bed, serialized_config);
 }
 
 void BackgroundProcess::slice()

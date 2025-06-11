@@ -14,7 +14,7 @@ using Slic3r::Domain::FullConfig;
 using Slic3r::Domain::PartialConfig;
 using Slic3r::Domain::BoxRef;
 using Slic3r::Domain::BoxRefs;
-using Slic3r::Domain::BoxOtBoxesVector;
+using Slic3r::Domain::BoxOrBoxesVector;
 using Slic3r::Domain::EnumValueDefs;
 using Slic3r::Domain::EnumWrapper;
 using Slic3r::Domain::ConfigLocationSizes;
@@ -123,11 +123,11 @@ BoxRefs convert_to_box_refs(
     return result;
 }
 
-BoxOtBoxesVector get_input(
+BoxOrBoxesVector get_input(
     const TestPrintSettings& test_box, const std::vector<TestFilamentSettings>& boxes_with_overrides
 )
 {
-    BoxOtBoxesVector result;
+    BoxOrBoxesVector result;
 
     result.push_back(test_box);
     result.push_back(convert_to_box_refs(boxes_with_overrides));

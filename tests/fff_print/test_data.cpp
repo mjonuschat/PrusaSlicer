@@ -2,6 +2,8 @@
 #include "test_data.hpp"
 
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
+#include "Slic3r/Biz/Config/ConfigLegacy.hpp"
+#include "Slic3r/Biz/Config/ConfigSerialize.hpp"
 #include "libslic3r/Config.hpp"
 #include "libslic3r/Print.hpp"
 #include "libslic3r/Format/OBJ.hpp"
@@ -275,7 +277,11 @@ void init_print(std::vector<TriangleMesh> &&meshes, Slic3r::Print &print, Slic3r
 		print.auto_assign_extruders(mo);
     }
 
-	print.apply(model, config, {}, {});
+    const Biz::Print::SerializedConfig serialized_config{
+        .json = Biz::serialize(Domain::as_boxes(config_in), 2, true),
+        .ini = Biz::serialize_as_legacy_config(config_in, true)
+    };
+	print.apply(model, config, serialized_config, {}, {});
     print.validate();
     print.set_status_silent();
 }

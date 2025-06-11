@@ -578,12 +578,16 @@ public:
     std::vector<Domain::ObjectID> print_object_ids() const override;
 
     virtual Biz::Print::ApplyStatus update(
-        Model& model, const Domain::ConfigPack& config, const Domain::BedInstance& bed
+        Model& model,
+        const Domain::ConfigPack& config,
+        const Domain::BedInstance& bed,
+        const Biz::Print::SerializedConfig& serialized_config
     ) override;
 
     ApplyStatus apply(
         const Model& model,
         const Domain::ConfigPackFDM& config_pack,
+        const Biz::Print::SerializedConfig& serialized_config,
         const std::optional<Domain::ModelWipeTower>& wipe_tower,
         const std::optional<Domain::CustomGCode::Info>& custom_gcode,
         std::vector<std::string>* warnings = nullptr
@@ -711,6 +715,8 @@ public:
     OnWipeTowerGeometry m_on_wipe_tower_geometry;
 
     PrintConfigView m_config;
+    Biz::Print::SerializedConfig m_serialized_config;
+
     PrintObjectPtrs m_objects;
     PrintRegionPtrs m_print_regions;
 

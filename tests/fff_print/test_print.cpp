@@ -80,7 +80,7 @@ SCENARIO("Print: Changing number of solid surfaces does not cause all surfaces t
         test_is_solid_infill(0, 78); // should be solid
         WHEN("Model is re-sliced with top_solid_layers == 3") {
 			config.print.items.opt("top_solid_layers").set(3);
-			print.apply(model, config, {}, {});
+			print.apply(model, config, {}, {}, {});
             print.process();
             THEN("Print object does not have 0 solid bottom layers.") {
                 test_is_solid_infill(0, 0);
@@ -161,7 +161,7 @@ TEST_CASE("Ported from Perl", "[Print]") {
         Model model2(model);
         model2.objects.front()->object_settings.overrides.set("fill_density", Percentage{100});
         WHEN("fill_density overridden") {
-            print.apply(model2, config, {}, {});
+            print.apply(model2, config, {}, {}, {});
             THEN("region config inherits model object config") {
                 REQUIRE(print.get_print_region(0).config().get<Percentage>("fill_density").value == Percentage{100}.value);
             }
@@ -169,7 +169,7 @@ TEST_CASE("Ported from Perl", "[Print]") {
 
         model2.objects.front()->object_settings.overrides.disable("fill_density");
         WHEN("fill_density resetted") {
-            print.apply(model2, config, {}, {});
+            print.apply(model2, config, {}, {}, {});
             THEN("region config is resetted") {
                 REQUIRE(print.get_print_region(0).config().get<Percentage>("fill_density") == Percentage{20});
             }
@@ -178,7 +178,7 @@ TEST_CASE("Ported from Perl", "[Print]") {
         WHEN("extruder is assigned") {
             model2.objects.front()->object_settings.items.opt("extruder").set(3);
             model2.objects.front()->object_settings.overrides.set("perimeter_extruder", 2);
-            print.apply(model2, config, {}, {});
+            print.apply(model2, config, {}, {}, {});
             THEN("extruder setting is correctly expanded") {
                 REQUIRE(print.get_print_region(0).config().get<int>("infill_extruder") == 3);
             }
