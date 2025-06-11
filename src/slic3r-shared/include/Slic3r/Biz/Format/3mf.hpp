@@ -9,8 +9,8 @@
 #include <string_view>
 #include <vector>
 #include <limits>
-#include "3mf/Metadata.hpp"
-#include "3mf/ResultLoad3mf.hpp"
+#include "Slic3r/Biz/Format/Metadata.hpp"
+#include "Slic3r/Biz/Format/ResultLoad3mf.hpp"
 
 namespace Slic3r {
 

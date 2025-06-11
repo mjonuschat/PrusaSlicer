@@ -1,6 +1,7 @@
 #include "Relations.hpp"
-#include <pugixml/pugixml.hpp>
+#include "pugixml.hpp"
 #include <boost/log/trivial.hpp>
+#include "boost/filesystem.hpp"
 #include "libslic3r/Utils.hpp"
 
 namespace{

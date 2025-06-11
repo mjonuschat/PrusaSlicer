@@ -1,20 +1,25 @@
 #include "Model3mf.hpp"
 #include <numeric> // std::accumulate
 #include <array>
-#include <fast_float/fast_float.h>
+#include "fast_float.h"
 #include <boost/assign.hpp>
 #include <boost/bimap.hpp>
 #include <boost/log/trivial.hpp>
 #include <boost/spirit/include/qi_int.hpp> // text to int
 #include <boost/uuid/string_generator.hpp>
 #include <boost/uuid/uuid_io.hpp> // uuid to stream
+#include "boost/algorithm/string.hpp"
+#include "boost/filesystem/exception.hpp"
 #include <expat.h>
 #include "libslic3r/Utils.hpp" // ScopeGuard
-#include "Metadata.hpp"
+#include "Slic3r/Biz/Format/Metadata.hpp"
 #include "Relations.hpp"
+#include "Slic3r/Domain/Types.hpp"
+#include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 
 using namespace Slic3r;
 using namespace format_3MF;
+using TriangleMesh = Slic3r::Domain::TriangleMesh;
 
 /// <summary>
 /// Since C++17, the best way to keep string literal is:
@@ -273,9 +278,9 @@ bool parse_id(const XML_Char *id_str, ST_ResourceID& id) {
 
 constexpr const char *v123 = "123";
 void process_triangle_atts(LoadedModelFile &model, const XML_Char **atts, int num_atts){
-    std::vector<Vec3i>& triangles = model.model->resource.objects.back().mesh.its.indices;
+    std::vector<Domain::Index3>& triangles = model.model->resource.objects.back().mesh.its.indices;
     triangles.emplace_back();
-    Vec3i &triangle = triangles.back();
+    Domain::Index3 &triangle = triangles.back();
     for (int a = 0, i = 0; a < num_atts; a += 2, ++i) {
         const XML_Char *name = atts[a];
         const XML_Char *value = atts[a+1];
@@ -285,11 +290,11 @@ void process_triangle_atts(LoadedModelFile &model, const XML_Char **atts, int nu
         } else {
             // un expected order
             if (::strcmp(name, V1_ATTR) == 0) {
-                triangle.x() = parse_int(value);
+                triangle[0] = parse_int(value);
             } else if (::strcmp(name, V2_ATTR) == 0) {
-                triangle.y() = parse_int(value);
+                triangle[1] = parse_int(value);
             } else if (::strcmp(name, V3_ATTR) == 0) {
-                triangle.z() = parse_int(value);
+                triangle[2] = parse_int(value);
             } else {
                 model.add(Read3mfIssueType::model_triangle_unknown_attr,
                     std::string(name), std::string(value));
@@ -1117,10 +1122,10 @@ LoadedModel Slic3r::read_model3mf(mz_zip_archive &archive, const char * root_fil
 
 // May be move write function into separate file because of include Model.hpp !!!
 
-#include "../../Time.hpp" // utc_timestamp
-#include "../../LocalesUtils.hpp" // CNumericLocalesSetter
-#include "../../Model.hpp"
-#include "../../PrintConfig.hpp" // DynamicPrintConfig, ConfigSubstitutionContext
+#include "libslic3r/Time.hpp" // utc_timestamp
+#include "LocalesUtils.hpp" // CNumericLocalesSetter
+#include "libslic3r/Model.hpp"
+#include "libslic3r/PrintConfig.hpp" // DynamicPrintConfig, ConfigSubstitutionContext
 
 #include <boost/spirit/include/karma.hpp>
 
@@ -1235,7 +1240,7 @@ void store_geometry(mz_zip_writer_staged_context &context, const indexed_triangl
 
     // keep count of addressing of vertex in triangles
     std::vector<unsigned> is_vertex_used;
-    auto unused_vertex_write = [&is_vertex_used, vertices_count](const Vec3i& t) { 
+    auto unused_vertex_write = [&is_vertex_used, vertices_count](const Domain::Index3& t) { 
         if (is_vertex_used.empty()){
             // first call of function initialize vector
             is_vertex_used = std::vector<unsigned>(vertices_count, {0});
@@ -1245,7 +1250,7 @@ void store_geometry(mz_zip_writer_staged_context &context, const indexed_triangl
         return true; // return bool to be possible check only in debug
     };
 
-    auto is_valid = [vertices_count, &unused_vertex_write](const Vec3i &t) {
+    auto is_valid = [vertices_count, &unused_vertex_write](const Domain::Index3 &t) {
         // check unused vertex - each vertex SHOULD be addressed at least 3 times
         assert(unused_vertex_write(t));
 
@@ -1270,7 +1275,7 @@ void store_geometry(mz_zip_writer_staged_context &context, const indexed_triangl
 
     // condition SHOULD be before loop(which could be HUGE)
     if (!is_mirrored) {
-        for (const Vec3i &t : its.indices) {
+        for (const Domain::Index3& t : its.indices) {
             // Disallowe storing of negative idices or bigger than vertices count
             if (!is_valid(t)) continue;
             output_buffer += triangle_to_string(t[0], t[1], t[2]);
@@ -1278,7 +1283,7 @@ void store_geometry(mz_zip_writer_staged_context &context, const indexed_triangl
         }
     } else {
         // same as above only indices 2 and 0 are swaped to invert volume
-        for (const Vec3i &t : its.indices) {
+        for (const Domain::Index3& t : its.indices) {
             if (!is_valid(t)) continue;
             output_buffer += triangle_to_string(t[2], t[1], t[0]);
             flush();
@@ -1296,7 +1301,7 @@ void store_geometry(mz_zip_writer_staged_context &context, const indexed_triangl
 
     // 3md SHOULD contain water tide meshes only:
     assert(is_each_vertex_used_three_times());
-    assert(its_get_open_edges(its).empty());
+    assert(Slic3r::Biz::Algorithms::TriangleMesh::its_get_open_edges(its).empty());
 
     output_buffer += std::string() +
         "    </" + TRIANGLES_TAG + ">\n" +

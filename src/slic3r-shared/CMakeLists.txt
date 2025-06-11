@@ -503,12 +503,26 @@ set(SLIC3R_SHARED_FILES
 
         include/Slic3r/Biz/Config/ConfigLoad.hpp
         src/Slic3r/Biz/Config/ConfigLoad.cpp
-
         include/Slic3r/Biz/Config/ConfigJson.hpp
         src/Slic3r/Biz/Config/ConfigJson.cpp
 
         include/Slic3r/Biz/Config/HwConfigJson.hpp
         src/Slic3r/Biz/Config/HwConfigJson.cpp
+        include/Slic3r/Biz/Format/3mf.hpp
+        include/Slic3r/Biz/Format/Metadata.hpp
+        include/Slic3r/Biz/Format/ResultLoad3mf.hpp
+        src/Slic3r/Biz/Format/3mf.cpp
+        src/Slic3r/Biz/Format/3mf/BuildTicket.cpp
+        src/Slic3r/Biz/Format/3mf/BuildTicket.hpp
+        src/Slic3r/Biz/Format/3mf/Metadata.cpp
+        src/Slic3r/Biz/Format/3mf/Model3mf.cpp
+        src/Slic3r/Biz/Format/3mf/Model3mf.hpp
+        src/Slic3r/Biz/Format/3mf/ModelMap.hpp
+        src/Slic3r/Biz/Format/3mf/PrusaFile.cpp
+        src/Slic3r/Biz/Format/3mf/PrusaFile.hpp
+        src/Slic3r/Biz/Format/3mf/Relations.cpp
+        src/Slic3r/Biz/Format/3mf/Relations.hpp
+        src/Slic3r/Biz/Format/3mf/ResultLoad3mf.cpp
 )
 
 if (WIN32)

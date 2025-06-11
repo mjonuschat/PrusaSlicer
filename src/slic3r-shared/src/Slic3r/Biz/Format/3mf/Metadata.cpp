@@ -1,4 +1,4 @@
-#include "Metadata.hpp"
+#include "Slic3r/Biz/Format/Metadata.hpp"
 #include <string_view>
 
 #include <boost/assign.hpp>

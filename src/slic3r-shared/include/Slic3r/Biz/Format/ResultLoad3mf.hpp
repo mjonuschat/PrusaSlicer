@@ -309,7 +309,7 @@ private:
 };
 
 // forward declaration
-class TriangleMesh;
+namespace Domain { class TriangleMesh; }
 
 // NOTE: Must be same as format_3MF::ST_UUID
 using UUID = boost::uuids::uuid;
@@ -322,13 +322,13 @@ using FileIssues = std::unordered_map<std::string, ResultLoad3mf>;
 /// </summary>
 struct MeshWithUUID { 
     // Pointer into Slic3r::Model
-    std::weak_ptr<const TriangleMesh> mesh; 
+    std::weak_ptr<const Domain::TriangleMesh> mesh; 
     // 3mf/3D/3dmodel.model->model/resources/object
     UUID object_uuid;
 };
 using MeshesWithUUID = std::vector<MeshWithUUID>;
 MeshesWithUUID::const_iterator find_by_ptr(const MeshesWithUUID &meshes, 
-    const std::shared_ptr<const TriangleMesh> &mesh_ptr);
+    const std::shared_ptr<const Domain::TriangleMesh> &mesh_ptr);
 
 /// <summary>
 /// Connection between Slic3r::Volume and UUID from 3mf

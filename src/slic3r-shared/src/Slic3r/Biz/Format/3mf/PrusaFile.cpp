@@ -5,15 +5,22 @@
 #include <boost/assign.hpp>
 #include <boost/bimap.hpp>
 #include <boost/filesystem.hpp>
-#include <json/json.hpp>
+#include "nlohmann/json.hpp"
 #include "libslic3r/Model.hpp" // Model+ModelObject+ModelVolume+ModelVolumeType
 #include "libslic3r/PrintConfig.hpp" // DynamicPrintConfig + ConfigSubstitutionContext
 #include "libslic3r/Slicing.hpp" // t_layer_config_ranges
 #include "libslic3r/NSVGUtils.hpp" // open content of svg file
 
-//using json = nlohmann::json;
+#include "Slic3r/Log.hpp"
+
 using json = nlohmann::ordered_json;
 using namespace Slic3r;
+
+using EmbossProjection = Domain::EmbossProjection;
+using EmbossShape = Domain::EmbossShape;
+using EmbossStyle = Domain::EmbossStyle;
+using FontProp = Domain::FontProp;
+using TextConfiguration = Domain::TextConfiguration;
 
 namespace{
 using NamesType = const std::vector<std::string_view>;
@@ -432,7 +439,7 @@ void write_svg_files(mz_zip_archive &archive, const Model &model) {
             if (file_data == nullptr && !svg.path.empty()) {
                 file_data = read_from_disk(svg.path);
                 if (file_data == nullptr)
-                    BOOST_LOG_TRIVIAL(warning) << "Can't load svg file from path: " << svg.path;
+                    SPDLOG_WARN("Can't load svg file from path: {}", svg.path);
             }
             if (file_data == nullptr)
                 continue; // Text configuration do not have svg file
@@ -510,7 +517,7 @@ constexpr std::string_view BACKWARDED_EDGES = "backwardsEdges";
 
 const NamesType SOURCE_NAMES = {{FILEPATH, OFFSET, IS_FROM_INCH, IS_FROM_METERS, OBJECT_INDEX, VOLUME_INDEX, REPAIR}};
 const NamesType REPAIR_NAMES = {{EDGE_FIXED, DEGENERATE_FACETS, FACETS_REMOVED, FACETS_REVERSED, BACKWARDED_EDGES}};
-json to_json(const RepairedMeshErrors &rme) {
+json to_json(const Domain::RepairedMeshErrors &rme) {
     json r;
     if (rme.edges_fixed != 0)
         r[EDGE_FIXED] = rme.edges_fixed;
@@ -525,7 +532,7 @@ json to_json(const RepairedMeshErrors &rme) {
     return r;
 }
 
-json to_json(const ModelVolume::Source &source, const TriangleMeshStats &stats) {
+json to_json(const ModelVolume::Source &source, const Domain::TriangleMeshStats &stats) {
     json r;
     if (!source.input_file.empty())
         // unify direction of slashes
@@ -550,7 +557,7 @@ json to_json(const ModelVolume::Source &source, const TriangleMeshStats &stats) 
     return r;
 }
 
-void load(const json &source_json, ModelVolume::Source &source, TriangleMeshStats &stats, ResultLoad3mf &result) {
+void load(const json &source_json, ModelVolume::Source &source, Domain::TriangleMeshStats &stats, ResultLoad3mf &result) {
     if (!is_valid(source_json, SOURCE_NAMES, result, RT::project_source_unknown_property))
         return;
 
@@ -566,7 +573,7 @@ void load(const json &source_json, ModelVolume::Source &source, TriangleMeshStat
         if(!is_valid(repair_json, REPAIR_NAMES, result, RT::project_source_repair_issue))
             return;
 
-        RepairedMeshErrors &rme = stats.repaired_errors;
+        Domain::RepairedMeshErrors &rme = stats.repaired_errors;
         from_json(repair_json, EDGE_FIXED,        rme.edges_fixed,       result, RT::project_repair_edge_fixed_issue);
         from_json(repair_json, DEGENERATE_FACETS, rme.degenerate_facets, result, RT::project_repair_degenerate_facets_issue);
         from_json(repair_json, FACETS_REMOVED,    rme.facets_removed,    result, RT::project_repair_facets_removed_issue);
@@ -587,7 +594,7 @@ constexpr std::string_view TRIANGLE = "triangle"; // index into mesh(specifiead 
 constexpr std::string_view DIVIDING = "dividing";
 NamesType FACET_NAMES{{TRIANGLE, DIVIDING}};
 void write(mz_zip_archive &archive, const Model &model, const VolumeToObjectid &v2id) {
-    auto facets_to_json = [](const FacetsAnnotation &facets, int triangle_count) {
+    auto facets_to_json = [](const Domain::FacetsAnnotation &facets, int triangle_count) {
         if (facets.empty())
             return json{};
 
@@ -632,7 +639,7 @@ void load(const json &facets_json_arr, const VolumeMap &volume_map, ResultLoad3m
         return;
     }
 
-    auto json_to_facets = [&result](const json &facets_json, FacetsAnnotation &facets) {
+    auto json_to_facets = [&result](const json &facets_json, Domain::FacetsAnnotation &facets) {
         if (!facets_json.is_array())
             return;
         facets.reserve(static_cast<int>(facets_json.size()));
@@ -723,8 +730,8 @@ std::vector<double> load(const json &layer_heights_json, ResultLoad3mf& result) 
             result.add(RT::layer_heights_must_be_array_of_pairs, std::to_string(lo_hi_pair.size()));
             return {};
         }
-        layer_heights.push_back(lo_hi_pair[0]);
-        layer_heights.push_back(lo_hi_pair[1]);
+        layer_heights.push_back(lo_hi_pair[0].get<double>());
+        layer_heights.push_back(lo_hi_pair[1].get<double>());
     }
     return layer_heights;
 }
@@ -765,18 +772,18 @@ constexpr std::string_view CHECK_SUM = "checkSum";
 constexpr std::string_view CONNECTORS_CNT = "connectorsCnt";
 const NamesType NAMES_ID = {{CUT_TYPE, R_TOLERANCE, H_TOLERANCE}};
 
-json cut_to_json(const CutObjectBase &cut) {
-    if (!cut.id().valid())
+json cut_to_json(const CutId& cut) {
+    if (!cut.valid())
         return {};
 
     json cut_json;
-    cut_json[CUT_ID] = cut.id().id;
+    cut_json[CUT_ID] = cut.id();
     cut_json[CHECK_SUM] = cut.check_sum();
     cut_json[CONNECTORS_CNT] = cut.connectors_cnt();
     return cut_json;
 }
 
-void load(const json &cut_object_json, CutObjectBase &cut, ResultLoad3mf &result){
+void load(const json &cut_object_json, CutId &cut, ResultLoad3mf &result){
     if (!is_valid(cut_object_json, NAMES_ID, result, RT::project_cut_info_unknown_property))
         return;
 
@@ -784,7 +791,7 @@ void load(const json &cut_object_json, CutObjectBase &cut, ResultLoad3mf &result
     if(!from_json(cut_object_json, CUT_ID        , id      , result, RT::project_cut_object_id_issue, true)) return;
     if(!from_json(cut_object_json, CHECK_SUM     , checksum, result, RT::project_cut_object_checksum_issue, true)) return;
     if(!from_json(cut_object_json, CONNECTORS_CNT, cnt     , result, RT::project_cut_object_connector_count_issue, true)) return;
-    cut = CutObjectBase(ObjectID(id), checksum, cnt);
+    cut = CutId(id, checksum, cnt);
 }
 } // namespace CutSerialization
 
@@ -884,17 +891,17 @@ void load_volume(const json &volume_json, const VolumeMap &volume_map, ResultLoa
     if (auto source_json_it = volume_json.find(SOURCE);
         source_json_it != volume_json.end()){
         for (ModelVolume *mv : mvs) {
-            TriangleMeshStats stats;
+            Domain::TriangleMeshStats stats;
             SourceSerialization::load(*source_json_it, mv->source, stats, result);
             // Can't set repaired_errors directly so need to re-set the mesh
             auto &its = const_cast<indexed_triangle_set &>(mv->mesh().its);
-            mv->set_mesh(TriangleMesh(std::move(its), stats.repaired_errors));
+            mv->set_mesh(Domain::TriangleMesh(std::move(its), std::move(stats)));
         }
     }
 
     if (auto tc_json_it = volume_json.find(TEXT_CONFIGURATION);
         tc_json_it != volume_json.end()){
-        TextConfiguration tc;
+        Domain::TextConfiguration tc;
         TextConfigurationSerialization::load(*tc_json_it, tc, result);
         for (ModelVolume *mv : mvs)
             mv->text_configuration = tc;
@@ -902,7 +909,7 @@ void load_volume(const json &volume_json, const VolumeMap &volume_map, ResultLoa
 
     if (auto shape_json_it = volume_json.find(SHAPE);
         shape_json_it != volume_json.end()) {
-        EmbossShape es;
+        Domain::EmbossShape es;
         EmbossShapeSerialization::load(*shape_json_it, es, result);
         for (ModelVolume *mv : mvs)
             mv->emboss_shape = es;
@@ -925,20 +932,20 @@ constexpr std::string_view HEAD_FRONT_RADIUS = "r"; // head front radius
 constexpr std::string_view IS_NEW_ISLAND = "island";        // is new island
 NamesType NAMES{{POSITION, HEAD_FRONT_RADIUS, IS_NEW_ISLAND}};
 
-json to_json(const sla::SupportPoints &points) {
+json to_json(const Domain::SLA::SupportPoints &points) {
     json r = json::array();
-    for (const sla::SupportPoint &p : points) {
+    for (const Domain::SLA::SupportPoint &p : points) {
         json p_json;
         p_json[POSITION] = ::to_json(p.pos);
         p_json[HEAD_FRONT_RADIUS] = p.head_front_radius;
-        if (p.is_new_island)
+        if (p.is_island())
             p_json[IS_NEW_ISLAND] = true;
         r.push_back(std::move(p_json));
     }
     return r;
 }
 
-void load(const json &pts_json, sla::SupportPoints &pts, ResultLoad3mf &result) {
+void load(const json &pts_json, Domain::SLA::SupportPoints &pts, ResultLoad3mf &result) {
     if (!pts_json.is_array()) {
         result.add(RT::project_sla_support_points_must_be_array);
         return;
@@ -947,10 +954,13 @@ void load(const json &pts_json, sla::SupportPoints &pts, ResultLoad3mf &result) 
     for (const json &pt_json : pts_json) {
         if(!is_valid(pt_json, NAMES, result, RT::project_sla_support_point_unknown_property))
             continue;
-        sla::SupportPoint pt;
+        Domain::SLA::SupportPoint pt;
+        bool is_island = pt.is_island();
         from_json(pt_json, POSITION,          pt.pos,               result, RT::project_sla_support_point_position_issue, true);
         from_json(pt_json, HEAD_FRONT_RADIUS, pt.head_front_radius, result, RT::project_sla_support_point_radius_issue, true);
-        from_json(pt_json, IS_NEW_ISLAND,     pt.is_new_island,     result, RT::project_sla_support_point_is_new_island_issue);
+        from_json(pt_json, IS_NEW_ISLAND,     is_island,            result, RT::project_sla_support_point_is_new_island_issue);
+        if (is_island)
+            pt.type = Domain::SLA::SupportPointType::island;
         pts.push_back(pt);
     }
 }
@@ -962,9 +972,9 @@ constexpr std::string_view NORMAL = "normal";
 constexpr std::string_view RADIUS = "radius";
 constexpr std::string_view HEIGHT = "height";
 NamesType NAMES{{POSITION, NORMAL, RADIUS, HEIGHT}};
-json to_json(const sla::DrainHoles &holes) {
+json to_json(const Domain::SLA::DrainHoles &holes) {
     json r = json::array();
-    for (const sla::DrainHole &h : holes) {
+    for (const Domain::SLA::DrainHole &h : holes) {
         json h_json;
         h_json[POSITION] = ::to_json(h.pos);
         h_json[NORMAL]   = ::to_json(h.normal);
@@ -974,7 +984,7 @@ json to_json(const sla::DrainHoles &holes) {
     }
     return r;
 }
-void from_json(const json &holes_json, sla::DrainHoles &holes, ResultLoad3mf &result) {
+void from_json(const json &holes_json, Domain::SLA::DrainHoles &holes, ResultLoad3mf &result) {
     if (!holes_json.is_array()) {
         result.add(RT::project_sla_drain_holes_must_be_array);
         return;
@@ -983,7 +993,7 @@ void from_json(const json &holes_json, sla::DrainHoles &holes, ResultLoad3mf &re
     for (const json &hole_json : holes_json) {
         if(!is_valid(hole_json, NAMES, result, RT::project_sla_drain_hole_unknown_property))
             continue;
-        sla::DrainHole hole;
+        Domain::SLA::DrainHole hole;
         ::from_json(hole_json, POSITION, hole.pos,    result, RT::project_sla_drain_hole_position_issue, true);
         ::from_json(hole_json, NORMAL,   hole.normal, result, RT::project_sla_drain_hole_normal_issue, true);
         ::from_json(hole_json, RADIUS,   hole.radius, result, RT::project_sla_drain_hole_radius_issue, true);

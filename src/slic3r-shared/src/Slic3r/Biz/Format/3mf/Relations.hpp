@@ -8,7 +8,7 @@
 #include <string>
 #include <optional>
 #include <miniz.h> // mz_zip_archive
-#include "ResultLoad3mf.hpp"
+#include "Slic3r/Biz/Format/ResultLoad3mf.hpp"
 
 namespace Slic3r {
 

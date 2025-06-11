@@ -10,15 +10,15 @@
 #include <unordered_map>
 #include <optional>
 #include <variant>
-#include <miniz_extension.hpp> // mini zip archivator
+#include "libslic3r/miniz_extension.hpp" // mini zip archivator
 #include "libslic3r/Point.hpp" // Transform3d
-#include "libslic3r/TriangleMesh.hpp"
+#include "Slic3r/Domain/TriangleMesh.hpp"
 #include "admesh/stl.h" // indexed_triangle_set
-#include "ResultLoad3mf.hpp" // Error handling
-#include "Metadata.hpp"
+#include "Slic3r/Biz/Format/ResultLoad3mf.hpp" // Error handling
+#include "Slic3r/Biz/Format/Metadata.hpp"
 #include <boost/uuid/uuid.hpp>
 
-#include "../3mf.hpp" // Store3mfParam
+#include "Slic3r/Biz/Format/3mf.hpp" // Store3mfParam
 
 // Unprefixed: Element names
 // CT_ .. prefix of Complex types defined in 3MF specification
@@ -51,7 +51,7 @@ struct AnyTag{
 //       00 .. completely transparent
 //       FF .. completely opaque
 //       the default if not specified
-using ST_ColorValue = Vec4i;
+using ST_ColorValue = std::array<uint8_t, 4>;
 
 /// <summary>
 /// Since these materials can be applied at both the object and triangle level, 
@@ -473,7 +473,7 @@ struct ObjectIdWithPath{
 };
 
 //                           Pointer on data(volume), objectid from .model file
-using MeshToObjectid = std::unordered_map<const TriangleMesh *, ObjectIdWithPath>;
+using MeshToObjectid = std::unordered_map<const Domain::TriangleMesh *, ObjectIdWithPath>;
 // ModelVolume::id to objectid
 using VolumeToObjectid = std::unordered_map<size_t, unsigned>;
 // ModelObject::id to objectid

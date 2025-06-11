@@ -3,7 +3,7 @@
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/string_generator.hpp>
 #include <boost/spirit/include/qi_int.hpp> // parse int
-#include <pugixml/pugixml.hpp>
+#include "pugixml.hpp"
 #include <string>
 #include <vector>
 #include <map>

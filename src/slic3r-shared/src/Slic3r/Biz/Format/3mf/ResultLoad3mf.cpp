@@ -1,4 +1,4 @@
-#include "ResultLoad3mf.hpp"
+#include "Slic3r/Biz/Format/ResultLoad3mf.hpp"
 using namespace Slic3r;
 
 ResultLoad3mf::ResultLoad3mf(Read3mfIssueType type) : 
@@ -65,10 +65,10 @@ std::string create_message(const Read3mfIssues &issues) {
 }
 
 MeshesWithUUID::const_iterator find_by_ptr(
-    const MeshesWithUUID &meshes, const std::shared_ptr<const TriangleMesh> &mesh_ptr
+    const MeshesWithUUID &meshes, const std::shared_ptr<const Domain::TriangleMesh> &mesh_ptr
 ) {
     return std::find_if(meshes.cbegin(), meshes.cend(), [&mesh_ptr](const MeshWithUUID &mesh_uuid) {
-        std::shared_ptr<const TriangleMesh> mesh = mesh_uuid.mesh.lock();
+        std::shared_ptr<const Domain::TriangleMesh> mesh = mesh_uuid.mesh.lock();
         if (mesh == nullptr)
             return false;
         return mesh_ptr == mesh;

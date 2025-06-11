@@ -1,11 +1,11 @@
-#include "3mf.hpp"
+#include "Slic3r/Biz/Format/3mf.hpp"
 
 #include <memory>
 #include <set>
 
 #include <boost/algorithm/string/predicate.hpp> // iends_with
 #include <boost/filesystem.hpp> // storing exception
-#include <miniz_extension.hpp> // mini zip archivator
+#include "libslic3r/miniz_extension.hpp" // mini zip archivator
 #include "3mf/Relations.hpp"
 #include "3mf/Model3mf.hpp"
 #include "3mf/BuildTicket.hpp"
@@ -17,6 +17,7 @@
 
 #include "libslic3r/Model.hpp"
 #include "libslic3r/GCode/ThumbnailData.hpp"
+#include "libslic3r/Utils.hpp" // ScopeGuard
 
 #include "3mf_old_import.hpp"
 
@@ -117,7 +118,7 @@ bool can_be_instance(const Transform3d &tr1, const Transform3d &tr2)
     assert(is_approx(between.col(2).norm(), 1.));
 
     // Found similar implementation - check that it is also positive
-    assert(Geometry::trafos_differ_in_rotation_by_z_and_mirroring_by_xy_only(tr1, tr2));
+    assert(Slic3r::Biz::Algorithms::Geometry::trafos_differ_in_rotation_by_z_and_mirroring_by_xy_only(tr1, tr2));
     
     return true;
 }
@@ -172,7 +173,7 @@ ModelMap add_build_instances(Slic3r::Model &model, const CT_Items &items) {
         }
 
         ModelInstance *instance_ptr = model_object->add_instance();
-        instance_ptr->set_transformation(Geometry::Transformation(item.transform));
+        instance_ptr->set_transformation(Domain::Transformation(item.transform));
         model_map.instances[&item - &items.front()] = instance_ptr;
     }
     return model_map;
@@ -292,7 +293,7 @@ bool move_mesh(
     // is Object with mesh?
     if (!object_3mf.mesh.its.empty()) {
         // Triangle mesh check validity in constructor
-        TriangleMesh tm(std::move(object_3mf.mesh.its));
+        Domain::TriangleMesh tm(std::move(object_3mf.mesh.its), std::move(Domain::TriangleMeshStats()));
         ModelVolume *vol = temp_object.add_volume(std::move(tm));
         // copy name of volume
         vol->name = object_3mf.name;
@@ -813,7 +814,7 @@ bool regenerate_uuid(Slic3r::Model &model){
     auto add_mesh = [generate_uuid, is_uniqueu_uuid, 
         &new_meshes_uuid = new_persist.meshes_uuid,
         &old_meshes_uuid = old_persist.meshes_uuid](const ModelVolume &mv) -> bool {
-        const std::shared_ptr<const TriangleMesh> &mesh_ptr = mv.get_mesh_shared_ptr();
+        const std::shared_ptr<const Domain::TriangleMesh> &mesh_ptr = mv.get_mesh_shared_ptr();
         auto new_mesh_uuid_it = find_by_ptr(new_meshes_uuid, mesh_ptr);
         auto old_mesh_uuid_it = find_by_ptr(old_meshes_uuid, mesh_ptr);
         if (new_mesh_uuid_it == new_meshes_uuid.cend()) {

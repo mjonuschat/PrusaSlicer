@@ -5,7 +5,7 @@
 #ifndef slic3r_Format_3mf_buildticket_hpp_
 #define slic3r_Format_3mf_buildticket_hpp_
 
-#include <miniz_extension.hpp> // mz_zip_archive + mz_zip_archive_file_stat
+#include "libslic3r/miniz_extension.hpp" // mz_zip_archive + mz_zip_archive_file_stat
 #include "Model3mf.hpp" // CT_Items
 #include "ModelMap.hpp" // InstanceMap
 
