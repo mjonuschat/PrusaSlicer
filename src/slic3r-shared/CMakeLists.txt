@@ -425,6 +425,8 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/ThumbnailImageRequest.hpp
         include/Slic3r/Biz/ThumbnailImageResult.hpp
         include/Slic3r/Biz/ThumbnailType.hpp
+        include/Slic3r/Biz/CopyFile.hpp
+        src/Slic3r/Biz/CopyFile.cpp
 
         include/Slic3r/Biz/Scene/SceneInteractor.hpp
         src/Slic3r/Biz/Scene/SceneInteractor.cpp
@@ -609,7 +611,9 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/AppInstance/AbstractAppInstanceMessageHandler.hpp
         include/Slic3r/Biz/AppInstance/IAppInstanceMessageContentListener.hpp
         include/Slic3r/Biz/AppInstance/AppInstanceMessageHandlerFactory.hpp
+        include/Slic3r/Biz/AppInstance/AppInstanceUtils.hpp
         src/Slic3r/Biz/AppInstance/AbstractAppInstanceMessageHandler.cpp
+        src/Slic3r/Biz/AppInstance/AppInstanceUtils.cpp
         include/Slic3r/Biz/Config/ConfigSerialize.hpp
         include/Slic3r/Biz/Config/ConfigLegacy.hpp
         src/Slic3r/Biz/Config/ConfigSerialize.cpp

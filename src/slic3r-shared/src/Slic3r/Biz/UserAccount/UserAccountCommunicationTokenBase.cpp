@@ -5,7 +5,7 @@
 #include "Slic3r/Log.hpp"
 #include "Slic3r/Assert.hpp"
 
-#include "libslic3r/Utils.hpp" // get_current_pid()
+#include "Slic3r/Biz/AppInstance/AppInstanceUtils.hpp" // get_current_pid()
 
 namespace Slic3r::Biz::UserAccount {
 
@@ -72,7 +72,7 @@ void UserAccountCommunicationTokenBase::on_token_timer()
     SPDLOG_INFO("{} T1", __FUNCTION__);
 
     // Read PID from current stored token, compare with own PID and decide if master / slave
-    std::string my_pid = std::to_string(get_current_pid());
+    std::string my_pid = std::to_string(AppInstance::get_current_pid());
 
     TokenStore::StoreData stored_data;
     bool tokens_loaded = TokenStore::load_tokens(stored_data);
@@ -225,7 +225,7 @@ void UserAccountCommunicationTokenBase::on_username_changed(const std::string& u
         at_print = at_print.substr(0,5) + "..." + at_print.substr(at_print.size()-5);
     SPDLOG_INFO("{} access_token: {}", __FUNCTION__, (username.empty() ? "" : at_print));
 
-   TokenStore::StoreData stored_data {m_session.get_access_token(), m_session.get_refresh_token(), m_session.get_shared_session_key(), std::to_string(m_session.get_next_token_timeout()), std::to_string(get_current_pid())};
+   TokenStore::StoreData stored_data {m_session.get_access_token(), m_session.get_refresh_token(), m_session.get_shared_session_key(), std::to_string(m_session.get_next_token_timeout()), std::to_string(AppInstance::get_current_pid())};
    if (!TokenStore::save_tokens(stored_data)) {
        SPDLOG_INFO("Failed to write tokens to the secret store.");
    }

@@ -2,16 +2,19 @@
 
 #include "Slic3r/Biz/PresetUpdater/PresetUpdaterProcessStatus.hpp"
 #include "Slic3r/Biz/Network/IHttp.hpp"
+#include "Slic3r/Biz/CopyFile.hpp"
 
 #include "Slic3r/Assert.hpp"
 #include "Slic3r/Log.hpp"
 
-#include "libslic3r/Utils.hpp"
 #include "libslic3r/miniz_extension.hpp"
 
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/directory.hpp>
 #include <boost/nowide/fstream.hpp>
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_io.hpp>
+#include <boost/uuid/random_generator.hpp>
 #include <fmt/format.h>
 
 namespace fs = boost::filesystem;
@@ -108,10 +111,13 @@ bool PresetUpdaterRepository::extract_repository_header(const nlohmann::json& js
 
 bool PresetUpdaterRepositoryOnline::get_file_inner(const std::string& url, const fs::path& target_path, PresetUpdaterProcessStatus* process_status) const
 {
+    boost::uuids::random_generator generator;
+    boost::uuids::uuid uuid = generator();
 
 	bool res = false;
 	fs::path tmp_path = target_path;
-	tmp_path += fmt::format(".{}{}", get_current_pid(), TMP_EXTENSION); 
+	tmp_path += fmt::format(".{}{}", boost::uuids::to_string(generator()), TMP_EXTENSION); 
+
 	SPDLOG_INFO("Get: `{}`\n\t-> `{}`\n\tvia tmp path `{}`",
 		url,
 		target_path.string(),
@@ -178,8 +184,8 @@ bool PresetUpdaterRepositoryLocal::get_file_inner(const fs::path& source_path, c
 {
 	SPDLOG_INFO("Copying {} to {}", source_path.string(), target_path.string());
 	std::string error_message;
-	Slic3r::CopyFileResult cfr = Slic3r::copy_file(source_path.string(), target_path.string(), error_message, false);
-	if (cfr != Slic3r::CopyFileResult::SUCCESS) {
+	Utils::CopyFileResult cfr = Utils::copy_file(source_path.string(), target_path.string(), error_message, false);
+	if (cfr != Utils::CopyFileResult::Success) {
         SPDLOG_ERROR("Copying of {} to {} has failed: {}", source_path.string(), target_path.string(), error_message);
 		// remove target file, even if it was there before
         boost::system::error_code ec;

@@ -3,6 +3,7 @@
 #include "Slic3r/Biz/PresetUpdater/PresetUpdaterProcessStatus.hpp"
 #include "Slic3r/Biz/Network/IHttp.hpp"
 #include "Slic3r/Biz/Network/ServiceConfig.hpp"
+#include "Slic3r/Biz/CopyFile.hpp"
 
 #include "Slic3r/Exception.hpp"
 #include "Slic3r/Assert.hpp"
@@ -332,8 +333,8 @@ void PresetUpdaterRepositoryDatabase::copy_initial_manifest()
         throw Slic3r::RuntimeError(source_path.string() + " does not exists. " + ec.message());
     }
 	std::string error_message;
-	Slic3r::CopyFileResult cfr = Slic3r::copy_file(source_path.string(), target_path.string(), error_message, false);
-	if (cfr != Slic3r::CopyFileResult::SUCCESS) {
+	Utils::CopyFileResult cfr = Utils::copy_file(source_path.string(), target_path.string(), error_message, false);
+	if (cfr != Utils::CopyFileResult::Success) {
         throw Slic3r::RuntimeError("Failed to copy ArchiveRepositoryManifest.json from resources.");
 	}
 	static constexpr const auto perms = fs::owner_read | fs::owner_write | fs::group_read | fs::others_read;
