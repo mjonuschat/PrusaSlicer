@@ -23,7 +23,6 @@ Domain::SelectionId ProjectInteractor::new_project()
 Domain::SelectionId ProjectInteractor::load_project(const std::string& file_path)
 {
     Domain::Project project;
-    //initialize_new_project_before_inserting(project);
     project.load(file_path);
     Domain::SelectionId project_id = add_project(std::move(project));
 

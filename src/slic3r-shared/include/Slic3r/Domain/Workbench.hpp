@@ -40,7 +40,6 @@ public:
     { m_preset_bundle = std::make_unique<Preset::Bundle>(std::forward<Preset::Bundle>(preset_bundle)); }
 
     void load_legacy_configs();
-    void load_project(const std::string& file_path);
 
     SelectionId next_project_id() { return m_project_id_generator.next_id(); }
 private:

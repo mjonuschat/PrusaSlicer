@@ -42,7 +42,6 @@
 #define ENABLED_DEBUG_IMGUI_FONT 0
 #define ENABLED_DEBUG_IMGUI_ICONS 0
 #define ENABLED_DEBUG_BEDS 1
-#define ENABLED_DEBUG_LOAD_3MF 0
 #define ENABLED_DEBUG_CAMERA 0
 
 using namespace Slic3r::App::Yoga;
@@ -870,16 +869,6 @@ void PlaterRenderModule::render_imgui(Render::CommandBuffer & cmd_buffer)
     render_imgui_debug_bed(m_project_interactor, *m_scene_presenter, *m_device);
 #endif // ENABLED_DEBUG_BEDS
 
-#if ENABLED_DEBUG_LOAD_3MF
-    //ImGui::SetNextWindowPos(ImVec2(ImGui::GetMainViewport()->GetCenter().x, 20.f), ImGuiCond_Always);
-    if (ImGui::Begin("Load test", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-        if (ImGui::Button("Load project from test 3mf")) {
-            // temp solution because of ScenePresenter is created in canvas.render()
-            m_project_interactor.load_project("/Users/jan.bartipan/Downloads/apply_test_object.3mf");
-        }
-    }
-    ImGui::End();
-#endif // ENABLED_DEBUG_LOAD_3MF
 #if ENABLED_DEBUG_CAMERA
     render_imgui_debug_camera(m_scene_presenter->scene().camera(), m_scene_presenter->scene().camera_trackball());
 #endif // ENABLED_DEBUG_CAMERA
