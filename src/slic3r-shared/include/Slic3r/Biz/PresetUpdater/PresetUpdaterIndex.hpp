@@ -83,5 +83,6 @@ private:
     boost::filesystem::path     m_path;
 };
 
+bool is_idx_file(const boost::filesystem::directory_entry &path);
 
 } // namespace Slic3r::Biz::PresetUpdater

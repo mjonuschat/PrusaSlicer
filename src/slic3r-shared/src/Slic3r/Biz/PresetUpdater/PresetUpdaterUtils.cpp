@@ -3,6 +3,7 @@
 #include "Slic3r/Biz/PresetUpdater/PresetUpdaterProcessStatus.hpp"
 #include "Slic3r/Biz/PresetUpdater/PresetUpdaterReconfigurationList.hpp"
 #include "Slic3r/Biz/PresetUpdater/PresetUpdaterVendorProfile.hpp"
+#include "Slic3r/Biz/CopyFile.hpp"
 
 #include "libslic3r/Utils.hpp"
 
@@ -23,8 +24,8 @@ void copy_file_fix(const fs::path& source, const fs::path& target)
 {
 	SPDLOG_INFO("PresetUpdater: Copying {} -> {}", source.string(), target.string());
 	std::string error_message;
-	Slic3r::CopyFileResult cfr = Slic3r::copy_file(source.string(), target.string(), error_message, false);
-	if (cfr != Slic3r::CopyFileResult::SUCCESS) {
+	Utils::CopyFileResult cfr = Utils::copy_file(source.string(), target.string(), error_message, false);
+	if (cfr != Utils::CopyFileResult::Success) {
 		SPDLOG_ERROR("Copying failed: {}", error_message);
 		throw Slic3r::CriticalException(fmt::format(
 				"Copying of file {} to {} failed: {}",
@@ -50,7 +51,7 @@ std::vector<PresetUpdaterIndex> load_vendors_db(const fs::path& archive_path)
     }
     ec.clear();
     for (auto &dir_entry : fs::directory_iterator(archive_path, ec)) {
-        if (Slic3r::is_idx_file(dir_entry)) {
+        if (is_idx_file(dir_entry)) {
     	    PresetUpdaterIndex idx;
             try {
         	    idx.load(dir_entry.path());
@@ -85,7 +86,7 @@ std::vector<PresetUpdaterIndex> load_vendors_db_filtered(const boost::filesystem
     fs::directory_iterator source_directory_iterator(from_path, ec);
     // PresetUpdaterIndex work with dir entries, so we iterate every time
     for (auto &dir_entry : source_directory_iterator) {
-        if (Slic3r::is_idx_file(dir_entry)) {
+        if (is_idx_file(dir_entry)) {
             if (std::find(filter.begin(), filter.end(), dir_entry.path().filename().string()) == filter.end()) {
                 // not an index from this archive
                 continue;

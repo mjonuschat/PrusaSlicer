@@ -1,17 +1,87 @@
 #include "Slic3r/Biz/PresetUpdater/PresetUpdaterIndex.hpp"
 
-#include <cctype>
+#include "Slic3r/Exception.hpp"
 
+#include "libslic3r/libslic3r.h"
+
+#include <cctype>
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/directory.hpp>
 #include <boost/nowide/fstream.hpp>
 
-#include "libslic3r/FileParserError.hpp"
-#include "libslic3r/Config.hpp"
+#ifdef _MSC_VER 
+    #define strcasecmp _stricmp
+	#include <windows.h>
+#endif
 
 namespace Slic3r::Biz::PresetUpdater {
 
 Semver SEMVER { SLIC3R_VERSION };
+
+namespace {
+
+// Generic file parser error, mostly copied from boost::property_tree::file_parser_error
+class file_parser_error: public Slic3r::RuntimeError
+{
+public:
+    file_parser_error(const std::string &msg, const std::string &file, unsigned long line = 0) :
+        Slic3r::RuntimeError(format_what(msg, file, line)),
+        m_message(msg), m_filename(file), m_line(line) {}
+    file_parser_error(const std::string &msg, const boost::filesystem::path &file, unsigned long line = 0) :
+        Slic3r::RuntimeError(format_what(msg, file.string(), line)),
+        m_message(msg), m_filename(file.string()), m_line(line) {}
+    // gcc 3.4.2 complains about lack of throw specifier on compiler
+    // generated dtor
+    ~file_parser_error() throw() {}
+
+    // Get error message (without line and file - use what() to get full message)
+    std::string message() const { return m_message; }
+    // Get error filename
+    std::string filename() const { return m_filename; }
+    // Get error line number
+    unsigned long line() const { return m_line; }
+
+private:
+    std::string     m_message;
+    std::string     m_filename;
+    unsigned long   m_line;
+
+    // Format error message to be returned by Slic3r::RuntimeError::what()
+    static std::string format_what(const std::string &msg, const std::string &file, unsigned long l)
+    {
+        std::stringstream stream;
+        stream << (file.empty() ? "<unspecified file>" : file.c_str());
+        if (l > 0)
+            stream << '(' << l << ')';
+        stream << ": " << msg;
+        return stream.str();
+    }
+};
+
+// Unescape \n, \r and backslash
+bool unescape_string_cstyle(const std::string &str, std::string &str_out)
+{
+    std::vector<char> out(str.size(), 0);
+    char *outptr = out.data();
+    for (size_t i = 0; i < str.size(); ++ i) {
+        char c = str[i];
+        if (c == '\\') {
+            if (++ i == str.size())
+                return false;
+            c = str[i];
+            if (c == 'r')
+                (*outptr ++) = '\r';
+            else if (c == 'n')
+                (*outptr ++) = '\n';
+            else
+                (*outptr ++) = c;
+        } else
+            (*outptr ++) = c;
+    }
+    str_out.assign(out.data(), outptr - out.data());
+    return true;
+}
+}
 
 // Optimized lexicographic compare of two pre-release versions, ignoring the numeric suffix.
 static int compare_prerelease(const char *p1, const char *p2)
@@ -90,10 +160,10 @@ inline std::string unquote_value(char *value, char *end, const std::string &path
 		// Empty string is a valid string.
 	} else if (*value == '"') {
 		if (++ value > -- end || *end != '"')
-			throw Slic3r::file_parser_error("String not enquoted correctly", path, idx_line);
+			throw file_parser_error("String not enquoted correctly", path, idx_line);
 		*end = 0;
-		if (! Slic3r::unescape_string_cstyle(value, svalue))
-			throw Slic3r::file_parser_error("Invalid escape sequence inside a quoted string", path, idx_line);
+		if (! unescape_string_cstyle(value, svalue))
+			throw file_parser_error("Invalid escape sequence inside a quoted string", path, idx_line);
 	} else
 		svalue.assign(value, end);
 	return svalue;
@@ -106,10 +176,10 @@ inline std::string unquote_version_comment(char *value, char *end, const std::st
 		// Empty string is a valid string.
 	} else if (*value == '"') {
 		if (++ value > -- end || *end != '"')
-			throw Slic3r::file_parser_error("Version comment not enquoted correctly", path, idx_line);
+			throw file_parser_error("Version comment not enquoted correctly", path, idx_line);
 		*end = 0;
-		if (! Slic3r::unescape_string_cstyle(value, svalue))
-			throw Slic3r::file_parser_error("Invalid escape sequence inside a quoted version comment", path, idx_line);
+		if (! unescape_string_cstyle(value, svalue))
+			throw file_parser_error("Invalid escape sequence inside a quoted version comment", path, idx_line);
 	} else
 		svalue.assign(value, end);
 	return svalue;
@@ -156,7 +226,7 @@ size_t PresetUpdaterIndex::load(const boost::filesystem::path &path)
 				break;
     	}
         if (*key_end != 0 && *key_end != ' ' && *key_end != '\t' && *key_end != '=')
-    		throw Slic3r::file_parser_error("Invalid keyword or semantic version", path, idx_line);
+    		throw file_parser_error("Invalid keyword or semantic version", path, idx_line);
         char *value = left_trim(key_end);
 		bool  key_value_pair = *value == '=';
 		if (key_value_pair)
@@ -167,14 +237,14 @@ size_t PresetUpdaterIndex::load(const boost::filesystem::path &path)
     		semver = Slic3r::Semver::parse(key);
         if (key_value_pair) {
     		if (semver)
-    			throw Slic3r::file_parser_error("Key cannot be a semantic version", path, idx_line);\
+    			throw file_parser_error("Key cannot be a semantic version", path, idx_line);
     		// Verify validity of the key / value pair.
 			std::string svalue = unquote_value(value, end, path.string(), idx_line);
     		if (strcmp(key, "min_slic3r_version") == 0 || strcmp(key, "max_slic3r_version") == 0) {
     			if (! svalue.empty())
 					semver = Slic3r::Semver::parse(svalue);
                 if (! semver)
-		    		throw Slic3r::file_parser_error(std::string(key) + " must referece a valid semantic version", path, idx_line);
+		    		throw file_parser_error(std::string(key) + " must referece a valid semantic version", path, idx_line);
                 if (strcmp(key, "min_slic3r_version") == 0)
     				ver.min_slic3r_version = *semver;
                 else
@@ -185,7 +255,7 @@ size_t PresetUpdaterIndex::load(const boost::filesystem::path &path)
 			continue;
     	}
 		if (! semver)
-			throw Slic3r::file_parser_error("Invalid semantic version", path, idx_line);
+			throw file_parser_error("Invalid semantic version", path, idx_line);
 		ver.config_version = *semver;
 		ver.comment = (end <= key_end) ? "" : unquote_version_comment(value, end, path.string(), idx_line);
 		m_configs.emplace_back(ver);
@@ -229,5 +299,24 @@ PresetUpdaterIndex::const_iterator PresetUpdaterIndex::recommended() const
 	return this->recommended(SEMVER);
 }
 
+namespace {
+// Ignore system and hidden files, which may be created by the DropBox synchronisation process.
+// https://github.com/prusa3d/PrusaSlicer/issues/1298
+bool is_plain_file(const boost::filesystem::directory_entry &dir_entry)
+{
+    if (! boost::filesystem::is_regular_file(dir_entry.status()))
+        return false;
+#ifdef _MSC_VER
+    DWORD attributes = GetFileAttributesW(boost::nowide::widen(dir_entry.path().string()).c_str());
+    return (attributes & (FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_SYSTEM)) == 0;
+#else
+    return true;
+#endif
+}
+}
+bool is_idx_file(const boost::filesystem::directory_entry &dir_entry)
+{
+	return is_plain_file(dir_entry) && strcasecmp(dir_entry.path().extension().string().c_str(), ".idx") == 0;
+}
 
 } // namespace Slic3r::Biz::PresetUpdater
