@@ -3,6 +3,8 @@
 #include "Slic3r/Biz/Yaml/Yaml.hpp"
 #include "Slic3r/TestUtils/TestData.hpp"
 
+#include <mutex>
+
 TEST_CASE("PresetLoader preset-filament-common.yaml")
 {
     using namespace Slic3r::Biz::Preset::IO;
@@ -13,7 +15,8 @@ TEST_CASE("PresetLoader preset-filament-common.yaml")
     try {
         for (auto filename : std::array{"preset-filament-common.yaml", "preset-filament-prusament-pla.yaml"}) {
             const std::string path = Tests::get_datadir().string() + "/preset/" + filename;
-            loader.load(path);
+            std::mutex mutex;
+            loader.load(path, mutex);
         }
     } catch (const Yaml::ParseError& e) {
         std::cout << e.what() << std::endl;

@@ -26,7 +26,7 @@ struct RootPresetNode : PresetNode
 };
 
 using Presets = std::vector<RootPresetNode>;
-using PresetCollection = EnumCollection<PresetKind, RootPresetNode>;
+using PresetCollection = std::map<PresetKind, Presets>;
 
 using PresetNodePath = std::vector<const PresetNode*>;
 using NamedPresets = std::map<std::string, PresetNodePath>;

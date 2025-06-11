@@ -2,6 +2,8 @@
 
 #include "Slic3r/Domain/Preset/PresetTree.hpp"
 
+#include <mutex>
+
 namespace Slic3r::Biz::Preset::IO {
 
 class PresetLoader
@@ -11,7 +13,7 @@ public:
     using RootPresetNode = Domain::Preset::RootPresetNode;
     using PresetCollection = Domain::Preset::PresetCollection;
 
-    void load(const std::string& file_name);
+    void load(const std::string& file_name, std::mutex& mutex);
     void load_from_string(std::string_view source);
     void load_dir(const std::string& dir_path);
     const PresetCollection& presets() const { return m_presets; }

@@ -35,9 +35,6 @@ inline PresetKind tool_print_kind(PrinterTechnology technology)
 inline PresetKind material_kind(PrinterTechnology technology)
 { return technology == PrinterTechnology::FFF ? PresetKind::FdmMaterial : PresetKind::SlaMaterial; }
 
-template <typename E, typename T>
-using EnumCollection = std::map<E, std::vector<T>>;
-
 using FeatureValue = std::variant<bool, float, std::string>;
 using FeatureValueMap = std::map<std::string, FeatureValue>;
 

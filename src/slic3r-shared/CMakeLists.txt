@@ -567,6 +567,8 @@ target_link_libraries(slic3r-shared PUBLIC
         magic_enum::magic_enum
         fastfloat
         expat::expat
+        TBB::tbb
+        TBB::tbbmalloc
 )
 target_compile_definitions(slic3r-shared PUBLIC ${SLIC3R_YAML_DEFINE})
 if (EMSCRIPTEN)

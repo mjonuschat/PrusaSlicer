@@ -4,6 +4,8 @@
 
 #include <boost/filesystem/directory.hpp>
 
+#include "oneapi/tbb/parallel_for.h"
+
 ENUM_DESC(Slic3r::Domain::Preset::PresetKind,
     ("printer", FdmPrinter),
     ("print", FdmPrint),
@@ -39,10 +41,11 @@ STRUCT_DESC(Slic3r::Domain::Preset::RootPresetNode,
 
 namespace Slic3r::Biz::Preset::IO {
 
-void PresetLoader::load(const std::string& file_name)
+void PresetLoader::load(const std::string& file_name, std::mutex& mutex)
 {
-    Yaml::parse_all_documents_in_file(file_name.c_str(), [this](const auto& doc) {
+    Yaml::parse_all_documents_in_file(file_name.c_str(), [this, &mutex](const auto& doc) {
         auto preset = Yaml::parse_struct<RootPresetNode>(doc);
+        std::lock_guard guard(mutex);
         m_presets[preset.kind].emplace_back(std::move(preset));
     });
 }
@@ -57,12 +60,23 @@ void PresetLoader::load_from_string(std::string_view source)
 
 void PresetLoader::load_dir(const std::string& dir_path)
 {
-    for (const auto& entry : boost::filesystem::directory_iterator{dir_path}) {
-        auto path = entry.path();
-        if (!is_regular_file(entry) || !path.has_extension() || path.extension() != ".yaml" || path.filename() == "vendor.yaml")
-            continue;
-        load(path.string());
+    // Collect paths to files to load from.
+    std::vector<boost::filesystem::path> paths;
+    for (const auto& entry : boost::filesystem::directory_iterator{ dir_path }) {
+        boost::filesystem::path path = entry.path();
+        if (is_regular_file(entry) && path.has_extension() && path.extension() == ".yaml" && path.filename() != "vendor.yaml")
+            paths.emplace_back(path);
     }
+
+    // The presets are loaded in parallel and added into m_presets, which is
+    // guarded by this mutex.
+    std::mutex mutex;
+    tbb::parallel_for(tbb::blocked_range<size_t>(0, paths.size()),
+        [this, &mutex, &paths](const tbb::blocked_range<size_t> &range) {
+            for (size_t i = range.begin(); i < range.end(); ++i)
+                load(paths[i].string(), mutex);
+        }
+    );
 }
 
 } // namespace Slic3r::Biz::Preset::Loader
