@@ -333,6 +333,7 @@ void SimplifyGizmo::on_deactivated() {
 void SimplifyGizmo::close(){ m_close_fn(); }
 void SimplifyGizmo::apply_simplify()
 {
+    m_to_enable.clear();
     // worker must be stopped
     assert(m_state.status == State::Status::idle);
 
