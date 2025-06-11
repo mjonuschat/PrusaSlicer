@@ -125,6 +125,7 @@ public:
     Zip(const char* filename) {
         const auto mz_zip_deleter{[](mz_zip_archive* ptr){
             mz_zip_reader_end(ptr);
+            delete ptr;
         }};
         const auto mz_zip_creator{[](){
             auto result{new mz_zip_archive};
@@ -227,6 +228,8 @@ const std::map<std::string, std::vector<std::string>> fdm_whitelist{
         "<metadata name=\"Application\">",
         "<metadata name=\"Description\">",
         "<metadata name=\"Title\">",
+        "<metadata name=\"CreationDate\">",
+        "<metadata name=\"ModificationDate\">",
         "<vertex x="
     }},
 };
@@ -263,6 +266,8 @@ const std::map<std::string, std::vector<std::string>> sla_whitelist{
         "<metadata name=\"Application\">",
         "<metadata name=\"Description\">",
         "<metadata name=\"Title\">",
+        "<metadata name=\"CreationDate\">",
+        "<metadata name=\"ModificationDate\">",
         "<vertex x="
     }},
 };
