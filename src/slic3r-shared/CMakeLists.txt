@@ -545,6 +545,7 @@ find_package(Boost REQUIRED COMPONENTS filesystem)
 find_package(yoga CONFIG REQUIRED)
 find_package(nlohmann_json 3.11 REQUIRED)
 find_package(EXPAT CONFIG REQUIRED)
+find_package(pugixml CONFIG REQUIRED)
 
 
 if ("${SLIC3R_YAML}" STREQUAL "libfyaml")
@@ -572,7 +573,7 @@ endif ()
 
 find_package(magic_enum REQUIRED)
 
-slic3r_remap_configs("yoga::yogacore;${YAML_LIB}" RelWithDebInfo Release)
+slic3r_remap_configs("pugixml::static;yoga::yogacore;${YAML_LIB}" RelWithDebInfo Release)
 
 add_library(slic3r-shared STATIC ${SLIC3R_SHARED_FILES})
 target_link_libraries(slic3r-shared PUBLIC
@@ -592,6 +593,7 @@ target_link_libraries(slic3r-shared PUBLIC
         expat::expat
         TBB::tbb
         TBB::tbbmalloc
+        pugixml::pugixml
 )
 target_compile_definitions(slic3r-shared PUBLIC ${SLIC3R_YAML_DEFINE})
 if (EMSCRIPTEN)
