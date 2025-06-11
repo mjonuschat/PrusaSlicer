@@ -133,7 +133,7 @@ void GizmoManager::render_scene(Render::CommandBuffer& cmd_buffer)
 // TODO: remove this when gizmo rendering will be fully implemented
 void GizmoManager::render_imgui() {
     if (current_tool_type() == ToolType::Simplify) {
-        auto simplify_gizmo = dynamic_cast<Slic3r::App::Plater::SimplifyGizmo*>(m_active_tool);
+        auto simplify_gizmo = dynamic_cast<Slic3r::App::Plater::SimplifyGizmo*>(current_context().active_tool);
         if (simplify_gizmo!=nullptr) simplify_gizmo->render_imgui();
     }
 }
