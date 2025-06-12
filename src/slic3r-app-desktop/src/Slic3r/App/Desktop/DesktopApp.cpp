@@ -16,6 +16,7 @@
 #include <Slic3r/App/ThumbnailStore.hpp>
 #include <Slic3r/App/ThumbnailStoreUpdater.hpp>
 
+#include "Slic3r/Biz/Directories.hpp"
 #include <Slic3r/App/Render/TextureManager.hpp>
 
 #include <Slic3r/Biz/Platform/PlatformServices.hpp>
@@ -67,7 +68,7 @@ int run(const Slic3r::App::InitParams& init_params)
     if (AppInstance::instance_check(init_params, single_instance_app_config)) {
         return 1;
     }
-    Render::TextureManager::set_resource_resolver(std::make_unique<ResourceResolver>(resources_dir()));
+    Render::TextureManager::set_resource_resolver(std::make_unique<ResourceResolver>(Biz::Utils::resources_dir()));
     auto* app = new Slic3r::App::Desktop::DesktopApp();
     Slic3r::App::Desktop::DesktopApp::SetInstance(app);
     int argc    = init_params.argc;

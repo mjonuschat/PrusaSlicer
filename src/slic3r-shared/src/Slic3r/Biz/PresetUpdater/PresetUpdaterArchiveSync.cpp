@@ -4,12 +4,12 @@
 #include "Slic3r/Biz/PresetUpdater/PresetUpdaterUtils.hpp"
 #include "Slic3r/Biz/PresetUpdater/PresetUpdaterVendorProfile.hpp"
 #include "Slic3r/Biz/PresetUpdater/PresetUpdaterIndex.hpp"
+#include "Slic3r/Biz/Directories.hpp"
 
 #include "Slic3r/Exception.hpp"
 #include "Slic3r/Assert.hpp"
 #include "Slic3r/Log.hpp"
 
-#include "libslic3r/Utils.hpp"
 #include "libslic3r/miniz_extension.hpp"
 
 #include <boost/filesystem/path.hpp>
@@ -49,7 +49,7 @@ bool is_vendor_installed(const std::string& vendor_id)
 {
     // For now lets detect its file in data_dir_path / "profiles" / "local" / "vendor"
     // Later this function should rather detect vendor presence in app runtime data
-    fs::path installed_vendors_dir = fs::path(Slic3r::data_dir()) / "profiles" / "local" / "vendor";
+    fs::path installed_vendors_dir = fs::path(Utils::data_dir()) / "profiles" / "local" / "vendor";
     boost::system::error_code ec;
     if (!fs::exists(installed_vendors_dir, ec) || ec) {
         throw Slic3r::RuntimeError(installed_vendors_dir.string() + " does not exists. " + ec.message());
@@ -80,7 +80,7 @@ void PresetUpdaterArchiveSync::sync(
 	PresetUpdaterProcessStatus* process_status) const
 {
     ASSERT(process_status);
-    const fs::path resources_dir = fs::path(Slic3r::resources_dir()) / "profiles";
+    const fs::path resources_dir = fs::path(Utils::resources_dir()) / "profiles";
     for (const PresetUpdaterRepository* archive : repositories) {
         // Even if process_status says user canceled, we need stage_update_sync_dir.
         // But we need to end if thread itself is canceling.
@@ -141,7 +141,7 @@ void PresetUpdaterArchiveSync::stage_update_sync(
         return;
     }
     
-    const fs::path target_archive_dir = fs::path(Slic3r::data_dir()) / "update_sync" / archive->get_manifest().id;
+    const fs::path target_archive_dir = fs::path(Utils::data_dir()) / "update_sync" / archive->get_manifest().id;
     ec.clear();
     if(!fs::exists(target_archive_dir) || ec) {
         ec.clear();
@@ -154,8 +154,8 @@ void PresetUpdaterArchiveSync::stage_update_sync(
     std::vector<PresetUpdaterIndex> index_db = load_vendors_db(source_dir);
     for (const PresetUpdaterIndex& source_index: index_db) {
 
-        const fs::path target_vendor_dir = fs::path(Slic3r::data_dir()) / "update_sync" / archive->get_manifest().id / source_index.vendor();
-        const fs::path target_index_path = fs::path(Slic3r::data_dir()) / "update_sync" / archive->get_manifest().id / (source_index.vendor() + ".idx"); // index is outside vendor folder.
+        const fs::path target_vendor_dir = fs::path(Utils::data_dir()) / "update_sync" / archive->get_manifest().id / source_index.vendor();
+        const fs::path target_index_path = fs::path(Utils::data_dir()) / "update_sync" / archive->get_manifest().id / (source_index.vendor() + ".idx"); // index is outside vendor folder.
         const fs::path target_bundle = target_vendor_dir / (source_index.vendor() + ".ini");
         const fs::path target_resources = target_vendor_dir / "resources";
 
@@ -463,7 +463,7 @@ void PresetUpdaterArchiveSync::sync_installed_vendor(
 	PresetUpdaterProcessStatus* process_status,
     const PresetUpdaterIndex& index) const
 {
-    const fs::path profile_local_dir_path = fs::path(Slic3r::data_dir()) / "profiles" / "local" / "vendor";
+    const fs::path profile_local_dir_path = fs::path(Utils::data_dir()) / "profiles" / "local" / "vendor";
     const fs::path installed_bundle_path = profile_local_dir_path / (index.vendor() + ".ini");
     /* not yet - download to temp
     const fs::path update_sync_dir_path = fs::path(Slic3r::data_dir()) / "update_sync";

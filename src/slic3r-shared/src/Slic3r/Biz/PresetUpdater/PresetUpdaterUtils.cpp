@@ -4,8 +4,7 @@
 #include "Slic3r/Biz/PresetUpdater/PresetUpdaterReconfigurationList.hpp"
 #include "Slic3r/Biz/PresetUpdater/PresetUpdaterVendorProfile.hpp"
 #include "Slic3r/Biz/CopyFile.hpp"
-
-#include "libslic3r/Utils.hpp"
+#include "Slic3r/Biz/Directories.hpp"
 
 #include "Slic3r/Exception.hpp"
 #include "Slic3r/Assert.hpp"
@@ -120,8 +119,8 @@ void perform_downgrades(const std::vector<VendorReconfiguration>& downgrades, Pr
 {
     for (const VendorReconfiguration& downgrade : downgrades) {
         SPDLOG_INFO("Deleting incompatible bundle {}", downgrade.vendor_id); 
-        fs::path dir_path = fs::path(Slic3r::data_dir()) / "profiles" / "local" / "vendor" / downgrade.vendor_archive_id / downgrade.vendor_id;
-        fs::path idx_path = fs::path(Slic3r::data_dir()) / "profiles" / "local" / "vendor" / downgrade.vendor_archive_id / (downgrade.vendor_id + ".idx");
+        fs::path dir_path = fs::path(Utils::data_dir()) / "profiles" / "local" / "vendor" / downgrade.vendor_archive_id / downgrade.vendor_id;
+        fs::path idx_path = fs::path(Utils::data_dir()) / "profiles" / "local" / "vendor" / downgrade.vendor_archive_id / (downgrade.vendor_id + ".idx");
         boost::system::error_code ec;
         if (!fs::remove_all(dir_path, ec) || ec) {
             process_status->set_error(fmt::format("Failed to remove directory {} while performing downgrade. {}",dir_path.string(), ec.message()));
@@ -164,8 +163,8 @@ void deep_copy(const fs::path& source, const fs::path& destination)
 
 void perform_updates(const std::vector<VendorReconfiguration>& updates, PresetUpdaterProcessStatus* process_status)
 {
-    const fs::path profile_local_path = fs::path(Slic3r::data_dir()) / "profiles" / "local" / "vendor";
-    const fs::path update_sync_path = fs::path(Slic3r::data_dir()) / "update_sync";
+    const fs::path profile_local_path = fs::path(Utils::data_dir()) / "profiles" / "local" / "vendor";
+    const fs::path update_sync_path = fs::path(Utils::data_dir()) / "update_sync";
     boost::system::error_code ec;
     for (const VendorReconfiguration& update : updates) {
         SPDLOG_INFO("Updating bundle {}", update.vendor_id);
@@ -203,7 +202,7 @@ void perform_updates(const std::vector<VendorReconfiguration>& updates, PresetUp
 
 void check_forced_reconfigurations(PresetUpdaterReconfigurationList& results, PresetUpdaterProcessStatus* process_status)
 {
-    const fs::path profile_local_path = fs::path(Slic3r::data_dir()) / "profiles" / "local" / "vendor";
+    const fs::path profile_local_path = fs::path(Utils::data_dir()) / "profiles" / "local" / "vendor";
     boost::system::error_code ec;
 
     if (!fs::exists(profile_local_path, ec) || ec) {
@@ -290,8 +289,8 @@ void check_reconfigurations(PresetUpdaterReconfigurationList& results, PresetUpd
 {
     //SPDLOG_INFO(__FUNCTION__);
 
-    const fs::path profile_local_path = fs::path(Slic3r::data_dir()) / "profiles" / "local" / "vendor";
-    const fs::path update_sync_path = fs::path(Slic3r::data_dir()) / "update_sync";
+    const fs::path profile_local_path = fs::path(Utils::data_dir()) / "profiles" / "local" / "vendor";
+    const fs::path update_sync_path = fs::path(Utils::data_dir()) / "update_sync";
     boost::system::error_code ec;
 
     if (!fs::exists(profile_local_path, ec) || ec) {

@@ -1,11 +1,13 @@
 #include "Slic3r/App/Init.hpp"
 
+#include "Slic3r/Biz/Directories.hpp"
+
 #include <boost/filesystem/path.hpp>
 #include <boost/nowide/filesystem.hpp>
 #include <boost/dll/runtime_symbol_info.hpp>
+
 #include <libslic3r/Utils.hpp>
 #include <libslic3r/Utils/DirectoriesUtils.hpp>
-
 
 namespace Slic3r::App {
 void init_paths()
@@ -43,6 +45,17 @@ void init_paths()
 #endif // __EMSCRIPTEN__
 
     // Resource dirs
+    Biz::Utils::set_resources_dir(path_resources.string());
+    Biz::Utils::set_var_dir((path_resources / "icons").string());
+    Biz::Utils::set_local_dir((path_resources / "localization").string());
+    Biz::Utils::set_sys_shapes_dir((path_resources / "shapes").string());
+    Biz::Utils::set_custom_gcodes_dir((path_resources / "custom_gcodes").string());
+
+    // Old libslic3r variables
+
+    // Data/config dir
+    Biz::Utils::set_data_dir(Biz::Utils::get_default_datadir());
+
     set_resources_dir(path_resources.string());
     set_var_dir((path_resources / "icons").string());
     set_local_dir((path_resources / "localization").string());
@@ -50,7 +63,7 @@ void init_paths()
     set_custom_gcodes_dir((path_resources / "custom_gcodes").string());
 
     // Data/config dir
-    set_data_dir(get_default_datadir());
+   set_data_dir(Biz::Utils::get_default_datadir());
 
 }
 

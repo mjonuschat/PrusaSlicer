@@ -4,12 +4,11 @@
 #include "Slic3r/Biz/Network/IHttp.hpp"
 #include "Slic3r/Biz/Network/ServiceConfig.hpp"
 #include "Slic3r/Biz/CopyFile.hpp"
+#include "Slic3r/Biz/Directories.hpp"
 
 #include "Slic3r/Exception.hpp"
 #include "Slic3r/Assert.hpp"
 #include "Slic3r/Log.hpp"
-
-#include "libslic3r/Utils.hpp"
 
 #include <boost/filesystem/directory.hpp>
 #include <boost/nowide/fstream.hpp>
@@ -327,7 +326,7 @@ void PresetUpdaterRepositoryDatabase::load_app_manifest_json()
 void PresetUpdaterRepositoryDatabase::copy_initial_manifest()
 {
 	const fs::path target_path = get_stored_manifest_path();
-	const fs::path source_path = fs::path(resources_dir()) / "profiles" / "ArchiveRepositoryManifest.json";
+	const fs::path source_path = fs::path(Utils::resources_dir()) / "profiles" / "ArchiveRepositoryManifest.json";
     boost::system::error_code ec;
     if (!fs::exists(source_path, ec) || ec) {
         throw Slic3r::RuntimeError(source_path.string() + " does not exists. " + ec.message());
@@ -421,7 +420,7 @@ void PresetUpdaterRepositoryDatabase::save_app_manifest_json() const
 
 fs::path PresetUpdaterRepositoryDatabase::get_stored_manifest_path() const
 {
-	return (boost::filesystem::path(Slic3r::data_dir()) / "shared_runtime" / "ArchiveRepositoryManifest.json").make_preferred();
+	return (boost::filesystem::path(Utils::data_dir()) / "shared_runtime" / "ArchiveRepositoryManifest.json").make_preferred();
 }
 
 bool PresetUpdaterRepositoryDatabase::is_selected(const std::string& uuid) const

@@ -427,6 +427,8 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/ThumbnailType.hpp
         include/Slic3r/Biz/CopyFile.hpp
         src/Slic3r/Biz/CopyFile.cpp
+        include/Slic3r/Biz/Directories.hpp
+        src/Slic3r/Biz/Directories.cpp
 
         include/Slic3r/Biz/Scene/SceneInteractor.hpp
         src/Slic3r/Biz/Scene/SceneInteractor.cpp
