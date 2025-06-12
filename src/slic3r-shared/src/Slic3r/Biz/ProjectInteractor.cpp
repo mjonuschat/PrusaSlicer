@@ -10,6 +10,8 @@
 #include "Slic3r/Biz/ISelectedBedInstanceChangedListener.hpp"
 #include "Slic3r/Biz/UserAccount/ConnectUtils.hpp"
 
+#include "Slic3r/Biz/Format/3mf.hpp"
+
 namespace Slic3r::Biz {
 Domain::SelectionId ProjectInteractor::new_project()
 {

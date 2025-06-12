@@ -1,4 +1,4 @@
-#include "PrusaFile.hpp"
+﻿#include "PrusaFile.hpp"
 #include <string_view>
 #include <set>
 #include <type_traits> // enable_if
@@ -12,6 +12,10 @@
 #include "libslic3r/NSVGUtils.hpp" // open content of svg file
 
 #include "Slic3r/Log.hpp"
+#include "Slic3r/Biz/Config/ConfigSerialize.hpp"
+#include "Slic3r/Domain/ConfigBoxesFDM.hpp"
+#include "Slic3r/Domain/ConfigBoxesSLA.hpp"
+#include "Slic3r/Domain/ConfigContainer.hpp"
 
 namespace Slic3r {
     extern std::unique_ptr<const Persist3mfData> g_load_from_3mf;
@@ -1350,17 +1354,48 @@ constexpr const char *PRUSA_PROJECT_FILEPATH = "metadata/Slic3r_project.json";
 constexpr std::string_view CONFIGURATION = "configuration"; // DynamicConfig
 constexpr std::string_view OBJECTS = "objects";
 NamesType PROJECT_NAMES{{CONFIGURATION, OBJECTS}};
+constexpr std::string_view CONFIG_CONTAINERS = "config_containers";
 
 void write(
     mz_zip_archive &archive,
     const Model &model,
-    const DynamicPrintConfig *config,
+    const Domain::Project::ConfigContainerList& config_containers,
     const StoredStructure &stored_structure
 ) {
     json project_json = json::object();
     add(project_json, OBJECTS, ObjectsSerialization::objects_to_json(model, stored_structure));
-    if (config != nullptr)
-        add(project_json, CONFIGURATION, to_json(*config));
+
+    std::vector<nlohmann::json> all_containers_json;
+    for (const auto& config_container : config_containers) {
+        nlohmann::json cc_json;
+        std::vector<nlohmann::json> beds_json;
+        for (const auto& bed_instance : config_container->bed_instances()) {
+            const Vec3d& offset = bed_instance->transformation.get_offset();
+            beds_json.emplace_back();
+            beds_json.back()["position_x"] = offset.x();
+            beds_json.back()["position_y"] = offset.y();
+
+            const auto& wt = bed_instance->wipe_tower;
+            if (wt) {
+                beds_json.back()["wipe_tower"]["x"] = wt->position.x();
+                beds_json.back()["wipe_tower"]["y"] = wt->position.y();
+                beds_json.back()["wipe_tower"]["rotation_angle"] = wt->rotation;
+            } else
+                beds_json.back()["wipe_tower"] = nullptr;            
+        }
+        cc_json["beds"] = beds_json;
+
+        const auto& cfg_var = config_container->new_config();
+        if (std::holds_alternative<Domain::ConfigPackFDM>(cfg_var))
+            cc_json[CONFIGURATION] = Biz::serialize(Domain::as_boxes(std::get<Domain::ConfigPackFDM>(cfg_var)), 2, false);
+        else if (std::holds_alternative<Domain::ConfigPackSLA>(cfg_var))
+            cc_json[CONFIGURATION] = Biz::serialize(Domain::as_boxes(std::get<Domain::ConfigPackSLA>(cfg_var)), 2, false);
+        else
+            PANIC();
+        all_containers_json.emplace_back(cc_json);
+    }
+    project_json[CONFIG_CONTAINERS] = all_containers_json;
+
     if (project_json.empty())
         return;
 
@@ -1386,12 +1421,12 @@ void load(
 void Slic3r::store_prusa_files(
     mz_zip_archive &archive,
     const Model &model,
-    const DynamicPrintConfig *config,
+    const Domain::Project::ConfigContainerList& config_containers,
     const StoredStructure &stored_structure
 ) {
     FacetsAnnotationSerialization::write(archive, model, stored_structure.volumes);
     EmbossShapeSerialization::write_svg_files(archive, model);
-    ProjectFileSerialization::write(archive, model, config, stored_structure);
+    ProjectFileSerialization::write(archive, model, config_containers, stored_structure);
 }
 
 PrusaFilesResult Slic3r::load_prusa_files(

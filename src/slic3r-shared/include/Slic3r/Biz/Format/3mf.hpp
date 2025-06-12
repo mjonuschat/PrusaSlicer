@@ -11,6 +11,8 @@
 #include <limits>
 #include "Slic3r/Biz/Format/Metadata.hpp"
 #include "Slic3r/Biz/Format/ResultLoad3mf.hpp"
+#include "Slic3r/Domain/ConfigPack.hpp"
+#include "Slic3r/Domain/Project.hpp"
 
 namespace Slic3r {
 
@@ -57,7 +59,7 @@ namespace Slic3r {
 
         // Use https://github.com/3MFConsortium/spec_production/releases/tag/1.2.0
         // to store huge model geometries into separated files (faster store/load)
-        bool use_production_extension = true;
+        bool use_production_extension = false;
 
         // stored uncompressed 3mf - better versioning of uncompressed data
         // "0 - The file is stored (no compression)" in accordance with the OPC specification
@@ -76,8 +78,8 @@ namespace Slic3r {
     /// <param name="config">Configuration for printing</param>
     extern void store_3mf(
         const std::string &filepath,
-        const Model &model, 
-        const DynamicPrintConfig* config, const Store3mfParam &param = Store3mfParam{});
+        const Domain::Project& project,
+        const Store3mfParam &param = Store3mfParam{});
 
 } // namespace Slic3r
 

@@ -8,6 +8,7 @@
 #include "libslic3r/miniz_extension.hpp" // mz_zip_archive + mz_zip_archive_file_stat
 #include "Slic3r/Biz/Format/ResultLoad3mf.hpp" // Error handling
 #include "ModelMap.hpp"
+#include "Slic3r/Domain/Project.hpp"
 
 namespace Slic3r {
 struct ConfigSubstitutionContext;
@@ -23,7 +24,7 @@ struct ConfigSubstitutionContext;
 void store_prusa_files(
     mz_zip_archive &archive,
     const Domain::Model &model,
-    const DynamicPrintConfig *config,
+    const Domain::Project::ConfigContainerList& config_containers,
     const StoredStructure &stored_structure
 );
 

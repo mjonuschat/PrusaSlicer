@@ -1008,15 +1008,16 @@ bool load_3mf(
     return file_result.operator bool();
 }
 
-void store_3mf(const std::string &filepath, const Model &model,
-    const DynamicPrintConfig *config, const Store3mfParam &param)
+void store_3mf(const std::string &filepath,
+               const Domain::Project& project,
+               const Store3mfParam &param)
 {
     // check input 
     assert(!filepath.empty());
     if (filepath.empty())
         throw boost::filesystem::filesystem_error("Empty filepath", {});
 
-    regenerate_uuid(model);
+    regenerate_uuid(project.model());
 
     // All export should use "C" locales for number formatting.
     CNumericLocalesSetter locales_setter;
@@ -1034,7 +1035,7 @@ void store_3mf(const std::string &filepath, const Model &model,
     // when you read it you need to know where is root model
     RootRelations relations {
         // main_model_path
-        (!model.objects.empty()) ? MODEL_FILE : std::string(),
+        (!project.model().objects.empty()) ? MODEL_FILE : std::string(),
         // thumbnail_path
         (param.thumbnail_data != nullptr && param.thumbnail_data->is_valid())? THUMBNAIL_FILE : std::string(),
         // project_file_path
@@ -1057,10 +1058,10 @@ void store_3mf(const std::string &filepath, const Model &model,
     }
         
     // Adds model file ("3D/3dmodel.model").
-    StoredStructure stored_structure = store_model3mf(archive, model, MODEL_FILE.c_str(), param);
+    StoredStructure stored_structure = store_model3mf(archive, project.model(), MODEL_FILE.c_str(), param);
 
     // Add Prusa project files as structured JSONs
-    store_prusa_files(archive, model, config, stored_structure);
+    store_prusa_files(archive, project.model(), project.config_containers(), stored_structure);
 
     if (!mz_zip_writer_finalize_archive(archive_ptr))
         throw boost::filesystem::filesystem_error("Unable to finalize the archive.", {});
