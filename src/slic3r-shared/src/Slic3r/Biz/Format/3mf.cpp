@@ -21,8 +21,6 @@
 #include "libslic3r/GCode/ThumbnailData.hpp"
 #include "libslic3r/Utils.hpp" // ScopeGuard
 
-#include "3mf_old_import.hpp"
-
 #ifdef WIN32
 // Boost need to link bcrypt on windows platform
 #pragma comment(lib, "bcrypt.lib") // needed to generate random UUID
@@ -697,7 +695,9 @@ void load_3mf(
     ResultLoad3mf &result = relations;         
     LoadedModel loaded_model = read_model3mf(archive, relations.get_main_model_path());
     result += static_cast<ResultLoad3mf&>(loaded_model); // cumulate issues
-    if (!loaded_model.model.has_value() || loaded_model.is_old_3mf())
+    if (loaded_model.is_old_3mf())
+        throw Old3MFException();
+    if (!loaded_model.model.has_value())
         // model is not loaded
         return set_result(model, filepath_3mf, std::move(result));
     
@@ -977,7 +977,6 @@ bool regenerate_uuid(const Slic3r::Domain::Model &model){
 } // namespace
 
 namespace Slic3r {
-extern bool is_project_3mf(const std::string &filename) { return priv_old_3mf::is_project_3mf(filename); }
 
 bool load_3mf(
     std::string_view filepath_3mf,
@@ -1016,14 +1015,6 @@ void store_3mf(const std::string &filepath, const Model &model,
     assert(!filepath.empty());
     if (filepath.empty())
         throw boost::filesystem::filesystem_error("Empty filepath", {});
-
-    // TODO: delete next lines. It is only for DEBUGing
-    if (boost::algorithm::iends_with(filepath, "_old.3mf")) {
-        if (!priv_old_3mf::store_3mf(filepath.c_str(), &model, config, 
-            param.fullpath_sources, param.thumbnail_data, param.zip64))
-            throw boost::filesystem::filesystem_error("Can't store by old exporter", {});
-        return;
-    }    
 
     regenerate_uuid(model);
 
