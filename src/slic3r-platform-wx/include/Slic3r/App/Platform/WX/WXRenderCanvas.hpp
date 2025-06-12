@@ -58,6 +58,7 @@ private:
     wxGLContext* m_gl_context{nullptr}; ///< For subsequent rendering
 
     bool m_initialized{false};
+    bool m_in_render{false};
 };
 
 }

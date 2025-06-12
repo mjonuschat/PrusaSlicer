@@ -648,6 +648,20 @@ void WXRenderCanvas::init_wx_imgui()
     };
 }
 
+class ScopedGuard
+{
+public:
+    explicit ScopedGuard(bool& flag) : m_flag(flag)
+    {
+        m_flag = true;
+    }
+    ~ScopedGuard() { m_flag = false; }
+
+private:
+    bool& m_flag;
+};
+
+
 void WXRenderCanvas::render()
 {
     if (!IsShown())
@@ -657,6 +671,9 @@ void WXRenderCanvas::render()
         init();
         m_initialized = true;
     }
+    if (m_in_render)
+        return;
+    ScopedGuard guard{m_in_render};
     AbstractRenderCanvas::render();
 }
 
