@@ -45,6 +45,7 @@ namespace Slic3r {
 
 namespace execution = Slic3r::Biz::Algorithms::Execution;
 using ConfMap = std::map<std::string, std::string>;
+using Domain::EnumVectorWrapper;
 
 namespace {
 
@@ -57,137 +58,130 @@ std::string to_ini(const ConfMap &m)
     return ret;
 }
 
-static std::string get_key(const std::string& opt_key)
-{
-    static const std::set<std::string> ms_opts = {
-      "delay_before_exposure"
-    , "delay_after_exposure"
-    , "tilt_down_offset_delay"
-    , "tilt_up_offset_delay"
-    , "tilt_down_delay"
-    , "tilt_up_delay"
-    };
-    
-    static const std::set<std::string> nm_opts = {
-       "tower_hop_height"
-    };
-    
-    static const std::set<std::string> speed_opts = {
-      "tower_speed"
-    , "tilt_down_initial_speed"
-    , "tilt_down_finish_speed"
-    , "tilt_up_initial_speed"
-    , "tilt_up_finish_speed"
-    };
+const std::vector<std::string> ms_opts{
+    "delay_before_exposure",
+    "delay_after_exposure",
+    "tilt_down_offset_delay",
+    "tilt_up_offset_delay",
+    "tilt_down_delay",
+    "tilt_up_delay",
+};
 
-    if (ms_opts.find(opt_key) != ms_opts.end())
-        return opt_key + "_ms";
+const std::string tower_hop_height_opt{
+   "tower_hop_height"
+};
 
-    if (nm_opts.find(opt_key) != nm_opts.end())
-        return opt_key + "_nm";
+const std::vector<std::string> speed_opts{
+    "tower_speed",
+    "tilt_down_initial_speed",
+    "tilt_down_finish_speed",
+    "tilt_up_initial_speed",
+    "tilt_up_finish_speed",
+};
 
-    if (speed_opts.find(opt_key) != speed_opts.end())
-        return boost::replace_all_copy(opt_key, "_speed", "_profile");
+const std::string use_tilt_opt{"use_tilt"};
 
-    return opt_key;
-}
+const std::vector<std::string> count_opts{
+    "tilt_down_offset_steps",
+    "tilt_down_cycles",
+    "tilt_up_offset_steps",
+    "tilt_up_cycles"
+};
 
 namespace pt = boost::property_tree;
 
-std::string to_json(const DynamicPrintConfig& cfg, const ConfMap& m)
+std::string tilt_options_to_json(const SLAPrintConfigView& cfg, const ConfMap& iniconf)
 {
     pt::ptree below_node;
     pt::ptree above_node;
 
-    const t_config_enum_names& tilt_enum_names  = ConfigOptionEnum< TiltSpeeds>::get_enum_names();
-    const t_config_enum_names& tower_enum_names = ConfigOptionEnum<TowerSpeeds>::get_enum_names();
-
-    for (const std::string& opt_key : tilt_options()) {
-        const ConfigOption* opt = cfg.option(opt_key);
-        assert(opt != nullptr);
-
-        switch (opt->type()) {
-        case coFloats: {
-            auto values = static_cast<const ConfigOptionFloats*>(opt);
-            double koef = opt_key == "tower_hop_height" ? 1000000. : 1000.; // export in nm (instead of mm), resp. in ms (instead of s)
-            below_node.put<double>(get_key(opt_key), int(koef * values->get_at(0)));
-            above_node.put<double>(get_key(opt_key), int(koef * values->get_at(1)));
-        }
-        break;
-        case coInts: {
-            auto values = static_cast<const ConfigOptionInts*>(opt);
-            below_node.put<int>(get_key(opt_key), values->get_at(0));
-            above_node.put<int>(get_key(opt_key), values->get_at(1));
-        }
-        break;
-        case coBools: {
-            auto values = static_cast<const ConfigOptionBools*>(opt);
-            below_node.put<bool>(get_key(opt_key), values->get_at(0));
-            above_node.put<bool>(get_key(opt_key), values->get_at(1));
-        }
-        break;
-        case coEnums: {
-            const t_config_enum_names& enum_names = opt_key == "tower_speed" ? tower_enum_names : tilt_enum_names;
-            auto values = static_cast<const ConfigOptionEnums<TiltSpeeds>*>(opt);
-            below_node.put(get_key(opt_key), enum_names[values->get_at(0)]);
-            above_node.put(get_key(opt_key), enum_names[values->get_at(1)]);
-        }
-        break;
-        case coNone:
-        default:
-            break;
-        }
+    for (const std::string& key : ms_opts) {
+        const auto values{cfg.get<std::vector<double>>(key)};
+        const double coeff{1e3};
+        const std::string insert_key{key + "_ms"};
+        below_node.put<double>(insert_key, int(coeff * values.at(0)));
+        above_node.put<double>(insert_key, int(coeff * values.at(1)));
+    }
+    {
+        const auto values{cfg.get<std::vector<double>>(tower_hop_height_opt)};
+        const double coeff{1e6};
+        const std::string insert_key{tower_hop_height_opt + "_nm"};
+        below_node.put<double>(insert_key, int(coeff * values.at(0)));
+        above_node.put<double>(insert_key, int(coeff * values.at(1)));
+    }
+    for (const std::string& key : speed_opts) {
+        const auto values{cfg.get<Domain::EnumVectorWrapper>(key).get_strings()};
+        const std::string insert_key{boost::replace_all_copy(key, "_speed", "_profile")};
+        below_node.put(insert_key, values.at(0));
+        above_node.put(insert_key, values.at(1));
+    }
+    {
+        const auto values{cfg.get<std::vector<bool>>(use_tilt_opt)};
+        below_node.put<bool>(use_tilt_opt, values.at(0));
+        above_node.put<bool>(use_tilt_opt, values.at(1));
+    }
+    for (const std::string& key : count_opts) {
+        const auto values{cfg.get<std::vector<int>>(key)};
+        below_node.put<int>(key, values.at(0));
+        above_node.put<int>(key, values.at(1));
     }
 
     pt::ptree profile_node;
-    profile_node.put("area_fill", cfg.option("area_fill")->serialize());
+    profile_node.put("area_fill", cfg.get<double>("area_fill"));
     profile_node.add_child("below_area_fill", below_node);
     profile_node.add_child("above_area_fill", above_node);
 
     pt::ptree root;
-    // params from config.ini
-    for (auto& param : m)
+
+    for (auto& param : iniconf) {
         root.put(param.first, param.second );
+    }
 
     root.put("version", "1");
     root.add_child("exposure_profile", profile_node);
 
-    // Boost confirms its implementation has no 100% conformance to JSON standard. 
+    // Boost confirms its implementation has no 100% conformance to JSON standard.
     // In the boost libraries, boost will always serialize each value as string and parse all values to a string equivalent.
     // so, post-prosess output
     return write_json_with_post_process(root);
 }
 
-std::string get_cfg_value(const DynamicPrintConfig &cfg, const std::string &key)
+static std::string serialize(const double value)
 {
-    std::string ret;
-    
-    if (cfg.has(key)) {
-        auto opt = cfg.option(key);
-        if (opt) ret = opt->serialize();
-    }
-    
-    return ret;    
+    std::ostringstream ss;
+    if (std::isfinite(value))
+        ss << value;
+    else if (std::isnan(value)) {
+        throw std::runtime_error("Serializing NaN");
+    } else
+        throw std::runtime_error("Serializing invalid number");
+    return ss.str();
 }
 
-void fill_iniconf(ConfMap &m, const DynamicPrintConfig &cfg, const Sla::PrintStatistics &stats) {
+void fill_iniconf(ConfMap &m, const SLAPrintConfigView &cfg, const Sla::PrintStatistics &stats) {
+    using Domain::SLAMaterialSpeed;
+    using Domain::SLAMaterialSpeed::slamsSlow;
+    using Domain::SLAMaterialSpeed::slamsFast;
+
     CNumericLocalesSetter locales_setter; // for to_string
-    m["layerHeight"]    = get_cfg_value(cfg, "layer_height");
-    m["expTime"]        = get_cfg_value(cfg, "exposure_time");
-    m["expTimeFirst"]   = get_cfg_value(cfg, "initial_exposure_time");
-    const std::string mps = get_cfg_value(cfg, "material_print_speed");
-    m["expUserProfile"] = mps == "slow" ? "1" : mps == "fast" ? "0" : "2";
-    m["materialName"]   = get_cfg_value(cfg, "sla_material_settings_id");
-    m["printerModel"]   = get_cfg_value(cfg, "printer_model");
-    m["printerVariant"] = get_cfg_value(cfg, "printer_variant");
-    m["printerProfile"] = get_cfg_value(cfg, "printer_settings_id");
-    m["printProfile"]   = get_cfg_value(cfg, "sla_print_settings_id");
+    m["layerHeight"]    = serialize(cfg.get<double>("layer_height"));
+    m["expTime"]        = serialize(cfg.get<double>("exposure_time"));
+    m["expTimeFirst"]   = serialize(cfg.get<double>("initial_exposure_time"));
+    const Domain::SLAMaterialSpeed mps = cfg.get<Domain::SLAMaterialSpeed>("material_print_speed");
+    m["expUserProfile"] = mps == slamsSlow ? "1" : mps == slamsFast ? "0" : "2";
+
+    // TODO commented out, until we know how to reference the settings
+    //m["materialName"]   = cfg.get<std::string>("sla_material_settings_id");
+    m["printerModel"]   = cfg.get<std::string>("printer_model");
+    m["printerVariant"] = cfg.get<std::string>("printer_variant");
+    //m["printerProfile"] = cfg.get<std::string>("printer_settings_id");
+    //m["printProfile"]   = cfg.get<std::string>("sla_print_settings_id");
     m["fileCreationTimestamp"] = Utils::utc_timestamp();
     m["prusaSlicerVersion"]    = SLIC3R_BUILD_ID;
-    
-    // Set statistics values to the printer    
+
+    // Set statistics values to the printer
     double used_material = (stats.objects_used_material +
-                            stats.support_used_material) / 1000;        
+                            stats.support_used_material) / 1000;
     m["usedMaterial"] = std::to_string(used_material);
     m["numFade"]      = std::to_string(stats.count_faded_layers);
     m["numSlow"]      = std::to_string(stats.slow_layers_count);
@@ -196,39 +190,6 @@ void fill_iniconf(ConfMap &m, const DynamicPrintConfig &cfg, const Sla::PrintSta
     m["hollow"] = stats.hollowing_enable ? "1" : "0";
     m["action"] = "print";
 }
-
-void fill_slicerconf(ConfMap& m, const DynamicPrintConfig& cfg)
-{
-    using namespace std::literals::string_view_literals;
-    
-    // Sorted list of config keys, which shall not be stored into the ini.
-    static constexpr auto banned_keys = { 
-		"compatible_printers"sv,
-        "compatible_prints"sv,
-        //FIXME The print host keys should not be exported to full_print_config anymore. The following keys may likely be removed.
-        "print_host"sv,
-        "printhost_apikey"sv,
-        "printhost_cafile"sv
-    };
-    
-    assert(std::is_sorted(banned_keys.begin(), banned_keys.end()));
-    auto is_banned = [](const std::string &key) {
-        return std::binary_search(banned_keys.begin(), banned_keys.end(), key);
-    };
-
-    auto is_tilt_param = [](const std::string& key) -> bool {
-        const auto& keys = tilt_options();
-        return std::find(keys.begin(), keys.end(), key) != keys.end();
-    };
-    
-    for (const std::string &key : cfg.keys())
-        if (! is_banned(key) && !is_tilt_param(key) && ! cfg.option(key)->is_nil())
-            m[key] = cfg.opt_serialize(key);
-    
-}
-
-} // namespace
-
 
 static void write_thumbnail(Zipper &zipper, const ThumbnailData &data)
 {
@@ -247,10 +208,10 @@ static void write_thumbnail(Zipper &zipper, const ThumbnailData &data)
         mz_free(png_data);
     }
 }
-} // namespace Slic3r
+}
 
 using namespace Slic3r::Biz::Slicing;
-void Slic3r::store_sl1(const std::string& file_path, const SLAResult& data)
+void store_sl1(const std::string& file_path, const SLAResult& data)
 {
     std::string layer_extension = ".png";
     Zipper::e_compression compression = Zipper::FAST_COMPRESSION;
@@ -266,22 +227,25 @@ void Slic3r::store_sl1(const std::string& file_path, const SLAResult& data)
 
     const Sla::PrintStatistics& stats = *data.print_statistics;
 
-    //ConfMap iniconf;
-    //fill_iniconf(iniconf, cfg, stats);
+    const Biz::Print::SerializedConfig& serialized_config{data.serialized_config};
+    const SLAPrintConfigView full_config{data.print_config};
 
-    //iniconf["jobDir"] = project;
+    ConfMap iniconf;
+    fill_iniconf(iniconf, full_config, stats);
 
-    //ConfMap slicerconf;
-    //fill_slicerconf(slicerconf, cfg);
+    iniconf["jobDir"] = project;
 
     try {
-        //zipper.add_entry("config.ini");
-        //zipper << to_ini(iniconf);
-        //zipper.add_entry("prusaslicer.ini");
-        //zipper << to_ini(slicerconf);
+        zipper.add_entry("config.ini");
+        zipper << to_ini(iniconf);
+        zipper.add_entry("config.json");
+        zipper << tilt_options_to_json(full_config, iniconf);
 
-        //zipper.add_entry("config.json");
-        //zipper << to_json(cfg, iniconf);
+        zipper.add_entry("prusaslicer.ini");
+        zipper << serialized_config.ini;
+        zipper.add_entry("prusaslicer.json");
+        zipper << serialized_config.json;
+
 
         size_t i = 0;
         for (const Sla::FileData& rst : data.files.data) {
@@ -301,7 +265,6 @@ void Slic3r::store_sl1(const std::string& file_path, const SLAResult& data)
     }
 }
 
-namespace{
 using namespace Slic3r;
 using namespace Slic3r::sla;
 class Sl1Rasterizer : public ISlaRasterizer

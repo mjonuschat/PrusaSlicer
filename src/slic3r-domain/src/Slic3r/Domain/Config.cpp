@@ -377,7 +377,7 @@ FullConfig::FullConfig(const BoxOrBoxesVector& input, const ConfigLocationSizes&
 
 ConfigValue FullConfig::get_value(const std::string& key) const {
     const auto it{m_values.find(key)};
-    ASSERT(it != m_values.end(), "The key is not part of this config.");
+    ASSERT(it != m_values.end(), "The key '" + key + "' is not part of this config.");
     return it->second;
 }
 

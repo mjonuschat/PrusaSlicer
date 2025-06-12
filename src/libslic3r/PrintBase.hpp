@@ -24,6 +24,7 @@
 #include "libslic3r/ModelUtils.hpp"
 #include <libslic3r/SLA/SLAResult.hpp>
 #include "Slic3r/Domain/ConfigPack.hpp"
+#include "libslic3r/SerializedConfig.hpp"
 
 namespace Slic3r {
 
@@ -476,11 +477,6 @@ struct ZDepth{
 };
 
 using WipeTowerGeometry = std::vector<ZDepth>;
-
-struct SerializedConfig {
-    std::string json;
-    std::string ini;
-};
 
 class IPrint {
 public:

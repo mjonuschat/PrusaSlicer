@@ -2347,12 +2347,6 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with("");
 
 
-    def = defs.add("printer_variant", typeid(std::string));
-    def->location = Printer;
-    def->label = L("Printer variant");
-    def->tooltip = L("Name of the printer variant. For example, the printer variants may be differentiated by a nozzle diameter.");
-    def->init_fn = init_with("");
-
     /* TODO: What about this?
     def = defs.add("print_settings_id", typeid(std::string));
     def->init_fn = SET_DEFAULT(""));

@@ -1527,7 +1527,8 @@ void SLAPrint::Steps::merge_slices_and_eval_stats() {
     }
 
     m_print->m_on_sla_result(Biz::Slicing::SLAResult{
-        .printer_config = config,
+        .serialized_config = m_print->serialized_config(),
+        .print_config = config,
         .print_statistics = print_statistics,
         .slices = std::move(slices),
         .heights = std::move(heights),

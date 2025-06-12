@@ -355,6 +355,7 @@ public:
     ApplyStatus apply(
         const Model& model,
         const Domain::ConfigPackSLA& config_pack,
+        const Biz::Print::SerializedConfig& serialized_config,
         std::vector<std::string>* warnings = nullptr
     );
 
@@ -389,6 +390,7 @@ public:
     }
 
     const SLAPrintConfigView& print_config() const { return m_print_config; }
+    const Biz::Print::SerializedConfig& serialized_config() const { return m_serialized_config; }
 
     // Extracted value from the configuration objects
     Vec3d                       relative_correction() const;
@@ -457,6 +459,7 @@ public:
     OnSlaObject                     m_on_sla_object;
 
     SLAPrintConfigView              m_print_config;
+    Biz::Print::SerializedConfig    m_serialized_config;
 
     ::Slic3r::Biz::Slicing::Sla::PrintStatistics m_print_statistics;
 

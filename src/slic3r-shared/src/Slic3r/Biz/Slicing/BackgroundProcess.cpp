@@ -174,12 +174,19 @@ void BackgroundProcess::update(
 
     this->m_on_status(Status::Updating);
 
-    const Print::SerializedConfig serialized_config{std::visit([](auto&& config){
-        return Print::SerializedConfig{
-            .json = serialize(Domain::as_boxes(config), 2, true),
-            .ini = Biz::serialize_as_legacy_config(config, true)
-        };
-    }, config)};
+    const Print::SerializedConfig serialized_config{std::visit(
+        [](auto&& config) {
+            constexpr bool preped_semicolons{
+                std::is_same_v<std::remove_cvref_t<decltype(config)>, ConfigPackFDM>
+            };
+
+            return Print::SerializedConfig{
+                .json = serialize(Domain::as_boxes(config), 2, preped_semicolons),
+                .ini = Biz::serialize_as_legacy_config(config, preped_semicolons)
+            };
+        },
+        config
+    )};
 
     apply_status = this->m_print->update(model, config, bed, serialized_config);
 }

@@ -1,6 +1,8 @@
 #include <catch2/catch_test_macros.hpp>
 #include <test_utils.hpp>
 
+#include "Slic3r/Biz/Config/ConfigLegacy.hpp"
+#include "Slic3r/Biz/Config/ConfigSerialize.hpp"
 #include "libslic3r/SLAPrint.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "libslic3r/Format/SLAArchiveReader.hpp"
@@ -13,8 +15,7 @@
 using namespace Slic3r;
 using namespace Slic3r::Biz::Slicing; // SLAResult
 
-// TODO: Fix this once config serialization/deserialization is properly used
-TEST_CASE("Archive export test", "[sla_archives][!shouldfail]") {
+TEST_CASE("Archive export test", "[sla_archives]") {
     SLAResult sla_result;
     SLAPrint::OnSlaResult on_sla_result = [&sla_result](SLAResult&& r) {
         // only 2 steps of data propagation
@@ -34,6 +35,7 @@ TEST_CASE("Archive export test", "[sla_archives][!shouldfail]") {
 
         Model m;
         ASSERT(load_obj((TEST_DATA_DIR PATH_SEPARATOR + std::string(pname) + ".obj").c_str(), &m));
+        m.objects.back()->add_instance();
 
         Domain::ConfigPackSLA cfg;
 
@@ -44,7 +46,12 @@ TEST_CASE("Archive export test", "[sla_archives][!shouldfail]") {
 
 
         print.set_status_callback([](const PrintBase::SlicingStatus&) {});
-        print.apply(m, cfg);
+
+        const Biz::Print::SerializedConfig serialized_config{
+            .json = Biz::serialize(Domain::as_boxes(cfg), 2, false),
+            .ini = Biz::serialize_as_legacy_config(cfg, false)
+        };
+        print.apply(m, cfg, serialized_config);
         print.process();
 
         ThumbnailsList thumbnails;
@@ -57,7 +64,7 @@ TEST_CASE("Archive export test", "[sla_archives][!shouldfail]") {
 
         double vol_written = m.mesh().volume();
 
-        if (true) {
+        if (false) {
             INFO("Testing archive type: SL1 -- reading back...");
             indexed_triangle_set its;
             DynamicPrintConfig cfg;

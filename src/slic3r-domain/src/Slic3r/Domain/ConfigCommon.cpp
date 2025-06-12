@@ -181,6 +181,13 @@ void init_common_fdm_sla_config_items(ConfigDefinitions& defs, const PrinterTech
     def->label = L("Printer type");
     def->tooltip = L("Type of the printer.");
     def->init_fn = init_with("");
+
+    def = defs.add("printer_variant", typeid(std::string));
+    def->location = printer;
+    def->label = L("Printer variant");
+    def->tooltip = L("Name of the printer variant. For example, the printer variants may be differentiated by a nozzle diameter.");
+    def->init_fn = init_with("");
+
 }
 
 }

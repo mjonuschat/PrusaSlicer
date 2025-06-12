@@ -812,7 +812,7 @@ Biz::Print::ApplyStatus SLAPrint::update(
 {
     Biz::Print::ApplyStatus result{Biz::Print::ApplyStatus::unchanged};
     Biz::Slicing::with_limited_instances(model, bed.model_instances, [&](){
-        const ApplyStatus status{this->apply(model, std::get<ConfigPackSLA>(config))};
+        const ApplyStatus status{this->apply(model, std::get<ConfigPackSLA>(config), serialized_config)};
         if (status == APPLY_STATUS_UNCHANGED) {
             return;
         }
@@ -824,6 +824,7 @@ Biz::Print::ApplyStatus SLAPrint::update(
 SLAPrint::ApplyStatus SLAPrint::apply(
     const Model& model,
     const Domain::ConfigPackSLA& config_pack,
+    const Biz::Print::SerializedConfig& serialized_config,
     std::vector<std::string>* warnings
 )
 {
@@ -834,6 +835,7 @@ SLAPrint::ApplyStatus SLAPrint::apply(
 
     const auto new_full_config_ptr{std::make_shared<FullConfigSLA>(config_pack)};
     const SLAPrintConfigView new_print_config{new_full_config_ptr};
+    m_serialized_config = serialized_config;
 
     // Collect changes to print config.
     const std::vector<std::string> config_diff{new_print_config.full_config().diff_keys(m_print_config.full_config())};

@@ -8,6 +8,7 @@
 #include "Slic3r/Domain/TriangleMesh.hpp"
 #include "Slic3r/Domain/ObjectID.hpp"
 #include "Slic3r/Domain/SLA/SupportPoint.hpp"
+#include "libslic3r/SerializedConfig.hpp"
 
 namespace Slic3r::Biz::Slicing {
 
@@ -104,7 +105,8 @@ using Instances = std::vector<Object>;
 // + provide data during slicing process
 struct SLAResult
 {
-    SLAPrintConfigView printer_config;
+    Print::SerializedConfig serialized_config;
+    SLAPrintConfigView print_config;
     // NOTE: previously from constructor of the archive
 
     // It is filled after slicing
