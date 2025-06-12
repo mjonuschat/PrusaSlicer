@@ -303,6 +303,9 @@ void SceneInteractor::change_volume_meshes(RefMeshes&& meshes)
             selection_ids.emplace_back(update_id.object_id, inst->id().id, update_id.volume_id);
     }
     set_selection({SelectionMode::Volume, selection_ids});
+    auto changes = update_instances_bed_placement(project, selection_ids);
+    for (const auto& bed_ref : changes.updated_beds)
+        invoke_slicing_input_changed(bed_ref);
 }
 
 void SceneInteractor::edit_name(const Domain::ElementRef& id, const std::string& new_name)
