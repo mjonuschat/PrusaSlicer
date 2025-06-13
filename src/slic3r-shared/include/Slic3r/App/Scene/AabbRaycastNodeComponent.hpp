@@ -14,7 +14,7 @@ public:
         : m_aabb_mesh(mesh)
     {}
 
-    bool raycast(const Domain::SquareMatrix4d& world, const Ray& ray, double& t) const override;
+    bool raycast(const Domain::SquareMatrix4d& world, const Ray& ray, RaycastResult& t) const override;
     Eigen::AlignedBox3f world_bounding_box(const Domain::SquareMatrix4d& world) const override;
 
     AABBMesh::hit_result hit_result(const Domain::SquareMatrix4d& world, const Ray& ray) const;

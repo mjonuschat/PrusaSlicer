@@ -1036,18 +1036,18 @@ bool Scene::pick_at(float mouse_x, float mouse_y, ConstNodePickResults& results,
     if (out_ray != nullptr)
         *out_ray = ray;
     const Node& n = m_root;
-    auto ret = visit_conditional_transform<double>(n, [&ray](const Node& n, double& t) {
+    auto ret = visit_conditional_transform<RaycastResult>(n, [&ray](const Node& n, RaycastResult& res) {
         if (!n.has_raycast_component())
             return false;
-        return n.raycast_component()->raycast(n.world_transform().matrix(), ray, t);
+        return n.raycast_component()->raycast(n.world_transform(), ray, res);
     });
     results.reserve(results.size() + ret.size());
     std::transform(
         ret.begin(), ret.end(), std::back_inserter(results),
-        [](const auto& p) -> ConstNodePickResult { return {p.first, p.second}; }
+        [](const auto& p) -> ConstNodePickResult { return {p.first, std::move(p.second)}; }
     );
     std::sort(ret.begin(), ret.end(), [](auto a, auto b) {
-        return a.second < b.second;
+        return a.second.distance < b.second.distance;
     });
     return !ret.empty();
 }
@@ -1059,18 +1059,18 @@ bool Scene::pick_at(float mouse_x, float mouse_y, NodePickResults& results, Ray*
     if (out_ray != nullptr)
         *out_ray = ray;
     Node& n = m_root;
-    auto ret = visit_conditional_transform<double>(n, [&ray](Node& n, double& t) {
+    auto ret = visit_conditional_transform<RaycastResult>(n, [&ray](Node& n, RaycastResult& t) {
         if (!n.has_raycast_component())
             return false;
         return n.raycast_component()->raycast(n.world_transform().matrix(), ray, t);
     });
-    std::sort(ret.begin(), ret.end(), [](auto a, auto b) {
-        return a.second < b.second;
+    std::sort(ret.begin(), ret.end(), [](const auto& a, const auto& b) {
+        return a.second.distance < b.second.distance;
     });
     results.reserve(results.size() + ret.size());
     std::transform(
         ret.begin(), ret.end(), std::back_inserter(results),
-        [](const auto& p) -> NodePickResult { return {p.first, p.second}; }
+        [](const auto& p) -> NodePickResult { return {p.first, std::move(p.second)}; }
     );
 
     return !ret.empty();

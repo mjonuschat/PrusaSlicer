@@ -11,7 +11,7 @@ using Slic3r::Domain::Vec3f;
 namespace Slic3r::App::Scene
 {
 
-bool AabbRaycastNodeComponent::raycast(const SquareMatrix4d& world, const Ray& ray, double& t) const
+bool AabbRaycastNodeComponent::raycast(const SquareMatrix4d& world, const Ray& ray, RaycastResult& res) const
 {
     ASSERT(m_aabb_mesh != nullptr);
 
@@ -38,11 +38,12 @@ bool AabbRaycastNodeComponent::raycast(const SquareMatrix4d& world, const Ray& r
     // The vector from ray origin to the hit point is (world_hit_point - ray.origin).
     // This vector must be equal to t * ray.direction.
     // We can solve for t using a dot product:
-    // t = ((world_hit_point - ray.origin).dot(ray.direction)) / ray.direction.squaredNorm();
+    // distance = ((world_hit_point - ray.origin).dot(ray.direction)) / ray.direction.squaredNorm();
 
     Vec3d hit_vector = world_hit_point - ray.origin;
-    t = hit_vector.dot(ray.direction) / ray.direction.squaredNorm();
-
+    res.distance = hit_vector.dot(ray.direction) / ray.direction.squaredNorm();
+    res.normal = world.block<3,3>(0,0) * hit.normal();
+    res.triangle_index = hit.face();
     return true;
 }
 

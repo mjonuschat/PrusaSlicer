@@ -9,6 +9,12 @@ namespace Slic3r::App::Scene {
 class Frustum;
 class PickerFrustum;
 
+struct RaycastResult {
+  double distance;
+  Vec3d normal; // world normal of the hit
+  int triangle_index; // index of triangle in the mesh
+};
+
 /**
  * @brief Generic interface for raycast collision detection component.
  * @see AabbRaycastNodeComponent
@@ -21,10 +27,10 @@ public:
      * @brief raycast test given ray against collision object.
      * @param world World transform of associated node
      * @param ray Ray in world space
-     * @param[out] t Output ray t of first hit (set only if `true` returned)
+     * @param[out] res Output of the first hit (set only if `true` returned)
      * @return True if any collision hit was detected
      */
-    virtual bool raycast(const Domain::SquareMatrix4d& world, const Ray& ray, double& t) const = 0;
+    virtual bool raycast(const Domain::SquareMatrix4d& world, const Ray& ray, RaycastResult& res) const = 0;
 
     virtual Eigen::AlignedBox3f world_bounding_box(const Domain::SquareMatrix4d& world) const = 0;
 

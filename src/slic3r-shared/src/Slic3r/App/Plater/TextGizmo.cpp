@@ -16,6 +16,8 @@ using namespace Slic3r::App::Yoga;
 #include <Slic3r/Biz/Algorithms/TriangleMesh.hpp>
 #include <Slic3r/Biz/Emboss/Emboss.hpp> // also copy in libslic3r for SurfaceCut
 #include "Slic3r/Biz/Platform/PlatformServices.hpp" // main_thread_dispatcher
+#include <Slic3r/App/Scene/BedNodeTag.hpp>
+#include <Slic3r/App/Plater/SceneNodeTag.hpp>
 
 namespace {
 using namespace Slic3r;
@@ -23,6 +25,7 @@ using namespace Slic3r::Biz::Emboss;
 
 using Slic3r::Biz::Platform::IMainThreadDispatcher;
 using Slic3r::Biz::Platform::PlatformServices; 
+using Slic3r::App::Scene::Ray;
 
 Domain::TriangleMesh create_mesh() {
 
@@ -57,7 +60,22 @@ bool create_object(Biz::ProjectInteractor& project_interactor, const Vec2d& z0_c
     return true;
 }
 
-bool is_selected_object(const Slic3r::Biz::Scene::Selection::ElementRefs& selected_elements) {
+bool create_object(Biz::ProjectInteractor& project_interactor, const Ray& ray){
+    double d_z = ray.direction.z();
+    if (fabs(d_z) - 1e-4 > 0.) { // not parallel to Z axis
+        Vec3d z0 = ray.point_at(-ray.origin.z() / d_z);
+        Vec2d bed_coor(z0.x(), z0.y());
+        create_object(project_interactor, bed_coor);
+        // m_gizmo_manager.activate_tool(type(), ptAny);
+        // const Domain::Bed& bed =
+        // m_project_interactor.selected_project().config_containers().front()->bed();
+        return true;
+    }
+
+    return false;
+}
+
+bool is_selected_object(const Biz::Scene::Selection::ElementRefs& selected_elements) {
     if (selected_elements.empty()) 
         return false;
     
@@ -73,35 +91,61 @@ bool is_selected_object(const Slic3r::Biz::Scene::Selection::ElementRefs& select
 //    
 //}
 
+struct CreateVolumeData {
+    // To inform application listener about volume creation
+    // NOTE1: Before access check thread cancel
+    // NOTE2: Current project do not have to be one where add new volume
+    Biz::ProjectInteractor& project_interactor; // live longer than TextGizmo (@barzto garanteed)
+    Domain::SelectionId project_id = Domain::INVALID_ID; // project id, where to create volume
+    Domain::ObjectID object_id = Domain::INVALID_ID; // object id, where to create volume    
+    ModelVolumeType volume_type = ModelVolumeType::MODEL_PART; // type of volume to create
+
+    Transform3d tr = Transform3d::Identity();
+    std::string name = "Embossed text"; // default name for volume
+};
+
+bool create_volume(CreateVolumeData& data) {
+
+    /* TODO: find way to add volume into not selected project
+    auto& project = data.project_interactor.workbench().project(data.project_id);
+    /*/
+    auto& project = data.project_interactor.selected_project();
+    ASSERT(data.project_interactor.selected_project_id() == data.project_id); // project does not match
+    // */
+
+    // create volume
+    Domain::TriangleMesh mesh = create_mesh();
+    
+
+    /* only add volume without addition data
+    scene_interactor.add_volume_from_mesh(std::move(mesh), volume_type, tr.matrix());
+    /*/
+    auto& obj = *project.find_object_by_id(data.object_id.id);
+    auto* vol = obj.add_volume(std::move(mesh), data.volume_type);
+    vol->set_transformation(data.tr);
+    vol->name = data.name;
+
+    data.project_interactor.scene_interactor().add_volume(vol);
+    // */
+    return true;
+
+}
+
 // Inspired in Biz::SceneInteractor::add_volume_from_mesh()
 bool create_volume(
     Biz::ProjectInteractor& project_interactor, 
     Slic3r::ModelVolumeType volume_type){
-       
-    // New created volume
-    Domain::TriangleMesh mesh = create_mesh();
-    Transform3d tr = Transform3d::Identity();
-
-    auto& scene_interactor = project_interactor.scene_interactor();
-    /*
-    scene_interactor.add_volume_from_mesh(std::move(mesh), volume_type, tr.matrix());
-    /*/
-    const Biz::Scene::Selection& sel = scene_interactor.selection();
-    if(sel.elements.empty())
+    const Biz::Scene::Selection& sel = project_interactor.scene_interactor().selection();
+    if (sel.elements.empty())
         return false; // no object selected
 
-    size_t obj_id = sel.elements[0].object_id;
-
-    auto& project = project_interactor.selected_project();
-    auto& obj = *project.find_object_by_id(obj_id);
-    auto* vol = obj.add_volume(std::move(mesh), volume_type);
-    vol->set_transformation(tr);
-    vol->name = "Embossed text";
-    vol->config.set_key_value("extruder", new ConfigOptionInt(0));    
-    scene_interactor.add_volume(vol);    
-    // */    
-    
-    return true;
+    CreateVolumeData data{
+        .project_interactor = project_interactor,
+        .project_id = project_interactor.selected_project_id(),
+        .object_id = sel.elements[0].object_id,
+        .volume_type = volume_type
+    };
+    return create_volume(data);
 }
 
 } // namespace
@@ -167,31 +211,31 @@ Scene::GizmoActivationState TextGizmo::on_mouse(Scene::GizmoEventContext& ctx, b
     using App::Platform::MouseEvent;
     using App::Platform::MouseButton;
     const MouseEvent& mouse_event = ctx.mouse_event();
-    if (mouse_event.type() == MouseEvent::Type::ButtonUp &&
+    if (mouse_event.type() == MouseEvent::Type::ButtonDown &&
         mouse_event.button() == MouseButton::Right) {
-        Point mouse_pos(mouse_event.x(), mouse_event.y());
-
-        create_object(m_project_interactor, Vec2d(0, 0));
+        if (create_volume(ModelVolumeType::MODEL_PART, ctx.pick_ray(), ctx.pick_results()))
+            return Scene::GizmoActivationState::Active; // create volume at pick ray
     }
     return Scene::GizmoActivationState::Inactive;
 }
 
 void TextGizmo::register_commands(Platform::CommandRegistry& registry) {
     registry.register_command(std::make_unique<Platform::FuncCommand>(
-        "Create/Edit text", [&]() { create_volume(); }, nullptr,
+        "Create/Edit text", [&]() { add_text_by_view_direction(ModelVolumeType::MODEL_PART); }, nullptr,
         Platform::KeyboardShortcut{0, Platform::KeyCode::T}
     ));
 }
 
 void TextGizmo::render_imgui()
 {
+    ImGui::TextColored(ImVec4(.1f, .9f, .2f, 1.f), "RClick add negative volume \n or object on plate");
     if (ImGui::Begin("Text Gizmo")) {
         ImGui::Text("Emboss text");
-        if (ImGui::Button("Add Object")) {
+        if (ImGui::Button("Add Object on[0,0]")) {
             create_object(m_project_interactor, Vec2d(0,0));
         }
-        if (ImGui::Button("Add Volume")) {
-            ::create_volume(m_project_interactor, Slic3r::ModelVolumeType::MODEL_PART);
+        if (ImGui::Button("Add negative Volume")) {
+            ::create_volume(m_project_interactor, Slic3r::ModelVolumeType::NEGATIVE_VOLUME);
         }
         if (ImGui::Button("Close")) {
             close();
@@ -216,7 +260,7 @@ void TextGizmo::on_activated()
 
 void TextGizmo::on_deactivated() {}
 
-bool TextGizmo::create_volume(Slic3r::ModelVolumeType volume_type) {
+bool TextGizmo::add_text_by_view_direction(Slic3r::ModelVolumeType volume_type) {
     if (m_gizmo_manager.current_tool_type() == type())
         return false; // already active
 
@@ -227,28 +271,49 @@ bool TextGizmo::create_volume(Slic3r::ModelVolumeType volume_type) {
     Biz::Scene::SceneInteractor& scene_interactor = m_project_interactor.scene_interactor();
     const Biz::Scene::Selection& selection = scene_interactor.selection();
     if (!is_selected_object(selection.elements)) {
-
-        const Scene::Scene& scene = m_scene_presenter.scene();
-        const Scene::Camera& camera = scene.camera();
+        const Scene::Camera& camera = m_scene_presenter.scene().camera();
         const Render::Rect& rect = camera.viewport();
-        // ray to screen center
+        // TODO: subtract sides menu size
         Scene::Ray ray = camera.ray_at(rect.width / 2., rect.height / 2.);
-        double d_z = ray.direction.z();
-        if (fabs(d_z) - 1e-4 > 0.) { // not parallel to Z axis
-            Vec3d z0 = ray.point_at(-ray.origin.z() / d_z);
-            Vec2d bed_coor(z0.x(), z0.y());
-            create_object(m_project_interactor, bed_coor);
-            m_gizmo_manager.activate_tool(type(), ptFFF);
-            //m_gizmo_manager.activate_tool(type(), ptAny);
-            //const Domain::Bed& bed = m_project_interactor.selected_project().config_containers().front()->bed();
-            return true;
-        } 
-
-        return false;
+        ::create_object(m_project_interactor, ray); // create object at center of screen
+        m_gizmo_manager.activate_tool(type(), ptFFF);
     }
-
-
     return ::create_volume(m_project_interactor, volume_type);
+}
+
+bool TextGizmo::create_volume(Slic3r::ModelVolumeType volume_type, const Scene::Ray& pick_ray, const Scene::NodePickResults& picks) {
+    const Domain::Project& project = m_project_interactor.selected_project();
+    for (const Scene::NodePickResult& pick : picks) {
+        if (pick.node->has_tag_of_type<App::Plater::SceneNodeTag>()) {
+            auto* tag = pick.node->tag_of_type<App::Plater::SceneNodeTag>();
+            const ModelVolume* volume = project.find_volume_by_id(tag->object_id, tag->volume_id);
+            if (volume == nullptr)
+                continue; // no volume under mouse
+            // TODO: What to do with Negative volume
+            if (volume->type() != ModelVolumeType::MODEL_PART)
+                continue; // skip modifiers + SupportBlock/Enforce
+
+            double UP_LIMIT = 0.9;
+            Vec3d pick_point = pick_ray.point_at(pick.cast.distance);
+            Vec3d pick_normal = pick.cast.normal;
+            const ModelInstance* instance = project.find_instance_by_id(tag->object_id, tag->instance_id);
+            Transform3d surface_trmat = create_transformation_onto_surface(pick_point, pick_normal, UP_LIMIT);
+            Transform3d tr = instance->get_matrix().inverse() * surface_trmat;
+            
+            CreateVolumeData data{
+                .project_interactor = m_project_interactor,
+                .project_id = m_project_interactor.selected_project_id(),
+                .object_id = volume->get_object()->id(),
+                .volume_type = ModelVolumeType::NEGATIVE_VOLUME, //volume_type,
+                .tr = tr,
+                .name = "Embossed text Volume"
+            };
+            return ::create_volume(data);
+        }
+        if (pick.node->has_tag_of_type<App::Scene::BedNodeTag>())
+            return ::create_object(m_project_interactor, pick_ray);
+    }
+    return add_text_by_view_direction(volume_type); // fall back, do not use pick ray
 }
 
 void TextGizmo::close() { m_gizmo_manager.deactivate_current_tool();}

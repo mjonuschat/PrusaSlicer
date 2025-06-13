@@ -20,9 +20,9 @@
 #include "Slic3r/Biz/Emboss/stbtt_FlattenCurves.hpp"
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
-#include "Slic3r/Biz/Algorithms/IntersectionPoints.hpp"
 #include "Slic3r/Biz/Algorithms/Expolygon.hpp"
-#include "admesh/stl.h"
+#include "Slic3r/Biz/Algorithms/IntersectionPoints.hpp"
+#include "admesh/stl.h" // indexed_triangle_set
 #include "Slic3r/Biz/Algorithms/AABBTreeIndirect.hpp"
 #include "Slic3r/Domain/Line.hpp"
 #include "Slic3r/Domain/EmbossShape.hpp"
@@ -1084,8 +1084,9 @@ EmbossStyles get_font_list_by_folder()
     }
     return result;
 }
-
+} // namespace Slic3r::Biz::Emboss
 #else
+namespace Slic3r::Biz::Emboss {
 EmbossStyles get_font_list()
 {
     // not implemented
@@ -1097,9 +1098,11 @@ std::optional<std::wstring> get_font_path(const std::wstring& font_face_name)
     // not implemented
     return {};
 }
+} // namespace Slic3r::Biz::Emboss
 #endif
 
-std::unique_ptr<FontFile> create_font_file(std::unique_ptr<std::vector<unsigned char>> data)
+namespace Slic3r::Biz::Emboss {
+std::unique_ptr<FontFile> create_font_file_from_data(std::unique_ptr<std::vector<unsigned char>> data)
 {
     int collection_size = stbtt_GetNumberOfFonts(data->data());
     // at least one font must be inside collection
@@ -1160,7 +1163,7 @@ std::unique_ptr<FontFile> create_font_file(const char* file_path)
         BOOST_LOG_TRIVIAL(error) << "Different loaded(from file) data size.";
         return nullptr;
     }
-    return create_font_file(std::move(buffer));
+    return create_font_file_from_data(std::move(buffer));
 }
 } // namespace Slic3r::Biz::Emboss
 
@@ -1228,7 +1231,7 @@ std::unique_ptr<FontFile> create_font_file(void* hfont)
         BOOST_LOG_TRIVIAL(error) << "Different loaded(from HFONT) data size.";
         return nullptr;
     }
-    return create_font_file(std::move(buffer));
+    return create_font_file_from_data(std::move(buffer));
 }
 } // namespace Slic3r::Biz::Emboss
 #endif // _WIN32

@@ -139,7 +139,7 @@ struct FontFileWithCache
 /// <returns>Font object when loaded.</returns>
 std::unique_ptr<FontFile> create_font_file(const char *file_path);
 // data = raw file data
-std::unique_ptr<FontFile> create_font_file(std::unique_ptr<std::vector<unsigned char>> data);
+std::unique_ptr<FontFile> create_font_file_from_data(std::unique_ptr<std::vector<unsigned char>> data);
 #ifdef _WIN32
 // fix for unknown pointer HFONT is replaced with "void *"
 void * can_load(void* hfont);

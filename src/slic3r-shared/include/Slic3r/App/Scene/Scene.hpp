@@ -26,13 +26,13 @@ namespace Slic3r::App::Scene {
 struct NodePickResult
 {
     Node* node;
-    double t;
+    RaycastResult cast;
 };
 
 struct ConstNodePickResult
 {
     const Node* node;
-    double t;
+    RaycastResult cast;
 };
 
 using NodePickResults = std::vector<NodePickResult>;
