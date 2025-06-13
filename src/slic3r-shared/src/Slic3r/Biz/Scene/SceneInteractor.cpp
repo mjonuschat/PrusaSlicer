@@ -525,6 +525,7 @@ const BedSelection& SceneInteractor::bed_selection() const
     return *ASSERT_VAL(result);
 }
 
+<<<<<<< HEAD
 BedSelection& SceneInteractor::bed_selection()
 {
     BedSelection* result{bed_selection(m_selected_project_id)};
@@ -546,9 +547,13 @@ BedSelection* SceneInteractor::bed_selection(const Domain::SelectionId project_i
     return const_cast<BedSelection*>(static_cast<const SceneInteractor*>(this)->bed_selection(project_id));
 }
 
-void SceneInteractor::new_object_from_mesh(Domain::TriangleMesh&& mesh, const std::string& name)
+void SceneInteractor::new_object_from_mesh(TriangleMesh&& mesh) {
+    new_object_from_mesh(std::move(mesh), m_selected_project_id);
+}
+
+void SceneInteractor::new_object_from_mesh(TriangleMesh&& mesh, Domain::SelectionId project_id)
 {
-    auto& project = m_workbench.project(m_selected_project_id);
+    auto& project = m_workbench.project(project_id);
     auto& obj     = *project.model().add_object();
     auto& vol     = *Algorithms::ModelObject::add_volume(&obj, std::move(mesh));
     auto& inst    = *obj.add_instance();
@@ -561,11 +566,13 @@ void SceneInteractor::new_object_from_mesh(Domain::TriangleMesh&& mesh, const st
     for (const auto& bed_ref : changes.updated_beds) {
         invoke_slicing_input_changed(bed_ref);
     }
-    invoke_listeners<ISceneChangedListener>(
-        [&](auto* l) { l->on_instance_added(m_selected_project_id, updated); }
-    );
+    invoke_listeners<ISceneChangedListener>([&](auto* l) {
+        l->on_instance_added(m_selected_project_id, updated);
+        l->on_volume_added(m_selected_project_id, updated_vols);
+    });
 
-    set_object_selection({SelectionMode::Instance, {updated}});
+    // TODO: need to send project_id for set selection (for @JanBartipan)
+    set_selection({SelectionMode::Instance, {updated}});
 }
 
 void SceneInteractor::add_new_objects(const std::vector<Domain::ModelObject*>& objects)
@@ -605,6 +612,21 @@ void SceneInteractor::add_volume_from_mesh(TriangleMesh&& mesh, Domain::ModelVol
 
     set_object_selection({SelectionMode::Volume, updated});
     update_elements_bed_placement(sel.elements, sel.mode == SelectionMode::Volume);
+}
+
+void SceneInteractor::add_volume(const ModelVolume* volume){
+    const ModelObject* obj = volume->get_object();
+    Domain::ElementRefs updated = {Domain::ElementRef(
+        obj->id().id,
+        obj->instances[0]->id().id,
+        volume->id().id)};
+
+    invoke_listeners<ISceneChangedListener>([&](auto* l) {
+        l->on_volume_added(m_selected_project_id, updated);
+    });
+
+    set_selection({SelectionMode::Volume, updated});
+    update_selection_instance_bed_placement();
 }
 
 void SceneInteractor::add_instance(const Vec2d& offset)

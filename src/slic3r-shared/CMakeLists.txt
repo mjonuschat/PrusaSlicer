@@ -805,7 +805,9 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/PrintHost/PrintHostMKS.cpp
 
         include/Slic3r/Biz/Emboss/Emboss.hpp
+        include/Slic3r/Biz/Emboss/stbtt_FlattenCurves.hpp
         src/Slic3r/Biz/Emboss/Emboss.cpp
+        src/Slic3r/Biz/Emboss/stbtt_FlattenCurves.cpp
 
         include/Slic3r/Biz/Network/IHttp.hpp
         include/Slic3r/Biz/Network/HttpFactory.hpp

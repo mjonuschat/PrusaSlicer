@@ -857,7 +857,12 @@ void PlaterRenderModule::init_gizmos()
         m_project_interactor,
         *m_scene_presenter
     );
-    m_text_gizmo    = &m_gizmo_manager->add_tool_gizmo<TextGizmo>(m_project_interactor);
+    m_text_gizmo = &m_gizmo_manager->add_tool_gizmo<TextGizmo>(
+        *m_device,
+        *m_scene_presenter, 
+        m_project_interactor, 
+        *m_gizmo_manager
+    );
     m_measure_gizmo = &m_gizmo_manager->add_tool_gizmo<MeasureGizmo>(
         *m_device,
         m_project_interactor,

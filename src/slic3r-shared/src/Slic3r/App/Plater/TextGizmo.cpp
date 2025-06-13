@@ -10,14 +10,19 @@
 
 using namespace Slic3r::App::Yoga;
 #include <boost/nowide/convert.hpp>
+#include <imgui/imgui.h>
 
 #include <Slic3r/Domain/TriangleMesh.hpp>
 #include <Slic3r/Biz/Algorithms/TriangleMesh.hpp>
 #include <Slic3r/Biz/Emboss/Emboss.hpp> // also copy in libslic3r for SurfaceCut
+#include "Slic3r/Biz/Platform/PlatformServices.hpp" // main_thread_dispatcher
 
 namespace {
 using namespace Slic3r;
 using namespace Slic3r::Biz::Emboss;
+
+using Slic3r::Biz::Platform::IMainThreadDispatcher;
+using Slic3r::Biz::Platform::PlatformServices; 
 
 Domain::TriangleMesh create_mesh() {
 
@@ -37,15 +42,66 @@ Domain::TriangleMesh create_mesh() {
     return Biz::Algorithms::TriangleMesh::construct(its);
 }
 
-void create_object(Biz::ProjectInteractor& project_interactor)
+bool create_object(Biz::ProjectInteractor& project_interactor, const Vec2d& z0_coor)
 {
-    auto& scene_interactor = project_interactor.scene_interactor();
-    const auto& bed = project_interactor.selected_project().config_containers().front()->bed();
-    scene_interactor.new_object_from_mesh(create_mesh());
+    // To check if the project is same
+    Domain::SelectionId project_id = project_interactor.selected_project_id();        
+    Domain::TriangleMesh mesh = create_mesh();
+    double z_move = -mesh.bounding_box().min.z();
 
-    Transform3d xform = Transform3d::Identity();
-    xform.translate(Vec3d{bed.center().x(), bed.center().y(), 0});
-    scene_interactor.transform_selection(xform.matrix());
+    Biz::Scene::SceneInteractor& scene_interactor = project_interactor.scene_interactor();
+    scene_interactor.new_object_from_mesh(std::move(mesh), project_id);
+    scene_interactor.transform_selection(Transform3d(
+        Eigen::Translation<double, 3>(z0_coor.x(), z0_coor.y(), z_move)
+    ).matrix());
+    return true;
+}
+
+bool is_selected_object(const Slic3r::Biz::Scene::Selection::ElementRefs& selected_elements) {
+    if (selected_elements.empty()) 
+        return false;
+    
+    return true;
+}
+
+//ModelVolume* add_volume_from_mesh(
+//    const Domain::ObjectID& object_id,
+//    Domain::TriangleMesh&& mesh,
+//    ModelVolumeType type = ModelVolumeType::MODEL_PART,
+//    const Transform& trafo = Matrix4d::Identity())
+//{
+//    
+//}
+
+// Inspired in Biz::SceneInteractor::add_volume_from_mesh()
+bool create_volume(
+    Biz::ProjectInteractor& project_interactor, 
+    Slic3r::ModelVolumeType volume_type){
+       
+    // New created volume
+    Domain::TriangleMesh mesh = create_mesh();
+    Transform3d tr = Transform3d::Identity();
+
+    auto& scene_interactor = project_interactor.scene_interactor();
+    /*
+    scene_interactor.add_volume_from_mesh(std::move(mesh), volume_type, tr.matrix());
+    /*/
+    const Biz::Scene::Selection& sel = scene_interactor.selection();
+    if(sel.elements.empty())
+        return false; // no object selected
+
+    size_t obj_id = sel.elements[0].object_id;
+
+    auto& project = project_interactor.selected_project();
+    auto& obj = *project.find_object_by_id(obj_id);
+    auto* vol = obj.add_volume(std::move(mesh), volume_type);
+    vol->set_transformation(tr);
+    vol->name = "Embossed text";
+    vol->config.set_key_value("extruder", new ConfigOptionInt(0));    
+    scene_interactor.add_volume(vol);    
+    // */    
+    
+    return true;
 }
 
 } // namespace
@@ -55,12 +111,12 @@ TextGizmo::TextGizmo(
     Render::Device& device,
     PlaterScenePresenter& scene_presenter,
     Biz::ProjectInteractor& project_interactor,
-    CloseFn close_fn
+    Scene::GizmoManager& gizmo_manager
 )
     : m_device(device)
     , m_scene_presenter(scene_presenter)
     , m_project_interactor(project_interactor)
-    , m_close_fn(close_fn)
+    , m_gizmo_manager(gizmo_manager)
 {
     m_dialog = std::make_unique<TextDialog>();
 
@@ -108,18 +164,37 @@ void TextGizmo::update_layout(bool show_for_part)
     m_dialog->show_part_specific_panel(show_for_part);
 }
 Scene::GizmoActivationState TextGizmo::on_mouse(Scene::GizmoEventContext& ctx, bool only_active){
+    using App::Platform::MouseEvent;
+    using App::Platform::MouseButton;
+    const MouseEvent& mouse_event = ctx.mouse_event();
+    if (mouse_event.type() == MouseEvent::Type::ButtonUp &&
+        mouse_event.button() == MouseButton::Right) {
+        Point mouse_pos(mouse_event.x(), mouse_event.y());
+
+        create_object(m_project_interactor, Vec2d(0, 0));
+    }
     return Scene::GizmoActivationState::Inactive;
 }
 
-void TextGizmo::render_imgui() const
+void TextGizmo::register_commands(Platform::CommandRegistry& registry) {
+    registry.register_command(std::make_unique<Platform::FuncCommand>(
+        "Create/Edit text", [&]() { create_volume(); }, nullptr,
+        Platform::KeyboardShortcut{0, Platform::KeyCode::T}
+    ));
+}
+
+void TextGizmo::render_imgui()
 {
     if (ImGui::Begin("Text Gizmo")) {
         ImGui::Text("Emboss text");
         if (ImGui::Button("Add Object")) {
-            create_object(m_project_interactor);
+            create_object(m_project_interactor, Vec2d(0,0));
+        }
+        if (ImGui::Button("Add Volume")) {
+            ::create_volume(m_project_interactor, Slic3r::ModelVolumeType::MODEL_PART);
         }
         if (ImGui::Button("Close")) {
-            m_close_fn();
+            close();
         }
     }
     ImGui::End();
@@ -140,5 +215,53 @@ void TextGizmo::on_activated()
 }
 
 void TextGizmo::on_deactivated() {}
+
+bool TextGizmo::create_volume(Slic3r::ModelVolumeType volume_type) {
+    if (m_gizmo_manager.current_tool_type() == type())
+        return false; // already active
+
+    if (!init_create(volume_type))
+        return false;
+
+    // is selected object
+    Biz::Scene::SceneInteractor& scene_interactor = m_project_interactor.scene_interactor();
+    const Biz::Scene::Selection& selection = scene_interactor.selection();
+    if (!is_selected_object(selection.elements)) {
+
+        const Scene::Scene& scene = m_scene_presenter.scene();
+        const Scene::Camera& camera = scene.camera();
+        const Render::Rect& rect = camera.viewport();
+        // ray to screen center
+        Scene::Ray ray = camera.ray_at(rect.width / 2., rect.height / 2.);
+        double d_z = ray.direction.z();
+        if (fabs(d_z) - 1e-4 > 0.) { // not parallel to Z axis
+            Vec3d z0 = ray.point_at(-ray.origin.z() / d_z);
+            Vec2d bed_coor(z0.x(), z0.y());
+            create_object(m_project_interactor, bed_coor);
+            m_gizmo_manager.activate_tool(type(), ptFFF);
+            //m_gizmo_manager.activate_tool(type(), ptAny);
+            //const Domain::Bed& bed = m_project_interactor.selected_project().config_containers().front()->bed();
+            return true;
+        } 
+
+        return false;
+    }
+
+
+    return ::create_volume(m_project_interactor, volume_type);
+}
+
+void TextGizmo::close() { m_gizmo_manager.deactivate_current_tool();}
+
+
+bool TextGizmo::init_create(Slic3r::ModelVolumeType volume_type) { 
+    if (volume_type != ModelVolumeType::MODEL_PART &&
+        volume_type != ModelVolumeType::NEGATIVE_VOLUME &&
+        volume_type != ModelVolumeType::PARAMETER_MODIFIER)
+        return false; // invalid volume type for emboss text
+
+    // if (wxGetApp().obj_list()->has_selected_cut_object()) return false;
+    return true;
+}
 
 } // namespace Slic3r::App::Plater

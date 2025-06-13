@@ -2,6 +2,7 @@
 
 #include <libslic3r/Emboss.hpp>
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
+#include "Slic3r/Biz/Algorithms/ExPolygon.hpp"
 #include "Slic3r/Biz/Algorithms/SVG.hpp" // only debug visualization
 #include "Slic3r/Domain/TriangleMesh.hpp"
 #include "Slic3r/Biz/Algorithms/CerealUtils.hpp"
@@ -173,6 +174,9 @@ TEST_CASE("Convert glyph % to model", "[Emboss]")
 
     ExPolygons shape = glyph->shape;    
     REQUIRE(!shape.empty());
+
+    // Check same behavior of copied function stbtt_FlattenCurves 
+    CHECK(Algorithms::ExPolygon::to_points(shape).size() == 132);
 
     float z_depth = 1.f;
     Emboss::ProjectZ projection(z_depth);

@@ -17,6 +17,7 @@
 #include <iterator>
 #include <limits>
 
+#include "Slic3r/Biz/Emboss/stbtt_FlattenCurves.hpp"
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "Slic3r/Biz/Algorithms/IntersectionPoints.hpp"
@@ -34,7 +35,7 @@
 // In project slic3r-shared we use stb_truetype.h from imgui
 //#define STB_TRUETYPE_IMPLEMENTATION // force following include to generate implementation
 // Explicit horror include (used to be implicit) - libslic3r "officialy" does not depend on imgui.
-#include "../../bundled_deps/imgui/imgui/imstb_truetype.h" // stbtt_fontinfo
+//#include "../../bundled_deps/imgui/imgui/imstb_truetype.h" // stbtt_fontinfo
 // to heal shape
 #include "libslic3r/ClipperUtils.hpp" // union_ex + for boldness(polygon extend(offset))
 #include "Slic3r/Biz/Algorithms/ExPolygonsIndex.hpp"
@@ -125,7 +126,7 @@ const Glyph* get_glyph(int unicode, const FontFile &font, const FontProp &font_p
         Glyphs &cache, fontinfo_opt &font_info_opt);
 
 // scale and convert float to int coordinate
-Point to_point(const stbtt__point &point);
+Point to_point(const Slic3r::Biz::Emboss::stbtt__point& point);
 
 // bad is contour smaller than 3 points
 void remove_bad(Polygons &polygons);
@@ -752,8 +753,8 @@ std::optional<Glyph> get_glyph(const stbtt_fontinfo &font_info, int unicode_lett
 
     int *contour_lengths = NULL;
     int  num_countour_int = 0;
-    stbtt__point *points = stbtt_FlattenCurves(vertices, num_verts,
-        flatness, &contour_lengths, &num_countour_int, font_info.userdata);
+    Slic3r::Biz::Emboss::stbtt__point* points = Slic3r::Biz::Emboss::stbtt_FlattenCurves(
+        vertices, num_verts, flatness, &contour_lengths, &num_countour_int, font_info.userdata);
     if (!points) return glyph; // no valid flattening
     ScopeGuard sg2([&contour_lengths, &points]() {
         free(contour_lengths); 
@@ -860,7 +861,7 @@ const Glyph* get_glyph(
     return &it->second;
 }
 
-Point to_point(const stbtt__point &point) {
+Point to_point(const Slic3r::Biz::Emboss::stbtt__point &point) {
     return Point(static_cast<int>(std::round(point.x / SHAPE_SCALE)),
                  static_cast<int>(std::round(point.y / SHAPE_SCALE)));
 }

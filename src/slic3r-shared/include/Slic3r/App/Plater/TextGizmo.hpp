@@ -4,15 +4,9 @@
 ///|/
 #pragma once
 #include "Slic3r/App/Scene/IGizmo.hpp" // IToolGizmo
+#include "Slic3r/App/Scene/GizmoManager.hpp"
 #include "Slic3r/App/Plater/PlaterScenePresenter.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
-
-#include "Slic3r/App/Scene/IGizmo.hpp"
-#include "Slic3r/App/Yoga/Item.hpp"
-
-namespace Slic3r::Biz {
-    class ProjectInteractor;
-}
 
 namespace Slic3r::App::Yoga {
 class Dialog;
@@ -25,12 +19,11 @@ class TextDialog;
 class TextGizmo : public Scene::IToolGizmo
 {
 public:
-    using CloseFn = std::function<void()>;
     TextGizmo(
         Render::Device& device,
         PlaterScenePresenter& scene_presenter,
         Biz::ProjectInteractor& project_interactor,
-        CloseFn close_fn
+        Scene::GizmoManager& gizmo_manager
     );
     std::unique_ptr<Yoga::GizmoWindow> release_ui_window() override;
 
@@ -38,25 +31,34 @@ public:
      * @name Implementation of IGizmo interface
      */
     Scene::GizmoActivationState on_mouse(Scene::GizmoEventContext& ctx, bool only_active) override;
-
+    void register_commands(Platform::CommandRegistry& registry) override;
+    
     /**
      * @name Implementation of IToolGizmo interface
      */
     void on_activated() override;
     void on_deactivated() override;
-    bool enabled() const override;
-    Scene::ToolType type() const override;
-    void update_layout(bool show_for_part);
-    void render_imgui() const;
+    Scene::ToolType type() const override { return Scene::ToolType::Text; }
 
+    /// <summary>
+    /// Create new text without given position
+    /// </summary>
+    /// <param name="volume_type">Object part / Negative volume / Modifier</param>
+    bool create_volume(Slic3r::ModelVolumeType volume_type = Slic3r::ModelVolumeType::MODEL_PART);
+    void update_layout(bool show_for_part);
+
+    void render_imgui();
 private:
+    void close();
+    bool init_create(Slic3r::ModelVolumeType volume_type);
+
     void update_presets_list();
     void activate_preset(/*preset*/);
 
     Render::Device& m_device;
     PlaterScenePresenter& m_scene_presenter;
     Biz::ProjectInteractor& m_project_interactor;
-    CloseFn m_close_fn; // call GizmoManager to close current gizmo
+    Scene::GizmoManager& m_gizmo_manager;
     Yoga::Passthrough<TextDialog> m_dialog;
     Biz::ProjectInteractor& m_project_interactor;
 };
