@@ -18,12 +18,15 @@ public:
     {
         std::function<void()> action{nullptr};
         std::function<void(bool hovered)> hovered_changed{nullptr};
+        std::function<void(bool pressed)> pressed_changed{nullptr};
         std::function<void(bool checked)> checked_changed{nullptr};
     };
 
-    explicit AbstractButton(const std::string& tooltip = {});
+    AbstractButton(const std::string& tooltip = {}, const std::string& name = "Button");
 
     void process_events(Vec2f pos, Vec2f size) override;
+
+    void render(Vec2f pos, Vec2f size) override;
 
     Callbacks& callbacks();
 
@@ -43,6 +46,10 @@ public:
 
     bool hovered() const;
 
+    bool pressed() const;
+
+    ImGuiButtonFlags flags() const;
+
 protected:
     virtual void checked_updated_internal() {}
     virtual void hovered_updated_internal() {}
@@ -54,15 +61,18 @@ protected:
 
 private:
     void set_hovered(bool hovered);
+    void set_pressed(bool pressed);
 
 private:
     bool m_has_arrow = false;
     bool m_checkable = false;
     bool m_checked = false;
     bool m_hovered = false;
+    bool m_pressed = false;
 
     std::string m_shortcut;
     Callbacks m_callbacks;
+    ImGuiButtonFlags m_flags = ImGuiButtonFlags_MouseButtonLeft;
 };
 
 } // namespace Slic3r::App::Yoga
