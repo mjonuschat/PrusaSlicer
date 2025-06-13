@@ -4,6 +4,7 @@
 #include "Slic3r/Biz/Network/IHttp.hpp"
 #include "Slic3r/Biz/Platform/PlatformServices.hpp"
 #include "Slic3r/Log.hpp"
+#include "Slic3r/Biz/Directories.hpp"
 
 #include "fmt/format.h"
 
@@ -92,7 +93,7 @@ boost::filesystem::path UserAccountCommunication::avatar() const
         const std::string filename = "slic3r3-avatar-" + std::to_string(Platform::PlatformServices::instance().app_hash()) + m_avatar_extension;
         return boost::filesystem::temp_directory_path() / filename;
     } else {
-        return  boost::filesystem::path(resources_dir()) / "icons" / "user.svg";
+        return  boost::filesystem::path(Utils::resources_dir()) / "icons" / "user.svg";
     }
 }
 void UserAccountCommunication::on_avatar_url(const std::string& data)

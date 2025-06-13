@@ -162,6 +162,8 @@ bool DesktopApp::OnInit()
 
     m_main_frame->Show();
 
+    m_preset_updater_ui = std::make_unique<PresetUpdaterUI>(m_project_interactor->preset_updater_interactor());
+
 #if !defined(__linux)
     // Initial repaint
     canvas.render();

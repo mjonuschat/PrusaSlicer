@@ -3,6 +3,7 @@
 #include "Slic3r/Biz/Directories.hpp"
 
 #include <boost/filesystem/path.hpp>
+#include <boost/filesystem/operations.hpp>
 #include <boost/nowide/filesystem.hpp>
 #include <boost/dll/runtime_symbol_info.hpp>
 
@@ -63,9 +64,35 @@ void init_paths()
     set_custom_gcodes_dir((path_resources / "custom_gcodes").string());
 
     // Data/config dir
-   set_data_dir(Biz::Utils::get_default_datadir());
+    set_data_dir(Biz::Utils::get_default_datadir());
+
+    boost::filesystem::path data_dir_path(data_dir());
+    if (!boost::filesystem::exists(data_dir_path) || !boost::filesystem::is_directory(data_dir_path)) {
+        boost::filesystem::create_directory(data_dir_path);
+    }
+    std::initializer_list<boost::filesystem::path> sub_datadirs = {   
+        data_dir_path / "update_sync", // Data prepared for installation, all that config wizard needs. (also pid subs?)
+        data_dir_path / "shared_runtime", // all data needed for run of slicer, shared among all instances, App config, archive repo manifest, 
+        data_dir_path / "local_repositories", // Where local repositories are unzipped, each in own unique directory
+        data_dir_path / "snapshots",
+        data_dir_path / "profiles", // subs are local or userid
+        data_dir_path / "profiles" / "local", // All profiles that slicer reads on startup, vendor profiles gets here only from wizard, user profiles by user creation
+        data_dir_path / "profiles" / "local" / "vendor",
+        data_dir_path / "profiles" / "local" / "shapes",
+        data_dir_path / "profiles" / "local" / "print",
+        data_dir_path / "profiles" / "local" / "filament",
+        data_dir_path / "profiles" / "local" / "sla_print",
+        data_dir_path / "profiles" / "local" / "sla_material",
+        data_dir_path / "profiles" / "local" / "printer",
+        data_dir_path / "profiles" / "local" / "physical_printer"
+    };
+
+    for (const boost::filesystem::path& sub : sub_datadirs) {
+        if (!boost::filesystem::exists(sub) || !boost::filesystem::is_directory(sub)) {
+            boost::filesystem::create_directory(sub);
+        }
+    }
 
 }
-
 
 }

@@ -15,7 +15,7 @@ struct VendorReconfiguration
 {
     VendorReconfigurationState state;
     std::string vendor_id;
-    std::string vendor_archive_id;
+    std::string vendor_repo_id;
     Slic3r::Semver current_version;
     Slic3r::Semver desired_version;
     std::string comment;
@@ -32,7 +32,7 @@ struct VendorReconfiguration
         const std::string& new_printers)
         :  state(s)
         , vendor_id(id)
-        , vendor_archive_id(archive_id)
+        , vendor_repo_id(archive_id)
 	    , current_version(current_version)
         , desired_version(desired_version)
 		, comment(comment)

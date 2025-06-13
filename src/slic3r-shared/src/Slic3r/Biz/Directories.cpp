@@ -214,7 +214,8 @@ static std::string GetDataDir()
 std::string get_default_datadir()
 {
     const std::string config_dir = GetDataDir();
-    std::string data_dir = (boost::filesystem::path(config_dir) / SLIC3R_APP_FULL_NAME).make_preferred().string();
+    std::string datadir_name = std::string(SLIC3R_APP_FULL_NAME) + "3";
+    std::string data_dir = (boost::filesystem::path(config_dir) / datadir_name).make_preferred().string();
     return data_dir;
 }
 

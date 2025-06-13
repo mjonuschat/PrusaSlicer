@@ -83,7 +83,7 @@ bool unzip_repository(const fs::path& source_path, const fs::path& target_path)
 
 } // namespace
 
-bool PresetUpdaterRepository::extract_repository_header(const nlohmann::json& json, PresetUpdaterRepository::RepositoryManifest& data)
+bool AbstractPresetUpdaterRepository::extract_repository_header(const nlohmann::json& json, PresetUpdaterRepositoryDescriptor& data, PresetUpdaterProcessStatus* process_status)
 {
     try {
 		// Mandatory attributes
@@ -101,15 +101,28 @@ bool PresetUpdaterRepository::extract_repository_header(const nlohmann::json& js
 		if (json.contains("visibility")) {
 			json.at("visibility").get_to(data.visibility);
 		}
+
+        if (json.contains("offline_archive_url")) {
+			json.at("offline_archive_url").get_to(data.offline_archive_url);
+		}
+        if (json.contains("unzipped_data_path")) {
+            std::string path_str = json.at("unzipped_data_path").get<std::string>();
+            data.zip_path = boost::filesystem::path(path_str);
+        }
+        if (json.contains("zip_path")) {
+            std::string path_str = json.at("zip_path").get<std::string>();
+            data.zip_path = boost::filesystem::path(path_str);
+        }
+
 	} catch (const nlohmann::json::exception& e) {
-		// Catches missing mandatory keys and any type errors
-		SPDLOG_ERROR("Failed to parse source manifest: " + std::string(e.what()));
+		SPDLOG_ERROR("Failed to parse source manifest: {}. json: {}", e.what(), json.dump());
+        process_status->set_warning(fmt::format("Failed to parse source manifest: {}.", e.what()));
 		return false;
 	}
 	return true;
 }
 
-bool PresetUpdaterRepositoryOnline::get_file_inner(const std::string& url, const fs::path& target_path, PresetUpdaterProcessStatus* process_status) const
+bool OnlinePresetUpdaterRepository::get_file_inner(const std::string& url, const fs::path& target_path, PresetUpdaterProcessStatus* process_status) const
 {
     boost::uuids::random_generator generator;
     boost::uuids::uuid uuid = generator();
@@ -136,7 +149,7 @@ bool PresetUpdaterRepositoryOnline::get_file_inner(const std::string& url, const
     http->timeout_total(30)
         .on_error([&](std::string body, std::string error, unsigned http_status) {
 			SPDLOG_ERROR("Error getting: `{}`: HTTP {}, {}", url, http_status, body);
-             process_status->set_error(error);
+             process_status->set_warning(error);
              res = false;
 		})
 		.on_complete([&](std::string body, unsigned /* http_status */) {
@@ -154,12 +167,12 @@ bool PresetUpdaterRepositoryOnline::get_file_inner(const std::string& url, const
 	return res;
 }
 
-bool PresetUpdaterRepositoryOnline::get_archive(const fs::path& target_path, PresetUpdaterProcessStatus* process_status) const
+bool OnlinePresetUpdaterRepository::get_archive(const fs::path& target_path, PresetUpdaterProcessStatus* process_status) const
 {
 	return get_file_inner(m_data.index_url.empty() ? m_data.url + "vendor_indices.zip" : m_data.index_url, target_path, process_status);
 }
 
-bool PresetUpdaterRepositoryOnline::get_file(const std::string& source_subpath, const fs::path& target_path, const std::string& repository_id, PresetUpdaterProcessStatus* process_status) const
+bool OnlinePresetUpdaterRepository::get_file(const std::string& source_subpath, const fs::path& target_path, const std::string& repository_id, PresetUpdaterProcessStatus* process_status) const
 {
 	if (repository_id != m_data.id) {
 		SPDLOG_ERROR("Error getting file {}. The repository_id was not matching.", source_subpath);
@@ -172,7 +185,8 @@ bool PresetUpdaterRepositoryOnline::get_file(const std::string& source_subpath, 
 	return get_file_inner(m_data.url + escaped_source_subpath, target_path, process_status);
 }
 
-bool PresetUpdaterRepositoryOnline::get_ini_no_id(const std::string& source_subpath, const fs::path& target_path, PresetUpdaterProcessStatus* process_status) const
+
+bool OnlinePresetUpdaterRepository::get_file_no_id(const std::string& source_subpath, const boost::filesystem::path& target_path, PresetUpdaterProcessStatus* process_status) const
 {
     process_status->set_target(target_path.filename().string());
     
@@ -180,7 +194,7 @@ bool PresetUpdaterRepositoryOnline::get_ini_no_id(const std::string& source_subp
 	return get_file_inner(m_data.url + escaped_source_subpath, target_path, process_status);
 }
 
-bool PresetUpdaterRepositoryLocal::get_file_inner(const fs::path& source_path, const fs::path& target_path) const
+bool LocalPresetUpdaterRepository::get_file_inner(const fs::path& source_path, const fs::path& target_path) const
 {
 	SPDLOG_INFO("Copying {} to {}", source_path.string(), target_path.string());
 	std::string error_message;
@@ -206,48 +220,52 @@ bool PresetUpdaterRepositoryLocal::get_file_inner(const fs::path& source_path, c
 	return true;
 }
 
-bool PresetUpdaterRepositoryLocal::get_file(const std::string& source_subpath, const fs::path& target_path, const std::string& repository_id, PresetUpdaterProcessStatus* process_status) const
+bool LocalPresetUpdaterRepository::get_file(const std::string& source_subpath, const fs::path& target_path, const std::string& repository_id, PresetUpdaterProcessStatus* process_status) const
 {
 	if (repository_id != m_data.id) {
 		SPDLOG_ERROR("Error getting file {}. The repository_id was not matching.", source_subpath);
 		return false;
 	}
-	return get_file_inner(m_data.tmp_path / source_subpath, target_path);
+	return get_file_inner(m_data.unzipped_data_path / source_subpath, target_path);
 }
-bool PresetUpdaterRepositoryLocal::get_ini_no_id(const std::string& source_subpath, const fs::path& target_path, PresetUpdaterProcessStatus* process_status) const
+/*
+bool LocalPresetUpdaterRepository::get_ini_no_id(const std::string& source_subpath, const fs::path& target_path, PresetUpdaterProcessStatus* process_status) const
 {
 	return get_file_inner(m_data.tmp_path / source_subpath, target_path);
 }
-bool PresetUpdaterRepositoryLocal::get_archive(const fs::path& target_path, PresetUpdaterProcessStatus* process_status) const
+*/
+bool LocalPresetUpdaterRepository::get_file_no_id(const std::string& source_subpath, const boost::filesystem::path& target_path, PresetUpdaterProcessStatus* process_status) const
 {
-	fs::path source_path = fs::path(m_data.tmp_path) / "vendor_indices.zip";
+    return get_file_inner(m_data.unzipped_data_path / source_subpath, target_path);
+}
+
+bool LocalPresetUpdaterRepository::get_archive(const fs::path& target_path, PresetUpdaterProcessStatus* process_status) const
+{
+	fs::path source_path = fs::path(m_data.unzipped_data_path) / "vendor_indices.zip";
 	return get_file_inner(std::move(source_path), target_path);
 }
 
-void PresetUpdaterRepositoryLocal::do_extract() 
+bool LocalPresetUpdaterRepository::extract_local_archive_repository(PresetUpdaterRepositoryDescriptor& descriptor, PresetUpdaterProcessStatus* process_status)
 {
-    RepositoryManifest new_manifest;
-    new_manifest.source_path = this->get_manifest().source_path;
-    new_manifest.tmp_path = this->get_manifest().tmp_path;
-    m_extracted = extract_local_archive_repository(new_manifest);
-    set_manifest(std::move(new_manifest));
-}
-
-bool PresetUpdaterRepositoryLocal::extract_local_archive_repository(PresetUpdaterRepository::RepositoryManifest& manifest_data)
-{
-    DEBUG_ASSERT(!manifest_data.tmp_path.empty());
-    DEBUG_ASSERT(!manifest_data.source_path.empty());
+    DEBUG_ASSERT(!descriptor.unzipped_data_path.empty());
+    DEBUG_ASSERT(!descriptor.zip_path.empty());
 	// Delete previous data before unzip.
 	// We have unique path in temp set for whole run of slicer and in it folder for each repo. 
-	delete_path_recursive(manifest_data.tmp_path);
-	fs::create_directories(manifest_data.tmp_path);
+	delete_path_recursive(descriptor.unzipped_data_path);
+
+    boost::system::error_code ec;
+    if (!fs::create_directories(descriptor.unzipped_data_path, ec) && ec) {
+        process_status->set_error(fmt::format("Failed to create directory at {} for repository {}.", descriptor.unzipped_data_path.string(), descriptor.id));
+        return false;
+    }
+
 	// Unzip repository zip to unique path in temp directory.
-    if (!unzip_repository(manifest_data.source_path, manifest_data.tmp_path)) {
+    if (!unzip_repository(descriptor.zip_path, descriptor.unzipped_data_path)) {
+        process_status->set_error(fmt::format("Failed to unzip repository {}.", descriptor.id));
 		return false;
 	}
 	// Read the manifest file.
-	fs::path manifest_path = manifest_data.tmp_path / "manifest.json";
-
+	fs::path manifest_path = descriptor.unzipped_data_path / "manifest.json";
 
     try
     {
@@ -263,14 +281,14 @@ bool PresetUpdaterRepositoryLocal::extract_local_archive_repository(PresetUpdate
 		    return false;
 	    }
 	
-	    if (!extract_repository_header(j, manifest_data)) {
-		    SPDLOG_ERROR("Failed to process repository data for source: {}", manifest_data.id);
+	    if (!extract_repository_header(j, descriptor, process_status)) {
+            process_status->set_error(fmt::format("Failed to process repository data of source: {}", descriptor.id));
 		    return false;
 	    }
     }
     catch (const std::exception& e)
     {
-	    SPDLOG_ERROR("Failed to read source manifest JSON {}. Reason: {}", manifest_path.string(), e.what());
+        process_status->set_error(fmt::format("Failed to read source manifest JSON {}. Reason: {}", manifest_path.string(), e.what()));
 	    return false;
     }
 	return true;

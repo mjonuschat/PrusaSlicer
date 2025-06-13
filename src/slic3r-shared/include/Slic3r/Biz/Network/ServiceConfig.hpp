@@ -26,7 +26,7 @@ public:
     std::string media_url() const { return m_media_url + "/media/"; }
 
     const std::string& preset_repo_url() const { return m_preset_repo_url; }
-    std::string preset_repo_repos_url() const { return m_preset_repo_url + "/v1/repos"; }
+    std::string preset_repo_repos_url() const { return m_preset_repo_url + "/v2/repos"; }
 
     bool webdev_enabled() const { return m_webdev_enabled; }
     void set_webdev_enabled(bool enabled) { m_webdev_enabled = enabled; }

@@ -1,6 +1,7 @@
 #include "Slic3r/Biz/PresetUpdater/PresetUpdaterRepositoryDatabase.hpp"
 
 #include "Slic3r/Biz/PresetUpdater/PresetUpdaterProcessStatus.hpp"
+#include "Slic3r/Biz/PresetUpdater/PresetUpdaterUtils.hpp"
 #include "Slic3r/Biz/Network/IHttp.hpp"
 #include "Slic3r/Biz/Network/ServiceConfig.hpp"
 #include "Slic3r/Biz/CopyFile.hpp"
@@ -21,235 +22,69 @@ namespace fs = boost::filesystem;
 
 namespace Slic3r::Biz::PresetUpdater {
 
-PresetUpdaterRepositoryDatabase::PresetUpdaterRepositoryDatabase()
+PresetUpdaterRepositoryDatabase::PresetUpdaterRepositoryDatabase(PresetUpdaterProcessStatus* process_status)
 {
     boost::system::error_code ec;
 	m_unq_tmp_path = fs::temp_directory_path() / fs::unique_path();
-	fs::create_directories(m_unq_tmp_path, ec);
-	assert(!ec);
-    try
-    {
-        load_app_manifest_json();
+    if (!fs::create_directories(m_unq_tmp_path, ec) && ec) {
+        process_status->set_error(fmt::format("Failed to create temp directory {}: {}.", m_unq_tmp_path.string(), ec.what()));
+        return;
     }
-    catch (const Slic3r::RuntimeError& e)
-    {
-        SPDLOG_ERROR("Failed to load archive repository manifest: {}", e.what());
-    }
-	
+	load_app_manifest_json(process_status);
 }
 
-bool PresetUpdaterRepositoryDatabase::set_selected_repositories(const std::vector<std::string>& selected_uuids, std::string& msg)
+PresetUpdaterRepositoryDatabase::~PresetUpdaterRepositoryDatabase()
 {
-    // First re-extract locals, this will set is_extracted flag
-    extract_local_archives();
-	// Check if some uuids leads to the same id (online vs local conflict)
-	std::map<std::string, std::string> used_set;
-	for (const std::string& uuid : selected_uuids) {
-		std::string id;
-		std::string name;
-		for (const auto& archive : m_archive_repositories) {
-			if (archive->get_uuid() != uuid) {
-                continue;
-            }        
-		    id = archive->get_manifest().id;
-		    name = archive->get_manifest().name;
-            if (!archive->is_extracted()) {
-                // non existent local repo since start selected
-                msg = fmt::format(
-                    "Cannot select local source from path: {}. It was not extracted.",
-                    archive->get_manifest().source_path.string()
-                );
-                return false;
-            }
-		    break;
-		}
-		assert(!id.empty());
-		if (auto it = used_set.find(id); it != used_set.end()) {
-			msg = fmt::format("Cannot select two sources with the same id: {} and {}", it->second, name);
-			return false;
-		}
-		used_set.emplace(id, name);
-	}
-	// deselect all first
-	for (auto& pair : m_selected_repositories_uuid) {
-		pair.second = false;
-	}
-	for (const std::string& uuid : selected_uuids) {
-		m_selected_repositories_uuid[uuid] = true;
-	}
-    try
-    {
-        save_app_manifest_json();
+    boost::system::error_code ec;
+    fs::remove_all(m_unq_tmp_path, ec);
+    if (ec) {
+        SPDLOG_ERROR("Failed to remove temp directory {}: {}", m_unq_tmp_path.string(), ec.what());
     }
-    catch (const Slic3r::RuntimeError& e)
-    {
-        msg = fmt::format("Failed to save app manifest: {}", e.what());
-        return false;
-    }	
-	return true;
 }
 
-bool PresetUpdaterRepositoryDatabase::extract_archives_with_check(std::string &msg)
+void PresetUpdaterRepositoryDatabase::add_local_repository(const boost::filesystem::path& zip_path, PresetUpdaterProcessStatus* process_status)
 {
-    extract_local_archives();
-    // std::map<std::string, bool> m_selected_repositories_uuid
-    for (const auto& pair : m_selected_repositories_uuid) {
-        if (!pair.second) {
-            continue;
-        }
-        const std::string uuid = pair.first;
-        auto compare_repo = [&uuid](const std::unique_ptr<PresetUpdaterRepository> &repo) {
-            return repo->get_uuid() == uuid;
-        };
+    PresetUpdaterRepositoryDescriptor header_data;
+    const std::string uuid = get_next_uuid();
+    header_data.zip_path = zip_path;
+    header_data.unzipped_data_path = fs::path(Utils::data_dir()) / "local_repositories" / uuid;
+    boost::system::error_code ec;
 
-        const auto& archives_it =std::find_if(m_archive_repositories.begin(), m_archive_repositories.end(), compare_repo);
-        assert(archives_it != m_archive_repositories.end());
-        if (!archives_it->get()->is_extracted()) {
-            // non existent local repo since start selected
-            msg += std::string(msg.empty() ? "" : "\n") + archives_it->get()->get_manifest().source_path.string();
-        }
-    }
-    return msg.empty();
+	if (!LocalPresetUpdaterRepository::extract_local_archive_repository(header_data, process_status)) {
+        return;
+	}
+    m_all_repositories.emplace_back(std::make_unique<LocalPresetUpdaterRepository>(uuid, std::move(header_data), true));
+    save_app_manifest_json(process_status);
 }
 
-void PresetUpdaterRepositoryDatabase::set_installed_printer_repositories(const std::vector<std::string> &used_ids)
+void PresetUpdaterRepositoryDatabase::remove_local_repository(const std::string& uuid, PresetUpdaterProcessStatus* process_status)
 {
-	// set all uuids as not having installed printer
-    m_has_installed_printer_repositories_uuid.clear();
-    for (const auto &archive : m_archive_repositories) {
-        m_has_installed_printer_repositories_uuid.emplace(archive->get_uuid(), false);
-	}
-	// set correct repos as having installed printer
-    for (const std::string &used_id : used_ids) {
-		// find archive with id and is used
-        std::vector<std::string> selected_uuid;
-        std::vector<std::string> unselected_uuid;
-        for (const auto &archive : m_archive_repositories) {
-            if (archive->get_manifest().id != used_id) {
-				continue;
-			}	
-			const std::string uuid = archive->get_uuid();
-            if (m_selected_repositories_uuid[uuid]) {
-                selected_uuid.emplace_back(uuid);
-            } else {
-                unselected_uuid.emplace_back(uuid);
-            }
-		}
-        
-        if (selected_uuid.empty() && unselected_uuid.empty()) {
-            // there is id in used_ids that is not in m_archive_repositories - BAD
-            assert(false);
-            continue;
-        } else if (selected_uuid.size() == 1){
-            // regular case
-             m_has_installed_printer_repositories_uuid[selected_uuid.front()] = true;
-        } else if (selected_uuid.size() > 1) {
-            // this should not happen, only one repo of same id should be selected (online / local conflict)
-            assert(false);
-            // select first one to solve the conflict
-            m_has_installed_printer_repositories_uuid[selected_uuid.front()] = true;
-            // unselect the rest
-            for (size_t i = 1; i < selected_uuid.size(); i++) {
-                m_selected_repositories_uuid[selected_uuid[i]] = false;
-            }
-        } else if (selected_uuid.empty()) {
-            // This is a rare case, where there are no selected repos with matching id but id has installed printers
-            // Repro: install printer, unselect repo in the next run of wizard, next, cancel wizard, run wizard again and press finish.
-            // Solution: Select the first unselected 
-            m_has_installed_printer_repositories_uuid[unselected_uuid.front()] = true;
-            m_selected_repositories_uuid[unselected_uuid.front()] = true;
-        }
-
-	}
-    try
-    {
-        save_app_manifest_json();
-    }
-    catch (const Slic3r::RuntimeError& e)
-    {
-        SPDLOG_ERROR("Failed to save app manifest: {}", e.what());
-    }	
-}
-
-std::string PresetUpdaterRepositoryDatabase::add_local_archive(const boost::filesystem::path path, std::string& msg)
-{
-	if (auto it = std::find_if(m_archive_repositories.begin(), m_archive_repositories.end(), [path](const std::unique_ptr<PresetUpdaterRepository>& ptr) {
-		return ptr->get_manifest().source_path == path;
-		}); it != m_archive_repositories.end())
-	{
-		msg = fmt::format("Failed to add local archive {}. Path already used.", path.string());
-		SPDLOG_ERROR(msg);
-		return std::string();
-	}
-	std::string uuid = get_next_uuid();
-	PresetUpdaterRepository::RepositoryManifest header_data;
-    header_data.source_path = path;
-    header_data.tmp_path = m_unq_tmp_path / uuid;
-	if (!PresetUpdaterRepositoryLocal::extract_local_archive_repository(header_data)) {
-		msg = fmt::format("Failed to extract local archive {}.", path.string());
-		SPDLOG_ERROR(msg);
-		return std::string();
-	}
-	// Solve if it can be set true first.
-	m_selected_repositories_uuid[uuid] = false;
-    m_has_installed_printer_repositories_uuid[uuid] = false;
-	m_archive_repositories.emplace_back(std::make_unique<PresetUpdaterRepositoryLocal>(uuid, std::move(header_data), true));
-
-	try
-    {
-        save_app_manifest_json();
-    }
-    catch (const Slic3r::RuntimeError& e)
-    {
-        msg = fmt::format("Failed to save app manifest: %1%", e.what());
-        return std::string();
-    }
-	return uuid;
-}
-void PresetUpdaterRepositoryDatabase::remove_local_archive(const std::string& uuid)
-{
-	auto compare_repo = [uuid](const std::unique_ptr<PresetUpdaterRepository>& repo) {
+    
+    auto compare_repo = [uuid](const std::unique_ptr<AbstractPresetUpdaterRepository>& repo) {
 		return repo->get_uuid() == uuid;
 	};
 
-	auto archives_it = std::find_if(m_archive_repositories.begin(), m_archive_repositories.end(), compare_repo);
-    if (archives_it == m_archive_repositories.end()) {
-        return;
+	auto archives_it = std::find_if(m_all_repositories.begin(), m_all_repositories.end(), compare_repo);
+    ASSERT(archives_it != m_all_repositories.end());
+    ASSERT(!archives_it->get()->get_descriptor().unzipped_data_path.empty());
+
+    boost::system::error_code ec;
+    fs::remove_all(archives_it->get()->get_descriptor().unzipped_data_path, ec);
+    if (ec) {
+        process_status->set_warning(fmt::format("Failed to remove directory {}: {}.", archives_it->get()->get_descriptor().unzipped_data_path.string(), ec.what()));
     }
-    if (archives_it->get()->get_manifest().source_path.empty()) {
-        SPDLOG_ERROR("Attempting to remove archive repository that is not local! Removing local archive repository is canceled.");
-        return;
-    }
+
 	std::string removed_uuid = archives_it->get()->get_uuid();
-	m_archive_repositories.erase(archives_it);
-	
-	auto used_it = m_selected_repositories_uuid.find(removed_uuid);
-	assert(used_it != m_selected_repositories_uuid.end());
-	m_selected_repositories_uuid.erase(used_it);
+	m_all_repositories.erase(archives_it);
 
-    auto inst_it = m_has_installed_printer_repositories_uuid.find(removed_uuid);
-    assert(inst_it != m_has_installed_printer_repositories_uuid.end());
-    m_has_installed_printer_repositories_uuid.erase(inst_it);
-
-	try
-    {
-        save_app_manifest_json();
-    }
-    catch (const Slic3r::RuntimeError& e)
-    {
-        SPDLOG_ERROR("Failed to save app manifest: {}", e.what());
-    }
+    save_app_manifest_json(process_status);
 }
-
- void PresetUpdaterRepositoryDatabase::extract_local_archives()
- {
-    for (auto &archive : m_archive_repositories) {
-         archive->do_extract();
-    }
- }    
-
-void PresetUpdaterRepositoryDatabase::load_app_manifest_json()
+ 
+ 
+void PresetUpdaterRepositoryDatabase::load_app_manifest_json(PresetUpdaterProcessStatus* process_status)
 {
+    ASSERT(m_all_repositories.empty(), "This method shoud be called only from constructor");
+
 	const fs::path path = get_stored_manifest_path();
     boost::system::error_code ec;
 	if (!fs::exists(path, ec) || ec) {
@@ -265,82 +100,84 @@ void PresetUpdaterRepositoryDatabase::load_app_manifest_json()
 		file.close();
 	}
 	else {
-		assert(false);
-		SPDLOG_ERROR("Failed to read Archive Source Manifest at {}", path.string());
-	}
-	if (data.empty()) {
+		process_status->set_error(fmt::format("Failed to read Repository Source Manifest at {}: Couldn't open the file. The file is being deleted to prevent this error in future.", path.string()));
+        ec.clear();
+        fs::remove(path, ec);
 		return;
 	}
-
-	m_archive_repositories.clear();
-    m_selected_repositories_uuid.clear();
-    m_has_installed_printer_repositories_uuid.clear();
+	if (data.empty()) {
+        process_status->set_error("The Repository Source Manifest file is empty. The file is being deleted to prevent this error in future.");
+        ec.clear();
+        fs::remove(path, ec);
+		return;
+	}
 
     try
     {
 	    nlohmann::json j = nlohmann::json::parse(data, nullptr, false);
 
 	    if (j.is_discarded() || !j.is_array()) {
-		    SPDLOG_ERROR("Failed to parse archives JSON: Input is not a valid JSON array.");
+            process_status->set_error("Failed to parse Repository Source Manifest JSON: Input is not a valid JSON array. The file is being deleted to prevent this error in future.");
+            ec.clear();
+            fs::remove(path, ec);
 		    return;
 	    }
 
 	    for (const auto& repo_json : j) {
-            std::string uuid = get_next_uuid();
-
 		    // if "source_path" exists, it's a local repo, else it's an online repo
 		    if (repo_json.contains("source_path")) {
-			    PresetUpdaterRepository::RepositoryManifest manifest;
-			    manifest.source_path = repo_json.at("source_path").get<std::string>();
-			    manifest.tmp_path    = m_unq_tmp_path / uuid;
-
-			    bool extracted = PresetUpdaterRepositoryLocal::extract_local_archive_repository(manifest);
-			    bool selected     = repo_json.value("selected", true);
-			    bool has_printers = repo_json.value("has_installed_printers", false);
-
-			    m_selected_repositories_uuid[uuid]              = extracted && selected;
-			    m_has_installed_printer_repositories_uuid[uuid] = extracted && has_printers;
-
-			    m_archive_repositories.emplace_back(std::make_unique<PresetUpdaterRepositoryLocal>(std::move(uuid), std::move(manifest), extracted));			
-		    } else {
-			    // Online repo
-			    PresetUpdaterRepository::RepositoryManifest manifest;
-			    if (!PresetUpdaterRepository::extract_repository_header(repo_json, manifest)) {
-				    SPDLOG_ERROR("Failed to read header for an online source repository.");
+			    PresetUpdaterRepositoryDescriptor descriptor;
+                if (!AbstractPresetUpdaterRepository::extract_repository_header(repo_json, descriptor, process_status)) {
 				    continue;
 			    }
-
-			    m_selected_repositories_uuid[uuid]              = repo_json.value("selected", true);
-			    m_has_installed_printer_repositories_uuid[uuid] = repo_json.value("has_installed_printers", false);
-
-			    m_archive_repositories.emplace_back(std::make_unique<PresetUpdaterRepositoryOnline>(std::move(uuid), std::move(manifest)));
+                ASSERT(descriptor.unzipped_data_path.empty());
+                ec.clear();
+                if (!fs::exists(descriptor.unzipped_data_path, ec) || ec || !fs::is_directory(descriptor.unzipped_data_path, ec) || ec) {
+                    process_status->set_warning(fmt::format("Local repository source {} has is missing its directory at {}: {}. Skipping.", descriptor.id, descriptor.unzipped_data_path.string(), ec.what()));
+                    continue;
+                }
+                // We use same uuid as it was assigned at time of creation - its same as its directory name.
+                // (New uuid would work too)
+                std::string uuid = descriptor.unzipped_data_path.filename().string();
+			    bool selected = repo_json.value("selected", true);
+			    m_all_repositories.emplace_back(std::make_unique<LocalPresetUpdaterRepository>(std::move(uuid), std::move(descriptor), selected));			
+		    } else {
+			    // Online repo
+                std::string uuid = get_next_uuid();
+			    PresetUpdaterRepositoryDescriptor descriptor;
+			    if (!AbstractPresetUpdaterRepository::extract_repository_header(repo_json, descriptor, process_status)) {
+				    continue;
+			    }
+			    bool selected = repo_json.value("selected", true);
+			    m_all_repositories.emplace_back(std::make_unique<OnlinePresetUpdaterRepository>(std::move(uuid), std::move(descriptor), selected));
 		    }
 	    }
     }
     catch (const std::exception& e)
     {
-	    SPDLOG_ERROR("Failed to read archives JSON. Reason: {}", e.what());
+        process_status->set_error(fmt::format("Failed to read Repository Source Manifest JSON. Reason: {}. The file is being deleted to prevent this error in future.", e.what()));
+        ec.clear();
+        fs::remove(path, ec);
+        return;
     }
+
+    // If there were corrupt data in json, we store it again.
+    save_app_manifest_json(process_status);
 }
 
-void PresetUpdaterRepositoryDatabase::copy_initial_manifest()
+void PresetUpdaterRepositoryDatabase::copy_initial_manifest() const
 {
 	const fs::path target_path = get_stored_manifest_path();
-	const fs::path source_path = fs::path(Utils::resources_dir()) / "profiles" / "ArchiveRepositoryManifest.json";
+	const fs::path source_path = fs::path(Utils::resources_dir()) / "profiles" / "RepositoryManifest.json";
     boost::system::error_code ec;
     if (!fs::exists(source_path, ec) || ec) {
-        throw Slic3r::RuntimeError(source_path.string() + " does not exists. " + ec.message());
+        SPDLOG_ERROR(ec.message());
+        ASSERT(false, fmt::format("Resources descriptor file does not exists at {}. The installation is corrupt.", source_path.string()));
     }
-	std::string error_message;
-	Utils::CopyFileResult cfr = Utils::copy_file(source_path.string(), target_path.string(), error_message, false);
-	if (cfr != Utils::CopyFileResult::Success) {
-        throw Slic3r::RuntimeError("Failed to copy ArchiveRepositoryManifest.json from resources.");
-	}
-	static constexpr const auto perms = fs::owner_read | fs::owner_write | fs::group_read | fs::others_read;
-	fs::permissions(target_path, perms);
+    copy_file_fix(source_path, target_path);
 }
 
-void PresetUpdaterRepositoryDatabase::save_app_manifest_json() const
+void PresetUpdaterRepositoryDatabase::save_app_manifest_json(PresetUpdaterProcessStatus* process_status) const
 {
 	/*
 	[{
@@ -363,92 +200,66 @@ void PresetUpdaterRepositoryDatabase::save_app_manifest_json() const
         "has_installed_printers": 0
 	}]
 	*/
-	std::string data = "[";
-
-	for (const auto& archive : m_archive_repositories) {
-		// local writes only source_path and "selected". Rest is read from zip on source_path.
-		if (!archive->get_manifest().tmp_path.empty()) {
-			const PresetUpdaterRepository::RepositoryManifest& man = archive->get_manifest();
-			std::string line = archive == m_archive_repositories.front() ? std::string() : ",";
-			line += fmt::format(
-				"{{"
-				"\"source_path\": \"{}\","
-				"\"selected\": {},"
-				"\"has_installed_printers\": {}"
-				"}}",
-                man.source_path.generic_string()
-				, is_selected(archive->get_uuid()) ? "1" : "0"
-                , has_installed_printers(archive->get_uuid()) ? "1" : "0"
-            );
-			data += line;
-			continue;
-		}
-		// online repo writes whole manifest - in case of offline run, this info is load from here
-		const PresetUpdaterRepository::RepositoryManifest& man = archive->get_manifest();
-		std::string line = archive == m_archive_repositories.front() ? std::string() : ",";
-		line += fmt::format(
-			"{{\"name\": \"{}\","
-			"\"description\": \"{}\","
-			"\"visibility\": \"{}\","
-			"\"id\": \"{}\","
-			"\"url\": \"{}\","
-			"\"index_url\": \"{}\","
-			"\"selected\": {},"
-            "\"has_installed_printers\": {}"
-			"}}"
-			, man.name, man.description
-			, man. visibility
-			, man.id
-			, man.url
-			, man.index_url
-			, is_selected(archive->get_uuid()) ? "1" : "0"
-			, has_installed_printers(archive->get_uuid()) ? "1" : "0"
-		);
-		data += line;
+    nlohmann::json json = nlohmann::json::array();
+    for (const auto& repo : m_all_repositories) {
+        const PresetUpdaterRepositoryDescriptor& descriptor = repo.get()->get_descriptor();
+		if (!repo->get_descriptor().unzipped_data_path.empty()) {
+            nlohmann::json sub = {
+                {"name", descriptor.name},
+                {"description", descriptor.description},
+                {"visibility", descriptor.visibility},
+                {"id", descriptor.id},
+                {"url", descriptor.url},
+                {"index_url", descriptor.index_url},
+                {"selected", repo.get()->is_selected()},
+                {"offline_archive_url", descriptor.offline_archive_url},
+                {"unzipped_data_path", descriptor.unzipped_data_path.string()},
+                {"zip_path", descriptor.zip_path.string()}
+            };
+            json.push_back(sub);
+        } else {
+            nlohmann::json sub = {
+                {"name", descriptor.name},
+                {"description", descriptor.description},
+                {"visibility", descriptor.visibility},
+                {"id", descriptor.id},
+                {"url", descriptor.url},
+                {"index_url", descriptor.index_url},
+                {"selected", repo.get()->is_selected()}
+            };
+            json.push_back(sub);
+        }
 	}
-	data += "]";
 
 	std::string path = get_stored_manifest_path().string();
 	boost::nowide::ofstream file(path);
 	if (file.is_open()) {
-		file << data;
+		file << json.dump();
 		file.close();
 	} else {
-        throw Slic3r::RuntimeError("Failed to write Archive Repository Manifest to " + path);
+        process_status->set_error(fmt::format("Failed to open Repository Source Manifest for writing at {}.", path));
 	}
 }
 
 fs::path PresetUpdaterRepositoryDatabase::get_stored_manifest_path() const
 {
-	return (boost::filesystem::path(Utils::data_dir()) / "shared_runtime" / "ArchiveRepositoryManifest.json").make_preferred();
+	return (boost::filesystem::path(Utils::data_dir()) / "shared_runtime" / "RepositoryManifest.json").make_preferred();
 }
 
-bool PresetUpdaterRepositoryDatabase::is_selected(const std::string& uuid) const
-{
-	auto search = m_selected_repositories_uuid.find(uuid);
-	assert(search != m_selected_repositories_uuid.end()); 
-	return search->second;
-}
-bool PresetUpdaterRepositoryDatabase::has_installed_printers(const std::string &uuid) const 
-{
-    auto search = m_has_installed_printer_repositories_uuid.find(uuid);
-    assert(search != m_has_installed_printer_repositories_uuid.end());
-    return search->second;
-}
 void PresetUpdaterRepositoryDatabase::clear_online_repos()
 {
-	auto it = m_archive_repositories.begin();
-	while (it != m_archive_repositories.end()) {
+	auto it = m_all_repositories.begin();
+	while (it != m_all_repositories.end()) {
 		// Do not clean repos with local path (local repo).
-        if ((*it)->get_manifest().tmp_path.empty()) {
-			it = m_archive_repositories.erase(it);
+        if ((*it)->get_descriptor().unzipped_data_path.empty()) {
+			it = m_all_repositories.erase(it);
 		} else {
 			++it;
 		}
 	}
 }
 
-void PresetUpdaterRepositoryDatabase::read_server_manifest(const std::string& json_body)
+void PresetUpdaterRepositoryDatabase::read_server_manifest(const std::string& json_body, PresetUpdaterProcessStatus* process_status)
 {
     nlohmann::json json;
 	try
@@ -457,153 +268,115 @@ void PresetUpdaterRepositoryDatabase::read_server_manifest(const std::string& js
     }
     catch (const nlohmann::json::exception& e)
     {
-	    SPDLOG_ERROR("Failed to parse JSON. Reason: {}", e.what());
+	    process_status->set_warning(fmt::format("Failed to parse online Repository Source Manifest JSON. Reason: {}. Sources were not updated from online Manifest.", e.what()));
         return;
     }
-	// Online repo manifests are in json_body. We already have read local manifest and online manifest from last run.
+
+    if(!json.is_array())
+    {
+        process_status->set_warning(fmt::format("Failed to parse online Repository Source Manifest JSON. JSON is not an array."));
+        return;
+    }
+
+	// Online repo manifests are in json_body. We already have read descriptor from datadir with repos from last run.
 	// Keep the local ones and replace the online ones but keep uuid for same id so the selected map is correct.
 	// Solution: Create id - uuid translate table for online repos.
 	std::map<std::string, std::string> id_to_uuid;
-	for (const auto& repo_ptr : m_archive_repositories) {
-		if (repo_ptr->get_manifest().source_path.empty()){
-			id_to_uuid[repo_ptr->get_manifest().id] = repo_ptr->get_uuid();
+	for (const auto& repo_ptr : m_all_repositories) {
+		if (repo_ptr->get_descriptor().zip_path.empty()){
+			id_to_uuid[repo_ptr->get_descriptor().id] = repo_ptr->get_uuid();
 		}
 	}
+
+    // Remember selected repos
+    std::map<std::string, bool> uuid_selected_map;
+    for (const auto& repo_ptr : m_all_repositories) {
+        uuid_selected_map[repo_ptr->get_uuid()] = repo_ptr->is_selected(); 
+	}
 	
-	// Make a stash of secret repos that are online and has installed printers.
+	// Make a stash of secret repos that are online and is selected.
 	// If some of these will be missing afer reading the json tree, it needs to be added back to main population.
-	PrivateArchiveRepositoryVector secret_online_used_repos_cache;
-    for (const auto &repo_ptr : m_archive_repositories) {
-        if (repo_ptr->get_manifest().visibility.empty() || !repo_ptr->get_manifest().tmp_path.empty()) {
+	PrivateRepositoryVector secret_online_used_repos_cache;
+    for (const auto &repo_ptr : m_all_repositories) {
+        if (repo_ptr->get_descriptor().visibility.empty() || !repo_ptr->get_descriptor().unzipped_data_path.empty()) {
+            // public and local repo are skipped
             continue;
 		}
-        const auto &it = m_has_installed_printer_repositories_uuid.find(repo_ptr->get_uuid());
-        assert(it != m_has_installed_printer_repositories_uuid.end());
-        if (it->second) {
-            PresetUpdaterRepository::RepositoryManifest manifest(repo_ptr->get_manifest());
-            secret_online_used_repos_cache.emplace_back(std::make_unique<PresetUpdaterRepositoryOnline>(repo_ptr->get_uuid(), std::move(manifest)));
+        if (repo_ptr->is_selected()) {
+            PresetUpdaterRepositoryDescriptor descriptor(repo_ptr->get_descriptor());
+            secret_online_used_repos_cache.emplace_back(std::make_unique<OnlinePresetUpdaterRepository>(repo_ptr->get_uuid(), std::move(descriptor), true));
 		}
 	}
 
     clear_online_repos();
 	
-    DEBUG_ASSERT(json.is_array());
     for (const auto& repo_json : json) {
-	    PresetUpdaterRepository::RepositoryManifest manifest;
-	    if (!PresetUpdaterRepository::extract_repository_header(repo_json, manifest)) {
-		    DEBUG_ASSERT(false);
-		    SPDLOG_ERROR("Failed to read one of the repository headers.");
+	    PresetUpdaterRepositoryDescriptor descriptor;
+	    if (!AbstractPresetUpdaterRepository::extract_repository_header(repo_json, descriptor, process_status)) {
 		    continue;
 	    }
 
-	    auto id_it = id_to_uuid.find(manifest.id);
+	    auto id_it = id_to_uuid.find(descriptor.id);
 	    std::string uuid = (id_it == id_to_uuid.end() ? get_next_uuid() : id_it->second);
-
-	    // Set default selected value to true - its a never before seen repository
-	    m_selected_repositories_uuid.try_emplace(uuid, true);
-        // Set default "has installed printers" value to false - its a never before seen repository
-	    m_has_installed_printer_repositories_uuid.try_emplace(uuid, false);
-
-	    m_archive_repositories.emplace_back(std::make_unique<PresetUpdaterRepositoryOnline>(uuid, std::move(manifest)));
+        bool selected = (id_it == id_to_uuid.end() ? true : uuid_selected_map[uuid]); // selected is set as default to true - its a never seen before repository
+     
+	    m_all_repositories.emplace_back(std::make_unique<OnlinePresetUpdaterRepository>(uuid, std::move(descriptor), selected));
     }
 	
-	// return missing secret online repos with installed printers to the vector
+	// return missing secret selected online repos to the vector
 	for (const auto &repo_ptr : secret_online_used_repos_cache) {
         std::string uuid = repo_ptr->get_uuid();
         if (std::find_if(
-                m_archive_repositories.begin(), m_archive_repositories.end(),
-                [uuid](const std::unique_ptr<PresetUpdaterRepository> &ptr) {
+                m_all_repositories.begin(), m_all_repositories.end(),
+                [uuid](const std::unique_ptr<AbstractPresetUpdaterRepository> &ptr) {
                     return ptr->get_uuid() == uuid;
                 }
-            ) == m_archive_repositories.end())
+            ) == m_all_repositories.end())
 		{
-            PresetUpdaterRepository::RepositoryManifest manifest(repo_ptr->get_manifest());
-            m_archive_repositories.emplace_back(std::make_unique<PresetUpdaterRepositoryOnline>(repo_ptr->get_uuid(), std::move(manifest)));
+            PresetUpdaterRepositoryDescriptor descriptor(repo_ptr->get_descriptor());
+            m_all_repositories.emplace_back(std::make_unique<OnlinePresetUpdaterRepository>(repo_ptr->get_uuid(), std::move(descriptor), true));
 	    }
 	}
 
-	consolidate_uuid_maps();
-    // possible exception catched in PresetUpdaterRepositoryDatabase::sync!
-    save_app_manifest_json();
+    save_app_manifest_json(process_status);
 }
 
-SharedArchiveRepositoryVector PresetUpdaterRepositoryDatabase::get_all_archive_repositories() const 
+SharedPresetUpdaterRepositoryInfoVector PresetUpdaterRepositoryDatabase::get_all_repositories() const 
 {
-    SharedArchiveRepositoryVector result;
-    result.reserve(m_archive_repositories.size());
-    for (const auto &repo_ptr : m_archive_repositories) 
+    SharedPresetUpdaterRepositoryInfoVector result;
+    result.reserve(m_all_repositories.size());
+    for (const auto &repo_ptr : m_all_repositories) 
     {
-        result.emplace_back(repo_ptr.get());
+        result.emplace_back(repo_ptr->get_descriptor(), repo_ptr->get_uuid(), repo_ptr->is_selected());
     }
     return result;
 }
 
-SharedArchiveRepositoryVector PresetUpdaterRepositoryDatabase::get_selected_archive_repositories() const 
+SharedRepositoryVector PresetUpdaterRepositoryDatabase::get_selected_repositories() const 
 {
-    SharedArchiveRepositoryVector result;
-    result.reserve(m_archive_repositories.size());
-    for (const auto &repo_ptr : m_archive_repositories) 
+    SharedRepositoryVector result;
+    result.reserve(m_all_repositories.size());
+    for (const auto &repo_ptr : m_all_repositories) 
     {
-        auto it = m_selected_repositories_uuid.find(repo_ptr->get_uuid());
-        assert(it != m_selected_repositories_uuid.end());
-        if (it->second) {
+        if (repo_ptr->is_selected()) {
             result.emplace_back(repo_ptr.get());
         }   
     }
     return result;
 }
 
-bool PresetUpdaterRepositoryDatabase::is_selected_repository_by_uuid(const std::string& uuid) const
-{
-	auto selected_it = m_selected_repositories_uuid.find(uuid);
-	assert(selected_it != m_selected_repositories_uuid.end());
-	return selected_it->second;
-}
-bool PresetUpdaterRepositoryDatabase::is_selected_repository_by_id(const std::string& repo_id) const
-{
-	assert(!repo_id.empty());
-	for (const auto& repo_ptr : m_archive_repositories) {
-		if (repo_ptr->get_manifest().id == repo_id) {
-			return true;
-		}
-	}
-	return false;
-}
-void PresetUpdaterRepositoryDatabase::consolidate_uuid_maps()
-{
-	//std::vector<std::unique_ptr<PresetUpdaterRepository>> m_archive_repositories;
-	//std::map<std::string, bool> m_selected_repositories_uuid;
-	auto selected_it = m_selected_repositories_uuid.begin();
-    while (selected_it != m_selected_repositories_uuid.end()) {
-		bool found = false;
-		for (const auto& repo_ptr : m_archive_repositories) {
-            if (repo_ptr->get_uuid() == selected_it->first) {
-				found = true;
-				break;	 
-			}
-		}
-		if (!found) {
-            selected_it = m_selected_repositories_uuid.erase(selected_it);
-		} else {
-            ++selected_it;
-		}
-	}
-	// Do the same for m_has_installed_printer_repositories_uuid
-    auto installed_it = m_has_installed_printer_repositories_uuid.begin();
-    while (installed_it != m_has_installed_printer_repositories_uuid.end()) {
-        bool found = false;
-        for (const auto &repo_ptr : m_archive_repositories) {
-            if (repo_ptr->get_uuid() == installed_it->first) {
-                found = true;
-                break;
-            }
-        }
-        if (!found) {
-            installed_it = m_has_installed_printer_repositories_uuid.erase(installed_it);
-        } else {
-            ++installed_it;
-        }
+void PresetUpdaterRepositoryDatabase::apply_selection(const SharedPresetUpdaterRepositoryInfoVector& repos, PresetUpdaterProcessStatus* process_status)
+{    
+    for (const SharedPresetUpdaterRepositoryInfo& info : repos) {
+        auto repo_it = std::find_if(m_all_repositories.begin(), m_all_repositories.end()
+            , [info](const std::unique_ptr<AbstractPresetUpdaterRepository>& ptr) {
+		        return ptr->get_uuid() == info.uuid;
+		    });
+        ASSERT(repo_it != m_all_repositories.end());
+        repo_it->get()->set_selected(info.selected);
     }
+    save_app_manifest_json(process_status);
+	return;
 }
 
 std::string PresetUpdaterRepositoryDatabase::get_next_uuid()
@@ -638,8 +411,8 @@ bool sync_inner(std::string& manifest, PresetUpdaterProcessStatus* process_statu
     }
     http->timeout_total(30)
         .on_error([&](std::string body, std::string error, unsigned http_status) {
-	        SPDLOG_ERROR("Failed to get online archive source manifests: {} ; {} ; {}", body, error, http_status);
-            process_status->set_error(error);
+	        SPDLOG_ERROR("Failed to get online repo source manifests: {} ; {} ; {}", body, error, http_status);
+            process_status->set_warning("Failed to get online repo source manifests: " + error);
             res = false;
 		})
 		.on_complete([&](std::string body, unsigned /* http_status */) {
@@ -654,21 +427,20 @@ bool sync_inner(std::string& manifest, PresetUpdaterProcessStatus* process_statu
 
 bool PresetUpdaterRepositoryDatabase::sync(PresetUpdaterProcessStatus* process_status)
 {
-    assert(process_status);
 	std::string manifest;
     bool sync_res = false;
-    process_status->set_target("Archive Database Mainfest");
+    process_status->set_target("Archive Database Manifest");
     sync_res = sync_inner(manifest, process_status);
     if (!sync_res) {
         return false;
     }    
     try
     {
-        read_server_manifest(std::move(manifest));
+        read_server_manifest(std::move(manifest), process_status);
     }
     catch (const Slic3r::RuntimeError& e)
     {
-        process_status->set_error(e.what());
+        process_status->set_error(fmt::format("Failed to read server manifest: {}", e.what()));
         return false;
     }
 	

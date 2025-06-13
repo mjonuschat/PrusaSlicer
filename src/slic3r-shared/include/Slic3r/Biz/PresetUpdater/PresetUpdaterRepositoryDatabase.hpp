@@ -14,52 +14,74 @@ namespace Slic3r::Biz::PresetUpdater {
 
 class PresetUpdaterProcessStatus;
 
-typedef std::vector<std::unique_ptr<PresetUpdaterRepository>> PrivateArchiveRepositoryVector;
-typedef std::vector<const PresetUpdaterRepository*> SharedArchiveRepositoryVector;
+typedef std::vector<std::unique_ptr<AbstractPresetUpdaterRepository>> PrivateRepositoryVector;
+typedef std::vector<const AbstractPresetUpdaterRepository*> SharedRepositoryVector;
 
 class PresetUpdaterRepositoryDatabase
 {
 public:
-	PresetUpdaterRepositoryDatabase();
+    /**
+     * @brief Constructor does loads manifest in datadir.
+     */
+	PresetUpdaterRepositoryDatabase(PresetUpdaterProcessStatus* process_status);
     PresetUpdaterRepositoryDatabase(PresetUpdaterRepositoryDatabase&&) = delete;
     PresetUpdaterRepositoryDatabase(const PresetUpdaterRepositoryDatabase&) = delete;
     PresetUpdaterRepositoryDatabase& operator=(PresetUpdaterRepositoryDatabase&&) = delete;
     PresetUpdaterRepositoryDatabase& operator=(const PresetUpdaterRepositoryDatabase&) = delete; 
-	~PresetUpdaterRepositoryDatabase() = default;
+	~PresetUpdaterRepositoryDatabase();
      
-    // returns true if successfully got the data
-	bool sync(PresetUpdaterProcessStatus* process_status = nullptr);
+    /**
+     * @brief Performs GET for online repo manifest. Then loads it, merges with current data (loaded in constructor) and stores into manifest in datadir.
+     * Returns true if successfully got the data.
+     */
+	bool sync(PresetUpdaterProcessStatus* process_status);
 
-	// Do not use get_all_archive_repositories to perform any GET calls. Use get_selected_archive_repositories instead.
-    SharedArchiveRepositoryVector get_all_archive_repositories() const;
-    // Creates copy of m_archive_repositories of shared pointers that are selected in m_selected_repositories_uuid.
-    SharedArchiveRepositoryVector get_selected_archive_repositories() const;
-	bool is_selected_repository_by_uuid(const std::string& uuid) const;
-	bool is_selected_repository_by_id(const std::string& repo_id) const;
-	const std::map<std::string, bool>& get_selected_repositories_uuid() const { assert(m_selected_repositories_uuid.size() == m_archive_repositories.size()); return m_selected_repositories_uuid; }
-    // Does re-extract all local archives
-	bool set_selected_repositories(const std::vector<std::string>& used_uuids, std::string& msg);
-    void set_installed_printer_repositories(const std::vector<std::string> &used_ids);
-	std::string add_local_archive(const boost::filesystem::path path, std::string& msg);
-	void remove_local_archive(const std::string& uuid);
-    bool extract_archives_with_check(std::string &msg);
+	/**
+     * @brief Returns Vector with all repository descriptor, uuid and selected flag. 
+     * Its all Frontend needs to show repositories to user. 
+     */
+    SharedPresetUpdaterRepositoryInfoVector get_all_repositories() const;
+
+    /**
+     * @brief Returns const pointers to selected repositories. Used by prepare update_sync and perform reconfigurations 
+     */
+    SharedRepositoryVector get_selected_repositories() const;
+
+    /**
+     * @brief Changes "selected" flag on repositories. 
+     */
+    void apply_selection(const SharedPresetUpdaterRepositoryInfoVector& repos, PresetUpdaterProcessStatus* process_status);
+
+    /**
+     * @brief Creates new local repository, unzips it to its newly created directory.
+     * Unzipped data lives in datadir until removal of local repo.
+     */
+    void add_local_repository(const boost::filesystem::path& zip_path, PresetUpdaterProcessStatus* process_status);
+
+    /**
+     * @brief Removes local repository, deletes its data directory. 
+     */
+	void remove_local_repository(const std::string& uuid, PresetUpdaterProcessStatus* process_status);
 
 private:
-	void load_app_manifest_json();
-	void copy_initial_manifest();
-	void read_server_manifest(const std::string& json_body);
-	void save_app_manifest_json() const;
-	void clear_online_repos();
-	bool is_selected(const std::string& uuid) const;
-    bool has_installed_printers(const std::string &uuid) const;
-	boost::filesystem::path get_stored_manifest_path() const;
-	void consolidate_uuid_maps();
-    void extract_local_archives();
+    /// @brief Reads manifest file in data dir or creates it from resources. Called from constructor. Fills repository vectors and maps. 
+	void load_app_manifest_json(PresetUpdaterProcessStatus* process_status);
+
+    /// @brief Updates repositories over manifest that was downloaded in sync(). Called from sync().
+    void read_server_manifest(const std::string& json_body, PresetUpdaterProcessStatus* process_status);
+
+    /// @brief Rewrites manifest file in datadir with current repos.
+    void save_app_manifest_json(PresetUpdaterProcessStatus* process_status) const;
+
+    // Helper methods
+	void copy_initial_manifest() const;
+    void clear_online_repos();
 	std::string get_next_uuid();
+    boost::filesystem::path get_stored_manifest_path() const;
+		
+
 	boost::filesystem::path			m_unq_tmp_path;
-    PrivateArchiveRepositoryVector  m_archive_repositories;
-	std::map<std::string, bool>		m_selected_repositories_uuid;
-    std::map<std::string, bool>		m_has_installed_printer_repositories_uuid;
+    PrivateRepositoryVector  m_all_repositories;
 	boost::uuids::random_generator	m_uuid_generator;
 };
 

@@ -22,6 +22,7 @@
 #include "Slic3r/Biz/ObservableProjectList.hpp"
 #include "Slic3r/Biz/ThumbnailImageProvider.hpp"
 #include "Slic3r/Biz/Format/3mf.hpp"
+#include "Slic3r/Biz/PresetUpdater/PresetUpdaterInteractor.hpp"
 
 namespace Slic3r::Domain {
 class Project;
@@ -68,6 +69,7 @@ public:
         m_user_account_interactor(dispatcher),
         m_app_instance_message_handler(AppInstance::create_app_instance_message_handler(dispatcher)),
         m_project_list(*this)
+        , m_preset_updater_interactor(dispatcher)
     {
         add_listener<ISelectedConfigContainerChangedListener>(&m_preset_interactor);
         add_listener<ISelectedConfigContainerChangedListener>(&m_scene_interactor);
@@ -400,6 +402,11 @@ public:
 
     ObservableProjectList& observable_project_list();
 
+    /**
+     * @brief Getter for Preset Updater.
+     */
+    PresetUpdater::PresetUpdaterInteractor& preset_updater_interactor(){ return m_preset_updater_interactor; }
+
 private:
     void on_slicing_input_changed(const Domain::BedRef& bed_instance) override;
     void on_slicing_input_removed(const Domain::BedRef& bed_instance) override;
@@ -432,6 +439,7 @@ private:
     LastExportPathStorage m_last_export_path_storage;
     UserAccount::UserAccountInteractor m_user_account_interactor;
     std::unique_ptr<AppInstance::AbstractAppInstanceMessageHandler> m_app_instance_message_handler;
+    PresetUpdater::PresetUpdaterInteractor m_preset_updater_interactor;
 
     ObservableProjectList m_project_list;
 };
