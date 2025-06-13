@@ -11,7 +11,7 @@
 #include "Slic3r/App/WX/I18N.hpp"
 #include "Slic3r/App/WX/format.hpp"
 
-#include "Slic3r/App/WX/Widgets/ComboBox.hpp"
+#include "Slic3r/App/WX/Widgets/WXComboBox.hpp"
 
 #include <cstddef>
 #include <vector>
@@ -107,7 +107,7 @@ void PresetNameGetter::init_input_name_ctrl(wxBoxSizer *input_name_sizer, const 
             values.push_back(preset.name);
         }
 
-        m_combo = new WX::Widgets::ComboBox(m_parent, wxID_ANY, {}, wxDefaultPosition, wxSize(35 * WX::w_config()->em_unit(), -1), 0, nullptr, wxTE_PROCESS_ENTER | DD_NO_CHECK_ICON);
+        m_combo = new WX::Widgets::WXComboBox(m_parent, wxID_ANY, {}, wxDefaultPosition, wxSize(35 * WX::w_config()->em_unit(), -1), 0, nullptr, wxTE_PROCESS_ENTER | DD_NO_CHECK_ICON);
         for (const std::string&value : values)
             m_combo->Append(WX::from_u8(value));
         m_combo->SetValue(WX::from_u8(preset_name));

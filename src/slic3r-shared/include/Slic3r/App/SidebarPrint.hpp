@@ -6,6 +6,7 @@ namespace Slic3r::App {
 namespace Yoga {
 class LayoutButton;
 class InputTextField;
+class ComboBox;
 } // namespace Yoga
 
 class SidebarPrint : public Yoga::Window
@@ -20,7 +21,9 @@ private:
 private:
     Yoga::LayoutButton* m_settings_set_btn{nullptr};
     Yoga::InputTextField* m_input_text_perimeters{nullptr};
-    Yoga::Item* m_rows{nullptr};
+    Yoga::ComboBox* m_combo_layer_height{nullptr};
+    Yoga::ComboBox* m_combo_density{nullptr};
+    Yoga::ComboBox* m_combo_pattern{nullptr};
 };
 
 } // namespace Slic3r::App

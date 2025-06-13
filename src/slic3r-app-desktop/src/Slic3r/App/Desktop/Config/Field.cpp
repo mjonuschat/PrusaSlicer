@@ -1058,7 +1058,7 @@ void SpinCtrl::msw_rescale()
         field->SetMinSize(wxSize(def_width() * m_em_unit, int(1.9f*field->GetFont().GetPixelSize().y)));
 }
 
-using choice_ctrl = WX::Widgets::ComboBox;
+using choice_ctrl = WX::Widgets::WXComboBox;
 
 void Choice::add_values()
 {

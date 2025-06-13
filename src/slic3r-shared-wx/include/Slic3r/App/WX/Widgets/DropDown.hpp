@@ -102,7 +102,7 @@ private:
 
     void render(wxDC& dc);
 
-    friend class ComboBox;
+    friend class WXComboBox;
     void messureSize();
     void autoPosition();
 

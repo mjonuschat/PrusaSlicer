@@ -411,7 +411,7 @@ void PresetComboBox::update_from_bundle()
 void PresetComboBox::msw_rescale()
 {
     m_em_unit = WX::w_config()->em_unit(this);
-    ComboBox::Rescale();
+    WXComboBox::Rescale();
 }
 
 void PresetComboBox::sys_color_changed()

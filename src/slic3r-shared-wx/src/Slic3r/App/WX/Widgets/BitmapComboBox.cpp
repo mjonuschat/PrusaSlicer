@@ -19,7 +19,7 @@ BitmapComboBox::BitmapComboBox(wxWindow*        parent,
                                int              n           /* = 0*/,
                                const wxString   choices[]   /* = NULL*/,
                                long             style       /* = 0*/) :
-    ComboBox(parent, id, value, pos, size, n, choices, style | DD_NO_CHECK_ICON)
+    WXComboBox(parent, id, value, pos, size, n, choices, style | DD_NO_CHECK_ICON)
 {
     SetFont(w_config()->normal_font());
 }

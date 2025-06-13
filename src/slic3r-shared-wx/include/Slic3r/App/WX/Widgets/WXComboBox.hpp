@@ -10,7 +10,7 @@ namespace Slic3r::App::WX::Widgets {
 #define CB_NO_DROP_ICON DD_NO_DROP_ICON
 #define CB_NO_TEXT DD_NO_TEXT
 
-class ComboBox : public wxWindowWithItems<TextInput, wxItemContainer>
+class WXComboBox : public wxWindowWithItems<TextInput, wxItemContainer>
 {
     std::vector<wxString>         texts;
     std::vector<wxBitmapBundle>   icons;
@@ -22,7 +22,7 @@ class ComboBox : public wxWindowWithItems<TextInput, wxItemContainer>
     bool     text_off = false;
 
 public:
-    ComboBox(wxWindow *      parent,
+    WXComboBox(wxWindow *      parent,
              wxWindowID      id,
              const wxString &value     = wxEmptyString,
              const wxPoint & pos       = wxDefaultPosition,

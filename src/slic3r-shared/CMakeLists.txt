@@ -246,6 +246,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Yoga/Validator.cpp
         include/Slic3r/App/Yoga/Scaler.hpp
         src/Slic3r/App/Yoga/Scaler.cpp
+        include/Slic3r/App/Yoga/ComboBox.hpp
+        src/Slic3r/App/Yoga/ComboBox.cpp
 
         src/Slic3r/App/Imgui/DoubleSlider.cpp
         include/Slic3r/App/Imgui/DoubleSlider.hpp

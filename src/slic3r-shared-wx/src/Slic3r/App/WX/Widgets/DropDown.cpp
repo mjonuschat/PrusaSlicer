@@ -1,5 +1,5 @@
 #include "Slic3r/App/WX/Widgets/DropDown.hpp"
-#include "Slic3r/App/WX/Widgets/ComboBox.hpp"
+#include "Slic3r/App/WX/Widgets/WXComboBox.hpp"
 #include "Slic3r/App/WX/WidgetsConfig.hpp"
 #include "Slic3r/App/WX/BitmapGetters.hpp"
 //#include "../OptionsGroup.hpp"
@@ -113,7 +113,7 @@ void DropDown::Create(wxWindow *     parent,
     g_signal_connect (m_widget, "key_press_event", G_CALLBACK (gtk_popup_key_press), this);
 
     Bind(wxEVT_KEY_DOWN, [parent](wxKeyEvent &e) {
-        if (ComboBox* cb = dynamic_cast<ComboBox*>(parent))
+        if (WXComboBox* cb = dynamic_cast<WXComboBox*>(parent))
             cb->OnKeyDown(e);
     });
 #endif

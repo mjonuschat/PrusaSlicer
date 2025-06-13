@@ -21,7 +21,7 @@ class wxTextCtrl;
 class wxStaticBitmap;
 
 namespace Slic3r::App::WX::Widgets{
-    class ComboBox;
+    class WXComboBox;
 }
 
 namespace Slic3r::App::Desktop::Preset {
@@ -77,7 +77,7 @@ private:
     ValidationType          m_valid_type            { ValidationType::NoValid };
     wxWindow*               m_parent                { nullptr };
     wxStaticBitmap*         m_valid_bmp             { nullptr };
-    WX::Widgets::ComboBox*  m_combo                 { nullptr };
+    WX::Widgets::WXComboBox*  m_combo                 { nullptr };
     wxTextCtrl*             m_text_ctrl             { nullptr };
     wxStaticText*           m_valid_label           { nullptr };
     const PresetCollection* m_presets               { nullptr };

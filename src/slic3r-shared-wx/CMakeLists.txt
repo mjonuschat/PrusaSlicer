@@ -54,8 +54,8 @@ set(SLIC3R_SHARED_WX_FILES
         src/Slic3r/App/WX/Widgets/DropDown.cpp
         include/Slic3r/App/WX/Widgets/CheckBox.hpp
         src/Slic3r/App/WX/Widgets/CheckBox.cpp
-        include/Slic3r/App/WX/Widgets/ComboBox.hpp
-        src/Slic3r/App/WX/Widgets/ComboBox.cpp
+        include/Slic3r/App/WX/Widgets/WXComboBox.hpp
+        src/Slic3r/App/WX/Widgets/WXComboBox.cpp
         include/Slic3r/App/WX/Widgets/Button.hpp
         src/Slic3r/App/WX/Widgets/Button.cpp
         include/Slic3r/App/WX/Widgets/BitmapToggleButton.hpp
