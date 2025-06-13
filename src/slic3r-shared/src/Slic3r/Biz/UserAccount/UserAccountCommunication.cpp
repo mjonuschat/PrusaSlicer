@@ -2,9 +2,14 @@
 #include "Slic3r/Biz/UserAccount/UserAccountCodeChallengeGenerator.hpp"
 #include "Slic3r/Biz/Network/ServiceConfig.hpp"
 #include "Slic3r/Biz/Network/IHttp.hpp"
+#include "Slic3r/Biz/Platform/PlatformServices.hpp"
 #include "Slic3r/Log.hpp"
 
 #include "libslic3r/format.hpp"
+#include "libslic3r/Utils.hpp"
+
+#include <boost/filesystem/operations.hpp>
+#include <boost/nowide/cstdio.hpp>
 
 namespace Slic3r::Biz::UserAccount {
 
@@ -56,9 +61,9 @@ std::string UserAccountCommunication::on_log_in_request(const std::string& lang_
     }
     
     std::string params = format("embed=1&client_id=%1%&response_type=code&code_challenge=%2%&code_challenge_method=S256&scope=basic_info&redirect_uri=%3%&language=%4%", CLIENT_ID, code_challenge, REDIRECT_URI, language);
-    params = Network::IHttp::escape_string(params);
+    //params = Network::IHttp::escape_string(params);
     if (service.empty()){
-        result_url = format("%1%/o/authorize/?%2%", AUTH_HOST, params);
+        result_url = format("%1%/o/authorize/?%2%&choose_account=1", AUTH_HOST, params);
     } else {
         result_url = format("%1%/login/%2%?next=/o/authorize/?%3%", AUTH_HOST, service, params);
     }
@@ -69,13 +74,51 @@ std::string UserAccountCommunication::on_log_in_request(const std::string& lang_
 void UserAccountCommunication::on_log_in_code_response(const std::string& url_message)
 {
     const std::string code = get_code_from_message(url_message);
-    //m_session->on_log_in_code_response(code, m_code_verifier);
-    //wakeup_session_thread();
+    m_session.on_log_in_code_response(code, m_code_verifier);
+    wakeup_session_thread();
 }
 
 bool UserAccountCommunication::is_logged_in() const
 {
-    return false;
+    return !username().empty();
 }
+
+std::string UserAccountCommunication::access_token() const
+{
+    return m_session.get_access_token();
+}
+
+boost::filesystem::path UserAccountCommunication::avatar() const
+{
+    if (is_logged_in()) {
+        const std::string filename = "slic3r3-avatar-" + std::to_string(Platform::PlatformServices::instance().app_hash()) + m_avatar_extension;
+        return boost::filesystem::temp_directory_path() / filename;
+    } else {
+        return  boost::filesystem::path(resources_dir()) / "icons" / "user.svg";
+    }
+}
+void UserAccountCommunication::on_avatar_url(const std::string& data)
+{ 
+    const boost::filesystem::path server_file(data);
+    m_avatar_extension = server_file.extension().string();
+    ASSERT(m_session.is_initialized());
+    m_session.enqueue_action(UserAccountActionID::Avatar, nullptr, nullptr, data);
+    wakeup_session_thread();
+}
+
+void UserAccountCommunication::on_avatar_success(std::string&& data) const
+{
+    ASSERT(is_logged_in());
+    boost::filesystem::path path = avatar();
+    FILE* file; 
+    file = boost::nowide::fopen(path.generic_string().c_str(), "wb");
+    if (file == NULL) {
+        SPDLOG_ERROR("Failed to create file to store avatar picture at: {}", path.string());
+        return;
+    }
+    fwrite(data.c_str(), 1, data.size(), file);
+    fclose(file);
+}
+
 
 } // namespace Slic3r::Biz::UserAccount 

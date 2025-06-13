@@ -18,15 +18,10 @@ UserAccountCommunicationTokenBase::UserAccountCommunicationTokenBase(Platform::I
     
     if (!tokens_loaded) {
         SPDLOG_INFO("Token store is empty on startup.");
+        init_session_thread();
         return;
     }
     
-    /*
-    stored_data.access_token = "";
-    stored_data.refresh_token = "eyJhbGciOiJSUzI1NiIsImtpZCI6IkhTSU53OXQzalhZd0lGaUcxNWVleW1BNlJscFFwVW5veTFrOG0wTW4yM0EiLCJ0eXAiOiJKV1QifQ.eyJqdGkiOiJmNDBjZjUyNDM5YWQ0MjBlODVkZDgxOWUwMzZmNDQzYSIsInN1YiI6IjgzNjg5MSIsImV4cCI6MTc0NjI2NjQ1Mi4zMzg4NzQsInNpZCI6ImRjNjRhZTFjLWM2MTgtNGEyYy1hMzZjLTEyOWQ3MTBlZjZiZCIsImFwcCI6IlBydXNhU2xpY2VyIiwidHlwZSI6InJlZnJlc2gifQ.Lu1h15x9MCe5JGfvybSi6qMJ05WtdDsDbDimPEnRGRz_yePKOgI0pGeCbafSJ6QhXY5KUuuKG9JvemA5tpYIHzyfa2-o-_2-VaboYkzxOPrnd4_ZQtdlwf3O9jUloIVs4KQkHwES_q0Pf0OqoFhR-zkQcXiI2C4ly5tlnptN3FgJBIa-B9IIBF-nK1krME6EtkoJ7BephNCBMi9WT8D3acF1NOZbtISqtCn9OJNy7ETt5qko2yco3zP5_s3qpFQq0cBDW-bddGjE4UuUUqj5snJuOqPo-p_cCQ15clwR47SBIW0cZ3ga7UUf5THP4yhNM2MucCPtYRBmqN_D9eqovQ";
-    stored_data.shared_session_key = "dc64ae1c-c618-4a2c-a36c-129d710ef6bd";
-    //stored_data.next_timeout =  "1743598829";
-    */
     long long next_timeout_long = stored_data.next_timeout.empty() ? 0 : std::stoll(stored_data.next_timeout);
     long long remain_time = next_timeout_long - std::time(nullptr);
     if (remain_time <= 0) {
@@ -48,6 +43,15 @@ UserAccountCommunicationTokenBase::UserAccountCommunicationTokenBase(Platform::I
         m_session.enqueue_test_with_refresh();
     }
     
+}
+
+UserAccountCommunicationTokenBase::~UserAccountCommunicationTokenBase()
+{
+    stop_all_timers();
+    // Since there is m_thread_stop_condition in m_thread,
+    // we need to manually request_stop and wake up the condition for the thread to stop. 
+    m_thread.request_stop();
+    wakeup_session_thread();
 }
 
 void UserAccountCommunicationTokenBase::set_refresh_time(int seconds)
@@ -133,7 +137,7 @@ void UserAccountCommunicationTokenBase::on_slave_read_timer()
 
 void UserAccountCommunicationTokenBase::set_tokens(const std::string& access_token, const std::string& refresh_token, const std::string& shared_session_key, const std::string& next_token_timeout)
 {
-    stop_all_timers();
+    stop_token_timers();
     long long next = next_token_timeout.empty() ? 0 : std::stoll(next_token_timeout);
     set_tokens_to_session(access_token, refresh_token, shared_session_key, next);  
 }
@@ -141,6 +145,20 @@ void UserAccountCommunicationTokenBase::set_tokens(const std::string& access_tok
 void UserAccountCommunicationTokenBase::set_tokens_to_session(const std::string& access_token, const std::string& refresh_token, const std::string& shared_session_key, long long next_token_timeout)
 {
     m_session.set_tokens(access_token, refresh_token, shared_session_key, next_token_timeout);
+}
+
+void UserAccountCommunicationTokenBase::stop_token_timers()
+{
+    auto& timer_queue = Platform::PlatformServices::instance().timer_queue();
+    if (timer_queue.is_timer_running(m_token_timer_id)) {
+        timer_queue.cancel_timer(m_token_timer_id);
+    }
+    if (timer_queue.is_timer_running(m_slave_read_timer_id)) {
+        timer_queue.cancel_timer(m_slave_read_timer_id);
+    }
+    if (timer_queue.is_timer_running(m_after_race_lost_timer_id)) {
+        timer_queue.cancel_timer(m_after_race_lost_timer_id);
+    }
 }
 
 void UserAccountCommunicationTokenBase::stop_all_timers()
@@ -152,11 +170,11 @@ void UserAccountCommunicationTokenBase::stop_all_timers()
     if (timer_queue.is_timer_running(m_slave_read_timer_id)) {
         timer_queue.cancel_timer(m_slave_read_timer_id);
     }
-    if (timer_queue.is_timer_running(m_polling_timer_id)) {
-        timer_queue.cancel_timer(m_polling_timer_id);
-    }
     if (timer_queue.is_timer_running(m_after_race_lost_timer_id)) {
         timer_queue.cancel_timer(m_after_race_lost_timer_id);
+    }
+    if (timer_queue.is_timer_running(m_polling_timer_id)) {
+        timer_queue.cancel_timer(m_polling_timer_id);
     }
 }
 
@@ -168,7 +186,9 @@ void UserAccountCommunicationTokenBase::init_session_thread()
         for (;;) {
             {
                 std::unique_lock<std::mutex> lck(m_thread_stop_mutex);      
-                m_thread_stop_condition.wait_for(lck, std::chrono::seconds(88888), [this, stop_token] { return stop_token.stop_requested() || m_thread_wakeup; });
+                m_thread_stop_condition.wait_for(lck, std::chrono::seconds(88888), [this, stop_token] {
+                    return stop_token.stop_requested() || m_thread_wakeup; 
+                    });
             }
             if (stop_token.stop_requested())
                 // Stop the worker thread.
@@ -338,5 +358,30 @@ void UserAccountCommunicationTokenBase::on_read_token_store_message()
        return;
     } 
 }
+
+void UserAccountCommunicationTokenBase::request_refresh()
+{
+    stop_token_timers();
+
+    TokenStore::StoreData stored_data;
+    bool tokens_loaded = TokenStore::load_tokens(stored_data);
+    if (!tokens_loaded || stored_data.refresh_token.empty()) {
+        SPDLOG_INFO("Store is empty - logging out.");
+        do_clear(false);
+        return;
+    }
+    std::string current_access_token = m_session.get_access_token();
+
+    // Here we need to count with situation when token was renewed in m_session but was not yet stored.
+    // Then store token is not valid - it should has earlier expiration
+    long long expires_in_second = stored_data.next_timeout.empty() ? 0 : std::stoll(stored_data.next_timeout) - std::time(nullptr);
+    if (stored_data.access_token != current_access_token && expires_in_second > 0 && expires_in_second > m_next_token_refresh_at - std::time(nullptr)) {
+        SPDLOG_INFO("Found usable token. Expires in {}", expires_in_second);
+        set_tokens(stored_data.access_token, stored_data.refresh_token, stored_data.shared_session_key, stored_data.next_timeout);
+    } else {
+        enqueue_refresh_race(stored_data.refresh_token);
+    }
+}
+
 
 } // namespace Slic3r::Biz::UserAccount 

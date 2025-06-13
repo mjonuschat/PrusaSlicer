@@ -91,7 +91,7 @@ void PrintHostInteractor::upload_gcode(PrintHostConfig config, PrintHostJobData 
     m_print_host_data_finalizer.finalize(std::move(config), std::move(data));
 }
 
-void PrintHostInteractor::proccess_gcode_inner(PrintHostConfig config, PrintHostJobData data)
+void PrintHostInteractor::process_gcode_inner(PrintHostConfig config, PrintHostJobData data)
 {
     if (config.type == Domain::PrintHostType::PrusaLink) {
         upload_gcode_with_storage_choice(std::move(config), std::move(data));
@@ -123,10 +123,10 @@ void PrintHostInteractor::upload_gcode_with_storage_choice(PrintHostConfig confi
     // PrintHostConfig has deleted copy constructor.
     PrintHostConfig storage_config = {Domain::PrintHostType::PrusaLinkStorage
         , config_ptr->host
-        , config_ptr->ca_file
-        , config_ptr->ssl_revoke_best_effort
-        , config_ptr->port
     };
+    storage_config.ca_file = config_ptr->ca_file;
+    storage_config.ssl_revoke_best_effort = config_ptr->ssl_revoke_best_effort;
+    storage_config.port = config_ptr->port;
     storage_config.auth_type = config_ptr->auth_type;
     storage_config.api_key = config_ptr->api_key;
     storage_config.username = config_ptr->username;
@@ -141,7 +141,7 @@ void PrintHostInteractor::upload_gcode_with_storage_choice(PrintHostConfig confi
 
 void PrintHostInteractor::on_print_host_binarize_success(PrintHostConfig config, PrintHostJobData data)
 {
-    proccess_gcode_inner(std::move(config), std::move(data));
+    process_gcode_inner(std::move(config), std::move(data));
 }
 
 void PrintHostInteractor::on_print_host_binarize_fail(const std::string& msg)

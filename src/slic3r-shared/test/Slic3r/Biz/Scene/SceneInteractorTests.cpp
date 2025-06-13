@@ -6,6 +6,9 @@
 #include "Slic3r/TestUtils/TestData.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
+#include <Slic3r/Biz/Platform/PlatformServices.hpp>
+#include "Slic3r/Biz/SecretStoreDummy.hpp"
+
 #include "libslic3r/Model.hpp"
 
 namespace TriMesh = Slic3r::Biz::Algorithms::TriangleMesh;
@@ -27,7 +30,6 @@ private:
     Slic3r::Biz::Platform::IMainThreadDispatcher& m_dispatcher;
 };
 
-
 TEST_CASE("Scene Interactor Bed Tracking")
 {
     using namespace Slic3r;
@@ -38,6 +40,9 @@ TEST_CASE("Scene Interactor Bed Tracking")
     Domain::Workbench workbench;
     set_data_dir(Tests::get_datadir().string());
     workbench.load_legacy_configs();
+
+    std::unique_ptr<SecretStoreDummy> store_dummy = std::make_unique<SecretStoreDummy>();
+    Platform::PlatformServices::instance().set_secret_store(std::move(store_dummy));
 
     App::Platform::StdMainThreadDispatcher dispatcher;
     ProjectInteractor project_interactor{workbench, dispatcher};

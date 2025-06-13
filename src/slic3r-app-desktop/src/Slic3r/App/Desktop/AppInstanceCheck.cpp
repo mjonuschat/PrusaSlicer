@@ -42,11 +42,13 @@ bool instance_check(const Slic3r::App::InitParams& init_params, bool app_config_
     if (init_params.single_instance.has_value()) {
         should_send_and_exit = *init_params.single_instance;
     }
+
     // The path in second parameter should change, once the new data dir structure is set.
     std::unique_ptr<Biz::Platform::ISingleInstanceChecker> single_instance_checker = SingleInstanceCheckerFactory::create_single_instance_checker(boost::filesystem::path(data_dir()) / "cache" / (lock_name + ".lock"));
     ASSERT(single_instance_checker != nullptr);
 
-    if (single_instance_checker->is_another_running() && should_send_and_exit) {
+    bool is_another_running = single_instance_checker->is_another_running();
+    if (is_another_running && should_send_and_exit) {
         std::unique_ptr<Biz::AppInstance::AbstractAppInstanceMessageSender> sender = Biz::AppInstance::create_app_instance_message_sender();
         sender->broadcast_message("CLI", get_init_params_in_string(init_params.argc, init_params.argv), hashed_path, nullptr);
         return true;

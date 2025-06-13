@@ -51,15 +51,14 @@ public:
         return GetLeftBarCtrl()->notifications_btn;
     }
 
+    LeftBarCtrl* GetLeftBarCtrl() const { return static_cast<LeftBarCtrl*>(m_bookctrl); }
+
 private:
     void CreateBookCtrl(TabsBarMenus* menus = nullptr) override
     {
         m_bookctrl = new LeftBarCtrl(this, wxVERTICAL, menus);
         m_controlSizer->Add(m_bookctrl, wxSizerFlags(1).Expand());
     }
-
-    LeftBarCtrl* GetLeftBarCtrl() const { return static_cast<LeftBarCtrl*>(m_bookctrl); }
-
 };
 
 

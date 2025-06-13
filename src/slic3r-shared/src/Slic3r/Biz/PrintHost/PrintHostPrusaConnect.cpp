@@ -104,13 +104,18 @@ bool PrintHostPrusaConnect::init_upload(const PrintHostJobData& upload_data, std
     const std::string name = get_name();
     const std::string upload_filename = upload_data.dest_path.filename().string();
     std::string url = format("%1%/app/users/teams/%2%/uploads", m_print_host_config.host, m_print_host_config.team_id);
-    std::string request_body_json = upload_data.request_body_json;
     
-    // replace placeholder filename 
-    ASSERT(request_body_json.find("%1%") != std::string::npos);
-    ASSERT(request_body_json.find("%2%") != std::string::npos);
-    request_body_json = format(request_body_json, upload_filename, size);
-    
+    std::string request_body_json;
+    try {
+        nlohmann::json j = nlohmann::json::parse(upload_data.request_body_json);
+        j["filename"] = upload_filename;
+        j["size"] = size;
+        request_body_json = j.dump();
+    } catch (const nlohmann::json::parse_error& e) {
+        SPDLOG_ERROR("Could not parse request_body_json: {}", e.what());
+        return false;
+    }
+
     SPDLOG_INFO("Register upload to " + name + ". Url: " + url + "\nBody: " + request_body_json);
     std::unique_ptr<Network::IHttp> http = Network::IHttp::create(Network::IHttp::RequestMethod::Post, std::move(url), retry_fn);
     http->header("Authorization", "Bearer " + m_print_host_config.access_token)
@@ -133,7 +138,6 @@ bool PrintHostPrusaConnect::init_upload(const PrintHostJobData& upload_data, std
 
 bool PrintHostPrusaConnect::perform(ProgressFn progress_fn, RetryFn retry_fn, ErrorFn error_fn, InfoFn info_fn) const
 {
-    std::string json = format(m_upload_data.request_body_json, "", "1");
     std::string printer_page_url = format("%1%/printer/%2%/dashboard", Network::ServiceConfig::instance().connect_url(), m_print_host_config.printer_uuid);
     info_fn("prusaconnect_printer_address", printer_page_url);
 
@@ -145,11 +149,11 @@ bool PrintHostPrusaConnect::perform(ProgressFn progress_fn, RetryFn retry_fn, Er
     }
  
     // init reply format: {"id": 1234, "team_id": 12345, "name": "filename.gcode", "size": 123, "hash": "QhE0LD76vihC-F11Jfx9rEqGsk4.", "state": "INITIATED", "source": "CONNECT_USER", "path": "/usb/filename.bgcode"}
-    std::string upload_id;
+    size_t upload_id;
     try
     {
         nlohmann::json json = nlohmann::json::parse(init_out);
-        if (!json.contains("id") || !json["id"].is_string()) {
+        if (!json.contains("id") || !json["id"].is_number_integer()) {
             error_fn(_u8L("Failed to extract upload id from server reply."));
             return false;
         }

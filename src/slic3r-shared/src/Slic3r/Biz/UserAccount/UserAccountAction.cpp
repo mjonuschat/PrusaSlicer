@@ -10,7 +10,7 @@ namespace Slic3r::Biz::UserAccount {
 void UserAccountActionPost::perform(IUserAccountActionCallbacks* callbacks, /*UNUSED*/ const std::string& access_token, ActionSuccessFn success_callback, ActionFailFn fail_callback, const std::string& input, std::atomic_bool& global_cancel) const
 {
     std::string url = m_url;
-    SPDLOG_INFO("{}: {}", __FUNCTION__, url);
+    //SPDLOG_INFO("{}: {}", __FUNCTION__, url);
     
     // TODO: callbacks pointer does not look safe
     auto retry_fn = [&global_cancel, &callbacks](Network::IHttp::Retry retry, bool& cancel ) {
@@ -26,12 +26,12 @@ void UserAccountActionPost::perform(IUserAccountActionCallbacks* callbacks, /*UN
         http->set_post_body(input);
     http->header("Content-type", "application/x-www-form-urlencoded")
     .on_error([fail_callback](std::string body, std::string error, unsigned status) {
-        SPDLOG_INFO("UserActionPost::perform on_error");
+        //SPDLOG_INFO("UserActionPost::perform on_error");
         if (fail_callback)
             fail_callback(body);
     })
     .on_complete([success_callback](std::string body, unsigned status) {
-        SPDLOG_INFO("UserActionPost::perform on_complete");
+        //SPDLOG_INFO("UserActionPost::perform on_complete");
         if (success_callback)
             success_callback(body);
     })
@@ -41,7 +41,14 @@ void UserAccountActionPost::perform(IUserAccountActionCallbacks* callbacks, /*UN
 void UserAccountActionGetWithEvent::perform(IUserAccountActionCallbacks* callbacks, const std::string& access_token, ActionSuccessFn success_callback, ActionFailFn fail_callback, const std::string& input, std::atomic_bool& global_cancel) const
 {
     std::string url = m_url;
-    SPDLOG_INFO("{}: {}", __FUNCTION__, url);
+    std::string post_body;
+    if (url.empty()) {
+        url = input;
+    } else {
+        post_body = input;
+    }
+
+    //SPDLOG_INFO("{}: {}", __FUNCTION__, url);
     
     // TODO: callbacks pointer does not look safe
     auto retry_fn = [&global_cancel, &callbacks](Network::IHttp::Retry retry, bool& cancel ) {
@@ -53,8 +60,8 @@ void UserAccountActionGetWithEvent::perform(IUserAccountActionCallbacks* callbac
     };
 
     std::unique_ptr<Network::IHttp> http = Network::IHttp::create(Network::IHttp::RequestMethod::Get, std::move(url), retry_fn);
-    if (!input.empty())
-        http->set_post_body(input);
+    if (!post_body.empty())
+        http->set_post_body(post_body);
     if (!access_token.empty()) {
         http->header("Authorization", "Bearer " + access_token);
 #ifndef _NDEBUG
@@ -69,7 +76,7 @@ void UserAccountActionGetWithEvent::perform(IUserAccountActionCallbacks* callbac
 #endif
     }
     http->on_error([fail_callback, action_name = &m_action_name, &callbacks, fail_type = m_fail_type](std::string body, std::string error, unsigned status) {
-        SPDLOG_INFO("UserActionGetWithEvent::perform on_error");
+        //SPDLOG_INFO("UserActionGetWithEvent::perform on_error");
         if (fail_callback)
             fail_callback(body);
         std::string message = format("%1% action failed (%2%): %3%", action_name, std::to_string(status), body);
@@ -78,7 +85,7 @@ void UserAccountActionGetWithEvent::perform(IUserAccountActionCallbacks* callbac
         }
     })
     .on_complete([success_callback, &callbacks, success_type = m_success_type](std::string body, unsigned status) {
-        SPDLOG_INFO("UserActionGetWithEvent::perform on_complete");
+        //SPDLOG_INFO("UserActionGetWithEvent::perform on_complete");
         if (success_callback)
             success_callback(body);
         if (success_type != ActionSuccessType::None) {

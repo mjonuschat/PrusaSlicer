@@ -5,6 +5,7 @@
 #include "Slic3r/App/WX/BitmapGetters.hpp"
 #include "Slic3r/App/WX/I18N.hpp"
 #include <Slic3r/App/WX/WidgetsConfig.hpp>
+#include <Slic3r/Assert.hpp>
 
 //#include "GUI_App.hpp"
 // #include "GUI_Factories.hpp"
@@ -105,18 +106,23 @@ void TabsBarMenus::UpdateAccountMenu()
     bool is_logged{ false };
     if (m_cb_get_user_account_info)
         is_logged = m_cb_get_user_account_info().is_logged;
-    if (is_logged)
-        RemoveHideLoginItem();
+    ShowHideLoginItem(is_logged);
     if (m_login_item) {
         m_login_item->SetItemLabel(is_logged ? _L("Log out") : _L("Log in"));
         set_menu_item_bitmap(m_login_item, is_logged ? "logout" : "login");
     }
 }
 
-void TabsBarMenus::RemoveHideLoginItem()
+void TabsBarMenus::ShowHideLoginItem(bool logged_in)
 {
-    if (m_hide_login_item)
+    ASSERT(m_hide_login_item);
+    if (logged_in && !m_hide_login_item_hidden) {
         account.Remove(m_hide_login_item);
+        m_hide_login_item_hidden = true;
+    } else if (!logged_in && m_hide_login_item_hidden) {
+        account.Append(m_hide_login_item);
+        m_hide_login_item_hidden = false;
+    }
 }
 
 void TabsBarMenus::Popup(TabsBarCtrl* popup_ctrl, wxMenu* menu, wxPoint pos)

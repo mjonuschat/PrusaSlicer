@@ -16,6 +16,8 @@ public:
         const std::string& wildcards,
         const std::function<void(bool result, const boost::filesystem::path& file_path)>& callback
     ) override;
+
+    void show_webview_dialog(std::unique_ptr<App::Browser::AbstractBrowserLogic>&& logic, Slic3r::Biz::ProjectInteractor* project_interactor) override;
 };
 
 } //namespace Slic3r::App::WX

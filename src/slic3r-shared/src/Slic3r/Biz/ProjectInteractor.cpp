@@ -8,6 +8,7 @@
 #include "Slic3r/Biz/ISelectedProjectChangedListener.hpp"
 #include "Slic3r/Biz/IProjectsChangedListener.hpp"
 #include "Slic3r/Biz/ISelectedBedInstanceChangedListener.hpp"
+#include "Slic3r/Biz/UserAccount/ConnectUtils.hpp"
 
 namespace Slic3r::Biz {
 Domain::SelectionId ProjectInteractor::new_project()
@@ -173,6 +174,25 @@ void ProjectInteractor::do_upload(const Slicing::SlicingId id, const std::string
         return;
     PrintHost::PrintHostConfig config{Domain::PrintHostType::OctoPrint,""};
     PrintHost::PrintHostJobData data{fdm_result.value().get().const_gcode(), filename, PrintHost::get_export_format_from_extension(boost::filesystem::path(filename).extension().string())};
+    m_print_host_interactor.upload_gcode(std::move(config), std::move(data));
+}
+
+void ProjectInteractor::do_upload_connect(const Slicing::SlicingId id, const std::string& connect_msg)
+{
+    const std::optional<FDMResultRef> fdm_result{ m_fdm_result_cache.get_result(id) };
+    if (!fdm_result)
+        return;
+
+    PrintHost::PrintHostConfig config{Domain::PrintHostType::PrusaConnect, Network::ServiceConfig::instance().connect_url()};
+    config.access_token = m_user_account_interactor.access_token();
+    std::string filename;
+    std::string body_json;
+    if(!UserAccount::ConnectUtils::config_from_json(connect_msg, config, filename, body_json)) {
+        SPDLOG_ERROR("Upload to Connect has failed - failed to read Connect message.");
+        return;
+    }
+    PrintHost::PrintHostJobData data{fdm_result.value().get().const_gcode(), filename, PrintHost::get_export_format_from_extension(boost::filesystem::path(filename).extension().string())};
+    data.request_body_json = std::move(body_json);
     m_print_host_interactor.upload_gcode(std::move(config), std::move(data));
 }
 

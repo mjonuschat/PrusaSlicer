@@ -1,7 +1,9 @@
 #include "Slic3r/App/WX/DialogManager.hpp"
 
+#include "Slic3r/App/WX/WebView/WebViewDialog.hpp"
 #include "Slic3r/App/I18N/I18N.hpp"
 #include "Slic3r/App/WX/StringConversions.hpp"
+#include "Slic3r/Biz/ProjectInteractor.hpp"
 
 #include <wx/filedlg.h>
 #include <wx/string.h>
@@ -45,6 +47,14 @@ void DialogManager::show_file_dialog(
     }
     wxString out_path = dlg.GetPath();
     callback(true, into_path(out_path));
+}
+
+void DialogManager::show_webview_dialog(std::unique_ptr<App::Browser::AbstractBrowserLogic>&& logic, Biz::ProjectInteractor* project_interactor)
+{
+    WebView::WebViewDialog dlg(std::move(logic));
+    project_interactor->user_account_interactor().add_listener<Biz::UserAccount::IUserAccountListener>(&dlg);
+    dlg.ShowModal();
+    project_interactor->user_account_interactor().remove_listener<Biz::UserAccount::IUserAccountListener>(&dlg);
 }
 
 }

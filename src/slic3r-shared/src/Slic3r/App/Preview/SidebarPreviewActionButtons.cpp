@@ -3,6 +3,9 @@
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
 #include "Slic3r/App/ExportPathSelect.hpp"
+#include "Slic3r/App/IDialogManager.hpp"
+#include "Slic3r/App/Browser/BrowserLogicConnectSelect.hpp"
+#include <Slic3r/Biz/Platform/PlatformServices.hpp>
 
 using namespace Slic3r::App::Yoga;
 
@@ -37,36 +40,45 @@ SidebarPreviewActionButtons::SidebarPreviewActionButtons()
     m_button_save_print_add_bookmark->set_background_color(IM_COL32_BLACK_TRANS);
 
     m_button_save_print->callbacks().action = [this]() {
-        GCodeExportPathSelect export_path_select(true);
-        export_path_select.show_modal_dialog(m_project_interactor->last_export_path(false), m_project_interactor->get_project_name(m_project_interactor->selected_project_id()), 
-            [this](bool result, const boost::filesystem::path& file_path) {
-            if (result) {
-                m_project_interactor->do_export(m_project_interactor->selected_bed_slicing_id(),file_path, false);
-            }
+        Biz::Platform::PlatformServices::instance().main_thread_dispatcher().dispatch_on_main_thread_after([this](){
+            GCodeExportPathSelect export_path_select(true);
+            export_path_select.show_modal_dialog(m_project_interactor->last_export_path(false), m_project_interactor->get_project_name(m_project_interactor->selected_project_id()), 
+                [this](bool result, const boost::filesystem::path& file_path) {
+                if (result) {
+                    m_project_interactor->do_export(m_project_interactor->selected_bed_slicing_id(),file_path, false);
+                }
             
+            });
         });
     };
     m_button_save_print_to_flash->callbacks().action = [this]() {
-        GCodeExportPathSelect export_path_select(true);
-        export_path_select.show_modal_dialog(m_project_interactor->last_export_path(true), m_project_interactor->get_project_name(m_project_interactor->selected_project_id()), 
-            [this](bool result, const boost::filesystem::path& file_path) {
-            if (result) {
-                m_project_interactor->do_export(m_project_interactor->selected_bed_slicing_id(), file_path, true);
-            }
+        Biz::Platform::PlatformServices::instance().main_thread_dispatcher().dispatch_on_main_thread_after([this](){
+            GCodeExportPathSelect export_path_select(true);
+            export_path_select.show_modal_dialog(m_project_interactor->last_export_path(true), m_project_interactor->get_project_name(m_project_interactor->selected_project_id()), 
+                [this](bool result, const boost::filesystem::path& file_path) {
+                if (result) {
+                    m_project_interactor->do_export(m_project_interactor->selected_bed_slicing_id(), file_path, true);
+                }
+            });
         });
     };
     m_button_save_print_to_local->callbacks().action = [this]() {
-        GCodeExportPathSelect export_path_select(true);
-        export_path_select.show_modal_dialog(m_project_interactor->last_export_path(false), m_project_interactor->get_project_name(m_project_interactor->selected_project_id()), 
-            [this](bool result, const boost::filesystem::path& file_path) {
-            if (result) {
-                m_project_interactor->do_export(m_project_interactor->selected_bed_slicing_id(), file_path, true);
-            }
+        Biz::Platform::PlatformServices::instance().main_thread_dispatcher().dispatch_on_main_thread_after([this](){
+            GCodeExportPathSelect export_path_select(true);
+            export_path_select.show_modal_dialog(m_project_interactor->last_export_path(false), m_project_interactor->get_project_name(m_project_interactor->selected_project_id()), 
+                [this](bool result, const boost::filesystem::path& file_path) {
+                if (result) {
+                    m_project_interactor->do_export(m_project_interactor->selected_bed_slicing_id(), file_path, true);
+                }
+            });
         });
     };
         
     m_button_save_print_add_bookmark->callbacks().action = [this]() {
-         m_project_interactor->do_upload(m_project_interactor->selected_bed_slicing_id(), "filename.gcode");
+        Biz::Platform::PlatformServices::instance().main_thread_dispatcher().dispatch_on_main_thread_after([this](){
+            DialogManagerProvider::instance().get().show_webview_dialog(std::make_unique<Browser::BrowserLogicConnectSelect>(*m_project_interactor), m_project_interactor);
+            //m_project_interactor->do_upload(m_project_interactor->selected_bed_slicing_id(), "filename.gcode");
+        });
     };
 
     m_layout_bottom = emplace_back<Item>();
@@ -104,4 +116,5 @@ bool SidebarPreviewActionButtons::export_allowed() const
 
     return status && status == Biz::Slicing::Status::Finished;
 }
+
 } // namespace Slic3r::App::Preview

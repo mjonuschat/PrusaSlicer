@@ -3,6 +3,7 @@
 #include "Slic3r/App/WX/StringConversions.hpp"
 #include "Slic3r/App/WX/WidgetsConfig.hpp"
 #include "Slic3r/App/WX/MacUtils.hpp"
+#include "Slic3r/Log.hpp"
 
 #include <wx/display.h>
 
@@ -41,10 +42,12 @@ ScalableBitmap::ScalableBitmap(wxWindow* parent, boost::filesystem::path& icon_p
     const std::string ext = icon_path.extension().string();
 
     if (ext == ".png" || ext == ".jpg") {
-        bitmap.LoadFile(path, ext == ".png" ? wxBITMAP_TYPE_PNG : wxBITMAP_TYPE_JPEG);
+        if (!bitmap.LoadFile(path, ext == ".png" ? wxBITMAP_TYPE_PNG : wxBITMAP_TYPE_JPEG)) {
+            SPDLOG_ERROR("Failed to load bitmap {}", into_u8(path));
+            return;
+        }
 
         // check if the bitmap has a square shape
-
         if (wxSize sz = bitmap.GetSize(); sz.x != sz.y) {
             const int bmp_side = std::min(sz.GetWidth(), sz.GetHeight());
 

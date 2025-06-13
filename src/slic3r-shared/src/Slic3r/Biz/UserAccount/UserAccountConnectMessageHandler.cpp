@@ -1,4 +1,4 @@
-#include "Slic3r/Biz/UserAccount/ConnectMessageHandler.hpp"
+#include "Slic3r/Biz/UserAccount/UserAccountConnectMessageHandler.hpp"
 
 
 namespace Slic3r::Biz::UserAccount {

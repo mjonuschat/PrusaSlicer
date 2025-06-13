@@ -3,9 +3,11 @@
 #include "Slic3r/Biz/UserAccount/IUserAccountListener.hpp"
 #include "Slic3r/Biz/UserAccount/UserAccountCommunication.hpp"
 #include "Slic3r/Biz/UserAccount/IUserAccountSessionListener.hpp"
-#include "Slic3r/Biz/UserAccount/ConnectMessageHandler.hpp"
+#include "Slic3r/Biz/UserAccount/UserAccountConnectMessageHandler.hpp"
 #include "Slic3r/Biz/Platform/WithListeners.hpp"
 #include "Slic3r/Biz/Platform/IMainThreadDispatcher.hpp"
+
+#include <functional>
 
 namespace Slic3r::Biz::UserAccount {
 /**
@@ -52,6 +54,28 @@ public:
      */
     void on_read_token_store_message();
 
+    /**
+     * @brief Returns public username or empty string. 
+     */
+    std::string username() const;
+
+    /**
+     * @brief Returns path to avatar (even if it does not exists).
+     */
+    boost::filesystem::path avatar() const;
+
+    /**
+     * @brief Sets callback for refreshing left bar account menu. Bool is recreate avatar. 
+     */
+    void set_update_menu_callback(std::function<void(bool)> cb) { update_menu_callback = std::move(cb); }
+
+    /**
+     * @brief Sets callback when account switches to logged in stage. 
+     */
+    void set_on_logged_in_callback(std::function<void(void)> cb) { on_logged_in_callback = std::move(cb); }
+
+    void request_refresh();
+
     // IUserAccountSessionListener implementations
     void on_action_retry(Network::IHttp::Retry retry) override;
     void on_action_success(ActionSuccessType success_type, std::string body) override;
@@ -60,14 +84,18 @@ public:
     void on_new_refresh_time(long long exp) override;
     void on_race_lost(const std::string& body) override;
     void on_logged_out() override;
+
+    std::string access_token() const;
 private:
     void on_user_id(const std::string& body);
 
     Platform::IMainThreadDispatcher&    m_dispatcher;
 	UserAccountCommunication 	        m_communication;
-	ConnectMessageHandler 		        m_connect_message_handler;
+	UserAccountConnectMessageHandler 	m_connect_message_handler;
 
     std::map<std::string, std::string>  m_account_user_data;
 
+    std::function<void(bool)> update_menu_callback;
+    std::function<void(void)> on_logged_in_callback;
 };
 } // namespace Slic3r::Biz::UserAccount

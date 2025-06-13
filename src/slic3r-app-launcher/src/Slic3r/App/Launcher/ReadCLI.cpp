@@ -24,7 +24,7 @@ InitParams read_cli(int argc, char* argv[])
 			init_params.single_instance = false;
 		else if (strcmp(argv[i], "--single-instance-on-url") == 0)
 			single_instance_on_url = true;
-        else if (strcmp(argv[i], "prusaslicer://") == 0)
+        else if (strstr(argv[i], "prusaslicer://") != nullptr)
 			has_url = true;
     }
     if (has_url && single_instance_on_url) {

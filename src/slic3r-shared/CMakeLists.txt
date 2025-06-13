@@ -74,6 +74,24 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/BedStore.cpp
         include/Slic3r/App/BedStore.hpp
         include/Slic3r/App/MaterialState.hpp
+        
+        include/Slic3r/App/Browser/BrowserLogicCommand.hpp
+        include/Slic3r/App/Browser/AbstractBrowserLogicCommandHandler.hpp
+        include/Slic3r/App/Browser/AbstractBrowserLogic.hpp
+        include/Slic3r/App/Browser/BrowserLogicLogIn.hpp
+        src/Slic3r/App/Browser/BrowserLogicLogIn.cpp
+        include/Slic3r/App/Browser/BrowserLogicConnectSelect.hpp
+        src/Slic3r/App/Browser/BrowserLogicConnectSelect.cpp
+        include/Slic3r/App/Browser/AbstractConnectRequestHandler.hpp
+        src/Slic3r/App/Browser/AbstractConnectRequestHandler.cpp
+        include/Slic3r/App/Browser/BrowserLogicConnectPage.hpp
+        src/Slic3r/App/Browser/BrowserLogicConnectPage.cpp
+        include/Slic3r/App/Browser/BrowserLogicPrintables.hpp
+        src/Slic3r/App/Browser/BrowserLogicPrintables.cpp
+        include/Slic3r/App/Browser/BrowserLogicLogInRedirect.hpp
+        src/Slic3r/App/Browser/BrowserLogicLogInRedirect.cpp
+        include/Slic3r/App/Browser/BrowserLogicPrintablesToConnect.hpp
+        src/Slic3r/App/Browser/BrowserLogicPrintablesToConnect.cpp
 
         src/Slic3r/App/Scene/Scene.cpp
         include/Slic3r/App/Scene/Scene.hpp
@@ -433,7 +451,8 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/UserAccount/UserAccountCommunicationTokenBase.hpp
         include/Slic3r/Biz/UserAccount/UserAccountTokenStore.hpp
         include/Slic3r/Biz/UserAccount/UserAccountCodeChallengeGenerator.hpp
-        include/Slic3r/Biz/UserAccount/ConnectMessageHandler.hpp
+        include/Slic3r/Biz/UserAccount/UserAccountConnectMessageHandler.hpp
+        include/Slic3r/Biz/UserAccount/ConnectUtils.hpp
         src/Slic3r/Biz/UserAccount/UserAccountInteractor.cpp
         src/Slic3r/Biz/UserAccount/UserAccountCommunication.cpp
         src/Slic3r/Biz/UserAccount/UserAccountSession.cpp
@@ -442,7 +461,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/UserAccount/UserAccountCommunicationTokenBase.cpp
         src/Slic3r/Biz/UserAccount/UserAccountTokenStore.cpp
         src/Slic3r/Biz/UserAccount/UserAccountCodeChallengeGenerator.cpp
-        src/Slic3r/Biz/UserAccount/ConnectMessageHandler.cpp
+        src/Slic3r/Biz/UserAccount/UserAccountConnectMessageHandler.cpp
+        src/Slic3r/Biz/UserAccount/ConnectUtils.cpp
 
         include/Slic3r/Biz/SHA256.hpp
 

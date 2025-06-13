@@ -15,6 +15,10 @@ namespace Slic3r::App::Desktop::Preset {
 class AbstractEditor;
 }
 
+namespace Slic3r::Biz {
+class ProjectInteractor;
+}
+
 namespace Slic3r::App::Desktop {
 
 class LeftBar;
@@ -46,11 +50,11 @@ private:
     void update_preset_editors();
 #endif
 
-    void init_left_bar();
-    void init_printer_page();
+    void init_left_bar(Biz::ProjectInteractor& project_interactor);
+    void init_printer_page(Biz::ProjectInteractor& project_interactor);
     void init_projects_page();
     void init_slicing_page();
-    void init_printables_page();
+    void init_printables_page(Biz::ProjectInteractor& project_interactor);
     void complete_and_bind_left_bar();
 
     void init_top_bar();

@@ -19,7 +19,7 @@ void UserAccountSession::set_tokens(const std::string& access_token, const std::
     // TODO: Add checks for empty tokens
 
     if (!access_token.empty()) {
-        SPDLOG_INFO("{} access_token: {} ... {}", __FUNCTION__, access_token.substr(0,5), access_token.substr(access_token.size()-5));
+        SPDLOG_INFO("{} access_token: {} ... {}", __FUNCTION__, access_token.substr(0,5), access_token.substr(access_token.size() - 5));
     } else {
         SPDLOG_INFO("{} access_token empty!", __FUNCTION__);
     }
@@ -45,7 +45,7 @@ void UserAccountSession::do_clear(bool notify_owner)
     }
     {
         std::lock_guard<std::mutex> lock(m_session_mutex);
-        m_proccessing_enabled = false;
+        m_processing_enabled = false;
     }
     if (notify_owner)
     {
@@ -57,9 +57,9 @@ void UserAccountSession::process_action_queue()
 {
     {
         std::lock_guard<std::mutex> lock(m_session_mutex);
-        if (!m_proccessing_enabled)
+        if (!m_processing_enabled)
             return;
-        SPDLOG_INFO("action queue: {} {}", m_priority_action_queue.size(), m_action_queue.size());
+        //SPDLOG_INFO("action queue: {} {}", m_priority_action_queue.size(), m_action_queue.size());
         if (m_priority_action_queue.empty() && m_action_queue.empty()) {
             // Update printers periodically.
             // ConnectStatus needs ConnectPrinterModels to be called once to has effect.
@@ -111,7 +111,7 @@ void UserAccountSession::on_log_in_code_response(const std::string& code, const 
             "&redirect_uri=" + REDIRECT_URI +
             "&code_verifier="+ code_verifier;
 
-        m_proccessing_enabled = true;
+        m_processing_enabled = true;
         // fail fn might be cancel_queue here
         m_priority_action_queue.push_back({ UserAccountActionID::CodeForToken
             , std::bind(&UserAccountSession::token_success_callback, this, std::placeholders::_1)
@@ -131,18 +131,18 @@ void UserAccountSession::enqueue_action(UserAccountActionID id, ActionSuccessFn 
 
 void UserAccountSession::enqueue_test_with_refresh()
 {
-    SPDLOG_INFO(__FUNCTION__);
+    //SPDLOG_INFO(__FUNCTION__);
     {
         std::lock_guard<std::mutex> lock(m_session_mutex);
         // on test fail - try refresh
-        m_proccessing_enabled = true;
+        m_processing_enabled = true;
         m_priority_action_queue.push_back({ UserAccountActionID::TestAccessToken, nullptr, std::bind(&UserAccountSession::enqueue_refresh, this, std::placeholders::_1), {} });
     }
 }
 
 void UserAccountSession::enqueue_refresh(const std::string& body)
 {
-    SPDLOG_INFO(__FUNCTION__);
+    //SPDLOG_INFO(__FUNCTION__);
     // TODO before or after push_back?
     dispatch_enqueued_refresh();
     std::string post_fields;
@@ -164,7 +164,7 @@ void UserAccountSession::enqueue_refresh(const std::string& body)
 
 void UserAccountSession::enqueue_refresh_race(const std::string& refresh_token_from_store)
 {
-    SPDLOG_INFO(__FUNCTION__);
+    //SPDLOG_INFO(__FUNCTION__);
     // TODO before or after push_back?
     dispatch_enqueued_refresh();
     std::string post_fields;
@@ -197,7 +197,7 @@ bool UserAccountSession::is_enqueued(UserAccountActionID action_id) const
 
 void UserAccountSession::enqueue_action_inner(UserAccountActionID id, ActionSuccessFn success_callback, ActionFailFn fail_callback, const std::string& input)
 {
-    m_proccessing_enabled = true;
+    m_processing_enabled = true;
     m_action_queue.push({ id, success_callback, fail_callback, input });
 }
 

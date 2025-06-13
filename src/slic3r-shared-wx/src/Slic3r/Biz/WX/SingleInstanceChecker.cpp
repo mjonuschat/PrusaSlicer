@@ -7,7 +7,8 @@ namespace Slic3r::Biz::WX {
 SingleInstanceChecker::SingleInstanceChecker(const std::string& name, const std::string& path) 
     : m_wxchecker() 
 {
-    ASSERT(m_wxchecker.Create(App::WX::from_u8(name), App::WX::from_u8(path)));
+    bool created = m_wxchecker.Create(App::WX::from_u8(name), App::WX::from_u8(path));
+    ASSERT(created);
 }
 bool SingleInstanceChecker::is_another_running() 
 {

@@ -15,8 +15,14 @@
 #include <Slic3r/App/WX/format.hpp>
 #include <Slic3r/App/WX/I18N.hpp>
 #include <Slic3r/App/WX/MsgDialog.hpp>
+#include <Slic3r/App/WX/WebView/WebViewPanel.hpp>
 
 #include <Slic3r/App/Localization.hpp>
+#include "Slic3r/App/Browser/BrowserLogicPrintables.hpp"
+#include "Slic3r/App/Browser/BrowserLogicConnectPage.hpp"
+#include "Slic3r/App/Browser/BrowserLogicLogInRedirect.hpp"
+
+#include "Slic3r/Biz/ProjectInteractor.hpp"
 
 #include <wx/panel.h>
 #include <wx/notebook.h>
@@ -149,8 +155,34 @@ MainFrame::MainFrame(
 #endif
 #endif // OLD_CODE
 
-    init_left_bar();
+    init_left_bar(project_interactor);
     complete_and_bind_left_bar();
+
+    m_tabs_bar_menus.set_account_menu_callbacks([&project_interactor]() {
+        if (!project_interactor.user_account_interactor().is_logged_in()) {
+            DialogManagerProvider::instance().get().show_webview_dialog(std::make_unique<Browser::BrowserLogicLogInRedirect>(project_interactor.user_account_interactor()), &project_interactor);
+        } else {
+            project_interactor.user_account_interactor().do_log_out(true);
+        }
+    }
+    , [](){} // TODO finish with preferences options
+    , [&project_interactor](){
+        return TabsBarMenus::UserAccountInfo{ project_interactor.user_account_interactor().is_logged_in(), 
+        project_interactor.user_account_interactor().username(),
+        project_interactor.user_account_interactor().avatar() };
+    });
+
+    project_interactor.user_account_interactor().set_update_menu_callback( [this](bool avatar){
+        m_tabs_bar_menus.UpdateAccountMenu();
+        m_left_bar->GetLeftBarCtrl()->UpdateAccountButton(avatar);
+    });
+
+    project_interactor.user_account_interactor().set_on_logged_in_callback( [this](){
+        this->Show(true);
+        this->Raise();
+        this->SetFocus();
+    });
+    
 
     this->Bind(wxEVT_SYS_COLOUR_CHANGED, [this](wxSysColourChangedEvent& event)
     {
@@ -289,14 +321,14 @@ void MainFrame::init_plater()
 }
 #endif // OLD_CODE
 
-void MainFrame::init_left_bar()
+void MainFrame::init_left_bar(Biz::ProjectInteractor& project_interactor)
 {
     m_left_bar = LeftBar::Create(this, &m_tabs_bar_menus);
 
-    init_printer_page();
+    init_printer_page(project_interactor);
     init_projects_page();
     init_slicing_page();
-    init_printables_page();
+    init_printables_page(project_interactor);
 
     //! experiments just for UI testing
     add_experimets_page(m_left_bar, this);
@@ -326,10 +358,12 @@ static wxPanel* tmp_panel(wxWindow* parent, const wxString& info_text)
     return test_panel;
 }
 
-void MainFrame::init_printer_page()
+void MainFrame::init_printer_page(Biz::ProjectInteractor& project_interactor)
 {
-    wxPanel* printers_page = tmp_panel(m_left_bar, from_u8("Here will be shown all printers"));
-    m_left_bar->AddNewPage(printers_page, from_u8(L("Printers")), "lb_printers");
+    std::unique_ptr<App::Browser::BrowserLogicConnectPage> logic = std::make_unique<App::Browser::BrowserLogicConnectPage>(project_interactor);
+    WebView::WebViewPanel* webview_panel = new WX::WebView::WebViewPanel(m_left_bar, std::move(logic), false);
+    project_interactor.user_account_interactor().add_listener<Biz::UserAccount::IUserAccountListener>(webview_panel);
+    m_left_bar->AddNewPage(webview_panel, from_u8(L("Printers")), "lb_printers");
 }
 
 void MainFrame::init_projects_page()
@@ -344,10 +378,12 @@ void MainFrame::init_slicing_page()
     m_left_bar->AddNewPage(m_canvas.get(), from_u8(L("Slicing")), "lb_slicing");
 }
 
-void MainFrame::init_printables_page()
+void MainFrame::init_printables_page(Biz::ProjectInteractor& project_interactor)
 {
-    wxPanel* printables_page = tmp_panel(m_left_bar, from_u8("Here will be shown Printables web page"));
-    m_left_bar->AddNewPage(printables_page, from_u8(L("Printables")), "lb_printables");
+    std::unique_ptr<App::Browser::BrowserLogicPrintables> logic = std::make_unique<App::Browser::BrowserLogicPrintables>(project_interactor);
+    WebView::WebViewPanel* webview_panel = new WX::WebView::WebViewPanel(m_left_bar, std::move(logic), false);
+    project_interactor.user_account_interactor().add_listener<Biz::UserAccount::IUserAccountListener>(webview_panel);
+    m_left_bar->AddNewPage(webview_panel, from_u8(L("Printables")), "lb_printables");
 }
 
 void MainFrame::complete_and_bind_left_bar()

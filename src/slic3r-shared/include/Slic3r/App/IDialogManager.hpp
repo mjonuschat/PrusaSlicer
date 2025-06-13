@@ -1,8 +1,13 @@
 #pragma once
 
+#include "Slic3r/App/Browser/AbstractBrowserLogic.hpp"
 #include "Slic3r/Assert.hpp"
 #include <memory>
 #include <boost/filesystem/path.hpp>
+
+namespace Slic3r::Biz {
+class ProjectInteractor;
+}
 
 namespace Slic3r::App {
 
@@ -28,6 +33,8 @@ public:
         const std::string& wildcards,
         const FileCallback& callback
     ) = 0;
+
+    virtual void show_webview_dialog(std::unique_ptr<Browser::AbstractBrowserLogic>&& logic, Slic3r::Biz::ProjectInteractor* project_interactor) = 0;
 };
 
 /**
@@ -55,7 +62,7 @@ public:
     }
 
 private:
-    std::unique_ptr<IDialogManager> m_manager {};
+    std::unique_ptr<IDialogManager> m_manager{};
 };
 
 } // namespace Slic3r::App

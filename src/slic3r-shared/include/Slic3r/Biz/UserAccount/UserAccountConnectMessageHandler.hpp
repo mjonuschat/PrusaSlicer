@@ -2,7 +2,7 @@
 
 namespace Slic3r::Biz::UserAccount {
 
-class ConnectMessageHandler
+class UserAccountConnectMessageHandler
 {
 
 };

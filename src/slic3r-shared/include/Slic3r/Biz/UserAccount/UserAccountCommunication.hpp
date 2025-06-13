@@ -43,7 +43,24 @@ public:
      */
     bool is_logged_in() const;
 
+    std::string access_token() const;
+    
+    /**
+     * @brief Returns path to avatar (even if it does not exists). 
+     */
+    boost::filesystem::path avatar() const;
+
+    /**
+     * @brief Uses data to download avatar.
+     */
+    void on_avatar_url(const std::string& data);
+
+    /**
+     * @brief Stores avatar into file.
+     */
+    void on_avatar_success(std::string&& data) const;
 private:
     std::string m_code_verifier;
+    std::string m_avatar_extension;
 };
 }

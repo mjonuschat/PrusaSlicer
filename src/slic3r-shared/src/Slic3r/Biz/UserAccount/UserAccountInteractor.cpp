@@ -25,6 +25,11 @@ UserAccountInteractor::~UserAccountInteractor()
 void UserAccountInteractor::do_log_out(bool notify_owner)
 {
     m_communication.do_log_out(notify_owner);
+    if (update_menu_callback)
+    {
+        update_menu_callback(true);
+    }
+    //on_logged_out();
 }
 
 std::string UserAccountInteractor::on_log_in_request(const std::string& lang_code, bool generate_code_verifier, const std::string& service/* = std::string()*/)
@@ -44,7 +49,26 @@ bool UserAccountInteractor::is_logged_in() const
 
 void UserAccountInteractor::on_read_token_store_message()
 {
+}
 
+std::string UserAccountInteractor::username() const
+{
+    return m_communication.username();
+}
+
+boost::filesystem::path UserAccountInteractor::avatar() const
+{
+    return m_communication.avatar();
+}
+
+void UserAccountInteractor::request_refresh()
+{
+     m_communication.request_refresh();
+}
+
+std::string UserAccountInteractor::access_token() const
+{
+    return m_communication.access_token();
 }
 
 void UserAccountInteractor::on_action_retry(Network::IHttp::Retry retry)
@@ -54,7 +78,7 @@ void UserAccountInteractor::on_action_retry(Network::IHttp::Retry retry)
 
 void UserAccountInteractor::on_action_success(ActionSuccessType success_type, std::string body) 
 {
-    SPDLOG_INFO("UserAccountInteractor: Action success({}): {}", static_cast<int>(success_type), body); 
+    SPDLOG_INFO("UserAccountInteractor: Action success({})", static_cast<int>(success_type)); 
     switch (success_type)
     {
     case Slic3r::Biz::UserAccount::ActionSuccessType::None:
@@ -63,12 +87,21 @@ void UserAccountInteractor::on_action_success(ActionSuccessType success_type, st
     case Slic3r::Biz::UserAccount::ActionSuccessType::UserID:
     case Slic3r::Biz::UserAccount::ActionSuccessType::UserIDAfterToken:
         on_user_id(body);
+        if (update_menu_callback)
+        {
+            update_menu_callback(false);
+        }
         break;
     case Slic3r::Biz::UserAccount::ActionSuccessType::ConnectStatus:
         break;
     case Slic3r::Biz::UserAccount::ActionSuccessType::ConnectPrinterModels:
         break;
     case Slic3r::Biz::UserAccount::ActionSuccessType::Avatar:
+        m_communication.on_avatar_success(std::move(body));
+        if (update_menu_callback)
+        {
+            update_menu_callback(true);
+        }
         break;
     case Slic3r::Biz::UserAccount::ActionSuccessType::PrinterData:
         break;
@@ -80,7 +113,7 @@ void UserAccountInteractor::on_action_success(ActionSuccessType success_type, st
 
 void UserAccountInteractor::on_action_fail(ActionFailType fail_type, std::string body)  
 {
-    SPDLOG_INFO("UserAccountInteractor: Action fail({}): {}", static_cast<int>(fail_type), body); 
+    SPDLOG_INFO("UserAccountInteractor: Action fail({})", static_cast<int>(fail_type)); 
     switch (fail_type)
     {
     case Slic3r::Biz::UserAccount::ActionFailType::None: 
@@ -90,6 +123,10 @@ void UserAccountInteractor::on_action_fail(ActionFailType fail_type, std::string
         break;
     case Slic3r::Biz::UserAccount::ActionFailType::Reset:
         do_log_out(true);
+        if (update_menu_callback)
+        {
+            update_menu_callback(true);
+        }
         break;
     case Slic3r::Biz::UserAccount::ActionFailType::PrinterData:
         break;
@@ -123,6 +160,7 @@ void UserAccountInteractor::on_logged_out()
 
 void UserAccountInteractor::on_user_id(const std::string& body)
 {
+    bool was_logged = is_logged_in();
     SPDLOG_INFO("UserAccountInteractor: User ID message: {}", body);
     try {
         nlohmann::json j = nlohmann::json::parse(body);
@@ -147,21 +185,23 @@ void UserAccountInteractor::on_user_id(const std::string& body)
     m_communication.on_username_changed(public_username, true);
 
     // enqueue GET with avatar url
-    /*
+    
     if (m_account_user_data.find("avatar_small") != m_account_user_data.end()) {
-        const boost::filesystem::path server_file(m_account_user_data["avatar_small"]);
-        m_avatar_extension = server_file.extension().string();
-        enqueue_avatar_new_action(m_account_user_data["avatar_small"]);
+        m_communication.on_avatar_url(m_account_user_data["avatar_small"]);
     } else {
-        BOOST_LOG_TRIVIAL(error) << "User ID message from PrusaAuth did not contain avatar.";
+        SPDLOG_ERROR("User ID message from PrusaAuth did not contain avatar info.");
     }
     // update printers list
-    enqueue_connect_printer_models_action();
-    */
+    // enqueue_connect_printer_models_action();
+    
 
-    invoke_listeners<IUserAccountListener>([](auto* listener){
-        listener->on_user_account_id_success();
+    invoke_listeners<IUserAccountListener>([was_logged](auto* listener){
+        listener->on_user_account_id_success(was_logged);
     });
+
+    if (!was_logged && on_logged_in_callback) {
+        on_logged_in_callback();
+    }
 }
 
 } // namespace Slic3r::Biz::UserAccount

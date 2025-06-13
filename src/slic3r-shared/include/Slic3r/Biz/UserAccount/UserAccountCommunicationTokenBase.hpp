@@ -15,7 +15,7 @@ class UserAccountCommunicationTokenBase
 {
 public:
 	UserAccountCommunicationTokenBase(Platform::IMainThreadDispatcher& dispatcher);
-	~UserAccountCommunicationTokenBase() = default;
+	~UserAccountCommunicationTokenBase();
 
 	UserAccountCommunicationTokenBase(const UserAccountCommunicationTokenBase& ) = delete;
     UserAccountCommunicationTokenBase(UserAccountCommunicationTokenBase&& other) = delete;
@@ -48,6 +48,14 @@ public:
      * @brief Called when other instance changed tokens in store.
      */
     void on_read_token_store_message();
+    
+    /**
+     * @brief This function is called when Printables requests new token - same token as we have now wont do.
+     */
+    void request_refresh();
+
+    std::string username() const { return m_username; }
+
 protected:
     UserAccountSession 		m_session;
 
@@ -55,6 +63,11 @@ protected:
      * @brief Logs out. All tokens are thrown out and deleted from store. All timers are stopped.
      */
     void do_clear(bool notify_owner);
+
+    /**
+     * @brief Wakes up m_thread. Needs to be call if Session thread should start processing its action queue.
+     */
+    void wakeup_session_thread();
 
 private:   
 
@@ -66,6 +79,7 @@ private:
     void set_tokens(const std::string& access_token, const std::string& refresh_token, const std::string& shared_session_key, const std::string& next_token_timeout);
     void set_tokens_to_session(const std::string& access_token, const std::string& refresh_token, const std::string& shared_session_key, long long next_token_timeout);
     void stop_all_timers();
+    void stop_token_timers();
 
     /**
      * @brief Implementation of thread function.
@@ -73,7 +87,6 @@ private:
     void init_session_thread();
 
     void enqueue_refresh();
-    void wakeup_session_thread();
     void enqueue_refresh_race(const std::string& refresh_token);
 
     std::string m_username;

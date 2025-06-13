@@ -41,7 +41,7 @@ class IProjectsChangedListener;
 
 
 
-class ProjectInteractor final :
+class ProjectInteractor final : 
     public ISelectedBedInstanceChangedListener,
     public ISlicingInputChangedListener,
     public UserAccount::IUserAccountListener,
@@ -225,6 +225,12 @@ public:
     void do_upload(const Slicing::SlicingId id, const std::string& filename);
 
     /**
+     * @brief Same as do_upload, but does parse connect_msg first.
+     * Uploads to PrintHostType::PrusaConnect.
+     */
+    void do_upload_connect(const Slicing::SlicingId id, const std::string& connect_msg);
+
+    /**
      * @brief Called after Mainframe is created to set window handle for AppInstanceMessageHandler.
      */
     void init_app_instance_message_handler(void* window_handle)
@@ -244,7 +250,7 @@ public:
      * @brief Called on every successful login to user account and token renewal.
      * Notifies all other running apps to read token store.
      */
-    void on_user_account_id_success() override
+    void on_user_account_id_success(bool is_refresh) override
     {
         m_app_instance_message_handler->multicast_message("STORE_READ", {}, Biz::Platform::PlatformServices::instance().app_hash());
     }
@@ -259,6 +265,7 @@ public:
         m_app_instance_message_handler->multicast_message("STORE_READ", {}, Biz::Platform::PlatformServices::instance().app_hash());
     }
    
+    void on_user_account_will_refresh() override { /*unused*/}
 
     /**
     * @brief Callback from AppInstanceMessageHandler.
@@ -281,18 +288,27 @@ public:
     /**
      * @brief Callback from AppInstanceMessageHandler.
      */
-    void on_login_data(const std::string& message) override {}
+    void on_login_data(const std::string& message) override 
+    {
+        m_user_account_interactor.on_log_in_code_response(message);
+    }
 
     /**
      * @brief Callback from AppInstanceMessageHandler.
      */
     void on_app_go_front() override {}
 
+    /**
+     * @brief Getter for user account.
+     */
+    UserAccount::UserAccountInteractor& user_account_interactor() { return m_user_account_interactor; }
+
     std::string get_project_name(Domain::SelectionId project_id) const;
 
     boost::filesystem::path last_export_path(bool only_removable) const { return m_last_export_path_storage.get_last_export_path(only_removable); }
 
     void set_last_export_path(const boost::filesystem::path& path, bool is_removable) { m_last_export_path_storage.set_last_export_path(path, is_removable); }
+
 private:
     void on_slicing_input_changed(const Domain::BedRef& bed_instance) override;
     void on_slicing_input_removed(const Domain::BedRef& bed_instance) override;

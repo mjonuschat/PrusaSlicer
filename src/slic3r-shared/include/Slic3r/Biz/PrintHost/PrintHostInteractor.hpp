@@ -49,12 +49,12 @@ public:
     void on_print_host_info(size_t id, const std::string& tag, const std::string& msg) override;
 
     /**
-     * @brief Accepts data from PrintHostJobManager and passes it to PrintHostDataFinalizer and proccess_gcode_inner.
+     * @brief Accepts data from PrintHostJobManager and passes it to PrintHostDataFinalizer and process_gcode_inner.
      */
     void export_gcode(PrintHostConfig config, PrintHostJobData data);
 
     /**
-     * @brief Accepts data from PrintHostJobManager and passes it to PrintHostDataFinalizer and proccess_gcode_inner.
+     * @brief Accepts data from PrintHostJobManager and passes it to PrintHostDataFinalizer and process_gcode_inner.
      */
     void upload_gcode(PrintHostConfig config, PrintHostJobData data);
     
@@ -73,6 +73,6 @@ private:
     /**
      * @brief Passes data to PrintHostJobManager to create and start export / upload job.
      */
-    void proccess_gcode_inner(PrintHostConfig config, PrintHostJobData data);
+    void process_gcode_inner(PrintHostConfig config, PrintHostJobData data);
 };
 } // namespace Slic3r::Biz::PrintHost

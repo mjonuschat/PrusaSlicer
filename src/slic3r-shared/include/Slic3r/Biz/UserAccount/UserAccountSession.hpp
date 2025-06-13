@@ -82,7 +82,7 @@ private:
      * @brief Prevents action queue to be processed if false - no communication is done
      *  sets to true by on_log_in_code_response or enqueue_action call
      */
-    bool m_proccessing_enabled {false}; 
+    bool m_processing_enabled {false}; 
     
     void enqueue_action_inner(UserAccountActionID id, ActionSuccessFn success_callback, ActionFailFn fail_callback, const std::string& input);
 
