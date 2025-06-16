@@ -1236,14 +1236,17 @@ bool ModelObject::has_negative_volume_mesh() const
 // Extract the current extruder ID based on this ModelVolume's config and the parent ModelObject's config.
 int ModelVolume::extruder_id() const
 {
-    int extruder_id = -1;
     if (this->is_model_part()) {
-        const ConfigOption *opt = this->config.option("extruder");
-        if ((opt == nullptr) || (opt->getInt() == 0))
-            opt = this->object->config.option("extruder");
-        extruder_id = (opt == nullptr) ? 0 : opt->getInt();
+        const std::optional<Domain::ConfigItem> volume_extruder_item = this->volume_settings.overrides.get("extruder");
+        if (volume_extruder_item.has_value() && volume_extruder_item->get<int>() > 0) {
+            return volume_extruder_item->get<int>();
+        }
+
+        const std::optional<Domain::ConfigItem> object_extruder_item = this->object->object_settings.overrides.get("extruder");
+        return object_extruder_item.has_value() ? object_extruder_item->get<int>() : 0;
     }
-    return extruder_id;
+
+    return -1;
 }
 
 bool ModelVolume::is_splittable() const
@@ -1343,7 +1346,6 @@ void ModelObject::scale_to_fit(const Vec3d &size)
 void ModelVolume::assign_new_unique_ids_recursive()
 {
     ObjectBase::set_new_unique_id();
-    config.set_new_unique_id();
     supported_facets.set_new_unique_id();
     seam_facets.set_new_unique_id();
     mm_segmentation_facets.set_new_unique_id();
@@ -1592,18 +1594,24 @@ bool model_has_parameter_modifiers_in_objects(const Model &model)
 
 bool model_has_advanced_features(const Model &model)
 {
-	auto config_is_advanced = [](const ModelConfig &config) {
-        return ! (config.empty() || (config.size() == 1 && config.cbegin()->first == "extruder"));
-	};
-    for (const ModelObject *model_object : model.objects) {
+    auto config_is_advanced = [](const Domain::ConfigBox& config) {
+        return !(config.overrides.empty() || (config.overrides.size() == 1 && config.overrides.get("extruder").has_value()));
+    };
+
+    for (const ModelObject* model_object : model.objects) {
         // Is there more than one instance or advanced config data?
-        if (model_object->instances.size() > 1 || config_is_advanced(model_object->config))
-        	return true;
+        if (model_object->instances.size() > 1 || config_is_advanced(model_object->object_settings)) {
+            return true;
+        }
+
         // Is there any modifier or advanced config data?
-        for (const ModelVolume* model_volume : model_object->volumes)
-            if (! model_volume->is_model_part() || config_is_advanced(model_volume->config))
-            	return true;
+        for (const ModelVolume* model_volume : model_object->volumes) {
+            if (!model_volume->is_model_part() || config_is_advanced(model_volume->volume_settings)) {
+                return true;
+            }
+        }
     }
+
     return false;
 }
 
@@ -1622,7 +1630,6 @@ void check_model_ids_validity(const Model &model)
         check(model_object->config.id());
         for (const ModelVolume *model_volume : model_object->volumes) {
             check(model_volume->id());
-	        check(model_volume->config.id());
         }
         for (const ModelInstance *model_instance : model_object->instances)
             check(model_instance->id());
@@ -1642,7 +1649,6 @@ void check_model_ids_equal(const Model &model1, const Model &model2)
         assert(model_object1.instances.size() == model_object2.instances.size());
         for (size_t i = 0; i < model_object1.volumes.size(); ++ i) {
             assert(model_object1.volumes[i]->id() == model_object2.volumes[i]->id());
-        	assert(model_object1.volumes[i]->config.id() == model_object2.volumes[i]->config.id());
         }
         for (size_t i = 0; i < model_object1.instances.size(); ++ i)
             assert(model_object1.instances[i]->id() == model_object2.instances[i]->id());

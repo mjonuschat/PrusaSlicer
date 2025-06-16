@@ -302,7 +302,7 @@ static bool has_overrides(const Slic3r::ModelObject* object, bool is_sla_config)
     bool has_config_overrides = !object->config.empty() || !object->layer_config_ranges.empty();
     if (!has_config_overrides) {
         for (auto volume : object->volumes)
-            if (!volume->config.empty()) {
+            if (!volume->volume_settings.overrides.empty()) {
                 has_config_overrides = true;
                 break;
             }
@@ -907,8 +907,8 @@ void ObjectList::render_volume_node(const Slic3r::ModelVolume* volume, const Dom
 
     NewRowWithSelectable row;
     ImVec2 pos = ImGui::GetCursorScreenPos();
-    bool has_config_overrides = !volume->config.empty();
-    bool has_extruder_overrides = !is_sla_config && has_config_overrides && volume->config.has("extruder");
+    bool has_config_overrides = !volume->volume_settings.overrides.empty();
+    bool has_extruder_overrides = !is_sla_config && has_config_overrides && volume->volume_settings.overrides.get("extruder").has_value();
 
     if (ctx.edited_node_id == volume_id) {
         if (selectable(icon_str(volume).c_str(), is_selected, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowItemOverlap, has_config_overrides)) {

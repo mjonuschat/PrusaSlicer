@@ -735,8 +735,6 @@ public:
     const std::shared_ptr<const Domain::TriangleMesh>& get_mesh_shared_ptr() const { return m_mesh; }
     // Configuration parameters specific to an object model geometry or a modifier volume, 
     // overriding the global Slic3r settings and the ModelObject settings.
-    ModelConfigObject	config;
-
     Domain::VolumeSettings volume_settings;
 
     // List of mesh facets to be supported/unsupported.
@@ -840,7 +838,6 @@ public:
 
 	void set_new_unique_id() { 
         ObjectBase::set_new_unique_id();
-        this->config.set_new_unique_id();
         this->supported_facets.set_new_unique_id();
         this->seam_facets.set_new_unique_id();
         this->mm_segmentation_facets.set_new_unique_id();
@@ -891,12 +888,10 @@ private:
 
     inline bool check() {
         assert(this->id().valid());
-        assert(this->config.id().valid());
         assert(this->supported_facets.id().valid());
         assert(this->seam_facets.id().valid());
         assert(this->mm_segmentation_facets.id().valid());
         assert(this->fuzzy_skin_facets.id().valid());
-        assert(this->id() != this->config.id());
         assert(this->id() != this->supported_facets.id());
         assert(this->id() != this->seam_facets.id());
         assert(this->id() != this->mm_segmentation_facets.id());
@@ -925,22 +920,19 @@ private:
     ModelVolume(ModelObject *object, const ModelVolume &other) :
         ObjectBase(other),
         name(other.name), source(other.source), m_mesh(other.m_mesh), m_convex_hull(other.m_convex_hull),
-        config(other.config), volume_settings(other.volume_settings), m_type(other.m_type), object(object), m_transformation(other.m_transformation),
+        volume_settings(other.volume_settings), m_type(other.m_type), object(object), m_transformation(other.m_transformation),
         supported_facets(other.supported_facets), seam_facets(other.seam_facets), mm_segmentation_facets(other.mm_segmentation_facets),
         fuzzy_skin_facets(other.fuzzy_skin_facets), cut_info(other.cut_info), text_configuration(other.text_configuration), emboss_shape(other.emboss_shape)
     {
 		assert(this->id().valid()); 
-        assert(this->config.id().valid()); 
         assert(this->supported_facets.id().valid());
         assert(this->seam_facets.id().valid());
         assert(this->mm_segmentation_facets.id().valid());
         assert(this->fuzzy_skin_facets.id().valid());
-        assert(this->id() != this->config.id());
         assert(this->id() != this->supported_facets.id());
         assert(this->id() != this->seam_facets.id());
         assert(this->id() != this->mm_segmentation_facets.id());
 		assert(this->id() == other.id());
-        assert(this->config.id() == other.config.id());
         assert(this->supported_facets.id() == other.supported_facets.id());
         assert(this->seam_facets.id() == other.seam_facets.id());
         assert(this->mm_segmentation_facets.id() == other.mm_segmentation_facets.id());
@@ -948,32 +940,25 @@ private:
     }
     // Providing a new mesh, therefore this volume will get a new unique ID assigned.
     ModelVolume(ModelObject *object, const ModelVolume &other, Domain::TriangleMesh &&mesh) :
-        name(other.name), source(other.source), config(other.config), volume_settings(other.volume_settings), object(object), m_mesh(new Domain::TriangleMesh(std::move(mesh))), m_type(other.m_type), m_transformation(other.m_transformation),
+        name(other.name), source(other.source), volume_settings(other.volume_settings), object(object), m_mesh(new Domain::TriangleMesh(std::move(mesh))), m_type(other.m_type), m_transformation(other.m_transformation),
         cut_info(other.cut_info), text_configuration(other.text_configuration), emboss_shape(other.emboss_shape)
     {
 		assert(this->id().valid()); 
-        assert(this->config.id().valid()); 
         assert(this->supported_facets.id().valid());
         assert(this->seam_facets.id().valid());
         assert(this->mm_segmentation_facets.id().valid());
         assert(this->fuzzy_skin_facets.id().valid());
-        assert(this->id() != this->config.id());
         assert(this->id() != this->supported_facets.id());
         assert(this->id() != this->seam_facets.id());
         assert(this->id() != this->mm_segmentation_facets.id());
         assert(this->id() != this->fuzzy_skin_facets.id());
 		assert(this->id() != other.id());
-        assert(this->config.id() == other.config.id());
-        this->config.set_new_unique_id();
         if (m_mesh->facets_count() > 1)
             calculate_convex_hull();
-		assert(this->config.id().valid()); 
-        assert(this->config.id() != other.config.id()); 
         assert(this->supported_facets.id() != other.supported_facets.id());
         assert(this->seam_facets.id() != other.seam_facets.id());
         assert(this->mm_segmentation_facets.id() != other.mm_segmentation_facets.id());
         assert(this->fuzzy_skin_facets.id() != other.fuzzy_skin_facets.id());
-        assert(this->id() != this->config.id());
         assert(this->supported_facets.empty());
         assert(this->seam_facets.empty());
         assert(this->mm_segmentation_facets.empty());
@@ -985,9 +970,8 @@ private:
 	friend class cereal::access;
 	friend class UndoRedo::StackImpl;
 	// Used for deserialization, therefore no IDs are allocated.
-	ModelVolume() : ObjectBase(-1), config(-1), supported_facets(-1), seam_facets(-1), mm_segmentation_facets(-1), fuzzy_skin_facets(-1), object(nullptr) {
+	ModelVolume() : ObjectBase(-1), supported_facets(-1), seam_facets(-1), mm_segmentation_facets(-1), fuzzy_skin_facets(-1), object(nullptr) {
 		assert(this->id().invalid());
-        assert(this->config.id().invalid());
         assert(this->supported_facets.id().invalid());
         assert(this->seam_facets.id().invalid());
         assert(this->mm_segmentation_facets.id().invalid());
@@ -1000,7 +984,7 @@ private:
         cereal::load_by_value(ar, seam_facets);
         cereal::load_by_value(ar, mm_segmentation_facets);
         cereal::load_by_value(ar, fuzzy_skin_facets);
-        cereal::load_by_value(ar, config);
+        cereal::load_by_value(ar, volume_settings);
         cereal::load(ar, text_configuration);
         cereal::load(ar, emboss_shape);
 		assert(m_mesh);
@@ -1019,7 +1003,7 @@ private:
         cereal::save_by_value(ar, seam_facets);
         cereal::save_by_value(ar, mm_segmentation_facets);
         cereal::save_by_value(ar, fuzzy_skin_facets);
-        cereal::save_by_value(ar, config);
+        cereal::save_by_value(ar, volume_settings);
         cereal::save(ar, text_configuration);
         cereal::save(ar, emboss_shape);
 		if (has_convex_hull)

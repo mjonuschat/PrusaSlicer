@@ -61,7 +61,7 @@ void convert_to_multipart_object(Model& model, unsigned int max_extruders)
             auto copy_volume = [o, max_extruders, &counter, &extruder_counter](ModelVolume* new_v) {
                 assert(new_v != nullptr);
                 new_v->name = (counter > 1) ? o->name + "_" + std::to_string(counter++) : o->name;
-                new_v->config.set("extruder", auto_extruder_id(max_extruders, extruder_counter));
+                new_v->volume_settings.overrides.set("extruder", auto_extruder_id(max_extruders, extruder_counter));
                 return new_v;
                 };
             if (o->instances.empty()) {
@@ -146,10 +146,7 @@ void convert_units(Model& model_to, ModelObject* object_from, ConversionType con
             ModelVolume* vol = new_object->add_volume(mesh);
             vol->name = volume->name;
             vol->set_type(volume->type());
-            // Don't copy the config's ID.
-            vol->config.assign_config(volume->config);
-            assert(vol->config.id().valid());
-            assert(vol->config.id() != volume->config.id());
+            vol->volume_settings = volume->volume_settings;
             vol->source.input_file = volume->source.input_file;
             vol->source.object_idx = (int)model_to.objects.size()-1;
             vol->source.volume_idx = vol_idx;
@@ -306,7 +303,7 @@ size_t split(ModelVolume* volume, unsigned int max_extruders)
         object->volumes[ivolume]->center_geometry_after_creation();
         object->volumes[ivolume]->translate(offset);
         object->volumes[ivolume]->name = name + "_" + std::to_string(idx + 1);
-        object->volumes[ivolume]->config.set("extruder", auto_extruder_id(max_extruders, extruder_counter));
+        object->volumes[ivolume]->volume_settings.overrides.set("extruder", auto_extruder_id(max_extruders, extruder_counter));
         object->volumes[ivolume]->discard_splittable();
         ++ idx;
     }
@@ -324,6 +321,23 @@ size_t split(ModelVolume* volume, unsigned int max_extruders)
     }
 
     return idx;
+}
+
+template <typename ObjectSettingsType>
+static ObjectSettingsType create_object_settings_from_volume_settings(const Domain::VolumeSettings &volume_settings)
+{
+    ObjectSettingsType object_settings;
+    for (const Domain::ConfigItem& item : volume_settings.items) {
+        if (!volume_settings.overrides.get(item.name()).has_value() || object_settings.items.contains(item.name()) == nullptr)
+            continue;
+
+        item.visit([&]<typename T>(const T& item_value) {
+            using ValueType = std::decay_t<T>;
+            object_settings.overrides.template set<ValueType>(item.name(), item_value);
+        });
+    }
+
+    return object_settings;
 }
 
 void split(ModelObject* object, ModelObjectPtrs* new_objects)
@@ -349,8 +363,8 @@ void split(ModelObject* object, ModelObjectPtrs* new_objects)
             ModelObject* new_object = object->get_model()->add_object();
             if (meshes.size() == 1) {
                 new_object->name = volume->name;
-                // Don't copy the config's ID.
-                new_object->config.assign_config(object->config.size() > 0 ? object->config : volume->config);
+                new_object->object_settings     = object->object_settings.overrides.empty()     ? create_object_settings_from_volume_settings<Domain::ObjectSettings>(volume->volume_settings)    : object->object_settings;
+                new_object->object_settings_sla = object->object_settings_sla.overrides.empty() ? create_object_settings_from_volume_settings<Domain::SLAObjectSettings>(volume->volume_settings) : object->object_settings_sla;
             }
             else {
                 new_object->name = object->name + (meshes.size() > 1 ? "_" + std::to_string(counter++) : "");
@@ -367,8 +381,9 @@ void split(ModelObject* object, ModelObjectPtrs* new_objects)
             // Invalidate extruder value in volume's config,
             // otherwise there will no way to change extruder for object after splitting,
             // because volume's extruder value overrides object's extruder value.
-            if (new_vol->config.has("extruder"))
-                new_vol->config.set_key_value("extruder", new ConfigOptionInt(0));
+            if (new_vol->volume_settings.overrides.get("extruder").has_value()) {
+                new_vol->volume_settings.overrides.set("extruder", 0);
+            }
 
             for (ModelInstance* model_instance : new_object->instances) {
                 const Vec3d shift = model_instance->get_transformation().get_matrix_no_offset() * new_vol->get_offset();

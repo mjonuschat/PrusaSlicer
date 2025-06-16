@@ -69,11 +69,8 @@ static void add_cut_volume(TriangleMesh& mesh, ModelObject* object, const ModelV
     vol->set_type(type);
 
     vol->name = src_volume->name + suffix;
-    // Don't copy the config's ID.
-    vol->config.assign_config(src_volume->config);
-    assert(vol->config.id().valid());
-    assert(vol->config.id() != src_volume->config.id());
     vol->cut_info = src_volume->cut_info;
+    vol->volume_settings = src_volume->volume_settings;
 }
 
 static void process_volume_cut( ModelVolume* volume, const Transform3d& instance_matrix, const Transform3d& cut_matrix,

@@ -98,11 +98,11 @@ void add_object(
     object->name = name;
     ModelVolume *volume = object->add_volume(Test::mesh(Test::TestMesh::cube_20x20x20));
     volume->translate(offset);
-    DynamicPrintConfig config;
-    config.set_deserialize_strict({
-        {"extruder", extruder_id},
-    });
-    volume->config.assign_config(config);
+
+    Domain::VolumeSettings volume_settings;
+    volume_settings.overrides.set("extruder", extruder);
+
+    volume->volume_settings = volume_settings;
     object->add_instance();
     object->ensure_on_bed();
 }
