@@ -8,7 +8,7 @@
 #include "libslic3r/miniz_extension.hpp" // mini zip archivator
 #include "3mf/Relations.hpp"
 #include "3mf/Model3mf.hpp"
-#include "3mf/BuildTicket.hpp"
+//#include "3mf/BuildTicket.hpp"
 #include "3mf/ModelMap.hpp"
 #include "3mf/PrusaFile.hpp"
 
@@ -25,6 +25,10 @@
 // Boost need to link bcrypt on windows platform
 #pragma comment(lib, "bcrypt.lib") // needed to generate random UUID
 #endif
+
+namespace Slic3r {
+    std::unique_ptr<const Slic3r::Persist3mfData> g_load_from_3mf;
+}
 
 namespace {
 using namespace Slic3r;
@@ -526,7 +530,7 @@ ModelMap move_model(/*const*/ LoadedModel &from, Slic3r::Model &to) {
 
 void set_result(Slic3r::Model &model, std::string_view filepath_3mf, ResultLoad3mf &&result) {
     Persist3mfData persist_data{FileIssues{ {std::string(filepath_3mf), std::move(result)} }};
-    model.load_from_3mf = std::make_unique<const Persist3mfData>(std::move(persist_data));
+    g_load_from_3mf = std::make_unique<const Persist3mfData>(std::move(persist_data));
 }
 
 const CT_Object * get_object(const PathId &path_id, const LoadedModel &loaded_model) {
@@ -666,7 +670,7 @@ void load_3mf(
     Slic3r::Model &model
 ) {
     // Function is not for add into an existing model
-    assert(model.load_from_3mf == nullptr);
+    assert(g_load_from_3mf == nullptr);
     
     mz_zip_archive archive;
     mz_zip_zero_struct(&archive);
@@ -734,8 +738,8 @@ void load_3mf(
         } else if (boost::algorithm::ends_with(name, ".svg") && 
             process_embossed_svg(archive, stat, model, result)) {
             continue;
-        } else if (boost::algorithm::iequals(name, BUILD_TICKET_FILE)) {
-            process_build_ticket(archive, stat, model_3mf.build.items, model_map.instances, config, config_substitutions);
+        //} else if (boost::algorithm::iequals(name, BUILD_TICKET_FILE)) {
+        //    process_build_ticket(archive, stat, model_3mf.build.items, model_map.instances, config, config_substitutions);
         } else {
             result.add(Read3mfIssueType::unprocessed_file_in_3mf, name, std::to_string(i));
         }
@@ -747,7 +751,7 @@ void load_3mf(
     // Set persistent data to model set_result
     Persist3mfData persist_data{FileIssues{{std::string(filepath_3mf), std::move(result)}}};
     fill_persist_uuid(persist_data, loaded_model, model_map);
-    model.load_from_3mf = std::make_unique<const Persist3mfData>(std::move(persist_data));
+    g_load_from_3mf = std::make_unique<const Persist3mfData>(std::move(persist_data));
 }
 
 /// <summary>
@@ -757,7 +761,7 @@ void load_3mf(
 /// </summary>
 /// <param name="model">Objects with uuid</param>
 /// <returns>True when model changed otherwise false</returns>
-bool regenerate_uuid(Slic3r::Model &model){
+bool regenerate_uuid(const Slic3r::Model &model){
     // Generator of uuid
     std::set<UUID> generated_uuid; // for checking uniqueness
     auto is_uniqueu_uuid = [&generated_uuid](const UUID& uuid) {
@@ -779,7 +783,7 @@ bool regenerate_uuid(Slic3r::Model &model){
             items.push_back(ItemWithUUID{mi_ptr->id().id, generate_uuid()});
     };
 
-    if (model.load_from_3mf == nullptr) {
+    if (g_load_from_3mf == nullptr) {
         // do not have any persistent uuid, soo generate all
         Persist3mfData new_persist;
         new_persist.build_uuid = generate_uuid();        
@@ -803,11 +807,11 @@ bool regenerate_uuid(Slic3r::Model &model){
             new_persist.objects_uuid.push_back(ObjectWithUUID{mo->id().id, generate_uuid(), std::move(components_uuid)});
             generate_items(new_persist.items_uuid, mo->instances);
         }
-        model.load_from_3mf = std::make_unique<const Persist3mfData>(std::move(new_persist));
+        g_load_from_3mf = std::make_unique<const Persist3mfData>(std::move(new_persist));
         return true;
     }
 
-    const Persist3mfData &old_persist = *model.load_from_3mf;
+    const Persist3mfData &old_persist = *g_load_from_3mf;
     Persist3mfData new_persist;
 
     // NOTE: return true when mesh contain change, otherwise false
@@ -956,7 +960,7 @@ bool regenerate_uuid(Slic3r::Model &model){
     change_build_uuid |= old_persist.build_uuid.is_nil() || !is_uniqueu_uuid(old_persist.build_uuid);
     new_persist.build_uuid = (change_build_uuid) ? generate_uuid() : old_persist.build_uuid;
 
-    model.load_from_3mf = std::make_unique<const Persist3mfData>(std::move(new_persist));
+   g_load_from_3mf = std::make_unique<const Persist3mfData>(std::move(new_persist));
     return change_build_uuid;
 }
 
@@ -975,27 +979,27 @@ bool load_3mf(
     ::load_3mf(filepath_3mf, config, config_substitutions, model);    
 
     // after load the variable SHOULD be setted
-    assert(model.load_from_3mf != nullptr);
-    if (model.load_from_3mf == nullptr)
+    assert(g_load_from_3mf != nullptr);
+    if (g_load_from_3mf == nullptr)
         return false;
 
-    const FileIssues& fi = model.load_from_3mf->file_issues;
+    const FileIssues& fi = g_load_from_3mf->file_issues;
     // Issues should contain exactly one file issue
     assert(fi.size() == 1);
     if (fi.size() != 1)
         return false;
 
     const ResultLoad3mf & file_result = fi.begin()->second;
-    if(file_result.is_old_3mf()){
-        // load old way
-        std::string path(filepath_3mf); // copy
-        return priv_old_3mf::load_3mf(path.c_str(), config, config_substitutions, &model, check_version);
-        // TODO: unify same geometry + transform volumes.    
-    }
+    //if(file_result.is_old_3mf()){
+    //    // load old way
+    //    std::string path(filepath_3mf); // copy
+    //    return priv_old_3mf::load_3mf(path.c_str(), config, config_substitutions, &model, check_version);
+    //    // TODO: unify same geometry + transform volumes.    
+    //}
     return file_result.operator bool();
 }
 
-void store_3mf(const std::string &filepath, /* const */ Model &model,
+void store_3mf(const std::string &filepath, const Model &model,
     const DynamicPrintConfig *config, const Store3mfParam &param)
 {
     // check input 

@@ -512,8 +512,8 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/Format/Metadata.hpp
         include/Slic3r/Biz/Format/ResultLoad3mf.hpp
         src/Slic3r/Biz/Format/3mf.cpp
-        src/Slic3r/Biz/Format/3mf/BuildTicket.cpp
-        src/Slic3r/Biz/Format/3mf/BuildTicket.hpp
+        #src/Slic3r/Biz/Format/3mf/BuildTicket.cpp
+        #src/Slic3r/Biz/Format/3mf/BuildTicket.hpp
         src/Slic3r/Biz/Format/3mf/Metadata.cpp
         src/Slic3r/Biz/Format/3mf/Model3mf.cpp
         src/Slic3r/Biz/Format/3mf/Model3mf.hpp

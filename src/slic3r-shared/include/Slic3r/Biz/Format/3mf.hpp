@@ -75,11 +75,10 @@ namespace Slic3r {
     /// </summary>
     /// <param name="filepath">Filename with path for store 3mf file in UTF8</param>
     /// <param name="model">Model of scene geometry and orientation
-    /// NOTE: Not CONST model may changed UUID</param>
     /// <param name="config">Configuration for printing</param>
     extern void store_3mf(
         const std::string &filepath,
-        /* const */ Model &model, 
+        const Model &model, 
         const DynamicPrintConfig* config, const Store3mfParam &param = Store3mfParam{});
 
 } // namespace Slic3r

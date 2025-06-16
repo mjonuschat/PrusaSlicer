@@ -17,6 +17,10 @@
 #include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 
+namespace Slic3r {
+    extern std::unique_ptr<const Persist3mfData> g_load_from_3mf;
+}
+
 using namespace Slic3r;
 using namespace format_3MF;
 using TriangleMesh = Slic3r::Domain::TriangleMesh;
@@ -1561,11 +1565,11 @@ VolumeToObjectid write_volumes(std::stringstream &stream, const Slic3r::Model &m
             const ObjectIdWithPath &id_path = it->second;
             unsigned mesh_id = id_path.id;
             const std::string &mesh_path = id_path.path;
-            assert(model.load_from_3mf);
-            if (model.load_from_3mf == nullptr)
+            assert(g_load_from_3mf);
+            if (g_load_from_3mf == nullptr)
                 continue;
 
-            const VolumesWithUUID &volumes_uuid = model.load_from_3mf->volumes_uuid;
+            const VolumesWithUUID &volumes_uuid = g_load_from_3mf->volumes_uuid;
             auto volume_uuid_it = std::find_if(volumes_uuid.begin(), volumes_uuid.end(),
                 [id = volume_ptr->id().id](const VolumeWithUUID &v_uuid) {
                     return v_uuid.volume_id == id;
@@ -1608,11 +1612,11 @@ ObjectToObjectid write_objects(std::stringstream &stream, const Slic3r::Model &m
         if (!is_valid_object(object_ptr))
             continue;
 
-        assert(model.load_from_3mf);
-        if (model.load_from_3mf == nullptr)
+        assert(g_load_from_3mf);
+        if (g_load_from_3mf == nullptr)
             continue;
 
-        const ObjectsWithUUID &objects_uuid = model.load_from_3mf->objects_uuid;
+        const ObjectsWithUUID &objects_uuid = g_load_from_3mf->objects_uuid;
         auto object_uuid_it = std::find_if(objects_uuid.begin(), objects_uuid.end(),
             [id = object_ptr->id().id](const ObjectWithUUID &o_uuid) { return o_uuid.object_id == id; }
         );
@@ -1663,14 +1667,14 @@ InstanceToBuildOrder write_instances(std::stringstream &stream, const Slic3r::Mo
     const ObjectToObjectid& stored_objects)
 {
     InstanceToBuildOrder stored_instances;
-    assert(model.load_from_3mf != nullptr);
-    if (model.load_from_3mf == nullptr)
+    assert(g_load_from_3mf != nullptr);
+    if (g_load_from_3mf == nullptr)
         return stored_instances;
-    assert(!model.load_from_3mf->build_uuid.is_nil());
-    stream << " <" << BUILD_TAG << " " << PROD_NS << UUID_ATTR << "=\"" << model.load_from_3mf->build_uuid << "\" >\n";
+    assert(!g_load_from_3mf->build_uuid.is_nil());
+    stream << " <" << BUILD_TAG << " " << PROD_NS << UUID_ATTR << "=\"" << g_load_from_3mf->build_uuid << "\" >\n";
     write_xml_commnet(stream, "List of PrusaSlicer:ModelInstance(with instance transformation)");
     unsigned stored_instance_index = 0;
-    const ItemsWithUUID &items_uuid = model.load_from_3mf->items_uuid;
+    const ItemsWithUUID &items_uuid = g_load_from_3mf->items_uuid;
     for (const ModelObject *object_ptr : model.objects) {
         if (!is_valid_object(object_ptr))
             continue;
@@ -1700,7 +1704,7 @@ InstanceToBuildOrder write_instances(std::stringstream &stream, const Slic3r::Mo
             // When False it is missinterpreted instance and should be separated from object.
             assert(
                 instance_ptr->id().id == object_ptr->instances.front()->id().id ||
-                Geometry::trafos_differ_in_rotation_by_z_and_mirroring_by_xy_only(                    
+                Biz::Algorithms::Geometry::trafos_differ_in_rotation_by_z_and_mirroring_by_xy_only(                    
                     instance_ptr->get_matrix(), object_ptr->instances.front()->get_matrix())
             );
         }
@@ -1711,11 +1715,11 @@ InstanceToBuildOrder write_instances(std::stringstream &stream, const Slic3r::Mo
 
 CT_Metadata_Model &update(CT_Metadata_Model &metadata, const Slic3r::Model &model) {
     // Copy permanent Creation Date
-    if (model.load_from_3mf != nullptr &&
-        !model.load_from_3mf->creation_date.empty())
+    if (g_load_from_3mf != nullptr &&
+        !g_load_from_3mf->creation_date.empty())
         metadata.insert(
             metadata.begin(),
-            ModelMetadata{ModelMetadataNames::CreationDate, model.load_from_3mf->creation_date, true}
+            ModelMetadata{ModelMetadataNames::CreationDate, g_load_from_3mf->creation_date, true}
         );
 
     // Remove non unique names

@@ -13,6 +13,10 @@
 
 #include "Slic3r/Log.hpp"
 
+namespace Slic3r {
+    extern std::unique_ptr<const Persist3mfData> g_load_from_3mf;
+}
+
 using json = nlohmann::ordered_json;
 using namespace Slic3r;
 
@@ -1184,10 +1188,10 @@ json object_to_json(const ModelObject &object, const StoredStructure &stored_str
 
 json objects_to_json(const Model &model, const StoredStructure &stored_structure) {
 
-    assert(model.load_from_3mf);
-    if (model.load_from_3mf == nullptr)
+    assert(g_load_from_3mf);
+    if (g_load_from_3mf == nullptr)
         return {};
-    const Persist3mfData &persist = *model.load_from_3mf;
+    const Persist3mfData &persist = *g_load_from_3mf;
     json objects_json = json::array();
     for (const ModelObject *object_ptr : model.objects) {
         assert(object_ptr != nullptr);
