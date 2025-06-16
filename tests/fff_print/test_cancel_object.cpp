@@ -3,6 +3,8 @@
 #include <sstream>
 #include <fstream>
 
+#include "Slic3r/Biz/Algorithms/ModelObject.hpp"
+#include "Slic3r/Biz/Algorithms/ModelVolume.hpp"
 #include "libslic3r/GCode.hpp"
 #include "test_data.hpp"
 
@@ -11,6 +13,9 @@ using namespace Test;
 using namespace Catch;
 
 using Biz::GCodeReader::GCodeReader;
+using Biz::Algorithms::ModelObject::add_volume;
+using Biz::Algorithms::ModelObject::ensure_on_bed;
+using Biz::Algorithms::ModelVolume::translate;
 
 constexpr bool debug_files{false};
 
@@ -91,20 +96,20 @@ void check_retraction(const std::string &gcode, double offset = 0.0) {
 }
 
 void add_object(
-    Model &model, const std::string &name, const int extruder, const Vec3d &offset = Vec3d::Zero()
+    Domain::Model &model, const std::string &name, const int extruder, const Vec3d &offset = Vec3d::Zero()
 ) {
     std::string extruder_id{std::to_string(extruder)};
-    ModelObject *object = model.add_object();
+    Domain::ModelObject *object = model.add_object();
     object->name = name;
-    ModelVolume *volume = object->add_volume(Test::mesh(Test::TestMesh::cube_20x20x20));
-    volume->translate(offset);
+    Domain::ModelVolume *volume = add_volume(object, Test::mesh(Test::TestMesh::cube_20x20x20));
+    translate(*volume, offset);
 
     Domain::VolumeSettings volume_settings;
     volume_settings.overrides.set("extruder", extruder);
 
     volume->volume_settings = volume_settings;
     object->add_instance();
-    object->ensure_on_bed();
+    ensure_on_bed(*object);
 }
 
 class CancelObjectFixture
@@ -131,8 +136,8 @@ public:
 
     TestConfig config;
 
-    Model two_cubes;
-    Model multimaterial_cubes;
+    Domain::Model two_cubes;
+    Domain::Model multimaterial_cubes;
 
     double retract_length{};
     double retract_length_toolchange{};

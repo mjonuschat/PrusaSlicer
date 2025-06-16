@@ -306,7 +306,7 @@ TEST_CASE("WaveSeed - ZFillFunction - SPE-2698", "[WaveSeedZFillFunctionSPE2698]
         Point(-5779767, -22315622),
     }};
 
-    std::vector<Slic3r::Algorithm::WaveSeed> wave_seeds = Slic3r::Algorithm::wave_seeds(src, boundary, 83561.8046, true);
+    std::vector<Slic3r::Algorithm::WaveSeed> wave_seeds = Slic3r::Algorithm::wave_seeds(src, boundary, 83561.8046f, true);
     for (const Slic3r::Algorithm::WaveSeed &wave_seed : wave_seeds) {
         REQUIRE(wave_seed.src < src.size());
         REQUIRE(wave_seed.boundary < boundary.size());

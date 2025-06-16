@@ -1,17 +1,10 @@
 #pragma once
 
 #include "Slic3r/Domain/ElementRef.hpp"
+#include "Slic3r/Domain/Forward.hpp"
 #include "Slic3r/Domain/ConfigContainer.hpp"
 #include "Slic3r/Domain/BedContainer.hpp"
 #include "Slic3r/Domain/FindById.hpp"
-
-namespace Slic3r {
-class Model;
-class ModelObject;
-class ModelVolume;
-class ModelInstance;
-enum class ModelVolumeType : int;
-}
 
 namespace Slic3r::Domain {
 

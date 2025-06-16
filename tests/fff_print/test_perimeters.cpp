@@ -436,7 +436,7 @@ SCENARIO("Some weird coverage test", "[Perimeters]")
 
     // we just need a pre-filled Print object
     Print print;
-    Model model;
+    Domain::Model model;
     Slic3r::Test::init_print({ Test::TestMesh::cube_20x20x20 }, print, model, config);
 
     // override a layer's slices

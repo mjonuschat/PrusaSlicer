@@ -12,7 +12,8 @@
 #include <cassert>
 #include <cstring>
 
-#include "libslic3r/Model.hpp"
+#include "Slic3r/Biz/Algorithms/Model.hpp"
+#include "Slic3r/Biz/Algorithms/ModelObject.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "OBJ.hpp"
 #include "objparser.hpp"
@@ -23,6 +24,8 @@
 #else
 #define DIR_SEPARATOR '/'
 #endif
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r {
 
@@ -111,7 +114,7 @@ bool load_obj(const char *path, TriangleMesh *meshptr)
     return true;
 }
 
-bool load_obj(const char *path, Model *model, const char *object_name_in)
+bool load_obj(const char *path, Domain::Model *model, const char *object_name_in)
 {
     TriangleMesh mesh;
     
@@ -125,7 +128,7 @@ bool load_obj(const char *path, Model *model, const char *object_name_in)
         } else
            object_name.assign(object_name_in);
     
-        model->add_object(object_name.c_str(), path, std::move(mesh));
+        Algorithms::Model::add_object(model, object_name.c_str(), path, std::move(mesh));
     }
     
     return ret;
@@ -138,15 +141,15 @@ bool store_obj(const char *path, TriangleMesh *mesh)
     return true;
 }
 
-bool store_obj(const char *path, ModelObject *model_object)
+bool store_obj(const char *path, Domain::ModelObject *model_object)
 {
-    TriangleMesh mesh = model_object->mesh();
+    TriangleMesh mesh = Algorithms::ModelObject::mesh(*model_object);
     return store_obj(path, &mesh);
 }
 
-bool store_obj(const char *path, Model *model)
+bool store_obj(const char *path, Domain::Model *model)
 {
-    TriangleMesh mesh = model->mesh();
+    TriangleMesh mesh = Algorithms::Model::mesh(*model);
     return store_obj(path, &mesh);
 }
 

@@ -170,24 +170,24 @@ void MultipleBeds::set_active_bed(int i)
 }
 
 namespace MultipleBedsUtils {
-InstanceOffsets get_instance_offsets(Model& model) {
+InstanceOffsets get_instance_offsets(Domain::Model& model) {
     InstanceOffsets result;
-    for (ModelObject* mo : model.objects) {
-        for (ModelInstance* mi : mo->instances) {
+    for (Domain::ModelObject* mo : model.objects) {
+        for (Domain::ModelInstance* mi : mo->instances) {
             result.emplace_back(mi->get_offset());
         }
     }
     return result;
 }
 
-ObjectInstances get_object_instances(const Model& model) {
+ObjectInstances get_object_instances(const Domain::Model& model) {
     ObjectInstances result;
 
     std::transform(
         model.objects.begin(),
         model.objects.end(),
         std::back_inserter(result),
-        [](ModelObject *object){
+        [](Domain::ModelObject *object){
             return std::pair{object, object->instances};
         }
     );
@@ -195,24 +195,24 @@ ObjectInstances get_object_instances(const Model& model) {
     return result;
 }
 
-void restore_instance_offsets(Model& model, const InstanceOffsets &offsets)
+void restore_instance_offsets(Domain::Model& model, const InstanceOffsets &offsets)
 {
     size_t i = 0;
-    for (ModelObject* mo : model.objects) {
-        for (ModelInstance* mi : mo->instances) {
+    for (Domain::ModelObject* mo : model.objects) {
+        for (Domain::ModelInstance* mi : mo->instances) {
             mi->set_offset(offsets[i++]);
         }
     }
 }
 
-void restore_object_instances(Model& model, const ObjectInstances &object_instances) {
-    ModelObjectPtrs objects;
+void restore_object_instances(Domain::Model& model, const ObjectInstances &object_instances) {
+    Domain::ModelObjectPtrs objects;
 
     std::transform(
         object_instances.begin(),
         object_instances.end(),
         std::back_inserter(objects),
-        [](const std::pair<ModelObject *, ModelInstancePtrs> &key_value){
+        [](const std::pair<Domain::ModelObject *, Domain::ModelInstancePtrs> &key_value){
             auto [object, instances]{key_value};
             object->instances = std::move(instances);
             return object;
@@ -222,7 +222,7 @@ void restore_object_instances(Model& model, const ObjectInstances &object_instan
     model.objects = objects;
 }
 
-void with_single_bed_model_fff(Model &model, const int bed_index, const std::function<void()> &callable) {
+void with_single_bed_model_fff(Domain::Model &model, const int bed_index, const std::function<void()> &callable) {
     const InstanceOffsets original_offssets{MultipleBedsUtils::get_instance_offsets(model)};
     const ObjectInstances original_objects{get_object_instances(model)};
     const int original_bed{s_multiple_beds.get_active_bed()};
@@ -240,27 +240,27 @@ void with_single_bed_model_fff(Model &model, const int bed_index, const std::fun
 
 using InstancesPrintability = std::vector<bool>;
 
-InstancesPrintability get_instances_printability(const Model &model) {
+InstancesPrintability get_instances_printability(const Domain::Model &model) {
     InstancesPrintability result;
-    for (ModelObject* mo : model.objects) {
-        for (ModelInstance* mi : mo->instances) {
+    for (Domain::ModelObject* mo : model.objects) {
+        for (Domain::ModelInstance* mi : mo->instances) {
             result.emplace_back(mi->printable);
         }
     }
     return result;
 }
 
-void restore_instances_printability(Model& model, const InstancesPrintability &printability)
+void restore_instances_printability(Domain::Model& model, const InstancesPrintability &printability)
 {
     size_t i = 0;
-    for (ModelObject* mo : model.objects) {
-        for (ModelInstance* mi : mo->instances) {
+    for (Domain::ModelObject* mo : model.objects) {
+        for (Domain::ModelInstance* mi : mo->instances) {
             mi->printable = printability[i++];
         }
     }
 }
 
-void with_single_bed_model_sla(Model &model, const int bed_index, const std::function<void()> &callable) {
+void with_single_bed_model_sla(Domain::Model &model, const int bed_index, const std::function<void()> &callable) {
     const InstanceOffsets original_offssets{get_instance_offsets(model)};
     const InstancesPrintability original_printability{get_instances_printability(model)};
     const int original_bed{s_multiple_beds.get_active_bed()};
@@ -284,12 +284,12 @@ bool MultipleBeds::is_instance_on_bed(const Domain::ObjectID id, const int bed_i
     return (it != m_inst_to_bed.end() && it->second == bed_index);
 }
 
-void MultipleBeds::remove_instances_outside_outside_bed(Model& model, const int bed_index) const {
-    for (ModelObject* mo : model.objects) {
+void MultipleBeds::remove_instances_outside_outside_bed(Domain::Model& model, const int bed_index) const {
+    for (Domain::ModelObject* mo : model.objects) {
         mo->instances.erase(std::remove_if(
             mo->instances.begin(),
             mo->instances.end(),
-            [&](const ModelInstance* instance){
+            [&](const Domain::ModelInstance* instance){
                 return !this->is_instance_on_bed(instance->id(), bed_index);
             }
         ), mo->instances.end());
@@ -298,15 +298,15 @@ void MultipleBeds::remove_instances_outside_outside_bed(Model& model, const int 
     model.objects.erase(std::remove_if(
         model.objects.begin(),
         model.objects.end(),
-        [](const ModelObject *object){
+        [](const Domain::ModelObject *object){
             return object->instances.empty();
         }
     ), model.objects.end());
 }
 
-void MultipleBeds::set_instances_outside_outside_bed_unprintable(Model& model, const int bed_index) const {
-    for (ModelObject* mo : model.objects) {
-        for (ModelInstance* mi : mo->instances) {
+void MultipleBeds::set_instances_outside_outside_bed_unprintable(Domain::Model& model, const int bed_index) const {
+    for (Domain::ModelObject* mo : model.objects) {
+        for (Domain::ModelInstance* mi : mo->instances) {
             if (!this->is_instance_on_bed(mi->id(), bed_index)) {
                 mi->printable = false;
             }
@@ -314,14 +314,14 @@ void MultipleBeds::set_instances_outside_outside_bed_unprintable(Model& model, c
     }
 }
 
-void MultipleBeds::move_from_bed_to_first_bed(Model& model, const int bed_index) const
+void MultipleBeds::move_from_bed_to_first_bed(Domain::Model& model, const int bed_index) const
 {
     if (bed_index < 0 || bed_index >= MAX_NUMBER_OF_BEDS) {
         assert(false);
         return;
     }
-    for (ModelObject* mo : model.objects) {
-        for (ModelInstance* mi : mo->instances) {
+    for (Domain::ModelObject* mo : model.objects) {
+        for (Domain::ModelInstance* mi : mo->instances) {
             if (this->is_instance_on_bed(mi->id(), bed_index)) {
                 mi->set_offset(mi->get_offset() - get_bed_translation(bed_index));
             }
@@ -329,7 +329,7 @@ void MultipleBeds::move_from_bed_to_first_bed(Model& model, const int bed_index)
     }
 }
 
-bool MultipleBeds::is_glvolume_on_thumbnail_bed(const Model& model, int obj_idx, int instance_idx) const
+bool MultipleBeds::is_glvolume_on_thumbnail_bed(const Domain::Model& model, int obj_idx, int instance_idx) const
 {
     if (m_bed_for_thumbnails_generation == -2) {
         // Called from shape gallery, just render everything.
@@ -345,12 +345,12 @@ bool MultipleBeds::is_glvolume_on_thumbnail_bed(const Model& model, int obj_idx,
     return (m_bed_for_thumbnails_generation < 0 || it->second == m_bed_for_thumbnails_generation);
 }
 
-void MultipleBeds::update_shown_beds(Model& model, const BuildVolume& build_volume, bool only_remove /*=false*/) {
+void MultipleBeds::update_shown_beds(Domain::Model& model, const BuildVolume& build_volume, bool only_remove /*=false*/) {
     const int original_number_of_beds = m_number_of_beds;
     const int stash_active = get_active_bed();
     if (! only_remove)
         m_number_of_beds = get_max_beds();
-    model.update_print_volume_state(build_volume);
+    Slic3r::update_print_volume_state(model, build_volume);
     const int max_bed{std::accumulate(
         this->m_inst_to_bed.begin(), this->m_inst_to_bed.end(), 0,
         [](const int max_so_far, const std::pair<Domain::ObjectID, int> &value){
@@ -358,25 +358,25 @@ void MultipleBeds::update_shown_beds(Model& model, const BuildVolume& build_volu
         }
     )};
     m_number_of_beds = std::min(this->get_max_beds(), max_bed + 1);
-    model.update_print_volume_state(build_volume);
+    Slic3r::update_print_volume_state(model, build_volume);
     set_active_bed(m_number_of_beds != original_number_of_beds ? 0 : stash_active);
     if (m_number_of_beds != original_number_of_beds)
         request_next_bed(false);
 }
 
-bool MultipleBeds::rearrange_after_load(Model& model, const BuildVolume& build_volume)
+bool MultipleBeds::rearrange_after_load(Domain::Model& model, const BuildVolume& build_volume)
 {
     int original_number_of_beds = m_number_of_beds;
     int stash_active = get_active_bed();
     Slic3r::ScopeGuard guard([&]() {
         m_legacy_layout = false;
         m_number_of_beds = get_max_beds();
-        model.update_print_volume_state(build_volume);
+        Slic3r::update_print_volume_state(model, build_volume);
         int max_bed = 0;
         for (const auto& [oid, bed_id] : m_inst_to_bed)
             max_bed = std::max(bed_id, max_bed);
         m_number_of_beds = std::min(get_max_beds(), max_bed + 1);
-        model.update_print_volume_state(build_volume);
+        Slic3r::update_print_volume_state(model, build_volume);
         request_next_bed(false);
         set_active_bed(m_number_of_beds != original_number_of_beds ? 0 : stash_active);
         if (m_number_of_beds != original_number_of_beds)
@@ -389,7 +389,7 @@ bool MultipleBeds::rearrange_after_load(Model& model, const BuildVolume& build_v
         // This is to ensure that even objects on linear bed with higher than
         // allowed index will be rearranged.
         m_number_of_beds = abs_max;
-        model.update_print_volume_state(build_volume);
+        Slic3r::update_print_volume_state(model, build_volume);
         int max_bed = 0;
         for (const auto& [oid, bed_id] : m_inst_to_bed)
             max_bed = std::max(bed_id, max_bed);
@@ -403,9 +403,9 @@ bool MultipleBeds::rearrange_after_load(Model& model, const BuildVolume& build_v
     int max_bed = 0;
 
     // Check that no instances are out of any bed.
-    std::map<Domain::ObjectID, std::pair<ModelInstance*, int>> id_to_ptr_and_bed;
-    for (ModelObject* mo : model.objects) {
-        for (ModelInstance* mi : mo->instances) {
+    std::map<Domain::ObjectID, std::pair<Domain::ModelInstance*, int>> id_to_ptr_and_bed;
+    for (Domain::ModelObject* mo : model.objects) {
+        for (Domain::ModelInstance* mi : mo->instances) {
             auto it = m_inst_to_bed.find(mi->id());
             if (it == m_inst_to_bed.end()) {
                 // An instance is outside. Do not rearrange anything,

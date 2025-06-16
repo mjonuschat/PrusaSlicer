@@ -10,14 +10,10 @@
 #include <set>
 #include <string>
 
-namespace Slic3r {
+namespace Slic3r::Domain {
 class Model;
 class ModelObject;
-class ModelInstance;
 class ModelVolume;
-}
-
-namespace Slic3r::Domain {
 struct BedInstance;
 }
 
@@ -61,20 +57,20 @@ private:
     bool render_out_of_beds();
     void render_drop_target_area();
     bool render_bed_node(const Domain::BedInstance* bed, size_t config_container_id);
-    bool render_object_node(const Slic3r::ModelObject* object, const Domain::BedInstance* bed = nullptr, bool is_sla_config = false);
-    bool render_connectors_node(const Slic3r::ModelObject* object, size_t bed_id);
-    bool render_volumes(const Slic3r::ModelObject* object, size_t bed_id, bool is_sla_config);
-    void render_volume_node(const Slic3r::ModelVolume* volume, const Domain::ElementRef& sel_element, bool is_selected, bool is_sla_config);
-    bool render_instances_node(const Slic3r::ModelObject* object, const Domain::BedInstance* bed);
-    bool render_instances(const Slic3r::ModelObject* object, const std::set<size_t>& instances_on_bed);
-    void render_instance_node(const Slic3r::ModelObject* object, size_t inst_id, bool is_selected);
-    void render_infos_node(const Slic3r::ModelObject* object, bool is_sla_config);
+    bool render_object_node(const Domain::ModelObject* object, const Domain::BedInstance* bed = nullptr, bool is_sla_config = false);
+    bool render_connectors_node(const Domain::ModelObject* object, size_t bed_id);
+    bool render_volumes(const Domain::ModelObject* object, size_t bed_id, bool is_sla_config);
+    void render_volume_node(const Domain::ModelVolume* volume, const Domain::ElementRef& sel_element, bool is_selected, bool is_sla_config);
+    bool render_instances_node(const Domain::ModelObject* object, const Domain::BedInstance* bed);
+    bool render_instances(const Domain::ModelObject* object, const std::set<size_t>& instances_on_bed);
+    void render_instance_node(const Domain::ModelObject* object, size_t inst_id, bool is_selected);
+    void render_infos_node(const Domain::ModelObject* object, bool is_sla_config);
 
     void render_edited(const char* init_name, const Domain::ElementRef& sel_element);
     void render_printable_icon(const Domain::ElementRef& sel_element, bool is_printable);
     void render_extruder_marker(size_t extruder_id, const std::vector<std::string>& colors);
     void render_slicing_state_marker(size_t bed_instance_id);
-    void render_infos_selectable(const std::set<Render::Icon>& infos, const Slic3r::ModelObject* object, bool force_render);
+    void render_infos_selectable(const std::set<Render::Icon>& infos, const Domain::ModelObject* object, bool force_render);
 
     bool tree_node(const char* str_id, ImGuiTreeNodeFlags flags, const std::string& label, bool add_overrides_marker = false);
 
@@ -83,7 +79,7 @@ private:
 
     bool handle_selection(const Domain::ElementRef& id);
     void handle_dragging(const Domain::ElementRef& id);
-    void force_select_whole_object(const Slic3r::ModelObject* object);
+    void force_select_whole_object(const Domain::ModelObject* object);
 
     void propagate_selection();
     void propagate_name_editing(const Domain::ElementRef& id, const std::string& new_name);
@@ -100,7 +96,7 @@ private:
 private:
     struct ProjectContext
     {
-        const Model*                    model             { nullptr };
+        const Domain::Model*            model             { nullptr };
         MultiSelections                 instances_ms;
         MultiSelections                 volumes_ms;
         size_t                          edited_node_id              { 0 };

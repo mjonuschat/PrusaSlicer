@@ -45,6 +45,14 @@ add_library(slic3r-biz-algorithms
     include/Slic3r/Biz/Algorithms/TriangleSelector.hpp
     src/Slic3r/Biz/Algorithms/QuadricEdgeCollapse.cpp
     include/Slic3r/Biz/Algorithms/QuadricEdgeCollapse.hpp
+    src/Slic3r/Biz/Algorithms/ModelInstance.cpp
+    include/Slic3r/Biz/Algorithms/ModelInstance.hpp
+    src/Slic3r/Biz/Algorithms/Model.cpp
+    include/Slic3r/Biz/Algorithms/Model.hpp
+    src/Slic3r/Biz/Algorithms/ModelObject.cpp
+    include/Slic3r/Biz/Algorithms/ModelObject.hpp
+    src/Slic3r/Biz/Algorithms/ModelVolume.cpp
+    include/Slic3r/Biz/Algorithms/ModelVolume.hpp
 )
 target_include_directories(slic3r-biz-algorithms PUBLIC include)
 target_include_directories(slic3r-biz-algorithms PRIVATE src)
@@ -60,12 +68,10 @@ else()
 endif()
 
 target_link_libraries(slic3r-biz-algorithms PRIVATE localesutils glu-libtess qhull)
-#FIXME: Temporarily link libslic3r until ModelVolume is moved into the domain.
 target_link_libraries(slic3r-biz-algorithms PUBLIC
     slic3r-domain
     clipper
     admesh
-    libslic3r
 )
 
 if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)

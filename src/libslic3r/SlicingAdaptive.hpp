@@ -15,18 +15,19 @@
 #include "Slicing.hpp"
 #include "admesh/stl.h"
 
-namespace Slic3r
-{
-
+namespace Slic3r::Domain {
 class ModelVolume;
 class ModelObject;
+} // namespace Slic3r::Domain
+
+namespace Slic3r {
 
 class SlicingAdaptive
 {
 public:
     void  clear();
     void  set_slicing_parameters(SlicingParameters params) { m_slicing_params = params; }
-    void  prepare(const ModelObject &object);
+    void  prepare(const Domain::ModelObject &object);
     // Return next layer height starting from the last print_z, using a quality measure
     // (quality in range from 0 to 1, 0 - highest quality at low layer heights, 1 - lowest print quality at high layer heights).
     // The layer height curve shall be centered roughly around the default profile's layer height for quality 0.5.

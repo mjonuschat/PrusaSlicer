@@ -51,6 +51,7 @@ namespace pt = boost::property_tree;
 
 #include "fast_float.h"
 
+#include "Slic3r/Biz/Algorithms/ModelObject.hpp"
 #include "Slic3r/Biz/Config/ConfigLegacy.hpp"
 #include "Slic3r/Biz/Config/Legacy/PrintConfig.hpp"
 
@@ -72,6 +73,8 @@ namespace CustomGCode = Slic3r::Domain::CustomGCode;
 using Slic3r::Domain::ConfigPack;
 using Slic3r::Domain::ConfigPackFDM;
 using Slic3r::Domain::ConfigPackSLA;
+
+using namespace Slic3r::Biz;
 
 // Slightly faster than sprintf("%.9g"), but there is an issue with the karma floating point formatter,
 // https://github.com/boostorg/spirit/pull/586
@@ -458,7 +461,7 @@ namespace Slic3rLegacy {
             // Index of the ModelObject in its respective Model, zero based.
             int model_object_idx;
             Geometry geometry;
-            ModelObject* object;
+            Domain::ModelObject* object;
             ComponentsList components;
 
             CurrentObject() { reset(); }
@@ -480,10 +483,10 @@ namespace Slic3rLegacy {
 
         struct Instance
         {
-            ModelInstance* instance;
+            Domain::ModelInstance* instance;
             Transform3d transform;
 
-            Instance(ModelInstance* instance, const Transform3d& transform)
+            Instance(Domain::ModelInstance* instance, const Transform3d& transform)
                 : instance(instance)
                 , transform(transform)
             {
@@ -567,7 +570,7 @@ namespace Slic3rLegacy {
         // after returning from XML_Parse() function, thus we keep the error state here.
         bool m_parse_error { false };
         std::string m_parse_error_message;
-        Model* m_model;
+        Domain::Model* m_model;
         float m_unit_factor;
         CurrentObject m_curr_object;
         IdToModelObjectMap m_objects;
@@ -594,7 +597,7 @@ namespace Slic3rLegacy {
 
         bool load_model_from_file(
             const std::string& filename,
-            Model& model,
+            Domain::Model& model,
             ConfigPack& config,
             Slic3rLegacy::ConfigSubstitutionContext& config_substitutions,
             bool check_version,
@@ -619,7 +622,7 @@ namespace Slic3rLegacy {
 
         bool _load_model_from_file(
             const std::string& filename,
-            Model& model,
+            Domain::Model& model,
             ConfigPack& config,
             Slic3rLegacy::ConfigSubstitutionContext& config_substitutions,
             Slic3r::Domain::WipeTowersOnBeds& wipe_towers,
@@ -644,7 +647,7 @@ namespace Slic3rLegacy {
         );
 
         void _extract_print_config_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat, ConfigPack& config, Slic3rLegacy::ConfigSubstitutionContext& subs_context, const std::string& archive_filename);
-        bool _extract_model_config_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat, Model& model);
+        bool _extract_model_config_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat, Domain::Model& model);
         void _extract_embossed_svg_shape_file(const std::string &filename, mz_zip_archive &archive, const mz_zip_archive_file_stat &stat);
 
         // handlers to parse the .rels file
@@ -704,7 +707,7 @@ namespace Slic3rLegacy {
 
         bool _create_object_instance(PathId object_id, const Transform3d& transform, const bool printable, unsigned int recur_counter);
 
-        void _apply_transform(ModelInstance& instance, const Transform3d& transform);
+        void _apply_transform(Domain::ModelInstance& instance, const Transform3d& transform);
 
         bool _handle_start_config(const char** attributes, unsigned int num_attributes);
         bool _handle_end_config();
@@ -720,7 +723,7 @@ namespace Slic3rLegacy {
         bool _handle_start_config_metadata(const char** attributes, unsigned int num_attributes);
         bool _handle_end_config_metadata();
 
-        bool _generate_volumes(ModelObject& object, const Geometry& geometry, const ObjectMetadata::VolumeMetadataList& volumes, Slic3rLegacy::ConfigSubstitutionContext& config_substitutions);
+        bool _generate_volumes(Domain::ModelObject& object, const Geometry& geometry, const ObjectMetadata::VolumeMetadataList& volumes, Slic3rLegacy::ConfigSubstitutionContext& config_substitutions);
 
         // callbacks to parse the .rels file
         static void XMLCALL _handle_start_relationships_element(void *userData, const char *name, const char **attributes);
@@ -754,7 +757,7 @@ namespace Slic3rLegacy {
 
     bool _3MF_Importer::load_model_from_file(
         const std::string& filename,
-        Model& model,
+        Domain::Model& model,
         ConfigPack& config,
         Slic3rLegacy::ConfigSubstitutionContext& config_substitutions,
         bool check_version,
@@ -808,7 +811,7 @@ namespace Slic3rLegacy {
 
     bool _3MF_Importer::_load_model_from_file(
         const std::string& filename,
-        Model& model,
+        Domain::Model& model,
         ConfigPack& config,
         Slic3rLegacy::ConfigSubstitutionContext& config_substitutions,
         Slic3r::Domain::WipeTowersOnBeds& wipe_towers,
@@ -976,7 +979,7 @@ namespace Slic3rLegacy {
             size_t curr_models_count = m_model->objects.size();
             size_t i = 0;
             while (i < curr_models_count) {
-                ModelObject* model_object = m_model->objects[i];
+                Domain::ModelObject* model_object = m_model->objects[i];
                 if (model_object->instances.size() > 1) {
                     // select the geometry associated with the original model object
                     const Geometry* geometry = nullptr;
@@ -1003,7 +1006,7 @@ namespace Slic3rLegacy {
                     // for each instance after the 1st, create a new model object containing only that instance
                     // and copy into it the geometry
                     while (model_object->instances.size() > 1) {
-                        ModelObject* new_model_object = m_model->add_object(*model_object);
+                        Domain::ModelObject* new_model_object = m_model->add_object(*model_object);
                         new_model_object->clear_instances();
                         new_model_object->add_instance(*model_object->instances.back());
                         model_object->delete_last_instance();
@@ -1020,7 +1023,7 @@ namespace Slic3rLegacy {
                 add_error("Unable to find object");
                 return false;
             }
-            ModelObject* model_object = m_model->objects[object.second];
+            Domain::ModelObject* model_object = m_model->objects[object.second];
             IdToGeometryMap::const_iterator obj_geometry = m_geometries.find(object.first);
             if (obj_geometry == m_geometries.end()) {
                 add_error("Unable to find object geometry");
@@ -1099,7 +1102,7 @@ namespace Slic3rLegacy {
                         continue;
                     }
                     model_object->volumes[connector.volume_id]->cut_info = 
-                        ModelVolume::CutInfo(Domain::CutConnectorType(connector.type), connector.r_tolerance, connector.h_tolerance, true);
+                        Domain::ModelVolume::CutInfo(Domain::CutConnectorType(connector.type), connector.r_tolerance, connector.h_tolerance, true);
                 }
             }
         }
@@ -1108,9 +1111,9 @@ namespace Slic3rLegacy {
         // This equals to say that instance world position and volume world position should match
         // Correct all instances/volumes for which this does not hold
         for (int obj_id = 0; obj_id < int(model.objects.size()); ++obj_id) {
-            ModelObject* o = model.objects[obj_id];
+            Domain::ModelObject* o = model.objects[obj_id];
             if (o->volumes.size() == 1) {
-                ModelVolume* v = o->volumes.front();
+                Domain::ModelVolume* v = o->volumes.front();
                 const Slic3r::Geometry::Transformation& first_inst_trafo = o->instances.front()->get_transformation();
                 const Vec3d world_vol_offset = (first_inst_trafo * v->get_transformation()).get_offset();
                 const Vec3d world_inst_offset = first_inst_trafo.get_offset();
@@ -1118,7 +1121,7 @@ namespace Slic3rLegacy {
                 if (!world_vol_offset.isApprox(world_inst_offset)) {
                     const Slic3r::Geometry::Transformation& vol_trafo = v->get_transformation();
                     for (int inst_id = 0; inst_id < int(o->instances.size()); ++inst_id) {
-                        ModelInstance* i = o->instances[inst_id];
+                        Domain::ModelInstance* i = o->instances[inst_id];
                         const Slic3r::Geometry::Transformation& inst_trafo = i->get_transformation();
                         i->set_offset((inst_trafo * vol_trafo).get_offset());
                     }
@@ -1128,9 +1131,9 @@ namespace Slic3rLegacy {
         }
 
         for (int obj_id = 0; obj_id < int(model.objects.size()); ++obj_id) {
-            ModelObject* o = model.objects[obj_id];
+            Domain::ModelObject* o = model.objects[obj_id];
             for (int vol_id = 0; vol_id < int(o->volumes.size()); ++vol_id) {
-                ModelVolume* v = o->volumes[vol_id];
+                Domain::ModelVolume* v = o->volumes[vol_id];
                 if (v->source.input_file.empty())
                     v->source.input_file = filename;
                 if (v->source.volume_idx == -1)
@@ -1663,8 +1666,8 @@ namespace Slic3rLegacy {
         m_path_to_emboss_shape_files[filename] = std::move(file);
         
         // find embossed volume, for case svg is loaded after volume
-        for (const ModelObject* object : m_model->objects)
-        for (ModelVolume *volume : object->volumes) {
+        for (const Domain::ModelObject* object : m_model->objects)
+        for (Domain::ModelVolume *volume : object->volumes) {
             std::optional<EmbossShape> &es = volume->emboss_shape;
             if (!es.has_value())
                 continue;
@@ -1676,7 +1679,7 @@ namespace Slic3rLegacy {
         }
     }
 
-    bool _3MF_Importer::_extract_model_config_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat, Model& model)
+    bool _3MF_Importer::_extract_model_config_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat, Domain::Model& model)
     {
         if (stat.m_uncomp_size == 0) {
             add_error("Found invalid size");
@@ -2069,7 +2072,7 @@ namespace Slic3rLegacy {
                 add_error("Unable to find object");
                 return false;
             }
-            ModelObject *model_object = m_model->objects[object.second];
+            Domain::ModelObject *model_object = m_model->objects[object.second];
             if (model_object != nullptr && model_object->instances.size() == 0)
                 m_model->delete_object(model_object);
         }
@@ -2452,7 +2455,7 @@ namespace Slic3rLegacy {
     }
 
     // Definition of read/write method for EmbossShape
-    static void to_xml(std::stringstream &stream, const EmbossShape &es, const ModelVolume &volume, mz_zip_archive &archive);
+    static void to_xml(std::stringstream &stream, const EmbossShape &es, const Domain::ModelVolume &volume, mz_zip_archive &archive);
     static std::optional<EmbossShape> read_emboss_shape(const char **attributes, unsigned int num_attributes);
 
     bool _3MF_Importer::_handle_start_shape_configuration(const char **attributes, unsigned int num_attributes)
@@ -2514,7 +2517,7 @@ namespace Slic3rLegacy {
                 return false;
             }
             else {
-                ModelInstance* instance = m_model->objects[object_item->second]->add_instance();
+                Domain::ModelInstance* instance = m_model->objects[object_item->second]->add_instance();
                 if (instance == nullptr) {
                     add_error("Unable to add object instance");
                     return false;
@@ -2535,7 +2538,7 @@ namespace Slic3rLegacy {
         return true;
     }
 
-    void _3MF_Importer::_apply_transform(ModelInstance& instance, const Transform3d& transform)
+    void _3MF_Importer::_apply_transform(Domain::ModelInstance& instance, const Transform3d& transform)
     {
         Slic3r::Geometry::Transformation t(transform);
         // invalid scale value, return
@@ -2666,7 +2669,7 @@ namespace Slic3rLegacy {
         return true;
     }
 
-    bool _3MF_Importer::_generate_volumes(ModelObject& object, const Geometry& geometry, const ObjectMetadata::VolumeMetadataList& volumes, Slic3rLegacy::ConfigSubstitutionContext& config_substitutions)
+    bool _3MF_Importer::_generate_volumes(Domain::ModelObject& object, const Geometry& geometry, const ObjectMetadata::VolumeMetadataList& volumes, Slic3rLegacy::ConfigSubstitutionContext& config_substitutions)
     {
         if (!object.volumes.empty()) {
             add_error("Found invalid volumes count");
@@ -2747,7 +2750,7 @@ namespace Slic3rLegacy {
             if (triangle_mesh.volume() < 0)
                 triangle_mesh.flip_triangles();
 
-			ModelVolume* volume = object.add_volume(std::move(triangle_mesh));
+            Domain::ModelVolume* volume = Algorithms::ModelObject::add_volume(&object, std::move(triangle_mesh));
             // stores the volume matrix taken from the metadata, if present
             if (has_transform)
                 volume->source.transform = Slic3r::Geometry::Transformation(volume_matrix_to_object);
@@ -2785,9 +2788,9 @@ namespace Slic3rLegacy {
                 if (metadata.key == NAME_KEY)
                     volume->name = metadata.value;
                 else if ((metadata.key == MODIFIER_KEY) && (metadata.value == "1"))
-					volume->set_type(ModelVolumeType::PARAMETER_MODIFIER);
+					volume->set_type(Domain::ModelVolumeType::PARAMETER_MODIFIER);
                 else if (metadata.key == VOLUME_TYPE_KEY)
-                    volume->set_type(ModelVolume::type_from_string(metadata.value));
+                    volume->set_type(Domain::ModelVolume::type_from_string(metadata.value));
                 else if (metadata.key == SOURCE_FILE_KEY)
                     volume->source.input_file = metadata.value;
                 else if (metadata.key == SOURCE_OBJECT_ID_KEY)
@@ -2888,14 +2891,14 @@ namespace Slic3rLegacy {
             }
         };
 
-        typedef std::map<const ModelVolume*, Offsets> VolumeToOffsetsMap;
+        typedef std::map<const Domain::ModelVolume*, Offsets> VolumeToOffsetsMap;
 
         struct ObjectData
         {
-            ModelObject* object;
+            Domain::ModelObject* object;
             VolumeToOffsetsMap volumes_offsets;
 
-            explicit ObjectData(ModelObject* object)
+            explicit ObjectData(Domain::ModelObject* object)
                 : object(object)
             {
             }
@@ -2910,7 +2913,7 @@ namespace Slic3rLegacy {
     public:
         bool save_model_to_file(
             const std::string& filename,
-            const Model& model,
+            const Domain::Model& model,
             const std::optional<ConfigPack>& config,
             bool fullpath_sources,
             const ThumbnailData* thumbnail_data,
@@ -2920,10 +2923,10 @@ namespace Slic3rLegacy {
         );
         static void add_transformation(std::stringstream &stream, const Transform3d &tr);
     private:
-        void _publish(Model &model);
+        void _publish(Domain::Model &model);
         bool _save_model_to_file(
             const std::string& filename,
-            const Model& model,
+            const Domain::Model& model,
             const std::optional<ConfigPack>& config,
             const ThumbnailData* thumbnail_data,
             const Slic3r::Domain::WipeTowersOnBeds& wipe_towers,
@@ -2932,24 +2935,24 @@ namespace Slic3rLegacy {
         bool _add_content_types_file_to_archive(mz_zip_archive& archive);
         bool _add_thumbnail_file_to_archive(mz_zip_archive& archive, const ThumbnailData& thumbnail_data);
         bool _add_relationships_file_to_archive(mz_zip_archive& archive);
-        bool _add_model_file_to_archive(const std::string& filename, mz_zip_archive& archive, const Model& model, IdToObjectDataMap& objects_data);
-        bool _add_object_to_model_stream(mz_zip_writer_staged_context &context, unsigned int& object_id, ModelObject& object, BuildItemsList& build_items, VolumeToOffsetsMap& volumes_offsets);
-        bool _add_mesh_to_object_stream(mz_zip_writer_staged_context &context, ModelObject& object, VolumeToOffsetsMap& volumes_offsets);        
+        bool _add_model_file_to_archive(const std::string& filename, mz_zip_archive& archive, const Domain::Model& model, IdToObjectDataMap& objects_data);
+        bool _add_object_to_model_stream(mz_zip_writer_staged_context &context, unsigned int& object_id, Domain::ModelObject& object, BuildItemsList& build_items, VolumeToOffsetsMap& volumes_offsets);
+        bool _add_mesh_to_object_stream(mz_zip_writer_staged_context &context, Domain::ModelObject& object, VolumeToOffsetsMap& volumes_offsets);
         bool _add_build_to_model_stream(std::stringstream& stream, const BuildItemsList& build_items);
-        bool _add_cut_information_file_to_archive(mz_zip_archive& archive, const Model& model);
-        bool _add_layer_height_profile_file_to_archive(mz_zip_archive& archive, const Model& model);
-        bool _add_layer_config_ranges_file_to_archive(mz_zip_archive& archive, const Model& model);
-        bool _add_sla_support_points_file_to_archive(mz_zip_archive& archive, const Model& model);
-        bool _add_sla_drain_holes_file_to_archive(mz_zip_archive& archive, const Model& model);
-        bool _add_print_config_file_to_archive(mz_zip_archive& archive, const ConfigPack& config, const Model& model, const Slic3r::Domain::WipeTowersOnBeds& wipe_towers);
-        bool _add_model_config_file_to_archive(mz_zip_archive& archive, const Model& model, const IdToObjectDataMap &objects_data);
+        bool _add_cut_information_file_to_archive(mz_zip_archive& archive, const Domain::Model& model);
+        bool _add_layer_height_profile_file_to_archive(mz_zip_archive& archive, const Domain::Model& model);
+        bool _add_layer_config_ranges_file_to_archive(mz_zip_archive& archive, const Domain::Model& model);
+        bool _add_sla_support_points_file_to_archive(mz_zip_archive& archive, const Domain::Model& model);
+        bool _add_sla_drain_holes_file_to_archive(mz_zip_archive& archive, const Domain::Model& model);
+        bool _add_print_config_file_to_archive(mz_zip_archive& archive, const ConfigPack& config, const Domain::Model& model, const Slic3r::Domain::WipeTowersOnBeds& wipe_towers);
+        bool _add_model_config_file_to_archive(mz_zip_archive& archive, const Domain::Model& model, const IdToObjectDataMap &objects_data);
         bool _add_custom_gcode_per_print_z_file_to_archive(mz_zip_archive& archive, const Slic3r::Domain::CustomGCodesOnBeds& custom_gcodes, const std::optional<ConfigPack>& config);
         bool _add_wipe_tower_information_file_to_archive( mz_zip_archive& archive, const Slic3r::Domain::WipeTowersOnBeds& wipe_towers);
     };
 
     bool _3MF_Exporter::save_model_to_file(
         const std::string& filename,
-        const Model& model,
+        const Domain::Model& model,
         const std::optional<ConfigPack>& config,
         bool fullpath_sources,
         const ThumbnailData* thumbnail_data,
@@ -2966,7 +2969,7 @@ namespace Slic3rLegacy {
 
     bool _3MF_Exporter::_save_model_to_file(
         const std::string& filename,
-        const Model& model,
+        const Domain::Model& model,
         const std::optional<ConfigPack>& config,
         const ThumbnailData* thumbnail_data,
         const Slic3r::Domain::WipeTowersOnBeds& wipe_towers,
@@ -3175,7 +3178,7 @@ namespace Slic3rLegacy {
         stream << std::setprecision(std::numeric_limits<float>::max_digits10);
     }
 
-    bool _3MF_Exporter::_add_model_file_to_archive(const std::string& filename, mz_zip_archive& archive, const Model& model, IdToObjectDataMap& objects_data)
+    bool _3MF_Exporter::_add_model_file_to_archive(const std::string& filename, mz_zip_archive& archive, const Domain::Model& model, IdToObjectDataMap& objects_data)
     {
         mz_zip_writer_staged_context context;
         if (!mz_zip_writer_add_staged_open(&archive, &context, MODEL_FILE.c_str(), 
@@ -3235,7 +3238,7 @@ namespace Slic3rLegacy {
         // all the object instances of all ModelObjects are stored and indexed in a 1 based linear fashion.
         // Therefore the list of object_ids here may not be continuous.
         unsigned int object_id = 1;
-        for (ModelObject* obj : model.objects) {
+        for (Domain::ModelObject* obj : model.objects) {
             if (obj == nullptr)
                 continue;
 
@@ -3278,12 +3281,12 @@ namespace Slic3rLegacy {
         return true;
     }
 
-    bool _3MF_Exporter::_add_object_to_model_stream(mz_zip_writer_staged_context &context, unsigned int& object_id, ModelObject& object, BuildItemsList& build_items, VolumeToOffsetsMap& volumes_offsets)
+    bool _3MF_Exporter::_add_object_to_model_stream(mz_zip_writer_staged_context &context, unsigned int& object_id, Domain::ModelObject& object, BuildItemsList& build_items, VolumeToOffsetsMap& volumes_offsets)
     {
         std::stringstream stream;
         reset_stream(stream);
         unsigned int id = 0;
-        for (const ModelInstance* instance : object.instances) {
+        for (const Domain::ModelInstance* instance : object.instances) {
 			assert(instance != nullptr);
             if (instance == nullptr)
                 continue;
@@ -3341,7 +3344,7 @@ namespace Slic3rLegacy {
     using coordinate_type_scientific = boost::spirit::karma::real_generator<float, coordinate_policy_scientific<float>>;
 #endif // EXPORT_3MF_USE_SPIRIT_KARMA_FP
 
-    bool _3MF_Exporter::_add_mesh_to_object_stream(mz_zip_writer_staged_context &context, ModelObject& object, VolumeToOffsetsMap& volumes_offsets)
+    bool _3MF_Exporter::_add_mesh_to_object_stream(mz_zip_writer_staged_context &context, Domain::ModelObject& object, VolumeToOffsetsMap& volumes_offsets)
     {
         std::string output_buffer;
         output_buffer += "   <";
@@ -3393,7 +3396,7 @@ namespace Slic3rLegacy {
 
         char buf[256];
         unsigned int vertices_count = 0;
-        for (ModelVolume* volume : object.volumes) {
+        for (Domain::ModelVolume* volume : object.volumes) {
             if (volume == nullptr)
                 continue;
 
@@ -3432,7 +3435,7 @@ namespace Slic3rLegacy {
         output_buffer += ">\n";
 
         unsigned int triangles_count = 0;
-        for (ModelVolume* volume : object.volumes) {
+        for (Domain::ModelVolume* volume : object.volumes) {
             if (volume == nullptr)
                 continue;
 
@@ -3546,13 +3549,13 @@ namespace Slic3rLegacy {
         return true;
     }
 
-    bool _3MF_Exporter::_add_cut_information_file_to_archive(mz_zip_archive& archive, const Model& model)
+    bool _3MF_Exporter::_add_cut_information_file_to_archive(mz_zip_archive& archive, const Domain::Model& model)
     {
         std::string out = "";
         pt::ptree tree;
 
         unsigned int object_cnt = 0;
-        for (const ModelObject* object : model.objects) {
+        for (const Domain::ModelObject* object : model.objects) {
             object_cnt++;
             if (!object->is_cut())
                 continue;
@@ -3569,7 +3572,7 @@ namespace Slic3rLegacy {
             cut_id_tree.put("<xmlattr>.connectors_cnt", object->cut_id.connectors_cnt());
 
             int volume_idx = -1;
-            for (const ModelVolume* volume : object->volumes) {
+            for (const Domain::ModelVolume* volume : object->volumes) {
                 ++volume_idx;
                 if (volume->is_cut_connector()) {
                     pt::ptree& connectors_tree = obj_tree.add("connectors.connector", "");
@@ -3609,14 +3612,14 @@ namespace Slic3rLegacy {
         return true;
     }
 
-    bool _3MF_Exporter::_add_layer_height_profile_file_to_archive(mz_zip_archive& archive, const Model& model)
+    bool _3MF_Exporter::_add_layer_height_profile_file_to_archive(mz_zip_archive& archive, const Domain::Model& model)
     {
         assert(is_decimal_separator_point());
         std::string out = "";
         char buffer[1024];
 
         unsigned int count = 0;
-        for (const ModelObject* object : model.objects) {
+        for (const Domain::ModelObject* object : model.objects) {
             ++count;
             const std::vector<double>& layer_height_profile = object->layer_height_profile.get();
             if (layer_height_profile.size() >= 4 && layer_height_profile.size() % 2 == 0) {
@@ -3643,13 +3646,13 @@ namespace Slic3rLegacy {
         return true;
     }
 
-    bool _3MF_Exporter::_add_layer_config_ranges_file_to_archive(mz_zip_archive& archive, const Model& model)
+    bool _3MF_Exporter::_add_layer_config_ranges_file_to_archive(mz_zip_archive& archive, const Domain::Model& model)
     {
         std::string out = "";
         pt::ptree tree;
 
         unsigned int object_cnt = 0;
-        for (const ModelObject* object : model.objects) {
+        for (const Domain::ModelObject* object : model.objects) {
             object_cnt++;
             const auto& ranges = object->layer_config_ranges;
             if (!ranges.empty())
@@ -3701,14 +3704,14 @@ namespace Slic3rLegacy {
         return true;
     }
 
-    bool _3MF_Exporter::_add_sla_support_points_file_to_archive(mz_zip_archive& archive, const Model& model)
+    bool _3MF_Exporter::_add_sla_support_points_file_to_archive(mz_zip_archive& archive, const Domain::Model& model)
     {
         assert(is_decimal_separator_point());
         std::string out = "";
         char buffer[1024];
 
         unsigned int count = 0;
-        for (const ModelObject* object : model.objects) {
+        for (const Domain::ModelObject* object : model.objects) {
             ++count;
             const std::vector<SupportPoint>& sla_support_points = object->sla_support_points;
             if (!sla_support_points.empty()) {
@@ -3748,14 +3751,14 @@ namespace Slic3rLegacy {
         return true;
     }
     
-    bool _3MF_Exporter::_add_sla_drain_holes_file_to_archive(mz_zip_archive& archive, const Model& model)
+    bool _3MF_Exporter::_add_sla_drain_holes_file_to_archive(mz_zip_archive& archive, const Domain::Model& model)
     {
         assert(is_decimal_separator_point());
         const char *const fmt = "object_id=%d|";
         std::string out;
         
         unsigned int count = 0;
-        for (const ModelObject* object : model.objects) {
+        for (const Domain::ModelObject* object : model.objects) {
             ++count;
             Domain::SLA::DrainHoles drain_holes = object->sla_drain_holes;
 
@@ -3799,7 +3802,7 @@ namespace Slic3rLegacy {
         return true;
     }
 
-    bool _3MF_Exporter::_add_print_config_file_to_archive(mz_zip_archive& archive, const ConfigPack& config, const Model& model, const Slic3r::Domain::WipeTowersOnBeds& wipe_towers)
+    bool _3MF_Exporter::_add_print_config_file_to_archive(mz_zip_archive& archive, const ConfigPack& config, const Domain::Model& model, const Slic3r::Domain::WipeTowersOnBeds& wipe_towers)
     {
         assert(is_decimal_separator_point());
         char buffer[1024];
@@ -3835,7 +3838,7 @@ namespace Slic3rLegacy {
         return true;
     }
 
-    bool _3MF_Exporter::_add_model_config_file_to_archive(mz_zip_archive& archive, const Model& model, const IdToObjectDataMap &objects_data)
+    bool _3MF_Exporter::_add_model_config_file_to_archive(mz_zip_archive& archive, const Domain::Model& model, const IdToObjectDataMap &objects_data)
     {
         enum class MetadataType{
             object,
@@ -3863,7 +3866,7 @@ namespace Slic3rLegacy {
         stream << "<" << CONFIG_TAG << ">\n";
 
         for (const IdToObjectDataMap::value_type& obj_metadata : objects_data) {
-            const ModelObject* obj = obj_metadata.second.object;
+            const Domain::ModelObject* obj = obj_metadata.second.object;
             if (obj == nullptr) continue;
             // Output of instances count added because of github #3435, currently not used by PrusaSlicer
             stream << " <" << OBJECT_TAG << " " << ID_ATTR << "=\"" << obj_metadata.first << "\" " << INSTANCESCOUNT_ATTR << "=\"" << obj->instances.size() << "\">\n";
@@ -3878,7 +3881,7 @@ namespace Slic3rLegacy {
             for (const std::string& key : config.keys())
                 add_metadata(stream, 2, MetadataType::object, key, config.opt_serialize(key));
 
-            for (const ModelVolume* volume : obj_metadata.second.object->volumes) {
+            for (const Domain::ModelVolume* volume : obj_metadata.second.object->volumes) {
                 if (volume == nullptr) continue;
                 const VolumeToOffsetsMap& offsets = obj_metadata.second.volumes_offsets;
                 VolumeToOffsetsMap::const_iterator it = offsets.find(volume);
@@ -3896,7 +3899,7 @@ namespace Slic3rLegacy {
                     if (volume->is_modifier())
                         add_metadata(stream, 3, MetadataType::volume, MODIFIER_KEY, "1");
                     // stores volume's type (overrides the modifier field above)
-                    add_metadata(stream, 3, MetadataType::volume, VOLUME_TYPE_KEY, ModelVolume::type_to_string(volume->type()));
+                    add_metadata(stream, 3, MetadataType::volume, VOLUME_TYPE_KEY, Domain::ModelVolume::type_to_string(volume->type()));
 
                     // stores volume's local matrix
                     stream << "   <" << METADATA_TAG << " " << TYPE_ATTR << "=\"" << VOLUME_TYPE << "\" " << KEY_ATTR << "=\"" << MATRIX_KEY << "\" " << VALUE_ATTR << "=\"";
@@ -4347,7 +4350,7 @@ EmbossShape TextConfigurationSerialization::read_old(const char **attributes, un
 }
 
 namespace {
-Transform3d create_fix(const std::optional<Transform3d> &prev, const ModelVolume &volume)
+Transform3d create_fix(const std::optional<Transform3d> &prev, const Domain::ModelVolume &volume)
 {
     // IMPROVE: check if volume was modified (translated, rotated OR scaled)
     // when no change do not calculate transformation only store original fix matrix
@@ -4382,7 +4385,7 @@ Transform3d create_fix(const std::optional<Transform3d> &prev, const ModelVolume
     return *prev * fix_trmat;
 }
 
-bool to_xml(std::stringstream &stream, const EmbossShape::SvgFile &svg, const ModelVolume &volume, mz_zip_archive &archive){
+bool to_xml(std::stringstream &stream, const EmbossShape::SvgFile &svg, const Domain::ModelVolume &volume, mz_zip_archive &archive){
     if (svg.path_in_3mf.empty())
         return true; // EmbossedText OR unwanted store .svg file into .3mf (protection of copyRight)
 
@@ -4406,7 +4409,7 @@ bool to_xml(std::stringstream &stream, const EmbossShape::SvgFile &svg, const Mo
 
 } // namespace
 
-void to_xml(std::stringstream &stream, const EmbossShape &es, const ModelVolume &volume, mz_zip_archive &archive)
+void to_xml(std::stringstream &stream, const EmbossShape &es, const Domain::ModelVolume &volume, mz_zip_archive &archive)
 {
     stream << "   <" << SHAPE_TAG << " ";
     if (es.svg_file.has_value())
@@ -4476,7 +4479,7 @@ namespace Slic3rLegacy {
 bool load_3mf_legacy(
     const char* path,
     ConfigPack& config,
-    Model* model,
+    Domain::Model* model,
     bool check_version,
     boost::optional<Semver> &prusaslicer_generator_version,
     Slic3r::Domain::WipeTowersOnBeds& wipe_towers,
@@ -4501,7 +4504,7 @@ bool load_3mf_legacy(
 
 bool store_3mf_legacy(
     const char* path,
-    const Model* model,
+    const Domain::Model* model,
     const std::optional<ConfigPack>& config,
     bool fullpath_sources,
     const Slic3r::Domain::WipeTowersOnBeds& wipe_towers,

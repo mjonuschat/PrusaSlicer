@@ -10,9 +10,12 @@
 #include <array>
 #include <utility>
 
+namespace Slic3r::Domain {
+class ModelObject;
+} // namespace Slic3r::Domain
+
 namespace Slic3r {
 
-class ModelObject;
 class SLAPrintObject;
 class DynamicPrintConfig;
 
@@ -60,13 +63,13 @@ public:
   *
   * @return Returns the rotations around each axis (x, y, z)
   */
-Vec2d find_best_misalignment_rotation(const ModelObject &modelobj,
+Vec2d find_best_misalignment_rotation(const Domain::ModelObject &modelobj,
                                       const RotOptimizeParams & = {});
 
-Vec2d find_least_supports_rotation(const ModelObject &modelobj,
+Vec2d find_least_supports_rotation(const Domain::ModelObject &modelobj,
                                    const RotOptimizeParams & = {});
 
-Vec2d find_min_z_height_rotation(const ModelObject &mo,
+Vec2d find_min_z_height_rotation(const Domain::ModelObject &mo,
                                  const RotOptimizeParams &params = {});
 
 } // namespace sla

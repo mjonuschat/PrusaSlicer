@@ -4,12 +4,15 @@
 ///|/
 #include "Slic3r/Exception.hpp"
 #include "PrintBase.hpp"
+#include "Slic3r/Biz/Algorithms/Model.hpp"
 #include "Slic3r/Domain/ConfigPack.hpp"
 
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 
 #include "I18N.hpp"
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r
 {
@@ -38,9 +41,9 @@ ParserConfig PrintBase::get_object_placeholders() const
     std::vector<std::string> v_scale;
     int num_objects = 0;
     int num_instances = 0;
-	for (const ModelObject *model_object : m_model.objects) {
-		ModelInstance *printable = nullptr;
-		for (ModelInstance *model_instance : model_object->instances)
+	for (const Domain::ModelObject *model_object : m_model.objects) {
+        Domain::ModelInstance *printable = nullptr;
+		for (Domain::ModelInstance *model_instance : model_object->instances)
 			if (model_instance->is_printable()) {
 				printable = model_instance;
 				++ num_instances;
@@ -104,7 +107,7 @@ std::string PrintBase::output_filepath(const std::string &path, const std::strin
     // if we were supplied no path, generate an automatic one based on our first object's input file
     if (path.empty())
         // get the first input file name
-        return (boost::filesystem::path(m_model.propose_export_file_name_and_path()).parent_path() / this->output_filename(filename_base)).make_preferred().string();
+        return (boost::filesystem::path(Algorithms::Model::propose_export_file_name_and_path(m_model)).parent_path() / this->output_filename(filename_base)).make_preferred().string();
     
     // if we were supplied a directory, use it and append our automatically generated filename
     boost::filesystem::path p(path);

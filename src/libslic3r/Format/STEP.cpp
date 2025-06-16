@@ -6,6 +6,7 @@
 #include "occt_wrapper/OCCTWrapper.hpp"
 
 #include "libslic3r/Model.hpp"
+#include "Slic3r/Biz/Algorithms/ModelObject.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "libslic3r/Utils.hpp"
 
@@ -23,6 +24,7 @@
     #include <dlfcn.h>
 #endif
 
+using namespace Slic3r::Biz;
 
 namespace Slic3r {
 
@@ -83,7 +85,7 @@ LoadStepFn get_load_step_fn()
     return load_step_fn;
 }
 
-bool load_step(const char *path, Model *model /*BBS:, ImportStepProgressFn proFn*/, std::optional<std::pair<double, double>> deflections)
+bool load_step(const char *path, Domain::Model *model /*BBS:, ImportStepProgressFn proFn*/, std::optional<std::pair<double, double>> deflections)
 {
     OCCTResult occt_object;
 
@@ -102,7 +104,7 @@ bool load_step(const char *path, Model *model /*BBS:, ImportStepProgressFn proFn
     assert(! occt_object.object_name.empty());
 
 
-    ModelObject* new_object = model->add_object();
+    Domain::ModelObject* new_object = model->add_object();
     new_object->input_file = path;
     if (new_object->volumes.size() == 1 && ! occt_object.volumes.front().volume_name.empty())
         new_object->name = new_object->volumes.front()->name;
@@ -112,7 +114,7 @@ bool load_step(const char *path, Model *model /*BBS:, ImportStepProgressFn proFn
     using Biz::Algorithms::TriangleMesh::construct;
     for (size_t i = 0; i < occt_object.volumes.size(); ++i) {
         Domain::TriangleMesh triangle_mesh{construct(std::move(occt_object.volumes[i].facets))};
-        ModelVolume* new_volume = new_object->add_volume(std::move(triangle_mesh));
+        Domain::ModelVolume* new_volume = Algorithms::ModelObject::add_volume(new_object, std::move(triangle_mesh));
 
         new_volume->name = occt_object.volumes[i].volume_name.empty()
                        ? std::string("Part") + std::to_string(i + 1)

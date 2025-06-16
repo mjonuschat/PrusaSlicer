@@ -1,11 +1,12 @@
 #ifndef slic3r_Format_PrintRequest_hpp_
 #define slic3r_Format_PrintRequest_hpp_
 
-
+namespace Slic3r::Domain {
+class Model;
+} // namespace Slic3r::Domain
 
 namespace Slic3r {
-class Model;
-bool load_printRequest(const char* input_file, Model* model);
+bool load_printRequest(const char* input_file, Domain::Model* model);
 
 } //namespace Slic3r 
 

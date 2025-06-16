@@ -30,6 +30,7 @@
 #include <cstdlib>
 
 #include "Slic3r/Biz/Algorithms/FacetsAnnotation.hpp"
+#include "Slic3r/Biz/Algorithms/ModelObject.hpp"
 #include "Slic3r/Biz/Algorithms/Polyline.hpp"
 #include "Slic3r/Domain/TriangleSelector.hpp"
 #include "AABBTreeLines.hpp"
@@ -110,9 +111,10 @@ namespace Slic3r {
 using Domain::BoundingBox3d;
 using Biz::Algorithms::BoundingBox::center;
 using Biz::Algorithms::BoundingBox::sizes;
+using Biz::Algorithms::BoundingBox::transformed;
 
 // Constructor is called from the main thread, therefore all Model / ModelObject / ModelIntance data are valid.
-PrintObject::PrintObject(Print* print, ModelObject* model_object, const PrintObjectConfigView& config, const Transform3d& trafo, PrintInstances&& instances) :
+PrintObject::PrintObject(Print* print, Domain::ModelObject* model_object, const PrintObjectConfigView& config, const Transform3d& trafo, PrintInstances&& instances) :
     PrintObjectBaseWithState(print, model_object),
     m_config(config),
     m_trafo(trafo)
@@ -124,7 +126,7 @@ PrintObject::PrintObject(Print* print, ModelObject* model_object, const PrintObj
 	// All the instances share the transformation matrix with the exception of translation in XY and rotation by Z,
 	// therefore a bounding box from 1st instance of a ModelObject is good enough for calculating the object center,
 	// snug height and an approximate bounding box in XY.
-    BoundingBox3d  bbox        = model_object->raw_bounding_box();
+    BoundingBox3d  bbox        = Algorithms::ModelObject::raw_bounding_box(*model_object);
     Vec3d 		   bbox_center = center(bbox);
 	// We may need to rotate the bbox / bbox_center from the original instance to the current instance.
     double z_diff = Geometry::rotation_diff_z(model_object->instances.front()->get_matrix(), instances.front().model_instance.get_matrix());
@@ -2472,13 +2474,13 @@ void PrintObject::update_slicing_parameters() {
 
 SlicingParameters PrintObject::slicing_parameters(
     const PrintObjectConfigView& object_config,
-    const ModelObject& model_object,
+    const Domain::ModelObject& model_object,
     float object_max_z,
     const Vec3d& object_shrinkage_compensation
 )
 {
     std::vector<unsigned int> object_extruders;
-	for (const ModelVolume* model_volume : model_object.volumes)
+	for (const Domain::ModelVolume* model_volume : model_object.volumes)
 		if (model_volume->is_model_part()) {
 			PrintRegion::collect_object_printing_extruders(
 				object_config,
@@ -2497,7 +2499,7 @@ SlicingParameters PrintObject::slicing_parameters(
     //FIXME add painting extruders
 
     if (object_max_z <= 0.f)
-        object_max_z = (float)sizes(model_object.raw_bounding_box()).z();
+        object_max_z = (float)sizes(Algorithms::ModelObject::raw_bounding_box(model_object)).z();
 
     return SlicingParameters::create_from_config(object_config, object_max_z, object_extruders, object_shrinkage_compensation);
 }
@@ -2513,7 +2515,7 @@ std::vector<unsigned int> PrintObject::object_extruders() const
     return extruders;
 }
 
-bool PrintObject::update_layer_height_profile(const ModelObject &model_object, const SlicingParameters &slicing_parameters, std::vector<double> &layer_height_profile)
+bool PrintObject::update_layer_height_profile(const Domain::ModelObject &model_object, const SlicingParameters &slicing_parameters, std::vector<double> &layer_height_profile)
 {
     bool updated = false;
 
@@ -3175,7 +3177,7 @@ static void project_triangles_to_slabs(SpanOfConstPtrs<Layer> layers, const inde
 void PrintObject::project_and_append_custom_facets(
         bool seam, Domain::TriangleSelector::TriangleStateType type, std::vector<Polygons>& out) const
 {
-    for (const ModelVolume* mv : this->model_object()->volumes)
+    for (const Domain::ModelVolume* mv : this->model_object()->volumes)
         if (mv->is_model_part()) {
             const indexed_triangle_set custom_facets = seam
                     ? Algorithms::FacetsAnnotation::get_facets_strict(mv->seam_facets, *mv, type)

@@ -6,10 +6,6 @@
 
 #include <cereal/access.hpp>
 
-namespace Slic3r::UndoRedo {
-class StackImpl;
-}
-
 namespace Slic3r::Domain {
 
 // Unique identifier of a mutable object accross the application.
@@ -72,9 +68,9 @@ protected:
     virtual ~ObjectBase() = default;
 
     // Use with caution!
-    void        set_new_unique_id() { m_id = generate_new_id(); }
+    virtual void set_new_unique_id() { m_id = generate_new_id(); }
     // Use with caution!
-    void        copy_id(const ObjectBase &rhs) { m_id = rhs.id(); }
+    void         copy_id(const ObjectBase &rhs) { m_id = rhs.id(); }
 
     // Override this method if a ObjectBase derived class owns other ObjectBase derived instances.
     virtual void assign_new_unique_ids_recursive() { this->set_new_unique_id(); }
@@ -86,7 +82,6 @@ private:
     static size_t           s_last_id;
 
     friend class cereal::access;
-    friend class Slic3r::UndoRedo::StackImpl;
     template<class Archive> void serialize(Archive &ar) { ar(m_id); }
 protected: // #vbCHECKME && #ysFIXME
     explicit ObjectBase(const ObjectID id) : m_id(id) {}
@@ -125,7 +120,6 @@ private:
     static Timestamp s_last_timestamp;
 
     friend class cereal::access;
-    friend class Slic3r::UndoRedo::StackImpl;
     template<class Archive> void serialize(Archive &ar) { ar(m_timestamp); }
 };
 

@@ -15,7 +15,6 @@
 #include "Slic3r/Domain/ElementRef.hpp"
 #include "Slic3r/Domain/BedRef.hpp"
 
-namespace Slic3r { class ObjectModel; }
 namespace Slic3r::Domain { class Bed; }
 
 namespace Slic3r::Biz {
@@ -76,9 +75,9 @@ public:
     void on_selected_config_container_changed(Domain::SelectionId project_id, Domain::SelectionId container_id) override;
 
     void new_object_from_mesh(Domain::TriangleMesh&& mesh);
-    void add_volume_from_mesh(Domain::TriangleMesh&& mesh, ModelVolumeType volume_type, const Transform& xform = Matrix4d::Identity());
+    void add_volume_from_mesh(Domain::TriangleMesh&& mesh, Domain::ModelVolumeType volume_type, const Transform& xform = Matrix4d::Identity());
     void add_instance(const Transform& xform);
-    void notify_listener_on_objects(const std::vector<Slic3r::ModelObject*>& objects);
+    void notify_listener_on_objects(const std::vector<Domain::ModelObject*>& objects);
     void notify_listener_on_objects();
 
     using RefMesh = std::pair<Domain::ElementRef, Domain::TriangleMesh>;

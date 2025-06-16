@@ -14,7 +14,6 @@
 #include <map>
 
 namespace Slic3r {
-    class Model;
     struct ConfigSubstitutionContext;
     class DynamicPrintConfig;
     struct ThumbnailData;
@@ -62,7 +61,7 @@ namespace Slic3rLegacy {
     extern bool load_3mf_legacy(
         const char* path,
         Slic3r::Domain::ConfigPack& config,
-        Slic3r::Model* model,
+        Slic3r::Domain::Model* model,
         bool check_version,
         boost::optional<Slic3r::Semver> &prusaslicer_generator_version,
         Slic3r::Domain::WipeTowersOnBeds& wipe_towers,
@@ -73,7 +72,7 @@ namespace Slic3rLegacy {
     // The model could be modified during the export process if meshes are not repaired or have no shared vertices
     extern bool store_3mf_legacy(
         const char* path,
-        const Slic3r::Model* model,
+        const Slic3r::Domain::Model* model,
         const std::optional<Slic3r::Domain::ConfigPack>& config,
         bool fullpath_sources,
         const Slic3r::Domain::WipeTowersOnBeds& wipe_towers,

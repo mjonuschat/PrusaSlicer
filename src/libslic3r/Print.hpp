@@ -52,7 +52,6 @@ namespace Slic3r {
 
 class GCodeGenerator;
 class Layer;
-class ModelObject;
 class Print;
 class PrintObject;
 class SupportLayer;

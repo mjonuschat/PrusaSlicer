@@ -4,6 +4,7 @@
 #include "Slic3r/Biz/Config/ConfigLegacy.hpp"
 #include "Slic3r/Biz/Config/ConfigSerialize.hpp"
 #include "libslic3r/SLAPrint.hpp"
+#include "Slic3r/Biz/Algorithms/Model.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "libslic3r/Format/SLAArchiveReader.hpp"
 #include "libslic3r/Format/SL1.hpp"
@@ -14,6 +15,8 @@
 
 using namespace Slic3r;
 using namespace Slic3r::Biz::Slicing; // SLAResult
+
+using Biz::Algorithms::Model::mesh;
 
 TEST_CASE("Archive export test", "[sla_archives]") {
     SLAResult sla_result;
@@ -33,7 +36,7 @@ TEST_CASE("Archive export test", "[sla_archives]") {
         INFO("Testing archive type: SL1 -- writing...");
         SLAPrint print(on_sla_result, on_sla_object);
 
-        Model m;
+        Domain::Model m;
         ASSERT(load_obj((TEST_DATA_DIR PATH_SEPARATOR + std::string(pname) + ".obj").c_str(), &m));
         m.objects.back()->add_instance();
 
@@ -62,7 +65,7 @@ TEST_CASE("Archive export test", "[sla_archives]") {
         // Not much can be checked about the archives...
         REQUIRE(boost::filesystem::exists(outputfname));
 
-        double vol_written = m.mesh().volume();
+        double vol_written = mesh(m).volume();
 
         if (false) {
             INFO("Testing archive type: SL1 -- reading back...");

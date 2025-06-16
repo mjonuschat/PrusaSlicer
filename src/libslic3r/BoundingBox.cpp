@@ -174,34 +174,4 @@ void BoundingBox::align_to_grid(const coord_t cell_size)
     }
 }
 
-Domain::BoundingBox3d transformed(const Domain::BoundingBox3d& box, const Domain::Transform3d& matrix)
-{
-    typedef Eigen::Matrix<double, 3, 8, Eigen::DontAlign> Vertices;
-
-    Vertices src_vertices;
-    src_vertices(0, 0) = box.min.x(); src_vertices(1, 0) = box.min.y(); src_vertices(2, 0) = box.min.z();
-    src_vertices(0, 1) = box.max.x(); src_vertices(1, 1) = box.min.y(); src_vertices(2, 1) = box.min.z();
-    src_vertices(0, 2) = box.max.x(); src_vertices(1, 2) = box.max.y(); src_vertices(2, 2) = box.min.z();
-    src_vertices(0, 3) = box.min.x(); src_vertices(1, 3) = box.max.y(); src_vertices(2, 3) = box.min.z();
-    src_vertices(0, 4) = box.min.x(); src_vertices(1, 4) = box.min.y(); src_vertices(2, 4) = box.max.z();
-    src_vertices(0, 5) = box.max.x(); src_vertices(1, 5) = box.min.y(); src_vertices(2, 5) = box.max.z();
-    src_vertices(0, 6) = box.max.x(); src_vertices(1, 6) = box.max.y(); src_vertices(2, 6) = box.max.z();
-    src_vertices(0, 7) = box.min.x(); src_vertices(1, 7) = box.max.y(); src_vertices(2, 7) = box.max.z();
-
-    Vertices dst_vertices = matrix * src_vertices.colwise().homogeneous();
-
-    Vec3d v_min(dst_vertices(0, 0), dst_vertices(1, 0), dst_vertices(2, 0));
-    Vec3d v_max = v_min;
-
-    for (int i = 1; i < 8; ++i)
-    {
-        for (int j = 0; j < 3; ++j)
-        {
-            v_min(j) = std::min(v_min(j), dst_vertices(j, i));
-            v_max(j) = std::max(v_max(j), dst_vertices(j, i));
-        }
-    }
-
-    return BoundingBoxf3(v_min, v_max);
-}
-}
+} // namespace Slic3r

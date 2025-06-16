@@ -1,10 +1,14 @@
 #include "TestUtils.hpp"
 
+#include "Slic3r/Biz/Algorithms/ModelObject.hpp"
+
 #include <boost/filesystem.hpp>
 
 namespace Slic3r::Tests {
 
 using Domain::ConfigPack;
+using Biz::Algorithms::ModelObject::ensure_on_bed;
+using Biz::Algorithms::ModelObject::add_volume;
 
 void precise_sleep(const std::chrono::milliseconds duration) {
     const auto start = std::chrono::high_resolution_clock::now();
@@ -14,10 +18,10 @@ void precise_sleep(const std::chrono::milliseconds duration) {
     }
 }
 
-Slic3r::Model generate_cubes(const int count, const int row_size)
+Domain::Model generate_cubes(const int count, const int row_size)
 {
     const float size{20};
-    Slic3r::Model model;
+    Domain::Model model;
     for (int i{}; i < count; ++i) {
         const int row{i / row_size};
         const int column{i % row_size};
@@ -26,16 +30,16 @@ Slic3r::Model generate_cubes(const int count, const int row_size)
         Domain::TriangleMesh cube_mesh = TriMesh::make_cube(size, size, size);
         cube_mesh.translate(Vec3f{column * (size + 5.0f), row * (size + 5.0f), 0.0f});
 
-        Slic3r::ModelObject* model_object = model.add_object();
-        model_object->add_volume(cube_mesh);
+        Domain::ModelObject* model_object = model.add_object();
+        add_volume(model_object, cube_mesh);
         model_object->add_instance();
-        model_object->ensure_on_bed();
+        ensure_on_bed(*model_object);
     }
     return model;
 }
 
 
-double get_cubes_filament_used(const Slic3r::Model &model) {
+double get_cubes_filament_used(const Domain::Model &model) {
     return model.objects.size() * 1483.0;
 }
 
@@ -45,11 +49,11 @@ Domain::ConfigPack get_config() {
     return config;
 }
 
-ModelOnBed::ModelOnBed(Model&& model, ConfigPack&& config)
+ModelOnBed::ModelOnBed(Domain::Model&& model, ConfigPack&& config)
     : model{std::move(model)}, config{std::move(config)}, bed_instance{ModelOnBed::bed}
 {
-    for (ModelObject* object : this->model.objects) {
-        for (ModelInstance* instance : object->instances) {
+    for (Domain::ModelObject* object : this->model.objects) {
+        for (Domain::ModelInstance* instance : object->instances) {
             this->bed_instance.model_instances.push_back(instance);
         }
     }

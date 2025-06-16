@@ -24,7 +24,7 @@ TEST_CASE( "PrintGCode basic functionality", "[PrintGCode]") {
     GIVEN("A default configuration and a print test object") {
         WHEN("the output is executed with no support material") {
             Slic3r::Print print;
-            Slic3r::Model model;
+            Slic3r::Domain::Model model;
 
             TestConfig config;
             config.print.items.opt("layer_height").set(0.2);
@@ -94,7 +94,7 @@ TEST_CASE( "PrintGCode basic functionality", "[PrintGCode]") {
         }
         WHEN("output is executed with complete objects and two differently-sized meshes") {
             Slic3r::Print print;
-            Slic3r::Model model;
+            Slic3r::Domain::Model model;
 
             TestConfig config;
             config.print.items.opt("first_layer_extrusion_width").set(FloatOrPercentage{0});

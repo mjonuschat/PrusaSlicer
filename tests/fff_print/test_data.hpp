@@ -79,11 +79,11 @@ template<typename T> bool _equiv(const T &a, const T &b, double epsilon) {
     return abs(a - b) < epsilon;
 }
 
-Slic3r::Model model(const std::string &model_name, Domain::TriangleMesh &&_mesh);
+Domain::Model model(const std::string &model_name, Domain::TriangleMesh &&_mesh);
 void init_print(
     std::vector<Domain::TriangleMesh> &&meshes,
     Slic3r::Print &print,
-    Slic3r::Model &model,
+    Domain::Model &model,
     const TestConfig &config_in,
     bool comments = false,
     unsigned duplicate_count = 1
@@ -91,7 +91,7 @@ void init_print(
 void init_print(
     std::initializer_list<TestMesh> meshes,
     Slic3r::Print &print,
-    Slic3r::Model &model,
+    Domain::Model &model,
     const TestConfig &config_in = {},
     bool comments = false,
     unsigned duplicate_count = 1
@@ -99,7 +99,7 @@ void init_print(
 void init_print(
     std::initializer_list<Domain::TriangleMesh> meshes,
     Slic3r::Print &print,
-    Slic3r::Model &model,
+    Domain::Model &model,
     const TestConfig &config_in = {},
     bool comments = false,
     unsigned duplicate = 1
@@ -134,7 +134,7 @@ bool contains_regex(const std::string &data, const std::string &pattern);
 inline std::unique_ptr<Print> process_3mf(const boost::filesystem::path &path) {
     Domain::ConfigPack config;
     auto print{std::make_unique<Print>()};
-    Model model;
+    Domain::Model model;
 
     boost::optional<Semver> version;
     Domain::WipeTowersOnBeds wipe_towers;
@@ -193,7 +193,7 @@ struct SeamsFixture
     Seams::Params params{Seams::Placer::get_params(print->config())};
 
     const Transform3d transformation{print_object->trafo_centered()};
-    const ModelVolumePtrs &volumes{print_object->model_object()->volumes};
+    const Domain::ModelVolumePtrs &volumes{print_object->model_object()->volumes};
     Seams::ModelInfo::Painting painting{transformation, volumes};
 
     const std::vector<Seams::Geometry::Extrusions> extrusions{

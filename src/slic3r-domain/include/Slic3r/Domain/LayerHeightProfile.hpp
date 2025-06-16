@@ -1,15 +1,12 @@
 #pragma once
 
-#include "Slic3r/Domain/ObjectID.hpp"
 #include "Slic3r/Domain/ConfigBoxesFDM.hpp"
+#include "Slic3r/Domain/Forward.hpp"
+#include "Slic3r/Domain/ObjectID.hpp"
 
 #include <map>
 
 #include <cereal/types/base_class.hpp>
-
-namespace Slic3r {
-class ModelObject;
-} // namespace Slic3r
 
 namespace Slic3r::Domain {
 
@@ -52,7 +49,7 @@ private:
     }
 
     // To access set_new_unique_id() when copy / pasting an object.
-    friend class Slic3r::ModelObject;
+    friend class ModelObject;
 };
 
 using LayerHeightRange = std::pair<double, double>;

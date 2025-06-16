@@ -318,7 +318,7 @@ ExPolygon create_mountains(double size) {
 ExPolygon create_cylinder_bottom_slice() {
     indexed_triangle_set its_cylinder = triangle_mesh::its_make_cylinder(6.6551999999999998, 11.800000000000001);
     MeshSlicingParams param;
-    Polygons polygons = slice_mesh(its_cylinder, 0.0125000002, param);
+    Polygons polygons = slice_mesh(its_cylinder, 0.0125000002f, param);
     return ExPolygon{polygons.front()};
 }
 

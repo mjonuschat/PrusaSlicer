@@ -4,6 +4,8 @@
 #include <sstream>
 
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
+#include "Slic3r/Biz/Algorithms/ModelObject.hpp"
+#include "Slic3r/Biz/Algorithms/ModelVolume.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/Geometry.hpp"
 #include "libslic3r/Geometry/ConvexHull.hpp"
@@ -20,6 +22,9 @@ using Test::TestConfig;
 using Domain::VolumeSettings;
 using Domain::FloatOrPercentage;
 using Domain::Percentage;
+using Biz::Algorithms::ModelObject::add_volume;
+using Biz::Algorithms::ModelObject::ensure_on_bed;
+using Biz::Algorithms::ModelVolume::translate;
 
 SCENARIO("Basic tests", "[Multi]")
 {
@@ -171,16 +176,16 @@ SCENARIO("Ooze prevention", "[Multi]")
 
 std::string slice_stacked_cubes(const TestConfig &config, const VolumeSettings &volume1config, const VolumeSettings &volume2config)
 {
-    Model        model;
-    ModelObject *object = model.add_object();
+    Domain::Model        model;
+    Domain::ModelObject* object = model.add_object();
     object->name = "object.stl";
-    ModelVolume *v1 = object->add_volume(Test::mesh(Test::TestMesh::cube_20x20x20));
+    Domain::ModelVolume *v1 = add_volume(object, Test::mesh(Test::TestMesh::cube_20x20x20));
     v1->volume_settings = volume1config;
-    ModelVolume *v2 = object->add_volume(Test::mesh(Test::TestMesh::cube_20x20x20));
-    v2->translate(0., 0., 20.);
+    Domain::ModelVolume *v2 = add_volume(object, Test::mesh(Test::TestMesh::cube_20x20x20));
+    translate(*v2, 0., 0., 20.);
     v2->volume_settings = volume2config;
     object->add_instance();
-    object->ensure_on_bed();
+    ensure_on_bed(*object);
     Print print;
     print.apply(model, config, {}, {}, {});
     print.validate();

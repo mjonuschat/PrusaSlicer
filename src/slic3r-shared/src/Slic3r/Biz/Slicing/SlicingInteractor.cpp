@@ -21,7 +21,7 @@ SlicingInteractor::~SlicingInteractor() {
 }
 
 void SlicingInteractor::create_process(
-    Model& model,
+    Domain::Model& model,
     const ConfigPack& config,
     const Domain::BedInstance& bed,
     const SlicingId id
@@ -40,17 +40,17 @@ void SlicingInteractor::create_process(
     );
 }
 namespace {
-std::vector<Domain::ObjectID> get_object_ids(const Model& model) {
+std::vector<Domain::ObjectID> get_object_ids(const Domain::Model& model) {
     std::vector<Domain::ObjectID> object_ids;
     object_ids.reserve(model.objects.size());
-    for (const ModelObject* object_ptr : model.objects)
+    for (const Domain::ModelObject* object_ptr : model.objects)
         object_ids.push_back(object_ptr->id());
     return object_ids;
 }
 } // namespace
 
 void SlicingInteractor::update_process(
-    Model& model, const ConfigPack& config, const Domain::BedInstance& bed
+    Domain::Model& model, const ConfigPack& config, const Domain::BedInstance& bed
 )
 {
     const Domain::SelectionId bed_instance_id{bed.id().id};

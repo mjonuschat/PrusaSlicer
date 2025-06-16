@@ -120,7 +120,7 @@ class MockPrint : public IPrint
 {
 public:
     ApplyStatus update(
-        Slic3r::Model&,
+        Slic3r::Domain::Model&,
         const Slic3r::Domain::ConfigPack&,
         const Slic3r::Domain::BedInstance&,
         const Slic3r::Biz::Print::SerializedConfig&
@@ -162,7 +162,7 @@ TEST_CASE("Test process slice() returns immediately", "[background-process][slic
     print->processing_time = processing_time;
 
     StatusLog log;
-    Slic3r::Model model{};
+    Slic3r::Domain::Model model{};
     const Slic3r::Domain::Bed bed;
     const Slic3r::Domain::BedInstance bed_instance{bed};
     BackgroundProcess
@@ -196,7 +196,7 @@ TEST_CASE("Test process stop() returns immediately", "[background-process][slici
     print->delay_after_stop = delay_after_stop;
 
     StatusLog log;
-    Slic3r::Model model{};
+    Slic3r::Domain::Model model{};
     const Slic3r::Domain::Bed bed;
     const Slic3r::Domain::BedInstance bed_instance{bed};
     BackgroundProcess
@@ -250,7 +250,7 @@ TEST_CASE("Test process update() updates status", "[background-process][slicing-
     StatusLog log;
     std::optional<BackgroundProcess> optional_process;
 
-    Slic3r::Model model{};
+    Slic3r::Domain::Model model{};
     const Slic3r::Domain::Bed bed;
     const Slic3r::Domain::BedInstance bed_instance{bed};
 

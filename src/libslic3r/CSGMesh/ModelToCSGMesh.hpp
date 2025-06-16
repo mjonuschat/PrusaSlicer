@@ -23,11 +23,11 @@ enum ModelParts {
 };
 
 template<class OutIt>
-void model_to_csgmesh(const ModelObject &mo,
-                      const Transform3d &trafo, // Applies to all exported parts
-                      OutIt              out,   // Output iterator
+void model_to_csgmesh(const Domain::ModelObject &mo,
+                      const Transform3d         &trafo, // Applies to all exported parts
+                      OutIt                      out,   // Output iterator
                       // values of ModelParts OR-ed
-                      int                parts_to_include = mpartsPositive
+                      int                        parts_to_include = mpartsPositive
                       )
 {
     bool do_positives  = parts_to_include & mpartsPositive;
@@ -35,7 +35,7 @@ void model_to_csgmesh(const ModelObject &mo,
     bool do_drillholes = parts_to_include & mpartsDrillHoles;
     bool do_splits     = parts_to_include & mpartsDoSplits;
 
-    for (const ModelVolume *vol : mo.volumes) {
+    for (const Domain::ModelVolume *vol : mo.volumes) {
         if (vol && vol->mesh_ptr() &&
             ((do_positives && vol->is_model_part()) ||
              (do_negatives && vol->is_negative_volume()))) {

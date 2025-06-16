@@ -105,6 +105,20 @@ add_library(slic3r-domain
 
     include/Slic3r/Domain/LayerHeightProfile.hpp
     src/Slic3r/Domain/LayerHeightProfile.cpp
+
+    include/Slic3r/Domain/Model.hpp
+    src/Slic3r/Domain/Model.cpp
+
+    include/Slic3r/Domain/ModelObject.hpp
+    src/Slic3r/Domain/ModelObject.cpp
+
+    include/Slic3r/Domain/ModelVolume.hpp
+    src/Slic3r/Domain/ModelVolume.cpp
+
+    include/Slic3r/Domain/ModelInstance.hpp
+    src/Slic3r/Domain/ModelInstance.cpp
+
+    include/Slic3r/Domain/Forward.hpp
 )
 
 target_include_directories(slic3r-domain PUBLIC include)

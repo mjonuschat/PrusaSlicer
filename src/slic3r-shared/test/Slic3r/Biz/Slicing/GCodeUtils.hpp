@@ -15,6 +15,6 @@ struct Extrusion {
     Slic3r::Vec4d end;
 };
 
-std::optional<std::string> is_gcode_sane(const std::string& gcode, const Slic3r::Model &model);
+std::optional<std::string> is_gcode_sane(const std::string& gcode, const Domain::Model &model);
 
 }

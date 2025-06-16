@@ -7,15 +7,21 @@
 #include <catch2/matchers/catch_matchers_string.hpp>
 
 #include "Slic3r/Domain/OnBeds.hpp"
+#include "Slic3r/Biz/Algorithms/Model.hpp"
+#include "Slic3r/Biz/Algorithms/ModelObject.hpp"
 #include "Slic3r/Biz/Config/3mf_legacy.hpp"
 #include "Slic3r/Domain/ConfigPack.hpp"
 
 using namespace Slic3r;
 using Domain::Transformation;
 
+using Biz::Algorithms::Model::mesh;
+using Biz::Algorithms::ModelObject::center_around_origin;
+using Biz::Algorithms::ModelObject::convex_hull_2d;
+
 SCENARIO("Reading 3mf file", "[3mf]") {
     GIVEN("umlauts in the path of the file") {
-        Model model;
+        Domain::Model model;
         WHEN("3mf model is read") {
         	std::string path = std::string(TEST_DATA_DIR) + "/test_3mf/Geräte/Büchse.3mf";
         	Domain::ConfigPack config;
@@ -34,12 +40,12 @@ SCENARIO("Reading 3mf file", "[3mf]") {
 TEST_CASE("Export+Import geometry to/from 3mf file cycle", "[3mf]") {
     GIVEN("world vertices coordinates before save") {
         // load a model from stl file
-        Model src_model;
+        Domain::Model src_model;
         std::string src_file = std::string(TEST_DATA_DIR) + "/test_3mf/Prusa.stl";
         load_stl(src_file.c_str(), &src_model);
         src_model.add_default_instances();
 
-        ModelObject* src_object = src_model.objects.front();
+        Domain::ModelObject* src_object = src_model.objects.front();
 
         // apply generic transformation to the 1st volume
         Transformation src_volume_transform;
@@ -81,7 +87,7 @@ TEST_CASE("Export+Import geometry to/from 3mf file cycle", "[3mf]") {
             Slic3rLegacy::store_3mf_legacy(test_file.c_str(), &src_model, config, false, src_wipe_towers, src_custom_gcodes);
 
             // load back the model from the 3mf file
-            Model dst_model;
+            Domain::Model dst_model;
             Domain::ConfigPack dst_config;
             Domain::WipeTowersOnBeds dst_wipe_towers;
             Domain::CustomGCodesOnBeds dst_custom_gcodes;
@@ -93,8 +99,8 @@ TEST_CASE("Export+Import geometry to/from 3mf file cycle", "[3mf]") {
             boost::filesystem::remove(test_file);
 
             // compare meshes
-            Domain::TriangleMesh src_mesh = src_model.mesh();
-            Domain::TriangleMesh dst_mesh = dst_model.mesh();
+            Domain::TriangleMesh src_mesh = mesh(src_model);
+            Domain::TriangleMesh dst_mesh = mesh(dst_model);
 
             bool res = src_mesh.its.vertices.size() == dst_mesh.its.vertices.size();
             if (res) {
@@ -119,23 +125,23 @@ TEST_CASE("Export+Import geometry to/from 3mf file cycle", "[3mf]") {
 SCENARIO("2D convex hull of sinking object", "[3mf]") {
     GIVEN("model") {
         // load a model
-        Model model;
+        Domain::Model model;
         std::string src_file = std::string(TEST_DATA_DIR) + "/test_3mf/Prusa.stl";
         load_stl(src_file.c_str(), &model);
         model.add_default_instances();
 
         WHEN("model is rotated, scaled and set as sinking") {
-            ModelObject* object = model.objects.front();
-            object->center_around_origin(false);
+            Domain::ModelObject* object = model.objects.front();
+            center_around_origin(*object, false);
 
             // set instance's attitude so that it is rotated, scaled and sinking
-            ModelInstance* instance = object->instances.front();
+            Domain::ModelInstance* instance = object->instances.front();
             instance->set_rotation(X, -M_PI / 4.0);
             instance->set_offset(Vec3d::Zero());
             instance->set_scaling_factor({ 2.0, 2.0, 2.0 });
 
             // calculate 2D convex hull
-            Domain::Polygon hull_2d = object->convex_hull_2d(instance->get_transformation().get_matrix());
+            Domain::Polygon hull_2d = convex_hull_2d(*object, instance->get_transformation().get_matrix());
 
             // verify result
             Points result = {

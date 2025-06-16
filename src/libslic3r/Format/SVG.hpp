@@ -6,11 +6,14 @@
 
 #include <string>
 
+namespace Slic3r::Domain {
+class Model;
+} // namespace Slic3r::Domain
+
 namespace Slic3r {
 
-class Model;
 // Load an SVG file as embossed shape into a provided model.
-bool load_svg(const std::string &input_file, Model &output_model);
+bool load_svg(const std::string &input_file, Domain::Model &output_model);
 
 }; // namespace Slic3r
 

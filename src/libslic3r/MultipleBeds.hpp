@@ -9,9 +9,12 @@
 
 #include <map>
 
+namespace Slic3r::Domain {
+class Model;
+} // namespace Slic3r::Domain
+
 namespace Slic3r {
 
-class Model;
 class BuildVolume;
 class PrintBase;
 class Print;
@@ -66,21 +69,21 @@ public:
 
 	void   set_active_bed(int i);
 
-    void   remove_instances_outside_outside_bed(Model& model, const int bed) const;
-    void   set_instances_outside_outside_bed_unprintable(Model& model, const int bed_index) const;
+    void   remove_instances_outside_outside_bed(Domain::Model& model, const int bed) const;
+    void   set_instances_outside_outside_bed_unprintable(Domain::Model& model, const int bed_index) const;
 
     // Sets !printable to all instances outside the active bed.
-    void   move_from_bed_to_first_bed(Model& model, const int bed) const;
+    void   move_from_bed_to_first_bed(Domain::Model& model, const int bed) const;
 
 	void   set_thumbnail_bed_idx(int bed_idx) { m_bed_for_thumbnails_generation = bed_idx; }
 	int    get_thumbnail_bed_idx() const { return m_bed_for_thumbnails_generation; }
-	bool   is_glvolume_on_thumbnail_bed(const Model& model, int obj_idx, int instance_idx) const;
+	bool   is_glvolume_on_thumbnail_bed(const Domain::Model& model, int obj_idx, int instance_idx) const;
 
 	void   set_last_hovered_bed(int i)  { m_last_hovered_bed = i; }
 	int    get_last_hovered_bed() const { return m_last_hovered_bed; }
 
-    void   update_shown_beds(Model& model, const BuildVolume& build_volume, bool only_remove = false);
-	bool   rearrange_after_load(Model& model, const BuildVolume& build_volume);
+    void   update_shown_beds(Domain::Model& model, const BuildVolume& build_volume, bool only_remove = false);
+	bool   rearrange_after_load(Domain::Model& model, const BuildVolume& build_volume);
 	void   set_loading_project_flag(bool project) { m_loading_project = project; }
 	bool   get_loading_project_flag() const { return m_loading_project; }
 
@@ -132,15 +135,15 @@ namespace MultipleBedsUtils {
 using InstanceOffsets = std::vector<Vec3d>;
 // The bool is true if the instance is printable.
 // The order is from 'for o in objects; for i in o.instances.
-InstanceOffsets get_instance_offsets(Model& model);
+InstanceOffsets get_instance_offsets(Domain::Model& model);
 
-using ObjectInstances = std::vector<std::pair<ModelObject*, ModelInstancePtrs>>;
-ObjectInstances get_object_instances(const Model& model);
-void restore_instance_offsets(Model& model, const InstanceOffsets &offsets);
-void restore_object_instances(Model& model, const ObjectInstances &object_instances);
+using ObjectInstances = std::vector<std::pair<Domain::ModelObject*, Domain::ModelInstancePtrs>>;
+ObjectInstances get_object_instances(const Domain::Model& model);
+void restore_instance_offsets(Domain::Model& model, const InstanceOffsets &offsets);
+void restore_object_instances(Domain::Model& model, const ObjectInstances &object_instances);
 
-void with_single_bed_model_fff(Model &model, const int bed_index, const std::function<void()> &callable);
-void with_single_bed_model_sla(Model &model, const int bed_index, const std::function<void()> &callable);
+void with_single_bed_model_fff(Domain::Model &model, const int bed_index, const std::function<void()> &callable);
+void with_single_bed_model_sla(Domain::Model &model, const int bed_index, const std::function<void()> &callable);
 }
 
 } // namespace Slic3r

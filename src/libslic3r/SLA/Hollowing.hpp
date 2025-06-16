@@ -27,7 +27,6 @@
 
 namespace Slic3r {
 
-class ModelObject;
 struct VoxelGrid;
 
 namespace sla {

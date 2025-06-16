@@ -31,6 +31,12 @@ bool remove_consecutive_duplicate_points(Domain::Points& points, bool check_firs
 Domain::Points scaled(const std::vector<Domain::Vec2d> &points);
 
 template<typename Derived>
+Domain::Advanced::Vec<typename Derived::Scalar, 2> to_2d(const Eigen::MatrixBase<Derived> &ptN) {
+    static_assert(Derived::IsVectorAtCompileTime && int(Derived::SizeAtCompileTime) >= 3, "to_2d(): first parameter is not a 3D or higher dimensional vector");
+    return ptN.template head<2>();
+}
+
+template<typename Derived>
 inline Domain::Advanced::Vec<typename Derived::Scalar, 3> to_3d(const Eigen::MatrixBase<Derived> &pt, const typename Derived::Scalar z) {
     static_assert(Derived::IsVectorAtCompileTime && int(Derived::SizeAtCompileTime) == 2, "to_3d(): first parameter is not a 2D vector");
     return { pt.x(), pt.y(), z };

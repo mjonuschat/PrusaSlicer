@@ -144,7 +144,7 @@ TEST_CASE("Extrusion, travels, temperatures", "[GCode]") {
 	GCodeReader parser;
 
     Print print;
-    Model model;
+    Domain::Model model;
     Test::init_print({TestMesh::cube_20x20x20}, print, model, config, false, 2);
     std::string gcode = Test::gcode(print);
 
@@ -202,7 +202,7 @@ TEST_CASE("Used filament", "[GCode]") {
     config1.printer.items.opt("use_relative_e_distances").set(true);
     config1.printer.items.opt("layer_gcode").set("G92 E0\n");
     Print print1;
-    Model model1;
+    Domain::Model model1;
     Test::init_print({TestMesh::cube_20x20x20}, print1, model1, config1);
     Test::gcode(print1);
 
@@ -211,7 +211,7 @@ TEST_CASE("Used filament", "[GCode]") {
     config2.printer.items.opt("use_relative_e_distances").set(true);
     config2.printer.items.opt("layer_gcode").set("G92 E0\n");
     Print print2;
-    Model model2;
+    Domain::Model model2;
     Test::init_print({TestMesh::cube_20x20x20}, print2, model2, config2);
     Test::gcode(print2);
 
@@ -257,7 +257,7 @@ TEST_CASE("M73s have correct percent values", "[GCode]") {
         config.print.items.opt("raft_layers").set(3);
 
         Print print;
-        Model model;
+        Domain::Model model;
         Test::init_print({TestMesh::cube_20x20x20}, print, model, config);
         check_m73s(print);
     }
@@ -265,7 +265,7 @@ TEST_CASE("M73s have correct percent values", "[GCode]") {
     SECTION("Two copies of single object") {
         config.printer.items.opt("gcode_flavor").set(Domain::GCodeFlavor::gcfSailfish);
         Print print;
-        Model model;
+        Domain::Model model;
 
         Test::init_print({TestMesh::cube_20x20x20}, print, model, config, false, 2);
         check_m73s(print);
@@ -279,7 +279,7 @@ TEST_CASE("M73s have correct percent values", "[GCode]") {
     SECTION("Two objects") {
         config.printer.items.opt("gcode_flavor").set(Domain::GCodeFlavor::gcfSailfish);
         Print print;
-        Model model;
+        Domain::Model model;
         Test::init_print({TestMesh::cube_20x20x20, TestMesh::cube_20x20x20}, print, model, config);
         check_m73s(print);
     }
@@ -287,7 +287,7 @@ TEST_CASE("M73s have correct percent values", "[GCode]") {
     SECTION("One layer object") {
         config.printer.items.opt("gcode_flavor").set(Domain::GCodeFlavor::gcfSailfish);
         Print print;
-        Model model;
+        Domain::Model model;
         Domain::TriangleMesh test_mesh{mesh(TestMesh::cube_20x20x20)};
         const auto layer_height = static_cast<float>(config.print.items.opt("layer_height").get<double>());
         test_mesh.scale(Vec3f{1.0F, 1.0F, layer_height/20.0F});

@@ -6,6 +6,7 @@
 #include <cassert>
 
 #include "Slic3r/Biz/Algorithms/DouglasPeucker.hpp"
+#include "Slic3r/Biz/Algorithms/ModelObject.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/GCode/GCodeWriter.hpp"
 #include "libslic3r/Model.hpp"
@@ -22,22 +23,21 @@ using namespace Slic3r::Biz;
 
 namespace Slic3r::GCode {
 
-
 namespace {
 
 Polygon instance_outline(const PrintInstance* pi)
 {
     ExPolygons outline;
-    const ModelObject* mo = pi->model_instance.get_object();
-    const ModelInstance& mi = pi->model_instance;
-    for (const ModelVolume *v : mo->volumes) {
+    const Domain::ModelObject* mo = pi->model_instance.get_object();
+    const Domain::ModelInstance& mi = pi->model_instance;
+    for (const Domain::ModelVolume *v : mo->volumes) {
         Polygons vol_outline;
         vol_outline = project_mesh(v->mesh().its,
                                     mi.get_matrix() * v->get_matrix(),
                                     [] {});
         switch (v->type()) {
-        case ModelVolumeType::MODEL_PART: outline = union_ex(outline, vol_outline); break;
-        case ModelVolumeType::NEGATIVE_VOLUME: outline = diff_ex(outline, vol_outline); break;
+        case Domain::ModelVolumeType::MODEL_PART: outline = union_ex(outline, vol_outline); break;
+        case Domain::ModelVolumeType::NEGATIVE_VOLUME: outline = diff_ex(outline, vol_outline); break;
         default:;
         }
     }
@@ -47,7 +47,7 @@ Polygon instance_outline(const PrintInstance* pi)
     if (outline.size() == 1u)
         return outline.front().contour;
     else
-        return pi->model_instance.get_object()->convex_hull_2d(pi->model_instance.get_matrix());
+        return Algorithms::ModelObject::convex_hull_2d(*pi->model_instance.get_object(), pi->model_instance.get_matrix());
 }
 
 }; // anonymous namespace
@@ -61,7 +61,7 @@ void LabelObjects::init(const SpanOfConstPtrs<PrintObject>& objects, Domain::Lab
     if (m_label_objects_style == Domain::LabelObjectsStyle::Disabled)
         return;
 
-    std::map<const ModelObject*, std::vector<const PrintInstance*>> model_object_to_print_instances;
+    std::map<const Domain::ModelObject*, std::vector<const PrintInstance*>> model_object_to_print_instances;
 
     // Iterate over all PrintObjects and their PrintInstances, collect PrintInstances which
     // belong to the same ModelObject.
@@ -75,7 +75,7 @@ void LabelObjects::init(const SpanOfConstPtrs<PrintObject>& objects, Domain::Lab
     // or when some are out of bed (these ModelInstances have no corresponding PrintInstances).
     int unique_id = 0;
     for (const auto& [model_object, print_instances] : model_object_to_print_instances) {
-        const ModelObjectPtrs& model_objects = model_object->get_model()->objects;
+        const Domain::ModelObjectPtrs& model_objects = model_object->get_model()->objects;
         int object_id = int(std::find(model_objects.begin(), model_objects.end(), model_object) - model_objects.begin());
         for (const PrintInstance* const pi : print_instances) {
             bool object_has_more_instances = print_instances.size() > 1u;

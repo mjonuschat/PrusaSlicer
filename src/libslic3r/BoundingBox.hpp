@@ -260,10 +260,6 @@ public:
     using BoundingBoxBase::BoundingBoxBase;
 };
 
-Domain::BoundingBox3d transformed(
-    const Domain::BoundingBox3d& box, const Domain::Transform3d& matrix
-);
-
 template<typename PointType, typename PointsType>
 [[deprecated("Use Biz::Algorithms::BoundingBox::empty")]]
 inline bool empty(const BoundingBoxBase<PointType, PointsType> &bb)

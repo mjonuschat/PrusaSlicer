@@ -810,7 +810,7 @@ static void cut_segmented_layers(const std::vector<ExPolygons>        &input_exp
 static bool is_volume_sinking(const indexed_triangle_set &its, const Transform3d &trafo) {
     const Transform3f trafo_f = trafo.cast<float>();
     for (const stl_vertex &vertex : its.vertices) {
-        if ((trafo_f * vertex).z() < SINKING_Z_THRESHOLD)
+        if ((trafo_f * vertex).z() < Domain::SINKING_Z_THRESHOLD)
             return true;
     }
 
@@ -832,11 +832,11 @@ static inline ExPolygons trim_by_top_or_bottom_layer(ExPolygons expolygons_to_tr
 }
 
 // Returns segmentation of top and bottom layers based on painting in segmentation gizmos.
-static inline std::vector<std::vector<ExPolygons>> segmentation_top_and_bottom_layers(const PrintObject                                               &print_object,
-                                                                                      const std::vector<ExPolygons>                                   &input_expolygons,
-                                                                                      const std::function<ModelVolumeFacetsInfo(const ModelVolume &)> &extract_facets_info,
-                                                                                      const size_t                                                     num_facets_states,
-                                                                                      const std::function<void()>                                     &throw_on_cancel_callback)
+static inline std::vector<std::vector<ExPolygons>> segmentation_top_and_bottom_layers(const PrintObject                                                       &print_object,
+                                                                                      const std::vector<ExPolygons>                                           &input_expolygons,
+                                                                                      const std::function<ModelVolumeFacetsInfo(const Domain::ModelVolume &)> &extract_facets_info,
+                                                                                      const size_t                                                             num_facets_states,
+                                                                                      const std::function<void()>                                             &throw_on_cancel_callback)
 {
     BOOST_LOG_TRIVIAL(debug) << "Print object segmentation - Segmentation of top and bottom layers in parallel - Begin";
     const size_t                 num_layers = input_expolygons.size();
@@ -860,7 +860,7 @@ static inline std::vector<std::vector<ExPolygons>> segmentation_top_and_bottom_l
     Transform3d        object_trafo = print_object.trafo_centered();
 
     if (max_top_layers > 0 || max_bottom_layers > 0) {
-        for (const ModelVolume *mv : print_object.model_object()->volumes)
+        for (const Domain::ModelVolume *mv : print_object.model_object()->volumes)
             if (mv->is_model_part()) {
                 const Transform3d volume_trafo = object_trafo * mv->get_matrix();
                 for (size_t extruder_idx = 0; extruder_idx < num_facets_states; ++extruder_idx) {
@@ -1976,11 +1976,11 @@ static void update_color_changes_using_color_projection_ranges(ColorProjectionEx
     }
 }
 
-static std::vector<ColorPolygons> slice_model_volume_with_color(const ModelVolume                                              &model_volume,
-                                                               const std::function<ModelVolumeFacetsInfo(const ModelVolume &)> &extract_facets_info,
-                                                               const std::vector<float>                                        &layer_zs,
-                                                               const PrintObject                                               &print_object,
-                                                               const size_t                                                     num_facets_states)
+static std::vector<ColorPolygons> slice_model_volume_with_color(const Domain::ModelVolume                                              &model_volume,
+                                                               const std::function<ModelVolumeFacetsInfo(const Domain::ModelVolume &)> &extract_facets_info,
+                                                               const std::vector<float>                                                &layer_zs,
+                                                               const PrintObject                                                       &print_object,
+                                                               const size_t                                                             num_facets_states)
 {
     using Domain::indexed_triangle_set_with_color;
 
@@ -2079,14 +2079,14 @@ static void project_color_lines_on_color_projection_lines(std::vector<ColorLines
     }
 }
 
-std::vector<std::vector<ExPolygons>> segmentation_by_painting(const PrintObject                                               &print_object,
-                                                              const std::function<ModelVolumeFacetsInfo(const ModelVolume &)> &extract_facets_info,
-                                                              const size_t                                                     num_facets_states,
-                                                              const float                                                      segmentation_max_width,
-                                                              const float                                                      segmentation_interlocking_depth,
-                                                              const bool                                                       segmentation_interlocking_beam,
-                                                              const IncludeTopAndBottomLayers                                  include_top_and_bottom_layers,
-                                                              const std::function<void()>                                     &throw_on_cancel_callback)
+std::vector<std::vector<ExPolygons>> segmentation_by_painting(const PrintObject                                                       &print_object,
+                                                              const std::function<ModelVolumeFacetsInfo(const Domain::ModelVolume &)> &extract_facets_info,
+                                                              const size_t                                                             num_facets_states,
+                                                              const float                                                              segmentation_max_width,
+                                                              const float                                                              segmentation_interlocking_depth,
+                                                              const bool                                                               segmentation_interlocking_beam,
+                                                              const IncludeTopAndBottomLayers                                          include_top_and_bottom_layers,
+                                                              const std::function<void()>                                             &throw_on_cancel_callback)
 {
     const size_t                                   num_layers    = print_object.layers().size();
     const SpanOfConstPtrs<Layer>                   layers        = print_object.layers();
@@ -2132,7 +2132,7 @@ std::vector<std::vector<ExPolygons>> segmentation_by_painting(const PrintObject 
 
     BOOST_LOG_TRIVIAL(debug) << "Print object segmentation - Slicing painted triangles - Begin";
     const std::vector<float> layer_zs = get_print_object_layers_zs(layers);
-    for (const ModelVolume *mv : print_object.model_object()->volumes) {
+    for (const Domain::ModelVolume *mv : print_object.model_object()->volumes) {
         std::vector<ColorPolygons> color_polygons_per_layer = slice_model_volume_with_color(*mv, extract_facets_info, layer_zs, print_object, num_facets_states);
 
         tbb::parallel_for(tbb::blocked_range<size_t>(0, num_layers), [&color_polygons_per_layer, &color_polygons_lines_layers, &throw_on_cancel_callback](const tbb::blocked_range<size_t> &range) {
@@ -2276,7 +2276,7 @@ std::vector<std::vector<ExPolygons>> multi_material_segmentation_by_painting(con
     const float  interlocking_depth = float(print_object.config().get<double>("mmu_segmented_region_interlocking_depth"));
     const bool   interlocking_beam  = print_object.config().get<bool>("interlocking_beam");
 
-    const auto extract_facets_info = [](const ModelVolume &mv) -> ModelVolumeFacetsInfo {
+    const auto extract_facets_info = [](const Domain::ModelVolume &mv) -> ModelVolumeFacetsInfo {
         return {mv.mm_segmentation_facets, mv.is_mm_painted(), false};
     };
 
@@ -2287,7 +2287,7 @@ std::vector<std::vector<ExPolygons>> multi_material_segmentation_by_painting(con
 std::vector<std::vector<ExPolygons>> fuzzy_skin_segmentation_by_painting(const PrintObject &print_object, const std::function<void()> &throw_on_cancel_callback) {
     const size_t num_facets_states = 2; // Unpainted facets and facets painted with fuzzy skin.
 
-    const auto extract_facets_info = [](const ModelVolume &mv) -> ModelVolumeFacetsInfo {
+    const auto extract_facets_info = [](const Domain::ModelVolume &mv) -> ModelVolumeFacetsInfo {
         return {mv.fuzzy_skin_facets, mv.is_fuzzy_skin_painted(), false};
     };
 

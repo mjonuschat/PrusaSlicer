@@ -20,6 +20,7 @@
 #include <libslic3r/Geometry.hpp>
 #include <libslic3r/PrintConfig.hpp>
 #include <libslic3r/SLA/Pad.hpp>
+#include "Slic3r/Biz/Algorithms/ModelObject.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include <libslic3r/TriangleMeshSlicer.hpp>
 
@@ -29,7 +30,11 @@
 #include <arrange-wrapper/SceneBuilder.hpp>
 #include <arrange-wrapper/Scene.hpp>
 
-namespace Slic3r { namespace arr2 {
+namespace Slic3r {
+
+using Biz::Algorithms::ModelObject::convex_hull_2d;
+
+namespace arr2 {
 namespace tm = Slic3r::Biz::Algorithms::TriangleMesh;
 
 coord_t get_skirt_inset(const Print &fffprint)
@@ -59,20 +64,20 @@ coord_t brim_offset(const PrintObject &po)
     return has_outer_brim ? scaled(brim_width + brim_separation) : 0;
 }
 
-size_t model_instance_count (const Model &m)
+size_t model_instance_count (const Domain::Model &m)
 {
     return std::accumulate(m.objects.begin(),
                            m.objects.end(),
                            size_t(0),
-                           [](size_t s, const Slic3r::ModelObject *mo) {
+                           [](size_t s, const Domain::ModelObject *mo) {
                                return s + mo->instances.size();
                            });
 }
 
-void transform_instance(ModelInstance     &mi,
-                        const Vec2d       &transl_unscaled,
-                        double             rot,
-                        const Transform3d &physical_tr)
+void transform_instance(Domain::ModelInstance &mi,
+                        const Vec2d           &transl_unscaled,
+                        double                 rot,
+                        const Transform3d     &physical_tr)
 {
     auto trafo = mi.get_transformation().get_matrix();
     auto tr = Transform3d::Identity();
@@ -84,7 +89,7 @@ void transform_instance(ModelInstance     &mi,
     mi.invalidate_object_bounding_box();
 }
 
-BoundingBoxf3 instance_bounding_box(const ModelInstance &mi,
+BoundingBoxf3 instance_bounding_box(const Domain::ModelInstance &mi,
                                     const Transform3d &tr,
                                     bool dont_translate)
 {
@@ -95,7 +100,7 @@ BoundingBoxf3 instance_bounding_box(const ModelInstance &mi,
         = dont_translate ? mi.get_transformation().get_matrix_no_offset()
                          : mi.get_transformation().get_matrix();
 
-    for (ModelVolume *v : mi.get_object()->volumes) {
+    for (Domain::ModelVolume *v : mi.get_object()->volumes) {
         if (v->is_model_part()) {
             bb = merge(bb, tm::transformed_bounding_box(v->mesh(), tr * inst_matrix * v->get_matrix()));
         }
@@ -109,7 +114,7 @@ BoundingBoxf3 instance_bounding_box(const ModelInstance &mi,
     return result;
 }
 
-BoundingBoxf3 instance_bounding_box(const ModelInstance &mi, bool dont_translate)
+BoundingBoxf3 instance_bounding_box(const Domain::ModelInstance &mi, bool dont_translate)
 {
     return instance_bounding_box(mi, Transform3d::Identity(), dont_translate);
 }
@@ -122,22 +127,22 @@ bool check_coord_bounds(const BoundingBoxf &bb)
            std::abs(bb.max.y()) < UnscaledCoordLimit;
 }
 
-ExPolygons extract_full_outline(const ModelInstance &inst, const Transform3d &tr)
+ExPolygons extract_full_outline(const Domain::ModelInstance &inst, const Transform3d &tr)
 {
     ExPolygons outline;
 
     if (check_coord_bounds(to_2d(instance_bounding_box(inst, tr)))) {
-        for (const ModelVolume *v : inst.get_object()->volumes) {
+        for (const Domain::ModelVolume *v : inst.get_object()->volumes) {
             Polygons vol_outline;
 
             vol_outline = project_mesh(v->mesh().its,
                                        tr * inst.get_matrix() * v->get_matrix(),
                                        [] {});
             switch (v->type()) {
-            case ModelVolumeType::MODEL_PART:
+            case Domain::ModelVolumeType::MODEL_PART:
                 outline = union_ex(outline, vol_outline);
                 break;
-            case ModelVolumeType::NEGATIVE_VOLUME:
+            case Domain::ModelVolumeType::NEGATIVE_VOLUME:
                 outline = diff_ex(outline, vol_outline);
                 break;
             default:;
@@ -148,13 +153,13 @@ ExPolygons extract_full_outline(const ModelInstance &inst, const Transform3d &tr
     return outline;
 }
 
-Polygon extract_convex_outline(const ModelInstance &inst, const Transform3d &tr)
+Polygon extract_convex_outline(const Domain::ModelInstance &inst, const Transform3d &tr)
 {
     auto bb = to_2d(instance_bounding_box(inst, tr));
     Polygon ret;
 
     if (check_coord_bounds(bb)) {
-        ret = inst.get_object()->convex_hull_2d(tr * inst.get_matrix());
+        ret = convex_hull_2d(*inst.get_object(), tr * inst.get_matrix());
     }
 
     return ret;
@@ -214,7 +219,7 @@ void SceneBuilder::build_scene(Scene &sc) &&
 void SceneBuilder::build_arrangeable_slicer_model(ArrangeableSlicerModel &amodel)
 {
     if (!m_model)
-        m_model = std::make_unique<Model>();
+        m_model = std::make_unique<Domain::Model>();
 
     if (!m_selection)
         m_selection = std::make_unique<FixedSelection>(*m_model);
@@ -384,7 +389,7 @@ Transform3d GridStriderVBedHandler::get_physical_bed_trafo(int bed_idx) const
     return ret;
 }
 
-FixedSelection::FixedSelection(const Model &m) : m_wp{true}
+FixedSelection::FixedSelection(const Domain::Model &m) : m_wp{true}
 {
     m_seldata.resize(m.objects.size());
     for (size_t i = 0; i < m.objects.size(); ++i) {
@@ -442,13 +447,13 @@ SceneBuilder::~SceneBuilder() = default;
 SceneBuilder::SceneBuilder(SceneBuilder &&) = default;
 SceneBuilder& SceneBuilder::operator=(SceneBuilder&&) = default;
 
-SceneBuilder &&SceneBuilder::set_model(AnyPtr<Model> mdl)
+SceneBuilder &&SceneBuilder::set_model(AnyPtr<Domain::Model> mdl)
 {
     m_model = std::move(mdl);
     return std::move(*this);
 }
 
-SceneBuilder &&SceneBuilder::set_model(Model &mdl)
+SceneBuilder &&SceneBuilder::set_model(Domain::Model &mdl)
 {
     m_model = &mdl;
     return std::move(*this);
@@ -774,8 +779,8 @@ bool ArrangeableModelInstance<InstPtr, VBedHPtr>::assign_bed(int bed_idx)
     return ret;
 }
 
-template class ArrangeableModelInstance<ModelInstance, VirtualBedHandler>;
-template class ArrangeableModelInstance<const ModelInstance, const VirtualBedHandler>;
+template class ArrangeableModelInstance<Domain::ModelInstance, VirtualBedHandler>;
+template class ArrangeableModelInstance<const Domain::ModelInstance, const VirtualBedHandler>;
 
 ExPolygons ArrangeableSLAPrintObject::full_outline() const
 {
@@ -876,7 +881,7 @@ Polygon ArrangeableSLAPrintObject::convex_envelope() const
     return Geometry::convex_hull(polys);
 }
 
-DuplicableModel::DuplicableModel(AnyPtr<Model> mdl, AnyPtr<VirtualBedHandler> vbh, const BoundingBox &bedbb)
+DuplicableModel::DuplicableModel(AnyPtr<Domain::Model> mdl, AnyPtr<VirtualBedHandler> vbh, const BoundingBox &bedbb)
     : m_model{std::move(mdl)}, m_vbh{std::move(vbh)}, m_duplicates(1), m_bedbb{bedbb}
 {
 }
@@ -901,14 +906,14 @@ Domain::ObjectID DuplicableModel::add_arrangeable(const Domain::ObjectID &protot
 
 void DuplicableModel::apply_duplicates()
 {
-    for (ModelObject *o : m_model->objects) {
+    for (Domain::ModelObject *o : m_model->objects) {
         // make a copy of the pointers in order to avoid recursion
         // when appending their copies
-        ModelInstancePtrs instances = o->instances;
+        Domain::ModelInstancePtrs instances = o->instances;
         o->instances.clear();
-        for (const ModelInstance *i : instances) {
+        for (const Domain::ModelInstance *i : instances) {
             for (const ModelDuplicate &md : m_duplicates) {
-                ModelInstance *instance = o->add_instance(*i);
+                Domain::ModelInstance *instance = o->add_instance(*i);
                 arr2::transform_instance(*instance, md.tr, md.rot);
             }
         }
@@ -961,8 +966,8 @@ Polygon ArrangeableFullModel<Mdl, Dup, VBH>::convex_outline() const
     return Geometry::convex_hull(ret);
 }
 
-template class ArrangeableFullModel<Model, ModelDuplicate, VirtualBedHandler>;
-template class ArrangeableFullModel<const Model, const ModelDuplicate, const VirtualBedHandler>;
+template class ArrangeableFullModel<Domain::Model, ModelDuplicate, VirtualBedHandler>;
+template class ArrangeableFullModel<const Domain::Model, const ModelDuplicate, const VirtualBedHandler>;
 
 std::unique_ptr<VirtualBedHandler> VirtualBedHandler::create(const ExtendedBed &bed)
 {

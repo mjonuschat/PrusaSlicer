@@ -15,6 +15,7 @@
 #include <cstddef>
 
 #include "libslic3r/Model.hpp"
+#include "Slic3r/Biz/Algorithms/ModelObject.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "libslic3r/NSVGUtils.hpp"
 #include "libslic3r/Emboss.hpp"
@@ -26,6 +27,8 @@
 using Slic3r::Domain::EmbossShape;
 using Slic3r::Domain::ExPolygonsWithIds;
 using Slic3r::Domain::EmbossProjection;
+
+using namespace Slic3r::Biz;
 
 namespace {
 std::string get_file_name(const std::string &file_path)
@@ -56,7 +59,7 @@ std::string get_file_name(const std::string &file_path)
 
 namespace Slic3r {
 
-bool load_svg(const std::string &input_file, Model &output_model)
+bool load_svg(const std::string &input_file, Domain::Model &output_model)
 {
     EmbossShape::SvgFile svg_file{input_file};
     const NSVGimage* image = init_image(svg_file);
@@ -100,12 +103,12 @@ bool load_svg(const std::string &input_file, Model &output_model)
     Domain::TriangleMesh triangl_mesh(construct(std::move(its)));
 
     // add mesh to model
-    ModelObject *object = output_model.add_object();
+    Domain::ModelObject *object = output_model.add_object();
     assert(object != nullptr);
     if (object == nullptr)
         return false;
     object->name = get_file_name(input_file);
-    ModelVolume* volume = object->add_volume(std::move(triangl_mesh));
+    Domain::ModelVolume* volume = Algorithms::ModelObject::add_volume(object, std::move(triangl_mesh));
     assert(volume != nullptr);
     if (volume == nullptr) {
         output_model.delete_object(object);

@@ -18,52 +18,56 @@
 #include "libslic3r/Geometry/ConvexHull.hpp"
 #include "Slic3r/Biz/Config/3mf_legacy.hpp"
 #include "Slic3r/Biz/Config/ConfigLegacy.hpp"
+#include "Slic3r/Biz/Algorithms/Model.hpp"
+#include "Slic3r/Domain/ModelInstance.hpp"
+#include "Slic3r/Domain/ModelObject.hpp"
 
 
 using namespace Catch;
 using Slic3r::Biz::Algorithms::BoundingBox::center;
 using Slic3r::Biz::Algorithms::BoundingBox::contains;
 using Slic3r::Biz::Algorithms::BoundingBox::scaled;
+using Slic3r::Biz::Algorithms::ModelObject::add_volume;
 using Slic3r::Domain::Transformation;
 using Slic3r::Domain::TriangleMesh;
 namespace triangle_mesh = Slic3r::Biz::Algorithms::TriangleMesh;
 
-static Slic3r::Model get_example_model_with_20mm_cube()
+static Slic3r::Domain::Model get_example_model_with_20mm_cube()
 {
     using namespace Slic3r;
 
-    Model model;
+    Domain::Model model;
 
-    ModelObject* new_object = model.add_object();
+    Domain::ModelObject* new_object = model.add_object();
     new_object->name = "20mm_cube";
     new_object->add_instance();
     TriangleMesh mesh = triangle_mesh::make_cube(20., 20., 20.);
     mesh.translate(Vec3f{-10.f, -10.f, 0.});
-    ModelVolume* new_volume = new_object->add_volume(mesh);
+    Domain::ModelVolume* new_volume = add_volume(new_object, mesh);
     new_volume->name = new_object->name;
 
     return model;
 }
 
 [[maybe_unused]]
-static Slic3r::Model get_example_model_with_random_cube_objects(size_t N = 0)
+static Slic3r::Domain::Model get_example_model_with_random_cube_objects(size_t N = 0)
 {
     using namespace Slic3r;
 
-    Model model;
+    Domain::Model model;
 
     auto cube_count = N == 0 ? random_value(size_t(1), size_t(100)) : N;
 
     INFO("Cube count " << cube_count);
 
-    ModelObject* new_object = model.add_object();
+    Domain::ModelObject* new_object = model.add_object();
     new_object->name = "20mm_cube";
     TriangleMesh mesh = triangle_mesh::make_cube(20., 20., 20.);
-    ModelVolume* new_volume = new_object->add_volume(mesh);
+    Domain::ModelVolume* new_volume = add_volume(new_object, mesh);
     new_volume->name = new_object->name;
 
     for (size_t i = 0; i < cube_count; ++i) {
-        ModelInstance *inst = new_object->add_instance();
+        Domain::ModelInstance *inst = new_object->add_instance();
         arr2::transform_instance(*inst,
                                  Vec2d{random_value(-arr2::UnscaledCoordLimit / 10., arr2::UnscaledCoordLimit / 10.),
                                        random_value(-arr2::UnscaledCoordLimit / 10., arr2::UnscaledCoordLimit / 10.)},
@@ -73,21 +77,21 @@ static Slic3r::Model get_example_model_with_random_cube_objects(size_t N = 0)
     return model;
 }
 
-static Slic3r::Model get_example_model_with_arranged_primitives()
+static Slic3r::Domain::Model get_example_model_with_arranged_primitives()
 {
     using namespace Slic3r;
 
-    Model model;
+    Domain::Model model;
 
-    ModelObject* new_object = model.add_object();
+    Domain::ModelObject* new_object = model.add_object();
     new_object->name = "20mm_cube";
-    ModelInstance *cube_inst = new_object->add_instance();
+    Domain::ModelInstance *cube_inst = new_object->add_instance();
     TriangleMesh mesh = triangle_mesh::make_cube(20., 20., 20.);
     mesh.translate(Vec3f{-10.f, -10.f, 0.});
-    ModelVolume* new_volume = new_object->add_volume(mesh);
+    Domain::ModelVolume* new_volume = add_volume(new_object, mesh);
     new_volume->name = new_object->name;
 
-    ModelInstance *inst = new_object->add_instance(*cube_inst);
+    Domain::ModelInstance *inst = new_object->add_instance(*cube_inst);
     auto tr = inst->get_matrix();
     tr.translate(Vec3d{25., 0., 0.});
     inst->set_transformation(Transformation{tr});
@@ -97,7 +101,7 @@ static Slic3r::Model get_example_model_with_arranged_primitives()
     new_object->add_instance();
     mesh = triangle_mesh::make_cylinder(10., 20.);
     mesh.translate(Vec3f{0., -25.f, 0.});
-    new_volume = new_object->add_volume(mesh);
+    new_volume = add_volume(new_object, mesh);
     new_volume->name = new_object->name;
 
     new_object = model.add_object();
@@ -105,7 +109,7 @@ static Slic3r::Model get_example_model_with_arranged_primitives()
     new_object->add_instance();
     mesh = triangle_mesh::make_sphere(10.);
     mesh.translate(Vec3f{25., -25.f, 0.});
-    new_volume = new_object->add_volume(mesh);
+    new_volume = add_volume(new_object, mesh);
     new_volume->name = new_object->name;
 
     return model;
@@ -155,7 +159,7 @@ TEST_CASE("ModelInstance should be retrievable when imbued into ArrangeItem",
 {
     using namespace Slic3r;
 
-    Model model = get_example_model_with_20mm_cube();
+    Domain::Model model = get_example_model_with_20mm_cube();
     auto mi = model.objects.front()->instances.front();
 
     arr2::ArrangeItem itm;
@@ -202,7 +206,7 @@ TEMPLATE_TEST_CASE("Writing arrange transformations into ModelInstance should be
 
     using namespace Slic3r;
 
-    Model model = get_example_model_with_20mm_cube();
+    Domain::Model model = get_example_model_with_20mm_cube();
 
     auto transl = scaled(Vec2d(tx, ty));
 
@@ -262,14 +266,14 @@ TEMPLATE_TEST_CASE("Writing arrange transformations into ModelInstance should be
 }
 
 struct OutlineExtractorConvex {
-    auto operator() (const Slic3r::ModelInstance *mi)
+    auto operator() (const Slic3r::Domain::ModelInstance *mi)
     {
         return Slic3r::arr2::extract_convex_outline(*mi);
     }
 };
 
 struct OutlineExtractorFull {
-    auto operator() (const Slic3r::ModelInstance *mi)
+    auto operator() (const Slic3r::Domain::ModelInstance *mi)
     {
         return Slic3r::arr2::extract_full_outline(*mi);
     }
@@ -283,9 +287,9 @@ TEMPLATE_TEST_CASE("Outline extraction from ModelInstance",
     using namespace Slic3r;
     using OutlineExtractor = TestType;
 
-    Model model = get_example_model_with_20mm_cube();
+    Domain::Model model = get_example_model_with_20mm_cube();
 
-    ModelInstance *mi = model.objects.front()->instances.front();
+    Domain::ModelInstance *mi = model.objects.front()->instances.front();
     auto matrix = mi->get_matrix();
     matrix.scale(Vec3d{random_value(0.1, 5.),
                        random_value(0.1, 5.),
@@ -301,7 +305,7 @@ TEMPLATE_TEST_CASE("Outline extraction from ModelInstance",
 
     GIVEN("An empty ModelInstance without mesh")
     {
-        const ModelInstance *mi = model.add_object()->add_instance();
+        const Domain::ModelInstance *mi = model.add_object()->add_instance();
 
         WHEN("the outline is generated") {
             auto outline = OutlineExtractor{}(mi);
@@ -313,7 +317,7 @@ TEMPLATE_TEST_CASE("Outline extraction from ModelInstance",
     }
 
     GIVEN("A simple cube as outline") {
-        const ModelInstance *mi = model.objects.front()->instances.front();
+        const Domain::ModelInstance *mi = model.objects.front()->instances.front();
 
         WHEN("the outline is generated") {
             auto outline = OutlineExtractor{}(mi);
@@ -323,7 +327,7 @@ TEMPLATE_TEST_CASE("Outline extraction from ModelInstance",
             {
                 auto bb = unscaled(get_extents(outline));
                 namespace bounding_box = Slic3r::Biz::Algorithms::BoundingBox;
-                auto modelbb = bounding_box::to_2d(model.bounding_box_exact());
+                auto modelbb = bounding_box::to_2d(Slic3r::Biz::Algorithms::Model::bounding_box_exact(model));
 
                 REQUIRE((bb.min - modelbb.min).norm() < EPSILON);
                 REQUIRE((bb.max - modelbb.max).norm() < EPSILON);
@@ -372,7 +376,7 @@ TEMPLATE_TEST_CASE("Common virtual bed handlers",
     using namespace Slic3r;
     using VBP = arr2::VBedPlaceableMI;
 
-    Model model = get_example_model_with_20mm_cube();
+    Domain::Model model = get_example_model_with_20mm_cube();
 
     const auto bedsize = Vec2d{random_value(21., 500.), random_value(21., 500.)};
 
@@ -384,7 +388,7 @@ TEMPLATE_TEST_CASE("Common virtual bed handlers",
     INFO("Bed boundaries bedbb = { {" << unscaled(bedbb.min).transpose() << "}, {"
                                       << unscaled(bedbb.max).transpose() << "} }" );
 
-    auto modelbb = model.bounding_box_exact();
+    auto modelbb = Slic3r::Biz::Algorithms::Model::bounding_box_exact(model);
 
     // Center the single instance within the model
     arr2::transform_instance(*model.objects.front()->instances.front(),
@@ -400,7 +404,7 @@ TEMPLATE_TEST_CASE("Common virtual bed handlers",
 
     GIVEN("A ModelInstance on the physical bed")
     {
-        ModelInstance *mi = model.objects.front()->instances.front();
+        Domain::ModelInstance *mi = model.objects.front()->instances.front();
 
         WHEN ("trying to move the item to an invalid bed index")
         {
@@ -419,7 +423,7 @@ TEMPLATE_TEST_CASE("Common virtual bed handlers",
 
     GIVEN("A ModelInstance being assigned to a virtual bed")
     {
-        ModelInstance *mi = model.objects.front()->instances.front();
+        Domain::ModelInstance *mi = model.objects.front()->instances.front();
 
         auto bedidx_to = GENERATE(random_value(-1000, -1), 0, random_value(1, 1000));
         INFO("bed index = " << bedidx_to);
@@ -512,11 +516,11 @@ TEST_CASE("Virtual bed handlers - StriderVBedHandler", "[arrange2][integration][
     using namespace Slic3r;
     using VBP = arr2::VBedPlaceableMI;
 
-    Model model = get_example_model_with_20mm_cube();
+    Domain::Model model = get_example_model_with_20mm_cube();
 
     static const Vec2d bedsize{250., 210.};
     static const BoundingBox bedbb{{0, 0}, scaled(bedsize)};
-    static const auto modelbb = model.bounding_box_exact();
+    static const auto modelbb = Slic3r::Biz::Algorithms::Model::bounding_box_exact(model);
 
     GIVEN("An instance of StriderVBedHandler with a stride of the bed width"
           " and random non-negative gap")
@@ -542,7 +546,7 @@ TEST_CASE("Virtual bed handlers - StriderVBedHandler", "[arrange2][integration][
 
         WHEN("a model instance is on the Nth virtual bed (spatially)")
         {
-            ModelInstance *mi = model.objects.front()->instances.front();
+            Domain::ModelInstance *mi = model.objects.front()->instances.front();
             auto &mi_to_move = *model.objects.front()->add_instance(*mi);
 
             auto bed_index = GENERATE(random_value(-1000, -1), 0, random_value(1, 1000));
@@ -572,7 +576,7 @@ TEST_CASE("Virtual bed handlers - StriderVBedHandler", "[arrange2][integration][
 
         WHEN("a model instance is on the physical bed")
         {
-            ModelInstance *mi = model.objects.front()->instances.front();
+            Domain::ModelInstance *mi = model.objects.front()->instances.front();
             auto &mi_to_move = *model.objects.front()->add_instance(*mi);
 
             THEN("assigning the model instance to the Nth bed will move it N*stride in the X axis")
@@ -606,7 +610,7 @@ TEST_CASE("Virtual bed handlers - StriderVBedHandler", "[arrange2][integration][
 
         WHEN("a model instance is within the gap on the Nth virtual bed")
         {
-            ModelInstance *mi = model.objects.front()->instances.front();
+            Domain::ModelInstance *mi = model.objects.front()->instances.front();
             auto &mi_to_move = *model.objects.front()->add_instance(*mi);
 
             auto bed_index = GENERATE(random_value(-1000, -1), 0, random_value(1, 1000));
@@ -649,13 +653,13 @@ TEMPLATE_TEST_CASE("Bed needs to be completely filled with 1cm cubes",
     auto cfg = std::get<Domain::ConfigPackFDM>(Biz::load_config_from_legacy_file(basepath + "default_fff.ini"));
     cfg.printer.items.opt("bed_shape").set<std::vector<Vec2d>>({{0., 0.}, {100., 0.}, {100., 100.}, {0, 100.}});
 
-    Model m;
+    Domain::Model m;
 
-    ModelObject* new_object = m.add_object();
+    Domain::ModelObject* new_object = m.add_object();
     new_object->name = "10mm_box";
-    ModelInstance *instance = new_object->add_instance();
+    Domain::ModelInstance *instance = new_object->add_instance();
     TriangleMesh mesh = triangle_mesh::make_cube(10., 10., 10.);
-    ModelVolume* new_volume = new_object->add_volume(mesh);
+    Domain::ModelVolume* new_volume = add_volume(new_object, mesh);
     new_volume->name = new_object->name;
 
     Slic3rLegacy::store_3mf_legacy("fillbed_10mm.3mf", &m, cfg, false, {}, {});
@@ -779,7 +783,7 @@ TEST_CASE("Testing a simple arrange on cubes", "[arrange2][integration]")
 {
     using namespace Slic3r;
 
-    Model model = get_example_model_with_random_cube_objects(size_t{10});
+    Domain::Model model = get_example_model_with_random_cube_objects(size_t{10});
 
     arr2::ArrangeSettings settings;
     settings.set_rotation_enabled(true);
@@ -822,7 +826,7 @@ TEST_CASE("Testing arrangement involving virtual beds", "[arrange2][integration]
 {
     using namespace Slic3r;
 
-    Model model = get_example_model_with_arranged_primitives();
+    Domain::Model model = get_example_model_with_arranged_primitives();
     auto cfg = std::get<Domain::ConfigPackFDM>(Biz::load_config_from_legacy_file(std::string(TEST_DATA_DIR PATH_SEPARATOR) + "default_fff.ini"));
     auto bed = arr2::to_arrange_bed(configpack_to_bed_points(cfg), scaled(Vec2d(10, 10)));
     auto bedbb = bounding_box(bed);
@@ -846,11 +850,11 @@ TEST_CASE("Testing arrangement involving virtual beds", "[arrange2][integration]
 
     auto task = arr2::ArrangeTask<arr2::ArrangeItem>::create(scene, *itm_conv);
 
-    ModelObject* new_object = model.add_object();
+    Domain::ModelObject* new_object = model.add_object();
     new_object->name = "big_cube";
-    ModelInstance *bigcube_inst = new_object->add_instance();
+    Domain::ModelInstance *bigcube_inst = new_object->add_instance();
     TriangleMesh mesh = triangle_mesh::make_cube(bedsz.x() - 5., bedsz.y() - 5., 20.);
-    ModelVolume* new_volume = new_object->add_volume(mesh);
+    Domain::ModelVolume* new_volume = add_volume(new_object, mesh);
     new_volume->name = new_object->name;
 
     {
@@ -980,7 +984,7 @@ TEST_CASE("Test SceneBuilder", "[arrange2][integration]")
     GIVEN("An existing instance of the class Model")
     {
         auto N = random_value(1, 20);
-        Model model = get_example_model_with_random_cube_objects(N);
+        Domain::Model model = get_example_model_with_random_cube_objects(N);
         INFO("model object count " << N);
 
         WHEN("a scene is built from a builder that holds a reference to an existing model")
@@ -1026,7 +1030,7 @@ TEST_CASE("Test SceneBuilder", "[arrange2][integration]")
     GIVEN("A wipe tower handler that uses the builder's selection mask")
     {
         arr2::SceneBuilder bld;
-        Model mdl;
+        Domain::Model mdl;
         bld.set_model(mdl);
 
         std::vector<AnyPtr<arr2::WipeTowerHandler>> handlers;
@@ -1061,7 +1065,7 @@ TEST_CASE("Testing duplicate function to really duplicate the whole Model",
 {
     using namespace Slic3r;
 
-    Model model = get_example_model_with_arranged_primitives();
+    Domain::Model model = get_example_model_with_arranged_primitives();
 
     Slic3rLegacy::store_3mf_legacy("dupl_example.3mf", &model, std::nullopt, false, {}, {});
 

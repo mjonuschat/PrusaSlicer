@@ -14,8 +14,13 @@
 #include "Model.hpp"
 #include "ModelProcessing.hpp"
 
+#include "Slic3r/Biz/Algorithms/ModelObject.hpp"
+#include "Slic3r/Biz/Algorithms/ModelVolume.hpp"
+
 #include <boost/filesystem.hpp>
 #include <boost/log/trivial.hpp>
+
+using namespace Slic3r::Biz;
 
 namespace Slic3r::ModelProcessing {
 
@@ -33,23 +38,23 @@ static inline int auto_extruder_id(unsigned int max_extruders, unsigned int& cnt
     return out;
 }
 
-void convert_to_multipart_object(Model& model, unsigned int max_extruders)
+void convert_to_multipart_object(Domain::Model& model, unsigned int max_extruders)
 {
     assert(model.objects.size() >= 2);
     if (model.objects.size() < 2)
         return;
 
-    Model tmp_model = Model();
+    Domain::Model tmp_model = Domain::Model();
     tmp_model.add_object();
 
-    ModelObject* object = tmp_model.objects[0];
+    Domain::ModelObject* object = tmp_model.objects[0];
     object->input_file = model.objects.front()->input_file;
     object->name = boost::filesystem::path(model.objects.front()->input_file).stem().string();
     //FIXME copy the config etc?
 
     unsigned int extruder_counter = 0;
-    for (const ModelObject* o : model.objects)
-        for (const ModelVolume* v : o->volumes) {
+    for (const Domain::ModelObject* o : model.objects)
+        for (const Domain::ModelVolume* v : o->volumes) {
             // If there are more than one object, put all volumes together 
             // Each object may contain any number of volumes and instances
             // The volumes transformations are relative to the object containing them...
@@ -58,7 +63,7 @@ void convert_to_multipart_object(Model& model, unsigned int max_extruders)
             // Revert the centering operation.
             trafo_volume.set_offset(trafo_volume.get_offset() - o->origin_translation);
             int counter = 1;
-            auto copy_volume = [o, max_extruders, &counter, &extruder_counter](ModelVolume* new_v) {
+            auto copy_volume = [o, max_extruders, &counter, &extruder_counter](Domain::ModelVolume* new_v) {
                 assert(new_v != nullptr);
                 new_v->name = (counter > 1) ? o->name + "_" + std::to_string(counter++) : o->name;
                 new_v->volume_settings.overrides.set("extruder", auto_extruder_id(max_extruders, extruder_counter));
@@ -68,7 +73,7 @@ void convert_to_multipart_object(Model& model, unsigned int max_extruders)
                 copy_volume(object->add_volume(*v))->set_transformation(trafo_volume);
             }
             else {
-                for (const ModelInstance* i : o->instances)
+                for (const Domain::ModelInstance* i : o->instances)
                     // ...so, transform everything to a common reference system (world)
                     copy_volume(object->add_volume(*v))->set_transformation(i->get_transformation() * trafo_volume);
             }
@@ -82,20 +87,20 @@ void convert_to_multipart_object(Model& model, unsigned int max_extruders)
     model.add_object(*object);
 }
 
-void convert_from_imperial_units(Model& model, bool only_small_volumes)
+void convert_from_imperial_units(Domain::Model& model, bool only_small_volumes)
 {
     static constexpr const float in_to_mm = 25.4f;
-    for (ModelObject* obj : model.objects)
+    for (Domain::ModelObject* obj : model.objects)
         if (!only_small_volumes || get_object_mesh_stats(obj).volume < volume_threshold_inches) {
             obj->scale_mesh_after_creation(in_to_mm);
-            for (ModelVolume* v : obj->volumes) {
+            for (Domain::ModelVolume* v : obj->volumes) {
                 assert(!v->source.is_converted_from_meters);
                 v->source.is_converted_from_inches = true;
             }
         }
 }
 
-void convert_from_imperial_units(ModelVolume* volume)
+void convert_from_imperial_units(Domain::ModelVolume* volume)
 {
     assert(!volume->source.is_converted_from_meters);
     volume->scale_geometry_after_creation(25.4f);
@@ -103,20 +108,20 @@ void convert_from_imperial_units(ModelVolume* volume)
     volume->source.is_converted_from_inches = true;
 }
 
-void convert_from_meters(Model& model, bool only_small_volumes)
+void convert_from_meters(Domain::Model& model, bool only_small_volumes)
 {
     static constexpr const double m_to_mm = 1000;
-    for (ModelObject* obj : model.objects)
+    for (Domain::ModelObject* obj : model.objects)
         if (!only_small_volumes || get_object_mesh_stats(obj).volume < volume_threshold_meters) {
             obj->scale_mesh_after_creation(m_to_mm);
-            for (ModelVolume* v : obj->volumes) {
+            for (Domain::ModelVolume* v : obj->volumes) {
                 assert(!v->source.is_converted_from_inches);
                 v->source.is_converted_from_meters = true;
             }
         }
 }
 
-void convert_from_meters(ModelVolume* volume)
+void convert_from_meters(Domain::ModelVolume* volume)
 {
     assert(!volume->source.is_converted_from_inches);
     volume->scale_geometry_after_creation(1000.f);
@@ -124,14 +129,14 @@ void convert_from_meters(ModelVolume* volume)
     volume->source.is_converted_from_meters = true;
 }
 
-void convert_units(Model& model_to, ModelObject* object_from, ConversionType conv_type, std::vector<int> volume_idxs)
+void convert_units(Domain::Model& model_to, Domain::ModelObject* object_from, ConversionType conv_type, std::vector<int> volume_idxs)
 {
     BOOST_LOG_TRIVIAL(trace) << "ModelObject::convert_units - start";
 
     float koef = conv_type == ConversionType::CONV_FROM_INCH ? 25.4f   : conv_type == ConversionType::CONV_TO_INCH ? 0.0393700787f :
                  conv_type == ConversionType::CONV_FROM_METER ? 1000.f : conv_type == ConversionType::CONV_TO_METER ? 0.001f : 1.f;
 
-    ModelObject* new_object = model_to.add_object(*object_from);
+    Domain::ModelObject* new_object = model_to.add_object(*object_from);
     new_object->sla_support_points.clear();
     new_object->sla_drain_holes.clear();
     new_object->sla_points_status = Domain::SLA::PointsStatus::NoPoints;
@@ -139,11 +144,11 @@ void convert_units(Model& model_to, ModelObject* object_from, ConversionType con
     new_object->input_file.clear();
 
     int vol_idx = 0;
-    for (ModelVolume* volume : object_from->volumes) {
+    for (Domain::ModelVolume* volume : object_from->volumes) {
         if (!volume->mesh().empty()) {
             TriangleMesh mesh(volume->mesh());
 
-            ModelVolume* vol = new_object->add_volume(mesh);
+            Domain::ModelVolume* vol = Algorithms::ModelObject::add_volume(new_object, mesh);
             vol->name = volume->name;
             vol->set_type(volume->type());
             vol->volume_settings = volume->volume_settings;
@@ -181,13 +186,13 @@ void convert_units(Model& model_to, ModelObject* object_from, ConversionType con
     BOOST_LOG_TRIVIAL(trace) << "ModelObject::convert_units - end";
 }
 
-TriangleMeshStats get_object_mesh_stats(const ModelObject* object)
+TriangleMeshStats get_object_mesh_stats(const Domain::ModelObject* object)
 {
     TriangleMeshStats full_stats;
     full_stats.volume = 0.f;
 
     // fill full_stats from all objet's meshes
-    for (ModelVolume* volume : object->volumes)
+    for (Domain::ModelVolume* volume : object->volumes)
     {
         const TriangleMeshStats& stats = volume->mesh().stats();
 
@@ -206,7 +211,7 @@ TriangleMeshStats get_object_mesh_stats(const ModelObject* object)
     return full_stats;
 }
 
-int get_repaired_errors_count(const ModelVolume* volume)
+int get_repaired_errors_count(const Domain::ModelVolume* volume)
 {
     const RepairedMeshErrors& errors = volume->mesh().stats().repaired_errors;
     return  errors.degenerate_facets + 
@@ -216,7 +221,7 @@ int get_repaired_errors_count(const ModelVolume* volume)
             errors.backwards_edges;
 }
 
-int get_repaired_errors_count(const ModelObject* object, const int vol_idx /*= -1*/)
+int get_repaired_errors_count(const Domain::ModelObject* object, const int vol_idx /*= -1*/)
 {
     if (vol_idx >= 0)
         return get_repaired_errors_count(object->volumes[vol_idx]);
@@ -262,7 +267,7 @@ static bool is_front_up_left(const TriangleMesh &trinagle_mesh1, const TriangleM
 // Split this volume, append the result to the object owning this volume.
 // Return the number of volumes created from this one.
 // This is useful to assign different materials to different volumes of an object.
-size_t split(ModelVolume* volume, unsigned int max_extruders)
+size_t split(Domain::ModelVolume* volume, unsigned int max_extruders)
 {
     std::vector<TriangleMesh> meshes = tm::split(volume->mesh());
     if (meshes.size() <= 1)
@@ -274,7 +279,7 @@ size_t split(ModelVolume* volume, unsigned int max_extruders)
     if (volume->text_configuration.has_value())
         volume->text_configuration.reset();
 
-    ModelObject* object = volume->get_object();
+    Domain::ModelObject* object = volume->get_object();
 
     size_t idx = 0;
     size_t ivolume = std::find(object->volumes.begin(), object->volumes.end(), volume) - object->volumes.begin();
@@ -290,18 +295,18 @@ size_t split(ModelVolume* volume, unsigned int max_extruders)
 
         if (idx == 0) {
             volume->set_mesh(std::move(mesh));
-            volume->calculate_convex_hull();
+            Algorithms::ModelVolume::calculate_convex_hull(*volume);
             // Assign a new unique ID, so that a new GLVolume will be generated.
             volume->set_new_unique_id();
             // reset the source to disable reload from disk
-            volume->source = ModelVolume::Source();
+            volume->source = Domain::ModelVolume::Source();
         }
         else
-            object->insert_volume((++ivolume), *volume, std::move(mesh));//object->volumes.insert(object->volumes.begin() + (++ivolume), new ModelVolume(object, *volume, std::move(mesh)));
+            Algorithms::ModelObject::insert_volume(object, (++ivolume), *volume, std::move(mesh));
 
         object->volumes[ivolume]->set_offset(Vec3d::Zero());
-        object->volumes[ivolume]->center_geometry_after_creation();
-        object->volumes[ivolume]->translate(offset);
+        Algorithms::ModelVolume::center_geometry_after_creation(*object->volumes[ivolume]);
+        Algorithms::ModelVolume::translate(*object->volumes[ivolume], offset);
         object->volumes[ivolume]->name = name + "_" + std::to_string(idx + 1);
         object->volumes[ivolume]->volume_settings.overrides.set("extruder", auto_extruder_id(max_extruders, extruder_counter));
         object->volumes[ivolume]->discard_splittable();
@@ -340,10 +345,10 @@ static ObjectSettingsType create_object_settings_from_volume_settings(const Doma
     return object_settings;
 }
 
-void split(ModelObject* object, ModelObjectPtrs* new_objects)
+void split(Domain::ModelObject* object, Domain::ModelObjectPtrs* new_objects)
 {
-    for (ModelVolume* volume : object->volumes) {
-        if (volume->type() != ModelVolumeType::MODEL_PART)
+    for (Domain::ModelVolume* volume : object->volumes) {
+        if (volume->type() != Domain::ModelVolumeType::MODEL_PART)
             continue;
 
         // splited volume should not be text object 
@@ -360,7 +365,7 @@ void split(ModelObject* object, ModelObjectPtrs* new_objects)
                 continue;
 
             // XXX: this seems to be the only real usage of m_model, maybe refactor this so that it's not needed?
-            ModelObject* new_object = object->get_model()->add_object();
+            Domain::ModelObject* new_object = object->get_model()->add_object();
             if (meshes.size() == 1) {
                 new_object->name                = volume->name;
                 new_object->object_settings     = object->object_settings.overrides.empty()     ? create_object_settings_from_volume_settings<Domain::ObjectSettings>(volume->volume_settings)    : object->object_settings;
@@ -373,9 +378,10 @@ void split(ModelObject* object, ModelObjectPtrs* new_objects)
             }
 
             new_object->instances.reserve(object->instances.size());
-            for (const ModelInstance* model_instance : object->instances)
+            for (const Domain::ModelInstance* model_instance : object->instances)
                 new_object->add_instance(*model_instance);
-            ModelVolume* new_vol = new_object->add_volume(*volume, std::move(mesh));
+
+            Domain::ModelVolume* new_vol = Algorithms::ModelObject::add_volume(new_object, *volume, std::move(mesh));
 
             // Invalidate extruder value in volume's config,
             // otherwise there will no way to change extruder for object after splitting,
@@ -384,20 +390,20 @@ void split(ModelObject* object, ModelObjectPtrs* new_objects)
                 new_vol->volume_settings.overrides.set("extruder", 0);
             }
 
-            for (ModelInstance* model_instance : new_object->instances) {
+            for (Domain::ModelInstance* model_instance : new_object->instances) {
                 const Vec3d shift = model_instance->get_transformation().get_matrix_no_offset() * new_vol->get_offset();
                 model_instance->set_offset(model_instance->get_offset() + shift);
             }
 
             new_vol->set_offset(Vec3d::Zero());
             // reset the source to disable reload from disk
-            new_vol->source = ModelVolume::Source();
+            new_vol->source = Domain::ModelVolume::Source();
             new_objects->emplace_back(new_object);
         }
     }
 }
 
-void merge(ModelObject* object)
+void merge(Domain::ModelObject* object)
 {
     if (object->volumes.size() == 1) {
         // We can't merge meshes if there's just one volume
@@ -406,12 +412,12 @@ void merge(ModelObject* object)
 
     TriangleMesh mesh;
 
-    for (ModelVolume* volume : object->volumes)
+    for (Domain::ModelVolume* volume : object->volumes)
         if (!volume->mesh().empty())
             mesh.merge(volume->mesh());
 
     object->clear_volumes();
-    ModelVolume* vol = object->add_volume(mesh);
+    Domain::ModelVolume* vol = Algorithms::ModelObject::add_volume(object, mesh);
 
     if (!vol)
         return;

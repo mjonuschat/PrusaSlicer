@@ -1,5 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 
+#include "Slic3r/Biz/Algorithms/ModelObject.hpp"
 #include "libslic3r/libslic3r.h"
 #include "libslic3r/Model.hpp"
 #include <arrange-wrapper/ModelArrange.hpp>
@@ -12,20 +13,23 @@
 using namespace Slic3r;
 using namespace Slic3r::Test;
 
+using Biz::Algorithms::ModelObject::ensure_on_bed;
+using Biz::Algorithms::ModelObject::add_volume;
+
 SCENARIO("Model construction", "[Model]") {
     GIVEN("A Slic3r Model") {
-		Slic3r::Model model;
+        Domain::Model model;
         namespace triangle_mesh = Biz::Algorithms::TriangleMesh;
         Domain::TriangleMesh sample_mesh = triangle_mesh::make_cube(20,20,20);
         TestConfig config;
         Slic3r::Print print;
 
         WHEN("Model object is added") {
-            Slic3r::ModelObject *model_object = model.add_object();
+            Domain::ModelObject *model_object = model.add_object();
             THEN("Model object list == 1") {
                 REQUIRE(model.objects.size() == 1);
             }
-            model_object->add_volume(sample_mesh);
+            add_volume(model_object, sample_mesh);
             THEN("Model volume list == 1") {
                 REQUIRE(model_object->volumes.size() == 1);
             }
@@ -53,7 +57,7 @@ SCENARIO("Model construction", "[Model]") {
                             arr2::ArrangeSettings{}.set_distance_from_objects(
                                 min_object_distance(config.get_view())));
 
-            model_object->ensure_on_bed();
+            ensure_on_bed(*model_object);
 			THEN("Print works?") {
 				print.set_status_silent();
 				print.apply(model, config, {}, {}, {});

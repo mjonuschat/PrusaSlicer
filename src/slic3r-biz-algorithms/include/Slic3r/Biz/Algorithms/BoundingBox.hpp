@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Slic3r/Domain/BoundingBox.hpp"
+#include "Slic3r/Domain/Polygon.hpp"
 
 namespace Slic3r::Biz::Algorithms::BoundingBox {
 
@@ -101,9 +102,9 @@ template<Domain::BoundingBoxConcept BoxType>
     const Domain::Advanced::Vec<typename BoxType::Scalar, BoxType::Dim>& delta
 );
 
-// TODO required polygon
-/**
-inline Domain::Polygon to_polygon(const Domain::BoundingBox2i32& box)
+Domain::BoundingBox3d transformed(const Domain::BoundingBox3d& box, const Domain::Transform3d& matrix);
+
+inline Domain::Polygon to_polygon(const Domain::BoundingBox2crd& box)
 {
     return Domain::Polygon{{
         box.min,
@@ -112,7 +113,6 @@ inline Domain::Polygon to_polygon(const Domain::BoundingBox2i32& box)
         { box.min.x(), box.max.y() }
     }};
 }
-*/
 
 } // namespace Slic3r::Biz::Algorithms::BoundingBox
 

@@ -1,17 +1,15 @@
 #pragma once
 
+#include "Slic3r/Domain/Forward.hpp"
 #include "Slic3r/Domain/ObjectID.hpp"
 #include "Slic3r/Domain/TriangleSelector.hpp"
 
 #include <string>
 
-namespace Slic3r {
-class ModelVolume;
-}
-
 namespace Slic3r::Domain {
 
-class FacetsAnnotation final : public Domain::ObjectWithTimestamp {
+class FacetsAnnotation final : public Domain::ObjectWithTimestamp
+{
 public:
     Domain::TriangleSelector::TriangleSplittingData triangle_splitting_data;
 
@@ -59,10 +57,9 @@ private:
     void serialize(Archive& ar);
 
     // To access set_new_unique_id() when copy / pasting a ModelVolume.
-    friend class Slic3r::ModelVolume;
+    friend class ModelVolume;
 
     friend class cereal::access;
-    friend class UndoRedo::StackImpl;
 };
 
 } // namespace Slic3r::Domain

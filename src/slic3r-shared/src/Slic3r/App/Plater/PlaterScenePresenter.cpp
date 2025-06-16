@@ -16,15 +16,17 @@
 
 #include "libslic3r/Model.hpp"
 
+using Slic3r::Biz::Algorithms::BoundingBox::transformed;
+
 namespace Slic3r::App::Plater {
 
-static const std::unordered_map<ModelVolumeType, ColorRGBA> VOLUME_COLORS = {
-    {ModelVolumeType::MODEL_PART, {1, 0.5f, 0, 1}},
-    {ModelVolumeType::NEGATIVE_VOLUME, {0.5f, 0.5f, 0.5f, 0.5f}},
-    {ModelVolumeType::SUPPORT_BLOCKER, {0.6f, 0.2f, 1.0f, 0.5f}},
-    {ModelVolumeType::SUPPORT_ENFORCER, {0.6f, 0.2f, 1.0f, 0.5f}},
-    {ModelVolumeType::PARAMETER_MODIFIER, {1, 1.0f, 0, 0.5f}},
-    {ModelVolumeType::INVALID, {1, 0.2f, 0.2f, 0.5f}},
+static const std::unordered_map<Domain::ModelVolumeType, ColorRGBA> VOLUME_COLORS = {
+    {Domain::ModelVolumeType::MODEL_PART, {1, 0.5f, 0, 1}},
+    {Domain::ModelVolumeType::NEGATIVE_VOLUME, {0.5f, 0.5f, 0.5f, 0.5f}},
+    {Domain::ModelVolumeType::SUPPORT_BLOCKER, {0.6f, 0.2f, 1.0f, 0.5f}},
+    {Domain::ModelVolumeType::SUPPORT_ENFORCER, {0.6f, 0.2f, 1.0f, 0.5f}},
+    {Domain::ModelVolumeType::PARAMETER_MODIFIER, {1, 1.0f, 0, 0.5f}},
+    {Domain::ModelVolumeType::INVALID, {1, 0.2f, 0.2f, 0.5f}},
 };
 
 namespace {
@@ -148,16 +150,16 @@ void PlaterScenePresenter::update_objects_shadows_data()
 {
     const Domain::BedInstance& bed_inst = selected_bed_instance();
     const Domain::ModelInstanceList& insts_on_bed = bed_inst.model_instances;
-    const Slic3r::Model* model = &m_project_interactor.selected_project().model();
+    const Domain::Model* model = &m_project_interactor.selected_project().model();
 
     auto& scene = m_projects[m_project_interactor.selected_project_id()].scene();
     Scene::visit(scene.root(), [&](Scene::Node& n) {
         const SceneNodeTag* tag = n.tag_of_type<SceneNodeTag>();
         if (tag != nullptr && n.has_render_component()) {
-            const auto* obj = Domain::find_by_id<ModelObject>(model->objects, tag->object_id);
-            const auto* vol = Domain::find_by_id<ModelVolume>(obj->volumes, tag->volume_id);
+            const auto* obj = Domain::find_by_id<Domain::ModelObject>(model->objects, tag->object_id);
+            const auto* vol = Domain::find_by_id<Domain::ModelVolume>(obj->volumes, tag->volume_id);
             if (vol->is_model_part()) {
-                const auto* inst = Domain::find_by_id<ModelInstance>(obj->instances, tag->instance_id);
+                const auto* inst = Domain::find_by_id<Domain::ModelInstance>(obj->instances, tag->instance_id);
                 bool shadows = std::find(insts_on_bed.begin(), insts_on_bed.end(), inst) != insts_on_bed.end();
                 n.render_component()->set_shadows(shadows ? Render::Shadows{ true, true } : Render::Shadows{ false, false });
             }
@@ -238,8 +240,8 @@ void PlaterScenePresenter::on_scene_selection_changed(Domain::SelectionId projec
         Matrix4d xform = Matrix4d::Identity();
         if (selection.mode == Biz::Scene::SelectionMode::Instance) {
             const auto* tag = found_nodes.front()->tag_of_type<SceneNodeTag>();
-            const ModelObject* obj = m_project_interactor.selected_project().find_object_by_id(tag->object_id);
-            const ModelInstance* inst = m_project_interactor.selected_project().find_instance_by_id(tag->object_id, tag->instance_id);
+            const Domain::ModelObject* obj = m_project_interactor.selected_project().find_object_by_id(tag->object_id);
+            const Domain::ModelInstance* inst = m_project_interactor.selected_project().find_instance_by_id(tag->object_id, tag->instance_id);
             Geometry::Transformation world_m = inst->get_transformation() * obj->volumes.front()->get_transformation();
             xform.col(3).head(3) = world_m.get_offset();
         }
@@ -274,8 +276,8 @@ void PlaterScenePresenter::on_selected_bed_instance_changed(Domain::SelectionId 
 void PlaterScenePresenter::build_volume_node(
     Scene::NodeBuilder& builder,
     Domain::SelectionId project_id,
-    const ModelInstance* inst,
-    const ModelVolume* vol
+    const Domain::ModelInstance* inst,
+    const Domain::ModelVolume* vol
 )
 {
     SPDLOG_DEBUG("build_volume inst: {}  vol: {}", inst->id().id, vol->id().id);
@@ -307,7 +309,7 @@ void PlaterScenePresenter::build_volume_node(
         .set_tag(SceneNodeTag{vol->get_object()->id().id, vol->id().id, inst->id().id, vol->type()})
         .set_mesh(geom, material, int(PlaterSceneLayer::DocumentObjects))
         .set_aabb(trimesh->aabb_mesh());
-    if (vol->type() == ModelVolumeType::MODEL_PART) {
+    if (vol->type() == Domain::ModelVolumeType::MODEL_PART) {
         builder
             .set_shadows(Render::Shadows{ true, true })
             // FIXME: the pbr data should be set in dependence of the volume filament 
@@ -333,12 +335,12 @@ void PlaterScenePresenter::on_instance_added(Domain::SelectionId project_id, con
 
     Scene::NodeBuilder builder(scn);
     for (const auto& element : instances) {
-        const ModelObject* obj = project.find_object_by_id(element.object_id);
-        const ModelInstance* inst = Domain::find_by_id<ModelInstance>(obj->instances, element.instance_id);
+        const Domain::ModelObject* obj = project.find_object_by_id(element.object_id);
+        const Domain::ModelInstance* inst = Domain::find_by_id<Domain::ModelInstance>(obj->instances, element.instance_id);
         builder
             .set_debug_name(fmt::format("obj: {} inst: {}", obj->id().id, inst->id().id))
             .transform([inst](auto& t) { t = inst->get_matrix(); })
-            .set_tag(SceneNodeTag{obj->id().id, 0, inst->id().id, ModelVolumeType::INVALID})
+            .set_tag(SceneNodeTag{obj->id().id, 0, inst->id().id, Domain::ModelVolumeType::INVALID})
             // .child_for_each(obj->volumes, [&](Scene::NodeBuilder& builder, const ModelVolume* vol) {
             //     build_volume_node(builder, project_id, inst, vol);
             // })
@@ -414,12 +416,12 @@ void PlaterScenePresenter::on_volume_added(Domain::SelectionId project_id, const
         if (t != nullptr && t->volume_id == 0 && object_ids.contains(t->object_id)) {
             // root of the instance
             const auto* obj = m_workbench.project(project_id).find_object_by_id(t->object_id);
-            const auto* inst = Domain::find_by_id<ModelInstance>(obj->instances, t->instance_id);
+            const auto* inst = Domain::find_by_id<Domain::ModelInstance>(obj->instances, t->instance_id);
             Scene::NodeBuilder builder{scene};
             for (const auto& e : volumes) {
                 if (e.object_id != t->object_id)
                     continue;
-                const auto* vol = Domain::find_by_id<ModelVolume>(obj->volumes, e.volume_id);
+                const auto* vol = Domain::find_by_id<Domain::ModelVolume>(obj->volumes, e.volume_id);
                 build_volume_node(builder, project_id, inst, vol);
                 scene.add_child(builder.build().release(), &n);
             }
@@ -446,7 +448,7 @@ void PlaterScenePresenter::on_volume_removed(
 void PlaterScenePresenter::on_volume_transformed(Domain::SelectionId project_id, const Domain::ElementRefs& elements)
 {
     const Domain::BedInstance& bed_inst = selected_bed_instance();
-    const Slic3r::Model* model = &m_project_interactor.selected_project().model();
+    const Domain::Model* model = &m_project_interactor.selected_project().model();
 
     auto& scene = m_projects[m_selected_project_id].scene();
     const auto& proj = m_workbench.project(project_id);
@@ -463,8 +465,8 @@ void PlaterScenePresenter::on_volume_transformed(Domain::SelectionId project_id,
                         const SceneNodeTag* tag = n.tag_of_type<SceneNodeTag>();
                         if (tag != nullptr && n.has_render_component()) {
                             if (tag->object_id == t->object_id && tag->volume_id == t->volume_id) {
-                                const auto* obj = Domain::find_by_id<ModelObject>(model->objects, tag->object_id);
-                                const auto* inst = Domain::find_by_id<ModelInstance>(obj->instances, tag->instance_id);
+                                const auto* obj = Domain::find_by_id<Domain::ModelObject>(model->objects, tag->object_id);
+                                const auto* inst = Domain::find_by_id<Domain::ModelInstance>(obj->instances, tag->instance_id);
                                 bool shadows = bed_inst.contains(Biz::Algorithms::BoundingBox::to_2d(transformed(vol->mesh().bounding_box(), inst->get_matrix() * vol->get_matrix())));
                                 n.render_component()->set_shadows(shadows ? Render::Shadows{ true, true } : Render::Shadows{ false, false });
                             }

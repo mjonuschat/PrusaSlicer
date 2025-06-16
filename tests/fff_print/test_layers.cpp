@@ -75,7 +75,7 @@ TEST_CASE("GCode has reasonable height", "[Layers]") {
     config.print.items.opt("fill_density").set(Percentage{0});
 
     Print print;
-    Model model;
+    Domain::Model model;
     Domain::TriangleMesh test_mesh{mesh(TestMesh::cube_20x20x20)};
     test_mesh.scale(2);
     Test::init_print({test_mesh}, print, model, config);

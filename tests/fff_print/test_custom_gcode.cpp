@@ -30,7 +30,7 @@ TEST_CASE("Output file format", "[CustomGCode]")
         config.printer.items.opt("start_gcode").set("TRAVEL:[travel_speed] HEIGHT:[layer_height]\n" );
 
         Print print;
-        Model model;
+        Domain::Model model;
         Test::init_print({ Test::TestMesh::cube_2x20x10 }, print, model, config);
 
         std::string output_file = print.output_filepath({}, {});

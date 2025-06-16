@@ -2,9 +2,12 @@
 #include <regex>
 #include <vector>
 
+#include "Slic3r/Biz/Algorithms/ModelObject.hpp"
 #include <libslic3r/Point.hpp>
 #include <libslic3r/BoundingBox.hpp>
 #include <libslic3r/Model.hpp>
+
+using namespace Slic3r::Biz;
 
 namespace {
 struct Extrusion {
@@ -110,7 +113,7 @@ std::optional<std::string> are_extrusions_within_bounds(
 
 namespace Slic3r::Tests {
 
-std::optional<std::string> is_gcode_sane(const std::string& gcode, const Slic3r::Model &model) {
+std::optional<std::string> is_gcode_sane(const std::string& gcode, const Domain::Model &model) {
     if (gcode.empty()) {
         return "GCode is empty!";
     }
@@ -118,10 +121,10 @@ std::optional<std::string> is_gcode_sane(const std::string& gcode, const Slic3r:
     std::stringstream buffer{gcode};
     const std::vector<Extrusion> extrusions{get_first_layer_extrusions(buffer)};
     std::vector<Slic3r::BoundingBoxf> bounding_boxes;
-    for (const Slic3r::ModelObject* object : model.objects) {
+    for (const Domain::ModelObject* object : model.objects) {
         bounding_boxes.push_back(Slic3r::BoundingBoxf{
-            object->bounding_box_exact().min.head<2>(),
-            object->bounding_box_exact().max.head<2>()
+            Algorithms::ModelObject::bounding_box_exact(*object).min.head<2>(),
+            Algorithms::ModelObject::bounding_box_exact(*object).max.head<2>()
         });
     }
 

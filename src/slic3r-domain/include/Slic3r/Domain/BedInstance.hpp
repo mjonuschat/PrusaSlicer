@@ -1,17 +1,15 @@
 #pragma once
 
-#include "Slic3r/Domain/Bed.hpp"
 #include "Slic3r/Assert.hpp"
+#include "Slic3r/Domain/Bed.hpp"
 #include "Slic3r/Domain/CustomGCode.hpp"
+#include "Slic3r/Domain/Forward.hpp"
 #include "Slic3r/Domain/Model.hpp"
 #include "Slic3r/Domain/ObjectID.hpp"
 #include "Slic3r/Domain/Transformation.hpp"
 
-namespace Slic3r {
-class ModelInstance;
-}
-
 namespace Slic3r::Domain {
+
 // TODO: move this to better place
 using ModelInstanceList = std::vector<ModelInstance*>;
 

@@ -1,6 +1,8 @@
 #include <catch2/catch_test_macros.hpp>
 #include "test_data.hpp"
 
+#include "Slic3r/Biz/Algorithms/Model.hpp"
+#include "Slic3r/Biz/Algorithms/ModelObject.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "Slic3r/Biz/Config/ConfigLegacy.hpp"
 #include "Slic3r/Biz/Config/ConfigSerialize.hpp"
@@ -23,6 +25,8 @@ using namespace std;
 
 namespace Slic3r { namespace Test {
 
+using Biz::Algorithms::ModelObject::add_volume;
+using Biz::Algorithms::ModelObject::ensure_on_bed;
 using Domain::TriangleMesh;
 namespace triangle_mesh = Biz::Algorithms::TriangleMesh;
 
@@ -244,16 +248,16 @@ static bool verbose_gcode()
     return s == "1" || s == "on" || s == "yes";
 }
 
-void init_print(std::vector<TriangleMesh> &&meshes, Slic3r::Print &print, Slic3r::Model &model, const TestConfig& config_in, bool comments, unsigned duplicate_count)
+void init_print(std::vector<TriangleMesh> &&meshes, Slic3r::Print &print, Domain::Model &model, const TestConfig& config_in, bool comments, unsigned duplicate_count)
 {
     TestConfig config{config_in};
     if (verbose_gcode())
         config.print.items.opt("gcode_comments").set(true);
 
     for (const TriangleMesh &t : meshes) {
-		ModelObject *object = model.add_object();
+        Domain::ModelObject *object = model.add_object();
 		object->name += "object.stl";
-		object->add_volume(t);
+		add_volume(object, t);
 		object->add_instance();
 	}
 
@@ -271,9 +275,9 @@ void init_print(std::vector<TriangleMesh> &&meshes, Slic3r::Print &print, Slic3r
     }
 
     arrange_objects(model, bed, arrange_settings);
-    model.center_instances_around_point({100, 100});
-	for (ModelObject *mo : model.objects) {
-        mo->ensure_on_bed();
+    Slic3r::Biz::Algorithms::Model::center_instances_around_point(model, {100, 100});
+	for (Domain::ModelObject *mo : model.objects) {
+        ensure_on_bed(*mo);
     }
 
     const Biz::Print::SerializedConfig serialized_config{
@@ -285,7 +289,7 @@ void init_print(std::vector<TriangleMesh> &&meshes, Slic3r::Print &print, Slic3r
     print.set_status_silent();
 }
 
-void init_print(std::initializer_list<TestMesh> test_meshes, Slic3r::Print &print, Slic3r::Model &model, const TestConfig& config_in, bool comments, unsigned duplicate_count)
+void init_print(std::initializer_list<TestMesh> test_meshes, Slic3r::Print &print, Domain::Model &model, const TestConfig& config_in, bool comments, unsigned duplicate_count)
 {
 	std::vector<TriangleMesh> triangle_meshes;
 	triangle_meshes.reserve(test_meshes.size());
@@ -294,7 +298,7 @@ void init_print(std::initializer_list<TestMesh> test_meshes, Slic3r::Print &prin
 	init_print(std::move(triangle_meshes), print, model, config_in, comments, duplicate_count);
 }
 
-void init_print(std::initializer_list<TriangleMesh> input_meshes, Slic3r::Print &print, Slic3r::Model &model, const TestConfig& config_in, bool comments, unsigned duplicate_count)
+void init_print(std::initializer_list<TriangleMesh> input_meshes, Slic3r::Print &print, Domain::Model &model, const TestConfig& config_in, bool comments, unsigned duplicate_count)
 {
 	std::vector<TriangleMesh> triangle_meshes;
 	triangle_meshes.reserve(input_meshes.size());
@@ -305,14 +309,14 @@ void init_print(std::initializer_list<TriangleMesh> input_meshes, Slic3r::Print 
 
 void init_and_process_print(std::initializer_list<TestMesh> meshes, Slic3r::Print &print, const TestConfig& config, bool comments)
 {
-	Slic3r::Model model;
+    Domain::Model model;
 	init_print(meshes, print, model, config, comments);
 	print.process();
 }
 
 void init_and_process_print(std::initializer_list<TriangleMesh> meshes, Slic3r::Print &print, const TestConfig& config, bool comments)
 {
-	Slic3r::Model model;
+    Domain::Model model;
 	init_print(meshes, print, model, config, comments);
 	print.process();
 }
@@ -325,12 +329,12 @@ std::string gcode(Print & print)
 	return result.const_gcode()->str();
 }
 
-Slic3r::Model model(const std::string &model_name, TriangleMesh &&_mesh)
+Domain::Model model(const std::string &model_name, TriangleMesh &&_mesh)
 {
-    Slic3r::Model result;
-	ModelObject *object = result.add_object();
+    Domain::Model result;
+    Domain::ModelObject *object = result.add_object();
 	object->name += model_name + ".stl";
-    object->add_volume(_mesh);
+    add_volume(object, _mesh);
     object->add_instance();
     return result;
 }
@@ -338,7 +342,7 @@ Slic3r::Model model(const std::string &model_name, TriangleMesh &&_mesh)
 std::string slice(std::initializer_list<TestMesh> meshes, const TestConfig& config, bool comments)
 {
 	Slic3r::Print print;
-	Slic3r::Model model;
+    Domain::Model model;
 	init_print(meshes, print, model, config, comments);
 	return gcode(print);
 }
@@ -346,7 +350,7 @@ std::string slice(std::initializer_list<TestMesh> meshes, const TestConfig& conf
 std::string slice(std::initializer_list<TriangleMesh> meshes, const TestConfig& config, bool comments)
 {
 	Slic3r::Print print;
-	Slic3r::Model model;
+    Domain::Model model;
 	init_print(meshes, print, model, config, comments);
 	return gcode(print);
 }
@@ -368,7 +372,7 @@ bool contains_regex(const std::string &data, const std::string &pattern)
 SCENARIO("init_print functionality", "[test_data]") {
 	GIVEN("A default config") {
 		WHEN("init_print is called with a single mesh.") {
-			Slic3r::Model model;
+			Slic3r::Domain::Model model;
 			Slic3r::Print print;
 			Slic3r::Test::init_print({ Slic3r::Test::TestMesh::cube_20x20x20 }, print, model, Slic3r::Test::TestConfig{}, true);
 			THEN("One mesh/printobject is in the resulting Print object.") {

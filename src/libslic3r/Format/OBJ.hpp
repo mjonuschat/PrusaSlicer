@@ -11,18 +11,20 @@
 
 #include "Slic3r/Domain/TriangleMesh.hpp"
 
-namespace Slic3r {
-
+namespace Slic3r::Domain {
 class Model;
 class ModelObject;
+} // namespace Slic3r::Domain
+
+namespace Slic3r {
 
 // Load an OBJ file into a provided model.
 extern bool load_obj(const char *path, Domain::TriangleMesh *mesh);
-extern bool load_obj(const char *path, Model *model, const char *object_name = nullptr);
+extern bool load_obj(const char *path, Domain::Model *model, const char *object_name = nullptr);
 
 extern bool store_obj(const char *path, Domain::TriangleMesh *mesh);
-extern bool store_obj(const char *path, ModelObject *model);
-extern bool store_obj(const char *path, Model *model);
+extern bool store_obj(const char *path, Domain::ModelObject *model);
+extern bool store_obj(const char *path, Domain::Model *model);
 
 }; // namespace Slic3r
 

@@ -434,11 +434,11 @@ class PrintBase;
 class PrintObjectBase : public Domain::ObjectBase
 {
 public:
-    const ModelObject*      model_object() const    { return m_model_object; }
-    ModelObject*            model_object()          { return m_model_object; }
+    const Domain::ModelObject* model_object() const    { return m_model_object; }
+    Domain::ModelObject*       model_object()          { return m_model_object; }
 
 protected:
-    PrintObjectBase(ModelObject *model_object) : m_model_object(model_object) {}
+    PrintObjectBase(Domain::ModelObject *model_object) : m_model_object(model_object) {}
     virtual ~PrintObjectBase() {}
     // Declared here to allow access from PrintBase through friendship.
 	static std::mutex&                  state_mutex(PrintBase *print);
@@ -448,7 +448,7 @@ protected:
 	// If no status callback is registered, the message is printed to console.
 	void 				   				status_update_warnings(PrintBase *print, int step, PrintStateBase::WarningLevel warning_level, const std::string &message);
 
-    ModelObject                  *m_model_object;
+    Domain::ModelObject                *m_model_object;
 };
 
 // Wrapper around the private PrintBase.throw_if_canceled(), so that a cancellation object could be passed
@@ -481,7 +481,7 @@ using WipeTowerGeometry = std::vector<ZDepth>;
 class IPrint {
 public:
     virtual ApplyStatus update(
-        Model& model,
+        Domain::Model& model,
         const Domain::ConfigPack& config,
         const Domain::BedInstance& bed,
         const SerializedConfig& serialized_config
@@ -531,7 +531,7 @@ public:
         APPLY_STATUS_INVALIDATED,
     };
 
-    const Model&            model() const { return m_model; }
+    const Domain::Model&                  model() const { return m_model; }
     std::optional<Domain::ModelWipeTower> wipe_tower() const {
         return m_wipe_tower;
     }
@@ -665,7 +665,7 @@ protected:
     // Update "scale", "input_filename", "input_filename_base" placeholders from the current printable ModelObjects.
     Biz::Parser::IO::Config get_object_placeholders() const;
 
-	Model                                   m_model;
+    Domain::Model                           m_model;
     std::optional<Domain::ModelWipeTower>   m_wipe_tower;
     std::optional<Domain::CustomGCode::Info>m_custom_gcode;
 
@@ -873,7 +873,7 @@ public:
     }
 
 protected:
-	PrintObjectBaseWithState(PrintType *print, ModelObject *model_object) : PrintObjectBase(model_object), m_print(print) {}
+	PrintObjectBaseWithState(PrintType *print, Domain::ModelObject *model_object) : PrintObjectBase(model_object), m_print(print) {}
 
     bool            set_started(PrintObjectStepEnum step) 
         { return m_state.set_started(step, PrintObjectBase::state_mutex(m_print), [this](){ this->throw_if_canceled(); }); }

@@ -27,8 +27,6 @@ namespace Slic3r
 
 class PrintConfigView;
 class PrintObjectConfigView;
-class ModelConfig;
-class ModelObject;
 class DynamicPrintConfig;
 
 // Parameters to guide object slicing and support generation.

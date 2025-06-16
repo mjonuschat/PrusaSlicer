@@ -61,7 +61,7 @@ SCENARIO("Print: Changing number of solid surfaces does not cause all surfaces t
         config.print.items.opt("layer_height").set(0.25);
         config.print.items.opt("first_layer_height").set(FloatOrPercentage{0.25});
         Slic3r::Print print;
-        Slic3r::Model model;
+        Domain::Model model;
         Slic3r::Test::init_print({TestMesh::cube_20x20x20}, print, model, config);
         // Precondition: Ensure that the model has 2 solid top layers (39, 38)
         // and one solid bottom layer (0).
@@ -154,11 +154,11 @@ TEST_CASE("Ported from Perl", "[Print]") {
             tool_settings.items.opt("nozzle_diameter").set(0.4);
         }
         Print print;
-        Model model;
+        Domain::Model model;
         Slic3r::Test::init_print({ TestMesh::cube_20x20x20 }, print, model, config);
 
         // User sets a per-region option, also testing a deep copy of Model.
-        Model model2(model);
+        Domain::Model model2(model);
         model2.objects.front()->object_settings.overrides.set("fill_density", Percentage{100});
         WHEN("fill_density overridden") {
             print.apply(model2, config, {}, {}, {});

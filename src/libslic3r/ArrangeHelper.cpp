@@ -1,6 +1,7 @@
 #include "ArrangeHelper.hpp"
 
 #include "libslic3r/Model.hpp"
+#include "Slic3r/Biz/Algorithms/ModelObject.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "libslic3r/MultipleBeds.hpp"
 #include "libslic3r/BuildVolume.hpp"
@@ -13,21 +14,20 @@
 #include "libslic3r/Utils.hpp"
 #include <boost/nowide/fstream.hpp>
 
-
+using namespace Slic3r::Biz;
 
 namespace Slic3r {
 
-	
-static bool can_arrange_selected_bed(const Model& model, int bed_idx)
+static bool can_arrange_selected_bed(const Domain::Model& model, int bed_idx)
 {
 	// When arranging a single bed, all instances of each object present must be on the same bed.
 	// Otherwise, the resulting order may not be possible to apply without messing up order
 	// on the other beds.
 	const auto map = s_multiple_beds.get_inst_map();
-	for (const ModelObject* mo : model.objects) {
+	for (const Domain::ModelObject* mo : model.objects) {
 		std::map<int, bool> used_beds;
 		bool mo_on_this_bed = false;
-		for (const ModelInstance* mi : mo->instances) {
+		for (const Domain::ModelInstance* mi : mo->instances) {
 			int id = -1;
 			if (auto it = map.find(mi->id()); it != map.end())
 				id = it->second;
@@ -138,7 +138,7 @@ static Sequential::SolverConfiguration get_solver_config(const Sequential::Print
 	return Sequential::SolverConfiguration(printer_geometry);
 }
 
-static std::vector<Sequential::ObjectToPrint> get_objects_to_print(const Model& model, const Sequential::PrinterGeometry& printer_geometry, int selected_bed)
+static std::vector<Sequential::ObjectToPrint> get_objects_to_print(const Domain::Model& model, const Sequential::PrinterGeometry& printer_geometry, int selected_bed)
 {
 	// First extract the heights of interest.
 	std::vector<double> heights;
@@ -148,12 +148,12 @@ static std::vector<Sequential::ObjectToPrint> get_objects_to_print(const Model& 
 
 	// Now collect all objects and projections of convex hull above respective heights.
 	std::vector<std::pair<Sequential::ObjectToPrint, std::vector<Sequential::ObjectToPrint>>> objects; // first = object id, the vector = ids of its instances
-	for (const ModelObject* mo : model.objects) {
+	for (const Domain::ModelObject* mo : model.objects) {
 		const Domain::TriangleMesh& raw_mesh = mo->raw_mesh();
         using Biz::Algorithms::BoundingBox::sizes;
-		coord_t height = scaled(sizes(mo->instance_bounding_box(0)).z());
+		coord_t height = scaled(sizes(Algorithms::ModelObject::instance_bounding_box(*mo, 0)).z());
 		std::vector<Sequential::ObjectToPrint> instances;
-		for (const ModelInstance* mi : mo->instances) {
+		for (const Domain::ModelInstance* mi : mo->instances) {
 			if (selected_bed != -1) {
 				auto it = s_multiple_beds.get_inst_map().find(mi->id());
 				if (it == s_multiple_beds.get_inst_map().end() || it->second != selected_bed)
@@ -200,7 +200,7 @@ static std::vector<Sequential::ObjectToPrint> get_objects_to_print(const Model& 
 
 
 
-void arrange_model_sequential(Model& model, const PrintConfigView& config, bool current_bed_only)
+void arrange_model_sequential(Domain::Model& model, const PrintConfigView& config, bool current_bed_only)
 {
 	SeqArrange seq_arrange(model, config, current_bed_only);
 	seq_arrange.process_seq_arrange([](int) {});
@@ -209,7 +209,7 @@ void arrange_model_sequential(Model& model, const PrintConfigView& config, bool 
 
 
 
-SeqArrange::SeqArrange(const Model& model, const PrintConfigView& config, bool current_bed_only)
+SeqArrange::SeqArrange(const Domain::Model& model, const PrintConfigView& config, bool current_bed_only)
 {
 	m_selected_bed = current_bed_only ? s_multiple_beds.get_active_bed() : -1;
 	if (m_selected_bed != -1 && ! can_arrange_selected_bed(model, m_selected_bed))
@@ -252,12 +252,12 @@ void SeqArrange::process_seq_arrange(std::function<void(int)> progress_fn)
 
 
 // Extract the result and move the objects in Model accordingly.
-void SeqArrange::apply_seq_arrange(Model& model) const
+void SeqArrange::apply_seq_arrange(Domain::Model& model) const
 {
 	struct MoveData {
 		Sequential::ScheduledObject scheduled_object;
 		size_t bed_idx;
-		ModelObject* mo;
+        Domain::ModelObject* mo;
 	};
 
 	// Iterate over the result and move the instances.
@@ -277,20 +277,21 @@ void SeqArrange::apply_seq_arrange(Model& model) const
 		const Vec3d bed_offset = s_multiple_beds.get_bed_translation(real_bed);
 
 		for (const Sequential::ScheduledObject& object : plate.scheduled_objects)
-			for (ModelObject* mo : model.objects)
-				for (ModelInstance* mi : mo->instances)
+			for (Domain::ModelObject* mo : model.objects)
+				for (Domain::ModelInstance* mi : mo->instances) {
 					if (mi->id().id == object.id) {
 						move_data_all.push_back({ object, size_t(real_bed), mo });
 						mi->set_offset(Vec3d(unscaled(object.x) + bed_offset.x(), unscaled(object.y) + bed_offset.y(), mi->get_offset().z()));
 					}
+                }
 		++plate_idx;
 	}
 
 	// Create a copy of ModelObject pointers, zero ones present in move_data_all.
 	// The point is to only reorder ModelObject which had actually been passed to the arrange algorithm.
-	std::vector<ModelObject*> objects_reordered = model.objects;
+	std::vector<Domain::ModelObject*> objects_reordered = model.objects;
 	for (size_t i = 0; i < objects_reordered.size(); ++i) {
-		ModelObject* mo = objects_reordered[i];
+        Domain::ModelObject* mo = objects_reordered[i];
 		if (std::any_of(move_data_all.begin(), move_data_all.end(), [&mo](const MoveData& md) { return md.mo == mo; }))
 			objects_reordered[i] = nullptr;
 	}
@@ -316,9 +317,9 @@ void SeqArrange::apply_seq_arrange(Model& model) const
 
 	// One last thing. Move unprintable instances to new beds. It would be nicer to
 	// arrange them (non-sequentially) on just one bed - maybe one day.
-	std::map<int, std::vector<ModelInstance*>> instances_to_move; // bed to move from and list of instances
-	for (ModelObject* mo : model.objects)
-		for (ModelInstance* mi : mo->instances)
+	std::map<int, std::vector<Domain::ModelInstance*>> instances_to_move; // bed to move from and list of instances
+	for (Domain::ModelObject* mo : model.objects)
+		for (Domain::ModelInstance* mi : mo->instances)
 			if (!mi->printable) {
 				auto it = s_multiple_beds.get_inst_map().find(mi->id());
 				if (it == s_multiple_beds.get_inst_map().end() || (m_selected_bed != -1 && it->second != m_selected_bed))
@@ -331,7 +332,7 @@ void SeqArrange::apply_seq_arrange(Model& model) const
 	for (auto& [bed_idx, instances] : instances_to_move) {
 		Vec3d old_bed_offset = s_multiple_beds.get_bed_translation(bed_idx);
 		Vec3d new_bed_offset = s_multiple_beds.get_bed_translation(new_number_of_beds);
-		for (ModelInstance* mi : instances)
+		for (Domain::ModelInstance* mi : instances)
 			mi->set_offset(mi->get_offset() - old_bed_offset + new_bed_offset);
 		++new_number_of_beds;
 	}
@@ -339,7 +340,7 @@ void SeqArrange::apply_seq_arrange(Model& model) const
 
 
 
-std::optional<std::pair<std::string, std::string> > check_seq_conflict(const Model& model, const PrintConfigView& config)
+std::optional<std::pair<std::string, std::string> > check_seq_conflict(const Domain::Model& model, const PrintConfigView& config)
 {
 	Sequential::PrinterGeometry printer_geometry = get_printer_geometry(config);
 	Sequential::SolverConfiguration solver_config = get_solver_config(printer_geometry);
@@ -352,9 +353,9 @@ std::optional<std::pair<std::string, std::string> > check_seq_conflict(const Mod
 	}
 
 	Sequential::ScheduledPlate plate;
-	for (const ModelObject* mo : model.objects) {
+	for (const Domain::ModelObject* mo : model.objects) {
 		int inst_id = -1;
-		for (const ModelInstance* mi : mo->instances) {
+		for (const Domain::ModelInstance* mi : mo->instances) {
 			++inst_id;
 
 			auto it = s_multiple_beds.get_inst_map().find(mi->id());
@@ -374,8 +375,8 @@ std::optional<std::pair<std::string, std::string> > check_seq_conflict(const Mod
 	std::optional<std::pair<int,int>> conflict = Sequential::check_ScheduledObjectsForSequentialConflict(solver_config, printer_geometry, objects, std::vector<Sequential::ScheduledPlate>(1, plate));
 	if (conflict) {
 		std::pair<std::string, std::string> names;
-		for (const ModelObject* mo : model.objects)
-			for (const ModelInstance* mi : mo->instances) {
+		for (const Domain::ModelObject* mo : model.objects)
+			for (const Domain::ModelInstance* mi : mo->instances) {
 				if (mi->id().id == conflict->first)
 					names.first = mo->name;
 				if (mi->id().id == conflict->second)

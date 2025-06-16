@@ -1,4 +1,7 @@
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
+
+#include "Slic3r/Biz/Algorithms/ModelObject.hpp"
+#include "Slic3r/Biz/Algorithms/ModelVolume.hpp"
 #include "Slic3r/Biz/Scene/BedTracking.hpp"
 #include "Slic3r/Domain/BedInstance.hpp"
 #include "Slic3r/Biz/ISelectedBedInstanceChangedListener.hpp"
@@ -9,6 +12,8 @@
 #include <Slic3r/Log.hpp>
 #include <vector>
 #include <algorithm>
+
+using namespace Slic3r::Biz;
 
 namespace fmt {
 template <>
@@ -155,7 +160,7 @@ void SceneInteractor::new_object_from_mesh(TriangleMesh&& mesh)
 {
     auto& project = m_workbench.project(m_selected_project_id);
     auto& obj = *project.model().add_object();
-    auto& vol = *obj.add_volume(std::move(mesh));
+    auto& vol = *Algorithms::ModelObject::add_volume(&obj, std::move(mesh));
     auto& inst = *obj.add_instance();
     const Domain::ElementRefs updated {{obj.id().id, inst.id().id}};
     const Domain::ElementRefs updated_vols{{obj.id().id, inst.id().id, vol.id().id}};
@@ -172,7 +177,7 @@ void SceneInteractor::new_object_from_mesh(TriangleMesh&& mesh)
     set_selection({SelectionMode::Instance, {updated}});
 }
 
-void SceneInteractor::add_volume_from_mesh(TriangleMesh&& mesh, ModelVolumeType volume_type, const Transform& xform)
+void SceneInteractor::add_volume_from_mesh(TriangleMesh&& mesh, Domain::ModelVolumeType volume_type, const Transform& xform)
 {
     auto& project = m_workbench.project(m_selected_project_id);
     const Selection& sel = selection();
@@ -182,7 +187,7 @@ void SceneInteractor::add_volume_from_mesh(TriangleMesh&& mesh, ModelVolumeType 
     Domain::ElementRefs updated;
     
     auto& obj = *project.find_object_by_id(obj_id);
-    auto& vol = *obj.add_volume(std::move(mesh), volume_type);
+    auto& vol = *Algorithms::ModelObject::add_volume(&obj, std::move(mesh), volume_type);
     vol.set_transformation(Transform3d{xform});
     updated.push_back({obj.id().id, obj.instances[0]->id().id, vol.id().id});
 
@@ -219,14 +224,14 @@ void SceneInteractor::add_instance(const Transform& xform)
     set_selection({SelectionMode::Instance, updated});
 }
 
-void SceneInteractor::notify_listener_on_objects(const Slic3r::ModelObjectPtrs& objects)
+void SceneInteractor::notify_listener_on_objects(const Domain::ModelObjectPtrs& objects)
 {
     auto& project = m_workbench.project(m_selected_project_id);
-    for (const Slic3r::ModelObject* object : objects) {
+    for (const Domain::ModelObject* object : objects) {
         Domain::ElementRefs updated;
         SPDLOG_DEBUG("Notify listner obj {}", object->id().id);
 
-        for (const Slic3r::ModelInstance* inst : object->instances)
+        for (const Domain::ModelInstance* inst : object->instances)
             updated.emplace_back(object->id().id, inst->id().id, 0);
 
         auto changes = update_instances_bed_placement(project, updated);
@@ -239,7 +244,7 @@ void SceneInteractor::notify_listener_on_objects(const Slic3r::ModelObjectPtrs& 
         });
 
         Domain::ElementRefs updated_vols;
-        for (const Slic3r::ModelVolume* vol : object->volumes)
+        for (const Domain::ModelVolume* vol : object->volumes)
             updated_vols.emplace_back(object->id().id, object->instances[0]->id().id, vol->id().id);
         SPDLOG_DEBUG("- on_volume_added: {}", fmt::join(updated_vols, ", "));
         invoke_listeners<ISceneChangedListener>([&](auto* l) {
@@ -266,15 +271,15 @@ void SceneInteractor::change_volume_meshes(RefMeshes&& meshes)
     for (RefMesh& mesh : meshes) {
         const Domain::ElementRef& id = mesh.first;
         Domain::TriangleMesh& triangle_mesh = mesh.second;
-        ModelVolume* volume_ptr = project.find_volume_by_id(id.object_id, id.volume_id);
+        Domain::ModelVolume* volume_ptr = project.find_volume_by_id(id.object_id, id.volume_id);
 
         assert(volume_ptr != nullptr);
         if (volume_ptr == nullptr)
             return;
 
-        ModelVolume& volume = *volume_ptr;
+        Domain::ModelVolume& volume = *volume_ptr;
         volume.set_mesh(std::move(triangle_mesh));
-        volume.calculate_convex_hull();
+        Algorithms::ModelVolume::calculate_convex_hull(volume);
         volume.set_new_unique_id();
         
         object_ids.push_back(id.object_id);
@@ -285,9 +290,9 @@ void SceneInteractor::change_volume_meshes(RefMeshes&& meshes)
     std::sort(object_ids.begin(), object_ids.end());
     object_ids.erase(std::unique(object_ids.begin(), object_ids.end()), object_ids.end());
     for (size_t object_id : object_ids) {
-        ModelObject& object = *project.find_object_by_id(object_id);
+        Domain::ModelObject& object = *project.find_object_by_id(object_id);
         object.invalidate_bounding_box();
-        object.ensure_on_bed(true); // disallow negative z
+        Algorithms::ModelObject::ensure_on_bed(object, true); // disallow negative z
     }
 
     invoke_listeners<ISceneChangedListener>(
@@ -298,7 +303,7 @@ void SceneInteractor::change_volume_meshes(RefMeshes&& meshes)
     
     Domain::ElementRefs selection_ids;
     for (const auto& update_id: updated_ids) {
-        ModelObject& object = *project.find_object_by_id(update_id.object_id);
+        Domain::ModelObject& object = *project.find_object_by_id(update_id.object_id);
         for (const auto& inst : object.instances)
             selection_ids.emplace_back(update_id.object_id, inst->id().id, update_id.volume_id);
     }
@@ -360,19 +365,19 @@ void SceneInteractor::extract_selected_instances()
     ASSERT(all_instances_from_one_object);
 
     Domain::Project& project = m_workbench.project(m_selected_project_id);
-    Slic3r::Model&   model   = project.model();
+    Domain::Model&   model   = project.model();
 
-    Selection::ElementRefs to_remove = scene_selection.elements;
-    ModelObjectPtrs        new_objects;
-    ModelObject*           old_object = project.find_object_by_id(object_id);
-    size_t                 sel_object_id = old_object->id().id;
+    Selection::ElementRefs  to_remove = scene_selection.elements;
+    Domain::ModelObjectPtrs new_objects;
+    Domain::ModelObject*    old_object = project.find_object_by_id(object_id);
+    size_t                  sel_object_id = old_object->id().id;
 
     if (old_object->instances.size() == to_remove.size()) {
         // splite old_object instances into separate object
         
         for (int inst_cnt = int(old_object->instances.size()) - 1; inst_cnt > 0; inst_cnt--) {
             // make a copy of the active object
-            Slic3r::ModelObject* new_object = model.add_object(*old_object);
+            Domain::ModelObject* new_object = model.add_object(*old_object);
             new_objects.emplace_back(new_object);
             // delete no needed instances from new_object
             for (size_t idx = old_object->instances.size() - 1; idx != size_t(-1); idx--) {
@@ -391,7 +396,7 @@ void SceneInteractor::extract_selected_instances()
         //extract selected instances into separate object
 
         // make a copy of the active object
-        Slic3r::ModelObject* new_object = model.add_object(*old_object);
+        Domain::ModelObject* new_object = model.add_object(*old_object);
         new_objects.emplace_back(new_object);
 
         // delete no needed instances from both objects

@@ -49,7 +49,7 @@ void read_tree(const boost::property_tree::ptree::value_type& section, boost::fi
 		}
 	}
 }
-bool fill_model(Model* model, const boost::filesystem::path& model_path, const std::string& material, const std::vector<std::string>& transformation_matrix)
+bool fill_model(Domain::Model* model, const boost::filesystem::path& model_path, const std::string& material, const std::vector<std::string>& transformation_matrix)
 {
 	if (!boost::filesystem::exists(model_path))
 		throw Slic3r::RuntimeError("Failed reading PrintRequest file. Path doesn't exists. " + model_path.string());
@@ -57,7 +57,7 @@ bool fill_model(Model* model, const boost::filesystem::path& model_path, const s
 		throw Slic3r::RuntimeError("Failed reading PrintRequest file. Path is not stl file. " + model_path.string());
 	return load_stl(model_path.string().c_str(), model);;
 }
-void add_instance(Model* model, const boost::filesystem::path& model_path, const std::vector<std::string>& transformation_matrix)
+void add_instance(Domain::Model* model, const boost::filesystem::path& model_path, const std::vector<std::string>& transformation_matrix)
 {
 	if (transformation_matrix.size() >= 16) {
 
@@ -90,7 +90,7 @@ void add_instance(Model* model, const boost::filesystem::path& model_path, const
 		}
 
 
-		ModelObject* object = model->objects.back();
+		Domain::ModelObject* object = model->objects.back();
         Domain::Transformation transformation(matrix);
 		transformation.set_offset(offset_vector);
 		object->add_instance(transformation);
@@ -99,7 +99,7 @@ void add_instance(Model* model, const boost::filesystem::path& model_path, const
 
 }
 
-bool load_printRequest(const char* input_file, Model* model)
+bool load_printRequest(const char* input_file, Domain::Model* model)
 {
 	pt::ptree tree;
 	try

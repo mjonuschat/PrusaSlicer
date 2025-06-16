@@ -2,13 +2,14 @@
 
 #include "Slic3r/Domain/Project.hpp"
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
+#include "Slic3r/Biz/Algorithms/ModelObject.hpp"
 
 #include <libslic3r/Model.hpp>
 
 namespace Slic3r::Biz {
 
 namespace {
-bool remove_instance(Domain::ModelInstanceList& instances, ModelInstance* inst)
+bool remove_instance(Domain::ModelInstanceList& instances, Domain::ModelInstance* inst)
 {
     auto it = std::find(instances.begin(), instances.end(), inst);
     if (it == instances.end())
@@ -18,7 +19,7 @@ bool remove_instance(Domain::ModelInstanceList& instances, ModelInstance* inst)
 }
 }
 
-void remove_instance_from_bed(Domain::Project& project, ModelInstance* model_instance, BedTrackingChanges& changes)
+void remove_instance_from_bed(Domain::Project& project, Domain::ModelInstance* model_instance, BedTrackingChanges& changes)
 {
     if (remove_instance(project.unplaced_model_instances(), model_instance)) {
         changes.unplaced_instances_updated = true;
@@ -43,11 +44,12 @@ std::pair<Domain::ConfigContainer*, Domain::BedInstance*> find_bed_instance_for_
     return std::make_pair(nullptr, nullptr);
 }
 
-void update_instance_bed_placement(Domain::Project& project, ModelInstance& inst, BedTrackingChanges& changes)
+void update_instance_bed_placement(Domain::Project& project, Domain::ModelInstance& inst, BedTrackingChanges& changes)
 {
     using Algorithms::BoundingBox::to_2d;
+    using Algorithms::ModelObject::instance_bounding_box;
 
-    const auto bb = to_2d(inst.get_object()->instance_bounding_box(inst));
+    const auto bb = to_2d(instance_bounding_box(*inst.get_object(), inst));
     if (auto [cc, bi] = find_bed_instance_for_bounds(project, bb); bi != nullptr) {
         bi->model_instances.push_back(&inst);
         changes.updated_beds.insert(Domain::BedRef{cc->id().id, bi->id().id});

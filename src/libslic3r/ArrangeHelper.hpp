@@ -4,28 +4,28 @@
 #include "libseqarrange/seq_interface.hpp"
 #include "libslic3r/ConfigViews.hpp"
 
-
+namespace Slic3r::Domain {
+class Model;
+} // namespace Slic3r::Domain
 
 namespace Slic3r {
-
-	class Model;
 	class ConfigBase;
 
 	class ExceptionCannotAttemptSeqArrange : public std::exception {};
 	class ExceptionCannotApplySeqArrange : public std::exception {};
 
-	void arrange_model_sequential(Model& model, const PrintConfigView& config);
+	void arrange_model_sequential(Domain::Model& model, const PrintConfigView& config);
     
-	std::optional<std::pair<std::string, std::string>> check_seq_conflict(const Model& model, const PrintConfigView& config);
+	std::optional<std::pair<std::string, std::string>> check_seq_conflict(const Domain::Model& model, const PrintConfigView& config);
 
 	// This is just a helper class to collect data for seq. arrangement, running the arrangement
 	// and applying the results to model. It is here so the processing itself can be offloaded
 	// into a separate thread without copying the Model or sharing it with UI thread.
 	class SeqArrange {
 	public:
-		explicit SeqArrange(const Model& model, const PrintConfigView& config, bool current_bed_only);
+		explicit SeqArrange(const Domain::Model& model, const PrintConfigView& config, bool current_bed_only);
 		void process_seq_arrange(std::function<void(int)> progress_fn);
-		void apply_seq_arrange(Model& model) const;
+		void apply_seq_arrange(Domain::Model& model) const;
 
 	private:
 		// Following three are inputs, filled in by the constructor.

@@ -31,11 +31,13 @@
 
 #include "Scene.hpp"
 
-namespace Slic3r {
-
+namespace Slic3r::Domain {
 class Model;
 class ModelInstance;
-class ModelWipeTower;
+} // namespace Slic3r::Domain
+
+namespace Slic3r {
+
 class Print;
 class SLAPrint;
 class SLAPrintObject;
@@ -129,7 +131,7 @@ public:
         : m_seldata{std::move(seld)}, m_wp{wp}
     {}
 
-    explicit FixedSelection(const Model &m);
+    explicit FixedSelection(const Domain::Model &m);
 
     explicit FixedSelection(const SelectionMask &other);
 
@@ -211,7 +213,7 @@ using BedConstraints = std::map<Domain::ObjectID, int>;
 class ArrangeableSlicerModel: public ArrangeableModel
 {
 protected:
-    AnyPtr<Model> m_model;
+    AnyPtr<Domain::Model> m_model;
     std::vector<AnyPtr<WipeTowerHandler>> m_wths; // Determines how wipe tower is handled
     AnyPtr<VirtualBedHandler> m_vbed_handler; // Determines how virtual beds are handled
     AnyPtr<const SelectionMask> m_selmask;  // Determines which objects are selected/unselected
@@ -239,15 +241,15 @@ public:
 
     Domain::ObjectID add_arrangeable(const Domain::ObjectID &prototype_id) override;
 
-    Model & get_model() { return *m_model; }
-    const Model &get_model() const { return *m_model; }
+    Domain::Model & get_model() { return *m_model; }
+    const Domain::Model &get_model() const { return *m_model; }
 };
 
 // SceneBuilder implementation for PrusaSlicer API.
 class SceneBuilder: public SceneBuilderBase<SceneBuilder>
 {
 protected:
-    AnyPtr<Model> m_model;
+    AnyPtr<Domain::Model> m_model;
     std::vector<AnyPtr<WipeTowerHandler>> m_wipetower_handlers;
     BedConstraints m_bed_constraints;
     std::optional<std::set<Domain::ObjectID>> m_considered_instances;
@@ -266,9 +268,9 @@ public:
     SceneBuilder(SceneBuilder&&);
     SceneBuilder& operator=(SceneBuilder&&);
 
-    SceneBuilder && set_model(AnyPtr<Model> mdl);
+    SceneBuilder && set_model(AnyPtr<Domain::Model> mdl);
 
-    SceneBuilder && set_model(Model &mdl);
+    SceneBuilder && set_model(Domain::Model &mdl);
 
     SceneBuilder && set_fff_print(AnyPtr<const Print> fffprint);
     SceneBuilder && set_sla_print(AnyPtr<const SLAPrint> mdl_print);
@@ -407,34 +409,34 @@ coord_t brim_offset(const PrintObject &po);
 // unscaled coords are necessary to be able to handle bigger coordinate range
 // than what is available with scaled coords. This is useful when working with
 // virtual beds.
-void transform_instance(ModelInstance     &mi,
-                        const Vec2d       &transl_unscaled,
-                        double             rot,
-                        const Transform3d &physical_tr = Transform3d::Identity());
+void transform_instance(Domain::ModelInstance &mi,
+                        const Vec2d           &transl_unscaled,
+                        double                 rot,
+                        const Transform3d     &physical_tr = Transform3d::Identity());
 
-BoundingBoxf3 instance_bounding_box(const ModelInstance &mi,
+BoundingBoxf3 instance_bounding_box(const Domain::ModelInstance &mi,
                                     bool dont_translate = false);
 
-BoundingBoxf3 instance_bounding_box(const ModelInstance &mi,
+BoundingBoxf3 instance_bounding_box(const Domain::ModelInstance &mi,
                                     const Transform3d &tr,
                                     bool dont_translate = false);
 
 constexpr double UnscaledCoordLimit = 1000.;
 
-ExPolygons extract_full_outline(const ModelInstance &inst,
+ExPolygons extract_full_outline(const Domain::ModelInstance &inst,
                                 const Transform3d &tr = Transform3d::Identity());
 
-Polygon extract_convex_outline(const ModelInstance &inst,
+Polygon extract_convex_outline(const Domain::ModelInstance &inst,
                                const Transform3d &tr = Transform3d::Identity());
 
-size_t model_instance_count (const Model &m);
+size_t model_instance_count (const Domain::Model &m);
 
 class VBedPlaceableMI : public VBedPlaceable
 {
-    ModelInstance *m_mi;
+    Domain::ModelInstance *m_mi;
 
 public:
-    explicit VBedPlaceableMI(ModelInstance &mi) : m_mi{&mi} {}
+    explicit VBedPlaceableMI(Domain::ModelInstance &mi) : m_mi{&mi} {}
 
     BoundingBoxf bounding_box() const override { return to_2d(instance_bounding_box(*m_mi)); }
     void         displace(const Vec2d &transl, double rot) override
@@ -487,8 +489,8 @@ public:
     }
 };
 
-extern template class ArrangeableModelInstance<ModelInstance, VirtualBedHandler>;
-extern template class ArrangeableModelInstance<const ModelInstance, const VirtualBedHandler>;
+extern template class ArrangeableModelInstance<Domain::ModelInstance, VirtualBedHandler>;
+extern template class ArrangeableModelInstance<const Domain::ModelInstance, const VirtualBedHandler>;
 
 // Arrangeable implementation for an SLAPrintObject to be able to arrange with the supports and pad
 class ArrangeableSLAPrintObject : public Arrangeable
@@ -661,13 +663,13 @@ public:
     }
 };
 
-extern template class ArrangeableFullModel<Model, ModelDuplicate, VirtualBedHandler>;
-extern template class ArrangeableFullModel<const Model, const ModelDuplicate, const VirtualBedHandler>;
+extern template class ArrangeableFullModel<Domain::Model, ModelDuplicate, VirtualBedHandler>;
+extern template class ArrangeableFullModel<const Domain::Model, const ModelDuplicate, const VirtualBedHandler>;
 
 // An implementation of the ArrangeableModel to be used for the full model 'duplicate' feature
 // accessible from CLI
 class DuplicableModel: public ArrangeableModel {
-    AnyPtr<Model> m_model;
+    AnyPtr<Domain::Model> m_model;
     AnyPtr<VirtualBedHandler> m_vbh;
     std::vector<ModelDuplicate> m_duplicates;
     BoundingBox m_bedbb;
@@ -686,7 +688,7 @@ class DuplicableModel: public ArrangeableModel {
     }
 
 public:
-    explicit DuplicableModel(AnyPtr<Model> mdl,
+    explicit DuplicableModel(AnyPtr<Domain::Model> mdl,
                              AnyPtr<VirtualBedHandler> vbh,
                              const BoundingBox &bedbb);
     ~DuplicableModel();
