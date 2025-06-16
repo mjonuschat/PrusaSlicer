@@ -140,7 +140,7 @@ struct ExprParser : qi::grammar<Iterator, ExprAst(), ascii::space_type>
 {
     ExprParser() : ExprParser::base_type(logical_or)
     {
-        using qi::float_;
+        using qi::double_;
         using qi::char_;
         using qi::lexeme;
         using qi::lit;
@@ -186,7 +186,7 @@ struct ExprParser : qi::grammar<Iterator, ExprAst(), ascii::space_type>
                 )
             ]
         ];
-        factor = float_
+        factor = double_
             | bool_constant
             | string_constant
             | regex_constant

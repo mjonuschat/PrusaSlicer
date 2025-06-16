@@ -34,7 +34,7 @@ TEST_CASE("Preset Evaluator")
         .tools = {
             {
                 .features = {
-                    std::make_pair("nozzle_diameter", FeatureValue{0.4f}),
+                    std::make_pair("nozzle_diameter", FeatureValue{0.4}),
                     std::make_pair("nozzle_high_flow", FeatureValue{false}),
                 }
             }

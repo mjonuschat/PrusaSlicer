@@ -89,7 +89,7 @@ TEST_CASE("Load Yaml from file into MyData", "[yaml]")
         REQUIRE(data.items[1].id == "2");
         REQUIRE(data.items[2].id == "3");
         REQUIRE(data.param.index() == 0);
-        REQUIRE(std::get<float>(data.param) == Catch::Approx(3.14f));
+        REQUIRE(std::get<float>(data.param) == Catch::Approx(3.14));
     } catch (const Yaml::ParseError& e) {
         std::cerr << e.what() << std::endl;
     }
@@ -179,7 +179,7 @@ presets:
             auto doc = Yaml::parse_string(yaml);
             Tests::ValueData data = Yaml::parse_struct<Tests::ValueData>(doc);
             REQUIRE(data.features.find("bool")->second == FeatureValue{true});
-            REQUIRE(data.features.find("num")->second == FeatureValue{42.1f});
+            REQUIRE(data.features.find("num")->second == FeatureValue{42.1});
             REQUIRE(data.features.find("str")->second == FeatureValue{"Hello world"});
 
 
@@ -187,7 +187,7 @@ presets:
             REQUIRE(data.presets.find("vec2s")->second == PresetValue{Vec2ds{Vec2d{0, 0}}});
             REQUIRE(data.presets.find("bool")->second == PresetValue{true});
             REQUIRE(data.presets.find("bools")->second == PresetValue{Bools{true, false}});
-            REQUIRE(data.presets.find("num")->second == PresetValue{42.1f});
+            REQUIRE(data.presets.find("num")->second == PresetValue{42.1});
             REQUIRE(data.presets.find("nums")->second == PresetValue{Floats{1, 2, 3}});
             REQUIRE(data.presets.find("str")->second == PresetValue{"Hello"});
             REQUIRE(data.presets.find("strs")->second == PresetValue{Strings{"Hello", "world"}});

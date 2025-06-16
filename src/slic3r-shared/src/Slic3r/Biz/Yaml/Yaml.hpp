@@ -28,7 +28,7 @@
 #elif defined(SLIC3R_YAML_YAMLCPP)
 #include "YamlAdapterYamlCpp.hpp"
 #else
-#error "No YAML library selected
+#error "No YAML library selected"
 #endif
 
 namespace Slic3r::Biz::Yaml {
@@ -38,7 +38,7 @@ using YamlAdapter = Libfyaml::YamlAdapterLibfyaml;
 #elif defined(SLIC3R_YAML_YAMLCPP)
 using YamlAdapter = YamlCpp::YamlAdapterYamlCpp;
 #else
-#error "No YAML library selected
+#error "No YAML library selected"
 #endif
 
 

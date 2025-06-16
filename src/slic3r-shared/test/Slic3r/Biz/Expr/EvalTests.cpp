@@ -21,6 +21,13 @@ TEST_CASE("Expression eval")
         return e.eval(p.parse(source), extra_vars);
     };
 
+    SECTION("Constant")
+    {
+        v = eval("123456789");
+        double w = boost::get<double>(v);
+        REQUIRE(w == 123456789);
+    }
+
     SECTION("Arithmetic ops")
     {
         v = eval("2 + 3 * 4");
@@ -67,7 +74,7 @@ TEST_CASE("Expression eval")
         v = eval("name == \"abc\"");
         REQUIRE(boost::get<bool>(v) == false);
 
-        e.set_var("tool.nozzle_diameter", 0.4f);
+        e.set_var("tool.nozzle_diameter", 0.4);
         e.set_var("tool.high_flow_nozzle", true);
         v = eval("tool.nozzle_diameter == 0.4");
         REQUIRE(boost::get<bool>(v) == true);
