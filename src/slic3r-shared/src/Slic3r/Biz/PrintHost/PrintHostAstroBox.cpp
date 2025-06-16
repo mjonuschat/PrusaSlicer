@@ -93,7 +93,7 @@ bool PrintHostAstroBox::test(std::string& msg, RetryFn retry_fn) const
                 }
                 boost::optional<std::string> text;
                 if (json.contains("text") && json["text"].is_string()) {
-                   text = json["text"];
+                   text = json["text"].get<std::string>();
                 }
                 res = validate_version_text(text);
                 if (! res) {

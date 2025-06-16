@@ -18,6 +18,8 @@ struct ConfigPackFDM
     std::vector<Domain::ToolPrintSettings> tool;
     std::vector<Domain::FilamentSettings> filament;
     Domain::ProjectSettings project;
+
+    bool operator==(const ConfigPackFDM&) const = default;
 };
 
 struct ConfigPackSLA
@@ -25,6 +27,8 @@ struct ConfigPackSLA
     Domain::SLAPrinterSettings sla_printer_settings;
     Domain::SLAMaterialSettings sla_material_settings;
     Domain::SLAPrintSettings sla_print_settings;
+
+    bool operator==(const ConfigPackSLA&) const = default;
 };
 
 using ConfigPack = std::variant<ConfigPackFDM, ConfigPackSLA>;

@@ -48,12 +48,15 @@ if ((NOT UNIX) OR APPLE)
 	target_compile_definitions(slic3r-base PUBLIC -DwxNO_IMPLICIT_WXSTRING_ENCODING=1)
 endif ()
 
+find_package(tl-expected REQUIRED)
+
 target_include_directories(slic3r-base PUBLIC include)
 target_include_directories(slic3r-base PRIVATE src)
 target_link_libraries(slic3r-base PUBLIC
     spdlog
     semver
     boost_headeronly
+	tl::expected
     slic3r-domain-types
 )
 

@@ -2,97 +2,114 @@
 #include "Slic3r/Biz/Config/ConfigSerialize.hpp"
 
 #include "Slic3r/Domain/Types.hpp"
+#include "Slic3r/Biz/Config/ConfigJson.hpp" // IWYU pragma: keep
 #include "boost/algorithm/string.hpp"
 
 #include <set>
 
-namespace Slic3r::Biz {
-
-using Domain::ConfigItem;
-using Domain::FloatOrPercentage;
-using Domain::Percentage;
-using Domain::EnumWrapper;
-using Domain::EnumVectorWrapper;
-using Domain::Vec2d;
-using Domain::BoxOrBoxesVector;
-using Domain::BoxRefs;
-using Domain::BoxRef;
-using Domain::overloaded;
-using Domain::ConfigLocation;
-using Domain::FDMConfigLocation;
-using Domain::SLAConfigLocation;
-using Domain::PhysicalPrinterLocation;
-
-static nlohmann::json serialize_float_or_percent(const FloatOrPercentage& fop)
-{
-    nlohmann::json j;
-    j["value"] = fop.is_percentage() ? fop.percentage().value : fop.float_value();
-    j["is_percent"] = fop.is_percentage();
-    return j;
-}
-
-static nlohmann::json serialize_point(const Vec2d& p)
-{
-    return nlohmann::json(std::vector<double>{p.x(), p.y()});
-}
-
-static nlohmann::json serialize_points(const std::vector<Vec2d>& pts)
-{
-    std::vector<std::vector<double>> out;
-    for (const Domain::Vec2d& pt : pts)
-        out.emplace_back(std::vector<double>{pt.x(), pt.y()});
-    return nlohmann::json(out);
-}
-
-static nlohmann::json serialize_enums(const std::vector<std::string_view>& strings)
+static std::vector<std::string> to_strings(const std::vector<std::string_view>& strings)
 {
     std::vector<std::string> out;
     out.insert(out.end(), strings.begin(), strings.end());
-    return nlohmann::json(out);
+    return out;
 }
 
-static void serialize_and_append(const ConfigItem& item, nlohmann::json& j)
-{
-    j[item.name()] = nullptr;
-    auto& jval = j.back();
-
-    item.visit([&](auto&& item_value){
+namespace Slic3r::Domain {
+[[maybe_unused]] void to_json(nlohmann::ordered_json& json_value, const ConfigItem& item) {
+    item.visit([&](auto&& item_value) {
         using ValueType = std::remove_cvref_t<decltype(item_value)>;
         if constexpr (std::is_same_v<ValueType, EnumWrapper>) {
-            jval = item_value.get_string();
+            json_value = item_value.get_string();
         } else if constexpr (std::is_same_v<ValueType, EnumVectorWrapper>) {
-            jval = serialize_enums(item_value.get_strings());
-        } else if constexpr (std::is_same_v<ValueType, Vec2d>) {
-            jval = serialize_point(item_value);
-        } else if constexpr (std::is_same_v<ValueType, std::vector<Vec2d>>) {
-            jval = serialize_points(item_value);
-        } else if constexpr (
-            std::is_same_v<ValueType, Percentage>
-            || std::is_same_v<ValueType, FloatOrPercentage>
-        ) {
-            jval = serialize_float_or_percent(item_value);
-        } else if constexpr (std::is_same_v<ValueType, std::optional<int>>) {
-            if (item_value)
-                jval = *item_value;
-            else
-                jval = nullptr;
-        } else if constexpr (
-            std::is_same_v<ValueType, int>
-            || std::is_same_v<ValueType, bool>
-            || std::is_same_v<ValueType, double>
-            || std::is_same_v<ValueType, std::string>
-            || std::is_same_v<ValueType, std::vector<int>>
-            || std::is_same_v<ValueType, std::vector<bool>>
-            || std::is_same_v<ValueType, std::vector<double>>
-            || std::is_same_v<ValueType, std::vector<std::string>>
-        ) {
-            jval = item.get<ValueType>();
+            json_value = to_strings(item_value.get_strings());
         } else {
-            PANIC("Cannot serialize value!");
+            json_value = item.get<ValueType>();
         }
     });
 }
 
+[[maybe_unused]] void to_json(nlohmann::ordered_json& json_value, const Domain::ConfigBox& box)
+{
+    for (const ConfigItem& item : box.overrides.all_items()) {
+        if (box.overrides.get(item.name())) {
+            json_value[item.name()] = item;
+        } else {
+            json_value[item.name()] = nullptr;
+        }
+    }
+
+    for (const ConfigItem& item : box.items) {
+        json_value[item.name()] = item;
+    }
+}
+
+// Given list of boxes of the same type, serializes the content such that each key
+// appears once and items from individual boxes end up as vector elements.
+// Vector which belong to overrides and which are full of nulls are omitted.
+[[maybe_unused]] void to_json(nlohmann::ordered_json& json_value, const BoxRefs& boxes)
+{
+    ASSERT(!boxes.empty());
+    ASSERT(std::all_of(boxes.begin(), boxes.end(), [&boxes](const auto& box_ref) {
+        return box_ref.get().location == boxes.front().get().location;
+    }));
+
+    // Create a JSON object from each box individually.
+    std::vector<nlohmann::ordered_json> json_objects;
+    for (const auto& box : boxes)
+        json_objects.emplace_back(box.get());
+
+    // Vectorization of the individual json objects. Assumes that the keys are the same.
+    json_value = nlohmann::ordered_json::object();
+    for (auto it = json_objects[0].items().begin(); it != json_objects[0].items().end(); ++it) {
+        const std::string& current_key = it.key();
+        nlohmann::ordered_json value_array = nlohmann::ordered_json::array();
+        for (const auto& obj : json_objects)
+            value_array.push_back(obj[current_key]);
+        json_value[current_key] = std::move(value_array);
+    }
+
+    // Remove all vectors which are full of nulls - but only for overrides.
+    for (auto it = json_value.begin(); it != json_value.end(); ) {
+        if (!boxes.front().get().overrides.contains(it.key())) {
+            ++it;
+            continue; // Not an override, apparently an optional value.
+        }
+        ASSERT(it.value().is_array());
+        if (const auto& arr = it.value();
+            ! arr.empty() && std::all_of(arr.begin(), arr.end(), [](const auto& e) { return e.is_null(); }))
+            it = json_value.erase(it);
+        else
+            ++it;
+    }
+}
+
+void to_json(
+    nlohmann::ordered_json& json_value, const BoxOrBoxesVector& box_or_boxes_vector
+)
+{
+    for (const auto& box_or_boxes : box_or_boxes_vector) {
+        std::visit([&](auto&& box_or_boxes){
+            using ValueType = std::remove_cvref_t<decltype(box_or_boxes)>;
+            std::string location_name;
+            if constexpr(std::is_same_v<ValueType, BoxRef>) {
+                location_name = get_location_name(box_or_boxes.get().location);
+            } else {
+                location_name = get_location_name(box_or_boxes.front().get().location);
+            }
+            json_value[location_name] = box_or_boxes;
+        }, box_or_boxes);
+    }
+}
+}
+
+namespace Slic3r::Biz {
+
+using Domain::ConfigItem;
+using Domain::Vec2d;
+using Domain::BoxOrBoxesVector;
+using Domain::BoxRefs;
+using Domain::BoxRef;
+using Domain::ConfigLocation;
 
 static std::string trim_quotes(const std::string& json_str)
 {
@@ -104,8 +121,8 @@ static std::string trim_quotes(const std::string& json_str)
 
 std::variant<std::string, std::vector<std::string>> serialize_to_string(const ConfigItem& item)
 {
-    nlohmann::json j;
-    serialize_and_append(item, j);
+    nlohmann::ordered_json j;
+    j[item.name()] = item;
 
     ASSERT(! j.empty());
 
@@ -122,122 +139,18 @@ std::variant<std::string, std::vector<std::string>> serialize_to_string(const Co
         return trim_quotes(value.dump(-1, ' ', false));
 }
 
-
-
-nlohmann::json serialize(const Domain::ConfigBox& box)
-{
-    nlohmann::json out;
-
-    for (const auto& item_ref : box.overrides.overriden_items()) {
-        const ConfigItem& item{item_ref.get()};
-        if (item.def().location != box.location)
-            continue;
-        serialize_and_append(item, out);
-    }
-
-    for (const ConfigItem& item : box.items) {
-        if (item.def().location != box.location)
-            continue;
-        serialize_and_append(item, out);
-    }
-
-    return out;
-}
-
-
-
-nlohmann::json serialize_as_vector(const BoxRefs& boxes)
-{
-    ASSERT(! boxes.empty());
-    ASSERT(std::all_of(boxes.begin(), boxes.end(), [&boxes](const auto& box_ref) {
-        return box_ref.get().location == boxes.front().get().location;
-    }));
-
-    // Create a JSON object from each box individually.
-    std::vector<nlohmann::json> json_objects;
-    for (const auto& box : boxes)
-        json_objects.emplace_back(serialize(box.get()));
-
-    // Vectorization of the individual json objects. Assumes that the keys are the same.
-    nlohmann::json combined_json = nlohmann::json::object();
-    for (auto it = json_objects[0].items().begin(); it != json_objects[0].items().end(); ++it) {
-        const std::string& current_key = it.key();
-        nlohmann::json value_array = nlohmann::json::array();
-        for (const auto& obj : json_objects)
-            value_array.push_back(obj[current_key]);
-        combined_json[current_key] = std::move(value_array);
-    }
-
-    // Remove all vectors which are full of nulls - but only for overrides.
-    for (auto it = combined_json.begin(); it != combined_json.end(); ) {
-        if (!boxes.front().get().overrides.contains(it.key())) {
-            ++it;
-            continue; // Not an override, apparently an optional value.
-        }
-        ASSERT(it.value().is_array());
-        if (const auto& arr = it.value();
-            ! arr.empty() && std::all_of(arr.begin(), arr.end(), [](const auto& e) { return e.is_null(); }))
-            it = combined_json.erase(it);
-        else
-            ++it;
-    }
-
-    return combined_json;
-}
-
-namespace {
-const std::string get_location_name(const ConfigLocation& location) {
-    return std::visit(overloaded{
-        [](const FDMConfigLocation location) {
-            switch(location) {
-                case FDMConfigLocation::Printer: return "printer_settings";
-                case FDMConfigLocation::Tool: return "toolprint_settings";
-                case FDMConfigLocation::Print: return "print_settings";
-                case FDMConfigLocation::Filament: return "filament_settings";
-                case FDMConfigLocation::Project: return "project_settings";
-                case FDMConfigLocation::Object: return "object_settings";
-                case FDMConfigLocation::Volume: return "volume_settings";
-                default: PANIC("Unknown location");
-            }
-        },
-        [](const SLAConfigLocation location) {
-            switch(location) {
-                case SLAConfigLocation::Printer: return "sla_printer_settings";
-                case SLAConfigLocation::Print: return "sla_print_settings";
-                case SLAConfigLocation::Material: return "sla_material_settings";
-                case SLAConfigLocation::Object: return "sla_object_settings";
-                default: PANIC("Unknown location");
-            }
-        },
-        [](const PhysicalPrinterLocation location) {
-            return "physical_printer_settings";
-        },
-    }, location);
-}
-}
-
 std::string serialize(
     const BoxOrBoxesVector& input,
     int indent,
     bool prepend_semicolons)
 {
-    std::set<std::string> box_names;
-
-    nlohmann::ordered_json complete_json;
-    for (const auto& var : input) {
-        if (std::holds_alternative<BoxRef>(var)) {
-            const auto& box = std::get<BoxRef>(var).get();
-            const std::string location_name{get_location_name(box.location)};
-            box_names.emplace(location_name);
-            complete_json[location_name] = serialize(box);
-        } else {
-            const auto& boxes = std::get<BoxRefs>(var);
-            const std::string location_name{get_location_name(boxes.front().get().location)};
-            box_names.emplace(location_name);
-            complete_json[location_name] = serialize_as_vector(boxes);
-        }
-    }
+    const nlohmann::ordered_json complete_json = input;
     std::string str = complete_json.dump(indent);
+
+    std::set<std::string> box_names;
+    for (const auto& [key, _] : complete_json.items()) {
+        box_names.insert(key);
+    }
 
     // Now a little minification to make the result a bit more readable.
     // Only removes newlines and leading spaces, so the meaning stays the same.

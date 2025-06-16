@@ -116,11 +116,11 @@ bool PrintHostRepetier::test(std::string& msg, RetryFn retry_fn) const
                 nlohmann::json json = nlohmann::json::parse(body);
                 boost::optional<std::string> text;
                 if (json.contains("name") && json["name"].is_string()) {
-                   text = json["name"];
+                   text = json["name"].get<std::string>();
                 }
                 boost::optional<std::string> soft;
                 if (json.contains("software") && json["software"].is_string()) {
-                   soft = json["software"];
+                   soft = json["software"].get<std::string>();
                 }
                 res = validate_repetier(text, soft);
                 if (! res) {

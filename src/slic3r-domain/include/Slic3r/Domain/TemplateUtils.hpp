@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <optional>
 
 namespace Slic3r::Domain {
 
@@ -14,6 +15,17 @@ struct is_std_vector<std::vector<T, Alloc>> : std::true_type
 
 template<typename T>
 inline constexpr bool is_std_vector_v = is_std_vector<T>::value;
+
+template<typename T>
+struct is_std_optional : std::false_type
+{};
+
+template<typename T>
+struct is_std_optional<std::optional<T>> : std::true_type
+{};
+
+template<typename T>
+inline constexpr bool is_std_optional_v = is_std_optional<T>::value;
 
 template<class... Ts>
 struct overloaded : Ts... {

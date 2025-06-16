@@ -24,7 +24,7 @@ boost::optional<std::string> get_error_message_from_response_body(const std::str
     {
         nlohmann::json json = nlohmann::json::parse(body);
         if (json.contains("message") && json["message"].is_string()) {
-            message = json["message"];
+            message = json["message"].get<std::string>();
         }
     }
     // ignore possible errors if body is not valid JSON
@@ -153,11 +153,11 @@ bool PrintHostPrusaConnect::perform(ProgressFn progress_fn, RetryFn retry_fn, Er
     try
     {
         nlohmann::json json = nlohmann::json::parse(init_out);
-        if (!json.contains("id") || !json["id"].is_number_integer()) {
+        if (!json.contains("id") || !json["id"].is_number_unsigned()) {
             error_fn(_u8L("Failed to extract upload id from server reply."));
             return false;
         }
-        upload_id = json["id"];
+        upload_id = json["id"].get<std::size_t>();
     }
     catch (const std::exception&)
     {

@@ -1,6 +1,36 @@
 #include "Slic3r/Domain/ConfigDef.hpp"
 
 namespace Slic3r::Domain {
+
+std::string get_location_name(const ConfigLocation& location) {
+    return std::visit(overloaded{
+        [](const FDMConfigLocation location) {
+            switch(location) {
+                case FDMConfigLocation::Printer: return "printer_settings";
+                case FDMConfigLocation::Tool: return "toolprint_settings";
+                case FDMConfigLocation::Print: return "print_settings";
+                case FDMConfigLocation::Filament: return "filament_settings";
+                case FDMConfigLocation::Project: return "project_settings";
+                case FDMConfigLocation::Object: return "object_settings";
+                case FDMConfigLocation::Volume: return "volume_settings";
+                default: PANIC("Unknown location");
+            }
+        },
+        [](const SLAConfigLocation location) {
+            switch(location) {
+                case SLAConfigLocation::Printer: return "sla_printer_settings";
+                case SLAConfigLocation::Print: return "sla_print_settings";
+                case SLAConfigLocation::Material: return "sla_material_settings";
+                case SLAConfigLocation::Object: return "sla_object_settings";
+                default: PANIC("Unknown location");
+            }
+        },
+        [](const PhysicalPrinterLocation location) {
+            return "physical_printer_settings";
+        },
+    }, location);
+}
+
 ConfigDefinitions::ConfigDefinitions(
     const std::set<ConfigLocation>& acceptable_boxes,
     std::function<void(ConfigDefinitions&)> init_fn

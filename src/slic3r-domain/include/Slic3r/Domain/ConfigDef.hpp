@@ -41,6 +41,8 @@ struct PhysicalPrinterLocation {
 
 using ConfigLocation = std::variant<FDMConfigLocation, SLAConfigLocation, PhysicalPrinterLocation>;
 
+std::string get_location_name(const ConfigLocation& location);
+
 // Static definition of a single config item. Contains all info about what the item is,
 // as well as rules for diplaying it in the UI. All information about the item is here,
 // including where it is supposed to be.

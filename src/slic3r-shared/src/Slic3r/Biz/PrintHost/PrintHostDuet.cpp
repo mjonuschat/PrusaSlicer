@@ -108,7 +108,7 @@ PrintHostDuet::ConnectionType PrintHostDuet::connect(std::string &msg, RetryFn r
                         nlohmann::json json = nlohmann::json::parse(body);
                         if (json.contains("sessionKey") && json["sessionKey"].is_string())
                         {
-                            msg = json["sessionKey"];
+                            msg = json["sessionKey"].get<std::string>();
                         }
                         res = ConnectionType::dsf;
 					}

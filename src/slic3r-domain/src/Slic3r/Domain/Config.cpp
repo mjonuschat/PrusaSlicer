@@ -147,6 +147,14 @@ std::vector<std::reference_wrapper<const ConfigItem>> ConfigOverrides::overriden
     return result;
 }
 
+std::vector<ConfigItem>& ConfigOverrides::all_items() {
+    return m_items;
+}
+
+const std::vector<ConfigItem>& ConfigOverrides::all_items() const {
+    return m_items;
+}
+
 std::size_t ConfigOverrides::find(const std::string& key) {
     const auto index{find_item_index(m_items, key)};
     ASSERT(index, "The key does not belong to this!");

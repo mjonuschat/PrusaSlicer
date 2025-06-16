@@ -496,6 +496,12 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/Config/ConfigLegacy.cpp
         src/Slic3r/Biz/Config/Legacy/3mf_legacy.cpp
         include/Slic3r/Biz/Config/3mf_legacy.hpp
+
+        include/Slic3r/Biz/Config/ConfigLoad.hpp
+        src/Slic3r/Biz/Config/ConfigLoad.cpp
+
+        include/Slic3r/Biz/Config/ConfigJson.hpp
+        src/Slic3r/Biz/Config/ConfigJson.cpp
 )
 
 if (WIN32)
@@ -658,6 +664,8 @@ if(SLIC3R_BUILD_TESTS AND NOT EMSCRIPTEN)
         test/Slic3r/Biz/Slicing/ProcessActionsTests.cpp
 
         test/Slic3r/Biz/Config/ConfigLegacyTests.cpp
+        test/Slic3r/Biz/Config/ConfigLoadTests.cpp
+        test/Slic3r/Biz/Config/ConfigRoundtripTests.cpp
     )
     target_include_directories(slic3r-shared-tests PRIVATE test src)
 

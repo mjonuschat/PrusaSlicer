@@ -44,6 +44,11 @@ public:
         return m_value.visit(std::forward<Visitor>(visitor));
     }
 
+    template <typename Visitor>
+    auto visit(Visitor&& visitor) {
+        return m_value.visit(std::forward<Visitor>(visitor));
+    }
+
     ConfigValue value() const {
         return m_value;
     }
@@ -83,6 +88,8 @@ public:
 
     virtual ~ConfigItems() = default;
 
+    bool operator==(const ConfigItems&) const = default;
+
 private:
     std::vector<ConfigItem> m_items;
 };
@@ -112,6 +119,12 @@ public:
     const ConfigItem* contains(const std::string& key) const;
 
     std::vector<std::reference_wrapper<const ConfigItem>> overriden_items() const;
+
+    std::vector<ConfigItem>& all_items();
+
+    const std::vector<ConfigItem>& all_items() const;
+
+    bool operator==(const ConfigOverrides&) const = default;
 
 private:
     std::size_t find(const std::string& key);
@@ -149,6 +162,8 @@ struct ConfigBox
         }
         return {items.contains(key), false};
     }
+
+    bool operator==(const ConfigBox&) const = default;
 
 protected:
     ConfigBox(const ConfigDefinitions& defs, const ConfigLocation& location)

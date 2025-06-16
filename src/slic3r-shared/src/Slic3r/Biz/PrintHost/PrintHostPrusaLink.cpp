@@ -153,7 +153,7 @@ bool PrintHostPrusaLink::test(std::string& msg, RetryFn retry_fn) const
                 }
                 boost::optional<std::string> text;
                 if (json.contains("text") && json["text"].is_string()) {
-                   text = json["text"];
+                   text = json["text"].get<std::string>();
                 }
                 res = validate_version_text(text);
                 if (! res) {
@@ -208,7 +208,7 @@ bool PrintHostPrusaLink::test_with_method_check(std::string& msg, bool& use_put,
             }
             boost::optional<std::string> text;
             if (json.contains("text") && json["text"].is_string()) {
-               text = json["text"];
+               text = json["text"].get<std::string>();
             }
             res = validate_version_text(text);
             if (! res) {
@@ -219,7 +219,7 @@ bool PrintHostPrusaLink::test_with_method_check(std::string& msg, bool& use_put,
             if (json.contains("capabilities") && json["capabilities"].is_structured())
             {
                 if (json["capabilities"].contains("upload-by-put") && json["capabilities"]["upload-by-put"].is_boolean()) {
-                   use_put = json["capabilities"]["upload-by-put"];
+                   use_put = json["capabilities"]["upload-by-put"].get<bool>();
                 }
             }
         }
@@ -280,7 +280,7 @@ bool PrintHostPrusaLink::test_with_resolved_ip_and_method_check(std::string& msg
                 }
                 boost::optional<std::string> text;
                 if (json.contains("text") && json["text"].is_string()) {
-                   text = json["text"];
+                   text = json["text"].get<std::string>();
                 }
                 res = validate_version_text(text);
                 if (! res) {
@@ -291,7 +291,7 @@ bool PrintHostPrusaLink::test_with_resolved_ip_and_method_check(std::string& msg
                 if (json.contains("capabilities") && json["capabilities"].is_structured())
                 {
                     if (json["capabilities"].contains("upload-by-put") && json["capabilities"]["upload-by-put"].is_boolean()) {
-                       use_put = json["capabilities"]["upload-by-put"];
+                       use_put = json["capabilities"]["upload-by-put"].get<bool>();
                     }
                 }
             }

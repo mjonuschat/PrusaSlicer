@@ -186,12 +186,19 @@ struct ConfigValue {
     template <typename T>
     requires (!std::is_enum_v<T> && !Impl::is_enum_vector<T>())
     void set(const T& value) {
+        ASSERT(std::holds_alternative<T>(m_value));
         m_value = value;
+    }
+
+    void set(const char* value) {
+        ASSERT(std::holds_alternative<std::string>(m_value));
+        m_value = std::string{value};
     }
 
     template <typename T>
     requires std::is_enum_v<T>
     void set(const T& value) {
+        ASSERT(std::holds_alternative<EnumWrapper>(m_value));
         std::get<EnumWrapper>(m_value).set<T>(value);
     }
 
@@ -199,11 +206,17 @@ struct ConfigValue {
     requires (Impl::is_enum_vector<T>())
     void set(const T& values)
     {
+        ASSERT(std::holds_alternative<EnumVectorWrapper>(m_value));
         std::get<EnumVectorWrapper>(m_value).set(values);
     }
 
     template <typename Visitor>
     auto visit(Visitor&& visitor) const {
+        return std::visit(std::forward<Visitor>(visitor), m_value);
+    }
+
+    template <typename Visitor>
+    auto visit(Visitor&& visitor) {
         return std::visit(std::forward<Visitor>(visitor), m_value);
     }
 
