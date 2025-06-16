@@ -29,6 +29,7 @@
 #include "Slic3r/Domain/Model.hpp"
 #include "Slic3r/Domain/FullConfigFDM.hpp"
 #include "Slic3r/Domain/FullConfigSLA.hpp"
+#include "Slic3r/Domain/CutConnector.hpp"
 
 #include <map>
 #include <memory>
@@ -151,133 +152,6 @@ private:
     friend class ModelObject;
 };
 
-
-class CutId
-{
-    size_t m_unique_id;      // 0 = invalid
-    size_t m_check_sum;      // check sum of CutParts in initial Object
-    size_t m_connectors_cnt; // connectors count
-
-public:
-    CutId() { invalidate(); }
-    CutId(size_t id, size_t check_sum, size_t connectors_cnt) :
-        m_unique_id{ id }, m_check_sum{ check_sum }, m_connectors_cnt{ connectors_cnt } {}
-
-    bool operator< (const CutId& rhs) const { return this->m_unique_id <  rhs.m_unique_id; }
-    CutId& operator=(const CutId& rhs) {
-        this->m_unique_id = rhs.id();
-        this->m_check_sum = rhs.check_sum();
-        this->m_connectors_cnt = rhs.connectors_cnt();
-        return *this;
-    }
-
-    void invalidate() {
-        m_unique_id = 0;
-        m_check_sum = 1;
-        m_connectors_cnt = 0;
-    }
-    void init() {
-        std::random_device rd;
-        std::mt19937_64 mt(rd() + time(NULL));
-        std::uniform_int_distribution<size_t> dist(1, std::numeric_limits<size_t>::max());
-        m_unique_id = dist(mt);
-    }
-    bool has_same_id(const CutId& rhs) const { return id() == rhs.id(); }
-    bool is_equal(const CutId& rhs) const    { return id()             == rhs.id() &&
-                                                      check_sum()      == rhs.check_sum() &&
-                                                      connectors_cnt() == rhs.connectors_cnt() ; }
-    size_t id() const                     { return m_unique_id; }
-    bool valid() const                    { return m_unique_id != 0; }
-    size_t check_sum() const              { return m_check_sum; }
-    void increase_check_sum(size_t cnt)   { m_check_sum += cnt; }
-
-    size_t connectors_cnt() const                           { return m_connectors_cnt; }
-    void   increase_connectors_cnt(size_t connectors_cnt)   { m_connectors_cnt += connectors_cnt; }
-
-    template<class Archive> void serialize(Archive &ar) {
-        ar(m_unique_id, m_check_sum, m_connectors_cnt);
-    }
-};
-
-enum class CutConnectorType : int {
-    Plug
-    , Dowel
-    , Snap
-    , Undef
-};
-
-enum class CutConnectorStyle : int {
-    Prism
-    , Frustum
-    , Undef
-    //,Claw
-};
-
-enum class CutConnectorShape : int {
-    Triangle
-    , Square
-    , Hexagon
-    , Circle
-    , Undef
-    //,D-shape
-};
-
-struct CutConnectorAttributes
-{
-    CutConnectorType    type{ CutConnectorType::Plug };
-    CutConnectorStyle   style{ CutConnectorStyle::Prism };
-    CutConnectorShape   shape{ CutConnectorShape::Circle };
-
-    CutConnectorAttributes() {}
-
-    CutConnectorAttributes(CutConnectorType t, CutConnectorStyle st, CutConnectorShape sh)
-        : type(t), style(st), shape(sh)
-    {}
-
-    CutConnectorAttributes(const CutConnectorAttributes& rhs) :
-        CutConnectorAttributes(rhs.type, rhs.style, rhs.shape) {}
-
-    bool operator<(const CutConnectorAttributes& other) const {
-        return   this->type <  other.type ||
-                (this->type == other.type && this->style <  other.style) ||
-                (this->type == other.type && this->style == other.style && this->shape < other.shape);
-    }
-
-    template<class Archive> inline void serialize(Archive& ar) {
-        ar(type, style, shape);
-    }
-};
-
-struct CutConnector
-{
-    Vec3d pos;
-    Transform3d rotation_m;
-    float radius;
-    float height;
-    float radius_tolerance;// [0.f : 1.f]
-    float height_tolerance;// [0.f : 1.f]
-    float z_angle {0.f};
-    CutConnectorAttributes attribs;
-
-    CutConnector()
-        : pos(Vec3d::Zero()), rotation_m(Transform3d::Identity()), radius(5.f), height(10.f), radius_tolerance(0.f), height_tolerance(0.1f), z_angle(0.f)
-    {}
-
-    CutConnector(Vec3d p, Transform3d rot, float r, float h, float rt, float ht, float za, CutConnectorAttributes attributes)
-        : pos(p), rotation_m(rot), radius(r), height(h), radius_tolerance(rt), height_tolerance(ht), z_angle(za), attribs(attributes)
-    {}
-
-    CutConnector(const CutConnector& rhs) :
-        CutConnector(rhs.pos, rhs.rotation_m, rhs.radius, rhs.height, rhs.radius_tolerance, rhs.height_tolerance, rhs.z_angle, rhs.attribs) {}
-
-    template<class Archive> inline void serialize(Archive& ar) {
-        ar(pos, rotation_m, radius, height, radius_tolerance, height_tolerance, z_angle, attribs);
-    }
-};
-
-using CutConnectors = std::vector<CutConnector>;
-
-
 // Declared outside of ModelVolume, so it could be forward declared.
 enum class ModelVolumeType : int {
     INVALID = -1,
@@ -332,8 +206,8 @@ public:
     Domain::SLA::DrainHoles         sla_drain_holes;
 
     // Connectors to be added into the object before cut and are used to create a solid/negative volumes during a cut perform
-    CutConnectors           cut_connectors;
-    CutId                 cut_id;
+    Domain::CutConnectors           cut_connectors;
+    Domain::CutId                   cut_id;
 
     /* This vector accumulates the total translation applied to the object by the
         center_around_origin() method. Callers might want to apply the same translation
@@ -633,12 +507,12 @@ public:
         bool                is_from_upper{ true };
         bool                is_connector{ false };
         bool                is_processed{ true };
-        CutConnectorType    connector_type{ CutConnectorType::Plug };
+        Domain::CutConnectorType connector_type{ Domain::CutConnectorType::Plug };
         float               radius_tolerance{ 0.f };// [0.f : 1.f]
         float               height_tolerance{ 0.f };// [0.f : 1.f]
 
         CutInfo() = default;
-        CutInfo(CutConnectorType type, float rad_tolerance, float h_tolerance, bool processed = false) :
+        CutInfo(Domain::CutConnectorType type, float rad_tolerance, float h_tolerance, bool processed = false) :
         is_connector(true),
         is_processed(processed),
         connector_type(type),

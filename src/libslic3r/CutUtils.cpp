@@ -52,8 +52,8 @@ static void apply_tolerance(ModelVolume* vol)
         rot_norm.normalize();
 
     double z_offset = 0.5 * static_cast<double>(cut_info.height_tolerance);
-    if (cut_info.connector_type == CutConnectorType::Plug || 
-        cut_info.connector_type == CutConnectorType::Snap)
+    if (cut_info.connector_type == Domain::CutConnectorType::Plug ||
+        cut_info.connector_type == Domain::CutConnectorType::Snap)
         z_offset -= 0.05; // add small Z offset to better preview
 
     vol->set_offset(vol->get_offset() + rot_norm * z_offset);
@@ -107,10 +107,10 @@ static void process_connector_cut(  ModelVolume* volume, const Transform3d& inst
 
     // ! Don't apply instance transformation for the conntectors.
     // This transformation is already there
-    if (volume->cut_info.connector_type != CutConnectorType::Dowel) {
+    if (volume->cut_info.connector_type != Domain::CutConnectorType::Dowel) {
         if (attributes.has(ModelObjectCutAttribute::KeepUpper)) {
             ModelVolume* vol = nullptr;
-            if (volume->cut_info.connector_type == CutConnectorType::Snap) {
+            if (volume->cut_info.connector_type == Domain::CutConnectorType::Snap) {
                 namespace TriMesh = Biz::Algorithms::TriangleMesh;
                 TriangleMesh mesh = TriMesh::make_cylinder(1.0, 1.0, PI / 180.);
 

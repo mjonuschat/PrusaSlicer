@@ -100,6 +100,8 @@ add_library(slic3r-domain
     include/Slic3r/Domain/ConfigCommon.hpp
     src/Slic3r/Domain/ConfigCommon.cpp
 
+    include/Slic3r/Domain/CutConnector.hpp
+    src/Slic3r/Domain/CutConnector.cpp
 )
 
 target_include_directories(slic3r-domain PUBLIC include)

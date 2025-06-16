@@ -536,7 +536,7 @@ namespace Slic3rLegacy {
                 float   r_tolerance;
                 float   h_tolerance;
             };
-            CutId           id;
+            Domain::CutId           id;
             std::vector<Connector>  connectors;
         };
 
@@ -1099,7 +1099,7 @@ namespace Slic3rLegacy {
                         continue;
                     }
                     model_object->volumes[connector.volume_id]->cut_info = 
-                        ModelVolume::CutInfo(CutConnectorType(connector.type), connector.r_tolerance, connector.h_tolerance, true);
+                        ModelVolume::CutInfo(Domain::CutConnectorType(connector.type), connector.r_tolerance, connector.h_tolerance, true);
                 }
             }
         }
@@ -1289,15 +1289,15 @@ namespace Slic3rLegacy {
                     continue;
                 }
 
-                CutId cut_id;
+                Domain::CutId cut_id;
                 std::vector<CutObjectInfo::Connector>  connectors;
 
                 for (const auto& obj_cut_info : object_tree) {
                     if (obj_cut_info.first == "cut_id") {
                         pt::ptree cut_id_tree = obj_cut_info.second;
-                        cut_id = CutId(cut_id_tree.get<size_t>("<xmlattr>.id"),
-                                       cut_id_tree.get<size_t>("<xmlattr>.check_sum"),
-                                       cut_id_tree.get<size_t>("<xmlattr>.connectors_cnt"));
+                        cut_id = Domain::CutId(cut_id_tree.get<size_t>("<xmlattr>.id"),
+                                               cut_id_tree.get<size_t>("<xmlattr>.check_sum"),
+                                               cut_id_tree.get<size_t>("<xmlattr>.connectors_cnt"));
                     }
                     if (obj_cut_info.first == "connectors") {
                         pt::ptree cut_connectors_tree = obj_cut_info.second;
