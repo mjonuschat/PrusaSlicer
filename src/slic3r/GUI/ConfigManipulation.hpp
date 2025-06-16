@@ -7,7 +7,7 @@
 
 /*	 Class for validation config options
  *	 and update (enable/disable) IU components
- *	 
+ *
  *	 Used for config validation for global config (Print Settings Tab)
  *	 and local config (overrides options on sidebar)
  * */
@@ -15,11 +15,12 @@
 #include "libslic3r/PrintConfig.hpp"
 #include "Field.hpp"
 
-namespace Slic3r {
+namespace Domain {
+    class ConfigBox;
+} // namespace Domain
 
-class ModelConfig;
 
-namespace GUI {
+namespace Slic3r::GUI {
 
 class ConfigManipulation
 {
@@ -28,19 +29,19 @@ class ConfigManipulation
     bool                m_is_initialized_support_material_overhangs_queried{ false };
     bool                m_support_material_overhangs_queried{ false };
 
-    // function to loading of changed configuration 
+    // function to loading of changed configuration
     std::function<void()>                                       load_config = nullptr;
     std::function<void (const std::string&, bool toggle, int opt_index)>   cb_toggle_field = nullptr;
-    // callback to propagation of changed value, if needed 
+    // callback to propagation of changed value, if needed
     std::function<void(const std::string&, const boost::any&)>  cb_value_change = nullptr;
-    ModelConfig* local_config = nullptr;
+    Domain::ConfigBox* local_config = nullptr;
     wxWindow*    m_msg_dlg_parent {nullptr};
 
 public:
     ConfigManipulation(std::function<void()> load_config,
         std::function<void(const std::string&, bool toggle, int opt_index)> cb_toggle_field,
         std::function<void(const std::string&, const boost::any&)>  cb_value_change,
-        ModelConfig* local_config = nullptr,
+        Domain::ConfigBox* local_config = nullptr,
         wxWindow* msg_dlg_parent  = nullptr) :
         load_config(load_config),
         cb_toggle_field(cb_toggle_field),
@@ -73,7 +74,6 @@ public:
     }
 };
 
-} // GUI
-} // Slic3r
+} // namespace Slic3r::GUI
 
 #endif /* slic3r_ConfigManipulation_hpp_ */

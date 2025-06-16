@@ -10,8 +10,8 @@
 
 class wxWindow;
 
-namespace Slic3r {
-    class ModelConfig;
+namespace Slic3r::Domain {
+    class ConfigBox;
 }
 
 namespace Slic3r::App::WX {
@@ -24,7 +24,7 @@ public:
     ConfigManipulation(std::function<void()> load_config,
         std::function<void(const std::string&, bool toggle, int opt_index)> cb_toggle_field,
         std::function<void(const std::string&, const boost::any&)>  cb_value_change,
-        ModelConfig* local_config = nullptr) :
+        Domain::ConfigBox* local_config = nullptr) :
         Biz::Preset::AbstractConfigManipulation(load_config, cb_toggle_field, cb_value_change, local_config) {}
     ConfigManipulation() {}
 

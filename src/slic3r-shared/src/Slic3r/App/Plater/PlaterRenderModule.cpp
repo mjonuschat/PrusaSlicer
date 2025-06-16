@@ -183,11 +183,13 @@ void PlaterRenderModule::toggle_activate_tool(Scene::ToolType tool_type)
     update_toolbar_tool_selection(current_tool_type);
 }
 
+#if 0
 void override_config(ModelConfigObject& config)
 {
     config.set_key_value("fill_pattern", new ConfigOptionEnum<InfillPattern>(ipHoneycomb));
     config.set_key_value("extruder", new ConfigOptionInt(3));
 }
+#endif
 
 void PlaterRenderModule::init_scene()
 {

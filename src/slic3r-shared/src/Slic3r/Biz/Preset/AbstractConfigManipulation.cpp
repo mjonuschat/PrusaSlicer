@@ -3,6 +3,7 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include "Slic3r/Biz/Preset/AbstractConfigManipulation.hpp"
+#include "Slic3r/Domain/Config.hpp"
 #include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/format.hpp"
 
@@ -29,7 +30,7 @@ void AbstractConfigManipulation::apply(DynamicPrintConfig* config, const Dynamic
 void AbstractConfigManipulation::toggle_field(const std::string& opt_key, const bool toggle, int opt_index/* = -1*/)
 {
     if (local_config) {
-        if (local_config->option(opt_key) == nullptr)
+        if (local_config->overrides.get(opt_key).has_value())
             return;
     }
     cb_toggle_field(opt_key, toggle, opt_index);

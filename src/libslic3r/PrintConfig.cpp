@@ -6306,9 +6306,6 @@ CustomGcodeSpecificConfigDef::CustomGcodeSpecificConfigDef()
 
 const CustomGcodeSpecificConfigDef custom_gcode_specific_config_def;
 
-uint64_t ModelConfig::s_last_timestamp = 1;
-
-
 std::string get_sla_suptree_prefix(const DynamicPrintConfig &config)
 {
     const auto *suptreetype = config.option<ConfigOptionEnum<sla::SupportTreeType>>("support_tree_type");

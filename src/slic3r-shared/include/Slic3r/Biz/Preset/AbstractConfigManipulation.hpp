@@ -16,8 +16,11 @@
 #include "Slic3r/Biz/Preset/IConfigInteractor.hpp"
 
 namespace Slic3r {
-    class ModelConfig;
     class DynamicPrintConfig;
+}
+
+namespace Slic3r::Domain {
+    struct ConfigBox;
 }
 
 namespace Slic3r::Biz::Preset {
@@ -34,13 +37,13 @@ class AbstractConfigManipulation
     std::function<void (const std::string&, bool toggle, int opt_index)>    cb_toggle_field = nullptr;
     // callback to propagation of changed value, if needed 
     std::function<void(const std::string&, const boost::any&)>  cb_value_change = nullptr;
-    ModelConfig* local_config = nullptr;
+    Domain::ConfigBox* local_config = nullptr;
 
 public:
     AbstractConfigManipulation(std::function<void()> load_config,
         std::function<void(const std::string&, bool toggle, int opt_index)> cb_toggle_field,
         std::function<void(const std::string&, const boost::any&)>  cb_value_change,
-        ModelConfig* local_config = nullptr) :
+        Domain::ConfigBox* local_config = nullptr) :
         load_config(load_config),
         cb_toggle_field(cb_toggle_field),
         cb_value_change(cb_value_change),

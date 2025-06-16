@@ -61,37 +61,6 @@ namespace UndoRedo {
 	class StackImpl;
 }
 
-class ModelConfigObject : public Domain::ObjectBase, public ModelConfig
-{
-private:
-	friend class cereal::access;
-	friend class UndoRedo::StackImpl;
-	friend class ModelObject;
-	friend class ModelVolume;
-
-    // Constructors to be only called by derived classes.
-    // Default constructor to assign a unique ID.
-    explicit ModelConfigObject() = default;
-    // Constructor with ignored int parameter to assign an invalid ID, to be replaced
-    // by an existing ID copied from elsewhere.
-    explicit ModelConfigObject(int) : ObjectBase(-1) {}
-    // Copy constructor copies the ID.
-	explicit ModelConfigObject(const ModelConfigObject &cfg) = default;
-    // Move constructor copies the ID.
-	explicit ModelConfigObject(ModelConfigObject &&cfg) = default;
-
-    Timestamp          timestamp() const throw() override { return this->ModelConfig::timestamp(); }
-    bool               object_id_and_timestamp_match(const ModelConfigObject &rhs) const throw() { return this->id() == rhs.id() && this->timestamp() == rhs.timestamp(); }
-
-    // called by ModelObject::assign_copy()
-	ModelConfigObject& operator=(const ModelConfigObject &rhs) = default;
-    ModelConfigObject& operator=(ModelConfigObject &&rhs) = default;
-
-    template<class Archive> void serialize(Archive &ar) {
-        ar(cereal::base_class<ModelConfig>(this));
-    }
-};
-
 namespace Internal {
 	template<typename T>
 	class StaticSerializationWrapper
@@ -1244,7 +1213,9 @@ static const double SINKING_MIN_Z_THRESHOLD = 0.05;
 namespace cereal
 {
 	template <class Archive> struct specialize<Archive, Slic3r::ModelVolume, cereal::specialization::member_load_save> {};
-	template <class Archive> struct specialize<Archive, Slic3r::ModelConfigObject, cereal::specialization::member_serialize> {};
+    template <class Archive> struct specialize<Archive, Slic3r::Domain::VolumeSettings, cereal::specialization::member_serialize> {};
+    template <class Archive> struct specialize<Archive, Slic3r::Domain::ObjectSettings, cereal::specialization::member_serialize> {};
+    template <class Archive> struct specialize<Archive, Slic3r::Domain::SLAObjectSettings, cereal::specialization::member_serialize> {};
 }
 
 #endif /* slic3r_Model_hpp_ */
