@@ -141,8 +141,6 @@ set(SLIC3R_SOURCES
     Flow.cpp
     Flow.hpp
     format.hpp
-    Format/AMF.cpp
-    Format/AMF.hpp
     Format/OBJ.cpp
     Format/OBJ.hpp
     Format/objparser.cpp
