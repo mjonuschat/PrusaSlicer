@@ -2484,7 +2484,7 @@ SlicingParameters PrintObject::slicing_parameters(
 				object_config,
                 object_config.get<Domain::BrimType>("brim_type") != Domain::BrimType::NoBrim && object_config.get<double>("brim_width") > 0.,
 				object_extruders);
-			for (const std::pair<const LayerHeightRange, Domain::VolumeSettings> &range_and_config : model_object.layer_config_ranges)
+			for (const std::pair<const Domain::LayerHeightRange, Domain::VolumeSettings> &range_and_config : model_object.layer_config_ranges)
 				if (!range_and_config.second.overrides.get("perimeter_extruder").has_value() ||
 					!range_and_config.second.overrides.get("infill_extruder").has_value() ||
 					!range_and_config.second.overrides.get("solid_infill_extruder").has_value())

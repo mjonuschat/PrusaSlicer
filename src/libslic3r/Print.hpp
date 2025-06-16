@@ -245,7 +245,7 @@ public:
     // possibly clipped by the layer_height_range.
     struct LayerRangeRegions
     {
-        LayerHeightRange                    layer_height_range;
+        Domain::LayerHeightRange            layer_height_range;
         // Config of the layer range, null if there is just a single range with no config override.
         // Config is owned by the associated ModelObject.
         Domain::PartialVolumeConfigFDMPtr   config;

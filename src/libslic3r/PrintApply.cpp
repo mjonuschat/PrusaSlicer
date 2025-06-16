@@ -110,7 +110,7 @@ static std::vector<PrintObjectTrafoAndInstances> print_objects_from_model_object
 
 // Compare just the layer ranges and their layer heights, not the associated configs.
 // Ignore the layer heights if check_layer_heights is false.
-static bool layer_height_ranges_equal(const LayerConfigRanges &lr1, const LayerConfigRanges &lr2, bool check_layer_height)
+static bool layer_height_ranges_equal(const Domain::LayerConfigRanges &lr1, const Domain::LayerConfigRanges &lr2, bool check_layer_height)
 {
     if (lr1.size() != lr2.size())
         return false;
@@ -165,7 +165,7 @@ class LayerRanges
 {
 public:
     struct LayerRange {
-        LayerHeightRange        layer_height_range;
+        Domain::LayerHeightRange  layer_height_range;
         // Config is owned by the associated ModelObject.
         PartialVolumeConfigFDMPtr config;
 
@@ -174,7 +174,7 @@ public:
 
     LayerRanges() = default;
     LayerRanges(
-        const LayerConfigRanges& in,
+        const Domain::LayerConfigRanges& in,
         const std::size_t tools_count,
         const std::size_t filaments_count
     )
@@ -184,7 +184,7 @@ public:
 
     // Convert input config ranges into continuous non-overlapping sorted vector of intervals and their configs.
     void assign(
-        const LayerConfigRanges& in,
+        const Domain::LayerConfigRanges& in,
         const std::size_t tools_count,
         const std::size_t filaments_count
     )
@@ -193,29 +193,29 @@ public:
         m_ranges.reserve(in.size());
         // Input ranges are sorted lexicographically. First range trims the other ranges.
         double last_z = 0;
-        for (const std::pair<const LayerHeightRange, Domain::VolumeSettings> &range : in)
+        for (const std::pair<const Domain::LayerHeightRange, Domain::VolumeSettings> &range : in)
             if (range.first.second > last_z) {
                 double min_z = std::max(range.first.first, 0.);
                 if (min_z > last_z + EPSILON) {
-                    m_ranges.push_back({ LayerHeightRange(last_z, min_z) });
+                    m_ranges.push_back({ Domain::LayerHeightRange(last_z, min_z) });
                     last_z = min_z;
                 }
                 if (range.first.second > last_z + EPSILON) {
                     const PartialVolumeConfigFDMPtr cfg{std::make_shared<
                         const PartialVolumeConfigFDM>(range.second, tools_count, filaments_count)};
-                    m_ranges.push_back({ LayerHeightRange(last_z, range.first.second), cfg });
+                    m_ranges.push_back({ Domain::LayerHeightRange(last_z, range.first.second), cfg });
                     last_z = range.first.second;
                 }
             }
         if (m_ranges.empty())
-            m_ranges.push_back({ LayerHeightRange(0, DBL_MAX) });
+            m_ranges.push_back({ Domain::LayerHeightRange(0, DBL_MAX) });
         else if (m_ranges.back().config == nullptr)
             m_ranges.back().layer_height_range.second = DBL_MAX;
         else
-            m_ranges.push_back({ LayerHeightRange(m_ranges.back().layer_height_range.second, DBL_MAX) });
+            m_ranges.push_back({ Domain::LayerHeightRange(m_ranges.back().layer_height_range.second, DBL_MAX) });
     }
 
-    PartialVolumeConfigFDMPtr config(const LayerHeightRange &range) const {
+    PartialVolumeConfigFDMPtr config(const Domain::LayerHeightRange &range) const {
         auto it = std::lower_bound(m_ranges.begin(), m_ranges.end(), LayerRange{ { range.first - EPSILON, range.second - EPSILON } });
         // #ys_FIXME_COLOR
         // assert(it != m_ranges.end());
@@ -267,7 +267,7 @@ static PrintObjectRegions::BoundingBox transformed_its_bbox2d(const indexed_tria
 static void transformed_its_bboxes_in_z_ranges(
     const indexed_triangle_set                                    &its, 
     const Transform3f                                             &m,
-    const std::vector<LayerHeightRange>                           &z_ranges,
+    const std::vector<Domain::LayerHeightRange>                   &z_ranges,
     std::vector<std::pair<PrintObjectRegions::BoundingBox, bool>> &bboxes,
     const float                                                    offset)
 {
@@ -275,7 +275,7 @@ static void transformed_its_bboxes_in_z_ranges(
     for (const stl_triangle_vertex_indices &tri : its.indices) {
         const Vec3f pts[3] = { m * its.vertices[tri[0]], m * its.vertices[tri[1]], m * its.vertices[tri[2]] };
         for (size_t irange = 0; irange < z_ranges.size(); ++ irange) {
-            const LayerHeightRange                           &z_range = z_ranges[irange];
+            const Domain::LayerHeightRange                   &z_range = z_ranges[irange];
             std::pair<PrintObjectRegions::BoundingBox, bool> &bbox    = bboxes[irange];
             auto bbox_extend = [&bbox](const Vec3f& p) {
                 if (bbox.second) {
@@ -401,10 +401,10 @@ void update_volume_bboxes(
         }
 
         std::vector<std::pair<PrintObjectRegions::BoundingBox, bool>> bboxes;
-        std::vector<LayerHeightRange>                                 ranges;
+        std::vector<Domain::LayerHeightRange>                         ranges;
         ranges.reserve(layer_ranges.size());
         for (const PrintObjectRegions::LayerRangeRegions &layer_range : layer_ranges) {
-            LayerHeightRange r = layer_range.layer_height_range;
+            Domain::LayerHeightRange r = layer_range.layer_height_range;
             r.first  -= EPSILON;
             r.second += EPSILON;
             ranges.emplace_back(r);

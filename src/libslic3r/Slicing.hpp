@@ -149,7 +149,7 @@ inline bool equal_layering(const SlicingParameters &sp1, const SlicingParameters
 
 std::vector<double> layer_height_profile_from_ranges(
     const SlicingParameters &slicing_params,
-    const LayerConfigRanges &layer_config_ranges);
+    const Domain::LayerConfigRanges &layer_config_ranges);
 
 std::vector<double> layer_height_profile_adaptive(
     const SlicingParameters& slicing_params,
@@ -216,7 +216,7 @@ namespace Slicing {
 
 namespace cereal
 {
-	template<class Archive> void serialize(Archive& archive, Slic3r::LayerHeightRange &lhr) { archive(lhr.first, lhr.second); }
+	template<class Archive> void serialize(Archive& archive, Slic3r::Domain::LayerHeightRange &lhr) { archive(lhr.first, lhr.second); }
 }
 
 #endif /* slic3r_Slicing_hpp_ */

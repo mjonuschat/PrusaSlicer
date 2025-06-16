@@ -30,6 +30,7 @@
 #include "Slic3r/Domain/FullConfigFDM.hpp"
 #include "Slic3r/Domain/FullConfigSLA.hpp"
 #include "Slic3r/Domain/CutConnector.hpp"
+#include "Slic3r/Domain/LayerHeightProfile.hpp"
 
 #include <map>
 #include <memory>
@@ -113,45 +114,6 @@ typedef std::vector<ModelInstance*> ModelInstancePtrs;
 		return *this; \
     }
 
-class LayerHeightProfile final : public Domain::ObjectWithTimestamp {
-public:
-    // Assign the content if the timestamp differs, don't assign an ObjectID.
-    void assign(const LayerHeightProfile &rhs) { if (! this->timestamp_matches(rhs)) { m_data = rhs.m_data; this->copy_timestamp(rhs); } }
-    void assign(LayerHeightProfile &&rhs) { if (! this->timestamp_matches(rhs)) { m_data = std::move(rhs.m_data); this->copy_timestamp(rhs); } }
-
-    const std::vector<double>& get() const throw() { return m_data; }
-    bool                  empty() const throw() { return m_data.empty(); }
-    void                  set(const std::vector<double> &data) { if (m_data != data) { m_data = data; this->touch(); } }
-    void                  set(std::vector<double> &&data) { if (m_data != data) { m_data = std::move(data); this->touch(); } }
-    void                  clear() { m_data.clear(); this->touch(); }
-
-    template<class Archive> void serialize(Archive &ar)
-    {
-        ar(cereal::base_class<ObjectWithTimestamp>(this), m_data);
-    }
-
-private:
-    // Constructors to be only called by derived classes.
-    // Default constructor to assign a unique ID.
-    explicit LayerHeightProfile() = default;
-    // Constructor with ignored int parameter to assign an invalid ID, to be replaced
-    // by an existing ID copied from elsewhere.
-    explicit LayerHeightProfile(int) : ObjectWithTimestamp(-1) {}
-    // Copy constructor copies the ID.
-    explicit LayerHeightProfile(const LayerHeightProfile &rhs) = default;
-    // Move constructor copies the ID.
-    explicit LayerHeightProfile(LayerHeightProfile &&rhs) = default;
-
-    // called by ModelObject::assign_copy()
-    LayerHeightProfile& operator=(const LayerHeightProfile &rhs) = default;
-    LayerHeightProfile& operator=(LayerHeightProfile &&rhs) = default;
-
-    std::vector<double> m_data;
-
-    // to access set_new_unique_id() when copy / pasting an object
-    friend class ModelObject;
-};
-
 // Declared outside of ModelVolume, so it could be forward declared.
 enum class ModelVolumeType : int {
     INVALID = -1,
@@ -161,10 +123,6 @@ enum class ModelVolumeType : int {
     SUPPORT_BLOCKER,
     SUPPORT_ENFORCER,
 };
-
-
-using LayerHeightRange = std::pair<double,double>;
-using LayerConfigRanges = std::map<LayerHeightRange, Slic3r::Domain::VolumeSettings>;
 
 // A printable object, possibly having multiple print volumes (each with its own set of parameters and materials),
 // and possibly having multiple modifier volumes, each modifier volume with its set of parameters and materials.
@@ -186,11 +144,11 @@ public:
     Domain::SLAObjectSettings object_settings_sla;
 
     // Variation of a layer thickness for spans of Z coordinates + optional parameter overrides.
-    LayerConfigRanges       layer_config_ranges;
+    Domain::LayerConfigRanges layer_config_ranges;
 
     // Profile of increasing z to a layer height, to be linearly interpolated when calculating the layers.
     // The pairs of <z, layer_height> are packed into a 1D array.
-    LayerHeightProfile      layer_height_profile;
+    Domain::LayerHeightProfile layer_height_profile;
     // Whether or not this object is printable
     bool                    printable { true };
 
@@ -458,7 +416,7 @@ private:
 		ar(cereal::base_class<ObjectBase>(this));
 	    Internal::StaticSerializationWrapper<Domain::ObjectSettings> object_settings_wrapper(object_settings);
 	    Internal::StaticSerializationWrapper<Domain::SLAObjectSettings> object_settings_sla_wrapper(object_settings_sla);
-        Internal::StaticSerializationWrapper<LayerHeightProfile> layer_heigth_profile_wrapper(layer_height_profile);
+        Internal::StaticSerializationWrapper<Domain::LayerHeightProfile> layer_heigth_profile_wrapper(layer_height_profile);
         ar(name, input_file, instances, volumes, object_settings_wrapper, object_settings_sla_wrapper, layer_config_ranges, layer_heigth_profile_wrapper,
             sla_support_points, sla_points_status, sla_drain_holes, printable, origin_translation,
             m_bounding_box_approx, m_bounding_box_approx_valid, 
@@ -746,7 +704,7 @@ private:
         supported_facets(other.supported_facets), seam_facets(other.seam_facets), mm_segmentation_facets(other.mm_segmentation_facets),
         fuzzy_skin_facets(other.fuzzy_skin_facets), cut_info(other.cut_info), text_configuration(other.text_configuration), emboss_shape(other.emboss_shape)
     {
-		assert(this->id().valid()); 
+		assert(this->id().valid());
         assert(this->supported_facets.id().valid());
         assert(this->seam_facets.id().valid());
         assert(this->mm_segmentation_facets.id().valid());
@@ -872,7 +830,7 @@ public:
 
     Vec3d get_offset() const { return m_transformation.get_offset(); }
     double get_offset(Axis axis) const { return m_transformation.get_offset(axis); }
-    
+
     void set_offset(const Vec3d& offset) { m_transformation.set_offset(offset); }
     void set_offset(Axis axis, double offset) { m_transformation.set_offset(axis, offset); }
 
@@ -891,7 +849,7 @@ public:
     Vec3d get_mirror() const { return m_transformation.get_mirror(); }
     double get_mirror(Axis axis) const { return m_transformation.get_mirror(axis); }
     bool is_left_handed() const { return m_transformation.is_left_handed(); }
-    
+
     void set_mirror(const Vec3d& mirror) { m_transformation.set_mirror(mirror); }
     void set_mirror(Axis axis, double mirror) { m_transformation.set_mirror(axis, mirror); }
 

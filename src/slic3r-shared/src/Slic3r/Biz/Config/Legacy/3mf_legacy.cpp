@@ -547,7 +547,7 @@ namespace Slic3rLegacy {
         typedef std::map<int, ObjectMetadata> IdToMetadataMap;
         typedef std::map<PathId, Geometry> IdToGeometryMap;
         typedef std::map<int, std::vector<double>> IdToLayerHeightsProfileMap;
-        typedef std::map<int, LayerConfigRanges> IdToLayerConfigRangesMap;
+        typedef std::map<int, Domain::LayerConfigRanges> IdToLayerConfigRangesMap;
         typedef std::map<int, CutObjectInfo> IdToCutObjectInfoMap;
         typedef std::map<int, std::vector<SupportPoint>> IdToSlaSupportPointsMap;
         typedef std::map<int, std::vector<Domain::SLA::DrainHole>> IdToSlaDrainHolesMap;
@@ -1437,7 +1437,7 @@ namespace Slic3rLegacy {
                     continue;
                 }
 
-                std::map<LayerHeightRange, Slic3r::Domain::VolumeSettings> config_ranges;
+                std::map<Domain::LayerHeightRange, Slic3r::Domain::VolumeSettings> config_ranges;
 
                 for (const auto& range : object_tree) {
                     if (range.first != "range")

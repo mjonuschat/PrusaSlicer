@@ -102,6 +102,9 @@ add_library(slic3r-domain
 
     include/Slic3r/Domain/CutConnector.hpp
     src/Slic3r/Domain/CutConnector.cpp
+
+    include/Slic3r/Domain/LayerHeightProfile.hpp
+    src/Slic3r/Domain/LayerHeightProfile.cpp
 )
 
 target_include_directories(slic3r-domain PUBLIC include)

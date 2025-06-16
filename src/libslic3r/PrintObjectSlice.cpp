@@ -97,7 +97,7 @@ static std::vector<ExPolygons> slice_volume(
 static std::vector<ExPolygons> slice_volume(
     const ModelVolume                           &volume,
     const std::vector<float>                    &z,
-    const std::vector<LayerHeightRange>         &ranges,
+    const std::vector<Domain::LayerHeightRange> &ranges,
     const MeshSlicingParamsEx                   &params,
     const std::function<void()>                 &throw_on_cancel_callback)
 {
@@ -112,7 +112,7 @@ static std::vector<ExPolygons> slice_volume(
             z_filtered.reserve(z.size());
             n_filtered.reserve(2 * ranges.size());
             size_t i = 0;
-            for (const LayerHeightRange &range : ranges) {
+            for (const Domain::LayerHeightRange &range : ranges) {
                 for (; i < z.size() && z[i] < range.first; ++ i) ;
                 size_t first = i;
                 for (; i < z.size() && z[i] < range.second; ++ i)
@@ -163,7 +163,7 @@ static std::vector<VolumeSlices> slice_volumes_inner(
     std::vector<VolumeSlices> out;
     out.reserve(model_volumes.size());
 
-    std::vector<LayerHeightRange> slicing_ranges;
+    std::vector<Domain::LayerHeightRange> slicing_ranges;
     if (layer_ranges.size() > 1)
         slicing_ranges.reserve(layer_ranges.size());
 
