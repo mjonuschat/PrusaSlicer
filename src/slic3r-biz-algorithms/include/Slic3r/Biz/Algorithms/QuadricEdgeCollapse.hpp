@@ -5,15 +5,14 @@
 #ifndef slic3r_quadric_edge_collapse_hpp_
 #define slic3r_quadric_edge_collapse_hpp_
 
-struct indexed_triangle_set;
 // paper: https://people.eecs.berkeley.edu/~jrs/meshpapers/GarlandHeckbert2.pdf
 // sum up: https://users.csc.calpoly.edu/~zwood/teaching/csc570/final06/jseeba/
 // inspiration: https://github.com/sp4cerat/Fast-Quadric-Mesh-Simplification
 
 #include <cstdint> // uint32_t
-#include <functional> 
+#include <functional>
 
-#include <admesh/stl.h> // indexed_triangle_set
+struct indexed_triangle_set;
 
 namespace Slic3r::Biz::Algorithms {
 
